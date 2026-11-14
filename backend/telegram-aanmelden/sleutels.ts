@@ -22,14 +22,30 @@ const cache = new Map<string, { waarde: string; tot: number }>();
 
 type Kluis = {
   lees: (userId: string, naam: string) => Promise<string>;
+  leesIntegratie?: (userId: string) => Promise<{ waarde: string; naam: string } | null>;
   bewaar: (userId: string, naam: string, waarde: string) => Promise<void>;
   wis: (userId: string, naam: string) => Promise<void>;
   eigenaar: () => Promise<string>;
 };
+const EIGEN_SLEUTELS: ReadonlySet<string> = new Set([KLUIS.bot, KLUIS.botNieuw, KLUIS.webhook, KLUIS.peper]);
 const echteKluis: Kluis = {
   lees: async (userId, naam) => {
     const m = await import('../api-platform-kluis');
     return alsSysteem(() => m.readOwnerVaultPlaintext(userId, naam, DOEL as never));
+  },
+  leesIntegratie: async (userId) => {
+    const m = await import('../api-platform-kluis');
+    const items = await alsSysteem(() => m.apiPlatformVaultItems(userId));
+    const kandidaten = items
+      .filter((i) => i.purpose === DOEL && !EIGEN_SLEUTELS.has(i.keyName))
+      .sort((a, b) => Number(b.keyName === 'telegram-bot-token') - Number(a.keyName === 'telegram-bot-token') || b.updatedAt - a.updatedAt);
+    for (const item of kandidaten) {
+      try {
+        const w = String(await alsSysteem(() => m.readOwnerVaultPlaintext(userId, item.keyName, DOEL as never))).trim();
+        if (BOT_SLEUTEL_RE.test(w)) return { waarde: w, naam: item.keyName };
+      } catch { /* наступний кандидат */ }
+    }
+    return null;
   },
   bewaar: async (userId, naam, waarde) => {
     const m = await import('../api-platform-kluis');
@@ -57,6 +73,21 @@ async function lees(naam: string): Promise<string> {
   cache.set(naam, { waarde, tot: Date.now() + CACHE_MS });
   return waarde;
 }
+async function leesIntegratie(): Promise<string> {
+  const sleutel = '__integratie__';
+  const c = cache.get(sleutel);
+  if (c && c.tot > Date.now()) return c.waarde;
+  let waarde = '';
+  try {
+    if (kluis.leesIntegratie) {
+      const eigenaar = await kluis.eigenaar();
+      const gevonden = eigenaar ? await kluis.leesIntegratie(eigenaar) : null;
+      if (gevonden && BOT_SLEUTEL_RE.test(gevonden.waarde)) waarde = gevonden.waarde;
+    }
+  } catch { waarde = ''; }
+  cache.set(sleutel, { waarde, tot: Date.now() + CACHE_MS });
+  return waarde;
+}
 async function bewaar(naam: string, waarde: string): Promise<void> {
   const eigenaar = await kluis.eigenaar();
   if (!eigenaar) throw new Error('EIGENAAR_ONBEKEND');
@@ -66,18 +97,25 @@ async function bewaar(naam: string, waarde: string): Promise<void> {
 
 export const BOT_SLEUTEL_RE = /^[0-9]{3,20}:[A-Za-z0-9_-]{30,80}$/;
 
-/** De actieve botsleutel ('' = niet ingesteld). */
+/** De actieve botsleutel: eigen kluis → bestaande Telegram-integratie in de kluis → omgevingsvariabele ('' = niet ingesteld). */
 export async function botSleutel(): Promise<string> {
   const uitKluis = await lees(KLUIS.bot);
-  if (uitKluis) return uitKluis;
-  return String(process.env.AANMELD_TELEGRAM_BOT_TOKEN || '').trim();
+  if (uitKluis && BOT_SLEUTEL_RE.test(uitKluis)) return uitKluis;
+  const uitIntegratie = await leesIntegratie();
+  if (uitIntegratie) return uitIntegratie;
+  const omg = String(process.env.AANMELD_TELEGRAM_BOT_TOKEN || '').trim();
+  return BOT_SLEUTEL_RE.test(omg) ? omg : '';
 }
 /** Bron van de sleutel voor de beheerweergave (zonder waarde). */
-export async function botSleutelBron(): Promise<{ aanwezig: boolean; bron: 'kluis' | 'omgeving' | 'geen'; botId: string; wisselLoopt: boolean }> {
+export async function botSleutelBron(): Promise<{ aanwezig: boolean; bron: 'kluis' | 'kluis-integratie' | 'omgeving' | 'geen'; botId: string; wisselLoopt: boolean }> {
   const k = await lees(KLUIS.bot);
-  const env = String(process.env.AANMELD_TELEGRAM_BOT_TOKEN || '').trim();
-  const s = k || env;
-  return { aanwezig: !!s, bron: k ? 'kluis' : env ? 'omgeving' : 'geen', botId: s ? s.split(':')[0] : '', wisselLoopt: !!(await lees(KLUIS.botNieuw)) };
+  const kGeldig = k && BOT_SLEUTEL_RE.test(k) ? k : '';
+  const integratie = kGeldig ? '' : await leesIntegratie();
+  const envRaw = String(process.env.AANMELD_TELEGRAM_BOT_TOKEN || '').trim();
+  const env = BOT_SLEUTEL_RE.test(envRaw) ? envRaw : '';
+  const s = kGeldig || integratie || env;
+  const bron = kGeldig ? 'kluis' : integratie ? 'kluis-integratie' : env ? 'omgeving' : 'geen';
+  return { aanwezig: !!s, bron, botId: s ? s.split(':')[0] : '', wisselLoopt: !!(await lees(KLUIS.botNieuw)) };
 }
 export async function nieuweBotSleutelBewaren(waarde: string): Promise<void> { await bewaar(KLUIS.botNieuw, waarde); }
 export async function nieuweBotSleutel(): Promise<string> { return lees(KLUIS.botNieuw); }

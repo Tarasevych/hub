@@ -169,6 +169,25 @@ export function connectGeweigerd(staat: SiteStaat, vraag: { ruimte: AiRuimte; kl
   return null;
 }
 
+/**
+ * SEC-002 (ai-mcp-05): чи може ЧИННЕ приватне підключення (уже виданий OAuth-грант або токен tvh_) працювати далі.
+ * Раніше вимикачі `agent:<клієнт>` і `methode:mcp|token` читалися лише під час НОВОГО підключення (connectGeweigerd), тож
+ * вимкнений для всього сайту агент і далі користувався наявним грантом. Тепер їх питають при кожному tools/list і tools/call.
+ *
+ * Свідомо вужче за connectGeweigerd: тут діють лише ЯВНІ вимикачі адміністратора. Каталог (METHODE_NIET: клієнт без картки
+ * чи без способу) чинне підключення не ріже — інакше наявні гранти зникли б без жодного рішення людини.
+ * `agentKlant` — клієнт адреси агента в connector v2 (/claude, /grok): назву клієнта задає сам ШІ, адресу — ні, тож
+ * вимикач агента діє, якщо збігається будь-що з двох. Технічний простір цими перемикачами не керується.
+ */
+export function verbindingGeweigerd(staat: SiteStaat, vraag: { ruimte: AiRuimte; klant: KlantId; methode: MethodeId; agentKlant?: KlantId | null }): Weigering | null {
+  if (vraag.ruimte !== 'prive') return null;
+  if (staat.methode[vraag.methode] === false) return { code: 'METHODE_UIT' };
+  for (const klant of [vraag.klant, vraag.agentKlant]) {
+    if (klant && klant !== 'overig' && !agentAan(staat, klant)) return { code: 'AGENT_UIT' };
+  }
+  return null;
+}
+
 export function klantUit(value: unknown, naam: string): KlantId {
   if (typeof value === 'string' && KLANTEN.some((k) => k.id === value)) return value as KlantId;
   return klantVan(naam);
@@ -215,8 +234,9 @@ export function aiVerbindingenNaar(hash: string): string {
 }
 
 export const SITE_REGEL = {
-  uk: 'Якщо тут вимкнено, жоден користувач — навіть окремо — цього доступу не отримає.',
-  nl: 'Staat dit uit, dan krijgt geen enkele gebruiker — ook niet apart — deze toegang.',
+  // SEC-002 (ai-mcp-05): вимикач діє й на вже підключених (verbindingGeweigerd) — підказка тепер каже це прямо.
+  uk: 'Якщо тут вимкнено, жоден користувач — навіть окремо — цього доступу не отримає. Уже підключені ШІ втрачають його одразу; після ввімкнення їхні підключення запрацюють знову.',
+  nl: 'Staat dit uit, dan krijgt geen enkele gebruiker — ook niet apart — deze toegang. Al verbonden AI\'s verliezen haar meteen; na aanzetten werken hun verbindingen weer.',
 } as const;
 
 /** Умови, які сайт уже вимагає. Окремих URL умов виробника в продукті немає. */

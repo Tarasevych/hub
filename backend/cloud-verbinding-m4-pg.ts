@@ -2,7 +2,8 @@
  * AES-256-GCM envelope encryption with record-bound AAD; no decrypted token is
  * sent by list(). The system role is used only behind an authenticated Cloud route.
  */
-import {createCipheriv,createDecipheriv,createHash,randomBytes,randomUUID} from 'node:crypto';
+import {createCipheriv,createHash,randomBytes,randomUUID} from 'node:crypto';
+import {gcmOpenStrikt} from '../server/platform/beveiliging';
 import {getPool} from '../server/platform/pg';
 import type {CloudPrincipal,PendingFlow,StoredConnection,AccountView,ConnectionStatus,CloudConnectionStore} from './cloud-verbinding-m4';
 import {CloudConnectionError} from './cloud-verbinding-m4';
@@ -25,9 +26,9 @@ export function encryptCloudGrant(value:unknown,aad:string):string{
 }
 export function decryptCloudGrant<T>(encoded:string,aad:string):T{
  const p=encoded.split('.');if(p.length!==4||p[0]!=='v1')throw new CloudConnectionError('CLOUD_GRANT_CIPHERTEXT_INVALID',500);
- try{const decipher=createDecipheriv('aes-256-gcm',key(),Buffer.from(p[1],'base64url'));
-  decipher.setAAD(Buffer.from(aad,'utf8'));decipher.setAuthTag(Buffer.from(p[2],'base64url'));
-  return JSON.parse(Buffer.concat([decipher.update(Buffer.from(p[3],'base64url')),decipher.final()]).toString('utf8')) as T;
+ // SEC-002 (geheimen-06): IV 12 en tag 16 bytes afgedwongen; een afgekapte tag wordt geweigerd.
+ try{
+  return JSON.parse(gcmOpenStrikt(key(),Buffer.from(p[1],'base64url'),Buffer.from(p[2],'base64url'),Buffer.from(p[3],'base64url'),Buffer.from(aad,'utf8')).toString('utf8')) as T;
  }catch{throw new CloudConnectionError('CLOUD_GRANT_DECRYPT_FAILED',503);}
 }
 const grantAAD=(owner:string,space:string,id:string)=>`cloud-m4:token:${owner}:${space}:${id}`;

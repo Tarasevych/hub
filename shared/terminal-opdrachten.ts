@@ -42,10 +42,15 @@ export const STANDAARD_ALLOW_SERVER: readonly string[] = Object.freeze([
  *   { sub: [...] }       → lezend als het EERSTE niet-vlag-woord in de lijst staat (git status, systemctl is-active); zonder woord: lezend,
  *                          tenzij zonderSub:false (node zonder argumenten = REPL/script)
  *   { alleenMet: [...] } → lezend alleen met een van deze argumenten (tar -t…)
+ *   { nietExact: [...] } → zoals nietMet, maar ALLEEN het exacte argument (of `x=…`), nooit gebundeld: voor programma's met lange
+ *                          opties achter één streepje (`ip -batch` is schrijvend, `ip -brief` niet)
  * nietMet geldt ook naast sub/alleenMet (git … --output=bestand, tar -t … -I programma).
+ * SEC-002 server-uitrol-09 (12.11.2026): vlaggen die een bestand schrijven, instellingen wijzigen of naar een ANDERE machine
+ * verbinden zijn nooit lezend — tar --index-file/--one-top-level/-O, journalctl --cursor-file/-M, ss -D, systemctl -H/-M,
+ * ip -batch, en bij `git branch` alles behalve een vaste lijst kijk-vlaggen (BRANCH_KIJK hieronder).
  * Spiegel: deploy/agent/agent.mjs LEZEND + opdrachtSoort (tests/eenheid/terminal-opdrachten-20261022 houdt ze gelijk).
  */
-export type LezendRegel = true | { readonly sub?: readonly string[]; readonly zonderSub?: boolean; readonly nietMet?: readonly string[]; readonly alleenMet?: readonly string[] };
+export type LezendRegel = true | { readonly sub?: readonly string[]; readonly zonderSub?: boolean; readonly nietMet?: readonly string[]; readonly nietExact?: readonly string[]; readonly alleenMet?: readonly string[] };
 export const LEZEND: Readonly<Record<string, LezendRegel>> = Object.freeze({
   ls: true, cat: true, tail: true, head: true, df: true, free: true, uptime: true, whoami: true, id: true,
   stat: true, wc: true, du: true, ps: true, uname: true, pwd: true, grep: true, nproc: true, lscpu: true, lsblk: true,
@@ -58,25 +63,49 @@ export const LEZEND: Readonly<Record<string, LezendRegel>> = Object.freeze({
   tree: { nietMet: ['-o'] },
   file: { nietMet: ['-C', '--compile'] },
   dmesg: { nietMet: ['-C', '--clear', '-c', '--read-clear', '-D', '--console-off', '-E', '--console-on', '-n', '--console-level'] },
-  ss: { nietMet: ['-K', '--kill'] },
-  ip: { nietMet: ['set', 'add', 'del', 'delete', 'change', 'replace', 'flush', 'append', 'prepend', 'restore', 'save', 'exec'] },
+  ss: { nietMet: ['-K', '--kill', '-D', '--diag'] },
+  ip: { nietMet: ['set', 'add', 'del', 'delete', 'change', 'replace', 'flush', 'append', 'prepend', 'restore', 'save', 'exec'], nietExact: ['-b', '-ba', '-bat', '-batc', '-batch', '--batch'] },
   ipconfig: { nietMet: ['/release', '/renew', '/flushdns', '/registerdns', '/release6', '/renew6', '/setclassid', '/setclassid6'] },
-  git: { sub: ['status', 'log', 'diff', 'show', 'branch', 'remote', 'ls-files', 'rev-parse', 'describe', 'tag', 'blame', 'shortlog', 'ls-remote', 'reflog', 'worktree'], nietMet: ['--output'] },
-  systemctl: { sub: ['status', 'is-active', 'is-enabled', 'is-failed', 'is-system-running', 'list-units', 'list-timers', 'list-unit-files', 'list-dependencies', 'list-sockets', 'show', 'cat'] },
-  journalctl: { nietMet: ['--vacuum-size', '--vacuum-time', '--vacuum-files', '--rotate', '--flush', '--sync', '--relinquish-var', '--smart-relinquish-var', '--setup-keys', '--update-catalog'] },
+  git: { sub: ['status', 'log', 'diff', 'show', 'branch', 'remote', 'ls-files', 'rev-parse', 'describe', 'tag', 'blame', 'shortlog', 'ls-remote', 'reflog', 'worktree'], nietMet: ['--output', '--exec', '--upload-pack', '--receive-pack'] },
+  systemctl: { sub: ['status', 'is-active', 'is-enabled', 'is-failed', 'is-system-running', 'list-units', 'list-timers', 'list-unit-files', 'list-dependencies', 'list-sockets', 'show', 'cat'], nietMet: ['-H', '--host', '-M', '--machine'] },
+  journalctl: { nietMet: ['--vacuum-size', '--vacuum-time', '--vacuum-files', '--rotate', '--flush', '--sync', '--relinquish-var', '--smart-relinquish-var', '--setup-keys', '--update-catalog', '--cursor-file', '-M', '--machine', '--root', '--image'] },
   npm: { sub: ['ls', 'list', 'view', 'info', 'show', 'outdated', 'explain', 'why', 'ping', 'root', 'prefix', 'bin', '-v', '--version', 'version'] },
   node: { sub: ['-v', '--version', '-h', '--help'], zonderSub: false },
   podman: { sub: ['ps', 'images', 'logs', 'inspect', 'stats', 'top', 'version', 'info', 'port', 'diff', 'history', 'events', 'volume', 'network', 'pod', 'system'] },
   docker: { sub: ['ps', 'images', 'logs', 'inspect', 'stats', 'top', 'version', 'info', 'port', 'diff', 'history', 'events'] },
   'mijn-ruimte-installeer': { sub: ['lijst', 'apps-status'] },
   apt: { sub: ['list', 'search', 'show', 'policy'] }, 'apt-get': { sub: [] },
-  tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command'] },
+  tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command', '--index-file', '--one-top-level', '-O', '--to-stdout', '--record-file', '-g', '--listed-incremental', '--volno-file', '--remove-files'] },
 });
 
 const VOOR_SUB_VLAGGEN: readonly string[] = ['--no-pager', '--no-legend', '--plain', '--full', '-q', '--quiet'];
-/** Een argument uit een «niet met»-lijst: exact, met `=waarde`, of — bij een korte vlag `-x` — aangeplakt of gebundeld (`-ofile`, `-tK`). */
-const raakt = (args: readonly string[], lijst?: readonly string[]): boolean => !!lijst && args.some((a) => lijst.some((v) =>
-  a === v || a.startsWith(`${v}=`) || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))));
+/** `git branch`: alleen deze vlaggen kijken. Al het andere (-u/--set-upstream-to, --unset-upstream, --edit-description, -c/-m/-d/-f, een naam) wijzigt. */
+const BRANCH_KIJK: readonly string[] = ['--all', '--remotes', '--verbose', '--list', '--show-current', '--no-color', '--no-column', '--no-abbrev', '--color', '--column', '--abbrev'];
+/** Vlaggen waarvan het VOLGENDE woord de waarde is (git neemt het dan nooit als taknaam): `--contains HEAD`, `--sort -committerdate`. */
+const BRANCH_KIJK_MET_WAARDE: readonly string[] = ['--contains', '--no-contains', '--merged', '--no-merged', '--points-at', '--sort', '--format'];
+const branchLezend = (rest: readonly string[]): boolean => {
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (BRANCH_KIJK.includes(a) || /^-[arvl]+$/.test(a)) continue;
+    if ([...BRANCH_KIJK_MET_WAARDE, '--color', '--column', '--abbrev'].some((v) => a.startsWith(`${v}=`))) continue;
+    if (BRANCH_KIJK_MET_WAARDE.includes(a)) { if (i + 1 < rest.length && (a === '--sort' || !rest[i + 1].startsWith('-'))) i++; continue; }
+    return false;
+  }
+  return true;
+};
+/**
+ * Een argument uit een «niet met»-lijst: exact, met `=waarde`, bij een korte vlag `-x` aangeplakt of gebundeld (`-ofile`, `-tK`), of —
+ * SEC-002 server-uitrol-09 (toets g10a-1) — een AFKORTING van een lange vlag: GNU getopt_long (tar, journalctl, systemctl, ss, sort,
+ * dmesg, date, file) en git nemen elk ondubbelzinnig voorvoegsel aan, dus `--index-fil=x`, `--checkpoint-ac=exec=…`, `--cursor-fi=x` en
+ * `--hos=u@h` doen hetzelfde als de volle naam. Een lang argument telt daarom als treffer zodra een naam uit de lijst ermee BEGINT.
+ * `vrij` = lange vlaggen die exact zo bestaan en lezend zijn (`tar --list` is geen afkorting van `--listed-incremental`).
+ */
+const raakt = (args: readonly string[], lijst?: readonly string[], vrij: readonly string[] = []): boolean => !!lijst && args.some((a) => {
+  const kop = a.startsWith('--') ? a.split('=')[0] : '';
+  return lijst.some((v) => a === v || a.startsWith(`${v}=`)
+    || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))
+    || (kop.length > 2 && v.startsWith('--') && v.startsWith(kop) && !vrij.includes(kop)));
+});
 /** Lezend of wijzigend. PowerShell en onbekende programma's zijn altijd wijzigend. */
 export function opdrachtSoort(programma: string, args: readonly string[]): OpdrachtSoort {
   const naam = String(programma || '').replace(/^.*[\\/]/, '').replace(/\.(exe|cmd|bat)$/i, '');
@@ -84,7 +113,8 @@ export function opdrachtSoort(programma: string, args: readonly string[]): Opdra
   const regel = LEZEND[naam];
   if (!regel) return 'wijzigend';
   if (regel === true) return 'lezend';
-  if (raakt(args, regel.nietMet)) return 'wijzigend';
+  if (raakt(args, regel.nietMet, regel.alleenMet)) return 'wijzigend';
+  if (regel.nietExact) { const exact = regel.nietExact; if (args.some((a) => exact.some((v) => a === v || a.startsWith(`${v}=`)))) return 'wijzigend'; }
   if (regel.alleenMet) { const alleen = regel.alleenMet; return args.some((a) => alleen.includes(a)) ? 'lezend' : 'wijzigend'; }
   const sub = regel.sub;
   if (!sub) return 'lezend';
@@ -94,6 +124,7 @@ export function opdrachtSoort(programma: string, args: readonly string[]): Opdra
   if (!eerste) return regel.zonderSub === false ? (args.length > 0 && args.every((a) => sub.includes(a)) ? 'lezend' : 'wijzigend') : 'lezend';
   if (!sub.includes(eerste)) return 'wijzigend';
   if (args.slice(0, args.indexOf(eerste)).some((a) => !VOOR_SUB_VLAGGEN.includes(a))) return 'wijzigend';
+  if (naam === 'git' && eerste === 'branch') return branchLezend(args.slice(args.indexOf(eerste) + 1)) ? 'lezend' : 'wijzigend';
   if (['volume', 'network', 'pod', 'system', 'worktree', 'remote', 'branch', 'tag', 'stash', 'reflog', 'version'].includes(eerste)) {
     const tweede = args.slice(args.indexOf(eerste) + 1).find((a) => !a.startsWith('-')) ?? '';
     const lezendeTweede = ['ls', 'list', 'inspect', 'df', 'info', 'show', 'get-url', '-v', ''];

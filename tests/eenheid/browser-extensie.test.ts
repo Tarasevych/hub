@@ -113,7 +113,7 @@ export async function main(): Promise<number> {
   check('manifest 0.9.2: Manifest V3, alleen tarasevych.com, exact storage/alarms/scripting/activeTab/sidePanel/webRequest/offscreen (offscreen sinds 0.9.1/0.9.2: ingebouwde AI; geen debugger, tabs/cookies/history/<all_urls>), CSP en vaste sleutel (extensie-id)',
     JSON.stringify(manifest.permissions) === '["storage","alarms","scripting","activeTab","sidePanel","webRequest","offscreen"]'
     && manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'none'; base-uri 'none'"
-    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.2'
+    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.3'
     && manifest.description.length <= 132 &&
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))

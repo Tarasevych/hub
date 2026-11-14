@@ -3,3 +3,6 @@
 .block-head{flex-wrap:wrap}
 .block-head-actions{max-width:100%;min-width:0;flex:1 1 auto}
 .block-window-tools{flex-wrap:wrap}
+/* IDENTITEIT-015 (profiel-blokken): блок, до якого привело «Відкрити в просторі», коротко підсвічено */
+.block.is-gevonden{outline:3px solid var(--accent);outline-offset:3px;transition:outline-color .4s}
+@media (prefers-reduced-motion:reduce){.block.is-gevonden{transition:none}}

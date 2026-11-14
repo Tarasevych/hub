@@ -78,6 +78,7 @@ html[data-tech=aan] #root .canonical-chrome[data-plaats-stapel]:not([data-focus-
    er schuift niets op en er springt niets naar een andere plek). Eén regel per venster, niet per combinatie. */
 html body:has(.mail-new-message-backdrop) .plaats-actiestapel,
 html body:has(.zk-uitklap) .plaats-actiestapel,
+html body:has(.am3-mobiel-laag) .plaats-actiestapel,
 .canonical-chrome.sidebar-drawer .plaats-actiestapel{visibility:hidden}
 @media (max-width:900px){html body:has(.zk-scrim) .plaats-actiestapel{visibility:hidden}}
 /* alleen «Написати» in de stapel weg (zijn gniezdo blijft staan): brief open, paneel van de meldingen open */

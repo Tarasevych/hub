@@ -140,26 +140,37 @@ export function guacInstructie(opcode: string, ...args: Array<string | number>):
   return [opcode, ...args].map(el).join(',') + ';';
 }
 
+/** Meer elementen heeft geen echte instructie («args»/«connect» van guacd voor RDP: ruim honderd). */
+export const GUAC_MAX_ELEMENTEN = 1024;
 /**
  * Volledige instructies uit een buffer halen (codepunt-telling). Geeft de instructies (als tekst én ontleed) en de rest terug.
  * Gooit bij een kapotte stroom (geen lengte, verkeerd scheidingsteken, te groot element).
+ * SEC-002 (server-uitrol-03): ook één INSTRUCTIE is begrensd — in aantal elementen en in lengte (UTF-16-eenheden, standaard twee
+ * maximale elementen plus 64 KiB). Vroeger bleef een instructie zonder afsluitende «;» («1.a,1.a,…») onbeperkt als «rest» staan en
+ * werd ze bij elk volgend bericht opnieuw van voren ontleed: geheugen en rekentijd zonder grens. Nu: GUAC_TE_GROOT.
+ * Одна інструкція теж має межу (кількість елементів і довжина): незавершена інструкція більше не може накопичуватися.
  */
-export function guacOntleed(buffer: string, maxElement = 1024 * 1024): { instructies: Array<{ tekst: string; opcode: string; args: string[] }>; rest: string } {
+export function guacOntleed(buffer: string, maxElement = 1024 * 1024, grenzen: { maxInstructie?: number; maxElementen?: number } = {}): { instructies: Array<{ tekst: string; opcode: string; args: string[] }>; rest: string } {
   const uit: Array<{ tekst: string; opcode: string; args: string[] }> = [];
+  const maxInstructie = grenzen.maxInstructie ?? 2 * maxElement + 64 * 1024;
+  const maxElementen = grenzen.maxElementen ?? GUAC_MAX_ELEMENTEN;
+  // Een onvoltooide instructie die al boven de grens zit, wordt nooit meer geldig: meteen weigeren in plaats van bewaren.
+  const teGroot = (vanaf: number) => { if (buffer.length - vanaf > maxInstructie) throw new Error('GUAC_TE_GROOT'); };
   let start = 0;
   // Werk op codepunten: een array van tekens is duur bij grote buffers, dus stap door de string met surrogaat-paren.
   outer: while (start < buffer.length) {
     let i = start; const els: string[] = [];
     for (;;) {
       const punt = buffer.indexOf('.', i);
-      if (punt === -1) { if (buffer.length - i > 12) throw new Error('GUAC_LENGTE'); break outer; }
+      if (punt === -1) { if (buffer.length - i > 12) throw new Error('GUAC_LENGTE'); teGroot(start); break outer; }
       const lenTekst = buffer.slice(i, punt);
       if (!/^\d{1,8}$/.test(lenTekst)) throw new Error('GUAC_LENGTE');
       const len = Number(lenTekst);
       if (len > maxElement) throw new Error('GUAC_TE_GROOT');
       let j = punt + 1, n = 0;
       while (n < len && j < buffer.length) { const c = buffer.charCodeAt(j); j += c >= 0xd800 && c <= 0xdbff ? 2 : 1; n++; }
-      if (n < len || j >= buffer.length) break outer; // onvolledig: wachten op meer
+      if (n < len || j >= buffer.length) { teGroot(start); break outer; } // onvolledig: wachten op meer
+      if (els.length >= maxElementen || j - start > maxInstructie) throw new Error('GUAC_TE_GROOT');
       els.push(buffer.slice(punt + 1, j));
       const t = buffer[j];
       if (t === ',') { i = j + 1; continue; }

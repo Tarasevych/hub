@@ -2,7 +2,8 @@
 // koppelen (alleen eigen gedeeld nummer) → aanmelden met kaart + aftelling → «Ні» blokkeert → wijziging gezien → «Ні» wint →
 // dubbele tik en dubbele update tellen één keer → groepen genegeerd → code in de chat wordt verwijderd.
 import { createServer, type IncomingMessage } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import { getPool } from '../../server/platform/pg';
 
@@ -28,9 +29,14 @@ export async function main(): Promise<number> {
   process.env.AANMELD_TERUG_BASIS = 'https://id.tarasevych.com';
 
   const pool = getPool('systeem');
+  const mig0209 = readFileSync('migrations/0209_telegram_aanmelden_context.sql', 'utf8');
+  await pool.query(mig0209);
+  await pool.query(mig0209); // idempotentiecontrole van migratie 0209
+  const vlagVooraf = (await pool.query("SELECT aan, standaard FROM app.feature_flags WHERE sleutel = 'telegram-aanmelden-v1'")).rows[0];
   // Er mag maar één eigenaar zijn (records_een_eigenaar): de bestaande gebruiken, anders een tijdelijke maken.
   const bestaand = (await pool.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1")).rows[0];
   const eigenaar = bestaand ? String(bestaand.id) : randomUUID();
+  const proefSessie = randomUUID();
   if (!bestaand) await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', eigenaar, { email: `tg-${eigenaar.slice(0, 8)}@voorbeeld.test`, role: 'owner', status: 'approved', name: 'Pavlo' }]);
   await pool.query('DELETE FROM app.tg_koppelingen WHERE user_id = $1', [eigenaar]);
   await pool.query('DELETE FROM app.tg_matrix WHERE user_id = $1', [eigenaar]);
@@ -39,16 +45,22 @@ export async function main(): Promise<number> {
   await pool.query("DELETE FROM app.tg_chats WHERE telegram_id IN ('777','778')");
 
   const sleutels = await import('../../backend/telegram-aanmelden/sleutels');
-  const geheugen = new Map<string, string>([['TELEGRAM_AANMELD_BOT_SLEUTEL', '123456789:AAEtestsleuteltestsleuteltestsleutel0'], ['TELEGRAM_AANMELD_WEBHOOK_GEHEIM', 'w'.repeat(40)], ['TELEGRAM_AANMELD_PEPER', 'p'.repeat(40)]]);
-  sleutels.zetKluisVoorTest({ lees: async (_u, n) => geheugen.get(n) || '', bewaar: async (_u, n, w) => { geheugen.set(n, w); }, wis: async (_u, n) => { geheugen.delete(n); }, eigenaar: async () => eigenaar });
+  const testBotSleutel = '123456789:AAEtestsleuteltestsleuteltestsleutel0';
+  const geheugen = new Map<string, string>([['TELEGRAM_AANMELD_WEBHOOK_GEHEIM', 'w'.repeat(40)], ['TELEGRAM_AANMELD_PEPER', 'p'.repeat(40)]]);
+  sleutels.zetKluisVoorTest({
+    lees: async (_u, n) => geheugen.get(n) || '',
+    leesIntegratie: async () => ({ waarde: testBotSleutel, naam: 'telegram-bot-token' }),
+    bewaar: async (_u, n, w) => { geheugen.set(n, w); },
+    wis: async (_u, n) => { geheugen.delete(n); },
+    eigenaar: async () => eigenaar,
+  });
   const opslag = await import('../../backend/telegram-aanmelden/opslag');
   opslag.vlagCacheWissen(); opslag.instellingenCacheWissen();
   opslag.registreerVlagBeoordelaar(async (id) => id === eigenaar); // in de server: flagsBerekenen (backend/index.ts)
   const { koppelStart, koppelStatus, koppelBevestigen } = await import('../../backend/telegram-aanmelden/koppelen');
-  const { inlogStart, inlogStatus } = await import('../../backend/telegram-aanmelden/inloggen');
+  const { inlogStart, inlogStatus, inlogSessieVastleggen, publiekeConfig, widgetTerug } = await import('../../backend/telegram-aanmelden/inloggen');
   const { updateVerwerken, kopKlopt } = await import('../../backend/telegram-aanmelden/webhook');
   const { wijzigingBeantwoorden } = await import('../../backend/telegram-aanmelden/wijzigingen');
-  const { publiekeConfig } = await import('../../backend/telegram-aanmelden/inloggen');
 
   let upd = Date.now() * 100; // uniek per run (Telegram-update-ids worden ontdubbeld)
   const van = { id: 777, first_name: 'Pavlo', last_name: 'T', username: 'pavlo_t', language_code: 'uk' };
@@ -83,24 +95,61 @@ export async function main(): Promise<number> {
     const kb = await koppelBevestigen(eigenaar, 'sessie-a', k.id, { rechten: ['aanmelden', 'bevestigen', 'meldingen'] });
     check('bevestigd → koppeling actief', (await sql('SELECT stand FROM app.tg_koppelingen WHERE id = $1', [kb.koppelingId]))[0]?.stand === 'actief');
 
-    // ---------------------------------------------------------------- aanmelden
+    const bronInfo = await sleutels.botSleutelBron();
+    check('bestaande kluis-integratie (telegram-bot-token) wordt zonder dubbele sleutel herkend', bronInfo.aanwezig && bronInfo.bron === 'kluis-integratie' && bronInfo.botId === '123456789');
+
+    // ---------------------------------------------------------------- aanmelden met volledige veiligheidscontext + terugkeerknop + sessiebeheer
     await sql('INSERT INTO app.tg_matrix (user_id, keuzes) VALUES ($1, $2::jsonb) ON CONFLICT (user_id) DO UPDATE SET keuzes = EXCLUDED.keuzes', [eigenaar, JSON.stringify({ 'nieuw-apparaat': 'telegram', aanmelden: 'telegram' })]);
-    const i1 = await inlogStart('tx-1', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0');
+    const i1 = await inlogStart('tx-1', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0', {
+      ip: '203.0.113.10',
+      locatie: 'BE, Brussel',
+      browser: 'Firefox',
+      os: 'Linux',
+      apparaatType: 'computer',
+      dienst: 'hub',
+      onthouden: false,
+      terugAdres: 'https://hub.tarasevych.com/postvak',
+    });
     check('aanmelden: directe verwijzing t.me/MijnRuimte_Bot?start=i_<id>', i1.deeplink === `https://t.me/MijnRuimte_Bot?start=i_${i1.id}`);
     await bericht({ text: `/start i_${i1.id}` });
     const ja = knop('i');
     check('kaart met «Так»-knop verstuurd', !!ja);
+    const vraagLichaam = oproepen.slice(-3).map((o) => o.lichaam).join('\n');
+    check('aanmeldkaart in Telegram toont pagina, netwerk en «Зберегти обліковий запис: Ні»', vraagLichaam.includes('hub.tarasevych.com/postvak') && vraagLichaam.includes('203.0.113.10') && vraagLichaam.includes('BE, Brussel') && vraagLichaam.includes('лише поточний сеанс'));
     check('«Так»-knop toont eerst de aftelling (⏳)', oproepen.some((o) => o.lichaam.includes('⏳')));
     await tik(ja);
     check('tik vóór het aftellen telt niet (melding «⏳ Ще … с»)', (await inlogStatus(i1.id, i1.geheim)).stand === 'wacht' && /show_alert":true/.test(laatste('answerCallbackQuery')?.lichaam || ''));
     await sql("UPDATE app.tg_knoppen SET aangemaakt_op = now() - interval '1 minute' WHERE groep = $1", [`inlog-${i1.id}`]);
     await Promise.all([tik(ja), tik(ja), tik(ja)]);
     check('na het aftellen: goedgekeurd', (await inlogStatus(i1.id, i1.geheim)).stand === 'goedgekeurd');
+    const bewerktLichaam = (laatste('editMessageText')?.lichaam || '') + (laatste('editMessageCaption')?.lichaam || '');
+    check('na goedkeuren bevat het bericht een eenmalige terugkeerknop naar de vragende pagina met tg_inlog', bewerktLichaam.includes(`https://hub.tarasevych.com/postvak?tg_inlog=${i1.id}`));
     const klaar = await sql("SELECT count(*)::int AS n FROM app.tg_knoppen WHERE letter = 'i' AND stand = 'klaar' AND groep = $1", [`inlog-${i1.id}`]);
     check('drie snelle tikken = één handeling', klaar[0].n === 1);
     let fout = '';
     try { await inlogStatus(i1.id, 'verkeerd-geheim'); } catch (e) { fout = (e as Error).message; }
     check('zonder het geheim van deze browser geen status', fout === 'VERZOEK_ONBEKEND');
+
+    // Actieve sessie vastleggen en rechtstreeks vanuit /sessies in de bot beëindigen
+    await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['owner_service_sessions_v1', proefSessie, { userId: eigenaar, service: 'hub', createdAt: Date.now() }]);
+    await sql("UPDATE app.tg_inlog_verzoeken SET stand = 'ingewisseld' WHERE id = $1", [i1.id]);
+    await inlogSessieVastleggen(i1.id, `a:${proefSessie}`);
+    await bericht({ text: '/sessies' });
+    const zKnop = knop('z');
+    check('/sessies toont actieve sessie met een ondertekende beëindigingsknop', !!zKnop);
+    await tik(zKnop);
+    const [ingetrokkenRec] = await sql("SELECT data->>'revokedAt' AS revoked FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND id = $1", [proefSessie]);
+    const [inlogNaZ] = await sql('SELECT sessie_ingetrokken_op FROM app.tg_inlog_verzoeken WHERE id = $1', [i1.id]);
+    check('tik op «Завершити» in de bot trekt de sessie meteen in', !!ingetrokkenRec?.revoked && !!inlogNaZ?.sessie_ingetrokken_op);
+
+    // Officieel aanmeldvenster terugkeer met eigen `verzoek` naast Telegrams `id`
+    const iWidget = await inlogStart('tx-widget', 'Safari/18.0', { dienst: 'hub', terugAdres: 'https://hub.tarasevych.com/postvak' });
+    const nuSec = Math.floor(Date.now() / 1000);
+    const wVelden: Record<string, string> = { auth_date: String(nuSec), first_name: 'Pavlo', id: '777', last_name: 'T', username: 'pavlo_t' };
+    const wRegel = Object.entries(wVelden).map(([k2, v2]) => `${k2}=${v2}`).sort().join('\n');
+    const wHash = createHmac('sha256', createHash('sha256').update(testBotSleutel).digest()).update(wRegel).digest('hex');
+    const wUit = await widgetTerug({ ...wVelden, hash: wHash, verzoek: iWidget.id, i: iWidget.id });
+    check('officieel aanmeldvenster: verzoek en Telegram-id botsen niet en bewaren het canonieke terugkeeradres', wUit.fout === '' && wUit.id === iWidget.id && wUit.terugAdres === 'https://hub.tarasevych.com/postvak');
 
     // ---------------------------------------------------------------- «Ні, це не я»
     const i2 = await inlogStart('tx-2', 'Vreemd apparaat');
@@ -146,7 +195,8 @@ export async function main(): Promise<number> {
     await bericht({ text: 'mijn code is 4815162342' });
     check('bot plaatst nooit iets met parse_mode (geen opmaak-injectie)', !oproepen.some((o) => o.lichaam.includes('parse_mode')));
   } finally {
-    await pool.query("UPDATE app.feature_flags SET aan = false, standaard = false WHERE sleutel = 'telegram-aanmelden-v1'");
+    if (vlagVooraf) await pool.query("UPDATE app.feature_flags SET aan = $1, standaard = $2 WHERE sleutel = 'telegram-aanmelden-v1'", [vlagVooraf.aan, vlagVooraf.standaard]);
+    await pool.query("DELETE FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND id = $1", [proefSessie]).catch(() => undefined);
     await pool.query('DELETE FROM app.tg_koppelingen WHERE user_id = $1', [eigenaar]);
     await pool.query('DELETE FROM app.tg_matrix WHERE user_id = $1', [eigenaar]);
     await pool.query('DELETE FROM app.tg_geblokkeerd WHERE user_id = $1', [eigenaar]);

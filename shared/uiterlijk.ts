@@ -37,11 +37,27 @@ export const UITERLIJK_MODI = ['light', 'dark', 'device', 'auto'] as const;
 export const UITERLIJK_MODI_OUD = ['plum', 'plum-light', 'plum-dark'] as const;
 export type UiterlijkModus = typeof UITERLIJK_MODI[number] | typeof UITERLIJK_MODI_OUD[number];
 /** Paletten (zelfde lijst als src/thema/kern.ts en public/canonical-service.js; de eenheidstest vergelijkt ze). */
-export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur'] as const;
+export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart'] as const;
 export type UiterlijkPalet = typeof UITERLIJK_PALETTEN[number];
 /** Gecachte «leegte» van een route, zodat het eerste beeld geen skelet toont dat er toch niet komt. */
 export const UITERLIJK_ROUTEBEELDEN = ['signed-out', 'mail-empty', 'github-empty', 'api-empty'] as const;
 export type UiterlijkRouteBeeld = typeof UITERLIJK_ROUTEBEELDEN[number];
+
+/** IDENTITEIT-015 (крок «vormgeving»): вигляд центру облікового запису — раніше лише localStorage пристрою, тепер в обліковому записі.
+ *  De weergave van het accountcentrum: vroeger alleen localStorage van dit apparaat, nu in het account (localStorage blijft cache). */
+export const UITERLIJK_VORMGEVINGEN = ['maquette', 'studio', 'klassiek'] as const;
+export type UiterlijkVormgeving = typeof UITERLIJK_VORMGEVINGEN[number];
+/** Щільність інтерфейсу всього сайту: масштаб відступів (--ruimte-1…6). Без поля — «звичайна». Dichtheid: schaal van de witruimte. */
+export const UITERLIJK_DICHTHEDEN = ['compact', 'normaal', 'ruim'] as const;
+export type UiterlijkDichtheid = typeof UITERLIJK_DICHTHEDEN[number];
+/** Рух: «systeem» — як на пристрої (prefers-reduced-motion), «minder» — менше руху завжди, поверх пристрою. Beweging. */
+export const UITERLIJK_BEWEGINGEN = ['systeem', 'minder'] as const;
+export type UiterlijkBeweging = typeof UITERLIJK_BEWEGINGEN[number];
+/** Акцентний колір поверх палітри (кнопки, виділення, перемикачі). Без поля — акцент самої палітри. Accentkleur boven het palet. */
+export const UITERLIJK_ACCENTEN = ['violet', 'cyan', 'pink', 'amber'] as const;
+export type UiterlijkAccent = typeof UITERLIJK_ACCENTEN[number];
+/** Виразність декоративних ефектів (сяйво ілюстрацій), 0–100 %. Без поля — 45 %, як у макеті. Sterkte van decoratieve effecten. */
+export const UITERLIJK_EFFECTEN_STANDAARD = 45;
 
 export const UITERLIJK_MAX_MENU = 16;
 /** Profielfoto in de cache: alleen een https-adres, nooit een data:-URI (die is tot 340 kB groot en past nooit in een cookie). */
@@ -61,6 +77,12 @@ export type UiterlijkRuimte = {
   belPositie?: { x: number; y: number };
   laatstePad?: Partial<Record<UiterlijkDienst, string>>;
   routeBeeld?: Record<string, UiterlijkRouteBeeld>;
+  /** IDENTITEIT-015: вигляд центру облікового запису, щільність, рух, акцент і виразність ефектів (старі записи без них — типові). */
+  vormgeving?: UiterlijkVormgeving;
+  dichtheid?: UiterlijkDichtheid;
+  beweging?: UiterlijkBeweging;
+  accent?: UiterlijkAccent;
+  effecten?: number;
   op?: number;
 };
 /** Wat alleen per account staat (gelijk in beide ruimtes van dat account, nooit van een ander account). */
@@ -144,6 +166,15 @@ export function normaliseerUiterlijkRuimte(raw: unknown): UiterlijkRuimte {
     if (beeld && (UITERLIJK_DIENSTEN as readonly string[]).includes(dienst) && (MENU_PAGINAS[dienst] || []).includes(pagina)) beelden[`${dienst}:${pagina}`] = beeld;
   }
   if (Object.keys(beelden).length) uit.routeBeeld = beelden;
+  // IDENTITEIT-015: невідомі значення відкидаються (старий клієнт або підробка), типові значення не зберігаються зайвий раз.
+  const vormgeving = een(UITERLIJK_VORMGEVINGEN, r.vormgeving), dichtheid = een(UITERLIJK_DICHTHEDEN, r.dichtheid);
+  const beweging = een(UITERLIJK_BEWEGINGEN, r.beweging), accent = een(UITERLIJK_ACCENTEN, r.accent);
+  if (vormgeving) uit.vormgeving = vormgeving;
+  if (dichtheid && dichtheid !== 'normaal') uit.dichtheid = dichtheid;
+  if (beweging && beweging !== 'systeem') uit.beweging = beweging;
+  if (accent) uit.accent = accent;
+  const effecten = r.effecten === null || r.effecten === undefined || r.effecten === '' ? NaN : Number(r.effecten);
+  if (Number.isFinite(effecten) && effecten >= 0 && effecten <= 100 && Math.round(effecten) !== UITERLIJK_EFFECTEN_STANDAARD) uit.effecten = Math.round(effecten);
   const op = Number(r.op);
   if (Number.isFinite(op) && op > 0) uit.op = Math.floor(op);
   return uit;

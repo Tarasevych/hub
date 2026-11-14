@@ -165,9 +165,10 @@ export async function main(): Promise<number> {
     && detail.includes("replace(/\\D+/g, '')") && detail.includes('maxLength={6}'));
   check('detail: TOTP-geheim alleen hier, in amv-geheim, met «показано один раз»; uitschakelen via p.totpUitschakelen',
     detail.includes('{p.secret}') && detail.includes('Ключ показано один раз') && detail.includes('p.totpUitschakelen()'));
-  check('detail: wachtwoord via dezelfde routes set/remove; verwijderen in twee stappen (is-gevaar) en geblokkeerd bij lockout.protected',
+  // IDENTITEIT-013: de tweede stap is nu de gedeelde bevestigingsdialoog (gevaarlijk), niet meer een inline knop is-gevaar.
+  check('detail: wachtwoord via dezelfde routes set/remove; verwijderen in twee stappen (BevestigDialoog gevaarlijk) en geblokkeerd bij lockout.protected',
     detail.includes("write('/api/owner/access/password/set', { password: p.password })") && detail.includes("write('/api/owner/access/password/remove')")
-    && detail.includes('is-gevaar') && detail.includes('busy || data.lockout.protected'));
+    && detail.includes('<BevestigDialoog open={wachtwoordWeg}') && detail.includes('gevaarlijk') && detail.includes('busy || data.lockout.protected'));
   check('detail: google — extern beheer bij Google + eerlijke enige-weg-melding (data-google-enige), geen verzonnen «laatste login»',
     detail.includes('https://myaccount.google.com/security') && detail.includes('data-google-enige') && !/laatste login|востаннє|last.login/i.test(detail));
   check('geheimen NOOIT buiten het detail: kaart/overzicht/filter/hero raken p.secret, otpauth, p.recovery of nieuweHerstelcodes niet aan',

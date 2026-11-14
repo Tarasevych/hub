@@ -12,9 +12,12 @@ import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { getPool } from '../server/platform/pg';
 import { assetCookieVoor, assetToegestaan, vergeetSleutel } from './tech-bundels';
+import { stapOpUitKaart } from './stap-op-noodschakelaar';
 
 export type DiepeStap = { id: string; ok: boolean; detail: string };
-export type DiepeUitslag = { ok: boolean; db: boolean; diep: true; stappen: DiepeStap[]; duurMs: number };
+// SEC-002 (aanv-gat-a-04): `waarschuwingen` telt NIET mee voor ok/503 — een bewust aangezette noodschakelaar mag geen automatisch
+// terugdraaien na een uitrol veroorzaken (nazorg leest deze controle), maar staat wel zwart op wit in het antwoord en in het logboek.
+export type DiepeUitslag = { ok: boolean; db: boolean; diep: true; stappen: DiepeStap[]; duurMs: number; waarschuwingen?: string[] };
 export const PROEF_GEBRUIKER = 'gezondheid-proef';
 
 let bezig: Promise<DiepeUitslag> | null = null;
@@ -63,7 +66,10 @@ async function uitvoeren(distDir: string): Promise<DiepeUitslag> {
     const namen = await readdir(path.join(distDir, 'assets', 'tech'));
     stap('tech-bestanden-in-build', namen.some((n) => n.endsWith('.js')), `${namen.length} bestanden`);
   } catch { stap('tech-bestanden-in-build', true, 'geen dist/assets/tech (ontwikkelstand)'); }
-  return { ok: db && stappen.every((s) => s.ok), db, diep: true, stappen, duurMs: Date.now() - t0 };
+  const stapOp = stapOpUitKaart();
+  const waarschuwingen = stapOp.ernst ? [stapOp.tekst[1]] : [];
+  if (waarschuwingen.length) console.warn('[gezondheid] waarschuwing:', waarschuwingen.join(' | '));
+  return { ok: db && stappen.every((s) => s.ok), db, diep: true, stappen, duurMs: Date.now() - t0, waarschuwingen };
 }
 
 /** Komt dit verzoek van de server zelf (en niet via Cloudflare)? Alleen dan mag de diepe controle draaien. */

@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-009",
+  "titel": "Хвиля 8 теми оформлення «Макет»: повне студійне перевтілення платформи API api.tarasevych.com та технічного контуру",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх чотирьох канонічних вкладок простору api.tarasevych.com (/toegang, /kluis, /verbindingen, /afstemming), матриці фактичної реалізації, системи звірки продукту Afstemming vNext, захищеної брами TechPoort та верхньої смуги технічного профілю TechLaag поруч з усіма чинними темами без видалення можливостей.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-009-20261114-000851",
+    "basis": "c7d8954299184c1354ff1e92e8221cd80bd6b90b",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, відкриті значення сховища таємниць та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T00:08:51Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-009-20261114-000851 поверх перевіреної Хвилі 7 (c7d8954299184c1354ff1e92e8221cd80bd6b90b) та зареєстровано завдання MAQUETTE-009."
+    },
+    {
+      "tijd": "2026-11-14T00:23:02Z",
+      "stap": "Оформлено центр звірки продукту AfstemmingWissel та Afstemming vNext разом із класичною матрицею фактичної реалізації у src/afstemming-vnext/afstemming-maquette.css із розумним приховуванням якірної навігації на вузькому екрані."
+    },
+    {
+      "tijd": "2026-11-14T00:25:34Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil, рожево-кварцову вітрину MaquetteHeld (dienst='api') та чотиристоронню якірну навігацію MaquetteAnkerRail у ApiPlatformWeergave.tsx та створено таблицю стилів src/api-sleutels-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T00:27:39Z",
+      "stap": "Оформлено наскрізну верхню смугу технічного профілю TechLaag, діалогові вікна підтвердження входу та обидва стани захищеної брами TechPoort у src/tech/tech-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T00:34:05Z",
+      "stap": "Виконано перевірку типів клієнта й сервера, повне виробниче складання з контролем ізоляції технічних пакунків, 14 модульних випробувань та живу перевірку 8 режимів api.tarasevych.com у безголовому Chromium у нічному й світлому режимах."
+    }
+  ],
+  "keuzes": [
+    "Вітрину MaquetteHeld подано у повному режимі на головній вкладці доступу (/toegang) та у компактному режимі на робочих вкладках сховища таємниць (/kluis), підключень (/verbindingen) і звірки (/afstemming).",
+    "Для центру звірки Afstemming vNext на вузьких екранах (<= 760px) збережено рідну нижню панель .afv-onderbalk без накладання другої мобільної смуги якорів.",
+    "Оформлення портального кореня #tech-laag та вікон .tech-venster побудовано без зміни геометричних висот --tech-band-h і відступів вимірювача переповнення кнопок."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-009-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-009.json",
+    "orchestratie/taken/MAQUETTE-009.json",
+    "src/AfstemmingWissel.tsx",
+    "src/ApiPlatformWeergave.tsx",
+    "src/afstemming-vnext/AfstemmingPagina.tsx",
+    "src/afstemming-vnext/afstemming-maquette.css",
+    "src/api-sleutels-maquette.css",
+    "src/tech/TechLaag.tsx",
+    "src/tech/TechPoort.tsx",
+    "src/tech/tech-bundel.tsx",
+    "src/tech/tech-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (включно з huis-maquette та ізоляцією tech-bundels-controle) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, afstemming-zvirka-ui-20261030, afstemming-ui-20261030, afstemming-kern-20261030, tech-ruimtes-ui, tech-ruimte-f5-20261105, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка api.tarasevych.com (/toegang у темному й світлому режимах, /kluis, /verbindingen, /afstemming у темному й світлому режимах, мобільний 390x844, контрольна палітра kleur та видима смуга .tech-band) у безголовому Chromium через локальний HTTPS — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/ApiPlatformWeergave.tsx",
+    "src/AfstemmingWissel.tsx",
+    "src/tech/TechLaag.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 8 (MAQUETTE-009) охоплює ядро теми, id, mail, cloud, github, hub, ai, huis, mcp, api.tarasevych.com та наскрізну смугу технічного профілю; заключний піддомен admin.tarasevych.com завершує систему у Фінальній Хвилі 9 (MAQUETTE-010)."
+  ]
+}

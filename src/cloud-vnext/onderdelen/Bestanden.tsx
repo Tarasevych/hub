@@ -1,18 +1,25 @@
 // «Мої файли» — het hart van cloud vNext: kruimelpad met sleepdoelen, zoeken, soort-/label-/favorietenfilters,
 // raster én lijst, meerkeuze (Shift = reeks) met bulkacties, eigen contextmenu (absoluut BINNEN .cvn, nooit fixed),
-// nieuwe map, uploaden (knop + sleepvlak → wachtrij in stukken), prullenbakmodus (30 dagen, herstel/definitief met
-// bevestiging in een Laag — nooit een browser-popup), versies en detailpaneel. Zolang de serverkant in aanbouw is
-// (NOG_NIET_GEBOUWD), blijft de hele interface staan met een eerlijke bouwmelding erboven.
+// nieuwe map, mappenboom-upload (knop én slepen van hele mappen), 0-byte bestanden, archieven, prullenbakmodus,
+// versies, detailpaneel én rijke deellinks (mappen, bestanden, selecties, archiefdelen en bestandsdelen).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDownUp, ArrowUpDown, Folder, FolderPlus, LayoutGrid, List, LoaderCircle, Search, Star, Trash2, Upload, X } from 'lucide-react';
-import { CLOUD_SORTERING, CLOUD_SOORT_LABEL, CLOUD_VNEXT_LIMIETEN, schoneNaam, schoneTag, type CloudBestand, type CloudMap, type CloudSoort, type CloudSortering } from '../../../shared/cloud-vnext-model';
+import {
+  ArrowDownUp, ArrowUpDown, Folder, FolderPlus, FolderUp, LayoutGrid, Link2, List,
+  LoaderCircle, Scissors, Search, Share2, Star, Trash2, Upload, X,
+} from 'lucide-react';
+import {
+  CLOUD_SORTERING, CLOUD_SOORT_LABEL, CLOUD_VNEXT_LIMIETEN, schoneNaam, schoneTag, veiligUploadMime,
+  type CloudBestand, type CloudMap, type CloudSoort, type CloudSortering,
+} from '../../../shared/cloud-vnext-model';
 import BestandKaart, { BestandRij, type BestandActies } from '../BestandKaart';
-import { cloudClient, type Lijst } from '../cloud-client';
+import { cloudClient, type DelenDoelSamenvatting, type Lijst } from '../cloud-client';
 import type { OnderdeelProps } from '../CloudPagina';
+import DeelVenster, { type DeelVensterDoel } from '../DeelVenster';
 import DetailPaneel from '../DetailPaneel';
 import { bewaarBlob, cloudFoutTekst, isBouwFout, sessieLees, sessieNeem, sessieZet, vanB64 } from '../hulp';
 import Laag from '../Laag';
 import MapKiezer from '../MapKiezer';
+import { leesDropBoom, leesMapInputFiles, verwerkBoomUpload } from '../map-upload-hulp';
 import UploadBeheer from '../UploadBeheer';
 import { bronVanFile, overdrachten, preflightNaarDienst } from '../overdracht-beheer';
 import type { CloudTaakSoort } from '../../../shared/cloud-overdracht-model';
@@ -27,6 +34,8 @@ type LaagStaat =
 const SORTEER_LABEL: Record<CloudSortering, [string, string]> = { naam: ['Назва', 'Naam'], datum: ['Дата', 'Datum'], grootte: ['Розмір', 'Grootte'], soort: ['Тип', 'Soort'] };
 const SOORTEN = Object.keys(CLOUD_SOORT_LABEL) as CloudSoort[];
 
+const mapInvoerAttributen: Record<string, string> = { webkitdirectory: '', directory: '' };
+
 export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelProps) {
   const [vraag, setVraag] = useState<Vraag>(() => ({
     mapId: undefined, zoek: '', soort: '', tag: '', favoriet: sessieNeem('cvn-favoriet') === '1',
@@ -37,6 +46,7 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
   const [tagVeld, setTagVeld] = useState('');
   const [lijst, setLijst] = useState<Lijst | null>(null);
   const [bestanden, setBestanden] = useState<CloudBestand[]>([]);
+  const [deelPerDoel, setDeelPerDoel] = useState<Record<string, DelenDoelSamenvatting>>({});
   const [laden, setLaden] = useState(true);
   const [meerLaden, setMeerLaden] = useState(false);
   const [fout, setFout] = useState('');
@@ -46,13 +56,21 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
   const [ctx, setCtx] = useState<{ x: number; y: number; b?: CloudBestand; m?: CloudMap } | null>(null);
   const [laag, setLaag] = useState<LaagStaat | null>(null);
   const [detail, setDetail] = useState<CloudBestand | null>(null);
+  const [deelDoel, setDeelDoel] = useState<DeelVensterDoel | null>(null);
   const [besig, setBesig] = useState(false);
   const [sleepTel, setSleepTel] = useState(0);
   const [sleepDoel, setSleepDoel] = useState('');
   const anker = useRef<string | null>(null);
   const wortel = useRef<HTMLElement | null>(null);
   const bestandInput = useRef<HTMLInputElement | null>(null);
+  const mapInput = useRef<HTMLInputElement | null>(null);
   const generatie = useRef(0);
+
+  const laadDeelTellers = useCallback(() => {
+    void cloudClient.delenOverzicht()
+      .then((d) => setDeelPerDoel(d.perDoel || {}))
+      .catch(() => undefined);
+  }, []);
 
   const laad = useCallback(async (vervolg?: string) => {
     const g = ++generatie.current;
@@ -67,20 +85,19 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
       setBouw(false); setFout(''); setLijst(r);
       setBestanden((oud) => (vervolg ? [...oud, ...r.bestanden] : r.bestanden));
       if (!vervolg) { setSelectie([]); anker.current = null; }
+      laadDeelTellers();
     } catch (e) {
       if (g !== generatie.current) return;
       if (isBouwFout(e)) { setBouw(true); setFout(''); setLijst(null); setBestanden([]); }
       else setFout(cloudFoutTekst(lang, e));
     } finally { if (g === generatie.current) { setLaden(false); setMeerLaden(false); } }
-  }, [vraag, lang]);
+  }, [vraag, lang, laadDeelTellers]);
   useEffect(() => { void laad(); }, [laad]);
   const laadRef = useRef(laad); useEffect(() => { laadRef.current = laad; });
   const herlaad = useCallback(() => { void laadRef.current(); void vernieuw(); }, [vernieuw]);
 
   // Overdracht uit Overzicht/Werkruimtes: open een bestand of de nieuwe-mapdialoog direct bij binnenkomst.
   useEffect(() => {
-    // ZOEKDIEP-001 (05.11.2026): 'cvn-open' draagt een heel bestand (Overzicht/Recent/Postvak) óf een kale id (zoekpagina en
-    // diepe link ?open_item_id=). Vroeger werd een kale id stil genegeerd (JSON.parse faalde), dus «Пошук» opende nooit het bestand.
     const open = sessieNeem('cvn-open');
     if (open) {
       let b: CloudBestand | null = null;
@@ -96,9 +113,39 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
   }, []);
 
   // Uploads lopen via het overdrachtbeheer (module-singleton): navigeren binnen de dienst breekt niets af.
+  // Lege bestanden (0 bytes) worden direct aangemaakt via bestandNieuwLeeg.
   const voegToe = useCallback((files: ArrayLike<File>, mapId: string | null) => {
-    for (const f of Array.from(files)) overdrachten().voegUploadToe(bronVanFile(f), mapId);
-  }, []);
+    let heeftLeeg = false;
+    for (const f of Array.from(files)) {
+      if (f.size === 0) {
+        heeftLeeg = true;
+        void cloudClient.bestandNieuwLeeg(f.name, veiligUploadMime(f.type, f.name), mapId)
+          .then((b) => { toon(tr(lang, `Завантажено: ${b.naam}`, `Geüpload: ${b.naam}`)); herlaad(); })
+          .catch((e) => setFout(cloudFoutTekst(lang, e)));
+      } else {
+        overdrachten().voegUploadToe(bronVanFile(f), mapId);
+      }
+    }
+    if (heeftLeeg) void vernieuw();
+  }, [lang, toon, herlaad, vernieuw]);
+
+  const startMapUpload = useCallback(async (files: ArrayLike<File>, mapId: string | null) => {
+    const stukken = leesMapInputFiles(files);
+    if (!stukken.length) return;
+    setFout('');
+    try {
+      const uit = await verwerkBoomUpload(stukken, mapId);
+      toon(tr(
+        lang,
+        `Теку додано: створено підтек — ${uit.aangemaakteMappen}, файлів у черзі — ${uit.bestandenGeplaatst}.`,
+        `Map toegevoegd: ${uit.aangemaakteMappen} submappen aangemaakt, ${uit.bestandenGeplaatst} bestanden geplaatst.`,
+      ));
+      herlaad();
+    } catch (e) {
+      setFout(cloudFoutTekst(lang, e));
+    }
+  }, [lang, toon, herlaad]);
+
   useEffect(() => overdrachten().opKlaar((b) => { toon(tr(lang, `Завантажено: ${b.naam}`, `Geüpload: ${b.naam}`)); herlaad(); }), [lang, toon, herlaad]);
 
   const kies = (b: CloudBestand, metShift: boolean) => {
@@ -113,9 +160,9 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
   };
   useEffect(() => {
     if (!selectie.length) return;
-    const f = (e: KeyboardEvent) => { if (e.key === 'Escape' && !ctx && !laag && !detail) setSelectie([]); };
+    const f = (e: KeyboardEvent) => { if (e.key === 'Escape' && !ctx && !laag && !detail && !deelDoel) setSelectie([]); };
     window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f);
-  }, [selectie.length, ctx, laag, detail]);
+  }, [selectie.length, ctx, laag, detail, deelDoel]);
 
   const doe = async (werk: () => Promise<void>, melding?: string) => {
     setBesig(true); setFout('');
@@ -130,7 +177,6 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
   const downloadBestand = async (b: CloudBestand) => {
     setFout('');
     if (b.bytes > CLOUD_VNEXT_LIMIETEN.downloadMaxBytes) {
-      // Groot bestand: in delen met herhaling via het overdrachtbeheer; de voortgang staat in het paneel «Передачі».
       overdrachten().voegDownloadToe({ id: b.id, naam: b.naam, bytes: b.bytes }, (blob) => bewaarBlob(blob.naam || b.naam, new Blob([blob.bytes as unknown as BlobPart], { type: blob.mime })));
       toon(tr(lang, 'Скачування йде частинами у фоні — слідкуйте в «Передачах».', 'Het downloaden loopt in delen op de achtergrond — volg het bij «Overdrachten».'));
       return;
@@ -139,7 +185,7 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
     catch (e) { setFout(cloudFoutTekst(lang, e)); }
   };
 
-  // ---- slepen: pc-bestanden → uploadwachtrij; kaarten → map of kruimel (text/plain-JSON {ids})
+  // ---- slepen: pc-bestanden of mappen → uploadwachtrij; kaarten → map of kruimel (text/plain-JSON {ids})
   const metPcBestanden = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
   const metKaarten = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('text/plain');
   const leesIds = (e: React.DragEvent): string[] => {
@@ -150,6 +196,37 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
     onDragLeave: () => setSleepDoel(''),
     onDrop: (e: React.DragEvent) => { if (!metKaarten(e)) return; e.preventDefault(); e.stopPropagation(); setSleepDoel(''); const ids = leesIds(e); if (ids.length) void verplaatsIds(ids, mapId); },
   });
+
+  const behandelDropOpVlak = (e: React.DragEvent) => {
+    if (!metPcBestanden(e)) return;
+    e.preventDefault();
+    setSleepTel(0);
+    if (vraag.prullenbak) return;
+    const doelMap = vraag.mapId ?? null;
+    const ruweFiles = e.dataTransfer.files;
+    // Probeer eerst mappenboom via DataTransferItem.webkitGetAsEntry; val terug op gewone e.dataTransfer.files
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      void leesDropBoom(e.dataTransfer)
+        .then(async (uit) => {
+          if (uit.heeftMappen) {
+            const res = await verwerkBoomUpload(uit.stukken, doelMap, uit.legeMappen);
+            toon(tr(
+              lang,
+              `Структуру перетягнуто: підтек — ${res.aangemaakteMappen}, файлів — ${res.bestandenGeplaatst}.`,
+              `Structuur geplaatst: ${res.aangemaakteMappen} mappen, ${res.bestandenGeplaatst} bestanden.`,
+            ));
+            herlaad();
+          } else if (uit.stukken.length) {
+            voegToe(uit.stukken.map((s) => s.file), doelMap);
+          } else if (ruweFiles.length) {
+            voegToe(ruweFiles, doelMap);
+          }
+        })
+        .catch((err) => setFout(cloudFoutTekst(lang, err)));
+      return;
+    }
+    if (e.dataTransfer.files.length) voegToe(e.dataTransfer.files, doelMap);
+  };
 
   const openCtx = (e: React.MouseEvent, b?: CloudBestand, m?: CloudMap) => {
     const host = wortel.current?.getBoundingClientRect(); if (!host) return;
@@ -165,20 +242,24 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
 
   const acties = (b: CloudBestand): BestandActies => ({
     lang, b, gekozen: selectie.includes(b.id), keuzestand: selectie.length > 0, prullenbak: vraag.prullenbak,
-    onOpen: setDetail, onKies: kies, onFavoriet: (x) => void favorietZet([x.id], !x.favoriet), onMeer: (x, e) => openCtx(e, x),
+    deelInfo: deelPerDoel[b.id],
+    onOpen: setDetail, onKies: kies, onFavoriet: (x) => void favorietZet([x.id], !x.favoriet),
+    onDeel: (x) => setDeelDoel({ soort: 'bestand', bestand: x }),
+    onMeer: (x, e) => openCtx(e, x),
     sleepIds: (x) => (selectie.includes(x.id) ? selectie : [x.id]),
   });
   const wsTitel = (id: string | null) => (id ? ov?.workspaces.find((w) => w.id === id)?.titel || tr(lang, 'простір', 'werkruimte') : '');
   const filtersAan = Boolean(vraag.zoek || vraag.soort || vraag.tag || vraag.favoriet || vraag.workspaceId);
   const mappen = !vraag.prullenbak ? lijst?.mappen || [] : [];
   const alleGekozenFavoriet = selectie.length > 0 && selectie.every((id) => bestanden.find((b) => b.id === id)?.favoriet);
+  const huidigeMapObj = vraag.mapId ? (lijst?.pad || []).find((m) => m.id === vraag.mapId) || null : null;
 
   return (
     <section ref={wortel} className='cvn-bestanden' aria-label={tr(lang, 'Мої файли', 'Mijn bestanden')}
       onDragEnter={(e) => { if (metPcBestanden(e) && !vraag.prullenbak) { e.preventDefault(); setSleepTel((t) => t + 1); } }}
       onDragOver={(e) => { if (metPcBestanden(e) && !vraag.prullenbak) e.preventDefault(); }}
       onDragLeave={(e) => { if (metPcBestanden(e)) setSleepTel((t) => Math.max(0, t - 1)); }}
-      onDrop={(e) => { if (!metPcBestanden(e)) return; e.preventDefault(); setSleepTel(0); if (!vraag.prullenbak && e.dataTransfer.files.length) voegToe(e.dataTransfer.files, vraag.mapId ?? null); }}>
+      onDrop={behandelDropOpVlak}>
       {bouw ? <p className='cvn-melding is-info' role='status' data-cvn-bouw=''>{tr(lang, 'Серверна частина цього розділу ще збирається — інтерфейс уже можна роздивитись, дані з’являться щойно сервер буде готовий.', 'De serverkant van dit onderdeel is nog in aanbouw — de interface is al te bekijken; de gegevens volgen zodra de server klaar is.')}</p> : null}
       {fout ? <p className='cvn-melding is-fout' role='alert'>{fout}</p> : null}
       <UploadBeheer lang={lang} />
@@ -199,10 +280,18 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
         <div className='cvn-werkbalk-acties'>
           {!vraag.prullenbak ? (
             <>
+              {huidigeMapObj ? (
+                <button type='button' className='cvn-knop' data-cvn-deel-huidige-map={huidigeMapObj.id} onClick={() => setDeelDoel({ soort: 'map', map: huidigeMapObj })}>
+                  <Share2 aria-hidden='true' />{tr(lang, 'Поділитися цією текою', 'Deze map delen')}
+                </button>
+              ) : null}
               <button type='button' className='cvn-knop' data-cvn-nieuwe-map='' onClick={() => setLaag({ t: 'nieuwe-map' })}><FolderPlus aria-hidden='true' />{tr(lang, 'Нова тека', 'Nieuwe map')}</button>
+              <button type='button' className='cvn-knop' data-cvn-upload='map' onClick={() => mapInput.current?.click()}><FolderUp aria-hidden='true' />{tr(lang, 'Завантажити теку', 'Map uploaden')}</button>
               <button type='button' className='cvn-knop is-hoofd' data-cvn-upload='knop' onClick={() => bestandInput.current?.click()}><Upload aria-hidden='true' />{tr(lang, 'Завантажити', 'Uploaden')}</button>
               <input ref={bestandInput} type='file' multiple className='cvn-verborgen' tabIndex={-1} aria-hidden='true'
                 onChange={(e) => { if (e.target.files?.length) voegToe(e.target.files, vraag.mapId ?? null); e.target.value = ''; }} />
+              <input ref={mapInput} type='file' {...mapInvoerAttributen} className='cvn-verborgen' tabIndex={-1} aria-hidden='true'
+                onChange={(e) => { if (e.target.files?.length) void startMapUpload(e.target.files, vraag.mapId ?? null); e.target.value = ''; }} />
             </>
           ) : null}
           <button type='button' className={`cvn-knop${vraag.prullenbak ? ' is-actief' : ''}`} data-cvn-prullenbak='schakel' aria-pressed={vraag.prullenbak}
@@ -261,6 +350,13 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
           <strong>{tr(lang, `Вибрано: ${selectie.length}`, `Gekozen: ${selectie.length}`)}</strong>
           {!vraag.prullenbak ? (
             <>
+              <button type='button' className='cvn-knop is-klein is-hoofd' disabled={besig} onClick={() => {
+                const eerste = bestanden.find((b) => b.id === selectie[0]);
+                const label = selectie.length === 1 && eerste ? eerste.naam : tr(lang, `Вибрані файли (${selectie.length})`, `Gekozen bestanden (${selectie.length})`);
+                setDeelDoel({ soort: 'selectie', bestandIds: selectie, label });
+              }}>
+                <Share2 aria-hidden='true' />{tr(lang, 'Поділитися вибраним', 'Keuze delen')}
+              </button>
               <button type='button' className='cvn-knop is-klein' disabled={besig} onClick={() => setLaag({ t: 'verplaats', ids: selectie })}><Folder aria-hidden='true' />{tr(lang, 'Перемістити', 'Verplaatsen')}</button>
               <button type='button' className='cvn-knop is-klein' disabled={besig} onClick={() => void favorietZet(selectie, !alleGekozenFavoriet)}><Star aria-hidden='true' />{alleGekozenFavoriet ? tr(lang, 'Прибрати з обраного', 'Uit favorieten') : tr(lang, 'До обраного', 'Favoriet')}</button>
               <button type='button' className='cvn-knop is-klein' data-cvn-prullenbak='keuze' disabled={besig} onClick={() => void naarKosh(selectie)}><Trash2 aria-hidden='true' />{tr(lang, 'У кошик', 'Prullenbak')}</button>
@@ -280,15 +376,25 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
 
         {mappen.length ? (
           <ul className='cvn-mappen' role='list' aria-label={tr(lang, 'Теки', 'Mappen')}>
-            {mappen.map((m) => (
-              <li key={m.id}>
-                <button type='button' className={`cvn-map${sleepDoel === m.id ? ' is-doel' : ''}`} data-cvn-map={m.id}
-                  onClick={() => setVraag((v) => ({ ...v, mapId: m.id }))} onContextMenu={(e) => { e.preventDefault(); openCtx(e, undefined, m); }} {...doelDrop(m.id)}>
-                  <Folder aria-hidden='true' /><span className='cvn-map-naam'>{m.naam}</span>
-                  {typeof m.aantal === 'number' ? <span className='cvn-map-aantal'>{m.aantal}</span> : null}
-                </button>
-              </li>
-            ))}
+            {mappen.map((m) => {
+              const mDeel = deelPerDoel[m.id];
+              return (
+                <li key={m.id} className='cvn-map-cel'>
+                  <button type='button' className={`cvn-map${sleepDoel === m.id ? ' is-doel' : ''}`} data-cvn-map={m.id}
+                    onClick={() => setVraag((v) => ({ ...v, mapId: m.id }))} onContextMenu={(e) => { e.preventDefault(); openCtx(e, undefined, m); }} {...doelDrop(m.id)}>
+                    <Folder aria-hidden='true' /><span className='cvn-map-naam'>{m.naam}</span>
+                    {mDeel && mDeel.actief > 0 ? <span className='cvn-map-deelpil' title={tr(lang, `Активних посилань: ${mDeel.actief}`, `Actieve koppelingen: ${mDeel.actief}`)}><Link2 aria-hidden='true' />{mDeel.actief}</span> : null}
+                    {typeof m.aantal === 'number' ? <span className='cvn-map-aantal'>{m.aantal}</span> : null}
+                  </button>
+                  <button type='button' className='cvn-icoonknop cvn-map-deelknop' data-cvn-deel-map={m.id}
+                    aria-label={tr(lang, `Поділитися текою ${m.naam}`, `Map ${m.naam} delen`)}
+                    title={tr(lang, 'Поділитися текою', 'Map delen')}
+                    onClick={(e) => { e.stopPropagation(); setDeelDoel({ soort: 'map', map: m }); }}>
+                    <Share2 aria-hidden='true' />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
 
@@ -305,7 +411,7 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
                   ? <p>{tr(lang, 'Щойно сервер буде готовий, тут з’являться ваші теки й файли.', 'Zodra de server klaar is, staan hier uw mappen en bestanden.')}</p>
                   : <>
                     <Upload aria-hidden='true' />
-                    <p>{tr(lang, 'Ця тека порожня. Перетягніть файли сюди або натисніть «Завантажити».', 'Deze map is leeg. Sleep bestanden hierheen of kies «Uploaden».')}</p>
+                    <p>{tr(lang, 'Ця тека порожня. Перетягніть сюди теки, архіви чи файли або натисніть «Завантажити».', 'Deze map is leeg. Sleep mappen, archieven of bestanden hierheen of kies «Uploaden».')}</p>
                   </>}
           </div>
         ) : null}
@@ -351,6 +457,12 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
             ) : (
               <>
                 <button type='button' role='menuitem' onClick={() => { setDetail(ctx.b!); setCtx(null); }}>{tr(lang, 'Відкрити', 'Openen')}</button>
+                <button type='button' role='menuitem' onClick={() => { setDeelDoel({ soort: 'bestand', bestand: ctx.b! }); setCtx(null); }}><Share2 aria-hidden='true' /> {tr(lang, 'Поділитися…', 'Delen…')}</button>
+                {ctx.b.kind !== 'link' && ctx.b.bytes > 0 ? (
+                  <button type='button' role='menuitem' onClick={() => { setDeelDoel({ soort: 'bestand', bestand: ctx.b!, beginModus: ctx.b!.soort === 'archief' ? 'archief' : 'deel' }); setCtx(null); }}>
+                    <Scissors aria-hidden='true' /> {ctx.b.soort === 'archief' ? tr(lang, 'Поділитися частиною архіву…', 'Deel van archief delen…') : tr(lang, 'Поділитися частиною файла…', 'Deel van bestand delen…')}
+                  </button>
+                ) : null}
                 {ctx.b.kind !== 'link' ? <button type='button' role='menuitem' onClick={() => { void downloadBestand(ctx.b!); setCtx(null); }}>{tr(lang, 'Завантажити на ПК', 'Downloaden')}</button> : null}
                 <button type='button' role='menuitem' onClick={() => { setLaag({ t: 'hernoem', b: ctx.b! }); setCtx(null); }}>{tr(lang, 'Перейменувати', 'Hernoemen')}</button>
                 <button type='button' role='menuitem' onClick={() => { setLaag({ t: 'tags', b: ctx.b! }); setCtx(null); }}>{tr(lang, 'Теґи…', 'Labels…')}</button>
@@ -364,6 +476,7 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
           ) : ctx.m ? (
             <>
               <button type='button' role='menuitem' onClick={() => { setVraag((v) => ({ ...v, mapId: ctx.m!.id })); setCtx(null); }}>{tr(lang, 'Відкрити', 'Openen')}</button>
+              <button type='button' role='menuitem' onClick={() => { setDeelDoel({ soort: 'map', map: ctx.m! }); setCtx(null); }}><Share2 aria-hidden='true' /> {tr(lang, 'Поділитися текою…', 'Map delen…')}</button>
               <button type='button' role='menuitem' onClick={() => { setLaag({ t: 'map-hernoem', m: ctx.m! }); setCtx(null); }}>{tr(lang, 'Перейменувати', 'Hernoemen')}</button>
               <button type='button' role='menuitem' className='is-gevaar' onClick={() => { setLaag({ t: 'map-weg', m: ctx.m! }); setCtx(null); }}>{tr(lang, 'Видалити теку', 'Map verwijderen')}</button>
             </>
@@ -421,7 +534,20 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
         <DetailPaneel lang={lang} smal={smal} bestand={detail} pad={lijst?.pad || []} wsTitel={wsTitel(detail.workspaceId)} prullenbak={Boolean(detail.verwijderdOp)}
           onSluit={() => setDetail(null)}
           onBijgewerkt={(n) => { if (n) { setDetail(n); setBestanden((bs) => bs.map((x) => (x.id === n.id ? n : x))); void vernieuw(); } else { setDetail(null); herlaad(); } }}
+          onDeel={(opties) => setDeelDoel({ soort: 'bestand', bestand: detail, ...opties })}
+          onArchiefUitgepakt={herlaad}
           toon={toon} />
+      ) : null}
+
+      {deelDoel ? (
+        <DeelVenster
+          lang={lang}
+          smal={smal}
+          doel={deelDoel}
+          onSluit={() => setDeelDoel(null)}
+          onVeranderd={laadDeelTellers}
+          toon={toon}
+        />
       ) : null}
     </section>
   );

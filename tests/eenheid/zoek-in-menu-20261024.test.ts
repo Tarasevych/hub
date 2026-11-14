@@ -52,9 +52,9 @@ export async function main(): Promise<number> {
     kop.includes("{touchMode&&bovenTelefoon&&<div className='canonical-account-anchor plaats-boven-telefoon' {...zoneBoven}>{!zoekInMenu&&<ZoekGlobaal lang={lang} mobiel dienst={current}/>}") && chrome.includes('bovenTelefoon=!zoekInMenu||bovenN>0||plaatsS.sleep!==null'));
   check('A palet + ⌘K blijven op de post: één ZoekGlobaal zonderKnop direct in de bovenbalk (niet in de lade, die gaat dicht)', kop.includes('{zoekInMenu&&<ZoekGlobaal lang={lang} dienst={current} zonderKnop/>}') && tel(chrome, '<ZoekGlobaal ') === 3 && tel(chrome, 'zonderKnop/>') === 1);
   const lade = chrome.slice(chrome.indexOf("{drawer?<div className='canonical-drawer-header'>"), chrome.indexOf("data-sidebar-action='close-drawer'"));
-  check('A lade-kop: profielfoto (· gniezda van de zone, bel) → zoekknop → «Редагувати меню», lade sluit vóór het palet', volgorde(lade, "className='canonical-drawer-account'>{account}</div><Gniezda zone='lade-kop' ind={plaatsInd}/></div>", "{zoekInMenu&&<ZoekMenuKnop lang={lang} className='zk-menu-knop zk-menu-knop-lade' voorOpenen={closeDrawer}/>}", 'menu-lade-bewerken'), lade.slice(0, 400));
+  check('A lade-kop: profielfoto (· gniezda van de zone, bel) → zoekknop → «Редагувати меню», lade sluit vóór het palet', volgorde(lade, "className='canonical-drawer-account'>{account}</div><Gniezda zone='lade-kop' ind={plaatsInd}/></div>", "<ZoekMenuKnop lang={lang} className='zk-menu-knop zk-menu-knop-lade' voorOpenen={closeDrawer}/>", 'menu-lade-bewerken'), lade.slice(0, 400));
   const werkbalk = chrome.slice(chrome.indexOf('<ZijbalkWerkbalk '), chrome.indexOf('/>}', chrome.indexOf('<ZijbalkWerkbalk ')));
-  check('A zijbalk-werkbalk (computer) krijgt zoek={zoekInMenu}', werkbalk.includes(' zoek={zoekInMenu} '), werkbalk.slice(0, 300));
+  check('A zijbalk-werkbalk (computer) krijgt zoek', werkbalk.includes(' zoek '), werkbalk.slice(0, 300));
   check('A import: ZoekMenuKnop uit ./search/ZoekGlobaal', chrome.includes("import ZoekGlobaal,{ZoekMenuKnop}from'./zoek/ZoekGlobaal';"));
 
   const zg = lees('src/zoek/ZoekGlobaal.tsx');

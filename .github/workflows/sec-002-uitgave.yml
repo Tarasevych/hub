@@ -1,0 +1,398 @@
+name: SEC-002 · виправлення вразливостей за глибоким аудитом безпеки (усі служби *.tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу, ланцюг постачання,
+# типи, усі міграції двічі, тести безпеки SEC-002 і суміжних модулів та контрольну суму SHA-256. Публікує окреме завдання без npm.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, de toeleveringsketen, typen, alle migraties (twee keer),
+# de beveiligingstests van SEC-002 en aangrenzende modules en de controlesom. Een aparte taak zonder npm publiceert.
+on:
+  push:
+    branches:
+      - 'fix/sec-002-20261112-121623'
+    paths:
+      - '.github/workflows/sec-002-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/SEC-002.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sec-002-uitgave
+  # Випуск не обривається посеред перевірок чи публікації; новий запуск чекає. · Een lopende uitgave wordt niet afgebroken.
+  cancel-in-progress: false
+
+env:
+  TAAK: SEC-002
+  # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
+  # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
+  # Остання в переліку — запасна, якщо тунель тимчасово недоступний. · De laatste is de reserve bij een tijdelijk onbereikbare tunnel.
+  BEKENDE_BASISSEN: '20261112-135406=2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f 20261112-192752=11e0aad8b641b62412d2efcf1382d117339d251f 20261112-215622=1f101224e2e896d78485c79edf615b47d7c2d373'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  # Ідентифікатор моделі ШІ задає власник змінною сховища (у файлах сховища його не пишемо).
+  # De model-id zet de eigenaar als repository-variabele (niet in bestanden van de repository).
+  MODEL_ID: ${{ vars.SEC_002_MODEL_ID || vars.APPARAAT_001_MODEL_ID || vars.UITROL_001_MODEL_ID || vars.PERF_001_MODEL_ID || vars.IDENTITEIT_007_MODEL_ID || vars.IDENTITEIT_006_MODEL_ID }}
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
+        run: |
+          if [ "$GITHUB_REF_NAME" != "fix/sec-002-20261112-121623" ]; then
+            echo "Випуск SEC-002 можна запускати лише з гілки fix/sec-002-20261112-121623. · Alleen vanaf de taaktak." >&2
+            exit 1
+          fi
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = '';
+          let levend = '';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            versie = v.versie;
+            levend = v.bronCommit || v.commit;
+            if (bekend.get(versie) !== levend) {
+              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+            }
+            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+            [versie, levend] = bekendLijst[bekendLijst.length - 1];
+            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
+          JS
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Модель ШІ від власника · AI-model van de eigenaar
+        shell: bash
+        run: |
+          if [ -z "${MODEL_ID:-}" ]; then
+            echo '::error::Задайте змінну сховища SEC_002_MODEL_ID (або лишіть APPARAAT_001_MODEL_ID) у Settings → Secrets and variables → Actions → Variables.'
+            exit 1
+          fi
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          set -o pipefail
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+          const d = JSON.parse(readFileSync('orchestratie/ontwikkelarchieven/SEC-002.json', 'utf8'));
+          const fouten = valideerOntwikkelDossier(d, 'SEC-002');
+          if (fouten.length) throw Error('Помилки журналу розробки: ' + fouten.join('; '));
+          JS
+      - name: Перевірити ланцюг постачання, розміщення, каталог інтерфейсу, мовний закон і макет HUIS-001 · keten, plaatsing, catalogus, taal
+        run: |
+          set -o pipefail
+          node scripts/keten-controle.mjs
+          node scripts/l002-audit.mjs
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node --test tests/eenheid/cloud-migratie-volgorde.test.mjs
+          for t in hulpmiddelen-tweetalig-20261020 menu-v2 plaatsing-20261025 werkblad-register-20261027 cloud-001-ui-contract cloud-vnext-ui-20261029 identiteit-009-mobiel-veiligheid; do
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Перевірити типи та скласти застосунок разом із макетом розумного будинку
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+      - name: Перевірити подвійне застосування всіх міграцій і тести безпеки SEC-002 з базою даних PostgreSQL 16 · migraties en beveiligingstests
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export SESSION_SECRET="$(head -c32 /dev/urandom | base64)"
+          # Сховище файлів тестів — тимчасова тека виконавця (типова /srv/data для користувача runner недоступна).
+          export UPLOADS_DIR="$RUNNER_TEMP/uploads"
+          mkdir -p "$UPLOADS_DIR"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          # Усі тести SEC-002 (групи, доопрацювання) і наявні тести безпеки та модулів, які змінили патчі.
+          # Справжній Chrome для перевірок інтерфейсу (g10g): закріплений playwright-core без запису в package.json, системний Chrome.
+          npm install --no-save --package-lock=false --ignore-scripts playwright-core@1.56.1
+          export PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core"
+          export CHROME_PAD=/usr/bin/google-chrome
+          test -x "$CHROME_PAD"
+          # g09 і g10f перевіряють справжні сценарії root (chown, підпис SSH-сертифіката від root, скидання прав до nobody),
+          # тож виконуються через sudo зі збереженням оточення; решта — від звичайного користувача виконавця.
+          for f in tests/eenheid/sec-002-*.test.ts; do
+            t="$(basename "$f")"
+            case "$t" in
+              sec-002-g09-*|sec-002-g10f-*) sudo -E env "PATH=$PATH" node scripts/eenheidstests.mjs "$t" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log" ;;
+              *) node scripts/eenheidstests.mjs "$t" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log" ;;
+            esac
+          done
+          # Робочі теки, створені тестами від root, повертаються користувачеві виконавця.
+          sudo chown -R "$(id -u):$(id -g)" rapporten "$UPLOADS_DIR" 2>/dev/null || true
+          # Змінені патчами тести модулів, зелені в послідовному прогоні в чистій базі. mcp-scherm-lokale-controle-20261031
+          # залежить від стану, який лишають попередні тести, тож його перевірено поодинці в чистій базі (17/17), а не тут.
+          for t in account-wissen-20261026 account-wissen-db-20261113 afstemming-kern-20261030 ai-agent-bord ai-kluis-een-plek-20261101 ai-mail-assistent audit-toegang browser-extensie connector-beide-kanten-20261020 connector-v2 devtools-schema-tekst-20261112 extensie-offscreen-20261106 extensie-opties extensie-profielen extensie-vergrendeling extern-bureaublad github-webhook-na-ontkoppelen-20261112 github-werkruimte-tak-20261112 huis-vnext-20261028 lezer-context-20261024 mail-ux-beoordeling-20261021 mcp-2026-07-28-studio mcp-console-c2 mcp-klant-stabiliteit-20261112 mcp-r1-beveiliging-20261112 meldingen-sferen-20261022 merk-bron-20261021 merk-bron-redos-20261112 notities-vnext-20261028 ruimte-cloud-agenda-20261020 ruimte-mail-20261020 ruimtes-gescheiden-20261101 telegram-inlog-apparaat-20261112 terminal-opdrachten-20261022 toegangssleutels zoek-kern-20261022 zoek-ui-bereik-20261105; do
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          // Двомовний опис випуску — з docs/beveiliging/sec-002-uitgave-tekst.json (складено з публічного звіту SEC-002).
+          const tekst = JSON.parse(readFileSync('docs/beveiliging/sec-002-uitgave-tekst.json', 'utf8'));
+          const vul = (s) => String(s).replaceAll('<BASIS>', e.BASIS_VERSIE);
+          const uk = { ...tekst.uk, samenvatting: vul(tekst.uk.samenvatting) };
+          const nl = { ...tekst.nl, samenvatting: vul(tekst.nl.samenvatting) };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'claude',
+                platform: 'claude.ai',
+                tool: 'Claude Code',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
+          const tests = {
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації, свіжість основи ' + e.BASIS_VERSIE + ' та перевірку походження TRACE-001; перевірку ланцюга постачання (npm audit без високих і критичних вразливостей, лише реєстр npmjs); статичні перевірки розміщення, каталогу інтерфейсу, мовного закону та макета HUIS-001; перевірку типів клієнта й сервера; повне виробниче складання; подвійне застосування всіх міграцій на чистій базі PostgreSQL 16; усі тести безпеки SEC-002 і наявні тести змінених модулів.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis ' + e.BASIS_VERSIE + ' en herkomstcontrole TRACE-001; controle van de toeleveringsketen (npm audit zonder hoge of kritieke kwetsbaarheden, alleen het npmjs-register); statische controles van plaatsing, UI-catalogus, taalwet en maquette HUIS-001; typecontrole van client en server; volledige productiebouw; dubbele uitvoering van alle migraties op een schone PostgreSQL 16-databank; alle beveiligingstests van SEC-002 en de bestaande tests van de gewijzigde modules.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `SEC-002 · ${uk.titel} · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            ...(uk.fixes && uk.fixes.length ? ['Виправлено:', ...uk.fixes.map((x) => `- ${x}`), ''] : []),
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent claude --platform 'claude.ai' --tool 'Claude Code' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Виправлення вразливостей за глибоким аудитом безпеки SEC-002 поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Herstel van kwetsbaarheden uit de diepe beveiligingsaudit SEC-002 boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sec-002-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sec-002-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: sec-002-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            }
+          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "SEC-002 · виправлення вразливостей (аудит безпеки) · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'

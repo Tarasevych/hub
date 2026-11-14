@@ -1,0 +1,384 @@
+name: IDENTITEIT-009 · повна мобільна адаптація та зміцнення безпеки розділу Ідентичність (id.tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер. Перед оприлюдненням звіряє живу встановлену основу (20261112-090824), макет HUIS-001, типи, міграції й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261112-090824), maquette HUIS-001, typen, migraties en controlesom.
+on:
+  push:
+    branches:
+      - 'fix/identiteit-009-mobiel-veiligheid-20261112-080000'
+    paths:
+      - '.github/workflows/identiteit-009-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-009.json'
+      - 'orchestratie/taken/IDENTITEIT-009.json'
+      - 'backend/**'
+      - 'src/**'
+      - 'tests/eenheid/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: identiteit-009-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: IDENTITEIT-009
+  # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
+  # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
+  BEKENDE_BASISSEN: '20261112-090824=fd772f575b85a81c43195f4dba840db3c60a87b1'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          const levend = v.bronCommit || v.commit;
+          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
+          if (bekend.get(v.versie) !== levend) {
+            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
+          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
+          JS
+          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          set -o pipefail
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Перевірити розміщення, каталог інтерфейсу, макет HUIS-001 та модульні тести розділу Ідентичність
+        run: |
+          set -o pipefail
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node scripts/eenheidstests.mjs identiteit-009-mobiel-veiligheid.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-maquette.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-account-ui.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs mobiel-geometrie-20261021.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs mobiel-cascade-20261105.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmelden-integ-20261103.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmeld-ui-20261030.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs accountmenu-v3.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs lees-venster-20261024.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs contrast-knoppen-logos-20261021.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs menu-per-profiel-20261019.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs huis-001-maquette-20261112.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs routes.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Перевірити типи та скласти застосунок разом із макетом розумного будинку
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const html = readFileSync('dist/huis-maquette/index.html', 'utf8');
+          if (/<script(?![^>]*\ssrc=)[^>]*>/i.test(html) || /<style[\s>]/i.test(html)) {
+            throw Error('Сторінка макета містить вбудований сценарій або стиль: політика безпеки сайту її не пропустить.');
+          }
+          JS
+      - name: Перевірити подвійне застосування міграцій і серверні тести з базою даних
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs sleutelkluis-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Повна мобільна адаптація всіх трьох режимів розділу Ідентичність (id.tarasevych.com) та зміцнення безпеки й швидкодії',
+            samenvatting: 'Повне адаптивне та захисне оновлення розділу https://id.tarasevych.com/ поверх живої встановленої версії ' + e.BASIS_VERSIE + ' (із повним збереженням HUIS-001, GITHUB-012, GITHUB-011 та GITHUB-010): усі три режими відображення («Макет», «Студія», «Класичний»), усі 12 підрозділів, вкладені секції та екран входу адаптовано для смартфонів (320–430 px), планшетів і настільних екранів, а виявлені недоліки безпеки, швидкодії, працездатності та клієнтської стійкості усунено.',
+            wijzigingen: [
+              'Режим «Студія» (.mr-at): захист карток від правила flat-content, кнопка «Вигляд і навігація» у мобільній смузі .mr-at-balk для вибору розташування та стилю меню на смартфонах, обмежена за висотою прокручувана панель .mr-at-popover, узгоджений верхній відступ під шапкою сайту та одноколонкове перенесення сусідніх розділів на вузьких контейнерах.',
+              'Режим «Макет» (.mq-root): приховування фонової бічної шухляди позаду відкритого мобільного меню облікового запису (.am3-mobiel-laag), автоматичне зачинення тимчасово відкритої шухляди після закриття меню та збалансовані внутрішні відступи справжніх панелей налаштувань на вузьких екранах.',
+              'Режим «Класичний» (.ia-account) та екран входу (.mr-sign-in): компактна липка горизонтальна стрічка змісту .ia-toc з автоцентруванням активної вкладки та захистом від жесту бічного меню (data-no-edge-swipe), усунення потрійного дублювання секцій доступу й повторюваних ідентифікаторів, розширені сенсорні зони (40–44 px) у всіх підрозділах і симетричні поля екрана входу на 320 px.',
+              'Безпека світлини профілю: повноцінне скидання власної світлини до початкового зображення постачальника на сервері й клієнті із записом події owner.profile.photo.reset у журнал аудиту, обмеження часу очікування 10 с, політика no-referrer і верхні межі обсягу завантаження (8 МБ за посиланням, 12 МБ з пристрою).',
+              'Швидкодія та клієнтська стійкість: об’єднання одночасних однакових запитів читання у swrPost (lees-cache.ts), автопідвантаження активних сесій у SessiesOverzicht, усунення самовільного перестрибування прокрутки в AanmeldVnextPanelen і перевірка структури мережевих відповідей у всіх секціях доступу, ключів, кодів відновлення, Telegram та підтвердження на пристроях.'
+            ],
+            fixes: [
+              'Виправлено кнопку скидання світлини профілю в Profielfoto.tsx, яка раніше лише очищувала локальне поле стану й не зберігала зміну на сервері.',
+              'Усунено потрійне відмальовування однакових блоків ключів доступу, сховища ключів, Telegram і підтвердження на пристроях на об’єднаній сторінці Класичного режиму.',
+              'Усунено винятки клієнтського виконання при неповних або перерваних мережевих відповідях у Luisteraar.tsx, ToegangssleutelsSectie.tsx, TelegramSectie.tsx, SleutelkluisSectie.tsx, HerstelcodesSectie.tsx, Toegangscodes.tsx, InstellingenSectie.tsx та AanbiederCatalogus.tsx.',
+              'Виправлено поломку сітки редактора меню на вузьких екранах (.settings-menu-editor article), вихід списків вибору підтвердження на пристроях за межі 320 px, обрізання таємних значень у .access-plane-secret і накладання міток у прозорості панелі та сповіщеннях.'
+            ],
+            beperkingen: [
+              'Встановлення випуску на робочий сервер виконує виключно власник із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте всі три режими відображення («Макет», «Студія», «Класичний») на https://id.tarasevych.com/.'
+          };
+          const nl = {
+            titel: 'Volledige mobiele aanpassing van alle drie weergavemodi van Identiteit (id.tarasevych.com) en versterking van veiligheid en snelheid',
+            samenvatting: 'Volledige responsieve en beveiligingsbijwerking van https://id.tarasevych.com/ boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + ' (met volledig behoud van HUIS-001, GITHUB-012, GITHUB-011 en GITHUB-010): alle drie weergavemodi («Ontwerp», «Studio», «Klassiek»), alle 12 onderdelen, ingebedde secties en het aanmeldscherm zijn aangepast voor smartphones (320–430 px), tablets en desktops, inclusief herstel van beveiliging, snelheid, werking en clientbestendigheid.',
+            wijzigingen: [
+              'Modus «Studio» (.mr-at): bescherming van kaarten tegen flat-content, knop «Weergave en navigatie» in de mobiele balk .mr-at-balk voor navigatiepositie en stijl op smartphones, in hoogte begrensd schuifbaar venster .mr-at-popover, uitgelijnde bovenmarge onder de sitekop en enkelkoloms plaatsing van buuronderdelen op smalle containers.',
+              'Modus «Ontwerp» (.mq-root): verbergen van de achtergrond-zijlade achter het geopende mobiele accountmenu (.am3-mobiel-laag), automatisch sluiten van de tijdelijk geopende zijlade na het sluiten van het menu en evenwichtige binnenmarges voor echte instellingenpanelen op smalle schermen.',
+              'Modus «Klassiek» (.ia-account) en aanmeldscherm (.mr-sign-in): compacte horizontaal schuifbare inhoudsopgave .ia-toc met automatische centrering van het actieve onderdeel en bescherming tegen zijvegen (data-no-edge-swipe), opheffing van drievoudige herhaling van toegangssecties en dubbele id-waarden, vergrote aanraakdoelen (40–44 px) en symmetrische marges op 320 px.',
+              'Beveiliging van de profielfoto: volledig herstel van de eigen profielfoto naar de oorspronkelijke aanbiedersafbeelding op server en client met vastlegging van owner.profile.photo.reset in het controlelogboek, tijdslimiet van 10 s, no-referrer-beleid en volumegrenzen (8 MB via koppeling, 12 MB vanaf apparaat).',
+              'Snelheid en clientbestendigheid: samenvoeging van gelijktijdige identieke leesverzoeken in swrPost (lees-cache.ts), automatisch laden van actieve sessies in SessiesOverzicht, voorkomen van ongewenst omlaagspringen in AanmeldVnextPanelen en structuurcontrole van netwerkantwoorden in alle secties voor toegang, sleutels, herstelcodes, Telegram en apparaatbevestiging.'
+            ],
+            fixes: [
+              'Herstelknop voor de profielfoto in Profielfoto.tsx gerepareerd zodat de wijziging daadwerkelijk op de server wordt bewaard en niet alleen lokaal.',
+              'Drievoudige weergave van passkeys, sleutelkluis, Telegram en apparaatbevestiging op de lange pagina van de Klassieke modus opgeheven.',
+              'Uitvoeringsfouten bij onvolledige of onderbroken netwerkantwoorden verholpen in Luisteraar.tsx, ToegangssleutelsSectie.tsx, TelegramSectie.tsx, SleutelkluisSectie.tsx, HerstelcodesSectie.tsx, Toegangscodes.tsx, InstellingenSectie.tsx en AanbiederCatalogus.tsx.',
+              'Opmaak van de menubewerker op smalle schermen (.settings-menu-editor article), brede keuzelijsten bij apparaatbevestiging op 320 px, afsnijden van geheime waarden in .access-plane-secret en overlappende bijschriften bij balktransparantie en meldingstijden hersteld.'
+            ],
+            beperkingen: [
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer alle drie weergavemodi («Ontwerp», «Studio», «Klassiek») op https://id.tarasevych.com/.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
+          const tests = {
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-090824 та перевірку походження TRACE-001; статичні перевірки розміщення, каталогу інтерфейсу та макета розумного будинку HUIS-001; модульні й серверні перевірки з PostgreSQL 16 для identiteit-009-mobiel-veiligheid, identiteit-maquette, identiteit-atelier, identiteit-account-ui, mobiel-geometrie-20261021, mobiel-cascade-20261105, aanmelden-integ-20261103, aanmeld-ui-20261030, aanmeld-001-weergave, accountmenu-v3, lees-venster-20261024, contrast-knoppen-logos-20261021, menu-per-profiel-20261019, huis-001-maquette-20261112, sleutelkluis-20261020, site-hulpmiddelen, routes та plaatsing-20261025; перевірку типів клієнта та сервера; повне виробниче складання застосунку разом із dist/huis-maquette/; подвійне застосування всіх міграцій на чистій базі PostgreSQL 16. Додатково в середовищі розробки пройдено живу перевірку всіх трьох режимів і екрана входу в безголовому Chromium під повною політикою безпеки сайту.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-090824 en herkomstcontrole TRACE-001; statische controles van plaatsing, de UI-catalogus en de maquette HUIS-001; eenheids- en PostgreSQL 16-servertests voor identiteit-009-mobiel-veiligheid, identiteit-maquette, identiteit-atelier, identiteit-account-ui, mobiel-geometrie-20261021, mobiel-cascade-20261105, aanmelden-integ-20261103, aanmeld-ui-20261030, aanmeld-001-weergave, accountmenu-v3, lees-venster-20261024, contrast-knoppen-logos-20261021, menu-per-profiel-20261019, huis-001-maquette-20261112, sleutelkluis-20261020, site-hulpmiddelen, routes en plaatsing-20261025; typecontrole van client en server; volledige productiebouw inclusief dist/huis-maquette/; dubbele uitvoering van alle migraties op een schone PostgreSQL 16-databank. Daarnaast is in de ontwikkelomgeving een live controle van alle drie weergavemodi en het aanmeldscherm in headless Chromium onder het volledige beveiligingsbeleid van de site geslaagd.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `IDENTITEIT-009 · Повна мобільна адаптація та зміцнення безпеки розділу Ідентичність (https://id.tarasevych.com/) · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Повна мобільна адаптація всіх трьох режимів відображення розділу Ідентичність (id.tarasevych.com) та зміцнення безпеки, швидкодії й стійкості поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Volledige mobiele aanpassing van alle drie weergavemodi van Identiteit (id.tarasevych.com) en versterking van veiligheid, snelheid en bestendigheid boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-009-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-009-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: identiteit-009-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-009 · мобільна адаптація та зміцнення безпеки id.tarasevych.com · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'

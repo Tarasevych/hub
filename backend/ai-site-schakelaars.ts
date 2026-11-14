@@ -11,6 +11,11 @@ const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql,
 
 let cache: { at: number; staat: SiteStaat } | null = null;
 const VERS = 5_000;
+/** SEC-002 (ai-mcp-13): zo lang mag bij een leesfout de laatste geslaagde stand nog gelden; daarna weigeren. */
+const NOODVENSTER = 5 * 60_000;
+const capsCache = new Map<string, { at: number; caps: GebruikerCaps }>();
+/** Alleen «relation … does not exist» (42P01) voor de eigen tabellen: dan geldt het oude gedrag (alles aan). */
+const isOntbrekend = (err: unknown): boolean => (err as { code?: string })?.code === '42P01' || (err instanceof Error && /relation "app\.ai_(?:site_schakelaars|gebruiker_caps)" does not exist/.test(err.message));
 
 export function vergeetStaat(): void { cache = null; }
 
@@ -22,8 +27,12 @@ export async function leesStaat(): Promise<SiteStaat> {
     const staat = staatVanRijen(rows as { sleutel: string; aan: boolean }[]);
     cache = { at: Date.now(), staat };
     return staat;
-  } catch {
-    return STANDAARD_STAAT;
+  } catch (err) {
+    // SEC-002 (ai-mcp-13): alleen «tabel ontbreekt» (migratie nog niet gedraaid) = standaard. Elke andere fout (time-out, volle pool,
+    // verbroken verbinding) opende vroeger stil alle schakelaars; nu de laatste geslaagde stand als die vers genoeg is, anders weigeren.
+    if (isOntbrekend(err)) return STANDAARD_STAAT;
+    if (cache && Date.now() - cache.at < NOODVENSTER) return cache.staat;
+    throw new Error('CAP_ONBEKEND');
   }
 }
 
@@ -49,9 +58,15 @@ export async function leesGebruikerCaps(userId: string): Promise<GebruikerCaps> 
       if (!isBordKlant(rij.klant) || !isPriveCap(rij.cap) || typeof rij.aan !== 'boolean') continue;
       (uit[rij.klant] ??= {})[rij.cap] = rij.aan;
     }
+    capsCache.set(userId, { at: Date.now(), caps: uit });
+    if (capsCache.size > 2000) capsCache.delete(capsCache.keys().next().value as string);
     return uit;
-  } catch {
-    return {};
+  } catch (err) {
+    // SEC-002 (ai-mcp-13): zie leesStaat — alleen een ontbrekende tabel betekent «niets uitgezet».
+    if (isOntbrekend(err)) return {};
+    const laatst = capsCache.get(userId);
+    if (laatst && Date.now() - laatst.at < NOODVENSTER) return laatst.caps;
+    throw new Error('CAP_ONBEKEND');
   }
 }
 

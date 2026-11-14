@@ -9,10 +9,11 @@ import {
   type ChangeEvent,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
+import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
   ChevronDown,
-  ChevronUp,
   FileText,
   KeyRound,
   LifeBuoy,
@@ -42,7 +43,8 @@ const RuimteWissel = lazy(() => import('./tech/ruimtes/RuimteWissel'));
 const UITLOG_GEBEURTENIS = 'mr-ruimtes-uitloggen';
 import { weergaveGebruiker } from './weergave/weergave-opslag';
 import { openDiagnose } from './diagnose/open';
-import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
+import { leesKeuze } from './thema/kern';
+import { hervatAuto, pauzeerAuto, useAutoStatus, zetPalet } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
   readAccountPreviewHistory,
@@ -67,6 +69,8 @@ import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoo
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';
+import { useAccountmenuV3 } from './accountmenu-v3/vlag';
+import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
 import Vraag from './tech/Vraag';
 import { isLeesfout } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
@@ -123,7 +127,7 @@ const copy = {
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через',
+    firstLogin: 'Увійти в обліковий запис через Google',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
@@ -138,9 +142,18 @@ const copy = {
     device: 'Пристрій',
     auto: 'Авто',
     autoHint: 'Автоматично: темна, коли надворі темно (або за вашим розкладом)',
-    pauze: 'Скасувати автоперемикання на сьогодні',
+    pauze: 'Призупинити до наступного перемикання',
     hervat: 'Повернути автоперемикання',
     kleuren: 'Кольори теми…',
+    maquette: 'Вигляд: Макет',
+    maquetteAan: 'Вигляд: Макет ✓',
+    maquetteHint: 'Увімкнути або вимкнути студійну палітру «Макет»',
+    klassiekWit: 'Біла класика',
+    klassiekWitAan: 'Біла класика ✓',
+    klassiekWitHint: 'Увімкнути або вимкнути прагматичну тему «Біла класика»',
+    klassiekZwart: 'Чорна класика',
+    klassiekZwartAan: 'Чорна класика ✓',
+    klassiekZwartHint: 'Увімкнути або вимкнути прагматичну тему «Чорна класика»',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -168,7 +181,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via',
+    firstLogin: 'Aanmelden bij een account via Google',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -183,9 +196,18 @@ const copy = {
     device: 'Apparaat',
     auto: 'Auto',
     autoHint: 'Automatisch: donker wanneer het buiten donker is (of volgens uw schema)',
-    pauze: 'Automatisch wisselen vandaag annuleren',
+    pauze: 'Pauzeren tot de volgende wissel',
     hervat: 'Automatisch wisselen hervatten',
     kleuren: 'Themakleuren…',
+    maquette: 'Uiterlijk: Ontwerp',
+    maquetteAan: 'Uiterlijk: Ontwerp ✓',
+    maquetteHint: 'Studiopalet «Ontwerp» in- of uitschakelen',
+    klassiekWit: 'Witte klassiek',
+    klassiekWitAan: 'Witte klassiek ✓',
+    klassiekWitHint: 'Pragmatisch thema «Witte klassiek» in- of uitschakelen',
+    klassiekZwart: 'Zwarte klassiek',
+    klassiekZwartAan: 'Zwarte klassiek ✓',
+    klassiekZwartHint: 'Pragmatisch thema «Zwarte klassiek» in- of uitschakelen',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -249,14 +271,10 @@ export const accountWisselMelding = (lang: 'uk' | 'nl', stand: AccountWisselStan
 };
 
 export const rememberedAccountStatusLabel = (status: AccountPresenceStatus, lang: 'uk' | 'nl') => {
-  const t = copy[lang];
-  return status === 'active'
-    ? t.active
-    : status === 'signed_in'
-      ? t.signedIn
-      : status === 'registration'
-        ? t.registration
-        : t.reauth;
+  if (status === 'active') return lang === 'uk' ? 'Активний' : 'Actief';
+  if (status === 'signed_in') return lang === 'uk' ? 'Готовий до входу' : 'Klaar om te openen';
+  if (status === 'registration') return lang === 'uk' ? 'Завершити реєстрацію' : 'Registratie voltooien';
+  return lang === 'uk' ? 'Увійти через Google' : 'Aanmelden met Google';
 };
 
 function Avatar({ user, size = 'regular' }: { user: AccountMenuUser; size?: 'profile' | 'hero' | 'regular' | 'mini' }) {
@@ -321,6 +339,23 @@ function IconAction({
   );
 }
 
+function useMobielAccountVenster(): boolean {
+  const [mobiel, setMobiel] = useState<boolean>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 700px)').matches
+      : false,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(max-width: 700px)');
+    const werkBij = () => setMobiel(media.matches);
+    werkBij();
+    media.addEventListener?.('change', werkBij);
+    return () => media.removeEventListener?.('change', werkBij);
+  }, []);
+  return mobiel;
+}
+
 export default function CanonicalAccountMenu({
   lang,
   theme,
@@ -345,6 +380,8 @@ export default function CanonicalAccountMenu({
   const tech = useTech();
   const v2 = useRuimtesV2();
   const am2 = useAccountmenuV2();
+  const am3 = useAccountmenuV3();
+  const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
@@ -356,6 +393,7 @@ export default function CanonicalAccountMenu({
   const techUid = user?.id;
   useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
+  const portaalRef = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   // UI-008: de tooltip van de kleine avatar noemt ook hoeveel andere accounts er zijn; die lijst één keer ophalen bij aanwijzen.
   const geladenVoorTip = useRef(false);
@@ -385,6 +423,11 @@ export default function CanonicalAccountMenu({
     setGewisseld(null);
   };
 
+  const sluitMetLade = () => {
+    close();
+    if (mobielVenster) ladeBediening()?.sluit();
+  };
+
   const applySnapshot = (next: AccountMenuSnapshot) => {
     setSnapshot(next);
     // History can refine MRU only for authoritative accounts; it never creates preview candidates.
@@ -399,8 +442,15 @@ export default function CanonicalAccountMenu({
     setLoadFailed(false);
     try {
       applySnapshot(normalizeAccountMenuSnapshot(await onLoadAccounts()));
-    } catch {
-      setLoadFailed(true);
+    } catch (caught) {
+      const status = Number(
+        (caught as { status?: number; response?: { status?: number } })?.status ??
+          (caught as { response?: { status?: number } })?.response?.status ??
+          0,
+      );
+      if (user && status !== 401 && status !== 403) {
+        setLoadFailed(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -417,7 +467,8 @@ export default function CanonicalAccountMenu({
   useEffect(() => {
     setProfileOverride(null);
     setPhotoError(false);
-  }, [user?.id, user?.accountId, user?.email]);
+    setLoadFailed(false);
+  }, [user?.id, user?.accountId, user?.email, user?.picture, user?.customPicture, user?.customPhoto, user?.providerPicture]);
 
   const displayUser = profileOverride && user && isSameAccount(profileOverride, user) ? profileOverride : user;
 
@@ -428,7 +479,7 @@ export default function CanonicalAccountMenu({
 
   useEffect(() => {
     const outside = (event: PointerEvent) => {
-      if (!open || root.current?.contains(event.target as Node)) return;
+      if (!open || root.current?.contains(event.target as Node) || portaalRef.current?.contains(event.target as Node)) return;
       const target = event.target as Element;
       const opensMail = Boolean(target.closest('.google-mail-open,.mail-row-date-mode'));
       const functional = Boolean(target.closest('button,a,input,select,textarea,summary,[contenteditable="true"],[role="button"],[role="menuitem"],[role="checkbox"],[tabindex]:not([tabindex="-1"]),.mail-row-interactive,.mail-row-hover-actions'));
@@ -543,6 +594,14 @@ export default function CanonicalAccountMenu({
   const device = theme === 'device';
   const auto = theme === 'auto';
   const autoStatus = useAutoStatus(theme);
+  const huidigPalet = leesKeuze(theme, autoStatus.palet).palet;
+  const wisselSysteemPalet = (doel: 'maquette' | 'klassiek-wit' | 'klassiek-zwart') => {
+    zetPalet(huidigPalet === doel ? 'kleur' : doel);
+    if (theme === 'plum-light' || theme === 'plum-dark') {
+      onTheme(theme === 'plum-dark' ? 'dark' : 'light');
+    }
+  };
+  const wisselMaquette = () => wisselSysteemPalet('maquette');
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
 
@@ -568,7 +627,11 @@ export default function CanonicalAccountMenu({
                 <strong>{item.user.name || item.user.email}</strong>
                 <small>{item.user.email}</small>
                 <span className='canonical-account-statuses'>
-                  <em>{rememberedAccountStatusLabel(status, lang)}</em>
+                  <em>
+                    {selecting === item.grantId
+                      ? (lang === 'uk' ? 'Переходимо до входу…' : 'Doorsturen naar aanmelding…')
+                      : rememberedAccountStatusLabel(status, lang)}
+                  </em>
                 </span>
               </span>
               {selecting === item.grantId
@@ -631,7 +694,34 @@ export default function CanonicalAccountMenu({
           </button>
         </div>
       )}
-      <div className='canonical-thema-kleuren-link'>
+      <div className='canonical-thema-kleuren-link' style={{ justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'maquette'}
+          title={t.maquetteHint}
+          onClick={wisselMaquette}
+          data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'maquette' ? t.maquetteAan : t.maquette}
+        </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-wit'}
+          title={t.klassiekWitHint}
+          onClick={() => wisselSysteemPalet('klassiek-wit')}
+          data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-wit' ? t.klassiekWitAan : t.klassiekWit}
+        </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-zwart'}
+          title={t.klassiekZwartHint}
+          onClick={() => wisselSysteemPalet('klassiek-zwart')}
+          data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-zwart' ? t.klassiekZwartAan : t.klassiekZwart}
+        </button>
         <button type='button' onClick={() => { close(); onThemeColors?.(); }} data-thema-kleuren>{t.kleuren}</button>
       </div>
     </div>
@@ -675,6 +765,48 @@ export default function CanonicalAccountMenu({
           <Settings />
         </button>
       </div>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'maquette'}
+        title={t.maquetteHint}
+        onClick={wisselMaquette}
+        data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+      >
+        <Palette aria-hidden='true' />
+        <span>{t.maquette}</span>
+        <em className={`am2-stand${huidigPalet === 'maquette' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'maquette' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-wit'}
+        title={t.klassiekWitHint}
+        onClick={() => wisselSysteemPalet('klassiek-wit')}
+        data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+      >
+        <Sun aria-hidden='true' />
+        <span>{t.klassiekWit}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-wit' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-wit' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-zwart'}
+        title={t.klassiekZwartHint}
+        onClick={() => wisselSysteemPalet('klassiek-zwart')}
+        data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+      >
+        <Moon aria-hidden='true' />
+        <span>{t.klassiekZwart}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-zwart' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-zwart' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
     </div>
   );
 
@@ -685,6 +817,18 @@ export default function CanonicalAccountMenu({
       <a href='?legal=terms' data-legal-link='terms' onClick={close}><FileText />{t.terms}</a>
     </div>
   );
+
+  const wisselMeldingData = gewisseld
+    ? {
+        email: gewisseld.email,
+        ...accountWisselMelding(lang, {
+          techBeeindigd: gewisseld.techBeeindigd,
+          heeftTechProfiel: !!tech.profiel,
+          techActief: techActief(tech),
+          techGeladen: tech.geladen,
+        }),
+      }
+    : null;
 
   return (
     <div
@@ -702,6 +846,7 @@ export default function CanonicalAccountMenu({
       data-signed-out={!displayUser ? 'true' : 'false'}
       data-profile-photo-control={onProfilePhotoChange ? 'enabled' : 'unavailable'}
       data-account-menu-v2={am2 ? 'aan' : undefined}
+      data-account-menu-v3={am3 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
         {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
@@ -715,11 +860,11 @@ export default function CanonicalAccountMenu({
       <button
         type='button'
         className='canonical-avatar-trigger'
-        aria-label={open ? t.close : am2 && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
-        title={am2 && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
+        aria-label={open ? t.close : (am2 || am3) && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
+        title={(am2 || am3) && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
         data-am2-tip={am2 && displayUser ? 'ja' : undefined}
-        onPointerEnter={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
-        onFocus={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onPointerEnter={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onFocus={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
         aria-haspopup='dialog'
         aria-expanded={open}
         onClick={() => open ? close() : setOpen(true)}
@@ -731,8 +876,114 @@ export default function CanonicalAccountMenu({
             : <span className='canonical-account-avatar avatar-hero'><UserRound /></span>}
       </button>
 
-      {open && (
+      {open && am3 && mobielVenster && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={portaalRef}
+              className='am3-mobiel-laag'
+              data-account-menu-v3='aan'
+              data-no-edge-swipe='1'
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+            >
+              <div className='am3-mobiel-scrim' aria-hidden='true' onClick={close} />
+              <section
+                className='canonical-account-panel am3-mobiel-paneel'
+                role='dialog'
+                aria-modal='true'
+                aria-label={t.accounts}
+              >
+                <AccountMenuV3
+                  lang={lang}
+                  theme={theme}
+                  displayUser={displayUser}
+                  visibleRows={visibleRows}
+                  shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+                  expanded={expanded}
+                  onToggleExpanded={() => { setExpanded((value) => !value); }}
+                  busy={busy}
+                  selecting={selecting}
+                  forgetting={forgetting}
+                  loading={loading}
+                  loadFailed={loadFailed}
+                  photoBusy={photoBusy}
+                  photoError={photoError}
+                  photoLeesfout={photoLeesfout}
+                  photoFailedText={t.photoFailed}
+                  changePhotoLabel={t.changePhoto}
+                  manageLabel={t.manage}
+                  settingsLabel={t.settings}
+                  privacyLabel={t.privacy}
+                  termsLabel={t.terms}
+                  showLogoutAll={showLogoutAll}
+                  wisselMelding={wisselMeldingData}
+                  v2Ruimtes={v2}
+                  onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
+                  onSelectAccount={select}
+                  onForgetAccount={onForgetAccount ? forget : undefined}
+                  onAddAccount={add}
+                  onManage={onManage}
+                  onSettings={onSettings}
+                  onTheme={onTheme}
+                  onThemeColors={onThemeColors}
+                  onLanguage={onLanguage}
+                  onLogout={onLogout}
+                  onLogoutAll={onLogoutAll}
+                  onClose={close}
+                  onSluitNavigatie={sluitMetLade}
+                  mobiel
+                  renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+                />
+              </section>
+            </div>,
+            document.querySelector('.canonical-chrome') ?? document.body,
+          )
+        : null}
+
+      {open && !(am3 && mobielVenster && typeof document !== 'undefined') && (
         <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+          {am3 ? (
+            <AccountMenuV3
+              lang={lang}
+              theme={theme}
+              displayUser={displayUser}
+              visibleRows={visibleRows}
+              shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+              expanded={expanded}
+              onToggleExpanded={() => { setExpanded((value) => !value); }}
+              busy={busy}
+              selecting={selecting}
+              forgetting={forgetting}
+              loading={loading}
+              loadFailed={loadFailed}
+              photoBusy={photoBusy}
+              photoError={photoError}
+              photoLeesfout={photoLeesfout}
+              photoFailedText={t.photoFailed}
+              changePhotoLabel={t.changePhoto}
+              manageLabel={t.manage}
+              settingsLabel={t.settings}
+              privacyLabel={t.privacy}
+              termsLabel={t.terms}
+              showLogoutAll={showLogoutAll}
+              wisselMelding={wisselMeldingData}
+              v2Ruimtes={v2}
+              onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
+              onSelectAccount={select}
+              onForgetAccount={onForgetAccount ? forget : undefined}
+              onAddAccount={add}
+              onManage={onManage}
+              onSettings={onSettings}
+              onTheme={onTheme}
+              onThemeColors={onThemeColors}
+              onLanguage={onLanguage}
+              onLogout={onLogout}
+              onLogoutAll={onLogoutAll}
+              onClose={close}
+              renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+            />
+          ) : (
+            <>
           {displayUser ? (
             <>
               <header className='canonical-current-account'>
@@ -819,7 +1070,7 @@ export default function CanonicalAccountMenu({
                         <IllustrativePreviews items={model.collapsedSwitchPreviewAccounts} mode='quick' />
                       )}
                       <span className='canonical-other-toggle-pijl' aria-hidden='true'>
-                        {expanded ? <ChevronUp /> : <ChevronDown />}
+                        <ChevronDown />
                       </span>
                     </button>
                   </div>
@@ -983,6 +1234,8 @@ export default function CanonicalAccountMenu({
             </div>
           ) : null}
           {footer}
+            </>
+          )}
         </section>
       )}
     </div>

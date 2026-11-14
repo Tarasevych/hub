@@ -3,6 +3,17 @@
 # root-lijst toegestaan.json (standaard alleen «beheer»), met alleen permit-pty. De app kan dit niet zelf: schakelaar "ssh-ca"
 # in mcp-rechten.json ontbreekt of is iets anders dan true → geen handtekening.
 #
+# SEC-002 (server-uitrol-06): root tekent ALLEEN met een passkey van de eigenaar over precies dit certificaat (publieke sleutel,
+# principals, duur; nonce eenmalig, ≤ 5 min) — `mijn-ruimte-passkey verifieer-ssh-ca <bestand> teken`. Een verzoek in de inbox is
+# dus niet meer genoeg: wie code als de app kan uitvoeren, krijgt zonder de passkey van de eigenaar geen toegang tot de host.
+#   "ssh-ca-teken-passkey" in mcp-rechten.json (root-bestand; de app kan het niet wijzigen):
+#     ontbreekt   passkey verplicht zodra de passkey-infrastructuur er is (het sleutelbestand goedkeur-passkeys.json bestaat;
+#                 de installer maakt het altijd aan). Staat er nog geen passkey in → geweigerd, niet stil getekend.
+#     true        altijd verplicht.
+#     false   (!) NIET verplicht — bewuste keuze van de eigenaar als root. Risico: elk verzoek van de app wordt weer getekend;
+#                 een inbreker met de rechten van de app krijgt dan een shell op de host. Elke handtekening zonder passkey
+#                 staat met die waarschuwing in het journaal.
+#
 # Beheer vanaf de site (18.10.2026, `beheer`, unit mijn-ruimte-ssh-ca-beheer.service): de app legt een verzoek in
 # /srv/mijn-ruimte/ssh-ca-beheer; root voert het uit:
 #   status       stand schrijven (CA, sshd vertrouwt de CA, schakelaar, KRL) — geen assertie nodig
@@ -21,7 +32,7 @@ if [ "$(id -u)" -eq 0 ]; then
     MIJN_RUIMTE_SSH_CA_WERK MIJN_RUIMTE_SSH_CA_UIT MIJN_RUIMTE_SSH_CA_STATUS \
     MIJN_RUIMTE_SSH_CA_GROEP MIJN_RUIMTE_SSH_CA_LIMIET MIJN_RUIMTE_SSH_CA_BEHEER_INBOX \
     MIJN_RUIMTE_SSH_CA_SSHD_DROPIN MIJN_RUIMTE_SSH_CA_SSHD_CONFIG MIJN_RUIMTE_SSH_CA_SSHD_BIN \
-    MIJN_RUIMTE_SSH_CA_SYSTEMCTL MIJN_RUIMTE_SSH_CA_PASSKEY MIJN_RUIMTE_SSH_CA_ACCOUNT
+    MIJN_RUIMTE_SSH_CA_SYSTEMCTL MIJN_RUIMTE_SSH_CA_PASSKEY MIJN_RUIMTE_SSH_CA_ACCOUNT MIJN_RUIMTE_SSH_CA_SLEUTELS
 fi
 
 CA_DIR="${MIJN_RUIMTE_SSH_CA_DIR:-/etc/mijn-ruimte/ssh-ca}"
@@ -39,6 +50,8 @@ SSHD_BIN="${MIJN_RUIMTE_SSH_CA_SSHD_BIN:-/usr/sbin/sshd}"
 SYSTEMCTL="${MIJN_RUIMTE_SSH_CA_SYSTEMCTL:-/usr/bin/systemctl}"
 PASSKEY="${MIJN_RUIMTE_SSH_CA_PASSKEY:-/usr/local/sbin/mijn-ruimte-passkey}"
 ACCOUNT="${MIJN_RUIMTE_SSH_CA_ACCOUNT:-beheer}"
+# Sleutelbestand van de root-passkeys: alleen of het BESTAAT telt hier (de controle zelf doet mijn-ruimte-passkey).
+SLEUTELS="${MIJN_RUIMTE_SSH_CA_SLEUTELS:-/etc/mijn-ruimte/goedkeur-passkeys.json}"
 ID_RE='^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
 case "$LIMIET" in
   ''|*[!0-9]*) LIMIET=12 ;;
@@ -85,9 +98,9 @@ EOT
 }
 
 teken_py() {
-  /usr/bin/python3 - "$CA_DIR" "$WERK" "$UIT" "$RECHTEN" "$STATUS" "$LIMIET" "$1" "$2" "$GROEP" <<'PY'
+  /usr/bin/python3 - "$CA_DIR" "$WERK" "$UIT" "$RECHTEN" "$STATUS" "$LIMIET" "$1" "$2" "$GROEP" "$PASSKEY" "$SLEUTELS" <<'PY'
 import datetime, grp, json, os, re, secrets, subprocess, sys
-ca_dir, werk, uit, rechten, status, limiet_s, sid, aanvraag, groep = sys.argv[1:10]
+ca_dir, werk, uit, rechten, status, limiet_s, sid, aanvraag, groep, passkey, sleutels = sys.argv[1:12]
 limiet = int(limiet_s)
 py = "/usr/bin/ssh-keygen"
 PUB = re.compile(r"ssh-ed25519 [A-Za-z0-9+/]{68}\Z")
@@ -153,13 +166,58 @@ def weiger(code, uk, nl):
     noteer(code, "geweigerd", uk, nl)
     return 0
 
-def schakelaar():
+def rechten_data():
     try:
         with open(rechten, encoding="utf-8") as f:
             d = json.load(f)
     except Exception:
+        return {}
+    return d if isinstance(d, dict) else {}
+
+def schakelaar():
+    return rechten_data().get("ssh-ca") is True
+
+def passkey_vereist():
+    # SEC-002: alleen exact false (door root gezet) zet de controle uit. Het bestaan van het sleutelbestand telt, niet het
+    # aantal sleutels: de app mag passkeys laten intrekken (veilige richting) en zou de controle anders zelf kunnen uitzetten.
+    modus = rechten_data().get("ssh-ca-teken-passkey")
+    if modus is False:
         return False
-    return isinstance(d, dict) and d.get("ssh-ca") is True
+    return modus is True or os.path.lexists(sleutels)
+
+def teken_passkey_ok(d, pub, gevraagd, minuten):
+    # Het verzoek van de app is één keer gelezen (raw). Wat root gaat tekenen schrijft hij zelf in een eigen bestand (0600)
+    # en DAT controleert de passkey-hulp: de app kan niet het ene laten controleren en het andere laten tekenen.
+    pk = d.get("passkey")
+    if not isinstance(pk, dict) or "minuten" not in d or "toegang" not in d:
+        return False
+    a = pk.get("assertie")
+    verloopt = pk.get("verloopt")
+    if not isinstance(pk.get("nonce"), str) or isinstance(verloopt, bool) or not isinstance(verloopt, int) or not isinstance(a, dict):
+        return False
+    velden = ("credentialId", "clientDataJSON", "authenticatorData", "signature")
+    if any(not isinstance(a.get(k), str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,8192}", a.get(k)) for k in velden):
+        return False
+    norm = {"doel": "ssh-ca", "actie": "teken", "publiek": pub, "toegang": gevraagd, "minuten": minuten,
+            "passkey": {"nonce": pk["nonce"], "verloopt": verloopt, "assertie": {k: a[k] for k in velden}}}
+    pkpad = os.path.join(werk, sid + ".passkey.json")
+    try:
+        try:
+            os.remove(pkpad)
+        except FileNotFoundError:
+            pass
+        fd = os.open(pkpad, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(norm, f)
+        r = subprocess.run([passkey, "verifieer-ssh-ca", pkpad, "teken"], stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60)
+        return r.returncode == 0
+    except Exception:
+        return False
+    finally:
+        try:
+            os.remove(pkpad)
+        except Exception:
+            pass
 
 try:
     st = os.lstat(aanvraag)
@@ -168,8 +226,9 @@ try:
     nu = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
     if nu - int(st.st_mtime) > 90 or int(st.st_mtime) - nu > 30:
         sys.exit(weiger("SSH_CA_TE_OUD", "Запит на сертифікат застарів.", "Het certificaatverzoek is te oud."))
-    raw = open(aanvraag, "rb").read(4096)
-    if len(raw) > 2048:
+    # 8192 (was 2048): het verzoek draagt nu ook de passkey-assertie van de eigenaar.
+    raw = open(aanvraag, "rb").read(16385)
+    if len(raw) > 8192:
         sys.exit(weiger("SSH_CA_SLEUTEL", "Публічний ключ не прийнято.", "Publieke sleutel niet aanvaard."))
     if not schakelaar():
         sys.exit(weiger("SSH_CA_UIT", "Підпис SSH-сертифікатів вимкнено.", "Ondertekenen van SSH-certificaten staat uit."))
@@ -209,6 +268,11 @@ try:
     tijden = [t for t in tijden if nu - t < 3600]
     if len(tijden) >= limiet:
         sys.exit(weiger("SSH_CA_LIMIET", "Забагато сертифікатів за цю годину.", "Te veel certificaten in dit uur."))
+    # SEC-002 (server-uitrol-06): na alle goedkope controles en vóór serienummer en handtekening. De nonce is daarna verbruikt.
+    met_passkey = passkey_vereist()
+    if met_passkey and not teken_passkey_ok(d, pub, gevraagd, minuten):
+        sys.exit(weiger("SSH_CA_PASSKEY", "Root не підтвердив passkey власника саме для цього ключа — сертифікат не підписано.",
+                        "Root heeft de passkey van de eigenaar voor precies deze sleutel niet bevestigd — geen certificaat getekend."))
     volg = os.path.join(ca_dir, "volgende")
     try:
         n = int(open(volg, encoding="utf-8").read().strip() or "0")
@@ -276,7 +340,9 @@ try:
         f.write("\n".join(str(t) for t in tijden) + "\n")
     os.chmod(uitgiften, 0o600)
     schrijf("SSH_CA_OK", True, {"cert": cert, "geldigTot": vm.group(2), "vinger": vinger, "principal": gevraagd[0], "principals": gevraagd, "minuten": minuten, "serie": n})
-    noteer("SSH_CA_OK", "info", "Сертифікат SSH №%d для %s на %d хв: %s." % (n, ident, minuten, ", ".join(gevraagd)), "SSH-certificaat nr. %d voor %s, %d min: %s." % (n, ident, minuten, ", ".join(gevraagd)), vinger)
+    hoe_uk = " Підтверджено passkey власника." if met_passkey else " УВАГА: без passkey власника (ssh-ca-teken-passkey вимкнено або немає файлу ключів)."
+    hoe_nl = " Bevestigd met de passkey van de eigenaar." if met_passkey else " LET OP: zonder passkey van de eigenaar (ssh-ca-teken-passkey staat uit of het sleutelbestand ontbreekt)."
+    noteer("SSH_CA_OK", "info", "Сертифікат SSH №%d для %s на %d хв: %s.%s" % (n, ident, minuten, ", ".join(gevraagd), hoe_uk), "SSH-certificaat nr. %d voor %s, %d min: %s.%s" % (n, ident, minuten, ", ".join(gevraagd), hoe_nl), vinger)
 except subprocess.CalledProcessError:
     weiger("SSH_CA_CONTROLE", "Сертифікат не пройшов перевірку.", "Het certificaat kwam niet door de controle.")
 except Exception:
@@ -676,7 +742,7 @@ tekenen_een() {
     mv -n -- "$bron" "$doel" || exit 0
     if [ -L "$doel" ] || [ ! -f "$doel" ]; then rm -f -- "$doel"; exit 0; fi
     teken_py "$id" "$doel" || true
-    rm -f -- "$doel" "$WERK/$id.pub" "$WERK/$id-cert.pub"
+    rm -f -- "$doel" "$WERK/$id.pub" "$WERK/$id-cert.pub" "$WERK/$id.passkey.json"
   ) 9>"$WERK/.lock"
 }
 

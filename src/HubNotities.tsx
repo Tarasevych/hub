@@ -28,6 +28,7 @@ import {
   type NotitieKleur, type NotitieSoort, type NotitieVorm,
 } from '../shared/notities-model';
 import './hub-notities.css';
+import './notities/notities-maquette.css';
 
 export type HubNotitie = { id: string; title: string; body: string; tags: string[]; author: string; createdAt: string; updatedAt: string };
 const body = () => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });

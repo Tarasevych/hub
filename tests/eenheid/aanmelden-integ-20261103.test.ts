@@ -113,12 +113,15 @@ export async function main(): Promise<number> {
   check('3. hover/focus: alleen een rustige rand, geen animatie of conic-gradient', hover.length > 0 && !/animation|conic-gradient/.test(hover));
   check('3. de rotatie (conic-gradient + animatie) zit uitsluitend op [data-activated=\'true\']',
     (css.match(/animation:mr-login-ring/g) || []).length === 1 && regel(".canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-activated='true']").includes('animation:mr-login-ring'));
-  check('1. het blad: width:auto en hoogte = venster min tweemaal dezelfde marge (geen schuifbalk, niet uit het midden)',
-    css.includes('--mr-login-rand:clamp(10px,3.5vw,56px)') && css.includes('width:auto;max-width:none;min-height:calc(100dvh - 2 * var(--mr-login-rand))') && css.includes('margin:var(--mr-login-rand)!important'));
+  check('1. het aanmeldscherm vult 100% van het venster zonder buitenmarge, zonder binnenkader en zonder werkblad-achtergrond',
+    css.includes('width:100%;max-width:none;min-height:100vh;min-height:100dvh') && css.includes('margin:0!important') && css.includes('border:0!important;border-radius:0!important;box-shadow:none!important')
+    && css.includes('.canonical-chrome.schil-achtergrond:has(.mr-sign-in)::before{content:none!important') && css.includes('html body main.canonical-chrome:has(.mr-sign-in) .canonical-workspace'));
   check('1. de reserve van de zwevende stapel geeft op het aanmeldscherm geen extra hoogte', css.includes('.canonical-chrome:has(.mr-sign-in) .canonical-workspace::after{content:none!important;height:0!important}'));
-  check('1. telefoonregel met dezelfde specificiteit als de hoofdregel (vroeger dood)', /@media\(max-width:700px\)\{[\s\S]*\.canonical-chrome\[data-surface-model='flat-content'\] \.canonical-content \.canonical-signed-out\.mr-sign-in\{--mr-login-rand:8px/.test(css));
+  check('1. telefoonregel met dezelfde specificiteit als de hoofdregel houdt 0 px marge en een ronde avatarknop (38×38 px)',
+    /@media\(max-width:700px\)\{[\s\S]*\.canonical-chrome\[data-surface-model='flat-content'\] \.canonical-content \.canonical-signed-out\.mr-sign-in\{\s*--mr-login-rand:0px/.test(css)
+    && css.includes('button.canonical-avatar-trigger') && css.includes('min-height:38px'));
   check('2. logo-verhouding: «G» 18 px op een witte plaat van 34 px, kolommen 34px · 1fr · 34px',
-    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && css.includes('width:34px;height:34px;border-radius:50%;background:#fff') && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
+    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && /width:34px;height:34px;border-radius:50%;background:(var\(--papier\)|#fff)/.test(css) && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
   check('4. optieknoppen winnen van de oude algemene regel «.canonical-signed-out button»', css.includes('.canonical-signed-out.mr-sign-in .mr-sign-in-optie{') && !/\n\.mr-sign-in-optie\{/.test(css));
 
   // ------------------------------------------------------------------ 4. andere aanmeldwegen
@@ -127,10 +130,13 @@ export async function main(): Promise<number> {
   check('4. volgorde van de eigenaar: GitHub, Apple, Microsoft, passkey — Google niet dubbel', ids === 'github,apple,microsoft,passkey');
   // TELEGRAM-001 (09.11.2026): власник вимагає жодної англійської — «passkey» → «ключ доступу».
   check('4. passkey met de woorden van de eigenaar (zonder Engels sinds 09.11)', andere.AANMELD_INGANGEN[3].titel[0] === 'Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу');
-  // Eerlijkheid tegen de echte backend: zolang deze zinnen in de bron staan, kan geen van de vier een sessie geven.
-  const koppel = lees('backend/aanmeld-koppel.ts'), sleutels = lees('backend/toegangssleutels.ts'), gh = lees('backend/github-oauth.ts');
-  const backendKanGeenAndereAanmelding = koppel.includes('het geeft GEEN sessies uit') && sleutels.includes('Inloggen zonder Google met alleen een passkey kan (nog) NIET') && gh.includes('Echte OAuth-koppeling met GitHub');
-  check('4. eerlijk: de backend geeft vandaag alleen via Google een sessie → alle vier uitgeschakeld met reden', backendKanGeenAndereAanmelding && andere.AANMELD_INGANGEN.every((x) => !x.beschikbaar && x.reden[0].length > 30 && x.reden[1].length > 30));
+  // IDENTITEIT-015 (aanmelden, 14.11.2026): ключ доступу, Apple й Microsoft ТЕПЕР можуть дати сеанс — але лише за прапорцями власника
+  // (backend/aanmelden-methoden.ts). Тому перевірка змінилася законно: статичний список і далі — вимкнені рядки з причиною; робочий спосіб
+  // з'являється лише як справжня кнопка через `extra`, коли сервер назвав його в /config → methoden (src/CanoniekOmlijsting.tsx).
+  // Eerlijkheid: GitHub blijft een dienst; de andere drie geven pas een sessie via de vlaggen, nooit via deze statische lijst.
+  const koppel = lees('backend/aanmeld-koppel.ts'), methoden = lees('backend/aanmelden-methoden.ts'), schilBron = lees('src/CanoniekOmlijsting.tsx'), gh = lees('backend/github-oauth.ts');
+  const alleenViaServer = koppel.includes('het geeft zelf GEEN sessies uit') && methoden.includes("vlagPubliek(WEG_VLAG.passkey)") && schilBron.includes('werkendZonderGoogle') && gh.includes('Echte OAuth-koppeling met GitHub');
+  check('4. eerlijk: zonder bericht van de server zijn alle vier uitgeschakeld met reden; werkende wegen komen alleen via de server (methoden)', alleenViaServer && andere.AANMELD_INGANGEN.every((x) => !x.beschikbaar && x.reden[0].length > 30 && x.reden[1].length > 30));
   // Het merkregister laadt lui (in de browser direct na het openklappen); hier eerst laden, zoals de pagina het doet.
   const reg = await import('../../src/merk/merk-register');
   await reg.laadMerken(); await reg.laadOfficieel();

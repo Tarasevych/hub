@@ -52,7 +52,7 @@ const stanTekst = (lang: Taal, stan: string) => STAN[stan]?.[lang] || stan;
 const helder = () => typeof document !== 'undefined' &&
   (document.documentElement.classList.contains('theme-light') || document.documentElement.classList.contains('theme-plum-light'));
 const zonderBeweging = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-const normaal = (t: string) => t.toLowerCase().replace(/[’'ʼ`«»"„“]/g, '').replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+const normaal = (t: string) => t.toLowerCase().replace(/[’'ʼ`«»"„“]/g, '').replace(/\u0451/g, 'е').replace(/\s+/g, ' ').trim();
 
 /** Найближчий предок, що прокручується (на сайті це робоча область, а не вікно). */
 function schuifouder(el: HTMLElement | null): HTMLElement | null {
@@ -308,6 +308,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
               <ChevronDown size={18} className='mr-at-pijl'/>
             </button>
             <button type='button' className='mr-at-rond' onClick={() => { setVraag(''); setKiezer('zoek'); }} aria-label={vertaal(lang, 'Знайти налаштування', 'Instelling zoeken')}><Search size={18}/></button>
+            <button type='button' className='mr-at-rond' aria-haspopup='dialog' aria-expanded={instellingen} onClick={() => setInstellingen(v => !v)} aria-label={vertaal(lang, 'Вигляд і навігація', 'Weergave en navigatie')}><Settings2 size={18}/></button>
             {voortgang}
           </div>
 

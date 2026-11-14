@@ -15,6 +15,7 @@
 // Waarheidsbron bij een conflict: Google (shared/agenda-model.ts → WAARHEIDSBRON). De spiegel is een cache en
 // mag nooit als origineel dienen; daarom staat bij elke rij de `etag` die wij kenden, en gaat die als If-Match mee.
 import { db } from '../server/platform';
+import { auditToevoegen } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
 import { IDEMPOTENTIE_SLEUTEL, WAARHEIDSBRON, normaliseerDeelnemers, type AgendaItem, type Deelnemer } from '../shared/agenda-model';
 import { hoortBij, ladeFilter, ladeVelden, sqlLadeWaar } from '../shared/ruimte-scheiding';
@@ -158,35 +159,104 @@ export type ExterneRij = {
   begin: string; einde: string; heleDag: boolean; tijdzone: string; rrule: string; status: string; reeks: number;
   gewijzigdOp: string; url: string;
 };
-/** De externe spiegel in één keer vervangen voor één bron (abonnement + eventueel één CalDAV-agenda). */
+/**
+ * SEC-002 (integraties-07): hoeveel rijen één vervanging hoogstens schrijft, wat de aanroeper ook aanlevert. Gelijk aan
+ * ICS_MAX_GEBEURTENISSEN en CALDAV_MAX_GEBEURTENISSEN_PER_AGENDA: dit is het TWEEDE hek, vlak voor de database, zodat een
+ * aanroeper die zijn eigen grens vergeet nooit tienduizenden rijen in één transactie kan zetten.
+ */
+export const EXTERNE_SPIEGEL_MAX_RIJEN = 2000;
+/** Hoeveel rijen er in één INSERT gaan. De hele vervanging is zo een handvol opdrachten in plaats van één per afspraak. */
+const EXTERNE_SPIEGEL_PAKKET = 500;
+const INT4_MAX = 2147483647;
+/**
+ * De externe spiegel in één keer vervangen voor één bron (abonnement + eventueel één CalDAV-agenda).
+ *
+ * Vroeger: één INSERT per afspraak binnen één transactie op de systeempool — bij een vreemde server die honderdduizend
+ * afspraken stuurt honderdduizend rondjes naar de database terwijl de verbinding bezet blijft. Nu: hoogstens
+ * EXTERNE_SPIEGEL_MAX_RIJEN rijen, in pakketten van EXTERNE_SPIEGEL_PAKKET via unnest(). Het gedrag voor de lezer blijft
+ * gelijk: komt een UID twee keer voor (een uitzondering op een reeks draagt het UID van de reeks), dan wint de LAATSTE,
+ * precies zoals ON CONFLICT … DO UPDATE dat per rij deed. Met opzet arrays en geen JSON: een titel die op een half teken
+ * is afgesneden (een los surrogaat) zou als JSON geweigerd worden; als tekst wordt het gewoon U+FFFD.
+ */
 export async function externeSpiegelVervang(ownerUserId: string, abonnementId: string, agendaUrl: string, rijen: readonly ExterneRij[]): Promise<number> {
+  const perUid = new Map<string, ExterneRij>();
+  let aangenomen = 0;
+  for (const rij of rijen) {
+    if (aangenomen >= EXTERNE_SPIEGEL_MAX_RIJEN) break;
+    aangenomen += 1;
+    const uid = kort(rij.uid, 500);
+    if (!uid || !rij.begin) continue;
+    perUid.set(uid, rij);
+  }
+  const alle = [...perUid.entries()];
   const klant = await sys().connect();
   try {
     await klant.query('BEGIN');
+    // SEC-002 (nacontrole g08-2): twee gelijktijdige vervangingen van DEZELFDE bron. Elke transactie wiste alleen de rijen
+    // die zij zag en voegde dan haar eigen rijen toe; de rijen van de andere (nog niet vastgelegd) bleven staan. Drie
+    // tegelijk gaven zo 6000 rijen bij een grens van 2000 — ook voor ICS. Deze vergrendeling (tot COMMIT/ROLLBACK) laat ze
+    // na elkaar lopen: de tweede wist pas als de eerste klaar is, en ziet dan ook diens rijen.
+    await klant.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`agenda-spiegel|${ownerUserId}|${abonnementId}|${agendaUrl}`]);
     const lade = ladeOf(ownerUserId);
     await klant.query(`DELETE FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND abonnement_id = $2 AND agenda_url = $3`, [ownerUserId, abonnementId, agendaUrl]);
-    for (const rij of rijen) {
-      if (!rij.uid || !rij.begin) continue;
+    for (let start = 0; start < alle.length; start += EXTERNE_SPIEGEL_PAKKET) {
+      const deel = alle.slice(start, start + EXTERNE_SPIEGEL_PAKKET);
+      const kolom = <T>(waarde: (rij: ExterneRij) => T): T[] => deel.map(([, rij]) => waarde(rij));
       await klant.query(
         `INSERT INTO app.agenda_externe_gebeurtenis
            (user_id, ruimte, abonnement_id, agenda_url, uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url, gezien_op)
-         VALUES ($1,$17,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, now())
+         SELECT $1::text, $4::text, $2::text, $3::text, r.uid, r.titel, r.locatie, r.beschrijving, r.begin_waarde, r.eind_waarde, r.hele_dag, r.tijdzone, r.rrule, r.status, r.reeks, r.gewijzigd_op, r.url, now()
+           FROM unnest($5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], $11::boolean[], $12::text[], $13::text[], $14::text[], $15::integer[], $16::text[], $17::text[])
+             AS r(uid, titel, locatie, beschrijving, begin_waarde, eind_waarde, hele_dag, tijdzone, rrule, status, reeks, gewijzigd_op, url)
          ON CONFLICT (user_id, abonnement_id, agenda_url, uid) DO UPDATE SET
            titel = EXCLUDED.titel, locatie = EXCLUDED.locatie, beschrijving = EXCLUDED.beschrijving,
            begin_waarde = EXCLUDED.begin_waarde, eind_waarde = EXCLUDED.eind_waarde, hele_dag = EXCLUDED.hele_dag,
            tijdzone = EXCLUDED.tijdzone, rrule = EXCLUDED.rrule, status = EXCLUDED.status, reeks = EXCLUDED.reeks,
            gewijzigd_op = EXCLUDED.gewijzigd_op, url = EXCLUDED.url, gezien_op = now()`,
-        [ownerUserId, abonnementId, agendaUrl, kort(rij.uid, 500), kort(rij.titel, 300), kort(rij.locatie, 500), kort(rij.beschrijving, 4000),
-          kort(rij.begin, 40), kort(rij.einde, 40), Boolean(rij.heleDag), kort(rij.tijdzone, 80), kort(rij.rrule, 600),
-          kort(rij.status, 40), Math.max(0, Math.trunc(getal(rij.reeks))), kort(rij.gewijzigdOp, 40), /^https:\/\//i.test(kort(rij.url, 1600)) ? kort(rij.url, 1600) : '', lade.ruimte],
+        [ownerUserId, abonnementId, agendaUrl, lade.ruimte,
+          deel.map(([uid]) => uid), kolom((rij) => kort(rij.titel, 300)), kolom((rij) => kort(rij.locatie, 500)), kolom((rij) => kort(rij.beschrijving, 4000)),
+          kolom((rij) => kort(rij.begin, 40)), kolom((rij) => kort(rij.einde, 40)), kolom((rij) => Boolean(rij.heleDag)), kolom((rij) => kort(rij.tijdzone, 80)),
+          kolom((rij) => kort(rij.rrule, 600)), kolom((rij) => kort(rij.status, 40)), kolom((rij) => Math.min(INT4_MAX, Math.max(0, Math.trunc(getal(rij.reeks))))),
+          kolom((rij) => kort(rij.gewijzigdOp, 40)), kolom((rij) => (/^https:\/\//i.test(kort(rij.url, 1600)) ? kort(rij.url, 1600) : ''))],
       );
     }
     await klant.query('COMMIT');
-    return rijen.length;
+    return alle.length;
   } catch (fout) {
     await klant.query('ROLLBACK').catch(() => undefined);
     throw fout;
   } finally { klant.release(); }
+}
+/**
+ * Na een volledige CalDAV-ronde: alles van dit account weghalen wat NIET bij een van de zojuist gelezen agenda's hoort.
+ * Zo blijft er geen rij achter van een agenda die verdween of na opnieuw koppelen een ander adres kreeg, en kan de
+ * spiegel van één account nooit boven de grens per account uitgroeien (SEC-002, integraties-07).
+ */
+export async function externeSpiegelSnoei(ownerUserId: string, abonnementId: string, behoudAgendaUrls: readonly string[]): Promise<number> {
+  const uitslag = await sys().query(
+    `DELETE FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} AND abonnement_id = $2 AND NOT (agenda_url = ANY($3::text[]))`,
+    [ownerUserId, abonnementId, [...behoudAgendaUrls]]);
+  return Number(uitslag.rowCount || 0);
+}
+/**
+ * SEC-002 (nacontrole g08-3): een vreemde server antwoordde met een statuscode buiten 200–599. Sinds http-rand-02 valt het
+ * proces daar niet meer over, maar zo'n antwoord is een teken van een opzettelijke aanval op het proces — dus een spoor in
+ * de audit. Alleen de HOST: geen pad of zoekreeks (die kunnen een geheim token dragen, bv. bij een ICS-link) en nooit
+ * aanmeldgegevens. Faalt nooit hard: de audit mag de foutcode van de ronde niet verdringen.
+ */
+export async function externStatusSpoor(ownerUserId: string, bron: 'ics' | 'caldav', abonnementId: string, url: string): Promise<void> {
+  let host = '';
+  try { host = new URL(url).hostname.slice(0, 253); } catch { host = ''; }
+  await auditToevoegen({
+    ownerId: ownerUserId, actorId: null, action: 'agenda.extern.status_ongeldig', type: 'beveiliging', result: 'geweigerd',
+    details: { bron, abonnement: kort(abonnementId, 120).slice(0, 8), host, lade: ladeOf(ownerUserId).ruimte },
+  }).catch(() => undefined);
+}
+/** Hoeveel rijen de spiegel NU werkelijk voor dit account bevat (alle agenda's samen) — om de grens per account aan de feiten te toetsen. */
+export async function externeSpiegelAantal(ownerUserId: string, abonnementId: string): Promise<number> {
+  const uitslag = await sys().query(
+    `SELECT count(*)::int AS n FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} AND abonnement_id = $2`, [ownerUserId, abonnementId]);
+  return Number(uitslag.rows[0]?.n || 0);
 }
 export async function externeSpiegelWis(ownerUserId: string, abonnementId: string): Promise<void> {
   await sys().query(`DELETE FROM app.agenda_externe_gebeurtenis WHERE ${sqlLadeWaar('ruimte', ladeOf(ownerUserId), 1)} AND abonnement_id = $2`, [ownerUserId, abonnementId]);

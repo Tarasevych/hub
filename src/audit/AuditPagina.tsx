@@ -6,11 +6,13 @@ import {
   ShieldAlert, ShieldCheck, Stethoscope, TriangleAlert, UserCog, LogIn, Mail, KeyRound, MonitorSmartphone, Wrench, X, FileJson, FileSpreadsheet, ListFilter,
 } from 'lucide-react';
 import { api } from '../platform/client';
+import { journaalWeigeringTekst } from './journaal-weigering';
 import {
   ALLE_CATEGORIEEN, RESULTAAT_NAMEN, actieLabel, categorieNaam, wijzigingTekst, type CategorieId,
 } from '../../shared/beheer-journaal';
 import { Doelwit, Wie } from './Mensen';
 import './audit.css';
+import './audit-maquette.css';
 import {
   LEEG, bewaarFilters, leesFilters, dagKop, datumLang, filtersActief, korteHash, naarBody, relatief, tijdKort, tr,
   type KetenUitslag, type Lang, type Lijst, type Periode, type Persoon, type Rij, type Staat, type Statistiek,
@@ -91,7 +93,7 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
   const controle = async () => {
     setKetenBezig(true);
     try { setKeten((await api.post('/api/owner/journaal/beheer/ketencontrole', context)).data as KetenUitslag); }
-    catch { setMelding(tr(lang, 'Перевірку ланцюжка не виконано.', 'De ketencontrole is niet uitgevoerd.')); }
+    catch (e) { setMelding(journaalWeigeringTekst(lang, e, 'keten') || tr(lang, 'Перевірку ланцюжка не виконано.', 'De ketencontrole is niet uitgevoerd.')); }
     finally { setKetenBezig(false); }
   };
 
@@ -102,7 +104,7 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
       const blob = new Blob([d.inhoud], { type: formaat === 'csv' ? 'text/csv;charset=utf-8' : 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = d.bestandsnaam; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 4000);
       setMelding(tr(lang, `Експортовано ${d.aantal} подій${d.afgekapt ? ' (обмежено 5000)' : ''}. Експорт записано в журнал.`, `${d.aantal} gebeurtenissen geëxporteerd${d.afgekapt ? ' (begrensd op 5000)' : ''}. De export is gelogd.`));
-    } catch { setMelding(tr(lang, 'Експорт не вдався.', 'Exporteren is mislukt.')); } finally { setBezigExport(false); }
+    } catch (e) { setMelding(journaalWeigeringTekst(lang, e, 'export') || tr(lang, 'Експорт не вдався.', 'Exporteren is mislukt.')); } finally { setBezigExport(false); }
   };
 
   const zet = (d: Partial<Staat>) => setS((x) => ({ ...x, ...d }));
@@ -127,7 +129,7 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
   }, [rijen, lang]);
 
 
-  return <section className='aj-root' data-admin-audit data-aj-root>
+  return <section className='aj-root mq-accent-emerald' data-admin-audit data-aj-root>
     <header className='aj-kop'>
       <div className='aj-titel'>
         <span className='aj-titel-ico'><ShieldCheck aria-hidden='true' /></span>

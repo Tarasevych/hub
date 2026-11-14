@@ -32,15 +32,15 @@ doel() {
     OWNER_EMAIL) echo "E-mail власника (не секрет, але визначає super-admin) / E-mail van de eigenaar (geen geheim, bepaalt super-admin)@@з рук / handmatig" ;;
     AUDIT_IP_PEPPER) echo "Pepper для хешу IP у журналі аудиту / Pepper voor de IP-hash in het auditlogboek@@mijn-ruimte-installeer geheimen (нова = старі хеші непорівнянні)" ;;
     RECOVERY_CODE_PEPPER) echo "Pepper для кодів відновлення / Pepper voor herstelcodes@@НЕ ротувати без нових кодів для всіх / niet roteren zonder nieuwe codes" ;;
-    TOTP_ENCRYPTION_KEY_V1) echo "AES-256 ключ секретів TOTP (і резерв для GitHub/агентів/архіву) / AES-256-sleutel voor TOTP-geheimen (en terugval)@@НЕ ротувати (втрата TOTP усіх) / niet roteren" ;;
+    TOTP_ENCRYPTION_KEY_V1) echo "AES-256 ключ секретів TOTP (і резерв для GitHub/агентів/архіву) / AES-256-sleutel voor TOTP-geheimen (en terugval)@@ротація: додати TOTP_ENCRYPTION_KEY_V2 і перезапустити (нові записи — під V2, старі v1 читаються далі); V1 ніколи не видаляти / rotatie: TOTP_ENCRYPTION_KEY_V2 toevoegen en herstarten (nieuw onder V2, oude v1 blijven leesbaar); V1 nooit verwijderen (deploy/GEHEIMEN-REGISTER.nl.md)" ;;
     GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1) echo "AES-256 ключ Google-токенів (refresh) / AES-256-sleutel voor Google-tokens@@НЕ ротувати (перепідключення Google) / niet roteren" ;;
     OWNER_VAULT_ENCRYPTION_KEY_V1) echo "AES-256 ключ сховища секретів власника / AES-256-sleutel van de geheimenkluis@@НЕ ротувати (сховище нечитабельне) / niet roteren" ;;
     MAIL_TOKEN_ENCRYPTION_KEY_V1) echo "AES-256 ключ токенів поштових провайдерів / AES-256-sleutel voor mailprovider-tokens@@НЕ ротувати / niet roteren" ;;
     SLEUTELKLUIS_SLEUTEL_V1) echo "Pepper обгорток ключа даних для підключень ШІ / pepper voor de DEK-omslagen van AI-verbindingen@@НЕ ротувати й не видаляти (підключення ШІ треба буде перепідключити) / niet roteren of verwijderen" ;;
-    MAIL_APP_WACHTWOORD_SLEUTEL_V1) echo "AES-256 ключ паролів застосунку IMAP/SMTP / AES-256-sleutel voor IMAP/SMTP-app-wachtwoorden@@НЕ ротувати (перепідключення пошти) / niet roteren" ;;
-    AGENDA_ABONNEMENT_SLEUTEL_V1) echo "AES-256 ключ паролів CalDAV / AES-256-sleutel voor CalDAV-wachtwoorden@@НЕ ротувати / niet roteren" ;;
-    GITHUB_KOPPELING_SLEUTEL_V1) echo "AES-256 ключ токенів GitHub-підключення / AES-256-sleutel voor GitHub-koppelingstokens@@НЕ ротувати / niet roteren" ;;
-    AGENT_SLEUTEL_V1) echo "AES-256 ключ токенів ШІ-агентів / AES-256-sleutel voor AI-agenttokens@@НЕ ротувати / niet roteren" ;;
+    MAIL_APP_WACHTWOORD_SLEUTEL_V1) echo "AES-256 ключ паролів застосунку IMAP/SMTP / AES-256-sleutel voor IMAP/SMTP-app-wachtwoorden@@ротація: додати MAIL_APP_WACHTWOORD_SLEUTEL_V2 і перезапустити (нові записи — під V2, старі v1 читаються далі); V1 ніколи не видаляти / rotatie: MAIL_APP_WACHTWOORD_SLEUTEL_V2 toevoegen en herstarten (nieuw onder V2, oude v1 blijven leesbaar); V1 nooit verwijderen (deploy/GEHEIMEN-REGISTER.nl.md)" ;;
+    AGENDA_ABONNEMENT_SLEUTEL_V1) echo "AES-256 ключ паролів CalDAV / AES-256-sleutel voor CalDAV-wachtwoorden@@ротація: додати AGENDA_ABONNEMENT_SLEUTEL_V2 і перезапустити (нові записи — під V2, старі v1 читаються далі); V1 ніколи не видаляти / rotatie: AGENDA_ABONNEMENT_SLEUTEL_V2 toevoegen en herstarten (nieuw onder V2, oude v1 blijven leesbaar); V1 nooit verwijderen (deploy/GEHEIMEN-REGISTER.nl.md)" ;;
+    GITHUB_KOPPELING_SLEUTEL_V1) echo "AES-256 ключ токенів GitHub-підключення / AES-256-sleutel voor GitHub-koppelingstokens@@ротація: додати GITHUB_KOPPELING_SLEUTEL_V2 і перезапустити (нові записи — під V2, старі v1 читаються далі); V1 ніколи не видаляти / rotatie: GITHUB_KOPPELING_SLEUTEL_V2 toevoegen en herstarten (nieuw onder V2, oude v1 blijven leesbaar); V1 nooit verwijderen (deploy/GEHEIMEN-REGISTER.nl.md)" ;;
+    AGENT_SLEUTEL_V1) echo "AES-256 ключ токенів ШІ-агентів / AES-256-sleutel voor AI-agenttokens@@ротація: додати AGENT_SLEUTEL_V2 і перезапустити (нові записи — під V2, старі v1 читаються далі); V1 ніколи не видаляти / rotatie: AGENT_SLEUTEL_V2 toevoegen en herstarten (nieuw onder V2, oude v1 blijven leesbaar); V1 nooit verwijderen (deploy/GEHEIMEN-REGISTER.nl.md)" ;;
     AI_ARCHIEF_SLEUTEL_V1) echo "AES-256 ключ архіву діагностики браузера / AES-256-sleutel voor het browserdiagnose-archief@@може / mag" ;;
     GOOGLE_OAUTH_CLIENT_ID|GOOGLE_SUITE_CLIENT_ID) echo "Google OAuth Client ID (публічний) / Google OAuth Client ID (publiek)@@Google Cloud Console → Credentials" ;;
     GOOGLE_OAUTH_CLIENT_SECRET|GOOGLE_SUITE_CLIENT_SECRET) echo "Google OAuth client secret / Google OAuth client secret@@Google Cloud Console → Credentials → Reset secret; потім mijn-ruimte-installeer oauth-client google" ;;
@@ -52,6 +52,7 @@ doel() {
     GOOGLE_GMAIL_PUBSUB_TOPIC|GOOGLE_GMAIL_PUBSUB_AUDIENCE|GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL) echo "Gmail push (Pub/Sub), не секрет / Gmail push (Pub/Sub), geen geheim@@Google Cloud → Pub/Sub" ;;
     SCIM_BEARER_TOKEN) echo "Вхідний SCIM-токен / Inkomend SCIM-token@@openssl rand -base64 48 + у каталозі" ;;
     SIEM_*) echo "Налаштування SIEM / SIEM-instelling@@deploy/SIEM.md" ;;
+    *_V[2-9]) echo "Наступна версія ключа конвертів (SEC-002 geheimen-07: нові записи пишуться під нею, V1 лишається для старих) / Volgende versie van een envelopsleutel (nieuwe rijen eronder, V1 blijft voor oude)@@не видаляти, доки є записи під нею / niet verwijderen zolang er rijen onder staan" ;;
     *) echo "— / —@@—" ;;
   esac
 }
@@ -79,8 +80,8 @@ uitvoer() {
   echo "Згенеровано / gegenereerd: $(date -u +%Y-%m-%dT%H:%M:%SZ) · файл / bestand: $ENV_BESTAND · значень тут НЕМАЄ / GEEN waarden."
   echo "Відбиток = SHA-256 значення, перші 8 hex / vingerafdruk = SHA-256 van de waarde, eerste 8 hex. Ротація: див. колонку / zie kolom."
   echo
-  echo "| Назва / Naam / Призначення / Doel / Де / Waar / Відбиток / Vingerafdruk / Дата / Datum / Хто ротує / Wie roteert @@"
-  echo "|---|---|---|---|---|---@@"
+  echo "| Назва / Naam | Призначення / Doel | Де / Waar | Відбиток / Vingerafdruk | Дата / Datum | Хто ротує / Wie roteert |"
+  echo "|---|---|---|---|---|---|"
   while IFS= read -r naam; do
     [ -n "$naam" ] || continue
     fp="$(sed -n -E "s/^[[:space:]]*(export[[:space:]]+)?$naam=//p" "$ENV_BESTAND" | tail -n 1 | tr -d '\r' | sed -E 's/^["'"'"']//; s/["'"'"']$//' | tr -d '\n' | sha256sum | cut -c1-8)"
@@ -101,7 +102,7 @@ uitvoer() {
 if [ -n "$UIT" ]; then
   tmp="$(mktemp "$(dirname "$UIT")/.register.XXXXXX")"
   uitvoer > "$tmp"; chmod 0600 "$tmp"; mv -f -- "$tmp" "$UIT"
-  echo "[register] geschreven: $UIT ($(grep -c '^@@ `' "$UIT") regels, geen waarden)"
+  echo "[register] geschreven: $UIT ($(grep -c '^| `' "$UIT" || true) regels, geen waarden)"
 else
   uitvoer
 fi

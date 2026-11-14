@@ -8,13 +8,18 @@
 // `ruimte` is persoonlijk, dus elk bestaand concept en elke geplande verzending blijft precies waar hij was.
 import { error, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
-import { denyMutation } from './rbac';
+import { can, denyMutation } from './rbac';
+import { auditToevoegen } from '../server/platform/audit';
+import { meld } from './melder';
+import { keuzeVan, standVan } from './ruimte-scheiding';
+import { ladeVoor } from '../shared/ruimte-scheiding';
 import { getPool } from '../server/platform/pg';
 import { googleSuiteMailProviderSnapshot, googleSuitePrincipalAccessToken } from './google-suite-inrichting';
 import { mailHtmlToPlainText, normalizeOutboundMailHtml } from './mail-opstel-html';
 import { buildMime, encodeWord, headerSafe, parseAddressList, toGmailRaw } from './mail-mime';
 import { ladeVereist } from './mail-ruimte';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
+import { jsonbTekst } from '../shared/tekst-veilig';
 
 const systeem = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 
@@ -126,6 +131,8 @@ export const setMailTransport = (impl: MailTransport | null) => { transport = im
 // ---------------------------------------------------------------- validatie
 const MAX_RECIPIENTS = 50;
 const MAX_SUBJECT = 998;
+/** SEC-002 (keten-config-04): bovengrens voor de ruwe HTML-invoer (tekens) vóór elke bewerking. */
+export const MAX_HTML_INVOER = 2_000_000;
 
 function normalizePayload(input: ComposeInput, requireRecipient: boolean): { ok: true; payload: Payload } | { ok: false; code: string } {
   const to = parseAddressList(String(input.to ?? ''));
@@ -134,6 +141,8 @@ function normalizePayload(input: ComposeInput, requireRecipient: boolean): { ok:
   if (to.invalid.length || cc.invalid.length || bcc.invalid.length) return { ok: false, code: 'MAIL_RECIPIENT_INVALID' };
   if (to.valid.length + cc.valid.length + bcc.valid.length > MAX_RECIPIENTS) return { ok: false, code: 'MAIL_TOO_MANY_RECIPIENTS' };
   if (requireRecipient && !to.valid.length) return { ok: false, code: 'MAIL_RECIPIENT_REQUIRED' };
+  // SEC-002 (keten-config-04): een lichaam ver boven wat bewaard wordt (250 000 tekens na opschonen) wordt niet eens bewerkt.
+  if (String(input.html ?? '').length > MAX_HTML_INVOER) return { ok: false, code: 'MAIL_BODY_TOO_LARGE' };
   const html = normalizeOutboundMailHtml(input.html ?? '');
   const plainInput = String(input.plainText ?? '').replace(/\u0000/g, '').slice(0, 100_000);
   const plainText = plainInput.trim() ? plainInput : mailHtmlToPlainText(html);
@@ -270,7 +279,7 @@ export async function enqueue(userId: string, input: ComposeInput, sendAt: numbe
   const ins = await systeem(
     `INSERT INTO app.mail_queue (user_id, ruimte, account_id, message_payload, send_at, request_id) VALUES ($1,'${R(lade)}',$2,$3::jsonb,to_timestamp($4/1000.0),$5)
      ON CONFLICT (user_id, ruimte, request_id) WHERE request_id <> '' DO NOTHING RETURNING *`,
-    [userId, String(input.accountId ?? '').slice(0, 300), JSON.stringify(payload), Math.max(when, Date.now()), rid]);
+    [userId, String(input.accountId ?? '').slice(0, 300), jsonbTekst(payload), Math.max(when, Date.now()), rid]);
   if (ins.rows[0]) return { item: queueOf(ins.rows[0]) };
   const existing = await systeem(`SELECT * FROM app.mail_queue WHERE ${W(lade)} AND request_id=$2`, [userId, rid]);
   return existing.rows[0] ? { item: queueOf(existing.rows[0]) } : { error: 'MAIL_QUEUE_FAILED' };
@@ -290,11 +299,56 @@ export async function cancelScheduled(userId: string, id: string): Promise<boole
   return (r.rowCount ?? 0) > 0;
 }
 
+/**
+ * SEC-002 (post-10): mag dit account NU (op het moment van versturen) nog mail versturen? Ingeplande mail werd tot een jaar later
+ * verstuurd, ook na blokkeren of na terugzetten naar «alleen lezen». Leest het accountrecord via de systeemrol.
+ * Geen record: geen extra weigering hier (een verwijderd account heeft ook geen gekoppelde Gmail meer; transport.resolve faalt dan).
+ */
+async function afzenderMagVersturen(userId: string): Promise<string> {
+  const r = await systeem(`SELECT data FROM app.records WHERE tbl='users' AND id=$1`, [userId]);
+  const user = r.rows[0]?.data as { status?: string; role?: string; accessLevel?: string; email?: string } | undefined;
+  if (!user) return '';
+  if (user.status !== 'approved') return 'MAIL_SENDER_NOT_ALLOWED';
+  if (!can({ id: userId, ...user }, 'mail.write')) return 'MAIL_SENDER_NO_WRITE';
+  return '';
+}
+
+/**
+ * g10c-toets-2: de gegevensruimte van het wachtrij-item op het moment van versturen. Privé: de privélade bestaat altijd.
+ * Technisch: de dienst «mail» moet in de technische ruimte nog aan staan (niet uit, niet bevroren, keuze gemaakt) — anders
+ * verstuurt de server niets meer uit een ruimte die de eigenaar dichtzette. '' = in orde, anders de weigercode.
+ */
+async function ruimteMagVersturen(userId: string, ruimte: unknown): Promise<string> {
+  if (ruimte !== 'technisch') return '';
+  const besluit = ladeVoor({ userId, ruimte: 'technisch', dienst: 'mail', stand: await standVan(userId, 'mail'), keuzeGemaakt: !!(await keuzeVan(userId)) });
+  return besluit.ok ? '' : `MAIL_SPACE_${besluit.code}`;
+}
+
+/** g10c-toets-2: elke weigering of annulering door het systeem laat een auditregel én een melding aan de gebruiker na. */
+async function wachtrijSpoor(userId: string, actie: 'refused' | 'cancelled', code: string, details: Record<string, unknown>): Promise<void> {
+  await auditToevoegen({ ownerId: userId, actorId: null, action: `owner.mail.queue.${actie}`, type: 'mail', result: 'denied', details: { code, ...details }, service: 'systeem' }).catch(() => undefined);
+  const aantal = Number(details.aantal || 1);
+  if (actie === 'refused') await meld(userId, 'mail_queue_refused', 'Запланований лист не надіслано / Gepland bericht niet verzonden',
+    `Код ${code}: на момент надсилання ваш обліковий запис або поштовий простір більше не дозволяє надсилати. Лист залишено в «Запланованих» зі статусом «помилка». / Code ${code}: op het moment van verzenden stond uw account of postruimte verzenden niet meer toe. Het bericht staat bij «Gepland» als «fout».`, '/');
+  else await meld(userId, 'mail_queue_cancelled', 'Заплановані листи скасовано / Geplande berichten geannuleerd',
+    `${aantal} запланованих листів скасовано (${code}): доступ до надсилання змінено адміністратором. / ${aantal} geplande berichten geannuleerd (${code}): de beheerder wijzigde het recht om te verzenden.`, '/');
+}
+
+/** SEC-002 (post-10): bij blokkeren of verlagen naar «alleen lezen» gaat ingeplande mail van dit account niet meer de deur uit. */
+export async function annuleerGeplandeMail(userId: string, reden = 'MAIL_SENDER_NOT_ALLOWED'): Promise<number> {
+  const r = await systeem(`UPDATE app.mail_queue SET status='cancelled', last_error=$2, updated_at=now() WHERE user_id=$1 AND status='scheduled' RETURNING id`, [userId, String(reden).slice(0, 120)]);
+  const aantal = r.rowCount ?? 0;
+  if (aantal) await wachtrijSpoor(userId, 'cancelled', String(reden).slice(0, 120), { aantal });
+  return aantal;
+}
+
 /** Eén wachtrij-item versturen (de aanroeper heeft het al geclaimd: status "sending"). */
 async function deliver(row: any): Promise<void> {
   const userId = row.user_id as string;
   const payload = row.message_payload as Payload;
   try {
+    const geweigerd = (await afzenderMagVersturen(userId)) || (await ruimteMagVersturen(userId, row.ruimte));
+    if (geweigerd) { await wachtrijSpoor(userId, 'refused', geweigerd, { queueId: String(row.id || '') }); throw new ProviderError(geweigerd, 403, true); }
     const account = await transport.resolve(userId, row.account_id);
     if (!account) throw new ProviderError('MAIL_ACCOUNT_NOT_CONNECTED', 409, true);
     const sent = await transport.send(userId, account.accountId, mimeOf(payload, fromHeader(account)), payload.threadId);
@@ -348,7 +402,7 @@ type Deps = {
 const bodyOf = (b: unknown): Record<string, unknown> => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {});
 
 const MESSAGE_FOR: Record<string, number> = {
-  MAIL_RECIPIENT_INVALID: 400, MAIL_RECIPIENT_REQUIRED: 400, MAIL_BODY_REQUIRED: 400, MAIL_TOO_MANY_RECIPIENTS: 400, MAIL_DRAFT_ID_INVALID: 400,
+  MAIL_RECIPIENT_INVALID: 400, MAIL_RECIPIENT_REQUIRED: 400, MAIL_BODY_REQUIRED: 400, MAIL_TOO_MANY_RECIPIENTS: 400, MAIL_DRAFT_ID_INVALID: 400, MAIL_BODY_TOO_LARGE: 413,
   MAIL_SCHEDULE_TOO_FAR: 400, MAIL_SCHEDULE_TIME_INVALID: 400, MAIL_ACCOUNT_NOT_CONNECTED: 409, MAIL_REQUEST_ID_REQUIRED: 400,
 };
 

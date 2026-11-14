@@ -29,6 +29,15 @@ const zet = (t: Partial<TechStatus>) => { toestand = { ...toestand, ...t }; prof
 export type TabProfiel = 'gebruiker' | 'technisch';
 export const PROFIEL_META = 'mjn-profiel';
 export const profielVan = (t: TechStatus = toestand, nu = Date.now()): TabProfiel => (!!t.activatie && t.activatie.eind > nu + t.scheef ? 'technisch' : 'gebruiker');
+/**
+ * SEC-002 extensie-04 (12.11.2026): WEET de site al of dit tabblad technisch is? Nee zolang het eerste antwoord van /tech/status er
+ * niet is (de pagina laadt, of dit tabblad vraagt nog geen status) en na een netwerk-/serverfout zonder bekende activering. De meta
+ * draagt dat als data-zeker="0"; de extensie behandelt zo'n tabblad als «onbekend» en GEEN slot leest of bedient het. Vroeger stond
+ * er in die tijd gewoon «gebruiker», waardoor de AI van de privéruimte een technisch tabblad kon lezen tijdens het laden — en na
+ * één mislukte statusvraag tot het tabblad opnieuw zichtbaar werd.
+ */
+export const profielZeker = (t: TechStatus = toestand): boolean => t.geladen && !(t.fout === 'netwerk' && !t.activatie);
+export const PROFIEL_ZEKER_ATTR = 'data-zeker';
 let profielTimer: ReturnType<typeof setTimeout> | null = null;
 export function profielMetaBijwerken(nu = Date.now()): TabProfiel {
   const waarde = profielVan(toestand, nu);
@@ -36,6 +45,9 @@ export function profielMetaBijwerken(nu = Date.now()): TabProfiel {
     if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return waarde;
     let m = document.querySelector(`meta[name="${PROFIEL_META}"]`);
     if (!m && document.head) { m = document.createElement('meta'); m.setAttribute('name', PROFIEL_META); document.head.appendChild(m); }
+    // Eerst het voorbehoud, dan de waarde: de brug van de extensie leest beide in één keer (MutationObserver na deze taak).
+    const zeker = profielZeker(toestand) ? '1' : '0';
+    if (m && m.getAttribute(PROFIEL_ZEKER_ATTR) !== zeker) m.setAttribute(PROFIEL_ZEKER_ATTR, zeker);
     if (m && m.getAttribute('content') !== waarde) m.setAttribute('content', waarde);
     if (profielTimer !== null) clearTimeout(profielTimer);
     profielTimer = null;
@@ -54,11 +66,21 @@ const neem = (data: any) => (statussen += 1, zet({ geladen: true, profiel: data?
 
 /** HUB-01: alleen een DUIDELIJK antwoord van de server (401/403/404: geen sessie of geen recht) wist het profiel; netwerk/5xx houdt de vorige staat. */
 export const techFoutReset = (e: unknown): boolean => { const st = Number((e as { status?: number } | null)?.status || 0); return st === 401 || st === 403 || st === 404; };
+// SEC-002 extensie-04: na een netwerk-/serverfout de status zelf opnieuw vragen (4 s, 8 s … hoogstens 60 s), ook ZONDER bekende
+// activering. Vroeger kwam er pas een nieuwe vraag als het tabblad verborgen en weer getoond werd; tot dan bleef het profiel fout.
+let herkansTimer: ReturnType<typeof setTimeout> | null = null;
+let herkansMs = 0;
+function herkansPlannen(): void {
+  if (herkansTimer !== null) return;
+  herkansMs = Math.min(60_000, Math.max(4_000, herkansMs * 2));
+  herkansTimer = setTimeout(() => { herkansTimer = null; if (sleutel && toestand.fout === 'netwerk') void techVernieuwen(); }, herkansMs);
+  (herkansTimer as unknown as { unref?: () => void }).unref?.(); // Node (tests): een wachtende herkansing houdt het proces niet open
+}
 export async function techVernieuwen(): Promise<void> {
-  try { neem((await api.post('/api/owner/tech/status', techBody())).data); }
+  try { neem((await api.post('/api/owner/tech/status', techBody())).data); herkansMs = 0; }
   catch (e) {
-    if (techFoutReset(e)) zet({ geladen: true, profiel: null, activatie: null, fout: null });
-    else zet({ geladen: true, fout: 'netwerk' });
+    if (techFoutReset(e)) { zet({ geladen: true, profiel: null, activatie: null, fout: null }); herkansMs = 0; }
+    else { zet({ geladen: true, fout: 'netwerk' }); herkansPlannen(); }
   }
 }
 export async function techActiveren(minuten: number, reden: string) {

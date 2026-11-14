@@ -20,6 +20,7 @@ import { ruimteOf } from '../shared/ai-ruimte';
 import { getPool } from '../server/platform/pg';
 import { actieveActivatie, profielVan } from './tech-profiel';
 import { meldingenLade } from './meldingen-ruimte';
+import { meld } from './melder';
 import { TECHNISCHE_ACTIE, activiteitenVanSfeer, sfeerVanActiviteit } from '../shared/meldingen-soorten';
 import { V2_OPTIES } from '../shared/connector-v2/catalogus';
 
@@ -106,6 +107,12 @@ const MAX_PARAM_BYTES = 6 * 1024 * 1024;
 export const AUTO_APPROVABLE_MACHINE = ['fs.read', 'fs.list', 'fs.stat', 'fs.search', 'sys.info', 'sys.metrics', 'docker.ps', 'apps.list', 'apps.status', 'apps.logs', 'apps.versions', 'apps.secret.list'] as const;
 export const AUTO_APPROVABLE_BROWSER = BROWSER_AUTO_APPROVABLE;
 const MAX_NAME = 80;
+/** SEC-002 interface-02: de mens zelf vanaf de site (test, formulier «Додатки») — het scherm zegt dan «Ви (сайт)», geen AI-naam. */
+const SITE_AANVRAGER: store.Aanvrager = { client: store.AANVRAGER_SITE, grant: '', agent: '' };
+/** Wie een wachtend verzoek vroeg, voor het scherm: klantnaam (van de geauthenticeerde verbinding), agent en een kort stuk van het verbindings-id. */
+export const aanvragerUit = store.aanvragerVoorScherm;
+/** Naam voor het activiteitenoverzicht: de echte klant; onbekend blijft eerlijk onbekend (geen hard «Claude» meer). */
+export const aanvragerNaam = (r: { aanvrager_client?: unknown }) => { const c = String(r.aanvrager_client ?? '').trim(); return c && c !== store.AANVRAGER_SITE ? c.slice(0, 80) : (c ? 'Ви (сайт) / U (site)' : 'ШІ (клієнт невідомий) / AI (klant onbekend)'); };
 
 const bearerOf = (ctx: any) => {
   const h = (ctx.event?.headers || {}) as Record<string, string>;
@@ -190,7 +197,8 @@ export function createAgentRoutes(deps: Deps) {
           preview: c.result ? JSON.stringify(c.result).slice(0, 600) : '',
           createdAt: new Date(c.created_at).getTime(),
         })),
-        pending: pending.map((c: any) => ({ id: c.id, agentId: c.agent_id, agentName: c.agent_name, type: c.type, params: c.params, createdAt: new Date(c.created_at).getTime() })),
+        // SEC-002 interface-02: bij elk wachtend verzoek WIE het vroeg (naam van de klant + agent), zodat het scherm niet meer hard «Claude» schrijft.
+        pending: pending.map((c: any) => ({ id: c.id, agentId: c.agent_id, agentName: c.agent_name, type: c.type, params: c.params, createdAt: new Date(c.created_at).getTime(), aanvrager: aanvragerUit(c) })),
         limits: store.AGENT_LIMITS,
       });
     }],
@@ -199,6 +207,10 @@ export function createAgentRoutes(deps: Deps) {
     'POST /api/owner/agents/pairing-code': [async (ctx: any) => {
       const auth = await ownerGate(ctx.event, ctx.body);
       if (!auth || 'errorCode' in auth) return denied(auth);
+      // SEC-002 extensie-09: de code is het ENIGE geheim van de publieke inwisselroute (/agents/pair) en levert een apparaat in dit
+      // account op. Vroeger kon elke klik (ook die van een AI met «Клік і введення») hem zonder bevestiging ophalen; nu altijd een
+      // verse bevestiging van de mens (pad 'pairing-code' wordt nooit «onthouden», shared/stap-op-acties.ts).
+      { const su = await stepUp(ctx, auth); if (su) return su; }
       if ((await store.countAgents(auth.user.id)) >= store.AGENT_LIMITS.agentsPerUser) return deps.fail('AGENT_LIMIT_REACHED', 409);
       // De ruimte van het nieuwe apparaat kiest de mens hier; 'technisch' (server/beheer) kan alleen de eigenaar met een actief technisch profiel.
       // Extensie 0.6: {ruimte:'technisch', doel:'extensie'} = het technische SLOT van de browserextensie. Dat mag iedereen met een lopende
@@ -252,6 +264,14 @@ export function createAgentRoutes(deps: Deps) {
       // Een nieuwe koppeling start met alleen lezen (30 dagen); meer geeft de gebruiker zelf (presets of per mogelijkheid).
       await grants.applyPreset(userId, 'pairing', agent.id, 'spostericach').catch(() => undefined);
       await auditToevoegen({ ownerId: userId, actorId: null, action: 'owner.agent.paired', result: 'success', details: { agentId: agent.id, name, platform, version, ruimte, replaced: replaced.length, replacedIds: replaced, pairingId: pairingId ? 'ja' : 'nee' } });
+      // SEC-002 extensie-09: een koppelcode is het ENIGE geheim van deze publieke route. Elke nieuwe koppeling komt daarom als
+      // beveiligingsmelding bij de mens zelf: een apparaat dat hij niet zelf koppelde (code afgelezen door een AI of meekijker) valt
+      // zo meteen op, met de weg om het los te koppelen. De naam komt van het apparaat zelf en gaat dus tussen «» zonder opmaak.
+      const veiligeNaam = name.replace(/[\u0000-\u001f\u007f<>]/g, ' ').slice(0, 60);
+      await meld(userId, 'security',
+        'Новий пристрій або браузер підключено до ШІ / Nieuw apparaat of browser gekoppeld voor AI',
+        `«${veiligeNaam}» (${platform || 'невідома платформа / onbekend platform'}) щойно підключено за одноразовим кодом. Якщо це були не ви — негайно відключіть його: mcp → Агенти → Пристрої. / «${veiligeNaam}» is zojuist gekoppeld met een eenmalige code. Was u dit niet? Koppel het meteen los: mcp → Agenten → Apparaten.`,
+        'https://mcp.tarasevych.com/agents#apparaten');
       // userId: voor de accountclaim (<meta name="mjn-account">): de extensie weigert opdrachten op een pagina van een ander account.
       // ruimte (0.6): in welk slot de extensie deze koppeling bewaart ('prive' | 'technisch').
       return json({ agentId: agent.id, userId, token, commandKey, ruimte, tokenExpiresAt: agent.token_expires_at ? new Date(agent.token_expires_at).getTime() : null });
@@ -303,7 +323,7 @@ export function createAgentRoutes(deps: Deps) {
       const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
       const alles = [
         ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', platform: r.platform || '', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ruimte: ruimteOf(r.ruimte), ...(r.pad ? { doel: String(r.pad) } : {}), ...(r.fout && r.status === 'failed' ? { reden: String(r.fout) } : {}) })),
-        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: 'Claude', status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
+        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: aanvragerNaam(r), status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
         ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
         ...siteEventsFromAudit(audit),
       ].map((e) => ({ ...e, sfeer: sfeerVanActiviteit(e) }));
@@ -452,7 +472,7 @@ export function createAgentRoutes(deps: Deps) {
         const basis = { id: a.id, name: a.name, platform: a.platform, online: agentOnline(a.id), apps: caps.apps === true, version: a.agent_version ?? (typeof caps.version === 'string' ? caps.version : null) };
         if (!basis.apps || !basis.online) return basis;
         try {
-          const { command } = await submitCommand(a, auth.user.id, 'apps.list', {});
+          const { command } = await submitCommand(a, auth.user.id, 'apps.list', {}, { aanvrager: SITE_AANVRAGER });
           const klaar = (await waitForCommand(auth.user.id, command.id, 20_000)) ?? command;
           if (klaar.status === 'succeeded') return { ...basis, lijst: ((klaar.result?.data as { apps?: unknown[] } | undefined)?.apps ?? []) };
           return { ...basis, fout: klaar.status === 'pending_approval' ? 'WACHT_OP_GOEDKEURING' : String(klaar.result?.error ?? klaar.status).slice(0, 200) };
@@ -487,7 +507,7 @@ export function createAgentRoutes(deps: Deps) {
       const ticket = maakTicket(agent.id, auth.user.id, 'geheim', { key: v.sleutel, value: waarde });
       let command;
       try {
-        ({ command } = await submitCommand(agent, auth.user.id, 'apps.secret.set', { name: v.app, key: v.sleutel, ticket }));
+        ({ command } = await submitCommand(agent, auth.user.id, 'apps.secret.set', { name: v.app, key: v.sleutel, ticket }, { aanvrager: SITE_AANVRAGER }));
       } catch (err) { vergeetTicket(ticket); const r = refused(err); if (r) return r; throw err; }
       // De eigenaar typte de waarde zelf en bevestigde met step-up: dat IS de goedkeuring van deze ene opdracht.
       if (command.status === 'pending_approval') command = (await approveCommand(auth.user.id, command.id)) ?? command;
@@ -531,12 +551,13 @@ export function createAgentRoutes(deps: Deps) {
       const b = deps.body(ctx.body);
       const list = Array.isArray(b.grants) ? b.grants as any[] : [b];
       if (!list.length || list.length > 20) return deps.fail('GRANTS_INVALID', 400);
-      const wantsAlways = list.some((g) => g?.always === true);
-      // 'altijd' alleen met step-up (en dan nog met vervaldatum; zie ai-grants). Gewone grants: step-up voor destructieve mogelijkheden.
-      const needsStepUp = wantsAlways || list.some((g) => grants.DESTRUCTIVE.has(g?.capability));
-      if (needsStepUp) { const su = await stepUp(ctx, auth); if (su) return su; }
+      // 'altijd' krijgt daarbij nog een vervaldatum (zie ai-grants).
+      // SEC-002 extensie-02 (na de toets g10a-2): ELK nieuw AI-recht vraagt een verse bevestiging van de mens — ook machine.read of
+      // browser.read. Vroeger alleen «altijd»/destructief: een AI met «Клік і введення» gaf zichzelf zo leesrechten op de pc met één
+      // (script)klik. Het pad /ai/grants/… wordt nooit «onthouden» (actieVoorPad = 'onbekend').
+      { const su = await stepUp(ctx, auth); if (su) return su; }
       try {
-        const out = await grants.addGrants(auth.user.id, auth.user.id, list.map((g) => ({ agentId: String(g.agentId || ''), capability: g.capability, domains: g.domains, always: g.always === true, minutes: g.minutes == null ? undefined : Number(g.minutes) })), { steppedUp: needsStepUp });
+        const out = await grants.addGrants(auth.user.id, auth.user.id, list.map((g) => ({ agentId: String(g.agentId || ''), capability: g.capability, domains: g.domains, always: g.always === true, minutes: g.minutes == null ? undefined : Number(g.minutes) })), { steppedUp: true });
         return deps.respond({ ok: true, epoch: out.epoch, ids: out.grants.map((g) => g.id) });
       } catch (err) { return deps.fail((err as Error).message, 400); }
     }],
@@ -546,9 +567,8 @@ export function createAgentRoutes(deps: Deps) {
       const b = deps.body(ctx.body);
       const preset = String(b.preset || '') as grants.PresetId;
       if (!grants.PRESETS[preset]) return deps.fail('PRESET_INVALID', 400);
-      // Presets met destructieve mogelijkheden (Помічник, Разово): step-up.
-      const p = grants.PRESETS[preset];
-      if ([...p.browser, ...p.machine].some((c) => grants.DESTRUCTIVE.has(c))) { const su = await stepUp(ctx, auth); if (su) return su; }
+      // SEC-002 extensie-02 (g10a-2): elke set geeft rechten (ook «Спостерігач»: lezen op pc en browser) → altijd een verse bevestiging.
+      { const su = await stepUp(ctx, auth); if (su) return su; }
       try {
         const out = await grants.applyPreset(auth.user.id, auth.user.id, String(b.agentId || ''), preset, { minutes: b.minutes == null ? undefined : Number(b.minutes), domains: b.domains, replace: b.replace !== false });
         return deps.respond({ ok: true, epoch: out.epoch });
@@ -626,7 +646,7 @@ export function createAgentRoutes(deps: Deps) {
       if (!agentOnline(agent.id)) return deps.fail('AGENT_OFFLINE', 409);
       if (type.startsWith('browser.') && !(await store.browserActive(agent.id))) return deps.fail('BROWSER_NOT_ACTIVE', 409);
       let command, auto;
-      try { ({ command, auto } = await submitCommand(agent, auth.user.id, type, params)); }
+      try { ({ command, auto } = await submitCommand(agent, auth.user.id, type, params, { aanvrager: SITE_AANVRAGER })); }
       catch (err) { const r = refused(err); if (r) return r; throw err; }
       await deps.audit(auth.user.id, 'owner.agent.command', 'success', { agentId: agent.id, commandId: command.id, type, auto });
       return deps.respond({ command });

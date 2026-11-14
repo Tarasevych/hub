@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-004",
+  "titel": "Хвиля 3 теми оформлення «Макет»: повне студійне перевтілення інженерного простору github.tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 13 канонічних вкладок і робочих поверхонь піддомену github.tarasevych.com поруч з усіма чинними темами без видалення наявних можливостей. Охопити огляд інженерного простору, сховища, провідник файлів і редактор коду, задачі, запити на злиття, конвеєри дій і термінал журналів, випуски, двосторонній міст синхронізації, проєкти, документацію, пошук, активність та однодотикове підключення облікового запису в нічній студії та світлому режимі.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-004-20261113-204900",
+    "basis": "b83a9433d122738b7fba20d1433d2bc3ce2f8f8c",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, приватний вихідний код користувачів, внутрішні мережеві адреси та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T20:48:21Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-004-20261113-204900 поверх перевіреної Хвилі 2 (b83a9433d122738b7fba20d1433d2bc3ce2f8f8c) та зареєстровано завдання MAQUETTE-004."
+    },
+    {
+      "tijd": "2026-11-13T21:02:00Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil.gh-maquette-wikkel, вітрину MaquetteHeld (повну на overview, repositories, accounts та при відсутності з'єднання; компактну на решті 10 вкладок) і перетягувану якірну рейку MaquetteAnkerRail у GitHubWeergave.tsx із приховуванням на вкладці коду та при відкритих діалогах; створено src/github/github-overzicht-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T21:09:00Z",
+      "stap": "Оформлено провідник файлів, редактор коду, історію фіксацій змін, порівняння гілок і вікна різниці рядків у CodeEnEditorPaneel.tsx, github-client.tsx та src/github/github-brontekst-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T21:14:00Z",
+      "stap": "Оформлено двоколонкові панелі задач і запитів на злиття, конвеєри дій із термінальним вікном журналів, випуски та двосторонній міст синхронізації у ZakenEnSamenvoegingenPaneel.tsx, ActiesEnUitgavenPaneel.tsx, SpiegelEnBrugPaneel.tsx та src/github/github-werkstroom-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T21:24:00Z",
+      "stap": "Узгоджено прив'язку якоря бокової панелі поштових облікових записів у MailAccountsHub.tsx, оновлено каталог пошуку елементів інтерфейсу, виконано виробниче складання, модульні випробування та візуальну перевірку github.tarasevych.com у безголовому Chromium."
+    }
+  ],
+  "keuzes": [
+    "Студійну оболонку .mq-schil змонтовано ззовні навколо .gh-root, щоб зберегти мобільну сітку й каскад інженерного простору та надати йому індиговий відтінок --mq-accent-github.",
+    "На вкладці редактора коду (code) бічна якірна рейка MaquetteAnkerRail автоматично вимикається, залишаючи максимальну ширину дереву файлів і переглядачу вихідних текстів.",
+    "Усі три нові таблиці стилів інженерного простору побудовано виключно на змінних var(--mq-*) та color-mix із використанням :where(...) на загальних полях вводу, без жодного сирого кольору, !important чи нового position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-004-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-004.json",
+    "orchestratie/taken/MAQUETTE-004.json",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "src/GitHubWeergave.tsx",
+    "src/MailAccountsHub.tsx",
+    "src/github/ActiesEnUitgavenPaneel.tsx",
+    "src/github/CodeEnEditorPaneel.tsx",
+    "src/github/EenklikKoppelPaneel.tsx",
+    "src/github/SpiegelEnBrugPaneel.tsx",
+    "src/github/ZakenEnSamenvoegingenPaneel.tsx",
+    "src/github/github-brontekst-maquette.css",
+    "src/github/github-client.tsx",
+    "src/github/github-overzicht-maquette.css",
+    "src/github/github-werkstroom-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, github-koppelkaart-20261019, github-werkruimte-tak-20261112, github-012-mobiele-weergave, github-volledige-werkruimte, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка github.tarasevych.com (/overzicht, /code, мобільний вигляд та контрольна палітра kleur) у безголовому оглядачі Chromium через локальний HTTPS у темному й світлому режимах на 1440x900 та 390x844 — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/GitHubWeergave.tsx",
+    "src/github/CodeEnEditorPaneel.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 3 (MAQUETTE-004) охоплює ядро теми, id.tarasevych.com, екрани входу, mail.tarasevych.com, cloud.tarasevych.com та всі 13 канонічних вкладок інженерного простору github.tarasevych.com; піддомени hub, ai, huis, mcp, api та admin послідовно перевтілюються у Хвилях 4–9 (MAQUETTE-005 — MAQUETTE-010)."
+  ]
+}

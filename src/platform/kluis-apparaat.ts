@@ -1,8 +1,8 @@
-// KLUIS-APPARAAT-001 (0206) — de browserhelft van «пам'ятати цей пристрій» voor de sleutelkluis.
+// KLUIS-APPARAAT-001 (0277) — de browserhelft van «пам'ятати цей пристрій» voor de sleutelkluis.
 //
 // Wat hier bewaard wordt: X = DEK ⊕ S (hex), versleuteld met AES-256-GCM onder een NIET-EXPORTEERBARE CryptoKey die alleen in
 // IndexedDB van dit origin leeft. Geen enkele code (ook deze niet) kan die sleutel uitlezen; hij kan alleen in deze browser gebruikt
-// worden. De server heeft S; geen van beide helften opent de gegevens alleen (zie migrations/0206_sleutelkluis_apparaat.sql).
+// worden. De server heeft S; geen van beide helften opent de gegevens alleen (zie migrations/0277_sleutelkluis_apparaat.sql).
 // Що тут зберігається: лише зашифрована половина X; ключ браузера не експортується, сервер його ніколи не бачить.
 //
 // Alles faalt stil (privévenster, geblokkeerde opslag, oude browser): dan is er gewoon geen geheugen en vraagt de pagina de knop.

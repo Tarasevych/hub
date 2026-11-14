@@ -352,7 +352,7 @@ mail-contacten 70, mobiel-mail 27. Echte Chromium: extensie e2e 41/41, hub 76/76
 ## Z · 19.10.2026 — live-audit (eigenaar + nieuwe gebruiker) en reparaties (geen nieuwe migratie)
 
 **Methode.** Crawl van alle 10 subdomeinen in de Chrome van de eigenaar (technisch profiel), daarna extensie, noodstop, journaal, «Захист», en een
-tweede account (Google) als Учасник via «Додати інший обліковий запис». 5 crawlers + 2 gebruikerscrawlers + 6 reparatieagenten. Details: scratchpad/audit/*.
+tweede account (Google) als Учасник via «Додати інший обліковий запис». 5 crawlers + 2 gebruikerscrawlers + 6 reparatieagenten. Details: de werkverslagen van die controle (niet in de repository).
 
 **Kritiek, gerepareerd.** Mail: iframe-hoogtelus (mail-body-passend: offsetHeight i.p.v. scrollHeight, frame niet observeren); bijlagevoorbeeld onder het
 iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»

@@ -1,4 +1,5 @@
-import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
+import {createCipheriv,createHash,randomBytes} from 'node:crypto';
+import {gcmOpenStrikt} from '../server/platform/beveiliging';
 import {db,secrets} from '../server/platform';
 import {googleClientUitKluis} from './integraties-kluis';
 
@@ -90,10 +91,8 @@ const encryptSecret=(plaintext:string,secret:string,provider:string,clientId:str
   return{algorithm:'AES-256-GCM' as const,keyVersion:1,ciphertext:ciphertext.toString('base64url'),iv:iv.toString('base64url'),authTag:cipher.getAuthTag().toString('base64url')};
 };
 const decryptSecret=(record:Pick<ContourRecord,'ciphertext'|'iv'|'authTag'|'algorithm'>,secret:string,provider:string,clientId:string)=>{
-  const decipher=createDecipheriv('aes-256-gcm',keyFrom(secret),Buffer.from(record.iv,'base64url'));
-  decipher.setAAD(Buffer.from(aad(provider,clientId),'utf8'));
-  decipher.setAuthTag(Buffer.from(record.authTag,'base64url'));
-  return Buffer.concat([decipher.update(Buffer.from(record.ciphertext,'base64url')),decipher.final()]).toString('utf8');
+  // SEC-002 (geheimen-06): IV 12 en tag 16 bytes afgedwongen; een afgekapte tag wordt geweigerd.
+  return gcmOpenStrikt(keyFrom(secret),Buffer.from(String(record.iv||''),'base64url'),Buffer.from(String(record.authTag||''),'base64url'),Buffer.from(String(record.ciphertext||''),'base64url'),Buffer.from(aad(provider,clientId),'utf8')).toString('utf8');
 };
 const mask=(value:string)=>{
   const n=String(value||'');

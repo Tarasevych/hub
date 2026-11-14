@@ -10,6 +10,7 @@ import { beheerBeleid, beheerIntrekken, beheerVerlengen, laadBeheer, useBeheerTo
 import { Aftellen, Chips, RuimteBadge, Venster, tgFout } from './delen';
 import { ALLE_BROWSER_CAPS, BELEID_MAX_DAGEN, BELEID_MAX_MINUTEN, PRIVE_DAGEN, TECH_MINUTEN, capMens, filterGebruikers, type BeheerBrowser, type BeheerFilter, type BeheerGebruiker, type Beleid, type Ruimte } from './model';
 import { MAX_DAGEN, MAX_MINUTEN } from '../../../shared/extensie-ontgrendeling';
+import '../agenten-toegang-maquette.css';
 
 type Vraag = { userId: string; agentId?: string; ruimte?: Ruimte; titel: string; tekst: string };
 const minTekst = (m: number, tr: Tr) => (m < 60 ? tr(`${m} хв`, `${m} min`) : tr(`${m / 60} год`, `${m / 60} u`));

@@ -20,6 +20,7 @@ import type { Lade } from '../shared/ruimte-scheiding';
 import { achtergrondOf, normaliseerWerkblad, type WerkbladIndeling } from '../shared/werkblad-indeling';
 import { APPARATEN, apparaatOf, migreerV2NaarV3, normaliseerLaag, type V3Context } from '../shared/werkblad-v3';
 import { WERKBLAD_V3_FLAG, WERKBLAD_V3_LIMIETEN, type ApparaatKlasse, type CanvasLayout, type DesktopEntry, type WerkbladRuimte } from '../shared/werkblad-v3-types';
+import { jsonbTekst } from '../shared/tekst-veilig';
 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -61,7 +62,7 @@ async function laagSchrijven(q: Q, lade: Lade, apparaat: ApparaatKlasse, layout:
     `INSERT INTO app.werkblad_items (layout_id, user_id, ruimte, apparaat, instance_id, kind, item_id, x, y, w, h, z, locked, parent, title_override, icon_override, config)
      SELECT $1, $2, $3, $4, r."instanceId", r.kind, r."itemId", r.x, r.y, r.w, r.h, r.z, coalesce(r.locked, false), r.parent, r."titleOverride", r."iconOverride", r.config
      FROM jsonb_to_recordset($5::jsonb) AS r("instanceId" text, kind text, "itemId" text, x int, y int, w int, h int, z int, locked boolean, parent text, "titleOverride" text, "iconOverride" text, config jsonb)`,
-    [l.id, lade.userId, lade.ruimte, apparaat, JSON.stringify(layout.items)]);
+    [l.id, lade.userId, lade.ruimte, apparaat, jsonbTekst(layout.items)]);
   await blokkenNaSchrijven(q, lade, String(l.id), blokken);
 }
 
@@ -83,7 +84,7 @@ export async function overzetten(q: Q, lade: Lade, ctx: V3Context): Promise<bool
   const ins = await q(
     `INSERT INTO app.werkblad_v3_lade (user_id, ruimte, achtergrond, herkomst, v2_backup, v2_versie) VALUES ($1, $2, $3, $4, $5::jsonb, $6)
      ON CONFLICT (user_id, ruimte) DO NOTHING RETURNING user_id`,
-    [lade.userId, lade.ruimte, v3.achtergrond, backup ? 'v2' : 'standaard', backup ? JSON.stringify(backup) : null, v2 ? Number(v2.versie) : null]);
+    [lade.userId, lade.ruimte, v3.achtergrond, backup ? 'v2' : 'standaard', backup ? jsonbTekst(backup) : null, v2 ? Number(v2.versie) : null]);
   if (!ins.rowCount) return false;
   for (const a of APPARATEN) { const l = v3.layouts[a]; if (l) await laagSchrijven(q, lade, a, l); }
   return true;
@@ -135,7 +136,7 @@ export async function v3Terugdraaien(lade: Lade, opties: { v3Wissen?: boolean } 
          ON CONFLICT (user_id, ruimte) DO UPDATE SET indeling = EXCLUDED.indeling, versie = app.werkblad_indeling.versie + 1, bijgewerkt_op = now(),
            achtergrond_eigen = CASE WHEN (EXCLUDED.indeling->>'achtergrond') = 'eigen' THEN app.werkblad_indeling.achtergrond_eigen ELSE '' END
          WHERE app.werkblad_indeling.user_id = $1 AND app.werkblad_indeling.ruimte = $2
-         RETURNING versie`, [lade.userId, lade.ruimte, JSON.stringify(ind)])).rows[0];
+         RETURNING versie`, [lade.userId, lade.ruimte, jsonbTekst(ind)])).rows[0];
       hersteld = true; v2Versie = Number(r.versie);
     }
     let v3Gewist = false;

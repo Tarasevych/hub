@@ -1,5 +1,5 @@
 // E2E thema's (Chrome): Налаштування → Теми — palet «Чистий» + Темний = zuiver zwart (QLED); «Кольоровий» volgt de sectie
-// (id: grijs, mail: blauw); «Автоматично» met een venster rond NU → donker, «Скасувати автоперемикання на сьогодні» → licht;
+// (id: grijs, mail: blauw); «Автоматично» met een venster rond NU → donker, «Призупинити до наступного перемикання» → licht;
 // keuze blijft na F5 en geldt op een ander subdomein; eerste beeld al juist (opstartscript, geen flits). axe licht + donker.
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -92,7 +92,7 @@ export async function main(): Promise<number> {
     await page.waitForTimeout(500);
     check('«Автоматично» (venster rond nu) → donker, status «Зараз темна»', /theme-dark/.test(await html()) && /Зараз темна/.test(await page.locator('[data-thema-status]').innerText()), await page.locator('[data-thema-status]').innerText());
     await page.locator('[data-thema-status] [data-thema-pauze]').click(); await page.waitForTimeout(400);
-    check('«Скасувати автоперемикання на сьогодні» → licht + «призупинено»', /theme-light/.test(await html()) && /призупинено/.test(await page.locator('[data-thema-status]').innerText()));
+    check('«Призупинити до наступного перемикання» → licht + «призупинено»', /theme-light/.test(await html()) && /призупинено/.test(await page.locator('[data-thema-status]').innerText()));
     await page.reload({ waitUntil: 'networkidle' });
     check('pauze blijft na F5', /theme-light/.test(await html()));
     await page.locator('[data-thema-status] [data-thema-pauze]').click(); await page.waitForTimeout(400);

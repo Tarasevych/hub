@@ -200,6 +200,11 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   github_ci_logs: 'github.read', github_pr: 'github.write', app_domain: 'apps.deploy',
   image_generate: 'media.create', diagram_generate: 'media.create', screenshot_design: 'media.read', payments_list: 'payments.read',
   github_create_issue: 'github.write',
+  github_list_branches: 'github.read', github_list_tree: 'github.read', github_read_file: 'github.read',
+  github_compare: 'github.read', github_list_releases: 'github.read',
+  github_save_file: 'github.write', github_sync_mirror: 'github.write',
+  ecosysteem_context_list: 'site.read', ecosysteem_context_save: 'board.write',
+  ecosysteem_agent_overdracht: 'board.write', ecosysteem_ruimte_uitbreiding: 'apps.deploy',
   // сервер
   mcp_board_list: 'board.read',
   mcp_board_add: 'board.write',

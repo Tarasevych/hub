@@ -13,9 +13,34 @@ De privésleutel verlaat uw computer nooit: op de site plakt u alleen de publiek
 Aan **alle vier** de voorwaarden moet zijn voldaan:
 1. Een actief technisch profiel in dit tabblad met het recht **`ssh.host`**. Alleen de rol **Eigenaar** heeft dit: SSH als `beheer` betekent toegang
    tot de server zelf, en dat gaat verder dan een terminal in een container zonder netwerk. Daarom krijgt de rol «Beheerder» (`terminal.servers`) geen certificaat.
-2. Een verse bevestiging van de aanmelding (passkey of Google).
+2. Een verse bevestiging van de aanmelding (passkey of Google) **én** — sinds SEC-002 — een **passkey van de eigenaar over precies dit
+   certificaat** (publieke sleutel, principal, duur; eenmalig, hoogstens 5 minuten geldig). Root controleert die passkey zelf tegen
+   `/etc/mijn-ruimte/goedkeur-passkeys.json`; een verzoek van de site alleen is niet meer genoeg. Zie «Passkey van de eigenaar» hieronder.
 3. Root heeft de schakelaar `"ssh-ca": true` aangezet in `/etc/mijn-ruimte/mcp-rechten.json`. Standaard staat deze op `false` en de installer wijzigt dit niet.
 4. De feature-flag `ssh-certificaat` staat aan. Deze **toont alleen de knop** en verleent geen rechten.
+
+## Passkey van de eigenaar (SEC-002, server-uitrol-06)
+Root tekent een certificaat alleen als de eigenaar het **op de site met een passkey** heeft bevestigd. Zo krijgt iemand die code kan
+uitvoeren met de rechten van de app (een inbreker in de app) **geen** shell op de server zonder de passkey van de eigenaar.
+
+**Wat u na de installatie ziet.** Zolang er in `/etc/mijn-ruimte/goedkeur-passkeys.json` nog geen passkey van de eigenaar staat, tekent
+root **niets**: de site toont «На сервері ще немає passkey власника для схвалень» (`GEEN_PASSKEY`). Dat is de veilige stand, geen storing.
+
+**Passkey toevoegen (eenmalig).** Dezelfde passkey als voor het goedkeuren van updates (`deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md` §13.2):
+1. Op de telefoon of laptop, aangemeld als eigenaar: «Налаштування → Способи входу» → «Passkeys» → «Додати passkey»; daarna bij die passkey
+   «Може схвалювати оновлення сервера» aanvinken. De site toont de vingerafdruk (`ab12 cd34 …`).
+2. Op de server: `sudo mijn-ruimte-passkey wachtend` (vergelijk de vingerafdruk) en `sudo mijn-ruimte-passkey toevoegen <eerste 16 of meer
+   tekens>`. Hebt u al een passkey die updates mag goedkeuren, dan is er niets te doen: die telt ook voor SSH-certificaten.
+3. Een certificaat vraagt u daarna aan op **https://admin.tarasevych.com** of **https://id.tarasevych.com** (alleen op die adressen aanvaardt
+   root de passkey): technisch profiel van de Eigenaar → «SSH-certificaat» → publieke sleutel plakken → passkey bevestigen.
+
+**De schakelaar `"ssh-ca-teken-passkey"` in `/etc/mijn-ruimte/mcp-rechten.json`** (alleen root kan dit bestand schrijven):
+
+| Waarde | Betekenis |
+|---|---|
+| ontbreekt (standaard) | Passkey verplicht zodra het sleutelbestand bestaat (de installer maakt het altijd aan). Geen passkey in het bestand → geweigerd, nooit stil getekend. |
+| `true` | Altijd verplicht. |
+| `false` **(!)** | **Niet** verplicht. **Risico:** elk verzoek van de app wordt weer getekend — wie de app overneemt, krijgt een shell op de server als `beheer`. Elke handtekening zonder passkey staat met een waarschuwing in het journaal van root. Zet dit niet; alleen tijdelijk als u de passkey kwijt bent en via de console werkt, en daarna meteen terug. |
 
 Limiet: maximaal 12 certificaten per uur voor de hele server. Elke uitgifte en weigering wordt vastgelegd in het logboek van de site
 (alleen de vingerafdruk, zonder het certificaat zelf) en in het logboek van root (`gebeurtenissen.jsonl`).

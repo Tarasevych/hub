@@ -142,8 +142,10 @@ export async function main(): Promise<number> {
   await new Promise<void>((r) => http.listen(0, '127.0.0.1', r));
   const wsPoort = (http.address() as AddressInfo).port;
   type Ws = { ws: WebSocket; berichten: string[]; dicht: { code: number; reden: string } | null };
-  const verbind = (origin = `http://127.0.0.1:${wsPoort}`) => new Promise<Ws>((res, rej) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${wsPoort}${rb.REMOTE_WS_PATH}?`, 'guacamole', { headers: { origin } });
+  // SEC-002 (afwerking A): de tunnel eist voor ELKE verbinding de tech-cookie van de eigenaar (geen anonieme weg meer, geen «oracle»).
+  let tunnelCookie = '';
+  const verbind = (origin = `http://127.0.0.1:${wsPoort}`, cookie = tunnelCookie) => new Promise<Ws>((res, rej) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${wsPoort}${rb.REMOTE_WS_PATH}?`, 'guacamole', { headers: { origin, ...(cookie ? { cookie } : {}) } });
     const x: Ws = { ws, berichten: [], dicht: null };
     ws.on('message', (m) => x.berichten.push(m.toString()));
     ws.on('close', (code, reden) => { x.dicht = { code, reden: reden.toString() }; });
@@ -201,6 +203,12 @@ export async function main(): Promise<number> {
     check('openen zonder actief technisch profiel in dit tabblad → 403 TECH_PROFIEL_VEREIST', (await roep('/api/owner/remote/openen', { id: vid })).data.error === 'TECH_PROFIEL_VEREIST');
     await tp.profielVan(eig);
     const act = await tp.activeren(eig, tab, 0, 'eenheidstest extern bureaublad');
+    {
+      const tb = await import('../../backend/tech-bundels');
+      const { TECH_ASSET_COOKIE } = await import('../../shared/tech-bundels');
+      const kop = await tb.assetCookieVoor(null, { id: act.id, eind: act.eind }, uid);
+      tunnelCookie = `${TECH_ASSET_COOKIE}=${/=([^;]*);/.exec(kop || '')?.[1] || ''}`;
+    }
     passkey = false;
     check('openen zonder passkey (met techprofiel) → 403 STEP_UP_REQUIRED', (await roep('/api/owner/remote/openen', { id: vid })).data.error === 'STEP_UP_REQUIRED');
     passkey = true;
@@ -213,6 +221,8 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- tunnel
     let fout = ''; try { await verbind('https://evil.example'); } catch (e) { fout = (e as Error).message; }
     check('tunnel: andere Origin → HTTP 403', fout === 'HTTP 403', fout);
+    fout = ''; try { await verbind(undefined, ''); } catch (e) { fout = (e as Error).message; }
+    check('tunnel (afwerking A): zonder tech-cookie → HTTP 403, ook nu er een sessie op haar ticket wacht (geen oracle)', fout === 'HTTP 403', fout);
     const a = await verbind();
     await tot(() => a.berichten.length > 0);
     check('tunnel: eerst de interne UUID (client gaat naar OPEN)', /^0\.,36\.[0-9a-f-]{36};$/.test(a.berichten[0] || ''), a.berichten[0]);
@@ -230,14 +240,15 @@ export async function main(): Promise<number> {
     await wacht(100);
     check('invoer door (mouse), bestandsoverdracht tegengehouden (file/put)', g.ontvangen.includes('mouse') && !g.ontvangen.includes('file') && !g.ontvangen.includes('put'), g.ontvangen.join(','));
     check('guacd-antwoord terug naar de browser (sync)', await tot(() => a.berichten.some((m) => m.includes('4.sync'))));
-    const b = await verbind();
-    await tot(() => b.berichten.length > 0);
-    b.ws.send(G.guacInstructie('mr-auth', op.data.ticket));
-    check('ticket eenmalig: tweede gebruik → verbinding dicht (4403)', await tot(() => b.dicht?.code === 4403));
-    const c = await verbind();
-    await tot(() => c.berichten.length > 0);
-    c.ws.send(G.guacInstructie('mouse', 1, 1, 0));
-    check('zonder ticket alleen genegeerd; na 5 s dicht (4401)', await tot(() => c.dicht?.code === 4401, 6500));
+    // SEC-002 (afwerking A): wacht er geen sessie van de eigenaar meer op een ticket, dan weigert upgrade() al vóór de handdruk (403);
+    // anders sluit de tunnel na het tweede gebruik (4403) of zonder ticket na 5 s (4401). Beide zijn een weigering.
+    const verbindOf403 = async () => { try { return await verbind(); } catch (e) { return (e as Error).message; } };
+    const b = await verbindOf403();
+    if (typeof b !== 'string') { await tot(() => b.berichten.length > 0); b.ws.send(G.guacInstructie('mr-auth', op.data.ticket)); }
+    check('ticket eenmalig: tweede gebruik → geweigerd (HTTP 403 vóór de handdruk, of dicht met 4403)', b === 'HTTP 403' || (typeof b !== 'string' && await tot(() => b.dicht?.code === 4403)), typeof b === 'string' ? b : String(b.dicht?.code));
+    const c = await verbindOf403();
+    if (typeof c !== 'string') { await tot(() => c.berichten.length > 0); c.ws.send(G.guacInstructie('mouse', 1, 1, 0)); }
+    check('zonder ticket: geweigerd (HTTP 403, of genegeerd en na 5 s dicht met 4401)', c === 'HTTP 403' || (typeof c !== 'string' && await tot(() => c.dicht?.code === 4401, 6500)), typeof c === 'string' ? c : String(c.dicht?.code));
     check('stand: sessie zichtbaar als actief', (await roep('/api/owner/remote/stand')).data.actief?.some((x: { sid: string }) => x.sid === op.data.sid));
     a.ws.send(G.guacInstructie('disconnect'));
     check('disconnect van de browser → guacd krijgt disconnect, sessie dicht', await tot(() => g.disconnect && !rb._sessies.has(op.data.sid)));

@@ -19,6 +19,7 @@ import {
 } from '../../shared/werkblad-register';
 import { bewaarV3, draaiV3Terug, laadV3, schrijfCacheV3, wisCacheV3, WerkbladV3Verouderd, type LaagStand, type V3Antwoord } from './api-v3';
 import { haalWerkblad } from './api';
+import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 import { pasPaginaAchtergrondToe } from './pagina-achtergrond';
 import { useZichtbaar } from './gegevens';
 import { tr, type Acties, type Dienst, type Lang } from './soorten';
@@ -35,6 +36,8 @@ import { BIBLIOTHEEK_EVENT, BIBLIOTHEEK_MIME, leesSleepData, leesVerzoek, type B
 import { useWerkbladBlokken } from './blokken/useWerkbladBlokken';
 import { heeftBlok, SNEL_TOEGANG, SNEL_TOEGANG_ITEMS } from './blokken/koppeling';
 import './werkblad.css';
+import './werkblad-maquette.css';
+import { useIsMaquette } from '../thema/useThema';
 
 type Lagen = Partial<Record<ApparaatKlasse, LaagStand>>;
 const soortVan = (itemId: string) => (itemId.startsWith('wdg:') ? 'widget' : itemId.startsWith('map:') ? 'folder' : 'shortcut') as DesktopEntry['kind'];
@@ -87,6 +90,7 @@ function WidgetV3({ entry, lang, acties, basis, kolommen, bewerken, rctx, vak }:
 }
 
 export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, rechten, onHubTab, eerste }: WerkbladProps & { eerste: Extract<V3Antwoord, { aan: true }> }) {
+  const isMaquette = useIsMaquette();
   const tech = useTech();
   const techProfiel = profielVan(tech) === 'technisch';
   const profiel = techProfiel ? 'technisch' : 'gebruiker';
@@ -300,13 +304,13 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       zetMelding(r.hersteld
         ? tr(lang, `Розкладку v2 відновлено (версія ${r.v2Versie}). Щоб бачити старий стіл, вимкніть прапорець «werkblad-v3». Дані v3 збережено.`, `De v2-indeling is hersteld (versie ${r.v2Versie}). Zet de vlag «werkblad-v3» uit om het oude werkblad te zien. De v3-gegevens blijven bewaard.`)
         : tr(lang, 'Резервної копії v2 немає — нічого відновлювати.', 'Er is geen v2-back-up — niets te herstellen.'));
-    } catch (e) { zetMelding(tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
+    } catch (e) { zetMelding(weigeringZinUitFout(lang, e) ?? tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
   };
   const kiesAchtergrond = (nieuw: string) => { const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout; if (a && l) bewaar(a, l, { achtergrond: nieuw }); zetAchtergrond(nieuw); };
 
   const stijl = achtergrond === 'eigen' && achtergrondEigen ? ({ '--wb-eigen': `url("${achtergrondEigen}")` } as CSSProperties) : undefined;
   return (
-    <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}`} style={stijl} data-werkblad='klaar' data-werkblad-versie='3'
+    <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
       data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         <h2 id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</h2>

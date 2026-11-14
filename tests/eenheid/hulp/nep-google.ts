@@ -33,7 +33,7 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
   process.env.OWNER_EMAIL = opties.ownerEmail;
   const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
   const kid = `eenheid-${Date.now()}-${randomBytes(3).toString('hex')}`;
-  const codes = new Map<string, { sub: string; email: string; nonce: string; authTime: number | null; iat?: number }>();
+  const codes = new Map<string, { sub: string; email: string; nonce: string; authTime: number | null; iat?: number; picture?: string }>();
   const laatsteAuthUrls: string[] = [];
   const echteFetch = globalThis.fetch;
   globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
@@ -43,7 +43,7 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
       const c = codes.get(p.get('code') || '');
       if (!c || p.get('client_id') !== CLIENT) return new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 });
       const kop = b64({ alg: 'RS256', kid }), nu = Math.floor(Date.now() / 1000);
-      const inhoud = b64({ iss: 'https://accounts.google.com', aud: CLIENT, sub: c.sub, email: c.email, email_verified: true, name: c.email, iat: c.iat ?? nu, exp: nu + 600, nonce: c.nonce, ...(c.authTime === null ? {} : { auth_time: c.authTime }) });
+      const inhoud = b64({ iss: 'https://accounts.google.com', aud: CLIENT, sub: c.sub, email: c.email, email_verified: true, name: c.email, iat: c.iat ?? nu, exp: nu + 600, nonce: c.nonce, ...(c.authTime === null ? {} : { auth_time: c.authTime }), ...(c.picture ? { picture: c.picture } : {}) });
       const handtekening = createSign('RSA-SHA256').update(`${kop}.${inhoud}`).sign(privateKey).toString('base64url');
       return new Response(JSON.stringify({ id_token: `${kop}.${inhoud}.${handtekening}`, access_token: 'eenheid' }), { status: 200 });
     }
@@ -76,14 +76,14 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     };
     const tab = randomBytes(24).toString('hex');
     /** Aanmelden via de redirect-flow (zoals productie). intent 'step-up' vraagt opnieuw om het wachtwoord. */
-    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string; ip?: string; ua?: string; kop?: Record<string, string> } = {}) => {
+    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string; ip?: string; ua?: string; kop?: Record<string, string>; /** IDENTITEIT-015: claim «picture» у токені (за замовчуванням немає) */ picture?: string } = {}) => {
       const net = { ip: o.ip, ua: o.ua, kop: o.kop };
       const service = o.service || 'hub', host = `${service === 'identity' ? 'id' : service}.tarasevych.com`;
       const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false }, net);
       const authUrl = String(start.data.authUrl || 'https://x.invalid/'); laatsteAuthUrls.push(authUrl);
       const u = new URL(authUrl);
       const code = `code-${randomBytes(6).toString('hex')}`;
-      codes.set(code, { sub, email, nonce: u.searchParams.get('nonce') || '', authTime: o.authTime === undefined ? Math.floor(Date.now() / 1000) : o.authTime, ...(o.iat === undefined ? {} : { iat: o.iat }) });
+      codes.set(code, { sub, email, nonce: u.searchParams.get('nonce') || '', authTime: o.authTime === undefined ? Math.floor(Date.now() / 1000) : o.authTime, ...(o.iat === undefined ? {} : { iat: o.iat }), ...(o.picture ? { picture: o.picture } : {}) });
       const cb = await verzoek('id.tarasevych.com', '/api/owner/auth/google/callback', { state: u.searchParams.get('state'), code }, net);
       return { start, cb, authUrl: u };
     };

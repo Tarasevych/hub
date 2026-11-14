@@ -36,6 +36,27 @@ import { heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
 import { maskeer } from './uitrol-diagnose-run';
 import { accountKort, accountOverzicht, accountRonde, isAccountId, laatsteServerStanden } from './diagnostiek-account';
 import { tabel as accountTabel } from '../shared/diagnostiek-account';
+import { meldBeveiligingsWijziging } from './beveiliging-meldingen';
+
+/**
+ * SEC-002 (privacy-logboek-03): wie met diagnose.lezen het account van een ANDER bekijkt of doorlicht, laat dat de bekeken
+ * gebruiker weten in zijn eigen meldingencentrum (wie, wat). Het journaal had het al, maar alleen in de technische sfeer.
+ * Hooguit één melding per beheerder × gebruiker × soort per uur, zodat «vernieuwen» geen stortvloed geeft.
+ */
+const inzageGemeld = new Map<string, number>();
+const INZAGE_VENSTER_MS = 60 * 60_000;
+export async function meldInzage(actor: { id: string; email?: string }, doelId: string, wat: 'gebruiker' | 'account' | 'account-uitgevoerd', nu = Date.now()): Promise<boolean> {
+  if (!doelId || !actor?.id || actor.id === doelId) return false;
+  const sleutel = `${actor.id}|${doelId}|${wat}`;
+  if (nu - (inzageGemeld.get(sleutel) ?? 0) < INZAGE_VENSTER_MS) return false;
+  inzageGemeld.set(sleutel, nu);
+  if (inzageGemeld.size > 5000) for (const [k, t] of inzageGemeld) if (nu - t >= INZAGE_VENSTER_MS) inzageGemeld.delete(k);
+  const [uk, nl] = wat === 'gebruiker' ? ['стан вашого облікового запису (скарга користувача)', 'de toestand van uw account (melding van een gebruiker)']
+    : wat === 'account-uitgevoerd' ? ['перевірку служб вашого облікового запису (запущено)', 'een controle van de diensten van uw account (uitgevoerd)']
+      : ['стан служб вашого облікового запису', 'de toestand van de diensten van uw account'];
+  await meldBeveiligingsWijziging(doelId, 'account-bekeken', { wie: actor.email || 'beheerder', wat: uk, watNl: nl });
+  return true;
+}
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
@@ -517,6 +538,7 @@ export function adminDiagnostiekRoutes(deps: { requireSession: RequireSession })
       if (!res) return error('GEBRUIKER_ONBEKEND', 404);
       await schrijfBeheerAudit({ actor: { id: auth.user.id, email: String(auth.user.email || '') }, doel: { soort: 'account', id }, actie: 'diag.gebruiker.bekeken', categorie: 'diagnose', resultaat: 'success', service: 'admin', eigenaar: id,
         details: { bevindingen: res.bevindingen.filter((x) => x.ernst !== 'info').map((x) => x.code).slice(0, 12) } }).catch((e) => console.error('[admin-diagnostiek] AUDIT MISLUKT:', (e as Error).message));
+      await meldInzage({ id: auth.user.id, email: String(auth.user.email || '') }, id, 'gebruiker');
       return json(res);
     })],
     // «Перевірити рендеринг» (22.10.2026): de site start geen browser; ze zet een leeg verzoekbestand in de goedkeur-inbox en root (nazorg-timer,
@@ -568,6 +590,7 @@ export function adminDiagnostiekRoutes(deps: { requireSession: RequireSession })
       const wie = { id: auth.user.id, email: String(auth.user.email || '') };
       await schrijfBeheerAudit({ actor: wie, doel: { soort: 'account', id }, actie: uitvoeren ? 'diag.account.uitgevoerd' : 'diag.account.bekeken', categorie: 'diagnose', resultaat: 'success', service: 'admin', eigenaar: id,
         details: { slecht: o.laatste.filter((u) => u.stand === 'fout' || u.stand === 'let-op').map((u) => `${u.dienst}:${u.code}`).slice(0, 10) } }).catch((e) => console.error('[admin-diagnostiek] AUDIT MISLUKT:', (e as Error).message));
+      await meldInzage(wie, id, uitvoeren ? 'account-uitgevoerd' : 'account');
       return json({ gebruiker: kort, zelf: id === auth.user.id, rijen: accountTabel(server, o.laatste), historie: o.historie, nu: Date.now() });
     })],
     // «Стан моїх служб» (Налаштування): ALLEEN het eigen account, geen serverkolom, geen andere gebruiker (gebruikerId wordt genegeerd).

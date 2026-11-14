@@ -28,6 +28,12 @@ import { googleSuiteOnboardingSnapshot } from './google-suite-inrichting';
 import { listUserGrants } from './mcp-connector';
 import { aanbiederFout, LEGE_FEITEN, startStaat, WERKRUIMTE_FOUTEN, type Feiten, type ModelKeuze } from '../shared/ai-werkruimte';
 import { AI_AANBIEDERS } from '../shared/ai-aanbieders';
+import {
+  bouwWerkruimteSysteemInstructie,
+  controleerAanroepVoorWerkruimte,
+  filterHulpmiddelenVoorWerkruimte,
+} from '../shared/ai-ecosysteem';
+import { ecosysteemLade, leesWerkruimteEnContextVoorChat, type EcosysteemOpslag } from './ai-ecosysteem';
 
 /** Diensten waarvan dit scherm bereikbaar is: ai.* (het scherm zelf), mcp.* (de hub ernaast) en 'api' voor clients. */
 const DIENSTEN = ['ai', 'mcp', 'api'] as const;
@@ -134,6 +140,7 @@ export type WerkruimteDeps = {
   /** Alleen voor tests: feiten en chat zonder database/netwerk. */
   feiten?: (user: { id: string; email?: string }, recht: boolean) => Promise<Feiten>;
   chatDeps?: ChatDeps;
+  ecosysteemOpslag?: EcosysteemOpslag;
   /** Alleen voor tests: zonder teller. Standaard 20 verzoeken per minuut per account (de sleutel kost de gebruiker geld). */
   limiet?: (userId: string) => Promise<boolean>;
 };
@@ -187,14 +194,46 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
       if (!berichten.length || berichten[berichten.length - 1].role !== 'user') return error(WERKRUIMTE_FOUTEN.laatsteMoetVraagZijn, 400);
       if (!(await limiet(p.user.id))) return error(WERKRUIMTE_FOUTEN.teVeel, 429);
 
-      const uit = await runChat({ ...(deps.chatDeps ?? defaultChatDeps), model }, p.user.id, berichten);
+      const basisDeps = deps.chatDeps ?? defaultChatDeps;
+      const werkruimteId = typeof body.werkruimteId === 'string' ? body.werkruimteId.trim() : '';
+      const contextSleutels = Array.isArray(body.contextSleutels)
+        ? body.contextSleutels.filter((s): s is string => typeof s === 'string').slice(0, 12)
+        : [];
+
+      let werkruimte = null as Awaited<ReturnType<typeof leesWerkruimteEnContextVoorChat>>['werkruimte'];
+      let extraSystem = '';
+      if (werkruimteId || contextSleutels.length > 0) {
+        const lade = await ecosysteemLade(p.user.id, ctx.body);
+        const geladen = await leesWerkruimteEnContextVoorChat(lade, werkruimteId, contextSleutels, deps.ecosysteemOpslag);
+        werkruimte = geladen.werkruimte;
+        extraSystem = bouwWerkruimteSysteemInstructie(werkruimte, geladen.contextItems);
+      }
+
+      const samengesteldeDeps: ChatDeps = {
+        ...basisDeps,
+        model,
+        ...(extraSystem ? { extraSystem } : {}),
+        listTools: async (uid) => {
+          const alle = await basisDeps.listTools(uid);
+          return filterHulpmiddelenVoorWerkruimte(alle, werkruimte);
+        },
+        callTool: async (uid, name, args) => {
+          const controle = controleerAanroepVoorWerkruimte(name, args, werkruimte);
+          if (!controle.ok) {
+            return { isError: true, content: [{ type: 'text', text: controle.reden }] };
+          }
+          return basisDeps.callTool(uid, name, args);
+        },
+      };
+
+      const uit = await runChat(samengesteldeDeps, p.user.id, berichten);
       if ('error' in uit) {
         await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'failure', details: { model, fout: uit.error } }).catch(() => undefined);
         if (uit.error === 'no_api_key') return error(WERKRUIMTE_FOUTEN.geenSleutel, 409);
         return error(aanbiederFout(uit.status), 502);
       }
-      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool) } }).catch(() => undefined);
-      return json({ ...uit, model });
+      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}) } }).catch(() => undefined);
+      return json({ ...uit, model, ...(werkruimte ? { werkruimteId: werkruimte.id } : {}) });
     }) as RouterMiddleware],
   };
 }

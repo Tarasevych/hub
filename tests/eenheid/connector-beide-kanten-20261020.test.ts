@@ -112,7 +112,9 @@ export async function main(): Promise<number> {
     /const AGENTPADEN_NAAR_APP = \(process\.env\.MCP_AGENTPADEN \|\| "app"\) !== "deur"/.test(deurBron) && /AGENTPADEN_NAAR_APP && AGENT_SLUGS\.test\(delen\[0\]\)\) return null/.test(deurBron));
   const start = readFileSync('server/start.ts', 'utf8');
   check('server/start.ts: GET /<agent> met text/event-stream opent de stroom, en alle RFC 8414-ontdekkingsvormen van de app-issuer horen bij de app',
-    /stroomVerzoek\(req, res, m\[1\]\)/.test(start) && /'\/\.well-known\/openid-configuration\/oauth2': '\/api\/mcp-connector\/asm'/.test(start) && /'\/\.well-known\/oauth-authorization-server': '\/api\/mcp-connector\/asm'/.test(start));
+    // SEC-002 (http-rand-07): de stroom krijgt nu ook het IP voor de emmer per IP — alleen de eerste drie argumenten zijn hier wezenlijk.
+    // SEC-002: потік тепер отримує ще й IP (ліміт на IP) — суттєві лише перші три аргументи.
+    /stroomVerzoek\(req, res, m\[1\][,)]/.test(start) && /'\/\.well-known\/openid-configuration\/oauth2': '\/api\/mcp-connector\/asm'/.test(start) && /'\/\.well-known\/oauth-authorization-server': '\/api\/mcp-connector\/asm'/.test(start));
   check('tunnelsjabloon stuurt /claude niet meer naar de deur (de regel die op de server nog stond, is de oorzaak)',
     !/\(\?i:grok\|claude\|chatgpt\|gemini\|copilot\)/.test(readFileSync('deploy/cloudflared-config.yml', 'utf8')));
 

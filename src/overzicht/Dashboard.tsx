@@ -13,6 +13,7 @@ import { WIDGET_ICOON, WidgetInhoud, type WidgetCtx } from './widgets';
 import type { Bron, Context, Lang, Overzicht } from './types';
 import { tr } from './types';
 import './overzicht.css';
+import './overzicht-maquette.css';
 
 const POLL_MS = 15_000;
 const RIJ_PX = 118; const GAP_PX = 14;

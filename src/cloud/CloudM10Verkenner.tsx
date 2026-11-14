@@ -1,11 +1,12 @@
-/** M10: authenticated multi-account browser, STAGING ONLY.
- * Uses only account-scoped server directory endpoints; never invents provider capabilities,
- * previews or download URLs. Not a replacement for the existing Drive browser.
+/** M10: захищений оглядач кількох облікових записів у передпусковому режимі.
+ * Використовує лише серверні маршрути каталогів, прив'язані до облікового запису; ніколи не вигадує можливостей,
+ * попередніх переглядів або прямих посилань завантаження, і не замінює основний переглядач Google Диску.
  */
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {api} from '../platform/client';
 import {openUniverseelBestand,type BestandBron} from '../bestand/universeel-bestand';
 import './cloud-m10-verkenner.css';
+import '../cloud-klassiek-maquette.css';
 
 type A={id:string;provider:string;displayName:string;email:string;status:string};
 type F={id:string;name:string;kind:'file'|'folder';size:number|null;revision:string;mime:string};

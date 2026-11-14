@@ -26,10 +26,9 @@ export function zetTypeVoorkeur(type: MeldingType, veld: Veld, waarde: boolean):
 export function zetTypeWeergave(type: MeldingType, weergave: MeldingWeergave): void {
   zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, soorten: { ...cur.meldingen.soorten, [type]: metWeergave(voorkeurVoor(cur.meldingen.soorten, type), weergave, type) } } }));
 }
-/** Hoe lang de pop-up van dit type staat (0 = automatisch, anders 3–60 s); zonder «висить». */
+/** Hoe lang de pop-up van dit type staat (0 = standaard 2 s, anders 2–60 s); zonder «висить». */
 export function zetTypeSeconden(type: MeldingType, seconden: number): void {
-  // 0 = automatisch volgens soort en lengte (INTEG-001); anders 3–60 s.
-  const veilig = seconden <= 0 ? 0 : Math.min(60, Math.max(3, Math.round(seconden)));
+  const veilig = seconden <= 0 ? 0 : Math.min(60, Math.max(2, Math.round(seconden)));
   zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, soorten: { ...cur.meldingen.soorten, [type]: { ...voorkeurVoor(cur.meldingen.soorten, type), seconden: veilig } } } }));
 }
 export function zetAlleTypen(typen: readonly MeldingType[], veld: Veld, waarde: boolean): void {
@@ -59,10 +58,10 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
   /** Een voorbeeld-pop-up van dit type: de gebruiker ziet meteen wat zijn keuze doet (geluid, pop-up, duur, vast). */
   const voorbeeld = (id: MeldingType, naam: string) => {
     const v = voorkeurVoor(soorten, id);
-    const hoe = v.vast ? t('висить, доки ви не закриєте', 'blijft staan tot u sluit') : v.seconden ? t(`зникне приблизно за ${v.seconden} с`, `verdwijnt na ongeveer ${v.seconden} s`) : t('зникне за кілька секунд (авто)', 'verdwijnt na enkele seconden (auto)');
+    const hoe = v.vast ? t('висить, доки ви не закриєте', 'blijft staan tot u sluit') : t(`зникне за ${v.seconden || 2} с`, `verdwijnt na ${v.seconden || 2} s`);
     emitCanonicalNotice({
       text: t(`Приклад: «${naam}»`, `Voorbeeld: «${naam}»`), kind: 'info', type: id, transient: true, voorbeeld: true, source: 'voorbeeld',
-      explain: t(`Так виглядатиме сповіщення цього типу. Воно ${hoe}; наведіть курсор — відлік зупиниться.`, `Zo ziet een melding van dit type eruit. Ze ${hoe}; houd de muis erop — dan stopt de aftelling.`),
+      explain: t(`Так виглядатиме сповіщення цього типу. Воно ${hoe}; наведіть курсор або затисніть пальцем — відлік зупиниться.`, `Zo ziet een melding van dit type eruit. Ze ${hoe}; houd de aanwijzer of uw vinger erop — dan stopt de aftelling.`),
     });
   };
   const rij = (id: MeldingType) => {
@@ -90,7 +89,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
         <label className='mv-veld'>
           <span>{t('Тривалість', 'Duur')}</span>
           <select className='mv-duur' data-mv-veld='seconden' value={v.seconden} disabled={!popup || v.vast} onChange={(e) => zetTypeSeconden(id, Number(e.target.value))} aria-label={`${naam}: ${t('скільки секунд показувати спливне вікно', 'duur van de pop-up in seconden')}`}>
-            {[...new Set([0, ...TOAST_SECONDEN_KEUZES, v.seconden])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s === 0 ? t('Авто (за типом і текстом)', 'Auto (volgens soort en tekst)') : `${s} ${t('с', 's')}`}</option>)}
+            {[...new Set([0, ...TOAST_SECONDEN_KEUZES, v.seconden])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s === 0 ? t('2 с (типово)', '2 s (standaard)') : `${s} ${t('с', 's')}`}</option>)}
           </select>
         </label>
         <button type='button' className='mv-voorbeeld' data-mv-voorbeeld={id} disabled={!v.tonen} onClick={() => voorbeeld(id, naam)}
@@ -118,7 +117,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
   return (
     <div className='mv-paneel' data-melding-voorkeuren>
       <p className='mv-uitleg'>{t('Зберігається у вашому акаунті й діє в усіх вкладках і на всіх пристроях.', 'Wordt in uw account bewaard en geldt in alle tabbladen en op alle apparaten.')}</p>
-      <p className='mv-uitleg'>{t('Спливне вікно зникає саме за вказаний час («Авто» — коротше для «готово», довше для помилок і довгого тексту). Поки курсор на ньому, відлік стоїть. Після закриття сповіщення лишається в панелі.', 'De pop-up verdwijnt vanzelf na de ingestelde tijd («Auto» — korter voor «klaar», langer voor fouten en lange tekst). Zolang de muis erop staat, staat de aftelling stil. Na het sluiten blijft de melding in het paneel.')}</p>
+      <p className='mv-uitleg'>{t('Спливне вікно типово показується 2 с (або обраний вами час). Поки курсор чи палець утримує сповіщення, відлік стоїть. Після закриття сповіщення лишається в панелі.', 'De pop-up verschijnt standaard 2 s (of de door u gekozen tijd). Zolang de aanwijzer of uw vinger op de melding rust, staat de aftelling stil. Na het sluiten blijft de melding in het paneel.')}</p>
       {groep(t('Мої сповіщення', 'Mijn meldingen'), t('Пошта, безпека акаунта, спільний доступ та інше, що стосується лише вас.', 'E-mail, beveiliging van uw account, delen en andere zaken die alleen u aangaan.'), prive, 'prive')}
       {techTypen ? groep(t('Технічна панель', 'Technisch paneel'), t('Видно лише з технічним профілем і лише те, що стосується ваших ролей. Самі сповіщення — у смузі технічного режиму.', 'Alleen zichtbaar met een technisch profiel en alleen wat uw rollen aangaat. De meldingen zelf staan in de band van de technische modus.'), tech, 'technisch') : null}
     </div>

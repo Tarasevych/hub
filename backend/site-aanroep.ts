@@ -81,6 +81,17 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/mcp/health',
   'POST /api/mcp/archive/status',
   'POST /api/mcp/backups',
+  'POST /api/owner/ai/ecosysteem/context/lijst',
+  'POST /api/owner/ai/ecosysteem/context/opslaan',
+  'POST /api/owner/ai/ecosysteem/overdracht/aanmaken',
+  'POST /api/owner/ai/ecosysteem/uitbreiding/opslaan',
+  'POST /api/owner/github/branches',
+  'POST /api/owner/github/tree',
+  'POST /api/owner/github/file',
+  'POST /api/owner/github/compare',
+  'POST /api/owner/github/releases',
+  'POST /api/owner/github/file/save',
+  'POST /api/owner/github/spiegel/sync',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body, namens) => {

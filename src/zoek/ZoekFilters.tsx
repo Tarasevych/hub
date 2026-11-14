@@ -89,7 +89,7 @@ export default function ZoekFilters({ lang, f, setF, facets, stand, mobiel, open
     return (
       <>
         <div className='zk-scrim' onClick={onClose} aria-hidden='true' />
-        <section ref={paneel} className='zk-paneel is-onderblad' role='dialog' aria-modal='true' aria-labelledby={`${uid}-h`} tabIndex={-1} onKeyDown={onKey} data-zoek-filters='onderblad'>{inhoud}</section>
+        <section ref={paneel} className='zk-paneel is-onderblad' role='dialog' aria-modal='true' aria-labelledby={`${uid}-h`} tabIndex={-1} onKeyDown={onKey} data-zoek-filters='onderblad' data-mq-laag-open='1'>{inhoud}</section>
       </>);
   }
   return <aside ref={paneel as React.RefObject<HTMLElement>} className='zk-paneel kaart' aria-labelledby={`${uid}-h`} data-zoek-filters='kolom'>{inhoud}</aside>;

@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-008",
+  "titel": "Спадне меню облікового запису (v3), виправлення входу пошти Google та відкрита агентна екосистема розділу ШІ",
+  "opdracht": "Виправити три виявлені під час перевірки вади (збій завершення входу пошти Google із прихованою причиною закритого сховища ключів, автозгортання полички палітри кольорів при утриманні на смартфоні та перекриття кнопки видалення запису із сусідньою кнопкою переходу) та втілити відкриту агентну екосистему розділу ШІ (ізольовані робочі простори агентів для комп’ютера, оглядача й сервера, спільний контекст між завданнями й застосунками, передача завдань між агентами за розпорядженням користувача, адаптація простору користувача з підтримкою OpenAI Codex і Anthropic Claude та відкритий пакет самостійного розгортання на власному обладнанні).",
+  "herkomst": {
+    "tak": "feature/identiteit-008-accountmenu-v3-20261111-142500",
+    "basis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "geinstalleerdeBasis": "730d9f811b09d138d5378ef9339bf4c895074c16",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, вміст поштових листів, сеанси оглядача та приховані міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-11T08:05:00Z",
+      "stap": "Разом із власником узгоджено будову нового спадного меню облікового запису (accountmenu-v3): перемикач теми з палітрою, мову зі справжніми прапорами, простір і терміни, швидкі дії, орбіту світлин, нижній рядок виходу в два стовпці та масштабування за кутик."
+    },
+    {
+      "tijd": "2026-11-11T13:25:00Z",
+      "stap": "Уточнено деталі меню: світіння щитка лише за активного технічного простору, палітра за Моделлю В без кутового кружечка, концентричне кільце 32×32 (r = 15.5) та спливна картка підказки."
+    },
+    {
+      "tijd": "2026-11-11T15:43:00Z",
+      "stap": "Втілено розумний захисний запобіжник повноти застосованих міграцій (MIGRATIES_ONTBREKEN) із розпізнаванням задокументованих жовтневих перейменувань за наявності міграції-спадкоємиці."
+    },
+    {
+      "tijd": "2026-11-11T17:15:00Z",
+      "stap": "Створено незалежне мобільне поверхневе вікно AccountMenuV3 через портал на всю зручну ширину смартфона; випуск 20261111-172513 встановлено власником на робочому сервері."
+    },
+    {
+      "tijd": "2026-11-11T19:14:00Z",
+      "stap": "Після живої перевірки на сервері виправлено збій завершення входу пошти Google при закритому сховищі ключів (SLEUTELKLUIS_GESLOTEN), усунуто автозгортання полички палітри після утримання на сенсорному екрані, розмежовано дотикові зони кнопок переходу та видалення запису зі списку, а також реалізовано відкриту агентну екосистему розділу ШІ з міграцією 0207_ai_ecosysteem_werkruimtes.sql, підтримкою OpenAI Codex (/codex) і Anthropic Claude (/claude), ізольованими просторами агентів, спільним контекстом, передачею завдань між агентами та пакетом самостійного розгортання на власному обладнанні."
+    }
+  ],
+  "keuzes": [
+    "Перевіряти стан особистого сховища ключів користувача вже на початку підключення пошти Google (startConsent → 423 SLEUTELKLUIS_GESLOTEN) і прокидати точний код збою в upsertOAuthGrant та googleSuiteCallbackPost разом із прямою кнопкою розблокування сховища у EigenaarIdentiteitTerug.tsx і MailKoppelVenster.tsx замість сліпого GOOGLE_SUITE_CALLBACK_FAILED.",
+    "Блокувати синтетичну подію contextmenu протягом 850 мс після відкриття полички палітри утриманням на сенсорному екрані (lastHoldToggleAtRef), щоб поличка не згорталася миттєво після відкриття, і додати явну круглу кнопку закриття.",
+    "Задати position: relative на .am3-acc-btn та .am3-acc-btn.is-icon-only зі збільшеним проміжком між кнопками й окремим написом «Перейти» для вже активних записів, щоб прозорий дотиковий шар ::after хрестика ніколи не перекривав сусідню кнопку входу чи переходу.",
+    "Зробити OpenAI Codex першокласним підтримуваним агентом зі своєю кінцевою точкою /codex нарівні з Anthropic Claude (/claude) у всіх реєстрах клієнтів, каталогів v2, значків і рецептів підключення.",
+    "Зберігати ізольовані робочі простори агентів (ai_agent_werkruimtes), спільний контекст між завданнями (ai_gedeelde_context), передачі завдань між агентами (ai_agent_overdrachten) і розширення простору користувача (ai_ruimte_uitbreidingen) у PostgreSQL під захистом RLS (user_id = app.huidige_gebruiker()) та розмежуванням приватного і технічного просторів.",
+    "Забезпечити подвійний замок обмежень для ізольованих просторів агентів ШІ: фільтрація переліку видимих інструментів перед передачею моделі та повторна перевірка дозволених середовищ (комп’ютер, оглядач, сервер), кореневих тек і доменів безпосередньо під час виконання кожного виклику інструмента.",
+    "Додати відкритий генератор налаштувань самостійного розгортання на власному обладнанні користувача (docker-compose.yml, приклад .env, команди підключення локального агента, Codex і Claude) без прив’язки до одного центрального сайту."
+  ],
+  "wijzigingen": [
+    "migrations/0206_accountmenu_v3_vlag.sql",
+    "migrations/0207_ai_ecosysteem_werkruimtes.sql",
+    "migrations/rechten.sql",
+    "shared/vlaggen.ts",
+    "shared/uitrol-vereisten.ts",
+    "shared/uitrol-codes.ts",
+    "shared/ai-aanbieders.ts",
+    "shared/ai-ecosysteem.ts",
+    "shared/ai-ruimte.ts",
+    "shared/ai-verbinding.ts",
+    "shared/connector-v2/agenten.ts",
+    "shared/connector-v2/catalogus.ts",
+    "shared/markering-agenten.ts",
+    "backend/uitrol-vereisten.ts",
+    "backend/uitrol-voorcontrole.ts",
+    "backend/google-suite-inrichting.ts",
+    "backend/ai-ecosysteem.ts",
+    "backend/ai-werkruimte.ts",
+    "backend/connectors-chat.ts",
+    "backend/connector-v2-erfenis.ts",
+    "backend/site-aanroep.ts",
+    "backend/site-hulpmiddelen.ts",
+    "backend/index.ts",
+    "deploy/mcp/server.mjs",
+    "extension/markering-agenten.js",
+    "extension/merk-agenten.js",
+    "src/functievlag-lezen.ts",
+    "src/CanoniekAccountMenu.tsx",
+    "src/CanoniekOmlijsting.tsx",
+    "src/InstellingencentrumWeergave.tsx",
+    "src/EigenaarIdentiteitTerug.tsx",
+    "src/AIDienstWeergave.tsx",
+    "src/AiWerkruimte.tsx",
+    "src/AiWerkruimteChat.tsx",
+    "src/mcp-ui.tsx",
+    "src/plaatsing/plaatsing.css",
+    "scripts/plaatsing-vaste-elementen.json",
+    "src/accountmenu-v3/vlag.ts",
+    "src/accountmenu-v3/accountmenu-v3-voorkeuren.ts",
+    "src/accountmenu-v3/accountmenu-v3.css",
+    "src/accountmenu-v3/AccountMenuV3.tsx",
+    "src/accountmenu-v3/AccountMenuV3Instellingen.tsx",
+    "src/ai-ecosysteem/ai-ecosysteem.css",
+    "src/ai-ecosysteem/AiEcosysteemPaneel.tsx",
+    "src/agenten/gegevens.ts",
+    "src/agenten/verbind-recepten.ts",
+    "src/connector-v2/ConnectorsTab.tsx",
+    "src/mail/MailKoppelVenster.tsx",
+    "src/mail/mail-koppel-model.ts",
+    "src/merk/merk-register.ts",
+    "src/merk/merk-tabel.ts",
+    "tests/eenheid/accountmenu-v3.test.ts",
+    "tests/eenheid/ai-ecosysteem-en-google-herstel.test.ts",
+    "tests/eenheid/agent-verbinden-20261020.test.ts",
+    "tests/eenheid/uitrol-vereisten-001.test.ts",
+    "tests/eenheid/uitrol-voorcontrole.test.ts",
+    "orchestratie/taken/IDENTITEIT-008.json",
+    "orchestratie/ontwikkelarchieven/IDENTITEIT-008.json",
+    ".github/workflows/identiteit-008-uitgave.yml"
+  ],
+  "controles": [
+    "Перевірка координації та свіжості основи: node scripts/orch.mjs controleer і versheid --taak IDENTITEIT-008 --fase overdracht.",
+    "Будівельні перевірки розміщення, підказок, контрасту та ізоляції технічних пакунків: plaatsing-controle, hulp-vraagtekens-controle, kleur-contrast-controle, tech-bundels-controle.",
+    "Одиничні випробування accountmenu-v3.test.ts, ai-ecosysteem-en-google-herstel.test.ts, ai-werkruimte-20261019.test.ts, agent-verbinden-20261020.test.ts, hulpmiddelen-tweetalig-20261020.test.ts, connector-v2.test.ts, plaatsing-20261025.test.ts, ui-audit-g.test.ts, trace-001-ontwikkelarchief.test.ts, uitrol-vereisten-001.test.ts, uitrol-voorcontrole.test.ts, uitrol-codes.test.ts та суміжні набори.",
+    "Перевірка типів клієнта й сервера (tsc --noEmit та npm run typecheck:server) і повне виробниче складання застосунку та розширення (npm run build).",
+    "Подвійний прогін усіх міграцій включно з 0206_accountmenu_v3_vlag.sql та 0207_ai_ecosysteem_werkruimtes.sql на чистій випробувальній базі PostgreSQL 16 із перевіркою ввімкненого RLS.",
+    "Перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://github.com/Tarasevych/hub/commit/730d9f811b09d138d5378ef9339bf4c895074c16",
+    "https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "https://github.com/Tarasevych/hub/tree/feature/identiteit-008-accountmenu-v3-20261111-142500"
+  ],
+  "beperkingen": [
+    "Якщо особисте сховище ключів користувача закрите на сервері (наприклад, після перезапуску), підключення нової пошти Google чесно повідомить про це й запропонує спершу розблокувати сховище ключів.",
+    "Усі дії запису на локальний комп’ютер або сервер через підключених агентів і далі вимагають підтвердження користувача згідно з правилами безпеки платформи.",
+    "Пакет не встановлюється автоматично: завантаження та встановлення на робочий сервер виконуються виключно власником із підтвердженням ключем доступу."
+  ]
+}

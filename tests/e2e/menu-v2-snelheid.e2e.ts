@@ -59,7 +59,7 @@ export async function main(): Promise<number> {
       const page = await ctx.newPage();
       page.on('console', (m) => { if (m.type() === 'error' && !/^Failed to load resource/.test(m.text())) fouten.push(`console: ${m.text()}`); });
       page.on('pageerror', (e) => fouten.push(`pageerror: ${e.message}`));
-      page.on('response', (q) => { const k = `${q.status()} ${q.url()}`; if (q.status() >= 400 && !VERWACHT.some((v) => v.test(k))) fouten.push(`http ${k}`); });
+      page.on('response', async (q) => { const k = `${q.status()} ${q.url()}`; if (q.status() >= 400 && !VERWACHT.some((v) => v.test(k))) { const code = await q.json().then((j: { error?: string }) => j?.error || '').catch(() => ''); fouten.push(`http ${k}${code ? ` (${code})` : ''}`); } });
       await page.goto(o.url, { waitUntil: 'networkidle' });
       await page.locator('.canonical-service-list').waitFor({ state: 'attached', timeout: 20000 });
       await page.waitForTimeout(600);
@@ -114,6 +114,10 @@ export async function main(): Promise<number> {
     await A.ctx.close();
     // naar ander onderdeel (zonder vooruitladen, trage mail-pagina): balk blijft lopen tot de pagina wisselt, in E-mailblauw
     const B = await sessie({ url: `${ID}/sessions?lang=uk`, snelheid: { vooruitladen: false } });
+    // IDENTITEIT-013: «trage mail-pagina» stond alleen in de opmerking; lokaal laadt mail binnen enkele ms, dus de oude pagina was weg
+    // vóór de balk verscheen en deze controle faalde ook op de live versie. Nu wordt het HTML-document van mail echt vertraagd.
+    // Тест обіцяв «повільну сторінку пошти», але нічого не сповільнював — тепер документ пошти справді затримується на 1,2 с.
+    await B.page.route(/^https:\/\/mail\.tarasevych\.com\//, async (route) => { if (route.request().resourceType() === 'document') await new Promise((r) => setTimeout(r, 1200)); await route.continue(); });
     await hoofdKnop(B.page, 'mail').click();
     await B.page.waitForURL(/mail\.tarasevych\.com/, { timeout: 20000 });
     await B.page.waitForTimeout(400);
@@ -216,7 +220,14 @@ export async function main(): Promise<number> {
     await veld2.fill('opnieuw iets'); await H.page.waitForTimeout(1200);
     check('opnieuw typen: weer bewaard', (await idb(H.page)).rijen.length === 1);
     await H.page.goto(`${ID}/menu?lang=uk#menu-snelheid`, { waitUntil: 'networkidle' });
-    await H.page.locator('#menu-snelheid [data-meld-schakel="concepten"]').click(); await H.page.waitForTimeout(800);
+    await H.page.locator('#menu-snelheid [data-meld-schakel="concepten"]').click(); await H.page.waitForTimeout(500);
+    // IDENTITEIT-013: вимкнення чернеток спершу питає підтвердження; Esc скасовує й нічого не стирає.
+    const dlg = H.page.locator('[data-bevestig="concepten-uit"]');
+    check('concepten uitzetten: eerst een bevestigingsdialoog', await dlg.count() === 1);
+    await H.page.keyboard.press('Escape'); await H.page.waitForTimeout(400);
+    check('Esc: dialoog dicht, concept blijft bewaard', await dlg.count() === 0 && (await idb(H.page)).rijen.length === 1);
+    await H.page.locator('#menu-snelheid [data-meld-schakel="concepten"]').click(); await H.page.waitForTimeout(500);
+    await dlg.locator('.bevestig-dialoog-ja').click(); await H.page.waitForTimeout(800);
     const na = await idb(H.page);
     check('concepten uitzetten: alle concepten en sleutels gewist', na.rijen.length === 0 && na.sleutels.length === 0, JSON.stringify(na).slice(0, 120));
     await H.ctx.close();

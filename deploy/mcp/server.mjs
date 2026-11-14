@@ -54,7 +54,7 @@ const DEUREN = new Map([["grok", "Grok"], ["claude", "claude"], ["chatgpt", "cha
  * deur uitkomt voor een agentadres. Alleen MCP_AGENTPADEN=deur (tests, noodgeval) laat de deur ze zelf bedienen.
  */
 const AGENTPADEN_NAAR_APP = (process.env.MCP_AGENTPADEN || "app") !== "deur";
-const AGENT_SLUGS = /^(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i;
+const AGENT_SLUGS = /^(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i;
 /** Het pad dat de app moet krijgen (agentslug in kleine letters), of null als dit pad van de deur zelf is. */
 function appPad(pathName) {
   if (!AGENTPADEN_NAAR_APP) return null;
@@ -138,6 +138,12 @@ const VERZOEK_TTL = 10 * 60 * 1000;
 // grants: per familie (één toestemming) klant, deur, duur, wie toestond en laatst gebruikt — nooit tokens.
 let state = { clients: {}, access: {}, refresh: {}, families: {}, grants: {} };
 const sha = (value) => createHash("sha256").update(String(value)).digest("hex");
+// SEC-002 (ai-mcp-14, toets g10e-toets-5): bindingscookie per toestemmingsverzoek, zelfde naam en vorm als backend/mcp-oauth-binding.ts
+// (de site vergelijkt). Alleen de SHA-256 blijft hier in het verzoek; /intern/verzoek geeft die aan de site.
+function nieuweBinding(rid) {
+  const waarde = b64url(randomBytes(32));
+  return { hash: sha(waarde), cookie: `__Host-mr_mcpb_${sha(`mcp-consent|${rid}`).slice(0, 16)}=${waarde}; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax` };
+}
 const b64url = (buf) => Buffer.from(buf).toString("base64url");
 const s256 = (verifier) => createHash("sha256").update(verifier).digest("base64url");
 function sameText(expect, got) {
@@ -244,7 +250,7 @@ async function resolveAuth(header, deur) {
   return { clientId: row.clientId, naam: g?.clientName || state.clients[row.clientId]?.name || row.clientId };
 }
 
-// Agenttokens van de site (tvh_…): de site controleert ze (hash, vervaldatum, eigenaar, AI niet geblokkeerd). 60 s in het geheugen.
+// Agenttokens van de site (tvh_…): de site controleert ze (hash, vervaldatum, eigenaar, AI niet geblokkeerd, technisch). 15 s in het geheugen.
 const paneelCache = new Map();
 async function paneelToken(token, deur) {
   const key = sha(token); const now = Date.now();
@@ -256,7 +262,9 @@ async function paneelToken(token, deur) {
     if (res.status === 200) { const d = JSON.parse(res.body); ok = d.ok === true; id = String(d.id || "").slice(0, 60); naam = String(d.naam || "agent").slice(0, 80); }
   } catch { ok = false; }
   if (paneelCache.size > 500) paneelCache.clear();
-  paneelCache.set(key, { ok, id, naam, exp: now + (ok ? 60_000 : 15_000) });
+  // SEC-002 (ai-mcp-07): een positief antwoord kort bewaren (15 s): intrekken, een privétoken of een uitgeschakeld technisch profiel
+  // moeten snel doorwerken; de site beslist (alleen technische tokens met een levend technisch profiel).
+  paneelCache.set(key, { ok, id, naam, exp: now + 15_000 });
   return ok ? { clientId: `tvh:${id}`, naam } : null;
 }
 
@@ -559,10 +567,19 @@ function issuePair(clientId, fam, duurId, door) {
   const now = Date.now();
   const family = fam || b64url(randomBytes(9));
   const d = duurMs(duurId);
-  state.access[sha(access)] = { exp: now + d.access, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
-  state.refresh[sha(refresh)] = { exp: now + d.refresh, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
+  // SEC-002 (ai-mcp-11): de vernieuwtermijn is ABSOLUUT vanaf de toestemming (grant.createdAt), niet glijdend vanaf de laatste
+  // vernieuwing: «1 година, поновлюється до 14 днів» eindigt na 14 dagen, ook als de AI elk uur vernieuwt. Daarna: nieuwe toestemming.
+  // (toets g10e-toets-3) Eigen veld vensterVanaf, zoals migratie 0262 in de app: een grant van vóór dit veld krijgt bij de eerste
+  // vernieuwing na de uitrol één volledig venster vanaf NU — anders vielen alle oude deurverbindingen tegelijk weg (createdAt is oud).
+  const g = state.grants[family];
+  if (g && !g.vensterVanaf) g.vensterVanaf = now;
+  const begin = g?.vensterVanaf || now;
+  const refreshExp = Math.min(now + d.refresh, begin + d.refresh);
+  const accessExp = Math.min(now + d.access, refreshExp);
+  state.access[sha(access)] = { exp: accessExp, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
+  state.refresh[sha(refresh)] = { exp: refreshExp, clientId, fam: family, iat: now, ...(door ? { door } : {}) };
   prune(); saveState();
-  return { access_token: access, token_type: "Bearer", expires_in: Math.floor(d.access / 1000), refresh_token: refresh, scope: "read" };
+  return { access_token: access, token_type: "Bearer", expires_in: Math.max(0, Math.floor((accessExp - now) / 1000)), refresh_token: refresh, scope: "read" };
 }
 function revokeFamily(fam) {
   if (!fam) return;
@@ -636,7 +653,7 @@ export const server = createServer(async (req, res) => {
         const v = verzoeken.get(url.searchParams.get("rid") || "");
         if (!v || v.exp <= Date.now()) { send(res, 404, { error: "VERZOEK_VERLOPEN" }); return; }
         let host = ""; try { const u = new URL(v.redirect); host = u.host || u.protocol; } catch { host = ""; }
-        send(res, 200, { clientName: v.clientName, redirectHost: host, redirectSoort: v.soort, deur: v.door ? (DEUREN.get(v.door) || v.door) : "", resource: v.door ? resourceVoor(DEUREN.get(v.door) || v.door) : "", expiresAt: v.exp, scope: "read" }); return;
+        send(res, 200, { clientName: v.clientName, redirectHost: host, redirectSoort: v.soort, deur: v.door ? (DEUREN.get(v.door) || v.door) : "", resource: v.door ? resourceVoor(DEUREN.get(v.door) || v.door) : "", expiresAt: v.exp, scope: "read", bindingHash: v.bindingHash || null }); return;
       }
       if (pathName === "/intern/besluit" && req.method === "POST") {
         const d = JSON.parse(await readBody(req) || "{}");
@@ -721,12 +738,14 @@ export const server = createServer(async (req, res) => {
       if (verzoeken.size >= 50) { prune(); if (verzoeken.size >= 50) { send(res, 429, "<!doctype html><p>Забагато відкритих запитів. / Te veel openstaande verzoeken.</p>"); return; } }
       const rid = `mrd_${b64url(randomBytes(24))}`;
       const c = state.clients[clientId];
-      const v = { clientId, clientName: c.name || "MCP-client", redirect, soort: redirectSoort(redirect, extraRedirects()), challenge: q.get("code_challenge"), state: (q.get("state") || "").slice(0, 512), door, exp: Date.now() + VERZOEK_TTL };
+      // SEC-002 (ai-mcp-14, toets g10e-toets-5): het verzoek hoort bij DEZE browser — zelfde cookie als de app (backend/mcp-oauth-binding.ts).
+      const binding = nieuweBinding(rid);
+      const v = { clientId, clientName: c.name || "MCP-client", redirect, soort: redirectSoort(redirect, extraRedirects()), challenge: q.get("code_challenge"), state: (q.get("state") || "").slice(0, 512), door, exp: Date.now() + VERZOEK_TTL, bindingHash: binding.hash };
       verzoeken.set(rid, v);
-      if (q.get("methode") === "token") { send(res, 200, handmatigePagina(v, rid, ""), { "content-security-policy": cspVoor(redirect) }); return; }
+      if (q.get("methode") === "token") { send(res, 200, handmatigePagina(v, rid, ""), { "content-security-policy": cspVoor(redirect), "set-cookie": binding.cookie }); return; }
       // Eén klik: het venster «Дозволити» van de site (bestaande aanmelding van de eigenaar). De deur is de TECHNISCHE ruimte:
       // de pagina «Технічні підключення» (technisch profiel), nooit de accountpagina Agenten (shared/ai-ruimte.ts).
-      res.writeHead(302, { location: `${ISSUER}/agents?consent=${rid}`, "cache-control": "no-store" }); res.end(); return;
+      res.writeHead(302, { location: `${ISSUER}/agents?consent=${rid}`, "cache-control": "no-store", "set-cookie": binding.cookie }); res.end(); return;
     }
     if (pathName === "/oauth/authorize" && req.method === "POST") {
       if (limited(req, "authorize", 10, 15 * 60_000)) { send(res, 429, "<!doctype html><p>Забагато спроб. / Te veel pogingen.</p>"); return; }
@@ -740,7 +759,7 @@ export const server = createServer(async (req, res) => {
         if (!clientRedirectOk(clientId, back) || q.get("code_challenge_method") !== "S256" || !PKCE.test(q.get("code_challenge") || "")) { send(res, 400, { error: "invalid_request" }); return; }
         const door = deurUitResource(q.get("resource") || "");
         if (door === null) { send(res, 400, { error: "invalid_target" }); return; }
-        v = { clientId, clientName: state.clients[clientId].name || "MCP-client", redirect: back, soort: redirectSoort(back, extraRedirects()), challenge: q.get("code_challenge"), state: q.get("state") || "", door, exp: Date.now() + VERZOEK_TTL };
+        v = { clientId, clientName: state.clients[clientId].name || "MCP-client", redirect: back, soort: redirectSoort(back, extraRedirects()), challenge: q.get("code_challenge"), state: q.get("state") || "", door, exp: Date.now() + VERZOEK_TTL, bindingHash: sha(b64url(randomBytes(32))) }; // (toets g10e-toets-5) geen cookie hier: via de site niet te openen
       }
       if (!(await fileTokenOk(q.get("bridge_token") || ""))) {
         const nieuw = rid || `mrd_${b64url(randomBytes(24))}`;
@@ -768,6 +787,9 @@ export const server = createServer(async (req, res) => {
         if (!tokenValid(row) || row.clientId !== id) { saveState(); send(res, 400, { error: "invalid_grant" }); return; }
         if (row.used) { revokeFamily(row.fam); send(res, 400, { error: "invalid_grant" }); return; }
         // verbruikte tokens onthouden (als "used") zodat een tweede gebruik de familie intrekt
+        // SEC-002 (toets g10e-toets-3): het absolute venster is voorbij → nieuwe toestemming nodig; geen 200 met al verlopen tokens.
+        const gr = state.grants[row.fam];
+        if (gr?.vensterVanaf && gr.vensterVanaf + duurMs(gr.duur || "1u").refresh <= Date.now()) { revokeFamily(row.fam); saveState(); send(res, 400, { error: "invalid_grant" }); return; }
         state.refresh[key] = { ...row, used: true };
         send(res, 200, issuePair(id, row.fam, state.grants[row.fam]?.duur || "1u", row.door || "")); return;
       }
@@ -779,7 +801,7 @@ export const server = createServer(async (req, res) => {
         send(res, 400, { error: "invalid_grant" }); return;
       }
       const fam = b64url(randomBytes(9));
-      state.grants[fam] = { clientId: id, clientName: state.clients[id]?.name || "MCP-client", door: row.door || "", duur: row.duur, createdAt: Date.now(), lastUsedAt: 0, wie: row.wie && (row.wie.id || row.wie.email) ? { id: row.wie.id || "", email: row.wie.email || "" } : null, via: row.wie?.via || "deurtoken" };
+      state.grants[fam] = { clientId: id, clientName: state.clients[id]?.name || "MCP-client", door: row.door || "", duur: row.duur, createdAt: Date.now(), vensterVanaf: Date.now(), lastUsedAt: 0, wie: row.wie && (row.wie.id || row.wie.email) ? { id: row.wie.id || "", email: row.wie.email || "" } : null, via: row.wie?.via || "deurtoken" };
       send(res, 200, issuePair(id, fam, row.duur, row.door || "")); return;
     }
     if (pathName === "/oauth/revoke" && req.method === "POST") {

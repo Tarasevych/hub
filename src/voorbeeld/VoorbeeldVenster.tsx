@@ -115,7 +115,10 @@ export default function VoorbeeldVenster(p: {
           {!fout && !detail && <p className='voorbeeld-laden'><LoaderCircle className='spin' aria-hidden='true' />{t('Завантажуємо вміст…', 'Inhoud wordt geladen…')}</p>}
           {detail && tab === 'tekst' && (
             <Suspense fallback={<p className='voorbeeld-laden'><LoaderCircle className='spin' aria-hidden='true' /></p>}>
-              <MailMessageBody lang={p.lang} context={p.context} accountId={p.accountId} cacheAccountId={p.cacheAccountId} messageId={detail.id}
+              {/* SEC-002 (post-05): dit venster staat BUITEN het leesvenster. MailMessageBody volgt hier de bewaarde instelling
+                  «Зовнішні зображення» (zonder keuze: vragen) en toont dezelfde strook «N зовнішніх зображень приховано»;
+                  `afzender` maakt «Завжди від цього відправника» mogelijk, per account en mailbox. */}
+              <MailMessageBody lang={p.lang} context={p.context} accountId={p.accountId} cacheAccountId={p.cacheAccountId} messageId={detail.id} afzender={detail.from || p.bericht.from || ''}
                 renderBody={detail.renderBody} fallbackText={detail.plainText || maakUittreksel(detail.snippet) || t('Текст листа відсутній.', 'De berichttekst ontbreekt.')} />
             </Suspense>
           )}

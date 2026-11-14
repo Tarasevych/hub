@@ -109,11 +109,48 @@ textarea { min-height:calc(var(--tik-hoogte) * 2); resize:vertical; }
 :where(.zijbalk-schakel input:checked + .zijbalk-schakel-spoor i) { background:var(--text-on-accent); }
 :where(.zijbalk-schakel input:focus-visible + .zijbalk-schakel-spoor) { outline:2px solid var(--focus); outline-offset:2px; }
 
-/* ---------------------------------------------------------------- вікна / діалоги: спільні межі */
+/* ---------------------------------------------------------------- вікна / діалоги та розкривні блоки (<details>) */
+:root {
+  --icoon-pijl-omlaag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
 :where(.venster-achter, .modal-backdrop, .mcp-consent-backdrop) { background:var(--overlay); }
 :where(.venster, .modal, [role=dialog]) { min-width:0; max-width:calc(100vw - 16px); color:var(--text); }
 :where(.modal) { background:var(--panel); border:1px solid var(--line); box-shadow:var(--schaduw-3); }
-:where(details > summary) { cursor:pointer; min-height:var(--tik-hoogte); display:flex; align-items:center; gap:var(--ruimte-2); }
+:where(details > summary) { cursor:pointer; min-height:var(--tik-hoogte); display:flex; align-items:center; gap:var(--ruimte-2); list-style:none; }
+:where(details:not(.mr-mq *) > summary)::-webkit-details-marker,
+:where(details:not(.mr-mq *) > summary)::marker { display:none; content:''; }
+
+/* Єдиний векторний кутик розгортання (16×16, лінія 2 px, заокруглені кінці) для розкривних блоків <details > summary>,
+   які не є іконковими кнопками меню і не містять власної піктограми шеврона. */
+:where(details:not(.mr-mq *, .mail-viewer-overflow, .foto-album-meer, .google-mail-reader-more, .mail-selection-picker, .mail-selection-mobile-more, .mail-selection-action-menu, .mail-reader-weergave, .mail-provider-waarom, .ctv-bronnen, [class*='-onderbalk-meer']))
+  > :where(summary:not(:has(> svg:only-child, svg.lucide-chevron-down, svg.lucide-chevron-right, svg.lucide-chevron-up, .expand-chevron, [class*='pijl'], [class*='chev'], [class*='caret'])):not([data-tooltip]):not([data-geen-pijl]))::after {
+  content:'';
+  flex:0 0 16px;
+  width:16px;
+  height:16px;
+  margin-left:auto;
+  color:var(--muted);
+  background-color:currentColor;
+  -webkit-mask:var(--icoon-pijl-omlaag) center / contain no-repeat;
+  mask:var(--icoon-pijl-omlaag) center / contain no-repeat;
+  transition:transform 180ms ease, color 180ms ease;
+}
+:where(details[open]:not(.mr-mq *, .mail-viewer-overflow, .foto-album-meer, .google-mail-reader-more, .mail-selection-picker, .mail-selection-mobile-more, .mail-selection-action-menu, .mail-reader-weergave, .mail-provider-waarom, .ctv-bronnen, [class*='-onderbalk-meer']))
+  > :where(summary:not(:has(> svg:only-child, svg.lucide-chevron-down, svg.lucide-chevron-right, svg.lucide-chevron-up, .expand-chevron, [class*='pijl'], [class*='chev'], [class*='caret'])):not([data-tooltip]):not([data-geen-pijl]))::after {
+  transform:rotate(180deg);
+}
+
+/* Жодна векторна стрілка чи шеврон не стискається гнучким контейнером на вузьких екранах (від 320 px). */
+svg:is(.lucide-chevron-down, .lucide-chevron-up, .lucide-chevron-right, .lucide-chevron-left, .lucide-chevrons-up-down),
+:where([class*='chevron'], [class*='-pijl']) > svg {
+  flex-shrink:0;
+}
+:where(.toegang-uitklap-pijl) { flex:0 0 14px; transform:rotate(-90deg); transition:transform 180ms ease; }
+:where([aria-expanded='true']) > :where(.toegang-uitklap-pijl) { transform:rotate(0deg); }
+:where(.tga-voorbeeld-schakel) { display:inline-flex; align-items:center; gap:var(--ruimte-1); }
+@media (prefers-reduced-motion: reduce) {
+  :where(details > summary)::after, :where(.toegang-uitklap-pijl) { transition:none; }
+}
 
 /* ---------------------------------------------------------------- аватари (21.10.2026) */
 /* Одне правило для всіх фото-аватарів сайту (StableAvatar рендерить img.avatar-img: шапка, «Поштові скриньки», рядки листів,
@@ -122,5 +159,5 @@ textarea { min-height:calc(var(--tik-hoogte) * 2); resize:vertical; }
    (0,1,1) — сильніше за preflight «img{max-width:100%;height:auto}», слабше за будь-яке правило сторінки «.обгортка img». */
 img.avatar-img { flex:none; aspect-ratio:1; object-fit:cover; object-position:center; }
 
-/* ---------------------------------------------------------------- скролбари в кольорі теми */
+/* ---------------------------------------------------------------- смуги прокручування в кольорі теми */
 :where(*) { scrollbar-color:color-mix(in srgb, var(--muted) 45%, transparent) transparent; }

@@ -88,8 +88,8 @@ export async function main(): Promise<number> {
     !recept('gemini').knoppen.some((k) => k.soort === 'web' || k.soort === 'deeplink') && !!recept('gemini').grens && JSON.parse(geminiCliConfig('gemini')).mcpServers[SERVER_NAAM].httpUrl === agentUrl('gemini') && /2026/.test(recept('gemini').grens![0]));
   check('Grok: eerlijk — geen verzonnen vendorknop, wel mcp.json en de grens benoemd',
     !recept('grok').knoppen.some((k) => k.soort === 'web' || k.soort === 'deeplink') && !!recept('grok').grens && JSON.parse(mcpJsonConfig('grok')).mcpServers[SERVER_NAAM].url === agentUrl('grok'));
-  check('heeftEenKlik: Cursor, Copilot, Claude (opdracht), Antigravity (opdracht) en AutoClaw (opdracht) wel; ChatGPT, Gemini en Grok niet',
-    heeftEenKlik('cursor') && heeftEenKlik('copilot') && heeftEenKlik('claude') && heeftEenKlik('antigravity') && heeftEenKlik('autoclaw') && !heeftEenKlik('gpt') && !heeftEenKlik('gemini') && !heeftEenKlik('grok'));
+  check('heeftEenKlik: Cursor, Copilot, Claude (opdracht), Codex (opdracht), Antigravity (opdracht) en AutoClaw (opdracht) wel; ChatGPT, Gemini en Grok niet',
+    heeftEenKlik('cursor') && heeftEenKlik('copilot') && heeftEenKlik('claude') && heeftEenKlik('codex') && heeftEenKlik('antigravity') && heeftEenKlik('autoclaw') && !heeftEenKlik('gpt') && !heeftEenKlik('gemini') && !heeftEenKlik('grok'));
 
   // ================================================================ 3. de WARE stand: v2 + erfenis + deur
   check('stand: v2-koppeling → verbonden, niet oud', standVan({ v2: 1, erfenis: 0, deur: 0 }).code === 'v2' && standVan({ v2: 1, erfenis: 0, deur: 0 }).verbonden && !standVan({ v2: 1, erfenis: 0, deur: 0 }).alleenOud);
@@ -140,8 +140,8 @@ export async function main(): Promise<number> {
   // ================================================================ 6. logo's uit het ene register (src/merk)
   const herstel = nepBrowser();
   const { aiLogo, aiEigenaar } = await import('../../src/agenten/gegevens').finally(() => undefined);
-  check('aiLogo: Gemini, Copilot en Antigravity krijgen hun merk, geen pseudo-logo (aiclient) meer', aiLogo('Gemini') === 'gemini' && aiLogo('GitHub Copilot') === 'copilot' && aiLogo('Antigravity') === 'antigravity' && aiLogo('Claude Code') === 'claude' && aiLogo('ChatGPT') === 'openai' && aiLogo('ноутбук Олени') === 'aiclient');
-  check('aiEigenaar kent alle zeven makers', ['Claude', 'ChatGPT', 'Grok', 'Gemini', 'Copilot', 'Cursor', 'Antigravity'].every((n) => aiEigenaar(n).length > 2));
+  check('aiLogo: Gemini, Copilot, Codex en Antigravity krijgen hun merk, geen pseudo-logo (aiclient) meer', aiLogo('Gemini') === 'gemini' && aiLogo('GitHub Copilot') === 'copilot' && aiLogo('OpenAI Codex') === 'codex' && aiLogo('Antigravity') === 'antigravity' && aiLogo('Claude Code') === 'claude' && aiLogo('ChatGPT') === 'openai' && aiLogo('ноутбук Олени') === 'aiclient');
+  check('aiEigenaar kent alle makers inclusief Codex', ['Claude', 'ChatGPT', 'Codex', 'Grok', 'Gemini', 'Copilot', 'Cursor', 'Antigravity', 'AutoClaw'].every((n) => aiEigenaar(n).length > 2));
   herstel();
   const { merkSleutel } = await import('../../src/merk/merk-register');
   const tabel = lees('src/merk/merk-tabel.ts');

@@ -182,11 +182,11 @@ export const zoekMenuHub = (c: ZoekMenuCtx) => async (p: Page) => {
     if (m.rond !== 1) slecht.push(`ronde knop op de hub: ${m.rond} (verwacht 1)`);
     await p.locator('[data-sidebar-action="open-drawer"]').first().click({ timeout: 10000 }); await p.waitForSelector('.canonical-drawer-header', { timeout: 6000 }).catch(() => undefined); await p.waitForTimeout(350);
     lade = await p.evaluate(() => ({ zoekInLade: document.querySelectorAll('.canonical-drawer-header [data-zoek-trigger]').length, bewerkMarge: (() => { const b = document.querySelector('.canonical-drawer-header .menu-lade-bewerken'); return b ? getComputedStyle(b).marginLeft : ''; })() }));
-    if ((lade as { zoekInLade: number }).zoekInLade) slecht.push('zoekknop in de lade op de hub (alleen de post)');
+    if ((lade as { zoekInLade: number }).zoekInLade !== 1) slecht.push(`zoekknop in de lade op de hub: ${(lade as { zoekInLade: number }).zoekInLade} (verwacht 1)`);
     await p.locator('[data-sidebar-action="close-drawer"]').first().click({ timeout: 4000 }).catch(() => undefined);
   } else {
     if (m.veldInAnker !== 1) slecht.push(`veld naast de foto op de hub: ${m.veldInAnker} (verwacht 1)`);
-    if (m.menu) slecht.push('zoekknop in de zijbalk op de hub (alleen de post)');
+    if (m.menu !== 1) slecht.push(`zoekknop in de zijbalk op de hub: ${m.menu} (verwacht 1)`);
   }
   c.meting('hub-zoek-ongewijzigd', p, slecht.join('; '), JSON.stringify({ ...m, lade }));
 };

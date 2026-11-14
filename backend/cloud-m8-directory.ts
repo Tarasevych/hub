@@ -3,7 +3,7 @@
  * The adapter is not evidence of live readiness; deployment requires separate provider E2E.
  */
 import type {CloudGrantContext,CloudTokenResolver,Fetcher} from './cloud-overdracht-adapters';
-import {CloudTransportError} from './cloud-overdracht-adapters';
+import {CloudTransportError,isDropboxPad} from './cloud-overdracht-adapters';
 
 export type DirectoryItem={id:string;name:string;kind:'file'|'folder';size:number|null;revision:string;mime:string};
 export type DirectoryPage={items:DirectoryItem[];nextCursor:string|null};
@@ -104,7 +104,7 @@ export class DropboxDirectory implements DirectoryListing{
  constructor(private readonly token:CloudTokenResolver,private readonly request:Fetcher=fetch){}
  async list(ctx:CloudGrantContext,folder:string,rawCursor:string|null):Promise<DirectoryPage>{
   ensure(ctx.provider===this.provider,'CLOUD_M8_PROVIDER_MISMATCH',403);
-  ensure(folder==='root'||/^\/(?:[^\\\r\n\0]+\/?){1,40}$/.test(folder),'CLOUD_M8_DROPBOX_FOLDER_INVALID');
+  /* SEC-002 (aanv-ronde1-06): lineaire padcontrole i.p.v. geneste kwantoren / лінійна перевірка шляху */ensure(folder==='root'||(typeof folder==='string'&&folder.startsWith('/')&&isDropboxPad(folder)),'CLOUD_M8_DROPBOX_FOLDER_INVALID');
   const next=cursor(rawCursor),url=next?'https://api.dropboxapi.com/2/files/list_folder/continue':'https://api.dropboxapi.com/2/files/list_folder';
   const x=await getJson(this.request,url,await this.token(ctx,'read'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next?{cursor:next}:{path:folder==='root'?'':folder,recursive:false,limit:maxResults})});
   const items=entries(x.entries).map(f=>dataItem(f.id||f.path_lower||f.path_display,f.name,f['.tag']==='folder',f.size,f.rev,f['.tag']==='folder'?'inode/directory':'application/octet-stream'));

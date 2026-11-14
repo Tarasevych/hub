@@ -35,7 +35,7 @@ export async function botGebruikersnaam(): Promise<string> { return (await inste
 export const deeplink = (bot: string, start: string): string => `https://t.me/${encodeURIComponent(bot)}?start=${encodeURIComponent(start)}`;
 
 /** Stap 1 (site). */
-export async function koppelStart(u: Gebruiker, sessieId: string, o: { naam?: unknown; metCode?: unknown; siteTaal?: unknown }): Promise<{ id: string; deeplink: string; bot: string; verlooptOp: string }> {
+export async function koppelStart(u: Gebruiker, sessieId: string, o: { naam?: unknown; metCode?: unknown; siteTaal?: unknown; ip?: string; locatie?: string; apparaat?: string }): Promise<{ id: string; deeplink: string; bot: string; verlooptOp: string }> {
   const weigering = await magTelegram(u);
   if (weigering) throw new Error(weigering);
   if (!sessieId) throw new Error('SESSIE_ONBEKEND');
@@ -45,13 +45,21 @@ export async function koppelStart(u: Gebruiker, sessieId: string, o: { naam?: un
   if (!NAAM_RE.test(naam)) throw new Error('NAAM_ONGELDIG');
   // Eén open verzoek per account tegelijk: een vorig open verzoek vervalt.
   await sql("UPDATE app.tg_koppel_verzoeken SET stand = 'verlopen' WHERE user_id = $1 AND stand IN ('wacht-bot','wacht-telefoon','wacht-passkey')", [u.id]);
-  const [{ n }] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM app.tg_koppel_verzoeken WHERE user_id = $1 AND aangemaakt_op > now() - interval '1 hour'", [u.id]);
-  if (n >= 10) throw new Error('RATE_LIMITED');
+  const [{ n, wacht }] = await sql<{ n: number; wacht: number | null }>(
+    "SELECT count(*)::int AS n, CEIL(EXTRACT(EPOCH FROM (min(aangemaakt_op) + interval '1 hour' - now())))::int AS wacht FROM app.tg_koppel_verzoeken WHERE user_id = $1 AND aangemaakt_op > now() - interval '1 hour'",
+    [u.id],
+  );
+  if (n >= 10) throw Object.assign(new Error('RATE_LIMITED'), { retryAfter: Math.max(1, Number(wacht || 60)) });
   const id = nieuweId();
   const verloopt = new Date(Date.now() + KOPPEL_MINUTEN * 60_000);
-  await sql('INSERT INTO app.tg_koppel_verzoeken (id, user_id, sessie_id, binding_hash, naam, met_code, verloopt_op) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-    [id, u.id, sessieId, bindingHash(sessieId), naam, o.metCode === true, verloopt]);
-  await sql('UPDATE app.tg_koppel_verzoeken SET profiel = jsonb_build_object(\'siteTaal\', $2::text) WHERE id = $1', [id, o.siteTaal === 'nl' ? 'nl' : 'uk']);
+  const startProfiel = {
+    siteTaal: o.siteTaal === 'nl' ? 'nl' : 'uk',
+    ip: String(o.ip || '').slice(0, 64),
+    locatie: String(o.locatie || '').slice(0, 160),
+    apparaat: String(o.apparaat || '').slice(0, 120),
+  };
+  await sql('INSERT INTO app.tg_koppel_verzoeken (id, user_id, sessie_id, binding_hash, naam, met_code, profiel, verloopt_op) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)',
+    [id, u.id, sessieId, bindingHash(sessieId), naam, o.metCode === true, JSON.stringify(startProfiel), verloopt]);
   await audit(u.id, 'koppelen.start', 'pending', { verzoek: id });
   const bot = inst.botGebruikersnaam;
   return { id, deeplink: deeplink(bot, `k_${id}`), bot, verlooptOp: verloopt.toISOString() };
@@ -145,10 +153,11 @@ export async function koppelBevestigen(userId: string, sessieId: string, id: str
     if (actief.length >= inst.koppelLimiet) throw new Error('LIMIET_BEREIKT');
     if (actief.some((a) => a.telegram_id === v.telegram_id)) throw new Error('AL_GEKOPPELD');
     const vrij = [0, 1, 2, 3, 4].find((k) => !actief.some((a) => Number(a.kleur) === k)) ?? 0;
-    const [rij] = await q<{ id: string }>(`INSERT INTO app.tg_koppelingen (user_id, telegram_id, chat_id, telefoon, gebruikersnaam, voornaam, achternaam, foto_id, naam, rechten, kleur, site_taal)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::text[],$11,$12) RETURNING id`,
+    const [rij] = await q<{ id: string }>(`INSERT INTO app.tg_koppelingen (user_id, telegram_id, chat_id, telefoon, gebruikersnaam, voornaam, achternaam, foto_id, naam, rechten, kleur, site_taal, gekoppeld_ip, gekoppeld_locatie, gekoppeld_apparaat)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::text[],$11,$12,$13,$14,$15) RETURNING id`,
       [userId, v.telegram_id, v.chat_id, v.telefoon, String(v.profiel.gebruikersnaam || ''), String(v.profiel.voornaam || ''), String(v.profiel.achternaam || ''), String(v.profiel.fotoId || ''),
-        v.naam || (v.profiel.voornaam ? String(v.profiel.voornaam).slice(0, 40) : 'Telegram'), rechten, vrij, v.profiel.siteTaal === 'nl' ? 'nl' : 'uk']);
+        v.naam || (v.profiel.voornaam ? String(v.profiel.voornaam).slice(0, 40) : 'Telegram'), rechten, vrij, v.profiel.siteTaal === 'nl' ? 'nl' : 'uk',
+        String(v.profiel.ip || '').slice(0, 64), String(v.profiel.locatie || '').slice(0, 160), String(v.profiel.apparaat || '').slice(0, 120)]);
     return rij.id;
   });
   await gebeurtenis('koppelen', true, userId);

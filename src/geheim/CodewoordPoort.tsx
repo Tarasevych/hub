@@ -3,6 +3,7 @@ import { api } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import GeheimInvoer from './GeheimInvoer';
 import { useCodewoordPoort, zetCodewoordPoort } from './codewoord-poort-brug';
+import { poortAfmelden } from './poort-afmelden';
 import './codewoord-poort.css';
 
 /** Другий крок входу: Google уже пустив, кодове слово цієї сесії ще ні. */
@@ -38,8 +39,15 @@ export default function CodewoordPoort() {
     }
   };
   const uit = async () => {
-    setBezig(true);
-    try { await api.post('/api/owner/session/logout-current', lichaam()); } catch { /* вихід і так закриє сесію, якщо вона була */ }
+    setBezig(true); setFout('');
+    // SEC-002 (aanmelden-07): вихід облікового запису з усього браузера, а не лише цієї вкладки — інакше cookie сесії лишається
+    // чинною до 30 діб і будь-яка нова вкладка знову стоїть перед цим вікном із тим самим обліковим записом.
+    const uitkomst = await poortAfmelden((url, data) => api.post(url, data), lichaam());
+    if (uitkomst === 'mislukt') {
+      setFout(t('Вийти не вдалося: сесія в цьому браузері ще чинна. Спробуйте ще раз.', 'Afmelden is niet gelukt: de sessie in deze browser is nog geldig. Probeer het opnieuw.'));
+      setBezig(false);
+      return;
+    }
     zetCodewoordPoort(false);
     location.reload();
   };

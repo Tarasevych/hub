@@ -135,11 +135,10 @@ export async function main(): Promise<number> {
   check('A4 uniekOpId: per id één keer (één pop-up, geen «+1» voor dezelfde melding)', uniekOpId([{ id: 'a' }, { id: 'b' }, { id: 'a' }]).map((x) => x.id).join() === 'a,b' && bel.includes('uniekOpId([...(p.serverItems || []), ...(p.techItems || [])])'));
   check('A4 «Не турбувати»: ook geen pop-up meer (beveiliging wel), niet alleen geen geluid', bel.includes('const dnd = meldingenV2Nu() && nietStorenActief() && !isKritiekType(type);') && bel.includes('opduiken: basis.opduiken && !dnd && !dubbel'));
 
-  // ------------------------------------------------------------------ B. pop-up: tijd per soort en inhoud, pauze, balk, niet vast
+  // ------------------------------------------------------------------ B. pop-up: standaard 2000 ms (2 s), pauze met muis en aanraking, balk, niet vast
   const ms = (kind: 'success' | 'info' | 'warning' | 'error', tekst = 'kort', uitleg?: string) => popupLevensduurMs({ vast: false, seconden: 0 }, tekst, uitleg, kind)!;
-  check('B1 automatisch (standaard): «готово» kort, fout het langst', ms('success') === AUTO_SECONDEN.success * 1000 && ms('success') < ms('info') && ms('info') < ms('warning') && ms('warning') < ms('error'));
-  check('B1 inhoud telt mee: lange tekst en uitleg geven meer tijd (begrensd)', ms('info', 'x'.repeat(130)) === ms('info') + 2000 && ms('info', 'kort', 'y'.repeat(300)) === ms('info') + 4000 && ms('info', 'x'.repeat(10_000), 'y'.repeat(10_000)) === ms('info') + 10_000);
-  check('B1 een eigen keuze in seconden blijft gelden (3–60 s), «vast» = null', popupLevensduurMs({ vast: false, seconden: 20 }, 'kort', undefined, 'error') === 20_000 && popupLevensduurMs({ vast: true, seconden: 20 }, 'kort') === null);
+  check('B1 standaardduur: precies 2000 ms (2 s) voor elke soort en elke tekstlengte', (['success', 'info', 'warning', 'error'] as const).every((k) => ms(k) === 2000 && AUTO_SECONDEN[k] === 2) && ms('error', 'x'.repeat(300), 'y'.repeat(300)) === 2000);
+  check('B1 een eigen keuze in seconden blijft gelden (2–60 s), «vast» = null', popupLevensduurMs({ vast: false, seconden: 20 }, 'kort', undefined, 'error') === 20_000 && popupLevensduurMs({ vast: false, seconden: 2 }, 'kort') === 2000 && popupLevensduurMs({ vast: true, seconden: 20 }, 'kort') === null);
 
   let a = nieuweAftelling(6000);
   a = tik(tik(a, 1000), 1000);
@@ -147,6 +146,8 @@ export async function main(): Promise<number> {
   a = pauze(a, 'muis', true);
   const tijdens = tik(tik(tik(a, 1000), 1000), 1000);
   check('B2 muis op de pop-up: de klok staat stil (lange tekst rustig lezen)', gepauzeerd(tijdens) && tijdens.over === 4000);
+  const vasthouden = pauze(tik(nieuweAftelling(2000), 800), 'aanraking', true);
+  check('B2 vinger op het aanraakscherm: klok staat stil op de resterende tijd en loopt na loslaten vloeiend door (1200 ms)', gepauzeerd(vasthouden) && tik(vasthouden, 5000).over === 1200 && pauze(vasthouden, 'aanraking', false).over === 1200);
   const bijnaOp = pauze(tik(nieuweAftelling(3000), 2900), 'muis', true);
   const los = pauze(bijnaOp, 'muis', false);
   check('B2 muis weg: telt door, maar minstens nog MIN_NA_PAUZE_MS (verdwijnt niet meteen onder de cursor vandaan)', !gepauzeerd(los) && los.over === Math.min(3000, MIN_NA_PAUZE_MS));
@@ -161,9 +162,9 @@ export async function main(): Promise<number> {
 
   const std = normaliseerTypeVoorkeuren(null);
   check('B3 geen enkel type blijft standaard hangen tot u sluit — ook beveiliging niet (eigenaar: «не має висіти»)', MELDING_TYPE_IDS.every((t) => std[t].vast === false) && isKritiekType('beveiliging'));
-  const oud = normaliseerTypeVoorkeuren({ beveiliging: { geluid: false, opduiken: true, tonen: true, vast: true, seconden: 10 }, post: { vast: true, vastGekozen: true, seconden: 2 }, agenda: { seconden: 0 } });
+  const oud = normaliseerTypeVoorkeuren({ beveiliging: { geluid: false, opduiken: true, tonen: true, vast: true, seconden: 10 }, post: { vast: true, vastGekozen: true, seconden: 1 }, agenda: { seconden: 0 } });
   check('B3 oude opslag: «vast» zonder eigen keuze (vroeger de standaard van kritiek) telt niet meer; met eigen keuze wel', oud.beveiliging.vast === false && oud.beveiliging.geluid === false && oud.post.vast === true && voorkeurVoor({ beveiliging: { geluid: true, opduiken: true, tonen: true, vast: true, seconden: 10 } }, 'beveiliging').vast === false);
-  check('B3 seconden: 0 = automatisch; 1–2 → 3 (minimum); standaard automatisch', oud.agenda.seconden === 0 && oud.post.seconden === 3 && std.post.seconden === 0);
+  check('B3 seconden: 0 = standaard (2 s); 1 → 2 (minimum); standaard 0', oud.agenda.seconden === 0 && oud.post.seconden === 2 && std.post.seconden === 0);
 
   check('B4 «hoe» per type: спливає+звук / лише спливає / лише звук / лише в панелі / не показувати',
     weergaveVan({ geluid: true, opduiken: true, tonen: true }) === 'beide' && weergaveVan({ geluid: false, opduiken: true, tonen: true }) === 'popup'
@@ -173,8 +174,9 @@ export async function main(): Promise<number> {
     MELDING_WEERGAVEN.every((w) => weergaveVan(metWeergave(basisV, w, 'post')) === w) && weergaveVan(metWeergave(basisV, 'uit', 'beveiliging')) === 'paneel');
 
   const belB = code(lees('src/CanoniekMeldingencentrum.tsx'));
-  check('B5 pop-up: muis = pauze; focus alleen via het toetsenbord (:focus-visible); geen pauze «uitgeklapt» meer',
-    belB.includes("onPointerEnter={() => pauzeer('muis', true)}") && belB.includes("onPointerLeave={() => pauzeer('muis', false)}") && belB.includes("matches(':focus-visible')") && !belB.includes("pauzeer('uitgeklapt'"));
+  const cssB = code(lees('src/canoniek-meldingencentrum.css'));
+  check('B5 pop-up: muis én vinger op het scherm = pauze; focus alleen via het toetsenbord (:focus-visible); balk stopt synchroon op animation-play-state:paused; één enkel uitklaphoekje met 180°-rotatie',
+    belB.includes("pauzeer('muis', true)") && belB.includes("pauzeer('muis', false)") && belB.includes("pauzeer('aanraking', true)") && belB.includes("pauzeer('aanraking', false)") && belB.includes("matches(':focus-visible')") && !belB.includes("pauzeer('uitgeklapt'") && !belB.includes('ChevronUp') && cssB.includes('animation-play-state:paused') && cssB.includes('user-select:none') && cssB.includes('transform:rotate(180deg)'));
   check('B5 de klok gebruikt de aftelling (pauze/verlengen/verborgen) en sluit pas bij klaar', belB.includes('aftelRef.current = tikAftelling(a, nu - vorige);') && belB.includes('if (klaar(aftelRef.current)) { window.clearInterval(timer); dismissRef.current(); return; }') && belB.includes("pauzeer('verborgen', document.hidden);"));
   check('B5 gezien = gelezen, ook voor de regel in het paneel (activiteit a:, server s:) — niet als het tabblad verborgen is',
     belB.includes("if (next.meldingId?.startsWith('a:')) activityRef.current.markRead(next.meldingId.slice(2));") && belB.includes('if (typeof document !== \'undefined\' && document.hidden) { leesWachtend.current = next; return; }'));
@@ -193,8 +195,8 @@ export async function main(): Promise<number> {
     check('C1 elke persoonlijke soort één rij met drie keuzes (як показувати, поведінка, тривалість) + «Приклад»',
       rijen(uk) === prive && (uk.match(/data-mv-veld="weergave"/g) || []).length === prive && (uk.match(/data-mv-veld="gedrag"/g) || []).length === prive && (uk.match(/data-mv-veld="seconden"/g) || []).length === prive && (uk.match(/data-mv-voorbeeld="/g) || []).length === prive, `${rijen(uk)}/${prive}`);
     check('C1 vier manieren + «не показувати» in gewone woorden (uk)', ['Спливає зі звуком', 'Лише спливає (без звуку)', 'Лише звук (без спливання)', 'Лише в панелі (тихо)', 'Не показувати'].every((s) => uk.includes(s)));
-    check('C1 поведінка: «Зникає за таймером» / «Висить, доки не закрию»; тривалість «Авто» of seconden', uk.includes('Зникає за таймером') && uk.includes('Висить, доки не закрию') && uk.includes('Авто (за типом і текстом)') && uk.includes('>14 с<'));
-    check('C1 nl: dezelfde keuzes in het Nederlands', ['Pop-up met geluid', 'Alleen pop-up (zonder geluid)', 'Alleen geluid (geen pop-up)', 'Alleen in het paneel (stil)', 'Niet tonen', 'Verdwijnt na de tijd', 'Blijft staan tot ik sluit', 'Auto (volgens soort en tekst)'].every((s) => nl.includes(s)));
+    check('C1 поведінка: «Зникає за таймером» / «Висить, доки не закрию»; тривалість «2 с (типово)» of seconden', uk.includes('Зникає за таймером') && uk.includes('Висить, доки не закрию') && uk.includes('2 с (типово)') && uk.includes('>14 с<'));
+    check('C1 nl: dezelfde keuzes in het Nederlands', ['Pop-up met geluid', 'Alleen pop-up (zonder geluid)', 'Alleen geluid (geen pop-up)', 'Alleen in het paneel (stil)', 'Niet tonen', 'Verdwijnt na de tijd', 'Blijft staan tot ik sluit', '2 s (standaard)'].every((s) => nl.includes(s)));
     const bev = uk.slice(uk.indexOf('data-mv-type="beveiliging"'), uk.indexOf('data-mv-type="toegang"'));
     check('C1 beveiliging: «Не показувати» uitgeschakeld + uitleg; standaard «Зникає за таймером» (niet vast)', /<option value="uit" disabled="">Не показувати<\/option>/.test(bev) && bev.includes('приховати — ні') && /data-mv-veld="gedrag"[^>]*>[\s\S]*?<option value="timer" selected="">/.test(bev));
     const engels = /\b(Sound|Popup only|Show|Hide|Duration|Behaviour|Behavior|Example|Panel only)\b/;

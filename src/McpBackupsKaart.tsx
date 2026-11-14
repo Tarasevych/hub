@@ -3,6 +3,7 @@ import { Database, Download, FileArchive, Loader2, RefreshCw, ServerCog, ShieldC
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import './mcp-backups-kaart.css';
+import './mcp-uitrol-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Row = { stamp: string; at: string; ready: boolean; release: string; encrypted: boolean; migrations: number; files: { name: string; bytes: number }[]; hasSystem: boolean; totalBytes: number };

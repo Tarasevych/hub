@@ -2,6 +2,8 @@
 // Google-fotokiezer (dezelfde weergave als vroeger onder «Хмарне сховище», geen tweede implementatie). Beide UIT → eerlijk bericht.
 import { Suspense, lazy } from 'react';
 import type { Lang } from '../cloud-vnext/tekst';
+import './foto.css';
+import './foto-maquette.css';
 const FotoPagina = lazy(() => import('./FotoPagina'));
 const OudeFotos = lazy(() => import('./OudeFotos'));
 export default function FotoHubTab({ lang, vlaggen }: { lang: Lang; vlaggen: { foto: boolean; menu: boolean } }) {

@@ -144,9 +144,9 @@ const реєстрНалаштувань={
     ])
   ],
   account:[
-    група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису. Вилучення фото наразі потребує окремої серверної дії.","De echte foto komt uit het aangemelde account. Verwijderen vereist nog een afzonderlijke serverhandeling.","частково",[
+    група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису; її можна замінити файлом або посиланням, прибрати власну або вибрати «Без фото» (лише ініціали).","De echte foto komt uit het aangemelde account; u kunt ze vervangen door een bestand of een link, de eigen foto verwijderen of «Geen foto» kiezen (alleen initialen).","наявне",[
       рядок("Світлина з облікового запису","Foto uit het account","фото"),
-      рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія",[],"частково",null,{uk:"Виявлена кнопка не вилучає фото, а повторно його передає. Потрібні окрема серверна дія вилучення, підтвердження та оновлення усіх зображень профілю.",nl:"De huidige knop verwijdert de foto niet, maar verstuurt dezelfde foto opnieuw. Een afzonderlijke serverhandeling, bevestiging en verversing van alle profielafbeeldingen zijn nodig."})
+      рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія")
     ]),
     група("стан","Стан підключених служб","Status van verbonden diensten","Перевірка підключення без читання вмісту листів і файлів.","Controle van verbindingen zonder inhoud van berichten of bestanden te lezen.","наявне",[
       рядок("Пошта й календар","Mail en agenda","відомості"),
@@ -327,6 +327,101 @@ const вжеОформленіГрупи={
   identities:["зв'язки","профіль"]
 };
 const вжеОформленіРядки={account:["Світлина з облікового запису"]};
+// САЙТ (IDENTITEIT-011): жива карта. Стан кожної групи й рядка звірено з кодом живої версії 20261113-121403.
+// IDENTITEIT-014 (фаза 3): звірено ще раз після під'єднання спільного доступу, вивантаження, способів входу й відновлення;
+// кожна ціль — справжній id/селектор у коді (перевіряє tests/eenheid/identiteit-014-kaart.test.ts).
+// «в-чинних» — працює в блоці «Чинні налаштування» цього розділу; рядок стає кнопкою переходу до потрібного місця.
+// «частково» — є на сайті, але бракує частини; «заплановано» — потребує розробки; «недоступно» — свідомо не передбачено.
+// IDENTITEIT-015 (крок «kaart-stille-uren»): «власник» — код є й працює, але лише після кроку власника сайту (ключі, прапорець, право);
+// точна передумова — у рядку відомості (reden). Перехід веде до місця, де людина бачить пояснення. Підписи звірено з відомістю.
+// ціль: "розділ|селектор" усередині гнізда .mq-echt розділу (без розділу — той самий розділ). Група, усі рядки якої «в-чинних», зникає з карти.
+// De levende kaart: status per groep en regel volgens de live code; «в-чинних» wordt een knop naar de echte instelling.
+// IDENTITEIT-015 (крок «vormgeving»): групи, оформлені в самій картці, тепер під'єднано до справжніх налаштувань (обліковий запис):
+// щільність і рух, акцент і ефекти, мова, положення й режим меню, тумблер простору. Що на сайті свідомо не налаштовується — «недоступно».
+const станНаСайті={
+  personalization:{
+    "особисте":{стан:"в-чинних",ціль:"#weergave-dichtheid",цілі:{1:"#weergave-beweging"}}
+  },
+  languages:{"мова":{стан:"в-чинних",ціль:".settings-choice-grid"}},
+  identities:{"профіль":{стан:"в-чинних",рядки:{1:"недоступно"}}},
+  menu:{
+    "панель":{стан:"в-чинних",ціль:"#menu-modus"},
+    "розташування":{стан:"в-чинних",ціль:"#menu-indeling"},
+    "додаткове":{стан:"частково",ціль:"#menu-modus",рядки:{0:"частково",1:"частково",2:"частково",3:"недоступно"}},
+    "швидкий-доступ":{стан:"в-чинних",ціль:"#menu-snel"},
+    "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",цілі:{9:"#menu-meldingtypen"},додати:[
+      {uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-meld-schakel=\"reserve\"]",іконка:"нагадування"}
+    ]},
+    "швидкодія":{стан:"в-чинних",ціль:"#menu-snelheid"},
+    "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid"}
+  },
+  themes:{
+    "розклад":{стан:"в-чинних",ціль:"#thema-auto-kop"},
+    // IDENTITEIT-015 (зведення): фіолетова палітра — лише з правом plum-theme від власника сайту.
+    "палітра":{стан:"в-чинних",ціль:"#thema-kleur-kop",рядки:{0:"власник"}},
+    "акцент":{стан:"в-чинних",ціль:"#thema-accent",цілі:{1:"#thema-effecten"}}
+  },
+  // IDENTITEIT-015 (крок «profiel-blokken»): форма блоку повна — «Скасувати», «Відкрити в просторі», пояснення адреси внутрішнього блоку,
+  // серверна перевірка посилання (крок «risico»). Передача простору перед видаленням — .settings-overdracht.
+  widgets:{"створення":{стан:"в-чинних",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
+  sharing:{
+    "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
+    // IDENTITEIT-015 (крок «delen»): строк 1/7/30 днів з межею на сервері, дата спливу, прив'язка до адреси (.delen-link-opties);
+    // «Відкриті посилання» з відкликанням (#delen-links); «Вийти з простору» на власному рядку (#delen-leden).
+    "посилання":{стан:"в-чинних",ціль:"#delen-uitnodigen",цілі:{0:".delen-link-opties"}},
+    "чинні":{стан:"в-чинних",ціль:"#delen-leden"}
+  },
+  account:{
+    "особа":{стан:"в-чинних"},
+    "стан":{стан:"в-чинних"},
+    "простори":{стан:"в-чинних"},
+    "видалення":{стан:"в-чинних",ціль:".settings-danger",цілі:{0:".settings-overdracht"}},
+    // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір формату JSON / ZIP із CSV (.gegevensuitvoer-formaat), стан «готую → готово → файл».
+    "експорт":{стан:"в-чинних",ціль:"#gegevensuitvoer",цілі:{0:".gegevensuitvoer-formaat"}}
+  },
+  sessions:{
+    "цей-пристрій":{стан:"в-чинних",ціль:".sessies-onthouden"},
+    "активні":{стан:"в-чинних"},
+    // IDENTITEIT-015 (зведення): гостьові входи інших облікових записів — за прапорцем власника gastcodes-iedereen.
+    "гості":{стан:"в-чинних",ціль:".sessies-gasten",рядки:{0:"власник"}},
+    // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір «Завжди / Вимкнено», відомі пристрої, «Це був я», «Забути пристрій».
+    // IDENTITEIT-015 (зведення): вибір і відомі пристрої працюють; спливне сповіщення — після прапорців власника meldingen-v2 і meldingen-uitleg-v3.
+    "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat",рядки:{0:"власник"}}
+  },
+  methods:{
+    // IDENTITEIT-015 (крок «sleutels-gasten»): біля кожного ключа — «Вхід і підтвердження» / «Лише підтвердження» і окремо «Довірений».
+    // IDENTITEIT-015 (зведення): позиція 0 — Google працює, вхід посиланням на пошту потребує поштової служби сайту (налаштування власника).
+    "основні":{стан:"в-чинних",ціль:"#aanmeldmethoden-google",рядки:{0:"власник"},цілі:{1:"security|#aanmeldmethoden-passkeys",2:"security|#aanmeldmethoden-2fa"}},
+    // IDENTITEIT-015 (зведення): позиція 0 — тимчасовий пароль від власника не дає входу (форми заміни під час входу немає) — «частково».
+    "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord",рядки:{0:"частково"}},
+    // IDENTITEIT-015 (зведення): повторне шифрування — з перебігом і продовженням (працює); гостьові коди для інших — за прапорцем власника.
+    "захист":{стан:"в-чинних",рядки:{2:"власник"},цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
+    // IDENTITEIT-015 (крок «aanmelden»): Microsoft/Discord/Apple — прив'язка для схвалених не-власників і вхід за прив'язкою (потрібні ключі
+    // власника й самоперевірка — тому «частково»); SMS — номер і код pending → verified (#aanmeldmethoden-telefoon), потрібен провайдер власника.
+    // IDENTITEIT-015 (зведення): усі ці способи в коді є; працюють після ключів/прапорця власника (SMS — після провайдера SMS_AANBIEDER) — «власник».
+    "додаткові":{стан:"власник",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"власник",1:"власник",2:"власник",3:"власник",4:"недоступно",5:"власник"},цілі:{5:"#aanmeldmethoden-telefoon"},
+      назви:{5:{uk:"SMS — потрібне налаштування власника",nl:"Sms — configuratie van eigenaar nodig"}}}
+  },
+  security:{
+    // IDENTITEIT-015 (крок «sleutels-gasten»): довіра до ключа (міграція 0274, посилене підтвердження) — позначка «Довірений» у переліку ключів.
+    "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",цілі:{5:"#aanmeldmethoden-passkeys"}},
+    "другий-чинник":{стан:"в-чинних",ціль:"#aanmeldmethoden-2fa",додати:[
+      {uk:"QR-код для застосунку-автентифікатора",nl:"QR-code voor de authenticator-app",стан:"в-чинних",іконка:"зчитування"},
+      {uk:"Замінити автентифікатор",nl:"Authenticator vervangen",стан:"в-чинних",іконка:"повернути"}
+    ]},
+    "резервні-коди":{стан:"в-чинних",ціль:"recovery|#aanmeldmethoden-herstel"},
+    "шифрування":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutelkluis"},
+    // IDENTITEIT-015: для схвалених не-власників — за прапорцем gastcodes-iedereen; без нього в #toegangscodes пояснення й перехід до «Доступу».
+    "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes",рядки:{0:"власник"}}
+  },
+  recovery:{
+    "засоби":{стан:"в-чинних",ціль:"#aanmeldmethoden-herstel",цілі:{1:"#herstel-overzicht"}},
+    "сценарії":{стан:"в-чинних",ціль:"#herstel-scenarios",цілі:{0:"#herstel-scenarios [data-scenario=\"apparaat\"]",1:"#herstel-scenarios [data-scenario=\"passkey\"]",2:"#herstel-scenarios [data-scenario=\"authenticator\"]",3:"#herstel-scenarios [data-scenario=\"codes-op\"]"},
+      // IDENTITEIT-015 (крок «sleutels-gasten»): у кожному кроці — кнопка до точного місця; перемикач нагадування — прямо тут.
+      додати:[{uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-herstel-reserve=\"schakel\"]",іконка:"нагадування"}]},
+    "поради":{стан:"в-чинних",цілі:{0:"#herstel-overzicht",1:"#herstel-sleutelverlies"}}
+  }
+};
 // Кожна з 43 груп і 153 дій має власне, перевірене за змістом призначення.
 const піктограмиГруп={
   personalization:{"переходи":"блоки","особисте":"керування"},
@@ -373,31 +468,57 @@ const піктограмиДій={
 };
 function знакМожливості(розділ,групаId,номер=null){
   const назва=номер===null?піктограмиГруп[розділ]?.[групаId]:піктограмиДій[розділ]?.[групаId]?.[номер];
-  if(!назва)throw new Error("Відсутня змістовна піктограма: "+розділ+" / "+групаId+" / "+номер);
+  // САЙТ: без змістовної піктограми — нейтральний знак, а не збій усієї картки (тест перевіряє повноту окремо).
+  if(!назва)return піктограмаЗаСуттю("інструмент");
   return піктограмаЗаСуттю(назва);
 }
 const відкритіМожливості=new Set();
 const відкритіПідгрупиМожливостей=new Set();
 function tekenМайбутніМожливості(розділ){
   const nl=preferences.lang==="nl";
-  const групи=(реєстрНалаштувань[розділ]||[]).filter(г=>!вжеОформленіГрупи[розділ]?.includes(г.id)).map(г=>({
-    ...г,рядки:г.рядки.map((р,первіснийНомер)=>({...р,первіснийНомер})).filter(р=>!вжеОформленіРядки[розділ]?.includes(р.uk))
-  })).filter(г=>г.рядки.length);
+  const групи=(реєстрНалаштувань[розділ]||[]).filter(г=>!вжеОформленіГрупи[розділ]?.includes(г.id)).map(г=>{
+    // САЙТ: стани й цілі з живої карти; додані рядки (нові можливості) мають власну піктограму.
+    const сайт=станНаСайті[розділ]?.[г.id]||{};
+    const рядки=[...г.рядки.map((р,первіснийНомер)=>({...р,первіснийНомер})),...(сайт.додати||[]).map(р=>({...р,первіснийНомер:null}))]
+      .map(р=>{
+        const рідний=р.первіснийНомер!==null;
+        // Пріоритет стану: окремий рядок живої карти → стан групи на сайті → власний стан рядка → стан групи з макета.
+        const стан=рідний?(сайт.рядки?.[р.первіснийНомер]||сайт.стан||р.стан||г.стан):(р.стан||сайт.стан||г.стан);
+        // IDENTITEIT-015: «назви» — чесна назва рядка на карті, коли текст дизайну v49 суперечить станові (дані дизайну не змінюємо).
+        const назва=рідний?сайт.назви?.[р.первіснийНомер]:null;
+        return {...р,...(назва?{uk:назва.uk,nl:назва.nl}:{}),стан,ціль:(рідний&&сайт.цілі?.[р.первіснийНомер])||сайт.ціль||null};
+      })
+      .filter(р=>!вжеОформленіРядки[розділ]?.includes(р.uk));
+    return {...г,стан:сайт.стан||г.стан,рядки};
+  }).filter(г=>г.рядки.length&&!г.рядки.every(р=>р.стан==="в-чинних"));
   if(!групи.length)return '';
-  const статус=стан=>стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):(nl?'Koppeling controleren':'Звірити підключення');
-  const рядок=(р,і,г)=>'<div class="future-option" title="'+veiligeTekstРеєстру(статус(р.стан||г.стан))+'"><span class="future-option-mark">'+знакМожливості(розділ,г.id,р.первіснийНомер)+'</span><span class="future-option-name">'+veiligeTekstРеєстру(nl?р.nl:р.uk)+'</span>'+(р.стан&&р.стан!==г.стан?'<small class="future-option-status">'+статус(р.стан)+'</small>':'')+'</div>';
+  // САЙТ: чесні мітки живої карти; мітки «звірити підключення» більше немає.
+  const статус=стан=>стан==='власник'?(nl?'Eigenaar moet dit instellen':'Потребує налаштування власника'):стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):стан==='недоступно'?(nl?'Niet beschikbaar':'Недоступно'):(nl?'Werkt':'Працює');
+  const клас=стан=>стан==='в-чинних'||стан==='наявне'?'werkt':стан==='власник'?'eigenaar':стан==='частково'?'deels':стан==='недоступно'?'nee':стан==='макет'?'ontwerp':'gepland';
+  const рядок=(р,і,г)=>{
+    const знак=р.іконка?піктограмаЗаСуттю(р.іконка):знакМожливості(розділ,г.id,р.первіснийНомер);
+    const мітка='<small class="future-option-status future-stand-'+клас(р.стан)+'">'+статус(р.стан)+'</small>';
+    const назва='<span class="future-option-name">'+veiligeTekstРеєстру(nl?р.nl:р.uk)+'</span>';
+    // Робоче або частково робоче місце з відомою ціллю — кнопка переходу до справжнього налаштування.
+    if(р.ціль&&(р.стан==='в-чинних'||р.стан==='частково'||р.стан==='власник')){
+      const ціль=р.ціль.includes('|')?р.ціль:розділ+'|'+р.ціль;
+      const підказка=р.стан==='власник'?(nl?'Opent de echte instelling; daar staat wat de site-eigenaar eerst moet instellen (sleutels, schakelaar of recht).':'Відкриває справжнє налаштування; там пояснено, що спершу має налаштувати власник сайту (ключі, перемикач або право).'):nl?'Opent de echte instelling in «Huidige instellingen»; wijzigingen daar gelden meteen voor uw account.':'Відкриває справжнє налаштування в блоці «Чинні налаштування»; зміни там одразу діють для вашого облікового запису.';
+      return '<button type="button" class="future-option future-option-go" data-kaart-ga="'+veiligeTekstРеєстру(ціль)+'" title="'+veiligeTekstРеєстру(підказка)+'"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'<span class="future-option-open">'+(nl?'Openen':'Відкрити')+'</span></button>';
+    }
+    return '<div class="future-option"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'</div>';
+  };
   const перелік=групи.map((г,і)=>{
     const назва=veiligeTekstРеєстру(nl?г.nl:г.uk),пояснення=veiligeTekstРеєстру(nl?г.поясненняNl:г.поясненняUk);
     const значок='<span class="future-group-glyph">'+знакМожливості(розділ,г.id)+'</span>';
     const вміст='<div class="future-options">'+г.рядки.map((р,j)=>рядок(р,j,г)).join('')+'</div>';
-    if(г.рядки.length<=3)return '<div class="future-group future-group-short"><div class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status">'+статус(г.стан)+'</span></div>'+вміст+'</div>';
+    if(г.рядки.length<=3)return '<div class="future-group future-group-short"><div class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status future-stand-'+клас(г.стан)+'">'+статус(г.стан)+'</span></div>'+вміст+'</div>';
     const ід=розділ+':'+г.id;
-    return '<details class="future-group" data-future-group="'+ід+'"'+(відкритіПідгрупиМожливостей.has(ід)?' open':'')+'><summary class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status">'+статус(г.стан)+'</span><span class="future-chevron">'+(typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon)+'</span></summary>'+вміст+'</details>';
+    return '<details class="future-group" data-future-group="'+ід+'"'+(відкритіПідгрупиМожливостей.has(ід)?' open':'')+'><summary class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status future-stand-'+клас(г.стан)+'">'+статус(г.стан)+'</span><span class="future-chevron">'+(typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon)+'</span></summary>'+вміст+'</details>';
   }).join('');
   const стрілка=typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon;
   return '<details class="future-section" data-future-section="'+розділ+'"'+(відкритіМожливості.has(розділ)?' open':'')+'>'+
     '<summary class="future-section-head"><span class="future-section-flower" aria-hidden="true">'+піктограмаЗаСуттю("інструмент")+'</span>'+
-      '<span class="future-section-copy"><strong>'+(nl?'Aanvullende mogelijkheden':'Можливості для доопрацювання')+'</strong><p>'+(nl?'De onderstaande functies staan op de ontwikkelkaart. Dit zijn geen werkende accountknoppen.':'Нижче — завдання з карти розробки. Ці елементи не змінюють справжній обліковий запис.')+'</p></span>'+
+      '<span class="future-section-copy"><strong>'+(nl?'Ontwikkelkaart':'Карта розвитку')+'</strong><p>'+(nl?'Wat al werkt, opent u met één klik in de echte instellingen; wat deels klaar is of nog ontwikkeld wordt, staat erbij. Deze kaart zelf wijzigt uw account niet.':'Що вже працює — відкривається одним натиском у справжніх налаштуваннях; поруч — що працює частково і що ще в розробці. Сама карта обліковий запис не змінює.')+'</p></span>'+
       '<span class="future-section-chevron" aria-hidden="true">'+стрілка+'</span></summary>'+
     '<div class="future-section-content"><div class="future-groups">'+перелік+'</div></div></details>';
 }
@@ -431,6 +552,9 @@ document.addEventListener('click',event=>{
     keuze.closest('.register-choices').querySelectorAll('[data-register-choice]').forEach(b=>{const gekozen=b===keuze;b.classList.toggle('selected',gekozen);b.setAttribute('aria-pressed',String(gekozen));});
     showToast(написиРеєстру[preferences.lang].toast);return;
   }
+  // САЙТ: перехід із живої карти до справжнього налаштування (функцію надає двигун сайту).
+  const карта=event.target.closest('[data-kaart-ga]');
+  if(карта){const [розділКарти,...решта]=карта.dataset.kaartGa.split('|');if(typeof відкритиНаСайті==='function')відкритиНаСайті(розділКарти,решта.join('|'));return;}
   const overgang=event.target.closest('[data-register-go]');
   if(overgang){const id=overgang.dataset.registerGo;openInlineSettings(id,{toggle:false});document.getElementById(id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});return;}
   const knop=event.target.closest('[data-register-all]');

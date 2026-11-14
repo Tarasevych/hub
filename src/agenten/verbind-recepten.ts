@@ -55,6 +55,9 @@ export const cursorDeeplink = (slug: AgentSlug) => `cursor://anysphere.cursor-de
 export const vscodeDeeplink = (slug: AgentSlug, insiders = false) => `${insiders ? 'vscode-insiders' : 'vscode'}:mcp/install?${encodeURIComponent(JSON.stringify({ name: SERVER_NAAM, type: 'http', url: agentUrl(slug) }))}`;
 /** Claude Code: één opdracht in de terminal; OAuth gebeurt in de browser bij het eerste gebruik (/mcp in Claude Code). */
 export const claudeCodeOpdracht = (slug: AgentSlug) => `claude mcp add --transport http ${SERVER_NAAM} ${agentUrl(slug)}`;
+/** OpenAI Codex: één opdracht in de terminal of config.toml met het eigen adres /codex (OAuth RFC 9728). */
+export const codexCliOpdracht = (slug: AgentSlug) => `codex mcp add ${SERVER_NAAM} --url ${agentUrl(slug)}`;
+export const codexTomlConfig = (slug: AgentSlug) => `[mcp_servers.${SERVER_NAAM}]\nurl = "${agentUrl(slug)}"\n`;
 /** Gemini CLI: ~/.gemini/settings.json → mcpServers.<naam>.httpUrl (OAuth wordt automatisch ontdekt, RFC 9728). */
 export const geminiCliConfig = (slug: AgentSlug) => JSON.stringify({ mcpServers: { [SERVER_NAAM]: { httpUrl: agentUrl(slug) } } }, null, 2);
 /** Gewone mcp.json (Cursor, Windsurf en andere clients die een bestand lezen). */
@@ -109,6 +112,19 @@ export function recept(slug: AgentSlug): Recept {
         'Лише ChatGPT у браузері, плани Pro, Plus, Business, Enterprise або Education; у мобільних застосунках ChatGPT і в безкоштовному плані цього немає. За даними OpenAI (жовтень 2026), повний MCP із діями запису та змін — бета лише для Business і Enterprise/Edu (у Business режим розробника вмикає адміністратор, в Enterprise/Edu адміністратор надає доступ), а Pro підключає MCP лише з правами читання. Тож на Plus/Pro інструменти, що пишуть або змінюють (лист, файл, команда), у ChatGPT можуть не працювати; читання працює.',
         'Alleen ChatGPT in de browser, met Pro, Plus, Business, Enterprise of Education; in de mobiele ChatGPT-apps en in het gratis plan bestaat dit niet. Volgens OpenAI (oktober 2026) is volledige MCP met schrijf- en wijzigacties een bèta voor alleen Business en Enterprise/Edu (in Business zet een beheerder de ontwikkelaarsmodus aan, in Enterprise/Edu geeft een beheerder toegang), en Pro koppelt MCP alleen met leesrechten. Op Plus/Pro werken hulpmiddelen die schrijven of wijzigen (mail, bestand, opdracht) in ChatGPT dus mogelijk niet; lezen werkt wel.',
       ],
+    };
+    case 'codex': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'opdracht', label: ['Скопіювати команду для OpenAI Codex', 'Opdracht voor OpenAI Codex kopiëren'], kopieer: codexCliOpdracht(slug), uitleg: ['Термінал або середовище розробки OpenAI Codex: одна команда додає власну адресу /codex із входом через оглядач.', 'Terminal of IDE van OpenAI Codex: één opdracht voegt het eigen adres /codex met browseraanmelding toe.'] },
+        { soort: 'config', label: ['Скопіювати блок для ~/.codex/config.toml', 'Blok voor ~/.codex/config.toml kopiëren'], kopieer: codexTomlConfig(slug), uitleg: ['Запасний шлях: додайте блок [mcp_servers.mijn-ruimte] у ~/.codex/config.toml.', 'Reserveweg: voeg het blok [mcp_servers.mijn-ruimte] toe aan ~/.codex/config.toml.'] },
+      ],
+      stappen: [
+        [`Виконайте в терміналі скопійовану команду codex mcp add mijn-ruimte --url ${url} або додайте блок у ~/.codex/config.toml.`, `Voer in de terminal de gekopieerde opdracht codex mcp add mijn-ruimte --url ${url} uit of zet het blok in ~/.codex/config.toml.`],
+        ['Під час першого звернення Codex сам знайде метадані OAuth (RFC 9728) і відкриє оглядач для підтвердження доступу.', 'Bij het eerste gebruik vindt Codex zelf de OAuth-metadata (RFC 9728) en opent de browser om de toegang te bevestigen.'],
+        DOZVIL, KLAAR,
+      ],
+      vereist: ['Працює у відкритому клієнті OpenAI Codex CLI та в розширенні Codex для середовища розробки з вашою підпискою ChatGPT або власним ключем OpenAI.', 'Werkt in de open OpenAI Codex CLI en in de Codex-extensie voor uw IDE met uw ChatGPT-abonnement of uw eigen OpenAI-sleutel.'],
     };
     case 'cursor': return {
       slug, serverNaam: SERVER_NAAM,

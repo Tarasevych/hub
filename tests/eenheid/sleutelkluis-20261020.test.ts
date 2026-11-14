@@ -197,6 +197,8 @@ export async function main(): Promise<number> {
       'backend/browser-diag-archief.ts': 'register: app.browser_diag_archive, nog-niet',
       'backend/sleutelkluis.ts': 'de kluis zelf (oude weg voor wie de kluis niet aanzette)',
       'backend/github-koppeling-opslag.ts': 'sync verzegel() alleen voor de OAuth-state-verifier (eenmalig, 10 min) en tests; tokens gaan via verzegelVoor',
+      // IDENTITEIT-012 (13.11.2026): CLOUD-001 voegde deze module toe zonder registerregel; de test faalde sindsdien ook op 5f2325d7.
+      'backend/bestanden-delen.ts': 'toegangscode van een eigen deellink (geen persoonlijke inhoud); de server controleert hem bij elk bezoek, ook als de kluis van de eigenaar dicht is',
     };
     const modules = new Set(SLEUTELKLUIS_REGISTER.flatMap((r) => r.module.split(',').map((m) => m.trim().split(' ')[0])));
     const zonderRegel = backendBestanden.filter((f) => /\bsealWithEnvKey\(/.test(bron(f)) && !modules.has(f) && !UITZONDERING[f]);

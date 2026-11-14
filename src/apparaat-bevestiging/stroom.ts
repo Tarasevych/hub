@@ -12,11 +12,16 @@ const MAX_POGINGEN = 6;
 /** Luister naar gebeurtenissen voor dit account; geeft een afmeldfunctie. Meerdere luisteraars delen één verbinding. */
 export function abonneer(ctx: { service: string; tabContext: string }, fn: Luisteraar): () => void {
   if (typeof window === 'undefined' || typeof EventSource === 'undefined') return () => undefined;
+  // IDENTITEIT-015 (gastcodes e2e): server/start.ts обслуговує потік лише поза mcp.* (там свої потоки MCP і перевірка Origin) — на mcp
+  // одразу повільне опитування замість EventSource, що щоразу отримує 404. Op mcp.* geen stroom: meteen de langzame navraag.
+  if (!stroomOpHost(location.hostname)) return () => undefined;
   const sleutel = `${ctx.service}|${ctx.tabContext}`;
   if (!verbinding || verbinding.sleutel !== sleutel) { verbinding?.bron.close(); verbinding = openen(sleutel, ctx); }
   verbinding.luisteraars.add(fn);
   return () => { verbinding?.luisteraars.delete(fn); if (verbinding && !verbinding.luisteraars.size) { verbinding.bron.close(); window.clearTimeout(verbinding.timer); verbinding = null; } };
 }
+/** Чи обслуговує цей хост потік /api/owner/stroom (усі, крім mcp.*). Bedient deze host de stroom (alles behalve mcp.*)? */
+export const stroomOpHost = (host: string): boolean => !/^mcp\./i.test(String(host || ''));
 /** Is de snelle stroom nu verbonden? (de luisteraar vertraagt dan zijn eigen navraag) */
 export const stroomVerbonden = (): boolean => !!verbinding?.verbonden;
 

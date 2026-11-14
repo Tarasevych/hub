@@ -967,7 +967,15 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
       const omg = standaardOmgeving({ passkeyKlaar: async () => (await schakelaarAan()) && !!b?.sleutels.length, archiefToken: () => uitrolArchiefToken(auth.user.id) });
       return vereistenStarten(auth.user.id, body(ctx.body), omg);
     })],
-    'POST /api/owner/uitrol/vereisten/proef': [eigenaar({}, async (ctx, auth) => proefAanvragen(auth.user.id, body(ctx.body)))],
+    // SEC-002 (server-uitrol-04): de proef laat root SQL uit de browser uitvoeren (op een wegwerpkopie, onder een eenmalige rol).
+    // Dat is een handeling, geen inzage: een gestolen sessie zonder herbevestiging mag haar niet kunnen starten → step-up (zoals
+    // «stoppen» en «voorbereiders»). Start (/vereisten) en stand (/vereisten/stand) lezen alleen en blijven zonder extra venster.
+    // Begrensd: 12 proeven per 10 minuten (elke proef kost root een pg_dump en tot 5 minuten databasewerk).
+    'POST /api/owner/uitrol/vereisten/proef': [eigenaar({ stepUp: true }, async (ctx, auth) => {
+      const limiet = await rateLimit(`uitrol-proef:${auth.user.id}`, 12, 600);
+      if (!limiet.ok) fout('RATE_LIMITED', 429);
+      return proefAanvragen(auth.user.id, body(ctx.body));
+    })],
     'POST /api/owner/uitrol/vereisten/stand': [eigenaar({}, async (ctx, auth) => vereistenStand(auth.user.id, body(ctx.body)))],
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/termijn': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantTermijn(wie(auth), body(ctx.body).id, body(ctx.body)) }))],

@@ -1,0 +1,289 @@
+/* Stijlen voor het open AI-ecosysteem (ai.*, 11.11.2026) — volledig adaptief voor desktop en mobiel. */
+.aie-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: clamp(12px, 3vw, 24px);
+}
+
+.aie-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aie-kop h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.aie-kop p {
+  margin: 6px 0 0;
+  color: var(--muted, #64748b);
+  line-height: 1.5;
+  max-width: 72ch;
+}
+
+.aie-ruimte-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--soft, #eef3f8);
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aie-kaart {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 16px;
+  background: var(--panel, #fff);
+}
+
+.aie-kaart h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aie-kaart h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.aie-subtekst {
+  margin: 0;
+  color: var(--muted, #64748b);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.aie-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aie-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.aie-omgeving-vak {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 12px;
+  background: var(--soft, #f8fafc);
+}
+
+.aie-veld {
+  display: grid;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.aie-veld > span {
+  font-weight: 600;
+}
+
+.aie-veld input[type='text'],
+.aie-veld input[type='number'],
+.aie-veld select,
+.aie-veld textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 10px;
+  background: var(--panel, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.aie-veld textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.aie-keuzerij {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aie-vink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 5px 11px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 999px;
+  background: var(--panel, #fff);
+  font-size: 0.86rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.aie-vink input {
+  margin: 0;
+}
+
+.aie-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.aie-knop-hoofd {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--accent, #2563eb);
+  color: var(--text-on-accent, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aie-knop-tweede {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 11px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aie-knop-gevaar {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--fout, #dc2626);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fout, #dc2626);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.aie-lijst {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aie-item {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--panel, #fff);
+}
+
+.aie-item-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aie-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aie-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #cbd5e1);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.aie-codeblok {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--soft, #f1f5f9);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aie-melding-ok {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ok, #15803d);
+  color: var(--ok, #15803d);
+  font-size: 0.9rem;
+}
+
+.aie-melding-fout {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--fout, #dc2626);
+  color: var(--fout, #dc2626);
+  font-size: 0.9rem;
+}
+
+.aie-chat-koppeling {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #d7e0ea);
+  border-radius: 14px;
+  background: var(--soft, #f8fafc);
+}
+
+@media (max-width: 760px) {
+  .aie-grid-2,
+  .aie-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .aie-knop-hoofd,
+  .aie-knop-tweede {
+    width: 100%;
+    justify-content: center;
+  }
+}

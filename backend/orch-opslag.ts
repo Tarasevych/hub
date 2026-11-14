@@ -11,7 +11,7 @@
 //                            eigenaar.soort = 'passkey', CONTEXT-COMPACT.md, controleer, commit, push, посилання на PR.
 // Omgevingsvariabelen: ORCH_WORTEL (werkkopie, standaard /srv/mijn-ruimte/orch-repo), ORCH_INBOX (/srv/mijn-ruimte/orch-inbox),
 // OPDRACHT_STATUS_DIR (root-statusmap, zelfde als eigenaar-besluit.ts). Tests: tests/eenheid/orch-site-20261031.test.ts.
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFile, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,7 +20,7 @@ import * as bk from '../deploy/goedkeuring/besluit-kern.mjs';
 import {
   CONTEXT_PAD, SHA40, TAAK_ID, VOORSTEL_ID, beoordeelVoorstel, bevestigMetPasskey, compacteContext, eigenaarStatus, statusAfleiden, valideerBeleid, valideerTaak, vergrendel,
 } from '../scripts/orch/kern.mjs';
-import { inleveren, registreerInlevering } from '../scripts/orch/inleveren.mjs';
+import { inleveren, inleverenA, registreerInlevering } from '../scripts/orch/inleveren.mjs';
 import { ORCH_LIMIETEN, ORCH_TOOL_NAMEN, type OrchBevestiging, type OrchInlevering, type OrchOverzicht, type OrchRegelsOverzicht, type OrchTaak, type OrchUpload, type OrchVoorstel, type OrchZaak } from '../shared/orch-model';
 
 // ---------------------------------------------------------------- paden en fouten
@@ -46,6 +46,66 @@ type Lock = { schema: number; regelsVersie: string; hash: string; kritiekHash: s
 function git(...a: string[]): string | null {
   try { return execFileSync('git', a, { cwd: wortel(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 }).trim(); } catch { return null; }
 }
+
+// ---------------------------------------------------------------- SEC-002 (ai-mcp-09): niet-blokkerende uitvoering
+// De server is ÉÉN proces: elke execFileSync/spawnSync houdt de gebeurtenislus vast — alle verzoeken, hartslagen van agenten en
+// terminals wachten dan mee. Het LEESPAD (overzicht, context, regels-overzicht — voor een agent zonder bevestiging aan te roepen, dus
+// ook in een lus) loopt daarom over asynchrone processen met een tijdslimiet en een rij «één tegelijk»; `controleer` wordt bovendien
+// gedeeld (gelijktijdige vragers krijgen dezelfde uitslag) en kort onthouden per stand van de werkkopie. De synchrone git() hierboven
+// blijft alleen voor de SCHRIJFPADEN (taak registreren, upload afronden, regels toepassen): die zijn per uur begrensd en doen enkele
+// korte lokale git-aanroepen. Wat lang kan duren in «regels toepassen» (controleer, push) is ook asynchroon gemaakt.
+// Сервер — один процес: синхронні виклики зупиняли весь сайт; шлях читання тепер асинхронний, з чергою і коротким кешем.
+function eenTegelijkRij(): <T>(werk: () => Promise<T>) => Promise<T> {
+  let staart: Promise<unknown> = Promise.resolve();
+  return <T,>(werk: () => Promise<T>): Promise<T> => {
+    const p = staart.then(werk, werk);
+    staart = p.then(() => undefined, () => undefined);
+    return p;
+  };
+}
+const gitRij = eenTegelijkRij();       // asynchrone git van het leespad: nooit meer dan één proces tegelijk
+const controleRij = eenTegelijkRij();  // `orch controleer` van het overzicht: één tegelijk
+const toepasRij = eenTegelijkRij();    // «regels toepassen»: sinds het asynchroon is, mogen twee aanvragen elkaar niet kruisen
+// SEC-002 (g05-toets-1): het asynchrone leespad loopt nu TEGELIJK met de synchrone schrijfpaden (taakStart/staatCommit, uploadKlaar →
+// inleveren) in dezelfde werkkopie. `git status` neemt standaard een NIET-VERPLICHT .git/index.lock om de index te verversen; een
+// synchrone `git add` op dat moment faalt («index.lock: File exists») en staatCommit() gaf dan stil null (taak niet vastgelegd,
+// werkkopie vuil). Met GIT_OPTIONAL_LOCKS=0 neemt git op het leespad zulke sloten niet (git ≥ 2.15) — ook in `orch controleer`,
+// dat zelf git aanroept. Шлях читання не бере необов'язкового index.lock, щоб не заважати синхронним комітам задач і передач.
+const LEES_GIT_ENV = (): NodeJS.ProcessEnv => ({ ...process.env, GIT_OPTIONAL_LOCKS: '0' });
+
+/** Asynchrone tegenhanger van git(): uitvoer (getrimd) of null bij een fout/tijdslimiet. Blokkeert de gebeurtenislus niet. */
+function gitA(...a: string[]): Promise<string | null> {
+  return gitRij(() => new Promise<string | null>((klaar) => {
+    try {
+      execFile('git', a, { cwd: wortel(), encoding: 'utf8', timeout: 60_000, env: LEES_GIT_ENV() }, (err, stdout) => klaar(err ? null : String(stdout).trim()));
+    } catch { klaar(null); }
+  }));
+}
+type ProcesUitslag = { status: number | null; stdout: string; stderr: string };
+const UITVOER_MAX = 1024 * 1024;
+/**
+ * Asynchrone tegenhanger van spawnSync(cmd, args, { timeout }): status null bij tijdslimiet of startfout (zoals spawnSync). Na de
+ * tijdslimiet krijgt het proces SIGTERM (zoals spawnSync) en 5 s later SIGKILL; houdt een kleinkind de uitvoer nog open, dan
+ * wachten we daar niet eindeloos op — de belofte komt ALTIJD terug, anders zou de rij «één tegelijk» voorgoed vastlopen.
+ */
+function draaiA(cmd: string, args: string[], opties: { cwd: string; timeoutMs: number; env?: NodeJS.ProcessEnv }): Promise<ProcesUitslag> {
+  return new Promise<ProcesUitslag>((klaar) => {
+    let stdout = '', stderr = '', af = false;
+    const klokken: Array<ReturnType<typeof setTimeout>> = [];
+    const einde = (status: number | null) => { if (af) return; af = true; for (const k of klokken) clearTimeout(k); klaar({ status, stdout, stderr }); };
+    try {
+      const kind = spawn(cmd, args, { cwd: opties.cwd, stdio: ['ignore', 'pipe', 'pipe'], env: opties.env ?? process.env });
+      kind.stdout.setEncoding('utf8'); kind.stderr.setEncoding('utf8');
+      kind.stdout.on('data', (d: string) => { if (stdout.length < UITVOER_MAX) stdout += d; });
+      kind.stderr.on('data', (d: string) => { if (stderr.length < UITVOER_MAX) stderr += d; });
+      kind.on('error', () => einde(null));
+      kind.on('close', (code) => einde(code));
+      kind.on('exit', (code) => { klokken.push(setTimeout(() => { kind.stdout.destroy(); kind.stderr.destroy(); einde(code); }, 500)); });
+      klokken.push(setTimeout(() => { try { kind.kill('SIGTERM'); } catch { /* al weg */ } }, opties.timeoutMs));
+      klokken.push(setTimeout(() => { try { kind.kill('SIGKILL'); } catch { /* al weg */ } kind.stdout.destroy(); kind.stderr.destroy(); einde(null); }, opties.timeoutMs + 5_000));
+    } catch { einde(null); }
+  });
+}
 const leesJson = <T,>(pad: string): T => JSON.parse(readFileSync(pad, 'utf8')) as T;
 const schrijfJson = (pad: string, w: unknown) => { mkdirSync(join(pad, '..'), { recursive: true }); writeFileSync(pad, `${JSON.stringify(w, null, 2)}\n`); };
 /** Origin zonder gebruikersnaam/wachtwoord of token (nooit een geheim naar de pagina). */
@@ -60,9 +120,29 @@ export function repoStand(): OrchOverzicht['repo'] {
   return { aanwezig: true, wortel: w, tak: git('rev-parse', '--abbrev-ref', 'HEAD') || '', hoofd: git('rev-parse', 'HEAD') || '', schoon: (git('status', '--porcelain') ?? 'x') === '', origin: veiligeOrigin(git('remote', 'get-url', 'origin') || ''), code: '' };
 }
 
+/** Niet-blokkerende repoStand() (SEC-002 ai-mcp-09) + de ruwe `git status --porcelain` (sleutel voor het onthouden van controleer). */
+async function repoStandA(): Promise<{ repo: OrchOverzicht['repo']; status: string | null }> {
+  const w = wortel();
+  const leeg = { aanwezig: false, wortel: w, tak: '', hoofd: '', schoon: false, origin: '', code: 'ORCH_GEEN_REPO' };
+  if (!existsSync(join(w, 'orchestratie', 'beleid.json')) || !existsSync(join(w, 'scripts', 'orch.mjs'))) return { repo: leeg, status: null };
+  if ((await gitA('rev-parse', '--is-inside-work-tree')) !== 'true') return { repo: leeg, status: null };
+  const tak = (await gitA('rev-parse', '--abbrev-ref', 'HEAD')) || '';
+  const hoofd = (await gitA('rev-parse', 'HEAD')) || '';
+  const status = await gitA('status', '--porcelain');
+  const origin = veiligeOrigin((await gitA('remote', 'get-url', 'origin')) || '');
+  return { repo: { aanwezig: true, wortel: w, tak, hoofd, schoon: (status ?? 'x') === '', origin, code: '' }, status };
+}
+
 /** beleid.json + lock + regelbestanden uit de werkkopie; zonder werkkopie → ORCH_GEEN_REPO (503). */
 export function laadOrch(): { beleid: Beleid; lock: Lock | null; bestanden: Record<string, string>; repo: OrchOverzicht['repo'] } {
-  const repo = repoStand();
+  return laadUit(repoStand());
+}
+/** Niet-blokkerende laadOrch() voor het leespad. */
+async function laadOrchA(): Promise<ReturnType<typeof laadOrch> & { status: string | null }> {
+  const { repo, status } = await repoStandA();
+  return { ...laadUit(repo), status };
+}
+function laadUit(repo: OrchOverzicht['repo']): { beleid: Beleid; lock: Lock | null; bestanden: Record<string, string>; repo: OrchOverzicht['repo'] } {
   if (!repo.aanwezig) fout('ORCH_GEEN_REPO', 503);
   const beleid = leesJson<Beleid>(join(wortel(), 'orchestratie/beleid.json'));
   const vb = valideerBeleid(beleid) as OrchZaak[];
@@ -85,18 +165,82 @@ export function rootBevestigingen(): OrchBevestiging[] {
   } catch { return []; }
 }
 
-/** `node scripts/orch.mjs controleer` in de werkkopie — de echte controle, niet een nabootsing. */
+/**
+ * `node scripts/orch.mjs controleer` in de werkkopie — de echte controle, niet een nabootsing.
+ * LET OP: synchroon (houdt het hele proces vast, tot 120 s) — alleen voor tests en diagnose. Routes en MCP gebruiken controleerA().
+ */
 export function controleer(): { code: number; regels: string[] } {
   const r = spawnSync(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer'], { cwd: wortel(), encoding: 'utf8', timeout: 120_000 });
-  return { code: r.status ?? -1, regels: `${r.stdout}${r.stderr}`.trim().split('\n').filter(Boolean).slice(-40).map((l) => tekst(l, 400)) };
+  return { code: r.status ?? -1, regels: controleUitvoerRegels(`${r.stdout}${r.stderr}`) };
+}
+const controleUitvoerRegels = (uitvoer: string): string[] => uitvoer.trim().split('\n').filter(Boolean).slice(-40).map((l) => tekst(l, 400));
+
+// SEC-002 (ai-mcp-09): controleer voor het overzicht — asynchroon, één tegelijk, gedeeld en kort onthouden.
+// De sleutel is de stand van de werkkopie: HEAD + `git status --porcelain` + (bij niet-vastgelegde wijzigingen) tijdstip en grootte van
+// elk gewijzigd bestand. Verandert er iets (commit, bewerkt bestand), dan is de sleutel anders en draait de controle opnieuw; anders
+// komt hooguit CONTROLE_ONTHOUD_MS oud nieuws terug. Beslissingen (inleveren, regels toepassen) draaien ALTIJD hun eigen, verse controle.
+type ControleUitslag = { code: number; regels: string[] };
+const controleInstelling = { timeoutMs: 120_000, onthoudMs: 30_000 };
+let controleOnthouden: { sleutel: string; op: number; uitslag: ControleUitslag } | null = null;
+const controleLopend = new Map<string, Promise<ControleUitslag>>();
+/** Alleen voor tests: tijdslimiet/onthoudtijd instellen en het onthouden resultaat wissen. */
+export const _controleInstellen = (o: { timeoutMs?: number; onthoudMs?: number } = {}): void => {
+  if (o.timeoutMs !== undefined) controleInstelling.timeoutMs = o.timeoutMs;
+  if (o.onthoudMs !== undefined) controleInstelling.onthoudMs = o.onthoudMs;
+  controleOnthouden = null;
+};
+/** Sleutel van de werkkopie-stand, of null wanneer die niet betrouwbaar te bepalen is (dan wordt niets onthouden). */
+function controleSleutel(repo: OrchOverzicht['repo'], status: string | null): string | null {
+  if (status === null || !repo.hoofd) return null;
+  const h = createHash('sha256').update(`${repo.wortel}\n${repo.hoofd}\n${status}\n`);
+  const regels = status.split('\n').filter(Boolean);
+  if (regels.length > 200) return null;
+  for (const r of regels) {
+    const m = /^\s*\S{1,2}\s+(.+)$/.exec(r);
+    const pad = m ? m[1].split(' -> ').pop()! : '';
+    try { const s = statSync(join(repo.wortel, pad)); h.update(`${pad}:${s.mtimeMs}:${s.size}\n`); } catch { h.update(`${pad}:weg\n`); }
+  }
+  return h.digest('hex');
+}
+/** Niet-blokkerende controleer(): één proces tegelijk, met tijdslimiet. Zonder sleutel: altijd een verse run (wel in de rij). */
+export function controleerA(sleutel: string | null = null): Promise<ControleUitslag> {
+  if (sleutel && controleOnthouden && controleOnthouden.sleutel === sleutel && Date.now() - controleOnthouden.op < controleInstelling.onthoudMs) return Promise.resolve(controleOnthouden.uitslag);
+  const bezig = sleutel ? controleLopend.get(sleutel) : undefined;
+  if (bezig) return bezig;
+  const w = wortel();
+  const p = controleRij(async () => {
+    const r = await draaiA(process.execPath, [join(w, 'scripts/orch.mjs'), 'controleer'], { cwd: w, timeoutMs: controleInstelling.timeoutMs, env: LEES_GIT_ENV() });
+    const uitslag: ControleUitslag = { code: r.status ?? -1, regels: controleUitvoerRegels(`${r.stdout}${r.stderr}`) };
+    // Een afgebroken run (tijdslimiet, startfout) wordt niet onthouden: de volgende vraag probeert het opnieuw.
+    if (sleutel && r.status !== null) controleOnthouden = { sleutel, op: Date.now(), uitslag };
+    return uitslag;
+  });
+  if (sleutel) { controleLopend.set(sleutel, p); void p.then(() => controleLopend.delete(sleutel), () => controleLopend.delete(sleutel)); }
+  return p;
 }
 
 // ---------------------------------------------------------------- 1. overzicht en context
-function leesTaken(beleid: Beleid, lock: Lock | null): OrchTaak[] {
+/** Leest een taakbestand alleen voor de vraag «welke voorouder-controles heeft statusAfleiden nodig» (leespad, asynchroon). */
+async function voorouderTabel(): Promise<(a: string, b: string) => boolean> {
+  const map = join(wortel(), 'orchestratie/taken');
+  const gi = leesGeinstalleerd();
+  const tabel = new Map<string, boolean>();
+  if (existsSync(map) && gi?.bronCommit) {
+    for (const f of readdirSync(map).filter((n) => n.endsWith('.json')).sort()) {
+      let a = '';
+      try { a = String(leesJson<Record<string, any>>(join(map, f)).integratieCommit || ''); } catch { continue; }
+      const sleutel = `${a}\n${gi.bronCommit}`;
+      if (!a || tabel.has(sleutel)) continue;
+      // Een waarde uit een bestand mag nooit als optie bij git aankomen.
+      tabel.set(sleutel, a.startsWith('-') || gi.bronCommit.startsWith('-') ? false : (await gitA('merge-base', '--is-ancestor', a, gi.bronCommit)) !== null);
+    }
+  }
+  return (a, b) => tabel.get(`${a}\n${b}`) ?? false;
+}
+function leesTaken(beleid: Beleid, lock: Lock | null, isVoorouder: (a: string, b: string) => boolean = (a, b) => git('merge-base', '--is-ancestor', a, b) !== null): OrchTaak[] {
   const map = join(wortel(), 'orchestratie/taken');
   if (!existsSync(map)) return [];
   const gi = leesGeinstalleerd();
-  const isVoorouder = (a: string, b: string) => git('merge-base', '--is-ancestor', a, b) !== null;
   const uit: OrchTaak[] = [];
   for (const f of readdirSync(map).filter((n) => n.endsWith('.json')).sort()) {
     try {
@@ -133,24 +277,48 @@ function leesWachtrij(beleid: Beleid): OrchOverzicht['wachtrij'] {
   } catch { return null; }
 }
 
-export function overzicht(): OrchOverzicht {
-  const repo = repoStand();
-  const leeg: OrchOverzicht = { repo, regels: null, basis: null, integratie: null, geinstalleerd: null, agenten: [], taken: [], wachtrij: null, inleveringen: [], uploads: uploadsLijst(), voorstellen: voorstellenLijst(), bevestigingen: rootBevestigingen(), controleer: null, kanalen: [], tools: ORCH_TOOL_NAMEN, limieten: ORCH_LIMIETEN, schakelaar: { orchRegelsPasskey: orchRechtenOpen() } };
-  if (!repo.aanwezig) return leeg;
-  const { beleid, lock } = laadOrch();
-  const taken = leesTaken(beleid, lock);
+function leegOverzicht(repo: OrchOverzicht['repo']): OrchOverzicht {
+  return { repo, regels: null, basis: null, integratie: null, geinstalleerd: null, agenten: [], taken: [], wachtrij: null, inleveringen: [], uploads: uploadsLijst(), voorstellen: voorstellenLijst(), bevestigingen: rootBevestigingen(), controleer: null, kanalen: [], tools: ORCH_TOOL_NAMEN, limieten: ORCH_LIMIETEN, schakelaar: { orchRegelsPasskey: orchRechtenOpen() } };
+}
+function volOverzicht(leeg: OrchOverzicht, beleid: Beleid, lock: Lock | null, taken: OrchTaak[], controle: OrchOverzicht['controleer']): OrchOverzicht {
   return {
     ...leeg,
     regels: { regelsVersie: beleid.regelsVersie, hash: lock?.hash ?? '', kritiekHash: lock?.kritiekHash ?? '', eigenaar: (lock?.eigenaar as OrchOverzicht['regels'] extends infer R ? R extends { eigenaar: infer E } ? E : never : never) ?? null, eigenaarStatus: lock ? (eigenaarStatus(lock, null) as OrchZaak | null) : null, regelBestanden: beleid.regelBestanden, bijgewerkt: String(beleid.bijgewerkt || '') },
     basis: beleid.basis, integratie: { tak: beleid.integratie.tak, basisTak: beleid.integratie.basisTak }, geinstalleerd: leesGeinstalleerd(),
     agenten: beleid.agenten.map((a) => ({ id: a.id, naam: a.naam, kanalen: a.kanalen, adapter: a.adapter, taken: taken.filter((t) => t.agent === a.id).length })),
-    taken, wachtrij: leesWachtrij(beleid), inleveringen: leesInleveringen(), controleer: controleer(), kanalen: beleid.inlevering.kanalen,
+    taken, wachtrij: leesWachtrij(beleid), inleveringen: leesInleveringen(), controleer: controle, kanalen: beleid.inlevering.kanalen,
   };
+}
+/**
+ * LET OP: synchroon — houdt het hele proces vast zolang git en `controleer` lopen (tot 120 s). Alleen voor tests en diagnose;
+ * de routes van de eigenaar en het MCP-hulpmiddel orch_overzicht gebruiken overzichtA() (SEC-002 ai-mcp-09).
+ */
+export function overzicht(): OrchOverzicht {
+  const repo = repoStand();
+  const leeg = leegOverzicht(repo);
+  if (!repo.aanwezig) return leeg;
+  const { beleid, lock } = laadOrch();
+  return volOverzicht(leeg, beleid, lock, leesTaken(beleid, lock), controleer());
+}
+/**
+ * Het overzicht zonder de gebeurtenislus vast te houden: git asynchroon (één tegelijk), `controleer` asynchroon, gedeeld tussen
+ * gelijktijdige vragers en kort onthouden per stand van de werkkopie. Zelfde inhoud als overzicht().
+ * Огляд без блокування всього сайту: git і controleer — асинхронно, по одному, з коротким кешем за станом робочої копії.
+ */
+export async function overzichtA(): Promise<OrchOverzicht> {
+  const { repo, status } = await repoStandA();
+  const leeg = leegOverzicht(repo);
+  if (!repo.aanwezig) return leeg;
+  const { beleid, lock } = laadUit(repo);
+  const taken = leesTaken(beleid, lock, await voorouderTabel());
+  return volOverzicht(leeg, beleid, lock, taken, await controleerA(controleSleutel(repo, status)));
 }
 
 /** De compacte context voor agents zonder GitHub/MCP (orchestratie/CONTEXT-COMPACT.md), zoals hij in de werkkopie staat. */
-export function context(): { bestand: string; tekst: string; regelsVersie: string; hash: string } {
-  const { beleid, lock } = laadOrch();
+export function context(): { bestand: string; tekst: string; regelsVersie: string; hash: string } { return contextUit(laadOrch()); }
+/** Niet-blokkerende context() voor de route en orch_context (SEC-002 ai-mcp-09). */
+export async function contextA(): Promise<ReturnType<typeof context>> { return contextUit(await laadOrchA()); }
+function contextUit({ beleid, lock }: { beleid: Beleid; lock: Lock | null }): { bestand: string; tekst: string; regelsVersie: string; hash: string } {
   // Захист у глибину: valideerBeleid уже вимагає orchestratie/<назва>.md, але integratie могли змінити повз сайт.
   if (!CONTEXT_PAD.test(String(beleid.compactContext?.bestand || ''))) fout('BELEID_ONGELDIG', 500, [], 'compactContext.bestand');
   const pad = join(wortel(), beleid.compactContext.bestand);
@@ -255,7 +423,24 @@ export function uploadAnnuleren(input: Record<string, unknown>, actor: string): 
  * конфлікти, тести, запис у orchestratie/inleveringen, задача ter_integratie, черга; стан закомічено. Відхилена передача → uitkomst
  * 'geweigerd' із zaken (не HTTP-помилка: це результат, який власник має побачити).
  */
-export function uploadKlaar(input: Record<string, unknown>, actor: string): { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null } {
+type UploadKlaarUit = { upload: OrchUpload; record: Record<string, unknown>; registratie: Record<string, unknown> | null; staatCommit: string | null };
+export function uploadKlaar(input: Record<string, unknown>, actor: string): UploadKlaarUit {
+  const v = uploadKlaarVoorbereiden(input, actor);
+  return uploadKlaarAfronden(v, inleveren(v.opties));
+}
+/**
+ * SEC-002 (ai-mcp-09, afwerking A): dezelfde afronding, maar de pijplijn (unzip/tar, git, controle — tot minuten) draait in een eigen
+ * Node-proces (inleverenA) en hier wordt alleen gewacht: de event-loop van de site blijft vrij. Eén afronding tegelijk.
+ * Асинхронне завершення: конвеєр в окремому процесі, сайт не зупиняється; по одному.
+ */
+const klaarRij = eenTegelijkRij();
+export function uploadKlaarA(input: Record<string, unknown>, actor: string): Promise<UploadKlaarUit> {
+  return klaarRij(async () => {
+    const v = uploadKlaarVoorbereiden(input, actor);
+    return uploadKlaarAfronden(v, await inleverenA(v.opties));
+  });
+}
+function uploadKlaarVoorbereiden(input: Record<string, unknown>, actor: string) {
   const { beleid, lock } = laadOrch();
   const u = leesUpload(input.id);
   eisEigenUpload(u, actor);
@@ -272,7 +457,11 @@ export function uploadKlaar(input: Record<string, unknown>, actor: string): { up
   }
   // verwachteAgent: завантаження MCP-агента приймається лише з ORCH-OVERDRACHT.json від імені того самого агента (AGENT_VERSCHILT);
   // door — хто фактично доставив (власник або MCP-підключення з grant-id) — лишається в записі передачі.
-  const record = inleveren({ wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, alleenVeiligeControle: true, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null, verwachteAgent: u.agent ?? null, door: u.door });
+  const opties = { wortel: wortel(), beleid, lock, bron: pad, kanaal: u.kanaal, taakId: u.taakId ?? null, alleenVeiligeControle: true, zonderTests: input.zonderTests ? tekst(input.zonderTests, 300) : null, verwachteAgent: u.agent ?? null, door: u.door };
+  return { u, pad, opties };
+}
+function uploadKlaarAfronden(v: ReturnType<typeof uploadKlaarVoorbereiden>, record: ReturnType<typeof inleveren>): UploadKlaarUit {
+  const { u, pad } = v;
   const registratie = registreerInlevering(wortel(), record) as Record<string, unknown>;
   const commit = staatCommit(`orch: inlevering ${record.id} (${record.uitkomst}) via ${u.kanaal}`);
   u.staat = record.uitkomst === 'aanvaard' ? 'klaar' : 'mislukt';
@@ -305,8 +494,10 @@ export function voorstellenLijst(): OrchVoorstel[] {
   }
   return uit.sort((a, b) => (a.aangemaakt < b.aangemaakt ? 1 : -1)).slice(0, 20);
 }
-export function regelsOverzicht(): OrchRegelsOverzicht {
-  const { beleid, lock, bestanden, repo } = laadOrch();
+export function regelsOverzicht(): OrchRegelsOverzicht { return regelsOverzichtUit(laadOrch()); }
+/** Niet-blokkerende regelsOverzicht() voor de route (SEC-002 ai-mcp-09). */
+export async function regelsOverzichtA(): Promise<OrchRegelsOverzicht> { return regelsOverzichtUit(await laadOrchA()); }
+function regelsOverzichtUit({ beleid, lock, bestanden, repo }: ReturnType<typeof laadOrch>): OrchRegelsOverzicht {
   return { regelsVersie: beleid.regelsVersie, hash: lock?.hash ?? '', kritiekHash: lock?.kritiekHash ?? '', eigenaar: (lock?.eigenaar ?? null) as OrchRegelsOverzicht['eigenaar'], eigenaarStatus: lock ? (eigenaarStatus(lock, null) as OrchZaak | null) : null, bestanden, voorstellen: voorstellenLijst(), bevestigingen: rootBevestigingen(), schakelaar: { orchRegelsPasskey: orchRechtenOpen() }, repo };
 }
 /** Чернетка: власник надсилає нові тексти файлів правил; оцінка — чиста функція kern.beoordeelVoorstel. Повертає пропозицію з verschil. */
@@ -347,7 +538,17 @@ export type BesluitVoorToepassen = { id: string; passkey: string; inhoud: { rege
  * (б) root записав підтвердження у власний файл, (в) чинні правила не змінилися. Тоді: гілка regels/<versie>-<tijd>, файли, lock з
  * eigenaar.soort='passkey' (kern.bevestigMetPasskey), CONTEXT-COMPACT.md, `orch controleer` (при помилці все відкидається), commit, push.
  */
-export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): { voorstel: OrchVoorstel; tak: string; commit: string; gepusht: boolean; prUrl: string | null; controleer: string[]; pushDetail: string } {
+type ToepasUitslag = { voorstel: OrchVoorstel; tak: string; commit: string; gepusht: boolean; prUrl: string | null; controleer: string[]; pushDetail: string };
+/**
+ * SEC-002 (ai-mcp-09): de twee stappen die lang kunnen duren — `orch controleer` (tot 120 s) en `git push` (netwerk, tot 90 s) —
+ * lopen asynchroon, zodat de site intussen blijft antwoorden. Daardoor kunnen andere verzoeken tussendoor komen: twee aanvragen
+ * «toepassen» gaan daarom één voor één (toepasRij), en ná de controle wordt opnieuw gekeken of het ontwerp nog «ontwerp» is en
+ * de geldende regels dezelfde zijn (intrekken of een regelwijziging tijdens het wachten → niets vastleggen).
+ */
+export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): Promise<ToepasUitslag> {
+  return toepasRij(() => voorstelToepassenBinnen(id, besluit));
+}
+async function voorstelToepassenBinnen(id: unknown, besluit: BesluitVoorToepassen): Promise<ToepasUitslag> {
   const v = leesVoorstel(id);
   if (v.staat !== 'ontwerp') fout('GEEN_VOORSTEL', 409);
   const i = besluit?.inhoud;
@@ -388,9 +589,15 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
     const beleidNieuw = r.beleid!;
     if (!CONTEXT_PAD.test(String(beleidNieuw.compactContext?.bestand || ''))) { verwijderTak(); fout('BELEID_ONGELDIG', 409, [], 'compactContext.bestand'); }
     writeFileSync(join(boom, beleidNieuw.compactContext.bestand), compacteContext(r.bestanden!['AGENTS.md'] ?? readFileSync(join(boom, 'AGENTS.md'), 'utf8'), beleidNieuw, b.lock));
-    const cr = spawnSync(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer', '--wortel', boom], { cwd: boom, encoding: 'utf8', timeout: 120_000 });
+    const cr = await draaiA(process.execPath, [join(wortel(), 'scripts/orch.mjs'), 'controleer', '--wortel', boom], { cwd: boom, timeoutMs: controleInstelling.timeoutMs, env: LEES_GIT_ENV() });
     const cRegels = `${cr.stdout ?? ''}${cr.stderr ?? ''}`.trim().split('\n').filter(Boolean);
     if ((cr.status ?? 1) !== 0) { verwijderTak(); fout('CONTROLE_MISLUKT', 409, [], cRegels.slice(-30).join('\n')); }
+    // Tijdens het wachten op de controle kon er iets veranderen (zie de toelichting bij voorstelToepassen): opnieuw kijken vóór de commit.
+    let nogOntwerp = false, zelfdeRegels = false;
+    try { nogOntwerp = leesVoorstel(v.id).staat === 'ontwerp'; } catch { nogOntwerp = false; }
+    if (!nogOntwerp) { verwijderTak(); fout('GEEN_VOORSTEL', 409); }
+    try { zelfdeRegels = (laadOrch().lock?.hash ?? null) === v.basisHash; } catch { zelfdeRegels = false; }
+    if (!zelfdeRegels) { verwijderTak(); fout('VOORSTEL_VEROUDERD', 409); }
     if (gw('add', '-A', '--', ...huidig.beleid.regelBestanden, LOCK, beleidNieuw.compactContext.bestand) === null) { verwijderTak(); fout('GIT_FOUT', 500, [], 'git add'); }
     const bericht = `ORCH regels ${v.regelsVersie}: bevestigd door eigenaar (passkey ${bevestigd.passkey}, besluit ${besluit.id})\n\nVoorstel ${v.id} via mcp.* /agenten → Координація. kritiekHash ${v.kritiekHash}${v.kritiekGewijzigd ? ' (kritiek gewijzigd)' : ''}.`;
     if (gw('-c', 'user.name=orch-site', '-c', 'user.email=orch@mijn-ruimte.invalid', 'commit', '-q', '-m', bericht) === null) { verwijderTak(); fout('GIT_FOUT', 500, [], 'git commit'); }
@@ -405,7 +612,7 @@ export function voorstelToepassen(id: unknown, besluit: BesluitVoorToepassen): {
     rmSync(werk, { recursive: true, force: true });
   }
   const heeftOrigin = !!git('remote', 'get-url', 'origin');
-  const push = heeftOrigin ? spawnSync('git', ['push', '-q', '-u', 'origin', tak], { cwd: wortel(), encoding: 'utf8', timeout: 90_000 }) : null;
+  const push = heeftOrigin ? await draaiA('git', ['push', '-q', '-u', 'origin', tak], { cwd: wortel(), timeoutMs: 90_000 }) : null;
   const gepusht = !!push && push.status === 0;
   const m = /github\.com[:/]([^/]+\/[^/.]+)/.exec(git('remote', 'get-url', 'origin') || '');
   const prUrl = m && gepusht ? `https://github.com/${m[1]}/compare/${encodeURIComponent(huidig.beleid.integratie.tak)}...${encodeURIComponent(tak)}?expand=1` : null;

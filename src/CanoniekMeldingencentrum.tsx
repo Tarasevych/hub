@@ -1,4 +1,4 @@
-import { ArrowLeft, Bell, CheckCheck, ChevronDown, ChevronUp, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
@@ -25,6 +25,9 @@ import { zetTechActiviteit } from './meldingen/tech-meldingen-opslag';
 import { pijlNaarBel, placeNear, zonderDok, type Pijl } from './melding-positie';
 import { zichtbaarKader, volgKader } from './platform/vast-kader';
 import { styleOf } from './melding-stijl';
+// IDENTITEIT-015 (kaart-stille-uren): тихі години для всього центру — без спливання й звуку, після кінця один підсумок.
+import { samenvattingTekst, stilNu, type StilVoorkeur } from '../shared/stille-uren';
+import { stilAfronden, stilTellen } from './meldingen/stille-uren-opslag';
 // 25.10.2026: de bel staat in een ZONE van de pagina (shared/plaatsing.ts) — standaard rechts van de foto (computer: bovenbalk; telefoon:
 // kop van het menu). Geen eigen positie (x,y) meer vanaf de hoek van het scherm, geen eigen slepen: <Plek> en src/plaatsing/plaats-slepen.ts.
 import { Plek } from './plaatsing/Plek';
@@ -72,6 +75,8 @@ type Props = {
   techItems?: CanonicalServerNotification[];
   /** 22.10.2026: sfeer van DEZE bel (shared/meldingen-soorten.ts): de bel toont alleen activiteiten van haar eigen sfeer; technische gaan naar het paneel in de band. */
   sfeer?: MeldingSfeer;
+  /** IDENTITEIT-015: stille uren (zijbalk.meldingen.stil): geen pop-up en geen geluid (beveiliging wel), daarna één samenvatting. */
+  stil?: StilVoorkeur;
 };
 
 /**
@@ -102,8 +107,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   const [sound, setSound] = useState(prefs.notificationSound !== false);
   const [retained, setRetained] = useState<Retained[]>(() => readRows(p.scope));
   const [active, setActive] = useState<Active | null>(null);
-  /** Pop-up staat stil (muis erop, focus erin of uitgeklapt): de aftelling stopt. */
+  /** Pop-up staat stil (muis erop, vinger erop op het aanraakscherm, toetsenbordfocus erin of tabblad verborgen): de aftelling stopt. */
   const [paused, setPaused] = useState(false);
+  const [vastgehoudenMetAanraking, setVastgehoudenMetAanraking] = useState(false);
+  const [balkSegment, setBalkSegment] = useState<{ versie: number; duur: number; verstreken: number }>({ versie: 0, duur: 2000, verstreken: 0 });
   const [panelOpen, setPanelOpen] = useState(false);
   const [instellingen, setInstellingen] = useState(false);
   const [meer, setMeer] = useState(false);
@@ -122,6 +129,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   const retainedRef = useRef<Retained[]>(retained);
   /** Aftelling van de pop-up die nu staat (null = blijft staan tot u sluit). */
   const aftelRef = useRef<Aftelling | null>(null);
+  const laatsteTikRef = useRef(0);
+  const aanrakingActiefRef = useRef(false);
+  const heeftTouchEventRef = useRef(false);
+  const laatsteAanrakingMsRef = useRef(0);
   /** Tijdelijke meldingen (uit de activiteit en de server): dezelfde melding krijgt binnen het venster maar één pop-up. */
   const toastRecentRef = useRef(new Map<string, number>());
   /** Pop-ups van de laatste minuten (sectie, soort, bron): één gebeurtenis uit twee bronnen → één pop-up (isBronDuplicaat). */
@@ -204,8 +215,12 @@ export default function CanonicalNotificationCenter(p: Props) {
   /** Toon de pop-up. Wat op het scherm staat, telt als gelezen (ook zonder klik). */
   const activate = (next: Active) => {
     activeRef.current = next;
+    aanrakingActiefRef.current = false;
+    setVastgehoudenMetAanraking(false);
+    laatsteTikRef.current = Date.now();
     aftelRef.current = next.levensduurMs == null ? null : pauzeAftelling(nieuweAftelling(next.levensduurMs), 'verborgen', typeof document !== 'undefined' && document.hidden);
     setPaused(!!aftelRef.current && gepauzeerd(aftelRef.current));
+    setBalkSegment({ versie: 0, duur: next.levensduurMs ?? 2000, verstreken: 0 });
     setActive(next);
     if (!next.stil) playChime();
     markeerGetoond(next);
@@ -233,13 +248,21 @@ export default function CanonicalNotificationCenter(p: Props) {
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
     const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !notice.alleenPaneel };
-    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
+    let geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
     }
+    // IDENTITEIT-015: тихі години. Подія лишається в панелі, але не спливає й не звучить; її пораховано для одного підсумку після тиші.
+    // Безпека (критичні типи) і приклади з «Типи сповіщень» спливають як завжди — попередження безпеки не відкладаються.
+    if ((voorkeur.opduiken || geluid) && !notice.voorbeeld && !isKritiekType(type) && stilNu(propsRef.current.stil, new Date(nu))) {
+      const vorige = stilTellen(propsRef.current.scope, propsRef.current.stil, 1, new Date(nu));
+      if (vorige) toonStilSamenvatting(vorige);
+      voorkeur.opduiken = false;
+      geluid = false;
+    }
     const explain = notice.explain?.trim() || (kind === 'error' || kind === 'warning' ? uitlegStandaard(propsRef.current.lang, styleOf(notice.source || '', propsRef.current.lang).label) : undefined);
-    const groep = notice.action ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
+    const groep = notice.action || notice.losseRegel ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
     // Een gelukte stap lost eerdere fouten met hetzelfde onderwerp op, ook als deze melding zelf geen pop-up krijgt.
     if (notice.topic && kind === 'success') saveRetained((rijen) => losOpEerdere(rijen, notice.topic!));
 
@@ -300,6 +323,24 @@ export default function CanonicalNotificationCenter(p: Props) {
   const receiveRef = useRef(receive);
   receiveRef.current = receive;
 
+  /** IDENTITEIT-015: de ene samenvatting na de stilte (in de lijst bewaard; type «systeem», dus de keuzes voor dat type gelden). */
+  const toonStilSamenvatting = (n: number) => {
+    const { text, explain } = samenvattingTekst(n, propsRef.current.lang);
+    // losseRegel: «Поки була тиша: 3» і пізніше «…: 4» (інша тиша) — окремі підсумки, не злиття в один рядок (samenvoegSleutel прибирає цифри).
+    receiveRef.current({ text, explain, kind: 'info', type: 'systeem', topic: 'stille-uren', losseRegel: true }, 'event', { type: 'systeem' });
+  };
+  // Na het einde van de stilte (of zodra ze uitgezet is): één keer de samenvatting. Ook na herladen of als het tabblad over het einde
+  // heen sliep: de telling staat in de opslag en wordt gewist op het moment dat de samenvatting getoond wordt (geen tweede).
+  const stilSleutel = JSON.stringify(p.stil ?? null);
+  useEffect(() => {
+    const kijk = () => { const n = stilAfronden(propsRef.current.scope, propsRef.current.stil); if (n) toonStilSamenvatting(n); };
+    kijk();
+    const t = window.setInterval(kijk, 30_000);
+    const zicht = () => { if (document.visibilityState === 'visible') kijk(); };
+    document.addEventListener('visibilitychange', zicht);
+    return () => { window.clearInterval(t); document.removeEventListener('visibilitychange', zicht); };
+  }, [p.scope, stilSleutel]);
+
   const showNext = () => {
     const queued = queueRef.current.shift();
     if (!queued) return;
@@ -318,21 +359,60 @@ export default function CanonicalNotificationCenter(p: Props) {
   const dismissRef = useRef(dismiss);
   dismissRef.current = dismiss;
 
-  /** Muis erop, toetsenbordfocus erin of tabblad verborgen: de aftelling staat stil; loslaten telt weer door (src/meldingen/aftelling.ts). */
+  /** Muis erop, vinger op de melding, toetsenbordfocus erin of tabblad verborgen: de aftelling staat stil; loslaten telt vloeiend verder. */
   const pauzeer = (bron: PauzeBron, aan: boolean) => {
-    if (!aftelRef.current) return;
-    aftelRef.current = pauzeAftelling(aftelRef.current, bron, aan);
-    setPaused(gepauzeerd(aftelRef.current));
+    const huidig = aftelRef.current;
+    if (!huidig) return;
+    const nu = Date.now();
+    const bijgewerkt = !gepauzeerd(huidig) && laatsteTikRef.current > 0
+      ? tikAftelling(huidig, Math.max(0, nu - laatsteTikRef.current))
+      : huidig;
+    laatsteTikRef.current = nu;
+    const overVoor = bijgewerkt.over;
+    const volgende = pauzeAftelling(bijgewerkt, bron, aan);
+    aftelRef.current = volgende;
+    if (barRef.current) barRef.current.style.transform = `scaleX(${fractie(volgende)})`;
+    if (volgende.over !== overVoor) {
+      setBalkSegment((s) => ({ versie: s.versie + 1, duur: volgende.totaal, verstreken: Math.max(0, volgende.totaal - volgende.over) }));
+    }
+    setPaused(gepauzeerd(volgende));
+    setVastgehoudenMetAanraking(volgende.pauzes.includes('aanraking'));
+  };
+  const pauzeerRef = useRef(pauzeer);
+  pauzeerRef.current = pauzeer;
+
+  const heeftAanrakingOpToast = (touches: ArrayLike<{ clientX: number; clientY: number; target?: EventTarget | null }>): boolean => {
+    const el = toastRef.current;
+    if (!el || !el.isConnected || touches.length === 0) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) {
+      for (let i = 0; i < touches.length; i += 1) {
+        const doel = touches[i]?.target;
+        if (doel && typeof Node !== 'undefined' && doel instanceof Node && el.contains(doel)) return true;
+      }
+      return false;
+    }
+    for (let i = 0; i < touches.length; i += 1) {
+      const punt = touches[i];
+      if (punt && punt.clientX >= r.left && punt.clientX <= r.right && punt.clientY >= r.top && punt.clientY <= r.bottom) return true;
+    }
+    return false;
   };
 
-  /** Uitklappen geeft weer de volle tijd (balk weer vol), maar pauzeert niet voor altijd: zonder muis erop verdwijnt hij daarna toch. */
+  /** Uitklappen geeft weer de volle tijd (balk weer vol), maar pauzeert niet voor altijd: zonder muis of vinger erop verdwijnt zij daarna. */
   const toggleExpanded = () => {
     const current = activeRef.current;
     if (!current) return;
     const next = { ...current, expanded: !current.expanded };
     activeRef.current = next;
     setActive(next);
-    if (next.expanded && aftelRef.current && current.levensduurMs != null) aftelRef.current = verleng(aftelRef.current, current.levensduurMs);
+    if (next.expanded && aftelRef.current && current.levensduurMs != null) {
+      laatsteTikRef.current = Date.now();
+      const verlengd = verleng(aftelRef.current, current.levensduurMs);
+      aftelRef.current = verlengd;
+      if (barRef.current) barRef.current.style.transform = 'scaleX(1)';
+      setBalkSegment((s) => ({ versie: s.versie + 1, duur: verlengd.totaal, verstreken: Math.max(0, verlengd.totaal - verlengd.over) }));
+    }
   };
 
   const runAction = async (id: string, action: CanonicalNoticeAction, closeToast = false) => {
@@ -357,23 +437,66 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => { if (!panelOpen) { setInstellingen(false); setMeer(false); } }, [panelOpen]);
   useEffect(() => { soundRef.current = sound; }, [sound]);
 
-  // Aftelling van de pop-up: de balk krijgt de resterende tijd rechtstreeks (geen herrendering elke 100 ms). Pauze, verlengen en de
-  // tijd na een pauze staan in src/meldingen/aftelling.ts; hier alleen de klok.
+  // Aftelling van de pop-up: de CSS-balk loopt vloeiend en stopt synchroon op animation-play-state: paused; voor verminderde beweging
+  // zet deze klok ook rechtstreeks scaleX. Pauze, verlengen en de tijd na een pauze staan in src/meldingen/aftelling.ts.
   useEffect(() => {
     if (barRef.current) barRef.current.style.transform = 'scaleX(1)';
     if (!active || active.levensduurMs == null) return;
-    let vorige = Date.now();
+    laatsteTikRef.current = Date.now();
     const timer = window.setInterval(() => {
       const nu = Date.now();
       const a = aftelRef.current;
       if (!a) return;
+      const vorige = laatsteTikRef.current || nu;
       aftelRef.current = tikAftelling(a, nu - vorige);
-      vorige = nu;
+      laatsteTikRef.current = nu;
       if (klaar(aftelRef.current)) { window.clearInterval(timer); dismissRef.current(); return; }
       if (barRef.current) barRef.current.style.transform = `scaleX(${fractie(aftelRef.current)})`;
-    }, 100);
+    }, 40);
     return () => window.clearInterval(timer);
   }, [active?.id]);
+
+  // Aanraakscherm: vinger rechtstreeks op de melding plaatsen OF met de vinger over het scherm naar het meldingsvlak schuiven en vasthouden.
+  // Zolang een vinger binnen de rechthoek van de melding blijft, staat 'aanraking' op pauze — ook als de browser pointercancel stuurt.
+  useEffect(() => {
+    if (!active || active.levensduurMs == null || typeof document === 'undefined') {
+      aanrakingActiefRef.current = false;
+      return;
+    }
+    const bijAanraking = (event: TouchEvent) => {
+      heeftTouchEventRef.current = true;
+      const opToast = heeftAanrakingOpToast(event.touches);
+      if (opToast) {
+        laatsteAanrakingMsRef.current = Date.now();
+        if (!aanrakingActiefRef.current) {
+          aanrakingActiefRef.current = true;
+          pauzeerRef.current('aanraking', true);
+        }
+      } else if (aanrakingActiefRef.current) {
+        laatsteAanrakingMsRef.current = Date.now();
+        aanrakingActiefRef.current = false;
+        pauzeerRef.current('aanraking', false);
+      }
+    };
+    const losBijVerlies = () => {
+      if (aanrakingActiefRef.current) {
+        aanrakingActiefRef.current = false;
+        pauzeerRef.current('aanraking', false);
+      }
+    };
+    document.addEventListener('touchstart', bijAanraking, { passive: true, capture: true });
+    document.addEventListener('touchmove', bijAanraking, { passive: true, capture: true });
+    document.addEventListener('touchend', bijAanraking, { passive: true, capture: true });
+    document.addEventListener('touchcancel', bijAanraking, { passive: true, capture: true });
+    window.addEventListener('blur', losBijVerlies);
+    return () => {
+      document.removeEventListener('touchstart', bijAanraking, true);
+      document.removeEventListener('touchmove', bijAanraking, true);
+      document.removeEventListener('touchend', bijAanraking, true);
+      document.removeEventListener('touchcancel', bijAanraking, true);
+      window.removeEventListener('blur', losBijVerlies);
+    };
+  }, [active?.id, active?.levensduurMs]);
 
   // Tabblad verborgen: de aftelling staat stil (niemand kan lezen); weer zichtbaar: telt door, en wat toen op het scherm stond telt als gelezen.
   const zichtRef = useRef(() => undefined as void);
@@ -492,8 +615,13 @@ export default function CanonicalNotificationCenter(p: Props) {
     const added = alle.filter((item) => !serverKnown.current?.has(item.id) && vk(soortInfo(item.kind).type).tonen);
     serverKnown.current = unreadIds;
     if (!added.length) return;
-    const klinkt = added.some((item) => vk(soortInfo(item.kind).type).geluid);
-    const toon = added.filter((item) => vk(soortInfo(item.kind).type).opduiken);
+    // IDENTITEIT-015: тихі години — некритичні нові серверні сповіщення не спливають і не звучать, лише рахуються для підсумку.
+    const stilNuServer = stilNu(p.stil, new Date());
+    const telbaar = stilNuServer ? added.filter((item) => { const ty = soortInfo(item.kind).type; return !isKritiekType(ty) && (vk(ty).opduiken || vk(ty).geluid); }) : [];
+    if (telbaar.length) { const vorige = stilTellen(p.scope, p.stil, telbaar.length); if (vorige) toonStilSamenvatting(vorige); }
+    const luid = stilNuServer ? added.filter((item) => isKritiekType(soortInfo(item.kind).type)) : added;
+    const klinkt = luid.some((item) => vk(soortInfo(item.kind).type).geluid);
+    const toon = luid.filter((item) => vk(soortInfo(item.kind).type).opduiken);
     if (toon.length) {
       const item = toon[0];
       const info = soortInfo(item.kind);
@@ -740,15 +868,25 @@ export default function CanonicalNotificationCenter(p: Props) {
         <section
           ref={toastRef as never}
           data-qa-id='canonical-notification-toast'
+          data-no-edge-swipe='1'
           className={`canonical-notification-toast kind-${active.kind}${active.action ? ' has-action' : ''}${active.expanded ? ' expanded' : ''}${paused ? ' is-paused' : ''}${active.levensduurMs == null ? ' is-sticky' : ''}`}
           style={toastPos
             ? { left: toastPos.left, top: toastPos.top, maxHeight: toastPos.maxHeight, right: 'auto', bottom: 'auto', ['--melding-top' as string]: `${toastPos.top}px` }
             : { visibility: 'hidden' }}
           role={active.kind === 'error' ? 'alert' : 'status'}
           data-levensduur={active.levensduurMs ?? 'vast'}
-          onPointerEnter={() => pauzeer('muis', true)}
-          onPointerLeave={() => pauzeer('muis', false)}
-          // Alleen toetsenbordfocus pauzeert (een muisklik in de pop-up hield hem vroeger open tot u elders klikte).
+          onPointerEnter={(event) => { if (event.pointerType === 'mouse' || event.pointerType === 'pen') pauzeer('muis', true); }}
+          onPointerLeave={(event) => { if (event.pointerType === 'mouse' || event.pointerType === 'pen') pauzeer('muis', false); }}
+          onMouseEnter={() => { if (!aanrakingActiefRef.current && Date.now() - laatsteAanrakingMsRef.current >= 800) pauzeer('muis', true); }}
+          onMouseLeave={() => pauzeer('muis', false)}
+          onPointerDown={(event) => { if (event.pointerType === 'touch') { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = true; pauzeer('aanraking', true); } }}
+          onPointerUp={(event) => { if (event.pointerType === 'touch' && !heeftTouchEventRef.current) { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
+          onPointerCancel={(event) => { if (event.pointerType === 'touch' && !heeftTouchEventRef.current) { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
+          onTouchStart={() => { heeftTouchEventRef.current = true; laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = true; pauzeer('aanraking', true); }}
+          onTouchEnd={(event) => { laatsteAanrakingMsRef.current = Date.now(); if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
+          onTouchCancel={(event) => { laatsteAanrakingMsRef.current = Date.now(); if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
+          onContextMenu={(event) => { if (aanrakingActiefRef.current || Date.now() - laatsteAanrakingMsRef.current < 800) event.preventDefault(); }}
+          // Alleen toetsenbordfocus pauzeert (een muisklik of korte tik houdt hem niet hangend via focus).
           onFocus={(event) => { let toets = false; try { toets = event.target instanceof Element && event.target.matches(':focus-visible'); } catch { toets = false; } if (toets) pauzeer('toets', true); }}
           onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pauzeer('toets', false); }}
         >
@@ -770,7 +908,13 @@ export default function CanonicalNotificationCenter(p: Props) {
             ) : null}
             {active.expanded ? <small className='canonical-notification-toast-meta'>{formatTime(active.createdAt)}</small> : null}
             {active.levensduurMs == null ? <small className='canonical-notification-toast-meta'>{t('Лишається, доки ви не закриєте (так налаштовано для цього типу). Після закриття — у панелі сповіщень.', 'Blijft staan tot u sluit (zo ingesteld voor dit type). Daarna staat hij in het meldingenpaneel.')}</small> : null}
-            {paused && active.levensduurMs != null ? <small className='canonical-notification-toast-pauze' aria-hidden='true'>{t('Пауза — не зникне, поки курсор на сповіщенні', 'Pauze — verdwijnt niet zolang de muis erop staat')}</small> : null}
+            {paused && active.levensduurMs != null ? (
+              <small className='canonical-notification-toast-pauze' aria-hidden='true'>
+                {vastgehoudenMetAanraking
+                  ? t('Пауза — не зникне, поки тримаєте палець на сповіщенні', 'Pauze — verdwijnt niet zolang u de melding vasthoudt')
+                  : t('Пауза — не зникне, поки курсор на сповіщенні', 'Pauze — verdwijnt niet zolang de muis erop staat')}
+              </small>
+            ) : null}
           </div>
           {active.action ? (
             <button type='button' className='canonical-notification-action-icon' aria-label={active.action.label} title={active.action.label} data-tooltip={active.action.label} onClick={() => void runAction(active.id, active.action!, true)}><Undo2 /></button>
@@ -783,11 +927,17 @@ export default function CanonicalNotificationCenter(p: Props) {
             title={active.expanded ? t('Згорнути сповіщення', 'Melding inklappen') : t('Розгорнути сповіщення', 'Melding uitklappen')}
             onClick={toggleExpanded}
           >
-            {active.expanded ? <ChevronUp /> : <ChevronDown />}
+            <ChevronDown aria-hidden='true' />
           </button>
           <button type='button' className='canonical-notification-icon-button' onClick={dismiss} aria-label={t('Закрити повідомлення', 'Melding sluiten')} title={t('Закрити повідомлення', 'Melding sluiten')}><X /></button>
           {active.levensduurMs != null ? (
-            <div className='canonical-notification-toast-balk' aria-hidden='true'><i ref={barRef as never} /></div>
+            <div className='canonical-notification-toast-balk' aria-hidden='true'>
+              <i
+                key={`${active.id}:${balkSegment.versie}`}
+                ref={barRef as never}
+                style={{ ['--toast-duur' as string]: `${balkSegment.duur}ms`, ['--toast-verstreken' as string]: `-${balkSegment.verstreken}ms` }}
+              />
+            </div>
           ) : null}
         </section>
       )}

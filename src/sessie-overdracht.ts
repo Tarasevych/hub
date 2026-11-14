@@ -83,12 +83,18 @@ const allowedHandoffOrigin = (url: string) => {
   }
 };
 
+const zelfdeEcosysteem = (a: string, b: string) => {
+  const ha = a.toLowerCase(), hb = b.toLowerCase();
+  return (ha === 'tarasevych.com' || ha.endsWith('.tarasevych.com')) && (hb === 'tarasevych.com' || hb.endsWith('.tarasevych.com'));
+};
+
 const skipIntercept = (parsed: URL, target: string, current: string) => {
   if (parsed.searchParams.get('handoff')) return true;
   if (parsed.protocol !== 'https:') return true;
   if (parsed.hostname === 'accounts.google.com' || parsed.hostname.endsWith('.google.com')) return true;
   if (parsed.pathname.includes('/api/auth') || parsed.searchParams.has('client_id')) return true;
   if (!target || target === current || target === 'identity') return true;
+  if (typeof location !== 'undefined' && zelfdeEcosysteem(location.hostname, parsed.hostname)) return true;
   return false;
 };
 

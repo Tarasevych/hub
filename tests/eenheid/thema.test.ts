@@ -2,8 +2,9 @@
 // moet exact hetzelfde beslissen; gegenereerde CSS actueel; contrast van de nieuwe paletten (WCAG AA).
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { autoNu, leesKeuze, normaalAuto, pauzeer, resolveer, zonTijden } from '../../src/thema/kern';
-import { bootCss, contrast, kleurWaarden, paletCss, PUUR, SECTIES } from '../../src/thema/paletten';
+import { UITERLIJK_PALETTEN } from '../../shared/uiterlijk';
+import { autoNu, echteWissel, isKlassiekPalet, isMaquetteStelsel, leesKeuze, normaalAuto, PALETTEN, pauzeer, resolveer, zonTijden } from '../../src/thema/kern';
+import { bootCss, contrast, KLASSIEK_WIT, KLASSIEK_ZWART, kleurWaarden, MAQUETTE, paletCss, PUUR, SECTIES } from '../../src/thema/paletten';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
@@ -18,6 +19,22 @@ export async function main(): Promise<number> {
   const jun = zonTijden(new Date('2026-06-21T12:00'), 50.8, 4.4);
   check('Brussel 21.06: licht ± 04:45–22:45 (zomertijd)', typeof jun === 'object' && Math.abs(t('2026-06-21T04:47') - jun.op) < 15 * 60e3 && Math.abs(t('2026-06-21T22:40') - jun.onder) < 15 * 60e3, typeof jun === 'object' ? `${uur(jun.op)}–${uur(jun.onder)}` : '');
   check('Spitsbergen: poolnacht/witte nacht', zonTijden(new Date('2026-12-21T12:00'), 78, 15) === 'nacht' && zonTijden(new Date('2026-06-21T12:00'), 78, 15) === 'dag');
+  // IDENTITEIT-015 (приймання thema): у полярний день/ніч `volgende` — лише північ; справжнє перемикання — коли сонце вперше перетне −6°.
+  {
+    const pool = normaalAuto({ soort: 'zon', lat: 78.2, lon: 15.7 });
+    const zomer = t('2026-06-21T12:00'), winter = t('2026-12-21T12:00');
+    const eersteDag = (van: Date, soort: 'dag' | 'nacht') => { for (let i = 1; i < 200; i++) { const d = new Date(van.getFullYear(), van.getMonth(), van.getDate() + i); if (zonTijden(d, 78.2, 15.7) !== soort) return d; } return null; };
+    const ez = echteWissel(pool, zomer), ew = echteWissel(pool, winter);
+    const dz = eersteDag(new Date(zomer), 'dag'), dw = eersteDag(new Date(winter), 'nacht');
+    check('echteWissel: poolzomer — volgende is middernacht, echte wissel pas op de eerste dag zonder witte nacht (donker wordt)', autoNu(pool, zomer).volgende === t('2026-06-22T00:00') && ez !== null && dz !== null && new Date(ez).toDateString() === dz.toDateString() && autoNu(pool, ez).donker && !autoNu(pool, ez - 1).donker, ez ? new Date(ez).toString() : 'null');
+    const zw = dw ? zonTijden(dw, 78.2, 15.7) : null;
+    check('echteWissel: poolnacht — echte wissel = eerste zonsopgang (−6°) na de poolnacht', ew !== null && typeof zw === 'object' && zw !== null && ew === zw.op && !autoNu(pool, ew).donker, ew ? new Date(ew).toString() : 'null');
+    const iv = normaalAuto({ soort: 'interval', van: '22:00', tot: '06:00' });
+    check('echteWissel: venster — gelijk aan volgende (22:00 / 06:00 morgen; zomertijdnacht 29.03 → 06:00 CEST)', echteWissel(iv, t('2026-11-16T12:00')) === t('2026-11-16T22:00') && echteWissel(iv, t('2026-11-16T23:00')) === t('2026-11-17T06:00') && echteWissel(iv, t('2026-03-28T23:00')) === new Date('2026-03-29T06:00:00+02:00').getTime());
+    check('echteWissel: venster met gelijke uren — nooit een wissel (null)', echteWissel(normaalAuto({ soort: 'interval', van: '08:00', tot: '08:00' }), t('2026-11-16T12:00')) === null);
+    const pz = pauzeer(pool, zomer);
+    check('echteWissel: pauze in de poolzomer eindigt om middernacht — dat IS een wissel (donker → licht)', echteWissel(pz, zomer) === t('2026-06-22T00:00'));
+  }
 
   // tijdvenster 20:00–07:00 (over middernacht)
   const a = normaalAuto({ soort: 'interval', van: '20:00', tot: '07:00' });
@@ -34,6 +51,25 @@ export async function main(): Promise<number> {
   // keuzes en oude waarden
   check('oud «plum-dark» → violet + donker', JSON.stringify(leesKeuze('plum-dark', undefined)) === '{"modus":"dark","palet":"violet"}');
   check('standaard: palet «kleur», modus «device»', JSON.stringify(leesKeuze(undefined, undefined)) === '{"modus":"device","palet":"kleur"}');
+  check('palet «maquette» + modus «dark»', JSON.stringify(leesKeuze('dark', 'maquette')) === '{"modus":"dark","palet":"maquette"}');
+  check('PALETTEN en UITERLIJK_PALETTEN bevatten exact dezelfde 7 paletten', PALETTEN.length === 7 && UITERLIJK_PALETTEN.length === 7 && PALETTEN.every((x) => (UITERLIJK_PALETTEN as readonly string[]).includes(x)));
+  check('isKlassiekPalet en isMaquetteStelsel herkennen maquette en beide klassieke paletten', isKlassiekPalet('klassiek-wit') && isKlassiekPalet('klassiek-zwart') && !isKlassiekPalet('maquette') && isMaquetteStelsel('maquette') && isMaquetteStelsel('klassiek-wit') && isMaquetteStelsel('klassiek-zwart') && !isMaquetteStelsel('kleur'));
+  check(
+    'klassiek-wit dwingt altijd een vaste lichte toon af zonder de opgeslagen modus te wissen',
+    leesKeuze('dark', 'klassiek-wit').modus === 'dark' &&
+      (['light', 'dark', 'device', 'auto'] as const).every((m) => {
+        const uit = resolveer({ theme: m, palet: 'klassiek-wit', auto: p, apparaatDonker: true, nu: t('2026-10-10T23:00') });
+        return !uit.donker && uit.palet === 'klassiek-wit' && uit.presentatie === 'light' && uit.volgende === null && !uit.gepauzeerd;
+      }),
+  );
+  check(
+    'klassiek-zwart dwingt altijd een vaste donkere toon af zonder de opgeslagen modus te wissen',
+    leesKeuze('light', 'klassiek-zwart').modus === 'light' &&
+      (['light', 'dark', 'device', 'auto'] as const).every((m) => {
+        const uit = resolveer({ theme: m, palet: 'klassiek-zwart', auto: a, apparaatDonker: false, nu: t('2026-10-10T12:00') });
+        return uit.donker && uit.palet === 'klassiek-zwart' && uit.presentatie === 'dark' && uit.volgende === null && !uit.gepauzeerd;
+      }),
+  );
   const r = resolveer({ theme: 'dark', palet: 'violet', auto: undefined, apparaatDonker: false, nu: 0, violetToegestaan: false });
   check('violet zonder recht → grifel (opgeslagen keuze blijft)', r.palet === 'grifel' && r.presentatie === 'dark');
   check('normaalAuto: rommel → standaard, coördinaten afgerond op 0,1°', JSON.stringify(normaalAuto({ soort: 'x', van: '25:00', lat: 50.84567, lon: 4.35678 })) === '{"soort":"zon","van":"20:00","tot":"07:00","lat":50.8,"lon":4.4}');
@@ -45,20 +81,22 @@ export async function main(): Promise<number> {
   runInNewContext(readFileSync('public/canonical-service.js', 'utf8'), ctx);
   const rt = venster.__TSV_CANONICAL_SERVICE__ as { thema?: (o: unknown) => unknown } | undefined;
   check('canonical-service.js heeft runtime.thema', typeof rt?.thema === 'function');
-  let verschil = '';
+  let verschil = '', combinaties = 0;
   const themes = ['light', 'dark', 'device', 'auto', 'plum-dark', 'plum-light', undefined, 'onzin'];
-  const paletten = ['grifel', 'puur', 'violet', 'kleur', undefined];
+  const paletten = ['grifel', 'puur', 'violet', 'kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart', undefined];
   const autos = [undefined, { soort: 'zon' }, { soort: 'zon', lat: 50.5, lon: 30.5 }, { soort: 'interval', van: '21:30', tot: '06:15' }, { soort: 'interval', van: '08:00', tot: '08:00' }, pauzeer(a, t('2026-10-10T07:30'))];
   for (const theme of themes) for (const palet of paletten) for (const auto of autos) for (const nu of [t('2026-10-10T03:00'), t('2026-10-10T12:00'), t('2026-10-10T19:40'), t('2026-12-21T16:00'), t('2026-06-21T22:50')]) for (const apparaatDonker of [true, false]) for (const violetToegestaan of [true, false, undefined]) {
+    combinaties++;
     const o = { theme, palet, auto, apparaatDonker, nu, violetToegestaan };
     const x = JSON.stringify(resolveer(o)), y = JSON.stringify(rt?.thema?.(o));
     if (x !== y && !verschil) verschil = `${JSON.stringify(o)}\n  ts: ${x}\n  js: ${y}`;
   }
-  check('opstart (JS) en app (TS) beslissen identiek over 7200 combinaties', !verschil, verschil);
+  check(`opstart (JS) en app (TS) beslissen identiek over ${combinaties} combinaties`, !verschil && combinaties === 11520, verschil);
 
   // gegenereerde bestanden actueel
+  const indexHtml = readFileSync('index.html', 'utf8');
   check('src/thema/paletten.css actueel (node scripts/thema-css.mjs)', readFileSync('src/thema/paletten.css', 'utf8') === paletCss());
-  check('index.html bevat de actuele opstartregels', readFileSync('index.html', 'utf8').includes(`/*thema-paletten*/${bootCss()}/*/thema-paletten*/`));
+  check('index.html bevat de actuele opstartregels en maquetteStijl-synchronisatie', indexHtml.includes(`/*thema-paletten*/${bootCss()}/*/thema-paletten*/`) && indexHtml.includes("'palet-klassiek-wit','palet-klassiek-zwart'") && indexHtml.includes("root.dataset.maquetteStijl='klassiek'"));
 
   // contrast (AA 4,5:1 voor tekst): tekst/gedempt op achtergrond en paneel, accent als tekst op paneel en zachte accentvlak,
   // tekst op accentknop
@@ -69,7 +107,9 @@ export async function main(): Promise<number> {
     }
   };
   meet('puur licht', PUUR.licht); meet('puur donker', PUUR.donker);
+  meet('maquette licht', MAQUETTE.licht); meet('maquette donker', MAQUETTE.donker);
+  meet('klassiek-wit', KLASSIEK_WIT); meet('klassiek-zwart', KLASSIEK_ZWART);
   for (const s of SECTIES) { const k = kleurWaarden(s); meet(`${s} licht`, k.licht); meet(`${s} donker`, k.donker); }
-  check('contrast ≥ 4,5:1 in «Чистий» en «Кольоровий» (alle secties, licht en donker)', fouten.length === 0, fouten.join(', '));
+  check('contrast ≥ 4,5:1 in «Чистий», «Макет», «Біла класика», «Чорна класика» en «Кольоровий» (alle secties, licht en donker)', fouten.length === 0, fouten.join(', '));
   return einde();
 }

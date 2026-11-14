@@ -37,6 +37,7 @@ import { SLEUTEL_GESLOTEN_CODE, isServerEnvelop } from '../shared/sleutelkluis';
 import { meld } from './melder';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { huidigeNamens } from './mcp-namens';
+import { bijNoodstop } from './ai-toestemmingen';
 
 const sys = () => getPool('systeem');
 export const TABEL = 'app.ai_bevestiging';
@@ -382,6 +383,10 @@ export async function trekAllesIn(userId: string): Promise<number> {
   for (const rij of r.rows as Rij[]) await journaal(rij, 'ingetrokken', 'revoked');
   return r.rowCount ?? 0;
 }
+// SEC-002 ai-mcp-12: trekAllesIn bestond «voor Стоп» maar werd nergens aangeroepen — een verzoek dat een AI vlak vóór de noodstop
+// had klaargezet (mail versturen, delen, agenda) bleef 30 minuten in «Підтвердження на сайті» staan en kon daarna nog worden
+// bevestigd. Nu meldt deze module zich aan bij de noodstop (en bij het blokkeren van een gebruiker, dat dezelfde haak afloopt).
+bijNoodstop((userId) => { void trekAllesIn(userId).catch((err) => console.error('[ai-bevestiging] intrekken bij noodstop mislukt:', (err as Error).message)); });
 
 /** Een menselijke tekst bij een foutcode (voor routes en het scherm). */
 export const bevestigFoutTekst = (c: string): Tweetalig => ({ uk: foutUitleg(c, 'uk'), nl: foutUitleg(c, 'nl') });

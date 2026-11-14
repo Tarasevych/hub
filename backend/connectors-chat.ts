@@ -29,6 +29,7 @@ export type ChatDeps = {
   fetchImpl?: typeof fetch;
   now?: () => number;
   model?: string;
+  extraSystem?: string;
 };
 
 const MAX_STEPS = 8;
@@ -63,6 +64,7 @@ export async function runChat(deps: ChatDeps, userId: string, history: ChatMessa
 
   const doFetch = deps.fetchImpl ?? fetch;
   const now = deps.now ?? Date.now;
+  const systemText = deps.extraSystem && deps.extraSystem.trim() ? `${SYSTEM}\n\n${deps.extraSystem.trim()}` : SYSTEM;
   const tools = (await deps.listTools(userId)).map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema }));
   const steps: ChatStep[] = [];
   const deadline = now() + DEADLINE_MS;
@@ -80,7 +82,7 @@ export async function runChat(deps: ChatDeps, userId: string, history: ChatMessa
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
+          systemInstruction: { parts: [{ text: systemText }] },
           contents,
           ...(geminiTools.length ? { tools: geminiTools } : {}),
         }),
@@ -138,7 +140,7 @@ export async function runChat(deps: ChatDeps, userId: string, history: ChatMessa
     const endpoint = AI_AANBIEDER_BIJ_ID[aanbieder].eindpunt;
     const oaTools = naarOpenAiTools(tools);
     const oaMessages: any[] = [
-      { role: 'system', content: SYSTEM },
+      { role: 'system', content: systemText },
       ...history.map((m) => ({ role: m.role, content: m.content })),
     ];
 
@@ -206,7 +208,7 @@ export async function runChat(deps: ChatDeps, userId: string, history: ChatMessa
       headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model, max_tokens: 4096,
-        system: SYSTEM, messages, ...(tools.length ? { tools } : {}),
+        system: systemText, messages, ...(tools.length ? { tools } : {}),
       }),
       signal: AbortSignal.timeout(60_000),
     });

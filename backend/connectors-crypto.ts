@@ -23,10 +23,10 @@ export const normalizePairingCode = (value: unknown): string =>
 // opdrachten uit met een geldige, niet-verlopen handtekening; een gestolen WebSocket of een server-imitatie zonder sleutel kan
 // dus niets laten uitvoeren.
 import { createHmac } from 'node:crypto';
-import { envKey32, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
+import { envKey32, envSleutelBeschikbaar, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
 
 export const COMMAND_SIG_TTL_MS = 120_000;
-const keyName = () => (envKey32('AGENT_SLEUTEL_V1') ? 'AGENT_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
+/* SEC-002 (g10b #2, afwerking A): eigen sleutel in ELKE versie (_V1…_V9), niet alleen _V1 — anders viel een installatie met alleen _V2 stil terug op de TOTP-sleutel. */const keyName = () => (envSleutelBeschikbaar('AGENT_SLEUTEL_V1') ? 'AGENT_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
 export const newCommandKey = (): string => randomBytes(32).toString('base64url');
 export const sealCommandKey = (key: string, userId: string, tokenHash: string): string | null => {
   try { return sealWithEnvKey(keyName(), key, `agent-cmd-key:${userId}:${tokenHash}`); } catch { return null; }

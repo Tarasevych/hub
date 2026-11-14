@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-011",
+  "titel": "«Макет»: жива карта розвитку, межі розділів і переходи до справжніх налаштувань",
+  "opdracht": "Власник: доопрацювати розділи «Можливості для доопрацювання» вигляду «Макет» — не лише стиль, а й справжня робота функцій; почати з фази 0 погодженого плану (PR #76) у власній гілці від живої версії.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/identiteit-011-maquette-kaart-20261113-193722",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": {
+      "pr": "https://github.com/Tarasevych/hub/pull/76",
+      "commit": "7ae8c40350f421795ec3a1f295ed9c354b5632be",
+      "overgenomen": "git cherry-pick -x"
+    }
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Без облікових даних, ключів, вмісту листів і прихованих міркувань моделі. Знімки екрана — лише зі стенду без справжніх даних."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T17:30:00Z",
+      "stap": "Звірено 31 групу «Можливостей для доопрацювання» з кодом живої версії 5f2325d7 (9 читачів + перевірка повноти); план 6 фаз погоджено власником (PR #76)."
+    },
+    {
+      "tijd": "2026-11-13T19:37:22Z",
+      "stap": "Гілка від 5f2325d7; план перенесено cherry-pick -x 7ae8c40; orch taak-start, controleer, versheid start — свіжо."
+    },
+    {
+      "tijd": "2026-11-13T19:45:00Z",
+      "stap": "Межі розділів (AtelierInhoud) і сталі контейнери порталів; коди після TOTP у «Безпеці»; ключі доступу й коди для інших перенесено в «Безпеку»."
+    },
+    {
+      "tijd": "2026-11-13T19:55:00Z",
+      "stap": "Жива карта в джерелі реєстр.js (станНаСайті) і перехід відкритиНаСайті у двигуні; двигун перезібрано bouw.mjs."
+    },
+    {
+      "tijd": "2026-11-13T20:10:00Z",
+      "stap": "Демо-елементи розділів облікового запису позначено «Приклад вигляду» з переходом до справжніх налаштувань; e2e у Chromium 62/62; виправлено вихід мітки за картку на телефоні."
+    }
+  ],
+  "keuzes": [
+    "Стани живої карти зберігаються окремим шаром станНаСайті поверх каталогу власника: макет не переписано, а кожне рішення простежуване.",
+    "Ключі доступу й коди для інших перенесено в «Безпеку», як у карті розвитку; у «Способах входу» лишається перехід, щоб їх не дублювати.",
+    "Перемикач теми в «Макеті» не з’єднано напряму з темою сайту: паралельна робота MAQUETTE-001 змінює систему тем, тому елемент веде до справжнього вибору теми, а тема сайту й далі доходить до «Макета» автоматично.",
+    "Панель монтується лише після першого відкриття блоку «Чинні налаштування» й далі лишається — без зайвих запитів і без втрати введеного."
+  ],
+  "wijzigingen": {
+    "toegevoegd": [
+      "\"docs/ontwerp/identiteit-account/\\320\\237\\320\\233\\320\\220\\320\\235-\\320\\234\\320\\220\\320\\232\\320\\225\\320\\242-\\320\\224\\320\\236\\320\\236\\320\\237\\320\\240\\320\\220\\320\\246\\320\\256\\320\\222\\320\\220\\320\\235\\320\\235\\320\\257.uk.md\"",
+      "orchestratie/taken/IDENTITEIT-011.json",
+      "tests/e2e/hulp/identiteit-maquette-stand/stand.tsx",
+      "tests/e2e/identiteit-maquette-kaart.e2e.ts"
+    ],
+    "gewijzigd": [
+      "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\"",
+      "scripts/identiteit-maquette/motor-aanpassingen.mjs",
+      "shared/zoek-ui-knoppen.generated.ts",
+      "src/identiteit/maquette/IdentiteitMaquette.tsx",
+      "src/identiteit/maquette/maquette-motor.ts",
+      "src/identiteit/maquette/maquette-omlijsting.css",
+      "src/toegangslaag-panelen.tsx",
+      "tests/eenheid/identiteit-atelier.test.ts",
+      "tests/eenheid/identiteit-maquette.test.ts"
+    ],
+    "verwijderd": []
+  },
+  "controles": [
+    "node scripts/eenheidstests.mjs identiteit — 133/133 (identiteit-maquette 56/56, identiteit-atelier 37/37).",
+    "node scripts/e2e-lokaal.mjs identiteit-maquette-kaart — 62/62 у Chromium (390/768/1280, uk/nl, світла/темна).",
+    "npx tsc --noEmit і npm run typecheck:server — без помилок.",
+    "npm run build — успішно (NODE_OPTIONS=--max-old-space-size=8192; без нього Node у цьому середовищі вичерпує типову межу пам’яті)."
+  ],
+  "bronnen": [
+    {
+      "soort": "встановлена версія",
+      "omschrijving": "https://id.tarasevych.com/api/version — 20261113-121403, 5f2325d788e2",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "план",
+      "omschrijving": "docs/ontwerp/identiteit-account/ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md (PR #76)",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "макет власника",
+      "omschrijving": "архів атласу «Макета» (34 файли, index.html і знімки), переданий у розмові; не публікується",
+      "inhoudGepubliceerd": false
+    }
+  ],
+  "beperkingen": [
+    "Фази 1–5 плану (безпека сервера, підтвердження, під’єднання, нові маршрути, нові способи входу) — окремі Task ID IDENTITEIT-012…020.",
+    "Паралельна гілка MAQUETTE-001 (antigravity) змінює IdentiteitAccountPagina.tsx і систему тем; ця робота IdentiteitAccountPagina.tsx не змінює, але під час інтеграції треба звірити.",
+    "Встановлення на сайт — лише після погодження власника, резервної копії на R:\\ і перевірки накладання."
+  ],
+  "commits": [
+    "c0fd44480757a4fbbf84a9f6e3a28489cf3511d3",
+    "8f85d179d2023678b26bfa42724bd844a512c492",
+    "81a712ec2bc4a8ee0b1bf4f7e9b8666972828745",
+    "6ac91d2e134b2f8d2fb22514090a469521996893",
+    "1c81503a7629b66f778532570a4a63662f942d5c"
+  ]
+}

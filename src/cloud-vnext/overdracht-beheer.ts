@@ -7,7 +7,7 @@
 //   • de sha256 wordt INCREMENTEEL berekend door het bestand in stukken te lezen — nooit heel in het geheugen.
 // Dit bestand importeert bewust GEEN cloud-client: het vervoer wordt geregistreerd (registreerVervoer) zodat tests een
 // nagebootst vervoer kunnen geven en Node geen browsermodules hoeft te laden.
-import { CLOUD_VNEXT_LIMIETEN } from '../../shared/cloud-vnext-model';
+import { CLOUD_VNEXT_LIMIETEN, veiligUploadMime } from '../../shared/cloud-vnext-model';
 import { HERVAT_PAUZE_MS, HERVAT_POGINGEN, PARALLEL_STUKKEN, overdrachtGrens, stukTotaal, type OverdrachtGrens } from '../../shared/cloud-overdracht-model';
 import type { CloudBestand } from '../../shared/cloud-vnext-model';
 
@@ -92,7 +92,7 @@ export class Sha256Stroom {
 /** Een leesbare bron: het bestand wordt ALTIJD in stukken gelezen (lees), nooit heel in het geheugen. */
 export type OverdrachtBron = { naam: string; bytes: number; mime: string; lees: (offset: number, lengte: number) => Promise<ArrayBuffer> };
 export const bronVanFile = (f: File): OverdrachtBron => ({
-  naam: f.name, bytes: f.size, mime: f.type || 'application/octet-stream',
+  naam: f.name, bytes: f.size, mime: veiligUploadMime(f.type, f.name),
   lees: (offset, lengte) => f.slice(offset, Math.min(offset + lengte, f.size)).arrayBuffer(),
 });
 /** sha256 van een bron, incrementeel in stukken van 4 MiB. */
@@ -127,6 +127,8 @@ export type OverdrachtRij = {
 export type HervatBeschrijving = { naam: string; bytes: number; mime: string; mapId: string | null };
 
 const HERVAT_SLEUTEL = 'cvn-overdrachten';
+/** SEC-002 (toets g10e-toets-7): gelijktijdige bestanden per upload-beheerder (tabblad). */
+export const UPLOADS_TEGELIJK = 2;
 /** Is deze mislukking iets voorbijgaands (netwerk, server even weg) — dus herhalen, niet opgeven?
  *  Een 500/501 is een echte serverfout en wordt níét eindeloos herhaald: dat zou een bug verbergen. */
 export function voorbijgaand(e: unknown): boolean {
@@ -175,6 +177,10 @@ export class OverdrachtBeheer {
   private vuil = true;
   private teller = 0;
   private losVenster: (() => void) | null = null;
+  // SEC-002 (toets g10e-toets-7): hoogstens UPLOADS_TEGELIJK bestanden tegelijk (× PARALLEL_STUKKEN stukken). Een map van 20 bestanden
+  // stuurde vroeger 60 lichamen van ~5,6 MB tegelijk: boven de geheugengrenzen van de server (server/platform/body-budget.ts).
+  private uploadsBezig = 0;
+  private uploadWachtrij: Array<() => void> = [];
 
   constructor(deps: Deps) {
     this.d = { wacht: standaardWacht, nu: () => Date.now(), bewaar: veiligBewaar, leesBewaard: veiligLees, venster: typeof window !== 'undefined' ? window : null, ...deps };
@@ -240,6 +246,14 @@ export class OverdrachtBeheer {
     return true;
   }
   private async draaiUpload(it: Intern, viaZoek = false): Promise<void> {
+    // (toets g10e-toets-7) eerst een plaats in de rij van uploads; staat blijft 'wacht' tot het zover is.
+    if (this.uploadsBezig >= UPLOADS_TEGELIJK) await new Promise<void>((r) => this.uploadWachtrij.push(r));
+    this.uploadsBezig += 1;
+    try { await this.draaiUploadKern(it, viaZoek); }
+    finally { this.uploadsBezig -= 1; this.uploadWachtrij.shift()?.(); }
+  }
+  private async draaiUploadKern(it: Intern, viaZoek: boolean): Promise<void> {
+    if (it.gestopt) return;
     const bron = it.bron!;
     try {
       let ontbreekt: number[] | null = null;
@@ -320,11 +334,21 @@ export class OverdrachtBeheer {
   /** Eén aanroep met zachte herhalingen: oplopende pauze (HERVAT_PAUZE_MS); na HERVAT_POGINGEN → «wacht op netwerk». */
   private async metHerhaling<T>(it: Intern, roep: () => Promise<T>): Promise<T> {
     let poging = 0;
+    let drukte = 0;
     for (;;) {
       if (it.gestopt) throw new Error('AFGEBROKEN');
       try { const uit = await roep(); return uit; }
       catch (e) {
         if (!voorbijgaand(e)) throw e;
+        // SEC-002 (toets g10e-toets-7): 429/503 = de server vraagt om even te wachten (grenzen, budget) — geen netwerkstoring.
+        // Wachten zoals Retry-After zegt (anders de oplopende pauze) en NIET meetellen voor «wacht op netwerk».
+        const status = Number((e as { status?: unknown })?.status ?? 0);
+        if (status === 429 || status === 503) {
+          const ra = Number((e as { retryAfter?: unknown })?.retryAfter ?? 0);
+          drukte += 1;
+          await this.d.wacht!(ra > 0 ? Math.min(60, ra) * 1000 : HERVAT_PAUZE_MS[Math.min(drukte - 1, HERVAT_PAUZE_MS.length - 1)]);
+          continue;
+        }
         poging += 1;
         if (poging >= HERVAT_POGINGEN) {
           this.zet(it, { staat: 'wacht-netwerk' });

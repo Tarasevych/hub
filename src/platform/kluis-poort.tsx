@@ -197,6 +197,13 @@ function KluisKaart() {
     if (r.herstelcode) { setNieuweCode(r.herstelcode); setBewaard(false); }
     await naOpenen();
   });
+  // SEC-002 (geheimen-04): na ontgrendelen met de herstelcode blijft de GEBRUIKTE code geldig tot de mens bevestigt dat hij de nieuwe
+  // bewaarde. Pas «Готово»/«Показати мої дані» bevestigt bij de server; mislukt dat, dan blijft de kaart staan met de melding.
+  // Використаний код діє, доки людина не підтвердить, що зберегла новий: підтвердження йде лише з кнопкою «Готово».
+  const naBevestigen = (verder: () => void) => {
+    if (!nieuweCode) { verder(); return; }
+    void doe('bevestigen', async () => { await postNu(`${P}/herstelcode/bevestigen`, lichaam()); setNieuweCode(''); setBewaard(false); verder(); });
+  };
   const later = () => { const w = wachtOpMens; wachtOpMens = null; w?.(false); toon('chip'); };
   const sluiten = () => { setKlaar(null); toon('weg'); };
   const kopieren = async () => { try { await navigator.clipboard.writeText(opmaakHerstelcode(nieuweCode)); } catch { setFout(tr('Не вдалося скопіювати. Завантажте файл.', 'Kopiëren lukte niet. Download het bestand.')); } };
@@ -258,18 +265,19 @@ function KluisKaart() {
 
     {nieuweCode && <div className='kluis-poort-nieuw' data-kluis-nieuwe-code>
       <strong>{tr('Збережіть новий код відновлення', 'Bewaar de nieuwe herstelcode')}</strong>
-      <small>{tr('Використаний код більше не діє. Новий показуємо лише зараз: без нього й без passkey дані не відновити.', 'De gebruikte code werkt niet meer. De nieuwe tonen we alleen nu: zonder hem én zonder passkey zijn de gegevens niet terug te halen.')}</small>
+      <small>{tr('Новий показуємо лише зараз: без нього й без passkey дані не відновити. Використаний код діятиме, доки ви не натиснете «Готово».', 'De nieuwe tonen we alleen nu: zonder hem én zonder passkey zijn de gegevens niet terug te halen. De gebruikte code blijft werken tot u op «Klaar» drukt.')}</small>
       <code>{opmaakHerstelcode(nieuweCode)}</code>
       <div className='kluis-poort-knoppen'>
         <button type='button' className='kluis-poort-tweede' onClick={downloaden}><Download aria-hidden='true' />{tr('Завантажити', 'Downloaden')}</button>
         <button type='button' className='kluis-poort-tweede' onClick={() => void kopieren()}><Copy aria-hidden='true' />{tr('Копіювати', 'Kopiëren')}</button>
       </div>
-      <label className='kluis-poort-onthoud'><input type='checkbox' checked={bewaard} onChange={(e) => setBewaard(e.target.checked)} /><span>{tr('Я зберіг код', 'Ik heb de code bewaard')}</span></label>
+      <label className='kluis-poort-onthoud'><input type='checkbox' checked={bewaard} onChange={(e) => setBewaard(e.target.checked)} /><span>{tr('Код збережено', 'Ik heb de code bewaard')}</span></label>
+      {klaar && fout && <p className='kluis-poort-fout' role='alert'>{fout}</p>}
     </div>}
 
     {klaar && <div className='kluis-poort-knoppen'>
-      {klaar.herladen && <button type='button' className='kluis-poort-primair' disabled={!!nieuweCode && !bewaard} onClick={() => location.reload()} title={tr('Частина сторінки вже показала «порожньо» до розшифрування; оновлення дочитає все.', 'Een deel van de pagina toonde al «leeg» vóór het ontsleutelen; herladen haalt alles op.')}><Check aria-hidden='true' />{tr('Показати мої дані', 'Mijn gegevens tonen')}</button>}
-      <button type='button' className={klaar.herladen ? 'kluis-poort-tweede' : 'kluis-poort-primair'} disabled={!!nieuweCode && !bewaard} onClick={() => { setNieuweCode(''); sluiten(); }}><Check aria-hidden='true' />{tr('Готово', 'Klaar')}</button>
+      {klaar.herladen && <button type='button' className='kluis-poort-primair' disabled={(!!nieuweCode && !bewaard) || !!bezig} onClick={() => naBevestigen(() => location.reload())} title={tr('Частина сторінки вже показала «порожньо» до розшифрування; оновлення дочитає все.', 'Een deel van de pagina toonde al «leeg» vóór het ontsleutelen; herladen haalt alles op.')}><Check aria-hidden='true' />{tr('Показати мої дані', 'Mijn gegevens tonen')}</button>}
+      <button type='button' className={klaar.herladen ? 'kluis-poort-tweede' : 'kluis-poort-primair'} disabled={(!!nieuweCode && !bewaard) || !!bezig} onClick={() => naBevestigen(sluiten)}><Check aria-hidden='true' />{tr('Готово', 'Klaar')}</button>
     </div>}
   </section>;
 }

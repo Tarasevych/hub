@@ -167,9 +167,10 @@ export async function main(): Promise<number> {
     const uLid = (leden.data.members || []).find((m: any) => m.userId === U.id);
     const uWeg = await hub(U.b, '/api/share/revoke', { workspaceId: wsId, memberId: uLid?.id });
     await U.b.aanmelden(`sub-u-${T}`, U.email, { intent: 'step-up' });
-    const del = await hub(U.b, '/api/account/delete', { confirmEmail: U.email });
+    // IDENTITEIT-015: старі /api/account/{delete,recover} → 410; той самий потік іде новими маршрутами (теж із hub).
+    const del = await hub(U.b, '/api/owner/identity/account/delete', { confirmEmail: U.email });
     await U.b.aanmelden(`sub-u-${T}`, U.email, { authTime: oud });
-    const rec = await hub(U.b, '/api/account/recover', { mode: 'restore' });
+    const rec = await hub(U.b, '/api/owner/identity/account/recover', { mode: 'restore' });
     check('flows: zelf vertrekken, zelf verwijderen en herstellen werken', uWeg.status === 200 && del.status === 200 && rec.status === 200, JSON.stringify([uWeg.status, del.status, rec.status]));
 
     await new Promise((r) => setTimeout(r, 300));

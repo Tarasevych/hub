@@ -146,10 +146,11 @@ export async function main(): Promise<number> {
     check('client.ts: ook «dicht» in een gewoon antwoord ({fout}) toont de kaart', client.includes("(parsed as { fout?: unknown }).fout === 'SLEUTELKLUIS_GESLOTEN'") && client.includes('kluisGeslotenGezien'));
     check('VerenigdDienstApp: bij het openen van een dienst vooraf controleren (stil op een bekend apparaat)', app.includes("import('./platform/kluis-poort').then(m=>m.kluisVoorbereiden({service,tabContext:tabContext(),sourceOrigin}))"));
     check('kluis-poort: eerst stil met het apparaat, dan de kaart; passkey meteen gevraagd; herstelcode → nieuwe code tonen', poort.includes('stilMetApparaat(s)') && poort.includes('zetAutoGevraagd()') && poort.includes('data-kluis-nieuwe-code') && poort.includes('/apparaat/onthouden'));
+    check('kluis-poort: na de herstelcode bevestigt pas «Готово» de nieuwe code (SEC-002 geheimen-04: de oude blijft geldig tot dan)', /naBevestigen[^]{0,200}herstelcode\/bevestigen/.test(poort) && poort.includes('naBevestigen(sluiten)') && poort.includes('naBevestigen(() => location.reload())'));
     check('kluis-apparaat: de browsersleutel is NIET exporteerbaar (generateKey extractable=false)', /generateKey\(\{ name: 'AES-GCM', length: 256 \}, false,/.test(apparaat) && !/exportKey/.test(apparaat));
     check('kluis-poort: elke tekst in beide talen (geen Engelse UI-zinnen)', (poort.match(/tr\('/g) || []).length >= 30 && !/>\s*(Decrypt|Remember|Later|Unlock)\b/.test(poort));
     check('agents komen niet aan de kluisroutes (agent-namens.ts)', /sleutelkluis\|codewoord/.test(bron('backend/agent-namens.ts')));
-    check('migratie 0206: tabel met RLS, alleen S verzegeld (v1-envelop), cascade bij het wissen van de kluis', /deel_verzegeld[^]{0,80}\^v1/.test(bron('migrations/0206_sleutelkluis_apparaat.sql')) && /ON DELETE CASCADE/.test(bron('migrations/0206_sleutelkluis_apparaat.sql')) && /ENABLE ROW LEVEL SECURITY/.test(bron('migrations/0206_sleutelkluis_apparaat.sql')));
+    check('migratie 0277: tabel met RLS, alleen S verzegeld (v1-envelop), cascade bij het wissen van de kluis', /deel_verzegeld[^]{0,80}\^v1/.test(bron('migrations/0277_sleutelkluis_apparaat.sql')) && /ON DELETE CASCADE/.test(bron('migrations/0277_sleutelkluis_apparaat.sql')) && /ENABLE ROW LEVEL SECURITY/.test(bron('migrations/0277_sleutelkluis_apparaat.sql')));
   } finally {
     sk.geheugenLeeg();
     await closePool().catch(() => undefined);

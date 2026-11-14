@@ -29,6 +29,8 @@ import type { V2Keuze } from './connector-v2-opslag';
 import { BEHEER_TOOL_NAMEN } from './ai-beheer-hulpmiddeldefinities';
 import { DEV_GEBRUIKER_NAMEN } from './dev-gebruiker-hulpmiddeldefinities';
 import { DEV_MG_TOOLS } from '../shared/dev-media-github';
+import { ECOSYSTEEM_SCHRIJF_TOOL_NAMEN } from '../shared/ai-ecosysteem';
+import { GITHUB_WERKRUIMTE_SCHRIJF_TOOL_NAMEN } from '../shared/github-werkruimte';
 
 /**
  * Hulpmiddelen die NOOIT uit de erfenis van het oude /mcp komen, ook niet zonder scope (21.10.2026): het oude /mcp kende ze niet, dus
@@ -38,7 +40,13 @@ import { DEV_MG_TOOLS } from '../shared/dev-media-github';
 // 21.10.2026 (P1): ook de zes privé-rechten die «у розробці» stonden (mail verzenden, Drive maken/uploaden/delen, gekozen foto's,
 // iCloud) — het oude /mcp kende ze niet, dus geen erfenis; alleen een uitdrukkelijk vinkje in het venster van connector v2.
 // 21.10.2026 (agent D): ook PR, CI-logboeken, eigen domein, beeld, schema, ontwerpcontext en Stripe (shared/dev-media-github.ts).
-export const ALLEEN_UITDRUKKELIJK: ReadonlySet<string> = new Set<string>([...BEHEER_TOOL_NAMEN, ...DEV_GEBRUIKER_NAMEN, ...DEV_MG_TOOLS]);
+export const ALLEEN_UITDRUKKELIJK: ReadonlySet<string> = new Set<string>([
+  ...BEHEER_TOOL_NAMEN,
+  ...DEV_GEBRUIKER_NAMEN,
+  ...DEV_MG_TOOLS,
+  ...ECOSYSTEEM_SCHRIJF_TOOL_NAMEN,
+  ...GITHUB_WERKRUIMTE_SCHRIJF_TOOL_NAMEN,
+]);
 
 export type Erfenis = V2Keuze & {
   /** De oude grants (ids) waaruit dit is afgeleid; leeg = geen erfenis. */

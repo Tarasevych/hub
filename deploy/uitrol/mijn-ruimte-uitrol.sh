@@ -34,7 +34,7 @@ export LC_ALL=C
 # Overschrijven van paden kan alleen in tests (niet als root): de root-dienst gebruikt altijd de vaste paden.
 if [ "$(id -u)" -eq 0 ]; then
   unset UITROL_INBOX UITROL_WERK UITROL_STATUS_DIR UITROL_ONDERTEKENAARS UITROL_INSTALLEER UITROL_LOCK UITROL_MAX_BYTES UITROL_GROEP \
-        UITROL_GOEDKEUR_INBOX UITROL_GOEDKEUR_HULP UITROL_TEST_BREEK 2>/dev/null || true
+        UITROL_GOEDKEUR_INBOX UITROL_GOEDKEUR_HULP UITROL_TEST_BREEK UITROL_PAKKETTEN_DIR UITROL_ACTIEF_LINK 2>/dev/null || true
 fi
 if [ "$MODUS" = passkey ]; then INBOX="${UITROL_GOEDKEUR_INBOX:-/srv/mijn-ruimte/goedkeur-inbox}"; else INBOX="${UITROL_INBOX:-/srv/mijn-ruimte/uitrol-inbox}"; fi
 # Root: altijd de vaste hulp (wist de omgeving, neemt de vergrendeling). Tests: "node <pad>/goedkeur-hulp.mjs".
@@ -240,7 +240,19 @@ opruimen() { rm -rf -- "$WERK"; }
 AFGEROND=0; ONDERBROKEN=0; FOUT_REGEL=""; INSTALL_PID=""
 set -E
 trap 'FOUT_REGEL="$LINENO"' ERR
-trap 'ONDERBROKEN=1; [ -n "$INSTALL_PID" ] && { kill -TERM -- "-$INSTALL_PID" 2>/dev/null || kill -TERM "$INSTALL_PID" 2>/dev/null; }; exit 143' TERM INT HUP
+# SEC-002 (server-uitrol-08): na het doorgeven van het signaal even op het installatiescript wachten (hoogstens 30 s). Dat script zet,
+# als het al had overgeschakeld, zelf de vorige release terug; pas daarna kan afsluiten() zien welke release werkelijk actief is.
+onderbroken() {
+  local i
+  ONDERBROKEN=1
+  trap '' TERM INT HUP
+  if [ -n "$INSTALL_PID" ]; then
+    kill -TERM -- "-$INSTALL_PID" 2>/dev/null || kill -TERM "$INSTALL_PID" 2>/dev/null || true
+    for i in $(seq 1 60); do kill -0 "$INSTALL_PID" 2>/dev/null || break; sleep 0.5 || true; done
+  fi
+  exit 143
+}
+trap onderbroken TERM INT HUP
 
 # ---- Stopverzoek van de eigenaar (UITROL-001) ----------------------------------------------------------------------------------
 # De site (als app-gebruiker, na step-up van de eigenaar) legt $INBOX/stop.json neer: {doel:"stoppen", versie, voorstelId, tijd, door,
@@ -290,11 +302,41 @@ PY
 ' "$uit" | head -n1))"; return 1 ;;
   esac
 }
+# SEC-002 (server-uitrol-08): wat is er NU werkelijk actief? Vroeger schreef dit script na een onderbreking of een stop altijd «de
+# vorige release blijft actief», ook als het installatiescript al had overgeschakeld. Nu wordt de pakketversie van de actieve release
+# gelezen (UITROL-VERSIE onder de current-symlink): is dat de versie van DIT pakket, dan zegt de status eerlijk dat de nieuwe release
+# actief en niet gecontroleerd is. Що насправді активне: читаємо версію під посиланням current і кажемо правду в статусі.
+ACTIEF_LINK="${UITROL_ACTIEF_LINK:-/srv/mijn-ruimte/current}"
+nieuwe_release_actief() { # → 0 als de actieve release de versie van dit pakket draagt
+  local v=""
+  [ -n "${VERSIE:-}" ] && [ -f "$ACTIEF_LINK/UITROL-VERSIE" ] || return 1
+  v="$(head -c 32 "$ACTIEF_LINK/UITROL-VERSIE" 2>/dev/null | tr -d '\r\n[:space:]')"
+  [ "$v" = "$VERSIE" ]
+}
+# Percentage van de laatste stapregel, rechtstreeks uit het logboek van het installatiescript (niet uit een eerder weggeschreven tussenstand).
+# SEC-002 (g09-toets-4): heeft het installatiescript de nieuwe release al bevestigd? Het schrijft dan «[installeer] actief: <map>»
+# (na gezondheid, nabewaking en rendercontrole). Alleen een regel die daarmee BEGINT telt.
+nieuwe_release_bevestigd() {
+  grep -aqE '^\[installeer\] actief: ' "$WERK/installeer.log" 2>/dev/null
+}
+log_pct() {
+  local p
+  p="$(grep -aoE '^\[installeer\] stap: [a-z]+ \([0-9]{1,3}%\)' "$WERK/installeer.log" 2>/dev/null | tail -n 1 | grep -oE '[0-9]{1,3}%' | tr -d '%' || true)"
+  [[ "$p" =~ ^[0-9]{1,3}$ ]] && printf '%s' "$p" || printf '0'
+}
 afsluiten() {
   local rc=$? code uk nl
   trap - ERR
   if [ "$AFGEROND" -ne 1 ] && [ -n "${RUN:-}" ]; then
-    if [ "$ONDERBROKEN" -eq 1 ]; then
+    if [ "$ONDERBROKEN" -eq 1 ] && nieuwe_release_actief && nieuwe_release_bevestigd; then
+      code=ONDERBROKEN
+      uk="! Встановлення перервано ззовні (зупинка служби, тайм-аут systemd або сигнал) на кроці «${HUIDIGE_STAP:-ontvangen}». Новий випуск ${VERSIE} уже активний і ПЕРЕВІРЕНИЙ (здоров'я, нагляд, рендеринг), але наступні кроки налаштування не завершено. Повторіть установлення або за потреби поверніть попередній випуск."
+      nl="! De installatie is van buitenaf onderbroken (dienst gestopt, systemd-timeout of signaal) in stap «${HUIDIGE_STAP:-ontvangen}». De nieuwe release ${VERSIE} is al actief en GECONTROLEERD (gezondheid, nabewaking, rendering), maar de inrichtstappen daarna zijn niet afgerond. Installeer opnieuw of zet zo nodig de vorige release terug."
+    elif [ "$ONDERBROKEN" -eq 1 ] && nieuwe_release_actief; then
+      code=ONDERBROKEN
+      uk="! Встановлення перервано ззовні (зупинка служби, тайм-аут systemd або сигнал) на кроці «${HUIDIGE_STAP:-ontvangen}», коли новий випуск ${VERSIE} уже був увімкнений. Він лишився активним БЕЗ завершеної перевірки й без автоматичного відкату. Перевірте сайт; якщо він не працює — поверніть попередній випуск (сторінка «Оновлення» → «Повернути» або sudo mijn-ruimte-installeer terugdraaien)."
+      nl="! De installatie is van buitenaf onderbroken (dienst gestopt, systemd-timeout of signaal) in stap «${HUIDIGE_STAP:-ontvangen}», toen de nieuwe release ${VERSIE} al was ingeschakeld. Ze is actief gebleven ZONDER afgeronde controle en zonder automatische terugdraai. Controleer de site; werkt ze niet, zet dan de vorige release terug (pagina «Оновлення» → «Повернути» of sudo mijn-ruimte-installeer terugdraaien)."
+    elif [ "$ONDERBROKEN" -eq 1 ]; then
       code=ONDERBROKEN
       uk="Встановлення перервано ззовні (зупинка служби, тайм-аут systemd або сигнал) на кроці «${HUIDIGE_STAP:-ontvangen}». Попередній випуск лишився активним; повторіть завантаження."
       nl="De installatie is van buitenaf onderbroken (dienst gestopt, systemd-timeout of signaal) in stap «${HUIDIGE_STAP:-ontvangen}». De vorige release blijft actief; upload opnieuw."
@@ -761,23 +803,42 @@ publiceer_log
 # Nooit fataal; zet PAKKET_PAD/PAKKET_SHA256/PAKKET_BYTES en UITROL_GEB_EXTRA (door gebeurtenis() in de OK-regel opgenomen). Idempotent.
 PAKKETTEN_DIR="${UITROL_PAKKETTEN_DIR:-/srv/mijn-ruimte/pakketten}"
 PAKKET_PAD=""; PAKKET_SHA256=""; PAKKET_BYTES=""
+#
+# SEC-002 (server-uitrol-02): $PAKKETTEN_DIR is schrijfbaar voor de app (groep, 0770, geen sticky-bit). Alles wat root dáár zelf
+# aanmaakt of op naam bewerkt, kan de app vervangen door een symlink: `printf > "$doel.sha256"`, `cp`, `chgrp` en `chmod` volgen
+# die link en overschreven zo een willekeurig root-bestand of maakten het leesbaar voor de groep. Daarom nu:
+#   • archief en .sha256 worden klaargezet in de eigen werkmap van root ($WERK, 0700): daar groep en rechten, sha256 en grootte van
+#     de EIGEN kopie (nooit teruggelezen uit de gedeelde map);
+#   • in de gedeelde map gebeurt alleen `mv -T -f` (rename(2) vervangt de naam zelf en volgt geen symlink; op een ander
+#     bestandssysteem verwijdert mv eerst de bestemming en maakt haar met O_EXCL opnieuw aan — ook dan wordt geen link gevolgd);
+#   • de map zelf mag geen symlink zijn en moet van root zijn (ze staat in een map die alleen root kan schrijven).
+# Каталог архівів записуваний для застосунку: root готує файли у власній теці й лише перейменовує їх туди (посилання не слідуються).
+pakketten_map_veilig() { # → 0 als $PAKKETTEN_DIR een echte map van root is (zo nodig aangemaakt)
+  if [ -L "$PAKKETTEN_DIR" ]; then log "archief: $PAKKETTEN_DIR is een symlink — niets bewaard"; return 1; fi
+  [ -d "$PAKKETTEN_DIR" ] || mkdir -p -- "$PAKKETTEN_DIR" || return 1
+  if [ -L "$PAKKETTEN_DIR" ] || [ ! -d "$PAKKETTEN_DIR" ] || [ "$(stat -c %u -- "$PAKKETTEN_DIR" 2>/dev/null)" != "$(id -u)" ]; then
+    log "archief: $PAKKETTEN_DIR is geen map van root — niets bewaard"; return 1
+  fi
+  chgrp "$GROEP" "$PAKKETTEN_DIR" 2>/dev/null || true
+  chmod 0770 "$PAKKETTEN_DIR" 2>/dev/null || true   # de app (groep) mag opruimen; bestanden blijven root 0640
+  return 0
+}
 pakket_bewaren() {
   [ -n "${PAKKET_PAD:-}" ] && return 0
   [ -f "$WERK/pakket.tar.gz" ] || { log "archief: geen kopie om te bewaren"; return 1; }
-  mkdir -p "$PAKKETTEN_DIR" || return 1
-  chgrp "$GROEP" "$PAKKETTEN_DIR" 2>/dev/null || true
-  chmod 0770 "$PAKKETTEN_DIR" 2>/dev/null || true   # de app (groep) mag opruimen; bestanden blijven root 0640
-  local doel="$PAKKETTEN_DIR/mijn-ruimte-${VERSIE}.tar.gz" tmp sha
-  tmp="$(mktemp "$PAKKETTEN_DIR/.pakket.XXXXXX")" || return 1
-  if ! cp -f -- "$WERK/pakket.tar.gz" "$tmp"; then rm -f -- "$tmp"; log "archief: kopiëren mislukt"; return 1; fi
-  chgrp "$GROEP" "$tmp" 2>/dev/null || true
-  chmod 0640 "$tmp"
-  mv -f -- "$tmp" "$doel" || { rm -f -- "$tmp"; return 1; }
-  sha="$(sha256sum -- "$doel" | cut -c1-64)"
-  printf '%s  %s\n' "$sha" "$(basename "$doel")" > "$doel.sha256"
-  chgrp "$GROEP" "$doel.sha256" 2>/dev/null || true
-  chmod 0640 "$doel.sha256"
-  PAKKET_PAD="$doel"; PAKKET_SHA256="$sha"; PAKKET_BYTES="$(stat -c %s "$doel")"
+  pakketten_map_veilig || return 1
+  local naam="mijn-ruimte-${VERSIE}.tar.gz" doel klaar sha bytes
+  doel="$PAKKETTEN_DIR/$naam"
+  klaar="$(mktemp -d "$WERK/archief.XXXXXX")" || return 1
+  if ! cp -f -- "$WERK/pakket.tar.gz" "$klaar/$naam"; then rm -rf -- "$klaar"; log "archief: kopiëren mislukt"; return 1; fi
+  sha="$(sha256sum -- "$klaar/$naam" | cut -c1-64)"; bytes="$(stat -c %s -- "$klaar/$naam")"
+  printf '%s  %s\n' "$sha" "$naam" > "$klaar/$naam.sha256"
+  chgrp "$GROEP" "$klaar/$naam" "$klaar/$naam.sha256" 2>/dev/null || true
+  chmod 0640 "$klaar/$naam" "$klaar/$naam.sha256"
+  if ! mv -T -f -- "$klaar/$naam" "$doel"; then rm -rf -- "$klaar"; log "archief: plaatsen in $PAKKETTEN_DIR mislukt"; return 1; fi
+  mv -T -f -- "$klaar/$naam.sha256" "$doel.sha256" || log "archief: $naam.sha256 niet geplaatst (het archief zelf staat er wel)"
+  rm -rf -- "$klaar"
+  PAKKET_PAD="$doel"; PAKKET_SHA256="$sha"; PAKKET_BYTES="$bytes"
   export UITROL_GEB_EXTRA="{\"pakket_pad\":\"$PAKKET_PAD\",\"pakket_sha256\":\"$PAKKET_SHA256\",\"pakket_bytes\":$PAKKET_BYTES}"
   log "archief bewaard: $doel ($PAKKET_BYTES bytes, sha256 $sha)"
   return 0
@@ -798,7 +859,10 @@ INSTALL_PID=$!
 ( while kill -0 "$INSTALL_PID" 2>/dev/null; do
     installeer_stappen; publiceer_log
     if [ ! -f "$WERK/gestopt" ] && stop_verzoek; then
-      pct="$(cat "$WERK/stap-pct" 2>/dev/null || echo 0)"; [[ "$pct" =~ ^[0-9]+$ ]] || pct=0
+      # SEC-002 (server-uitrol-08): het percentage op het moment van beslissen rechtstreeks uit het logboek (stap-pct was van vóór het
+      # lezen van het stopverzoek en kon bij de grens van 90 % al verouderd zijn). Valt het signaal toch net na het overschakelen, dan
+      # zet het installatiescript zelf de vorige release terug (bij_signaal in deploy/installeer-app.sh).
+      pct="$(log_pct)"
       if [ "$pct" -lt 90 ]; then
         printf '%s\n%s\n' "$STOP_DOOR" "$STOP_REDEN" > "$WERK/gestopt"
         log "STOP: eigenaar vraagt te stoppen bij $pct % (${STOP_DOOR:-onbekend})${STOP_REDEN:+: $STOP_REDEN} — installatie wordt afgebroken, vorige release blijft actief"
@@ -854,8 +918,14 @@ elif [ -f "$WERK/gestopt" ]; then
   STOP_DOOR="$(sed -n 1p "$WERK/gestopt")"; STOP_REDEN="$(sed -n 2p "$WERK/gestopt")"
   pct="$(cat "$WERK/stap-pct" 2>/dev/null || echo 0)"
   REDEN_TEKST="gestopt door de eigenaar${STOP_DOOR:+ ($STOP_DOOR)} bij $pct %${STOP_REDEN:+: $STOP_REDEN}"
+  if nieuwe_release_actief; then
+    # SEC-002 (server-uitrol-08): het stopsignaal viel toch ná het overschakelen en het terugzetten lukte niet — zeg dat eerlijk.
+    REDEN_UK="! Встановлення зупинено власником${STOP_DOOR:+ ($STOP_DOOR)} на $pct %${STOP_REDEN:+: $STOP_REDEN}, але новий випуск $VERSIE уже був увімкнений і лишився активним БЕЗ завершеної перевірки. Перевірте сайт; якщо він не працює — поверніть попередній випуск («Оновлення» → «Повернути» або sudo mijn-ruimte-installeer terugdraaien)."
+    REDEN_NL="! Installatie gestopt door de eigenaar${STOP_DOOR:+ ($STOP_DOOR)} bij $pct %${STOP_REDEN:+: $STOP_REDEN}, maar de nieuwe release $VERSIE was al ingeschakeld en is actief gebleven ZONDER afgeronde controle. Controleer de site; werkt ze niet, zet dan de vorige release terug («Оновлення» → «Повернути» of sudo mijn-ruimte-installeer terugdraaien)."
+  else
   REDEN_UK="Встановлення зупинено власником${STOP_DOOR:+ ($STOP_DOOR)} на $pct %${STOP_REDEN:+: $STOP_REDEN}. Попередній випуск лишився активним; незавершену теку випуску прибрано."
   REDEN_NL="Installatie gestopt door de eigenaar${STOP_DOOR:+ ($STOP_DOOR)} bij $pct %${STOP_REDEN:+: $STOP_REDEN}. De vorige release blijft actief; de onvolledige releasemap is opgeruimd."
+  fi
   stap installeren fout 0 "$REDEN_UK" "$REDEN_NL"
   status mislukt GESTOPT "$REDEN_UK" "$REDEN_NL" "$VERSIE"
   AFGEROND=1
@@ -916,8 +986,15 @@ PY
     *) STAP_UK="встановлення"; STAP_NL="installatie" ;;
   esac
   REDEN="$REDEN_TEKST"
+  if nieuwe_release_actief; then
+    # SEC-002 (server-uitrol-08): het installatiescript viel om ná het overschakelen (bv. in een inrichtstap na «actief», of het
+    # terugzetten mislukte). «De vorige release blijft actief» zou dan niet waar zijn.
+    REDEN_UK="! Встановлення не завершилося на кроці «${STAP_UK}»: ${REDEN_TEKST}. Новий випуск $VERSIE при цьому вже активний — перевірте сайт і журнал; за потреби поверніть попередній випуск («Оновлення» → «Повернути» або sudo mijn-ruimte-installeer terugdraaien)."
+    REDEN_NL="! De installatie is niet afgerond in stap «${STAP_NL}»: ${REDEN_TEKST}. De nieuwe release $VERSIE is daarbij al actief — controleer de site en het logboek; zet zo nodig de vorige release terug («Оновлення» → «Повернути» of sudo mijn-ruimte-installeer terugdraaien)."
+  else
   REDEN_UK="Встановлення не вдалося на кроці «${STAP_UK}»: ${REDEN_TEKST}. Попередній випуск лишився активним."
   REDEN_NL="Installeren mislukt in stap «${STAP_NL}»: ${REDEN_TEKST}. De vorige release blijft actief."
+  fi
   stap installeren fout 0 "$REDEN_UK" "$REDEN_NL"
   status mislukt INSTALLATIE_MISLUKT "$REDEN_UK" "$REDEN_NL" "$VERSIE"
   AFGEROND=1

@@ -13,6 +13,7 @@ import MijnToegang from './toegang/MijnToegang';
 import AlleGebruikers from './toegang/AlleGebruikers';
 import './toegang/toegang.css';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 export default function TabToegang({ tr }: { tr: Tr }) {
   const t = useTech();

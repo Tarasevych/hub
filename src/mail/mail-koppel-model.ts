@@ -128,6 +128,16 @@ export function mailAccountsAdres(origin: string): string {
   } catch { return '/?tab=accounts'; }
 }
 
+/** Adres van de sleutelkluis («Способи входу → Шифрування») op het id-subdomein van DEZE installatie. */
+export function sleutelkluisAdres(origin: string): string {
+  try {
+    const u = new URL(origin);
+    const delen = u.hostname.split('.');
+    if (delen.length > 2) delen[0] = 'id'; else delen.unshift('id');
+    return `${u.protocol}//${delen.join('.')}${u.port ? `:${u.port}` : ''}/aanmeldmethoden#aanmeldmethoden-sleutelkluis`;
+  } catch { return '/aanmeldmethoden#aanmeldmethoden-sleutelkluis'; }
+}
+
 /**
  * Het tabblad-id van dit venster (zelfde bron als src/tab-context.ts: window.name «tarasevych-tab:<id>|…» of sessionStorage), zonder
  * die module te laden — zij raakt bij het importeren `window` aan, en deze pagina wordt ook buiten de browser getekend (tests, SSR).

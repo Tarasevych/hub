@@ -13,6 +13,7 @@ import RuimteBand from './RuimteBand';
 import AfzenderFoto from './AfzenderFoto';
 import { gebruikBeeldStappen, gebruikGekozenBeeld, kiesBeeldBron, noteerBeeld } from './beeld-geschiedenis';
 import './afzenders.css';
+import { weigeringZin } from '../../shared/weigering-tekst';
 import './contacten.css';
 
 const AfzenderDialoog = lazy(() => import('./AfzenderDialoog'));
@@ -51,7 +52,7 @@ const FOUT: Record<string, [string, string]> = {
   AFZENDER_VERDACHT_BEVESTIG: ['Нова адреса виглядає підозріло. Підтвердіть ризик.', 'Het nieuwe adres lijkt verdacht. Bevestig het risico.'],
   AFZENDER_ADRES_ONGELDIG: ['Адреса недійсна.', 'Het adres is ongeldig.'], AFZENDER_NIET_GEVONDEN: ['Адресу не знайдено.', 'Adres niet gevonden.'],
 };
-const foutTekst = (lang: Lang, code: string) => (FOUT[code] || [`Не вдалося (${code}).`, `Mislukt (${code}).`])[lang === 'uk' ? 0 : 1];
+const foutTekst = (lang: Lang, code: string) => (FOUT[code] || [weigeringZin('uk', code) ?? `Не вдалося (${code}).`, weigeringZin('nl', code) ?? `Mislukt (${code}).`])[lang === 'uk' ? 0 : 1];
 export const StatusIcoon = ({ s }: { s: AfzenderStatus }) => s === 'geverifieerd' ? <BadgeCheck aria-hidden='true' style={I} /> : s === 'verdacht' ? <ShieldAlert aria-hidden='true' style={I} /> : <ShieldQuestion aria-hidden='true' style={I} />;
 const Niveau = ({ lang, n, score }: { lang: Lang; n: VertrouwensNiveau; score?: number }) => <span className={`ctv-niveau ctv-niveau-${n}`} data-niveau={n}>{NIVEAU_TEKST[n][lang === 'uk' ? 0 : 1]}{score !== undefined ? ` · ${score}/100` : ''}</span>;
 const BRON_FOTO: Record<string, [string, string]> = {

@@ -213,7 +213,7 @@ export async function main(): Promise<number> {
       && idb.waarde('mr-geheim', 'kv', 'technisch:agentToken') === 'tok-tech' && idb.waarde('mr-geheim', 'kv', 'technisch:commandKey') === KT
       && local.slot_prive?.agentId === 'agent-prive' && local.slot_technisch?.agentId === 'agent-tech' && !JSON.stringify(local).includes('tok-') && !JSON.stringify(local).includes(KP) && wsP.readyState === 1,
       JSON.stringify(local));
-    check('pair-body: zelfde pairingId voor beide sloten, platform browser, versie 0.9.2, capabilities.ontgrendeling = 2', pairBodies.length === 2 && pairBodies[0].pairingId === pairBodies[1].pairingId && pairBodies[1].version === '0.9.2' && pairBodies[1].capabilities.ontgrendeling === 2 && pairBodies[1].sloten?.prive === true);
+    check('pair-body: zelfde pairingId voor beide sloten, platform browser, versie 0.9.3, capabilities.ontgrendeling = 2', pairBodies.length === 2 && pairBodies[0].pairingId === pairBodies[1].pairingId && pairBodies[1].version === '0.9.3' && pairBodies[1].capabilities.ontgrendeling === 2 && pairBodies[1].sloten?.prive === true);
     check("auth per slot: capabilities.ruimte in het eerste bericht", wsP.sent[0].capabilities.ruimte === 'prive' && wsT.sent[0].capabilities.ruimte === 'technisch');
     wsT.ontvang({ t: 'ready' });
     const caps = ['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.debug'].map((c) => ({ capability: c, domains: [] }));

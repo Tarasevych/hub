@@ -5,9 +5,13 @@ import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
 import { IdentiteitAtelier } from './IdentiteitAtelier';
-import { useVormgeving } from './identiteit-vormgeving';
+import { AtelierInhoud } from './atelier-inhoud';
+import { isKlassiekMaquettePalet, useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
 import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
+import { IdentiteitKlassiekMaquette } from './IdentiteitKlassiekMaquette';
+import { leesKeuze } from '../thema/kern';
+import { useThemaStand } from '../thema/useThema';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -22,6 +26,8 @@ type Props = {
   onKies: (id: string) => void;
   /** Ім'я та світлина облікового запису для аватарів у вигляді «Макет». */
   gebruiker?: MaquetteGebruiker;
+  /** IDENTITEIT-015: справжня зміна мови сайту (cookie + обліковий запис) — для мовних кнопок картки «Мови» в «Макеті». */
+  onTaal?: (lang: 'uk' | 'nl') => void;
 };
 
 const sectieId = (id: string) => `identity-sectie-${id}`;
@@ -34,11 +40,17 @@ class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode
   render() { return this.state.fout ? this.props.terugval : this.props.children; }
 }
 
-export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker }: Props) {
+export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker, onTaal }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
+  const tocRef = useRef<HTMLElement>(null);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
-  const atelier = useVlag('identiteit-account-atelier', false);
-  // Прапорець відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag: altijd de klassieke weergave.
+  const atelierVlag = useVlag('identiteit-account-atelier', false);
+  const themaStand = useThemaStand();
+  const huidigPalet = String(leesKeuze(themaStand.theme, themaStand.palet).palet);
+  const isThemaMaquette = huidigPalet === 'maquette';
+  const isKlassiekPalet = isKlassiekMaquettePalet(huidigPalet);
+  const atelier = atelierVlag || isThemaMaquette || isKlassiekPalet;
+  // Прапорець або палітра «Макет» відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag of maquette-palet: altijd de klassieke weergave.
   const [vormgeving] = useVormgeving();
   // Зміна вигляду користувачем: робоча область прокручується вгору, інакше новий вигляд відкривається на випадковій глибині
   // попереднього (і перемикач класичної сторінки лишається поза екраном). Bij een andere weergave begint de pagina bovenaan.
@@ -51,18 +63,23 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     else window.scrollTo({ top: 0 });
   }, [vormgeving]);
 
+  const eigenWeergaveActief =
+    isKlassiekPalet ||
+    (atelier && (vormgeving === 'studio' || vormgeving === 'maquette'));
+
   // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
     setInBeeld(actief);
+    if (eigenWeergaveActief) return;
     const doel = document.getElementById(sectieId(actief));
     if (doel && typeof doel.scrollIntoView === 'function') {
       doel.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
-  }, [actief]);
+  }, [actief, eigenWeergaveActief]);
 
   // Підсвічування під час прокрутки: визначаємо розділ, який зараз найбільше видно. Без спостережника перетинів — тихо лишаємо як є.
   useEffect(() => {
-    if (typeof IntersectionObserver !== 'function') return;
+    if (eigenWeergaveActief || typeof IntersectionObserver !== 'function') return;
     const waarnemer = new IntersectionObserver(
       (entries) => {
         const beste = entries
@@ -78,7 +95,18 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
       if (el) waarnemer.observe(el);
     }
     return () => waarnemer.disconnect();
-  }, [secties]);
+  }, [secties, eigenWeergaveActief]);
+
+  // На вузьких екранах липка смуга розділів прокручується горизонтально: тримаємо активну пігулку видимою по центру.
+  useEffect(() => {
+    const toc = tocRef.current;
+    if (!toc || toc.scrollWidth <= toc.clientWidth + 2 || typeof toc.scrollTo !== 'function') return;
+    const knop = toc.querySelector<HTMLElement>('.ia-toc-knop.actief');
+    if (!knop) return;
+    const doelLinks = Math.max(0, knop.offsetLeft - (toc.clientWidth - knop.offsetWidth) / 2);
+    const zonderBeweging = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    toc.scrollTo({ left: doelLinks, behavior: zonderBeweging ? 'auto' : 'smooth' });
+  }, [inBeeld]);
 
   const kies = (id: string) => {
     setInBeeld(id);
@@ -95,10 +123,11 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   if (atelier && vormgeving === 'studio') return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   const klassiek = (
+    <AtelierInhoud.Provider value={true}>
     <div className='ia-account'>
       {atelier && <VormgevingKiezer lang={lang} />}
       {kop}
-      <nav className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
+      <nav ref={tocRef} data-no-edge-swipe='1' className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
         {IDENTITEIT_TABS.map((tab, index) => (
           <button
             key={tab.id}
@@ -131,10 +160,15 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
       {/* Під розділами теж, як у «Студії» та «Макеті»: дочитавши сторінку, можна одразу обрати інший вигляд. */}
       {atelier && <div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>}
     </div>
+    </AtelierInhoud.Provider>
   );
+  // Для тем «Біла класика» та «Чорна класика» вмикаємо прагматичний класичний центр облікового запису.
+  if (isKlassiekPalet) {
+    return <MaquetteGrens terugval={klassiek}><IdentiteitKlassiekMaquette lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} gebruiker={gebruiker} /></MaquetteGrens>;
+  }
   // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.
   if (atelier && vormgeving === 'maquette') {
-    return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} /></MaquetteGrens>;
+    return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} onTaal={onTaal} /></MaquetteGrens>;
   }
   return klassiek;
 }

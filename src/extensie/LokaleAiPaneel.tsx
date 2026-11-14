@@ -7,6 +7,7 @@ import type { Tr } from '../mcp-ui';
 import { vergelijkVersie } from '../../shared/extensie-update';
 import { sendToExtension } from '../extensie-toestand';
 import { LOKALE_AI_APIS, LOKALE_AI_INFO, LOKALE_AI_MAX_TEKST, LOKALE_AI_MIN_EXTENSIE, LOKALE_AI_REDENEN, filterLokaleAiAntwoord, kiesStand, type LokaleAiAntwoord, laiRegel, meetPagina, type LokaleAiApi, type LokaleAiKeuze, type PaginaStand } from '../../shared/lokale-ai-model';
+import '../agenten/agenten-toegang-maquette.css';
 
 const ouder = (a: string, b: string) => vergelijkVersie(a, b) < 0;
 

@@ -24,7 +24,7 @@ export default function Laag({ lang, soort, titel, onSluit, children, data = {},
   };
   const dataAttr = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data-${k}`, v]));
   return (
-    <div className={`agv-laag is-${soort}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
+    <div className={`agv-laag is-${soort}`} data-mq-laag-open='1' onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
       <div ref={vak} className={`agv-laag-vak${breed ? ' is-breed' : ''}`} role='dialog' aria-modal='true' aria-label={titel} tabIndex={-1} onKeyDown={toets} {...dataAttr}>
         <header className='agv-laag-kop'>
           <h2>{titel}</h2>

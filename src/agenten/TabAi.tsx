@@ -16,6 +16,7 @@ import AgentBord from './AgentBord';
 import { aiEigenaar, aiLogo, isoMs, type DeurToken, type OauthVerbinding, type Overzicht } from './gegevens';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Knop, Melding, Rij, Tech, Tijd, useActies } from './ui';
 import { CLAUDE_CONNECTORS_URL } from './verbind-recepten';
+import './agenten-kern-maquette.css';
 
 type Item = { sleutel: string; soort: 'oauth' | 'token'; naam: string; laatst: number | null; sinds: number | null; actief: boolean; oauth?: OauthVerbinding; token?: DeurToken };
 // Sinds 2025 heet het in claude.ai en Claude Desktop «Settings → Connectors» (de oude ankerlink naar «Customize» bestaat niet meer).

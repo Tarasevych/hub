@@ -217,6 +217,18 @@ export function snelWeg(v: ZijbalkVoorkeuren, basis: Basis, sleutel: string): Ui
 /** Eén plaats naar links/omhoog (-1) of rechts/omlaag (+1) in de snelbalk (pijltjesknoppen én toetsenbord). */
 export const snelStap = (v: ZijbalkVoorkeuren, basis: Basis, sleutel: string, delta: -1 | 1): Uitkomst => stap(v, menuWeergave(v, basis), sleutel, delta);
 
+/**
+ * IDENTITEIT-015 (приймання menu): куди перевести фокус після переміщення рядка на позицію `nieuw` (0…lengte-1). Кнопка, яку натиснули,
+ * на краю списку стає вимкненою (перша — «раніше», остання — «пізніше»), і браузер скидає фокус на <body>: людина з клавіатурою
+ * після Alt+↑ на першу позицію губила рядок і наступне Alt+↓ нічого не робило. Тепер фокус лишається на рядку — на тій кнопці
+ * напрямку, яка ще активна. Na verplaatsen: focus op de knop van dezelfde rij die nog actief is (nooit op een uitgeschakelde).
+ */
+export function snelFocusNaStap(nieuw: number, lengte: number, delta: -1 | 1): 'omhoog' | 'omlaag' | null {
+  if (lengte < 2 || nieuw < 0 || nieuw >= lengte) return null;
+  if (delta === -1) return nieuw > 0 ? 'omhoog' : 'omlaag';
+  return nieuw < lengte - 1 ? 'omlaag' : 'omhoog';
+}
+
 const zonder = <T extends object>(o: T, veld: keyof T): T => { const x = { ...o }; delete x[veld]; return x; };
 
 /** Eigen kleur van een item of een kopie (undefined = terug naar de kleur van de dienst van herkomst). */

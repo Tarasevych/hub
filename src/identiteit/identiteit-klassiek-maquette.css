@@ -1,0 +1,705 @@
+/* Прагматичний класичний центр облікового запису для тем «Біла класика» та «Чорна класика» (KLASSIEK-001).
+   Стриманий діловий інтерфейс без декоративних вітрин, із м'якими заокругленнями (16px на картках, 999px на капсулах).
+   Pragmatisch klassiek accountcentrum voor Witte klassiek en Zwarte klassiek zonder decoratieve vitrines. */
+
+.ia-account.ikm-wortel {
+  --ikm-bg: var(--mq-bg, var(--bg));
+  --ikm-oppervlak: var(--mq-oppervlak, var(--panel));
+  --ikm-oppervlak-2: var(--mq-oppervlak-2, var(--surface));
+  --ikm-oppervlak-zacht: var(--mq-oppervlak-zacht, color-mix(in srgb, var(--surface) 68%, transparent));
+  --ikm-zweef: var(--mq-oppervlak-hover, color-mix(in srgb, var(--text) 6%, var(--panel)));
+  --ikm-rand: var(--mq-rand, var(--line));
+  --ikm-rand-sterk: var(--mq-rand-sterk, color-mix(in srgb, var(--text) 22%, var(--line)));
+  --ikm-tekst: var(--mq-tekst, var(--text));
+  --ikm-gedempt: var(--mq-gedempt, var(--muted));
+  --ikm-stil: var(--mq-stil, var(--faint));
+  --ikm-accent: var(--mq-accent, var(--accent));
+  --ikm-accent-tekst: var(--mq-accent-op, var(--accentText));
+  --ikm-schaduw: var(--mq-schaduw-zacht, var(--schaduw-1));
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 12px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  color: var(--ikm-tekst);
+}
+
+/* ── 1. Однорядкова ділова шапка (~54px) ───────────────────────────────────────────────────────────────────── */
+
+.ikm-kopbalk {
+  min-height: 54px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak);
+  box-shadow: var(--ikm-schaduw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.ikm-kop-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.ikm-gebruiker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-tekst);
+  max-width: 220px;
+}
+
+.ikm-gebruiker-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: color-mix(in srgb, var(--ikm-accent) 14%, var(--ikm-oppervlak));
+  color: var(--ikm-tekst);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ikm-gebruiker-avatar img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  display: block;
+}
+
+.ikm-gebruiker-naam {
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ikm-titel {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ikm-tekst);
+}
+
+.ikm-kop-pillen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ikm-thema-pil,
+.ikm-teller-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-gedempt);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ikm-thema-pil {
+  color: var(--ikm-tekst);
+  border-color: var(--ikm-rand-sterk);
+}
+
+.ikm-thema-stip {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--ikm-accent);
+  flex: none;
+}
+
+.ikm-kop-rechts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+}
+
+.ikm-filter-veld {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.ikm-filter-veld:focus-within {
+  border-color: var(--ikm-rand-sterk);
+  background: var(--ikm-oppervlak);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ikm-accent) 18%, transparent);
+}
+
+.ikm-filter-veld svg {
+  color: var(--ikm-gedempt);
+  flex: none;
+}
+
+.ikm-filter-veld input {
+  width: 176px;
+  border: 0;
+  outline: none;
+  padding: 4px 0;
+  background: transparent;
+  color: var(--ikm-tekst);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.ikm-filter-veld input::placeholder {
+  color: var(--ikm-stil);
+}
+
+.ikm-filter-wis {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ikm-tekst) 10%, transparent);
+  color: var(--ikm-gedempt);
+  cursor: pointer;
+}
+
+.ikm-filter-wis:hover,
+.ikm-filter-wis:focus-visible {
+  color: var(--ikm-tekst);
+  background: color-mix(in srgb, var(--ikm-tekst) 16%, transparent);
+}
+
+.ikm-snel-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand-sterk);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-tekst);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.ikm-snel-knop:hover,
+.ikm-snel-knop:focus-visible {
+  background: var(--ikm-zweef);
+  border-color: var(--ikm-accent);
+}
+
+.ikm-snel-knop:focus-visible {
+  outline: 2px solid var(--ikm-accent);
+  outline-offset: 2px;
+}
+
+.ikm-snel-knop kbd {
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak);
+  color: var(--ikm-gedempt);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── 2. Липка панель швидкої навігації (режим подання + 4 групи + 12 капсульних вкладок) ────────────────────── */
+
+/* У центрі облікового запису вже є липка навігація .ikm-plakbalk із 12 вкладками, тож дубльована мобільна підсмуга рейки не потрібна */
+.ia-account.ikm-wortel .mq-anker-onderbalk {
+  display: none;
+}
+
+.ikm-plakbalk {
+  position: sticky;
+  top: var(--ikm-plak-boven, 4px);
+  z-index: 4;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--ikm-rand);
+  background: color-mix(in srgb, var(--ikm-oppervlak) 96%, transparent);
+  box-shadow: var(--ikm-schaduw);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.ikm-nav-bovenrij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ikm-modus-wissel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak-2);
+}
+
+.ikm-modus-knop {
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ikm-gedempt);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ikm-modus-knop:hover {
+  color: var(--ikm-tekst);
+}
+
+.ikm-modus-knop.is-actief {
+  background: var(--ikm-oppervlak);
+  border-color: var(--ikm-rand-sterk);
+  color: var(--ikm-tekst);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--ikm-tekst) 10%, transparent);
+}
+
+.ikm-modus-knop:focus-visible {
+  outline: 2px solid var(--ikm-accent);
+  outline-offset: 2px;
+}
+
+.ikm-groep-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ikm-groep-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: transparent;
+  color: var(--ikm-gedempt);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ikm-groep-knop:hover {
+  border-color: var(--ikm-rand-sterk);
+  color: var(--ikm-tekst);
+  background: var(--ikm-oppervlak-zacht);
+}
+
+.ikm-groep-knop.is-actief {
+  border-color: var(--ikm-accent);
+  background: color-mix(in srgb, var(--ikm-accent) 14%, var(--ikm-oppervlak));
+  color: var(--ikm-tekst);
+}
+
+.ikm-groep-knop:focus-visible {
+  outline: 2px solid var(--ikm-accent);
+  outline-offset: 2px;
+}
+
+.ikm-groep-bereik {
+  font-size: 0.72rem;
+  color: var(--ikm-stil);
+  font-variant-numeric: tabular-nums;
+}
+
+.ikm-groep-knop.is-actief .ikm-groep-bereik {
+  color: var(--ikm-gedempt);
+}
+
+.ikm-tabs-rij {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.ikm-tab-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 5px 13px 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak);
+  color: var(--ikm-tekst);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 560;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ikm-tab-pil:hover {
+  border-color: var(--ikm-rand-sterk);
+  background: var(--ikm-zweef);
+}
+
+.ikm-tab-pil.is-actief {
+  border-color: var(--ikm-accent);
+  background: var(--ikm-accent);
+  color: var(--ikm-accent-tekst);
+}
+
+.ikm-tab-pil:focus-visible {
+  outline: 2px solid var(--ikm-accent);
+  outline-offset: 2px;
+}
+
+.ikm-tab-nummer {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-gedempt);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ikm-tab-pil.is-actief .ikm-tab-nummer {
+  background: color-mix(in srgb, var(--ikm-accent-tekst) 20%, transparent);
+  color: var(--ikm-accent-tekst);
+}
+
+/* ── 3. Картки всіх 12 живих розділів облікового запису ────────────────────────────────────────────────────── */
+
+.ikm-secties {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ikm-kaart {
+  scroll-margin-top: 196px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak);
+  box-shadow: var(--ikm-schaduw);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease;
+}
+
+.ikm-kaart.is-actief {
+  border-color: var(--ikm-rand-sterk);
+}
+
+.ikm-kaart-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ikm-rand);
+}
+
+.ikm-kaart-kop-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ikm-kaart-icoon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-tekst);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.ikm-kaart.is-actief .ikm-kaart-icoon {
+  border-color: var(--ikm-rand-sterk);
+}
+
+.ikm-kaart-titels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ikm-kaart-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--ikm-gedempt);
+}
+
+.ikm-kaart-nummer {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ikm-tekst);
+}
+
+.ikm-kaart-groep {
+  color: var(--ikm-gedempt);
+}
+
+.ikm-kaart-titel {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--ikm-tekst);
+}
+
+.ikm-kaart-inhoud {
+  min-width: 0;
+}
+
+/* Сусідні переходи в режимі «Один обраний розділ» */
+.ikm-enkel-stappen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ikm-stap-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand);
+  background: var(--ikm-oppervlak);
+  color: var(--ikm-tekst);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ikm-stap-knop:hover,
+.ikm-stap-knop:focus-visible {
+  border-color: var(--ikm-rand-sterk);
+  background: var(--ikm-zweef);
+}
+
+.ikm-stap-knop:focus-visible {
+  outline: 2px solid var(--ikm-accent);
+  outline-offset: 2px;
+}
+
+/* Порожній стан швидкого фільтра */
+.ikm-leeg {
+  padding: 28px 20px;
+  border-radius: 16px;
+  border: 1px dashed var(--ikm-rand-sterk);
+  background: var(--ikm-oppervlak);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  color: var(--ikm-gedempt);
+}
+
+.ikm-leeg p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.ikm-leeg-herstel {
+  min-height: 38px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--ikm-rand-sterk);
+  background: var(--ikm-oppervlak-2);
+  color: var(--ikm-tekst);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ikm-leeg-herstel:hover,
+.ikm-leeg-herstel:focus-visible {
+  background: var(--ikm-zweef);
+  border-color: var(--ikm-accent);
+}
+
+/* ── 4. Нижній перемикач вигляду ───────────────────────────────────────────────────────────────────────────── */
+
+.ikm-voet {
+  padding-top: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ikm-filter-veld,
+  .ikm-snel-knop,
+  .ikm-modus-knop,
+  .ikm-groep-knop,
+  .ikm-tab-pil,
+  .ikm-kaart,
+  .ikm-stap-knop {
+    transition: none;
+  }
+}
+
+/* ── Мобільні медіазапити (суворо наприкінці файла) ────────────────────────────────────────────────────────── */
+
+@media (max-width: 820px) {
+  .ikm-kop-rechts {
+    width: 100%;
+  }
+
+  .ikm-filter-veld {
+    flex: 1 1 auto;
+  }
+
+  .ikm-filter-veld input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ikm-groep-filter {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    scrollbar-width: none;
+  }
+
+  .ikm-groep-filter::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .ia-account.ikm-wortel {
+    padding: 6px 4px 36px;
+    gap: 12px;
+  }
+
+  .ikm-kopbalk {
+    padding: 10px 12px;
+  }
+
+  .ikm-plakbalk {
+    top: var(--ikm-plak-boven, 4px);
+    padding: 8px 10px;
+  }
+
+  .ikm-modus-wissel {
+    width: 100%;
+  }
+
+  .ikm-modus-knop {
+    flex: 1 1 0;
+    min-height: var(--tik-hoogte, 40px);
+    padding: 0 8px;
+    font-size: 0.78rem;
+  }
+
+  .ikm-groep-knop,
+  .ikm-tab-pil,
+  .ikm-snel-knop,
+  .ikm-filter-veld {
+    min-height: var(--tik-hoogte, 40px);
+  }
+
+  .ikm-kaart {
+    scroll-margin-top: 212px;
+    padding: 16px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ikm-snel-knop kbd {
+    display: none;
+  }
+
+  .ikm-titel {
+    font-size: 0.98rem;
+  }
+}

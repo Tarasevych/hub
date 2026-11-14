@@ -1,16 +1,16 @@
 // Aftelling van de pop-up (INTEG-001). Pure toestand, los te toetsen (tests/eenheid/meldingen-integ-20261103.test.ts, deel B).
 //
-// Eisen van de eigenaar: de pop-up verdwijnt na enkele seconden (afhankelijk van soort en inhoud); zolang de muis erop staat telt hij
-// NIET af (pauze) zodat een lange tekst te lezen is; een balk onderaan toont hoeveel tijd er nog is. Hij blijft niet hangen tot u
-// hem sluit: uitklappen of klikken geeft meer tijd, maar pauzeert niet voor altijd (vroeger: uitklappen = pauze zonder einde, en
-// een klik in de pop-up hield hem via de focus open tot u ergens anders klikte).
+// Eisen van de eigenaar: de pop-up verschijnt standaard 2 seconden (2000 ms); zolang de muis erop staat of de vinger op het
+// aanraakscherm de melding aanraakt en vasthoudt, telt zij NIET af (pauze) zodat een lange tekst rustig te lezen is; een balk onderaan
+// toont hoeveel tijd er nog is. Uitklappen geeft opnieuw de volle tijd, maar pauzeert niet voor altijd.
 //
-// Pauzebronnen: 'muis' (aanwijzen), 'toets' (toetsenbordfocus in de pop-up), 'verborgen' (tabblad niet zichtbaar: niemand kan lezen).
-export type PauzeBron = 'muis' | 'toets' | 'verborgen';
+// Pauzebronnen: 'muis' (aanwijzen met muis/pen), 'aanraking' (vinger op de melding op het aanraakscherm),
+// 'toets' (toetsenbordfocus in de pop-up), 'verborgen' (tabblad niet zichtbaar: niemand kan lezen).
+export type PauzeBron = 'muis' | 'aanraking' | 'toets' | 'verborgen';
 export type Aftelling = { totaal: number; over: number; pauzes: readonly PauzeBron[] };
 
-/** Na het loslaten van een pauze blijft de pop-up nog minstens zo lang staan (niet meteen weg als u de muis weghaalt). */
-export const MIN_NA_PAUZE_MS = 2500;
+/** Na het loslaten van een bijna afgelopen pauze blijft er minstens een halve seconde over, zodat de pop-up niet onder vinger of muis wegspringt. */
+export const MIN_NA_PAUZE_MS = 500;
 
 export const nieuweAftelling = (ms: number): Aftelling => ({ totaal: Math.max(0, ms), over: Math.max(0, ms), pauzes: [] });
 export const gepauzeerd = (a: Aftelling): boolean => a.pauzes.length > 0;
