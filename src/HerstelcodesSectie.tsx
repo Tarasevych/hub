@@ -7,6 +7,7 @@ import {useEffect,useRef,useState} from 'react';
 import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,Copy,Download,Printer,RefreshCw,ShieldOff,X} from 'lucide-react';
 import {api} from './platform/client';
+import {KOPIEER_MISLUKT,kopieerTekst} from './platform/klembord'; // IDENTITEIT-014: копіювання з запасним шляхом
 import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
@@ -53,7 +54,7 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
     const a=document.createElement('a');a.href=url;a.download='mijn-ruimte-herstelcodes.txt';document.body.appendChild(a);a.click();a.remove();
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  const kopieren=async()=>{try{await navigator.clipboard.writeText(codes.map(opmaak).join('\n'));setMelding({ok:true,tekst:tr(lang,'Коди скопійовано.','Codes gekopieerd.')});}catch{setMelding({ok:false,tekst:tr(lang,'Не вдалося скопіювати. Завантажте файл або виділіть коди вручну.','Kopiëren lukte niet. Download het bestand of selecteer de codes zelf.')});}};
+  const kopieren=async()=>{const ok=await kopieerTekst(codes.map(opmaak).join('\n'));setMelding(ok?{ok:true,tekst:tr(lang,'Коди скопійовано.','Codes gekopieerd.')}:{ok:false,tekst:`${tr(lang,KOPIEER_MISLUKT[0],KOPIEER_MISLUKT[1])} ${tr(lang,'Або завантажте файл.','Of download het bestand.')}`});};
   const afdrukken=()=>{document.body.classList.add('herstel-afdruk');const weg=()=>{document.body.classList.remove('herstel-afdruk');window.removeEventListener('afterprint',weg);};window.addEventListener('afterprint',weg);window.print();window.setTimeout(weg,1500);};
   const klaar=async()=>{setBezig('klaar');await recoverySaved();leesVergeten('/api/owner/access/recovery/overzicht');setBezig('');await laden(true);};
 

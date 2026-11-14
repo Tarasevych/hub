@@ -3,10 +3,10 @@
 // 1 день / 7 днів / 30 днів / eigen datum en tijd), eenmalig of herbruikbaar met optioneel maximum. De code verschijnt één keer
 // (kopiëren, QR, deellink). Lijst met status, verloop, gebruik, laatste gebruik en uitklapbare geschiedenis van elk gebruik en elke
 // actie. Intrekken met reden (gastsessies meteen weg), verloop korter (vrij) of langer (sterke bevestiging). Alleen UA + NL.
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useState} from 'react';
 import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,ChevronDown,Clock,Copy,History,KeyRound,Link2,Plus,Share2,Ticket,Users,X} from 'lucide-react';
-import qrcode from 'qrcode-generator';
+import {Qr} from './platform/Qr'; // IDENTITEIT-014: спільний QR (той самий і для ключа автентифікатора)
 import {api} from './platform/client';
 import {swrPost} from './lees-cache';
 import {foutCode} from './platform/webauthn';
@@ -48,12 +48,6 @@ const foutTekst=(lang:Lang,c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):wei
 const lokaal=(d:Date)=>{const p=(n:number)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
 const scopeTekst=(lang:Lang,scopes:Scope[],id:string)=>{const s=scopes.find(x=>x.id===id);return s?tr(lang,s.uk,s.nl):id;};
 const gebruikTekst=(lang:Lang,c:Code)=>{const max=c.eenmalig?1:c.maxGebruik;return max?tr(lang,`${c.gebruikt} з ${max}`,`${c.gebruikt} van ${max}`):tr(lang,`${c.gebruikt} раз(и)`,`${c.gebruikt}×`);};
-
-/** QR als SVG-paden (geen innerHTML). */
-function Qr({tekst,label}:{tekst:string;label:string}){
-  const pad=useMemo(()=>{const q=qrcode(0,'M');q.addData(tekst);q.make();const n=q.getModuleCount();let d='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+4} ${r+4}h1v1h-1z`;return{d,n:n+8};},[tekst]);
-  return <svg className='toegangscode-qr' viewBox={`0 0 ${pad.n} ${pad.n}`} role='img' aria-label={label} shapeRendering='crispEdges'><rect width={pad.n} height={pad.n} fill='#fff'/><path d={pad.d} fill='#000'/></svg>;
-}
 
 function VerloopKiezer({lang,waarde,zet,presets,metNooit=true,groep='verloop'}:{lang:Lang;waarde:Verloop;zet:(v:Verloop)=>void;presets:string[];metNooit?:boolean;groep?:string}){
   const min=lokaal(new Date(Date.now()+6*60000)),max=lokaal(new Date(Date.now()+365*86400000));
