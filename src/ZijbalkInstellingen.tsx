@@ -1,6 +1,8 @@
 // Instellingen → Меню: «Стиль іконок» (Класичний / Кольоровий) en de modus van de bijbalk (auto / altijd open / altijd smal).
 // Dezelfde winkel als de werkbalk boven in de zijbalk (zijbalk-voorkeuren.ts): wijzigingen zijn meteen overal zichtbaar.
-import {type ReactElement,type ReactNode} from 'react';
+import {useState,type ReactElement,type ReactNode} from 'react';
+import {BevestigDialoog} from './platform/BevestigDialoog'; // IDENTITEIT-013
+import {conceptAantal} from './concepten';
 import {BellRing,ChevronDown,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen,Zap} from 'lucide-react';
 import type {SnelheidVoorkeuren} from '../shared/menu-snelheid';
 import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeuren} from '../shared/menu-meldingen-voorkeuren';
@@ -21,11 +23,22 @@ const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','s
 export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zichtbaarheid?:ReactNode;rechten?:AccountRechten}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
   const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
+  // IDENTITEIT-013: вимкнення «Чернеток» одразу стирає всі збережені чернетки цього браузера — тому спершу підтвердження з їхньою кількістю.
+  const lang=tr('uk','nl') as 'uk'|'nl';
+  const[wisVraag,setWisVraag]=useState<{aantal:number}|null>(null);
+  const vraagConceptenUit=async()=>{const n=await conceptAantal();if(n===0){zetS({concepten:false});return}setWisVraag({aantal:Math.max(0,n)})};
   const zetM=(patch:Partial<MeldingVoorkeuren>)=>zetZijbalk(cur=>({...cur,meldingen:{...cur.meldingen,...patch}}));
   const schakel=(id:string,aan:boolean,naam:string,uitleg:string,doe:(x:boolean)=>void,uit=false)=><label className={`zijbalk-schakel${uit?' uit':''}`} data-meld-schakel={id}><input type='checkbox' role='switch' checked={aan} disabled={uit} onChange={e=>doe(e.target.checked)}/><span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span><span><strong>{naam}</strong>{uitleg&&<small>{uitleg}</small>}</span></label>;
   const stijlen:Array<[IcoonStijl,string,string]>=[['klassiek',tr('Класичний','Klassiek'),tr('Спокійні монохромні іконки; колір розділу з’являється при наведенні та в активного пункту.','Rustige monochrome iconen; de kleur van het onderdeel verschijnt bij aanwijzen en bij het actieve item.')],['kleur',tr('Кольоровий','Kleurrijk'),tr('Кожен розділ завжди у своєму кольорі (пошта — синя, ШІ — фіолетовий, хмара — блакитна…); підпункти — світлішим відтінком того ж кольору.','Elk onderdeel altijd in zijn eigen kleur (e-mail blauw, AI violet, cloud hemelsblauw…); subitems in een lichtere tint van dezelfde kleur.')]];
   const modi:Array<[ZijbalkModus,string,ReactElement]>=[['auto',tr('Автоматично','Automatisch'),<MousePointer2 key='a'/>],['open',tr('Розгорнута','Uitgeklapt'),<PanelLeftOpen key='o'/>],['dicht',tr('Згорнута','Ingeklapt'),<PanelLeftClose key='d'/>]];
   return <section className='zijbalk-instellingen' data-zijbalk-instellingen data-accordeon>
+    <BevestigDialoog open={!!wisVraag} id='concepten-uit' lang={lang} gevaarlijk aantal={wisVraag?.aantal||undefined}
+      titel={tr('Вимкнути збереження чернеток?','Concepten bewaren uitzetten?')}
+      uitleg={wisVraag&&wisVraag.aantal>0?tr(`Буде видалено збережені чернетки (${wisVraag.aantal}) у цьому браузері.`,`De bewaarde concepten (${wisVraag.aantal}) in deze browser worden verwijderd.`):tr('Збережені чернетки в цьому браузері буде видалено.','De bewaarde concepten in deze browser worden verwijderd.')}
+      gevolgen={[tr('Незавершений текст (чат ШІ, відповіді, нотатки) більше не відновлюватиметься після перезавантаження.','Onafgemaakte tekst (AI-chat, antwoorden, notities) komt na herladen niet meer terug.'),tr('Повернути видалені чернетки неможливо.','Verwijderde concepten kunnen niet worden teruggezet.')]}
+      bevestigTekst={tr('Так, вимкнути й видалити','Ja, uitzetten en verwijderen')}
+      onAnnuleer={()=>setWisVraag(null)}
+      onBevestig={()=>{setWisVraag(null);zetS({concepten:false})}}/>
     <Blok id='menu-stijl' icoon={<Palette/>} titel={tr('Стиль іконок','Icoonstijl')} uitleg={tr('Класичні чи кольорові іконки розділів','Klassieke of kleurrijke iconen van de onderdelen')}>
     <fieldset className='zijbalk-keuze' data-icoon-stijl-keuze>
       <legend>{tr('Стиль іконок','Icoonstijl')}</legend>
@@ -89,7 +102,7 @@ export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zi
       <div className='zijbalk-risico' role='group' aria-label={tr('Експериментальні функції','Experimentele functies')}>
         <p className='zijbalk-risico-kop'><strong>{tr('Експериментально','Experimenteel')}</strong> {tr('— вимкнено типово','— standaard uit')}</p>
         {schakel('prerender',sn.prerender,tr('Повністю готувати розділ заздалегідь','Onderdeel volledig voorbereiden'),tr('Ще швидше, але браузер відкриває сторінку у фоні. Застосунок стартує лише коли ви її справді відкриєте.','Nog sneller, maar de browser opent de pagina op de achtergrond. De app start pas als je hem echt opent.'),x=>zetS({prerender:x}),!sn.vooruitladen)}
-        {schakel('concepten',sn.concepten,tr('Зберігати чернетки (зашифровано)','Concepten bewaren (versleuteld)'),tr('Незавершений текст у полях (чат ШІ, відповіді, нотатки) зберігається зашифрованим лише в цьому браузері до 7 днів і відновлюється після перезавантаження. Вимкнення видаляє всі чернетки.','Onafgemaakte tekst in velden (AI-chat, antwoorden, notities) wordt versleuteld alleen in deze browser bewaard (max. 7 dagen) en na herladen teruggezet. Uitzetten wist alle concepten.'),x=>zetS({concepten:x}))}
+        {schakel('concepten',sn.concepten,tr('Зберігати чернетки (зашифровано)','Concepten bewaren (versleuteld)'),tr('Незавершений текст у полях (чат ШІ, відповіді, нотатки) зберігається зашифрованим лише в цьому браузері до 7 днів і відновлюється після перезавантаження. Вимкнення видаляє всі чернетки.','Onafgemaakte tekst in velden (AI-chat, antwoorden, notities) wordt versleuteld alleen in deze browser bewaard (max. 7 dagen) en na herladen teruggezet. Uitzetten wist alle concepten.'),x=>{if(x)zetS({concepten:true});else void vraagConceptenUit()})}
       </div>
     </fieldset>
     </Blok>

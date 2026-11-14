@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, ImagePlus, Link2, Trash2, Upload, Cloud, X } from 'lucide-react';
+import { BevestigDialoog } from '../platform/BevestigDialoog';
 
 type Props = {
   naam: string;
@@ -125,6 +126,9 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
     }
   };
 
+  // IDENTITEIT-013: прибирання власного фото — лише після підтвердження: власний файл не зберігається, повернути його можна
+  // тільки повторним завантаженням. Обидві кнопки (смітник і «Повернути сервісне фото») спершу відкривають діалог.
+  const [vraagHerstel, setVraagHerstel] = useState(false);
   const herstel = async () => {
     setFout('');
     if (!eigenFoto) {
@@ -212,7 +216,7 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
             eigenFoto ? (
               <>
                 <p>{tekst(lang, 'Зараз встановлено вашу власну світлину. Ви можете повернути стандартне фото з вашого сервісу входу.', 'U gebruikt nu een eigen profielfoto. U kunt de standaardfoto van uw aanmelddienst herstellen.')}</p>
-                <button type='button' className='ia-knop' onClick={() => void herstel()} disabled={bezig || !onFoto}>
+                <button type='button' className='ia-knop' onClick={() => setVraagHerstel(true)} disabled={bezig || !onFoto}>
                   <Cloud />{tekst(lang, 'Повернути сервісне фото', 'Servicefoto herstellen')}
                 </button>
               </>
@@ -273,7 +277,7 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
             type='button'
             className='ia-avatar-prullenbak'
             disabled={bezig}
-            onClick={() => void herstel()}
+            onClick={() => setVraagHerstel(true)}
             aria-label={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
             title={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
           >
@@ -288,6 +292,22 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
       </div>
 
       {dialoogVenster ? (typeof document !== 'undefined' && document.body ? createPortal(dialoogVenster, document.body) : dialoogVenster) : null}
+      <BevestigDialoog
+        open={vraagHerstel}
+        id='foto-herstellen'
+        lang={lang}
+        gevaarlijk
+        titel={tekst(lang, 'Прибрати власне фото?', 'Eigen foto verwijderen?')}
+        uitleg={tekst(lang, 'Замість нього знову показуватиметься фото з вашого сервісу входу (наприклад, Google).', 'In plaats daarvan wordt de foto van uw aanmelddienst (bijvoorbeeld Google) weer getoond.')}
+        gevolgen={[
+          tekst(lang, 'Власний файл фото не зберігається — повернути його можна лише новим завантаженням.', 'Het eigen fotobestand wordt niet bewaard — terugzetten kan alleen door het opnieuw te uploaden.'),
+          tekst(lang, 'Нове фото з’явиться на всіх піддоменах одразу.', 'De nieuwe foto verschijnt meteen op alle subdomeinen.'),
+        ]}
+        bevestigTekst={tekst(lang, 'Так, прибрати', 'Ja, verwijderen')}
+        bezig={bezig}
+        onAnnuleer={() => setVraagHerstel(false)}
+        onBevestig={async () => { setVraagHerstel(false); await herstel(); }}
+      />
     </article>
   );
 }

@@ -101,6 +101,8 @@ export async function alleConceptenWissen() {
   accountSleutels.clear();
   try { await tx(CONCEPTEN, 'readwrite', (s) => s.clear()); await tx(SLEUTELS, 'readwrite', (s) => s.clear()); } catch { /* geen IndexedDB */ }
 }
+/** IDENTITEIT-013: кількість збережених чернеток для діалогу «буде видалено N»; -1, якщо сховища немає. */
+export const conceptAantal = (): Promise<number> => __conceptAantal();
 export async function __conceptAantal() { try { return (await tx<number>(CONCEPTEN, 'readonly', (s) => s.count())); } catch { return -1; } }
 
 // ------------------------------------------------------------------------------------------------ velden koppelen

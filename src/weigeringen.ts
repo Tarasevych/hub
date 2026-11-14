@@ -49,3 +49,42 @@ export function beheerWeigering(e: unknown): Paar | null {
       return null;
   }
 }
+
+// IDENTITEIT-013: загальні відмови для видалення облікового запису, віджетів, способів входу й спільного доступу. Код береться і з
+// `error`, і з `reasonCode` (step-up віддає саме його). Спершу — точніші таблиці deelWeigering/beheerWeigering.
+// Algemene weigeringen voor account verwijderen, widgets, aanmeldmethoden en delen; leest error én reasonCode.
+const volleCode = (e: unknown): string => {
+  const f = (e ?? {}) as { message?: unknown; response?: { data?: { error?: unknown; reasonCode?: unknown } } };
+  const d = f.response?.data && typeof f.response.data === 'object' ? f.response.data : undefined;
+  return String(d?.error || d?.reasonCode || f.message || '');
+};
+const ALGEMEEN: Record<string, Paar> = {
+  OWNER_NIET_WISSEN: ['Обліковий запис власника сайту не можна видалити.', 'Het account van de eigenaar van de site kan niet worden verwijderd.'],
+  OWNER_EMAIL_CONFIRMATION_MISMATCH: ['Адреса для підтвердження не збігається з адресою облікового запису. Введіть її точно.', 'Het bevestigingsadres komt niet overeen met het adres van het account. Typ het exact over.'],
+  CODEWOORD_ONJUIST: ['Кодове слово не збігається. Нічого не змінено.', 'Het codewoord klopt niet. Er is niets gewijzigd.'],
+  CODEWOORD_VERPLICHT: ['Для цієї дії потрібне ваше кодове слово.', 'Voor deze handeling is uw codewoord nodig.'],
+  CODEWOORD_GEBLOKKEERD: ['Забагато спроб кодового слова. Зачекайте 15 хвилин.', 'Te veel pogingen met het codewoord. Wacht 15 minuten.'],
+  STEP_UP_REQUIRED: ['Потрібно підтвердити доступ (passkey, код або повторний вхід Google). Нічого не змінено.', 'Bevestiging van toegang is nodig (passkey, code of opnieuw aanmelden bij Google). Er is niets gewijzigd.'],
+  STEP_UP_STRONG_REQUIRED: ['Потрібне сильне підтвердження: passkey, код із застосунку або код відновлення. Нічого не змінено.', 'Sterke bevestiging nodig: passkey, app-code of herstelcode. Er is niets gewijzigd.'],
+  STAP_OP_VENSTER_FOUT: ['Не вдалося відкрити вікно «Підтвердіть доступ». Оновіть сторінку й спробуйте ще раз.', 'Het venster «Toegang bevestigen» kon niet openen. Vernieuw de pagina en probeer het opnieuw.'],
+  LAST_LOGIN_METHOD_PROTECTED: ['Це ваш останній спосіб входу — його не можна прибрати, інакше ви втратите доступ.', 'Dit is uw laatste aanmeldmethode — die kan niet weg, anders verliest u de toegang.'],
+  ACCESS_PASSWORD_TOO_SHORT: ['Пароль закороткий: потрібно щонайменше 10 символів.', 'Het wachtwoord is te kort: minstens 10 tekens.'],
+  ACCESS_PASSWORD_TOO_LONG: ['Пароль задовгий: щонайбільше 1024 символи.', 'Het wachtwoord is te lang: hoogstens 1024 tekens.'],
+  BLOK_URL_ONGELDIG: ['Посилання має починатися з https:// і не містити логіна чи пароля.', 'De link moet met https:// beginnen en mag geen gebruikersnaam of wachtwoord bevatten.'],
+  BLOK_TITEL_TE_LANG: ['Назва задовга: щонайбільше 120 символів.', 'De naam is te lang: hoogstens 120 tekens.'],
+  BLOK_OMSCHRIJVING_TE_LANG: ['Опис задовгий: щонайбільше 500 символів.', 'De beschrijving is te lang: hoogstens 500 tekens.'],
+  'Title is required': ['Вкажіть назву блоку.', 'Geef het blok een naam.'],
+  'Write access required': ['У цьому просторі у вас лише перегляд — додавати блоки не можна.', 'In deze werkruimte kunt u alleen kijken — blokken toevoegen kan niet.'],
+  'Approval required': ['Обліковий запис ще не схвалено, тож змінювати простір не можна.', 'Het account is nog niet goedgekeurd, dus de werkruimte wijzigen kan niet.'],
+  ZELFTEST_ALLEEN_BEHEER: ['Самоперевірку способу входу запускає лише власник або адміністратор.', 'Alleen de eigenaar of een beheerder voert de zelftest van een aanmeldmethode uit.'],
+  NETWORK_ERROR: ['Немає зв’язку з сервером. Перевірте інтернет і спробуйте ще раз — нічого не змінено.', 'Geen verbinding met de server. Controleer het internet en probeer het opnieuw — er is niets gewijzigd.'],
+  ABORTED: ['Запит перервано. Нічого не змінено.', 'Het verzoek is afgebroken. Er is niets gewijzigd.'],
+};
+/** Зрозумілий текст відмови [uk, nl] для відомого коду; null — екран показує свій загальний текст. */
+export function foutNaarTekst(e: unknown): Paar | null {
+  const specifiek = deelWeigering(e) || beheerWeigering(e);
+  if (specifiek) return specifiek;
+  const code = volleCode(e);
+  if (code === 'RATE_LIMITED') { const m = minuten(e); return [`Забагато спроб. Спробуйте ${m ? `через ~${m} хв` : 'пізніше'}.`, `Te veel pogingen. Probeer het ${m ? `over ~${m} min.` : 'later'} opnieuw.`]; }
+  return ALGEMEEN[code] || null;
+}
