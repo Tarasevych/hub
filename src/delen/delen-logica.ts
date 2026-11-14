@@ -176,7 +176,33 @@ export function linkGemaakt(dagen: number, vervaltOp: string | null | undefined)
 }
 
 /** IDENTITEIT-015: een open link zoals POST /api/share/link/lijst hem geeft (zonder de code zelf). */
-export type OpenLink = { id: string; code: string; workspaceRole: WerkruimteRol; email: string; expiresAt: string | null; createdAt: string; eigen: boolean; blokken: number };
+/** IDENTITEIT-015: підсумки «Вийти з простору» (показуються й після перезавантаження сторінки, src/platform/melding-na-herladen.ts). */
+export const VERTROKKEN: Paar = ['Ви вийшли з простору. Власник отримає сповіщення; щоб повернутися, потрібне нове запрошення.', 'U hebt de werkruimte verlaten. De eigenaar krijgt een melding; om terug te komen is een nieuwe uitnodiging nodig.'];
+export const AL_VERTROKKEN: Paar = ['Ви вже не учасник цього простору.', 'U bent al geen lid meer van deze werkruimte.'];
+
+/** IDENTITEIT-015: doorEigenaar/eenmalig/werkt — optioneel (oudere server): ontbreekt = eenmalig, werkt, door een andere beheerder. */
+export type OpenLink = { id: string; code: string; workspaceRole: WerkruimteRol; email: string; expiresAt: string | null; createdAt: string; eigen: boolean; blokken: number; doorEigenaar?: boolean; eenmalig?: boolean; werkt?: boolean };
+
+/**
+ * IDENTITEIT-015 (рецензія delen): рядок опису посилання в «Відкритих посиланнях» — для кого, скільки разів, до коли, хто створив.
+ * Давні посилання без строку й багаторазові (до кроку delen) описуються правдиво; посилання, що вже не діє через права творця, — так і названо.
+ */
+export function linkOmschrijving(lang: Lang, l: Pick<OpenLink, 'email' | 'expiresAt' | 'blokken' | 'eigen' | 'doorEigenaar' | 'eenmalig' | 'werkt'>): string {
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  const voorWie = l.email ? t(`Лише для ${l.email}`, `Alleen voor ${l.email}`)
+    : l.eenmalig === false ? t('Для кожного, хто відкриє, — багаторазове', 'Voor iedereen die hem opent — meermaals bruikbaar')
+    : t('Для будь-кого, хто відкриє першим', 'Voor wie hem als eerste opent');
+  const tot = l.werkt === false ? t('не діє: той, хто створив, більше не може надавати доступ', 'werkt niet: wie hem maakte, mag geen toegang meer geven')
+    : l.expiresAt ? `${t('діє до', 'geldig tot')} ${vervalTekst(lang, l.expiresAt)}` : t('без строку дії', 'zonder einddatum');
+  const blokken = l.blokken ? t(` · лише вибрані блоки (${l.blokken})`, ` · alleen gekozen blokken (${l.blokken})`) : '';
+  const maker = l.eigen ? '' : l.doorEigenaar ? t(' · створив власник простору', ' · gemaakt door de eigenaar') : t(' · створив інший адміністратор', ' · gemaakt door een andere beheerder');
+  return `${voorWie} · ${tot}${blokken}${maker}`;
+}
+
+/** IDENTITEIT-015: toegankelijke naam van «Відкликати» per link (код і роль), anders zijn de knoppen voor een schermlezer gelijk. */
+export function linkIntrekkenLabel(lang: Lang, l: Pick<OpenLink, 'code' | 'workspaceRole' | 'email'>): string {
+  return lang === 'uk' ? `Відкликати посилання ${l.code} з роллю «${ROL_TEKST[l.workspaceRole][0]}»${l.email ? ` для ${l.email}` : ''}` : `Link ${l.code} met de rol «${ROL_TEKST[l.workspaceRole][1]}»${l.email ? ` voor ${l.email}` : ''} intrekken`;
+}
 
 /** Venster vóór het intrekken van een link (id deel-link-intrekken). */
 export function linkIntrekkenVraag(lang: Lang, l: Pick<OpenLink, 'code' | 'workspaceRole' | 'email' | 'expiresAt'>) {

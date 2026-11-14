@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, BrainCircuit, CalendarDays, Check, ChevronDown, Che
 import { api, image as appImage, invitesClient } from './platform/client';
 import { BevestigDialoog } from './platform/BevestigDialoog'; // IDENTITEIT-013
 import { createPortal } from 'react-dom'; // IDENTITEIT-014: hub-vensters in document.body (anders onder de zijbalk/scrim van .canonical-workspace)
-import { useDelen } from './delen/useDelen'; import { LedenLijst } from './delen/LedenLijst'; import { LinkOpties, LinksLijst } from './delen/LinksLijst'; import { STANDAARD_LINK_DAGEN, vervalTekst, type LinkDagen } from '../shared/deel-links'; /* IDENTITEIT-015 */ // IDENTITEIT-014: één hook + lijst voor hub en instellingencentrum
+import { useDelen } from './delen/useDelen'; import { haalMeldingNaHerladen } from './platform/melding-na-herladen';import { LedenLijst } from './delen/LedenLijst'; import { LinkOpties, LinksLijst } from './delen/LinksLijst'; import { STANDAARD_LINK_DAGEN, vervalTekst, type LinkDagen } from '../shared/deel-links'; /* IDENTITEIT-015 */ // IDENTITEIT-014: één hook + lijst voor hub en instellingencentrum
 import { geldigeKeuze, linkMakenVraag, rolNaarKeuze, toegangGevenVraag, uitnodigingAfgewezen, waaromNiet, type KeuzeRol } from './delen/delen-logica';
 import { verborgenVoorAi } from './menselijke-actie'; // IDENTITEIT-014: de uitnodigingslink is een eenmalig geheim
 import { magRolBeheren, type WerkruimteRol } from '../shared/werkruimte-rechten';
@@ -182,6 +182,8 @@ function HubApp({active=true}:{active?:boolean}) {
   // daar delen, een sitebeheerder die hier alleen kijker is niet. De privélink wijst altijd naar de hub.
   const rolHier: WerkruimteRol | null = spaces.find((item) => item.id === spaceId)?.workspaceRole ?? null;
   const delen = useDelen({ werkruimteId: spaceId, rol: rolHier, actief: state === 'authorized' && modal === 'share', post: async (pad, lichaam) => (await api.post(pad, authData(lichaam))).data as Record<string, unknown>, melding: (p) => setMessage(lang === 'uk' ? p[0] : p[1]), hubOrigin: new URL(canonicalNavigationUrl('hub')).origin });
+  /* IDENTITEIT-015 (рецензія delen): підсумок «Вийти з простору» переживає перезавантаження сторінки й показується, щойно hub готовий */
+  useEffect(() => { if (state !== 'authorized') return; const m = haalMeldingNaHerladen(); if (m) setMessage(lang === 'uk' ? m[0] : m[1]); }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
   const openShare = async () => { setModal('share'); };
   useEffect(() => { setSharePermission((k) => geldigeKeuze(delen.rol, k)); }, [delen.rol]);
   // «Надати доступ» відкриває спершу вікно підтвердження (адреса, простір, роль); сервер ще раз перевіряє права і для «адміністратора» просить step-up.

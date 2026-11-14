@@ -131,7 +131,8 @@ export async function main(): Promise<number> {
     check('aanv-gat-c-02: geen enkele van de gemelde plaatsen gebruikt nog de kwadratische expressie', nogOud.length === 0, nogOud.join(', '));
     const idx = readFileSync('backend/index.ts', 'utf8');
     check('aanv-gat-c-02: share/email, share/link (nu mét grens 254) en mail/accounts/link gebruiken isEmailAdres',
-      idx.includes('if (!isEmailAdres(email, 254)') && idx.includes("if (email && !isEmailAdres(email, 254)) return error('Valid email required', 400)") && idx.includes("if(!isEmailAdres(email,320))return error('MAIL_ACCOUNT_EMAIL_INVALID',400)"));
+      /* IDENTITEIT-015 (delen): share/link weigert daarnaast stuurtekens — dezelfde isEmailAdres-grens, strenger */
+      idx.includes('if (!isEmailAdres(email, 254)') && /if \(email && \(?!isEmailAdres\(email, 254\)[^\n]*\) return error\('Valid email required', 400\)/.test(idx) && idx.includes("if(!isEmailAdres(email,320))return error('MAIL_ACCOUNT_EMAIL_INVALID',400)"));
   }
 
   // ================================================================ aanv-gat-c-03: zip-bom

@@ -9,7 +9,7 @@
 // інтерфейс — справжні складові src/delen, відмальовані на сервері. Лише вигадані дані; назовні не йде нічого.
 // Privélinks: looptijd, lijst, intrekken op id, adresbinding en zelf vertrekken.
 // Запуск: DATABASE_URL=<тестова база> node scripts/eenheidstests.mjs identiteit-015-delen.test.ts
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -22,7 +22,9 @@ import { MELDING_SOORTEN, isBekendeSoort } from '../../shared/melding-soorten';
 import { NA_0107_VIA_VOORVOEGSEL, SFEER_PER_SOORT, sfeerVanSoort } from '../../shared/meldingen-soorten';
 import { uitlegVoor } from '../../shared/meldingen-v2/uitleg-register';
 import { meldingDoel } from '../../shared/menu-meldingen';
-import { GEEN_UITNODIGINGSMAIL, PER_ADRES_GELUKT, linkGemaakt, linkIntrekkenVraag, linkMakenVraag, vertrekkenVraag } from '../../src/delen/delen-logica';
+import { GEEN_UITNODIGINGSMAIL, PER_ADRES_GELUKT, linkGemaakt, linkIntrekkenLabel, linkIntrekkenVraag, linkMakenVraag, linkOmschrijving, vertrekkenVraag } from '../../src/delen/delen-logica';
+import { AL_VERTROKKEN, VERTROKKEN } from '../../src/delen/delen-logica';
+import { bewaarMeldingNaHerladen, haalMeldingNaHerladen } from '../../src/platform/melding-na-herladen';
 import { deelWeigering } from '../../src/weigeringen';
 import { LinksLijst, LinkOpties } from '../../src/delen/LinksLijst';
 import { LedenLijst } from '../../src/delen/LedenLijst';
@@ -203,6 +205,64 @@ export async function main(): Promise<number> {
       mLeft.length === 1 && /Проба m виходить із простору/.test(String(mLeft[0].message))
       && Number((await pool.query("select count(*)::int n from app.records where tbl='security_audit' and data->>'accountId'=$1 and data->>'event'='workspace_member_revoked' and data->'details'->>'zelf'='true'", [M.id])).rows[0]?.n) === 1);
 
+    // ---- рецензія delen (14.11.2026): використане посилання, гонка, права творця, давні посилання, прив'язка до адреси
+    const idVan = (code: string) => createHash('sha256').update(code, 'utf8').digest('hex').slice(0, 32);
+    {
+      // (1) [middel] використане одноразове посилання (M приєднався за l7) — відкликати нічого: 409 SHARE_LINK_USED, без запису й сповіщення
+      const auditO = await auditTel(O.id, 'workspace_share_link_revoked'); const mVoor = (await meldingen(O.id, 'workspace_share_link_revoked')).length;
+      const M2 = await maak('m2'); await hub(M2, '/api/workspace/load');
+      const lU = await hub(O, '/api/share/link', { workspaceId: ws, workspaceRole: 'viewer' });
+      const joinU = await hub(M2, '/api/share/join', { code: String(lU.data.code) });
+      const rU = await hub(O, '/api/share/link/revoke', { workspaceId: ws, linkId: idVan(String(lU.data.code)) });
+      await wacht();
+      const revokedAt = (await pool.query('select revoked_at from app.invites where code=$1', [String(lU.data.code)])).rows[0]?.revoked_at;
+      check('рецензія: відкликання вже використаного одноразового посилання → 409 SHARE_LINK_USED; revoked_at не ставиться; без запису «відкликано» й без сповіщення; учасник лишається',
+        joinU.status === 200 && rU.status === 409 && rU.data.error === 'SHARE_LINK_USED' && !revokedAt && (await auditTel(O.id, 'workspace_share_link_revoked')) === auditO && (await meldingen(O.id, 'workspace_share_link_revoked')).length === mVoor && (await lidRij(ws, M2.id))?.s === 'active', `${rU.status} ${JSON.stringify(rU.data)}`);
+      const tekstU = deelWeigering({ response: { data: { error: 'SHARE_LINK_USED' } } });
+      check('рецензія: текст SHARE_LINK_USED каже, що людина лишається учасником, і вказує на «Хто має доступ» (обидві мови)', /лишається учасником/.test(tekstU?.[0] || '') && /Хто має доступ/.test(tekstU?.[0] || '') && /blijft lid/.test(tekstU?.[1] || ''));
+      const invU = await invites.revoke({ code: String(lU.data.code), actor: { userId: O.id }, beheerder: true });
+      check('рецензія: invites.revoke для використаного посилання → uitkomst «gebruikt»', invU.uitkomst === 'gebruikt');
+
+      // (2) [дрібне] два одночасні відкликання → рівно один запис і одне сповіщення
+      const lR = await hub(O, '/api/share/link', { workspaceId: ws, workspaceRole: 'viewer' });
+      const auditR = await auditTel(O.id, 'workspace_share_link_revoked'); const mR = (await meldingen(O.id, 'workspace_share_link_revoked')).length;
+      const [g1, g2, g3] = await Promise.all([1, 2, 3].map(() => hub(O, '/api/share/link/revoke', { workspaceId: ws, linkId: idVan(String(lR.data.code)) })));
+      await wacht();
+      check('рецензія: три одночасні відкликання — усі 200, рівно одне без alIngetrokken; один запис в аудиті, одне сповіщення',
+        [g1, g2, g3].every((g) => g.status === 200) && [g1, g2, g3].filter((g) => !g.data.alIngetrokken).length === 1 && (await auditTel(O.id, 'workspace_share_link_revoked')) === auditR + 1 && (await meldingen(O.id, 'workspace_share_link_revoked')).length === mR + 1,
+        [g1, g2, g3].map((g) => JSON.stringify(g.data)).join(' '));
+
+      // (3) [дрібне] посилання адміністратора, якого понизили, у переліку — «не діє»; посилання власника — doorEigenaar
+      const lA = await hub(A, '/api/share/link', { workspaceId: ws, workspaceRole: 'viewer' });
+      const vanA = () => hub(O, '/api/share/link/lijst', { workspaceId: ws }).then((r) => ((r.data.links || []) as Array<{ id: string; werkt: boolean; doorEigenaar: boolean; eigen: boolean; eenmalig: boolean }>));
+      const voorDemotie = (await vanA()).find((l) => l.id === idVan(String(lA.data.code)));
+      const lijstAdm = ((await hub(A, '/api/share/link/lijst', { workspaceId: ws })).data.links || []) as Array<{ eigen: boolean; doorEigenaar: boolean }>;
+      check('рецензія: посилання власника для адміністратора — doorEigenaar (а не «інший адміністратор»); посилання A для власника — ні',
+        lA.status === 200 && !!voorDemotie && voorDemotie.werkt === true && voorDemotie.doorEigenaar === false && voorDemotie.eigen === false && lijstAdm.filter((l) => !l.eigen).every((l) => l.doorEigenaar === true) && lijstAdm.some((l) => l.eigen));
+      await pool.query(`update app.records set data = data || '{"workspaceRole":"member"}'::jsonb where tbl='workspace_members' and id=$1`, [`i015d-adm-${T}`]);
+      const naDemotie = (await vanA()).find((l) => l.id === idVan(String(lA.data.code)));
+      const joinDood = await hub(X, '/api/share/join', { code: String(lA.data.code) });
+      check('рецензія: після пониження A його посилання в переліку — werkt=false, і справді не діє (join → INVITE_INVITER_NOT_ALLOWED)',
+        naDemotie?.werkt === false && joinDood.status === 403 && joinDood.data.error === 'INVITE_INVITER_NOT_ALLOWED', `${JSON.stringify(naDemotie)} ${joinDood.status} ${JSON.stringify(joinDood.data)}`);
+      await pool.query(`update app.records set data = data || '{"workspaceRole":"admin"}'::jsonb where tbl='workspace_members' and id=$1`, [`i015d-adm-${T}`]);
+
+      // (4) [дрібне] давнє багаторазове посилання без строку
+      const multi = await invites.create({ resourceType: 'workspace_share', authMode: 'anonymous', actor: { userId: O.id, email: O.email }, context: { workspaceId: ws, permission: 'viewer', createdBy: O.id } });
+      const lm = ((await hub(O, '/api/share/link/lijst', { workspaceId: ws })).data.links || []).find((l: { id: string }) => l.id === idVan(multi.code)) as { eenmalig: boolean; expiresAt: string | null } | undefined;
+      check('рецензія: давнє багаторазове посилання без строку → eenmalig=false, expiresAt=null', !!lm && lm.eenmalig === false && lm.expiresAt === null, JSON.stringify(lm));
+      await hub(O, '/api/share/link/revoke', { workspaceId: ws, linkId: idVan(multi.code) });
+
+      // (5) [дрібне] прив'язка до адреси: інший обліковий запис із тим самим рядком адреси не проходить; оригінальний — проходить
+      const X2 = await maak('x2'); await hub(X2, '/api/workspace/load');
+      await pool.query(`update app.records set data = data || jsonb_build_object('email', $2::text) where tbl='users' and id=$1`, [X2.id, X.email]);
+      const lB = await hub(O, '/api/share/link', { workspaceId: ws, workspaceRole: 'viewer', email: X.email });
+      const joinDubbel = await hub(X2, '/api/share/join', { code: String(lB.data.code) });
+      const joinEcht = await hub(X, '/api/share/join', { code: String(lB.data.code) });
+      check('рецензія: посилання для адреси — другий запис із тим самим рядком адреси → invite_not_allowed (як activateInvites); оригінальний обліковий запис приєднується',
+        lB.status === 200 && joinDubbel.status === 400 && joinDubbel.data.error === 'invite_not_allowed' && !(await lidRij(ws, X2.id)) && joinEcht.status === 200 && (await lidRij(ws, X.id))?.s === 'active', `${joinDubbel.status} ${JSON.stringify(joinDubbel.data)} ${joinEcht.status} ${JSON.stringify(joinEcht.data)}`);
+
+    }
+
     // ---- RLS 0273
     let appFout = '';
     try { await getPool('app').query('select count(*) from app.invites'); } catch (e) { appFout = String((e as Error).message); }
@@ -250,6 +310,38 @@ export async function main(): Promise<number> {
     check('UI: центр налаштувань і hub мають «Відкриті посилання», вибір строку, дату спливу й «Вийти з простору»',
       centrum.includes("id='delen-links'") && centrum.includes('<LinkOpties') && centrum.includes('data-link-vervalt') && centrum.includes('onVertrekken=')
       && app.includes('<LinksLijst') && app.includes('<LinkOpties') && app.includes('data-link-vervalt') && app.includes('onVertrekken='));
+
+    // ---- рецензія delen: тексти переліку, доступність, підсумок після перезавантаження, вихід із центру
+    const basis = { email: '', expiresAt: '2026-11-21T10:00:00Z', blokken: 0, eigen: false };
+    const oudMulti = linkOmschrijving('uk', { ...basis, expiresAt: null, eenmalig: false });
+    check('перелік: давнє посилання без строку — «без строку дії» (не «діє до без строку»), багаторазове — «для кожного … багаторазове»',
+      /без строку дії/.test(oudMulti) && !/діє до без строку/.test(oudMulti) && /Для кожного, хто відкриє, — багаторазове/.test(oudMulti) && /zonder einddatum/.test(linkOmschrijving('nl', { ...basis, expiresAt: null })) && /Для будь-кого, хто відкриє першим/.test(linkOmschrijving('uk', basis)), oudMulti);
+    check('перелік: посилання власника — «створив власник простору»; іншого адміністратора — «створив інший адміністратор»; своє — без напису',
+      /створив власник простору/.test(linkOmschrijving('uk', { ...basis, doorEigenaar: true })) && /створив інший адміністратор/.test(linkOmschrijving('uk', basis)) && !/створив/.test(linkOmschrijving('uk', { ...basis, eigen: true })) && /gemaakt door de eigenaar/.test(linkOmschrijving('nl', { ...basis, doorEigenaar: true })));
+    check('перелік: посилання, що не діє через права творця, так і названо (а не «діє до …»)', /не діє: той, хто створив/.test(linkOmschrijving('uk', { ...basis, werkt: false })) && !/діє до/.test(linkOmschrijving('uk', { ...basis, werkt: false })));
+    const html2 = renderToStaticMarkup(createElement(LinksLijst, { lang: 'uk', links: [link, { ...link, id: 'b'.repeat(32), code: 'XyZw…', workspaceRole: 'viewer' as const, email: '', werkt: false }], mag: true, onIntrekken: () => undefined }));
+    check('доступність: кожна «Відкликати» має власну назву з кодом і роллю; посилання, що не діє, позначене data-link-werkt="nee"',
+      html2.includes('aria-label="Відкликати посилання AbCd… з роллю «Редагування» для x@example.test"') && html2.includes('aria-label="Відкликати посилання XyZw… з роллю «Перегляд»"') && html2.includes('data-link-werkt="nee"') && linkIntrekkenLabel('nl', link).startsWith('Link AbCd…'), html2.slice(0, 400));
+    check('доступність: перелік фокусований після відкликання (tabIndex=-1 і логіка повернення фокуса в складовій)', html2.includes('tabindex="-1"') && lees('src/delen/LinksLijst.tsx').includes('wacht.current = { id: d.id'));
+    check('доступність: підказки до «Строк дії» й «Лише для адреси» видимі й прив\'язані aria-describedby (не лише title)',
+      (opties.match(/aria-describedby="/g) || []).length === 2 && (opties.match(/class="delen-link-hint"/g) || []).length === 2 && !/<select[^>]*title=/.test(opties) && !/<input[^>]*title=/.test(opties));
+    check('доступність: select і input вибору посилання мають ціль дотику 44 px', /\.delen-link-opties select,\.delen-link-opties input[^{]*\{min-height:var\(--tik-hoogte,44px\)/.test(lees('src/delen/delen.css')));
+    const self = deelWeigering({ response: { data: { error: 'SHARE_SELF' } } });
+    check('SHARE_SELF: текст правдивий і для адміністратора (без «ви вже власник»)', !!self && !/власник/.test(self[0]) && !/eigenaar/.test(self[1]) && /вже маєте доступ/.test(self[0]));
+    const mem = new Map<string, string>(); const opslag = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k) };
+    bewaarMeldingNaHerladen(VERTROKKEN, opslag, 1000);
+    const eerst = haalMeldingNaHerladen(opslag, 2000), tweede = haalMeldingNaHerladen(opslag, 2100);
+    bewaarMeldingNaHerladen(AL_VERTROKKEN, opslag, 1000); const oudM = haalMeldingNaHerladen(opslag, 1000 + 61_000);
+    mem.set('tsv-melding-na-herladen-v1', '{kapot'); const kapot = haalMeldingNaHerladen(opslag, 2000);
+    const gooit = { getItem: () => { throw new Error('geen opslag'); }, setItem: () => { throw new Error('geen opslag'); }, removeItem: () => undefined };
+    let geenFout = true; try { bewaarMeldingNaHerladen(VERTROKKEN, gooit); haalMeldingNaHerladen(gooit); } catch { geenFout = false; }
+    check('підсумок «Вийти з простору» переживає перезавантаження: показується один раз, старіший за хвилину або зіпсований — ні, без сховища — без помилки',
+      eerst?.[0] === VERTROKKEN[0] && eerst?.[1] === VERTROKKEN[1] && tweede === null && oudM === null && kapot === null && geenFout && /Власник отримає сповіщення/.test(VERTROKKEN[0]));
+    const vd = lees('src/VerenigdDienstApp.tsx');
+    check('вихід: хук зберігає підсумок перед перезавантаженням; hub і центр показують його після входу (state authorized)',
+      /const gelukt = \(paar: Paar\) => \{ melding\(paar\); bewaarMeldingNaHerladen\(paar\)/.test(hook) && app.includes('haalMeldingNaHerladen()') && vd.includes('haalMeldingNaHerladen()'));
+    check('вихід у центрі: спільні простори учасника/глядача передаються як lidWerkruimtes і потрапляють у вибір простору (форма там вимкнена)',
+      vd.includes('lidWerkruimtes={') && centrum.includes('...(p.lidWerkruimtes||[])') && centrum.includes("ваша роль — ${rolNaam('uk',item.rol)}"));
   }
   return einde();
 }

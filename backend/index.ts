@@ -1066,7 +1066,13 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
     const body = (ctx.body || {}) as Record<string, unknown>; const workspaceId = String(body.workspaceId || ''); const access = await workspaceAccess(context.user, workspaceId);
     if (!access || !magDelen(werkruimteRol(access))) return error('Share access required', 403);
     const rijen = await invites.openVoorWerkruimte('workspace_share', workspaceId, 100);
-    return json({ links: rijen.map((r) => { const c = r.context; const rolLink = werkruimteRol({ permission: String(c.permission || 'viewer'), workspaceRole: c.workspaceRole as never }) || 'viewer'; return { id: r.id, code: `${r.begin}…`, workspaceRole: rolLink, email: r.allowList[0] || '', expiresAt: r.expiresAt, createdAt: r.createdAt, eigen: r.createdBy === context.user.id, blokken: Array.isArray(c.scopeBlockIds) ? c.scopeBlockIds.length : 0 }; }) });
+    /* IDENTITEIT-015 (рецензія delen): чи діє посилання ЗАРАЗ — та сама перевірка, що в /api/share/join (uitnodigerMagNogDelen): посилання
+       пониженого чи видаленого адміністратора показується як «не діє», а не «діє до …». Один запит на творця й роль. */
+    const werktCache = new Map<string, Promise<boolean>>();
+    const werkt = (c: Record<string, unknown>) => { const k = `${String(c.createdBy || '')}|${String(c.workspaceRole || c.permission || '')}`; if (!werktCache.has(k)) werktCache.set(k, uitnodigerMagNogDelen(c, workspaceId)); return werktCache.get(k)!; };
+    const eigenaarId = String(access.workspace.ownerUserId || '');
+    const links = await Promise.all(rijen.map(async (r) => { const c = r.context; const rolLink = werkruimteRol({ permission: String(c.permission || 'viewer'), workspaceRole: c.workspaceRole as never }) || 'viewer'; return { id: r.id, code: `${r.begin}…`, workspaceRole: rolLink, email: r.allowList[0] || '', expiresAt: r.expiresAt, createdAt: r.createdAt, eigen: r.createdBy === context.user.id, doorEigenaar: !!r.createdBy && r.createdBy === eigenaarId, eenmalig: c.eenmalig === true, werkt: await werkt(c), blokken: Array.isArray(c.scopeBlockIds) ? c.scopeBlockIds.length : 0 }; }));
+    return json({ links });
   }],
   // Audit-fix 10: deel-links (ook anonieme) intrekken: de maker, of eigenaar/beheerder van de ruimte.
   'POST /api/share/link/revoke': [async (ctx) => {
@@ -1083,10 +1089,15 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
       // ruimte beheerder is (de ruimterol telt dan niet als beheerder). Een koppeling van een ander → 403 RBAC_FORBIDDEN + audit (kijkerWacht).
       // Viewer відкликає лише власне посилання; чуже — відмова «лише перегляд».
       const kijker = canonicalWorkspaceRole(context.user) === 'viewer';
-      try { await invites.revoke({ code, actor: { userId: context.user.id, email: context.user.email }, beheerder: !kijker && magDelen(werkruimteRol(access)) }); }
+      let uitkomst: Awaited<ReturnType<typeof invites.revoke>>['uitkomst'];
+      try { ({ uitkomst } = await invites.revoke({ code, actor: { userId: context.user.id, email: context.user.email }, beheerder: !kijker && magDelen(werkruimteRol(access)) })); }
       catch (fout) { if (kijker && isInviteError(fout) && fout.code === 'invite_not_revocable') kijkerAlleenEigen(context.user, false); throw fout; }
-      /* IDENTITEIT-015: повторне натискання (або повтор після обриву) — той самий підсумок без другого запису в журналі й другого сповіщення */
-      if (info.status === 'revoked') return json({ ok: true, alIngetrokken: true });
+      /* IDENTITEIT-015: повторне натискання (або два одночасні запити) — той самий підсумок без другого запису в журналі й другого сповіщення.
+         Рішення — з умовного UPDATE у revoke (rowCount), а не зі стану, прочитаного раніше. */
+      if (uitkomst === 'al') return json({ ok: true, alIngetrokken: true });
+      /* IDENTITEIT-015 (рецензія delen): одноразовим посиланням уже скористалися — відкликати нічого; людина, що приєдналася, лишається
+         учасником. Окрема відповідь, щоб інтерфейс не обіцяв «доступу не отримає», а вказав на «Хто має доступ». Без запису й сповіщення. */
+      if (uitkomst === 'gebruikt') return error('SHARE_LINK_USED', 409);
       await audit(context.user.id, 'workspace_share_link_revoked', { workspaceId, ...(linkId ? { linkId } : {}) });
       /* IDENTITEIT-015: той, хто створив посилання, бачить у центрі сповіщень, що воно більше не діє (і хто відкликав, якщо не він сам) */
       const maker = String(ic.createdBy || '') || context.user.id; void deelMelden(maker, 'workspace_share_link_revoked', { wie: deelWie(context.user), ruimte: access.workspace.name, zelf: maker === context.user.id });
@@ -1106,6 +1117,9 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
       if (ws.ownerUserId === context.user.id) return json({ ok: true, workspaceId: preWs }); // eigenaar verbruikt de link niet
       // Audit-fix 10: de uitnodiger moet NU nog mogen delen (en deze rol mogen geven); anders is de link dood.
       if (!await uitnodigerMagNogDelen(preview.context as Record<string, unknown>, preWs)) return error('INVITE_INVITER_NOT_ALLOWED', 403);
+      /* IDENTITEIT-015 (рецензія delen): посилання, прив'язане до адреси, — та сама межа, що й для запрошень за адресою (activateInvites):
+         лише ОРИГІНАЛЬНИЙ обліковий запис із цією адресою (isEmailEigenaar), а не будь-який інший запис, що має такий самий рядок email. */
+      if (preview.adresGebonden && !await isEmailEigenaar(context.user)) return error('invite_not_allowed', 400);
       const joined = await invites.join({ code, actor: { userId: context.user.id, email: context.user.email } });
       const data = joined.context as { workspaceId?: string; permission?: string; workspaceRole?: string; scopeBlockIds?: string[] }; const workspaceId = String(data.workspaceId || '');
       /* SEC-002 (autorisatie-07): alleen het EIGEN actieve lidmaatschap, of een nog geldige e-mailuitnodiging van het oorspronkelijke account met dit adres, telt mee voor de rol. Een verlopen uitnodiging verhoogt niets meer (zij activeert ook niet in activateInvites), en de rij van een ANDER account met hetzelfde adres wordt niet overgenomen: dan komt er een eigen rij met de rol van de link. */

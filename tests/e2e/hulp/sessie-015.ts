@@ -79,7 +79,8 @@ export const horizontaal = (page: Page) => page.evaluate(() => document.document
 
 /** Маскує пробні адреси, коди й QR на знімку (знеособлення). */
 export async function verberg(page: Page) {
-  await page.addStyleTag({ content: '[data-ai-verborgen], canvas, svg[data-qr], .toegangscode-code, .herstelcode{filter:blur(7px)!important}' }).catch(() => undefined);
+  /* IDENTITEIT-015 (delen): CSP сайту (style-src-elem 'self') блокує вставлений <style> — розмиваємо через CSSOM (el.style), яке CSP не зачіпає */
+  await page.evaluate(() => { for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-ai-verborgen], canvas, svg[data-qr], .toegangscode-code, .herstelcode'))) el.style.setProperty('filter', 'blur(7px)', 'important'); }).catch(() => undefined);
   await page.evaluate(() => {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) if (/@example\.test/.test(n.nodeValue || '')) n.nodeValue = (n.nodeValue || '').replace(/[\w.+-]+@example\.test/g, 'proef•••@example.test');

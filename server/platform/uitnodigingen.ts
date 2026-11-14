@@ -28,8 +28,13 @@ export function isInviteError(err: unknown): err is InviteError {
 type Actor = { userId: string; email?: string; name?: string; scope?: string };
 type InviteRow = {
   code: string; resource_type: string; auth_mode: 'anonymous' | 'required'; allow_list: string[];
-  context: Record<string, unknown>; created_by: string | null; expires_at: Date | null; revoked_at: Date | null;
+  context: Record<string, unknown>; created_by: string | null; expires_at: Date | null; revoked_at: Date | null; join_count?: number;
 };
+
+/** IDENTITEIT-015: eenmalige link waarmee al iemand aansloot (vanaf dan geeft hij niemand meer toegang). / Одноразове посилання, яким уже скористалися. */
+const gebruiktVan = (row: Pick<InviteRow, 'context' | 'join_count'>) => !!row.context && row.context.eenmalig === true && Number(row.join_count || 0) > 0;
+/** Uitkomst van intrekken: echt ingetrokken, al eerder ingetrokken, of al gebruikt (dan valt er niets in te trekken). */
+export type IntrekUitkomst = 'ingetrokken' | 'al' | 'gebruikt';
 
 const CODE_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
 
@@ -59,7 +64,8 @@ export const invites = {
 
   async resolve(input: { code: string; actor?: Actor }) {
     const row = await load(input.code);
-    return { status: statusOf(row), resourceType: row.resource_type, authMode: row.auth_mode, expiresAt: row.expires_at ? row.expires_at.toISOString() : null, context: row.context };
+    /* IDENTITEIT-015: gebruikt (eenmalig, al aangesloten) en adresGebonden (allow_list) — status blijft zoals vroeger voor oude aanroepers */
+    return { status: statusOf(row), gebruikt: gebruiktVan(row), adresGebonden: (row.allow_list || []).length > 0, resourceType: row.resource_type, authMode: row.auth_mode, expiresAt: row.expires_at ? row.expires_at.toISOString() : null, context: row.context };
   },
 
   async join(input: { code: string; actor?: Actor }) {
@@ -120,10 +126,21 @@ export const invites = {
     return (r.rows[0]?.code as string | undefined) || null;
   },
 
-  async revoke(input: { code: string; actor: Actor; beheerder?: boolean }): Promise<{ ok: true }> {
+  /**
+   * IDENTITEIT-015: de uitkomst komt uit de voorwaardelijke UPDATE zelf (rowCount), niet uit een eerder gelezen staat — twee gelijktijdige
+   * verzoeken geven dus precies één 'ingetrokken'. Een eenmalige link waarmee al iemand aansloot, wordt niet «ingetrokken» ('gebruikt'):
+   * dat zou beloven dat niemand meer toegang krijgt, terwijl het lid blijft. / Результат — з умовного UPDATE; використане посилання не відкликається.
+   */
+  async revoke(input: { code: string; actor: Actor; beheerder?: boolean }): Promise<{ ok: true; uitkomst: IntrekUitkomst }> {
     const row = await load(input.code);
     if (!input.actor?.userId || (row.created_by !== input.actor.userId && input.beheerder !== true)) throw new InviteError('invite_not_revocable');
-    await getPool().query('UPDATE app.invites SET revoked_at = now() WHERE code = $1 AND revoked_at IS NULL', [row.code]);
-    return { ok: true };
+    const r = await getPool().query(
+      `UPDATE app.invites SET revoked_at = now() WHERE code = $1 AND revoked_at IS NULL
+          AND NOT (coalesce(context->>'eenmalig', '') = 'true' AND join_count > 0)`,
+      [row.code],
+    );
+    if (r.rowCount === 1) return { ok: true, uitkomst: 'ingetrokken' };
+    const nu = await load(input.code);
+    return { ok: true, uitkomst: nu.revoked_at ? 'al' : gebruiktVan(nu) ? 'gebruikt' : 'al' };
   },
 };

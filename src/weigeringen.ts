@@ -24,7 +24,10 @@ export function deelWeigering(e: unknown): Paar | null {
       `Te veel uitnodigingen in een uur — deze uitnodiging is niet verstuurd. Probeer het ${m ? `over ~${m} min.` : 'later'} opnieuw.`,
     ];
   }
-  if (code === 'SHARE_SELF') return ['Собі надати доступ не можна — ви вже власник цього простору.', 'U kunt uzelf geen toegang geven — u bent al de eigenaar van deze ruimte.'];
+  /* IDENTITEIT-015 (рецензія delen): SHARE_SELF бачить і адміністратор, що не власник (запрошення чи посилання на власну адресу) — без «ви власник» */
+  if (code === 'SHARE_SELF') return ['Собі надати доступ не можна — ви вже маєте доступ до цього простору. Вкажіть адресу іншої людини.', 'U kunt uzelf geen toegang geven — u hebt al toegang tot deze ruimte. Vul het adres van iemand anders in.'];
+  /* IDENTITEIT-015 (рецензія delen): одноразовим посиланням уже скористалися — відкликати нічого, а людина лишається учасником */
+  if (code === 'SHARE_LINK_USED') return ['Цим посиланням уже скористалися, тож воно більше нікому не дасть доступу. Людина, яка за ним приєдналася, лишається учасником — відкликати її доступ можна в «Хто має доступ».', 'Deze link is al gebruikt en geeft niemand meer toegang. Wie ermee aansloot, blijft lid — die toegang trekt u in via «Wie heeft toegang».'];
   if (code === 'RBAC_ROLE_FORBIDDEN') return ['Ви не можете надати таку роль: вона вища за вашу власну. Виберіть нижчу роль.', 'U kunt deze rol niet geven: hij is hoger dan uw eigen rol. Kies een lagere rol.'];
   if (code === 'SCOPE_BLOCKS_INVALID') return ['Вибрані блоки більше не належать до цього простору. Оновіть сторінку й виберіть їх знову.', 'De gekozen blokken horen niet meer bij deze ruimte. Ververs de pagina en kies ze opnieuw.'];
   if (code === 'Valid email required') return ['Перевірте адресу пошти: вона не схожа на справжню.', 'Controleer het e-mailadres: het lijkt niet echt.'];

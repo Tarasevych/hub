@@ -7,9 +7,9 @@ import { invitesClient } from '../platform/client';
 import { KOPIEER_MISLUKT, kopieerTekst } from '../platform/klembord';
 import { deelWeigering, foutNaarTekst } from '../weigeringen';
 import { magDelen, werkruimteRol, type WerkruimteRol } from '../../shared/werkruimte-rechten';
-import { LINK_GEMAAKT, PER_ADRES_GELUKT, keuzeNaarRol, lidStaat, linkGemaakt, rolGewijzigdTekst, type KeuzeRol, type Lid, type OpenLink, type Paar } from './delen-logica';
+import { AL_VERTROKKEN, LINK_GEMAAKT, PER_ADRES_GELUKT, VERTROKKEN,keuzeNaarRol, lidStaat, linkGemaakt, rolGewijzigdTekst, type KeuzeRol, type Lid, type OpenLink, type Paar } from './delen-logica';
 import { linkDagen, type LinkDagen } from '../../shared/deel-links';
-
+import { bewaarMeldingNaHerladen } from '../platform/melding-na-herladen';
 /** POST naar de server met het juiste lichaam voor deze client; geeft response.data terug. */
 export type DelenPost = (pad: string, lichaam: Record<string, unknown>) => Promise<Record<string, unknown>>;
 
@@ -128,12 +128,15 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
     const { werkruimteId, post, melding } = ref.current;
     if (!werkruimteId || !lidId) return false;
     setBezig(true);
+    /* IDENTITEIT-015 (рецензія delen): після успіху сторінка перезавантажується (список просторів інший) — підсумок зберігаємо на одне
+       показування після перезавантаження, інакше людина не дізнається, чи вихід удався. */
+    const gelukt = (paar: Paar) => { melding(paar); bewaarMeldingNaHerladen(paar); return true; };
     try {
       await post('/api/share/revoke', { workspaceId: werkruimteId, memberId: lidId });
-      melding(['Ви вийшли з простору. Власник отримає сповіщення.', 'U hebt de werkruimte verlaten. De eigenaar krijgt een melding.']); return true;
+      return gelukt(VERTROKKEN);
     } catch (e) {
       const status = (e as { response?: { status?: number } })?.response?.status;
-      if (status === 404) { melding(['Ви вже не учасник цього простору.', 'U bent al geen lid meer van deze werkruimte.']); return true; }
+      if (status === 404) return gelukt(AL_VERTROKKEN);
       melding(foutNaarTekst(e) || ['Вийти не вдалося. Оновіть сторінку й спробуйте ще раз.', 'Verlaten is niet gelukt. Vernieuw de pagina en probeer het opnieuw.']); return false;
     } finally { setBezig(false); }
   }, []);
