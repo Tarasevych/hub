@@ -61,7 +61,7 @@ function ApparaatKaart({a,tr,busy,onRevoke,onRefresh}:{a:Apparaat;tr:Tr;busy:boo
       <span className='sessie-kop-tekst'>
         <strong><BrowserIcoon browser={a.browser} klein/>{titel}<span className='sessie-op'>·</span><OsIcoon os={a.os} klein/>{os}</strong>
         <small><Vlag land={a.plaats?.country} naam={cc?landNaam(cc,tr):''}/>{plaatsTekst(a,tr)} · {soortToestel(a.soort,tr)} · {tr('активність','actief')} {geleden(a.laatst,tr)}</small>
-        <span className='sessie-badges'>{a.methoden.map(m=><Methode key={m} m={m} tr={tr}/>)}<span className='sessie-telling'>{tr(`${a.sessies.length} ${mn(a.sessies.length,'вхід','входи','входів')}`,`${a.sessies.length} ${a.sessies.length===1?'aanmelding':'aanmeldingen'}`)}</span></span>
+        <span className='sessie-badges'>{a.methoden.map(m=><Methode key={m} m={m} tr={tr}/>)}<span className='sessie-telling'>{tr(`${a.sessies.length} ${mn(a.sessies.length,'вхід','входи','входів')}`,`${a.sessies.length} ${a.sessies.length===1?'aanmelding':'aanmeldingen'}`)}</span>{/* IDENTITEIT-015 (sessies): на телефоні позначка праворуч прихована — тут вона видна (лише ≤ 640 px) */a.huidig&&<b className='security-current-badge sessie-huidig-mobiel'>{tr('Цей пристрій','Dit apparaat')}</b>}</span>
       </span>
       {a.huidig&&<b className='security-current-badge'>{tr('Цей пристрій','Dit apparaat')}</b>}
       <ChevronDown className='sessie-pijl' aria-hidden/>
