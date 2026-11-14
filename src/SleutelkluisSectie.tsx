@@ -42,6 +42,15 @@ const t2=(lang:Lang,t:{uk:string;nl:string})=>lang==='nl'?t.nl:t.uk;
 const datum=(lang:Lang,ms?:number)=>ms?new Date(ms).toLocaleDateString(lang==='uk'?'uk-UA':'nl-BE',{day:'numeric',month:'short',year:'numeric'}):'';
 const foutTekst=(lang:Lang,code:string)=>code==='STEP_UP_REQUIRED'||code==='STEP_UP_STRONG_REQUIRED'?stapOpUitleg():KLUIS_FOUT[code]?t2(lang,KLUIS_FOUT[code]):code==='NotAllowedError'||code==='AbortError'?tr(lang,'Скасовано.','Geannuleerd.'):tr(lang,'Не вдалося. ','Mislukt. ')+(code||tr(lang,'Немає зв’язку.','Geen verbinding.'));
 
+/** IDENTITEIT-015 (kluis): одна дія розділу. Стан сервера перечитується І ПІСЛЯ ПОМИЛКИ: якщо ключ закрили в іншій вкладці посеред
+ *  повторного шифрування, людина одразу бачить «закрито», «не завершено N з M» і шлях до «Продовжити» (раніше — застарілий «відкрито»
+ *  до ручного перезавантаження). Ook na een fout de stand opnieuw lezen. */
+export async function kluisActie(fn:()=>Promise<void>,h:{vergeten:()=>void;laden:()=>Promise<void>;fout:(code:string)=>void}):Promise<void>{
+  try{await fn();}catch(c){h.fout(foutCode(c));}
+  h.vergeten();
+  await h.laden().catch(()=>undefined);
+}
+
 export function SleutelkluisSectie({lang,context}:Props){
   const[o,setO]=useState<Overzicht|null>(null);
   const[bezig,setBezig]=useState('');
@@ -58,7 +67,7 @@ export function SleutelkluisSectie({lang,context}:Props){
 
   const laden=async(alleenVers=false)=>{try{await swrPost<Overzicht>(`${P}/stand`,context,d=>{if(d&&typeof d==='object'&&typeof d.stand==='string')setO(d);},{alleenVers});}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
   useEffect(()=>{void laden();},[]);// eslint-disable-line react-hooks/exhaustive-deps
-  const doe=async(naam:string,fn:()=>Promise<void>)=>{setBezig(naam);setMelding(null);try{await fn();leesVergeten(`${P}/stand`);await laden(true);}catch(c){const code=foutCode(c);console.error('[sleutelkluis]',naam,code);setMelding({ok:false,tekst:foutTekst(lang,code)});}finally{setBezig('');}};
+  const doe=async(naam:string,fn:()=>Promise<void>)=>{setBezig(naam);setMelding(null);try{await kluisActie(fn,{vergeten:()=>leesVergeten(`${P}/stand`),laden:()=>laden(true),fout:code=>{console.error('[sleutelkluis]',naam,code);setMelding({ok:false,tekst:foutTekst(lang,code)});}});}finally{setBezig('');}};
 
   const inschakelen=()=>doe('inschakelen',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/inschakelen`,context))).data as {herstelcode:string};setNieuweCode(r.herstelcode);setBewaard(false);setMoetBevestigen(false);});
   const codeVernieuwen=()=>doe('code',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herstelcode/vernieuwen`,context))).data as {herstelcode:string};setNieuweCode(r.herstelcode);setBewaard(false);setMoetBevestigen(false);});

@@ -227,6 +227,10 @@ export async function registratieOpties(auth: PasskeyAuth) {
       // meteen naar Windows Hello gaan; dat willen we niet afdwingen.
       authenticatorSelection: { residentKey: 'preferred', requireResidentKey: false, userVerification: 'required' },
       excludeCredentials: rijen.map((r) => ({ type: 'public-key', id: r.credential_id, ...(r.transports?.length ? { transports: r.transports } : {}) })),
+      // IDENTITEIT-015 (kluis): PRF уже під час створення. Ключ безпеки (CTAP2 hmac-secret) вмикає PRF лише тоді, коли його
+      // попросили при створенні; без цього «Додати passkey як ключ» сховища завжди казало «без PRF». Браузер без PRF просто ігнорує.
+      // PRF al bij het aanmaken vragen: een beveiligingssleutel zet hmac-secret alleen dan aan; anders kan hij de kluis nooit openen.
+      extensions: { prf: {} },
     },
   };
 }
