@@ -126,6 +126,11 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730).rail-smart-condensed.rail-right .anchor-rail{right:12px!important}
 .mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-bottom .anchor-rail{bottom:calc(var(--mq-onder,0px) + 19px)!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq.rail-left .adaptive-nav-edge{display:none!important}
+/* IDENTITEIT-015 (приймання vormgeving): вікно «Налаштування навігації» на широкому екрані (fixed, від шапки) разом із перемикачем
+   вигляду й поясненням вище за вікно 1280×900 (≈1030 px) — нижні кнопки («Налаштування меню сайту», «Вигляд сторінки») були поза
+   екраном і недосяжні ні мишею, ні клавіатурою. Тепер вікно не вище за видиму частину й прокручується саме (як на телефоні нижче).
+   Het navigatievenster past nu altijd in beeld en scrolt zelf; de onderste knoppen waren op brede schermen onbereikbaar. */
+.mr-mq.mr-mq.mr-mq.mr-mq .popover-panel{max-height:calc(100dvh - var(--mq-boven,0px) - var(--mq-onder,0px) - 38px);overflow:auto;overscroll-behavior:contain}
 .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:is(.rail-left,.rail-right) .anchor-rail{
   height:auto!important;
   max-height:calc(100dvh - var(--mq-boven) - var(--mq-onder,0px) - 20px)!important;

@@ -492,5 +492,24 @@ v(`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділ�
 `    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
     write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
     write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");`);
+// IDENTITEIT-015 (приймання vormgeving): давня вада макета — вікно «Налаштування навігації» закривалося (Esc, «×», вибір положення),
+// а фокус лишався на схованій кнопці вікна або падав на <body>: людина з клавіатурою губила місце. Тепер фокус повертається на кнопку,
+// що відкрила вікно (⚙ меню, «Розташування навігації» у героя, кнопка положення на смузі розділів), — лише якщо він був у вікні
+// або загубився; клік деінде на сторінці фокус не перехоплює.
+// Oude fout: na het sluiten van het navigatievenster stond de focus op een verborgen knop of op <body>; nu terug naar de opener.
+v(`  function toggleNavSettings(){
+    popover.hidden=!popover.hidden;`,
+`  let navOpener=null; // САЙТ (IDENTITEIT-015): хто відкрив вікно навігації — туди повертається фокус
+  function focusNaarOpener(){
+    const actief=doc.activeElement;
+    if(navOpener&&navOpener.isConnected&&(!actief||actief===doc.body||popover.contains(actief)))navOpener.focus({preventScroll:true});
+    navOpener=null;
+  }
+  function toggleNavSettings(){
+    if(popover.hidden){const a=doc.activeElement;navOpener=a&&a!==doc.body&&!popover.contains(a)?a:null;}
+    popover.hidden=!popover.hidden;
+    if(popover.hidden)focusNaarOpener();`);
+v(`  function closeNavSettings(){popover.hidden=true;scheduleRailAutoCollapse();}`,
+`  function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;if(was)focusNaarOpener();scheduleRailAutoCollapse();}`);
 fs.writeFileSync(f, s);
 console.log('ok');
