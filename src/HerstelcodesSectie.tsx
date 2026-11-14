@@ -9,6 +9,7 @@ import {Check,Copy,Download,Printer,RefreshCw,ShieldOff,X} from 'lucide-react';
 import {api} from './platform/client';
 import {KOPIEER_MISLUKT,kopieerTekst} from './platform/klembord'; // IDENTITEIT-014: копіювання з запасним шляхом
 import {leesVergeten,swrPost} from './lees-cache';
+import {RAAKT_HERSTELCODES,meldToegangGewijzigd,opToegangGewijzigd} from './toegang-gewijzigd'; // IDENTITEIT-015: інші екземпляри панелі
 import {metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
 import {InfoTip} from './InfoTip';
@@ -43,6 +44,11 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
 
   const laden=async(alleenVers=false)=>{try{await swrPost<Overzicht>('/api/owner/access/recovery/overzicht',context,d=>{if(d&&typeof d==='object')setO(d);},{alleenVers});}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
   useEffect(()=>{void laden(codes.length>0);setBewaard(false);},[codes.length]);// eslint-disable-line react-hooks/exhaustive-deps
+  // IDENTITEIT-015 (aanmelden-sleutels): коди створено/збережено/відкликано в ІНШОМУ екземплярі панелі (напр. «Безпека» після
+  // налаштування автентифікатора) — перечитати огляд, інакше тут лишалося «Кодів ще немає» до перезавантаження.
+  const eigenId=useRef(`herstel-${Math.random().toString(36).slice(2)}`);
+  const ladenRef=useRef(laden);ladenRef.current=laden;
+  useEffect(()=>opToegangGewijzigd(eigenId.current,d=>{if(RAAKT_HERSTELCODES.test(d.route)){leesVergeten('/api/owner/access/recovery/overzicht');void ladenRef.current(true);}}),[]);
 
   const tekstBestand=()=>[
     tr(lang,'Mijn Ruimte — коди відновлення','Mijn Ruimte — herstelcodes'),
@@ -66,6 +72,7 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
       leesVergeten('/api/owner/access/snapshot');
       setMelding({ok:true,tekst:tr(lang,'Усі коди відкликано. Жоден із них більше не діє.','Alle codes zijn ingetrokken. Geen enkele werkt nog.')});
       await laden(true);onChange?.();
+      meldToegangGewijzigd(eigenId.current,'/api/owner/access/recovery/intrekken');
     }catch(c){const code=foutCode(c);console.error('[herstelcodes] intrekken',code,c);setMelding({ok:false,tekst:foutTekst(lang,code)});}
     finally{setBezig('');}
   };

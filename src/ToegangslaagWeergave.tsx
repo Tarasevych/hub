@@ -17,6 +17,7 @@ import {useApparaatVlag} from './apparaat-bevestiging/vlag'; /* APPARAAT-001 */
 import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 import {aanmeldPauzeBericht,leesAanmeldPauze} from './aanmeld-pauze';
 import {foutNaarTekst} from './weigeringen'; /* IDENTITEIT-014: зрозумілі відмови замість одного загального тексту */
+import {meldToegangGewijzigd,opToegangGewijzigd} from './toegang-gewijzigd'; /* IDENTITEIT-015: окремі екземпляри панелі не розходяться */
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
@@ -119,6 +120,11 @@ export default function AccessPlaneView({tab,lang,mode='identity',onKies}:{tab:s
   };
 
   useEffect(()=>{void load();},[tab,mode,lang]);
+  // IDENTITEIT-015 (aanmelden-sleutels): «Безпека», «Вхід» і «Відновлення» — окремі екземпляри; зміна в одному → інші перечитують стан.
+  // Andere instanties lezen vers na een wijziging elders (bv. herstelcodes na het instellen van de authenticator in «Beveiliging»).
+  const eigenId=useRef(`toegang-${Math.random().toString(36).slice(2)}`);
+  const loadRef=useRef(load);loadRef.current=load;
+  useEffect(()=>opToegangGewijzigd(eigenId.current,()=>{leesVergeten('/api/owner/access/snapshot');void loadRef.current(true);}),[]);
 
   const write=async(route:string,payload:Record<string,unknown>={})=>{
     setBusy(true);
@@ -134,6 +140,7 @@ export default function AccessPlaneView({tab,lang,mode='identity',onKies}:{tab:s
       leesVergeten('/api/owner/access/snapshot');
       leesVergeten('/api/owner/access/recovery/overzicht');
       await load(true);
+      meldToegangGewijzigd(eigenId.current,route);
       setPassword('');
       setCode('');
     }catch(caught){
