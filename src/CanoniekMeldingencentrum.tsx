@@ -25,6 +25,9 @@ import { zetTechActiviteit } from './meldingen/tech-meldingen-opslag';
 import { pijlNaarBel, placeNear, zonderDok, type Pijl } from './melding-positie';
 import { zichtbaarKader, volgKader } from './platform/vast-kader';
 import { styleOf } from './melding-stijl';
+// IDENTITEIT-015 (kaart-stille-uren): тихі години для всього центру — без спливання й звуку, після кінця один підсумок.
+import { samenvattingTekst, stilNu, type StilVoorkeur } from '../shared/stille-uren';
+import { stilAfronden, stilTellen } from './meldingen/stille-uren-opslag';
 // 25.10.2026: de bel staat in een ZONE van de pagina (shared/plaatsing.ts) — standaard rechts van de foto (computer: bovenbalk; telefoon:
 // kop van het menu). Geen eigen positie (x,y) meer vanaf de hoek van het scherm, geen eigen slepen: <Plek> en src/plaatsing/plaats-slepen.ts.
 import { Plek } from './plaatsing/Plek';
@@ -72,6 +75,8 @@ type Props = {
   techItems?: CanonicalServerNotification[];
   /** 22.10.2026: sfeer van DEZE bel (shared/meldingen-soorten.ts): de bel toont alleen activiteiten van haar eigen sfeer; technische gaan naar het paneel in de band. */
   sfeer?: MeldingSfeer;
+  /** IDENTITEIT-015: stille uren (zijbalk.meldingen.stil): geen pop-up en geen geluid (beveiliging wel), daarna één samenvatting. */
+  stil?: StilVoorkeur;
 };
 
 /**
@@ -243,13 +248,21 @@ export default function CanonicalNotificationCenter(p: Props) {
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
     const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !notice.alleenPaneel };
-    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
+    let geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
     }
+    // IDENTITEIT-015: тихі години. Подія лишається в панелі, але не спливає й не звучить; її пораховано для одного підсумку після тиші.
+    // Безпека (критичні типи) і приклади з «Типи сповіщень» спливають як завжди — попередження безпеки не відкладаються.
+    if ((voorkeur.opduiken || geluid) && !notice.voorbeeld && !isKritiekType(type) && stilNu(propsRef.current.stil, new Date(nu))) {
+      const vorige = stilTellen(propsRef.current.scope, propsRef.current.stil, 1, new Date(nu));
+      if (vorige) toonStilSamenvatting(vorige);
+      voorkeur.opduiken = false;
+      geluid = false;
+    }
     const explain = notice.explain?.trim() || (kind === 'error' || kind === 'warning' ? uitlegStandaard(propsRef.current.lang, styleOf(notice.source || '', propsRef.current.lang).label) : undefined);
-    const groep = notice.action ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
+    const groep = notice.action || notice.losseRegel ? undefined : samenvoegSleutel(notice.source || '', kind, tekst);
     // Een gelukte stap lost eerdere fouten met hetzelfde onderwerp op, ook als deze melding zelf geen pop-up krijgt.
     if (notice.topic && kind === 'success') saveRetained((rijen) => losOpEerdere(rijen, notice.topic!));
 
@@ -309,6 +322,24 @@ export default function CanonicalNotificationCenter(p: Props) {
   };
   const receiveRef = useRef(receive);
   receiveRef.current = receive;
+
+  /** IDENTITEIT-015: de ene samenvatting na de stilte (in de lijst bewaard; type «systeem», dus de keuzes voor dat type gelden). */
+  const toonStilSamenvatting = (n: number) => {
+    const { text, explain } = samenvattingTekst(n, propsRef.current.lang);
+    // losseRegel: «Поки була тиша: 3» і пізніше «…: 4» (інша тиша) — окремі підсумки, не злиття в один рядок (samenvoegSleutel прибирає цифри).
+    receiveRef.current({ text, explain, kind: 'info', type: 'systeem', topic: 'stille-uren', losseRegel: true }, 'event', { type: 'systeem' });
+  };
+  // Na het einde van de stilte (of zodra ze uitgezet is): één keer de samenvatting. Ook na herladen of als het tabblad over het einde
+  // heen sliep: de telling staat in de opslag en wordt gewist op het moment dat de samenvatting getoond wordt (geen tweede).
+  const stilSleutel = JSON.stringify(p.stil ?? null);
+  useEffect(() => {
+    const kijk = () => { const n = stilAfronden(propsRef.current.scope, propsRef.current.stil); if (n) toonStilSamenvatting(n); };
+    kijk();
+    const t = window.setInterval(kijk, 30_000);
+    const zicht = () => { if (document.visibilityState === 'visible') kijk(); };
+    document.addEventListener('visibilitychange', zicht);
+    return () => { window.clearInterval(t); document.removeEventListener('visibilitychange', zicht); };
+  }, [p.scope, stilSleutel]);
 
   const showNext = () => {
     const queued = queueRef.current.shift();
@@ -584,8 +615,13 @@ export default function CanonicalNotificationCenter(p: Props) {
     const added = alle.filter((item) => !serverKnown.current?.has(item.id) && vk(soortInfo(item.kind).type).tonen);
     serverKnown.current = unreadIds;
     if (!added.length) return;
-    const klinkt = added.some((item) => vk(soortInfo(item.kind).type).geluid);
-    const toon = added.filter((item) => vk(soortInfo(item.kind).type).opduiken);
+    // IDENTITEIT-015: тихі години — некритичні нові серверні сповіщення не спливають і не звучать, лише рахуються для підсумку.
+    const stilNuServer = stilNu(p.stil, new Date());
+    const telbaar = stilNuServer ? added.filter((item) => { const ty = soortInfo(item.kind).type; return !isKritiekType(ty) && (vk(ty).opduiken || vk(ty).geluid); }) : [];
+    if (telbaar.length) { const vorige = stilTellen(p.scope, p.stil, telbaar.length); if (vorige) toonStilSamenvatting(vorige); }
+    const luid = stilNuServer ? added.filter((item) => isKritiekType(soortInfo(item.kind).type)) : added;
+    const klinkt = luid.some((item) => vk(soortInfo(item.kind).type).geluid);
+    const toon = luid.filter((item) => vk(soortInfo(item.kind).type).opduiken);
     if (toon.length) {
       const item = toon[0];
       const info = soortInfo(item.kind);

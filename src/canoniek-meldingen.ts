@@ -38,6 +38,8 @@ export type CanonicalNoticeInput = {
   type?: MeldingType;
   /** Voorbeeld uit «Типи сповіщень»: altijd tonen (geen samenvoegen), niet bewaren. */
   voorbeeld?: boolean;
+  /** IDENTITEIT-015: altijd een eigen regel, nooit samenvoegen met een eerdere gelijke tekst (de samenvatting na de stille uren). */
+  losseRegel?: boolean;
 };
 
 /* `ruimte` (20.10.2026): de gegevenslade van de melding zoals de server haar vaststelde ('prive' ook voor oude rijen zonder veld); ontbreekt het veld, dan beslist shared/meldingen-ruimte.ts op soort en link. */

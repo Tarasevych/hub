@@ -464,7 +464,8 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
   await clearLoginFailures(subject);
   await upsertLoginBinding(user.id,'password',user.id,user.email);
   /* IDENTITEIT-015 (aanmelden): tweedeFactor — код із застосунку/відновлення справді перевірено (є підтверджений TOTP); тоді вхід паролем двофакторний. */
-  return{status:'ok' as const,code:'OK',http:200,tweedeFactor:Boolean(totpRow?.confirmed),user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
+  /* IDENTITEIT-015 (kaart-stille-uren): mustChange — тимчасовий пароль від власника сайту; викликач вирішує, чи можна з ним входити (вхід — ні). */
+  return{status:'ok' as const,code:'OK',http:200,tweedeFactor:Boolean(totpRow?.confirmed),mustChange:Boolean(record.mustChange),user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
 }
 
 async function writePolicy(enabled:Partial<Record<MethodId,boolean>>,mfa:'optional'|'required'){

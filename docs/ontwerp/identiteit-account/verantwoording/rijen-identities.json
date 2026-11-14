@@ -17,7 +17,11 @@
     "gereedAls": "У «Макеті» натискання «Сесії та пристрої» в «Чинних налаштуваннях» розділу «Ідентичності» прокручує до розділу «Сесії та пристрої», його панель відкрита й показує поточний сеанс",
     "testen": ["tests/eenheid/identiteit-maquette.test.ts", "tests/e2e/sessies-apparaten.e2e.ts"],
     "herkomst": "Також окремий розділ 09 «Сесії та пристрої» (#sessions) у навігації макета",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (sessies-apparaten.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "identities.зв'язки.1.kaart-aanmeldmethoden",
@@ -37,7 +41,11 @@
     "gereedAls": "Натискання «Способи входу» прокручує до розділу «Способи входу» з відкритою справжньою панеллю",
     "testen": ["tests/eenheid/identiteit-maquette.test.ts", "tests/e2e/aanmeldmethoden-vnext.e2e.ts"],
     "herkomst": "Також окремий розділ 10 «Способи входу» (#methods) макета",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (aanmeldmethoden-vnext.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "identities.зв'язки.2.kaart-beveiliging",
@@ -57,7 +65,11 @@
     "gereedAls": "Натискання «Безпека» прокручує до розділу «Безпека» з відкритою справжньою панеллю 2FA",
     "testen": ["tests/eenheid/identiteit-maquette.test.ts", "tests/e2e/kluis-meta.e2e.ts"],
     "herkomst": "Також окремий розділ 11 «Безпека» (#security) макета",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (kluis-meta.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "identities.зв'язки.3.kaart-herstel",
@@ -77,7 +89,11 @@
     "gereedAls": "Картка зветься «Відновлення доступу»; натискання прокручує до розділу 12 з відкритою панеллю кодів відновлення",
     "testen": ["tests/eenheid/identiteit-maquette.test.ts", "tests/e2e/herstelcodes.e2e.ts"],
     "herkomst": "Перейменовано: на сайті картка «Відновлення»; також окремий розділ 12 «Відновлення доступу» (#recovery)",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "identities.профіль.0.knop-echte-instelling",
@@ -146,7 +162,12 @@
     "gereedAls": "Людина з наданим профілем з картки «Ідентичності» запускає технічний сеанс після step-up; без профілю бачить пояснення й не бачить кнопки запуску",
     "testen": ["tests/eenheid/tech-ruimtes-v2-20261027.test.ts", "tests/eenheid/tech-profiel.test.ts", "tests/e2e/tech-profiel.e2e.ts"],
     "herkomst": "Теперішнє місце: вікно StartVenster, що відкривається з тумблера в меню облікового запису",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "потребує налаштування власника",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "reden": "Передумова власника: людині потрібен технічний профіль хоча б з однією роллю — його видає власник сервера (backend/tech-ruimtes-kern.ts: technischToegestaan = власник або ролі профілю), і прапорець «Два простори одного акаунта (нова версія)» (tech-ruimtes-v2: технічний профіль → смуга технічного режиму → «Перемикачі функцій»). Без профілю тумблер показує «Немає дозволу на технічний простір. Його дає власник сервера.»",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
   },
   {
     "id": "identities.профіль.1.knop-echte-instelling",
@@ -191,7 +212,12 @@
     "gereedAls": "Картка «Показувати позначку режиму» каже, що позначку не вимкнути, і веде до режиму згортання смуги",
     "testen": ["tests/eenheid/band-inschuiven.test.ts", "tests/eenheid/strook-voorkeur.test.ts"],
     "herkomst": "Нова вимога v49; на сайті натомість — режими смуги й колір смуги",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "недоступно за задумом",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "reden": "Причина: позначка технічного режиму завжди видима, щоб людина не виконала дію керування сайтом, думаючи, що вона у звичайному просторі (src/tech/TechLaag.tsx). Альтернатива: згорнути смугу до тонкої смужки («Згорнуто»/«Автоматично») і вибрати її колір — на самій технічній смузі.",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Свідоме рішення лишається."
   },
   {
     "id": "identities.профіль.1.strook-modus",
@@ -211,7 +237,11 @@
     "gereedAls": "З картки «Ідентичності» людина з технічним профілем доходить до режиму смуги й вибирає «Автоматично»; смуга згортається до тонкої смужки",
     "testen": ["tests/eenheid/strook-voorkeur.test.ts", "tests/e2e/tech-ruimtes-ui.e2e.ts"],
     "herkomst": "Теперішнє місце: панель налаштувань технічної смуги",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в іншому місці",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: strook-voorkeur.test.ts 38/38. E2E (tech-ruimtes-ui.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "identities.профіль.1.band-kleur",
@@ -231,6 +261,10 @@
     "gereedAls": "З картки «Ідентичності» людина з технічним профілем змінює колір смуги, після перезавантаження колір зберігається",
     "testen": ["tests/eenheid/tech-profiel.test.ts", "tests/e2e/tech-profiel.e2e.ts"],
     "herkomst": "Теперішнє місце: меню «⋯» технічної смуги; відповідає назві групи v49 «Оформлення … технічного режиму»",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в іншому місці",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: tech-profiel.test.ts 37/37. E2E (tech-profiel.e2e.ts) на цьому кроці не прогнано — етап 4."
   }
 ]

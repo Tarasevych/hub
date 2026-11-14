@@ -207,11 +207,14 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-deels{color:#9a6512;background:rgba(243,166,61,.12);border-color:rgba(234,169,75,.3)}
 .mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-gepland{color:#5b5bb5;background:rgba(110,110,220,.11);border-color:rgba(110,110,220,.3)}
 .mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-nee{color:#7a7f8c;background:rgba(122,127,140,.12);border-color:rgba(122,127,140,.3)}
+/* IDENTITEIT-015: «Потребує налаштування власника» — код є, працює після кроку власника сайту (ключі, перемикач, право). */
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-eigenaar{color:#0e6a80;background:rgba(14,140,170,.11);border-color:rgba(14,140,170,.32)}
 .mr-mq.mr-mq.mr-mq.mr-mq .future-option-status[class*=future-stand-]{border:1px solid;border-radius:50px;padding:3px 7px;font-weight:700}
 .mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-werkt{color:#6fd39b}
 .mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-deels{color:#f0bb6a}
 .mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-gepland{color:#a9a9f2}
 .mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-nee{color:#b4b8c2}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-eigenaar{color:#7fd3e6}
 /* Ціль переходу: коротке підсвічування, щоб людина бачила, куди її привело (без руху, якщо рух вимкнено). */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{outline:2px solid rgba(var(--global-rgb),.7);outline-offset:4px;border-radius:12px;transition:outline-color 1.6s ease}
 @media (prefers-reduced-motion:reduce){.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{transition:none}}

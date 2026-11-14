@@ -79,7 +79,11 @@
       "tests/e2e/hulp/identiteit-mobiel-stand/stand.tsx:16 (стенд із панеллю мов, без перевірки збереження)"
     ],
     "herkomst": "Позиція v49 «Мова інтерфейсу»; справжня дія — вкладка «Мови» центру налаштувань (InstellingencentrumWeergave), вбудована в «Макет» через гніздо .mq-echt",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: weergave-per-account-20261020.test.ts 60/60; identiteit-012-server-veiligheid.test.ts 21/21. E2E (hulp/identiteit-mobiel-stand/stand.tsx) на цьому кроці не прогнано — етап 4."
   },
   {
     "id": "languages.мова.0.echt-paneel-nl",
@@ -110,7 +114,11 @@
       "tests/eenheid/identiteit-012-server-veiligheid.test.ts:67"
     ],
     "herkomst": "Позиція v49 «Мова інтерфейсу», варіант «Нідерландська»",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в цьому оформленні",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: weergave-per-account-20261020.test.ts 60/60; identiteit-012-server-veiligheid.test.ts 21/21."
   },
   {
     "id": "languages.мова.0.accountmenu-taal",
@@ -141,6 +149,10 @@
       "tests/e2e/hulp/accountmenu-stand/stand.tsx"
     ],
     "herkomst": "Наявний перемикач мови в меню облікового запису сайту; не є частиною погодженої картки, але досяжний із «Макету»",
-    "maquetteLabel": "прихована група"
+    "maquetteLabel": "прихована група",
+    "staatNa": "працює в іншому місці",
+    "versie": "HEAD кроку kaart-stille-uren",
+    "omgeving": "випробувальне середовище",
+    "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: accountmenu-v3.test.ts 30/30; menu-taal-prapor-20261103.test.ts 56/56. E2E (hulp/accountmenu-stand/stand.tsx) на цьому кроці не прогнано — етап 4."
   }
 ]

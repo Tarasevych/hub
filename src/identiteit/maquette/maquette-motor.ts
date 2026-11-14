@@ -840,6 +840,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   // кожна ціль — справжній id/селектор у коді (перевіряє tests/eenheid/identiteit-014-kaart.test.ts).
   // «в-чинних» — працює в блоці «Чинні налаштування» цього розділу; рядок стає кнопкою переходу до потрібного місця.
   // «частково» — є на сайті, але бракує частини; «заплановано» — потребує розробки; «недоступно» — свідомо не передбачено.
+  // IDENTITEIT-015 (крок «kaart-stille-uren»): «власник» — код є й працює, але лише після кроку власника сайту (ключі, прапорець, право);
+  // точна передумова — у рядку відомості (reden). Перехід веде до місця, де людина бачить пояснення. Підписи звірено з відомістю.
   // ціль: "розділ|селектор" усередині гнізда .mq-echt розділу (без розділу — той самий розділ). Група, усі рядки якої «в-чинних», зникає з карти.
   // De levende kaart: status per groep en regel volgens de live code; «в-чинних» wordt een knop naar de echte instelling.
   // IDENTITEIT-015 (крок «vormgeving»): групи, оформлені в самій картці, тепер під'єднано до справжніх налаштувань (обліковий запис):
@@ -863,7 +865,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     },
     themes:{
       "розклад":{стан:"в-чинних",ціль:"#thema-auto-kop"},
-      "палітра":{стан:"в-чинних",ціль:"#thema-kleur-kop"},
+      // IDENTITEIT-015 (зведення): фіолетова палітра — лише з правом plum-theme від власника сайту.
+      "палітра":{стан:"в-чинних",ціль:"#thema-kleur-kop",рядки:{0:"власник"}},
       "акцент":{стан:"в-чинних",ціль:"#thema-accent",цілі:{1:"#thema-effecten"}}
     },
     // IDENTITEIT-015 (крок «profiel-blokken»): форма блоку повна — «Скасувати», «Відкрити в просторі», пояснення адреси внутрішнього блоку,
@@ -885,18 +888,25 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     sessions:{
       "цей-пристрій":{стан:"в-чинних",ціль:".sessies-onthouden"},
       "активні":{стан:"в-чинних"},
-      "гості":{стан:"в-чинних"},
+      // IDENTITEIT-015 (зведення): гостьові входи інших облікових записів — за прапорцем власника gastcodes-iedereen.
+      "гості":{стан:"в-чинних",ціль:".sessies-gasten",рядки:{0:"власник"}},
       // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір «Завжди / Вимкнено», відомі пристрої, «Це був я», «Забути пристрій».
-      "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat"}
+      // IDENTITEIT-015 (зведення): вибір і відомі пристрої працюють; спливне сповіщення — після прапорців власника meldingen-v2 і meldingen-uitleg-v3.
+      "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat",рядки:{0:"власник"}}
     },
     methods:{
       // IDENTITEIT-015 (крок «sleutels-gasten»): біля кожного ключа — «Вхід і підтвердження» / «Лише підтвердження» і окремо «Довірений».
-      "основні":{стан:"в-чинних",ціль:"#aanmeldmethoden-google",цілі:{1:"security|#aanmeldmethoden-passkeys",2:"security|#aanmeldmethoden-2fa"}},
-      "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord"},
-      "захист":{стан:"в-чинних",цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
+      // IDENTITEIT-015 (зведення): позиція 0 — Google працює, вхід посиланням на пошту потребує поштової служби сайту (налаштування власника).
+      "основні":{стан:"в-чинних",ціль:"#aanmeldmethoden-google",рядки:{0:"власник"},цілі:{1:"security|#aanmeldmethoden-passkeys",2:"security|#aanmeldmethoden-2fa"}},
+      // IDENTITEIT-015 (зведення): позиція 0 — тимчасовий пароль від власника не дає входу (форми заміни під час входу немає) — «частково».
+      "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord",рядки:{0:"частково"}},
+      // IDENTITEIT-015 (зведення): повторне шифрування — з перебігом і продовженням (працює); гостьові коди для інших — за прапорцем власника.
+      "захист":{стан:"в-чинних",рядки:{2:"власник"},цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
       // IDENTITEIT-015 (крок «aanmelden»): Microsoft/Discord/Apple — прив'язка для схвалених не-власників і вхід за прив'язкою (потрібні ключі
       // власника й самоперевірка — тому «частково»); SMS — номер і код pending → verified (#aanmeldmethoden-telefoon), потрібен провайдер власника.
-      "додаткові":{стан:"частково",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"частково"},цілі:{5:"#aanmeldmethoden-telefoon"}}
+      // IDENTITEIT-015 (зведення): усі ці способи в коді є; працюють після ключів/прапорця власника (SMS — після провайдера SMS_AANBIEDER) — «власник».
+      "додаткові":{стан:"власник",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"власник",1:"власник",2:"власник",3:"власник",4:"недоступно",5:"власник"},цілі:{5:"#aanmeldmethoden-telefoon"},
+        назви:{5:{uk:"SMS — потрібне налаштування власника",nl:"Sms — configuratie van eigenaar nodig"}}}
     },
     security:{
       // IDENTITEIT-015 (крок «sleutels-gasten»): довіра до ключа (міграція 0274, посилене підтвердження) — позначка «Довірений» у переліку ключів.
@@ -908,7 +918,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "резервні-коди":{стан:"в-чинних",ціль:"recovery|#aanmeldmethoden-herstel"},
       "шифрування":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutelkluis"},
       // IDENTITEIT-015: для схвалених не-власників — за прапорцем gastcodes-iedereen; без нього в #toegangscodes пояснення й перехід до «Доступу».
-      "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes"}
+      "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes",рядки:{0:"власник"}}
     },
     recovery:{
       "засоби":{стан:"в-чинних",ціль:"#aanmeldmethoden-herstel",цілі:{1:"#herstel-overzicht"}},
@@ -980,23 +990,25 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           const рідний=р.первіснийНомер!==null;
           // Пріоритет стану: окремий рядок живої карти → стан групи на сайті → власний стан рядка → стан групи з макета.
           const стан=рідний?(сайт.рядки?.[р.первіснийНомер]||сайт.стан||р.стан||г.стан):(р.стан||сайт.стан||г.стан);
-          return {...р,стан,ціль:(рідний&&сайт.цілі?.[р.первіснийНомер])||сайт.ціль||null};
+          // IDENTITEIT-015: «назви» — чесна назва рядка на карті, коли текст дизайну v49 суперечить станові (дані дизайну не змінюємо).
+          const назва=рідний?сайт.назви?.[р.первіснийНомер]:null;
+          return {...р,...(назва?{uk:назва.uk,nl:назва.nl}:{}),стан,ціль:(рідний&&сайт.цілі?.[р.первіснийНомер])||сайт.ціль||null};
         })
         .filter(р=>!вжеОформленіРядки[розділ]?.includes(р.uk));
       return {...г,стан:сайт.стан||г.стан,рядки};
     }).filter(г=>г.рядки.length&&!г.рядки.every(р=>р.стан==="в-чинних"));
     if(!групи.length)return '';
     // САЙТ: чесні мітки живої карти; мітки «звірити підключення» більше немає.
-    const статус=стан=>стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):стан==='недоступно'?(nl?'Niet beschikbaar':'Недоступно'):(nl?'Werkt':'Працює');
-    const клас=стан=>стан==='в-чинних'||стан==='наявне'?'werkt':стан==='частково'?'deels':стан==='недоступно'?'nee':стан==='макет'?'ontwerp':'gepland';
+    const статус=стан=>стан==='власник'?(nl?'Eigenaar moet dit instellen':'Потребує налаштування власника'):стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):стан==='недоступно'?(nl?'Niet beschikbaar':'Недоступно'):(nl?'Werkt':'Працює');
+    const клас=стан=>стан==='в-чинних'||стан==='наявне'?'werkt':стан==='власник'?'eigenaar':стан==='частково'?'deels':стан==='недоступно'?'nee':стан==='макет'?'ontwerp':'gepland';
     const рядок=(р,і,г)=>{
       const знак=р.іконка?піктограмаЗаСуттю(р.іконка):знакМожливості(розділ,г.id,р.первіснийНомер);
       const мітка='<small class="future-option-status future-stand-'+клас(р.стан)+'">'+статус(р.стан)+'</small>';
       const назва='<span class="future-option-name">'+veiligeTekstРеєстру(nl?р.nl:р.uk)+'</span>';
       // Робоче або частково робоче місце з відомою ціллю — кнопка переходу до справжнього налаштування.
-      if(р.ціль&&(р.стан==='в-чинних'||р.стан==='частково')){
+      if(р.ціль&&(р.стан==='в-чинних'||р.стан==='частково'||р.стан==='власник')){
         const ціль=р.ціль.includes('|')?р.ціль:розділ+'|'+р.ціль;
-        const підказка=nl?'Opent de echte instelling in «Huidige instellingen»; wijzigingen daar gelden meteen voor uw account.':'Відкриває справжнє налаштування в блоці «Чинні налаштування»; зміни там одразу діють для вашого облікового запису.';
+        const підказка=р.стан==='власник'?(nl?'Opent de echte instelling; daar staat wat de site-eigenaar eerst moet instellen (sleutels, schakelaar of recht).':'Відкриває справжнє налаштування; там пояснено, що спершу має налаштувати власник сайту (ключі, перемикач або право).'):nl?'Opent de echte instelling in «Huidige instellingen»; wijzigingen daar gelden meteen voor uw account.':'Відкриває справжнє налаштування в блоці «Чинні налаштування»; зміни там одразу діють для вашого облікового запису.';
         return '<button type="button" class="future-option future-option-go" data-kaart-ga="'+veiligeTekstРеєстру(ціль)+'" title="'+veiligeTekstРеєстру(підказка)+'"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'<span class="future-option-open">'+(nl?'Openen':'Відкрити')+'</span></button>';
       }
       return '<div class="future-option"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'</div>';

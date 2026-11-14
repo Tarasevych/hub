@@ -229,6 +229,9 @@ export function aanmeldMethodenRoutes(deps: AanmeldWegDeps): Record<string, Rout
         await audit(null, 'aanmelden.password', 'denied', { reden: uit.code });
         return fout(uit.code, uit.http || 401, 'retryAfter' in uit && uit.retryAfter ? { retryAfter: uit.retryAfter } : {});
       }
+      // IDENTITEIT-015 (давня вада): тимчасовий пароль (mustChange) відомий тому, хто його видав, — сеансу він не дає. Людина входить іншим
+      // способом і задає власний пароль у «Способах входу». Перевірка ПІСЛЯ пароля й коду: відповідь не розкриває нічого стороннім.
+      if (uit.mustChange) { await audit(uit.user.id, 'aanmelden.password', 'denied', { reden: 'ACCESS_PASSWORD_MUST_CHANGE' }); return fout('ACCESS_PASSWORD_MUST_CHANGE', 403); }
       return afronden(deps, rc, { transactieId: rij.transactie_id, userId: uit.user.id, methode: 'password', tweedeFactor: uit.tweedeFactor === true });
     }),
 

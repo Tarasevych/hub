@@ -56,7 +56,7 @@ export function normaliseerMeldingen(raw: unknown): MeldingVoorkeuren {
   };
 }
 /** Valt `nu` (minuten na middernacht, lokale tijd) binnen de stille uren? Ook over middernacht heen (22:00–07:00). */
-export function isStil(v: MeldingVoorkeuren, minutenNaMiddernacht: number): boolean {
+export function isStil(v: Pick<MeldingVoorkeuren, 'stil'>, minutenNaMiddernacht: number): boolean {
   if (!v.stil.aan) return false;
   const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
   const van = m(v.stil.van), tot = m(v.stil.tot), n = ((minutenNaMiddernacht % 1440) + 1440) % 1440;
