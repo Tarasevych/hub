@@ -21,8 +21,10 @@ import { uitlegVoor } from '../../shared/meldingen-v2/uitleg-register';
 import { VLAG_UITLEG } from '../../shared/vlaggen';
 import { actieVoorPad } from '../../shared/stap-op-acties';
 import { NOOIT_ONTHOUDEN } from '../../backend/stap-op';
+import { sleutelIsOpen, sleutelVergrendelen } from '../../backend/sleutelkluis';
 import { ScenariosWeergave } from '../../src/herstel/Scenarios';
 import { ReserveHerinneringWeergave } from '../../src/herstel/ReserveHerinnering';
+import { kluisActie } from '../../src/SleutelkluisSectie';
 import type { AccessPlanePanels } from '../../src/toegangslaag-panelen';
 import type { KluisKern } from '../../src/herstel/reserve';
 
@@ -55,6 +57,18 @@ export async function main(): Promise<number> {
     check('UI кодів: без права — пояснення з переходом до «Доступу до простору» (а не порожнє місце); перемикач «Усі дозволені / Лише вибрані»',
       tc.includes('data-toegangscodes-niet-beschikbaar') && tc.includes("href='/sharing'") && tc.includes("data-scope-modus='alle'") && tc.includes("data-scope-modus='gekozen'") && !/if\(geenToegang\)return null;/.test(tc));
     check('UI сесій: без гостьових кодів — пояснення замість порожнечі', readFileSync('src/SessiesOverzicht.tsx', 'utf8').includes('data-gast-sessies-uit'));
+    // Знахідка e2e kluis-gast-herstel: після помилки дії (ключ закрили в іншій вкладці посеред повторного шифрування, 423) розділ
+    // не перечитував стан — «Продовжити» не з'являлося. Тепер стан читається і після помилки, і після успіху.
+    const kroki: string[] = [];
+    const h = { vergeten: () => { kroki.push('vergeten'); }, laden: async () => { kroki.push('laden'); }, fout: (c: string) => { kroki.push(`fout:${c}`); } };
+    await kluisActie(async () => { throw Object.assign(new Error('SLEUTELKLUIS_GESLOTEN'), { name: 'SLEUTELKLUIS_GESLOTEN', code: 'SLEUTELKLUIS_GESLOTEN' }); }, h);
+    const naFout = [...kroki]; kroki.length = 0;
+    await kluisActie(async () => { kroki.push('actie'); }, h);
+    check('сховище: після помилки дії стан перечитується (помилку показано, потім vergeten + laden); після успіху — так само, без помилки',
+      naFout.length === 3 && naFout[0].startsWith('fout:') && naFout[1] === 'vergeten' && naFout[2] === 'laden' && JSON.stringify(kroki) === '["actie","vergeten","laden"]', `${JSON.stringify(naFout)} ${JSON.stringify(kroki)}`);
+    let laadFout = '';
+    await kluisActie(async () => {}, { ...h, laden: async () => { throw new Error('net'); } }).catch((e) => { laadFout = String(e); });
+    check('сховище: збій перечитування не ламає дію (без винятку назовні)', laadFout === '');
   }
 
   // ================================================================ (б) сценарії відновлення: переходи до точного місця, перемикач нагадування
@@ -145,7 +159,7 @@ export async function main(): Promise<number> {
     check('ключ: з прапорцем для A — «вхід і підтвердження» (aanmelden=true)', (await id(A.b, '/api/owner/access/passkeys/lijst')).data.aanmelden === true);
 
     // ---------------------------------------------------------------- довіра до ключа
-    const zonder = await id(A.b, '/api/owner/access/passkeys/vertrouwen', { id: A.pkId });
+    const zonder =await id(A.b, '/api/owner/access/passkeys/vertrouwen', { id: A.pkId });
     check('довіра: без посиленого підтвердження → 403 STEP_UP_STRONG_REQUIRED, нічого не змінено',
       zonder.status === 403 && zonder.data.error === 'STEP_UP_STRONG_REQUIRED' && (await pool.query('select vertrouwd_op from app.passkeys where id=$1', [A.pkId])).rows[0].vertrouwd_op === null, `${zonder.status} ${zonder.body.slice(0, 120)}`);
     const su = await stapOp(A.b, A.pk, 'passkey-vertrouwen');
@@ -170,6 +184,36 @@ export async function main(): Promise<number> {
     check('відкликання довіри: позначка зникла (і «хто/сеанс» теж), ключ лишився; повтор — без нового сповіщення',
       ii.status === 200 && ii.data.vertrouwd === false && ii.data.gewijzigd === true && ii2.data.gewijzigd === false && (await pool.query('select vertrouwd_op, vertrouwd_wie from app.passkeys where id=$1', [A.pkId])).rows[0].vertrouwd_wie === null
       && (await meldingen(A.uid, 'passkey_vertrouwen_ingetrokken')) === 1 && (await audits(A.uid, 'passkey_vertrouwen_ingetrokken')) === 1 && (await pool.query('select 1 from app.passkeys where id=$1', [A.pkId])).rowCount === 1);
+
+    // ---------------------------------------------------------------- PRF під час створення ключа (знахідка e2e kluis-gast-herstel)
+    await stapOp(A.b, A.pk, actieVoorPad('/api/owner/access/passkeys/registreren/opties') || 'passkey-toevoegen');
+    const regOpt = await id(A.b, '/api/owner/access/passkeys/registreren/opties');
+    check('реєстрація ключа: опції просять розширення PRF (без нього ключ безпеки ніколи не відкриє сховище ключів)',
+      regOpt.status === 200 && !!regOpt.data.publicKey?.extensions?.prf && typeof regOpt.data.publicKey.extensions.prf === 'object' && regOpt.data.publicKey.authenticatorSelection?.userVerification === 'required', `${regOpt.status} ${regOpt.body.slice(0, 160)}`);
+    const webauthn = readFileSync('src/platform/webauthn.ts', 'utf8');
+    check('реєстрація ключа: браузер передає опції сервера як є (…pk) — розширення не губиться', /publicKey:\s*\{\s*\.\.\.pk,/.test(webauthn));
+
+    // ---------------------------------------------------------------- «Завершити всі інші» закриває ключ даних (знахідка e2e kluis-gast-herstel)
+    {
+      await stapOp(A.b, A.pk, actieVoorPad('/api/owner/sleutelkluis/inschakelen') || 'sleutelkluis');
+      const aan = await id(A.b, '/api/owner/sleutelkluis/inschakelen');
+      const lade = { userId: A.uid, ruimte: 'prive' as const };
+      const openVoor = sleutelIsOpen(lade);
+      // «утрачений пристрій» = вхід A.b; новий вхід A2 завершує всі інші
+      const A2 = G.browser();
+      await A2.aanmelden(`sub-i015s-a-${T}`, A.email, { service: 'identity' });
+      const zichtbaarA2 = await id(A2, '/api/owner/sleutelkluis/stand');
+      await stapOp(A2, A.pk, actieVoorPad('/api/owner/identity/security/revoke-others') || 'sessies-beeindigen');
+      const ro = await id(A2, '/api/owner/identity/security/revoke-others');
+      const naRo = sleutelIsOpen(lade);
+      const standA2 = await id(A2, '/api/owner/sleutelkluis/stand');
+      check('«Завершити всі інші»: ключ даних, який тримав відкликаний вхід, закривається ОДРАЗУ — новий вхід бачить «закрито» без коду сховища',
+        aan.status === 200 && openVoor && zichtbaarA2.data.stand === 'open' && ro.status === 200 && !naRo && standA2.data.stand === 'gesloten', `${aan.status} ${openVoor} ${zichtbaarA2.data.stand} ${ro.status} ${ro.body.slice(0, 80)} ${naRo} ${standA2.data.stand}`);
+      sleutelVergrendelen(lade);
+      // новий вхід підробленого Google перезаписує ім'я — повертаємо, як було, для перевірок гостя нижче
+      await pool.query(`update app.records set data = data || $2::jsonb where tbl='users' and id=$1`, [A.uid, JSON.stringify({ status: 'approved', name: 'Проба A' })]);
+      A.b = A2;
+    }
 
     // ---------------------------------------------------------------- гостьові коди для схвалених не-власників
     const TC = '/api/owner/access/toegangscodes';
@@ -226,7 +270,7 @@ export async function main(): Promise<number> {
     if (ids.length) {
       await sys.query('delete from app.toegangscodes where user_id = any($1)', [ids]).catch(() => undefined);
       await sys.query('delete from app.agents where user_id = any($1)', [ids]).catch(() => undefined);
-      for (const t of ['passkeys', 'passkey_uitdagingen', 'toegang_gebruik', 'toegang_notities']) await sys.query(`delete from app.${t} where user_id = any($1)`, [ids]).catch(() => undefined);
+      for (const t of ['passkeys', 'passkey_uitdagingen', 'toegang_gebruik', 'toegang_notities', 'sleutelkluis_omslag', 'sleutelkluis_journaal', 'sleutelkluis']) await sys.query(`delete from app.${t} where user_id = any($1)`, [ids]).catch(() => undefined);
       await pool.query("delete from app.records where id = any($1) or data->>'userId' = any($1) or data->>'accountId' = any($1) or data->>'recipientUserId' = any($1) or data->>'ownerUserId' = any($1)", [ids]).catch(() => undefined);
       await pool.query('delete from app.login_lockouts where subject = any($1)', [ids.map((i) => `stap-op:${i}`)]).catch(() => undefined);
     }
