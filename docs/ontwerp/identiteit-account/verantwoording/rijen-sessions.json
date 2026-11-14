@@ -30,7 +30,7 @@
     "herkomst": "Перенесено з екрана входу (вибір «Зберегти цей акаунт») у «Сесії та пристрої»; теперішнє місце — SessiesOverzicht, блок «Збереження акаунта на цьому пристрої».",
     "maquetteLabel": "Частково реалізовано",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65; sessie-tabbladen-20261020.test.ts 20/20; sessies-weergave-20261020.test.ts 18/18."
   },
@@ -91,7 +91,7 @@
     "herkomst": "",
     "maquetteLabel": "Частково реалізовано",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: sessie-tabbladen-20261020.test.ts 20/20."
   },
@@ -124,7 +124,7 @@
     "herkomst": "",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: sessies-weergave-20261020.test.ts 18/18. E2E (sessies-apparaten.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
@@ -158,7 +158,7 @@
     "herkomst": "",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21; toegangscodes.test.ts 56/56. E2E (gast-toegang.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
@@ -193,7 +193,7 @@
     "herkomst": "Супутня дія панелі «Керування входами й пристроями» (BeveiligingSessiesPaneel), не окрема позиція v49.",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: stap-op-onthouden-20261020.test.ts 27/27; tech-sessies.test.ts 16/20 (червоний набір — див. звіт кроку). E2E (sessies-apparaten.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
@@ -223,7 +223,7 @@
     "herkomst": "",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21."
   },
@@ -255,7 +255,7 @@
     "herkomst": "",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangscodes.test.ts 56/56. E2E (gast-toegang.e2e.ts) на цьому кроці не прогнано — етап 4."
   },
@@ -287,7 +287,7 @@
     "herkomst": "",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangscodes.test.ts 56/56. E2E (gast-toegang.e2e.ts) на цьому кроці не прогнано — етап 4."
   },

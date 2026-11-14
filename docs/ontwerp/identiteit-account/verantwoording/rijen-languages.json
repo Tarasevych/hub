@@ -81,7 +81,7 @@
     "herkomst": "Позиція v49 «Мова інтерфейсу»; справжня дія — вкладка «Мови» центру налаштувань (InstellingencentrumWeergave), вбудована в «Макет» через гніздо .mq-echt",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: weergave-per-account-20261020.test.ts 60/60; identiteit-012-server-veiligheid.test.ts 21/21. E2E (hulp/identiteit-mobiel-stand/stand.tsx) на цьому кроці не прогнано — етап 4."
   },
@@ -116,7 +116,7 @@
     "herkomst": "Позиція v49 «Мова інтерфейсу», варіант «Нідерландська»",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в цьому оформленні",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: weergave-per-account-20261020.test.ts 60/60; identiteit-012-server-veiligheid.test.ts 21/21."
   },
@@ -151,7 +151,7 @@
     "herkomst": "Наявний перемикач мови в меню облікового запису сайту; не є частиною погодженої картки, але досяжний із «Макету»",
     "maquetteLabel": "прихована група",
     "staatNa": "працює в іншому місці",
-    "versie": "HEAD кроку kaart-stille-uren",
+    "versie": "899c96ad",
     "omgeving": "випробувальне середовище",
     "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: accountmenu-v3.test.ts 30/30; menu-taal-prapor-20261103.test.ts 56/56. E2E (hulp/accountmenu-stand/stand.tsx) на цьому кроці не прогнано — етап 4."
   }

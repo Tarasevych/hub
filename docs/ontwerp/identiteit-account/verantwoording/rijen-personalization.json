@@ -27,7 +27,7 @@
   ],
   "herkomst": "У v49 — пункт «Меню й піктограми» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #menu і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -63,7 +63,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
@@ -95,7 +95,7 @@
   ],
   "herkomst": "У v49 — пункт «Теми та кольори» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #themes і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -131,7 +131,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
@@ -163,7 +163,7 @@
   ],
   "herkomst": "У v49 — пункт «Мова інтерфейсу» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #languages і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -199,7 +199,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
@@ -231,7 +231,7 @@
   ],
   "herkomst": "У v49 — пункт «Віджети й блоки» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #widgets і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -267,7 +267,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
@@ -299,7 +299,7 @@
   ],
   "herkomst": "У v49 — пункт «Спільний доступ» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #sharing і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -335,7 +335,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
@@ -367,7 +367,7 @@
   ],
   "herkomst": "У v49 — пункт «Ідентичності й захист» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #identities і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
  },
@@ -403,7 +403,7 @@
   ],
   "herkomst": "Справжня панель сайту SettingsCenterView tab=\"personalization\" (src/InstellingencentrumWeergave.tsx:37), вбудована в «Макет» порталом у гніздо .mq-echt[data-echt=\"personalization\"]; там же вимкнена картка «Майбутні налаштування».",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку kaart-stille-uren",
+  "versie": "899c96ad",
   "omgeving": "випробувальне середовище",
   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
  },
