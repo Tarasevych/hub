@@ -7,6 +7,7 @@ import { RUIMTES_VLAG } from '../ruimtes-api';
 import { techBody } from '../tech-opslag';
 import { sessieDienst } from '../../canoniek-navigatie';
 import { vlagDienst } from '../ruimtes-contract';
+import { opGoogleTerugkeer } from '../../platform/google-terugkeer'; /* IDENTITEIT-015 (C2) */
 
 // Integratiefix 27.10: techBody() valt vóór het laden van de zijbalk terug op serviceFromLocation(), dat op hub.* 'ai' geeft → 401
 // OWNER_SESSION_CONTEXT_REQUIRED → vlag stil «uit». Hier altijd de sessiedienst van deze host (zoals hubAuthBody/ruimtes-api).
@@ -19,7 +20,11 @@ let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPS
 let bezig: Promise<boolean> | null = null;
 const luisteraars = new Set<(v: boolean) => void>();
 export const ruimtesV2Nu = () => waarde === true;
+// IDENTITEIT-015 (C2): сторінка повернення від Google (?state=v2.…&code=…) ще не має сесійного контексту вкладки — запит давав 401
+// і одразу губився (сторінка переходить далі). Там прапорець не питаємо; на наступній сторінці він завантажиться звичайно.
+// Terugkeerpagina van Google: nog geen tabcontext → geen vlagverzoek (gaf een nutteloze 401).
 export function laadRuimtesVlag(opnieuw = false): Promise<boolean> {
+  if (opGoogleTerugkeer()) return Promise.resolve(waarde === true);
   if (bezig && !opnieuw) return bezig;
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${RUIMTES_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
     // Fout (netwerk/401): voor deze weergave «uit», maar niet onthouden en de volgende aanroep vraagt opnieuw.
