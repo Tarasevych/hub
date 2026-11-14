@@ -7,6 +7,7 @@ import './toegangslaag.css';
 import {t,type Lang} from './toegangslaag-teksten';
 import {AccessPlanePanels} from './toegangslaag-panelen';
 import {lazy,Suspense} from 'react';
+import {magHerstelcodesHervatten} from './herstel/hervat-plek'; /* IDENTITEIT-015 (C2) */
 import {useAanmeldVnext} from './aanmeld-vnext/aanmeld-vlag'; /* UI-015: de vlag kiest alleen de PRESENTATIE van het methods-tabblad */
 import {AtelierInhoud} from './identiteit/atelier-inhoud';
 const AanmeldVnextPanelen=lazy(()=>import('./aanmeld-vnext/AanmeldVnextPanelen'));
@@ -190,7 +191,8 @@ export default function AccessPlaneView({tab,lang,mode='identity',onKies}:{tab:s
   const totpVervangenStoppen=()=>{setOtpauth('');setSecret('');setCode('');};
   const hervat=useRef(false);
   useEffect(()=>{
-    if(hervat.current||data.factors.some(item=>item.status==='loading'))return;
+    /* IDENTITEIT-015 (C2): лише екземпляр із секцією «Коди відновлення» — інакше нові коди губилися в стані «Способів входу» */
+    if(hervat.current||!magHerstelcodesHervatten(alleen)||data.factors.some(item=>item.status==='loading'))return;
     hervat.current=true;
     if(neemHervat('herstelcodes-maken'))void nieuweHerstelcodes();
   },[data]);// eslint-disable-line react-hooks/exhaustive-deps
