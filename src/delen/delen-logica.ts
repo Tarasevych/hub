@@ -3,6 +3,7 @@
 // de tekst van het bevestigingsvenster «Надати доступ», en of een weigering bij aansluiten definitief is.
 // Без DOM, без fetch: права лише з shared/werkruimte-rechten.ts (та сама таблиця, що на сервері) — власних перевірок ролей тут немає.
 import { ROL_TEKST, magDelen, magRolBeheren, werkruimteRol, type WerkruimteRol } from '../../shared/werkruimte-rechten';
+import { STANDAARD_LINK_DAGEN, dagenTekst, vervalTekst } from '../../shared/deel-links';
 
 type Lang = 'uk' | 'nl';
 export type Paar = readonly [string, string];
@@ -92,8 +93,18 @@ export const MELDING_PER_ADRES: Paar = [
 ];
 /** Melding na een geslaagd «Надати доступ» — hub en instellingencentrum gebruiken dezelfde tekst. */
 export const PER_ADRES_GELUKT: Paar = [
-  'Доступ збережено. Сповіщення отримає лише наявний обліковий запис з цією адресою; інакше доступ з’явиться після першого входу (протягом 7 днів).',
-  'Toegang opgeslagen. Alleen een bestaand account met dit adres krijgt een melding; anders begint de toegang na de eerste aanmelding (binnen 7 dagen).',
+  'Доступ збережено. Сповіщення отримає лише наявний обліковий запис з цією адресою; інакше адресат побачить запрошення після входу з цією адресою (протягом 7 днів). Листа сайт не надсилає — повідомте людину самі.',
+  'Toegang opgeslagen. Alleen een bestaand account met dit adres krijgt een melding; anders ziet de geadresseerde de uitnodiging na aanmelden met dit adres (binnen 7 dagen). De site stuurt geen e-mail — laat het de persoon zelf weten.',
+];
+/**
+ * IDENTITEIT-015: чому немає листа-запрошення. Сайт не має власної поштової служби (відправника від імені сайту): поштові
+ * з'єднання в «Пошті» — це скриньки самих людей, і від імені сайту вони не пишуть. Тож адресат без облікового запису
+ * дізнається про запрошення лише від вас, а побачить простір після входу з цією адресою.
+ * Waarom er geen e-mail gaat: de site heeft geen eigen verzendende postdienst.
+ */
+export const GEEN_UITNODIGINGSMAIL: Paar = [
+  'Лист-запрошення сайт не надсилає: власної поштової служби для листів від імені сайту немає (поштові з’єднання в «Пошті» — це особисті скриньки). Адресат побачить запрошення після входу з цією адресою.',
+  'De site verstuurt geen uitnodigingsmail: er is geen eigen postdienst om namens de site te mailen (de postkoppelingen in «Mail» zijn persoonlijke postvakken). De geadresseerde ziet de uitnodiging na aanmelden met dit adres.',
 ];
 /** Melding na een rolwijziging: alleen een ACTIEF lid krijgt een melding (zelfde regel als POST /api/share/role). */
 export const rolGewijzigdTekst = (actief: boolean): Paar => actief
@@ -126,12 +137,15 @@ export function rolWijzigenVraag(lang: Lang, v: { email: string; van: Werkruimte
 }
 
 /** Venster vóór het maken van een privélink (id deel-link-maken): de link is een geheim dat de rol geeft aan wie hem als eerste opent. */
-export function linkMakenVraag(lang: Lang, v: { ruimte: string; keuze: KeuzeRol; blokken?: number }) {
+export function linkMakenVraag(lang: Lang, v: { ruimte: string; keuze: KeuzeRol; blokken?: number; /** IDENTITEIT-015 */ dagen?: number; email?: string }) {
+  const dagen = v.dagen || STANDAARD_LINK_DAGEN;
   const rol = keuzeNaarRol(v.keuze);
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const gevolgen = [
-    t('Хто першим відкриє посилання й увійде, отримає цю роль — будь-хто, до кого воно потрапить, не лише той, кому ви його надіслали.', 'Wie de link als eerste opent en zich aanmeldt, krijgt deze rol — iedereen die hem in handen krijgt, niet alleen aan wie u hem stuurde.'),
-    t('Посилання одноразове й діє 7 днів. Надсилайте його лише особисто.', 'De link is eenmalig en 7 dagen geldig. Stuur hem alleen persoonlijk.'),
+    v.email
+      ? t(`Посилання спрацює лише для того, хто ввійде з адресою ${v.email}; іншим воно доступу не дасть.`, `De link werkt alleen voor wie zich aanmeldt met ${v.email}; anderen krijgt er geen toegang mee.`)
+      : t('Хто першим відкриє посилання й увійде, отримає цю роль — будь-хто, до кого воно потрапить, не лише той, кому ви його надіслали.', 'Wie de link als eerste opent en zich aanmeldt, krijgt deze rol — iedereen die hem in handen krijgt, niet alleen aan wie u hem stuurde.'),
+    t(`Посилання одноразове й діє ${dagenTekst('uk', dagen)}. Надсилайте його лише особисто.`, `De link is eenmalig en ${dagenTekst('nl', dagen)} geldig. Stuur hem alleen persoonlijk.`),
     bereikTekst(lang, v.blokken),
     t('Запис про створене посилання з’явиться у вашому центрі сповіщень і в журналі.', 'Een spoor van de gemaakte link komt in uw meldingencentrum en in het logboek.'),
   ];
@@ -152,6 +166,47 @@ export const LINK_GEMAAKT: Paar = [
   'Посилання створено. Воно одноразове й діє 7 днів; запис є у вашому центрі сповіщень.',
   'De link is gemaakt. Hij is eenmalig en 7 dagen geldig; er staat een spoor in uw meldingencentrum.',
 ];
+
+/** IDENTITEIT-015: melding na het maken met de gekozen looptijd en de echte einddatum van de server. */
+export function linkGemaakt(dagen: number, vervaltOp: string | null | undefined): Paar {
+  return [
+    `Посилання створено. Воно одноразове й діє ${dagenTekst('uk', dagen)} — до ${vervalTekst('uk', vervaltOp)}; запис є у вашому центрі сповіщень.`,
+    `De link is gemaakt. Hij is eenmalig en ${dagenTekst('nl', dagen)} geldig — tot ${vervalTekst('nl', vervaltOp)}; er staat een spoor in uw meldingencentrum.`,
+  ];
+}
+
+/** IDENTITEIT-015: een open link zoals POST /api/share/link/lijst hem geeft (zonder de code zelf). */
+export type OpenLink = { id: string; code: string; workspaceRole: WerkruimteRol; email: string; expiresAt: string | null; createdAt: string; eigen: boolean; blokken: number };
+
+/** Venster vóór het intrekken van een link (id deel-link-intrekken). */
+export function linkIntrekkenVraag(lang: Lang, l: Pick<OpenLink, 'code' | 'workspaceRole' | 'email' | 'expiresAt'>) {
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  return {
+    titel: t('Відкликати посилання?', 'Link intrekken?'),
+    uitleg: t(`Посилання ${l.code} з роллю «${ROL_TEKST[l.workspaceRole][0]}»${l.email ? ` для ${l.email}` : ''} перестане діяти одразу.`, `De link ${l.code} met de rol «${ROL_TEKST[l.workspaceRole][1]}»${l.email ? ` voor ${l.email}` : ''} werkt meteen niet meer.`),
+    gevolgen: [
+      t('Хто відкриє його після цього, доступу не отримає.', 'Wie hem daarna opent, krijgt geen toegang.'),
+      t('Учасників, які вже приєдналися, це не змінює — їх відкликають у списку «Хто має доступ».', 'Leden die al aansloten, blijven; die trekt u in via «Wie heeft toegang».'),
+      t('Скасувати відкликання не можна — за потреби створіть нове посилання.', 'Intrekken kan niet ongedaan worden — maak zo nodig een nieuwe link.'),
+    ],
+    bevestigTekst: t('Так, відкликати', 'Ja, intrekken'),
+  };
+}
+
+/** Venster vóór «Вийти з простору» (id deel-vertrekken) — eigen rij in «Хто має доступ». */
+export function vertrekkenVraag(lang: Lang) {
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  return {
+    titel: t('Вийти з простору?', 'Werkruimte verlaten?'),
+    uitleg: t('Ви більше не бачитимете цей простір і його блоки.', 'U ziet deze werkruimte en haar blokken dan niet meer.'),
+    gevolgen: [
+      t('Блоки, які ви додали, залишаться у власника простору.', 'Blokken die u toevoegde, blijven bij de eigenaar van de werkruimte.'),
+      t('Власник отримає сповіщення, що ви вийшли.', 'De eigenaar krijgt een melding dat u vertrok.'),
+      t('Повернутися можна лише за новим запрошенням.', 'Terugkeren kan alleen met een nieuwe uitnodiging.'),
+    ],
+    bevestigTekst: t('Так, вийти', 'Ja, verlaten'),
+  };
+}
 
 /** Tekst van het venster bij het wijzigen van een rol naar «beheerder» (id deel-rol-beheerder). */
 export function beheerderMakenVraag(lang: Lang, email: string, actief = true) {

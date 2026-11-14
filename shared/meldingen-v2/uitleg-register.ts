@@ -104,7 +104,7 @@ export const REGISTER: UitlegSoort[] = [
     past: (m) => m.soort === 'workspace_share_link_created',
     risico: 'midden',
     wat: ['Ви створили посилання-запрошення до спільного простору.', 'U maakte een uitnodigingslink voor een gedeelde werkruimte.'],
-    waarom: ['Посилання дає вибрану роль першому, хто його відкриє й увійде; воно одноразове й діє 7 днів.', 'De link geeft de gekozen rol aan wie hem als eerste opent en zich aanmeldt; hij is eenmalig en 7 dagen geldig.'],
+    waarom: ['Посилання дає вибрану роль першому, хто його відкриє й увійде; воно одноразове й діє вибраний строк (1, 7 або 30 днів).', 'De link geeft de gekozen rol aan wie hem als eerste opent en zich aanmeldt; hij is eenmalig en geldig voor de gekozen termijn (1, 7 of 30 dagen).'],
     gevolg: ['Будь-хто, до кого потрапить посилання, може ним скористатися — навіть не та людина, якій ви його надіслали.', 'Iedereen die de link in handen krijgt, kan hem gebruiken — ook iemand anders dan aan wie u hem stuurde.'],
     doen: ['Надсилайте посилання лише особисто. Якщо його створили не ви — захистіть вхід і перевірте учасників простору.', 'Stuur de link alleen persoonlijk. Maakte u hem niet, beveilig dan uw aanmelding en controleer de leden.'],
     deeplink: viaLink('https://hub.tarasevych.com/'),
@@ -115,9 +115,10 @@ export const REGISTER: UitlegSoort[] = [
   },
   {
     id: 'delen-rechten',
-    past: (m) => /^workspace_(role_changed|access_revoked|invite_accepted)$/.test(m.soort || ''),
+    // IDENTITEIT-015: ook «посилання відкликано» і «учасник вийшов» — обидва змінюють, хто має доступ до простору.
+    past: (m) => /^workspace_(role_changed|access_revoked|invite_accepted|share_link_revoked|member_left)$/.test(m.soort || ''),
     risico: 'midden',
-    wat: ['Змінилися права в спільному просторі: ваша роль, ваш доступ або хтось прийняв ваше запрошення.', 'De rechten in een gedeelde werkruimte zijn gewijzigd: uw rol, uw toegang, of iemand nam uw uitnodiging aan.'],
+    wat: ['Змінилися права в спільному просторі: ваша роль, ваш доступ, хтось прийняв ваше запрошення, вийшов із простору або ваше посилання-запрошення відкликано.', 'De rechten in een gedeelde werkruimte zijn gewijzigd: uw rol, uw toegang, iemand nam uw uitnodiging aan of verliet de werkruimte, of uw uitnodigingslink is ingetrokken.'],
     waarom: ['Власник або адміністратор простору змінив учасників, або людина скористалася запрошенням.', 'De eigenaar of een beheerder van de werkruimte wijzigde de leden, of iemand gebruikte een uitnodiging.'],
     gevolg: ['Від ролі залежить, чи можна лише переглядати, редагувати або запрошувати інших; після відкликання простір зникає зі списку.', 'De rol bepaalt of u alleen kunt bekijken, kunt bewerken of anderen kunt uitnodigen; na intrekken verdwijnt de werkruimte uit de lijst.'],
     doen: ['Якщо зміна несподівана — зверніться до власника простору. Якщо до вас приєднався незнайомець — змініть його роль або відкличте доступ у списку учасників.', 'Komt de wijziging onverwacht, neem contact op met de eigenaar. Sloot een onbekende aan, wijzig dan zijn rol of trek de toegang in via de ledenlijst.'],

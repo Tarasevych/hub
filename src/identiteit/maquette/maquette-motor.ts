@@ -874,7 +874,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     widgets:{"створення":{стан:"в-чинних",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
     sharing:{
       "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
-      "посилання":{стан:"частково",ціль:"#delen-uitnodigen",рядки:{0:"частково",1:"в-чинних"}},
+      // IDENTITEIT-015 (крок «delen»): строк 1/7/30 днів з межею на сервері, дата спливу, прив'язка до адреси (.delen-link-opties);
+      // «Відкриті посилання» з відкликанням (#delen-links); «Вийти з простору» на власному рядку (#delen-leden).
+      "посилання":{стан:"в-чинних",ціль:"#delen-uitnodigen",цілі:{0:".delen-link-opties"}},
       "чинні":{стан:"в-чинних",ціль:"#delen-leden"}
     },
     account:{

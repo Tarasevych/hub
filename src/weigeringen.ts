@@ -30,7 +30,11 @@ export function deelWeigering(e: unknown): Paar | null {
   if (code === 'Valid email required') return ['Перевірте адресу пошти: вона не схожа на справжню.', 'Controleer het e-mailadres: het lijkt niet echt.'];
   // IDENTITEIT-014: відмови під час вступу за запрошенням (POST /api/share/join) — що сталося і що робити далі.
   // Weigeringen bij aansluiten via een uitnodiging: wat er gebeurde en wat de mens nu kan doen.
-  if (code === 'invite_expired') return ['Запрошення прострочене: воно діяло 7 днів. Попросіть того, хто вас запросив, надіслати нове.', 'De uitnodiging is verlopen: ze was 7 dagen geldig. Vraag wie u uitnodigde om een nieuwe te sturen.'];
+  /* IDENTITEIT-015: строк посилання тепер 1, 7 або 30 днів — не обіцяємо конкретного числа */
+  if (code === 'invite_expired') return ['Запрошення прострочене: його строк дії минув. Попросіть того, хто вас запросив, надіслати нове.', 'De uitnodiging is verlopen: de geldigheidstermijn is voorbij. Vraag wie u uitnodigde om een nieuwe te sturen.'];
+  if (code === 'SHARE_LINK_DAYS_INVALID') return ['Строк дії посилання може бути лише 1, 7 або 30 днів. Виберіть один із них — посилання не створено.', 'Een link kan alleen 1, 7 of 30 dagen geldig zijn. Kies een van deze — de link is niet gemaakt.'];
+  if (code === 'Share access required') return ['Керувати посиланнями й учасниками цього простору може лише його власник або адміністратор.', 'Links en leden van deze werkruimte beheren kan alleen de eigenaar of een beheerder.'];
+  if (code === 'invite_not_revocable') return ['Це посилання створив інший учасник; відкликати його може він сам, власник або адміністратор простору.', 'Deze link is door een ander lid gemaakt; intrekken kan die persoon zelf, de eigenaar of een beheerder van de werkruimte.'];
   if (code === 'invite_used') return ['Це посилання вже використано: воно одноразове. Попросіть нове посилання.', 'Deze link is al gebruikt: hij werkt maar één keer. Vraag om een nieuwe link.'];
   if (code === 'invite_revoked') return ['Запрошення відкликали — доступу за ним немає. Якщо це помилка, зверніться до того, хто вас запросив.', 'De uitnodiging is ingetrokken — ze geeft geen toegang. Is dat een vergissing, neem dan contact op met wie u uitnodigde.'];
   if (code === 'invite_not_found') return ['Запрошення не знайдено: посилання неповне або неправильне. Перевірте, чи скопійовано його повністю.', 'Uitnodiging niet gevonden: de link is onvolledig of fout. Controleer of hij helemaal is gekopieerd.'];

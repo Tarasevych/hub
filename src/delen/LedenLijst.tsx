@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { BevestigDialoog } from '../platform/BevestigDialoog';
 import { WERKRUIMTE_ROLLEN, magDelen, magRolBeheren, type WerkruimteRol } from '../../shared/werkruimte-rechten';
-import { STAAT_UITLEG, lidStaat, rolNaam, rolVanLid, rolWijzigenVraag, staatTekst, type Lid } from './delen-logica';
+import { STAAT_UITLEG, lidStaat, rolNaam, rolVanLid, rolWijzigenVraag, staatTekst, vertrekkenVraag, type Lid } from './delen-logica';
 import './delen.css';
 
 type Lang = 'uk' | 'nl';
@@ -22,10 +22,16 @@ export function LedenLijst(p: {
   onIntrekken: (lidId: string) => Promise<unknown> | void;
   /** Verlopen uitnodiging opnieuw sturen (opent het venster «Надати доступ» van de ouder) — met het bereik van de oude uitnodiging. */
   onOpnieuw?: (email: string, rol: WerkruimteRol, scopeBlockIds: string[]) => void;
+  /** IDENTITEIT-015: id van de huidige gebruiker — zijn eigen rij krijgt «Вийти з простору». */
+  eigenId?: string;
+  /** IDENTITEIT-015: zelf vertrekken (POST /api/share/revoke met de eigen rij; de server laat dat elk lid toe). */
+  onVertrekken?: (lidId: string) => Promise<unknown> | void;
 }) {
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const [intrekDoel, setIntrekDoel] = useState<{ id: string; email: string } | null>(null);
   const [rolDoel, setRolDoel] = useState<{ id: string; email: string; van: WerkruimteRol; naar: WerkruimteRol; actief: boolean } | null>(null);
+  const [vertrekDoel, setVertrekDoel] = useState<string | null>(null);
+  const vertrekVraag = vertrekkenVraag(p.lang);
   const mag = magDelen(p.rol);
   const nietBeheren = t('Змінювати ролі й відкликати доступ може лише власник або адміністратор цього простору.', 'Rollen wijzigen en toegang intrekken kan alleen de eigenaar of een beheerder van deze werkruimte.');
   if (!p.leden.length) return <p className='hint delen-leeg'>{t('Поки що доступу немає ні в кого, крім вас.', 'Nog niemand anders dan u heeft toegang.')}</p>;
@@ -37,7 +43,8 @@ export function LedenLijst(p: {
       {p.leden.map((lid) => {
         const huidig = rolVanLid(lid);
         const staat = lidStaat(lid);
-        const magDit = magRolBeheren(p.rol, huidig);
+        const eigen = !!p.eigenId && lid.userId === p.eigenId && staat === 'actief';
+        const magDit = !eigen && magRolBeheren(p.rol, huidig);
         return (
           <article key={lid.id} className='share-member-row delen-lid' data-lid-staat={staat}>
             <div>
@@ -55,6 +62,7 @@ export function LedenLijst(p: {
               </label>
               {staat === 'verlopen' && p.onOpnieuw && magDit && <button type='button' className='ghost' disabled={p.bezig} title={t('Нове запрошення знову діятиме 7 днів.', 'De nieuwe uitnodiging is weer 7 dagen geldig.')} onClick={() => p.onOpnieuw?.(lid.email, huidig, lid.scopeBlockIds || [])}>{t('Надіслати знову', 'Opnieuw sturen')}</button>}
               {mag && magDit && <button type='button' className='ghost' disabled={p.bezig} title={t('Людина одразу перестане бачити простір.', 'Deze persoon ziet de werkruimte meteen niet meer.')} onClick={() => setIntrekDoel({ id: lid.id, email: lid.email })}>{t('Відкликати', 'Intrekken')}</button>}
+              {eigen && p.onVertrekken && <button type='button' className='ghost' data-delen-vertrekken='' disabled={p.bezig} title={t('Ви перестанете бачити цей простір; повернутися можна лише за новим запрошенням.', 'U ziet deze werkruimte dan niet meer; terugkeren kan alleen met een nieuwe uitnodiging.')} onClick={() => setVertrekDoel(lid.id)}>{t('Вийти з простору', 'Werkruimte verlaten')}</button>}
             </div>
           </article>
         );
@@ -65,6 +73,9 @@ export function LedenLijst(p: {
         gevolgen={[t('Блоки, які створила ця особа, переходять власнику простору.', 'Blokken die deze persoon maakte, gaan over naar de eigenaar van de werkruimte.'), t('Щоб повернути доступ, потрібне нове запрошення.', 'Om de toegang terug te geven is een nieuwe uitnodiging nodig.')]}
         bevestigTekst={t('Так, відкликати', 'Ja, intrekken')} onAnnuleer={() => setIntrekDoel(null)}
         onBevestig={async () => { const doel = intrekDoel; setIntrekDoel(null); if (doel) await p.onIntrekken(doel.id); }} />
+      <BevestigDialoog open={!!vertrekDoel} id='deel-vertrekken' lang={p.lang} gevaarlijk bezig={p.bezig}
+        titel={vertrekVraag.titel} uitleg={vertrekVraag.uitleg} gevolgen={vertrekVraag.gevolgen} bevestigTekst={vertrekVraag.bevestigTekst}
+        onAnnuleer={() => setVertrekDoel(null)} onBevestig={async () => { const id = vertrekDoel; setVertrekDoel(null); if (id) await p.onVertrekken?.(id); }} />
       <BevestigDialoog open={rolDoel?.naar === 'admin'} id='deel-rol-beheerder' lang={p.lang} gevaarlijk bezig={p.bezig}
         titel={vraag?.titel || ''} uitleg={vraag?.uitleg} gevolgen={vraag?.gevolgen} bevestigTekst={vraag?.bevestigTekst || ''}
         onAnnuleer={() => setRolDoel(null)} onBevestig={bevestigRol} />

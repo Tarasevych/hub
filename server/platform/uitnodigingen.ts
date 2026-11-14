@@ -87,6 +87,39 @@ export const invites = {
    * Intrekken door de maker, of (beheerdeAan) door wie de route zelf als beheerder van de bron heeft
    * gecontroleerd. Audit-fix 10: ook anonieme links (vroeger alleen auth_mode 'required').
    */
+  /**
+   * IDENTITEIT-015 (крок «delen»): відкриті посилання одного простору — для переліку «Відкриті посилання».
+   * Open links van één werkruimte: niet ingetrokken, niet verlopen en (eenmalig) nog niet gebruikt. De code zelf verlaat de server
+   * NIET: alleen een id (eerste 32 hex van sha256(code), om in te trekken) en de eerste 4 tekens om de link te herkennen.
+   * Index: invites_werkruimte_idx (migratie 0273).
+   */
+  async openVoorWerkruimte(resourceType: string, workspaceId: string, limiet = 100): Promise<Array<{ id: string; begin: string; authMode: string; allowList: string[]; context: Record<string, unknown>; createdBy: string | null; expiresAt: string | null; createdAt: string }>> {
+    const r = await getPool().query(
+      `SELECT left(encode(sha256(convert_to(code, 'UTF8')), 'hex'), 32) AS id, left(code, 4) AS begin, auth_mode, allow_list, context, created_by, expires_at, created_at
+         FROM app.invites
+        WHERE resource_type = $1 AND context->>'workspaceId' = $2 AND revoked_at IS NULL
+          AND (expires_at IS NULL OR expires_at > now())
+          AND NOT (coalesce(context->>'eenmalig', '') = 'true' AND join_count > 0)
+        ORDER BY created_at DESC LIMIT $3`,
+      [String(resourceType), String(workspaceId), Math.max(1, Math.min(200, Math.floor(limiet)))],
+    );
+    return r.rows.map((x: { id: string; begin: string; auth_mode: string; allow_list: string[]; context: Record<string, unknown>; created_by: string | null; expires_at: Date | null; created_at: Date }) => ({
+      id: x.id, begin: x.begin, authMode: x.auth_mode, allowList: x.allow_list || [], context: x.context || {}, createdBy: x.created_by,
+      expiresAt: x.expires_at ? x.expires_at.toISOString() : null, createdAt: x.created_at.toISOString(),
+    }));
+  },
+
+  /** Code bij een id uit openVoorWerkruimte — alleen binnen dezelfde bron en werkruimte (ook al ingetrokken: intrekken is idempotent). */
+  async codeVoorId(resourceType: string, workspaceId: string, id: string): Promise<string | null> {
+    if (!/^[0-9a-f]{32}$/.test(String(id || ''))) return null;
+    const r = await getPool().query(
+      `SELECT code FROM app.invites WHERE resource_type = $1 AND context->>'workspaceId' = $2
+          AND left(encode(sha256(convert_to(code, 'UTF8')), 'hex'), 32) = $3 LIMIT 1`,
+      [String(resourceType), String(workspaceId), String(id)],
+    );
+    return (r.rows[0]?.code as string | undefined) || null;
+  },
+
   async revoke(input: { code: string; actor: Actor; beheerder?: boolean }): Promise<{ ok: true }> {
     const row = await load(input.code);
     if (!input.actor?.userId || (row.created_by !== input.actor.userId && input.beheerder !== true)) throw new InviteError('invite_not_revocable');

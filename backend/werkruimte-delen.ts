@@ -4,6 +4,7 @@
 import { db } from '../server/platform';
 import type { WorkspaceRole } from './rbac';
 import { ROL_TEKST, type WerkruimteRol } from '../shared/werkruimte-rechten';
+import { STANDAARD_LINK_DAGEN, dagenTekst, linkDagen } from '../shared/deel-links';
 // IDENTITEIT-014: de rollentabel leeft in shared/werkruimte-rechten.ts (ook voor de interface); hier alleen heruitgevoerd,
 // zodat backend/index.ts en de rest ongewijzigd importeren. / Таблиця ролей — у shared/werkruimte-rechten.ts.
 export { werkruimteRol, magDelen, magRolBeheren, hoogsteRol, rollenUitLidmaatschappen } from '../shared/werkruimte-rechten';
@@ -43,7 +44,9 @@ export function ledenVoorWeergave<T extends { email: string; userId: string }>(l
 // Тексти пояснюють наслідок (що людина тепер може чи не може), а не лише назву дії. Формат «uk / nl», як решта сповіщень безпеки.
 //   workspace_share          → wie per adres toegang kreeg (herstel: vroeger alleen Oekraïens);
 //   workspace_share_link_created → de maker van een privélink (een geheim dat de rol geeft aan wie hem als eerste opent).
-export type DeelMeldingSoort = 'workspace_role_changed' | 'workspace_access_revoked' | 'workspace_invite_accepted' | 'workspace_share' | 'workspace_share_link_created';
+//   workspace_share_link_revoked → de maker van een privélink die (door hemzelf of een beheerder) is ingetrokken (IDENTITEIT-015);
+//   workspace_member_left    → de eigenaar van de ruimte, wanneer een lid zelf vertrekt (IDENTITEIT-015).
+export type DeelMeldingSoort = 'workspace_role_changed' | 'workspace_access_revoked' | 'workspace_invite_accepted' | 'workspace_share' | 'workspace_share_link_created' | 'workspace_share_link_revoked' | 'workspace_member_left';
 // «/» мінімізуємо: центр сповіщень ділить текст за першим « / » (src/canoniek-meldingen.ts, taalDeel). / Geen « / » in namen.
 const kort = (v: unknown, fallback: string) => { const s = String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s\/\s/g, ' – ').trim().slice(0, 80); return s || fallback; };
 /**
@@ -62,8 +65,24 @@ const GEVOLG: Record<WerkruimteRol, readonly [string, string]> = {
   viewer: ['Тепер ви можете лише переглядати простір; редагування вимкнено.', 'U kunt de werkruimte nu alleen bekijken; bewerken staat uit.'],
 };
 /** Titel en tekst van een deelmelding (puur; getest in tests/eenheid/identiteit-014-rechten.test.ts). */
-export function deelMeldingTekst(soort: DeelMeldingSoort, d: { wie: unknown; ruimte: unknown; oud?: WerkruimteRol | null; nieuw?: WerkruimteRol | null }): { titel: string; tekst: string } {
+export function deelMeldingTekst(soort: DeelMeldingSoort, d: { wie: unknown; ruimte: unknown; oud?: WerkruimteRol | null; nieuw?: WerkruimteRol | null; dagen?: number; zelf?: boolean }): { titel: string; tekst: string } {
   const wie = kort(d.wie, 'Учасник / Een lid'); const ruimte = kort(d.ruimte, '—');
+  /* IDENTITEIT-015: looptijd uit de keuze (1/7/30), standaard 7 — dezelfde tekst als vroeger voor oude aanroepers */
+  const dagen = linkDagen(d.dagen ?? STANDAARD_LINK_DAGEN) || STANDAARD_LINK_DAGEN;
+  if (soort === 'workspace_share_link_revoked') {
+    return {
+      titel: 'Посилання-запрошення відкликано / Uitnodigingslink ingetrokken',
+      tekst: d.zelf
+        ? `Ви відкликали посилання-запрошення до простору «${ruimte}». Хто відкриє його тепер, доступу не отримає; учасники, які вже приєдналися, залишаються. / U trok een uitnodigingslink voor de werkruimte «${ruimte}» in. Wie hem nu opent, krijgt geen toegang; leden die al aansloten, blijven.`
+        : `${wie} відкликає ваше посилання-запрошення до простору «${ruimte}». Хто відкриє його тепер, доступу не отримає; за потреби створіть нове. / «${wie}» trekt uw uitnodigingslink voor de werkruimte «${ruimte}» in. Wie hem nu opent, krijgt geen toegang; maak zo nodig een nieuwe.`,
+    };
+  }
+  if (soort === 'workspace_member_left') {
+    return {
+      titel: 'Учасник вийшов зі спільного простору / Een lid heeft een gedeelde werkruimte verlaten',
+      tekst: `${wie} виходить із простору «${ruimte}» і більше його не бачить. Блоки, які додала ця людина, тепер ваші. Щоб повернути доступ, потрібне нове запрошення. / «${wie}» verlaat de werkruimte «${ruimte}» en ziet haar niet meer. Blokken die deze persoon toevoegde, zijn nu van u. Om de toegang terug te geven is een nieuwe uitnodiging nodig.`,
+    };
+  }
   if (soort === 'workspace_role_changed') {
     const nieuw = d.nieuw || 'viewer'; const oud = d.oud || null; const [nUk, nNl] = ROL_TEKST[nieuw];
     const vanUk = oud ? `«${ROL_TEKST[oud][0]}» → «${nUk}»` : `«${nUk}»`; const vanNl = oud ? `«${ROL_TEKST[oud][1]}» → «${nNl}»` : `«${nNl}»`;
@@ -89,7 +108,7 @@ export function deelMeldingTekst(soort: DeelMeldingSoort, d: { wie: unknown; rui
     const rol = d.nieuw || 'viewer';
     return {
       titel: 'Створено посилання-запрошення / Uitnodigingslink gemaakt',
-      tekst: `Ви створили одноразове посилання до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». Хто першим відкриє його й увійде, отримає цю роль; посилання діє 7 днів. Якщо це були не ви — захистіть вхід і перевірте учасників простору. / U maakte een eenmalige link naar de werkruimte «${ruimte}» met de rol «${ROL_TEKST[rol][1]}». Wie hem als eerste opent en zich aanmeldt, krijgt die rol; de link is 7 dagen geldig. Was u dit niet, beveilig dan uw aanmelding en controleer de leden van de werkruimte.`,
+      tekst: `Ви створили одноразове посилання до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». Хто першим відкриє його й увійде, отримає цю роль; посилання діє ${dagenTekst('uk', dagen)}. Якщо це були не ви — захистіть вхід і перевірте учасників простору. / U maakte een eenmalige link naar de werkruimte «${ruimte}» met de rol «${ROL_TEKST[rol][1]}». Wie hem als eerste opent en zich aanmeldt, krijgt die rol; de link is ${dagenTekst('nl', dagen)} geldig. Was u dit niet, beveilig dan uw aanmelding en controleer de leden van de werkruimte.`,
     };
   }
   const rol = d.nieuw || 'viewer';
