@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
+import {markeerGoogleTerugkeer} from './platform/google-terugkeer';
 import {api} from './platform/client';
 import {bewaarStapOpFout} from './platform/stap-op';
 import {rememberViewAccountEverywhere} from './domein-weergave-cache';
@@ -91,6 +92,7 @@ export default function OwnerIdentityCallback(){
     const suiteState=/^gsuite\.v2\./.test(state);
     const callbackEndpoint=suiteState?'/api/owner/google-suite/callback':'/api/owner/auth/google/callback';
     if(suiteState)setMessage(copy(initialLocale).suiteWorking);
+    markeerGoogleTerugkeer(); /* IDENTITEIT-015 (C2): до очищення адреси — прапорці на цій сторінці не питаються (401 без контексту вкладки) */
     try{history.replaceState({},'',current.pathname||'/')}catch{}
     let stopped=false;
     let retryTimer=0;let watchdog=0;
