@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "TELEGRAM-002",
+  "agent": "claude",
+  "tak": "feature/telegram-002-20261114-225433",
+  "basisCommit": "987b81a578f120dfcf7af253a110a0d106883365",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T22:13:56.171Z",
+  "bijgewerkt": "2026-11-14T22:13:56.171Z",
+  "omschrijving": "Удосконалення входу й підтверджень через Telegram, етап 1: вибір однакової піктограми в захищеному вікні Telegram, таємний код лише у вікні, фото облікових записів у запитах, логотипи пристроїв і місце мовою читача, історія фото й імен Telegram. Спільний випуск із KLUIS-001 (розшифрування на місці).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
