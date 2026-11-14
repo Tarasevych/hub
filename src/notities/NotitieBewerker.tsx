@@ -9,7 +9,7 @@ import {
 } from '../../shared/notities-vnext-model';
 import Laag from './Laag';
 import { veiligeHtml } from './NotitieKaart';
-import { NotitiesFout, kladBewaren, kladLezen, kladWissen, notitiesClient } from './notities-client';
+import { NotitiesFout, kladBewarenVoor, kladLezen, kladScopeNu, kladWissenVoor, notitiesClient, type KladScope } from './notities-client';
 import { KLEUR_LABEL_VN, SOORT_LABEL, datumTekst, foutTekst, tr, type Lang } from './tekst';
 
 type Props = {
@@ -18,6 +18,10 @@ type Props = {
 };
 type Stand = 'rust' | 'bezig' | 'conflict';
 const kladId = (n: Notitie | null) => (n ? n.id : 'nieuw');
+// SEC-002 (aanv-ronde1-07): het klad hoort bij het account en de ruimte waarin de bewerker OPENDE. Wisselt het tabblad intussen
+// van account of ruimte, dan wordt er niet meer weggeschreven (anders kwam de tekst van de een onder de sleutel van de ander).
+// Чернетка належить обліковому запису й простору, у яких редактор відкрито; після зміни — не записується.
+const zelfdeScope = (a: KladScope | null, b: KladScope | null) => Boolean(a && b && a.account === b.account && a.ruimte === b.ruimte);
 
 export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap, startSoort, onSluit, onBewaard, onMappen }: Props) {
   const [v, setV] = useState<NotitieInvoer>(() => notitie
@@ -29,6 +33,7 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
   const [huidig, setHuidig] = useState<Notitie | null>(null);
   const [voorbeeld, setVoorbeeld] = useState(false);
   const [nieuwEtiket, setNieuwEtiket] = useState('');
+  const [kladScope] = useState<KladScope | null>(() => kladScopeNu());
   const [klad, setKlad] = useState(() => { const k = kladLezen(kladId(notitie)); return k && (k.titel !== (notitie?.titel ?? '') || k.inhoud !== (notitie?.inhoud ?? '')) ? k : null; });
   const [geschiedenis, setGeschiedenis] = useState<NotitieRevisie[] | null>(null);
   const [nieuweMap, setNieuweMap] = useState('');
@@ -40,9 +45,9 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
   // Klad: na elke wijziging (met een korte pauze) in deze browser; weg zodra de server bevestigde.
   useEffect(() => {
     if (!vuil) return;
-    const t = setTimeout(() => kladBewaren(id, { titel: v.titel, inhoud: v.inhoud }), 600);
+    const t = setTimeout(() => { if (zelfdeScope(kladScope, kladScopeNu())) kladBewarenVoor(kladScope, id, { titel: v.titel, inhoud: v.inhoud }); }, 600);
     return () => clearTimeout(t);
-  }, [v.titel, v.inhoud, vuil, id]);
+  }, [v.titel, v.inhoud, vuil, id, kladScope]);
   const zet = (p: Partial<NotitieInvoer>) => { setV((x) => ({ ...x, ...p })); setVuil(true); };
 
   const bewaar = useCallback(async (opnieuwVersie?: number | null) => {
@@ -52,7 +57,7 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
       let uit: Notitie;
       if (notitie) uit = await notitiesClient.wijzig(notitie.id, opnieuwVersie === undefined ? versie : opnieuwVersie, v);
       else uit = await notitiesClient.nieuw(v);
-      kladWissen(id); setVuil(false); setVersie(uit.versie); setHuidig(null); setStand('rust');
+      kladWissenVoor(kladScope, id); setVuil(false); setVersie(uit.versie); setHuidig(null); setStand('rust');
       onBewaard(uit, !notitie);
     } catch (e) {
       if (e instanceof NotitiesFout && e.code === 'VERSIE_VEROUDERD') { setHuidig(e.data?.huidig ?? null); setStand('conflict'); return; }
@@ -116,7 +121,7 @@ export default function NotitieBewerker({ lang, smal, notitie, mappen, startMap,
           <p className='vn-melding is-info' data-vn-klad='1'>
             <AlertCircle aria-hidden='true' />{tr(lang, `Є незбережена чернетка (${datumTekst(lang, klad.op)}).`, `Er is een niet-opgeslagen klad (${datumTekst(lang, klad.op)}).`)}
             <button type='button' className='vn-knop is-klein' onClick={() => { zet({ titel: klad.titel, inhoud: klad.inhoud }); setKlad(null); }}>{tr(lang, 'Відновити', 'Terughalen')}</button>
-            <button type='button' className='vn-knop is-klein is-stil' onClick={() => { kladWissen(id); setKlad(null); }}>{tr(lang, 'Відкинути', 'Weggooien')}</button>
+            <button type='button' className='vn-knop is-klein is-stil' onClick={() => { kladWissenVoor(kladScope, id); setKlad(null); }}>{tr(lang, 'Відкинути', 'Weggooien')}</button>
           </p>
         ) : null}
         {stand === 'conflict' && huidig ? (

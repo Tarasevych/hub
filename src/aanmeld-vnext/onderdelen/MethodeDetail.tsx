@@ -2,7 +2,9 @@
 // routes — PasskeysSection, HerstelcodesSectie, SleutelkluisSectie, Toegangscodes en de TOTP-aanroepen van de controller
 // worden hier ongewijzigd gerenderd; dit paneel is alleen de omlijsting (zijpaneel op breed, volledig scherm op smal).
 // Geheimen (TOTP-sleutel, herstelcodes) verschijnen uitsluitend hier, nooit op de kaart of in het overzicht.
-import { Check, ExternalLink, Plus, Trash2, X } from 'lucide-react';
+import { Check, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { BevestigDialoog } from '../../platform/BevestigDialoog'; // IDENTITEIT-013
+import {verborgenVoorAi} from '../../menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import { STAAT_LABEL, aanmeldTekst, type MethodeUi } from '../../../shared/aanmeld-vnext-model';
@@ -42,10 +44,15 @@ export default function MethodeDetail({ lang, kaart: k, p, smal, onSluit }: Prop
           <GeheimInvoer lang={lang} value={p.password} onChange={p.setPassword} autoComplete='new-password' autoFocus placeholder={tr(lang, 'Новий пароль, мін. 10 символів', 'Nieuw wachtwoord, min. 10 tekens')} minLength={10} max={1024} soort='wachtwoord' />
           <div className='amv-rij'>
             <button type='button' className='amv-knop is-hoofd' disabled={busy || p.password.length < 10} onClick={() => void write('/api/owner/access/password/set', { password: p.password })}><Check aria-hidden='true' />{tr(lang, 'Зберегти', 'Opslaan')}</button>
-            {!wachtwoordWeg
-              ? <button type='button' className='amv-knop' disabled={busy || data.lockout.protected} onClick={() => setWachtwoordWeg(true)}><Trash2 aria-hidden='true' />{tr(lang, 'Прибрати пароль', 'Wachtwoord verwijderen')}</button>
-              : <button type='button' className='amv-knop is-gevaar' disabled={busy} onClick={() => { setWachtwoordWeg(false); void write('/api/owner/access/password/remove'); }}><Trash2 aria-hidden='true' />{tr(lang, 'Так, прибрати', 'Ja, verwijderen')}</button>}
-            {wachtwoordWeg ? <button type='button' className='amv-knop is-stil' onClick={() => setWachtwoordWeg(false)}><X aria-hidden='true' />{tr(lang, 'Скасувати', 'Annuleren')}</button> : null}
+            {/* IDENTITEIT-013: спільний діалог підтвердження замість вбудованої пари кнопок. */}
+            <button type='button' className='amv-knop' disabled={busy || data.lockout.protected} onClick={() => setWachtwoordWeg(true)}><Trash2 aria-hidden='true' />{tr(lang, 'Прибрати пароль', 'Wachtwoord verwijderen')}</button>
+            <BevestigDialoog open={wachtwoordWeg} id='wachtwoord-verwijderen' lang={lang} gevaarlijk bezig={busy}
+              titel={tr(lang, 'Прибрати пароль?', 'Wachtwoord verwijderen?')}
+              uitleg={tr(lang, 'Пароль перестане діяти. Повернути його можна протягом 7 днів у цьому ж розділі.', 'Het wachtwoord werkt dan niet meer. Terugzetten kan binnen 7 dagen in dit onderdeel.')}
+              gevolgen={[tr(lang, 'Вхід через Google та інші способи не зміняться.', 'Aanmelden via Google en andere methoden verandert niet.')]}
+              bevestigTekst={tr(lang, 'Так, прибрати', 'Ja, verwijderen')}
+              onAnnuleer={() => setWachtwoordWeg(false)}
+              onBevestig={async () => { setWachtwoordWeg(false); await write('/api/owner/access/password/remove'); }} />
           </div>
           {data.lockout.protected ? <small className='amv-hint'>{tr(lang, 'Останній спосіб входу захищено — прибрати пароль не можна.', 'De laatste aanmeldweg is beschermd — het wachtwoord verwijderen kan niet.')}</small> : null}
         </div>
@@ -62,7 +69,7 @@ export default function MethodeDetail({ lang, kaart: k, p, smal, onSluit }: Prop
           {p.otpauth && !totp?.enrolled ? (
             <div className='amv-totp-setup'>
               <strong>{tr(lang, 'Додайте ключ у застосунок і введіть код', 'Voeg de sleutel toe in de app en voer de code in')}</strong>
-              <code className='amv-geheim'>{p.secret}</code>
+              <code className='amv-geheim' {...verborgenVoorAi}>{p.secret}</code>
               <small>{tr(lang, 'Ключ показано один раз.', 'De sleutel wordt eenmalig getoond.')}</small>
               <div className='amv-rij'>
                 <input inputMode='numeric' autoComplete='one-time-code' autoFocus value={p.code} maxLength={6}

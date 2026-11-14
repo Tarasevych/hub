@@ -51,6 +51,22 @@ command -v sha256sum >/dev/null || { echo "[geheimen] sha256sum ontbreekt" >&2; 
 
 NIEUW_BESTAND=0; MODUS=0600
 if [ -f "$BESTAND" ]; then MODUS="$(stat -c %a "$BESTAND")"; fi
+# SEC-002 (geheimen-08): toegestaan is hoogstens 0640 (root:root 0600 of root:mijnruimte 0640). Ruimer (lezen/schrijven door
+# «anderen», schrijven door de groep, uitvoerbits, setuid) wordt METEEN — vóór er een nieuwe sleutel bij komt — teruggezet,
+# met een waarschuwing; vroeger bleef 0644 stil 0644 en kwamen nieuwe sleutels in een voor iedereen leesbaar bestand.
+if [ -f "$BESTAND" ] && [ $(( 8#$MODUS & 8#7137 )) -ne 0 ]; then
+  NIEUWE_MODUS="$(printf '%04o' $(( 8#$MODUS & 8#0640 )))"
+  chmod "$NIEUWE_MODUS" "$BESTAND"
+  echo "[geheimen] LET OP: rechten van $BESTAND waren $(printf '%04o' $(( 8#$MODUS ))) (te ruim: anderen of de groep konden lezen of schrijven) — teruggezet naar $NIEUWE_MODUS. Controleer of iemand het bestand heeft kunnen lezen; zo ja: sleutels als gelekt behandelen (deploy/GEHEIMEN-REGISTER.nl.md, «Rotatie»)." >&2
+  MODUS="$NIEUWE_MODUS"
+fi
+# Het standaardbestand hoort van root te zijn (de groep mag mijnruimte zijn): een andere eigenaar kan de rechten zelf weer verruimen.
+if [ -f "$BESTAND" ] && [ "$BESTAND" = "$STANDAARD" ] && [ "$(stat -c %u "$BESTAND")" != "0" ]; then
+  chown root "$BESTAND"
+  echo "[geheimen] LET OP: eigenaar van $BESTAND was niet root — teruggezet naar root (groep ongewijzigd)." >&2
+fi
+# Het journaal (namen, datums, vingerafdrukken) is altijd 0600, ook als het al bestond.
+[ ! -f "$JOURNAAL" ] || chmod 0600 "$JOURNAAL" 2>/dev/null || true
 if [ ! -f "$BESTAND" ]; then
   install -m 0600 /dev/null "$BESTAND"
   NIEUW_BESTAND=1
@@ -68,6 +84,7 @@ vingerafdruk() {
 }
 journaal() { # naam actie vingerafdruk
   { [ -f "$JOURNAAL" ] || install -m 0600 /dev/null "$JOURNAAL"; } 2>/dev/null || return 0
+  chmod 0600 "$JOURNAAL" 2>/dev/null || true # SEC-002 (geheimen-08): ook een bestaand journaal altijd 0600
   printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$2" "$3" >> "$JOURNAAL" 2>/dev/null || true
 }
 AANGEMAAKT=(); BESTOND=(); OVERGESLAGEN=()

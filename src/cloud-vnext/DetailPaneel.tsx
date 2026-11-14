@@ -1,10 +1,15 @@
 // Detailpaneel van één bestand (laag rechts; op de telefoon een volledig scherm): voorbeeld via de BESTAANDE
 // voorbeeldmotor van de mail/Drive (src/MailBijlageVoorbeeld.tsx, lui geladen — dezelfde weg als src/DriveBrowser.tsx),
-// metadata, labels bewerken, versies (terugzetten/bewaren) en de handelingen. Groter dan de downloadgrens → eerlijk
-// «geen voorbeeld», zonder te doen alsof. Alle teksten uk/nl; sluiten met Esc regelt Laag.
-import { Suspense, lazy, useEffect, useState } from 'react';
-import { Check, Download, History, LoaderCircle, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react';
-import { CLOUD_VNEXT_LIMIETEN, schoneNaam, schoneTag, type CloudBestand, type CloudMap, type CloudVersie } from '../../shared/cloud-vnext-model';
+// archiefverkenner (.zip / .tar / .tar.gz) met uitpakken en delen van gekozen onderdelen, metadata, labels, versies en delen.
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import {
+  Archive, Check, Download, FileText, Folder, FolderOutput, History, LoaderCircle, Pencil,
+  RotateCcw, Scissors, Search, Share2, Star, Trash2, X,
+} from 'lucide-react';
+import {
+  CLOUD_VNEXT_LIMIETEN, schoneNaam, schoneTag,
+  type CloudArchiefIngang, type CloudBestand, type CloudDeelDeelSoort, type CloudMap, type CloudVersie,
+} from '../../shared/cloud-vnext-model';
 import type { MailAttachmentPreview } from '../MailBijlageVoorbeeld';
 import { CloudFout, cloudClient } from './cloud-client';
 import { SOORT_ICOON, bewaarBlob, cloudFoutTekst, vanB64 } from './hulp';
@@ -14,23 +19,40 @@ import { bytesTekst, datumTekst, soortTekst, tr, type Lang } from './tekst';
 const PreviewBody = lazy(() => import('../MailBijlageVoorbeeld').then((m) => ({ default: m.MailAttachmentPreviewBody })));
 const voorbeeldMotor = () => import('../MailBijlageVoorbeeld');
 
+export type DetailDeelStart = {
+  beginModus?: 'heel' | 'deel' | 'archief';
+  beginDeelSoort?: CloudDeelDeelSoort;
+  beginArchiefPaden?: string[];
+};
+
 type Props = {
   lang: Lang; smal: boolean; bestand: CloudBestand; pad: CloudMap[]; wsTitel?: string; prullenbak: boolean;
   onSluit: () => void; onBijgewerkt: (b: CloudBestand | null) => void; toon: (t: string) => void;
+  onDeel?: (opties?: DetailDeelStart) => void;
+  onArchiefUitgepakt?: () => void;
 };
 
-export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, prullenbak, onSluit, onBijgewerkt, toon }: Props) {
+export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, prullenbak, onSluit, onBijgewerkt, toon, onDeel, onArchiefUitgepakt }: Props) {
   const [voorbeeld, setVoorbeeld] = useState<MailAttachmentPreview | null>(null);
   const [voorbeeldFout, setVoorbeeldFout] = useState('');
   const [laden, setLaden] = useState(false);
   const [fout, setFout] = useState('');
   const [besig, setBesig] = useState(false);
-  const [hernoem, setHernoem] = useState('');          // '' = niet aan het hernoemen
+  const [hernoem, setHernoem] = useState('');
   const [hernoemAan, setHernoemAan] = useState(false);
   const [tagInvoer, setTagInvoer] = useState('');
   const [versies, setVersies] = useState<CloudVersie[] | null>(null);
   const [versiesOpen, setVersiesOpen] = useState(false);
-  const [wisVraag, setWisVraag] = useState(false);      // bevestiging «definitief» — in het paneel, nooit een browser-popup
+  const [wisVraag, setWisVraag] = useState(false);
+
+  // Archiefverkenner (.zip / .tar / .tar.gz)
+  const [archiefLaden, setArchiefLaden] = useState(false);
+  const [archiefOndersteund, setArchiefOndersteund] = useState<boolean | null>(null);
+  const [archiefReden, setArchiefReden] = useState('');
+  const [archiefIngangen, setArchiefIngangen] = useState<CloudArchiefIngang[]>([]);
+  const [archiefZoek, setArchiefZoek] = useState('');
+  const [archiefKeuze, setArchiefKeuze] = useState<string[]>([]);
+
   const teGroot = b.kind !== 'link' && b.bytes > CLOUD_VNEXT_LIMIETEN.downloadMaxBytes;
   const grootTekst = tr(lang,
     `Передперегляд недоступний: файл більший за ${bytesTekst(lang, CLOUD_VNEXT_LIMIETEN.downloadMaxBytes)} — ліміт одного завантаження в цьому випуску (без стрімів).`,
@@ -39,7 +61,20 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
   useEffect(() => {
     let actief = true; let geladen: MailAttachmentPreview | null = null;
     setVoorbeeld(null); setVoorbeeldFout(''); setVersies(null); setVersiesOpen(false); setWisVraag(false); setHernoemAan(false);
-    if (b.kind === 'link' || teGroot) return;
+    setArchiefOndersteund(null); setArchiefReden(''); setArchiefIngangen([]); setArchiefZoek(''); setArchiefKeuze([]);
+    if (b.soort === 'archief' && b.kind === 'file' && !prullenbak && b.bytes <= 64 * 1024 * 1024) {
+      setArchiefLaden(true);
+      cloudClient.archiefInhoud(b.id)
+        .then((uit) => {
+          if (!actief) return;
+          setArchiefOndersteund(uit.ondersteund);
+          setArchiefReden(uit.reden || '');
+          setArchiefIngangen(uit.ingangen || []);
+        })
+        .catch((e) => { if (actief) setArchiefReden(e instanceof CloudFout ? e.code : 'ARCHIEF_BESCHADIGD'); })
+        .finally(() => { if (actief) setArchiefLaden(false); });
+    }
+    if (b.kind === 'link' || teGroot || b.soort === 'archief') return;
     setLaden(true);
     (async () => {
       try {
@@ -68,6 +103,20 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
     const d = await cloudClient.download(b.id, versie);
     bewaarBlob(d.naam || b.naam, new Blob([vanB64(d.data) as unknown as BlobPart], { type: d.mime || 'application/octet-stream' }));
   });
+  const downloadUitArchief = (archPad: string) => doe(async () => {
+    const d = await cloudClient.archiefBestand(b.id, archPad);
+    bewaarBlob(d.naam, new Blob([vanB64(d.data) as unknown as BlobPart], { type: d.mime || 'application/octet-stream' }));
+  });
+  const pakArchiefUit = (alleenKeuze: boolean) => doe(async () => {
+    const uit = await cloudClient.archiefUitpakken(b.id, {
+      doelMapId: b.mapId,
+      ...(alleenKeuze && archiefKeuze.length ? { paden: archiefKeuze } : {}),
+      inEigenMap: true,
+    });
+    toon(tr(lang, `Розпаковано файлів: ${uit.uitgepakteBestanden}, створено тек: ${uit.aangemaakteMappen}.`, `Uitgepakt: ${uit.uitgepakteBestanden} bestanden, ${uit.aangemaakteMappen} mappen.`));
+    onArchiefUitgepakt?.();
+  });
+
   const favoriet = () => doe(async () => { await cloudClient.bestandFavoriet([b.id], !b.favoriet); onBijgewerkt({ ...b, favoriet: !b.favoriet }); });
   const hernoemBewaar = () => {
     const naam = schoneNaam(hernoem);
@@ -85,17 +134,30 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
   const versiesLaad = () => doe(async () => { setVersies(await cloudClient.versies(b.id)); setVersiesOpen(true); });
 
   const Icoon = SOORT_ICOON[b.soort];
-  // Het kruimelpad hoort bij de lijst waaruit het paneel opende; klopt het niet met de map van het bestand (bv. geopend
-  // vanuit het Overzicht), dan zeggen we dat eerlijk in plaats van een verkeerd pad te tonen.
   const padKlopt = (pad.length ? pad[pad.length - 1].id : null) === (b.mapId || null);
   const mapTekst = !b.mapId ? tr(lang, 'Корінь', 'Wortel') : padKlopt ? pad.map((m) => m.naam).join(' / ') : tr(lang, 'у теці (видно в «Мої файли»)', 'in een map (zichtbaar in «Mijn bestanden»)');
   const koppeling = b.kind === 'link' && /^https?:\/\//i.test(b.url || '') ? b.url : '';
+  const kanDeelSnijden = b.kind !== 'link' && b.bytes > 0;
+  const gefilterdArchief = useMemo(() => {
+    const z = archiefZoek.trim().toLowerCase();
+    return z ? archiefIngangen.filter((i) => i.pad.toLowerCase().includes(z)) : archiefIngangen;
+  }, [archiefIngangen, archiefZoek]);
 
   return (
     <Laag lang={lang} soort={smal ? 'scherm' : 'paneel'} titel={b.naam} onSluit={onSluit} data={{ 'cvn-detail': b.id }}>
       {fout ? <p className='cvn-melding is-fout' role='alert'>{fout}</p> : null}
 
       <div className='cvn-detail-acties' data-cvn-acties='detail' role='group' aria-label={tr(lang, 'Дії з файлом', 'Acties met het bestand')}>
+        {!prullenbak && onDeel ? (
+          <button type='button' className='cvn-knop is-hoofd' data-cvn-deel={b.id} disabled={besig} onClick={() => onDeel({ beginModus: 'heel' })}>
+            <Share2 aria-hidden='true' />{tr(lang, 'Поділитися', 'Delen')}
+          </button>
+        ) : null}
+        {!prullenbak && onDeel && kanDeelSnijden && b.soort !== 'archief' ? (
+          <button type='button' className='cvn-knop' disabled={besig} onClick={() => onDeel({ beginModus: 'deel' })}>
+            <Scissors aria-hidden='true' />{tr(lang, 'Поділитися частиною', 'Deel delen')}
+          </button>
+        ) : null}
         {b.kind !== 'link' ? <button type='button' className='cvn-knop' disabled={besig} onClick={() => void downloadHeel()}><Download aria-hidden='true' />{tr(lang, 'Завантажити', 'Downloaden')}</button> : null}
         <button type='button' className={`cvn-knop${b.favoriet ? ' is-actief' : ''}`} data-cvn-favoriet={b.id} aria-pressed={b.favoriet} disabled={besig} onClick={() => void favoriet()}><Star aria-hidden='true' />{b.favoriet ? tr(lang, 'В обраному', 'Favoriet') : tr(lang, 'До обраного', 'Favoriet maken')}</button>
         {!prullenbak ? <button type='button' className='cvn-knop' disabled={besig} onClick={() => { setHernoemAan(true); setHernoem(b.naam); }}><Pencil aria-hidden='true' />{tr(lang, 'Перейменувати', 'Hernoemen')}</button> : null}
@@ -121,18 +183,79 @@ export default function DetailPaneel({ lang, smal, bestand: b, pad, wsTitel, pru
         </form>
       ) : null}
 
-      <section className='cvn-detail-voorbeeld' data-cvn-detail={b.id} aria-label={tr(lang, 'Передперегляд', 'Voorvertoning')}>
-        {koppeling ? <p className='cvn-hint'><a href={koppeling} target='_blank' rel='noreferrer noopener'>{koppeling}</a></p> : null}
-        {b.kind === 'link' && !koppeling ? <p className='cvn-hint'>{tr(lang, 'Посилання без адреси http(s) — відкривати нічого.', 'Een link zonder http(s)-adres — niets te openen.')}</p> : null}
-        {teGroot ? <p className='cvn-melding is-info' role='status'>{grootTekst}</p> : null}
-        {voorbeeldFout ? <p className='cvn-melding is-info' role='status'>{voorbeeldFout}</p> : null}
-        {laden ? <p className='cvn-hint' role='status' aria-busy='true'><LoaderCircle className='cvn-draai' aria-hidden='true' />{tr(lang, 'Готуємо передперегляд…', 'Voorvertoning laden…')}</p> : null}
-        {voorbeeld ? (
-          <Suspense fallback={<p className='cvn-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
-            <PreviewBody preview={voorbeeld} lang={lang} />
-          </Suspense>
-        ) : null}
-      </section>
+      {/* ARCHIEFVERKENNER */}
+      {b.soort === 'archief' && b.kind === 'file' && !prullenbak ? (
+        <section className='cvn-detail-archief' data-cvn-archief={b.id} aria-label={tr(lang, 'Вміст архіву', 'Inhoud van archief')}>
+          <div className='cvn-detail-archief-kop'>
+            <h3><Archive aria-hidden='true' />{tr(lang, 'Вміст архіву', 'Inhoud van archief')}</h3>
+            {archiefOndersteund && archiefIngangen.length > 0 ? (
+              <div className='cvn-detail-archief-acties'>
+                <button type='button' className='cvn-knop is-klein' disabled={besig} onClick={() => void pakArchiefUit(false)}>
+                  <FolderOutput aria-hidden='true' />{tr(lang, 'Розпакувати все в теку', 'Alles uitpakken in map')}
+                </button>
+                {archiefKeuze.length > 0 ? (
+                  <>
+                    <button type='button' className='cvn-knop is-klein' disabled={besig} onClick={() => void pakArchiefUit(true)}>
+                      <FolderOutput aria-hidden='true' />{tr(lang, `Розпакувати вибране (${archiefKeuze.length})`, `Keuze uitpakken (${archiefKeuze.length})`)}
+                    </button>
+                    {onDeel ? (
+                      <button type='button' className='cvn-knop is-klein is-hoofd' disabled={besig} onClick={() => onDeel({ beginModus: 'archief', beginArchiefPaden: archiefKeuze })}>
+                        <Share2 aria-hidden='true' />{tr(lang, `Поділитися вибраним (${archiefKeuze.length})`, `Keuze delen (${archiefKeuze.length})`)}
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          {archiefLaden ? (
+            <p className='cvn-hint'><LoaderCircle className='cvn-draai' aria-hidden='true' />{tr(lang, 'Читаємо структуру архіву…', 'Archiefstructuur lezen…')}</p>
+          ) : archiefOndersteund === false || archiefReden ? (
+            <p className='cvn-hint'>{cloudFoutTekst(lang, new CloudFout(archiefReden || 'ARCHIEF_FORMAAT_ALLEEN_OPSLAG', 400, null))}</p>
+          ) : archiefIngangen.length > 0 ? (
+            <>
+              <div className='cvn-zoekveld'>
+                <Search aria-hidden='true' />
+                <input type='search' value={archiefZoek} onChange={(e) => setArchiefZoek(e.target.value)} placeholder={tr(lang, 'Пошук всередині архіву…', 'Zoeken in archief…')} aria-label={tr(lang, 'Пошук всередині архіву', 'Zoeken in archief')} />
+              </div>
+              <div className='cvn-deel-boomlijst'>
+                {gefilterdArchief.slice(0, 200).map((ing) => {
+                  const aan = archiefKeuze.includes(ing.pad);
+                  return (
+                    <div key={ing.pad} className={`cvn-deel-boomrij${aan ? ' is-aan' : ''}`}>
+                      <input type='checkbox' checked={aan} aria-label={ing.pad} onChange={() => setArchiefKeuze((oud) => (aan ? oud.filter((p) => p !== ing.pad) : [...oud, ing.pad]))} />
+                      {ing.map ? <Folder aria-hidden='true' /> : <FileText aria-hidden='true' />}
+                      <span className='cvn-deel-boompad'>{ing.pad}</span>
+                      {!ing.map ? <small>{bytesTekst(lang, ing.bytes)}</small> : null}
+                      {!ing.map ? (
+                        <button type='button' className='cvn-icoonknop' disabled={besig} aria-label={tr(lang, `Завантажити ${ing.naam}`, `${ing.naam} downloaden`)} onClick={() => void downloadUitArchief(ing.pad)}>
+                          <Download aria-hidden='true' />
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+        </section>
+      ) : null}
+
+      {b.soort !== 'archief' ? (
+        <section className='cvn-detail-voorbeeld' data-cvn-detail={b.id} aria-label={tr(lang, 'Передперегляд', 'Voorvertoning')}>
+          {koppeling ? <p className='cvn-hint'><a href={koppeling} target='_blank' rel='noreferrer noopener'>{koppeling}</a></p> : null}
+          {b.kind === 'link' && !koppeling ? <p className='cvn-hint'>{tr(lang, 'Посилання без адреси http(s) — відкривати нічого.', 'Een link zonder http(s)-adres — niets te openen.')}</p> : null}
+          {teGroot ? <p className='cvn-melding is-info' role='status'>{grootTekst}</p> : null}
+          {voorbeeldFout ? <p className='cvn-melding is-info' role='status'>{voorbeeldFout}</p> : null}
+          {laden ? <p className='cvn-hint' role='status' aria-busy='true'><LoaderCircle className='cvn-draai' aria-hidden='true' />{tr(lang, 'Готуємо передперегляд…', 'Voorvertoning laden…')}</p> : null}
+          {voorbeeld ? (
+            <Suspense fallback={<p className='cvn-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
+              <PreviewBody preview={voorbeeld} lang={lang} />
+            </Suspense>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className='cvn-detail-meta' aria-label={tr(lang, 'Відомості', 'Gegevens')}>
         <h3><Icoon aria-hidden='true' />{soortTekst(lang, b.soort)}</h3>

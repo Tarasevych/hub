@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Info, RefreshCw, X } from 'lucide-react';
 import type { AgendaRuimte } from '../../agenda-client';
 import { tr, taalcode, type Lang } from '../tekst';
+import { ABONNEMENT_FOUT, foutCodeTekst } from '../../abonnement-fouten';
 
 export function laadFoutTekst(lang: Lang, code: string): string {
   if (/OWNER_AGENDA_SESSIE_VEREIST|401|403/.test(code)) return tr(lang, 'Календар доступний лише після входу у ваш акаунт.', 'De agenda is alleen beschikbaar na aanmelden in uw account.');
@@ -23,7 +24,7 @@ export default function Terugkoppeling({ lang, fout, syncFout, laatstGelukt, rui
         <div className='agv-balk is-fout' role='alert' data-agenda-v3-fout={fout ? 'laden' : 'synchroniseren'}>
           <AlertTriangle aria-hidden='true' />
           <span>
-            {fout ? laadFoutTekst(lang, fout) : tr(lang, `Синхронізація не вдалася (${syncFout}).`, `Synchroniseren is mislukt (${syncFout}).`)}
+            {fout ? laadFoutTekst(lang, fout) : ABONNEMENT_FOUT[syncFout] ? foutCodeTekst(syncFout, lang) : tr(lang, `Синхронізація не вдалася (${syncFout}).`, `Synchroniseren is mislukt (${syncFout}).`)}
             {' '}{wanneer ? tr(lang, `Показано дані станом на ${wanneer}.`, `U ziet de gegevens van ${wanneer}.`) : null}
           </span>
           <button type='button' className='agv-tekstknop' onClick={onOpnieuw} disabled={bezig} data-agenda-v3-opnieuw='1'>

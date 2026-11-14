@@ -1,4 +1,4 @@
-// ZOEKEN — BRONNEN EN DE LEVENSCYCLUS VAN DE INDEX (Z2, 22.10.2026). Contract: scratchpad/zoek-API.md; kern: backend/zoek-index.ts.
+// ZOEKEN — BRONNEN EN DE LEVENSCYCLUS VAN DE INDEX (Z2, 22.10.2026). Contract: shared/zoek-model.ts (uitleg: docs/zoek/ZOEKEN.nl.md §4); kern: backend/zoek-index.ts.
 //
 // WAT DIT DOET
 //   1. LADEN. Voor elke goedgekeurde mens: de persoonlijke lade altijd; de technische lade alleen als hij technische rechten
@@ -42,6 +42,7 @@ import { formaatVan } from './adapters';
 import { FORMATEN } from '../../shared/zoek-formaten';
 import { VOLLEDIG_ID, zoekAnnuleren, zoekFout, zoekKlaar, zoekMelden, zoekOphalen, zoekOpruimen, zoekTelling, zoekUitstellen, type Q, type WachtItem } from './wachtrij';
 import { standAfleiden, WACHT_LADE, WACHT_SLEUTEL, type BronStandVolledig, type KoppelFeit, type StandRij } from './stand';
+import { jsonbTekst } from '../../shared/tekst-veilig';
 
 // ---------------------------------------------------------------- instellingen (ENV-VARS.md)
 const env = (k: string, std: number, min: number, max: number) => { const v = Number(process.env[k]); return Number.isFinite(v) && v > 0 ? Math.max(min, Math.min(max, v)) : std; };
@@ -91,7 +92,7 @@ async function z2StandZetten(lade: Lade, bron: ZoekBron, patch: Partial<Z2Stand>
       volledig_op = CASE WHEN $7::double precision IS NULL THEN volledig_op ELSE to_timestamp($7/1000.0) END,
       wacht_reden = COALESCE($8, wacht_reden), bijgewerkt_op = now()
     WHERE user_id=$1 AND ruimte=$2 AND bron=$3`,
-    [lade.userId, lade.ruimte, bron, patch.waterlijn ?? null, patch.waterlijnId ?? null, patch.cursor ? JSON.stringify(patch.cursor) : null, patch.volledigOp ?? null, patch.wachtReden ?? null]);
+    [lade.userId, lade.ruimte, bron, patch.waterlijn ?? null, patch.waterlijnId ?? null, patch.cursor ? jsonbTekst(patch.cursor) : null, patch.volledigOp ?? null, patch.wachtReden ?? null]);
 }
 async function kernStand(lade: Lade, bron: ZoekBron): Promise<StandRij> {
   const k = await standVanBron(lade, bron);
@@ -387,8 +388,10 @@ async function itemVerwerken(lade: Lade, item: WachtItem): Promise<number> {
     const pad = String(r.storagePath || ''), mime = String(r.mimeType || ''), naam = String(r.originalName || r.title || '');
     if (item.payload.inhoud && pad && Number(r.sizeBytes || 0) <= maxInhoud() && indexeerbaar(mime, naam)) {
       const { storage } = await import('../../server/platform');
-      const [e] = await storage.read([pad], { eigenaar: lade.userId });
-      if (e?.content) {
+      // SEC-002 (eind-omzeiling 6, patch van «t»): de grootte uit de rij kan verouderd zijn — ook het LEZEN zelf begrensd (maxBytes).
+      // Te groot (teGroot) = geen inhoud indexeren, net als zonder inhoud. / Читання обмежене maxBytes; завеликий — без індексу вмісту.
+      const [e] = await storage.read([pad], { eigenaar: lade.userId, maxBytes: maxInhoud() });
+      if (e?.content && !e.teGroot) {
         const bytes = new Uint8Array(['txt', 'md', 'csv', 'json', 'html'].includes(formaatVan(mime, naam)) && !/^[A-Za-z0-9+/]*={0,2}$/.test(e.content.slice(0, 200)) ? Buffer.from(e.content, 'utf8') : Buffer.from(e.content, 'base64'));
         if (bytes.length <= maxInhoud()) { const uit = await inhoudObjecten(lade, objecten[0], bytes, mime, naam, (p, t, sha, ocr) => cloudObject(lade, r, { pad: p, tekst: t, sha256: sha, ocr }), Boolean(item.payload.ocr)); objecten = uit.objecten; ocrNodig = uit.ocrNodig; }
       }

@@ -89,7 +89,7 @@ export default function Bron(props: OnderdeelProps & { bron: 'google-drive' | 'o
   const [fout, setFout] = useState('');
   const laadIntegraties = useCallback(async (): Promise<IntegratiesUit | null> => {
     try { const vers = await cloudClient.integraties(); setIntegr(vers); return vers; }
-    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); return null; }
+    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); return null; }
     finally { setLaden(false); }
   }, [lang]);
   useEffect(() => { void laadIntegraties(); }, [laadIntegraties]);
@@ -155,7 +155,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
     try {
       const r = (await cloudClient.driveBrowse({ accountId: account, folderId: mapId, query: vraag, pageToken: '' })) as DriveAntwoord;
       setBestanden(r.files || []); setToken(String(r.nextPageToken || '')); setKruimels(volgendeKruimels); setZoek(vraag);
-    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setLijstLaden(false); }
   }, [accountId, lang]);
   useEffect(() => { if (accountId) void blader('root', [{ id: 'root', naam: wortelNaam }], ''); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -169,7 +169,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
       const kaart = new Map(bestanden.map((b) => [b.id, b] as const));
       for (const b of r.files || []) kaart.set(b.id, b);
       setBestanden([...kaart.values()]); setToken(String(r.nextPageToken || ''));
-    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setMeerLaden(false); }
   };
 
@@ -182,7 +182,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
     try {
       await cloudClient.taken({ actie: 'nieuw', soort: 'kopie', bron: { dienst: 'google-drive', account: accountId, id: b.id, naam: b.name }, doel: { dienst: 'eigen' } });
       setTaakMelding(tr(lang, `«${b.name}» копіюється у вашу хмару у фоні — прогрес у «Мої файли» → «Передачі».`, `«${b.name}» wordt op de achtergrond naar uw cloud gekopieerd — voortgang bij «Mijn bestanden» → «Overdrachten».`));
-    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setTaakBezig(''); }
   };
   const open = async (b: DriveBestand) => {
@@ -198,7 +198,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
       const status = e instanceof CloudFout ? e.status : 0;
       setFout(status === 413 ? tr(lang, 'Файл завеликий для безпечного перегляду тут (ліміт 32 МБ, відео 128 МБ).', 'Het bestand is te groot voor een veilige weergave hier (grens 32 MB, video 128 MB).')
         : status === 415 ? tr(lang, 'Цей формат не можна безпечно показати всередині сервісу.', 'Dit formaat kan niet veilig binnen de dienst worden getoond.')
-        : foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT'));
+        : foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined));
     } finally { setVoorbeeldLaden(false); }
   };
   useEffect(() => () => { if (voorbeeld) revokeMailAttachmentPreview(voorbeeld); }, [voorbeeld]);
@@ -229,7 +229,7 @@ function GoogleDriveLezer({ lang, naarTab, integr, laden, fout: bovenFout, herla
           if (vers?.google.gekoppeld) stopPoll();
         }, POLL_MS);
       } else { venster?.close(); await herlaad(); }
-    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setBezig(false); }
   };
 

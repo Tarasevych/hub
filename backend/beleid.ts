@@ -137,6 +137,8 @@ export async function afdwingAdmin(a: { userId: string; eigenaar: boolean; admin
   const act = tab ? await actieveActivatie(a.userId, tab).catch(() => null) : null;
   const tech = { actief: !!act, mogelijkheden: act?.mogelijkheden ?? [] };
   const weiger = async (code: 'OWNER_ADMIN_TECH_REQUIRED' | 'BELEID_ONBEREIKBAAR', reden: string) => {
+    // SEC-002 (afwerking A): een weigering DOOR het afdwingen zelf telt apart voor de zekering (niet elke 403 van de site).
+    if (code === 'OWNER_ADMIN_TECH_REQUIRED') telZekering('opa403');
     await auditToevoegen({ ownerId: a.userId, actorId: a.userId, action: 'owner.beleid.geweigerd', type: 'beveiliging', result: 'denied', details: { capability: a.capability, code, reden } }).catch(() => undefined);
     return code;
   };

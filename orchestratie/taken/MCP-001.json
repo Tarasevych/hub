@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MCP-001",
+  "agent": "gemini",
+  "tak": "feature/mcp-001-platform-20261112-210500",
+  "basisCommit": "11e0aad8b641b62412d2efcf1382d117339d251f",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-12T21:05:00.000Z",
+  "bijgewerkt": "2026-11-12T21:05:00.000Z",
+  "omschrijving": "Повна підтримка MCP 2026-07-28 та 2025-11-25, безпека OAuth 2.1 (Origin 403, CIMD із захистом від SSRF, RFC 9207 iss), ресурси, шаблони запитів, автодоповнення, server/discover, Server Card, реєстр і вбудована студія-інспектор на mcp.tarasevych.com",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

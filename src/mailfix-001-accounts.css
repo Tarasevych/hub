@@ -34,6 +34,6 @@
 
 /* 05.11.2026 (ZOEKDIEP-001): beheer van Gmail (actieve postbus, zoektoegang bijwerken) — ingeklapt onder de accounthub. */
 .mail-gmail-beheer{margin-top:16px;border:1px solid var(--border,rgba(127,127,127,.25));border-radius:12px;padding:0 14px;background:var(--surface,transparent)}
-.mail-gmail-beheer>summary{cursor:pointer;padding:12px 0;font-weight:600;list-style-position:inside}
+.mail-gmail-beheer>summary{cursor:pointer;padding:12px 0;font-weight:600;list-style:none}
 .mail-gmail-beheer[open]>summary{border-bottom:1px solid var(--border,rgba(127,127,127,.25));margin-bottom:12px}
 .mail-gmail-beheer .google-mail-accounts{margin:0 0 14px}

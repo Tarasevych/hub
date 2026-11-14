@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "taakId": "GITHUB-012",
+  "titel": "Повна адаптація мобільної, планшетної та настільної версій розділу GitHub (https://github.tarasevych.com/) у всіх 13 підрозділах і просторах",
+  "opdracht": "Повністю опрацювати мобільну версію сайту https://github.tarasevych.com/ та адаптувати її для всіх пристроїв із різним розміром екрана (смартфони, фаблети, планшети, вікна з відкритою бічною панеллю та настільні екрани), пройти кожний простір і кожний розділ та усунути всі поломки інтерфейсу.",
+  "herkomst": {
+    "tak": "fix/github-012-mobiele-weergave-20261112-041500",
+    "basis": "f2626def3d793e9170f4a6b36a616072f95c829f",
+    "geinstalleerdeBasis": "f2626def3d793e9170f4a6b36a616072f95c829f",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, одноразові коди та стани OAuth, вміст поштових листів, сеанси оглядача та приховані міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-12T04:15:00Z",
+      "stap": "Звірено живу встановлену на сервері версію 20261112-034214 (f2626def3d793e9170f4a6b36a616072f95c829f, задача GITHUB-011), створено робочу гілку fix/github-012-mobiele-weergave-20261112-041500 та зареєстровано задачу GITHUB-012."
+    },
+    {
+      "tijd": "2026-11-12T04:18:00Z",
+      "stap": "Проведено повний аудит геометрії та стилів усіх 13 розділів https://github.tarasevych.com/ у приватному та технічному просторах. Виявлено стирання бічних рамок і заокруглень карток .gh-card глобальним правилом flat-content у canoniek-omlijsting.css, подвійну рамку на списку вибору сховища .gh-select-wikkel select, відсутність класу is-verborgen-mobiel у двоколонковому провіднику коду та вкладках «Сховища» і «Документація», конфлікт стилів .gh-zaak-inhoud у задачах і запитах на злиття, злипання коду пристрою з кнопкою копіювання та відсутність навігаційної стрічки на вкладках «Підключення», «Проєкти», «Пошук» і «Активність»."
+    },
+    {
+      "tijd": "2026-11-12T04:24:00Z",
+      "stap": "Оновлено src/github-weergave.css, src/GitHubWeergave.tsx, src/github/CodeEnEditorPaneel.tsx, src/github/EenklikKoppelPaneel.tsx, src/github/ActiesEnUitgavenPaneel.tsx та src/github/github-client.tsx: впроваджено контейнерні запити (@container gh-root) і медіазапити (@media 860px / 700px / 420px), захищено картки від flat-content, додано єдину стрічку GhAfdelingNav для всіх 13 розділів із захистом від випадкового свайпу меню (data-no-edge-swipe), мобільні перемикачі для двоколонкових панелей та перемикач переносу довгих рядків коду."
+    },
+    {
+      "tijd": "2026-11-12T04:29:00Z",
+      "stap": "Оновлено пошуковий каталог інтерфейсу (1437 елементів), створено та пройдено модульний тест github-012-mobiele-weergave.test.ts разом з усіма перевірками геометрії mobiel-geometrie-20261021.test.ts, розміщення та типів."
+    }
+  ],
+  "keuzes": [
+    "Застосувати одночасно контейнерні запити (@container gh-root на .gh-root із container-type:inline-size) та екранні медіазапити (@media max-width: 860px / 700px / 420px), щоб інтерфейс автоматично перебудовувався як на смартфонах, так і на планшетах чи ноутбуках із відкритою бічною панеллю 310px.",
+    "Захистити всі картки всередині .gh-root (.gh-card, .gh-me, .gh-eenklik-held, .gh-uitgave-kaart, .gh-subkaart, .gh-stat-kaart, .gh-veld, .gh-pad) від глобального правила flat-content у canoniek-omlijsting.css без зміни самого файла canoniek-omlijsting.css.",
+    "Додати єдину прокручувану стрічку GhAfdelingNav з усіма 13 підрозділами GitHub та атрибутом data-no-edge-swipe на всіх вкладках, щоб на смартфонах і планшетах перехід між будь-якими розділами виконувався в один дотик без відкриття бічної шухляди.",
+    "Забезпечити повноцінне мобільне перемикання між списком і деталями у всіх двоколонкових макетах (.gh-code-split у вкладці «Код» та .gh-split у вкладках «Сховища» і «Документація») разом із кнопкою повернення та перемикачем переносу довгих рядків коду."
+  ],
+  "wijzigingen": [
+    "src/github-weergave.css",
+    "src/GitHubWeergave.tsx",
+    "src/github/CodeEnEditorPaneel.tsx",
+    "src/github/EenklikKoppelPaneel.tsx",
+    "src/github/ActiesEnUitgavenPaneel.tsx",
+    "src/github/github-client.tsx",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "tests/eenheid/github-012-mobiele-weergave.test.ts",
+    "orchestratie/taken/GITHUB-012.json",
+    "orchestratie/ontwikkelarchieven/GITHUB-012.json",
+    ".github/workflows/github-012-uitgave.yml"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи: node scripts/orch.mjs controleer і versheid --taak GITHUB-012 --fase overdracht.",
+    "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
+    "Будівельні перевірки розміщення, пошукового каталогу інтерфейсу (1437 елементів) та інтерактивного макета HUIS-001 (/huis-maquette/): node scripts/plaatsing-controle.mjs, node scripts/zoek-ui-catalogus.mjs --controle та node scripts/huis-maquette.mjs --controle.",
+    "Модульні та наскрізні перевірки з базою даних PostgreSQL 16: github-012-mobiele-weergave.test.ts, mobiel-geometrie-20261021.test.ts, github-011-oauth-sleutelkluis.test.ts, github-oauth-20261020.test.ts, github-koppelkaart-20261019.test.ts, github-volledige-werkruimte.test.ts, github-platform.test.ts, huis-001-maquette-20261112.test.ts, huis-001-oude-fouten-20261110.test.ts, routes.test.ts, plaatsing-20261025.test.ts та ruimte-bord-github-20261020.test.ts.",
+    "Перевірка типів клієнтського та серверного коду (tsc --noEmit і npm run typecheck:server) та повне виробниче складання застосунку разом із макетом dist/huis-maquette/ (npm run build).",
+    "Перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://github.com/Tarasevych/hub/commit/f2626def3d793e9170f4a6b36a616072f95c829f",
+    "https://github.com/Tarasevych/hub/commit/f9db50747048f7dc7a6937fff65b0ae4c1058f72",
+    "https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "https://github.com/Tarasevych/hub/tree/fix/github-012-mobiele-weergave-20261112-041500"
+  ],
+  "beperkingen": [
+    "Пакунок випуску не встановлюється автоматично: завантаження та встановлення на робочий сервер виконуються виключно власником із підтвердженням ключем доступу."
+  ]
+}

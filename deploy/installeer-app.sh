@@ -88,8 +88,36 @@ trap opruimen_bij_afbreken EXIT
 # systemd-timeout mag nooit stil eindigen: de EXIT-trap hierboven ruimt dan de onvolledige release op en het logboek zegt waar het stopte.
 # Vóór het overschakelen is dat veilig (de actieve release is niet aangeraakt; elke migratie draait in een eigen transactie en wordt
 # door PostgreSQL teruggedraaid als de verbinding wegvalt). Vanaf «activeren» honoreert root geen stopverzoek meer.
+#
+# SEC-002 (server-uitrol-08): tussen het overschakelen en de bevestiging (gezondheid, nabewaking, rendercontrole: samen 10+ minuten) is
+# de NIEUWE release al actief. Kwam er in dat venster een signaal (systemd-timeout van de uitrol-unit, herstart van de server, een
+# stopverzoek dat net bij 90 % viel), dan eindigde het script vroeger met «de vorige release blijft actief» terwijl de nieuwe —
+# ongecontroleerd, zonder terugdraai en zonder dode-mansschakelaar — bleef draaien. Nu onthoudt activeren() waar het vandaan kwam
+# (OVERGESCHAKELD_VAN/NAAR) en zet een signaal in dat venster zelf de vorige release terug; het logboek zegt wat er werkelijk gebeurde.
+# Сигнал після перемикання, але до підтвердження: попередній випуск повертається, а журнал каже правду.
 HUIDIG_ONDERDEEL=""
-trap 'echo "[installeer] gestopt door een signaal (SIGTERM) tijdens «${HUIDIG_ONDERDEEL:-start}»; de vorige release blijft actief" >&2; exit 143' TERM INT HUP
+OVERGESCHAKELD_VAN=""; OVERGESCHAKELD_NAAR=""; OVERGESCHAKELD_BEVESTIGD=""
+bij_signaal() {
+  local naar="${OVERGESCHAKELD_NAAR:-}" van="${OVERGESCHAKELD_VAN:-}" stap="${HUIDIG_ONDERDEEL:-start}"
+  trap '' TERM INT HUP   # het terugzetten zelf niet nog eens laten onderbreken
+  if [ -z "$naar" ] && [ -n "${OVERGESCHAKELD_BEVESTIGD:-}" ]; then
+    # SEC-002 (g09-toets-4): na de bevestiging is de NIEUWE release actief én gecontroleerd; alleen latere inrichtstappen ontbreken.
+    echo "[installeer] FOUT: gestopt door een signaal (SIGTERM) tijdens «$stap»: release $(basename "$OVERGESCHAKELD_BEVESTIGD") is actief en gecontroleerd, maar de stappen daarna zijn niet afgerond — installeer opnieuw of draai terug / новий випуск активний і перевірений, подальші кроки не завершено" >&2
+  elif [ -z "$naar" ]; then
+    echo "[installeer] gestopt door een signaal (SIGTERM) tijdens «$stap»; de vorige release blijft actief" >&2
+  elif [ -n "$van" ] && [ -d "$van" ] && [ "$van" != "$naar" ]; then
+    OVERGESCHAKELD_NAAR=""
+    if omzetten "$van" && systemctl restart "$DIENST"; then
+      echo "[installeer] FOUT: gestopt door een signaal (SIGTERM) tijdens «$stap»: release $(basename "$naar") was al ingeschakeld maar nog niet bevestigd en is teruggezet; $(basename "$van") is weer actief / новий випуск ще не був підтверджений — повернуто попередній" >&2
+    else
+      echo "[installeer] FOUT: gestopt door een signaal (SIGTERM) tijdens «$stap» en terugzetten naar $(basename "$van") MISLUKTE: release $(basename "$naar") is mogelijk nog actief en is NIET gecontroleerd — kijk met «mijn-ruimte-installeer lijst» en draai zo nodig terug / відкат не вдався, новий випуск НЕ перевірено" >&2
+    fi
+  else
+    echo "[installeer] FOUT: gestopt door een signaal (SIGTERM) tijdens «$stap»: release $(basename "$naar") is actief maar NIET gecontroleerd en er is geen vorige release om naar terug te gaan / новий випуск активний, але НЕ перевірений; попереднього немає" >&2
+  fi
+  exit 143
+}
+trap bij_signaal TERM INT HUP
 git_bron() { git -c safe.directory="$BRON_GIT" -C "$BRON_GIT" "$@"; }
 
 melding() { echo "[installeer] $*"; }
@@ -101,14 +129,15 @@ voortgang() { HUIDIG_ONDERDEEL="$1"; echo "[installeer] stap: $1 ($2%) ${3:-}"; 
 waarschuwing() { echo "[installeer] LET OP: $*" >&2; }
 fout() { echo "[installeer] FOUT: $*" >&2; exit 1; }
 
+# SEC-002 (g09-toets-1): de release-wortel was tijdens het bouwen van de bouwgebruiker; nooit een symlink of FIFO volgen.
 pakket_versie() {
   local v=""
-  [ -f "$1/UITROL-VERSIE" ] && v="$(head -c 32 "$1/UITROL-VERSIE" | tr -d '\r\n[:space:]')"
+  [ -f "$1/UITROL-VERSIE" ] && [ ! -L "$1/UITROL-VERSIE" ] && v="$(head -c 32 "$1/UITROL-VERSIE" | tr -d '\r\n[:space:]')"
   [[ "$v" =~ ^[0-9]{8}-[0-9]{6}$ ]] && printf '%s' "$v"
 }
 commit_van() {
   local c=""
-  [ -f "$1/RELEASE-COMMIT" ] && c="$(head -c 64 "$1/RELEASE-COMMIT" | tr -d '\r\n[:space:]')"
+  [ -f "$1/RELEASE-COMMIT" ] && [ ! -L "$1/RELEASE-COMMIT" ] && c="$(head -c 64 "$1/RELEASE-COMMIT" | tr -d '\r\n[:space:]')"
   c="${c:0:40}"
   [[ "$c" =~ ^[0-9a-f]{7,40}$ ]] && printf '%s' "$c"
 }
@@ -117,14 +146,37 @@ commit_van() {
 # Ligt naast de bronmap het archief waaruit ze is uitgepakt (`tar -xzf mijn-ruimte-<v>.tar.gz` → map met dezelfde naam), dan wordt dát
 # bewaard; anders wordt de bronmap zelf ingepakt (zonder node_modules/dist/.git). Nooit fataal. Zet UITROL_GEB_EXTRA voor noteer_ssh.
 # Bij een passkey/ondertekende uitrol bewaart het root-script het archief al; dan doet deze functie niets.
+#
+# SEC-002 (server-uitrol-02): de map is schrijfbaar voor de app (root:mijnruimte 0770, geen sticky-bit, ReadWritePaths van de dienst).
+# Een bestand dat root dáár aanmaakt of op naam bewerkt, kan de app door een symlink vervangen; `cp`, `tar -czf`, `chown`, `chmod` en
+# `printf >` volgden die link en overschreven zo een willekeurig root-bestand of maakten het leesbaar voor de groep. Daarom wordt
+# alles klaargezet in een eigen root-map (PAKKET_KLAAR_ROOT, 0700): daar eigenaar, rechten en sha256 van de EIGEN kopie; in de
+# gedeelde map gebeurt alleen `mv -T -f` (rename(2) vervangt de naam zelf; over bestandssystemen heen verwijdert mv de bestemming en
+# maakt haar met O_EXCL opnieuw aan — in beide gevallen wordt geen symlink gevolgd). De map zelf mag geen symlink zijn.
+# Каталог архівів записуваний для застосунку: root готує файли у власній теці й лише перейменовує їх туди (посилання не слідуються).
+if [ "$(id -u)" -eq 0 ]; then unset UITROL_PAKKETTEN_DIR PAKKET_KLAAR_ROOT; fi   # als root alleen de vaste paden (tests wel)
 PAKKETTEN_DIR="${UITROL_PAKKETTEN_DIR:-$APP_ROOT/pakketten}"
+PAKKET_KLAAR_ROOT="${PAKKET_KLAAR_ROOT:-/var/lib/mijn-ruimte-uitrol}"
+pakketten_map_veilig() { # → 0 als $PAKKETTEN_DIR een echte map van root is (zo nodig aangemaakt, root:$GEBRUIKER 0770)
+  if [ -L "$PAKKETTEN_DIR" ]; then waarschuwing "archief: $PAKKETTEN_DIR is een symlink — niets bewaard"; return 1; fi
+  [ -d "$PAKKETTEN_DIR" ] || mkdir -p -- "$PAKKETTEN_DIR" || { waarschuwing "archief: map $PAKKETTEN_DIR niet aan te maken"; return 1; }
+  if [ -L "$PAKKETTEN_DIR" ] || [ ! -d "$PAKKETTEN_DIR" ] || [ "$(stat -c %u -- "$PAKKETTEN_DIR" 2>/dev/null)" != "$(id -u)" ]; then
+    waarschuwing "archief: $PAKKETTEN_DIR is geen map van root — niets bewaard"; return 1
+  fi
+  chgrp "$GEBRUIKER" "$PAKKETTEN_DIR" 2>/dev/null || true
+  chmod 0770 "$PAKKETTEN_DIR" 2>/dev/null || true   # de app (groep) mag opruimen; bestanden blijven root 0640
+  return 0
+}
 pakket_bewaren_ssh() { # pakket_bewaren_ssh <bronmap> <versie>
-  local bron="$1" versie="$2" doel tmp sha naast eerste geleverd="" herkomst="opnieuw-ingepakt" kand
+  local bron="$1" versie="$2" doel tmp klaar naam sha bytes naast eerste geleverd="" herkomst="opnieuw-ingepakt" kand
   case "${MIJN_RUIMTE_UITROL_MODUS:-ssh}" in passkey|handtekening|gitops|opdracht|nazorg|besluit) return 0 ;; esac
   [[ "$versie" =~ ^[0-9]{8}-[0-9]{6}$ ]] || { waarschuwing "archief niet bewaard: geen geldige UITROL-VERSIE"; return 0; }
-  install -d -o root -g "$GEBRUIKER" -m 0770 "$PAKKETTEN_DIR" || { waarschuwing "archief: map $PAKKETTEN_DIR niet aan te maken"; return 0; }
-  doel="$PAKKETTEN_DIR/mijn-ruimte-$versie.tar.gz"
-  tmp="$(mktemp "$PAKKETTEN_DIR/.pakket.XXXXXX")" || return 0
+  pakketten_map_veilig || return 0
+  naam="mijn-ruimte-$versie.tar.gz"
+  doel="$PAKKETTEN_DIR/$naam"
+  mkdir -p -- "$PAKKET_KLAAR_ROOT" && chmod 0700 "$PAKKET_KLAAR_ROOT" || { waarschuwing "archief: werkmap $PAKKET_KLAAR_ROOT niet beschikbaar"; return 0; }
+  klaar="$(mktemp -d "$PAKKET_KLAAR_ROOT/archief.XXXXXX")" || return 0
+  tmp="$klaar/$naam"
   # Het geleverde archief zoeken (29.10.2026): eerst UITROL_ARCHIEF (expliciet), dan naast de bronmap onder de mapnaam of onder
   # mijn-ruimte-<versie>.tar.gz. VROEGER: `tar -tzf … | head -n1 | grep` onder `set -o pipefail` → tar kreeg SIGPIPE (141), de test
   # faalde ALTIJD en het archief werd opnieuw ingepakt (andere sha256/grootte dan geleverd: 215049, 224316). Nu zonder pijp-fout.
@@ -135,7 +187,7 @@ pakket_bewaren_ssh() { # pakket_bewaren_ssh <bronmap> <versie>
     case "$eerste" in "$(basename "$bron")/"*|"mijn-ruimte-$versie/"*) naast="$kand"; break ;; esac
   done
   if [ -n "$naast" ]; then
-    cp -f -- "$naast" "$tmp" || { rm -f -- "$tmp"; waarschuwing "archief: kopiëren van $naast mislukt"; return 0; }
+    cp -f -- "$naast" "$tmp" || { rm -rf -- "$klaar"; waarschuwing "archief: kopiëren van $naast mislukt"; return 0; }
     herkomst="geleverd"
     geleverd="$(sha256sum -- "$naast" | cut -c1-64)"
     # Een .sha256 die met het archief meekwam, moet kloppen; anders melden (het bestand is onderweg veranderd).
@@ -146,13 +198,17 @@ pakket_bewaren_ssh() { # pakket_bewaren_ssh <bronmap> <versie>
   else
     waarschuwing "archief: geleverd archief niet gevonden naast $bron (zet UITROL_ARCHIEF=<pad>); de bronmap wordt opnieuw ingepakt — sha256 wijkt dan af van het geleverde bestand"
     tar -czf "$tmp" -C "$(dirname "$bron")" --exclude=node_modules --exclude=dist --exclude=dist-server --exclude=.git --exclude=rapporten \
-      --transform "s|^$(basename "$bron")|mijn-ruimte-$versie|" "$(basename "$bron")" 2>/dev/null || { rm -f -- "$tmp"; waarschuwing "archief: inpakken van $bron mislukt"; return 0; }
+      --transform "s|^$(basename "$bron")|mijn-ruimte-$versie|" "$(basename "$bron")" 2>/dev/null || { rm -rf -- "$klaar"; waarschuwing "archief: inpakken van $bron mislukt"; return 0; }
   fi
-  chown "root:$GEBRUIKER" "$tmp"; chmod 0640 "$tmp"
-  mv -f -- "$tmp" "$doel" || { rm -f -- "$tmp"; return 0; }
-  sha="$(sha256sum -- "$doel" | cut -c1-64)"
-  printf '%s  %s\n' "$sha" "$(basename "$doel")" > "$doel.sha256"; chown "root:$GEBRUIKER" "$doel.sha256"; chmod 0640 "$doel.sha256"
-  export UITROL_GEB_EXTRA="{\"pakket_pad\":\"$doel\",\"pakket_sha256\":\"$sha\",\"pakket_bytes\":$(stat -c %s "$doel"),\"geleverd_sha256\":\"$geleverd\",\"pakket_herkomst\":\"$herkomst\"}"
+  # Alles in de eigen root-map afmaken (sha256 en grootte van de eigen kopie), daarna alleen nog hernoemen naar de gedeelde map.
+  sha="$(sha256sum -- "$tmp" | cut -c1-64)"; bytes="$(stat -c %s -- "$tmp")"
+  printf '%s  %s\n' "$sha" "$naam" > "$tmp.sha256"
+  chgrp "$GEBRUIKER" "$tmp" "$tmp.sha256" 2>/dev/null || true
+  chmod 0640 "$tmp" "$tmp.sha256"
+  if ! mv -T -f -- "$tmp" "$doel"; then rm -rf -- "$klaar"; waarschuwing "archief: plaatsen in $PAKKETTEN_DIR mislukt"; return 0; fi
+  mv -T -f -- "$tmp.sha256" "$doel.sha256" || waarschuwing "archief: $naam.sha256 niet geplaatst (het archief zelf staat er wel)"
+  rm -rf -- "$klaar"
+  export UITROL_GEB_EXTRA="{\"pakket_pad\":\"$doel\",\"pakket_sha256\":\"$sha\",\"pakket_bytes\":$bytes,\"geleverd_sha256\":\"$geleverd\",\"pakket_herkomst\":\"$herkomst\"}"
   melding "archief bewaard: $doel (sha256 $sha; $herkomst${geleverd:+, geleverd $geleverd})"
 }
 
@@ -436,19 +492,31 @@ veilige_uitrol_inrichten() {
 # De map deploy/ van een release is tijdens `npm ci`/build schrijfbaar voor mijnruimte (scripts van afhankelijkheden). Alles wat
 # daarna als root wordt geïnstalleerd (units, root-scripts, polkit-regel) moet uit de ONGEWIJZIGDE bron komen: daarom deploy/ na
 # het bouwen opnieuw uit de bron halen (git: HEAD; uitgepakte map: die map zelf, die alleen root kan schrijven).
+#
+# SEC-002 (server-uitrol-05): hetzelfde geldt voor migrations/. rechten.sql gaat via db_rollen_hulp_inrichten naar
+# /usr/local/lib/mijn-ruimte/db-rollen en wordt daar door db-rollen-instellen.sh als postgres aan `psql -f -` gegeven (een regel
+# `\! …` is dan een shell als postgres, `COPY … TO PROGRAM` idem); de migraties zelf draaien met de eigenaarsrol van alle app-tabellen.
+# Een script van een afhankelijkheid kon die bestanden tijdens het bouwen herschrijven. Daarom komt ook migrations/ na het bouwen
+# opnieuw uit de ongewijzigde bron — wat de build daar neerzette of veranderde, verdwijnt.
+# Після збирання deploy/ і migrations/ беруться заново з незміненого джерела: сценарій залежності не може їх підмінити.
 deploy_herstellen() {
-  local bron="$1" doel="$2"
-  rm -rf -- "$doel/deploy"
+  local bron="$1" doel="$2" map
   BRON_GIT="$bron"
+  rm -rf -- "$doel/deploy" "$doel/migrations"
   if git_bron rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git_bron archive --format=tar HEAD deploy | tar -x -C "$doel"
+    if git_bron cat-file -e HEAD:migrations 2>/dev/null; then git_bron archive --format=tar HEAD migrations | tar -x -C "$doel"; fi
   else
     rsync -a --no-links "$bron/deploy/" "$doel/deploy/"
+    if [ -d "$bron/migrations" ]; then rsync -a --no-links "$bron/migrations/" "$doel/migrations/"; fi
   fi
-  chown -R "root:$GEBRUIKER" "$doel/deploy"
-  chmod -R u=rwX,g=rX,o= "$doel/deploy"
+  for map in deploy migrations; do
+    [ -d "$doel/$map" ] || continue
+    chown -R "root:$GEBRUIKER" "$doel/$map"
+    chmod -R u=rwX,g=rX,o= "$doel/$map"
+    if find "$doel/$map" -type l | grep -q .; then fout "symlink in $map/ van $doel"; fi
+  done
   find "$doel/deploy" -type f -name '*.sh' -exec chmod 750 {} +
-  if find "$doel/deploy" -type l | grep -q .; then fout "symlink in deploy/ van $doel"; fi
 }
 
 # Beheer op afstand zonder root-pad voor de app (methode 1 GitOps-pull, methode 3 gepantserde opdracht; zie RUNBOOK-VEILIGE-UITROL.md).
@@ -682,24 +750,100 @@ bron_kopieren() {
   echo "$commit" > "$doel/RELEASE-COMMIT"
 }
 
+# SEC-002 (keten-config-06, server-uitrol-05): het bouwen voert code van honderden afhankelijkheden uit (installatiescripts, vite en
+# zijn plug-ins, esbuild, postcss…). Vroeger draaide dat als de DIENSTGEBRUIKER zelf, zonder afscherming: zo'n script kon
+# /proc/<pid van de dienst>/environ lezen (DATABASE_URL_SYSTEM met BYPASSRLS, sleutels, pepers), de bestanden van alle gebruikers in
+# /srv/data/uploads lezen en wijzigen, en in de inbox-mappen schrijven. Nu:
+#   1. eigen systeemgebruiker voor het bouwen ($BOUW_GEBRUIKER, geen login, geen sudo): een ander UID ziet de omgeving van de dienst
+#      niet (ProtectProc=invisible verbergt bovendien alle processen van andere gebruikers) en is geen eigenaar van de uploads;
+#   2. afgeschermde unit: het hele bestandssysteem alleen-lezen behalve de nieuwe releasemap en de eigen cache/thuismap; de mappen met
+#      gegevens, geheimen, status, archieven en de inboxen bestaan voor de build niet (InaccessiblePaths);
+#   3. `npm ci --ignore-scripts`: installatiescripts van afhankelijkheden draaien niet. Alleen esbuild krijgt daarna zijn script
+#      (`npm rebuild esbuild`) — hetzelfde als «allowScripts» in package.json, dat oudere npm-versies negeren.
+#   4. van $APP_ROOT (root:mijnruimte 0750) ziet de build ALLEEN de eigen releasemap: een lege, alleen-lezen tmpfs over $APP_ROOT met
+#      daarin de releasemap (TemporaryFileSystem + BindPaths). Zo is geen groep $GEBRUIKER nodig om bij de releasemap te komen —
+#      die groep zou leesrecht geven op mappen van de dienst zoals mcp-state (interne sleutel), ssh-ca-beheer en de inboxen.
+#   5. (g09-toets-5) geen blijvende thuismap: HOME=/tmp (PrivateTmp, bij elke build leeg) en npm_config_userconfig=/dev/null. Een
+#      ~/.npmrc die code van een eerdere build schreef (node-options=--require …, script-shell=…) werkt zo nooit door in een
+#      volgende build. $BOUW_THUIS is alleen nog de (nooit aangemaakte) thuismap in /etc/passwd.
+# Eigen cache ($BOUW_CACHE; npm controleert elk pakket tegen sha512 uit de lockfile): de oude mappen van de dienstgebruiker blijven onaangeroerd, zodat een ouder
+# pakket (met het oude bouwscript) gewoon blijft werken. De oude cache wordt bewust NIET overgenomen (root zou dan een boom van een
+# onbevoegde gebruiker moeten kopiëren); de eerste afgeschermde build haalt de pakketten één keer opnieuw op (sha512 uit de lockfile).
+# Noodrem (alleen root kan dit bestand maken): bestaat /etc/mijn-ruimte/bouw-afscherming.uit, dan wordt gebouwd zoals vroeger —
+# ! onveilig: code van afhankelijkheden kan dan de geheimen van de draaiende dienst en alle gebruikersbestanden lezen.
+# Збирання виконує сторонній код: окремий користувач, пісочниця й без сценаріїв установлення залежностей.
+BOUW_GEBRUIKER=mijnruimte-bouw
+BOUW_CACHE=/var/cache/mijn-ruimte-bouw
+BOUW_THUIS=/var/lib/mijn-ruimte-bouw
+BOUW_AFSCHERMING_UIT=/etc/mijn-ruimte/bouw-afscherming.uit
+BOUW_OPDRACHT='set -euo pipefail; echo "[installeer] stap: npm (55%) npm ci"; npm ci --ignore-scripts --no-audit --no-fund; npm rebuild esbuild --no-audit --no-fund || echo "[installeer] LET OP: npm rebuild esbuild mislukt; esbuild werkt ook zonder zijn installatiescript"; echo "[installeer] stap: bouwen (70%) npm run build"; NODE_ENV=production npm run build; npm prune --omit=dev --ignore-scripts --no-audit --no-fund'
+# Eigenschappen van de afgeschermde bouw-unit, één per regel (ook gelezen door de eenheidstest; alleen eigenschappen die systemd 255 kent).
+bouw_afscherming() { # bouw_afscherming <releasemap>
+  local doel="$1" p
+  # Geen SupplementaryGroups=$GEBRUIKER: de releasemap komt via BindPaths in een lege tmpfs over $APP_ROOT (zie punt 4 hierboven).
+  printf '%s\n' "User=$BOUW_GEBRUIKER" "Group=$BOUW_GEBRUIKER" \
+    NoNewPrivileges=yes PrivateTmp=yes ProtectSystem=strict ProtectHome=yes PrivateDevices=yes ProtectProc=invisible \
+    ProtectKernelTunables=yes ProtectKernelModules=yes ProtectControlGroups=yes RestrictSUIDSGID=yes \
+    "TemporaryFileSystem=$APP_ROOT:ro" "BindPaths=$doel" \
+    "ReadWritePaths=$BOUW_CACHE"
+  for p in /srv/data /srv/backups /etc/mijn-ruimte /var/lib/mijn-ruimte /var/lib/mijn-ruimte-uitrol /var/lib/mijn-ruimte-uitrol-status \
+           /var/lib/mijn-ruimte-proef /var/lib/mijn-ruimte-archief /var/log/mijn-ruimte; do
+    printf 'InaccessiblePaths=-%s\n' "$p"
+  done
+}
+bouw_gebruiker_inrichten() {
+  if ! id "$BOUW_GEBRUIKER" >/dev/null 2>&1; then
+    useradd --system --user-group --home-dir "$BOUW_THUIS" --no-create-home --shell /usr/sbin/nologin "$BOUW_GEBRUIKER" || fout "bouwgebruiker $BOUW_GEBRUIKER kon niet worden aangemaakt"
+    melding "systeemgebruiker $BOUW_GEBRUIKER aangemaakt (alleen voor het bouwen; geen login, geen sudo)"
+  fi
+  if id -nG "$BOUW_GEBRUIKER" | tr ' ' '\n' | grep -qxE "sudo|wheel|docker|adm|$GEBRUIKER|$BACKUP_GROEP"; then fout "$BOUW_GEBRUIKER zit in een groep met rechten (sudo/wheel/docker/adm/$GEBRUIKER): haal hem daar eerst uit"; fi
+  # Alleen de twee mappen zelf (nooit recursief door een boom lopen die een onbevoegde gebruiker beheert).
+  install -d -o "$BOUW_GEBRUIKER" -g "$BOUW_GEBRUIKER" -m 0700 "$BOUW_CACHE"
+}
+# SEC-002 (g09-toets-1): tijdens het bouwen was de releasemap van $BOUW_GEBRUIKER. Daarna leest root bestanden uit de wortel
+# (RELEASE-COMMIT, UITROL-VERSIE, AUTEUR, AGENT, PAKKET-BRON-COMMIT … via commit_van, pakket_versie, deploy/pakketgegevens.py).
+# chown/chmod -R raken symlinks niet; een symlink naar /etc/… of een FIFO in de wortel zou root laten lezen of laten hangen.
+# In de wortel horen alleen gewone bestanden en mappen; anders stopt de installatie vóór migraties en activeren.
+# Після збирання в корені теки випуску дозволені лише звичайні файли й теки (без посилань і FIFO).
+release_wortel_controleren() { # release_wortel_controleren <releasemap>
+  local vreemd
+  vreemd="$(find "$1" -mindepth 1 -maxdepth 1 ! -type f ! -type d -printf '%f ' 2>/dev/null | head -c 300)"
+  [ -z "$vreemd" ] || fout "na het bouwen staan er symlinks of speciale bestanden in de wortel van $1: $vreemd— installatie gestopt, niets geactiveerd / після збирання в корені випуску є посилання чи спецфайли"
+  return 0
+}
 bouwen() {
-  local doel="$1"
-  chown -R "$GEBRUIKER:$GEBRUIKER" "$doel"
-  # Bouwen als onbevoegde gebruiker: npm-scripts van afhankelijkheden draaien nooit als root.
-  # NODE_ENV=development alleen voor `npm ci` (devDependencies nodig); de build zelf met NODE_ENV=production, anders
-  # bundelt vite de ontwikkelversie van React (trager, extra waarschuwingen) — zo stond het t/m release 20261009-052551.
+  local doel="$1" eig=() regel
   # In een eigen cgroup met geheugenplafond: de vite-build heeft ~1,5 GB heap nodig. Op een kleine VM
   # (2 GB RAM) mag de build in swap uitwijken, maar raakt een tekort alleen de build (cgroup-OOM),
   # nooit Postgres of sshd. Instelbaar: BOUW_GEHEUGEN_MAX, BOUW_SWAP_MAX, BOUW_HEAP_MB.
-  systemd-run --quiet --wait --pipe --collect --unit="mijn-ruimte-bouw-$(basename "$doel")" \
-    -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p WorkingDirectory="$doel" \
-    -p MemoryMax="${BOUW_GEHEUGEN_MAX:-3000M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
-    -p NoNewPrivileges=yes -p PrivateTmp=yes \
-    -E PATH="$(dirname "$NODE"):/usr/bin:/bin" -E HOME="$APP_ROOT/.bouw-home" \
-    -E npm_config_cache="$APP_ROOT/.npm-cache" -E npm_config_update_notifier=false -E NODE_ENV=development \
-    -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2560}" \
-    bash -c 'set -euo pipefail; echo "[installeer] stap: npm (55%) npm ci"; npm ci --no-audit --no-fund; echo "[installeer] stap: bouwen (70%) npm run build"; NODE_ENV=production npm run build; npm prune --omit=dev --no-audit --no-fund' \
-    || fout "bouwen mislukt (journalctl -u mijn-ruimte-bouw-$(basename "$doel"))"
+  # NODE_ENV=development alleen voor `npm ci` (devDependencies nodig); de build zelf met NODE_ENV=production, anders
+  # bundelt vite de ontwikkelversie van React (trager, extra waarschuwingen) — zo stond het t/m release 20261009-052551.
+  if [ -e "$BOUW_AFSCHERMING_UIT" ]; then
+    waarschuwing "! bouwen ZONDER afscherming ($BOUW_AFSCHERMING_UIT bestaat): code van afhankelijkheden draait als $GEBRUIKER en kan de geheimen van de draaiende dienst en alle gebruikersbestanden lezen. Verwijder dat bestand zodra het kan. / ! збирання БЕЗ захисту: сторонній код може прочитати секрети служби й файли користувачів."
+    chown -R "$GEBRUIKER:$GEBRUIKER" "$doel"
+    systemd-run --quiet --wait --pipe --collect --unit="mijn-ruimte-bouw-$(basename "$doel")" \
+      -p User="$GEBRUIKER" -p Group="$GEBRUIKER" -p WorkingDirectory="$doel" \
+      -p MemoryMax="${BOUW_GEHEUGEN_MAX:-3000M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
+      -p NoNewPrivileges=yes -p PrivateTmp=yes \
+      -E PATH="$(dirname "$NODE"):/usr/bin:/bin" -E HOME="$APP_ROOT/.bouw-home" \
+      -E npm_config_cache="$APP_ROOT/.npm-cache" -E npm_config_update_notifier=false -E NODE_ENV=development \
+      -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2560}" \
+      bash -c "$BOUW_OPDRACHT" \
+      || fout "bouwen mislukt (journalctl -u mijn-ruimte-bouw-$(basename "$doel"))"
+  else
+    # Bouwen als een eigen onbevoegde gebruiker: scripts van afhankelijkheden draaien nooit als root en nooit als de dienst.
+    bouw_gebruiker_inrichten
+    chown -R "$BOUW_GEBRUIKER:$BOUW_GEBRUIKER" "$doel"
+    while IFS= read -r regel; do eig+=(-p "$regel"); done < <(bouw_afscherming "$doel")
+    systemd-run --quiet --wait --pipe --collect --unit="mijn-ruimte-bouw-$(basename "$doel")" \
+      "${eig[@]}" -p WorkingDirectory="$doel" \
+      -p MemoryMax="${BOUW_GEHEUGEN_MAX:-3000M}" -p MemorySwapMax="${BOUW_SWAP_MAX:-2G}" -p Nice=10 \
+      -E PATH="$(dirname "$NODE"):/usr/bin:/bin" -E HOME=/tmp -E npm_config_userconfig=/dev/null \
+      -E npm_config_cache="$BOUW_CACHE" -E npm_config_update_notifier=false -E NODE_ENV=development \
+      -E NODE_OPTIONS="--max-old-space-size=${BOUW_HEAP_MB:-2560}" \
+      bash -c "$BOUW_OPDRACHT" \
+      || fout "bouwen mislukt (journalctl -u mijn-ruimte-bouw-$(basename "$doel")). Faalt de afgeschermde build op deze server om een andere reden dan de code, dan kan root tijdelijk $BOUW_AFSCHERMING_UIT aanmaken (onveilig: zie de uitleg boven bouwen)"
+  fi
   [ -f "$doel/dist/index.html" ] || fout "bouwen mislukt: dist/index.html ontbreekt"
   [ -f "$doel/dist-server/start.mjs" ] || fout "bouwen mislukt: dist-server/start.mjs ontbreekt"
   find "$doel/dist" -name '*.map' -delete
@@ -707,6 +851,7 @@ bouwen() {
   # Code is daarna alleen-lezen voor de dienst (root is eigenaar).
   chown -R "root:$GEBRUIKER" "$doel"
   chmod -R u=rwX,g=rX,o= "$doel"
+  release_wortel_controleren "$doel"
   find "$doel/deploy" -type f -name '*.sh' -exec chmod 750 {} +
 }
 
@@ -884,7 +1029,7 @@ rook_samenvatting() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])
 
 # rook_controleren <releasemap> [stand|live] [scriptmap]  → 0 in orde, 1 kapot, 2 niet uitgevoerd; zet ROOK_REDEN (uk) bij 1.
 rook_controleren() {
-  local doel="$1" modus="${2:-stand}" script="${3:-$1}" db="" rol="" werk uit rc=2 chromium="" args=() soort
+  local doel="$1" modus="${2:-stand}" script="${3:-$1}" db="" rol="" werk uit kopie rook_bron rc=2 chromium="" args=() soort
   ROOK_REDEN=""
   [ "${ROOK_UIT:-0}" != 1 ] || { melding "rendercontrole overgeslagen (ROOK_UIT=1)"; return 2; }
   [ -s "$script/scripts/rook-controle.mjs" ] || { waarschuwing "rendercontrole: scripts/rook-controle.mjs ontbreekt in $script; rendering niet gecontroleerd"; return 2; }
@@ -922,17 +1067,54 @@ rook_controleren() {
   rc=$?
   set -e
   [ -z "$db" ] || rook_db_opruimen "$db"
-  if [ -s "$uit" ]; then
+  # SEC-002 (g09-toets-2): $werk (root:mijnruimte 0770) is schrijfbaar voor de rook-unit (app-gebruiker, code uit de releasemap);
+  # rook-controle.json daar kan een symlink naar een root-bestand of een FIFO zijn — vroeger kopieerde `install` dan het doel naar de
+  # statusmap (leesbaar voor de app) of bleef root hangen. Nu: één keer openen met O_NOFOLLOW|O_NONBLOCK, controleren op de open
+  # descriptor (gewoon bestand, één naam, 1 byte … 4 MB) en de bytes in een NIEUW eigen bestand (O_EXCL, 0600) in een eigen
+  # root-map schrijven; daarna wijst $uit naar die kopie (samenvatting, statusmap). Geweigerd = «geen resultaat».
+  # Результат проби рендерингу читається один раз без переходу за посиланням у власну копію root.
+  # rook-uitslag: begin
+  rook_bron="$uit"; kopie="$(mktemp -d)"; uit="$kopie/rook-controle.json"
+  python3 - "$rook_bron" "$uit" <<'PY' || rm -f -- "$uit"
+import os, stat, sys
+bron, doel, grens = sys.argv[1], sys.argv[2], 4 * 1024 * 1024
+try:
+    fd = os.open(bron, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+except OSError:
+    sys.exit(1)
+try:
+    st = os.fstat(fd)
+    if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1 or st.st_size == 0 or st.st_size > grens:
+        sys.exit(1)
+    data = b""
+    while len(data) <= grens:
+        stuk = os.read(fd, 65536)
+        if not stuk:
+            break
+        data += stuk
+    if not data or len(data) > grens:
+        sys.exit(1)
+finally:
+    os.close(fd)
+try:
+    uit = os.open(doel, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+except OSError:
+    sys.exit(1)
+with os.fdopen(uit, "wb") as f:
+    f.write(data)
+PY
+  # rook-uitslag: eind
+  if [ -s "$uit" ] && [ ! -L "$uit" ]; then
     mkdir -p "$STATUS_GEBEURTENISSEN"
     install -m 0640 -o root -g "$STATUS_GROEP" "$uit" "$STATUS_GEBEURTENISSEN/$ROOK_STATUS"
     melding "rendercontrole: $(rook_samenvatting "$uit" uk)"
     # Een kapotte uitslag blijft apart bewaard (de volgende controle — van de vorige release — overschrijft rook-controle.json).
     if [ "$rc" -eq 1 ]; then ROOK_REDEN="$(rook_samenvatting "$uit" uk)"; install -m 0640 -o root -g "$STATUS_GROEP" "$uit" "$STATUS_GEBEURTENISSEN/rook-controle-kapot.json"; fi
   else
-    waarschuwing "rendercontrole: geen resultaat (code $rc; journalctl -u 'mijn-ruimte-rook-*' -n 50); rendering niet gecontroleerd"
+    waarschuwing "rendercontrole: geen resultaat (ontbreekt, leeg, te groot of geen gewoon bestand; code $rc; journalctl -u 'mijn-ruimte-rook-*' -n 50); rendering niet gecontroleerd"
     rc=2
   fi
-  rm -rf "$werk"
+  rm -rf "$werk" "$kopie"
   case "$rc" in 0|1|2) ;; *) rc=2 ;; esac
   return "$rc"
 }
@@ -996,6 +1178,9 @@ activeren() {
   local doel="$1" vorige
   vorige="$(actieve_release)"
   voortgang activeren 90 "overschakelen en de dienst herstarten"
+  # SEC-002 (server-uitrol-08): vanaf hier tot «actief» is de nieuwe release ingeschakeld maar niet bevestigd; een signaal zet de
+  # vorige terug (bij_signaal). De variabelen worden vóór het omzetten gezet: liever één keer te veel terug dan één keer te weinig.
+  OVERGESCHAKELD_VAN="$vorige"; OVERGESCHAKELD_NAAR="$doel"
   omzetten "$doel"
   [ -n "$vorige" ] && [ "$vorige" != "$doel" ] && echo "$vorige" > "$VORIGE_BESTAND"
   systemctl restart "$DIENST"
@@ -1008,6 +1193,7 @@ activeren() {
       rook_controleren "$doel" || rrc=$?
       if [ "$rrc" -ne 1 ]; then
         [ "$rrc" -eq 0 ] || waarschuwing "rendering van $doel is NIET gecontroleerd (zie hierboven); de release is wel actief"
+        OVERGESCHAKELD_NAAR=""; OVERGESCHAKELD_BEVESTIGD="$doel"   # bevestigd: een later signaal zet niets terug en meldt de nieuwe release
         melding "actief: $doel"
         return 0
       fi
@@ -1021,6 +1207,7 @@ activeren() {
   if [ -n "$vorige" ] && [ -d "$vorige" ] && [ "$vorige" != "$doel" ]; then
     waarschuwing "automatisch terug naar $vorige"
     omzetten "$vorige"
+    OVERGESCHAKELD_NAAR=""   # het script heeft zelf teruggezet; een signaal hoeft dat niet nog eens te doen
     systemctl restart "$DIENST"
     gezond && melding "vorige release draait weer" || waarschuwing "ook de vorige release is niet gezond!"
     if [ "$rrc" -eq 1 ]; then
@@ -1136,7 +1323,9 @@ installeren() {
   migreren "$doel"
   ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   goedkeur_inbox_maken   # vóór het herstarten: de app-unit noemt deze map in ReadWritePaths
-  install -d -o root -g "$GEBRUIKER" -m 0770 "$PAKKETTEN_DIR"   # idem: archieven van releases (ReadWritePaths, audit 18.10.2026 punt 4)
+  # idem: archieven van releases (ReadWritePaths, audit 18.10.2026 punt 4). SEC-002: nooit door een symlink heen (install -d zou het doel chownen).
+  if [ -L "$PAKKETTEN_DIR" ]; then waarschuwing "archief: $PAKKETTEN_DIR is een symlink — map niet ingericht, archieven worden niet bewaard"
+  else install -d -o root -g "$GEBRUIKER" -m 0770 "$PAKKETTEN_DIR"; fi
   units_installeren "$doel"
   hulpscripts_installeren "$doel"
   activeren "$doel"
@@ -1184,7 +1373,7 @@ installeren() {
   # Zone G (22.10.2026): deze server als apparaat van de eigenaar (opdracht-terminal); stil, nooit fataal, alleen de eerste keer.
   if [ -s "$doel/deploy/apparaat-inrichten.sh" ]; then bash "$doel/deploy/apparaat-inrichten.sh" --bij-installeren "$doel" || waarschuwing "server als apparaat: later met «$0 terminal-inrichten»"; fi
   releases_opruimen
-  melding "klaar: release $datum (commit $(cat "$doel/RELEASE-COMMIT"))"
+  melding "klaar: release $datum (commit $(commit_van "$doel" || echo onbekend))"   # SEC-002 g09-toets-1: nooit cat op een bestand uit de releasemap
   pakket_bewaren_ssh "$bron" "$(pakket_versie "$doel")" || true
   pakketgegevens_melden "$doel" || true
   noteer_ssh SSH_OK "$datum" "$(pakket_versie "$doel")" "$(commit_van "$doel")" || waarschuwing "auditregel voor deze installatie niet geschreven"
@@ -1659,7 +1848,7 @@ lijst() {
     label=""
     [ "$r" = "$actief" ] && label=" (actief)"
     [ "$r" = "$vorige" ] && label="$label (vorige)"
-    echo "$(basename "$r")  commit $(cat "$r/RELEASE-COMMIT" 2>/dev/null || echo '?')$label"
+    echo "$(basename "$r")  commit $(commit_van "$r" || echo '?')$label"
   done
 }
 

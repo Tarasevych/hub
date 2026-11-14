@@ -7,6 +7,8 @@
 // passkeys ook als bevestiging tellen. De paginakop zelf komt van SettingsCenterView (geen tweede kop hier).
 // Bevestigen (step-up) gebeurt in het venster «Підтвердіть доступ» (src/platform/bevestig-toegang.tsx), nooit met prompt/alert.
 import {useEffect} from 'react';
+import {BevestigDialoog} from './platform/BevestigDialoog'; // IDENTITEIT-013
+import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,ExternalLink,Fingerprint,KeyRound,Mail,Pencil,Plus,Smartphone,Trash2,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {useState} from 'react';
@@ -77,6 +79,7 @@ export const naarSectie=(tab:string,doc:Pick<Document,'getElementById'|'querySel
 export function AccessPlanePanels(p:Props){
   const {tab,lang,data,busy,notice,password,setPassword,code,setCode,recovery,write}=p;
   const[wachtwoordOpen,setWachtwoordOpen]=useState(false);
+  const[wachtwoordWeg,setWachtwoordWeg]=useState(false); /* IDENTITEIT-013: прибирання пароля — через діалог підтвердження */
   const totp=data.factors.find(item=>item.id==='totp');
   const passwordMethod=data.methods.find(item=>item.id==='password');
   const googleMethod=data.methods.find(item=>item.id==='google');
@@ -95,6 +98,13 @@ export function AccessPlanePanels(p:Props){
   const codeVeld=<input inputMode='numeric' autoComplete='one-time-code' autoFocus value={code} onChange={event=>setCode(event.target.value.replace(/\D+/g,''))} placeholder={tr(lang,'6-значний код','6-cijferige code')} maxLength={6}/>;
 
   return <div className='access-plane'>
+    <BevestigDialoog open={wachtwoordWeg} id='wachtwoord-verwijderen' lang={lang} gevaarlijk bezig={busy}
+      titel={tr(lang,'Прибрати пароль?','Wachtwoord verwijderen?')}
+      uitleg={tr(lang,'Пароль перестане діяти. Повернути його можна протягом 7 днів у цьому ж розділі.','Het wachtwoord werkt dan niet meer. Terugzetten kan binnen 7 dagen in dit onderdeel.')}
+      gevolgen={[tr(lang,'Вхід через Google та інші способи не зміняться.','Aanmelden via Google en andere methoden verandert niet.'),tr(lang,'Сайт може попросити підтвердити доступ перед прибиранням.','De site kan eerst om bevestiging van toegang vragen.')]}
+      bevestigTekst={tr(lang,'Так, прибрати','Ja, verwijderen')}
+      onAnnuleer={()=>setWachtwoordWeg(false)}
+      onBevestig={async()=>{setWachtwoordWeg(false);await write('/api/owner/access/password/remove');}}/>
     {notice&&<p className='access-plane-notice'>{notice}</p>}
     {wijziging&&<ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={()=>{setVernieuw(v=>v+1);void p.load();}}/>}
 
@@ -123,7 +133,7 @@ export function AccessPlanePanels(p:Props){
             {wachtwoordOpen&&<div className='access-plane-inline-form'>
               <GeheimInvoer lang={lang} value={password} onChange={setPassword} autoComplete='new-password' autoFocus placeholder={tr(lang,'Новий пароль, мін. 10 символів','Nieuw wachtwoord, min. 10 tekens')} minLength={10} max={1024} soort='wachtwoord'/>
               <button type='button' disabled={busy||password.length<10} onClick={()=>void write('/api/owner/access/password/set',{password})}><Check/>{tr(lang,'Зберегти','Opslaan')}</button>
-              <button type='button' className='secondary' disabled={busy||data.lockout.protected} onClick={()=>void write('/api/owner/access/password/remove')}><Trash2/>{tr(lang,'Прибрати пароль','Wachtwoord verwijderen')}</button>
+              <button type='button' className='secondary' disabled={busy||data.lockout.protected} onClick={()=>setWachtwoordWeg(true)}><Trash2/>{tr(lang,'Прибрати пароль','Wachtwoord verwijderen')}</button>
             </div>}
           </div>
           <div className='access-plane-row-actions'>
@@ -153,7 +163,7 @@ export function AccessPlanePanels(p:Props){
         </div>}
         {p.otpauth&&!totp?.enrolled&&<div className='access-plane-subrow access-plane-totp-setup'>
           <strong>{tr(lang,'Додайте ключ у застосунок-автентифікатор і введіть код','Voeg de sleutel toe in de authenticator-app en voer de code in')}</strong>
-          <code className='access-plane-mono access-plane-secret'>{p.secret}</code>
+          <code className='access-plane-mono access-plane-secret' {...verborgenVoorAi}>{p.secret}</code>
           <small>{tr(lang,'Ключ показано один раз.','De sleutel wordt eenmalig getoond.')}</small>
           <div className='access-plane-inline-form'>
             {codeVeld}
@@ -166,6 +176,6 @@ export function AccessPlanePanels(p:Props){
     {toonHerstel&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
     {toonBeveiliging&&<SleutelkluisSectie lang={lang} context={p.context}/>}
     {toonMethoden&&<Toegangscodes lang={lang} context={p.context}/>}
-    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
+    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes' {...verborgenVoorAi}><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }

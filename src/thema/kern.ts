@@ -4,7 +4,7 @@
 //    zijn eigen kleur uit het menu, licht én donker).
 //  • MODUS — licht/donker als laag BOVENOP het palet: 'light', 'dark', 'device' (volgt het apparaat) of 'auto' (zelf schakelen
 //    op een vast tijdvenster of op het echte donker worden: burgerlijke schemering, zon 6° onder de horizon).
-// Pauze «Скасувати автоперемикання на сьогодні»: houdt de ANDERE modus vast tot het volgende geplande schakelmoment.
+// Pauze «Призупинити до наступного перемикання» (IDENTITEIT-013; was «… на сьогодні»): houdt de ANDERE modus vast tot het volgende geplande schakelmoment.
 // Puur en zonder DOM: dezelfde regels staan als JavaScript in public/canonical-service.js (runtime.thema) voor het allereerste
 // beeld zonder flits; een eenheidstest vergelijkt beide.
 
@@ -93,7 +93,7 @@ export function autoNu(a: AutoInstelling, nu: number): { donker: boolean; volgen
   return { ...autoZonderPauze(a, nu), gepauzeerd: false };
 }
 
-/** «Скасувати автоперемикання на сьогодні»: zet de ANDERE modus vast tot het volgende geplande schakelmoment. */
+/** «Призупинити до наступного перемикання»: zet de ANDERE modus vast tot het volgende geplande schakelmoment. */
 export function pauzeer(a: AutoInstelling, nu: number): AutoInstelling {
   const r = autoZonderPauze(a, nu);
   return { ...a, pauzeTot: r.volgende, pauzeModus: r.donker ? 'light' : 'dark' };

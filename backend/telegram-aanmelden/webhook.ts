@@ -8,13 +8,14 @@ import { gelijk, knopHandtekeningKlopt, knopLezen, knopSleutel } from './cryptog
 import { instellingen, koppelingenVanTelegram, sql, vlagHoofdschakelaar, gebeurtenis } from './opslag';
 import { aftelRest, JA_LETTERS, bijwerken, knopAntwoord, knoppenMaken, stuur, succesTonen, taalVoor, strook, TAALKNOPPEN, type BotTaal, type Verzonden } from './berichten';
 import { contactVanBot, koppelVanBot, type TgGebruiker } from './koppelen';
-import { inlogGoedkeuren, inlogVanBot, inlogWeigeren } from './inloggen';
+import { ANDERE_WEG_UITLEG, inlogGoedkeuren, inlogVanBot, inlogWeigeren } from './inloggen';
 import { bevestigingSymbool, bevestigingVanBot } from './bevestigen';
 import { wijziging, wijzigingBeantwoorden, vingerafdrukControleren } from './wijzigingen';
 import { ontkoppelen } from './ontkoppelen';
-import { codeInChatGezien, lijktOpCodeVan } from './code';
-import { accountNaam } from './meldingen';
+import { codeInChatGezien, lijktOpCode } from './code';
+import { accountNaam, audit } from './meldingen';
 import { statusMelden } from './status';
+import { sessieIntrekken as telegramSessieIntrekken } from '../toegang-context';
 import { invullen, t, TEKST } from '../../shared/telegram-aanmelden/teksten';
 
 type Bericht = { message_id: number; chat: { id: number; type: string }; from?: TgGebruiker; text?: string; contact?: { user_id?: number; phone_number?: string }; photo?: unknown };
@@ -107,7 +108,11 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
   if (opdracht === 'hulp' || opdracht === 'help') { await stuur(chatId, t(TEKST.hulp, taal), taal); return; }
   if (opdracht === 'koppelen') { await stuur(chatId, t(TEKST.koppelUitleg, taal), taal); return; }
   if (opdracht === 'status') { await stuur(chatId, await statusTekst(tg, taal), taal); return; }
-  if (opdracht === 'aanmeldingen') { await stuur(chatId, await aanmeldingenTekst(tg, taal), taal); return; }
+  if (opdracht === 'aanmeldingen' || opdracht === 'sessies') {
+    const a = await aanmeldingenOverzicht(tg, taal);
+    await stuur(chatId, a.tekst, taal, a.knoppen ? { knoppen: a.knoppen } : {});
+    return;
+  }
   if (opdracht === 'ontkoppelen') {
     const lijst = (await koppelingenVanTelegram(tg)).filter((k) => k.stand !== 'uitgeschakeld');
     if (!lijst.length) { await stuur(chatId, t(TEKST.nietGekoppeld, taal), taal); return; }
@@ -127,8 +132,10 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
   }
   // Iets dat op een geheime code lijkt: meteen weg uit de chat.
   const accounts = (await koppelingenVanTelegram(tg)).map((k) => k.user_id);
-  const eigenaarCode = accounts.length ? await lijktOpCodeVan(accounts, tekst) : null;
-  const lijktGeheim = eigenaarCode || /^\s*[0-9]{6,12}\s*$/.test(tekst);
+  // SEC-002 aanv-gat-a-03 / toets g10e-toets-4: budget per Telegram-gebruiker; is het op, dan wordt een codevormig woord toch verwijderd (vermoeden).
+  const vondst = accounts.length ? await lijktOpCode(accounts, tekst, `tg:${tg}`) : { userId: null, vermoeden: false };
+  const eigenaarCode = vondst.userId;
+  const lijktGeheim = eigenaarCode || vondst.vermoeden || /^\s*[0-9]{6,12}\s*$/.test(tekst);
   if (lijktGeheim) {
     await botAanroep(await botSleutel(), 'deleteMessage', { chat_id: chatId, message_id: m.message_id }).catch(() => undefined);
     if (eigenaarCode) await codeInChatGezien(eigenaarCode);
@@ -147,12 +154,67 @@ async function statusTekst(tg: string, taal: BotTaal): Promise<string> {
   for (const k of lijst) regels.push(`${['🔵', '🟢', '🟣', '🟠', '🟤'][k.kleur] ?? '🔵'} ${(await accountNaam(k.user_id)) || k.naam} — ${standen[k.stand]?.[tl === 'nl' ? 1 : 0] ?? k.stand}`);
   return `${tl === 'nl' ? 'Mijn koppelingen' : 'Мої прив’язки'}:\n${regels.join('\n')}`;
 }
-async function aanmeldingenTekst(tg: string, taal: BotTaal): Promise<string> {
+function ontleedSessieId(ruw: string): { anker?: string; tab?: string } {
+  const s = String(ruw || '').trim();
+  if (!s) return {};
+  if (s.includes(':') || s.includes('|')) {
+    const delen = Object.fromEntries(s.split('|').map((d) => [d.slice(0, 1), d.slice(2)]));
+    return { anker: delen.a || undefined, tab: delen.t || undefined };
+  }
+  return { anker: s };
+}
+
+async function isSessieNogActief(userId: string | null, sessieId: string | null, ingetrokkenOp: Date | null | undefined): Promise<boolean> {
+  if (!userId || !sessieId || ingetrokkenOp) return false;
+  const d = ontleedSessieId(sessieId);
+  if (d.anker) {
+    const [a] = await sql<{ revoked: string | null }>("SELECT data->>'revokedAt' AS revoked FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND id = $1 AND data->>'userId' = $2", [d.anker, userId]);
+    if (a && !a.revoked) return true;
+  }
+  if (d.tab) {
+    const [tb] = await sql<{ status: string | null; revoked: string | null }>("SELECT data->>'status' AS status, data->>'revokedAt' AS revoked FROM app.records WHERE tbl = 'owner_tab_sessions_v1' AND id = $1 AND data->>'userId' = $2", [d.tab, userId]);
+    if (tb && tb.status !== 'signed_out' && !tb.revoked) return true;
+  }
+  return false;
+}
+
+async function aanmeldingenOverzicht(tg: string, taal: BotTaal): Promise<{ tekst: string; knoppen?: Array<Array<Record<string, unknown>>> }> {
   const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
-  const rijen = await sql<{ apparaat: string; aangemaakt_op: Date; stand: string }>("SELECT apparaat, aangemaakt_op, stand FROM app.tg_inlog_verzoeken WHERE telegram_id = $1 AND stand IN ('ingewisseld','geweigerd') ORDER BY aangemaakt_op DESC LIMIT 5", [tg]);
-  if (!rijen.length) return tl === 'nl' ? 'Nog geen aanmeldingen met Telegram.' : 'Ще не було входів через Telegram.';
+  const rijen = await sql<{
+    id: string; user_id: string | null; apparaat: string; ip: string; locatie: string; dienst: string;
+    aangemaakt_op: Date; stand: string; sessie_id: string | null; sessie_ingetrokken_op: Date | null;
+  }>(
+    "SELECT id, user_id, apparaat, ip, locatie, dienst, aangemaakt_op, stand, sessie_id, sessie_ingetrokken_op FROM app.tg_inlog_verzoeken WHERE telegram_id = $1 AND stand IN ('ingewisseld','geweigerd') ORDER BY aangemaakt_op DESC LIMIT 8",
+    [tg],
+  );
+  if (!rijen.length) return { tekst: tl === 'nl' ? 'Nog geen aanmeldingen of sessies met Telegram.' : 'Ще не було входів або сеансів через Telegram.' };
   const { brusselsTijd } = await import('../nieuw-apparaat');
-  return `${tl === 'nl' ? 'Laatste aanmeldingen' : 'Останні входи'}:\n${rijen.map((r) => `${r.stand === 'ingewisseld' ? '✅' : '⛔'} ${brusselsTijd(new Date(r.aangemaakt_op).getTime(), tl)} · ${r.apparaat}`).join('\n')}`;
+  const regels: string[] = [];
+  const knopRijen: Array<Array<{ letter: 'z'; doel: string; tekst: string }>> = [];
+  for (const r of rijen) {
+    const tijd = brusselsTijd(new Date(r.aangemaakt_op).getTime(), tl);
+    const actief = r.stand === 'ingewisseld' && await isSessieNogActief(r.user_id, r.sessie_id, r.sessie_ingetrokken_op);
+    const icoon = r.stand === 'geweigerd' ? '⛔' : actief ? '🟢' : r.sessie_ingetrokken_op ? '🛑' : '⚪';
+    const plaats = [r.dienst ? `${r.dienst}.tarasevych.com` : '', r.apparaat, r.ip, r.locatie].filter(Boolean).join(' · ');
+    const statusLabel = r.stand === 'geweigerd'
+      ? (tl === 'nl' ? 'geweigerd' : 'відхилено')
+      : actief
+        ? (tl === 'nl' ? 'actieve sessie' : 'активний сеанс')
+        : (tl === 'nl' ? 'sessie beëindigd' : 'сеанс завершено');
+    regels.push(`${icoon} ${tijd} · ${plaats} (${statusLabel})`);
+    if (actief) {
+      const label = tl === 'nl'
+        ? `🛑 Beëindigen: ${r.dienst ? `${r.dienst} · ` : ''}${r.apparaat}`.slice(0, 60)
+        : `🛑 Завершити: ${r.dienst ? `${r.dienst} · ` : ''}${r.apparaat}`.slice(0, 60);
+      knopRijen.push([{ letter: 'z', doel: r.id, tekst: label }]);
+    }
+  }
+  const kop = tl === 'nl' ? 'Laatste aanmeldingen en actieve sessies' : 'Останні входи та активні сеанси';
+  const uitleg = knopRijen.length
+    ? (tl === 'nl' ? '\n\nTik op een knop hieronder om die sessie meteen te beëindigen:' : '\n\nНатисніть кнопку нижче, щоб миттєво завершити відповідний сеанс:')
+    : '';
+  const knoppen = knopRijen.length ? await knoppenMaken(tg, `sessies-${tg}-${Date.now()}`, knopRijen) : undefined;
+  return { tekst: `${kop}:\n${regels.join('\n')}${uitleg}`, knoppen };
 }
 
 // ------------------------------------------------------------------------------------------------ knoppen
@@ -193,12 +255,18 @@ async function knopVerwerken(q: KnopUpdate): Promise<void> {
 const bericht = (q: KnopUpdate): Verzonden => ({ chatId: String(q.message!.chat.id), berichtId: q.message!.message_id, isFoto: !!q.message!.photo });
 
 async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: BotTaal, v: Verzonden | null): Promise<string> {
-  const werk = async (tekst: string) => { if (v) await bijwerken(v, tekst, taal); };
+  const werk = async (tekst: string, knoppen?: Array<Array<Record<string, unknown>>>) => { if (v) await bijwerken(v, tekst, taal, knoppen); };
   switch (letter) {
     case 'i': {
       const r = await inlogGoedkeuren(rij.doel, tg);
-      if (r.uitkomst === 'ok') { await werk(t(TEKST.ingelogd, taal)); if (v) await succesTonen(v.chatId); }
-      else if (r.uitkomst === 'code') await werk(taal === 'nl' ? '🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).' : taal === 'uk' ? '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).' : '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).\n\n🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).');
+      const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
+      const terugKnop = (r.uitkomst === 'ok' || r.uitkomst === 'code') && r.terugUrl
+        ? await knoppenMaken(tg, `terug-${rij.doel.split(':')[0] || 'inlog'}`, [[{ url: r.terugUrl, tekst: t(TEKST.knopTerugSite, tl) }]])
+        : undefined;
+      if (r.uitkomst === 'ok') { await werk(t(TEKST.ingelogd, taal), terugKnop); if (v) await succesTonen(v.chatId); }
+      else if (r.uitkomst === 'code') await werk(taal === 'nl' ? '🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).' : taal === 'uk' ? '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).' : '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).\n\n🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).', terugKnop);
+      // SEC-002 (slot s, midden-2): zonder toegangssleutel een duidelijke weg (andere aanmelding in die browser), geen doodlopende eis.
+      else if (r.uitkomst === 'passkey-nodig' && r.andereWeg) await werk(`🔐 ${taal === 'nl' ? ANDERE_WEG_UITLEG.nl : taal === 'uk' ? ANDERE_WEG_UITLEG.uk : `${ANDERE_WEG_UITLEG.uk}\n\n🔐 ${ANDERE_WEG_UITLEG.nl}`}`);
       else if (r.uitkomst === 'passkey-nodig') await werk(taal === 'nl' ? '🔐 Voor dit account (of dit nieuwe apparaat) is een toegangssleutel nodig. Meld u op de site aan met uw toegangssleutel.' : '🔐 Для цього облікового запису (або цього нового пристрою) потрібен ключ доступу. Увійдіть на сайті ключем доступу.');
       else if (r.uitkomst === 'geweigerd') await werk(t(TEKST.storingVast, taal));
       else await werk(t(TEKST.verlopen, taal));
@@ -254,6 +322,22 @@ async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: Bot
       await sql('UPDATE app.tg_chats SET taal = $2 WHERE telegram_id = $1', [tg, nieuw]);
       await werk(t(TEKST.taalGekozen, nieuw));
       return nieuw;
+    }
+    case 'z': {
+      const [vRij] = await sql<{ id: string; user_id: string | null; apparaat: string; dienst: string; sessie_id: string | null; sessie_ingetrokken_op: Date | null }>(
+        'SELECT id, user_id, apparaat, dienst, sessie_id, sessie_ingetrokken_op FROM app.tg_inlog_verzoeken WHERE id = $1 AND telegram_id = $2',
+        [rij.doel, tg],
+      );
+      if (!vRij || !vRij.user_id || !vRij.sessie_id) { await werk(t(TEKST.verlopen, taal)); return 'verlopen'; }
+      if (!vRij.sessie_ingetrokken_op) {
+        const d = ontleedSessieId(vRij.sessie_id);
+        const r = await telegramSessieIntrekken(vRij.user_id, { tab: d.tab, anker: d.anker }, { sessieId: '', anker: '', grant: '' });
+        await sql('UPDATE app.tg_inlog_verzoeken SET sessie_ingetrokken_op = now() WHERE id = $1', [vRij.id]);
+        await audit(vRij.user_id, 'sessie.ingetrokken.bot', 'success', { verzoek: vRij.id, apparaat: vRij.apparaat, dienst: vRij.dienst, anker: r.anker, tab: r.tab });
+      }
+      const overzicht = await aanmeldingenOverzicht(tg, taal);
+      await werk(`${t(TEKST.sessieBeeindigd, taal)}\n\n${overzicht.tekst}`, overzicht.knoppen);
+      return 'sessie-ingetrokken';
     }
     case 'c': { await werk(taal === 'nl' ? 'Geannuleerd.' : taal === 'uk' ? 'Скасовано.' : 'Скасовано. · Geannuleerd.'); return 'geannuleerd'; }
     default: await werk(t(TEKST.verlopen, taal)); return 'onbekend';

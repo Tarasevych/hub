@@ -13,7 +13,7 @@ import type { LambdaEvent, RouterContext, RouterMiddleware, RouterResponse } fro
 import { error } from './router';
 import { isSessieGeverifieerd, sessieGeverifieerd } from './context';
 import { schakelaarAan } from './schakelaars';
-import { tel } from './antwoord-teller';
+import { telPoort401 } from './antwoord-teller';
 
 /** Routes die zonder sessie mogen slagen (patroon zoals in de routetabel) → reden. */
 export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
@@ -56,6 +56,8 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   // (OAuth-client + PKCE + eenmalige code, of Bearer-token bij /rpc). Zie backend/mcp-connector.ts.
   'GET /api/mcp-connector/prm': 'OAuth protected resource metadata (RFC 9728), openbaar',
   'GET /api/mcp-connector/asm': 'OAuth authorization server metadata (RFC 8414), openbaar',
+  'GET /api/mcp-connector/server-card': 'MCP Server Card (ext-server-card, /.well-known/mcp.json), openbaar',
+  'GET /api/mcp-connector/registry-server': 'MCP Registry-manifest (/server.json), openbaar',
   'POST /api/mcp-connector/register': 'dynamische clientregistratie (RFC 7591); alleen de callback van Claude is toegestaan',
   'GET /api/mcp-connector/authorize': 'autorisatieverzoek van Claude; redirect naar het toestemmingsscherm, geeft zelf geen toegang',
   'POST /api/mcp-connector/token': 'tokenuitgifte: eenmalige code + PKCE-verifier, of roterend refresh-token',
@@ -81,10 +83,15 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/agents/diagnostics/archive':'browserextensie levert met haar eigen token (Authorization-header) een diagnosebuffer aan; versleuteld per gebruiker opgeslagen, 90 dagen',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
+  'POST /api/github/webhook/:sleutel': 'inkomende GitHub-webhook (verplichte HMAC-SHA256-handtekening in X-Hub-Signature-256)',
   // Toegangscodes voor anderen (§13.11): inwisselen heeft (nog) geen sessie; de code zelf is de referentie (alleen hash-opzoeking,
   // strikt per IP begrensd + blokkade). Uitloggen is idempotent. De overige /api/gast/*-routes eisen de gastcookie.
   'POST /api/gast/inwisselen': 'toegangscode inwisselen voor een beperkte gastsessie (code in de body, gehasht opgezocht)',
   'POST /api/gast/uitloggen': 'gastsessie beëindigen (idempotent; zonder sessie niets te doen)',
+  // Gedeelde cloudkoppelingen (CLOUD-001, backend/bestanden-delen.ts): referentie is de gehashte 192-bits koppelingscode (+ optioneel scrypt-wachtwoord of accountcontrole + rateLimit per IP).
+  'POST /api/cloud/gedeeld/info': 'metadata en toegestane boom van een gedeelde cloudkoppeling (gehashte code + IP-limiet)',
+  'POST /api/cloud/gedeeld/inhoud': 'inhoud of afgesneden deel van een gedeelde cloudkoppeling (gehashte code + strikt bereik)',
+  'POST /api/cloud/gedeeld/download': 'download van een gedeeld bestand, deel of map-zip (gehashte code + rechten- en limietcontrole)',
   'POST /api/owner/access/webauthn/options': 'passkey-opties (uitgeschakeld: 503)',
   'POST /api/owner/access/webauthn/register': 'passkey registreren (uitgeschakeld: 503)',
 };
@@ -116,7 +123,7 @@ export function poortNaVerzoek(patroon: string, event: LambdaEvent, antwoord: Ro
   }
   try { melder?.(patroon); } catch { /* melden mag nooit het verzoek breken */ }
   if (!poortAfdwingen()) return antwoord;
-  tel('poort401'); // zekering: piek in 401 van het vangnet na het aanzetten → automatisch uit
+  telPoort401(patroon); // zekering: piek in 401 van het vangnet over VERSCHILLENDE routes na het aanzetten → automatisch uit
   return error('AUTH_REQUIRED', 401);
 }
 

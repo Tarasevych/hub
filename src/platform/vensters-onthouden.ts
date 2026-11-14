@@ -62,7 +62,7 @@ export async function vensterStandOphalen(dienst: string): Promise<void> {
   // De dienst van DEZE pagina onthouden: het opslaan stuurt hem mee en de server weigert (403) een dienst die niet bij de herkomst
   // past. Voorheen bleef het 'hub' tot iemand een venster opende — minimaliseren op mcp.* of mail.* werd dan nooit bewaard (stand 21.10).
   if (dienst) laatsteDienst = dienst;
-  if (bezig || typeof window === 'undefined') return;
+  if (bezig || typeof window === 'undefined' || !weergaveAccountNu()) return;
   bezig = true;
   const vanScope = scope;
   try {

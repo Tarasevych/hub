@@ -1,7 +1,7 @@
 // ZOEKKERN v2 — HET UNIVERSELE ZOEKOBJECT EN HET CONTRACT VAN DE ZOEKKERN (Z1, 22.10.2026).
 // Dit bestand is het contract tussen de kern (backend/zoek-index.ts), de bronnen (Z2: backend/zoek/*), OCR/archieven (Z3),
-// de pagina /zoek (Z4: src/zoek/*) en de tests (Z5). Volledige uitleg: scratchpad/zoek-API.md (sectie «Зміни» bij
-// elke wijziging van een handtekening). Eén tabel: app.zoek_objecten (migrations/0100_zoek_kern.sql).
+// de pagina /zoek (Z4: src/zoek/*) en de tests (Z5). Volledige uitleg: docs/zoek/ZOEKEN.nl.md §4 (bij
+// elke wijziging van een handtekening bijwerken). Eén tabel: app.zoek_objecten (migrations/0100_zoek_kern.sql).
 //
 // De LADE (userId + ruimte) komt ALTIJD van de server (poort backend/ruimte-projecties.ts / gegevensLade), nooit uit het
 // verzoek. Een object zonder lade bestaat niet; een object buiten de lade van de aanroep wordt geweigerd (ZOEK_LADE_MISMATCH).

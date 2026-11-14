@@ -140,7 +140,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
           {type:"toggle",label:"Нагадування про резервний доступ",note:"Попередження про ризик втрати всіх способів входу",initial:true},
-          {type:"warning",label:"Важливе застереження",note:"Втрата всіх ключів і кодів може означати втрату зашифрованих даних."}
+          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
     },
@@ -260,7 +260,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
           {type:"toggle",label:"Herinnering over herstel",note:"Waarschuw voor verlies van alle inlogmethoden",initial:true},
-          {type:"warning",label:"Belangrijk",note:"Als alle sleutels en codes verloren gaan, kunnen versleutelde gegevens onbereikbaar worden."}
+          {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
     }
@@ -274,18 +274,22 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const даніВласника=opties.profiel;
   const дозволенаСвітлина=(значення)=>{
     if(typeof значення!=="string"||!значення.trim())return "";
+    const чисте=значення.trim();
     // У чинному застосунку власне фото може бути збережене як зображення всередині даних акаунта.
-    if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(значення)&&значення.length<=340000)return значення;
+    if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(чисте)&&чисте.length<=340000)return чисте;
+    if(чисте.length>1024)return "";
     try{
-      const адреса=new URL(значення,location.href);
-      const вузол=адреса.hostname.toLowerCase();
-      return адреса.protocol==="https:"&&(вузол==="lh3.googleusercontent.com"||вузол.endsWith(".googleusercontent.com"))?адреса.href:"";
+      const адреса=new URL(чисте);
+      if(адреса.protocol!=="https:"||адреса.username||адреса.password)return "";
+      адреса.hash="";
+      return адреса.href;
     }catch{return "";}
   };
+  const початковаАдреса=даніВласника?.bevestigd===true?дозволенаСвітлина(даніВласника.foto):"";
   const світлинаПрофілю={
     імʼя:даніВласника?.bevestigd===true&&typeof даніВласника.naam==="string"?даніВласника.naam.trim():"",
-    адреса:даніВласника?.bevestigd===true?дозволенаСвітлина(даніВласника.foto):"",
-    джерело:даніВласника?.bevestigd===true?"акаунт":"немає",
+    адреса:початковаАдреса,
+    джерело:даніВласника?.bevestigd===true?(початковаАдреса?"акаунт":"безФото"):"немає",
     місцеваАдреса:""
   };
 
@@ -295,8 +299,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(світлинаПрофілю.місцеваАдреса)URL.revokeObjectURL(світлинаПрофілю.місцеваАдреса);
     світлинаПрофілю.місцеваАдреса="";
     світлинаПрофілю.імʼя=новийПрофіль?.bevestigd===true&&typeof новийПрофіль.naam==="string"?новийПрофіль.naam.trim():"";
-    світлинаПрофілю.адреса=новийПрофіль?.bevestigd===true?дозволенаСвітлина(новийПрофіль.foto):"";
-    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?"акаунт":"немає";
+    const новаАдреса=новийПрофіль?.bevestigd===true?дозволенаСвітлина(новийПрофіль.foto):"";
+    світлинаПрофілю.адреса=новаАдреса;
+    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?(новаАдреса?"акаунт":"безФото"):"немає";
     оновитиФотоПрофілю();
   }
   luister(window,"mijn-ruimte:profiel-bijgewerkt",подія=>прийнятиФотоПрофілю(подія.detail));
@@ -332,7 +337,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!рядок||!пояснення)return;
     const мова=моваПрофілю();
     const написи={
-      акаунт:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. У цьому макеті його можна лише переглядати.","De aangemelde toepassing heeft de foto aangeleverd. Dit ontwerp toont haar alleen."],
+      акаунт:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. Змінити або прибрати світлину можна в розділі «Акаунт».","De aangemelde toepassing heeft de foto aangeleverd. U kunt de foto wijzigen of verwijderen bij «Account»."],
+      безФото:["Світлину профілю ще не встановлено","Nog geen profielfoto ingesteld","Обліковий запис підключено, але власну чи сервісну світлину не передано. Додати її можна в розділі «Акаунт».","Het account is verbonden, maar er is nog geen profielfoto ingesteld. U kunt er een kiezen bij «Account»."],
       попередній:["Місцева світлина лише для перегляду","Lokale foto alleen als voorbeeld","Файл залишається у вашому браузері. Він не надсилається на сервер і не змінює фото облікового запису. Після оновлення сторінки місцевий перегляд зникне.","Het bestand blijft in je browser. Het wordt niet verstuurd en wijzigt je accountfoto niet. Na het vernieuwen verdwijnt dit voorbeeld."],
       немає:["Дані облікового запису ще не підключено","Accountgegevens zijn nog niet verbonden","Коли нове оформлення працюватиме всередині Mijn Ruimte, воно отримає справжню світлину з облікового запису. Зараз можна тимчасово обрати власний файл.","Binnen Mijn Ruimte krijgt dit ontwerp de echte accountfoto. Nu kun je tijdelijk een eigen bestand kiezen."],
       недоступне:["Світлину облікового запису не вдалося відобразити","De accountfoto kon niet worden getoond","Джерело світлини не відкривається. Замість вигаданого зображення показано нейтральну позначку.","De fotobron is niet bereikbaar. In plaats van een verzonnen foto zie je een neutraal symbool."]
@@ -804,7 +810,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       '<div class="register-head"><div><span class="register-eyebrow">'+veiligeTekstРеєстру(t.title)+'</span><p>'+veiligeTekstРеєстру(t.notice)+'</p></div><button type="button" class="register-all" data-register-all="'+sectie+'">'+veiligeTekstРеєстру(усіВідкриті?t.hideAll:t.showAll)+'</button></div>'+
       '<div class="register-list">'+groeplijst.map((g,i)=>{
         const sleutel=sectie+':'+g.id,open=відкритіГрупиРеєстру.has(sleutel);
-        return '<details class="register-group" data-register-group="'+sleutel+'" '+(open?'open':'')+'><summary><span class="register-group-index">'+String(i+1).padStart(2,'0')+'</span><span class="register-group-text"><strong>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.nl:g.uk)+'</strong><small>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.поясненняNl:g.поясненняUk)+'</small></span>'+badgeРеєстру(g.стан)+'<span class="register-chevron" aria-hidden="true">⌄</span></summary><div class="register-group-body">'+g.рядки.map((rij,j)=>veldРеєстру(sectie,g,rij,j)).join('')+'</div></details>';
+        return '<details class="register-group" data-register-group="'+sleutel+'" '+(open?'open':'')+'><summary><span class="register-group-index">'+String(i+1).padStart(2,'0')+'</span><span class="register-group-text"><strong>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.nl:g.uk)+'</strong><small>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.поясненняNl:g.поясненняUk)+'</small></span>'+badgeРеєстру(g.стан)+'<span class="register-chevron" aria-hidden="true"><svg class="expand-chevron" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m5 7.5 5 5 5-5"/></svg></span></summary><div class="register-group-body">'+g.рядки.map((rij,j)=>veldРеєстру(sectie,g,rij,j)).join('')+'</div></details>';
       }).join('')+'</div></div>';
   }
 
@@ -1075,7 +1081,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!panel)return;
     const visualPreview=visualPreviewSections.has(id);
     panel.innerHTML=
-      '<div class="inline-settings-header"><div class="inline-settings-identity"><span class="inline-settings-section-icon'+(id==='identities'?' profile-avatar':'')+'"'+(id==='identities'?' data-profile-photo':'')+'>'+(id==='identities'?'':iconSvg(id))+'</span><div><span class="inline-settings-eyebrow">'+t.inlineEyebrow+'</span><h3>'+s.name+'</h3></div></div><button class="inline-close-button" data-close-inline="'+id+'" aria-label="'+t.collapseSection+'">'+t.collapseSection+' <span>⌃</span></button></div>'+
+      '<div class="inline-settings-header"><div class="inline-settings-identity"><span class="inline-settings-section-icon'+(id==='identities'?' profile-avatar':'')+'"'+(id==='identities'?' data-profile-photo':'')+'>'+(id==='identities'?'':iconSvg(id))+'</span><div><span class="inline-settings-eyebrow">'+t.inlineEyebrow+'</span><h3>'+s.name+'</h3></div></div><button class="inline-close-button" data-close-inline="'+id+'" aria-label="'+t.collapseSection+'">'+t.collapseSection+' <span class="inline-close-chevron" aria-hidden="true">'+chevronIcon+'</span></button></div>'+
       '<div class="inline-settings-workspace '+(visualPreview?'has-preview':'no-preview')+'">'+
         '<div class="inline-settings-controls"><div class="drawer-controls-list">'+locales[preferences.lang].panels[id].map((control,i)=>drawerControl(control,i,id)).join("")+'</div></div>'+
         (visualPreview?'<aside class="inline-live-panel" aria-label="'+t.previewSample+'"><div class="inline-preview-body">'+drawerPreview(s)+'</div></aside>':'')+
@@ -1350,14 +1356,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const adaptiveNavEdge=byId("adaptiveNavEdge");
   let drawerOpenedByControl=false;
   function placeAdaptiveNavToggle(){
-    // Keep the hamburger on the same edge as the temporary side drawer.
-    // Moving the existing node preserves its event listeners and focus state.
-    const onRight=preferences.position==="right";
-    const host=root.querySelector(onRight?".top-actions":".topbar-start");
-    if(adaptiveNavToggle.parentElement!==host){
-      if(onRight)host.append(adaptiveNavToggle);
-      else host.prepend(adaptiveNavToggle);
-    }
+    const balk=byId("mqSectieBalk");
+    if(balk)balk.dataset.zijde=preferences.position==="right"?"right":"left";
   }
   function setAdaptiveNavOpen(open,{explicit=false}={}){
     const visible=Boolean(open&&body.classList.contains("rail-smart-condensed"));
@@ -1367,7 +1367,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     adaptiveNavScrim.hidden=!visible;
     byId("anchorRail").setAttribute("aria-hidden",String(!visible&&body.classList.contains("rail-smart-condensed")));
     adaptiveNavToggle.setAttribute("aria-expanded",String(visible));
-    adaptiveNavToggle.setAttribute("aria-label",preferences.lang==="nl"?(visible?"Navigatie sluiten":"Navigatie openen"):(visible?"Закрити навігацію":"Відкрити навігацію"));
+    adaptiveNavToggle.setAttribute("aria-label",preferences.lang==="nl"?(visible?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(visible?"Закрити розділи сторінки":"Відкрити розділи сторінки"));
     adaptiveNavToggle.title=adaptiveNavToggle.getAttribute("aria-label");
     const edgeLabel=preferences.lang==="nl"?"Zijmenu openen":"Відкрити бічне меню";
     adaptiveNavEdge.setAttribute("aria-label",edgeLabel);
@@ -1557,7 +1557,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     write("#breadcrumbWorkspace",t.workspace);
     write(".breadcrumbs strong",t.settings);
     write(".concept-pill",'<span class="concept-dot"></span>'+t.concept,true);
-    write(".search-action span",t.quickJump);
+    write(".search-action span",preferences.lang==="nl"?"Zoeken in «Mijn Ruimte»…":"Пошук у «Мій простір»…");
+    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
+    const zoekKnop=byId("openSearch");if(zoekKnop){const zl=preferences.lang==="nl"?"Zoeken in «Mijn Ruimte» (Ctrl K)":"Пошук у «Мій простір» (Ctrl K)";zoekKnop.setAttribute("aria-label",zl);zoekKnop.title=zl;}
+    const posKnop=byId("mqSectiePositie");if(posKnop){const pl=preferences.lang==="nl"?"Positie van paginanavigatie":"Розташування навігації сторінки";posKnop.setAttribute("aria-label",pl);posKnop.title=pl;}
     write(".hero-eyebrow",'<span class="line"></span>'+t.heroEyebrow+'<span class="line"></span>',true);
     write(".hero h1",t.heroTitle[0]+'<br><em>'+t.heroTitle[1]+'</em>',true);
     write(".hero-copy p",t.heroDesc);
@@ -1903,7 +1906,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const right=body.classList.contains("rail-right");
     const open=body.classList.contains("rail-smart-open");
     const edgeRect=adaptiveNavEdge.getBoundingClientRect();
-    const fromEdge=!open&&event.clientX>=edgeRect.left-5&&event.clientX<=edgeRect.right+5&&
+    const siteLade=Boolean(root.closest(".canonical-chrome")?.classList.contains("sidebar-drawer-mode"));
+    const fromEdge=!open&&(right||!siteLade)&&event.clientX>=edgeRect.left-5&&event.clientX<=edgeRect.right+5&&
       event.clientY>=edgeRect.top&&event.clientY<=edgeRect.bottom;
     const railRect=byId("anchorRail").getBoundingClientRect();
     const fromDrawer=open&&event.clientX>=railRect.left&&event.clientX<=railRect.right&&event.clientY>=railRect.top&&event.clientY<=railRect.bottom;
@@ -1926,8 +1930,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   luister(window,"resize",()=>requestAnimationFrame(updatePillDimensions));
   if(typeof ResizeObserver!=="undefined"){const ro=new ResizeObserver(()=>requestAnimationFrame(updatePillDimensions));ro.observe(byId("anchorRail"));luisteraars.push(()=>ro.disconnect());}
   // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області (не вікна).
-  // Зсуви закріплених елементів: смуга сервісів макета плюс відступ робочої області сайту (--mq-links), верхні відступи (--mq-site, --mq-boven).
+  // Зсуви закріплених елементів: відступ робочої області від справжнього головного меню сайту (--mq-links, --mq-rechts, --mq-onder, --mq-site) і висота підсмуги розділів (--mq-boven).
   const DREMPELS=[400,420,430,440,500,600,650,720,730,731,810,900,1000,1040,1120,1150,1250,1280];
+  const chrome=root.closest(".canonical-chrome");
   function zetMaten(){
     const b=breed();
     for(const n of DREMPELS){root.classList.toggle("bp-max-"+n,b<=n);root.classList.toggle("bp-min-"+n,b>=n);}
@@ -1937,16 +1942,20 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const railBreed=rail&&getComputedStyle(rail).display!=="none"?rail.offsetWidth:0;
     const links=maat("paddingLeft")+railBreed, site=maat("paddingTop");
     const planck=root.querySelector(".topbar")?.offsetHeight||0;
+    const sectieBalkEl=byId("mqSectieBalk");
+    const sectieBalk=sectieBalkEl&&getComputedStyle(sectieBalkEl).display!=="none"?sectieBalkEl.offsetHeight:0;
     root.style.setProperty("--mq-links",links+"px");
     root.style.setProperty("--mq-site-links",maat("paddingLeft")+"px");
     root.style.setProperty("--mq-rechts",maat("paddingRight")+"px");
     root.style.setProperty("--mq-onder",maat("paddingBottom")+"px");
     root.style.setProperty("--mq-site",site+"px");
-    root.style.setProperty("--mq-boven",(site+planck)+"px");
+    root.style.setProperty("--mq-topbar",planck+"px");
+    root.style.setProperty("--mq-boven",(site+planck+sectieBalk)+"px");
     if(rail)rail.style.left=maat("paddingLeft")+"px";
   }
   zetMaten();
-  if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});ro2.observe(root);luisteraars.push(()=>ro2.disconnect());}
+  if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});ro2.observe(root);if(werkvlak)ro2.observe(werkvlak);luisteraars.push(()=>ro2.disconnect());}
+  if(chrome&&typeof MutationObserver!=="undefined"){const mo=new MutationObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});mo.observe(chrome,{attributes:true,attributeFilter:["class","data-dock"]});luisteraars.push(()=>mo.disconnect());}
   luisteraars.push(()=>{cancelRailAutoCollapse();clearTimeout(showToast.timer);});
   // САЙТ: відкриті блоки «Чинні налаштування» пам'ятаємо між перемальовуваннями; відкриття монтує справжню панель.
   luister(root,"toggle",e=>{
@@ -1970,6 +1979,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   function closeNavSettings(){popover.hidden=true;scheduleRailAutoCollapse();}
   byId("railConfig").addEventListener("click",e=>{e.stopPropagation(); toggleNavSettings();});
   byId("heroNavSettings").addEventListener("click",toggleNavSettings);
+  byId("mqSectiePositie")?.addEventListener("click",e=>{e.stopPropagation();toggleNavSettings();});
   byId("closeNavSettings").addEventListener("click",closeNavSettings);
   byId("railProgressHelp").addEventListener("click",()=>showToast(preferences.lang==="nl"?"De cirkel laat zien hoeveel van deze pagina je al hebt bekeken.":"Коло показує, яку частину цієї сторінки ви вже переглянули."));
   byId("anchorRail").addEventListener("pointerenter",e=>{
@@ -2078,7 +2088,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 12</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
     if(!matches.length)byId("commandResults").innerHTML='<div class="no-results">'+ui().noResults+'</div>';
   }
-  byId("openSearch").addEventListener("click",openSearch);
+  byId("openSearch").addEventListener("click",()=>{window.dispatchEvent(new CustomEvent("tsv:zoek-palet"));});
   searchInput.addEventListener("input",()=>{searchIndex=0;renderSearch();});
   searchInput.addEventListener("keydown",e=>{
     const buttons=[...byId("commandResults").querySelectorAll("[data-jump]")];
@@ -2087,21 +2097,20 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(e.key==="Enter"&&buttons[searchIndex])jump(buttons[searchIndex].dataset.jump);
   });
   searchOverlay.addEventListener("click",e=>{if(e.target===searchOverlay)closeSearch();});
-  luister(window,"keydown",e=>{
-    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();e.stopImmediatePropagation();searchOverlay.hidden?openSearch():closeSearch();} // САЙТ: перехоплює комбінацію раніше за глобальний пошук сайту
+  luister(doc,"keydown",e=>{
     if(e.key==="Escape"){
       const closingAdaptiveNav=body.classList.contains("rail-smart-open");
       closeSearch();closeNavSettings();closeHorizontalNavMenu(true);setAdaptiveNavOpen(false);
       if(closingAdaptiveNav)adaptiveNavToggle.focus({preventScroll:true});
-      if(e.target.closest?.('.section-inline-settings'))closeInlineSettings(e.target.closest('.section-inline-settings').dataset.inlineSection);
+      if(e.target?.closest?.('.section-inline-settings'))closeInlineSettings(e.target.closest('.section-inline-settings').dataset.inlineSection);
     }
-  },true);
+  });
   luister(doc,"pointerdown",e=>{
     if(!e.target.closest('#horizontalNavPopup,#railExpand,#railItems .nav-group-toggle,#railItems .anchor-link[data-jump="intro"]'))closeHorizontalNavMenu();
   });
   luister(doc,"click",e=>{
     const target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[data-icon-display],[data-rail-mode],[data-theme],[data-accent],[data-demo-lang],.open-detail,.demo-action");
-    if(!target){if(!e.target.closest("#navSettings,#railConfig,#heroNavSettings"))closeNavSettings();return;}
+    if(!target){if(!e.target.closest("#navSettings,#railConfig,#heroNavSettings,#mqSectiePositie"))closeNavSettings();return;}
     if(target.dataset.jump){hideAnchorTooltip();jump(target.dataset.jump);return;}
     if(target.dataset.pos){setPosition(target.dataset.pos);syncActive();closeNavSettings();syncControlStates();showToast(ui().moved+" "+ui().positions[target.dataset.pos]);return;}
     if(target.dataset.navStyle){setNavStyle(target.dataset.navStyle);return;}

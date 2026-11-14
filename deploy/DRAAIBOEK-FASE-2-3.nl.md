@@ -64,8 +64,9 @@ Let op (verwacht gedrag, geen fout):
   (wachtwoord, ontkoppelen, telefoon, toegangsbeleid, kluis onthullen, beheerrollen/-beleid/-gebruikers,
   audit verwijderen, gegevensexport, account verwijderen). De UI heeft hier nog geen dialoog voor: **afmelden,
   opnieuw met Google aanmelden en de actie binnen 5 minuten herhalen** (of TOTP via `/api/owner/access/stap-op`).
-  Noodschakelaar als dit iets dringends blokkeert: `STAP_OP_UIT=1` in `geheimen.env` + `systemctl restart mijn-ruimte`
-  (daarna weer verwijderen).
+  Noodschakelaar als dit iets dringends blokkeert: `STAP_OP_UIT_TOT=<ISO-tijdstip, hoogstens 24 uur vooruit>` in `geheimen.env`
+  + `systemctl restart mijn-ruimte` (daarna weer verwijderen; na het tijdstip gaat de step-up vanzelf weer aan). Zolang hij aan staat,
+  meldt de server dat (logboek, journaal, melding aan de eigenaar, «Захист»). De oude vorm `STAP_OP_UIT=1` heeft geen einde: niet meer gebruiken.
 - API-platform/kluis alleen nog voor de eigenaar of accounts met recht `api-platform` (identiteitsbeheer).
 - Bestaande gedeelde links blijven geldig tot ze verlopen; nieuwe links zijn eenmalig.
 

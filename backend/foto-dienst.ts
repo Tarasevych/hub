@@ -16,11 +16,12 @@
 //     het definitief wissen van een EIGEN kopie vraagt bevestiging 'WISSEN' en kan alleen als het item geen andere bron heeft
 //     die alleen hier staat — externe diensten worden door deze code nooit aangeraakt (er is geen schrijfweg naar buiten).
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdtemp, open, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createReadStream } from 'node:fs';
+import { mkdir, open, readdir, rm, stat, statfs } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
+import { buitenVerzoek } from '../server/platform/context';
 import { denyMutation } from './rbac';
 import {
   BRON_IDS, FOTO_BRONNEN, FOTO_LIMIETEN as L, duplicaatGroepen, gelijkendeGroepen, mediaSoort, mimeVoor, extVan,
@@ -66,7 +67,7 @@ function naarBuiten(r: MetId<MediaRec>, cloudBestaat?: (id: string) => boolean):
   const herkomst = Array.isArray(r.herkomst) ? r.herkomst.slice(0, 20) : [];
   const beschikbaar = r.opslag === 'cloud' ? (cloudBestaat ? cloudBestaat(str(r.cloudItemId)) : true) : Boolean(r.storagePath);
   return {
-    id: r.id, naam, titel: str(r.titel) || naam, beschrijving: str(r.beschrijving), soort: mediaSoort(naam, str(r.mime)) || 'foto', mime: str(r.mime),
+    id: r.id, naam, titel: str(r.titel) || naam, beschrijving: str(r.beschrijving), soort: mediaSoort(naam, str(r.mime)) || 'foto', mime: mimeVoor(naam, str(r.mime)) /* wolk-09: ook oude records */,
     bytes: num(r.bytes), sha256: str(r.sha256), breedte: r.breedte ?? null, hoogte: r.hoogte ?? null, genomenOp: r.genomenOp ?? null, datumBron: r.datumBron || 'onbekend',
     plaats: r.plaats ?? null, camera: str(r.camera), tags: Array.isArray(r.tags) ? r.tags : [], albums: Array.isArray(r.albums) ? r.albums : [],
     favoriet: r.favoriet === true, verborgen: r.verborgen === true, bron: herkomst[0]?.bron || (r.opslag === 'cloud' ? 'cloud' : 'eigen'), herkomst,
@@ -82,9 +83,65 @@ const schonePlaats = (v: unknown) => { const o = (v && typeof v === 'object' ? v
 const schoneTags = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).map(schoneTag).filter(Boolean))].slice(0, L.tagsMax);
 
 // ------------------------------------------------------------------------------------------------ uploadsessies
-type Sessie = { lade: Lade; pad: string; map: string; bytes: number; ontvangen: number; meta: Record<string, unknown>; tot: number };
+// SEC-002 (wolk-02 / privacy-logboek-04, 12.11.2026) — vroeger: onbeperkt veel sessies per mens in /tmp (mkdtemp), «stuk» zonder
+// slot (zes gelijke stukken tegelijk kwamen er alle zes door, het bestand groeide voorbij de aangekondigde grootte), en «klaar»/
+// «kopieer» lazen het hele bestand (tot 256 MiB) in het geheugen en maakten er nog eens base64 van (~850 MB per verzoek) — een
+// paar gelijktijdige «klaar» liet het enige serverproces vallen. Nu:
+//   • sessies op het opslagvolume: <UPLOADS_DIR>/.foto-sessies/<uuid>/inhoud (een map met een punt kan geen opslagpad zijn);
+//   • per mens hoogstens L.sessiesPerMens open sessies en L.sessieBytesPerMens aangekondigde bytes; alle mensen samen
+//     L.sessiesTotaal; daarboven UPLOAD_TE_VEEL; «begin» meet de vrije schijf mét wat open sessies nog zullen innemen;
+//   • «stuk» en «klaar» per sessie achter elkaar (slot-keten), de controle van offset en grootte ONDER het slot;
+//   • «klaar» en «kopieer»: sha256 stromend, opslaan met storage.writeVanPad (nooit het hele bestand in het geheugen), en
+//     hoogstens L.klaarTegelijk tegelijk (de rest wacht in de rij);
+//   • opruimen met een klok (niet alleen bij een volgend verzoek), ook mappen die van een vorig procesleven zijn blijven staan.
+type Sessie = { lade: Lade; pad: string; map: string; bytes: number; ontvangen: number; meta: Record<string, unknown>; tot: number; slot: Promise<unknown> };
 const sessies = new Map<string, Sessie>();
-const opruimen = async () => { const nu = Date.now(); for (const [id, s] of sessies) if (s.tot < nu) { sessies.delete(id); await rm(s.map, { recursive: true, force: true }).catch(() => undefined); } };
+const SESSIE_MS = L.sessieMinuten * 60_000;
+const SESSIE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const SCHIJF_RESERVE = 256 * 1024 * 1024;
+const opslagWortel = () => resolve(process.env.UPLOADS_DIR || '/srv/data/uploads');
+const sessieWortel = () => join(opslagWortel(), '.foto-sessies');
+const standaardVrij = async (): Promise<number | null> => { try { const s = await statfs(opslagWortel()); return Number(s.bavail) * Number(s.bsize); } catch { return null; } };
+let vrijeBytes = standaardVrij;
+/** Bytes die open sessies (alle mensen) nog zullen innemen. */
+const beloofd = (): number => { let n = 0; for (const s of sessies.values()) n += Math.max(0, s.bytes - s.ontvangen); return n; };
+const sessieWeg = async (id: string): Promise<void> => {
+  const s = sessies.get(id); sessies.delete(id);
+  if (SESSIE_ID.test(id)) await rm(s?.map ?? join(sessieWortel(), id), { recursive: true, force: true }).catch(() => undefined);
+};
+const opruimen = async (nu = Date.now(), schijf = true): Promise<void> => {
+  for (const [id, s] of sessies) if (s.tot < nu) await sessieWeg(id);
+  if (!schijf) return; // bij elk verzoek alleen het geheugen; de schijf doet de klok
+  // Wezen op schijf (vorig procesleven, of een sessie waarvan het opruimen mislukte): alles wat niet in het geheugen staat
+  // en ouder is dan een sessie mag worden.
+  let namen: string[] = [];
+  try { namen = (await readdir(sessieWortel())).filter((n) => SESSIE_ID.test(n)); } catch { return; }
+  for (const id of namen) {
+    if (sessies.has(id)) continue;
+    const st = await stat(join(sessieWortel(), id)).catch(() => null);
+    if (st && nu - st.mtimeMs > SESSIE_MS && !sessies.has(id)) await rm(join(sessieWortel(), id), { recursive: true, force: true }).catch(() => undefined);
+  }
+};
+let opruimKlok: ReturnType<typeof setInterval> | null = null;
+const startOpruimKlok = () => {
+  if (opruimKlok) return;
+  opruimKlok = buitenVerzoek(() => setInterval(() => { void opruimen().catch(() => undefined); }, 5 * 60_000));
+  (opruimKlok as unknown as { unref?: () => void }).unref?.();
+  void opruimen().catch(() => undefined); // één keer bij de start: wezen van een vorig procesleven
+};
+// Rij voor «klaar»/«kopieer»: hoogstens L.klaarTegelijk tegelijk bezig met bytes.
+let klaarBezig = 0;
+const klaarRij: Array<() => void> = [];
+async function metKlaarPlek<T>(fn: () => Promise<T>): Promise<T> {
+  if (klaarBezig < L.klaarTegelijk) klaarBezig += 1;
+  else await new Promise<void>((r) => klaarRij.push(r)); // de vrijgever geeft zijn plek door
+  try { return await fn(); } finally { const volgende = klaarRij.shift(); if (volgende) volgende(); else klaarBezig -= 1; }
+}
+/** sha256 en grootte van een bestand op schijf, stromend. */
+const shaVanBestand = (pad: string): Promise<{ sha: string; bytes: number }> => new Promise((ok, mis) => {
+  const h = createHash('sha256'); let n = 0;
+  createReadStream(pad).on('data', (c) => { h.update(c); n += (c as Buffer).length; }).on('end', () => ok({ sha: h.digest('hex'), bytes: n })).on('error', mis);
+});
 
 async function albumVoorNaam(lade: Lade, naam: string, bron: string, cache: Map<string, string>): Promise<string> {
   const sleutel = naam.toLowerCase(); const al = cache.get(sleutel); if (al) return al;
@@ -102,10 +159,18 @@ type Resp = ReturnType<typeof json>;
 const DIENSTEN = ['hub', 'cloud'];
 const NIET_GEVONDEN = new Set(['ITEM_ONBEKEND', 'ALBUM_ONBEKEND', 'UPLOAD_ONBEKEND', 'FOTO_DIENST_UIT']);
 
-export const fotoProef = { wisSessies: () => sessies.clear(), vlagNegeren: false };
+export const fotoProef = {
+  wisSessies: () => sessies.clear(), vlagNegeren: false,
+  /** Alleen voor tests: de schijfmeting vervangen (null = echte meting). */
+  zetVrijeBytes: (fn: (() => Promise<number | null>) | null) => { vrijeBytes = fn ?? standaardVrij; },
+  /** Alleen voor tests: één opruimronde «op tijdstip nu». */
+  opruimenNu: (nu?: number) => opruimen(nu),
+};
+const organiseerBezig = new Set<string>(); // aanv-ronde1-05: één «Упорядкувати» tegelijk per mens
 
 export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagAan?: (u: SessionOk['user']) => Promise<boolean> } = {}): Record<string, RouterMiddleware[]> {
   const vlagAan = opties.vlagAan ?? (async () => false); /* vlag-evaluatie komt uit backend/index.ts (architectuurregel) */
+  startOpruimKlok();
   type Run = (lade: Lade, d: Record<string, unknown>, auth: SessionOk) => Promise<Resp>;
   const route = (run: Run): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as Ctx; const auth = await requireSession(ctx.event, ctx.body);
@@ -190,7 +255,8 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
       // Inhoud lezen (begrensd): sha256 voor duplicaten en EXIF (datum, camera, plaats) — de cloud bewaart die niet altijd.
       let shaC = str(c.sha256); let exif: Exif = {};
       if (gelezen < 300 && num(c.sizeBytes) <= L.inhoudMaxBytes) {
-        const [g] = await storage.read([str(c.storagePath)], { eigenaar: lade.userId }).catch(() => [null]);
+        // SEC-002 (aanv-ronde1-04): sizeBytes van de rij kan verouderd zijn — de werkelijke grootte telt (stat in storage.read).
+        const [g] = await storage.read([str(c.storagePath)], { eigenaar: lade.userId, maxBytes: L.inhoudMaxBytes }).catch(() => [null]);
         if (g?.content) { const b = Buffer.from(g.content, 'base64'); gelezen++; shaC ||= createHash('sha256').update(b).digest('hex'); if (/jpe?g$/i.test(naam) || str(c.mimeType) === 'image/jpeg') exif = leesExif(new Uint8Array(b.subarray(0, 256 * 1024))); }
       }
       const dubbel = shaC ? shaBekend.get(shaC) : undefined;
@@ -206,19 +272,38 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- bytes lezen (weergave/download/kopie)
-  const bytesVan = async (lade: Lade, r: MetId<MediaRec>): Promise<Buffer> => {
+  // SEC-002 (aanv-ronde1-04, 12.11.2026): `r.bytes` is de grootte van TOEN; een bestand in de hmara kan sindsdien door een groter
+  // vervangen zijn (zelfde id). Daarom leest bytesVan met een bovengrens op de WERKELIJKE grootte (storage.read doet eerst stat en
+  // leest een te groot bestand niet in het geheugen), en rekent «controleer» de sha256 in stukken (leesDeel) — nooit het hele bestand.
+  const padVan = async (lade: Lade, r: MetId<MediaRec>): Promise<string> => {
     let pad = str(r.storagePath);
     if (r.opslag === 'cloud') { const c = await een<CloudRec>(CLOUD_ITEMS, lade, r.cloudItemId); if (!c || str(c.verwijderdOp)) fout('BRON_NIET_BESCHIKBAAR'); pad = str(c!.storagePath); }
     if (!pad) fout('BRON_NIET_BESCHIKBAAR');
-    const [g] = await storage.read([pad], { eigenaar: lade.userId });
+    return pad;
+  };
+  const bytesVan = async (lade: Lade, r: MetId<MediaRec>, maxBytes: number, teGroot = 'TE_GROOT'): Promise<Buffer> => {
+    const [g] = await storage.read([await padVan(lade, r)], { eigenaar: lade.userId, maxBytes });
+    if (g?.teGroot) fout(teGroot);
     if (!g?.content) fout('BRON_NIET_BESCHIKBAAR');
     return Buffer.from(g!.content!, 'base64');
+  };
+  const DEEL_BYTES = 4 * 1024 * 1024;
+  const shaVan = async (lade: Lade, r: MetId<MediaRec>): Promise<string> => {
+    const pad = await padVan(lade, r), h = createHash('sha256');
+    for (let offset = 0; ;) {
+      const deel = await storage.leesDeel(pad, offset, DEEL_BYTES, { eigenaar: lade.userId });
+      if (!deel) { if (offset === 0) fout('BRON_NIET_BESCHIKBAAR'); break; }
+      if (!deel.data.length) break;
+      h.update(deel.data); offset += deel.data.length;
+      if (offset >= deel.totaal) break;
+    }
+    return h.digest('hex');
   };
   const inhoud: Run = async (lade, d) => {
     const r = await een<MediaRec>(MEDIA, lade, d.id); if (!r) fout('ITEM_ONBEKEND');
     if (num(r!.bytes) > L.inhoudMaxBytes) fout('TE_GROOT_VOOR_WEERGAVE');
-    const b = await bytesVan(lade, r!);
-    return json({ id: r!.id, mime: str(r!.mime) || mimeVoor(str(r!.naam)), naam: str(r!.naam), bytes: b.length, sha256: createHash('sha256').update(b).digest('hex'), data: b.toString('base64') });
+    const b = await bytesVan(lade, r!, L.inhoudMaxBytes, 'TE_GROOT_VOOR_WEERGAVE');
+    return json({ id: r!.id, mime: mimeVoor(str(r!.naam), str(r!.mime)), naam: str(r!.naam), bytes: b.length, sha256: createHash('sha256').update(b).digest('hex'), data: b.toString('base64') });
   };
 
   // ---- acties op items
@@ -257,13 +342,36 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
       } else if (actie === 'kopieer') { // back-up: bestand uit «Хмарне сховище» als eigen kopie bewaren (origineel blijft)
         if (r.opslag !== 'cloud') { uit.push(naarBuiten(r)); continue; }
         if (num(r.bytes) > L.itemMaxBytes) fout('TE_GROOT');
-        const b = await bytesVan(lade, r); const pad = `${cloudVoorvoegsel(lade)}/foto-${randomUUID()}.${extVan(str(r.naam)) || 'bin'}`;
-        const [ok] = await storage.write([{ path: pad, content: b.toString('base64'), contentType: str(r.mime) || 'application/octet-stream', ownerId: lade.userId }]);
-        if (!ok) fout('FOTO_OPSLAG_MISLUKT');
-        const sha = createHash('sha256').update(b).digest('hex');
-        n = await bewaar(r, { opslag: 'eigen', storagePath: pad, sha256: sha, bytes: b.length, backupOp: new Date().toISOString(), backupOk: true });
+        // SEC-002 (wolk-02): in delen naar een tijdelijk bestand op het opslagvolume (sha256 onderweg), dan writeVanPad —
+        // vroeger het hele bestand in het geheugen plus base64 (tot ~850 MB per verzoek). Ook hier de rij van «klaar».
+        const pad = `${cloudVoorvoegsel(lade)}/foto-${randomUUID()}.${extVan(str(r.naam)) || 'bin'}`;
+        const bronPad = await padVan(lade, r);
+        const { sha, bytes: gekopieerd } = await metKlaarPlek(async () => {
+          await mkdir(sessieWortel(), { recursive: true, mode: 0o700 });
+          const tmp = join(sessieWortel(), `.kopie-${randomUUID()}`);
+          try {
+            const vrij = await vrijeBytes();
+            if (vrij !== null && vrij < num(r.bytes) + SCHIJF_RESERVE + beloofd()) fout('SCHIJF_VOL');
+            const h = createHash('sha256'); let offset = 0;
+            const fh = await open(tmp, 'wx', 0o600);
+            try {
+              for (;;) {
+                const deel = await storage.leesDeel(bronPad, offset, DEEL_BYTES, { eigenaar: lade.userId });
+                if (!deel) { if (offset === 0) fout('BRON_NIET_BESCHIKBAAR'); break; }
+                if (deel.totaal > L.itemMaxBytes) fout('TE_GROOT');
+                if (!deel.data.length) break;
+                await fh.write(deel.data, 0, deel.data.length, offset); h.update(deel.data); offset += deel.data.length;
+                if (offset >= deel.totaal) break;
+              }
+            } finally { await fh.close(); }
+            const [ok] = await storage.writeVanPad([{ path: pad, vanPad: tmp, contentType: mimeVoor(str(r.naam), str(r.mime)), ownerId: lade.userId }]);
+            if (!ok) fout('FOTO_OPSLAG_MISLUKT');
+            return { sha: h.digest('hex'), bytes: offset };
+          } finally { await rm(tmp, { force: true }).catch(() => undefined); }
+        });
+        n = await bewaar(r, { opslag: 'eigen', storagePath: pad, sha256: sha, bytes: gekopieerd, backupOp: new Date().toISOString(), backupOk: true });
       } else if (actie === 'controleer') { // back-up nagaan: is de kopie er nog en klopt de sha256?
-        try { const b = await bytesVan(lade, r); const sha = createHash('sha256').update(b).digest('hex'); n = await bewaar(r, { backupOp: new Date().toISOString(), backupOk: !r.sha256 || sha === r.sha256, ...(r.sha256 ? {} : { sha256: sha }) }); }
+        try { const sha = await shaVan(lade, r); n =await bewaar(r, { backupOp: new Date().toISOString(), backupOk: !r.sha256 || sha === r.sha256, ...(r.sha256 ? {} : { sha256: sha }) }); }
         catch { n = await bewaar(r, { backupOp: new Date().toISOString(), backupOk: false }); }
       } else fout('ACTIE_ONGELDIG');
       uit.push(naarBuiten(n));
@@ -294,7 +402,7 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   // ---- upload van één mediabestand (uit een import of rechtstreeks), in stukken
   const upload: Run = async (lade, d, auth) => {
     const denied = denyMutation(auth.user, 'photos.write'); if (denied) return denied;
-    await opruimen();
+    await opruimen(Date.now(), false);
     const actie = str(d.actie);
     if (actie === 'begin') {
       const naam = schoneTekst(str(d.naam).split('/').pop(), 240); const bytes = num(d.bytes);
@@ -308,44 +416,77 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
         const bestaand = (await alle<MediaRec>(MEDIA, lade)).find((m) => m.sha256 === sha);
         if (bestaand) return json({ bekend: true, item: naarBuiten(await herkomstErbij(lade, bestaand, d)) });
       }
-      const map = await mkdtemp(join(tmpdir(), 'foto-up-')); const id = randomUUID();
-      sessies.set(id, { lade, pad: join(map, 'inhoud'), map, bytes, ontvangen: 0, meta: d, tot: Date.now() + 30 * 60_000 });
-      await (await open(join(map, 'inhoud'), 'w')).close();
+      // Grenzen (wolk-02 / privacy-logboek-04): per mens, voor iedereen samen, en de schijf.
+      let eigen = 0, eigenBytes = 0;
+      for (const x of sessies.values()) if (x.lade.userId === lade.userId) { eigen += 1; eigenBytes += x.bytes; }
+      if (eigen >= L.sessiesPerMens || eigenBytes + bytes > L.sessieBytesPerMens || sessies.size >= L.sessiesTotaal) fout('UPLOAD_TE_VEEL');
+      const vrij = await vrijeBytes();
+      const nodig = bytes + SCHIJF_RESERVE + beloofd();
+      if (vrij !== null && vrij < nodig) return json({ error: 'SCHIJF_VOL', vrijBytes: vrij, nodigBytes: nodig }, 400);
+      // Na de await opnieuw (synchroon tot sessies.set): twee gelijktijdige «begin» zien elkaar altijd.
+      eigen = 0; eigenBytes = 0;
+      for (const x of sessies.values()) if (x.lade.userId === lade.userId) { eigen += 1; eigenBytes += x.bytes; }
+      if (eigen >= L.sessiesPerMens || eigenBytes + bytes > L.sessieBytesPerMens || sessies.size >= L.sessiesTotaal) fout('UPLOAD_TE_VEEL');
+      const id = randomUUID(); const map = join(sessieWortel(), id);
+      sessies.set(id, { lade, pad: join(map, 'inhoud'), map, bytes, ontvangen: 0, meta: d, tot: Date.now() + SESSIE_MS, slot: Promise.resolve() });
+      try {
+        await mkdir(map, { recursive: true, mode: 0o700 });
+        await (await open(join(map, 'inhoud'), 'wx', 0o600)).close();
+      } catch { await sessieWeg(id); throw new Error('FOTO_OPSLAG_MISLUKT'); }
       return json({ id, stukMax: L.stukMaxBytes });
     }
-    const s = sessies.get(idOf(d.id)); if (!s || s.lade.userId !== lade.userId || s.lade.ruimte !== lade.ruimte) fout('UPLOAD_ONBEKEND');
-    if (actie === 'afbreken') { sessies.delete(idOf(d.id)); await rm(s!.map, { recursive: true, force: true }); return json({ ok: true }); }
+    const sid = idOf(d.id);
+    const s = sessies.get(sid); if (!s || s.lade.userId !== lade.userId || s.lade.ruimte !== lade.ruimte) fout('UPLOAD_ONBEKEND');
+    /** Werk aan DEZE sessie, na alles wat er al voor in de rij staat; daarna moet de sessie nog bestaan. */
+    const opSlot = <T>(fn: () => Promise<T>): Promise<T> => {
+      const werk = s!.slot.then(() => { if (sessies.get(sid) !== s) fout('UPLOAD_ONBEKEND'); return fn(); });
+      s!.slot = werk.catch(() => undefined);
+      return werk;
+    };
+    if (actie === 'afbreken') { await opSlot(() => sessieWeg(sid)); return json({ ok: true }); }
     if (actie === 'stuk') {
-      if (num(d.offset) !== s!.ontvangen) fout('STUK_BUITEN_ORDE');
-      const b = Buffer.from(str(d.data), 'base64'); if (!b.length || b.length > L.stukMaxBytes || s!.ontvangen + b.length > s!.bytes) fout('TE_GROOT');
-      const fh = await open(s!.pad, 'a'); try { await fh.write(b); } finally { await fh.close(); }
-      s!.ontvangen += b.length; return json({ ontvangen: s!.ontvangen });
+      const data = str(d.data);
+      if (!data || data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(data)) fout('STUK_BUITEN_ORDE');
+      const b = Buffer.from(data, 'base64');
+      const ontvangen = await opSlot(async () => {
+        // Onder het slot: offset en grootte tegen de ECHTE stand (vroeger vóór de await → parallelle stukken kwamen er allemaal door).
+        if (num(d.offset) !== s!.ontvangen) fout('STUK_BUITEN_ORDE');
+        if (!b.length || b.length > L.stukMaxBytes || s!.ontvangen + b.length > s!.bytes) fout('TE_GROOT');
+        const fh = await open(s!.pad, 'r+'); try { await fh.write(b, 0, b.length, s!.ontvangen); } finally { await fh.close(); }
+        s!.ontvangen += b.length; s!.tot = Date.now() + SESSIE_MS;
+        return s!.ontvangen;
+      });
+      return json({ ontvangen });
     }
     if (actie === 'klaar') {
-      if (s!.ontvangen !== s!.bytes) fout('STUK_BUITEN_ORDE');
-      const b = await readFile(s!.pad); sessies.delete(idOf(d.id)); await rm(s!.map, { recursive: true, force: true });
-      const sha = createHash('sha256').update(b).digest('hex');
-      if (str(d.sha256) && str(d.sha256) !== sha) fout('SHA_MISMATCH');
-      const m = s!.meta; const naam = schoneTekst(str(m.naam).split('/').pop(), 240);
-      const bestaand = (await alle<MediaRec>(MEDIA, lade)).find((x) => x.sha256 === sha);
-      if (bestaand) return json({ bekend: true, item: naarBuiten(await herkomstErbij(lade, bestaand, m)) });
-      const pad = `${cloudVoorvoegsel(lade)}/foto-${randomUUID()}.${extVan(naam) || 'bin'}`;
-      const mime = mimeVoor(naam, str(m.mime));
-      const [ok] = await storage.write([{ path: pad, content: b.toString('base64'), contentType: mime, ownerId: lade.userId }]);
-      if (!ok) fout('FOTO_OPSLAG_MISLUKT');
-      const cache = new Map<string, string>(); const bron = str(m.bron) || 'eigen';
-      const albumNaam = schoneTekst(m.album, L.albumNaamMax);
-      const albums = albumNaam ? [await albumVoorNaam(lade, albumNaam, bron, cache)] : [];
-      const datum = isoOf(m.genomenOp);
-      const rec: MediaRec = {
-        ...ladeVelden(lade), naam, titel: schoneTekst(m.titel, L.titelMax) || naam, beschrijving: schoneTekst(m.beschrijving, L.beschrijvingMax), mime, bytes: b.length, sha256: sha,
-        breedte: num(m.breedte) || null, hoogte: num(m.hoogte) || null, genomenOp: datum, datumBron: datum ? (['exif', 'sidecar', 'bestand'].includes(str(m.datumBron)) ? (m.datumBron as FotoItem['datumBron']) : 'bestand') : 'onbekend',
-        plaats: schonePlaats(m.plaats), camera: schoneTekst(m.camera, 120), tags: schoneTags(m.tags), albums, favoriet: false, verborgen: false,
-        herkomst: [{ bron, ...(str(m.pad) ? { pad: schoneTekst(m.pad, 500) } : {}), ...(str(m.archief) ? { archief: schoneTekst(m.archief, 200) } : {}), op: new Date().toISOString() }],
-        opslag: 'eigen', storagePath: pad, miniatuur: schoneMiniatuur(m.miniatuur), dhash: schoneHash(m.dhash), backupOp: new Date().toISOString(), backupOk: true, createdAt: Date.now(), updatedAt: Date.now(),
-      };
-      const [id] = await db.add(MEDIA, [rec as Record<string, unknown>]); if (!id) { await storage.delete([pad]); fout('FOTO_OPSLAG_MISLUKT'); }
-      return json({ bekend: false, item: naarBuiten({ ...rec, id: id! }) });
+      const { sha, bytes: echteBytes } = await opSlot(async () => {
+        if (s!.ontvangen !== s!.bytes) fout('STUK_BUITEN_ORDE');
+        sessies.delete(sid); // vanaf hier geen «stuk» meer; de map ruimen wij hieronder zelf op
+        return metKlaarPlek(() => shaVanBestand(s!.pad));
+      });
+      try {
+        if (echteBytes !== s!.bytes || (str(d.sha256) && str(d.sha256) !== sha)) fout('SHA_MISMATCH');
+        const m = s!.meta; const naam = schoneTekst(str(m.naam).split('/').pop(), 240);
+        const bestaand = (await alle<MediaRec>(MEDIA, lade)).find((x) => x.sha256 === sha);
+        if (bestaand) return json({ bekend: true, item: naarBuiten(await herkomstErbij(lade, bestaand, m)) });
+        const pad = `${cloudVoorvoegsel(lade)}/foto-${randomUUID()}.${extVan(naam) || 'bin'}`;
+        const mime = mimeVoor(naam, str(m.mime));
+        const [ok] = await metKlaarPlek(() => storage.writeVanPad([{ path: pad, vanPad: s!.pad, contentType: mime, ownerId: lade.userId }]));
+        if (!ok) fout('FOTO_OPSLAG_MISLUKT');
+        const cache = new Map<string, string>(); const bron = str(m.bron) || 'eigen';
+        const albumNaam = schoneTekst(m.album, L.albumNaamMax);
+        const albums = albumNaam ? [await albumVoorNaam(lade, albumNaam, bron, cache)] : [];
+        const datum = isoOf(m.genomenOp);
+        const rec: MediaRec = {
+          ...ladeVelden(lade), naam, titel: schoneTekst(m.titel, L.titelMax) || naam, beschrijving: schoneTekst(m.beschrijving, L.beschrijvingMax), mime, bytes: echteBytes, sha256: sha,
+          breedte: num(m.breedte) || null, hoogte: num(m.hoogte) || null, genomenOp: datum, datumBron: datum ? (['exif', 'sidecar', 'bestand'].includes(str(m.datumBron)) ? (m.datumBron as FotoItem['datumBron']) : 'bestand') : 'onbekend',
+          plaats: schonePlaats(m.plaats), camera: schoneTekst(m.camera, 120), tags: schoneTags(m.tags), albums, favoriet: false, verborgen: false,
+          herkomst: [{ bron, ...(str(m.pad) ? { pad: schoneTekst(m.pad, 500) } : {}), ...(str(m.archief) ? { archief: schoneTekst(m.archief, 200) } : {}), op: new Date().toISOString() }],
+          opslag: 'eigen', storagePath: pad, miniatuur: schoneMiniatuur(m.miniatuur), dhash: schoneHash(m.dhash), backupOp: new Date().toISOString(), backupOk: true, createdAt: Date.now(), updatedAt: Date.now(),
+        };
+        const [id] = await db.add(MEDIA, [rec as Record<string, unknown>]); if (!id) { await storage.delete([pad]); fout('FOTO_OPSLAG_MISLUKT'); }
+        return json({ bekend: false, item: naarBuiten({ ...rec, id: id! }) });
+      } finally { await rm(s!.map, { recursive: true, force: true }).catch(() => undefined); }
     }
     return fout('ACTIE_ONGELDIG');
   };
@@ -363,7 +504,15 @@ export function fotoDienstRoutes(requireSession: RequireSession, opties: { vlagA
   };
 
   // ---- organiseren: duplicaten en gelijkende foto's
+  // aanv-ronde1-05: gelijkendeGroepen vergelijkt nu alleen paren die in een band gelijk zijn (shared/foto-model.ts) — 6000 foto's
+  // in milliseconden in plaats van ~20 s; daarbovenop één berekening tegelijk per mens (een tweede klik wacht niet in de rij).
   const organiseer: Run = async (lade) => {
+    const sleutel = `${lade.userId}/${lade.ruimte}`;
+    if (organiseerBezig.has(sleutel)) return json({ error: 'BEZIG' }, 429);
+    organiseerBezig.add(sleutel);
+    try { return await organiseerNu(lade); } finally { organiseerBezig.delete(sleutel); }
+  };
+  const organiseerNu = async (lade: Lade): Promise<Resp> => {
     const media = (await alle<MediaRec>(MEDIA, lade)).filter((m) => !m.verborgen).map((m) => naarBuiten(m));
     const per = new Map(media.map((m) => [m.id, m]));
     const dup = duplicaatGroepen(media.map((m) => ({ id: m.id, sha256: m.sha256 || undefined, bytes: m.bytes, genomenOp: m.genomenOp || undefined })));

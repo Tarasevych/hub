@@ -1,6 +1,6 @@
 // Bouwstenen voor /agents in de stijl van GitHub Settings → Applications: rijen die standaard dicht zijn (titel, statusregel,
 // knop rechts), uitklappen voor alle technische gegevens, acties met bevestiging op de pagina, spinner en een duidelijke uitkomst.
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type MouseEvent, type ReactNode } from 'react';
 import { Check, ChevronDown, Loader2, TriangleAlert, X } from 'lucide-react';
 import type { Tr } from '../mcp-ui';
 import { foutTekst } from './fouten';
@@ -102,7 +102,7 @@ export function useActies(tr: Tr) {
 }
 
 export function Knop({ children, onClick, toon = 'default', bezig, disabled, icoon, title, type = 'button', data }: {
-  children: ReactNode; onClick?: () => void; toon?: 'default' | 'primary' | 'danger'; bezig?: boolean; disabled?: boolean; icoon?: ReactNode; title?: string; type?: 'button' | 'submit'; data?: string;
+  children: ReactNode; onClick?: (e: MouseEvent<HTMLButtonElement>) => void; toon?: 'default' | 'primary' | 'danger'; bezig?: boolean; disabled?: boolean; icoon?: ReactNode; title?: string; type?: 'button' | 'submit'; data?: string;
 }) {
   return (
     <button type={type} className={`ag-knop ag-knop-${toon}`} onClick={onClick} disabled={disabled || bezig} aria-busy={bezig || undefined} title={title} data-knop={data}>

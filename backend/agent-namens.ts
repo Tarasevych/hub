@@ -19,7 +19,7 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { isOwnerEmail } from '../server/platform';
 import { isAgentSlug, V2_AGENTEN } from '../shared/connector-v2/agenten';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 
 export const NAMENS_MIN_MINUTEN = 15;
@@ -46,7 +46,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/identity\/admin\//,            // rollen van anderen
   /^[A-Z]+ \/api\/owner\/identity\/codewoord(\/|$)/,    // codewoord instellen/wijzigen
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
-  /^[A-Z]+ \/api\/owner\/admin\/(users|roles|access)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/admin\/(users|roles|access|access-requests)(\/|$)/, // SEC-002 aanv-gat-a-01: ook besluiten over toegangsverzoeken
   /^[A-Z]+ \/api\/owner\/agent-namens\//,               // namens-sessies zelf
   /^[A-Z]+ \/api\/owner\/uitrol\/voorbereiders(\/|$)/,  // wie updates mag voorbereiden (grants)
   /^[A-Z]+ \/api\/owner\/uitrol\/(goedkeuren|goedkeuring)(\/|$)/,
@@ -58,6 +58,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/mcp-connector\/(grants|approvals|consent)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp\/consent(\/|$)/,
   /^[A-Z]+ \/api\/owner\/connector-v2\//,
+  /^[A-Z]+ \/api\/owner\/mcp-inspector\//,             // SEC-002 (slot m, MR-6): MCP-studio voert hulpmiddelen uit en toont koppelingen: alleen een mens
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/(ontgrendeling|extensie-status|extensie-beheer|register|ws-ticket|block|unblock)(\/|$)/, // browserextensie ontgrendelen/intrekken/status (0.5), beheer/beleid (0.6) en agentregistratie: alleen een mens
   /^[A-Z]+ \/api\/owner\/tech\//,                       // technisch profiel activeren/verlengen
@@ -167,17 +168,15 @@ export function agentNamensRoutes(deps: { requireSession: RequireSession }): Rec
       await schrijfBeheerAudit({ actor: { id: auth.user.id, email: auth.user.email }, doel: { soort: 'agent', naam: 'namens-sessie' }, actie: 'agent.namens.geweigerd', resultaat: 'denied', reden: 'OWNER_REQUIRED' });
       return error('OWNER_REQUIRED', 403);
     }
-    if (opts.passkey) {
-      // Alleen een passkey telt (geen Google, geen TOTP): dit geeft een AI tijdelijk verhoogde rechten.
-      if (!(await passkeyStapOpGeldig(auth as StapOpAuth))) {
+    try {
+      // Alleen een passkey telt (geen Google, geen TOTP): dit geeft een AI tijdelijk verhoogde rechten. Eén bevestiging = één
+      // aanmaak/opruiming: controleren en verbruiken ondeelbaar (SEC-002 g06), bij een fout van run() teruggezet.
+      const stap = await metStapOpEenmalig(auth as StapOpAuth, opts.passkey ? passkeyStapOpGeldig : null, () => run(ctx, auth));
+      if (!stap.ok) {
         await schrijfBeheerAudit({ actor: { id: auth.user.id, email: auth.user.email }, doel: { soort: 'agent', naam: 'namens-sessie' }, actie: 'agent.namens.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
         return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
       }
-    }
-    try {
-      const uit = await run(ctx, auth);
-      if (opts.passkey) await stapOpVerbruiken(auth as StapOpAuth); // één bevestiging = één aanmaak/opruiming
-      return json(uit);
+      return json(stap.uit);
     } catch (e) {
       const code = (e as Error).message || 'NAMENS_FOUT';
       if (/^[A-Z][A-Z0-9_]{2,60}$/.test(code)) return error(code, 400);

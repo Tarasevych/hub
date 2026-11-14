@@ -1,4 +1,4 @@
-// /zoek — de clientkant van het contract (shared/zoek-model.ts, scratchpad/zoek-API.md). Zone Z4, 22.10.2026.
+// /zoek — de clientkant van het contract (shared/zoek-model.ts, uitleg in docs/zoek/ZOEKEN.nl.md §4). Zone Z4, 22.10.2026.
 //   POST /api/owner/zoek                     ZoekVraag → ZoekAntwoord
 //   POST /api/owner/zoek/suggesties          { prefix, bronnen? } → { suggesties: ZoekSuggestie[] }
 //   POST /api/owner/zoek/stand               {} → { standen: ZoekBronStand[], gesloten }

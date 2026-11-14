@@ -190,25 +190,45 @@ export function losOpEerdere<T extends { onderwerp?: string; kind: CanonicalNoti
 }
 
 /**
- * Hoe lang een pop-up blijft staan: de tijd van het type (null = blijft staan tot u sluit), plus extra tijd voor een lange tekst en een uitleg.
- * INTEG-001: seconden 0 = AUTOMATISCH volgens de soort — «готово» kort, een fout het langst (die moet u kunnen lezen) — en de inhoud.
+ * Hoe lang een pop-up blijft staan: standaard precies 2 seconden (2000 ms), of de door de gebruiker gekozen seconden (null = blijft staan tot u sluit).
+ * Wie langer wil lezen, wijst de pop-up met de muis aan of houdt de vinger erop — zolang dat duurt, staat de aftelling op pauze.
  */
 export type PopupVoorkeur = { vast: boolean; seconden: number };
-export const AUTO_SECONDEN: Record<CanonicalNoticeKind, number> = { success: 5, info: 6, warning: 9, error: 12 };
-export function popupLevensduurMs(voorkeur: PopupVoorkeur, text: string, explain?: string, kind: CanonicalNoticeKind = 'info'): number | null {
+export const STANDAARD_POPUP_SECONDEN = 2;
+export const STANDAARD_POPUP_MS = STANDAARD_POPUP_SECONDEN * 1000;
+export const AUTO_SECONDEN: Record<CanonicalNoticeKind, number> = {
+  success: STANDAARD_POPUP_SECONDEN,
+  info: STANDAARD_POPUP_SECONDEN,
+  warning: STANDAARD_POPUP_SECONDEN,
+  error: STANDAARD_POPUP_SECONDEN,
+};
+export function popupLevensduurMs(voorkeur: PopupVoorkeur, _text?: string, _explain?: string, kind: CanonicalNoticeKind = 'info'): number | null {
   if (voorkeur.vast) return null;
-  const lengte = Math.min(4000, Math.floor(text.length / 60) * 1000);
-  const uitleg = explain ? Math.min(6000, 2000 + Math.floor(explain.length / 120) * 1000) : 0;
-  const basis = voorkeur.seconden > 0 ? Math.max(3, voorkeur.seconden) : AUTO_SECONDEN[kind] ?? AUTO_SECONDEN.info;
-  return basis * 1000 + lengte + uitleg;
+  const seconden = voorkeur.seconden > 0 ? Math.max(STANDAARD_POPUP_SECONDEN, voorkeur.seconden) : (AUTO_SECONDEN[kind] ?? STANDAARD_POPUP_SECONDEN);
+  return seconden * 1000;
 }
 
 /** HUB-06: servermeldingen zijn tweetalig opgeslagen («Українська / Nederlands»); toon alleen de taal van de site. Alleen gesplitst als
  * het linkerdeel Cyrillisch bevat en het rechterdeel niet (anders blijft de tekst heel, bv. een pad met « / »). */
+/**
+ * SEC-002 (slot «u», interface п.9): meldingen over delen (soort workspace_share) bewaarde de server alleen in het Oekraïens
+ * («Новий спільний простір», «Спільний доступ: …»). Bestaande rijen blijven zo; in het Nederlands tonen we hier de vertaling.
+ * Nieuwe rijen zijn tweetalig («uk / nl») en gaan gewoon door de splitsing hieronder.
+ */
+const EENTALIG_UK: ReadonlyArray<readonly [RegExp, (m: RegExpExecArray) => string]> = [
+  [/^Новий спільний простір$/, () => 'Nieuwe gedeelde ruimte'],
+  [/^([\s\S]+) надав вам доступ\.$/, (m) => `${m[1]} gaf u toegang.`],
+  [/^Спільний доступ: ([\s\S]+)$/, (m) => `Gedeelde toegang: ${m[1]}`],
+  [/^([\s\S]+) відкрив\(ла\) вам доступ до «([\s\S]+)»\.$/, (m) => `${m[1]} gaf u toegang tot «${m[2]}».`],
+];
+const nlVanEentalig = (t: string): string => {
+  for (const [re, f] of EENTALIG_UK) { const m = re.exec(t); if (m) return f(m); }
+  return t;
+};
 export const taalDeel = (tekst: string, lang: 'uk' | 'nl'): string => {
   const t = String(tekst || '');
   const i = t.indexOf(' / ');
-  if (i < 0) return t;
+  if (i < 0) return lang === 'nl' ? nlVanEentalig(t) : t;
   const links = t.slice(0, i).trim(), rechts = t.slice(i + 3).trim();
   /* UI-014: het Nederlandse deel mag Oekraïense NAMEN tussen «» bevatten (bv. het recht «Власник — з пристрою» of een reden); die tellen niet als Cyrillische tekst. Vroeger bleef zo de hele tweetalige tekst staan. */
   const rechtsZonderNamen = rechts.replace(/«[^»]*»/g, '');
