@@ -88,6 +88,12 @@ export async function koppelVanBot(id: string, van: TgGebruiker, chatId: string)
   return r.length ? 'telefoon' : 'verlopen';
 }
 
+/** TELEGRAM-002: voor welk site-account loopt dit koppelverzoek? (de bot toont naam en foto, zodat u niet per vergissing een ander account koppelt) */
+export async function koppelAccountVan(id: string): Promise<string> {
+  const v = await verzoek(id);
+  return v?.user_id ?? '';
+}
+
 /** Stap 2b (bot): gedeeld contact. Alleen eigen contact via de knop. */
 export async function contactVanBot(van: TgGebruiker, contact: { user_id?: number; phone_number?: string }): Promise<'ok' | 'vreemd' | 'geen-verzoek'> {
   const tg = String(van.id);
@@ -108,7 +114,7 @@ export async function profielFotoId(telegramId: string): Promise<string> {
     return String(r.photos?.[0]?.[0]?.file_unique_id || '').slice(0, 128);
   } catch { return ''; }
 }
-/** Kleine profielfoto als data-URL (alleen voor de eigenaar van het verzoek/de koppeling; niets wordt opgeslagen). */
+/** Kleine profielfoto als data-URL (alleen voor de eigenaar van het verzoek/de koppeling). De geschiedenis van foto's houdt fotos.ts bij. */
 export async function profielFotoData(telegramId: string): Promise<string> {
   try {
     const sleutel = await botSleutel();

@@ -4,7 +4,7 @@ type Lang = 'uk' | 'nl';
 /** Foutcodes van de abonnementen in gewone woorden. Onbekende codes worden niet verzonnen maar letterlijk getoond. */
 export const ABONNEMENT_FOUT: Record<string, [string, string]> = {
   // Sleutelkluis (0092): de gegevenssleutel van de mens is dicht — geen fout van de koppeling, synchronisatie volgt na ontgrendelen.
-  SLEUTELKLUIS_GESLOTEN: ['Ключ даних закритий: синхронізація продовжиться після входу або розблокування.', 'Gegevenssleutel gesloten: synchronisatie gaat verder na aanmelden of ontgrendelen.'],
+  SLEUTELKLUIS_GESLOTEN: ['Ваші дані зараз зашифровані: синхронізація продовжиться, щойно ви натиснете «Розшифрувати» в картці вгорі сторінки.', 'Uw gegevens zijn nu versleuteld: synchronisatie gaat verder zodra u op «Ontsleutelen» klikt in de kaart bovenaan de pagina.'],
   ICS_ADRES_LEEG: ['Введіть адресу .ics.', 'Vul een .ics-adres in.'],
   ICS_ADRES_ONGELDIG: ['Адреса не схожа на посилання.', 'Het adres lijkt geen link.'],
   ICS_SCHEMA_NIET_TOEGESTAAN: ['Дозволено лише https (webcal:// перетворюється на https автоматично).', 'Alleen https is toegestaan (webcal:// wordt automatisch https).'],

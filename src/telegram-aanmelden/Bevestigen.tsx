@@ -1,12 +1,15 @@
 // Gemeenschappelijke bouwstenen: een knop met aftelling, en het bevestigingsvenster voor TELEGRAM_BEVESTIGING_NODIG.
 // Het venster legt ALTIJD uit waarom het iets vraagt (welke handeling, welke methode, wat er gebeurt bij «Ні»).
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import TelegramWie, { geldigePersonen, type TelegramPersoon } from './TelegramWie';
 // APPARAAT-001: vierde methode «ander apparaat» in hetzelfde venster.
 const StapOpKanaal = lazy(() => import('../apparaat-bevestiging/StapOpKanaal'));
 import { api } from '../platform/client';
 import { bevestigToegang } from '../platform/stap-op';
 import { BevestigingNodig, foutTekst, tgPost, type Ctx, type Nodig } from './api';
 import TelegramLogo from './TelegramLogo';
+import PictogramTegel from '../apparaat-bevestiging/PictogramTegel';
+import { pictogramTegel } from '../../shared/apparaat-bevestiging/symbolen';
 import { METHODE_NAMEN } from '../../shared/telegram-aanmelden/beleid';
 import { tekstIn } from '../../shared/telegram-aanmelden/model';
 import { aanmeldPauzeBericht, useAftelPauze } from '../aanmeld-pauze';
@@ -70,6 +73,9 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
   const [fout, setFout] = useState('');
   const [info, setInfo] = useState('');
   const [code, setCode] = useState('');
+  // TELEGRAM-002: juist pictogram voor het beveiligde Telegram-venster (alleen deze browser kent het).
+  const [pictogram, setPictogram] = useState<number | null>(null);
+  const [ontvangers, setOntvangers] = useState<TelegramPersoon[]>([]);
   const [gedaan, setGedaan] = useState<string[]>([]);
   const [telegramPoging, setTelegramPoging] = useState(0);
   const { bezig, doe } = useEenmalig();
@@ -100,9 +106,16 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
     let actief = true; let t = 0;
     void (async () => {
       try {
-        const r = await tgPost<{ id: string; verlooptOp: string; verstuurd: number }>(ctx, '/api/owner/telegram/bevestiging/aanvragen', { actie: nodig.actie });
+        const r = await tgPost<{ id: string; verlooptOp: string; verstuurd: number; venster?: boolean; kandidaten?: number[]; juist?: number; codeNodig?: boolean; ontvangers?: unknown }>(ctx, '/api/owner/telegram/bevestiging/aanvragen', { actie: nodig.actie });
         verzoek.current = r.id;
-        setInfo(tr(lang, `Запит надіслано у ваш Telegram (${r.verstuurd}). Відкрийте чат із ботом і натисніть «Так, це я».`, `Verzoek verstuurd naar uw Telegram (${r.verstuurd}). Open de chat met de bot en tik «Ja, dit ben ik».`));
+        const p = r.venster && r.kandidaten && typeof r.juist === 'number' ? r.kandidaten[r.juist] : null;
+        setPictogram(typeof p === 'number' ? p : null);
+        setOntvangers(geldigePersonen(r.ontvangers));
+        if (typeof p === 'number') {
+          const naam = pictogramTegel(p, lang)?.naam ?? '';
+          setInfo(tr(lang, `Запит надіслано у ваш Telegram (${r.verstuurd}). Натисніть там «Перевірити й підтвердити» і оберіть піктограму «${naam}»${r.codeNodig ? ', потім введіть таємний код у тому ж вікні' : ''}.`,
+            `Verzoek verstuurd naar uw Telegram (${r.verstuurd}). Tik daar «Controleren en bevestigen» en kies het pictogram «${naam}»${r.codeNodig ? ', vul daarna uw geheime code in hetzelfde venster in' : ''}.`));
+        } else setInfo(tr(lang, `Запит надіслано у ваш Telegram (${r.verstuurd}). Відкрийте чат із ботом і натисніть «Так, це я».`, `Verzoek verstuurd naar uw Telegram (${r.verstuurd}). Open de chat met de bot en tik «Ja, dit ben ik».`));
         const kijk = async () => {
           if (!actief) return;
           try {
@@ -150,6 +163,8 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
       <p className='tga-waarom'>{tr(lang, `Для цієї дії ваші налаштування вимагають: ${methoden}. Так ніхто інший не зможе зробити це від вашого імені, навіть маючи доступ до цього браузера.`,
         `Voor deze handeling vragen uw instellingen: ${methoden}. Zo kan niemand anders dit namens u doen, ook niet met toegang tot deze browser.`)}</p>
       {stap === 'telegram' && <div className='tga-blok'>
+        {pictogram !== null && <div className='tg2-held'><PictogramTegel index={pictogram} lang={lang} groot /></div>}
+        <TelegramWie lang={lang} personen={ontvangers} soort='verstuurd' />
         <p>{info || tr(lang, 'Надсилаємо запит у Telegram…', 'Verzoek naar Telegram sturen…')}</p>
         {!fout && !pauzeActief && <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Чекаємо на вашу відповідь у Telegram…', 'Wachten op uw antwoord in Telegram…')}</p>}
         {(fout || pauzeActief || pauzeVrij) && !verzoek.current && <button type='button' className='tga-knop tga-knop-hoofd' disabled={pauzeActief} onClick={() => { if (!pauzeActief) { setFout(''); setTelegramPoging((n) => n + 1); } }}>{pauzeActief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Спробувати ще раз', 'Opnieuw proberen')}</button>}

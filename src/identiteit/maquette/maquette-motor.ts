@@ -714,7 +714,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Discord — потрібне налаштування власника","Discord — configuratie van eigenaar nodig","відомості",[],"заплановано"),
         рядок("Telegram — потрібне налаштування власника","Telegram — configuratie van eigenaar nodig","відомості",[],"заплановано"),
         рядок("Apple — потрібне налаштування власника","Apple — configuratie van eigenaar nodig","відомості",[],"заплановано"),
-        рядок("WhatsApp — такий вхід недоступний","WhatsApp — deze inlogmethode bestaat niet","відомості"),
+        рядок("WhatsApp — заплановано, під’єднаємо пізніше","WhatsApp — gepland, wordt later gekoppeld","відомості",[],"заплановано"),
         рядок("SMS — потребує окремої розробки","Sms — afzonderlijke ontwikkeling nodig","відомості",[],"заплановано")
       ])
     ],

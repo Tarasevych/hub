@@ -373,6 +373,10 @@
   {
    "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-snel-naar-laag",
    "reden": "MAQUETTE-001: повноекранний модальний шар діалогового вікна швидкого переходу за розділами піддомену (закривається клавішею Escape або дотиком до тла); модальне вікно, не кнопка."
+  },
+  {
+   "sleutel": "src/platform/kluis-poort.css :: .kluis-poort-host",
+   "reden": "KLUIS-APPARAAT-001: kaart «Ваші дані зараз зашифровані» bovenaan de pagina (ingeklapt: strook onderaan) — een meldingspaneel met uitleg en knoppen, zoals .canonical-connection-banner; pointer-events alleen op de kaart zelf. Geen losse zwevende knop."
   }
  ],
  "kopReserves": [

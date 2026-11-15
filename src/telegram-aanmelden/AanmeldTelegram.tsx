@@ -7,6 +7,7 @@
 //   5. voltooien → sessie zoals bij Google (zonder extra bevestiging: gevoelige acties vragen daarna nog een toegangssleutel).
 // Dubbel tikken doet niets, elke fout zegt eerlijk of opnieuw proberen zin heeft.
 import { useEffect, useRef, useState } from 'react';
+import TelegramWie, { geldigePersonen, type TelegramPersoon } from './TelegramWie';
 import { cleanRedirectReturnTo } from '../aanmeld-omleiding';
 import { broadcastCanonicalAuthChange } from '../canoniek-gebeurtenissen';
 import { sessieDienst } from '../canoniek-navigatie';
@@ -18,13 +19,15 @@ import { laadAanmeldConfig } from './aanmeld-config';
 import TelegramLogo from './TelegramLogo';
 import { useEenmalig } from './Bevestigen';
 import './telegram.css';
+import PictogramTegel from '../apparaat-bevestiging/PictogramTegel';
+import { pictogramTegel } from '../../shared/apparaat-bevestiging/symbolen';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 type Config = { zichtbaar: boolean; bot: string; stand: string; soort: string; status?: { stand: string; soort: string } };
 // SEC-002 (aanmelden-04): symbool van dit verzoek (server: inlogSymbool); de bot toont hetzelfde in zijn kaart.
 type Symbool = { id: string; emoji: string; uk: string; nl: string };
-type Lopend = { id: string; geheim: string; deeplink: string; widgetUrl: string; verlooptOp: string; bot: string; symbool?: Symbool };
+type Lopend = { id: string; geheim: string; deeplink: string; widgetUrl: string; verlooptOp: string; bot: string; symbool?: Symbool; pictogram?: number | null };
 const geldigSymbool = (s: unknown): s is Symbool => !!s && typeof s === 'object' && ['emoji', 'uk', 'nl'].every((k) => typeof (s as Record<string, unknown>)[k] === 'string' && String((s as Record<string, unknown>)[k]).length <= 40);
 type VoltooidAntwoord = {
   ok?: boolean;
@@ -79,6 +82,11 @@ export default function AanmeldTelegram({
   // NIEUW_APPARAAT_ANDERE_WEG + uitleg uk/nl, backend/telegram-aanmelden/inloggen.ts). Die tekst wint dan van de algemene.
   const [andereWeg, setAndereWeg] = useState<{ uk: string; nl: string } | null>(null);
   const [codeNodig, setCodeNodig] = useState(false);
+  // TELEGRAM-002: het juiste pictogram (alleen deze browser kent het) en of de code in het Telegram-venster moet.
+  const [pictogram, setPictogram] = useState<number | null>(null);
+  const [codeInVenster, setCodeInVenster] = useState(false);
+  const [symboolOk, setSymboolOk] = useState(false);
+  const [bevestiger, setBevestiger] = useState<TelegramPersoon[]>([]);
   const [code, setCode] = useState('');
   const [fout, setFout] = useState('');
   const [rest, setRest] = useState(0);
@@ -169,11 +177,13 @@ export default function AanmeldTelegram({
     const kijk = async () => {
       if (!actief || klaar.current) return;
       try {
-        const s = await openbaarPost<{ stand: string; reden?: string; codeNodig: boolean; codeOk: boolean; advies?: string; uitleg?: { uk?: unknown; nl?: unknown } }>('/api/aanmelden/telegram/status', { id: lopend.id, geheim: lopend.geheim });
+        const s = await openbaarPost<{ stand: string; reden?: string; codeNodig: boolean; codeOk: boolean; advies?: string; uitleg?: { uk?: unknown; nl?: unknown }; pictogram?: number | null; codePlek?: string; symboolOk?: boolean; telegram?: unknown }>('/api/aanmelden/telegram/status', { id: lopend.id, geheim: lopend.geheim });
         netwerkFouten = 0;
         setStand(s.stand); setReden(s.reden || '');
         setAndereWeg(s.advies === 'NIEUW_APPARAAT_ANDERE_WEG' && typeof s.uitleg?.uk === 'string' && typeof s.uitleg?.nl === 'string' ? { uk: s.uitleg.uk.slice(0, 600), nl: s.uitleg.nl.slice(0, 600) } : null);
-        if (s.stand === 'goedgekeurd' && s.codeNodig && !s.codeOk) setCodeNodig(true);
+        setPictogram(typeof s.pictogram === 'number' ? s.pictogram : null); setSymboolOk(!!s.symboolOk);
+        setBevestiger(s.telegram ? geldigePersonen([s.telegram]) : []);
+        if (s.stand === 'goedgekeurd' && s.codeNodig && !s.codeOk) { if (s.codePlek === 'venster') setCodeInVenster(true); else setCodeNodig(true); }
         if (s.stand === 'goedgekeurd' && (!s.codeNodig || s.codeOk)) { void voltooien(lopend); return; }
         if (['geweigerd', 'verlopen', 'ingewisseld'].includes(s.stand)) { bewaar(null); return; }
       } catch (e) {
@@ -190,7 +200,7 @@ export default function AanmeldTelegram({
   const start = () => {
     if (pauze.actief) return;
     void doe(async () => {
-      setFout(''); setStand(''); setReden(''); setCodeNodig(false); klaar.current = false;
+      setFout(''); setStand(''); setReden(''); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setSymboolOk(false); klaar.current = false;
       try {
         const tab = ecosystemTabContext();
         const r = await openbaarPost<Lopend>('/api/aanmelden/telegram/start', {
@@ -204,7 +214,7 @@ export default function AanmeldTelegram({
           remember,
         });
         pauze.wis();
-        bewaar(r); setLopend(r); setStand('wacht');
+        bewaar(r); setLopend(r); setStand('wacht'); setPictogram(typeof r.pictogram === 'number' ? r.pictogram : null);
       } catch (e) {
         const p = pauze.vangPauze(e);
         if (p.isPauze) { setFout(''); return; }
@@ -235,7 +245,8 @@ export default function AanmeldTelegram({
       }
     });
   };
-  const stoppen = () => { klaar.current = false; bewaar(null); setLopend(null); setStand(''); setReden(''); setCodeNodig(false); setFout(''); };
+  const stoppen = () => { klaar.current = false; bewaar(null); setLopend(null); setStand(''); setReden(''); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setFout(''); };
+  const tegelNaam = pictogram !== null ? pictogramTegel(pictogram, lang)?.naam ?? '' : '';
 
   if (!cfg?.zichtbaar) return null;
   const storing = cfg.status?.stand === 'storing' || cfg.stand === 'storing';
@@ -268,7 +279,9 @@ export default function AanmeldTelegram({
     {storing && <p className='tga-klein' role='status'>{lang10 ? tr(lang, 'Telegram не відповідає вже понад 10 хвилин. Увійдіть через Google — ми покажемо, щойно запрацює.', 'Telegram antwoordt al meer dan 10 minuten niet. Meld u aan met Google — we tonen het zodra het weer werkt.')
       : tr(lang, 'Telegram тимчасово не відповідає. Спробуйте за хвилину або увійдіть через Google.', 'Telegram antwoordt tijdelijk niet. Probeer over een minuut of meld u aan met Google.')}</p>}
     {stand === 'geweigerd' && <p className='tga-fout' role='alert'>{
-      reden === 'niet-ik' ? tr(lang, 'Вхід відхилено в Telegram («Ні, це не я»), цей пристрій заблоковано для входу через Telegram. Якщо це були ви — увійдіть через Google.', 'Aanmelding geweigerd in Telegram («Nee, dit ben ik niet»); dit apparaat is geblokkeerd voor Telegram. Was u het wel — meld u aan met Google.')
+      reden === 'fout-symbool' ? tr(lang, 'У Telegram обрали іншу піктограму — вхід скасовано. Якщо це були ви, почніть знову й уважно оберіть ту саму піктограму, що на цьому екрані.', 'In Telegram werd een ander pictogram gekozen — de aanmelding is geannuleerd. Was u het, begin opnieuw en kies precies het pictogram van dit scherm.')
+        : reden === 'code-fout' ? tr(lang, 'Таємний код у вікні Telegram не підійшов забагато разів — вхід скасовано.', 'De geheime code in het Telegram-venster klopte te vaak niet — de aanmelding is geannuleerd.')
+        : reden === 'niet-ik' ? tr(lang, 'Вхід відхилено в Telegram («Ні, це не я»), цей пристрій заблоковано для входу через Telegram. Якщо це були ви — увійдіть через Google.', 'Aanmelding geweigerd in Telegram («Nee, dit ben ik niet»); dit apparaat is geblokkeerd voor Telegram. Was u het wel — meld u aan met Google.')
         : reden === 'passkey-nodig' && andereWeg ? tr(lang, andereWeg.uk, andereWeg.nl)
         : reden === 'passkey-nodig' ? tr(lang, 'Telegram підтвердив, але для цього пристрою (або облікового запису) ваші налаштування вимагають ще ключ доступу. Увійдіть через Google і підтвердьте ключем доступу — потім цей пристрій стане відомим.', 'Telegram bevestigde, maar voor dit apparaat (of account) vragen uw instellingen ook een toegangssleutel. Meld u aan met Google en bevestig met uw toegangssleutel — daarna is dit apparaat bekend.')
           : reden === 'niet-gekoppeld' ? tr(lang, 'Цей Telegram не прив’язано до жодного облікового запису. Увійдіть через Google і прив’яжіть його у «Способах входу».', 'Deze Telegram is aan geen enkel account gekoppeld. Meld u aan met Google en koppel hem bij «Aanmeldmethoden».')
@@ -281,7 +294,21 @@ export default function AanmeldTelegram({
 
   return <div className='tga-aanmeld tga-aanmeld-open' aria-live='polite'>
     <h2 className='tga-kop'><TelegramLogo maat={24} /> {tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}</h2>
-    {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : codeNodig ? <form onSubmit={(e) => { e.preventDefault(); codeSturen(); }} className='tga-blok'>
+    {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : pictogram !== null ? <div className='tg2-wacht'>
+      <div className='tg2-held'><PictogramTegel index={pictogram} lang={lang} groot /></div>
+      <p className='tg2-vraag'>{tr(lang, `Оберіть у Telegram таку саму піктограму «${tegelNaam}»`, `Kies in Telegram hetzelfde pictogram «${tegelNaam}»`)}</p>
+      <p className='tga-klein'>{tr(lang, 'Бот надішле кнопку «Підтвердити вхід». Вона відкриє захищене вікно з чотирма піктограмами — точно такими, як ця: той самий малюнок, колір і назва. Правильна лише одна, спроба одна.', 'De bot stuurt een knop «Aanmelding bevestigen». Die opent een beveiligd venster met vier pictogrammen — precies zoals dit: zelfde tekening, kleur en naam. Er is er maar één juist, u hebt één poging.')}</p>
+      <TelegramWie lang={lang} personen={bevestiger} soort='bevestigd' />
+      <ol className='tg2-stappen'>
+        <li className={symboolOk || stand === 'goedgekeurd' ? 'is-klaar' : 'is-nu'}>{tr(lang, `Відкрийте Telegram і натисніть «Підтвердити вхід», потім піктограму «${tegelNaam}».`, `Open Telegram, tik «Aanmelding bevestigen» en daarna het pictogram «${tegelNaam}».`)}</li>
+        <li className={codeInVenster ? 'is-nu' : ''}>{tr(lang, 'Якщо ви ввімкнули таємний код — введіть його в тому ж вікні (ніколи не в чаті).', 'Hebt u een geheime code ingesteld, vul die dan in hetzelfde venster in (nooit in de chat).')}</li>
+        <li>{tr(lang, 'Сторінка відкриється сама.', 'De pagina opent vanzelf.')}</li>
+      </ol>
+      {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span></a>}
+      {!symboolOk && stand === 'wacht' && <a className='tga-link' href={lopend.widgetUrl}>{tr(lang, 'Telegram на іншому пристрої? Увійти через офіційне вікно входу Telegram', 'Telegram op een ander apparaat? Aanmelden via het officiële aanmeldvenster van Telegram')}</a>}
+      <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {codeInVenster ? tr(lang, `Чекаємо на таємний код у вікні Telegram… залишилось ${mmss}`, `Wachten op de geheime code in het Telegram-venster… nog ${mmss}`) : tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
+      <p className='tg2-waarom'><b>{tr(lang, 'Чому піктограма, а не просто «Так»?', 'Waarom een pictogram en niet gewoon «Ja»?')}</b> {tr(lang, 'Якщо у ваш акаунт намагається увійти хтось інший, запит у Telegram ви отримаєте, але не знатимете, яка піктограма правильна, — випадкове натискання нічого не відкриє.', 'Probeert iemand anders zich aan te melden, dan krijgt u het verzoek in Telegram wel, maar weet u niet welk pictogram juist is — per ongeluk tikken opent niets.')}</p>
+    </div> : codeNodig ? <form onSubmit={(e) => { e.preventDefault(); codeSturen(); }} className='tga-blok'>
       <p>{tr(lang, 'Telegram підтвердив. Ваш обліковий запис також вимагає таємний код — введіть його тут (ніколи не в чаті).', 'Telegram heeft bevestigd. Uw account vraagt ook uw geheime code — vul die hier in (nooit in de chat).')}</p>
       <input type='password' autoComplete='off' value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} autoFocus aria-label={tr(lang, 'Таємний код', 'Geheime code')} />
       <button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || pauze.actief || code.length < 4}>

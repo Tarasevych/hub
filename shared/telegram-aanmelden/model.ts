@@ -52,6 +52,8 @@ export type KoppelingPubliek = {
 export type TelegramInstellingen = {
   aan: boolean;                         // noodschakelaar: uit = Telegram-aanmelden voor iedereen dicht
   afbeeldingen: boolean;                // kaarten als afbeelding (sendPhoto)
+  /** TELEGRAM-002: bevestigen in het beveiligde Telegram-venster (zelfde pictogram als op de site + geheime code daar). Uit = oude knop «Так, це я». */
+  venster: boolean;
   animatie: boolean;                    // korte animatie bij succes (sendAnimation)
   koppelLimiet: number;                 // max. Telegram-koppelingen per account (standaard 3)
   aftelSeconden: number;                // «Так, це я» bij gewone wijzigingen (standaard 5)
@@ -70,6 +72,7 @@ export type TelegramInstellingen = {
 export const STANDAARD_INSTELLINGEN: TelegramInstellingen = {
   aan: true,
   afbeeldingen: true,
+  venster: true,
   animatie: true,
   koppelLimiet: 3,
   aftelSeconden: 5,
@@ -122,6 +125,7 @@ export function instellingenNormaliseren(v: unknown): TelegramInstellingen {
   return {
     aan: typeof i.aan === 'boolean' ? i.aan : s.aan,
     afbeeldingen: typeof i.afbeeldingen === 'boolean' ? i.afbeeldingen : s.afbeeldingen,
+    venster: typeof i.venster === 'boolean' ? i.venster : s.venster,
     animatie: typeof i.animatie === 'boolean' ? i.animatie : s.animatie,
     koppelLimiet: tussen(i.koppelLimiet, 1, 10, s.koppelLimiet),
     aftelSeconden: tussen(i.aftelSeconden, 3, 30, s.aftelSeconden),

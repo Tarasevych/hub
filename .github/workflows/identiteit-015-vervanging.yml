@@ -1,0 +1,110 @@
+name: IDENTITEIT-015 · Заміна хибного випуску 20261114-175600 на 20261114-180411
+
+# Власник доручив замінити хибний випуск правильним (14.11.2026). Випуск 20261114-175600 має правильний маніфест,
+# але модель ШІ в ньому взято із запасної змінної іншого завдання. Його замінює 20261114-180411.
+# Порядок: спершу ще раз перевірити заміну — точний архів на GitHub, SHA-256, UITROL-MANIFEST.json валідатором
+# інсталятора (shared/uitrol-manifest.ts). Лише тоді видалити хибний випуск разом із тегом. На сервер нічого не встановлює.
+# De eigenaar liet de foutieve release vervangen door de juiste: eerst de vervanger opnieuw controleren
+# (archief, SHA-256, manifest met de validator van het installatieprogramma), pas dan de foutieve release met tag verwijderen.
+on:
+  push:
+    branches:
+      - feature/identiteit-015-uitrol-20261114-162503
+    paths:
+      - .github/workflows/identiteit-015-vervanging.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: identiteit-015-uitgave
+  cancel-in-progress: false
+
+env:
+  OUD: '20261114-175600'
+  NIEUW: '20261114-180411'
+  NIEUW_SHA256: '6d54fff8c553e2c91d8dc1964e9f39351902d19160dbef7a584240a5fb23a096'
+  TITEL_VOORVOEGSEL: 'IDENTITEIT-015 · '
+
+jobs:
+  vervangen:
+    name: Перевірити заміну й прибрати хибний випуск · vervanger controleren en foutieve release verwijderen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
+        run: |
+          if [ "$GITHUB_REF_NAME" != "feature/identiteit-015-uitrol-20261114-162503" ]; then
+            echo "Заміну можна запускати лише з гілки feature/identiteit-015-uitrol-20261114-162503." >&2
+            exit 1
+          fi
+      - name: Отримати вихідні коди сховища (валідатор маніфесту)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Перевірити випуск-заміну · de vervangende release controleren
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [[ "$OUD" =~ ^[0-9]{8}-[0-9]{6}$ && "$NIEUW" =~ ^[0-9]{8}-[0-9]{6}$ && "$OUD" < "$NIEUW" ]] || { echo 'Неправильні позначення випусків — зупинено.' >&2; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$NIEUW" > "$RUNNER_TEMP/nieuw.json"
+          mkdir -p "$RUNNER_TEMP/nieuw"
+          gh release download "$NIEUW" --pattern "mijn-ruimte-${NIEUW}.tar.gz" --dir "$RUNNER_TEMP/nieuw"
+          echo "$NIEUW_SHA256  $RUNNER_TEMP/nieuw/mijn-ruimte-${NIEUW}.tar.gz" | sha256sum --check
+          tar -xzOf "$RUNNER_TEMP/nieuw/mijn-ruimte-${NIEUW}.tar.gz" "mijn-ruimte-${NIEUW}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest.json"
+          tar -xzOf "$RUNNER_TEMP/nieuw/mijn-ruimte-${NIEUW}.tar.gz" "mijn-ruimte-${NIEUW}/UITROL-VERSIE" > "$RUNNER_TEMP/uitrol-versie"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerManifest } from './shared/uitrol-manifest.ts';
+          const e = process.env;
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/nieuw.json', 'utf8'));
+          const archief = uitgave.assets.find((a) => a.name === `mijn-ruimte-${e.NIEUW}.tar.gz`);
+          if (uitgave.draft || !String(uitgave.name || '').startsWith(e.TITEL_VOORVOEGSEL)) throw Error('Випуск-заміна чернетковий або не належить IDENTITEIT-015 — зупинено.');
+          if (!archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + e.NIEUW_SHA256) throw Error('Архів випуску-заміни на GitHub не збігається за SHA-256 — зупинено.');
+          if (readFileSync(e.RUNNER_TEMP + '/uitrol-versie', 'utf8').trim() !== e.NIEUW) throw Error('UITROL-VERSIE в архіві не збігається з випуском — зупинено.');
+          const { manifest, fouten } = valideerManifest(readFileSync(e.RUNNER_TEMP + '/manifest.json', 'utf8'), e.NIEUW);
+          if (fouten.length || !manifest) {
+            for (const f of fouten) console.error('::error::UITROL-MANIFEST.json · ' + (f.veld || '') + ': ' + (f.uk || JSON.stringify(f)));
+            throw Error('Маніфест випуску-заміни не проходить перевірку інсталятора — хибний випуск не чіпаємо.');
+          }
+          const ai = manifest.deelnemers.filter((d) => d.soort === 'ai');
+          if (!manifest.aangemaakt || !manifest.herkomst || !ai.length || ai.some((d) => !d.model || !d.model.id)) throw Error('Маніфест випуску-заміни неповний — зупинено.');
+          console.log(`Заміна ${e.NIEUW}: SHA-256 збігається, маніфест 0 помилок (aangemaakt ${manifest.aangemaakt}).`);
+          JS
+      - name: Видалити хибний випуск разом із тегом · foutieve release met tag verwijderen
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$OUD" > "$RUNNER_TEMP/oud.json" 2>/dev/null; then
+            NAAM="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).name||"")' "$RUNNER_TEMP/oud.json")"
+            case "$NAAM" in "$TITEL_VOORVOEGSEL"*) ;; *) echo "Випуск $OUD не належить IDENTITEIT-015 («$NAAM») — не чіпаємо." >&2; exit 1 ;; esac
+            gh release delete "$OUD" --cleanup-tag --yes
+            echo "Випуск $OUD видалено разом із тегом."
+          else
+            echo "Випуску $OUD уже немає."
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$OUD" >/dev/null 2>&1; then
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$OUD"
+              echo "Залишковий тег $OUD видалено."
+            fi
+          fi
+          sleep 3
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$OUD" >/dev/null 2>&1; then echo "Випуск $OUD досі існує." >&2; exit 1; fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$OUD" >/dev/null 2>&1; then echo "Тег $OUD досі існує." >&2; exit 1; fi
+          {
+            echo "### Заміна випуску IDENTITEIT-015"
+            echo "- Хибний випуск \`$OUD\` (модель ШІ із чужої змінної) видалено разом із тегом."
+            echo "- Чинний випуск: https://github.com/$GITHUB_REPOSITORY/releases/tag/$NIEUW — SHA-256 \`$NIEUW_SHA256\`, маніфест 0 помилок."
+          } >> "$GITHUB_STEP_SUMMARY"
