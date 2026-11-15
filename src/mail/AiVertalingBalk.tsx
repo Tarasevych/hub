@@ -643,10 +643,10 @@ export default function AiVertalingBalk({
       {/* Punt 16: каталог рушіїв з чесним станом — «що працює зараз, що треба підключити, чого ще немає», з кнопкою підключення
           такою ж, як на інших картках інтеграцій. Нічого не імітуємо: у рушія зі станом «ще немає» кнопки немає взагалі. */}
       {motorenOpen && (
-        <div className="ai-vb-motoren" role="region" aria-label="Рушії перекладу" data-testid="ai-vb-motoren">
+        <div className="ai-vb-motoren" role="region" aria-label={t('Рушії перекладу', 'Vertaalmotoren')} data-testid="ai-vb-motoren">
           <div className="ai-vb-settings-header">
-            <strong>Рушії перекладу</strong>
-            <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label="Закрити перелік рушіїв">
+            <strong>{t('Рушії перекладу', 'Vertaalmotoren')}</strong>
+            <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label={t('Закрити перелік рушіїв', 'Lijst met motoren sluiten')}>
               <X size={14} />
             </button>
           </div>
@@ -656,22 +656,22 @@ export default function AiVertalingBalk({
               <li key={motor.id} className="ai-vb-motor-kaart" data-motor={motor.id} data-motor-staat={motor.staat}>
                 <div className="ai-vb-motor-kop">
                   <strong>{motor.naam}</strong>
-                  <span className="ai-vb-motor-staat" data-staat={motor.staat}>{VERTAAL_MOTOR_STAAT_TEKST[motor.staat][0]}</span>
+                  <span className="ai-vb-motor-staat" data-staat={motor.staat}>{VERTAAL_MOTOR_STAAT_TEKST[motor.staat][nl ? 1 : 0]}</span>
                 </div>
                 <small className="ai-vb-motor-leverancier">
                   {motor.leverancier}
-                  {motor.plek === 'eigen-server' ? ' · на вашому сервері' : motor.plek === 'eigen-sleutel' ? ' · ваш власний ключ' : ' · сторонній сервіс'}
+                  {motor.plek === 'eigen-server' ? t(' · на вашому сервері', ' · op uw server') : motor.plek === 'eigen-sleutel' ? t(' · ваш власний ключ', ' · uw eigen sleutel') : t(' · сторонній сервіс', ' · externe dienst')}
                 </small>
-                <p>{motor.uitlegUk}</p>
+                <p>{nl && motor.uitlegNl ? motor.uitlegNl : motor.uitlegUk}</p>
                 {motor.staat === 'aansluiten' && motor.aansluitenHref ? (
                   <a className="ai-vb-motor-knop" href={aiHrefOplossen(motor.aansluitenHref, 'sleutels')} data-motor-aansluiten={motor.id}>
                     <Plug size={13} aria-hidden="true" />
-                    Підключити
+                    {t('Підключити', 'Koppelen')}
                   </a>
                 ) : motor.staat === 'werkt' ? (
-                  <span className="ai-vb-motor-klaar"><Check size={13} aria-hidden="true" />Підключено й готовий до роботи</span>
+                  <span className="ai-vb-motor-klaar"><Check size={13} aria-hidden="true" />{t('Підключено й готовий до роботи', 'Gekoppeld en klaar')}</span>
                 ) : (
-                  <span className="ai-vb-motor-leeg"><AlertTriangle size={13} aria-hidden="true" />Підключення ще не написано — цей рушій зараз недоступний</span>
+                  <span className="ai-vb-motor-leeg"><AlertTriangle size={13} aria-hidden="true" />{t('Підключення ще не написано — цей рушій зараз недоступний', 'De koppeling is nog niet geschreven — deze motor is nu niet beschikbaar')}</span>
                 )}
               </li>
             ))}
