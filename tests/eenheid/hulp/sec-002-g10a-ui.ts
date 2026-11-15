@@ -110,7 +110,7 @@ export async function uiBlok(check: Check): Promise<void> {
     check('extensie-02: lijst met wachtende opdrachten en hulpmiddelen ligt in een zone die de extensie niet bedient', /data-agents-pending="2"[^>]*data-ai-geen-actie="1"/.test(compact) && /data-mcp-approvals="2"[^>]*data-ai-geen-actie="1"/.test(ta));
     const consent = lees('src/McpToestemmingVenster.tsx'), bea = lees('src/extensie/BrowserEnAgenten.tsx'), prive = lees('src/extensie/ExtensiePrive.tsx'), tools = lees('src/McpHulpmiddelenPaneel.tsx'), srv = lees('src/ServerKoppelen.tsx');
     check('extensie-02: OAuth-toestemming «Дозволити» alleen bij een echte klik; matrix «Зберегти», «Так, дозволити все» en «Відкрити доступ» idem; zones gemarkeerd',
-      consent.includes('onClick={alleenMens(() => void decide(true))}') && consent.includes("data-mcp-consent-modal='true' {...geenAi}")
+      /data-mcp-consent-modal='true'[^>]*\{\.\.\.geenAi\}/.test(consent) && consent.includes('onClick={alleenMens(() => void decide(true))}')
       && bea.includes("onClick={alleenMens(() => void opslaan())}") && bea.includes("onClick={alleenMens(() => void snel('alles'))}") && bea.includes('alleenMens(() => void doeOpen())(e)') && /data-bea-ruimte=\{ruimte\} \{\.\.\.geenAi\}/.test(bea)
       && prive.includes('alleenMens(() => void doeOpen())(e)') && tools.includes('data-mcp-tools-panel=\'true\' data-mcp-tools={String(tools.length)} {...geenAi}')
       && (srv.match(/\{\.\.\.geenAi\} onClick=\{alleenMens\(\(\) => void geef\(/g) || []).length === 4);

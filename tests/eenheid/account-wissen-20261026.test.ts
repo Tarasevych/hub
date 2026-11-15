@@ -163,7 +163,7 @@ export async function main() {
 
   const tabellen = tabellenUitMigraties();
   const open: string[] = [];
-  const nietInRegister = new Set(['gemeld_door', 'door_email', 'gebruikersnaam', 'gebruiker', 'author', 'account_email', 'accounts', 'gebruikers', 'voor_gebruikers', 'beheerder_tab', 'aanvrager_tab', 'voorbereider', 'wie']);
+  const nietInRegister = new Set(['gemeld_door', 'door_email', 'door_agent', 'gebruikersnaam', 'gebruiker', 'author', 'account_email', 'accounts', 'gebruikers', 'voor_gebruikers', 'beheerder_tab', 'aanvrager_tab', 'voorbereider', 'wie']);
   const verdacht = /^(owner_id|user_id|account_id|eigenaar_id|created_by|aanvrager_id|doel_id|beheerder_id|owner_key|actor_id)$|_door$|^door$|^door_/;
   const onbekend: string[] = [];
   for (const [sleutel, cols] of tabellen) {

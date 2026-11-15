@@ -2298,6 +2298,22 @@
   {
    "pad": "src/main.tsx",
    "reden": "ingang (index.html)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-security-nl-donker-1280.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /security (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-security-uk-licht-380.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /security (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-sessions-nl-donker-1280.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-sessions-uk-licht-380.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
   }
  ],
  "woorden": {
@@ -3257,6 +3273,31 @@
    "pad": "tests/eenheid/mailanker-001-model.test.ts",
    "wat": "Eenheidstest voor het e-mailankermodel, inklappen van groepen en stabiele selectiestatus.",
    "sinds": "MAILANKER-001 (PR #118)"
+  },
+  {
+   "pad": "src/beheer-kern-maquette.css",
+   "wat": "Technisch beheerstijlblad voor de beheerconsole (BeheerConsoleWeergave) en AI-beleidspaneel (BeheerAiBeleidWeergave) in studio- en klassieke paletten.",
+   "sinds": "MAQUETTE-010 / KLASSIEK-010A"
+  },
+  {
+   "pad": "src/beheer-laden.css",
+   "wat": "Technisch beheerstijlblad voor de compacte laadtoestand van de beheerconsole en uitrolpagina.",
+   "sinds": "Beheerconsole 15.11.2026"
+  },
+  {
+   "pad": "src/github/CodeEnBewerkerPaneel.tsx",
+   "wat": "GitHub-tabbladpaneel voor bestandsboom, brontekstweergave, bewerker en vastleggingsgeschiedenis (hernoemd vanuit Engelse naam).",
+   "sinds": "GITHUB-010 / UPD-002"
+  },
+  {
+   "pad": "server/platform/tekst-aanmelding.ts",
+   "wat": "Controle vooraf of sessiecookie of Bearer-token echt is voor verhoogd verzoeklichaambudget (hernoemd vanuit Engelse naam).",
+   "sinds": "SEC-002 / UPD-002"
+  },
+  {
+   "pad": "server/platform/tekst-budget.ts",
+   "wat": "Begrensd inlezen van verzoeklichamen met IP-, aanmeldings- en geheugenbudgetten (hernoemd vanuit Engelse naam).",
+   "sinds": "SEC-002 / UPD-002"
   }
  ]
 }
