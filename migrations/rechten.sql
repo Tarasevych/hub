@@ -50,7 +50,7 @@ BEGIN
     IF to_regclass('app.uitrol_runs') IS NOT NULL THEN REVOKE ALL ON app.uitrol_runs, app.uitrol_run_regels FROM mijnruimte_app; END IF;
     -- 0081: pogingen die niet tot een installatie kwamen (ook afbrekingen die de browser meldde): alleen de systeemrol.
     IF to_regclass('app.uitrol_pogingen') IS NOT NULL THEN REVOKE ALL ON app.uitrol_pogingen FROM mijnruimte_app; END IF;
-    -- 0279: slimme uitrolstroom (notities, controlelijsten, bewijs van controles): uitsluitend systeemrol (beheercontour) onder FORCE RLS.
+    -- 0282: slimme uitrolstroom (notities, controlelijsten, bewijs van controles): uitsluitend systeemrol (beheercontour) onder FORCE RLS.
     IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
       REVOKE ALL ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen FROM mijnruimte_app;
     END IF;

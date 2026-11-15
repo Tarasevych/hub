@@ -388,8 +388,11 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     // M4: ook de OAuth-tokens van de MCP-connector (Claude) en de tvh_-tokens van de MCP-console intrekken.
     const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
-    // VEILIG-002 (noodstop): активні сесії «від імені власника» теж негайно закриваються.
-    const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'blocked' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
+    // VEILIG-002 (noodstop): активні сесії «від імені власника» теж негайно закриваються (user_id у таблиці має тип uuid).
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const namens = isUuid
+      ? await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'blocked' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId])
+      : { rowCount: 0 };
     const voorbereiders = await q(`UPDATE app.uitrol_voorbereiders SET ingetrokken_op = now(), ingetrokken_door = 'blocked' WHERE account_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
     return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0), namens: namens.rowCount ?? 0, voorbereiders: voorbereiders.rowCount ?? 0 };
@@ -438,8 +441,11 @@ export async function stopAll(userId: string, actorId: string) {
                             WHERE user_id = $1 AND status = 'pending_approval'`, [userId]);
     const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
-    // VEILIG-002 (noodstop): активні сесії «від імені власника» також негайно припиняються.
-    const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'noodstop' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
+    // VEILIG-002 (noodstop): активні сесії «від імені власника» також негайно припиняються (user_id у таблиці має тип uuid).
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const namens = isUuid
+      ? await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'noodstop' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId])
+      : { rowCount: 0 };
     const voorbereiders = await q(`UPDATE app.uitrol_voorbereiders SET ingetrokken_op = now(), ingetrokken_door = 'noodstop' WHERE account_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
     return {
