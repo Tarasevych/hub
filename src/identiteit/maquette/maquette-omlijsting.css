@@ -232,9 +232,26 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
    NL: geen extra achterpaneel meer onder de instellingen van een sectie; elke groep heeft al een eigen blok. */
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}
-/* Справжня панель (безпека, способи входу, відновлення) займає всю ширину картки розділу, як блоки груп вище, — без порожньої
-   темної смуги праворуч і ліворуч (побажання власника 15.11.2026). NL: het echte paneel vult de hele sectiekaart, zoals de groepsblokken. */
-.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud .access-plane{max-width:none}
+/* Розгорнута справжня панель (безпека, способи входу, відновлення) на ПК: темна підкладка звужена до ширини її блоків, а не на всю
+   картку розділу (побажання власника 15.11.2026). Картка розділу закінчується заголовком «Чинні налаштування»; панель під ним —
+   окрема вужча картка по центру (до 910 px), далі — картка «Можливостей». Довкола видно чисте тло сторінки. Телефон і планшет без змін.
+   NL: bij een geopend echt paneel krimpt het donkere achterpaneel tot de breedte van de blokken; de sectiekaart eindigt bij de kop. */
+@media (min-width:961px){
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open]){background:transparent!important;border-color:transparent!important;box-shadow:none!important;overflow:visible}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-card{background:var(--surface);border:1px solid var(--card-border);border-bottom:0;border-radius:var(--radius) var(--radius) 0 0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings{padding:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-header,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-workspace{padding-inline:29px;background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-head{padding:25px 54px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]~.future-section{margin-top:18px;padding-inline:54px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+/* Те саме, коли «Чинні налаштування» лежать прямо в картці розділу (головна: герой, блоки груп, панель). */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.direct-settings{background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-head{padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]~.future-section{margin-top:18px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+}
 
 /* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
