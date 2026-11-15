@@ -25,6 +25,7 @@ import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerIt
 import { useIsMaquette } from './thema/useThema';
 import './agenten/agenten.css';
 import './ai-werkruimte-maquette.css';
+import './agenten/ai-ingangen-pictogrammen.css';
 
 /** Werkgebied «ШІ для вас» (punt 13, 19.10.2026): startstaat uit echte feiten, chat, startvragen, alle hulpmiddelen. */
 const AiWerkruimte = lazy(() => import('./AiWerkruimte'));
@@ -120,11 +121,28 @@ function AiOnderdeel({ tab, tr }: { tab: 'agents' | 'runs' | 'workflows'; tr: Tr
     <>
       {band}
       {tab === 'agents' ? (
-        <section className='ag ag-ai-ingangen' data-ai-agent-ingangen='1' aria-label={tr('Підключити окремий ШІ', 'Eén AI koppelen')}>
-          <ul className='ag-agent-ingangen'>
+        // BREEDTE-001 (15.11.2026, побажання власника): слово «Підключити» один раз у заголовку блоку, а не на кожній плитці; плитки —
+        // ряд піктограм. Наведення чи фокус трохи збільшує плитку й показує підказку: ЩО станеться після натискання. Повна назва
+        // «Підключити Claude» лишається для читачів екрана (aria-label); на сенсорному екрані під піктограмою видно коротку назву.
+        // NL: «Koppelen» één keer als kop; tegels zijn pictogrammen met een uitleg bij aanwijzen/focus en een kort label op aanraakschermen.
+        <section className='ag ag-ai-ingangen' data-ai-agent-ingangen='1' aria-labelledby='ag-ingangen-titel'>
+          <div className='ag-ingangen-kop'>
+            <h2 id='ag-ingangen-titel'>{tr('Підключити', 'Koppelen')}</h2>
+            <p>{tr('Оберіть ШІ — відкриється його сторінка підключення', 'Kies een AI — de koppelpagina ervan opent')}</p>
+          </div>
+          <ul className='ag-agent-ingangen ag-ingangen-pictogram'>
             {V2_AGENTEN.map((a) => (
-              <li key={a.slug}><a className='ag-kaart ag-agent-ingang' href={hubUrl(`agent/${a.slug}`)} data-agent-ingang={a.slug}>
-                <AgentLogo agent={a.slug} naam={a.naam} size={26} /><b>{tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</b>
+              <li key={a.slug}><a className='ag-kaart ag-agent-ingang' href={hubUrl(`agent/${a.slug}`)} data-agent-ingang={a.slug}
+                aria-label={tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)} aria-describedby={`ag-ingang-tip-${a.slug}`}>
+                <span className='ag-ingang-logo' aria-hidden='true'><AgentLogo agent={a.slug} naam={a.naam} size={30} /></span>
+                <b className='ag-ingang-naam' aria-hidden='true'>{a.naam}</b>
+                <span className='ag-ingang-tip' role='tooltip' id={`ag-ingang-tip-${a.slug}`}>
+                  <strong>{tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</strong>
+                  {tr(
+                    `Відкриє сторінку ${a.naam} у «Підключення ШІ»: там ви дасте йому доступ лише до свого простору, а відкликати його можна будь-коли.`,
+                    `Opent de pagina van ${a.naam} in «AI-koppelingen»: daar geeft u alleen toegang tot uw eigen ruimte, en u kunt die altijd intrekken.`,
+                  )}
+                </span>
               </a></li>
             ))}
           </ul>
