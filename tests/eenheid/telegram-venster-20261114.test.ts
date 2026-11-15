@@ -37,11 +37,26 @@ export async function main(): Promise<number> {
   const sym = await import('../../shared/apparaat-bevestiging/symbolen');
   const { VORMEN } = await import('../../shared/apparaat-bevestiging/pictogram-vormen');
   const lum = (h: string) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-  check('48 pictogrammen, elk met een vorm en een eigen vaste kleur', sym.PICTOGRAMMEN.length === 48 && sym.PICTOGRAMMEN.every((p) => VORMEN[p.icoon]?.length > 0) && new Set(sym.PICTOGRAMMEN.map((p) => p.kleur)).size === 48);
-  check('wit pictogram op elke tegel: contrast ≥ 4,5:1', sym.PICTOGRAMMEN.every((p) => 1.05 / (lum(p.kleur) + 0.05) >= 4.5));
+  check('96 pictogrammen, elk met een vorm en een eigen vaste kleur', sym.PICTOGRAMMEN.length === 96 && sym.PICTOGRAMMEN.every((p) => VORMEN[p.icoon]?.length > 0) && new Set(sym.PICTOGRAMMEN.map((p) => p.kleur)).size === 96);
+  check('lijn en naam op elke tegel (wit of donker): contrast ≥ 4,5:1', sym.PICTOGRAMMEN.every((p) => sym.tegelContrast(p.kleur) >= 4.5));
+  const kl = (id: string) => sym.PICTOGRAMMEN.find((p) => p.id === id)!.kleur;
+  const tint = (hex: string) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return { r, g, b }; };
+  check('kleur past bij het beeld: dennenboom groen, maan geel, appel rood, golven blauw', tint(kl('boom')).g > tint(kl('boom')).r && tint(kl('boom')).g > tint(kl('boom')).b
+    && tint(kl('maan')).r > 200 && tint(kl('maan')).g > 180 && tint(kl('maan')).b < 120 && tint(kl('appel')).r > 2 * tint(kl('appel')).g && tint(kl('golven')).b > tint(kl('golven')).r);
+  check('lichte tegel krijgt donkere inkt, donkere tegel witte', sym.inktVoor(kl('maan')) === sym.INKT_DONKER && sym.inktVoor(kl('boom')) === sym.INKT_LICHT && sym.pictogramSvg(sym.PICTOGRAMMEN.findIndex((p) => p.id === 'maan')).includes(`stroke="${sym.INKT_DONKER}"`));
+  {
+    // Zonder herhaling: 88 aanmeldingen na elkaar tonen 88 verschillende juiste pictogrammen (catalogus 96, de laatste 88 worden overgeslagen).
+    const gezien: number[] = []; let i = 7;
+    const w = (n: number) => { i = (i * 1103515245 + 12345) % 2147483648; return i % n; };
+    for (let k = 0; k < 88; k++) { const t = sym.trekZonderHerhaling(3, gezien.slice(0, 88), w); gezien.unshift(t.kandidaten[t.juist]); }
+    check('zonder herhaling: 88 keer na elkaar steeds een ander juist pictogram', new Set(gezien).size === 88);
+    const t3 = sym.trekZonderHerhaling(3, gezien, w);
+    check('trekking voor het venster: 3 verschillende tegels, het juiste niet uit de recente', t3.kandidaten.length === 3 && new Set(t3.kandidaten).size === 3 && !gezien.includes(t3.kandidaten[t3.juist]));
+    check('alles recent (kan niet) → toch een geldige trekking', sym.trekZonderHerhaling(3, Array.from({ length: 96 }, (_, x) => x), w).kandidaten.length === 3);
+  }
   const svg = sym.pictogramSvg(0);
   check('svg van het venster = dezelfde vormen als de React-tegel (Anker)', VORMEN.Anchor.every(([tag, a]) => svg.includes(`<${tag} `) && Object.values(a).every((v) => svg.includes(`"${v}"`))) && !/[\u{1F300}-\u{1FAFF}☀-➿]/u.test(svg));
-  check('ongeldige index → geen tegel, geen svg', sym.pictogramTegel(48, 'uk') === null && sym.pictogramSvg(-1) === '');
+  check('ongeldige index → geen tegel, geen svg', sym.pictogramTegel(96, 'uk') === null && sym.pictogramSvg(-1) === '');
   const st = sym.tegelStijlen('#1f5f9e');
   check('opmaak van de tegel als gegevens → style-tekst', sym.stijlTekst(st.tegel).includes('justify-content:center') && sym.stijlTekst(st.tegel).includes('background:#1f5f9e'));
   check('kleur uit de catalogus wordt nooit vervangen door invoer van buiten', sym.tegelStijlen('red;x:1').tegel.background === '#4f5b66');
@@ -164,7 +179,7 @@ export async function main(): Promise<number> {
     const s1 = await inl.inlogStatus(i1.id, i1.geheim);
     const j1 = await juistePos(i1.id);
     const kand1 = (await sql('SELECT kandidaten FROM app.tg_inlog_verzoeken WHERE id = $1', [i1.id]))[0].kandidaten.map(Number);
-    check('browser (met geheim) krijgt het juiste pictogram', s1.pictogram === kand1[j1] && s1.codePlek === 'venster' && kand1.length === 4);
+    check('browser (met geheim) krijgt het juiste pictogram', s1.pictogram === kand1[j1] && s1.codePlek === 'venster' && kand1.length === 3);
     await bericht(`/start i_${i1.id}`);
     const adres1 = vensterAdres();
     check('kaart in Telegram: knop naar het beveiligde venster (web_app) + browser + «Це не я», geen «Так»-knop', adres1.startsWith('https://id.tarasevych.com/api/telegram/venster?t=') && !!knop('n') && !knop('i'));
@@ -174,10 +189,10 @@ export async function main(): Promise<number> {
     check('kaart van de bot: verstuurd als foto van het site-account (account.png)', oproepen.some((o) => o.methode === 'sendPhoto' && o.lichaam.includes('filename="account.png"')));
     check('venster: foto van het site-account + naam + gemaskeerde e-mail, en de Telegram-account', p1.body.includes(`src="${ACCOUNT_FOTO}"`) && p1.body.includes('class="rond"') && p1.body.includes('tg…@voorbeeld.test') && /Ваш Telegram/.test(p1.body));
     check('status vóór de keuze: geen Telegram-gegevens naar de browser', s1.telegram === undefined);
-    check('venster: 4 tegels, logo\'s en vlag, juiste pictogram NIET aangeduid', (p1.body.match(/class="keuze"/g) || []).length === 4 && p1.body.includes('data:image/svg+xml') && !/juist|is-uitgelicht|aria-current/.test(p1.body));
+    check('venster: 3 tegels op één rij, logo\'s en vlag, juiste pictogram NIET aangeduid', (p1.body.match(/class="keuze"/g) || []).length === 3 && p1.body.includes('repeat(3,') && p1.body.includes('data:image/svg+xml') && !/juist|is-uitgelicht|aria-current/.test(p1.body));
     check('venster: eigen CSP, X-Frame-Options weggelaten, geen verwijzer', p1.headers['Content-Security-Policy'] === VENSTER_CSP && p1.headers['X-Frame-Options'] === '' && p1.headers['Referrer-Policy'] === 'no-referrer');
     check('venster-tegel = zelfde svg als pictogramSvg (identiek op beide schermen)', p1.body.includes(sym.pictogramSvg(kand1[0], sym.stijlTekst(sym.tegelStijlen(sym.PICTOGRAMMEN[kand1[0]].kleur).vorm))));
-    const fout1 = (j1 + 1) % 4;
+    const fout1 = (j1 + 1) % 3;
     check('initData van een andere Telegram → geweigerd', (await ven.vensterKiezen({ t: t1, initData: initData(780), pos: j1, koppeling: kp.id })).uitkomst === 'verlopen');
     check('initData met een valse sleutel → geweigerd', (await ven.vensterKiezen({ t: t1, initData: initData(TG, '1:vals'), pos: j1, koppeling: kp.id })).uitkomst === 'verlopen');
     check('verkeerd pictogram → fout-symbool', (await ven.vensterKiezen({ t: t1, initData: initData(TG), pos: fout1, koppeling: kp.id })).uitkomst === 'fout-symbool');
@@ -188,6 +203,12 @@ export async function main(): Promise<number> {
     await sql('UPDATE app.apparaat_voorkeuren SET mislukt = 0 WHERE user_id = $1', [eigenaar]);
 
     // ---------------------------------------------------------------- aanmelden: juist pictogram, zonder code
+    {
+      // 15.11.2026: hetzelfde apparaat meldt 40 keer na elkaar aan → 40 verschillende juiste pictogrammen (geen herhaling binnen de reeks).
+      const cookie = 'c'.repeat(64); const juiste: number[] = [];
+      for (let k = 0; k < 40; k++) { const s = await inl.inlogStart(`tx-reeks-${k}`, ua, { apparaatCookie: cookie }); juiste.push(Number(s.pictogram)); }
+      check('zelfde apparaat, 40 aanmeldingen: het juiste pictogram herhaalt zich niet', new Set(juiste).size === 40);
+    }
     const i2 = await inl.inlogStart('tx-v2', ua);
     await bericht(`/start i_${i2.id}`);
     const t2 = tokenUit(vensterAdres());
@@ -244,7 +265,7 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------------- bevestigen van een handeling
     const b1 = await bev.bevestigingAanvragen(eigenaar, 'sessie-v', 'stap-op', { apparaat: 'Chrome/Windows', herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Gent', land: 'BE' } });
-    check('aanvraag: venster, code nodig, juist pictogram alleen naar de vragende site', b1.venster === true && b1.codeNodig === true && typeof b1.juist === 'number' && b1.kandidaten?.length === 4);
+    check('aanvraag: venster, code nodig, juist pictogram alleen naar de vragende site', b1.venster === true && b1.codeNodig === true && typeof b1.juist === 'number' && b1.kandidaten?.length === 3);
     const tb1 = tokenUit(vensterAdres());
     check('aanvraag: de site krijgt de Telegram-ontvanger(s) met naam (foto als die bewaard is)', b1.ontvangers?.length === 1 && b1.ontvangers[0].naam.length > 0);
     check('kaart: knop naar het venster, geen symbool- of «Так»-knoppen', tb1.startsWith('b.') && !knop('s') && !knop('b'));
@@ -257,7 +278,7 @@ export async function main(): Promise<number> {
 
     const b2 = await bev.bevestigingAanvragen(eigenaar, 'sessie-v', 'stap-op', { apparaat: 'Chrome/Windows' });
     const tb2 = tokenUit(vensterAdres());
-    check('verkeerd pictogram bij bevestigen → geweigerd', (await ven.vensterKiezen({ t: tb2, pos: ((b2.juist ?? 0) + 1) % 4 })).uitkomst === 'fout-symbool' && (await bev.bevestigingStatus(eigenaar, 'sessie-v', b2.id)).stand === 'geweigerd');
+    check('verkeerd pictogram bij bevestigen → geweigerd', (await ven.vensterKiezen({ t: tb2, pos: ((b2.juist ?? 0) + 1) % 3 })).uitkomst === 'fout-symbool' && (await bev.bevestigingStatus(eigenaar, 'sessie-v', b2.id)).stand === 'geweigerd');
     await sql('UPDATE app.apparaat_voorkeuren SET mislukt = 0 WHERE user_id = $1', [eigenaar]);
     await tik(knop('n'));
 

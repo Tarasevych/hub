@@ -20,7 +20,7 @@ import { knoppenMaken, SITE_BASIS, stuur, strook, succesTonen, taalVoor, type Bo
 import { deeplink, magTelegram, type TgGebruiker } from './koppelen';
 import { invullen, t, TEKST } from '../../shared/telegram-aanmelden/teksten';
 // TELEGRAM-002: het beveiligde venster (zelfde pictogram als op de site + geheime code daar).
-import { vensterAan, vensterTrekking, vensterUrl } from './venster-sleutel';
+import { recenteJuiste, vensterAan, vensterTrekking, vensterUrl } from './venster-sleutel';
 import { codeStand } from './code';
 import { accountBeeld, telegramBeeld, type TelegramBeeld } from './account-foto';
 import type { Herkenning } from './herkenning';
@@ -158,7 +158,10 @@ export async function inlogStart(transactieId: string, ua: string, meta: InlogCo
   const onthouden = meta.onthouden !== undefined ? meta.onthouden !== false : (txCtx.onthouden ?? true);
   const terugAdres = meta.terugAdres ? veiligEigenTerugAdres(meta.terugAdres) : txCtx.terugAdres;
   // TELEGRAM-002: met het venster aan trekken we nu al de pictogrammen, zodat de browser het juiste meteen kan tonen.
-  const trekking = (await vensterAan()) ? vensterTrekking() : null;
+  // 15.11.2026: het juiste pictogram herhaalt zich niet zolang bijna de hele catalogus niet langs is geweest (per apparaat).
+  const trekking = (await vensterAan())
+    ? vensterTrekking(await recenteJuiste({ apparaatSleutel: isApparaatHash(meta.apparaatCookie) ? meta.apparaatCookie : null, ip: String(meta.ip || '').slice(0, 64), apparaat: grofApparaat }))
+    : null;
   const h: Herkenning = meta.herkenning ?? { toestel: '', plaats: '', land: '' };
   await sql(
     `INSERT INTO app.tg_inlog_verzoeken (id, geheim_hash, transactie_id, apparaat, ip, locatie, browser, os, apparaat_type, dienst, onthouden, terug_adres, verloopt_op, apparaat_sleutel,
@@ -181,7 +184,7 @@ export async function inlogStart(transactieId: string, ua: string, meta: InlogCo
       h.toestel.slice(0, 80), h.plaats.slice(0, 120), /^[A-Z]{2}$/.test(h.land) ? h.land : '',
     ],
   );
-  // TELEGRAM-002: met het venster toont de site het juiste pictogram (één van de vier tegels); het oude emoji-symbool alleen zonder venster.
+  // TELEGRAM-002: met het venster toont de site het juiste pictogram (één van de tegels); het oude emoji-symbool alleen zonder venster.
   const pictogram = trekking ? trekking.kandidaten[trekking.juist] : null;
   return { id, geheim, deeplink: deeplink(cfg.bot, `i_${id}`), bot: cfg.bot, verlooptOp: verloopt.toISOString(), pictogram, ...(trekking ? {} : { symbool: inlogSymbool(id) }) };
 }
