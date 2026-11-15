@@ -930,5 +930,17 @@ v(`name:"Акаунт і дані", short:"Акаунт і дан`, `name:"Об�
 v(`function tekenЧинні(id){`, `function tekenЧинні(id){
     if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу`);
 
+// ДУБЛІ-001: підвал без «Account Atelier / Дизайн-концепт» — звичайна назва сторінки.
+v(`footer:"Дизайн-концепт 2026"`, `footer:"Центр облікового запису"`);
+v(`footer:"Ontwerpconcept 2026"`, `footer:"Accountcentrum"`);
+v(`write(".site-footer div span","Account Atelier / "+t.footer);`, `write(".site-footer div span",t.footer);`);
+v(`note:"Primaire inlogmethode in dit concept."`, `note:"Primaire inlogmethode."`);
+
+// ДУБЛІ-001: назви в навігації «Макета» — як у меню сайту: «Блоки», «Обліковий запис» (без англіцизму «Акаунт»).
+v(`navGroups:["Вигляд і меню","Доступ і ролі","Акаунт","Захист"]`, `navGroups:["Вигляд і меню","Доступ і ролі","Обліковий запис","Захист"]`);
+v(`id:"widgets", group:"personal", number:"05", name:"Віджети", short:"Віджети"`, `id:"widgets", group:"personal", number:"05", name:"Блоки", short:"Блоки"`);
+v(`widgets:{name:"Widgets",short:"Widgets"`, `widgets:{name:"Blokken",short:"Blokken"`);
+v(`short:"Обліковий запис і дані"`, `short:"Обліковий запис"`);
+
 fs.writeFileSync(f, s);
 console.log('ok');

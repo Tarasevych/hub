@@ -57,12 +57,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         controlCenter:"Єдиний центр керування",profiles:"Окремі режими та простори",
         groups:["ОБЛИЧЧЯ ВАШОГО ПРОСТОРУ","ЛЮДИ ТА ІДЕНТИЧНІСТЬ","ВАШ АКАУНТ","БЕЗПЕКА ТА ВІДНОВЛЕННЯ"],
         interludes:[["Дизайн стає по-справжньому вашим, коли кожен елемент","має своє місце."],["Справжній контроль — це коли складне","відчувається простим."]],
-        footer:"Дизайн-концепт 2026",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
+        footer:"Центр облікового запису",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
         scrollProgress:"Прогрес сторінки",collapse:"Згорнути панель",expand:"Розгорнути панель",
         anchorPlacement:"ПОЛОЖЕННЯ ЯКОРІВ",positionPrompt:"Розташуйте як зручно",
         positions:{left:"Ліворуч",right:"Праворуч",top:"Зверху",bottom:"Знизу"},
         compact:"Компактний режим",navStyle:"Стиль меню",navClassic:"Звичайна панель",navPills:"Окремі кнопки",navIconLabel:"Вміст кнопок",navNames:"Піктограми з назвами",navIcons:"Лише піктограми",navStyleHint:"Кнопки за розміром тексту, без спільного фону",dragHelp:"Можна також перетягнути заголовок панелі до потрібного краю екрана.",adaptiveNavHelp:"На вузькому екрані меню висувається збоку, не займаючи місця в робочій області.",adaptiveNavModeOnly:"Автоматично: наведіть мишку на край екрана або відкрийте меню натисканням чи свайпом. Постійні режими доступні лише на широкому екрані.",
-        navGroups:["Вигляд і меню","Доступ і ролі","Акаунт","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
+        navGroups:["Вигляд і меню","Доступ і ролі","Обліковий запис","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
         findSection:"Знайти розділ налаштувань…",commandHeading:"РОЗДІЛИ ЦЕНТРУ КЕРУВАННЯ",
         choose:"↑ ↓ обрати",go:"↵ перейти",noResults:"Нічого не знайдено. Спробуйте іншу назву.",
         beginning:"Початок",manage:"КЕРУВАННЯ",openSettings:"Відкрити налаштування",
@@ -169,7 +169,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         controlCenter:"Eén centrale plek",profiles:"Aparte profielen en ruimtes",
         groups:["DE SFEER VAN JOUW RUIMTE","MENSEN EN IDENTITEIT","JOUW ACCOUNT","BEVEILIGING EN HERSTEL"],
         interludes:[["Een ontwerp wordt persoonlijk wanneer elk element","zijn eigen plek krijgt."],["Echte controle voelt natuurlijk aan, ook als","de techniek complex is."]],
-        footer:"Ontwerpconcept 2026",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
+        footer:"Accountcentrum",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
         scrollProgress:"Pagina-voortgang",collapse:"Paneel inklappen",expand:"Paneel uitklappen",
         anchorPlacement:"POSITIE VAN ANKERS",positionPrompt:"Zet het waar jij wilt",
         positions:{left:"Links",right:"Rechts",top:"Boven",bottom:"Onder"},
@@ -213,7 +213,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         menu:{name:"Menu",short:"Menu",kicker:"ALLE VRIJHEID",title:"Navigatie die met je meebeweegt.",description:"Menupositie, snelle toegang, iconen en subtiele animaties. Precies instelbaar, toch eenvoudig.",details:[["Positie","Links · rechts · boven · onder"],["Snelle toegang","Je favoriete acties binnen handbereik"],["Paneelweergave","Uitgevouwen, compact of als dock"]]},
         themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
         languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
-        widgets:{name:"Widgets",short:"Widgets",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+        widgets:{name:"Blokken",short:"Blokken",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
         melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
         sharing:{name:"Delen",short:"Delen",kicker:"JOUW GRENZEN",title:"Deel alleen wat jij wilt.",description:"Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",details:[["Toegang per account","Uitnodigingen en rollen"],["Toegang via link","Aparte opties en beperkingen"]]},
         identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
@@ -271,7 +271,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"action",label:"Sessiegeschiedenis",note:"Voorbeeld van recente logins"}
         ],
         methods:[
-          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode in dit concept."},
+          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode."},
           {type:"action",label:"Passkey toevoegen",note:"Voorbeeld zonder een echte sleutel aan te maken"},
           {type:"toggle",label:"Uitleg vóór bevestiging",note:"Toon waarvoor je toestemming geeft",initial:true}
         ],
@@ -1467,7 +1467,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       special:"language"
     },
     {
-      id:"widgets", group:"personal", number:"05", name:"Віджети", short:"Віджети", icon:"⊞",
+      id:"widgets", group:"personal", number:"05", name:"Блоки", short:"Блоки", icon:"⊞",
       kicker:"ЗБЕРІТЬ СВОЄ", title:"Маленькі деталі. Велика різниця.",
       description:"Побудуйте робочий простір із корисних блоків. Обирайте те, що важливе саме сьогодні.",
       accent:"amber", art:"widgets",
@@ -1508,7 +1508,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"account", group:"account", number:"09", name:"Обліковий запис і дані", short:"Обліковий запис і дані", icon:"▣",
+      id:"account", group:"account", number:"09", name:"Обліковий запис і дані", short:"Обліковий запис", icon:"▣",
       kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
@@ -1876,7 +1876,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     root.querySelectorAll(".section-overline-text").forEach((el,i)=>el.textContent=t.groups[i]);
     root.querySelectorAll(".interlude p").forEach((el,i)=>el.innerHTML=t.interludes[i][0]+' <em>'+t.interludes[i][1]+'</em>');
     write(".site-footer strong",t.workspace);
-    write(".site-footer div span","Account Atelier / "+t.footer);
+    write(".site-footer div span",t.footer);
     write(".to-top",t.backTop);
     write(".rail-title strong",t.navigation);
     write(".rail-title small",t.dragToEdge);
