@@ -197,10 +197,13 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="on
 
 /* Внутрішні обгортки не звужують колонку вдруге (на будь-якій ширині, також на телефоні й планшеті): «ШІ для вас» (1360 px) і панель
    агентів (1180 px + 28 px відступу) займають рівно колонку, тож краї вітрини, стрічки «ШІ для вас», плиток «Підключити» і карток
-   збігаються; між блоками однаковий проміжок (gap обгортки), тому панель агентів — без власного верхнього відступу. */
+   збігаються; між блоками однаковий проміжок (gap обгортки), тому панель агентів — без власного верхнього відступу.
+   width:100% обов'язкова: у flex-стовпчику з margin:auto панель інакше стискається до ширини свого вмісту. */
 html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .ai-maquette-wikkel .ai-maquette-inhoud,
 html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .ai-maquette-wikkel .aie-container,
 html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mcp-maquette-wikkel .ag-pagina {
+  box-sizing: border-box;
+  width: 100%;
   max-width: none;
   padding-inline: 0;
 }

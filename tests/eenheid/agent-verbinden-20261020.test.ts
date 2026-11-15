@@ -153,7 +153,8 @@ export async function main(): Promise<number> {
     lees('src/McpDienstWeergave.tsx').includes('<AgentLogo agent={a.slug}') && lees('src/McpDienstWeergave.tsx').includes('#agent/${a.slug}') && !lees('src/McpDienstWeergave.tsx').includes('bearerSample'));
 
   // ================================================================ 7. navigatie: alles over AI in het AI-deel, met een directe weg naar #agent/<slug>
-  check('ai.*/agents heeft directe ingangen per AI naar de hub (#agent/<slug>)', lees('src/AIDienstWeergave.tsx').includes("hubUrl(`agent/${a.slug}`)") && lees('src/AIDienstWeergave.tsx').includes("data-ai-agent-ingangen='1'"));
+  // BREEDTE-002 (15.11.2026): de rij ingangen is opgegaan in de catalogus van AI-kaarten (één kaart per AI, met «Права, токени й журнал»).
+  check('ai.*/agents heeft directe ingangen per AI naar de hub (#agent/<slug>) — in de catalogus van AI-kaarten', lees('src/agenten/AgentCatalogus.tsx').includes("hubUrl(`agent/${a.slug}`)") && lees('src/agenten/AgentCatalogus.tsx').includes("data-agent-catalogus='1'") && lees('src/ai-ecosysteem/AiEcosysteemPaneel.tsx').includes('<AgentCatalogus '));
   // INTEG-001 (03.11.2026, «блоки не повторюються»): «Підключені ШІ» heeft geen eigen zes knoppen «Підключити <ШІ>» meer (dubbel met
   // «Конектори»); het bord zit nu ín het blok «Підключити новий ШІ» van TabAi en linkt per AI naar zijn plek (data-knop='agent-pagina').
   check('«Підключені ШІ» (hub #ai) toont het bord, en het bord linkt naar de plek van de agent', lees('src/agenten/TabAi.tsx').includes('<AgentBord tr={tr} ingebed />') && lees('src/agenten/AgentBord.tsx').includes("data-knop='agent-pagina'") && !lees('src/agenten/TabAi.tsx').includes('data-ai-agent-ingangen'));

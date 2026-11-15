@@ -20,7 +20,6 @@ import { RichtingBand } from './weergave/Weergave';
 
 import { aiVerbindingenNaar } from '../shared/ai-agent-bord';
 import { V2_AGENTEN } from '../shared/connector-v2/agenten';
-import AgentLogo from './agenten/AgentLogo';
 import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
 import { useIsMaquette } from './thema/useThema';
 import './agenten/agenten.css';
@@ -120,34 +119,7 @@ function AiOnderdeel({ tab, tr }: { tab: 'agents' | 'runs' | 'workflows'; tr: Tr
   return (
     <>
       {band}
-      {tab === 'agents' ? (
-        // BREEDTE-001 (15.11.2026, побажання власника): слово «Підключити» один раз у заголовку блоку, а не на кожній плитці; плитки —
-        // ряд піктограм. Наведення чи фокус трохи збільшує плитку й показує підказку: ЩО станеться після натискання. Повна назва
-        // «Підключити Claude» лишається для читачів екрана (aria-label); на сенсорному екрані під піктограмою видно коротку назву.
-        // NL: «Koppelen» één keer als kop; tegels zijn pictogrammen met een uitleg bij aanwijzen/focus en een kort label op aanraakschermen.
-        <section className='ag ag-ai-ingangen' data-ai-agent-ingangen='1' aria-labelledby='ag-ingangen-titel'>
-          <div className='ag-ingangen-kop'>
-            <h2 id='ag-ingangen-titel'>{tr('Підключити', 'Koppelen')}</h2>
-            <p>{tr('Оберіть ШІ — відкриється його сторінка підключення', 'Kies een AI — de koppelpagina ervan opent')}</p>
-          </div>
-          <ul className='ag-agent-ingangen ag-ingangen-pictogram'>
-            {V2_AGENTEN.map((a) => (
-              <li key={a.slug}><a className='ag-kaart ag-agent-ingang' href={hubUrl(`agent/${a.slug}`)} data-agent-ingang={a.slug}
-                aria-label={tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)} aria-describedby={`ag-ingang-tip-${a.slug}`}>
-                <span className='ag-ingang-logo' aria-hidden='true'><AgentLogo agent={a.slug} naam={a.naam} size={30} /></span>
-                <b className='ag-ingang-naam' aria-hidden='true'>{a.naam}</b>
-                <span className='ag-ingang-tip' role='tooltip' id={`ag-ingang-tip-${a.slug}`}>
-                  <strong>{tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</strong>
-                  {tr(
-                    `Відкриє сторінку ${a.naam} у «Підключення ШІ»: там ви дасте йому доступ лише до свого простору, а відкликати його можна будь-коли.`,
-                    `Opent de pagina van ${a.naam} in «AI-koppelingen»: daar geeft u alleen toegang tot uw eigen ruimte, en u kunt die altijd intrekken.`,
-                  )}
-                </span>
-              </a></li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {/* BREEDTE-002: op «Агенти» staat de catalogus van AI-kaarten (AgentCatalogus) in het paneel hieronder — geen aparte rij «Підключити». */}
       <Suspense fallback={null}>
         <AiEcosysteemPaneel modus={tab} tr={tr} band={null} hubUrl={hubUrl} />
       </Suspense>
@@ -277,25 +249,23 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
           openStandaard: true,
           kiesbaar: false,
           badge: V2_AGENTEN.length,
-          actiefBij: ['agents-ingangen', 'agents-tools', 'agents-ruimtes'],
+          actiefBij: ['agents-ingangen', 'agents-ruimtes'],
           kinderen: [
             {
               id: 'agents-ingangen',
-              label: tr('Швидкі входи до агентів', 'Directe agentingangen'),
+              label: tr('Каталог ШІ', 'AI-catalogus'),
               icoon: PlugZap,
-              onActie: () => springNaarSectie('agents-ingangen', "[data-ai-agent-ingangen='1']"),
-            },
-            {
-              id: 'agents-tools',
-              label: tr('Codex, Claude та інші', 'Codex, Claude en andere'),
-              icoon: Cpu,
-              onActie: () => springNaarSectie('agents-tools', "[data-aie-agent-overzicht='1'], [data-aie-kop='agents']"),
+              onActie: () => springNaarSectie('agents-ingangen', "[data-agent-catalogus='1']"),
             },
             {
               id: 'agents-ruimtes',
-              label: tr('Ізольовані простори', 'Geïsoleerde werkruimtes'),
+              label: tr('Розширені налаштування', 'Geavanceerd'),
               icoon: FolderLock,
-              onActie: () => springNaarSectie('agents-ruimtes', "[data-aie-werkruimtes-sectie='1']"),
+              onActie: () => {
+                // Ізольовані простори згорнуто в «Розширені налаштування» — перехід із меню розгортає блок.
+                document.querySelector<HTMLDetailsElement>("[data-aie-uitgebreid='1']")?.setAttribute('open', '');
+                springNaarSectie('agents-ruimtes', "[data-aie-uitgebreid='1']");
+              },
             },
           ],
         },
