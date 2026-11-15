@@ -49,29 +49,29 @@ export async function main(): Promise<number> {
     {
       const { c, page } = await open('lang=uk&thema=licht', 1280, 'light');
       check('paneel: titel UA, zoekveld, categorieën', (await page.textContent('#bib-titel')) === 'Все на сайті' && await page.locator('.bib-chip').count() === 7);
-      const totaal = await page.locator('.bib-rij').count();
+      const totaal = await page.locator('.bib-kaart').count();
       check(`alle items zichtbaar (${totaal} ≥ 120)`, totaal >= 120);
       await page.fill('.bib-zoek input', 'спам');
-      check('zoeken «спам» → eerste rij pg:mail/spam', (await page.locator('.bib-rij').first().getAttribute('data-bib-id')) === 'pg:mail/spam');
-      await page.locator('.bib-rij').first().getByRole('button', { name: 'Як ярлик' }).click();
-      check('«Як ярлик» stuurt het event werkblad-bibliotheek:toevoegen', (await page.textContent('#stand-log'))!.includes('{"itemId":"pg:mail/spam","kind":"shortcut"}'));
+      check('zoeken «спам» → eerste rij pg:mail/spam', (await page.locator('.bib-kaart').first().getAttribute('data-bib-id')) === 'pg:mail/spam');
+      await page.locator('.bib-kaart').first().getByRole('button', { name: 'Додати', exact: true }).click();
+      check('«Додати» stuurt het event werkblad-bibliotheek:toevoegen', (await page.textContent('#stand-log'))!.includes('{"itemId":"pg:mail/spam","kind":"shortcut"}'));
       await page.fill('.bib-zoek input', '');
       // BIB-002: zonder technische toegang geen categorie «Технічні» en geen technische items (niet toe te voegen, niet te openen).
-      check('BIB-002: zonder technische toegang geen «Технічні» in privé', await page.locator('.bib-chip', { hasText: /^Технічні$/ }).count() === 0 && await page.locator('[data-bib-id="pg:admin/updates"]').count() === 0);
+      check('BIB-002: zonder technische toegang geen «Технічні» in privé', await page.locator('.bib-chip', { hasText: /^Технічні\d*$/ }).count() === 0 && await page.locator('[data-bib-id="pg:admin/updates"]').count() === 0);
       check('BIB-002: tegel naar admin/audit zonder toegang = geen toegang', (await page.locator('[data-werkblad-item="pg:admin/audit"]').getAttribute('aria-disabled')) === 'true');
-      await page.locator('.bib-chip', { hasText: /^Усе$/ }).click();
+      await page.locator('.bib-chip', { hasText: /^Усе\d*$/ }).click();
       await page.fill('.bib-zoek input', 'соціальні');
       check('planned (Соціальні мережі) toont «Скоро» en is niet toe te voegen', (await page.locator('[data-bib-id="svc:social"]').getAttribute('data-bib-stand')) === 'planned' && (await page.locator('[data-bib-id="svc:social"] .bib-reden').textContent())!.startsWith('Скоро'));
       // meervoudige selectie
       await page.fill('.bib-zoek input', '');
-      await page.locator('.bib-chip', { hasText: /^Віджети$/ }).click();
-      const rijen = page.locator('.bib-rij[data-bib-stand=ready] .bib-kies input');
+      await page.locator('.bib-chip', { hasText: /^Віджети\d*$/ }).click();
+      const rijen = page.locator('.bib-kaart[data-bib-stand=ready] .bib-kies input');
       await rijen.nth(0).check(); await rijen.nth(1).check();
       await page.getByRole('button', { name: /Додати вибрані \(2\)/ }).click();
       const log = JSON.parse((await page.textContent('#stand-log'))!) as Array<{ kind: string }>;
       check('meervoudige selectie: 2 widgets in één keer', log.length === 3 && log.slice(1).every((l) => l.kind === 'widget'));
       // slepen naar het canvas
-      await page.locator('.bib-chip', { hasText: /^Сторінки$/ }).click();
+      await page.locator('.bib-chip', { hasText: /^Сторінки\d*$/ }).click();
       await page.locator('[data-bib-id="pg:identity/sessions"]').dragTo(page.locator('[data-stand-canvas]'), { targetPosition: { x: 300, y: 260 } });
       const na = (await page.textContent('#stand-log'))!;
       check('slepen: dataTransfer-contract komt aan met een punt', /"itemId":"pg:identity\/sessions","kind":"shortcut","point":\{"x":\d+,"y":\d+\}/.test(na));
@@ -86,7 +86,7 @@ export async function main(): Promise<number> {
       await page.keyboard.press('Escape');
       check('map: Escape sluit en zet focus terug', await page.locator('.bib-map-paneel').count() === 0 && await page.evaluate(() => document.activeElement?.getAttribute('data-werkblad-map') === 'm1'));
       // hernoemen + icoon (persoonlijk)
-      await page.locator('.bib-chip', { hasText: /^Усе$/ }).click();
+      await page.locator('.bib-chip', { hasText: /^Усе\d*$/ }).click();
       await page.fill('.bib-zoek input', 'спам');
       await page.getByRole('button', { name: 'Перейменувати або змінити значок «Спам»' }).click();
       await page.fill('.bib-bewerk input:not([type])', 'Мій спам');
@@ -106,7 +106,7 @@ export async function main(): Promise<number> {
     {
       const { c, page } = await open('lang=uk&thema=licht&api=1&tech=1', 1280, 'light');
       check('BIB-002: met technische toegang staat «Технічні» erbij', await page.locator('.bib-chip').count() === 8);
-      await page.locator('.bib-chip', { hasText: /^Технічні$/ }).click();
+      await page.locator('.bib-chip', { hasText: /^Технічні\d*$/ }).click();
       const deur = page.locator('[data-bib-id="pg:admin/updates"]');
       check('BIB-002: technische pagina in privé = deur, toe te voegen', (await deur.getAttribute('data-bib-stand')) === 'ready' && !(await deur.locator('button.bib-knop').first().isDisabled()));
       await deur.locator('button.bib-knop').first().click();
@@ -122,11 +122,11 @@ export async function main(): Promise<number> {
     {
       const { c, page } = await open('lang=nl&thema=donker&ruimte=technisch&api=1', 1280, 'dark');
       check('nl: titel «Alles op de site»', (await page.textContent('#bib-titel')) === 'Alles op de site');
-      await page.locator('.bib-chip', { hasText: /^Technisch$/ }).click();
-      check('technisch profiel: technische items beschikbaar', (await page.locator('.bib-rij').first().getAttribute('data-bib-stand')) === 'ready');
+      await page.locator('.bib-chip', { hasText: /^Technisch\d*$/ }).click();
+      check('technisch profiel: technische items beschikbaar', (await page.locator('.bib-kaart').first().getAttribute('data-bib-stand')) === 'ready');
       await page.locator('[data-werkblad-item="pg:admin/audit"]').click();
       check('technisch: admin/audit opent via router', /^https:\/\/admin\.tarasevych\.com\/audit/.test((await page.textContent('#stand-nav'))!));
-      await page.locator('.bib-chip', { hasText: /^Alles$/ }).click();
+      await page.locator('.bib-chip', { hasText: /^Alles\d*$/ }).click();
       await page.screenshot({ path: join(UIT, 'bib-donker-1280.png') });
       await c.close();
     }
