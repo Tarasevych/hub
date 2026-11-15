@@ -613,6 +613,8 @@ export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown)
   const v = rows[0];
   if (!v) fout('NIET_GEVONDEN', 404);
   if (v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
+  if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   const u = await uitdagingMaken(eigenaar.id, 'goedkeuren', String(v.id), { voorstelId: String(v.id), versie: String(v.versie), sha256: String(v.sha256) });
   return { uitdagingId: u.id, verloopt: u.verloopt, publicKey: assertieOpties(u.uitdaging, b), voorstel: { id: String(v.id), versie: String(v.versie), sha256: String(v.sha256) } };
 }
@@ -625,6 +627,8 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   const { rows } = await sys().query('SELECT * FROM app.uitrol_voorstellen WHERE id = $1', [u.onderwerp]);
   const v = rows[0];
   if (!v || v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
+  if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   // Opnieuw uitrekenen uit de HUIDIGE gegevens: een gewijzigd voorstel (andere sha/versie) past niet meer bij de challenge.
   const verwacht = kern.uitdagingVoor('goedkeuren', { voorstelId: String(v.id), versie: String(v.versie), sha256: String(v.sha256), nonce: u.nonce, verloopt: u.verloopt });
   const b = await leesSleutels();

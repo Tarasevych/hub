@@ -122,7 +122,7 @@ import { sshCaRoutes } from './ssh-ca-routes';
 import { beheerJournaalRoutes } from './beheer-journaal-routes'; import { eenKeerPer as journaalEenKeerPer, maskeerDetailsVoorKijker } from './beheer-journaal';
 // 21.10.2026 — «Запити ШІ на підтвердження» (één wachtrij, migratie 0098) en de zes privé-rechten die «у розробці» stonden.
 import { aiBevestigingRoutes } from './ai-bevestiging-routes'; import { devRechtenGebruikerRoutes } from './dev-rechten-gebruiker';
-import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitrol-goedkeuring'; import { uitrolStroomRoutes } from './uitrol-stroom'; import { uitrolDiagnoseRunRoutes } from './uitrol-diagnose-run'; import { uitrolBronRoutes } from './uitrol-bron'; import { uitrolGithubRoutes } from './uitrol-github';
+import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitrol-goedkeuring'; import { uitrolStroomRoutes } from './uitrol-stroom'; import { uitrolDiagnoseRunRoutes } from './uitrol-diagnose-run'; import { uitrolBronRoutes } from './uitrol-bron'; import { uitrolGithubRoutes } from './uitrol-github'; import { uitrolTelegramRoutes } from './uitrol-telegram'; import { uitrolGithubOntvangenRoutes } from './uitrol-github-ontvangen';
 import { aiBeleidRoutes } from './ai-beleid';
 import { eigenaarBesluitRoutes } from './eigenaar-besluit'; // besluiten van de eigenaar met passkey (zone B 22.10.2026, §15)
 import { orchRoutes } from './orch-routes'; // ORCH-001 етап 3 (31.10.2026): координація агентів через сайт — /api/owner/orch/*
@@ -814,6 +814,9 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...uitrolBronRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar }),
   // Blijvende archieven: «Завантажити цей випуск» (passkey) en publicatie op GitHub met de token uit de kluis (0061, backend/uitrol-github.ts).
   ...uitrolGithubRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
+  // 0280: зашифроване архівування випусків у Telegram і безпечне отримання релізів із GitHub (webhook/вручну/MCP).
+  ...uitrolTelegramRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...uitrolGithubOntvangenRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),
   // Besluiten van de eigenaar met passkey-handtekening (§15): terugdraaien naar een release, witte lijst externe MCP-hosts; root controleert en voert uit.
   ...eigenaarBesluitRoutes({ requireSession: ownerRequireSession as never }),

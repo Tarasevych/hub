@@ -32,6 +32,7 @@ export type ToolRuimte = AiRuimte | 'apparaat';
 const TECHNISCH = new Set([
   // Updates voorbereiden (passkey-goedkeuring, backend/uitrol-goedkeuring.ts) — goedkeuren bestaat voor een AI nergens.
   'uitrol_voorstel_begin', 'uitrol_voorstel_stuk', 'uitrol_voorstel_klaar', 'uitrol_voorstel_status', 'uitrol_voorstel_annuleren',
+  'uitrol_github_ophalen',
   // Spiegel van de serverdeur in de connector (site-hulpmiddelen.ts): releases en gezondheid van de server.
   'get_live_release', 'list_releases', 'read_release_file', 'get_system_health',
   // Serverdeur (deploy/mcp/server.mjs, via backend/mcp-deur-brug.ts) en de eigenaarstools van de console-deur (backend/mcp-console.ts):

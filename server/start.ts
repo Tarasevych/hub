@@ -200,10 +200,12 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
     const pakketten = (process.env.UITROL_PAKKETTEN_DIR || "/srv/mijn-ruimte/pakketten").replace(/\\/g, "/").replace(/\/+$/, "");
     const backups = (process.env.BACKUP_DIR || "/srv/backups/mijn-ruimte").replace(/\\/g, "/").replace(/\/+$/, "");
     const archiefUit = (process.env.ARCHIEF_UIT || "/var/lib/mijn-ruimte-archief/uitgifte").replace(/\\/g, "/").replace(/\/+$/, "");
+    const telegramHerstel = `${(process.env.UPLOADS_DIR || "/srv/data/uploads").replace(/\\/g, "/").replace(/\/+$/, "")}/uitrol-telegram-herstel`;
     const isPakket = canon.startsWith(pakketten + "/") && /^mijn-ruimte-\d{8}-\d{6}\.tar\.gz$/.test(canon.slice(pakketten.length + 1));
     const isBackup = canon.startsWith(backups + "/") && /^\d{8}-\d{6}\/(database\.dump\.age|uploads\.tar\.gz\.age|systeem\.tar\.gz\.age|systeem-info\.txt|info\.txt|SHA256SUMS)$/.test(canon.slice(backups.length + 1));
     const isArchief = canon === `${archiefUit}/archief-laatste.tar.age`;
-    const allowed = !file.includes("\0") && fileNorm === canon && !fileNorm.includes("..") && (isArchief || isBackup || isPakket);
+    const isTelegramHerstel = canon.startsWith(telegramHerstel + "/") && /^[A-Za-z0-9_-]{16,64}\.tar\.gz$/.test(canon.slice(telegramHerstel.length + 1));
+    const allowed = !file.includes("\0") && fileNorm === canon && !fileNorm.includes("..") && (isArchief || isBackup || isPakket || isTelegramHerstel);
     const s = allowed ? await fileStat(file) : null;
     if (!s) return sendText(res, 404, "NOT_FOUND");
     const headers: Record<string, string> = {
@@ -214,7 +216,10 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
     };
     if (/^[0-9a-f]{64}$/.test(String(response.headers["X-Pakket-Sha256"] || ""))) headers["X-Pakket-Sha256"] = String(response.headers["X-Pakket-Sha256"]);
     res.writeHead(response.statusCode || 200, { ...BASE_HEADERS, ...headers });
-    createReadStream(file).on("error", () => res.destroy()).pipe(res);
+    const stream = createReadStream(file);
+    stream.on("error", () => res.destroy());
+    if (isTelegramHerstel) stream.on("close", () => { void import("node:fs/promises").then((fs) => fs.unlink(file)).catch(() => undefined); });
+    stream.pipe(res);
     return;
   }
   const headers: Record<string, string | string[]> = { "Cache-Control": "no-store" };

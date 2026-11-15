@@ -28,6 +28,7 @@ import UitrolStroom from './uitrol/UitrolStroom';
 import UitrolStroomKaart from './uitrol/UitrolStroomKaart';
 import Voorbereiders from './uitrol/Voorbereiders';
 import GithubInstellingen from './uitrol/GithubInstellingen';
+import TelegramArchief from './uitrol/TelegramArchief';
 import './uitrol/pakket.css';
 import Zijkant from './uitrol/Zijkant';
 import { foutTekst, isHerstart } from './uitrol/fouten';
@@ -69,13 +70,21 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const lopendeRun = useRef('');
   const [flow, setFlow] = useState<Flow>({ fase: 'leeg', versie: '', detail: '' });
   const [nieuwId, setNieuwId] = useState('');
+  const [tgBlokkade, setTgBlokkade] = useState<{ geblokkeerd: boolean; huidigeVersie?: string; huidigeRunId?: string; klaar?: boolean } | null>(null);
   const kanPasskey = passkeyMogelijk();
   const v2 = useUitrolV2() === true;
 
+  const tgStandLaden = useCallback(async () => {
+    try {
+      const r = (await api.post('/api/owner/uitrol/telegram/stand', context)).data as { klaar?: boolean; blokkade?: { geblokkeerd: boolean; huidigeVersie?: string; huidigeRunId?: string } };
+      setTgBlokkade(r?.blokkade?.geblokkeerd ? { ...r.blokkade, klaar: Boolean(r.klaar) } : { geblokkeerd: false, klaar: Boolean(r?.klaar) });
+    } catch { /* опційно */ }
+  }, [context]);
+
   const laden = useCallback(async () => {
-    try { setData((await api.post('/api/owner/uitrol/overzicht', context)).data as Overzicht); wisPoging('admin|POST /api/owner/uitrol/overzicht'); setNotice((n) => (n?.herstart ? null : n)); }
+    try { setData((await api.post('/api/owner/uitrol/overzicht', context)).data as Overzicht); wisPoging('admin|POST /api/owner/uitrol/overzicht'); setNotice((n) => (n?.herstart ? null : n)); void tgStandLaden(); }
     catch (c) { const code = foutCode(c); setNotice({ ok: false, text: foutTekst(lang, code, feitenVan(c, code, 'POST /api/owner/uitrol/overzicht')), herstart: isHerstart(code) }); }
-  }, [context, lang]);
+  }, [context, lang, tgStandLaden]);
   const actiefGoedgekeurd = !!data?.voorstellen.some((v) => v.status === 'goedgekeurd');
   useEffect(() => { void laden(); const t = window.setInterval(() => { if (!document.hidden) void laden(); }, notice?.herstart ? 3000 : actiefGoedgekeurd ? 4000 : 20000); return () => window.clearInterval(t); }, [laden, actiefGoedgekeurd, notice?.herstart]);
 
@@ -227,6 +236,42 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     <div role='tabpanel' id={`ut-paneel-${tab}`} aria-labelledby={`ut-tab-${tab}`} className='ut-paneel'>
       {tab === 'overzicht' && <div className='ut-raster'>
         <div className='ut-hoofdkolom'>
+          {wachtend > 0 && tgBlokkade?.geblokkeerd && (
+            <section className='ut-kaart' role='alert' data-ut-tg-blok-banner>
+              <p className='ut-fout'>
+                {tr(
+                  lang,
+                  `Схвалення очікуваного оновлення заблоковано політикою обов’язкового архівування в Telegram: поточний випуск ${tgBlokkade.huidigeVersie || ''} ще не збережено в каналі Telegram.`,
+                  `Goedkeuren is geblokkeerd door verplichte Telegram-archivering: de huidige release ${tgBlokkade.huidigeVersie || ''} staat nog niet in Telegram.`,
+                )}
+              </p>
+              <div className='ut-pakket-knoppen'>
+                {tgBlokkade.klaar && tgBlokkade.huidigeRunId && (
+                  <button
+                    type='button'
+                    className='ut-knop ut-knop-primair'
+                    disabled={Boolean(busy)}
+                    onClick={() => void doe('tg-blok-archief', async () => {
+                      const r = (await api.post('/api/owner/uitrol/telegram/archiveren', { ...context, runId: tgBlokkade.huidigeRunId })).data as { versie: string; aantalDelen: number };
+                      return tr(lang, `Випуск ${r.versie} заархівовано в Telegram (${r.aantalDelen} част.). Тепер можна схвалювати оновлення passkey.`, `Release ${r.versie} in Telegram gearchiveerd (${r.aantalDelen} delen). U kunt nu met passkey goedkeuren.`);
+                    })}
+                  >
+                    {tr(lang, `Заархівувати ${tgBlokkade.huidigeVersie} у Telegram зараз`, `Nu ${tgBlokkade.huidigeVersie} in Telegram archiveren`)}
+                  </button>
+                )}
+                <button
+                  type='button'
+                  className='ut-knop'
+                  onClick={() => {
+                    setTab('instellen');
+                    window.setTimeout(() => document.getElementById('ut-telegram-archief-anker')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+                  }}
+                >
+                  {tr(lang, 'Налаштування архіву Telegram', 'Instellingen Telegram-archief')}
+                </button>
+              </div>
+            </section>
+          )}
           {/* Eerst de handeling (uploaden); daarna de levende kaart en de goedkeuring, die alleen iets tonen als er echt iets loopt of wacht. */}
           <Upload lang={lang} context={context} data={data} busy={busy} klaar={klaar} kanPasskey={kanPasskey} doe={doe} laden={laden} goedkeurenId={goedkeurenId} onFlow={setFlow} onNieuwId={setNieuwId} naarLive={naarLive} />
           <LiveKaart lang={lang} context={context} wachtendOpGoedkeuring={wachtend} goedgekeurd={goedgekeurd} openLog={openLog} openDiagnose={() => setTab('diagnose')} onRunVerandert={onRunVerandert} flow={flow} stoppen={stoppen} busy={busy} />
@@ -275,7 +320,8 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
       {tab === 'instellen' && <>
         <UitrolMeester lang={lang} context={context} sourceOrigin={sourceOrigin} tabContext={tabContext} data={data} laden={laden} naarOverzicht={naarUpload} teGoedkeuren={wachtend} />
         <Voorbereiders lang={lang} data={data} busy={busy} geven={grantGeven} intrekken={grantIntrekken} termijn={grantTermijn} zoekAccounts={zoekAccounts} />
-        <GithubInstellingen lang={lang} context={context} />
+        <GithubInstellingen lang={lang} context={context} onVoorstelOntvangen={() => { void laden(); setTab('overzicht'); }} />
+        <TelegramArchief lang={lang} context={context} runs={recent} onGewijzigd={() => void laden()} />
         <ZoneKiezer lang={lang} />
       </>}
     </div>

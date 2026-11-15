@@ -916,6 +916,33 @@ export async function stroomVastleggenVanRun(runId: string): Promise<void> {
   }
 }
 
+/** Автоматичний запис доказів отримання випуску з GitHub або зашифрованого архівування в Telegram. */
+export async function stroomVastleggenVanExternBewijs(
+  eigenaarIdHint: string,
+  invoer: {
+    versie: string;
+    voorstelId?: string | null;
+    runId?: string;
+    soort: 'telegram-archief' | 'github-ontvangst';
+    bron: string;
+    status: BewijsStatus;
+    samenvattingUk: string;
+    samenvattingNl: string;
+    pakketSha256?: string;
+    bewijsData?: Record<string, unknown>;
+  },
+): Promise<void> {
+  if (!dbBeschikbaar() || !VERSIE_RE.test(invoer.versie)) return;
+  try {
+    const eigenaarId = await vindEigenaarId(eigenaarIdHint);
+    if (!eigenaarId) return;
+    await bewijsToevoegen(eigenaarId, invoer);
+    await synchroniseerEnBouwOverzicht(eigenaarId, invoer.versie);
+  } catch (err) {
+    if (!isOntbrekendeTabel(err)) console.error('[uitrol-stroom] extern-hook:', (err as Error).message);
+  }
+}
+
 // ------------------------------------------------------------------------------------------------ публічні методи API
 export async function stroomOverzichtVoorEigenaar(
   eigenaarId: string,

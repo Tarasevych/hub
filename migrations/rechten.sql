@@ -208,6 +208,13 @@ BEGIN
     IF to_regclass('app.melding_ecosysteem_profiel') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.melding_ecosysteem_profiel, app.melding_ecosysteem_gebeurtenissen, app.melding_ecosysteem_actie_log TO mijnruimte_app;
     END IF;
+    -- 0280 (UITROL-002): Telegram-архівування та прийом GitHub-релізів — суто адміністративний контур через mijnruimte_system.
+    IF to_regclass('app.uitrol_telegram_instellingen') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_telegram_instellingen, app.uitrol_telegram_archief, app.uitrol_github_ontvangen, app.uitrol_github_webhook_leveringen FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_telegram_updates FROM mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).
@@ -233,6 +240,12 @@ BEGIN
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_system;
     IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_instellingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_telegram_instellingen, app.uitrol_telegram_archief, app.uitrol_github_ontvangen, app.uitrol_github_webhook_leveringen TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_telegram_updates TO mijnruimte_system;
     END IF;
     REVOKE INSERT, UPDATE, DELETE ON app.schema_migrations FROM mijnruimte_system;
     -- De RLS-stand en de allowlist wijzigt alleen het rollenscript (postgres/migrator), nooit de app zelf.

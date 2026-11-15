@@ -476,6 +476,9 @@ const DEFS: readonly Def[] = [
   { id: 'uitrol_voorstel_annuleren', essentie: 'annuleren_update_voorstel', sub: 'admin', kanten: B, soort: 'wissen', groep: 'releases', risico: 'laag',
     uk: ['Скасовувати пропозицію', 'Видаляє незавершену пропозицію.', 'Завантажені частини видаляються.'],
     nl: ['Voorstel annuleren', 'Verwijdert een onafgemaakt voorstel.', 'Geüploade delen worden verwijderd.'] },
+  { id: 'uitrol_github_ophalen', essentie: 'ophalen_github_release', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
+    uk: ['Завантажувати реліз із GitHub', 'Отримує архів випуску з GitHub, звіряє SHA-256 і запускає попередню перевірку перед схваленням.', 'Пропозиція з’являється на сторінці оновлень; нічого не встановлюється без вашого passkey.', 'ШІ не може сам схвалити чи встановити пакет.'],
+    nl: ['GitHub-release ophalen', 'Haalt een release-archief uit GitHub, controleert SHA-256 en draait de voorcontrole vóór goedkeuring.', 'Het voorstel verschijnt op de updatepagina; er wordt niets geïnstalleerd zonder uw passkey.', 'De AI kan het pakket nooit zelf goedkeuren of installeren.'] },
 
   // ---------------------------------------------------------------- beheer: server en beveiliging
   { id: 'get_admin_view', essentie: 'tonen_beheer_namens', sub: 'admin', kanten: B, soort: 'lezen', groep: 'server', risico: 'midden',

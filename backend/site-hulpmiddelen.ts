@@ -1167,6 +1167,64 @@ SITE_TOOLS.push(
     }),
     shape: (d) => compact(d),
   },
+  {
+    group: 'site', service: 'admin', write: true,
+    tool: {
+      name: 'uitrol_github_ophalen',
+      title: 'Отримати реліз із GitHub на перевірку / GitHub-release ophalen voor voorcontrole',
+      description: 'Завантажує архів .tar.gz із релізу GitHub, перевіряє SHA-256 і запускає попередню перевірку сервера; нічого не встановлює без passkey власника. / Haalt een .tar.gz-archief uit een GitHub-release, controleert SHA-256 en voert de voorcontrole uit; installeert niets zonder passkey van de eigenaar.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repo: {
+            type: 'string',
+            description: p(
+              'Необов’язкове сховище у вигляді "власник/назва". Якщо не вказано — береться з налаштувань оновлень.',
+              'Optionele opslagplaats als "eigenaar/naam". Zonder waarde wordt de ingestelde opslagplaats gebruikt.',
+            ),
+          },
+          tag: {
+            type: 'string',
+            description: p(
+              'Необов’язковий теґ релізу, наприклад "uitrol-20261115-120000". Якщо не вказано — береться останній опублікований реліз.',
+              'Optionele release-tag, bijvoorbeeld "uitrol-20261115-120000". Zonder waarde wordt de nieuwste gepubliceerde uitgave gebruikt.',
+            ),
+          },
+          sha256: {
+            type: 'string',
+            description: p(
+              'Необов’язкова очікувана контрольна сума SHA-256 (64 шістнадцяткові символи) для звірки завантаженого архіву.',
+              'Optionele verwachte SHA-256-controlesom (64 hexadecimale tekens) ter controle van het opgehaalde archief.',
+            ),
+          },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    validate: (a) => {
+      if (a.repo !== undefined && (typeof a.repo !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9._-]{1,100}$/.test(a.repo.trim()))) {
+        return 'Invalid "repo": expected "owner/name".';
+      }
+      if (a.tag !== undefined && (typeof a.tag !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/.test(a.tag.trim()))) {
+        return 'Invalid "tag".';
+      }
+      if (a.sha256 !== undefined && (typeof a.sha256 !== 'string' || !/^[0-9a-fA-F]{64}$/.test(a.sha256.trim()))) {
+        return 'Invalid "sha256": expected 64 hex chars.';
+      }
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/uitrol/github/ophalen',
+      body: without({
+        bron: 'mcp',
+        repo: typeof a.repo === 'string' ? a.repo.trim() : undefined,
+        tag: typeof a.tag === 'string' ? a.tag.trim() : undefined,
+        sha256: typeof a.sha256 === 'string' ? a.sha256.trim().toLowerCase() : undefined,
+      }),
+    }),
+    shape: (d) => compact(d),
+  },
 );
 
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));

@@ -196,6 +196,7 @@ async function pakketKoppelen(events: RootGebeurtenis[]) {
   }
   if (!nieuw.length) return;
   try { const m = await import('./uitrol-github'); for (const id of nieuw) m.naInstallatie(id); } catch (err) { console.error('[uitrol-runs] github-wachtrij:', (err as Error).message); }
+  try { const t = await import('./uitrol-telegram'); for (const id of nieuw) t.naInstallatieTelegram(id); } catch (err) { console.error('[uitrol-runs] telegram-wachtrij:', (err as Error).message); }
   try { const s = await import('./uitrol-stroom'); for (const id of nieuw) await s.stroomVastleggenVanRun(id); } catch (err) { console.error('[uitrol-runs] stroom-pakket:', (err as Error).message); }
 }
 

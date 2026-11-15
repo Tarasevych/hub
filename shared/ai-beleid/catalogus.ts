@@ -228,6 +228,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   github_get: 'github.read', global_search: 'site.read',
   uitrol_voorstel_status: 'deploy.status',
   uitrol_voorstel_begin: 'deploy.release', uitrol_voorstel_stuk: 'deploy.release', uitrol_voorstel_klaar: 'deploy.release', uitrol_voorstel_annuleren: 'deploy.release',
+  uitrol_github_ophalen: 'deploy.release',
   get_live_release: 'deploy.status',
   read_release_file: 'server.read', get_system_health: 'server.read',
   get_hub_overview: 'server.read', get_connector_stats: 'server.read',

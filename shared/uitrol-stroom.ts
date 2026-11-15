@@ -20,7 +20,9 @@ export type BewijsSoort =
   | 'testresultaten'
   | 'goedkeuring-passkey'
   | 'installatie-uitvoering'
-  | 'server-diagnose';
+  | 'server-diagnose'
+  | 'telegram-archief'
+  | 'github-ontvangst';
 export type BewijsStatus = 'geslaagd' | 'waarschuwing' | 'mislukt' | 'overgeslagen';
 
 export type StroomNotitie = {
