@@ -2852,6 +2852,101 @@
    "pad": "tests/e2e/hulp/stand-blok1-toegang.ts",
    "wat": "Stand blok1-toegang-*: venster «Підтвердіть доступ» (label binnen het venster, contrast), chips van de toestemming op 390 px, pagina ChatGPT met de nieuwe stappen en de waarschuwing over het plan.",
    "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "backend/meldingen-ecosysteem.ts",
+   "wat": "Servermodule en API-eindpunten van het geïntegreerde meldingen-ecosysteem: ruimte-isolatie, gebeurtenisstroom, profiel, actielog en opgeschoonde AI-duiding.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "migrations/0278_meldingen_ecosysteem.sql",
+   "wat": "Migratie 0278: drie tabellen onder strikte rijbeveiliging (RLS) voor profielen, gebeurtenissen en het actielogboek van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/model.ts",
+   "wat": "Gedeelde typen en normalisatiefuncties van het meldingen-ecosysteem voor zowel server als browser.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/formaten.ts",
+   "wat": "Formaatclassificatie voor de ingebouwde bijlage-speler (afbeeldingen, audio, video, PDF, tabellen, databases, archieven, agenda, contacten, handtekeningen en binaire HEX-inspectie).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/tolk.ts",
+   "wat": "Gebeurtenistolk die signalen van subdomeinen, pc-agent, browserextensie, post, opslag, AI en paginabanners omzet naar één uniform formaat met acties.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/ai.ts",
+   "wat": "Opschoning van geheimen (zonderGeheimen), lokale AI-analyse zonder extern verkeer en veilige opbouw van vragen voor externe AI.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/regels.ts",
+   "wat": "Zuivere geometrische regels voor het achtzijdig schalen van het venster, klemmen binnen dokzones, veegregels met beveiligingsrem, subdomeincontext en stille uren.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/index.ts",
+   "wat": "Publieke heruitvoer van de gedeelde kern van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/ecosysteem-opslag.ts",
+   "wat": "Reactieve browseropslag en synchronisatie van profielen per ruimte (prive/technisch), statusoverschrijvingen en de uniforme stroom uit vijf bronnen (bouwUniformeStroom).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingAiPaneel.tsx",
+   "wat": "Ingebouwde AI-paneelcomponent voor lokale en veilige externe duiding van gebeurtenissen met afscherming van beveiligingssignalen.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingBijlageSpeler.tsx",
+   "wat": "Universele vertrouwelijke bijlage-speler (app-in-app) voor rechtstreekse inzage en afspelen van alle ondersteunde bestandsformaten.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingVeegKaart.tsx",
+   "wat": "Meldingskaart met horizontale veeggebaren, snelle acties, bijlagenstrook en bescherming tegen onbedoeld archiveren van nieuwe kritieke beveiligingsmeldingen.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingenPortaal.tsx",
+   "wat": "Onafhankelijk portaalvenster van het meldingen-ecosysteem boven de volledige site (slepen, achtzijdig schalen, vier venstermodi, zwevende pil en contextfilters).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/meldingen-ecosysteem.css",
+   "wat": "Stijlblad op canonieke tokens voor het portaalvenster, acht schaalranden, zwevende capsule, kaarten, bijlage-speler en AI-paneel.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/index.ts",
+   "wat": "Publieke export van componenten en opslagfuncties van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/identiteit/melding/MeldingEcosysteemPagina.tsx",
+   "wat": "Canonieke instellingenpagina (/melding) met ruimtekeuze, veegtrainer, kanaalregels, stille uren, AI-opties en proefzandbak.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/identiteit/melding/melding-pagina.css",
+   "wat": "Stijlblad van de instellingenpagina /melding voor het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-kern.test.ts",
+   "wat": "Eenheidstest voor de kernlogica van het meldingen-ecosysteem: profielen, venstergeometrie, vegen, formaten, geheimenfilter, tolk en uniforme stroom.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts",
+   "wat": "Eenheidstest voor de gebruikersinterface, stijlen, portaalintegratie, /melding-pagina, maquette en canonieke schil van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
   }
  ]
 }

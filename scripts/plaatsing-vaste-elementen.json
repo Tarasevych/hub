@@ -377,6 +377,18 @@
   {
    "sleutel": "src/platform/kluis-poort.css :: .kluis-poort-host",
    "reden": "KLUIS-APPARAAT-001: kaart «Ваші дані зараз зашифровані» bovenaan de pagina (ingeklapt: strook onderaan) — een meldingspaneel met uitleg en knoppen, zoals .canonical-connection-banner; pointer-events alleen op de kaart zelf. Geen losse zwevende knop."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-ecosysteem-portaal",
+   "reden": "GEMINI-002: незалежне вікно порталу споживчих сповіщень («застосунок у застосунку»), що переміщується, змінює розміри й плаває поверх усіх елементів сайту з власним закріпленням; портальне вікно, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-bijlage-portaal",
+   "reden": "GEMINI-002: повноекранний модальний шар розгорнутого переглядача та програвача вкладень у межах порталу сповіщень (закривається клавішею Escape або кнопкою закриття); модальний діалог, не кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-minimale-pil",
+   "reden": "GEMINI-002: згорнута компактна капсула порталу сповіщень поверх сторінки для швидкого розгортання екосистеми з лічильником активних подій; закріплений компактний стан вікна, не дубльована кнопка навігації."
   }
  ],
  "kopReserves": [

@@ -86,6 +86,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         makeYours:"Ваш стиль.",personalSpace:"ОСОБИСТИЙ ПРОСТІР",nav:"МЕНЮ",anyEdge:"БУДЬ-ЯКЕ РОЗТАШУВАННЯ",
         beautifully:"Тонка<br>гармонія.",hello1:"Вітаю",hello2:"Привіт",commonSpace:"ЄДИНИЙ ПРОСТІР",greeting:"Привіт,<br>Павле.",
         widgets:"ВІДЖЕТИ",create:"ДОДАТИ",widgetCalendar:"КАЛЕНДАР",widgetMail:"ПОШТА",widgetNotes:"НОТАТКИ",
+        meldingTitle:"ЕКОСИСТЕМА СПОВІЩЕНЬ",meldingLive:"НАЖИВО",meldingSecTitle:"Безпека та канали піддоменів",meldingSecSub:"ID · ПОШТА · ХМАРА · ДІМ · СЕРВЕР",meldingFileTitle:"Універсальний переглядач файлів",meldingFileSub:"ФОТО · ВІДЕО · АУДІО · PDF · АРХІВИ · HEX",meldingLeft:"← ВІДКЛАСТИ",meldingCenter:"ЗМАХИ",meldingRight:"ПРОЧИТАНО →",meldingAi:"КОНФІДЕНЦІЙНИЙ ЛОКАЛЬНИЙ АНАЛІЗ ШІ",
         sharing:"ВАШ ПРОСТІР · ВАШІ ПРАВИЛА",sharingOnly:"ЛИШЕ ОБРАНІ",sharingSecure:"ДОСТУП ПІД КОНТРОЛЕМ",
         sharingTitle:"ПРИКЛАД ПРАВ ДОСТУПУ",sharingOwner:"ВЛАСНИК",sharingInvite:"ЗАПРОШЕНА ОСОБА",sharingView:"ПЕРЕГЛЯД",sharingLink:"ПРИВАТНЕ ПОСИЛАННЯ",sharingOff:"ВИМКНЕНО",
         tech:"ТЕХНІЧНИЙ ПРОФІЛЬ",control:"КЕРУВАННЯ",personal:"ОСОБИСТИЙ ПРОСТІР",daily:"ЩОДЕННИЙ ПРОСТІР",
@@ -117,6 +118,11 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"toggle",label:"Показувати віджети",note:"Розміщуйте корисні блоки у просторі",initial:true},
           {type:"choice",label:"Розмір карток",note:"Адаптивне компонування",options:["Звичайні","Великі"]},
           {type:"action",label:"Додати новий віджет",note:"Відкрити приклад каталогу блоків"}
+        ],
+        melding:[
+          {type:"choice",label:"Режим центру сповіщень",note:"Єдине незалежне вікно або класичне меню",options:["Екосистема","Класичне"]},
+          {type:"toggle",label:"Контекстна адаптація до піддомену",note:"Підлаштовує колір і швидкі фільтри під поточний сервіс",initial:true},
+          {type:"action",label:"Відкрити портал зараз",note:"Перейти до єдиного вікна екосистеми сповіщень"}
         ],
         sharing:[
           {type:"choice",label:"Видимість простору",note:"Хто має право його переглядати",options:["Лише я","За запрошенням"]},
@@ -192,6 +198,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         makeYours:"Helemaal jij.",personalSpace:"PERSOONLIJKE RUIMTE",nav:"MENU",anyEdge:"OP ELKE SCHERMRAND",
         beautifully:"Mooi in<br>balans.",hello1:"Welkom",hello2:"Hallo",commonSpace:"ÉÉN RUIMTE",greeting:"Hallo,<br>Pavlo.",
         widgets:"WIDGETS",create:"TOEVOEGEN",widgetCalendar:"AGENDA",widgetMail:"MAIL",widgetNotes:"NOTITIES",
+        meldingTitle:"MELDINGS-ECOSYSTEEM",meldingLive:"ACTIEF",meldingSecTitle:"Beveiliging en kanalen per subdomein",meldingSecSub:"ID · MAIL · CLOUD · HUIS · SERVER",meldingFileTitle:"Universele bijlagespeler",meldingFileSub:"FOTO · VIDEO · AUDIO · PDF · ARCHIEVEN · HEX",meldingLeft:"← UITSTELLEN",meldingCenter:"VEGEN",meldingRight:"GELEZEN →",meldingAi:"LOKALE PRIVACYVEILIGE AI-ANALYSE",
         sharing:"JOUW RUIMTE · JOUW REGELS",sharingOnly:"ALLEEN GENODIGDEN",sharingSecure:"TOEGANG ONDER CONTROLE",
         sharingTitle:"VOORBEELD VAN RECHTEN",sharingOwner:"EIGENAAR",sharingInvite:"GENODIGDE",sharingView:"BEKIJKEN",sharingLink:"PRIVÉKOPPELING",sharingOff:"UITGESCHAKELD",
         tech:"TECHNISCH PROFIEL",control:"BEHEER",personal:"PERSOONLIJKE RUIMTE",daily:"JOUW DAGELIJKSE RUIMTE",
@@ -207,6 +214,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
         languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
         widgets:{name:"Widgets",short:"Widgets",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+        melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
         sharing:{name:"Delen",short:"Delen",kicker:"JOUW GRENZEN",title:"Deel alleen wat jij wilt.",description:"Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",details:[["Toegang per account","Uitnodigingen en rollen"],["Toegang via link","Aparte opties en beperkingen"]]},
         identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
         account:{name:"Account en gegevens",short:"Account",kicker:"JOUW GEGEVENS",title:"Alles wat belangrijk is, onder controle.",description:"Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",details:[["Profiel","Basisgegevens van je account"],["Gegevens en export","Je gegevens bekijken en beheren"],["Gevoelige acties","Een aparte zone met bevestiging"]]},
@@ -237,6 +245,11 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"toggle",label:"Widgets tonen",note:"Nuttige blokken op je werkplek",initial:true},
           {type:"choice",label:"Kaartgrootte",note:"Responsieve indeling",options:["Normaal","Groot"]},
           {type:"action",label:"Widget toevoegen",note:"Voorbeeld van de blokkencatalogus"}
+        ],
+        melding:[
+          {type:"choice",label:"Modus van het meldingencentrum",note:"Onafhankelijk ecosysteemvenster of klassiek belmenu",options:["Ecosysteem","Klassiek"]},
+          {type:"toggle",label:"Contextadaptatie per subdomein",note:"Past kleur en snelle filters aan op de huidige dienst",initial:true},
+          {type:"action",label:"Portaal nu openen",note:"Naar het centrale meldingenvenster gaan"}
         ],
         sharing:[
           {type:"choice",label:"Zichtbaarheid",note:"Wie je ruimte kan bekijken",options:["Alleen ik","Op uitnodiging"]},
@@ -517,6 +530,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Теми та кольори","Thema's en kleuren","перехід",[],null,"themes"),
         рядок("Мова інтерфейсу","Taal van de interface","перехід",[],null,"languages"),
         рядок("Віджети й блоки","Widgets en blokken","перехід",[],null,"widgets"),
+        рядок("Єдина екосистема сповіщень","Meldingen-ecosysteem","перехід",[],null,"melding"),
         рядок("Спільний доступ","Delen","перехід",[],null,"sharing"),
         рядок("Ідентичності й захист","Identiteiten en beveiliging","перехід",[],null,"identities")
       ]),
@@ -622,6 +636,35 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Попередній перегляд розташування","Voorbeeld van de indeling","відомості")
       ])
     ],
+    melding:[
+      група("портал","Режим порталу та загальна поведінка","Portaalmodus en algemeen gedrag","Повне перемикання між незалежним вікном «застосунок у застосунку», контекстом піддоменів і класичним меню.","Schakelen tussen het onafhankelijke ecosysteemvenster, context per subdomein en het klassieke belmenu.","наявне",[
+        рядок("Єдина екосистема сповіщень","Geïntegreerd meldingen-ecosysteem","вибір",[["Єдина екосистема сповіщень","Geïntegreerd meldingen-ecosysteem"],["Класичне меню біля дзвоника","Klassiek paneel aan de bel"]]),
+        рядок("Контекстна адаптація до піддомену","Contextadaptatie per subdomein","перемикач"),
+        рядок("Збирати інформаційні смуги й сигнали сторінок","Paginabanners en signalen bundelen","перемикач"),
+        рядок("Геометрія та незалежне вікно","Geometrie en onafhankelijk venster","вибір",[["Рухоме вікно","Standaard zwevend"],["Бічна панель","Zijpaneel"],["Компактна пігулка","Compacte capsule"],["На весь екран","Volledig scherm"]]),
+        рядок("Відкрити портал зараз","Portaal nu openen","дія")
+      ]),
+      група("змахи","Змахування й захист безпеки","Veeggebaren en beveiligingsrem","Налаштування дій змахом ліворуч та праворуч; нові критичні сповіщення безпеки не можна прибрати випадково.","Acties voor vegen naar links en rechts; nieuwe kritieke beveiligingsmeldingen zijn altijd beschermd.","наявне",[
+        рядок("Закріпити поверх інтерфейсу","Vastpinnen boven de interface","перемикач"),
+        рядок("Змах ліворуч","Veeg naar links","вибір",[["Відкласти на 15 хв","15 min uitstellen"],["Прочитано","Gelezen"],["Архівувати","Archiveren"],["Прибрати (окрім безпеки)","Verwijderen (behalve beveiliging)"]]),
+        рядок("Змах праворуч","Veeg naar rechts","вибір",[["Виконати головну дію","Hoofdactie uitvoeren"],["Закріпити вгорі","Bovenaan vastpinnen"],["Аналіз ШІ","AI-duiding"]]),
+        рядок("Живий тренажер картки","Interactieve oefenkaart","дія")
+      ]),
+      група("канали","Канали, піддомени та тихі години","Kanalen, subdomeinen en stille uren","Гнучкі правила для кожного сервісу, спливання, звуку, важливості та тихих годин.","Regels per kanaal en subdomein voor zichtbaarheid, pop-ups, geluid en stille uren.","наявне",[
+        рядок("Тихі години екосистеми","Stille uren van ecosysteem","перемикач"),
+        рядок("Критична безпека пробиває тишу","Kritieke beveiliging doorbreekt stilte","перемикач"),
+        рядок("Початок тиші","Start stille uren","поле"),
+        рядок("Канали та важливість піддоменів","Kanalen en prioriteit per subdomein","вибір",[["Безпека (завжди)","Beveiliging (altijd)"],["Пошта","Mail"],["ШІ","AI"],["Розумний дім","Slim wonen"]])
+      ]),
+      група("вкладення-і-ші","Вкладення, ШІ та пісочниця","Bijlagen, AI en zandbak","Вбудований переглядач 14 форматів, конфіденційний внутрішній та очищений зовнішній ШІ, відокремлення просторів і пісочниця.","Universele speler voor 14 formaten, privé interne of geanonimiseerde externe AI, ruimtescheiding en zandbak.","наявне",[
+        рядок("Вбудований програвач у картці","Inline speler in meldingskaart","перемикач"),
+        рядок("Автоматичне визначення форматів","Automatische formaatherkenning","перемикач"),
+        рядок("Режим аналізу ШІ","AI-analysemodus","вибір",[["Внутрішній конфіденційний","Interne privé-analyser"],["Зовнішній (після очищення)","Externe AI (na anonimisering)"],["Поєднаний","Gecombineerd"],["Вимкнено","Uitgeschakeld"]]),
+        рядок("Лише локальний ШІ для подій безпеки","Alleen lokale AI voor beveiliging","перемикач"),
+        рядок("Відокремлення просторів сповіщень","Ruimtescheiding van meldingen","вибір",[["Особистий простір","Persoonlijke ruimte"],["Технічний простір","Technische ruimte"]]),
+        рядок("Надіслати тестову подію","Proefmelding versturen","дія")
+      ])
+    ],
     sharing:[
       група("запрошення","Доступ за обліковим записом","Toegang per account","Запрошення конкретної особи з визначеними правами. Потрібно узгодити перевірку прав в інтерфейсі та на сервері.","Een persoon uitnodigen met afgebakende rechten. De controle van rechten in de interface en op de server moet worden afgestemd.","частково",[
         рядок("Право запрошувати визначає роль у вибраному просторі","De rol in de gekozen werkruimte bepaalt het uitnodigingsrecht","відомості",[],"частково",null,{uk:"Наявний інтерфейс перевіряє загальну роль користувача, а сервер — роль у вибраному просторі. До узгодження цих перевірок не показувати дозвіл як підтверджений.",nl:"De huidige interface controleert de algemene gebruikersrol, terwijl de server de rol in de gekozen werkruimte controleert. Toon de toestemming niet als bevestigd voordat beide controles overeenkomen."}),
@@ -714,7 +757,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Discord — потрібне налаштування власника","Discord — configuratie van eigenaar nodig","відомості",[],"заплановано"),
         рядок("Telegram — потрібне налаштування власника","Telegram — configuratie van eigenaar nodig","відомості",[],"заплановано"),
         рядок("Apple — потрібне налаштування власника","Apple — configuratie van eigenaar nodig","відомості",[],"заплановано"),
-        рядок("WhatsApp — заплановано, під’єднаємо пізніше","WhatsApp — gepland, wordt later gekoppeld","відомості",[],"заплановано"),
+        рядок("WhatsApp — такий вхід недоступний","WhatsApp — deze inlogmethode bestaat niet","відомості"),
         рядок("SMS — потребує окремої розробки","Sms — afzonderlijke ontwikkeling nodig","відомості",[],"заплановано")
       ])
     ],
@@ -872,6 +915,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     // IDENTITEIT-015 (крок «profiel-blokken»): форма блоку повна — «Скасувати», «Відкрити в просторі», пояснення адреси внутрішнього блоку,
     // серверна перевірка посилання (крок «risico»). Передача простору перед видаленням — .settings-overdracht.
     widgets:{"створення":{стан:"в-чинних",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
+    melding:{
+      "портал":{стан:"в-чинних",ціль:"#melding-modus",цілі:{3:"#melding-geometrie"}},
+      "змахи":{стан:"в-чинних",ціль:"#melding-veeg",цілі:{0:"#melding-geometrie"}},
+      "канали":{стан:"в-чинних",ціль:"#melding-kanalen"},
+      "вкладення-і-ші":{стан:"в-чинних",ціль:"#melding-bijlagen",цілі:{2:"#melding-ai",3:"#melding-ai",4:".mp-ruimte-balk",5:"#melding-zandbak"}}
+    },
     sharing:{
       "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
       // IDENTITEIT-015 (крок «delen»): строк 1/7/30 днів з межею на сервері, дата спливу, прив'язка до адреси (.delen-link-opties);
@@ -930,13 +979,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "поради":{стан:"в-чинних",цілі:{0:"#herstel-overzicht",1:"#herstel-sleutelverlies"}}
     }
   };
-  // Кожна з 43 груп і 153 дій має власне, перевірене за змістом призначення.
+  // Кожна з 47 груп і 173 дій має власне, перевірене за змістом призначення.
   const піктограмиГруп={
     personalization:{"переходи":"блоки","особисте":"керування"},
     menu:{"піктограми":"піктограма","панель":"панель","швидкий-доступ":"зафіксувати","розташування":"розташування","сповіщення":"сповіщення","швидкодія":"завантаження","видимість":"видимість","додаткове":"керування"},
     themes:{"режим":"місяць","розклад":"сонце","палітра":"палітра","акцент":"палітра"},
     languages:{"мова":"мова"},
     widgets:{"створення":"додати","вигляд":"блоки"},
+    melding:{"портал":"панель","змахи":"дотик","канали":"сповіщення","вкладення-і-ші":"захист"},
     sharing:{"запрошення":"запрошення","посилання":"посилання","чинні":"користувачі"},
     identities:{"зв'язки":"посвідчення","профіль":"особа"},
     account:{"особа":"світлина","стан":"перевірка","простори":"простір","видалення":"смітник","експорт":"дані"},
@@ -946,7 +996,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     recovery:{"засоби":"відновлення","сценарії":"допомога","поради":"захист"}
   };
   const піктограмиДій={
-    personalization:{"переходи":["меню","палітра","мова","блоки","запрошення","посвідчення"],"особисте":["щільність","рух"]},
+    personalization:{"переходи":["меню","палітра","мова","блоки","сповіщення","запрошення","посвідчення"],"особисте":["щільність","рух"]},
     menu:{
       "піктограми":["піктограма","палітра"],
       "панель":["панель","наведення","дотик"],
@@ -960,6 +1010,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     themes:{"режим":["місяць"],"розклад":["сонце","місце","місце","час","час","скасувати"],"палітра":["палітра"],"акцент":["палітра","ефекти"]},
     languages:{"мова":["мова"]},
     widgets:{"створення":["простір","джерело","блоки","назва","опис","посилання","розмір","додати"],"вигляд":["видимість","блоки"]},
+    melding:{
+      "портал":["панель","підсвітка","сповіщення","розмір","переходи"],
+      "змахи":["зафіксувати","перемістити","перемістити","дотик"],
+      "канали":["місяць","захист","час","сповіщення"],
+      "вкладення-і-ші":["видимість","дослід","підсвітка","захист","простір","нагадування"]
+    },
     sharing:{"запрошення":["права","простір","лист","права","запрошення"],"посилання":["час","посилання"],"чинні":["користувачі","прибрати"]},
     identities:{"зв'язки":["сеанси","ключдоступу","захист","відновлення"],"профіль":["особа","посвідчення"]},
     account:{"особа":["світлина","смітник"],"стан":["пошта","сховище","пристрій","оновити"],"простори":["простір","архів"],"видалення":["попередження","смітник"],"експорт":["дані","завантаження"]},
@@ -1091,7 +1147,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const optionIconNames={
     personalization:["піктограма","щільність","рух"],menu:["підсвітка","підказка"],
     themes:["місяць","палітра","ефекти"],languages:["мова"],
-    widgets:["видимість","розмір","додати"],sharing:["видимість","посилання","запрошення"],
+    widgets:["видимість","розмір","додати"],melding:["сповіщення","підсвітка","переходи"],sharing:["видимість","посилання","запрошення"],
     identities:["особа","посвідчення"],account:["особа","дані","попередження"],
     sessions:["пристрій","сповіщення","історія"],methods:["гугл","ключдоступу","захист"],
     security:["захист","шифрування","гість"],recovery:["коди","нагадування","попередження"]
@@ -1102,7 +1158,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     return піктограмаЗаСуттю(name);
   }
 
-  const демоДоСайту={sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+  const демоДоСайту={melding:"#melding-modus",sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
   const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
   function чеснийЕлемент(control,i,sectionId,ціль,пояснення,кнопка){
     const nl=preferences.lang==="nl";
@@ -1421,7 +1477,18 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"sharing", group:"social", number:"06", name:"Спільний доступ", short:"Доступ", icon:"◎",
+      id:"melding", group:"personal", number:"06", name:"Сповіщення", short:"Сповіщення", icon:"◔",
+      kicker:"СИСТЕМА В СИСТЕМІ", title:"Єдина екосистема сповіщень.",
+      description:"Незалежне вікно поверх сайту, канали всіх піддоменів, жести змахування, вбудований переглядач вкладень та конфіденційний аналіз ШІ.",
+      accent:"cyan", art:"melding",
+      details:[
+        {icon:"◉",label:"Портал поверх сайту",note:"Зміна розмірів, закріплення й згортання в пігулку"},
+        {icon:"⇄",label:"Змахи та вкладення",note:"Швидкі дії та відтворення всіх форматів файлів"},
+        {icon:"✦",label:"Приватний ШІ",note:"Локальний розбір і очищене зовнішнє узагальнення"}
+      ]
+    },
+    {
+      id:"sharing", group:"social", number:"07", name:"Спільний доступ", short:"Доступ", icon:"◎",
       kicker:"ВАШІ КОРДОНИ", title:"Діліться лише тим, чим хочете.",
       description:"Прозорі права доступу, чіткі запрошення й повне розуміння того, хто що бачить.",
       accent:"blue", art:"sharing",
@@ -1431,7 +1498,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"identities", group:"social", number:"07", name:"Ідентичності", short:"Ідентичності", icon:"◇",
+      id:"identities", group:"social", number:"08", name:"Ідентичності", short:"Ідентичності", icon:"◇",
       kicker:"ДВА РЕЖИМИ", title:"Кожна роль на своєму місці.",
       description:"Особистий і технічний профілі залишаються виразно відокремленими — і в логіці, і у візуальному стилі.",
       accent:"violet", art:"identities",
@@ -1441,7 +1508,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"account", group:"account", number:"08", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
+      id:"account", group:"account", number:"09", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
       kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
@@ -1452,7 +1519,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"sessions", group:"account", number:"09", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
+      id:"sessions", group:"account", number:"10", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
       kicker:"ВАШІ ПІДКЛЮЧЕННЯ", title:"Видно кожен пристрій.",
       description:"Активні сесії, історія та підключені пристрої — візуально зрозумілі з першого погляду.",
       accent:"mint", art:"sessions",
@@ -1462,7 +1529,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"methods", group:"account", number:"10", name:"Способи входу", short:"Способи входу", icon:"⌁",
+      id:"methods", group:"account", number:"11", name:"Способи входу", short:"Способи входу", icon:"⌁",
       kicker:"БЕЗ ЗАЙВИХ ПАРОЛІВ", title:"Безпечний вхід. Менше тертя.",
       description:"Google, ключі доступу та способи підтвердження важливих дій — кожен на своєму місці.",
       accent:"pink", art:"methods",
@@ -1472,7 +1539,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"security", group:"security", number:"11", name:"Безпека", short:"Безпека", icon:"⬡",
+      id:"security", group:"security", number:"12", name:"Безпека", short:"Безпека", icon:"⬡",
       kicker:"ТИХА ВПЕВНЕНІСТЬ", title:"Захист, який можна зрозуміти.",
       description:"Двофакторна автентифікація, шифрування, ключі та дозволи — без прихованих деталей і двозначності.",
       accent:"blue", art:"security",
@@ -1483,7 +1550,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"recovery", group:"security", number:"12", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
+      id:"recovery", group:"security", number:"13", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
       kicker:"ПЛАН Б", title:"Спокій навіть у непередбачуваному.",
       description:"Відновлення доступу повинно бути передбачуваним: із чіткими поясненнями, ризиками та шляхами дій.",
       accent:"amber", art:"recovery",
@@ -1687,6 +1754,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     themes:'<path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-2a2 2 0 0 1-2-2V6a3 3 0 0 0-3-3Z"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="7" r=".8"/><circle cx="7" cy="15" r=".8"/>',
     languages:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 6-5 12 0 18M12 3c5 6 5 12 0 18"/>',
     widgets:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    melding:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
     sharing:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 6a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/>',
     identities:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M18 3l2 2m0-2-2 2"/>',
     account:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M5.8 16a3.5 3.5 0 0 1 6.4 0M15 8h4M15 12h4M15 16h3"/>',
@@ -1705,6 +1773,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       case "themes": return '<div class="art art-themes"><div class="theme-sample theme-sample-back"><span class="theme-sample-dot"></span><i></i><i></i></div><div class="theme-sample theme-sample-front"><div class="sample-moon">◑</div><strong>'+a.beautifully+'</strong><div class="sample-pills"><span></span><span></span><span></span></div></div></div>';
       case "languages": return '<div class="art art-languages"><div class="language-card language-back">'+a.hello1+' <span>'+a.hello2+'</span></div><div class="language-card language-front"><small>'+a.commonSpace+'</small><strong>'+a.greeting+'</strong><span>UA ↔ NL</span></div><span class="language-ring"></span></div>';
       case "widgets": return '<div class="art art-widgets"><div class="widget-art-grid"><div><small>'+a.widgets+'</small><span>'+піктограмаЗаСуттю("строк")+'</span><small>'+a.widgetCalendar+'</small></div><div><span>'+піктограмаЗаСуттю("пошта")+'</span><small>'+a.widgetMail+'</small></div><div><span>'+піктограмаЗаСуттю("нотатка")+'</span><small>'+a.widgetNotes+'</small></div><div><span>'+піктограмаЗаСуттю("додати")+'</span><small>'+a.create+'</small></div></div></div>';
+      case "melding": return '<div class="art art-melding"><div class="melding-halo"></div><div class="melding-portal"><div class="melding-head"><span class="melding-bell"><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span><strong>'+a.meldingTitle+'</strong><em>'+a.meldingLive+'</em></div><div class="melding-kaart"><span>'+піктограмаЗаСуттю("захист")+'</span><div><strong>'+a.meldingSecTitle+'</strong><small>'+a.meldingSecSub+'</small></div></div><div class="melding-kaart"><span><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span><div><strong>'+a.meldingFileTitle+'</strong><small>'+a.meldingFileSub+'</small></div></div><div class="melding-veeg-spoor"><span>'+a.meldingLeft+'</span><span>'+a.meldingCenter+'</span><span>'+a.meldingRight+'</span></div></div><span class="melding-ai-label">'+a.meldingAi+'</span></div>';
       case "sharing": return '<div class="art art-sharing"><div class="sharing-permissions-card"><div class="sharing-card-head"><span>'+піктограмаЗаСуттю("захист")+'</span><strong>'+a.sharingTitle+'</strong></div><div class="sharing-person-row"><div class="sharing-person-avatar profile-avatar" data-profile-photo></div><span>'+a.sharingOwner+'</span><b>'+піктограмаЗаСуттю("перевірка")+'</b></div><div class="sharing-person-row"><div class="sharing-person-avatar sharing-invite-avatar">'+піктограмаЗаСуттю("запрошення")+'</div><span>'+a.sharingInvite+'</span><em>'+a.sharingView+'</em></div><div class="sharing-link-row"><span>'+піктограмаЗаСуттю("посилання")+'</span><strong>'+a.sharingLink+'</strong><small>'+a.sharingOff+'</small></div><div class="sharing-card-foot">'+піктограмаЗаСуттю("права")+'<span>'+a.sharingSecure+'</span></div></div><div class="sharing-art-footer">'+a.verified+'</div></div>';
       case "identities": return '<div class="art art-identities"><div class="identity-card identity-back"><small>'+a.tech+'</small><strong class="identity-tech-mark"><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="5"/><path d="M18 5v8M30 5v8M18 35v8M30 35v8M5 18h8M5 30h8M35 18h8M35 30h8"/><path d="m20 24 3 3 6-7"/></svg></strong><span>'+a.control+'</span></div><div class="identity-card identity-front"><small>'+a.personal+'</small><div class="identity-avatar profile-avatar" data-profile-photo></div><strong data-profile-name>'+naamVoorProfiel()+'</strong><span>'+a.daily+'</span></div><span class="identity-mode-badge">'+a.personal+'</span></div>';
       case "account": return '<div class="art art-account"><div class="account-outer-ring"></div><div class="account-folder"><div class="folder-tab"></div><span>'+піктограмаЗаСуттю("дані")+'</span><strong>'+a.yourData+'</strong><small>'+a.inHands+'</small></div><div class="account-stamp">'+a.private+'</div></div>';
@@ -1743,7 +1812,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     return '<section class="setting-section accent-'+s.accent+'" id="'+s.id+'" data-section="'+s.id+'">' +
       '<div class="section-card">' +
         '<div class="setting-main">' +
-          '<div class="setting-topline"><span class="setting-index">'+s.number+' / 12</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
+          '<div class="setting-topline"><span class="setting-index">'+s.number+' / 13</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
           '<div class="setting-symbol'+(s.id==="identities"?' profile-avatar':'')+'"'+(s.id==="identities"?' data-profile-photo':'')+'>'+(s.id==="identities"?'':iconSvg(s.id))+'</div>' +
           '<h2>'+s.title+'</h2><p>'+s.description+'</p>' +
           (expandable?'<button class="text-link open-detail" data-for="'+s.id+'" aria-controls="inline-'+s.id+'" aria-expanded="false">'+ui().openSettings+' <span>'+chevronIcon+'</span></button>':'') +
@@ -1778,7 +1847,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     write(".hero-copy p",t.heroDesc);
     write(".primary-button",t.startSetup+' <span>'+arrowIcon+'</span>',true);
     write(".ghost-button",t.navPlacement+' <span>⌘</span>',true);
-    write(".hero-foot span:first-child",'<b>12</b> '+t.sectionCount,true);
+    write(".hero-foot span:first-child",'<b>13</b> '+t.sectionCount,true);
     write(".hero-foot span:nth-of-type(2)",t.controlCenter);
     write(".hero-foot .hero-foot-last",t.profiles);
     root.querySelectorAll(".section-overline-text").forEach((el,i)=>el.textContent=t.groups[i]);
@@ -2335,7 +2404,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const term=searchInput.value.trim().toLocaleLowerCase("uk");
     const matches=localizedSections().filter(s=>(s.name+" "+s.title+" "+s.description).toLocaleLowerCase().includes(term));
     searchIndex=Math.min(searchIndex,Math.max(0,matches.length-1));
-    byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 12</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
+    byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 13</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
     if(!matches.length)byId("commandResults").innerHTML='<div class="no-results">'+ui().noResults+'</div>';
   }
   byId("openSearch").addEventListener("click",()=>{window.dispatchEvent(new CustomEvent("tsv:zoek-palet"));});

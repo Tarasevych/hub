@@ -116,7 +116,7 @@ export async function main(): Promise<number> {
     const paden = IDENTITEIT_TABS.map((t) => [t.id, new URL(routeUrl({ host: 'id', pad: t.id } as never, 'uk') || 'https://x/').pathname] as const);
     const slug = (win.__TSV_CANONICAL_SERVICE__ as { tabSlug: (id: string) => string }).tabSlug;
     const fout = paden.filter(([id, p]) => p !== `/${slug(id)}` || p === '/');
-    check(`пошук розділів: 12 адрес — канонічні slug (security → ${paden.find(([id]) => id === 'security')?.[1]}, languages → ${paden.find(([id]) => id === 'languages')?.[1]})`, paden.length === 12 && fout.length === 0, JSON.stringify(fout));
+    check(`пошук розділів: 13 адрес — канонічні slug (security → ${paden.find(([id]) => id === 'security')?.[1]}, languages → ${paden.find(([id]) => id === 'languages')?.[1]})`, paden.length === 13 && fout.length === 0, JSON.stringify(fout));
   } catch (e) {
     check('пошук розділів: адреси (неочікувана помилка)', false, String((e as Error)?.message || e).slice(0, 300));
   } finally {

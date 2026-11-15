@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { RefreshCw, X } from 'lucide-react';
 import { routeLang } from '../canoniek-navigatie';
 import { INTERVAL_MS, LATER_SLEUTEL, MIN_TUSSEN_MS, STORING_POLL_MS, beslis, heeftOnopgeslagen, isServerStoring, meldServerAntwoord } from './nieuwe-versie';
+import { publiceerPaginaSignaal, verwijderPaginaSignaal } from '../canoniek-meldingen';
 import './nieuwe-versie.css';
 
 declare const __MR_BOUW_VERSIE__: string;
@@ -48,7 +49,33 @@ export default function NieuweVersieBand() {
     return () => { stop = true; document.removeEventListener('visibilitychange', zicht); window.clearInterval(i); };
   }, []);
 
-  if (beslis({ ingebouwd, server, zichtbaar: true, onopgeslagen: true, uitgesteld: later }) !== 'toon') return null;
+  const moetTonen = beslis({ ingebouwd, server, zichtbaar: true, onopgeslagen: true, uitgesteld: later }) === 'toon';
+  useEffect(() => {
+    if (!moetTonen || !server) {
+      verwijderPaginaSignaal('band:nieuwe-versie');
+      return;
+    }
+    publiceerPaginaSignaal({
+      id: 'band:nieuwe-versie',
+      bron: 'nieuwe-versie',
+      kanaal: 'systeem',
+      subdomein: 'systeem',
+      soort: 'info',
+      ernst: 'info',
+      titelUk: `Сайт оновлено до ${server}`,
+      titelNl: `De site is bijgewerkt naar ${server}`,
+      berichtUk: `Ця вкладка ще працює на ${ingebouwd}. Оновіть сторінку, щоб отримати виправлення.`,
+      berichtNl: `Dit tabblad draait nog ${ingebouwd}. Vernieuw de pagina voor de verbeteringen.`,
+      contextLabel: `${ingebouwd} → ${server}`,
+      acties: [
+        { id: 'vernieuwen', labelUk: 'Оновити сторінку', labelNl: 'Pagina vernieuwen', primair: true, uitvoer: () => location.reload() },
+        { id: 'later', labelUk: 'Пізніше', labelNl: 'Later', uitvoer: () => { zetLater(server); setLater(server); } },
+      ],
+    });
+    return () => verwijderPaginaSignaal('band:nieuwe-versie');
+  }, [moetTonen, server]);
+
+  if (!moetTonen) return null;
   return <div className='nv-band' role='status' data-nieuwe-versie={server}>
     <RefreshCw aria-hidden='true' className='nv-icoon' />
     <div className='nv-tekst'>

@@ -11,6 +11,7 @@ import { ClipboardCheck, ClipboardCopy, ChevronDown, ExternalLink, RefreshCw, Se
 import { detailsTekst, dienstVanHostnaam, kiesTaal, legUit, type Feiten, type Lang, type UitrolFeit } from '../shared/foutuitleg';
 import { meldServerAntwoord, opServerStoring, opStoringFeiten, serverStoring, serverStoringFeiten, type StoringFeiten } from './platform/nieuwe-versie';
 import { uitrolFeit } from './platform/uitrol-feit';
+import { publiceerPaginaSignaal, verwijderPaginaSignaal } from './canoniek-meldingen';
 import './platform/verbinding-plakkaat.css';
 
 type Phase = 'online' | 'offline' | 'restored' | 'server';
@@ -153,6 +154,86 @@ export default function CanonicalConnectionBanner({ lang }: { lang: 'uk' | 'nl' 
     try { await navigator.clipboard.writeText(tekst); setGekopieerd(true); window.setTimeout(() => setGekopieerd(false), 2500); }
     catch { setGekopieerd(false); } // geen klembordrecht: de regels staan al open op het scherm
   }, [feiten, uitleg, taal]);
+
+  useEffect(() => {
+    if (phase === 'online') {
+      verwijderPaginaSignaal('band:verbinding');
+      return;
+    }
+    if (phase === 'restored') {
+      publiceerPaginaSignaal({
+        id: 'band:verbinding',
+        bron: 'verbinding-band',
+        kanaal: 'pagina',
+        subdomein: 'systeem',
+        soort: 'verbinding_hersteld',
+        ernst: 'succes',
+        titelUk: 'Сервер знову відповідає',
+        titelNl: 'De server antwoordt weer',
+        berichtUk: 'Дані оновлюються. Якщо щось не збереглося під час перерви — повторіть ту дію.',
+        berichtNl: 'Gegevens worden bijgewerkt. Is er tijdens de onderbreking iets niet bewaard, herhaal dan die actie.',
+        contextLabel: hostDienst(),
+      });
+      return () => verwijderPaginaSignaal('band:verbinding');
+    }
+    if (!feiten) return;
+    const ukUitleg = legUit('uk', feiten);
+    const nlUitleg = legUit('nl', feiten);
+    const diagnoseTekst = detailsTekst(taal, feiten, ukUitleg);
+    const dienst = hostDienst();
+    const geldigSubdomein = (['hub', 'id', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'api', 'admin', 'systeem'] as const)
+      .includes(dienst as 'hub')
+      ? (dienst as 'hub' | 'id' | 'ai' | 'mail' | 'cloud' | 'github' | 'huis' | 'mcp' | 'api' | 'admin' | 'systeem')
+      : 'systeem';
+
+    publiceerPaginaSignaal({
+      id: 'band:verbinding',
+      bron: 'verbinding-band',
+      kanaal: 'pagina',
+      subdomein: geldigSubdomein,
+      soort: phase === 'offline' ? 'netwerk_offline' : 'server_storing',
+      ernst: 'kritiek',
+      titelUk: ukUitleg.titel,
+      titelNl: nlUitleg.titel,
+      berichtUk: `${ukUitleg.waarom} ${ukUitleg.doen}`.trim(),
+      berichtNl: `${nlUitleg.waarom} ${nlUitleg.doen}`.trim(),
+      uitlegUk: ukUitleg.details.join('\n'),
+      uitlegNl: nlUitleg.details.join('\n'),
+      contextLabel: `${ukUitleg.codeLabel} · ${ukUitleg.dienstLabel}`,
+      link: journaalUrl(),
+      bijlagen: [
+        {
+          id: 'verbinding-diagnose',
+          naam: 'verbinding-diagnose.txt',
+          mime: 'text/plain',
+          grootteBytes: diagnoseTekst.length,
+          tekstVoorbeeld: diagnoseTekst,
+        },
+      ],
+      acties: [
+        {
+          id: 'herprobeer',
+          labelUk: 'Повторити перевірку',
+          labelNl: 'Opnieuw proberen',
+          primair: true,
+          uitvoer: nuProberen,
+        },
+        {
+          id: 'kopieer-diagnose',
+          labelUk: 'Копіювати подробиці',
+          labelNl: 'Details kopiëren',
+          uitvoer: kopieer,
+        },
+        {
+          id: 'open-journaal',
+          labelUk: 'Відкрити журнал',
+          labelNl: 'Logboek openen',
+          href: journaalUrl(),
+        },
+      ],
+    });
+    return () => verwijderPaginaSignaal('band:verbinding');
+  }, [phase, feiten, taal, nuProberen, kopieer]);
 
   if (phase === 'online') return null;
 

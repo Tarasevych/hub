@@ -200,6 +200,10 @@ BEGIN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.cloud_deel_koppelingen, app.cloud_deel_gebeurtenissen TO mijnruimte_app;
       GRANT USAGE, SELECT ON SEQUENCE app.cloud_deel_gebeurtenissen_id_seq TO mijnruimte_app;
     END IF;
+    -- 0278 (GEMINI-002): екосистема споживчих сповіщень («застосунок у застосунку») під RLS за користувачем і простором.
+    IF to_regclass('app.melding_ecosysteem_profiel') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.melding_ecosysteem_profiel, app.melding_ecosysteem_gebeurtenissen, app.melding_ecosysteem_actie_log TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

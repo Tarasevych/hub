@@ -7,6 +7,9 @@ import { adresVan as adresVanAfzender } from '../shared/mail-afzenders'; // SEC-
 import { meldingRegelsRoutes } from './meldingen-regels'
 import { meldingGelezenRoutes } from './meldingen-gelezen'
 import { meldingStatusRoutes } from './meldingen-status'
+import { meldingEcosysteemRoutes, verwerkAgentMelding } from './meldingen-ecosysteem'
+import { registreerMeldingHook } from './connectors-gateway'
+registreerMeldingHook(verwerkAgentMelding);
 import { juridischeRoutes } from './juridisch'
 import { createAgentRoutes } from './connectors-routes'
 import { zetGeheimMelder } from './apps-overdracht'
@@ -835,6 +838,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...meldingRegelsRoutes({ requireSession: ownerRequireSession as never }),
   ...meldingGelezenRoutes({ requireSession: ownerRequireSession as never }),
   ...meldingStatusRoutes({ requireSession: ownerRequireSession as never }),
+  ...meldingEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
   ...createApiPlatformConnectionRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createAgentRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist}),
   ...createMcpConnectorRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody,stepUp:stapOpVereist as never}),

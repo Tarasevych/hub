@@ -34,8 +34,8 @@ export const VORMGEVING_TEKST: Record<Vormgeving, { uk: string; nl: string; ukUi
   },
   klassiek: {
     uk: 'Класичний', nl: 'Klassiek',
-    ukUitleg: 'Усі дванадцять розділів однією довгою сторінкою зі змістом, як було раніше. Підходить, якщо звикли до старого вигляду.',
-    nlUitleg: 'Alle twaalf onderdelen op één lange pagina met inhoudsopgave, zoals vroeger. Handig als u aan de oude weergave gewend bent.',
+    ukUitleg: 'Усі тринадцять розділів однією довгою сторінкою зі змістом, як було раніше. Підходить, якщо звикли до старого вигляду.',
+    nlUitleg: 'Alle dertien onderdelen op één lange pagina met inhoudsopgave, zoals vroeger. Handig als u aan de oude weergave gewend bent.',
   },
 };
 

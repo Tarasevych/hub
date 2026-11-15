@@ -1273,11 +1273,41 @@ function run() {
       ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
       pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) })); } catch { /* dicht */ } }, 20_000);
     };
+    const stuurMelding = (data) => {
+      if (ws.readyState !== 1) return;
+      try {
+        ws.send(JSON.stringify({
+          t: 'melding',
+          ruimte: 'prive',
+          context: `${os.hostname()} (${os.platform()})`,
+          link: 'https://mcp.tarasevych.com/',
+          ...data,
+        }));
+      } catch { /* з'єднання закрито */ }
+    };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
-      if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
+      if (msg.t === 'ready') {
+        delay = 1000;
+        console.log(`[agent] connected as ${msg.agentId}`);
+        const vrijMb = Math.round(os.freemem() / (1024 * 1024));
+        const laagGeheugen = vrijMb < 512;
+        stuurMelding({
+          sleutel: `pc-agent:ready:${msg.agentId}`,
+          soort: laagGeheugen ? 'waarschuwing' : 'systeem',
+          ernst: laagGeheugen ? 'warning' : 'info',
+          titel: laagGeheugen
+            ? `Мало вільної пам’яті на ${os.hostname()} (${vrijMb} MB) / Weinig vrij geheugen op ${os.hostname()}`
+            : `ПК-агент ${os.hostname()} підключено / Pc-agent ${os.hostname()} verbonden`,
+          bericht: `Вільно ОЗП: ${vrijMb} MB · Дозволених тек: ${cfg.roots?.length || 0} / Vrij RAM: ${vrijMb} MB · Mappen: ${cfg.roots?.length || 0}`,
+        });
+      }
       else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
-      else if (msg.t === 'stop') { console.log('[agent] Стоп: усі дозволи відкликано на сайті'); termAllesSluiten('noodstop'); }
+      else if (msg.t === 'stop') {
+        console.log('[agent] Стоп: усі дозволи відкликано на сайті');
+        stuurMelding({ sleutel: `pc-agent:stop:${Date.now()}`, soort: 'beveiliging', ernst: 'warning', titel: 'Аварійна зупинка ПК-агента / Noodstop van pc-agent', bericht: 'Усі дозволи відкликано на сайті. / Alle machtigingen ingetrokken op de site.' });
+        termAllesSluiten('noodstop');
+      }
       else if (msg.t === 'term.in' || msg.t === 'term.close') termBericht(msg);
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));
@@ -1290,6 +1320,13 @@ function run() {
           if (!rechtAan(msg.type)) throw new Error(`refused: "${msg.type}" is switched off on this device (rechten.json)`);
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: true, data: await h(cfg, msg.params ?? {}) }));
         } catch (e) {
+          stuurMelding({
+            sleutel: `pc-agent:cmd-fout:${msg.type}:${String(e.message).slice(0, 40)}`,
+            soort: 'beveiliging',
+            ernst: 'error',
+            titel: `Відхилено команду агента (${msg.type}) / Agentopdracht geweigerd (${msg.type})`,
+            bericht: String(e.message || 'Помилка виконання').slice(0, 300),
+          });
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: false, error: e.message }));
         }
       }

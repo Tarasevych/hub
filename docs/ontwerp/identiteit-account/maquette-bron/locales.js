@@ -38,6 +38,7 @@ const locales = {
       makeYours:"Ваш стиль.",personalSpace:"ОСОБИСТИЙ ПРОСТІР",nav:"МЕНЮ",anyEdge:"БУДЬ-ЯКЕ РОЗТАШУВАННЯ",
       beautifully:"Тонка<br>гармонія.",hello1:"Вітаю",hello2:"Привіт",commonSpace:"ЄДИНИЙ ПРОСТІР",greeting:"Привіт,<br>Павле.",
       widgets:"ВІДЖЕТИ",create:"ДОДАТИ",widgetCalendar:"КАЛЕНДАР",widgetMail:"ПОШТА",widgetNotes:"НОТАТКИ",
+      meldingTitle:"ЕКОСИСТЕМА СПОВІЩЕНЬ",meldingLive:"НАЖИВО",meldingSecTitle:"Безпека та канали піддоменів",meldingSecSub:"ID · ПОШТА · ХМАРА · ДІМ · СЕРВЕР",meldingFileTitle:"Універсальний переглядач файлів",meldingFileSub:"ФОТО · ВІДЕО · АУДІО · PDF · АРХІВИ · HEX",meldingLeft:"← ВІДКЛАСТИ",meldingCenter:"ЗМАХИ",meldingRight:"ПРОЧИТАНО →",meldingAi:"КОНФІДЕНЦІЙНИЙ ЛОКАЛЬНИЙ АНАЛІЗ ШІ",
       sharing:"ВАШ ПРОСТІР · ВАШІ ПРАВИЛА",sharingOnly:"ЛИШЕ ОБРАНІ",sharingSecure:"ДОСТУП ПІД КОНТРОЛЕМ",
       sharingTitle:"ПРИКЛАД ПРАВ ДОСТУПУ",sharingOwner:"ВЛАСНИК",sharingInvite:"ЗАПРОШЕНА ОСОБА",sharingView:"ПЕРЕГЛЯД",sharingLink:"ПРИВАТНЕ ПОСИЛАННЯ",sharingOff:"ВИМКНЕНО",
       tech:"ТЕХНІЧНИЙ ПРОФІЛЬ",control:"КЕРУВАННЯ",personal:"ОСОБИСТИЙ ПРОСТІР",daily:"ЩОДЕННИЙ ПРОСТІР",
@@ -69,6 +70,11 @@ const locales = {
         {type:"toggle",label:"Показувати віджети",note:"Розміщуйте корисні блоки у просторі",initial:true},
         {type:"choice",label:"Розмір карток",note:"Адаптивне компонування",options:["Звичайні","Великі"]},
         {type:"action",label:"Додати новий віджет",note:"Відкрити приклад каталогу блоків"}
+      ],
+      melding:[
+        {type:"choice",label:"Режим центру сповіщень",note:"Єдине незалежне вікно або класичне меню",options:["Екосистема","Класичне"]},
+        {type:"toggle",label:"Контекстна адаптація до піддомену",note:"Підлаштовує колір і швидкі фільтри під поточний сервіс",initial:true},
+        {type:"action",label:"Відкрити портал зараз",note:"Перейти до єдиного вікна екосистеми сповіщень"}
       ],
       sharing:[
         {type:"choice",label:"Видимість простору",note:"Хто має право його переглядати",options:["Лише я","За запрошенням"]},
@@ -144,6 +150,7 @@ const locales = {
       makeYours:"Helemaal jij.",personalSpace:"PERSOONLIJKE RUIMTE",nav:"MENU",anyEdge:"OP ELKE SCHERMRAND",
       beautifully:"Mooi in<br>balans.",hello1:"Welkom",hello2:"Hallo",commonSpace:"ÉÉN RUIMTE",greeting:"Hallo,<br>Pavlo.",
       widgets:"WIDGETS",create:"TOEVOEGEN",widgetCalendar:"AGENDA",widgetMail:"MAIL",widgetNotes:"NOTITIES",
+      meldingTitle:"MELDINGS-ECOSYSTEEM",meldingLive:"ACTIEF",meldingSecTitle:"Beveiliging en kanalen per subdomein",meldingSecSub:"ID · MAIL · CLOUD · HUIS · SERVER",meldingFileTitle:"Universele bijlagespeler",meldingFileSub:"FOTO · VIDEO · AUDIO · PDF · ARCHIEVEN · HEX",meldingLeft:"← UITSTELLEN",meldingCenter:"VEGEN",meldingRight:"GELEZEN →",meldingAi:"LOKALE PRIVACYVEILIGE AI-ANALYSE",
       sharing:"JOUW RUIMTE · JOUW REGELS",sharingOnly:"ALLEEN GENODIGDEN",sharingSecure:"TOEGANG ONDER CONTROLE",
       sharingTitle:"VOORBEELD VAN RECHTEN",sharingOwner:"EIGENAAR",sharingInvite:"GENODIGDE",sharingView:"BEKIJKEN",sharingLink:"PRIVÉKOPPELING",sharingOff:"UITGESCHAKELD",
       tech:"TECHNISCH PROFIEL",control:"BEHEER",personal:"PERSOONLIJKE RUIMTE",daily:"JOUW DAGELIJKSE RUIMTE",
@@ -159,6 +166,7 @@ const locales = {
       themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
       languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
       widgets:{name:"Widgets",short:"Widgets",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+      melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
       sharing:{name:"Delen",short:"Delen",kicker:"JOUW GRENZEN",title:"Deel alleen wat jij wilt.",description:"Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",details:[["Toegang per account","Uitnodigingen en rollen"],["Toegang via link","Aparte opties en beperkingen"]]},
       identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
       account:{name:"Account en gegevens",short:"Account",kicker:"JOUW GEGEVENS",title:"Alles wat belangrijk is, onder controle.",description:"Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",details:[["Profiel","Basisgegevens van je account"],["Gegevens en export","Je gegevens bekijken en beheren"],["Gevoelige acties","Een aparte zone met bevestiging"]]},
@@ -189,6 +197,11 @@ const locales = {
         {type:"toggle",label:"Widgets tonen",note:"Nuttige blokken op je werkplek",initial:true},
         {type:"choice",label:"Kaartgrootte",note:"Responsieve indeling",options:["Normaal","Groot"]},
         {type:"action",label:"Widget toevoegen",note:"Voorbeeld van de blokkencatalogus"}
+      ],
+      melding:[
+        {type:"choice",label:"Modus van het meldingencentrum",note:"Onafhankelijk ecosysteemvenster of klassiek belmenu",options:["Ecosysteem","Klassiek"]},
+        {type:"toggle",label:"Contextadaptatie per subdomein",note:"Past kleur en snelle filters aan op de huidige dienst",initial:true},
+        {type:"action",label:"Portaal nu openen",note:"Naar het centrale meldingenvenster gaan"}
       ],
       sharing:[
         {type:"choice",label:"Zichtbaarheid",note:"Wie je ruimte kan bekijken",options:["Alleen ik","Op uitnodiging"]},

@@ -56,7 +56,18 @@ const sections = [
     ]
   },
   {
-    id:"sharing", group:"social", number:"06", name:"Спільний доступ", short:"Доступ", icon:"◎",
+    id:"melding", group:"personal", number:"06", name:"Сповіщення", short:"Сповіщення", icon:"◔",
+    kicker:"СИСТЕМА В СИСТЕМІ", title:"Єдина екосистема сповіщень.",
+    description:"Незалежне вікно поверх сайту, канали всіх піддоменів, жести змахування, вбудований переглядач вкладень та конфіденційний аналіз ШІ.",
+    accent:"cyan", art:"melding",
+    details:[
+      {icon:"◉",label:"Портал поверх сайту",note:"Зміна розмірів, закріплення й згортання в пігулку"},
+      {icon:"⇄",label:"Змахи та вкладення",note:"Швидкі дії та відтворення всіх форматів файлів"},
+      {icon:"✦",label:"Приватний ШІ",note:"Локальний розбір і очищене зовнішнє узагальнення"}
+    ]
+  },
+  {
+    id:"sharing", group:"social", number:"07", name:"Спільний доступ", short:"Доступ", icon:"◎",
     kicker:"ВАШІ КОРДОНИ", title:"Діліться лише тим, чим хочете.",
     description:"Прозорі права доступу, чіткі запрошення й повне розуміння того, хто що бачить.",
     accent:"blue", art:"sharing",
@@ -66,7 +77,7 @@ const sections = [
     ]
   },
   {
-    id:"identities", group:"social", number:"07", name:"Ідентичності", short:"Ідентичності", icon:"◇",
+    id:"identities", group:"social", number:"08", name:"Ідентичності", short:"Ідентичності", icon:"◇",
     kicker:"ДВА РЕЖИМИ", title:"Кожна роль на своєму місці.",
     description:"Особистий і технічний профілі залишаються виразно відокремленими — і в логіці, і у візуальному стилі.",
     accent:"violet", art:"identities",
@@ -76,7 +87,7 @@ const sections = [
     ]
   },
   {
-    id:"account", group:"account", number:"08", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
+    id:"account", group:"account", number:"09", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
     kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
     description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
     accent:"cyan", art:"account",
@@ -87,7 +98,7 @@ const sections = [
     ]
   },
   {
-    id:"sessions", group:"account", number:"09", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
+    id:"sessions", group:"account", number:"10", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
     kicker:"ВАШІ ПІДКЛЮЧЕННЯ", title:"Видно кожен пристрій.",
     description:"Активні сесії, історія та підключені пристрої — візуально зрозумілі з першого погляду.",
     accent:"mint", art:"sessions",
@@ -97,7 +108,7 @@ const sections = [
     ]
   },
   {
-    id:"methods", group:"account", number:"10", name:"Способи входу", short:"Способи входу", icon:"⌁",
+    id:"methods", group:"account", number:"11", name:"Способи входу", short:"Способи входу", icon:"⌁",
     kicker:"БЕЗ ЗАЙВИХ ПАРОЛІВ", title:"Безпечний вхід. Менше тертя.",
     description:"Google, ключі доступу та способи підтвердження важливих дій — кожен на своєму місці.",
     accent:"pink", art:"methods",
@@ -107,7 +118,7 @@ const sections = [
     ]
   },
   {
-    id:"security", group:"security", number:"11", name:"Безпека", short:"Безпека", icon:"⬡",
+    id:"security", group:"security", number:"12", name:"Безпека", short:"Безпека", icon:"⬡",
     kicker:"ТИХА ВПЕВНЕНІСТЬ", title:"Захист, який можна зрозуміти.",
     description:"Двофакторна автентифікація, шифрування, ключі та дозволи — без прихованих деталей і двозначності.",
     accent:"blue", art:"security",
@@ -118,7 +129,7 @@ const sections = [
     ]
   },
   {
-    id:"recovery", group:"security", number:"12", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
+    id:"recovery", group:"security", number:"13", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
     kicker:"ПЛАН Б", title:"Спокій навіть у непередбачуваному.",
     description:"Відновлення доступу повинно бути передбачуваним: із чіткими поясненнями, ризиками та шляхами дій.",
     accent:"amber", art:"recovery",
@@ -284,6 +295,7 @@ const iconPaths = {
   themes:'<path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-2a2 2 0 0 1-2-2V6a3 3 0 0 0-3-3Z"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="7" r=".8"/><circle cx="7" cy="15" r=".8"/>',
   languages:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 6-5 12 0 18M12 3c5 6 5 12 0 18"/>',
   widgets:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  melding:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   sharing:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 6a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/>',
   identities:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M18 3l2 2m0-2-2 2"/>',
   account:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M5.8 16a3.5 3.5 0 0 1 6.4 0M15 8h4M15 12h4M15 16h3"/>',
@@ -302,6 +314,7 @@ function visual(type){
     case "themes": return '<div class="art art-themes"><div class="theme-sample theme-sample-back"><span class="theme-sample-dot"></span><i></i><i></i></div><div class="theme-sample theme-sample-front"><div class="sample-moon">◑</div><strong>'+a.beautifully+'</strong><div class="sample-pills"><span></span><span></span><span></span></div></div></div>';
     case "languages": return '<div class="art art-languages"><div class="language-card language-back">'+a.hello1+' <span>'+a.hello2+'</span></div><div class="language-card language-front"><small>'+a.commonSpace+'</small><strong>'+a.greeting+'</strong><span>UA ↔ NL</span></div><span class="language-ring"></span></div>';
     case "widgets": return '<div class="art art-widgets"><div class="widget-art-grid"><div><small>'+a.widgets+'</small><span>'+піктограмаЗаСуттю("строк")+'</span><small>'+a.widgetCalendar+'</small></div><div><span>'+піктограмаЗаСуттю("пошта")+'</span><small>'+a.widgetMail+'</small></div><div><span>'+піктограмаЗаСуттю("нотатка")+'</span><small>'+a.widgetNotes+'</small></div><div><span>'+піктограмаЗаСуттю("додати")+'</span><small>'+a.create+'</small></div></div></div>';
+    case "melding": return '<div class="art art-melding"><div class="melding-halo"></div><div class="melding-portal"><div class="melding-head"><span class="melding-bell"><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span><strong>'+a.meldingTitle+'</strong><em>'+a.meldingLive+'</em></div><div class="melding-kaart"><span>'+піктограмаЗаСуттю("захист")+'</span><div><strong>'+a.meldingSecTitle+'</strong><small>'+a.meldingSecSub+'</small></div></div><div class="melding-kaart"><span><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span><div><strong>'+a.meldingFileTitle+'</strong><small>'+a.meldingFileSub+'</small></div></div><div class="melding-veeg-spoor"><span>'+a.meldingLeft+'</span><span>'+a.meldingCenter+'</span><span>'+a.meldingRight+'</span></div></div><span class="melding-ai-label">'+a.meldingAi+'</span></div>';
     case "sharing": return '<div class="art art-sharing"><div class="sharing-permissions-card"><div class="sharing-card-head"><span>'+піктограмаЗаСуттю("захист")+'</span><strong>'+a.sharingTitle+'</strong></div><div class="sharing-person-row"><div class="sharing-person-avatar profile-avatar" data-profile-photo></div><span>'+a.sharingOwner+'</span><b>'+піктограмаЗаСуттю("перевірка")+'</b></div><div class="sharing-person-row"><div class="sharing-person-avatar sharing-invite-avatar">'+піктограмаЗаСуттю("запрошення")+'</div><span>'+a.sharingInvite+'</span><em>'+a.sharingView+'</em></div><div class="sharing-link-row"><span>'+піктограмаЗаСуттю("посилання")+'</span><strong>'+a.sharingLink+'</strong><small>'+a.sharingOff+'</small></div><div class="sharing-card-foot">'+піктограмаЗаСуттю("права")+'<span>'+a.sharingSecure+'</span></div></div><div class="sharing-art-footer">'+a.verified+'</div></div>';
     case "identities": return '<div class="art art-identities"><div class="identity-card identity-back"><small>'+a.tech+'</small><strong class="identity-tech-mark"><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="5"/><path d="M18 5v8M30 5v8M18 35v8M30 35v8M5 18h8M5 30h8M35 18h8M35 30h8"/><path d="m20 24 3 3 6-7"/></svg></strong><span>'+a.control+'</span></div><div class="identity-card identity-front"><small>'+a.personal+'</small><div class="identity-avatar profile-avatar" data-profile-photo></div><strong data-profile-name>'+naamVoorProfiel()+'</strong><span>'+a.daily+'</span></div><span class="identity-mode-badge">'+a.personal+'</span></div>';
     case "account": return '<div class="art art-account"><div class="account-outer-ring"></div><div class="account-folder"><div class="folder-tab"></div><span>'+піктограмаЗаСуттю("дані")+'</span><strong>'+a.yourData+'</strong><small>'+a.inHands+'</small></div><div class="account-stamp">'+a.private+'</div></div>';
@@ -330,7 +343,7 @@ function renderCard(s){
   return '<section class="setting-section accent-'+s.accent+'" id="'+s.id+'" data-section="'+s.id+'">' +
     '<div class="section-card">' +
       '<div class="setting-main">' +
-        '<div class="setting-topline"><span class="setting-index">'+s.number+' / 12</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
+        '<div class="setting-topline"><span class="setting-index">'+s.number+' / 13</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
         '<div class="setting-symbol'+(s.id==="identities"?' profile-avatar':'')+'"'+(s.id==="identities"?' data-profile-photo':'')+'>'+(s.id==="identities"?'':iconSvg(s.id))+'</div>' +
         '<h2>'+s.title+'</h2><p>'+s.description+'</p>' +
         (expandable?'<button class="text-link open-detail" data-for="'+s.id+'" aria-controls="inline-'+s.id+'" aria-expanded="false">'+ui().openSettings+' <span>'+chevronIcon+'</span></button>':'') +
@@ -360,7 +373,7 @@ function renderStatic(){
   write(".hero-copy p",t.heroDesc);
   write(".primary-button",t.startSetup+' <span>'+arrowIcon+'</span>',true);
   write(".ghost-button",t.navPlacement+' <span>⌘</span>',true);
-  write(".hero-foot span:first-child",'<b>12</b> '+t.sectionCount,true);
+  write(".hero-foot span:first-child",'<b>13</b> '+t.sectionCount,true);
   write(".hero-foot span:nth-of-type(2)",t.controlCenter);
   write(".hero-foot .hero-foot-last",t.profiles);
   document.querySelectorAll(".section-overline-text").forEach((el,i)=>el.textContent=t.groups[i]);
@@ -830,7 +843,7 @@ function renderSearch(){
   const term=searchInput.value.trim().toLocaleLowerCase("uk");
   const matches=localizedSections().filter(s=>(s.name+" "+s.title+" "+s.description).toLocaleLowerCase().includes(term));
   searchIndex=Math.min(searchIndex,Math.max(0,matches.length-1));
-  byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 12</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
+  byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 13</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
   if(!matches.length)byId("commandResults").innerHTML='<div class="no-results">'+ui().noResults+'</div>';
 }
 byId("openSearch").addEventListener("click",openSearch);

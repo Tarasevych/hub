@@ -44,11 +44,11 @@ export const PLEKKEN = [
   ['bureau/', 'hub', 'overview', 'iedereen'], ['WelkomKaart', 'hub', 'overview', 'iedereen'],
   // Технічні сповіщення: кнопка є лише в технічній смузі (TechLaag → actief && activatie), а не у звичайному дзвонику.
   ['meldingen/TechMeldingen', 'hub', 'overview', 'technisch'],
-  ['meldingen/', 'hub', 'overview', 'iedereen'], ['CanoniekMeldingencentrum', 'hub', 'overview', 'iedereen'], ['MeldingenpaneelInhoud', 'hub', 'overview', 'iedereen'],
+  ['meldingen/ecosysteem/', 'hub', 'overview', 'iedereen'], ['meldingen/', 'hub', 'overview', 'iedereen'], ['CanoniekMeldingencentrum', 'hub', 'overview', 'iedereen'], ['MeldingenpaneelInhoud', 'hub', 'overview', 'iedereen'],
   ['CanoniekAccountMenu', 'hub', 'overview', 'iedereen'], ['CanoniekOmlijsting', 'hub', 'overview', 'iedereen'], ['ZijbalkWerkbalk', 'hub', 'overview', 'iedereen'],
   ['RuimteStrook', 'hub', 'overview', 'iedereen'], ['ExtensieUpdateBand', 'hub', 'overview', 'iedereen'], ['CanoniekVerbindingBand', 'hub', 'overview', 'iedereen'],
   ['DomoticaWeergave', 'huis', 'overview', 'iedereen'],
-  ['thema/', 'identity', 'themes', 'iedereen'], ['weergave/', 'identity', 'personalization', 'iedereen'], ['instellingen/', 'identity', 'account', 'iedereen'],
+  ['identiteit/melding/', 'identity', 'melding', 'iedereen'], ['thema/', 'identity', 'themes', 'iedereen'], ['weergave/', 'identity', 'personalization', 'iedereen'], ['instellingen/', 'identity', 'account', 'iedereen'],
   ['ZijbalkInstellingen', 'identity', 'menu', 'iedereen'], ['MenuAanpasser', 'identity', 'menu', 'iedereen'], ['MenuIndelingInstellingen', 'identity', 'menu', 'iedereen'],
   ['MenuInstellingenVenster', 'identity', 'menu', 'iedereen'], ['MenuItemActies', 'identity', 'menu', 'iedereen'], ['MenuMeldingen', 'identity', 'menu', 'iedereen'],
   ['SnelleToegangBewerker', 'identity', 'menu', 'iedereen'], ['InstellingencentrumWeergave', 'identity', 'personalization', 'iedereen'],

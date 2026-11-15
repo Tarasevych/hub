@@ -2,6 +2,7 @@
 // zonder browser getest kunnen worden (tests/eenheid/mededeling-ontdubbelen.test.ts).
 
 import type { MeldingType } from '../shared/melding-typen';
+import type { MeldingActie, MeldingBijlage, MeldingKanaal, MeldingPrioriteit, MeldingSubdomein } from '../shared/meldingen-ecosysteem/model';
 
 export type CanonicalNoticeKind = 'info' | 'success' | 'warning' | 'error';
 export type CanonicalNoticeAction = { label: string; onAction: () => void | Promise<void> };
@@ -40,6 +41,12 @@ export type CanonicalNoticeInput = {
   voorbeeld?: boolean;
   /** IDENTITEIT-015: altijd een eigen regel, nooit samenvoegen met een eerdere gelijke tekst (de samenvatting na de stille uren). */
   losseRegel?: boolean;
+  /** Поля екосистеми сповіщень («застосунок у застосунку»): канал, піддомен, пріоритет, вкладення та інтерактивні дії. */
+  kanaal?: MeldingKanaal;
+  subdomein?: MeldingSubdomein;
+  prioriteit?: MeldingPrioriteit;
+  bijlagen?: MeldingBijlage[];
+  acties?: MeldingActie[];
 };
 
 /* `ruimte` (20.10.2026): de gegevenslade van de melding zoals de server haar vaststelde ('prive' ook voor oude rijen zonder veld); ontbreekt het veld, dan beslist shared/meldingen-ruimte.ts op soort en link. */
@@ -54,6 +61,84 @@ export type CanonicalServerNotification = {
   ruimte?: 'prive' | 'technisch';
   /** 22.10.2026: paneel (shared/meldingen-soorten.ts, 0107) — de server levert alleen de sfeer van dit tabblad. */
   sfeer?: 'prive' | 'technisch';
+};
+
+export type PaginaSignaalActie = {
+  id: string;
+  labelUk: string;
+  labelNl: string;
+  primair?: boolean;
+  href?: string;
+  uitvoer?: () => void | Promise<void>;
+};
+
+export type PaginaSignaal = {
+  id: string;
+  bron: string;
+  kanaal?: MeldingKanaal;
+  subdomein?: MeldingSubdomein;
+  soort: string;
+  ernst: 'kritiek' | 'hoog' | 'info' | 'succes';
+  titelUk: string;
+  titelNl: string;
+  berichtUk?: string;
+  berichtNl?: string;
+  uitlegUk?: string;
+  uitlegNl?: string;
+  contextLabel?: string;
+  link?: string;
+  bijlagen?: MeldingBijlage[];
+  acties?: PaginaSignaalActie[];
+  bijgewerktOp: number;
+  actief: boolean;
+};
+
+const paginaSignalenKaart = new Map<string, PaginaSignaal>();
+const paginaSignaalLuisteraars = new Set<(lijst: PaginaSignaal[]) => void>();
+export const PAGINA_SIGNAAL_EVENT = 'tsv:pagina-signaal';
+
+const verwittigPaginaSignalen = () => {
+  const lijst = Array.from(paginaSignalenKaart.values());
+  for (const fn of paginaSignaalLuisteraars) {
+    try { fn(lijst); } catch { /* слухач не ламає шину */ }
+  }
+  if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+    try { window.dispatchEvent(new CustomEvent(PAGINA_SIGNAAL_EVENT, { detail: lijst })); } catch { /* тест без DOM */ }
+  }
+};
+
+export const publiceerPaginaSignaal = (
+  invoer: Omit<PaginaSignaal, 'bijgewerktOp' | 'actief'> & { bijgewerktOp?: number; actief?: boolean },
+) => {
+  if (!invoer.id) return;
+  paginaSignalenKaart.set(invoer.id, {
+    ...invoer,
+    bijgewerktOp: invoer.bijgewerktOp ?? Date.now(),
+    actief: invoer.actief !== false,
+  });
+  verwittigPaginaSignalen();
+};
+
+export const verwijderPaginaSignaal = (id: string) => {
+  if (!id || !paginaSignalenKaart.has(id)) return;
+  paginaSignalenKaart.delete(id);
+  verwittigPaginaSignalen();
+};
+
+export const haalPaginaSignalenOp = (): PaginaSignaal[] => Array.from(paginaSignalenKaart.values());
+
+export const abonneerPaginaSignalen = (fn: (lijst: PaginaSignaal[]) => void): (() => void) => {
+  paginaSignaalLuisteraars.add(fn);
+  try { fn(haalPaginaSignalenOp()); } catch { /* порожній старт */ }
+  return () => { paginaSignaalLuisteraars.delete(fn); };
+};
+
+export const voerPaginaSignaalActieUit = async (signaalId: string, actieId: string): Promise<boolean> => {
+  const sig = paginaSignalenKaart.get(signaalId);
+  const actie = sig?.acties?.find((a) => a.id === actieId);
+  if (!actie?.uitvoer) return false;
+  await actie.uitvoer();
+  return true;
 };
 
 const canonicalNoticeActionRegistry = new Map<string, CanonicalNoticeAction>();

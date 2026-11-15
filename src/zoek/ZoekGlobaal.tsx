@@ -57,13 +57,14 @@ const TERUG_ALS_KNOP_WEG = '[data-zoek-trigger], .canonical-menu-toggle[data-sid
 // Het zoeken hoort bij de dienst waarin je staat: mail zoekt in de mail, cloud in de bestanden, enz. (alleen de standaardkeuze).
 const sectieVan = (dienst: string): Categorie => (dienst === 'mail' ? 'mail' : dienst === 'cloud' ? 'files' : dienst === 'github' ? 'github' : 'all');
 
-// Додаткові ключові слова для миттєвого пошуку 12 розділів центру облікового запису (uk + nl) з пріоритетом поточної сторінки.
+// Додаткові ключові слова для миттєвого пошуку 13 розділів центру облікового запису (uk + nl) з пріоритетом поточної сторінки.
 const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
   personalization: 'огляд вигляд оформлення початкова overzicht uiterlijk sfeer start',
   menu: 'бічна панель навігація док швидкий доступ zijbalk navigatie dock snelkoppelingen',
   themes: 'тема світла темна сливова палітра контраст licht donker pruim kleur contrast',
   languages: 'мова українська нідерландська переклад oekraiens nederlands vertaling',
   widgets: 'віджети блоки картки головна blokken kaarten startpagina',
+  melding: 'сповіщення екосистема повідомлення інформаційна смуга тихі години жести змах вкладення ші meldingen ecosysteem meldingsstroken stille uren vegen bijlagen ai',
   sharing: 'спільний доступ запрошення гості ролі посилання uitnodiging gasten rollen delen',
   identity: 'ідентичність технічний профіль звичайний простір псевдонім technisch profiel ruimte',
   account: 'обліковий запис фото світлина пошта видалення дані profielfoto gegevens verwijderen',

@@ -248,9 +248,62 @@
       }
     },
     {
+      "id": "melding",
+      "group": "personal",
+      "number": "06",
+      "accent": "cyan",
+      "uk": {
+        "name": "Сповіщення",
+        "kicker": "СИСТЕМА В СИСТЕМІ",
+        "title": "Єдина екосистема сповіщень.",
+        "description": "Незалежне вікно поверх сайту, канали всіх піддоменів, жести змахування, вбудований переглядач вкладень та конфіденційний аналіз ШІ.",
+        "details": [
+          {
+            "icon": "◉",
+            "label": "Портал поверх сайту",
+            "note": "Зміна розмірів, закріплення й згортання в пігулку"
+          },
+          {
+            "icon": "⇄",
+            "label": "Змахи та вкладення",
+            "note": "Швидкі дії та відтворення всіх форматів файлів"
+          },
+          {
+            "icon": "✦",
+            "label": "Приватний ШІ",
+            "note": "Локальний розбір і очищене зовнішнє узагальнення"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Meldingen",
+        "kicker": "SYSTEEM IN SYSTEEM",
+        "title": "Eén geïntegreerd meldingen-ecosysteem.",
+        "description": "Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",
+        "details": [
+          [
+            "Portaal boven de site",
+            "Schaalbaar venster, vastpinnen en compacte capsule"
+          ],
+          [
+            "Vegen en bijlagen",
+            "Snelle acties en weergave voor elk bestandsformaat"
+          ],
+          [
+            "Privacyveilige AI",
+            "Lokale analyse en opgeschoonde externe samenvatting"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-melding\"><div class=\"melding-halo\"></div><div class=\"melding-portal\"><div class=\"melding-head\"><span class=\"melding-bell\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\"/><path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\"/></svg></span><strong>ЕКОСИСТЕМА СПОВІЩЕНЬ</strong><em>НАЖИВО</em></div><div class=\"melding-kaart\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><div><strong>Безпека та канали піддоменів</strong><small>ID · ПОШТА · ХМАРА · ДІМ · СЕРВЕР</small></div></div><div class=\"melding-kaart\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48\"/></svg></span><div><strong>Універсальний переглядач файлів</strong><small>ФОТО · ВІДЕО · АУДІО · PDF · АРХІВИ · HEX</small></div></div><div class=\"melding-veeg-spoor\"><span>← ВІДКЛАСТИ</span><span>ЗМАХИ</span><span>ПРОЧИТАНО →</span></div></div><span class=\"melding-ai-label\">КОНФІДЕНЦІЙНИЙ ЛОКАЛЬНИЙ АНАЛІЗ ШІ</span></div>",
+        "nl": "<div class=\"art art-melding\"><div class=\"melding-halo\"></div><div class=\"melding-portal\"><div class=\"melding-head\"><span class=\"melding-bell\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\"/><path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\"/></svg></span><strong>MELDINGS-ECOSYSTEEM</strong><em>ACTIEF</em></div><div class=\"melding-kaart\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><div><strong>Beveiliging en kanalen per subdomein</strong><small>ID · MAIL · CLOUD · HUIS · SERVER</small></div></div><div class=\"melding-kaart\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48\"/></svg></span><div><strong>Universele bijlagespeler</strong><small>FOTO · VIDEO · AUDIO · PDF · ARCHIEVEN · HEX</small></div></div><div class=\"melding-veeg-spoor\"><span>← UITSTELLEN</span><span>VEGEN</span><span>GELEZEN →</span></div></div><span class=\"melding-ai-label\">LOKALE PRIVACYVEILIGE AI-ANALYSE</span></div>"
+      }
+    },
+    {
       "id": "sharing",
       "group": "social",
-      "number": "06",
+      "number": "07",
       "accent": "blue",
       "uk": {
         "name": "Спільний доступ",
@@ -294,7 +347,7 @@
     {
       "id": "identities",
       "group": "social",
-      "number": "07",
+      "number": "08",
       "accent": "violet",
       "uk": {
         "name": "Ідентичності",
@@ -338,7 +391,7 @@
     {
       "id": "account",
       "group": "account",
-      "number": "08",
+      "number": "09",
       "accent": "cyan",
       "uk": {
         "name": "Акаунт і дані",
@@ -391,7 +444,7 @@
     {
       "id": "sessions",
       "group": "account",
-      "number": "09",
+      "number": "10",
       "accent": "mint",
       "uk": {
         "name": "Сесії та пристрої",
@@ -435,7 +488,7 @@
     {
       "id": "methods",
       "group": "account",
-      "number": "10",
+      "number": "11",
       "accent": "pink",
       "uk": {
         "name": "Способи входу",
@@ -479,7 +532,7 @@
     {
       "id": "security",
       "group": "security",
-      "number": "11",
+      "number": "12",
       "accent": "blue",
       "uk": {
         "name": "Безпека",
@@ -532,7 +585,7 @@
     {
       "id": "recovery",
       "group": "security",
-      "number": "12",
+      "number": "13",
       "accent": "amber",
       "uk": {
         "name": "Відновлення доступу",
@@ -618,6 +671,15 @@
             "варіанти": [],
             "стан": null,
             "перехід": "widgets",
+            "пояснення": null
+          },
+          {
+            "uk": "Єдина екосистема сповіщень",
+            "nl": "Meldingen-ecosysteem",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "melding",
             "пояснення": null
           },
           {
@@ -1588,6 +1650,318 @@
             "uk": "Попередній перегляд розташування",
             "nl": "Voorbeeld van de indeling",
             "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "melding": [
+      {
+        "id": "портал",
+        "uk": "Режим порталу та загальна поведінка",
+        "nl": "Portaalmodus en algemeen gedrag",
+        "поясненняUk": "Повне перемикання між незалежним вікном «застосунок у застосунку», контекстом піддоменів і класичним меню.",
+        "поясненняNl": "Schakelen tussen het onafhankelijke ecosysteemvenster, context per subdomein en het klassieke belmenu.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Єдина екосистема сповіщень",
+            "nl": "Geïntegreerd meldingen-ecosysteem",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Єдина екосистема сповіщень",
+                "Geïntegreerd meldingen-ecosysteem"
+              ],
+              [
+                "Класичне меню біля дзвоника",
+                "Klassiek paneel aan de bel"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Контекстна адаптація до піддомену",
+            "nl": "Contextadaptatie per subdomein",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Збирати інформаційні смуги й сигнали сторінок",
+            "nl": "Paginabanners en signalen bundelen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Геометрія та незалежне вікно",
+            "nl": "Geometrie en onafhankelijk venster",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Рухоме вікно",
+                "Standaard zwevend"
+              ],
+              [
+                "Бічна панель",
+                "Zijpaneel"
+              ],
+              [
+                "Компактна пігулка",
+                "Compacte capsule"
+              ],
+              [
+                "На весь екран",
+                "Volledig scherm"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відкрити портал зараз",
+            "nl": "Portaal nu openen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "змахи",
+        "uk": "Змахування й захист безпеки",
+        "nl": "Veeggebaren en beveiligingsrem",
+        "поясненняUk": "Налаштування дій змахом ліворуч та праворуч; нові критичні сповіщення безпеки не можна прибрати випадково.",
+        "поясненняNl": "Acties voor vegen naar links en rechts; nieuwe kritieke beveiligingsmeldingen zijn altijd beschermd.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Закріпити поверх інтерфейсу",
+            "nl": "Vastpinnen boven de interface",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змах ліворуч",
+            "nl": "Veeg naar links",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Відкласти на 15 хв",
+                "15 min uitstellen"
+              ],
+              [
+                "Прочитано",
+                "Gelezen"
+              ],
+              [
+                "Архівувати",
+                "Archiveren"
+              ],
+              [
+                "Прибрати (окрім безпеки)",
+                "Verwijderen (behalve beveiliging)"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змах праворуч",
+            "nl": "Veeg naar rechts",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Виконати головну дію",
+                "Hoofdactie uitvoeren"
+              ],
+              [
+                "Закріпити вгорі",
+                "Bovenaan vastpinnen"
+              ],
+              [
+                "Аналіз ШІ",
+                "AI-duiding"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Живий тренажер картки",
+            "nl": "Interactieve oefenkaart",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "канали",
+        "uk": "Канали, піддомени та тихі години",
+        "nl": "Kanalen, subdomeinen en stille uren",
+        "поясненняUk": "Гнучкі правила для кожного сервісу, спливання, звуку, важливості та тихих годин.",
+        "поясненняNl": "Regels per kanaal en subdomein voor zichtbaarheid, pop-ups, geluid en stille uren.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Тихі години екосистеми",
+            "nl": "Stille uren van ecosysteem",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Критична безпека пробиває тишу",
+            "nl": "Kritieke beveiliging doorbreekt stilte",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Початок тиші",
+            "nl": "Start stille uren",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Канали та важливість піддоменів",
+            "nl": "Kanalen en prioriteit per subdomein",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Безпека (завжди)",
+                "Beveiliging (altijd)"
+              ],
+              [
+                "Пошта",
+                "Mail"
+              ],
+              [
+                "ШІ",
+                "AI"
+              ],
+              [
+                "Розумний дім",
+                "Slim wonen"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "вкладення-і-ші",
+        "uk": "Вкладення, ШІ та пісочниця",
+        "nl": "Bijlagen, AI en zandbak",
+        "поясненняUk": "Вбудований переглядач 14 форматів, конфіденційний внутрішній та очищений зовнішній ШІ, відокремлення просторів і пісочниця.",
+        "поясненняNl": "Universele speler voor 14 formaten, privé interne of geanonimiseerde externe AI, ruimtescheiding en zandbak.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Вбудований програвач у картці",
+            "nl": "Inline speler in meldingskaart",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Автоматичне визначення форматів",
+            "nl": "Automatische formaatherkenning",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Режим аналізу ШІ",
+            "nl": "AI-analysemodus",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Внутрішній конфіденційний",
+                "Interne privé-analyser"
+              ],
+              [
+                "Зовнішній (після очищення)",
+                "Externe AI (na anonimisering)"
+              ],
+              [
+                "Поєднаний",
+                "Gecombineerd"
+              ],
+              [
+                "Вимкнено",
+                "Uitgeschakeld"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Лише локальний ШІ для подій безпеки",
+            "nl": "Alleen lokale AI voor beveiliging",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відокремлення просторів сповіщень",
+            "nl": "Ruimtescheiding van meldingen",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Особистий простір",
+                "Persoonlijke ruimte"
+              ],
+              [
+                "Технічний простір",
+                "Technische ruimte"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Надіслати тестову подію",
+            "nl": "Proefmelding versturen",
+            "тип": "дія",
             "варіанти": [],
             "стан": null,
             "перехід": null,

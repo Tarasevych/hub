@@ -1,4 +1,4 @@
-// Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, дванадцятьма розділами й підсвічуванням під час прокрутки.
+// Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, тринадцятьма розділами й підсвічуванням під час прокрутки.
 // Розділи наповнює наявний код сторінок категорії «ідентичність» — тут лише розкладка й перехід до розділу.
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
@@ -43,7 +43,7 @@ class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode
 export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker, onTaal }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
   const tocRef = useRef<HTMLElement>(null);
-  // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
+  // Alleen de weergave wisselt. Dezelfde dertien bestaande onderdelen en hun handelingen blijven bestaan.
   const atelierVlag = useVlag('identiteit-account-atelier', false);
   const themaStand = useThemaStand();
   const huidigPalet = String(leesKeuze(themaStand.theme, themaStand.palet).palet);
@@ -117,7 +117,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     }
   };
 
-  // Поки прапорці не відомі, не показуємо жоден із двох виглядів: інакше старий вигляд на мить монтує всі 12 розділів,
+  // Поки прапорці не відомі, не показуємо жоден із двох виглядів: інакше старий вигляд на мить монтує всі 13 розділів,
   // їхні запити й прокрутки, а потім його змінює новий (сторінка «стрибала» вниз). Totdat de vlaggen bekend zijn: rustige plaatshouder.
   if (!vlaggenBekend()) return <div className='ia-account ia-wacht' aria-busy='true' aria-label={lang === 'uk' ? 'Завантаження налаштувань' : 'Instellingen laden'} />;
   if (atelier && vormgeving === 'studio') return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;

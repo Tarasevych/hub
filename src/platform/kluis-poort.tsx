@@ -48,7 +48,7 @@ const foutTekst = (code: string): string => {
   return tr('Не вдалося розшифрувати. ', 'Ontsleutelen mislukt. ') + (code || tr('Немає зв’язку.', 'Geen verbinding.'));
 };
 const melden = (text: string, kind: 'success' | 'info' | 'warning', explain?: string) => {
-  void import('../canoniek-meldingen').then(({ emitCanonicalNotice }) => emitCanonicalNotice({ text, kind, source: 'sleutelkluis', alleenPaneel: kind !== 'warning', topic: 'sleutelkluis|ontgrendelen', explain, dedupeSeconds: 30 })).catch(() => undefined);
+  void import('../canoniek-meldingen').then(({ emitCanonicalNotice }) => emitCanonicalNotice({ text, kind, source: 'sleutelkluis', kanaal: 'beveiliging', subdomein: 'id', alleenPaneel: kind !== 'warning', topic: 'sleutelkluis|ontgrendelen', explain, dedupeSeconds: 30 })).catch(() => undefined);
 };
 
 // ------------------------------------------------------------------------------------------------ toestand van de poort
@@ -68,7 +68,32 @@ async function postNu(url: string, data: unknown) {
   if (!post) { const { api } = await import('./client'); post = (u, d) => api.post(u, d); }
   return post(url, data);
 }
-const toon = (stand: 'weg' | 'kaart' | 'chip') => { zichtbaar = stand; monteer(); teken?.(); };
+const synchKluisSignaal = (stand: 'weg' | 'kaart' | 'chip') => {
+  void import('../canoniek-meldingen').then(({ publiceerPaginaSignaal, verwijderPaginaSignaal }) => {
+    if (stand === 'weg') {
+      verwijderPaginaSignaal('band:sleutelkluis');
+      return;
+    }
+    publiceerPaginaSignaal({
+      id: 'band:sleutelkluis',
+      bron: 'sleutelkluis',
+      kanaal: 'beveiliging',
+      subdomein: 'id',
+      soort: 'sleutel_dicht',
+      ernst: 'kritiek',
+      titelUk: 'Дані зараз зашифровані',
+      titelNl: 'Uw gegevens zijn nu versleuteld',
+      berichtUk: 'Пошта, хмара та інші захищені розділи відкриються одразу після розшифрування ключем на місці.',
+      berichtNl: 'Mail, cloud en andere beschermde onderdelen openen meteen na ontsleutelen ter plaatse.',
+      contextLabel: ctx.service || 'sleutelkluis',
+      link: 'https://id.tarasevych.com/aanmeldmethoden',
+      acties: [
+        { id: 'ontgrendel-kaart', labelUk: 'Відкрити розшифрування', labelNl: 'Ontsleutelen openen', primair: true, uitvoer: () => toon('kaart') },
+      ],
+    });
+  }).catch(() => undefined);
+};
+const toon = (stand: 'weg' | 'kaart' | 'chip') => { zichtbaar = stand; synchKluisSignaal(stand); monteer(); teken?.(); };
 
 /** Context bijwerken (dienst + tabblad): de sleutelkluis-routes hebben dezelfde sessiegegevens nodig als de pagina. */
 export function kluisContext(c: KluisContext) { if (c.service && c.tabContext) ctx = { ...ctx, ...c }; }

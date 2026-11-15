@@ -93,6 +93,9 @@ type TerminalHooks = { vanAgent: (agentId: string, msg: any) => boolean; upgrade
 let terminalHooks: TerminalHooks | null = null;
 export const TERMINAL_WS_PATH = '/terminal/ws';
 export function registreerTerminal(h: TerminalHooks): void { terminalHooks = h; }
+export type AgentMeldingHook = (invoer: { userId: string; agentId: string; platform: string | null; msg: Record<string, unknown> }) => void | Promise<void>;
+let meldingHook: AgentMeldingHook | null = null;
+export function registreerMeldingHook(h: AgentMeldingHook | null): void { meldingHook = h; }
 // Andere browser-WS-paden van de eigen site (bv. /api/owner/remote/tunnel, backend/remote-bureaublad.ts): zelfde host-controle, nooit ?ticket/?token.
 const wsPaden = new Map<string, (req: IncomingMessage, socket: Duplex, head: Buffer) => void>();
 export function registreerWsPad(pad: string, f: (req: IncomingMessage, socket: Duplex, head: Buffer) => void): void { wsPaden.set(pad, f); }
@@ -310,6 +313,10 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
       return;
     }
     if (msg?.t === 'status' && entry.platform === 'browser') { ext.bijStatus(agentId, msg); return; }
+    if (msg?.t === 'melding' && msg && typeof msg === 'object' && meldingHook) {
+      void Promise.resolve(meldingHook({ userId: entry.userId, agentId, platform: entry.platform, msg: msg as Record<string, unknown> })).catch(() => undefined);
+      return;
+    }
     if (msg?.t === 'vergrendel-verzoek' && entry.platform === 'browser') {
       const n = await ext.vergrendelVerzoek(agentId, entry.userId, { gid: msg.gid, reden: msg.reden }).catch(() => 0);
       // Bevestiging; de extensie had al lokaal vergrendeld.

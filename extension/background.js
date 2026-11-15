@@ -557,6 +557,19 @@ function stuurStatusNaarServer(r, extra = {}) {
   if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
   try { s.ws.send(JSON.stringify({ t: 'status', ...statusVelden(r), ...extra, version: VERSION })); } catch { /* dicht */ }
 }
+function stuurMeldingNaarServer(r, data = {}) {
+  const s = sloten[r];
+  if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
+  try {
+    s.ws.send(JSON.stringify({
+      t: 'melding',
+      ruimte: r === 'technisch' ? 'technisch' : 'prive',
+      link: 'https://mcp.tarasevych.com/#extensie',
+      context: `Chrome ${VERSION} · ${r}`,
+      ...data,
+    }));
+  } catch { /* з'єднання закрито */ }
+}
 const pong = (r) => JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(r), ...statusVelden(r) });
 
 // ---------------------------------------------------------------- badge + tooltip (samen voor beide sloten)
@@ -721,6 +734,17 @@ async function handle(r, socket, raw) {
     await wachtrijVersturen(r);
     void selfInfo(r, true).then(() => statusWijziging());
     await statusWijziging();
+    stuurMeldingNaarServer(r, {
+      sleutel: `ext:ready:${r}:${VERSION}`,
+      soort: 'extensie',
+      ernst: 'info',
+      titel: r === 'technisch'
+        ? `Розширення Chrome v${VERSION} (технічний контур) підключено / Chrome-extensie v${VERSION} (technisch) verbonden`
+        : `Розширення Chrome v${VERSION} готове до роботи / Chrome-extensie v${VERSION} gereed`,
+      bericht: r === 'technisch'
+        ? 'Слот технічного профілю активний. Доступ дозволяється лише після passkey.'
+        : 'Слот користувача на зв’язку з порталом.',
+    });
     return;
   }
   if (msg.t === 'ping') { socket.send(pong(r)); return; }

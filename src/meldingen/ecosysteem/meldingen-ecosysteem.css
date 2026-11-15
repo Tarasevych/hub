@@ -1,0 +1,1043 @@
+/* Єдина портальна екосистема сповіщень («застосунок у застосунку», GEMINI-002). */
+/* Побудована виключно на канонічних змінних оформлення сайту (--panel, --surface, --line, --text, --muted, --accent, --danger, --good, --warn). */
+
+.mel-ecosysteem-portaal {
+  position: fixed;
+  z-index: 105000;
+  display: flex;
+  flex-direction: column;
+  min-width: 310px;
+  min-height: 300px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  border: 1px solid color-mix(in srgb, var(--mel-accent, var(--accent)) 36%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel) 97%, var(--mel-tint, transparent));
+  color: var(--text);
+  box-shadow: 0 28px 80px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+  user-select: text;
+}
+
+.mel-ecosysteem-portaal.is-modus-volledig {
+  border-radius: 14px;
+}
+
+/* 8 ручок змінення розмірів вікна по краях і кутах */
+.mel-rand {
+  position: absolute;
+  z-index: 6;
+  touch-action: none;
+}
+.mel-rand-n { top: -3px; left: 12px; right: 12px; height: 7px; cursor: ns-resize; }
+.mel-rand-z { bottom: -3px; left: 12px; right: 12px; height: 7px; cursor: ns-resize; }
+.mel-rand-w { left: -3px; top: 12px; bottom: 12px; width: 7px; cursor: ew-resize; }
+.mel-rand-o { right: -3px; top: 12px; bottom: 12px; width: 7px; cursor: ew-resize; }
+.mel-rand-nw { top: -4px; left: -4px; width: 14px; height: 14px; cursor: nwse-resize; }
+.mel-rand-no { top: -4px; right: -4px; width: 14px; height: 14px; cursor: nesw-resize; }
+.mel-rand-zw { bottom: -4px; left: -4px; width: 14px; height: 14px; cursor: nesw-resize; }
+.mel-rand-zo { bottom: -4px; right: -4px; width: 14px; height: 14px; cursor: nwse-resize; }
+
+.mel-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--mel-tint, var(--accent-soft)), transparent 70%);
+  cursor: grab;
+  touch-action: none;
+}
+.mel-kop:active {
+  cursor: grabbing;
+}
+.mel-kop-titel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mel-kop-titel > div {
+  display: grid;
+  min-width: 0;
+}
+.mel-kop-titel strong {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mel-kop-titel small {
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mel-kop-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 18%, transparent);
+  color: var(--mel-accent, var(--accent));
+}
+.mel-kop-badge svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mel-kop-gereedschap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.mel-modus-groep {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.mel-modus-groep > button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.mel-modus-groep > button.is-actief,
+.mel-modus-groep > button:hover {
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 16%, transparent);
+  color: var(--mel-accent, var(--accent));
+}
+.mel-modus-groep svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mel-ikoon-knop {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+.mel-ikoon-knop:hover:not(:disabled),
+.mel-ikoon-knop:focus-visible:not(:disabled) {
+  background: var(--nav-hover);
+  color: var(--text);
+}
+.mel-ikoon-knop.is-actief {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 45%, transparent);
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+  color: var(--mel-accent, var(--accent));
+}
+.mel-ikoon-knop:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.mel-ikoon-knop svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mel-werkbalk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.mel-zoekveld {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.mel-zoekveld svg {
+  width: 15px;
+  color: var(--muted);
+  flex: none;
+}
+.mel-zoekveld input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.mel-werkbalk-knoppen {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.mel-filters {
+  display: grid;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+.mel-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.mel-tab {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mel-tab:hover {
+  background: var(--nav-hover);
+  color: var(--text);
+}
+.mel-tab.is-actief {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 45%, transparent);
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, var(--panel));
+  color: var(--mel-accent, var(--accent));
+}
+
+.mel-kanaal-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.mel-kanaal-chip {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mel-kanaal-chip.is-actief {
+  border-color: var(--mel-accent, var(--accent));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, var(--panel));
+  color: var(--text);
+  font-weight: 600;
+}
+.mel-kanaal-select {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.mel-lichaam {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.mel-ecosysteem-portaal.is-tweekolom .mel-lichaam {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
+}
+.mel-stroom-kolom {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mel-detail-kolom {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mel-voorkeuren-kader {
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.mel-leeg-staat {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 40px 18px;
+  text-align: center;
+  color: var(--muted);
+}
+.mel-leeg-staat svg {
+  width: 28px;
+  height: 28px;
+  color: var(--mel-accent, var(--accent));
+}
+.mel-leeg-staat strong {
+  color: var(--text);
+  font-size: 14px;
+}
+.mel-leeg-staat span {
+  font-size: 12px;
+  max-width: 280px;
+}
+
+/* Картки зі змахами */
+.mel-veeg-houder {
+  position: relative;
+  border-radius: 13px;
+  overflow: hidden;
+}
+.mel-veeg-achtergrond {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 13px;
+}
+.mel-veeg-achtergrond.is-rechts {
+  justify-content: flex-start;
+  background: color-mix(in srgb, var(--good, #16a34a) 22%, var(--surface));
+  color: var(--good, #16a34a);
+}
+.mel-veeg-achtergrond.is-links {
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--warn, #d97706) 22%, var(--surface));
+  color: var(--warn, #d97706);
+}
+.mel-veeg-achtergrond.is-geblokkeerd {
+  background: color-mix(in srgb, var(--danger, #dc2626) 22%, var(--surface));
+  color: var(--danger, #dc2626);
+}
+
+.mel-kaart {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  transition: transform 0.14s ease, border-color 0.15s ease;
+  touch-action: pan-y;
+}
+.mel-kaart.is-status-nieuw {
+  border-color: color-mix(in srgb, var(--mel-accent, var(--accent)) 45%, var(--line));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 6%, var(--surface));
+}
+.mel-kaart.is-geselecteerd {
+  border-color: var(--mel-accent, var(--accent));
+  box-shadow: 0 0 0 1px var(--mel-accent, var(--accent));
+}
+.mel-kaart.is-prio-kritiek {
+  border-left: 4px solid var(--danger);
+}
+.mel-kaart.is-prio-hoog {
+  border-left: 4px solid var(--warn, #d97706);
+}
+
+.mel-kaart-kop {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+}
+.mel-kanaal-teken {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 14%, transparent);
+  color: var(--mel-accent, var(--accent));
+}
+.mel-kanaal-teken.is-beveiliging {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+.mel-kanaal-teken svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mel-kaart-hoofd {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.mel-kaart-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.mel-subdomein-chip {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.mel-prio {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.mel-prio.is-kritiek {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+.mel-prio.is-hoog {
+  background: color-mix(in srgb, var(--warn, #d97706) 16%, transparent);
+  color: var(--warn, #d97706);
+}
+.mel-herhaling {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  font-weight: 700;
+}
+.mel-tijd {
+  margin-left: auto;
+}
+
+.mel-kaart-titel-knop {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.mel-kaart-titel-knop strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.mel-nieuw-stip {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--mel-accent, var(--accent));
+}
+.mel-pijl-klap {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.16s ease;
+}
+.mel-pijl-klap.is-open {
+  transform: rotate(180deg);
+}
+.mel-context {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.mel-bericht {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.mel-bericht.is-vol {
+  display: block;
+  -webkit-line-clamp: unset;
+  color: var(--text);
+}
+
+.mel-bescherm-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  font-size: 12px;
+}
+.mel-bescherm-hint svg {
+  width: 15px;
+  flex: none;
+}
+
+.mel-bijlagen-strook {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.mel-bijlage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.mel-bijlage-chip svg {
+  width: 14px;
+  height: 14px;
+  color: var(--mel-accent, var(--accent));
+  flex: none;
+}
+.mel-bijlage-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+.mel-bijlage-chip small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.mel-bijlage-chip.is-actief,
+.mel-bijlage-chip:hover {
+  border-color: var(--mel-accent, var(--accent));
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 10%, var(--panel));
+}
+
+.mel-kaart-acties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.mel-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mel-knop svg {
+  width: 14px;
+  height: 14px;
+}
+.mel-knop-zacht:hover:not(:disabled) {
+  background: var(--nav-hover);
+}
+.mel-knop-primair {
+  border-color: var(--mel-accent, var(--accent));
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #fff);
+}
+.mel-knop-primair:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.mel-knop:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mel-kaart-details {
+  display: grid;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.mel-uitleg-blok {
+  margin: 0;
+  padding: 8px;
+  border-radius: 9px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow: auto;
+}
+
+/* Переглядач і програвач вкладень */
+.mel-speler {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.mel-speler.is-modaal {
+  width: min(920px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  box-shadow: 0 32px 96px var(--shadow);
+}
+.mel-bijlage-portaal {
+  position: fixed;
+  inset: 0;
+  z-index: 105200;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(8, 12, 20, 0.62);
+  backdrop-filter: blur(8px);
+}
+.mel-speler-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.mel-speler-titel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.mel-speler-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+.mel-speler-badge svg {
+  width: 13px;
+  height: 13px;
+}
+.mel-speler-naam {
+  display: grid;
+  min-width: 0;
+}
+.mel-speler-naam strong {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mel-speler-naam small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.mel-speler-acties,
+.mel-speler-nav {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.mel-speler-teller {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 0 4px;
+}
+.mel-speler-lichaam {
+  padding: 8px 10px 10px;
+  max-height: 360px;
+  overflow: auto;
+}
+.mel-speler.is-modaal .mel-speler-lichaam {
+  max-height: calc(100dvh - 110px);
+}
+.mel-speler-beeld-doek {
+  display: grid;
+  gap: 6px;
+}
+.mel-speler-gereedschap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.mel-speler-beeld-kader {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  overflow: auto;
+  border-radius: 8px;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--text) 6%, transparent) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+}
+.mel-speler-beeld-kader img {
+  max-width: 100%;
+  max-height: 440px;
+  transition: transform 0.14s ease;
+}
+.mel-speler-media video {
+  width: 100%;
+  max-height: 460px;
+  border-radius: 8px;
+  background: #000;
+}
+.mel-speler-audio {
+  display: grid;
+  gap: 8px;
+}
+.mel-speler-audio audio {
+  width: 100%;
+}
+.mel-speler-audio-kaart {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.mel-speler-pdf {
+  width: 100%;
+  height: 360px;
+  border: 0;
+  border-radius: 8px;
+}
+.mel-speler-code {
+  display: grid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+.mel-speler-regel {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  padding: 0 6px;
+}
+.mel-speler-regel.is-plus {
+  background: color-mix(in srgb, var(--good, #16a34a) 16%, transparent);
+}
+.mel-speler-regel.is-min {
+  background: color-mix(in srgb, var(--danger, #dc2626) 16%, transparent);
+}
+.mel-speler-regel.is-stuk {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.mel-nr {
+  color: var(--muted);
+  text-align: right;
+  user-select: none;
+}
+.mel-speler-tabel-kader {
+  overflow: auto;
+}
+.mel-speler-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.mel-speler-tabel th,
+.mel-speler-tabel td {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.mel-speler-tabel th {
+  background: var(--surface);
+  font-weight: 700;
+}
+.mel-speler-hex pre {
+  margin: 6px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  overflow-x: auto;
+}
+.mel-speler-kaarten {
+  display: grid;
+  gap: 8px;
+}
+.mel-speler-kaart-item {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+}
+.mel-speler-leeg,
+.mel-speler-status {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ШІ-панель */
+.mel-ai-paneel {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--panel));
+}
+.mel-ai-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.mel-ai-titel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.mel-ai-titel svg {
+  width: 15px;
+  color: var(--accent);
+}
+.mel-ai-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.mel-ai-veiligheid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--text);
+  font-size: 11.5px;
+}
+.mel-ai-veiligheid svg {
+  width: 15px;
+  color: var(--danger);
+  flex: none;
+}
+.mel-ai-uitslag {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.mel-ai-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.mel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 600;
+}
+.mel-chip svg {
+  width: 12px;
+  height: 12px;
+}
+.mel-ai-samenvatting {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.mel-ai-lijst {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.mel-ai-lijst dt {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.mel-ai-lijst dd {
+  margin: 0;
+  line-height: 1.35;
+}
+.mel-ai-stappen {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 2px;
+}
+
+.mel-voet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+/* Плавуча міні-пігулка поверх сайту */
+.mel-minimale-pil {
+  position: fixed;
+  right: max(16px, var(--veilig-rechts, 0px) + 12px);
+  bottom: max(18px, var(--veilig-onder, 0px) + 12px);
+  z-index: 105000;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--mel-accent, var(--accent)) 45%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 96%, var(--mel-tint, transparent));
+  color: var(--text);
+  box-shadow: 0 14px 38px var(--shadow);
+  backdrop-filter: blur(12px);
+}
+.mel-pil-hoofd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mel-pil-hoofd svg {
+  width: 18px;
+  height: 18px;
+  color: var(--mel-accent, var(--accent));
+}
+.mel-pil-hoofd svg.is-kritiek {
+  color: var(--danger);
+}
+.mel-pil-tekst {
+  display: grid;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+.mel-pil-tekst small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.mel-pil-teller {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--mel-accent, var(--accent));
+  color: var(--accentText, #fff);
+  font-size: 11px;
+}
+
+.mel-draai {
+  animation: mel-spin 0.9s linear infinite;
+}
+@keyframes mel-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .mel-ecosysteem-portaal {
+    left: calc(8px + var(--veilig-links, 0px)) !important;
+    right: calc(8px + var(--veilig-rechts, 0px)) !important;
+    top: calc(12px + var(--veilig-boven, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    height: calc(100dvh - 24px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px)) !important;
+    max-height: none !important;
+  }
+  .mel-ecosysteem-portaal.is-tweekolom .mel-lichaam {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mel-detail-kolom {
+    display: none;
+  }
+  .mel-modus-groep {
+    display: none;
+  }
+}

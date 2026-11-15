@@ -14,6 +14,7 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
+  Bell,
   CircleHelp,
   ContactRound,
   Globe,
@@ -56,6 +57,7 @@ const ATELIER_SYMBOLEN: Record<string, LucideIcon> = {
   themes: Palette,
   languages: Globe,
   widgets: LayoutGrid,
+  melding: Bell,
   sharing: UsersRound,
   identities: ContactRound,
   account: Settings2,
@@ -66,10 +68,10 @@ const ATELIER_SYMBOLEN: Record<string, LucideIcon> = {
 };
 
 const ATELIER_GROEPEN = [
-  { id: 'personal', ids: ['personalization', 'menu', 'themes', 'languages', 'widgets'], uk: 'Обличчя вашого простору', nl: 'De sfeer van jouw ruimte', ukKort: 'Вигляд і меню', nlKort: 'Uiterlijk en menu', bereik: '01 — 05' },
-  { id: 'social', ids: ['sharing', 'identities'], uk: 'Люди та ідентичність', nl: 'Mensen en identiteit', ukKort: 'Доступ і ролі', nlKort: 'Toegang en rollen', bereik: '06 — 07' },
-  { id: 'account', ids: ['account', 'sessions', 'methods'], uk: 'Ваш обліковий запис', nl: 'Jouw account', ukKort: 'Обліковий запис', nlKort: 'Account', bereik: '08 — 10' },
-  { id: 'security', ids: ['security', 'recovery'], uk: 'Безпека та відновлення', nl: 'Beveiliging en herstel', ukKort: 'Захист', nlKort: 'Bescherming', bereik: '11 — 12' },
+  { id: 'personal', ids: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding'], uk: 'Обличчя вашого простору', nl: 'De sfeer van jouw ruimte', ukKort: 'Вигляд і меню', nlKort: 'Uiterlijk en menu', bereik: '01 — 06' },
+  { id: 'social', ids: ['sharing', 'identities'], uk: 'Люди та ідентичність', nl: 'Mensen en identiteit', ukKort: 'Доступ і ролі', nlKort: 'Toegang en rollen', bereik: '07 — 08' },
+  { id: 'account', ids: ['account', 'sessions', 'methods'], uk: 'Ваш обліковий запис', nl: 'Jouw account', ukKort: 'Обліковий запис', nlKort: 'Account', bereik: '09 — 11' },
+  { id: 'security', ids: ['security', 'recovery'], uk: 'Безпека та відновлення', nl: 'Beveiliging en herstel', ukKort: 'Захист', nlKort: 'Bescherming', bereik: '12 — 13' },
 ] as const;
 
 type Taal = 'uk' | 'nl';
@@ -182,7 +184,7 @@ export function IdentiteitKlassiekMaquette({
     return () => window.removeEventListener('keydown', bijToets, { capture: true });
   }, []);
 
-  // Довідник метаданих кожного з 12 розділів: порядковий номер, змістова група та пошуковий рядок двома мовами.
+  // Довідник метаданих кожного з 13 розділів: порядковий номер, змістова група та пошуковий рядок двома мовами.
   const sectieMetaMap = useMemo(() => {
     const kaart = new Map<
       string,
@@ -605,7 +607,7 @@ export function IdentiteitKlassiekMaquette({
           </div>
         </header>
 
-        {/* 2. Липка панель швидкої навігації: режим подання + 4 змістові групи + 12 капсульних вкладок */}
+        {/* 2. Липка панель швидкої навігації: режим подання + 4 змістові групи + 13 капсульних вкладок */}
         <nav
           className='ikm-plakbalk'
           aria-label={uk ? 'Навігація розділами облікового запису' : 'Navigatie accountonderdelen'}

@@ -1,4 +1,4 @@
-// IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (12 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
+// IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (13 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
 import { readFileSync } from 'node:fs';
 import { IDENTITEIT_TABS, identiteitTitel, isIdentiteitTab } from '../../src/identiteit/identiteit-tabs';
 import { checker } from './hulp/nep-google';
@@ -10,15 +10,15 @@ export async function main(): Promise<number> {
   const css = readFileSync('src/identiteit/identiteit-account.css', 'utf8');
   const plaatsing = JSON.parse(readFileSync('scripts/plaatsing-vaste-elementen.json', 'utf8'));
 
-  check('IDENTITEIT_TABS містить рівно 12 розділів у канонічному порядку з двомовними назвами (uk/nl)',
-    IDENTITEIT_TABS.length === 12
+  check('IDENTITEIT_TABS містить рівно 13 розділів у канонічному порядку з двомовними назвами (uk/nl)',
+    IDENTITEIT_TABS.length === 13
     && IDENTITEIT_TABS.every((t) => isIdentiteitTab(t.id) && t.uk.length > 0 && t.nl.length > 0)
     && !isIdentiteitTab('onbekend')
     && identiteitTitel('personalization', 'uk') === 'Персоналізація'
     && identiteitTitel('recovery', 'nl') === 'Toegangsherstel'
     && identiteitTitel('onbekend', 'uk') === 'onbekend');
 
-  check('IdentiteitAccountPagina рендерить меню-зміст (.ia-toc) і всі 12 секцій (.ia-sectie) зі scrollIntoView',
+  check('IdentiteitAccountPagina відмальовує меню-зміст (.ia-toc) і всі 13 секцій (.ia-sectie) зі scrollIntoView',
     pagina.includes("className='ia-toc'")
     && pagina.includes("className='ia-sectie'")
     && pagina.includes('IDENTITEIT_TABS.map')

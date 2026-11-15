@@ -1,4 +1,4 @@
-import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, Sparkles, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
@@ -45,6 +45,17 @@ import { openTechMeldingen } from './meldingen/tech-meldingen-opslag';
 import { techSamenvattingTekst } from './meldingen/samenvatting';
 import { useTech } from './tech/tech-opslag';
 import { useHuidigeRuimte, ruimteFilterActief } from './tech/ruimtes/ruimte-signaal';
+import './meldingen/ecosysteem/meldingen-ecosysteem.css';
+import { MeldingenPortaal, useEcosysteemModusActief, useMeldingEcosysteem, zetEcosysteemModusActief } from './meldingen/ecosysteem';
+import { abonneerPaginaSignalen, haalPaginaSignalenOp, meldingInTaal, type PaginaSignaal } from './canoniek-meldingen';
+import { dienstVanHostnaam } from '../shared/foutuitleg';
+import { activityTitle, activiteitContext } from './connector-activiteit';
+import { SUBDOMEINEN, type MeldingSubdomein } from '../shared/meldingen-ecosysteem';
+
+const naarMeldingSubdomein = (dienst: string): MeldingSubdomein => {
+  const norm = dienst === 'identity' ? 'id' : dienst;
+  return (SUBDOMEINEN as readonly string[]).includes(norm) ? (norm as MeldingSubdomein) : 'hub';
+};
 
 type Retained = BewaardeRij;
 
@@ -107,6 +118,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   const [sound, setSound] = useState(prefs.notificationSound !== false);
   const [retained, setRetained] = useState<Retained[]>(() => readRows(p.scope));
   const [active, setActive] = useState<Active | null>(null);
+  const ecosysteemActief = useEcosysteemModusActief();
+  const [paginaSignalen, setPaginaSignalen] = useState<PaginaSignaal[]>(() => haalPaginaSignalenOp());
+  const [toastVeegDx, setToastVeegDx] = useState(0);
+  const toastVeegStartRef = useRef<{ x: number; y: number } | null>(null);
   /** Pop-up staat stil (muis erop, vinger erop op het aanraakscherm, toetsenbordfocus erin of tabblad verborgen): de aftelling stopt. */
   const [paused, setPaused] = useState(false);
   const [vastgehoudenMetAanraking, setVastgehoudenMetAanraking] = useState(false);
@@ -216,6 +231,8 @@ export default function CanonicalNotificationCenter(p: Props) {
   const activate = (next: Active) => {
     activeRef.current = next;
     aanrakingActiefRef.current = false;
+    toastVeegStartRef.current = null;
+    setToastVeegDx(0);
     setVastgehoudenMetAanraking(false);
     laatsteTikRef.current = Date.now();
     aftelRef.current = next.levensduurMs == null ? null : pauzeAftelling(nieuweAftelling(next.levensduurMs), 'verborgen', typeof document !== 'undefined' && document.hidden);
@@ -225,6 +242,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     if (!next.stil) playChime();
     markeerGetoond(next);
   };
+
+  useEffect(() => abonneerPaginaSignalen(setPaginaSignalen), []);
 
   const vk = (type: MeldingType) => voorkeurVoor(typenRef.current, type);
 
@@ -511,7 +530,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   }, []);
 
   useEffect(() => {
-    if (!panelOpen) return;
+    if (!panelOpen || ecosysteemActief) return;
     /* 25.10.2026: in de vangfase (vóór de lade): Esc sluit eerst het paneel — de lade (waar de bel op de telefoon staat) blijft open en de focus gaat terug naar de bel */
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -527,15 +546,15 @@ export default function CanonicalNotificationCenter(p: Props) {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [panelOpen]);
+  }, [panelOpen, ecosysteemActief]);
 
   /* WCAG 2.4.3 (recensie toegankelijkheid 21.10): bij openen gaat de focus IN het paneel, bij sluiten terug naar de bel — behalve als de mens elders klikte. */
   useEffect(() => {
-    if (!panelOpen) return;
+    if (!panelOpen || ecosysteemActief) return;
     const paneel = panelRef.current;
     const r = requestAnimationFrame(() => { if (paneel && !paneel.contains(document.activeElement)) paneel.focus({ preventScroll: true }); });
     return () => { cancelAnimationFrame(r); if (focusVerloren()) bellRef.current?.focus({ preventScroll: true }); };
-  }, [panelOpen]);
+  }, [panelOpen, ecosysteemActief]);
 
   /* «⋯» open (telefoon) → de eerste actie krijgt de focus: het menu staat onderaan in de DOM, Tab landde eerst in alle rijen. */
   useEffect(() => {
@@ -656,10 +675,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   }, []);
 
   useEffect(() => {
-    if (!panelOpen) return;
+    if (!panelOpen || ecosysteemActief) return;
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
-      if (!(target instanceof Element) || target.closest('.canonical-notification-panel') || target.closest('.canonical-notification-bell')) return;
+      if (!(target instanceof Element) || target.closest('.canonical-notification-panel,.mel-ecosysteem-portaal,.mel-bijlage-portaal,.mel-minimale-pil') || target.closest('.canonical-notification-bell')) return;
       const control = target.closest('button,a,input,select,textarea,[role="button"],[role="menuitem"],[role="checkbox"]');
       const functional = Boolean(control && !control.matches('.google-mail-open'));
       if (functional) { window.setTimeout(() => setPanelOpen(false), 0); return; }
@@ -672,7 +691,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     };
     document.addEventListener('pointerdown', onPointerDown, true);
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
-  }, [panelOpen]);
+  }, [panelOpen, ecosysteemActief]);
 
   /** Strook van het vensterdok (CSS-variabelen op <html>): het paneel en de pop-up komen er nooit onder (vroeger regelde de CSS dat met een vol blad). */
   const dokRanden = () => {
@@ -700,7 +719,7 @@ export default function CanonicalNotificationCenter(p: Props) {
   const zelfdePijl = (a: Pijl | null, b: Pijl | null) => (a === b) || (!!a && !!b && a.left === b.left && a.top === b.top && a.kant === b.kant);
 
   useLayoutEffect(() => {
-    if (!panelOpen) return;
+    if (!panelOpen || ecosysteemActief) return;
     const panel = panelRef.current;
     const bell = bellRef.current;
     if (!panel) return;
@@ -722,22 +741,22 @@ export default function CanonicalNotificationCenter(p: Props) {
     /* boven de bel mag het paneel niet hoger worden dan waarmee de bovenkant berekend is — anders schoof de onderrand onder het scherm (stand 768×1024, 36 meldingen) */
     const maxHeight = place.side === 'above' ? Math.min(place.maxHeight, Math.max(120, Math.round(natural))) : place.maxHeight;
     setPanelPos((current) => (current.left === place.left && current.top === place.top && current.maxHeight === maxHeight ? current : { left: place.left, top: place.top, maxHeight }));
-  }, [panelOpen, belPlek, viewportRev, retained.length, (p.serverItems || []).length]);
+  }, [panelOpen, ecosysteemActief, belPlek, viewportRev, retained.length, (p.serverItems || []).length]);
 
   useEffect(() => {
-    if (!panelOpen || typeof ResizeObserver === 'undefined') return;
+    if (!panelOpen || ecosysteemActief || typeof ResizeObserver === 'undefined') return;
     const panel = panelRef.current;
     if (!panel) return;
     const observer = new ResizeObserver(() => setViewportRev((value) => value + 1));
     observer.observe(panel);
     return () => observer.disconnect();
-  }, [panelOpen]);
+  }, [panelOpen, ecosysteemActief]);
 
   useLayoutEffect(() => {
-    const volgende = panelOpen ? meetPijl(panelRef.current) : null;
+    const volgende = panelOpen && !ecosysteemActief ? meetPijl(panelRef.current) : null;
     setPaneelPijl((huidig) => (zelfdePijl(huidig, volgende) ? huidig : volgende));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelOpen, panelPos, viewportRev]);
+  }, [panelOpen, ecosysteemActief, panelPos, viewportRev]);
 
   /* De pop-up staat NAAST de bel (kant met de meeste ruimte, binnen het scherm) — nooit midden op het scherm. */
   useLayoutEffect(() => {
@@ -791,7 +810,26 @@ export default function CanonicalNotificationCenter(p: Props) {
   const v2Model = useMemo(() => (v2
     ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, (ms) => pasStatusToe(ms, v3Status))
     : null), [v2, v2Regels, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
-  const unreadCount = v2Model ? v2Model.tellers.bel + (techRegel ? techUnread : 0) : unreadCountOud;
+  const subdomeinNu = naarMeldingSubdomein(typeof location !== 'undefined' ? dienstVanHostnaam(location.hostname) : 'hub');
+  const ecoRuimte = belSfeer === 'technisch' ? 'technisch' : 'prive';
+  const eco = useMeldingEcosysteem({
+    lang: p.lang,
+    scope: p.scope,
+    ruimte: ecoRuimte,
+    subdomeinNu,
+    actief: panelOpen && ecosysteemActief,
+    paginaSignalen,
+    serverItems: p.serverItems || [],
+    techItems: p.techItems || [],
+    localRows: zichtbaarLokaal,
+    activityEvents: events,
+    activityRead: activity.read,
+    tekstVanServer: (s) => meldingInTaal(s, p.lang),
+    titelVanActiviteit: (ev) => activityTitle(ev, p.lang),
+    contextVanActiviteit: (ev) => activiteitContext(ev, p.lang) || '',
+  });
+  const ecoExtraUnread = eco.stroom.filter((g) => g.status === 'nieuw' && !g.externeSleutel.startsWith('site_notif:') && !g.externeSleutel.startsWith('act:') && !g.externeSleutel.startsWith('l:')).length;
+  const unreadCount = v2Model ? v2Model.tellers.bel + (techRegel ? techUnread : 0) + ecoExtraUnread : unreadCountOud + ecoExtraUnread;
   const historyCount = zichtbaarLokaal.length + server.length + events.length;
   const removeRetained = (id: string) => { releaseCanonicalNoticeAction(id); saveRetained((rows) => rows.filter((row) => row.id !== id)); };
   const markLocalRead = markRetainedRead;
@@ -799,6 +837,11 @@ export default function CanonicalNotificationCenter(p: Props) {
     activity.markAllRead();
     if (localUnread) saveRetained((rows) => rows.map((row) => ({ ...row, read: true })));
     if (serverUnread) await p.onReadAllServer?.();
+    for (const g of eco.stroom) {
+      if (g.status === 'nieuw' && !g.externeSleutel.startsWith('site_notif:') && !g.externeSleutel.startsWith('act:') && !g.externeSleutel.startsWith('l:')) {
+        void eco.wijzigGebeurtenisStatus(g, 'gelezen');
+      }
+    }
   };
   const resetPosition = () => {
     const klasse = plaatsStaat().ctx.klasse;
@@ -813,7 +856,7 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   /* Het paneel (legacy lijst): wat in het open paneel te zien is, telt als gelezen — na een korte weergave. */
   useEffect(() => {
-    if (!panelOpen || v2) return;
+    if (!panelOpen || v2 || ecosysteemActief) return;
     const lokaal = zichtbaarLokaal.filter((row) => !row.read).map((row) => row.id);
     const serverIds = server.filter((item) => !item.read).map((item) => item.id);
     const eventIds = events.filter((event) => !activity.read.has(event.id)).map((event) => event.id);
@@ -825,7 +868,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     }, 700);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelOpen, v2, retained, p.serverItems, activity.events]);
+  }, [panelOpen, v2, ecosysteemActief, retained, p.serverItems, activity.events]);
 
   /* ☰ toont de teller als de bel in het menu staat (telefoon) */
   useEffect(() => { zetBelTeller(unreadCount); }, [unreadCount]);
@@ -862,6 +905,18 @@ export default function CanonicalNotificationCenter(p: Props) {
     dismiss();
   };
 
+  const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaal>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
+    await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
+    if (status !== 'nieuw') {
+      if (geb.id.startsWith('s:')) void p.onReadServer?.(geb.id.slice(2));
+      else if (geb.id.startsWith('a:')) activity.markRead(geb.id.slice(2));
+      else if (geb.id.startsWith('l:')) markLocalRead(geb.id.slice(2));
+    }
+    if ((geb.id.startsWith('s:') || geb.id.startsWith('a:') || geb.id.startsWith('l:')) && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
+      void wijzigStatus({ ids: [geb.id], status, hoe: 'kaart' });
+    }
+  };
+
   return (
     <>
       {active && (
@@ -871,7 +926,15 @@ export default function CanonicalNotificationCenter(p: Props) {
           data-no-edge-swipe='1'
           className={`canonical-notification-toast kind-${active.kind}${active.action ? ' has-action' : ''}${active.expanded ? ' expanded' : ''}${paused ? ' is-paused' : ''}${active.levensduurMs == null ? ' is-sticky' : ''}`}
           style={toastPos
-            ? { left: toastPos.left, top: toastPos.top, maxHeight: toastPos.maxHeight, right: 'auto', bottom: 'auto', ['--melding-top' as string]: `${toastPos.top}px` }
+            ? {
+                left: toastPos.left,
+                top: toastPos.top,
+                maxHeight: toastPos.maxHeight,
+                right: 'auto',
+                bottom: 'auto',
+                ['--melding-top' as string]: `${toastPos.top}px`,
+                ...(toastVeegDx ? { transform: `translateX(${toastVeegDx}px)`, opacity: Math.max(0.35, 1 - Math.abs(toastVeegDx) / 220) } : {}),
+              }
             : { visibility: 'hidden' }}
           role={active.kind === 'error' ? 'alert' : 'status'}
           data-levensduur={active.levensduurMs ?? 'vast'}
@@ -882,9 +945,27 @@ export default function CanonicalNotificationCenter(p: Props) {
           onPointerDown={(event) => { if (event.pointerType === 'touch') { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = true; pauzeer('aanraking', true); } }}
           onPointerUp={(event) => { if (event.pointerType === 'touch' && !heeftTouchEventRef.current) { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
           onPointerCancel={(event) => { if (event.pointerType === 'touch' && !heeftTouchEventRef.current) { laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
-          onTouchStart={() => { heeftTouchEventRef.current = true; laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = true; pauzeer('aanraking', true); }}
-          onTouchEnd={(event) => { laatsteAanrakingMsRef.current = Date.now(); if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
-          onTouchCancel={(event) => { laatsteAanrakingMsRef.current = Date.now(); if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); } }}
+          onTouchStart={(event) => { heeftTouchEventRef.current = true; laatsteAanrakingMsRef.current = Date.now(); aanrakingActiefRef.current = true; pauzeer('aanraking', true); toastVeegStartRef.current = event.touches[0] ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null; }}
+          onTouchMove={(event) => {
+            const st = toastVeegStartRef.current;
+            const pt = event.touches[0];
+            if (!st || !pt) return;
+            const dx = pt.clientX - st.x;
+            const dy = pt.clientY - st.y;
+            if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) setToastVeegDx(dx);
+          }}
+          onTouchEnd={(event) => {
+            laatsteAanrakingMsRef.current = Date.now();
+            if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); }
+            const dx = toastVeegDx;
+            toastVeegStartRef.current = null;
+            setToastVeegDx(0);
+            if (Math.abs(dx) >= 72) {
+              if (dx > 0 && activeRef.current?.meldingId) ruimToastOp();
+              else dismiss();
+            }
+          }}
+          onTouchCancel={(event) => { laatsteAanrakingMsRef.current = Date.now(); if (!heeftAanrakingOpToast(event.touches)) { aanrakingActiefRef.current = false; pauzeer('aanraking', false); } toastVeegStartRef.current = null; setToastVeegDx(0); }}
           onContextMenu={(event) => { if (aanrakingActiefRef.current || Date.now() - laatsteAanrakingMsRef.current < 800) event.preventDefault(); }}
           // Alleen toetsenbordfocus pauzeert (een muisklik of korte tik houdt hem niet hangend via focus).
           onFocus={(event) => { let toets = false; try { toets = event.target instanceof Element && event.target.matches(':focus-visible'); } catch { toets = false; } if (toets) pauzeer('toets', true); }}
@@ -895,9 +976,23 @@ export default function CanonicalNotificationCenter(p: Props) {
             {toastSectie ? <span className='canonical-notification-toast-sectie'>{toastSectie}</span> : null}
             <span className='canonical-notification-toast-titel'>{active.text}</span>
             {active.explain ? <p className='canonical-notification-toast-uitleg'>{active.explain}</p> : null}
-            {toastLink || active.meldingId ? (
+            {toastLink || active.meldingId || active.bijlagen?.length ? (
               <div className='canonical-notification-toast-acties'>
                 {toastLink ? <a className='canonical-notification-link' href={toastLink.href} data-qa-id='melding-openen'>{toastLink.label} →</a> : null}
+                {active.bijlagen?.length ? (
+                  <button
+                    type='button'
+                    className='canonical-notification-opruimen'
+                    data-qa-id='melding-bijlage-openen'
+                    onClick={() => {
+                      zetEcosysteemModusActief(true);
+                      setPanelOpen(true);
+                      dismiss();
+                    }}
+                  >
+                    {t(`Вкладення (${active.bijlagen.length})`, `Bijlagen (${active.bijlagen.length})`)}
+                  </button>
+                ) : null}
                 {active.meldingId ? (
                   <button type='button' className='canonical-notification-opruimen' data-qa-id='melding-opruimen' onClick={ruimToastOp}
                     title={t('Позначити прочитаним і перенести в «Архів» (можна повернути)', 'Als gelezen markeren en naar «Archief» (terug te zetten)')}>
@@ -962,7 +1057,7 @@ export default function CanonicalNotificationCenter(p: Props) {
         )}
       </Plek>
 
-      {panelOpen && (
+      {panelOpen && !ecosysteemActief && (
         <section
           ref={panelRef}
           data-qa-id='canonical-notification-panel'
@@ -1009,6 +1104,16 @@ export default function CanonicalNotificationCenter(p: Props) {
                   <Ellipsis aria-hidden='true' />
                 </button>
                 <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')} title={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')}><Minimize2 /></button>
+                <button
+                  type='button'
+                  className='cnc-ecosysteem-schakel'
+                  data-qa-id='melding-ecosysteem-openen'
+                  onClick={() => { zetEcosysteemModusActief(true); }}
+                  aria-label={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                  title={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                >
+                  <Sparkles aria-hidden='true' />
+                </button>
               </header>
               {techRegel && (
                 <button type='button' className='canonical-notification-tech' data-qa-id='tech-meldingen-samenvatting' data-tech-aantal={techUnread} onClick={() => { setPanelOpen(false); openTechMeldingen(); }}>
@@ -1058,7 +1163,29 @@ export default function CanonicalNotificationCenter(p: Props) {
           )}
         </section>
       )}
-      {panelOpen && paneelPijl ? <span className='cnc-pijl' data-kant={paneelPijl.kant} data-qa-id='melding-paneel-pijl' style={{ left: paneelPijl.left, top: paneelPijl.top }} aria-hidden='true' /> : null}
+      {ecosysteemActief && (
+        <MeldingenPortaal
+          lang={p.lang}
+          open={panelOpen}
+          ruimte={ecoRuimte}
+          subdomeinNu={subdomeinNu}
+          profiel={eco.profiel}
+          stroom={eco.stroom}
+          laden={eco.laden}
+          sound={sound}
+          techTypen={!!tech.profiel}
+          onSluiten={() => setPanelOpen(false)}
+          onOpenen={() => setPanelOpen(true)}
+          onToggleSound={toggleSound}
+          onVervers={() => void eco.verversStroom()}
+          onSlaGeometrieOp={eco.slaGeometrieOp}
+          onStatusWijzigen={wijzigEnSyncStatus}
+          onOntleden={(g, modus, aanbieder) => eco.ontledenMetAi(g, modus, aanbieder)}
+          onMarkAll={() => void markAll()}
+          onSwitchToClassic={() => { zetEcosysteemModusActief(false); setPanelOpen(true); }}
+        />
+      )}
+      {panelOpen && !ecosysteemActief && paneelPijl ? <span className='cnc-pijl' data-kant={paneelPijl.kant} data-qa-id='melding-paneel-pijl' style={{ left: paneelPijl.left, top: paneelPijl.top }} aria-hidden='true' /> : null}
     </>
   );
 }

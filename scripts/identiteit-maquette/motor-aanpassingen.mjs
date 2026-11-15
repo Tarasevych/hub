@@ -285,7 +285,7 @@ v(`  /** Розділ розгорнуто: сайт монтує справжн
 // Demo-elementen boven het echte paneel: in accountonderdelen gemarkeerd als «Voorbeeld» en een knop naar de echte instelling.
 v(`  function drawerControl(control,i,sectionId){
     const key=sectionId+"-"+i,type=control.type,t=ui();`,
-`  const демоДоСайту={sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+`  const демоДоСайту={melding:"#melding-modus",sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
   const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
   function чеснийЕлемент(control,i,sectionId,ціль){
     const nl=preferences.lang==="nl";

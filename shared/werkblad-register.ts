@@ -33,7 +33,7 @@ export type CanoniekeDienst = typeof CANONIEKE_DIENSTEN[number];
 export const MENU_ICOON_IDS = [
   'home', 'bot', 'mail', 'cloud', 'github', 'house', 'key', 'network', 'shield', 'share', 'calendar', 'tasks', 'notes', 'google', 'microsoft', 'drive', 'onedrive', 'dropbox', 'settings', 'cable',
   'overview', 'recent', 'workspace', 'agents', 'runs', 'workflows', 'connections', 'unread', 'all-mail', 'important', 'drafts', 'sent', 'archive', 'labels', 'local', 'photos', 'accounts',
-  'repositories', 'projects', 'documentation', 'research', 'activity', 'personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'vault', 'oauth',
+  'repositories', 'projects', 'documentation', 'research', 'activity', 'personalization', 'menu', 'themes', 'languages', 'widgets', 'melding', 'sharing', 'identity', 'account', 'sessions', 'vault', 'oauth',
   'access', 'webhooks', 'events', 'logs', 'import', 'reconciliation', 'apps', 'devices', 'sso', 'directories', 'roles', 'audit', 'inbox', 'star', 'snooze', 'dot', 'spam', 'trash', 'news',
   'scheduled', 'tune', 'sidebar', 'blocks', 'invite', 'id-card', 'lock', 'lifebuoy', 'user-check', 'reconcile', 'sign-in', 'gauge', 'link', 'download', 'ai-access', 'deploy',
 ] as const;
@@ -52,7 +52,7 @@ const PAGINA_ICOON: Record<string, Record<string, string>> = {
   github: { overview: 'github', repositories: 'repositories', code: 'drafts', issues: 'dot', pulls: 'reconcile', actions: 'workflows', releases: 'deploy', sync: 'webhooks', projects: 'projects', documentation: 'documentation', research: 'research', activity: 'activity', accounts: 'accounts' },
   huis: { overview: 'overview', rooms: 'blocks', devices: 'devices', scenes: 'workspace', automations: 'workflows', security: 'lock', energy: 'gauge', activity: 'activity', integrations: 'connections', assistant: 'ai-access', settings: 'tune', showroom: 'photos', planner: 'reconcile' },
   mcp: { overview: 'overview', dashboard: 'deploy', services: 'connections', tools: 'workflows', board: 'projects', agents: 'agents', apps: 'blocks', playground: 'runs', traffic: 'gauge', connect: 'link', roadmap: 'documentation', download: 'download', verbindingen: 'key' },
-  identity: { personalization: 'tune', menu: 'sidebar', themes: 'themes', languages: 'languages', widgets: 'blocks', sharing: 'invite', identity: 'id-card', account: 'account', sessions: 'sessions', methods: 'vault', security: 'lock', recovery: 'lifebuoy' },
+  identity: { personalization: 'tune', menu: 'sidebar', themes: 'themes', languages: 'languages', widgets: 'blocks', melding: 'melding', sharing: 'invite', identity: 'id-card', account: 'account', sessions: 'sessions', methods: 'vault', security: 'lock', recovery: 'lifebuoy' },
   api: { verbindingen: 'connections', vault: 'vault', oauth: 'oauth', access: 'user-check', webhooks: 'webhooks', events: 'events', logs: 'logs', import: 'import', reconciliation: 'reconcile' },
   admin: { overview: 'overview', access: 'user-check', ai: 'ai-access', contour: 'vault', updates: 'import', apps: 'oauth', devices: 'sessions', sso: 'sign-in', directories: 'connections', roles: 'accounts', diagnostics: 'activity', audit: 'logs' },
 };
