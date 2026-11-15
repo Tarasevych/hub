@@ -162,7 +162,7 @@ const LABELS = {
   native_permission: ['Дозвіл Native Messaging у Chrome', 'Native Messaging-recht in Chrome'],
   native: ['Локальний агент', 'Lokale agent'],
   diag_opt_in: ['Діагностику дозволено', 'Diagnose toegestaan'],
-  site_tab: ['Відкрита вкладка Mijn Ruimte', 'Open Mijn Ruimte-tabblad'],
+  site_tab: ['Сторінки tarasevych.com у цьому браузері (у будь-якому вікні)', 'tarasevych.com-pagina’s in deze browser (in elk venster)'],
   bridge: ['Розширення активне на сторінці', 'Extensie actief op de pagina'],
   account: ['Той самий обліковий запис на сторінці', 'Zelfde account op de pagina'],
 };
@@ -176,7 +176,8 @@ const HERSTEL = {
   profiel: ['Відкрийте сторінку tarasevych.com у потрібному режимі.', 'Open een tarasevych.com-pagina in de juiste modus.'],
   debugger_permission: ['Стандартний пакет навмисно без дозволу налагоджувача. Для глибокої діагностики встановіть пакет «діагностика» з сайту й натисніть ↻ у chrome://extensions.', 'Het standaardpakket heeft bewust geen debuggerrecht. Installeer voor diepe diagnose het pakket «diagnose» van de site en klik ↻ in chrome://extensions.'],
   diag_opt_in: ['Глибоку діагностику не дозволено. Увімкніть перемикач вище, якщо вона потрібна.', 'Diepe diagnose is niet toegestaan. Zet de schakelaar hierboven aan als u die nodig hebt.'],
-  site_tab: ['Відкрийте будь-яку сторінку tarasevych.com в активній вкладці.', 'Open een tarasevych.com-pagina in het actieve tabblad.'],
+  // 0.9.4: geen voorwaarde maar een hint (c.hint): welk tabblad actief is doet er niet toe. Tekst hangt af van c.tabs (zie siteTabHint).
+  site_tab: ['Зараз не відкрито жодної сторінки tarasevych.com. Це не заважає: розширення шукає вкладки сайту у фоні в усіх вікнах, а ШІ сам відкриє потрібну сторінку, коли вона знадобиться. Яка вкладка активна — значення не має.', 'Er staat nu geen tarasevych.com-pagina open. Dat is geen probleem: de extensie zoekt tabbladen van de site op de achtergrond in alle vensters, en de AI opent zelf de pagina die hij nodig heeft. Welk tabblad actief is, maakt niet uit.'],
   // 0.9.1: geen F5 meer — de extensie plaatst zich zelf op open tabbladen; dit verschijnt alleen als Chrome dat weigerde.
   bridge: ['Розширення під’єднується до відкритих сторінок tarasevych.com саме, без оновлення. Якщо цей рядок лишився — вкладка заснула або Chrome не дав доступу до неї: перейдіть на вкладку й натисніть «Перевірити» ще раз.', 'De extensie koppelt zich zelf aan open tarasevych.com-pagina’s, zonder vernieuwen. Blijft deze regel staan, dan sliep het tabblad of gaf Chrome geen toegang: ga naar het tabblad en klik nogmaals op «Controleren».'],
   account: ['На сторінці інший обліковий запис. Увійдіть тим самим, що й у розширенні.', 'Op de pagina staat een ander account. Meld u aan met hetzelfde als in de extensie.'],
@@ -184,6 +185,12 @@ const HERSTEL = {
   native_permission: ['Chrome не дав дозвіл Native Messaging. Увімкніть перемикач у «Додатково».', 'Chrome gaf geen Native Messaging-recht. Zet de schakelaar in «Extra» aan.'],
   native: ['Локальна програма не відповідає. Встановіть її за інструкцією на сайті.', 'Het lokale programma antwoordt niet. Installeer het volgens de instructies op de site.'],
 };
+/** 0.9.4: uitleg bij site_tab. c.tabs = aantal open tarasevych.com-tabbladen (alle vensters). */
+function siteTabHint(c) {
+  const n = Number.isInteger(c && c.tabs) ? c.tabs : 0;
+  if (n > 0) return [`Відкрито сторінок tarasevych.com: ${n}, але жодна з них зараз не входить у відкритий для ШІ доступ (інша адреса або інший профіль). Це не помилка: ШІ відкриє дозволену сторінку сам, коли вона знадобиться.`, `Open tarasevych.com-pagina’s: ${n}, maar geen ervan valt nu binnen de geopende AI-toegang (ander adres of ander profiel). Geen fout: de AI opent zelf een toegestane pagina als dat nodig is.`];
+  return HERSTEL.site_tab;
+}
 document.getElementById('self-test').addEventListener('click', async () => {
   const knop = document.getElementById('self-test');
   const out = document.getElementById('self-test-result');
@@ -193,7 +200,8 @@ document.getElementById('self-test').addEventListener('click', async () => {
   try {
     const r = await UI.vraag({ op: 'self-test' });
     if (!r || !Array.isArray(r.checks)) { meld(out, 'Не вдалося виконати перевірку: служба розширення не відповіла. Натисніть ↻ у chrome://extensions і повторіть.', 'Controle mislukt: de dienst van de extensie antwoordde niet. Klik ↻ in chrome://extensions en probeer opnieuw.', 'fout'); list.replaceChildren(); return; }
-    const fout = r.checks.filter((c) => !c.ok).length;
+    // 0.9.4: hints (c.hint, bv. «geen tarasevych.com-pagina open») tellen niet als «не виконано»: ze krijgen ⓘ, geen ✗.
+    const fout = r.checks.filter((c) => !c.ok && !c.hint).length;
     // Nooit «усе гаразд» als er een ✗ in de lijst staat: r.ok van de achtergrond negeert alleen informatieve controles.
     meld(out, fout === 0 ? `Усе гаразд (${r.checks.length} перевірок)` : r.ok ? `Основне працює. Не виконано умов: ${fout} з ${r.checks.length} — це не помилка, нижче що вони означають.` : `Перевірок: ${r.checks.length}, не пройшли: ${fout}. Нижче — причина й що зробити.`,
       fout === 0 ? `Alles in orde (${r.checks.length} controles)` : r.ok ? `De basis werkt. Niet vervulde voorwaarden: ${fout} van ${r.checks.length} — geen fout, hieronder wat ze betekenen.` : `Controles: ${r.checks.length}, niet gelukt: ${fout}. Hieronder oorzaak en wat te doen.`, fout === 0 ? 'ok' : 'off');
@@ -201,12 +209,22 @@ document.getElementById('self-test').addEventListener('click', async () => {
       const [ruimte, id] = String(c.id).includes('.') ? String(c.id).split('.') : [null, String(c.id)];
       const [uk, nl] = LABELS[id] || [id, id];
       const voor = ruimte && UI.TITEL[ruimte] ? `${UI.t(UI.TITEL[ruimte][0], UI.TITEL[ruimte][1])}: ` : '';
-      const li = UI.maak('li', { class: c.ok ? 'ok' : 'off', 'data-check': String(c.id) },
-        UI.maak('span', { class: 'check-teken', 'aria-hidden': 'true' }, c.ok ? '✓' : '✗'),
+      const hint = !c.ok && c.hint === true;
+      const li = UI.maak('li', { class: c.ok ? 'ok' : hint ? 'hint' : 'off', 'data-check': String(c.id) },
+        UI.maak('span', { class: 'check-teken', 'aria-hidden': 'true' }, c.ok ? '✓' : hint ? 'ⓘ' : '✗'),
         UI.maak('span', { class: 'check-wat' }, `${voor}${UI.t(uk, nl)}`),
-        UI.maak('span', { class: 'vh' }, c.ok ? UI.t('гаразд', 'in orde') : UI.t('не пройшло', 'niet gelukt')));
+        UI.maak('span', { class: 'vh' }, c.ok ? UI.t('гаразд', 'in orde') : hint ? UI.t('довідка, не помилка', 'ter info, geen fout') : UI.t('не пройшло', 'niet gelukt')));
       if (c.detail) li.append(UI.maak('span', { class: 'check-detail' }, String(c.detail)));
-      if (!c.ok && HERSTEL[id]) li.append(UI.maak('span', { class: 'check-herstel' }, UI.t(HERSTEL[id][0], HERSTEL[id][1])));
+      const herstel = id === 'site_tab' ? siteTabHint(c) : HERSTEL[id];
+      if (!c.ok && herstel) li.append(UI.maak('span', { class: 'check-herstel' }, UI.t(herstel[0], herstel[1])));
+      if (!c.ok && id === 'site_tab') {
+        // Eén klik: opent de site in een nieuw tabblad; deze pagina blijft open. Не обов'язково — лише для перевірки.
+        const open = UI.maak('button', { type: 'button', class: 'klein check-actie',
+          title: UI.t('Відкриває tarasevych.com у новій вкладці, щоб одразу перевірити зв’язок розширення зі сторінкою. Не обов’язково: ШІ відкриє сторінку сам, коли вона знадобиться. Доступ ШІ від цього не змінюється.', 'Opent tarasevych.com in een nieuw tabblad om de koppeling van de extensie met de pagina meteen te controleren. Niet nodig: de AI opent zelf een pagina als dat nodig is. De toegang van de AI verandert hierdoor niet.') },
+        UI.t('Відкрити tarasevych.com', 'tarasevych.com openen'));
+        open.addEventListener('click', () => UI.openTab(UI.URLS.beheer));
+        li.append(open);
+      }
       return li;
     }));
   } finally { knop.disabled = false; knop.removeAttribute('aria-busy'); }
@@ -236,7 +254,8 @@ function toonOverig(s, sl) {
   const doms = new Set();
   for (const x of [sl.prive, sl.technisch]) if (x && x.ontgrendeling && Array.isArray(x.ontgrendeling.domeinen)) for (const d of x.ontgrendeling.domeinen) doms.add(String(d));
   document.getElementById('tab-info').replaceChildren(
-    regel(p ? 'ja' : 'let-op', p ? UI.t(`Активна вкладка: tarasevych.com, профіль «${p === 'technisch' ? 'Технічний' : 'Користувач'}»`, `Actief tabblad: tarasevych.com, profiel «${p === 'technisch' ? 'Technisch' : 'Gebruiker'}»`) : UI.t('Активна вкладка не на tarasevych.com — ШІ її не бачить', 'Het actieve tabblad is niet op tarasevych.com — de AI ziet het niet')),
+    // 0.9.4: zonder actief site-tabblad neutraal (info): de extensie werkt met tabbladen op de achtergrond.
+    regel(p ? 'ja' : 'info', p ? UI.t(`Активна вкладка: tarasevych.com, профіль «${p === 'technisch' ? 'Технічний' : 'Користувач'}»`, `Actief tabblad: tarasevych.com, profiel «${p === 'technisch' ? 'Technisch' : 'Gebruiker'}»`) : UI.t(...UI.tabTekst(s, null))),
     regel(doms.size ? 'ja' : 'let-op', doms.size ? `${UI.t('Дозволені сайти', 'Toegestane sites')}: ${[...doms].join(', ')}` : UI.t('Дозволених сайтів зараз немає (доступ закрито)', 'Nu geen toegestane sites (toegang dicht)')));
   const agenten = [];
   for (const [r, x] of [['prive', sl.prive], ['technisch', sl.technisch]]) {
