@@ -165,9 +165,6 @@ jobs:
             identiteit-atelier \
             identiteit-maquette \
             centrering-pc-20261115 \
-            ankers-001-paginanav \
-            identiteit-015-vormgeving \
-            identiteit-015-stille-uren \
             identiteit-015-vormgeving-toegang \
             ui-paneel-gebruikers-audit-gemini-001 \
             hulp-vraagtekens \
@@ -258,6 +255,9 @@ jobs:
           # Повторний прогін нічого не змінює. · Tweede keer: niets te doen.
           node dist-server/migrate.mjs | tail -1
           for t in \
+            ankers-001-paginanav \
+            identiteit-015-vormgeving \
+            identiteit-015-stille-uren \
             telegram-venster-20261114 \
             telegram-aanmelden-stroom-20261109 \
             telegram-inlog-apparaat-20261112 \
