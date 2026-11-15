@@ -3077,6 +3077,21 @@
    "pad": "tests/eenheid/geheugen-taken-en-13-agenten.test.ts",
    "wat": "Eenheidstest en PG-RLS-test voor sessie-overstijgende taken, 13 canonieke MCP-agenten, 8 geheugen_*-hulpmiddelen en geheimvrije overdracht.",
    "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/agenten/anker-bron.ts",
+   "wat": "Gedeelde ankerbron voor de AI-koppelingspagina (/agents), zodat de pagina en de zwevende ankernavigatie exact dezelfde secties, namen, iconen en tellers tonen.",
+   "sinds": "ANKERS-002 (PR #114)"
+  },
+  {
+   "pad": "tests/eenheid/ankers-002-agenten-20261115.test.ts",
+   "wat": "Eenheidstest voor afgeronde kaarten zonder flat-content-afplatting en één gedeeld ankermenu op /agents en #agent/….",
+   "sinds": "ANKERS-002 (PR #114)"
+  },
+  {
+   "pad": "tests/eenheid/mail-dok-pil-20261115.test.ts",
+   "wat": "Eenheidstest voor transparante pagineringsstrook met eigen afgeronde pillen voor paginering en selectie in de e-mailwerkruimte.",
+   "sinds": "MAILDOK-001 (PR #115)"
   }
  ]
 }
