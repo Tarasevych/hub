@@ -298,6 +298,8 @@ export async function main(): Promise<number> {
     check('ook na ontkoppelen blijven de foto\'s bewaard', (await sql('SELECT count(*)::int AS n FROM app.tg_fotos WHERE telegram_id = $1', [String(TG)]))[0].n === 2);
   } finally {
     await opruimen();
+    await sql('DELETE FROM app.tg_fotos WHERE telegram_id = $1', [String(TG)]);
+    if (!bestaand) await sql('DELETE FROM app.records WHERE id = $1', [eigenaar]);
     await sql("UPDATE app.feature_flags SET aan = false, standaard = false WHERE sleutel = 'telegram-aanmelden-v1'");
     sleutels.zetKluisVoorTest(null);
     opslag.registreerVlagBeoordelaar(null);
