@@ -39,9 +39,14 @@ export async function main(): Promise<number> {
     adressen.filter((a) => a === 'eigenaar@example.test').length === 1 && rijen.find((r) => r.email.toLowerCase() === 'eigenaar@example.test')?.soort === 'google');
   check('ПІСЛЯ: inactieve IMAP-koppeling niet in het menu', !adressen.includes('weg@yahoo.com'));
   check('ПІСЛЯ: volgorde — hoofd-Gmail eerst, dan Microsoft, dan IMAP', rijen[0].hoofd && rijen[0].soort === 'google' && rijen[1].soort === 'microsoft' && rijen.slice(2).every((r) => r.soort === 'imap'));
-  check('ПІСЛЯ: alleen Google kan hier direct worden geopend; IMAP/Microsoft gaan naar het beheer', rijen.filter((r) => r.kiesbaar).every((r) => r.soort === 'google') && rijen.filter((r) => r.soort !== 'google').every((r) => !r.kiesbaar));
+  // MAIL-IMAP-LEZEN-001 (15.11.2026, tweede klacht): IMAP kiezen = de berichten van die mailbox zien; alleen Microsoft gaat nog naar het beheer.
+  check('ПІСЛЯ: Google en IMAP zijn kiesbaar (wisselen in de lijst); Microsoft opent het beheer',
+    rijen.filter((r) => r.soort !== 'microsoft').every((r) => r.kiesbaar) && rijen.filter((r) => r.soort === 'microsoft').every((r) => !r.kiesbaar));
+  const werkBron = lees('src/GoogleMailWerkruimte.tsx');
+  check('ПІСЛЯ: werkruimte toont ImapPostvak voor de gekozen IMAP-mailbox en beide wisselaars krijgen onSelectImap',
+    werkBron.includes('<ImapPostvak key={imapActiefId}') && (werkBron.match(/onSelectImap=\{setImapActiefId\}/g) || []).length === 2 && (werkBron.match(/setImapActiefId\(''\);void selectAccount\(id\)/g) || []).length === 2);
   const fout = rijen.find((r) => r.email === 'derde@i.ua')!;
-  check('ПІСЛЯ: een IMAP-fout vraagt aandacht en de uitleg zegt wat er gebeurt (uk + nl)', fout.aandacht && wisselUitleg(fout, 'uk').includes('сторінка акаунтів') && wisselUitleg(fout, 'nl').includes('accountpagina'));
+  check('ПІСЛЯ: een IMAP-fout vraagt aandacht en de uitleg zegt wat er gebeurt (uk + nl)', fout.aandacht && wisselUitleg(fout, 'uk').includes('сторінку акаунтів') && wisselUitleg(fout, 'nl').includes('accountpagina'));
   const nl = wisselRijen({ taal: 'nl', google, connectors, imap });
   check('ПІСЛЯ: Nederlandse standen', nl.some((r) => r.stand === 'primair') && nl.some((r) => r.stand.includes('gekoppeld')));
   check('ПІСЛЯ: geen geheimen of tellers in de rijen', !JSON.stringify(rijen).match(/wachtwoord|geheim|password/i));
