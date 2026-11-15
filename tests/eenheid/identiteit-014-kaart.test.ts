@@ -81,13 +81,13 @@ export async function main(): Promise<number> {
 
   // ================================================================ інтерфейс: справжній перемикач і прибраний демо-перемикач
   {
-    const z = lees('src/ZijbalkInstellingen.tsx');
-    const i = z.indexOf("schakel('reserve',"), groep = z.indexOf("<div className='zijbalk-meldingen-groep'");
-    check('меню: перемикач reserve у #menu-meldingen, поза групою, що вимикається разом із мітками (не disabled від !m.aan)',
-      i > z.indexOf("<Blok id='menu-meldingen'") && i < groep && !z.slice(i, z.indexOf('\n', i)).includes(',!m.aan)') && z.slice(i, z.indexOf('\n', i)).includes('zetM({reserveHerinnering:x})'));
+    // ДУБЛІ-001 (рішення Павла 15.11): нагадування про резервний доступ — лише у «Відновленні доступу», у «Меню» його більше немає.
+    const z = lees('src/ZijbalkInstellingen.tsx'), sc = lees('src/herstel/Scenarios.tsx');
+    check('нагадування reserve: лише у «Відновленні доступу» (data-herstel-reserve), у меню перемикача немає',
+      !z.includes("schakel('reserve',") && sc.includes("data-herstel-reserve='schakel'") && sc.includes('<ReserveHerinneringKoppeling'));
     const loc = lees('docs/ontwerp/identiteit-account/maquette-bron/locales.js'), motor = lees('src/identiteit/maquette/maquette-motor.ts');
-    check('«Макет»: демо-перемикача нагадування більше немає (джерело й згенерований двигун), замість нього — указівка на Меню',
-      !/type:"toggle",label:"(Нагадування про резервний доступ|Herinnering over herstel)"/.test(loc + motor) && loc.includes('Справжній перемикач — у Меню') && motor.includes('De echte schakelaar staat bij Menu'));
+    check('«Макет»: демо-перемикача нагадування більше немає (джерело й згенерований двигун), замість нього — указівка на «Чинні налаштування»',
+      !/type:"toggle",label:"(Нагадування про резервний доступ|Herinnering over herstel)"/.test(loc + motor) && loc.includes('Справжній перемикач — у блоці «Чинні налаштування»') && motor.includes('De echte schakelaar staat in het blok «Huidige instellingen»'));
     const t = lees('backend/toegangslaag.ts');
     check('сервер: перевірка в herstelcodeGebruiken — спільній точці входу, TOTP і «Підтвердіть доступ»', /async function herstelcodeGebruiken[\s\S]*?await reserveBijnaOpMelden\(userId,[\s\S]*?return sleutel;/.test(t) && t.includes("'laagGemeld',herstelSetSleutel(recovery)"));
   }
@@ -128,7 +128,7 @@ export async function main(): Promise<number> {
     };
     const ontbreekt = [...doelen].filter((d) => !d.split('|')[1].split(/\s+/).every(deelBestaat));
     check(`карта: усі ${doelen.size} цілей data-kaart-ga існують як id / клас / атрибут у коді src/`, doelen.size >= 25 && ontbreekt.length === 0, ontbreekt.join(', '));
-    const fase3 = ['menu|#menu-meldingtypen', 'menu|[data-meld-schakel="reserve"]', 'sharing|#delen-uitnodigen', 'sharing|#delen-leden', 'account|#gegevensuitvoer', 'recovery|#herstel-overzicht', 'recovery|#herstel-scenarios', 'recovery|#herstel-sleutelverlies', 'methods|#aanmeldmethoden-wachtwoord', 'methods|#aanmeldmethoden-catalogus', 'security|#aanmeldmethoden-2fa'];
+    const fase3 = ['melding|#melding-kanalen', 'recovery|[data-herstel-reserve="schakel"]', 'sharing|#delen-uitnodigen', 'sharing|#delen-leden', 'account|#gegevensuitvoer', 'recovery|#herstel-overzicht', 'recovery|#herstel-scenarios', 'recovery|#herstel-sleutelverlies', 'methods|#aanmeldmethoden-wachtwoord', 'methods|#aanmeldmethoden-catalogus', 'security|#aanmeldmethoden-2fa'];
     check('карта: якорі фази 3 використано саме з цими назвами й у своїх розділах', fase3.every((d) => doelen.has(d)), fase3.filter((d) => !doelen.has(d)).join(', '));
 
     // Справжній рендер старої панелі в межах розділу (як гніздо «Макета»): цілі розділів methods / security / recovery на місці.

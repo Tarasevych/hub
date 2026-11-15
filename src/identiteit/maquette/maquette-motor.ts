@@ -155,7 +155,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-          {type:"info",label:"Нагадування про резервний доступ",note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
+          {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у блоці «Чинні налаштування» цього розділу. Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
           {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх ключів доступу означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
@@ -282,7 +282,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-          {type:"info",label:"Herinnering aan reservetoegang",note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
+          {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
           {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
@@ -900,9 +900,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "розташування":{стан:"в-чинних",ціль:"#menu-indeling"},
       "додаткове":{стан:"частково",ціль:"#menu-modus",рядки:{0:"частково",1:"частково",2:"частково",3:"недоступно"}},
       "швидкий-доступ":{стан:"в-чинних",ціль:"#menu-snel"},
-      "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",цілі:{9:"#menu-meldingtypen"},додати:[
-        {uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-meld-schakel=\"reserve\"]",іконка:"нагадування"}
-      ]},
+      "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",цілі:{6:"melding|#melding-kanalen",7:"melding|#melding-kanalen",8:"melding|#melding-kanalen",9:"melding|#melding-kanalen"}}, // САЙТ (ДУБЛІ-001): тихі години й типи — лише в «Сповіщеннях»
       "швидкодія":{стан:"в-чинних",ціль:"#menu-snelheid"},
       "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid"}
     },

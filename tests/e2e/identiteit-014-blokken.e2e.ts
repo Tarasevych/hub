@@ -20,7 +20,7 @@ const HOSTS = ['id', 'mcp', 'mail', 'hub', 'admin', 'cloud', 'ai'].map((h) => `h
 const ID = 'https://id.tarasevych.com';
 // Сторінка → якір блоку фази 3.
 const BLOKKEN: Array<[string, string]> = [
-  ['menu', 'menu-meldingtypen'],
+  ['melding', 'melding-kanalen'], // ДУБЛІ-001: типи сповіщень і тихі години — лише в «Сповіщеннях»
   ['sharing', 'delen-uitnodigen'],
   ['sharing', 'delen-leden'],
   ['account', 'gegevensuitvoer'],

@@ -3,14 +3,12 @@
 import {useState,type ReactElement,type ReactNode} from 'react';
 import {BevestigDialoog} from './platform/BevestigDialoog'; // IDENTITEIT-013
 import {conceptAantal} from './concepten';
-import {BellRing,ChevronDown,SlidersHorizontal,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen,Zap} from 'lucide-react';
+import {BellRing,ChevronDown,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen,Zap} from 'lucide-react';
 import type {SnelheidVoorkeuren} from '../shared/menu-snelheid';
 import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeuren} from '../shared/menu-meldingen-voorkeuren';
 import {DIENST_ACCENT,type IcoonStijl,type ZijbalkModus} from '../shared/menu-model';
 import {MenuGlyph} from './menu-voorkeuren';
 import {useZijbalkVoorkeuren,zetZijbalk} from './zijbalk-voorkeuren';
-import MeldingVoorkeurenPaneel from './meldingen/MeldingVoorkeurenPaneel'; // IDENTITEIT-014: «Типи сповіщень» і тут, не лише в дзвонику
-import {useTech} from './tech/tech-opslag';
 import MenuIndelingInstellingen from './MenuIndelingInstellingen';
 import SnelleToegangEditor from './SnelleToegangBewerker';
 import type {AccountRechten} from './account-rechten';
@@ -24,7 +22,6 @@ const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','s
 
 export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zichtbaarheid?:ReactNode;rechten?:AccountRechten}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
-  const tech=useTech(); // технічні типи сповіщень — лише з технічним профілем (як у дзвонику)
   const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
   // IDENTITEIT-013: вимкнення «Чернеток» одразу стирає всі збережені чернетки цього браузера — тому спершу підтвердження з їхньою кількістю.
   const lang=tr('uk','nl') as 'uk'|'nl';
@@ -67,19 +64,12 @@ export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zi
     <Blok id='menu-indeling' icoon={<Move/>} titel={tr('Розташування й порядок меню','Plaats en indeling van het menu')} uitleg={tr('Збоку чи док, порядок, редагування, скидання','Zijkant of dock, volgorde, bewerken, terugzetten')}>
     <MenuIndelingInstellingen tr={tr}/>
     </Blok>
-    <Blok id='menu-meldingen' icoon={<BellRing/>} titel={tr('Сповіщення в меню','Meldingen in het menu')} uitleg={tr('Мітки, бульбашки, нагадування, тихі години','Badges, bellen, herinneringen, stille uren')}>
+    <Blok id='menu-meldingen' icoon={<BellRing/>} titel={tr('Сповіщення в меню','Meldingen in het menu')} uitleg={tr('Мітки й бульбашки на пунктах меню','Badges en bellen op menu-items')}>
     <fieldset className='zijbalk-meldingen' data-menu-meldingen-instellingen>
       <legend><BellRing aria-hidden='true'/>{tr('Сповіщення в меню','Meldingen in het menu')}</legend>
       <p className='zijbalk-meldingen-uitleg'>{tr('Пункти меню показують мітку, коли там є щось нове (наприклад, непрочитані листи чи запит на доступ). Наведіть на пункт — побачите список, кожне можна прибрати хрестиком. Бачите лише ви: гості та інші акаунти цього не отримують.','Menu-items tonen een badge als er iets nieuws is (bijv. ongelezen e-mail of een toegangsverzoek). Wijs een item aan voor de lijst; elk bericht kun je met het kruisje verbergen. Alleen jij ziet dit: gasten en andere accounts niet.')}</p>
       {schakel('aan',m.aan,tr('Показувати мітки сповіщень','Badges tonen'),'',x=>zetM({aan:x}))}
-      {/* IDENTITEIT-014: попередження безпеки (типово увімкнено) — надсилає сервер, тому не залежить від міток меню й не вимикається разом із ними. */}
-      {schakel('reserve',m.reserveHerinnering!==false,tr('Нагадувати про резервний доступ','Herinneren aan reservetoegang'),m.reserveHerinnering!==false?tr('Коли після використання залишиться 2 коди відновлення або менше, у центрі сповіщень з’явиться одне нагадування створити нові.','Als er na gebruik nog 2 of minder herstelcodes over zijn, verschijnt één herinnering in het meldingencentrum om nieuwe te maken.'):tr('Вимкнено: про останні коди відновлення ви не дізнаєтеся, доки не спробуєте ними скористатися.','Uit: u merkt pas dat de laatste herstelcodes op zijn wanneer u er een probeert te gebruiken.'),x=>zetM({reserveHerinnering:x}))}
-      {/* IDENTITEIT-015 (kaart-stille-uren): тихі години діють на весь центр сповіщень (спливання, звук, пульс і нагадування міток), тому
-          не залежать від «Показувати мітки». Попередження безпеки однаково спливають. Після кінця — один підсумок «Поки була тиша: N». */}
-      <div className='zijbalk-meldingen-stil' data-stille-uren>
-        {schakel('stil',m.stil.aan,tr('Тихі години','Stille uren'),m.stil.aan?tr(`З ${m.stil.van} до ${m.stil.tot} нові сповіщення не спливають і не звучать, мітки меню не пульсують — усе лишається в панелі сповіщень. Попередження безпеки все одно з’являються. Після кінця тиші — одне зведення «Поки була тиша: N».`,`Van ${m.stil.van} tot ${m.stil.tot} verschijnen nieuwe meldingen niet en maken ze geen geluid, menubadges pulseren niet — alles blijft in het meldingenpaneel. Beveiligingswaarschuwingen verschijnen wel. Na afloop één overzicht «Tijdens de stille uren: N».`):tr('Вимкнено: сповіщення спливають і звучать будь-коли (як налаштовано для кожного типу).','Uit: meldingen verschijnen en klinken op elk moment (zoals per type ingesteld).'),x=>zetM({stil:{...m.stil,aan:x}}))}
-        <span className='zijbalk-meldingen-tijden'><input type='time' aria-label={tr('Від','Van')} value={m.stil.van} disabled={!m.stil.aan} onChange={e=>zetM({stil:{...m.stil,van:e.target.value}})}/>–<input type='time' aria-label={tr('До','Tot')} value={m.stil.tot} disabled={!m.stil.aan} onChange={e=>zetM({stil:{...m.stil,tot:e.target.value}})}/></span>
-      </div>
+      {/* ДУБЛІ-001: тихі години й нагадування про резервний доступ — лише в розділах «Сповіщення» та «Відновлення доступу». */}
       <div className='zijbalk-meldingen-groep' aria-disabled={!m.aan}>
         <div className='zijbalk-keuze compact zijbalk-badge-stijl' role='radiogroup' aria-label={tr('Вигляд мітки','Weergave van de badge')}>
           {([['getal',tr('Число','Getal'),tr('Скільки нового','Hoeveel nieuw')],['punt',tr('Кольорова крапка','Gekleurde stip'),tr('Колір — категорія','Kleur = categorie')]] as const).map(([id,naam,uitleg])=><label key={id} className={m.stijl===id?'actief':''}>
@@ -98,10 +88,6 @@ export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zi
         </fieldset>
       </div>
     </fieldset>
-    </Blok>
-    {/* IDENTITEIT-014: як показувати кожен тип сповіщення (звук, спливне вікно, тривалість) — те саме сховище, що в дзвонику. */}
-    <Blok id='menu-meldingtypen' icoon={<SlidersHorizontal/>} titel={tr('Типи сповіщень','Soorten meldingen')} uitleg={tr('Для кожного типу: зі звуком, лише спливне вікно чи лише в панелі, і скільки висить','Per soort: met geluid, alleen pop-up of alleen in het paneel, en hoe lang hij blijft staan')}>
-      <MeldingVoorkeurenPaneel lang={lang} techTypen={!!tech.profiel}/>
     </Blok>
     <Blok id='menu-snelheid' icoon={<Gauge/>} titel={tr('Швидкість переходів і чернетки','Snelheid van overgangen en concepten')} uitleg={tr('Смужка завантаження, плавні переходи, підвантаження','Laadbalk, vloeiende overgangen, vooraf laden')}>
     <fieldset className='zijbalk-meldingen zijbalk-snelheid' data-menu-snelheid-instellingen>

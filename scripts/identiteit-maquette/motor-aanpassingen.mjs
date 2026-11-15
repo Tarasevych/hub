@@ -921,8 +921,6 @@ v(`demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn 
 v(`drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті."`, `drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису."`);
 v(`drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website."`, `drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account."`);
 v(`note:"Приклад сценарію passkey без створення ключа"`, `note:"Створення ключа — у блоці «Чинні налаштування»"`);
-v(`note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово`, `note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово`);
-v(`note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard`, `note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard`);
 v(`усіх passkey означає`, `усіх ключів доступу означає`);
 v(`methods:{name:"Inlogmethoden",short:"Inloggen"`, `methods:{name:"Aanmeldmethoden",short:"Aanmelden"`);
 v(`name:"Акаунт і дані", short:"Акаунт і дан`, `name:"Обліковий запис і дані", short:"Обліковий запис і дан`);
