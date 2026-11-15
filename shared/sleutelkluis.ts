@@ -90,6 +90,10 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Архів пишеться агентом розширення без сесії сайту; потрібен грант-шлях для токена агента. Наступний випуск.', nl: 'Het archief wordt door de extensie-agent zonder sitesessie geschreven; vraagt de grant-weg voor agenttokens. Volgende uitrol.' } },
   { tabel: 'app.huis_integraties', veld: 'token_envelop (Home Assistant-koppeling van de woning)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/huis-vnext.ts',
     reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
+  { tabel: 'app.melding_ecosysteem_profiel', veld: 'instellingen (venstergeometrie, veegregels en kanalen per ruimte)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/meldingen-ecosysteem.ts',
+    reden: { uk: 'Налаштування геометрії й режимів порталу потрібні одразу при завантаженні сторінки до розблокування ключа; не містять секретів або листів.', nl: 'Portaalgeometrie en -voorkeuren zijn direct bij paginalaad nodig vóór het ontgrendelen van de sleutel; bevatten geen geheimen of berichten.' } },
+  { tabel: 'app.melding_ecosysteem_gebeurtenissen', veld: 'titel/bericht/uitleg/bijlagen (uniforme meldingsstroom)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/meldingen-ecosysteem.ts',
+    reden: { uk: 'Події сповіщень пишуться також від ПК-агента й розширення через WebSocket без сеансу оглядача та фільтруються в SQL; окреме шифрування через грант-обгортки заплановане в наступному випуску.', nl: 'Meldingen worden ook door pc-agent en extensie via WebSocket zonder browsersessie opgeslagen en in SQL gefilterd; aparte versleuteling via grant-omslagen volgt in een volgende uitrol.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 

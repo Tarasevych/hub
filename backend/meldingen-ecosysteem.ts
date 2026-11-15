@@ -8,13 +8,14 @@ import { db } from '../server/platform/db';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
 import { defaultChatDeps } from './connectors-chat';
-import { gegevensRuimteVeilig } from './ruimte-scheiding';
+import { gegevensRuimteVeilig, RuimteFout, technischeRechten } from './ruimte-scheiding';
 import { AI_AANBIEDER_BIJ_ID, type AiAanbiederId } from '../shared/ai-aanbieders';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   bouwAiPromptVoorGebeurtenis,
   GEBEURTENIS_STATUSSEN,
+  herkenKanaal,
   interneAiAnalyse,
   interpreteerGebeurtenis,
   normaliseerGebeurtenis,
@@ -35,14 +36,30 @@ type RequireSession = (event: unknown, body: unknown) => Promise<Auth>;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function meldingLade(userId: string, body: unknown, fallbackTab?: string): Promise<Lade> {
+export async function meldingLade(
+  userId: string,
+  body: unknown,
+  fallbackTab?: string,
+  opties: { isProfielBeheer?: boolean } = {},
+): Promise<Lade> {
   const b = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
   const tab = String(b.tabContext ?? fallbackTab ?? '');
+  let actieveRuimte: RuimteType = 'prive';
   try {
-    return { userId, ruimte: await gegevensRuimteVeilig(userId, { tabContext: tab }) };
+    actieveRuimte = await gegevensRuimteVeilig(userId, { tabContext: tab });
   } catch {
-    return { userId, ruimte: 'prive' };
+    actieveRuimte = 'prive';
   }
+  const gevraagd = b.ruimte === 'technisch' ? 'technisch' : b.ruimte === 'prive' ? 'prive' : null;
+  if (gevraagd === 'prive') return { userId, ruimte: 'prive' };
+  if (gevraagd === 'technisch' && actieveRuimte !== 'technisch') {
+    if (opties.isProfielBeheer) {
+      const r = await technischeRechten(userId).catch(() => ({ ok: false as const }));
+      if (r.ok) return { userId, ruimte: 'technisch' };
+    }
+    throw new RuimteFout('TECHNISCHE_RUIMTE_VEREIST', 403);
+  }
+  return { userId, ruimte: actieveRuimte };
 }
 
 export async function leesProfiel(lade: Lade): Promise<MeldingEcosysteemProfiel> {
@@ -114,17 +131,26 @@ export async function slaGebeurtenisOp(
         `INSERT INTO app.melding_ecosysteem_gebeurtenissen
           (user_id, ruimte, externe_sleutel, kanaal, subdomein, bron, prioriteit, status, titel, bericht, uitleg, context_label, herhalingen, bijlagen, acties, meta)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 1, $13::jsonb, $14::jsonb, $15::jsonb)
-         ON CONFLICT (user_id, ruimte, externe_sleutel) WHERE externe_sleutel <> ''
-         DO UPDATE SET
-           herhalingen = app.melding_ecosysteem_gebeurtenissen.herhalingen + 1,
-           prioriteit = CASE
-             WHEN EXCLUDED.prioriteit = 'kritiek' THEN 'kritiek'
-             ELSE app.melding_ecosysteem_gebeurtenissen.prioriteit
-           END,
-           bericht = CASE WHEN EXCLUDED.bericht <> '' THEN EXCLUDED.bericht ELSE app.melding_ecosysteem_gebeurtenissen.bericht END,
-           bijlagen = CASE WHEN jsonb_array_length(EXCLUDED.bijlagen) > 0 THEN EXCLUDED.bijlagen ELSE app.melding_ecosysteem_gebeurtenissen.bijlagen END,
-           bijgewerkt_op = now()
-         RETURNING ${KOLOMMEN}`,
+           ON CONFLICT (user_id, ruimte, externe_sleutel) WHERE externe_sleutel <> ''
+           DO UPDATE SET
+             herhalingen = app.melding_ecosysteem_gebeurtenissen.herhalingen + 1,
+             prioriteit = CASE
+               WHEN EXCLUDED.prioriteit = 'kritiek' THEN 'kritiek'
+               ELSE app.melding_ecosysteem_gebeurtenissen.prioriteit
+             END,
+             status = CASE
+               WHEN app.melding_ecosysteem_gebeurtenissen.status = 'opgelost' THEN EXCLUDED.status
+               ELSE app.melding_ecosysteem_gebeurtenissen.status
+             END,
+             titel = CASE WHEN EXCLUDED.titel <> '' THEN EXCLUDED.titel ELSE app.melding_ecosysteem_gebeurtenissen.titel END,
+             bericht = CASE WHEN EXCLUDED.bericht <> '' THEN EXCLUDED.bericht ELSE app.melding_ecosysteem_gebeurtenissen.bericht END,
+             uitleg = CASE WHEN EXCLUDED.uitleg <> '' THEN EXCLUDED.uitleg ELSE app.melding_ecosysteem_gebeurtenissen.uitleg END,
+             context_label = CASE WHEN EXCLUDED.context_label <> '' THEN EXCLUDED.context_label ELSE app.melding_ecosysteem_gebeurtenissen.context_label END,
+             bijlagen = CASE WHEN jsonb_array_length(EXCLUDED.bijlagen) > 0 THEN EXCLUDED.bijlagen ELSE app.melding_ecosysteem_gebeurtenissen.bijlagen END,
+             acties = CASE WHEN jsonb_array_length(EXCLUDED.acties) > 0 THEN EXCLUDED.acties ELSE app.melding_ecosysteem_gebeurtenissen.acties END,
+             meta = app.melding_ecosysteem_gebeurtenissen.meta || EXCLUDED.meta,
+             bijgewerkt_op = now()
+           RETURNING ${KOLOMMEN}`,
         [
           lade.userId,
           lade.ruimte,
@@ -178,6 +204,14 @@ export async function lijstStroom(
 ): Promise<{ gebeurtenissen: MeldingEcosysteemGebeurtenis[]; ongelezen: number }> {
   const limiet = Math.max(1, Math.min(120, Math.trunc(Number(opties.limiet) || 60)));
   return alsGebruiker(lade.userId, async (q) => {
+    // Автоматично пробуджуємо події, чий термін відкладення вже настав.
+    await q(
+      `UPDATE app.melding_ecosysteem_gebeurtenissen
+          SET status = 'nieuw', uitgesteld_tot = NULL, bijgewerkt_op = now()
+        WHERE user_id = $1 AND ruimte = $2 AND status = 'uitgesteld' AND uitgesteld_tot IS NOT NULL AND uitgesteld_tot <= now()`,
+      [lade.userId, lade.ruimte],
+    ).catch(() => undefined);
+
     const conds = ['user_id = $1', 'ruimte = $2'];
     const params: unknown[] = [lade.userId, lade.ruimte];
     if (opties.kanaal && opties.kanaal !== 'alle') {
@@ -192,8 +226,9 @@ export async function lijstStroom(
       params.push(opties.status);
       conds.push(`status = $${params.length}`);
     }
-    if (opties.zoek && opties.zoek.trim()) {
-      params.push(`%${opties.zoek.trim().slice(0, 80)}%`);
+    const zoekNorm = opties.zoek ? opties.zoek.trim().slice(0, 80) : '';
+    if (zoekNorm) {
+      params.push(`%${zoekNorm}%`);
       const idx = params.length;
       conds.push(`(titel ILIKE $${idx} OR bericht ILIKE $${idx} OR bron ILIKE $${idx} OR context_label ILIKE $${idx})`);
     }
@@ -220,28 +255,35 @@ export async function lijstStroom(
         limit: 25,
         nieuwsteEerst: true,
       });
+      const zoekLaag = zoekNorm.toLowerCase();
       for (const s of serverMeld.items) {
         const sRuimte: RuimteType = s.ruimte === 'technisch' ? 'technisch' : 'prive';
         if (sRuimte !== lade.ruimte) continue;
         const sleutel = `site_notif:${s.id}`;
         if (bekendeSleutels.has(sleutel)) continue;
-        gebeurtenissen.push(
-          interpreteerGebeurtenis(
-            {
-              id: sleutel,
-              externeSleutel: sleutel,
-              ruimte: sRuimte,
-              bron: String(s.kind || 'systeem'),
-              soort: String(s.kind || ''),
-              titel: String(s.title || ''),
-              bericht: String(s.message || ''),
-              link: typeof s.link === 'string' ? s.link : undefined,
-              aangemaaktOp: Number(s.createdAt) || Date.now(),
-              gelezen: s.read === true,
-            },
-            lade.ruimte,
-          ),
+        const geb = interpreteerGebeurtenis(
+          {
+            id: sleutel,
+            externeSleutel: sleutel,
+            ruimte: sRuimte,
+            bron: String(s.kind || 'systeem'),
+            soort: String(s.kind || ''),
+            titel: String(s.title || ''),
+            bericht: String(s.message || ''),
+            link: typeof s.link === 'string' ? s.link : undefined,
+            aangemaaktOp: Number(s.createdAt) || Date.now(),
+            gelezen: s.read === true,
+          },
+          lade.ruimte,
         );
+        if (opties.kanaal && opties.kanaal !== 'alle' && geb.kanaal !== opties.kanaal) continue;
+        if (opties.subdomein && opties.subdomein !== 'alle' && geb.subdomein !== opties.subdomein) continue;
+        if (opties.status && (GEBEURTENIS_STATUSSEN as readonly string[]).includes(opties.status) && geb.status !== opties.status) continue;
+        if (zoekLaag) {
+          const hay = `${geb.titel} ${geb.bericht} ${geb.bron} ${geb.contextLabel}`.toLowerCase();
+          if (!hay.includes(zoekLaag)) continue;
+        }
+        gebeurtenissen.push(geb);
       }
     } catch {
       /* якщо site_notifications недоступна в ізольованому тесті — працюємо чисто на новій таблиці */
@@ -436,8 +478,18 @@ export async function analyseerMetAi(
   }
 
   let uitslag = interneAiAnalyse(geb, lang);
-  const modus = typeof body.modus === 'string' ? body.modus : profiel.ai.modus;
-  const beveiligingsBlok = profiel.ai.alleenLokaalVoorBeveiliging && geb.kanaal === 'beveiliging';
+  const modus =
+    profiel.ai.modus === 'uit'
+      ? 'uit'
+      : profiel.ai.modus === 'intern'
+        ? 'intern'
+        : typeof body.modus === 'string'
+          ? body.modus
+          : profiel.ai.modus;
+  const vermoedtBeveiliging =
+    geb.kanaal === 'beveiliging' ||
+    herkenKanaal(geb.bron, `${String(body.soort || '')} ${geb.titel}`, geb.subdomein) === 'beveiliging';
+  const beveiligingsBlok = profiel.ai.alleenLokaalVoorBeveiliging && vermoedtBeveiliging;
 
   if (!beveiligingsBlok && (modus === 'extern' || modus === 'beide') && defaultChatDeps.getApiKeyForPurpose) {
     const aanbiederId = naarAanbiederId(typeof body.aanbieder === 'string' ? body.aanbieder : profiel.ai.aanbieder);
@@ -479,10 +531,19 @@ export async function verwerkAgentMelding(invoer: {
   userId: string;
   agentId: string;
   platform: string | null;
+  agentRuimte?: RuimteType;
   msg: Record<string, unknown>;
 }): Promise<void> {
   const m = invoer.msg;
-  const ruimte: RuimteType = m.ruimte === 'technisch' ? 'technisch' : 'prive';
+  const ruimte: RuimteType = invoer.agentRuimte
+    ? invoer.agentRuimte
+    : m.ruimte === 'technisch'
+      ? 'technisch'
+      : 'prive';
+  if (ruimte === 'technisch') {
+    const rechten = await technischeRechten(invoer.userId).catch(() => ({ ok: false as const }));
+    if (!rechten.ok) return;
+  }
   const isBrowser = invoer.platform === 'browser';
   await slaGebeurtenisOp(
     { userId: invoer.userId, ruimte },
@@ -507,6 +568,7 @@ export async function verwerkAgentMelding(invoer: {
 export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }): Record<string, RouterMiddleware[]> {
   const metSessie = (
     fn: (lade: Lade, body: Record<string, unknown>, user: { id: string; role?: string }) => Promise<unknown>,
+    opties: { isProfielBeheer?: boolean } = {},
   ) =>
     (async (raw: unknown) => {
       const ctx = raw as { event: unknown; body: unknown };
@@ -514,10 +576,11 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
       if ('errorCode' in auth) return error(auth.errorCode, 401);
       if (auth.user.status !== 'approved') return error('OWNER_SESSION_REQUIRED', 401);
       const body = (ctx.body && typeof ctx.body === 'object' ? ctx.body : {}) as Record<string, unknown>;
-      const lade = await meldingLade(auth.user.id, body, auth.tab);
       try {
+        const lade = await meldingLade(auth.user.id, body, auth.tab, opties);
         return json(await fn(lade, body, auth.user));
       } catch (e) {
+        if (e instanceof RuimteFout) return error(e.code, e.status);
         console.error('[meldingen-ecosysteem] помилка маршруту:', (e as Error).message);
         return error('MELDING_ECOSYSTEEM_MISLUKT', 500);
       }
@@ -525,13 +588,16 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
 
   return {
     'POST /api/owner/meldingen/ecosysteem/profiel': [
-      metSessie(async (lade) => ({ ok: true, ruimte: lade.ruimte, profiel: await leesProfiel(lade) })),
+      metSessie(async (lade) => ({ ok: true, ruimte: lade.ruimte, profiel: await leesProfiel(lade) }), { isProfielBeheer: true }),
     ],
     'POST /api/owner/meldingen/ecosysteem/profiel/opslaan': [
-      metSessie(async (lade, body) => {
-        const profiel = await schrijfProfiel(lade, body.profiel ?? body);
-        return { ok: true, ruimte: lade.ruimte, profiel };
-      }),
+      metSessie(
+        async (lade, body) => {
+          const profiel = await schrijfProfiel(lade, body.profiel ?? body);
+          return { ok: true, ruimte: lade.ruimte, profiel };
+        },
+        { isProfielBeheer: true },
+      ),
     ],
     'POST /api/owner/meldingen/ecosysteem/stroom': [
       metSessie(async (lade, body) => ({

@@ -841,7 +841,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, (ms) => pasStatusToe(ms, v3Status))
     : null), [v2, v2Regels, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
   const subdomeinNu = naarMeldingSubdomein(typeof location !== 'undefined' ? dienstVanHostnaam(location.hostname) : 'hub');
-  const ecoRuimte = belSfeer === 'technisch' ? 'technisch' : 'prive';
+  const ecoRuimte = (belSfeer === 'technisch' || (ruimteFilterActief() && ruimteNu === 'technisch')) ? 'technisch' : 'prive';
   const eco = useMeldingEcosysteem({
     lang: p.lang,
     scope: p.scope,
@@ -867,11 +867,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     activity.markAllRead();
     if (localUnread) saveRetained((rows) => rows.map((row) => ({ ...row, read: true })));
     if (serverUnread) await p.onReadAllServer?.();
-    for (const g of eco.stroom) {
-      if (g.status === 'nieuw' && !g.externeSleutel.startsWith('site_notif:') && !g.externeSleutel.startsWith('act:') && !g.externeSleutel.startsWith('l:')) {
-        void eco.wijzigGebeurtenisStatus(g, 'gelezen');
-      }
-    }
+    await eco.allesGelezenEcosysteem();
   };
   const resetPosition = () => {
     const klasse = plaatsStaat().ctx.klasse;
@@ -937,13 +933,35 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
     await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
+    const serverId = geb.id.startsWith('s:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('site_notif:')
+        ? geb.externeSleutel.slice('site_notif:'.length)
+        : typeof geb.meta?.serverId === 'string'
+          ? geb.meta.serverId
+          : '';
+    const actId = geb.id.startsWith('a:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('act:')
+        ? geb.externeSleutel.slice('act:'.length)
+        : typeof geb.meta?.activiteitId === 'string'
+          ? geb.meta.activiteitId
+          : '';
+    const lokId = geb.id.startsWith('l:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('l:')
+        ? geb.externeSleutel.slice(2)
+        : typeof geb.meta?.lokaalId === 'string'
+          ? geb.meta.lokaalId
+          : '';
     if (status !== 'nieuw') {
-      if (geb.id.startsWith('s:')) void p.onReadServer?.(geb.id.slice(2));
-      else if (geb.id.startsWith('a:')) activity.markRead(geb.id.slice(2));
-      else if (geb.id.startsWith('l:')) markLocalRead(geb.id.slice(2));
+      if (serverId) void p.onReadServer?.(serverId);
+      else if (actId) activity.markRead(actId);
+      else if (lokId) markLocalRead(lokId);
     }
-    if ((geb.id.startsWith('s:') || geb.id.startsWith('a:') || geb.id.startsWith('l:')) && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
-      void wijzigStatus({ ids: [geb.id], status, hoe: 'kaart' });
+    const v3Sleutel = serverId ? `s:${serverId}` : actId ? `a:${actId}` : lokId ? `l:${lokId}` : '';
+    if (v3Sleutel && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
+      void wijzigStatus({ ids: [v3Sleutel], status, hoe: 'kaart' });
     }
   };
 

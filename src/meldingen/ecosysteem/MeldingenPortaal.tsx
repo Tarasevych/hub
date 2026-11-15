@@ -126,17 +126,22 @@ export default function MeldingenPortaal({
   const ctx = useMemo(() => contextVoorSubdomein(subdomeinNu, ruimte), [subdomeinNu, ruimte]);
 
   const [geo, setGeo] = useState<VensterGeometrie>(() => klemVenster(profiel.geometrie, leesScherm()));
+  const laatsteGeoRef = useRef<VensterGeometrie>(geo);
+  laatsteGeoRef.current = geo;
   const [zoek, setZoek] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('actief');
   const [kanaalFilter, setKanaalFilter] = useState<MeldingKanaal | 'alle'>('alle');
   const [alleenDitSubdomein, setAlleenDitSubdomein] = useState(false);
   const [toonVoorkeuren, setToonVoorkeuren] = useState(false);
   const [geselecteerdId, setGeselecteerdId] = useState<string>('');
+  const [detailBijlageIdx, setDetailBijlageIdx] = useState(0);
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
   const vensterRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    setGeo(klemVenster(profiel.geometrie, leesScherm()));
+    const geklemd = klemVenster(profiel.geometrie, leesScherm());
+    laatsteGeoRef.current = geklemd;
+    setGeo(geklemd);
   }, [
     profiel.geometrie.x,
     profiel.geometrie.y,
@@ -148,15 +153,32 @@ export default function MeldingenPortaal({
   ]);
 
   useEffect(() => {
-    const onResize = () => setGeo((h) => klemVenster(h, leesScherm()));
+    const onResize = () => {
+      setGeo((h) => {
+        const geklemd = klemVenster(h, leesScherm());
+        laatsteGeoRef.current = geklemd;
+        return geklemd;
+      });
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
   useEffect(() => {
+    if (!open || modaalBijlage) return;
+    const r = requestAnimationFrame(() => {
+      const el = vensterRef.current;
+      if (el && !el.contains(document.activeElement)) {
+        el.focus({ preventScroll: true });
+      }
+    });
+    return () => cancelAnimationFrame(r);
+  }, [open, modaalBijlage]);
+
+  useEffect(() => {
     if (!open && !modaalBijlage) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (modaalBijlage) {
         e.preventDefault();
         e.stopPropagation();
@@ -165,11 +187,12 @@ export default function MeldingenPortaal({
       }
       if (open) {
         const doel = e.target as Element | null;
-        if (doel?.closest('.mel-ecosysteem-portaal')) {
-          e.preventDefault();
-          e.stopPropagation();
-          onSluiten();
+        if (doel && !doel.closest('.mel-ecosysteem-portaal') && !doel.closest('.canonical-notification-bell') && doel.closest('[role="dialog"],[aria-modal="true"]')) {
+          return;
         }
+        e.preventDefault();
+        e.stopPropagation();
+        onSluiten();
       }
     };
     window.addEventListener('keydown', onKey, true);
@@ -248,10 +271,15 @@ export default function MeldingenPortaal({
     const dx = e.clientX - s.startX;
     const dy = e.clientY - s.startY;
     const scherm = leesScherm();
-    if (s.soort === 'verplaats') {
-      setGeo(klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm));
-    } else if (s.richting) {
-      setGeo(pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm));
+    const volgende =
+      s.soort === 'verplaats'
+        ? klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm)
+        : s.richting
+          ? pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm)
+          : null;
+    if (volgende) {
+      laatsteGeoRef.current = volgende;
+      setGeo(volgende);
     }
   };
 
@@ -264,7 +292,18 @@ export default function MeldingenPortaal({
     } catch {
       /* ігноруємо */
     }
-    onSlaGeometrieOp(geo, true);
+    const dx = e.clientX - s.startX;
+    const dy = e.clientY - s.startY;
+    const scherm = leesScherm();
+    const eindGeo =
+      s.soort === 'verplaats'
+        ? klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm)
+        : s.richting
+          ? pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm)
+          : laatsteGeoRef.current;
+    laatsteGeoRef.current = eindGeo;
+    setGeo(eindGeo);
+    onSlaGeometrieOp(eindGeo, true);
   };
 
   const pasModusToe = (modus: VensterModus) => {
@@ -308,6 +347,10 @@ export default function MeldingenPortaal({
     if (!gefilterd.length) return null;
     return gefilterd.find((g) => g.id === geselecteerdId) ?? gefilterd[0];
   }, [gefilterd, geselecteerdId]);
+
+  useEffect(() => {
+    setDetailBijlageIdx(0);
+  }, [geselecteerd?.id]);
 
   const tellers = useMemo(() => {
     let nieuw = 0;
@@ -382,10 +425,10 @@ export default function MeldingenPortaal({
           tabIndex={-1}
           aria-label={t('Екосистема сповіщень', 'Meldingen-ecosysteem')}
           style={{
-            left: `${geo.x}px`,
-            top: `${geo.y}px`,
-            width: `${geo.breedte}px`,
-            height: `${geo.hoogte}px`,
+            ['--mel-x' as string]: `${geo.x}px`,
+            ['--mel-y' as string]: `${geo.y}px`,
+            ['--mel-w' as string]: `${geo.breedte}px`,
+            ['--mel-h' as string]: `${geo.hoogte}px`,
             ['--mel-accent' as string]: ctx.accent,
             ['--mel-tint' as string]: ctx.tintAchtergrond,
           }}
@@ -675,9 +718,10 @@ export default function MeldingenPortaal({
                       <MeldingBijlageSpeler
                         lang={lang}
                         bijlagen={geselecteerd.bijlagen}
-                        actieveIndex={0}
+                        actieveIndex={Math.min(detailBijlageIdx, geselecteerd.bijlagen.length - 1)}
                         voorkeur={profiel.bijlageWeergave}
-                        onToggleModaal={() => setModaalBijlage({ gebeurtenis: geselecteerd, index: 0 })}
+                        onSelectIndex={setDetailBijlageIdx}
+                        onToggleModaal={() => setModaalBijlage({ gebeurtenis: geselecteerd, index: Math.min(detailBijlageIdx, geselecteerd.bijlagen.length - 1) })}
                       />
                     )}
 
