@@ -30,6 +30,11 @@ test('запит про випробування знаходить навичк
   assert.equal(uit[0]?.naam, 'wijziging-controleren');
 });
 
+test('перевірка безпеки випуску не плутається з його підготовкою', () => {
+  const uit = kiesVaardigheden('Перевір новий випуск на безпеку');
+  assert.equal(uit[0]?.naam, 'wijziging-controleren');
+});
+
 test('нідерландський запит про будову знаходить огляд проєкту', () => {
   const uit = kiesVaardigheden('Verken de projectopbouw en diensten');
   assert.equal(uit[0]?.naam, 'project-verkennen');
