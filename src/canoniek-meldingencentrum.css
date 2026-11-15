@@ -79,3 +79,34 @@ html .canonical-chrome .plaats-actiestapel .plaats-gniezdo>.canonical-notificati
 /* zelfde compensatie als het paneel en de pop-up bij een verborgen technische band (src/tech/tech.css) — anders hangt de pijl ernaast */
 html[data-tech=aan] #root .cnc-pijl{transition:translate .22s ease!important}
 html[data-tech=aan][data-tech-verborgen] #root .cnc-pijl{translate:0 var(--tech-band-h)}
+
+/* MELDINGEN-UX-001: «Вікно» — wissel naar het zwevende venster, vlak voor ✕ (dezelfde plek als «Компактно» in het venster). */
+.canonical-notification-panel .mv2-vorm-schakel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  width: auto;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--panel));
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.canonical-notification-panel .mv2-vorm-schakel svg {
+  width: 15px;
+  height: 15px;
+}
+.canonical-notification-panel .mv2-vorm-schakel:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+}
+.canonical-notification-panel .mv2-vorm-schakel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

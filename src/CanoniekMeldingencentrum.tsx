@@ -1,4 +1,4 @@
-import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, Sparkles, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
+import { AppWindow, ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
@@ -1134,6 +1134,7 @@ export default function CanonicalNotificationCenter(p: Props) {
                 geluid={sound}
                 onGeluid={toggleSound}
                 onSluiten={() => setPanelOpen(false)}
+                onVenster={() => { zetEcosysteemModusActief(true); }}
                 techTypen={!!tech.profiel}
                 tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
               />
@@ -1152,17 +1153,16 @@ export default function CanonicalNotificationCenter(p: Props) {
                   <button type='button' ref={meerKnopRef} className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties' aria-label={t('Інші дії: звук, типи, позначити все, повернути дзвоник на типове місце', 'Meer acties: geluid, soorten, alles gelezen, bel terug naar de standaardplek')} title={t('Інші дії', 'Meer acties')} onClick={() => setMeer((v) => !v)}>
                     <Ellipsis aria-hidden='true' />
                   </button>
-                  <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')} title={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')}><Minimize2 /></button>
                   <button
                     type='button'
-                    className='cnc-ecosysteem-schakel'
+                    className='cnc-ecosysteem-schakel mv2-vorm-schakel'
                     data-qa-id='melding-ecosysteem-openen'
                     onClick={() => { zetEcosysteemModusActief(true); }}
-                    aria-label={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
-                    title={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                    title={t('Відкрити сповіщення у великому вікні. Повернутися — кнопкою «Компактно» у вікні.', 'Meldingen openen in een groot venster. Terug met de knop «Compact» in het venster.')}
                   >
-                    <Sparkles aria-hidden='true' />
+                    <AppWindow aria-hidden='true' /><span>{t('Вікно', 'Venster')}</span>
                   </button>
+                  <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Закрити панель сповіщень', 'Meldingenpaneel sluiten')} title={t('Закрити панель сповіщень', 'Meldingenpaneel sluiten')}><X /></button>
                 </header>
                 {techRegel && (
                   <button type='button' className='canonical-notification-tech' data-qa-id='tech-meldingen-samenvatting' data-tech-aantal={techUnread} onClick={() => { setPanelOpen(false); openTechMeldingen(); }}>
