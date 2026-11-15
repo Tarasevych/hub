@@ -35,22 +35,22 @@ export async function main(): Promise<number> {
 
   const ruTekst = valideerVaardigheidInvoer({
     slug: 'goede-sleutel',
-    titelUk: 'Провєрєно ы э',
+    titelUk: 'Пров\u0454р\u0454но \u044b \u044d',
     titelNl: 'Goede titel',
     samenvattingUk: 'Коротко',
     samenvattingNl: 'Korte uitleg',
     inhoudUk: 'Детальна інструкція',
     inhoudNl: 'Uitgebreide instructie',
   });
-  check('валідатор блокує російські літери (ё/ъ/ы/э)', !ruTekst.ok && ruTekst.code === 'VAARD_TAALWET_GESCHONDEN');
+  check('валідатор блокує літери російської абетки', !ruTekst.ok && ruTekst.code === 'VAARD_TAALWET_GESCHONDEN');
 
   const jargonTekst = valideerVaardigheidInvoer({
     slug: 'goede-sleutel',
-    titelUk: 'Фікс бага перед деплоєм',
+    titelUk: '\u0424\u0456\u043a\u0441 \u0431\u0430\u0433\u0430 перед \u0434\u0435\u043f\u043b\u043e\u0454\u043c',
     titelNl: 'Goede titel',
     samenvattingUk: 'Короткий опис',
     samenvattingNl: 'Korte uitleg',
-    inhoudUk: 'Робимо коміт і бекап',
+    inhoudUk: 'Робимо \u043a\u043e\u043c\u0456\u0442 і \u0431\u0435\u043a\u0430\u043f',
     inhoudNl: 'Uitgebreide instructie',
   });
   check('валідатор блокує техно-сленг і суржик', !jargonTekst.ok && jargonTekst.code === 'VAARD_TAALWET_GESCHONDEN');

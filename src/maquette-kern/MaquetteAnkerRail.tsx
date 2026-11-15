@@ -351,8 +351,8 @@ export function MaquetteAnkerRail({
   }, [opslagSleutel]);
 
   // Автоматично розкриваємо батьківські групи для активного елемента або позначки openStandaard.
-  // MAILANKER-001: лише коли змінився активний пункт або з'явилася нова група. Раніше це спрацьовувало на кожен
-  // рендер (масив items щоразу новий), тож групу з активним пунктом неможливо було згорнути — вона одразу відкривалася.
+  // MAILANKER-001: лише коли змінився активний пункт або з'явилася нова група. Раніше це спрацьовувало на кожне
+  // відмальовування (масив items щоразу новий), тож групу з активним пунктом неможливо було згорнути — вона одразу відкривалася.
   // Alleen bij een nieuw actief item of een nieuwe groep; anders klapte een groep met het actieve item meteen weer open.
   const bekendeGroepenRef = useRef<Set<string> | null>(null);
   const vorigActiefRef = useRef<string>(actief);

@@ -358,11 +358,11 @@ export async function main(): Promise<number> {
       && updBody.knoop?.soort === 'besluit'
       && updBody.knoop?.vastgepind === true);
 
-    // Неіснуючий vervangtId або vervangtSleutel має повертати 404, а самозаміна — 400
+    // Відсутній vervangtId або vervangtSleutel має повертати 404, а самозаміна — 400
     const onbekendeUuid = '99999999-9999-4999-8999-999999999999';
     const rVervangtMis = await routes['POST /api/owner/ai/geheugen/opslaan'][0](ctx({
-      titel: 'Новий вузол із неіснуючою заміною',
-      inhoud: 'Не повинен падати з 500 при неіснуючому vervangtId.',
+      titel: 'Новий вузол із відсутньою заміною',
+      inhoud: 'Не повинен падати з 500 при відсутньому vervangtId.',
       vervangtId: onbekendeUuid,
     }));
     const rZelfVervang = await routes['POST /api/owner/ai/geheugen/opslaan'][0](ctx({
@@ -371,7 +371,7 @@ export async function main(): Promise<number> {
       inhoud: 'Повинна блокуватися кодом самопосилання.',
       vervangtId: id2,
     }));
-    check('3j: неіснуючий vervangtId повертає 404 GEHEUGEN_NIET_GEVONDEN, а самозаміна — 400 GEHEUGEN_ZELF_RELATIE_ONGELDIG',
+    check('3j: відсутній vervangtId повертає 404 GEHEUGEN_NIET_GEVONDEN, а самозаміна — 400 GEHEUGEN_ZELF_RELATIE_ONGELDIG',
       (rVervangtMis as Antwoord).statusCode === 404
       && codeVan(rVervangtMis) === GEHEUGEN_FOUTEN.nietGevonden
       && (rZelfVervang as Antwoord).statusCode === 400
@@ -448,7 +448,7 @@ export async function main(): Promise<number> {
         );
         const resTech = await pgStroomOpslag.leesAlles({ userId: pgUserA, ruimte: 'technisch' });
         const resUserB = await pgStroomOpslag.leesAlles({ userId: pgUserB, ruimte: 'prive' });
-        check('4f: реальний PostgreSQL + RLS підтверджує запис, оновлення за id, відхилення неіснуючого vervangtId та ізоляцію просторів і користувачів',
+        check('4f: реальний PostgreSQL + RLS підтверджує запис, оновлення за id, відхилення відсутнього vervangtId та ізоляцію просторів і користувачів',
           resA1.ok
           && resA1Upd.ok
           && resA1Upd.knoop.id === resA1.knoop.id

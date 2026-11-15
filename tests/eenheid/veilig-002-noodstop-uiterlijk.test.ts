@@ -3,7 +3,7 @@
 //  2) stopAll, blockUser і technischeVerbindingenIntrekken — закриття agent_namens_sessies, асинхронне очікування bijNoodstop та двері (з БД за наявності DATABASE_URL);
 //  3) backend/apparaat-bevestiging/routes.ts — захист глибини (status !== 'approved' → 403 ACCOUNT_NOT_APPROVED_FORBIDDEN у metSessie та stroomAuth);
 //  4) tegelStijlen (shared/apparaat-bevestiging/symbolen.ts) і backend/telegram-aanmelden/venster.ts — адаптивна верстка вузьких екранів (≤360px) без обрізання та блокування submit під час запиту;
-//  5) LevendeAchtergrond, AchtergrondKnopMaquette та портали модалів (AgentToevoegen, ProbleemRapport, GebruikerKaart, Venster) — відсутність setInterval, кешування, CSS-обгортки .ut-portaal/.ov-portaal/.ag-portaal, z-index і сумісність із renderToStaticMarkup.
+//  5) LevendeAchtergrond, AchtergrondKnopMaquette та портали модалів (AgentToevoegen, ProbleemRapport, GebruikerKaart, Venster) — відсутність setInterval, буферизація, CSS-обгортки .ut-portaal/.ov-portaal/.ag-portaal, z-index і сумісність із renderToStaticMarkup.
 
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -158,7 +158,7 @@ export async function main(): Promise<number> {
     !knopSrc.includes('setInterval') && knopSrc.includes('MutationObserver') && knopSrc.includes('data-identiteit-maquette'),
   );
   check(
-    '5b LevendeAchtergrond кешує нормалізацію кольору та мемоїзує dekking через useMemo',
+    '5b LevendeAchtergrond запам’ятовує нормалізацію кольору та мемоїзує dekking через useMemo',
     achtergrondSrc.includes('kleurCache') && achtergrondSrc.includes('normaliseerKleur') && achtergrondSrc.includes('useMemo('),
   );
 

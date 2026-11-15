@@ -2,7 +2,7 @@
 // «Більше» з додатковими теками, «Керування мітками», «Створити нову мітку», мітки користувача), а колишні пункти
 // («Фільтри списку», «Подання списку», «Дії скриньки») згорнуто в групу «Вигляд і дії».
 //  • модель: склад і порядок збігаються з бічним меню, враховують «Редагувати меню» (зона/порядок/видимість) і «пам'ять стану»;
-//  • кеш налаштувань більше не губить seenUnread (після F5 лічильники переглянутих тек не поверталися б);
+//  • буфер налаштувань більше не губить seenUnread (після F5 лічильники переглянутих тек не поверталися б);
 //  • джерело: обидва меню беруть пункти з однієї моделі; група з активним пунктом у якорях знову згортається.
 // Ankermenu van E-mail krijgt alle items van het linkermenu; oude weergave-items zitten ingeklapt in «Weergave en acties».
 // Запуск: node scripts/eenheidstests.mjs mailanker-001-model.test.ts
@@ -85,15 +85,15 @@ export async function main(): Promise<number> {
     check('відкрита мітка — без числа', open.labels.find((p) => p.id === 'Label_1')!.teller === 0);
   }
 
-  // ---------------------------------------------------------------- (в) кеш налаштувань зберігає seenUnread
+  // ---------------------------------------------------------------- (в) буфер налаштувань зберігає seenUnread
   {
-    // модуль кешу тягне оболонку сайту — мінімальне оточення браузера, як в agent-een-plek-20261020
+    // модуль буфера тягне оболонку сайту — мінімальне оточення браузера, як в agent-een-plek-20261020
     browserOmgeving();
     const { normalizeMailViewPreferences } = await import('../../src/mail-weergave-voorkeuren-cache');
     const n = normalizeMailViewPreferences({ navigationVisits: [{ key: 'nav:spam', visitedAt: 1, attentionSeenAt: 2, activityAt: 3, seenUnread: 7 }, { key: 'nav:trash', visitedAt: 1 }, { key: 'nav:sent', seenUnread: 'x' }] });
     const spam = n.navigationVisits.find((v) => v.key === 'nav:spam');
-    check('кеш: seenUnread переживає читання з сервера (F5)', spam?.seenUnread === 7, JSON.stringify(spam));
-    check('кеш: без seenUnread — поле відсутнє, сміття відкинуто', !('seenUnread' in (n.navigationVisits.find((v) => v.key === 'nav:trash') || {})) && !('seenUnread' in (n.navigationVisits.find((v) => v.key === 'nav:sent') || {})));
+    check('буфер: seenUnread переживає читання з сервера (F5)', spam?.seenUnread === 7, JSON.stringify(spam));
+    check('буфер: без seenUnread — поле відсутнє, сміття відкинуто', !('seenUnread' in (n.navigationVisits.find((v) => v.key === 'nav:trash') || {})) && !('seenUnread' in (n.navigationVisits.find((v) => v.key === 'nav:sent') || {})));
   }
 
   // ---------------------------------------------------------------- (г) джерело: обидва меню з однієї моделі, групи якорів

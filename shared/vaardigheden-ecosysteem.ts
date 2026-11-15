@@ -155,7 +155,7 @@ export const VAARD_FOUT_TEKST: Readonly<Record<string, VaardigheidTaalPaar>> = O
     nl: 'Alle verplichte tweetalige velden (titel, samenvatting en inhoud in het Oekraïens en Nederlands) moeten ingevuld zijn.',
   },
   VAARD_TAALWET_GESCHONDEN: {
-    uk: 'Порушено мовний закон: заборонено російські літери [ё/ъ/ы/э] і техно-сленг; українська частина потребує кирилиці, а нідерландська — латиниці.',
+    uk: 'Порушено мовний закон: заборонено літери російської абетки та техно-сленг; українська частина потребує кирилиці, а нідерландська — латиниці.',
     nl: 'Taalwet geschonden: verboden tekens of jargon zijn niet toegestaan; het Oekraïense deel vereist Cyrillisch en het Nederlandse Latijns schrift.',
   },
   VAARD_GEHEIM_VERBODEN: {

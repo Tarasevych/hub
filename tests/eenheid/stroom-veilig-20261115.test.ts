@@ -66,7 +66,7 @@ export async function main(): Promise<number> {
     nepBrowser('https://mcp.tarasevych.com', 'uk');
     const { AiStopKnop } = await import('../../src/AiToestemmingen');
     const stopKnopHtml = renderToStaticMarkup(createElement(AiStopKnop, { tr: (uk) => uk }));
-    check('1d AiStopKnop рендериться без помилок і показує кнопку аварійної зупинки', stopKnopHtml.includes('data-ai-stop="rust"') && stopKnopHtml.includes('Стоп'));
+    check('1d AiStopKnop відмальовується без помилок і показує кнопку аварійної зупинки', stopKnopHtml.includes('data-ai-stop="rust"') && stopKnopHtml.includes('Стоп'));
   }
 
   // ------------------------------------------------------------------ 2. Сховище ключів та часткові збої БД
@@ -156,7 +156,7 @@ export async function main(): Promise<number> {
         levendSrc.includes('setIsAanraak(aanraak())') &&
         !/backdrop-filter:none\s*!important/.test(maquetteOml),
     );
-    check('3d LevendeAchtergrond рендериться на сервері без збою', ssrOk);
+    check('3d LevendeAchtergrond відмальовується на сервері без збою', ssrOk);
   }
 
   // ------------------------------------------------------------------ 4. z-index, вузький екран пошти (360–390px), каталог пошуку
