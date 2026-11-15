@@ -256,7 +256,6 @@ jobs:
           node dist-server/migrate.mjs | tail -1
           for t in \
             ankers-001-paginanav \
-            identiteit-015-vormgeving \
             identiteit-015-stille-uren \
             telegram-venster-20261114 \
             telegram-aanmelden-stroom-20261109 \
