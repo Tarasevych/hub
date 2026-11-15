@@ -153,7 +153,7 @@ async function inChrome(check: Check) {
       const kaarten = await page.$$eval('.mq-demo-eerlijk .mq-demo-open', (bs: HTMLElement[]) => bs.map((b) => b.dataset.kaartGa).join(' '));
       check('Chrome: чесні картки «Приклад вигляду» з переходами; тумблер простору — гніздо в картці «Активний профіль»; пояснення у вікні навігації',
         kaarten.includes('menu|#menu-modus') && kaarten.includes('widgets|dienst:hub') && kaarten.includes('identities|accountmenu:') && await page.$$eval('[data-echt="ruimtewissel"]', (x: unknown[]) => x.length) === 1
-        && (await page.$eval('#mqPaginaNavNoot', (e: HTMLElement) => e.textContent || '')).startsWith('Положення й поведінка діють і на меню сайту'), kaarten);
+        && (await page.$eval('#mqPaginaNavNoot', (e: HTMLElement) => e.textContent || '')).startsWith('Положення й поведінка діють лише на навігацію цієї сторінки'), kaarten);
       check('Chrome: без помилок сторінки', fouten.length === 0, fouten.join(' | '));
     } finally { await browser.close(); }
   } catch (e) {
@@ -272,7 +272,7 @@ export async function main(): Promise<number> {
     const kaart = readFileSync('src/identiteit/ProfielRuimteKaart.tsx', 'utf8');
     check('identities.профіль: без перемикача просторів — точна передумова (технічний профіль → «Перемикачі функцій» → tech-ruimtes-v2); без права — пояснення RuimteWissel',
       kaart.includes('«Перемикачі функцій» → «Два простори одного акаунта (нова версія)» (tech-ruimtes-v2)') && kaart.includes('<RuimteWissel taal={lang} />') && readFileSync('src/tech/ruimtes/RuimteWissel.tsx', 'utf8').includes('Немає дозволу на технічний простір. Його дає власник сервера.'));
-    check('вікно навігації: чесно сказано, що діє на меню сайту, а що лише на навігацію сторінки, і є перехід до справжніх налаштувань меню',
+    check('вікно навігації: чесно сказано, що положення й поведінка — лише навігація сторінки (окремо від меню сайту), і є перехід до справжніх налаштувань меню',
       sjabloon.includes('id=\\"mqPaginaNavNoot\\"') && sjabloon.includes('data-kaart-ga=\\"menu|#menu-modus\\"') && motor.includes('write("#mqPaginaNavNoot",'));
     check('справжні панелі: щільність і рух у «Персоналізації», акцент і ефекти в «Темах» (видно в «Макеті», «Студії» й класичному)',
       centrum.includes('<PersoonlijkeWeergave tr={tr}/>') && readFileSync('src/thema/ThemaInstellingen.tsx', 'utf8').includes('<AccentEnEffecten tr={tr} />'));
@@ -311,10 +311,12 @@ export async function main(): Promise<number> {
     const zb = await import('../../src/zijbalk-voorkeuren');
     mq.weergaveNaarSite({ dichtheid: 'ruim', beweging: 'systeem', accent: 'violet', effecten: 20, icoonStijl: 'kleur', positie: 'rechts', modus: 'dicht' });
     const na = sp.readSharedPreferences(), z = zb.zijbalkVoorkeuren();
-    check('макет → сайт: weergaveNaarSite змінює справжні налаштування облікового запису й меню (не локальні демо-значення)',
-      na.dichtheid === 'ruim' && na.beweging === undefined && na.accent === 'violet' && na.effecten === 20 && z.icoonStijl === 'kleur' && z.dock.positie === 'rechts' && z.modus === 'dicht', JSON.stringify({ na, z: { i: z.icoonStijl, d: z.dock, m: z.modus } }));
+    // ANKERS-001: положення й режим із макета — навігація якорів (paginaNav), меню сайту (dock.positie, modus) не рухається.
+    check('макет → сайт: weergaveNaarSite змінює справжні налаштування облікового запису; положення й режим — лише навігація якорів (paginaNav), не меню сайту',
+      na.dichtheid === 'ruim' && na.beweging === undefined && na.accent === 'violet' && na.effecten === 20 && z.icoonStijl === 'kleur' && z.paginaNav.positie === 'rechts' && z.paginaNav.modus === 'dicht'
+      && z.dock.positie === 'links' && z.modus === 'auto', JSON.stringify({ na, z: { i: z.icoonStijl, d: z.dock, m: z.modus, p: z.paginaNav } }));
     mq.weergaveNaarSite({ dichtheid: 'normaal', effecten: UITERLIJK_EFFECTEN_STANDAARD });
-    check('макет → сайт: «Звичайна» і 45 % повертають типове (поля зникають), меню не чіпається', sp.readSharedPreferences().dichtheid === undefined && sp.readSharedPreferences().effecten === undefined && zb.zijbalkVoorkeuren().dock.positie === 'rechts');
+    check('макет → сайт: «Звичайна» і 45 % повертають типове (поля зникають), меню не чіпається', sp.readSharedPreferences().dichtheid === undefined && sp.readSharedPreferences().effecten === undefined && zb.zijbalkVoorkeuren().paginaNav.positie === 'rechts');
     pasWeergaveStijlToe({ dichtheid: 'compact', accent: 'cyan' });
     check('застосування на справжньому document.documentElement', wortel.dataset.dichtheid === 'compact' && wortel.dataset.accent === 'cyan');
   }

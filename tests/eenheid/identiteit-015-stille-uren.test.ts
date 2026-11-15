@@ -191,7 +191,11 @@ async function inChrome(check: Check) {
   try {
     const { build } = await import('esbuild');
     const uit = resolve(map, 'proef.js');
-    await build({ stdin: { contents: PROEF, resolveDir: resolve('.'), loader: 'tsx', sourcefile: 'i015-stil-proef.tsx' }, outfile: uit, bundle: true, logLevel: 'error', platform: 'browser', format: 'iife', target: 'es2022', define: { 'process.env.NODE_ENV': '"production"' }, loader: { '.css': 'empty', '.svg': 'empty', '.png': 'empty' } });
+    await build({ stdin: { contents: PROEF, resolveDir: resolve('.'), loader: 'tsx', sourcefile: 'i015-stil-proef.tsx' }, outfile: uit, bundle: true, logLevel: 'error', platform: 'browser', format: 'iife', target: 'es2022', define: { 'process.env.NODE_ENV': '"production"' }, loader: { '.css': 'empty', '.svg': 'empty', '.png': 'empty' },
+      // GEMINI-002 (15.11) додав у центр сповіщень переглядач вкладень; його важкі частини (sql.js, mdb-reader) вантажаться лише через
+      // import() і тягнуть вбудовані модулі Node. Vite їх розділяє, а один файл IIFE тут — ні: робимо їх зовнішніми (у пробі не викликаються).
+      // Zware bijlagenviewer (alleen via import()) gebruikt Node-modules; in deze ene IIFE-bundel extern, ze worden niet uitgevoerd.
+      external: ['stream', 'events', 'node:fs', 'node:crypto', 'fs', 'crypto', 'path'] });
     const { chromium } = await import(pathToFileURL(PW).href) as { chromium: { launch: (o: unknown) => Promise<any> } };
     const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox'] });
     try {

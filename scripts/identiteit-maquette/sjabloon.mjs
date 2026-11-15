@@ -35,8 +35,8 @@ if (!html.includes('vormgeving-venster') || !html.includes('vormgeving-voet')) t
 // кнопок — лише навігація цієї сторінки; кнопка веде до справжніх налаштувань меню. Переклад ставить двигун (renderStatic).
 // Саме <div>, не <p>: двигун пише підказку перетягування в перший прямий <p> вікна (:scope > p) і стер би це пояснення.
 html = html.replace(/(<div class="mq-echt mq-vormgeving" data-echt="vormgeving-venster">)/,
-  '<div class="mq-pagina-nav-noot"><span id="mqPaginaNavNoot">Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.</span> ' +
-  '<button type="button" id="mqPaginaNavKnop" class="mq-pagina-nav-knop" data-kaart-ga="menu|#menu-modus">Налаштування меню сайту</button></div>\n    $1');
+  '<div class="mq-pagina-nav-noot"><span id="mqPaginaNavNoot">Положення й поведінка діють лише на навігацію цієї сторінки й зберігаються в обліковому записі окремо від меню сайту: зміна тут не рухає меню сайту, а зміна меню сайту — цю навігацію. Стиль і вміст кнопок — лише на цьому пристрої.</span> ' +
+  '<button type="button" id="mqPaginaNavKnop" class="mq-pagina-nav-knop" data-kaart-ga="menu|#menu-modus" title="Відкриває налаштування головного меню сайту (положення, поведінка, піктограми). Те, що ви там оберете, не змінює навігацію цієї сторінки.">Налаштування меню сайту</button></div>\n    $1');
 if (!html.includes('id="mqPaginaNavNoot"')) throw new Error('пояснення вікна навігації не вставлено');
 
 // САЙТ: відокремлення внутрішнього дороговказу розділів сторінки від головного гамбургера сайту в шапці .topbar.
