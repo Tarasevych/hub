@@ -27,14 +27,27 @@ export async function main(): Promise<number> {
     orbit.includes('<Logo id={a.id}') && orbit.includes('onClick={() => onSelect(a)}')
     && orbit.includes('onClick={() => onSelect(actief)}'));
   check('onbeschikbare diensten tonen redenen, niet een schijn-actie',
-    orbit.includes('<details key={a.id} data-mail-orbit-onbeschikbaar={a.id}>')
+    orbit.includes("<details key={a.id} data-mail-orbit-onbeschikbaar={a.id} data-mail-provider-knop='nee'>")
     && orbit.includes('(a.ontbreekt || []).map')
     && !orbit.includes('onClick={() => onSelect(a)}\n                <details'));
   check('het lege accountscherm toont orbit, bestaande accounts blijven beheren',
     accounts.includes("alleKoppelingen.length === 0") && accounts.includes('<MailOrbitIntro lang={lang} onSelect={openen}')
     && accounts.includes("data-mail-accounts-empty='true'")
-    && accounts.includes("data-mail-provider-knop='nee'")
+    && orbit.includes("data-mail-provider-knop='nee'")
     && accounts.includes('mailKoppelenOpenen(a.id'));
+  // MAILACC-002: vóór de eerste lading géén lege orbit (dat flitste ~1 s en sprong dan naar een ándere pagina);
+  // met accounts dezelfde orbit (variant «extra») en géén tweede tegelcatalogus.
+  check('MAILACC-002: eerst een laadkaart, de lege orbit pas als het laden echt niets opleverde',
+    accounts.includes('const [geladen, setGeladen] = useState(')
+    && accounts.includes('setGeladen(true);')
+    && accounts.includes("if (!geladen && alleKoppelingen.length === 0) {")
+    && accounts.indexOf("if (!geladen && alleKoppelingen.length === 0) {") < accounts.indexOf("data-mail-accounts-empty='true'")
+    && accounts.includes("if (!geladen) return; // nog niet bekend"));
+  check('MAILACC-002: met accounts dezelfde orbit bovenaan, één catalogus, beheer bereikbaar via de chip',
+    accounts.includes("variant='extra' aantal={alleKoppelingen.length} onManage={naarBeheer}")
+    && !accounts.includes('mail-provider-rooster') && !accounts.includes('MAIL_AANBIEDERS.map')
+    && orbit.includes('data-mail-orbit-naar-beheer') && orbit.includes("onManage && variant !== 'extra'")
+    && css.includes('.mail-accounts-hub.mail-accounts-met-orbit>.mail-accounts-orbit-rij{grid-column:1/-1'));
   check('de lege inbox toont dezelfde orbit, zonder de site te verlaten',
     inbox.includes("accountResolution==='empty'?<div className='google-mail-orbit'")
     && inbox.includes("variant='inbox'")

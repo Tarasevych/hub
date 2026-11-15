@@ -43,11 +43,13 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ 2. de weergave: geen letter in een vierkant meer
   const hub = bron('src/MailAccountsHub.tsx');
+  const orbitBron = bron('src/mail/MailOrbitIntro.tsx');
   check('de pagina tekent logo\'s uit het register en geen beginletter meer',
     hub.includes('<Logo') && !hub.includes('{p.name[0]}') && !/\{a\.provider\[0\]\}/.test(hub));
   check('de pagina haalt haar diensten uit de ene lijst (geen tweede, hardgecodeerde reeks tegels)',
-    hub.includes("from '../shared/mail-aanbieders'") && hub.includes('MAIL_AANBIEDERS.map'));
-  check('een tegel zonder handeling is geen knop', hub.includes("data-mail-provider-knop='nee'") && hub.includes('mailAanbiederHeeftKnop'));
+    // MAILACC-002: de catalogus is de orbit (src/mail/MailOrbitIntro.tsx), ook bij gekoppelde accounts.
+    hub.includes("from '../shared/mail-aanbieders'") && orbitBron.includes("from '../../shared/mail-aanbieders'") && orbitBron.includes('MAIL_AANBIEDERS.filter(mailAanbiederHeeftKnop)'));
+  check('een tegel zonder handeling is geen knop', orbitBron.includes("data-mail-provider-knop='nee'") && orbitBron.includes("<details key={a.id} data-mail-orbit-onbeschikbaar") && hub.includes('mailAanbiederHeeftKnop'));
   check('het lege vak legt uit wat een koppeling geeft (punt 5)', hub.includes("data-mail-leeg='uitleg'") && !/Ще немає підключених акаунтів<\//.test(hub));
 
   const post = bron('src/MailFunctioneelWeergave.tsx');
