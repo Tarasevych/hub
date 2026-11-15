@@ -2977,6 +2977,26 @@
    "pad": "tests/eenheid/vaardigheden-20261115.test.ts",
    "wat": "Eenheidstest voor de 9 vaardigheden (inclusief mijn-ruimte), SemVer, afhankelijkheidsgraaf, <id>:<kant>-controle, tweetalige selectie, voorbeelden, valideerVaardigheden, kaartcontrole en taalzuiverheid.",
    "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/uitrol-telegram.ts",
+   "wat": "Versleuteld (AES-256-GCM) opdelen en verzenden van geïnstalleerde uitrolpakketten naar Telegram, verplichte blokkade vóór nieuwe goedkeuring en integriteitsgecontroleerd herstel.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "backend/uitrol-github-ontvangen.ts",
+   "wat": "Veilige ontvangst van uitrolreleases uit GitHub via ondertekende HMAC-SHA256-webhook, handmatig of via MCP (uitrol_github_ophalen), met voorcontrole tot wacht-op-goedkeuring.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/TelegramArchief.tsx",
+   "wat": "Beheerpaneel voor versleutelde Telegram-releaseback-ups (kanaal, eenmalige 256-bits sleutel, verplichte blokkade, handmatig archiveren en herstel met SHA-256-controle).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "tests/eenheid/uitrol-telegram-en-github-ontvangen-20261115.test.ts",
+   "wat": "Eenheidstest op PostgreSQL voor versleuteld Telegram-archief (AES-256-GCM, delen, blokkade, herstel) en veilige GitHub-release-ontvangst (HMAC, replay, 302 zonder tokenlek, voorcontrole).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
   }
  ]
 }

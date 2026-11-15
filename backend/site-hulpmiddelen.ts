@@ -444,6 +444,7 @@ export const ADMIN_VIEW_ROUTES: Readonly<Record<string, { route: string; body: (
   overview: { route: 'POST /api/owner/admin/overview', body: () => ({}) },
   rollouts: { route: 'POST /api/owner/uitrol/overzicht', body: () => ({}) },
   rollout_history: { route: 'POST /api/owner/uitrol/runs', body: (a) => ({ pagina: Number.isInteger(a.page) && a.page > 0 ? a.page : 1, perPagina: 15 }) },
+  rollout_stroom: { route: 'POST /api/owner/uitrol/stroom/stand', body: (a) => (typeof a.version === 'string' && a.version ? { versie: a.version } : {}) },
   diagnostics: { route: 'POST /api/owner/admin/diagnostiek/overzicht', body: () => ({}) },
   audit_log: { route: 'POST /api/owner/audit/beheer/lijst', body: () => ({ limiet: 50 }) },
 });
@@ -451,8 +452,8 @@ SITE_TOOLS.push({
   group: 'site', service: 'admin', write: false,
   tool: {
     name: 'get_admin_view', title: 'Admin view on behalf of the owner',
-    description: 'Read one admin view (overview, rollouts, rollout_history, diagnostics, audit_log) on behalf of the owner. Works ONLY while the owner has granted you a time-limited delegation on the website with their passkey; otherwise it returns NAMENS_SESSIE_VEREIST — then ask the owner, do not retry. Every call is logged as done by you (the agent), never as the owner. Read-only; you can never change the owner account, roles, access, AI policy or secrets.',
-    inputSchema: { type: 'object', properties: { view: { type: 'string', enum: Object.keys(ADMIN_VIEW_ROUTES), description: p('Який адмін-розділ прочитати.', 'Welk beheeroverzicht gelezen wordt.') }, page: { type: 'integer', minimum: 1, description: p('Сторінка для rollout_history (типово 1).', 'Pagina van rollout_history (standaard 1).') } }, required: ['view'], additionalProperties: false },
+    description: 'Read one admin view (overview, rollouts, rollout_history, rollout_stroom, diagnostics, audit_log) on behalf of the owner. Works ONLY while the owner has granted you a time-limited delegation on the website with their passkey; otherwise it returns NAMENS_SESSIE_VEREIST — then ask the owner, do not retry. Every call is logged as done by you (the agent), never as the owner. Read-only; you can never change the owner account, roles, access, AI policy or secrets.',
+    inputSchema: { type: 'object', properties: { view: { type: 'string', enum: Object.keys(ADMIN_VIEW_ROUTES), description: p('Який адмін-розділ прочитати.', 'Welk beheeroverzicht gelezen wordt.') }, page: { type: 'integer', minimum: 1, description: p('Сторінка для rollout_history (типово 1).', 'Pagina van rollout_history (standaard 1).') }, version: { type: 'string', description: p('Необов’язково: версія випуску (YYYYMMDD-HHMMSS) для огляду потоку.', 'Optioneel: uitrolversie (YYYYMMDD-HHMMSS) voor het stroomoverzicht.') } }, required: ['view'], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   validate: (a) => (typeof a.view === 'string' && Object.prototype.hasOwnProperty.call(ADMIN_VIEW_ROUTES, a.view) ? null : 'Invalid "view".'),
@@ -1238,6 +1239,64 @@ SITE_TOOLS.push(
         termenUk: a.termen_uk,
         termenNl: a.termen_nl,
         agentKoppelingen: a.agent_koppelingen,
+      }),
+    }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'admin', write: true,
+    tool: {
+      name: 'uitrol_github_ophalen',
+      title: 'Отримати реліз із GitHub на перевірку / GitHub-release ophalen voor voorcontrole',
+      description: 'Завантажує архів .tar.gz із релізу GitHub, перевіряє SHA-256 і запускає попередню перевірку сервера; нічого не встановлює без passkey власника. / Haalt een .tar.gz-archief uit een GitHub-release, controleert SHA-256 en voert de voorcontrole uit; installeert niets zonder passkey van de eigenaar.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repo: {
+            type: 'string',
+            description: p(
+              'Необов’язкове сховище у вигляді "власник/назва". Якщо не вказано — береться з налаштувань оновлень.',
+              'Optionele opslagplaats als "eigenaar/naam". Zonder waarde wordt de ingestelde opslagplaats gebruikt.',
+            ),
+          },
+          tag: {
+            type: 'string',
+            description: p(
+              'Необов’язковий теґ релізу, наприклад "uitrol-20261115-120000". Якщо не вказано — береться останній опублікований реліз.',
+              'Optionele release-tag, bijvoorbeeld "uitrol-20261115-120000". Zonder waarde wordt de nieuwste gepubliceerde uitgave gebruikt.',
+            ),
+          },
+          sha256: {
+            type: 'string',
+            description: p(
+              'Необов’язкова очікувана контрольна сума SHA-256 (64 шістнадцяткові символи) для звірки завантаженого архіву.',
+              'Optionele verwachte SHA-256-controlesom (64 hexadecimale tekens) ter controle van het opgehaalde archief.',
+            ),
+          },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    validate: (a) => {
+      if (a.repo !== undefined && (typeof a.repo !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9._-]{1,100}$/.test(a.repo.trim()))) {
+        return 'Invalid "repo": expected "owner/name".';
+      }
+      if (a.tag !== undefined && (typeof a.tag !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/.test(a.tag.trim()))) {
+        return 'Invalid "tag".';
+      }
+      if (a.sha256 !== undefined && (typeof a.sha256 !== 'string' || !/^[0-9a-fA-F]{64}$/.test(a.sha256.trim()))) {
+        return 'Invalid "sha256": expected 64 hex chars.';
+      }
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/uitrol/github/ophalen',
+      body: without({
+        bron: 'mcp',
+        repo: typeof a.repo === 'string' ? a.repo.trim() : undefined,
+        tag: typeof a.tag === 'string' ? a.tag.trim() : undefined,
+        sha256: typeof a.sha256 === 'string' ? a.sha256.trim().toLowerCase() : undefined,
       }),
     }),
     shape: (d) => compact(d),

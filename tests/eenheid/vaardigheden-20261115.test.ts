@@ -223,15 +223,17 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ 6. Узгодженість правил, валідатор каталогу і заборони суперечностей
   const uitgave = leesVaardigheid('uitgave-voorbereiden', cat);
-  check('uitgave-voorbereiden: PostgreSQL 18.6 (без згадки 16), zoek-ui-catalogus, ONTWIKKELARCHIEF, R:\\, ключ доступу, заплановані GitHub/Telegram',
+  check('uitgave-voorbereiden: PostgreSQL 18.6 (без згадки 16), zoek-ui-catalogus, ONTWIKKELARCHIEF, R:\\, ключ доступу, UITROL-002 GitHub/Telegram',
     uitgave.includes('PostgreSQL 18.6')
     && !uitgave.includes('PostgreSQL 16')
     && uitgave.includes('zoek-ui-catalogus')
     && uitgave.includes('ONTWIKKELARCHIEF')
     && uitgave.includes('R:\\mijn-ruimte-reservekopie\\')
     && uitgave.includes('міграції БД автоматично не скасовуються')
-    && uitgave.includes('запланованим напрямом')
-    && uitgave.includes('поки не працює'));
+    && uitgave.includes('uitrol-github-ontvangen.ts')
+    && uitgave.includes('TELEGRAM_UITROL_BOT_TOKEN')
+    && uitgave.includes('ніколи не підміняє')
+    && !uitgave.includes('поки не працює'));
 
   const kop = leesVaardigheid('koppelingen-echte-vorm-testen', cat);
   check('koppelingen-echte-vorm-testen: справжня будова, знеособлення, signature, IMAP/Dovecot, TLS, повтори/відмови',

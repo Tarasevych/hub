@@ -33,14 +33,14 @@ NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit
 ### Перевірені обмеження напряму 1
 
 - У цьому ізольованому середовищі немає підключення до чистої тестової PostgreSQL 18.6 і права публікації в GitHub Releases; тому прогін нових міграцій (`deploy/uitrol/mijn-ruimte-migratie-proef.sh`) та перевірка точного SHA-256 оприлюдненого `.tar.gz`-файла в GitHub Release у цьому прогоні **не виконувалися** (але обов’язкові для справжнього випуску).
-- Напрям «сервер сам отримує архів із GitHub» у чинному коді **ще не впроваджено**.
+- Механізм отримання релізу сервером із GitHub уже впроваджено в `backend/uitrol-github-ontvangen.ts`, однак у робочому середовищі власник має окремо перевірити налаштування сховища та підпису запитів безпосередньо в розділі «Налаштування → GitHub».
 
 ## Напрям 5: Пам’ятка встановлення, запасних копій та повернення версії
 
 ### Складники в коді
 
 - Запасні копії й відновлення: `deploy/backup-maken.sh`, `deploy/ВІДНОВЛЕННЯ.uk.md`, `deploy/HERSTEL.nl.md`, `deploy/installeer-app.sh`.
-- Попередня перевірка, міграційна проба, схвалення ключем доступу та відкочування: `backend/uitrol-voorcontrole.ts`, `backend/uitrol-vereisten.ts`, `backend/uitrol-goedkeuring.ts`, `backend/uitrol-runs.ts`, `src/uitrol/Voorcontrole.tsx`, `scripts/rook-controle.mjs`.
+- Попередня перевірка, міграційна проба, схвалення ключем доступу та відкочування: `backend/uitrol-voorcontrole.ts`, `backend/uitrol-vereisten.ts`, `backend/uitrol-goedkeuring.ts`, `backend/uitrol-runs.ts`, `backend/uitrol-github-ontvangen.ts`, `backend/uitrol-telegram.ts`, `src/uitrol/Voorcontrole.tsx`, `scripts/rook-controle.mjs`.
 
 ### Послідовний приклад перед і після оновлення
 
@@ -48,12 +48,12 @@ NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit
 2. Передати власнику явну вимогу перевірити офлайнову копію на ПК у `R:\mijn-ruimte-reservekopie\` (`sleutels/herstelsleutel-age.txt`, `geheimen/geheimen-<stempel>.tar.age`, `vm-back-ups/`), не стверджуючи її наявності без доступу до `R:\`.
 3. На `admin.tarasevych.com/updates` дочекатися зеленої попередньої перевірки та проби міграцій (`proef-inbox` на PostgreSQL 18.6) до натискання власником схвалення ключем доступу.
 4. Після встановлення звірити `/api/version` (`versie` та `commit`), `/__gezondheid`, `diagnose.json` і `node scripts/rook-controle.mjs --live`.
-5. У разі збою виконати повернення через `Admin → Оновлення → Відкотити` (`TERUGDRAAIEN`), а якщо новий випуск застосував несумісні міграції БД — додатково відновити БД із `database.dump.age` (`pg_restore`), оскільки міграції при кодовому відкаті автоматично не скасовуються.
+5. У разі збою виконати повернення через `Admin → Оновлення → Відкотити` (`TERUGDRAAIEN`), а якщо новий випуск застосував несумісні міграції БД — додатково відновити БД із `database.dump.age` (`pg_restore`), оскільки міграції при кодовому поверненні автоматично не скасовуються.
 
 ### Перевірені обмеження напряму 5
 
 - Доступ до робочої ВМ `<VM-IP>`, каталогу `/srv/backups/mijn-ruimte/` та диску `R:\` власника в цьому середовищі відсутній — перевірка копій та живого `/api/version` є обов’язковою передумовою на місці під час справжнього оновлення.
-- Автоматична зашифрована копія архіву в темі Telegram до схвалення **ще не впроваджена** (окремий бот ще не підключено до сайту).
+- Окремий бот випусків і шифрування архівів у темі Telegram впроваджено в `backend/uitrol-telegram.ts`, однак наявність чинного ключа `TELEGRAM_UITROL_BOT_TOKEN`, 256-бітного ключа шифрування та прав бота в темі потрібно підтвердити живою перевіркою з’єднання на сайті.
 
 ## Запис передавання роботи (`WERKOVERDRACHT`)
 

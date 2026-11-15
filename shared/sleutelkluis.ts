@@ -92,6 +92,8 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
   { tabel: 'app.vaardigheden_eigen', veld: 'instructies van agentvaardigheden (0279)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/vaardigheden-opslag.ts',
     reden: { uk: 'Настанови й рецепти навичок не містять секретів (валідатор блокує ключі й токени) і читаються під час виявлення ресурсів MCP.', nl: 'Instructies van vaardigheden bevatten nooit geheimen (de validator weigert sleutels en tokens) en worden bij MCP-brondetectie gelezen.' } },
+  { tabel: 'app.uitrol_telegram_instellingen / app.uitrol_telegram_archief / app.uitrol_telegram_updates / app.uitrol_github_ontvangen / app.uitrol_github_webhook_leveringen', veld: 'chat_id, manifest en ontvangststatus (geheimen zelf in owner_vault_v1)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/uitrol-telegram.ts, backend/uitrol-github-ontvangen.ts',
+    reden: { uk: 'Фонові процеси (GitHub/Telegram-webhook та архівування випусків у Telegram) читають ці налаштування без браузерної сесії; секретні токени й ключ шифрування зберігаються зашифрованими в owner_vault_v1.', nl: 'Achtergrondtaken (GitHub/Telegram-webhook en Telegram-releasearchief) lezen deze instellingen zonder browsersessie; tokens en de archiefsleutel staan versleuteld in owner_vault_v1.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 

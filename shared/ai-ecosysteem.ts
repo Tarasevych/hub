@@ -258,7 +258,7 @@ const PC_SCHRIJF_TOOLS = new Set([
 ]);
 
 const SERVER_SCHRIJF_TOOLS = new Set([
-  'uitrol_voorstel_begin', 'uitrol_voorstel_stuk', 'uitrol_voorstel_klaar', 'uitrol_voorstel_annuleren',
+  'uitrol_voorstel_begin', 'uitrol_voorstel_stuk', 'uitrol_voorstel_klaar', 'uitrol_voorstel_annuleren', 'uitrol_github_ophalen',
   'users_manage', 'flags_manage', 'app_domain', 'orch_taak_start', 'orch_inleveren_begin', 'orch_inleveren_stuk', 'orch_inleveren_klaar',
 ]);
 

@@ -94,6 +94,7 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/github/spiegel/sync',
   'POST /api/owner/vaardigheden/aanbevelen',
   'POST /api/owner/vaardigheden/opslaan',
+  'POST /api/owner/uitrol/github/ophalen',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body, namens) => {

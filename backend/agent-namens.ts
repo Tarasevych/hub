@@ -29,7 +29,7 @@ export const NAMENS_STANDAARD_MINUTEN = 60;
 /** Omvang: groepen van ALLEEN-LEZEN beheerroutes die een agent met een namens-sessie via callSite mag aanroepen. */
 export const NAMENS_OMVANG: Readonly<Record<string, { uk: string; nl: string; routes: readonly string[] }>> = Object.freeze({
   overzicht: { uk: 'Огляд адміністрування (лічильники, стан)', nl: 'Beheeroverzicht (tellers, stand)', routes: ['POST /api/owner/admin/overview'] },
-  uitrol: { uk: 'Історія розгортань (лише читання)', nl: 'Uitrolgeschiedenis (alleen lezen)', routes: ['POST /api/owner/uitrol/overzicht', 'POST /api/owner/uitrol/runs'] },
+  uitrol: { uk: 'Історія розгортань (лише читання)', nl: 'Uitrolgeschiedenis (alleen lezen)', routes: ['POST /api/owner/uitrol/overzicht', 'POST /api/owner/uitrol/runs', 'POST /api/owner/uitrol/stroom/stand'] },
   diagnostiek: { uk: 'Діагностика сервісів (лише читання)', nl: 'Diagnostiek van diensten (alleen lezen)', routes: ['POST /api/owner/admin/diagnostiek/overzicht'] },
   journaal: { uk: 'Журнал аудиту (лише читання)', nl: 'Auditlogboek (alleen lezen)', routes: ['POST /api/owner/audit/beheer/lijst'] },
 });
@@ -50,6 +50,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/agent-namens\//,               // namens-sessies zelf
   /^[A-Z]+ \/api\/owner\/uitrol\/voorbereiders(\/|$)/,  // wie updates mag voorbereiden (grants)
   /^[A-Z]+ \/api\/owner\/uitrol\/(goedkeuren|goedkeuring)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/uitrol\/stroom\/(?!stand$).+/, // enkel de eigenaar mag stroomnotities, controlelijsten en bewijsrapporten schrijven/verwijderen
   /^[A-Z]+ \/api\/owner\/ai-beleid(\/|$)/,              // AI-beleid (ondertekend door de eigenaar)
   /^[A-Z]+ \/api\/owner\/geheimen(\/|$)/,               // «Секрети й ключі»
   /^[A-Z]+ \/api\/owner\/(sleutelkluis|codewoord|tech-ruimtes|besluit|aanmeld|orch)(\/|$)/,
