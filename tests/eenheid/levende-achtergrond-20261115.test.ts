@@ -7,7 +7,7 @@
 // (4) кожен кадр справді малює плями (підробний 2D-контекст рахує виклики).
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
-import { ACHTERGROND_STANDAARD, achtergrondVolledig, normaliseerAchtergrond, normaliseerUiterlijkRuimte, normaliseerUiterlijkRuimtes, metUiterlijkRuimte } from '../../shared/uiterlijk';
+import { ACHTERGROND_GRENZEN, ACHTERGROND_NIVEAUS, ACHTERGROND_NIVEAU_WAARDEN, ACHTERGROND_STANDAARD, achtergrondNiveau, achtergrondVolledig, normaliseerAchtergrond, normaliseerUiterlijkRuimte, normaliseerUiterlijkRuimtes, metUiterlijkRuimte } from '../../shared/uiterlijk';
 import { maakPlan, polotno, teken, tintVan, type Ctx2D } from '../../src/achtergrond/levende-kern';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
@@ -68,6 +68,21 @@ export async function main(): Promise<number> {
   check('оболонка монтує фон першою дитиною main.canonical-chrome', /onPointerUp=\{finishSwipe\}>\{\/\*[^*]*\*\/\}<LevendeAchtergrond lang=\{lang\}\/>/.test(lees('src/CanoniekOmlijsting.tsx')));
   check('налаштування живого фону — у «Темах»', /<AchtergrondInstellingen tr=\{tr\} \/>/.test(lees('src/thema/ThemaInstellingen.tsx')));
   check('налаштування мають тексти uk і nl', (lees('src/achtergrond/AchtergrondInstellingen.tsx').match(/tr\('/g) || []).length >= 40);
+
+
+  // 5. Швидке керування зі сторінки (кнопка вгорі): рівні від ледь помітного до вражаючого, ті самі збережені налаштування.
+  const sterktes = ACHTERGROND_NIVEAUS.map((n) => ACHTERGROND_NIVEAU_WAARDEN[n].sterkte), tempos = ACHTERGROND_NIVEAUS.map((n) => ACHTERGROND_NIVEAU_WAARDEN[n].tempo);
+  check('рівні зростають від «ледь помітно» до «вражаюче»', sterktes.every((v, i) => i === 0 || v > sterktes[i - 1]) && tempos.every((v, i) => i === 0 || v > tempos[i - 1]));
+  check('усі значення рівнів у межах', ACHTERGROND_NIVEAUS.every((n) => Object.entries(ACHTERGROND_NIVEAU_WAARDEN[n]).every(([k, v]) => { const g = ACHTERGROND_GRENZEN[k as keyof typeof ACHTERGROND_GRENZEN]; return v >= g[0] && v <= g[1]; })));
+  check('типові налаштування = рівень «Спокійно»; власні — без рівня', achtergrondNiveau(achtergrondVolledig(undefined)) === 'rustig' && achtergrondNiveau(achtergrondVolledig({ tempo: 33 })) === null);
+  check('рівень «Спокійно» не зберігає зайвого (лише відхилення від типового)', normaliseerAchtergrond({ ...ACHTERGROND_STANDAARD, ...ACHTERGROND_NIVEAU_WAARDEN.rustig }) === undefined);
+  check('рівень «Ледь помітно» зберігається й відновлюється', achtergrondNiveau(achtergrondVolledig(normaliseerAchtergrond({ ...ACHTERGROND_STANDAARD, ...ACHTERGROND_NIVEAU_WAARDEN.subtiel }))) === 'subtiel');
+  const knop = lees('src/achtergrond/AchtergrondKnop.tsx'), schil = lees('src/CanoniekOmlijsting.tsx');
+  check('кнопка у верхній смузі оболонки на ПК і телефоні', (schil.match(/\{!signedOut&&<AchtergrondKnop lang=\{lang\}\/>\}/g) || []).length === 2);
+  check('кнопка в шапці «Макета» (перед пошуком)', /<AchtergrondKnopMaquette lang=\{lang\}\/>/.test(schil) && /\.mr-mq \.top-actions/.test(knop) && /search-action/.test(knop));
+  check('панель пише ті самі налаштування, що й «Теми»', /zetAchtergrond\(/.test(knop) && /useThemaStand\(\)/.test(knop));
+  check('панель: швидкість, інтенсивність, перелив, кількість, форма, розмір', ['tempo', 'sterkte', 'kleurwissel', 'aantal', 'vervorming', 'grootte'].every((v) => knop.includes(`schuif('${v}'`)));
+  check('панель закривається Esc і клацанням поза нею', /e\.key === 'Escape'/.test(knop) && /pointerdown/.test(knop));
 
   return einde();
 }
