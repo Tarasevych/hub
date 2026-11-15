@@ -2,7 +2,7 @@
 // Gebruikt in de wizard (voorbeeld vóór upload) en in «Про цей випуск» (Zijkant). De taal volgt `lang` zonder herladen.
 import { useEffect, useState } from 'react';
 import AgentLogo from '../agenten/AgentLogo';
-import { kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type DeelnemerAccount, type Manifest, type Rol } from '../../shared/uitrol-manifest';
+import { isEigenAccount, kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type DeelnemerAccount, type Manifest, type Rol } from '../../shared/uitrol-manifest';
 import { actieveAccountFoto } from './Persoon';
 import { tr, type Lang } from './types';
 
@@ -13,7 +13,7 @@ const slug = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 /** Знаходить фото профілю учасника-людини з особистого кабінету або списку облікових записів. */
 export function mensFoto(naam: string | null | undefined, account?: DeelnemerAccount | null, accounts?: readonly DeelnemerAccount[]): string {
-  return mensFotoUitAccount(naam, account, accounts) || actieveAccountFoto(account?.foto);
+  return mensFotoUitAccount(naam, account, accounts) || (isEigenAccount(naam, account) ? actieveAccountFoto(account?.foto, true) : '');
 }
 
 function MensDeelnemerFoto({ naam, account, accounts }: { naam: string; account?: DeelnemerAccount | null; accounts?: readonly DeelnemerAccount[] }) {
