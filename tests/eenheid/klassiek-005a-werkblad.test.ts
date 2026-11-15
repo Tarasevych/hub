@@ -176,12 +176,14 @@ export async function main(): Promise<number> {
   const hubHeldMap = new Map((hubHeldRegel?.decls ?? []).map((d) => [d.eig, d.waarde]));
 
   check(
-    'ділова смуга .wb-balk, привітання .wb-begroeting та шапка огляду .mq-held мають компактну висоту min-height: 52px, щільні відступи, матове тло var(--mq-oppervlak) і нульове розмиття',
-    wbBalkMap.get('min-height') === '52px' &&
-      wbBalkMap.get('padding') === '8px 14px' &&
-      wbBalkMap.get('background') === 'var(--mq-oppervlak)' &&
-      wbBalkMap.get('background-image') === 'none' &&
-      wbBalkMap.get('backdrop-filter') === 'none' &&
+    // WB-HOEK-001 (15.11.2026): смуга .wb-balk більше не має власної підкладки — лише кругла піктограма «Налаштувати» на тлі.
+    // WB-HOEK-001: de balk heeft geen eigen paneel meer; alleen de ronde knop staat op de achtergrond.
+    'ділова смуга .wb-balk без власної підкладки (прозора, без рамки й відступів), привітання .wb-begroeting та шапка огляду .mq-held мають компактну висоту min-height: 52px, щільні відступи, матове тло var(--mq-oppervlak) і нульове розмиття',
+    wbBalkMap.get('min-height') === '0' &&
+      wbBalkMap.get('padding') === '0' &&
+      wbBalkMap.get('border') === '0' &&
+      wbBalkMap.get('background') === 'transparent' &&
+      wbBalkMap.get('box-shadow') === 'none' &&
       wbBegroetingMap.get('min-height') === '52px' &&
       wbBegroetingMap.get('padding') === '10px 16px' &&
       wbBegroetingMap.get('background') === 'var(--mq-oppervlak)' &&
