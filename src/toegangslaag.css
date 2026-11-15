@@ -1,4 +1,4 @@
-.access-plane{display:flex;flex-direction:column;gap:16px;max-width:860px;min-width:0;container-type:inline-size;container-name:access-plane}
+.access-plane{display:flex;flex-direction:column;gap:16px;width:100%;max-width:860px;min-width:0;margin-inline:auto;container-type:inline-size;container-name:access-plane}
 .access-plane-header{display:flex;align-items:flex-start;gap:12px}
 .access-plane-header svg{flex:0 0 auto;width:22px;height:22px;color:var(--accent);margin-top:2px}
 .access-plane-header h1{margin:0;font-size:1.3rem}
