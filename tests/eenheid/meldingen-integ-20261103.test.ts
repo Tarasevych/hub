@@ -190,22 +190,24 @@ export async function main(): Promise<number> {
     const Paneel = (await import('../../src/meldingen/MeldingVoorkeurenPaneel')).default;
     const html = (lang: 'uk' | 'nl') => renderToStaticMarkup(createElement(Paneel, { lang, techTypen: false }));
     const uk = html('uk'), nl = html('nl');
-    const rijen = (h: string) => (h.match(/class="mv-rij[^"]*" data-mv-type="/g) || []).length;
+    // MELDINGEN-UX-001 (15.11.2026): kaarten — «Загальне» bovenaan (як показувати + тривалість), elke soort één rij met schakelaar,
+    // eigen keuzes pas na uitklappen. MELDINGEN-UX-001: картки — «Загальне» зверху, кожен тип — рядок із перемикачем.
+    const rijen = (h: string) => (h.match(/class="mvk-rij[^"]*" data-mv-type="/g) || []).length;
     const prive = MELDING_TYPE_IDS.filter((t) => MELDING_TYPES[t].ruimte === 'prive').length;
-    check('C1 elke persoonlijke soort één rij met drie keuzes (як показувати, поведінка, тривалість) + «Приклад»',
-      rijen(uk) === prive && (uk.match(/data-mv-veld="weergave"/g) || []).length === prive && (uk.match(/data-mv-veld="gedrag"/g) || []).length === prive && (uk.match(/data-mv-veld="seconden"/g) || []).length === prive && (uk.match(/data-mv-voorbeeld="/g) || []).length === prive, `${rijen(uk)}/${prive}`);
-    check('C1 vier manieren + «не показувати» in gewone woorden (uk)', ['Спливає зі звуком', 'Лише спливає (без звуку)', 'Лише звук (без спливання)', 'Лише в панелі (тихо)', 'Не показувати'].every((s) => uk.includes(s)));
-    check('C1 поведінка: «Зникає за таймером» / «Висить, доки не закрию»; тривалість «2 с (типово)» of seconden', uk.includes('Зникає за таймером') && uk.includes('Висить, доки не закрию') && uk.includes('2 с (типово)') && uk.includes('>14 с<'));
-    check('C1 nl: dezelfde keuzes in het Nederlands', ['Pop-up met geluid', 'Alleen pop-up (zonder geluid)', 'Alleen geluid (geen pop-up)', 'Alleen in het paneel (stil)', 'Niet tonen', 'Verdwijnt na de tijd', 'Blijft staan tot ik sluit', '2 s (standaard)'].every((s) => nl.includes(s)));
-    const bev = uk.slice(uk.indexOf('data-mv-type="beveiliging"'), uk.indexOf('data-mv-type="toegang"'));
-    check('C1 beveiliging: «Не показувати» uitgeschakeld + uitleg; standaard «Зникає за таймером» (niet vast)', /<option value="uit" disabled="">Не показувати<\/option>/.test(bev) && bev.includes('приховати — ні') && /data-mv-veld="gedrag"[^>]*>[\s\S]*?<option value="timer" selected="">/.test(bev));
+    check('C1 elke persoonlijke soort één rij met schakelaar en samenvatting',
+      rijen(uk) === prive && (uk.match(/role="switch"/g) || []).length >= prive && (uk.match(/data-mvk-samenvatting="/g) || []).length === prive, `${rijen(uk)}/${prive}`);
+    check('C1 «Загальне»: vier manieren in gewone woorden + tooltip met gevolg (uk)', ['Загальне', 'Спливає і звук', 'Без звуку', 'Лише звук', 'Тихо', 'Як загальне'].every((x) => uk.includes(x)) && ['beide', 'popup', 'geluid', 'paneel'].every((w) => uk.includes(`data-mvk-keuze="${w}"`)) && uk.includes('Потім сповіщення лишається в панелі'));
+    check('C1 тривалість: 2 с (типово) … «Доки не закрию»', uk.includes('>2 с<') && uk.includes('>30 с<') && uk.includes('Доки не закрию') && uk.includes('data-mvk-keuze="vast"'));
+    check('C1 nl: dezelfde keuzes in het Nederlands', ['Algemeen', 'Pop-up + geluid', 'Zonder geluid', 'Alleen geluid', 'Stil', 'Tot ik sluit', 'Zoals algemeen'].every((x) => nl.includes(x)));
+    const bev = uk.slice(uk.indexOf('data-mv-type="beveiliging"'), uk.indexOf('</li>', uk.indexOf('data-mv-type="beveiliging"')));
+    check('C1 beveiliging: rij «захищене», schakelaar uitgeschakeld + uitleg «приховати — ні»', bev.includes('data-mv-kritiek="1"') && bev.includes('захищене') && /role="switch"[^>]*disabled=""/.test(bev) && uk.includes('приховати — ні'));
     const engels = /\b(Sound|Popup only|Show|Hide|Duration|Behaviour|Behavior|Example|Panel only)\b/;
     check('C1 geen Engelse tekst in uk of nl', !engels.test(uk.replace(/<[^>]+>/g, ' ')) && !engels.test(nl.replace(/<[^>]+>/g, ' ')));
   } finally {
     herstelC();
   }
   const v2bron = lees('src/meldingen/v2/MeldingenV2.tsx');
-  check('C2 meldingen v2: dezelfde typekeuzes bovenaan «Правила сповіщень» (één systeem)', v2bron.includes("<MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} />") && v2bron.includes("data-mv2-typen='1'"));
+  check('C2 meldingen v2: dezelfde typekeuzes bovenaan «Правила сповіщень» (één systeem)', v2bron.includes("<MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} geluid={p.geluid} onGeluid={p.onGeluid} />") && v2bron.includes("data-mv2-typen='1'"));
   check('C2 een regel «Тихе/Вимкнене» per bron maakt de pop-up en het geluid stil (beveiliging niet)', belB.includes("const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);") && belB.includes('!dnd && !dubbel && !regelStil'));
 
   // ------------------------------------------------------------------ D. paneel en pop-up aan de bel (niet midden op het scherm)

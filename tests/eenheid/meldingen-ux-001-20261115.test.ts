@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checker } from './hulp/nep-google';
 import { normaliseerMeldingen } from '../../shared/menu-meldingen-voorkeuren';
+import { MELDING_TYPE_IDS, standaardTypeVoorkeur, type MeldingType } from '../../shared/melding-typen';
+import { menselijkeTitel, tegelKleur } from '../../src/meldingen/toast-weergave';
 
 const lees = (rel: string) => readFileSync(resolve(rel), 'utf8');
 
@@ -50,6 +52,36 @@ export async function main(): Promise<number> {
   check('css: tabs lopen door (wrap), geen overflow-x', /flex-wrap: wrap/.test(blok('.mel-tabs')) && !/overflow-x/.test(blok('.mel-tabs')));
   check('css: kanaalchips lopen door (wrap), geen overflow-x', /flex-wrap: wrap/.test(blok('.mel-kanaal-chips')) && !/overflow-x/.test(blok('.mel-kanaal-chips')));
   check('css: «Вікно» ook in het klassieke paneel gestyled (globaal bestand)', lees('src/canoniek-meldingencentrum.css').includes('.canonical-notification-panel .mv2-vorm-schakel'));
+
+  // 6. Regels: «Загальне» = de meest gekozen instelling; een type met een eigen keuze volgt niet meer.
+  const { algemeneInstelling, volgtAlgemeen } = await import('../../src/meldingen/voorkeur-algemeen');
+  const ids = MELDING_TYPE_IDS.slice(0, 3) as MeldingType[];
+  const std = standaardTypeVoorkeur();
+  const alg = algemeneInstelling({ [ids[0]]: std, [ids[1]]: std, [ids[2]]: { ...std, geluid: false, seconden: 10 } } as never, ids);
+  check('regels: algemeen = meerderheid (спливає і звук, 2 с)', alg.weergave === 'beide' && alg.duur === '0', JSON.stringify(alg));
+  check('regels: standaardtype volgt algemeen', volgtAlgemeen(std, alg));
+  check('regels: eigen geluid/duur volgt niet', !volgtAlgemeen({ ...std, geluid: false, seconden: 10 }, alg));
+  check('regels: verborgen type met dezelfde duur volgt nog wel (geen «Своє»)', volgtAlgemeen({ ...std, tonen: false }, alg));
+  check('regels: «Доки не закрию» telt als eigen duur', !volgtAlgemeen({ ...std, vast: true }, alg));
+  const leeg = algemeneInstelling({}, ids);
+  check('regels: zonder opslag → standaard', leeg.weergave === 'beide' && leeg.duur === '0');
+
+  // 7. Спливне вікно: code uit de titel naar details, agent → logo, hoofdletter.
+  const a = menselijkeTitel('Claude: доступ до пошти обмежено (AI_NIET_TOEGESTAAN)');
+  check('toast: code gaat uit de titel', a.titel === 'Доступ до пошти обмежено' && a.code === 'AI_NIET_TOEGESTAAN', JSON.stringify(a));
+  check('toast: agent herkend met logo', a.agent?.naam === 'Claude' && a.agent.logo === 'claude');
+  const b = menselijkeTitel('Новий лист від Марії');
+  check('toast: gewone titel blijft, geen gegokt logo', b.titel === 'Новий лист від Марії' && !b.code && !b.agent);
+  check('toast: onbekende naam vooraan is geen agent', !menselijkeTitel('Марія: привіт').agent && !menselijkeTitel('Note: test').agent);
+  check('toast: code met vierkante haken en cijfers', menselijkeTitel('Збій [HTTP503]').code === 'HTTP503' || menselijkeTitel('Збій [E_TIME_OUT]').code === 'E_TIME_OUT');
+  check('toast: lege tekst valt niet om', menselijkeTitel('').titel === '');
+  check('toast: tegelkleur per onderdeel, onbekend → blauw', tegelKleur('identity') === 'rood' && tegelKleur('ai') === 'paars' && tegelKleur('iets') === 'blauw');
+  const centrum2 = lees('src/CanoniekMeldingencentrum.tsx');
+  check('toast: geen vaste «Пауза…»-tekst meer, alleen voor schermlezers tijdens pauze', centrum2.split('\n').filter((r) => r.includes("t('Пауза")).every((r) => r.includes("className='mr-sr'")) && centrum2.includes("className='mr-sr'"));
+  const css2 = lees('src/canoniek-meldingencentrum.css');
+  check('toast: animatie uit bij prefers-reduced-motion', /prefers-reduced-motion:reduce\)\{[^}]*mr-toast/.test(css2));
+  check('toast: eigen raster wint ook met has-action (telefoon)', css2.includes('.canonical-notification-toast.mr-toast.has-action{grid-template-columns:36px'));
+  check('regels: kaarten krimpen niet in de compacte panel', /\.mv2-regels\{display:flex;flex-direction:column/.test(lees('src/meldingen/v2/meldingen-v2.css')));
 
   return einde();
 }

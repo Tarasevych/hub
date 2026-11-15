@@ -7,7 +7,7 @@
 // meteen gelezen maar blijft tot het sluiten in «Нові». De blijvende status (archief, opgelost) geldt nu ook zonder vlag v3.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
-  Archive, ArchiveRestore, ArrowLeft, BellDot, BellOff, Check, CheckCheck, CircleAlert, CircleCheck, Ellipsis, ExternalLink, Eye, History, Info, ListFilter,
+  Archive, ArchiveRestore, ArrowLeft, Bell, BellDot, BellMinus, BellOff, Check, ChevronDown, ArrowUpToLine, UserRound, CheckCheck, CircleAlert, CircleCheck, Ellipsis, ExternalLink, Eye, History, Info, ListFilter,
   AppWindow, Moon, Search, Settings2, ShieldCheck, TriangleAlert, Volume2, VolumeX, X, Clock, RotateCcw, ListChecks, EyeOff,
 } from 'lucide-react';
 import { pasStatusToe, verborgenReden, type MeldingStatus } from '../../../shared/meldingen-v2/status';
@@ -58,6 +58,7 @@ const MODUS_UITLEG: Record<LeverModus, [string, string]> = {
   stil: ['Без спливання, звуку й лічильника; лише в списку', 'Geen pop-up, geluid of teller; alleen in de lijst'],
   uit: ['Не показувати в центрі (обов’язкові записи лишаються)', 'Niet in het centrum (verplichte registratie blijft)'],
 };
+const MODUS_ICOON: Record<LeverModus, typeof Info> = { prioriteit: ArrowUpToLine, normaal: Bell, stil: BellMinus, uit: BellOff };
 const ERNST_ICON: Record<Ernst, typeof Info> = { fout: CircleAlert, aandacht: TriangleAlert, succes: CircleCheck, info: Info };
 /** INTEG-001: de drie delen — klein pictogram, de naam bij aanwijzen (data-tip) en voor de schermlezer (aria-label). */
 export const SECTIE_NAAM: Record<Sectie, readonly [string, string]> = { nieuw: ['Нові', 'Nieuw'], gelezen: ['Прочитані', 'Gelezen'], archief: ['Архів', 'Archief'] };
@@ -292,47 +293,74 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   );
 
   if (paneel === 'regels') {
-    const doelen: Array<{ doel: { dienst?: string; account?: string }; naam: string; sub?: string }> = [
-      ...diensten.map((d) => ({ doel: { dienst: d }, naam: dienstNaam(d) })),
-      ...accounts.map(([a, label]) => ({ doel: { account: a }, naam: label, sub: t('Акаунт', 'Account') })),
+    const doelen: Array<{ doel: { dienst?: string; account?: string }; naam: string; sub?: string; Icon: typeof Info }> = [
+      ...diensten.map((d) => ({ doel: { dienst: d }, naam: dienstNaam(d), Icon: styleOf(SECTIE_VAN_DIENST[d] || 'site', lang).Icon as typeof Info })),
+      ...accounts.map(([a, label]) => ({ doel: { account: a }, naam: label, sub: t('Акаунт', 'Account'), Icon: UserRound })),
     ];
+    const nAfwijkend = doelen.filter(({ doel }) => !!p.regels.regels.find((r) => (doel.dienst ? r.dienst === doel.dienst && !r.account && !r.categorie : r.account === doel.account && !r.dienst && !r.categorie))).length;
+    // MELDINGEN-UX-001: kaarten in plaats van een lange lijst — «Як приходять» (types) bovenaan, daaronder inklapbaar «Джерела й
+    // акаунти» en «Вигляд панелі». Elke keuze heeft een piktogram en een uitleg van het gevolg (title).
     return (
       <div ref={wortel} className='mv2' data-mv2='regels' data-mv2-esc='1' onKeyDown={opEsc}>
         {kop}
         <div className='mv2-regels'>
-          {/* INTEG-001: één plek voor alle keuzes — per type: як показувати (спливає / звук / лише в панелі), поведінка, тривалість. */}
-          <details className='mv2-regel mv2-typen' data-mv2-typen='1' open>
-            <summary>{t('Типи сповіщень: як показувати, звук, тривалість', 'Soorten meldingen: hoe tonen, geluid, duur')}</summary>
-            <MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} />
-          </details>
-          {v3 ? <fieldset className='mv2-regel mv2-grootte' data-mv2-grootte='1'>
-            <legend>{t('Розмір сповіщень', 'Grootte van de meldingen')}<small>{t('Панель збільшується разом із текстом', 'Het paneel groeit mee met de tekst')}</small></legend>
-            <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Розмір тексту', 'Tekstgrootte')}>
-              {TEKSTGROOTTES.map((g) => <button key={g} type='button' role='radio' aria-checked={weergaveGr.tekst === g} onClick={() => void bewaarRegels({ ...p.regels, weergave: { ...weergaveGr, tekst: g }, bijgewerkt: Date.now() })}>{g === 'S' ? t('Малий', 'Klein') : g === 'M' ? t('Звичайний', 'Normaal') : g === 'L' ? t('Великий', 'Groot') : t('Дуже великий', 'Zeer groot')}</button>)}
-            </div>
-            <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Щільність', 'Dichtheid')}>
-              {DICHTHEDEN.map((d) => <button key={d} type='button' role='radio' aria-checked={weergaveGr.dichtheid === d} onClick={() => void bewaarRegels({ ...p.regels, weergave: { ...weergaveGr, dichtheid: d }, bijgewerkt: Date.now() })}>{d === 'compact' ? t('Щільно', 'Compact') : d === 'normaal' ? t('Звичайно', 'Normaal') : t('Просторо', 'Ruim')}</button>)}
-            </div>
-            <p className='mv2-uitleg' data-mv2-voorbeeld='1'>{t('Зміна видно одразу на цій панелі й зберігається для вашого облікового запису на всіх пристроях.', 'De wijziging is meteen zichtbaar in dit paneel en wordt voor uw account op al uw apparaten bewaard.')}</p>
-          </fieldset> : null}
-          {v3 ? <BewaarTermijn lang={lang} dagen={statusStand.bewaarDagen} /> : null}
-          <p className='mv2-uitleg'>{t('Правила зберігаються в обліковому записі й діють на всіх пристроях. Сповіщення безпеки та запити на підтвердження приглушити не можна.', 'Regels worden in uw account bewaard en gelden op al uw apparaten. Beveiligingsmeldingen en bevestigingsverzoeken kunnen niet gedempt worden.')}</p>
-          <ul className='mv2-modi-uitleg'>{LEVER_MODI.map((m) => <li key={m}><b>{t(...MODUS_NAAM[m])}</b> — {t(...MODUS_UITLEG[m])}</li>)}</ul>
-          {doelen.map(({ doel, naam, sub }) => {
-            const huidig = geldendeRegel(p.regels, doel)?.modus;
-            const sleutel = doel.dienst || doel.account || '';
-            const exact = p.regels.regels.find((r) => (doel.dienst ? r.dienst === doel.dienst && !r.account && !r.categorie : r.account === doel.account && !r.dienst && !r.categorie));
-            return (
-              <fieldset key={sleutel} className='mv2-regel'>
-                <legend>{naam}{sub ? <small>{sub}</small> : null}</legend>
-                <div className='mv2-segment is-klein' role='radiogroup' aria-label={naam}>
-                  {LEVER_MODI.map((m) => <button key={m} type='button' role='radio' aria-checked={(exact?.modus || huidig || 'normaal') === m} title={t(...MODUS_UITLEG[m])} onClick={() => void regel(doel, m === 'normaal' ? null : m, t('Збережено.', 'Opgeslagen.'))}>{t(...MODUS_NAAM[m])}</button>)}
+          <div className='mv2-typen' data-mv2-typen='1'>
+            <MeldingVoorkeurenPaneel lang={lang} techTypen={!!p.techTypen} geluid={p.geluid} onGeluid={p.onGeluid} />
+          </div>
+          {doelen.length ? (
+            <details className='mvk-kaart mvk-groep' data-mv2-bronnen='1'>
+              <summary>
+                <span className='mvk-tegel is-groot' data-kleur='teal' aria-hidden='true'><ListFilter /></span>
+                <span className='mvk-kaart-titel'><strong>{t('Джерела й акаунти', 'Bronnen en accounts')}</strong><small>{t('Виділити важливе джерело або приглушити шумне', 'Een belangrijke bron vooraan zetten of een luidruchtige dempen')}</small></span>
+                <span className='mvk-tellers'>{nAfwijkend ? <span className='mvk-chip is-eigen'>{t(`змінено: ${nAfwijkend}`, `gewijzigd: ${nAfwijkend}`)}</span> : null}</span>
+                <ChevronDown className='mvk-pijl' aria-hidden='true' />
+              </summary>
+              <ul className='mvk-lijst'>
+                {doelen.map(({ doel, naam, sub, Icon }) => {
+                  const huidig = geldendeRegel(p.regels, doel)?.modus;
+                  const sleutel = doel.dienst || doel.account || '';
+                  const exact = p.regels.regels.find((r) => (doel.dienst ? r.dienst === doel.dienst && !r.account && !r.categorie : r.account === doel.account && !r.dienst && !r.categorie));
+                  const gekozen = exact?.modus || huidig || 'normaal';
+                  return (
+                    <li key={sleutel} className='mvk-rij mv2-bron-rij' data-mv2-bron={sleutel}>
+                      <div className='mvk-rij-kop'>
+                        <span className='mvk-tegel' data-kleur={doel.account ? 'grijs' : 'blauw'} aria-hidden='true'><Icon /></span>
+                        <span className='mvk-naam'>{naam}{sub ? <span className='mvk-chip'>{sub}</span> : null}</span>
+                      </div>
+                      <div className='mvk-segment mv2-bron-segment' role='radiogroup' aria-label={naam}>
+                        {LEVER_MODI.map((m) => { const MI = MODUS_ICOON[m]; return <button key={m} type='button' role='radio' aria-checked={gekozen === m} title={`${t(...MODUS_NAAM[m])}: ${t(...MODUS_UITLEG[m])}`} onClick={() => void regel(doel, m === 'normaal' ? null : m, t('Збережено.', 'Opgeslagen.'))}><MI aria-hidden='true' /><span>{t(...MODUS_NAAM[m])}</span></button>; })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          ) : null}
+          <details className='mvk-kaart mvk-groep' data-mv2-vorm='1'>
+            <summary>
+              <span className='mvk-tegel is-groot' data-kleur='paars' aria-hidden='true'><Settings2 /></span>
+              <span className='mvk-kaart-titel'><strong>{t('Вигляд панелі', 'Weergave van het paneel')}</strong><small>{t('Розмір тексту, адреси акаунтів, архів', 'Tekstgrootte, accountadressen, archief')}</small></span>
+              <ChevronDown className='mvk-pijl' aria-hidden='true' />
+            </summary>
+            <div className='mv2-vorm-inhoud'>
+              {v3 ? <fieldset className='mv2-regel mv2-grootte' data-mv2-grootte='1'>
+                <legend>{t('Розмір сповіщень', 'Grootte van de meldingen')}<small>{t('Панель збільшується разом із текстом', 'Het paneel groeit mee met de tekst')}</small></legend>
+                <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Розмір тексту', 'Tekstgrootte')}>
+                  {TEKSTGROOTTES.map((g) => <button key={g} type='button' role='radio' aria-checked={weergaveGr.tekst === g} onClick={() => void bewaarRegels({ ...p.regels, weergave: { ...weergaveGr, tekst: g }, bijgewerkt: Date.now() })}>{g === 'S' ? t('Малий', 'Klein') : g === 'M' ? t('Звичайний', 'Normaal') : g === 'L' ? t('Великий', 'Groot') : t('Дуже великий', 'Zeer groot')}</button>)}
                 </div>
-              </fieldset>
-            );
-          })}
-          <label className='mv2-schakel'><input type='checkbox' checked={volledigAdres} onChange={(e) => setVolledigAdres(e.target.checked)} /><span>{t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')}</span></label>
-          <label className='mv2-schakel'><input type='checkbox' checked={p.geluid} onChange={p.onGeluid} /><span>{t('Звук сповіщень (загалом, для всіх типів)', 'Geluid van meldingen (algemeen, voor alle soorten)')}</span></label>
+                <div className='mv2-segment is-klein' role='radiogroup' aria-label={t('Щільність', 'Dichtheid')}>
+                  {DICHTHEDEN.map((d) => <button key={d} type='button' role='radio' aria-checked={weergaveGr.dichtheid === d} onClick={() => void bewaarRegels({ ...p.regels, weergave: { ...weergaveGr, dichtheid: d }, bijgewerkt: Date.now() })}>{d === 'compact' ? t('Щільно', 'Compact') : d === 'normaal' ? t('Звичайно', 'Normaal') : t('Просторо', 'Ruim')}</button>)}
+                </div>
+                <p className='mv2-uitleg' data-mv2-voorbeeld='1'>{t('Зміна видно одразу на цій панелі й зберігається для вашого облікового запису на всіх пристроях.', 'De wijziging is meteen zichtbaar in dit paneel en wordt voor uw account op al uw apparaten bewaard.')}</p>
+              </fieldset> : null}
+              {v3 ? <BewaarTermijn lang={lang} dagen={statusStand.bewaarDagen} /> : null}
+              <div className='mvk-rij-kop mv2-schakel-rij'>
+                <span className='mvk-naam'>{t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')}</span>
+                <button type='button' role='switch' className='mvk-schakel' aria-checked={volledigAdres} title={t('Увімкнено — у списку видно всю адресу (напр. ім’я@пошта); вимкнено — лише коротке ім’я акаунта.', 'Aan — de lijst toont het hele adres (bv. naam@mail); uit — alleen een korte accountnaam.')} aria-label={t('Показувати повні адреси акаунтів', 'Volledige accountadressen tonen')} onClick={() => setVolledigAdres((v) => !v)}><span aria-hidden='true' /></button>
+              </div>
+            </div>
+          </details>
+          <p className='mvk-noot mv2-veilig'><ShieldCheck aria-hidden='true' />{t('Правила зберігаються в обліковому записі й діють на всіх пристроях. Сповіщення безпеки та запити на підтвердження приглушити не можна.', 'Regels worden in uw account bewaard en gelden op al uw apparaten. Beveiligingsmeldingen en bevestigingsverzoeken kunnen niet gedempt worden.')}</p>
           {melding ? <p className='mv2-toast' role='status'>{melding}</p> : null}
         </div>
       </div>
