@@ -42,11 +42,12 @@ export function Bibliotheek(p: BibliotheekProps) {
   const zoekRef = useRef<HTMLInputElement>(null);
 
   const lijst = useMemo(() => {
-    const r = zoekRegister(vraag, lang, { categorie: cat, persoonlijk });
+    // BIB-002: без технічного доступу технічні елементи в приватному просторі не показуємо — їх однаково не можна ні додати, ні відкрити.
+    const r = zoekRegister(vraag, lang, { categorie: cat, persoonlijk }).filter((x) => x.categorie !== 'technisch' || p.ctx.ruimte === 'technisch' || p.ctx.techToegang);
     if (sort === 'naam') return [...r].sort((a, b) => a.titel[lang].localeCompare(b.titel[lang], lang === 'uk' ? 'uk' : 'nl'));
     if (sort === 'categorie') { const v = REGISTER_CATEGORIEEN.map((c) => c.id); return [...r].sort((a, b) => v.indexOf(a.categorie) - v.indexOf(b.categorie)); }
     return r;
-  }, [vraag, lang, cat, sort, persoonlijk]);
+  }, [vraag, lang, cat, sort, persoonlijk, p.ctx.ruimte, p.ctx.techToegang]);
 
   const stuur = (v: BibliotheekVerzoek) => (p.onToevoegen ? p.onToevoegen(v) : stuurToevoegen(v));
   const voegToe = (r: RegisterRegel, kind: 'shortcut' | 'widget' | 'folder') => {
@@ -82,7 +83,7 @@ export function Bibliotheek(p: BibliotheekProps) {
         <input ref={zoekRef} type='search' value={vraag} maxLength={80} onChange={(e) => setVraag(e.target.value)} placeholder={tr(lang, 'Пошук служб, сторінок, віджетів…', 'Zoek diensten, pagina’s, widgets…')} />
       </label>
       <div className='bib-chips' role='group' aria-label={tr(lang, 'Категорії', 'Categorieën')}>
-        {[{ id: 'alle' as const, titel: { uk: 'Усе', nl: 'Alles' } }, ...REGISTER_CATEGORIEEN].map((c) => (
+        {[{ id: 'alle' as const, titel: { uk: 'Усе', nl: 'Alles' } }, ...REGISTER_CATEGORIEEN.filter((c) => c.id !== 'technisch' || p.ctx.ruimte === 'technisch' || p.ctx.techToegang)].map((c) => (
           <button key={c.id} type='button' className='bib-chip' aria-pressed={cat === c.id} onClick={() => setCat(c.id)}>{c.titel[lang]}</button>
         ))}
       </div>
