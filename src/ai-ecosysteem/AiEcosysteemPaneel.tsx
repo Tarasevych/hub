@@ -27,6 +27,7 @@ import {
   type ZelfHostPakket,
 } from '../../shared/ai-ecosysteem';
 import AgentLogo from '../agenten/AgentLogo';
+import GeheugenStroomPaneel from './GeheugenStroomPaneel';
 import './ai-ecosysteem.css';
 import './ai-ecosysteem-maquette.css';
 
@@ -762,6 +763,8 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                 <a className='aie-knop-tweede' href={hubUrl('journaal')}>{tr('Відкрити журнал дій', 'Actielogboek openen')}</a>
               </div>
             </header>
+
+            <GeheugenStroomPaneel tr={tr} werkruimtes={data.werkruimtes} />
 
             <article className='aie-kaart aie-mq-kaart-context' data-aie-context-sectie='1'>
               <h2><Layers size={18} aria-hidden='true' /> {tr('Спільний контекст між завданнями та застосунками', 'Gedeelde werkcontext tussen taken en toepassingen')}</h2>

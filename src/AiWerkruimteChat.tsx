@@ -14,11 +14,14 @@ import { AI_AANBIEDER_BIJ_ID, aanbiederUitModel } from '../shared/ai-aanbieders'
 import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud';
 import { commandLabel, type Aanvrager } from './agenten-gegevens';
 import { geenAi } from './menselijke-actie';
+import { BookmarkPlus, Brain } from 'lucide-react';
+import { GEHEUGEN_FOUTEN, haalGeheugenKandidatenUitTekst } from '../shared/geheugen-stroom';
 import './chat-paneel.css';
 import './ai-werkruimte.css';
+import './ai-ecosysteem/geheugen-stroom.css';
 
 type Tr = (uk: string, nl: string) => string;
-type Bericht = { rol: 'user' | 'assistant'; tekst: string; onvolledig?: boolean };
+type Bericht = { rol: 'user' | 'assistant'; tekst: string; onvolledig?: boolean; geheugenOpgeslagen?: boolean };
 type Stap = { tool: string; isError: boolean };
 type Wachtend = { id: string; agentName: string; type: string; params: unknown; aanvrager?: Aanvrager };
 
@@ -55,14 +58,19 @@ type Props = {
   werkruimteId?: string;
   /** Optionele sleutels van gedeelde werkcontext tussen taken. */
   contextSleutels?: string[];
+  /** Автоматичне підключення релевантних вузлів зі Стріму пам’яті до відповіді чату. */
+  metGeheugen?: boolean;
+  onToggleGeheugen?: (aan: boolean) => void;
 };
 
-export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg, werkruimteId, contextSleutels }: Props) {
+export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg, werkruimteId, contextSleutels, metGeheugen = true, onToggleGeheugen }: Props) {
   const [berichten, setBerichten] = useState<Bericht[]>([]);
   const [stappen, setStappen] = useState<Stap[]>([]);
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
+  const [geheugenAantal, setGeheugenAantal] = useState<number | null>(null);
+  const [bewarenIndex, setBewarenIndex] = useState<number | null>(null);
   const [wachtend, setWachtend] = useState<Wachtend[]>([]);
   // SEC-002 interface-01: «Дозволити» pas als de mens ALLE parameters kon zien (geen slice(0, 800) meer).
   const [gezien, setGezien] = useState<Record<string, boolean>>({});
@@ -100,10 +108,12 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         ...sessieLichaam(), model,
         ...(werkruimteId ? { werkruimteId } : {}),
         ...(contextSleutels && contextSleutels.length ? { contextSleutels } : {}),
+        metGeheugen,
         messages: volgende.map((b) => ({ role: b.rol, content: b.tekst })),
       }, { signal: ctrl.signal });
       setBerichten([...volgende, { rol: 'assistant', tekst: String(res.data?.reply ?? ''), onvolledig: res.data?.truncated === true }]);
       setStappen((res.data?.steps ?? []) as Stap[]);
+      setGeheugenAantal(typeof res.data?.geheugenAantal === 'number' ? res.data.geheugenAantal : null);
     } catch (e) {
       // Afgebroken door de gebruiker: geen fout, maar wel eerlijk dat er geen antwoord is.
       if (isAfgebroken(e)) setMelding(tr('Зупинено. Відповіді немає — надішліть запит ще раз, якщо потрібно.', 'Gestopt. Er is geen antwoord — stuur de vraag opnieuw als u wilt.'));
@@ -120,6 +130,39 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     try { await api.post(`/api/owner/agents/commands/${id}/${besluit}`, sessieLichaam()); }
     catch (e) { setFout(werkruimteFout(e, tr, model)); }
     void leesWachtend().catch(() => undefined);
+  };
+
+  const bewaarInGeheugen = async (index: number, tekst: string) => {
+    const schoon = tekst.trim();
+    if (!schoon || bewarenIndex !== null) return;
+    setBewarenIndex(index);
+    setFout('');
+    setMelding('');
+    try {
+      const kandidaten = haalGeheugenKandidatenUitTekst(schoon, { maxKandidaten: 1 }).filter((k) => !k.geblokkeerdDoorGeheim);
+      const kandidaat = kandidaten[0];
+      const titel = kandidaat?.titel ?? schoon.slice(0, 78);
+      const inhoud = kandidaat?.inhoud ?? schoon.slice(0, 2000);
+      await api.post('/api/owner/ai/geheugen/opslaan', {
+        ...sessieLichaam(),
+        ...(kandidaat ? { sleutel: kandidaat.sleutel, soort: kandidaat.soort, labels: kandidaat.labels } : { soort: 'context' }),
+        titel,
+        inhoud,
+        bronDienst: 'ai',
+        ...(werkruimteId ? { werkruimteId } : {}),
+      });
+      setBerichten((lijst) => lijst.map((item, idx) => (idx === index ? { ...item, geheugenOpgeslagen: true } : item)));
+      setMelding(tr('Збережено у Стрім пам’яті.', 'Opgeslagen in Stroom van geheugen.'));
+    } catch (e) {
+      const { code } = foutCode(e);
+      if (code === GEHEUGEN_FOUTEN.geheimGeweigerd) {
+        setFout(tr('У відповіді знайдено можливі секрети чи ключі — збереження до пам’яті заблоковано.', 'Mogelijke geheimen of sleutels herkend — opslaan in geheugen geweigerd.'));
+      } else {
+        setFout(werkruimteFout(e, tr, model));
+      }
+    } finally {
+      setBewarenIndex(null);
+    }
   };
 
   return (
@@ -146,6 +189,22 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
           : null}
       </div>
 
+      <div className='gs-chat-strook' data-aiw-geheugen='1'>
+        <label className='gs-statusrij'>
+          <input
+            type='checkbox'
+            checked={metGeheugen}
+            disabled={bezig}
+            onChange={(e) => onToggleGeheugen?.(e.target.checked)}
+          />
+          <Brain size={15} aria-hidden='true' />
+          <span>{tr('Підключати Стрім пам’яті в цьому чаті', 'Stroom van geheugen gebruiken in deze chat')}</span>
+        </label>
+        {geheugenAantal !== null ? (
+          <span className='gs-pil'>{tr(`Залучено вузлів: ${geheugenAantal}`, `Gebruikte knopen: ${geheugenAantal}`)}</span>
+        ) : null}
+      </div>
+
       <div className='chat-log' role='log' aria-live='polite'>
         {berichten.length === 0 ? (
           <p className='chat-empty'>{stand.kanChatten
@@ -157,6 +216,21 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
             <b>{b.rol === 'user' ? tr('Ви', 'U') : tr(actieveAanbieder.naamUk, actieveAanbieder.naamNl)}</b>
             <p>{b.tekst || tr('(порожня відповідь)', '(leeg antwoord)')}</p>
             {b.onvolledig ? <small>{tr('Відповідь неповна: час або кроки закінчилися. Напишіть «продовжуй».', 'Antwoord onvolledig: tijd of stappen op. Schrijf «ga verder».')}</small> : null}
+            {b.rol === 'assistant' && b.tekst.trim().length >= 20 ? (
+              <button
+                type='button'
+                className='gs-chat-bewaar'
+                disabled={bewarenIndex === i || b.geheugenOpgeslagen === true}
+                onClick={() => void bewaarInGeheugen(i, b.tekst)}
+              >
+                <BookmarkPlus size={13} aria-hidden='true' />
+                {b.geheugenOpgeslagen
+                  ? tr('Збережено в Стрім', 'Opgeslagen in stroom')
+                  : bewarenIndex === i
+                    ? tr('Зберігаємо…', 'Opslaan…')
+                    : tr('Зберегти в Стрім пам’яті', 'Bewaren in geheugenstroom')}
+              </button>
+            ) : null}
           </div>
         ))}
         {stappen.length ? (

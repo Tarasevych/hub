@@ -65,6 +65,7 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.venster_stand', veld: 'vensters_versleuteld', klasse: 'voorkeur', stand: 'dek', module: 'backend/vensters-onthouden.ts' },
   { tabel: 'app.ai_bevestiging', veld: 'parameters/resultaat (verzoeken van AI ter bevestiging, 0094)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/ai-bevestiging.ts' },
   { tabel: 'app.afzender_beeld', veld: 'data_versleuteld (foto\'s van afzenders: Google-contacten, vCard, Gravatar)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/merk-bron.ts' },
+  { tabel: 'app.geheugen_stroom_knopen', veld: 'inhoud_versleuteld (вузли довготривалої пам’яті ШІ / knopen van de geheugenstroom, 0279)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/geheugen-stroom.ts' },
   // --- nog niet: met reden ---
   { tabel: 'mail_oauth_tokens_v2', veld: 'token (Microsoft 365)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/index.ts (Microsoft-tak)',
     reden: { uk: 'Гілка Microsoft у backend/index.ts — спільний файл; переносимо в окремому випуску після зняття блокування.', nl: 'De Microsoft-tak zit in backend/index.ts (gedeeld bestand); volgt in een eigen uitrol.' } },

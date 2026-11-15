@@ -31,6 +31,7 @@ export async function main(): Promise<number> {
   // Modules met een herversleutelaar laden (zoals de server dat bij het opstarten doet via backend/index.ts).
   await import('../../backend/mail-imap'); await import('../../backend/agenda-caldav'); await import('../../backend/github-koppeling-opslag');
   await import('../../backend/vensters-onthouden'); await import('../../backend/google-suite-inrichting');
+  await import('../../backend/geheugen-stroom');
   const st = await import('../../backend/mcp-connector-opslag');
   const sync = await import('../../backend/google-suite-sync');
   const { db } = await import('../../server/platform');

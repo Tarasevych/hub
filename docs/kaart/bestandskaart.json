@@ -2957,6 +2957,46 @@
    "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts",
    "wat": "Eenheidstest voor mobiele prestatie-invarianten: herstelde postweergave, uitgestelde bundels, beide laag- en attribuutwaarnemers, rAF-bundeling en mobiele CSS zonder zware filters.",
    "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/model.ts",
+   "wat": "Domeinmodel, tweetalige metadata (uk/nl) en geheimenfilter voor de Stroom van geheugen.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "shared/geheugen-stroom/rangschikking.ts",
+   "wat": "Deterministische tweetalige zoeker, tijdverval, tegenspraakdetectie, pakketbouwer en Markdown-export voor de Stroom van geheugen.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "shared/geheugen-stroom/uittreksel.ts",
+   "wat": "Deterministische tekstanalysator om feiten, besluiten, voorkeuren en waarschuwingen veilig voor te stellen.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "shared/geheugen-stroom/index.ts",
+   "wat": "Publieke export van de Stroom van geheugen-bibliotheek.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "backend/geheugen-stroom.ts",
+   "wat": "Serveropslag met RLS-ruimte-isolatie, DEK-versleuteling, HTTP-routes en chatkoppeling voor de Stroom van geheugen.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "src/ai-ecosysteem/GeheugenStroomPaneel.tsx",
+   "wat": "Tweetalige gebruikersinterface voor de Stroom van geheugen met kennisgraaf, tegenspraken, pakketbouwer en export.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "src/ai-ecosysteem/geheugen-stroom.css",
+   "wat": "Adaptieve stijlen voor het Stroom van geheugen-paneel en chatstrook zonder !important of vaste positionering.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-stroom.test.ts",
+   "wat": "Eenheidstest voor de volledige Stroom van geheugen (kern, geheimenfilter, tegenspraken, routes, ruimte-isolatie en chatintegratie).",
+   "sinds": "stroom-geheugen"
   }
  ]
 }
