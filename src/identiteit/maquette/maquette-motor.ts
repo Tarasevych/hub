@@ -1162,6 +1162,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   }
 
   const демоДоСайту={melding:"#melding-modus",sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+  // BLOKKEN-001: точні справжні блоки для карток, де ціль розділу порожня. Ключ — «розділ-номер картки».
+  // NL: precieze echte blokken voor kaarten zonder doel in de sectie.
+  const ЦІЛЬ_КАРТКИ={"account-0":".ia-profiel","account-1":"#gegevensuitvoer","account-2":".settings-danger","sessions-0":".sessies-overzicht"};
   const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
   function чеснийЕлемент(control,i,sectionId,ціль,пояснення,кнопка){
     const nl=preferences.lang==="nl";
@@ -1193,7 +1196,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(sectionId==="identities"&&i===0)return карткаПростору(control,i,sectionId); // САЙТ (IDENTITEIT-015)
     const чесно=ЧЕСНО[sectionId+"-"+i];
     if(чесно)return чеснийЕлемент(control,i,sectionId,чесно[2],чесно[0],чесно[1]);
-    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,демоДоСайту[sectionId]);
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,ЦІЛЬ_КАРТКИ[sectionId+"-"+i]||демоДоСайту[sectionId]);
     if(sectionId==="themes"&&control.type==="theme")return чеснийЕлемент({...control,type:"theme"},i,sectionId,"#thema-modus-kop");
     if(sectionId==="widgets"&&control.type==="action")return чеснийЕлемент(control,i,sectionId,".settings-form");
     const key=sectionId+"-"+i,type=control.type,t=ui();
@@ -2107,15 +2110,18 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!sections.some(s=>s.id===id))return;
     gaNaar(id,true);
     opties.bijOpenen(id);
-    if(!ціль)return;
+    // BLOKKEN-001: без точної цілі ведемо до самого гнізда справжніх налаштувань розділу (а не до верху розділу),
+    // а якщо селектор не знайшовся за ~3 с — теж до гнізда. NL: zonder doel naar het nest met echte instellingen.
     const рух=matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
     let спроби=0;
     const шукати=()=>{
       const гніздо=root.querySelector('.mq-echt[data-echt="'+id+'"]');
       let доціль=null;
-      try{доціль=гніздо?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      try{доціль=гніздо&&ціль?гніздо.querySelector(ціль):null;}catch{доціль=null;}
       // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
-      if(!доціль){if(++спроби<50)setTimeout(шукати,60);return;}
+      const гніздоГотове=гніздо&&гніздо.childElementCount>0&&гніздо.getBoundingClientRect().height>0;
+      if(!доціль&&!ціль&&гніздоГотове&&спроби>=3)доціль=гніздо;
+      if(!доціль){if(++спроби<50){setTimeout(шукати,60);return;}if(гніздоГотове)доціль=гніздо;else return;}
       for(let d=доціль.closest("details");d;d=d.parentElement?d.parentElement.closest("details"):null)if(!d.open)d.open=true;
       доціль.scrollIntoView({behavior:рух,block:"start"});
       const фокус=доціль.matches("summary,button,a,input,select,textarea")?доціль:(доціль.querySelector(":scope > summary")||доціль);
