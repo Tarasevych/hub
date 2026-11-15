@@ -9,12 +9,14 @@ import './weergave-stijl.css';
 import './wissel-rust.css';
 import { themaWisselRust } from './wissel-rust';
 import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';
+import type { UiterlijkAchtergrond } from '../../shared/uiterlijk';
 
 const GEBEURTENIS = 'tsv:thema';
 // IDENTITEIT-015: у стані ще щільність, рух, акцент і виразність ефектів (shared/uiterlijk.ts) — для <html> і для вигляду «Макет».
-type Stand = { palet: Palet | undefined; auto: AutoInstelling | undefined; theme: unknown; stijl: WeergaveStijl };
-const uitVoorkeuren = (p: ReturnType<typeof readSharedPreferences>): Stand => ({ palet: p.palet, auto: p.auto, theme: p.theme, stijl: { dichtheid: p.dichtheid, beweging: p.beweging, accent: p.accent, effecten: p.effecten } });
-let stand: Stand = (() => { try { return uitVoorkeuren(readSharedPreferences()); } catch { return { palet: undefined, auto: undefined, theme: undefined, stijl: {} }; } })();
+// ACHTERGROND-001: ще налаштування «Живого фону» (src/achtergrond/). Ook de instellingen van de levende achtergrond.
+type Stand = { palet: Palet | undefined; auto: AutoInstelling | undefined; theme: unknown; stijl: WeergaveStijl; achtergrond: Partial<UiterlijkAchtergrond> | undefined };
+const uitVoorkeuren = (p: ReturnType<typeof readSharedPreferences>): Stand => ({ palet: p.palet, auto: p.auto, theme: p.theme, stijl: { dichtheid: p.dichtheid, beweging: p.beweging, accent: p.accent, effecten: p.effecten }, achtergrond: p.achtergrond });
+let stand: Stand = (() => { try { return uitVoorkeuren(readSharedPreferences()); } catch { return { palet: undefined, auto: undefined, theme: undefined, stijl: {}, achtergrond: undefined }; } })();
 const luisteraars = new Set<() => void>();
 const ververs = () => { const n = uitVoorkeuren(readSharedPreferences()); if (JSON.stringify(n) !== JSON.stringify(stand)) { stand = n; luisteraars.forEach((l) => l()); } };
 let gestart = false;
@@ -31,6 +33,8 @@ export function zetPalet(palet: Palet) { writeSharedPreferences({ palet }); wind
 /** IDENTITEIT-015: щільність, рух, акцент, ефекти — у спільних уподобаннях (сервер — джерело правди, src/weergave-uiterlijk.ts).
  *  undefined повертає типове значення (поле зникає із запису). Dichtheid, beweging, accent, effecten: undefined = standaard. */
 export function zetWeergaveStijl(patch: WeergaveStijl) { writeSharedPreferences(patch); window.dispatchEvent(new Event(GEBEURTENIS)); }
+/** ACHTERGROND-001: повний набір «Живого фону» (типові поля прибирає нормалізація); undefined — усе типове. Volledige instellingen; undefined = standaard. */
+export function zetAchtergrond(achtergrond: Partial<UiterlijkAchtergrond> | undefined) { writeSharedPreferences({ achtergrond }); window.dispatchEvent(new Event(GEBEURTENIS)); }
 export function zetAuto(auto: AutoInstelling) { writeSharedPreferences({ auto: normaalAuto(auto) }); window.dispatchEvent(new Event(GEBEURTENIS)); }
 export function huidigeAuto(): AutoInstelling { return normaalAuto(stand.auto || STANDAARD_AUTO); }
 export function pauzeerAuto() { zetAuto(pauzeer(huidigeAuto(), Date.now())); }
