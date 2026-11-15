@@ -75,6 +75,7 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   orch_overzicht: 'uitrol', orch_context: 'uitrol', orch_taak_start: 'uitrol', orch_inleveren_begin: 'uitrol', orch_inleveren_stuk: 'uitrol', orch_inleveren_klaar: 'uitrol',
   geheugen_stroom_zoeken: 'geheugen', geheugen_stroom_bewaren: 'geheugen', geheugen_stroom_verbinden: 'geheugen',
   geheugen_agent_bots_overzicht: 'geheugen', geheugen_agent_bots_bezorgen: 'geheugen',
+  geheugen_taak_lezen: 'geheugen', geheugen_taak_opslaan: 'geheugen', geheugen_taak_overdracht: 'geheugen',
 };
 const zonderPrefix = (t: string) => String(t || '').replace(/^mcp__[^_]+(?:_[^_]+)*?__/, '');
 export const actieSoort = (tool: string): ActieSoort => TOOL_SOORT[zonderPrefix(tool)] ?? 'onbekend';
@@ -146,6 +147,33 @@ export function actieDoel(tool: string, args: unknown): string | undefined {
         tk && /^[A-Za-z0-9._:-]{1,60}$/.test(tk) ? tk : '',
       ].filter(Boolean);
       return delen.length ? kort(delen.join(' · '), 90) : undefined;
+    }
+    case 'geheugen_taak_lezen': {
+      const tk = tekst(a.taak_sleutel);
+      const ag = tekst(a.agent);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        ag && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(ag) ? ag : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 80) : undefined;
+    }
+    case 'geheugen_taak_opslaan': {
+      const tk = tekst(a.taak_sleutel);
+      const st = tekst(a.status);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        st && /^(open|bezig|wacht_op_eigenaar|klaar|gepauzeerd|geannuleerd)$/.test(st) ? st : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 80) : undefined;
+    }
+    case 'geheugen_taak_overdracht': {
+      const tk = tekst(a.taak_sleutel);
+      const naar = tekst(a.naar_agent);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        naar && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(naar) ? `→ ${naar}` : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' '), 90) : undefined;
     }
     default: {
       const repo = tekst(a.repo) ?? tekst(a.repository);
@@ -229,6 +257,9 @@ const Z: Readonly<Record<string, [string, string]>> = {
   geheugen_stroom_verbinden: ['Пов’язав вузли в Стрімі пам’яті', 'Verbond knopen in de geheugenstroom'],
   geheugen_agent_bots_overzicht: ['Перевірив реєстр ботів агентів і чергу доставлення', 'Bekeek het register van agentbots en de bezorgwachtrij'],
   geheugen_agent_bots_bezorgen: ['Підготував або надіслав запис пам’яті агента', 'Bezorgde of plaatste een geheugenbericht voor een agent'],
+  geheugen_taak_lezen: ['Переглянув наскрізні задачі й досьє переходу', 'Bekeek doorlopende taken en het overdrachtsdossier'],
+  geheugen_taak_opslaan: ['Зберіг наскрізну задачу для продовження', 'Sloeg een doorlopende taak op voor voortzetting'],
+  geheugen_taak_overdracht: ['Передав естафету задачі іншому агенту чи сесії', 'Droeg een taak over aan een andere agent of sessie'],
 };
 const SYNONIEM: Readonly<Record<string, string>> = {
   browser_snapshot: 'take_snapshot', browser_pages: 'list_pages', browser_list_tabs: 'list_pages', browser_console: 'list_console_messages', browser_network: 'list_network_requests',

@@ -159,6 +159,33 @@ export const AGENT_PROFIEL_CATALOGUS: readonly AgentProfielSjabloon[] = Object.f
     avatarKleur: '#0891b2',
     standaardActies: ['gebeurtenis', 'overdracht', 'bestand'],
   },
+  {
+    slug: 'autoclaw',
+    dienstNaam: 'AutoClaw (Z.ai / GLM)',
+    weergaveNaam: 'AutoClaw',
+    beschrijvingUk: 'Правничий і координаційний агент із дослівною перевіркою джерел.',
+    beschrijvingNl: 'Juridische en coördinatie-agent met letterlijke broncontrole.',
+    avatarKleur: '#2563eb',
+    standaardActies: ['gebeurtenis', 'besluit', 'overdracht', 'rapport'],
+  },
+  {
+    slug: 'devin',
+    dienstNaam: 'Cognition Devin',
+    weergaveNaam: 'Devin',
+    beschrijvingUk: 'Автономний хмарний інженер для тривалих циклів розробки й тестування.',
+    beschrijvingNl: 'Zelfstandige cloud-engineer voor langere bouw- en testcycli.',
+    avatarKleur: '#4338ca',
+    standaardActies: ['gebeurtenis', 'overdracht', 'rapport', 'bestand'],
+  },
+  {
+    slug: 'opencode',
+    dienstNaam: 'OpenCode CLI / IDE',
+    weergaveNaam: 'OpenCode',
+    beschrijvingUk: 'Відкритий термінальний і IDE-агент для командних змін коду.',
+    beschrijvingNl: 'Open terminal- en IDE-agent voor codewijzigingen.',
+    avatarKleur: '#1e293b',
+    standaardActies: ['gebeurtenis', 'overdracht', 'rapport', 'bestand'],
+  },
 ]);
 
 export const BOT_STATUS_META: Record<BotStatus, { uk: string; nl: string }> = {

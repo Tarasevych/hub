@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Archive,
   ArchiveRestore,
+  ArrowRightLeft,
   Bot,
   Brain,
   Copy,
@@ -52,6 +53,7 @@ import type { AiAgentWerkruimte } from '../../shared/ai-ecosysteem';
 import type { AiRuimte } from '../../shared/ai-ruimte';
 import type { KluisStand } from '../../shared/sleutelkluis';
 import AgentTelegramBotsPaneel from './AgentTelegramBotsPaneel';
+import GeheugenTakenPaneel from './GeheugenTakenPaneel';
 import './geheugen-stroom.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -76,7 +78,7 @@ type OverzichtData = {
   };
 };
 
-type PaneelTab = 'stroom' | 'pakket' | 'uittreksel' | 'bots';
+type PaneelTab = 'stroom' | 'pakket' | 'uittreksel' | 'bots' | 'taken';
 
 type Props = {
   tr: Tr;
@@ -594,6 +596,16 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
           >
             <Bot size={15} aria-hidden='true' />
             {tr('Боти агентів Telegram', 'Agentbots Telegram')}
+          </button>
+          <button
+            type='button'
+            role='tab'
+            className='gs-tab'
+            aria-selected={tab === 'taken'}
+            onClick={() => setTab('taken')}
+          >
+            <ArrowRightLeft size={15} aria-hidden='true' />
+            {tr('Перехід задач (13 ШІ)', 'Taakoverdracht (13 AI)')}
           </button>
         </div>
 
@@ -1187,6 +1199,10 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
 
         {tab === 'bots' ? (
           <AgentTelegramBotsPaneel tr={tr} onStroomBijgewerkt={() => void laadOverzicht(zoekVraag)} />
+        ) : null}
+
+        {tab === 'taken' ? (
+          <GeheugenTakenPaneel tr={tr} onStroomBijgewerkt={() => void laadOverzicht(zoekVraag)} />
         ) : null}
       </article>
     </section>

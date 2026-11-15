@@ -33,9 +33,9 @@ export async function main(): Promise<number> {
     // verwijderen, deelnemers, RSVP) — allemaal write: true en dus standaard op «vragen».
     // 21.10.2026: +7 ontwikkel-/mediahulpmiddelen (github_ci_logs, github_pr, app_domain, image_generate, diagram_generate,
     // screenshot_design, payments_list) + 4 ecosysteem + 7 GitHub-werkruimtehulpmiddelen — alleen via connector v2.
-    // 15.11.2026: +3 hulpmiddelen voor Stroom van geheugen + 2 voor agentbots Telegram (geheugen_agent_bots_*).
-    check('catalogus: 74 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, v2-ontwikkel-, ecosysteem-, GitHub-werkruimte-, geheugenstroom- en agentbot-hulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
-      SITE_TOOLS.length === 74 && new Set(namen).size === 74 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
+    // 15.11.2026: +3 hulpmiddelen voor Stroom van geheugen + 2 voor agentbots Telegram (geheugen_agent_bots_*) + 3 voor taakoverdracht (geheugen_taak_*).
+    check('catalogus: 77 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, v2-ontwikkel-, ecosysteem-, GitHub-werkruimte-, geheugenstroom-, agentbot- en taakoverdracht-hulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
+      SITE_TOOLS.length === 77 && new Set(namen).size === 77 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
       && SITE_TOOLS.filter((s) => !s.write).every((s) => s.tool.annotations?.readOnlyHint === true) && SITE_TOOLS.filter((s) => s.write).every((s) => s.tool.annotations?.readOnlyHint === false), namen.join(','));
     const voorbeeld = (schema: any) => {
       const args: Record<string, unknown> = {};

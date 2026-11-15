@@ -20,7 +20,7 @@ const DOMEIN_LABELS: Array<{ re: RegExp; label: string }> = [
   { re: /(?:безпек|ключ|passkey|tls|rls|shi?f|versleut|beveilig|sleutel|kluis)/i, label: 'beveiliging' },
   { re: /(?:будинок|дім|huis|woning|енерг|energie|сенсор|sensor)/i, label: 'huis' },
   { re: /(?:календар|agenda|зустріч|afspraak|caldav)/i, label: 'agenda' },
-  { re: /(?:агент|mcp|claude|codex|gemini|chatgpt|grok|cursor|antigravity)/i, label: 'agenten' },
+  { re: /(?:агент|mcp|claude|codex|gemini|chatgpt|grok|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode)/i, label: 'agenten' },
   { re: /(?:інтерфейс|тема|css|ui|дизайн|weergave|thema|stijl)/i, label: 'ui' },
   { re: /(?:баз[аи]\s+даних|postgres|sql|міграц|database|migratie)/i, label: 'database' },
 ];

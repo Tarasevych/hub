@@ -549,6 +549,15 @@ const DEFS: readonly Def[] = [
   { id: 'geheugen_agent_bots_bezorgen', essentie: 'bezorgen_agentbots', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
     uk: ['Надсилати пам’ять агентові', 'Ставить у чергу й надсилає подію, рішення, передачу завдання, звіт або підсумок розмови в тему окремого бота агента з захистом від дублікатів.', 'Після підтвердження на сайті запис зберігається в черзі, надсилається в закріплену тему без секретів і лишає слід для інших помічників.'],
     nl: ['Geheugenbericht aan agent bezorgen', 'Zet een gebeurtenis, besluit, taakoverdracht, rapport of gesprekssamenvatting klaar en bezorgt die in het onderwerp van de afzonderlijke agentbot zonder dubbels.', 'Na bevestiging op de site blijft het item bewaard, gaat het zonder geheimen naar het gekoppelde onderwerp en blijft het vindbaar per taaknummer.'] },
+  { id: 'geheugen_taak_lezen', essentie: 'lezen_geheugentaak', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',
+    uk: ['Читати наскрізні задачі', 'Переглядає список наскрізних задач або досьє окремої задачі: кроки естафети між сесіями й агентами, вузли пам’яті, доставлення в Telegram і готовий контекст продовження.', 'Надає лише стан задач активного простору (приватного чи технічного) без таємних ключів.'],
+    nl: ['Doorlopende taken lezen', 'Bekijkt het overzicht of het volledige dossier van een doorlopende taak: stappen tussen sessies en agenten, geheugenknopen, Telegram-bezorgingen en de vervolginstructie.', 'Toont alleen de taakstatus binnen de actieve ruimte (privé of technisch) zonder geheime sleutels.'] },
+  { id: 'geheugen_taak_opslaan', essentie: 'bewaren_geheugentaak', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'laag',
+    uk: ['Зберігати наскрізну задачу', 'Створює або оновлює наскрізну задачу між сесіями, прив’язує вузли Стріму пам’яті та картку узгодження.', 'Після підтвердження на сайті задача стає доступною для підхоплення іншими сесіями й агентами в цьому ж просторі.'],
+    nl: ['Doorlopende taak bewaren', 'Maakt of werkt een doorlopende taak over sessies heen bij en koppelt geheugenknopen en afstemmingskaart.', 'Na bevestiging op de site kan elke volgende sessie of agent binnen dezelfde ruimte de taak oppakken.'] },
+  { id: 'geheugen_taak_overdracht', essentie: 'overdragen_taak_stap', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Передавати естафету задачі', 'Фіксує завершений крок і передає задачу наступному ШІ-агенту чи новій сесії, оновлює Стрім пам’яті, може надіслати сповіщення в Telegram і готує точний контекст продовження.', 'Усі тексти перевіряються фільтром таємниць; після підтвердження на сайті наступний агент продовжує роботу без повтору.'],
+    nl: ['Taak naar volgende sessie of agent overdragen', 'Legt de voltooide stap vast en draagt de taak over aan de volgende AI-agent of nieuwe sessie, werkt de geheugenstroom bij, kan via Telegram melden en levert een kant-en-klare vervolginstructie.', 'Alle teksten doorlopen het geheimenfilter; na bevestiging op de site gaat de volgende agent zonder dubbel werk verder.'] },
 ];
 
 /**

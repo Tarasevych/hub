@@ -1,4 +1,4 @@
-// Серверне ядро «Окремий Telegram-бот для кожного ШІ-агента» (migratie 0280):
+// Серверне ядро «Окремий Telegram-бот для кожного ШІ-агента» (migratie 0281):
 //   - Ізоляція за користувачем (RLS + app.huidige_gebruiker()) та простором ('prive' | 'technisch');
 //   - Окремі токени ботів шифруються через backend/sleutelkluis.ts (dek1 або серверний ключ) + реєстрація перешифрування;
 //   - Офіційна перевірка Telegram API (getMe, getChat, getChatMember) через ін’єктовний telegramFetch;

@@ -1391,6 +1391,152 @@ SITE_TOOLS.push(
         },
     shape: (d) => compact(d),
   },
+  {
+    group: 'site', service: 'ai', write: false,
+    tool: {
+      name: 'geheugen_taak_lezen',
+      title: 'Читання наскрізних задач і переходу сесій · Doorlopende taken en sessie-overdracht lezen',
+      description: 'Читає список відкритих задач або повний контекст конкретної задачі (taak_sleutel): кроки естафети, вузли Стріму пам’яті, доставлення в Telegram і готовий запит продовження. · Leest het overzicht van doorlopende taken of het volledige dossier van één taak (taak_sleutel) met overdrachtsstappen, geheugenknopen, Telegram-bezorgingen en vervolgopdracht.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          taak_sleutel: { type: 'string', description: p('Необов’язковий ключ задачі для отримання повного досьє переходу й підказок продовження (2–120 символів).', 'Optionele taaksleutel om het volledige overdrachtsdossier en vervolginstructies op te halen (2–120 tekens).') },
+          status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Фільтр за станом задачі під час перегляду списку.', 'Filter op taakstatus bij het opvragen van het overzicht.') },
+          agent: { type: 'string', description: p('Фільтр за кодом поточного агента (наприклад claude, codex, gemini, windsurf, cline, devin, opencode).', 'Filter op code van de huidige agent (bijvoorbeeld claude, codex, gemini, windsurf, cline, devin, opencode).') },
+          vraag: { type: 'string', description: p('Пошуковий запит за назвою, метою чи карткою узгодження (до 200 символів).', 'Zoekterm op titel, doel of afstemmingskaart (hoogstens 200 tekens).') },
+          limiet: geheelProp('Найбільша кількість задач у списку: від 1 до 100 (типово 40).', 'Hoogste aantal taken in het overzicht: 1 tot 100 (standaard 40).', 1, 100),
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (a.taak_sleutel !== undefined && (typeof a.taak_sleutel !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,119}$/.test(a.taak_sleutel.trim()))) return 'Invalid "taak_sleutel".';
+      if (a.status !== undefined && !['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'].includes(a.status)) return 'Invalid "status".';
+      if (a.agent !== undefined && (typeof a.agent !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.agent.trim().toLowerCase()))) return 'Invalid "agent".';
+      if (a.vraag !== undefined && (typeof a.vraag !== 'string' || a.vraag.length > 200)) return 'Invalid "vraag": at most 200 characters.';
+      if (a.limiet !== undefined && !(Number.isInteger(a.limiet) && a.limiet >= 1 && a.limiet <= 100)) return 'Invalid "limiet": 1-100.';
+      return null;
+    },
+    request: (a) => a.taak_sleutel
+      ? { route: 'POST /api/owner/ai/geheugen/taken/detail', body: { taakSleutel: a.taak_sleutel.trim() } }
+      : { route: 'POST /api/owner/ai/geheugen/taken/overzicht', body: without({ status: a.status, agent: a.agent, vraag: a.vraag, limiet: a.limiet }) },
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'ai', write: true,
+    tool: {
+      name: 'geheugen_taak_opslaan',
+      title: 'Створення й оновлення наскрізної задачі · Doorlopende taak bewaren of bijwerken',
+      description: `Створює або оновлює наскрізну задачу між сесіями (taak_sleutel), прив’язує вузли Стріму пам’яті й картку узгодження (afstemming). · Maakt of werkt een doorlopende taak over sessies heen bij (taak_sleutel) en koppelt geheugenknopen en afstemmingskaart. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          taak_sleutel: { type: 'string', description: p('Сталий ключ задачі, наприклад "GEHEUGEN-003" або "auth-refactor" (2–120 символів).', 'Vaste taaksleutel, bijvoorbeeld "GEHEUGEN-003" of "auth-refactor" (2–120 tekens).') },
+          titel: { type: 'string', description: p('Коротка зрозуміла назва задачі без таємниць (1–240 символів).', 'Korte duidelijke taaktitel zonder geheimen (1–240 tekens).') },
+          doel: { type: 'string', description: p('Мета, межі та критерії готовності задачі без секретів (до 4000 символів).', 'Doel, afbakening en criteria van de taak zonder geheimen (hoogstens 4000 tekens).') },
+          status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Поточний стан виконання задачі.', 'Huidige uitvoeringsstatus van de taak.') },
+          prioriteit: { type: 'string', enum: ['laag', 'normaal', 'hoog', 'kritiek'], description: p('Пріоритет задачі: laag, normaal, hoog або kritiek.', 'Prioriteit van de taak: laag, normaal, hoog of kritiek.') },
+          huidige_agent: { type: 'string', description: p('Код агента або сесії, що веде задачу зараз (наприклад claude, codex, windsurf, cline, devin, opencode).', 'Code van de agent of sessie die de taak nu draagt (zoals claude, codex, windsurf, cline, devin, opencode).') },
+          afstemming_kaart_id: { type: 'string', description: p('Необов’язковий внутрішній ідентифікатор картки узгодження (afstemming).', 'Optioneel intern ID van de gekoppelde afstemmingskaart.') },
+          afstemming_extern_id: { type: 'string', description: p('Необов’язковий зовнішній код картки узгодження (наприклад UI-014 чи CAN-001).', 'Optionele externe code van de afstemmingskaart (bijvoorbeeld UI-014 of CAN-001).') },
+          geheugen_sleutels: { type: 'array', items: { type: 'string' }, description: p('Список ключів вузлів у Стрімі пам’яті, що стосуються цієї задачі.', 'Lijst van sleutels van geheugenknopen die bij deze taak horen.') },
+          eigenaar_vereist: { type: 'boolean', description: p('Чи потребує задача рішення або схвалення власника на наступному кроці.', 'Of deze taak in de volgende stap een eigenaarsbesluit of bevestiging vereist.') },
+          eerste_samenvatting: { type: 'string', description: p('Початкова нотатка для першого запису в журналі кроків нової задачі.', 'Startnotitie voor de eerste stap in de chronologie van een nieuwe taak.') },
+        },
+        required: ['taak_sleutel', 'titel'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (typeof a.taak_sleutel !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,119}$/.test(a.taak_sleutel.trim())) return 'Invalid "taak_sleutel".';
+      if (typeof a.titel !== 'string' || !a.titel.trim() || a.titel.length > 240) return 'Invalid "titel": 1-240 characters.';
+      if (a.doel !== undefined && (typeof a.doel !== 'string' || a.doel.length > 4000)) return 'Invalid "doel": at most 4000 characters.';
+      if (a.status !== undefined && !['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'].includes(a.status)) return 'Invalid "status".';
+      if (a.prioriteit !== undefined && !['laag', 'normaal', 'hoog', 'kritiek'].includes(a.prioriteit)) return 'Invalid "prioriteit".';
+      if (a.huidige_agent !== undefined && (typeof a.huidige_agent !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.huidige_agent.trim().toLowerCase()))) return 'Invalid "huidige_agent".';
+      if (a.afstemming_kaart_id !== undefined && (typeof a.afstemming_kaart_id !== 'string' || a.afstemming_kaart_id.length > 120)) return 'Invalid "afstemming_kaart_id".';
+      if (a.afstemming_extern_id !== undefined && (typeof a.afstemming_extern_id !== 'string' || a.afstemming_extern_id.length > 80)) return 'Invalid "afstemming_extern_id".';
+      if (a.geheugen_sleutels !== undefined && (!Array.isArray(a.geheugen_sleutels) || a.geheugen_sleutels.length > 64 || a.geheugen_sleutels.some((x: unknown) => typeof x !== 'string'))) return 'Invalid "geheugen_sleutels".';
+      if (a.eigenaar_vereist !== undefined && typeof a.eigenaar_vereist !== 'boolean') return 'Invalid "eigenaar_vereist".';
+      if (a.eerste_samenvatting !== undefined && (typeof a.eerste_samenvatting !== 'string' || a.eerste_samenvatting.length > 4000)) return 'Invalid "eerste_samenvatting".';
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/ai/geheugen/taken/opslaan',
+      body: without({
+        taakSleutel: a.taak_sleutel.trim(),
+        titel: a.titel.trim(),
+        doel: a.doel,
+        status: a.status,
+        prioriteit: a.prioriteit,
+        huidigeAgent: a.huidige_agent,
+        afstemmingKaartId: a.afstemming_kaart_id,
+        afstemmingExternId: a.afstemming_extern_id,
+        geheugenSleutels: a.geheugen_sleutels,
+        eigenaarVereist: a.eigenaar_vereist,
+        eersteSamenvatting: a.eerste_samenvatting,
+      }),
+    }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'ai', write: true,
+    tool: {
+      name: 'geheugen_taak_overdracht',
+      title: 'Передача естафети задачі іншому агенту чи сесії · Taak overdragen aan volgende agent of sessie',
+      description: `Передає задачу (taak_sleutel) наступному ШІ-агенту або новій сесії, фіксує виконаний крок, оновлює вузол пам’яті, може сповістити через Telegram-бота агента й повертає готовий текст продовження. · Draagt een taak over aan de volgende AI-agent of nieuwe sessie, legt de voortgangsstap vast, kan de geheugenstroom en de Telegram-bot van de agent bijwerken en geeft een kant-en-klare vervolginstructie terug. ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          taak_sleutel: { type: 'string', description: p('Ключ задачі для передачі (2–120 символів).', 'Taaksleutel voor de overdracht (2–120 tekens).') },
+          naar_agent: { type: 'string', description: p('Код агента або сесії-отримувача (наприклад claude, codex, windsurf, cline, devin, opencode, nova-sesiya).', 'Code van de ontvangende agent of sessie (zoals claude, codex, windsurf, cline, devin, opencode, nieuwe-sessie).') },
+          samenvatting: { type: 'string', description: p('Чіткий підсумок зробленого, стану тестів і першого кроку для продовження без таємниць (до 4000 символів).', 'Duidelijke samenvatting van het uitgevoerde werk, de teststand en de eerste vervolgstap zonder geheimen (hoogstens 4000 tekens).') },
+          van_agent: { type: 'string', description: p('Необов’язковий код агента, що передає роботу.', 'Optionele code van de overdragende agent.') },
+          titel: { type: 'string', description: p('Назва задачі (обов’язкова лише якщо задачі з таким ключем ще не існує).', 'Taaktitel (alleen verplicht wanneer de taak nog niet bestaat).') },
+          doel: { type: 'string', description: p('Необов’язкова мета задачі при одночасному створенні.', 'Optioneel taakdoel bij gelijktijdige aanmaak.') },
+          status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Новий стан задачі після передачі (типово bezig).', 'Nieuwe taakstatus na de overdracht (standaard bezig).') },
+          bewaar_in_stroom: { type: 'boolean', description: p('Чи зберегти підсумок передачі також як закріплений вузол у Стрімі пам’яті (типово так).', 'Of de overdrachtssamenvatting ook als vastgepinde knoop in de geheugenstroom bewaard wordt (standaard ja).') },
+          ook_bezorgen: { type: 'boolean', description: p('Чи надіслати сповіщення про передачу у закріплену тему Telegram-бота агента-отримувача (типово ні).', 'Of er ook een bericht naar het gekoppelde Telegram-onderwerp van de ontvangende agentbot gestuurd wordt (standaard nee).') },
+          geheugen_sleutels: { type: 'array', items: { type: 'string' }, description: p('Додаткові ключі вузлів пам’яті, важливі для продовження задачі.', 'Extra sleutels van geheugenknopen die belangrijk zijn voor de voortzetting.') },
+          bestands_verwijzingen: { type: 'array', items: { type: 'object' }, description: p('Список посилань на змінені файли (pad, regel, toelichting — без вмісту таємниць).', 'Lijst van bestandsverwijzingen (pad, regel, toelichting — zonder geheime inhoud).') },
+        },
+        required: ['taak_sleutel', 'naar_agent', 'samenvatting'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (typeof a.taak_sleutel !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,119}$/.test(a.taak_sleutel.trim())) return 'Invalid "taak_sleutel".';
+      if (typeof a.naar_agent !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.naar_agent.trim().toLowerCase())) return 'Invalid "naar_agent".';
+      if (typeof a.samenvatting !== 'string' || !a.samenvatting.trim() || a.samenvatting.length > 4000) return 'Invalid "samenvatting": 1-4000 characters.';
+      if (a.van_agent !== undefined && (typeof a.van_agent !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.van_agent.trim().toLowerCase()))) return 'Invalid "van_agent".';
+      if (a.titel !== undefined && (typeof a.titel !== 'string' || a.titel.length > 240)) return 'Invalid "titel".';
+      if (a.doel !== undefined && (typeof a.doel !== 'string' || a.doel.length > 4000)) return 'Invalid "doel".';
+      if (a.status !== undefined && !['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'].includes(a.status)) return 'Invalid "status".';
+      if (a.bewaar_in_stroom !== undefined && typeof a.bewaar_in_stroom !== 'boolean') return 'Invalid "bewaar_in_stroom".';
+      if (a.ook_bezorgen !== undefined && typeof a.ook_bezorgen !== 'boolean') return 'Invalid "ook_bezorgen".';
+      if (a.geheugen_sleutels !== undefined && (!Array.isArray(a.geheugen_sleutels) || a.geheugen_sleutels.length > 64 || a.geheugen_sleutels.some((x: unknown) => typeof x !== 'string'))) return 'Invalid "geheugen_sleutels".';
+      if (a.bestands_verwijzingen !== undefined && (!Array.isArray(a.bestands_verwijzingen) || a.bestands_verwijzingen.length > 24)) return 'Invalid "bestands_verwijzingen".';
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/ai/geheugen/taken/overdragen',
+      body: without({
+        taakSleutel: a.taak_sleutel.trim(),
+        naarAgent: a.naar_agent.trim().toLowerCase(),
+        samenvatting: a.samenvatting.trim(),
+        vanAgent: a.van_agent,
+        titel: a.titel,
+        doel: a.doel,
+        status: a.status,
+        bewaarInStroom: a.bewaar_in_stroom,
+        ookBezorgen: a.ook_bezorgen,
+        geheugenSleutels: a.geheugen_sleutels,
+        bestandsVerwijzingen: a.bestands_verwijzingen,
+      }),
+    }),
+    shape: (d) => compact(d),
+  },
 );
 
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));
@@ -1400,6 +1546,7 @@ export function explainSiteError(status: number, data: any): string {
   const code = String(data?.error || data?.reasonCode || data?.message || `HTTP ${status}`);
   if (code === 'GEHEUGEN_GEHEIM_GEWEIGERD') return 'Stroom van geheugen refused to store potential secrets, tokens or passwords. Remove the secret and ask the user to use the key vault if needed.';
   if (/^(BOT_|BEZORGING_)/.test(code)) return `Agent Telegram bot delivery reported ${code}. Inspect the bot status and channel/topic check in Stroom van geheugen before retrying.`;
+  if (/^(TAAK_|AFSTEMMING_KAART_)/.test(code)) return `Помилка переходу задачі (${code}): перевірте ключ задачі й приберіть потенційні таємниці перед повторним викликом. / Fout bij taakoverdracht (${code}): controleer de taaksleutel en verwijder eventuele geheimen voordat u opnieuw aanroept.`;
   // 21.10.2026 (shared/dev-media-github.ts): invoerfouten dragen hun Engelse uitleg na de dubbele punt; de rest krijgt uk + nl.
   const invoer = /^(GITHUB_PR_INVOER|APP_DOMEIN_INVOER|MEDIA_INVOER):([\s\S]+)$/.exec(code);
   if (invoer) return invoer[2].slice(0, 400);

@@ -21,7 +21,20 @@ export const AGENT_PAD_PREFIX = '';
 export const OUD_AGENT_PAD_PREFIX = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
-export type AgentSlug = 'claude' | 'gpt' | 'codex' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw';
+export type AgentSlug =
+  | 'claude'
+  | 'gpt'
+  | 'codex'
+  | 'grok'
+  | 'gemini'
+  | 'copilot'
+  | 'cursor'
+  | 'antigravity'
+  | 'autoclaw'
+  | 'windsurf'
+  | 'cline'
+  | 'devin'
+  | 'opencode';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -38,7 +51,7 @@ export interface V2Agent {
 }
 
 export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
-  // uk/nl: één zin «waar zit het in deze client» (oktober 2026). De volledige stappen en de knoppen staan in
+  // uk/nl: één zin «waar zit het in deze client» (oktober–november 2026). De volledige stappen en de knoppen staan in
   // src/agenten/verbind-recepten.ts; hier nooit een oud pad (/mcp, /ai/<agent>) en nooit «plak een token» waar OAuth bestaat.
   { slug: 'claude', naam: 'Claude', klant: 'claude', webHosts: ['claude.ai', 'claude.com'], appSchemas: [], loopback: true,
     uk: 'claude.ai і Claude Desktop: Settings → Connectors → Add custom connector (адреса, без client id); Claude Code: claude mcp add --transport http.',
@@ -68,6 +81,18 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'autoclaw', naam: 'AutoClaw', klant: 'autoclaw', webHosts: ['autoclaw.z.ai', 'chat.z.ai', 'z.ai'], appSchemas: [], loopback: true,
     uk: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): команда мосту mijn-ruimte або mcp.json із власною адресою /autoclaw та правничою перевіркою джерел.',
     nl: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): opdracht van de mijn-ruimte-brug of mcp.json met het eigen adres /autoclaw en juridische broncontrole.' },
+  { slug: 'windsurf', naam: 'Windsurf', klant: 'windsurf', webHosts: ['windsurf.com', 'codeium.com'], appSchemas: ['windsurf'], loopback: true,
+    uk: 'Windsurf (Cascade): ~/.codeium/windsurf/mcp_config.json → mcpServers → serverUrl із власною адресою /windsurf.',
+    nl: 'Windsurf (Cascade): ~/.codeium/windsurf/mcp_config.json → mcpServers → serverUrl met het eigen adres /windsurf.' },
+  { slug: 'cline', naam: 'Cline', klant: 'cline', webHosts: ['cline.bot'], appSchemas: ['vscode', 'vscode-insiders', 'cursor'], loopback: true,
+    uk: 'Cline (VS Code / Roo Code): MCP Servers → Configure MCP Servers → cline_mcp_settings.json (type: streamableHttp) із адресою /cline.',
+    nl: 'Cline (VS Code / Roo Code): MCP Servers → Configure MCP Servers → cline_mcp_settings.json (type: streamableHttp) met het adres /cline.' },
+  { slug: 'devin', naam: 'Devin', klant: 'devin', webHosts: ['app.devin.ai', 'devin.ai'], appSchemas: [], loopback: true,
+    uk: 'Devin (Cognition): Settings → MCP Servers → Add MCP Server (HTTP + OAuth) із власною адресою /devin.',
+    nl: 'Devin (Cognition): Settings → MCP Servers → Add MCP Server (HTTP + OAuth) met het eigen adres /devin.' },
+  { slug: 'opencode', naam: 'OpenCode', klant: 'opencode', webHosts: ['opencode.ai'], appSchemas: [], loopback: true,
+    uk: 'OpenCode (термінал і середовище): opencode mcp add або ~/.config/opencode/opencode.json → mcp.mijn-ruimte із власною адресою /opencode.',
+    nl: 'OpenCode (terminal en IDE): opencode mcp add of ~/.config/opencode/opencode.json → mcp.mijn-ruimte met het eigen adres /opencode.' },
 ]);
 
 const PER_SLUG = new Map(V2_AGENTEN.map((a) => [a.slug, a]));

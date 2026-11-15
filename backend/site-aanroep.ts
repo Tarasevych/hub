@@ -98,6 +98,11 @@ export const TOEGESTANE_ROUTES = new Set<string>([
   'POST /api/owner/ai/geheugen/bots/overzicht',
   'POST /api/owner/ai/geheugen/bots/bezorgen',
   'POST /api/owner/ai/geheugen/bots/gesprek-invoeren',
+  'POST /api/owner/ai/geheugen/taken/overzicht',
+  'POST /api/owner/ai/geheugen/taken/detail',
+  'POST /api/owner/ai/geheugen/taken/opslaan',
+  'POST /api/owner/ai/geheugen/taken/stap',
+  'POST /api/owner/ai/geheugen/taken/overdragen',
 ]);
 
 const echt: Aanroeper = async (userId, service, route, body, namens) => {

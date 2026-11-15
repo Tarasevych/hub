@@ -1,4 +1,4 @@
--- 0280 (stroom-geheugen): Окремий Telegram-бот для кожного ШІ-агента та надійна ідемпотентна черга доставлення й передавання завдань.
+-- 0281 (stroom-geheugen): Окремий Telegram-бот для кожного ШІ-агента та надійна ідемпотентна черга доставлення й передавання завдань.
 -- Обидві таблиці працюють під суворим RLS (ізоляція user_id = app.huidige_gebruiker() та ruimte 'prive' | 'technisch'):
 --   1) app.geheugen_agent_bots          — реєстр ботів по агентах (токен у sleutel_versleuteld під DEK/серверним ключем, без додаткових прав агента).
 --   2) app.geheugen_telegram_bezorging  — черга доставлення, передавання завдань за taak_id, ланцюжки vorige_bezorging_id та захист від дублікатів.

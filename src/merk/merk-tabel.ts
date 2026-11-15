@@ -32,6 +32,10 @@ export const MERKEN: MerkTabel = Object.freeze({
   cursor: { naam: "Cursor", kleur: "#EDECEC", vlak: "#14120B", regel: "evenodd", d: "M22.106 5.68 12.5.135a1 1 0 0 0-.998 0L1.893 5.68a.84.84 0 0 0-.419.726v11.186c0 .3.16.577.42.727l9.607 5.547a1 1 0 0 0 .998 0l9.608-5.547a.84.84 0 0 0 .42-.727V6.407a.84.84 0 0 0-.42-.726zm-.603 1.176L12.228 22.92c-.063.108-.228.064-.228-.061V12.34a.59.59 0 0 0-.295-.51l-9.11-5.26c-.107-.062-.063-.228.062-.228h18.55c.264 0 .428.286.296.514" },
   antigravity: { naam: "Antigravity", kleur: "#FFFFFF", vlak: "#027FBD", d: "M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1S6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506c5.192-3.517 4.857-9.714 9.715-9.714s4.522 6.197 9.714 9.715" },
   autoclaw: { naam: "AutoClaw", kleur: "#FFFFFF", vlak: "#2563EB", d: "M4 4h16v3.2L9.6 16.8H20V20H4v-3.2L14.4 7.2H4V4zm3.2 4.8h3.6l-2.4 3.2H4.8l2.4-3.2zm8.4 6.4h3.6l-2.4 3.2h-3.6l2.4-3.2z" },
+  windsurf: { naam: "Windsurf", kleur: "#FFFFFF", vlak: "#0F766E", neutraal: true, letter: "Ws" },
+  cline: { naam: "Cline", kleur: "#FFFFFF", vlak: "#B45309", neutraal: true, letter: "Cl" },
+  devin: { naam: "Devin", kleur: "#FFFFFF", vlak: "#4338CA", neutraal: true, letter: "Dv" },
+  opencode: { naam: "OpenCode", kleur: "#FFFFFF", vlak: "#1E293B", neutraal: true, letter: "OC" },
 
   // — browsers, besturingssystemen en platformen —
   chrome: { naam: "Google Chrome", kleur: "#4285F4", d: "M12 0C8.21 0 4.83 1.76 2.63 4.5l3.95 6.85A5.45 5.45 0 0 1 12 6.55h10.7A12 12 0 0 0 12 0M1.93 5.47A12 12 0 0 0 0 12a12 12 0 0 0 10.19 11.86l3.95-6.84a5.45 5.45 0 0 1-6.86-2.3zm13.34 2.17a5.45 5.45 0 0 1 1.45 7.09l-5.34 9.25.62.02A12 12 0 0 0 23.18 7.64zM12 16.36a4.36 4.36 0 1 1 0-8.72 4.36 4.36 0 0 1 0 8.72" },

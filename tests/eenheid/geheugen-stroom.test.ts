@@ -400,10 +400,10 @@ export async function main(): Promise<number> {
     check('4c: кожна подія пам’яті (GEHEUGEN_ACTIES) має переклади uk + nl в GEHEUGEN_ACTIE_META',
       GEHEUGEN_ACTIES.every((a) => Boolean(GEHEUGEN_ACTIE_META[a]?.uk && GEHEUGEN_ACTIE_META[a]?.nl)));
 
-    const migratieSql = readFileSync('migrations/0279_geheugen_stroom.sql', 'utf8');
+    const migratieSql = readFileSync('migrations/0280_geheugen_stroom.sql', 'utf8');
     const opslagBron = readFileSync('backend/connectors-opslag.ts', 'utf8');
     const toolsBron = readFileSync('backend/connectors-hulpmiddelen.ts', 'utf8');
-    check('4d: міграція 0279 має FORCE RLS на трьох таблицях та зберігає ruimte в черзі затверджень MCP',
+    check('4d: міграція 0280 має FORCE RLS на трьох таблицях та зберігає ruimte в черзі затверджень MCP',
       migratieSql.includes('ENABLE ROW LEVEL SECURITY')
       && migratieSql.includes('FORCE ROW LEVEL SECURITY')
       && migratieSql.includes('app.connector_tool_calls')

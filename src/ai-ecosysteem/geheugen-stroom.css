@@ -498,6 +498,32 @@
   min-height: 68px;
 }
 
+.gs-lijst {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gs-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.gs-knoop-kaart.gs-taak-actief {
+  border-color: var(--accent, #2f6f73);
+  background: var(--accent-soft, rgba(47, 111, 115, 0.08));
+}
+
+.gs-taken-kolom,
+.gs-taken-dossier {
+  min-width: 0;
+}
+
 @media (max-width: 720px) {
   .gs-zoekbalk,
   .gs-grid-2,
