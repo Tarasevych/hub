@@ -50,7 +50,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const locales = {
     uk:{
       ui:{
-        workspace:"Мій простір",settings:"Налаштування",concept:"Дизайн-концепт",quickJump:"Швидкий перехід",
+        workspace:"Мій простір",settings:"Налаштування",concept:"Новий вигляд",quickJump:"Швидкий перехід",
         heroEyebrow:"ВАШ ЦИФРОВИЙ ПРОСТІР",heroTitle:["Ваш простір.","Ваші правила."],
         heroDesc:"Один витончений центр керування всім, що робить «Мій простір» по-справжньому вашим.",
         startSetup:"Налаштувати простір",navPlacement:"Розташування навігації",sectionCount:"розділів",
@@ -73,10 +73,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
         dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
-        moved:"Панель якорів переміщено:",demoToast:"Це демонстрація дизайну. Реальні параметри акаунта не змінено.",
+        moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
         drawerControls:"Налаштування",drawerPreview:"Вигляд у роботі",drawerDemo:"ДЕМО · Без змін акаунта",drawerDone:"Готово",
-        drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті.",
+        drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису.",
         drawerVisualTitle:"Ось як виглядає відкритий розділ",drawerVisualNote:"Простора панель, зрозумілі групи й миттєвий відгук на дії.",
         previewSample:"Попередній перегляд",previewEnabled:"Увімкнено",previewOptions:"Ваші параметри",
         savedLocally:"Показано лише в макеті",actionDemo:"Дія показана в демонстраційному режимі.",rangeValue:"Інтенсивність",
@@ -145,7 +145,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         methods:[
           {type:"info",label:"Вхід через Google",note:"Основний спосіб входу в поточній концепції."},
-          {type:"action",label:"Додати ключ доступу",note:"Приклад сценарію passkey без створення ключа"},
+          {type:"action",label:"Додати ключ доступу",note:"Створення ключа — у блоці «Чинні налаштування»"},
           {type:"toggle",label:"Пояснення перед підтвердженням",note:"Показувати, для чого потрібна перевірка",initial:true}
         ],
         security:[
@@ -155,14 +155,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-          {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
-          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
+          {type:"info",label:"Нагадування про резервний доступ",note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
+          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх ключів доступу означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
     },
     nl:{
       ui:{
-        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Ontwerpconcept",quickJump:"Snel navigeren",
+        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Nieuwe weergave",quickJump:"Snel navigeren",
         heroEyebrow:"JOUW DIGITALE RUIMTE",heroTitle:["Jouw ruimte.","Jouw regels."],
         heroDesc:"Eén stijlvolle plek om alles te beheren wat Mijn Ruimte echt van jou maakt.",
         startSetup:"Ruimte aanpassen",navPlacement:"Navigatiepositie",sectionCount:"onderdelen",
@@ -185,10 +185,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
         dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
         langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",
-        moved:"Ankernavigatie verplaatst naar:",demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn niet gewijzigd.",
+        moved:"Ankernavigatie verplaatst naar:",demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel.",
         navDemoToast:"Dit is een visueel prototype. Echte diensten zijn hier niet verbonden.",
         drawerControls:"Instellingen",drawerPreview:"Live voorbeeld",drawerDemo:"DEMO · Account ongewijzigd",drawerDone:"Gereed",
-        drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website.",
+        drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account.",
         drawerVisualTitle:"Zo ziet een geopend onderdeel eruit",drawerVisualNote:"Een ruim paneel met heldere groepen en directe visuele feedback.",
         previewSample:"Voorbeeld",previewEnabled:"Ingeschakeld",previewOptions:"Jouw voorkeuren",
         savedLocally:"Alleen zichtbaar in het prototype",actionDemo:"Actie getoond in demomodus.",rangeValue:"Intensiteit",
@@ -219,7 +219,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
         account:{name:"Account en gegevens",short:"Account",kicker:"JOUW GEGEVENS",title:"Alles wat belangrijk is, onder controle.",description:"Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",details:[["Profiel","Basisgegevens van je account"],["Gegevens en export","Je gegevens bekijken en beheren"],["Gevoelige acties","Een aparte zone met bevestiging"]]},
         sessions:{name:"Sessies en apparaten",short:"Apparaten",kicker:"JOUW VERBINDINGEN",title:"Elk apparaat in beeld.",description:"Actieve sessies, geschiedenis en gekoppelde apparaten meteen duidelijk.",details:[["Apparaten","Type, browser en recente activiteit"],["Sessies","Inlogmomenten bekijken en beheren"]]},
-        methods:{name:"Inlogmethoden",short:"Inloggen",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
+        methods:{name:"Aanmeldmethoden",short:"Aanmelden",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
         security:{name:"Beveiliging",short:"Beveiliging",kicker:"RUST EN ZEKERHEID",title:"Beveiliging die je begrijpt.",description:"Tweestapsverificatie, versleuteling en rechten helder uitgelegd.",details:[["Inlogbevestiging","TOTP en toegangssleutels"],["Versleuteling","Sleutels en gegevensbescherming"],["Gasttoegang","Beperkte rechten en geschiedenis"]]},
         recovery:{name:"Toegang herstellen",short:"Herstel",kicker:"PLAN B",title:"Rust, ook als het tegenzit.",description:"Een duidelijk herstelproces met uitleg, risico's en vervolgstappen.",details:[["Herstelcodes","Een reserveoptie voor bevestiging"],["Aanbevelingen","Voorkom verlies van toegang"]]}
       },
@@ -282,7 +282,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-          {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
+          {type:"info",label:"Herinnering aan reservetoegang",note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
           {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
@@ -1508,7 +1508,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"account", group:"account", number:"09", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
+      id:"account", group:"account", number:"09", name:"Обліковий запис і дані", short:"Обліковий запис і дані", icon:"▣",
       kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
@@ -1815,6 +1815,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   // САЙТ: блок справжніх налаштувань у стилі «Можливостей для доопрацювання» макета; гніздо .mq-echt заповнює застосунок.
   const openeЧинні=new Set();
   function tekenЧинні(id){
+    if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу
     const nl=preferences.lang==="nl";
     const kop=nl?"Huidige instellingen":"Чинні налаштування";
     const uitleg=nl?"De echte instellingen van uw account: wijzigingen hier gelden meteen en volgen uw rechten.":"Справжні налаштування вашого облікового запису: зміни тут діють одразу й за вашими правами.";

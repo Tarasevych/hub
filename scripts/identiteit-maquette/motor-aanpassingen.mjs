@@ -911,5 +911,24 @@ v(`    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><
     "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
   };`);
 
+// ДУБЛІ-001: тексти, що стали неправдою або звучали як макет: елементи тепер змінюють справжні налаштування; «passkey» → «ключ доступу»;
+// нагадування про резервний доступ має чинне місце в розділі «Відновлення доступу»; єдині назви розділів.
+// Teksten die niet meer klopten of als ontwerp klonken; één naam per onderdeel.
+v(`concept:"Дизайн-концепт"`, `concept:"Новий вигляд"`);
+v(`concept:"Ontwerpconcept"`, `concept:"Nieuwe weergave"`);
+v(`demoToast:"Це демонстрація дизайну. Реальні параметри акаунта не змінено."`, `demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу."`);
+v(`demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn niet gewijzigd."`, `demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel."`);
+v(`drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті."`, `drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису."`);
+v(`drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website."`, `drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account."`);
+v(`note:"Приклад сценарію passkey без створення ключа"`, `note:"Створення ключа — у блоці «Чинні налаштування»"`);
+v(`note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово`, `note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово`);
+v(`note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard`, `note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard`);
+v(`усіх passkey означає`, `усіх ключів доступу означає`);
+v(`methods:{name:"Inlogmethoden",short:"Inloggen"`, `methods:{name:"Aanmeldmethoden",short:"Aanmelden"`);
+v(`name:"Акаунт і дані", short:"Акаунт і дан`, `name:"Обліковий запис і дані", short:"Обліковий запис і дан`);
+// Розділ «Ідентичності»: вибір профілю вже стоїть у картці — порожній блок «Чинні налаштування» не малюємо.
+v(`function tekenЧинні(id){`, `function tekenЧинні(id){
+    if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу`);
+
 fs.writeFileSync(f, s);
 console.log('ok');
