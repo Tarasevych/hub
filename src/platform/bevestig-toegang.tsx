@@ -59,6 +59,9 @@ const T = {
   // SEC-002 interface-07: WAT wordt bevestigd en wat volgt eruit (shared/stap-op-beschrijving.ts).
   watKop: ['Що ви підтверджуєте', 'Wat u bevestigt'],
   gevolgKop: ['Наслідок', 'Gevolg'],
+  // STAPOP-OMSCHR-001: het technische adres van een actie zonder beschrijving — klein, in de details, niet als hoofdtekst.
+  details: ['Подробиці для перевірки', 'Details om te controleren'],
+  technischAdres: ['Технічна адреса запиту', 'Technisch adres van het verzoek'],
   onthoudNietDirect: ['Запам’ятати тут не пропонуємо: запит виник не від вашого кліку в цій вкладці (фоновий запит, інша вкладка, повернення після Google або дія розширення браузера). Якщо ви щойно нічого не натискали — скасуйте.', 'Onthouden bieden we hier niet aan: het verzoek kwam niet uit uw klik in dit tabblad (achtergrondverzoek, ander tabblad, terugkeer van Google of een actie van de browserextensie). Klikte u net nergens op, annuleer dan.'],
   geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
@@ -162,7 +165,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   // SEC-002 interface-07: ook niet als het verzoek niet uit een klik van de mens in dit tabblad kwam (stap-op.ts directGebaar).
   const nietDirect = opties.onthoudAanbieden === false;
   const onthoudMag = !opties.sterk && !!info?.onthoudMag && weergave !== 'codewoord' && !nietDirect;
-  const wat = beschrijfStapOp(opties.actie, opties.pad);
+  const wat = beschrijfStapOp(opties.actie, opties.pad, opties.verzoek);
   const meldOnthoudMislukt = () => {
     void import('../canoniek-meldingen').then(({ emitCanonicalNotice }) => emitCanonicalNotice({
       text: t('onthoudMislukt'), kind: 'warning', source: 'stap-op', dedupeSeconds: 30,
@@ -266,6 +269,10 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
       <div className='bevestig-toegang-wat' data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'} data-sterk={opties.sterk ? '1' : undefined} role='note'>
         <p className={wat.gevaar || !wat.bekend ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg'}><strong>{!wat.bekend ? '⚠ ' : ''}{t('watKop')}:</strong> {lang === 'nl' ? wat.nl : wat.uk}</p>
         <p className='bevestig-toegang-uitleg'><strong>{t('gevolgKop')}:</strong> {lang === 'nl' ? wat.gevolgNl : wat.gevolgUk}</p>
+        {wat.technisch && <details className='bevestig-toegang-details' data-stap-op-technisch=''>
+          <summary>{t('details')}</summary>
+          <p>{t('technischAdres')}: <code translate='no'>{wat.technisch}</code></p>
+        </details>}
       </div>
 
       <div className='bevestig-toegang-kaart' {...geenAi}>
