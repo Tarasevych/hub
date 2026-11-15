@@ -110,6 +110,7 @@ const MAQUETTE_MAIL_TEKSTEN={
 } as const;
 
 const emptyMetrics:Metrics={firstImportAt:0,firstActionAt:0,focusViews:0,taskConversions:0,snoozes:0,drafts:0,triageChanges:0};
+const INITIAL_BOOTSTRAP:Bootstrap={items:[],resume:null,metrics:emptyMetrics,notificationPreference:{minimum:'action',updatedAt:0},mailAccounts:[],accountPolicy:{autoLinkPrimaryMail:true,allowAdditionalMailAccounts:true,mailboxAuthorization:'required'},provider:{connected:false,manualImport:true,analysis:'deterministic-cited-v1',highRiskSend:false,notificationDelivery:'not_connected'},platform:{architecture:'provider_foundation_v1',runtime:'phase1_manual_only',tokenVault:{algorithm:'AES-256-GCM',keySecret:'server_side_only',selfTestPassed:false},queue:{table:'mail_jobs_v2',jobTypes:[],idempotency:'sha256_owner_account_type_fingerprint',workersActive:false},providers:{google:{provider:'google_gmail',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]},microsoft:{provider:'microsoft_graph',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]}},selfTests:[]}};
 const triageValues:Triage[]=['action','waiting','info','later'];
 const text=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
 const triageName=(lang:Lang,value:Triage)=>value==='action'?text(lang,'Дія','Actie'):value==='waiting'?text(lang,'Чекаю','Wachten'):value==='info'?text(lang,'Інфо','Info'):text(lang,'Пізніше','Later');
@@ -142,7 +143,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [actiefAnker,setActiefAnker]=useState('mail-sectie-aanbieders');
 
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
- const [data,setData]=useState<Bootstrap>({items:[],resume:null,metrics:emptyMetrics,notificationPreference:{minimum:'action',updatedAt:0},mailAccounts:[],accountPolicy:{autoLinkPrimaryMail:true,allowAdditionalMailAccounts:true,mailboxAuthorization:'required'},provider:{connected:false,manualImport:true,analysis:'deterministic-cited-v1',highRiskSend:false,notificationDelivery:'not_connected'},platform:{architecture:'provider_foundation_v1',runtime:'phase1_manual_only',tokenVault:{algorithm:'AES-256-GCM',keySecret:'server_side_only',selfTestPassed:false},queue:{table:'mail_jobs_v2',jobTypes:[],idempotency:'sha256_owner_account_type_fingerprint',workersActive:false},providers:{google:{provider:'google_gmail',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]},microsoft:{provider:'microsoft_graph',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]}},selfTests:[]}});
+ const [data,setData]=useState<Bootstrap>(INITIAL_BOOTSTRAP);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [showNoise,setShowNoise]=useState(false);
@@ -182,7 +183,18 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   setLoading(true);
   try{
    const response=await api.post('/api/owner/mail/bootstrap',context);
-   const next=response.data as Bootstrap;
+   const raw=(response.data||{}) as Partial<Bootstrap>;
+   const next:Bootstrap={
+    ...INITIAL_BOOTSTRAP,
+    ...raw,
+    items:Array.isArray(raw.items)?raw.items:[],
+    mailAccounts:Array.isArray(raw.mailAccounts)?raw.mailAccounts:[],
+    metrics:{...emptyMetrics,...(raw.metrics||{})},
+    notificationPreference:{minimum:raw.notificationPreference?.minimum??'action',updatedAt:Number(raw.notificationPreference?.updatedAt||0)},
+    accountPolicy:{...INITIAL_BOOTSTRAP.accountPolicy,...(raw.accountPolicy||{})},
+    provider:{...INITIAL_BOOTSTRAP.provider,...(raw.provider||{})},
+    platform:{...INITIAL_BOOTSTRAP.platform,...(raw.platform||{})},
+   };
    setData(next);
    setEnergy(next.resume?.energy||'low');
    if(next.resume?.focus&&next.resume.currentItemId){
@@ -321,7 +333,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
    {data.googleMail?.accounts?.length?<details className='mail-gmail-beheer' data-mail-gmail-beheer='v1' open={(data.googleMail.accounts as Array<{mailSearchConsentRequired?:boolean}>).some(a=>a.mailSearchConsentRequired)||undefined}><summary title={text(lang,'Тут обирають активну Gmail-скриньку (її показує вкладка «Вхідні») і оновлюють доступ Google для пошуку в листах. Без оновленого доступу пошук у цій скриньці лишається неповним.','Hier kiest u de actieve Gmail-postbus (die toont het tabblad «Postvak IN») en werkt u de Google-toegang voor zoeken in berichten bij. Zonder bijgewerkte toegang blijft zoeken in deze postbus onvolledig.')}>{text(lang,'Gmail: активна скринька і доступ для пошуку','Gmail: actieve postbus en zoektoegang')}</summary><GoogleMailWorkspace lang={lang} tab='inbox' mode='accounts' sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} initialSnapshot={data.googleMail||null} bootstrapPending={loading}/></details>:null}
    </div>
    <div id='mail-sectie-import' className='mail-provider-card available'><Upload/><div><b>{text(lang,'Приватний ручний імпорт','Privé handmatige import')}</b><p>{text(lang,'Focus, triage, цитоване резюме й тихе збереження контексту вже працюють для реального тексту.','Focus, triage, samenvatting met citaten en stille contextopslag werken al voor echte tekst.')}</p></div><button onClick={()=>setImportOpen(true)}>{text(lang,'Додати лист','Bericht toevoegen')}</button></div>
-   <div id='mail-sectie-meldingen' className='mail-notification-card' data-mail-notification-threshold={data.notificationPreference.minimum}><Bell/><div><b>{text(lang,'Сповіщення для цієї пошти','Meldingen voor deze mailbox')}</b><p>{text(lang,'Виберіть рівень важливості, починаючи з якого потрібно показувати сповіщення для цієї Email.','Kies het belangrijkheidsniveau vanaf wanneer meldingen voor deze mailbox moeten worden getoond.')}</p><label>{text(lang,'Мінімальний рівень','Minimum niveau')}<select value={data.notificationPreference.minimum} disabled={busy} onChange={event=>void saveNotificationLevel(event.target.value as NotificationLevel)}>{(['all','info','waiting','action','none'] as NotificationLevel[]).map(value=><option key={value} value={value}>{notificationName(lang,value)}</option>)}</select></label><small><ShieldCheck/>{text(lang,'Налаштування вже збережено. Сповіщення почнуть надходити після підключення пошти.','De instelling is opgeslagen. Meldingen beginnen zodra de mailbox is gekoppeld.')}</small></div></div>
+   <div id='mail-sectie-meldingen' className='mail-notification-card' data-mail-notification-threshold={data.notificationPreference?.minimum??'action'}><Bell/><div><b>{text(lang,'Сповіщення для цієї пошти','Meldingen voor deze mailbox')}</b><p>{text(lang,'Виберіть рівень важливості, починаючи з якого потрібно показувати сповіщення для цієї Email.','Kies het belangrijkheidsniveau vanaf wanneer meldingen voor deze mailbox moeten worden getoond.')}</p><label>{text(lang,'Мінімальний рівень','Minimum niveau')}<select value={data.notificationPreference?.minimum??'action'} disabled={busy} onChange={event=>void saveNotificationLevel(event.target.value as NotificationLevel)}>{(['all','info','waiting','action','none'] as NotificationLevel[]).map(value=><option key={value} value={value}>{notificationName(lang,value)}</option>)}</select></label><small><ShieldCheck/>{text(lang,'Налаштування вже збережено. Сповіщення почнуть надходити після підключення пошти.','De instelling is opgeslagen. Meldingen beginnen zodra de mailbox is gekoppeld.')}</small></div></div>
   </section>
  );
 
@@ -331,7 +343,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
 
    <div className='mail-control-row'><label>{text(lang,'Зараз у мене','Mijn energie nu')}<select value={energy} onChange={event=>changeEnergy(event.target.value as Energy)}><option value='low'>{text(lang,'Мало сил','Weinig energie')}</option><option value='medium'>{text(lang,'Середньо','Gemiddeld')}</option><option value='high'>{text(lang,'Є ресурс','Voldoende energie')}</option></select></label>{hiddenNoise>0&&<button className='mail-noise-toggle' onClick={()=>setShowNoise(value=>!value)}><Clock3/>{showNoise?text(lang,'Знову сховати шум','Ruis weer verbergen'):text(lang,`Показати шум (${hiddenNoise})`,`Ruis tonen (${hiddenNoise})`)}</button>}</div>
    {visible.length>0?<div className='mail-list'>{visible.map((item,index)=><article key={item.id} className={`mail-row triage-${item.triage}${item.unread?' unread':''}`} data-notification-eligible={item.notificationEligible?'true':'false'}><button className='mail-row-main' onClick={()=>void openFocus(item)}><span className='mail-row-index'>{String(index+1).padStart(2,'0')}</span><span><small>{item.senderName||item.senderEmail||text(lang,'Невідомий відправник','Onbekende afzender')}</small><b>{item.subject||text(lang,'Без теми','Geen onderwerp')}</b><em>{item.summary.what}</em></span></button><div className='mail-row-meta'><span data-mail-triage={item.triage}><Star/>{triageName(lang,item.triage)}{!item.triageConfirmed&&<small>{text(lang,'пропозиція','suggestie')}</small>}</span><time>{dateName(lang,item.receivedAt)}</time></div></article>)}</div>:<div className='mail-soft-empty'><Check/><h2>{text(lang,'На зараз достатньо','Voor nu is dit genoeg')}</h2><p>{text(lang,'У цій черзі немає листів, які потребують вашої уваги.','In deze rij staan geen berichten die uw aandacht vragen.')}</p><button onClick={()=>setImportOpen(true)}>{text(lang,'Додати один лист','Eén bericht toevoegen')}</button></div>}
-   <details className='mail-metrics'><summary>{text(lang,'Мій спокійний прогрес','Mijn rustige voortgang')}</summary><div><span>{text(lang,'Focus відкрито','Focus geopend')}<b>{data.metrics.focusViews}</b></span><span>{text(lang,'Створено задач','Taken gemaakt')}<b>{data.metrics.taskConversions}</b></span><span>{text(lang,'Збережено чернеток','Concepten bewaard')}<b>{data.metrics.drafts}</b></span><span>{text(lang,'Відкладено','Uitgesteld')}<b>{data.metrics.snoozes}</b></span></div></details>
+   <details className='mail-metrics'><summary>{text(lang,'Мій спокійний прогрес','Mijn rustige voortgang')}</summary><div><span>{text(lang,'Focus відкрито','Focus geopend')}<b>{data.metrics?.focusViews??0}</b></span><span>{text(lang,'Створено задач','Taken gemaakt')}<b>{data.metrics?.taskConversions??0}</b></span><span>{text(lang,'Збережено чернеток','Concepten bewaard')}<b>{data.metrics?.drafts??0}</b></span><span>{text(lang,'Відкладено','Uitgesteld')}<b>{data.metrics?.snoozes??0}</b></span></div></details>
   </section>
  );
 
@@ -396,7 +408,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
      statistieken={[
       {waarde:gekoppeldeTotaal,label:mqTekst.statSkrinky},
       {waarde:data.items.length,label:mqTekst.statLokalni},
-      {waarde:notificationName(lang,data.notificationPreference.minimum),label:mqTekst.statPorih},
+      {waarde:notificationName(lang,data.notificationPreference?.minimum??'action'),label:mqTekst.statPorih},
      ]}
     />
     <MaquetteAnkerRail
@@ -426,7 +438,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
     secundair={{label:mqTekst.localSecundair,onClick:openClassicMail}}
     statistieken={[
      {waarde:visible.length,label:mqTekst.statCherga},
-     {waarde:data.metrics.taskConversions,label:mqTekst.statZadachi},
+     {waarde:data.metrics?.taskConversions??0,label:mqTekst.statZadachi},
     ]}
    />
   ):null

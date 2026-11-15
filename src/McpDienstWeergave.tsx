@@ -22,7 +22,7 @@ import McpBackupsCard from "./McpBackupsKaart";
 import McpServerBeheerCard from "./McpServerBeheerKaart";
 import DeurSchakelaars from "./agenten/DeurSchakelaars";
 import AgentLogo from "./agenten/AgentLogo";
-import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from "./maquette-kern";
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from "./maquette-kern";
 import { useIsMaquette } from "./thema/useThema";
 import "./mcp-domein.css";
 import "./mcp-kern-maquette.css";
@@ -592,23 +592,15 @@ export default function McpServiceView({ lang, tab }: Props) {
       setLaagOpen(false);
       return;
     }
-    const controleer = () => {
-      setLaagOpen(Boolean(document.querySelector(MCP_MODAAL_SELECTOR)));
-      if (typeof location !== "undefined") {
-        setIsAgentDetail(location.hash.startsWith("#agent/"));
-      }
-    };
-    controleer();
-    const wortel = document.documentElement ?? document.body;
-    if (!wortel || typeof MutationObserver !== "function") return;
-    const waarnemer = new MutationObserver(controleer);
-    waarnemer.observe(wortel, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(MCP_MODAAL_SELECTOR, setLaagOpen, {
+      wortel: "documentElement",
       attributeFilter: ["open", "hidden", "class", "aria-modal", "data-mq-laag-open"],
+      extraActie: () => {
+        if (typeof location !== "undefined") {
+          setIsAgentDetail(location.hash.startsWith("#agent/"));
+        }
+      },
     });
-    return () => waarnemer.disconnect();
   }, [isMaquette, section]);
 
   useEffect(() => {

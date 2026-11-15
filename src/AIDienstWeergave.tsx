@@ -21,7 +21,7 @@ import { RichtingBand } from './weergave/Weergave';
 import { aiVerbindingenNaar } from '../shared/ai-agent-bord';
 import { V2_AGENTEN } from '../shared/connector-v2/agenten';
 import AgentLogo from './agenten/AgentLogo';
-import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
 import { useIsMaquette } from './thema/useThema';
 import './agenten/agenten.css';
 import './ai-werkruimte-maquette.css';
@@ -232,20 +232,10 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
       setLaagOpen(false);
       return;
     }
-    const controleer = () => {
-      setLaagOpen(Boolean(document.querySelector(AI_MODAAL_SELECTOR)));
-    };
-    controleer();
-    const wortel = document.documentElement ?? document.body;
-    if (!wortel || typeof MutationObserver !== 'function') return;
-    const waarnemer = new MutationObserver(controleer);
-    waarnemer.observe(wortel, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(AI_MODAAL_SELECTOR, setLaagOpen, {
+      wortel: 'documentElement',
       attributeFilter: ['open', 'hidden', 'class', 'aria-modal', 'data-mq-laag-open'],
     });
-    return () => waarnemer.disconnect();
   }, [isMaquette, tab]);
 
   const statistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(

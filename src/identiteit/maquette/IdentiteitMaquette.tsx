@@ -4,10 +4,8 @@
 // De weergave «Ontwerp»: het ontwerp van de eigenaar één op één, de echte onderdelen van de site in een inklapbaar blok onder de kaarten.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import './maquette-stijlen.css';
 import './maquette-omlijsting.css';
-import { MAQUETTE_SJABLOON } from './maquette-sjabloon';
-import { startMaquette, type Maquette, type MaquetteOpties, type MaquetteWeergave } from './maquette-motor';
+import type { Maquette, MaquetteOpties, MaquetteWeergave } from './maquette-motor';
 import { useThemaStand, zetWeergaveStijl } from '../../thema/useThema';
 import type { WeergaveStijl } from '../../thema/weergave-stijl';
 import { useZijbalkVoorkeuren, zetZijbalk } from '../../zijbalk-voorkeuren';
@@ -85,7 +83,8 @@ const openAccountMenu = () => {
       if (document.documentElement.dataset.identiteitMaquette !== 'aan') return;
       document.querySelector<HTMLElement>('.canonical-drawer-close, .canonical-sidebar-scrim.drawer')?.click();
     });
-    w.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] });
+    w.observe(document.body, { childList: true, subtree: false });
+    if (trekker) w.observe(trekker, { attributes: true, attributeFilter: ['aria-expanded'] });
     window.setTimeout(() => w.disconnect(), 60_000);
   });
 };
@@ -102,6 +101,10 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   weergaveRef.current = weergave;
   const onTaalRef = useRef(onTaal);
   onTaalRef.current = onTaal;
+  const actiefRef = useRef(actief);
+  actiefRef.current = actief;
+  const gebruikerRef = useRef(gebruiker);
+  gebruikerRef.current = gebruiker;
   const wortel = useRef<HTMLDivElement>(null);
   const motor = useRef<Maquette | null>(null);
   // Гнізда .mq-echt у живій розмітці; картки будуються рядком HTML, тож після кожного перемальовування збираємо їх знову.
@@ -147,28 +150,51 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   useLayoutEffect(() => {
     const root = wortel.current;
     if (!root) return;
-    const m = startMaquette(root, {
-      lang,
-      licht: helder(),
-      profiel: profiel(gebruiker),
-      bijKies: (id) => { const s = naarSite(id); eigenKeuze.current = s; onKiesRef.current(s); },
-      bijOpenen: verzamelGaten,
-      bijRender: verzamelGaten,
-      bijDienst: (id) => window.dispatchEvent(new CustomEvent(GA_NAAR_DIENST, { detail: id })),
-      bijAccountMenu: openAccountMenu,
-      weergave: weergaveRef.current,
-      bijWeergave: weergaveNaarSite,
-      // Без обробника мови (старі виклики) — кнопки змінюють лише тексти макета, як раніше.
-      ...(onTaalRef.current ? { bijTaal: (l: 'uk' | 'nl') => onTaalRef.current?.(l) } : {}),
+    let actiefMount = true;
+    let motorActief: Maquette | null = null;
+    let kijker: MutationObserver | null = null;
+
+    void Promise.all([
+      import('./maquette-sjabloon'),
+      import('./maquette-motor'),
+      import('./maquette-stijlen.css'),
+    ]).then(([{ MAQUETTE_SJABLOON }, { startMaquette }]) => {
+      if (!actiefMount || !wortel.current) return;
+      root.innerHTML = MAQUETTE_SJABLOON;
+      const m = startMaquette(root, {
+        lang,
+        licht: helder(),
+        profiel: profiel(gebruikerRef.current),
+        bijKies: (id) => { const s = naarSite(id); eigenKeuze.current = s; onKiesRef.current(s); },
+        bijOpenen: verzamelGaten,
+        bijRender: verzamelGaten,
+        bijDienst: (id) => window.dispatchEvent(new CustomEvent(GA_NAAR_DIENST, { detail: id })),
+        bijAccountMenu: openAccountMenu,
+        weergave: weergaveRef.current,
+        bijWeergave: weergaveNaarSite,
+        // Без обробника мови (старі виклики) — кнопки змінюють лише тексти макета, як раніше.
+        ...(onTaalRef.current ? { bijTaal: (l: 'uk' | 'nl') => onTaalRef.current?.(l) } : {}),
+      });
+      motorActief = m;
+      motor.current = m;
+      verzamelGaten();
+      // Пряме посилання на розділ: показуємо його зі справжніми налаштуваннями. Типовий розділ — сторінка починається з героя, як макет.
+      if (actief && actief !== 'intro' && actief !== TYPISCH) m.ga(naarOntwerp(actief), true);
+      if (actiefRef.current !== actief && actiefRef.current && actiefRef.current !== 'intro' && actiefRef.current !== TYPISCH) {
+        m.ga(naarOntwerp(actiefRef.current), true);
+      }
+      // Тема сайту може змінитися, поки вигляд відкритий (перемикач у меню облікового запису або в розділі «Теми»).
+      kijker = new MutationObserver(() => m.zetLicht(helder()));
+      kijker.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     });
-    motor.current = m;
-    verzamelGaten();
-    // Пряме посилання на розділ: показуємо його зі справжніми налаштуваннями. Типовий розділ — сторінка починається з героя, як макет.
-    if (actief && actief !== 'intro' && actief !== TYPISCH) m.ga(naarOntwerp(actief), true);
-    // Тема сайту може змінитися, поки вигляд відкритий (перемикач у меню облікового запису або в розділі «Теми»).
-    const kijker = new MutationObserver(() => m.zetLicht(helder()));
-    kijker.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => { kijker.disconnect(); m.stop(); motor.current = null; };
+
+    return () => {
+      actiefMount = false;
+      kijker?.disconnect();
+      motorActief?.stop();
+      motor.current = null;
+      root.innerHTML = '';
+    };
     // Мова перезапускає двигун (усі тексти макета — з його словника); решта оновлюється окремими ефектами.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
@@ -197,9 +223,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
 
   return (
     <>
-      <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette'
-        // Розмітка макета незмінна й згенерована з його index.html; динамічні частини малює двигун.
-        dangerouslySetInnerHTML={{ __html: MAQUETTE_SJABLOON }} />
+      <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette' />
       {/* Межі розділів, як у класичному вигляді: гнізда «Способи входу», «Безпека», «Відновлення» показують лише свій розділ. */}
       <AtelierInhoud.Provider value={true}>
         {gaten.map((gat) => {

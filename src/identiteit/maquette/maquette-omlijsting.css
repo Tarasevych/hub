@@ -235,3 +235,4 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{cursor:pointer;background:transparent;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
 @media (max-width:520px){.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-eerlijk .drawer-control-top{flex-wrap:wrap}.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{margin-left:auto}}
+@media(max-width:730px){html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:auto}.mr-mq.mr-mq.mr-mq.mr-mq :is(.topbar,.anchor-rail,.popover-panel,.search-overlay,.toast,.horizontal-nav-popup,.mq-sectie-balk){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}

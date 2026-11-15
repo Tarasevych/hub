@@ -24,6 +24,7 @@ import { canonicalNavigationUrl } from './canoniek-navigatie';
 import {
   MaquetteAnkerRail,
   MaquetteHeld,
+  abonneerOpenLaag,
   type MaquetteAnkerItem,
   type MaquetteHeldStatistiek,
 } from './maquette-kern';
@@ -93,23 +94,11 @@ export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Pro
       setLaagOpen(false);
       return;
     }
-    const controleer = () => {
-      setLaagOpen(Boolean(document.querySelector(LAAG_OPEN_SELECTOR)));
-    };
-    controleer();
-    if (typeof MutationObserver !== 'function') return;
-    const obs = new MutationObserver(controleer);
-    obs.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-mq-laag-open'],
-    });
-    obs.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(LAAG_OPEN_SELECTOR, setLaagOpen, {
+      wortel: 'beide',
       attributeFilter: ['class', 'open', 'hidden', 'aria-modal', 'data-mq-laag-open'],
+      htmlAttributeFilter: ['data-mq-laag-open'],
     });
-    return () => obs.disconnect();
   }, [isMaquette, vnext]);
 
   useEffect(() => {

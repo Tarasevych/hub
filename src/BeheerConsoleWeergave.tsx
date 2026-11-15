@@ -6,7 +6,7 @@ import{Activity,Bot,CalendarDays,Check,Clock,CopyCheck,Eye,Filter,Fingerprint,Hi
 import'./beheer-console.css';
 import'./beheer-kern-maquette.css';
 import{canonicalNavigationUrl}from'./canoniek-navigatie';
-import{MaquetteAnkerRail,MaquetteHeld,type MaquetteAnkerItem,type MaquetteHeldStatistiek}from'./maquette-kern';
+import{MaquetteAnkerRail,MaquetteHeld,abonneerOpenLaag,type MaquetteAnkerItem,type MaquetteHeldStatistiek}from'./maquette-kern';
 import{useIsMaquette}from'./thema/useThema';
 import StableAvatar from'./StabielAvatar';
 import{groepeerVergelijkbareGebruikers,redenLabel,type GebruikersGroep,type GroepReden}from'../shared/gebruikers-groepering';
@@ -145,7 +145,7 @@ export default function AdminConsoleView({lang,tab,userId,sourceOrigin,tabContex
     };
   },[]);
 
-  useEffect(()=>{if(!isMaquette||typeof document==='undefined'||!document.body){setLaagOpen(false);return}const meetLaag=()=>{setLaagOpen(Boolean(document.body.querySelector(ADMIN_MODAAL_SELECTOR)))};meetLaag();if(typeof MutationObserver!=='function')return;const waarnemer=new MutationObserver(meetLaag);waarnemer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden','class','aria-modal','data-mq-laag-open']});return()=>waarnemer.disconnect()},[isMaquette,actieveTab]);
+  useEffect(()=>{if(!isMaquette||typeof document==='undefined'||!document.body){setLaagOpen(false);return}return abonneerOpenLaag(ADMIN_MODAAL_SELECTOR,setLaagOpen,{wortel:'body',attributeFilter:['open','hidden','class','aria-modal','data-mq-laag-open']})},[isMaquette,actieveTab]);
   const overviewStatistieken=useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(()=>[{waarde:data.summary.users,label:ADMIN_STAT_LABELS.users[taalIdx]},{waarde:data.summary.activeSessions,label:ADMIN_STAT_LABELS.sessions[taalIdx]},{waarde:data.summary.rememberedDevices,label:ADMIN_STAT_LABELS.devices[taalIdx]},{waarde:data.summary.auditEvents,label:ADMIN_STAT_LABELS.audit[taalIdx]}],[data.summary.activeSessions,data.summary.auditEvents,data.summary.rememberedDevices,data.summary.users,taalIdx]);
 
   const scrollToSelector=useCallback((selector:string)=>{

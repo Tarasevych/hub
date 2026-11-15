@@ -17,7 +17,7 @@ import { isVaultDoel, type VaultDoel } from '../shared/geheimen';
 import { GeheimVenster } from './geheimen/GeheimFormulier';
 import { RuimteGeslotenVlak, RuimteStrook } from './RuimteStrook';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
-import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
 import { useIsMaquette } from './thema/useThema';
 import { GhDialoog, ghFoutTekst, ghPost } from './github/github-client';
 import EenklikKoppelPaneel from './github/EenklikKoppelPaneel';
@@ -1007,18 +1007,10 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
       setDialoogOpen(false);
       return;
     }
-    const controleer = () => {
-      setDialoogOpen(Boolean(document.querySelector(GH_MODAAL_SELECTOR)));
-    };
-    controleer();
-    const waarnemer = new MutationObserver(controleer);
-    waarnemer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(GH_MODAAL_SELECTOR, setDialoogOpen, {
+      wortel: 'body',
       attributeFilter: ['open', 'hidden', 'class', 'aria-modal', 'data-gh-dialoog-open'],
     });
-    return () => waarnemer.disconnect();
   }, [isMaquette, tab]);
 
   const connected = !!status.data?.connected;

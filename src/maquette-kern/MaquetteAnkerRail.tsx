@@ -376,6 +376,7 @@ export function MaquetteAnkerRail({
   const ankerPlekRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const grenzenCacheRef = useRef(new WeakMap<HTMLElement, string>());
   const zojuistGesleeptRef = useRef<boolean>(false);
   const sleepStaat = useRef<{
     pointerId: number;
@@ -517,8 +518,11 @@ export function MaquetteAnkerRail({
       boven = Math.max(boven, 60);
     }
 
+    const sleutel = `${links}|${rechts}|${boven}|${onder}`;
     const pasToe = (el: HTMLElement | null) => {
       if (!el) return;
+      if (grenzenCacheRef.current.get(el) === sleutel) return;
+      grenzenCacheRef.current.set(el, sleutel);
       el.style.setProperty('--mq-kern-links', `${links}px`);
       el.style.setProperty('--mq-kern-rechts', `${rechts}px`);
       el.style.setProperty('--mq-kern-boven', `${boven}px`);
@@ -538,7 +542,16 @@ export function MaquetteAnkerRail({
     const topAnker = document.querySelector<HTMLElement>('.canonical-topbar .canonical-account-anchor');
     const chrome = document.querySelector<HTMLElement>('.canonical-chrome');
 
-    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => meetGrenzen()) : null;
+    let raf = 0;
+    const plan = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        meetGrenzen();
+      });
+    };
+
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(plan) : null;
     if (ro) {
       if (ws) ro.observe(ws);
       if (sb) ro.observe(sb);
@@ -547,7 +560,7 @@ export function MaquetteAnkerRail({
 
     const mo =
       typeof MutationObserver === 'function' && chrome
-        ? new MutationObserver(() => meetGrenzen())
+        ? new MutationObserver(plan)
         : null;
     if (mo && chrome) {
       mo.observe(chrome, {
@@ -556,11 +569,12 @@ export function MaquetteAnkerRail({
       });
     }
 
-    window.addEventListener('resize', meetGrenzen);
+    window.addEventListener('resize', plan);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       ro?.disconnect();
       mo?.disconnect();
-      window.removeEventListener('resize', meetGrenzen);
+      window.removeEventListener('resize', plan);
     };
   }, [meetGrenzen, popoverOpen, mobielOpen, isKlassiek, ingeklapt]);
 
@@ -570,34 +584,42 @@ export function MaquetteAnkerRail({
     const ws = document.querySelector<HTMLElement>('.canonical-workspace');
 
     const berekenVoortgang = () => {
+      let nieuw = 0;
       if (ws) {
         const max = ws.scrollHeight - ws.clientHeight;
-        if (max <= 4) {
-          setVoortgang(0);
-          return;
+        if (max > 4) {
+          const pct = Math.round((ws.scrollTop / max) * 100);
+          nieuw = Math.min(100, Math.max(0, pct));
         }
-        const pct = Math.round((ws.scrollTop / max) * 100);
-        setVoortgang(Math.min(100, Math.max(0, pct)));
       } else {
         const doc = document.documentElement;
         const max = doc.scrollHeight - window.innerHeight;
-        if (max <= 4) {
-          setVoortgang(0);
-          return;
+        if (max > 4) {
+          const pct = Math.round((window.scrollY / max) * 100);
+          nieuw = Math.min(100, Math.max(0, pct));
         }
-        const pct = Math.round((window.scrollY / max) * 100);
-        setVoortgang(Math.min(100, Math.max(0, pct)));
       }
+      setVoortgang((vorige) => (vorige === nieuw ? vorige : nieuw));
+    };
+
+    let raf = 0;
+    const plan = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        berekenVoortgang();
+      });
     };
 
     berekenVoortgang();
-    ws?.addEventListener('scroll', berekenVoortgang, { passive: true });
-    window.addEventListener('scroll', berekenVoortgang, { passive: true });
-    window.addEventListener('resize', berekenVoortgang);
+    ws?.addEventListener('scroll', plan, { passive: true });
+    window.addEventListener('scroll', plan, { passive: true });
+    window.addEventListener('resize', plan);
     return () => {
-      ws?.removeEventListener('scroll', berekenVoortgang);
-      window.removeEventListener('scroll', berekenVoortgang);
-      window.removeEventListener('resize', berekenVoortgang);
+      if (raf) cancelAnimationFrame(raf);
+      ws?.removeEventListener('scroll', plan);
+      window.removeEventListener('scroll', plan);
+      window.removeEventListener('resize', plan);
     };
   }, [items.length]);
 
@@ -639,7 +661,9 @@ export function MaquetteAnkerRail({
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
     zojuistGesleeptRef.current = false;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
     sleepStaat.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -661,9 +685,11 @@ export function MaquetteAnkerRail({
   const eindigSlepen = (e: ReactPointerEvent<HTMLElement>) => {
     const st = sleepStaat.current;
     if (!st || st.pointerId !== e.pointerId) return;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {}
     if (st.actief) {
       zojuistGesleeptRef.current = true;
       const gekozen = berekenDichtstbijzijndeZijde(e.clientX, e.clientY);

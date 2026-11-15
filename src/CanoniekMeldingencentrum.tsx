@@ -1,5 +1,5 @@
 import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, Sparkles, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
   CANONICAL_NOTICE_EVENT, MELDINGEN_OPENEN_EVENT, SAMENVOEG_MS, isBronDuplicaat, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
@@ -10,7 +10,7 @@ import './canoniek-meldingencentrum.css';
 import { historyKey, leesOpslag, normalizeDetails, normalizeLink, readRows, werkRijenBij, type BewaardeRij } from './meldingen/lokale-rijen';
 import { fractie, gepauzeerd, klaar, nieuweAftelling, pauze as pauzeAftelling, tik as tikAftelling, verleng, type Aftelling, type PauzeBron } from './meldingen/aftelling';
 // UI-007 (29.10.2026): vlag `meldingen-v2` (standaard UIT) — compact aandachtscentrum in hetzelfde paneel; zonder vlag alles zoals het was.
-import MeldingenV2 from './meldingen/v2/MeldingenV2';
+const MeldingenV2 = lazy(() => import('./meldingen/v2/MeldingenV2'));
 import { useMeldingenV2, meldingenV2Nu } from './meldingen/v2/vlag';
 import { useLeverRegels, nietStorenActief, regelsNu } from './meldingen/v2/regels-opslag';
 import { geldendeRegel } from '../shared/meldingen-v2/beleid';
@@ -40,13 +40,15 @@ import './toegankelijk.css';
 import { isKritiekType, typeInfo, voorkeurVoor, type MeldingType, type TypeVoorkeur } from '../shared/melding-typen';
 import { itemVanLink } from '../shared/menu-meldingen';
 import { soortInfo, typeVanBron } from '../shared/melding-soorten';
-import MeldingVoorkeurenPaneel from './meldingen/MeldingVoorkeurenPaneel';
+const MeldingVoorkeurenPaneel = lazy(() => import('./meldingen/MeldingVoorkeurenPaneel'));
 import { openTechMeldingen } from './meldingen/tech-meldingen-opslag';
 import { techSamenvattingTekst } from './meldingen/samenvatting';
 import { useTech } from './tech/tech-opslag';
 import { useHuidigeRuimte, ruimteFilterActief } from './tech/ruimtes/ruimte-signaal';
 import './meldingen/ecosysteem/meldingen-ecosysteem.css';
-import { MeldingenPortaal, useEcosysteemModusActief, useMeldingEcosysteem, zetEcosysteemModusActief } from './meldingen/ecosysteem';
+import { useEcosysteemModusActief, useMeldingEcosysteem, zetEcosysteemModusActief } from './meldingen/ecosysteem/ecosysteem-opslag';
+import type MeldingenPortaalType from './meldingen/ecosysteem/MeldingenPortaal';
+const MeldingenPortaal = lazy(() => import('./meldingen/ecosysteem/MeldingenPortaal'));
 import { abonneerPaginaSignalen, haalPaginaSignalenOp, meldingInTaal, type PaginaSignaal } from './canoniek-meldingen';
 import { dienstVanHostnaam } from '../shared/foutuitleg';
 import { activityTitle, activiteitContext } from './connector-activiteit';
@@ -663,11 +665,19 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => volgKader(() => setViewportRev((value) => value + 1)), []);
   useLayoutEffect(() => { setViewportRev((value) => value + 1); }, []);
   useEffect(() => {
-    const update = () => setViewportRev((value) => value + 1);
+    let raf = 0;
+    const update = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setViewportRev((value) => value + 1);
+      });
+    };
     window.addEventListener('resize', update);
     window.visualViewport?.addEventListener('resize', update);
     window.visualViewport?.addEventListener('scroll', update);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', update);
       window.visualViewport?.removeEventListener('resize', update);
       window.visualViewport?.removeEventListener('scroll', update);
@@ -747,9 +757,19 @@ export default function CanonicalNotificationCenter(p: Props) {
     if (!panelOpen || ecosysteemActief || typeof ResizeObserver === 'undefined') return;
     const panel = panelRef.current;
     if (!panel) return;
-    const observer = new ResizeObserver(() => setViewportRev((value) => value + 1));
+    let raf = 0;
+    const observer = new ResizeObserver(() => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setViewportRev((value) => value + 1);
+      });
+    });
     observer.observe(panel);
-    return () => observer.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, [panelOpen, ecosysteemActief]);
 
   useLayoutEffect(() => {
@@ -789,9 +809,19 @@ export default function CanonicalNotificationCenter(p: Props) {
   useEffect(() => {
     const el = toastRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => setViewportRev((value) => value + 1));
+    let raf = 0;
+    const observer = new ResizeObserver(() => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setViewportRev((value) => value + 1);
+      });
+    });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, [active?.id]);
 
   const toggleBell = () => setPanelOpen((value) => !value);
@@ -905,7 +935,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     dismiss();
   };
 
-  const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaal>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
+  const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
     await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
     if (status !== 'nieuw') {
       if (geb.id.startsWith('s:')) void p.onReadServer?.(geb.id.slice(2));
@@ -1070,120 +1100,126 @@ export default function CanonicalNotificationCenter(p: Props) {
           onKeyDown={(event) => { if (paneelModaal) houdTab(event, focusbaar(event.currentTarget), { houder: event.currentTarget }); }}
           onPointerDownCapture={(event) => { if (meer && event.target instanceof Element && !event.target.closest('#cnc-acties,[data-qa-id="melding-meer"]')) setMeer(false); }}
         >
-          {v2 ? (
-            <MeldingenV2
-              lang={p.lang}
-              local={zichtbaarLokaal as never}
-              server={server as never}
-              events={events}
-              readEvents={activity.read}
-              regels={v2Regels}
-              onReadLocal={markLocalRead}
-              onReadServer={p.onReadServer}
-              onReadEvent={activity.markRead}
-              onMarkAll={markAll}
-              geluid={sound}
-              onGeluid={toggleSound}
-              onSluiten={() => setPanelOpen(false)}
-              techTypen={!!tech.profiel}
-              tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
-            />
-          ) : (
-            <>
-              <header>
-                {instellingen && (
-                  <button type='button' className='cnc-terug' onClick={() => setInstellingen(false)} aria-label={t('До сповіщень', 'Terug naar meldingen')} title={t('До сповіщень', 'Terug naar meldingen')}>
-                    <ArrowLeft aria-hidden='true' />
+          <Suspense fallback={null}>
+            {v2 ? (
+              <MeldingenV2
+                lang={p.lang}
+                local={zichtbaarLokaal as never}
+                server={server as never}
+                events={events}
+                readEvents={activity.read}
+                regels={v2Regels}
+                onReadLocal={markLocalRead}
+                onReadServer={p.onReadServer}
+                onReadEvent={activity.markRead}
+                onMarkAll={markAll}
+                geluid={sound}
+                onGeluid={toggleSound}
+                onSluiten={() => setPanelOpen(false)}
+                techTypen={!!tech.profiel}
+                tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
+              />
+            ) : (
+              <>
+                <header>
+                  {instellingen && (
+                    <button type='button' className='cnc-terug' onClick={() => setInstellingen(false)} aria-label={t('До сповіщень', 'Terug naar meldingen')} title={t('До сповіщень', 'Terug naar meldingen')}>
+                      <ArrowLeft aria-hidden='true' />
+                    </button>
+                  )}
+                  <div>
+                    <strong>{t('Сповіщення', 'Meldingen')}</strong>
+                    <small><span role='status'>{t(`Непрочитаних: ${unreadCount}`, `Ongelezen: ${unreadCount}`)}</span>{t(` · Історія: ${historyCount}`, ` · Geschiedenis: ${historyCount}`)}</small>
+                  </div>
+                  <button type='button' ref={meerKnopRef} className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties' aria-label={t('Інші дії: звук, типи, позначити все, повернути дзвоник на типове місце', 'Meer acties: geluid, soorten, alles gelezen, bel terug naar de standaardplek')} title={t('Інші дії', 'Meer acties')} onClick={() => setMeer((v) => !v)}>
+                    <Ellipsis aria-hidden='true' />
+                  </button>
+                  <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')} title={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')}><Minimize2 /></button>
+                  <button
+                    type='button'
+                    className='cnc-ecosysteem-schakel'
+                    data-qa-id='melding-ecosysteem-openen'
+                    onClick={() => { zetEcosysteemModusActief(true); }}
+                    aria-label={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                    title={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                  >
+                    <Sparkles aria-hidden='true' />
+                  </button>
+                </header>
+                {techRegel && (
+                  <button type='button' className='canonical-notification-tech' data-qa-id='tech-meldingen-samenvatting' data-tech-aantal={techUnread} onClick={() => { setPanelOpen(false); openTechMeldingen(); }}>
+                    <ShieldCheck aria-hidden='true' />
+                    <span>
+                      {techSamenvattingTekst(p.lang, techUnread)}
+                      <small>{tech.activatie && tech.activatie.eind > Date.now() + tech.scheef ? t('Відкрити технічну панель', 'Technisch paneel openen') : t('Спершу увімкніть технічний профіль — потім панель відкриється сама', 'Zet eerst het technisch profiel aan — daarna opent het paneel vanzelf')}</small>
+                    </span>
+                    <b aria-hidden='true'>{techUnread > 99 ? '99+' : techUnread}</b>
                   </button>
                 )}
-                <div>
-                  <strong>{t('Сповіщення', 'Meldingen')}</strong>
-                  <small><span role='status'>{t(`Непрочитаних: ${unreadCount}`, `Ongelezen: ${unreadCount}`)}</span>{t(` · Історія: ${historyCount}`, ` · Geschiedenis: ${historyCount}`)}</small>
-                </div>
-                <button type='button' ref={meerKnopRef} className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties' aria-label={t('Інші дії: звук, типи, позначити все, повернути дзвоник на типове місце', 'Meer acties: geluid, soorten, alles gelezen, bel terug naar de standaardplek')} title={t('Інші дії', 'Meer acties')} onClick={() => setMeer((v) => !v)}>
-                  <Ellipsis aria-hidden='true' />
-                </button>
-                <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')} title={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')}><Minimize2 /></button>
-                <button
-                  type='button'
-                  className='cnc-ecosysteem-schakel'
-                  data-qa-id='melding-ecosysteem-openen'
-                  onClick={() => { zetEcosysteemModusActief(true); }}
-                  aria-label={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
-                  title={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                {instellingen ? (
+                  <Suspense fallback={null}>
+                    <MeldingVoorkeurenPaneel lang={p.lang} techTypen={!!tech.profiel} />
+                  </Suspense>
+                ) : (
+                  <NotificationPanelBody lang={p.lang} local={zichtbaarLokaal} server={server} events={events} readEvents={activity.read} onReadLocal={markLocalRead} onRemoveLocal={removeRetained} onRunAction={(id, action) => runAction(id, action)} onReadServer={p.onReadServer} onReadEvent={activity.markRead} detailIcons={DETAIL_ICON_COMPONENTS as never}
+                    status={v3Status} onOpruimen={ruimOp} onTerug={(ids) => void wijzigStatus({ ids: [...ids], status: 'nieuw', hoe: ids.length > 1 ? 'bulk' : 'kaart' })} />
+                )}
+                <footer
+                  id='cnc-acties'
+                  className={meer ? 'is-open' : undefined}
+                  role='group'
+                  onKeyDown={(event) => {
+                    if (!meer) return;
+                    if (menuToets(event, focusbaar(event.currentTarget))) return;
+                    if (event.key === 'Tab') { setMeer(false); meerKnopRef.current?.focus(); }
+                  }}
+                  aria-label={t('Дії зі сповіщеннями', 'Acties voor meldingen')}
                 >
-                  <Sparkles aria-hidden='true' />
-                </button>
-              </header>
-              {techRegel && (
-                <button type='button' className='canonical-notification-tech' data-qa-id='tech-meldingen-samenvatting' data-tech-aantal={techUnread} onClick={() => { setPanelOpen(false); openTechMeldingen(); }}>
-                  <ShieldCheck aria-hidden='true' />
-                  <span>
-                    {techSamenvattingTekst(p.lang, techUnread)}
-                    <small>{tech.activatie && tech.activatie.eind > Date.now() + tech.scheef ? t('Відкрити технічну панель', 'Technisch paneel openen') : t('Спершу увімкніть технічний профіль — потім панель відкриється сама', 'Zet eerst het technisch profiel aan — daarna opent het paneel vanzelf')}</small>
-                  </span>
-                  <b aria-hidden='true'>{techUnread > 99 ? '99+' : techUnread}</b>
-                </button>
-              )}
-              {instellingen ? (
-                <MeldingVoorkeurenPaneel lang={p.lang} techTypen={!!tech.profiel} />
-              ) : (
-                <NotificationPanelBody lang={p.lang} local={zichtbaarLokaal} server={server} events={events} readEvents={activity.read} onReadLocal={markLocalRead} onRemoveLocal={removeRetained} onRunAction={(id, action) => runAction(id, action)} onReadServer={p.onReadServer} onReadEvent={activity.markRead} detailIcons={DETAIL_ICON_COMPONENTS as never}
-                  status={v3Status} onOpruimen={ruimOp} onTerug={(ids) => void wijzigStatus({ ids: [...ids], status: 'nieuw', hoe: ids.length > 1 ? 'bulk' : 'kaart' })} />
-              )}
-              <footer
-                id='cnc-acties'
-                className={meer ? 'is-open' : undefined}
-                role='group'
-                onKeyDown={(event) => {
-                  if (!meer) return;
-                  if (menuToets(event, focusbaar(event.currentTarget))) return;
-                  if (event.key === 'Tab') { setMeer(false); meerKnopRef.current?.focus(); }
-                }}
-                aria-label={t('Дії зі сповіщеннями', 'Acties voor meldingen')}
-              >
-                <button type='button' onClick={toggleSound} data-tooltip={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}>
-                  {sound ? <Volume2 /> : <VolumeX />}
-                  <span className='cnc-actie-tekst'>{sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}</span>
-                </button>
-                <button type='button' onClick={() => { setInstellingen((v) => !v); setMeer(false); }} aria-pressed={instellingen} data-qa-id='melding-typen' data-tooltip={t('Типи сповіщень', 'Soorten meldingen')}>
-                  <SlidersHorizontal />
-                  <span className='cnc-actie-tekst'>{instellingen ? t('До сповіщень', 'Terug naar meldingen') : t('Типи сповіщень', 'Soorten meldingen')}</span>
-                </button>
-                <button type='button' onClick={() => { resetPosition(); setMeer(false); }} data-tooltip={t('Повернути на типове місце', 'Terug naar de standaardplek')}>
-                  <RotateCcw />
-                  <span className='cnc-actie-tekst'>{t('Повернути на типове місце', 'Terug naar de standaardplek')}</span>
-                </button>
-                <button type='button' disabled={unreadCount === 0} onClick={() => { setMeer(false); void markAll(); }}>
-                  <CheckCheck />
-                  <span className='cnc-actie-tekst'>{t('Позначити все прочитаним', 'Alles als gelezen')}</span>
-                </button>
-              </footer>
-            </>
-          )}
+                  <button type='button' onClick={toggleSound} data-tooltip={sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}>
+                    {sound ? <Volume2 /> : <VolumeX />}
+                    <span className='cnc-actie-tekst'>{sound ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')}</span>
+                  </button>
+                  <button type='button' onClick={() => { setInstellingen((v) => !v); setMeer(false); }} aria-pressed={instellingen} data-qa-id='melding-typen' data-tooltip={t('Типи сповіщень', 'Soorten meldingen')}>
+                    <SlidersHorizontal />
+                    <span className='cnc-actie-tekst'>{instellingen ? t('До сповіщень', 'Terug naar meldingen') : t('Типи сповіщень', 'Soorten meldingen')}</span>
+                  </button>
+                  <button type='button' onClick={() => { resetPosition(); setMeer(false); }} data-tooltip={t('Повернути на типове місце', 'Terug naar de standaardplek')}>
+                    <RotateCcw />
+                    <span className='cnc-actie-tekst'>{t('Повернути на типове місце', 'Terug naar de standaardplek')}</span>
+                  </button>
+                  <button type='button' disabled={unreadCount === 0} onClick={() => { setMeer(false); void markAll(); }}>
+                    <CheckCheck />
+                    <span className='cnc-actie-tekst'>{t('Позначити все прочитаним', 'Alles als gelezen')}</span>
+                  </button>
+                </footer>
+              </>
+            )}
+          </Suspense>
         </section>
       )}
       {ecosysteemActief && (
-        <MeldingenPortaal
-          lang={p.lang}
-          open={panelOpen}
-          ruimte={ecoRuimte}
-          subdomeinNu={subdomeinNu}
-          profiel={eco.profiel}
-          stroom={eco.stroom}
-          laden={eco.laden}
-          sound={sound}
-          techTypen={!!tech.profiel}
-          onSluiten={() => setPanelOpen(false)}
-          onOpenen={() => setPanelOpen(true)}
-          onToggleSound={toggleSound}
-          onVervers={() => void eco.verversStroom()}
-          onSlaGeometrieOp={eco.slaGeometrieOp}
-          onStatusWijzigen={wijzigEnSyncStatus}
-          onOntleden={(g, modus, aanbieder) => eco.ontledenMetAi(g, modus, aanbieder)}
-          onMarkAll={() => void markAll()}
-          onSwitchToClassic={() => { zetEcosysteemModusActief(false); setPanelOpen(true); }}
-        />
+        <Suspense fallback={null}>
+          <MeldingenPortaal
+            lang={p.lang}
+            open={panelOpen}
+            ruimte={ecoRuimte}
+            subdomeinNu={subdomeinNu}
+            profiel={eco.profiel}
+            stroom={eco.stroom}
+            laden={eco.laden}
+            sound={sound}
+            techTypen={!!tech.profiel}
+            onSluiten={() => setPanelOpen(false)}
+            onOpenen={() => setPanelOpen(true)}
+            onToggleSound={toggleSound}
+            onVervers={() => void eco.verversStroom()}
+            onSlaGeometrieOp={eco.slaGeometrieOp}
+            onStatusWijzigen={wijzigEnSyncStatus}
+            onOntleden={(g, modus, aanbieder) => eco.ontledenMetAi(g, modus, aanbieder)}
+            onMarkAll={() => void markAll()}
+            onSwitchToClassic={() => { zetEcosysteemModusActief(false); setPanelOpen(true); }}
+          />
+        </Suspense>
       )}
       {panelOpen && !ecosysteemActief && paneelPijl ? <span className='cnc-pijl' data-kant={paneelPijl.kant} data-qa-id='melding-paneel-pijl' style={{ left: paneelPijl.left, top: paneelPijl.top }} aria-hidden='true' /> : null}
     </>

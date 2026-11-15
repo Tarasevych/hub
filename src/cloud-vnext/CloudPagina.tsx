@@ -4,7 +4,7 @@
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, Clock3, Cloud, FolderOpen, FolderPlus, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, RefreshCw, Search, Settings2, Share2, Star, Upload, Users } from 'lucide-react';
-import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
 import { useIsMaquette } from '../thema/useThema';
 import { cloudClient, CloudFout, type Overzicht as OverzichtUit } from './cloud-client';
 import { bytesTekst, foutTekst, tr, useSmal, type Lang } from './tekst';
@@ -227,23 +227,11 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
       setOverlaptOpen(false);
       return;
     }
-    const controleerOverlap = () => {
-      setOverlaptOpen(Boolean(document.querySelector(OVERLAP_SELECTOR)));
-    };
-    controleerOverlap();
-    if (typeof MutationObserver !== 'function') return;
-    const obs = new MutationObserver(controleerOverlap);
-    obs.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(OVERLAP_SELECTOR, setOverlaptOpen, {
+      wortel: 'beide',
       attributeFilter: ['class', 'open', 'hidden', 'data-universeel-bestand-open'],
+      htmlAttributeFilter: ['data-universeel-bestand-open'],
     });
-    obs.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-universeel-bestand-open'],
-    });
-    return () => obs.disconnect();
   }, [isMaquette, huidig]);
 
   const props: OnderdeelProps = useMemo(() => ({ lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab }), [lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab]);

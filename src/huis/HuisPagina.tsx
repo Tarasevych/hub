@@ -8,7 +8,7 @@ import { HUIS_TABS, HUIS_TAB_LABEL, type HuisTab } from '../../shared/huis-model
 import { HuisFout, gekozenWoning, huisClient, kiesWoning, type Overzicht as OverzichtUit } from './huis-client';
 import { foutTekst, geledenTekst, serverFout, tr, useSmal, type Lang } from './tekst';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
-import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
 import { useIsMaquette } from '../thema/useThema';
 import './huis.css';
 import './huis-kern-maquette.css';
@@ -293,20 +293,10 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
       setLaagOpen(false);
       return;
     }
-    const controleer = () => {
-      setLaagOpen(Boolean(document.querySelector(HUIS_LAAG_SELECTOR)));
-    };
-    controleer();
-    const wortel = document.documentElement ?? document.body;
-    if (!wortel || typeof MutationObserver !== 'function') return;
-    const waarnemer = new MutationObserver(controleer);
-    waarnemer.observe(wortel, {
-      childList: true,
-      subtree: true,
-      attributes: true,
+    return abonneerOpenLaag(HUIS_LAAG_SELECTOR, setLaagOpen, {
+      wortel: 'documentElement',
       attributeFilter: ['open', 'hidden', 'class', 'aria-modal', 'data-mq-laag-open'],
     });
-    return () => waarnemer.disconnect();
   }, [isMaquette, huidig]);
 
   const statistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(

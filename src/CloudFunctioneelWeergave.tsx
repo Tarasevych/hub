@@ -6,7 +6,7 @@ import {GoogleCalendarView,GooglePhotosView} from './GoogleSuiteMediaWeergave';
 import GlobalSearchPanel from './GlobaalZoekPaneel';
 import { zoekPaginaUrl } from './zoek/ZoekGlobaal'; // Z4 22.10.2026: de kapotte SearchPage (403 zonder service) is weg; knop → hub /zoek?bron=cloud
 import{emitCanonicalNotice}from'./canoniek-meldingen';
-import { MaquetteHeld, MaquetteAnkerRail, type MaquetteAnkerItem } from './maquette-kern';
+import { MaquetteHeld, MaquetteAnkerRail, abonneerOpenLaag, type MaquetteAnkerItem } from './maquette-kern';
 import { useIsMaquette } from './thema/useThema';
 import './cloud-functioneel.css';
 import './cloud-klassiek-maquette.css';
@@ -485,28 +485,13 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
   const [actiefAnker, setActiefAnker] = useState('cloud-sectie-volgende');
   const [externeViewerOpen, setExterneViewerOpen] = useState(() => typeof document !== 'undefined' && Boolean(document.documentElement.dataset.universeelBestandOpen || document.documentElement.dataset.driveViewerOpen || document.querySelector('.drive-viewer-backdrop, .cloud-dialog-backdrop')));
 
-  useEffect(() => {
-    const controleerViewer = () => {
-      const html = document.documentElement;
-      const open = Boolean(
-        html.dataset.universeelBestandOpen ||
-        html.dataset.driveViewerOpen ||
-        document.querySelector('.drive-viewer-backdrop, .cloud-dialog-backdrop')
-      );
-      setExterneViewerOpen(prev => (prev === open ? prev : open));
-    };
-    controleerViewer();
-    window.addEventListener('tsv:universeel-bestand-open', controleerViewer);
-    window.addEventListener('tsv:cloud-viewer-open', controleerViewer);
-    const observeer = new MutationObserver(controleerViewer);
-    observeer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-universeel-bestand-open', 'data-drive-viewer-open'] });
-    observeer.observe(document.body, { childList: true });
-    return () => {
-      window.removeEventListener('tsv:universeel-bestand-open', controleerViewer);
-      window.removeEventListener('tsv:cloud-viewer-open', controleerViewer);
-      observeer.disconnect();
-    };
-  }, []);
+  useEffect(() => abonneerOpenLaag('.drive-viewer-backdrop, .cloud-dialog-backdrop', setExterneViewerOpen, {
+    wortel: 'beide',
+    subtree: false,
+    htmlAttributeFilter: ['data-universeel-bestand-open', 'data-drive-viewer-open'],
+    extraControle: () => Boolean(document.documentElement.dataset.universeelBestandOpen || document.documentElement.dataset.driveViewerOpen),
+    extraEvents: ['tsv:universeel-bestand-open', 'tsv:cloud-viewer-open'],
+  }), []);
 
   useEffect(() => {
     if (effectiveTab === 'overview') setActiefAnker('cloud-sectie-volgende');

@@ -131,7 +131,8 @@ function scan(root: ParentNode) {
   lijst.push(...Array.from(root.querySelectorAll?.('[data-concept]') || []));
   for (const el of lijst) if (conceptVeld(el)) void herstel(el);
 }
-let geinstalleerd = false, waarnemer: MutationObserver | null = null, wasAan = false;
+let geinstalleerd = false, waarnemer: MutationObserver | null = null, wasAan = false, wachtRaf = 0;
+const wachtQueue = new Set<Element>();
 export function installeerConcepten() {
   if (geinstalleerd || typeof document === 'undefined') return; geinstalleerd = true;
   document.addEventListener('input', (e) => {
@@ -142,11 +143,31 @@ export function installeerConcepten() {
     if (!waarde) { void conceptWissen(naam); return; }
     wachtend.set(el, window.setTimeout(() => { void conceptBewaren(naam, waarde).catch(() => undefined); }, WACHT_MS));
   }, true);
-  const start = () => { if (waarnemer || !document.body) return; waarnemer = new MutationObserver((m) => { for (const r of m) for (const n of Array.from(r.addedNodes)) if (n instanceof Element) scan(n); }); waarnemer.observe(document.body, { childList: true, subtree: true }); scan(document.body); };
+  const verwerk = () => {
+    wachtRaf = 0;
+    const batch = Array.from(wachtQueue);
+    wachtQueue.clear();
+    for (const el of batch) if (el.isConnected) scan(el);
+  };
+  const start = () => {
+    if (waarnemer || !document.body) return;
+    waarnemer = new MutationObserver((m) => {
+      for (const r of m) for (const n of Array.from(r.addedNodes)) if (n instanceof Element) wachtQueue.add(n);
+      if (!wachtRaf && wachtQueue.size) {
+        wachtRaf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(verwerk) : (verwerk(), 0);
+      }
+    });
+    waarnemer.observe(document.body, { childList: true, subtree: true });
+    scan(document.body);
+  };
   const volg = () => {
     const nu = aan();
     if (nu && !wasAan) start();
-    if (!nu && waarnemer) { waarnemer.disconnect(); waarnemer = null; }
+    if (!nu && waarnemer) {
+      waarnemer.disconnect(); waarnemer = null;
+      if (wachtRaf && typeof cancelAnimationFrame === 'function') { cancelAnimationFrame(wachtRaf); wachtRaf = 0; }
+      wachtQueue.clear();
+    }
     if (!zijbalkVoorkeuren().snelheid.concepten && wasAanIngesteld) void alleConceptenWissen();
     wasAanIngesteld = zijbalkVoorkeuren().snelheid.concepten;
     wasAan = nu;

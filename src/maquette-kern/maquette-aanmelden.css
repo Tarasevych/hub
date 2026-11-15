@@ -1001,6 +1001,15 @@ html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-inhoud 
   html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-inhoud {
     border-radius: 16px;
   }
+
+  html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content,
+  html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-legal,
+  html.palet-maquette .gast-kaart,
+  html.palet-maquette .gast-banner,
+  html.palet-maquette .gast-inhoud {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
 }
 
 @media (max-width: 380px) {

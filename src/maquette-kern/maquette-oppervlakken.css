@@ -2569,4 +2569,26 @@ html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .can
   .mq-snel-naar-globaal {
     min-height: var(--tik-hoogte, 44px);
   }
+
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-workspace {
+    scroll-behavior: auto;
+  }
+
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:not(.sidebar-drawer-mode):not([data-dock="boven"]):not([data-dock="onder"]) .canonical-sidebar,
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:is([data-dock="boven"], [data-dock="onder"]):not(.sidebar-drawer-mode) .canonical-sidebar,
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome.sidebar-drawer .canonical-sidebar,
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-sidebar-scrim.drawer,
+  html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-topbar .canonical-account-anchor:not(.mr-guest-mobile-account),
+  .mq-held-voet,
+  .mq-zwevend-venster,
+  .floating-window,
+  .mq-kunst-stempel,
+  .mq-rail-popover,
+  .mq-anker-sluier,
+  .mq-snel-naar-laag,
+  .mq-anker-onderbalk,
+  .mq-anker-rail.mq-anker-rail[data-mobiel-open="ja"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
 }

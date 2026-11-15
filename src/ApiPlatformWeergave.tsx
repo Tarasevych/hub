@@ -13,7 +13,7 @@ import {DOEL_INFO,isVaultDoel,type VaultDoel} from '../shared/geheimen';
 import {GeheimFormulier} from './geheimen/GeheimFormulier';
 import {foutTekst,kies} from './geheimen/hulp';
 import {canonicalNavigationUrl,serviceIds,type TargetService} from './canoniek-navigatie';
-import {MaquetteAnkerRail,MaquetteHeld,type MaquetteAnkerItem,type MaquetteHeldStatistiek} from './maquette-kern';
+import {MaquetteAnkerRail,MaquetteHeld,abonneerOpenLaag,type MaquetteAnkerItem,type MaquetteHeldStatistiek} from './maquette-kern';
 import {useIsMaquette} from './thema/useThema';
 import './api-platform-weergave.css';
 import './api-sleutels-maquette.css';
@@ -115,20 +115,10 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
       setLaagOpen(false);
       return;
     }
-    const controleer=()=>{
-      setLaagOpen(Boolean(document.querySelector(API_MODAAL_SELECTOR)));
-    };
-    controleer();
-    const wortel=document.documentElement??document.body;
-    if(!wortel||typeof MutationObserver!=='function')return;
-    const waarnemer=new MutationObserver(controleer);
-    waarnemer.observe(wortel,{
-      childList:true,
-      subtree:true,
-      attributes:true,
+    return abonneerOpenLaag(API_MODAAL_SELECTOR,setLaagOpen,{
+      wortel:'documentElement',
       attributeFilter:['open','hidden','class','aria-modal','data-mq-laag-open']
     });
-    return()=>waarnemer.disconnect();
   },[isMaquette,actieveTab]);
   const beginDoel=useMemo<VaultDoel>(()=>{
     try{const d=new URLSearchParams(location.search).get('doel');if(isVaultDoel(d))return d;}catch{/* ignore */}

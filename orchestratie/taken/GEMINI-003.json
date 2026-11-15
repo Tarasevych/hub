@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "GEMINI-003",
+  "agent": "gemini",
+  "tak": "fix/maquette-mobiel-prestatie-20261115-055004",
+  "basisCommit": "dfdb7356703e0ace554a07f76cd48a43ed8b1aab",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T05:50:20.744Z",
+  "bijgewerkt": "2026-11-15T06:59:00Z",
+  "omschrijving": "Усунення падіння пошти (INITIAL_BOOTSTRAP і захисні звертання у MailFunctioneelWeergave.tsx), ліниве завантаження макета IdentiteitMaquette, UnifiedServiceApp і панелей центру сповіщень, спільний rAF-спостерігач перекривних шарів abonneerOpenLaag по всіх піддоменах, пакетування MutationObserver/ResizeObserver/scroll у requestAnimationFrame, винесення перевірок змахів із touchstart у touchend, прискорення міждоменних переходів (MAX_VOORUIT=10, preconnect і фоновий прогрів для сенсорів), відкладення registration.update() та скасування важких backdrop-filter і плавної прокрутки на смартфонах поверх живої основи 20261115-044530. · Herstel van mail-uitval (INITIAL_BOOTSTRAP in MailFunctioneelWeergave.tsx), lui laden van IdentiteitMaquette, UnifiedServiceApp en meldingenpanelen, gedeelde rAF-laagwaarnemer abonneerOpenLaag voor alle subdomeinen, rAF-bundeling van waarnemers en scroll, lichtere touchstart-afhandeling, snellere domeinovergangen (MAX_VOORUIT=10, preconnect en achtergrondvoorverwarming), uitgestelde registration.update() en uitschakeling van zware backdrop-filter en vloeiend scrollen op mobiele schermen boven op basis 20261115-044530.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -50,3 +50,9 @@ export {
   MaquetteVoet,
   type MaquetteVoetProps,
 } from './MaquetteVoet';
+
+export {
+  abonneerOpenLaag,
+  abonneerElementAttributen,
+  type OpenLaagOpties,
+} from './laag-waarnemer';

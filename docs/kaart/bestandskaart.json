@@ -2947,6 +2947,16 @@
    "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts",
    "wat": "Eenheidstest voor de gebruikersinterface, stijlen, portaalintegratie, /melding-pagina, maquette en canonieke schil van het meldingen-ecosysteem.",
    "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/maquette-kern/laag-waarnemer.ts",
+   "wat": "Gedeelde MutationObserver-waarnemers (abonneerOpenLaag en abonneerElementAttributen) met requestAnimationFrame-groepering tegen herhaalde DOM-inspecties over alle subdomeinen.",
+   "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts",
+   "wat": "Eenheidstest voor mobiele prestatie-invarianten: herstelde postweergave, uitgestelde bundels, beide laag- en attribuutwaarnemers, rAF-bundeling en mobiele CSS zonder zware filters.",
+   "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
   }
  ]
 }
