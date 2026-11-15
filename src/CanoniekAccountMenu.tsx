@@ -742,6 +742,14 @@ export default function CanonicalAccountMenu({
         };
       }
 
+      // MENU-STROOK-001: меню v3 — межа висоти картки за вікном (прокрутка всередині картки), див. src/canoniek-account-menu.css.
+      // NL: v3 — maximale kaarthoogte volgens het venster; de kaart scrollt zelf.
+      if (am3) {
+        const grens = typeof stijl.maxHeight === 'string'
+          ? stijl.maxHeight
+          : `calc(100dvh - ${(parseInt(String(stijl.top), 10) || 70) + 16}px)`;
+        stijl = { ...stijl, ['--am3-portaal-max' as string]: grens } as CSSProperties;
+      }
       setPortaalStijl((prev) => (JSON.stringify(prev) === JSON.stringify(stijl) ? prev : stijl));
     };
 
