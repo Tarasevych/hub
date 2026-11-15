@@ -306,7 +306,7 @@ jobs:
               "Фото автора пакета: спершу за email, потім ваш власний обліковий запис, потім лише однозначне ім’я; чуже фото більше не підставляється.",
               "«Хто має доступ до підготовки»: вимкнення доступу й термін справді зберігаються й показуються (PR #111).",
               "«Макет» центру облікового запису: колонка на ПК 910 px по центру (ширина блоку «Ключі доступу»), без суцільних підкладок; розгорнута панель налаштувань — окрема вузька картка, довкола чисте тло.",
-            "«Делікатна поява блоків» — справжній перемикач замість розтягнутого прапорця; кнопки небезпечних дій (видалити, вимкнути захист) мають ніжний червоний відтінок.",
+            "«Делікатна поява блоків» — справжній перемикач замість розтягнутого прапорця; кнопки небезпечних дій (видалити, вимкнути захист) мають ніжний червоний відтінок; Passkeys мають мітку «Налаштовано / Не налаштовано», як інші способи захисту.",
             "«Живий фон»: ніжні розмиті кольорові плями повільно переливаються по всій сторінці, блоки лишаються чистими; швидке налаштування — кнопкою вгорі сторінки (PR #112)."
             ],
             "fixes": [
@@ -326,7 +326,7 @@ jobs:
               "Auteursfoto: eerst via e-mail, dan uw eigen account, dan alleen een eenduidige naam; geen foto van iemand anders meer.",
               "«Wie mag voorbereiden»: uitschakelen en termijn worden echt bewaard en getoond (PR #111).",
               "«Ontwerp» van het accountcentrum: kolom op pc 910 px in het midden (breedte van het blok «Toegangssleutels»), zonder volle achterpanelen; het geopende instellingenpaneel is een eigen smalle kaart met rustige achtergrond eromheen.",
-            "«Rustig verschijnen van blokken» is een echte schakelaar in plaats van een uitgerekt selectievakje; knoppen voor gevaarlijke acties (verwijderen, beveiliging uitzetten) hebben een zachte rode tint.",
+            "«Rustig verschijnen van blokken» is een echte schakelaar in plaats van een uitgerekt selectievakje; knoppen voor gevaarlijke acties (verwijderen, beveiliging uitzetten) hebben een zachte rode tint; Passkeys hebben het label «Ingesteld / Niet ingesteld», zoals de andere methoden.",
             "«Levende achtergrond»: zachte vage kleurvlekken vloeien langzaam over de hele pagina, blokken blijven rustig; snel instelbaar met een knop bovenaan de pagina (PR #112)."
             ],
             "fixes": [
