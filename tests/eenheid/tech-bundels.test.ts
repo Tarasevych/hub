@@ -58,7 +58,8 @@ export async function main(): Promise<number> {
     check('controleer: statische import door openbare bundel en modulepreload in index.html = FOUT', s.fouten.length === 2 && s.fouten.some((f: string) => f.includes('statisch')) && s.fouten.some((f: string) => f.includes('index.html')), JSON.stringify(s.fouten));
     check('controleer: geen enkele technische bundel = FOUT (configuratie stuk)', l.fouten.length === 1, JSON.stringify(l.fouten));
   } finally { for (const d of [goed, slecht, leeg]) rmSync(d, { recursive: true, force: true }); }
-  check('package.json: «npm run build» voert de bouwcontrole uit direct na vite build', /vite build && node scripts\/tech-bundels-controle\.mjs dist/.test(lees('package.json')));
+  const buildScript = String((JSON.parse(lees('package.json')) as { scripts?: Record<string, string> }).scripts?.build || '');
+  check('package.json: «npm run build» voert de bouwcontrole uit na vite build', /vite build\b[^|;]*&&\s*node scripts\/tech-bundels-controle\.mjs dist\b/.test(buildScript));
   const vc = lees('vite.config.ts');
   check('vite.config: chunkFileNames/assetFileNames via isTechChunk → assets/tech/', vc.includes('chunkFileNames: chunkNaam') && vc.includes('assetFileNames: assetNaam') && vc.includes("'assets/tech/[name]-[hash].js'"));
 
