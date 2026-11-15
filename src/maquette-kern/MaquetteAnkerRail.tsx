@@ -351,9 +351,42 @@ export function MaquetteAnkerRail({
   }, [opslagSleutel]);
 
   // Автоматично розкриваємо батьківські групи для активного елемента або позначки openStandaard.
+  // MAILANKER-001: лише коли змінився активний пункт або з'явилася нова група. Раніше це спрацьовувало на кожен
+  // рендер (масив items щоразу новий), тож групу з активним пунктом неможливо було згорнути — вона одразу відкривалася.
+  // Alleen bij een nieuw actief item of een nieuwe groep; anders klapte een groep met het actieve item meteen weer open.
+  const bekendeGroepenRef = useRef<Set<string> | null>(null);
+  const vorigActiefRef = useRef<string>(actief);
   useEffect(() => {
+    const alleGroepen = new Set<string>();
+    const nieuweGroepen: MaquetteAnkerItem[] = [];
+    const eerste = bekendeGroepenRef.current === null;
+    const loop = (lijst: ReadonlyArray<MaquetteAnkerItem>) => {
+      for (const item of lijst) {
+        if (!item.kinderen?.length) continue;
+        alleGroepen.add(item.id);
+        if (!eerste && !bekendeGroepenRef.current?.has(item.id)) nieuweGroepen.push(item);
+        loop(item.kinderen);
+      }
+    };
+    loop(items);
+    bekendeGroepenRef.current = alleGroepen;
+    const actiefGewijzigd = vorigActiefRef.current !== actief;
+    vorigActiefRef.current = actief;
+    if (eerste) return; // початковий стан уже враховано в useState
     const nodig = new Set<string>();
-    verzamelOpenGroepen(items, actief, nodig);
+    if (actiefGewijzigd) {
+      const loopActief = (lijst: ReadonlyArray<MaquetteAnkerItem>) => {
+        for (const item of lijst) {
+          if (!item.kinderen?.length) continue;
+          if (heeftActiefInTak(item, actief)) nodig.add(item.id);
+          loopActief(item.kinderen);
+        }
+      };
+      loopActief(items);
+    }
+    for (const groep of nieuweGroepen) {
+      if (groep.openStandaard || heeftActiefInTak(groep, actief)) nodig.add(groep.id);
+    }
     if (nodig.size === 0) return;
     setOpenGroepen((oud) => {
       let gewijzigd = false;
