@@ -29,6 +29,17 @@ export const ACCENT_TONEN: Record<UiterlijkAccent, { licht: { accent: string; te
  *  показуються, лише поки обрані. Dezelfde tinten als in het accountmenu; oude tinten alleen zolang ze gekozen zijn. */
 export const ACCENT_KEUZES: readonly UiterlijkAccent[] = ['violet', 'cyan', 'blauw', 'hemel', 'teal', 'groen', 'oranje', 'roze', 'indigo', 'bruin'];
 
+/** KLEUREN-001: назви відтінків — ОДНЕ джерело для «Теми», меню облікового запису й «Макета» (раніше в кожному місці свої назви
+ *  й свій набір: 4, 8 або 10 кольорів). Namen van de tinten: één bron voor Thema's, het accountmenu en «Ontwerp». */
+export const ACCENT_NAMEN: Record<UiterlijkAccent, { uk: string; nl: string }> = {
+  violet: { uk: 'Фіолетовий', nl: 'Violet' }, cyan: { uk: 'Ціан', nl: 'Cyaan' }, pink: { uk: 'Рожевий', nl: 'Roze' }, amber: { uk: 'Медовий', nl: 'Honing' },
+  blauw: { uk: 'Синій', nl: 'Blauw' }, hemel: { uk: 'Небесний', nl: 'Hemelsblauw' }, teal: { uk: 'Бірюзовий', nl: 'Teal' }, groen: { uk: 'Зелений', nl: 'Groen' },
+  oranje: { uk: 'Бурштиновий', nl: 'Oranje' }, roze: { uk: 'Малиновий', nl: 'Framboos' }, indigo: { uk: 'Індиго', nl: 'Indigo' }, bruin: { uk: 'Теракотовий', nl: 'Terracotta' },
+};
+/** KLEUREN-001: що показувати у виборі — сталий набір плюс давній відтінок, поки він обраний. Te tonen keuzes. */
+export const accentKeuzesMet = (gekozen: UiterlijkAccent | undefined): UiterlijkAccent[] =>
+  gekozen && !ACCENT_KEUZES.includes(gekozen) ? [...ACCENT_KEUZES, gekozen] : [...ACCENT_KEUZES];
+
 /** ACCENT-001: непрозорість підкладки блоків за повзунком прозорості (0 — суцільні; 100 — 30 %, нижче текст гірше читається). */
 export const blokDekking = (transparantie: number | undefined): number => {
   const t = typeof transparantie === 'number' && Number.isFinite(transparantie) ? Math.max(0, Math.min(100, transparantie)) : 0;

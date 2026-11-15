@@ -6,7 +6,7 @@
 // De motor van de weergave «Ontwerp»: de eigen scripts van het ontwerp van de eigenaar, gebundeld en aan de component-wortel gebonden.
 
 import type { UiterlijkAccent } from '../../../shared/uiterlijk';
-import { ACCENT_KEUZES } from '../../thema/weergave-stijl';
+import { ACCENT_KEUZES, ACCENT_NAMEN } from '../../thema/weergave-stijl';
 export type MaquetteOpties = {
   lang: 'uk' | 'nl';
   licht: boolean;
@@ -610,10 +610,13 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Тимчасове скасування автоматичного режиму","Automatische modus tijdelijk onderbreken","дія")
       ]),
       група("палітра","Основне кольорове оформлення","Basiskleuren","Наявні оформлення з різними світлими та темними відтінками.","Bestaande paletten met een lichte en donkere variant.","наявне",[
-        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Грифельне","Leisteen"],["Чисте","Zuiver"],["Фіолетове","Paars"]])
+        // САЙТ (KLEUREN-001): усі сім палітр, як у «Темах» і меню облікового запису (було чотири). Alle zeven paletten.
+        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Макет","Ontwerp"],["Біла класика","Witte klassiek"],["Чорна класика","Zwarte klassiek"],["Грифельне","Grafiet"],["Чисте","Puur"],["Фіолетове","Violet"]])
       ]),
-      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Допоміжний колір не замінює основного оформлення.","Accentkleur vervangt het basispalet niet.","макет",[
-        рядок("Акцентна палітра","Accentkleuren","вибір",[["Фіолетовий","Paars"],["Бірюзовий","Turkoois"],["Рожевий","Roze"],["Бурштиновий","Amber"]]),
+      // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
+      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
+        рядок("Акцентна палітра","Accentkleuren","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
         рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")
       ])
     ],
