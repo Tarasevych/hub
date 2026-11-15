@@ -199,6 +199,13 @@ export async function grantTermijn(door: { id: string; email?: string }, id: unk
   const na = onbepaald ? 'tot intrekking' : `tot ${iso(rows[0].verloopt_op)} (${dagen} dagen)`;
   await agentAudit({ ownerId: door.id, actor: { id: door.id, email: door.email }, action: 'agent.grant.termijn', target: { type: SOORT_TEKST[rows[0].soort as Soort], id: String(rows[0].onderwerp), label: String(rows[0].label || '') },
     agent: rows[0].soort === 'agent' ? String(rows[0].onderwerp) : null, before: voor, after: na, reason: tekst(input.reden, 300), extra: { grantId: String(id) } });
+  // TOEGANG-001: een termijnwijziging kwam alleen in het journaal, niet in het meldingencentrum. Nu wel (getroffen account = account van het recht).
+  const label = String(rows[0].label || '');
+  const totUk = onbepaald ? 'до відкликання (без терміну)' : `на ${dagen} дн., до ${iso(rows[0].verloopt_op).slice(0, 10)}`;
+  const totNl = onbepaald ? 'tot intrekking (zonder termijn)' : `voor ${dagen} d, tot ${iso(rows[0].verloopt_op).slice(0, 10)}`;
+  await meld(String(rows[0].account_id), 'security', 'Термін права готувати оновлення змінено / Termijn van het recht om updates voor te bereiden gewijzigd',
+    `${door.email || 'Власник'} змінив термін права «${label}»: ${totUk}. Було: ${voor}. / ${door.email || 'De eigenaar'} wijzigde de termijn van «${label}»: ${totNl}. Was: ${voor}.`,
+    'https://admin.tarasevych.com/updates').catch(() => undefined);
   return grantUit(rows[0]);
 }
 /**

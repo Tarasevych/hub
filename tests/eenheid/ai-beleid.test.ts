@@ -200,6 +200,35 @@ export async function main(): Promise<number> {
       check('beleid-sync: weer «Вимкнено» ⇒ alleen het automatische recht wordt ingetrokken (rij blijft als geschiedenis)', u2.ingetrokken.join() === 'grok' && r2.length === 1 && !!r2[0].ingetrokken_op && (await rij('gpt')).filter((r) => !r.ingetrokken_op).length === 1, JSON.stringify([u2, r2.length]));
       const nGegeven = await auditN('agent.grant.auto_gegeven'), nIngetr = await auditN('agent.grant.auto_ingetrokken');
       check('beleid-sync: elke automatische wijziging staat in het journaal (auto_gegeven, auto_ingetrokken)', nGegeven === 1 && nIngetr === 1, `${nGegeven}/${nIngetr}`);
+
+      // TOEGANG-001 (15.11.2026): «Вимкнути доступ» op een automatisch recht bleef niet staan — bij het volgende openen van «Оновлення»
+      // maakte de synchronisatie het meteen opnieuw aan («безстроково»). Nu telt de laatste beëindiging: die van de eigenaar blijft.
+      const { agentTegels } = await import('../../backend/uitrol-beleid-sync');
+      const { grantGeven, grantIntrekken, grantTermijn } = await import('../../backend/uitrol-goedkeuring');
+      const actiefVan = async (slug: string) => (await rij(slug)).filter((r) => !r.ingetrokken_op && new Date(r.verloopt_op).getTime() > Date.now());
+      await ondertekenViaHerstel([{ op: 'grant', agent: 'grok', capabilities: ['deploy.release'], spec: { type: 'always' } }], randomBytes(8).toString('hex'));
+      const u3 = await synchroniseerGrants(e, 'test: grok weer aan');
+      check('toegang-001: beleid weer «Завжди» na «Вимкнено» door het beleid ⇒ automatisch recht komt terug', u3.gegeven.join() === 'grok' && (await actiefVan('grok')).length === 1, JSON.stringify(u3));
+      const auto = (await actiefVan('grok'))[0];
+      await grantIntrekken(e, auto.id, { reden: 'test: eigenaar zet Grok hier uit' });
+      const u4 = await synchroniseerGrants(e, 'overzicht geopend');
+      const t4 = (await agentTegels(EIGENAAR)).find((t) => t.slug === 'grok');
+      check('toegang-001: eigenaar zet het automatische recht uit ⇒ blijft uit na het herladen (geen nieuwe rij)', u4.gegeven.length === 0 && (await actiefVan('grok')).length === 0 && t4?.recht === null, JSON.stringify([u4, t4?.recht]));
+      check('toegang-001: de tegel zegt eerlijk dat de eigenaar het zelf uitzette (beleid zegt nog «Завжди»)', t4?.modus === 'always' && !!t4?.uitgezetDoorEigenaar, JSON.stringify(t4));
+      const handmatig = await grantGeven(e, { soort: 'agent', onderwerp: 'grok', dagen: 1 });
+      const u5 = await synchroniseerGrants(e, 'overzicht geopend');
+      const t5 = (await agentTegels(EIGENAAR)).find((t) => t.slug === 'grok');
+      check('toegang-001: opnieuw «Дозволити» (1 dag) ⇒ precies dat ene recht, geen extra automatisch', u5.gegeven.length === 0 && (await actiefVan('grok')).length === 1 && handmatig.bron === 'handmatig' && !handmatig.onbepaald && t5?.recht?.id === handmatig.id && !t5?.uitgezetDoorEigenaar, JSON.stringify([u5, t5?.recht]));
+      const verlengd = await grantTermijn(e, handmatig.id, { dagen: 7 });
+      check('toegang-001: termijn wijzigen bewaart de nieuwe einddatum (≈ 7 dagen)', Math.abs(Date.parse(verlengd.verlooptOp) - Date.now() - 7 * 86400_000) < 120_000 && (await actiefVan('grok')).length === 1, verlengd.verlooptOp);
+      await sys.query("UPDATE app.uitrol_voorbereiders SET gegeven_op = now() - interval '8 days', verloopt_op = now() - interval '1 minute' WHERE id = $1", [handmatig.id]);
+      const u6 = await synchroniseerGrants(e, 'overzicht geopend');
+      check('toegang-001: een recht met termijn van de eigenaar loopt af ⇒ het beleid maakt er geen «безстроково» van', u6.gegeven.length === 0 && (await actiefVan('grok')).length === 0, JSON.stringify(u6));
+      await ondertekenViaHerstel([{ op: 'grant', agent: 'grok', capabilities: ['deploy.release'], spec: { type: 'off' } }], randomBytes(8).toString('hex'));
+      await synchroniseerGrants(e, 'test: grok uit');
+      await ondertekenViaHerstel([{ op: 'grant', agent: 'grok', capabilities: ['deploy.release'], spec: { type: 'always' } }], randomBytes(8).toString('hex'));
+      const u7 = await synchroniseerGrants(e, 'test: grok aan');
+      check('toegang-001: na een handmatige beëindiging geeft alleen de eigenaar het recht terug (beleid uit/aan verandert dat niet)', u7.gegeven.length === 0 && (await actiefVan('grok')).length === 0, JSON.stringify(u7));
       await sys.query('DELETE FROM app.uitrol_voorbereiders WHERE account_id = $1', [EIGENAAR]).catch(() => undefined);
       void man;
     }

@@ -132,6 +132,12 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     naarUpload();
     if (!hervat) window.setTimeout(() => (document.querySelector('[data-meester-bestand]') as HTMLInputElement | null)?.click(), 400);
   }, [naarUpload]);
+  // TOEGANG-001: «Керувати доступом» opende alleen het tabblad «Налаштування»; de lijst «Хто готує оновлення» staat daar ONDER de
+  // installatiewizard, dus de eigenaar zag niets veranderen en dacht dat de knop niet werkte. Nu: tabblad + scrollen + focus op de lijst.
+  const naarToegang = useCallback(() => {
+    setTab('instellen');
+    window.setTimeout(() => { const el = document.getElementById('ut-voorb-titel'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); (el?.closest('[data-ut-voorbereiders]') as HTMLElement | null)?.focus({ preventScroll: true }); }, 80);
+  }, []);
   const naarLive = useCallback(() => { document.getElementById('ut-live-titel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, []);
   const onRunVerandert = useCallback((r: Run | null) => { lopendeRun.current = r?.id || ''; }, []);
 
@@ -236,7 +242,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
               : <Pogingen lang={lang} pogingen={pogingen.slice(0, 5)} naarUpload={naarUploadPoging} compact />}
           </section>
         </div>
-        <Zijkant lang={lang} context={context} data={data} kanPasskey={kanPasskey} naarUpload={naarUpload} naarLog={() => openLog(lopendeRun.current || recent[0]?.id || '')} naarDiagnose={() => setTab('diagnose')} naarInstellen={() => setTab('instellen')} />
+        <Zijkant lang={lang} context={context} data={data} kanPasskey={kanPasskey} naarUpload={naarUpload} naarLog={() => openLog(lopendeRun.current || recent[0]?.id || '')} naarDiagnose={() => setTab('diagnose')} naarInstellen={() => setTab('instellen')} naarToegang={naarToegang} />
       </div>}
 
       {/* Eén tijdlijn (22.10.2026): runs, afgebroken pogingen én pakketten die niet tot installatie kwamen staan samen op datum (src/uitrol/Geschiedenis.tsx). */}
