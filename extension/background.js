@@ -481,13 +481,15 @@ async function statusKern() {
   const tech = await slotStatus('technisch');
   const tab = await actiefTabblad();
   const opSite = !!(tab && isOwnSiteUrl(tab.url || ''));
+  // 0.9.4: hoeveel tarasevych.com-tabbladen staan er open (alle vensters)? De kop zegt dan «у фоні» i.p.v. «активна вкладка не на сайті».
+  const siteTabs = ((await stil(() => ownTabs())) || []).length;
   const userId = await accountUserId();
   const nativeAan = gl.nativeOptIn === true;
   const nr = nativeRuimte();
   const techBestaat = tech.gekoppeld || accountInfo.techRecht === true;
   return {
     // 0.9.1: e-mail alleen zolang er een koppeling is (na ontkoppelen geen oude e-mail in de kop, maar de knop «Увійти»).
-    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
+    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, siteTabs, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
     account: opSite ? accountState(tabInfo.get(tab.id) ? tabInfo.get(tab.id).claim : null, userId) : 'unknown',
     sloten: { prive, technisch: techBestaat ? tech : null },
     lokaal: { toegestaan: nativeAan && !!nr, verbonden: lokaalInfo().verbonden, ruimte: nativeAan ? nr : null },
@@ -980,7 +982,11 @@ async function zetTabInfo(tabId, claim, profiel) {
  */
 async function claimVan(tabId, vers = false) {
   if (!vers && tabInfo.has(tabId)) return tabInfo.get(tabId);
-  const a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  let a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  // 0.9.4: geen antwoord = meestal GEEN brug (tabblad open van vóór installeren/bijwerken van de extensie). Dan eerst zelf plaatsen
+  // (zorgVoorBrug, alleen eigen tabbladen) en één keer opnieuw vragen — anders bleef zo'n tabblad 'onbekend' en vond geen enkele
+  // opdracht of zelftest het, ook al stond het gewoon open. Немає відповіді → спершу під'єднати міст, потім спитати ще раз.
+  if (!(a && a.ok === true) && (await stil(() => zorgVoorBrug(tabId)))) a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
   if (a && a.ok === true && a.data && typeof a.data === 'object') {
     const claim = typeof a.data.claim === 'string' ? parseAccountClaim(a.data.claim) : null;
     const profiel = parseProfiel(a.data.profiel);
@@ -1404,10 +1410,26 @@ async function selfTest(r) {
   const ds = await diagStand();
   add('debugger_permission', ds.recht, ds.stand === 'niet-aanvraagbaar' ? 'debugger ontbreekt: standaardpakket (diepe diagnose vereist pakket diagnose)' : ds.laatsteFout ? `${ds.stand}, laatste aanhaking: ${ds.laatsteFout.code}` : ds.stand);
   add('diag_opt_in', ds.optIn);
-  const doel = r || 'prive';
+  // 0.9.4: «Відкрита вкладка Mijn Ruimte» is een HINT, geen voorwaarde. De extensie zoekt eigen tabbladen in ALLE vensters op de
+  // achtergrond (ownTabs/targetTab) — welk tabblad actief is doet er niet toe; de AI opent zelf een pagina (navigate) als er geen is.
+  // Vroeger faalde deze regel ook mét open tabbladen: na het wekken van de service worker (of na bijwerken, zonder brug) was hun
+  // profiel 'onbekend' en paste geen enkel tabblad. Nu eerst de stand van de eigen tabbladen vers ophalen (brug zo nodig plaatsen),
+  // en zonder r beide sloten bekijken (een admin-tabblad hoort bij het technische slot, niet bij «Як користувач»).
+  // Підказка, а не умова: вкладки сайту шукаються у фоні в усіх вікнах; активна вкладка значення не має.
+  await stil(() => verversProfielen((u) => isOwnSiteUrl(u), false));
+  const doelen = r ? [r] : RUIMTES.filter((x) => huidigeGrant(x));
+  let tab = null;
+  let doel = r || 'prive';
+  for (const x of doelen) {
+    const gx = huidigeGrant(x);
+    tab = await stil(() => targetTab((t) => (gx ? tabMag(x, gx, t) : isOwnSiteUrl(t.url || ''))));
+    if (tab) { doel = x; break; }
+  }
+  if (!doelen.length) tab = await stil(() => targetTab((t) => isOwnSiteUrl(t.url || '')));
   const g = huidigeGrant(doel);
-  const tab = await stil(() => targetTab((t) => (g ? tabMag(doel, g, t) : isOwnSiteUrl(t.url || ''))));
+  const aantal = ((await stil(() => ownTabs())) || []).length;
   add('site_tab', !!tab, tab && g ? stripQuery(tab.url) : ''); // vergrendeld: geen adres of titel
+  checks[checks.length - 1].tabs = aantal; // alleen een getal: hoeveel tarasevych.com-tabbladen er open staan (de UI legt uit)
   if (tab) {
     // 0.9.1: ontbreekt de brug, dan eerst zelf plaatsen (geen F5); pas daarna de echte controle.
     await stil(() => zorgVoorBrug(tab.id, tab.url));
@@ -1420,6 +1442,8 @@ async function selfTest(r) {
     add('account', accountState(i.claim, await accountUserId()) === 'ok', accountState(i.claim, await accountUserId()));
     add('profiel', true, i.profiel);
   }
+  // 0.9.4: hint = puur ter informatie (geen ✗ in de UI, telt niet als «не виконано»). Alleen site_tab: zonder open tabblad werkt alles.
+  for (const c of checks) if (c.id === 'site_tab' && !c.ok) c.hint = true;
   return { version: VERSION, ok: checks.filter((c) => !info.includes(c.id)).every((c) => c.ok), checks };
 }
 

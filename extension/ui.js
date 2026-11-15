@@ -263,10 +263,17 @@
     add('geinstalleerd', 'ja', 'Розширення встановлене', 'Extensie geïnstalleerd');
     add('dienst', s ? 'ja' : 'nee', s ? 'Служба розширення працює' : 'Служба розширення не відповідає', s ? 'Dienst van de extensie werkt' : 'Dienst van de extensie antwoordt niet');
     const mail = s && typeof s.accountEmail === 'string' ? s.accountEmail : '';
-    add('account', mail ? 'ja' : 'nee', mail ? `Обліковий запис: ${mail}` : 'Обліковий запис не підключено', mail ? `Account: ${mail}` : 'Geen account gekoppeld');
+    // 0.9.4: «gekoppeld» volgt uit de sloten, niet uit de e-mail. De server geeft in /self bewust GEEN e-mail terug (geen
+    // persoonsgegevens), dus «Обліковий запис не підключено» stond er vroeger ook als beide profielen gekoppeld waren.
+    // Підключення визначають слоти, а не пошта: сервер навмисно не надсилає адресу.
+    const gekoppeld = !!((prive && prive.gekoppeld) || (technisch && technisch.gekoppeld));
+    add('account', mail || gekoppeld ? 'ja' : 'nee', mail ? `Обліковий запис: ${mail}` : gekoppeld ? 'Підключено до облікового запису' : 'Обліковий запис не підключено', mail ? `Account: ${mail}` : gekoppeld ? 'Gekoppeld aan het account' : 'Geen account gekoppeld');
     const p0 = s && (s.profielTab === 'technisch' || s.profielTab === 'gebruiker') ? s.profielTab : null;
     const p = p0 === 'technisch' && !technisch ? 'gebruiker' : p0; // zelfde regel als toonKop: geen «технічний» zonder technische kaart
-    add('tab', p ? 'ja' : 'let-op', p ? `Вкладка: ${t(PROFIEL_NAAM[p][0], PROFIEL_NAAM[p][1])}` : 'Активна вкладка не на tarasevych.com', p ? `Tabblad: ${t(PROFIEL_NAAM[p][0], PROFIEL_NAAM[p][1])}` : 'Actief tabblad niet op tarasevych.com');
+    // 0.9.4: het actieve tabblad is GEEN voorwaarde (de extensie vindt tabbladen van de site op de achtergrond, de AI opent zelf een
+    // pagina). Niet op de site → neutrale 'info', nooit amber. Активна вкладка — лише довідка, не умова.
+    const [tuk, tnl] = tabTekst(s, p);
+    add('tab', p ? 'ja' : 'info', tuk, tnl);
     const open = [prive, technisch].filter((x) => x && isOpen(staatVan(x)));
     add('toegang', open.length ? 'ja' : (prive && prive.gekoppeld) ? 'let-op' : 'nee', open.length ? 'Доступ ШІ відкрито' : (prive && prive.gekoppeld) ? 'Доступ ШІ закрито' : 'ШІ не підключено', open.length ? 'AI-toegang open' : (prive && prive.gekoppeld) ? 'AI-toegang dicht' : 'AI niet gekoppeld');
     const verbondenAgent = [prive, technisch].some((x) => x && staatVan(x) === 'agent');
@@ -275,13 +282,23 @@
     if (technisch) add('debugger', dw.code === 'actief' || dw.code === 'beschikbaar' ? 'ja' : dw.code === 'geblokkeerd' || dw.code === 'fout' ? 'nee' : 'let-op', `Глибока діагностика: ${dw.uk}`, `Diepe diagnose: ${dw.nl}`);
     return r;
   }
-  /** Eén zin bovenaan: groen alleen als dienst, account, toegang en tabblad alle vier kloppen. */
+  /**
+   * 0.9.4: tekst over tabbladen [uk, nl]. p = profiel van het actieve tabblad (of null). Zonder actief site-tabblad: hoeveel
+   * tarasevych.com-tabbladen er op de achtergrond open staan (s.siteTabs), of dat de AI zelf een pagina opent als die nodig is.
+   */
+  function tabTekst(s, p) {
+    if (p) return [`Вкладка: ${PROFIEL_NAAM[p][0]}`, `Tabblad: ${PROFIEL_NAAM[p][1]}`];
+    const n = s && Number.isInteger(s.siteTabs) && s.siteTabs > 0 ? s.siteTabs : 0;
+    if (n) return [`Відкрито сторінок tarasevych.com: ${n} (працюють у фоні)`, `Open tarasevych.com-pagina’s: ${n} (werken op de achtergrond)`];
+    return ['Сторінок tarasevych.com не відкрито — ШІ відкриє потрібну сам', 'Geen tarasevych.com-pagina open — de AI opent er zelf een als dat nodig is'];
+  }
+  /** Eén zin bovenaan: groen als dienst, account en toegang kloppen (het tabblad is sinds 0.9.4 alleen ter info). */
   function samenvatting(s) {
     const m = Object.fromEntries(toestandModel(s).map((x) => [x.id, x]));
     if (m.dienst.stand !== 'ja') return { niveau: 'fout', tekst: m.dienst.tekst };
     if (m.account.stand !== 'ja') return { niveau: 'uit', tekst: m.account.tekst };
     if (m.toegang.stand !== 'ja') return { niveau: 'uit', tekst: m.toegang.tekst };
-    if (m.tab.stand !== 'ja') return { niveau: 'let-op', tekst: `${m.toegang.tekst} · ${m.tab.tekst}` };
+    // 0.9.4: het tabblad kleurt de samenvatting niet meer (zie toestandModel): toegang open = groen.
     return { niveau: 'ok', tekst: `${m.toegang.tekst} · ${m.tab.tekst}` };
   }
 
@@ -431,7 +448,7 @@
       $('status-regel').textContent = sv.tekst;
     }
     if ($('toestand')) {
-      $('toestand').replaceChildren(...toestandModel(s).map((x) => maak('li', { 'data-stand': x.stand, 'data-id': x.id }, maak('span', { class: 'stip', 'aria-hidden': 'true' }), maak('span', null, x.tekst), maak('span', { class: 'vh' }, x.stand === 'ja' ? t('гаразд', 'in orde') : x.stand === 'nee' ? t('проблема', 'probleem') : t('увага', 'let op')))));
+      $('toestand').replaceChildren(...toestandModel(s).map((x) => maak('li', { 'data-stand': x.stand, 'data-id': x.id }, maak('span', { class: 'stip', 'aria-hidden': 'true' }), maak('span', null, x.tekst), maak('span', { class: 'vh' }, x.stand === 'ja' ? t('гаразд', 'in orde') : x.stand === 'nee' ? t('проблема', 'probleem') : x.stand === 'info' ? t('довідка', 'ter info') : t('увага', 'let op')))));
     }
     // 0.9.1 (EXT090-001): zonder koppeling geen leeg «Обліковий запис: —» en geen «Активна вкладка не на tarasevych.com», maar
     // één knop «Увійти»: opent de site, die na het inloggen deze extensie meteen aan het account koppelt (?koppel=prive).
@@ -443,7 +460,8 @@
       const el = $('account');
       el.setAttribute('data-ingelogd', gekoppeld ? '1' : '0');
       if (!s) el.textContent = `${t('Обліковий запис', 'Account')}: —`;
-      else if (gekoppeld) el.textContent = `${t('Обліковий запис', 'Account')}: ${mail || t('підключено (пошта завантажується…)', 'gekoppeld (e-mail wordt geladen…)')}`;
+      // 0.9.4: zonder e-mail (de server stuurt die niet) gewoon «підключено», niet eeuwig «пошта завантажується…».
+      else if (gekoppeld) el.textContent = `${t('Обліковий запис', 'Account')}: ${mail || t('підключено', 'gekoppeld')}`;
       else {
         const knop = maak('button', { type: 'button', id: 'inloggen', class: 'primair klein', 'aria-describedby': 'inloggen-uitleg',
           title: t('Відкриває tarasevych.com у новій вкладці. Увійдіть (якщо ще не ввійшли) — сайт сам підключить це розширення до вашого облікового запису; тут з’явиться ваша пошта, а ШІ отримає доступ лише після вашого дозволу на сайті.',
@@ -460,8 +478,8 @@
       // «Технічний» alleen als de technische kaart bestaat (anders kan er geen technisch tabblad voor dit account zijn).
       const toon = p === 'technisch' && !slotenVan(s).technisch ? 'gebruiker' : p;
       $('profiel-tab').setAttribute('data-profiel', toon || 'geen');
-      $('profiel-tab').textContent = toon ? `${t('Профіль вкладки', 'Profiel van het tabblad')}: ${t(PROFIEL_NAAM[toon][0], PROFIEL_NAAM[toon][1])}`
-        : t('Активна вкладка не на tarasevych.com', 'Het actieve tabblad is niet op tarasevych.com');
+      const [tuk, tnl] = tabTekst(s, toon);
+      $('profiel-tab').textContent = toon ? `${t('Профіль вкладки', 'Profiel van het tabblad')}: ${t(PROFIEL_NAAM[toon][0], PROFIEL_NAAM[toon][1])}` : t(tuk, tnl);
     }
   }
 
@@ -553,7 +571,7 @@
 
   globalThis.MR_UI = Object.freeze({
     NL, t, URLS, STAAT_TEKST, STAAT_TEKST_PRIVE, TITEL, BROWSER_CAPS, CAP_NAAM, CAP_UITLEG, capNaam, staatVan, slotenVan, isOpen, vraag, openTab, tijd,
-    resttijdTekst, start, ververs, trekIn, toonStatus, laatste: () => laatste, heeft, maak,
+    resttijdTekst, start, ververs, trekIn, toonStatus, laatste: () => laatste, heeft, maak, tabTekst,
     // 0.6.1 (punt 7): diepe diagnose — stand, teksten en het verzoek dat STRIKT uit een klik moet komen.
     DIAG_STAND_TEKST, DIAG_HULP, DIAG_WAAROM, DIAG_PAKKET_URL, diagWerkelijk, toestandModel, samenvatting, helpKnop, koppelHelp, diagStandVan, diagStandTekst, diagHulpTekst, vraagDebuggerRecht, standVanFout, toonDiag,
   });
