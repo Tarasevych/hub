@@ -962,5 +962,32 @@ v(`function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;`, 
 v(`dockInlineHint:"Налаштування цієї демонстраційної панелі"`, `dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться"`);
 v(`dockInlineHint:"Pas dit demonstratiepaneel aan"`, `dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet"`);
 
+// BLOKKEN-001 (15.11.2026): «Справжнє налаштування» в картках «Профіль» і «Небезпечні дії» мало порожню ціль і лише
+// прокручувало до верху розділу, нічого не розгортаючи. Тепер у кожної картки — свій справжній блок; без точної цілі (або якщо
+// селектор не знайшовся за ~3 с) кнопка веде до гнізда справжніх налаштувань розділу, а не до верху розділу.
+// NL: «Echte instelling» opent en toont het echte blok; zonder doel het nest met de echte instellingen van de sectie.
+v(`if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,демоДоСайту[sectionId]);`,
+`if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,ЦІЛЬ_КАРТКИ[sectionId+"-"+i]||демоДоСайту[sectionId]);`);
+v(`  const демоТипи=new Set(`,
+`  // BLOKKEN-001: точні справжні блоки для карток, де ціль розділу порожня. Ключ — «розділ-номер картки».
+  // NL: precieze echte blokken voor kaarten zonder doel in de sectie.
+  const ЦІЛЬ_КАРТКИ={"account-0":".ia-profiel","account-1":"#gegevensuitvoer","account-2":".settings-danger","sessions-0":".sessies-overzicht"};
+  const демоТипи=new Set(`);
+v(`    gaNaar(id,true);
+    opties.bijOpenen(id);
+    if(!ціль)return;`,
+`    gaNaar(id,true);
+    opties.bijOpenen(id);
+    // BLOKKEN-001: без точної цілі ведемо до самого гнізда справжніх налаштувань розділу (а не до верху розділу),
+    // а якщо селектор не знайшовся за ~3 с — теж до гнізда. NL: zonder doel naar het nest met echte instellingen.`);
+v(`      try{доціль=гніздо?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
+      if(!доціль){if(++спроби<50)setTimeout(шукати,60);return;}`,
+`      try{доціль=гніздо&&ціль?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
+      const гніздоГотове=гніздо&&гніздо.childElementCount>0&&гніздо.getBoundingClientRect().height>0;
+      if(!доціль&&!ціль&&гніздоГотове&&спроби>=3)доціль=гніздо;
+      if(!доціль){if(++спроби<50){setTimeout(шукати,60);return;}if(гніздоГотове)доціль=гніздо;else return;}`);
+
 fs.writeFileSync(f, s);
 console.log('ok');

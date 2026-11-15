@@ -182,11 +182,12 @@
 }
 
 .ia-avatar-camera {
-  /* Камера — по центру аватара (так у прототипі); смітничок 24 px сидить у куті й її не перекриває. */
+  /* BLOKKEN-001: камера — у правому нижньому куті, не посеред обличчя (раніше виглядала як зайва крапка на фото).
+     Смітничок — угорі праворуч, тож вони не перетинаються. NL: camera rechtsonder, niet midden op de foto. */
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  right: -2px;
+  bottom: -2px;
+  box-shadow: 0 0 0 2px var(--panel);
   display: grid;
   place-items: center;
   width: 22px;
