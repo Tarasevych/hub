@@ -5,6 +5,8 @@
 // Відмінності від макета позначено коментарями «САЙТ:». Тип-перевірку вимкнено свідомо: код лишається максимально близьким до джерела.
 // De motor van de weergave «Ontwerp»: de eigen scripts van het ontwerp van de eigenaar, gebundeld en aan de component-wortel gebonden.
 
+import type { UiterlijkAccent } from '../../../shared/uiterlijk';
+import { ACCENT_KEUZES } from '../../thema/weergave-stijl';
 export type MaquetteOpties = {
   lang: 'uk' | 'nl';
   licht: boolean;
@@ -27,7 +29,7 @@ export type MaquetteOpties = {
   bijTaal?: (lang: 'uk' | 'nl') => void;
 };
 export type MaquetteWeergave = {
-  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: 'violet' | 'cyan' | 'pink' | 'amber'; effecten: number;
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
   icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
 };
 export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
@@ -71,7 +73,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         dockInline:"Положення якорів",dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться",
         themeInline:"Атмосфера прототипу",themeInlineHint:"Відразу побачите різницю",
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
-        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
+        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Ціан",pink:"Рожевий",amber:"Медовий",blauw:"Синій",hemel:"Небесний",teal:"Бірюзовий",groen:"Зелений",oranje:"Бурштиновий",roze:"Малиновий",indigo:"Індиго",bruin:"Теракотовий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
         moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
@@ -183,7 +185,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         dockInline:"Positie van ankers",dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet",
         themeInline:"Sfeer van het prototype",themeInlineHint:"Bekijk direct het verschil",
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
-        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
+        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Cyaan",pink:"Roze",amber:"Honing",blauw:"Blauw",hemel:"Hemelsblauw",teal:"Teal",groen:"Groen",oranje:"Oranje",roze:"Framboos",indigo:"Indigo",bruin:"Terracotta"},
         langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",
         moved:"Ankernavigatie verplaatst naar:",demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel.",
         navDemoToast:"Dit is een visueel prototype. Echte diensten zijn hier niet verbonden.",
@@ -1209,7 +1211,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }else if(type==="theme"){
       widget='<div class="drawer-choice theme-illustrated"><button data-theme="dark" class="'+(preferences.theme==="dark"?"selected":"")+'"><span class="theme-miniature theme-miniature-dark"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 16a8.4 8.4 0 0 1-12-12 8.4 8.4 0 1 0 12 12Z"/></svg></span><span>'+t.dark+'</span></button><button data-theme="light" class="'+(preferences.theme==="light"?"selected":"")+'"><span class="theme-miniature theme-miniature-light"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span>'+t.light+'</span></button></div>';
     }else if(type==="accent"){
-      widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
+      // ACCENT-001: ті самі відтінки, що в меню облікового запису; давні «pink»/«amber» видно, лише поки обрані.
+      widget='<div class="swatches drawer-swatches">'+ACCENT_KEUZES.concat(ACCENT_KEUZES.includes(обранийАкцент())||!обранийАкцент()?[]:[обранийАкцент()]).map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
     }else if(type==="language"){
       widget='<div class="drawer-choice language-illustrated"><button data-demo-lang="uk" class="'+(preferences.lang==="uk"?"selected":"")+'"><span class="language-flag language-flag-uk" aria-hidden="true"></span><span>Українська</span></button><button data-demo-lang="nl" class="'+(preferences.lang==="nl"?"selected":"")+'"><span class="language-flag language-flag-nl" aria-hidden="true"></span><span>Nederlands</span></button></div>';
     }else if(type==="range"){

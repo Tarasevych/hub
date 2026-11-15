@@ -996,6 +996,52 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   height: 12px;
 }
 
+/* ACCENT-001: «Як у палітрі», перемикач і повзунок прозорості блоків. */
+[data-account-menu-v3] .am3-tint-reset {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+[data-account-menu-v3] .am3-transp-schakel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-transp-schakel input {
+  accent-color: var(--am3-accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+[data-account-menu-v3] .am3-transp-schuif {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-transp-schuif input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--am3-accent);
+}
+
+[data-account-menu-v3] .am3-transp-schuif output {
+  min-width: 3.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--am3-text);
+  font-weight: 700;
+}
+
 [data-account-menu-v3] .am3-tray-footer-row {
   display: flex;
   align-items: center;

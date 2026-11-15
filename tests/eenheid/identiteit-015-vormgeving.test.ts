@@ -179,8 +179,8 @@ export async function main(): Promise<number> {
     check('сумісність: старий запис без нових полів читається як раніше', oud.modus === 'dark' && oud.palet === 'puur' && oud.geluid === false && !('vormgeving' in oud) && !('dichtheid' in oud));
     const twee = metUiterlijkRuimte({ versie: 2, gebruiker: { modus: 'light' }, technisch: { modus: 'dark', accent: 'amber' } }, 'gebruiker', { dichtheid: 'ruim' });
     check('модель: зміна однієї ruimte не чіпає іншої (технічний простір зберігає свій акцент)', twee.technisch.accent === 'amber' && twee.gebruiker.dichtheid === 'ruim' && !twee.gebruiker.modus && uiterlijkVoorRuimte(twee, 'technisch').modus === 'dark');
-    check('модель: переліки збігаються з елементами «Макета» (3 вигляди, 3 щільності, 4 акценти)',
-      UITERLIJK_VORMGEVINGEN.join() === 'maquette,studio,klassiek' && UITERLIJK_DICHTHEDEN.join() === 'compact,normaal,ruim' && UITERLIJK_ACCENTEN.join() === 'violet,cyan,pink,amber'
+    check('модель: переліки збігаються з елементами «Макета» (3 вигляди, 3 щільності, 12 акцентів — ACCENT-001)',
+      UITERLIJK_VORMGEVINGEN.join() === 'maquette,studio,klassiek' && UITERLIJK_DICHTHEDEN.join() === 'compact,normaal,ruim' && UITERLIJK_ACCENTEN.join() === 'violet,cyan,pink,amber,blauw,hemel,teal,groen,oranje,roze,indigo,bruin'
       && normaliseerUiterlijkRuimtes({ vormgeving: 'studio' }).gebruiker.vormgeving === 'studio');
   }
 
@@ -193,7 +193,7 @@ export async function main(): Promise<number> {
       const regel = `:root:root[data-accent="${id}"]:is(.${sel}), :root:root[data-accent="${id}"] :is(.${sel}) { --accent:${t.accent}; --accentText:${t.tekst}; --accent-soft:${t.zacht}; }`;
       if (!css.includes(regel)) verschil.push(`${id}/${toon}`);
     }
-    check('акцент: правила weergave-stijl.css точно відповідають ACCENT_TONEN (обидві теми, усі 4 кольори)', verschil.length === 0, verschil.join(' '));
+    check('акцент: правила weergave-stijl.css точно відповідають ACCENT_TONEN (обидві теми, усі кольори)', verschil.length === 0, verschil.join(' '));
     // Тла всіх палітр: «Кольоровий» для кожного розділу, «Чистий», грифельний і фіолетовий (src/ontwerp/tokens.css).
     const tokens = readFileSync('src/ontwerp/tokens.css', 'utf8');
     const uitTokens = (sel: string) => { const m = new RegExp(`${sel.replace(/[.]/g, '\\.')} \\{([^}]*)\\}`).exec(tokens)?.[1] || ''; return ['--bg', '--panel', '--surface'].map((k) => new RegExp(`${k}:(#[0-9a-f]{3,6})`, 'i').exec(m)?.[1]).filter(Boolean) as string[]; };
