@@ -58,7 +58,7 @@ export async function main(): Promise<number> {
   check('компонент монтує панелі порталами в гнізда й перезбирає їх після перемальовування', component.includes('createPortal(') && component.includes("querySelectorAll<HTMLElement>('.mq-echt[data-echt]')") && motor.includes('opties.bijRender();'));
   check('усі тринадцять розділів сайту знаходять свою картку (identities ↔ identity)', component.includes("id === 'identities' ? 'identity' : id") && IDENTITEIT_TABS.every((t) => motor.includes(`id:"${t.id === 'identity' ? 'identities' : t.id}"`)));
   check('вибору файла світлини в макеті немає: світлина й ім’я — з облікового запису', !sjabloon.includes('profilePhotoFile') && weergave.includes('gebruiker={{naam:p.user.name,foto:p.user.picture}}') && component.includes('zetProfiel('));
-  check('тема сайту відстежується, поки вигляд відкритий', component.includes("attributeFilter: ['class']") && component.includes('m.zetLicht(helder())'));
+  check('тема сайту відстежується, поки вигляд відкритий', component.includes("attributeFilter: ['class']") && /m\.zetLicht\((helder\(\)|l)\)/.test(component) /* ZAVYSANNIA-001: лише за справжньої зміни теми */);
   check('збій двигуна макета повертає класичну сторінку, а не порожній екран', pagina.includes('class MaquetteGrens extends Component') && pagina.includes('<MaquetteGrens terugval={klassiek}>'));
 
   // Стилі в просторі імен сайту.
