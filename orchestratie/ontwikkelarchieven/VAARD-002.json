@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "taakId": "VAARD-002",
+  "datum": "2026-11-15",
+  "taal": "uk",
+  "titel": "Навички ШІ-агентів: підключення на справжній будові даних, вигляд зі знімка, швидкодія, випуски та пам’ятка встановлення",
+  "opdracht": "Доповнити проєктні навички ШІ-агентів у .agents/skills/ та каталог добору scripts/vaardigheden/ за завданням №106: створити три спеціалізовані навички (koppelingen-echte-vorm-testen, uiterlijk-van-schermafdruk-herstellen, prestatie-meten), розширити uitgave-voorbereiden повним переліком збирання випусків і пам’яткою встановлення/резервних копій/повернення, інтегрувати з ontwikkelgeheugen-bewaken, додати відтворювані приклади з обмеженнями та модульні випробування.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/vaard-002-vaardigheden-20261115-160000",
+    "basisTak": "integratie",
+    "basisCommit": "30119943e9b477082cb178b15c0965879a410383",
+    "basisVersie": "20261105-061659",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "bronnen": [
+    {
+      "soort": "завдання координації",
+      "omschrijving": "Вимоги навички VAARD-002 (№106) щодо п’яти напрямів роботи ШІ-агентів, двомовних метаданих, відтворюваних прикладів і зв’язку з пам’яттю розвитку.",
+      "bewijzen": [
+        "AGENTS.md",
+        "GEMINI.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "orchestratie/taken/VAARD-002.json"
+      ]
+    },
+    {
+      "soort": "чинний код проєкту",
+      "omschrijving": "Перевірено справжні модулі й скрипти, на які спираються навички (без припущень і суперечностей).",
+      "bewijzen": [
+        "backend/telegram-aanmelden/cryptografie.ts",
+        "backend/telegram-aanmelden/webhook.ts",
+        "backend/mail-imap-lezen.ts",
+        "backend/uitrol-voorcontrole.ts",
+        "backend/uitrol-vereisten.ts",
+        "backend/uitrol-goedkeuring.ts",
+        "src/uitrol/Voorcontrole.tsx",
+        "src/gedeelde-voorkeuren.ts",
+        "scripts/zoek-ui-catalogus.mjs",
+        "scripts/kaart-controle.mjs",
+        "scripts/l002-audit.mjs",
+        "scripts/plaatsing-controle.mjs",
+        "scripts/kleur-contrast-controle.mjs",
+        "scripts/tech-bundels-controle.mjs",
+        "deploy/ВІДНОВЛЕННЯ.uk.md",
+        "deploy/HERSTEL.nl.md"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T16:10:00Z",
+      "stap": "Оглянуто підготовлені в робочому дереві stroom-vaard базові навички (5 навичок, catalogus.json і kies.mjs) та зареєстровано задачу VAARD-002 через scripts/orch.mjs taak-start і versheid."
+    },
+    {
+      "tijd": "2026-11-15T16:20:00Z",
+      "stap": "Створено три спеціалізовані навички (koppelingen-echte-vorm-testen, uiterlijk-van-schermafdruk-herstellen, prestatie-meten) із відповідними прикладами VOORBEELD.uk.md та розширено uitgave-voorbereiden на обидва напрями (збирання випусків і пам’ятка встановлення, копій R:\\ і повернення версії)."
+    },
+    {
+      "tijd": "2026-11-15T16:23:00Z",
+      "stap": "Оновлено scripts/vaardigheden/catalogus.json і scripts/vaardigheden/kies.mjs (перевірка двомовних підсумків, описів frontmatter і прикладів), створено tests/eenheid/vaardigheden-20261115.test.ts, оновлено docs/kaart/bestandskaart.json та перевірено тести й типи."
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Збережено uitgave-voorbereiden як єдину навичку для збирання випусків та пам’ятки встановлення й повернення",
+      "reden": "Узгоджується з постановкою задачі (3 нові навички + доповнення наявної), уникає дублювання правил координації та розділяє приклади в VOORBEELD.uk.md окремо для Напряму 1 і Напряму 5.",
+      "alternatief": "Окрема четверта нова навичка лише для пам’ятки встановлення розривала б спільні правила основи, копій та схвалення ключем доступу."
+    },
+    {
+      "keuze": "Явно зазначено PostgreSQL 18.6, каталог пошуку zoek-ui-catalogus.mjs, шлях R:\\mijn-ruimte-reservekopie\\ і запланований статус серверного отримання з GitHub та Telegram-копій",
+      "reden": "Узгоджено з фактичним стеком (B-009) та чинним кодом бекенду, щоб агенти не видавали заплановане за реалізоване й не посилались на застарілий PostgreSQL 16.",
+      "alternatief": "Механічне перенесення застарілих нотаток створювало суперечності з AGENTS.md і реальним сервером."
+    },
+    {
+      "keuze": "Використано чисті нідерландські назви файлів у scripts/ та tests/eenheid/ з реєстрацією в docs/kaart/bestandskaart.json",
+      "reden": "Відповідає вимогам scripts/kaart-controle.mjs і перевіряється модульним тестом.",
+      "alternatief": "Файли формату .test.mjs не підхоплюються стандартним запуском node scripts/eenheidstests.mjs."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "toegevoegd", "pad": ".agents/skills/project-verkennen/SKILL.md", "omschrijving": "Навичка дослідження структури проєкту без редагування." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/site-ontwikkelen/SKILL.md", "omschrijving": "Навичка розроблення сторінок і служб платформи." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/wijziging-controleren/SKILL.md", "omschrijving": "Навичка контрольної перевірки змін перед випуском." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/ontwikkelgeheugen-bewaken/SKILL.md", "omschrijving": "Навичка ведення пам’яті розвитку та передавання роботи." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/ontwikkelgeheugen-bewaken/WERKOVERDRACHT.uk.md", "omschrijving": "Зразок документа передавання роботи між агентами." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/uitgave-voorbereiden/SKILL.md", "omschrijving": "Розширена навичка підготовки випусків, перевірки основи, PostgreSQL 18.6, zoek-ui-catalogus, резервних копій (R:\\), встановлення й повернення." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/uitgave-voorbereiden/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад для Напряму 1 і Напряму 5 із результатами, обмеженнями й передаванням." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/koppelingen-echte-vorm-testen/SKILL.md", "omschrijving": "Навичка перевірки підключень на знеособленій справжній будові даних, нових полях (signature), IMAP-фрагментації, правах і відмовах." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/koppelingen-echte-vorm-testen/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад для підключень Telegram та IMAP із результатами й обмеженнями." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/SKILL.md", "omschrijving": "Навичка усунення вад інтерфейсу за знімком екрана з аналізом каскаду CSS, ширинами 360–1920 px, обома темами та мовами." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад виправлення за знімком екрана (каскад UPD-001 і перевірки стилів)." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/prestatie-meten/SKILL.md", "omschrijving": "Навичка відтворюваного вимірювання швидкодії на умовно повільному телефоні з навантаженням ЦП і мережі, медіаною та похибкою." },
+    { "soort": "toegevoegd", "pad": ".agents/skills/prestatie-meten/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад вимірювання швидкодії й інваріантів із чесними обмеженнями." },
+    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/catalogus.json", "omschrijving": "Двомовний каталог навичок (8 записів) із підсумками uk/nl та пошуковими термами." },
+    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/kies.mjs", "omschrijving": "Сценарій добору навичок, перевірки двомовних описів frontmatter і безпечного читання прикладів без надання прав." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/vaardigheden-20261115.test.ts", "omschrijving": "Модульні перевірки усіх 8 навичок, добору uk/nl, обмежень, відмов, мовної чистоти й досьє VAARD-002." },
+    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Зареєстровано нові файли в scripts/vaardigheden/ та tests/eenheid/vaardigheden-20261115.test.ts." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/VAARD-002.json", "omschrijving": "Реєстрація завдання VAARD-002 у координації агентів." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/VAARD-002.json", "omschrijving": "Доказове досьє завдання VAARD-002 за стандартом TRACE-001." }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/eenheidstests.mjs vaardigheden-20261115.test.ts",
+      "uitkomst": "Пройдено після фінальних змін: усі перевірки 8 навичок, добору uk/nl, прикладів, відмов, TRACE-001, карти файлів і мовної чистоти."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs orch-kern && node scripts/eenheidstests.mjs uitrol-manifest.test.ts && node scripts/eenheidstests.mjs telegram-venster-20261114.test.ts && node scripts/eenheidstests.mjs mail-imap-lezen-20261115.test.ts && node scripts/eenheidstests.mjs uitrol-centrering-20261115.test.ts && node scripts/eenheidstests.mjs maquette-mobiel-prestatie.test.ts",
+      "uitkomst": "Підтверджено проходження пов’язаних перевірок у stroom-vaard (у telegram-venster-20261114.test.ts частину БД пропущено через брак DATABASE_URL)."
+    },
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server && node scripts/kaart-controle.mjs && node scripts/orch.mjs controleer",
+      "uitkomst": "Вихід 0 без помилок типізації, правил карти файлів (0 нових попереджень) і координації."
+    }
+  ],
+  "beperkingen": [
+    "У локальному середовищі немає DATABASE_URL і чистої бази PostgreSQL 18.6, через що БД-частини тестів (наприклад, у telegram-venster-20261114.test.ts) і пробний накат міграцій не виконувалися.",
+    "У середовищі немає доступу до робочої ВМ <VM-IP>, каталогу /srv/backups/mijn-ruimte/ і диска R:\\ власника; живий /api/version та фактична наявність резервних копій не перевірялись і не зараховуються як пройдені.",
+    "Дослідний приклад швидкодії зафіксував наявну на базі 30119943 помилку в tests/eenheid/perf-001-20261109.test.ts (крок /api/flags), яку в межах завдання навичок не змінювали."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Усі зразки, тести й досьє очищено від ключів, паролів, адрес, особистих листів і прихованих міркувань моделі; використано лише штучні безпечні приклади."
+  }
+}

@@ -2957,6 +2957,21 @@
    "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts",
    "wat": "Eenheidstest voor mobiele prestatie-invarianten: herstelde postweergave, uitgestelde bundels, beide laag- en attribuutwaarnemers, rAF-bundeling en mobiele CSS zonder zware filters.",
    "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "scripts/vaardigheden/catalogus.json",
+   "wat": "Tweetalige vaardighedencatalogus (uk/nl) met metagegevens en zoektermen voor 8 modulaire agentvaardigheden.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/kies.mjs",
+   "wat": "Deterministische vaardighedenkiezer op basis van uk/nl-zoektermen, frontmatter-validatie en zichtbare hulpmiddelstatus zonder rechtenverlening.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/vaardigheden-20261115.test.ts",
+   "wat": "Eenheidstest voor de 8 vaardigheden, tweetalige selectie- en validatiecontroles, voorbeelden, beperkingen, kaartcontrole en taalzuiverheid.",
+   "sinds": "VAARD-002 (vaardigheden)"
   }
  ]
 }
