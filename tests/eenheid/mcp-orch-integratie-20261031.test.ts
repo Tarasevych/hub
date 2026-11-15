@@ -293,11 +293,12 @@ export async function main(): Promise<number> {
 
     const clients: string[] = [];
     const sluiters: Array<() => void> = [];
+    const oudeEigenaren: string[] = [];
     let server: http.Server | null = null;
     try {
-      const oudeEigenaren = (await sys.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner'")).rows.map((r) => String(r.id));
-      for (const id of oudeEigenaren) {
-        await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl='users' AND id=$1", [id]);
+      for (const r of (await sys.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner'")).rows) {
+        oudeEigenaren.push(String(r.id));
+        await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl='users' AND id=$1", [r.id]);
       }
       await sys.query(
         "INSERT INTO app.records (tbl, id, data) VALUES ('users', $1, $2)",
@@ -436,10 +437,6 @@ export async function main(): Promise<number> {
 
       const delResp = await verzoek(poort, 'DELETE', '/cursor', '', { authorization: `Bearer ${cursorTok1}` });
       check('DELETE /cursor sluit Streamable HTTP-sessie met 204 No Content', delResp.status === 204);
-
-      for (const id of oudeEigenaren) {
-        await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [id]);
-      }
     } finally {
       for (const s of sluiters) s();
       if (server) await new Promise<void>((r) => { server!.closeAllConnections?.(); server!.close(() => r()); });
@@ -454,6 +451,9 @@ export async function main(): Promise<number> {
       await sys.query('DELETE FROM app.connector_v2_rechten WHERE user_id = $1', [eigId]).catch(() => undefined);
       await sys.query('DELETE FROM app.tech_profielen WHERE user_id = $1', [eigId]).catch(() => undefined);
       await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = $1", [eigId]).catch(() => undefined);
+      for (const id of oudeEigenaren) {
+        await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id=$1", [id]).catch(() => undefined);
+      }
       if (vorigeOwner === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorigeOwner;
       if (vorigeTotp === undefined) delete process.env.TOTP_ENCRYPTION_KEY_V1; else process.env.TOTP_ENCRYPTION_KEY_V1 = vorigeTotp;
       if (vorigeDist === undefined) delete process.env.DIST_DIR; else process.env.DIST_DIR = vorigeDist;
