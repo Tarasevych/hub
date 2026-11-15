@@ -51,6 +51,9 @@ export async function main(): Promise<number> {
   check('у «Макеті» запас прокрутки розділу більше не розрахований на смугу вкладок (6rem замість 11rem)',
     /html\.palet-maquette \.ag-pagina \.ag-sectie \{\s*scroll-margin-top: 6rem;/.test(lees('src/agenten/agenten-kern-maquette.css')));
 
+  check('сітка розділів оселі (huis) заокруглена ззовні у всіх палітрах',
+    lees('src/domotica.css').includes('.smart-home-sections{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--straal-l,20px);overflow:hidden}'));
+
   // 3. Довгий перелік видно.
   check('смуга прокрутки меню якорів видима (тонка), а не прихована',
     /\.mq-rail-lijst \{[^}]*scrollbar-width: thin/.test(railCss) && !/\.mq-rail-lijst \{[^}]*scrollbar-width: none/.test(railCss));
