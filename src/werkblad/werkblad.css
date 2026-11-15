@@ -39,6 +39,10 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb-balk h2 svg{width:18px;height:18px;color:var(--accent)}
 .wb-balk-acties{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);margin-left:auto}
 .wb-balk-acties .knop-stil,.wb-balk-acties .knop-secundair{background:var(--wb-glas);border-color:var(--wb-glas-rand)}
+/* WB-HOEK-001: «Налаштувати робочий стіл» — кругла піктограма в куті замість широкої кнопки з підписом.
+   «Werkblad instellen» — rond icoon in de hoek i.p.v. een brede knop met tekst. */
+.wb-balk-acties .wb3-instellen-icoon{display:inline-grid;place-items:center;flex:0 0 auto;width:var(--tik-hoogte);min-width:var(--tik-hoogte);height:var(--tik-hoogte);padding:0;border-radius:999px}
+.wb-balk-acties .wb3-instellen-icoon svg{width:18px;height:18px}
 .wb-uitleg{margin:0;color:var(--muted);font-size:var(--tekst-klein)}
 .wb-melding,.wb-fout-balk{display:flex;align-items:center;gap:var(--ruimte-2);margin:0;font-size:var(--tekst-klein)}
 .wb-melding .wb-tip-sluit{margin-left:auto}
@@ -319,6 +323,8 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .werkblad :is(.knop,.knop-primair,.knop-secundair,.knop-stil,.knop-gevaar).is-klein,
   .wb-catalogus :is(.knop,.knop-primair,.knop-secundair,.knop-stil).is-klein,
   .wb-agenda-vandaag,.wb-alles,.wb-link-knop,.wb-acties button,.wb-zoek-rij,.wb-chips button{min-height:var(--tik-hoogte-mobiel)}
+  /* WB-HOEK-001: на телефоні піктограма теж у правому куті, а не на початку рядка. Telefoon: icoon blijft rechts. */
+  .wb-balk-acties:has(> .wb3-instellen-icoon){justify-content:flex-end}
   .wb-balk-acties .knop-stil.is-klein:not(:has(> :not(svg))),.wb-agenda-knoppen .wb-icoonknop{min-width:var(--tik-hoogte-mobiel);width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}
   .wb-rijen li>a,.wb-snelkoppeling{min-height:var(--tik-hoogte-mobiel)}
   /* Catalogus in het venster: op de telefoon scrollt alleen het venster (05.11.2026). Stond in het eerste mobiele blok en verloor daar
