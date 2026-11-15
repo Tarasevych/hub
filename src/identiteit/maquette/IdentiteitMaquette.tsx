@@ -35,8 +35,10 @@ type Props = {
 };
 
 /** IDENTITEIT-015: зміна в елементі макета → справжнє налаштування сайту. Вигляд (щільність, рух, акцент, ефекти) — у спільних
- *  уподобаннях облікового запису; меню (стиль піктограм, положення, режим) — у налаштуваннях меню. Обидва зберігає сервер.
- *  Wijziging in het ontwerp → echte instelling: weergave via de gedeelde voorkeuren, menu via de zijbalkvoorkeuren. */
+ *  уподобаннях облікового запису; стиль піктограм — у налаштуваннях меню сайту. Обидва зберігає сервер.
+ *  ANKERS-001: положення й поведінка навігації якорів цієї сторінки — власне поле `paginaNav` у тих самих налаштуваннях облікового
+ *  запису, а НЕ положення (`dock.positie`) і режим (`modus`) меню сайту: одне меню більше не рухає інше.
+ *  Wijziging in het ontwerp → echte instelling; positie en gedrag van de ankernavigatie staan los van het sitemenu. */
 export function weergaveNaarSite(patch: Partial<MaquetteWeergave>) {
   const stijl: WeergaveStijl = {};
   if ('dichtheid' in patch) stijl.dichtheid = patch.dichtheid === 'normaal' ? undefined : patch.dichtheid;
@@ -45,7 +47,11 @@ export function weergaveNaarSite(patch: Partial<MaquetteWeergave>) {
   if ('effecten' in patch) stijl.effecten = patch.effecten === UITERLIJK_EFFECTEN_STANDAARD ? undefined : patch.effecten;
   if (Object.keys(stijl).length) zetWeergaveStijl(stijl);
   if (patch.icoonStijl || patch.positie || patch.modus) {
-    zetZijbalk((z) => ({ ...z, ...(patch.icoonStijl ? { icoonStijl: patch.icoonStijl } : {}), ...(patch.modus ? { modus: patch.modus } : {}), ...(patch.positie ? { dock: { ...z.dock, positie: patch.positie } } : {}) }));
+    zetZijbalk((z) => ({
+      ...z,
+      ...(patch.icoonStijl ? { icoonStijl: patch.icoonStijl } : {}),
+      ...(patch.positie || patch.modus ? { paginaNav: { ...z.paginaNav, ...(patch.positie ? { positie: patch.positie } : {}), ...(patch.modus ? { modus: patch.modus } : {}) } } : {}),
+    }));
   }
 }
 
@@ -95,7 +101,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
   const zijbalk = useZijbalkVoorkeuren();
   const weergave: MaquetteWeergave = {
     dichtheid: stijl.dichtheid || 'normaal', beweging: stijl.beweging || 'systeem', accent: stijl.accent, effecten: stijl.effecten ?? UITERLIJK_EFFECTEN_STANDAARD,
-    icoonStijl: zijbalk.icoonStijl, positie: zijbalk.dock.positie, modus: zijbalk.modus,
+    icoonStijl: zijbalk.icoonStijl, positie: zijbalk.paginaNav.positie, modus: zijbalk.paginaNav.modus, // ANKERS-001: не меню сайту
   };
   const weergaveRef = useRef(weergave);
   weergaveRef.current = weergave;

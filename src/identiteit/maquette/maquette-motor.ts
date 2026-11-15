@@ -68,7 +68,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         beginning:"Початок",manage:"КЕРУВАННЯ",openSettings:"Відкрити налаштування",
         collapseSection:"Згорнути налаштування",inlineEyebrow:"НАЛАШТУВАННЯ РОЗДІЛУ",inlineHeading:"Керуйте прямо на сторінці",
         profileName:"Відображуване ім’я",demoOnly:"Лише демонстраційне поле — дані акаунта не змінюються",prepareCopy:"Підготувати приклад",
-        dockInline:"Положення якорів",dockInlineHint:"Налаштування цієї демонстраційної панелі",
+        dockInline:"Положення якорів",dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться",
         themeInline:"Атмосфера прототипу",themeInlineHint:"Відразу побачите різницю",
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
         dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
@@ -180,7 +180,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         beginning:"Begin",manage:"BEHEREN",openSettings:"Instellingen openen",
         collapseSection:"Instellingen inklappen",inlineEyebrow:"ONDERDEELINSTELLINGEN",inlineHeading:"Beheer direct op de pagina",
         profileName:"Weergavenaam",demoOnly:"Alleen een demoveld — geen wijziging van accountgegevens",prepareCopy:"Voorbeeld voorbereiden",
-        dockInline:"Positie van ankers",dockInlineHint:"Pas dit demonstratiepaneel aan",
+        dockInline:"Positie van ankers",dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet",
         themeInline:"Sfeer van het prototype",themeInlineHint:"Bekijk direct het verschil",
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
         dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
@@ -1859,8 +1859,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     write(".concept-pill",'<span class="concept-dot"></span>'+t.concept,true);
     write(".search-action span",preferences.lang==="nl"?"Zoeken in «Mijn Ruimte»…":"Пошук у «Мій простір»…");
     zetSectieBalk();
-    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
+    // ANKERS-001: положення й поведінка — лише навігація цієї сторінки (окремо від меню сайту); підказка кнопки каже, що вона змінює.
+    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden alleen voor de navigatie van deze pagina en worden apart van het sitemenu in uw account bewaard: een wijziging hier verschuift het sitemenu niet, en omgekeerd. Stijl en inhoud van de knoppen gelden alleen op dit apparaat.":"Положення й поведінка діють лише на навігацію цієї сторінки й зберігаються в обліковому записі окремо від меню сайту: зміна тут не рухає меню сайту, а зміна меню сайту — цю навігацію. Стиль і вміст кнопок — лише на цьому пристрої.");
     write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");
+    {const k=byId("mqPaginaNavKnop");if(k)k.title=preferences.lang==="nl"?"Opent de instellingen van het hoofdmenu van de site (positie, gedrag, pictogrammen). Wat u daar kiest, verandert de navigatie van deze pagina niet.":"Відкриває налаштування головного меню сайту (положення, поведінка, піктограми). Те, що ви там оберете, не змінює навігацію цієї сторінки.";}
     const zoekKnop=byId("openSearch");if(zoekKnop){const zl=preferences.lang==="nl"?"Zoeken in «Mijn Ruimte» (Ctrl K)":"Пошук у «Мій простір» (Ctrl K)";zoekKnop.setAttribute("aria-label",zl);zoekKnop.title=zl;}
     const posKnop=byId("mqSectiePositie");if(posKnop){const pl=preferences.lang==="nl"?"Positie van paginanavigatie":"Розташування навігації сторінки";posKnop.setAttribute("aria-label",pl);posKnop.title=pl;}
     write(".hero-eyebrow",'<span class="line"></span>'+t.heroEyebrow+'<span class="line"></span>',true);
@@ -1957,7 +1959,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     body.classList.remove("rail-left","rail-right","rail-top","rail-bottom");
     body.classList.add("rail-"+position);
     preferences.position=position;
-    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (IDENTITEIT-015): положення меню сайту
+    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (ANKERS-001): положення навігації якорів (paginaNav), не меню сайту
     syncRailCompactButton();
     syncNavGroups();
     root.querySelectorAll("[data-pos]").forEach(b=>b.classList.toggle("selected",b.dataset.pos===position));
@@ -1995,7 +1997,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     cancelRailAutoCollapse();
     preferences.railMode=mode;
     preferences.compact=mode!=="expanded";
-    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (IDENTITEIT-015): режим меню сайту
+    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (ANKERS-001): поведінка навігації якорів (paginaNav), не меню сайту
     body.classList.toggle("rail-mode-auto",isAutoRail());
     applyRailCollapsed(mode==="collapsed"||(mode==="auto"&&!railPointerInside&&byId("navSettings").hidden));
     root.querySelectorAll("[data-rail-mode]").forEach(button=>{

@@ -110,9 +110,14 @@ export type ZijbalkVoorkeuren = {
   snelheid: SnelheidVoorkeuren;
   /** 25.10.2026: waar de zwevende knoppen staan (bel, «Написати», «Вгору») — zone en gniezdo PER APPARAATKLASSE (shared/plaatsing.ts). */
   plaatsing: PlaatsingVoorkeur;
+  /** ANKERS-001 (15.11.2026): положення й поведінка навігації ЯКОРІВ сторінки центру облікового запису (вигляд «Макет») — ОКРЕМО від
+   *  меню сайту (`dock.positie`, `modus`). З IDENTITEIT-015 (14.11) обидва меню писали в одне поле, тож вибір в одному рухав інше.
+   *  Старий запис без цього поля отримує поточне положення й режим меню сайту — те, що людина бачила досі; далі вони незалежні.
+   *  Ankernavigatie van de accountpagina: eigen positie en gedrag, los van het sitemenu; oude records erven de huidige keuze. */
+  paginaNav: { positie: DockPositie; modus: ZijbalkModus };
 };
 export const MAX_OVERRIDES = 200, MAX_KOPIEEN = 50, MAX_TRANSPARANTIE = 60;
-export const standaardZijbalk = (): ZijbalkVoorkeuren => ({ versie: 1, modus: 'auto', icoonStijl: 'klassiek', dock: { positie: 'links', transparantie: 0, vergroting: false }, items: {}, kopieen: [], meldingen: standaardMeldingen(), snelheid: standaardSnelheid(), plaatsing: standaardPlaatsing() });
+export const standaardZijbalk = (): ZijbalkVoorkeuren => ({ versie: 1, modus: 'auto', icoonStijl: 'klassiek', dock: { positie: 'links', transparantie: 0, vergroting: false }, items: {}, kopieen: [], meldingen: standaardMeldingen(), snelheid: standaardSnelheid(), plaatsing: standaardPlaatsing(), paginaNav: { positie: 'links', modus: 'auto' } });
 
 const een = <T extends string>(lijst: readonly T[], v: unknown, std: T): T => (lijst as readonly string[]).includes(String(v)) ? v as T : std;
 const geheel = (v: unknown, min: number, max: number, std: number) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : std; };
@@ -149,15 +154,19 @@ export function normaliseerZijbalk(raw: unknown): ZijbalkVoorkeuren {
     if ((ACCENTEN as readonly string[]).includes(String(o.kleur))) kopie.kleur = o.kleur as Accent;
     kopieen.push(kopie);
   }
+  const modus = een(ZIJBALK_MODI, r.modus, std.modus), positie = een(DOCK_POSITIES, d.positie, 'links');
+  // ANKERS-001: без власного значення (старий запис) — те, що діяло досі (меню сайту); далі поле зберігається разом із записом.
+  const pn = obj(r.paginaNav);
   return {
     versie: 1,
-    modus: een(ZIJBALK_MODI, r.modus, std.modus),
+    modus,
     icoonStijl: een(ICOON_STIJLEN, r.icoonStijl, std.icoonStijl),
-    dock: { positie: een(DOCK_POSITIES, d.positie, 'links'), transparantie: geheel(d.transparantie, 0, MAX_TRANSPARANTIE, 0), vergroting: d.vergroting === true },
+    dock: { positie, transparantie: geheel(d.transparantie, 0, MAX_TRANSPARANTIE, 0), vergroting: d.vergroting === true },
     items, kopieen,
     meldingen: normaliseerMeldingen(r.meldingen),
     snelheid: normaliseerSnelheid(r.snelheid),
     plaatsing: normaliseerPlaatsing(r.plaatsing),
+    paginaNav: { positie: een(DOCK_POSITIES, pn.positie, positie), modus: een(ZIJBALK_MODI, pn.modus, modus) },
   };
 }
 
@@ -166,10 +175,11 @@ export function itemTerugzetten(v: ZijbalkVoorkeuren, id: string): ZijbalkVoorke
   const items = { ...v.items }; delete items[id];
   return { ...v, items, kopieen: v.kopieen.filter((k) => k.item !== id) };
 }
-/** Fase 2: alles terug (indeling, kopieën, dock); de gekozen modus, icoonstijl en meldingsinstellingen blijven. */
+/** Fase 2: alles terug (indeling, kopieën, dock); de gekozen modus, icoonstijl en meldingsinstellingen blijven.
+ *  ANKERS-001: de ankernavigatie van de accountpagina is geen deel van het sitemenu en blijft ook staan. */
 export function allesTerugzetten(v: ZijbalkVoorkeuren): ZijbalkVoorkeuren {
   const std = standaardZijbalk();
-  return { ...std, modus: v.modus, icoonStijl: v.icoonStijl, meldingen: v.meldingen, snelheid: v.snelheid, plaatsing: v.plaatsing };
+  return { ...std, modus: v.modus, icoonStijl: v.icoonStijl, meldingen: v.meldingen, snelheid: v.snelheid, plaatsing: v.plaatsing, paginaNav: v.paginaNav };
 }
 
 // ------------------------------------------------------------------------------------- twee webruimtes (profielen), punt 4
