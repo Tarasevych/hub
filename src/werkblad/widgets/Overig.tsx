@@ -100,7 +100,10 @@ export function TechWidget({ lang, item, acties, zichtbaar, kolommen }: WidgetPr
   if (!waarde) return bezig || !zichtbaar ? <Skelet rijen={4} /> : <Fout lang={lang} code='GEEN_BRON' opnieuw={herlaad} />;
   if (item.id === 'tech-server') {
     const s = waarde.server;
-    const last = s.load1 / s.kernen;
+    // ACCENT-001 (знайдено на стенді): відповідь без блоку server (старіший сервер, урізані права, оновлення) валила всю сторінку
+    // «Робочий стіл» (TypeError load1). Тепер віджет показує «немає даних» з повтором. Zonder serverblok geen crash meer.
+    if (!s || typeof s.load1 !== 'number') return <Fout lang={lang} code='GEEN_BRON' opnieuw={herlaad} />;
+    const last = s.load1 / Math.max(1, s.kernen || 1);
     return (
       <ul className='wb-systeem' data-wb-tech='server'>
         <li><Database aria-hidden='true' /><span className='wb-rij-titel'>{tr(lang, 'База даних', 'Database')}</span><span className={`pil ${s.db ? 'pil-ok' : 'pil-fout'}`}>{s.db ? `${tr(lang, 'працює', 'werkt')} · ${s.dbMs} ms` : tr(lang, 'збій', 'storing')}</span></li>
@@ -115,6 +118,8 @@ export function TechWidget({ lang, item, acties, zichtbaar, kolommen }: WidgetPr
     afgebroken: tr(l, 'перервано', 'afgebroken'), teruggedraaid: tr(l, 'відкочено', 'teruggedraaid') } as Record<string, string>)[st] || tr(l, 'інше', 'overig');
   if (item.id === 'tech-updates') {
     const r = waarde.release;
+    // ACCENT-001: так само без блоку release/uitrol — «немає даних» замість падіння сторінки. Ook hier geen crash zonder gegevens.
+    if (!r || !Array.isArray(waarde.uitrol)) return <Fout lang={lang} code='GEEN_BRON' opnieuw={herlaad} />;
     return (
       <div className='wb-lijst-vlak'>
         <div className='wb-release'><Package aria-hidden='true' /><span className='wb-rij-titel'>{tr(lang, 'Поточний випуск', 'Huidige release')}<small>{r.versie || tr(lang, 'невідомо', 'onbekend')}{r.commit ? ` · ${r.commit}` : ''}{r.commitStatus === 'zonder-git' ? ` · ${tr(lang, 'поза git', 'buiten git')}` : ''}</small></span></div>
