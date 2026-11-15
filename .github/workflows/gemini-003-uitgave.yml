@@ -246,9 +246,6 @@ jobs:
           # Повторний прогін нічого не змінює. · Tweede keer: niets te doen.
           node dist-server/migrate.mjs | tail -1
           for t in \
-            tech-bundels \
-            tech-bundels-ruimtes-v2 \
-            afstemming-kern-20261030 \
             telegram-venster-20261114 \
             telegram-aanmelden-stroom-20261109 \
             telegram-inlog-apparaat-20261112 \
@@ -264,7 +261,10 @@ jobs:
             migraties-pg16-20261021 \
             beheer-journaal \
             gebruiker-audit-2026-10-19 \
-            sec-002-g10i-20261112; do
+            sec-002-g10i-20261112 \
+            afstemming-kern-20261030 \
+            tech-bundels \
+            tech-bundels-ruimtes-v2; do
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
       - name: Упевнитися в незмінності робочого дерева

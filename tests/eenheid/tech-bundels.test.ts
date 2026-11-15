@@ -180,6 +180,11 @@ export async function main(): Promise<number> {
     await pool.query('DELETE FROM app.tech_asset_toegang WHERE user_id=$1', [uid]).catch(() => undefined);
     await tp.beeindigenBijIntrekken(uid, 'handmatig').catch(() => undefined);
     for (const id of sessies) await pool.query("DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id=$1", [id]).catch(() => undefined);
+    if (!bestaand) {
+      await pool.query('DELETE FROM app.tech_activaties WHERE user_id=$1', [uid]).catch(() => undefined);
+      await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [uid]).catch(() => undefined);
+      await pool.query("DELETE FROM app.records WHERE tbl='users' AND id=$1", [uid]).catch(() => undefined);
+    }
     rmSync(dist, { recursive: true, force: true });
   }
   return einde();
