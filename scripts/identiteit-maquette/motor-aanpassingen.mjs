@@ -896,5 +896,20 @@ v(`  luisteraars.push(()=>revealObserver.disconnect());
   ініціалізовано=true;
   renderAll();`);
 
+// ДУБЛІ-001: заголовок групи в бічній навігації мав піктограму свого першого розділу («Обличчя простору» = «Персоналізація»,
+// «Люди» = «Спільний доступ» тощо), тож у розгорнутій групі дві однакові піктограми стояли поспіль і виглядали як дубль розділу.
+// Групи отримують власні піктограми. Groepen krijgen eigen pictogrammen, zodat er geen dubbele iconen onder elkaar staan.
+v(`const groups=[{id:"personal",icon:"personalization"},{id:"social",icon:"sharing"},{id:"account",icon:"account"},{id:"security",icon:"security"}];`,
+`const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп`);
+v(`    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>'
+  };`,
+`    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+    // САЙТ (ДУБЛІ-001): піктограми груп, відмінні від піктограм розділів.
+    "groep-personal":'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+    "groep-social":'<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
+    "groep-account":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.6a7 7 0 0 1 11.6 0"/>',
+    "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
+  };`);
+
 fs.writeFileSync(f, s);
 console.log('ok');

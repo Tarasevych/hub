@@ -1778,7 +1778,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     sessions:'<rect x="2" y="4" width="15" height="12" rx="2"/><path d="M6 20h7M9.5 16v4"/><rect x="18" y="9" width="4" height="10" rx="1"/>',
     methods:'<circle cx="8" cy="15" r="4"/><path d="M11 12 21 2M16 7l3 3M18 5l3 3"/>',
     security:'<path d="M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z"/><path d="m8 12 3 3 5-6"/>',
-    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>'
+    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+    // САЙТ (ДУБЛІ-001): піктограми груп, відмінні від піктограм розділів.
+    "groep-personal":'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+    "groep-social":'<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
+    "groep-account":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.6a7 7 0 0 1 11.6 0"/>',
+    "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
   };
   function iconSvg(id){return '<svg class="semantic-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">'+(iconPaths[id]||iconPaths.intro)+'</svg>';}
 
@@ -1927,7 +1932,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       byId("group-"+g).innerHTML=localized.filter(s=>s.group===g).map(renderCard).join("");
     }
     const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
-    const groups=[{id:"personal",icon:"personalization"},{id:"social",icon:"sharing"},{id:"account",icon:"account"},{id:"security",icon:"security"}];
+    const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп
     byId("railItems").innerHTML=navItem("intro",ui().beginning)+groups.map((group,index)=>{
       const label=ui().navGroups[index],opened=expandedNavGroups.has(group.id);
       return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
