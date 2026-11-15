@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Archive, ArchiveRestore, ArrowLeft, BellDot, BellOff, Check, CheckCheck, CircleAlert, CircleCheck, Ellipsis, ExternalLink, Eye, History, Info, ListFilter,
-  Minimize2, Moon, Search, Settings2, ShieldCheck, TriangleAlert, Volume2, VolumeX, X, Clock, RotateCcw, ListChecks, EyeOff,
+  AppWindow, Moon, Search, Settings2, ShieldCheck, TriangleAlert, Volume2, VolumeX, X, Clock, RotateCcw, ListChecks, EyeOff,
 } from 'lucide-react';
 import { pasStatusToe, verborgenReden, type MeldingStatus } from '../../../shared/meldingen-v2/status';
 import { ARCHIEF_NA_DAGEN, SECTIES, beginSectie, sectieLijst, sectieVanGroep, type Sectie } from '../../../shared/meldingen-v2/secties';
@@ -33,6 +33,8 @@ export type MeldingenV2Props = Bronnen & {
   regels: LeverRegels;
   onReadLocal: (id: string) => void; onReadServer?: (id: string) => void | Promise<void>; onReadEvent: (id: string) => void;
   onMarkAll: () => void | Promise<void>; geluid: boolean; onGeluid: () => void; onSluiten: () => void;
+  /** MELDINGEN-UX-001: naar het zwevende venster wisselen (dezelfde knop-plek als «Компактно» in dat venster). */
+  onVenster?: () => void;
   tech?: { aantal: number; open: () => void; tekst: string } | null;
   /** Voor schermafbeeldingen/tests: vaste «nu». */
   nu?: number;
@@ -283,7 +285,8 @@ export default function MeldingenV2(p: MeldingenV2Props) {
           <button type='button' className={`mv2-ikoon${nFilters ? ' is-actief' : ''}`} aria-label={nFilters ? t(`Фільтри (активних: ${nFilters})`, `Filters (actief: ${nFilters})`) : t('Фільтри й порядок', 'Filters en volgorde')} data-tip={t('Фільтри й порядок', 'Filters en volgorde')} aria-expanded={paneel === 'filters'} onClick={() => setPaneel(paneel === 'filters' ? null : 'filters')}><ListFilter aria-hidden='true' />{nFilters ? <i className='mv2-stip' aria-hidden='true' /> : null}</button>
           <button type='button' className={`mv2-ikoon${dnd ? ' is-actief' : ''}`} aria-label={t('Не турбувати', 'Niet storen')} data-tip={t('Не турбувати', 'Niet storen')} aria-expanded={paneel === 'niet-storen'} onClick={() => setPaneel(paneel === 'niet-storen' ? null : 'niet-storen')}><Moon aria-hidden='true' /></button>
         </> : null}
-        <button type='button' className='mv2-ikoon' aria-label={t('Згорнути', 'Inklappen')} data-tip={t('Згорнути', 'Inklappen')} onClick={p.onSluiten}><Minimize2 aria-hidden='true' /></button>
+        {p.onVenster ? <button type='button' className='mv2-vorm-schakel' data-qa-id='melding-vorm-venster' onClick={p.onVenster} title={t('Відкрити сповіщення у великому вікні, яке можна пересувати й розширювати. Повернутися — кнопкою «Компактно» у вікні.', 'Meldingen openen in een groot venster dat u kunt verplaatsen en vergroten. Terug met de knop «Compact» in het venster.')}><AppWindow aria-hidden='true' /><span>{t('Вікно', 'Venster')}</span></button> : null}
+        <button type='button' className='mv2-ikoon' aria-label={t('Закрити', 'Sluiten')} data-tip={t('Закрити', 'Sluiten')} onClick={p.onSluiten}><X aria-hidden='true' /></button>
       </div>
     </header>
   );
