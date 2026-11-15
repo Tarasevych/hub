@@ -3122,6 +3122,141 @@
    "pad": "tests/eenheid/stroom-veilig-20261115.test.ts",
    "wat": "Integratie-eenheidstest voor uitgebreide noodstop (SSE-stromen, pc-agent, eerlijke bronFouten), sleutelkluislimiet 120, FPS-plafond 45 en zoekcatalogus.",
    "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "migrations/0279_vaardigheden_ecosysteem.sql",
+   "wat": "Migratie voor opgeslagen modulaire agentvaardigheden en aanbevelingsgeschiedenis onder RLS.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "migrations/0280_geheugen_stroom.sql",
+   "wat": "Migratie voor tabellen van de Stroom van geheugen onder RLS en systeemrechten.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "migrations/0281_geheugen_agent_bots.sql",
+   "wat": "Migratie voor afzonderlijke agentbots in Telegram en het idempotente bezorglogboek onder RLS.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "migrations/0282_slimme_uitrol_stroom.sql",
+   "wat": "Migratie voor notities, controlelijsten en bewijsrapporten van de uitrolstroom onder RLS.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "migrations/0283_uitrol_github_telegram_archief.sql",
+   "wat": "Migratie voor GitHub-ontvangstspoor en versleutelde Telegram-release-reservekopieën onder RLS.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "migrations/0284_geheugen_taken_en_13_agenten.sql",
+   "wat": "Migratie voor sessie-overstijgende taken en 13 canonieke MCP-agentprofielen onder RLS.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/uitrol-stroom.ts",
+   "wat": "Serveropslag en -routes voor het beheren van voorbereide uitrolnotities, controlelijsten en bewijsrapporten.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/uitrol-stroom.ts",
+   "wat": "Gedeeld domeinmodel voor voorbereide uitrolnotities, controlelijsten en bewijsrapporten.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/UitrolStroom.tsx",
+   "wat": "Overzichtspaneel van de voorbereide uitrolstroom op /updates.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/UitrolStroomKaart.tsx",
+   "wat": "Kaartcomponent met controlelijsten en bewijsstatus voor een voorbereide uitrol.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/stroom.css",
+   "wat": "Adaptieve stijlen voor de uitrolstroom zonder !important of vaste positionering.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "tests/eenheid/uitrol-stroom.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor de uitrolstroom (notities, controlelijsten en bewijsrapporten).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/vaardigheden-ecosysteem.ts",
+   "wat": "Gedeelde validatie, zoektermen, afhankelijkheden en modelcontract voor de vaardighedenbibliotheek.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/vaardigheden-opslag.ts",
+   "wat": "Serveropslag onder RLS voor vaardigheden en gebruiksregistratie per agent en eigenaar.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/vaardigheden-routes.ts",
+   "wat": "HTTP-routes voor het bekijken, beheren en testen van agentvaardigheden.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "src/agenten/VaardighedenBeheer.tsx",
+   "wat": "Beheerpaneel voor de gedeelde bibliotheek met agentvaardigheden en aanbevolen pakketten.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "src/agenten/vaardigheden-maquette.css",
+   "wat": "Stijlen voor het vaardighedenpaneel in de Maquette- en klassieke paletten.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/vaardigheden-ecosysteem.test.ts",
+   "wat": "Eenheidstest en PG-test voor opslag, routes, validatie en taalzuiverheid van het vaardighedenecosysteem.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/werkblad-hoek-20261115.test.ts",
+   "wat": "Eenheidstest voor de ronde hoekknop «Налаштувати робочий стіл» in het werkblad.",
+   "sinds": "WB-HOEK-001 (PR #115)"
+  },
+  {
+   "pad": "src/mail/stroken-sluiten.ts",
+   "wat": "Gedeelde toestand en opslag voor het sluiten en terugzetten van bovenstroken in e-mail.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "src/mail/stroken-sluiten.css",
+   "wat": "Stijlen voor het sluiten van bovenstroken («Мова листа», «Зовнішні зображення приховано») en herstelknoppen.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "tests/eenheid/stroken-sluiten-20261115.test.ts",
+   "wat": "Eenheidstest voor het sluiten en herstellen van de e-mailstroken.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "src/mail/AiUitleg.tsx",
+   "wat": "Tweetalige uitlegcomponent «Як працює ШІ в пошті» met live-motorstatus en directe sleutelverwijzing.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "src/mail/ai-uitleg.css",
+   "wat": "Stijlen voor het tweetalige AI-uitlegpaneel in e-mail.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "tests/eenheid/mailai-001-20261115.test.ts",
+   "wat": "Eenheidstest voor optionele AI-analysebalk, API-sleutelcontrole, InfoTip-contrast en meldingstype mail_ai_balk.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "src/mail/mail-navigatie-model.ts",
+   "wat": "Gedeeld navigatiemodel voor e-mailankers en ingeklapte weergavegroep in de ankernavigatie.",
+   "sinds": "MAILANKER-001 (PR #118)"
+  },
+  {
+   "pad": "tests/eenheid/mailanker-001-model.test.ts",
+   "wat": "Eenheidstest voor het e-mailankermodel, inklappen van groepen en stabiele selectiestatus.",
+   "sinds": "MAILANKER-001 (PR #118)"
   }
  ]
 }
