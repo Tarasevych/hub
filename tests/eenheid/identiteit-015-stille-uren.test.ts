@@ -67,12 +67,15 @@ export async function main(): Promise<number> {
 
   // ================================================================ (1б) код: центр, рамка, налаштування
   {
-    const centrum = lees('src/CanoniekMeldingencentrum.tsx'), oml = lees('src/CanoniekOmlijsting.tsx'), zb = lees('src/ZijbalkInstellingen.tsx');
+    const centrum = lees('src/CanoniekMeldingencentrum.tsx'), oml = lees('src/CanoniekOmlijsting.tsx'), zb = lees('src/ZijbalkInstellingen.tsx'), mp = lees('src/identiteit/melding/MeldingEcosysteemPagina.tsx');
     check('центр: отримує stil від рамки (mv.stil)', oml.includes('stil={mv.stil}') && centrum.includes('stil?: StilVoorkeur;'));
     check('рамка: стан тиші перевіряється таймером (не лише при перемальовуванні)', oml.includes('setStil(stilNuMenu())') && !oml.includes('const nu=new Date(),stil=isStil('));
-    const blok = zb.slice(zb.indexOf("data-stille-uren"), zb.indexOf('</div>', zb.indexOf("data-stille-uren")));
-    check('налаштування: «Тихі години» не вимикаються разом із мітками і пояснюють наслідки (безпека спливає, одне зведення)',
-      blok.length > 0 && !blok.includes('!m.aan') && blok.includes('Попередження безпеки все одно') && blok.includes('Beveiligingswaarschuwingen verschijnen wel') && blok.includes('Вимкнено:'));
+    // ДУБЛІ-001 (рішення Павла 15.11): тихі години лише в розділі «Сповіщення», одне сховище zijbalk.meldingen.stil.
+    const blok = mp.slice(mp.indexOf('data-stille-uren'), mp.indexOf('data-stille-tijden'));
+    check('налаштування: «Тихі години» лише в розділі «Сповіщення» (у «Меню» немає) і пояснюють наслідки (безпека спливає, одне зведення)',
+      blok.length > 0 && !zb.includes('data-stille-uren') && !zb.includes('m.stil') && blok.includes('Попередження безпеки все одно') && blok.includes('Beveiligingswaarschuwingen verschijnen wel') && blok.includes('Вимкнено:'));
+    check('налаштування: «Сповіщення» пишуть тихі години в те саме сховище, яке читає рамка (zetZijbalk → meldingen.stil)',
+      mp.includes('useZijbalkVoorkeuren().meldingen.stil') && /zetZijbalk\(\(cur\) => \(\{ \.\.\.cur, meldingen: \{ \.\.\.cur\.meldingen, stil:/.test(mp) && mp.includes('checked={stil.aan}'));
   }
 
   // ================================================================ (2) збереження через справжні маршрути

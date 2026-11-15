@@ -59,6 +59,7 @@ import {
 import MeldingVoorkeurenPaneel from '../../meldingen/MeldingVoorkeurenPaneel';
 import { useHuidigeRuimte } from '../../tech/ruimtes/ruimte-signaal';
 import { useTech } from '../../tech/tech-opslag';
+import { useZijbalkVoorkeuren, zetZijbalk } from '../../zijbalk-voorkeuren'; // ДУБЛІ-001: одне сховище тихих годин
 import './melding-pagina.css';
 
 type Props = {
@@ -265,6 +266,13 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
     };
   }, [scope, ruimte]);
 
+  // ДУБЛІ-001: тихі години діють через zijbalk.meldingen.stil (центр сповіщень, мітки меню); профіль екосистеми лише віддзеркалює їх,
+  // тож двох різних значень більше немає. Stille uren: één opslag, het profiel spiegelt mee.
+  const stil = useZijbalkVoorkeuren().meldingen.stil;
+  const zetStil = (patch: { aan?: boolean; van?: string; tot?: string }) => {
+    zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, stil: { ...cur.meldingen.stil, ...patch } } }));
+    slaProfielOp((c) => ({ ...c, stilleUren: { ...c.stilleUren, ...(patch.aan !== undefined ? { actief: patch.aan } : {}), ...(patch.van ? { van: patch.van } : {}), ...(patch.tot ? { tot: patch.tot } : {}) } }));
+  };
   const slaProfielOp = (updater: (cur: MeldingEcosysteemProfiel) => MeldingEcosysteemProfiel) => {
     setProfiel((cur) => {
       const volgende = updater(cur);
@@ -814,18 +822,18 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           </div>
         </div>
 
-        <div className='mp-schakel-raster'>
-          <label className='mp-schakel'>
+        <div className='mp-schakel-raster' data-stille-uren>
+          <label className='mp-schakel' data-meld-schakel='stil'>
             <input
               type='checkbox'
-              checked={profiel.stilleUren.actief}
-              onChange={(e) =>
-                slaProfielOp((c) => ({ ...c, stilleUren: { ...c.stilleUren, actief: e.target.checked } }))
-              }
+              checked={stil.aan}
+              onChange={(e) => zetStil({ aan: e.target.checked })}
             />
             <span>
-              {t('Тихі години екосистеми', 'Stille uren van ecosysteem')}
-              <small>{t('У заданому проміжку часу нові некритичні події накопичуються мовчки без звуку та спливань.', 'Niet-kritieke meldingen blijven stil in het paneel zonder pop-up of geluid.')}</small>
+              {t('Тихі години', 'Stille uren')}
+              <small>{stil.aan
+                ? t(`З ${stil.van} до ${stil.tot} нові сповіщення не спливають і не звучать, мітки меню не пульсують — усе лишається в панелі сповіщень. Попередження безпеки все одно спливають. Після кінця — одне зведення «Поки була тиша».`, `Van ${stil.van} tot ${stil.tot} verschijnen nieuwe meldingen niet en klinken ze niet, menubadges pulseren niet — alles blijft in het meldingenpaneel. Beveiligingswaarschuwingen verschijnen wel. Daarna één samenvatting.`)
+                : t('Вимкнено: сповіщення спливають і звучать у будь-який час.', 'Uit: meldingen verschijnen en klinken op elk moment.')}</small>
             </span>
           </label>
           <label className='mp-schakel'>
@@ -846,25 +854,23 @@ export default function MeldingEcosysteemPagina({ lang, scope, techTypen }: Prop
           </label>
         </div>
 
-        <div className='mp-velden-raster'>
+        <div className='mp-velden-raster' data-stille-tijden>
           <label>
             {t('Початок тиші', 'Start stille uren')}
             <input
               type='time'
-              value={profiel.stilleUren.van}
-              onChange={(e) =>
-                slaProfielOp((c) => ({ ...c, stilleUren: { ...c.stilleUren, van: e.target.value } }))
-              }
+              value={stil.van}
+              disabled={!stil.aan}
+              onChange={(e) => zetStil({ van: e.target.value })}
             />
           </label>
           <label>
             {t('Кінець тиші', 'Einde stille uren')}
             <input
               type='time'
-              value={profiel.stilleUren.tot}
-              onChange={(e) =>
-                slaProfielOp((c) => ({ ...c, stilleUren: { ...c.stilleUren, tot: e.target.value } }))
-              }
+              value={stil.tot}
+              disabled={!stil.aan}
+              onChange={(e) => zetStil({ tot: e.target.value })}
             />
           </label>
         </div>
