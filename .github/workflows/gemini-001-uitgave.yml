@@ -123,12 +123,14 @@ jobs:
       - name: Перевірити правила координації та журнал походження
         run: |
           set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
           node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Перевірити статичні правила та модульні випробування без бази даних
         run: |
           set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
           find deploy -name '*.sh' -exec bash -n {} +
           node scripts/kaart-controle.mjs --stil
           node scripts/plaatsing-controle.mjs --stil
@@ -202,6 +204,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
           export DATABASE_URL=postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon
           export DATABASE_URL_SYSTEM="$DATABASE_URL"
           export MIGRATIONS_DIR="$PWD/migrations"
