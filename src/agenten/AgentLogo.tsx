@@ -5,10 +5,12 @@
 // Onbekende agent → monogram (dat doet <Merk> zelf).
 import { agentSlugUitNaam } from '../../shared/markering-agenten';
 import Merk from '../merk/Merk';
-import { laadMerken } from '../merk/merk-register';
+import { laadMerken, laadOfficieel } from '../merk/merk-register';
 
 // Zodra een pagina met agentlogo's geladen wordt, halen we de merkentabel op; het monogram staat dan nauwelijks merkbaar kort.
 void laadMerken();
+// Справжні логотипи агентів (вбудована база) — одразу, щоб перемальована фігура не блимала. Echte agentlogo's meteen laden.
+void laadOfficieel();
 
 /**
  * Alles wat een agent kan heten (slug, klant-id van het journaal, clientnaam van een OAuth-registratie) → AgentSlug, of null.

@@ -49,15 +49,12 @@ export async function main(): Promise<number> {
   const rCompact = velden(1440, 96);
   check('згорнуте меню (96 px) на 1440: колонка по центру, поля 130/130', rCompact.menu === 130 && rCompact.ander === 130, JSON.stringify(rCompact));
 
-  // Частина 3. Блок «Підключити».
-  check('слово «Підключити» — один раз як заголовок блоку (role=heading, не <h2>: на ai/agents у каталозі пошуку лише вказівник, zoek-ui-tabblad 6j), а не на кожній плитці', tsx.includes(`<strong id='ag-ingangen-titel' className='ag-ingangen-titel' role='heading' aria-level={2}>{tr('Підключити', 'Koppelen')}</strong>`) && !tsx.includes(`<b>{tr(\`Підключити \${a.naam}\``));
-  check('повна назва «Підключити Claude» лишається для читачів екрана (aria-label) і підказка прив\'язана через aria-describedby',
-    tsx.includes("aria-label={tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)} aria-describedby={`ag-ingang-tip-${a.slug}`}") && tsx.includes("role='tooltip' id={`ag-ingang-tip-${a.slug}`}"));
-  check('підказка пояснює наслідок (куди веде й що там станеться), а не лише назву', tsx.includes('там ви дасте йому доступ лише до свого простору') && tsx.includes('daar geeft u alleen toegang tot uw eigen ruimte'));
-  check('наведення / фокус клавіатурою збільшує плитку й показує підказку лише там, де є наведення',
-    /@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*:hover,[\s\S]*:focus-visible \{[\s\S]*transform: scale\(1\.14\);/.test(ing));
-  check('сенсорний екран: коротка назва під піктограмою, підказку не показуємо, ряд — сітка без виходу за ширину',
-    /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*grid-template-columns: repeat\(auto-fill, minmax\(68px, 1fr\)\);[\s\S]*\.ag-ingang-naam \{\n    display: block;[\s\S]*\.ag-ingang-tip \{\n    display: none;/.test(ing));
+  // Частина 3. «Підключити» (BREEDTE-002, 15.11.2026): ряд піктограм замінено каталогом карток — одна картка на ШІ, одна кнопка
+  // «Підключити» й «Розгорнути»; слово «Підключити» більше не повторюється в окремому ряду над карточками.
+  const cat = lees('src/agenten/AgentCatalogus.tsx');
+  check('на ai/agents більше немає окремого ряду «Підключити X» — замість нього каталог карток', !tsx.includes("data-ai-agent-ingangen='1'") && lees('src/ai-ecosysteem/AiEcosysteemPaneel.tsx').includes('<AgentCatalogus '));
+  check('у картки одна головна кнопка «Підключити» і «Розгорнути» з aria-expanded / aria-controls', cat.includes("tr('Підключити', 'Koppelen')") && cat.includes('aria-expanded={isOpen} aria-controls={detailId}'));
+  check('підказка до «Підключити» прив\'язана через aria-describedby і пояснює наслідок', cat.includes("role='tooltip' id={tipId}") && cat.includes('aria-describedby={tipId}') && cat.includes('hoofdUitleg('));
   check('стиль блоку підключено до сторінки', tsx.includes("import './agenten/ai-ingangen-pictogrammen.css';"));
   check('менше руху — без анімацій', /prefers-reduced-motion: reduce[\s\S]*transition: none;/.test(ing));
   return einde();
