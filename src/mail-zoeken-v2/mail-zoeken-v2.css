@@ -76,7 +76,7 @@
 .mzv2-link{min-height:36px;padding:0 8px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
 .mzv2-link:hover,.mzv2-link:focus-visible{text-decoration:underline;text-underline-offset:3px;outline:none}
 .mzv2-keuze-chips{display:flex;flex-wrap:wrap;gap:5px}
-.mzv2-keuze-chips .mail-search-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.mzv2-keuze-chips .mail-search-chip{max-width:100%;white-space:normal;overflow-wrap:break-word}
 /* lijsten: geen eigen scroll — het werkgebied scrolt */
 .mzv2-lijst{display:grid;gap:5px}
 .mzv2-lijst-kop{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:28px;padding:0 2px}
