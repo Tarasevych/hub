@@ -11,7 +11,7 @@ import { focusTerug, focusVerloren, menuToets } from './platform/toegankelijk';
 
 type Lang = 'uk' | 'nl';
 type Account = { id: string; email: string; displayName: string; picture: string; accountRole: 'primary' | 'additional' };
-type Props = { lang: Lang; accounts: Account[]; activeAccountId: string; connectors: MailConnector[]; imap?: MailImapKoppelingPubliek[]; onSelect: (id: string) => void; onManage: () => void; onAdd: () => void; onOpen?: () => void };
+type Props = { lang: Lang; accounts: Account[]; activeAccountId: string; connectors: MailConnector[]; imap?: MailImapKoppelingPubliek[]; onSelect: (id: string) => void; onManage: () => void; onAdd: () => void; onOpen?: () => void; activeImapId?: string; onSelectImap?: (id: string) => void };
 
 const initialsOf = (a?: Account) => ((a?.displayName || a?.email || '?').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('') || '?').toUpperCase();
 
@@ -21,7 +21,7 @@ const initialsOf = (a?: Account) => ((a?.displayName || a?.email || '?').trim().
  * Круглий аватар ПОШТОВОГО акаунта (не всього сервісу) у правому куті, з логотипом сервісу (Google/Microsoft) на краю: одразу видно, яка пошта
  * зараз відкрита. Дотик відкриває список підключених скриньок для швидкого перемикання. Показується лише на вузьких екранах (на широких є перемикач у контекстній панелі).
  */
-export default function MailAccountBadge({ lang, accounts, activeAccountId, connectors, imap = [], onSelect, onManage, onAdd, onOpen }: Props) {
+export default function MailAccountBadge({ lang, accounts, activeAccountId, connectors, imap = [], onSelect, onManage, onAdd, onOpen, activeImapId = '', onSelectImap }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [open, setOpen] = useState(false);
   const [place, setPlace] = useState<{ top: number; maxHeight: number } | null>(null);
@@ -30,7 +30,9 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
   const active = accounts.find((a) => a.id === activeAccountId) || accounts[0];
   // 15.11.2026: усі джерела (Google, Microsoft, IMAP: Ukr.net, I.ua, iCloud…) — одна модель src/mail/mail-wisselaar-model.ts.
   const rijen = useMemo(() => wisselRijen({ taal: lang, google: accounts, connectors, imap }), [lang, accounts, connectors, imap]);
-  const extra = rijen.filter((r) => !r.kiesbaar);
+  const extra = rijen.filter((r) => r.soort !== 'google');
+  // MAIL-IMAP-LEZEN-001: een gekozen IMAP-mailbox is de actieve — de avatar toont dan haar letter en dienstlogo.
+  const actiefImap = activeImapId ? rijen.find((r) => r.soort === 'imap' && r.id === activeImapId) : undefined;
 
   useLayoutEffect(() => {
     if (!open || !trigger.current) return;
@@ -65,27 +67,34 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
   return (
     <div ref={root} className="mail-account-badge">
       <button ref={trigger} type="button" className="mail-account-badge-trigger" aria-haspopup="menu" aria-expanded={open}
-        aria-label={`${t('Поштовий акаунт', 'Mailaccount')}: ${active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => { if (!v) onOpen?.(); return !v; })}>
-        <span className="mail-account-badge-photo"><StableAvatar src={active.picture} fallback={initialsOf(active)} alt="" /></span>
-        <span className="mail-account-badge-logo" aria-hidden="true"><Logo kind="google" size={14} /></span>
+        aria-label={`${t('Поштовий акаунт', 'Mailaccount')}: ${actiefImap?.email || active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => { if (!v) onOpen?.(); return !v; })}>
+        {actiefImap ? <>
+          <span className="mail-account-badge-photo"><span className="mail-account-badge-initial">{(actiefImap.email[0] || '?').toUpperCase()}</span></span>
+          <span className="mail-account-badge-logo is-merk" aria-hidden="true"><MerkLogo id={actiefImap.id} naam={actiefImap.dienst} logo={actiefImap.merk} maat={16} /></span>
+        </> : <>
+          <span className="mail-account-badge-photo"><StableAvatar src={active.picture} fallback={initialsOf(active)} alt="" /></span>
+          <span className="mail-account-badge-logo" aria-hidden="true"><Logo kind="google" size={14} /></span>
+        </>}
       </button>
       {open && place && (
         <div ref={menuRef} className="mail-account-badge-menu" role="menu" aria-label={t('Поштові скриньки', 'Mailboxen')} onKeyDown={menuToetsen} style={{ top: place.top, maxHeight: place.maxHeight }}>
           <header role="none"><strong>{t('Поштові скриньки', 'Mailboxen')}</strong><small>{t('Оберіть, яку пошту показувати', 'Kies welke mailbox wordt getoond')}</small></header>
           <div className="mail-account-badge-list">
             {accounts.map((a) => (
-              <button key={`g:${a.id}`} type="button" role="menuitemradio" aria-checked={a.id === activeAccountId} className={a.id === activeAccountId ? 'active' : ''}
-                onClick={() => { setOpen(false); if (a.id !== activeAccountId) onSelect(a.id); }}>
+              <button key={`g:${a.id}`} type="button" role="menuitemradio" aria-checked={!actiefImap && a.id === activeAccountId} className={!actiefImap && a.id === activeAccountId ? 'active' : ''}
+                onClick={() => { setOpen(false); if (actiefImap || a.id !== activeAccountId) onSelect(a.id); }}>
                 <span className="mail-account-badge-photo is-klein" aria-hidden="true"><StableAvatar src={a.picture} fallback={<span className="mail-account-badge-initial">{initialsOf(a)}</span>} alt="" /><span className="mail-account-badge-logo"><Logo kind="google" size={12} /></span></span>
                 <span><strong>{a.displayName || a.email}</strong><small>{a.email}{a.accountRole === 'primary' ? ` · ${t('основний', 'primair')}` : ''}</small></span>
-                {a.id === activeAccountId ? <Check size={18} /> : null}
+                {!actiefImap && a.id === activeAccountId ? <Check size={18} /> : null}
               </button>
             ))}
             {extra.map((r) => (
-              <button key={r.sleutel} type="button" role="menuitem" title={wisselUitleg(r, lang)} className={r.aandacht ? 'aandacht' : ''} onClick={() => { setOpen(false); onManage(); }}>
+              <button key={r.sleutel} type="button" role={r.kiesbaar ? 'menuitemradio' : 'menuitem'} aria-checked={r.kiesbaar ? r.id === activeImapId : undefined} title={wisselUitleg(r, lang)}
+                className={[r.aandacht ? 'aandacht' : '', r.soort === 'imap' && r.id === activeImapId ? 'active' : ''].filter(Boolean).join(' ')}
+                onClick={() => { setOpen(false); if (r.kiesbaar && r.soort === 'imap' && onSelectImap) onSelectImap(r.id); else onManage(); }}>
                 <span className="mail-account-badge-photo is-klein" aria-hidden="true"><span className="mail-account-badge-initial">{(r.email[0] || '?').toUpperCase()}</span><span className="mail-account-badge-logo is-merk"><MerkLogo id={r.id} naam={r.dienst} logo={r.merk} maat={16} /></span></span>
                 <span><strong>{r.titel}</strong><small>{r.stand}</small></span>
-                <Settings2 size={18} />
+                {r.soort === 'imap' && r.id === activeImapId ? <Check size={18} /> : r.kiesbaar ? null : <Settings2 size={18} />}
               </button>
             ))}
           </div>

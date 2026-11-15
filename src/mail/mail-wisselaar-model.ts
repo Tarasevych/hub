@@ -29,7 +29,7 @@ export type WisselRij = {
   merk: string;
   picture: string;
   hoofd: boolean;
-  /** Kan de lijst van deze mailbox hier direct getoond worden? (alleen Google; de rest opent het beheer) */
+  /** Kan de lijst van deze mailbox hier direct getoond worden? (Google en — sinds MAIL-IMAP-LEZEN-001 — IMAP; Microsoft opent het beheer) */
   kiesbaar: boolean;
   /** Korte stand onder het adres */
   stand: string;
@@ -83,7 +83,7 @@ export function wisselRijen(o: { taal: Taal; google: readonly WisselGoogle[]; co
     const naam = d?.naam || m.aanbieder || 'IMAP';
     uit.push({
       sleutel: `imap:${m.id}`, soort: 'imap', id: m.id, email: m.adres, titel: m.adres, dienst: naam, merk: d?.merk || m.aanbieder,
-      picture: '', hoofd: false, kiesbaar: false,
+      picture: '', hoofd: false, kiesbaar: true,
       stand: m.fout ? `${naam} · ${t(taal, 'потрібна дія', 'actie nodig')}` : `${naam} · ${t(taal, 'підключено', 'gekoppeld')}`,
       aandacht: Boolean(m.fout),
     });
@@ -93,6 +93,7 @@ export function wisselRijen(o: { taal: Taal; google: readonly WisselGoogle[]; co
 
 /** Uitleg (tooltip) bij een rij die hier nog niet geopend kan worden: wat er gebeurt bij een klik. */
 export function wisselUitleg(r: WisselRij, taal: Taal): string {
+  if (r.kiesbaar && r.aandacht) return t(taal, `Показати листи ${r.email}. Підключення потребує дії: якщо сервіс відмовить, кнопка «Керувати підключенням» відкриє сторінку акаунтів`, `De berichten van ${r.email} tonen. De koppeling vraagt een handeling: weigert de dienst, dan opent de knop «Koppeling beheren» de accountpagina`);
   if (r.kiesbaar) return t(taal, `Показати листи ${r.email} у цьому списку`, `De berichten van ${r.email} in deze lijst tonen`);
   if (r.aandacht) return t(taal, `${r.dienst}: підключення потребує дії — відкриється сторінка акаунтів`, `${r.dienst}: de koppeling vraagt een handeling — de accountpagina opent`);
   return t(taal, `${r.dienst}: листи цієї скриньки поки не показуються в цьому списку — відкриється сторінка акаунтів`, `${r.dienst}: berichten van deze mailbox worden nog niet in deze lijst getoond — de accountpagina opent`);
