@@ -19,6 +19,7 @@
 // versleuteld bewaart. Bij MINIMALISEREN wordt het gewist (`klein` → leeg veld + de eerlijke regel «введіть пароль ще
 // раз»): een geminimaliseerd venster mag nooit een wachtwoord in de lucht laten hangen, want zijn beschrijving reist mee
 // naar een ander subdomein.
+import { meldMailAccountsGewijzigd } from './mail-wisselaar-model';
 import { useEffect, useId, useRef, useState } from 'react';
 import GeheimInvoer from '../geheim/GeheimInvoer';
 import { ArrowRight, ChevronLeft, ExternalLink, Loader2, LockKeyhole, MailCheck, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
@@ -180,6 +181,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       setKlaar({ mappen: data.koppeling.mappen, smtpGoed: data.koppeling.smtpGoed });
       setOpnieuwNodig(false); setAlGekoppeld(false);
       onStap('klaar', schoon);
+      meldMailAccountsGewijzigd(); // 15.11.2026: перемикач скриньок у списку листів оновлюється одразу
     } catch (gevangen) {
       // De server antwoordt 400 { ok:false, fout } → de ApiError draagt die code niet in message: lees het lichaam.
       const lichaam = (gevangen as { response?: { data?: { fout?: string } } })?.response?.data;

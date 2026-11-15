@@ -22,6 +22,7 @@
 //   • elk logo komt uit het ENE merkregister (src/merk/merk-register.ts). Merken zonder vorm met echte herkomst krijgen de
 //     neutrale plaat (geen nagetekend logo); de beheerder kan het officiële bestand zelf neerleggen (deploy/LEESMIJ.md);
 //   • klikken opent een VENSTER uit de gezamenlijke laag (src/platform/VensterHerstel.tsx → MailKoppelVenster).
+import { meldMailAccountsGewijzigd } from './mail/mail-wisselaar-model';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { focusVerloren } from './platform/toegankelijk';
 import { Mail, Settings2, ShieldCheck, Zap } from 'lucide-react';
@@ -279,6 +280,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
       setMelding({ fout: false, tekst: `${k.email}: ${t('відключено.', 'losgekoppeld.')} ${wissen ? t('Локальні дані видалено.', 'De lokale gegevens zijn gewist.') : k.soort === 'imap' ? '' : t('Локальні дані збережено.', 'De lokale gegevens zijn bewaard.')}`.trim() });
       await laden();
       onVeranderd?.();
+      meldMailAccountsGewijzigd(); // 15.11.2026: перемикач скриньок у списку листів (інша вкладка) оновлюється одразу
     } catch (gevangen) {
       setMelding({ fout: true, tekst: `${t('Не відключено. Код сервера:', 'Niet losgekoppeld. Servercode:')} ${fout(gevangen)}` });
     } finally { setBezig(''); }
