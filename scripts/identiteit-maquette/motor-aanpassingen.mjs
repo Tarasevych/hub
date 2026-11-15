@@ -989,5 +989,133 @@ v(`      try{доціль=гніздо?гніздо.querySelector(ціль):null
       if(!доціль&&!ціль&&гніздоГотове&&спроби>=3)доціль=гніздо;
       if(!доціль){if(++спроби<50){setTimeout(шукати,60);return;}if(гніздоГотове)доціль=гніздо;else return;}`);
 
+// BLOKKEN-001 (15.11.2026): правки, які KLEUREN-001 (#128: 12 акцентів і назви з ACCENT_KEUZES/ACCENT_NAMEN, сім палітр,
+// акцент як справжнє налаштування) і HINT-001 (#130: підказка якорів лише для самої піктограми, без дотику, data-anker-tip)
+// внесли прямо в згенерований maquette-motor.ts. Перенесено сюди, щоб bouw.mjs їх не стирав (кроки знайдено порівнянням файлів).
+// NL: handmatige wijzigingen van KLEUREN-001 en HINT-001 aan de gegenereerde motor, overgezet naar de generator.
+v(`
+export type MaquetteOpties = {`,
+`
+import type { UiterlijkAccent } from '../../../shared/uiterlijk';
+import { ACCENT_KEUZES, ACCENT_NAMEN } from '../../thema/weergave-stijl';
+export type MaquetteOpties = {`);
+v(`export type MaquetteWeergave = {
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: 'violet' | 'cyan' | 'pink' | 'amber'; effecten: number;
+  icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';`,
+`export type MaquetteWeergave = {
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
+  icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';`);
+v(`        accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
+        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
+        langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",`,
+`        accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
+        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Ціан",pink:"Рожевий",amber:"Медовий",blauw:"Синій",hemel:"Небесний",teal:"Бірюзовий",groen:"Зелений",oranje:"Бурштиновий",roze:"Малиновий",indigo:"Індиго",bruin:"Теракотовий"},
+        langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",`);
+v(`        accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
+        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
+        langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",`,
+`        accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
+        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Cyaan",pink:"Roze",amber:"Honing",blauw:"Blauw",hemel:"Hemelsblauw",teal:"Teal",groen:"Groen",oranje:"Oranje",roze:"Framboos",indigo:"Indigo",bruin:"Terracotta"},
+        langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",`);
+v(`      група("палітра","Основне кольорове оформлення","Basiskleuren","Наявні оформлення з різними світлими та темними відтінками.","Bestaande paletten met een lichte en donkere variant.","наявне",[
+        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Грифельне","Leisteen"],["Чисте","Zuiver"],["Фіолетове","Paars"]])
+      ]),`,
+`      група("палітра","Основне кольорове оформлення","Basiskleuren","Наявні оформлення з різними світлими та темними відтінками.","Bestaande paletten met een lichte en donkere variant.","наявне",[
+        // САЙТ (KLEUREN-001): усі сім палітр, як у «Темах» і меню облікового запису (було чотири). Alle zeven paletten.
+        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Макет","Ontwerp"],["Біла класика","Witte klassiek"],["Чорна класика","Zwarte klassiek"],["Грифельне","Grafiet"],["Чисте","Puur"],["Фіолетове","Violet"]])
+      ]),`);
+v(`      ]),
+      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Допоміжний колір не замінює основного оформлення.","Accentkleur vervangt het basispalet niet.","макет",[
+        рядок("Акцентна палітра","Accentkleuren","вибір",[["Фіолетовий","Paars"],["Бірюзовий","Turkoois"],["Рожевий","Roze"],["Бурштиновий","Amber"]]),
+        рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")`,
+`      ]),
+      // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
+      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
+        рядок("Акцентна палітра","Accentkleuren","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
+        рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")`);
+v(`    }else if(type==="accent"){
+      widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
+    }else if(type==="language"){`,
+`    }else if(type==="accent"){
+      // ACCENT-001: ті самі відтінки, що в меню облікового запису; давні «pink»/«amber» видно, лише поки обрані.
+      widget='<div class="swatches drawer-swatches">'+ACCENT_KEUZES.concat(ACCENT_KEUZES.includes(обранийАкцент())||!обранийАкцент()?[]:[обранийАкцент()]).map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
+    }else if(type==="language"){`);
+v(`
+  function isIconNav(){
+    return preferences.iconOnly || ["top","bottom"].includes(preferences.position) || preferences.compact ||
+      ((breed()<=730)&&["left","right"].includes(preferences.position));
+  }`,
+`
+  // HINT-001: підказка потрібна лише тоді, коли пункт справді показує саму піктограму. Налаштування «компактно»/«авто»
+  // не годиться як ознака: в авто-режимі панель розгортається при наведенні й назву вже видно (була подвійна назва).
+  // HINT-001: alleen een hint als het item echt alleen een pictogram toont; «auto» klapt bij aanwijzen uit en toont de naam al.
+  function isIconNav(el){
+    const naam=el&&el.querySelector(".anchor-name,.nav-group-name");
+    if(!naam)return true;
+    if(!naam.getClientRects().length)return true;
+    const st=getComputedStyle(naam);
+    return st.visibility==="hidden"||Number(st.opacity)<0.05;
+  }`);
+v(`  function showAnchorTooltip(el){
+    if(!el||!isIconNav()||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
+    const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();`,
+`  function showAnchorTooltip(el){
+    if(!el||!isIconNav(el)||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
+    const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();`);
+v(`    const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();
+    tooltip.textContent=el.dataset.tooltip;
+    tooltip.hidden=false;`,
+`    const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();
+    tooltip.textContent=el.dataset.ankerTip||el.getAttribute("aria-label")||"";
+    tooltip.hidden=false;`);
+v(`    tooltip.classList.add("show");
+  }`,
+`    tooltip.classList.add("show");
+    ankerTipDoel=el;
+    // Авто-панель розгортається під мишею вже після показу: щойно назву видно, бубка зникає · verdwijnt zodra de naam zichtbaar is
+    clearTimeout(ankerTipHerzien);ankerTipHerzien=setTimeout(herzieAnkerTip,120);setTimeout(herzieAnkerTip,420);
+  }`);
+v(`  }
+  function hideAnchorTooltip(){`,
+`  }
+  let ankerTipDoel=null,ankerTipHerzien=0;
+  function herzieAnkerTip(){if(ankerTipDoel&&!isIconNav(ankerTipDoel))hideAnchorTooltip();}
+  function hideAnchorTooltip(){`);
+v(`  function hideAnchorTooltip(){
+    const tooltip=byId("anchorTooltip");`,
+`  function hideAnchorTooltip(){
+    ankerTipDoel=null;
+    const tooltip=byId("anchorTooltip");`);
+v(`    }
+    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
+    const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп`,
+`    }
+    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-anker-tip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
+    const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп`);
+v(`      return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
+        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-tooltip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
+        '<div class="nav-subitems" role="group" aria-label="'+label+'">'+localized.filter(s=>s.group===group.id).map(s=>navItem(s.id,s.short)).join("")+'</div></div>';`,
+`      return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
+        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-anker-tip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
+        '<div class="nav-subitems" role="group" aria-label="'+label+'">'+localized.filter(s=>s.group===group.id).map(s=>navItem(s.id,s.short)).join("")+'</div></div>';`);
+v(`    body.classList.toggle("rail-compact",collapsed);
+    root.querySelectorAll("[data-drawer-compact]").forEach(b=>{b.setAttribute("aria-pressed",String(collapsed));b.classList.toggle("on",collapsed);});`,
+`    body.classList.toggle("rail-compact",collapsed);
+    if(!collapsed)herzieAnkerTip();
+    root.querySelectorAll("[data-drawer-compact]").forEach(b=>{b.setAttribute("aria-pressed",String(collapsed));b.classList.toggle("on",collapsed);});`);
+v(`  byId("railItems").addEventListener("pointerover",e=>{
+    const item=e.target.closest(".anchor-link,.nav-group-toggle");`,
+`  byId("railItems").addEventListener("pointerover",e=>{
+    // HINT-001: на сенсорному екрані дотик не показує підказку · geen hint bij aanraken
+    if(e.pointerType==="touch")return;
+    const item=e.target.closest(".anchor-link,.nav-group-toggle");`);
+v(`  });
+  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item)showAnchorTooltip(item);});
+  byId("railItems").addEventListener("focusout",hideAnchorTooltip);`,
+`  });
+  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item&&item.matches(":focus-visible"))showAnchorTooltip(item);});
+  byId("railItems").addEventListener("focusout",hideAnchorTooltip);`);
+
 fs.writeFileSync(f, s);
 console.log('ok');
