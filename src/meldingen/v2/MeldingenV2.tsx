@@ -26,6 +26,7 @@ import { laterActief, zetLater } from './later';
 import type { Bronnen } from './model';
 import { bouwModel } from './model';
 import MeldingVoorkeurenPaneel from '../MeldingVoorkeurenPaneel';
+import { veiligeMeldingUrl } from '../../../shared/meldingen-ecosysteem';
 import './meldingen-v2.css';
 
 type Lang = 'uk' | 'nl';
@@ -206,7 +207,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
           </span>
         </button>
         <div className='mv2-rij-acties'>
-          {m.link ? <a className='mv2-ikoon is-klein' href={m.link} data-mv2-openen='1' aria-label={t(`Відкрити: ${m.titel}`, `Openen: ${m.titel}`)} data-tip={t('Відкрити, де це виправити', 'Openen waar u het oplost')} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' /></a> : null}
+          {veiligeMeldingUrl(m.link) ? <a className='mv2-ikoon is-klein' href={veiligeMeldingUrl(m.link)} data-mv2-openen='1' aria-label={t(`Відкрити: ${m.titel}`, `Openen: ${m.titel}`)} data-tip={t('Відкрити, де це виправити', 'Openen waar u het oplost')} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' /></a> : null}
           {herstelbaar
             ? <button type='button' className='mv2-ikoon is-klein' data-mv2-terug='1' aria-label={t(`Повернути з архіву: ${m.titel}`, `Uit het archief terugzetten: ${m.titel}`)} data-tip={t('Повернути з архіву', 'Uit het archief terugzetten')} onClick={() => zetTerug([g])}><ArchiveRestore aria-hidden='true' /></button>
             : !inArchief ? <button type='button' className='mv2-ikoon is-klein' data-mv2-opruimen='1' aria-label={t(`Очистити: ${m.titel}`, `Opruimen: ${m.titel}`)} data-tip={t('Очистити — у «Архів» (можна повернути)', 'Opruimen — naar «Archief» (terug te zetten)')} onClick={() => ruimOp([g])}><Archive aria-hidden='true' /></button> : null}
@@ -230,7 +231,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
               </details>
             ) : null}
             {m.technischeTekst ? <details className='mv2-tech'><summary>{t('Технічні подробиці', 'Technische details')}</summary><code>{m.technischeTekst}</code></details> : null}
-            {m.link && !v3 ? <a className='mv2-knop-link' href={m.link} onClick={() => markeerGroep(g)}>{t('Відкрити, де це виправити', 'Openen waar u het oplost')}<ExternalLink aria-hidden='true' /></a> : null}
+            {veiligeMeldingUrl(m.link) && !v3 ? <a className='mv2-knop-link' href={veiligeMeldingUrl(m.link)} onClick={() => markeerGroep(g)}>{t('Відкрити, де це виправити', 'Openen waar u het oplost')}<ExternalLink aria-hidden='true' /></a> : null}
           </div>
         ) : null}
       </li>
@@ -239,10 +240,11 @@ export default function MeldingenV2(p: MeldingenV2Props) {
 
   const menuInhoud = (g: V2Groep) => {
     const m = g.hoofd;
+    const veiligLink = veiligeMeldingUrl(m.link);
     return (
       <>
         {g.ongelezen ? <button role='menuitem' type='button' onClick={() => { markeerGroep(g); setMenu(null); }}><Check aria-hidden='true' />{t('Позначити прочитаним', 'Als gelezen markeren')}</button> : null}
-        {m.link ? <a role='menuitem' href={m.link} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' />{t('Відкрити джерело', 'Bron openen')}</a> : null}
+        {veiligLink ? <a role='menuitem' href={veiligLink} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' />{t('Відкрити джерело', 'Bron openen')}</a> : null}
         {g.toestand !== 'opgelost' ? <button role='menuitem' type='button' onClick={() => { void zetGroepen([g], 'opgelost', 'kaart', undefined, t('Позначено вирішеним — у «Архіві».', 'Als opgelost gemarkeerd — in «Archief».')); setMenu(null); }}><CircleCheck aria-hidden='true' />{t('Позначити вирішеним', 'Als opgelost markeren')}</button> : null}
         {g.toestand !== 'archief' ? <button role='menuitem' type='button' onClick={() => { ruimOp([g]); setMenu(null); }}><Archive aria-hidden='true' />{t('Очистити (в архів)', 'Opruimen (naar archief)')}</button> : null}
         {v3 ? <>

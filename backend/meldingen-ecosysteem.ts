@@ -12,6 +12,8 @@ import { gegevensRuimteVeilig, RuimteFout, technischeRechten } from './ruimte-sc
 import { AI_AANBIEDER_BIJ_ID, type AiAanbiederId } from '../shared/ai-aanbieders';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { jsonbTekst } from '../shared/tekst-veilig';
+import { zichtbaarVoor, type Ontvanger as MeldingOntvanger } from '../shared/melding-soorten';
+import { sfeerVanRij } from '../shared/meldingen-soorten';
 import {
   bouwAiPromptVoorGebeurtenis,
   GEBEURTENIS_STATUSSEN,
@@ -31,8 +33,16 @@ import {
   type RuimteType,
 } from '../shared/meldingen-ecosysteem';
 
-type Auth = { errorCode: string } | { user: { id: string; status?: string; role?: string }; tab?: string };
+type Auth = { errorCode: string } | { user: { id: string; status?: string; role?: string; email?: string }; tab?: string };
 type RequireSession = (event: unknown, body: unknown) => Promise<Auth>;
+
+class LimietFout extends Error {
+  readonly retryAfter: number;
+  constructor(retryAfter?: number) {
+    super('RATE_LIMITED');
+    this.retryAfter = typeof retryAfter === 'number' && Number.isFinite(retryAfter) && retryAfter > 0 ? Math.ceil(retryAfter) : 60;
+  }
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -200,7 +210,7 @@ export async function slaGebeurtenisOp(
 
 export async function lijstStroom(
   lade: Lade,
-  opties: { kanaal?: string; subdomein?: string; status?: string; zoek?: string; limiet?: number } = {},
+  opties: { kanaal?: string; subdomein?: string; status?: string; zoek?: string; limiet?: number; ontvanger?: MeldingOntvanger } = {},
 ): Promise<{ gebeurtenissen: MeldingEcosysteemGebeurtenis[]; ongelezen: number }> {
   const limiet = Math.max(1, Math.min(120, Math.trunc(Number(opties.limiet) || 60)));
   return alsGebruiker(lade.userId, async (q) => {
@@ -228,9 +238,10 @@ export async function lijstStroom(
     }
     const zoekNorm = opties.zoek ? opties.zoek.trim().slice(0, 80) : '';
     if (zoekNorm) {
-      params.push(`%${zoekNorm}%`);
+      const escaped = zoekNorm.replace(/[%_\\]/g, '\\$&');
+      params.push(`%${escaped}%`);
       const idx = params.length;
-      conds.push(`(titel ILIKE $${idx} OR bericht ILIKE $${idx} OR bron ILIKE $${idx} OR context_label ILIKE $${idx})`);
+      conds.push(`(titel ILIKE $${idx} ESCAPE '\\' OR bericht ILIKE $${idx} ESCAPE '\\' OR bron ILIKE $${idx} ESCAPE '\\' OR context_label ILIKE $${idx} ESCAPE '\\')`);
     }
     params.push(limiet);
     const res = await q(
@@ -257,8 +268,9 @@ export async function lijstStroom(
       });
       const zoekLaag = zoekNorm.toLowerCase();
       for (const s of serverMeld.items) {
-        const sRuimte: RuimteType = s.ruimte === 'technisch' ? 'technisch' : 'prive';
+        const sRuimte: RuimteType = sfeerVanRij(s);
         if (sRuimte !== lade.ruimte) continue;
+        if (opties.ontvanger && !zichtbaarVoor(s.kind, opties.ontvanger)) continue;
         const sleutel = `site_notif:${s.id}`;
         if (bekendeSleutels.has(sleutel)) continue;
         const geb = interpreteerGebeurtenis(
@@ -565,9 +577,14 @@ export async function verwerkAgentMelding(invoer: {
   );
 }
 
-export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }): Record<string, RouterMiddleware[]> {
+export function meldingEcosysteemRoutes(deps: {
+  requireSession: RequireSession;
+  ontvanger?: (user: { id: string; email?: string; role?: string }) => Promise<MeldingOntvanger>;
+  rateLimit?: typeof rateLimit;
+}): Record<string, RouterMiddleware[]> {
+  const limietControle = deps.rateLimit ?? rateLimit;
   const metSessie = (
-    fn: (lade: Lade, body: Record<string, unknown>, user: { id: string; role?: string }) => Promise<unknown>,
+    fn: (lade: Lade, body: Record<string, unknown>, user: { id: string; role?: string; email?: string }) => Promise<unknown>,
     opties: { isProfielBeheer?: boolean } = {},
   ) =>
     (async (raw: unknown) => {
@@ -581,6 +598,7 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
         return json(await fn(lade, body, auth.user));
       } catch (e) {
         if (e instanceof RuimteFout) return error(e.code, e.status);
+        if (e instanceof LimietFout) return error('RATE_LIMITED', 429, { retryAfter: e.retryAfter });
         console.error('[meldingen-ecosysteem] помилка маршруту:', (e as Error).message);
         return error('MELDING_ECOSYSTEEM_MISLUKT', 500);
       }
@@ -600,7 +618,7 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
       ),
     ],
     'POST /api/owner/meldingen/ecosysteem/stroom': [
-      metSessie(async (lade, body) => ({
+      metSessie(async (lade, body, user) => ({
         ok: true,
         ruimte: lade.ruimte,
         ...(await lijstStroom(lade, {
@@ -609,11 +627,14 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
           status: typeof body.status === 'string' ? body.status : undefined,
           zoek: typeof body.zoek === 'string' ? body.zoek : undefined,
           limiet: Number(body.limiet) || 60,
+          ontvanger: deps.ontvanger ? await deps.ontvanger(user).catch(() => undefined) : undefined,
         })),
       })),
     ],
     'POST /api/owner/meldingen/ecosysteem/gebeurtenis': [
       metSessie(async (lade, body) => {
+        const limiet = await limietControle(`melding-event:${lade.userId}`, 60, 60);
+        if (!limiet.ok) throw new LimietFout(limiet.retryAfter);
         const gebeurtenis = await slaGebeurtenisOp(lade, body);
         return { ok: true, ruimte: lade.ruimte, gebeurtenis };
       }),
@@ -623,8 +644,8 @@ export function meldingEcosysteemRoutes(deps: { requireSession: RequireSession }
     ],
     'POST /api/owner/meldingen/ecosysteem/ai-ontleden': [
       metSessie(async (lade, body) => {
-        const limiet = await rateLimit(`melding-ai:${lade.userId}`, 40, 3600);
-        if (!limiet.ok) return { error: 'RATE_LIMITED', retryAfter: limiet.retryAfter };
+        const limiet = await limietControle(`melding-ai:${lade.userId}`, 40, 3600);
+        if (!limiet.ok) throw new LimietFout(limiet.retryAfter);
         const samenvatting = await analyseerMetAi(lade, body);
         return { ok: true, ruimte: lade.ruimte, samenvatting };
       }),
