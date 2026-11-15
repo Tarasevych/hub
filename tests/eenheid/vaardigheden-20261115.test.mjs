@@ -5,10 +5,10 @@ import { kiesVaardigheden, laadCatalogus, leesVaardigheid } from '../../scripts/
 
 const catalogus = laadCatalogus();
 
-test('чотири різні навички мають правильні вихідні файли', () => {
-  assert.equal(catalogus.vaardigheden.length, 4);
+test('п’ять різних навичок мають правильні вихідні файли', () => {
+  assert.equal(catalogus.vaardigheden.length, 5);
   const namen = new Set(catalogus.vaardigheden.map((item) => item.naam));
-  assert.equal(namen.size, 4);
+  assert.equal(namen.size, 5);
   for (const item of catalogus.vaardigheden) {
     assert.ok(leesVaardigheid(item.naam).startsWith(`---\nname: ${item.naam}\n`));
     assert.ok(item.samenvatting.uk && item.samenvatting.nl);
@@ -69,4 +69,42 @@ test('обмеження кількості підказок не втрачає
   const uit = kiesVaardigheden('підготуй випуск сайту та перевір архів', { maximum: 1 });
   assert.equal(uit.length, 1);
   assert.equal(uit[0]?.naam, 'uitgave-voorbereiden');
+});
+
+test('прохання зберегти ідею знаходить навичку пам’яті розвитку', () => {
+  const uit = kiesVaardigheden('Зафіксуй ідею в пам’яті розвитку');
+  assert.equal(uit[0]?.naam, 'ontwikkelgeheugen-bewaken');
+});
+
+test('пошук давніх файлів добирає навичку пам’яті', () => {
+  const uit = kiesVaardigheden('Знайди попередній файл і не створюй заново');
+  assert.equal(uit[0]?.naam, 'ontwikkelgeheugen-bewaken');
+});
+
+test('передавання між агентами добирає спільну пам’ять', () => {
+  const uit = kiesVaardigheden('Передай іншому агенту історію роботи');
+  assert.equal(uit[0]?.naam, 'ontwikkelgeheugen-bewaken');
+});
+
+test('повторна несправність з посиланням на старе виправлення не плутається з перевіркою', () => {
+  const uit = kiesVaardigheden('Знайди попереднє виправлення: знову помилка');
+  assert.equal(uit[0]?.naam, 'ontwikkelgeheugen-bewaken');
+});
+
+test('нідерландське прохання передати роботу знаходить пам’ять', () => {
+  const uit = kiesVaardigheden('Gebruik het ontwikkelgeheugen en draag het werk over');
+  assert.equal(uit[0]?.naam, 'ontwikkelgeheugen-bewaken');
+});
+
+test('усі навички доступні за назвою та мають початкові відомості', () => {
+  const namen = catalogus.vaardigheden.map((item) => item.naam);
+  assert.ok(namen.includes('ontwikkelgeheugen-bewaken'));
+  const inhoud = leesVaardigheid('ontwikkelgeheugen-bewaken');
+  assert.match(inhoud, /Пам’ять розвитку/);
+  assert.match(inhoud, /WERKOVERDRACHT\.uk\.md/);
+});
+
+test('звичайна перевірка помилки й далі добирає перевірку змін', () => {
+  const uit = kiesVaardigheden('Перевір помилку та безпеку');
+  assert.equal(uit[0]?.naam, 'wijziging-controleren');
 });
