@@ -82,5 +82,10 @@ export async function main(): Promise<number> {
   check('1366 px: колонка 910 px уміщується — поля 198/198, запас під меню (168 px) не порушено', v1366.menu === 198 && v1366.ander === 198);
   const vOpen = velden(1860, 320);
   check('1920 px, розгорнуте меню (320 px): вміст не заходить під меню, поля симетричні', vOpen.menu === 475 && vOpen.ander === 475 && vOpen.vlak === 910);
+  // Мітка стану Passkeys, як у застосунку-автентифікатора (зауваження 15.11.2026). NL: statuslabel bij Passkeys.
+  const sleutels = lees('src/ToegangssleutelsSectie.tsx');
+  check('Passkeys мають мітку стану «Налаштовано / Не налаштовано» з тими ж класами, що й автентифікатор',
+    /data-passkey-mitka className=\{`access-plane-badge tone-\$\{!data\|\|!aantal\?'muted':'good'\}`\}/.test(sleutels)
+    && sleutels.includes("tr(lang,'Налаштовано','Ingesteld'):tr(lang,'Не налаштовано','Niet ingesteld')"));
   return einde();
 }
