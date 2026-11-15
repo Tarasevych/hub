@@ -849,7 +849,9 @@ export function AccountMenuV3({
                           type='button'
                           className='am3-acc-btn is-icon-only canonical-account-forget'
                           disabled={busy || isSelecting || forgetting === item.grantId}
-                          title={uk ? 'Прибрати зі списку на цьому пристрої' : 'Verwijderen uit de lijst op dit apparaat'}
+                          title={uk
+                            ? 'Прибрати з цього пристрою: запис зникне зі списку, і щоб повернутися до нього, доведеться увійти знову. Сам обліковий запис, його дані та входи на інших пристроях не зміняться.'
+                            : 'Van dit apparaat verwijderen: het account verdwijnt uit de lijst en om terug te gaan moet u opnieuw aanmelden. Het account zelf, de gegevens en aanmeldingen op andere apparaten blijven ongewijzigd.'}
                           aria-label={uk ? `Прибрати запис: ${item.user.email}` : `Account verwijderen: ${item.user.email}`}
                           onClick={(e) => {
                             e.stopPropagation();

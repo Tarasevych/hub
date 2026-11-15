@@ -1381,8 +1381,13 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* 6. Підвал (Конфіденційність · Умови · Масштаб) та кутики розтягування */
+/* MENU-STROOK-001 (15.11.2026): margin:0 і flex-direction:row — інакше загальні правила src/index.css «footer{margin:2rem auto 0}»
+   і на телефоні «footer{flex-direction:column}» додавали порожню смугу 32 px між «Вийти» і підвалом та ставили посилання стовпчиком.
+   NL: de globale footer-regels gaven 32 px lege ruimte boven de voet en zetten de links op de telefoon onder elkaar. */
 [data-account-menu-v3] .am3-footer {
   position: relative;
+  margin: 0;
+  flex-direction: row;
   padding: 8px 26px 10px;
   border-top: 1px solid var(--am3-line);
   display: flex;
@@ -1620,6 +1625,49 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 
 [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg-btn {
   flex: 1 1 0;
+}
+
+/* MENU-KRUISJE-001 (15.11.2026, побажання власника): «Прибрати запис» у рядку «Інші облікові записи» — охайний простий хрестик,
+   а не важкий квадратний бокс (рамка, тло, на ПК розтягнутий до 28×44 px). Видно лише хрестик; коло-підсвітка з'являється при
+   наведенні/фокусі, з м'яким червоним натяком (дія прибирає запис). Специфічність (0,7,0) перемагає мобільні правила нижче (0,6,0)
+   і загальне min-height:44px; зона дотику на телефоні — прозорий ::after (правило нижче).
+   NL: «Account verwijderen» is een eenvoudig kruisje zonder kader of vlak; een zachte rode cirkel verschijnt alleen bij hover/focus. */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  flex: 0 0 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--am3-muted);
+  opacity: 0.8;
+  transition: background-color 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:is(:hover, :focus-visible):not(:disabled) {
+  background: color-mix(in srgb, var(--am3-danger-icon) 12%, transparent);
+  color: var(--am3-danger-icon);
+  opacity: 1;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--am3-danger-icon) 55%, transparent);
+  outline-offset: 1px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок
