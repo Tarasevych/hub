@@ -21,6 +21,7 @@ import { achtergrondOf, normaliseerWerkblad, type WerkbladIndeling } from '../sh
 import { APPARATEN, apparaatOf, migreerV2NaarV3, normaliseerLaag, type V3Context } from '../shared/werkblad-v3';
 import { WERKBLAD_V3_FLAG, WERKBLAD_V3_LIMIETEN, type ApparaatKlasse, type CanvasLayout, type DesktopEntry, type WerkbladRuimte } from '../shared/werkblad-v3-types';
 import { jsonbTekst } from '../shared/tekst-veilig';
+import { zonderTechDeuren } from '../shared/werkblad-register';
 
 type Q = (sql: string, params?: unknown[]) => Promise<{ rows: any[]; rowCount: number | null }>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -154,7 +155,20 @@ export type V3RouteOpties = {
   vlagAan: (user: User) => Promise<boolean>;
   /** Registerhaken van de bibliotheek (werker B); zonder: de veilige standaard van shared/werkblad-v3.ts. */
   register?: Pick<V3Context, 'itemToegestaan' | 'grenzen' | 'singleton'>;
+  /**
+   * BIB-002: heeft deze mens technische toegang (een niet-ingetrokken technisch profiel)? Zonder toegang vallen deuren naar technische
+   * pagina's van de privélaag. Ontbreekt de functie of faalt ze → GEEN toegang (veilige kant).
+   */
+  techToegang?: (user: User) => Promise<boolean>;
 };
+/** BIB-002: registerhaken voor DIT verzoek — op de privélaag zonder technische toegang zonder deuren naar technische pagina's. */
+export async function registerVoor<R extends { itemToegestaan?: V3Context['itemToegestaan'] }>(opties: { register?: R; techToegang?: (user: User) => Promise<boolean> }, user: User, ruimte: string): Promise<R | Record<string, never>> {
+  const reg = opties.register;
+  if (!reg?.itemToegestaan || ruimte !== 'prive') return reg ?? {};
+  let toegang = false;
+  try { toegang = opties.techToegang ? (await opties.techToegang(user)) === true : false; } catch { toegang = false; }
+  return toegang ? reg : { ...reg, itemToegestaan: zonderTechDeuren(reg.itemToegestaan) };
+}
 const bodyOf = (b: unknown) => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {});
 const isLeegOfApparaat = (v: unknown) => v === undefined || v === null || v === '' || apparaatOf(v) !== null;
 
@@ -166,7 +180,7 @@ export const createWerkbladV3Routes = (authorize: Authorize, opties: V3RouteOpti
     let aan = false;
     try { aan = (await opties.vlagAan(auth.user)) === true; } catch { aan = false; }
     if (vlagNodig && !aan) return error('WERKBLAD_V3_UIT', 403);
-    const ctx: V3Context = { ruimte: lade.ruimte as WerkbladRuimte, eigenaar: isEigenaar(auth.user), ...(opties.register ?? {}) };
+    const ctx: V3Context = { ruimte: lade.ruimte as WerkbladRuimte, eigenaar: isEigenaar(auth.user), ...(await registerVoor(opties, auth.user, lade.ruimte)) };
     try { return await fn(lade, ctx, { ...bodyOf(c.body), __aan: aan }); }
     catch (err) { console.error('[werkblad-v3]', String((err as Error)?.message || err).slice(0, 200)); return error('WERKBLAD_V3_MISLUKT', 500); }
   }];

@@ -63,7 +63,7 @@
 .bib-map-paneel li{height:100px}
 @keyframes bib-in{from{opacity:0;transform:translate(-50%,-4px)}to{opacity:1;transform:translate(-50%,0)}}
 @media (prefers-reduced-motion:reduce){.bib-map-paneel{animation:none}.bib-paneel *{transition:none!important}}
-@media (max-width:520px){.bib-rij{grid-template-columns:44px 40px minmax(0,1fr)}.bib-acties{grid-column:1/-1;justify-content:flex-start}.bib-paneel{border-radius:0;padding:.75rem}}
+@media (max-width:520px){.bib-rij{grid-template-columns:44px 40px minmax(0,1fr)}.bib-acties{grid-column:1/-1;justify-content:flex-start}.bib-paneel{padding:.75rem}}
 
 /* Werkblad v3 (integratie): kleine tegels (telefoon, 72–90 px) — lange UA-namen afbreken binnen twee regels, icoon kleiner; volledige naam in title. */
 .wb3-tegel{container:wb3tegel/size;width:100%;height:100%}

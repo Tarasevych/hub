@@ -106,6 +106,8 @@ import { isEigenaar as techIsEigenaar, profielVan as techProfielVan } from './te
 import { mogelijkhedenVan as techMogelijkhedenVan } from '../shared/tech-rollen';
 import { filterVoorOntvanger, zichtbaarVoor, type Ontvanger as MeldingOntvanger } from '../shared/melding-soorten';
 import { actieveActivatie as techActieveActivatie, activatiesPerSessie as techActivatiesPerSessie, beeindigenBijIntrekken as techBeeindigenBijIntrekken, beeindigenBijUitloggen as techBeeindigenBijUitloggen } from './tech-profiel';
+/* BIB-002: technische toegang voor het werkblad = een niet-ingetrokken technisch profiel (de eigenaar heeft er altijd een). */
+const werkbladTechToegang=async(u:{id:string;email?:string;role?:string}):Promise<boolean>=>{const p=await techProfielVan(u);return !!p&&!p.ingetrokkenOp};
 // Journaalveld «профіль» (etap E): actief technisch profiel van de handelende gebruiker in DIT tabblad, één opzoeking per verzoek.
 zetAuditContextBron(async (c) => { const a = await techActieveActivatie(c.actor, c.tab); return a ? { profiel: a.profielId, activatie: a.id } : {}; });
 // 21.10.2026 — technische AI-hulpmiddelen users_manage / flags_manage (backend/ai-beheer-hulpmiddelen.ts): NA bevestiging op de site voeren zij
@@ -860,8 +862,8 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...wrapFactoryMutations(createZoekBeheerRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubBlockDataRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createWerkbladRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
-  ...wrapFactoryMutations(createWerkbladV3Routes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3']))[0]?.value===true,register:REGISTER_V3_HAKEN}),(event,body)=>ownerRequireSession(event,body)),
-  ...wrapFactoryMutations(createWerkbladBlokkenRoutes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3','werkblad-blokken'])).filter((v)=>v?.value===true).length===2,register:REGISTER_V3_HAKEN}),(event,body)=>ownerRequireSession(event,body)),
+  ...wrapFactoryMutations(createWerkbladV3Routes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3']))[0]?.value===true,register:REGISTER_V3_HAKEN,techToegang:werkbladTechToegang}),(event,body)=>ownerRequireSession(event,body)),
+  ...wrapFactoryMutations(createWerkbladBlokkenRoutes((event,body)=>ownerRequireSession(event,body),{vlagAan:async(u)=>(await flagsBerekenen(u as never,['werkblad-v3','werkblad-blokken'])).filter((v)=>v?.value===true).length===2,register:REGISTER_V3_HAKEN,techToegang:werkbladTechToegang}),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubLayoutPreferenceRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   // 20.10.2026 (opdracht van de eigenaar): echte postkoppelingen via IMAP/SMTP met een app-wachtwoord (backend/mail-imap.ts)
   // en het dok met onthouden vensters, dat op elk subdomein hetzelfde is (backend/vensters-onthouden.ts, migratie 0089).

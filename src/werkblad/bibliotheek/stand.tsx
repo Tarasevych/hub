@@ -1,5 +1,5 @@
 // ONTWIKKELSTAND (geen productie-ingang): de bibliotheek, snelkoppelingen en een map los gerenderd, voor
-// tests/e2e/werkblad-bibliotheek.e2e.ts. Querystring: ?lang=uk|nl&thema=licht|donker&ruimte=prive|technisch&api=1.
+// tests/e2e/werkblad-bibliotheek.e2e.ts. Querystring: ?lang=uk|nl&thema=licht|donker&ruimte=prive|technisch&api=1&tech=1 (tech = technische toegang, BIB-002).
 // Navigeren gebeurt hier NOOIT: het adres van de canonieke router wordt alleen in #stand-nav getoond.
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -12,7 +12,7 @@ import type { RegisterContext, RegisterRegel } from '../../../shared/werkblad-re
 const q = new URLSearchParams(location.search);
 const lang = q.get('lang') === 'nl' ? 'nl' : 'uk';
 const donker = q.get('thema') === 'donker';
-const ctx: RegisterContext = { ruimte: q.get('ruimte') === 'technisch' ? 'technisch' : 'prive', rechten: { apiPlatform: q.get('api') === '1', eigenaar: true } };
+const ctx: RegisterContext = { ruimte: q.get('ruimte') === 'technisch' ? 'technisch' : 'prive', rechten: { apiPlatform: q.get('api') === '1', eigenaar: true }, techToegang: q.get('tech') === '1' || q.get('ruimte') === 'technisch' };
 document.documentElement.dataset.thema = donker ? 'donker' : 'licht';
 
 function Stand() {

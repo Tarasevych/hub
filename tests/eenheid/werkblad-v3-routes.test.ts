@@ -110,16 +110,19 @@ export async function main(): Promise<number> {
       { instanceId: 'g1', itemId: 'wdg:post', kind: 'widget', x: 10, y: 600, w: 5000, h: 10, z: 9 },
     ] } });
     const RL = reg.data.laag?.layout; const RI = (id: string) => RL?.items.find((i: any) => i.instanceId === id); // eslint-disable-line @typescript-eslint/no-explicit-any
-    check('register op de server: map:m1 + inhoud (parent) + usr: met basis bewaard; vrije URL-basis, onbekende pagina, technische pagina/widget in privé en verkeerde soort weg', reg.status === 200 && ids(RL) === 'm1,k1,u1,g1' && RI('k1')?.parent === 'm1' && RI('u1')?.config?.basis === 'cmd:bericht-schrijven' && RI('u1')?.titleOverride === 'Мій лист', `${reg.status} ${RL ? ids(RL) : reg.body.slice(0, 200)}`);
+    // BIB-002: A is de eigenaar en heeft dus technische toegang → de deur pg:admin/audit (snelkoppeling) mag op zijn privélaag;
+    // de technische widget (gegevens) niet. Zonder technische toegang valt de deur weg (zie de controle met B hieronder).
+    check('register op de server: map:m1 + inhoud (parent) + usr: met basis + deur van de eigenaar bewaard; vrije URL-basis, onbekende pagina, technische widget in privé en verkeerde soort weg', reg.status === 200 && ids(RL) === 'm1,k1,u1,x2,g1' && RI('k1')?.parent === 'm1' && RI('u1')?.config?.basis === 'cmd:bericht-schrijven' && RI('u1')?.titleOverride === 'Мій лист', `${reg.status} ${RL ? ids(RL) : reg.body.slice(0, 200)}`);
     check('registergrenzen op de server: widget w/h geklemd op min/max van het register (geen 96-px-stap)', RI('g1')?.w <= 1600 && RI('g1')?.h >= 96, JSON.stringify(RI('g1')));
     const regL = await via(P, 'v3/laden', { apparaat: 'tablet' });
-    check('na laden: map, mapinhoud en persoonlijke snelkoppeling blijven (persistentie)', ids(regL.data.layouts.tablet.layout) === 'm1,k1,u1,g1' && regL.data.layouts.tablet.layout.items.find((i: any) => i.instanceId === 'k1')?.parent === 'm1'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    check('na laden: map, mapinhoud en persoonlijke snelkoppeling blijven (persistentie)', ids(regL.data.layouts.tablet.layout) === 'm1,k1,u1,x2,g1' && regL.data.layouts.tablet.layout.items.find((i: any) => i.instanceId === 'k1')?.parent === 'm1'); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // ---------------------------------------------------------------- 4. lade-scheiding
     await vlag([A, B]);
     const lB = await via(Bb, 'v3/laden', { userId: A, ownerUserId: A, ruimte: 'technisch' });
     check('АТАКА: B met userId van A → eigen (lege, standaard) lade; niets van A', lB.status === 200 && lB.data.aan === true && lB.data.herkomst === 'standaard' && lB.data.ruimte === 'prive' && lB.data.layouts.computer.layout.items.length === 0 && !lB.body.includes('s1'));
-    const sB = await via(Bb, 'v3/bewaren', { apparaat: 'computer', layout: { items: [{ instanceId: 'b1', itemId: 'svc:calendar', kind: 'shortcut' }] }, versie: 1, userId: A });
+    const sB = await via(Bb, 'v3/bewaren', { apparaat: 'computer', layout: { items: [{ instanceId: 'b1', itemId: 'svc:calendar', kind: 'shortcut' }, { instanceId: 'b2', itemId: 'pg:admin/updates', kind: 'shortcut' }, { instanceId: 'b3', itemId: 'usr:k1', kind: 'shortcut', config: { basis: 'pg:admin/audit' } }] }, versie: 1, userId: A });
+    check('BIB-002: B zonder technisch profiel — deuren naar technische pagina\'s (ook via usr:) vallen van de privélaag', sB.status === 200 && ids(sB.data.laag.layout) === 'b1', `${sB.status} ${sB.body.slice(0, 160)}`);
     check('B bewaart in eigen lade; laag van A onaangeroerd', sB.status === 200 && ids((await via(P, 'v3/laden', { apparaat: 'computer' })).data.layouts.computer.layout) === 's1,w1');
     const Tb = G.browser() as unknown as Br; await Tb.aanmelden(subA, eigenaar, { service: 'hub', authTime: Math.floor(Date.now() / 1000) - 3600 });
     const { tabHash } = await import('../../backend/tech-profiel');

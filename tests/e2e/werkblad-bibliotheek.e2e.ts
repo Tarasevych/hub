@@ -48,7 +48,7 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- privé, uk, licht, computer
     {
       const { c, page } = await open('lang=uk&thema=licht', 1280, 'light');
-      check('paneel: titel UA, zoekveld, categorieën', (await page.textContent('#bib-titel')) === 'Все на сайті' && await page.locator('.bib-chip').count() === 8);
+      check('paneel: titel UA, zoekveld, categorieën', (await page.textContent('#bib-titel')) === 'Все на сайті' && await page.locator('.bib-chip').count() === 7);
       const totaal = await page.locator('.bib-rij').count();
       check(`alle items zichtbaar (${totaal} ≥ 120)`, totaal >= 120);
       await page.fill('.bib-zoek input', 'спам');
@@ -56,10 +56,9 @@ export async function main(): Promise<number> {
       await page.locator('.bib-rij').first().getByRole('button', { name: 'Як ярлик' }).click();
       check('«Як ярлик» stuurt het event werkblad-bibliotheek:toevoegen', (await page.textContent('#stand-log'))!.includes('{"itemId":"pg:mail/spam","kind":"shortcut"}'));
       await page.fill('.bib-zoek input', '');
-      await page.locator('.bib-chip', { hasText: /^Технічні$/ }).click();
-      const tech = page.locator('.bib-rij');
-      check('technisch in privé: zichtbaar maar geweigerd met reden, knoppen uit', await tech.count() > 20 && (await tech.first().getAttribute('data-bib-stand')) === 'denied' && await tech.first().locator('.bib-reden').count() === 1 && await tech.first().locator('button.bib-knop').first().isDisabled());
-      await page.screenshot({ path: join(UIT, 'bib-licht-1280-technisch.png') });
+      // BIB-002: zonder technische toegang geen categorie «Технічні» en geen technische items (niet toe te voegen, niet te openen).
+      check('BIB-002: zonder technische toegang geen «Технічні» in privé', await page.locator('.bib-chip', { hasText: /^Технічні$/ }).count() === 0 && await page.locator('[data-bib-id="pg:admin/updates"]').count() === 0);
+      check('BIB-002: tegel naar admin/audit zonder toegang = geen toegang', (await page.locator('[data-werkblad-item="pg:admin/audit"]').getAttribute('aria-disabled')) === 'true');
       await page.locator('.bib-chip', { hasText: /^Усе$/ }).click();
       await page.fill('.bib-zoek input', 'соціальні');
       check('planned (Соціальні мережі) toont «Скоро» en is niet toe te voegen', (await page.locator('[data-bib-id="svc:social"]').getAttribute('data-bib-stand')) === 'planned' && (await page.locator('[data-bib-id="svc:social"] .bib-reden').textContent())!.startsWith('Скоро'));
@@ -101,6 +100,22 @@ export async function main(): Promise<number> {
       await page.focus('.bib-zoek input'); await page.keyboard.press('Tab');
       check('toetsenbord: Tab vanuit zoeken naar de eerste categorie', await page.evaluate(() => document.activeElement?.classList.contains('bib-chip') ?? false));
       await page.screenshot({ path: join(UIT, 'bib-licht-1280.png') });
+      await c.close();
+    }
+    // ---------------------------------------------------------------- BIB-002: privé MET technische toegang (eigenaar/gemachtigde)
+    {
+      const { c, page } = await open('lang=uk&thema=licht&api=1&tech=1', 1280, 'light');
+      check('BIB-002: met technische toegang staat «Технічні» erbij', await page.locator('.bib-chip').count() === 8);
+      await page.locator('.bib-chip', { hasText: /^Технічні$/ }).click();
+      const deur = page.locator('[data-bib-id="pg:admin/updates"]');
+      check('BIB-002: technische pagina in privé = deur, toe te voegen', (await deur.getAttribute('data-bib-stand')) === 'ready' && !(await deur.locator('button.bib-knop').first().isDisabled()));
+      await deur.locator('button.bib-knop').first().click();
+      check('BIB-002: deur gaat als snelkoppeling naar het werkblad', (await page.textContent('#stand-log'))!.includes('{"itemId":"pg:admin/updates","kind":"shortcut"}'));
+      const widget = page.locator('[data-bib-id="wdg:tech-server"]');
+      check('BIB-002: technische widget blijft geweigerd in privé (toont technische gegevens)', (await widget.getAttribute('data-bib-stand')) === 'denied' && await widget.locator('.bib-reden').count() === 1);
+      await page.locator('[data-werkblad-item="pg:admin/audit"]').click();
+      check('BIB-002: deur opent de pagina via de router (daar staat de poort van het technisch profiel)', /^https:\/\/admin\.tarasevych\.com\/audit/.test((await page.textContent('#stand-nav'))!));
+      await page.screenshot({ path: join(UIT, 'bib-licht-1280-technisch.png') });
       await c.close();
     }
     // ---------------------------------------------------------------- donker, nl, technisch
