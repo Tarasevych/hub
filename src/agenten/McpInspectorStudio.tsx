@@ -13,6 +13,7 @@ import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { Badge, Knop, Segment, Tech } from './ui';
+import VaardighedenBeheer from './VaardighedenBeheer';
 import './agenten-inspectie-maquette.css';
 
 type EraModus = 'auto' | 'modern' | 'legacy';
@@ -32,7 +33,7 @@ type ResourceItem = { uri: string; name: string; description: string; mimeType: 
 type ResourceTemplateItem = { uriTemplate: string; name: string; description: string; mimeType: string };
 type PromptArg = { name: string; required: boolean; description: string };
 type PromptItem = { name: string; title: string; description: string; arguments: PromptArg[] };
-type VaardigheidItem = { id: string; uri: string; titel: string; beschrijving: string };
+type VaardigheidItem = { id: string; uri: string; bron?: string; ruimte?: string; versie?: number; titel: string; beschrijving: string };
 type ExtensieItem = {
   id: string;
   versie: string;
@@ -572,6 +573,17 @@ export default function McpInspectorStudio({ tr }: { tr: Tr }) {
           </ul>
         </details>
       ) : null}
+
+      {/* 3б. Повноцінна студія керування навичками, профілями 9 агентів, імпортом/експортом і версійністю */}
+      <VaardighedenBeheer
+        tr={tr}
+        onLeesResourceInInspector={(uri) => {
+          setMethode('resources/read');
+          const p = { uri };
+          setParamsTekst(JSON.stringify(p, null, 2));
+          void voerVerzoekUit({ doelId, era: 'modern', methode: 'resources/read', params: p });
+        }}
+      />
 
       {/* 4. Студія SDK (TypeScript, Python, Go, Rust), Server Card та server.json */}
       {overzicht && gekozenSdk ? (

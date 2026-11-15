@@ -2957,6 +2957,26 @@
    "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts",
    "wat": "Eenheidstest voor mobiele prestatie-invarianten: herstelde postweergave, uitgestelde bundels, beide laag- en attribuutwaarnemers, rAF-bundeling en mobiele CSS zonder zware filters.",
    "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "scripts/vaardigheden/catalogus.json",
+   "wat": "Tweetalige vaardighedencatalogus (uk/nl) met SemVer-versies, afhankelijkheden, sleutels <id>:<kant> en zoektermen voor 9 modulaire agentvaardigheden (inclusief mijn-ruimte).",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/kies.mjs",
+   "wat": "Deterministische vaardighedenkiezer op basis van uk/nl-zoektermen, SemVer- en cycluscontrole, frontmatter-validatie en eerlijke <id>:<kant>-hulpmiddelstatus zonder rechtenverlening.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/valideer.mjs",
+   "wat": "Bouwcontrole van modulaire vaardigheden: wederzijdse 1-op-1-afdekking van .agents/skills/* en catalogus.json, SemVer, cyclusvrije afhankelijkheden, V2-hulpmiddelen (<id>:<kant>), YAML-kop en taalzuiverheid.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/vaardigheden-20261115.test.ts",
+   "wat": "Eenheidstest voor de 9 vaardigheden (inclusief mijn-ruimte), SemVer, afhankelijkheidsgraaf, <id>:<kant>-controle, tweetalige selectie, voorbeelden, valideerVaardigheden, kaartcontrole en taalzuiverheid.",
+   "sinds": "VAARD-002 (vaardigheden)"
   }
  ]
 }

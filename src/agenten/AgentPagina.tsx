@@ -44,6 +44,7 @@ import { inRuimte, isoMs, useDeurTokens, useJournaal } from './gegevens';
 import { foutTekst } from './fouten';
 import { GevaarKnop, Melding, useActies } from './ui';
 import BevestigingenPaneel from '../ai-bevestiging/BevestigingenPaneel';
+import VaardighedenBeheer from './VaardighedenBeheer';
 import './agenten-kern-maquette.css';
 
 const wanneer = (ms: number | null | undefined, uk: boolean) => (ms ? new Date(ms).toLocaleString(uk ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : (uk ? 'ще не було' : 'nog niet'));
@@ -896,6 +897,11 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
           <summary><Palette size={15} aria-hidden='true' /> {tr(`Колір агента (${info.naam} та інші)`, `Kleur per agent (${info.naam} en de andere)`)}</summary>
           <AgentKleuren tr={tr} />
         </details>
+      </section>
+
+      {/* 5б: модульні навички саме цього агента (з можливістю вмикати/вимикати та створювати власні) */}
+      <section className='ag-kaart' data-agent-sectie='vaardigheden'>
+        <VaardighedenBeheer tr={tr} vastAgent={slug} compact />
       </section>
 
       {/* 6: журнал саме цього агента. */}
