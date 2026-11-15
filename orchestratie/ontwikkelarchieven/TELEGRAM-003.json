@@ -1,0 +1,128 @@
+{
+ "schema": 1,
+ "taakId": "TELEGRAM-003",
+ "titel": "Піктограми підтвердження через Telegram: кольори за змістом, 96 у наборі, без повторів, три в ряд",
+ "opdracht": "На прохання власника від 15.11.2026: розширити набір піктограм для підтвердження входу й дій через Telegram, дати кожній колір за змістом (ялинка зелена, місяць жовтий), не повторювати правильну піктограму, доки не пройде весь набір, і зменшити плитки у вікні Telegram так, щоб у ряд вміщалося три замість чотирьох. Випуск поверх 20261115-121044.",
+ "herkomst": {
+  "eigenaar": "Павло Тарасевич",
+  "agent": "claude",
+  "tak": "feature/telegram-003-uitgave-20261115-121500",
+  "basis": "b0943390a1f6eb4d7b16a09b0686bc8559c33b0b",
+  "geinstalleerdeBasis": "b0943390a1f6eb4d7b16a09b0686bc8559c33b0b",
+  "geinstalleerdeVersie": "20261115-121044",
+  "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "samengevoegd": [
+   {
+    "taak": "TELEGRAM-002, піктограми (claude, цей тред)",
+    "commit": "f65f8e35",
+    "reden": "PR #101, гілка feature/telegram-pictogrammen-20261115-115800, влита звичайним злиттям"
+   }
+  ]
+ },
+ "privacy": {
+  "geheimenUitgesloten": true,
+  "toelichting": "Тести — лише з вигаданими адресами, вигаданим ключем бота й одноразовими локальними базами; на знімках вигадані портрети й імена."
+ },
+ "tijdlijn": [
+  {
+   "tijd": "2026-11-15T11:54:36Z",
+   "stap": "Власник попросив кольори за змістом, більший набір, відсутність повторів і три плитки в ряд."
+  },
+  {
+   "tijd": "2026-11-15T12:03:00Z",
+   "stap": "Зміни готові на гілці feature/telegram-pictogrammen-20261115-115800 (PR #101), тести зелені, знімки зроблено."
+  },
+  {
+   "tijd": "2026-11-15T12:15:00Z",
+   "stap": "Гілка випуску від 20261115-121044 (b0943390), злиття PR #101, файли завдання і процес випуску."
+  }
+ ],
+ "keuzes": [
+  "«Три в ряд» реалізовано як три варіанти на вибір в одному ряду; межа 3–5 варіантів у базі це дозволяє, тож міграцій немає.",
+  "Колір чорнила (біле або темне) обчислюється з кольору плитки, щоб контраст завжди був не менший за 4,5:1.",
+  "Пропускаються останні 88 правильних піктограм із 96: вісім лишаються в запасі, щоб наступну не можна було передбачити.",
+  "Вхід рахується за пристроєм (людина ще невідома), підтвердження дії — за обліковим записом; хибні варіанти беруться з усього каталогу.",
+  "Нові піктограми додано лише в кінець списку, бо індекси зберігаються в чинних запитах."
+ ],
+ "wijzigingen": [
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/bevestigen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/inloggen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/venster-sleutel.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/venster.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/apparaat-bevestiging/pictogram-vormen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/apparaat-bevestiging/symbolen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/apparaat-bevestiging/PictogramTegel.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/telegram-aanmelden/AanmeldTelegram.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/apparaat-bevestiging-20261109.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/telegram-venster-20261114.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/TELEGRAM-003.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/TELEGRAM-003.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/telegram-003-uitgave.yml"
+  }
+ ],
+ "controles": [
+  "telegram-venster 82/82, серед них 40 входів поспіль з одного пристрою без повтору на справжній базі.",
+  "apparaat-bevestiging 52/52 і 44/44, telegram-aanmelden 65/65, stroom 34/34, inlog-apparaat 18/18, aanmeld-ui 105/105.",
+  "Типи клієнта й сервера без помилок; каталог пошуку кнопок актуальний.",
+  "Знімки набору й вікна Telegram переглянуто."
+ ],
+ "bronnen": [
+  {
+   "soort": "запит власника",
+   "omschrijving": "Повідомлення власника 15.11.2026 у треді проєкту про піктограми.",
+   "inhoudGepubliceerd": false
+  },
+  {
+   "soort": "основа",
+   "omschrijving": "GitHub Release 20261115-121044, коміт b0943390a1f6",
+   "inhoudGepubliceerd": true
+  }
+ ],
+ "beperkingen": [
+  "Встановлення — лише власником після резервної копії на R:\\ і перевірки накладання.",
+  "На живому Telegram не перевірено."
+ ],
+ "commits": [
+  "f65f8e35dbef3e75bc99a5d4491c5b77cfca5434"
+ ]
+}

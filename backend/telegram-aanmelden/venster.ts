@@ -125,7 +125,7 @@ h1{font-size:1.15rem;margin:0}h2{font-size:1.05rem;margin:0;text-align:center}.z
 .wie{display:grid;gap:6px}.persoon{display:flex;align-items:center;gap:10px;min-width:0}.persoon b{display:block;overflow-wrap:anywhere}.persoon small{display:block;color:var(--zacht);font-size:.85rem;overflow-wrap:anywhere}
 .rond{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px var(--rand)}.rond.leeg{display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:700;font-size:1.3rem}
 .accounts .rond{width:36px;height:36px;font-size:1rem}
-.raster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.raster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .keuze{appearance:none;border:0;padding:0;background:none;border-radius:24px;cursor:pointer;display:block;width:100%}
 .keuze:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.keuze[disabled]{cursor:not-allowed;opacity:.45}
 .keuze.gekozen{outline:4px solid var(--accent);outline-offset:3px}

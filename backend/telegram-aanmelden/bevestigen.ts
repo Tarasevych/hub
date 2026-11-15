@@ -17,7 +17,7 @@ import { effectieveSoort } from '../../shared/apparaat-bevestiging/model';
 import { telegramKnopTekst, trek, type VasteSoort } from '../../shared/apparaat-bevestiging/symbolen';
 import { randomInt } from 'node:crypto';
 // TELEGRAM-002: beveiligd venster (zelfde pictogram als op de site; geheime code daar als de gebruiker er een heeft).
-import { vensterAan, vensterTrekking, vensterUrl } from './venster-sleutel';
+import { recenteJuiste, vensterAan, vensterTrekking, vensterUrl } from './venster-sleutel';
 import { codeActief } from './inloggen';
 import { accountBeeld, telegramBeeld, type TelegramBeeld } from './account-foto';
 
@@ -44,7 +44,7 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
   let trekking: { soort: VasteSoort; kandidaten: number[]; juist: number } | null = null;
   const venster = await vensterAan();
   const codeNodig = venster ? await codeActief(userId) : false;
-  if (venster) trekking = vensterTrekking();
+  if (venster) trekking = vensterTrekking(await recenteJuiste({ userId }));
   else if (actie === 'stap-op') {
     const ai = await apparaatInstellingen().catch(() => null);
     if (ai?.telegramSymbolen) {

@@ -297,7 +297,7 @@ export default function AanmeldTelegram({
     {stand === 'ingelogd' ? <p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Готово — відкриваємо ваш простір…', 'Klaar — uw ruimte wordt geopend…')}</p> : pictogram !== null ? <div className='tg2-wacht'>
       <div className='tg2-held'><PictogramTegel index={pictogram} lang={lang} groot /></div>
       <p className='tg2-vraag'>{tr(lang, `Оберіть у Telegram таку саму піктограму «${tegelNaam}»`, `Kies in Telegram hetzelfde pictogram «${tegelNaam}»`)}</p>
-      <p className='tga-klein'>{tr(lang, 'Бот надішле кнопку «Підтвердити вхід». Вона відкриє захищене вікно з чотирма піктограмами — точно такими, як ця: той самий малюнок, колір і назва. Правильна лише одна, спроба одна.', 'De bot stuurt een knop «Aanmelding bevestigen». Die opent een beveiligd venster met vier pictogrammen — precies zoals dit: zelfde tekening, kleur en naam. Er is er maar één juist, u hebt één poging.')}</p>
+      <p className='tga-klein'>{tr(lang, 'Бот надішле кнопку «Підтвердити вхід». Вона відкриє захищене вікно з трьома піктограмами — точно такими, як ця: той самий малюнок, колір і назва. Правильна лише одна, спроба одна.', 'De bot stuurt een knop «Aanmelding bevestigen». Die opent een beveiligd venster met drie pictogrammen — precies zoals dit: zelfde tekening, kleur en naam. Er is er maar één juist, u hebt één poging.')}</p>
       <TelegramWie lang={lang} personen={bevestiger} soort='bevestigd' />
       <ol className='tg2-stappen'>
         <li className={symboolOk || stand === 'goedgekeurd' ? 'is-klaar' : 'is-nu'}>{tr(lang, `Відкрийте Telegram і натисніть «Підтвердити вхід», потім піктограму «${tegelNaam}».`, `Open Telegram, tik «Aanmelding bevestigen» en daarna het pictogram «${tegelNaam}».`)}</li>

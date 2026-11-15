@@ -13,11 +13,12 @@ import { webhookGeheim } from './sleutels';
 import { instellingen, sql } from './opslag';
 import { gelijk } from './cryptografie';
 import { SITE_BASIS } from './berichten';
-import { trek } from '../../shared/apparaat-bevestiging/symbolen';
+import { PICTOGRAMMEN, trekZonderHerhaling } from '../../shared/apparaat-bevestiging/symbolen';
 
 export const VENSTER_VLAG = 'telegram-v2';
-/** Aantal pictogrammen in het venster (zoals in de goedgekeurde macquette: 4, raster 2 × 2). */
-export const VENSTER_KANDIDATEN = 4;
+/** Aantal pictogrammen in het venster. */
+// 15.11.2026 (eis van de eigenaar): drie kleinere tegels op één rij in plaats van vier. · три менші плитки в один ряд замість чотирьох.
+export const VENSTER_KANDIDATEN = 3;
 
 let vlagCache: { aan: boolean; tot: number } | null = null;
 export const vensterCacheWissen = (): void => { vlagCache = null; };
@@ -37,8 +38,31 @@ export async function vensterAan(): Promise<boolean> {
 }
 
 /** Trekking voor het venster: altijd pictogrammen (eis van de eigenaar: beelden, geen cijfers of letters). */
-export const vensterTrekking = (): { soort: 'pictogrammen'; kandidaten: number[]; juist: number } =>
-  trek('pictogrammen', VENSTER_KANDIDATEN, randomInt) as { soort: 'pictogrammen'; kandidaten: number[]; juist: number };
+export const vensterTrekking = (recent: readonly number[] = []): { soort: 'pictogrammen'; kandidaten: number[]; juist: number } =>
+  trekZonderHerhaling(VENSTER_KANDIDATEN, recent, randomInt);
+
+/** Hoeveel van de laatst getoonde juiste pictogrammen overgeslagen worden: bijna de hele catalogus, met 8 over zodat de volgende niet te voorspellen is. */
+export const HERHAAL_VENSTER = Math.max(0, PICTOGRAMMEN.length - 8);
+/**
+ * De juiste pictogrammen van de laatste verzoeken, nieuwste eerst. Aanmelden: per apparaat (de mens is dan nog niet bekend);
+ * bevestigen: per account. Een fout bij het lezen mag de aanmelding nooit tegenhouden → lege lijst.
+ */
+export async function recenteJuiste(bron: { apparaatSleutel?: string | null; ip?: string | null; apparaat?: string | null; userId?: string | null }): Promise<number[]> {
+  try {
+    if (bron.userId) {
+      const r = await sql<{ p: number | null }>("SELECT kandidaten[juist + 1] AS p FROM app.tg_bevestigingen WHERE user_id = $1 AND venster AND kandidaten IS NOT NULL AND juist IS NOT NULL ORDER BY aangemaakt_op DESC LIMIT $2", [bron.userId, HERHAAL_VENSTER]);
+      return r.map((x) => Number(x.p)).filter((x) => Number.isInteger(x));
+    }
+    const sleutel = String(bron.apparaatSleutel || '');
+    // Zonder apparaat-cookie (eerste bezoek): hetzelfde netwerkadres + hetzelfde soort toestel is de beste benadering.
+    const ip = String(bron.ip || ''), apparaat = String(bron.apparaat || '');
+    if (!sleutel && !(ip && apparaat)) return [];
+    const r = sleutel
+      ? await sql<{ p: number | null }>("SELECT kandidaten[juist + 1] AS p FROM app.tg_inlog_verzoeken WHERE apparaat_sleutel = $1 AND kandidaten IS NOT NULL AND juist IS NOT NULL ORDER BY aangemaakt_op DESC LIMIT $2", [sleutel, HERHAAL_VENSTER])
+      : await sql<{ p: number | null }>("SELECT kandidaten[juist + 1] AS p FROM app.tg_inlog_verzoeken WHERE apparaat_sleutel IS NULL AND ip = $1 AND apparaat = $2 AND kandidaten IS NOT NULL AND juist IS NOT NULL ORDER BY aangemaakt_op DESC LIMIT $3", [ip, apparaat, HERHAAL_VENSTER]);
+    return r.map((x) => Number(x.p)).filter((x) => Number.isInteger(x));
+  } catch { return []; }
+}
 
 export type VensterSoort = 'i' | 'b';
 export type VensterToken = { soort: VensterSoort; id: string; tg: string; tot: number };

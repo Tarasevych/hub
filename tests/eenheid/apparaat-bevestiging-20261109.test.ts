@@ -27,8 +27,8 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('apparaat-bevestiging-20261109');
 
   // ------------------------------------------------------------------ A. symbolen
-  check('48 pictogrammen, elk met uniek id, lucide-naam, naam uk+nl en emoji', PICTOGRAMMEN.length === 48 && new Set(PICTOGRAMMEN.map((p) => p.id)).size === 48 && PICTOGRAMMEN.every((p) => p.icoon && p.naam[0] && p.naam[1] && p.emoji));
-  check('namen van pictogrammen zijn uniek per taal (geen twee «Квітка»)', new Set(PICTOGRAMMEN.map((p) => p.naam[0])).size === 48 && new Set(PICTOGRAMMEN.map((p) => p.naam[1])).size === 48);
+  check('96 pictogrammen, elk met uniek id, lucide-naam, naam uk+nl en emoji', PICTOGRAMMEN.length === 96 && new Set(PICTOGRAMMEN.map((p) => p.id)).size === 96 && PICTOGRAMMEN.every((p) => p.icoon && p.naam[0] && p.naam[1] && p.emoji));
+  check('namen van pictogrammen zijn uniek per taal (geen twee «Квітка»)', new Set(PICTOGRAMMEN.map((p) => p.naam[0])).size === 96 && new Set(PICTOGRAMMEN.map((p) => p.naam[1])).size === 96);
   check('cijfers 2–9 (geen 0/1: lijken op O/I)', CIJFERS.join('') === '23456789');
   const dubbelgangers = new Set(['A', 'B', 'C', 'E', 'H', 'I', 'K', 'M', 'O', 'P', 'T', 'X', 'Y']);
   check('letters: alleen Latijns zonder Cyrillische dubbelganger', LETTERS.every((l) => /^[A-Z]$/.test(l) && !dubbelgangers.has(l)) && LETTERS.length >= 10);
