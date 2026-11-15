@@ -51,6 +51,12 @@
 .wbc-veld-actief{cursor:ns-resize}
 @media (pointer:coarse){.wbc-veld-greep{width:88px;height:28px}.wbc-veld-passend{min-height:36px}}
 @media (forced-colors:active){.wbc-veld-greep,.wbc-veld-passend{border:2px solid CanvasText}.wbc-veld:hover::before,.wbc-veld-actief::before{border-bottom-color:Highlight}}
+/* Спливні меню, підказки й випадні списки всередині блоку: блок із відкритим меню стає поверх сусідів і не обрізає вміст
+   (раніше меню ховалося за елементами свого ж блоку й за сусідніми блоками — знімок власника 15.11.2026). */
+.wbc-item:is(:has([aria-expanded="true"]),:has(details[open])){z-index:8050!important}
+/* Обгортки блоку (.wbc-inhoud і картка віджета .wb-tegel) на час відкритого меню не обрізають його (!important: картки в «Макеті»
+   й класиці мають overflow:hidden із сильнішими селекторами). Закрилося меню — все знову обрізається, як було. */
+.wbc-item:is(:has([aria-expanded="true"]),:has(details[open])) :is(.wbc-inhoud,.wb-tegel){overflow:visible!important}
 @media (prefers-reduced-motion:no-preference){.wbc-item:not(.wbc-bezig){transition:left .14s ease,top .14s ease,width .14s ease,height .14s ease}.wbc-geest{transition:left .08s,top .08s,width .08s,height .08s}}
 @media (prefers-reduced-motion:reduce){.wbc-item,.wbc-geest{transition:none!important;animation:none!important}}
 @media (forced-colors:active){.wbc-greep{background:Highlight;border-color:Canvas}.wbc-geest{border-color:Highlight}}
