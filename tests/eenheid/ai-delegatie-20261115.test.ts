@@ -104,6 +104,28 @@ export async function main(): Promise<number> {
   const rij = async (vid: string) => (await pool.query('SELECT * FROM app.tech_ruimte_ai WHERE user_id = $1 AND verbinding_id = $2', [uid, vid])).rows[0];
   const journaal = async (actie: string) => Number((await pool.query('SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = $2', [uid, actie])).rows[0].n);
 
+  // Opruimen (AI-TERMIJN-001, opmerking releasethread 15.11): de suite draait in een gedeelde wegwerp-DB na andere suites. Alles wat
+  // ze aan gedeelde staat wijzigt (vlag tech-ruimtes-v2, sessies en aanmeldingen van de bestaande eigenaar, zijn AI-delegaties) wordt
+  // hier vastgelegd en in finally exact teruggezet. / Знімок спільного стану; у finally повертаємо все як було.
+  const vlagVoor = (await pool.query(`SELECT aan, gebruikers FROM app.feature_flags WHERE sleutel = 'tech-ruimtes-v2'`)).rows[0] as { aan: boolean; gebruikers: string[] } | undefined;
+  const techVoor = (await pool.query('SELECT id::text AS id FROM app.tech_ruimte_sessies WHERE user_id = $1 AND beeindigd_op IS NULL', [uid])).rows.map((r) => String(r.id));
+  const techAlle = (await pool.query('SELECT id::text AS id FROM app.tech_ruimte_sessies WHERE user_id = $1', [uid])).rows.map((r) => String(r.id));
+  const siteVoor = (await pool.query(`SELECT id FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND data->>'userId' = $1 AND NOT (data ? 'revokedAt')`, [uid])).rows.map((r) => String(r.id));
+  const siteAlle = (await pool.query(`SELECT id FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND data->>'userId' = $1`, [uid])).rows.map((r) => String(r.id));
+  const aiVoor = (await pool.query('SELECT * FROM app.tech_ruimte_ai WHERE user_id = $1', [uid])).rows;
+  const herstel = async () => {
+    await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = ANY($1)', [[uid, uid2]]);
+    for (const r of aiVoor) { const kol = Object.keys(r); await pool.query(`INSERT INTO app.tech_ruimte_ai (${kol.join(', ')}) VALUES (${kol.map((_, i) => `${i + 1}`).join(', ')})`, kol.map((x) => r[x])); }
+    await pool.query('DELETE FROM app.mcp_oauth_tokens WHERE user_id = ANY($1)', [[uid, uid2]]);
+    // Eigen sessies en aanmeldingen van de suite sluiten, die van eerdere suites heropenen.
+    await pool.query(`UPDATE app.tech_ruimte_sessies SET beeindigd_op = now(), beeindigd_reden = 'zelf' WHERE user_id = ANY($1) AND beeindigd_op IS NULL AND NOT (id::text = ANY($2))`, [[uid, uid2], techAlle]);
+    await pool.query('UPDATE app.tech_ruimte_sessies SET beeindigd_op = NULL, beeindigd_reden = NULL WHERE id::text = ANY($1)', [techVoor]);
+    await pool.query(`UPDATE app.records SET data = jsonb_set(data, '{revokedAt}', to_jsonb((extract(epoch FROM now()) * 1000)::bigint)) WHERE tbl = 'owner_service_sessions_v1' AND data->>'userId' = ANY($1) AND NOT (id = ANY($2)) AND NOT (data ? 'revokedAt')`, [[uid, uid2], siteAlle]);
+    await pool.query(`UPDATE app.records SET data = data - 'revokedAt' WHERE tbl = 'owner_service_sessions_v1' AND id = ANY($1)`, [siteVoor]);
+    await pool.query(`DELETE FROM app.records WHERE tbl = 'users' AND id = $1`, [uid2]);
+    if (vlagVoor) await pool.query(`UPDATE app.feature_flags SET aan = $1, gebruikers = $2 WHERE sleutel = 'tech-ruimtes-v2'`, [vlagVoor.aan, vlagVoor.gebruikers]);
+    k._vlagCacheLeeg();
+  };
   await pool.query(`UPDATE app.feature_flags SET aan = true, gebruikers = $1 WHERE sleutel = 'tech-ruimtes-v2'`, [[uid, uid2]]); k._vlagCacheLeeg();
   await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = $1', [uid]);
   // Wegwerp-DB: sessies en aanmeldingen van eerdere suites van dezelfde eigenaar sluiten, anders telt «alles op pauze» niet.
@@ -206,8 +228,16 @@ export async function main(): Promise<number> {
     await dk.veeg(uid);
     check('overal afgemeld: toestemming ingetrokken (account-afgemeld)', (await rij(vid)).ingetrokken_reden === 'account-afgemeld' && (await mcp(vid)).ruimte === 'prive');
   } finally {
-    await pool.query('DELETE FROM app.tech_ruimte_ai WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
-    await pool.query('DELETE FROM app.mcp_oauth_tokens WHERE user_id = ANY($1)', [[uid, uid2]]).catch(() => undefined);
+    try {
+      await herstel();
+      const v = (await pool.query(`SELECT aan, gebruikers FROM app.feature_flags WHERE sleutel = 'tech-ruimtes-v2'`)).rows[0];
+      const levend = Number((await pool.query('SELECT count(*)::int AS n FROM app.tech_ruimte_sessies WHERE user_id = $1 AND beeindigd_op IS NULL', [uid])).rows[0].n);
+      const site = Number((await pool.query(`SELECT count(*)::int AS n FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND data->>'userId' = $1 AND NOT (data ? 'revokedAt')`, [uid])).rows[0].n);
+      check('opruimen: vlag, sessies, aanmeldingen en delegaties van de eigenaar zoals vóór de suite',
+        (!vlagVoor || (v.aan === vlagVoor.aan && JSON.stringify(v.gebruikers) === JSON.stringify(vlagVoor.gebruikers))) && levend === techVoor.length && site === siteVoor.length
+        && Number((await pool.query('SELECT count(*)::int AS n FROM app.tech_ruimte_ai WHERE user_id = $1', [uid])).rows[0].n) === aiVoor.length,
+        JSON.stringify({ vlag: v, levend, site, voor: { tech: techVoor.length, site: siteVoor.length, ai: aiVoor.length } }));
+    } catch (e) { check('opruimen: gedeelde staat teruggezet', false, String((e as Error)?.message)); }
   }
   return einde();
 }
