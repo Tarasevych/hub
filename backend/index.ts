@@ -122,7 +122,7 @@ import { sshCaRoutes } from './ssh-ca-routes';
 import { beheerJournaalRoutes } from './beheer-journaal-routes'; import { eenKeerPer as journaalEenKeerPer, maskeerDetailsVoorKijker } from './beheer-journaal';
 // 21.10.2026 — «Запити ШІ на підтвердження» (één wachtrij, migratie 0098) en de zes privé-rechten die «у розробці» stonden.
 import { aiBevestigingRoutes } from './ai-bevestiging-routes'; import { devRechtenGebruikerRoutes } from './dev-rechten-gebruiker';
-import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitrol-goedkeuring'; import { uitrolDiagnoseRunRoutes } from './uitrol-diagnose-run'; import { uitrolBronRoutes } from './uitrol-bron'; import { uitrolGithubRoutes } from './uitrol-github';
+import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitrol-goedkeuring'; import { uitrolStroomRoutes } from './uitrol-stroom'; import { uitrolDiagnoseRunRoutes } from './uitrol-diagnose-run'; import { uitrolBronRoutes } from './uitrol-bron'; import { uitrolGithubRoutes } from './uitrol-github';
 import { aiBeleidRoutes } from './ai-beleid';
 import { eigenaarBesluitRoutes } from './eigenaar-besluit'; // besluiten van de eigenaar met passkey (zone B 22.10.2026, §15)
 import { orchRoutes } from './orch-routes'; // ORCH-001 етап 3 (31.10.2026): координація агентів через сайт — /api/owner/orch/*
@@ -804,6 +804,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
     zoekPersonen: async (q) => { const t = q.trim().toLowerCase(); if (t.length < 2) return []; const rows = (await db.list<User>('users', { limit: 500, nieuwsteEerst: true })).items as User[]; return rows.filter((u) => String(u.email || '').toLowerCase().includes(t) || String(u.name || '').toLowerCase().includes(t)).map((u) => u.id).filter(Boolean).slice(0, 50); },
   }),
   ...uitrolGoedkeuringRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...uitrolStroomRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, stepUp: stapOpVereist as never }),
   // Bevestigen of weigeren wat een AI voorstelde (mail verzenden, delen, …): alleen de mens zelf, in de ruimte van het verzoek; hoog risico = verse passkey.
   ...aiBevestigingRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never, stapOp: stapOpVereist as never }),
   // «Надати доступ» bij Google (incrementele toestemming), de stand per dienst en de fotokiezer voor één verzoek.

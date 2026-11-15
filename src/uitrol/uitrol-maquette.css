@@ -1095,7 +1095,7 @@ html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"] .ut-roo
   --mq-ut-term-info: var(--info);
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-hoofd, .ut-kaart, .uitrol-meester, .uitrol-meester-stap, .ut-wiz-stap, .ut-pakket, .ut-pakket-acties, .ut-gh-blok, .ut-veilig, .ut-conv-detail, .ut-keten, .ut-tabel, .ut-tl, .ut-tl-groep, .ud-groep, .ud-kaart, .ut-bron-samenvatting, .ut-bron-instellen, .ut-bron-detail, .ut-vr, .ut-voorb-kaart, .ut-agenttegel) {
+html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-hoofd, .ut-kaart, .uitrol-meester, .uitrol-meester-stap, .ut-wiz-stap, .ut-pakket, .ut-pakket-acties, .ut-gh-blok, .ut-veilig, .ut-conv-detail, .ut-keten, .ut-tabel, .ut-tl, .ut-tl-groep, .ud-groep, .ud-kaart, .ut-bron-samenvatting, .ut-bron-instellen, .ut-bron-detail, .ut-vr, .ut-voorb-kaart, .ut-agenttegel, .ut-stroom-sectie) {
   border-radius: 16px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak);
@@ -1258,7 +1258,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-knop, .ut-k
   box-shadow: none;
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-knop-primair, .uitrol-meester-cta, .ut-chip[aria-pressed="true"], .uitrol-meester-logo) {
+html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-knop-primair, .uitrol-meester-cta, .ut-chip[aria-pressed="true"], .ut-stroom-chip[aria-pressed="true"], .uitrol-meester-logo) {
   border-radius: 11px;
   border: 1px solid var(--mq-knop-primair-bg);
   background: var(--mq-knop-primair-bg);
@@ -1267,7 +1267,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-knop-primai
   box-shadow: none;
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root .ut-chip[aria-pressed="true"] {
+html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-chip[aria-pressed="true"], .ut-stroom-chip[aria-pressed="true"]) {
   border-radius: 999px;
 }
 
@@ -1283,7 +1283,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root .ut-knop-gevaar {
   box-shadow: none;
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-bestand, .ut-tegel, .ut-vc-kop, .ut-vc-lijst > li, .uitrol-meester-rail button, .ut-conv-knoop, .ut-lijst > li, .ut-recent > li > button, .ut-toegang-rij, .ud-schakel, .ut-bron-rij > button, .ut-bron-schakel, .ut-vr-groep, .ut-vr-log, .ut-vr-banner, .ut-vr-oorzaak, .ut-zone-keuze, .ut-keuzekaart, .ut-agent-tegel) {
+html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root :is(.ut-bestand, .ut-tegel, .ut-vc-kop, .ut-vc-lijst > li, .uitrol-meester-rail button, .ut-conv-knoop, .ut-lijst > li, .ut-recent > li > button, .ut-toegang-rij, .ud-schakel, .ut-bron-rij > button, .ut-bron-schakel, .ut-vr-groep, .ut-vr-log, .ut-vr-banner, .ut-vr-oorzaak, .ut-zone-keuze, .ut-keuzekaart, .ut-agent-tegel, .ut-stroom-tegel, .ut-stroom-punt, .ut-stroom-notitie, .ut-stroom-compact, .ut-stroom-form) {
   border-radius: 11px;
   background-image: none;
   box-shadow: none;

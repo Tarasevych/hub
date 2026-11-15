@@ -194,6 +194,13 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   ONTWERP_VERLOPEN: { uk: 'Чернетка політики застаріла', nl: 'Beleidsontwerp verouderd' },
   BELEID_ONGELDIG: { uk: 'Чернетка політики недійсна', nl: 'Beleidsontwerp ongeldig' },
   BELEID_EIGENAAR_ALLEEN: { uk: 'Це право не можна видати агентові', nl: 'Dit recht kan niet aan een agent worden gegeven' },
+  // Slimme uitrolstroom (0279, backend/uitrol-stroom.ts)
+  STROOM_VERSIE_ONGELDIG: { uk: 'Неправильний формат версії потоку (очікується YYYYMMDD-HHMMSS)', nl: 'Ongeldig versienummer van de uitrolstroom (verwacht YYYYMMDD-HHMMSS)' },
+  STROOM_NOTITIE_NIET_GEVONDEN: { uk: 'Нотатку потоку розгортання не знайдено', nl: 'Uitrolnotitie niet gevonden' },
+  STROOM_CONTROLE_NIET_GEVONDEN: { uk: 'Пункт контрольного списку не знайдено', nl: 'Onderdeel van de controlelijst niet gevonden' },
+  STROOM_REDEN_VEREIST: { uk: 'Щоб пропустити обов’язковий пункт, зазначте причину (щонайменше 10 символів)', nl: 'Geef een reden op (minstens 10 tekens) om een verplicht onderdeel over te slaan' },
+  STROOM_VERPLICHT_HANDMATIG: { uk: 'Цей пункт не можна позначити виконаним автоматично — підтвердьте його вручну', nl: 'Dit onderdeel kan niet automatisch worden afgerond — bevestig het handmatig' },
+  STROOM_NIET_VERWIJDERBAAR: { uk: 'Системний пункт або автодоказ не можна видалити', nl: 'Een systeemonderdeel of automatisch bewijs kan niet worden verwijderd' },
 });
 
 const kies = (lang: 'uk' | 'nl', uk: string, nl: string) => (lang === 'uk' ? uk : nl);

@@ -407,6 +407,7 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
     await meld(grant.accountId, 'uitrol.mislukt', `Пакет ${tekst(row.versie, 40)} відхилено перевіркою / Pakket ${tekst(row.versie, 40)} geweigerd door de controle`,
       `Не пройшли перевірки: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Завантажив: «${grant.label}». / Niet geslaagd: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Geüpload door: «${grant.label}».`,
       'https://admin.tarasevych.com/updates');
+    await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'voorcontrole-mislukt', grant.accountId)).catch(() => undefined);
     return { id: String(row.id), versie: String(row.versie), status: 'afgebroken', code: 'VOORCONTROLE_MISLUKT', voorcontrole: vc.resultaat };
   }
   await rename(deel, pakketPad(row.id));
@@ -418,6 +419,7 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   await meld(grant.accountId, 'uitrol', `Оновлення ${tekst(row.versie, 40)} чекає схвалення / Update ${tekst(row.versie, 40)} wacht op goedkeuring`,
     `Завантажив: «${grant.label}». Перевірку пройдено. Схвалити чи відхилити — на сторінці оновлень (з passkey). / Geüpload door: «${grant.label}». Controle geslaagd. Goedkeuren of afwijzen op de updatepagina (met passkey).`,
     'https://admin.tarasevych.com/updates');
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'klaar', grant.accountId)).catch(() => undefined);
   return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat };
 }
 async function afbreken(id: string, code: string) {
@@ -645,6 +647,7 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'goedgekeurd', beslist_op = now(), beslist_door = $2, bijgewerkt_op = now() WHERE id = $1`, [String(v.id), eigenaar.email || eigenaar.id]);
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label) });
   await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(v.id), 'goedgekeurd', eigenaar.id)).catch(() => undefined);
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
 }
 

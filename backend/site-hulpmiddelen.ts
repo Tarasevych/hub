@@ -444,6 +444,7 @@ export const ADMIN_VIEW_ROUTES: Readonly<Record<string, { route: string; body: (
   overview: { route: 'POST /api/owner/admin/overview', body: () => ({}) },
   rollouts: { route: 'POST /api/owner/uitrol/overzicht', body: () => ({}) },
   rollout_history: { route: 'POST /api/owner/uitrol/runs', body: (a) => ({ pagina: Number.isInteger(a.page) && a.page > 0 ? a.page : 1, perPagina: 15 }) },
+  rollout_stroom: { route: 'POST /api/owner/uitrol/stroom/stand', body: (a) => (typeof a.version === 'string' && a.version ? { versie: a.version } : {}) },
   diagnostics: { route: 'POST /api/owner/admin/diagnostiek/overzicht', body: () => ({}) },
   audit_log: { route: 'POST /api/owner/audit/beheer/lijst', body: () => ({ limiet: 50 }) },
 });
@@ -451,8 +452,8 @@ SITE_TOOLS.push({
   group: 'site', service: 'admin', write: false,
   tool: {
     name: 'get_admin_view', title: 'Admin view on behalf of the owner',
-    description: 'Read one admin view (overview, rollouts, rollout_history, diagnostics, audit_log) on behalf of the owner. Works ONLY while the owner has granted you a time-limited delegation on the website with their passkey; otherwise it returns NAMENS_SESSIE_VEREIST — then ask the owner, do not retry. Every call is logged as done by you (the agent), never as the owner. Read-only; you can never change the owner account, roles, access, AI policy or secrets.',
-    inputSchema: { type: 'object', properties: { view: { type: 'string', enum: Object.keys(ADMIN_VIEW_ROUTES), description: p('Який адмін-розділ прочитати.', 'Welk beheeroverzicht gelezen wordt.') }, page: { type: 'integer', minimum: 1, description: p('Сторінка для rollout_history (типово 1).', 'Pagina van rollout_history (standaard 1).') } }, required: ['view'], additionalProperties: false },
+    description: 'Read one admin view (overview, rollouts, rollout_history, rollout_stroom, diagnostics, audit_log) on behalf of the owner. Works ONLY while the owner has granted you a time-limited delegation on the website with their passkey; otherwise it returns NAMENS_SESSIE_VEREIST — then ask the owner, do not retry. Every call is logged as done by you (the agent), never as the owner. Read-only; you can never change the owner account, roles, access, AI policy or secrets.',
+    inputSchema: { type: 'object', properties: { view: { type: 'string', enum: Object.keys(ADMIN_VIEW_ROUTES), description: p('Який адмін-розділ прочитати.', 'Welk beheeroverzicht gelezen wordt.') }, page: { type: 'integer', minimum: 1, description: p('Сторінка для rollout_history (типово 1).', 'Pagina van rollout_history (standaard 1).') }, version: { type: 'string', description: p('Необов’язково: версія випуску (YYYYMMDD-HHMMSS) для огляду потоку.', 'Optioneel: uitrolversie (YYYYMMDD-HHMMSS) voor het stroomoverzicht.') } }, required: ['view'], additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   validate: (a) => (typeof a.view === 'string' && Object.prototype.hasOwnProperty.call(ADMIN_VIEW_ROUTES, a.view) ? null : 'Invalid "view".'),

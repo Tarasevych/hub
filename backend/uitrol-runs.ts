@@ -130,6 +130,7 @@ async function synchroniseerEcht() {
   const perRun = new Map<string, StapRegel[]>();
   for (const r of parseStappen(stappenRaw)) { const l = perRun.get(r.run); if (l) l.push(r); else perRun.set(r.run, [r]); }
 
+  const afgerondeRuns: string[] = [];
   for (const [id, regels] of perRun) {
     const s = samenvatRun(regels);
     const ev = eindEvent(events, s);
@@ -151,19 +152,24 @@ async function synchroniseerEcht() {
     // Oorzaak (punt 6): de echte foutregel + context uit de gebeurtenis van root; blijft bij de run, ook als het logboek wordt ingekort.
     const reden = ev?.reden ? tekst(ev.reden, 400) : '';
     const context = JSON.stringify((ev?.context || []).slice(0, 8).map((r) => tekst(r, 300)));
-    await sys().query(`INSERT INTO app.uitrol_runs (id, methode, versie, staat, stap, pct, code, uk, nl, stappen, gestart_op, bijgewerkt_op, geeindigd_op, reden, context)
+    const upd = await sys().query(`INSERT INTO app.uitrol_runs (id, methode, versie, staat, stap, pct, code, uk, nl, stappen, gestart_op, bijgewerkt_op, geeindigd_op, reden, context)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15::jsonb)
       ON CONFLICT (id) DO UPDATE SET methode = EXCLUDED.methode, versie = EXCLUDED.versie, staat = EXCLUDED.staat, stap = EXCLUDED.stap,
         pct = GREATEST(app.uitrol_runs.pct, EXCLUDED.pct), code = EXCLUDED.code, uk = EXCLUDED.uk, nl = EXCLUDED.nl, stappen = EXCLUDED.stappen,
         bijgewerkt_op = EXCLUDED.bijgewerkt_op, geeindigd_op = EXCLUDED.geeindigd_op, reden = EXCLUDED.reden, context = EXCLUDED.context
-      WHERE app.uitrol_runs.staat IN ('bezig', 'afgebroken') OR app.uitrol_runs.stappen IS DISTINCT FROM EXCLUDED.stappen OR app.uitrol_runs.reden IS DISTINCT FROM EXCLUDED.reden`,
+      WHERE app.uitrol_runs.staat IN ('bezig', 'afgebroken') OR app.uitrol_runs.stappen IS DISTINCT FROM EXCLUDED.stappen OR app.uitrol_runs.reden IS DISTINCT FROM EXCLUDED.reden
+      RETURNING id`,
       [id, s.methode, s.versie, staat, s.stap, s.pct, tekst(code, 40), tekst(uk, 300), tekst(nl, 300), JSON.stringify(s.stappen), s.gestart, s.laatsteTijd, klaarTijd, reden, context]);
+    if (upd.rows[0] && staat !== 'bezig') afgerondeRuns.push(id);
   }
 
   await logregelsOpnemen();
   await oudeUitkomstenOpnemen(events, perRun);
   await voorstelKoppelen();
   await pakketKoppelen(events);
+  if (afgerondeRuns.length) {
+    try { const s = await import('./uitrol-stroom'); for (const id of afgerondeRuns) await s.stroomVastleggenVanRun(id); } catch (err) { console.error('[uitrol-runs] stroom-bewijs:', (err as Error).message); }
+  }
 }
 
 /**
@@ -190,6 +196,7 @@ async function pakketKoppelen(events: RootGebeurtenis[]) {
   }
   if (!nieuw.length) return;
   try { const m = await import('./uitrol-github'); for (const id of nieuw) m.naInstallatie(id); } catch (err) { console.error('[uitrol-runs] github-wachtrij:', (err as Error).message); }
+  try { const s = await import('./uitrol-stroom'); for (const id of nieuw) await s.stroomVastleggenVanRun(id); } catch (err) { console.error('[uitrol-runs] stroom-pakket:', (err as Error).message); }
 }
 
 /**

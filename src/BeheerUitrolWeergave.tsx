@@ -10,7 +10,7 @@ import { Deelnemers } from './uitrol/UitgaveBeschrijving';
 import { useUitrolV2 } from './uitrol/uitrol-vlag';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './platform/client';
-import { Activity, Bot, History, PackageCheck, RefreshCw, ScrollText, Settings2, Stethoscope, Fingerprint, UserCheck, UserRound, X } from 'lucide-react';
+import { Activity, Bot, ClipboardCheck, History, PackageCheck, RefreshCw, ScrollText, Settings2, Stethoscope, Fingerprint, UserCheck, UserRound, X } from 'lucide-react';
 import { foutCode, kanPasskey as passkeyMogelijk, passkeyBevestigen } from './platform/webauthn';
 import UitrolMeester from './UitrolMeester';
 import Upload from './uitrol/Upload';
@@ -24,6 +24,8 @@ import RunDetail from './uitrol/RunDetail';
 import Diagnose from './uitrol/Diagnose';
 import Bronnen from './uitrol/Bronnen';
 import Goedkeuring from './uitrol/Goedkeuring';
+import UitrolStroom from './uitrol/UitrolStroom';
+import UitrolStroomKaart from './uitrol/UitrolStroomKaart';
 import Voorbereiders from './uitrol/Voorbereiders';
 import GithubInstellingen from './uitrol/GithubInstellingen';
 import './uitrol/pakket.css';
@@ -44,7 +46,7 @@ const feitenVan = (e: unknown, code: string, route: string) => {
 };
 
 type Props = { lang: Lang; sourceOrigin: string; tabContext: string };
-type Tab = 'overzicht' | 'historie' | 'log' | 'diagnose' | 'instellen';
+type Tab = 'overzicht' | 'stroom' | 'historie' | 'log' | 'diagnose' | 'instellen';
 
 export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Props) {
   const context = useMemo(() => ({ service: 'admin', tabContext, sourceOrigin }), [tabContext, sourceOrigin]);
@@ -58,6 +60,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const [herhaal, setHerhaal] = useState<null | (() => Promise<string | void>)>(null);
   const [openRun, setOpenRun] = useState('');
   const [logRun, setLogRun] = useState('');
+  const [stroomVersie, setStroomVersie] = useState('');
   const [recent, setRecent] = useState<Run[]>([]);
   // Pogingen die niet tot een installatie kwamen (migratie 0081). Ze staan NIET in app.uitrol_runs: een afbreking in de browser
   // (leesfout van de schijf, netwerk weg, tabblad gesloten) heeft nooit een run op de server gestart. Zonder deze lijst bleef
@@ -122,6 +125,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     return (r.data as { kandidaten?: { accounts?: Keuze[]; accountsTotaal?: number } }).kandidaten || {};
   }, [context]);
   const openLog = useCallback((id: string) => { setLogRun(id); setTab('log'); window.scrollTo({ top: 0 }); }, []);
+  const naarStroom = useCallback((versie?: string) => { if (versie) setStroomVersie(versie); setTab('stroom'); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const naarUpload = useCallback(() => { setTab('overzicht'); window.setTimeout(() => document.getElementById('uitrol-upload-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); }, []);
   /**
    * Vanuit een afgebroken poging terug naar de wizard. `hervat` = de server heeft nog een deel van dit pakket: dan hoeft de
@@ -165,7 +169,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
         void recenteLaden(tab === 'log' ? 50 : 5);
         return;
       }
-      if (detail.tab && ['overzicht', 'historie', 'log', 'diagnose', 'instellen'].includes(detail.tab)) {
+      if (detail.tab && ['overzicht', 'stroom', 'historie', 'log', 'diagnose', 'instellen'].includes(detail.tab)) {
         if (detail.tab === 'log' && recent.some((r) => r.staat === 'bezig')) setLogRun('');
         setTab(detail.tab);
       }
@@ -194,6 +198,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const goedkeurenId = (id: string) => { const v = data.voorstellen.find((x) => x.id === id); if (v) void goedkeuren(v); };
   const TABS: Array<{ id: Tab; Icoon: typeof Activity; uk: string; nl: string; badge?: number }> = [
     { id: 'overzicht', Icoon: Activity, uk: 'Огляд', nl: 'Overzicht', badge: wachtend },
+    { id: 'stroom', Icoon: ClipboardCheck, uk: 'Потік і докази', nl: 'Stroom en bewijs' },
     { id: 'historie', Icoon: History, uk: 'Історія', nl: 'Geschiedenis' },
     { id: 'log', Icoon: ScrollText, uk: 'Журнал', nl: 'Logboek' },
     { id: 'diagnose', Icoon: Stethoscope, uk: 'Діагностика', nl: 'Diagnose' },
@@ -225,7 +230,8 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
           {/* Eerst de handeling (uploaden); daarna de levende kaart en de goedkeuring, die alleen iets tonen als er echt iets loopt of wacht. */}
           <Upload lang={lang} context={context} data={data} busy={busy} klaar={klaar} kanPasskey={kanPasskey} doe={doe} laden={laden} goedkeurenId={goedkeurenId} onFlow={setFlow} onNieuwId={setNieuwId} naarLive={naarLive} />
           <LiveKaart lang={lang} context={context} wachtendOpGoedkeuring={wachtend} goedgekeurd={goedgekeurd} openLog={openLog} openDiagnose={() => setTab('diagnose')} onRunVerandert={onRunVerandert} flow={flow} stoppen={stoppen} busy={busy} />
-          <Goedkeuring lang={lang} data={data} busy={busy} klaar={klaar} goedkeuren={(v) => void goedkeuren(v)} afwijzen={afwijzen} verberg={nieuwId} />
+          <Goedkeuring lang={lang} data={data} busy={busy} klaar={klaar} goedkeuren={(v) => void goedkeuren(v)} afwijzen={afwijzen} verberg={nieuwId} naarStroom={naarStroom} />
+          <UitrolStroomKaart lang={lang} context={context} versie={data.voorstellen.find((v) => v.status === 'wacht-op-goedkeuring' || v.status === 'goedgekeurd')?.versie || data.actieveVersie || ''} refreshSleutel={`${data.voorstellen.length}:${recent.length}:${data.actieveVersie || ''}`} naarStroom={naarStroom} />
           <section className='ut-kaart' aria-labelledby='ut-recent-titel'>
             <header className='ut-kaart-kop'><h2 id='ut-recent-titel'>{tr(lang, 'Останні розгортання', 'Laatste uitrollen')}</h2><button type='button' className='ut-knop' onClick={() => setTab('historie')}>{tr(lang, 'Уся історія', 'Volledige geschiedenis')}</button></header>
             <ul className='ut-lijst ut-recent'>
@@ -245,8 +251,10 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
         <Zijkant lang={lang} context={context} data={data} kanPasskey={kanPasskey} naarUpload={naarUpload} naarLog={() => openLog(lopendeRun.current || recent[0]?.id || '')} naarDiagnose={() => setTab('diagnose')} naarInstellen={() => setTab('instellen')} naarToegang={naarToegang} />
       </div>}
 
+      {tab === 'stroom' && <UitrolStroom lang={lang} context={context} versie={stroomVersie} onVersie={setStroomVersie} />}
+
       {/* Eén tijdlijn (22.10.2026): runs, afgebroken pogingen én pakketten die niet tot installatie kwamen staan samen op datum (src/uitrol/Geschiedenis.tsx). */}
-      {tab === 'historie' && <Geschiedenis lang={lang} context={context} openId={openRun} onOpenId={setOpenRun} naarUpload={naarUploadPoging} data={data} v2={v2} naarLog={openLog} naarDiagnose={() => setTab('diagnose')} />}
+      {tab === 'historie' && <Geschiedenis lang={lang} context={context} openId={openRun} onOpenId={setOpenRun} naarUpload={naarUploadPoging} data={data} v2={v2} naarLog={openLog} naarDiagnose={() => setTab('diagnose')} naarStroom={naarStroom} />}
 
       {tab === 'log' && <section className='ut-kaart' data-ut-logtab aria-labelledby='ut-log-titel'>
         <header className='ut-kaart-kop'><div><h2 id='ut-log-titel'>{tr(lang, 'Журнал встановлення', 'Installatielogboek')}</h2>
@@ -259,7 +267,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
         </header>
         {v2 && (() => { const r = recent.find((x) => x.id === logId); const v = r?.voorstelId ? data.voorstellen.find((x) => x.id === r.voorstelId) : undefined; const m = v?.pakketMeta?.manifest;
           return r ? <div className='ut-log-wie' data-ut-log-wie><small>{methodeTekst(lang, r.methode)}{(v?.voorbereider || r.voorbereider) ? ` · ${tr(lang, 'завантажив', 'geüpload door')} ${v?.voorbereider || r.voorbereider}` : ''}{(v?.beslistDoor || r.goedgekeurdDoor) ? ` · ${tr(lang, 'схвалив', 'goedgekeurd door')} ${v?.beslistDoor || r.goedgekeurdDoor}` : ''}</small>{m ? <Deelnemers lang={lang} m={m} /> : null}</div> : null; })()}
-        <RunDetail lang={lang} context={context} runId={logId} hoogte={520} />
+        <RunDetail lang={lang} context={context} runId={logId} hoogte={520} naarStroom={naarStroom} />
       </section>}
 
       {tab === 'diagnose' && <><Diagnose lang={lang} context={context} /><Bronnen lang={lang} context={context} /></>}

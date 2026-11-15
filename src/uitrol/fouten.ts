@@ -36,6 +36,14 @@ const FOUTEN: Record<string, [string, string]> = {
   ONDERWERP_ONBEKEND: ['Такого агента чи підключення не знайдено.', 'Die agent of koppeling bestaat niet.'],
   RUIMTE_PRIVE: ['Приватне підключення не може готувати оновлення сервера — потрібне підключення в технічному просторі.', 'Een privékoppeling kan geen serverupdates voorbereiden — gebruik een koppeling in de technische ruimte.'],
   PASSKEY_GEEN_VERIFICATIE: ['Потрібне розблокування (відбиток, обличчя або PIN).', 'Ontgrendeling is vereist (vingerafdruk, gezicht of pincode).'],
+  STROOM_VERSIE_ONGELDIG: ['Неправильний формат версії (очікується РРРРММДД-ГГХХСС).', 'Ongeldig versienummer (verwacht JJJJMMDD-UUMMSS).'],
+  STROOM_NOTITIE_LEEG: ['Вкажіть заголовок і текст нотатки.', 'Vul titel en tekst van de notitie in.'],
+  STROOM_NOTITIE_NIET_GEVONDEN: ['Нотатку не знайдено або вона системна.', 'Notitie niet gevonden of door het systeem gemaakt.'],
+  STROOM_CONTROLE_LEEG: ['Вкажіть назву пункту контрольного списку.', 'Geef een titel voor het controlelijstpunt.'],
+  STROOM_CONTROLE_NIET_GEVONDEN: ['Пункт контрольного списку не знайдено.', 'Controlelijstpunt niet gevonden.'],
+  STROOM_REDEN_VEREIST: ['Щоб пропустити обов’язковий пункт, зазначте причину (щонайменше 10 символів).', 'Geef een reden op (minstens 10 tekens) om een verplicht punt over te slaan.'],
+  STROOM_VERPLICHT_HANDMATIG: ['Провал автоматичної перевірки не можна позначити виконаним вручну — виправте причину або зафіксуйте обґрунтований пропуск.', 'Een mislukte automatische controle kunt u niet handmatig afvinken — los de fout op of sla onderbouwd over.'],
+  STROOM_NIET_VERWIJDERBAAR: ['Системні пункти не можна видалити.', 'Systeemonderdelen kunnen niet worden verwijderd.'],
 };
 const OORZAAK: Record<string, [string, string]> = {
   NETWORK_ERROR: ['немає зв’язку із сервером (мережа, VPN чи проксі обірвали запит)', 'geen verbinding met de server (netwerk, VPN of proxy brak het verzoek af)'],

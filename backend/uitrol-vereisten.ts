@@ -29,7 +29,7 @@ const tekst = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u001f
 
 export class VereistenFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
 
-type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number; sha256: string };
+type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number; sha256: string; versie: string };
 const SESSIES = new Map<string, Sessie>();
 const opruimen = () => { const grens = Date.now() - 3600_000; for (const [k, s] of SESSIES) if (s.gemaakt < grens) SESSIES.delete(k); };
 
@@ -243,9 +243,10 @@ export async function vereistenStarten(eigenaar: string, invoer: Record<string, 
     basis: a.basis ? { versie: tekst(a.basis.versie, 32), commit: tekst(a.basis.commit, 64) } : null, migraties: a.migraties.slice(0, 5000).map((m) => ({ naam: tekst(m.naam, 120), bytes: Math.max(0, Number(m.bytes) || 0) })),
     sha256: tekst(a.sha256, 64).toLowerCase(), ontwikkelArchief: a.ontwikkelArchief ? String(a.ontwikkelArchief).slice(0, 9000) : null };
   const ant = await vereistenBeoordelen(schoon as never, omg);
-  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0, sha256: schoon.sha256 });
+  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0, sha256: schoon.sha256, versie: schoon.versie });
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_vereisten_gecontroleerd', type: 'beveiliging', result: ant.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: ant.id, versie: schoon.versie, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id), nieuw: ant.nieuweMigraties.length } }).catch(() => undefined);
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVereisten(eigenaar, ant, { versie: schoon.versie, sha256: schoon.sha256, commit: schoon.commit, voorbereider: schoon.auteur })).catch(() => undefined);
   return ant;
 }
 
@@ -295,6 +296,8 @@ export async function vereistenStand(eigenaar: string, invoer: Record<string, un
   s.antwoord = proefVerwerken(s.antwoord, u, (n) => s.sql.get(n));
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_migratieproef', type: 'beveiliging', result: u.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: s.antwoord.id, status: u.status, migraties: u.migraties.map((m) => ({ naam: m.naam, ms: m.ms, ok: m.ok, code: m.fout?.code })) } }).catch(() => undefined);
+  const vingerafdrukken = proefSqlVingerafdrukken([...s.sql.entries()].map(([naam, sql]) => ({ naam, sql })));
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanProef(eigenaar, s.versie, u, s.sha256, vingerafdrukken)).catch(() => undefined);
   return s.antwoord;
 }
 

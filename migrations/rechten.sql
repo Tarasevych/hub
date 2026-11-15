@@ -50,6 +50,10 @@ BEGIN
     IF to_regclass('app.uitrol_runs') IS NOT NULL THEN REVOKE ALL ON app.uitrol_runs, app.uitrol_run_regels FROM mijnruimte_app; END IF;
     -- 0081: pogingen die niet tot een installatie kwamen (ook afbrekingen die de browser meldde): alleen de systeemrol.
     IF to_regclass('app.uitrol_pogingen') IS NOT NULL THEN REVOKE ALL ON app.uitrol_pogingen FROM mijnruimte_app; END IF;
+    -- 0279: slimme uitrolstroom (notities, controlelijsten, bewijs van controles): uitsluitend systeemrol (beheercontour) onder FORCE RLS.
+    IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen FROM mijnruimte_app;
+    END IF;
     -- 0105: besluiten van de eigenaar met passkey (terugdraaien, externe MCP-hosts): lezen onder RLS (eigen rijen), schrijven alleen de systeemrol.
     IF to_regclass('app.eigenaar_besluiten') IS NOT NULL THEN
       GRANT SELECT ON app.eigenaar_besluiten TO mijnruimte_app;
@@ -227,6 +231,9 @@ BEGIN
     GRANT USAGE ON SCHEMA app TO mijnruimte_system;
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app TO mijnruimte_system;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_system;
+    IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen TO mijnruimte_system;
+    END IF;
     REVOKE INSERT, UPDATE, DELETE ON app.schema_migrations FROM mijnruimte_system;
     -- De RLS-stand en de allowlist wijzigt alleen het rollenscript (postgres/migrator), nooit de app zelf.
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.rls_instellingen, app.rls_gedeelde_tabellen FROM mijnruimte_system; END IF;
