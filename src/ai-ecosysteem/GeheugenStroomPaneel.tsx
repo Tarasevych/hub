@@ -13,6 +13,7 @@ import {
   History,
   Link2,
   Lock,
+  Pencil,
   Pin,
   PinOff,
   Plus,
@@ -103,6 +104,9 @@ function geheugenFoutTekst(e: unknown, tr: Tr): string {
   if (code === GEHEUGEN_FOUTEN.zelfRelatie) {
     return tr('Вузол не можна пов’язати із самим собою.', 'Een knoop kan niet aan zichzelf worden gekoppeld.');
   }
+  if (code === GEHEUGEN_FOUTEN.nietGevonden) {
+    return tr('Потрібний вузол або зв’язок у цьому просторі не знайдено.', 'De gevraagde knoop of relatie is in deze ruimte niet gevonden.');
+  }
   return tr(`Помилка операції (${code || 'невідома'}).`, `Fout tijdens bewerking (${code || 'onbekend'}).`);
 }
 
@@ -122,6 +126,7 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
   const [toonFormulier, setToonFormulier] = useState(false);
 
   // Форма створення / редагування вузла
+  const [editId, setEditId] = useState('');
   const [sleutel, setSleutel] = useState('');
   const [soort, setSoort] = useState<GeheugenSoort>('besluit');
   const [titel, setTitel] = useState('');
@@ -131,6 +136,7 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
   const [vastgepind, setVastgepind] = useState(false);
   const [werkruimteId, setWerkruimteId] = useState(actieveWerkruimteId);
   const [vervangtId, setVervangtId] = useState('');
+  const [bevestigVerwijderId, setBevestigVerwijderId] = useState('');
 
   // Форма додавання зв’язку прямо з картки
   const [linkVanId, setLinkVanId] = useState('');
@@ -207,6 +213,33 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
     }
   };
 
+  const leegFormulier = () => {
+    setEditId('');
+    setSleutel('');
+    setSoort('besluit');
+    setTitel('');
+    setInhoud('');
+    setBronDienst('ai');
+    setLabelsTekst('');
+    setVastgepind(false);
+    setVervangtId('');
+  };
+
+  const openBewerken = (k: GeheugenKnoop) => {
+    setEditId(k.id);
+    setSleutel(k.sleutel);
+    setSoort(k.soort);
+    setTitel(k.titel);
+    setInhoud(k.inhoud);
+    setBronDienst(k.bronDienst);
+    setLabelsTekst(k.labels.join(', '));
+    setVastgepind(k.vastgepind);
+    setVervangtId('');
+    setToonFormulier(true);
+    setFout('');
+    setMelding('');
+  };
+
   const bewaarKnoop = async (e: React.FormEvent) => {
     e.preventDefault();
     setBezig(true);
@@ -215,6 +248,7 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
     try {
       await api.post('/api/owner/ai/geheugen/opslaan', {
         ...ctx(),
+        ...(editId ? { id: editId } : {}),
         ...(sleutel.trim() ? { sleutel: sleutel.trim() } : {}),
         soort,
         titel,
@@ -225,14 +259,10 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
         ...(werkruimteId ? { werkruimteId } : {}),
         ...(vervangtId ? { vervangtId } : {}),
       });
-      setSleutel('');
-      setTitel('');
-      setInhoud('');
-      setLabelsTekst('');
-      setVastgepind(false);
-      setVervangtId('');
+      const wasEdit = Boolean(editId);
+      leegFormulier();
       setToonFormulier(false);
-      setMelding(tr('Вузол збережено у Стрімі пам’яті.', 'Geheugenknoop opgeslagen in de stroom.'));
+      setMelding(wasEdit ? tr('Вузол пам’яті оновлено.', 'Geheugenknoop bijgewerkt.') : tr('Вузол збережено у Стрімі пам’яті.', 'Geheugenknoop opgeslagen in de stroom.'));
       await laadOverzicht();
     } catch (err) {
       setFout(geheugenFoutTekst(err, tr));
@@ -254,6 +284,13 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
         id,
         ...wijziging,
       });
+      if (wijziging.verwijder) {
+        setBevestigVerwijderId('');
+        if (editId === id) {
+          leegFormulier();
+          setToonFormulier(false);
+        }
+      }
       await laadOverzicht();
     } catch (err) {
       setFout(geheugenFoutTekst(err, tr));
@@ -565,7 +602,19 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
                 <Search size={14} aria-hidden='true' />
                 {tr('Знайти', 'Zoeken')}
               </button>
-              <button type='button' className='gs-knop-hoofd' onClick={() => setToonFormulier((v) => !v)}>
+              <button
+                type='button'
+                className='gs-knop-hoofd'
+                onClick={() => {
+                  if (toonFormulier) {
+                    leegFormulier();
+                    setToonFormulier(false);
+                  } else {
+                    leegFormulier();
+                    setToonFormulier(true);
+                  }
+                }}
+              >
                 <Plus size={14} aria-hidden='true' />
                 {toonFormulier ? tr('Згорнути форму', 'Formulier sluiten') : tr('Додати вузол', 'Knoop toevoegen')}
               </button>
@@ -676,7 +725,7 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
                     <select className='gs-select' value={vervangtId} onChange={(e) => setVervangtId(e.target.value)}>
                       <option value=''>{tr('Не замінює нічого', 'Vervangt niets')}</option>
                       {(data?.knopen ?? [])
-                        .filter((k) => k.status === 'actief')
+                        .filter((k) => k.status === 'actief' && k.id !== editId)
                         .map((k) => (
                           <option key={k.id} value={k.id}>{k.titel} ({k.sleutel})</option>
                         ))}
@@ -691,9 +740,16 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
 
                 <div className='gs-knoppen'>
                   <button type='submit' className='gs-knop-hoofd' disabled={bezig}>
-                    {tr('Зберегти у Стрім пам’яті', 'Opslaan in Stroom van geheugen')}
+                    {editId ? tr('Оновити вузол пам’яті', 'Geheugenknoop bijwerken') : tr('Зберегти у Стрім пам’яті', 'Opslaan in Stroom van geheugen')}
                   </button>
-                  <button type='button' className='gs-knop-tweede' onClick={() => setToonFormulier(false)}>
+                  <button
+                    type='button'
+                    className='gs-knop-tweede'
+                    onClick={() => {
+                      leegFormulier();
+                      setToonFormulier(false);
+                    }}
+                  >
                     {tr('Скасувати', 'Annuleren')}
                   </button>
                 </div>
@@ -705,12 +761,18 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
             ) : items.length === 0 ? (
               <div className='gs-leeg' data-geheugen-leeg='1'>
                 <Brain size={24} aria-hidden='true' />
-                <strong>{tr('У цій вибірці ще немає вузлів пам’яті', 'Nog geen geheugenknopen in deze selectie')}</strong>
+                <strong>
+                  {data?.sleutelStand === 'gesloten' && (data?.statistiek.versleuteld ?? 0) > 0
+                    ? tr(`Зашифровані вузли приховані (усього: ${data.statistiek.versleuteld})`, `Versleutelde knopen zijn verborgen (totaal: ${data.statistiek.versleuteld})`)
+                    : tr('У цій вибірці ще немає вузлів пам’яті', 'Nog geen geheugenknopen in deze selectie')}
+                </strong>
                 <p className='gs-subtekst'>
-                  {tr(
-                    'Додайте перший факт, рішення чи уподобання або витягніть їх автоматично з уривку тексту на третій вкладці.',
-                    'Voeg het eerste feit, besluit of voorkeur toe of haal ze automatisch uit een tekst op het derde tabblad.',
-                  )}
+                  {data?.sleutelStand === 'gesloten' && (data?.statistiek.versleuteld ?? 0) > 0
+                    ? tr('Відкрийте Сховище ключів вище, щоб розшифрувати й переглянути ваші збережені вузли.', 'Ontgrendel hierboven uw sleutelkluis om uw opgeslagen knopen te ontsleutelen en te bekijken.')
+                    : tr(
+                        'Додайте перший факт, рішення чи уподобання або витягніть їх автоматично з уривку тексту на третій вкладці.',
+                        'Voeg het eerste feit, besluit of voorkeur toe of haal ze automatisch uit een tekst op het derde tabblad.',
+                      )}
                 </p>
               </div>
             ) : (
@@ -806,6 +868,18 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
                           {k.vastgepind ? tr('Відкріпити', 'Losmaken') : tr('Закріпити', 'Vastzetten')}
                         </button>
 
+                        {!k.vergrendeld ? (
+                          <button
+                            type='button'
+                            className='gs-knop-tweede'
+                            disabled={bezig}
+                            onClick={() => openBewerken(k)}
+                          >
+                            <Pencil size={14} aria-hidden='true' />
+                            {tr('Редагувати', 'Bewerken')}
+                          </button>
+                        ) : null}
+
                         <button
                           type='button'
                           className='gs-knop-tweede'
@@ -838,15 +912,37 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
                           </button>
                         )}
 
-                        <button
-                          type='button'
-                          className='gs-knop-gevaar'
-                          disabled={bezig}
-                          onClick={() => void wijzigStatus(k.id, { verwijder: true })}
-                        >
-                          <Trash2 size={14} aria-hidden='true' />
-                          {tr('Видалити', 'Verwijderen')}
-                        </button>
+                        {bevestigVerwijderId === k.id ? (
+                          <>
+                            <button
+                              type='button'
+                              className='gs-knop-gevaar'
+                              disabled={bezig}
+                              onClick={() => void wijzigStatus(k.id, { verwijder: true })}
+                            >
+                              <Trash2 size={14} aria-hidden='true' />
+                              {tr('Точно видалити', 'Definitief verwijderen')}
+                            </button>
+                            <button
+                              type='button'
+                              className='gs-knop-tweede'
+                              disabled={bezig}
+                              onClick={() => setBevestigVerwijderId('')}
+                            >
+                              {tr('Скасувати', 'Annuleren')}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type='button'
+                            className='gs-knop-gevaar'
+                            disabled={bezig}
+                            onClick={() => setBevestigVerwijderId(k.id)}
+                          >
+                            <Trash2 size={14} aria-hidden='true' />
+                            {tr('Видалити', 'Verwijderen')}
+                          </button>
+                        )}
                       </div>
 
                       {linkerOpen ? (

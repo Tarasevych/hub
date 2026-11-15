@@ -196,8 +196,8 @@ registreerHerversleutelaar('app.geheugen_stroom_knopen', async (lade, dek) => {
     await sys().query(
       `UPDATE app.geheugen_stroom_knopen
           SET titel = '', inhoud = '', samenvatting = '', inhoud_versleuteld = $3, bijgewerkt_op = now()
-        WHERE id = $1 AND user_id = $2`,
-      [String(r.id), lade.userId, envelop],
+        WHERE id = $1::uuid AND user_id = $2 AND ruimte = $4`,
+      [String(r.id), lade.userId, envelop, lade.ruimte],
     );
     herversleuteld++;
   }
@@ -273,56 +273,68 @@ async function bepaalKluisStandEnDek(lade: Lade): Promise<{ stand: KluisStand; d
     const aan = await isIngeschakeld({ userId: lade.userId, ruimte: lade.ruimte });
     if (!aan) return { stand: 'uit', dek: null };
     const dek = sleutelOpen({ userId: lade.userId, ruimte: lade.ruimte });
-    return dek ? { stand: 'open', dek } : { stand: 'gesloten', dek: null };
-  } catch {
-    return { stand: 'uit', dek: null };
+    return dek ? { stand: 'open', dek: Buffer.from(dek) } : { stand: 'gesloten', dek: null };
+  } catch (err) {
+    // Лише якщо міграція 0092 ще не застосована, працюємо у стандартному режимі; інші помилки БД не глушимо.
+    if ((err as { code?: string } | null)?.code === '42P01') {
+      return { stand: 'uit', dek: null };
+    }
+    throw err;
   }
 }
 
 export const pgStroomOpslag: StroomOpslag = {
   async leesAlles(lade) {
     const { stand, dek } = await bepaalKluisStandEnDek(lade);
-    return alsGebruiker(lade.userId, async (q) => {
-      const [knRes, relRes, gebRes] = await Promise.all([
-        q(
+    try {
+      return await alsGebruiker(lade.userId, async (q) => {
+        const knRes = await q(
           `SELECT ${KNOOP_KOLOMMEN}
              FROM app.geheugen_stroom_knopen
             WHERE user_id = $1 AND ruimte = $2
             ORDER BY vastgepind DESC, bijgewerkt_op DESC
             LIMIT 400`,
           [lade.userId, lade.ruimte],
-        ),
-        q(
+        );
+        const relRes = await q(
           `SELECT ${RELATIE_KOLOMMEN}
              FROM app.geheugen_stroom_relaties
             WHERE user_id = $1 AND ruimte = $2
             ORDER BY aangemaakt_op DESC
             LIMIT 600`,
           [lade.userId, lade.ruimte],
-        ),
-        q(
+        );
+        const gebRes = await q(
           `SELECT ${GEBEURTENIS_KOLOMMEN}
              FROM app.geheugen_stroom_gebeurtenissen
             WHERE user_id = $1 AND ruimte = $2
             ORDER BY aangemaakt_op DESC
             LIMIT 80`,
           [lade.userId, lade.ruimte],
-        ),
-      ]);
+        );
 
-      return {
-        sleutelStand: stand,
-        knopen: knRes.rows.map((r) => decodeerKnoopRij(lade.userId, r as Record<string, unknown>, dek)),
-        relaties: relRes.rows.map((r) => rijNaarRelatie(r as Record<string, unknown>)),
-        gebeurtenissen: gebRes.rows.map((r) => rijNaarGebeurtenis(r as Record<string, unknown>)),
-      };
-    });
+        return {
+          sleutelStand: stand,
+          knopen: knRes.rows.map((r) => decodeerKnoopRij(lade.userId, r as Record<string, unknown>, dek)),
+          relaties: relRes.rows.map((r) => rijNaarRelatie(r as Record<string, unknown>)),
+          gebeurtenissen: gebRes.rows.map((r) => rijNaarGebeurtenis(r as Record<string, unknown>)),
+        };
+      });
+    } finally {
+      if (dek) dek.fill(0);
+    }
   },
 
   async bewaarKnoop(lade, invoer, agentHint = '') {
     const titel = String(invoer.titel ?? '').trim().slice(0, 200);
     const inhoud = String(invoer.inhoud ?? '').trim().slice(0, 8000);
     if (!titel || !inhoud) return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+    if (invoer.id !== undefined && invoer.id !== '' && !isGeldigUuid(invoer.id)) {
+      return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+    }
+    if (invoer.vervangtId !== undefined && invoer.vervangtId !== '' && !isGeldigUuid(invoer.vervangtId)) {
+      return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+    }
     if (bevatGevoeligGeheim(titel) || bevatGevoeligGeheim(inhoud) || bevatGevoeligGeheim(invoer.samenvatting)) {
       return { ok: false, code: GEHEUGEN_FOUTEN.geheimGeweigerd };
     }
@@ -332,144 +344,243 @@ export const pgStroomOpslag: StroomOpslag = {
       throw new Error(SLEUTEL_GESLOTEN_CODE);
     }
 
-    const soort = schoonGeheugenSoort(invoer.soort);
-    const bronDienst = schoonGeheugenDienst(invoer.bronDienst);
-    const bronAgent = schoonGeheugenAgent(invoer.bronAgent || agentHint);
-    const labels = normaliseerGeheugenLabels(invoer.labels);
-    const vastgepind = invoer.vastgepind === true;
-    const gewicht = normaliseerGeheugenGewicht(invoer.gewicht);
-    const werkruimteId = invoer.werkruimteId && isGeldigUuid(invoer.werkruimteId) ? invoer.werkruimteId.trim() : null;
-    const samenvatting = String(invoer.samenvatting ?? '').trim().slice(0, 600) || maakSamenvatting(titel, inhoud);
-    const inhoudHash = berekenInhoudHash(titel, inhoud);
+    try {
+      const bronDienst = schoonGeheugenDienst(invoer.bronDienst);
+      const bronAgent = schoonGeheugenAgent(invoer.bronAgent || agentHint);
+      const labels = normaliseerGeheugenLabels(invoer.labels);
+      const gewicht = normaliseerGeheugenGewicht(invoer.gewicht);
+      const werkruimteId = invoer.werkruimteId && isGeldigUuid(invoer.werkruimteId) ? invoer.werkruimteId.trim() : null;
+      const samenvatting = String(invoer.samenvatting ?? '').trim().slice(0, 600) || maakSamenvatting(titel, inhoud);
+      const inhoudHash = berekenInhoudHash(titel, inhoud);
 
-    let geldigTotIso: string | null = null;
-    if (invoer.geldigTot !== undefined && invoer.geldigTot !== null && invoer.geldigTot !== '') {
-      const ms = typeof invoer.geldigTot === 'number' ? invoer.geldigTot : Date.parse(String(invoer.geldigTot));
-      if (Number.isFinite(ms) && ms > 0) geldigTotIso = new Date(ms).toISOString();
-    }
+      let geldigTotIso: string | null = null;
+      if (invoer.geldigTot !== undefined && invoer.geldigTot !== null && invoer.geldigTot !== '') {
+        const ms = typeof invoer.geldigTot === 'number' ? invoer.geldigTot : Date.parse(String(invoer.geldigTot));
+        if (Number.isFinite(ms) && ms > 0) geldigTotIso = new Date(ms).toISOString();
+      }
 
-    const sleutel = invoer.sleutel && isGeldigeGeheugenSleutel(invoer.sleutel)
-      ? invoer.sleutel.trim().toLowerCase()
-      : invoer.sleutel
-        ? normaliseerGeheugenSleutel(invoer.sleutel, soort)
-        : maakKnoopSleutelVanTitel(titel);
+      const aangevraagdeSleutel = invoer.sleutel && isGeldigeGeheugenSleutel(invoer.sleutel)
+        ? invoer.sleutel.trim().toLowerCase()
+        : invoer.sleutel
+          ? normaliseerGeheugenSleutel(invoer.sleutel, schoonGeheugenSoort(invoer.soort))
+          : '';
+      const doelIdInvoer = invoer.id && isGeldigUuid(invoer.id) ? invoer.id.trim() : '';
 
-    const kluisEnvelop =
-      stand === 'open' && dek
-        ? verzegelMetDek(dek, JSON.stringify({ titel, inhoud, samenvatting }), geheugenAad(lade.userId, lade.ruimte, sleutel))
-        : null;
-
-    const dbTitel = kluisEnvelop ? '' : titel;
-    const dbInhoud = kluisEnvelop ? '' : inhoud;
-    const dbSamenvatting = kluisEnvelop ? '' : samenvatting;
-
-    return alsGebruiker(lade.userId, async (q) => {
-      if (werkruimteId) {
-        const wrCheck = await q(
-          `SELECT 1 FROM app.ai_agent_werkruimtes WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
-          [werkruimteId, lade.userId, lade.ruimte],
-        );
-        if (!wrCheck.rows[0]) {
-          return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+      return await alsGebruiker(lade.userId, async (q) => {
+        if (werkruimteId) {
+          const wrCheck = await q(
+            `SELECT 1 FROM app.ai_agent_werkruimtes WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+            [werkruimteId, lade.userId, lade.ruimte],
+          );
+          if (!wrCheck.rows[0]) {
+            return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+          }
         }
-      }
 
-      const bestaand = await q(
-        `SELECT id FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3`,
-        [lade.userId, lade.ruimte, sleutel],
-      );
-      const nieuw = bestaand.rows.length === 0;
+        let bestaandRij: Record<string, unknown> | null = null;
+        if (doelIdInvoer) {
+          const idRes = await q(
+            `SELECT id, sleutel, soort, vastgepind FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+            [doelIdInvoer, lade.userId, lade.ruimte],
+          );
+          if (!idRes.rows[0]) {
+            return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+          }
+          bestaandRij = idRes.rows[0] as Record<string, unknown>;
+        }
 
-      const res = await q(
-        `INSERT INTO app.geheugen_stroom_knopen
-          (user_id, ruimte, werkruimte_id, sleutel, soort, titel, inhoud, samenvatting, inhoud_versleuteld, inhoud_hash,
-           bron_dienst, bron_agent, labels, status, vastgepind, gewicht, geldig_tot)
-         VALUES ($1, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::text[], 'actief', $14, $15, $16::timestamptz)
-         ON CONFLICT (user_id, ruimte, sleutel)
-         DO UPDATE SET
-           werkruimte_id = COALESCE(EXCLUDED.werkruimte_id, app.geheugen_stroom_knopen.werkruimte_id),
-           soort = EXCLUDED.soort,
-           titel = EXCLUDED.titel,
-           inhoud = EXCLUDED.inhoud,
-           samenvatting = EXCLUDED.samenvatting,
-           inhoud_versleuteld = EXCLUDED.inhoud_versleuteld,
-           inhoud_hash = EXCLUDED.inhoud_hash,
-           bron_dienst = EXCLUDED.bron_dienst,
-           bron_agent = CASE WHEN EXCLUDED.bron_agent = '' THEN app.geheugen_stroom_knopen.bron_agent ELSE EXCLUDED.bron_agent END,
-           labels = EXCLUDED.labels,
-           status = 'actief',
-           vastgepind = EXCLUDED.vastgepind,
-           gewicht = EXCLUDED.gewicht,
-           geldig_tot = EXCLUDED.geldig_tot,
-           bijgewerkt_op = now()
-         RETURNING ${KNOOP_KOLOMMEN}`,
-        [
-          lade.userId,
-          lade.ruimte,
-          werkruimteId,
-          sleutel,
-          soort,
-          dbTitel,
-          dbInhoud,
-          dbSamenvatting,
-          kluisEnvelop,
-          inhoudHash,
-          bronDienst,
-          bronAgent,
-          labels,
-          vastgepind,
-          gewicht,
-          geldigTotIso,
-        ],
-      );
+        const sleutel = aangevraagdeSleutel || (bestaandRij ? String(bestaandRij.sleutel) : maakKnoopSleutelVanTitel(titel));
+        if (doelIdInvoer && aangevraagdeSleutel) {
+          const conflictRes = await q(
+            `SELECT id FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3 AND id <> $4::uuid`,
+            [lade.userId, lade.ruimte, sleutel, doelIdInvoer],
+          );
+          if (conflictRes.rows[0]) {
+            return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+          }
+        }
 
-      const knoop = decodeerKnoopRij(lade.userId, res.rows[0] as Record<string, unknown>, dek);
+        if (!bestaandRij) {
+          const sleutelRes = await q(
+            `SELECT id, sleutel, soort, vastgepind FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3`,
+            [lade.userId, lade.ruimte, sleutel],
+          );
+          bestaandRij = (sleutelRes.rows[0] as Record<string, unknown> | undefined) ?? null;
+        }
 
-      await q(
-        `INSERT INTO app.geheugen_stroom_gebeurtenissen (user_id, ruimte, knoop_id, actie, bron_agent, bron_dienst, details)
-         VALUES ($1, $2, $3::uuid, $4, $5, $6, $7::jsonb)`,
-        [
-          lade.userId,
-          lade.ruimte,
-          knoop.id,
-          nieuw ? 'aangemaakt' : 'bijgewerkt',
-          bronAgent,
-          bronDienst,
-          jsonbTekst({ sleutel: knoop.sleutel, soort: knoop.soort, versleuteld: Boolean(kluisEnvelop) }),
-        ],
-      );
+        // Перевіряємо існування замінюваного вузла ДО запису, щоб не допустити 500 від FK або розсинхронізації.
+        let vervangDoelId = '';
+        if (invoer.vervangtId && isGeldigUuid(invoer.vervangtId)) {
+          const vId = invoer.vervangtId.trim();
+          const doelRes = await q(
+            `SELECT id FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+            [vId, lade.userId, lade.ruimte],
+          );
+          if (!doelRes.rows[0]) {
+            return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+          }
+          vervangDoelId = String(doelRes.rows[0].id);
+        } else if (invoer.vervangtSleutel) {
+          const doelRes = await q(
+            `SELECT id FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3`,
+            [lade.userId, lade.ruimte, normaliseerGeheugenSleutel(invoer.vervangtSleutel)],
+          );
+          if (!doelRes.rows[0]) {
+            return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+          }
+          vervangDoelId = String(doelRes.rows[0].id);
+        }
+        if (vervangDoelId && bestaandRij && vervangDoelId === String(bestaandRij.id)) {
+          return { ok: false, code: GEHEUGEN_FOUTEN.zelfRelatie };
+        }
 
-      // Якщо цей вузол замінює попередній — автоматично будуємо ребро «vervangt» і позначаємо старий застарілим.
-      let vervangDoelId = invoer.vervangtId && isGeldigUuid(invoer.vervangtId) ? invoer.vervangtId.trim() : '';
-      if (!vervangDoelId && invoer.vervangtSleutel) {
-        const doelRes = await q(
-          `SELECT id FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3`,
-          [lade.userId, lade.ruimte, normaliseerGeheugenSleutel(invoer.vervangtSleutel)],
-        );
-        vervangDoelId = doelRes.rows[0]?.id ? String(doelRes.rows[0].id) : '';
-      }
-      if (vervangDoelId && vervangDoelId !== knoop.id) {
-        await q(
-          `INSERT INTO app.geheugen_stroom_relaties (user_id, ruimte, bron_knoop_id, doel_knoop_id, relatie_soort, toelichting)
-           VALUES ($1, $2, $3::uuid, $4::uuid, 'vervangt', $5)
-           ON CONFLICT (user_id, ruimte, bron_knoop_id, doel_knoop_id, relatie_soort) DO NOTHING`,
-          [lade.userId, lade.ruimte, knoop.id, vervangDoelId, 'Автоматичне оновлення знання / Automatische opvolging'],
-        );
-        await q(
-          `UPDATE app.geheugen_stroom_knopen
-              SET status = 'verouderd', bijgewerkt_op = now()
-            WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
-          [vervangDoelId, lade.userId, lade.ruimte],
-        );
+        const soort = invoer.soort
+          ? schoonGeheugenSoort(invoer.soort)
+          : bestaandRij
+            ? schoonGeheugenSoort(bestaandRij.soort)
+            : 'feit';
+        const vastgepind = typeof invoer.vastgepind === 'boolean'
+          ? invoer.vastgepind
+          : Boolean(bestaandRij?.vastgepind);
+
+        if (stand === 'open' && !sleutelOpen({ userId: lade.userId, ruimte: lade.ruimte })) {
+          throw new Error(SLEUTEL_GESLOTEN_CODE);
+        }
+        const kluisEnvelop =
+          stand === 'open' && dek
+            ? verzegelMetDek(dek, JSON.stringify({ titel, inhoud, samenvatting }), geheugenAad(lade.userId, lade.ruimte, sleutel))
+            : null;
+        const dbTitel = kluisEnvelop ? '' : titel;
+        const dbInhoud = kluisEnvelop ? '' : inhoud;
+        const dbSamenvatting = kluisEnvelop ? '' : samenvatting;
+
+        const nieuw = !bestaandRij;
+        const res = doelIdInvoer
+          ? await q(
+              `UPDATE app.geheugen_stroom_knopen
+                  SET werkruimte_id = COALESCE($4::uuid, app.geheugen_stroom_knopen.werkruimte_id),
+                      sleutel = $5,
+                      soort = $6,
+                      titel = $7,
+                      inhoud = $8,
+                      samenvatting = $9,
+                      inhoud_versleuteld = $10,
+                      inhoud_hash = $11,
+                      bron_dienst = $12,
+                      bron_agent = CASE WHEN $13 = '' THEN app.geheugen_stroom_knopen.bron_agent ELSE $13 END,
+                      labels = $14::text[],
+                      status = 'actief',
+                      vastgepind = $15,
+                      gewicht = $16,
+                      geldig_tot = $17::timestamptz,
+                      bijgewerkt_op = now()
+                WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3
+                RETURNING ${KNOOP_KOLOMMEN}`,
+              [
+                doelIdInvoer,
+                lade.userId,
+                lade.ruimte,
+                werkruimteId,
+                sleutel,
+                soort,
+                dbTitel,
+                dbInhoud,
+                dbSamenvatting,
+                kluisEnvelop,
+                inhoudHash,
+                bronDienst,
+                bronAgent,
+                labels,
+                vastgepind,
+                gewicht,
+                geldigTotIso,
+              ],
+            )
+          : await q(
+              `INSERT INTO app.geheugen_stroom_knopen
+                (user_id, ruimte, werkruimte_id, sleutel, soort, titel, inhoud, samenvatting, inhoud_versleuteld, inhoud_hash,
+                 bron_dienst, bron_agent, labels, status, vastgepind, gewicht, geldig_tot)
+               VALUES ($1, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::text[], 'actief', $14, $15, $16::timestamptz)
+               ON CONFLICT (user_id, ruimte, sleutel)
+               DO UPDATE SET
+                 werkruimte_id = COALESCE(EXCLUDED.werkruimte_id, app.geheugen_stroom_knopen.werkruimte_id),
+                 soort = EXCLUDED.soort,
+                 titel = EXCLUDED.titel,
+                 inhoud = EXCLUDED.inhoud,
+                 samenvatting = EXCLUDED.samenvatting,
+                 inhoud_versleuteld = EXCLUDED.inhoud_versleuteld,
+                 inhoud_hash = EXCLUDED.inhoud_hash,
+                 bron_dienst = EXCLUDED.bron_dienst,
+                 bron_agent = CASE WHEN EXCLUDED.bron_agent = '' THEN app.geheugen_stroom_knopen.bron_agent ELSE EXCLUDED.bron_agent END,
+                 labels = EXCLUDED.labels,
+                 status = 'actief',
+                 vastgepind = EXCLUDED.vastgepind,
+                 gewicht = EXCLUDED.gewicht,
+                 geldig_tot = EXCLUDED.geldig_tot,
+                 bijgewerkt_op = now()
+               RETURNING ${KNOOP_KOLOMMEN}`,
+              [
+                lade.userId,
+                lade.ruimte,
+                werkruimteId,
+                sleutel,
+                soort,
+                dbTitel,
+                dbInhoud,
+                dbSamenvatting,
+                kluisEnvelop,
+                inhoudHash,
+                bronDienst,
+                bronAgent,
+                labels,
+                vastgepind,
+                gewicht,
+                geldigTotIso,
+              ],
+            );
+
+        const knoop = decodeerKnoopRij(lade.userId, res.rows[0] as Record<string, unknown>, dek);
+
         await q(
           `INSERT INTO app.geheugen_stroom_gebeurtenissen (user_id, ruimte, knoop_id, actie, bron_agent, bron_dienst, details)
-           VALUES ($1, $2, $3::uuid, 'vervangen', $4, $5, $6::jsonb)`,
-          [lade.userId, lade.ruimte, vervangDoelId, bronAgent, bronDienst, jsonbTekst({ vervangenDoorId: knoop.id })],
+           VALUES ($1, $2, $3::uuid, $4, $5, $6, $7::jsonb)`,
+          [
+            lade.userId,
+            lade.ruimte,
+            knoop.id,
+            nieuw ? 'aangemaakt' : 'bijgewerkt',
+            bronAgent,
+            bronDienst,
+            jsonbTekst({ sleutel: knoop.sleutel, soort: knoop.soort, versleuteld: Boolean(kluisEnvelop) }),
+          ],
         );
-      }
 
-      return { ok: true, knoop, nieuw };
-    });
+        // Якщо цей вузол замінює попередній — автоматично будуємо ребро «vervangt» і позначаємо старий застарілим.
+        if (vervangDoelId && vervangDoelId !== knoop.id) {
+          await q(
+            `INSERT INTO app.geheugen_stroom_relaties (user_id, ruimte, bron_knoop_id, doel_knoop_id, relatie_soort, toelichting)
+             VALUES ($1, $2, $3::uuid, $4::uuid, 'vervangt', $5)
+             ON CONFLICT (user_id, ruimte, bron_knoop_id, doel_knoop_id, relatie_soort) DO NOTHING`,
+            [lade.userId, lade.ruimte, knoop.id, vervangDoelId, 'Автоматичне оновлення знання / Automatische opvolging'],
+          );
+          await q(
+            `UPDATE app.geheugen_stroom_knopen
+                SET status = 'verouderd', bijgewerkt_op = now()
+              WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+            [vervangDoelId, lade.userId, lade.ruimte],
+          );
+          await q(
+            `INSERT INTO app.geheugen_stroom_gebeurtenissen (user_id, ruimte, knoop_id, actie, bron_agent, bron_dienst, details)
+             VALUES ($1, $2, $3::uuid, 'vervangen', $4, $5, $6::jsonb)`,
+            [lade.userId, lade.ruimte, vervangDoelId, bronAgent, bronDienst, jsonbTekst({ vervangenDoorId: knoop.id })],
+          );
+        }
+
+        return { ok: true, knoop, nieuw };
+      });
+    } finally {
+      if (dek) dek.fill(0);
+    }
   },
 
   async zetRelatie(lade, invoer) {
@@ -543,55 +654,59 @@ export const pgStroomOpslag: StroomOpslag = {
     const { stand, dek } = await bepaalKluisStandEnDek(lade);
     const bronAgent = schoonGeheugenAgent(invoer.agentHint);
 
-    return alsGebruiker(lade.userId, async (q) => {
-      const bestaandRes = await q(
-        `SELECT ${KNOOP_KOLOMMEN} FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
-        [invoer.id, lade.userId, lade.ruimte],
-      );
-      if (!bestaandRes.rows[0]) return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
-      if (stand === 'gesloten' && Boolean((bestaandRes.rows[0] as Record<string, unknown>).inhoud_versleuteld)) {
-        throw new Error(SLEUTEL_GESLOTEN_CODE);
-      }
-
-      if (invoer.verwijder) {
-        const res = await q(
-          `DELETE FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+    try {
+      return await alsGebruiker(lade.userId, async (q) => {
+        const bestaandRes = await q(
+          `SELECT ${KNOOP_KOLOMMEN} FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
           [invoer.id, lade.userId, lade.ruimte],
         );
-        return (res.rowCount || 0) > 0 ? { ok: true, verwijderd: true } : { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
-      }
+        if (!bestaandRes.rows[0]) return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+        if (stand === 'gesloten' && Boolean((bestaandRes.rows[0] as Record<string, unknown>).inhoud_versleuteld)) {
+          throw new Error(SLEUTEL_GESLOTEN_CODE);
+        }
 
-      const oud = decodeerKnoopRij(lade.userId, bestaandRes.rows[0] as Record<string, unknown>, dek);
+        if (invoer.verwijder) {
+          const res = await q(
+            `DELETE FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+            [invoer.id, lade.userId, lade.ruimte],
+          );
+          return (res.rowCount || 0) > 0 ? { ok: true, verwijderd: true } : { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+        }
 
-      const nieuweStatus = invoer.status ? schoonGeheugenStatus(invoer.status) : oud.status;
-      const nieuwVastgepind = typeof invoer.vastgepind === 'boolean' ? invoer.vastgepind : oud.vastgepind;
+        const oud = decodeerKnoopRij(lade.userId, bestaandRes.rows[0] as Record<string, unknown>, dek);
 
-      const updRes = await q(
-        `UPDATE app.geheugen_stroom_knopen
-            SET status = $4, vastgepind = $5, bijgewerkt_op = now()
-          WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3
-          RETURNING ${KNOOP_KOLOMMEN}`,
-        [invoer.id, lade.userId, lade.ruimte, nieuweStatus, nieuwVastgepind],
-      );
-      const knoop = decodeerKnoopRij(lade.userId, updRes.rows[0] as Record<string, unknown>, dek);
+        const nieuweStatus = invoer.status ? schoonGeheugenStatus(invoer.status) : oud.status;
+        const nieuwVastgepind = typeof invoer.vastgepind === 'boolean' ? invoer.vastgepind : oud.vastgepind;
 
-      let actie: GeheugenActie = 'bijgewerkt';
-      if (typeof invoer.vastgepind === 'boolean' && invoer.vastgepind !== oud.vastgepind) {
-        actie = nieuwVastgepind ? 'vastgepind' : 'ontpind';
-      } else if (nieuweStatus === 'gearchiveerd' || nieuweStatus === 'herroepen') {
-        actie = 'gearchiveerd';
-      } else if (nieuweStatus === 'actief' && oud.status !== 'actief') {
-        actie = 'hersteld';
-      }
+        const updRes = await q(
+          `UPDATE app.geheugen_stroom_knopen
+              SET status = $4, vastgepind = $5, bijgewerkt_op = now()
+            WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3
+            RETURNING ${KNOOP_KOLOMMEN}`,
+          [invoer.id, lade.userId, lade.ruimte, nieuweStatus, nieuwVastgepind],
+        );
+        const knoop = decodeerKnoopRij(lade.userId, updRes.rows[0] as Record<string, unknown>, dek);
 
-      await q(
-        `INSERT INTO app.geheugen_stroom_gebeurtenissen (user_id, ruimte, knoop_id, actie, bron_agent, bron_dienst, details)
-         VALUES ($1, $2, $3::uuid, $4, $5, 'ai', $6::jsonb)`,
-        [lade.userId, lade.ruimte, knoop.id, actie, bronAgent, jsonbTekst({ status: knoop.status, vastgepind: knoop.vastgepind })],
-      );
+        let actie: GeheugenActie = 'bijgewerkt';
+        if (typeof invoer.vastgepind === 'boolean' && invoer.vastgepind !== oud.vastgepind) {
+          actie = nieuwVastgepind ? 'vastgepind' : 'ontpind';
+        } else if (nieuweStatus === 'gearchiveerd' || nieuweStatus === 'herroepen') {
+          actie = 'gearchiveerd';
+        } else if (nieuweStatus === 'actief' && oud.status !== 'actief') {
+          actie = 'hersteld';
+        }
 
-      return { ok: true, knoop };
-    });
+        await q(
+          `INSERT INTO app.geheugen_stroom_gebeurtenissen (user_id, ruimte, knoop_id, actie, bron_agent, bron_dienst, details)
+           VALUES ($1, $2, $3::uuid, $4, $5, 'ai', $6::jsonb)`,
+          [lade.userId, lade.ruimte, knoop.id, actie, bronAgent, jsonbTekst({ status: knoop.status, vastgepind: knoop.vastgepind })],
+        );
+
+        return { ok: true, knoop };
+      });
+    } finally {
+      if (dek) dek.fill(0);
+    }
   },
 
   async registreerRaadpleging(lade, knoopIds, vraag, agentHint = '', bronDienst = 'ai') {
@@ -668,20 +783,71 @@ export function maakGeheugenInGeheugenOpslag(): StroomOpslag {
       const titel = String(invoer.titel ?? '').trim().slice(0, 200);
       const inhoud = String(invoer.inhoud ?? '').trim().slice(0, 8000);
       if (!titel || !inhoud) return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+      if (invoer.id !== undefined && invoer.id !== '' && !isGeldigUuid(invoer.id)) {
+        return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+      }
+      if (invoer.vervangtId !== undefined && invoer.vervangtId !== '' && !isGeldigUuid(invoer.vervangtId)) {
+        return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+      }
       if (bevatGevoeligGeheim(titel) || bevatGevoeligGeheim(inhoud) || bevatGevoeligGeheim(invoer.samenvatting)) {
         return { ok: false, code: GEHEUGEN_FOUTEN.geheimGeweigerd };
       }
 
-      const soort = schoonGeheugenSoort(invoer.soort);
-      const sleutel = invoer.sleutel && isGeldigeGeheugenSleutel(invoer.sleutel)
+      const doelIdInvoer = invoer.id && isGeldigUuid(invoer.id) ? invoer.id.trim() : '';
+      let bestaand: (GeheugenKnoop & { userId: string }) | undefined;
+      if (doelIdInvoer) {
+        const bijId = knopen.get(doelIdInvoer);
+        if (!bijId || bijId.userId !== lade.userId || bijId.ruimte !== lade.ruimte) {
+          return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+        }
+        bestaand = bijId;
+      }
+
+      const aangevraagdeSleutel = invoer.sleutel && isGeldigeGeheugenSleutel(invoer.sleutel)
         ? invoer.sleutel.trim().toLowerCase()
         : invoer.sleutel
-          ? normaliseerGeheugenSleutel(invoer.sleutel, soort)
-          : maakKnoopSleutelVanTitel(titel);
+          ? normaliseerGeheugenSleutel(invoer.sleutel, schoonGeheugenSoort(invoer.soort))
+          : '';
+      const sleutel = aangevraagdeSleutel || bestaand?.sleutel || maakKnoopSleutelVanTitel(titel);
 
-      const bestaand = [...knopen.values()].find(
-        (k) => k.userId === lade.userId && k.ruimte === lade.ruimte && k.sleutel === sleutel,
-      );
+      if (doelIdInvoer && aangevraagdeSleutel) {
+        const conflict = [...knopen.values()].find(
+          (k) => k.userId === lade.userId && k.ruimte === lade.ruimte && k.sleutel === sleutel && k.id !== doelIdInvoer,
+        );
+        if (conflict) return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+      }
+      if (!bestaand) {
+        bestaand = [...knopen.values()].find(
+          (k) => k.userId === lade.userId && k.ruimte === lade.ruimte && k.sleutel === sleutel,
+        );
+      }
+
+      let vervangDoelId = '';
+      if (invoer.vervangtId && isGeldigUuid(invoer.vervangtId)) {
+        const doel = knopen.get(invoer.vervangtId.trim());
+        if (!doel || doel.userId !== lade.userId || doel.ruimte !== lade.ruimte) {
+          return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+        }
+        vervangDoelId = doel.id;
+      } else if (invoer.vervangtSleutel) {
+        const norm = normaliseerGeheugenSleutel(invoer.vervangtSleutel);
+        const gevonden = [...knopen.values()].find((k) => k.userId === lade.userId && k.ruimte === lade.ruimte && k.sleutel === norm);
+        if (!gevonden) return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+        vervangDoelId = gevonden.id;
+      }
+      if (vervangDoelId && bestaand && vervangDoelId === bestaand.id) {
+        return { ok: false, code: GEHEUGEN_FOUTEN.zelfRelatie };
+      }
+
+      const soort = invoer.soort
+        ? schoonGeheugenSoort(invoer.soort)
+        : bestaand
+          ? bestaand.soort
+          : 'feit';
+      const vastgepind = typeof invoer.vastgepind === 'boolean'
+        ? invoer.vastgepind
+        : Boolean(bestaand?.vastgepind);
+
       const nu = Date.now();
       const id = bestaand?.id ?? randomUUID();
       const samenvatting = String(invoer.samenvatting ?? '').trim().slice(0, 600) || maakSamenvatting(titel, inhoud);
@@ -713,7 +879,7 @@ export function maakGeheugenInGeheugenOpslag(): StroomOpslag {
         bronAgent: bronAgent || bestaand?.bronAgent || '',
         labels: normaliseerGeheugenLabels(invoer.labels),
         status: 'actief',
-        vastgepind: invoer.vastgepind === true,
+        vastgepind,
         gewicht: normaliseerGeheugenGewicht(invoer.gewicht),
         geldigVanaf: bestaand?.geldigVanaf ?? nu,
         ...(geldigTot ? { geldigTot } : {}),
@@ -725,12 +891,6 @@ export function maakGeheugenInGeheugenOpslag(): StroomOpslag {
       knopen.set(id, knoop);
       logEvent(lade, id, bestaand ? 'bijgewerkt' : 'aangemaakt', bronAgent, bronDienst, { sleutel, soort });
 
-      let vervangDoelId = invoer.vervangtId && isGeldigUuid(invoer.vervangtId) ? invoer.vervangtId.trim() : '';
-      if (!vervangDoelId && invoer.vervangtSleutel) {
-        const norm = normaliseerGeheugenSleutel(invoer.vervangtSleutel);
-        const gevonden = [...knopen.values()].find((k) => k.userId === lade.userId && k.ruimte === lade.ruimte && k.sleutel === norm);
-        vervangDoelId = gevonden?.id ?? '';
-      }
       if (vervangDoelId && vervangDoelId !== id) {
         const doel = knopen.get(vervangDoelId);
         if (doel && doel.userId === lade.userId && doel.ruimte === lade.ruimte) {
@@ -989,7 +1149,7 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
             bronDienst: typeof b.bronDienst === 'string' ? b.bronDienst : undefined,
             bronAgent: typeof b.bronAgent === 'string' ? b.bronAgent : undefined,
             labels: Array.isArray(b.labels) || typeof b.labels === 'string' ? (b.labels as string[] | string) : undefined,
-            vastgepind: b.vastgepind === true,
+            vastgepind: typeof b.vastgepind === 'boolean' ? b.vastgepind : undefined,
             gewicht: typeof b.gewicht === 'number' ? b.gewicht : undefined,
             geldigTot: typeof b.geldigTot === 'number' || typeof b.geldigTot === 'string' ? b.geldigTot : null,
             vervangtId: typeof b.vervangtId === 'string' ? b.vervangtId : undefined,
@@ -997,7 +1157,7 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
           },
           wie?.agent || (wie?.client && wie.client !== '?' ? wie.client : ''),
         );
-        if (!res.ok) return error(res.code, 400);
+        if (!res.ok) return error(res.code, res.code === GEHEUGEN_FOUTEN.nietGevonden ? 404 : 400);
         const na = await opslag.leesAlles(p.lade);
         const tegenspraken = spoorTegenspraken(na.knopen, na.relaties).filter(
           (t) => t.knoopAId === res.knoop.id || t.knoopBId === res.knoop.id,

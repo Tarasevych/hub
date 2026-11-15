@@ -4,6 +4,7 @@
 //   3. Побудова компактного пакета пам’яті в межах бюджету символів та експорт у Markdown;
 //   4. Серверні маршрути, ізоляція просторів ('prive' vs 'technisch'), RBAC, перевірка секретів і чатова інтеграція;
 //   5. Реєстрація MCP-інструментів, політик і таблиці в реєстрі Сховища ключів.
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import {
@@ -25,6 +26,7 @@ import {
 import {
   geheugenStroomRoutes,
   maakGeheugenInGeheugenOpslag,
+  pgStroomOpslag,
 } from '../../backend/geheugen-stroom';
 import { aiWerkruimteRoutes } from '../../backend/ai-werkruimte';
 import { SITE_TOOL_BY_NAME } from '../../backend/site-hulpmiddelen';
@@ -33,6 +35,8 @@ import { v2Optie } from '../../shared/connector-v2/catalogus';
 import { toolInRuimte } from '../../shared/ai-ruimte';
 import { capabilityForTool } from '../../shared/ai-beleid/catalogus';
 import { SLEUTELKLUIS_REGISTER } from '../../shared/sleutelkluis';
+import { actieDoel, actieSoort, actieZin, foutUitleg } from '../../shared/mcp-acties';
+import { closePool, getPool } from '../../server/platform/pg';
 
 type Antwoord = { statusCode: number; body: string };
 const lees = (r: unknown): Record<string, any> => JSON.parse((r as Antwoord).body || '{}');
@@ -62,15 +66,17 @@ export async function main(): Promise<number> {
       'Ми вирішили завжди використовувати PostgreSQL 18 з увімкненим RLS для нових таблиць.',
       'Ніколи не змінюйте виробничу базу вручну без міграції!',
       `Тимчасове поле з секретом: ${nepSk}`,
-      'We hebben besloten om alle rapporten zowel in het Oekraïens als in het Nederlands op te leveren.',
+      'We hebben besloten om alle rapporten zowel in het Oekraïens als in het Nederlands op te leveren voor ons prive project.',
     ].join('\n');
     const kandidaten = haalGeheugenKandidatenUitTekst(tekstMetGeheim, { maxKandidaten: 6 });
     const geblokkeerd = kandidaten.filter((k) => k.geblokkeerdDoorGeheim);
     const veilig = kandidaten.filter((k) => !k.geblokkeerdDoorGeheim);
+    const priveNlKandidaat = veilig.find((k) => k.inhoud.includes('prive project'));
     check('1c: haalGeheugenKandidatenUitTekst виокремлює рішення й застереження uk/nl та ізолює рядок із секретом',
       veilig.length >= 3
       && veilig.some((k) => k.soort === 'besluit')
       && veilig.some((k) => k.soort === 'waarschuwing')
+      && Boolean(priveNlKandidaat && !priveNlKandidaat.labels.includes('github'))
       && geblokkeerd.length === 1
       && !geblokkeerd[0]!.inhoud.includes(nepSk));
   }
@@ -336,6 +342,40 @@ export async function main(): Promise<number> {
       exp.formaat === 'mijn-ruimte-geheugen-v1'
       && String(exp.markdown || '').includes('# Stroom van geheugen Mijn Ruimte')
       && (exp.knopen as GeheugenKnoop[]).length === 2);
+
+    // Оновлення за id зі збереженням sleutel, soort та vastgepind при частковій передачі
+    const updById = await routes['POST /api/owner/ai/geheugen/opslaan'][0](ctx({
+      id: id2,
+      titel: 'Оновлена назва правила PostgreSQL з RLS',
+      inhoud: 'Оновлений текст рішення: усі таблиці працюють з RLS і шифруванням ключа.',
+    }));
+    const updBody = lees(updById);
+    check('3i: оновлення вузла за id зберігає його sleutel, soort та vastgepind без створення дубліката',
+      (updById as Antwoord).statusCode === 200
+      && updBody.nieuw === false
+      && updBody.knoop?.id === id2
+      && updBody.knoop?.sleutel === 'architectuur-db-pg18'
+      && updBody.knoop?.soort === 'besluit'
+      && updBody.knoop?.vastgepind === true);
+
+    // Неіснуючий vervangtId або vervangtSleutel має повертати 404, а самозаміна — 400
+    const onbekendeUuid = '99999999-9999-4999-8999-999999999999';
+    const rVervangtMis = await routes['POST /api/owner/ai/geheugen/opslaan'][0](ctx({
+      titel: 'Новий вузол із неіснуючою заміною',
+      inhoud: 'Не повинен падати з 500 при неіснуючому vervangtId.',
+      vervangtId: onbekendeUuid,
+    }));
+    const rZelfVervang = await routes['POST /api/owner/ai/geheugen/opslaan'][0](ctx({
+      id: id2,
+      titel: 'Спроба замінити сам себе',
+      inhoud: 'Повинна блокуватися кодом самопосилання.',
+      vervangtId: id2,
+    }));
+    check('3j: неіснуючий vervangtId повертає 404 GEHEUGEN_NIET_GEVONDEN, а самозаміна — 400 GEHEUGEN_ZELF_RELATIE_ONGELDIG',
+      (rVervangtMis as Antwoord).statusCode === 404
+      && codeVan(rVervangtMis) === GEHEUGEN_FOUTEN.nietGevonden
+      && (rZelfVervang as Antwoord).statusCode === 400
+      && codeVan(rZelfVervang) === GEHEUGEN_FOUTEN.zelfRelatie);
   }
 
   // ================================================================ 4. Реєстрація MCP-інструментів, політик і Сховища ключів
@@ -369,6 +409,60 @@ export async function main(): Promise<number> {
       && migratieSql.includes('app.connector_tool_calls')
       && opslagBron.includes('ruimte: AiRuimte = huidigeRuimte()')
       && toolsBron.includes('metNamens(namensHerstel, () => runSite(userId, site, claimed.args))'));
+
+    // Перевірка аудиту дій MCP (mcp-acties.ts): жодного витоку пошукового запиту чи змісту вузла
+    const doelZoek = actieDoel('geheugen_stroom_zoeken', { vraag: 'таємний пошуковий запит', doel_dienst: 'mail' });
+    const doelBewaar = actieDoel('geheugen_stroom_bewaren', { sleutel: 'mova-zvitiv', titel: 'Приватний заголовок', inhoud: 'Приватний текст' });
+    const doelVerbind = actieDoel('geheugen_stroom_verbinden', { relatie_soort: 'vervangt', toelichting: 'Таємне пояснення' });
+    check('4e: mcp-acties класифікує інструменти Стріму пам’яті без витоку вмісту чи запитів у doel',
+      actieSoort('geheugen_stroom_zoeken') === 'geheugen'
+      && actieSoort('geheugen_stroom_bewaren') === 'geheugen'
+      && actieSoort('geheugen_stroom_verbinden') === 'geheugen'
+      && doelZoek === 'mail'
+      && doelBewaar === 'mova-zvitiv'
+      && doelVerbind === 'vervangt'
+      && actieZin('geheugen_stroom_bewaren', doelBewaar, 'uk').includes('Стрімі пам’яті')
+      && Boolean(foutUitleg(GEHEUGEN_FOUTEN.geheimGeweigerd, 'uk'))
+      && Boolean(foutUitleg(GEHEUGEN_FOUTEN.sleutelGesloten, 'nl')));
+
+    // Реальна перевірка PostgreSQL з RLS (виконується, коли задано DATABASE_URL)
+    if (process.env.DATABASE_URL) {
+      const sys = getPool('systeem');
+      const pgUserA = `pg-geheugen-a-${randomUUID()}`;
+      const pgUserB = `pg-geheugen-b-${randomUUID()}`;
+      try {
+        const resA1 = await pgStroomOpslag.bewaarKnoop(
+          { userId: pgUserA, ruimte: 'prive' },
+          { sleutel: 'pg-test-1', soort: 'besluit', titel: 'PG тест 1', inhoud: 'Перше правило в PostgreSQL.', vastgepind: true },
+          'codex',
+        );
+        const resA1Upd = await pgStroomOpslag.bewaarKnoop(
+          { userId: pgUserA, ruimte: 'prive' },
+          { id: resA1.ok ? resA1.knoop.id : '', titel: 'PG тест 1 (оновлено)', inhoud: 'Оновлене правило в PostgreSQL.' },
+          'codex',
+        );
+        const resMis = await pgStroomOpslag.bewaarKnoop(
+          { userId: pgUserA, ruimte: 'prive' },
+          { titel: 'Помилкова заміна', inhoud: 'Повинно повернути nietGevonden.', vervangtId: '99999999-9999-4999-8999-999999999999' },
+          'codex',
+        );
+        const resTech = await pgStroomOpslag.leesAlles({ userId: pgUserA, ruimte: 'technisch' });
+        const resUserB = await pgStroomOpslag.leesAlles({ userId: pgUserB, ruimte: 'prive' });
+        check('4f: реальний PostgreSQL + RLS підтверджує запис, оновлення за id, відхилення неіснуючого vervangtId та ізоляцію просторів і користувачів',
+          resA1.ok
+          && resA1Upd.ok
+          && resA1Upd.knoop.id === resA1.knoop.id
+          && resA1Upd.knoop.sleutel === 'pg-test-1'
+          && resA1Upd.knoop.vastgepind === true
+          && !resMis.ok
+          && resMis.code === GEHEUGEN_FOUTEN.nietGevonden
+          && resTech.knopen.length === 0
+          && resUserB.knopen.length === 0);
+      } finally {
+        await sys.query(`DELETE FROM app.geheugen_stroom_knopen WHERE user_id IN ($1, $2)`, [pgUserA, pgUserB]).catch(() => undefined);
+        await closePool();
+      }
+    }
   }
 
   return einde();

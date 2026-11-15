@@ -70,7 +70,9 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
   const [geheugenAantal, setGeheugenAantal] = useState<number | null>(null);
+  const [lokaalGeheugen, setLokaalGeheugen] = useState(metGeheugen);
   const [bewarenIndex, setBewarenIndex] = useState<number | null>(null);
+  const effectiefMetGeheugen = onToggleGeheugen ? metGeheugen : lokaalGeheugen;
   const [wachtend, setWachtend] = useState<Wachtend[]>([]);
   // SEC-002 interface-01: «Дозволити» pas als de mens ALLE parameters kon zien (geen slice(0, 800) meer).
   const [gezien, setGezien] = useState<Record<string, boolean>>({});
@@ -108,7 +110,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         ...sessieLichaam(), model,
         ...(werkruimteId ? { werkruimteId } : {}),
         ...(contextSleutels && contextSleutels.length ? { contextSleutels } : {}),
-        metGeheugen,
+        metGeheugen: effectiefMetGeheugen,
         messages: volgende.map((b) => ({ role: b.rol, content: b.tekst })),
       }, { signal: ctrl.signal });
       setBerichten([...volgende, { rol: 'assistant', tekst: String(res.data?.reply ?? ''), onvolledig: res.data?.truncated === true }]);
@@ -157,6 +159,8 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
       const { code } = foutCode(e);
       if (code === GEHEUGEN_FOUTEN.geheimGeweigerd) {
         setFout(tr('У відповіді знайдено можливі секрети чи ключі — збереження до пам’яті заблоковано.', 'Mogelijke geheimen of sleutels herkend — opslaan in geheugen geweigerd.'));
+      } else if (code === GEHEUGEN_FOUTEN.sleutelGesloten) {
+        setFout(tr('Ваш ключ Сховища закрито в цій сесії — відкрийте його в налаштуваннях, щоб зберегти вузол у пам’ять.', 'Uw sleutelkluis is in deze sessie vergrendeld — ontgrendel uw sleutel om in het geheugen op te slaan.'));
       } else {
         setFout(werkruimteFout(e, tr, model));
       }
@@ -193,9 +197,13 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         <label className='gs-statusrij'>
           <input
             type='checkbox'
-            checked={metGeheugen}
+            checked={effectiefMetGeheugen}
             disabled={bezig}
-            onChange={(e) => onToggleGeheugen?.(e.target.checked)}
+            onChange={(e) => {
+              const aan = e.target.checked;
+              setLokaalGeheugen(aan);
+              onToggleGeheugen?.(aan);
+            }}
           />
           <Brain size={15} aria-hidden='true' />
           <span>{tr('Підключати Стрім пам’яті в цьому чаті', 'Stroom van geheugen gebruiken in deze chat')}</span>

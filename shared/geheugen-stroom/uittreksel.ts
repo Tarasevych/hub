@@ -16,7 +16,7 @@ const FEIT_RE = /(?:працює\s+на|розташовано|встановл�
 const DOMEIN_LABELS: Array<{ re: RegExp; label: string }> = [
   { re: /(?:пошт|mail|gmail|imap|smtp|postvak)/i, label: 'mail' },
   { re: /(?:хмар|cloud|drive|onedrive|dropbox|файл|bestand)/i, label: 'cloud' },
-  { re: /(?:github|гітхаб|git|branch|гілк|pr|реліз|випуск|uitrol)/i, label: 'github' },
+  { re: /(?:\bgithub\b|гітхаб|\bgit\b|\bbranch\b|гілк|\bpr\b|реліз|випуск|\buitrol\b)/i, label: 'github' },
   { re: /(?:безпек|ключ|passkey|tls|rls|shi?f|versleut|beveilig|sleutel|kluis)/i, label: 'beveiliging' },
   { re: /(?:будинок|дім|huis|woning|енерг|energie|сенсор|sensor)/i, label: 'huis' },
   { re: /(?:календар|agenda|зустріч|afspraak|caldav)/i, label: 'agenda' },
