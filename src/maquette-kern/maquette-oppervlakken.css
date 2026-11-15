@@ -1406,11 +1406,20 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  scrollbar-width: none;
+  /* ANKERS-002: тонка смуга прокрутки замість невидимої — інакше пункти нижче краю (напр. «Технічне», «Журнал») здаються відсутніми.
+     Dunne schuifbalk i.p.v. onzichtbaar, zodat ankers onder de rand niet «ontbreken». */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--mq-tekst, currentColor) 28%, transparent) transparent;
 }
 
 .mq-rail-lijst::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+  height: 6px;
+}
+
+.mq-rail-lijst::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-tekst, currentColor) 28%, transparent);
 }
 
 .mq-anker-rail[data-zijde="links"] .mq-rail-lijst {
