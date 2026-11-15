@@ -255,16 +255,16 @@ export async function main(): Promise<number> {
       const toast = (page: Page, t: string) => page.locator('.canonical-notification-toast', { hasText: t });
       const stuur = (page: Page, text: string) => page.evaluate((t) => window.dispatchEvent(new CustomEvent('tsv:canonical-notice', { detail: { text: t, kind: 'info', source: 'hub' } })), text);
       const klanken = (page: Page) => page.evaluate(() => (window as unknown as { __klank: number }).__klank || 0);
-      const c = await open(O, `${ID}/menu?lang=uk#menu-meldingen`, { width: 1280, height: 860, tijdzone: 'Europe/Brussels' }, async (p) => {
+      const c = await open(O, `${ID}/melding?lang=uk#melding-kanalen`, { width: 1280, height: 860, tijdzone: 'Europe/Brussels' }, async (p) => {
         await p.clock.install({ time: new Date('2026-11-16T21:50:00+01:00') });
         // Лічильник звуку: кожен AudioContext центру сповіщень = один сигнал.
         await p.addInitScript(() => { const W = window as unknown as { AudioContext: typeof AudioContext; __klank: number }; W.__klank = 0; const Orig = W.AudioContext; if (Orig) W.AudioContext = class extends Orig { constructor(...a: ConstructorParameters<typeof AudioContext>) { super(...a); W.__klank++; } } as typeof AudioContext; });
       });
       const { page } = c;
-      await openBlok(page, '#menu-meldingen [data-stille-uren]');
-      const stil = page.locator('#menu-meldingen [data-meld-schakel="stil"] input');
-      if (!(await stil.isChecked())) await page.locator('#menu-meldingen [data-meld-schakel="stil"]').click();
-      const tijden = page.locator('#menu-meldingen .zijbalk-meldingen-tijden input[type="time"]');
+      await openBlok(page, '#melding-kanalen [data-stille-uren]');
+      const stil = page.locator('#melding-kanalen [data-meld-schakel="stil"] input');
+      if (!(await stil.isChecked())) await page.locator('#melding-kanalen [data-meld-schakel="stil"]').click();
+      const tijden = page.locator('#melding-kanalen [data-stille-tijden] input[type="time"]');
       await tijden.nth(0).fill('22:00'); await tijden.nth(1).fill('07:00'); await page.waitForTimeout(700);
       const opgeslagen = await api(page, '/api/owner/ui/sidebar');
       const st = (opgeslagen.data?.sidebar as { meldingen?: { stil?: { aan: boolean; van: string; tot: string } } })?.meldingen?.stil;
@@ -303,8 +303,8 @@ export async function main(): Promise<number> {
       await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(1500);
       check('C: після перезавантаження підсумок не повторюється', (await toast(page, 'Поки була тиша').count()) === 0);
       // повернути: тихі години вимкнути
-      await openBlok(page, '#menu-meldingen [data-stille-uren]');
-      if (await stil.isChecked()) await page.locator('#menu-meldingen [data-meld-schakel="stil"]').click();
+      await openBlok(page, '#melding-kanalen [data-stille-uren]');
+      if (await stil.isChecked()) await page.locator('#melding-kanalen [data-meld-schakel="stil"]').click();
       await page.waitForTimeout(600);
       await sluit(c.ctx);
     }

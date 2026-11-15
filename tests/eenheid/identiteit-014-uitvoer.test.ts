@@ -118,18 +118,17 @@ export async function main(): Promise<number> {
     check('один помічник збереження: cloud-vnext реекспортує bewaarBlob з platform', lees('src/cloud-vnext/hulp.ts').includes("export { bewaarBlob } from '../platform/bestand-opslaan';") && !lees('src/cloud-vnext/hulp.ts').includes('URL.createObjectURL'));
   }
 
-  // ================================================================ (в) «Типи сповіщень» у меню — справжній рендер
+  // ================================================================ (в) «Типи сповіщень» — лише в розділі «Сповіщення» (ДУБЛІ-001, рішення Павла 15.11)
   {
     const { default: ZijbalkInstellingen } = await import('../../src/ZijbalkInstellingen');
     const tr = (uk: string) => uk;
     let html = '', fout = '';
     try { html = renderToStaticMarkup(createElement(ZijbalkInstellingen, { tr })); } catch (e) { fout = String((e as Error)?.stack || e).slice(0, 400); }
     const blok = html.indexOf('id="menu-meldingtypen"'), snel = html.indexOf('id="menu-snelheid"'), meld = html.indexOf('id="menu-meldingen"');
-    check('окремий блок id="menu-meldingtypen" стоїть перед menu-snelheid і після menu-meldingen', !fout && blok > 0 && meld >= 0 && meld < blok && blok < snel, fout || `${meld}/${blok}/${snel}`);
-    const binnen = html.slice(blok, snel);
-    check('у блоці — MeldingVoorkeurenPaneel (той самий редактор типів, що й у дзвонику)', binnen.includes('mv-paneel') && binnen.includes('Типи сповіщень'));
-    check('назва «Типи сповіщень» більше не двоїться: легенда міток меню — «Категорії міток у меню»', (html.match(/Типи сповіщень<\/strong>/g) || []).length === 1 && html.includes('Категорії міток у меню') && !html.includes('<legend>Типи сповіщень</legend>'));
-    check('селектори e2e меню не зачеплено: [data-meld-categorie], [data-meld-schakel="aan"] лишилися в #menu-meldingen', html.slice(meld, blok).includes('data-meld-categorie="delen"') && html.slice(meld, blok).includes('data-meld-schakel="aan"') && !binnen.includes('data-meld-'));
+    const mp = readFileSync('src/identiteit/melding/MeldingEcosysteemPagina.tsx', 'utf8');
+    check('у «Меню» немає ні блоку «Типи сповіщень», ні тихих годин, ні нагадування про резервний доступ', !fout && blok < 0 && !html.includes('mv-paneel') && !html.includes('data-stille-uren') && !html.includes('data-meld-schakel="reserve"'), fout || blok);
+    check('редактор типів сповіщень лишився в розділі «Сповіщення»', mp.includes('<MeldingVoorkeurenPaneel'));
+    check('селектори e2e меню не зачеплено: [data-meld-categorie], [data-meld-schakel="aan"] лишилися в #menu-meldingen', meld >= 0 && html.slice(meld, snel).includes('data-meld-categorie="delen"') && html.slice(meld, snel).includes('data-meld-schakel="aan"'));
   }
 
   browserWeg();
