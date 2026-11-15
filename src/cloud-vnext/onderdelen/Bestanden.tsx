@@ -296,7 +296,7 @@ export default function Bestanden({ lang, smal, ov, vernieuw, toon }: OnderdeelP
           ) : null}
           <button type='button' className={`cvn-knop${vraag.prullenbak ? ' is-actief' : ''}`} data-cvn-prullenbak='schakel' aria-pressed={vraag.prullenbak}
             onClick={() => setVraag((v) => ({ ...v, prullenbak: !v.prullenbak, mapId: undefined }))}>
-            <Trash2 aria-hidden='true' />{tr(lang, 'Кошик', 'Prullenbak')}{ov ? ` (${ov.prullenbak})` : ''}
+            <Trash2 aria-hidden='true' />{tr(lang, 'Кошик', 'Prullenbak')}{typeof ov?.prullenbak === 'number' ? ` (${ov.prullenbak})` : ''}
           </button>
           <button type='button' className='cvn-icoonknop' data-cvn-weergave={weergave} aria-label={weergave === 'raster' ? tr(lang, 'Показати списком', 'Als lijst tonen') : tr(lang, 'Показати плиткою', 'Als raster tonen')}
             onClick={() => { const w = weergave === 'raster' ? 'lijst' : 'raster'; setWeergave(w); sessieZet('cvn-weergave', w); }}>
