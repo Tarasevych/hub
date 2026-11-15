@@ -9,7 +9,8 @@
 //     в центр сповіщень лише при зміні; тип сповіщення зареєстровано як приватний (пошта).
 //  D. панель: без стану сервера — нічого (без порожнього місця); з'являється з хрестиком; немає вигаданого «Приватного асистента»,
 //     немає мертвого «/ai» і «#sleutels»; пояснення «Як працює ШІ в пошті» є в обох мовах.
-//  E. підказка «?»: її стилі вантажить сам InfoTip (hulp-knop.css), а не лише toegangslaag.css, якого пошта не вантажить.
+//  E. підказка «?»: її стилі вантажить сам InfoTip (hulp-knop.css), а не лише toegangslaag.css, якого пошта не вантажить; загальне
+//     правило пошти для [role=tooltip] (тло = колір тексту) більше не зачіпає InfoTip, який має власний колір тексту.
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
@@ -153,6 +154,9 @@ export async function main(): Promise<number> {
     const css = lees('src/hulp/hulp-knop.css'), toegang = lees('src/toegangslaag.css'), tip = lees('src/InfoTip.tsx');
     check('E стилі спливаючої підказки (position:fixed, тло й текст з токенів) вантажить сам InfoTip',
       tip.includes("import './hulp/hulp-knop.css';") && /\.info-tip-tekst\{position:fixed;[^}]*background:var\(--panel\);color:var\(--text\)/.test(css) && /\.info-tip-tekst\[hidden\]\{display:none\}/.test(css));
+    const overlay = lees('src/mail-overlay-oppervlak.css');
+    check('E пошта не фарбує підказку «?» інвертованим тлом (var(--text)): білий-на-білому в темній, чорний-на-чорному у світлій темі',
+      overlay.includes(".canonical-chrome [role='tooltip']:not(.info-tip-tekst),") && !overlay.includes(".canonical-chrome [role='tooltip'],"));
     check('E у toegangslaag.css базових правил більше немає (одне джерело), лише перевизначення для access-plane',
       !/^\.info-tip-tekst\{/m.test(toegang) && /:is\(\.access-plane/.test(toegang));
   }
