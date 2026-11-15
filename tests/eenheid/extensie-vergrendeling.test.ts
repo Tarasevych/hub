@@ -241,7 +241,7 @@ export async function main(): Promise<number> {
       !('agentId' in local) && !('agentToken' in local) && local[SK.local]?.agentId === AGENT && local[SK.local]?.userId === USER && !local.slot_prive
       && idb.waarde('mr-geheim', 'kv', 'technisch:agentToken') === 'agent-token-geheim' && idb.waarde('mr-geheim', 'kv', 'agentToken') === undefined, JSON.stringify(local));
     const laatsteStatus = () => [...ws.sent].reverse().find((m) => m.t === 'status');
-    check("na 'ready': {t:'status', ruimte:'technisch', staat:'vergrendeld', gid:null} naar de server", await tot(() => laatsteStatus()?.staat === 'vergrendeld') && laatsteStatus()?.gid === null && laatsteStatus()?.version === '0.9.3' && laatsteStatus()?.ruimte === R, JSON.stringify(laatsteStatus()));
+    check("na 'ready': {t:'status', ruimte:'technisch', staat:'vergrendeld', gid:null} naar de server", await tot(() => laatsteStatus()?.staat === 'vergrendeld') && laatsteStatus()?.gid === null && laatsteStatus()?.version === '0.9.4' && laatsteStatus()?.ruimte === R, JSON.stringify(laatsteStatus()));
 
     let n = 0;
     const opdracht = async (type: string, params: any = {}, o: { sig?: string; scope?: any } = {}) => {
@@ -377,7 +377,7 @@ export async function main(): Promise<number> {
     const sstat = await vraag(extern, { type: 'STATUS' }, { origin: 'https://admin.tarasevych.com', url: 'https://admin.tarasevych.com/' });
     const vreemdExt = await vraag(extern, { type: 'STATUS' }, { origin: 'https://evil.com', url: 'https://evil.com/' });
     check('externe PING en STATUS: publieke velden, geen sleutels/tokens/handtekening; vreemde oorsprong geweigerd',
-      ping.ok && ping.technisch?.staat === 'agent' && ping.technisch.exp === grantL.exp && JSON.stringify(ping.technisch.caps) === JSON.stringify(grantL.caps) && ping.technisch.aiVerbonden === true && ping.version === '0.9.3'
+      ping.ok && ping.technisch?.staat === 'agent' && ping.technisch.exp === grantL.exp && JSON.stringify(ping.technisch.caps) === JSON.stringify(grantL.caps) && ping.technisch.aiVerbonden === true && ping.version === '0.9.4'
       && ping.prive?.gekoppeld === false && ping.prive.staat === 'niet-gekoppeld'
       && sstat.ok && sstat.technisch?.staat === 'agent' && JSON.stringify(sstat.technisch.domeinen) === '["admin.tarasevych.com"]' && vreemdExt.ok === false
       && ![ping, sstat].some((x) => JSON.stringify(x).includes(key) || JSON.stringify(x).includes('agent-token-geheim') || JSON.stringify(x).includes(teken(key, grantL))), JSON.stringify(ping).slice(0, 200));
@@ -561,6 +561,10 @@ export async function main(): Promise<number> {
     const uHub = await vraag(extern, { type: 'UPDATE_CHECK' }, { origin: 'https://cloud.tarasevych.com', url: 'https://cloud.tarasevych.com/' });
     const zAdmin = await vraag(extern, { type: 'SELF_TEST' }, { origin: 'https://admin.tarasevych.com', url: 'https://admin.tarasevych.com/' });
     check('5: externe SELF_TEST/UPDATE_CHECK alleen vanaf mcp.* en admin.*', zHub.ok === false && zHub.reason === 'WRONG_HOST' && uHub.ok === false && uHub.reason === 'WRONG_HOST' && zAdmin.ok === true && Array.isArray(zAdmin.checks));
+    // 0.9.4: zelftest zonder r bekijkt het slot MET ontgrendeling (hier technisch): het admin-tabblad telt, geen hint.
+    const ztOpen = await vraag(intern, { op: 'self-test' }, eigenPagina);
+    const stOpen = ztOpen.checks.find((c: any) => c.id === 'site_tab');
+    check('5 (0.9.4): zelftest ontgrendeld (technisch) → site_tab ✓ op het toegestane admin-tabblad, zonder hint', stOpen?.ok === true && !stOpen.hint && /^https:\/\/admin\.tarasevych\.com\//.test(stOpen.detail), JSON.stringify(stOpen));
     wsR.ontvang({ t: 'vergrendel', reden: 'site' }); await rustig();
     const zt = await vraag(intern, { op: 'self-test' }, eigenPagina);
     check('5: zelftest vergrendeld → site_tab zonder adres', zt.checks.find((c: any) => c.id === 'site_tab')?.detail === '', JSON.stringify(zt.checks.find((c: any) => c.id === 'site_tab')));
