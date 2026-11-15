@@ -3092,6 +3092,36 @@
    "pad": "tests/eenheid/mail-dok-pil-20261115.test.ts",
    "wat": "Eenheidstest voor transparante pagineringsstrook met eigen afgeronde pillen voor paginering en selectie in de e-mailwerkruimte.",
    "sinds": "MAILDOK-001 (PR #115)"
+  },
+  {
+   "pad": "shared/adres-controle.ts",
+   "wat": "Gedeelde strikte webadrescontrole (alleen http/https zonder inloggegevens, met optionele lokale http-ondersteuning) tegen javascript:/data:/vbscript:-koppelingen.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-kern.test.ts",
+   "wat": "Eenheidstest voor isolatie, SVG-/URL-opschoning, geheimenfilter en uniforme meldingenstroom van het meldingenecosysteem.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts",
+   "wat": "Eenheidstest voor SSR, toegankelijkheid, RLS-migratie 0278 en beveiligde weergave van het meldingenportaal.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/veilig-002-uitbreiding.test.ts",
+   "wat": "Eenheidstest voor adresbeveiliging van beheer- en meldingsroutes, HTTP 429 en weigering van niet-goedgekeurde accounts.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/veilig-002-noodstop-uiterlijk.test.ts",
+   "wat": "Eenheidstest voor AI-noodstop (deur/namens/apparaatbevestiging), smalle Telegram-tegels, modalportalen en achtergrondprestaties.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/stroom-veilig-20261115.test.ts",
+   "wat": "Integratie-eenheidstest voor uitgebreide noodstop (SSE-stromen, pc-agent, eerlijke bronFouten), sleutelkluislimiet 120, FPS-plafond 45 en zoekcatalogus.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
   }
  ]
 }

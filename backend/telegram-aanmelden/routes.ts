@@ -135,6 +135,7 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
     (async (rc: RouterContext) => {
       const a = await deps.requireSession(rc.event as unknown as Record<string, unknown>, rc.body);
       if ('errorCode' in a) return fout(a.errorCode, a.errorCode.includes('FORBIDDEN') ? 403 : 401);
+      if (a.user.status !== 'approved') return fout('ACCOUNT_NOT_APPROVED_FORBIDDEN', 403);
       if (!(await vlagVoor(a.user.id))) return fout('NIET_GEVONDEN', 404);
       if (opties.beheer && !isBeheerder(a.user)) return fout('BEHEERDER_NODIG', 403);
       return vangen(() => run(rc, a, lichaam(rc)));

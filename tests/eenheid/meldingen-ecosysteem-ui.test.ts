@@ -344,5 +344,44 @@ export async function main(): Promise<number> {
       extBgJs.includes("t: 'melding'"),
   );
 
+  // 9. Регресійні перевірки безпеки інтерфейсу, просторової ізоляції та реєстру ключ-сейфу
+  const vuileKaartGeb: typeof gewoneGeb = {
+    ...gewoneGeb,
+    id: 'geb-xss-url',
+    acties: [{ id: 'bad-nav', labelUk: 'Пастка', labelNl: 'Val', soort: 'navigeer', href: 'javascript:alert(1)' }],
+    meta: { link: 'javascript:alert(2)' },
+  };
+  const vuileKaartHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: vuileKaartGeb,
+      profiel: profielBreed,
+      bijlageVoorkeur: profielBreed.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => gewoneGeb.aiSamenvatting!,
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+  const externPdfHtml = renderToStaticMarkup(
+    createElement(MeldingBijlageSpeler, {
+      lang: 'uk',
+      bijlagen: [{ id: 'ext-pdf', naam: 'extern.pdf', mime: 'application/pdf', grootteBytes: 1024, url: 'https://extern.example/doc.pdf' }],
+      actieveIndex: 0,
+      voorkeur: profielBreed.bijlageWeergave,
+    }),
+  );
+  const sleutelkluisTs = lees('shared/sleutelkluis.ts');
+  check(
+    '9a картка і переглядач блокують javascript:-посилання й зовнішній PDF iframe, а CSS не має !important',
+    !vuileKaartHtml.includes('javascript:') &&
+      !externPdfHtml.includes('<iframe') &&
+      !ecoCss.includes('!important') &&
+      backendEcoTs.includes("TECHNISCHE_RUIMTE_VEREIST") &&
+      backendEcoTs.includes('agentRuimte') &&
+      gatewayTs.includes('agentRuimte: entry.ruimte') &&
+      sleutelkluisTs.includes("tabel: 'app.melding_ecosysteem_profiel'") &&
+      sleutelkluisTs.includes("tabel: 'app.melding_ecosysteem_gebeurtenissen'"),
+  );
+
   return einde();
 }

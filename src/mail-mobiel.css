@@ -75,7 +75,7 @@
   html body .google-mail-reader-backdrop{left:0!important;right:0!important;width:100%!important;max-width:100%!important}
   html body .google-mail-reader{width:100%!important;max-width:100%!important;margin:0!important;border-radius:0!important}
 
-  /* верхня панель: аватар акаунта впритул до правого краю, пошук займає весь вільний простір */
+  /* верхня панель: аватар акаунта впритул до правого краю, пошук займає весь вільний простір, шестерня швидких налаштувань завжди доступна */
   html body .mail-top-command-bar{right:6px!important;min-height:52px;top:4px}
   html body .mail-top-command-bar>:first-child{flex:1 1 0!important;min-width:0!important}
   html body .mail-top-search-shell{width:100%;min-width:0}
@@ -84,13 +84,19 @@
   html body .mail-top-search-shell input{font-size:16px}
   html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:44px;height:44px}
   html body .mail-top-interface-actions{gap:0}
-  /* zoekveld: op de telefoon staat «Швидкі налаштування» (⚙) uit de bovenbalk — de instellingen zijn bereikbaar via het zijmenu (Пошта → Налаштування); zo krijgt het zoekveld de ruimte (was 75 px breed, nu ruim 120 px) */
-  html body .mail-top-interface-actions .mail-top-settings{display:none!important}
+  html body .mail-quick-settings{max-width:100vw;box-sizing:border-box}
   html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
   html body .google-mail-workspace>h1.mail-workspace-heading{font-size:20px;padding:14px 16px 8px}
   html body .mail-reader-icon-action{min-width:44px;min-height:44px}
   /* zwevende knoppen (Написати, Вгору; rechtsonder): de lijst krijgt onderaan zoveel lucht als de stapel hoog is, zodat de laatste rij erboven te zien is */
   html body .google-mail-workspace .mail-list-viewport>.google-mail-list::after{content:'';display:block;flex:none;height:var(--plaats-stapel-ruimte,0px);pointer-events:none}
+}
+
+@media (max-width:440px){
+  /* вузький екран 360–390px: кнопки 36×44 px вміщують пошук (≥ 100 px), фільтр, оновлення та шестерню налаштувань поруч без зникнення */
+  html body .mail-top-command-bar{gap:4px}
+  html body .mail-top-search-shell{grid-template-columns:36px minmax(0,1fr) auto auto}
+  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:36px;height:44px}
 }
 
 @media (prefers-reduced-motion:reduce){

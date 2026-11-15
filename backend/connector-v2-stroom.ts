@@ -20,6 +20,7 @@ import { koppelingVan } from './connector-v2';
 import { authenticate, unauthorized } from './mcp-connector';
 import { rateLimit } from '../server/platform';
 import { limietSleutel } from '../shared/ip-limiet';
+import { registreerStroomNoodstop } from './ai-toestemmingen';
 
 /**
  * SEC-002 (http-rand-07, afwerking A): een eigen, strenge emmer voor MISLUKTE aanmeldingen op de SSE-ingangen (elk een tokenopzoeking):
@@ -88,6 +89,20 @@ export function sluitStromenVan(userId: string, agent?: string): number {
 
 /** Alle stromen netjes sluiten (bij het stoppen van de server). */
 export function sluitAlleStromen(): void { for (const s of [...stromen]) s.sluit(); }
+
+/** Noodstop: stuur `event: noodstop` en sluit actieve SSE-stromen (voor één gebruiker of voor iedereen). */
+export function sluitAlleStroomenVoorNoodstop(userId?: string): number {
+  let n = 0;
+  const payload = JSON.stringify({ reden: 'noodstop' });
+  for (const s of [...stromen]) {
+    if (userId !== undefined && s.userId !== userId) continue;
+    schrijf(s, `event: noodstop\ndata: ${payload}\n\n`);
+    s.sluit();
+    n++;
+  }
+  return n;
+}
+registreerStroomNoodstop(sluitAlleStroomenVoorNoodstop);
 
 /**
  * Een geauthenticeerde GET /<agent> als SSE-stroom openen. De aanroeper (server/start.ts) heeft het token al gecontroleerd en de

@@ -123,7 +123,7 @@
    "reden": "MAILSCAN-002: bericht van hoogstens twee seconden na een uitdrukkelijk gekozen adrescontrole. Geen knop: pointer-events:none, raakvlakken blijven vrij en de vaste plaats verhindert dat de melding met de inhoud meeschuift."
   },
   {
-   "sleutel": "src/mail/mail-achtergrond.css :: .mail-achtergrond-instellingen-portaal",
+   "sleutel": "src/mail/mail-achtergrond.css :: body .mail-achtergrond-instellingen.mail-achtergrond-instellingen-portaal",
    "reden": "MAILSCAN-002: instellingenpaneel van de bewegende achtergrond, via document.body getoond. Geen zwevende knop: de bestaande knop blijft in de kop van de mailsectie, het paneel zelf krijgt een vaste plaats binnen de zichtbare schermranden en wordt niet door het smalle mobiele inhoudsvak afgesneden."
   },
   {

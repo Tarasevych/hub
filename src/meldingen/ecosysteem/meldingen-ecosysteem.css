@@ -3,6 +3,10 @@
 
 .mel-ecosysteem-portaal {
   position: fixed;
+  left: var(--mel-x, 24px);
+  top: var(--mel-y, 72px);
+  width: var(--mel-w, 460px);
+  height: var(--mel-h, 600px);
   z-index: 105000;
   display: flex;
   flex-direction: column;
@@ -894,6 +898,12 @@
   color: var(--danger);
   flex: none;
 }
+.mel-ai-melding {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
 .mel-ai-uitslag {
   display: grid;
   gap: 6px;
@@ -1023,13 +1033,13 @@
 
 @media (max-width: 640px) {
   .mel-ecosysteem-portaal {
-    left: calc(8px + var(--veilig-links, 0px)) !important;
-    right: calc(8px + var(--veilig-rechts, 0px)) !important;
-    top: calc(12px + var(--veilig-boven, 0px)) !important;
-    width: auto !important;
-    max-width: none !important;
-    height: calc(100dvh - 24px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px)) !important;
-    max-height: none !important;
+    left: calc(8px + var(--veilig-links, 0px));
+    right: calc(8px + var(--veilig-rechts, 0px));
+    top: calc(12px + var(--veilig-boven, 0px));
+    width: auto;
+    max-width: none;
+    height: calc(100dvh - 24px - var(--veilig-boven, 0px) - var(--veilig-onder, 0px));
+    max-height: none;
   }
   .mel-ecosysteem-portaal.is-tweekolom .mel-lichaam {
     grid-template-columns: minmax(0, 1fr);

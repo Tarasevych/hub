@@ -8,12 +8,13 @@ import { kanaalLabel, prioriteitLabel } from './tolk';
 import type { MeldingAiSamenvatting, MeldingEcosysteemGebeurtenis, MeldingPrioriteit } from './model';
 
 const GEHEIM_PATRONEN: ReadonlyArray<readonly [RegExp, string]> = [
-  [/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, '[ПРИВАТНИЙ_КЛЮЧ_ПРИХОВАНО]'],
+  [/-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----/g, '[ПРИВАТНИЙ_КЛЮЧ_ПРИХОВАНО]'],
   [/\beyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{8,}\b/g, '[JWT_ПРИХОВАНО]'],
   [/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/-]{12,}=*/gi, '$1 [МАРКЕР_ПРИХОВАНО]'],
-  [/\b(sk-[A-Za-z0-9_-]{16,}|AIza[0-9A-Za-z_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xai-[A-Za-z0-9_-]{16,}|agy-h-[A-Za-z0-9_-]{8,}|tsv_[A-Za-z0-9_-]{10,})\b/g, '[СЕКРЕТ_ПРИХОВАНО]'],
-  [/([?&](?:token|key|secret|password|sig|signature|code|ticket)=)[^&\s#]+/gi, '$1[ПРИХОВАНО]'],
-  [/(password|wachtwoord|secret|geheim|api[_-]?key|token)\s*[:=]\s*["']?[^\s"',;]{6,}["']?/gi, '$1=[ПРИХОВАНО]'],
+  [/\b(?:cookie|set-cookie|authorization|x-api-key|x-goog-api-key)\s*:\s*[^\r\n]{6,}/gi, '[ЗАГОЛОВОК_АВТОРИЗАЦІЇ_ПРИХОВАНО]'],
+  [/\b(?:sk-[A-Za-z0-9_-]{16,}|AIza[0-9A-Za-z_-]{20,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xai-[A-Za-z0-9_-]{16,}|agy-h-[A-Za-z0-9_-]{8,}|tsv_[A-Za-z0-9_-]{10,}|\d{8,12}:[A-Za-z0-9_-]{30,})\b/g, '[СЕКРЕТ_ПРИХОВАНО]'],
+  [/([?&](?:token|access_token|refresh_token|id_token|key|api_key|apikey|secret|client_secret|password|sig|signature|code|ticket|session|sid|auth)=)[^&\s#]+/gi, '$1[ПРИХОВАНО]'],
+  [/(password|wachtwoord|secret|geheim|api[_-]?key|token|bot[_-]?token)\s*[:=]\s*["']?[^\s"',;]{6,}["']?/gi, '$1=[ПРИХОВАНО]'],
   [/\b[0-9a-f]{40,}\b/gi, '[ГЕШ_ПРИХОВАНО]'],
 ];
 
@@ -91,9 +92,9 @@ export function interneAiAnalyse(geb: MeldingEcosysteemGebeurtenis, lang: 'uk' |
     stappen.push(`${nl ? 'Bijlagen' : 'Вкладення'}: ${bijlagenSamenvatting.slice(0, 3).join(', ')}`);
   }
 
-  const samenvatting = nl
-    ? `${geb.titel}${geb.bericht ? ` — ${geb.bericht.slice(0, 220)}` : ''}`
-    : `${geb.titel}${geb.bericht ? ` — ${geb.bericht.slice(0, 220)}` : ''}`;
+  const schoneTitel = zonderGeheimen(geb.titel);
+  const schoonBericht = geb.bericht ? zonderGeheimen(geb.bericht).slice(0, 220) : '';
+  const samenvatting = `${schoneTitel}${schoonBericht ? ` — ${schoonBericht}` : ''}`;
 
   return {
     bron: 'intern',

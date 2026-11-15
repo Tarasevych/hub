@@ -134,7 +134,8 @@ h1{font-size:1.15rem;margin:0}h2{font-size:1.05rem;margin:0;text-align:center}.z
 .knop{appearance:none;border:1px solid var(--rand);background:var(--kaart);color:var(--tekst);border-radius:999px;min-height:46px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;width:100%}
 .knop.hoofd{background:var(--accent);border-color:var(--accent);color:#fff}.knop.nee{color:var(--gevaar)}
 input[type=password],input[type=text]{width:100%;min-height:48px;font:inherit;font-size:1.2rem;letter-spacing:.15em;padding:8px 12px;border-radius:12px;border:1px solid var(--rand);background:var(--bg);color:var(--tekst);text-align:center}
-.uitkomst{font-weight:600;text-align:center;margin:0}.uitkomst.goed{color:var(--ok)}.uitkomst.slecht{color:var(--gevaar)}[hidden]{display:none!important}`;
+.uitkomst{font-weight:600;text-align:center;margin:0}.uitkomst.goed{color:var(--ok)}.uitkomst.slecht{color:var(--gevaar)}[hidden]{display:none!important}
+@media (max-width:360px){body{padding:12px 10px 24px}.kaart{padding:12px}.raster{gap:7px}.label{min-width:4.5em}}`;
 
 export async function vensterPagina(rc: RouterContext): Promise<RouterResponse> {
   const taal: Taal = rc.query.taal === 'nl' ? 'nl' : 'uk';
@@ -230,8 +231,8 @@ document.querySelectorAll('.keuze').forEach(k=>k.addEventListener('click',async(
   if(r.uitkomst==='netwerk'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon('netwerk');return}
   einde(r.uitkomst||'verlopen',false);
 }));
-const f=$('code-form');if(f)f.addEventListener('submit',async(e)=>{e.preventDefault();if(bezig)return;bezig=true;const v=$('code').value;
-  const r=await api('code',{code:v});bezig=false;$('code').value='';
+const f=$('code-form'),fb=f?f.querySelector('button[type=submit]'):null;if(f)f.addEventListener('submit',async(e)=>{e.preventDefault();if(bezig)return;bezig=true;if(fb)fb.disabled=true;const v=$('code').value;
+  const r=await api('code',{code:v});bezig=false;if(fb)fb.disabled=false;$('code').value='';
   if(r.ok){einde('ok',true);return}
   if(r.uitkomst==='fout'||r.uitkomst==='netwerk'){toon(r.uitkomst);$('code').focus();return}
   einde(r.uitkomst||'verlopen',false);});
