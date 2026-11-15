@@ -20,6 +20,8 @@ export interface VaardigheidItem {
   bron: VaardigheidBron;
   ruimte: VaardigheidRuimteBereik;
   versie: number;
+  versieSemver?: string;
+  afhankelijkheden?: string[];
   actief: boolean;
   /** Leeg = beschikbaar voor alle agenten in de toegestane ruimte; anders beperkt tot deze agenten. */
   agentKoppelingen: AgentSlug[];
@@ -55,6 +57,8 @@ export interface VaardigheidAanbeveling {
   id: string;
   uri: string;
   bron: VaardigheidBron;
+  versieSemver?: string;
+  afhankelijkheden?: string[];
   titel: VaardigheidTaalPaar;
   samenvatting: VaardigheidTaalPaar;
   score: number;
@@ -96,35 +100,35 @@ const LATIJNS = /[A-Za-z]/;
 const TECH_JARGON = new RegExp(
   '(?:^|[^\\p{L}])(' +
     [
-      'баг',
-      'баги',
-      'багів',
-      'фікс',
-      'фікси',
-      'білд',
-      'білду',
-      'деплой',
-      'деплою',
-      'коміт',
-      'коміту',
-      'бренч',
-      'пул-?реквест',
-      'таска',
-      'таску',
-      'фіча',
-      'фічі',
-      'кеш',
-      'мікрокешування',
-      'бекап',
-      'дефолтн',
-      'кастомн',
-      'апдейт',
-      'скріншот',
-      'лейаут',
-      'вотерфол',
-      'таймаут',
-      'чек-?ліст',
-      'дедуплікація',
+      '\u0431\u0430\u0433',
+      '\u0431\u0430\u0433\u0438',
+      '\u0431\u0430\u0433\u0456\u0432',
+      '\u0444\u0456\u043a\u0441',
+      '\u0444\u0456\u043a\u0441\u0438',
+      '\u0431\u0456\u043b\u0434',
+      '\u0431\u0456\u043b\u0434\u0443',
+      '\u0434\u0435\u043f\u043b\u043e\u0439',
+      '\u0434\u0435\u043f\u043b\u043e\u044e',
+      '\u043a\u043e\u043c\u0456\u0442',
+      '\u043a\u043e\u043c\u0456\u0442\u0443',
+      '\u0431\u0440\u0435\u043d\u0447',
+      '\u043f\u0443\u043b-?\u0440\u0435\u043a\u0432\u0435\u0441\u0442',
+      '\u0442\u0430\u0441\u043a\u0430',
+      '\u0442\u0430\u0441\u043a\u0443',
+      '\u0444\u0456\u0447\u0430',
+      '\u0444\u0456\u0447\u0456',
+      '\u043a\u0435\u0448',
+      '\u043c\u0456\u043a\u0440\u043e\u043a\u0435\u0448\u0443\u0432\u0430\u043d\u043d\u044f',
+      '\u0431\u0435\u043a\u0430\u043f',
+      '\u0434\u0435\u0444\u043e\u043b\u0442\u043d',
+      '\u043a\u0430\u0441\u0442\u043e\u043c\u043d',
+      '\u0430\u043f\u0434\u0435\u0439\u0442',
+      '\u0441\u043a\u0440\u0456\u043d\u0448\u043e\u0442',
+      '\u043b\u0435\u0439\u0430\u0443\u0442',
+      '\u0432\u043e\u0442\u0435\u0440\u0444\u043e\u043b',
+      '\u0442\u0430\u0439\u043c\u0430\u0443\u0442',
+      '\u0447\u0435\u043a-?\u043b\u0456\u0441\u0442',
+      '\u0434\u0435\u0434\u0443\u043f\u043b\u0456\u043a\u0430\u0446\u0456\u044f',
     ].join('|') +
     ')(?:[^\\p{L}]|$)',
   'iu',
@@ -252,7 +256,7 @@ export function valideerVaardigheidInvoer(
     ruw.vereisteHulpmiddelen ?? ruw.vereiste_hulpmiddelen,
     24,
     80,
-  ).filter((n) => /^[a-z0-9][a-z0-9_.-]{1,79}$/.test(n));
+  ).filter((n) => /^[a-z0-9][a-z0-9_.:-]{1,79}$/.test(n));
   const agentKoppelingen = schoonAgentKoppelingen(ruw.agentKoppelingen ?? ruw.agent_koppelingen);
 
   const alleTekst = [titelUk, titelNl, samenvattingUk, samenvattingNl, inhoudUk, inhoudNl, ...termenUk, ...termenNl];
@@ -366,6 +370,16 @@ export function effectieveVaardighedenVoorAgent(
   return items.filter((item) => isVaardigheidActiefVoorAgent(item, standen, opties.agentSlug, ruimte));
 }
 
+export function heeftVereistHulpmiddel(zichtbaar: ReadonlySet<string>, vereist: string): boolean {
+  if (zichtbaar.has(vereist)) return true;
+  if (vereist.includes(':')) return false;
+  const prefix = `${vereist}:`;
+  for (const sleutel of zichtbaar) {
+    if (sleutel.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
 export function zoekEnRankVaardigheden(
   vraag: string,
   items: readonly VaardigheidItem[],
@@ -387,13 +401,15 @@ export function zoekEnRankVaardigheden(
     .map((item) => {
       const score = berekenScore(vraag, item);
       const ontbrekend =
-        zichtbaar === null ? [] : item.vereisteHulpmiddelen.filter((h) => !zichtbaar.has(h));
+        zichtbaar === null ? [] : item.vereisteHulpmiddelen.filter((h) => !heeftVereistHulpmiddel(zichtbaar, h));
       const aansluiting: VaardigheidAansluiting =
         zichtbaar === null ? 'onbekend' : ontbrekend.length ? 'hulpmiddelen_ontbreken' : 'hulpmiddelen_aanwezig';
       return {
         id: item.id,
         uri: item.uri,
         bron: item.bron,
+        ...(item.versieSemver ? { versieSemver: item.versieSemver } : {}),
+        ...(item.afhankelijkheden ? { afhankelijkheden: [...item.afhankelijkheden] } : {}),
         titel: item.titel,
         samenvatting: item.samenvatting,
         score,

@@ -279,6 +279,8 @@ export async function leesResourceVoor(
             source: v.bron,
             space: v.ruimte,
             version: v.versie,
+            ...(v.versieSemver ? { semver: v.versieSemver } : {}),
+            ...(v.afhankelijkheden?.length ? { dependencies: v.afhankelijkheden } : {}),
             title: v.titel[t],
             description: v.samenvatting[t],
             requiredTools: v.vereisteHulpmiddelen,

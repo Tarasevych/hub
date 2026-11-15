@@ -2960,17 +2960,22 @@
   },
   {
    "pad": "scripts/vaardigheden/catalogus.json",
-   "wat": "Tweetalige vaardighedencatalogus (uk/nl) met metagegevens en zoektermen voor 8 modulaire agentvaardigheden.",
+   "wat": "Tweetalige vaardighedencatalogus (uk/nl) met SemVer-versies, afhankelijkheden, sleutels <id>:<kant> en zoektermen voor 9 modulaire agentvaardigheden (inclusief mijn-ruimte).",
    "sinds": "VAARD-002 (vaardigheden)"
   },
   {
    "pad": "scripts/vaardigheden/kies.mjs",
-   "wat": "Deterministische vaardighedenkiezer op basis van uk/nl-zoektermen, frontmatter-validatie en zichtbare hulpmiddelstatus zonder rechtenverlening.",
+   "wat": "Deterministische vaardighedenkiezer op basis van uk/nl-zoektermen, SemVer- en cycluscontrole, frontmatter-validatie en eerlijke <id>:<kant>-hulpmiddelstatus zonder rechtenverlening.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/valideer.mjs",
+   "wat": "Bouwcontrole van modulaire vaardigheden: wederzijdse 1-op-1-afdekking van .agents/skills/* en catalogus.json, SemVer, cyclusvrije afhankelijkheden, V2-hulpmiddelen (<id>:<kant>), YAML-kop en taalzuiverheid.",
    "sinds": "VAARD-002 (vaardigheden)"
   },
   {
    "pad": "tests/eenheid/vaardigheden-20261115.test.ts",
-   "wat": "Eenheidstest voor de 8 vaardigheden, tweetalige selectie- en validatiecontroles, voorbeelden, beperkingen, kaartcontrole en taalzuiverheid.",
+   "wat": "Eenheidstest voor de 9 vaardigheden (inclusief mijn-ruimte), SemVer, afhankelijkheidsgraaf, <id>:<kant>-controle, tweetalige selectie, voorbeelden, valideerVaardigheden, kaartcontrole en taalzuiverheid.",
    "sinds": "VAARD-002 (vaardigheden)"
   }
  ]

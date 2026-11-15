@@ -69,7 +69,7 @@ async function standaardZichtbareHulpmiddelen(userId: string, agentSlug?: AgentS
     const ov = await v2.overzicht(userId);
     const ag = ov.agenten.find((a) => a.slug === agentSlug);
     if (!ag?.actief?.sleutels?.length) return null;
-    return [...new Set(ag.actief.sleutels.map((s) => s.split(':')[0]).filter(Boolean))];
+    return [...new Set(ag.actief.sleutels.map((s) => String(s).trim()).filter(Boolean))];
   } catch {
     return null;
   }
@@ -169,6 +169,8 @@ export function vaardighedenRoutes(deps: VaardighedenRoutesDeps): Record<string,
           bron: gevonden.bron,
           ruimte: gevonden.ruimte,
           versie: gevonden.versie,
+          ...(gevonden.versieSemver ? { versieSemver: gevonden.versieSemver } : {}),
+          ...(gevonden.afhankelijkheden ? { afhankelijkheden: gevonden.afhankelijkheden } : {}),
           titel: gevonden.titel,
           samenvatting: gevonden.samenvatting,
           inhoud: gevonden.inhoud,

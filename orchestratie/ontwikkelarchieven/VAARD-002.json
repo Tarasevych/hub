@@ -62,7 +62,19 @@
     },
     {
       "tijd": "2026-11-15T16:23:00Z",
-      "stap": "Оновлено scripts/vaardigheden/catalogus.json і scripts/vaardigheden/kies.mjs (перевірка двомовних підсумків, описів frontmatter і прикладів), створено tests/eenheid/vaardigheden-20261115.test.ts, оновлено docs/kaart/bestandskaart.json та перевірено тести й типи."
+      "stap": "Оновлено scripts/vaardigheden/catalogus.json і scripts/vaardigheden/kies.mjs (перевірка двомовних підсумків, описів frontmatter і прикладів), створено tests/eenheid/vaardigheden-20261115.test.ts та оновлено docs/kaart/bestandskaart.json."
+    },
+    {
+      "tijd": "2026-11-15T17:15:00Z",
+      "stap": "Доопрацьовано 9-ту навичку mijn-ruimte (оновлення описів двома мовами і додавання до catalogus.json із ключем v2_whoami:gebruiker), додано SemVer-версії та ациклічний граф afhankelijkheden, створено валідатор scripts/vaardigheden/valideer.mjs."
+    },
+    {
+      "tijd": "2026-11-15T17:23:00Z",
+      "stap": "Узгоджено точне розмежування інструментів <id>:<kant> у kies.mjs, shared/vaardigheden-ecosysteem.ts і backend/vaardigheden-routes.ts (без обрізання сторони :beheer/:gebruiker); оновлено backend/vaardigheden-opslag.ts, backend/mcp-protocol-2026.ts, src/agenten/VaardighedenBeheer.tsx і src/agenten/TabOrch.tsx."
+    },
+    {
+      "tijd": "2026-11-15T17:28:00Z",
+      "stap": "Розширено tests/eenheid/vaardigheden-20261115.test.ts (55 перевірок, включно з 9-ю навичкою, SemVer, циклами, <id>:<kant>, HTTP-маршрутом і валідатором) та прогнано статичні аудити, типізацію, серверну збірку і тести протоколу MCP."
     }
   ],
   "keuzes": [
@@ -72,14 +84,19 @@
       "alternatief": "Окрема четверта нова навичка лише для пам’ятки встановлення розривала б спільні правила основи, копій та схвалення ключем доступу."
     },
     {
-      "keuze": "Явно зазначено PostgreSQL 18.6, каталог пошуку zoek-ui-catalogus.mjs, шлях R:\\mijn-ruimte-reservekopie\\ і запланований статус серверного отримання з GitHub та Telegram-копій",
-      "reden": "Узгоджено з фактичним стеком (B-009) та чинним кодом бекенду, щоб агенти не видавали заплановане за реалізоване й не посилались на застарілий PostgreSQL 16.",
+      "keuze": "Точна перевірка сторони інструмента <id>:<kant> зі зворотною сумісністю для записів без двокрапки",
+      "reden": "Не дозволяє праву боку :gebruiker помилково зараховуватися як достатнє для дій боку :beheer (наприклад, uitrol_voorstel_begin:beheer), зберігаючи водночас чинність наявних записів без суфікса сторони.",
+      "alternatief": "Обрізання суфікса сторони .split(':')[0] створювало б ілюзію наявності адміністративних прав для користувацької навички чи агента."
+    },
+    {
+      "keuze": "Явно зазначено PostgreSQL 18.6, каталог пошуку zoek-ui-catalogus.mjs, шлях R:\\mijn-ruimte-reservekopie\\ і запланований статус серверного отримання з GitHub та Telegram-копій до злиття з UITROL-002",
+      "reden": "Узгоджено з фактичним стеком (B-009) та чинним кодом основи 30119943, щоб агенти не видавали заплановане за реалізоване; під час фінального зведення з UITROL-002 текст буде оновлено за фактичним станом.",
       "alternatief": "Механічне перенесення застарілих нотаток створювало суперечності з AGENTS.md і реальним сервером."
     },
     {
-      "keuze": "Використано чисті нідерландські назви файлів у scripts/ та tests/eenheid/ з реєстрацією в docs/kaart/bestandskaart.json",
-      "reden": "Відповідає вимогам scripts/kaart-controle.mjs і перевіряється модульним тестом.",
-      "alternatief": "Файли формату .test.mjs не підхоплюються стандартним запуском node scripts/eenheidstests.mjs."
+      "keuze": "Використано Unicode-послідовності для регулярного виразу мовного фільтра в valideer.mjs і shared/vaardigheden-ecosysteem.ts та спільну функцію taalwetOvertreding у тестах",
+      "reden": "Усуває хибні спрацювання мовної перевірки на самі файли валідаторів і тестів та прибирає дублювання переліку слів.",
+      "alternatief": "Тримання відкритого переліку небажаної лексики в кількох файлах призводило до самоблокування валідатора."
     }
   ],
   "wijzigingen": [
@@ -96,30 +113,46 @@
     { "soort": "toegevoegd", "pad": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад виправлення за знімком екрана (каскад UPD-001 і перевірки стилів)." },
     { "soort": "toegevoegd", "pad": ".agents/skills/prestatie-meten/SKILL.md", "omschrijving": "Навичка відтворюваного вимірювання швидкодії на умовно повільному телефоні з навантаженням ЦП і мережі, медіаною та похибкою." },
     { "soort": "toegevoegd", "pad": ".agents/skills/prestatie-meten/VOORBEELD.uk.md", "omschrijving": "Відтворюваний приклад вимірювання швидкодії й інваріантів із чесними обмеженнями." },
-    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/catalogus.json", "omschrijving": "Двомовний каталог навичок (8 записів) із підсумками uk/nl та пошуковими термами." },
-    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/kies.mjs", "omschrijving": "Сценарій добору навичок, перевірки двомовних описів frontmatter і безпечного читання прикладів без надання прав." },
-    { "soort": "toegevoegd", "pad": "tests/eenheid/vaardigheden-20261115.test.ts", "omschrijving": "Модульні перевірки усіх 8 навичок, добору uk/nl, обмежень, відмов, мовної чистоти й досьє VAARD-002." },
-    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Зареєстровано нові файли в scripts/vaardigheden/ та tests/eenheid/vaardigheden-20261115.test.ts." },
+    { "soort": "gewijzigd", "pad": ".agents/skills/mijn-ruimte/SKILL.md", "omschrijving": "Уточнено двомовні метадані та настанови з’єднувача Antigravity і AutoClaw як 9-ї проєктної навички." },
+    { "soort": "gewijzigd", "pad": ".agents/skills/mijn-ruimte/VAARDIGHEID.nl.md", "omschrijving": "Узгоджено нідерландську версію настанови mijn-ruimte." },
+    { "soort": "gewijzigd", "pad": ".agents/skills/mijn-ruimte/НАВИЧКА.uk.md", "omschrijving": "Узгоджено українську версію настанови mijn-ruimte." },
+    { "soort": "gewijzigd", "pad": ".agents/skills/mijn-ruimte/НАВИЧКА-МІЙ-ПРОСТІР.uk.md", "omschrijving": "Оновлено розширену українську настанову mijn-ruimte." },
+    { "soort": "gewijzigd", "pad": ".agents/skills/mijn-ruimte/scripts/mijn-ruimte", "omschrijving": "Оновлено допоміжний сценарій навички mijn-ruimte без сленгу й порушень мовного закону." },
+    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/catalogus.json", "omschrijving": "Двомовний каталог навичок (9 записів, включно з mijn-ruimte) із SemVer, залежностями та точними ключами <id>:<kant>." },
+    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/kies.mjs", "omschrijving": "Сценарій добору навичок із перевіркою SemVer, безциклових залежностей, YAML на 1-му рядку та exact <id>:<kant>." },
+    { "soort": "toegevoegd", "pad": "scripts/vaardigheden/valideer.mjs", "omschrijving": "Статичний валідатор взаємної 1-до-1 відповідності навичок, ключів Connector v2, графа залежностей і мовного закону." },
+    { "soort": "gewijzigd", "pad": "shared/vaardigheden-ecosysteem.ts", "omschrijving": "Додано versieSemver, afhankelijkheden, heeftVereistHulpmiddel із точною перевіркою <id>:<kant> і закодовано шаблон мовного фільтра." },
+    { "soort": "gewijzigd", "pad": "backend/vaardigheden-opslag.ts", "omschrijving": "Додано завантаження versieSemver, afhankelijkheden і назву mijn-ruimte до вбудованого каталогу." },
+    { "soort": "gewijzigd", "pad": "backend/vaardigheden-routes.ts", "omschrijving": "Прибрано обрізання .split(':') у standaardZichtbareHulpmiddelen; додано versieSemver і afhankelijkheden у відповідь читання." },
+    { "soort": "gewijzigd", "pad": "backend/mcp-protocol-2026.ts", "omschrijving": "Додано поля semver та dependencies до ресурсу mr://skills/overzicht." },
+    { "soort": "gewijzigd", "pad": "src/agenten/VaardighedenBeheer.tsx", "omschrijving": "Відображення SemVer-версії та залежностей у картках каталогу навичок і рекомендаціях." },
+    { "soort": "gewijzigd", "pad": "src/agenten/TabOrch.tsx", "omschrijving": "Додано швидкі посилання до бібліотеки навичок та з’єднувача Antigravity під заголовком «Стан зараз»." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/vaardigheden-20261115.test.ts", "omschrijving": "55 модульних перевірок усіх 9 навичок, добору uk/nl, SemVer, циклів, <id>:<kant>, маршруту aanbevelen, valideerVaardigheden, мовної чистоти й досьє VAARD-002." },
+    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Зареєстровано всі нові файли в scripts/vaardigheden/ (включно з valideer.mjs) та tests/eenheid/vaardigheden-20261115.test.ts." },
     { "soort": "toegevoegd", "pad": "orchestratie/taken/VAARD-002.json", "omschrijving": "Реєстрація завдання VAARD-002 у координації агентів." },
     { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/VAARD-002.json", "omschrijving": "Доказове досьє завдання VAARD-002 за стандартом TRACE-001." }
   ],
   "controles": [
     {
-      "opdracht": "node scripts/eenheidstests.mjs vaardigheden-20261115.test.ts",
-      "uitkomst": "Пройдено після фінальних змін: усі перевірки 8 навичок, добору uk/nl, прикладів, відмов, TRACE-001, карти файлів і мовної чистоти."
+      "opdracht": "node scripts/vaardigheden/valideer.mjs",
+      "uitkomst": "Пройдено (вихід 0): 9 vaardigheden, 9 mappen, 185 V2-hulpmiddelsleutels gecontroleerd."
     },
     {
-      "opdracht": "node scripts/eenheidstests.mjs orch-kern && node scripts/eenheidstests.mjs uitrol-manifest.test.ts && node scripts/eenheidstests.mjs telegram-venster-20261114.test.ts && node scripts/eenheidstests.mjs mail-imap-lezen-20261115.test.ts && node scripts/eenheidstests.mjs uitrol-centrering-20261115.test.ts && node scripts/eenheidstests.mjs maquette-mobiel-prestatie.test.ts",
-      "uitkomst": "Підтверджено проходження пов’язаних перевірок у stroom-vaard (у telegram-venster-20261114.test.ts частину БД пропущено через брак DATABASE_URL)."
+      "opdracht": "node scripts/zoek-ui-catalogus.mjs && node scripts/zoek-ui-catalogus.mjs --controle && node scripts/kaart-controle.mjs && node scripts/hulp-vraagtekens-controle.mjs && node scripts/kleur-contrast-controle.mjs --stil && node scripts/l002-audit.mjs",
+      "uitkomst": "Усі перевірки пройшли (вихід 0): actueel (1647 elementen), 0 помилок карти файлів, 0 помилок підказок (?), контраст і L002 без помилок."
     },
     {
-      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server && node scripts/kaart-controle.mjs && node scripts/orch.mjs controleer",
-      "uitkomst": "Вихід 0 без помилок типізації, правил карти файлів (0 нових попереджень) і координації."
+      "opdracht": "node scripts/eenheidstests.mjs vaardigheden-20261115.test.ts && node scripts/eenheidstests.mjs vaardigheden-ecosysteem.test.ts && node scripts/eenheidstests.mjs orch-beoordeling-20261031.test.ts && node scripts/eenheidstests.mjs agenten-pagina-blokken-20261103.test.ts && node scripts/eenheidstests.mjs mcp-2026-07-28-studio.test.ts && node scripts/eenheidstests.mjs mcp-hulpmiddelen-catalogus-20261031.test.ts && node scripts/eenheidstests.mjs mcp-orch-integratie-20261031.test.ts",
+      "uitkomst": "Пройдено без помилок: vaardigheden-20261115 (55/55), vaardigheden-ecosysteem (21/21), orch-beoordeling (55/55), agenten-pagina-blokken-20261103 (37/37), mcp-2026-07-28-studio (41/41), mcp-hulpmiddelen-catalogus (6/6), mcp-orch-integratie (10/10 без БД-частини)."
+    },
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit && npm run typecheck:server && npm run build:server",
+      "uitkomst": "Пройдено (вихід 0): без помилок типізації клієнта й сервера та зібрано dist-server/."
     }
   ],
   "beperkingen": [
-    "У локальному середовищі немає DATABASE_URL і чистої бази PostgreSQL 18.6, через що БД-частини тестів (наприклад, у telegram-venster-20261114.test.ts) і пробний накат міграцій не виконувалися.",
-    "У середовищі немає доступу до робочої ВМ <VM-IP>, каталогу /srv/backups/mijn-ruimte/ і диска R:\\ власника; живий /api/version та фактична наявність резервних копій не перевірялись і не зараховуються як пройдені.",
+    "У цьому етапі без DATABASE_URL тести site-hulpmiddelen.test.ts і zoek-bronnen-20261022.test.ts дійшли до DB-перевірки й завершилися DATABASE_URL_ONTBREEKT (перша половина zoek-bronnen пройшла, включно з 1647 елементами каталогу UI), а БД-частини mcp-hulpmiddelen-catalogus і mcp-orch-integratie були пропущені; повний БД-прогін виконується на етапі зведеної консолідації.",
+    "У середовищі немає доступу до робочої ВМ <VM-IP>, каталогу /srv/backups/mijn-ruimte/ і диска R:\\ власника; живий /api/version перевірено окремо (20261115-162533 / 07359e0e), тож об’єднання поверх свіжої бази відбудеться у консолідаційній гілці stroom-samen.",
     "Дослідний приклад швидкодії зафіксував наявну на базі 30119943 помилку в tests/eenheid/perf-001-20261109.test.ts (крок /api/flags), яку в межах завдання навичок не змінювали."
   ],
   "privacy": {

@@ -698,6 +698,7 @@ export default function VaardighedenBeheer({
                     <div className='ag-vaard-rij-info'>
                       <div className='ag-vaard-rij-titel'>
                         <code>{a.id}</code> — {a.titel[taal]}
+                        {a.versieSemver ? <Badge toon='off'>v{a.versieSemver}</Badge> : null}
                         <Badge toon='info'>{tr(`Збіг: ${a.score}`, `Score: ${a.score}`)}</Badge>
                         {a.aansluiting === 'hulpmiddelen_aanwezig' ? (
                           <Badge toon='ok'>{tr('Інструменти відкриті', 'Hulpmiddelen open')}</Badge>
@@ -711,6 +712,13 @@ export default function VaardighedenBeheer({
                         ) : null}
                       </div>
                       <p className='ag-vaard-rij-tekst'>{a.samenvatting[taal]}</p>
+                      {a.afhankelijkheden?.length ? (
+                        <div className='ag-vaard-rij-meta'>
+                          <span>
+                            {tr('Залежності', 'Afhankelijkheden')}: <code>{a.afhankelijkheden.join(', ')}</code>
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <Knop
                       icoon={<BookOpen />}
@@ -754,11 +762,20 @@ export default function VaardighedenBeheer({
                     {item.ruimte === 'technisch' ? (
                       <Badge toon='warn'>{tr('Лише технічний простір', 'Alleen technisch')}</Badge>
                     ) : null}
-                    {item.versie > 1 ? <Badge toon='info'>v{item.versie}</Badge> : null}
+                    {item.versieSemver ? (
+                      <Badge toon='info'>v{item.versieSemver}</Badge>
+                    ) : item.versie > 1 ? (
+                      <Badge toon='info'>v{item.versie}</Badge>
+                    ) : null}
                   </div>
                   <p className='ag-vaard-rij-tekst'>{item.samenvatting[taal]}</p>
                   <div className='ag-vaard-rij-meta'>
                     <span>URI: <code>{item.uri}</code></span>
+                    {item.afhankelijkheden?.length ? (
+                      <span>
+                        {tr('Залежності', 'Afhankelijkheden')}: <code>{item.afhankelijkheden.join(', ')}</code>
+                      </span>
+                    ) : null}
                     {item.vereisteHulpmiddelen.length ? (
                       <span>
                         {tr('Інструменти', 'Hulpmiddelen')}: <code>{item.vereisteHulpmiddelen.join(', ')}</code>

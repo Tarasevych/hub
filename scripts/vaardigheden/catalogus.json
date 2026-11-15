@@ -5,6 +5,8 @@
     {
       "naam": "project-verkennen",
       "pad": ".agents/skills/project-verkennen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
       "samenvatting": {
         "uk": "Огляд будови проєкту, служб, правил і залежностей без змін.",
         "nl": "Projectopbouw, diensten, regels en afhankelijkheden verkennen zonder wijzigingen."
@@ -38,6 +40,10 @@
     {
       "naam": "site-ontwikkelen",
       "pad": ".agents/skills/site-ontwikkelen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "project-verkennen"
+      ],
       "samenvatting": {
         "uk": "Створення й удосконалення сторінок та служб з перевірками і координацією.",
         "nl": "Webpagina's en diensten ontwikkelen met controles en coördinatie."
@@ -67,12 +73,16 @@
         ]
       },
       "vereisteHulpmiddelen": [
-        "orch_taak_start"
+        "orch_taak_start:beheer"
       ]
     },
     {
       "naam": "wijziging-controleren",
       "pad": ".agents/skills/wijziging-controleren/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "project-verkennen"
+      ],
       "samenvatting": {
         "uk": "Перевірка змін, випробувань, безпеки, мобільного вигляду й міграцій.",
         "nl": "Wijzigingen, tests, beveiliging, mobiel ontwerp en migraties controleren."
@@ -106,6 +116,11 @@
     {
       "naam": "uitgave-voorbereiden",
       "pad": ".agents/skills/uitgave-voorbereiden/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "wijziging-controleren",
+        "ontwikkelgeheugen-bewaken"
+      ],
       "samenvatting": {
         "uk": "Підготовка випуску, перевірка основи, міграцій на PostgreSQL 18.6, каталогу пошуку, запасних копій, встановлення й повернення версії.",
         "nl": "Uitgave voorbereiden, basis, PostgreSQL 18.6-migraties, zoekcatalogus, reservekopieën, installatie en terugdraaien controleren."
@@ -175,12 +190,14 @@
         ]
       },
       "vereisteHulpmiddelen": [
-        "uitrol_voorstel_begin"
+        "uitrol_voorstel_begin:beheer"
       ]
     },
     {
       "naam": "ontwikkelgeheugen-bewaken",
       "pad": ".agents/skills/ontwikkelgeheugen-bewaken/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
       "samenvatting": {
         "uk": "Пам’ять розвитку: ідеї, рішення, історія агентів, передавання роботи, повторне використання файлів і попередніх виправлень.",
         "nl": "Ontwikkelgeheugen: ideeën, besluiten, agentgeschiedenis, werkoverdracht, bestanden hergebruiken en eerdere oplossingen terugvinden."
@@ -240,6 +257,10 @@
     {
       "naam": "koppelingen-echte-vorm-testen",
       "pad": ".agents/skills/koppelingen-echte-vorm-testen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
       "samenvatting": {
         "uk": "Випробування підключень Telegram, IMAP і зовнішніх служб на знеособленій справжній будові даних, правах, повторах і відмовах.",
         "nl": "Telegram-, IMAP- en externe koppelingen testen met geanonimiseerde echte gegevensvormen, rechten, herhalingen en weigeringen."
@@ -295,6 +316,10 @@
     {
       "naam": "uiterlijk-van-schermafdruk-herstellen",
       "pad": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
       "samenvatting": {
         "uk": "Усунення вад інтерфейсу за знімком екрана на телефоні й комп’ютері, у світлому й темному оформленні, двома мовами з аналізом каскаду стилів.",
         "nl": "Uiterlijke fouten vanaf een schermafdruk herstellen op telefoon en desktop, licht en donker thema, in beide talen met stijlanalyse."
@@ -357,6 +382,10 @@
     {
       "naam": "prestatie-meten",
       "pad": ".agents/skills/prestatie-meten/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
       "samenvatting": {
         "uk": "Вимірювання швидкодії до й після змін на умовно повільному телефоні з навантаженням процесора й мережі, причинами, цифрами й похибкою.",
         "nl": "Prestaties vóór en na wijzigingen meten op een trage telefoon met CPU- en netwerkbeperking, oorzaken, cijfers en foutmarges."
@@ -405,6 +434,47 @@
         ]
       },
       "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "mijn-ruimte",
+      "pad": ".agents/skills/mijn-ruimte/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "samenvatting": {
+        "uk": "Двосторонній з’єднувач MCP і міст Google Antigravity та AutoClaw для сайту, оглядача, ПК і сервера.",
+        "nl": "Tweerichtings-MCP-connector en brug van Google Antigravity en AutoClaw voor site, browser, pc en server."
+      },
+      "termen": {
+        "uk": [
+          "мій простір",
+          "з’єднувач",
+          "антигравіті",
+          "antigravity",
+          "autoclaw",
+          "розширення оглядача",
+          "локальний пк",
+          "керування оглядачем",
+          "mcp міст",
+          "договори",
+          "правнича перевірка",
+          "двосторонній з’єднувач"
+        ],
+        "nl": [
+          "mijn ruimte",
+          "mijn-ruimte",
+          "antigravity",
+          "autoclaw",
+          "browserextensie",
+          "lokale pc",
+          "tweerichtingsbrug",
+          "mcp connector",
+          "juridische controle",
+          "serverbeheer"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "v2_whoami:gebruiker"
+      ]
     }
   ]
 }

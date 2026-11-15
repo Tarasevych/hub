@@ -1,4 +1,4 @@
-// VAARD-002 (15.11.2026): навички ШІ-агентів, метадані uk/nl, автоматичний добір і узгодженість із правилами координації.
+// VAARD-002 (15.11.2026): навички ШІ-агентів, метадані uk/nl, SemVer, залежності, точне розмежування <id>:<kant>, валідатор і узгодженість із правилами.
 // Draaien: node scripts/eenheidstests.mjs vaardigheden-20261115.test.ts
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -7,8 +7,13 @@ import { checker } from './hulp/nep-google';
 // @ts-expect-error — .mjs zonder typen
 import { kiesVaardigheden, laadCatalogus, leesVaardigheid, leesVoorbeeld } from '../../scripts/vaardigheden/kies.mjs';
 // @ts-expect-error — .mjs zonder typen
+import { valideerVaardigheden } from '../../scripts/vaardigheden/valideer.mjs';
+// @ts-expect-error — .mjs zonder typen
 import { controleer as controleerKaart } from '../../scripts/kaart-controle.mjs';
 import { valideerOntwikkelDossier } from '../../shared/ontwikkelarchief';
+import { taalwetOvertreding, zoekEnRankVaardigheden } from '../../shared/vaardigheden-ecosysteem';
+import { leesIngebouwdeVaardigheden, maakGeheugenVaardighedenOpslag, resetVaardighedenCacheVoorTest } from '../../backend/vaardigheden-opslag';
+import { vaardighedenRoutes } from '../../backend/vaardigheden-routes';
 
 const VERWACHTE_VAARDIGHEDEN = [
   'project-verkennen',
@@ -19,6 +24,7 @@ const VERWACHTE_VAARDIGHEDEN = [
   'koppelingen-echte-vorm-testen',
   'uiterlijk-van-schermafdruk-herstellen',
   'prestatie-meten',
+  'mijn-ruimte',
 ] as const;
 
 const MET_VOORBEELD = [
@@ -32,17 +38,19 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('vaardigheden-20261115');
   const cat = laadCatalogus();
 
-  // ------------------------------------------------------------------ 1. Каталог, файли SKILL.md та метадані uk/nl
-  check('каталог містить рівно 8 очікуваних навичок',
+  // ------------------------------------------------------------------ 1. Каталог, файли SKILL.md, SemVer та метадані uk/nl
+  check('каталог містить рівно 9 очікуваних навичок',
     cat.vaardigheden.length === VERWACHTE_VAARDIGHEDEN.length
     && VERWACHTE_VAARDIGHEDEN.every((n) => cat.vaardigheden.some((v: { naam: string }) => v.naam === n)));
 
   for (const naam of VERWACHTE_VAARDIGHEDEN) {
     const tekst = leesVaardigheid(naam, cat);
     const kaartItem = cat.vaardigheden.find((v: { naam: string }) => v.naam === naam);
-    check(`навичка ${naam}: непорожні підсумки uk і nl`,
+    check(`навичка ${naam}: непорожні підсумки uk і nl та SemVer`,
       typeof kaartItem?.samenvatting?.uk === 'string' && kaartItem.samenvatting.uk.trim().length > 15
       && typeof kaartItem?.samenvatting?.nl === 'string' && kaartItem.samenvatting.nl.trim().length > 15
+      && typeof kaartItem?.versie === 'string' && /^\d+\.\d+\.\d+$/.test(kaartItem.versie)
+      && Array.isArray(kaartItem?.afhankelijkheden)
       && tekst.includes(`name: ${naam}\n`));
   }
 
@@ -62,7 +70,7 @@ export async function main(): Promise<number> {
   check('приклад uitgave-voorbereiden охоплює окремо напрям 1 (збирання) і напрям 5 (встановлення/повернення)',
     vbUitgave.includes('Напрям 1') && vbUitgave.includes('Напрям 5'));
 
-  // ------------------------------------------------------------------ 3. Автоматичний добір (uk + nl) по всіх 8 навичках і 5 напрямах
+  // ------------------------------------------------------------------ 3. Автоматичний добір (uk + nl) по всіх 9 навичках
   const proeven: Array<[string, string, string]> = [
     ['uk-напрям1-випуск', 'підготуй випуск і перевір каталог пошуку та міграції', 'uitgave-voorbereiden'],
     ['nl-richting1-uitgave', 'bereid een uitgave voor en controleer migraties en zoekcatalogus', 'uitgave-voorbereiden'],
@@ -82,6 +90,8 @@ export async function main(): Promise<number> {
     ['nl-ontwikkelen', 'ontwikkel nieuwe pagina en knoppen op website', 'site-ontwikkelen'],
     ['uk-перевірка', 'перевір зміни на безпеку й готовність', 'wijziging-controleren'],
     ['nl-controleren', 'controleer wijzigingen op kwaliteit en beveiliging', 'wijziging-controleren'],
+    ['uk-мій-простір', 'налаштуй з’єднувач antigravity, autoclaw і розширення оглядача через mcp міст', 'mijn-ruimte'],
+    ['nl-mijn-ruimte', 'koppel antigravity connector, autoclaw en browserextensie via tweerichtingsbrug', 'mijn-ruimte'],
   ];
 
   for (const [label, vraag, verwacht] of proeven) {
@@ -91,7 +101,7 @@ export async function main(): Promise<number> {
       uit.map((u: { naam: string; score: number }) => `${u.naam}(${u.score})`).join(', '));
   }
 
-  // ------------------------------------------------------------------ 4. Межі повноважень і межові вхідні дані
+  // ------------------------------------------------------------------ 4. Межі повноважень, точне <id>:<kant> і зворотна сумісність
   check('порожній або пробільний запит повертає []',
     kiesVaardigheden('', { catalogus: cat }).length === 0
     && kiesVaardigheden('   \n\t ', { catalogus: cat }).length === 0);
@@ -100,37 +110,100 @@ export async function main(): Promise<number> {
     kiesVaardigheden('випуск підключення знімок швидкодія сайт', { catalogus: cat, maximum: 2 }).length <= 2);
 
   const zonderMiddelen = kiesVaardigheden('підготуй випуск', { catalogus: cat });
-  const metMiddel = kiesVaardigheden('підготуй випуск', { catalogus: cat, zichtbareHulpmiddelen: ['uitrol_voorstel_begin'] });
-  const zonderNodigMiddel = kiesVaardigheden('підготуй випуск', { catalogus: cat, zichtbareHulpmiddelen: ['orch_overzicht'] });
-  check('видимі інструменти відображають статус підключення без підміни прав',
+  const metExactBeheer = kiesVaardigheden('підготуй випуск', { catalogus: cat, zichtbareHulpmiddelen: ['uitrol_voorstel_begin:beheer'] });
+  const metVerkeerdeKant = kiesVaardigheden('підготуй випуск', { catalogus: cat, zichtbareHulpmiddelen: ['uitrol_voorstel_begin:gebruiker'] });
+  const zonderNodigMiddel = kiesVaardigheden('підготуй випуск', { catalogus: cat, zichtbareHulpmiddelen: ['orch_overzicht:beheer'] });
+  check('kiesVaardigheden точно розрізняє :beheer від :gebruiker без підміни прав',
     zonderMiddelen[0]?.aansluiting === 'onbekend'
-    && metMiddel[0]?.aansluiting === 'hulpmiddelen_aanwezig'
+    && metExactBeheer[0]?.aansluiting === 'hulpmiddelen_aanwezig'
+    && metVerkeerdeKant[0]?.aansluiting === 'hulpmiddelen_ontbreken'
+    && metVerkeerdeKant[0]?.ontbrekendeHulpmiddelen.includes('uitrol_voorstel_begin:beheer')
     && zonderNodigMiddel[0]?.aansluiting === 'hulpmiddelen_ontbreken'
-    && zonderNodigMiddel[0]?.ontbrekendeHulpmiddelen.includes('uitrol_voorstel_begin'));
+    && zonderNodigMiddel[0]?.ontbrekendeHulpmiddelen.includes('uitrol_voorstel_begin:beheer'));
 
-  // ------------------------------------------------------------------ 5. Відмови при зіпсованих даних і обходах шляхів
+  resetVaardighedenCacheVoorTest();
+  const ingebouwd = leesIngebouwdeVaardigheden();
+  const ecoFoutKant = zoekEnRankVaardigheden('підготуй випуск', ingebouwd, {
+    ruimte: 'technisch',
+    zichtbareHulpmiddelen: ['uitrol_voorstel_begin:gebruiker'],
+  });
+  const ecoJuistKant = zoekEnRankVaardigheden('підготуй випуск', ingebouwd, {
+    ruimte: 'technisch',
+    zichtbareHulpmiddelen: ['uitrol_voorstel_begin:beheer'],
+  });
+  check('zoekEnRankVaardigheden розрізняє <id>:<kant> і повертає versieSemver + afhankelijkheden',
+    ecoFoutKant[0]?.id === 'uitgave-voorbereiden'
+    && ecoFoutKant[0]?.aansluiting === 'hulpmiddelen_ontbreken'
+    && ecoFoutKant[0]?.ontbrekendeHulpmiddelen.includes('uitrol_voorstel_begin:beheer')
+    && ecoJuistKant[0]?.aansluiting === 'hulpmiddelen_aanwezig'
+    && ecoJuistKant[0]?.versieSemver === '1.0.0'
+    && Array.isArray(ecoJuistKant[0]?.afhankelijkheden)
+    && ecoJuistKant[0]?.afhankelijkheden?.includes('wijziging-controleren'));
+
+  // Перевірка повної маршрутизації через HTTP-маршрут /api/owner/vaardigheden/aanbevelen (ключі <id>:<kant> не обрізаються)
+  const routeHandler = vaardighedenRoutes({
+    requireSession: async () => ({ service: 'mcp', user: { id: 'u-vaard', status: 'approved', role: 'owner', entitlements: ['api-platform'] } }),
+    opslag: maakGeheugenVaardighedenOpslag(),
+    ladeVoor: async (uid) => ({ ok: true, userId: uid, ruimte: 'technisch' }),
+    limiet: async () => true,
+    audit: async () => undefined,
+    meldWijziging: () => undefined,
+    zichtbareHulpmiddelenVoor: async (_uid, slug) => (slug === 'gemini' ? ['uitrol_voorstel_begin:beheer'] : ['uitrol_voorstel_begin:gebruiker']),
+  })['POST /api/owner/vaardigheden/aanbevelen'][0];
+  const rGemini = JSON.parse((await routeHandler({ event: { headers: {} }, body: { vraag: 'підготуй випуск', agent: 'gemini', leesId: 'uitgave-voorbereiden' } } as never) as { body: string }).body);
+  const rClaude = JSON.parse((await routeHandler({ event: { headers: {} }, body: { vraag: 'підготуй випуск', agent: 'claude' } } as never) as { body: string }).body);
+  check('маршрут /api/owner/vaardigheden/aanbevelen зберігає точну сторону :beheer/:gebruiker',
+    rGemini.aanbevelingen[0]?.aansluiting === 'hulpmiddelen_aanwezig'
+    && rClaude.aanbevelingen[0]?.aansluiting === 'hulpmiddelen_ontbreken'
+    && rClaude.aanbevelingen[0]?.ontbrekendeHulpmiddelen.includes('uitrol_voorstel_begin:beheer')
+    && rGemini.gelezen?.versieSemver === '1.0.0');
+
+  // ------------------------------------------------------------------ 5. Відмови при зіпсованих даних, циклічних залежностях і обходах шляхів
   const tijdelijk = mkdtempSync(join(tmpdir(), 'vaard-proef-'));
   try {
     const foutPad = join(tijdelijk, 'slecht.json');
     writeFileSync(foutPad, JSON.stringify({
       schema: 1,
-      vaardigheden: [{ naam: 'slecht', pad: '../geheim', samenvatting: { uk: 'а', nl: 'b' }, termen: { uk: [], nl: [] }, vereisteHulpmiddelen: [] }],
+      vaardigheden: [{ naam: 'slecht', pad: '../geheim', versie: '1.0.0', afhankelijkheden: [], samenvatting: { uk: 'а', nl: 'b' }, termen: { uk: [], nl: [] }, vereisteHulpmiddelen: [] }],
     }));
     let errPad = '';
     try { laadCatalogus(foutPad); } catch (e) { errPad = (e as Error).message; }
     check('небезпечний шлях у каталозі → VAARD_CATALOGUS_ONGELDIG', errPad === 'VAARD_CATALOGUS_ONGELDIG');
+
+    const foutSemver = join(tijdelijk, 'slecht-semver.json');
+    writeFileSync(foutSemver, JSON.stringify({
+      schema: 1,
+      vaardigheden: [{ naam: 'slecht-v', pad: '.agents/skills/slecht-v/SKILL.md', versie: 'v1', afhankelijkheden: [], samenvatting: { uk: 'Опис', nl: 'Uitleg' }, termen: { uk: [], nl: [] }, vereisteHulpmiddelen: [] }],
+    }));
+    let errSemver = '';
+    try { laadCatalogus(foutSemver); } catch (e) { errSemver = (e as Error).message; }
+    check('недійсна SemVer-версія → VAARD_CATALOGUS_ONGELDIG', errSemver === 'VAARD_CATALOGUS_ONGELDIG');
+
+    const cyclusPad = join(tijdelijk, 'cyclus.json');
+    writeFileSync(cyclusPad, JSON.stringify({
+      schema: 1,
+      vaardigheden: [
+        { naam: 'een', pad: '.agents/skills/een/SKILL.md', versie: '1.0.0', afhankelijkheden: ['twee'], samenvatting: { uk: 'Один', nl: 'Een' }, termen: { uk: ['один'], nl: ['een'] }, vereisteHulpmiddelen: [] },
+        { naam: 'twee', pad: '.agents/skills/twee/SKILL.md', versie: '1.0.0', afhankelijkheden: ['een'], samenvatting: { uk: 'Два', nl: 'Twee' }, termen: { uk: ['два'], nl: ['twee'] }, vereisteHulpmiddelen: [] },
+      ],
+    }));
+    let errCyclus = '';
+    try { laadCatalogus(cyclusPad); } catch (e) { errCyclus = (e as Error).message; }
+    check('цикл залежностей у каталозі → VAARD_CATALOGUS_ONGELDIG', errCyclus === 'VAARD_CATALOGUS_ONGELDIG');
 
     let errOnbekend = '';
     try { leesVaardigheid('bestaat-niet', cat); } catch (e) { errOnbekend = (e as Error).message; }
     check('неіснуюча навичка → VAARD_NIET_GEVONDEN', errOnbekend === 'VAARD_NIET_GEVONDEN');
 
     mkdirSync(join(tijdelijk, '.agents/skills/nep-kaart'), { recursive: true });
-    writeFileSync(join(tijdelijk, '.agents/skills/nep-kaart/SKILL.md'), '---\nname: nep-kaart\ndescription: Alleen Nederlands\n---\n');
+    writeFileSync(join(tijdelijk, '.agents/skills/nep-kaart/SKILL.md'), '---\nname: nep-kaart\ndescription: Alleen Nederlands\n---\nТекст\n');
     const nepCat = {
       schema: 1,
       vaardigheden: [{
         naam: 'nep-kaart',
         pad: '.agents/skills/nep-kaart/SKILL.md',
+        versie: '1.0.0',
+        afhankelijkheden: [],
         samenvatting: { uk: 'Перевірка опису', nl: 'Controle beschrijving' },
         termen: { uk: ['перевірка'], nl: ['controle'] },
         vereisteHulpmiddelen: [],
@@ -139,11 +212,16 @@ export async function main(): Promise<number> {
     let errTaal = '';
     try { leesVaardigheid('nep-kaart', nepCat, tijdelijk); } catch (e) { errTaal = (e as Error).message; }
     check('одномовний description у SKILL.md → VAARD_INHOUD_ONGELDIG', errTaal === 'VAARD_INHOUD_ONGELDIG');
+
+    writeFileSync(join(tijdelijk, '.agents/skills/nep-kaart/SKILL.md'), '\n---\nname: nep-kaart\ndescription: Тест · Test\n---\nТекст\n');
+    let errRegel1 = '';
+    try { leesVaardigheid('nep-kaart', nepCat, tijdelijk); } catch (e) { errRegel1 = (e as Error).message; }
+    check('YAML frontmatter не на 1-му рядку → VAARD_INHOUD_ONGELDIG', errRegel1 === 'VAARD_INHOUD_ONGELDIG');
   } finally {
     rmSync(tijdelijk, { recursive: true, force: true });
   }
 
-  // ------------------------------------------------------------------ 6. Узгодженість правил і заборони суперечностей
+  // ------------------------------------------------------------------ 6. Узгодженість правил, валідатор каталогу і заборони суперечностей
   const uitgave = leesVaardigheid('uitgave-voorbereiden', cat);
   check('uitgave-voorbereiden: PostgreSQL 18.6 (без згадки 16), zoek-ui-catalogus, ONTWIKKELARCHIEF, R:\\, ключ доступу, заплановані GitHub/Telegram',
     uitgave.includes('PostgreSQL 18.6')
@@ -182,6 +260,11 @@ export async function main(): Promise<number> {
     && leesVaardigheid('prestatie-meten', cat).includes('похибк')
     && typeof prest === 'string');
 
+  const valUit = valideerVaardigheden(process.cwd());
+  check('valideerVaardigheden(): 0 помилок і рівно 9 навичок із ключами Connector v2',
+    valUit.ok === true && valUit.fouten.length === 0 && valUit.aantallen.catalogus === 9,
+    valUit.fouten.join(' · '));
+
   const dossierPad = 'orchestratie/ontwikkelarchieven/VAARD-002.json';
   const dossierFouten = existsSync(dossierPad)
     ? valideerOntwikkelDossier(JSON.parse(readFileSync(dossierPad, 'utf8')), 'VAARD-002')
@@ -205,21 +288,22 @@ export async function main(): Promise<number> {
     '.agents/skills/uiterlijk-van-schermafdruk-herstellen/VOORBEELD.uk.md',
     '.agents/skills/prestatie-meten/SKILL.md',
     '.agents/skills/prestatie-meten/VOORBEELD.uk.md',
+    '.agents/skills/mijn-ruimte/SKILL.md',
+    '.agents/skills/mijn-ruimte/VAARDIGHEID.nl.md',
+    '.agents/skills/mijn-ruimte/НАВИЧКА.uk.md',
+    '.agents/skills/mijn-ruimte/НАВИЧКА-МІЙ-ПРОСТІР.uk.md',
+    '.agents/skills/mijn-ruimte/scripts/mijn-ruimte',
     'scripts/vaardigheden/catalogus.json',
     'scripts/vaardigheden/kies.mjs',
+    'scripts/vaardigheden/valideer.mjs',
+    'tests/eenheid/vaardigheden-20261115.test.ts',
     'orchestratie/ontwikkelarchieven/VAARD-002.json',
     'orchestratie/taken/VAARD-002.json',
   ];
-  const ruTekens = /[\u0401\u0451\u042a\u044a\u042b\u044b\u042d\u044d]/;
-  const jargon = new RegExp('(?:^|[^\\p{L}])(' + ['баг', 'баги', 'фікс', 'фікси', 'білд', 'деплой', 'коміт', 'бренч', 'пул-?реквест', 'таска', 'таску', 'фіча', 'фічі', 'кеш', 'мікрокешування', 'бекап', 'дефолтн', 'кастомн', 'апдейт', 'скріншот', 'лейаут', 'вотерфол', 'таймаут', 'чек-?ліст', 'дедуплікація'].join('|') + ')(?:[^\\p{L}]|$)', 'iu');
 
-  const slechteTaal = teControlerenBestanden.filter((p) => {
-    const s = readFileSync(p, 'utf8');
-    return ruTekens.test(s) || jargon.test(s);
-  });
-  const testInhoud = readFileSync('tests/eenheid/vaardigheden-20261115.test.ts', 'utf8');
+  const slechteTaal = teControlerenBestanden.filter((p) => taalwetOvertreding(readFileSync(p, 'utf8')));
   check('усі файли навичок і добору чисті від російських літер і техно-сленгу',
-    slechteTaal.length === 0 && !ruTekens.test(testInhoud),
+    slechteTaal.length === 0,
     slechteTaal.join(', '));
 
   const kaartUitslag = controleerKaart(process.cwd());

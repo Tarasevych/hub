@@ -32,6 +32,8 @@ type CatalogusRegel = {
   naam?: string;
   map?: string;
   pad?: string;
+  versie?: string;
+  afhankelijkheden?: string[];
   titel?: { uk?: string; nl?: string };
   samenvatting?: { uk?: string; nl?: string };
   termen?: { uk?: string[]; nl?: string[] };
@@ -49,6 +51,7 @@ const SYSTEEM_TITEL_NL: Readonly<Record<string, string>> = Object.freeze({
   'koppelingen-echte-vorm-testen': 'Koppelingen in echte vorm testen',
   'uiterlijk-van-schermafdruk-herstellen': 'Uiterlijke fouten op basis van schermafdrukken herstellen',
   'prestatie-meten': 'Snelheid en prestaties van site en database meten',
+  'mijn-ruimte': 'Mijn Ruimte — Google Antigravity-connector en tweerichtingsbrug',
 });
 
 let cacheTijd = 0;
@@ -123,6 +126,10 @@ function leesIngebouwdeUitSchijf(): VaardigheidItem[] {
         : Array.isArray(r.vereiste_hulpmiddelen)
           ? r.vereiste_hulpmiddelen
           : [];
+      const versieSemver = typeof r.versie === 'string' && r.versie.trim() ? r.versie.trim() : '1.0.0';
+      const afhankelijkheden = Array.isArray(r.afhankelijkheden)
+        ? r.afhankelijkheden.map((x) => String(x).trim()).filter(Boolean)
+        : [];
 
       gezieneIds.add(skillId);
       systeemItems.push({
@@ -131,6 +138,8 @@ function leesIngebouwdeUitSchijf(): VaardigheidItem[] {
         bron: 'systeem',
         ruimte: ruimteBereik,
         versie: 1,
+        versieSemver,
+        afhankelijkheden,
         actief: true,
         agentKoppelingen: [],
         titel: { uk: titelUk, nl: titelNl },
