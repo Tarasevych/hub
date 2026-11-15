@@ -204,7 +204,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 /* Центрування сторінки на широкому ПК (понад 1280 px). У макеті .page-wrap мав max-width 1580 px, margin:auto і запас під меню
    якорів лише з одного боку (168 px у режимі «авто» чи згорнутому, ~320 px у розгорнутому) проти 52 px з іншого. Запас рахувався від
    краю .page-wrap, а не екрана, тож на 1920–2560 px сторінка стояла збоку від центру, хоча меню якорів було далеко.
-   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (колонка вмісту 1240 px; до 15.11.2026 було 1476 px — як у макеті без меню
+   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (колонка вмісту 910 px — ширина блоку «Ключі доступу»; до 15.11.2026 було 1476 px — як у макеті без меню
    якорів, але власник просив вужчі блоки, щоб погляд не бігав по екрану); запас під меню лишається нижньою межею поля. Коли місця бракує (1366–1440 px), правий бік поступається першим — до 52 px,
    тобто вузькі екрани виглядають так само, як раніше.
    --mq-rand повторює запаси, що фактично перемагають у згенерованому maquette-stijlen.css (правила з !important наприкінці файла):
@@ -216,13 +216,13 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq.rail-right:is(.rail-mode-auto,.rail-compact){--mq-rand:96px}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-left .page-wrap{
   max-width:none!important;
-  padding-left:max(var(--mq-rand),calc((100% - 1240px) / 2))!important;
-  padding-right:max(52px,min(calc((100% - 1240px) / 2),calc(100% - 1240px - var(--mq-rand))))!important;
+  padding-left:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-right:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
 }
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-right .page-wrap{
   max-width:none!important;
-  padding-right:max(var(--mq-rand),calc((100% - 1240px) / 2))!important;
-  padding-left:max(52px,min(calc((100% - 1240px) / 2),calc(100% - 1240px - var(--mq-rand))))!important;
+  padding-right:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-left:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
 }
 
 /* Без зайвого заднього блоку (15.11.2026, побажання власника): під розгорнутими налаштуваннями розділу лежали ще дві суцільні
@@ -252,6 +252,12 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]~.future-section{margin-top:18px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
 }
+
+/* Вужча колонка (910 px): у картках «Приклад вигляду» кнопка «Налаштування меню» переходить під текст, а не стискає його у вузький
+   стовпчик по 3–4 слова. NL: in de smallere kolom gaat de knop onder de tekst in plaats van de tekst samen te drukken. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open){flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open)>.drawer-control-copy{flex:1 1 calc(100% - 60px);min-width:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top>.mq-demo-open{margin-left:50px}
 
 /* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
