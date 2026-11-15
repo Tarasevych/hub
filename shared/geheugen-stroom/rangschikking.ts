@@ -2,6 +2,7 @@
 // виявлення суперечностей та складання компактних пакетів пам’яті без зовнішнього ШІ.
 import type { AiRuimte } from '../ai-ruimte';
 import {
+  GEHEUGEN_ACTIE_META,
   GEHEUGEN_RELATIE_META,
   GEHEUGEN_SOORT_META,
   GEHEUGEN_STATUS_META,
@@ -37,19 +38,21 @@ const DOMEIN_SYNONIEM_GROEPEN: readonly string[][] = [
   ['хмара', 'файл', 'файли', 'сховище', 'диск', 'cloud', 'bestand', 'bestanden', 'opslag', 'schijf', 'drive'],
   ['код', 'гітхаб', 'сховище', 'гілка', 'випуск', 'github', 'repo', 'tak', 'uitgave', 'release', 'uitrol', 'розгортання'],
   ['безпека', 'ключ', 'ключі', 'шифрування', 'доступ', 'пароль', 'beveiliging', 'sleutel', 'versleuteling', 'toegang', 'passkey', 'kluis'],
-  ['агент', 'агенти', 'помічник', 'контекст', 'памʼять', 'память', 'agent', 'agenten', 'assistent', 'context', 'geheugen'],
+  ['агент', 'агенти', 'помічник', 'контекст', 'пам’ять', 'agent', 'agenten', 'assistent', 'context', 'geheugen'],
   ['завдання', 'задача', 'дошка', 'проєкт', 'план', 'taak', 'taken', 'bord', 'project', 'plan'],
   ['будинок', 'дім', 'кімната', 'світло', 'енергія', 'huis', 'woning', 'kamer', 'energie', 'licht', 'slim'],
   ['мова', 'українська', 'нідерландська', 'тема', 'вигляд', 'taal', 'oekraiens', 'nederlands', 'thema', 'weergave'],
-  ['сервер', 'журнал', 'аудит', 'компʼютер', 'оглядач', 'server', 'logboek', 'audit', 'computer', 'browser', 'extensie'],
+  ['сервер', 'журнал', 'аудит', 'комп’ютер', 'оглядач', 'server', 'logboek', 'audit', 'computer', 'browser', 'extensie'],
 ];
 
+const schoonSyn = (w: string) => w.toLowerCase().replace(/['’ʼ`]/g, '');
 const SYNONIEM_KAART = new Map<string, string[]>();
 for (const groep of DOMEIN_SYNONIEM_GROEPEN) {
-  for (const woord of groep) {
+  const schoonGroep = groep.map(schoonSyn);
+  for (const woord of schoonGroep) {
     SYNONIEM_KAART.set(
       woord,
-      groep.filter((g) => g !== woord),
+      schoonGroep.filter((g) => g !== woord),
     );
   }
 }
@@ -533,7 +536,9 @@ export function maakMarkdownExport(
   if (gebeurtenissen.length) {
     lijnen.push(uk ? '## Останні події пам’яті' : '## Recente geheugengebeurtenissen', '');
     for (const g of gebeurtenissen.slice(0, 25)) {
-      lijnen.push(`- [${new Date(g.aangemaaktOp).toISOString()}] ${g.actie} (${g.bronDienst}${g.bronAgent ? ` · ${g.bronAgent}` : ''})`);
+      const meta = GEHEUGEN_ACTIE_META[g.actie];
+      const actieLabel = meta ? (uk ? meta.uk : meta.nl) : g.actie;
+      lijnen.push(`- [${new Date(g.aangemaaktOp).toISOString()}] ${actieLabel} (${g.bronDienst}${g.bronAgent ? ` · ${g.bronAgent}` : ''})`);
     }
   }
 

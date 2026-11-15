@@ -364,6 +364,16 @@ export const pgStroomOpslag: StroomOpslag = {
     const dbSamenvatting = kluisEnvelop ? '' : samenvatting;
 
     return alsGebruiker(lade.userId, async (q) => {
+      if (werkruimteId) {
+        const wrCheck = await q(
+          `SELECT 1 FROM app.ai_agent_werkruimtes WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+          [werkruimteId, lade.userId, lade.ruimte],
+        );
+        if (!wrCheck.rows[0]) {
+          return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
+        }
+      }
+
       const bestaand = await q(
         `SELECT id FROM app.geheugen_stroom_knopen WHERE user_id = $1 AND ruimte = $2 AND sleutel = $3`,
         [lade.userId, lade.ruimte, sleutel],
@@ -530,10 +540,19 @@ export const pgStroomOpslag: StroomOpslag = {
 
   async zetStatus(lade, invoer) {
     if (!isGeldigUuid(invoer.id)) return { ok: false, code: GEHEUGEN_FOUTEN.ongeldigeInvoer };
-    const { dek } = await bepaalKluisStandEnDek(lade);
+    const { stand, dek } = await bepaalKluisStandEnDek(lade);
     const bronAgent = schoonGeheugenAgent(invoer.agentHint);
 
     return alsGebruiker(lade.userId, async (q) => {
+      const bestaandRes = await q(
+        `SELECT ${KNOOP_KOLOMMEN} FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+        [invoer.id, lade.userId, lade.ruimte],
+      );
+      if (!bestaandRes.rows[0]) return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
+      if (stand === 'gesloten' && Boolean((bestaandRes.rows[0] as Record<string, unknown>).inhoud_versleuteld)) {
+        throw new Error(SLEUTEL_GESLOTEN_CODE);
+      }
+
       if (invoer.verwijder) {
         const res = await q(
           `DELETE FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
@@ -542,11 +561,6 @@ export const pgStroomOpslag: StroomOpslag = {
         return (res.rowCount || 0) > 0 ? { ok: true, verwijderd: true } : { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
       }
 
-      const bestaandRes = await q(
-        `SELECT ${KNOOP_KOLOMMEN} FROM app.geheugen_stroom_knopen WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
-        [invoer.id, lade.userId, lade.ruimte],
-      );
-      if (!bestaandRes.rows[0]) return { ok: false, code: GEHEUGEN_FOUTEN.nietGevonden };
       const oud = decodeerKnoopRij(lade.userId, bestaandRes.rows[0] as Record<string, unknown>, dek);
 
       const nieuweStatus = invoer.status ? schoonGeheugenStatus(invoer.status) : oud.status;
@@ -981,7 +995,7 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
             vervangtId: typeof b.vervangtId === 'string' ? b.vervangtId : undefined,
             vervangtSleutel: typeof b.vervangtSleutel === 'string' ? b.vervangtSleutel : undefined,
           },
-          wie?.agent || wie?.client || '',
+          wie?.agent || (wie?.client && wie.client !== '?' ? wie.client : ''),
         );
         if (!res.ok) return error(res.code, 400);
         const na = await opslag.leesAlles(p.lade);
@@ -1016,7 +1030,7 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
         relatieSoort: typeof b.relatieSoort === 'string' ? schoonRelatieSoort(b.relatieSoort) : undefined,
         toelichting: typeof b.toelichting === 'string' ? b.toelichting : undefined,
         sterkte: typeof b.sterkte === 'number' ? b.sterkte : undefined,
-        agentHint: wie?.agent || wie?.client || '',
+        agentHint: wie?.agent || (wie?.client && wie.client !== '?' ? wie.client : ''),
       });
       if (!res.ok) return error(res.code, res.code === GEHEUGEN_FOUTEN.nietGevonden ? 404 : 400);
       await auditToevoegen({
@@ -1034,15 +1048,31 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
       if ('fout' in p) return p.fout;
       const b = lichaam(ctx.body);
       const wie = huidigeNamens();
-      const res = await opslag.zetStatus(p.lade, {
-        id: String(b.id ?? ''),
-        status: typeof b.status === 'string' ? schoonGeheugenStatus(b.status) : undefined,
-        vastgepind: typeof b.vastgepind === 'boolean' ? b.vastgepind : undefined,
-        verwijder: b.verwijder === true,
-        agentHint: wie?.agent || wie?.client || '',
-      });
-      if (!res.ok) return error(res.code, res.code === GEHEUGEN_FOUTEN.nietGevonden ? 404 : 400);
-      return json({ ...res, ruimte: p.lade.ruimte });
+      try {
+        const res = await opslag.zetStatus(p.lade, {
+          id: String(b.id ?? ''),
+          status: typeof b.status === 'string' ? schoonGeheugenStatus(b.status) : undefined,
+          vastgepind: typeof b.vastgepind === 'boolean' ? b.vastgepind : undefined,
+          verwijder: b.verwijder === true,
+          agentHint: wie?.agent || (wie?.client && wie.client !== '?' ? wie.client : ''),
+        });
+        if (!res.ok) return error(res.code, res.code === GEHEUGEN_FOUTEN.nietGevonden ? 404 : 400);
+        await auditToevoegen({
+          ownerId: p.user.id,
+          action: 'owner.ai.geheugen.status',
+          result: 'success',
+          details: {
+            ruimte: p.lade.ruimte,
+            verwijderd: Boolean(res.verwijderd),
+            status: res.knoop?.status,
+            vastgepind: res.knoop?.vastgepind,
+          },
+        }).catch(() => undefined);
+        return json({ ...res, ruimte: p.lade.ruimte });
+      } catch (err) {
+        if ((err as Error).message === SLEUTEL_GESLOTEN_CODE) return error(SLEUTEL_GESLOTEN_CODE, 423);
+        throw err;
+      }
     }) as RouterMiddleware],
 
     'POST /api/owner/ai/geheugen/pakket': [(async (raw) => {
@@ -1066,7 +1096,7 @@ export function geheugenStroomRoutes(deps: GeheugenStroomDeps): Record<string, R
           p.lade,
           pakket.items.map((i) => i.knoop.id),
           vraag,
-          wie?.agent || wie?.client || '',
+          wie?.agent || (wie?.client && wie.client !== '?' ? wie.client : ''),
           typeof b.doelDienst === 'string' ? b.doelDienst : 'ai',
         );
       }

@@ -10,6 +10,7 @@ import {
   Copy,
   Download,
   GitBranch,
+  History,
   Link2,
   Lock,
   Pin,
@@ -24,8 +25,9 @@ import {
 import { api } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import { foutCode } from '../agenten/fouten';
-import { routeLang } from '../canoniek-navigatie';
+import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import {
+  GEHEUGEN_ACTIE_META,
   GEHEUGEN_DIENST_LABELS,
   GEHEUGEN_DIENSTEN,
   GEHEUGEN_FOUTEN,
@@ -454,6 +456,21 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
           </div>
         ) : null}
 
+        {data?.sleutelStand === 'gesloten' ? (
+          <div className='gs-kluis-banner' role='status'>
+            <span>
+              {tr(
+                'Ваш ключ Сховища закрито в цій сесії — зашифровані вузли приховані, а збереження нових вузлів тимчасово заблоковане.',
+                'Uw sleutelkluis is in deze sessie vergrendeld — versleutelde knopen zijn verborgen en nieuw opslaan staat tijdelijk uit.',
+              )}
+            </span>
+            <a className='gs-knop-tweede' href={canonicalNavigationUrl('identity', 'methods', lang)}>
+              <Lock size={14} aria-hidden='true' />
+              {tr('Відкрити Сховище ключів', 'Sleutelkluis ontgrendelen')}
+            </a>
+          </div>
+        ) : null}
+
         {data?.tegenspraken.length ? (
           <div className='gs-conflict-doos' role='region' aria-label={tr('Виявлені суперечності пам’яті', 'Gevonden tegenspraken in het geheugen')}>
             <h3>
@@ -876,6 +893,36 @@ export default function GeheugenStroomPaneel({ tr, werkruimtes = [], actieveWerk
                 })}
               </ul>
             )}
+
+            {data?.gebeurtenissen.length ? (
+              <details className='gs-events-details' data-geheugen-events='1'>
+                <summary>
+                  <History size={15} aria-hidden='true' />
+                  {tr(
+                    `Хронологія подій Стріму пам’яті (${data.gebeurtenissen.length})`,
+                    `Tijdlijn van geheugengebeurtenissen (${data.gebeurtenissen.length})`,
+                  )}
+                </summary>
+                <ul className='gs-events-lijst'>
+                  {data.gebeurtenissen.slice(0, 15).map((g) => {
+                    const actieMeta = GEHEUGEN_ACTIE_META[g.actie];
+                    const gekoppeldeKnoop = g.knoopId ? knopenMap.get(g.knoopId) : undefined;
+                    return (
+                      <li key={g.id} className='gs-events-rij'>
+                        <span>
+                          <strong>{actieMeta ? tr(actieMeta.uk, actieMeta.nl) : g.actie}</strong>
+                          {gekoppeldeKnoop ? ` · ${gekoppeldeKnoop.titel}` : ''}
+                          {g.bronAgent ? ` (${g.bronAgent})` : ''}
+                        </span>
+                        <span className='gs-subtekst'>
+                          {new Date(g.aangemaaktOp).toLocaleString(lang === 'nl' ? 'nl-NL' : 'uk-UA')}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            ) : null}
           </>
         ) : null}
 

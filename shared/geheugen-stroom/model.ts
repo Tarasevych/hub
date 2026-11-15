@@ -231,6 +231,19 @@ export const GEHEUGEN_DIENST_LABELS: Record<string, { uk: string; nl: string }> 
   mcp: { uk: 'Міст і агенти', nl: 'MCP en agenten' },
 };
 
+export const GEHEUGEN_ACTIE_META: Record<GeheugenActie, { uk: string; nl: string }> = {
+  aangemaakt: { uk: 'Створено вузол', nl: 'Knoop aangemaakt' },
+  bijgewerkt: { uk: 'Оновлено вузол', nl: 'Knoop bijgewerkt' },
+  vastgepind: { uk: 'Закріплено вузол', nl: 'Knoop vastgezet' },
+  ontpind: { uk: 'Відкріплено вузол', nl: 'Knoop losgemaakt' },
+  vervangen: { uk: 'Замінено новішим записом', nl: 'Vervangen door nieuwere knoop' },
+  tegenspraak_gemarkeerd: { uk: 'Позначено суперечність', nl: 'Tegenspraak gemarkeerd' },
+  gearchiveerd: { uk: 'Перенесено до архіву', nl: 'Gearchiveerd' },
+  hersteld: { uk: 'Відновлено з архіву', nl: 'Hersteld uit archief' },
+  geraadpleegd: { uk: 'Звернення до вузла', nl: 'Knoop geraadpleegd' },
+  pakket_opgebouwd: { uk: 'Зібрано пакет для ШІ', nl: 'Geheugenpakket samengesteld' },
+};
+
 const SLEUTEL_RE = /^[a-z0-9][a-z0-9._:-]{1,95}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

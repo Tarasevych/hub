@@ -100,3 +100,8 @@ DROP POLICY IF EXISTS geheugen_stroom_gebeurtenissen_eigen ON app.geheugen_stroo
 CREATE POLICY geheugen_stroom_gebeurtenissen_eigen ON app.geheugen_stroom_gebeurtenissen
   USING (current_user::text <> 'mijnruimte_app' OR user_id = app.huidige_gebruiker())
   WITH CHECK (current_user::text <> 'mijnruimte_app' OR user_id = app.huidige_gebruiker());
+
+-- Додаткова ізоляція простору в черзі відкладених схвалень MCP, щоб затвердження пам’яті
+-- або дій із технічного простору ніколи не виконувалося в приватному просторі.
+ALTER TABLE IF EXISTS app.connector_tool_calls
+  ADD COLUMN IF NOT EXISTS ruimte text NOT NULL DEFAULT 'prive' CHECK (ruimte IN ('prive', 'technisch'));

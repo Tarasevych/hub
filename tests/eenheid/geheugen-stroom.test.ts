@@ -4,12 +4,15 @@
 //   3. Побудова компактного пакета пам’яті в межах бюджету символів та експорт у Markdown;
 //   4. Серверні маршрути, ізоляція просторів ('prive' vs 'technisch'), RBAC, перевірка секретів і чатова інтеграція;
 //   5. Реєстрація MCP-інструментів, політик і таблиці в реєстрі Сховища ключів.
+import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import {
   berekenTijdVerval,
   bevatGevoeligGeheim,
   bouwGeheugenPakket,
   bouwGeheugenSysteemPrompt,
+  GEHEUGEN_ACTIE_META,
+  GEHEUGEN_ACTIES,
   GEHEUGEN_FOUTEN,
   haalGeheugenKandidatenUitTekst,
   maakMarkdownExport,
@@ -160,6 +163,21 @@ export async function main(): Promise<number> {
     const gerangschikt = rangschikGeheugen(knopen, relaties, { vraag: 'пошта та сортування', nu });
     check('2b: крос-мовний пошук uk/nl піднімає релевантні закріплені й свіжі вузли над застарілими',
       gerangschikt.length === 3 && gerangschikt[0]!.knoop.id === knopen[1]!.id);
+
+    // Пошук слів з апострофом («пам’ять» -> «geheugen», «комп’ютер» -> «computer»)
+    const synKnoop: GeheugenKnoop = {
+      ...knopen[0]!,
+      id: '44444444-4444-4444-8444-444444444444',
+      sleutel: 'geheugen-computer-regels',
+      titel: 'Geheugen op eigen computer',
+      inhoud: 'Bewaar geheugen lokaal op de eigen computer.',
+      labels: ['geheugen', 'computer'],
+      bijgewerktOp: nu,
+      geldigVanaf: nu,
+    };
+    const synGevonden = rangschikGeheugen([synKnoop], [], { vraag: 'пам’ять і комп’ютер', nu });
+    check('2e: крос-мовний міст зі словами з апострофом (пам’ять/комп’ютер <-> geheugen/computer) спрацьовує точно',
+      synGevonden.length === 1 && synGevonden[0]!.score > 0);
 
     // Виявлення прихованої суперечності між knopen[0] і knopen[2] (спільна тема mail/sorteren, але протилежна полярність "Niet meer...")
     const tegenspraken = spoorTegenspraken(knopen, []);
@@ -338,6 +356,19 @@ export async function main(): Promise<number> {
       && TOEGESTANE_ROUTES.has('POST /api/owner/ai/geheugen/opslaan')
       && TOEGESTANE_ROUTES.has('POST /api/owner/ai/geheugen/relatie')
       && SLEUTELKLUIS_REGISTER.some((r) => r.tabel === 'app.geheugen_stroom_knopen' && r.stand === 'dek'));
+
+    check('4c: кожна подія пам’яті (GEHEUGEN_ACTIES) має переклади uk + nl в GEHEUGEN_ACTIE_META',
+      GEHEUGEN_ACTIES.every((a) => Boolean(GEHEUGEN_ACTIE_META[a]?.uk && GEHEUGEN_ACTIE_META[a]?.nl)));
+
+    const migratieSql = readFileSync('migrations/0279_geheugen_stroom.sql', 'utf8');
+    const opslagBron = readFileSync('backend/connectors-opslag.ts', 'utf8');
+    const toolsBron = readFileSync('backend/connectors-hulpmiddelen.ts', 'utf8');
+    check('4d: міграція 0279 має FORCE RLS на трьох таблицях та зберігає ruimte в черзі затверджень MCP',
+      migratieSql.includes('ENABLE ROW LEVEL SECURITY')
+      && migratieSql.includes('FORCE ROW LEVEL SECURITY')
+      && migratieSql.includes('app.connector_tool_calls')
+      && opslagBron.includes('ruimte: AiRuimte = huidigeRuimte()')
+      && toolsBron.includes('metNamens(namensHerstel, () => runSite(userId, site, claimed.args))'));
   }
 
   return einde();

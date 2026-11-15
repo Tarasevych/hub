@@ -1208,7 +1208,7 @@ SITE_TOOLS.push(
           titel: { type: 'string', description: p('Короткий точний заголовок вузла (1–200 символів).', 'Korte duidelijke titel van de knoop (1–200 tekens).') },
           inhoud: { type: 'string', description: p('Повний зміст знання або правила для запам’ятовування без жодних секретів (1–8000 символів).', 'Volledige inhoud van de kennis of regel zonder geheimen (1–8000 tekens).') },
           bron_dienst: { type: 'string', description: p('Служба-джерело ("ai", "hub", "mail", "cloud", "github", "huis", "mcp").', 'Brondienst ("ai", "hub", "mail", "cloud", "github", "huis", "mcp").') },
-          labels: { type: 'array', items: { type: 'string' }, maxItems: 24, description: p('Тематичні мітки для точного групування та пошуку.', 'Thematische labels voor gerichte groepering en zoeking.') },
+          labels: { type: 'array', items: { type: 'string' }, maxItems: 24, description: p('Тематичні мітки для точного групування та пошуку.', 'Thematische labels voor gerichte groepering en het zoeken.') },
           vastgepind: { type: 'boolean', description: p('Закріпити як постійне ключове правило, що не згасає з часом.', 'Vastzetten als blijvende kernregel die niet vervaagt in de tijd.') },
           vervangt_sleutel: { type: 'string', description: p('Необов’язковий ключ старого вузла, який цей новий вузол замінює.', 'Optionele sleutel van een oudere knoop die door deze nieuwe wordt vervangen.') },
           werkruimte_id: { type: 'string', description: p('Необов’язковий ідентифікатор ізольованої робочої області агента.', 'Optioneel kenmerk van een geïsoleerde agent-werkruimte.') },
