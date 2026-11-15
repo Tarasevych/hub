@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
   check('згорнуте меню (96 px) на 1440: колонка по центру, поля 130/130', rCompact.menu === 130 && rCompact.ander === 130, JSON.stringify(rCompact));
 
   // Частина 3. Блок «Підключити».
-  check('слово «Підключити» — один раз як заголовок блоку, а не на кожній плитці', tsx.includes(`<h2 id='ag-ingangen-titel'>{tr('Підключити', 'Koppelen')}</h2>`) && !tsx.includes(`<b>{tr(\`Підключити \${a.naam}\``));
+  check('слово «Підключити» — один раз як заголовок блоку (role=heading, не <h2>: на ai/agents у каталозі пошуку лише вказівник, zoek-ui-tabblad 6j), а не на кожній плитці', tsx.includes(`<strong id='ag-ingangen-titel' className='ag-ingangen-titel' role='heading' aria-level={2}>{tr('Підключити', 'Koppelen')}</strong>`) && !tsx.includes(`<b>{tr(\`Підключити \${a.naam}\``));
   check('повна назва «Підключити Claude» лишається для читачів екрана (aria-label) і підказка прив\'язана через aria-describedby',
     tsx.includes("aria-label={tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)} aria-describedby={`ag-ingang-tip-${a.slug}`}") && tsx.includes("role='tooltip' id={`ag-ingang-tip-${a.slug}`}"));
   check('підказка пояснює наслідок (куди веде й що там станеться), а не лише назву', tsx.includes('там ви дасте йому доступ лише до свого простору') && tsx.includes('daar geeft u alleen toegang tot uw eigen ruimte'));

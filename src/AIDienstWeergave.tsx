@@ -127,7 +127,9 @@ function AiOnderdeel({ tab, tr }: { tab: 'agents' | 'runs' | 'workflows'; tr: Tr
         // NL: «Koppelen» één keer als kop; tegels zijn pictogrammen met een uitleg bij aanwijzen/focus en een kort label op aanraakschermen.
         <section className='ag ag-ai-ingangen' data-ai-agent-ingangen='1' aria-labelledby='ag-ingangen-titel'>
           <div className='ag-ingangen-kop'>
-            <h2 id='ag-ingangen-titel'>{tr('Підключити', 'Koppelen')}</h2>
+            {/* Kop via role=heading, geen <h2>: de zoekcatalogus maakt van elke <h2> een sectie, en ai/agents is alleen een verwijzing
+                naar de hub mcp/agents (zoek-ui-tabblad 6j) — de koppelingen zelf zijn daar vindbaar. */}
+            <strong id='ag-ingangen-titel' className='ag-ingangen-titel' role='heading' aria-level={2}>{tr('Підключити', 'Koppelen')}</strong>
             <p>{tr('Оберіть ШІ — відкриється його сторінка підключення', 'Kies een AI — de koppelpagina ervan opent')}</p>
           </div>
           <ul className='ag-agent-ingangen ag-ingangen-pictogram'>
