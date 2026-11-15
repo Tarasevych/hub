@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "doel": "Короткі відомості для добору навичок. Сам покажчик не надає прав доступу.",
+  "vaardigheden": [
+    {
+      "naam": "project-verkennen",
+      "pad": ".agents/skills/project-verkennen/SKILL.md",
+      "samenvatting": {
+        "uk": "Огляд будови проєкту, служб, правил і залежностей без змін.",
+        "nl": "Projectopbouw, diensten, regels en afhankelijkheden verkennen zonder wijzigingen."
+      },
+      "termen": {
+        "uk": [
+          "оглянь проєкт",
+          "будова проєкту",
+          "структура",
+          "ознайомлення",
+          "розташовано",
+          "де знайти",
+          "залежності",
+          "служби",
+          "проєкт",
+          "архітектура"
+        ],
+        "nl": [
+          "project verkennen",
+          "projectopbouw",
+          "structuur",
+          "waar staat",
+          "afhankelijkheden",
+          "diensten",
+          "architectuur",
+          "verkennen"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "site-ontwikkelen",
+      "pad": ".agents/skills/site-ontwikkelen/SKILL.md",
+      "samenvatting": {
+        "uk": "Створення й удосконалення сторінок та служб з перевірками і координацією.",
+        "nl": "Webpagina's en diensten ontwikkelen met controles en coördinatie."
+      },
+      "termen": {
+        "uk": [
+          "розроби",
+          "створи сторінку",
+          "додай розділ",
+          "удоскональ",
+          "виправ вигляд",
+          "макет",
+          "кнопки",
+          "сайт",
+          "сторінку",
+          "створення сайту",
+          "мобільний вигляд"
+        ],
+        "nl": [
+          "ontwikkel",
+          "maak een pagina",
+          "verbeter",
+          "website",
+          "pagina",
+          "knoppen",
+          "opmaak",
+          "mobiele weergave",
+          "bouw",
+          "aanpassen"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "orch_taak_start"
+      ]
+    },
+    {
+      "naam": "wijziging-controleren",
+      "pad": ".agents/skills/wijziging-controleren/SKILL.md",
+      "samenvatting": {
+        "uk": "Перевірка змін, випробувань, безпеки, мобільного вигляду й міграцій.",
+        "nl": "Wijzigingen, tests, beveiliging, mobiel ontwerp en migraties controleren."
+      },
+      "termen": {
+        "uk": [
+          "перевір",
+          "перевірка",
+          "випробування",
+          "безпека",
+          "міграція",
+          "помилка",
+          "збої",
+          "готовність",
+          "перевірити зміни",
+          "знайди вади"
+        ],
+        "nl": [
+          "controleer",
+          "testen",
+          "beveiliging",
+          "migratie",
+          "fouten",
+          "klaar voor uitgave",
+          "toetsen",
+          "kwaliteit",
+          "nazicht"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "uitgave-voorbereiden",
+      "pad": ".agents/skills/uitgave-voorbereiden/SKILL.md",
+      "samenvatting": {
+        "uk": "Підготовка випуску, перевірка походження, передавання на погодження власникові.",
+        "nl": "Uitgave voorbereiden, herkomst controleren en ter goedkeuring aan de eigenaar aanbieden."
+      },
+      "termen": {
+        "uk": [
+          "випуск",
+          "випуски",
+          "оновлення",
+          "розгортання",
+          "архів",
+          "встановлення",
+          "встанови",
+          "підготуй випуск",
+          "опублікуй випуск",
+          "отримай архів",
+          "телеграм"
+        ],
+        "nl": [
+          "uitgave",
+          "uitrol",
+          "versie",
+          "release",
+          "pakket",
+          "archief",
+          "installeren",
+          "bijwerken",
+          "publiceren",
+          "telegram",
+          "updates"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "uitrol_voorstel_begin"
+      ]
+    }
+  ]
+}
