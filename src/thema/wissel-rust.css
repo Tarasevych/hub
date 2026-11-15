@@ -21,4 +21,12 @@
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
+  /* Лише рух (зсув, прозорість) лишається плавним; колір, тло, тінь і рамка змінюються одразу — без сотень переходів на кожну
+     зміну теми й без окремого класу thema-wissel (у wissel-rust.ts він на сенсорних екранах у «Макеті» не ставиться).
+     Alleen beweging blijft vloeiend; kleur, achtergrond, schaduw en rand wisselen meteen. */
+  :root.palet-maquette:not(#_) *,
+  :root.palet-maquette:not(#_) *::before,
+  :root.palet-maquette:not(#_) *::after {
+    transition-property: transform, opacity, translate, scale, rotate, grid-template-rows, height, max-height, width !important;
+  }
 }

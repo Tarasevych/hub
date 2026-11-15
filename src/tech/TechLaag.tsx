@@ -235,10 +235,21 @@ export default function TechLaag() {
     void document.fonts?.ready.then(meet);
     const laat = window.setTimeout(meet, 800);
     // Zijbalk open/dicht (of thema/taal) verandert klassen op <html>/<body>: opnieuw meten, ook als de band zelf even breed blijft.
-    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => window.requestAnimationFrame(meet)) : null;
+    // ZAVYSANNIA-001: один кадр на пачку змін і лише коли ширина смуги чи мова справді інші. Раніше кожна зміна класу <html>
+    // (тема: кілька змін за одне натискання) запускала окремий meet(), а кожен його запис data-pas/data-overvol із наступним
+    // читанням розмірів перераховував стилі ВСЬОГО документа (селектори :has на <html>) — 200–700 мс кожен на телефоні.
+    let moKader = 0;
+    let vorigeMaat = '';
+    const zonderThema = (k: DOMTokenList | undefined) => (k ? Array.from(k).filter((c) => !/^(theme-|palet-|thema-wissel)/.test(c)).sort().join(' ') : '');
+    const maat = () => `${Math.round(el.getBoundingClientRect().width)}|${document.documentElement.lang}|${zonderThema(document.documentElement.classList)}|${zonderThema(document.body?.classList)}`;
+    vorigeMaat = maat();
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
+      if (moKader) return;
+      moKader = window.requestAnimationFrame(() => { moKader = 0; const m = maat(); if (m === vorigeMaat) return; vorigeMaat = m; meet(); });
+    }) : null;
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang', 'data-theme'] });
     if (document.body) mo?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => { ro?.disconnect(); mo?.disconnect(); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
+    return () => { ro?.disconnect(); mo?.disconnect(); if (moKader) window.cancelAnimationFrame(moKader); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
   }, [bandStatus, actief, knoppenSleutel]);
   useEffect(() => {
     if (!meer) return;

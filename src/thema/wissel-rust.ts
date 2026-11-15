@@ -11,6 +11,9 @@ let kader = 0;
 /** Позначає <html> як «тема змінюється» на два кадри. Безпечно викликати багато разів поспіль (один таймер на всіх). */
 export function themaWisselRust(): void {
   if (typeof document === 'undefined' || typeof requestAnimationFrame !== 'function') return;
+  // Сенсорний екран: переходи кольору в «Макеті» вимкнено назавжди (wissel-rust.css), а зайві зміна й зняття класу <html>
+  // коштували б ще одного перерахунку стилів усього документа. Aanraakscherm: geen extra klasse, dus geen extra stijlherberekening.
+  if (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches && document.documentElement.classList.contains('palet-maquette')) return;
   const root = document.documentElement;
   if (!root.classList.contains('thema-wissel')) root.classList.add('thema-wissel');
   if (kader) cancelAnimationFrame(kader);

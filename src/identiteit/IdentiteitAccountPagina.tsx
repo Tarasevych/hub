@@ -40,6 +40,24 @@ class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode
   render() { return this.state.fout ? this.props.terugval : this.props.children; }
 }
 
+/** ZAVYSANNIA-001: вміст розділу класичної сторінки монтується, коли розділ підходить до екрана (або його обрано), і далі лишається.
+ *  Раніше вихід із «Макета» в іншу тему в один кадр монтував усі 12 розділів з їхніми запитами — телефон завмирав на секунди.
+ *  Zonder IntersectionObserver (server, tests): meteen alles, zoals vroeger. */
+function LuiInhoud({ open, children }: { open: boolean; children: ReactNode }) {
+  const [gemount, setGemount] = useState(() => open || typeof IntersectionObserver !== 'function');
+  const plek = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (open) setGemount(true); }, [open]);
+  useEffect(() => {
+    const el = plek.current;
+    if (gemount || !el || typeof IntersectionObserver !== 'function') return;
+    const w = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { setGemount(true); w.disconnect(); } }, { rootMargin: '600px 0px' });
+    w.observe(el);
+    return () => w.disconnect();
+  }, [gemount]);
+  if (gemount) return <>{children}</>;
+  return <div ref={plek} className='ia-lui' aria-busy='true' style={{ minHeight: 160 }} />;
+}
+
 export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker, onTaal }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
   const tocRef = useRef<HTMLElement>(null);
@@ -153,7 +171,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
             aria-labelledby={`${sectieId(sectie.id)}-kop`}
           >
             <h2 id={`${sectieId(sectie.id)}-kop`}>{sectie.titel}</h2>
-            <div className='ia-inhoud'>{sectie.inhoud}</div>
+            <div className='ia-inhoud'><LuiInhoud open={inBeeld === sectie.id || actief === sectie.id}>{sectie.inhoud}</LuiInhoud></div>
           </section>
         ))}
       </div>
