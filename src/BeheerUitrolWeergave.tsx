@@ -179,7 +179,8 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     };
   }, [broadcastUitrolStand, laden, recenteLaden, recent, tab]);
 
-  if (!data) return <section className='admin-section ut-root' data-admin-uitrol><header><PackageCheck /><div><h2>{tr(lang, 'Оновлення сервера', 'Serverupdates')}</h2><p role='status'>{notice?.text || tr(lang, 'Завантаження…', 'Laden…')}</p></div></header></section>;
+  // Поки дані не прийшли — той самий компактний індикатор, що й у консолі (src/beheer-laden.css); помилка — без обертання. · Zelfde compacte laadindicator; bij een fout zonder draaien.
+  if (!data) return <div className='admin-laden' role='status' aria-busy={!notice || undefined} data-admin-uitrol data-fout={notice && !notice.ok ? '' : undefined}>{notice && !notice.ok ? <PackageCheck aria-hidden='true' /> : <RefreshCw className='spin' aria-hidden='true' />}<p>{notice?.text || tr(lang, 'Завантажуємо оновлення сервера…', 'Serverupdates worden geladen…')}</p></div>;
 
   const wachtend = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring').length;
   const goedgekeurd = data.voorstellen.filter((v) => v.status === 'goedgekeurd').map((v) => ({ id: v.id, versie: v.versie, beslistOp: v.beslistOp }));

@@ -192,19 +192,46 @@ export function mensWeergaveNaam(naam: string | null | undefined, account?: Deel
   return schoon || accVol || '';
 }
 
-/** Знаходить фото профілю учасника-людини з облікового запису власника або списку облікових записів. */
+const EMAIL_RE = /[^\s()<>,;]+@[^\s()<>,;]+\.[^\s()<>,;]+/g;
+const kleine = (s?: string | null) => (s || '').trim().toLowerCase();
+/** Ел. адреси, згадані в імені учасника («Павло Тарасевич (pavlo@…)»). · E-mailadressen in de naam van een deelnemer. */
+export const emailsInNaam = (naam: string | null | undefined): string[] => [...(naam || '').matchAll(EMAIL_RE)].map((m) => kleine(m[0]));
+/** Ім'я без ел. адреси в дужках, для порівняння імен. · Naam zonder het e-mailadres tussen haakjes. */
+const kaleNaam = (naam: string | null | undefined) => kleine((naam || '').replace(/\([^)]*@[^)]*\)/g, '').replace(EMAIL_RE, '')).replace(/\s+/g, ' ');
+
+/**
+ * Чи учасник-людина — це той, хто зараз дивиться сторінку (`account` = data.ik): за ел. адресою, за точним ім'ям або загальним псевдонімом.
+ * Is deze menselijke deelnemer de kijker zelf: op e-mailadres, exacte naam of een generieke alias («Власник»).
+ */
+export function isEigenAccount(naam: string | null | undefined, account?: DeelnemerAccount | null): boolean {
+  if (!account) return false;
+  const mails = emailsInNaam(naam); const eigen = kleine(account.email);
+  if (mails.length) return !!eigen && mails.includes(eigen);
+  const kaal = kaleNaam(naam);
+  return !kaal || GENERIEKE_AUTEUR.test(kaal) || (!!kleine(account.naam) && kaal === kaleNaam(account.naam));
+}
+
+/**
+ * Фото профілю учасника-людини. Порядок (15.11.2026, скарга власника «чуже фото в авторі»):
+ *  1) обліковий запис із ТІЄЮ САМОЮ ел. адресою, що в імені автора; 2) сам глядач (data.ik), якщо це він;
+ *  3) за ім'ям — лише якщо рівно ОДИН обліковий запис має точно таке ім'я. Інакше — без фото (ініціали).
+ * Раніше бралося перше входження підрядка: обліковий запис «Павло Тарасевич» (інша адреса, старе фото Google) збігався
+ * з «Павло Тарасевич (pavlo@…)» раніше за справжній, бо список відсортовано за адресою.
+ * Foto van een menselijke deelnemer: eerst exact e-mailadres, dan de kijker zelf, dan een unieke exacte naam; nooit een deeltekst.
+ */
 export function mensFotoUitAccount(naam: string | null | undefined, account?: DeelnemerAccount | null, accounts?: readonly DeelnemerAccount[]): string {
-  const zoek = (naam || '').trim().toLowerCase();
-  if (accounts?.length && zoek) {
-    const gevonden = accounts.find((a) => {
-      const n = (a.naam || '').trim().toLowerCase();
-      const l = (a.label || a.email || '').trim().toLowerCase();
-      return (n && zoek.includes(n)) || (l && zoek.includes(l));
-    });
-    const uitLijst = fotoVeilig(gevonden?.foto);
-    if (uitLijst) return uitLijst;
+  const lijst = accounts || [];
+  const mails = emailsInNaam(naam);
+  if (mails.length) {
+    if (account && mails.includes(kleine(account.email))) return fotoVeilig(account.foto);
+    const opMail = lijst.find((a) => mails.includes(kleine(a.email || (a.label?.includes('@') ? a.label : ''))));
+    return opMail ? fotoVeilig(opMail.foto) : '';
   }
-  return fotoVeilig(account?.foto);
+  if (isEigenAccount(naam, account)) return fotoVeilig(account?.foto);
+  const kaal = kaleNaam(naam);
+  if (!kaal) return '';
+  const opNaam = lijst.filter((a) => kaleNaam(a.naam) === kaal);
+  return opNaam.length === 1 ? fotoVeilig(opNaam[0].foto) : '';
 }
 
 
