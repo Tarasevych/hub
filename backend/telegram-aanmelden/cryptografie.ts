@@ -55,7 +55,9 @@ export function initDataControle(initData: string, botToken: string, nuSec = Mat
   const hash = p.get('hash') || '';
   if (!botToken || !/^[0-9a-f]{64}$/.test(hash)) return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '', gebruiker: null };
   const paren: string[] = [];
-  p.forEach((v, k) => { if (k !== 'hash' && k !== 'signature') paren.push(`${k}=${v}`); });
+  // Alleen «hash» valt buiten de controlereeks. «signature» (Bot API 8.0+) hoort er WEL in: zonder dat veld klopt de HMAC van een echte Telegram nooit.
+  // Українською: поле «signature» входить до рядка перевірки; раніше його відкидали, і справжнє вікно Telegram завжди отримувало «застарів».
+  p.forEach((v, k) => { if (k !== 'hash') paren.push(`${k}=${v}`); });
   paren.sort();
   const geheim = createHmac('sha256', 'WebAppData').update(botToken).digest();
   const verwacht = createHmac('sha256', geheim).update(paren.join('\n')).digest('hex');

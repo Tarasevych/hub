@@ -9,8 +9,7 @@
 /* Op telefoons deden drie geneste kaders met 28 + 8 + 12 px binnenruimte de
    ontwerpkaart onnodig krimpen. Alleen de lege orbit krijgt een eigen pagina-opmaak. */
 @media (max-width: 620px) {
-  .mail-functional .mail-provider-view:has([data-mail-accounts-empty='true']),
-  .mail-functional .mail-provider-view:has([data-mail-accounts-orbit='ja']) {
+  .mail-functional .mail-provider-view:has([data-mail-accounts-empty='true']) {
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -41,3 +40,47 @@
 .mail-gmail-beheer>summary{cursor:pointer;padding:12px 0;font-weight:600;list-style:none}
 .mail-gmail-beheer[open]>summary{border-bottom:1px solid var(--border,rgba(127,127,127,.25));margin-bottom:12px}
 .mail-gmail-beheer .google-mail-accounts{margin:0 0 14px}
+
+/* MAILHOEK-001 (15.11.2026): met gekoppelde accounts werd de afgeronde kaart van de pagina (.mail-provider-view, zichtbaar tijdens
+   het laden) na het laden platgemaakt (radius 0, geen rand) en de orbit erin kreeg op de telefoon rechte hoeken — twee regelsets
+   wisselden elkaar af. Nu blijft ÉÉN kaart staan, vóór en na het laden: de paginakaart houdt rand en afronding en knipt haar inhoud
+   (ook het canvas van het levende tło) op de afgeronde hoeken; de orbit erin is vlak, zonder tweede kader.
+   Één kaart · Одна картка до й після завантаження, без підміни кутів. */
+@media (max-width: 620px) {
+  .mail-functional .mail-provider-view:has(.mail-accounts-met-orbit),
+  .mail-functional .mail-provider-view:has([data-mail-accounts-laden='ja']) {
+    padding: 0;
+    border-radius: var(--straal-l, 16px);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .mail-provider-view .mail-accounts-hub.mail-accounts-met-orbit,
+  .mail-provider-view .mail-accounts-hub.mail-accounts-laden {
+    padding: 0 0 12px;
+    margin: 0;
+  }
+  .mail-provider-view .mail-accounts-met-orbit .mail-orbit-intro {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .mail-provider-view .mail-accounts-met-orbit > :is(.mail-accounts-hoofd, .mail-accounts-kant) {
+    padding-inline: 12px;
+  }
+  .mail-provider-view:has(.mail-accounts-met-orbit) .mail-gmail-beheer {
+    margin: 4px 12px 12px;
+  }
+  /* Tijdens het laden al dezelfde opbouw: geen kop die na het laden verdwijnt. */
+  .mail-provider-view:has([data-mail-accounts-laden='ja']) > :is(.mail-kicker, .mail-account-intro) {
+    display: none;
+  }
+}
+
+/* MAILHOEK-001: op de pc sprong de paginakaart na het laden van volle breedte naar 1040 px (mail-initial-loading geldt voor de
+   inbox). Op «Поштові акаунти» houdt de laadfase dezelfde breedte als daarna. · Та сама ширина картки до й після завантаження. */
+.mail-functional.mail-initial-loading:has([data-mail-accounts-laden='ja']) {
+  --mail-max: 1040px;
+  max-width: var(--mail-max);
+  margin: 0 auto;
+  padding: 8px 0 40px;
+}
