@@ -105,7 +105,7 @@
   "src/tech/tech.css :: .tech-vraag-uitleg",
   "src/tech/tech.css :: @media (max-width:768px) .tech-band-extra",
   "src/tech/tech.css :: html[data-tech=aan] #root",
-  "src/toegangslaag.css :: .info-tip-tekst",
+  "src/hulp/hulp-knop.css :: .info-tip-tekst",
   "src/toegangslaag.css :: @media print body.herstel-afdruk .herstel-nieuw",
   "src/ui-golf-11.css :: .google-mail-reader-backdrop[data-reader-venster=\"zwevend\"] .google-mail-reader",
   "src/uitrol/uitrol.css :: .ut-lade-schaduw",

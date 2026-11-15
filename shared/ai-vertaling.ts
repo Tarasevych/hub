@@ -91,6 +91,11 @@ export type AiVertalingInstellingen = {
   summaryDepth: AiVertalingSummaryDepth;
   crossMailboxContext: boolean;
   includeAttachments: boolean;
+  /**
+   * MAILAI-001 (15.11.2026): панель «ШІ-аналіз і переклад» над листом — лише якщо людина сама її ввімкнула (типово вимкнено, також для
+   * наявних записів без цього поля). Het paneel boven de brief verschijnt alleen als de gebruiker het zelf aanzette (standaard uit).
+   */
+  balkTonen: boolean;
 };
 
 export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
@@ -100,6 +105,7 @@ export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
   summaryDepth: 'brief',
   crossMailboxContext: true,
   includeAttachments: true,
+  balkTonen: false,
 };
 
 export function normalizeAiVertalingTaal(raw: unknown, fallback = 'uk'): string {
@@ -138,6 +144,7 @@ export function normalizeAiVertalingInstellingen(
     typeof src.crossMailboxContext === 'boolean' ? src.crossMailboxContext : current.crossMailboxContext;
   const includeAttachments =
     typeof src.includeAttachments === 'boolean' ? src.includeAttachments : current.includeAttachments;
+  const balkTonen = typeof src.balkTonen === 'boolean' ? src.balkTonen : current.balkTonen === true;
   return {
     defaultLang,
     recentLangs: recentSet,
@@ -145,6 +152,7 @@ export function normalizeAiVertalingInstellingen(
     summaryDepth,
     crossMailboxContext,
     includeAttachments,
+    balkTonen,
   };
 }
 
@@ -401,7 +409,20 @@ export type AiVertalingAgentInfo = {
   allowedMailRead: boolean;
   allowedFilesRead: boolean;
   statusUk: string;
+  /**
+   * MAILAI-001: чи може сервер справді виконати запит від імені цього агента — у Sleutelkluis є ключ API його постачальника.
+   * Підключення через MCP-конектор (наприклад, Claude на claude.ai) саме по собі нічого не перекладає: конектор лише дає ШІ доступ
+   * до сайту, а не навпаки. false = показується, але кнопки не працюватимуть. Ontbreekt (oude server) = onbekend, telt als bruikbaar.
+   */
+  heeftSleutel?: boolean;
 };
+
+/** MAILAI-001: агент, яким сайт справді може перекласти/підсумувати пошту (приватний, mail.read, є ключ API). */
+export const agentKanPost = (a: Pick<AiVertalingAgentInfo, 'ruimte' | 'allowedMailRead' | 'heeftSleutel'> | null | undefined): boolean =>
+  !!a && a.ruimte === 'prive' && a.allowedMailRead === true && a.heeftSleutel !== false;
+/** Те саме для документів (files.read). */
+export const agentKanBestand = (a: Pick<AiVertalingAgentInfo, 'ruimte' | 'allowedFilesRead' | 'heeftSleutel'> | null | undefined): boolean =>
+  !!a && a.ruimte === 'prive' && a.allowedFilesRead === true && a.heeftSleutel !== false;
 
 export type AiVertalingToegangCheckInput = {
   userId: string;
@@ -1027,8 +1048,18 @@ export const VERTAAL_MOTOREN: readonly VertaalMotor[] = [
  * (of files.read in een documentweergave). Alle andere motoren blijven staan zoals ze zijn — nooit «werkt» zonder koppeling.
  */
 export function motorenMetStand(agents: readonly AiVertalingAgentInfo[], voorDocument = false): VertaalMotor[] {
-  const bruikbaar = (agents || []).some(a => (voorDocument ? a.allowedFilesRead : a.allowedMailRead));
+  // MAILAI-001: «працює» лише агент, якого сервер справді може виконати (є ключ API), не просто будь-яке підключення.
+  const bruikbaar = (agents || []).some(a => (voorDocument ? agentKanBestand({ ruimte: a.ruimte ?? 'prive', allowedFilesRead: a.allowedFilesRead, heeftSleutel: a.heeftSleutel }) : agentKanPost({ ruimte: a.ruimte ?? 'prive', allowedMailRead: a.allowedMailRead, heeftSleutel: a.heeftSleutel })));
   return VERTAAL_MOTOREN.map(m => (m.id === 'eigen-agent' ? { ...m, staat: (bruikbaar ? 'werkt' : 'aansluiten') as VertaalMotorStaat } : { ...m }));
+}
+
+/**
+ * MAILAI-001: чи показувати панель «ШІ-аналіз і переклад» над листом. Лише коли (1) стан уже завантажено з сервера, (2) людина
+ * ввімкнула опцію і (3) хоча б один рушій справді працює (зараз — приватний ШІ-агент із правом читати пошту/файли). Інакше панелі
+ * немає зовсім, без порожнього місця. Alleen tonen als de staat geladen is, de optie aan staat en minstens één motor echt werkt.
+ */
+export function aiBalkZichtbaar(o: { geladen: boolean; balkTonen: boolean; motoren: readonly Pick<VertaalMotor, 'staat'>[] }): boolean {
+  return o.geladen && o.balkTonen === true && o.motoren.some(m => m.staat === 'werkt');
 }
 
 /** De motor die een resultaat gemaakt heeft (voor de plaat boven de brief). */

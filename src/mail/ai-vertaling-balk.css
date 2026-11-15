@@ -651,6 +651,14 @@
 .ai-vb-inklap:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .ai-vb-inklap svg { transition:rotate .15s ease; }
 .ai-vb-inklap[aria-expanded='true'] svg { rotate:180deg; }
+/* MAILAI-001 (15.11.2026): хрестик «Сховати панель над усіма листами» поруч зі стрілкою; та сама форма, колір лише з токенів. */
+.ai-vb-sluit {
+  display:inline-grid; place-items:center; flex:none; width:var(--tik-hoogte); height:var(--tik-hoogte);
+  padding:0; border:1px solid var(--line); border-radius:var(--straal-m);
+  background:var(--panel); color:var(--muted); cursor:pointer;
+}
+.ai-vb-sluit:hover { background:var(--surface2); color:var(--text); }
+.ai-vb-sluit:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .ai-vertaling-balk[data-ingeklapt='ja'] { gap:0; padding-block:var(--ruimte-1); }
 .ai-vertaling-balk[data-ingeklapt='ja'] .ai-vb-brand { flex:1 1 auto; min-width:0; }
 .ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-selectors, .ai-vb-modes, .ai-vb-motoren, .ai-vb-settings-drawer, .ai-vb-space-badge) { display:none; }

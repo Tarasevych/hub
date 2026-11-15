@@ -50,6 +50,7 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   ai_bevestiging: { type: 'ai', ernst: 'belangrijk' },                    // een AI vraagt uw bevestiging op de site (backend/ai-bevestiging.ts)
   mail_queue_refused: { type: 'post', ernst: 'belangrijk' },               // SEC-002 (g10c): gepland bericht niet verzonden (ruimte mocht niet meer verzenden)
   mail_queue_cancelled: { type: 'post', ernst: 'info' },                   // SEC-002 (g10c): geplande berichten geannuleerd
+  mail_ai_balk: { type: 'post', ernst: 'info' },                           // MAILAI-001: paneel «ШІ-аналіз і переклад» boven brieven aan/uit gezet
   // ------------------------------------------------------------ technisch: beheer van de site
   access_request: { type: 'tech.toegang', ernst: 'belangrijk', vereist: 'users.manage' },
   google_login_config: { type: 'tech.integraties', ernst: 'kritiek', vereist: 'diensten.beheren' },
