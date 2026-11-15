@@ -19,8 +19,11 @@ let fotoUniek = '';
 const BOT = '123456789:AAEtestsleuteltestsleuteltestsleutel0';
 const TG = 779;
 /** initData zoals Telegram die ondertekent (https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app). */
-function initData(userId: number, sleutel = BOT, authDate = Math.floor(Date.now() / 1000)): string {
+// Een echte Telegram (Bot API 8.0+) stuurt ook «signature» mee, en dat veld zit IN de controlereeks van de HMAC.
+// Українською: справжній Telegram додає «signature», і воно входить до рядка перевірки — саме так відтворюється «Запит застарів» з 15.11.2026.
+function initData(userId: number, sleutel = BOT, authDate = Math.floor(Date.now() / 1000), metSignature = true): string {
   const velden: Record<string, string> = { auth_date: String(authDate), query_id: 'AAH' + userId, user: JSON.stringify({ id: userId, first_name: 'Pavlo' }) };
+  if (metSignature) velden.signature = 'c2lnbmF0dXVyLXZhbi10ZWxlZ3JhbS1lZDI1NTE5LXZvb3JiZWVsZA';
   const dcs = Object.keys(velden).sort().map((k) => `${k}=${velden[k]}`).join('\n');
   const geheim = createHmac('sha256', 'WebAppData').update(sleutel).digest();
   const hash = createHmac('sha256', geheim).update(dcs).digest('hex');
@@ -53,6 +56,11 @@ export async function main(): Promise<number> {
   const h = herkenning('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     { 'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131"', 'sec-ch-ua-platform': '"Windows"', 'sec-ch-ua-platform-version': '"15.0.0"', 'CF-IPCountry': 'BE', 'cf-ipcity': 'Brussels' });
   check('herkenning: «Chrome 131 · Windows 11», Brussels, BE (geen IP)', h.toestel === 'Chrome 131 · Windows 11' && h.plaats === 'Brussels' && h.land === 'BE');
+  const { initDataControle } = await import('../../backend/telegram-aanmelden/cryptografie');
+  check('initData van een echte Telegram (met «signature») wordt aanvaard', initDataControle(initData(TG), BOT).ok && initDataControle(initData(TG), BOT).vers);
+  check('initData zonder «signature» (oudere Telegram) wordt ook aanvaard', initDataControle(initData(TG, BOT, undefined, false), BOT).ok);
+  check('gewijzigde «signature» of gebruiker → handtekening ongeldig', !initDataControle(initData(TG).replace('c2lnbmF0', 'dmFsc2U'), BOT).ok && !initDataControle(initData(TG).replace('Pavlo', 'Ander'), BOT).ok);
+  check('initData ouder dan 5 minuten → niet vers', !initDataControle(initData(TG, BOT, Math.floor(Date.now() / 1000) - 400), BOT).vers);
   const { plaatsTekst } = await import('../../shared/telegram-aanmelden/plaatsnamen');
   check('plaats zonder Engelse woorden: «Брюссель, Бельгія» / «Brussel, België»', plaatsTekst('Brussels', 'BE', 'uk') === 'Брюссель, Бельгія' && plaatsTekst('Brussels', 'BE', 'nl') === 'Brussel, België');
   check('onbekende stad → alleen het land (geen Engels woord)', plaatsTekst('Springfield', 'US', 'uk') === 'Сполучені Штати' && plaatsTekst('', 'UA', 'nl') === 'Oekraïne' && plaatsTekst('x', '', 'uk') === '');

@@ -44,7 +44,11 @@ async function toegang(d: Record<string, unknown>): Promise<Toegang | null> {
   const init = typeof d.initData === 'string' ? d.initData.slice(0, 4096) : '';
   if (!init) return { tok, bron: 'browser' };
   const c = initDataControle(init, await botSleutel());
-  if (!c.ok || !c.vers || String((c.gebruiker as { id?: unknown } | null)?.id ?? '') !== tok.tg) return null;
+  if (!c.ok || !c.vers || String((c.gebruiker as { id?: unknown } | null)?.id ?? '') !== tok.tg) {
+    // Reden in het serverlogboek (geen gegevens van de mens): zo is een geweigerd venster later te verklaren. · Причина — у журналі сервера.
+    console.warn(`[telegram-venster] initData geweigerd: ${c.reden || 'ANDERE_TELEGRAM'}`);
+    return null;
+  }
   return { tok, bron: 'telegram' };
 }
 
