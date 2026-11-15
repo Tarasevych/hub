@@ -8,6 +8,7 @@ import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './use
 import { KLASSIEK_WIT, KLASSIEK_ZWART, kleurWaarden, MAQUETTE, PUUR, SECTIES, type Sectie } from './paletten';
 import './thema-instellingen.css';
 import { AccentEnEffecten } from './WeergaveVoorkeuren';
+import AchtergrondInstellingen from '../achtergrond/AchtergrondInstellingen';
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tr: Tr; lang: 'uk' | 'nl'; theme: ThemePreference; onTheme: (t: ThemePreference) => void; violetToegestaan: boolean };
@@ -125,5 +126,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     </section>
     {/* IDENTITEIT-015: акцент поверх палітри й виразність ефектів — справжні налаштування облікового запису (були лише в «Макеті»). */}
     <AccentEnEffecten tr={tr} />
+    {/* ACHTERGROND-001: «Живий фон» сторінок · levende achtergrond */}
+    <AchtergrondInstellingen tr={tr} />
   </div>;
 }

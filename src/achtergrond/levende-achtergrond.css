@@ -1,0 +1,16 @@
+/* ACHTERGROND-001: «Живий фон». Полотно лежить першою дитиною main.canonical-chrome (position:fixed, z-index 0), тож .canonical-workspace
+   (теж fixed, пізніше в DOM) малюється над ним. Полотно маленьке (≈1/8 вікна) — браузер розтягує його зі згладжуванням, тому плями
+   без меж. Анімується лише вміст полотна в окремому потоці; CSS тут статичний (без transition на великих шарах, без filter).
+   Levende achtergrond: klein canvas onder de werkruimte, zacht uitgerekt; geen filters of overgangen op grote lagen. */
+.levende-achtergrond{position:fixed;inset:0;z-index:0;display:block;width:100vw;height:100vh;height:100dvh;pointer-events:none;opacity:var(--la-dekking,.5);image-rendering:auto;contain:strict}
+.levende-achtergrond[hidden]{display:none}
+
+/* Також у вигляді «Макет» центру облікового запису: одне живе тло на всю сторінку, блоки лишаються непрозорими.
+   Робоча область прозора, щоб фон тягнувся від краю до краю. Статичні сяйва теми замінює живий фон; креслярська сітка технічного
+   контуру лишається тонким шаром поверх — так одразу видно, що це технічний профіль. !important — бо правила тем мають #-специфічність. */
+html[data-levende-achtergrond='aan'] .canonical-chrome .canonical-workspace{background-color:transparent!important;background-image:none!important}
+html[data-levende-achtergrond='aan'] .canonical-chrome[data-oppervlak='technisch'] .canonical-workspace{
+  background-image:linear-gradient(90deg,rgba(var(--mq-tech-markering-rgb,120,140,180),.045) 1px,transparent 1px),linear-gradient(180deg,rgba(var(--mq-tech-markering-rgb,120,140,180),.045) 1px,transparent 1px)!important;
+  background-size:28px 28px,28px 28px!important}
+/* Вигляд «Макет» має власне суцільне тло на корені .mr-mq — з живим фоном воно прозоре (картки макета не змінюються). */
+html[data-levende-achtergrond='aan'] .canonical-chrome .mr-mq{background:transparent!important}

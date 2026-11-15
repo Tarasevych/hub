@@ -389,6 +389,10 @@
   {
    "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-minimale-pil",
    "reden": "GEMINI-002: згорнута компактна капсула порталу сповіщень поверх сторінки для швидкого розгортання екосистеми з лічильником активних подій; закріплений компактний стан вікна, не дубльована кнопка навігації."
+  },
+  {
+   "sleutel": "src/achtergrond/levende-achtergrond.css :: .levende-achtergrond",
+   "reden": "ACHTERGROND-001: «Живий фон» — полотно-тло на весь екран під робочою областю (pointer-events:none), як фон оболонки schil-achtergrond; не кнопка й не панель."
   }
  ],
  "kopReserves": [
