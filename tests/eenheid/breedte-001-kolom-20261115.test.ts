@@ -33,8 +33,8 @@ export async function main(): Promise<number> {
     && opp.includes('padding-right: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));')
     && opp.includes('padding-left: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));')
     && opp.includes('padding-left: max(0px, min(calc((100% - var(--mq-kolom)) / 2), calc(100% - var(--mq-kolom) - var(--mq-kolom-rail))));'));
-  check('внутрішні обгортки (.ai-maquette-inhoud 1360, .aie-container 1180+28, .ag-pagina 1200) не звужують колонку вдруге — на будь-якій ширині',
-    /\.ai-maquette-wikkel \.ai-maquette-inhoud,\n[^{]*\.ai-maquette-wikkel \.aie-container,\n[^{]*\.mcp-maquette-wikkel \.ag-pagina \{\n  max-width: none;\n  padding-inline: 0;/.test(opp));
+  check('внутрішні обгортки (.ai-maquette-inhoud 1360, .aie-container 1180+28, .ag-pagina 1200) займають усю колонку (width:100%, без власної межі) — на будь-якій ширині',
+    /\.ai-maquette-wikkel \.ai-maquette-inhoud,\n[^{]*\.ai-maquette-wikkel \.aie-container,\n[^{]*\.mcp-maquette-wikkel \.ag-pagina \{\n  box-sizing: border-box;\n  width: 100%;\n  max-width: none;\n  padding-inline: 0;/.test(opp));
   check('правило колонки сильніше за правила обгорток (:not(#_mq):not(#_kolom) — дві частини id)', (opp.match(/:not\(#_mq\):not\(#_kolom\)/g) || []).length >= 8);
   check('класичні палітри: стрічка, «Підключити» й панель агентів — одна колонка 1180 px по центру',
     /html:not\(\.palet-maquette\):not\(#_ing\) \.canonical-content > :is\(\.ai-richting, \.ag\.ag-ai-ingangen, \.aie-container\) \{[^}]*max-width: 1180px;[^}]*margin-inline: auto;/.test(ing));
@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
   check('згорнуте меню (96 px) на 1440: колонка по центру, поля 130/130', rCompact.menu === 130 && rCompact.ander === 130, JSON.stringify(rCompact));
 
   // Частина 3. Блок «Підключити».
-  check('слово «Підключити» — один раз як заголовок блоку, а не на кожній плитці', tsx.includes(`<h2 id='ag-ingangen-titel'>{tr('Підключити', 'Koppelen')}</h2>`) && !tsx.includes(`<b>{tr(\`Підключити \${a.naam}\``));
+  check('слово «Підключити» — один раз як заголовок блоку (role=heading, не <h2>: на ai/agents у каталозі пошуку лише вказівник, zoek-ui-tabblad 6j), а не на кожній плитці', tsx.includes(`<strong id='ag-ingangen-titel' className='ag-ingangen-titel' role='heading' aria-level={2}>{tr('Підключити', 'Koppelen')}</strong>`) && !tsx.includes(`<b>{tr(\`Підключити \${a.naam}\``));
   check('повна назва «Підключити Claude» лишається для читачів екрана (aria-label) і підказка прив\'язана через aria-describedby',
     tsx.includes("aria-label={tr(`Підключити ${a.naam}`, `${a.naam} koppelen`)} aria-describedby={`ag-ingang-tip-${a.slug}`}") && tsx.includes("role='tooltip' id={`ag-ingang-tip-${a.slug}`}"));
   check('підказка пояснює наслідок (куди веде й що там станеться), а не лише назву', tsx.includes('там ви дасте йому доступ лише до свого простору') && tsx.includes('daar geeft u alleen toegang tot uw eigen ruimte'));

@@ -18,7 +18,8 @@ html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop {
   min-width: 0;
 }
 
-html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop h2 {
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop .ag-ingangen-titel {
+  display: block;
   margin: 0;
   font-family: inherit;
   font-size: 1.02rem;
