@@ -232,6 +232,9 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
    NL: geen extra achterpaneel meer onder de instellingen van een sectie; elke groep heeft al een eigen blok. */
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}
+/* Справжня панель (безпека, способи входу, відновлення) займає всю ширину картки розділу, як блоки груп вище, — без порожньої
+   темної смуги праворуч і ліворуч (побажання власника 15.11.2026). NL: het echte paneel vult de hele sectiekaart, zoals de groepsblokken. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud .access-plane{max-width:none}
 
 /* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
