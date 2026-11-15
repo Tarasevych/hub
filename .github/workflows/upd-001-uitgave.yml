@@ -166,6 +166,7 @@ jobs:
             identiteit-maquette \
             centrering-pc-20261115 \
             uitrol-centrering-20261115 \
+            levende-achtergrond-20261115 \
             identiteit-015-vormgeving-toegang \
             ui-paneel-gebruikers-audit-gemini-001 \
             hulp-vraagtekens \
@@ -304,7 +305,8 @@ jobs:
               "Стани завантаження консолі, оновлень, діагностики й ключів — компактний анімований індикатор без рамки й фону.",
               "Фото автора пакета: спершу за email, потім ваш власний обліковий запис, потім лише однозначне ім’я; чуже фото більше не підставляється.",
               "«Хто має доступ до підготовки»: вимкнення доступу й термін справді зберігаються й показуються (PR #111).",
-              "«Макет» центру облікового запису: без суцільних підкладок під налаштуваннями розділу, колонка на ПК 1240 px по центру."
+              "«Макет» центру облікового запису: без суцільних підкладок під налаштуваннями розділу, колонка на ПК 1240 px по центру.",
+            "«Живий фон»: ніжні розмиті кольорові плями повільно переливаються по всій сторінці, блоки лишаються чистими; налаштовується в темі (PR #112)."
             ],
             "fixes": [
               "Перевірено: типи, повне складання, безбазові й БД-тести на PostgreSQL 16 (міграції двічі); у Chromium 390–2560 px, обидві теми, uk і nl."
@@ -322,7 +324,8 @@ jobs:
               "Laadtoestanden van console, updates, diagnostiek en sleutels: compacte geanimeerde indicator zonder rand of achtergrond.",
               "Auteursfoto: eerst via e-mail, dan uw eigen account, dan alleen een eenduidige naam; geen foto van iemand anders meer.",
               "«Wie mag voorbereiden»: uitschakelen en termijn worden echt bewaard en getoond (PR #111).",
-              "«Ontwerp» van het accountcentrum: geen volle achterpanelen meer onder de sectie-instellingen, kolom op pc 1240 px in het midden."
+              "«Ontwerp» van het accountcentrum: geen volle achterpanelen meer onder de sectie-instellingen, kolom op pc 1240 px in het midden.",
+            "«Levende achtergrond»: zachte vage kleurvlekken vloeien langzaam over de hele pagina, blokken blijven rustig; instelbaar bij het thema (PR #112)."
             ],
             "fixes": [
               "Gecontroleerd: typen, volledige bouw, eenheids- en databasetests op PostgreSQL 16 (migraties tweemaal); in Chromium 390–2560 px, beide thema’s, uk en nl."
@@ -377,8 +380,8 @@ jobs:
             mislukt: gemeten.mislukt,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження TRACE-001, статичні перевірки карти файлів, довідок, пошукового каталогу, сценаріїв і розміщення, самоперевірку ПК-агента, перевірку типів клієнта та сервера, повне виробниче складання, подвійний прогін усіх міграцій на чистій базі PostgreSQL 16 та 103 модульні випробування (82 безбазові включно з maquette-mobiel-prestatie, menu-snelheid і vast-kader + TRACE-001 + БД-тести). Виміряно в цьому запуску: ' + gemetenLijst + '.',
-              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole TRACE-001, statische controles van bestandskaart, hulpteksten, zoekcatalogus, scripts en plaatsing, pc-agent zelftest, typecontrole van client en server, volledige productiebouw, dubbele uitvoering van alle migraties op PostgreSQL 16 en 103 eenheidstests (82 zonder DB inclusief maquette-mobiel-prestatie, menu-snelheid en vast-kader + TRACE-001 + databasetests). Gemeten in deze uitvoering: ' + gemetenLijst + '.'
+              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження TRACE-001, статичні перевірки карти файлів, довідок, пошукового каталогу, сценаріїв і розміщення, самоперевірку ПК-агента, перевірку типів клієнта та сервера, повне виробниче складання, подвійний прогін усіх міграцій на чистій базі PostgreSQL 16 та 104 модульні випробування (83 безбазові включно з maquette-mobiel-prestatie, menu-snelheid і vast-kader + TRACE-001 + БД-тести). Виміряно в цьому запуску: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole TRACE-001, statische controles van bestandskaart, hulpteksten, zoekcatalogus, scripts en plaatsing, pc-agent zelftest, typecontrole van client en server, volledige productiebouw, dubbele uitvoering van alle migraties op PostgreSQL 16 en 104 eenheidstests (83 zonder DB inclusief maquette-mobiel-prestatie, menu-snelheid en vast-kader + TRACE-001 + databasetests). Gemeten in deze uitvoering: ' + gemetenLijst + '.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
@@ -415,8 +418,8 @@ jobs:
             --agent claude --platform 'Claude Code' --tool 'Claude Code (хмарний сеанс)' \
             --model-id "$MODEL_ID" --model-bron omgeving \
             --versie "$VERSIE" --uit uitvoer \
-            --samenvatting-uk "Сторінка оновлень по центру, компактне завантаження, фото автора, блок доступу до підготовки, «Макет» без зайвих підкладок (UPD-001, PR #110 + PR #111); поверх основи 20261115-135345." \
-            --samenvatting-nl "Updatepagina gecentreerd, compacte laadtoestand, auteursfoto, voorbereidingstoegang, «Ontwerp» zonder extra achterpanelen (UPD-001, PR #110 + PR #111); boven op basis 20261115-135345." \
+            --samenvatting-uk "Сторінка оновлень по центру, компактне завантаження, фото автора, блок доступу до підготовки, «Макет» без зайвих підкладок (UPD-001, PR #110 + PR #111 + PR #112); поверх основи 20261115-135345." \
+            --samenvatting-nl "Updatepagina gecentreerd, compacte laadtoestand, auteursfoto, voorbereidingstoegang, «Ontwerp» zonder extra achterpanelen (UPD-001, PR #110 + PR #111 + PR #112); boven op basis 20261115-135345." \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"

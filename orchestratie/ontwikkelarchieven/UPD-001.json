@@ -2,7 +2,7 @@
  "schema": 1,
  "taakId": "UPD-001",
  "titel": "Сторінка оновлень по центру, компактне завантаження, фото автора, блок доступу до підготовки й «Макет» без зайвих підкладок",
- "opdracht": "На прохання власника від 15.11.2026: admin.tarasevych.com/updates — прибрати гострі кути, поставити блоки вужчою колонкою по центру; з’ясувати й виправити розбіжність фото автора пакета; замінити велику панель «Завантажуємо адміністративний контекст…» компактним індикатором; у «Макеті» центру облікового запису прибрати зайвий широкий темний задній блок; разом із виправленням блоку «Хто має доступ до підготовки» з сусіднього треду.",
+ "opdracht": "На прохання власника від 15.11.2026: admin.tarasevych.com/updates — прибрати гострі кути, поставити блоки вужчою колонкою по центру; з’ясувати й виправити розбіжність фото автора пакета; замінити велику панель «Завантажуємо адміністративний контекст…» компактним індикатором; у «Макеті» центру облікового запису прибрати зайвий широкий темний задній блок; разом із виправленням блоку «Хто має доступ до підготовки» з сусіднього треду. Також живий анімований фон сторінок із сусіднього треду (PR #112).",
  "herkomst": {
   "eigenaar": "Павло Тарасевич",
   "agent": "claude",
@@ -23,6 +23,11 @@
     "taak": "UPD-001, сторінка оновлень і «Макет» (claude, цей тред)",
     "commit": "58aa9fec",
     "reden": "PR #110, гілка claude/project-thread-deqwzv, влита звичайним злиттям"
+   },
+   {
+    "taak": "ACHTERGROND-001, живий фон сторінок (claude, сусідній тред)",
+    "commit": "d9d7db01",
+    "reden": "PR #112, гілка claude/project-thread-bkalrx, влита звичайним злиттям на прохання треду фону"
    }
   ]
  },
@@ -46,6 +51,10 @@
   {
    "tijd": "2026-11-15T15:13:11.191Z",
    "stap": "Гілка випуску від 20261115-135345 (932e601d), злиття PR #111 і PR #110, файли задачі й процес випуску."
+  },
+  {
+   "tijd": "2026-11-15T15:21:42.238Z",
+   "stap": "Власник лишив картку розділу «Макета»; до випуску влито PR #112 (живий фон)."
   }
  ],
  "keuzes": [
@@ -56,12 +65,32 @@
  ],
  "wijzigingen": [
   {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/upd-001-uitgave.yml"
+  },
+  {
    "soort": "gewijzigd",
    "bestand": "backend/uitrol-beleid-sync.ts"
   },
   {
    "soort": "gewijzigd",
    "bestand": "backend/uitrol-goedkeuring.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/UPD-001.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/UPD-001.json"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/plaatsing-vaste-elementen.json"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/uiterlijk.ts"
   },
   {
    "soort": "gewijzigd",
@@ -88,6 +117,34 @@
    "bestand": "src/BeheerUitrolWeergave.tsx"
   },
   {
+   "soort": "gewijzigd",
+   "bestand": "src/CanoniekOmlijsting.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/AchtergrondInstellingen.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/LevendeAchtergrond.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/achtergrond-instellingen.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/levende-achtergrond.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/levende-kern.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/achtergrond/levende-werker.ts"
+  },
+  {
    "soort": "toegevoegd",
    "bestand": "src/beheer-laden.css"
   },
@@ -101,7 +158,19 @@
   },
   {
    "soort": "gewijzigd",
+   "bestand": "src/gedeelde-voorkeuren.ts"
+  },
+  {
+   "soort": "gewijzigd",
    "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/ThemaInstellingen.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/useThema.ts"
   },
   {
    "soort": "gewijzigd",
@@ -153,29 +222,22 @@
   },
   {
    "soort": "toegevoegd",
+   "bestand": "tests/eenheid/levende-achtergrond-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
    "bestand": "tests/eenheid/uitrol-centrering-20261115.test.ts"
   },
   {
    "soort": "gewijzigd",
    "bestand": "tests/eenheid/uitrol-manifest.test.ts"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": "orchestratie/ontwikkelarchieven/UPD-001.json"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": "orchestratie/taken/UPD-001.json"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": ".github/workflows/upd-001-uitgave.yml"
   }
  ],
  "controles": [
   "uitrol-centrering-20261115 10/10, uitrol-manifest 25/25 (без виправлення 4 червоні), centrering-pc-20261115 14/14, identiteit-maquette 56/56, mobiel-cascade-20261105 22/22, ai-beleid 41/41 (PR #111, з базою).",
   "Chromium 390/768/1024/1366/1440/1536/1920/2560 px, стандартна палітра й «Макет», обидві теми, uk і nl: без горизонтальної прокрутки, без обрізаних підписів, термінал не обрізаний.",
-  "Знімки до/після переглянуто."
+  "Знімки до/після переглянуто.",
+  "levende-achtergrond-20261115 (PR #112) у безбазовому наборі процесу випуску."
  ],
  "bronnen": [
   {
@@ -196,6 +258,7 @@
  "commits": [
   "58aa9fecdfab4125d4007959ad560fe77dbf2f5e",
   "26b7d818de3e3e9aaad580585c1df92669a31403",
-  "666841fb361559957149a8e6a6c728aaa6f32078"
+  "666841fb361559957149a8e6a6c728aaa6f32078",
+  "d9d7db014a833760f76511ade083d9881c8993c3"
  ]
 }
