@@ -79,7 +79,11 @@ textarea { min-height:calc(var(--tik-hoogte) * 2); resize:vertical; }
 :where(.kaart > :last-child, .kaart-zacht > :last-child) { margin-bottom:0; }
 
 /* ---------------------------------------------------------------- бейджі / пілюлі */
-:where(.pil, .badge, .status-pill, .pil-ok, .pil-warn, .pil-fout, .pil-info, .pil-stil) { display:inline-flex; align-items:center; gap:var(--ruimte-1); max-width:100%; padding:2px var(--ruimte-2); border-radius:999px; background:var(--surface2); color:var(--text); font-size:var(--tekst-mini); font-weight:650; line-height:1.3; overflow-wrap:anywhere; }
+/* WOORDBREUK-001 (15.11.2026): overflow-wrap:break-word, а не anywhere. Із anywhere мінімальна ширина пілюлі = одна літера,
+   тож у рядку поруч із довгою назвою флекс стискав «готово» в стовпчик «г-о-т-о-в-о». break-word переносить лише слово,
+   яке саме по собі ширше за рядок. Тест tests/eenheid/woordbreuk-001-20261115.test.ts.
+   NL: break-word i.p.v. anywhere — anders krimpt een label naast een lange titel tot één letter per regel. */
+:where(.pil, .badge, .status-pill, .pil-ok, .pil-warn, .pil-fout, .pil-info, .pil-stil) { display:inline-flex; align-items:center; gap:var(--ruimte-1); max-width:100%; padding:2px var(--ruimte-2); border-radius:999px; background:var(--surface2); color:var(--text); font-size:var(--tekst-mini); font-weight:650; line-height:1.3; overflow-wrap:break-word; }
 :where(.pil-ok, .badge.ok, .status-pill.active, .status-pill.ok) { background:var(--ok-zacht); color:var(--ok); }
 :where(.pil-warn, .badge.amber, .badge.warn, .status-pill.pending, .status-pill.warn) { background:var(--warn-zacht); color:var(--warn); }
 :where(.pil-fout, .badge.fout, .badge.danger, .status-pill.blocked, .status-pill.fout) { background:var(--fout-zacht); color:var(--fout); }

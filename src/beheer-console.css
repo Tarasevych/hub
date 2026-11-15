@@ -8,7 +8,7 @@
 .admin-groups-banner-kop>div{display:grid;gap:4px;min-width:0}
 .admin-groups-banner-kop p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.45;overflow-wrap:anywhere}
 .admin-groups-chips{display:flex;flex-wrap:wrap;gap:8px}
-.admin-groep-chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:.84rem;font-weight:650;cursor:pointer;max-width:100%;overflow-wrap:anywhere}
+.admin-groep-chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:.84rem;font-weight:650;cursor:pointer;max-width:100%;overflow-wrap:break-word}
 .admin-groep-chip b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--surface);font-size:.78rem}
 .admin-groep-chip[aria-pressed='true']{border-color:var(--accent);background:var(--accent);color:var(--text-on-accent,var(--panel))}
 .admin-groep-chip[aria-pressed='true'] b{background:color-mix(in srgb,var(--text-on-accent,var(--panel)) 20%,transparent);color:inherit}

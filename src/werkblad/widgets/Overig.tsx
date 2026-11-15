@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, ArrowRight, Clock, Database, ExternalLink, HardDrive, Languages, MonitorSmartphone, Moon, Package, RefreshCw, Search, Server, Sun, Trash2, Wifi, WifiOff, X } from 'lucide-react';
 import HubBlockWidget from '../../HubBlokWidget';
+import { zonderVersieKop } from '../../../shared/werkblad-indeling';
 import { dienstenControleren, haalDiensten, haalGezondheid, haalTechSamenvatting, haalZoekRecent, useBron, wisAlleZoekRecent, wisZoekRecent, type Gezondheid, type TechSamenvatting, type ZoekRecent } from '../gegevens';
 import { geleden, regelsVoor, tr, wanneer, type Lang, type WidgetProps } from '../soorten';
 import { Fout, Leeg, Skelet } from './Vlak';
@@ -120,7 +121,7 @@ export function TechWidget({ lang, item, acties, zichtbaar, kolommen }: WidgetPr
         <div className='wb-release'><Package aria-hidden='true' /><span className='wb-rij-titel'>{tr(lang, 'Поточний випуск', 'Huidige release')}<small>{r.versie || tr(lang, 'невідомо', 'onbekend')}{r.commit ? ` · ${r.commit}` : ''}{r.commitStatus === 'zonder-git' ? ` · ${tr(lang, 'поза git', 'buiten git')}` : ''}</small></span></div>
         {waarde.uitrol.length ? (
           <ul className='wb-rijen wb-uitrol'>
-            {waarde.uitrol.slice(0, regelsVoor(item.r, kolommen, 2, 3)).map((u) => <li key={u.id} data-wb-run={u.staat}><span className={`pil ${u.staat === 'klaar' ? 'pil-ok' : u.staat === 'bezig' ? 'pil-info' : u.staat === 'mislukt' ? 'pil-fout' : 'pil-warn'}`}>{staatNaam(lang, u.staat)}</span><span className='wb-rij-titel'>{u.versie || '—'}<small title={lang === 'uk' ? u.uk : u.nl}>{lang === 'uk' ? u.uk : u.nl}</small></span><small>{wanneer(lang, Date.parse(u.geeindigd || u.gestart) || 0)}</small></li>)}
+            {waarde.uitrol.slice(0, regelsVoor(item.r, kolommen, 2, 3)).map((u) => <li key={u.id} data-wb-run={u.staat}><span className={`pil ${u.staat === 'klaar' ? 'pil-ok' : u.staat === 'bezig' ? 'pil-info' : u.staat === 'mislukt' ? 'pil-fout' : 'pil-warn'}`}>{staatNaam(lang, u.staat)}</span><span className='wb-rij-titel'><span className='wb-rij-naam'>{u.versie || '—'}</span><small title={lang === 'uk' ? u.uk : u.nl}>{zonderVersieKop(lang === 'uk' ? u.uk : u.nl, u.versie, lang)}</small></span><small>{wanneer(lang, Date.parse(u.geeindigd || u.gestart) || 0)}</small></li>)}
           </ul>
         ) : <Leeg>{tr(lang, 'Розгортань ще не було.', 'Er zijn nog geen uitrol-runs.')}</Leeg>}
         <button type='button' className='wb-alles' onClick={() => acties.dienst('admin', 'updates')}>{tr(lang, 'До оновлень', 'Naar updates')}<ArrowRight aria-hidden='true' /></button>
@@ -136,7 +137,7 @@ export function TechWidget({ lang, item, acties, zichtbaar, kolommen }: WidgetPr
         <span data-wb-diag='let-op'><strong>{d.letOp}</strong><small>{tr(lang, 'увага', 'let op')}</small></span>
         <span data-wb-diag='fout'><strong>{d.fout}</strong><small>{tr(lang, 'збій', 'fout')}</small></span>
       </div>
-      {d.slecht.length ? <ul className='wb-rijen'>{d.slecht.slice(0, regelsVoor(item.r, kolommen, 2, 3)).map((s) => <li key={s.id}><span className={`pil ${s.stand === 'fout' ? 'pil-fout' : 'pil-warn'}`}>{s.stand === 'fout' ? tr(lang, 'збій', 'storing') : tr(lang, 'увага', 'let op')}</span><span className='wb-rij-titel'>{s.naam ? (lang === 'uk' ? s.naam[0] : s.naam[1]) : s.id}<small title={s.code}>{s.reden ? (lang === 'uk' ? s.reden[0] : s.reden[1]) : s.code}</small></span></li>)}</ul> : <Leeg>{tr(lang, 'Усі перевірки зелені.', 'Alle controles zijn groen.')}</Leeg>}
+      {d.slecht.length ? <ul className='wb-rijen'>{d.slecht.slice(0, regelsVoor(item.r, kolommen, 2, 3)).map((s) => <li key={s.id}><span className={`pil ${s.stand === 'fout' ? 'pil-fout' : 'pil-warn'}`}>{s.stand === 'fout' ? tr(lang, 'збій', 'storing') : tr(lang, 'увага', 'let op')}</span><span className='wb-rij-titel'><span className='wb-rij-naam' title={s.naam ? (lang === 'uk' ? s.naam[0] : s.naam[1]) : s.id}>{s.naam ? (lang === 'uk' ? s.naam[0] : s.naam[1]) : s.id}</span><small title={s.code}>{s.reden ? (lang === 'uk' ? s.reden[0] : s.reden[1]) : s.code}</small></span></li>)}</ul> : <Leeg>{tr(lang, 'Усі перевірки зелені.', 'Alle controles zijn groen.')}</Leeg>}
       <small className='wb-voet'>{d.laatsteOp ? tr(lang, `Остання перевірка: ${geleden(lang, d.laatsteOp)}`, `Laatste controle: ${geleden(lang, d.laatsteOp)}`) : ''}</small>
       <button type='button' className='wb-alles' onClick={() => acties.dienst('admin', 'diagnostics')}>{tr(lang, 'До діагностики', 'Naar diagnostiek')}<ArrowRight aria-hidden='true' /></button>
     </div>
