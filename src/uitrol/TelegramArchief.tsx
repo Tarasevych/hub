@@ -7,6 +7,7 @@ import {
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
 import { leesSha256 } from '../../shared/bestand-lezen';
+import HulpVraag from '../hulp/HulpVraag';
 import { foutTekst } from './fouten';
 import { datum, mb, tr, type Lang, type Run } from './types';
 
@@ -407,7 +408,7 @@ export default function TelegramArchief({
             </div>
 
             <div className='ut-gh-blok' data-ut-tg-sleutel>
-              <h3><KeyRound aria-hidden='true' /> {tr(lang, 'Ключ шифрування та політика', 'Versleutelingssleutel en beleid')}</h3>
+              <h3><KeyRound aria-hidden='true' /> {tr(lang, 'Ключ шифрування та політика', 'Versleutelingssleutel en beleid')} <HulpVraag k='uitrol.telegram-archief-actief' naam={['Автоархів', 'Automatisch archiveren']} meer={[['uitrol.telegram-archief-verplicht', 'Обов’язкове збереження', 'Verplichte reservekopie']]} lang={lang} /></h3>
               <label className='ut-veld'>
                 <span>{tr(lang, 'Власний 256-бітний ключ (64 hex або мін. 32 символи)', 'Eigen 256-bits sleutel (64 hex of min. 32 tekens)')}</span>
                 <input
@@ -422,12 +423,12 @@ export default function TelegramArchief({
               </label>
 
               <label className='ut-schakel'>
-                <input type='checkbox' checked={actief} onChange={(e) => setActief(e.target.checked)} data-ut-tg-actief />
+                <input data-hulp='uitrol.telegram-archief-actief' type='checkbox' checked={actief} onChange={(e) => setActief(e.target.checked)} data-ut-tg-actief />
                 <span>{tr(lang, 'Автоматично шифрувати й надсилати кожен встановлений випуск у Telegram', 'Elke geslaagde installatie automatisch versleutelen en naar Telegram sturen')}</span>
               </label>
 
               <label className='ut-schakel'>
-                <input type='checkbox' checked={verplicht} onChange={(e) => setVerplicht(e.target.checked)} data-ut-tg-verplicht />
+                <input data-hulp='uitrol.telegram-archief-verplicht' type='checkbox' checked={verplicht} onChange={(e) => setVerplicht(e.target.checked)} data-ut-tg-verplicht />
                 <span>{tr(lang, 'Обов’язкове збереження: заборонити схвалення наступного оновлення, доки поточний випуск не в Telegram', 'Verplichte reservekopie: goedkeuring van een volgende update blokkeren totdat de huidige release in Telegram staat')}</span>
               </label>
 

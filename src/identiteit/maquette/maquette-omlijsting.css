@@ -180,7 +180,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true'] .mq-sectie-pijl{transform:rotate(180deg)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{
   display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;
-  border-radius:50%;border:1px solid var(--card-border);background:var(--card-bg);color:var(--muted);
+  border-radius:50%;border:1px solid var(--card-border);background:var(--surface);color:var(--muted);
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie:hover{color:var(--text);border-color:rgba(var(--global-rgb),.42)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie svg{width:17px;height:17px}
@@ -309,16 +309,16 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
    макета не змінено. De acht voorkeurstinten als --global van het ontwerp, de kleurstippen en doorschijnende kaarten. */
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=blauw]{--global:#7aa7ff;--global-rgb:122,167,255}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=blauw]{--global:#1a5fd6;--global-rgb:26,95,214}
-.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=blauw]{background:#1a5fd6}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=blauw]{--mq-stip:#1a5fd6;background:var(--mq-stip)}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=hemel]{--global:#67e8f9;--global-rgb:103,232,249}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=hemel]{--global:#0279b4;--global-rgb:2,121,180}
 .mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=hemel]{background:#0279b4}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=teal]{--global:#5eead4;--global-rgb:94,234,212}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=teal]{--global:#0f766e;--global-rgb:15,118,110}
-.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=teal]{background:#0f766e}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=teal]{--mq-stip:#0f766e;background:var(--mq-stip)}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=groen]{--global:#4ade80;--global-rgb:74,222,128}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=groen]{--global:#15803d;--global-rgb:21,128,61}
-.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=groen]{background:#15803d}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=groen]{--mq-stip:#15803d;background:var(--mq-stip)}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=oranje]{--global:#fdba74;--global-rgb:253,186,116}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=oranje]{--global:#b8530b;--global-rgb:184,83,11}
 .mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=oranje]{background:#b8530b}

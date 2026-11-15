@@ -1639,8 +1639,8 @@ html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ut-root .ut-drop
 
   html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root .ut-knop-primair:hover:not(:disabled),
   html.palet-maquette[data-maquette-stijl="klassiek"] .ut-root .uitrol-meester-cta:hover:not(:disabled) {
-    border-color: var(--mq-knop-primair-hover);
-    background: var(--mq-knop-primair-hover);
+    border-color: var(--mq-accent-2);
+    background: var(--mq-accent-2);
     background-image: none;
     color: var(--mq-knop-primair-tekst);
     transform: none;

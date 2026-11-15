@@ -491,7 +491,7 @@
 }
 
 .gs-bot-stip.is-blauw {
-  background: #2563eb;
+  background: var(--info-vlak, #2563eb);
 }
 
 .gs-bot-klein-area {

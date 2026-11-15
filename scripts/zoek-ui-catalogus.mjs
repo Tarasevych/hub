@@ -33,7 +33,7 @@ export const PLEKKEN = [
   ['cloud-vnext/onderdelen/Zoeken', 'cloud', 'search', 'iedereen'], ['cloud-vnext/onderdelen/Recent', 'cloud', 'recent', 'iedereen'],
   ['cloud-vnext/onderdelen/Werkruimtes', 'cloud', 'workspaces', 'iedereen'], ['cloud-vnext/onderdelen/Vastleggen', 'cloud', 'capture', 'iedereen'], ['cloud-vnext/onderdelen/PostvakIn', 'cloud', 'inbox', 'iedereen'],
   ['github/EenklikKoppelPaneel', 'github', 'accounts', 'iedereen'],
-  ['github/CodeEnEditorPaneel', 'github', 'code', 'iedereen'],
+  ['github/CodeEnBewerkerPaneel', 'github', 'code', 'iedereen'],
   ['github/ZakenEnSamenvoegingenPaneel', 'github', 'issues', 'iedereen'],
   ['github/ActiesEnUitgavenPaneel', 'github', 'actions', 'iedereen'],
   ['github/SpiegelEnBrugPaneel', 'github', 'sync', 'iedereen'],

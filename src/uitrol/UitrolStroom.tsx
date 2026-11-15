@@ -31,6 +31,7 @@ import {
   type StroomOverzicht,
   type StroomRisico,
 } from '../../shared/uitrol-stroom';
+import HulpVraag from '../hulp/HulpVraag';
 import { foutTekst } from './fouten';
 import { risicoTekst } from './UitrolStroomKaart';
 import { datumLang, tr, type Lang } from './types';
@@ -367,6 +368,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
             <label className='ut-stroom-kies-versie'>
               <span>{tr(lang, 'Версія:', 'Versie:')}</span>
               <select
+                data-hulp-vrij='keuze'
                 value={stand.versie}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -508,7 +510,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
       {/* Блок 2: Контекстний контрольний список розгортання */}
       <section className='ut-stroom-sectie' aria-labelledby='ut-stroom-ctrl-titel'>
         <div className='ut-stroom-sectie-kop'>
-          <h3 id='ut-stroom-ctrl-titel'><ClipboardCheck size={18} aria-hidden='true' /> {tr(lang, 'Контекстний контрольний список', 'Contextafhankelijke controlelijst')} ({g.afgerond}/{g.totaal})</h3>
+          <h3 id='ut-stroom-ctrl-titel'><ClipboardCheck size={18} aria-hidden='true' /> {tr(lang, 'Контекстний контрольний список', 'Contextafhankelijke controlelijst')} ({g.afgerond}/{g.totaal}) <HulpVraag k='uitrol.stroom-verplicht' lang={lang} /></h3>
           <button type='button' className='ut-knop' onClick={() => setNieuwControle((c) => ({ ...c, open: !c.open }))}>
             <Plus size={15} aria-hidden='true' />
             {tr(lang, 'Додати пункт', 'Punt toevoegen')}
@@ -551,7 +553,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
               </label>
             </div>
             <label className='ut-stroom-check'>
-              <input type='checkbox' checked={nieuwControle.verplicht} onChange={(e) => setNieuwControle((c) => ({ ...c, verplicht: e.target.checked }))} />
+              <input data-hulp='uitrol.stroom-verplicht' type='checkbox' checked={nieuwControle.verplicht} onChange={(e) => setNieuwControle((c) => ({ ...c, verplicht: e.target.checked }))} />
               <span>{tr(lang, 'Обов’язковий блокувальний пункт', 'Verplicht blokkerend punt')}</span>
             </label>
             <div className='ut-stroom-punt-acties'>
@@ -688,7 +690,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
       {/* Блок 4: Нотатки розгортання */}
       <section className='ut-stroom-sectie' aria-labelledby='ut-stroom-notities-titel'>
         <div className='ut-stroom-sectie-kop'>
-          <h3 id='ut-stroom-notities-titel'>{tr(lang, 'Нотатки та інженерний журнал випуску', 'Uitrolnotities en bevindingen')} ({stand.notities.length})</h3>
+          <h3 id='ut-stroom-notities-titel'>{tr(lang, 'Нотатки та інженерний журнал випуску', 'Uitrolnotities en bevindingen')} ({stand.notities.length}) <HulpVraag k='uitrol.stroom-vastpinnen' lang={lang} /></h3>
           <button
             type='button'
             className='ut-knop'
@@ -715,7 +717,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
               </label>
               <label>
                 <span>{tr(lang, 'Важливість', 'Risico / ernst')}</span>
-                <select value={notitieForm.risico} onChange={(e) => setNotitieForm((f) => ({ ...f, risico: e.target.value as StroomRisico }))}>
+                <select data-hulp-vrij='keuze' value={notitieForm.risico} onChange={(e) => setNotitieForm((f) => ({ ...f, risico: e.target.value as StroomRisico }))}>
                   <option value='laag'>{risicoTekst(lang, 'laag')}</option>
                   <option value='normaal'>{risicoTekst(lang, 'normaal')}</option>
                   <option value='verhoogd'>{risicoTekst(lang, 'verhoogd')}</option>
@@ -734,7 +736,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
               />
             </label>
             <label className='ut-stroom-check'>
-              <input type='checkbox' checked={notitieForm.vastgepind} onChange={(e) => setNotitieForm((f) => ({ ...f, vastgepind: e.target.checked }))} />
+              <input data-hulp='uitrol.stroom-vastpinnen' type='checkbox' checked={notitieForm.vastgepind} onChange={(e) => setNotitieForm((f) => ({ ...f, vastgepind: e.target.checked }))} />
               <span>{tr(lang, 'Закріпити вгорі списку', 'Bovenaan vastpinnen')}</span>
             </label>
             <div className='ut-stroom-punt-acties'>

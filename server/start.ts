@@ -48,8 +48,8 @@ import { schakelaarsVerversen } from './platform/schakelaars';
 import { procesVangnetInstellen } from './platform/proces-vangnet';
 import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 */
 import { limietSleutel } from '../shared/ip-limiet';
-import { leesBodyBegrensd, zetAanmeldControle } from './platform/body-budget';
-import { aanmeldingEcht } from './platform/body-aanmelding';
+import { leesBodyBegrensd, zetAanmeldControle } from './platform/tekst-budget';
+import { aanmeldingEcht } from './platform/tekst-aanmelding';
 // SEC-002 (toets g10e-toets-2): ruimere grenzen voor lichamen alleen bij een ECHTE sessie of een echt token (niet «Cookie: x=1»).
 zetAanmeldControle(aanmeldingEcht);
 
@@ -151,7 +151,7 @@ const sendJson = (res: http.ServerResponse, status: number, data: unknown) =>
   send(res, status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, JSON.stringify(data));
 
 // SEC-002 (http-rand-06, keten-config-05): Content-Length vooraf, 256 KB zonder Cookie/Authorization, budget voor alle lichamen
-// samen, lichamen per IP en een korte termijn voor anonieme lichamen — server/platform/body-budget.ts. MAX_BODY_BYTES blijft de bovengrens.
+// samen, lichamen per IP en een korte termijn voor anonieme lichamen — server/platform/tekst-budget.ts. MAX_BODY_BYTES blijft de bovengrens.
 async function readBody(req: http.IncomingMessage, pad = '', ip = clientIp(req)): Promise<string> {
   return leesBodyBegrensd(req, pad, ip);
 }

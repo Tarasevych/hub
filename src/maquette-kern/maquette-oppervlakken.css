@@ -1567,7 +1567,7 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
 }
 
 :is(html.palet-maquette.theme-light, html.palet-maquette.theme-plum-light, html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light))) .mq-anker-rail :is(.mq-anker-knop, .mq-anker-groep-toggle):not(.is-actief):not(.is-tak-actief) {
-  background: #ffffff;
+  background: var(--mq-oppervlak);
   border-color: #c4cde0;
   box-shadow: 0 5px 17px rgba(38, 52, 82, 0.14);
   color: var(--mq-tekst, #192640);
@@ -1594,7 +1594,7 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
 }
 
 :is(html.palet-maquette.theme-light, html.palet-maquette.theme-plum-light, html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light))) .mq-anker-rail :is(.mq-anker-groep-toggle.is-tak-actief:not(.is-actief), .mq-anker-groep.is-open > .mq-anker-groep-toggle:not(.is-actief)) {
-  background: color-mix(in srgb, #ffffff 82%, var(--mq-accent) 18%);
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-accent) 18%);
   border-color: rgba(var(--mq-accent-rgb), 0.62);
 }
 

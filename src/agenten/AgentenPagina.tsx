@@ -249,7 +249,13 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     let gevonden = false, n = 0;
     const stop = () => { window.clearInterval(t); weg(); };
     const door = () => { vastTot.current = 0; stop(); };
-    const weg = () => { window.removeEventListener('wheel', door, true); window.removeEventListener('touchstart', door, true); window.removeEventListener('keydown', door, true); };
+    const weg = () => {
+      window.removeEventListener('wheel', door, true);
+      window.removeEventListener('touchstart', door, true);
+      window.removeEventListener('pointerdown', door, true);
+      window.removeEventListener('mousedown', door, true);
+      window.removeEventListener('keydown', door, true);
+    };
     const t = window.setInterval(() => {
       n += 1;
       const el = document.getElementById(id);
@@ -261,6 +267,8 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     }, 60);
     window.addEventListener('wheel', door, { capture: true, passive: true });
     window.addEventListener('touchstart', door, { capture: true, passive: true });
+    window.addEventListener('pointerdown', door, { capture: true, passive: true });
+    window.addEventListener('mousedown', door, { capture: true, passive: true });
     window.addEventListener('keydown', door, true);
     return stop;
   }, [plek.tab, plek.anker]);

@@ -182,11 +182,11 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   height: 10px;
   border-radius: 50%;
   border: 2px solid var(--am3-bg);
-  background: #16a34a;
+  background: var(--ok-vlak, #16a34a);
 }
 
 [data-account-menu-v3] .am3-orbit-dot.is-expired {
-  background: #d97706;
+  background: var(--warn-vlak, #d97706);
 }
 
 [data-account-menu-v3] .am3-center-avatar-wrap {

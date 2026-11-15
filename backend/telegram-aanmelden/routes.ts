@@ -262,6 +262,12 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
     'POST /api/aanmelden/telegram/voltooien': openbaar(async (rc) => {
       const d = lichaam(rc);
       const id = str(d.id, 12);
+      const txId = await inlogTransactieId(id);
+      // SEC-002: eerst de browserbinding van de transactie controleren vóórdat inlogInwisselen het verzoek als ingewisseld vastlegt.
+      if (txId && (!deps.aanmeldBindingKlopt || !(await deps.aanmeldBindingKlopt(rc, txId).catch(() => false)))) {
+        await audit(null, 'widget.andere-browser', 'denied', { route: 'voltooien' }).catch(() => undefined);
+        return fout('LOGIN_BINDING_MISMATCH', 403, { ok: false, sessionCreated: false });
+      }
       const r = await inlogInwisselen(id, str(d.geheim, 64));
       const { antwoord, sessieId } = await deps.aanmeldVoltooien(rc, { transactieId: r.transactieId, userId: r.userId });
       if (sessieId) {

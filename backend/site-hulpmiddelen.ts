@@ -1531,13 +1531,13 @@ SITE_TOOLS.push(
     tool: {
       name: 'geheugen_taak_lezen',
       title: 'Читання наскрізних задач і переходу сесій · Doorlopende taken en sessie-overdracht lezen',
-      description: 'Читає список відкритих задач або повний контекст конкретної задачі (taak_sleutel): кроки естафети, вузли Стріму пам’яті, доставлення в Telegram і готовий запит продовження. · Leest het overzicht van doorlopende taken of het volledige dossier van één taak (taak_sleutel) met overdrachtsstappen, geheugenknopen, Telegram-bezorgingen en vervolgopdracht.',
+      description: 'Читає список відкритих задач або повний контекст конкретної задачі (taak_sleutel): кроки естафети, вузли Стріму пам’яті, доставлення в Телеграм і готовий запит продовження. · Leest het overzicht van doorlopende taken of het volledige dossier van één taak (taak_sleutel) met overdrachtsstappen, geheugenknopen, Telegram-bezorgingen en vervolgopdracht.',
       inputSchema: {
         type: 'object',
         properties: {
           taak_sleutel: { type: 'string', description: p('Необов’язковий ключ задачі для отримання повного досьє переходу й підказок продовження (2–120 символів).', 'Optionele taaksleutel om het volledige overdrachtsdossier en vervolginstructies op te halen (2–120 tekens).') },
           status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Фільтр за станом задачі під час перегляду списку.', 'Filter op taakstatus bij het opvragen van het overzicht.') },
-          agent: { type: 'string', description: p('Фільтр за кодом поточного агента (наприклад claude, codex, gemini, windsurf, cline, devin, opencode).', 'Filter op code van de huidige agent (bijvoorbeeld claude, codex, gemini, windsurf, cline, devin, opencode).') },
+          agent: { type: 'string', description: p('Фільтр за кодом поточного агента (наприклад, claude, codex, gemini, copilot або cursor).', 'Filter op code van de huidige agent (bijvoorbeeld claude, codex, gemini, windsurf, cline, devin, opencode).') },
           vraag: { type: 'string', description: p('Пошуковий запит за назвою, метою чи карткою узгодження (до 200 символів).', 'Zoekterm op titel, doel of afstemmingskaart (hoogstens 200 tekens).') },
           limiet: geheelProp('Найбільша кількість задач у списку: від 1 до 100 (типово 40).', 'Hoogste aantal taken in het overzicht: 1 tot 100 (standaard 40).', 1, 100),
         },
@@ -1563,7 +1563,7 @@ SITE_TOOLS.push(
     tool: {
       name: 'geheugen_taak_opslaan',
       title: 'Створення й оновлення наскрізної задачі · Doorlopende taak bewaren of bijwerken',
-      description: `Створює або оновлює наскрізну задачу між сесіями (taak_sleutel), прив’язує вузли Стріму пам’яті й картку узгодження (afstemming). · Maakt of werkt een doorlopende taak over sessies heen bij (taak_sleutel) en koppelt geheugenknopen en afstemmingskaart. ${CONFIRM}`,
+      description: `Створює або оновлює наскрізну задачу між сесіями (taak_sleutel), прив’язує вузли Стріму пам’яті й картку узгодження. · Maakt of werkt een doorlopende taak over sessies heen bij (taak_sleutel) en koppelt geheugenknopen en afstemmingskaart. ${CONFIRM}`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -1571,10 +1571,10 @@ SITE_TOOLS.push(
           titel: { type: 'string', description: p('Коротка зрозуміла назва задачі без таємниць (1–240 символів).', 'Korte duidelijke taaktitel zonder geheimen (1–240 tekens).') },
           doel: { type: 'string', description: p('Мета, межі та критерії готовності задачі без секретів (до 4000 символів).', 'Doel, afbakening en criteria van de taak zonder geheimen (hoogstens 4000 tekens).') },
           status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Поточний стан виконання задачі.', 'Huidige uitvoeringsstatus van de taak.') },
-          prioriteit: { type: 'string', enum: ['laag', 'normaal', 'hoog', 'kritiek'], description: p('Пріоритет задачі: laag, normaal, hoog або kritiek.', 'Prioriteit van de taak: laag, normaal, hoog of kritiek.') },
-          huidige_agent: { type: 'string', description: p('Код агента або сесії, що веде задачу зараз (наприклад claude, codex, windsurf, cline, devin, opencode).', 'Code van de agent of sessie die de taak nu draagt (zoals claude, codex, windsurf, cline, devin, opencode).') },
-          afstemming_kaart_id: { type: 'string', description: p('Необов’язковий внутрішній ідентифікатор картки узгодження (afstemming).', 'Optioneel intern ID van de gekoppelde afstemmingskaart.') },
-          afstemming_extern_id: { type: 'string', description: p('Необов’язковий зовнішній код картки узгодження (наприклад UI-014 чи CAN-001).', 'Optionele externe code van de afstemmingskaart (bijvoorbeeld UI-014 of CAN-001).') },
+          prioriteit: { type: 'string', enum: ['laag', 'normaal', 'hoog', 'kritiek'], description: p('Пріоритет задачі: низький, звичайний, високий або критичний.', 'Prioriteit van de taak: laag, normaal, hoog of kritiek.') },
+          huidige_agent: { type: 'string', description: p('Код агента або сесії, що веде задачу зараз (наприклад, claude, codex, gemini, copilot або cursor).', 'Code van de agent of sessie die de taak nu draagt (zoals claude, codex, windsurf, cline, devin, opencode).') },
+          afstemming_kaart_id: { type: 'string', description: p('Необов’язковий внутрішній ідентифікатор картки узгодження.', 'Optioneel intern ID van de gekoppelde afstemmingskaart.') },
+          afstemming_extern_id: { type: 'string', description: p('Необов’язковий зовнішній код картки узгодження з реєстру задач.', 'Optionele externe code van de afstemmingskaart (bijvoorbeeld UI-014 of CAN-001).') },
           geheugen_sleutels: { type: 'array', items: { type: 'string' }, description: p('Список ключів вузлів у Стрімі пам’яті, що стосуються цієї задачі.', 'Lijst van sleutels van geheugenknopen die bij deze taak horen.') },
           eigenaar_vereist: { type: 'boolean', description: p('Чи потребує задача рішення або схвалення власника на наступному кроці.', 'Of deze taak in de volgende stap een eigenaarsbesluit of bevestiging vereist.') },
           eerste_samenvatting: { type: 'string', description: p('Початкова нотатка для першого запису в журналі кроків нової задачі.', 'Startnotitie voor de eerste stap in de chronologie van een nieuwe taak.') },
@@ -1620,21 +1620,21 @@ SITE_TOOLS.push(
     tool: {
       name: 'geheugen_taak_overdracht',
       title: 'Передача естафети задачі іншому агенту чи сесії · Taak overdragen aan volgende agent of sessie',
-      description: `Передає задачу (taak_sleutel) наступному ШІ-агенту або новій сесії, фіксує виконаний крок, оновлює вузол пам’яті, може сповістити через Telegram-бота агента й повертає готовий текст продовження. · Draagt een taak over aan de volgende AI-agent of nieuwe sessie, legt de voortgangsstap vast, kan de geheugenstroom en de Telegram-bot van de agent bijwerken en geeft een kant-en-klare vervolginstructie terug. ${CONFIRM}`,
+      description: `Передає задачу (taak_sleutel) наступному ШІ-агенту або новій сесії, фіксує виконаний крок, оновлює вузол пам’яті, може сповістити через Телеграм-бота агента й повертає готовий текст продовження. · Draagt een taak over aan de volgende AI-agent of nieuwe sessie, legt de voortgangsstap vast, kan de geheugenstroom en de Telegram-bot van de agent bijwerken en geeft een kant-en-klare vervolginstructie terug. ${CONFIRM}`,
       inputSchema: {
         type: 'object',
         properties: {
           taak_sleutel: { type: 'string', description: p('Ключ задачі для передачі (2–120 символів).', 'Taaksleutel voor de overdracht (2–120 tekens).') },
-          naar_agent: { type: 'string', description: p('Код агента або сесії-отримувача (наприклад claude, codex, windsurf, cline, devin, opencode, nova-sesiya).', 'Code van de ontvangende agent of sessie (zoals claude, codex, windsurf, cline, devin, opencode, nieuwe-sessie).') },
+          naar_agent: { type: 'string', description: p('Код агента або сесії-отримувача (наприклад, claude, codex, gemini, copilot, cursor або нова сесія).', 'Code van de ontvangende agent of sessie (zoals claude, codex, windsurf, cline, devin, opencode, nieuwe-sessie).') },
           samenvatting: { type: 'string', description: p('Чіткий підсумок зробленого, стану тестів і першого кроку для продовження без таємниць (до 4000 символів).', 'Duidelijke samenvatting van het uitgevoerde werk, de teststand en de eerste vervolgstap zonder geheimen (hoogstens 4000 tekens).') },
           van_agent: { type: 'string', description: p('Необов’язковий код агента, що передає роботу.', 'Optionele code van de overdragende agent.') },
           titel: { type: 'string', description: p('Назва задачі (обов’язкова лише якщо задачі з таким ключем ще не існує).', 'Taaktitel (alleen verplicht wanneer de taak nog niet bestaat).') },
           doel: { type: 'string', description: p('Необов’язкова мета задачі при одночасному створенні.', 'Optioneel taakdoel bij gelijktijdige aanmaak.') },
-          status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Новий стан задачі після передачі (типово bezig).', 'Nieuwe taakstatus na de overdracht (standaard bezig).') },
+          status: { type: 'string', enum: ['open', 'bezig', 'wacht_op_eigenaar', 'klaar', 'gepauzeerd', 'geannuleerd'], description: p('Новий стан задачі після передачі (типово — у роботі).', 'Nieuwe taakstatus na de overdracht (standaard bezig).') },
           bewaar_in_stroom: { type: 'boolean', description: p('Чи зберегти підсумок передачі також як закріплений вузол у Стрімі пам’яті (типово так).', 'Of de overdrachtssamenvatting ook als vastgepinde knoop in de geheugenstroom bewaard wordt (standaard ja).') },
-          ook_bezorgen: { type: 'boolean', description: p('Чи надіслати сповіщення про передачу у закріплену тему Telegram-бота агента-отримувача (типово ні).', 'Of er ook een bericht naar het gekoppelde Telegram-onderwerp van de ontvangende agentbot gestuurd wordt (standaard nee).') },
+          ook_bezorgen: { type: 'boolean', description: p('Чи надіслати сповіщення про передачу у закріплену тему Телеграм-бота агента-отримувача (типово ні).', 'Of er ook een bericht naar het gekoppelde Telegram-onderwerp van de ontvangende agentbot gestuurd wordt (standaard nee).') },
           geheugen_sleutels: { type: 'array', items: { type: 'string' }, description: p('Додаткові ключі вузлів пам’яті, важливі для продовження задачі.', 'Extra sleutels van geheugenknopen die belangrijk zijn voor de voortzetting.') },
-          bestands_verwijzingen: { type: 'array', items: { type: 'object' }, description: p('Список посилань на змінені файли (pad, regel, toelichting — без вмісту таємниць).', 'Lijst van bestandsverwijzingen (pad, regel, toelichting — zonder geheime inhoud).') },
+          bestands_verwijzingen: { type: 'array', items: { type: 'object' }, description: p('Список посилань на змінені файли (шлях, рядок, пояснення — без вмісту таємниць).', 'Lijst van bestandsverwijzingen (pad, regel, toelichting — zonder geheime inhoud).') },
         },
         required: ['taak_sleutel', 'naar_agent', 'samenvatting'], additionalProperties: false,
       },

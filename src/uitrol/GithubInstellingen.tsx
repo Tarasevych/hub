@@ -305,7 +305,7 @@ export default function GithubInstellingen({
           {ont && (
             <div className='ut-gh-raster' data-ut-gh-ontvangst>
               <div className='ut-gh-blok'>
-                <h3><Webhook aria-hidden='true' /> {tr(lang, 'Отримання випусків через приймач подій GitHub', 'Releases ontvangen via GitHub Webhook')}</h3>
+                <h3><Webhook aria-hidden='true' /> {tr(lang, 'Отримання випусків через приймач подій GitHub', 'Releases ontvangen via GitHub Webhook')} <HulpVraag k='uitrol.github-webhook-aan' naam={['Приймач подій', 'Webhook']} meer={[['uitrol.github-webhook-auto', 'Автозавантаження', 'Automatisch ophalen']]} lang={lang} /></h3>
                 <p className='ut-hint'>
                   {tr(
                     lang,
@@ -345,12 +345,12 @@ export default function GithubInstellingen({
                 </label>
 
                 <label className='ut-schakel'>
-                  <input type='checkbox' checked={webhookAan} onChange={(e) => setWebhookAan(e.target.checked)} data-ut-gh-wh-aan />
+                  <input data-hulp='uitrol.github-webhook-aan' type='checkbox' checked={webhookAan} onChange={(e) => setWebhookAan(e.target.checked)} data-ut-gh-wh-aan />
                   <span>{tr(lang, 'Приймати вхідні сповіщення про випуски з перевіркою HMAC-SHA256', 'Inkomende release-events accepteren met HMAC-SHA256-controle')}</span>
                 </label>
 
                 <label className='ut-schakel'>
-                  <input type='checkbox' checked={webhookAuto} onChange={(e) => setWebhookAuto(e.target.checked)} data-ut-gh-wh-auto />
+                  <input data-hulp='uitrol.github-webhook-auto' type='checkbox' checked={webhookAuto} onChange={(e) => setWebhookAuto(e.target.checked)} data-ut-gh-wh-auto />
                   <span>{tr(lang, 'Автоматично завантажувати й перевіряти архів (без самочинного встановлення — лише до «Очікує ключ доступу»)', 'Archief automatisch ophalen en voorcontroleren (nooit automatisch installeren — alleen tot «Wacht op passkey»)')}</span>
                 </label>
 

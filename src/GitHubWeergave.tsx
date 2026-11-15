@@ -21,7 +21,7 @@ import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerIt
 import { useIsMaquette } from './thema/useThema';
 import { GhDialoog, ghFoutTekst, ghPost } from './github/github-client';
 import EenklikKoppelPaneel from './github/EenklikKoppelPaneel';
-import CodeEnEditorPaneel from './github/CodeEnEditorPaneel';
+import CodeEnBewerkerPaneel from './github/CodeEnBewerkerPaneel';
 import ZakenEnSamenvoegingenPaneel from './github/ZakenEnSamenvoegingenPaneel';
 import ActiesEnUitgavenPaneel from './github/ActiesEnUitgavenPaneel';
 import SpiegelEnBrugPaneel from './github/SpiegelEnBrugPaneel';
@@ -1440,7 +1440,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
         </section>
       </div>
     </>}
-    {tab === 'code' && (selected ? <CodeEnEditorPaneel repo={selected} tr={tr} onOpenPulls={() => gaNaarTab('pulls')} /> : geenRepoKaart)}
+    {tab === 'code' && (selected ? <CodeEnBewerkerPaneel repo={selected} tr={tr} onOpenPulls={() => gaNaarTab('pulls')} /> : geenRepoKaart)}
     {(tab === 'issues' || tab === 'pulls') && <div id="gh-inhoud-paneel">{selected ? <ZakenEnSamenvoegingenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart}</div>}
     {(tab === 'actions' || tab === 'releases') && <div id="gh-inhoud-paneel">{selected ? <ActiesEnUitgavenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart}</div>}
     {tab === 'sync' && <div id="gh-inhoud-paneel"><SpiegelEnBrugPaneel repo={selected} tr={tr} onKiesRepo={pick} /></div>}
