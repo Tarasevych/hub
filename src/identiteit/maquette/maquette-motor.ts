@@ -1986,8 +1986,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     railCollapseTimer=setTimeout(()=>{
       railCollapseTimer=null;
       if(isAutoRail()&&!railPointerInside&&!drawerOpenedByControl&&byId("navSettings").hidden){
-        if(body.classList.contains("rail-smart-condensed"))setAdaptiveNavOpen(false);
-        applyRailCollapsed(true);
+        if(body.classList.contains("rail-smart-condensed")&&body.classList.contains("rail-smart-open"))setAdaptiveNavOpen(false);
+        if(!body.classList.contains("rail-compact"))applyRailCollapsed(true);
       }
     },300);
   }
@@ -2378,7 +2378,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       }
     }
   }
-  function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;if(was)focusNaarOpener();scheduleRailAutoCollapse();}
+  function closeNavSettings(){const was=!popover.hidden;if(was)popover.hidden=true;if(was)focusNaarOpener();scheduleRailAutoCollapse();}
   byId("railConfig").addEventListener("click",e=>{e.stopPropagation(); toggleNavSettings();});
   byId("heroNavSettings").addEventListener("click",toggleNavSettings);
   byId("mqSectiePositie")?.addEventListener("click",e=>{e.stopPropagation();toggleNavSettings();});

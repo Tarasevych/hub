@@ -942,5 +942,18 @@ v(`id:"widgets", group:"personal", number:"05", name:"Віджети", short:"В
 v(`widgets:{name:"Widgets",short:"Widgets"`, `widgets:{name:"Blokken",short:"Blokken"`);
 v(`short:"Обліковий запис і дані"`, `short:"Обліковий запис"`);
 
+// ZAVYSANNIA-001: будь-яке натискання на сторінці (зокрема вибір теми) закриває спливне вікно налаштувань рейки й через 300 мс
+// знову «згортало» рейку й шухляду, навіть коли вони вже згорнуті. Кожен такий перезапис класів і атрибутів перераховував стилі
+// всієї сторінки (селектори :has на <html>) — на телефоні до секунди без відгуку. Тепер лише справжня зміна стану.
+// Elke klik klapte de rail opnieuw in, ook als die al ingeklapt was; nu alleen bij een echte wijziging.
+v(`        if(body.classList.contains("rail-smart-condensed"))setAdaptiveNavOpen(false);
+        applyRailCollapsed(true);`,
+`        if(body.classList.contains("rail-smart-condensed")&&body.classList.contains("rail-smart-open"))setAdaptiveNavOpen(false);
+        if(!body.classList.contains("rail-compact"))applyRailCollapsed(true);`);
+
+// ZAVYSANNIA-001: так само вже сховане вікно налаштувань рейки не «ховаємо» вдруге — запис атрибута hidden на кожне натискання
+// перераховував стилі всієї сторінки. Een al verborgen paneel niet opnieuw verbergen.
+v(`function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;`, `function closeNavSettings(){const was=!popover.hidden;if(was)popover.hidden=true;`);
+
 fs.writeFileSync(f, s);
 console.log('ok');
