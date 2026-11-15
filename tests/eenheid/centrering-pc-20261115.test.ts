@@ -49,8 +49,12 @@ export async function main(): Promise<number> {
     omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}'));
   check('«Макет»: обгортка «Чинні налаштування» (.mq-echt-blok) прозора — лишаються лише блоки груп',
     omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}'));
-  check('«Макет»: справжня панель займає всю ширину картки розділу (без порожньої темної смуги)',
-    omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud .access-plane{max-width:none}'));
+  // Розгорнута справжня панель: підкладка звужена до блоків (910 px), картка розділу закінчується заголовком; лише від 961 px.
+  const smal = omlijsting.slice(omlijsting.indexOf('Розгорнута справжня панель'));
+  check('«Макет»: під розгорнутою справжньою панеллю підкладка вужча (max-width:910px), а не на всю картку розділу',
+    /@media \(min-width:961px\)\{/.test(smal) && smal.includes('.setting-section:has(.mq-echt-blok[open]){background:transparent!important')
+    && smal.includes('>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0')
+    && !omlijsting.includes('.mq-echt-inhoud .access-plane{max-width:none}'));
   check('правила без підкладок стоять перед мобільним шаром', omlijsting.indexOf('.section-inline-settings{background:none}') < omlijsting.indexOf('Мобільний шар наприкінці файла'));
   // Мобільний шар має лишитися в кінці файла (правило mobiel-cascade-20261105): новий блок стоїть до нього.
   check('новий блок центрування стоїть перед мобільним шаром', omlijsting.indexOf('Центрування сторінки на широкому ПК') < omlijsting.indexOf('Мобільний шар наприкінці файла'));
