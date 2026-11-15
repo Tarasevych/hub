@@ -52,19 +52,41 @@ html.palet-maquette .werkblad {
   gap: 16px;
 }
 
+/* WB-HOEK-001: смуга без власної підкладки — на тлі стоять лише самі кнопки (піктограма «Налаштувати» в куті,
+   у режимі налаштування — кнопки «Бібліотека», «Параметри», «Готово»).
+   De balk heeft geen eigen paneel meer: alleen de knoppen zelf staan op de achtergrond. */
 html.palet-maquette .werkblad .wb-balk {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 18px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Без підкладки смуги тихі кнопки («Параметри») мають власне скло, інакше губляться на живому тлі.
+   Zonder balkpaneel krijgen stille knoppen eigen glas, anders verdwijnen ze tegen de levende achtergrond. */
+html.palet-maquette .werkblad .wb-balk-acties .knop-stil {
   border: 1px solid var(--mq-border-outer);
   background: color-mix(in srgb, var(--mq-wb-glas) 84%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-balk-acties .wb3-instellen-icoon {
+  border: 1px solid var(--mq-border-outer);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-wb-glas) 84%, transparent);
   box-shadow: inset 0 1px 0 var(--mq-wb-glans);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .werkblad .wb-balk-acties .wb3-instellen-icoon:hover {
+  color: var(--mq-tekst);
 }
 
 html.palet-maquette .werkblad .wb-balk:not(:has(.wb-ruimte-pil)) {
@@ -761,17 +783,21 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-raster {
   gap: 12px;
 }
 
-/* Компактна однорядкова ділова смуга керування столом і блок привітання (min-height: 52px) */
+/* Смуга керування столом без власної підкладки (WB-HOEK-001): лише кнопки на тлі.
+   Bedieningsbalk zonder eigen paneel: alleen de knoppen staan op de achtergrond. */
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-balk {
-  min-height: 52px;
-  padding: 8px 14px;
+  min-height: 0;
+  padding: 0;
   gap: 8px 12px;
-  border-radius: 16px;
-  border: 1px solid var(--mq-rand);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-balk-acties .wb3-instellen-icoon {
+  border-color: var(--mq-rand);
   background: var(--mq-oppervlak);
-  background-image: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   box-shadow: var(--mq-schaduw-zacht);
 }
 
@@ -1449,7 +1475,6 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .blk-keuze-icoon {
 }
 
 /* Захист специфічності проти flat-content (0, 19, 0) — суворо без padding і gap */
-html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-balk,
 html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-begroeting,
 html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-tegel.is-kaart,
 html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-kaart,
@@ -1731,14 +1756,6 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-contrast {
 
   html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad {
     gap: 10px;
-  }
-
-  html.palet-maquette .werkblad .wb-balk {
-    padding: 9px 12px;
-  }
-
-  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-balk {
-    padding: 8px 12px;
   }
 
   html.palet-maquette .werkblad .wb-begroeting {
