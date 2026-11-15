@@ -14,7 +14,8 @@ export async function main(): Promise<number> {
   check('обидві поштові сторінки застосовують одне тло',
     accounts.includes("<MailAchtergrond lang={lang} plaats='accounts' />")
     && aanmelden.includes("<MailAchtergrond lang={lang} plaats='aanmelden'/>")
-    && beheer.includes("<MailAchtergrond lang={lang} plaats='accounts' />"));
+    // MAILACC-002: de beheerpagina toont dezelfde orbit (variant «extra») en dus hetzelfde tło, zonder tweede laag.
+    && beheer.includes("variant='extra'") && !beheer.includes('<MailAchtergrond'));
   check('інші служби зберігають звичайний вигляд входу',
     aanmelden.includes("window.location.hostname.startsWith('mail.')")
     && aanmelden.includes('postdienst&&<Suspense'));

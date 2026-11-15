@@ -33,11 +33,12 @@ export async function main(): Promise<number> {
 
   // 2. MailAccountsHub.tsx: компактна ділова шапка mail-accounts-hero у Класиці без кольорових частинок.
   check(
-    'MailAccountsHub показує компактну ділову шапку mail-accounts-hero за (!isMaquette || isKlassiek) і вимикає MailAchtergrond у Класиці',
-    accountsHub.includes('useIsKlassiekMaquette') &&
-      accountsHub.includes("(!isMaquette || isKlassiek)") &&
-      accountsHub.includes("<header className='mail-accounts-hero mail-accounts-welkom'") &&
-      accountsHub.includes("{!isKlassiek ? <MailAchtergrond lang={lang} plaats='accounts' /> : null}"),
+    // MAILACC-002 (15.11.2026): één ontwerp voor «Поштові акаунти» — de orbit, ook met accounts; geen eigen kop/achtergrond meer in de hub.
+    // De Класика blijft zonder kleurdeeltjes, want MailAchtergrond (in de orbit) geeft daar zelf null terug (check 3).
+    'MailAccountsHub: geen eigen kop of tweede MailAchtergrond; de orbit (variant «extra») draagt kop en tło',
+    !accountsHub.includes('<MailAchtergrond') &&
+      !accountsHub.includes("<header className='mail-accounts-hero mail-accounts-welkom'") &&
+      accountsHub.includes("variant='extra'"),
   );
 
   // 3. MailAchtergrond.tsx: миттєве повернення null і зупинка 1400 частинок у Класиці зі збереженням createPortal і document.body.
