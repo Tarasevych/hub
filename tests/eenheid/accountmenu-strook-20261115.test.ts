@@ -41,5 +41,13 @@ export async function main(): Promise<number> {
   check('загальні правила footer існують (причина порожнечі й стовпчика)', /footer \{[^}]*margin:2rem auto 0/.test(index) && /footer \{ align-items:flex-start; flex-direction:column; \}/.test(index));
   check('підвал меню v3 скидає margin і лишається рядком', /\[data-account-menu-v3\] \.am3-footer \{\s*position: relative;\s*margin: 0;\s*flex-direction: row;/.test(v3Css));
 
+  // 4. MENU-KRUISJE-001: «Прибрати запис» — простий хрестик без рамки й тла, підказка пояснює наслідок.
+  const v3Tsx = lees('src/accountmenu-v3/AccountMenuV3.tsx');
+  const kruis = v3Css.match(/\[data-account-menu-v3\] \.am3-shell\.am3-shell\.am3-shell \.am3-account-actions \.am3-acc-btn\.canonical-account-forget \{([^}]*)\}/);
+  check('хрестик «Прибрати»: без рамки, прозоре тло, кругла зона 28×28', !!kruis && /border: 0;/.test(kruis[1]) && /background: transparent;/.test(kruis[1]) && /width: 28px;/.test(kruis[1]) && /height: 28px;/.test(kruis[1]) && /min-height: 0;/.test(kruis[1]) && /border-radius: 50%;/.test(kruis[1]));
+  check('хрестик: м\'який червоний натяк лише при наведенні/фокусі', /canonical-account-forget:is\(:hover, :focus-visible\):not\(:disabled\) \{[^}]*var\(--am3-danger-icon\)/.test(v3Css));
+  check('правило хрестика стоїть до мобільного шару (mobiel-cascade)', v3Css.indexOf('.am3-account-actions .am3-acc-btn.canonical-account-forget {') < v3Css.indexOf('@media (max-width: 700px) {'));
+  check('підказка хрестика пояснює наслідок (uk/nl), а не дублює назву', /доведеться увійти знову[^']*не зміняться/.test(v3Tsx) && /opnieuw aanmelden[^']*blijven ongewijzigd/.test(v3Tsx));
+
   return einde();
 }
