@@ -148,6 +148,65 @@
       "vereisteHulpmiddelen": [
         "uitrol_voorstel_begin"
       ]
+    },
+    {
+      "naam": "ontwikkelgeheugen-bewaken",
+      "pad": ".agents/skills/ontwikkelgeheugen-bewaken/SKILL.md",
+      "samenvatting": {
+        "uk": "Пам’ять розвитку: ідеї, рішення, історія агентів, передавання роботи, повторне використання файлів і попередніх виправлень.",
+        "nl": "Ontwikkelgeheugen: ideeën, besluiten, agentgeschiedenis, werkoverdracht, bestanden hergebruiken en eerdere oplossingen terugvinden."
+      },
+      "termen": {
+        "uk": [
+          "пам’ять розвитку",
+          "пам'ять розвитку",
+          "спільна пам’ять",
+          "пам'ять проєкту",
+          "запам’ятай",
+          "запам'ятай",
+          "зафіксуй ідею",
+          "збережи ідею",
+          "історія агентів",
+          "історію агентів",
+          "історія роботи",
+          "історію роботи",
+          "передавання роботи",
+          "передай іншому агенту",
+          "передати роботу",
+          "віднови сеанс",
+          "відновити розмову",
+          "попереднє виправлення",
+          "старе виправлення",
+          "знайди попередній файл",
+          "знайди створений файл",
+          "не створюй заново",
+          "повторне використання",
+          "раніше створені файли",
+          "де збереглися файли",
+          "знайти історію",
+          "центру роботи агентів",
+          "журнал агентів"
+        ],
+        "nl": [
+          "ontwikkelgeheugen",
+          "projectgeheugen",
+          "onthoud het idee",
+          "idee vastleggen",
+          "agentgeschiedenis",
+          "werkoverdracht",
+          "draag het werk over",
+          "eerder gemaakte bestanden",
+          "oude bestanden terugvinden",
+          "eerdere oplossing",
+          "terugkerende fout",
+          "werk hervatten",
+          "gespreksgeschiedenis",
+          "besluiten bewaren",
+          "bestanden hergebruiken",
+          "agentenjournaal"
+        ]
+      },
+      "vereisteHulpmiddelen": []
     }
   ]
 }
