@@ -47,20 +47,34 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* Тонка смужка стану технічного простору у верхній крайці вікна */
+/* ACCENT-001 (знімок Павла 15.11): смужка висотою 5 px не могла мати радіус 23 px — браузер зменшував його до ~5 px, і рівні
+   кути смужки виступали за заокруглені кути вікна. Тепер смужку малює ::before висотою з радіус кута (24 px) із тим самим
+   заокругленням, а маска лишає видимими лише верхні 5 px — смуга йде точно по дузі кута. Місце в розкладці — ті самі 5 px.
+   De strook volgt nu de afgeronde hoek van het venster in plaats van eruit te steken. */
 [data-account-menu-v3] .am3-tech-strip {
+  position: relative;
   height: 0;
-  overflow: hidden;
-  border-radius: 23px 23px 0 0;
   transition: height 0.2s ease;
+  pointer-events: none;
 }
 
 [data-account-menu-v3] .am3-tech-strip.is-active {
   height: 5px;
+}
+
+[data-account-menu-v3] .am3-tech-strip.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 24px;
+  border-radius: 23px 23px 0 0;
   background: repeating-linear-gradient(
     -45deg,
     var(--am3-shield-color, #d97706) 0 8px,
     color-mix(in srgb, var(--am3-shield-color, #d97706) 68%, #000000) 8px 16px
   );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 5px, transparent 5px);
+  mask-image: linear-gradient(to bottom, #000 0 5px, transparent 5px);
 }
 
 /* 1. Шапка профілю та Орбіта світлин (Режим А) / Секційна картка (Режим Б) */
