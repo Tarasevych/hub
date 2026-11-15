@@ -84,6 +84,10 @@
     {
       "tijd": "2026-11-15T06:58:54Z",
       "stap": "Виконано перевірку типів клієнта та сервера, усі статичні перевірки (kaart-controle, plaatsing-controle, l002-audit, hulp-vraagtekens-controle, zoek-ui-catalogus, bash -n), самоперевірку ПК-агента, повний поодинокий прогін 81 безбазового випробування та trace-001-ontwikkelarchief (16/16); уточнено .github/workflows/gemini-003-uitgave.yml для прогону 81 безбазового + 19 БД-тестів на PostgreSQL 16 та оформлено доказове досьє GEMINI-003."
+    },
+    {
+      "tijd": "2026-11-15T07:09:30Z",
+      "stap": "Після першого запуску GitHub Actions (43688111990) виявлено застарілу умову в tests/eenheid/tech-bundels.test.ts: регулярний вираз очікував суміжності vite build і tech-bundels-controle.mjs без урахування кроку huis-maquette.mjs із фіксації b9503ae1 (HUIS-001). Оновлено перевірку поля scripts.build у tech-bundels.test.ts (зберігши вимогу обов’язкового ланцюжка && після vite build) і повторно підтверджено перевірку типів та TRACE-001."
     }
   ],
   "keuzes": [
@@ -115,7 +119,7 @@
   ],
   "wijzigingen": [
     { "soort": "toegevoegd", "pad": ".github/workflows/gemini-003-uitgave.yml", "omschrijving": "Процес випуску GEMINI-003 на GitHub Actions зі звіренням основи 20261115-044530, 81 безбазовим + 19 БД-тестами на PostgreSQL 16, подвійними міграціями, TRACE-001 і SHA-256." },
-    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-003.json", "omschrijving": "Доказове досьє завдання GEMINI-003 із хронологією, вимірами ДО/ПІСЛЯ, рішеннями та повним переліком 34 файлів." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-003.json", "omschrijving": "Доказове досьє завдання GEMINI-003 із хронологією, вимірами ДО/ПІСЛЯ, рішеннями та повним переліком 35 файлів." },
     { "soort": "toegevoegd", "pad": "orchestratie/taken/GEMINI-003.json", "omschrijving": "Картка реєстрації завдання GEMINI-003 у системі координації агентів." },
     { "soort": "toegevoegd", "pad": "src/maquette-kern/laag-waarnemer.ts", "omschrijving": "Спільний rAF-спостерігач перекривних шарів abonneerOpenLaag та спостерігач атрибутів abonneerElementAttributen." },
     { "soort": "toegevoegd", "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts", "omschrijving": "19 модульних перевірок мобільної швидкодії, безпеки пошти, rAF-спостерігачів, лінивого завантаження, спекулятивної навігації, CSS без backdrop-filter і чистоти мови." },
@@ -147,7 +151,8 @@
     { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-oppervlakken.css", "omschrijving": "Вимкнено плавну прокрутку та важкі backdrop-filter на панелях і спливних шарах макета до 730 px." },
     { "soort": "gewijzigd", "pad": "src/navigatie-snel.ts", "omschrijving": "Збільшено ліміт Speculation Rules до 10 посилань та додано одноразовий preconnect у document.head." },
     { "soort": "gewijzigd", "pad": "src/sessies/vite-glob.d.ts", "omschrijving": "Додано декларацію *.css для типізації динамічного імпорту таблиці стилів макета." },
-    { "soort": "gewijzigd", "pad": "src/zichtbaar-voorladen.ts", "omschrijving": "Згруповано обробку доданих вузлів у MutationObserver через requestAnimationFrame із чистим від’єднанням." }
+    { "soort": "gewijzigd", "pad": "src/zichtbaar-voorladen.ts", "omschrijving": "Згруповано обробку доданих вузлів у MutationObserver через requestAnimationFrame із чистим від’єднанням." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/tech-bundels.test.ts", "omschrijving": "Оновлено перевірку поля scripts.build у package.json із урахуванням генерації huis-maquette.mjs після vite build." }
   ],
   "controles": [
     {
