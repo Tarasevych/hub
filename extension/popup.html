@@ -33,14 +33,17 @@
   <p id="aankondiging" class="vh" role="status" aria-live="polite"></p>
 
   <div id="diagnostiek" class="diag" hidden></div>
+  <!-- 0.9.5 (EXTUI-001): waar de extensie werkt (waar.js) -->
+  <section id="waar" class="waar" aria-label="Де працює" data-nl-aria="Waar ze werkt" hidden></section>
 
   <nav class="snel" aria-label="Швидкі дії" data-nl-aria="Snelle acties">
     <button id="snel-test" type="button" data-nl="Verbinding controleren">Перевірити з’єднання</button>
     <button id="snel-beheer" type="button" data-nl="Toegang beheren">Керувати доступом</button>
   </nav>
-  <p class="voet zacht"><span data-nl="Werkt alleen op tarasevych.com.">Працює лише на tarasevych.com.</span> <span id="versie"></span></p>
+  <p class="voet zacht"><span data-nl="Mijn Ruimte-extensie">Розширення Mijn Ruimte</span> <span id="versie"></span></p>
 </main>
 <script src="ui.js"></script>
 <script src="popup.js"></script>
+<script src="waar.js"></script>
 </body>
 </html>

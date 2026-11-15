@@ -19,6 +19,7 @@ import { combineer, slotVan, useExtensieLiveToestand, type Slot } from './extens
 // 0.6: slot «як користувач» (step-up, geen technisch profiel nodig).
 import ExtensiePrive, { toestemmingId } from './extensie/ExtensiePrive';
 import './agenten-paneel.css';
+import './extensie/extensie-ontwerp.css';
 import './agenten/agenten-toegang-maquette.css';
 import { alleenMens, geenAi } from './menselijke-actie'; // SEC-002 extensie-02 (g10a-2)
 
@@ -243,11 +244,24 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
   const installBlock = (
     <section ref={rootRef}>
       {mismatchKaart}
-      <ExtensionWizard
-        tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
-        busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
-        onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
-      />
+      {(() => {
+        const wizard = (
+          <ExtensionWizard
+            tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
+            busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
+            onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
+          />
+        );
+        // EXTUI-001: розширення вже є й підключене → покрокове встановлення не займає пів сторінки, а згорнуте (для іншого браузера
+        // чи перевстановлення). Extensie aanwezig en gekoppeld → de installatiehulp staat ingeklapt.
+        if (!(presence === 'present' && slotGekoppeld && !welcome)) return wizard;
+        return (
+          <details className='ext-klap' data-ext-klap='installatie'>
+            <summary><span className='ext-klap-icoon' aria-hidden='true'><Globe /></span><span>{tr('Встановити в іншому браузері або перевстановити', 'In een andere browser installeren of opnieuw installeren')}<small>{tr('У цьому браузері розширення вже встановлене й підключене', 'In deze browser is de extensie al geïnstalleerd en gekoppeld')}</small></span></summary>
+            <div className='ext-klap-inhoud'>{wizard}</div>
+          </details>
+        );
+      })()}
       {ruimte ? null : <ExtensieOntgrendeling tr={tr} />}
     </section>
   );
