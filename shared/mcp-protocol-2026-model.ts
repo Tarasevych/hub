@@ -603,6 +603,7 @@ export const MCP_INSPECTOR_RECEPTEN: readonly McpInspectorRecept[] = [
 export function voltooiMcpArgument(
   ref: { type?: string; name?: string; uri?: string } | undefined,
   arg: { name?: string; value?: string } | undefined,
+  opties?: { extraSkillIds?: readonly string[] },
 ): { values: string[]; total: number; hasMore: boolean } {
   const naam = String(arg?.name ?? '').trim();
   const voorvoegsel = String(arg?.value ?? '').trim().toLowerCase();
@@ -618,7 +619,7 @@ export function voltooiMcpArgument(
   } else if (naam === 'taal') {
     kandidaten = MCP_SDK_VOORBEELDEN.map((s) => s.taal);
   } else if (naam === 'id' || String(ref?.uri ?? '').includes('skills')) {
-    kandidaten = MCP_VAARDIGHEDEN.map((v) => v.id);
+    kandidaten = [...MCP_VAARDIGHEDEN.map((v) => v.id), ...(opties?.extraSkillIds ?? [])];
   } else if (naam === 'repo') {
     kandidaten = ['Tarasevych/hub'];
   } else if (naam === 'taakId') {

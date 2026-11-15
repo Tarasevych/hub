@@ -205,6 +205,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   github_save_file: 'github.write', github_sync_mirror: 'github.write',
   ecosysteem_context_list: 'site.read', ecosysteem_context_save: 'board.write',
   ecosysteem_agent_overdracht: 'board.write', ecosysteem_ruimte_uitbreiding: 'apps.deploy',
+  vaardigheden_aanbevelen: 'site.read', vaardigheden_opslaan: 'board.write',
   // сервер
   mcp_board_list: 'board.read',
   mcp_board_add: 'board.write',

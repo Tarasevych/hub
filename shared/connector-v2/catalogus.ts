@@ -534,6 +534,13 @@ const DEFS: readonly Def[] = [
   { id: 'ecosysteem_ruimte_uitbreiding', essentie: 'bewaren_uitbreiding', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
     uk: ['Додавати розширення простору сайту', 'Реєструє адаптацію, системний міст або робочий потік, створений вами чи інструментом програмування ШІ у межах вашого простору облікового запису.', 'Розширення працює лише у вашому просторі після підтвердження на сайті та з тими середовищами, які ви йому відкрили.'],
     nl: ['Uitbreiding van uw siteruimte bewaren', 'Registreert een aanpassing, systeembrug of werkstroom die door u of een programmeeragent binnen uw eigen accountruimte is gebouwd.', 'De uitbreiding werkt alleen in uw ruimte na bevestiging op de site en met de omgevingen die u ervoor openzette.'] },
+  // ---------------------------------------------------------------- vaardigheden-ecosysteem: modulaire vaardigheden per agent en ruimte
+  { id: 'vaardigheden_aanbevelen', essentie: 'kies_vaardigheden', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',
+    uk: ['Підбирати й читати навички', 'Шукає й читає модульні навички та інструкції для поточного агента й простору без надання нових прав.', 'Тексти навичок є настановами робочого процесу; права доступу визначають лише дозволи з’єднання.'],
+    nl: ['Vaardigheden kiezen en lezen', 'Zoekt en leest modulaire vaardigheden en werkinstructies voor de huidige agent en ruimte zonder extra rechten.', 'Vaardigheidsteksten zijn werkinstructies; toegangsrechten worden uitsluitend door de koppeling bepaald.'] },
+  { id: 'vaardigheden_opslaan', essentie: 'bewaar_vaardigheid', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Зберігати власну навичку', 'Створює або оновлює власну двомовну навичку у поточному просторі з версійністю та перевіркою мовного закону.', 'Навичка з’являється у каталозі поточного простору після підтвердження на сайті; таємні ключі заборонено.'],
+    nl: ['Eigen vaardigheid bewaren', 'Maakt of werkt een eigen tweetalige vaardigheid bij in de actieve ruimte met versiebeheer en taalcontrole.', 'De vaardigheid verschijnt in de catalogus van de actieve ruimte na bevestiging op de site; geheimen zijn verboden.'] },
 ];
 
 /**

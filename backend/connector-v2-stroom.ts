@@ -47,6 +47,7 @@ type Stroom = { userId: string; agent: string; res: http.ServerResponse; ruimte:
 const stromen = new Set<Stroom>();
 
 export const LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' });
+export const RESOURCES_LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/resources/list_changed' });
 
 const schrijf = (s: Stroom, tekst: string): boolean => { try { return s.res.write(tekst); } catch { return false; } };
 
@@ -57,6 +58,17 @@ export function meldLijstGewijzigd(userId: string, ruimte?: AiRuimte): number {
     if (s.userId !== userId) continue;
     if (ruimte !== undefined) s.ruimte = ruimte;
     if (schrijf(s, `event: message\ndata: ${LIST_CHANGED}\n\n`)) n++;
+  }
+  return n;
+}
+
+/** Alle open stromen van deze mens (of één agent) melden dat vaardigheden en MCP-bronnen gewijzigd zijn. */
+export function meldBronnenGewijzigd(userId: string, agent?: string): number {
+  let n = 0;
+  for (const s of stromen) {
+    if (s.userId !== userId) continue;
+    if (agent && agent !== '*' && s.agent !== agent) continue;
+    if (schrijf(s, `event: message\ndata: ${RESOURCES_LIST_CHANGED}\n\n`)) n++;
   }
   return n;
 }

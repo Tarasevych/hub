@@ -41,12 +41,14 @@ import { getPool } from '../server/platform/pg';
 import { DEV_MG_ALLEEN_V2, DEV_MG_SET } from '../shared/dev-media-github';
 import { ECOSYSTEEM_TOOL_NAMEN } from '../shared/ai-ecosysteem';
 import { GITHUB_WERKRUIMTE_TOOL_NAMEN } from '../shared/github-werkruimte';
-/** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), ecosysteem- en nieuwe GitHub-werkruimtehulpmiddelen. */
+import { VAARDIGHEDEN_TOOL_NAMEN } from '../shared/vaardigheden-ecosysteem';
+/** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), ecosysteem-, vaardigheden- en nieuwe GitHub-werkruimtehulpmiddelen. */
 export const V2_ALLEEN: ReadonlySet<string> = new Set<string>([
   ...DEV_MG_SET,
   'browser_script',
   ...ECOSYSTEEM_TOOL_NAMEN,
   ...GITHUB_WERKRUIMTE_TOOL_NAMEN,
+  ...VAARDIGHEDEN_TOOL_NAMEN,
 ]);
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
 // 21.10.2026: de zes privé-rechten die «у розробці» stonden (backend/dev-gebruiker-hulpmiddeldefinities.ts; uitvoering in backend/dev-rechten-gebruiker.ts).

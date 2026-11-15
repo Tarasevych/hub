@@ -90,6 +90,8 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Архів пишеться агентом розширення без сесії сайту; потрібен грант-шлях для токена агента. Наступний випуск.', nl: 'Het archief wordt door de extensie-agent zonder sitesessie geschreven; vraagt de grant-weg voor agenttokens. Volgende uitrol.' } },
   { tabel: 'app.huis_integraties', veld: 'token_envelop (Home Assistant-koppeling van de woning)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/huis-vnext.ts',
     reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
+  { tabel: 'app.vaardigheden_eigen', veld: 'instructies van agentvaardigheden (0279)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/vaardigheden-opslag.ts',
+    reden: { uk: 'Настанови й рецепти навичок не містять секретів (валідатор блокує ключі й токени) і читаються під час виявлення ресурсів MCP.', nl: 'Instructies van vaardigheden bevatten nooit geheimen (de validator weigert sleutels en tokens) en worden bij MCP-brondetectie gelezen.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 

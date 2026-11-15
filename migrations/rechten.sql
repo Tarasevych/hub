@@ -204,6 +204,10 @@ BEGIN
     IF to_regclass('app.melding_ecosysteem_profiel') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.melding_ecosysteem_profiel, app.melding_ecosysteem_gebeurtenissen, app.melding_ecosysteem_actie_log TO mijnruimte_app;
     END IF;
+    -- 0279: екосистема навичок, прив'язок до агентів та версійних ревізій під RLS.
+    IF to_regclass('app.vaardigheden_eigen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.vaardigheden_eigen, app.vaardigheden_agent_stand, app.vaardigheden_revisies TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

@@ -130,6 +130,7 @@ import { besluitZoekenPg } from './orch-besluit-pg';
 import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, toegangAanvraagToegestaan } from './gebruiker-schrijven'; // SEC-002 (autorisatie-02/-06)
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { aiEcosysteemRoutes } from './ai-ecosysteem';
+import { vaardighedenRoutes } from './vaardigheden-routes';
 import { passkeyRoutes } from './toegangssleutels';
 import { toegangRoutes } from './toegang-routes';
 import { toegangscodeRoutes } from './toegangscodes-routes';
@@ -822,6 +823,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),
   ...aiEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
+  ...vaardighedenRoutes({ requireSession: ownerRequireSession as never }),
   ...codewoordRoutes({ requireSession: ownerRequireSession as never, fail: error as never, ok: ownerResponse as never, body: ownerBody as never, stepUp: stapOpVereist as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   // Sleutelkluis (0092): «Шифрування моїх даних» — per mens en ruimte een eigen gegevenssleutel (backend/sleutelkluis.ts).
