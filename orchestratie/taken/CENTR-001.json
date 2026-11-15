@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "CENTR-001",
+  "agent": "claude",
+  "tak": "feature/centr-001-uitgave-20261115-132146",
+  "basisCommit": "027324eb3980b8717437b725d416a2ae4130d50e",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T13:23:00.375Z",
+  "bijgewerkt": "2026-11-15T13:23:00.375Z",
+  "omschrijving": "Центр облікового запису по центру на широкому ПК у трьох виглядах (PR #108) разом з окремою навігацією якорів «Макета» (PR #107); поверх 20261115-122058.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
