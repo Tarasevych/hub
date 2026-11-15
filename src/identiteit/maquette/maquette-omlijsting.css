@@ -204,8 +204,8 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 /* Центрування сторінки на широкому ПК (понад 1280 px). У макеті .page-wrap мав max-width 1580 px, margin:auto і запас під меню
    якорів лише з одного боку (168 px у режимі «авто» чи згорнутому, ~320 px у розгорнутому) проти 52 px з іншого. Запас рахувався від
    краю .page-wrap, а не екрана, тож на 1920–2560 px сторінка стояла збоку від центру, хоча меню якорів було далеко.
-   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (вміст 1476 px — як у макеті без меню
-   якорів); запас під меню лишається нижньою межею поля. Коли місця бракує (1366–1440 px), правий бік поступається першим — до 52 px,
+   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (колонка вмісту 1240 px; до 15.11.2026 було 1476 px — як у макеті без меню
+   якорів, але власник просив вужчі блоки, щоб погляд не бігав по екрану); запас під меню лишається нижньою межею поля. Коли місця бракує (1366–1440 px), правий бік поступається першим — до 52 px,
    тобто вузькі екрани виглядають так само, як раніше.
    --mq-rand повторює запаси, що фактично перемагають у згенерованому maquette-stijlen.css (правила з !important наприкінці файла):
    «авто» або згорнуте меню — 168 / 96 px, розгорнуте — 91/19 px + ширина меню + 17 px. Режим rail-smart-condensed не чіпаємо.
@@ -216,14 +216,22 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq.rail-right:is(.rail-mode-auto,.rail-compact){--mq-rand:96px}
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-left .page-wrap{
   max-width:none!important;
-  padding-left:max(var(--mq-rand),calc((100% - 1476px) / 2))!important;
-  padding-right:max(52px,min(calc((100% - 1476px) / 2),calc(100% - 1476px - var(--mq-rand))))!important;
+  padding-left:max(var(--mq-rand),calc((100% - 1240px) / 2))!important;
+  padding-right:max(52px,min(calc((100% - 1240px) / 2),calc(100% - 1240px - var(--mq-rand))))!important;
 }
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-right .page-wrap{
   max-width:none!important;
-  padding-right:max(var(--mq-rand),calc((100% - 1476px) / 2))!important;
-  padding-left:max(52px,min(calc((100% - 1476px) / 2),calc(100% - 1476px - var(--mq-rand))))!important;
+  padding-right:max(var(--mq-rand),calc((100% - 1240px) / 2))!important;
+  padding-left:max(52px,min(calc((100% - 1240px) / 2),calc(100% - 1240px - var(--mq-rand))))!important;
 }
+
+/* Без зайвого заднього блоку (15.11.2026, побажання власника): під розгорнутими налаштуваннями розділу лежали ще дві суцільні
+   підкладки на всю ширину картки (.section-inline-settings — темно-синій градієнт surface2→surface, і «Чинні налаштування» —
+   .mq-echt-blok), хоча кожна група налаштувань уже має свій блок. Тепер підкладки прозорі (лишається тонка лінія-розділювач), блоки
+   груп стоять на тлі сторінки; заголовки лишаються на своїх місцях.
+   NL: geen extra achterpaneel meer onder de instellingen van een sectie; elke groep heeft al een eigen blok. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}
 
 /* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
