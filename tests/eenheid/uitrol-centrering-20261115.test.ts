@@ -23,8 +23,9 @@ export async function main(): Promise<number> {
   const uitrol = lees('src/BeheerUitrolWeergave.tsx');
 
   // Частина 1. Правила й розмітка.
-  check('flat-content не сплющує картки сторінки оновлень (:not(.ut-root *))',
-    omlijsting.includes(':not(.mr-mq *):not(.ut-root *){border-inline:0;border-radius:0;box-shadow:none}'));
+  // ANKERS-002: загального сплющування flat-content більше немає взагалі — картки оновлень заокруглені без винятку.
+  check('flat-content не сплющує картки сторінки оновлень (загального правила з border-radius:0 немає)',
+    !/flat-content'\]\s*\.canonical-content\s*:where\(section[^}]*border-radius:0/.test(omlijsting));
   check('консоль на вкладці «Оновлення» — 1180 px по центру, сильніше за правило «Макета» (1460 px)',
     uitrolCss.includes('html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:1180px}'));
   check('«Макет» з меню збоку: поля симетричні, коли є місце; запас під меню — нижня межа; лише від 961 px',

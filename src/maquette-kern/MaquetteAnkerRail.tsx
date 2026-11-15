@@ -374,6 +374,18 @@ export function MaquetteAnkerRail({
   const toonAlsPil = isKlassiek && ingeklapt && !mobielOpen;
 
   const ankerPlekRef = useRef<HTMLDivElement>(null);
+  const lijstRef = useRef<HTMLDivElement>(null);
+  // ANKERS-002: довгий перелік прокручується всередині меню; активний пункт сам стає видимим (не ховається за нижнім краєм).
+  // Het actieve anker schuift binnen de lijst in beeld, ook als de lijst langer is dan het scherm.
+  useEffect(() => {
+    const lijst = lijstRef.current;
+    if (!lijst || lijst.scrollHeight <= lijst.clientHeight + 1) return;
+    const knop = lijst.querySelector<HTMLElement>('.is-actief');
+    if (!knop) return;
+    const l = lijst.getBoundingClientRect(), k = knop.getBoundingClientRect();
+    if (k.top < l.top + 8) lijst.scrollTop -= l.top + 8 - k.top;
+    else if (k.bottom > l.bottom - 8) lijst.scrollTop += k.bottom - (l.bottom - 8);
+  }, [actief, items.length]); // niet [items]: dat is bij elke render een nieuwe array en zou handmatig scrollen terugzetten
   const railRef = useRef<HTMLElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const grenzenCacheRef = useRef(new WeakMap<HTMLElement, string>());
@@ -916,7 +928,7 @@ export function MaquetteAnkerRail({
               </button>
             </div>
 
-            <div className="mq-rail-lijst">
+            <div className="mq-rail-lijst" ref={lijstRef}>
               {items.map((item, index) => renderItem(item, index, 0))}
             </div>
 

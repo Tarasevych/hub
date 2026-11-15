@@ -102,8 +102,9 @@ html.palet-maquette .ag-pagina > .ag-ankers {
   display: contents;
 }
 
+/* ANKERS-002: у «Макеті» липкої смуги вкладок більше немає (розділи — у меню якорів), тож запас лише під верхню панель. */
 html.palet-maquette .ag-pagina .ag-sectie {
-  scroll-margin-top: 11rem;
+  scroll-margin-top: 6rem;
 }
 
 html.palet-maquette .ag-pagina-kop {
