@@ -180,7 +180,9 @@
 .mr-at-boventitel span{color:var(--accent-ink);font-weight:700;white-space:nowrap}
 .mr-at-boventitel strong{font-weight:650;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mr-at-boventitel i{flex:1;height:1px;background:var(--line);min-width:12px}
-.mr-at-tegels{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+/* auto-fit, а не auto-fill: на широкому ПК порожні колонки не резервуються, тож картки групи заповнюють рядок, а не тиснуться вліво.
+   auto-fit i.p.v. auto-fill: geen lege kolommen rechts op een breed scherm. */
+.mr-at-tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
 .mr-at-tegel{position:relative;display:flex;flex-direction:column;text-align:left;padding:0;border-radius:var(--r-l);overflow:hidden;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow-s);
   transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s,border-color .3s;min-width:0}
 .mr-at-tegel:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--a) 40%,var(--line));box-shadow:var(--shadow)}

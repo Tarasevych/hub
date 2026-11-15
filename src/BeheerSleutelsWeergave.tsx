@@ -229,7 +229,7 @@ export default function AdminKeysView({lang,sourceOrigin,tabContext}:Props){
   };
 
   if(loading){
-    return <section className='admin-section' data-admin-keys='loading' aria-busy='true'><RefreshCw className='spin'/><p>{tr(lang,'Завантажуємо ключі контуру…','Contour-sleutels worden geladen…')}</p></section>;
+    return <div className='admin-laden' data-admin-keys='loading' role='status' aria-busy='true'><RefreshCw className='spin' aria-hidden='true'/><p>{tr(lang,'Завантажуємо ключі контуру…','Contour-sleutels worden geladen…')}</p></div>;
   }
 
   return (

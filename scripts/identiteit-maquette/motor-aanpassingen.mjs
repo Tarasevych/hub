@@ -400,17 +400,19 @@ v(`if(choice){demoValues[choice.dataset.choiceGroup]=Number(choice.dataset.choic
 v(`      root.style.setProperty("--effect-intensity",String(range.value/100));`,
   `      root.style.setProperty("--effect-intensity",String(range.value/100));
       if(range.dataset.rangeDemo==="themes-2")доСайту({effecten:Number(range.value)});`);
-// Положення й поведінка меню макета = положення (dock.positie) і режим (zijbalk modus) меню сайту; перетягування теж.
+// Положення й поведінка навігації якорів (перетягування теж) зберігаються в обліковому записі.
+// ANKERS-001 (15.11): власне поле paginaNav, а НЕ положення (dock.positie) і режим (modus) меню сайту — одне меню більше не рухає інше.
+// Ankernavigatie: eigen veld paginaNav in het account, los van positie en gedrag van het sitemenu.
 v(`    preferences.position=position;
     syncRailCompactButton();`,
   `    preferences.position=position;
-    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (IDENTITEIT-015): положення меню сайту
+    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (ANKERS-001): положення навігації якорів (paginaNav), не меню сайту
     syncRailCompactButton();`);
 v(`    preferences.railMode=mode;
     preferences.compact=mode!=="expanded";`,
   `    preferences.railMode=mode;
     preferences.compact=mode!=="expanded";
-    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (IDENTITEIT-015): режим меню сайту`);
+    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (ANKERS-001): поведінка навігації якорів (paginaNav), не меню сайту`);
 v(`    if(target.dataset.accent){setAccent(target.dataset.accent);syncControlStates();return;}
     if(target.dataset.demoLang){setLang(target.dataset.demoLang);return;}`,
   `    if(target.dataset.accent){сайтАкцент=target.dataset.accent;setAccent(target.dataset.accent);доСайту({accent:target.dataset.accent});syncControlStates();return;}
@@ -490,8 +492,10 @@ v(`    const target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[d
 // Вікно навігації: що діє на меню сайту, а що лише на навігацію цієї сторінки (переклад; сам абзац додає sjabloon.mjs).
 v(`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");`,
 `    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
-    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
-    write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");`);
+    // ANKERS-001: положення й поведінка — лише навігація цієї сторінки (окремо від меню сайту); підказка кнопки каже, що вона змінює.
+    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden alleen voor de navigatie van deze pagina en worden apart van het sitemenu in uw account bewaard: een wijziging hier verschuift het sitemenu niet, en omgekeerd. Stijl en inhoud van de knoppen gelden alleen op dit apparaat.":"Положення й поведінка діють лише на навігацію цієї сторінки й зберігаються в обліковому записі окремо від меню сайту: зміна тут не рухає меню сайту, а зміна меню сайту — цю навігацію. Стиль і вміст кнопок — лише на цьому пристрої.");
+    write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");
+    {const k=byId("mqPaginaNavKnop");if(k)k.title=preferences.lang==="nl"?"Opent de instellingen van het hoofdmenu van de site (positie, gedrag, pictogrammen). Wat u daar kiest, verandert de navigatie van deze pagina niet.":"Відкриває налаштування головного меню сайту (положення, поведінка, піктограми). Те, що ви там оберете, не змінює навігацію цієї сторінки.";}`);
 // IDENTITEIT-015 (приймання vormgeving): давня вада макета — вікно «Налаштування навігації» закривалося (Esc, «×», вибір положення),
 // а фокус лишався на схованій кнопці вікна або падав на <body>: людина з клавіатурою губила місце. Тепер фокус повертається на кнопку,
 // що відкрила вікно (⚙ меню, «Розташування навігації» у героя, кнопка положення на смузі розділів), — лише якщо він був у вікні
@@ -952,6 +956,11 @@ v(`        if(body.classList.contains("rail-smart-condensed"))setAdaptiveNavOpen
 // ZAVYSANNIA-001: так само вже сховане вікно налаштувань рейки не «ховаємо» вдруге — запис атрибута hidden на кожне натискання
 // перераховував стилі всієї сторінки. Een al verborgen paneel niet opnieuw verbergen.
 v(`function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;`, `function closeNavSettings(){const was=!popover.hidden;if(was)popover.hidden=true;`);
+
+// ANKERS-001: блок «Положення якорів» у розділі «Меню» — справжнє налаштування навігації цієї сторінки, а не «демонстраційна панель».
+// Het blok «Positie van ankers» is een echte instelling van de paginanavigatie, geen demonstratiepaneel.
+v(`dockInlineHint:"Налаштування цієї демонстраційної панелі"`, `dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться"`);
+v(`dockInlineHint:"Pas dit demonstratiepaneel aan"`, `dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet"`);
 
 fs.writeFileSync(f, s);
 console.log('ok');

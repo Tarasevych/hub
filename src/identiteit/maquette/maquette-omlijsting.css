@@ -99,7 +99,9 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud :where(h1,h2,h3){font-family:Georgia,'Times New Roman',serif}
 :where(.mr-mq .mq-echt-inhoud svg){width:1rem;height:1rem;stroke-width:1.9}
 /* Панель сайту всередині блоку без власної рамки: рамка й тло — від картки або розгорнутої панелі макета. */
-.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0;border:0;background:transparent;box-shadow:none}
+/* Колонка справжньої панелі (до 1100 px) стоїть по центру блоку, а не притиснута вліво — на широкому ПК праворуч не лишається порожнеча.
+   De kolom van het echte paneel (max. 1100 px) staat in het midden van het blok, niet tegen de linkerrand. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0 auto;border:0;background:transparent;box-shadow:none}
 /* Блок «Чинні налаштування» у стилі «Можливостей для доопрацювання»; у вкладеній панелі він іде після робочої області. */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok .future-section-flower{font-size:21px}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok[open] .future-section-head{margin-bottom:0}
@@ -198,6 +200,64 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
   .mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron,
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-pijl{transition:none!important}
 }
+
+/* Центрування сторінки на широкому ПК (понад 1280 px). У макеті .page-wrap мав max-width 1580 px, margin:auto і запас під меню
+   якорів лише з одного боку (168 px у режимі «авто» чи згорнутому, ~320 px у розгорнутому) проти 52 px з іншого. Запас рахувався від
+   краю .page-wrap, а не екрана, тож на 1920–2560 px сторінка стояла збоку від центру, хоча меню якорів було далеко.
+   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (колонка вмісту 910 px — ширина блоку «Ключі доступу»; до 15.11.2026 було 1476 px — як у макеті без меню
+   якорів, але власник просив вужчі блоки, щоб погляд не бігав по екрану); запас під меню лишається нижньою межею поля. Коли місця бракує (1366–1440 px), правий бік поступається першим — до 52 px,
+   тобто вузькі екрани виглядають так само, як раніше.
+   --mq-rand повторює запаси, що фактично перемагають у згенерованому maquette-stijlen.css (правила з !important наприкінці файла):
+   «авто» або згорнуте меню — 168 / 96 px, розгорнуте — 91/19 px + ширина меню + 17 px. Режим rail-smart-condensed не чіпаємо.
+   Gecentreerde pagina op een brede pc: gelijke marges links en rechts zodra er ruimte is; de ruimte voor het ankermenu blijft het minimum. */
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-left{--mq-rand:calc(91px + var(--side-nav-width,212px) + 17px)}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-right{--mq-rand:calc(19px + var(--side-nav-width,212px) + 17px)}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-left:is(.rail-mode-auto,.rail-compact){--mq-rand:168px}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-right:is(.rail-mode-auto,.rail-compact){--mq-rand:96px}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-left .page-wrap{
+  max-width:none!important;
+  padding-left:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-right:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-right .page-wrap{
+  max-width:none!important;
+  padding-right:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-left:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
+}
+
+/* Без зайвого заднього блоку (15.11.2026, побажання власника): під розгорнутими налаштуваннями розділу лежали ще дві суцільні
+   підкладки на всю ширину картки (.section-inline-settings — темно-синій градієнт surface2→surface, і «Чинні налаштування» —
+   .mq-echt-blok), хоча кожна група налаштувань уже має свій блок. Тепер підкладки прозорі (лишається тонка лінія-розділювач), блоки
+   груп стоять на тлі сторінки; заголовки лишаються на своїх місцях.
+   NL: geen extra achterpaneel meer onder de instellingen van een sectie; elke groep heeft al een eigen blok. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}
+/* Розгорнута справжня панель (безпека, способи входу, відновлення) на ПК: темна підкладка звужена до ширини її блоків, а не на всю
+   картку розділу (побажання власника 15.11.2026). Картка розділу закінчується заголовком «Чинні налаштування»; панель під ним —
+   окрема вужча картка по центру (до 910 px), далі — картка «Можливостей». Довкола видно чисте тло сторінки. Телефон і планшет без змін.
+   NL: bij een geopend echt paneel krimpt het donkere achterpaneel tot de breedte van de blokken; de sectiekaart eindigt bij de kop. */
+@media (min-width:961px){
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open]){background:transparent!important;border-color:transparent!important;box-shadow:none!important;overflow:visible}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-card{background:var(--surface);border:1px solid var(--card-border);border-bottom:0;border-radius:var(--radius) var(--radius) 0 0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings{padding:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-header,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-workspace{padding-inline:29px;background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-head{padding:25px 54px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]~.future-section{margin-top:18px;padding-inline:54px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+/* Те саме, коли «Чинні налаштування» лежать прямо в картці розділу (головна: герой, блоки груп, панель). */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.direct-settings{background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-head{padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]~.future-section{margin-top:18px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+}
+
+/* Вужча колонка (910 px): у картках «Приклад вигляду» кнопка «Налаштування меню» переходить під текст, а не стискає його у вузький
+   стовпчик по 3–4 слова. NL: in de smallere kolom gaat de knop onder de tekst in plaats van de tekst samen te drukken. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open){flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open)>.drawer-control-copy{flex:1 1 calc(100% - 60px);min-width:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top>.mq-demo-open{margin-left:50px}
 
 /* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){

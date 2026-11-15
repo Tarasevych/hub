@@ -207,7 +207,9 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
             <p>{tr(lang,'Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN. Ним підтверджують важливі дії замість пароля, а коли власник сайту ввімкне вхід ключем — ним можна й входити без Google.','Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode. Je bevestigt er belangrijke acties mee zonder wachtwoord, en zodra de site-eigenaar aanmelden met een sleutel aanzet, kun je er ook zonder Google mee aanmelden.')}</p>
             <p data-verschil-vertrouwen>{tr(lang,VERSCHIL_SLEUTEL_VERTROUWEN[0],VERSCHIL_SLEUTEL_VERTROUWEN[1])}</p>
             <p data-qr-hint>{tr(lang,QR_HINT[0],QR_HINT[1])}</p>
-          </InfoTip></span>
+          </InfoTip>
+          {/* Мітка стану, як в інших способів захисту: видно з першого погляду, чи ключ уже є. NL: statuslabel zoals bij de andere methoden. */}
+          <span data-passkey-mitka className={`access-plane-badge tone-${!data||!aantal?'muted':'good'}`}>{!data?tr(lang,'Завантаження…','Laden…'):aantal?tr(lang,'Налаштовано','Ingesteld'):tr(lang,'Не налаштовано','Niet ingesteld')}</span></span>
         <small>{!data?tr(lang,'Завантаження…','Laden…'):aantal?tr(lang,`Додано: ${aantal}`,`Toegevoegd: ${aantal}`):tr(lang,'Ще не додано','Nog niet toegevoegd')}</small>
         {/* IDENTITEIT-015: постійний рядок стану (а не лише підказка): що ключ дає саме цій людині зараз. */}
         {data&&<small data-passkey-stand={metAanmelden?'aanmelden':'bevestigen'}>{metAanmelden

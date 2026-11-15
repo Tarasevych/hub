@@ -1,0 +1,8 @@
+/* Стан завантаження адмінки (консоль і «Оновлення»): компактна анімована піктограма з підписом по центру, без панелі й рамки.
+   15.11.2026, побажання власника: велика панель на всю ширину з гострими кутами нічого не додавала — досить самої анімації.
+   NL: laadtoestand van het beheer — een klein draaiend pictogram met tekst in het midden, zonder paneel of rand. */
+.admin-laden{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:min(40vh,320px);margin:0 auto;padding:24px 16px;text-align:center;color:var(--muted,var(--mq-gedempt));background:none;border:0;box-shadow:none}
+.admin-laden svg{width:30px;height:30px;color:var(--accent,var(--mq-accent-adm))}
+.admin-laden[data-fout] svg{color:var(--fout,var(--danger))}
+.admin-laden p{margin:0;max-width:44ch;font-size:.92rem;line-height:1.5}
+@media (prefers-reduced-motion:reduce){.admin-laden .spin{animation-duration:3s}}
