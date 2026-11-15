@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "taakId": "DUBLI-001",
+  "titel": "Спільний випуск: швидкодія на смартфоні, праве меню «Макета» та налаштування без дублів",
+  "opdracht": "Власник 15.11.2026: id.tarasevych.com жорстко лагає на смартфоні, особливо під час зміни теми у вигляді «Макет»; виправити дефект правого бокового меню розділів; прибрати розбіжності, повтори налаштувань, невдалі назви та блоки, що лише посилаються на інші функціональні блоки, без дублювання на чинних. Три треди, один спільний випуск.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/dubli-001-uitgave-20261115-093055",
+    "basis": "d2fe6c579abcac9e19875ccc4c101fddd993fd72",
+    "geinstalleerdeBasis": "d2fe6c579abcac9e19875ccc4c101fddd993fd72",
+    "geinstalleerdeVersie": "20261115-072353",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "samengevoegd": [
+      {
+        "taak": "ZAVYSANNIA-001 (claude, тред зависань)",
+        "commit": "3c1b4a15",
+        "reden": "PR #90, гілка claude/project-thread-kb1y69 — основа цієї гілки"
+      },
+      {
+        "taak": "ZIJMENU-001 (claude, тред правого меню)",
+        "commit": "1ba927aa",
+        "reden": "PR #91, гілка claude/project-thread-z43v3a, уже влита в PR #90"
+      },
+      {
+        "taak": "ДУБЛІ-001 (claude, цей тред)",
+        "commit": "d3461d75",
+        "reden": "PR #92, гілка claude/project-thread-v1uhlc, влита звичайним злиттям"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Без секретів, токенів, вмісту листів і прихованих міркувань моделі; у випробуваннях лише синтетичні дані."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T08:55:06Z",
+      "stap": "Звернення власника: лагання на смартфоні, праве меню, дублі налаштувань; координатор розділив роботу на три треди."
+    },
+    {
+      "tijd": "2026-11-15T09:00:00Z",
+      "stap": "ДУБЛІ-001: причина двох однакових піктограм — заголовок групи брав піктограму першого розділу; два паралельні аудити дублів."
+    },
+    {
+      "tijd": "2026-11-15T09:10:59Z",
+      "stap": "Власник обрав: налаштування сповіщень лише в розділі «Сповіщення»."
+    },
+    {
+      "tijd": "2026-11-15T09:30:16Z",
+      "stap": "PR #90 готовий (у ньому вже #91 і #92); гілка випуску від claude/project-thread-kb1y69 + останній коміт #92."
+    }
+  ],
+  "keuzes": [
+    "Випуск збирається поверх останнього опублікованого випуску 20261115-072353 (d2fe6c57), а не integratie, яка відстає.",
+    "Тихі години: діяло лише сховище меню (zijbalk.meldingen.stil); розділ «Сповіщення» тепер пише туди ж, профіль екосистеми лише віддзеркалює.",
+    "Картки, що лише ведуть в інші розділи, прибрано: навігація вже є в змісті й бічній панелі."
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "bestand": "docs/ontwerp/identiteit-account/maquette-bron/locales.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\""
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/identiteit-maquette/motor-aanpassingen.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/InstellingencentrumWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ZijbalkInstellingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/gedeelde-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/IdentiteitAccountPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/atelier-inhoud.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/identiteit-tabs.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/IdentiteitMaquette.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-motor.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/melding/MeldingEcosysteemPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/TechLaag.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/useThema.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/wissel-rust.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/wissel-rust.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/dubli-001-rail.e2e.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/e2e/identiteit-014-blokken.e2e.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/e2e/identiteit-015-menu.e2e.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-014-kaart.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-014-uitvoer.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-015-stille-uren.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".github/workflows/dubli-001-uitgave.yml"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/taken/DUBLI-001.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/ontwikkelarchieven/DUBLI-001.json"
+    }
+  ],
+  "controles": [
+    "tsc --noEmit: без помилок.",
+    "Безбазові: identiteit-maquette 56/56, identiteit-atelier 37/37, maquette-mobiel-prestatie 19/19, meldingen-ecosysteem-ui 9/9, identiteit-account-ui 6/6.",
+    "PostgreSQL 16: identiteit-014-kaart 27/27, identiteit-014-uitvoer 34/34, menu-meldingen 40/40, identiteit-015-vormgeving 54/54, identiteit-014-herstel 43/43, identiteit-015-herstel 27/27.",
+    "Chrome (стенд «Макета»): dubli-001-rail 16/16 — телефон 390 і ПК 1280, світла й темна теми."
+  ],
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Повідомлення власника 15.11.2026 у проєкті зі знімком екрана смартфона (/themas, дві однакові піктограми).",
+      "inhoudGepubliceerd": false
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сервер робить лише власник через Admin → Оновлення; автоматичного встановлення немає.",
+    "identiteit-015-stille-uren: частина з Chrome не складається в цьому середовищі й на основі без змін (31/32 на основі); не входить до процесу випуску."
+  ],
+  "commits": [
+    {
+      "sha": "3c1b4a152ac3f09856484ec6da8b6acb20ac56c7",
+      "onderwerp": "ZAVYSANNIA-001: «Макет» не перезаписує вже згорнуту навігацію й уже сховане вікно налаштувань рейки на кожне натискання · geen herschrijving bij elke klik"
+    },
+    {
+      "sha": "d3461d755083e221d8901386608404d686ff1c7b",
+      "onderwerp": "ДУБЛІ-001: налаштування сповіщень лише в розділі «Сповіщення» (рішення Павла) · meldingsinstellingen alleen onder «Meldingen»"
+    },
+    {
+      "sha": "441a2a9ad43cf6b114cc98be301a4f5b8625180a",
+      "onderwerp": "ZAVYSANNIA-001: класичний вигляд монтує розділи поступово; смуга техпрофілю не перераховує стилі на кожну зміну теми; на сенсорних екранах у «Макеті» без переходів кольору · lui monteren, minder stijlherberekening"
+    },
+    {
+      "sha": "5df8463503160ee3de9fce023b75afdfd81ba9de",
+      "onderwerp": "ДУБЛІ-001: підвал і навігація «Макета» з назвами сайту; випробування правої навігації в браузері · voettekst en navigatie met de namen van de site, browsertest"
+    },
+    {
+      "sha": "b6fcd3926de8081eb2250aef99ed4e9a112b375d",
+      "onderwerp": "ДУБЛІ-001: без розділів-переходів і неправдивих текстів; справжній вибір профілю в «Ідентичності»; єдині назви · geen doorverwijskaarten, echte profielkeuze, één naam per onderdeel"
+    },
+    {
+      "sha": "1ba927aac171dab3026ca49b64b828dcdadd7542",
+      "onderwerp": "ZIJMENU-001: праве бокове меню розділів «Макета» на телефоні закривається одним кадром"
+    },
+    {
+      "sha": "2807f05753fc70ae3c3076514d727f298fb62a63",
+      "onderwerp": "ZAVYSANNIA-001: зміна теми без переходів, без розмиття тла в «Макеті» на сенсорних екранах, без зайвих перемальовувань · rustige themawissel op telefoons"
+    },
+    {
+      "sha": "8ea676b33f3d6a4c0ba56139af9c3266e625163c",
+      "onderwerp": "ДУБЛІ-001: власні піктограми груп у бічній навігації «Макета» замість піктограми першого розділу · eigen groepspictogrammen in de zijnavigatie"
+    }
+  ]
+}
