@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "POSTVAK-002",
+  "agent": "claude",
+  "tak": "feature/postvak-002-uitgave-20261115-115913",
+  "basisCommit": "eb1a08ba6929e32b50adbdd7c37893bff87ef40c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T12:00:08.192Z",
+  "bijgewerkt": "2026-11-15T12:00:08.192Z",
+  "omschrijving": "Спільний випуск трьох виправлень поверх 20261115-104817 (POSTVAK-001 @ eb1a08ba): MAILHOEK-001 — «Поштові акаунти» однією заокругленою карткою до й після завантаження (PR #94, a5c46dca); MAIL-IMAP-LEZEN-001 — вибір IMAP-скриньки в перемикачі показує її листи (PR #93, ad240215); TELEGRAM-002 — «Запит застарів» у вікні входу через Telegram (PR #100, лише 3dfdea15). · Gezamenlijke uitgave van drie herstellingen.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

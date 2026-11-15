@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "taakId": "POSTVAK-002",
+  "titel": "Заокруглені кути «Поштових акаунтів», читання IMAP-скриньок і вхід через Telegram",
+  "opdracht": "Спільний випуск трьох виправлень, які власник попросив 15.11.2026 об 11:49: гострі кути вікна на сторінці «Поштові акаунти» після завантаження; перемикання на підключену IMAP-скриньку відкривало сторінку підключень замість листів; вхід через Telegram відповідав «Запит застарів», хоча таймер ще йшов.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/postvak-002-uitgave-20261115-115913",
+    "basis": "eb1a08ba6929e32b50adbdd7c37893bff87ef40c",
+    "geinstalleerdeBasis": "eb1a08ba6929e32b50adbdd7c37893bff87ef40c",
+    "geinstalleerdeVersie": "20261115-104817",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "samengevoegd": [
+      {
+        "taak": "MAILHOEK-001 (claude, тред сторінки акаунтів)",
+        "commit": "a5c46dca",
+        "reden": "PR #94, гілка claude/project-thread-l7xga6, влита звичайним злиттям"
+      },
+      {
+        "taak": "MAIL-IMAP-LEZEN-001 (claude, тред перемикача скриньок)",
+        "commit": "ad240215",
+        "reden": "PR #93, гілка claude/project-thread-sjvsir, влита звичайним злиттям"
+      },
+      {
+        "taak": "TELEGRAM-002 (claude, тред Telegram)",
+        "commit": "3dfdea15",
+        "reden": "PR #100, лише коміт 3dfdea15 з гілки fix/telegram-venster-verlopen-20261115-115500 (пізніші коміти з піктограмами не входять)"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Без секретів, токенів, вмісту листів і прихованих міркувань моделі; у випробуваннях лише синтетичні дані."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T10:49:00Z",
+      "stap": "Звернення власника: гострі кути на сторінці акаунтів, перемикання на IMAP-скриньку відкриває підключення, Telegram «Запит застарів»; координатор розділив роботу на три треди."
+    },
+    {
+      "tijd": "2026-11-15T10:58:00Z",
+      "stap": "Три виправлення готові (PR #94, #93, #100) від лінії 20261115-104817."
+    },
+    {
+      "tijd": "2026-11-15T11:00:00Z",
+      "stap": "Злиття трьох комітів у гілку випуску без конфліктів."
+    },
+    {
+      "tijd": "2026-11-15T12:00:08Z",
+      "stap": "Процес випуску POSTVAK-002 у GitHub Actions."
+    }
+  ],
+  "keuzes": [
+    "Випуск збирається поверх останнього опублікованого випуску 20261115-104817 (eb1a08ba).",
+    "Гілки тредів влито звичайним злиттям, без переписування історії; з гілки Telegram — лише коміт 3dfdea15."
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/mail-imap-lezen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/mail-imap.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/cryptografie.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/venster.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/mail-imap-mime.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/GoogleMailWerkruimte.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailAccountBadge.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailAccountWisselaar.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/ImapPostvak.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/imap-postvak.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/mail-wisselaar-model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mailfix-001-accounts.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mail-imap-lezen-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mail-imap-mime-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-wisselaar-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mailfix-001.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/telegram-venster-20261114.test.ts"
+    }
+  ],
+  "controles": [
+    "tsc -p tsconfig.json --noEmit і typecheck:server: без помилок.",
+    "Безбазові тести зі списку процесу випуску, тести пошти й Telegram: зелені.",
+    "Процес випуску: повний набір тестів, збірка й міграції на чистій PostgreSQL у GitHub Actions."
+  ],
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Повідомлення власника 15.11.2026 11:49 у проєкті.",
+      "inhoudGepubliceerd": false
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сервер робить лише власник через Admin → Оновлення; автоматичного встановлення немає.",
+    "Набори з БД перевіряються в процесі випуску, а не в хмарному середовищі агента."
+  ],
+  "commits": [
+    {
+      "sha": "ad240215b636fba28c3c0230a800c4b1d98d543d",
+      "onderwerp": "MAIL-IMAP-LEZEN-001: вибір Ukr.net (IMAP) у перемикачі показує листи цієї скриньки · IMAP-mailbox kiezen toont haar berichten"
+    },
+    {
+      "sha": "a5c46dca8c3b0c54edb1cb46b3fec87676cd8a07",
+      "onderwerp": "MAILHOEK-001: «Поштові акаунти» — одна заокруглена картка до й після завантаження · één afgeronde kaart vóór en na het laden"
+    },
+    {
+      "sha": "3dfdea152e84760aeb842deaec2274beabb86d20",
+      "onderwerp": "TELEGRAM-002: виправлено «Запит застарів» у вікні Telegram — поле signature входить до рядка перевірки initData"
+    }
+  ]
+}
