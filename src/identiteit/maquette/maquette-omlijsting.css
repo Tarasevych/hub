@@ -128,6 +128,16 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730).rail-smart-condensed.rail-right .anchor-rail{right:12px!important}
 .mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-bottom .anchor-rail{bottom:calc(var(--mq-onder,0px) + 19px)!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq.rail-left .adaptive-nav-edge{display:none!important}
+/* Виправлення правого бокового меню розділів на телефоні (2026-11-15). Під час закриття висувного меню назви розділів зникали
+   одразу (display:none без .rail-smart-open), а сама картка ще 0,2 с згасала на повну ширину — на завантаженому телефоні цей кадр
+   зависав: широка порожня картка з піктограмами під правим краєм, обрізаний низ і кружечки краю поверх. Тепер закриття миттєве
+   (відкриття лишається анімованим), а список розділів показує, що його можна прокрутити.
+   Het zijmenu sluit nu in één beeld: geen brede lege kaart meer zonder namen; de lijst toont dat er meer onder staat. */
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:not(.rail-smart-open):is(.rail-left,.rail-right) .anchor-rail{transition:none!important}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open:is(.rail-left,.rail-right) .anchor-rail .rail-items{
+  min-height:0;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:14px!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);
+}
 /* IDENTITEIT-015 (приймання vormgeving): вікно «Налаштування навігації» на широкому екрані (fixed, від шапки) разом із перемикачем
    вигляду й поясненням вище за вікно 1280×900 (≈1030 px) — нижні кнопки («Налаштування меню сайту», «Вигляд сторінки») були поза
    екраном і недосяжні ні мишею, ні клавіатурою. Тепер вікно не вище за видиму частину й прокручується саме (як на телефоні нижче).

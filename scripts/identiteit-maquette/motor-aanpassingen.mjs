@@ -896,5 +896,51 @@ v(`  luisteraars.push(()=>revealObserver.disconnect());
   ініціалізовано=true;
   renderAll();`);
 
+// ДУБЛІ-001: заголовок групи в бічній навігації мав піктограму свого першого розділу («Обличчя простору» = «Персоналізація»,
+// «Люди» = «Спільний доступ» тощо), тож у розгорнутій групі дві однакові піктограми стояли поспіль і виглядали як дубль розділу.
+// Групи отримують власні піктограми. Groepen krijgen eigen pictogrammen, zodat er geen dubbele iconen onder elkaar staan.
+v(`const groups=[{id:"personal",icon:"personalization"},{id:"social",icon:"sharing"},{id:"account",icon:"account"},{id:"security",icon:"security"}];`,
+`const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп`);
+v(`    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>'
+  };`,
+`    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+    // САЙТ (ДУБЛІ-001): піктограми груп, відмінні від піктограм розділів.
+    "groep-personal":'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+    "groep-social":'<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
+    "groep-account":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.6a7 7 0 0 1 11.6 0"/>',
+    "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
+  };`);
+
+// ДУБЛІ-001: тексти, що стали неправдою або звучали як макет: елементи тепер змінюють справжні налаштування; «passkey» → «ключ доступу»;
+// нагадування про резервний доступ має чинне місце в розділі «Відновлення доступу»; єдині назви розділів.
+// Teksten die niet meer klopten of als ontwerp klonken; één naam per onderdeel.
+v(`concept:"Дизайн-концепт"`, `concept:"Новий вигляд"`);
+v(`concept:"Ontwerpconcept"`, `concept:"Nieuwe weergave"`);
+v(`demoToast:"Це демонстрація дизайну. Реальні параметри акаунта не змінено."`, `demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу."`);
+v(`demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn niet gewijzigd."`, `demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel."`);
+v(`drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті."`, `drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису."`);
+v(`drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website."`, `drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account."`);
+v(`note:"Приклад сценарію passkey без створення ключа"`, `note:"Створення ключа — у блоці «Чинні налаштування»"`);
+v(`note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово`, `note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово`);
+v(`note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard`, `note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard`);
+v(`усіх passkey означає`, `усіх ключів доступу означає`);
+v(`methods:{name:"Inlogmethoden",short:"Inloggen"`, `methods:{name:"Aanmeldmethoden",short:"Aanmelden"`);
+v(`name:"Акаунт і дані", short:"Акаунт і дан`, `name:"Обліковий запис і дані", short:"Обліковий запис і дан`);
+// Розділ «Ідентичності»: вибір профілю вже стоїть у картці — порожній блок «Чинні налаштування» не малюємо.
+v(`function tekenЧинні(id){`, `function tekenЧинні(id){
+    if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу`);
+
+// ДУБЛІ-001: підвал без «Account Atelier / Дизайн-концепт» — звичайна назва сторінки.
+v(`footer:"Дизайн-концепт 2026"`, `footer:"Центр облікового запису"`);
+v(`footer:"Ontwerpconcept 2026"`, `footer:"Accountcentrum"`);
+v(`write(".site-footer div span","Account Atelier / "+t.footer);`, `write(".site-footer div span",t.footer);`);
+v(`note:"Primaire inlogmethode in dit concept."`, `note:"Primaire inlogmethode."`);
+
+// ДУБЛІ-001: назви в навігації «Макета» — як у меню сайту: «Блоки», «Обліковий запис» (без англіцизму «Акаунт»).
+v(`navGroups:["Вигляд і меню","Доступ і ролі","Акаунт","Захист"]`, `navGroups:["Вигляд і меню","Доступ і ролі","Обліковий запис","Захист"]`);
+v(`id:"widgets", group:"personal", number:"05", name:"Віджети", short:"Віджети"`, `id:"widgets", group:"personal", number:"05", name:"Блоки", short:"Блоки"`);
+v(`widgets:{name:"Widgets",short:"Widgets"`, `widgets:{name:"Blokken",short:"Blokken"`);
+v(`short:"Обліковий запис і дані"`, `short:"Обліковий запис"`);
+
 fs.writeFileSync(f, s);
 console.log('ok');

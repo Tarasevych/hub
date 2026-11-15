@@ -50,19 +50,19 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const locales = {
     uk:{
       ui:{
-        workspace:"Мій простір",settings:"Налаштування",concept:"Дизайн-концепт",quickJump:"Швидкий перехід",
+        workspace:"Мій простір",settings:"Налаштування",concept:"Новий вигляд",quickJump:"Швидкий перехід",
         heroEyebrow:"ВАШ ЦИФРОВИЙ ПРОСТІР",heroTitle:["Ваш простір.","Ваші правила."],
         heroDesc:"Один витончений центр керування всім, що робить «Мій простір» по-справжньому вашим.",
         startSetup:"Налаштувати простір",navPlacement:"Розташування навігації",sectionCount:"розділів",
         controlCenter:"Єдиний центр керування",profiles:"Окремі режими та простори",
         groups:["ОБЛИЧЧЯ ВАШОГО ПРОСТОРУ","ЛЮДИ ТА ІДЕНТИЧНІСТЬ","ВАШ АКАУНТ","БЕЗПЕКА ТА ВІДНОВЛЕННЯ"],
         interludes:[["Дизайн стає по-справжньому вашим, коли кожен елемент","має своє місце."],["Справжній контроль — це коли складне","відчувається простим."]],
-        footer:"Дизайн-концепт 2026",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
+        footer:"Центр облікового запису",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
         scrollProgress:"Прогрес сторінки",collapse:"Згорнути панель",expand:"Розгорнути панель",
         anchorPlacement:"ПОЛОЖЕННЯ ЯКОРІВ",positionPrompt:"Розташуйте як зручно",
         positions:{left:"Ліворуч",right:"Праворуч",top:"Зверху",bottom:"Знизу"},
         compact:"Компактний режим",navStyle:"Стиль меню",navClassic:"Звичайна панель",navPills:"Окремі кнопки",navIconLabel:"Вміст кнопок",navNames:"Піктограми з назвами",navIcons:"Лише піктограми",navStyleHint:"Кнопки за розміром тексту, без спільного фону",dragHelp:"Можна також перетягнути заголовок панелі до потрібного краю екрана.",adaptiveNavHelp:"На вузькому екрані меню висувається збоку, не займаючи місця в робочій області.",adaptiveNavModeOnly:"Автоматично: наведіть мишку на край екрана або відкрийте меню натисканням чи свайпом. Постійні режими доступні лише на широкому екрані.",
-        navGroups:["Вигляд і меню","Доступ і ролі","Акаунт","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
+        navGroups:["Вигляд і меню","Доступ і ролі","Обліковий запис","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
         findSection:"Знайти розділ налаштувань…",commandHeading:"РОЗДІЛИ ЦЕНТРУ КЕРУВАННЯ",
         choose:"↑ ↓ обрати",go:"↵ перейти",noResults:"Нічого не знайдено. Спробуйте іншу назву.",
         beginning:"Початок",manage:"КЕРУВАННЯ",openSettings:"Відкрити налаштування",
@@ -73,10 +73,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
         dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
-        moved:"Панель якорів переміщено:",demoToast:"Це демонстрація дизайну. Реальні параметри акаунта не змінено.",
+        moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
         drawerControls:"Налаштування",drawerPreview:"Вигляд у роботі",drawerDemo:"ДЕМО · Без змін акаунта",drawerDone:"Готово",
-        drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті.",
+        drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису.",
         drawerVisualTitle:"Ось як виглядає відкритий розділ",drawerVisualNote:"Простора панель, зрозумілі групи й миттєвий відгук на дії.",
         previewSample:"Попередній перегляд",previewEnabled:"Увімкнено",previewOptions:"Ваші параметри",
         savedLocally:"Показано лише в макеті",actionDemo:"Дія показана в демонстраційному режимі.",rangeValue:"Інтенсивність",
@@ -145,7 +145,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         methods:[
           {type:"info",label:"Вхід через Google",note:"Основний спосіб входу в поточній концепції."},
-          {type:"action",label:"Додати ключ доступу",note:"Приклад сценарію passkey без створення ключа"},
+          {type:"action",label:"Додати ключ доступу",note:"Створення ключа — у блоці «Чинні налаштування»"},
           {type:"toggle",label:"Пояснення перед підтвердженням",note:"Показувати, для чого потрібна перевірка",initial:true}
         ],
         security:[
@@ -155,21 +155,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-          {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
-          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
+          {type:"info",label:"Нагадування про резервний доступ",note:"Перемикач — у блоці «Чинні налаштування» цього розділу. Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
+          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх ключів доступу означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
     },
     nl:{
       ui:{
-        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Ontwerpconcept",quickJump:"Snel navigeren",
+        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Nieuwe weergave",quickJump:"Snel navigeren",
         heroEyebrow:"JOUW DIGITALE RUIMTE",heroTitle:["Jouw ruimte.","Jouw regels."],
         heroDesc:"Eén stijlvolle plek om alles te beheren wat Mijn Ruimte echt van jou maakt.",
         startSetup:"Ruimte aanpassen",navPlacement:"Navigatiepositie",sectionCount:"onderdelen",
         controlCenter:"Eén centrale plek",profiles:"Aparte profielen en ruimtes",
         groups:["DE SFEER VAN JOUW RUIMTE","MENSEN EN IDENTITEIT","JOUW ACCOUNT","BEVEILIGING EN HERSTEL"],
         interludes:[["Een ontwerp wordt persoonlijk wanneer elk element","zijn eigen plek krijgt."],["Echte controle voelt natuurlijk aan, ook als","de techniek complex is."]],
-        footer:"Ontwerpconcept 2026",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
+        footer:"Accountcentrum",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
         scrollProgress:"Pagina-voortgang",collapse:"Paneel inklappen",expand:"Paneel uitklappen",
         anchorPlacement:"POSITIE VAN ANKERS",positionPrompt:"Zet het waar jij wilt",
         positions:{left:"Links",right:"Rechts",top:"Boven",bottom:"Onder"},
@@ -185,10 +185,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
         dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
         langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",
-        moved:"Ankernavigatie verplaatst naar:",demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn niet gewijzigd.",
+        moved:"Ankernavigatie verplaatst naar:",demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel.",
         navDemoToast:"Dit is een visueel prototype. Echte diensten zijn hier niet verbonden.",
         drawerControls:"Instellingen",drawerPreview:"Live voorbeeld",drawerDemo:"DEMO · Account ongewijzigd",drawerDone:"Gereed",
-        drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website.",
+        drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account.",
         drawerVisualTitle:"Zo ziet een geopend onderdeel eruit",drawerVisualNote:"Een ruim paneel met heldere groepen en directe visuele feedback.",
         previewSample:"Voorbeeld",previewEnabled:"Ingeschakeld",previewOptions:"Jouw voorkeuren",
         savedLocally:"Alleen zichtbaar in het prototype",actionDemo:"Actie getoond in demomodus.",rangeValue:"Intensiteit",
@@ -213,13 +213,13 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         menu:{name:"Menu",short:"Menu",kicker:"ALLE VRIJHEID",title:"Navigatie die met je meebeweegt.",description:"Menupositie, snelle toegang, iconen en subtiele animaties. Precies instelbaar, toch eenvoudig.",details:[["Positie","Links · rechts · boven · onder"],["Snelle toegang","Je favoriete acties binnen handbereik"],["Paneelweergave","Uitgevouwen, compact of als dock"]]},
         themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
         languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
-        widgets:{name:"Widgets",short:"Widgets",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+        widgets:{name:"Blokken",short:"Blokken",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
         melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
         sharing:{name:"Delen",short:"Delen",kicker:"JOUW GRENZEN",title:"Deel alleen wat jij wilt.",description:"Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",details:[["Toegang per account","Uitnodigingen en rollen"],["Toegang via link","Aparte opties en beperkingen"]]},
         identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
         account:{name:"Account en gegevens",short:"Account",kicker:"JOUW GEGEVENS",title:"Alles wat belangrijk is, onder controle.",description:"Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",details:[["Profiel","Basisgegevens van je account"],["Gegevens en export","Je gegevens bekijken en beheren"],["Gevoelige acties","Een aparte zone met bevestiging"]]},
         sessions:{name:"Sessies en apparaten",short:"Apparaten",kicker:"JOUW VERBINDINGEN",title:"Elk apparaat in beeld.",description:"Actieve sessies, geschiedenis en gekoppelde apparaten meteen duidelijk.",details:[["Apparaten","Type, browser en recente activiteit"],["Sessies","Inlogmomenten bekijken en beheren"]]},
-        methods:{name:"Inlogmethoden",short:"Inloggen",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
+        methods:{name:"Aanmeldmethoden",short:"Aanmelden",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
         security:{name:"Beveiliging",short:"Beveiliging",kicker:"RUST EN ZEKERHEID",title:"Beveiliging die je begrijpt.",description:"Tweestapsverificatie, versleuteling en rechten helder uitgelegd.",details:[["Inlogbevestiging","TOTP en toegangssleutels"],["Versleuteling","Sleutels en gegevensbescherming"],["Gasttoegang","Beperkte rechten en geschiedenis"]]},
         recovery:{name:"Toegang herstellen",short:"Herstel",kicker:"PLAN B",title:"Rust, ook als het tegenzit.",description:"Een duidelijk herstelproces met uitleg, risico's en vervolgstappen.",details:[["Herstelcodes","Een reserveoptie voor bevestiging"],["Aanbevelingen","Voorkom verlies van toegang"]]}
       },
@@ -271,7 +271,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"action",label:"Sessiegeschiedenis",note:"Voorbeeld van recente logins"}
         ],
         methods:[
-          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode in dit concept."},
+          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode."},
           {type:"action",label:"Passkey toevoegen",note:"Voorbeeld zonder een echte sleutel aan te maken"},
           {type:"toggle",label:"Uitleg vóór bevestiging",note:"Toon waarvoor je toestemming geeft",initial:true}
         ],
@@ -282,7 +282,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-          {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
+          {type:"info",label:"Herinnering aan reservetoegang",note:"De schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
           {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
@@ -1467,7 +1467,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       special:"language"
     },
     {
-      id:"widgets", group:"personal", number:"05", name:"Віджети", short:"Віджети", icon:"⊞",
+      id:"widgets", group:"personal", number:"05", name:"Блоки", short:"Блоки", icon:"⊞",
       kicker:"ЗБЕРІТЬ СВОЄ", title:"Маленькі деталі. Велика різниця.",
       description:"Побудуйте робочий простір із корисних блоків. Обирайте те, що важливе саме сьогодні.",
       accent:"amber", art:"widgets",
@@ -1508,7 +1508,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"account", group:"account", number:"09", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
+      id:"account", group:"account", number:"09", name:"Обліковий запис і дані", short:"Обліковий запис", icon:"▣",
       kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
@@ -1778,7 +1778,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     sessions:'<rect x="2" y="4" width="15" height="12" rx="2"/><path d="M6 20h7M9.5 16v4"/><rect x="18" y="9" width="4" height="10" rx="1"/>',
     methods:'<circle cx="8" cy="15" r="4"/><path d="M11 12 21 2M16 7l3 3M18 5l3 3"/>',
     security:'<path d="M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z"/><path d="m8 12 3 3 5-6"/>',
-    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>'
+    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+    // САЙТ (ДУБЛІ-001): піктограми груп, відмінні від піктограм розділів.
+    "groep-personal":'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+    "groep-social":'<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
+    "groep-account":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.6a7 7 0 0 1 11.6 0"/>',
+    "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
   };
   function iconSvg(id){return '<svg class="semantic-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">'+(iconPaths[id]||iconPaths.intro)+'</svg>';}
 
@@ -1810,6 +1815,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   // САЙТ: блок справжніх налаштувань у стилі «Можливостей для доопрацювання» макета; гніздо .mq-echt заповнює застосунок.
   const openeЧинні=new Set();
   function tekenЧинні(id){
+    if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу
     const nl=preferences.lang==="nl";
     const kop=nl?"Huidige instellingen":"Чинні налаштування";
     const uitleg=nl?"De echte instellingen van uw account: wijzigingen hier gelden meteen en volgen uw rechten.":"Справжні налаштування вашого облікового запису: зміни тут діють одразу й за вашими правами.";
@@ -1870,7 +1876,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     root.querySelectorAll(".section-overline-text").forEach((el,i)=>el.textContent=t.groups[i]);
     root.querySelectorAll(".interlude p").forEach((el,i)=>el.innerHTML=t.interludes[i][0]+' <em>'+t.interludes[i][1]+'</em>');
     write(".site-footer strong",t.workspace);
-    write(".site-footer div span","Account Atelier / "+t.footer);
+    write(".site-footer div span",t.footer);
     write(".to-top",t.backTop);
     write(".rail-title strong",t.navigation);
     write(".rail-title small",t.dragToEdge);
@@ -1927,7 +1933,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       byId("group-"+g).innerHTML=localized.filter(s=>s.group===g).map(renderCard).join("");
     }
     const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
-    const groups=[{id:"personal",icon:"personalization"},{id:"social",icon:"sharing"},{id:"account",icon:"account"},{id:"security",icon:"security"}];
+    const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп
     byId("railItems").innerHTML=navItem("intro",ui().beginning)+groups.map((group,index)=>{
       const label=ui().navGroups[index],opened=expandedNavGroups.has(group.id);
       return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+

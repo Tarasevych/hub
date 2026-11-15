@@ -13,7 +13,7 @@ import { UITERLIJK_EFFECTEN_STANDAARD } from '../../../shared/uiterlijk';
 import { ProfielRuimteKaart } from '../ProfielRuimteKaart';
 import { VormgevingKiezer } from '../VormgevingKiezer';
 import { GA_NAAR_DIENST } from '../identiteit-vormgeving';
-import { AtelierInhoud } from '../atelier-inhoud';
+import { AtelierInhoud, RuimtewisselElders } from '../atelier-inhoud';
 
 export type MaquetteGebruiker = { naam: string; foto: string } | null;
 
@@ -229,7 +229,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
     <>
       <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette' />
       {/* Межі розділів, як у класичному вигляді: гнізда «Способи входу», «Безпека», «Відновлення» показують лише свій розділ. */}
-      <AtelierInhoud.Provider value={true}>
+      <AtelierInhoud.Provider value={true}><RuimtewisselElders.Provider value={true}>
         {gaten.map((gat) => {
           const id = gat.dataset.echt || '';
           const houder = houders.current.get(id);
@@ -239,7 +239,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
           const sectie = secties.find((s) => s.id === naarSite(id));
           return sectie ? createPortal(sectie.inhoud, houder, id) : null;
         })}
-      </AtelierInhoud.Provider>
+      </RuimtewisselElders.Provider></AtelierInhoud.Provider>
     </>
   );
 }
