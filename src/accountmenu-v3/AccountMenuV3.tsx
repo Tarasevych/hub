@@ -39,7 +39,7 @@ import type { TermijnModus } from '../tech/ruimtes-contract';
 import { beeindigen, starten, useRuimtes, verlengen } from '../tech/ruimtes/ruimtes-opslag';
 import { kiesRuimte } from '../tech/ruimtes/RuimteWissel';
 import { hervatAuto, pauzeerAuto, useAutoStatus, useThemaStand, zetPalet, zetWeergaveStijl } from '../thema/useThema';
-import { ACCENT_TONEN, minderTransparantie } from '../thema/weergave-stijl';
+import { ACCENT_NAMEN, ACCENT_TONEN, accentKeuzesMet, minderTransparantie } from '../thema/weergave-stijl';
 import { UITERLIJK_TRANSPARANTIE_STANDAARD_AAN, type UiterlijkAccent } from '../../shared/uiterlijk';
 import {
   begrensschaal,
@@ -60,10 +60,6 @@ import './accountmenu-v3.css';
 
 const OMTREK_32 = 97.4; // 2 * Math.PI * 15.5
 /** ACCENT-001: назви акцентів, обраних раніше в «Налаштування → Теми» (їх немає серед восьми відтінків меню). */
-const OUDE_ACCENT_NAMEN: Partial<Record<string, { uk: string; nl: string }>> = {
-  violet: { uk: 'Фіолетовий', nl: 'Violet' }, cyan: { uk: 'Бірюзовий', nl: 'Turquoise' }, pink: { uk: 'Рожевий', nl: 'Roze' }, amber: { uk: 'Бурштиновий', nl: 'Amber' },
-};
-
 function useAccountmenuV3PaletSync(violetToegestaan: boolean): {
   keuze: AccountmenuV3PaletKeuze;
   info: PaletKeuzeInfo;
@@ -262,7 +258,7 @@ export function AccountMenuV3({
   const accentKeuze = themaStijl.accent as UiterlijkAccent | undefined;
   const paletKleur = accentKeuze && ACCENT_TONEN[accentKeuze] ? ACCENT_TONEN[accentKeuze][donker ? 'donker' : 'licht'].accent : paletIcoonKleur(paletSync.keuze, dienst, donker);
   const transparantie = typeof themaStijl.transparantie === 'number' ? themaStijl.transparantie : 0;
-  const accentInfo = accentKeuze ? (PALET_KEUZES_INFO.find((p) => p.groep === 'vast' && p.id === accentKeuze) || OUDE_ACCENT_NAMEN[accentKeuze]) : undefined;
+  const accentInfo = accentKeuze ? ACCENT_NAMEN[accentKeuze] : undefined; // KLEUREN-001: назви з одного джерела · namen uit één bron
 
   // Стан технічного простору та колір технічної смуги (активні виключно для увімкненого облікового запису)
   const heeftTech = Boolean(displayUser) && (Boolean(tech.profiel) || Boolean(ruimtes.status?.technischToegestaan));
@@ -1057,7 +1053,9 @@ export function AccountMenuV3({
               </div>
 
               <div className='am3-tints-row' role='group' aria-label={uk ? 'Фіксовані кольорові відтінки' : 'Vaste kleurtinten'}>
-                {PALET_KEUZES_INFO.filter((p) => p.groep === 'vast').map((p) => {
+                {/* KLEUREN-001: той самий набір і ті самі назви, що в Налаштування → Теми → «Акцентна палітра» (раніше тут було 8, там 10). */}
+                {accentKeuzesMet(accentKeuze || undefined).map((id) => {
+                  const p = { id, kleur: ACCENT_TONEN[id].licht.accent, ...ACCENT_NAMEN[id] };
                   const isActief = accentKeuze === p.id;
                   return (
                     <button

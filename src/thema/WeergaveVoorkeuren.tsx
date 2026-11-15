@@ -6,18 +6,13 @@
 // Echte weergave-instellingen van de hele site (dichtheid, beweging, accent, effecten), bewaard in het account.
 import { Layers, Rows3, Rows4, StretchHorizontal, Waves } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { UITERLIJK_EFFECTEN_STANDAARD, UITERLIJK_TRANSPARANTIE_STANDAARD_AAN, type UiterlijkAccent, type UiterlijkDichtheid } from '../../shared/uiterlijk';
+import { UITERLIJK_EFFECTEN_STANDAARD, UITERLIJK_TRANSPARANTIE_STANDAARD_AAN, type UiterlijkDichtheid } from '../../shared/uiterlijk';
 import { useThemaStand, zetWeergaveStijl } from './useThema';
-import { ACCENT_KEUZES, ACCENT_TONEN } from './weergave-stijl';
+import { ACCENT_NAMEN, ACCENT_TONEN, accentKeuzesMet } from './weergave-stijl';
 import './thema-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
 
-const ACCENT_NAAM: Record<UiterlijkAccent, [string, string]> = {
-  violet: ['Фіолетовий', 'Violet'], cyan: ['Ціан', 'Cyaan'], pink: ['Рожевий', 'Roze'], amber: ['Медовий', 'Honing'],
-  blauw: ['Синій', 'Blauw'], hemel: ['Небесний', 'Hemelsblauw'], teal: ['Бірюзовий', 'Teal'], groen: ['Зелений', 'Groen'],
-  oranje: ['Бурштиновий', 'Oranje'], roze: ['Малиновий', 'Framboos'], indigo: ['Індиго', 'Indigo'], bruin: ['Теракотовий', 'Terracotta'],
-};
 
 /** «Персоналізація»: щільність і рух. Ідентифікатори секцій — цілі переходу з карток «Макета» (data-kaart-ga). */
 export function PersoonlijkeWeergave({ tr }: { tr: Tr }) {
@@ -63,9 +58,9 @@ export function AccentEnEffecten({ tr }: { tr: Tr }) {
           title={tr('Акцент визначає палітра (у «Кольоровій» — колір розділу).', 'Het palet bepaalt het accent (bij «Kleurrijk» de kleur van het onderdeel).')}>
           <i style={{ background: 'var(--accent)' }} aria-hidden /><span>{tr('Як у палітрі', 'Zoals het palet')}</span>
         </button>
-        {ACCENT_KEUZES.concat(stijl.accent && !ACCENT_KEUZES.includes(stijl.accent) ? [stijl.accent] : []).map((id) => <button key={id} type='button' role='radio' aria-checked={stijl.accent === id} className={stijl.accent === id ? 'active' : ''} onClick={() => zetWeergaveStijl({ accent: id })} data-thema-accent={id}
-          title={tr(`Кнопки, виділення й перемикачі на всіх сервісах стануть кольору «${ACCENT_NAAM[id][0]}»; палітра поверхонь не зміниться.`, `Knoppen, selecties en schakelaars op alle diensten worden «${ACCENT_NAAM[id][1]}»; de kleuren van de vlakken blijven.`)}>
-          <i style={{ background: `linear-gradient(135deg, ${ACCENT_TONEN[id].licht.accent} 50%, ${ACCENT_TONEN[id].donker.accent} 50%)` }} aria-hidden /><span>{tr(...ACCENT_NAAM[id])}</span>
+        {accentKeuzesMet(stijl.accent).map((id) => <button key={id} type='button' role='radio' aria-checked={stijl.accent === id} className={stijl.accent === id ? 'active' : ''} onClick={() => zetWeergaveStijl({ accent: id })} data-thema-accent={id}
+          title={tr(`Кнопки, виділення й перемикачі на всіх сервісах стануть кольору «${ACCENT_NAMEN[id].uk}»; палітра поверхонь не зміниться.`, `Knoppen, selecties en schakelaars op alle diensten worden «${ACCENT_NAMEN[id].nl}»; de kleuren van de vlakken blijven.`)}>
+          <i style={{ background: `linear-gradient(135deg, ${ACCENT_TONEN[id].licht.accent} 50%, ${ACCENT_TONEN[id].donker.accent} 50%)` }} aria-hidden /><span>{tr(ACCENT_NAMEN[id].uk, ACCENT_NAMEN[id].nl)}</span>
         </button>)}
       </div>
     </section>
