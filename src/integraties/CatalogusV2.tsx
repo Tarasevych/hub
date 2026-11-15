@@ -35,11 +35,19 @@ const tijd = (ms: number, lang: Lang) => new Date(ms).toLocaleString(lang === 'u
 
 export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, onDetail, onMappen, gelezenOp, context, onVernieuw }: Props) {
   const [wizard, setWizard] = useState<string | null>(null);
+  const [wizardBron, setWizardBron] = useState<string | null>(null);
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [v, setV] = useState<Voorkeur2>(() => { try { return leesVoorkeur(localStorage.getItem(OPSLAG())); } catch { return leesVoorkeur(null); } });
   const [zoek, setZoek] = useState('');
   const [plan, setPlan] = useState<string | null>(null);
   useEffect(() => { try { localStorage.setItem(OPSLAG(), JSON.stringify(v)); } catch { /* opslag geblokkeerd */ } }, [v]);
+
+  const sluitWizard = () => { setWizard(null); setWizardBron(null); };
+  const wisselWizard = (id: string, bron: string) => {
+    if (wizard === id && wizardBron === bron) sluitWizard();
+    else { setWizard(id); setWizardBron(bron); }
+  };
+  const kopWizardOpen = wizard === '' && wizardBron === 'kop';
 
   const lijst = useMemo(() => INTEGRATIES.filter((i) => (!v.cat || i.cat === v.cat) && (!v.methode || i.methoden.includes(v.methode)) && zoekt(i, zoek)), [v.cat, v.methode, zoek]);
   const blokken = useMemo(() => indelen(lijst, levend, v, lang), [lijst, levend, v, lang]);
@@ -55,21 +63,22 @@ export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, o
   };
   const ACTIE: Record<string, [string, string]> = { koppelen: ['Підключити', 'Koppelen'], beheren: ['Керувати', 'Beheren'], herstellen: ['Відновити', 'Herstellen'], instellen: ['Налаштувати', 'Instellen'], plan: ['План', 'Plan'] };
 
-  const kaart = (i: Integratie) => {
+  const kaart = (i: Integratie, bron: string) => {
     const l = levend(i), g = groepVan(i, l), a = actieVan(g), r = registerVan(i.id), url = link(i);
     const c = CATEGORIEEN.find((x) => x.id === i.cat)!;
     const sv = stand?.levend?.[i.id], ctl = stand?.controles?.[i.id];
     const op = wens.includes(i.id);
     const label = ACTIE[a][lang === 'uk' ? 0 : 1];
     const metWizard = (a === 'koppelen' || a === 'herstellen' || a === 'instellen') && wizardKan(i, l) && autorisatieSoort(i) !== 'directory';
+    const isWizardOpen = metWizard && wizard === i.id && wizardBron === bron;
     const hoofd = metWizard
-      ? <button type='button' className={`ic2-knop${a === 'instellen' ? '' : ' is-primair'}`} data-ic2-actie={a} onClick={() => { setWizard(i.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{label}<span className='il-sr'> — {i.naam}</span></button>
+      ? <button type='button' className={`ic2-knop${a === 'instellen' ? '' : ' is-primair'}`} data-ic2-actie={a} aria-expanded={isWizardOpen} onClick={() => wisselWizard(i.id, bron)}>{label}<span className='il-sr'> — {i.naam}</span></button>
       : a === 'plan' || (!url && i.doel?.soort !== 'directory')
       ? <button type='button' className='ic2-knop' aria-expanded={plan === i.id} onClick={() => setPlan(plan === i.id ? null : i.id)}>{a === 'plan' ? label : tr('Що потрібно', 'Wat is nodig')}<span className='il-sr'> — {i.naam}</span></button>
       : i.doel?.soort === 'directory' ? <button type='button' className='ic2-knop is-primair' onClick={onMappen}>{label}<span className='il-sr'> — {i.naam}</span></button>
       : <a className={`ic2-knop${a === 'koppelen' || a === 'herstellen' ? ' is-primair' : ''}`} href={url} data-ic2-actie={a}>{label}<span className='il-sr'> — {i.naam}</span></a>;
-    return (
-      <li key={i.id} className='ic2-kaart' data-integratie={i.id} data-groep={g}>
+    const kaartElement = (
+      <li key={i.id} className='ic2-kaart' data-integratie={i.id} data-groep={g} data-wizard-open={isWizardOpen ? 'ja' : undefined}>
         <div className='ic2-kop'>
           <Logo id={i.id} naam={i.naam} logo={i.logo} />
           <div className='ic2-titel'><h4>{i.naam}</h4><span>{c[lang]}{i.methoden.length ? ` · ${i.methoden.map((m) => METHODE_LABEL[m][lang === 'uk' ? 0 : 1]).join(', ')}` : ''}</span></div>
@@ -99,6 +108,13 @@ export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, o
         </div>
       </li>
     );
+    if (!isWizardOpen) return [kaartElement];
+    return [
+      kaartElement,
+      <li key={`${i.id}-wizard`} className='ic2-wizard-rij'>
+        <WizardV2 key={`${bron}:${i.id}`} lang={lang} context={context} begin={i.id} levend={levend} href={href} onSluit={sluitWizard} onGewijzigd={onVernieuw} onMappen={onMappen} />
+      </li>,
+    ];
   };
 
   return (
@@ -106,9 +122,9 @@ export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, o
       <div className='ic2-kopblok'>
         <h3>{tr('Каталог за темами', 'Catalogus per thema')}</h3>
         <HulpVraag k='integraties.v2-catalogus' lang={lang} />
-        <button type='button' className='ic2-knop is-primair ic2-wizardknop' onClick={() => setWizard('')}>{tr('Майстер підключень', 'Koppelwizard')}</button>
+        <button type='button' className='ic2-knop is-primair ic2-wizardknop' aria-expanded={kopWizardOpen} onClick={() => wisselWizard('', 'kop')}>{tr('Майстер підключень', 'Koppelwizard')}</button>
       </div>
-      {wizard !== null ? <WizardV2 key={wizard} lang={lang} context={context} begin={wizard || undefined} levend={levend} href={href} onSluit={() => setWizard(null)} onGewijzigd={onVernieuw} onMappen={onMappen} /> : null}
+      {kopWizardOpen ? <WizardV2 key='kop' lang={lang} context={context} levend={levend} href={href} onSluit={sluitWizard} onGewijzigd={onVernieuw} onMappen={onMappen} /> : null}
       <p className='ic2-samen'>{GROEPEN.map((g) => `${g[lang]}: ${tel[g.id] || 0}`).join(' · ')}</p>
 
       <div className='ic2-balk'>
@@ -137,14 +153,14 @@ export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, o
       {fouten.length ? (
         <section className='ic2-fouten' role='alert' aria-label={tr('Помилки підключення', 'Koppelfouten')}>
           <h4><AlertTriangle aria-hidden />{tr('Потребують уваги зараз', 'Vragen nu aandacht')} ({fouten.length})</h4>
-          <ul className='ic2-raster'>{fouten.map(kaart)}</ul>
+          <ul className='ic2-raster'>{fouten.flatMap((i) => kaart(i, 'fouten'))}</ul>
         </section>
       ) : null}
 
       {favorieten.length ? (
         <section className='ic2-blok'>
           <button type='button' className='ic2-blokkop' aria-expanded={isOpen(v, 'fav')} onClick={() => setV(wissel(v, 'fav'))}><Star aria-hidden />{tr('Обране', 'Favorieten')}<b>{favorieten.length}</b><ChevronDown aria-hidden className='ic2-pijl' /></button>
-          {isOpen(v, 'fav') ? <ul className='ic2-raster'>{favorieten.map(kaart)}</ul> : null}
+          {isOpen(v, 'fav') ? <ul className='ic2-raster'>{favorieten.flatMap((i) => kaart(i, 'fav'))}</ul> : null}
         </section>
       ) : null}
 
@@ -163,7 +179,7 @@ export default function CatalogusV2({ lang, levend, stand, href, wens, onWens, o
               return (
                 <div key={g.id} className='ic2-groep' data-groep={g.id}>
                   <button type='button' className='ic2-groepkop' aria-expanded={go} onClick={() => setV(wissel(v, s))}>{def[lang]}<b>{g.lijst.length}</b><ChevronDown aria-hidden className='ic2-pijl' /></button>
-                  {go ? <ul className='ic2-raster'>{g.lijst.map(kaart)}</ul> : null}
+                  {go ? <ul className='ic2-raster'>{g.lijst.flatMap((i) => kaart(i, `groep:${s}`))}</ul> : null}
                 </div>
               );
             }) : null}

@@ -89,6 +89,19 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
     }
   }, [tr]);
   useEffect(() => { void lees(); }, [lees]);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tsv:ai-werk-stand', { detail: weergave }));
+  }, [weergave]);
+  useEffect(() => {
+    const bijWissel = (event: Event) => {
+      const detail = (event as CustomEvent<'werk' | 'middelen'>).detail;
+      if (detail === 'werk' || detail === 'middelen') {
+        setWeergave(detail);
+      }
+    };
+    window.addEventListener('tsv:ai-werk-weergave', bijWissel);
+    return () => window.removeEventListener('tsv:ai-werk-weergave', bijWissel);
+  }, []);
   /** De stand kan in een ander tabblad veranderd zijn (sleutel toegevoegd, apparaat gekoppeld, recht gegeven). */
   const herlaad = () => { setLaden({ fase: 'laden' }); void lees(); };
   const herlaadKnop = (label: Tweetalig) => (

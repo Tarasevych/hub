@@ -1,7 +1,7 @@
 import {lazy,Suspense,useCallback,useEffect,useMemo,useState} from 'react';
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {api} from './platform/client';
-import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
+import {ArrowUp,Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,Plus,RefreshCw,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
 import MailAccountsHub from './MailAccountsHub';import{mailKoppelenOpenen}from'./platform/VensterHerstel';import{mailAanbieder}from'../shared/mail-aanbieders';
 import GoogleMailWorkspace from './GoogleMailWerkruimte';const ContactenWeergave=lazy(()=>import('./afzenders/ContactenWeergave'));const ContactenScanMelding=lazy(()=>import('./afzenders/ContactenScanMelding'));import{emitCanonicalNotice}from'./canoniek-meldingen';
 import {MaquetteHeld,MaquetteAnkerRail,useIsKlassiekMaquette,type MaquetteAnkerItem} from './maquette-kern';
@@ -43,13 +43,19 @@ const MAQUETTE_MAIL_TEKSTEN={
   statSkrinky:'Скриньок активних',
   statLokalni:'Локальних листів',
   statPorih:'Поріг сповіщень',
-  railTitel:'Розділи пошти',
+  railTitel:'На цій сторінці',
   railOndertitel:'Перетягніть до зручного краю',
+  ankerGroepSecties:'Розділи сторінки',
+  ankerGroepActies:'Швидкі дії',
+  ankerBoven:'На початок',
   ankerAanbieders:'Постачальники',
   ankerGekoppeld:'Підключені скриньки',
   ankerImport:'Приватне додавання',
   ankerMeldingen:'Сповіщення',
   ankerUitleg:'Як це працює',
+  ankerActieImport:'Додати лист вручну',
+  ankerActieVernieuw:'Оновити список',
+  ankerActieClassic:'Звичайна пошта',
   localBoven:'ПОШТА · КЕРОВАНИЙ ФРОНТ',
   localVoor:'Один лист за раз.',
   localCursief:'Без тиску й поспіху.',
@@ -74,13 +80,19 @@ const MAQUETTE_MAIL_TEKSTEN={
   statSkrinky:'Actieve postbussen',
   statLokalni:'Lokale berichten',
   statPorih:'Meldingsdrempel',
-  railTitel:'Onderdelen',
+  railTitel:'Op deze pagina',
   railOndertitel:'Sleep naar een gewenste rand',
+  ankerGroepSecties:'Onderdelen',
+  ankerGroepActies:'Snelle acties',
+  ankerBoven:'Naar boven',
   ankerAanbieders:'Aanbieders',
   ankerGekoppeld:'Gekoppelde postbussen',
   ankerImport:'Eigen berichtinvoer',
   ankerMeldingen:'Meldingen',
   ankerUitleg:'Hoe het werkt',
+  ankerActieImport:'Bericht toevoegen',
+  ankerActieVernieuw:'Lijst vernieuwen',
+  ankerActieClassic:'Gewone e-mail',
   localBoven:'E-MAIL · BEHEERSBARE WERKSTROOM',
   localVoor:'Eén bericht tegelijk.',
   localCursief:'Zonder druk of haast.',
@@ -158,6 +170,9 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
 
  const springNaarSectie=useCallback((sectieId:string)=>{
   setActiefAnker(sectieId);
+  if(sectieId==='actie:import'){setImportOpen(true);return;}
+  if(sectieId==='actie:vernieuw'){void load();return;}
+  if(sectieId==='actie:classic'){openClassicMail();return;}
   if(typeof document==='undefined')return;
   const doel=document.getElementById(sectieId);
   if(doel)doel.scrollIntoView({behavior:'smooth',block:'start'});
@@ -253,11 +268,29 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const modaalOpen=koppelVensterOpen||afzenderDialoogOpen||importOpen;
 
  const accountsAnkerItems=useMemo<ReadonlyArray<MaquetteAnkerItem>>(()=>[
-  {id:'mail-sectie-aanbieders',label:mqTekst.ankerAanbieders},
-  {id:'mail-sectie-gekoppeld',label:mqTekst.ankerGekoppeld,badge:gekoppeldeTotaal},
-  {id:'mail-sectie-import',label:mqTekst.ankerImport},
-  {id:'mail-sectie-meldingen',label:mqTekst.ankerMeldingen},
-  {id:'mail-sectie-uitleg',label:mqTekst.ankerUitleg},
+  {
+   id:'mail-groep-secties',
+   label:mqTekst.ankerGroepSecties,
+   icoon:<Inbox/>,
+   kinderen:[
+    {id:'mail-boven',label:mqTekst.ankerBoven,icoon:<ArrowUp/>},
+    {id:'mail-sectie-aanbieders',label:mqTekst.ankerAanbieders,icoon:<Sparkles/>},
+    {id:'mail-sectie-gekoppeld',label:mqTekst.ankerGekoppeld,icoon:<ShieldCheck/>,badge:gekoppeldeTotaal},
+    {id:'mail-sectie-import',label:mqTekst.ankerImport,icoon:<Upload/>},
+    {id:'mail-sectie-meldingen',label:mqTekst.ankerMeldingen,icoon:<Bell/>},
+    {id:'mail-sectie-uitleg',label:mqTekst.ankerUitleg,icoon:<FileText/>},
+   ],
+  },
+  {
+   id:'mail-groep-acties',
+   label:mqTekst.ankerGroepActies,
+   icoon:<ListChecks/>,
+   kinderen:[
+    {id:'actie:import',label:mqTekst.ankerActieImport,icoon:<Plus/>},
+    {id:'actie:vernieuw',label:mqTekst.ankerActieVernieuw,icoon:<RefreshCw/>},
+    {id:'actie:classic',label:mqTekst.ankerActieClassic,icoon:<Inbox/>},
+   ],
+  },
  ],[mqTekst,gekoppeldeTotaal]);
 
  const onboarding=(
@@ -412,7 +445,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   />
  ):null;
 
- return <div className={`mail-functional${focus?' is-focus':''}${loading?' mail-initial-loading':''}${standardMailSurface?' google-workspace-active':''}${maquetteSpeciaal?' mq-schil':''}`} data-mail-phase='1' data-mq-dienst={maquetteSpeciaal?'mail':undefined}>
+ return <div id='mail-boven' className={`mail-functional${focus?' is-focus':''}${loading?' mail-initial-loading':''}${standardMailSurface?' google-workspace-active':''}${maquetteSpeciaal?' mq-schil':''}`} data-mail-phase='1' data-mq-dienst={maquetteSpeciaal?'mail':undefined}>
   {maquetteBoven}
   {body}
   {/* «Контакти й відправники»: start de volledige controle automatisch één keer en toont de voortgang (Пауза / Зупинити). */}

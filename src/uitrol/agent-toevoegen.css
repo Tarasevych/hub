@@ -8,12 +8,13 @@
 .admin-uitrol .ut-icoon-knop:hover{background:var(--ut-bg);color:var(--ut-text);border-color:var(--ut-info)}
 .admin-uitrol .ut-icoon-knop.ut-sluit:hover{background:var(--ut-err-bg);color:var(--ut-err);border-color:var(--ut-err)}
 .ut-icoon-knop svg{width:18px;height:18px;display:block}
-.ut-agenttegels{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
-.ut-agenttegel{display:grid;gap:10px;align-content:start;padding:12px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg2)}
+.ut-agenttegels{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.ut-agenttegel{display:grid;gap:10px;align-content:start;padding:12px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg2);min-width:0;max-width:100%;overflow-wrap:anywhere}
 .ut-agenttegel[data-recht="ja"]{border-color:var(--ut-ok);background:linear-gradient(0deg,var(--ut-ok-bg),transparent 70%),var(--ut-bg2)}
 .ut-agenttegel-kop{display:flex;gap:12px;align-items:center;min-width:0}
 .ut-agenttegel-kop>div{display:grid;gap:2px;min-width:0}
-.ut-agenttegel-sub{font-size:.76rem;color:var(--ut-muted)}
+.ut-agenttegel-kop b{overflow-wrap:anywhere}
+.ut-agenttegel-sub{font-size:.76rem;color:var(--ut-muted);overflow-wrap:anywhere}
 .ut-agenttegel-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ut-agenttegel-nb{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 10px;border-radius:10px;background:var(--ut-info-bg);color:var(--ut-text);font-size:.82rem}
 .ut-agenttegel-nb[data-toon="warn"]{background:var(--ut-warn-bg)}

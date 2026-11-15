@@ -57,7 +57,7 @@
 .ag-tech-rij:first-child dt,.ag-tech-rij:first-child dd{border-top:0}
 .ag-tech dt{color:var(--muted);background:var(--surface)}
 .ag-tech dd{overflow-wrap:anywhere}
-.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;word-break:break-all}
+.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal}
 
 /* Badges, chips */
 .ag-badge{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border:1px solid currentColor;border-radius:99px;font-size:.75rem;font-weight:600;line-height:18px;white-space:nowrap}
@@ -110,7 +110,7 @@ small.ag-melding{display:block}
 .ag-kaart-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
 .ag-waarschuwing{border-color:var(--ag-warn);box-shadow:inset 4px 0 0 var(--ag-warn)}
 .ag-vers{border-color:var(--ag-ok)}
-.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);word-break:break-all}
+.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);overflow-wrap:anywhere;word-break:normal}
 .ag-groep{border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
 .ag-groep-acties{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 14px 10px}
 .ag-groep>summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;list-style:none;color:var(--muted);font-weight:600;font-size:.9rem}
@@ -194,7 +194,7 @@ small.ag-melding{display:block}
 .ag-verbind-klant:focus-visible,.ag-verbind-weg:focus-visible{outline:2px solid var(--accent,#1f5fbf);outline-offset:2px}
 .ag-verbind-rij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px}
 .ag-verbind-rij .ag-veld select{min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:inherit;font:inherit;max-width:100%}
-.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:12px}
+.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:12px}
 .ag-verbind-weg{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ag-verbind-weg>svg{grid-row:span 2;width:24px;height:24px;color:var(--accent,#1f5fbf)}
 .ag-verbind-weg small{color:var(--muted);line-height:1.4}
@@ -203,7 +203,7 @@ small.ag-melding{display:block}
 .ag-verbind-stappen{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px;line-height:1.5}
 .ag-verbind-stappen li{display:flex;flex-direction:column;gap:6px}
 .ag-verbind-adres{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);word-break:break-all;font-size:13px}
+.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);overflow-wrap:anywhere;word-break:normal;font-size:13px}
 .ag-verbind-let{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--ag-warn,#b45309) 12%,transparent);font-size:13px;line-height:1.45}
 .ag-verbind-snippet summary{cursor:pointer;font-weight:600;padding:4px 0}
 .ag-verbind-snippet pre{margin:8px 0;padding:10px;border-radius:8px;background:var(--surface);overflow:auto;max-width:100%;font-size:12px}
@@ -215,7 +215,7 @@ small.ag-melding{display:block}
 .ag-tech-kop{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
 .ag-tech-kop h1{margin:0;font-size:22px}
 .ag-tech-kop p{margin:0;color:var(--muted,#667);line-height:1.5}
-.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:0;padding:0;list-style:none}
 .ag-tech-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r,12px);background:var(--surface);font-size:13px;line-height:1.45}
 .ag-tech-regels li svg{flex:none;margin-top:2px}
 @media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
@@ -534,11 +534,11 @@ a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb)
 .ag-subrij{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r)}
 .ag-subrij[data-aan='false']{opacity:.6}
 .ag-subrij>div{min-width:0}
-.ag-subrij code{word-break:break-all}
+.ag-subrij code{overflow-wrap:anywhere;word-break:normal}
 
 /* «Окремі простори» (src/agenten/RuimteScheiding.tsx, migratie 0082): de eenmalige keuze als drie kaarten, en de tabel met
    de stand per dienst. Geen nieuwe stijltaal: dezelfde randen, radii en gedempte tekst als de rest van dit tabblad. */
-.ag-keuzes{display:grid;gap:12px;margin:12px 0 0;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr))}
+.ag-keuzes{display:grid;gap:12px;margin:12px 0 0;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))}
 .ag-keuze{padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);display:grid;gap:8px;align-content:start}
 .ag-keuze h4{margin:0;font-size:1rem}
 .ag-keuze p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5}

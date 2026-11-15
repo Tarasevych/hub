@@ -116,8 +116,8 @@ html[data-ruimte=technisch][data-tech=aan] body::after{content:'';position:fixed
 /* 28.10.2026: de paarse streep rechts van het menu (inset-schaduw) is weg — zag eruit als een defect. Nu een kleine stip op de menuknop. */
 html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle{position:relative}
 html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle::before{content:'';position:absolute;left:4px;bottom:4px;width:7px;height:7px;border-radius:50%;background:var(--tech-band-bg);pointer-events:none}
-html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:' · ТЕХ';font-weight:800;color:inherit;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:4px;padding:0 4px;margin-left:4px}
-html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:' · TECH'}
+html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:'ТЕХ';display:inline-flex;align-items:center;flex:none;white-space:nowrap;font-size:.68rem;font-weight:800;line-height:1.25;letter-spacing:.05em;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:5px;padding:2px 6px;margin-left:0}
+html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:'TECH'}
 @media (prefers-reduced-motion:reduce){.tech-band{transition:none!important}}
 /* Telefoon en tablet (≤1100 px): in de band alleen het spoor van de tumbler (naam en stand staan in title/aria), zodat «Згорнути» en «Вийти…» niet buiten beeld vallen. */
 @media (max-width:1100px){.tech-band .rw-stand,.tech-band .rw-label{display:none}.tech-band .rw-schakel{padding:3px;gap:0}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-label{display:flex}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel{padding:4px 14px 4px 4px;gap:10px}}

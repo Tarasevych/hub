@@ -46,7 +46,7 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
           <button type='button' className='hv-knop is-hoofd' onClick={() => naarTab('integrations')} data-hv-cta='integraties'><Plug aria-hidden='true' />{tr(lang, 'Налаштувати перший шлюз', 'Eerste gateway instellen')}</button>
         </section>
       ) : null}
-      <div className='hv-tegels'>
+      <div id='hv-ov-tegels' className='hv-tegels'>
         <button type='button' className={`hv-tegel${isMaquette ? ' mq-accent-coral' : ''}`} onClick={() => naarTab('devices')} data-hv-tegel='temperatuur'>
           <Thermometer aria-hidden='true' /><strong>{temp.length ? `${temp[0].t!.waarde} ${temp[0].t!.eenheid}` : '—'}</strong>
           <span>{temp.length ? `${temp[0].a.naam} · ${geledenTekst(lang, temp[0].t!.waargenomenOp || temp[0].t!.ontvangenOp)}` : tr(lang, 'температура: немає вимірів', 'temperatuur: geen meting')}</span>

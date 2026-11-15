@@ -24,6 +24,7 @@ export {
 export {
   MaquetteAnkerRail,
   type MaquetteRailZijde,
+  type MaquetteAnkerSoort,
   type MaquetteAnkerItem,
   type MaquetteAnkerRailProps,
 } from './MaquetteAnkerRail';

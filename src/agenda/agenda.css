@@ -23,8 +23,8 @@
 .agenda-winkel{display:grid;gap:10px}
 .agenda-winkel-uitleg{margin:0;max-width:78ch;padding:10px 12px;border-left:3px solid var(--accent,#2f6f73);border-radius:0 10px 10px 0;background:var(--surface,#f8fafc);color:var(--muted,#4b5563);font-size:.86rem}
 .agenda-winkel h3{margin:6px 0 0;font-size:.95rem}
-.agenda-kaarten{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
-.agenda-kaart{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--panel,#fff)}
+.agenda-kaarten{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+.agenda-kaart{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--panel,#fff);min-width:0;max-width:100%}
 .agenda-kaart[data-agenda-stand='binnenkort']{background:var(--surface,#f8fafc)}
 .agenda-kaart-kop{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:10px}
 .agenda-monogram{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--accent,#2f6f73) 16%,var(--panel,#fff));color:var(--accent,#2f6f73);font-weight:700}
@@ -67,7 +67,7 @@
 .agenda-uitbreiding p{margin:0;max-width:78ch;font-size:.86rem}
 .agenda-uitbreiding-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .agenda-uitbreiding-lijst li{display:grid;gap:2px;padding:8px 10px;border-radius:10px;background:var(--panel,#fff)}
-.agenda-uitbreiding-lijst code{font-size:.78rem;word-break:break-all}
+.agenda-uitbreiding-lijst code{font-size:.78rem;overflow-wrap:anywhere;word-break:normal}
 .agenda-uitbreiding-lijst small{color:var(--muted,#4b5563);font-size:.8rem}
 .agenda-uitbreiding button{justify-self:start;display:inline-flex;align-items:center;gap:6px}
 .agenda-uitbreiding button svg{width:15px;height:15px}
@@ -159,8 +159,8 @@ li[data-agenda-item-bron='ics'] .agenda-item-knop,li[data-agenda-item-bron='cald
 .agenda-conflict-acties{display:flex;flex-wrap:wrap;gap:8px}
 
 /* ---- abonnementen (.ics en CalDAV) ---- */
-.agenda-abonnementen{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.agenda-abonnementen>section{display:grid;gap:8px;align-content:start;padding:12px 14px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--panel,#fff)}
+.agenda-abonnementen{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.agenda-abonnementen>section{display:grid;gap:8px;align-content:start;padding:12px 14px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--panel,#fff);min-width:0;max-width:100%}
 .agenda-abonnementen h3{display:flex;align-items:center;gap:7px;margin:0;font-size:.95rem}
 .agenda-abonnementen h3 svg{width:15px;height:15px}
 .agenda-ics-vorm,.agenda-dav-vorm{display:grid;gap:6px}

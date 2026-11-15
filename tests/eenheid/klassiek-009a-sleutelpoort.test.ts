@@ -129,7 +129,7 @@ export async function main(): Promise<number> {
       tsxBron.includes('<GeheimFormulier') &&
       tsxBron.includes('<MaquetteHeld') &&
       tsxBron.includes('<MaquetteAnkerRail') &&
-      tsxBron.includes("<IntegratieStrook dienst='ai'/>"),
+      tsxBron.includes("<IntegratieStrook lang={lang} dienst='api'"),
   );
 
   // 2. Відсікання студійних світлих режимів та примусово темної шапки вітрини у api-sleutels-maquette.css.

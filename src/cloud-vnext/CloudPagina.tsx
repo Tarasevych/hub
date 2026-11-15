@@ -3,7 +3,7 @@
 // de vlag UIT volledig bestaan; beide lezen dezelfde records. Agenda en Foto's hergebruiken de bestaande Google-weergaven.
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, Cloud, FolderOpen, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, Search, Share2, Upload, Users } from 'lucide-react';
+import { CalendarDays, Clock3, Cloud, FolderOpen, FolderPlus, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, RefreshCw, Search, Settings2, Share2, Star, Upload, Users } from 'lucide-react';
 import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
 import { useIsMaquette } from '../thema/useThema';
 import { cloudClient, CloudFout, type Overzicht as OverzichtUit } from './cloud-client';
@@ -248,22 +248,146 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
 
   const props: OnderdeelProps = useMemo(() => ({ lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab }), [lang, smal, userEmail, sourceOrigin, tabContext, ov, vernieuw, toon, naarTab]);
 
+  const [actiefAnker, setActiefAnker] = useState('cvn-ov-statistiek');
+  useEffect(() => {
+    if (huidig === 'overview') setActiefAnker('cvn-ov-statistiek');
+    else if (huidig === 'accounts') setActiefAnker('cvi-gekoppeld-kop');
+    else setActiefAnker('cvn-inhoud');
+  }, [huidig]);
+
+  const springNaarSectie = useCallback((id: string) => {
+    setActiefAnker(id);
+    if (id === 'cvn-boven') {
+      document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
     if (!isMaquette) return [];
-    return TABS.filter((t) => !paginaVerborgen('cloud', t) || t === huidig).map((t) => {
-      let badge: number | undefined;
-      if (ov) {
-        if (t === 'files') badge = ov.stats.aantal;
-        else if (t === 'workspaces') badge = ov.workspaces.length;
-        else if (t === 'recent' && ov.recent.length > 0) badge = ov.recent.length;
-      }
-      return {
-        id: t,
-        label: tr(lang, LABEL[t][0], LABEL[t][1]),
-        badge,
-      };
+    const trLabel = (uk: string, nl: string) => tr(lang, uk, nl);
+    const verversActie: MaquetteAnkerItem = {
+      id: 'cvn-actie-vernieuw',
+      label: trLabel('Оновити дані', 'Gegevens vernieuwen'),
+      soort: 'actie',
+      icoon: RefreshCw,
+      onActie: () => { void vernieuw(); },
+    };
+    const sectieActies = (acties: MaquetteAnkerItem[]): MaquetteAnkerItem => ({
+      id: `groep-cloud-acties-${huidig}`,
+      label: trLabel('Дії сторінки', 'Pagina-acties'),
+      soort: 'groep',
+      openStandaard: true,
+      kiesbaar: false,
+      icoon: Settings2,
+      kinderen: [...acties, verversActie],
     });
-  }, [isMaquette, huidig, lang, ov]);
+
+    if (huidig === 'overview') {
+      return [
+        {
+          id: 'groep-cloud-ov',
+          label: trLabel('Огляд сховища', 'Opslagoverzicht'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: LayoutDashboard,
+          kinderen: [
+            { id: 'cvn-ov-statistiek', label: trLabel('Обсяги й типи', 'Omvang en typen'), icoon: FolderOpen, badge: ov?.stats.aantal || undefined },
+            { id: 'cvn-ov-acties', label: trLabel('Швидкі переходи', 'Snelle acties'), icoon: Upload },
+            { id: 'cvn-ov-recent', label: trLabel('Останні файли', 'Recente bestanden'), icoon: Clock3, badge: ov?.recent.length || undefined },
+            { id: 'cvn-ov-favorieten', label: trLabel('Обрані файли', 'Favorieten'), icoon: Star, badge: ov?.favorieten.length || undefined },
+          ],
+        },
+        sectieActies([
+          { id: 'cvn-actie-upload', label: trLabel('До файлів і завантаження', 'Naar uploaden'), soort: 'actie', icoon: Upload, onActie: () => naarTab('files') },
+          { id: 'cvn-actie-nieuwemap', label: trLabel('Створити теку', 'Nieuwe map'), soort: 'actie', icoon: FolderPlus, onActie: () => { sessieZet('cvn-nieuwe-map', '1'); naarTab('files'); } },
+          { id: 'cvn-actie-zoek', label: trLabel('Пошук у хмарі', 'Zoeken in cloud'), soort: 'actie', icoon: Search, onActie: () => naarTab('search') },
+        ]),
+      ];
+    }
+    if (huidig === 'files') {
+      return [
+        {
+          id: 'groep-cloud-files',
+          label: trLabel('Файловий простір', 'Bestandsruimte'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: FolderOpen,
+          kinderen: [
+            { id: 'cvn-kop', label: trLabel('Верхня панель', 'Bovenbalk'), icoon: LayoutDashboard },
+            { id: 'cvn-inhoud', label: trLabel('Список файлів і тек', 'Lijst van bestanden en mappen'), icoon: FolderOpen, badge: ov?.stats.aantal || undefined },
+          ],
+        },
+        sectieActies([
+          { id: 'cvn-actie-f-upload', label: trLabel('Завантажити файл', 'Bestand uploaden'), soort: 'actie', icoon: Upload, onActie: () => document.querySelector<HTMLButtonElement>('[data-cvn-upload="knop"]')?.click() },
+          { id: 'cvn-actie-f-map', label: trLabel('Нова тека', 'Nieuwe map'), soort: 'actie', icoon: FolderPlus, onActie: () => document.querySelector<HTMLButtonElement>('[data-cvn-nieuwe-map]')?.click() },
+          { id: 'cvn-actie-f-zoek', label: trLabel('Пошук у хмарі', 'Zoeken in cloud'), soort: 'actie', icoon: Search, onActie: () => naarTab('search') },
+        ]),
+      ];
+    }
+    if (huidig === 'accounts') {
+      return [
+        {
+          id: 'groep-cloud-acc',
+          label: trLabel('Секції інтеграцій', 'Integratiesecties'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: Link2,
+          kinderen: [
+            { id: 'cvi-gekoppeld-kop', label: trLabel('Підключені акаунти', 'Gekoppelde accounts'), icoon: Link2 },
+            { id: 'cvi-beschikbaar-kop', label: trLabel('Доступні провайдери', 'Beschikbare aanbieders'), icoon: Cloud },
+            { id: 'cvi-sync-kop', label: trLabel('Стан синхронізації', 'Synchronisatiestatus'), icoon: RefreshCw },
+          ],
+        },
+        sectieActies([
+          { id: 'cvn-actie-bestanden', label: trLabel('Мої файли', 'Mijn bestanden'), soort: 'actie', icoon: FolderOpen, onActie: () => naarTab('files') },
+        ]),
+      ];
+    }
+    if (huidig === 'workspaces') {
+      return [
+        {
+          id: 'groep-cloud-ws',
+          label: trLabel('Робочі простори', 'Werkruimtes'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: Users,
+          kinderen: [
+            { id: 'cvn-kop', label: trLabel('Заголовок і зведення', 'Kop en overzicht'), icoon: LayoutDashboard },
+            { id: 'cvn-inhoud', label: trLabel('Усі простори', 'Alle werkruimtes'), icoon: Users, badge: ov?.workspaces.length || undefined },
+          ],
+        },
+        sectieActies([
+          { id: 'cvn-actie-ws-nieuw', label: trLabel('Створити простір', 'Werkruimte aanmaken'), soort: 'actie', icoon: Plus, onActie: () => document.querySelector<HTMLButtonElement>('[data-cvn-ws-nieuw]')?.click() },
+        ]),
+      ];
+    }
+    const sectieIcoon = ICOON[huidig] || Cloud;
+    return [
+      {
+        id: `groep-cloud-${huidig}`,
+        label: tr(lang, LABEL[huidig][0], LABEL[huidig][1]),
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        icoon: sectieIcoon,
+        kinderen: [
+          { id: 'cvn-boven', label: trLabel('Початок сторінки', 'Bovenaan pagina'), icoon: LayoutDashboard },
+          { id: 'cvn-inhoud', label: trLabel('Робоча область', 'Werkvlak'), icoon: sectieIcoon },
+        ],
+      },
+      sectieActies([
+        ...(huidig !== 'capture' ? [{ id: 'cvn-actie-capture', label: trLabel('Швидко зберегти', 'Snel opslaan'), soort: 'actie' as const, icoon: Upload, onActie: () => naarTab('capture') }] : []),
+        ...(huidig !== 'search' ? [{ id: 'cvn-actie-zoek-nav', label: trLabel('Пошук у хмарі', 'Zoeken in cloud'), soort: 'actie' as const, icoon: Search, onActie: () => naarTab('search') }] : []),
+      ]),
+    ];
+  }, [isMaquette, huidig, lang, ov, vernieuw, naarTab]);
 
   const heldStatistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek> | undefined>(() => {
     if (!isMaquette || !ov) return undefined;
@@ -418,14 +542,11 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
           {!overlaptOpen && !smal ? (
             <MaquetteAnkerRail
               lang={lang}
-              titel={tr(lang, 'Розділи хмари', 'Cloudonderdelen')}
+              titel={tr(lang, 'На цій сторінці', 'Op deze pagina')}
               ondertitel={tr(lang, 'Перетягніть до краю', 'Sleep naar een rand')}
               items={ankerItems}
-              actief={huidig}
-              onKies={(id) => {
-                naarTab(id as CloudTab);
-                document.querySelector('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              actief={actiefAnker}
+              onKies={springNaarSectie}
               opslagSleutel='cloud-vnext'
             />
           ) : null}
@@ -437,7 +558,7 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
       )}
       {fout ? <p className='cvn-melding is-fout' role='alert'>{fout}</p> : null}
       {melding ? <p className='cvn-toost' role='status' aria-live='polite'>{melding}</p> : null}
-      <div className='cvn-inhoud'>
+      <div id='cvn-inhoud' className='cvn-inhoud'>
         <Suspense fallback={<p className='cvn-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>{onderdeel()}</Suspense>
       </div>
       {smal ? (

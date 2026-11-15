@@ -174,11 +174,48 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
   }, []);
 
   const ankerItems = useMemo<MaquetteAnkerItem[]>(() => [
-    { id: 'vbc-mijn', label: mqTekst.ankerMijn, badge: telling.ok || undefined },
-    { id: 'vbc-catalogus', label: mqTekst.ankerCatalogus, badge: telling.beschikbaar || undefined },
-    { id: 'vbc-sync', label: mqTekst.ankerSync },
-    { id: 'vbc-historie', label: mqTekst.ankerHistorie },
-  ], [mqTekst, telling.ok, telling.beschikbaar]);
+    {
+      id: 'groep-verbindingen-secties',
+      label: tr(lang, 'Секції сторінки', 'Paginasecties'),
+      soort: 'groep',
+      openStandaard: true,
+      kiesbaar: false,
+      icoon: Link2,
+      kinderen: [
+        { id: 'vbc-mijn', label: mqTekst.ankerMijn, badge: telling.ok || undefined, icoon: CheckCircle2 },
+        { id: 'vbc-catalogus', label: mqTekst.ankerCatalogus, badge: telling.beschikbaar || undefined, icoon: Link2 },
+        { id: 'vbc-sync', label: mqTekst.ankerSync, icoon: FolderSync },
+        { id: 'vbc-historie', label: mqTekst.ankerHistorie, badge: taken?.length || undefined, icoon: History },
+      ],
+    },
+    {
+      id: 'groep-verbindingen-acties',
+      label: tr(lang, 'Швидкі дії', 'Snelle acties'),
+      soort: 'groep',
+      openStandaard: true,
+      kiesbaar: false,
+      icoon: Settings2,
+      kinderen: [
+        {
+          id: 'vbc-actie-toevoegen',
+          label: tr(lang, 'Додати підключення', 'Koppeling toevoegen'),
+          soort: 'actie',
+          icoon: Plus,
+          onActie: () => naarCatalogus(),
+        },
+        {
+          id: 'vbc-actie-vernieuw',
+          label: tr(lang, 'Перевірити стан', 'Status controleren'),
+          soort: 'actie',
+          icoon: RefreshCw,
+          onActie: () => {
+            setLaden(true);
+            void laad();
+          },
+        },
+      ],
+    },
+  ], [lang, mqTekst, telling.ok, telling.beschikbaar, taken?.length, laad]);
 
   const naarCatalogus = () => { setActiefAnker('vbc-catalogus'); const el = catalogusRef.current; if (!el) return; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); (el.querySelector('h3') as HTMLElement | null)?.focus(); };
   const aanbieder = (id: string) => CLOUD_VNEXT_AANBIEDERS.find((a) => a.id === id);

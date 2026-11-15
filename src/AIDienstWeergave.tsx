@@ -1,5 +1,19 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Bot } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  Blocks,
+  Bot,
+  Cpu,
+  FolderLock,
+  Layers,
+  LayoutDashboard,
+  MessageSquare,
+  PlugZap,
+  Server,
+  Sparkles,
+  Workflow,
+  Wrench,
+} from 'lucide-react';
 import ProductEmptyState from './ProductLegeToestand';
 import { canonicalNavigationUrl, routeLang, sharedRouteSnapshot, writeLocalTab } from './canoniek-navigatie';
 import { RichtingBand } from './weergave/Weergave';
@@ -22,14 +36,6 @@ type AiWerkTab = 'workspace' | 'agents' | 'runs' | 'workflows';
 
 const AI_MODAAL_SELECTOR =
   "[data-mq-laag-open='1'], .venster-achter, .venster:not([hidden]), .modal-backdrop, dialog[open], [role='dialog'][aria-modal='true']";
-
-const AI_ANKER_TABS: ReadonlyArray< readonly [string, string, string] > = [
-  ['workspace', 'Робоча область', 'Werkgebied'],
-  ['agents', 'Агенти', 'Agenten'],
-  ['runs', 'Процеси', 'Processen'],
-  ['workflows', 'Сценарії', 'Werkstromen'],
-  ['verbindingen', 'Підключення ШІ', 'AI-koppelingen'],
-];
 
 const AI_HELD_TEKSTEN: Record<AiWerkTab, {
   boven: readonly [string, string];
@@ -161,6 +167,8 @@ function GeenSleutel({ tr, eigenaar }: { tr: Tr; eigenaar: boolean }) {
 function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?: boolean }) {
   const isMaquette = useIsMaquette();
   const [laagOpen, setLaagOpen] = useState(false);
+  const [werkWeergave, setWerkWeergave] = useState<'werk' | 'middelen'>('werk');
+  const [onderdeelAnker, setOnderdeelAnker] = useState<string>('');
   const lang: 'uk' | 'nl' = routeLang() === 'nl' ? 'nl' : 'uk';
   const uk = lang !== 'nl';
   const isOnderdeel = tab === 'agents' || tab === 'runs' || tab === 'workflows';
@@ -168,12 +176,55 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
 
   const gaNaarAiTab = useCallback((doel: string) => {
     const huidigeTaal = routeLang();
-    if (doel !== 'verbindingen' && sharedRouteSnapshot().service === 'ai') {
+    if (doel === 'verbindingen') {
+      location.assign(hubUrl('ai'));
+      return;
+    }
+    if (sharedRouteSnapshot().service === 'ai') {
       writeLocalTab('ai', doel, huidigeTaal);
       window.dispatchEvent(new PopStateEvent('popstate'));
       return;
     }
     location.assign(canonicalNavigationUrl('ai', doel, huidigeTaal));
+  }, []);
+
+  const stuurWerkWeergave = useCallback(
+    (modus: 'werk' | 'middelen') => {
+      setWerkWeergave(modus);
+      if (actieveTab !== 'workspace') {
+        gaNaarAiTab('workspace');
+        window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('tsv:ai-werk-weergave', { detail: modus }));
+        }, 60);
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('tsv:ai-werk-weergave', { detail: modus }));
+      document.querySelector<HTMLElement>('.aiw')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    [actieveTab, gaNaarAiTab],
+  );
+
+  const springNaarSectie = useCallback((ankerId: string, selector: string) => {
+    setOnderdeelAnker(ankerId);
+    const el = document.querySelector<HTMLElement>(selector);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  useEffect(() => {
+    setOnderdeelAnker('');
+  }, [actieveTab]);
+
+  useEffect(() => {
+    const bijStand = (event: Event) => {
+      const detail = (event as CustomEvent<'werk' | 'middelen'>).detail;
+      if (detail === 'werk' || detail === 'middelen') {
+        setWerkWeergave(detail);
+      }
+    };
+    window.addEventListener('tsv:ai-werk-stand', bijStand);
+    return () => window.removeEventListener('tsv:ai-werk-stand', bijStand);
   }, []);
 
   useEffect(() => {
@@ -207,15 +258,151 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
     [eigenaar, tr],
   );
 
-  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
-    () =>
-      AI_ANKER_TABS.map(([id, ukLabel, nlLabel]) => ({
-        id,
-        label: tr(ukLabel, nlLabel),
-        badge: id === 'agents' ? V2_AGENTEN.length : undefined,
-      })),
-    [tr],
-  );
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    if (actieveTab === 'agents') {
+      return [
+        {
+          id: 'agents',
+          label: tr('Агенти та простори', 'Agenten en werkruimtes'),
+          icoon: Cpu,
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          badge: V2_AGENTEN.length,
+          actiefBij: ['agents-ingangen', 'agents-tools', 'agents-ruimtes'],
+          kinderen: [
+            {
+              id: 'agents-ingangen',
+              label: tr('Швидкі входи до агентів', 'Directe agentingangen'),
+              icoon: PlugZap,
+              onActie: () => springNaarSectie('agents-ingangen', "[data-ai-agent-ingangen='1']"),
+            },
+            {
+              id: 'agents-tools',
+              label: tr('Codex, Claude та інші', 'Codex, Claude en andere'),
+              icoon: Cpu,
+              onActie: () => springNaarSectie('agents-tools', "[data-aie-agent-overzicht='1'], [data-aie-kop='agents']"),
+            },
+            {
+              id: 'agents-ruimtes',
+              label: tr('Ізольовані простори', 'Geïsoleerde werkruimtes'),
+              icoon: FolderLock,
+              onActie: () => springNaarSectie('agents-ruimtes', "[data-aie-werkruimtes-sectie='1']"),
+            },
+          ],
+        },
+        { id: 'workspace', label: tr('Робоча область', 'Werkgebied'), icoon: LayoutDashboard },
+        { id: 'runs', label: tr('Процеси', 'Processen'), icoon: ArrowRightLeft },
+        { id: 'workflows', label: tr('Сценарії', 'Werkstromen'), icoon: Workflow },
+        { id: 'verbindingen', label: tr('Підключення ШІ', 'AI-koppelingen'), icoon: PlugZap },
+      ];
+    }
+
+    if (actieveTab === 'runs') {
+      return [
+        {
+          id: 'runs',
+          label: tr('Процеси та контекст', 'Processen en context'),
+          icoon: ArrowRightLeft,
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          actiefBij: ['runs-context', 'runs-overdracht'],
+          kinderen: [
+            {
+              id: 'runs-context',
+              label: tr('Спільний контекст', 'Gedeelde werkcontext'),
+              icoon: Layers,
+              onActie: () => springNaarSectie('runs-context', "[data-aie-context-sectie='1']"),
+            },
+            {
+              id: 'runs-overdracht',
+              label: tr('Передача завдань', 'Taakoverdracht'),
+              icoon: ArrowRightLeft,
+              onActie: () => springNaarSectie('runs-overdracht', "[data-aie-overdrachten-sectie='1']"),
+            },
+          ],
+        },
+        { id: 'workspace', label: tr('Робоча область', 'Werkgebied'), icoon: LayoutDashboard },
+        { id: 'agents', label: tr('Агенти', 'Agenten'), icoon: Cpu, badge: V2_AGENTEN.length },
+        { id: 'workflows', label: tr('Сценарії', 'Werkstromen'), icoon: Workflow },
+        { id: 'verbindingen', label: tr('Підключення ШІ', 'AI-koppelingen'), icoon: PlugZap },
+      ];
+    }
+
+    if (actieveTab === 'workflows') {
+      return [
+        {
+          id: 'workflows',
+          label: tr('Сценарії та основа', 'Werkstromen en basis'),
+          icoon: Workflow,
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          actiefBij: ['workflows-uitbreiding', 'workflows-zelfhost'],
+          kinderen: [
+            {
+              id: 'workflows-uitbreiding',
+              label: tr('Розширення простору', 'Ruimte-uitbreidingen'),
+              icoon: Blocks,
+              onActie: () => springNaarSectie('workflows-uitbreiding', "[data-aie-uitbreidingen-sectie='1']"),
+            },
+            {
+              id: 'workflows-zelfhost',
+              label: tr('Власне обладнання', 'Eigen apparatuur'),
+              icoon: Server,
+              onActie: () => springNaarSectie('workflows-zelfhost', "[data-aie-zelf-host-sectie='1']"),
+            },
+          ],
+        },
+        { id: 'workspace', label: tr('Робоча область', 'Werkgebied'), icoon: LayoutDashboard },
+        { id: 'agents', label: tr('Агенти', 'Agenten'), icoon: Cpu, badge: V2_AGENTEN.length },
+        { id: 'runs', label: tr('Процеси', 'Processen'), icoon: ArrowRightLeft },
+        { id: 'verbindingen', label: tr('Підключення ШІ', 'AI-koppelingen'), icoon: PlugZap },
+      ];
+    }
+
+    return [
+      {
+        id: 'ai-voor-u',
+        label: tr('ШІ для вас', 'AI voor u'),
+        icoon: Sparkles,
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        actiefBij: ['werk-werk', 'werk-middelen'],
+        kinderen: [
+          {
+            id: 'werk-werk',
+            label: tr('Робота', 'Werken'),
+            icoon: MessageSquare,
+            onActie: () => stuurWerkWeergave('werk'),
+          },
+          {
+            id: 'werk-middelen',
+            label: tr('Усі інструменти', 'Alle hulpmiddelen'),
+            icoon: Wrench,
+            onActie: () => stuurWerkWeergave('middelen'),
+          },
+        ],
+      },
+      {
+        id: 'workspace',
+        label: tr('Робоча область', 'Werkgebied'),
+        icoon: LayoutDashboard,
+        onActie: () => stuurWerkWeergave('werk'),
+      },
+      { id: 'agents', label: tr('Агенти', 'Agenten'), icoon: Cpu, badge: V2_AGENTEN.length },
+      { id: 'runs', label: tr('Процеси', 'Processen'), icoon: ArrowRightLeft },
+      { id: 'workflows', label: tr('Сценарії', 'Werkstromen'), icoon: Workflow },
+      { id: 'verbindingen', label: tr('Підключення ШІ', 'AI-koppelingen'), icoon: PlugZap },
+    ];
+  }, [actieveTab, springNaarSectie, stuurWerkWeergave, tr]);
+
+  const actiefAnker =
+    actieveTab === 'workspace'
+      ? (werkWeergave === 'middelen' ? 'werk-middelen' : 'werk-werk')
+      : (onderdeelAnker || actieveTab);
 
   if (!isMaquette) {
     if (tab === 'agents' || tab === 'runs' || tab === 'workflows') return <AiOnderdeel tab={tab} tr={tr} />;
@@ -253,7 +440,7 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
         opslagSleutel={`ai-${actieveTab}`}
         bovenregel={tr(held.boven[0], held.boven[1])}
         titelVoor={tr(held.voor[0], held.voor[1])}
-        titelCursief={tr(held.cursief[0], held.cursief[1])}
+        titelCursief={held.cursief ? tr(held.cursief[0], held.cursief[1]) : ''}
         beschrijving={tr(held.beschrijving[0], held.beschrijving[1])}
         statistieken={statistieken}
         primair={primair}
@@ -272,10 +459,10 @@ function AIServiceInhoud({ tab, tr, eigenaar }: { tab: string; tr: Tr; eigenaar?
         <MaquetteAnkerRail
           lang={lang}
           opslagSleutel='ai-anker'
-          titel={tr('Розділи ШІ', 'AI-onderdelen')}
-          ondertitel={tr('Перетягніть до зручного краю', 'Sleep naar een gewenste rand')}
+          titel={tr('Навігація', 'Navigatie')}
+          ondertitel={tr('Перетягніть до краю', 'Sleep naar een rand')}
           items={ankerItems}
-          actief={actieveTab}
+          actief={actiefAnker}
           onKies={gaNaarAiTab}
         />
       ) : null}

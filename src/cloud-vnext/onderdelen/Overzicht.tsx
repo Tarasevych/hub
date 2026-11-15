@@ -47,7 +47,7 @@ export default function Overzicht({ lang, ov, naarTab }: OnderdeelProps) {
         </section>
       ) : (
         <>
-          <section className='cvn-blok' aria-label={tr(lang, 'Сховище', 'Opslag')}>
+          <section id='cvn-ov-statistiek' className='cvn-blok' aria-label={tr(lang, 'Сховище', 'Opslag')}>
             <h3>{tr(lang, 'Сховище', 'Opslag')}</h3>
             <div className='cvn-tegels' data-cvn-tegels=''>
               <button type='button' className='cvn-tegel' onClick={() => naarTab('files')} data-cvn-tegel='bestanden'>
@@ -80,7 +80,7 @@ export default function Overzicht({ lang, ov, naarTab }: OnderdeelProps) {
             ) : null}
           </section>
 
-          <section className='cvn-blok' aria-label={tr(lang, 'Швидкі дії', 'Snelle acties')}>
+          <section id='cvn-ov-acties' className='cvn-blok' aria-label={tr(lang, 'Швидкі дії', 'Snelle acties')}>
             <h3>{tr(lang, 'Швидкі дії', 'Snelle acties')}</h3>
             <div className='cvn-snel' data-cvn-snel=''>
               <button type='button' className='cvn-knop is-hoofd' onClick={() => naarTab('files')}><Upload aria-hidden='true' />{tr(lang, 'Завантажити', 'Uploaden')}</button>
@@ -92,7 +92,7 @@ export default function Overzicht({ lang, ov, naarTab }: OnderdeelProps) {
           </section>
 
           <div className='cvn-overzicht-lijsten'>
-            <section className='cvn-blok' aria-label={tr(lang, 'Останні', 'Recent')}>
+            <section id='cvn-ov-recent' className='cvn-blok' aria-label={tr(lang, 'Останні', 'Recent')}>
               <h3><Clock3 aria-hidden='true' />{tr(lang, 'Останні', 'Recent')}
                 <button type='button' className='cvn-knop is-klein is-stil' onClick={() => naarTab('recent')}>{tr(lang, 'Усі', 'Alle')}</button>
               </h3>
@@ -113,7 +113,7 @@ export default function Overzicht({ lang, ov, naarTab }: OnderdeelProps) {
               ) : <p className='cvn-hint'>{tr(lang, 'Ще нічого не відкривали й не змінювали.', 'Nog niets geopend of gewijzigd.')}</p>}
             </section>
 
-            <section className='cvn-blok' aria-label={tr(lang, 'Обрані', 'Favorieten')}>
+            <section id='cvn-ov-favorieten' className='cvn-blok' aria-label={tr(lang, 'Обрані', 'Favorieten')}>
               <h3><Star aria-hidden='true' />{tr(lang, 'Обрані', 'Favorieten')}</h3>
               {ov.favorieten.length ? (
                 <ul className='cvn-mini-lijst' data-cvn-favoriet='overzicht'>

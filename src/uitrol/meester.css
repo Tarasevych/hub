@@ -49,7 +49,7 @@ html.theme-dark .ut-root .uitrol-meester-stap[data-stand="ok"] .uitrol-meester-n
 .ut-root .uitrol-meester-inhoud p{margin:0;font-size:.9rem}
 .ut-root .uitrol-meester-uitleg{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.9rem}
 .ut-root .uitrol-meester-opdracht{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ut-root .uitrol-meester-opdracht code{flex:1 1 260px;min-width:0;padding:9px 11px;border-radius:10px;background:var(--ut-term-bg);color:var(--ut-term-text);user-select:all;word-break:break-all;font-size:.84rem}
+.ut-root .uitrol-meester-opdracht code{flex:1 1 260px;min-width:0;padding:9px 11px;border-radius:10px;background:var(--ut-term-bg);color:var(--ut-term-text);user-select:all;overflow-wrap:anywhere;word-break:normal;font-size:.84rem}
 /* Voortgangsrail */
 .ut-root .uitrol-meester-rail{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ut-root .uitrol-meester-rail li{position:relative;min-width:0}

@@ -13,7 +13,7 @@
 .mbk-files{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:6px}
 .mbk-files li{display:flex;align-items:center;gap:10px}
 .mbk-files li>span{display:grid;flex:1;min-width:0}
-.mbk-files small{color:var(--muted,#64748b);word-break:break-all}
+.mbk-files small{color:var(--muted,#64748b);overflow-wrap:anywhere;word-break:normal}
 .mbk-error{color:var(--fout);margin:0}
 .mbk-note,.mbk-busy{color:var(--muted,#64748b);font-size:.82rem;margin:0}
 .mcp-live{margin:4px 0;font-size:.86rem;color:var(--accent);font-weight:600;word-break:break-word}

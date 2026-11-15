@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Activity, Archive, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, Sparkles, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
@@ -40,21 +40,6 @@ type McpSectie = typeof MCP_SECTIES[number];
 
 const MCP_MODAAL_SELECTOR =
   ".mcp-consent-backdrop, .venster-achter, .venster:not([hidden]), [data-mq-laag-open='1'], dialog[open], [role='dialog'][aria-modal='true']";
-
-const MCP_ANKER_TABS: ReadonlyArray<readonly [McpSectie, string, string]> = [
-  ["overview", "Огляд", "Overzicht"],
-  ["dashboard", "Пульт стану", "Paneel"],
-  ["services", "Служби", "Diensten"],
-  ["tools", "Інструменти", "Hulpmiddelen"],
-  ["board", "Дошка", "Werkbord"],
-  ["agents", "Агенти", "Agenten"],
-  ["apps", "Застосунки", "Toepassingen"],
-  ["playground", "Пісочниця", "Zandbak"],
-  ["traffic", "Журнал руху", "Verkeer"],
-  ["connect", "З’єднання", "Verbinden"],
-  ["roadmap", "Дорожня карта", "Routekaart"],
-  ["download", "Архів і сервер", "Archief"],
-];
 
 const MCP_HELD_TEKSTEN: Record<McpSectie, {
   boven: readonly [string, string];
@@ -262,9 +247,9 @@ function PageHead({ icon, title, lead, actions, kicker }: { icon: ReactNode; tit
   );
 }
 /** Blok met eigen kop (icoon, titel, uitleg, acties) en de inhoud eronder. */
-function Block({ icon, title, hint, actions, tone, children }: { icon?: ReactNode; title: string; hint?: string; actions?: ReactNode; tone?: "ok" | "warn" | "bad"; children: ReactNode }) {
+function Block({ id, icon, title, hint, actions, tone, children }: { id?: string; icon?: ReactNode; title: string; hint?: string; actions?: ReactNode; tone?: "ok" | "warn" | "bad"; children: ReactNode }) {
   return (
-    <section className={`mcp-block${tone ? ` tone-${tone}` : ""}`}>
+    <section id={id} className={`mcp-block${tone ? ` tone-${tone}` : ""}`}>
       <header className="mcp-block-head">
         {icon ? <span className="mcp-block-icon" aria-hidden="true">{icon}</span> : null}
         <div className="mcp-block-title">
@@ -543,12 +528,64 @@ export default function McpServiceView({ lang, tab }: Props) {
     typeof window !== "undefined" && location.hash.startsWith("#agent/"),
   );
 
+  const [actiefBlok, setActiefBlok] = useState("mcp-boven");
+
+  useEffect(() => {
+    setActiefBlok(section === "agents" ? "ag-tab-overzicht" : "mcp-boven");
+  }, [section]);
+
   const gaNaarMcpTab = useCallback(
     (doelTab: string) => {
       location.assign(canonicalNavigationUrl("mcp", doelTab, lang === "nl" ? "nl" : "uk"));
     },
     [lang],
   );
+
+  const springNaarMcpBlok = (ankerId: string) => {
+    setActiefBlok(ankerId);
+    if (ankerId === "actie:probe") {
+      void run("probe", loadProbes);
+      return;
+    }
+    if (ankerId === "actie:traffic") {
+      void run("traffic", loadTraffic);
+      return;
+    }
+    if (ankerId === "actie:archive") {
+      void run("archive", downloadArchive);
+      return;
+    }
+    if (ankerId === "actie:apps-verversen") {
+      const knop = document.querySelector<HTMLButtonElement>("[data-apps-verversen]");
+      if (knop) knop.click();
+      return;
+    }
+    if (ankerId === "actie:board") {
+      gaNaarMcpTab("board");
+      return;
+    }
+    if (ankerId.startsWith("tab:")) {
+      gaNaarMcpTab(ankerId.slice(4));
+      return;
+    }
+    if (typeof document === "undefined") return;
+    if (ankerId.startsWith("ag-tab-")) {
+      const knop = document.getElementById(ankerId);
+      if (knop) {
+        knop.click();
+        return;
+      }
+      const sectieEl = document.getElementById(`ag-sectie-${ankerId.slice("ag-tab-".length)}`);
+      if (sectieEl) {
+        sectieEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+    const doel = document.getElementById(ankerId);
+    if (doel) {
+      doel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   useEffect(() => {
     if (!isMaquette || typeof document === "undefined") {
@@ -613,15 +650,145 @@ export default function McpServiceView({ lang, tab }: Props) {
     [bevestigd, lang, probes.length, techAan],
   );
 
-  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
-    () =>
-      MCP_ANKER_TABS.map(([id, ukLabel, nlLabel]) => ({
-        id,
-        label: lang === "uk" ? ukLabel : nlLabel,
-        badge: id === "agents" ? V2_AGENTEN.length : id === "tools" ? DOOR_TOOLS.length : undefined,
-      })),
-    [lang],
-  );
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    const tr = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
+    const bovenItem: MaquetteAnkerItem = { id: "mcp-boven", label: tr("На початок", "Naar boven"), icoon: <ArrowUp /> };
+
+    const inhoudKinderen: MaquetteAnkerItem[] = (() => {
+      switch (section) {
+        case "overview":
+          return [
+            bovenItem,
+            { id: "mcp-blok-stat", label: tr("Зведення мосту", "Kerngetallen"), icoon: <LayoutDashboard /> },
+            { id: "mcp-blok-lagen", label: tr("Шар мосту", "Laag van de brug"), icoon: <Layers /> },
+            { id: "mcp-blok-poort", label: tr("Брама ідентичності", "Identiteitspoort"), icoon: <ShieldCheck /> },
+            { id: "mcp-blok-adres", label: tr("Публічна адреса", "Publiek adres"), icoon: <Link2 /> },
+            { id: "mcp-blok-hosts", label: tr("Хости маєтку", "Hosts van het domein"), icoon: <Server />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "dashboard":
+          return [
+            bovenItem,
+            { id: "mcp-blok-serverbeheer", label: tr("Керування сервером", "Serverbeheer"), icoon: <Server /> },
+            { id: "mcp-blok-schakelaars", label: tr("Двері та перемикачі", "Deur en schakelaars"), icoon: <ShieldCheck /> },
+            { id: "mcp-blok-hosts", label: tr("Здоров’я сервісів", "Gezondheid diensten"), icoon: <Globe />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "services":
+          return [
+            bovenItem,
+            { id: "mcp-blok-hosts", label: tr("Усі хости маєтку", "Alle hosts"), icoon: <Globe />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "tools":
+          return [
+            bovenItem,
+            { id: "mcp-blok-door-tools", label: tr("На дверях", "Op de deur"), icoon: <Terminal />, badge: DOOR_TOOLS.length },
+            { id: "mcp-blok-extra-tools", label: tr("Ще не на дверях", "Nog niet op de deur"), icoon: <Plus /> },
+          ];
+        case "board":
+          return [
+            bovenItem,
+            { id: "mcp-blok-nieuw", label: tr("Нова задача / нотатка", "Nieuwe taak / notitie"), icoon: <Plus /> },
+            { id: "mcp-blok-bord", label: tr("Колонки дошки", "Kolommen van het bord"), icoon: <ListChecks />, badge: tasks.length || undefined },
+            { id: "mcp-blok-notities", label: tr("Нотатки", "Notities"), icoon: <StickyNote />, badge: notes.length || undefined },
+          ];
+        case "agents":
+          return [
+            bovenItem,
+            { id: "ag-tab-overzicht", label: tr("Огляд підключень", "Overzicht"), icoon: <LayoutDashboard /> },
+            { id: "ag-tab-connectors", label: tr("Конектори ШІ", "Connectors"), icoon: <Plug />, badge: V2_AGENTEN.length },
+            { id: "ag-tab-ai", label: tr("Підключені ШІ", "Verbonden AI"), icoon: <Sparkles /> },
+            { id: "ag-tab-extern", label: tr("Зовнішні MCP", "Externe MCP"), icoon: <Globe /> },
+            { id: "ag-tab-orch", label: tr("Координація", "Coördinatie"), icoon: <Compass /> },
+            { id: "ag-tab-extensie", label: tr("Розширення браузера", "Browserextensie"), icoon: <Boxes /> },
+            { id: "ag-tab-browser", label: tr("Браузер і агенти", "Browser en agenten"), icoon: <Globe /> },
+            { id: "ag-tab-apparaten", label: tr("Пристрої", "Apparaten"), icoon: <Server /> },
+            { id: "ag-tab-tokens", label: tr("Токени", "Tokens"), icoon: <ShieldCheck /> },
+            { id: "ag-tab-toegang", label: tr("Доступи", "Toegang"), icoon: <ListChecks /> },
+            ...(techAan ? [{ id: "ag-tab-technisch", label: tr("Технічне", "Technisch"), icoon: <Wrench /> }] : []),
+            { id: "ag-tab-journaal", label: tr("Журнал", "Logboek"), icoon: <Activity /> },
+          ];
+        case "apps":
+          return [
+            bovenItem,
+            { id: "mapps-open", label: tr("Запити на секрети", "Verzoeken om geheimen"), icoon: <ShieldCheck /> },
+            { id: "mapps-apps", label: tr("Розгорнуті додатки", "Uitgerolde apps"), icoon: <Boxes /> },
+            { id: "mapps-aanzetten", label: tr("Інші пристрої", "Andere apparaten"), icoon: <Server /> },
+          ];
+        case "playground":
+          return [
+            bovenItem,
+            { id: "mcp-blok-kiezen", label: tr("Оберіть інструмент", "Hulpmiddel kiezen"), icoon: <Terminal />, badge: DOOR_TOOLS.length },
+            { id: "mcp-blok-aanroep", label: tr("Параметри та виклик", "Argumenten en aanroep"), icoon: <Play /> },
+          ];
+        case "traffic":
+          return [
+            bovenItem,
+            { id: "mcp-blok-verzoeken", label: tr("Журнал запитів", "Verzoeken"), icoon: <Activity />, badge: rows.length || undefined },
+          ];
+        case "connect":
+          return [
+            bovenItem,
+            { id: "mcp-blok-adressen", label: tr("Іменні адреси ШІ", "Adressen per AI"), icoon: <Plug />, badge: V2_AGENTEN.length },
+            { id: "mcp-blok-oud", label: tr("Стара спільна адреса", "Oude gedeelde adres"), icoon: <History /> },
+            { id: "mcp-blok-json", label: tr("Приклад MCP-client", "Voorbeeld MCP-client"), icoon: <Copy /> },
+          ];
+        case "roadmap":
+          return [
+            bovenItem,
+            { id: "mcp-blok-al", label: tr("Уже є", "Er is al"), icoon: <Check /> },
+            { id: "mcp-blok-nodig", label: tr("Наступні кроки", "Volgende stappen"), icoon: <Compass /> },
+            { id: "mcp-blok-niet", label: tr("Обмеження безпеки", "Niet doen"), icoon: <ShieldCheck /> },
+          ];
+        case "download":
+          return [
+            bovenItem,
+            { id: "mcp-blok-archief", label: tr("Повний архів", "Volledig archief"), icoon: <Archive /> },
+            { id: "mcp-blok-backups", label: tr("Нічні копії", "Nachtelijke kopieën"), icoon: <FileArchive /> },
+            { id: "mcp-blok-serverbeheer", label: tr("Керування сервером", "Serverbeheer"), icoon: <Server /> },
+            { id: "mcp-blok-geschiedenis", label: tr("Історія зборів", "Geschiedenis"), icoon: <History />, badge: archive.history.length || undefined },
+          ];
+        default:
+          return [bovenItem];
+      }
+    })();
+
+    const actiesKinderen: MaquetteAnkerItem[] = [];
+    if (section === "overview" || section === "dashboard" || section === "services") {
+      actiesKinderen.push({ id: "actie:probe", label: tr("Перевірити хости", "Hosts controleren"), icoon: <RefreshCw /> });
+    }
+    if (section === "traffic") {
+      actiesKinderen.push({ id: "actie:traffic", label: tr("Оновити журнал", "Verversen"), icoon: <RefreshCw /> });
+    }
+    if (section === "apps") {
+      actiesKinderen.push({ id: "actie:apps-verversen", label: tr("Оновити додатки", "Apps vernieuwen"), icoon: <RefreshCw /> });
+    }
+    if (section === "download") {
+      actiesKinderen.push({ id: "actie:archive", label: tr("Зібрати повний архів", "Volledig archief maken"), icoon: <Archive /> });
+    }
+    if (section !== "agents") {
+      actiesKinderen.push({ id: "tab:agents", label: tr("Осередок агентів", "Agentencentrum"), icoon: <Plug /> });
+    }
+    if (section !== "playground") {
+      actiesKinderen.push({ id: "tab:playground", label: tr("Пісочниця викликів", "Testzandbak"), icoon: <Terminal /> });
+    }
+    if (section !== "board") {
+      actiesKinderen.push({ id: "actie:board", label: tr("Спільна дошка", "Gedeeld werkbord"), icoon: <ListChecks /> });
+    }
+
+    return [
+      {
+        id: "mcp-groep-inhoud",
+        label: tr("Розділи сторінки", "Op deze pagina"),
+        icoon: <Layers />,
+        kinderen: inhoudKinderen,
+      },
+      {
+        id: "mcp-groep-acties",
+        label: tr("Швидкі дії", "Snelle acties"),
+        icoon: <Settings2 />,
+        kinderen: actiesKinderen,
+      },
+    ];
+  }, [archive.history.length, bevestigd, lang, notes.length, probes.length, rows.length, section, tasks.length, techAan]);
 
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
@@ -659,6 +826,7 @@ export default function McpServiceView({ lang, tab }: Props) {
 
   return (
     <div
+      id="mcp-boven"
       className={isMaquette ? "mcp-estate mq-schil mcp-maquette-wikkel" : "mcp-estate"}
       data-mcp-tab={section}
       data-weergave-modus={weergave.modus ?? "onbekend"}
@@ -704,12 +872,12 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Будь-який агент заходить сюди. Не в браузер.", "Elke agent komt hier binnen. Niet via de browser.")}
             lead={t("Маєток tarasevych.com уже живий на домашньому вузлі, але за брамою ідентичності. ШІ не може увійти як людина. Цей MCP-міст — машинний контракт: інструменти, ресурси, спільна дошка.", "Het domein leeft al op de thuisknoop, achter de identiteitspoort. Een agent kan niet als mens inloggen. Deze brug is het machinecontract.")}
           />
-          <div className="mcp-stats">
+          <div id="mcp-blok-stat" className="mcp-stats">
             <Stat value="11" label={t("хостів маєтку", "hosts van het domein")} />
             <Stat value={DOOR_TOOLS.length} label={t("інструментів дверей", "hulpmiddelen van de deur")} />
             <Stat value="HTTP" label={t("JSON-RPC, без SSE", "JSON-RPC, geen SSE")} />
           </div>
-          <Block icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається brug, van binnen naar buiten.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
+          <Block id="mcp-blok-lagen" icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається brug, van binnen naar buiten.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
             <ul className="mcp-list">
               {LAYERS.map(([name, uk, nl]) => (
                 <li key={name} className="mcp-item">
@@ -719,14 +887,15 @@ export default function McpServiceView({ lang, tab }: Props) {
               ))}
             </ul>
           </Block>
-          <Block icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
+          <Block id="mcp-blok-poort" icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
             <p>{t("Кожен публічний хост відповідає, але id тримає браму. Браузерний логін — для людей. Агенту потрібен контракт: JSON-RPC, скоупи, аудит.", "Elke host antwoordt, maar id houdt de poort. Browserlogin is voor mensen. Een agent heeft een contract nodig.")}</p>
           </Block>
-          <Block icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
+          <Block id="mcp-blok-adres" icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
             <p className="mcp-url">{MCP_BASIS}</p>
             <p>{t(`Адреса конектора — у кожного ШІ своя: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`, `Het connectoradres is per AI: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`)}</p>
           </Block>
           <Block
+            id="mcp-blok-hosts"
             icon={<Server />}
             title={t("Хости маєтку", "Hosts van het domein")}
             hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : t("Ще не перевірено. Натисніть кнопку, щоб перевірити хости.", "Nog niet gecontroleerd. Druk op de knop om de hosts te testen.")}
@@ -744,9 +913,10 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Панель розгортання", "Deploy-dashboard")}
             lead={t("Стан сервера, історія випусків і відкат однією кнопкою. Дії, що щось змінюють, вимагають підтвердження passkey. Сервер встановлює лише випуски, підписані вашим ключем.", "Serverstatus, releasegeschiedenis en terugdraaien met één knop. Acties die iets wijzigen vragen een passkey-bevestiging. De server installeert alleen releases die met uw sleutel zijn ondertekend.")}
           />
-          <McpServerBeheerCard tr={t} />
-          <DeurSchakelaars tr={t} />
+          <div id="mcp-blok-serverbeheer"><McpServerBeheerCard tr={t} /></div>
+          <div id="mcp-blok-schakelaars"><DeurSchakelaars tr={t} /></div>
           <Block
+            id="mcp-blok-hosts"
             icon={<ShieldCheck />}
             title={t("Здоров’я сервісів", "Gezondheid van de diensten")}
             hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : t("Nog niet gecontroleerd.", "Nog niet gecontroleerd.")}
@@ -765,7 +935,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Статус береться з живої перевірки, не з зашитого значка. Посилання відкриває хост.", "De status komt uit een echte controle, niet uit een vaste badge. De link opent de host.")}
             actions={<button type="button" className="mcp-btn small" disabled={Boolean(busy)} onClick={() => void run("probe", loadProbes)}>{t("Перевірити хости", "Hosts controleren")}</button>}
           />
-          <Block icon={<Globe />} title={t("Усі хости", "Alle hosts")} hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : undefined}>
+          <Block id="mcp-blok-hosts" icon={<Globe />} title={t("Усі хости", "Alle hosts")} hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : undefined}>
             {hostRijen(() => ({ tone: "off", label: t("ще не перевірено", "nog niet gecontroleerd") }), true)}
           </Block>
         </>
@@ -778,7 +948,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Інструменти", "Hulpmiddelen")}
             lead={t("Тут лише те, що двері справді виконують. «Викликати» відкриває пісочницю саме з цим інструментом.", "Alleen wat de deur echt uitvoert. Aanroepen opent de zandbak met dat hulpmiddel.")}
           />
-          <Block icon={<Terminal />} title={t("На дверях", "Op de deur")} hint={t(`Зараз доступно інструментів: ${DOOR_TOOLS.length}.`, `${DOOR_TOOLS.length} hulpmiddelen zijn nu beschikbaar.`)}>
+          <Block id="mcp-blok-door-tools" icon={<Terminal />} title={t("На дверях", "Op de deur")} hint={t(`Зараз доступно інструментів: ${DOOR_TOOLS.length}.`, `${DOOR_TOOLS.length} hulpmiddelen zijn nu beschikbaar.`)}>
             <ul className="mcp-list">
               {DOOR_TOOLS.map((item) => (
                 <li key={item.name} className="mcp-item">
@@ -789,7 +959,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               ))}
             </ul>
           </Block>
-          <Block icon={<Plus />} title={t("Ще не на дверях", "Nog niet op de deur")} hint={t("Ці інструменти ще не на дверях, тож викликати їх тут не можна.", "Deze hulpmiddelen staan nog niet op de deur en kunnen hier dus niet worden aangeroepen.")}>
+          <Block id="mcp-blok-extra-tools" icon={<Plus />} title={t("Ще не на дверях", "Nog niet op de deur")} hint={t("Ці інструменти ще не на дверях, тож викликати їх тут не можна.", "Deze hulpmiddelen staan nog niet op de deur en kunnen hier dus niet worden aangeroepen.")}>
             <p className="mcp-code">{TOOL_HELP.filter(([name]) => !DOOR_TOOLS.some((item) => item.name === name)).map(([name]) => name).join(", ")}</p>
           </Block>
         </>
@@ -804,7 +974,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           />
           <RuimteStrook feiten={ruimte} lang={lang} />
           {bordDicht ? <RuimteGeslotenVlak gesloten={bordDicht} lang={lang} /> : null}
-          <Block icon={<Plus />} title={t("Нова задача або нотатка", "Nieuwe taak of notitie")} hint={t("Спершу оберіть тип, введіть назву і збережіть.", "Kies eerst wat het wordt, vul de naam in en sla op.")}>
+          <Block id="mcp-blok-nieuw" icon={<Plus />} title={t("Нова задача або нотатка", "Nieuwe taak of notitie")} hint={t("Спершу оберіть тип, введіть назву і збережіть.", "Kies eerst wat het wordt, vul de naam in en sla op.")}>
             <form className="mcp-compose" onSubmit={(event) => { event.preventDefault(); if (permsReady && !flags.board) return; void run("save", async () => { await api.post("/api/mcp/board", { ...ctx(), kind, title, body }); setTitle(""); setBody(""); await loadBoard(); }); }}>
               <div className="mcp-compose-row">
                 <div className="mcp-choice" role="group" aria-label={t("Soort", "Soort")}>
@@ -819,7 +989,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               </div>
             </form>
           </Block>
-          <section className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
+          <section id="mcp-blok-bord" className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
             {KOLOMMEN.map((status) => {
               const items = tasks.filter((task) => task.status === status);
               if (status === INKOMEND && items.length === 0) return null; // geen lege kolom zolang er niets binnenkwam
@@ -845,7 +1015,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               );
             })}
           </section>
-          <Block icon={<StickyNote />} title={t("Нотатки", "Notities")} hint={t("Вільний текст, що належить до дошки.", "Vrije tekst die bij het bord hoort.")}>
+          <Block id="mcp-blok-notities" icon={<StickyNote />} title={t("Нотатки", "Notities")} hint={t("Вільний текст, що належить до дошки.", "Vrije tekst die bij het bord hoort.")}>
             {notes.length === 0
               ? <Empty icon={<StickyNote />}>{t("Ще немає нотаток. Оберіть «Нотатка», напишіть щось і збережіть.", "Nog geen notities. Kies hierboven «Notitie», schrijf iets op en sla op.")}</Empty>
               : <ul className="mcp-list">{notes.map((note) => (
@@ -875,7 +1045,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Список збігається з дверима. Аргументи підставляються самі. Вимкнений перемикач дає відмову, а не порожню кнопку.", "De lijst is dezelfde als op de deur. Argumenten worden ingevuld. Een uitgeschakelde schakelaar weigert, in plaats van een lege knop.")}
           />
           <div className="mcp-play">
-            <Block icon={<Terminal />} title={t("Оберіть інструмент", "Hulpmiddel kiezen")}>
+            <Block id="mcp-blok-kiezen" icon={<Terminal />} title={t("Оберіть інструмент", "Hulpmiddel kiezen")}>
               <div className="mcp-toolnav">
                 {DOOR_TOOLS.map((item) => (
                   <button key={item.name} type="button" className={item.name === tool ? "on" : ""} aria-pressed={item.name === tool} onClick={() => chooseTool(item.name)}>
@@ -885,7 +1055,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                 ))}
               </div>
             </Block>
-            <Block icon={<Activity />} title={tool} hint={t("Змініть аргументи як JSON і викличте інструмент.", "Pas de argumenten aan als JSON en roep het hulpmiddel aan.")}>
+            <Block id="mcp-blok-aanroep" icon={<Activity />} title={tool} hint={t("Змініть аргументи як JSON і викличте інструмент.", "Pas de argumenten aan als JSON en roep het hulpmiddel aan.")}>
               <form className="mcp-compose" onSubmit={(event) => { event.preventDefault(); void run(tool, async () => { const gate = toolGate(tool); if (permsReady && !flags[gate]) throw new Error(`PERMISSION_OFF:${gate}`); const parsed = args.trim() ? JSON.parse(args) : {}; const res = await api.post("/api/mcp/call", { ...ctx(), name: tool, arguments: parsed }); setOut(JSON.stringify(res.data, null, 2)); }); }}>
                 <textarea className="mcp-input" value={args} onChange={(event) => setArgs(event.target.value)} aria-label={t("Argumenten (JSON)", "Argumenten (JSON)")} />
                 <div className="mcp-compose-row">
@@ -906,7 +1076,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Кожен запит до мосту з результатом і часом, який він зайняв.","Elk verzoek dat de brug heeft gekregen, met het resultaat en de tijd die het kostte.")}
             actions={<button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("traffic", loadTraffic)}>{t("Оновити", "Verversen")}</button>}
           />
-          <Block icon={<Activity />} title={t("Запити", "Verzoeken")} hint={rows.length ? `${rows.length} ${t("рядків", "regels")}` : undefined}>
+          <Block id="mcp-blok-verzoeken" icon={<Activity />} title={t("Запити", "Verzoeken")} hint={rows.length ? `${rows.length} ${t("рядків", "regels")}` : undefined}>
             {rows.length === 0
               ? <Empty icon={<Activity />}>{t("Ще немає запитів у цьому журналі. Щойно агент скористається мостом, вони з’являться тут.","Nog geen verzoeken in dit logboek. Zodra een agent de brug gebruikt, verschijnen ze hier.")}</Empty>
               : <ul className="mcp-list">{rows.map((row) => (
@@ -927,27 +1097,30 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Підключити", "Verbinden")}
             lead={t("Кожен ШІ має власну адресу конектора (напр. /claude, /grok). Клієнт входить на неї через OAuth — токен моста не потрібен. Повне підключення (кнопка в один клік, кроки для саме цього клієнта, стан) — на сторінці того ШІ в хабі «Підключення ШІ».", "Elke AI heeft zijn eigen connectoradres (bv. /claude, /grok). De client komt daar via OAuth binnen — een brugtoken is niet nodig. Het volledige koppelen (knop in één klik, stappen voor juist die client, stand) staat op de plek van die AI in de hub «AI-koppelingen».")}
           />
-          {V2_AGENTEN.map((a) => (
-            <div key={a.slug} data-agent-adres={a.slug}>
-              <Block
-                icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
-                title={a.naam}
-                actions={<>
-                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : copied === `fout:url-${a.slug}` ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати адресу", "Adres kopiëren")}</button>
-                  <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
-                </>}
-              >
-                <p className="mcp-url">{agentUrl(a.slug)}</p>
-              </Block>
-            </div>
-          ))}
-          <div data-oud-adres="1">
+          <div id="mcp-blok-adressen">
+            {V2_AGENTEN.map((a) => (
+              <div key={a.slug} data-agent-adres={a.slug}>
+                <Block
+                  icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
+                  title={a.naam}
+                  actions={<>
+                    <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : copied === `fout:url-${a.slug}` ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати адресу", "Adres kopiëren")}</button>
+                    <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
+                  </>}
+                >
+                  <p className="mcp-url">{agentUrl(a.slug)}</p>
+                </Block>
+              </div>
+            ))}
+          </div>
+          <div id="mcp-blok-oud" data-oud-adres="1">
             <Block icon={<History />} title={t("Стара спільна адреса", "Het oude gedeelde adres")}>
               <p className="mcp-url">{OUD_GEDEELD_URL}</p>
               <p className="mcp-meta">{t("Вона ще відповідає для вже підключених клієнтів і перенаправляє (308) на адресу агента. Для нового підключення беріть адресу свого ШІ вище.", "Dit adres antwoordt nog voor al gekoppelde clients en leidt door (308) naar het adres van de agent. Gebruik voor een nieuwe koppeling het adres van uw AI hierboven.")}</p>
             </Block>
           </div>
           <Block
+            id="mcp-blok-json"
             icon={<Copy />}
             title={t("MCP-client", "MCP-client")}
             hint={t("Приклад налаштування для MCP-клієнта.", "Voorbeeld van de configuratie voor een MCP-client.")}
@@ -965,13 +1138,13 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Що далі", "Wat hierna")}
             lead={t("Проєкт живий. Цей міст — шар, через який агент працює з маєтком, а не через браузер людини.", "Het project leeft. Deze brug is de laag waarmee een agent het domein bedient.")}
           />
-          <Block icon={<Check />} tone="ok" title={t("Уже є", "Er is al")}>
+          <Block id="mcp-blok-al" icon={<Check />} tone="ok" title={t("Уже є", "Er is al")}>
             <p>{t("Каталог хостів, дошка, токени, журнал, пісочниця, двері /Grok.", "Catalogus, bord, tokens, logboek, zandbak, deur /Grok.")}</p>
           </Block>
-          <Block icon={<Compass />} title={t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}>
+          <Block id="mcp-blok-nodig" icon={<Compass />} title={t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}>
             <p>{t("Ідентичності з id, гранти з admin, JSON на api, аудит на dashboard. Без пароля людини.", "Identiteiten uit id, toekenningen uit admin, JSON op api, audit op het dashboard. Zonder wachtwoord van een mens.")}</p>
           </Block>
-          <Block icon={<X />} tone="bad" title={t("Чого не треба", "Niet doen")}>
+          <Block id="mcp-blok-niet" icon={<X />} tone="bad" title={t("Чого не треба", "Niet doen")}>
             <p>{t("Не давати агенту логін хаба чи пошти. Не парсити HTML за брамою. Не один пароль на всі моделі.", "Geen login van hub of post aan een agent. Geen HTML achter de poort. Geen enkel wachtwoord voor alle modellen.")}</p>
           </Block>
         </>
@@ -985,6 +1158,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Один зашифрований файл з усім, на чому працює сайт, щоб відновити його на новій машині.","Eén versleuteld bestand met alles waarop de site draait, om hem op een nieuwe machine terug te zetten.")}
           />
           <Block
+            id="mcp-blok-archief"
             icon={<Archive />}
             title={archive.state === "ready" ? t("Архів готовий", "Archief klaar") : archive.state === "failed" ? t("Збір зупинився", "Maken gestopt") : archive.state === "building" ? t("Збираю повний архів", "Volledig archief maken") : t("Ще не запускали", "Nog niet gestart")}
             hint={archive.state === "building" && archive.started ? `${t("Минуло", "Verstreken")} ${clock(Date.now() - new Date(archive.started).getTime() + (tick >= 0 ? 0 : 0))}${remain(archive.started, archive.pct) ? ` · ${t("ще", "nog")} ~${remain(archive.started, archive.pct)}` : ""}` : archive.bytes ? sizeText(archive.bytes) : undefined}
@@ -1028,15 +1202,15 @@ export default function McpServiceView({ lang, tab }: Props) {
             ) : null}
             <p className="mcp-note">{t("Увесь файл цілком шифрується вашим наявним age-ключем (нового ключа не створюється): без вашого herstelsleutel його не відкрити. Після розшифрування лежить скрипт vidnovyty.sh. Завантаження — лише власнику, після повторного підтвердження входу, через одноразове посилання на 5 хвилин.", "Het hele bestand is versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij): zonder uw herstelsleutel is het niet te openen. Na ontsleutelen zit het script vidnovyty.sh erin. Downloaden kan alleen de eigenaar, na een nieuwe bevestiging van de aanmelding, via een eenmalige link van 5 minuten.")}</p>
           </Block>
-          <McpBackupsCard tr={t} />
-          <McpServerBeheerCard tr={t} />
-          <Block icon={<History />} title={t("Історія", "Geschiedenis")} hint={t("Кожен рядок — окремий збір. На сервері лишаються два останні архіви; ще старіші видаляються. Обидва зашифровані публічним ключем власника, тож без офлайн-ключа їх не відкрити. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijven de twee laatste archieven staan; ouder wordt opgeruimd. Beide zijn versleuteld met de publieke sleutel van de eigenaar; zonder de offline sleutel zijn ze niet te openen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}>
+          <div id="mcp-blok-backups"><McpBackupsCard tr={t} /></div>
+          <div id="mcp-blok-serverbeheer"><McpServerBeheerCard tr={t} /></div>
+          <Block id="mcp-blok-geschiedenis" icon={<History />} title={t("Історія", "Geschiedenis")} hint={t("Кожен рядок — окремий збір. На сервері лишаються два останні архіви; ще старіші видаляються. Обидва зашифровані публічним ключем власника, тож без офлайн-ключа їх не відкрити. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijven de twee laatste archieven staan; ouder wordt opgeruimd. Beide zijn versleuteld met de publieke sleutel van de eigenaar; zonder de offline sleutel zijn ze niet te openen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}>
             {archive.history.length ? (
               <ul className="mcp-list">
                 {archive.history.map((row) => (
                   <li key={`${row.at}-${row.name}`} className="mcp-item">
                     <span className="mcp-item-icon" aria-hidden="true"><FileArchive /></span>
-                    <div className="mcp-item-main"><b>{whenText(row.at)}</b><span>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</span></div>
+                    <div className="mcp-item-main"><b>{whenText(row.at)}</b><span>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база (шифр.)", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</span></div>
                     <div className="mcp-item-aside">
                       {row.kept ? <button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <Badge tone="off">{t("вже видалено (лишаються два останні)", "al opgeruimd (er blijven twee over)")}</Badge>}
                     </div>
@@ -1052,11 +1226,11 @@ export default function McpServiceView({ lang, tab }: Props) {
         <MaquetteAnkerRail
           lang={lang}
           opslagSleutel="mcp-anker"
-          titel={t("Розділи мосту MCP", "Onderdelen van de MCP-brug")}
+          titel={t("На цій сторінці", "Op deze pagina")}
           ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
           items={ankerItems}
-          actief={section}
-          onKies={gaNaarMcpTab}
+          actief={actiefBlok}
+          onKies={springNaarMcpBlok}
         />
       ) : null}
     </div>

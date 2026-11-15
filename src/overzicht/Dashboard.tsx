@@ -195,6 +195,41 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
 
   const ctx: WidgetCtx | null = useMemo(() => (o ? { o, lang, bron, codes, nu: o.nu, openGebruiker: setOpen, pauze, zetPauze: setPauze, context } : null), [o, lang, bron, codes, pauze, context]);
 
+  const zichtbaarIds = useMemo(() => indeling.items.filter((i) => !i.verborgen).map((i) => i.id), [indeling]);
+  const zendStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:overview-stand', {
+      detail: { pauze, bewerken, zichtbaarIds },
+    }));
+  }, [pauze, bewerken, zichtbaarIds]);
+
+  useEffect(() => {
+    zendStand();
+  }, [zendStand]);
+
+  useEffect(() => {
+    const onActie = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ actie?: 'vernieuw' | 'pauze' | 'bewerken'; selector?: string }>).detail;
+      if (!detail) return;
+      if (detail.actie === 'vernieuw') { void laden(); return; }
+      if (detail.actie === 'pauze') { setPauze((v) => !v); return; }
+      if (detail.actie === 'bewerken') {
+        if (bewerken) klaarRef.current();
+        else if (indelingKlaar) setBewerken(true);
+        return;
+      }
+      if (detail.selector) {
+        document.querySelector(detail.selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    const onVraag = () => zendStand();
+    window.addEventListener('tsv:overview-actie', onActie);
+    window.addEventListener('tsv:overview-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:overview-actie', onActie);
+      window.removeEventListener('tsv:overview-vraag-stand', onVraag);
+    };
+  }, [bewerken, indelingKlaar, laden, zendStand]);
+
   const statusTekst = opslag === 'bezig' ? tr(lang, 'Зберігаємо…', 'Opslaan…') : opslag === 'ok' ? tr(lang, 'Розташування збережено', 'Indeling opgeslagen') : opslag === 'fout' ? tr(lang, 'Не вдалося зберегти розташування', 'Indeling kon niet worden opgeslagen') : aangepast ? tr(lang, 'Ваше розташування', 'Uw indeling') : tr(lang, 'Типове розташування', 'Standaardindeling');
 
   return (

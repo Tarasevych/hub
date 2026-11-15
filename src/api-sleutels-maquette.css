@@ -882,6 +882,30 @@ html.palet-maquette .api-platform.mq-schil .vault-meta-knoppen button[type="subm
   color: var(--mq-tekst);
 }
 
+/* Приховування дубльованого внутрішнього заголовка, коли активний MaquetteHeld, без селектора >.mq-held (контракт klassiek-009a) */
+html.palet-maquette .api-platform.mq-schil:has(.mq-held) > header:not(:has(button, a, input, select)) {
+  display: none;
+}
+
+/* Захист панелей, таблиць, карток та капсул метаданих від горизонтального переповнення на вузьких екранах */
+html.palet-maquette .api-platform.mq-schil :is(.api-platform-panel, .api-platform-table, .api-platform-forbidden) {
+  min-width: 0;
+}
+
+html.palet-maquette .api-platform.mq-schil .api-platform-table {
+  overflow-x: auto;
+}
+
+html.palet-maquette .api-platform.mq-schil :is(.api-platform-tokens > li, .api-platform-connections > li) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette .api-platform.mq-schil .api-platform-meta span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    10. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */

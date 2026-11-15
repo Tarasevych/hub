@@ -351,6 +351,10 @@
    "reden": "IDENTITEIT-008: onafhankelijk mobiel bovenvenster van AccountMenuV3 (<= 700 px), geportaleerd naar .canonical-chrome zodat het menu niet in de smalle zijlade (270 px) wordt samengedrukt maar over de hele breedte van de telefoon verschijnt. De profielfotoknop blijft op haar vaste plek; dit is een vensterlaag met achtergrondsluier, geen zwevende knop."
   },
   {
+   "sleutel": "src/canoniek-account-menu.css :: .canonical-account-portal",
+   "reden": "Портальна обгортка панелі облікових записів безпосередньо в body (вище за якірну панель розділів .mq-anker-rail, але нижче за модальні шари), щоб ізольована оболонка не перекривала розкрите меню облікових записів; панель діалогу, не плаваюча кнопка."
+  },
+  {
    "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-anker-rail",
    "reden": "MAQUETTE-001: спільна якірна панель розділів піддомену, яку користувач закріплює на будь-якому з чотирьох країв робочої області; враховує виміряні межі бічного меню та верхньої смуги; панель навігації, не окрема кнопка."
   },

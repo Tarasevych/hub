@@ -2,6 +2,7 @@ import {
   Suspense,
   lazy,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -118,6 +119,51 @@ type Props = {
   onForgetAccount?: (grantId: string) => Promise<AccountMenuSnapshot>;
   onProfilePhotoChange?: (file: File) => Promise<AccountMenuUser | void>;
 };
+
+const THEMA_KLASSEN = ['theme-plum-dark', 'theme-plum-light', 'theme-dark', 'theme-light'] as const;
+type ThemaKlasse = (typeof THEMA_KLASSEN)[number];
+const LOGIN_CSS_VARS = ['--mr-login-sheet', '--mr-login-ink', '--mr-login-muted', '--mr-login-border', '--mr-login-card'] as const;
+
+type PortaalContext = {
+  themaKlasse: ThemaKlasse;
+  oppervlak: string;
+  opAanmelden: boolean;
+  loginVars: Record<string, string>;
+};
+
+function vindThemaKlasse(chrome: Element | null): ThemaKlasse {
+  const bronnen = [chrome, typeof document !== 'undefined' ? document.documentElement : null];
+  for (const el of bronnen) {
+    if (!el) continue;
+    for (const k of THEMA_KLASSEN) {
+      if (el.classList.contains(k)) return k;
+    }
+  }
+  return 'theme-light';
+}
+
+function leesPortaalContext(fallbackThema: AccountTheme): PortaalContext {
+  const standaardThema: ThemaKlasse =
+    fallbackThema === 'dark' || fallbackThema === 'plum-dark' || fallbackThema === 'plum-light'
+      ? `theme-${fallbackThema}`
+      : 'theme-light';
+  if (typeof document === 'undefined') {
+    return { themaKlasse: standaardThema, oppervlak: '', opAanmelden: false, loginVars: {} };
+  }
+  const chrome = document.querySelector('.canonical-chrome');
+  const themaKlasse = chrome ? vindThemaKlasse(chrome) : standaardThema;
+  const oppervlak = chrome?.getAttribute('data-oppervlak') ?? '';
+  const opAanmelden = Boolean(chrome?.querySelector('.mr-sign-in'));
+  const loginVars: Record<string, string> = {};
+  if (opAanmelden && chrome && typeof getComputedStyle === 'function') {
+    const cs = getComputedStyle(chrome);
+    for (const naam of LOGIN_CSS_VARS) {
+      const waarde = cs.getPropertyValue(naam).trim();
+      if (waarde) loginVars[naam] = waarde;
+    }
+  }
+  return { themaKlasse, oppervlak, opAanmelden, loginVars };
+}
 
 const copy = {
   uk: {
@@ -604,6 +650,121 @@ export default function CanonicalAccountMenu({
   const wisselMaquette = () => wisselSysteemPalet('maquette');
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
+  const [portaalStijl, setPortaalStijl] = useState<CSSProperties>({});
+  const [portaalCtx, setPortaalCtx] = useState<PortaalContext>(() => leesPortaalContext(theme));
+
+  useLayoutEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const chrome = document.querySelector<HTMLElement>('.canonical-chrome');
+    chrome?.setAttribute('data-account-menu-open', '1');
+    const mobielLaag = Boolean(am3 && mobielVenster);
+
+    const werkBij = () => {
+      const ctx = leesPortaalContext(theme);
+      setPortaalCtx((prev) =>
+        prev.themaKlasse === ctx.themaKlasse &&
+        prev.oppervlak === ctx.oppervlak &&
+        prev.opAanmelden === ctx.opAanmelden &&
+        JSON.stringify(prev.loginVars) === JSON.stringify(ctx.loginVars)
+          ? prev
+          : ctx,
+      );
+
+      if (mobielLaag) {
+        const el = portaalRef.current;
+        if (el) {
+          for (const k of THEMA_KLASSEN) el.classList.toggle(k, k === ctx.themaKlasse);
+          if (ctx.oppervlak) el.dataset.oppervlak = ctx.oppervlak;
+          else delete el.dataset.oppervlak;
+          el.dataset.signedOut = !displayUser ? 'true' : 'false';
+          if (ctx.opAanmelden) el.dataset.aanmeldScherm = 'ja';
+          else delete el.dataset.aanmeldScherm;
+          for (const naam of LOGIN_CSS_VARS) {
+            const v = ctx.loginVars[naam];
+            if (v) el.style.setProperty(naam, v);
+            else el.style.removeProperty(naam);
+          }
+        }
+        setPortaalStijl((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+        return;
+      }
+
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const inLade = Boolean(root.current?.closest('.canonical-drawer-account'));
+      const knop =
+        root.current?.querySelector<HTMLElement>('.canonical-avatar-trigger') ?? root.current;
+      const rect = knop?.getBoundingClientRect();
+
+      let stijl: CSSProperties;
+      if (inLade) {
+        stijl = {
+          top: '62px',
+          left: '8px',
+          right: 'auto',
+          width: 'calc(min(316px, 100vw - 48px) - 16px)',
+          maxHeight: 'calc(100dvh - 70px)',
+        };
+      } else if (!displayUser && vw <= 700) {
+        const topPx = rect && rect.height > 0 ? Math.max(54, Math.round(rect.bottom + 10)) : 64;
+        stijl = {
+          top: `${topPx}px`,
+          left: '50%',
+          right: 'auto',
+          transform: 'translateX(-50%)',
+          width: 'min(370px, calc(100vw - 24px))',
+          maxHeight: `calc(100dvh - ${topPx + 14}px)`,
+        };
+      } else if (vw <= 520 && !am3) {
+        stijl = {
+          top: '68px',
+          left: '10px',
+          right: 'auto',
+          width: 'calc(100vw - 20px)',
+          maxHeight: 'calc(100dvh - 80px)',
+        };
+      } else {
+        const topPx = rect && rect.height > 0
+          ? Math.max(10, Math.round(rect.bottom + (ctx.opAanmelden ? 12 : 10)))
+          : (ctx.opAanmelden ? 66 : 70);
+        const rechtPx = rect && rect.width > 0 ? Math.max(10, Math.round(vw - rect.right)) : 16;
+        const ankerRechts = rect && rect.right < 260
+          ? { left: `${Math.max(10, Math.round(rect.left))}px`, right: 'auto' as const }
+          : { right: `${rechtPx}px`, left: 'auto' as const };
+        const maxHoogte = am3
+          ? undefined
+          : ctx.opAanmelden
+            ? `min(650px, calc(100dvh - ${topPx + 14}px))`
+            : `min(760px, calc(100dvh - ${topPx + 16}px))`;
+        stijl = {
+          top: `${topPx}px`,
+          ...ankerRechts,
+          ...(maxHoogte ? { maxHeight: maxHoogte } : {}),
+        };
+      }
+
+      setPortaalStijl((prev) => (JSON.stringify(prev) === JSON.stringify(stijl) ? prev : stijl));
+    };
+
+    werkBij();
+    const knop = root.current?.querySelector<HTMLElement>('.canonical-avatar-trigger') ?? root.current;
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(werkBij) : null;
+    if (knop) ro?.observe(knop);
+    if (chrome) ro?.observe(chrome);
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(werkBij) : null;
+    if (chrome) mo?.observe(chrome, { attributes: true, attributeFilter: ['class', 'data-oppervlak', 'data-dock'] });
+    mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', werkBij);
+    window.addEventListener('scroll', werkBij, true);
+    window.visualViewport?.addEventListener('resize', werkBij);
+    return () => {
+      chrome?.removeAttribute('data-account-menu-open');
+      ro?.disconnect();
+      mo?.disconnect();
+      window.removeEventListener('resize', werkBij);
+      window.removeEventListener('scroll', werkBij, true);
+      window.visualViewport?.removeEventListener('resize', werkBij);
+    };
+  }, [open, am3, mobielVenster, displayUser, theme, huidigPalet]);
 
   const list = (
     <div className='canonical-account-list' data-account-list={displayUser ? 'other-known' : 'known'}>
@@ -936,12 +1097,13 @@ export default function CanonicalAccountMenu({
                 />
               </section>
             </div>,
-            document.querySelector('.canonical-chrome') ?? document.body,
+            document.body,
           )
         : null}
 
-      {open && !(am3 && mobielVenster && typeof document !== 'undefined') && (
-        <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+      {open && !(am3 && mobielVenster && typeof document !== 'undefined') && (() => {
+        const paneel = (
+          <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
           {am3 ? (
             <AccountMenuV3
               lang={lang}
@@ -1236,8 +1398,38 @@ export default function CanonicalAccountMenu({
           {footer}
             </>
           )}
-        </section>
-      )}
+          </section>
+        );
+        return typeof document !== 'undefined'
+          ? createPortal(
+              <div
+                ref={portaalRef}
+                className={`canonical-account-portal ${portaalCtx.themaKlasse}`}
+                data-no-edge-swipe='1'
+                data-oppervlak={portaalCtx.oppervlak || undefined}
+                data-signed-out={!displayUser ? 'true' : 'false'}
+                data-aanmeld-scherm={portaalCtx.opAanmelden ? 'ja' : undefined}
+                style={{ ...(portaalCtx.loginVars as CSSProperties), ...portaalStijl }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+              >
+                <div
+                  className='canonical-account-menu'
+                  data-account-menu-version='v6'
+                  data-account-menu-model='canonical-v1'
+                  data-account-menu-expanded={expanded ? 'true' : 'false'}
+                  data-signed-out={!displayUser ? 'true' : 'false'}
+                  data-account-menu-v2={am2 ? 'aan' : undefined}
+                  data-account-menu-v3={am3 ? 'aan' : undefined}
+                  data-portaal-volbreed={portaalStijl.width !== undefined ? '1' : undefined}
+                >
+                  {paneel}
+                </div>
+              </div>,
+              document.body,
+            )
+          : paneel;
+      })()}
     </div>
   );
 }

@@ -67,7 +67,7 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 .gm-root .gm-naam{padding:0;min-height:0;border:0;background:none;color:var(--gm-text);font-weight:750;font-size:.98rem;text-align:left;cursor:pointer;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .gm-naam:hover{color:var(--gm-accent);text-decoration:underline}
 .gm-kaart-sub{display:flex;flex-wrap:wrap;gap:4px 7px;color:var(--gm-muted);font-size:.8rem}
-.gm-waarde{display:block;max-width:100%;padding:6px 10px;border-radius:9px;background:color-mix(in srgb,var(--gm-text) 6%,var(--gm-bg));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;letter-spacing:.04em;color:var(--gm-muted);overflow-wrap:anywhere;word-break:break-all;white-space:pre-wrap;max-height:220px;overflow:auto}
+.gm-waarde{display:block;max-width:100%;padding:6px 10px;border-radius:9px;background:color-mix(in srgb,var(--gm-text) 6%,var(--gm-bg));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;letter-spacing:.04em;color:var(--gm-muted);overflow-wrap:anywhere;word-break:normal;white-space:pre-wrap;max-height:220px;overflow:auto}
 .gm-waarde.is-zichtbaar{color:var(--gm-text);letter-spacing:0;border:1px dashed color-mix(in srgb,var(--gm-warn) 55%,var(--gm-line));background:color-mix(in srgb,var(--gm-warn) 8%,var(--gm-bg))}
 .gm-teller{position:relative;display:flex;align-items:center;gap:8px}
 .gm-teller>span{display:block;height:4px;border-radius:2px;background:var(--gm-warn);transition:width .25s linear;flex:none;max-width:60%}

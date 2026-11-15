@@ -92,6 +92,18 @@ export function verschuiven(p: Plaatsing, m: MethodeId, richting: -1 | 1): Plaat
   return { ...p, volgorde: v };
 }
 
+/** Переміщення способу входу `bron` на позицію способу `doel` у списку. */
+export function verplaatsen(p: Plaatsing, bron: MethodeId, doel: MethodeId): Plaatsing {
+  if (bron === doel) return p;
+  const v = [...p.volgorde];
+  const van = v.indexOf(bron);
+  const naar = v.indexOf(doel);
+  if (van < 0 || naar < 0) return p;
+  v.splice(van, 1);
+  v.splice(naar, 0, bron);
+  return { ...p, volgorde: v };
+}
+
 /**
  * Het aanmeldscherm. cfg = antwoord van /api/aanmelden/telegram/config (of null/undefined bij laden, fout of vlag uit).
  * Zonder plaatsing: exact het scherm van vóór deze functie — Google, Telegram (als die zichtbaar is), dan alle vier onder «Інші».

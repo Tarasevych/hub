@@ -106,6 +106,50 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
   const naarHistorie = (id: string) => { setHistFilter((f) => ({ ...f, controle: id, stand: 'alles' })); setTab('historie'); };
   const [histFilter, setHistFilter] = useState<{ stand: 'problemen' | 'alles'; categorie: string; controle: string }>({ stand: 'problemen', categorie: '', controle: '' });
 
+  const allesRef = useRef(alles);
+  allesRef.current = alles;
+  const laadRef = useRef(laad);
+  laadRef.current = laad;
+
+  const broadcastDiagStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:diag-tab', {
+      detail: {
+        tab,
+        filter,
+        aandachtNu: aTel.nu,
+        totaalN,
+      },
+    }));
+  }, [tab, filter, aTel.nu, totaalN]);
+
+  useEffect(() => {
+    broadcastDiagStand();
+  }, [broadcastDiagStand]);
+
+  useEffect(() => {
+    const onNav = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ tab?: TabId; filter?: StandFilter; actie?: 'alles' | 'vernieuw'; selector?: string }>).detail;
+      if (!detail) return;
+      if (detail.actie === 'alles') { void allesRef.current(); return; }
+      if (detail.actie === 'vernieuw') { void laadRef.current(); return; }
+      if (detail.tab) setTab(detail.tab);
+      if (detail.filter) setFilter(detail.filter);
+      if (detail.selector) {
+        const sel = detail.selector;
+        window.setTimeout(() => {
+          document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 70);
+      }
+    };
+    const onVraag = () => broadcastDiagStand();
+    window.addEventListener('tsv:diag-nav', onNav);
+    window.addEventListener('tsv:diag-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:diag-nav', onNav);
+      window.removeEventListener('tsv:diag-vraag-stand', onVraag);
+    };
+  }, [broadcastDiagStand]);
+
   if (laden && !data) return <section className='admin-section adg-root mq-accent-emerald' aria-busy='true'><p className='adg-laden'><Loader2 className='adg-spin' />{tr(lang, 'Завантажуємо діагностику…', 'Diagnostiek wordt geladen…')}</p></section>;
 
   const aandachtBlok = (
