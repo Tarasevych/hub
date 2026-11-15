@@ -6,7 +6,7 @@
 // на телефоні/планшеті в стані «Авто» — полегшений режим (до 4 плям, ≤ 24 кадри/с, ще менше полотно); слабкий пристрій сам
 // переходить у полегшений режим і пише про це в центр сповіщень.
 // Levende achtergrond: getekend in een eigen thread op een klein canvas; pauze bij verborgen tabblad; respecteert «minder beweging».
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useThemaStand } from '../thema/useThema';
 import { minderBeweging } from '../thema/weergave-stijl';
 import { achtergrondVolledig } from '../../shared/uiterlijk';
@@ -16,6 +16,21 @@ import './levende-achtergrond.css';
 
 type Motor = { plan(p: Plan): void; maat(w: number, h: number): void; loop(aan: boolean): void; stop(): void };
 
+let kleurCtx: CanvasRenderingContext2D | null | undefined;
+const kleurCache = new Map<string, string>();
+function normaliseerKleur(ruw: string): string {
+  const hit = kleurCache.get(ruw);
+  if (hit !== undefined) return hit;
+  let norm = '';
+  try {
+    if (kleurCtx === undefined) kleurCtx = document.createElement('canvas').getContext('2d');
+    if (kleurCtx) { kleurCtx.fillStyle = '#000'; kleurCtx.fillStyle = ruw; norm = String(kleurCtx.fillStyle); }
+  } catch { /* geen accent: standaardtint */ }
+  if (kleurCache.size > 64) kleurCache.clear();
+  kleurCache.set(ruw, norm);
+  return norm;
+}
+
 /** Середовище сторінки: тема, акцент, «слабкий» пристрій. Omgeving van de pagina. */
 function leesOmgeving(el: HTMLElement | null, zuinig: boolean): Omgeving {
   const chrome = (el?.closest('.canonical-chrome') as HTMLElement | null) || document.documentElement;
@@ -23,7 +38,7 @@ function leesOmgeving(el: HTMLElement | null, zuinig: boolean): Omgeving {
   let accent = '';
   try {
     const ruw = getComputedStyle(chrome).getPropertyValue('--accent').trim();
-    if (ruw) { const c = document.createElement('canvas').getContext('2d'); if (c) { c.fillStyle = '#000'; c.fillStyle = ruw; accent = String(c.fillStyle); } }
+    if (ruw) accent = normaliseerKleur(ruw);
   } catch { /* geen accent: standaardtint */ }
   return { licht: !donker, accentTint: tintVan(accent), zuinig };
 }
@@ -146,15 +161,20 @@ export default function LevendeAchtergrond({ lang }: { lang: 'uk' | 'nl' }) {
   }, [actief]);
 
   // Нові налаштування / тема — новий план без перезапуску (плями не стрибають: той самий «зерновий» порядок).
+  const achtergrondSleutel = JSON.stringify(achtergrond || {});
   useEffect(() => {
     if (!actief || !motorRef.current) return;
     motorRef.current.plan(maakPlan(achtergrond, leesOmgeving(doekRef.current, zuinig)));
-  }, [actief, JSON.stringify(achtergrond || {}), zuinig, omgevingSleutel]);
+  }, [actief, achtergrondSleutel, zuinig, omgevingSleutel]);
 
   // Рух лише на видимій вкладці й без «менше руху». Alleen bewegen als het tabblad zichtbaar is.
   useEffect(() => { motorRef.current?.loop(actief && zichtbaar && !stil); }, [actief, zichtbaar, stil, omgevingSleutel]);
 
-  const dekking = actief ? maakPlan(achtergrond, leesOmgevingVeilig(doekRef.current, zuinig)).dekking : 0;
+  const dekking = useMemo(
+    () => (actief ? maakPlan(achtergrond, leesOmgevingVeilig(doekRef.current, zuinig)).dekking : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [actief, achtergrondSleutel, zuinig, omgevingSleutel],
+  );
   return <canvas key={actief ? 'aan' : 'uit'} ref={doekRef} className='levende-achtergrond' aria-hidden='true' data-levende-achtergrond={actief ? (zuinig ? 'zuinig' : 'vol') : 'uit'}
     data-stil={stil ? 'ja' : undefined} hidden={!actief} style={{ ['--la-dekking' as string]: String(dekking) }} />;
 }

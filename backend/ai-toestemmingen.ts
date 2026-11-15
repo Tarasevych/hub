@@ -16,6 +16,7 @@ import { huidigeContext } from '../server/platform/context';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
+import { deurIntrekkenVoorGebruiker } from './mcp-deur-brug';
 
 export const CAPABILITIES = [
   // 0110 (zone E): 'browser.console' (console + netwerk, tot dan onder browser.read) en 'browser.script' (evaluate_script via de debugger).
@@ -105,9 +106,19 @@ export function registerAgentPusher(p: Pusher): void { pusher = p; }
 /** Ruimtes (contract §4.2): één agentverbinding sluiten met een eigen code (4401 = sitesessie weg, niet ontkoppelen). */
 export const sluitAgent = (userId: string, agentId: string, code: number, reden: string): number => pusher.close(userId, agentId, code, reden);
 export const pushNaarAgent = (userId: string, agentId: string | null, msg: object): number => pusher.push(userId, agentId, msg);
-/** Haak voor wat bij de noodstop ook moet eindigen (ontgrendelingen van de browserextensie, 0072). */
-const noodstopLuisteraars: Array<(userId: string, actorId: string) => void> = [];
-export function bijNoodstop(f: (userId: string, actorId: string) => void): void { noodstopLuisteraars.push(f); }
+/** Haak voor wat bij de noodstop ook moet eindigen (ontgrendelingen van de browserextensie, open bevestigingen). */
+const noodstopLuisteraars: Array<(userId: string, actorId: string) => Promise<unknown> | void> = [];
+export function bijNoodstop(f: (userId: string, actorId: string) => Promise<unknown> | void): void { noodstopLuisteraars.push(f); }
+async function draaiNoodstopLuisteraars(userId: string, actorId: string): Promise<void> {
+  if (!noodstopLuisteraars.length) return;
+  await Promise.allSettled(noodstopLuisteraars.map((f) => Promise.resolve().then(() => f(userId, actorId))));
+}
+async function isServerEigenaar(userId: string): Promise<boolean> {
+  try {
+    const r = await getPool('systeem').query(`SELECT 1 FROM app.records WHERE tbl = 'users' AND id = $1 AND data->>'role' = 'owner' LIMIT 1`, [userId]);
+    return (r.rowCount ?? 0) > 0;
+  } catch { return false; }
+}
 /**
  * 0110 (zone E): de matrix «Браузер і агенти» (backend/extensie-matrix.ts) als tweede bron van toestemming voor BROWSERagenten.
  * null = matrix niet ingesteld voor die ruimte (dan tellen alleen de grants, zoals vóór 0110). Los gekoppeld: ai-grants kent de
@@ -374,16 +385,20 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     // M4: ook de OAuth-tokens van de MCP-connector (Claude) en de tvh_-tokens van de MCP-console intrekken.
     const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+    // VEILIG-002 (noodstop): активні сесії «від імені власника» теж негайно закриваються.
+    const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'blocked' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0) };
+    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0), namens: namens.rowCount ?? 0 };
   }, { systeem: true });
-  // SEC-002 ai-mcp-12 + geheimen-05: wat bij de noodstop eindigt (open bevestigingen, ontgrendelingen van de extensie), eindigt ook
-  // bij blokkeren; en de omslagen van de zojuist ingetrokken verbindingen gaan weg (sleutelkluis: «intrekken = dicht»).
-  for (const f of noodstopLuisteraars) { try { f(userId, actorId); } catch { /* luisteraar faalt: het blokkeren zelf gaat door */ } }
-  await grantsSluitenVoorGebruiker(userId);
+  // SEC-002 ai-mcp-12 + geheimen-05 + VEILIG-002: wacht op alle noodstopluisteraars, sluit sleutelkluisomslagen en sluit MCP-deurverbindingen.
+  const [, , deurConnectors] = await Promise.all([
+    draaiNoodstopLuisteraars(userId, actorId),
+    grantsSluitenVoorGebruiker(userId),
+    deurIntrekkenVoorGebruiker(userId, await isServerEigenaar(userId)),
+  ]);
   pusher.close(userId, null, 4403, 'blocked');
-  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens } }).catch(() => undefined);
-  return out;
+  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens, namens: out.namens, deurConnectors } }).catch(() => undefined);
+  return { ...out, deurConnectors };
 }
 
 export async function unblockUser(userId: string, actorId: string) {
@@ -416,16 +431,22 @@ export async function stopAll(userId: string, actorId: string) {
                             WHERE user_id = $1 AND status = 'pending_approval'`, [userId]);
     const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+    // VEILIG-002 (noodstop): активні сесії «від імені власника» також негайно припиняються.
+    const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'noodstop' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, grants: grants.rowCount ?? 0, commands: (cmds.rowCount ?? 0) + (calls.rowCount ?? 0), connectors: oauth.rowCount ?? 0, tokens: tvh.rowCount ?? 0 };
+    return { epoch, grants: grants.rowCount ?? 0, commands: (cmds.rowCount ?? 0) + (calls.rowCount ?? 0), connectors: oauth.rowCount ?? 0, tokens: tvh.rowCount ?? 0, namens: namens.rowCount ?? 0 };
   }, { systeem: true });
-  // SEC-002 geheimen-05: de omslagen van de gegevenssleutel van de zojuist ingetrokken verbindingen weg (database én geheugen).
-  await grantsSluitenVoorGebruiker(userId);
+  // SEC-002 geheimen-05 + VEILIG-002: wacht op het intrekken van open bevestigingen, extensie-ontgrendelingen, sleutelkluis en MCP-deur.
   pusher.push(userId, null, { t: 'stop', type: 'stop', epoch: out.epoch, detach: true });
-  for (const f of noodstopLuisteraars) { try { f(userId, actorId); } catch { /* luisteraar faalt: de stop zelf gaat door */ } }
+  const [, , deurConnectors] = await Promise.all([
+    grantsSluitenVoorGebruiker(userId),
+    draaiNoodstopLuisteraars(userId, actorId),
+    deurIntrekkenVoorGebruiker(userId, await isServerEigenaar(userId)),
+  ]);
   pusher.close(userId, null, 4410, 'stopped by user');
-  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_stop_all', type: 'ai', result: 'ok', details: out }).catch(() => undefined);
-  return out;
+  const totaal = { ...out, connectors: out.connectors + deurConnectors, deurConnectors };
+  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_stop_all', type: 'ai', result: 'ok', details: totaal }).catch(() => undefined);
+  return totaal;
 }
 
 /** Voor de UI: actieve 'altijd'-grants (met stopknop). */

@@ -120,22 +120,39 @@ export default function AchtergrondKnop({ lang, variant = 'schil' }: { lang: 'uk
 export function AchtergrondKnopMaquette({ lang }: { lang: 'uk' | 'nl' }) {
   const [gastheer, setGastheer] = useState<HTMLElement | null>(null);
   useEffect(() => {
+    if (typeof document === 'undefined') return;
     let plek: HTMLSpanElement | null = null;
+    let domMo: MutationObserver | null = null;
+    const opruimenDom = () => { domMo?.disconnect(); domMo = null; };
     const zoek = () => {
-      const acties = document.documentElement.dataset.identiteitMaquette === 'aan' ? document.querySelector<HTMLElement>('.mr-mq .top-actions') : null;
-      if (plek && plek.parentElement === acties) return;
+      const aan = document.documentElement.dataset.identiteitMaquette === 'aan';
+      const acties = aan ? document.querySelector<HTMLElement>('.mr-mq .top-actions') : null;
+      if (!aan) {
+        opruimenDom();
+        if (plek) { plek.remove(); plek = null; setGastheer(null); }
+        return;
+      }
+      if (plek && plek.isConnected && plek.parentElement === acties) { opruimenDom(); return; }
       plek?.remove(); plek = null;
       if (acties) {
+        opruimenDom();
         plek = document.createElement('span');
         plek.className = 'la-knop-gastheer';
         const zoekKnop = acties.querySelector('.search-action');
         acties.insertBefore(plek, zoekKnop || acties.firstChild);
+        setGastheer(plek);
+        return;
       }
-      setGastheer(plek);
+      setGastheer(null);
+      if (!domMo && typeof MutationObserver === 'function') {
+        const wortel = document.querySelector('.canonical-workspace') || document.body;
+        if (wortel) { domMo = new MutationObserver(zoek); domMo.observe(wortel, { childList: true, subtree: true }); }
+      }
     };
     zoek();
-    const id = window.setInterval(zoek, 1000);
-    return () => { clearInterval(id); plek?.remove(); };
+    const attrMo = typeof MutationObserver === 'function' ? new MutationObserver(zoek) : null;
+    attrMo?.observe(document.documentElement, { attributes: true, attributeFilter: ['data-identiteit-maquette'] });
+    return () => { attrMo?.disconnect(); opruimenDom(); plek?.remove(); };
   }, []);
   return gastheer ? createPortal(<AchtergrondKnop lang={lang} variant='maquette' />, gastheer) : null;
 }
