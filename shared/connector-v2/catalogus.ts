@@ -543,6 +543,12 @@ const DEFS: readonly Def[] = [
   { id: 'geheugen_stroom_verbinden', essentie: 'verbinden_geheugen', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
     uk: ['Поєднувати вузли пам’яті', 'Створює смисловий зв’язок між двома вузлами стріму пам’яті: заміна новішим рішенням, підтвердження, суперечність, залежність або посилання.', 'Граф пам’яті оновлюється після підтвердження на сайті й допомагає помічникам уникати застарілих порад.'],
     nl: ['Geheugenknopen met elkaar verbinden', 'Maakt een betekenisrelatie tussen twee knopen in de geheugenstroom: vervanging door een nieuwer besluit, ondersteuning, tegenspraak, afhankelijkheid of verwijzing.', 'De geheugengraaf wordt bijgewerkt na bevestiging op de site en helpt assistenten om verouderd advies te vermijden.'] },
+  { id: 'geheugen_agent_bots_overzicht', essentie: 'bekijken_agentbots', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',
+    uk: ['Переглядати ботів агентів', 'Шукає в реєстрі окремих ботів агентів та в черзі доставлення пам’яті за завданням або ідентифікатором агента в активному просторі.', 'Надає лише метадані стану ботів, груп і доставлення без розкриття токенів чи ключів.'],
+    nl: ['Agentbots en bezorging bekijken', 'Zoekt in het register van afzonderlijke agentbots en de bezorgwachtrij op taaknummer of agentnaam binnen de actieve ruimte.', 'Toont uitsluitend statusgegevens van bots, groepen en bezorgingen zonder ooit sleutels vrij te geven.'] },
+  { id: 'geheugen_agent_bots_bezorgen', essentie: 'bezorgen_agentbots', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Надсилати пам’ять агентові', 'Ставить у чергу й надсилає подію, рішення, передачу завдання, звіт або підсумок розмови в тему окремого бота агента з захистом від дублікатів.', 'Після підтвердження на сайті запис зберігається в черзі, надсилається в закріплену тему без секретів і лишає слід для інших помічників.'],
+    nl: ['Geheugenbericht aan agent bezorgen', 'Zet een gebeurtenis, besluit, taakoverdracht, rapport of gesprekssamenvatting klaar en bezorgt die in het onderwerp van de afzonderlijke agentbot zonder dubbels.', 'Na bevestiging op de site blijft het item bewaard, gaat het zonder geheimen naar het gekoppelde onderwerp en blijft het vindbaar per taaknummer.'] },
 ];
 
 /**

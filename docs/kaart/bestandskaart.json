@@ -2997,6 +2997,26 @@
    "pad": "tests/eenheid/geheugen-stroom.test.ts",
    "wat": "Eenheidstest voor de volledige Stroom van geheugen (kern, geheimenfilter, tegenspraken, routes, ruimte-isolatie en chatintegratie).",
    "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "shared/geheugen-stroom/bots.ts",
+   "wat": "Domeinmodel, 15+ standaard agentprofielen, tweetalige metadata, geheimenfilter en opmaak van Telegram-berichten voor agentbots.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "backend/geheugen-agent-bots.ts",
+   "wat": "Serveropslag onder RLS voor afzonderlijke Telegram-bots per agent (DEK-sleutelkluis), Telegram-controle, idempotente bezorgwachtrij en handmatige gesprekssamenvattingen.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "src/ai-ecosysteem/AgentTelegramBotsPaneel.tsx",
+   "wat": "Tweetalige tabbladcomponent in Stroom van geheugen voor het instellen, testen en beheren van per-agent Telegram-bots en bezorgketens.",
+   "sinds": "stroom-geheugen"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-agent-bots.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor het register van agentbots, Telegram-rechtencontrole, idempotente bezorging, overdrachten en sleutelkluis.",
+   "sinds": "stroom-geheugen"
   }
  ]
 }

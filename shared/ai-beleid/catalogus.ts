@@ -206,6 +206,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   ecosysteem_context_list: 'site.read', ecosysteem_context_save: 'board.write',
   ecosysteem_agent_overdracht: 'board.write', ecosysteem_ruimte_uitbreiding: 'apps.deploy',
   geheugen_stroom_zoeken: 'site.read', geheugen_stroom_bewaren: 'board.write', geheugen_stroom_verbinden: 'board.write',
+  geheugen_agent_bots_overzicht: 'site.read', geheugen_agent_bots_bezorgen: 'board.write',
   // сервер
   mcp_board_list: 'board.read',
   mcp_board_add: 'board.write',

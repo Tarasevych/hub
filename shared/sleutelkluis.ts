@@ -66,6 +66,7 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.ai_bevestiging', veld: 'parameters/resultaat (verzoeken van AI ter bevestiging, 0094)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/ai-bevestiging.ts' },
   { tabel: 'app.afzender_beeld', veld: 'data_versleuteld (foto\'s van afzenders: Google-contacten, vCard, Gravatar)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/merk-bron.ts' },
   { tabel: 'app.geheugen_stroom_knopen', veld: 'inhoud_versleuteld (вузли довготривалої пам’яті ШІ / knopen van de geheugenstroom, 0279)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/geheugen-stroom.ts' },
+  { tabel: 'app.geheugen_agent_bots', veld: 'sleutel_versleuteld (окремий токен Telegram-бота агента / afzonderlijk bot-token per AI-agent, 0280)', klasse: 'geheim', stand: 'dek', module: 'backend/geheugen-agent-bots.ts' },
   // --- nog niet: met reden ---
   { tabel: 'mail_oauth_tokens_v2', veld: 'token (Microsoft 365)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/index.ts (Microsoft-tak)',
     reden: { uk: 'Гілка Microsoft у backend/index.ts — спільний файл; переносимо в окремому випуску після зняття блокування.', nl: 'De Microsoft-tak zit in backend/index.ts (gedeeld bestand); volgt in een eigen uitrol.' } },
@@ -91,6 +92,8 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Архів пишеться агентом розширення без сесії сайту; потрібен грант-шлях для токена агента. Наступний випуск.', nl: 'Het archief wordt door de extensie-agent zonder sitesessie geschreven; vraagt de grant-weg voor agenttokens. Volgende uitrol.' } },
   { tabel: 'app.huis_integraties', veld: 'token_envelop (Home Assistant-koppeling van de woning)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/huis-vnext.ts',
     reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
+  { tabel: 'app.geheugen_telegram_bezorging', veld: 'titel/samenvatting/bestands_verwijzingen (пошукова черга доставлення в Telegram, 0280)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/geheugen-agent-bots.ts',
+    reden: { uk: 'Усі заголовки, підсумки та посилання проходять обов’язкову перевірку фільтром таємниць (bevatGevoeligGeheim) і зберігаються без секретів для пошуку за завданням та агентом.', nl: 'Alle titels, samenvattingen en verwijzingen doorlopen verplicht het geheimenfilter (bevatGevoeligGeheim) en blijven zonder geheimen doorzoekbaar op taak en agent.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 

@@ -131,6 +131,7 @@ import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, 
 import { aiWerkruimteRoutes } from './ai-werkruimte';
 import { aiEcosysteemRoutes } from './ai-ecosysteem';
 import { geheugenStroomRoutes } from './geheugen-stroom';
+import { geheugenAgentBotsRoutes } from './geheugen-agent-bots';
 import { passkeyRoutes } from './toegangssleutels';
 import { toegangRoutes } from './toegang-routes';
 import { toegangscodeRoutes } from './toegangscodes-routes';
@@ -824,6 +825,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),
   ...aiEcosysteemRoutes({ requireSession: ownerRequireSession as never }),
   ...geheugenStroomRoutes({ requireSession: ownerRequireSession as never }),
+  ...geheugenAgentBotsRoutes({ requireSession: ownerRequireSession as never }),
   ...codewoordRoutes({ requireSession: ownerRequireSession as never, fail: error as never, ok: ownerResponse as never, body: ownerBody as never, stepUp: stapOpVereist as never }),
   ...passkeyRoutes({ requireSession: ownerRequireSession as never, stepUp: stapOpVereist as never, sterkeStapOp: sterkeStapOpVereist as never }),
   // Sleutelkluis (0092): «Шифрування моїх даних» — per mens en ruimte een eigen gegevenssleutel (backend/sleutelkluis.ts).

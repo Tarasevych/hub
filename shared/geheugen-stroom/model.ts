@@ -257,8 +257,9 @@ const GEHEIME_PATRONEN: readonly RegExp[] = [
   /\bAIza[0-9A-Za-z_-]{20,}\b/,
   /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/,
   /\bAKIA[0-9A-Z]{16}\b/,
+  /\b\d{6,15}:AA[A-Za-z0-9_-]{20,}\b/,
   /\bBearer\s+[A-Za-z0-9._-]{24,}\b/i,
-  /\b(?:password|wachtwoord|пароль|api[_-]?key|secret[_-]?key|access[_-]?token|refresh[_-]?token)\s*[:=]\s*["']?[^\s"']{6,}/i,
+  /\b(?:password|wachtwoord|пароль|api[_-]?key|secret[_-]?key|access[_-]?token|refresh[_-]?token|bot[_-]?token)\s*[:=]\s*["']?[^\s"']{6,}/i,
 ];
 
 export function bevatGevoeligGeheim(tekst: unknown): boolean {

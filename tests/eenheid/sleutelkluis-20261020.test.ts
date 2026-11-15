@@ -32,6 +32,7 @@ export async function main(): Promise<number> {
   await import('../../backend/mail-imap'); await import('../../backend/agenda-caldav'); await import('../../backend/github-koppeling-opslag');
   await import('../../backend/vensters-onthouden'); await import('../../backend/google-suite-inrichting');
   await import('../../backend/geheugen-stroom');
+  await import('../../backend/geheugen-agent-bots');
   const st = await import('../../backend/mcp-connector-opslag');
   const sync = await import('../../backend/google-suite-sync');
   const { db } = await import('../../server/platform');

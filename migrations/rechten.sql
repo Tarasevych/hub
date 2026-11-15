@@ -209,6 +209,10 @@ BEGIN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_stroom_knopen, app.geheugen_stroom_relaties, app.geheugen_stroom_gebeurtenissen TO mijnruimte_app;
       GRANT USAGE, SELECT ON SEQUENCE app.geheugen_stroom_gebeurtenissen_id_seq TO mijnruimte_app;
     END IF;
+    -- 0280 (stroom-geheugen): окремі Telegram-боти по агентах і черга доставлення пам’яті під RLS за користувачем і простором.
+    IF to_regclass('app.geheugen_agent_bots') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_agent_bots, app.geheugen_telegram_bezorging TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

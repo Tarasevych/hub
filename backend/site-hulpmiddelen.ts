@@ -1282,6 +1282,115 @@ SITE_TOOLS.push(
     }),
     shape: (d) => compact(d),
   },
+  {
+    group: 'site', service: 'ai', write: false,
+    tool: {
+      name: 'geheugen_agent_bots_overzicht', title: 'List agent Telegram bots and delivery queue',
+      description: 'Inspect registered per-agent Telegram bots and search the shared delivery/handoff queue in the active space by task ID (taak_id), agent slug or search query. Read-only. Bot tokens are never returned.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          zoek: { type: 'string', description: p('Необов’язковий пошуковий рядок за назвою завдання, агентом або заголовком (до 200 символів).', 'Optionele zoekterm op taaknummer, agent of titel (hoogstens 200 tekens).') },
+          taak_id: { type: 'string', description: p('Необов’язковий код завдання для пошуку ланцюжка доставлення між різними агентами (до 120 символів).', 'Optioneel taaknummer om de keten van bezorgingen en overdrachten tussen agenten te bekijken (hoogstens 120 tekens).') },
+          agent_slug: { type: 'string', description: p('Необов’язковий технічний ідентифікатор агента, наприклад "claude", "codex", "gemini" або власний профіль.', 'Optioneel kenmerk van de agent, bijvoorbeeld "claude", "codex", "gemini" of een eigen profiel.') },
+          limiet: geheelProp('Найбільша кількість записів черги у відповіді: від 1 до 200 (типово 80).', 'Hoogste aantal bezorgitems in het antwoord: 1 tot 200 (standaard 80).', 1, 200),
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (a.zoek !== undefined && (typeof a.zoek !== 'string' || a.zoek.length > 200)) return 'Invalid "zoek": at most 200 characters.';
+      if (a.taak_id !== undefined && (typeof a.taak_id !== 'string' || a.taak_id.length > 120)) return 'Invalid "taak_id": at most 120 characters.';
+      if (a.agent_slug !== undefined && (typeof a.agent_slug !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.agent_slug.trim().toLowerCase()))) return 'Invalid "agent_slug".';
+      if (a.limiet !== undefined && !(Number.isInteger(a.limiet) && a.limiet >= 1 && a.limiet <= 200)) return 'Invalid "limiet": 1-200.';
+      return null;
+    },
+    request: (a) => ({
+      route: 'POST /api/owner/ai/geheugen/bots/overzicht',
+      body: without({ zoek: a.zoek, taakId: a.taak_id, agentSlug: a.agent_slug, limiet: a.limiet }),
+    }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'site', service: 'ai', write: true,
+    tool: {
+      name: 'geheugen_agent_bots_bezorgen', title: 'Deliver agent memory or handoff to Telegram',
+      description: `Queue and deliver a memory event, decision, task handoff, report, file reference or manual conversation summary to the dedicated agent's Telegram bot topic in the active space (with idempotency key and secret filtering). ${CONFIRM}`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          agent_slug: { type: 'string', description: p('Ідентифікатор цільового агента, наприклад "claude", "codex", "gemini" або власний профіль.', 'Kenmerk van de doelagent, bijvoorbeeld "claude", "codex", "gemini" of een eigen profiel.') },
+          taak_id: { type: 'string', description: p('Спільний код завдання для зв’язування повідомлень і передач між кількома агентами.', 'Gedeeld taaknummer om berichten en overdrachten tussen meerdere agenten te koppelen.') },
+          soort_bericht: { type: 'string', enum: ['gebeurtenis', 'besluit', 'overdracht', 'rapport', 'bestand', 'gesprek'], description: p('Вид повідомлення: "gebeurtenis" (подія), "besluit" (рішення), "overdracht" (передача), "rapport" (звіт), "bestand" (файл) або "gesprek" (розмова).', 'Soort bericht: "gebeurtenis", "besluit", "overdracht", "rapport", "bestand" of "gesprek".') },
+          titel: { type: 'string', description: p('Короткий заголовок без жодних паролів або ключів (1–240 символів).', 'Korte titel zonder wachtwoorden of sleutels (1–240 tekens).') },
+          samenvatting: { type: 'string', description: p('Змістовний підсумок або контекст передавання без секретів (до 4000 символів).', 'Inhoudelijke samenvatting of overdrachtscontext zonder geheimen (hoogstens 4000 tekens).') },
+          idempotentie_sleutel: { type: 'string', description: p('Унікальний ключ повторостійкості для запобігання дублікатам під час повтору запиту (до 160 символів).', 'Unieke herhaalsleutel om dubbele berichten bij herhalen te voorkomen (hoogstens 160 tekens).') },
+          vorige_bezorging_id: { type: 'string', description: p('Необов’язковий ідентифікатор попереднього запису доставлення в ланцюжку передачі завдання.', 'Optioneel kenmerk van de vorige bezorging in een keten van taakoverdracht.') },
+          knoop_id: { type: 'string', description: p('Необов’язковий ідентифікатор вузла у Стрімі пам’яті.', 'Optioneel kenmerk van een knoop in de geheugenstroom.') },
+          bestands_verwijzingen: {
+            type: 'array', maxItems: 20,
+            description: p('Перелік посилань або назв файлів із контрольними сумами без таємних даних.', 'Overzicht van bestandsverwijzingen met eventuele controlegetallen zonder geheimen.'),
+            items: {
+              type: 'object',
+              properties: {
+                naam: { type: 'string', description: p('Назва файлу.', 'Bestandsnaam.') },
+                verwijzing: { type: 'string', description: p('Шлях або безпечне посилання на файл.', 'Pad of veilige verwijzing naar het bestand.') },
+                sha256: { type: 'string', description: p('Необов’язкова шістнадцяткова контрольна сума у форматі "SHA-256" (64 символи).', 'Optioneel controlegetal in "SHA-256" (64 tekens).') },
+              },
+              required: ['naam', 'verwijzing'], additionalProperties: false,
+            },
+          },
+          handmatig_gesprek: { type: 'boolean', description: p('Увімкнути ручне збереження підсумку розмови для сторонньої служби у Стрімі пам’яті.', 'Handmatige invoer van een gesprekssamenvatting uit een andere dienst in de geheugenstroom inschakelen.') },
+          ook_bezorgen: { type: 'boolean', description: p('У режимі ручної розмови також надіслати запис у тему бота в Телеграмі (типово "false").', 'Bij handmatige invoer ook direct bezorgen naar het botonderwerp in Telegram (standaard "false").') },
+        },
+        required: ['agent_slug', 'titel'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    validate: (a) => {
+      if (typeof a.agent_slug !== 'string' || !/^[a-z0-9][a-z0-9._:-]{1,47}$/.test(a.agent_slug.trim().toLowerCase())) return 'Invalid "agent_slug".';
+      if (a.taak_id !== undefined && (typeof a.taak_id !== 'string' || a.taak_id.length > 120)) return 'Invalid "taak_id".';
+      if (a.soort_bericht !== undefined && !['gebeurtenis', 'besluit', 'overdracht', 'rapport', 'bestand', 'gesprek'].includes(a.soort_bericht)) return 'Invalid "soort_bericht".';
+      if (typeof a.titel !== 'string' || !a.titel.trim() || a.titel.length > 240) return 'Invalid "titel": 1-240 characters.';
+      if (a.samenvatting !== undefined && (typeof a.samenvatting !== 'string' || a.samenvatting.length > 4000)) return 'Invalid "samenvatting": at most 4000 characters.';
+      if (a.idempotentie_sleutel !== undefined && (typeof a.idempotentie_sleutel !== 'string' || !a.idempotentie_sleutel.trim() || a.idempotentie_sleutel.length > 160)) return 'Invalid "idempotentie_sleutel".';
+      if (a.vorige_bezorging_id !== undefined && (typeof a.vorige_bezorging_id !== 'string' || !BEVESTIG_UUID.test(a.vorige_bezorging_id.toLowerCase()))) return 'Invalid "vorige_bezorging_id": expected UUID.';
+      if (a.knoop_id !== undefined && (typeof a.knoop_id !== 'string' || !BEVESTIG_UUID.test(a.knoop_id.toLowerCase()))) return 'Invalid "knoop_id": expected UUID.';
+      if (a.bestands_verwijzingen !== undefined && (!Array.isArray(a.bestands_verwijzingen) || a.bestands_verwijzingen.length > 20)) return 'Invalid "bestands_verwijzingen".';
+      if (a.handmatig_gesprek === true && (typeof a.samenvatting !== 'string' || !a.samenvatting.trim())) return 'Manual conversation summary requires "samenvatting".';
+      return null;
+    },
+    request: (a) => a.handmatig_gesprek === true
+      ? {
+          route: 'POST /api/owner/ai/geheugen/bots/gesprek-invoeren',
+          body: without({
+            agentSlug: a.agent_slug.trim().toLowerCase(),
+            taakId: a.taak_id,
+            titel: a.titel.trim(),
+            samenvatting: String(a.samenvatting ?? '').trim(),
+            bestandsVerwijzingen: a.bestands_verwijzingen,
+            ookBezorgen: a.ook_bezorgen === true,
+            idempotentieSleutel: a.idempotentie_sleutel,
+            vorigeBezorgingId: a.vorige_bezorging_id,
+          }),
+        }
+      : {
+          route: 'POST /api/owner/ai/geheugen/bots/bezorgen',
+          body: without({
+            agentSlug: a.agent_slug.trim().toLowerCase(),
+            taakId: String(a.taak_id ?? '').trim() || `taak-${Date.now()}`,
+            soortBericht: a.soort_bericht,
+            titel: a.titel.trim(),
+            samenvatting: a.samenvatting,
+            idempotentieSleutel: a.idempotentie_sleutel,
+            vorigeBezorgingId: a.vorige_bezorging_id,
+            knoopId: a.knoop_id,
+            bestandsVerwijzingen: a.bestands_verwijzingen,
+          }),
+        },
+    shape: (d) => compact(d),
+  },
 );
 
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));
@@ -1290,6 +1399,7 @@ export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t])
 export function explainSiteError(status: number, data: any): string {
   const code = String(data?.error || data?.reasonCode || data?.message || `HTTP ${status}`);
   if (code === 'GEHEUGEN_GEHEIM_GEWEIGERD') return 'Stroom van geheugen refused to store potential secrets, tokens or passwords. Remove the secret and ask the user to use the key vault if needed.';
+  if (/^(BOT_|BEZORGING_)/.test(code)) return `Agent Telegram bot delivery reported ${code}. Inspect the bot status and channel/topic check in Stroom van geheugen before retrying.`;
   // 21.10.2026 (shared/dev-media-github.ts): invoerfouten dragen hun Engelse uitleg na de dubbele punt; de rest krijgt uk + nl.
   const invoer = /^(GITHUB_PR_INVOER|APP_DOMEIN_INVOER|MEDIA_INVOER):([\s\S]+)$/.exec(code);
   if (invoer) return invoer[2].slice(0, 400);
