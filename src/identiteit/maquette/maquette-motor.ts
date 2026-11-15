@@ -1366,14 +1366,20 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }
   }
 
-  function isIconNav(){
-    return preferences.iconOnly || ["top","bottom"].includes(preferences.position) || preferences.compact ||
-      ((breed()<=730)&&["left","right"].includes(preferences.position));
+  // HINT-001: підказка потрібна лише тоді, коли пункт справді показує саму піктограму. Налаштування «компактно»/«авто»
+  // не годиться як ознака: в авто-режимі панель розгортається при наведенні й назву вже видно (була подвійна назва).
+  // HINT-001: alleen een hint als het item echt alleen een pictogram toont; «auto» klapt bij aanwijzen uit en toont de naam al.
+  function isIconNav(el){
+    const naam=el&&el.querySelector(".anchor-name,.nav-group-name");
+    if(!naam)return true;
+    if(!naam.getClientRects().length)return true;
+    const st=getComputedStyle(naam);
+    return st.visibility==="hidden"||Number(st.opacity)<0.05;
   }
   function showAnchorTooltip(el){
-    if(!el||!isIconNav()||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
+    if(!el||!isIconNav(el)||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
     const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();
-    tooltip.textContent=el.dataset.tooltip;
+    tooltip.textContent=el.dataset.ankerTip||el.getAttribute("aria-label")||"";
     tooltip.hidden=false;
     tooltip.dataset.side=preferences.position;
     const tw=tooltip.offsetWidth,th=tooltip.offsetHeight,pad=9;
@@ -1385,8 +1391,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     tooltip.style.left=Math.max(pad,Math.min(innerWidth-tw-pad,x))+"px";
     tooltip.style.top=Math.max(pad,Math.min(innerHeight-th-pad,y))+"px";
     tooltip.classList.add("show");
+    ankerTipDoel=el;
+    // Авто-панель розгортається під мишею вже після показу: щойно назву видно, бубка зникає · verdwijnt zodra de naam zichtbaar is
+    clearTimeout(ankerTipHerzien);ankerTipHerzien=setTimeout(herzieAnkerTip,120);setTimeout(herzieAnkerTip,420);
   }
+  let ankerTipDoel=null,ankerTipHerzien=0;
+  function herzieAnkerTip(){if(ankerTipDoel&&!isIconNav(ankerTipDoel))hideAnchorTooltip();}
   function hideAnchorTooltip(){
+    ankerTipDoel=null;
     const tooltip=byId("anchorTooltip");
     tooltip.classList.remove("show");
     tooltip.hidden=true;
@@ -1932,12 +1944,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     for(const g of ["personal","social","account","security"]){
       byId("group-"+g).innerHTML=localized.filter(s=>s.group===g).map(renderCard).join("");
     }
-    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
+    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-anker-tip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
     const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп
     byId("railItems").innerHTML=navItem("intro",ui().beginning)+groups.map((group,index)=>{
       const label=ui().navGroups[index],opened=expandedNavGroups.has(group.id);
       return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
-        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-tooltip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
+        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-anker-tip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
         '<div class="nav-subitems" role="group" aria-label="'+label+'">'+localized.filter(s=>s.group===group.id).map(s=>navItem(s.id,s.short)).join("")+'</div></div>';
     }).join("");
     rehydrateInlineSettings();
@@ -1970,6 +1982,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   }
   function applyRailCollapsed(collapsed){
     body.classList.toggle("rail-compact",collapsed);
+    if(!collapsed)herzieAnkerTip();
     root.querySelectorAll("[data-drawer-compact]").forEach(b=>{b.setAttribute("aria-pressed",String(collapsed));b.classList.toggle("on",collapsed);});
     syncRailCompactButton();
     schedulePillUpdate();
@@ -2536,6 +2549,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(el.classList.contains("active")||!el.dataset.dienst)jump("intro");else opties.bijDienst(el.dataset.dienst);
   }));
   byId("railItems").addEventListener("pointerover",e=>{
+    // HINT-001: на сенсорному екрані дотик не показує підказку · geen hint bij aanraken
+    if(e.pointerType==="touch")return;
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&item!==e.relatedTarget?.closest?.(".anchor-link,.nav-group-toggle"))showAnchorTooltip(item);
   });
@@ -2543,7 +2558,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&!item.contains(e.relatedTarget))hideAnchorTooltip();
   });
-  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item)showAnchorTooltip(item);});
+  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item&&item.matches(":focus-visible"))showAnchorTooltip(item);});
   byId("railItems").addEventListener("focusout",hideAnchorTooltip);
   byId("railItems").addEventListener("scroll",hideAnchorTooltip,{passive:true});
 
