@@ -15,8 +15,8 @@ on:
   workflow_dispatch:
     inputs:
       model_id:
-        description: 'Ідентифікатор моделі ШІ, що виконала роботу (для UITROL-MANIFEST.json)'
-        required: true
+        description: 'Ідентифікатор моделі ШІ (необов’язково: інакше змінна сховища POSTVAK_001_MODEL_ID або DUBLI_001_MODEL_ID)'
+        required: false
         type: string
       model_versie:
         description: 'Версія моделі (необов’язково)'
