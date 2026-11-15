@@ -267,7 +267,6 @@ jobs:
             identiteit-014-kaart \
             identiteit-014-uitvoer \
             identiteit-014-herstel \
-            identiteit-015-vormgeving \
             migraties-pg16-20261021 \
             beheer-journaal \
             gebruiker-audit-2026-10-19 \
