@@ -69,7 +69,7 @@ export async function main(): Promise<number> {
     const st = await roep(R('starten'), s, t, { modus: 'tot-site-uitloggen', reden: 'compatibiliteit' });
     check('opzet: technische ruimte gestart', st.status === 200, `${st.status} ${st.data.error || ''}`);
     await stapOp(s);
-    const az = await roep(R('ai-zetten'), s, t, { verbindingId: '*', ruimtes: ['prive', 'technisch'], termijn: 'tot-technisch-einde' });
+    const az = await roep(R('ai-zetten'), s, t, { verbindingId: '*', ruimtes: ['prive', 'technisch'], termijn: 'tot-technisch-einde', alleVerbindingen: true }); // AI-TERMIJN-001: «*» vraagt expliciete bevestiging
     check('opzet: AI mag technisch', az.status === 200, `${az.status} ${az.data.error || ''}`);
     const a1 = await mcp('beheer_journaal_lezen');
     check('MCP: beheerhulpmiddel draait in scope technisch (200)', a1.status === 200 && a1.scope === 'technisch', JSON.stringify(a1));

@@ -197,7 +197,6 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
           ...sessionBody(),
           agent: a.slug,
           actie: 'alles-aan',
-          termijn: 'tot-technisch-einde',
         });
         delen.push(tr('технічний сеанс делеговано', 'technische sessie gedelegeerd'));
       }
