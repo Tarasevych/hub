@@ -41,6 +41,8 @@ import {
 } from '../../backend/uitrol-github-ontvangen';
 import { goedkeurUitdaging } from '../../backend/uitrol-goedkeuring';
 import { SITE_TOOL_BY_NAME } from '../../backend/site-hulpmiddelen';
+import { V2_ALLEEN } from '../../backend/connectors-hulpmiddelen';
+import { ALLEEN_UITDRUKKELIJK } from '../../backend/connector-v2-erfenis';
 import { TOEGESTANE_ROUTES } from '../../backend/site-aanroep';
 import { toolInRuimte } from '../../shared/ai-ruimte';
 import { v2Optie } from '../../shared/connector-v2/catalogus';
@@ -565,9 +567,10 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- 5. MCP-інструмент uitrol_github_ophalen у реєстрах
     const mcpTool = SITE_TOOL_BY_NAME.get('uitrol_github_ophalen');
     const mcpReq = mcpTool?.request({ repo: 'Tarasevych/hub', tag: 'uitrol-20261115-050000' });
-    check('MCP-інструмент uitrol_github_ophalen: у SITE_TOOLS (write: true), TOEGESTANE_ROUTES, TECHNISCH та V2_OPTIES',
+    check('MCP-інструмент uitrol_github_ophalen: у SITE_TOOLS (write: true), TOEGESTANE_ROUTES, TECHNISCH, V2_OPTIES та V2_ALLEEN/ALLEEN_UITDRUKKELIJK',
       Boolean(mcpTool && mcpTool.write === true && mcpReq && TOEGESTANE_ROUTES.has(mcpReq.route))
       && toolInRuimte('uitrol_github_ophalen', 'technisch') && !toolInRuimte('uitrol_github_ophalen', 'prive')
+      && V2_ALLEEN.has('uitrol_github_ophalen') && ALLEEN_UITDRUKKELIJK.has('uitrol_github_ophalen')
       && Boolean(v2Optie('uitrol_github_ophalen:beheer')));
 
     return einde();
