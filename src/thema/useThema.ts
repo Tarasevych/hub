@@ -6,6 +6,8 @@ import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences, 
 import { echteWissel, hervat, isKlassiekPalet, isMaquetteStelsel, leesKeuze, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
 import './paletten.css';
 import './weergave-stijl.css';
+import './wissel-rust.css';
+import { themaWisselRust } from './wissel-rust';
 import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';
 
 const GEBEURTENIS = 'tsv:thema';
@@ -54,6 +56,8 @@ export function useThemaPresentatie(theme: ThemePreference, apparaatDonker: bool
   }, []);
   useLayoutEffect(() => {
     const root = document.documentElement;
+    // ZAVYSANNIA-001: без переходів на час зміни палітри (лише коли вона справді інша).
+    if (!root.classList.contains(`palet-${r.palet}`)) themaWisselRust();
     root.classList.remove(...KLASSEN);
     root.classList.add(`palet-${r.palet}`);
     if (isKlassiekPalet(r.palet)) {

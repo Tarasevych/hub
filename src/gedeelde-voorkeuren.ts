@@ -23,6 +23,7 @@
 //    zijn eigen standaard en de andere accounts met een leeg record. Zie migreer() hieronder.
 import{defaults,idForTab,serviceForHostname,serviceTabs,type CanonicalService}from'./canoniek-dienst';
 import type{AutoInstelling,Palet}from'./thema/kern';
+import { themaWisselRust } from './thema/wissel-rust';
 import type{MenuRuimte}from'../shared/menu-model';
 import{normaliseerUiterlijkAccount,normaliseerUiterlijkAvatar,normaliseerUiterlijkRuimte,standaardVoorRuimte,uiterlijkLeeg,UITERLIJK_DIENSTEN,type UiterlijkAccount,type UiterlijkRuimte,type UiterlijkVormgeving,type UiterlijkDichtheid,type UiterlijkBeweging,type UiterlijkAccent}from'../shared/uiterlijk';
 export type SharedTheme='light'|'dark'|'device'|'auto'|'plum'|'plum-light'|'plum-dark';
@@ -234,7 +235,8 @@ export const uiterlijkVoorServer=(ruimte:MenuRuimte=ruimteNu,account=weergaveAcc
 // ---------------------------------------------------------------------------------------- thema toepassen en oude sleutels
 export const themePreferenceFromValue=(value:unknown,fallback:ThemePreference='device'):ThemePreference=>value==='plum-dark'?'plum-dark':value==='plum-light'||value==='plum'?'plum-light':value==='dark'?'dark':value==='light'?'light':value==='device'?'device':value==='auto'?'auto':fallback;
 export const presentationThemeFromValue=(value:unknown,fallback:PresentationTheme='light'):PresentationTheme=>value==='plum-dark'?'plum-dark':value==='plum-light'||value==='plum'?'plum-light':value==='dark'?'dark':value==='light'?'light':value==='device'?fallback:fallback;
-export const applyDocumentPresentationTheme=(theme:PresentationTheme)=>{const root=document.documentElement;root.classList.remove('theme-light','theme-dark','theme-plum','theme-plum-light','theme-plum-dark');root.classList.add(`theme-${theme}`);root.dataset.presentationTheme=theme;root.style.colorScheme=theme==='dark'||theme==='plum-dark'?'dark':'light'};
+// ZAVYSANNIA-001: однакова тема — нічого не чіпаємо (зайва зміна класу <html> перераховує стилі всього документа); інша — без переходів.
+export const applyDocumentPresentationTheme=(theme:PresentationTheme)=>{const root=document.documentElement;if(root.classList.contains(`theme-${theme}`)&&root.dataset.presentationTheme===theme)return;themaWisselRust();root.classList.remove('theme-light','theme-dark','theme-plum','theme-plum-light','theme-plum-dark');root.classList.add(`theme-${theme}`);root.dataset.presentationTheme=theme;root.style.colorScheme=theme==='dark'||theme==='plum-dark'?'dark':'light'};
 export const migrateLegacyPresentationStorage=()=>{try{
   // oude, accountloze cookie (versie 1/2) → record van dit account in de gebruikersruimte; één keer wegschrijven
   const ruw=ontleed(cookieValue());if(Object.keys(ruw).length&&Number(ruw.versie)!==3)bewaren(leesOpslag());

@@ -137,7 +137,8 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
       const blok = gat.closest('details.mq-echt-blok') as HTMLDetailsElement | null;
       if (!blok || blok.open) open.push(id);
     }
-    setGaten(lijst);
+    // ZAVYSANNIA-001: той самий набір гнізд — без нового рендеру всіх порталів.
+    setGaten((oud) => (oud.length === lijst.length && oud.every((g, i) => g === lijst[i]) ? oud : lijst));
     setGemonteerd((oud) => (open.every((id) => oud.has(id)) ? oud : new Set([...oud, ...open])));
   };
 
@@ -184,7 +185,10 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, o
         m.ga(naarOntwerp(actiefRef.current), true);
       }
       // Тема сайту може змінитися, поки вигляд відкритий (перемикач у меню облікового запису або в розділі «Теми»).
-      kijker = new MutationObserver(() => m.zetLicht(helder()));
+      // ZAVYSANNIA-001: лише коли світла/темна справді змінилася — інакше кожна зміна класу <html> (палітра, щільність, технічний
+      // профіль) перемальовувала прев’ю карток двигуна.
+      let laatsteLicht = helder();
+      kijker = new MutationObserver(() => { const l = helder(); if (l === laatsteLicht) return; laatsteLicht = l; m.zetLicht(l); });
       kijker.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     });
 
