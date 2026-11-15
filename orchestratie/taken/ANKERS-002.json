@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "ANKERS-002",
+  "agent": "claude",
+  "tak": "feature/ankers-002-uitgave-20261115-193802",
+  "basisCommit": "07359e0e0d4bbea34277cebffc17e1321ae2563c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T19:42:49.811Z",
+  "bijgewerkt": "2026-11-15T21:22:30.092Z",
+  "omschrijving": "Остаточний випуск 15.11: заокруглені блоки, одне меню якорів, пошта, робочий стіл, сповіщення, акценти, терміни доступу ШІ, розширення 0.9.4 (PR #114–#118, #120–#132 без #119 і правка живого тла); поверх 20261115-162533.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
