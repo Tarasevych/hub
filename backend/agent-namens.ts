@@ -72,6 +72,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/beveiliging\//,              // «Захист»: auth-poort, OPA, RLS aan/uit (alleen de eigenaar zelf)
   /^[A-Z]+ \/api\/impersonatie\//,                     // «Подивитися як користувач»: alleen mensen vragen, geven en gebruiken toegang (0068)
   /^[A-Z]+ \/api\/ondersteuning\//,                    // «Підтримка від імені»: idem
+  /^[A-Z]+ \/api\/owner\/ai\/geheugen\/bots\/(opslaan|testen|status|verwijderen)(\/|$)/, // botsleutels en botstatus van agentbots: alleen een mens met actieve sleutelkluis
 ]);
 export const agentRouteVerboden = (route: string): boolean => AGENT_VERBODEN.some((r) => r.test(route));
 export const AGENT_NIET_TOEGESTAAN_TEKST = Object.freeze({

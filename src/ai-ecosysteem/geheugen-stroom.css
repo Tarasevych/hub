@@ -1,0 +1,556 @@
+/* Стилі для панелі «Стріму пам’яті» (Stroom van geheugen) — без !important та position: fixed. */
+.gs-container {
+  display: grid;
+  gap: 16px;
+}
+
+.gs-kaart {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+}
+
+.gs-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gs-kop-titel {
+  display: grid;
+  gap: 4px;
+}
+
+.gs-kop-titel h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gs-subtekst {
+  margin: 0;
+  color: var(--muted, #64748b);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.gs-statusrij {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gs-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f1f5f9));
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+}
+
+.gs-pil-waarschuwing {
+  border-color: var(--warn, #d97706);
+  background: var(--warn-zacht, rgba(217, 119, 6, 0.12));
+}
+
+.gs-pil-beschermd {
+  border-color: var(--accent, #2f6f73);
+  background: var(--accent-soft, rgba(47, 111, 115, 0.12));
+}
+
+.gs-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.gs-stat-cel {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+}
+
+.gs-stat-cel strong {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.gs-stat-cel span {
+  font-size: 0.78rem;
+  color: var(--muted, #64748b);
+}
+
+.gs-conflict-doos {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--warn, #d97706);
+  background: var(--warn-zacht, rgba(217, 119, 6, 0.09));
+}
+
+.gs-conflict-doos h3 {
+  margin: 0;
+  font-size: 0.96rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gs-conflict-item {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+}
+
+.gs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--line, #d7e0ea);
+  padding-bottom: 10px;
+}
+
+.gs-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+  color: var(--text, #0f172a);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gs-tab[aria-selected='true'] {
+  background: var(--accent, #2f6f73);
+  border-color: var(--accent, #2f6f73);
+  color: var(--text-on-accent, var(--accentText, #ffffff));
+}
+
+.gs-zoekbalk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.gs-invoer,
+.gs-select,
+.gs-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+  color: var(--text, #0f172a);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.gs-textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.gs-form {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+}
+
+.gs-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gs-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gs-veld {
+  display: grid;
+  gap: 4px;
+  font-size: 0.86rem;
+}
+
+.gs-veld > span {
+  font-weight: 600;
+}
+
+.gs-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gs-knop-hoofd,
+.gs-knop-tweede,
+.gs-knop-gevaar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #d7e0ea);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gs-knop-hoofd {
+  background: var(--accent, #2f6f73);
+  border-color: var(--accent, #2f6f73);
+  color: var(--text-on-accent, var(--accentText, #ffffff));
+}
+
+.gs-knop-tweede {
+  background: var(--panel, #fff);
+  color: var(--text, #0f172a);
+  text-decoration: none;
+}
+
+.gs-knop-gevaar {
+  background: transparent;
+  color: var(--fout, var(--danger, #b91c1c));
+  border-color: color-mix(in srgb, var(--fout, var(--danger, #b91c1c)) 42%, transparent);
+}
+
+.gs-knop-hoofd:disabled,
+.gs-knop-tweede:disabled,
+.gs-knop-gevaar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gs-knopen-lijst {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gs-knoop-kaart {
+  display: grid;
+  gap: 8px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+}
+
+.gs-knoop-kaart.is-vastgepind {
+  border-color: var(--accent, #2f6f73);
+}
+
+.gs-knoop-kaart.is-verouderd {
+  opacity: 0.78;
+}
+
+.gs-knoop-kop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gs-knoop-inhoud {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.gs-relaties-doos {
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface, var(--soft, #f8fafc));
+  border: 1px solid var(--line, #d7e0ea);
+  font-size: 0.82rem;
+}
+
+.gs-relatie-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.gs-code {
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+  font-size: 0.83rem;
+  line-height: 1.48;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.gs-chat-strook {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+  font-size: 0.84rem;
+}
+
+.gs-chat-bewaar {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+  color: var(--text, #0f172a);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gs-leeg {
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px dashed var(--line, #cbd5e1);
+  text-align: center;
+  color: var(--muted, #64748b);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.gs-fout {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--fout, var(--danger, #b91c1c));
+  background: var(--fout-zacht, rgba(185, 28, 28, 0.08));
+  color: var(--fout, var(--danger, #b91c1c));
+  font-size: 0.86rem;
+}
+
+.gs-melding {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--accent, #2f6f73);
+  background: var(--accent-soft, rgba(47, 111, 115, 0.09));
+  font-size: 0.86rem;
+}
+
+.gs-kluis-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--warn, #d97706);
+  background: var(--warn-zacht, rgba(217, 119, 6, 0.1));
+  font-size: 0.86rem;
+}
+
+.gs-events-details {
+  border-radius: 12px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--surface, var(--soft, #f8fafc));
+  padding: 10px 12px;
+}
+
+.gs-events-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gs-events-lijst {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.gs-events-rij {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+}
+
+.gs-bot-info,
+.gs-bot-sectie,
+.gs-bot-soorten {
+  display: grid;
+  gap: 10px;
+}
+
+.gs-bot-catalogus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gs-bot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #d7e0ea);
+  background: var(--panel, #fff);
+  color: var(--text, #0f172a);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gs-bot-chip.is-geselecteerd {
+  border-color: var(--accent, #2f6f73);
+  background: var(--accent-soft, rgba(47, 111, 115, 0.12));
+}
+
+.gs-bot-stip {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+  background: var(--accent, #2f6f73);
+}
+
+.gs-bot-stip.is-warm {
+  background: var(--warn, #d97706);
+}
+
+.gs-bot-stip.is-groen {
+  background: var(--ok, #059669);
+}
+
+.gs-bot-stip.is-violet {
+  background: #6d28d9;
+}
+
+.gs-bot-stip.is-leisteen {
+  background: var(--muted, #64748b);
+}
+
+.gs-bot-stip.is-blauw {
+  background: #2563eb;
+}
+
+.gs-bot-klein-area {
+  min-height: 68px;
+}
+
+.gs-lijst {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gs-check,
+.gs-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.gs-checkbox input {
+  margin: 0;
+  accent-color: var(--accent, #2f6f73);
+}
+
+.gs-kop-tekst {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gs-pijlers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gs-knoop-kaart.gs-taak-actief {
+  border-color: var(--accent, #2f6f73);
+  background: var(--accent-soft, rgba(47, 111, 115, 0.08));
+}
+
+.gs-kaart,
+.gs-form,
+.gs-knoop-kaart,
+.gs-taken-kolom,
+.gs-taken-dossier {
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .gs-zoekbalk,
+  .gs-grid-2,
+  .gs-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

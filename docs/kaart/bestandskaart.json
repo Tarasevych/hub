@@ -2997,6 +2997,86 @@
    "pad": "tests/eenheid/uitrol-telegram-en-github-ontvangen-20261115.test.ts",
    "wat": "Eenheidstest op PostgreSQL voor versleuteld Telegram-archief (AES-256-GCM, delen, blokkade, herstel) en veilige GitHub-release-ontvangst (HMAC, replay, 302 zonder tokenlek, voorcontrole).",
    "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/model.ts",
+   "wat": "Domeinmodel, tweetalige metadata (uk/nl) en geheimenfilter voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/rangschikking.ts",
+   "wat": "Deterministische tweetalige zoeker, tijdverval, tegenspraakdetectie, pakketbouwer en Markdown-export voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/uittreksel.ts",
+   "wat": "Deterministische tekstanalysator om feiten, besluiten, voorkeuren en waarschuwingen veilig voor te stellen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/index.ts",
+   "wat": "Publieke export van de Stroom van geheugen-bibliotheek.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-stroom.ts",
+   "wat": "Serveropslag met RLS-ruimte-isolatie, DEK-versleuteling, HTTP-routes en chatkoppeling voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/GeheugenStroomPaneel.tsx",
+   "wat": "Tweetalige gebruikersinterface voor de Stroom van geheugen met kennisgraaf, tegenspraken, pakketbouwer en export.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/geheugen-stroom.css",
+   "wat": "Adaptieve stijlen voor het Stroom van geheugen-paneel en chatstrook zonder !important of vaste positionering.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-stroom.test.ts",
+   "wat": "Eenheidstest voor de volledige Stroom van geheugen (kern, geheimenfilter, tegenspraken, routes, ruimte-isolatie en chatintegratie).",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/bots.ts",
+   "wat": "Domeinmodel, 20 standaard agentprofielen, tweetalige metadata, geheimenfilter en opmaak van Telegram-berichten voor agentbots.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-agent-bots.ts",
+   "wat": "Serveropslag onder RLS voor afzonderlijke Telegram-bots per agent (DEK-sleutelkluis), Telegram-controle, idempotente bezorgwachtrij en handmatige gesprekssamenvattingen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/AgentTelegramBotsPaneel.tsx",
+   "wat": "Tweetalige tabbladcomponent in Stroom van geheugen voor het instellen, testen en beheren van per-agent Telegram-bots en bezorgketens.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-agent-bots.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor het register van agentbots, Telegram-rechtencontrole, idempotente bezorging, overdrachten en sleutelkluis.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/taken.ts",
+   "wat": "13 canonieke MCP-agentprofielen (Claude, Codex, Antigravity, Gemini, AutoClaw, ChatGPT, Grok, Copilot, Cursor, Local/OpenCode, OpenClaw/Claw, Ollama, Aider) en sessie-overstijgend takenmodel.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-taken.ts",
+   "wat": "Serveropslag onder RLS voor sessie-overstijgende taken, handmatig overdrachtsstappenplan en koppeling met Stroom van geheugen en MCP-agenten.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/GeheugenTakenPaneel.tsx",
+   "wat": "Tweetalige tabbladcomponent voor sessie-overstijgende taken, 13 canonieke MCP-agenten en directe koppeling met Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-taken-en-13-agenten.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor sessie-overstijgende taken, 13 canonieke MCP-agenten, 8 geheugen_*-hulpmiddelen en geheimvrije overdracht.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
   }
  ]
 }

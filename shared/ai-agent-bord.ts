@@ -96,6 +96,41 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
     mcpUk: 'AutoClaw Desktop → налаштування MCP (mcp.json) або міст mijn-ruimte → вставте адресу /autoclaw.',
     tokenUk: 'Ключ доступу консолі передається як Bearer або змінна MIJN_RUIMTE_TOKEN для мосту mijn-ruimte.',
   },
+  {
+    id: 'codex', naam: 'Codex',
+    kan: 'Працює з вашим простором через власну MCP-адресу /codex у терміналі та розширенні OpenAI Codex.',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: null,
+    mcpUk: 'Codex → виконайте codex mcp add mijn-ruimte --url або додайте адресу /codex у ~/.codex/config.toml.',
+    tokenUk: 'Токен консолі можна передати в Authorization: Bearer, якщо середовище не відкриває оглядач.',
+  },
+  {
+    id: 'windsurf', naam: 'Windsurf',
+    kan: 'Працює з вашим простором через власну MCP-адресу /windsurf у редакторі Windsurf (Cascade).',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: 'https://windsurf.com',
+    mcpUk: 'Windsurf → налаштування Cascade MCP (~/.codeium/windsurf/mcp_config.json) → вставте адресу /windsurf.',
+    tokenUk: 'Токен консолі можна додати в заголовок Authorization у разі виклику без OAuth.',
+  },
+  {
+    id: 'cline', naam: 'Cline',
+    kan: 'Працює з вашим простором через власну MCP-адресу /cline у розширенні Cline або Roo Code.',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: 'https://cline.bot',
+    mcpUk: 'Cline → MCP Servers → Configure MCP Servers (cline_mcp_settings.json) → вставте адресу /cline.',
+    tokenUk: 'Токен консолі вставляється як Bearer у заголовки, якщо локальне середовище працює без OAuth.',
+  },
+  {
+    id: 'devin', naam: 'Devin',
+    kan: 'Працює з вашим простором через власну MCP-адресу /devin у хмарному робочому середовищі Cognition Devin.',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: 'https://app.devin.ai',
+    mcpUk: 'Devin → Settings → MCP Servers → Add MCP Server → вставте адресу /devin із підтвердженням через OAuth.',
+    tokenUk: 'Токен консолі передається в Authorization: Bearer для захищеного доступу без інтерактивного OAuth.',
+  },
+  {
+    id: 'opencode', naam: 'OpenCode',
+    kan: 'Працює з вашим простором через власну MCP-адресу /opencode у термінальному та IDE-клієнті OpenCode.',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: 'https://opencode.ai',
+    mcpUk: 'OpenCode → opencode mcp add або ~/.config/opencode/opencode.json → вставте адресу /opencode.',
+    tokenUk: 'Токен консолі можна використати в заголовку Authorization: Bearer для безінтерактивних сеансів.',
+  },
 ]);
 
 const BORD_MAP = new Map(BORD_AGENTEN.map((a) => [a.id, a]));
@@ -116,7 +151,7 @@ export type SiteStaat = {
 };
 export const STANDAARD_STAAT: SiteStaat = { agent: {}, methode: {}, cap: {} };
 
-const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|gemini|copilot|cursor|antigravity|autoclaw)$/;
+const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|codex|gemini|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode)$/;
 const METHODE_SLEUTEL = /^methode:(mcp|token)$/;
 const CAP_SLEUTEL = /^cap:[a-z][a-z0-9.]{1,40}$/;
 

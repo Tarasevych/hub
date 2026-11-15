@@ -219,6 +219,19 @@ BEGIN
     IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
       REVOKE ALL ON app.uitrol_telegram_updates FROM mijnruimte_app;
     END IF;
+    -- 0280 (stroom-geheugen): Стрім пам’яті — жива, версійна й простір-ізольована пам’ять ШІ під RLS за користувачем і простором.
+    IF to_regclass('app.geheugen_stroom_knopen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_stroom_knopen, app.geheugen_stroom_relaties, app.geheugen_stroom_gebeurtenissen TO mijnruimte_app;
+      GRANT USAGE, SELECT ON SEQUENCE app.geheugen_stroom_gebeurtenissen_id_seq TO mijnruimte_app;
+    END IF;
+    -- 0281 (stroom-geheugen): окремі Telegram-боти по агентах і черга доставлення пам’яті під RLS за користувачем і простором.
+    IF to_regclass('app.geheugen_agent_bots') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_agent_bots, app.geheugen_telegram_bezorging TO mijnruimte_app;
+    END IF;
+    -- 0284 (stroom-geheugen): наскрізні задачі та кроки передачі естафети між сесіями й 13 агентами під RLS.
+    IF to_regclass('app.geheugen_taken') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_taken, app.geheugen_taak_stappen TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

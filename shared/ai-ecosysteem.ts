@@ -270,8 +270,8 @@ export function isHulpmiddelToegestaanInWerkruimte(toolNaam: string, werkruimte:
   if (!n) return false;
   if (!toolInRuimte(n, werkruimte.ruimte)) return false;
 
-  // Gedeelde ecosysteem-hulpmiddelen horen bij het samenwerkingskader zelf en blijven beschikbaar in elke actieve werkruimte.
-  if (n.startsWith('ecosysteem_') || n === 'v2_whoami' || n === 'list_services' || n === 'get_service' || n === 'get_hub_overview') {
+  // Gedeelde ecosysteem-, vaardigheden- en geheugenstroomhulpmiddelen horen bij het samenwerkingskader zelf en blijven beschikbaar in elke actieve werkruimte.
+  if (n.startsWith('ecosysteem_') || n.startsWith('geheugen_') || n.startsWith('vaardigheden_') || n === 'v2_whoami' || n === 'list_services' || n === 'get_service' || n === 'get_hub_overview') {
     return true;
   }
 
