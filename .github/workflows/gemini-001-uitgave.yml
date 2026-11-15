@@ -186,9 +186,9 @@ jobs:
             huis-001-oude-fouten-20261110 \
             verbindingen-centrum-20261029 \
             orch-kern-20261031 \
-            orch-pakket \
-            orch-uitrol-basis \
-            orch-beoordeling; do
+            orch-pakket-20261031 \
+            orch-uitrol-basis-20261031 \
+            orch-beoordeling-20261031; do
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
       - name: Перевірити типи та скласти застосунок
@@ -305,7 +305,7 @@ jobs:
           const logTekst = readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8');
           const gemeten = { geslaagd: 0, mislukt: 0 };
           const perTest = new Map();
-          for (const r of logTekst.matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) {
+          for (const r of logTekst.matchAll(/^(\d+)\/(\d+) geslaagd \(([^\n]+)\)$/gm)) {
             perTest.set(r[3], [Number(r[1]), Number(r[2])]);
           }
           for (const r of logTekst.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+)\/(\d+) geslaagd/gm)) {
