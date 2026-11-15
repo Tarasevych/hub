@@ -385,7 +385,7 @@ export function MaquetteAnkerRail({
     const l = lijst.getBoundingClientRect(), k = knop.getBoundingClientRect();
     if (k.top < l.top + 8) lijst.scrollTop -= l.top + 8 - k.top;
     else if (k.bottom > l.bottom - 8) lijst.scrollTop += k.bottom - (l.bottom - 8);
-  }, [actief, items]);
+  }, [actief, items.length]); // niet [items]: dat is bij elke render een nieuwe array en zou handmatig scrollen terugzetten
   const railRef = useRef<HTMLElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const grenzenCacheRef = useRef(new WeakMap<HTMLElement, string>());
