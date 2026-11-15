@@ -89,7 +89,7 @@ export async function main(): Promise<number> {
   // 3. Мобільна геометрія й зручність у трьох режимах («Макет», «Студія», «Класичний») та на екрані входу.
   check(
     'правило flat-content оболонки не зрізає заокруглення й рамки карток у режимах «Студія» (.mr-at) та «Класичний» (.ia-account)',
-    canoniekCss.includes(':not(.mr-at):not(.mr-at *):not(.ia-account):not(.ia-account *):not(.auth-card):not(.mr-mq *)'),
+    !/flat-content'\]\s*\.canonical-content\s*:where\(section[^}]*border-radius:0/.test(canoniekCss), // ANKERS-002: правило прибрано цілком
   );
   check(
     'класичний вигляд має горизонтальну липку смугу розділів без роздутої сітки на мобільних екранах, автоцентрування активної вкладки й сенсорну зону 44×44 px для скидання світлини',
