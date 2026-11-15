@@ -299,14 +299,15 @@ jobs:
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
             "titel": "UPD-001 · Сторінка оновлень по центру, компактне завантаження, правильне фото автора, блок доступу до підготовки й «Макет» без зайвих підкладок",
-            "samenvatting": "Поверх 20261115-135345: сторінка admin /updates стоїть вужчою колонкою по центру із заокругленими картками, стани завантаження адмінки — компактний індикатор замість великої панелі, автор пакета показується зі своїм справжнім фото, блок «Хто має доступ до підготовки» справді зберігає вимкнення й термін, а «Макет» центру облікового запису втратив зайві темні підкладки й став вужчим по центру.",
+            "samenvatting": "Поверх 20261115-135345: сторінка admin /updates стоїть вужчою колонкою по центру із заокругленими картками, стани завантаження адмінки — компактний індикатор замість великої панелі, автор пакета показується зі своїм справжнім фото, блок «Хто має доступ до підготовки» справді зберігає вимкнення й термін, а «Макет» центру облікового запису втратив зайві темні підкладки й став вужчим по центру, а сторінки отримали живий фон.",
             "wijzigingen": [
               "Admin → Оновлення: колонка 1180 px по центру, картки із заокругленими кутами в усіх палітрах, підписи конвеєра переносяться замість обрізання; у «Макеті» з меню збоку поля симетричні.",
               "Стани завантаження консолі, оновлень, діагностики й ключів — компактний анімований індикатор без рамки й фону.",
               "Фото автора пакета: спершу за email, потім ваш власний обліковий запис, потім лише однозначне ім’я; чуже фото більше не підставляється.",
               "«Хто має доступ до підготовки»: вимкнення доступу й термін справді зберігаються й показуються (PR #111).",
-              "«Макет» центру облікового запису: без суцільних підкладок під налаштуваннями розділу, колонка на ПК 1240 px по центру.",
-            "«Живий фон»: ніжні розмиті кольорові плями повільно переливаються по всій сторінці, блоки лишаються чистими; налаштовується в темі (PR #112)."
+              "«Макет» центру облікового запису: колонка на ПК 910 px по центру (ширина блоку «Ключі доступу»), без суцільних підкладок; розгорнута панель налаштувань — окрема вузька картка, довкола чисте тло.",
+            "«Делікатна поява блоків» — справжній перемикач замість розтягнутого прапорця; кнопки небезпечних дій (видалити, вимкнути захист) мають ніжний червоний відтінок.",
+            "«Живий фон»: ніжні розмиті кольорові плями повільно переливаються по всій сторінці, блоки лишаються чистими; швидке налаштування — кнопкою вгорі сторінки (PR #112)."
             ],
             "fixes": [
               "Перевірено: типи, повне складання, безбазові й БД-тести на PostgreSQL 16 (міграції двічі); у Chromium 390–2560 px, обидві теми, uk і nl."
@@ -324,8 +325,9 @@ jobs:
               "Laadtoestanden van console, updates, diagnostiek en sleutels: compacte geanimeerde indicator zonder rand of achtergrond.",
               "Auteursfoto: eerst via e-mail, dan uw eigen account, dan alleen een eenduidige naam; geen foto van iemand anders meer.",
               "«Wie mag voorbereiden»: uitschakelen en termijn worden echt bewaard en getoond (PR #111).",
-              "«Ontwerp» van het accountcentrum: geen volle achterpanelen meer onder de sectie-instellingen, kolom op pc 1240 px in het midden.",
-            "«Levende achtergrond»: zachte vage kleurvlekken vloeien langzaam over de hele pagina, blokken blijven rustig; instelbaar bij het thema (PR #112)."
+              "«Ontwerp» van het accountcentrum: kolom op pc 910 px in het midden (breedte van het blok «Toegangssleutels»), zonder volle achterpanelen; het geopende instellingenpaneel is een eigen smalle kaart met rustige achtergrond eromheen.",
+            "«Rustig verschijnen van blokken» is een echte schakelaar in plaats van een uitgerekt selectievakje; knoppen voor gevaarlijke acties (verwijderen, beveiliging uitzetten) hebben een zachte rode tint.",
+            "«Levende achtergrond»: zachte vage kleurvlekken vloeien langzaam over de hele pagina, blokken blijven rustig; snel instelbaar met een knop bovenaan de pagina (PR #112)."
             ],
             "fixes": [
               "Gecontroleerd: typen, volledige bouw, eenheids- en databasetests op PostgreSQL 16 (migraties tweemaal); in Chromium 390–2560 px, beide thema’s, uk en nl."
