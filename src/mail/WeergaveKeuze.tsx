@@ -6,10 +6,55 @@
 // Pakket 3: «Мова листа» — «Оригінал» (standaard) of «Перекладати» (een brief in een andere taal wordt bij het openen vertaald door de
 // privé-AI-agent; dat de tekst dan naar die agent gaat, staat eronder — zonder agent blijft alles in het origineel).
 import { SlidersHorizontal } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal } from './lees-modus';
 import { useLeesVenster } from './LeesVenster';
-import { useLaatsteAiStaat } from './ai-staat';
+import { useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
+import AiUitleg from './AiUitleg';
+
+/**
+ * MAILAI-001: «ШІ-аналіз над листом» — панель «ШІ-аналіз і переклад» над кожним листом. Типово вимкнено; налаштування облікового
+ * запису (не пристрою), тому однакове на телефоні й ПК. Навіть увімкнена, панель з'являється лише за робочого ШІ (є ключ API).
+ * Paneel boven de brief: standaard uit, per account; ook aan alleen zichtbaar met een werkende AI.
+ */
+function AiBalkKeuze({ lang }: { lang: 'uk' | 'nl' }) {
+  const ai = useLaatsteAiStaat(), id = useId();
+  const [fout, setFout] = useState(false);
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  const aan = ai?.instellingen.balkTonen === true;
+  const geenAgent = Boolean(ai?.geladen && !ai.agent);
+  const zet = (v: boolean) => { setFout(false); void zetAiBalkTonen(v).catch(() => setFout(true)); };
+  return (
+    <fieldset data-weergave-ai-balk>
+      <legend>{t('ШІ-аналіз над листом', 'AI-analyse boven het bericht')}</legend>
+      <span className='lz-segment'>
+        <label title={t('Панелі над листами немає. Переклад у смузі над листом лишається, якщо є робочий ШІ.', 'Geen paneel boven berichten. Vertalen in de strook boven het bericht blijft, als er een werkende AI is.')}>
+          <input type='radio' name={`${id}-ai`} checked={!aan} onChange={() => zet(false)} />
+          <span>{t('Вимкнено', 'Uit')}</span>
+        </label>
+        <label title={t('Над кожним листом — кнопки перекладу, підсумку, пояснення документа й контексту. Текст листа надсилається вашому ШІ лише після натискання.', 'Boven elk bericht knoppen voor vertalen, samenvatten, uitleg en context. De tekst gaat pas naar uw AI als u klikt.')}>
+          <input type='radio' name={`${id}-ai`} checked={aan} onChange={() => zet(true)} />
+          <span>{t('Увімкнено', 'Aan')}</span>
+        </label>
+      </span>
+      <small className='lz-weergave-noot'>
+        {fout
+          ? t('Не вдалося зберегти. Спробуйте ще раз.', 'Opslaan is niet gelukt. Probeer het opnieuw.')
+          : aan
+            ? geenAgent
+              ? t('Увімкнено, але робочого ШІ немає (немає ключа API), тому панель не показується. Як підключити — нижче.', 'Aan, maar er is geen werkende AI (geen API-sleutel), dus het paneel blijft weg. Hoe koppelen staat hieronder.')
+              : t('Панель над листом показується. Сховати можна й хрестиком на самій панелі.', 'Het paneel staat boven het bericht. Verbergen kan ook met het kruisje op het paneel zelf.')
+            : t('Панель прихована й не займає місця. Діє для вашого облікового запису на всіх пристроях.', 'Het paneel is verborgen en neemt geen ruimte in. Geldt voor uw account op elk apparaat.')}
+      </small>
+      {(geenAgent || !aan) && (
+        <details className='lz-ai-uitleg'>
+          <summary>{t('Як це працює і що підключити', 'Hoe het werkt en wat te koppelen')}</summary>
+          <AiUitleg nl={lang === 'nl'} compact />
+        </details>
+      )}
+    </fieldset>
+  );
+}
 
 /** «Питати»: verborgen tot «Показати» (geen verzoek naar buiten, ook niet via de server — een pixel verraadt anders het openen). */
 const BEELDEN: Array<{ id: LezerBeelden; uk: string; nl: string }> = [
@@ -35,6 +80,7 @@ function Keuzes({ lang }: { lang: 'uk' | 'nl' }) {
   const geenAgent = Boolean(ai?.geladen && !ai.agent);
   return (
     <div className='lz-weergave-keuzes'>
+      <AiBalkKeuze lang={lang} />
       <fieldset>
         <legend>{t('Щільність листа', 'Dichtheid van het bericht')}</legend>
         <span className='lz-segment'>
@@ -103,7 +149,7 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
   if (!useLeesVenster()) return null;
   return (
     <details ref={ref} className='mail-reader-weergave'>
-      <summary className='mail-reader-icon-action' aria-label={t('Вигляд: щільність і розмір тексту', 'Weergave: dichtheid en tekstgrootte')} data-tooltip={t('Вигляд', 'Weergave')}>
+      <summary className='mail-reader-icon-action' aria-label={t('Вигляд: ШІ-аналіз над листом, щільність і розмір тексту', 'Weergave: AI-analyse boven het bericht, dichtheid en tekstgrootte')} data-tooltip={t('Вигляд', 'Weergave')}>
         <SlidersHorizontal aria-hidden='true' />
       </summary>
       <div className='lz-weergave-paneel' role='group' aria-label={t('Вигляд листа', 'Weergave van het bericht')}>
