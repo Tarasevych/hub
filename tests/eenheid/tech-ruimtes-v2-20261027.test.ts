@@ -188,7 +188,10 @@ export async function main(): Promise<number> {
     await roep(R('starten'), sE, tE, { modus: 'tijd', minuten: 60, reden: 'ai test' });
     check('MCP zonder AI-instelling: privé (geen «ergens een activering»)', (await tp.lopendeActivatie(uid)) === null && (await effectieveRuimte(uid)) === 'prive');
     await stapOp(sE);
-    const az = await roep(R('ai-zetten'), sE, tE, { verbindingId: '*', ruimtes: ['prive', 'technisch'], termijn: 'tot-technisch-einde' });
+    // AI-TERMIJN-001: '*' (alle AI-verbindingen) alleen met de expliciete bevestiging alleVerbindingen: true.
+    const azZonder = await roep(R('ai-zetten'), sE, tE, { verbindingId: '*', ruimtes: ['prive', 'technisch'], termijn: 'tot-technisch-einde' });
+    check('ai-zetten «*» zonder bevestiging → 400 ALLE_VERBINDINGEN_NIET_BEVESTIGD', azZonder.status === 400 && azZonder.data.error === 'ALLE_VERBINDINGEN_NIET_BEVESTIGD', `${azZonder.status} ${azZonder.data.error || ''}`);
+    const az = await roep(R('ai-zetten'), sE, tE, { verbindingId: '*', ruimtes: ['prive', 'technisch'], termijn: 'tot-technisch-einde', alleVerbindingen: true });
     check('ai-zetten: 200 en zichtbaar in toegang.ai', az.status === 200 && az.data.ai.some((x: any) => x.verbindingId === '*' && x.ruimtes.includes('technisch')), `${az.status} ${az.data.error || ''}`);
     check('MCP met instelling: technisch, zelfde rechten als de site', (await tp.lopendeActivatie(uid))?.mogelijkheden.includes('users.manage') === true && (await effectieveRuimte(uid)) === 'technisch');
     await roep(R('wisselen'), sE, tE, { naar: 'prive' });
