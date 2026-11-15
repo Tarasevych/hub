@@ -1,5 +1,5 @@
 // Перевірка зашифрованого архівування випусків у Telegram (AES-256-GCM, частини, блокування, відновлення)
-// та прийому релізів із GitHub (HMAC-SHA256 webhook, HTTP-роут, захист від повторів, 302-редирект без витоку токена, voorcontrole).
+// та приймання випусків із GitHub (підписаний приймач HMAC-SHA256, HTTP-маршрут, захист від повторів, 302-перенаправлення без витоку ключа доступу, voorcontrole).
 import { execFileSync } from 'node:child_process';
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { chmodSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -274,7 +274,7 @@ export async function main(): Promise<number> {
       genereerSleutel: true,
     });
     const standNaOpslaan = await telegramStand(eigenaarId) as any;
-    check('telegramInstellingenOpslaan: зберігає окремий токен TELEGRAM_UITROL_BOT_TOKEN, генерує 256-бітний ключ і приховує його в stand',
+    check('telegramInstellingenOpslaan: зберігає окремий ключ доступу TELEGRAM_UITROL_BOT_TOKEN, генерує 256-бітний ключ і приховує його в stand',
       Boolean(opgeslagen.eenmaligeSleutel && /^[0-9a-f]{64}$/.test(opgeslagen.eenmaligeSleutel))
       && opgeslagen.sleutelAanwezig && opgeslagen.botAanwezig && opgeslagen.botBron === 'kluis' && !standNaOpslaan.eenmaligeSleutel);
 
@@ -298,6 +298,9 @@ export async function main(): Promise<number> {
     const errLeft = await telegramVerbindingTesten(eigenaar).then(() => '').catch((e) => String(e?.code || ''));
     memberMock = { status: 'administrator', can_post_messages: false };
     const errKanaalRecht = await telegramVerbindingTesten(eigenaar).then(() => '').catch((e) => String(e?.code || ''));
+    chatMock = { id: -100999888, title: 'Uitrol Groep', type: 'group' };
+    memberMock = { status: 'administrator', can_send_messages: true, can_send_documents: true };
+    const errGewoneGroep = await telegramVerbindingTesten(eigenaar).then(() => '').catch((e) => String(e?.code || ''));
     chatMock = { id: -100999888, title: 'Uitrol Groep', type: 'supergroup', is_forum: false };
     memberMock = { status: 'restricted', can_send_messages: true, can_send_documents: false };
     const errGroepRecht = await telegramVerbindingTesten(eigenaar).then(() => '').catch((e) => String(e?.code || ''));
@@ -305,9 +308,10 @@ export async function main(): Promise<number> {
     const errGeenForum = await telegramVerbindingTesten(eigenaar).then(() => '').catch((e) => String(e?.code || ''));
     chatMock = { id: -100999888, title: 'Uitrol Forum', type: 'supergroup', is_forum: true };
     const testRes = await telegramVerbindingTesten(eigenaar);
-    check('telegramVerbindingTesten: getChatMember (left, права каналу/групи, нефорумна супергрупа) та успішна перевірка з messageThreadId',
+    check('telegramVerbindingTesten: getChatMember (left, права каналу/групи, звичайна група й нефорумна супергрупа) та успішна перевірка з messageThreadId',
       errLeft === 'TELEGRAM_BOT_NIET_IN_GROEP'
       && errKanaalRecht === 'TELEGRAM_GEEN_SCHRIJFRECHT'
+      && errGewoneGroep === 'TELEGRAM_GEEN_FORUM'
       && errGroepRecht === 'TELEGRAM_GEEN_SCHRIJFRECHT'
       && errGeenForum === 'TELEGRAM_GEEN_FORUM'
       && testRes.ok && testRes.botUsername === 'mijn_test_bot' && testRes.chatType === 'supergroup'
@@ -361,7 +365,7 @@ export async function main(): Promise<number> {
     const uitdagingNaArchief = await goedkeurUitdaging(eigenaar, voorstel2Id);
     const alleCaptions = [...telegramBestanden.values()].map((x) => x.caption).join('\n');
     const bevatGeheim = alleCaptions.includes(opgeslagen.eenmaligeSleutel || '___') || alleCaptions.includes('ABCdefGHIjkl');
-    check('archiveerReleaseNaarTelegram: ріже на >= 4 частини + маніфест, не витікає секретами, ідемпотентне та розблоковує схвалення',
+    check('archiveerReleaseNaarTelegram: ріже на >= 4 частини + маніфест, не витікає секретами, повторостійке та розблоковує схвалення',
       archRes.ok && archRes.aantalDelen >= 4 && herhaalArch.reedsBestaand === true && !blokNa.geblokkeerd && Boolean(uitdagingNaArchief.uitdagingId) && !bevatGeheim);
 
     breekDeelEen = true;
@@ -373,10 +377,10 @@ export async function main(): Promise<number> {
     check('herstelTelegramArchief: відхиляє пошкоджені дані, відновлює 1:1 із точним SHA-256 і дає одноразовий downloadId',
       kapotHerstel && goedHerstel.geverifieerd && goedHerstel.sha256 === pak1.sha256 && dl1 !== null && dl2 === null);
 
-    // ---------------------------------------------------------------- 3b. Захищений webhook бота випусків (/status і /help лише в групі/темі)
+    // ---------------------------------------------------------------- 3b. Захищений приймач команд бота випусків (/status і /help лише в групі/темі)
     const whSetup = await telegramWebhookInstellen(eigenaar);
     const tgWhSecret = (await readOwnerVaultPlaintext(eigenaarId, VAULT_TELEGRAM_WEBHOOK_GEHEIM_NAAM, 'webhook')).trim();
-    check('telegramWebhookInstellen: зберігає окремий секрет webhook і реєструє allowed_updates=["message"]',
+    check('telegramWebhookInstellen: зберігає окремий секрет приймача команд і реєструє allowed_updates=["message"]',
       whSetup.ok && whSetup.webhookGeheimAanwezig && Boolean(tgWhSecret)
       && (ingesteldeWebhook as any)?.url === 'https://api.tarasevych.com/api/uitrol/telegram/webhook'
       && (ingesteldeWebhook as any)?.secret_token === tgWhSecret);
@@ -401,7 +405,7 @@ export async function main(): Promise<number> {
     const anderTopicHttp = await stuurTgWebhook({ update_id: 1003, message: { chat: { id: -100999888 }, message_thread_id: 99, from: { is_bot: false }, text: '/status' } });
     const botAuteurHttp = await stuurTgWebhook({ update_id: 1004, message: { chat: { id: -100999888 }, message_thread_id: 42, from: { is_bot: true }, text: '/status' } });
     const verbodenCmdHttp = await stuurTgWebhook({ update_id: 1005, message: { chat: { id: -100999888 }, message_thread_id: 42, from: { is_bot: false }, text: '/approve 123' } });
-    check('HTTP POST /api/uitrol/telegram/webhook: 401 при невалідному токені та ігнорування чужої групи, іншої теми, ботів і сторонніх команд',
+    check('HTTP POST /api/uitrol/telegram/webhook: 401 при недійсному ключі доступу та нехтування чужої групи, іншої теми, ботів і сторонніх команд',
       foutSecretHttp.statusCode === 401
       && anderChatHttp.statusCode === 200 && JSON.parse(anderChatHttp.body).overgeslagen === true
       && anderTopicHttp.statusCode === 200 && JSON.parse(anderTopicHttp.body).overgeslagen === true
@@ -415,7 +419,7 @@ export async function main(): Promise<number> {
     const statusAntwoord = verzondenBerichten[verzondenBerichten.length - 1];
     const helpOk = await stuurTgWebhook({ update_id: 1007, message: { chat: { id: -100999888 }, message_thread_id: 42, from: { is_bot: false }, text: '/help@mijn_test_bot' } });
     const helpAntwoord = verzondenBerichten[verzondenBerichten.length - 1];
-    check('webhook /status і /help: відповідають у погодженій темі без витоку секретів та захищені від повтору update_id',
+    check('приймач команд /status і /help: відповідає у погодженій темі без витоку секретів та захищений від повтору update_id',
       statusOk.statusCode === 200 && JSON.parse(statusOk.body).commando === 'status'
       && statusHerhaal.statusCode === 200 && JSON.parse(statusHerhaal.body).herhaling === true
       && statusAntwoord?.chat_id === '-100999888' && statusAntwoord?.message_thread_id === 42
@@ -423,9 +427,9 @@ export async function main(): Promise<number> {
       && !statusAntwoord.text.includes(testBotToken) && !statusAntwoord.text.includes(tgWhSecret) && !statusAntwoord.text.includes(opgeslagen.eenmaligeSleutel || '___')
       && helpOk.statusCode === 200 && helpAntwoord?.text.includes('/status') && helpAntwoord?.text.includes('passkey'));
 
-    // ---------------------------------------------------------------- 4. Приймання релізів із GitHub (типовий префікс '', webhook HMAC, HTTP-маршрут, replay, redirect, voorcontrole)
+    // ---------------------------------------------------------------- 4. Отримання випусків із GitHub (типовий префікс '', приймач HMAC, маршрут HTTP, replay, redirect, voorcontrole)
     const initGhStand = await githubOntvangstStand(eigenaarId);
-    check('githubOntvangstStand: типовий toegestaneTagPrefix порожній рядок "" (сумісно з тегами YYYYMMDD-HHMMSS)',
+    check('githubOntvangstStand: типовий toegestaneTagPrefix порожній рядок "" (сумісно з мітками YYYYMMDD-HHMMSS)',
       initGhStand.toegestaneTagPrefix === '');
 
     const mcpZonderInstFout = await haalGithubReleaseOp({
@@ -446,7 +450,7 @@ export async function main(): Promise<number> {
       genereerGeheim: true,
     });
     const whSecret = ghInst.eenmaligWebhookGeheim || '';
-    check('githubOntvangstInstellen: генерує HMAC-секрет і вмикає webhook', Boolean(whSecret) && ghInst.webhookGeheimAanwezig && ghInst.webhookAan);
+    check('githubOntvangstInstellen: генерує HMAC-секрет і вмикає приймач подій', Boolean(whSecret) && ghInst.webhookGeheimAanwezig && ghInst.webhookAan);
 
     const fouteSig = await verwerkGithubUitrolWebhook({
       handtekening: 'sha256=' + '0'.repeat(64),
@@ -471,7 +475,7 @@ export async function main(): Promise<number> {
       queryStringParameters: {},
       requestContext: { http: { method: 'POST', path: '/api/uitrol/github/webhook', sourceIp: '140.82.115.10', userAgent: 'GitHub-Hookshot/test' } },
     } as never) as { statusCode: number; body: string };
-    check('HTTP POST /api/uitrol/github/webhook: відхиляє невалідний підпис (401) і приймає валідний ping через роутер',
+    check('HTTP POST /api/uitrol/github/webhook: відхиляє недійсний підпис (401) і приймає дійсний ping через маршрутизатор',
       !fouteSig.ok && fouteSig.status === 401 && pingHttp.statusCode === 200 && JSON.parse(pingHttp.body).ping === true);
 
     const v3 = '20261115-030000';
@@ -529,7 +533,7 @@ export async function main(): Promise<number> {
     const voorstel3 = (await sys.query(`SELECT status, sha256 FROM app.uitrol_voorstellen WHERE versie = $1`, [v3])).rows[0];
     const bewijs3 = (await sys.query(`SELECT status, soort FROM app.uitrol_stroom_bewijzen WHERE versie = $1 AND soort = 'github-ontvangst'`, [v3])).rows[0];
 
-    check('webhook release: завантажує через 302 без токена на CDN, перевіряє, ставить wacht-op-goedkeuring і захищає від повтору',
+    check('приймач подій випуску: завантажує через 302 без ключа доступу на CDN, перевіряє, ставить wacht-op-goedkeuring і захищає від повтору',
       whRel.ok && whRel.resultaat.status === 'wacht-op-goedkeuring'
       && voorstel3?.status === 'wacht-op-goedkeuring' && voorstel3?.sha256 === pak3.sha256
       && bewijs3?.status === 'geslaagd' && !cdnHadAuth
@@ -545,7 +549,7 @@ export async function main(): Promise<number> {
       expectedSha256: '1'.repeat(64),
     }).then(() => '').catch((e) => String(e?.code || ''));
     const ghStand = await githubOntvangstStand(eigenaarId);
-    check('haalGithubReleaseOp: відхиляє архів при розбіжності SHA-256 і фіксує подію в stand',
+    check('haalGithubReleaseOp: відхиляє архів при розбіжності SHA-256 і заносить подію в stand',
       badShaErr === 'GITHUB_SHA256_VERSCHILT' && ghStand.ontvangen.some((o) => o.foutCode === 'GITHUB_SHA256_VERSCHILT'));
 
     const verkeerdeBronErr = await haalGithubReleaseOp({

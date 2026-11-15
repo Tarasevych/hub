@@ -38,7 +38,7 @@ export async function main(): Promise<number> {
   // 2. Очищення таємниць
   const gevaarlijk = 'Bearer abcdef1234567890 postgres://user:geheimWachtwoord99@db.local/app token=xyz987654 ghp_1234567890123456789012 API_KEY="super-secret-value"';
   const schoonTekst = zonderGeheimenUitrol(gevaarlijk);
-  check('zonderGeheimenUitrol прибирає Bearer-токен', !schoonTekst.includes('abcdef1234567890'));
+  check('zonderGeheimenUitrol прибирає ключ доступу Bearer', !schoonTekst.includes('abcdef1234567890'));
   check('zonderGeheimenUitrol прибирає пароль у postgres URI', !schoonTekst.includes('geheimWachtwoord99'));
   check('zonderGeheimenUitrol прибирає ghp_ ключ', !schoonTekst.includes('ghp_1234567890123456789012'));
   check('zonderGeheimenUitrol прибирає API_KEY', !schoonTekst.includes('super-secret-value'));
@@ -112,7 +112,7 @@ export async function main(): Promise<number> {
     },
   ];
   const vOk = verifieerBewijsKeten(ketenStroom);
-  check('verifieerBewijsKeten підтверджує валідний ланцюг із 2 доказів', vOk.ok && vOk.aantal === 2 && vOk.fouten.length === 0);
+  check('verifieerBewijsKeten підтверджує чинний ланцюг із 2 доказів', vOk.ok && vOk.aantal === 2 && vOk.fouten.length === 0);
   check('bewijsInhoudVoorHash повертає однаковий канонічний рядок незалежно від порядку ключів',
     bewijsInhoudVoorHash({ versie: '20261115-120000', soort: 'voorcontrole', bron: 'a', status: 'geslaagd', pakketSha256: sha, bewijsData: { b: 2, a: 1 }, vorigeHash: h1 })
     === bewijsInhoudVoorHash({ versie: '20261115-120000', soort: 'voorcontrole', bron: 'a', status: 'geslaagd', pakketSha256: sha, bewijsData: { a: 1, b: 2 }, vorigeHash: h1 }));

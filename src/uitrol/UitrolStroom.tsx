@@ -494,7 +494,7 @@ export default function UitrolStroom({ lang, context, versie, onVersie }: Props)
           <summary>{tr(lang, 'Очищений контекст для ШІ-помічника (без секретів)', 'Opgeschoonde instructie voor AI-assistent (zonder geheimen)')}</summary>
           <div className='ut-stroom-rapport-box'>
             <div className='ut-stroom-compact-kop'>
-              <small>{tr(lang, 'Усі паролі, токени й ключі автоматично видалені перед формуванням запиту.', 'Alle wachtwoorden, tokens en sleutels zijn vooraf verwijderd.')}</small>
+              <small>{tr(lang, 'Усі паролі, секретні коди й ключі автоматично видалені перед формуванням запиту.', 'Alle wachtwoorden, tokens en sleutels zijn vooraf verwijderd.')}</small>
               <button type='button' className='ut-knop' onClick={() => kopieer('prompt', `${stand.duiding.aiPrompt.systeem}\n\n${stand.duiding.aiPrompt.vraag}`)}>
                 {gekopieerd === 'prompt' ? <Check size={14} aria-hidden='true' /> : <ClipboardCopy size={14} aria-hidden='true' />}
                 {tr(lang, 'Копіювати підказку', 'Instructie kopiëren')}

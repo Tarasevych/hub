@@ -187,7 +187,7 @@ const bewijsUit = (r: Record<string, unknown>): StroomBewijs => ({
   aangemaaktOp: iso(r.aangemaakt_op),
 });
 
-// ------------------------------------------------------------------------------------------------ запис доказів (ідемпотентний ланцюжок)
+// ------------------------------------------------------------------------------------------------ запис доказів (повторостійкий ланцюжок)
 export async function bewijsToevoegen(
   userId: string,
   invoer: {
@@ -338,7 +338,7 @@ function voorstelBewijzenAfleiden(
       soort: 'pakket-integriteit',
       bron: 'uitrol-voorstellen',
       status: v.status === 'afgebroken' && String(v.uitkomst_code || '') === 'SHA256_VERSCHILT' ? 'mislukt' : 'geslaagd',
-      samenvattingUk: `Пакет ${versie} (${Number(v.bytes || 0)} байт), SHA-256 ${sha.slice(0, 12)}…, коміт ${String(v.bron_commit || meta.commit || '—').slice(0, 12)}.`,
+      samenvattingUk: `Пакет ${versie} (${Number(v.bytes || 0)} байт), SHA-256 ${sha.slice(0, 12)}…, фіксація змін ${String(v.bron_commit || meta.commit || '—').slice(0, 12)}.`,
       samenvattingNl: `Pakket ${versie} (${Number(v.bytes || 0)} bytes), SHA-256 ${sha.slice(0, 12)}…, commit ${String(v.bron_commit || meta.commit || '—').slice(0, 12)}.`,
       pakketSha256: sha,
       bewijsData: {
@@ -790,7 +790,7 @@ async function bepaalStandaardVersie(userId: string, gevraagde?: unknown): Promi
   return `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}-${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}${p2(d.getUTCSeconds())}`;
 }
 
-// ------------------------------------------------------------------------------------------------ неблокуючі автохуки для життєвого циклу
+// ------------------------------------------------------------------------------------------------ асинхронні автоперехоплювачі для життєвого циклу
 /** Автоматичний запис доказу попередньої перевірки вимог (з uitrol-vereisten.ts). */
 export async function stroomVastleggenVanVereisten(
   userId: string,
@@ -1076,7 +1076,7 @@ export async function controleStatusZetten(
     return controleUit(rows[0]);
   }
 
-  // Варіант Б: оновлення статусу існуючого пункту
+  // Варіант Б: оновлення статусу наявного пункту
   const id = String(invoer.id || '');
   if (!UUID_RE.test(id)) fout('STROOM_CONTROLE_NIET_GEVONDEN', 404);
   const { rows: curRows } = await sys().query(

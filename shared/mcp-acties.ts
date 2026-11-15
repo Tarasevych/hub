@@ -191,7 +191,7 @@ const Z: Readonly<Record<string, [string, string]>> = {
   uitrol_voorstel_begin: ['Почав готувати оновлення сайту', 'Begon een update van de site voor te bereiden'], uitrol_voorstel_stuk: ['Надіслав частину пакета оновлення', 'Stuurde een deel van een updatepakket'],
   uitrol_voorstel_klaar: ['Підготував оновлення (чекає вашого схвалення)', 'Bereidde een update voor (wacht op uw goedkeuring)'],
   uitrol_voorstel_status: ['Перевірив стан оновлення', 'Controleerde de status van een update'], uitrol_voorstel_annuleren: ['Скасував підготовлене оновлення', 'Annuleerde een voorbereide update'],
-  uitrol_github_ophalen: ['Завантажив реліз із GitHub на попередню перевірку', 'Haalde een release uit GitHub op voor voorcontrole'],
+  uitrol_github_ophalen: ['Завантажив випуск із GitHub на попередню перевірку', 'Haalde een release uit GitHub op voor voorcontrole'],
   audit_read: ['Прочитав журнал безпеки (замасковано)', 'Las het beveiligingslogboek (gemaskeerd)'], siem_status: ['Перевірив передачу в SIEM', 'Controleerde de SIEM-export'],
   users_manage: ['Запропонував зміну користувача (чекає вашого passkey)', 'Stelde een wijziging van een gebruiker voor (wacht op uw passkey)'],
   flags_manage: ['Запропонував зміну прапорця функції (чекає підтвердження)', 'Stelde een wijziging van een functievlag voor (wacht op bevestiging)'],

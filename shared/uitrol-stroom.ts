@@ -240,12 +240,12 @@ export function zonderGeheimenUitrol(invoer: unknown, maxLen: number = STROOM_LI
   // Приватні PEM-ключі
   s = s.replace(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, '[ПРИВАТНИЙ_КЛЮЧ_ПРИХОВАНО]');
   // Заголовки Bearer / Basic
-  s = s.replace(/\b(Bearer|Basic)\s+[A-Za-z0-9\-._~+/]+=*/gi, '$1 [ТОКЕН_ПРИХОВАНО]');
+  s = s.replace(/\b(Bearer|Basic)\s+[A-Za-z0-9\-._~+/]+=*/gi, '$1 [КЛЮЧ_ПРИХОВАНО]');
   // JWT
   s = s.replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{6,}\b/g, '[JWT_ПРИХОВАНО]');
   // Паролі в рядках підключення postgres://user:pass@host
   s = s.replace(/([a-z][a-z0-9+.-]*:\/\/[^:\s/]+):([^@\s/]{2,})@/gi, '$1:[ПАРОЛЬ_ПРИХОВАНО]@');
-  // Відомі префікси токенів (GitHub, OpenAI/Google/Grok/Anthropic, внутрішні токени агента tvh_/agy-)
+  // Відомі префікси ключів доступу (GitHub, OpenAI/Google/Grok/Anthropic, внутрішні ключі агента tvh_/agy-)
   s = s.replace(/\b(?:gh[pousr]_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{20,}|sk-(?:proj-|ant-)?[A-Za-z0-9_-]{16,}|xai-[A-Za-z0-9_-]{16,}|tvh_[A-Za-z0-9_-]{12,}|agy-[a-z]-[A-Za-z0-9_-]{12,})\b/g, '[КЛЮЧ_ПРИХОВАНО]');
   // Параметри запитів та змінні оточення з чутливими назвами
   s = s.replace(/([?&](?:token|key|secret|password|code|access_token|refresh_token)=)[^&\s]+/gi, '$1[ПРИХОВАНО]');
@@ -310,7 +310,7 @@ export function bewijsInhoudVoorHash(invoer: {
   });
 }
 
-// ------------------------------------------------------------------------------------------------ допоміжні парсери
+// ------------------------------------------------------------------------------------------------ допоміжні розбирачі
 const vindControle = (vc: VoorcontroleSamenvatting | null | undefined, id: string): VoorcontroleControle | undefined =>
   vc?.controles?.find((c) => c.id === id);
 
@@ -414,10 +414,10 @@ export function analyseerUitrolStroom(invoer: StroomAnalyseInvoer): StroomDuidin
     }
   }
 
-  // 3. Походження, коміт і TRACE-001 (ONTWIKKELARCHIEF)
+  // 3. Походження, фіксація змін і TRACE-001 (ONTWIKKELARCHIEF)
   const commit = String(invoer.commit || '');
   if (!commit || /^zonder-git:/.test(commit)) {
-    voegFactor('waarschuwing', 15, 'Коміт відсутній або зібрано поза git (zonder-git) — знижена відтворюваність коду.', 'Commit ontbreekt of buiten git gebouwd (zonder-git) — lagere herleidbaarheid van de code.');
+    voegFactor('waarschuwing', 15, 'Фіксація змін відсутня або зібрана поза git (zonder-git) — знижена відтворюваність коду.', 'Commit ontbreekt of buiten git gebouwd (zonder-git) — lagere herleidbaarheid van de code.');
   }
   const cArch = vindControle(vc, 'ontwikkelarchief') || vindControle(vc, 'github');
   const bArch = laatsteBewijs(invoer.bewijzen, 'ontwikkelarchief');
@@ -430,7 +430,7 @@ export function analyseerUitrolStroom(invoer: StroomAnalyseInvoer): StroomDuidin
   // 4. Таємниці у пакеті
   const cGeheim = vindControle(vc, 'geheimen');
   if (cGeheim && cGeheim.niveau !== 'ok') {
-    voegFactor('kritiek', 45, 'У вмісті пакета виявлено ознаки секретів (.env, приватні ключі або токени). Необхідна перевірка перед схваленням!', 'In de pakketinhoud zijn tekenen van geheimen gevonden (.env, privésleutels of tokens). Controle vóór goedkeuring vereist!');
+    voegFactor('kritiek', 45, 'У вмісті пакета виявлено ознаки секретів (.env, приватні ключі або ключі доступу). Необхідна перевірка перед схваленням!', 'In de pakketinhoud zijn tekenen van geheimen gevonden (.env, privésleutels of tokens). Controle vóór goedkeuring vereist!');
   }
 
   // 5. Результати тестів
@@ -532,7 +532,7 @@ export function analyseerUitrolStroom(invoer: StroomAnalyseInvoer): StroomDuidin
     aanbevelingenNl.push('Controleer of de migratieproef op een schemakopie is geslaagd en nieuwe tabellen RLS en rechten in rechten.sql hebben.');
   }
   if (destructief) {
-    aanbevelingenUk.push('Підтвердьте вручну сумісність попереднього релізу з новою схемою БД на випадок відкату.');
+    aanbevelingenUk.push('Підтвердьте вручну сумісність попереднього випуску з новою схемою БД на випадок відкату.');
     aanbevelingenNl.push('Bevestig handmatig dat de vorige release met het nieuwe schema werkt bij een eventuele terugdraai.');
   }
   if (typeof misluktTests === 'number' && misluktTests > 0) {
@@ -695,7 +695,7 @@ export function bouwContextControlelijst(invoer: StroomAnalyseInvoer): Controlel
       handmatigBevestigen: false,
       titelUk: 'Перевірка пакету на випадкові таємниці та ключі',
       titelNl: 'Controle van het pakket op onbedoelde geheimen en sleutels',
-      toelichtingUk: 'Автоматичний пошук файлів .env, приватних ключів і токенів у вмісті архіву.',
+      toelichtingUk: 'Автоматичний пошук файлів .env, приватних ключів і ключів доступу у вмісті архіву.',
       toelichtingNl: 'Automatisch zoeken naar .env-bestanden, privésleutels en tokens in het archief.',
       status: statusUitControle(vindControle(vc, 'geheimen')),
       bewijsSoort: 'voorcontrole',

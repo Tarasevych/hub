@@ -2990,7 +2990,7 @@
   },
   {
    "pad": "src/uitrol/TelegramArchief.tsx",
-   "wat": "Beheerpaneel voor versleutelde Telegram-releaseback-ups (kanaal, eenmalige 256-bits sleutel, verplichte blokkade, handmatig archiveren en herstel met SHA-256-controle).",
+   "wat": "Beheerpaneel voor versleutelde Telegram-release-reservekopieën (kanaal, eenmalige 256-bits sleutel, verplichte blokkade, handmatig archiveren en herstel met SHA-256-controle).",
    "sinds": "UITROL-002 (stroom-uitrol)"
   },
   {

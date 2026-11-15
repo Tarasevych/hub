@@ -1,4 +1,4 @@
-// «Налаштування → GitHub і архіви випусків» + безпечне приймання релізів із GitHub (webhook, вручну, MCP).
+// «Налаштування → GitHub і архіви випусків» + безпечне приймання випусків із GitHub (вхідний приймач, вручну, MCP).
 // «Instellingen → Release-archieven en GitHub» + veilige ontvangst van releases uit GitHub (webhook, handmatig, MCP).
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -73,7 +73,7 @@ export default function GithubInstellingen({
   const [auto, setAuto] = useState(false);
   const [bewaar, setBewaar] = useState(10);
 
-  // Налаштування приймання релізів із GitHub
+  // Налаштування приймання випусків із GitHub
   const [webhookAan, setWebhookAan] = useState(false);
   const [webhookAuto, setWebhookAuto] = useState(true);
   const [tagPrefix, setTagPrefix] = useState('');
@@ -158,8 +158,8 @@ export default function GithubInstellingen({
       setMelding({
         soort: 'ok',
         tekst: genereerGeheim
-          ? tr(lang, 'Секрет підпису GitHub webhook згенеровано й збережено в Сховищі секретів. Скопіюйте його нижче.', 'HMAC-geheim voor GitHub-webhook gegenereerd en in het Geheimenkluis opgeslagen. Kopieer het hieronder.')
-          : tr(lang, 'Налаштування отримання релізів із GitHub збережено.', 'Instellingen voor release-ontvangst uit GitHub opgeslagen.'),
+          ? tr(lang, 'Секрет підпису вхідного приймача GitHub згенеровано й збережено в Сховищі секретів. Скопіюйте його нижче.', 'HMAC-geheim voor GitHub-webhook gegenereerd en in het Geheimenkluis opgeslagen. Kopieer het hieronder.')
+          : tr(lang, 'Налаштування отримання випусків із GitHub збережено.', 'Instellingen voor release-ontvangst uit GitHub opgeslagen.'),
       });
       await laden();
     } catch (e) {
@@ -187,7 +187,7 @@ export default function GithubInstellingen({
       if (r.overgeslagen) {
         setMelding({ soort: 'ok', tekst: tr(lang, `Версія ${r.versie} уже є у списку пропозицій.`, `Versie ${r.versie} staat al in de lijst met voorstellen.`) });
       } else if (!r.ok) {
-        setMelding({ soort: 'fout', tekst: tr(lang, `Реліз ${r.versie || ''} завантажено, але попередня перевірка зупинила його (${r.code || 'VOORCONTROLE_MISLUKT'}).`, `Release ${r.versie || ''} opgehaald, maar door de voorcontrole geweigerd (${r.code || 'VOORCONTROLE_MISLUKT'}).`) });
+        setMelding({ soort: 'fout', tekst: tr(lang, `Випуск ${r.versie || ''} завантажено, але попередня перевірка зупинила його (${r.code || 'VOORCONTROLE_MISLUKT'}).`, `Release ${r.versie || ''} opgehaald, maar door de voorcontrole geweigerd (${r.code || 'VOORCONTROLE_MISLUKT'}).`) });
       } else {
         setMelding({ soort: 'ok', tekst: tr(lang, `Випуск ${r.versie} завантажено з GitHub і перевірено! Відкрийте «Огляд», щоб схвалити passkey.`, `Release ${r.versie} uit GitHub opgehaald en gecontroleerd! Open «Overzicht» om met passkey goed te keuren.`) });
         onVoorstelOntvangen?.();
@@ -223,7 +223,7 @@ export default function GithubInstellingen({
     } catch { /* ігнор */ }
   };
 
-  const tokenNaam = (d: string) => d === 'github-uitrol' ? tr(lang, 'технічний — лише релізи сайту', 'technisch — alleen site-releases') : tr(lang, 'особистий токен (приватний простір)', 'persoonlijke token (privéruimte)');
+  const tokenNaam = (d: string) => d === 'github-uitrol' ? tr(lang, 'технічний — лише випуски сайту', 'technisch — alleen site-releases') : tr(lang, 'особистий ключ доступу (приватний простір)', 'persoonlijke token (privéruimte)');
 
   return (
     <section className='ut-kaart ut-github' data-ut-github aria-labelledby='ut-gh-titel'>
@@ -233,7 +233,7 @@ export default function GithubInstellingen({
           <p className='ut-sub'>
             {tr(
               lang,
-              'Публікація встановлених релізів на GitHub, а також безпечне отримання нових релізів із GitHub (через підписаний webhook, вручну або MCP) на попередню перевірку перед схваленням passkey.',
+              'Публікація встановлених випусків на GitHub, а також безпечне отримання нових випусків із GitHub (через підписаний приймач сповіщень, вручну або MCP) на попередню перевірку перед схваленням passkey.',
               'Publicatie van geïnstalleerde releases op GitHub, én veilige ontvangst van nieuwe releases uit GitHub (via ondertekende webhook, handmatig of MCP) voor voorcontrole vóór passkey-goedkeuring.',
             )}
           </p>
@@ -260,10 +260,10 @@ export default function GithubInstellingen({
                 ))}
               </ul>
               <a className='ut-knop' href='https://admin.tarasevych.com/contour' data-ut-gh-koppel>
-                <KeyRound aria-hidden='true' />{s.gekoppeld ? tr(lang, 'Керувати токенами', 'Tokens beheren') : tr(lang, 'Підключити GitHub', 'GitHub koppelen')}
+                <KeyRound aria-hidden='true' />{s.gekoppeld ? tr(lang, 'Керувати ключами доступу', 'Tokens beheren') : tr(lang, 'Підключити GitHub', 'GitHub koppelen')}
                 <ExternalLink aria-hidden='true' />
               </a>
-              <p className='ut-hint'>{tr(lang, 'Рекомендовано: fine-grained токен лише на один репозиторій з правом «Contents: write», призначення «GitHub — релізи сайту (технічний)».', 'Aanbevolen: een fine-grained token voor één repository met «Contents: write», doel «GitHub — site-releases (technisch)».')}</p>
+              <p className='ut-hint'>{tr(lang, 'Рекомендовано: обмежений ключ доступу (fine-grained) лише на один репозиторій з правом «Contents: write», призначення «github-uitrol» (технічний).', 'Aanbevolen: een fine-grained token voor één repository met «Contents: write», doel «GitHub — site-releases (technisch)».')}</p>
             </div>
 
             <div className='ut-gh-blok'>
@@ -305,7 +305,7 @@ export default function GithubInstellingen({
           {ont && (
             <div className='ut-gh-raster' data-ut-gh-ontvangst>
               <div className='ut-gh-blok'>
-                <h3><Webhook aria-hidden='true' /> {tr(lang, 'Приймання релізів через GitHub Webhook', 'Releases ontvangen via GitHub Webhook')}</h3>
+                <h3><Webhook aria-hidden='true' /> {tr(lang, 'Отримання випусків через приймач подій GitHub', 'Releases ontvangen via GitHub Webhook')}</h3>
                 <p className='ut-hint'>
                   {tr(
                     lang,
@@ -318,7 +318,7 @@ export default function GithubInstellingen({
                   <button
                     type='button'
                     className='ut-knop'
-                    onClick={() => void kopieer(ont.webhookUrl, 'Адресу webhook скопійовано.', 'Webhook-adres gekopieerd.')}
+                    onClick={() => void kopieer(ont.webhookUrl, 'Адресу приймача подій скопійовано.', 'Webhook-adres gekopieerd.')}
                   >
                     <Copy size={14} aria-hidden='true' /> {tr(lang, 'Копіювати URL', 'URL kopiëren')}
                   </button>
@@ -326,7 +326,7 @@ export default function GithubInstellingen({
 
                 <label className='ut-veld'>
                   <span>
-                    {tr(lang, 'HMAC-секрет webhook', 'HMAC-geheim van de webhook')}{' '}
+                    {tr(lang, 'HMAC-секрет приймача подій', 'HMAC-geheim van de webhook')}{' '}
                     ({ont.webhookGeheimAanwezig ? tr(lang, 'установлено', 'ingesteld') : tr(lang, 'не встановлено', 'niet ingesteld')})
                   </span>
                   <input
@@ -340,24 +340,24 @@ export default function GithubInstellingen({
                 </label>
 
                 <label className='ut-veld'>
-                  <span>{tr(lang, 'Дозволений префікс тегів релізу (порожньо — будь-який)', 'Toegestane tag-prefix van releases (leeg = alle)')}</span>
-                  <input type='text' value={tagPrefix} onChange={(e) => setTagPrefix(e.target.value)} placeholder={tr(lang, 'порожньо — будь-який', 'leeg = elke tag')} maxLength={40} />
+                  <span>{tr(lang, 'Дозволений префікс міток випуску (порожньо — будь-яка)', 'Toegestane tag-prefix van releases (leeg = alle)')}</span>
+                  <input type='text' value={tagPrefix} onChange={(e) => setTagPrefix(e.target.value)} placeholder={tr(lang, 'порожньо — будь-яка', 'leeg = elke tag')} maxLength={40} />
                 </label>
 
                 <label className='ut-schakel'>
                   <input type='checkbox' checked={webhookAan} onChange={(e) => setWebhookAan(e.target.checked)} data-ut-gh-wh-aan />
-                  <span>{tr(lang, 'Приймати вхідні події релізів із перевіркою HMAC-SHA256', 'Inkomende release-events accepteren met HMAC-SHA256-controle')}</span>
+                  <span>{tr(lang, 'Приймати вхідні сповіщення про випуски з перевіркою HMAC-SHA256', 'Inkomende release-events accepteren met HMAC-SHA256-controle')}</span>
                 </label>
 
                 <label className='ut-schakel'>
                   <input type='checkbox' checked={webhookAuto} onChange={(e) => setWebhookAuto(e.target.checked)} data-ut-gh-wh-auto />
-                  <span>{tr(lang, 'Автоматично завантажувати й перевіряти архів (без автоінсталяції — лише до «Очікує passkey»)', 'Archief automatisch ophalen en voorcontroleren (nooit automatisch installeren — alleen tot «Wacht op passkey»)')}</span>
+                  <span>{tr(lang, 'Автоматично завантажувати й перевіряти архів (без самочинного встановлення — лише до «Очікує ключ доступу»)', 'Archief automatisch ophalen en voorcontroleren (nooit automatisch installeren — alleen tot «Wacht op passkey»)')}</span>
                 </label>
 
                 <div className='ut-pakket-knoppen'>
                   <button type='button' className='ut-knop ut-knop-primair' disabled={Boolean(bezig)} onClick={() => void ontvangstOpslaan(false)} data-ut-gh-wh-opslaan>
                     {bezig === 'wh-opslaan' ? <Loader2 className='ut-draai' aria-hidden='true' /> : <Save aria-hidden='true' />}
-                    {tr(lang, 'Зберегти webhook', 'Webhook opslaan')}
+                    {tr(lang, 'Зберегти приймач подій', 'Webhook opslaan')}
                   </button>
                   <button type='button' className='ut-knop' disabled={Boolean(bezig)} onClick={() => void ontvangstOpslaan(true)} data-ut-gh-wh-genereer>
                     {bezig === 'wh-genereer' ? <Loader2 className='ut-draai' aria-hidden='true' /> : <KeyRound aria-hidden='true' />}
@@ -371,7 +371,7 @@ export default function GithubInstellingen({
                     <button
                       type='button'
                       className='ut-knop'
-                      onClick={() => void kopieer(eenmaligGeheim, 'Секрет webhook скопійовано.', 'Webhook-geheim gekopieerd.')}
+                      onClick={() => void kopieer(eenmaligGeheim, 'Секрет приймача подій скопійовано.', 'Webhook-geheim gekopieerd.')}
                     >
                       <Copy size={14} aria-hidden='true' /> {tr(lang, 'Копіювати секрет', 'Geheim kopiëren')}
                     </button>
@@ -380,16 +380,16 @@ export default function GithubInstellingen({
               </div>
 
               <div className='ut-gh-blok'>
-                <h3><CloudDownload aria-hidden='true' /> {tr(lang, 'Завантажити реліз із GitHub вручну', 'Release handmatig uit GitHub ophalen')}</h3>
+                <h3><CloudDownload aria-hidden='true' /> {tr(lang, 'Завантажити випуск із GitHub вручну', 'Release handmatig uit GitHub ophalen')}</h3>
                 <p className='ut-hint'>
                   {tr(
                     lang,
-                    'Завантажує .tar.gz із релізу GitHub, звіряє SHA-256 і запускає ту саму попередню перевірку. Після успіху пропозиція чекатиме схвалення passkey у вкладці «Огляд».',
+                    'Завантажує .tar.gz із випуску GitHub, звіряє SHA-256 і запускає ту саму попередню перевірку. Після успіху пропозиція чекатиме схвалення ключем доступу у вкладці «Огляд».',
                     'Haalt een .tar.gz uit een GitHub-release, controleert SHA-256 en draait dezelfde voorcontrole. Na succes wacht het voorstel op uw passkey in «Overzicht».',
                   )}
                 </p>
                 <label className='ut-veld'>
-                  <span>{tr(lang, 'Теґ релізу (порожньо — найновіший реліз)', 'Release-tag (leeg = nieuwste release)')}</span>
+                  <span>{tr(lang, 'Мітка випуску (порожньо — найновіший випуск)', 'Release-tag (leeg = nieuwste release)')}</span>
                   <input type='text' value={ophaalTag} onChange={(e) => setOphaalTag(e.target.value)} placeholder='20261115-120000' maxLength={120} data-ut-gh-ophalen-tag />
                 </label>
                 <label className='ut-veld'>
@@ -412,7 +412,7 @@ export default function GithubInstellingen({
 
           {ont && ont.ontvangen.length > 0 && (
             <details className='ut-gh-log' open={ont.ontvangen.length < 6}>
-              <summary>{tr(lang, 'Журнал отримання релізів із GitHub', 'Ontvangen releases uit GitHub')} <b>{ont.ontvangen.length}</b></summary>
+              <summary>{tr(lang, 'Журнал отримання випусків із GitHub', 'Ontvangen releases uit GitHub')} <b>{ont.ontvangen.length}</b></summary>
               <ol>
                 {ont.ontvangen.map((o) => (
                   <li key={o.id} data-uitkomst={o.status === 'voorcontrole_ok' ? 'ok' : o.status === 'voorcontrole_mislukt' || o.status === 'geweigerd' || o.status === 'fout' ? 'fout' : undefined}>

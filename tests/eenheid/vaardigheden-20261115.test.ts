@@ -193,7 +193,7 @@ export async function main(): Promise<number> {
 
     let errOnbekend = '';
     try { leesVaardigheid('bestaat-niet', cat); } catch (e) { errOnbekend = (e as Error).message; }
-    check('неіснуюча навичка → VAARD_NIET_GEVONDEN', errOnbekend === 'VAARD_NIET_GEVONDEN');
+    check('відсутня навичка → VAARD_NIET_GEVONDEN', errOnbekend === 'VAARD_NIET_GEVONDEN');
 
     mkdirSync(join(tijdelijk, '.agents/skills/nep-kaart'), { recursive: true });
     writeFileSync(join(tijdelijk, '.agents/skills/nep-kaart/SKILL.md'), '---\nname: nep-kaart\ndescription: Alleen Nederlands\n---\nТекст\n');
@@ -271,7 +271,7 @@ export async function main(): Promise<number> {
   const dossierFouten = existsSync(dossierPad)
     ? valideerOntwikkelDossier(JSON.parse(readFileSync(dossierPad, 'utf8')), 'VAARD-002')
     : ['dossier ontbreekt'];
-  check('TRACE-001: доказове досьє VAARD-002.json валідне',
+  check('TRACE-001: доказове досьє VAARD-002.json чинне',
     dossierFouten.length === 0,
     dossierFouten.join(', '));
 

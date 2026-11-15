@@ -1,7 +1,7 @@
 -- 0282 — Розумний потік розгортання: інтелектуальні нотатки, контекстні контрольні списки та автоматичні докази перевірок.
 -- 0282 — Slimme uitrolstroom: intelligente notities, contextafhankelijke controlelijsten en automatisch bewijs van controles.
 --
--- Сумісно з PostgreSQL 15+ і PostgreSQL 18.6; ідемпотентно.
+-- Сумісно з PostgreSQL 15+ і PostgreSQL 18.6; повторостійко.
 -- Включено суворий захист рядків (ENABLE + FORCE ROW LEVEL SECURITY) за app.huidige_gebruiker() та app.huidige_ruimte(),
 -- а також повне закриття доступу для непривілейованої ролі mijnruimte_app (використовується лише контуром admin через mijnruimte_system).
 

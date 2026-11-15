@@ -1247,8 +1247,8 @@ SITE_TOOLS.push(
     group: 'site', service: 'admin', write: true,
     tool: {
       name: 'uitrol_github_ophalen',
-      title: 'Отримати реліз із GitHub на перевірку / GitHub-release ophalen voor voorcontrole',
-      description: 'Завантажує архів .tar.gz із релізу GitHub, перевіряє SHA-256 і запускає попередню перевірку сервера; нічого не встановлює без passkey власника. / Haalt een .tar.gz-archief uit een GitHub-release, controleert SHA-256 en voert de voorcontrole uit; installeert niets zonder passkey van de eigenaar.',
+      title: 'Отримати випуск із GitHub на перевірку / GitHub-release ophalen voor voorcontrole',
+      description: 'Завантажує архів .tar.gz із випуску GitHub, перевіряє SHA-256 і запускає попередню перевірку сервера; нічого не встановлює без passkey власника. / Haalt een .tar.gz-archief uit een GitHub-release, controleert SHA-256 en voert de voorcontrole uit; installeert niets zonder passkey van de eigenaar.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -1262,7 +1262,7 @@ SITE_TOOLS.push(
           tag: {
             type: 'string',
             description: p(
-              'Необов’язковий теґ релізу, наприклад "uitrol-20261115-120000". Якщо не вказано — береться останній опублікований реліз.',
+              'Необов’язкова мітка випуску, наприклад "uitrol-20261115-120000". Якщо не вказано — береться останній оприлюднений випуск.',
               'Optionele release-tag, bijvoorbeeld "uitrol-20261115-120000". Zonder waarde wordt de nieuwste gepubliceerde uitgave gebruikt.',
             ),
           },

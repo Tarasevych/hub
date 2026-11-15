@@ -1,6 +1,6 @@
 // Модульні й інтеграційні тести екосистеми модульних навичок і профілів ШІ-агентів:
 //   1. Валідатор мовного закону (uk + nl), заборона російських літер, техно-сленгу й таємних ключів.
-//   2. Генератор та парсер SKILL.md та JSON-пакета mr-vaardigheid-v1.
+//   2. Генератор та розбирач SKILL.md та JSON-пакета mr-vaardigheid-v1.
 //   3. HTTP-маршрути /api/owner/vaardigheden/*: огляд, пошук/підбір, збереження, імпорт, перемикач на агента, відкат версій, видалення.
 //   4. Ізоляція просторів (prive проти technisch) та ізоляція між користувачами (користувач A vs B).
 //   5. Інтеграція з протоколом MCP 2026-07-28 (resources/list, resources/read, completion/complete, mr://agent/{slug}/info).
@@ -64,7 +64,7 @@ export async function main(): Promise<number> {
     inhoudUk: 'Токен ghp_1234567890abcdefghijklmnopqrstuvwx не можна зберігати',
     inhoudNl: 'Geen geheimen',
   });
-  check('валідатор блокує секретні ключі й токени', !geheimTekst.ok && geheimTekst.code === 'VAARD_GEHEIM_VERBODEN');
+  check('валідатор блокує секретні ключі доступу', !geheimTekst.ok && geheimTekst.code === 'VAARD_GEHEIM_VERBODEN');
 
   const geldigeInvoer = {
     slug: 'dagelijks-rapport',
@@ -97,7 +97,7 @@ export async function main(): Promise<number> {
   });
   const terugVanMd = parseerSkillMarkdown(mdTekst);
   check(
-    'парсер SKILL.md відновлює двомовні розділи, агентів та інструменти',
+    'розбирач SKILL.md відновлює двомовні розділи, агентів та інструменти',
     terugVanMd.ok &&
       terugVanMd.waarde.slug === 'dagelijks-rapport' &&
       terugVanMd.waarde.agentKoppelingen.includes('claude') &&

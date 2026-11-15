@@ -206,7 +206,7 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
     uk: 'Спершу зашифрований архів поточного випуску має бути збережений у Telegram',
     nl: 'Het versleutelde archief van de huidige release moet eerst in Telegram zijn bewaard',
     doenUk: 'Увімкнено обов’язкове резервування перед новим установленням. Натисніть «Заархівувати поточний випуск у Telegram» або перевірте налаштування в розділі «Налаштування → Архів у Telegram».',
-    doenNl: 'Verplichte back-up vóór een nieuwe installatie staat aan. Kies «Huidige release naar Telegram archiveren» of controleer «Instellingen → Archief in Telegram».',
+    doenNl: 'Verplichte reservekopie vóór een nieuwe installatie staat aan. Kies «Huidige release naar Telegram archiveren» of controleer «Instellingen → Archief in Telegram».',
   },
   TELEGRAM_SLEUTEL_ONTBREEKT: {
     uk: 'Не вказано 256-бітний ключ шифрування архіву для Telegram',
@@ -215,9 +215,9 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
     doenNl: 'Sla een eigen sleutel op of genereer er een in «Instellingen → Archief in Telegram». Zonder versleuteling wordt niets verstuurd.',
   },
   TELEGRAM_CHAT_ONTBREEKT: {
-    uk: 'Не вказано ідентифікатор каналу або групи Telegram (chat_id) чи токен бота',
+    uk: 'Не вказано ідентифікатор каналу або групи Telegram (chat_id) чи ключ доступу бота',
     nl: 'Telegram chat_id of botsleutel ontbreekt',
-    doenUk: 'Вкажіть токен бота і chat_id у «Налаштування → Архів у Telegram» та натисніть «Перевірити з’єднання».',
+    doenUk: 'Вкажіть ключ доступу бота і chat_id у «Налаштування → Архів у Telegram» та натисніть «Перевірити з’єднання».',
     doenNl: 'Vul botsleutel en chat_id in bij «Instellingen → Archief in Telegram» en kies «Verbinding testen».',
   },
   TELEGRAM_HERSTEL_INTEGRITEIT: {
@@ -237,17 +237,17 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
     doenNl: 'Geef de bot het recht om berichten en documenten te plaatsen (in een kanaal als beheerder).',
   },
   TELEGRAM_GEEN_FORUM: {
-    uk: 'Для вказаної теми групи потрібна супергрупа з увімкненими темами (форум)',
-    nl: 'Een opgegeven topicnummer (message_thread_id) vereist een supergroep met topics (forum)',
+    uk: 'Для вказаної теми групи потрібна супергрупа з увімкненими темами (форум), а не звичайна група',
+    nl: 'Een opgegeven topicnummer (message_thread_id) vereist een supergroep met topics (forum), geen gewone groep',
     doenUk: 'Увімкніть теми в налаштуваннях супергрупи або очистіть поле message_thread_id.',
     doenNl: 'Schakel topics in voor de supergroep of maak het veld message_thread_id leeg.',
   },
   TELEGRAM_WEBHOOK_ONGELDIG: {
-    uk: 'Секретний маркер вхідного webhook від Telegram відсутній або недійсний',
+    uk: 'Секретний ключ вхідного приймача сповіщень від Telegram відсутній або недійсний',
     nl: 'Het geheime token van de inkomende Telegram-webhook ontbreekt of is ongeldig',
   },
   GITHUB_WEBHOOK_ONGELDIG: {
-    uk: 'Підпис або заголовок вхідного webhook від GitHub не пройшов перевірку',
+    uk: 'Підпис або заголовок вхідного приймача сповіщень від GitHub не пройшов перевірку',
     nl: 'Handtekening of kop van de inkomende GitHub-webhook is ongeldig',
   },
   GITHUB_WEBHOOK_HERHALING: {
@@ -255,11 +255,11 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
     nl: 'Herhaalde aflevering van dezelfde GitHub-gebeurtenis (X-GitHub-Delivery) genegeerd',
   },
   GITHUB_ASSET_ONTBREEKT: {
-    uk: 'У цьому релізі на GitHub немає архіву випуску (*.tar.gz)',
+    uk: 'У цьому випуску на GitHub немає архіву (*.tar.gz)',
     nl: 'Deze GitHub-release bevat geen release-archief (*.tar.gz)',
   },
   GITHUB_SHA256_VERSCHILT: {
-    uk: 'Контрольна сума завантаженого з GitHub архіву не збігається із заявленою в релізі',
+    uk: 'Контрольна сума завантаженого з GitHub архіву не збігається із заявленою у випуску',
     nl: 'SHA-256 van het uit GitHub opgehaalde archief komt niet overeen met de opgegeven som',
   },
   GITHUB_ONJUISTE_BRON: {

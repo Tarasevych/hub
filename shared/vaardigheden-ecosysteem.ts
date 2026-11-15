@@ -159,7 +159,7 @@ export const VAARD_FOUT_TEKST: Readonly<Record<string, VaardigheidTaalPaar>> = O
     nl: 'Taalwet geschonden: verboden tekens of jargon zijn niet toegestaan; het Oekraïense deel vereist Cyrillisch en het Nederlandse Latijns schrift.',
   },
   VAARD_GEHEIM_VERBODEN: {
-    uk: 'Навичка містить зразок токена, пароля або приватного ключа. Ніколи не зберігайте таємниці в навичках агентів.',
+    uk: 'Навичка містить зразок ключа доступу, пароля або приватного ключа. Ніколи не зберігайте таємниці в навичках агентів.',
     nl: 'De vaardigheid bevat een token-, wachtwoord- of privésleutelpatroon. Bewaar nooit geheimen in agentvaardigheden.',
   },
   VAARD_TE_GROOT: {

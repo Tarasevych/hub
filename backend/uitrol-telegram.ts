@@ -109,7 +109,7 @@ export function normaliseerArchiefSleutel(invoer: string): Buffer {
   throw new TelegramArchiefFout('TELEGRAM_SLEUTEL_ONGELDIG', 400);
 }
 
-/** Читає ВИКЛЮЧНО токен власного бота випусків (`TELEGRAM_UITROL_BOT_TOKEN`), ніколи не перемикається на бот входу. */
+/** Читає ВИКЛЮЧНО ключ доступу власного бота випусків (`TELEGRAM_UITROL_BOT_TOKEN`), ніколи не перемикається на бот входу. */
 async function leesBotToken(eigenaarId: string): Promise<{ token: string; bron: 'kluis' | 'omgeving' } | null> {
   if (botBronOverride) return botBronOverride(eigenaarId);
   try {
@@ -559,7 +559,7 @@ export async function telegramVerbindingTesten(eigenaar: { id: string; email?: s
       }
     }
 
-    if (inst.messageThreadId != null && chatType === 'supergroup' && chat?.is_forum === false) {
+    if (inst.messageThreadId != null && (chatType === 'group' || (chatType === 'supergroup' && chat?.is_forum === false))) {
       throw new TelegramArchiefFout('TELEGRAM_GEEN_FORUM', 400);
     }
 
@@ -631,7 +631,7 @@ export async function archiveerReleaseNaarTelegram(invoer: {
   if (lopendeArchieven.has(lockKey)) throw new TelegramArchiefFout('AL_BEZIG', 409);
   lopendeArchieven.add(lockKey);
 
-  // Ідемпотентність: якщо такий самий оригінал цієї версії вже успішно збережено в Telegram, повертаємо існуючий запис.
+  // Повторостійкість: якщо такий самий оригінал цієї версії вже успішно збережено в Telegram, повертаємо наявний запис.
   const bestaand = await sys().query(
     `SELECT * FROM app.uitrol_telegram_archief WHERE user_id = $1 AND versie = $2 AND origineel_sha256 = $3 AND status = 'voltooid' LIMIT 1`,
     [invoer.eigenaarId, invoer.versie, origineelInfo.sha256],
@@ -1010,7 +1010,7 @@ export async function gebruikHerstelDownload(eigenaarId: string, archiefId: stri
   return item;
 }
 
-// ------------------------------------------------------------------------------------------------ webhook бота випусків (/status і /help)
+// ------------------------------------------------------------------------------------------------ приймач команд бота випусків (/status і /help)
 export async function telegramWebhookInstellen(
   eigenaar: { id: string; email?: string },
   invoer?: { vernieuwGeheim?: boolean },
@@ -1097,7 +1097,7 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     return { ok: false, fout: 'TELEGRAM_WEBHOOK_ONGELDIG', status: 400 };
   }
 
-  // Атомарна ідемпотентність за update_id: повторний виклик Telegram не виконує команду вдруге.
+  // Атомарна повторостійкість за update_id: повторний виклик Telegram не виконує команду вдруге.
   const ins = await sys().query(
     `INSERT INTO app.uitrol_telegram_updates (update_id, user_id, ruimte, chat_id, uitkomst)
      VALUES ($1, $2, 'technisch', $3, 'ontvangen')

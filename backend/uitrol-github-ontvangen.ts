@@ -1,4 +1,4 @@
-// Безпечне отримання релізів із GitHub (webhook HMAC-SHA256, ручне завантаження або MCP-інструмент).
+// Безпечне отримання випусків із GitHub (вхідний приймач сповіщень HMAC-SHA256, ручне завантаження або MCP-інструмент).
 // Veilige ontvangst van releases uit GitHub (webhook HMAC-SHA256, handmatig ophalen of MCP-hulpmiddel).
 import { execFile } from 'node:child_process';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
@@ -294,7 +294,7 @@ async function downloadAssetMetLimiet(
       Accept: acceptHeader,
       'User-Agent': 'mijn-ruimte-uitrol-ontvanger',
     };
-    // Токен GitHub ніколи не передається на CDN або сторонні хости редиректу.
+    // Ключ доступу GitHub ніколи не передається на CDN або сторонні хости перенаправлення.
     if (token && u.hostname.toLowerCase() === 'api.github.com') {
       headers.Authorization = `Bearer ${token}`;
       headers['X-GitHub-Api-Version'] = '2022-11-28';
@@ -370,7 +370,7 @@ async function haalExpectedSha256(
       const txt = buf.subarray(0, bytesRead).toString('utf8');
       const m = /\b([0-9a-f]{64})\b/i.exec(txt);
       if (m) return m[1].toLowerCase();
-    } catch { /* спробуємо з опису релізу */ }
+    } catch { /* спробуємо з опису випуску */ }
     finally { await rm(tmp, { force: true }).catch(() => undefined); }
   }
 
@@ -389,7 +389,7 @@ async function leesVersieUitArchief(archiefPad: string, fallbackTag: string, ass
       const v = vOut.trim();
       if (VERSIE_RE.test(v)) return v;
     }
-  } catch { /* запасний розбір із імені або тега */ }
+  } catch { /* запасний розбір із імені або мітки */ }
   const mNaam = /(\d{8}-\d{6})/.exec(assetNaam) || /(\d{8}-\d{6})/.exec(fallbackTag);
   return mNaam ? mNaam[1] : '';
 }
@@ -414,7 +414,7 @@ async function eigenaarVoorbereiderGrant(eigenaarId: string): Promise<{ id: stri
   return { id: String(ins.rows[0].id), label: String(ins.rows[0].label) };
 }
 
-// ------------------------------------------------------------------------------------------------ основний потік прийому релізу
+// ------------------------------------------------------------------------------------------------ основний потік приймання випуску
 export async function haalGithubReleaseOp(invoer: {
   eigenaarId: string;
   actor?: { id: string; email?: string } | null;
@@ -481,7 +481,7 @@ export async function haalGithubReleaseOp(invoer: {
       Number.isSafeInteger(releaseId) ? releaseId : 0,
       Number(asset?.id || 0),
       tekst(asset?.name || '', 200),
-      `Отримано реліз ${tag} із ${repo}.`,
+      `Отримано випуск ${tag} із ${repo}.`,
       `Release ${tag} uit ${repo} ontvangen.`,
     ],
   )).rows[0].id as string;
@@ -526,7 +526,7 @@ export async function haalGithubReleaseOp(invoer: {
     await bijwerk({
       status: 'fout',
       foutCode: 'GITHUB_ASSET_ONTBREEKT',
-      uk: `У релізі ${tag} немає архіву .tar.gz.`,
+      uk: `У випуску ${tag} немає архіву .tar.gz.`,
       nl: `Release ${tag} bevat geen .tar.gz-archief.`,
     });
     throw new GithubOntvangstFout('GITHUB_ASSET_ONTBREEKT', 404);
@@ -560,7 +560,7 @@ export async function haalGithubReleaseOp(invoer: {
         sha: dl.sha256,
         status: 'geweigerd',
         foutCode: 'GITHUB_SHA256_VERSCHILT',
-        uk: `SHA-256 файлу ${assetNaam} не збігається з очікуваним у релізі.`,
+        uk: `SHA-256 файлу ${assetNaam} не збігається з очікуваним у випуску.`,
         nl: `SHA-256 van ${assetNaam} komt niet overeen met de opgegeven controlesom.`,
       });
       throw new GithubOntvangstFout('GITHUB_SHA256_VERSCHILT', 422);
@@ -616,7 +616,7 @@ export async function haalGithubReleaseOp(invoer: {
         invoer.eigenaarId,
         'uitrol.mislukt',
         `Випуск ${versie} з GitHub не пройшов перевірку / Release ${versie} uit GitHub geweigerd`,
-        `Реліз ${repo}@${tag} завантажено, але попередня перевірка зупинила його (${foutLijst}). / Release ${repo}@${tag} is opgehaald, maar door de voorcontrole geweigerd (${foutLijst}).`,
+        `Випуск ${repo}@${tag} завантажено, але попередня перевірка зупинила його (${foutLijst}). / Release ${repo}@${tag} is opgehaald, maar door de voorcontrole geweigerd (${foutLijst}).`,
         'https://admin.tarasevych.com/updates',
       ).catch(() => undefined);
       return {
@@ -731,7 +731,7 @@ export async function haalGithubReleaseOp(invoer: {
   }
 }
 
-// ------------------------------------------------------------------------------------------------ обробка вхідного GitHub Webhook
+// ------------------------------------------------------------------------------------------------ обробка вхідного приймача подій GitHub
 export async function verwerkGithubUitrolWebhook(invoer: {
   handtekening: string;
   gebeurtenis: string;
@@ -749,7 +749,7 @@ export async function verwerkGithubUitrolWebhook(invoer: {
   try { payload = JSON.parse(invoer.rauwLichaam); } catch { return { ok: false, fout: 'GITHUB_WEBHOOK_ONGELDIG', status: 400 }; }
   const repoFull = String(payload?.repository?.full_name || '').trim();
 
-  // Шукаємо конфігурацію власника з увімкненим webhook (для вказаного репо або єдиного активного).
+  // Шукаємо налаштування власника з увімкненим приймачем подій (для вказаного сховища або єдиного активного).
   const { rows: instRows } = await sys().query(
     `SELECT eigenaar_id, repo, webhook_aan, webhook_auto_ophalen, toegestane_tag_prefix
        FROM app.uitrol_github_instellingen
@@ -819,7 +819,7 @@ export async function verwerkGithubUitrolWebhook(invoer: {
         repoFull || String(matchedInst.repo),
         tag,
         Number(payload?.release?.id || 0),
-        `Отримано сповіщення webhook про випуск ${tag} (автозавантаження вимкнено).`,
+        `Отримано сповіщення приймача подій про випуск ${tag} (автозавантаження вимкнено).`,
         `Webhook ontvangen voor release ${tag} (automatisch ophalen staat uit).`,
       ],
     );
@@ -912,7 +912,7 @@ export function uitrolGithubOntvangenRoutes(deps: GithubOntvangstRouteDeps): Rec
         expectedSha256: b.sha256 ? String(b.sha256) : undefined,
       });
     })],
-    // Публічний вхідний GitHub Webhook (без cookie-сесії; автентифікація виключно через HMAC-SHA256 у X-Hub-Signature-256).
+    // Публічний вхідний приймач сповіщень GitHub (без сеансу реп'яшків; перевірка підпису виключно через HMAC-SHA256 у X-Hub-Signature-256).
     'POST /api/uitrol/github/webhook': [async (raw) => {
       const ctx = raw as unknown as Ctx;
       if (!(await rateLimit('uitrol-gh-webhook', 120, 60, { failClosed: false })).ok) {

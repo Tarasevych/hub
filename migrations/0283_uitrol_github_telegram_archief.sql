@@ -1,7 +1,7 @@
--- 0283 — Налаштування GitHub-webhook і автоматичного отримання випусків + зашифроване архівування випусків у Telegram.
+-- 0283 — Налаштування вхідного приймача GitHub і автоматичного отримання випусків + зашифроване архівування випусків у Telegram.
 -- 0283 — Instellingen voor GitHub-webhook en automatische release-ontvangst + versleutelde release-archivering in Telegram.
 --
--- Сумісно з PostgreSQL 15+ і PostgreSQL 18.6; ідемпотентно.
+-- Сумісно з PostgreSQL 15+ і PostgreSQL 18.6; повторостійко.
 -- Увімкнено суворий захист рядків (ENABLE + FORCE ROW LEVEL SECURITY) за app.huidige_gebruiker() та app.huidige_ruimte(),
 -- а доступ непривілейованої ролі mijnruimte_app повністю закритий через migrations/rechten.sql.
 

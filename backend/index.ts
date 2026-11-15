@@ -815,7 +815,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...uitrolBronRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar }),
   // Blijvende archieven: «Завантажити цей випуск» (passkey) en publicatie op GitHub met de token uit de kluis (0061, backend/uitrol-github.ts).
   ...uitrolGithubRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
-  // 0283: зашифроване архівування випусків у Telegram і безпечне отримання релізів із GitHub (webhook/вручну/MCP).
+  // 0283: зашифроване архівування випусків у Telegram і безпечне отримання випусків із GitHub (приймач подій/вручну/MCP).
   ...uitrolTelegramRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
   ...uitrolGithubOntvangenRoutes({ requireSession: ownerRequireSession as never, isEigenaar: uitrolIsEigenaar, sterkeStapOp: sterkeStapOpVereist as never }),
   ...aiBeleidRoutes({ requireSession: ownerRequireSession as never }),

@@ -186,7 +186,7 @@ export default function TelegramArchief({
         soort: 'ok',
         tekst: tr(
           lang,
-          `Webhook бота випусків підключено на ${r.webhookUrl || 'адресу сервера'} (доступні лише /status і /help у погодженій темі).`,
+          `Вхідний приймач команд бота випусків підключено на ${r.webhookUrl || 'адресу сервера'} (доступні лише /status і /help у погодженій темі).`,
           `Webhook van de releasebot geactiveerd op ${r.webhookUrl || 'het serveradres'} (alleen /status en /help in het ingestelde topic).`,
         ),
       });
@@ -300,7 +300,7 @@ export default function TelegramArchief({
     <section className='ut-kaart ut-github' id='ut-telegram-archief-anker' data-ut-telegram-archief aria-labelledby='ut-tg-arch-titel'>
       <header className='ut-kaart-kop'>
         <div>
-          <h2 id='ut-tg-arch-titel'><Lock aria-hidden='true' /> {tr(lang, 'Резервне архівування випусків у Telegram (AES-256-GCM)', 'Versleutelde release-back-up in Telegram (AES-256-GCM)')}</h2>
+          <h2 id='ut-tg-arch-titel'><Lock aria-hidden='true' /> {tr(lang, 'Резервне архівування випусків у Telegram (AES-256-GCM)', 'Versleutelde release-reservekopie in Telegram (AES-256-GCM)')}</h2>
           <p className='ut-sub'>
             {tr(
               lang,
@@ -346,7 +346,7 @@ export default function TelegramArchief({
                 <li data-aanwezig={stand.botAanwezig}>
                   {stand.botAanwezig ? <CheckCircle2 aria-hidden='true' /> : <ShieldAlert aria-hidden='true' />}
                   <span>
-                    <b>{tr(lang, 'Окремий токен бота випусків', 'Eigen bot-token van releasebot')}</b>
+                    <b>{tr(lang, 'Окремий ключ бота випусків', 'Eigen bot-token van releasebot')}</b>
                     <small>
                       {stand.botAanwezig
                         ? tr(
@@ -394,7 +394,7 @@ export default function TelegramArchief({
               </label>
 
               <label className='ut-veld'>
-                <span>{tr(lang, 'Новий токен бота (залиште порожнім, щоб не змінювати)', 'Nieuwe bot-token (leeg laten om huidige te behouden)')}</span>
+                <span>{tr(lang, 'Новий ключ доступу бота (залиште порожнім, щоб не змінювати)', 'Nieuwe bot-token (leeg laten om huidige te behouden)')}</span>
                 <input
                   type='password'
                   value={botToken}
@@ -428,7 +428,7 @@ export default function TelegramArchief({
 
               <label className='ut-schakel'>
                 <input type='checkbox' checked={verplicht} onChange={(e) => setVerplicht(e.target.checked)} data-ut-tg-verplicht />
-                <span>{tr(lang, 'Обов’язкове збереження: заборонити схвалення наступного оновлення, доки поточний випуск не в Telegram', 'Verplichte back-up: goedkeuring van een volgende update blokkeren totdat de huidige release in Telegram staat')}</span>
+                <span>{tr(lang, 'Обов’язкове збереження: заборонити схвалення наступного оновлення, доки поточний випуск не в Telegram', 'Verplichte reservekopie: goedkeuring van een volgende update blokkeren totdat de huidige release in Telegram staat')}</span>
               </label>
 
               <div className='ut-pakket-knoppen'>
@@ -473,7 +473,7 @@ export default function TelegramArchief({
                 <rect x='52' y='75' width='24' height='6' rx='3' fill='#bfdbfe' />
               </svg>
               <div>
-                <h3>{tr(lang, 'Webhook команд читання (/status, /help) та емблема бота', 'Webhook voor leesopdrachten (/status, /help) en bot-embleem')}</h3>
+                <h3>{tr(lang, 'Вхідний приймач команд читання (/status, /help) та емблема бота', 'Webhook voor leesopdrachten (/status, /help) en bot-embleem')}</h3>
                 <p className='ut-hint'>
                   {tr(
                     lang,
@@ -490,7 +490,7 @@ export default function TelegramArchief({
                 <button
                   type='button'
                   className='ut-knop'
-                  onClick={() => void kopieerTekst(stand.webhookUrl || '', 'Адресу webhook скопійовано.', 'Webhook-adres gekopieerd.')}
+                  onClick={() => void kopieerTekst(stand.webhookUrl || '', 'Адресу приймача скопійовано.', 'Webhook-adres gekopieerd.')}
                 >
                   <Copy size={14} aria-hidden='true' /> {tr(lang, 'Копіювати URL', 'URL kopiëren')}
                 </button>
@@ -507,8 +507,8 @@ export default function TelegramArchief({
               >
                 {bezig === 'webhook' ? <Loader2 className='ut-draai' aria-hidden='true' /> : <Send aria-hidden='true' />}
                 {stand.webhookGeheimAanwezig
-                  ? tr(lang, 'Підключити / перевірити webhook бота', 'Bot-webhook activeren / vernieuwen')
-                  : tr(lang, 'Підключити webhook бота', 'Bot-webhook activeren')}
+                  ? tr(lang, 'Підключити / перевірити приймач бота', 'Bot-webhook activeren / vernieuwen')
+                  : tr(lang, 'Підключити приймач бота', 'Bot-webhook activeren')}
               </button>
               {stand.webhookGeheimAanwezig && (
                 <button
@@ -518,7 +518,7 @@ export default function TelegramArchief({
                   onClick={() => void webhookInstellen(true)}
                   data-ut-tg-webhook-vernieuw
                 >
-                  <KeyRound size={15} aria-hidden='true' /> {tr(lang, 'Оновити секрет webhook', 'Webhook-geheim vernieuwen')}
+                  <KeyRound size={15} aria-hidden='true' /> {tr(lang, 'Оновити секрет приймача', 'Webhook-geheim vernieuwen')}
                 </button>
               )}
               <button

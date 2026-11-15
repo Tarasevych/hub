@@ -212,7 +212,7 @@ BEGIN
     IF to_regclass('app.vaardigheden_eigen') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.vaardigheden_eigen, app.vaardigheden_agent_stand, app.vaardigheden_revisies TO mijnruimte_app;
     END IF;
-    -- 0283 (UITROL-002): Telegram-архівування та прийом GitHub-релізів — суто адміністративний контур через mijnruimte_system.
+    -- 0283 (UITROL-002): Telegram-архівування та прийом GitHub-випусків — суто адміністративний контур через mijnruimte_system.
     IF to_regclass('app.uitrol_telegram_instellingen') IS NOT NULL THEN
       REVOKE ALL ON app.uitrol_telegram_instellingen, app.uitrol_telegram_archief, app.uitrol_github_ontvangen, app.uitrol_github_webhook_leveringen FROM mijnruimte_app;
     END IF;
