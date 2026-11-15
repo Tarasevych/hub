@@ -1,17 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, Plus, Settings2 } from 'lucide-react';
 import StableAvatar from './StabielAvatar';
-import { Logo, type LogoKind } from './mcp-ui';
+import { Logo } from './mcp-ui';
+import MerkLogo from './merk/MerkLogo';
 import type { MailConnector } from './MailAccountWisselaar';
+import type { MailImapKoppelingPubliek } from '../shared/mail-aanbieders';
+import { wisselRijen, wisselUitleg } from './mail/mail-wisselaar-model';
 import './mail-account-badge.css';
 import { focusTerug, focusVerloren, menuToets } from './platform/toegankelijk';
 
 type Lang = 'uk' | 'nl';
 type Account = { id: string; email: string; displayName: string; picture: string; accountRole: 'primary' | 'additional' };
-type Props = { lang: Lang; accounts: Account[]; activeAccountId: string; connectors: MailConnector[]; onSelect: (id: string) => void; onManage: () => void; onAdd: () => void };
+type Props = { lang: Lang; accounts: Account[]; activeAccountId: string; connectors: MailConnector[]; imap?: MailImapKoppelingPubliek[]; onSelect: (id: string) => void; onManage: () => void; onAdd: () => void; onOpen?: () => void };
 
 const initialsOf = (a?: Account) => ((a?.displayName || a?.email || '?').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('') || '?').toUpperCase();
-const kindOf = (provider: string): LogoKind => (provider === 'microsoft' ? 'microsoft' : 'google');
 
 /**
  * 21.10: клас «small» на фото в меню перейменовано на «is-klein» — глобальний модифікатор кнопки .small (index.css: padding .4rem .7rem,
@@ -19,17 +21,16 @@ const kindOf = (provider: string): LogoKind => (provider === 'microsoft' ? 'micr
  * Круглий аватар ПОШТОВОГО акаунта (не всього сервісу) у правому куті, з логотипом сервісу (Google/Microsoft) на краю: одразу видно, яка пошта
  * зараз відкрита. Дотик відкриває список підключених скриньок для швидкого перемикання. Показується лише на вузьких екранах (на широких є перемикач у контекстній панелі).
  */
-export default function MailAccountBadge({ lang, accounts, activeAccountId, connectors, onSelect, onManage, onAdd }: Props) {
+export default function MailAccountBadge({ lang, accounts, activeAccountId, connectors, imap = [], onSelect, onManage, onAdd, onOpen }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [open, setOpen] = useState(false);
   const [place, setPlace] = useState<{ top: number; maxHeight: number } | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const active = accounts.find((a) => a.id === activeAccountId) || accounts[0];
-  const extra = useMemo(() => {
-    const keys = new Set(accounts.map((a) => `google:${a.email.toLowerCase()}`));
-    return connectors.filter((c) => !['revoked', 'disconnected'].includes(c.status) && !keys.has(`${c.provider}:${c.email.toLowerCase()}`));
-  }, [accounts, connectors]);
+  // 15.11.2026: усі джерела (Google, Microsoft, IMAP: Ukr.net, I.ua, iCloud…) — одна модель src/mail/mail-wisselaar-model.ts.
+  const rijen = useMemo(() => wisselRijen({ taal: lang, google: accounts, connectors, imap }), [lang, accounts, connectors, imap]);
+  const extra = rijen.filter((r) => !r.kiesbaar);
 
   useLayoutEffect(() => {
     if (!open || !trigger.current) return;
@@ -64,7 +65,7 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
   return (
     <div ref={root} className="mail-account-badge">
       <button ref={trigger} type="button" className="mail-account-badge-trigger" aria-haspopup="menu" aria-expanded={open}
-        aria-label={`${t('Поштовий акаунт', 'Mailaccount')}: ${active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => !v)}>
+        aria-label={`${t('Поштовий акаунт', 'Mailaccount')}: ${active.email}. ${t('Змінити', 'Wijzigen')}`} onClick={() => setOpen((v) => { if (!v) onOpen?.(); return !v; })}>
         <span className="mail-account-badge-photo"><StableAvatar src={active.picture} fallback={initialsOf(active)} alt="" /></span>
         <span className="mail-account-badge-logo" aria-hidden="true"><Logo kind="google" size={14} /></span>
       </button>
@@ -80,10 +81,10 @@ export default function MailAccountBadge({ lang, accounts, activeAccountId, conn
                 {a.id === activeAccountId ? <Check size={18} /> : null}
               </button>
             ))}
-            {extra.map((c) => (
-              <button key={`${c.provider}:${c.id}`} type="button" role="menuitem" onClick={() => { setOpen(false); onManage(); }}>
-                <span className="mail-account-badge-photo is-klein" aria-hidden="true"><span className="mail-account-badge-initial">{(c.email[0] || '?').toUpperCase()}</span><span className="mail-account-badge-logo"><Logo kind={kindOf(c.provider)} size={12} /></span></span>
-                <span><strong>{c.email}</strong><small>{c.provider === 'microsoft' ? 'Microsoft' : 'Google'} · {c.status === 'connected' ? t('підключено', 'gekoppeld') : t('потрібна дія', 'actie nodig')}</small></span>
+            {extra.map((r) => (
+              <button key={r.sleutel} type="button" role="menuitem" title={wisselUitleg(r, lang)} className={r.aandacht ? 'aandacht' : ''} onClick={() => { setOpen(false); onManage(); }}>
+                <span className="mail-account-badge-photo is-klein" aria-hidden="true"><span className="mail-account-badge-initial">{(r.email[0] || '?').toUpperCase()}</span><span className="mail-account-badge-logo is-merk"><MerkLogo id={r.id} naam={r.dienst} logo={r.merk} maat={16} /></span></span>
+                <span><strong>{r.titel}</strong><small>{r.stand}</small></span>
                 <Settings2 size={18} />
               </button>
             ))}

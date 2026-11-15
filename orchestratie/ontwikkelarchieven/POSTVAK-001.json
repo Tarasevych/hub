@@ -1,0 +1,206 @@
+{
+  "schema": 1,
+  "taakId": "POSTVAK-001",
+  "titel": "Пошта: акаунти без блимання, перемикач скриньок і тонкі кнопки «⋮»",
+  "opdracht": "Спільний випуск трьох виправлень пошти, які власник попросив 15.11.2026: сторінка «Поштові акаунти» не має підмінятися старою довгою сторінкою й не має дублювати перелік сервісів; перемикач поштових скриньок у списку листів має показувати всі підключені акаунти й оновлюватися як перемикач акаунтів сайту; кнопки «⋮» у переліку листів — тонші, а їхнє меню — на всю доступну висоту екрана.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/postvak-001-uitgave-20261115-103157",
+    "basis": "468a2e8b5c5f4e1046436582d4a5855d943e9331",
+    "geinstalleerdeBasis": "468a2e8b5c5f4e1046436582d4a5855d943e9331",
+    "geinstalleerdeVersie": "20261115-094513",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "samengevoegd": [
+      {
+        "taak": "MAILACC-002 (claude, тред сторінки акаунтів)",
+        "commit": "a2ad24dd",
+        "reden": "PR #94, гілка claude/project-thread-l7xga6, влита звичайним злиттям"
+      },
+      {
+        "taak": "MAIL-WISSELAAR-001 (claude, тред перемикача скриньок)",
+        "commit": "b70696b8",
+        "reden": "PR #93, гілка claude/project-thread-sjvsir, влита звичайним злиттям"
+      },
+      {
+        "taak": "PRIJ-001 (claude, тред кнопок «⋮»)",
+        "commit": "38419960",
+        "reden": "PR #95, гілка claude/project-thread-d8h8v1, влита звичайним злиттям"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Без секретів, токенів, вмісту листів і прихованих міркувань моделі; у випробуваннях лише синтетичні дані."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T10:18:48Z",
+      "stap": "Звернення власника зі знімками телефона: сторінка акаунтів підміняється, перемикач скриньок показує лише один акаунт, кнопки «⋮» завеликі; координатор розділив роботу на три треди."
+    },
+    {
+      "tijd": "2026-11-15T10:28:00Z",
+      "stap": "Три чернетки PR (#93, #94, #95) від лінії випуску 20261115-094513."
+    },
+    {
+      "tijd": "2026-11-15T10:32:00Z",
+      "stap": "Злиття трьох гілок у гілку випуску без конфліктів; tsc і тести пошти зелені."
+    },
+    {
+      "tijd": "2026-11-15T10:35:20Z",
+      "stap": "Процес випуску POSTVAK-001 у GitHub Actions."
+    }
+  ],
+  "keuzes": [
+    "Випуск збирається поверх останнього опублікованого випуску 20261115-094513 (468a2e8b), а не integratie, яка відстає.",
+    "Гілки тредів влито звичайним злиттям, без переписування історії.",
+    "На сторінці акаунтів єдиним каталогом сервісів лишається орбіта; смугу «Що можна підключити тут» і плиткову сітку прибрано."
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/GoogleMailWerkruimte.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailAccountBadge.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailAccountWisselaar.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailAccountsHub.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailFunctioneelWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailRijSnelleActies.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ViewportKnopinfoLaag.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-account-badge.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-lezer-verbeteringen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-mobiel.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-rij-snelle-acties.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/MailKoppelVenster.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/MailOrbitIntro.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/mail-orbit-intro.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/mail-wisselaar-model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mailfix-001-accounts.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/klassiek-002c-panelen.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-achtergrond-001.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-koppelen-20261020.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-orbit-001.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-rij-mobiel-20261021.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mail-wisselaar-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mailfix-001.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mobiel-geometrie-20261021.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/prij-001-rijknop-menu.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/toegankelijk-mail-20261021.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/visueel/mailacc-002-voorbeeld.html"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/visueel/mailacc-002-voorbeeld.tsx"
+    }
+  ],
+  "controles": [
+    "tsc -p tsconfig.json --noEmit: без помилок.",
+    "Тести пошти без БД (74 набори): зелені, крім mail-ux-beoordeling R1 і mail-wachtrij, які так само падають на основі 468a2e8b (не зміна цього випуску).",
+    "Chromium: сторінка «Поштові акаунти» 390 і 1366 px, світла й темна теми, uk/nl; з API-затримкою 1,2 с порожня орбіта не з’являється.",
+    "Процес випуску: повний набір тестів, збірка й міграції на чистій PostgreSQL у GitHub Actions."
+  ],
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Повідомлення власника 15.11.2026 у проєкті з трьома знімками екрана смартфона (mail.tarasevych.com/accounts і /postvak-in).",
+      "inhoudGepubliceerd": false
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сервер робить лише власник через Admin → Оновлення; автоматичного встановлення немає.",
+    "Набори з БД перевіряються в процесі випуску, а не в хмарному середовищі агента."
+  ],
+  "commits": [
+    {
+      "sha": "384199600ab6ecb1acb0c248a04a77b72d7e99ab",
+      "onderwerp": "PRIJ-001: тонкі «⋮» у переліку листів, меню на всю доступну висоту · dunne «⋮», menu over de hele hoogte"
+    },
+    {
+      "sha": "a2ad24dd8f884b70444b8a83b8c249d707078d44",
+      "onderwerp": "MAILACC-002: «Поштові акаунти» — без блимання й без дубля каталогу · zonder flits en zonder dubbele catalogus"
+    },
+    {
+      "sha": "b70696b8bc892a21e660a143f2d9398144b493f1",
+      "onderwerp": "MAIL-WISSELAAR-001: перемикач поштових скриньок показує всі сервіси (Google, Microsoft, IMAP) і оновлюється без перезавантаження · wisselaar toont alle diensten en ververst zonder herladen"
+    }
+  ]
+}

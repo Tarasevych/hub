@@ -12,14 +12,19 @@ type Taal = 'uk' | 'nl';
 type Eigenschappen = {
   lang: Taal;
   onSelect: (aanbieder: MailAanbieder) => void;
-  variant?: 'accounts' | 'inbox';
+  /** MAILACC-002: «extra» = er zijn al koppelingen; dezelfde orbit dient dan om er nog één toe te voegen. */
+  variant?: 'accounts' | 'inbox' | 'extra';
   onManage?: () => void;
+  /** Aantal reeds gekoppelde mailboxen (alleen bij variant «extra»). */
+  aantal?: number;
+  /** Persoonlijke begroeting boven de kop (variant «extra»), bv. «Вітаємо, Pavlo!». */
+  groet?: string;
 };
 
 const KOPPELBAAR = MAIL_AANBIEDERS.filter(mailAanbiederHeeftKnop);
 const NIET_KOPPELBAAR = MAIL_AANBIEDERS.filter((a) => !mailAanbiederHeeftKnop(a));
 
-export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', onManage }: Eigenschappen) {
+export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', onManage, aantal = 0, groet = '' }: Eigenschappen) {
   const t = (uk: string, nl: string) => lang === 'uk' ? uk : nl;
   const [hover, setHover] = useState<string | null>(null);
   const [catalogus, setCatalogus] = useState(false);
@@ -29,14 +34,25 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
   const hoofdDienst = actief || KOPPELBAAR[0]!;
 
   return (
-    <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
+    <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : variant === 'extra' ? ' is-extra' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
       <MailAchtergrond lang={lang} plaats='accounts' />
       <div className='mail-orbit-kop'>
-        <span className='mail-orbit-kicker'><Sparkles aria-hidden='true' size={15} /> {t('Пошта · Нове підключення', 'E-mail · Nieuwe koppeling')}</span>
+        {variant === 'extra' && groet ? <p className='mail-orbit-groet' data-mail-orbit-groet>{groet}</p> : null}
+        <span className='mail-orbit-kicker'><Sparkles aria-hidden='true' size={15} /> {variant === 'extra' ? t('Пошта · Ваші скриньки', 'E-mail · Uw mailboxen') : t('Пошта · Нове підключення', 'E-mail · Nieuwe koppeling')}</span>
         <h2>{variant === 'inbox' ? t('Ваша пошта починається тут.', 'Uw e-mail begint hier.') : t('Уся пошта. Один простір.', 'Al uw e-mail. Eén ruimte.')}</h2>
         <p>{variant === 'inbox'
           ? t('Підключіть скриньку та керуйте всією поштою в одному просторі.', 'Koppel uw mailbox en beheer al uw e-mail op één plek.')
+          : variant === 'extra'
+          ? t('Додайте ще одну скриньку будь-якого сервісу — листи й перемикання між акаунтами лишаються в одному місці.', 'Voeg nog een mailbox van eender welke dienst toe — berichten en wisselen tussen accounts blijven op één plek.')
           : t('Підключіть першу скриньку. Листи різних сервісів і керування акаунтами будуть в одному місці.', 'Koppel uw eerste mailbox. E-mail van meerdere diensten en accountbeheer komen samen op één plek.')}</p>
+        {variant === 'extra' && onManage ? (
+          <button type='button' className='mail-orbit-gekoppeld-chip' data-mail-orbit-naar-beheer onClick={onManage}
+            title={t('Перейти до списку підключених скриньок: там вибір основної, сповіщення й відключення.', 'Naar de lijst met gekoppelde mailboxen: daar kiest u de hoofdmailbox, meldingen en loskoppelen.')}>
+            <Check size={15} aria-hidden='true' />
+            <span>{t('Підключено скриньок: ', 'Gekoppelde mailboxen: ')}<strong>{aantal}</strong></span>
+            <span className='mail-orbit-gekoppeld-chip-actie'>{t('Керувати', 'Beheren')} <ChevronRight size={15} aria-hidden='true' /></span>
+          </button>
+        ) : null}
         {variant === 'inbox' && KOPPELBAAR[0] ? (
           <button type='button' className='mail-orbit-desktop-hoofdknop' onClick={() => onSelect(KOPPELBAAR[0])}
             aria-label={t('Підключити ', 'Koppelen: ') + KOPPELBAAR[0].naam}>
@@ -61,7 +77,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
           {KOPPELBAAR.map((a) => (
             <li key={a.id} className='mail-orbit-positie' data-mail-orbit-provider={a.id}
               data-mail-orbit-gekozen={actief?.id === a.id ? 'ja' : 'nee'}>
-              <button type='button' className='mail-orbit-dienst' data-mail-orbit-knop={a.id}
+              <button type='button' className='mail-orbit-dienst' data-mail-orbit-knop={a.id} data-mail-provider={a.id} data-mail-provider-knop='ja'
                 onMouseEnter={() => setHover(a.id)} onFocus={() => setHover(a.id)}
                 onClick={() => onSelect(a)}
                 aria-label={t('Підключити ', 'Koppelen: ') + a.naam}
@@ -115,7 +131,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
           <button type='button' className='mail-orbit-catalogus-knop' aria-expanded={catalogus} aria-controls={catalogusId} onClick={() => setCatalogus((v) => !v)}>
             {catalogus ? t('Згорнути каталог', 'Catalogus sluiten') : t('Увесь каталог', 'Volledige catalogus')} <ChevronRight size={17} aria-hidden='true' />
           </button>
-          {onManage ? <button type='button' className='mail-orbit-beheer-knop' onClick={onManage}>{t('Керування акаунтами', 'Accounts beheren')} <ArrowRight size={15} aria-hidden='true' /></button> : null}
+          {onManage && variant !== 'extra' ? <button type='button' className='mail-orbit-beheer-knop' onClick={onManage}>{t('Керування акаунтами', 'Accounts beheren')} <ArrowRight size={15} aria-hidden='true' /></button> : null}
         </div>
       </div>
 
@@ -135,7 +151,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
             <h3 className='mail-orbit-nog-niet-kop'><CircleHelp size={16} aria-hidden='true' /> {t('Ще недоступні', 'Nog niet beschikbaar')}</h3>
             <div className='mail-orbit-onbeschikbaar'>
               {NIET_KOPPELBAAR.map((a) => (
-                <details key={a.id} data-mail-orbit-onbeschikbaar={a.id}>
+                <details key={a.id} data-mail-orbit-onbeschikbaar={a.id} data-mail-provider-knop='nee'>
                   <summary><Logo id={a.id} naam={a.naam} logo={a.merk} maat={28} /><span>{a.naam}</span><span className='mail-orbit-status'>{t('Поки не підключається', 'Nog niet te koppelen')}</span><ChevronRight size={16} aria-hidden='true' /></summary>
                   <ul>{(a.ontbreekt || []).map((u, i) => <li key={i}>{t(u[0], u[1])}</li>)}</ul>
                 </details>

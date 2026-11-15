@@ -1,5 +1,4 @@
 import {lazy,Suspense,useCallback,useEffect,useMemo,useState} from 'react';
-import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {api} from './platform/client';
 import {ArrowUp,Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,Plus,RefreshCw,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
 import MailAccountsHub from './MailAccountsHub';import{mailKoppelenOpenen}from'./platform/VensterHerstel';import{mailAanbieder}from'../shared/mail-aanbieders';
@@ -381,7 +380,8 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  // Інваріант маршрутизації робочої поверхні: const standardMailSurface = tab !== 'accounts' && tab !== 'local';
  let body;
  const standardMailSurface=tab!=='accounts'&&tab!=='local'&&tab!=='contacts';
- if(tab==='accounts')body=<><IntegratieStrook dienst='mail'/>{accountView}</>;
+ // MAILACC-002: geen gedeelde strook «Що можна підключити тут» meer — de orbit op deze pagina is al de volledige catalogus (dubbel).
+ if(tab==='accounts')body=accountView;
  else if(tab==='contacts')body=<Suspense fallback={null}><ContactenWeergave lang={lang}/></Suspense>;
  else if(standardMailSurface)body=<GoogleMailWorkspace lang={lang} tab={tab} sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} homeSignal={homeSignal} initialSnapshot={data.googleMail||null} bootstrapPending={loading}/>;
  else if(loading)body=null;
