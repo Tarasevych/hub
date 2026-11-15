@@ -33,8 +33,8 @@ export async function main(): Promise<number> {
     && opp.includes('padding-right: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));')
     && opp.includes('padding-left: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));')
     && opp.includes('padding-left: max(0px, min(calc((100% - var(--mq-kolom)) / 2), calc(100% - var(--mq-kolom) - var(--mq-kolom-rail))));'));
-  check('внутрішні обгортки (.ai-maquette-inhoud 1360, .aie-container 1180+28, .ag-pagina 1200) не звужують колонку вдруге — на будь-якій ширині',
-    /\.ai-maquette-wikkel \.ai-maquette-inhoud,\n[^{]*\.ai-maquette-wikkel \.aie-container,\n[^{]*\.mcp-maquette-wikkel \.ag-pagina \{\n  max-width: none;\n  padding-inline: 0;/.test(opp));
+  check('внутрішні обгортки (.ai-maquette-inhoud 1360, .aie-container 1180+28, .ag-pagina 1200) займають усю колонку (width:100%, без власної межі) — на будь-якій ширині',
+    /\.ai-maquette-wikkel \.ai-maquette-inhoud,\n[^{]*\.ai-maquette-wikkel \.aie-container,\n[^{]*\.mcp-maquette-wikkel \.ag-pagina \{\n  box-sizing: border-box;\n  width: 100%;\n  max-width: none;\n  padding-inline: 0;/.test(opp));
   check('правило колонки сильніше за правила обгорток (:not(#_mq):not(#_kolom) — дві частини id)', (opp.match(/:not\(#_mq\):not\(#_kolom\)/g) || []).length >= 8);
   check('класичні палітри: стрічка, «Підключити» й панель агентів — одна колонка 1180 px по центру',
     /html:not\(\.palet-maquette\):not\(#_ing\) \.canonical-content > :is\(\.ai-richting, \.ag\.ag-ai-ingangen, \.aie-container\) \{[^}]*max-width: 1180px;[^}]*margin-inline: auto;/.test(ing));
