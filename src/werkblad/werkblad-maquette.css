@@ -668,16 +668,30 @@ html.palet-maquette .werkblad.wb3 .bib-chip.is-actief {
   color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
 }
 
-html.palet-maquette .werkblad.wb3 .bib-rij {
+html.palet-maquette .werkblad.wb3 .bib-kaart {
   border-radius: 14px;
   border: 1px solid var(--mq-rand);
   background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-oppervlak-zacht));
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .werkblad.wb3 .bib-rij:hover {
+html.palet-maquette .werkblad.wb3 .bib-kaart:hover {
   border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
   background: color-mix(in srgb, var(--mq-accent-hub) 9%, var(--mq-oppervlak-hover));
+}
+
+/* BIB-002: бібліотека в одному кадрі (.wb3-bibliotheek) — без другої рамки панелі всередині, в усіх стилях «Макета».
+   :not(#_bib) + .bib-winkel переважають захист :not(#_mqk) для окремої .bib-paneel (стенд бібліотеки без обгортки лишає її рамку). */
+html.palet-maquette .werkblad.wb3 .wb3-bibliotheek > .bib-paneel.bib-winkel:not(#_bib) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette .werkblad.wb3 .bib-kaart-icoon {
+  border-radius: 14px;
 }
 
 /* Інспектор властивостей значків та блоків (.eig-paneel) */
@@ -1344,7 +1358,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-kop.is-z
 html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-lijst > li,
 html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-achtergrond-tegel:not(.wb-achtergrond-eigen),
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc-status,
-html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-rij,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-kaart,
 html.palet-maquette[data-maquette-stijl="klassiek"] .blk-keuzelijst,
 html.palet-maquette[data-maquette-stijl="klassiek"] .blk-icoonkiezer {
   border-radius: 16px;
@@ -1425,7 +1439,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > a
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > button:hover,
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-notitie-rij:hover,
 html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-lijst > li:hover,
-html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-rij:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-kaart:hover,
 html.palet-maquette[data-maquette-stijl="klassiek"] .wb-plekkiezer .wb-plekkiezer-lijst > li:hover:not([aria-disabled="true"]) {
   border-color: var(--mq-rand-sterk);
   background: var(--mq-oppervlak-hover);
@@ -1439,7 +1453,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-snel-icoon,
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tip-icoon,
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-tegel-icoon,
 html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-map-icoon,
-html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-rij-icoon {
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-kaart-icoon {
   border-radius: 11px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak-2);
@@ -1501,7 +1515,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bl
 
 html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-taak,
 html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-laag .wb-catalogus-lijst > li,
-html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bib-rij {
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bib-kaart {
   border: 1px solid var(--mq-rand);
   border-inline: 1px solid var(--mq-rand);
   border-radius: 16px;

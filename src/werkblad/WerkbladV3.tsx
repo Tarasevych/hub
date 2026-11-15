@@ -322,7 +322,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
           {magBewerken ? (bewerken ? (
             <>
               <button type='button' className='knop-secundair is-klein' data-wb3='bibliotheek' aria-expanded={bib} onClick={() => zetBib((b) => !b)}><Library aria-hidden='true' />{tr(lang, 'Бібліотека', 'Bibliotheek')}</button>
-              <button type='button' className='knop-stil is-klein' data-wb3='instellingen' aria-expanded={instellingen} onClick={() => zetInstellingen((b) => !b)}><Settings2 aria-hidden='true' />{tr(lang, 'Параметри', 'Instellingen')}</button>
+              <button type='button' className='knop-stil is-klein' data-wb3='instellingen' aria-expanded={instellingen} onClick={() => zetInstellingen((b) => !b)}><Settings2 aria-hidden='true' /><span>{tr(lang, 'Параметри', 'Instellingen')}</span></button>
               <button type='button' className='knop-primair is-klein' data-wb3='klaar' onClick={() => { zetBewerken(false); zetBib(false); zetInstellingen(false); }}><Check aria-hidden='true' />{tr(lang, 'Готово', 'Klaar')}</button>
             </>
           ) : /* WB-HOEK-001: замість широкої кнопки з підписом — маленька піктограма в куті; назва й наслідок — у підказці та для читачів екрана.
@@ -360,7 +360,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       ) : null}
       {bewerken && bib ? (
         <div className='wb3-bibliotheek' data-wb3-paneel='bibliotheek'>
-          <Bibliotheek lang={lang} ctx={rctx} persoonlijk={persoonlijk}
+          <Bibliotheek lang={lang} ctx={rctx} persoonlijk={persoonlijk} opWerkblad={new Set((klasse && lagen[klasse]?.layout.items || []).map((e) => e.itemId))}
             onPersoonlijk={(lijst) => zetLokaalUsr(lijst.filter((r) => r.basis).map((r) => ({ id: r.id, basis: String(r.basis), titel: r.titel.uk, icoon: r.icoon })))}
             onSluiten={() => zetBib(false)} />
         </div>
