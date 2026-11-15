@@ -81,6 +81,28 @@ export function benodigdeHoogte(l: CanvasLayout, marge = 24): number {
   return Math.min(L.maxCanvas, Math.max(l.canvasHeight, ...zichtbareItems(l).map((e) => e.y + e.h + marge)));
 }
 
+// ── Hoogte van het veld (VELD-001, 15.11.2026) ─────────────────────────────────────────────────────────────────────────────
+// Vroeger kon canvasHeight alleen groeien: benodigdeHoogte() neemt het maximum met de opgeslagen hoogte, en de standaard was
+// 1600/2000/3000 logische px. Gevolg (знімок власника): in de instelmodus een groot leeg veld dat niet kleiner kon.
+// Nu: canvasHeight = de hoogte die de mens koos (ручка знизу / «Прибрати порожнє»), nooit lager dan de blokken + marge.
+/** Kleinste veldhoogte (logische px) — gelijk aan de ondergrens van de server (normaliseerLaag klemt op 200). */
+export const VELD_MIN = 200;
+/** Stap van de ручка met het toetsenbord (logisch px); met Shift × 5. */
+export const VELD_STAP = 40;
+/** Wat de blokken echt innemen: onderkant van het laagste zichtbare item + marge (≥ VELD_MIN). Buiten de instelmodus is dit de hoogte. */
+export function inhoudHoogte(l: CanvasLayout, marge = 24): number {
+  return Math.min(L.maxCanvas, Math.max(VELD_MIN, ...zichtbareItems(l).map((e) => e.y + e.h + marge)));
+}
+/** Nieuwe veldhoogte, geklemd: niet onder de blokken (niets verborgen), niet boven maxCanvas. Onveranderd → dezelfde indeling. */
+export function zetVeldHoogte(l: CanvasLayout, h: number): CanvasLayout {
+  const nieuw = Math.round(klem(h, inhoudHoogte(l), L.maxCanvas));
+  return nieuw === l.canvasHeight ? l : { ...l, canvasHeight: nieuw };
+}
+/** «Прибрати порожнє»: het veld precies om de blokken. */
+export const veldPassend = (l: CanvasLayout) => zetVeldHoogte(l, 0);
+/** Is er onder de blokken lege ruimte die weg kan? (knop alleen dan actief) */
+export const heeftLegeStaart = (l: CanvasLayout) => benodigdeHoogte(l) > inhoudHoogte(l);
+
 export function vervang(l: CanvasLayout, id: string, wijzig: Partial<DesktopEntry>): CanvasLayout {
   return { ...l, items: l.items.map((e) => (e.instanceId === id ? { ...e, ...wijzig } : e)) };
 }
@@ -288,6 +310,15 @@ export const TEKST = {
     menu: { toevoegen: 'Додати', formaat: 'Змінити розмір', voren: 'Вперед', voorgrond: 'На передній план', vast: 'Зафіксувати', los: 'Відкріпити', verwijder: 'Видалити', plaats: 'Розмістити тут…' },
     canvas: 'Робочий стіл', greep: (r: Rand) => `Змінити розмір: ${({ n: 'верх', s: 'низ', e: 'праворуч', w: 'ліворуч', ne: 'верх-праворуч', nw: 'верх-ліворуч', se: 'низ-праворуч', sw: 'низ-ліворуч' })[r]}`,
     hulp: 'Режим налаштування: стрілки — перемістити, Shift+стрілки — розмір, Ctrl — точно на 1 px, Enter або Shift+F10 — меню.',
+    veld: {
+      greep: 'Висота робочого стола',
+      tip: 'Тягніть вниз, щоб додати місця під блоками, або вгору, щоб прибрати порожнє. Вище за найнижчий блок поле не стиснеться, тож нічого не сховається. Розмір запам’ятовується для цього пристрою (ПК, планшет чи телефон окремо). Клавіатура: стрілки вгору/вниз, Shift — більшим кроком, Home — впритул до блоків.',
+      passend: 'Прибрати порожнє',
+      passendTip: 'Стискає поле впритул до найнижчого блока: порожнє місце внизу зникне, блоки лишаться на своїх місцях. Скасувати — Ctrl+Z.',
+      passendNiets: 'Порожнього місця під блоками немає',
+      hoogte: (px: number) => `Висота поля: ${px} px.`,
+      minimum: 'Поле вже впритул до блоків — нижче не можна, інакше блоки сховаються.',
+    },
   },
   nl: {
     opgepakt: (t: string) => `${t}: slepen. Pijltjes = verplaatsen, Escape = annuleren.`,
@@ -304,5 +335,14 @@ export const TEKST = {
     menu: { toevoegen: 'Toevoegen', formaat: 'Formaat wijzigen', voren: 'Naar voren', voorgrond: 'Op de voorgrond', vast: 'Vastzetten', los: 'Losmaken', verwijder: 'Verwijderen', plaats: 'Hier plaatsen…' },
     canvas: 'Werkblad', greep: (r: Rand) => `Formaat wijzigen: ${({ n: 'boven', s: 'onder', e: 'rechts', w: 'links', ne: 'rechtsboven', nw: 'linksboven', se: 'rechtsonder', sw: 'linksonder' })[r]}`,
     hulp: 'Instelmodus: pijltjes = verplaatsen, Shift+pijltjes = formaat, Ctrl = 1 px precies, Enter of Shift+F10 = menu.',
+    veld: {
+      greep: 'Hoogte van het werkblad',
+      tip: 'Sleep omlaag voor meer ruimte onder de blokken, of omhoog om lege ruimte weg te halen. Hoger dan het laagste blok krimpt het veld niet, dus er verdwijnt niets. De hoogte wordt per apparaatsoort onthouden (computer, tablet en telefoon apart). Toetsenbord: pijltjes omhoog/omlaag, Shift = grotere stap, Home = tot aan de blokken.',
+      passend: 'Lege ruimte weg',
+      passendTip: 'Maakt het veld precies zo hoog als het laagste blok: de lege ruimte onderaan verdwijnt, de blokken blijven staan. Ongedaan maken: Ctrl+Z.',
+      passendNiets: 'Er is geen lege ruimte onder de blokken',
+      hoogte: (px: number) => `Hoogte van het veld: ${px} px.`,
+      minimum: 'Het veld sluit al aan op de blokken — lager kan niet, anders verdwijnen er blokken.',
+    },
   },
 } as const;
