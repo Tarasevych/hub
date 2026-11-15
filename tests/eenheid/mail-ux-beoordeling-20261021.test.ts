@@ -132,7 +132,7 @@ export async function main(): Promise<number> {
   opslag.set('mr-ai-balk-open-v1', '1'); zetBrowser(true); const gekozen = aiBalkStartIngeklapt(); opslag.clear();
   zetBrowser(true, true); const prive = aiBalkStartIngeklapt();
   check('R9 старт: телефон згорнуто, комп\'ютер теж згорнуто (пакет 3, 24.10; раніше розгорнуто), «розгорнути» пам\'ятається, privévenster не ламає', telefoon && computer && !gekozen && prive, JSON.stringify({ telefoon, computer, gekozen, prive }));
-  const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', from: 'X <x@y.test>', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined } as unknown as Parameters<typeof AiVertalingBalk>[0];
+  const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', from: 'X <x@y.test>', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined, voorbeeldZichtbaar: true /* MAILAI-001: zonder serverstaat is het paneel weg */ } as unknown as Parameters<typeof AiVertalingBalk>[0];
   zetBrowser(true);
   const ukHtml = renderToString(createElement(AiVertalingBalk, props));
   const ids = /aria-controls="([^" ]+)-kiezers \1-modi"/.exec(ukHtml);
