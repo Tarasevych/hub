@@ -1,0 +1,201 @@
+{
+ "schema": 1,
+ "taakId": "UPD-001",
+ "titel": "Сторінка оновлень по центру, компактне завантаження, фото автора, блок доступу до підготовки й «Макет» без зайвих підкладок",
+ "opdracht": "На прохання власника від 15.11.2026: admin.tarasevych.com/updates — прибрати гострі кути, поставити блоки вужчою колонкою по центру; з’ясувати й виправити розбіжність фото автора пакета; замінити велику панель «Завантажуємо адміністративний контекст…» компактним індикатором; у «Макеті» центру облікового запису прибрати зайвий широкий темний задній блок; разом із виправленням блоку «Хто має доступ до підготовки» з сусіднього треду.",
+ "herkomst": {
+  "eigenaar": "Павло Тарасевич",
+  "agent": "claude",
+  "tak": "feature/upd-001-uitgave-20261115-151204",
+  "basis": "932e601d8c15c5ec9b26be8d4888c46952b4b3b0",
+  "geinstalleerdeBasis": "932e601d8c15c5ec9b26be8d4888c46952b4b3b0",
+  "geinstalleerdeVersie": "20261115-135345",
+  "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "samengevoegd": [
+   {
+    "taak": "TOEGANG-001, блок «Хто має доступ до підготовки» (claude, сусідній тред)",
+    "commit": "666841fb",
+    "reden": "PR #111, гілка claude/project-thread-2t0l91, влита звичайним злиттям за вказівкою координатора"
+   },
+   {
+    "taak": "UPD-001, сторінка оновлень і «Макет» (claude, цей тред)",
+    "commit": "58aa9fec",
+    "reden": "PR #110, гілка claude/project-thread-deqwzv, влита звичайним злиттям"
+   }
+  ]
+ },
+ "privacy": {
+  "geheimenUitgesloten": true,
+  "toelichting": "Перевірки — на локальній збірці з підробленим API та вигаданими даними; на знімках вигадані імена, пристрої й журнали."
+ },
+ "tijdlijn": [
+  {
+   "tijd": "2026-11-15T14:27:00Z",
+   "stap": "Власник попросив прибрати гострі кути й відцентрувати сторінку оновлень, з’ясувати фото автора, замінити панель завантаження."
+  },
+  {
+   "tijd": "2026-11-15T14:55:00Z",
+   "stap": "Причини знайдено в Chromium: загальне правило flat-content, неоднозначний пошук фото за підрядком імені; виправлення й тести на гілці claude/project-thread-deqwzv (PR #110)."
+  },
+  {
+   "tijd": "2026-11-15T15:15:00Z",
+   "stap": "«Макет»: прозорі підкладки під налаштуваннями розділу, колонка 1240 px; знімки до/після."
+  },
+  {
+   "tijd": "2026-11-15T15:13:11.191Z",
+   "stap": "Гілка випуску від 20261115-135345 (932e601d), злиття PR #111 і PR #110, файли задачі й процес випуску."
+  }
+ ],
+ "keuzes": [
+  "Картки сторінки оновлень виключено з flat-content через :not(.ut-root *), а не точковими !important, тож заокруглення однакове в усіх палітрах.",
+  "У «Макеті» з меню збоку поля сторінки оновлень рахуються тією ж формулою, що й у CENTR-001: запас під меню — нижня межа, симетрія — коли є місце.",
+  "Фото автора береться лише за однозначною ознакою (email, власний обліковий запис, єдине точне ім’я); інакше показуються ініціали, без звернень до зовнішніх служб.",
+  "Підкладки «Макета» зроблено прозорими, а не видалено з розмітки: згенеровані maquette-stijlen.css і maquette-motor.ts не змінювались."
+ ],
+ "wijzigingen": [
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/uitrol-beleid-sync.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/uitrol-goedkeuring.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/uitrol-manifest.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/zoek-ui-knoppen.generated.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/BeheerConsoleWeergave.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/BeheerDiagnostiekWeergave.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/BeheerSleutelsWeergave.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/BeheerUitrolWeergave.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/beheer-laden.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/beheer-uitrol.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/canoniek-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/AgentToevoegen.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/Persoon.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/ToegangBlok.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/UitgaveBeschrijving.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/Voorbereiders.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/Zijkant.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/types.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/uitrol.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/uitrol/voorbereiders.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/ai-beleid.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/centrering-pc-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-maquette.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/uitrol-centrering-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/uitrol-manifest.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/UPD-001.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/UPD-001.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/upd-001-uitgave.yml"
+  }
+ ],
+ "controles": [
+  "uitrol-centrering-20261115 10/10, uitrol-manifest 25/25 (без виправлення 4 червоні), centrering-pc-20261115 14/14, identiteit-maquette 56/56, mobiel-cascade-20261105 22/22, ai-beleid 41/41 (PR #111, з базою).",
+  "Chromium 390/768/1024/1366/1440/1536/1920/2560 px, стандартна палітра й «Макет», обидві теми, uk і nl: без горизонтальної прокрутки, без обрізаних підписів, термінал не обрізаний.",
+  "Знімки до/після переглянуто."
+ ],
+ "bronnen": [
+  {
+   "soort": "запит власника",
+   "omschrijving": "Повідомлення власника 15.11.2026 у треді проєкту про сторінку оновлень, фото, панель завантаження й «Макет».",
+   "inhoudGepubliceerd": false
+  },
+  {
+   "soort": "основа",
+   "omschrijving": "GitHub Release 20261115-135345, коміт 932e601d8c15",
+   "inhoudGepubliceerd": true
+  }
+ ],
+ "beperkingen": [
+  "Встановлення — лише власником після резервної копії на R:\\ і перевірки накладання.",
+  "На живому сайті й справжньому моніторі власника не перевірено."
+ ],
+ "commits": [
+  "58aa9fecdfab4125d4007959ad560fe77dbf2f5e",
+  "26b7d818de3e3e9aaad580585c1df92669a31403",
+  "666841fb361559957149a8e6a6c728aaa6f32078"
+ ]
+}
