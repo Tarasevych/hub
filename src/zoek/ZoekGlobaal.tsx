@@ -59,7 +59,7 @@ const sectieVan = (dienst: string): Categorie => (dienst === 'mail' ? 'mail' : d
 
 // Додаткові ключові слова для миттєвого пошуку 13 розділів центру облікового запису (uk + nl) з пріоритетом поточної сторінки.
 const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
-  personalization: 'огляд вигляд оформлення початкова overzicht uiterlijk sfeer start',
+  personalization: 'огляд вигляд оформлення початкова живий фон плями перелив overzicht uiterlijk sfeer start levende achtergrond vlekken',
   menu: 'бічна панель навігація док швидкий доступ zijbalk navigatie dock snelkoppelingen',
   themes: 'тема світла темна сливова палітра контраст licht donker pruim kleur contrast',
   languages: 'мова українська нідерландська переклад oekraiens nederlands vertaling',
@@ -69,7 +69,7 @@ const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
   identity: 'ідентичність технічний профіль звичайний простір псевдонім technisch profiel ruimte',
   account: 'обліковий запис фото світлина пошта видалення дані profielfoto gegevens verwijderen',
   sessions: 'сесії пристрої активні входи вийти оглядач apparaten aanmeldingen afmelden',
-  methods: 'способи входу ключ доступу google телеграм пароль sleutel telegram aanmelden',
+  methods: 'способи входу ключ доступу google телеграм вхід бот підтвердження пароль sleutel telegram aanmelden bot bevestiging',
   security: 'безпека захист двофакторна підтвердження сповіщення журналювання bescherming bevestiging',
   recovery: 'відновлення запасні коди доступ порятунок herstelcodes noodtoegang',
 };

@@ -259,7 +259,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const oauthActief = (overzicht?.oauth ?? []).filter((g) => g.status === 'active').length;
   const tokensActief = (tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
   // HUB-02: één teller voor «ШІ підключено» (verschillende AI-clients), overal dezelfde.
-  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu);
+  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu, v2.data?.agenten);
   const toolPending = calls.filter((c) => c.status === 'pending_approval');
   const wachten = pending.length + toolPending.length;
 

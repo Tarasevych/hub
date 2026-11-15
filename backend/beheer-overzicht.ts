@@ -14,6 +14,7 @@ import { bouwOverzicht, FAIL_RE, gebruikerHistorie, RUIS_BRON, type AuditRegel, 
 import { normaliseerIndeling, standaardIndeling } from '../shared/overzicht-widgets';
 import { bewaarMomentopname, lijstMomentopnamen } from './beheer-overzicht-momentopnamen';
 import { tellerStand } from './toegangsfout-tellers';
+import { huidigeStand } from './uitrol-bron';
 
 type AdminAuth = { user: { id: string; email?: string; name?: string }; capabilities?: string[] };
 export type AdminGate = (ctx: { event: Record<string, unknown>; body: unknown }, capability: string) => Promise<AdminAuth | { errorCode: string }>;
@@ -24,18 +25,23 @@ const sys = () => getPool('systeem');
 export const CACHE_MS = 15_000;
 const ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
 
-async function probeer<T>(f: () => Promise<T>, terug: T): Promise<T> {
-  try { return await f(); } catch (e) { console.error('[admin-overzicht]', (e as Error).message); return terug; }
+async function probeer<T>(bron: string, f: () => Promise<T>, terug: T, bronFouten: string[]): Promise<T> {
+  try { return await f(); } catch (e) {
+    console.error(`[admin-overzicht:${bron}]`, (e as Error).message);
+    if (!bronFouten.includes(bron)) bronFouten.push(bron);
+    return terug;
+  }
 }
 
 const tel = (n: unknown) => Number(n) || 0;
 
 /** Haalt alle ruwe gegevens op (zonder aanroeper-specifieke delen). */
 export async function laadInvoer(nu = Date.now()): Promise<Omit<Invoer, 'magAudit'>> {
-  const [gebruikers, sessies, telRij, uren, dagen, acties7, recent, diensten, runs, wachtUitrol, wachtToegang] = await Promise.all([
-    probeer(async () => (await db.list<Gebruiker>('users', { limit: 500, nieuwsteEerst: true })).items as Gebruiker[], [] as Gebruiker[]),
-    probeer(async () => (await db.list<Sessie & { userId: string }>(SESSIE_TABEL, { limit: 500, nieuwsteEerst: true })).items as unknown as Sessie[], [] as Sessie[]),
-    probeer(async () => (await sys().query(
+  const bronFouten: string[] = [];
+  const [gebruikers, sessies, telRij, uren, dagen, acties7, recent, diensten, runs, wachtUitrol, wachtToegang, uitrolStand] = await Promise.all([
+    probeer('gebruikers', async () => (await db.list<Gebruiker>('users', { limit: 500, nieuwsteEerst: true })).items as Gebruiker[], [] as Gebruiker[], bronFouten),
+    probeer('sessies', async () => (await db.list<Sessie & { userId: string }>(SESSIE_TABEL, { limit: 500, nieuwsteEerst: true })).items as unknown as Sessie[], [] as Sessie[], bronFouten),
+    probeer('telling', async () => (await sys().query(
       `SELECT count(*)::int AS totaal,
               count(*) FILTER (WHERE data->>'createdAt' ~ '^[0-9]+$' AND (data->>'createdAt')::numeric >= $1)::int AS nieuw24,
               count(*) FILTER (WHERE data->>'createdAt' ~ '^[0-9]+$' AND (data->>'createdAt')::numeric >= $2)::int AS nieuw7,
@@ -43,42 +49,47 @@ export async function laadInvoer(nu = Date.now()): Promise<Omit<Invoer, 'magAudi
          FROM app.records
         WHERE tbl = 'users' AND COALESCE(data->>'status', '') <> 'deleted' AND COALESCE(data->>'retiredAt', '0') IN ('0', '')`,
       [nu - 86_400_000, nu - 7 * 86_400_000],
-    )).rows[0], { totaal: 0, nieuw24: 0, nieuw7: 0, wacht: 0 }),
-    probeer(async () => (await sys().query(
+    )).rows[0], { totaal: 0, nieuw24: 0, nieuw7: 0, wacht: 0 }, bronFouten),
+    probeer('audit_uren', async () => (await sys().query(
       `SELECT floor(extract(epoch FROM created_at) / 3600)::bigint AS b, count(*)::int AS n, count(*) FILTER (WHERE result ~* $2)::int AS f
          FROM app.audit WHERE created_at >= now() - interval '25 hours' AND action ~ '^(owner|account)\\.' AND action !~ $1 GROUP BY 1`,
       [RUIS_BRON, FAIL_RE.source],
-    )).rows as Array<{ b: string; n: number; f: number }>, []),
-    probeer(async () => (await sys().query(
+    )).rows as Array<{ b: string; n: number; f: number }>, [], bronFouten),
+    probeer('audit_dagen', async () => (await sys().query(
       `SELECT floor(extract(epoch FROM created_at) / 86400)::bigint AS b, count(*)::int AS n, count(*) FILTER (WHERE result ~* $2)::int AS f
          FROM app.audit WHERE created_at >= now() - interval '15 days' AND action ~ '^(owner|account)\\.' AND action !~ $1 GROUP BY 1`,
       [RUIS_BRON, FAIL_RE.source],
-    )).rows as Array<{ b: string; n: number; f: number }>, []),
-    probeer(async () => (await sys().query(
+    )).rows as Array<{ b: string; n: number; f: number }>, [], bronFouten),
+    probeer('audit_acties', async () => (await sys().query(
       `SELECT action, count(*)::int AS n, count(*) FILTER (WHERE result ~* $2)::int AS f
          FROM app.audit WHERE created_at >= now() - interval '7 days' AND action ~ '^(owner|account)\\.' AND action !~ $1
         GROUP BY action ORDER BY n DESC LIMIT 300`,
       [RUIS_BRON, FAIL_RE.source],
-    )).rows as Array<{ action: string; n: number; f: number }>, []),
-    probeer(async () => (await auditLijst({ limit: 200 })).items.map((r): AuditRegel => ({
+    )).rows as Array<{ action: string; n: number; f: number }>, [], bronFouten),
+    probeer('audit_recent', async () => (await auditLijst({ limit: 200 })).items.map((r): AuditRegel => ({
       id: r.id, ownerId: r.ownerId, actorId: r.actorId, action: r.action, result: r.result, createdAt: r.createdAt, service: r.service, device: r.device,
-    })), [] as AuditRegel[]),
-    probeer(async () => (await serverControlesGecached()).map((u) => ({ id: u.id, stand: u.stand, ms: u.ms })), [] as Invoer['diensten']),
-    probeer(async () => (await sys().query(
+    })), [] as AuditRegel[], bronFouten),
+    probeer('diensten', async () => (await serverControlesGecached()).map((u) => ({ id: u.id, stand: u.stand, ms: u.ms })), [] as Invoer['diensten'], bronFouten),
+    probeer('uitrol_runs', async () => (await sys().query(
       `SELECT id, versie, staat, methode, pct, gestart_op, geeindigd_op, wie, voorbereider, wijzigingen FROM app.uitrol_runs ORDER BY gestart_op DESC, id DESC LIMIT 5`,
     )).rows.map((r): RunKort => ({
       id: String(r.id), versie: String(r.versie || ''), staat: String(r.staat), methode: String(r.methode), pct: tel(r.pct),
       gestart: r.gestart_op ? new Date(r.gestart_op).toISOString() : '', geeindigd: r.geeindigd_op ? new Date(r.geeindigd_op).toISOString() : '',
       wie: String(r.wie || r.voorbereider || '').slice(0, 40), samenvatting: String(r.wijzigingen || '').split('\n')[0].slice(0, 140),
-    })), [] as RunKort[]),
-    probeer(async () => tel((await sys().query(`SELECT count(*)::int AS n FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring'`)).rows[0]?.n), 0),
-    probeer(async () => (await db.list('access_requests', { filter: { status: 'pending' }, limit: 200 })).items.length, 0),
+    })), [] as RunKort[], bronFouten),
+    probeer('uitrol_wacht', async () => tel((await sys().query(`SELECT count(*)::int AS n FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring'`)).rows[0]?.n), 0, bronFouten),
+    probeer('toegang_wacht', async () => (await db.list('access_requests', { filter: { status: 'pending' }, limit: 200 })).items.length, 0, bronFouten),
+    probeer('uitrol_stand', async () => {
+      const s = await huidigeStand({ nu });
+      return s.versie ? { versie: s.versie, release: s.release, commit: s.commit, staat: s.staat, bron: s.versieBron } : null;
+    }, null, bronFouten),
   ]);
   const emmers = (rows: Array<{ b: string; n: number; f: number }>): Emmer[] => rows.map((r) => ({ b: Number(r.b), n: tel(r.n), f: tel(r.f) }));
   return {
     nu, gebruikers, sessies,
     telling: { totaal: tel(telRij.totaal) || gebruikers.length, nieuw24: tel(telRij.nieuw24), nieuw7: tel(telRij.nieuw7), wachtGoedkeuring: tel(telRij.wacht) },
     uren: emmers(uren), dagen: emmers(dagen), acties7, recent, diensten, runs, wachtUitrol, wachtToegang,
+    bronFouten, actieveVersie: uitrolStand,
   };
 }
 
@@ -105,11 +116,12 @@ export async function momentopnameCron(nu = Date.now()) {
 
 export async function gebruikerKaart(id: string, nu = Date.now()) {
   const inv = await invoerGecached(nu);
+  const bronFouten = [...(inv.bronFouten ?? [])];
   const g = inv.gebruikers.find((u) => u.id === id)
-    ?? (await probeer(async () => ((await db.get<Gebruiker>('users', [id]))[0] ?? undefined) as Gebruiker | undefined, undefined));
-  const audit = await auditLijst({ ownerId: id, limit: 300 });
+    ?? (await probeer('gebruiker', async () => ((await db.get<Gebruiker>('users', [id]))[0] ?? undefined) as Gebruiker | undefined, undefined, bronFouten));
+  const audit = await probeer('gebruiker_audit', () => auditLijst({ ownerId: id, limit: 300 }), { items: [], nextCursor: undefined }, bronFouten);
   return gebruikerHistorie({
-    nu, gebruiker: g ? { ...g, id } : undefined, id, sessies: inv.sessies,
+    nu, gebruiker: g ? { ...g, id } : undefined, id, sessies: inv.sessies, bronFouten,
     audit: audit.items.map((r): AuditRegel => ({ id: r.id, ownerId: r.ownerId, actorId: r.actorId, action: r.action, result: r.result, createdAt: r.createdAt, service: r.service, device: r.device })),
   });
 }

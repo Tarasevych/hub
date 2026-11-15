@@ -64,6 +64,12 @@ export default function GebruikerKaart({ id, ctx, lang, nu, onSluit }: { id: str
           {!data && !fout && <p className="ov-leeg"><RefreshCw className="spin" aria-hidden="true" /> {tr(lang, 'Завантажуємо історію…', 'Geschiedenis laden…')}</p>}
           {data && (
             <>
+              {data.gedeeltelijkeFout && (
+                <p className="ov-banner" role="status">
+                  <TriangleAlert aria-hidden="true" />{' '}
+                  {tr(lang, `Деякі джерела тимчасово не відповіли (${data.bronFouten.join(', ')}).`, `Sommige bronnen reageerden tijdelijk niet (${data.bronFouten.join(', ')}).`)}
+                </p>
+              )}
               <p className="ov-privacy">{tr(lang, 'Показано лише тип дії, розділ, час, результат і клас пристрою. Вміст листів, файлів, секрети й IP не показуються.', 'Alleen soort actie, onderdeel, tijd, uitkomst en apparaatklasse. Mail- en bestandsinhoud, geheimen en IP worden niet getoond.')}</p>
               <dl className="ov-kaart-kpi">
                 <div><dt>{tr(lang, 'Стан', 'Status')}</dt><dd>{data.kpi.online ? <span className="ov-live"><i aria-hidden="true" />{tr(lang, 'онлайн', 'online')}</span> : tr(lang, 'не в мережі', 'offline')}</dd></div>

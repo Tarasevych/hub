@@ -107,12 +107,15 @@ export function registerAgentPusher(p: Pusher): void { pusher = p; }
 export const sluitAgent = (userId: string, agentId: string, code: number, reden: string): number => pusher.close(userId, agentId, code, reden);
 export const pushNaarAgent = (userId: string, agentId: string | null, msg: object): number => pusher.push(userId, agentId, msg);
 /** Haak voor wat bij de noodstop ook moet eindigen (ontgrendelingen van de browserextensie, open bevestigingen). */
-const noodstopLuisteraars: Array<(userId: string, actorId: string) => Promise<unknown> | void> = [];
-export function bijNoodstop(f: (userId: string, actorId: string) => Promise<unknown> | void): void { noodstopLuisteraars.push(f); }
+let noodstopLuisteraars: Array<(userId: string, actorId: string) => Promise<unknown> | void> | undefined;
+export function bijNoodstop(f: (userId: string, actorId: string) => Promise<unknown> | void): void { (noodstopLuisteraars ??= []).push(f); }
 async function draaiNoodstopLuisteraars(userId: string, actorId: string): Promise<void> {
-  if (!noodstopLuisteraars.length) return;
+  if (!noodstopLuisteraars?.length) return;
   await Promise.allSettled(noodstopLuisteraars.map((f) => Promise.resolve().then(() => f(userId, actorId))));
 }
+let stroomNoodstop: ((userId?: string) => number) | null = null;
+/** Los gekoppeld (connector-v2-stroom registreert zich bij het laden): zo blijft ai-toestemmingen zonder importlus. */
+export function registreerStroomNoodstop(f: (userId?: string) => number): void { stroomNoodstop = f; }
 async function isServerEigenaar(userId: string): Promise<boolean> {
   try {
     const r = await getPool('systeem').query(`SELECT 1 FROM app.records WHERE tbl = 'users' AND id = $1 AND data->>'role' = 'owner' LIMIT 1`, [userId]);
@@ -387,8 +390,9 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     // VEILIG-002 (noodstop): активні сесії «від імені власника» теж негайно закриваються.
     const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'blocked' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
+    const voorbereiders = await q(`UPDATE app.uitrol_voorbereiders SET ingetrokken_op = now(), ingetrokken_door = 'blocked' WHERE account_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0), namens: namens.rowCount ?? 0 };
+    return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0), namens: namens.rowCount ?? 0, voorbereiders: voorbereiders.rowCount ?? 0 };
   }, { systeem: true });
   // SEC-002 ai-mcp-12 + geheimen-05 + VEILIG-002: wacht op alle noodstopluisteraars, sluit sleutelkluisomslagen en sluit MCP-deurverbindingen.
   const [, , deurConnectors] = await Promise.all([
@@ -396,9 +400,10 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     grantsSluitenVoorGebruiker(userId),
     deurIntrekkenVoorGebruiker(userId, await isServerEigenaar(userId)),
   ]);
+  const streams = stroomNoodstop ? stroomNoodstop(userId) : 0;
   pusher.close(userId, null, 4403, 'blocked');
-  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens, namens: out.namens, deurConnectors } }).catch(() => undefined);
-  return { ...out, deurConnectors };
+  await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens, namens: out.namens, voorbereiders: out.voorbereiders, streams, deurConnectors } }).catch(() => undefined);
+  return { ...out, streams, deurConnectors };
 }
 
 export async function unblockUser(userId: string, actorId: string) {
@@ -424,7 +429,9 @@ export async function stopAll(userId: string, actorId: string) {
     const grants = await q('UPDATE app.ai_grants SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const cmds = await q(`UPDATE app.agent_commands SET status = 'rejected', decided_at = now(), finished_at = now(), result = '{"error":"stopped by user"}'::jsonb
                            WHERE user_id = $1 AND status IN ('pending_approval', 'approved') RETURNING id`, [userId]);
-    await q(`UPDATE app.agents SET browser_enabled = false, armed_until = NULL WHERE user_id = $1 AND platform = 'browser' AND revoked_at IS NULL`, [userId]);
+    const browsers = await q(`UPDATE app.agents SET browser_enabled = false, armed_until = NULL
+                               WHERE user_id = $1 AND platform = 'browser' AND revoked_at IS NULL
+                                 AND (browser_enabled = true OR armed_until IS NOT NULL) RETURNING id`, [userId]);
     // SEC-002 ai-mcp-12: «Стоп» liet de wachtrij «Питати» staan (mail versturen, agenda, delen, externe MCP): wie daarna nog op
     // «Дозволити» klikte, voerde de actie alsnog uit. Nu wordt alles wat op een klik wacht in dezelfde transactie afgewezen.
     const calls = await q(`UPDATE app.connector_tool_calls SET status = 'rejected', decided_at = now(), finished_at = now()
@@ -433,18 +440,59 @@ export async function stopAll(userId: string, actorId: string) {
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     // VEILIG-002 (noodstop): активні сесії «від імені власника» також негайно припиняються.
     const namens = await q(`UPDATE app.agent_namens_sessies SET ingetrokken_op = now(), ingetrokken_reden = 'noodstop' WHERE user_id = $1 AND ingetrokken_op IS NULL`, [userId]);
+    const voorbereiders = await q(`UPDATE app.uitrol_voorbereiders SET ingetrokken_op = now(), ingetrokken_door = 'noodstop' WHERE account_id = $1 AND ingetrokken_op IS NULL`, [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, grants: grants.rowCount ?? 0, commands: (cmds.rowCount ?? 0) + (calls.rowCount ?? 0), connectors: oauth.rowCount ?? 0, tokens: tvh.rowCount ?? 0, namens: namens.rowCount ?? 0 };
+    return {
+      epoch,
+      grants: grants.rowCount ?? 0,
+      commands: (cmds.rowCount ?? 0) + (calls.rowCount ?? 0),
+      connectors: oauth.rowCount ?? 0,
+      tokens: tvh.rowCount ?? 0,
+      namens: namens.rowCount ?? 0,
+      voorbereiders: voorbereiders.rowCount ?? 0,
+      browsers: browsers.rowCount ?? 0,
+    };
   }, { systeem: true });
-  // SEC-002 geheimen-05 + VEILIG-002: wacht op het intrekken van open bevestigingen, extensie-ontgrendelingen, sleutelkluis en MCP-deur.
+  // SEC-002 geheimen-05 + VEILIG-002: wacht op het intrekken van open bevestigingen, extensie-ontgrendelingen, sleutelkluis, SSE-stromen en MCP-deur.
   pusher.push(userId, null, { t: 'stop', type: 'stop', epoch: out.epoch, detach: true });
   const [, , deurConnectors] = await Promise.all([
     grantsSluitenVoorGebruiker(userId),
     draaiNoodstopLuisteraars(userId, actorId),
     deurIntrekkenVoorGebruiker(userId, await isServerEigenaar(userId)),
   ]);
+  const streams = stroomNoodstop ? stroomNoodstop(userId) : 0;
   pusher.close(userId, null, 4410, 'stopped by user');
-  const totaal = { ...out, connectors: out.connectors + deurConnectors, deurConnectors };
+  const connectors = out.connectors + deurConnectors;
+  const agents = out.browsers + out.namens + streams;
+  const rapport = {
+    gestopt: {
+      grants: out.grants,
+      commands: out.commands,
+      connectors,
+      tokens: out.tokens,
+      namens: out.namens,
+      voorbereiders: out.voorbereiders,
+      streams,
+      deurConnectors,
+      browsers: out.browsers,
+      agents,
+    },
+    nietAutomatischTeStoppen: [
+      {
+        uk: 'Зовнішні ШІ-чати та клієнти (Claude, ChatGPT, сторонні MCP-клієнти), де сеанс уже триває, не можуть бути закриті сервером — завершіть їх або вийдіть там вручну.',
+        nl: 'Externe AI-chats en clients (Claude, ChatGPT, externe MCP-clients) met een lopende sessie kan de server niet sluiten — sluit ze daar handmatig af.',
+      },
+      {
+        uk: 'Локальні процеси на пристроях, які ПК-агент запустив раніше без активного WebSocket-з’єднання або які вже відокремились, потрібно перевірити й зупинити на самому пристрої.',
+        nl: 'Lokale processen op apparaten die eerder door de pc-agent zonder actieve WebSocket-verbinding zijn gestart of losgekoppeld raakten, moet u op het apparaat zelf controleren en stoppen.',
+      },
+      {
+        uk: 'Ключі доступу та зовнішні API-токени, видані сторонніми постачальниками, не відкликаються у них автоматично — за потреби відкличте або замініть їх у відповідному сервісі.',
+        nl: 'Toegangssleutels en externe API-tokens van derden worden niet automatisch bij de aanbieder ingetrokken — trek ze zo nodig daar in of vervang ze.',
+      },
+    ],
+  };
+  const totaal = { ...out, connectors, deurConnectors, streams, agents, rapport };
   await auditToevoegen({ ownerId: userId, actorId, action: 'ai_stop_all', type: 'ai', result: 'ok', details: totaal }).catch(() => undefined);
   return totaal;
 }

@@ -855,9 +855,20 @@ async function powershellUitvoeren(cfg, tekst, dir) {
   const file = isWin ? 'powershell.exe' : 'pwsh';
   return programmaStarten(file, ['-NoProfile', '-NonInteractive', '-Command', tekst], dir);
 }
+const actieveProcessen = new Set();
+function stopActieveProcessen(reden = 'noodstop') {
+  for (const child of [...actieveProcessen]) {
+    try { child.kill('SIGTERM'); } catch { /* reken op kill */ }
+    const killTimer = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* al gestopt */ } }, 1500);
+    killTimer.unref?.();
+    actieveProcessen.delete(child);
+  }
+  if (reden) console.log(`[agent] actieve processen gestopt (${reden})`);
+}
 function programmaStarten(command, args, dir) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd: dir, shell: false, windowsHide: true });
+    actieveProcessen.add(child);
     let out = ''; let err = ''; let truncated = false; let gedood = false;
     const add = (buf, which) => {
       const s = buf.toString();
@@ -867,8 +878,8 @@ function programmaStarten(command, args, dir) {
     child.stdout.on('data', (d) => add(d, 'o'));
     child.stderr.on('data', (d) => add(d, 'e'));
     const timer = setTimeout(() => { gedood = true; child.kill('SIGKILL'); }, EXEC_TIMEOUT_MS);
-    child.on('error', (e) => { clearTimeout(timer); reject(e); });
-    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout: out, stderr: err, truncated, timeout: gedood }); });
+    child.on('error', (e) => { clearTimeout(timer); actieveProcessen.delete(child); reject(e); });
+    child.on('close', (code, signal) => { clearTimeout(timer); actieveProcessen.delete(child); resolve({ code, signal, stdout: out, stderr: err, truncated, timeout: gedood }); });
   });
 }
 async function controleerArgPaden(cfg, dir, args) {
@@ -1303,10 +1314,11 @@ function run() {
         });
       }
       else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
-      else if (msg.t === 'stop') {
+      else if (msg.t === 'stop' || msg.type === 'noodstop') {
         console.log('[agent] Стоп: усі дозволи відкликано на сайті');
         stuurMelding({ sleutel: `pc-agent:stop:${Date.now()}`, soort: 'beveiliging', ernst: 'warning', titel: 'Аварійна зупинка ПК-агента / Noodstop van pc-agent', bericht: 'Усі дозволи відкликано на сайті. / Alle machtigingen ingetrokken op de site.' });
         termAllesSluiten('noodstop');
+        stopActieveProcessen('noodstop');
       }
       else if (msg.t === 'term.in' || msg.t === 'term.close') termBericht(msg);
       else if (msg.t === 'cmd') {
@@ -1335,6 +1347,10 @@ function run() {
       clearInterval(pinger);
       termAllesSluiten('verbinding');
       if (ev.code === 4403) die('токен відкликано або недійсний. Виконайте pair заново.');
+      if (ev.code === 4410) {
+        stopActieveProcessen('noodstop');
+        die('аварійна зупинка на сайті (код 4410): усі дозволи відкликано, повторне підключення зупинено. Запустіть агент знову вручну після видачі дозволів.');
+      }
       console.log(`[agent] disconnected (${ev.code}), retry in ${delay / 1000}s`);
       setTimeout(connect, delay);
       delay = Math.min(delay * 2, 30_000);
