@@ -82,6 +82,21 @@ export const ACHTERGROND_GRENZEN = { tempo: [0, 100], sterkte: [0, 100], aantal:
 export const ACHTERGROND_STANDAARD: UiterlijkAchtergrond = {
   stand: 'auto', tempo: 25, sterkte: 40, aantal: 6, vervorming: 60, grootte: 115, kleuren: 'thema', kleurwissel: 30, overgang: 'golf', kader: 'normaal',
 };
+/** Готові рівні — від ледь помітного до вражаючого (кнопка фону вгорі й «Теми»). Решта полів лишається як є.
+ *  Voorinstellingen van nauwelijks zichtbaar tot opvallend; andere velden blijven zoals ze zijn. */
+export const ACHTERGROND_NIVEAUS = ['subtiel', 'rustig', 'levendig', 'opvallend'] as const;
+export type AchtergrondNiveau = typeof ACHTERGROND_NIVEAUS[number];
+export const ACHTERGROND_NIVEAU_WAARDEN: Record<AchtergrondNiveau, Pick<UiterlijkAchtergrond, 'tempo' | 'sterkte' | 'kleurwissel' | 'aantal' | 'vervorming' | 'grootte'>> = {
+  subtiel: { tempo: 12, sterkte: 18, kleurwissel: 15, aantal: 4, vervorming: 45, grootte: 130 },
+  rustig: { tempo: 25, sterkte: 40, kleurwissel: 30, aantal: 6, vervorming: 60, grootte: 115 },
+  levendig: { tempo: 50, sterkte: 65, kleurwissel: 55, aantal: 8, vervorming: 75, grootte: 105 },
+  opvallend: { tempo: 75, sterkte: 90, kleurwissel: 80, aantal: 10, vervorming: 90, grootte: 95 },
+};
+/** Який рівень відповідає поточним значенням (або null, якщо щось змінено вручну). Welk niveau past bij de huidige waarden. */
+export function achtergrondNiveau(a: UiterlijkAchtergrond): AchtergrondNiveau | null {
+  for (const n of ACHTERGROND_NIVEAUS) { const w = ACHTERGROND_NIVEAU_WAARDEN[n]; if ((Object.keys(w) as Array<keyof typeof w>).every((k) => a[k] === w[k])) return n; }
+  return null;
+}
 /** Повний набір налаштувань фону з частини (відсутнє — типове). Volledige instellingen uit een deel. */
 export function achtergrondVolledig(deel: Partial<UiterlijkAchtergrond> | undefined): UiterlijkAchtergrond {
   return { ...ACHTERGROND_STANDAARD, ...(deel || {}) };

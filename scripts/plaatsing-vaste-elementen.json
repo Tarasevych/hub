@@ -393,6 +393,10 @@
   {
    "sleutel": "src/achtergrond/levende-achtergrond.css :: .levende-achtergrond",
    "reden": "ACHTERGROND-001: «Живий фон» — полотно-тло на весь екран під робочою областю (pointer-events:none), як фон оболонки schil-achtergrond; не кнопка й не панель."
+  },
+  {
+   "sleutel": "src/achtergrond/achtergrond-knop.css :: .la-snel-laag",
+   "reden": "ACHTERGROND-001: випадна панель швидкого налаштування «Живого фону» під кнопкою у верхній смузі (позиція — від кнопки, закривається Esc або клацанням поза нею); панель, не плаваюча кнопка."
   }
  ],
  "kopReserves": [
