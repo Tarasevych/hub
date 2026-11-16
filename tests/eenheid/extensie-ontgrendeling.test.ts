@@ -331,6 +331,19 @@ export async function main(): Promise<number> {
       && (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, domeinen: [] }))) === 'DOMEIN_ONGELDIG@prive'
       && (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, domeinen: ['evil.example'] }))) === 'DOMEIN_ONGELDIG@prive'
       && (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, dagen: 2 }))) === 'DUUR_ONGELDIG@prive');
+    // EXTUI-001 «Закрити до дати»: власний момент (tot, мс). Te vroeg / te laat / geen getal → DUUR_ONGELDIG; geldig → eind = tot
+    // (toestemmingen 120 min liggen later dan tot = nu + 60 min, dus niets kapt in).
+    await reset();
+    check('prive tot: te vroeg (1 min), verder dan een jaar, geen getal → DUUR_ONGELDIG',
+      (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, tot: Date.now() + 60_000 }))) === 'DUUR_ONGELDIG@prive'
+      && (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, tot: Date.now() + 400 * 86_400_000 }))) === 'DUUR_ONGELDIG@prive'
+      && (await codeR(eo.priveOntgrendelen(aP, { agentId: P.id, tot: 'morgen' }))) === 'DUUR_ONGELDIG@prive');
+    await reset();
+    const totDoel = Date.now() + 60 * 60_000;
+    const pTot = await eo.priveOntgrendelen(aP, { agentId: P.id, tot: totDoel });
+    const pTotRij = (await sys.query('SELECT eind_op FROM app.extensie_ontgrendelingen WHERE id = $1', [pTot.ontgrendeling.gid])).rows[0];
+    check('prive tot geldig: ondertekend einde = gekozen moment (± 1 s), ook in de database', Math.abs(pTot.ontgrendeling.eind - totDoel) < 1000 && Math.abs(new Date(pTotRij.eind_op).getTime() - totDoel) < 1000, JSON.stringify({ eind: pTot.ontgrendeling.eind, totDoel, rij: pTotRij }));
+    await sys.query('UPDATE app.extensie_ontgrendelingen SET ingetrokken_op = now(), reden_einde = $2 WHERE agent_id = $1 AND ingetrokken_op IS NULL', [P.id, 'test']);
     await reset();
     check('ruimte-mismatch: prive ontgrendelen op het technische slot → VERKEERDE_RUIMTE; technisch (passkey) op het prive slot → VERKEERDE_RUIMTE',
       (await codeR(eo.priveOntgrendelen(aP, { agentId: agent.id }))) === 'VERKEERDE_RUIMTE@prive'
@@ -358,7 +371,8 @@ export async function main(): Promise<number> {
       const vp = await vx.verifyOntgrendeling(keyP, pPush.grant, pPush.sig, { agentId: P.id, userId: U, ruimte: 'prive' });
       check('extensie (extension/shared.js) aanvaardt de prive-push in het prive slot', vp.ok === true, JSON.stringify(vp));
     }
-    check('prive: audit owner.extensie.ontgrendeld met ruimte prive', Number((await sys.query("SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.extensie.ontgrendeld' AND details->>'ruimte' = 'prive'", [U])).rows[0].n) === 1);
+    // 2 = de ontgrendeling «tot datum» (EXTUI-001) hierboven + de geldige van 7 dagen.
+    check('prive: audit owner.extensie.ontgrendeld met ruimte prive', Number((await sys.query("SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.extensie.ontgrendeld' AND details->>'ruimte' = 'prive'", [U])).rows[0].n) === 2);
     // dispatch met prive-ontgrendeling
     const pMet = await submitCommand(P, U, 'browser.navigate', { url: 'https://mail.tarasevych.com/inbox' });
     check('dispatch: prive-agent met prive-ontgrendeling → opdracht bereikt het prive slot', await until(async () => (await store.getCommand(U, pMet.command.id))?.status === 'succeeded')

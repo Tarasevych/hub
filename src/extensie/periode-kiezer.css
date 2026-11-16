@@ -17,6 +17,9 @@
 :is(html) .pk-tegel.is-aan small{color:inherit;opacity:.85}
 .pk-tegel.is-aan .pk-schaal{background:color-mix(in srgb,var(--text-on-accent,#fff) 30%,transparent)}
 .pk-tegel.is-aan .pk-schaal i{background:var(--text-on-accent,#fff)}
+.pk-tegel.is-datum{gap:4px}
+.pk-kalender{width:24px;height:24px;color:var(--accent,#2f6f73)}
+.pk-tegel.is-aan .pk-kalender{color:inherit}
 .pk-vink{position:absolute;top:5px;right:5px;width:14px;height:14px;color:inherit}
 :is(html) .pk-tegel:has(input:focus-visible){outline:2px solid var(--accent,#2f6f73);outline-offset:2px}
 :is(html) .pk:disabled .pk-tegel{cursor:default;opacity:.6}

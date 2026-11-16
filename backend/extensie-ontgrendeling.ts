@@ -35,7 +35,7 @@ import * as tp from './tech-profiel';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import {
   ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveOfAiHost, isAiSiteHost, AI_SITE_TYPES, AI_SITE_HOSTS, isToegestaneHost,
-  MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
+  KLOK_SPELING_MS, MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
   type BrowserCap, type DiagRechtStand, type EindeSoort, type ExtensieAgentStatus, type ExtensieBeleid, type ExtensieBrowser, type ExtensieStaat, type ExtensieStatusAntwoord, type Ontgrendeling,
   type OntgrendelingWeergave, type RechtPrive, type RechtTechnisch, type VergrendelReden, type Weigercode,
 } from '../shared/extensie-ontgrendeling';
@@ -710,6 +710,17 @@ function termijnKiezen(input: Record<string, unknown>, ruimte: AiRuimte, o: { nu
   const t: Termijn | null = input.termijn === undefined || input.termijn === null ? null : termijnVan(input.termijn);
   if (input.termijn !== undefined && input.termijn !== null && !t) weiger('DUUR_ONGELDIG', 'termijn', ruimte);
   if (t?.alleenTechnisch && ruimte !== 'technisch') weiger('DUUR_ONGELDIG', 'termijn-technisch', ruimte);
+  if (!t && input.tot !== undefined && input.tot !== null) {
+    // EXTUI-001 (16.11, побажання Павла): «Закрити до дати» — власний момент закриття з календаря (мс від епохи).
+    // Ті самі межі, що й у плиток: не раніше ніж за MIN_MINUTEN, не довше за максимум простору; правила власника й кінець
+    // технічної активації скорочують мовчки (передпереглядання показує справжній кінець, passkey підписує саме його).
+    // «Sluiten op datum»: eigen sluitmoment uit de kalender; zelfde grenzen als de tegels, beleid en activering korten stil in.
+    const tot = Number(input.tot);
+    if (!Number.isFinite(tot) || tot < o.nu + MIN_MINUTEN * 60_000 - KLOK_SPELING_MS || tot > o.nu + MAX_DUUR_MS[ruimte] + KLOK_SPELING_MS) weiger('DUUR_ONGELDIG', 'tot', ruimte);
+    const eind = Math.min(Math.round(tot), o.activatieEind ?? Infinity, o.nu + o.plafondMs);
+    if (eind - o.nu > o.oudMs && !versieMinstens(o.versie, EXTENSIE_VERSIE_MATRIX)) weiger('TERMIJN_VEREIST_UPDATE', o.versie, ruimte);
+    return { eind, soort: ruimte === 'technisch' ? 'tech-einde' : 'duur', overleeft: false, termijn: null };
+  }
   if (!t) {
     // Oude vorm: minuten (technisch, binnen de activering) of dagen (privé).
     const m = ruimte === 'technisch' ? Math.round(Number(input.minuten)) : Number(input.dagen === undefined || input.dagen === null ? PRIVE_STANDAARD_DAGEN : input.dagen) * 24 * 60;

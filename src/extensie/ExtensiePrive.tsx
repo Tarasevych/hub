@@ -43,6 +43,8 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const recht = live.rechtPrive;
   const keuzes = useMemo(() => PRIVE_DAGEN_KEUZES.filter((d) => d <= (recht?.maxDagen ?? 30)), [recht?.maxDagen]);
   const [dagen, setDagen] = useState<number>(PRIVE_STANDAARD_DAGEN);
+  // EXTUI-001: «До дати» — власний момент закриття з календаря (годинник браузера); null = діє плитка строку.
+  const [tot, setTot] = useState<number | null>(null);
   const toegestaan = useMemo(() => (recht?.domeinen?.length ? PRIVE_HOSTS.filter((h) => recht.domeinen.includes(h)) : [...PRIVE_HOSTS]), [recht?.domeinen]);
   const [domeinen, setDomeinen] = useState<string[] | null>(null);
   const gekozenDomeinen = (domeinen ?? toegestaan).filter((h) => toegestaan.includes(h));
@@ -92,7 +94,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const doeOpen = async () => {
     if (knopUit || !live.agentId) return;
     setBezig('open'); setMelding(null);
-    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, domeinen: [...gekozenDomeinen, ...aiSites], lokaal: lokaal && recht?.lokaal !== false });
+    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, tot: tot !== null ? tot + live.scheef : null, domeinen: [...gekozenDomeinen, ...aiSites], lokaal: lokaal && recht?.lokaal !== false });
     setBezig('');
     setMelding(r.ok
       ? { ok: true, tekst: r.verzonden ? tr('Доступ відкрито. Розширення вже отримало підписаний дозвіл.', 'Toegang open. De extensie heeft de ondertekende ontgrendeling al ontvangen.') : tr('Доступ відкрито. Розширення отримає дозвіл, щойно з’єднається із сервером.', 'Toegang open. De extensie krijgt de ontgrendeling zodra ze met de server verbindt.') }
@@ -141,7 +143,9 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
             hulp='extensie.prive.dagen' data={{ 'data-eo-dagen': String(gekozen) }}
             kop={<>{tr('Строк доступу', 'Termijn van de toegang')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></>}
             uitleg={(k) => tr(`Доступ закриється сам через ${k.naam}. Довший строк — рідше підтверджувати, але довше відкрите вікно; закрити раніше можна кнопкою «Відкликати зараз».`, `De toegang sluit vanzelf na ${k.naam}. Langer = minder vaak bevestigen, maar het venster staat langer open; eerder sluiten kan met «Nu intrekken».`)}
-            einde={<>{tr('Закриється сам ', 'Sluit vanzelf op ')}<b>{new Date(nuServer + gekozen * 86_400_000 - live.scheef).toLocaleString(uk ? 'uk-UA' : 'nl-NL', { weekday: 'short', day: 'numeric', month: 'long', year: gekozen > 300 ? 'numeric' : undefined, hour: '2-digit', minute: '2-digit' })}</b>{tr(' (якщо правила власника не скоротять)', ' (tenzij het beleid van de eigenaar korter is)')}</>} />
+            kalender={{ uk, min: nu + 15 * 60_000, max: nu + (recht?.maxDagen ?? 30) * 86_400_000, tot, onTot: setTot,
+              uitleg: tr('До дати: відкриває календар, де можна обрати будь-який день, місяць і рік (у межах правил власника) та час — тоді доступ закриється сам саме в цей момент.', 'Tot datum: opent een kalender waarin u elke dag, maand en jaar (binnen het beleid van de eigenaar) en een tijd kiest — de toegang sluit dan vanzelf op dat moment.') }}
+            einde={<>{tr('Закриється сам ', 'Sluit vanzelf op ')}<b>{new Date(tot ?? (nuServer + gekozen * 86_400_000 - live.scheef)).toLocaleString(uk ? 'uk-UA' : 'nl-NL', { weekday: 'short', day: 'numeric', month: 'long', year: tot !== null || gekozen > 300 ? 'numeric' : undefined, hour: '2-digit', minute: '2-digit' })}</b>{tr(' (якщо правила власника не скоротять)', ' (tenzij het beleid van de eigenaar korter is)')}</>} />
         ) : <p className='eo-meta'>{tr('Строк зараз не можна вибрати: власник не дав дозволу на доступ у цьому браузері.', 'Er is nu geen termijn te kiezen: de eigenaar gaf geen toestemming voor toegang in deze browser.')}</p>}
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Ваші сторінки', 'Uw pagina’s')} <HulpVraag k='extensie.prive.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>

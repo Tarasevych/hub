@@ -197,6 +197,12 @@ export async function main(): Promise<number> {
       const m = pk.minuutKeuzes([15, 30, 60, 120, 240], false).map((k) => `${k.groot} ${k.eenheid}`).join(' | ');
       check('termijn-tegels tonen menselijke eenheden (dagen → maanden → jaar, minuten → uur)', d === '1 день | 7 днів | 30 днів | 6 місяців | 1 рік' && m === '15 min | 30 min | 1 uur | 2 uur | 4 uur', `${d} ## ${m}`);
     }
+    // 16.11 (Павло: «кнопка закрити до дати, календар — будь-яка дата, рік і місяць»): плитка «До дати» в обох вікнах, сервер приймає `tot`.
+    const serverBron = readFileSync(join(W, 'backend/extensie-ontgrendeling.ts'), 'utf8');
+    check('«До дати»: kalender in privé en technisch, DatumKiezer met dagen/maanden/jaren en tijd, server neemt tot aan binnen de grenzen',
+      pkVeld.every((s) => /kalender=\{/.test(s) && /tot: tot !== null \? tot \+ live\.scheef : null/.test(s))
+      && /'dagen' \| 'maanden' \| 'jaren'/.test(readFileSync(join(W, 'src/extensie/DatumKiezer.tsx'), 'utf8'))
+      && /input\.tot !== undefined[^]*?MAX_DUUR_MS\[ruimte\][^]*?o\.activatieEind[^]*?o\.plafondMs/.test(serverBron));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

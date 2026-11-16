@@ -76,7 +76,8 @@ export function weigeringVan(e: unknown, ruimte?: 'prive' | 'technisch'): Weiger
 }
 
 /** 0.7.0: `termijn` (id uit ONTGRENDEL_TERMIJNEN, shared/extensie-matrix.ts) gaat vóór `minuten`. */
-export type OntgrendelInvoer = { agentId: string; minuten: number; domeinen: string[]; lokaal: boolean; termijn?: string | null };
+/** EXTUI-001: `tot` — власний момент закриття з календаря (мс від епохи); тоді `minuten` лише для старих серверів. */
+export type OntgrendelInvoer = { agentId: string; minuten: number; domeinen: string[]; lokaal: boolean; termijn?: string | null; tot?: number | null };
 export type Uitkomst = { ok: true; ontgrendeling: ExtensieAgentStatus['ontgrendeling']; verzonden: boolean } | { ok: false; weigering: Weigering };
 
 /** Uitdaging → passkey (UV) → ontgrendeling. Bij succes meteen in de live-store (geen herladen), daarna opnieuw bij de server. */
@@ -84,7 +85,7 @@ export async function ontgrendelen(inv: OntgrendelInvoer, opVoortgang?: (stap: '
   const store = deps.store();
   try {
     opVoortgang?.('uitdaging');
-    const u = (await deps.post('/api/owner/agents/ontgrendeling/uitdaging', { ...deps.body(), agentId: inv.agentId, minuten: inv.minuten, domeinen: inv.domeinen, lokaal: inv.lokaal, ...(inv.termijn ? { termijn: inv.termijn } : {}) })).data as { uitdagingId?: unknown; publicKey?: AssertieOpties };
+    const u = (await deps.post('/api/owner/agents/ontgrendeling/uitdaging', { ...deps.body(), agentId: inv.agentId, minuten: inv.minuten, domeinen: inv.domeinen, lokaal: inv.lokaal, ...(inv.termijn ? { termijn: inv.termijn } : {}), ...(inv.tot ? { tot: inv.tot } : {}) })).data as { uitdagingId?: unknown; publicKey?: AssertieOpties };
     if (typeof u?.uitdagingId !== 'string' || !u.publicKey) return { ok: false, weigering: weigeringVan(new ApiError(500, '', { error: 'UITDAGING_ONGELDIG' }, '')) };
     opVoortgang?.('passkey');
     const assertie = await deps.bevestig(u.publicKey);
@@ -101,7 +102,7 @@ export async function ontgrendelen(inv: OntgrendelInvoer, opVoortgang?: (stap: '
 }
 
 // ------------------------------------------------------------------------------------------------ slot «як користувач» (0.6)
-export type PriveInvoer = { agentId: string; dagen: number; domeinen: string[]; lokaal: boolean; termijn?: string | null };
+export type PriveInvoer = { agentId: string; dagen: number; domeinen: string[]; lokaal: boolean; termijn?: string | null; tot?: number | null };
 /** Hoeveel keer we na STEP_UP_REQUIRED opnieuw proberen (na het venster «Підтвердіть доступ»). */
 const STAP_OP_HERHALINGEN = 1;
 const isStapOp = (e: unknown) => {
@@ -116,7 +117,7 @@ const isStapOp = (e: unknown) => {
  */
 export async function ontgrendelenPrive(inv: PriveInvoer): Promise<Uitkomst> {
   const store = deps.store();
-  const body = () => ({ ...deps.body(), agentId: inv.agentId, dagen: inv.dagen, domeinen: inv.domeinen, lokaal: inv.lokaal, ...(inv.termijn ? { termijn: inv.termijn } : {}) });
+  const body = () => ({ ...deps.body(), agentId: inv.agentId, dagen: inv.dagen, domeinen: inv.domeinen, lokaal: inv.lokaal, ...(inv.termijn ? { termijn: inv.termijn } : {}), ...(inv.tot ? { tot: inv.tot } : {}) });
   try {
     let r: { data: unknown } | null = null;
     for (let poging = 0; ; poging++) {
@@ -190,6 +191,8 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
   const statusRef = useRef<HTMLDivElement | null>(null);
   const [nu, setNu] = useState(() => Date.now());
   const [minuten, setMinuten] = useState(STANDAARD_MINUTEN);
+  // EXTUI-001: «До дати» (годинник браузера); сервер однаково обріже до кінця технічної активації.
+  const [tot, setTot] = useState<number | null>(null);
   const [domeinen, setDomeinen] = useState<string[]>(() => [...ADMIN_HOSTS_STANDAARD]);
   const [lokaal, setLokaal] = useState(false);
   const [bezig, setBezig] = useState<'' | 'uitdaging' | 'passkey' | 'bevestigen' | 'intrekken'>('');
@@ -200,7 +203,8 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
   const nuServer = nu + live.scheef;
   const keuzes = useMemo(() => duurKeuzes(live.recht?.activatieTot ?? null, nuServer), [live.recht?.activatieTot, Math.floor(nuServer / 30000)]); // eslint-disable-line react-hooks/exhaustive-deps
   const gekozen = keuzes.includes(minuten) ? minuten : keuzes.includes(STANDAARD_MINUTEN) ? STANDAARD_MINUTEN : keuzes[keuzes.length - 1] ?? 0;
-  const eindKeuze = gekozen ? Math.min(nuServer + gekozen * 60000, live.recht?.activatieTot ?? Infinity) : 0;
+  const eindKeuze = tot !== null ? Math.min(tot + live.scheef, live.recht?.activatieTot ?? Infinity) : gekozen ? Math.min(nuServer + gekozen * 60000, live.recht?.activatieTot ?? Infinity) : 0;
+  const kalMax = Math.min((live.recht?.activatieTot ?? nuServer) - live.scheef, nuServer - live.scheef + MAX_MINUTEN * 60_000);
   const blok = blokkade(live);
   const open = staat === 'ontgrendeld' || staat === 'agent';
 
@@ -227,7 +231,7 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
   const doeOntgrendelen = async () => {
     if (bezig || !live.agentId || blok || !gekozen || !domeinen.length) return;
     setMelding(null);
-    const r = await ontgrendelen({ agentId: live.agentId, minuten: gekozen, domeinen, lokaal }, (s) => setBezig(s));
+    const r = await ontgrendelen({ agentId: live.agentId, minuten: gekozen, tot: tot !== null ? tot + live.scheef : null, domeinen, lokaal }, (s) => setBezig(s));
     setBezig('');
     if (r.ok) {
       setMelding({ ok: true, tekst: r.verzonden ? tr('Доступ відкрито. Розширення вже отримало підписаний дозвіл.', 'Toegang open. De extensie heeft de ondertekende ontgrendeling al ontvangen.') : tr('Доступ відкрито. Розширення отримає дозвіл, щойно з’єднається із сервером.', 'Toegang open. De extensie krijgt de ontgrendeling zodra ze met de server verbindt.') });
@@ -293,6 +297,8 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
             hulp='extensie.duur' data={{ 'data-eo-duur': String(gekozen) }}
             kop={<>{tr('Тривалість', 'Duur')} <HulpVraag k='extensie.duur' uk={uk} label={tr('Тривалість', 'Duur')} /></>}
             uitleg={(k) => tr(`Технічний доступ закриється сам через ${k.naam}, але не пізніше кінця технічної активації. Коротший строк — менше ризику, якщо забудете закрити.`, `De technische toegang sluit vanzelf na ${k.naam}, maar niet later dan het einde van de technische activering. Korter = minder risico als u vergeet te sluiten.`)}
+            kalender={kalMax > nu + 30 * 60_000 ? { uk, min: nu + 15 * 60_000, max: kalMax, tot, onTot: setTot,
+              uitleg: tr('До дати: календар із днем і часом закриття. Технічний доступ однаково не переживе кінця технічної активації — пізніші дні вимкнені.', 'Tot datum: kalender met dag en tijd van sluiten. Technische toegang overleeft het einde van de technische activering toch niet — latere dagen staan uit.') } : undefined}
             einde={<span data-eo-tot='1'>{eindKeuze ? <>{tr('Діятиме до ', 'Geldt tot ')}<b>{tijd(eindKeuze - live.scheef, uk)}</b></> : tr('немає часу: технічна активація закінчується', 'geen tijd: de technische activering loopt af')}
               {live.recht?.activatieTot ? tr(` · технічна активація до ${tijd(live.recht.activatieTot - live.scheef, true)}`, ` · technische activering tot ${tijd(live.recht.activatieTot - live.scheef, false)}`) : ''}</span>} />
         ) : <p className='eo-meta' data-eo-tot='1'>{tr('Немає часу для розблокування: технічна активація закінчується.', 'Geen tijd om te ontgrendelen: de technische activering loopt af.')}</p>}

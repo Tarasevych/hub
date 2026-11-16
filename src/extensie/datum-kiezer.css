@@ -1,0 +1,34 @@
+/* EXTUI-001 · календар «Закрити до дати». Kalender «Sluiten op datum». */
+:is(html) .dk{display:grid;gap:10px;width:min(100%,340px);padding:12px;border:1px solid var(--line,#d7dee8);border-radius:16px;
+  background:var(--surface,#fff);box-shadow:0 10px 30px color-mix(in srgb,var(--text,#1f2937) 14%,transparent)}
+.dk-kop{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:4px}
+:is(html) .dk-pijl,:is(html) .dk-titel{display:grid;place-items:center;min-height:36px;margin:0;padding:0 8px;border:0;border-radius:10px;background:transparent;color:var(--text);font:inherit;cursor:pointer}
+:is(html) .dk-pijl svg{width:18px;height:18px}
+:is(html) .dk-titel{font-weight:600}
+:is(html) .dk-pijl:hover:not(:disabled),:is(html) .dk-titel:hover{background:color-mix(in srgb,var(--accent,#2f6f73) 10%,transparent)}
+:is(html) .dk-pijl:disabled{opacity:.3;cursor:default}
+.dk-rooster{display:grid;gap:3px}
+.dk-rooster.is-dagen{grid-template-columns:repeat(7,1fr)}
+.dk-rooster.is-groot{grid-template-columns:repeat(3,1fr);gap:6px}
+.dk-weekdag{display:grid;place-items:center;height:24px;font-size:.72rem;color:var(--muted);text-transform:capitalize}
+:is(html) .dk-dag,:is(html) .dk-cel{display:grid;place-items:center;min-width:0;margin:0;padding:0;border:1px solid transparent;border-radius:10px;background:transparent;
+  color:var(--text);font:inherit;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .12s ease}
+:is(html) .dk-dag{aspect-ratio:1;min-height:36px;font-size:.88rem}
+:is(html) .dk-cel{min-height:44px;font-size:.9rem;text-transform:capitalize}
+:is(html) .dk-dag:hover:not(:disabled),:is(html) .dk-cel:hover:not(:disabled){background:color-mix(in srgb,var(--accent,#2f6f73) 12%,transparent)}
+:is(html) .dk-dag.is-vandaag{border-color:color-mix(in srgb,var(--accent,#2f6f73) 45%,transparent)}
+:is(html) .dk-dag.is-aan,:is(html) .dk-cel.is-aan{background:var(--accent,#2f6f73);color:var(--text-on-accent,#fff);font-weight:600}
+:is(html) .dk-dag:disabled,:is(html) .dk-cel:disabled{opacity:.28;cursor:default}
+:is(html) .dk-dag:focus-visible,:is(html) .dk-cel:focus-visible,:is(html) .dk-pijl:focus-visible,:is(html) .dk-titel:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:1px}
+.dk-voet{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--line,#d7dee8)}
+:is(html) .dk-tijd{display:flex;align-items:center;gap:6px;margin:0;font-size:.88rem;color:var(--muted)}
+.dk-tijd svg{width:16px;height:16px;color:var(--accent,#2f6f73)}
+:is(html) .dk-tijd select{width:auto;min-height:36px;padding:0 8px;border:1px solid var(--line,#d7dee8);border-radius:10px;background:var(--surface,#fff);color:var(--text);font:inherit;font-variant-numeric:tabular-nums}
+.dk-knoppen{display:flex;gap:6px}
+:is(html) .dk-knop{min-height:36px;margin:0;padding:0 14px;border:1px solid var(--line,#d7dee8);border-radius:10px;background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+:is(html) .dk-knop.is-hoofd{border-color:var(--accent,#2f6f73);background:var(--accent,#2f6f73);color:var(--text-on-accent,#fff)}
+:is(html) .dk-knop:disabled{opacity:.45;cursor:default}
+.dk-samenvatting{margin:0;font-size:.82rem;color:var(--muted)}
+.dk-samenvatting b{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel{transition:none}}
+@media (max-width:420px){:is(html) .dk{padding:10px}:is(html) .dk-dag{min-height:34px}}
