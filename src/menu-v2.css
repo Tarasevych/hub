@@ -385,6 +385,11 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-list .menu-leeg{width:36px;height:36px;margin:0;padding:0;border-radius:50%;font-size:0}
   .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:max(76px,calc(var(--plaats-boven-onder,62px) + 14px)) 24px calc(var(--dock-hoogte) + 30px)!important}
   .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:max(calc(var(--dock-hoogte) + 30px),calc(var(--plaats-boven-onder,62px) + 14px)) 24px 24px!important}
+  /* BLOKKEN-001 (15.11.2026): меню-док знизу (або вгорі) плаває над сторінкою. scroll-padding тримає запас на його висоту,
+     тож переходи до блоку («Справжнє налаштування», якорі) і Tab ставлять кнопку над доком, а не під ним.
+     NL: ruimte voor het zwevende dock bij scrollIntoView, ankers en Tab. */
+  html:has(.canonical-chrome[data-dock='onder']),.canonical-chrome[data-dock='onder'] .canonical-workspace{scroll-padding-bottom:calc(var(--dock-hoogte,62px) + 24px)}
+  html:has(.canonical-chrome[data-dock='boven']),.canonical-chrome[data-dock='boven'] .canonical-workspace{scroll-padding-top:calc(var(--dock-hoogte,62px) + 24px)}
   .canonical-chrome[data-dock='boven'] .mail-top-command-bar{top:calc(var(--dock-hoogte) + 16px)}
   .canonical-chrome[data-dock='boven'] :is(.mail-search-filter-surface,.mail-advanced-search){top:calc(var(--dock-hoogte) + 66px)}
   .canonical-chrome[data-dock='onder'] .canonical-connection-banner{bottom:calc(var(--dock-hoogte) + 26px)}

@@ -105,7 +105,7 @@
   "src/tech/tech.css :: .tech-vraag-uitleg",
   "src/tech/tech.css :: @media (max-width:768px) .tech-band-extra",
   "src/tech/tech.css :: html[data-tech=aan] #root",
-  "src/toegangslaag.css :: .info-tip-tekst",
+  "src/hulp/hulp-knop.css :: .info-tip-tekst",
   "src/toegangslaag.css :: @media print body.herstel-afdruk .herstel-nieuw",
   "src/ui-golf-11.css :: .google-mail-reader-backdrop[data-reader-venster=\"zwevend\"] .google-mail-reader",
   "src/uitrol/uitrol.css :: .ut-lade-schaduw",
@@ -397,6 +397,10 @@
   {
    "sleutel": "src/achtergrond/achtergrond-knop.css :: .la-snel-laag",
    "reden": "ACHTERGROND-001: випадна панель швидкого налаштування «Живого фону» під кнопкою у верхній смузі (позиція — від кнопки, закривається Esc або клацанням поза нею); панель, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/platform/zwevend-menu.css :: .zwevend-popover",
+   "reden": "ZWEVEND-001 (15.11.2026): спливне меню (напр. «⋯» у вітрині «Живий робочий стіл») у порталі на рівні .canonical-chrome. Не кнопка, а тимчасовий список дій біля своєї кнопки; position:fixed потрібен, бо вітрина .mq-held обрізає вміст (overflow:hidden) і меню ховалося під смугою лічильників. Закривається кліком поза ним, Escape і вибором пункту."
   }
  ],
  "kopReserves": [

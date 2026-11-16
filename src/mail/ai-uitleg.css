@@ -1,0 +1,18 @@
+/* MAILAI-001 (15.11.2026): «Як працює ШІ в пошті» (src/mail/AiUitleg.tsx) — у «Рушії перекладу» і в «Вигляд». Лише токени теми. */
+.ai-uitleg{display:grid;gap:8px;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:color-mix(in srgb,var(--surface2) 55%,var(--panel));color:var(--text);font-size:12.5px;line-height:1.45}
+.ai-uitleg p{margin:0}
+.ai-uitleg-kop{font-size:13px;font-weight:700}
+.ai-uitleg-lijst{display:grid;gap:4px;margin:0;padding-inline-start:18px}
+.ai-uitleg-stappen{color:var(--muted)}
+.ai-uitleg-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.ai-uitleg-knop{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:12.5px;font-weight:650;text-decoration:none}
+.ai-uitleg-knop:hover{background:var(--surface2)}
+.ai-uitleg-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ai-uitleg.is-compact{padding:10px 12px;font-size:12px}
+.lz-ai-uitleg{margin-top:8px}
+.lz-ai-uitleg>summary{cursor:pointer;color:var(--text);font-size:12px;font-weight:650}
+.lz-ai-uitleg[open]>summary{margin-bottom:8px}
+.lz-weergave-paneel{max-height:min(78vh,640px);overflow-y:auto;overscroll-behavior:contain}
+@media (max-width:720px){
+  .ai-uitleg-knop{min-height:44px;flex:1 1 auto;justify-content:center}
+}

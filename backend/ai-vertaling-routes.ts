@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { db, error, json } from '../server/platform';
 import { postRecordsVanLade } from './mail-ruimte';
 import { rateLimit } from '../server/platform/beveiliging';
+import { meld } from './melder';
 import { getPool } from '../server/platform/pg';
 import { beslissing, leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
@@ -334,6 +335,41 @@ async function defaultLoadAgents(userId: string): Promise<AiVertalingAgentInfo[]
       allowedFilesRead: baseScopes.includes('files.read'),
       statusUk: 'Активний (приватний простір)',
     });
+  }
+
+  // MAILAI-001: позначити, хто справді може працювати. Сервер перекладає/підсумовує лише через ключ API постачальника в Sleutelkluis
+  // (callAnthropicJson); MCP-конектор, токен консолі чи спарений агент без такого ключа кнопок не оживить. Чесно кажемо це в статусі.
+  const sleutels = new Map<string, Promise<boolean>>();
+  const heeftKey = (agent: AiVertalingAgentInfo): Promise<boolean> => {
+    const aanbieder = aanbiederUitAgent(agent);
+    const k = `${aanbieder}\u001f${agent.id === 'prive:mijn-ruimte-assistent' ? 'basis' : ''}`;
+    let p = sleutels.get(k);
+    if (!p) {
+      p = (async () => {
+        try {
+          if (customDeps?.getApiKeyForProvider) return Boolean(await customDeps.getApiKeyForProvider(userId, aanbieder));
+          if (customDeps?.getApiKey) return Boolean(await customDeps.getApiKey(userId));
+          if (defaultChatDeps.getApiKeyForPurpose) {
+            if (await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder)) return true;
+            return agent.id === 'prive:mijn-ruimte-assistent' ? Boolean(await defaultChatDeps.getApiKey(userId)) : false;
+          }
+          return Boolean(await defaultChatDeps.getApiKey(userId));
+        } catch {
+          return false;
+        }
+      })();
+      sleutels.set(k, p);
+    }
+    return p;
+  };
+  for (const agent of result) {
+    if (agent.ruimte !== 'prive') continue;
+    agent.heeftSleutel = await heeftKey(agent);
+    if (!agent.heeftSleutel) {
+      agent.statusUk = agent.id === 'prive:mijn-ruimte-assistent'
+        ? 'Не налаштовано: немає ключа ШІ — переклад і підсумок не працюватимуть'
+        : 'Підключено, але сайт не може запускати цього ШІ сам: потрібен ключ API в «Доступ ШІ»';
+    }
   }
 
   return result;
@@ -1453,14 +1489,26 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
         if (raw.summaryDepth !== undefined) patch.summaryDepth = raw.summaryDepth as AiVertalingSummaryDepth;
         if (typeof raw.crossMailboxContext === 'boolean') patch.crossMailboxContext = raw.crossMailboxContext;
         if (typeof raw.includeAttachments === 'boolean') patch.includeAttachments = raw.includeAttachments;
+        if (typeof raw.balkTonen === 'boolean') patch.balkTonen = raw.balkTonen;
 
+        const voor = typeof patch.balkTonen === 'boolean' ? (await loadUserSettings(userId)).balkTonen : undefined;
         const settings = await saveUserSettings(userId, patch);
         await deps.audit(userId, 'owner.mail.ai_vertaling.settings', 'success', {
           defaultLang: settings.defaultLang,
           summaryDepth: settings.summaryDepth,
           crossMailboxContext: settings.crossMailboxContext,
           includeAttachments: settings.includeAttachments,
+          balkTonen: settings.balkTonen,
         });
+        // MAILAI-001: увімкнення/вимкнення панелі ШІ над листами — у центр сповіщень (лише коли стан справді змінився).
+        if (voor !== undefined && voor !== settings.balkTonen) {
+          await meld(userId, 'mail_ai_balk',
+            settings.balkTonen ? 'ШІ-аналіз листів увімкнено / AI-analyse van berichten aangezet' : 'ШІ-аналіз листів вимкнено / AI-analyse van berichten uitgezet',
+            settings.balkTonen
+              ? 'Над відкритим листом з\'явиться панель «ШІ-аналіз і переклад», якщо підключено приватного ШІ-агента з правом читати пошту. Текст листа надсилається агенту лише після вашого натискання. / Boven een geopend bericht staat het paneel «AI-analyse en vertaling» als er een privé-AI-agent met leesrecht op de post is. De tekst gaat pas naar de agent als u klikt.'
+              : 'Панель «ШІ-аналіз і переклад» над листами прихована. Увімкнути знову: «Вигляд» у відкритому листі. / Het paneel «AI-analyse en vertaling» boven berichten is verborgen. Weer aanzetten: «Weergave» in een geopend bericht.',
+            '/mail');
+        }
         return json({ ok: true, settings });
       },
     ],

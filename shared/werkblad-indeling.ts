@@ -461,6 +461,18 @@ export type TechSamenvatting = {
   diagnostiek: { ok: number; letOp: number; fout: number; slecht: Array<{ id: string; stand: string; code: string; op: number; naam?: readonly [string, string]; reden?: readonly [string, string] }>; laatsteOp: number } | null;
 };
 
+/**
+ * WOORDBREUK-001 (15.11.2026): опис розгортання без повтору версії, яка вже стоїть у назві рядка віджета «Оновлення»
+ * («Випуск 20261115-162533 встановлено…» → «Встановлено…»). Інший текст лишається як є.
+ * NL: de omschrijving van een uitrol zonder de versie te herhalen die al in de rijnaam staat.
+ */
+export function zonderVersieKop(tekst: string, versie: string, lang: 'uk' | 'nl'): string {
+  if (!tekst || !versie || !/^[\w.-]+$/.test(versie)) return tekst;
+  const kop = new RegExp(`^\\s*(?:Випуск|Release)\\s+${versie.replace(/\./g, '\\.')}\\s*[:·—-]?\\s*`, 'i').exec(tekst);
+  const rest = kop ? tekst.slice(kop[0].length) : tekst;
+  return rest ? rest.charAt(0).toLocaleUpperCase(lang === 'uk' ? 'uk' : 'nl') + rest.slice(1) : tekst;
+}
+
 // ---------------------------------------------------------------------------------------------------------------- hulp
 const T = (uk: string, nl: string): Tweetalig => [uk, nl];
 const H = (wat: Tweetalig, gevolg: Tweetalig, risico: Tweetalig, dev: Tweetalig): HulpItem => ({ wat, gevolg, risico, dev, bron: 'src/werkblad/Werkblad.tsx' });

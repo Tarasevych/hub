@@ -23,6 +23,15 @@
 .canonical-account-portal.theme-dark .canonical-menu-action.primary{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
 .canonical-account-portal.theme-dark .canonical-menu-action.primary>svg{color:var(--text-on-accent)}
 .canonical-account-portal.theme-dark .canonical-menu-action.primary:focus-visible{outline-color:var(--focus)}
+/* MENU-STROOK-001 (15.11.2026): шар меню отримує клас теми (theme-dark/-light/-plum-*) лише заради змінних. Загальне правило
+   src/index.css «.theme-dark,.theme-light{min-height:100svh;background:var(--bg)}» робило з шару квадратну смугу тла до низу вікна
+   позаду заокругленої картки. Шар — лише прозора рамка: без висоти й тла; тло малює тільки сама картка.
+   NL: de portaallaag krijgt de themaklasse alleen voor de variabelen; geen schermhoge achtergrondstrook meer achter het paneel. */
+:is(.canonical-account-portal,.am3-mobiel-laag):is(.theme-dark,.theme-light,.theme-plum-dark,.theme-plum-light){min-height:0;background:none}
+/* Меню v3 на ПК: висота за вмістом, а якщо вікно низьке — прокрутка всередині картки (у межах заокруглених кутів), а не за край
+   екрана. --am3-portaal-max ставить CanoniekAccountMenu.tsx (висота вікна мінус верх меню); ділимо на масштаб меню (--am3-scale).
+   NL: v3-paneel op de pc: hoogte volgens inhoud, bij een laag venster scrollt de kaart zelf binnen de afgeronde hoeken. */
+.canonical-account-portal .canonical-account-menu[data-account-menu-v3] .canonical-account-panel{max-height:calc(var(--am3-portaal-max,calc(100dvh - 80px)) / var(--am3-scale,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){
   /* камера на фото: 30×44 (овал) → тикова зона 44×44, видиме коло лишається 30 px (прозора рамка + background-clip) */

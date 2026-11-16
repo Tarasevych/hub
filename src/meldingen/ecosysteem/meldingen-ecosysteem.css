@@ -206,11 +206,11 @@
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
+/* Tabs en kanaalchips lopen door op een tweede regel in plaats van elk een eigen horizontale schuifbalk. */
 .mel-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 .mel-tab {
   min-height: 30px;
@@ -237,10 +237,9 @@
 
 .mel-kanaal-chips {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 .mel-kanaal-chip {
   min-height: 26px;
@@ -281,9 +280,11 @@
 .mel-ecosysteem-portaal.is-tweekolom .mel-lichaam {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
 }
+/* MELDINGEN-UX-001: flex-kolom in plaats van grid — in een grid met vaste hoogte kromp elke kaart (overflow:hidden op de houder
+   geeft min-height 0) tot een smalle strook van enkele pixels die over de volgende viel. Kaarten krimpen nu nooit. */
 .mel-stroom-kolom {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 10px 12px;
   min-height: 0;
@@ -332,6 +333,7 @@
 /* Картки зі змахами */
 .mel-veeg-houder {
   position: relative;
+  flex: 0 0 auto;
   border-radius: 13px;
   overflow: hidden;
 }
@@ -1039,5 +1041,46 @@
   }
   .mel-modus-groep {
     display: none;
+  }
+}
+
+/* MELDINGEN-UX-001: wissel naar de compacte panel — op dezelfde plek (vlak voor ✕) als «Вікно» in de compacte panel. */
+.mel-vorm-schakel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--mel-accent, var(--accent)) 40%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 9%, var(--panel));
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mel-vorm-schakel svg {
+  width: 15px;
+  height: 15px;
+}
+.mel-vorm-schakel:hover {
+  background: color-mix(in srgb, var(--mel-accent, var(--accent)) 16%, var(--panel));
+}
+.mel-vorm-schakel:focus-visible {
+  outline: 2px solid var(--mel-accent, var(--accent));
+  outline-offset: 2px;
+}
+@media (max-width: 420px) {
+  .mel-vorm-schakel span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .mel-vorm-schakel {
+    padding: 0 8px;
   }
 }

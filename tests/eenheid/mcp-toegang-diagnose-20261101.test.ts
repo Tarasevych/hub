@@ -738,7 +738,7 @@ export async function main(): Promise<number> {
         heeftDubbeleStartKnop: Boolean(document.querySelector('[data-diagnose-actie="start_tech_sessie"]')),
         dienstStaat: document.querySelector('[data-diagnose-laag="dienst"]')?.getAttribute('data-diagnose-staat') || '',
         heeftDubbeleDienstKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_dienst_eigen"]')),
-        heeftDelegatieKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]')),
+        heeftDelegatieKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]')),
       }))()`);
 
       check('Scenario 12b (Chrome #agent/cursor geen UI-leugen): toont 102 zichtbare tools en AI_NIET_TOEGESTAAN i.p.v. «ці інструменти ШІ бачить зараз»',
@@ -755,12 +755,12 @@ export async function main(): Promise<number> {
         && uiControleVoor.heeftDelegatieKnop === true,
         JSON.stringify(uiControleVoor));
 
-      // 12d. Klik op de directe 1-klik knop «Дозволити до кінця сеансу» op #agent/cursor!
-      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]').click()`);
+      // 12d. Klik op de directe 1-klik knop «Дозволити» (типові правила) op #agent/cursor!
+      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]').click()`);
       await wachtOp('gereedheidspaneel springt naar OK en volledige tools',
         `document.querySelector('[data-agent-diagnose]')?.getAttribute('data-agent-diagnose') === 'OK' && document.querySelector('[data-agent-hulpmiddelen]')?.getAttribute('data-agent-hulpmiddelen') === '${volledigMetTechAantal}'`);
 
-      const heeftNogDelegatieAanKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]'))`);
+      const heeftNogDelegatieAanKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]'))`);
       const heeftIntrekDelegatieKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="trek_ai_sessie_in"]'))`);
       check('Scenario 12d (Chrome na 1-klik vrijgave): diagnose=OK, alle technische tools zichtbaar, «Дозволити»-knop verdwenen en vervangen door intrekknop',
         !heeftNogDelegatieAanKnop && heeftIntrekDelegatieKnop);

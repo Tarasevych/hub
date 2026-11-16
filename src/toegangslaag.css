@@ -106,14 +106,6 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
 :is(.access-plane,.access-plane-section,.access-plane-group) label.access-plane-switch input[type='checkbox']:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* (?) підказки поруч із заголовками — InfoTip.tsx */
-.info-tip{position:relative;display:inline-flex;align-items:center}
-.info-tip-knop{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;line-height:1;cursor:help}
-.info-tip-knop:hover,.info-tip[data-open] .info-tip-knop{color:var(--text);border-color:var(--muted)}
-.info-tip-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.info-tip-tekst{position:fixed;z-index:900;width:max-content;max-width:min(320px,calc(100vw - 24px));padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3,0 10px 30px rgba(0,0,0,.25));font-size:.84rem;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
-.info-tip-tekst[hidden]{display:none}
-.info-tip-tekst p{margin:0}
-.info-tip-tekst p+p{margin-top:6px}
 :is(.access-plane,.access-plane-section,.access-plane-group) .info-tip .info-tip-knop{display:inline-flex;min-height:0;width:18px;height:18px;padding:0;gap:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;line-height:1;cursor:help;flex:0 0 auto}
 :is(.access-plane,.access-plane-section,.access-plane-group) .info-tip[data-open] .info-tip-knop,:is(.access-plane,.access-plane-section,.access-plane-group) .info-tip .info-tip-knop:hover{color:var(--text);border-color:var(--muted)}
 

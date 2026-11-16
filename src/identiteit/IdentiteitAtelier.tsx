@@ -198,7 +198,9 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
   useEffect(() => { setToekomstOpen(false); setPlan(''); }, [huidig.id]);
   useEffect(() => {
     const toets = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setVraag(''); setKiezer('zoek'); }
+      // ZOEK-002 (стара вада): Ctrl+K відкривав одночасно наскрізний пошук у панелі (ZoekGlobaal, який на id уже ставить розділи цієї
+      // сторінки першими) і власний вибирач «Пошук налаштувань», що забирав фокус. Є наскрізний пошук — Ctrl+K лишаємо йому.
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !document.querySelector('[data-zoek-trigger]')) { e.preventDefault(); setVraag(''); setKiezer('zoek'); }
       if (e.key === 'Escape') { setKiezer(null); setInstellingen(false); }
     };
     window.addEventListener('keydown', toets);

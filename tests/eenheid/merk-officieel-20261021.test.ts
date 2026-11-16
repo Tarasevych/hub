@@ -112,5 +112,17 @@ export async function main(): Promise<number> {
   check('merk.css: het officiële logo op een vaste lichte plaat met een rand in de lijnkleur, nooit vervormd (object-fit: contain)', /span\.merk-beeld\.merk-plaat\s*\{[^}]*background:\s*#ffffff/.test(css) && /span\.merk-beeld > img\s*\{[^}]*object-fit:\s*contain/.test(css));
 
   console.log(`  (${bestanden.length} officiële bestanden: ${pakketRegels.length} uit pakketten, ${siteRegels.length} van de eigen website; database-merken: ${afwezig.length}; vormen met herkomst: ${metVorm.length})`);
+
+  // ------------------------------------------------------------------ 7. AI-агенти: справжні логотипи, а не перемальовані фігури (15.11.2026)
+  // Скарга Павла на каталог ШІ: «чому логотип не береться з бази справжнього логотипа?» — у агентів була власна фігура (lobehub),
+  // тож <Merk> базу справжніх логотипів навіть не відкривав. Тепер вісім агентів мають справжній знак із пакета CC0.
+  const AGENTEN = ['claude', 'gpt', 'codex', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity'];
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
+  check('вісім ШІ-агентів мають справжній файл у вбудованій базі (пакет @iconify-json/logos, CC0)', AGENTEN.every((k) => existsSync(`${MAP}/${k}.svg`) && perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && OFFICIEEL_SLEUTELS.has(k)), AGENTEN.filter((k) => !existsSync(`${MAP}/${k}.svg`)).join());
+  check('список ключів у головній збірці = рівно файли бази', [...OFFICIEEL_SLEUTELS].sort().join() === bestanden.map((f) => f.replace(/\.(svg|png)$/, '')).sort().join());
+  check('справжній логотип має перевагу над фігурою: шар «officieel» для Copilot і Claude', reg.merkLaag('copilot') === 'officieel' && reg.merkLaag('claude') === 'officieel');
+  const copilot = renderToString(createElement(Merk, { merk: 'copilot', maat: 40 }));
+  check('<Merk merk="copilot"> малює справжній файл (<img data-merk-officieel="copilot">), а не фігуру <path>', copilot.includes('data-merk-officieel="copilot"') && !copilot.includes('<path'), copilot.slice(0, 160));
+  check('<Merk> завантажує базу й для марки з власною фігурою, якщо для неї є справжній файл', lees('src/merk/Merk.tsx').includes('else if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel)) void laadOfficieel();'));
   return einde();
 }

@@ -36,7 +36,7 @@
 .tg-feiten dt{color:var(--muted);font-size:.8rem}
 .tg-feiten dd{margin:0;min-width:0;overflow-wrap:anywhere;font-size:.9rem}
 .tg-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
-.tg-chip{display:inline-block;max-width:100%;padding:1px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.8rem;line-height:1.5;overflow-wrap:anywhere}
+.tg-chip{display:inline-block;max-width:100%;padding:1px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.8rem;line-height:1.5;overflow-wrap:break-word}
 .tg-tijd{font-weight:600;white-space:nowrap}
 .tg-tijd.is-kort{color:var(--ag-warn,#9a6700)}
 .tg-noot{margin:0;color:var(--muted);font-size:.84rem;line-height:1.45;overflow-wrap:anywhere}

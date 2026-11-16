@@ -25,6 +25,7 @@ import { api } from '../platform/client';
 import {
   AI_TOEGANG_HREF,
   AI_VERTALING_SUMMARY_DEPTHS,
+  aiBalkZichtbaar,
   AI_VERTALING_TALEN,
   motorenMetStand,
   normaliseerVertaalWeergave,
@@ -43,6 +44,8 @@ import {
   type VertaalWeergave,
 } from '../../shared/ai-vertaling';
 import { InfoTip } from '../InfoTip';
+import { aiHrefOplossen, useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
+import AiUitleg from './AiUitleg';
 import './ai-vertaling-balk.css';
 
 /* 21.10.2026 (рецензія UX): на телефоні й в альбомній орієнтації панель ШІ займала 200+ px над листом (на 390×844 текст листа
@@ -104,6 +107,8 @@ export type AiVertalingBalkProps = {
   /** Punt 16: «поруч» — оригінал ліворуч, переклад праворуч (op een telefoon onder elkaar). */
   weergave?: VertaalWeergave;
   onWeergave?: (weergave: VertaalWeergave) => void;
+  /** MAILAI-001: alleen voor tests en de stand — het paneel tonen zonder serverstaat (SSR kent geen /state-antwoord). */
+  voorbeeldZichtbaar?: boolean;
 };
 
 type RefusalBanner = {
@@ -134,6 +139,7 @@ export default function AiVertalingBalk({
   onOpenRelatedMessage,
   weergave = 'inline',
   onWeergave,
+  voorbeeldZichtbaar = false,
 }: AiVertalingBalkProps) {
   const [agents, setAgents] = useState<AiVertalingAgentInfo[]>([]);
   // Punt 16: de catalogus van vertaalmotoren met hun echte stand. De server stuurt hem mee; tot dat antwoord komt rekenen we
@@ -154,6 +160,9 @@ export default function AiVertalingBalk({
   const [lastResult, setLastResult] = useState<AiVertalingRunResponse | null>(null);
   const [hasTranslation, setHasTranslation] = useState(false);
   const [ingeklapt, setIngeklapt] = useState<boolean>(aiBalkStartIngeklapt);
+  // MAILAI-001: панель видно лише після відповіді сервера, якщо людина її ввімкнула і є робочий рушій (aiBalkZichtbaar).
+  const [staatGeladen, setStaatGeladen] = useState(false);
+  const gedeeldeStaat = useLaatsteAiStaat();
   const balkId = useId();
   const nl = isNl();
   const t = (uk: string, nlTekst: string) => (nl ? nlTekst : uk);
@@ -187,6 +196,7 @@ export default function AiVertalingBalk({
         };
         const loadedAgents = Array.isArray(data?.agents) ? data.agents : [];
         setAgents(loadedAgents);
+        setStaatGeladen(true);
         setMotoren(Array.isArray(data?.motoren) && data.motoren.length ? data.motoren : motorenMetStand(loadedAgents, isDocumentView));
         if (data?.settings) {
           setSettings(data.settings);
@@ -205,21 +215,12 @@ export default function AiVertalingBalk({
       })
       .catch(() => {
         if (!active) return;
-        setAgents([
-          {
-            id: 'prive:mijn-ruimte-assistent',
-            name: 'Приватний асистент Мого Простору',
-            platform: 'anthropic-prive',
-            source: 'vault',
-            ruimte: 'prive',
-            scopes: ['mail.read', 'files.read'],
-            allowedMailRead: true,
-            allowedFilesRead: true,
-            statusUk: 'Активний (приватний простір)',
-          },
-        ]);
+        // MAILAI-001: раніше тут вигадувався «Приватний асистент» зі станом «Активний» — кнопки виглядали робочими, але не працювали.
+        // Тепер чесно: стан невідомий → агентів немає → панель не показується (переклад нічого не надсилає).
+        setAgents([]);
         setMotoren(motorenMetStand([], isDocumentView));
-        setSelectedAgentId('prive:mijn-ruimte-assistent');
+        setSelectedAgentId('');
+        setStaatGeladen(true);
       });
     return () => {
       active = false;
@@ -360,7 +361,7 @@ export default function AiVertalingBalk({
               String(errBody.messageUk || '') ||
               'Обраний ШІ-агент не має дозволу на читання пошти або документів (mail.read / files.read).',
             actionLabelUk: String(errBody.actionLabelUk || 'Відкрити «Доступ ШІ»'),
-            actionHref: String(errBody.actionHref || AI_TOEGANG_HREF),
+            actionHref: aiHrefOplossen(String(errBody.actionHref || AI_TOEGANG_HREF)),
           });
         } else {
           setErrorText('Не вдалося виконати запит до ШІ-агента. Оригінал листа чи документа не змінено.');
@@ -402,6 +403,18 @@ export default function AiVertalingBalk({
     }
   }, [translationActive, hasTranslation, busyMode, segments.length, runAction]);
 
+  const balkTonen = gedeeldeStaat?.geladen ? gedeeldeStaat.instellingen.balkTonen === true : settings.balkTonen === true;
+  const sluitBalk = () => {
+    setSettings(curr => ({ ...curr, balkTonen: false }));
+    void zetAiBalkTonen(false, context).catch(() => {
+      setSettings(curr => ({ ...curr, balkTonen: true }));
+      setErrorText(t('Не вдалося зберегти: панель лишається. Спробуйте ще раз.', 'Opslaan is niet gelukt: het paneel blijft staan. Probeer het opnieuw.'));
+    });
+  };
+  // Вимкнено або немає жодного робочого рушія: панелі немає зовсім (без порожнього місця). Хуки вище працюють далі, тож переклад,
+  // який людина обрала в смузі над листом чи в «Вигляд → Мова листа», і далі виконується (якщо є робочий агент).
+  if (!voorbeeldZichtbaar && !aiBalkZichtbaar({ geladen: staatGeladen, balkTonen, motoren })) return null;
+
   return (
     <section
       className={`ai-vertaling-balk${translationActive ? ' is-translated' : ''}${isDocumentView ? ' is-document' : ''}`}
@@ -442,6 +455,19 @@ export default function AiVertalingBalk({
             data-testid="ai-vb-inklap"
           >
             <ChevronDown size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="ai-vb-sluit"
+            aria-label={t('Сховати панель ШІ над усіма листами', 'AI-paneel boven alle berichten verbergen')}
+            title={t(
+              'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
+              'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
+            )}
+            onClick={sluitBalk}
+            data-testid="ai-vb-sluit"
+          >
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 
@@ -617,38 +643,35 @@ export default function AiVertalingBalk({
       {/* Punt 16: каталог рушіїв з чесним станом — «що працює зараз, що треба підключити, чого ще немає», з кнопкою підключення
           такою ж, як на інших картках інтеграцій. Нічого не імітуємо: у рушія зі станом «ще немає» кнопки немає взагалі. */}
       {motorenOpen && (
-        <div className="ai-vb-motoren" role="region" aria-label="Рушії перекладу" data-testid="ai-vb-motoren">
+        <div className="ai-vb-motoren" role="region" aria-label={t('Рушії перекладу', 'Vertaalmotoren')} data-testid="ai-vb-motoren">
           <div className="ai-vb-settings-header">
-            <strong>Рушії перекладу</strong>
-            <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label="Закрити перелік рушіїв">
+            <strong>{t('Рушії перекладу', 'Vertaalmotoren')}</strong>
+            <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label={t('Закрити перелік рушіїв', 'Lijst met motoren sluiten')}>
               <X size={14} />
             </button>
           </div>
-          <p className="ai-vb-motoren-note">
-            Платформа працює на вашому власному сервері (BYOS). Жоден сторонній сервіс не отримує ваших листів, поки ви самі його
-            не підключите своїм ключем. Якщо рушій не підключено — переклад не виконується і нічого не вигадується.
-          </p>
+          <AiUitleg nl={nl} />
           <ul className="ai-vb-motoren-lijst">
             {motoren.map(motor => (
               <li key={motor.id} className="ai-vb-motor-kaart" data-motor={motor.id} data-motor-staat={motor.staat}>
                 <div className="ai-vb-motor-kop">
                   <strong>{motor.naam}</strong>
-                  <span className="ai-vb-motor-staat" data-staat={motor.staat}>{VERTAAL_MOTOR_STAAT_TEKST[motor.staat][0]}</span>
+                  <span className="ai-vb-motor-staat" data-staat={motor.staat}>{VERTAAL_MOTOR_STAAT_TEKST[motor.staat][nl ? 1 : 0]}</span>
                 </div>
                 <small className="ai-vb-motor-leverancier">
                   {motor.leverancier}
-                  {motor.plek === 'eigen-server' ? ' · на вашому сервері' : motor.plek === 'eigen-sleutel' ? ' · ваш власний ключ' : ' · сторонній сервіс'}
+                  {motor.plek === 'eigen-server' ? t(' · на вашому сервері', ' · op uw server') : motor.plek === 'eigen-sleutel' ? t(' · ваш власний ключ', ' · uw eigen sleutel') : t(' · сторонній сервіс', ' · externe dienst')}
                 </small>
-                <p>{motor.uitlegUk}</p>
+                <p>{nl && motor.uitlegNl ? motor.uitlegNl : motor.uitlegUk}</p>
                 {motor.staat === 'aansluiten' && motor.aansluitenHref ? (
-                  <a className="ai-vb-motor-knop" href={motor.aansluitenHref} data-motor-aansluiten={motor.id}>
+                  <a className="ai-vb-motor-knop" href={aiHrefOplossen(motor.aansluitenHref, 'sleutels')} data-motor-aansluiten={motor.id}>
                     <Plug size={13} aria-hidden="true" />
-                    Підключити
+                    {t('Підключити', 'Koppelen')}
                   </a>
                 ) : motor.staat === 'werkt' ? (
-                  <span className="ai-vb-motor-klaar"><Check size={13} aria-hidden="true" />Підключено й готовий до роботи</span>
+                  <span className="ai-vb-motor-klaar"><Check size={13} aria-hidden="true" />{t('Підключено й готовий до роботи', 'Gekoppeld en klaar')}</span>
                 ) : (
-                  <span className="ai-vb-motor-leeg"><AlertTriangle size={13} aria-hidden="true" />Підключення ще не написано — цей рушій зараз недоступний</span>
+                  <span className="ai-vb-motor-leeg"><AlertTriangle size={13} aria-hidden="true" />{t('Підключення ще не написано — цей рушій зараз недоступний', 'De koppeling is nog niet geschreven — deze motor is nu niet beschikbaar')}</span>
                 )}
               </li>
             ))}
@@ -742,11 +765,11 @@ export default function AiVertalingBalk({
                 <Check size={13} />
                 <span>Зберегти поточного агента й мову ({taalLabelUk(selectedLang)}) типово</span>
               </button>
-              <a href={AI_TOEGANG_HREF} className="ai-vb-toegang-link">
-                Керувати дозволами агентів у «Доступ ШІ» →
+              <a href={aiHrefOplossen(AI_TOEGANG_HREF)} className="ai-vb-toegang-link">
+                {t('Дозволи агентів: «Підключення ШІ» → «Доступи» →', 'Rechten van agenten: «AI-verbindingen» → «Toegang» →')}
               </a>
-              <a href="https://mcp.tarasevych.com/agents#sleutels" className="ai-vb-toegang-link" data-testid="ai-vb-sleutels-link">
-                Керувати ключами постачальників у «Сховищі ключів» →
+              <a href={aiHrefOplossen(AI_TOEGANG_HREF, 'sleutels')} className="ai-vb-toegang-link" data-testid="ai-vb-sleutels-link">
+                {t('Ключі постачальників ШІ: «Сховище ключів» →', 'Sleutels van AI-aanbieders: «Sleutelkluis» →')}
               </a>
             </div>
           </div>

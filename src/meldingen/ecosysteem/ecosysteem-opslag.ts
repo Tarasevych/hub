@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../platform/client';
 import { meldingLichaam } from '../sessie-context';
+import { abonneerZijbalk, zetZijbalk, zijbalkVoorkeuren } from '../../zijbalk-voorkeuren';
 import type { PaginaSignaal } from '../../canoniek-meldingen';
 import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
@@ -106,7 +107,16 @@ function schrijfLokaalProfiel(scope: string, ruimte: RuimteType, profiel: Meldin
   }
 }
 
+// MELDINGEN-UX-001: de keuze «компактна панель / плаваюче вікно» staat in de accountvoorkeuren (zijbalk `meldingen.paneel`,
+// server, alle subdomeinen en apparaten). localStorage per subdomein is alleen de terugval voor wie nog niets koos — vroeger was
+// het ALLEEN localStorage, waardoor op een ander subdomein (mcp., cloud.) ineens het andere paneel opensprong.
 export function leesEcosysteemModusActief(): boolean {
+  try {
+    const keuze = zijbalkVoorkeuren().meldingen.paneel;
+    if (keuze) return keuze === 'venster';
+  } catch {
+    /* voorkeuren nog niet geladen */
+  }
   try {
     const v = localStorage.getItem(STAND_SLEUTEL);
     if (v === 'klassiek') return false;
@@ -122,6 +132,11 @@ export function zetEcosysteemModusActief(actief: boolean): void {
   } catch {
     /* безпечний ігнор */
   }
+  try {
+    zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, paneel: actief ? 'venster' : 'compact' } }));
+  } catch {
+    /* voorkeuren niet beschikbaar: alleen lokaal */
+  }
   verwittigStand(actief);
   try {
     kanaal?.postMessage({ soort: 'stand', actief });
@@ -130,15 +145,17 @@ export function zetEcosysteemModusActief(actief: boolean): void {
   }
 }
 
-/** Реактивна підписка на поточний режим панелі сповіщень («Єдина екосистема» чи «Класика») між вкладками й компонентами. */
+/** Реактивна підписка на поточний режим панелі сповіщень (плаваюче вікно чи компактна панель) між вкладками, піддоменами й компонентами. */
 export function useEcosysteemModusActief(): boolean {
   const [actief, setActief] = useState<boolean>(() => leesEcosysteemModusActief());
   useEffect(() => {
     setActief(leesEcosysteemModusActief());
     const luister = (waarde: boolean) => setActief(waarde);
     standLuisteraars.add(luister);
+    const weg = abonneerZijbalk(() => setActief(leesEcosysteemModusActief()));
     return () => {
       standLuisteraars.delete(luister);
+      weg();
     };
   }, []);
   return actief;

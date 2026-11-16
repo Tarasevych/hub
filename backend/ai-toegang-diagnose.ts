@@ -36,6 +36,8 @@ import { MELDING_TABEL, ruimteVoorNieuweMelding, sfeerVoorNieuweMelding } from '
 import { keuzeVan } from './ruimte-scheiding';
 import * as tp from './tech-profiel';
 import * as kern from './tech-ruimtes-kern';
+import * as dk from './ai-delegatie-kern';
+import { beoordeel, type DelegatieFeit } from '../shared/ai-delegatie';
 
 const sys = () => getPool('systeem');
 const SITE_WEG_REDENEN = new Set(['uitgelogd', 'revoke', 'revoke-all', 'revoke-others', 'emergency', 'site-sessie-weg']);
@@ -45,14 +47,7 @@ const meldGeheugen = new Map<string, number>();
 export const _diagnoseMeldCacheLeeg = () => meldGeheugen.clear();
 export const _resetToegangMeldingGeheugen = _diagnoseMeldCacheLeeg;
 
-type AiDelegatieRij = {
-  verbinding_id: string;
-  ruimtes: string[];
-  termijn: string;
-  eind_op: Date | string | null;
-  ruimte_sessie_id: string;
-  gezet_op?: Date | string | null;
-};
+type AiDelegatieRij = DelegatieFeit;
 
 type TechSessieRij = {
   id: string;
@@ -81,6 +76,7 @@ export type GebruikerDiagnoseContext = {
   levendeActieveRijen: TechSessieRij[];
   basisTechCode: ToegangWeigerCode | null;
   aiDelegaties: AiDelegatieRij[];
+  aiFeiten: dk.DelegatieFeiten;
   ruimteKeuzeGemaakt: boolean;
   aiServiceState: Awaited<ReturnType<typeof aiStandVeilig>>;
   beleidStand: BeleidStand;
@@ -139,6 +135,7 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
   const levendeActieveRijen: TechSessieRij[] = [];
   let basisTechCode: ToegangWeigerCode | null = null;
   let aiDelegaties: AiDelegatieRij[] = [];
+  let aiFeiten: dk.DelegatieFeiten = { sessies: [], aanmeldingen: [] };
 
   if (!eigenaar) {
     basisTechCode = 'GEEN_EIGENAAR';
@@ -148,10 +145,10 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
     const [sessieRes, aiRes] = await Promise.all([
       sys().query(`SELECT id::text AS id, sessie_id, modus, actief, begin_op, eind_op, grens_op, beeindigd_op, beeindigd_reden
                      FROM app.tech_ruimte_sessies WHERE user_id = $1 ORDER BY begin_op DESC LIMIT 8`, [userId]).catch(() => ({ rows: [] as TechSessieRij[] })),
-      sys().query(`SELECT verbinding_id, ruimtes, termijn, eind_op, ruimte_sessie_id::text AS ruimte_sessie_id, gezet_op
-                     FROM app.tech_ruimte_ai WHERE user_id = $1`, [userId]).catch(() => ({ rows: [] as AiDelegatieRij[] })),
+      dk.alle(userId).catch(() => [] as AiDelegatieRij[]),
     ]);
-    aiDelegaties = aiRes.rows as AiDelegatieRij[];
+    aiDelegaties = aiRes;
+    aiFeiten = await dk.feiten(userId).catch(() => aiFeiten);
     const nu = Date.now();
     let eersteLevendeRij: TechSessieRij | null = null;
     for (const r of sessieRes.rows as TechSessieRij[]) {
@@ -234,6 +231,7 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
     levendeActieveRijen,
     basisTechCode,
     aiDelegaties,
+    aiFeiten,
     ruimteKeuzeGemaakt: Boolean(keuze),
     aiServiceState,
     beleidStand,
@@ -245,44 +243,23 @@ export async function bouwGebruikerDiagnoseContext(userId: string): Promise<Gebr
   };
 }
 
-function evalueerDelegatie(ctx: GebruikerDiagnoseContext, grantId: string | null): {
+function evalueerDelegatie(ctx: GebruikerDiagnoseContext, grantId: string | null, agent?: string | null): {
   actief: boolean;
   scope: AgentToegangDiagnose['aiSessionDelegationScope'];
   termijn: string | null;
   eind: number | null;
+  wacht?: string | null;
 } {
   if (!ctx.techV2Active) {
     return { actief: ctx.profileSessionActive, scope: 'niet-van-toepassing', termijn: null, eind: ctx.profileSessionEnd };
   }
-  const rijen = ctx.levendeActieveRijen.length ? ctx.levendeActieveRijen : ctx.levendeSessieRij ? [ctx.levendeSessieRij] : [];
-  if (!rijen.length) return { actief: false, scope: 'geen', termijn: null, eind: null };
-  const rijIds = new Set(rijen.map((r) => r.id));
-  const nu = Date.now();
-  const geldigVoorSessie = (a: AiDelegatieRij): boolean => {
-    if (a.termijn === 'tijd') return Boolean(a.ruimte_sessie_id && rijIds.has(a.ruimte_sessie_id)) && (msVan(a.eind_op) ?? 0) > nu;
-    if (a.termijn === 'tot-technisch-einde') return Boolean(a.ruimte_sessie_id && rijIds.has(a.ruimte_sessie_id));
-    if (a.termijn === 'tot-site-uitloggen') return true; // gekoppeld aan sessie_id; wordt hieronder gevalideerd als nodig
-    return false;
-  };
-  const specifiek = grantId ? ctx.aiDelegaties.find((a) => a.verbinding_id === grantId && geldigVoorSessie(a)) : undefined;
-  if (specifiek) {
-    const heeftTech = Array.isArray(specifiek.ruimtes) && specifiek.ruimtes.includes('technisch');
-    return {
-      actief: heeftTech,
-      scope: heeftTech ? 'verbinding' : 'geen',
-      termijn: specifiek.termijn,
-      eind: specifiek.termijn === 'tijd' ? msVan(specifiek.eind_op) : ctx.profileSessionEnd,
-    };
-  }
-  const algemeen = ctx.aiDelegaties.find((a) => a.verbinding_id === '*' && geldigVoorSessie(a));
-  if (algemeen && Array.isArray(algemeen.ruimtes) && algemeen.ruimtes.includes('technisch')) {
-    return {
-      actief: true,
-      scope: 'alle',
-      termijn: algemeen.termijn,
-      eind: algemeen.termijn === 'tijd' ? msVan(algemeen.eind_op) : ctx.profileSessionEnd,
-    };
-  }
+  // AI-TERMIJN-001: DEZELFDE beoordeling als tools/list (shared/ai-delegatie.ts → beoordeel), niet meer «hoort bij precies deze sessierij».
+  const d = dk.voorVerbinding(ctx.aiDelegaties, grantId, agent);
+  if (!d) return { actief: false, scope: 'geen', termijn: null, eind: null };
+  const u = beoordeel(d, ctx.aiFeiten.sessies, ctx.aiFeiten.aanmeldingen, Date.now());
+  const eind = d.eindOp ?? (d.termijn === 'tot-technisch-einde' || d.termijn === 'tot-site-uitloggen' ? ctx.profileSessionEnd : null);
+  if (u.soort === 'toegestaan') return { actief: true, scope: d.verbindingId === '*' ? 'alle' : 'verbinding', termijn: d.termijn, eind };
+  if (u.soort === 'wacht') return { actief: false, scope: 'geen', termijn: d.termijn, eind, wacht: u.code };
   return { actief: false, scope: 'geen', termijn: null, eind: null };
 }
 
@@ -358,14 +335,11 @@ export async function diagnoseVoorAgentMetContext(
   const wachtOpToepassen = Boolean(inv.verbonden && inv.voorkeur?.herverbinden && toegevoegdAantal > 0);
 
   // Technische sessie + delegatie + ruimte-scheiding dienst «ai»
-  let delegatie = evalueerDelegatie(ctx, inv.grantId);
-  if (ctx.techV2Active && ctx.profileSessionActive && delegatie.scope === 'alle') {
-    // Controleer via kern.besluit voor 'tot-site-uitloggen' dat de sessie-overeenkomst exact klopt
+  let delegatie = evalueerDelegatie(ctx, inv.grantId, inv.slug);
+  if (ctx.techV2Active && ctx.eigenaar && delegatie.actief) {
+    // Dubbele controle met de echte poort (kern.besluit, bron mcp): binding, rollen, aanmelding — wat tools/list ook doet.
     const b = await kern.besluit(ctx.userId, { bron: 'mcp', ...(inv.grantId ? { verbindingId: inv.grantId } : {}) });
-    if (!b.toegestaan) delegatie = { actief: false, scope: 'geen', termijn: null, eind: null };
-  } else if (ctx.techV2Active && ctx.profileSessionActive && inv.grantId && delegatie.actief) {
-    const b = await kern.besluit(ctx.userId, { bron: 'mcp', verbindingId: inv.grantId });
-    if (!b.toegestaan) delegatie = { actief: false, scope: 'geen', termijn: null, eind: null };
+    if (!b.toegestaan || b.ruimte !== 'technisch') delegatie = { actief: false, scope: 'geen', termijn: null, eind: null };
   }
 
   const dienstCode: ToegangWeigerCode | null = !ctx.ruimteKeuzeGemaakt
@@ -376,10 +350,11 @@ export async function diagnoseVoorAgentMetContext(
         ? 'DIENST_UIT'
         : null;
 
-  const techCode: ToegangWeigerCode | null = ctx.basisTechCode
+  // AI-TERMIJN-001: met de regel «doorwerken» mag de AI technisch blijven terwijl de eigenaar zelf op pauze staat.
+  const techCode: ToegangWeigerCode | null = delegatie.actief && ctx.techV2Active ? null : ctx.basisTechCode
     ?? (!delegatie.actief ? 'AI_NIET_TOEGESTAAN' : null);
 
-  const effectiveTechnicalAccess = Boolean(ctx.eigenaar && ctx.profileSessionActive && delegatie.actief && !dienstCode);
+  const effectiveTechnicalAccess = Boolean(ctx.eigenaar && (ctx.profileSessionActive || (ctx.techV2Active && delegatie.actief)) && delegatie.actief && !dienstCode);
   const ruimteNu: AiRuimte = effectiveTechnicalAccess ? 'technisch' : 'prive';
 
   // Ondertekend AI-beleid, GitHub, site-schakelaars en hulpmiddelmodi
@@ -478,6 +453,8 @@ export async function diagnoseVoorAgentMetContext(
     aiSessionDelegationScope: delegatie.scope,
     aiSessionDelegationTermijn: delegatie.termijn,
     aiSessionDelegationEnd: delegatie.eind,
+    aiSessionDelegationWacht: delegatie.wacht ?? null,
+    aiSessionDelegationRegels: (() => { const d = ctx.techV2Active ? dk.voorVerbinding(ctx.aiDelegaties, inv.grantId, inv.slug) : null; return d && d.technisch && !d.ingetrokkenOp ? d.regels : null; })(),
     aiPolicyState: beleidRes.staat,
     aiPolicyAgentId: beleidRes.agentId,
     aiPolicyBlockedCount: beleidRes.geblokkeerd,

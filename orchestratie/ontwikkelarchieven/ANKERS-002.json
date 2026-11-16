@@ -1,0 +1,993 @@
+{
+ "schema": 1,
+ "taakId": "ANKERS-002",
+ "titel": "Остаточний випуск 15.11: заокруглені блоки, одне меню якорів, пошта, робочий стіл, сповіщення, акценти, терміни доступу ШІ, розширення 0.9.4",
+ "opdracht": "На прохання власника від 15.11.2026: з’ясувати, чому блоки на mcp.tarasevych.com/agents квадратні, і виправити гострі кути там і на інших сторінках із тією самою причиною; розділи сторінки «Підключення ШІ» показувати як звичайне меню якорів (і на сторінці окремого ШІ #agent/claude), а не липкою смугою поверх вмісту. Далі на прохання власника (20:47) — один остаточний випуск з усіма виправленнями й новинками дня, від першого до останнього.",
+ "herkomst": {
+  "eigenaar": "Павло Тарасевич",
+  "agent": "claude",
+  "tak": "feature/ankers-002-uitgave-20261115-193802",
+  "basis": "07359e0e0d4bbea34277cebffc17e1321ae2563c",
+  "geinstalleerdeBasis": "07359e0e0d4bbea34277cebffc17e1321ae2563c",
+  "geinstalleerdeVersie": "20261115-162533",
+  "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "samengevoegd": [
+   {
+    "taak": "ANKERS-002, заокруглені блоки й одне меню якорів (claude, цей тред)",
+    "commit": "a52868fa",
+    "reden": "PR #114 (з KLAP-001 «Згорнути все» на сторінці ШІ), гілка claude/project-thread-quj6fs, влита звичайним злиттям"
+   },
+   {
+    "taak": "MAILDOK-001 і WB-HOEK-001, смуга гортання пошти й піктограма робочого стола (claude, сусідній тред)",
+    "commit": "ba014c35",
+    "reden": "PR #115, гілка claude/project-thread-2qjaa4, влита звичайним злиттям за рішенням координатора"
+   },
+   {
+    "taak": "STROOK-001, хрестик на смугах листа (claude, сусідній тред)",
+    "commit": "cad78cdb",
+    "reden": "PR #116, гілка claude/project-thread-isvc3j, влита звичайним злиттям"
+   },
+   {
+    "taak": "MAILAI-001, панель «ШІ-аналіз і переклад» лише як опція (claude, сусідній тред)",
+    "commit": "1d9a6838",
+    "reden": "PR #117, гілка claude/project-thread-1yz0cx, влита звичайним злиттям (двічі, з доповненням)"
+   },
+   {
+    "taak": "MAILANKER-001, розділи пошти в меню якорів (claude, сусідній тред)",
+    "commit": "cb4675dd",
+    "reden": "PR #118, гілка claude/project-thread-lv5ybj, влита звичайним злиттям"
+   },
+   {
+    "taak": "BREEDTE-001, одна колонка 1180 px сторінок служб і блок «Підключити» піктограмами (claude, сусідній тред)",
+    "commit": "85b6ab22",
+    "reden": "PR #120 (з каталогом карток ШІ 50143673 і справжніми логотипами 85b6ab22), гілка claude/project-thread-3g2end, влита звичайним злиттям за рішенням координатора; каталог пошуку перегенеровано"
+   },
+   {
+    "taak": "VELD-001 і ZWEVEND-001, висота робочого стола й спливні меню поверх (claude, сусідній тред)",
+    "commit": "f74ce711",
+    "reden": "PR #121, гілка claude/project-thread-2varcv, влита звичайним злиттям"
+   },
+   {
+    "taak": "MENU-STROOK-001, спливне меню облікових записів без смуги тла (claude, сусідній тред)",
+    "commit": "523edb0d",
+    "reden": "PR #122 (з хрестиком MENU-KRUISJE-001), гілка claude/project-thread-muiwm0, влита звичайним злиттям за рішенням координатора"
+   },
+   {
+    "taak": "MELDINGEN-UX-001, плаваюче вікно сповіщень (claude, сусідній тред)",
+    "commit": "3154588f",
+    "reden": "PR #123 (з правилами сповіщень картками), влито звичайним злиттям за рішенням координатора; міграція не потрібна — поле в наявному JSON налаштувань"
+   },
+   {
+    "taak": "STAPOP-OMSCHR-001, описи дій у вікні «Підтвердіть доступ» (claude, сусідній тред)",
+    "commit": "c8c4193e",
+    "reden": "PR #126, гілка claude/project-thread-5hlhx6, влита звичайним злиттям за рішенням координатора"
+   },
+   {
+    "taak": "ACHTERGROND-001, кольори панелі живого тла (claude, сусідній тред)",
+    "commit": "31129aeb",
+    "reden": "лише src/achtergrond/achtergrond-knop.css з 6e64507, що не ввійшов у 20261115-162533"
+   },
+   {
+    "taak": "ZOEK-002, пошук у панелі розгортається на місці (claude, сусідній тред)",
+    "commit": "d279e229",
+    "reden": "PR #124, влито на прохання власника зібрати все сьогоднішнє"
+   },
+   {
+    "taak": "ACCENT-001, відтінок як акцент і прозорі блоки (claude, сусідній тред)",
+    "commit": "ae7edf00",
+    "reden": "PR #125, влито звичайним злиттям"
+   },
+   {
+    "taak": "EXT094-001, розширення 0.9.4 без вимоги активної вкладки (claude, сусідній тред)",
+    "commit": "ee6f8043",
+    "reden": "PR #127, влито звичайним злиттям; вигляд 0.9.5 не входить"
+   },
+   {
+    "taak": "KLEUREN-001, один набір і назви відтінків (claude, сусідній тред)",
+    "commit": "00c42b12",
+    "reden": "PR #128 поверх #125, влито звичайним злиттям"
+   },
+   {
+    "taak": "AI-TERMIJN-001, терміни доступу ШІ (claude, сусідній тред)",
+    "commit": "ebfba029",
+    "reden": "PR #129 з міграцією 0279, влито звичайним злиттям"
+   },
+   {
+    "taak": "HINT-001, одна підказка в навігації якорів (claude, сусідній тред)",
+    "commit": "151544c6",
+    "reden": "PR #130, влито звичайним злиттям"
+   },
+   {
+    "taak": "BLOKKEN-001, браковані блоки центру облікового запису (claude, сусідній тред)",
+    "commit": "aeb4ada7",
+    "reden": "PR #131 (84d2734c і aeb4ada7: правки #128 і #130 перенесено в генератор «Макета», тест maquette-generator-gelijk), влито звичайним злиттям"
+   },
+   {
+    "taak": "WOORDBREUK-001, слова не розриваються у вузьких блоках (claude, сусідній тред)",
+    "commit": "762939ea",
+    "reden": "PR #132, влито звичайним злиттям"
+   }
+  ]
+ },
+ "privacy": {
+  "geheimenUitgesloten": true,
+  "toelichting": "Перевірки — на локальній збірці з підробленим API та вигаданими даними; на знімках вигадані імена, ШІ-підключення й журнали."
+ },
+ "tijdlijn": [
+  {
+   "tijd": "2026-11-15T18:24:00Z",
+   "stap": "Власник надіслав знімок /agents#overzicht і спитав, чому блоки квадратні."
+  },
+  {
+   "tijd": "2026-11-15T18:33:00Z",
+   "stap": "Власник спитав, чому розділи «Огляд … Журнал» не показуються як меню якорів."
+  },
+  {
+   "tijd": "2026-11-15T18:35:00Z",
+   "stap": "Уточнення власника: на #agent/claude смуга кріпиться поверх і перекриває вміст під час прокрутки."
+  },
+  {
+   "tijd": "2026-11-15T18:55:00Z",
+   "stap": "Знайдено причину: загальне правило flat-content у src/canoniek-omlijsting.css сплющувало всі картки вмісту; правило прибрано, перевірено hub, cloud, github, huis."
+  },
+  {
+   "tijd": "2026-11-15T19:30:00Z",
+   "stap": "Одне джерело розділів /agents для меню якорів, смугу вкладок у «Макеті» прибрано, виправлено ранню зупинку переходу до далекого розділу; PR #114."
+  },
+  {
+   "tijd": "2026-11-15T19:38:00Z",
+   "stap": "Гілку випуску створено від 20261115-162533, влито PR #114–#118 і правку живого тла, каталог пошуку оновлено."
+  },
+  {
+   "tijd": "2026-11-15T20:15:00Z",
+   "stap": "Власник попросив кнопку, що одним натисканням згортає всі розгорнуті меню в блоках «Приватний простір» і «Технічний доступ»; додано KLAP-001."
+  },
+  {
+   "tijd": "2026-11-15T20:47:00Z",
+   "stap": "Власник попросив зібрати один остаточний випуск з усіма сьогоднішніми виправленнями й новинками."
+  },
+  {
+   "tijd": "2026-11-15T21:20:00Z",
+   "stap": "Влито #124, #125, #127–#132 і доповнення #120, #122, #123; міграцію 0279 двічі прогнано на чистій PostgreSQL 16."
+  }
+ ],
+ "keuzes": [
+  "Правило flat-content, що знімало border-radius, рамки й тіні з усіх section/article/*-card у вмісті, прибрано цілком, а не доповнено ще одним винятком: винятки для окремих сторінок вже множились, і кожна нова сторінка знову отримувала гострі кути.",
+  "Ширину вмісту flat-content (width:100%;max-width:none) залишено, бо від неї залежить розкладка сторінок.",
+  "Меню якорів «Макета» бере розділи /agents зі спільного сховища (src/agenten/anker-bron.ts), яке публікує сама сторінка: назви, піктограми й лічильники завжди збігаються з блоками.",
+  "У «Макеті» липку смугу вкладок не показано зовсім; у класичних палітрах вона лишилась, бо там меню якорів немає.",
+  "Перехід до розділу тримає ціль до 4 с, бо ліниві розділи вище міняють висоту; колесо, дотик чи клавіша переривають перехід, щоб не боротися з людиною.",
+  "Смуга прокрутки меню якорів тонка й видима, а активний пункт сам прокручується у видиму частину лише при зміні пункту чи довжини переліку."
+ ],
+ "wijzigingen": [
+  {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/ankers-002-uitgave.yml"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/ai-delegatie-kern.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/ai-toegang-diagnose.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/ai-vertaling-routes.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/connector-v2-routes.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/connector-v2.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/tech-ruimtes-kern.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/tech-ruimtes.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "extension/background.js"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "extension/manifest.json"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "extension/options.js"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "extension/ui.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "extension/ui.js"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "migrations/0279_ai_delegatie_termijnen.sql"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/ANKERS-002.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/ANKERS-002.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "scripts/accent-laag-css.mjs"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/identiteit-maquette/motor-aanpassingen.mjs"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/merk-officieel-maken.mjs"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/plaatsing-vaste-elementen.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "shared/ai-delegatie.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/ai-toegang-diagnose.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/ai-vertaling.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/melding-soorten.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/meldingen-soorten.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/menu-meldingen-voorkeuren.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/stap-op-acties.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/stap-op-beschrijving.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/uiterlijk.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/werkblad-indeling.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/zoek-ui-knoppen.generated.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/AIDienstWeergave.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/App.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/CanoniekAccountMenu.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/CanoniekMeldingencentrum.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/GoogleMailWerkruimte.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/MailBerichtTekst.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/MailGesprekInhoud.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/MailSnelleInstellingen.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/MailZijbalkNavigatie.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/McpDienstWeergave.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/accountmenu-v3/AccountMenuV3.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/accountmenu-v3/accountmenu-v3-voorkeuren.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/accountmenu-v3/accountmenu-v3.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/achtergrond/achtergrond-knop.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/agenten/AgentCatalogus.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenten/AgentLogo.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenten/AgentPagina.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenten/AgentenPagina.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/agenten/agent-catalogus.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenten/agenten-kern-maquette.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/agenten/ai-ingangen-pictogrammen.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/agenten/anker-bron.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenten/toegang/toegang.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/ai-ecosysteem/AiEcosysteemPaneel.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/beheer-console.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/canoniek-account-menu.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/canoniek-meldingencentrum.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/canoniek-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/cloud-vnext/onderdelen/Bestanden.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/connector-v2/ConnectorsTab.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/connector-v2/RechtenKiezer.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/connector-v2/connector-v2.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/domotica.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/gedeelde-voorkeuren.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/github-weergave.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/hulp/hulp-knop.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/IdentiteitAtelier.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/identiteit-account.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-motor.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/instellingen/gegevensuitvoer.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/instellingencentrum.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail-overlay-oppervlak.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail-weergave-voorkeuren-cache.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail-weergave-voorkeuren-server.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail-zijbalk-navigatie.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail-zoeken-v2/mail-zoeken-v2.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/mail/AiUitleg.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/AiVertalingBalk.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/VertaalStrook.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/WeergaveKeuze.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/ai-staat.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/mail/ai-uitleg.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/ai-vertaling-balk.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/mail-lijst-klassiek.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/mail/mail-navigatie-model.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/mail-werkruimte-maquette.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/mail/stroken-sluiten.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/mail/stroken-sluiten.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/maquette-kern/MaquetteAnkerRail.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/maquette-kern/maquette-oppervlakken.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/MeldingVoorkeurenPaneel.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/ecosysteem/MeldingenPortaal.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/ecosysteem/ecosysteem-opslag.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/ecosysteem/meldingen-ecosysteem.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/meldingen.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/meldingen/toast-weergave.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/v2/MeldingenV2.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/meldingen/v2/meldingen-v2.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/meldingen/voorkeur-algemeen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/menu-v2.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/merk/Merk.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/merk/merk-officieel.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel-sleutels.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/merk/officieel/HERKOMST.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/antigravity.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/claude.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/codex.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/copilot.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/cursor.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/gemini.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/gpt.svg"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/merk/officieel/grok.svg"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/ontwerp/modern.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/ontwerp/primitieven.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/platform/bevestig-toegang.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/platform/bevestig-toegang.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/platform/stap-op.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/platform/zwevend-menu.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/platform/zwevend-menu.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/tech/ruimtes-api.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/tech/ruimtes-contract.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/tech/ruimtes/AiToegangKaart.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/tech/ruimtes/ToegangPagina.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/tech/ruimtes/ai-toegang.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/WeergaveVoorkeuren.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/thema/accent-laag.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/useThema.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/weergave-stijl.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/thema/weergave-stijl.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/toegangslaag.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/verbindingen/verbindingen.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/WerkbladV3.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/canvas/Canvas.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/canvas/canvas.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/canvas/kern.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/werkblad-maquette.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/werkblad.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/widgets/Overig.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/werkblad/widgets/Start.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/zoek/ZoekGlobaal.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/zoek/zoek-uitklap-veld.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/accent-001-tint-transparantie.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/accountmenu-strook-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/accountmenu-v3.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/agent-verbinden-20261020.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/ai-delegatie-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/ai-kluis-een-plek-20261101.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/ankers-002-agenten-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/blokken-001-account.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/breedte-001-kolom-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/browser-extensie.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/extensie-offscreen-20261106.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/extensie-opties.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/extensie-profielen.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/extensie-tabblad-hint-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/extensie-ui.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/extensie-vergrendeling.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/hint-001-ankertip.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/hulp/sec-002-g10a-ui.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/hulp/stap-op-routes.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-009-mobiel-veiligheid.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-015-vormgeving.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-account-ui.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-maquette.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/klap-alles-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/klassiek-005a-werkblad.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/kleuren-001-een-bron.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/mail-dok-pil-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/mail-ux-beoordeling-20261021.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/mailai-001-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/mailanker-001-model.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/maquette-generator-gelijk.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/mcp-toegang-diagnose-20261101.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/melding-soorten.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/meldingen-integ-20261103.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/meldingen-ux-001-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/merk-officieel-20261021.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/ruimtes-compatibiliteit-db.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/sec-002-afwerking-b-20261112.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/stap-op-omschrijving-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/stroken-sluiten-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/tech-ruimtes-v2-20261027.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/uitrol-centrering-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/werkblad-hoek-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/werkblad-indeling-20261022.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/werkblad-veld-zwevend-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/woordbreuk-001-20261115.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/zoek-veld-op-plek-20261115.test.ts"
+  }
+ ],
+ "controles": [
+  "ankers-002-agenten-20261115 15/15 (без виправлення 3/11 червоні), uitrol-centrering-20261115, identiteit-maquette, identiteit-009-mobiel-veiligheid, mobiel-cascade-20261105 зелені.",
+  "Тести сусідніх робіт: mail-dok-pil-20261115, werkblad-hoek-20261115, stroken-sluiten-20261115, mailai-001-20261115, mailanker-001-model, breedte-001-kolom-20261115, werkblad-veld-zwevend-20261115, accountmenu-strook-20261115, klap-alles-20261115, meldingen-ux-001-20261115, stap-op-omschrijving-20261115 — зелені; klassiek-005a-werkblad оновлено під смугу без підкладки (WB-HOEK-001) на гілці випуску.",
+  "tsc --noEmit і typecheck:server чисті; повне складання vite успішне.",
+  "Стенд Playwright: /agents і #agent/claude у «Макеті» (studio, klassiek) і класичних палітрах, ПК і телефон; перехід до далекого розділу 8/8; метрика гострих кутів 0 на /agents, hub, cloud, github, huis.",
+  "mail-ux-beoordeling-20261021 дає 46/47 (R1) так само на чистій основі 20261115-162533; не входить до переліку процесу випуску.",
+  "Міграції на чистій PostgreSQL 16 двічі (0279 застосовано, повторний прогін — «niets te doen»), БД-тести процесу випуску зелені; tech-ruimtes-v2-20261027 у першому прогоні дав 58/59 (тіньове порівняння tab-zonder-sessie), у повторному 59/59.",
+  "Не входять: #119 (бібліотека, межа приватного й технічного просторів — чекає згоди власника), вигляд сторінки розширення 0.9.5 (макет на погодженні), карта «Вигляд і кольори» (макет).",
+  "identiteit-015-vormgeving 47/47 лише локально: його браузерна частина потребує Chrome і playwright-core, яких у CI немає; з переліку БД-тестів процесу випуску прибрано (у випуску UPD-001 його теж не було)."
+ ],
+ "bronnen": [
+  {
+   "soort": "запит власника",
+   "omschrijving": "Повідомлення власника 15.11.2026 у треді проєкту зі знімками /agents#overzicht і #agent/claude.",
+   "inhoudGepubliceerd": false
+  },
+  {
+   "soort": "знімки",
+   "omschrijving": "Знімки до/після /agents та інших сторінок у спільній теці проєкту ankers-002/.",
+   "inhoudGepubliceerd": false
+  }
+ ],
+ "beperkingen": [
+  "Встановлення — лише власником після резервної копії на R:\\ і перевірки накладання.",
+  "На живому сайті не перевірено: хмара не має доступу до mcp.tarasevych.com."
+ ],
+ "commits": [
+  "8a165439dfb0edf0e61178e83597b08fde48e979",
+  "aeb4ada702003c38b4ad3848b29c85929fa6fd51",
+  "762939ea96969b4dcfef35838f8470d360577ceb",
+  "84d2734c435c5b1f00eb0bf3fc9d102329030b35",
+  "85b6ab22dd17822fba5b9c3f6c30ee7bab8e2825",
+  "50143673a0769220ecedcbb47cc2d96446ba43e1",
+  "151544c674733666ba38f7464246cbedc3ce1abc",
+  "f8b93fe2afad748b736b56e546d985e2c2306485",
+  "ebfba029a27e861d8eaee6a376fae64e238f00ab",
+  "00c42b12e1def8a348fdd73d74b69b7de3980b06",
+  "3154588f4468765bfd5108beaccd844cf1ff3c43",
+  "523edb0d07a8e7e84e85037d184d6d55d9708949",
+  "ee6f8043ae4aa26ef936ae7d369c1d1feb8beef3",
+  "ae7edf009713b372f44e2f9496d6f0bf5b2f5f7e",
+  "c8c4193e2b19ddedb8092766ca8ccea4e3fccbf3",
+  "2ab1e52a2e983a990a1120c70664087dc9220257",
+  "d279e229697b69890f00f9d0c142cf41a220706f",
+  "a52868fa1037de591e1bb2ee0c57d49fa8f94bfd",
+  "3765ae93bb810cf70b967a2ed5bf3f33f86bda54",
+  "3a2e6bc86cb57a28209eefc3ff699ed4efbe5620",
+  "23238ca6cd6e7f3e21204053b95c8d235971db54",
+  "b36610f264a7349a465d1597d6d24c163648d9b2",
+  "3f0051bbcd1554d5f205644006c083d27688cce0",
+  "d03a7662c3f68576dc702e5c6e9aff9ef89c7557",
+  "f74ce71149355973c632ab2a8c08d325a0b67f86",
+  "d208944784adc1810ca0123b94cd9022e240bf88",
+  "b3d8d56785e6bef6d501557ea8ccfa5eb2f4d4a0",
+  "e52b2d0f42139ccdf3f9d0b453643f1da695bff7",
+  "1d9a6838c1a568d7360d2f142bc6b4a0a8712230",
+  "765075508591a8ff06cf13065cf9d0c59eb58e5f",
+  "31129aeb9201e54175411f5e10e940e97d1a9b6c",
+  "cb4675dd9150a69a35d9c0b81495f0ae1d7da010",
+  "f18aafd4659c92fc53c297401d3d84bd25b678bd",
+  "ba014c353632a2384b4378004288cdbb1e881a2c",
+  "caabe6af74f6b45c1aeedc31bee3c26a4a2548b0",
+  "cad78cdb9e9e53d8d0815058f6e67f668658cdf5",
+  "aeaf41f976abbce6e4dd1c81a61b299f5369c455",
+  "cac59f0537de115900b7f9cde6a7996d02938c96",
+  "08ead77bbe9f2cff6e6052e8f115e76805472a64"
+ ]
+}

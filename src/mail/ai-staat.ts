@@ -4,7 +4,7 @@
 // niets weg; het eenvoudige ontleden werkt altijd (in de browser, zonder model).
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
-import { STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
+import { agentKanPost, AI_TOEGANG_HREF, STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
 
 export type AiStaat = { geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen };
 const LEEG: AiStaat = { geladen: false, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN };
@@ -21,12 +21,14 @@ export function laadAiStaat(context: Record<string, string>): Promise<AiStaat> {
   if (!p) {
     p = api.post('/api/owner/mail/ai-vertaling/state', { ...context }).then((res) => {
       const data = (res.data || {}) as { agents?: AiVertalingAgentInfo[]; settings?: AiVertalingInstellingen };
-      const agents = (Array.isArray(data.agents) ? data.agents : []).filter((a) => a && a.ruimte === 'prive' && a.allowedMailRead);
+      // MAILAI-001: лише агент, якого сайт справді може запустити (є ключ API), — інакше кнопки ШІ «працюють» лише на вигляд.
+      const agents = (Array.isArray(data.agents) ? data.agents : []).filter((a) => agentKanPost(a));
       const instellingen = data.settings || STANDAARD_AI_VERTALING_INSTELLINGEN;
       const agent = agents.find((a) => a.id === instellingen.defaultAgentId) || agents[0] || null;
       return { geladen: true, agent, instellingen };
     }, () => ({ geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN }));
     cache.set(k, p);
+    laatsteContext = { ...context };
     void p.then((s) => {
       laatste = s;
       for (const f of luisteraars) f(s);
@@ -59,7 +61,46 @@ export function useLaatsteAiStaat(): AiStaat | null {
 }
 
 /** Alleen voor tests: de gedeelde staat vergeten. */
-export function vergeetAiStaat() { cache.clear(); laatste = null; }
+export function vergeetAiStaat() { cache.clear(); laatste = null; laatsteContext = null; }
+
+let laatsteContext: Record<string, string> | null = null;
+/**
+ * MAILAI-001: увімкнути/вимкнути панель «ШІ-аналіз і переклад» над листами (налаштування облікового запису, не пристрою). Одразу
+ * оновлює всі відкриті частини (панель, «Вигляд»), потім зберігає на сервері; при збої повертає попередній стан і кидає помилку.
+ * Paneel boven de brief aan/uit: meteen overal zichtbaar, daarna op de server bewaard; bij een fout terug naar de vorige stand.
+ */
+export async function zetAiBalkTonen(aan: boolean, context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<void> {
+  const vorige = laatste;
+  const pas = (v: boolean) => {
+    const basis = laatste || { geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN };
+    laatste = { ...basis, instellingen: { ...basis.instellingen, balkTonen: v } };
+    for (const [k, p] of cache) cache.set(k, p.then((s) => ({ ...s, instellingen: { ...s.instellingen, balkTonen: v } })));
+    for (const f of luisteraars) f(laatste);
+  };
+  pas(aan);
+  try {
+    await api.post('/api/owner/mail/ai-vertaling/settings', { ...context, balkTonen: aan });
+  } catch (err) {
+    pas(vorige?.instellingen.balkTonen === true);
+    throw err;
+  }
+}
+
+/** MAILAI-001: «/ai» bestaat op geen enkele host (404 op mail.*). Het echte adres: rechten → «Підключення ШІ → Доступи», sleutels → «Сховище ключів». */
+export function aiHrefOplossen(href: string | undefined | null, soort: 'toegang' | 'sleutels' = 'toegang'): string {
+  const h = String(href || '');
+  if (h && h !== AI_TOEGANG_HREF && !h.startsWith('/ai/') && !h.startsWith('/ai#') && !h.startsWith('/ai?')) return h;
+  try {
+    const taal = typeof document !== 'undefined' && document.documentElement.lang === 'nl' ? 'nl' : 'uk';
+    // Rechtstreeks uit de runtime (public/canonical-service.js) i.p.v. src/canoniek-navigatie: dat module gooit bij het laden zonder
+    // venster (tests). Domeinen komen uit de eigen installatie (BYOS), niet hard uit tarasevych.com.
+    const rt = (globalThis as { __TSV_CANONICAL_SERVICE__?: { canonicalUrl: (s: string, t: string, l: string, o: { explicitTab: boolean }) => string } }).__TSV_CANONICAL_SERVICE__;
+    if (!rt) throw new Error('geen runtime');
+    return soort === 'sleutels' ? rt.canonicalUrl('api', 'vault', taal, { explicitTab: true }) : `${rt.canonicalUrl('mcp', 'agents', taal, { explicitTab: true })}#toegang`;
+  } catch {
+    return soort === 'sleutels' ? 'https://api.tarasevych.com/kluis' : 'https://mcp.tarasevych.com/agenten#toegang';
+  }
+}
 
 export type AiFout = { code: string; uk: string; nl: string; href: string };
 /** Een weigering of fout van `/ai-vertaling/run` als eerlijke tekst (nooit een verzonnen resultaat). */
@@ -71,7 +112,7 @@ export function aiFoutVan(err: unknown): AiFout {
     code,
     uk: String(b.messageUk || '') || 'Не вдалося виконати запит до ШІ-агента. Лист не змінено.',
     nl: String(b.messageNl || '') || 'Het verzoek aan de AI-agent is niet gelukt. Het bericht is niet veranderd.',
-    href: String(b.actionHref || '/ai'),
+    href: aiHrefOplossen(String(b.actionHref || '')),
   };
 }
 

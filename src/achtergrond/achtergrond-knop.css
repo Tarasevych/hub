@@ -20,7 +20,7 @@
 .la-snel-niveaus button[aria-checked='true']{border-color:var(--accent,#7c6cf0);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#7c6cf0) 30%,transparent)}
 .la-snel-niveaus i{display:block;flex:none;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--accent,#7c6cf0),transparent 70%)}
 .la-snel-niveaus i[data-n='subtiel']{opacity:.3}.la-snel-niveaus i[data-n='rustig']{opacity:.55}.la-snel-niveaus i[data-n='levendig']{opacity:.8}
-.la-snel-niveaus i[data-n='opvallend']{background:conic-gradient(#f472b6,#a78bfa,#38bdf8,#34d399,#f472b6)}
+.la-snel-niveaus i[data-n='opvallend']{background:conic-gradient(#f472b6,#a78bfa,#38bdf8,#2dd4bf,#f472b6)}
 .la-snel-niveaus .la-let-op{width:14px;height:14px;margin-left:auto;color:var(--warn,#d97706)}
 .la-snel-schuif{display:grid;gap:3px;font-weight:600}
 .la-snel-schuif span{display:flex;justify-content:space-between;gap:8px}
@@ -32,7 +32,7 @@
 .la-snel-voet{display:flex;align-items:center;gap:9px}
 .la-snel-voet button{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:32px;padding:4px 10px;border:1px solid var(--line,#c8d1dc);border-radius:10px;background:var(--surface,#f6f8fb);color:var(--text,#25364c);font:inherit;font-weight:600;cursor:pointer}
 .la-snel-voet button svg{width:14px;height:14px}
-.la-snel-voet small{color:var(--muted,#637083);font-size:11px;line-height:1.35}
+.la-snel-voet small{color:var(--muted,#637083);font-size:12px;line-height:1.35}
 .la-snel-paneel :is(button,select,input):focus-visible{outline:2px solid var(--accent,#7c6cf0);outline-offset:2px}
 .la-snel-paneel :is(button,select,input):disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:560px){
