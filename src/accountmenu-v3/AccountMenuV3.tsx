@@ -1188,7 +1188,7 @@ export function AccountMenuV3({
                       onThemeColors();
                     }}
                   >
-                    {uk ? 'Усі налаштування теми ↗' : 'Alle thema-instellingen ↗'}
+                    {uk ? 'Вигляд і кольори: усі налаштування ↗' : 'Weergave en kleuren: alle instellingen ↗'}
                   </button>
                 ) : null}
               </div>

@@ -164,7 +164,7 @@ export default function LevendeAchtergrond({ lang }: { lang: 'uk' | 'nl' }) {
         details: [{ title: tr('Що змінилося', 'Wat is er veranderd'), items: [
           { icon: 'duration', label: tr('Причина', 'Reden'), value: tr(`середній кадр ${ms.toFixed(1)} мс (межа ${ZWAK_MS} мс)`, `gemiddeld beeld ${ms.toFixed(1)} ms (grens ${ZWAK_MS} ms)`) },
           { icon: 'saved', label: tr('Тепер', 'Nu'), value: tr('до 4 плям, до 24 кадрів/с — менше навантаження й батареї', 'hoogstens 4 vlekken, 24 beelden/s — minder belasting en batterij') },
-          { icon: 'scope', label: tr('Як повернути', 'Terugzetten'), value: tr('Налаштування → Теми → Живий фон → «Завжди повний»', 'Instellingen → Thema\'s → Levende achtergrond → «Altijd volledig»') },
+          { icon: 'scope', label: tr('Як повернути', 'Terugzetten'), value: tr('Налаштування → Вигляд і кольори → Тло і глибина → «Завжди повний»', 'Instellingen → Weergave en kleuren → Achtergrond en diepte → «Altijd volledig»') },
         ] }],
       });
     };

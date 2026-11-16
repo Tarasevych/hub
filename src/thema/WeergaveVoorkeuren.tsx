@@ -1,6 +1,6 @@
 // IDENTITEIT-015 (крок «vormgeving»): справжні налаштування вигляду всього сайту, що раніше були лише демо-елементами «Макета».
 //  • PersoonlijkeWeergave — «Персоналізація»: щільність інтерфейсу (компактна / звичайна / простора) і менше руху;
-//  • AccentEnEffecten — «Теми»: акцентний колір поверх палітри та виразність декоративних ефектів.
+//  • AccentKeuze і TransparantieEnEffecten — блоки зони «Вигляд і кольори» (src/thema/ThemaInstellingen.tsx): акцент, прозорість, сяйво.
 // Усе зберігається в обліковому записі (той самий шлях, що й тема: shared/uiterlijk.ts → POST /api/owner/ui/weergave/save) і діє
 // на всіх сервісах та пристроях після входу. Кожна підказка каже, що саме зміниться.
 // Echte weergave-instellingen van de hele site (dichtheid, beweging, accent, effecten), bewaard in het account.
@@ -44,15 +44,12 @@ export function PersoonlijkeWeergave({ tr }: { tr: Tr }) {
   </div>;
 }
 
-/** «Теми»: акцент поверх палітри й виразність ефектів. */
-export function AccentEnEffecten({ tr }: { tr: Tr }) {
+/** KLEUREN-001: «Вигляд і кольори» → блок «Акцент». Blok «Accent». */
+export function AccentKeuze({ tr }: { tr: Tr }) {
   const { stijl } = useThemaStand();
-  const effecten = typeof stijl.effecten === 'number' ? stijl.effecten : UITERLIJK_EFFECTEN_STANDAARD;
-  const transparantie = typeof stijl.transparantie === 'number' ? stijl.transparantie : 0;
-  return <>
-    <section id='thema-accent' aria-labelledby='thema-accent-kop'>
-      <h3 id='thema-accent-kop'>{tr('Акцентна палітра', 'Accentkleur')}</h3>
-      <p className='thema-uitleg'>{tr('Улюблений відтінок діє поверх будь-якої палітри: кнопки, посилання, активні пункти меню й якорі, перемикачі, рамка фокусу й «Живий фон» (у режимі «Як тема»). Фон і текст палітри не змінюються, контраст тексту лишається достатнім у світлій і темній темі. Той самий вибір — у меню облікового запису.', 'De voorkeurstint werkt bovenop elk palet: knoppen, links, actieve menu-items en ankers, schakelaars, de focusrand en de levende achtergrond (stand «Zoals het thema»). Achtergrond en tekst van het palet blijven; het tekstcontrast blijft voldoende in licht en donker. Dezelfde keuze staat in het accountmenu.')}</p>
+  return <section id='thema-accent' aria-labelledby='thema-accent-kop'>
+      <h3 id='thema-accent-kop'>{tr('Акцентний відтінок', 'Accenttint')}</h3>
+      <p className='thema-uitleg'>{tr('Улюблений відтінок діє поверх будь-якої палітри: кнопки, посилання, активні пункти меню й якорі, перемикачі, рамка фокусу й «Живий фон» (відтінки «За акцентом»). Фон і текст палітри не змінюються, контраст тексту лишається достатнім у світлій і темній темі. Той самий вибір — у меню облікового запису.', 'De voorkeurstint werkt bovenop elk palet: knoppen, links, actieve menu-items en ankers, schakelaars, de focusrand en de levende achtergrond (stand «Zoals het thema»). Achtergrond en tekst van het palet blijven; het tekstcontrast blijft voldoende in licht en donker. Dezelfde keuze staat in het accountmenu.')}</p>
       <div className='thema-accenten' role='radiogroup' aria-labelledby='thema-accent-kop'>
         <button type='button' role='radio' aria-checked={!stijl.accent} className={!stijl.accent ? 'active' : ''} onClick={() => zetWeergaveStijl({ accent: undefined })} data-thema-accent=''
           title={tr('Акцент визначає палітра (у «Кольоровій» — колір розділу).', 'Het palet bepaalt het accent (bij «Kleurrijk» de kleur van het onderdeel).')}>
@@ -63,7 +60,15 @@ export function AccentEnEffecten({ tr }: { tr: Tr }) {
           <i style={{ background: `linear-gradient(135deg, ${ACCENT_TONEN[id].licht.accent} 50%, ${ACCENT_TONEN[id].donker.accent} 50%)` }} aria-hidden /><span>{tr(ACCENT_NAMEN[id].uk, ACCENT_NAMEN[id].nl)}</span>
         </button>)}
       </div>
-    </section>
+    </section>;
+}
+
+/** KLEUREN-001: «Вигляд і кольори» → блок «Тло і глибина»: прозорість блоків і сяйво ілюстрацій. Doorschijnendheid en gloed. */
+export function TransparantieEnEffecten({ tr }: { tr: Tr }) {
+  const { stijl } = useThemaStand();
+  const effecten = typeof stijl.effecten === 'number' ? stijl.effecten : UITERLIJK_EFFECTEN_STANDAARD;
+  const transparantie = typeof stijl.transparantie === 'number' ? stijl.transparantie : 0;
+  return <>
     <section id='thema-transparantie' aria-labelledby='thema-transparantie-kop'>
       <h3 id='thema-transparantie-kop'>{tr('Прозорість блоків', 'Doorschijnende blokken')}</h3>
       <p className='thema-uitleg'>{tr('Блоки й картки стають напівпрозорими, і крізь них видно тло сторінки — найкраще з «Живим фоном». Меню, вікна й поля введення лишаються суцільними. Навіть на максимумі підкладка щільна щонайменше на 30 %, щоб текст читався. Якщо на пристрої ввімкнено «Зменшити прозорість», блоки лишаються суцільними.', 'Blokken en kaarten worden half doorschijnend en de achtergrond van de pagina schemert erdoor — het mooist met de levende achtergrond. Menu\'s, vensters en invoervelden blijven dicht. Ook op het maximum blijft de ondergrond minstens voor 30 % dicht, zodat tekst leesbaar blijft. Staat «Transparantie verminderen» op het apparaat aan, dan blijven de blokken dicht.')}</p>
@@ -79,7 +84,7 @@ export function AccentEnEffecten({ tr }: { tr: Tr }) {
       </label> : null}
     </section>
     <section id='thema-effecten' aria-labelledby='thema-effecten-kop'>
-      <h3 id='thema-effecten-kop'>{tr('Виразність декоративних ефектів', 'Sterkte van decoratieve effecten')}</h3>
+      <h3 id='thema-effecten-kop'>{tr('Сяйво ілюстрацій', 'Gloed van illustraties')}</h3>
       <p className='thema-uitleg'>{tr('Сяйво ілюстрацій центру облікового запису: 0 % — без сяйва, 45 % — як задумано, 100 % — насиченіше. На текст і кнопки не впливає.', 'De gloed van de illustraties in het accountcentrum: 0 % — geen gloed, 45 % — zoals bedoeld, 100 % — voller. Tekst en knoppen veranderen niet.')}</p>
       <label className='thema-veld thema-effecten'>
         <input type='range' min={0} max={100} step={5} value={effecten} aria-labelledby='thema-effecten-kop' aria-valuetext={`${effecten}%`} data-thema-effecten

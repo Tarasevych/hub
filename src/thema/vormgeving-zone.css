@@ -1,0 +1,61 @@
+/* KLEUREN-001 (16.11.2026): зона «Вигляд і кольори» — живий приклад, згортні блоки шарів, низ зони.
+   Мобільний шар (@media max-width) — у кінці файла. Mobiele laag aan het einde van het bestand. */
+.vz-zone{gap:.9rem}
+/* ---- живий приклад · levend voorbeeld */
+.vz-voorbeeld-vak{display:grid;grid-template-columns:minmax(0,17rem) minmax(0,1fr);gap:1rem;align-items:center;padding:.9rem;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.vz-voorbeeld{position:relative;display:grid;grid-template-columns:2.1rem minmax(0,1fr);gap:.55rem;min-height:9.5rem;padding:.6rem;border-radius:14px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;isolation:isolate}
+.vz-v-tlo{position:absolute;inset:-12%;z-index:-1;filter:blur(14px);pointer-events:none}
+.vz-v-tlo[hidden]{display:none}
+.vz-v-menu{display:grid;align-content:start;gap:.4rem;padding:.4rem .35rem;border-radius:10px;background:color-mix(in srgb,var(--panel) calc(var(--vz-dekking,1)*100%),transparent);box-shadow:inset 0 0 0 1px var(--line)}
+.vz-v-menu i{display:block;height:.9rem;border-radius:5px;background:color-mix(in srgb,var(--muted) 35%,transparent)}
+.vz-v-menu i.is-actief{background:var(--accent)}
+.vz-v-blok{display:grid;align-content:start;gap:.4rem;min-width:0;padding:.65rem .7rem;border-radius:12px;background:color-mix(in srgb,var(--panel) calc(var(--vz-dekking,1)*100%),transparent);box-shadow:inset 0 0 0 1px var(--line);color:var(--text)}
+.vz-v-blok b{font-size:.86rem;line-height:1.25}
+.vz-v-tekst{color:var(--muted);font-size:.78rem;line-height:1.35}
+.vz-v-tekst u{color:var(--accent);text-underline-offset:2px}
+.vz-v-rij{display:flex;align-items:center;gap:.6rem;margin-top:.15rem}
+.vz-v-knop{display:inline-flex;align-items:center;min-height:1.6rem;padding:.15rem .7rem;border-radius:999px;background:var(--accent);color:var(--accentText,var(--panel));font-size:.76rem;font-weight:650}
+.vz-v-schakel{position:relative;flex:none;width:2.1rem;height:1.15rem;border-radius:999px;background:var(--accent)}
+.vz-v-schakel::before{content:'';position:absolute;top:50%;right:.14rem;width:.85rem;height:.85rem;border-radius:50%;background:var(--accentText,var(--panel));transform:translateY(-50%)}
+.vz-v-glans{position:absolute;right:.7rem;bottom:.7rem;width:1.5rem;height:1.5rem;border-radius:50%;background:radial-gradient(circle at 35% 35%,color-mix(in srgb,var(--accent) 55%,#fff),var(--accent));box-shadow:0 0 calc(var(--vz-glans,.45)*26px) calc(var(--vz-glans,.45)*7px) color-mix(in srgb,var(--accent) 70%,transparent)}
+/* Підсвічення шару: решта приклада тьмяніє, частини обраного шару отримують пунктирне кільце. */
+.vz-voorbeeld-vak[data-wijs] .vz-voorbeeld [data-laag]{transition:opacity .18s,outline-color .18s}
+.vz-voorbeeld-vak[data-wijs='accent'] .vz-voorbeeld :is(.vz-v-blok b,.vz-v-tekst,.vz-v-menu i:not(.is-actief),.vz-v-glans,.vz-v-tlo){opacity:.35}
+.vz-voorbeeld-vak[data-wijs='accent'] .vz-voorbeeld [data-laag='accent'],
+.vz-voorbeeld-vak[data-wijs='basis'] .vz-voorbeeld :is(.vz-v-menu,.vz-v-blok),
+.vz-voorbeeld-vak[data-wijs='tlo'] .vz-voorbeeld .vz-v-glans{outline:2px dashed var(--text);outline-offset:2px}
+.vz-voorbeeld-vak[data-wijs='basis'] .vz-voorbeeld :is([data-laag='accent'],.vz-v-glans,.vz-v-tlo){opacity:.35}
+.vz-voorbeeld-vak[data-wijs='basis'] .vz-voorbeeld,.vz-voorbeeld-vak[data-wijs='tlo'] .vz-voorbeeld{box-shadow:inset 0 0 0 2px var(--text)}
+.vz-voorbeeld-vak[data-wijs='tlo'] .vz-voorbeeld :is(.vz-v-blok>*,.vz-v-menu i){opacity:.35}
+.vz-legenda{display:grid;gap:.35rem;margin:0;padding:0;list-style:none}
+.vz-legenda li{display:flex;align-items:flex-start;gap:.55rem;padding:.4rem .55rem;border:1px solid transparent;border-radius:12px;color:var(--muted);font-size:.86rem;line-height:1.4;cursor:default}
+.vz-legenda li strong{color:var(--text)}
+.vz-legenda li.is-gewezen{border-color:var(--line);background:var(--panel)}
+.vz-legenda li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vz-legenda li>i,.vz-nummer{display:grid;place-items:center;flex:none;width:1.45rem;height:1.45rem;border-radius:50%;background:var(--accent-soft,var(--surface2));color:var(--text);font-style:normal;font-size:.78rem;font-weight:700}
+/* ---- згортні блоки · inklapbare blokken */
+.vz-blok{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}
+.vz-blok>summary{display:flex;align-items:center;gap:.7rem;min-height:3.4rem;padding:.65rem 1rem;cursor:pointer;list-style:none}
+.vz-blok>summary::-webkit-details-marker{display:none}
+.vz-blok>summary::after{content:none}
+.vz-blok>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:18px}
+.vz-blok-kop{display:grid;gap:.1rem;flex:1;min-width:0}
+.vz-blok-kop strong{font-size:1.02rem}
+.vz-blok-kop small{color:var(--muted);font-size:.82rem;line-height:1.35}
+.vz-waarde{flex:none;max-width:45%;padding:.25rem .65rem;border-radius:999px;background:var(--surface);color:var(--text);font-size:.82rem;font-weight:600;line-height:1.3;text-align:right}
+.vz-pijl{flex:none;width:1.1rem;height:1.1rem;color:var(--muted);transition:transform .2s}
+.vz-blok[open]>summary .vz-pijl{transform:rotate(180deg)}
+.vz-blok-inhoud{display:grid;gap:1.2rem;padding:.2rem 1rem 1rem}
+.vz-blok-inhoud section{display:grid;gap:.6rem}
+/* ---- низ зони · voet */
+.vz-voet{display:grid;gap:.7rem;justify-items:start;padding:.9rem 1rem;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+@media (prefers-reduced-motion:reduce){.vz-pijl,.vz-voorbeeld-vak[data-wijs] .vz-voorbeeld [data-laag]{transition:none}}
+@media (max-width:720px){
+  .vz-voorbeeld-vak{grid-template-columns:1fr;padding:.7rem}
+  .vz-blok>summary{flex-wrap:wrap;gap:.5rem .6rem;min-height:var(--tik-hoogte,44px);padding:.6rem .75rem}
+  .vz-blok-kop{flex-basis:calc(100% - 4.2rem)}
+  .vz-waarde{order:3;max-width:calc(100% - 2.15rem);margin-left:2.15rem;text-align:left}
+  .vz-blok-inhoud{padding:.2rem .75rem .85rem}
+  .vz-voet{padding:.75rem}
+  .vz-voet .thema-knop{width:100%}
+}

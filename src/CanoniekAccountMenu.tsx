@@ -297,7 +297,7 @@ const V2_HULP = {
   },
   weergave: {
     wat: ['Мова сайту й тема. «Пристрій» — як у налаштуваннях телефона чи комп’ютера. «Авто» — темна, коли надворі темно (або за вашим розкладом).', 'Taal van de site en thema. «Apparaat» volgt de instelling van telefoon of computer. «Auto» — donker wanneer het buiten donker is (of volgens uw schema).'],
-    gevolg: ['Кольори теми й розклад автоперемикання — у «Налаштування → Теми» (кнопка з палітрою).', 'Themakleuren en het schema voor automatisch wisselen staan in «Instellingen → Thema’s» (knop met het palet).'],
+    gevolg: ['Кольори теми й розклад автоперемикання — у «Налаштування → Вигляд і кольори» (кнопка з палітрою).', 'Themakleuren en het schema voor automatisch wisselen staan in «Instellingen → Weergave en kleuren» (knop met het palet).'],
   },
 } as const;
 

@@ -5,17 +5,11 @@ import { AlertTriangle, ChevronDown, BatteryMedium, Blend, Gauge, Layers, Monito
 import type { ReactNode } from 'react';
 import { ACHTERGROND_GRENZEN, achtergrondVolledig, normaliseerAchtergrond, type AchtergrondKader, type AchtergrondKleuren, type AchtergrondOvergang, type AchtergrondStand, type UiterlijkAchtergrond } from '../../shared/uiterlijk';
 import { useThemaStand, zetAchtergrond } from '../thema/useThema';
+import { TLO_VOORBEELD } from '../thema/VormgevingZone';
 import './achtergrond-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
 
-const KLEUR_VOORBEELD: Record<AchtergrondKleuren, string> = {
-  thema: 'radial-gradient(circle at 30% 40%, var(--accent), transparent 62%), radial-gradient(circle at 75% 65%, color-mix(in srgb, var(--accent) 55%, #38bdf8), transparent 60%)',
-  aurora: 'radial-gradient(circle at 25% 45%, #34d399, transparent 60%), radial-gradient(circle at 70% 40%, #a78bfa, transparent 58%), radial-gradient(circle at 55% 85%, #22d3ee, transparent 55%)',
-  zee: 'radial-gradient(circle at 30% 40%, #38bdf8, transparent 60%), radial-gradient(circle at 75% 70%, #6366f1, transparent 58%)',
-  zonsondergang: 'radial-gradient(circle at 30% 45%, #fb923c, transparent 60%), radial-gradient(circle at 72% 55%, #f472b6, transparent 58%), radial-gradient(circle at 50% 90%, #a855f7, transparent 55%)',
-  regenboog: 'conic-gradient(from 30deg, #f87171, #fbbf24, #34d399, #38bdf8, #a78bfa, #f472b6, #f87171)',
-};
 
 export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
   const { achtergrond } = useThemaStand();
@@ -32,7 +26,8 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
       tr('Фон не малюється зовсім — нуль навантаження. Повертається статичне тло обраної палітри.', 'Er wordt niets getekend — geen belasting. Het stilstaande vlak van het gekozen palet komt terug.'), <Power key='i' aria-hidden />],
   ];
   const kleuren: Array<[AchtergrondKleuren, string, string]> = [
-    ['thema', tr('Як у темі', 'Zoals het thema'), tr('Відтінки довкола акцентного кольору палітри — завжди пасує до сайту.', 'Tinten rond de accentkleur van het palet — past altijd bij de site.')],
+    // KLEUREN-001: назва каже, звідки береться колір; у сірих палітрах без акценту плями фіолетово-сині (сірий акцент не дає відтінку).
+    ['thema', tr('За акцентом', 'Volgens het accent'), tr('Відтінки довкола акценту з блоку «Акцент» (або акценту палітри). У сірих палітрах без обраного акценту — спокійний фіолетово-синій.', 'Tinten rond het accent uit het blok «Accent» (of dat van het palet). Bij grijze paletten zonder gekozen accent een rustig violetblauw.')],
     ['aurora', tr('Полярне сяйво', 'Noorderlicht'), tr('Смарагд, бірюза й фіолет.', 'Smaragd, turkoois en violet.')],
     ['zee', tr('Море', 'Zee'), tr('Блакитні й сині відтінки, найспокійніше для очей.', 'Blauwe tinten, het rustigst voor de ogen.')],
     ['zonsondergang', tr('Захід сонця', 'Zonsondergang'), tr('Помаранч, корал, рожевий, бузок.', 'Oranje, koraal, roze, lila.')],
@@ -93,10 +88,10 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
     </details>
 
     <details className='la-blok' open>
-      <summary><Blend aria-hidden /><span>{tr('Кольори', 'Kleuren')}</span><ChevronDown className='la-pijl' aria-hidden /></summary>
-      <div className='la-kleuren' role='radiogroup' aria-label={tr('Набір кольорів', 'Kleurenset')}>
+      <summary><Blend aria-hidden /><span>{tr('Відтінки фону', 'Tinten van de achtergrond')}</span><ChevronDown className='la-pijl' aria-hidden /></summary>
+      <div className='la-kleuren' role='radiogroup' aria-label={tr('Відтінки плям живого фону', 'Tinten van de vlekken')}>
         {kleuren.map(([id, naam, uitleg]) => <button key={id} type='button' role='radio' aria-checked={a.kleuren === id} className={a.kleuren === id ? 'active' : ''} title={uitleg} disabled={uit} onClick={() => zet({ kleuren: id })} data-achtergrond-kleuren={id}>
-          <i style={{ background: KLEUR_VOORBEELD[id] }} aria-hidden /><span><strong>{naam}</strong><small>{uitleg}</small></span>
+          <i style={{ background: TLO_VOORBEELD[id] }} aria-hidden /><span><strong>{naam}</strong><small>{uitleg}</small></span>
         </button>)}
       </div>
     </details>
