@@ -713,8 +713,8 @@ export default function AiVertalingBalk({
             className="ai-vb-sluit"
             aria-label={t('Сховати панель ШІ над усіма листами', 'AI-paneel boven alle berichten verbergen')}
             title={t(
-              'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
-              'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
+              'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «Мова й ШІ» → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
+              'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «Taal en AI» → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
             )}
             onClick={() => setSluitKeuzeOpen(o => !o)}
             aria-expanded={sluitKeuzeOpen}
@@ -733,7 +733,7 @@ export default function AiVertalingBalk({
               </button>
               <button type="button" className="mk-knop" data-sluit="uit" onClick={() => { setSluitKeuzeOpen(false); sluitBalk(); }}>
                 <strong>{t('Вимкнути зовсім', 'Helemaal uitzetten')}</strong>
-                <small>{t('На всіх ваших пристроях, доки не ввімкнете знову: «Вигляд» у шапці листа → «ШІ-аналіз над листом».', 'Op al uw apparaten, tot u het weer aanzet: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht».')}</small>
+                <small>{t('На всіх ваших пристроях, доки не ввімкнете знову: «Вигляд» у шапці листа → «Мова й ШІ» → «ШІ-аналіз над листом».', 'Op al uw apparaten, tot u het weer aanzet: «Weergave» in de kop van het bericht → «Taal en AI» → «AI-analyse boven het bericht».')}</small>
               </button>
               <button type="button" className="ai-vb-wie-knop" data-sluit="annuleer" onClick={() => setSluitKeuzeOpen(false)}>{t('Скасувати', 'Annuleren')}</button>
             </div>

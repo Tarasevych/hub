@@ -20,9 +20,11 @@ const PROVIDERS: Record<string, { logo: LogoKind; label: string }> = {
   internal: { logo: 'internal', label: 'Mijn Ruimte' }, docker: { logo: 'docker', label: 'Docker' },
   // AGENTSCHEIDING-001: elke AI-koppeling met haar eigen logo en naam (klant-id uit shared/ai-verbinding.ts), niet allemaal «Claude».
   chatgpt: { logo: 'openai', label: 'ChatGPT' }, openai: { logo: 'openai', label: 'OpenAI' }, codex: { logo: 'codex', label: 'Codex' }, grok: { logo: 'grok', label: 'Grok' },
-  gemini: { logo: 'gemini', label: 'Gemini' }, copilot: { logo: 'copilot', label: 'Copilot' }, cursor: { logo: 'cursor', label: 'Cursor' },
+  gemini: { logo: 'gemini', label: 'Gemini' }, copilot: { logo: 'copilot', label: 'GitHub Copilot' }, cursor: { logo: 'cursor', label: 'Cursor' },
   antigravity: { logo: 'antigravity', label: 'Antigravity' }, autoclaw: { logo: 'autoclaw', label: 'AutoClaw' }, windsurf: { logo: 'windsurf', label: 'Windsurf' },
   cline: { logo: 'cline', label: 'Cline' }, devin: { logo: 'devin', label: 'Devin' }, opencode: { logo: 'opencode', label: 'OpenCode' },
+  // UPD-003: 14-й агент із #143 (BREEDTE-003) — власний знак і назва, а не «Copilot» GitHub. Eigen logo en naam voor Microsoft Copilot.
+  mscopilot: { logo: 'mscopilot', label: 'Microsoft Copilot' },
 };
 
 /**
