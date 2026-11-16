@@ -12,8 +12,8 @@ import { useLeesVenster } from './LeesVenster';
 import { aiHrefOplossen, useBalkSessieVerborgen, useLaatsteAiStaat, zetAiBalkTonen, zetBalkSessieVerborgen } from './ai-staat';
 import { lokaalStap } from '../../shared/mail-ai-motor';
 import { openExtensieOpties, useLokaleStand } from './lokale-motor';
-import AiUitleg from './AiUitleg';
 import './motor-kiezer.css';
+import AiUitleg from './AiUitleg';
 
 /**
  * MAILAI-001: «ШІ-аналіз над листом» — панель «ШІ-аналіз і переклад» над кожним листом. Типово вимкнено; налаштування облікового

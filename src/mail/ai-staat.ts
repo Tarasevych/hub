@@ -4,11 +4,17 @@
 // niets weg; het eenvoudige ontleden werkt altijd (in de browser, zonder model).
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
-import { MOTOR_AUTO, MOTOR_VOORKEUR_SLEUTEL } from '../../shared/mail-ai-motor';
+import { MOTOR_AUTO, MOTOR_VOORKEUR_SLEUTEL, type MotorPrijzen } from '../../shared/mail-ai-motor';
+import type { DienstGebruik, DienstMotorPubliek } from '../../shared/ai-dienst-motor';
 import { agentKanPost, AI_TOEGANG_HREF, STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
 
-export type AiStaat = { geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen };
-const LEEG: AiStaat = { geladen: false, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN };
+export type AiStaat = {
+  geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen;
+  /** MAILAI-003: усі приватні агенти (для карток рушіїв), спільні рушії сайту, лічильник на сьогодні й орієнтовні ціни. */
+  agents: AiVertalingAgentInfo[]; dienst: DienstMotorPubliek[]; gebruik: Record<string, DienstGebruik>; prijzen: MotorPrijzen | null;
+};
+const LEEG_EXTRA = { agents: [] as AiVertalingAgentInfo[], dienst: [] as DienstMotorPubliek[], gebruik: {} as Record<string, DienstGebruik>, prijzen: null as MotorPrijzen | null };
+const LEEG: AiStaat = { geladen: false, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA };
 const cache = new Map<string, Promise<AiStaat>>();
 /** De laatst geladen staat (welke context ook): voor onderdelen zonder eigen context, zoals «Вигляд → Мова листа». */
 let laatste: AiStaat | null = null;
@@ -21,20 +27,24 @@ export function laadAiStaat(context: Record<string, string>): Promise<AiStaat> {
   let p = cache.get(k);
   if (!p) {
     p = api.post('/api/owner/mail/ai-vertaling/state', { ...context }).then((res) => {
-      const data = (res.data || {}) as { agents?: AiVertalingAgentInfo[]; settings?: AiVertalingInstellingen };
+      const data = (res.data || {}) as { agents?: AiVertalingAgentInfo[]; settings?: AiVertalingInstellingen; dienstMotoren?: DienstMotorPubliek[]; gebruik?: Record<string, DienstGebruik>; prijzen?: MotorPrijzen | null };
       // MAILAI-001: лише агент, якого сайт справді може запустити (є ключ API), — інакше кнопки ШІ «працюють» лише на вигляд.
-      const agents = (Array.isArray(data.agents) ? data.agents : []).filter((a) => agentKanPost(a));
+      const alle = Array.isArray(data.agents) ? data.agents : [];
+      const agents = alle.filter((a) => agentKanPost(a));
       const instellingen = data.settings || STANDAARD_AI_VERTALING_INSTELLINGEN;
       const agent = agents.find((a) => a.id === instellingen.defaultAgentId) || agents[0] || null;
-      return { geladen: true, agent, instellingen };
-    }, () => ({ geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN }));
+      return {
+        geladen: true, agent, instellingen, agents: alle, dienst: Array.isArray(data.dienstMotoren) ? data.dienstMotoren : [],
+        gebruik: data.gebruik && typeof data.gebruik === 'object' ? data.gebruik : {}, prijzen: data.prijzen || null,
+      };
+    }, () => ({ geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA }));
     cache.set(k, p);
     laatsteContext = { ...context };
     void p.then((s) => {
       laatste = s;
       for (const f of luisteraars) f(s);
       // een mislukte poging niet onthouden: de volgende brief mag het opnieuw proberen (setTimeout van de omgeving: ook zonder window)
-      if (!s.agent) setTimeout(() => cache.delete(k), 60_000);
+      if (!s.agent && !s.dienst.length) setTimeout(() => cache.delete(k), 60_000);
     });
   }
   return p;
@@ -44,10 +54,37 @@ export function useAiStaat(context: Record<string, string>): AiStaat {
   const [staat, setStaat] = useState<AiStaat>(LEEG);
   useEffect(() => {
     let actief = true;
-    void laadAiStaat(context).then((s) => { if (actief) setStaat(s); });
-    return () => { actief = false; };
+    const zet = (s: AiStaat) => { if (actief) setStaat(s); };
+    void laadAiStaat(context).then(zet);
+    // MAILAI-003: згода на спільний рушій чи новий лічильник — усі відкриті частини бачать це одразу.
+    luisteraars.add(zet);
+    return () => { actief = false; luisteraars.delete(zet); };
   }, [context.service, context.tabContext, context.sourceOrigin]);
   return staat;
+}
+
+/** MAILAI-003: стан із сервера заново (після згоди на спільний рушій або коли сервер сказав, що рушій вимкнено). */
+export function herlaadAiStaat(context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<AiStaat> {
+  cache.delete(sleutelVan(context));
+  return laadAiStaat(context);
+}
+
+/** MAILAI-003: новий лічильник рушія з відповіді сервера — без повторного запиту стану. */
+export function zetMotorGebruik(teller: string, g: DienstGebruik | undefined | null): void {
+  if (!g || !teller || !laatste) return;
+  laatste = { ...laatste, gebruik: { ...laatste.gebruik, [teller]: g }, dienst: laatste.dienst.map((d) => (`dienst:${d.id}` === teller ? { ...d, vandaag: g.vandaag } : d)) };
+  const nieuw = laatste;
+  for (const [k, p] of cache) cache.set(k, p.then(() => nieuw));
+  for (const f of luisteraars) f(nieuw);
+}
+
+/**
+ * MAILAI-003: погодитися на спільний рушій сайту або відкликати згоду. Сервер сам обчислює, на що саме дається згода (куди йде
+ * текст), і записує це в центр сповіщень. Akkoord geven of intrekken; de server bepaalt waarmee precies akkoord wordt gegaan.
+ */
+export async function zetDienstAkkoord(id: string, aan: boolean, context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<AiStaat> {
+  await api.post('/api/owner/mail/ai-vertaling/settings', { ...context, dienstAkkoord: { id, aan } });
+  return herlaadAiStaat(context);
 }
 
 /** De laatst geladen staat, of null zolang er nog niets geladen is (dan weet het onderdeel het niet — en zegt het niets stelligs). */
@@ -73,7 +110,7 @@ let laatsteContext: Record<string, string> | null = null;
 export async function zetAiBalkTonen(aan: boolean, context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<void> {
   const vorige = laatste;
   const pas = (v: boolean) => {
-    const basis = laatste || { geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN };
+    const basis = laatste || { geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA };
     laatste = { ...basis, instellingen: { ...basis.instellingen, balkTonen: v } };
     for (const [k, p] of cache) cache.set(k, p.then((s) => ({ ...s, instellingen: { ...s.instellingen, balkTonen: v } })));
     for (const f of luisteraars) f(laatste);

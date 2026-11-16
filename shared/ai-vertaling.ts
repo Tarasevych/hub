@@ -96,6 +96,11 @@ export type AiVertalingInstellingen = {
    * наявних записів без цього поля). Het paneel boven de brief verschijnt alleen als de gebruiker het zelf aanzette (standaard uit).
    */
   balkTonen: boolean;
+  /**
+   * MAILAI-003 (16.11.2026): спільні рушії сайту, на які людина сама погодилася («<id>@<відбиток того, куди йде текст>»). Типово порожньо:
+   * без згоди текст листа спільному рушієві не надсилається. Gedeelde motoren waarmee de gebruiker zelf akkoord ging; standaard geen.
+   */
+  dienstAkkoord: string[];
 };
 
 export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
@@ -106,6 +111,7 @@ export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
   crossMailboxContext: true,
   includeAttachments: true,
   balkTonen: false,
+  dienstAkkoord: [],
 };
 
 export function normalizeAiVertalingTaal(raw: unknown, fallback = 'uk'): string {
@@ -145,7 +151,10 @@ export function normalizeAiVertalingInstellingen(
   const includeAttachments =
     typeof src.includeAttachments === 'boolean' ? src.includeAttachments : current.includeAttachments;
   const balkTonen = typeof src.balkTonen === 'boolean' ? src.balkTonen : current.balkTonen === true;
+  const akkoordBron = Array.isArray(src.dienstAkkoord) ? src.dienstAkkoord : Array.isArray(current.dienstAkkoord) ? current.dienstAkkoord : [];
+  const dienstAkkoord = [...new Set(akkoordBron.map((x) => String(x)).filter((x) => /^[a-z][a-z0-9-]{1,30}@[a-z0-9]{1,12}$/.test(x)))].slice(0, 24);
   return {
+    dienstAkkoord,
     defaultLang,
     recentLangs: recentSet,
     defaultAgentId,
@@ -403,7 +412,7 @@ export type AiVertalingAgentInfo = {
   id: string;
   name: string;
   platform: string;
-  source: 'oauth' | 'console' | 'agent' | 'vault';
+  source: 'oauth' | 'console' | 'agent' | 'vault' | 'dienst';
   ruimte: AiRuimte;
   scopes: AiVertalingScope[];
   allowedMailRead: boolean;
@@ -920,6 +929,10 @@ export type AiVertalingRunResponse = {
   onvertaald?: number;
   /** MAILAI-002: постачальник, який справді обробив текст вашим ключем (anthropic, gemini…). Ontbreekt bij een oude server. */
   aanbiederId?: string;
+  /** MAILAI-003: спільний рушій сайту, який обробив текст (ключ сайту або власний сервер). */
+  dienstId?: string;
+  /** MAILAI-003: використання цього рушія сьогодні й залишок за заголовками постачальника. */
+  gebruik?: { vandaag: number; limietPerDag?: number; resterend?: number; limiet?: number; gemetenOp?: number };
   summary?: {
     depth: AiVertalingSummaryDepth;
     headline: string;

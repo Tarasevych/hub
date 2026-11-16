@@ -44,11 +44,13 @@ import {
   type VertaalWeergave,
 } from '../../shared/ai-vertaling';
 import { InfoTip } from '../InfoTip';
-import { aiHrefOplossen, useBalkSessieVerborgen, useLaatsteAiStaat, useMotorVoorkeur, zetAiBalkTonen, zetBalkSessieVerborgen, zetMotorVoorkeur } from './ai-staat';
+import { aiHrefOplossen, herlaadAiStaat, zetDienstAkkoord, zetMotorGebruik, useBalkSessieVerborgen, useLaatsteAiStaat, useMotorVoorkeur, zetAiBalkTonen, zetBalkSessieVerborgen, zetMotorVoorkeur } from './ai-staat';
 import AiUitleg from './AiUitleg';
 import MotorKiezer from './MotorKiezer';
-import { lokaalGebruik, LokaleFout, useLokaleStand, vatSamenLokaal, vertaalLokaal } from './lokale-motor';
-import { andereMotor, kiesMotor, LOKAAL_MOTOR_ID, MOTOR_AUTO, motorenVoorPost, verwerktDoor, type MotorKaart } from '../../shared/mail-ai-motor';
+import { lokaalExtra, lokaalGebruik, LokaleFout, useLokaleStand, vatSamenLokaal, vertaalLokaal } from './lokale-motor';
+import { andereMotor, kiesMotor, LOKAAL_MOTOR_ID, MOTOR_AUTO, motorenVoorPost, verwerktDoor, type MotorKaart, type MotorPrijzen } from '../../shared/mail-ai-motor';
+import { gebruikSleutelDienst, gebruikSleutelEigen, type DienstGebruik, type DienstMotorPubliek } from '../../shared/ai-dienst-motor';
+import type { AiAanbiederId } from '../../shared/ai-aanbieders';
 import './motor-kiezer.css';
 import './ai-vertaling-balk.css';
 
@@ -170,7 +172,22 @@ export default function AiVertalingBalk({
   // MAILAI-002: рушії (локальний ШІ Chrome + ваші ключі), ваш вибір на цьому пристрої, «сховати зараз» і запропонований інший рушій.
   const lokaal = useLokaleStand();
   const voorkeur = useMotorVoorkeur();
-  const kaarten = useMemo(() => motorenVoorPost(agents, lokaal), [agents, lokaal]);
+  // MAILAI-003: спільні рушії сайту (лише ввімкнені власником), лічильник на сьогодні, орієнтовні ціни; стан перечитується після згоди.
+  const [dienst, setDienst] = useState<DienstMotorPubliek[]>([]);
+  const [motorGebruik, setMotorGebruik] = useState<Record<string, DienstGebruik>>({});
+  const [prijzen, setPrijzen] = useState<MotorPrijzen | null>(null);
+  const [staatVersie, setStaatVersie] = useState(0);
+  const lExtra = lokaalExtra();
+  const kaarten = useMemo(
+    () => motorenVoorPost(agents, lokaal, { dienst, gebruik: motorGebruik, prijzen, lokaalPrompt: lExtra.lokaalPrompt, beleid: lExtra.beleid }),
+    [agents, lokaal, dienst, motorGebruik, prijzen, lExtra.lokaalPrompt, lExtra.beleid?.reden, lExtra.beleid?.door],
+  );
+  const telGebruik = (teller: string, g?: DienstGebruik | null) => {
+    if (!g || !teller) return;
+    setMotorGebruik(curr => ({ ...curr, [teller]: g }));
+    setDienst(curr => curr.map(d => (gebruikSleutelDienst(d.id) === teller ? { ...d, vandaag: g.vandaag } : d)));
+    zetMotorGebruik(teller, g);
+  };
   const sessieVerborgen = useBalkSessieVerborgen();
   const [sluitKeuzeOpen, setSluitKeuzeOpen] = useState(false);
   const [voorstel, setVoorstel] = useState<{ mode: AiVertalingMode; motor: MotorKaart } | null>(null);
@@ -204,9 +221,15 @@ export default function AiVertalingBalk({
           agents?: AiVertalingAgentInfo[];
           settings?: AiVertalingInstellingen;
           motoren?: VertaalMotor[];
+          dienstMotoren?: DienstMotorPubliek[];
+          gebruik?: Record<string, DienstGebruik>;
+          prijzen?: MotorPrijzen | null;
         };
         const loadedAgents = Array.isArray(data?.agents) ? data.agents : [];
         setAgents(loadedAgents);
+        setDienst(Array.isArray(data?.dienstMotoren) ? data.dienstMotoren : []);
+        setMotorGebruik(data?.gebruik && typeof data.gebruik === 'object' ? data.gebruik : {});
+        setPrijzen(data?.prijzen || null);
         setStaatGeladen(true);
         setMotoren(Array.isArray(data?.motoren) && data.motoren.length ? data.motoren : motorenMetStand(loadedAgents, isDocumentView));
         if (data?.settings) {
@@ -236,7 +259,7 @@ export default function AiVertalingBalk({
     return () => {
       active = false;
     };
-  }, [context.service, context.tabContext, context.sourceOrigin]);
+  }, [context.service, context.tabContext, context.sourceOrigin, staatVersie]);
 
   // Reset displayed panel when switching to a different message/document
   useEffect(() => {
@@ -394,6 +417,8 @@ export default function AiVertalingBalk({
         const data = res.data as AiVertalingRunResponse;
         localCacheRef.current.set(cacheKey, data);
         setLastResult(data);
+        // MAILAI-003: лічильник цього рушія одразу після відповіді — «сьогодні 5 із 30», залишок у постачальника.
+        telGebruik(data.dienstId ? gebruikSleutelDienst(data.dienstId) : data.aanbiederId ? gebruikSleutelEigen(data.aanbiederId as AiAanbiederId) : '', data.gebruik);
 
         if (!settings.recentLangs.includes(targetLang) || settings.recentLangs[0] !== targetLang) {
           setSettings(curr => ({
@@ -411,7 +436,18 @@ export default function AiVertalingBalk({
         if (!aliveRef.current) return;
         const errBody = err?.response?.data || err?.data || {};
         // MAILAI-002: ліміт постачальника або недійсний ключ — сказати саме це і запропонувати інший готовий рушій.
-        if (errBody?.error === 'AANBIEDER_LIMIET' || errBody?.error === 'AANBIEDER_SLEUTEL_ONGELDIG' || errBody?.error === 'VERTAALMOTOR_GEEN_ANTWOORD') {
+        const code = String(errBody?.error || '');
+        // MAILAI-003: спільний рушій сайту — межа на людину, вимкнено власником, немає згоди, сервер не відповів. Кажемо саме це,
+        // пропонуємо інший готовий рушій і перечитуємо стан (картки мають показати правду).
+        const dienstFout = ['DIENST_LIMIET', 'DIENST_AANBIEDER_LIMIET', 'DIENST_ONBEREIKBAAR', 'DIENST_UIT', 'DIENST_AKKOORD_NODIG', 'DIENST_FUNCTIE', 'MOTOR_NIET_BESCHIKBAAR'].includes(code);
+        if (errBody?.gebruik) telGebruik(errBody.dienstId ? gebruikSleutelDienst(String(errBody.dienstId)) : errBody.aanbiederId ? gebruikSleutelEigen(errBody.aanbiederId as AiAanbiederId) : '', errBody.gebruik as DienstGebruik);
+        if (dienstFout) {
+          setErrorText(String((nl ? errBody.messageNl : errBody.messageUk) || errBody.messageUk || ''));
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+          if (code === 'DIENST_UIT' || code === 'DIENST_AKKOORD_NODIG' || code === 'MOTOR_NIET_BESCHIKBAAR') { setStaatVersie(v => v + 1); void herlaadAiStaat(context); }
+          if (code === 'DIENST_AKKOORD_NODIG') setMotorenOpen(true);
+        } else if (errBody?.error === 'AANBIEDER_LIMIET' || errBody?.error === 'AANBIEDER_SLEUTEL_ONGELDIG' || errBody?.error === 'VERTAALMOTOR_GEEN_ANTWOORD') {
           setErrorText(String((nl ? errBody.messageNl : errBody.messageUk) || errBody.messageUk || ''));
           const ander = andereMotor(kaarten, motor.id, mode);
           if (ander) setVoorstel({ mode, motor: ander });
@@ -487,6 +523,12 @@ export default function AiVertalingBalk({
     setErrorText(''); setVoorstel(null);
   };
   const kanFunctie = (mode: AiVertalingMode) => Boolean(kiesMotor(kaarten, voorkeur, mode));
+  // MAILAI-003: згода на спільний рушій (або відкликання). Після відкликання обраний рушій повертається до «Авто»: він більше не готовий.
+  const dienstAkkoord = async (id: string, aan: boolean) => {
+    await zetDienstAkkoord(id, aan, context);
+    if (!aan && voorkeur === `dienst:${id}`) zetMotorVoorkeur(MOTOR_AUTO);
+    setStaatVersie(v => v + 1);
+  };
   const nietKanTitel = t('Обраний рушій цього не вміє (локальний ШІ: лише переклад і підсумок). Оберіть інший у «Рушії ШІ».', 'De gekozen motor kan dit niet (lokale AI: alleen vertaling en samenvatting). Kies een andere in «AI-motoren».');
   const gebruik = actief?.soort === 'lokaal' ? lokaalGebruik() : null;
 
@@ -567,8 +609,12 @@ export default function AiVertalingBalk({
             <>
               <span>{t('Обробляє:', 'Verwerkt door:')}</span>
               <strong>{t(actief.naamUk, actief.naamNl)}</strong>
-              <span className="mk-label" data-kosten={actief.kosten}>{actief.kosten === 'gratis' ? t('безкоштовно', 'gratis') : actief.kosten === 'gratis-niveau' ? t('безкоштовний рівень або платно', 'gratis niveau of betaald') : t('платно', 'betaald')}</span>
-              <span>{actief.soort === 'lokaal' ? t('текст не покидає цей комп’ютер', 'de tekst verlaat deze computer niet') : t('ваш сервер → постачальник, вашим ключем', 'uw server → aanbieder, met uw sleutel')}</span>
+              <span className="mk-label" data-kosten={actief.kosten}>{actief.kosten === 'gratis' ? t('безкоштовно', 'gratis') : actief.kosten === 'gratis-niveau' ? t('безкоштовний рівень або платно', 'gratis niveau of betaald') : actief.kosten === 'eigenaar' ? t('для вас безкоштовно, платить власник сайту', 'voor u gratis, de eigenaar van de site betaalt') : t('платно', 'betaald')}</span>
+              <span>{actief.soort === 'lokaal' ? t('текст не покидає цей комп’ютер', 'de tekst verlaat deze computer niet')
+                : actief.soort === 'eigen-server' ? t('сервер Mijn Ruimte → власний сервер сайту, без ШІ-компаній', 'server van Mijn Ruimte → eigen server van de site, geen AI-bedrijf')
+                : actief.soort === 'dienst-eigenaar' ? t('сервер Mijn Ruimte → постачальник, ключем сайту (не вашим)', 'server van Mijn Ruimte → aanbieder, met de sleutel van de site (niet de uwe)')
+                : t('ваш сервер → постачальник, вашим ключем', 'uw server → aanbieder, met uw sleutel')}</span>
+              {actief.gebruikUk && <span className="ai-vb-wie-gebruik" data-testid="ai-vb-wie-gebruik" title={t('Лічильник оновлюється після кожного запиту. Залишок у постачальника — за його власними заголовками відповіді (Anthropic, OpenAI); Gemini такого не повідомляє.', 'De teller wordt na elk verzoek bijgewerkt. Het resterende aantal bij de aanbieder komt uit zijn eigen antwoordkoppen (Anthropic, OpenAI); Gemini meldt dat niet.')}>{t(actief.gebruikUk, actief.gebruikNl || actief.gebruikUk)}</span>}
               {gebruik && <span title={t('Розширення пропускає до 20 запитів за хвилину з цієї сторінки.', 'De extensie laat tot 20 verzoeken per minuut van deze pagina door.')}>{t(`запитів за хвилину: ${gebruik.minuut}/${gebruik.max}`, `verzoeken per minuut: ${gebruik.minuut}/${gebruik.max}`)}</span>}
               {voorkeur === MOTOR_AUTO && <span>{t('(авто)', '(auto)')}</span>}
             </>
@@ -601,7 +647,7 @@ export default function AiVertalingBalk({
               <option value={MOTOR_AUTO}>{t('Авто: спершу безкоштовний', 'Auto: eerst gratis')}</option>
               {kaarten.filter(k => k.staat === 'klaar').map(k => (
                 <option key={k.id} value={k.id}>
-                  {t(k.naamUk, k.naamNl)} · {k.kosten === 'gratis' ? t('безкоштовно', 'gratis') : k.kosten === 'gratis-niveau' ? t('безкоштовний рівень', 'gratis niveau') : t('платно', 'betaald')}
+                  {t(k.naamUk, k.naamNl)} · {k.kosten === 'gratis' ? t('безкоштовно', 'gratis') : k.kosten === 'gratis-niveau' ? t('безкоштовний рівень', 'gratis niveau') : k.kosten === 'eigenaar' ? t('платить власник сайту', 'de eigenaar betaalt') : t('платно', 'betaald')}
                 </option>
               ))}
             </select>
@@ -759,7 +805,7 @@ export default function AiVertalingBalk({
               <X size={14} />
             </button>
           </div>
-          <MotorKiezer nl={nl} kaarten={kaarten} voorkeur={voorkeur} onKies={kiesVoorkeur} lokaal={lokaal} />
+          <MotorKiezer nl={nl} kaarten={kaarten} voorkeur={voorkeur} onKies={kiesVoorkeur} lokaal={lokaal} onAkkoord={dienstAkkoord} />
           <details className="mk-later">
             <summary>{t('Як працює ШІ в пошті й конфіденційність', 'Hoe de AI in de post werkt en privacy')}</summary>
             <AiUitleg nl={nl} />
@@ -922,7 +968,7 @@ export default function AiVertalingBalk({
       {lastResult && !errorText && (
         <p className="ai-vb-verwerkt" data-testid="ai-vb-verwerkt">
           <ShieldCheck size={13} aria-hidden="true" />
-          {t('Оброблено: ', 'Verwerkt: ')}{verwerktDoor({ lokaal: lastResult.motorId === LOKAAL_MOTOR_ID, aanbiederId: lastResult.aanbiederId, agentName: lastResult.agentName }, nl)}
+          {t('Оброблено: ', 'Verwerkt: ')}{verwerktDoor({ lokaal: lastResult.motorId === LOKAAL_MOTOR_ID, aanbiederId: lastResult.aanbiederId, agentName: lastResult.agentName, dienst: lastResult.dienstId ? dienst.find(d => d.id === lastResult.dienstId) || null : null }, nl)}
         </p>
       )}
 

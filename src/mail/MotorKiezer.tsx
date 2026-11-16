@@ -1,7 +1,8 @@
 // MAILAI-002 (16.11.2026): вибір рушія ШІ для пошти — для людини без технічних знань: одна картка = один спосіб, на ній видно
 // куди йде текст, чий ключ, скільки коштує, і одна кнопка «Обрати» або «Що зробити». «Авто» — спершу безкоштовний.
 // Motorkeuze: per kaart waar de tekst heen gaat, wiens sleutel, wat het kost; «Авто» kiest eerst gratis.
-import { AlertTriangle, Check, Cpu, Download, ExternalLink, KeyRound, Server, Settings, Sparkles, Users } from 'lucide-react';
+import { AlertTriangle, Check, Cpu, Download, ExternalLink, KeyRound, Server, Settings, ShieldCheck, Sparkles, Undo2, Users } from 'lucide-react';
+import { useState } from 'react';
 import { kiesMotor, MOTOR_AUTO, type LokaalStand, type MotorKaart } from '../../shared/mail-ai-motor';
 import { aiHrefOplossen } from './ai-staat';
 import { openExtensieOpties } from './lokale-motor';
@@ -18,6 +19,8 @@ const STAAT: Record<MotorKaart['staat'], [string, string]> = {
   instellen: ['Потрібен крок', 'Eén stap nodig'],
   'niet-hier': ['Не на цьому пристрої', 'Niet op dit apparaat'],
   'nog-niet': ['Ще не налаштовано', 'Nog niet ingesteld'],
+  akkoord: ['Потрібна ваша згода', 'Uw akkoord nodig'],
+  op: ['Ліміт на сьогодні вичерпано', 'Daglimiet bereikt'],
 };
 
 function Icoon({ k }: { k: MotorKaart }) {
@@ -27,10 +30,21 @@ function Icoon({ k }: { k: MotorKaart }) {
   return <KeyRound size={15} aria-hidden='true' />;
 }
 
-export default function MotorKiezer({ nl, kaarten, voorkeur, onKies, lokaal }: {
+export default function MotorKiezer({ nl, kaarten, voorkeur, onKies, lokaal, onAkkoord }: {
   nl: boolean; kaarten: readonly MotorKaart[]; voorkeur: string; onKies: (id: string) => void; lokaal: LokaalStand;
+  /** MAILAI-003: згода на спільний рушій сайту (або її відкликання). Кидає помилку, якщо зберегти не вдалося. */
+  onAkkoord?: (dienstId: string, aan: boolean) => Promise<void>;
 }) {
   const t = (uk: string, nlTekst: string) => (nl ? nlTekst : uk);
+  const [akkoordBezig, setAkkoordBezig] = useState('');
+  const [akkoordFout, setAkkoordFout] = useState('');
+  const akkoord = async (id: string, aan: boolean) => {
+    if (!onAkkoord || akkoordBezig) return;
+    setAkkoordBezig(id); setAkkoordFout('');
+    try { await onAkkoord(id, aan); }
+    catch { setAkkoordFout(t('Не вдалося зберегти. Нічого не змінено; спробуйте ще раз.', 'Opslaan is niet gelukt. Er is niets gewijzigd; probeer het opnieuw.')); }
+    finally { setAkkoordBezig(''); }
+  };
   const auto = kiesMotor(kaarten, MOTOR_AUTO, 'translate');
   const echt = kaarten.filter((k) => k.staat !== 'nog-niet');
   const later = kaarten.filter((k) => k.staat === 'nog-niet');
@@ -48,10 +62,24 @@ export default function MotorKiezer({ nl, kaarten, voorkeur, onKies, lokaal }: {
           <dt>{t('Куди йде текст', 'Waar de tekst heen gaat')}</dt><dd>{t(k.wegUk, k.wegNl)}</dd>
           <dt>{t('Ключ', 'Sleutel')}</dt><dd>{t(k.sleutelUk, k.sleutelNl)}</dd>
           <dt>{t('Вартість і ліміти', 'Kosten en limieten')}</dt><dd>{t(k.kostenUk, k.kostenNl)}</dd>
+          {k.prijsUk && <><dt>{t('Орієнтовна ціна', 'Richtprijs')}</dt><dd data-motor-prijs>{t(k.prijsUk, k.prijsNl || k.prijsUk)}</dd></>}
+          {k.gebruikUk && <><dt>{t('Використано', 'Gebruikt')}</dt><dd data-motor-gebruik>{t(k.gebruikUk, k.gebruikNl || k.gebruikUk)}</dd></>}
           <dt>{t('Уміє', 'Kan')}</dt><dd>{k.functies.map((f) => t(...FUNCTIE[f])).join(' · ')}</dd>
         </dl>
         {k.staat !== 'klaar' && <p className='mk-stap'>{k.staat === 'niet-hier' || k.staat === 'nog-niet' ? null : <AlertTriangle size={13} aria-hidden='true' />}{t(k.stapUk, k.stapNl)}</p>}
         <div className='mk-knoppen'>
+          {k.dienst && k.staat === 'akkoord' && onAkkoord && (
+            <button type='button' className='mk-knop is-hoofd' disabled={akkoordBezig === k.dienst.id} onClick={() => void akkoord(k.dienst!.id, true)} data-motor-akkoord={k.dienst.id}
+              title={t('Ви дозволяєте цьому рушієві отримувати текст листа, коли самі натискаєте переклад чи аналіз. Згода діє лише для цього рушія й лише доки адміністратор не змінить, куди йде текст; відкликати можна будь-коли тут само. Запис про згоду з’явиться в центрі сповіщень.', 'U staat deze motor toe de tekst van een bericht te krijgen wanneer u zelf op vertalen of analyseren klikt. Het akkoord geldt alleen voor deze motor en alleen zolang de beheerder niet wijzigt waar de tekst heen gaat; intrekken kan altijd hier. Het akkoord komt in het meldingencentrum.')}>
+              <ShieldCheck size={13} aria-hidden='true' />{t('Погоджуюся, дозволити цей рушій', 'Ik ga akkoord, deze motor toestaan')}
+            </button>
+          )}
+          {k.dienst && k.dienst.akkoord && onAkkoord && (
+            <button type='button' className='mk-knop' disabled={akkoordBezig === k.dienst.id} onClick={() => void akkoord(k.dienst!.id, false)} data-motor-akkoord-weg={k.dienst.id}
+              title={t('Цей рушій більше не отримає тексту ваших листів, доки ви не погодитеся знову. Якщо він був обраний, вибір повернеться до «Авто».', 'Deze motor krijgt de tekst van uw berichten niet meer tot u opnieuw akkoord gaat. Was hij gekozen, dan gaat de keuze terug naar «Auto».')}>
+              <Undo2 size={13} aria-hidden='true' />{t('Відкликати згоду', 'Akkoord intrekken')}
+            </button>
+          )}
           {k.staat === 'klaar' && (
             <button type='button' className='mk-knop is-hoofd' aria-pressed={gekozen} onClick={() => onKies(k.id)} data-motor-kies={k.id}
               title={t('Завжди використовувати цей рушій на цьому пристрої. Якщо він чогось не вміє, кнопка цієї функції стане неактивною — текст не піде іншому рушію без вашого вибору.', 'Deze motor altijd gebruiken op dit apparaat. Kan hij iets niet, dan wordt die knop inactief — de tekst gaat niet zonder uw keuze naar een andere motor.')}>
@@ -97,6 +125,7 @@ export default function MotorKiezer({ nl, kaarten, voorkeur, onKies, lokaal }: {
           {voorkeur === MOTOR_AUTO ? <Check size={13} aria-hidden='true' /> : null}{voorkeur === MOTOR_AUTO ? t('Обрано', 'Gekozen') : t('Обрати', 'Kiezen')}
         </button>
       </div>
+      {akkoordFout && <p className='mk-stap' role='alert' data-motor-akkoord-fout><AlertTriangle size={13} aria-hidden='true' />{akkoordFout}</p>}
       <ul className='mk-lijst'>{echt.map(kaart)}</ul>
       {later.length > 0 && (
         <details className='mk-later'>

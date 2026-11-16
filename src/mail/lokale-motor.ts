@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 import { sendToExtension } from '../extensie-toestand';
 import { VAST_EXTENSIE_ID } from '../extensie/extensie-live';
 import { filterLokaleAiAntwoord, LOKALE_AI_REDENEN, type LokaleAiAntwoord } from '../../shared/lokale-ai-model';
-import { blokTerug, LOKAAL_LIMIET, lokaalStandVan, samenvattingVanTekst, vertaalBlokken, type LokaalStand } from '../../shared/mail-ai-motor';
+import { blokTerug, LOKAAL_LIMIET, lokaalBeleidVan, lokaalPromptVan, lokaalStandVan, samenvattingVanTekst, vertaalBlokken, type LokaalStand, type MotorExtra } from '../../shared/mail-ai-motor';
+import { ACTIES_JSON_SCHEMA, actiesLokaalSysteem, actiesLokaalTekst, actiesUitTekst, type ActiesModelAntwoord } from '../../shared/ai-acties-model';
+import type { BronAlinea } from '../../shared/ai-bronnen';
 import type { AiVertalingRunResponse, AiVertalingSegment } from '../../shared/ai-vertaling';
 
 export function isMobielApparaat(): boolean {
@@ -17,7 +19,14 @@ export function isMobielApparaat(): boolean {
   } catch { return false; }
 }
 
-let laatst: { stand: LokaalStand; op: number } | null = null;
+let laatst: { stand: LokaalStand; op: number; prompt: boolean; beleid: MotorExtra['beleid'] } | null = null;
+/**
+ * MAILAI-003: що ще сказало розширення у відповіді на PING — чи вміє «сирий» запит зі схемою (0.9.6+; тоді локально працює
+ * «Що від вас потрібно?») і хто й чому вимкнув локальний ШІ політикою. Читати під час рендеру разом з useLokaleStand.
+ */
+export function lokaalExtra(): Pick<MotorExtra, 'lokaalPrompt' | 'beleid'> {
+  return { lokaalPrompt: laatst?.stand === 'klaar' && laatst.prompt, beleid: laatst?.beleid || null };
+}
 let bezigPing: Promise<LokaalStand> | null = null;
 const luisteraars = new Set<(s: LokaalStand) => void>();
 
@@ -27,9 +36,10 @@ export function peilLokaal(opnieuw = false): Promise<LokaalStand> {
   if (bezigPing) return bezigPing;
   bezigPing = (async () => {
     let stand: LokaalStand;
+    let ping: unknown = null;
     if (isMobielApparaat()) stand = 'telefoon';
-    else stand = lokaalStandVan(await sendToExtension(VAST_EXTENSIE_ID, { type: 'PING' }, 2500));
-    laatst = { stand, op: Date.now() };
+    else { ping = await sendToExtension(VAST_EXTENSIE_ID, { type: 'PING' }, 2500); stand = lokaalStandVan(ping); }
+    laatst = { stand, op: Date.now(), prompt: lokaalPromptVan(ping), beleid: lokaalBeleidVan(ping) };
     for (const f of luisteraars) f(stand);
     return stand;
   })().finally(() => { bezigPing = null; });
@@ -66,10 +76,10 @@ export class LokaleFout extends Error {
   tekst(nl: boolean): string { const r = LOKALE_AI_REDENEN[this.reden] ?? LOKALE_AI_REDENEN.FOUT; return nl ? r[1] : r[0]; }
 }
 
-async function vraag(modus: 'translator' | 'summarizer', tekst: string, doel?: string): Promise<Extract<LokaleAiAntwoord, { ok: true }>> {
+async function vraag(modus: 'translator' | 'summarizer' | 'prompt', tekst: string, doel?: string, extra: Record<string, unknown> = {}): Promise<Extract<LokaleAiAntwoord, { ok: true }>> {
   verzoeken.push(Date.now());
-  const r = filterLokaleAiAntwoord(await sendToExtension(VAST_EXTENSIE_ID, { type: 'LOKALE_AI', modus, tekst: tekst.slice(0, LOKAAL_LIMIET.tekens), ...(doel ? { doel } : {}) }, 125_000));
-  if (!r.ok) { if (r.reden === 'SITE_TOEGANG_UIT' || r.reden === 'UIT') void peilLokaal(true); throw new LokaleFout(r.reden); }
+  const r = filterLokaleAiAntwoord(await sendToExtension(VAST_EXTENSIE_ID, { type: 'LOKALE_AI', modus, tekst: tekst.slice(0, LOKAAL_LIMIET.tekens), ...(doel ? { doel } : {}), ...extra }, 125_000));
+  if (!r.ok) { if (r.reden === 'SITE_TOEGANG_UIT' || r.reden === 'UIT' || r.reden === 'BELEID_UIT') void peilLokaal(true); throw new LokaleFout(r.reden); }
   return r;
 }
 
@@ -97,4 +107,20 @@ export async function vertaalLokaal(segmenten: readonly AiVertalingSegment[], do
 export async function vatSamenLokaal(tekst: string): Promise<NonNullable<AiVertalingRunResponse['summary']>> {
   const r = await vraag('summarizer', tekst);
   return samenvattingVanTekst(r.tekst);
+}
+
+/**
+ * MAILAI-003: «Що від вас потрібно?» на цьому пристрої (розширення 0.9.6+: LOKALE_AI modus 'prompt' з rauw, schema і systeem).
+ * Модель отримує лише абзаци гілки з мітками [лист.абзац]; відповідь — JSON за схемою. Повертаються й абзаци, які справді пішли
+ * моделі: з ними звіряється кожна цитата (controleerPunten), тож вигаданий пункт не покажеться. Якщо в розширенні ввімкнено
+ * «перекладати вхід англійською», цитати не збіжаться з оригіналом — такі пункти чесно потрапляють у «не знайдено».
+ * Lokaal «Wat wordt er van u verwacht?»: het model krijgt alleen de alinea's; elk citaat wordt daarna tegen het origineel gecontroleerd.
+ */
+export async function actiesLokaal(alineas: readonly BronAlinea[], doelTaal: string, doelLabel: string): Promise<{ antwoord: ActiesModelAntwoord; alineas: BronAlinea[] }> {
+  const bron = actiesLokaalTekst(alineas);
+  if (!bron.tekst.trim()) throw new LokaleFout('LEEG');
+  const r = await vraag('prompt', bron.tekst, undefined, { rauw: true, schema: ACTIES_JSON_SCHEMA, systeem: actiesLokaalSysteem(doelTaal, doelLabel) });
+  const antwoord = actiesUitTekst(r.tekst);
+  if (!antwoord) throw new LokaleFout('FOUT');
+  return { antwoord, alineas: bron.alineas };
 }

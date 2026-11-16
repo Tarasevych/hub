@@ -151,8 +151,10 @@ export async function main(): Promise<number> {
     check('E локальний рушій: переклад і підсумок через розширення, нічого на сервер; помилка → інший рушій',
       bron.includes("motor.soort === 'lokaal'") && bron.includes('vertaalLokaal(') && bron.includes('vatSamenLokaal(') && bron.includes('andereMotor(kaarten, motor.id, mode)'));
     const wat = lees('src/mail/WatNodigBlok.tsx');
-    check('E «Що від вас потрібно?»: обрано локальний → «Уточнити з ШІ» не показується і не надсилає; видно, хто обробив',
-      wat.includes('if (!ai.agent || bezig || lokaalGekozen) return;') && wat.includes('!model && !lokaalGekozen &&') && wat.includes('verwerktDoor(') && /нічого не надсилається/.test(wat));
+    // MAILAI-003: кнопка тепер залежить від рушія, обраного в панелі (kiesMotor … 'acties'): локальний без «сирого» запиту цього не вміє →
+    // рушія немає → кнопки немає і нічого не надсилається (раніше це була окрема умова lokaalGekozen).
+    check('E «Що від вас потрібно?»: обраний рушій цього не вміє (локальний до 0.9.6) → «Уточнити з ШІ» не показується і не надсилає; видно, хто обробив',
+      wat.includes('if (!motor || bezig) return;') && wat.includes('{motor && !model && (') && wat.includes("kiesMotor(kaarten, voorkeur, 'acties')") && wat.includes('data-ai-lokaal-gekozen') && wat.includes('verwerktDoor(') && /нічого не надсилається/.test(wat));
     const weergave = lees('src/mail/WeergaveKeuze.tsx');
     check('E «Вигляд»: про безкоштовний локальний ШІ Chrome знають і без розширення (стан + кнопка встановити/увімкнути); «Показати знову» після «сховати зараз»',
       weergave.includes("t('Безкоштовний локальний ШІ Chrome:'") && weergave.includes("'extensie')") && weergave.includes('openExtensieOpties') && weergave.includes('data-weergave-ai-sessie'));

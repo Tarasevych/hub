@@ -15,6 +15,7 @@ import AiVerbinden from './AiVerbinden';
 import AiToegangTab from './AiToegangTab';
 import ConnectorsTab from '../connector-v2/ConnectorsTab';
 import SiteSchakelaars from './SiteSchakelaars';
+import DienstMotoren from './DienstMotoren';
 import DeurVerbindingen, { useDeurVerbindingen } from './DeurVerbindingen';
 import { aiEigenaar, aiLogo, inRuimte, isoMs, useDeurTokens, useOverzicht, type DeurToken, type OauthVerbinding } from './gegevens';
 import { foutTekst } from './fouten';
@@ -124,6 +125,9 @@ export default function TechVerbindingen({ tr, ingebed = false }: { tr: Tr; inge
       {ingebed ? null : <ConnectorsTab tr={tr} />}
 
       <SiteSchakelaars tr={tr} />
+
+      {/* MAILAI-003: спільні рушії ШІ «для всіх» — окремо від особистих ключів; типово вимкнено. */}
+      <DienstMotoren tr={tr} />
 
       {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}
 

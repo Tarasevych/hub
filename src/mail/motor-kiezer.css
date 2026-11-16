@@ -10,7 +10,12 @@
 .mk-auto small, .mk-feiten dd, .mk-stap { color:var(--muted); }
 .mk-auto.is-gekozen, .mk-kaart.is-gekozen { border-color:color-mix(in srgb, var(--accent) 55%, var(--line)); background:color-mix(in srgb, var(--accent) 6%, var(--panel)); }
 .mk-lijst { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
-.mk-kaart[data-motor-staat='nog-niet'], .mk-kaart[data-motor-staat='niet-hier'] { opacity:.82; }
+.mk-kaart[data-motor-staat='nog-niet'], .mk-kaart[data-motor-staat='niet-hier'], .mk-kaart[data-motor-staat='op'] { opacity:.82; }
+/* MAILAI-003: спільний рушій чекає на вашу згоду — м'який натяк, не тривога. */
+.mk-kaart[data-motor-staat='akkoord'] { border-style:dashed; border-color:color-mix(in srgb, var(--warn, #b26a00) 40%, var(--line)); }
+.mk-label[data-staat='akkoord'], .mk-label[data-staat='op'] { border-color:color-mix(in srgb, var(--warn, #b26a00) 40%, var(--line)); color:var(--text); background:color-mix(in srgb, var(--warn, #b26a00) 8%, var(--panel)); }
+.mk-knop:disabled { opacity:.6; cursor:default; }
+.ai-vb-wie-gebruik { color:var(--muted); }
 .mk-kop { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
 .mk-kop strong { flex:1 1 12em; min-width:0; }
 .mk-label {
