@@ -52,7 +52,7 @@ const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.se
 // Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
 import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-AANMELDEN v1: toont niets zolang de server zichtbaar=false zegt */
-import AanmeldZonderGoogle, { ZONDER_GOOGLE, useTerugFout, type ZonderGoogleId } from './aanmelden/AanmeldZonderGoogle'; /* IDENTITEIT-015 (aanmelden): ключ доступу, пароль, Microsoft/Discord/Apple */
+import AanmeldZonderGoogle, { PlaatsNaTerugFout, ZONDER_GOOGLE, useTerugFout, type ZonderGoogleId } from './aanmelden/AanmeldZonderGoogle'; /* IDENTITEIT-015 (aanmelden): ключ доступу, пароль, Microsoft/Discord/Apple */
 import { useAanmeldConfig } from './telegram-aanmelden/aanmeld-config';
 import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
@@ -192,7 +192,7 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
     {pauze.actief?<><strong>{pauzeTekst.kop}</strong><span>{pauzeTekst.uitleg}</span></>:<span>{pauzeTekst.vrij}</span>}
    </div>}
    {!checking&&foutMelding&&!pauze.actief?<p className='mr-sign-in-fout' role='alert'>{foutMelding}</p>:null}
-   {!checking&&terugFout&&!foutMelding?<p className='mr-sign-in-fout' role='alert' data-aanmeld-terug-fout>{terugFout}</p>:null}
+   {!checking&&terugFout&&!foutMelding?<><p className='mr-sign-in-fout' role='alert' data-aanmeld-terug-fout>{terugFout}</p><PlaatsNaTerugFout lang={lang}/></>:null}
    {!checking&&<AanmeldAndereOpties lang={lang} ids={indeling.andere} extra={{
     ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' disabled={pauze.actief||undefined} onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
     ...(indeling.andere.includes('telegram')?{telegram:<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}:{}),

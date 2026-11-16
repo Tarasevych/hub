@@ -96,6 +96,7 @@
 .tga-sectie label.tga-schakel-rij,.tga-sectie label.tga-vinkje{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--panel);font-weight:400;cursor:pointer;min-width:0}
 /* TELEGRAM-004: uitleg onder een schakelaar — kort dicht, de rest onder «Докладніше». */
 .tga-uitleg summary{font-size:.9rem;cursor:pointer;color:var(--muted,inherit)}.tga-uitleg ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+.tga-plaats-methoden{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:6px;margin:8px 0}.tga-sectie label.tga-plaats-methode{padding:6px 10px}
 .tga-schakel-tekst{display:grid;gap:2px;flex:1 1 auto;min-width:0}
 .tga-schakel-tekst strong{font-size:13.5px;font-weight:650;line-height:1.25}
 .tga-schakel-tekst small{font-size:12px;color:var(--muted);font-weight:400;line-height:1.35}

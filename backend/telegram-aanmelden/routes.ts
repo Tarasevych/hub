@@ -6,7 +6,8 @@
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../../server/platform/router';
 import { json } from '../../server/platform';
 import { passkeyStapOpGeldig, stapOpSessieId } from '../stap-op';
-import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, plaatsVerplicht, plaatsVerplichtZetten, type PoortAuth } from './beleid-poort';
+import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, plaatsEisMethoden, plaatsEisZetten, type PoortAuth } from './beleid-poort';
+import { PLAATS_EIS_NAAM, plaatsEisSchoon } from '../../shared/aanmeld-plaats-eis';
 import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagHoofdschakelaar, vlagVoor } from './opslag';
 import { koppelAnnuleren, koppelBevestigen, koppelStart, koppelStatus, magTelegram, profielFotoData } from './koppelen';
 import { getPool } from '../../server/platform/pg';
@@ -209,7 +210,7 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
         eis: werkelijkeEis(s, keuzes[s.sleutel], { codeVerplicht: inst.code.verplichtVoor.includes(s.sleutel) }) })),
       beschikbaar: [...beschikbaar],
       // TELEGRAM-004 (0299): eist dit account de plaats van het toestel bij aanmelden met Telegram?
-      plaatsVerplicht: await plaatsVerplicht(a.user.id).catch(() => false),
+      plaatsEis: await plaatsEisMethoden(a.user.id).catch(() => []),
       geblokkeerd: (await sql<{ sleutel: string; op: Date }>('SELECT sleutel, op FROM app.tg_geblokkeerd WHERE user_id = $1 ORDER BY op DESC LIMIT 50', [a.user.id])).map((g) => ({ apparaat: g.sleutel, op: new Date(g.op).toISOString() })),
       status: await publiekeStand(),
       standen: KOPPEL_STANDEN,
@@ -396,16 +397,21 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       await audit(a.user.id, 'matrix.gewijzigd', 'success', { keuzes });
       return json({ ok: true, keuzes });
     }),
-    // TELEGRAM-004 (0299): «Вимагати місце пристрою» aan/uit. Zelfde bewaking als de bevestigingstabel: uitzetten verzwakt de
-    // bescherming en vraagt dus dezelfde bevestiging; nooit buitensluiten — de andere aanmeldmethoden vallen niet onder deze eis.
+    // TELEGRAM-004 (0299): «Вимагати місце пристрою» — de gebruiker kiest per aanmeldmethode. Zelfde bewaking als de
+    // bevestigingstabel: uitzetten verzwakt de bescherming en vraagt dus dezelfde bevestiging. Niets wordt hard verboden:
+    // ook «bij alle methoden» mag, de uitleg in de instellingen zegt met «!» wat dat betekent.
     'POST /api/owner/telegram/plaats-eis': bewaakt('matrix-wijzigen', async (_rc, a, d) => {
-      const aan = d.aan === true;
-      await plaatsVerplichtZetten(a.user.id, aan);
-      await audit(a.user.id, 'plaats-eis.gewijzigd', 'success', { aan });
-      await siteMelding(a.user.id, aan ? { uk: '📍 Вхід через Telegram тепер вимагає місце пристрою', nl: '📍 Aanmelden met Telegram eist nu de plaats van het apparaat' } : { uk: '📍 Вимогу місця пристрою для входу через Telegram вимкнено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden met Telegram staat uit' },
-        aan ? { uk: 'Без дозволу браузера на доступ до місця вхід через Telegram у цей обліковий запис не відбудеться. Інші способи входу працюють як раніше. Вимкнути: «Способи входу» → Telegram → «Вимагати місце пристрою».', nl: 'Zonder toestemming van de browser voor de locatie lukt aanmelden met Telegram bij dit account niet. Andere aanmeldmethoden werken zoals voorheen. Uitzetten: «Aanmeldmethoden» → Telegram → «Plaats van het apparaat eisen».' }
-          : { uk: 'Вхід через Telegram знову можливий без місця пристрою. Якщо це зробили не ви — увімкніть вимогу знову й перевірте активні сеанси.', nl: 'Aanmelden met Telegram kan weer zonder de plaats van het apparaat. Deed u dit niet zelf, zet de eis dan weer aan en controleer de actieve sessies.' }).catch(() => undefined);
-      return json({ ok: true, plaatsVerplicht: aan });
+      const voor: string[] = await plaatsEisMethoden(a.user.id).catch(() => []);
+      const methoden = await plaatsEisZetten(a.user.id, plaatsEisSchoon(d.methoden));
+      const erbij = methoden.filter((m) => !voor.includes(m)), eraf = voor.filter((m) => !(methoden as string[]).includes(m));
+      await audit(a.user.id, 'plaats-eis.gewijzigd', 'success', { methoden, erbij, eraf });
+      if (erbij.length || eraf.length) {
+        const lijst = (taal: 'uk' | 'nl') => methoden.map((m) => PLAATS_EIS_NAAM[m][taal]).join(', ');
+        await siteMelding(a.user.id, methoden.length ? { uk: '📍 Вимогу місця пристрою під час входу змінено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden is gewijzigd' } : { uk: '📍 Вимогу місця пристрою під час входу вимкнено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden staat uit' },
+          methoden.length ? { uk: `Місце пристрою тепер вимагають способи входу: ${lijst('uk')}. Без дозволу браузера на місце вхід цими способами не відбудеться; решта способів працюють як раніше. Змінити: «Способи входу» → «Вимагати місце пристрою».${eraf.length ? ' Якщо вимогу для якогось способу зняли не ви — поверніть її й перевірте активні сеанси.' : ''}`, nl: `De plaats van het apparaat is nu vereist bij: ${lijst('nl')}. Zonder toestemming van de browser voor de locatie lukt aanmelden met deze methoden niet; de andere methoden werken zoals voorheen. Wijzigen: «Aanmeldmethoden» → «Plaats van het apparaat eisen».${eraf.length ? ' Haalde u de eis bij een methode niet zelf weg, zet hem dan terug en controleer de actieve sessies.' : ''}` }
+            : { uk: 'Вхід будь-яким способом знову можливий без місця пристрою. Якщо це зробили не ви — увімкніть вимогу знову й перевірте активні сеанси.', nl: 'Aanmelden kan met elke methode weer zonder de plaats van het apparaat. Deed u dit niet zelf, zet de eis dan weer aan en controleer de actieve sessies.' }).catch(() => undefined);
+      }
+      return json({ ok: true, plaatsEis: methoden });
     }),
     'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (rc, a, d) => {
       const m = contextMetaVan(rc);

@@ -184,6 +184,8 @@ const AANMELDEN: Record<string, Paar> = {
   TOKEN_ONGELDIG: ['Провайдер не підтвердив вхід. Спробуйте ще раз або іншим способом.', 'De aanbieder bevestigde de aanmelding niet. Probeer opnieuw of op een andere manier.'],
   HANDTEKENING_ONGELDIG: ['Підпис відповіді провайдера не пройшов перевірку — вхід не виконано.', 'De handtekening van de aanbieder klopte niet — niet aangemeld.'],
   VERLOPEN: ['Час вийшов. Почніть вхід знову.', 'De tijd is om. Begin opnieuw.'],
+  // TELEGRAM-004: «Вимагати місце пристрою» ввімкнено для цього способу входу, а браузер місця не надав.
+  PLAATS_NODIG: ['Цей обліковий запис вимагає місце пристрою для цього способу входу, а браузер його не надав. Надайте місце й увійдіть ще раз.', 'Dit account eist bij deze aanmeldmethode de plaats van het apparaat en de browser gaf die niet. Deel de plaats en meld u opnieuw aan.'],
   ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не схвалено власником сайту, тож вхід поки неможливий.', 'Het account is nog niet goedgekeurd door de site-eigenaar; aanmelden kan nog niet.'],
   ACCESS_RESTORE_NOT_FOUND: ['Повертати нічого: 7 днів минули або спосіб уже повернуто.', 'Er is niets terug te zetten: de 7 dagen zijn voorbij of de methode is al teruggezet.'],
   ACCESS_RESTORE_ADMIN_ONLY: ['Цей спосіб від’єднав адміністратор — повернути його може лише він.', 'Deze methode is door een beheerder ontkoppeld — alleen die kan hem terugzetten.'],

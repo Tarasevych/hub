@@ -150,9 +150,12 @@ export async function startPrimaryRedirectLogin(input: StartInput): Promise<Star
     typeof input.hintGrantId === 'string' && /^[A-Za-z0-9_-]{8,120}$/.test(input.hintGrantId.trim())
       ? input.hintGrantId.trim()
       : '';
+  // TELEGRAM-004: місце пристрою — лише якщо браузер уже має дозвіл (жодного нового запитання); підтвердження дії його не потребує.
+  const plaats = input.intent === 'step-up' ? {} : await (await import('./aanmelden/plaats')).plaatsVoorStart().catch(() => ({}));
   let response: {data: any};
   try {
     response = await api.post('/api/owner/identity/transactions/create', {
+      ...plaats,
       service: input.service,
       tabContext: input.tabContext,
       sourceOrigin: input.sourceOrigin,
