@@ -59,9 +59,9 @@ export function AchtergrondPaneel({ tr, onSluit }: { tr: Tr; onSluit?: () => voi
         <select value={a.overgang} disabled={uit} onChange={(e) => zet({ overgang: e.target.value as AchtergrondOvergang })} data-achtergrond-snel-overgang>
           <option value='golf'>{tr('Хвилі', 'Golven')}</option><option value='drift'>{tr('Дрейф від краю до краю', 'Drift van rand tot rand')}</option><option value='adem'>{tr('Дихання', 'Ademen')}</option>
         </select></label>
-      <label title={tr('Набір відтінків; «Як у темі» завжди пасує до сайту.', 'Kleurenset; «Zoals het thema» past altijd bij de site.')}>{tr('Кольори', 'Kleuren')}
+      <label title={tr('Відтінки плям; «За акцентом» бере колір вашого акценту й завжди пасує до сайту.', 'Tinten van de vlekken; «Volgens het accent» neemt uw accentkleur en past altijd bij de site.')}>{tr('Кольори', 'Kleuren')}
         <select value={a.kleuren} disabled={uit} onChange={(e) => zet({ kleuren: e.target.value as AchtergrondKleuren })} data-achtergrond-snel-kleuren>
-          <option value='thema'>{tr('Як у темі', 'Zoals het thema')}</option><option value='aurora'>{tr('Полярне сяйво', 'Noorderlicht')}</option><option value='zee'>{tr('Море', 'Zee')}</option>
+          <option value='thema'>{tr('За акцентом', 'Volgens het accent')}</option><option value='aurora'>{tr('Полярне сяйво', 'Noorderlicht')}</option><option value='zee'>{tr('Море', 'Zee')}</option>
           <option value='zonsondergang'>{tr('Захід сонця', 'Zonsondergang')}</option><option value='regenboog'>{tr('Веселка', 'Regenboog')}</option>
         </select></label>
       <label title={tr('Більше кадрів — плавніше, але більше витрачає батарею (60 к/с помітно на ноутбуці й телефоні).', 'Meer beelden — vloeiender, maar meer batterij (60 b/s merkbaar op laptop en telefoon).')}>{tr('Кадри', 'Beelden')}
@@ -71,7 +71,7 @@ export function AchtergrondPaneel({ tr, onSluit }: { tr: Tr; onSluit?: () => voi
     </div>
     <div className='la-snel-voet'>
       <button type='button' onClick={() => zetAchtergrond(undefined)} title={tr('Повертає всі параметри фону до типових.', 'Zet alle instellingen van de achtergrond terug.')} data-achtergrond-snel-herstel><RotateCcw aria-hidden />{tr('Типово', 'Standaard')}</button>
-      <small>{tr('Зберігається в обліковому записі; те саме — в Налаштування → Теми.', 'Bewaard in het account; hetzelfde staat in Instellingen → Thema\'s.')}</small>
+      <small>{tr('Зберігається в обліковому записі; те саме — в Налаштування → Вигляд і кольори.', 'Bewaard in het account; hetzelfde staat in Instellingen → Weergave en kleuren.')}</small>
     </div>
   </div>;
 }

@@ -275,7 +275,7 @@ export async function main(): Promise<number> {
     check('вікно навігації: чесно сказано, що положення й поведінка — лише навігація сторінки (окремо від меню сайту), і є перехід до справжніх налаштувань меню',
       sjabloon.includes('id=\\"mqPaginaNavNoot\\"') && sjabloon.includes('data-kaart-ga=\\"menu|#menu-modus\\"') && motor.includes('write("#mqPaginaNavNoot",'));
     check('справжні панелі: щільність і рух у «Персоналізації», акцент і ефекти в «Темах» (видно в «Макеті», «Студії» й класичному)',
-      centrum.includes('<PersoonlijkeWeergave tr={tr}/>') && readFileSync('src/thema/ThemaInstellingen.tsx', 'utf8').includes('<AccentEnEffecten tr={tr} />'));
+      centrum.includes('<PersoonlijkeWeergave tr={tr}/>') && readFileSync('src/thema/ThemaInstellingen.tsx', 'utf8').includes('<AccentKeuze tr={tr} />') && readFileSync('src/thema/ThemaInstellingen.tsx', 'utf8').includes('<TransparantieEnEffecten tr={tr} />'));
     check('вибір вигляду: підказка більше не обіцяє «лише на цьому пристрої»', readFileSync('src/identiteit/VormgevingKiezer.tsx', 'utf8').includes('Вибір зберігається в обліковому записі й діє на всіх ваших пристроях після входу.') && !readFileSync('src/identiteit/VormgevingKiezer.tsx', 'utf8').includes('Вибір зберігається на цьому пристрої.'));
   }
 

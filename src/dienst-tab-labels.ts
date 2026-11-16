@@ -14,7 +14,7 @@ const LABELS: Record<string, Pair> = {
   repositories: ['Сховища', 'Repositories'], code: ['Код і редактор', 'Code en editor'], issues: ['Задачі', 'Vraagstukken'], pulls: ['Запити на злиття', 'Samenvoegingen'],
   actions: ['Конвеєри CI', 'CI-werkstromen'], releases: ['Випуски', 'Uitgaven'], sync: ['Дзеркало й пристрої', 'Spiegel en apparaten'],
   projects: ['Проєкти', 'Projecten'], documentation: ['Документація', 'Documentatie'], research: ['Дослідження', 'Onderzoek'], activity: ['Активність', 'Activiteit'],
-  personalization: ['Персоналізація', 'Personalisatie'], menu: ['Меню', 'Menu'], themes: ['Теми', "Thema's"], languages: ['Мови', 'Talen'], widgets: ['Віджети', 'Widgets'], melding: ['Сповіщення', 'Meldingen'],
+  personalization: ['Персоналізація', 'Personalisatie'], menu: ['Меню', 'Menu'], themes: ['Вигляд і кольори', 'Weergave en kleuren'], languages: ['Мови', 'Talen'], widgets: ['Віджети', 'Widgets'], melding: ['Сповіщення', 'Meldingen'],
   sharing: ['Спільний доступ', 'Delen'], identity: ['Ідентичність', 'Identiteit'], account: ['Обліковий запис', 'Account'], sessions: ['Сесії', 'Sessies'], methods: ['Способи входу', 'Aanmeldmethoden'],
   security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'],
   vault: ['Сховище', 'Kluis'], oauth: ['OAuth', 'OAuth'], access: ['Доступ', 'Toegang'], webhooks: ['Webhooks', 'Webhooks'], events: ['Події', 'Gebeurtenissen'], logs: ['Журнали', 'Logboeken'],

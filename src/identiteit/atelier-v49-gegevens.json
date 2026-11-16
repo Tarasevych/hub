@@ -112,7 +112,7 @@
       "number": "03",
       "accent": "pink",
       "uk": {
-        "name": "Теми",
+        "name": "Вигляд і кольори",
         "kicker": "ГРА СВІТЛА",
         "title": "Настрій у кожному пікселі.",
         "description": "Оберіть темний камерний простір або легку світлу атмосферу. Відтінки, які підтримують концентрацію.",
@@ -135,7 +135,7 @@
         ]
       },
       "nl": {
-        "name": "Thema's",
+        "name": "Weergave en kleuren",
         "kicker": "SPEL VAN LICHT",
         "title": "Sfeer in iedere pixel.",
         "description": "Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",
@@ -647,8 +647,8 @@
             "пояснення": null
           },
           {
-            "uk": "Теми та кольори",
-            "nl": "Thema's en kleuren",
+            "uk": "Вигляд і кольори",
+            "nl": "Weergave en kleuren",
             "тип": "перехід",
             "варіанти": [],
             "стан": null,
@@ -1392,16 +1392,28 @@
                 "Kleurrijk"
               ],
               [
+                "Макет",
+                "Ontwerp"
+              ],
+              [
+                "Біла класика",
+                "Witte klassiek"
+              ],
+              [
+                "Чорна класика",
+                "Zwarte klassiek"
+              ],
+              [
                 "Грифельне",
-                "Leisteen"
+                "Grafiet"
               ],
               [
                 "Чисте",
-                "Zuiver"
+                "Puur"
               ],
               [
                 "Фіолетове",
-                "Paars"
+                "Violet"
               ]
             ],
             "стан": null,
@@ -1414,30 +1426,58 @@
         "id": "акцент",
         "uk": "Допоміжний колір і виразність",
         "nl": "Accentkleur en intensiteit",
-        "поясненняUk": "Допоміжний колір не замінює основного оформлення.",
-        "поясненняNl": "Accentkleur vervangt het basispalet niet.",
-        "стан": "макет",
+        "поясненняUk": "Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.",
+        "поясненняNl": "Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.",
+        "стан": "наявне",
         "рядки": [
           {
-            "uk": "Акцентна палітра",
-            "nl": "Accentkleuren",
+            "uk": "Акцентний відтінок",
+            "nl": "Accenttint",
             "тип": "вибір",
             "варіанти": [
               [
+                "Як у палітрі",
+                "Zoals het palet"
+              ],
+              [
                 "Фіолетовий",
-                "Paars"
+                "Violet"
+              ],
+              [
+                "Ціан",
+                "Cyaan"
+              ],
+              [
+                "Синій",
+                "Blauw"
+              ],
+              [
+                "Небесний",
+                "Hemelsblauw"
               ],
               [
                 "Бірюзовий",
-                "Turkoois"
+                "Teal"
               ],
               [
-                "Рожевий",
-                "Roze"
+                "Зелений",
+                "Groen"
               ],
               [
                 "Бурштиновий",
-                "Amber"
+                "Oranje"
+              ],
+              [
+                "Малиновий",
+                "Framboos"
+              ],
+              [
+                "Індиго",
+                "Indigo"
+              ],
+              [
+                "Теракотовий",
+                "Terracotta"
               ]
             ],
             "стан": null,
@@ -1445,8 +1485,8 @@
             "пояснення": null
           },
           {
-            "uk": "Виразність декоративних ефектів",
-            "nl": "Intensiteit van decoratieve effecten",
+            "uk": "Сяйво ілюстрацій",
+            "nl": "Gloed van illustraties",
             "тип": "повзунок",
             "варіанти": [],
             "стан": null,

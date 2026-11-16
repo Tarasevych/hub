@@ -213,7 +213,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       sections:{
         personalization:{name:"Personalisatie",short:"Persoonlijk",kicker:"JOUW STIJL",title:"Een ruimte die helemaal van jou voelt.",description:"Het uiterlijk, het gedrag en jouw voorkeuren op één rustige en stijlvolle plek.",details:[["Menu en pictogrammen","Volgorde, kleuren en navigatiestijl"],["Thema's en sfeer","Licht, contrast en jouw kleuren"],["Widgets en blokken","Een rustige persoonlijke werkplek"]]},
         menu:{name:"Menu",short:"Menu",kicker:"ALLE VRIJHEID",title:"Navigatie die met je meebeweegt.",description:"Menupositie, snelle toegang, iconen en subtiele animaties. Precies instelbaar, toch eenvoudig.",details:[["Positie","Links · rechts · boven · onder"],["Snelle toegang","Je favoriete acties binnen handbereik"],["Paneelweergave","Uitgevouwen, compact of als dock"]]},
-        themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
+        themes:{name:"Weergave en kleuren",short:"Weergave",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
         languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
         widgets:{name:"Blokken",short:"Blokken",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
         melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
@@ -529,7 +529,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     personalization:[
       група("переходи","Розділи персоналізації","Onderdelen van personalisatie","Кожний пункт відкриває відповідні параметри на цій сторінці.","Elk onderdeel opent zijn instellingen op deze pagina.","наявне",[
         рядок("Меню й піктограми","Menu en pictogrammen","перехід",[],null,"menu"),
-        рядок("Теми та кольори","Thema's en kleuren","перехід",[],null,"themes"),
+        рядок("Вигляд і кольори","Weergave en kleuren","перехід",[],null,"themes"),
         рядок("Мова інтерфейсу","Taal van de interface","перехід",[],null,"languages"),
         рядок("Віджети й блоки","Widgets en blokken","перехід",[],null,"widgets"),
         рядок("Єдина екосистема сповіщень","Meldingen-ecosysteem","перехід",[],null,"melding"),
@@ -615,9 +615,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]),
       // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
       група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
-        рядок("Акцентна палітра","Accentkleuren","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Акцентний відтінок","Accenttint","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
         рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
-        рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")
+        рядок("Сяйво ілюстрацій","Gloed van illustraties","повзунок")
       ])
     ],
     languages:[
@@ -1463,7 +1463,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       special:"dock"
     },
     {
-      id:"themes", group:"personal", number:"03", name:"Теми", short:"Теми", icon:"◑",
+      id:"themes", group:"personal", number:"03", name:"Вигляд і кольори", short:"Вигляд", icon:"◑",
       kicker:"ГРА СВІТЛА", title:"Настрій у кожному пікселі.",
       description:"Оберіть темний камерний простір або легку світлу атмосферу. Відтінки, які підтримують концентрацію.",
       accent:"pink", art:"themes",

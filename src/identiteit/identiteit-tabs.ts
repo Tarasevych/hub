@@ -9,7 +9,7 @@ export type IdentiteitTabTitel = { id: IdentiteitTab; uk: string; nl: string };
 export const IDENTITEIT_TABS: readonly IdentiteitTabTitel[] = [
   { id: 'personalization', uk: 'Персоналізація', nl: 'Personalisatie' },
   { id: 'menu', uk: 'Меню', nl: 'Menu' },
-  { id: 'themes', uk: 'Теми', nl: 'Thema’s' },
+  { id: 'themes', uk: 'Вигляд і кольори', nl: 'Weergave en kleuren' },
   { id: 'languages', uk: 'Мови', nl: 'Talen' },
   { id: 'widgets', uk: 'Блоки', nl: 'Blokken' },
   { id: 'melding', uk: 'Сповіщення', nl: 'Meldingen' },

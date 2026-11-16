@@ -1,4 +1,7 @@
-// Налаштування → Теми: режим (світлий / темний / як на пристрої / авто) + кольори (палет) + розклад автоперемикання.
+// Налаштування → «Вигляд і кольори» (KLEUREN-001, 16.11.2026): ОДНА зона для всього, що фарбує сайт. Угорі живий приклад, нижче три
+// згортні блоки в порядку шарів: «Основа» (палітра + режим + автоперемикання), «Акцент», «Тло і глибина» (живий фон, прозорість, сяйво).
+// Меню облікового запису й картки «Макета» — лише швидкі перемикачі тих самих полів облікового запису.
+// Eén zone voor alles wat de site kleurt: een levend voorbeeld en drie inklapbare blokken in de volgorde van de lagen.
 // Режим — це шар поверх кольорів: кожен палет має світлий і темний тон.
 import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
@@ -7,7 +10,11 @@ import { isKlassiekPalet, leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
 import { KLASSIEK_WIT, KLASSIEK_ZWART, kleurWaarden, MAQUETTE, PUUR, SECTIES, type Sectie } from './paletten';
 import './thema-instellingen.css';
-import { AccentEnEffecten } from './WeergaveVoorkeuren';
+import { AccentKeuze, TransparantieEnEffecten } from './WeergaveVoorkeuren';
+import { useThemaStand } from './useThema';
+import { ACCENT_NAMEN } from './weergave-stijl';
+import { LAAG_UITLEG, VoorbeeldVenster, ZoneBlok, ZoneVoet, type ZoneLaag } from './VormgevingZone';
+import { achtergrondNiveau, achtergrondVolledig, UITERLIJK_EFFECTEN_STANDAARD } from '../../shared/uiterlijk';
 import AchtergrondInstellingen from '../achtergrond/AchtergrondInstellingen';
 
 type Tr = (uk: string, nl: string) => string;
@@ -41,6 +48,9 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
   const a = status.auto;
   const sectie = (document.documentElement.dataset.presentationService || 'identity') as Sectie;
   const [geoMelding, setGeoMelding] = useState('');
+  // KLEUREN-001: шар, який зараз підсвічено в живому прикладі (наведення/фокус на блоці чи рядку легенди).
+  const [wijs, setWijs] = useState<ZoneLaag | null>(null);
+  const { stijl, achtergrond } = useThemaStand();
   const kies = (p: Palet) => { zetPalet(p); if (theme === 'plum-light' || theme === 'plum-dark') onTheme(theme === 'plum-dark' ? 'dark' : 'light'); };
   const auto = (patch: Partial<AutoInstelling>) => zetAuto({ ...a, ...patch, pauzeTot: undefined, pauzeModus: undefined });
   const plaatsId = PLAATSEN.find((p) => p.lat === a.lat && p.lon === a.lon)?.id || (a.lat !== undefined ? 'eigen' : 'brussel');
@@ -69,7 +79,19 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     ['puur', tr('Чистий', 'Puur'), tr('Чистий білий удень, чистий чорний (QLED) уночі', 'Zuiver wit overdag, zuiver zwart (QLED) ’s nachts'), PUUR.licht, PUUR.donker],
     ...(violetToegestaan ? [['violet', tr('Фіолетовий', 'Violet'), tr('Один фіолетовий; тон — за режимом', 'Eén violet; de toon volgt de modus'), VIOLET.licht, VIOLET.donker] as [Palet, string, string, Mini, Mini | null]] : []),
   ];
-  return <div className='thema-instellingen' data-thema-instellingen>
+  const paletNaam = kleuren.find(([id]) => id === palet)?.[1] || palet;
+  const modusNaam = modi.find(([id]) => id === modus)?.[1] || modus;
+  const accentNaam = stijl.accent ? tr(ACCENT_NAMEN[stijl.accent].uk, ACCENT_NAMEN[stijl.accent].nl) : tr('Як у палітрі', 'Zoals het palet');
+  const tlo = achtergrondVolledig(achtergrond), niveau = achtergrondNiveau(tlo);
+  const NIVEAU: Record<string, [string, string]> = { subtiel: ['ледь помітний', 'subtiel'], rustig: ['спокійний', 'rustig'], levendig: ['жвавий', 'levendig'], opvallend: ['виразний', 'opvallend'] };
+  const tloNaam = tlo.stand === 'uit' ? tr('фон вимкнено', 'achtergrond uit') : niveau ? tr(`фон ${NIVEAU[niveau][0]}`, `achtergrond ${NIVEAU[niveau][1]}`) : tr('фон власний', 'eigen achtergrond');
+  const transparantie = typeof stijl.transparantie === 'number' ? stijl.transparantie : 0;
+  const effecten = typeof stijl.effecten === 'number' ? stijl.effecten : UITERLIJK_EFFECTEN_STANDAARD;
+  const laagTekst = (laag: ZoneLaag) => tr(`Фарбує: ${LAAG_UITLEG[laag].uk[1]}.`, `Kleurt: ${LAAG_UITLEG[laag].nl[1]}.`);
+  return <div className='thema-instellingen vz-zone' data-thema-instellingen data-vz-zone>
+    <p className='thema-uitleg' data-vz-inleiding>{tr('Тут зібрано все, що фарбує сайт. Шари лягають один на одного: палітра й режим задають основу, акцент перефарбовує лише активні елементи, а живий фон, прозорість і сяйво — прикраси поверх. Наведіть на блок, щоб побачити на прикладі, що саме він змінює.', 'Hier staat alles wat de site kleurt. De lagen liggen op elkaar: palet en modus vormen de basis, het accent kleurt alleen de actieve elementen, en de levende achtergrond, doorschijnendheid en gloed zijn versiering erbovenop. Wijs een blok aan om in het voorbeeld te zien wat het verandert.')}</p>
+    <VoorbeeldVenster tr={tr} wijs={wijs} onWijs={setWijs} />
+    <ZoneBlok laag='basis' standaardOpen onWijs={setWijs} titel={tr('Основа: палітра й режим', 'Basis: palet en modus')} waarde={`${paletNaam} · ${modusNaam}`} uitleg={laagTekst('basis')}>
     <section aria-labelledby='thema-modus-kop'>
       <h3 id='thema-modus-kop'>{tr('Режим', 'Modus')}</h3>
       <p className='thema-uitleg'>{tr('Світлий чи темний — поверх вибраних кольорів.', 'Licht of donker — bovenop de gekozen kleuren.')}</p>
@@ -113,7 +135,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     </section>}
 
     <section aria-labelledby='thema-kleur-kop'>
-      <h3 id='thema-kleur-kop'>{tr('Кольори', 'Kleuren')}</h3>
+      <h3 id='thema-kleur-kop'>{tr('Палітра сайту', 'Palet van de site')}</h3>
       <p className='thema-uitleg'>{tr('Кожен варіант має світлий і темний тон — його обирає режим вище.', 'Elke variant heeft een lichte en een donkere toon — die kiest de modus hierboven.')}</p>
       <div className='thema-paletten' role='radiogroup' aria-labelledby='thema-kleur-kop'>
         {kleuren.map(([id, naam, hint, l, d]) => <button key={id} type='button' role='radio' aria-checked={palet === id} className={palet === id ? 'active' : ''} onClick={() => kies(id)} data-thema-palet={id}>
@@ -124,9 +146,17 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       </div>
       {!violetToegestaan && <p className='settings-honest-note'>{tr('Фіолетова тема не дозволена для цього акаунта.', 'Het violette thema is niet toegestaan voor dit account.')}</p>}
     </section>
-    {/* IDENTITEIT-015: акцент поверх палітри й виразність ефектів — справжні налаштування облікового запису (були лише в «Макеті»). */}
-    <AccentEnEffecten tr={tr} />
-    {/* ACHTERGROND-001: «Живий фон» сторінок · levende achtergrond */}
-    <AchtergrondInstellingen tr={tr} />
+    </ZoneBlok>
+    <ZoneBlok laag='accent' standaardOpen onWijs={setWijs} titel={tr('Акцент', 'Accent')} waarde={accentNaam} uitleg={laagTekst('accent')}>
+      <AccentKeuze tr={tr} />
+    </ZoneBlok>
+    <ZoneBlok laag='tlo' standaardOpen={false} onWijs={setWijs} titel={tr('Тло і глибина', 'Achtergrond en diepte')}
+      waarde={`${tloNaam} · ${transparantie > 0 ? tr(`прозорість ${transparantie}%`, `doorschijnend ${transparantie}%`) : tr('блоки суцільні', 'blokken dicht')} · ${tr('сяйво', 'gloed')} ${effecten}%`}
+      uitleg={laagTekst('tlo')}>
+      {/* ACHTERGROND-001: «Живий фон» сторінок · levende achtergrond */}
+      <AchtergrondInstellingen tr={tr} />
+      <TransparantieEnEffecten tr={tr} />
+    </ZoneBlok>
+    <ZoneVoet tr={tr} />
   </div>;
 }

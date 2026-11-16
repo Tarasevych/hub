@@ -1031,9 +1031,9 @@ v(`      ]),
 `      ]),
       // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
       група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
-        рядок("Акцентна палітра","Accentkleuren","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Акцентний відтінок","Accenttint","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
         рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
-        рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")`);
+        рядок("Сяйво ілюстрацій","Gloed van illustraties","повзунок")`);
 v(`    }else if(type==="accent"){
       widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
     }else if(type==="language"){`,
@@ -1116,6 +1116,12 @@ v(`  });
 `  });
   byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item&&item.matches(":focus-visible"))showAnchorTooltip(item);});
   byId("railItems").addEventListener("focusout",hideAnchorTooltip);`);
+
+// KLEUREN-001: розділ зветься так само, як на вкладці сайту й у меню облікового запису — «Вигляд і кольори» (раніше «Теми», хоча в ньому
+// ще й акцент, живий фон, прозорість і сяйво). De sectie heet overal hetzelfde: «Weergave en kleuren».
+v(`id:"themes", group:"personal", number:"03", name:"Теми", short:"Теми",`, `id:"themes", group:"personal", number:"03", name:"Вигляд і кольори", short:"Вигляд",`);
+v(`themes:{name:"Thema's",short:"Thema's",`, `themes:{name:"Weergave en kleuren",short:"Weergave",`);
+v(`рядок("Теми та кольори","Thema's en kleuren","перехід",[],null,"themes")`, `рядок("Вигляд і кольори","Weergave en kleuren","перехід",[],null,"themes")`);
 
 fs.writeFileSync(f, s);
 console.log('ok');
