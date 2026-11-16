@@ -58,14 +58,16 @@ const KEUZE = [
   { sleutel: 'codex', pakket: '@iconify-json/logos', icoon: 'codex' },
   { sleutel: 'grok', pakket: '@iconify-json/logos', icoon: 'grok-icon' },
   { sleutel: 'gemini', pakket: '@iconify-json/logos', icoon: 'google-gemini-icon' },
-  { sleutel: 'copilot', pakket: '@iconify-json/logos', icoon: 'github-copilot' },
+  // Copilot: НЕ з пакета — там старіший малюнок (суцільний шолом). Власник помітив різницю (16.11.2026); чинний знак GitHub узято з
+  // github.githubassets.com/favicons/favicon-copilot.svg (soort 'officiele-site'). NL: het pakket heeft een oudere tekening.
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
   { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
   // 16.11.2026: нові агенти каталогу (Cline, Devin, OpenCode) — теж справжні знаки з того самого пакета CC0, а не літери на плитці.
   // Windsurf і AutoClaw немає в жодному відкритому пакеті: їхні файли взято з власних сайтів (soort 'officiele-site', --ua).
   { sleutel: 'cline', pakket: '@iconify-json/logos', icoon: 'cline-icon' },
   { sleutel: 'devin', pakket: '@iconify-json/logos', icoon: 'devin' },
-  { sleutel: 'opencode', pakket: '@iconify-json/logos', icoon: 'opencode-icon' },
+  // OpenCode: НЕ з пакета — світлий варіант знака на білій плитці читається як порожній прямокутник; узято піктограму застосунку
+  // з opencode.ai/apple-touch-icon-v3.png. NL: de lichte variant uit het pakket is op een witte plaat onleesbaar.
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:

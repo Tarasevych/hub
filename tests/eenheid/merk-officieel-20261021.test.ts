@@ -116,9 +116,9 @@ export async function main(): Promise<number> {
   // ------------------------------------------------------------------ 7. AI-агенти: справжні логотипи, а не перемальовані фігури (15.11.2026)
   // Скарга Павла на каталог ШІ: «чому логотип не береться з бази справжнього логотипа?» — у агентів була власна фігура (lobehub),
   // тож <Merk> базу справжніх логотипів навіть не відкривав. Тепер вісім агентів мають справжній знак із пакета CC0.
-  const AGENTEN = ['claude', 'gpt', 'codex', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity'];
+  const AGENTEN = ['claude', 'gpt', 'codex', 'grok', 'gemini', 'cursor', 'antigravity'];
   const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
-  check('вісім ШІ-агентів мають справжній файл у вбудованій базі (пакет @iconify-json/logos, CC0)', AGENTEN.every((k) => existsSync(`${MAP}/${k}.svg`) && perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && OFFICIEEL_SLEUTELS.has(k)), AGENTEN.filter((k) => !existsSync(`${MAP}/${k}.svg`)).join());
+  check('сім ШІ-агентів мають справжній файл у вбудованій базі (пакет @iconify-json/logos, CC0)', AGENTEN.every((k) => existsSync(`${MAP}/${k}.svg`) && perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && OFFICIEEL_SLEUTELS.has(k)), AGENTEN.filter((k) => !existsSync(`${MAP}/${k}.svg`)).join());
   check('список ключів у головній збірці = рівно файли бази', [...OFFICIEEL_SLEUTELS].sort().join() === bestanden.map((f) => f.replace(/\.(svg|png)$/, '')).sort().join());
   check('справжній логотип має перевагу над фігурою: шар «officieel» для Copilot і Claude', reg.merkLaag('copilot') === 'officieel' && reg.merkLaag('claude') === 'officieel');
   const copilot = renderToString(createElement(Merk, { merk: 'copilot', maat: 40 }));
@@ -128,9 +128,15 @@ export async function main(): Promise<number> {
   const ac = perBestand.get('autoclaw.png');
   check('AutoClaw має справжній знак із власного сайту виробника (officiele-site, https://autoclaw.z.ai/…), а не перемальовану фігуру',
     existsSync(`${MAP}/autoclaw.png`) && ac?.soort === 'officiele-site' && /^https:\/\/autoclaw\.z\.ai\//.test(String(ac?.bronUrl)) && OFFICIEEL_SLEUTELS.has('autoclaw') && reg.merkLaag('autoclaw') === 'officieel');
-  const NIEUW = ['cline', 'devin', 'opencode'];
+  const NIEUW = ['cline', 'devin'];
   const ws = perBestand.get('windsurf.svg');
-  check('нові агенти каталогу теж мають справжні знаки: Cline, Devin, OpenCode з пакета CC0, Windsurf — з windsurf.com', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel');
+  check('нові агенти каталогу теж мають справжні знаки: Cline, Devin з пакета CC0, Windsurf — з windsurf.com', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel');
+  // Павло (16.11.2026) побачив на знімку, що знаки Copilot і OpenCode «не такі»: пакет мав старіший малюнок Copilot (суцільний шолом)
+  // і світлий варіант OpenCode, який на білій плитці читався як порожній прямокутник. Тепер обидва — файли з власних сайтів.
+  const cp = perBestand.get('copilot.svg'); const oc = perBestand.get('opencode.png');
+  check('Copilot — чинний знак із файлів GitHub (githubassets.com), OpenCode — піктограма застосунку з opencode.ai; не з пакета',
+    cp?.soort === 'officiele-site' && String(cp?.bronUrl) === 'https://github.githubassets.com/favicons/favicon-copilot.svg' && oc?.soort === 'officiele-site' && String(oc?.bronUrl).startsWith('https://opencode.ai/')
+    && !existsSync(`${MAP}/opencode.svg`) && !/sleutel: '(copilot|opencode)', pakket:/.test(lees('scripts/merk-officieel-maken.mjs')) && reg.merkLaag('opencode') === 'officieel');
   const acBeeld = renderToString(createElement(Merk, { merk: 'autoclaw', maat: 40 }));
   check('<Merk merk="autoclaw"> малює файл як <img> з data-URI PNG — без зовнішньої адреси', acBeeld.includes('data-merk-officieel="autoclaw"') && acBeeld.includes('src="data:image/png;base64,') && !/src="https?:/.test(acBeeld));
   check('генератор зберігає файли з власних сайтів і без --ua (перечитує їх із HERKOMST.json і звіряє sha256)', lees('scripts/merk-officieel-maken.mjs').includes("o.soort === 'officiele-site' && existsSync(join(UIT, o.bestand))") && lees('scripts/merk-officieel-maken.mjs').includes('sha(u.inhoud) !== o.sha256'));
