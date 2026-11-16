@@ -6,10 +6,12 @@
 //    bestaande venster «Підтвердіть доступ» en gaat het verzoek één keer opnieuw (client.ts). Geen technisch profiel nodig.
 //  - Wat de AI mag = de bestaande toestemmingen van deze browser (AiToestemmingen); zonder toestemming → uitleg + knop erheen.
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Bot, KeyRound, Lock, LockOpen, ShieldOff } from 'lucide-react';
+import { Bot, KeyRound, Lock, LockOpen, ShieldOff, Laptop } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
+import HostSchakelaar from './HostSchakelaar';
+import PeriodeKiezer, { dagKeuzes } from './PeriodeKiezer';
 import {
-  PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
+  AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_MAX_DAGEN, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
 import { eindeWeergave } from '../../shared/extensie-matrix';
 import { restTekst, useExtensieLive } from './extensie-live';
@@ -39,11 +41,15 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const kopId = useId();
   const [nu, setNu] = useState(() => Date.now());
   const recht = live.rechtPrive;
-  const keuzes = useMemo(() => PRIVE_DAGEN_KEUZES.filter((d) => d <= (recht?.maxDagen ?? 30)), [recht?.maxDagen]);
+  const keuzes = useMemo(() => PRIVE_DAGEN_KEUZES.filter((d) => d <= (recht?.maxDagen ?? PRIVE_MAX_DAGEN)), [recht?.maxDagen]);
   const [dagen, setDagen] = useState<number>(PRIVE_STANDAARD_DAGEN);
+  // EXTUI-001: «До дати» — власний момент закриття з календаря (годинник браузера); null = діє плитка строку.
+  const [tot, setTot] = useState<number | null>(null);
   const toegestaan = useMemo(() => (recht?.domeinen?.length ? PRIVE_HOSTS.filter((h) => recht.domeinen.includes(h)) : [...PRIVE_HOSTS]), [recht?.domeinen]);
   const [domeinen, setDomeinen] = useState<string[] | null>(null);
   const gekozenDomeinen = (domeinen ?? toegestaan).filter((h) => toegestaan.includes(h));
+  // EXTUI-001: сайти ШІ — типово НЕ позначені; лише читання і лише з дозволом Chrome у розширенні. AI-sites: standaard uit.
+  const [aiSites, setAiSites] = useState<string[]>([]);
   const [lokaal, setLokaal] = useState(false);
   const [bezig, setBezig] = useState<'' | 'open' | 'intrekken'>('');
   const [melding, setMelding] = useState<{ ok: boolean; tekst: string; weigering?: Weigering } | null>(null);
@@ -62,6 +68,10 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
     : recht && !recht.mag
       ? (() => { const c = recht.code && isWeigercode(recht.code) ? recht.code : 'BELEID_UIT'; return { code: c, ...weigerUitleg(c, 'prive') }; })()
       : live.geladen && live.agent && !capsNu.length ? { code: 'GEEN_BROWSER_RECHTEN', ...weigerUitleg('GEEN_BROWSER_RECHTEN', 'prive') } : null;
+  // EXTUI-001: календар — до межі власника (maxDagen), але не пізніше кінця дозволів «Що може ШІ» (сервер теж обрізає до них).
+  const maxDagen = recht?.maxDagen ?? PRIVE_MAX_DAGEN;
+  const toestemmingTot = live.agent?.toestemming?.tot ?? null;
+  const kalMax = Math.min(nu + maxDagen * 86_400_000, toestemmingTot ? toestemmingTot - live.scheef : Infinity);
   const knopUit = !!bezig || !!blok || !gekozen || !gekozenDomeinen.length || !live.agentId;
 
   if (!live.heeftBrowser) {
@@ -88,7 +98,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const doeOpen = async () => {
     if (knopUit || !live.agentId) return;
     setBezig('open'); setMelding(null);
-    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, domeinen: gekozenDomeinen, lokaal: lokaal && recht?.lokaal !== false });
+    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, tot: tot !== null ? tot + live.scheef : null, domeinen: [...gekozenDomeinen, ...aiSites], lokaal: lokaal && recht?.lokaal !== false });
     setBezig('');
     setMelding(r.ok
       ? { ok: true, tekst: r.verzonden ? tr('Доступ відкрито. Розширення вже отримало підписаний дозвіл.', 'Toegang open. De extensie heeft de ondertekende ontgrendeling al ontvangen.') : tr('Доступ відкрито. Розширення отримає дозвіл, щойно з’єднається із сервером.', 'Toegang open. De extensie krijgt de ontgrendeling zodra ze met de server verbindt.') }
@@ -132,26 +142,49 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
         <p className='eo-lead'>{open ? tr('Нове відкриття замінить поточне.', 'Een nieuwe toegang vervangt de huidige.') : recht?.stapOpGeldig ? tr('Вхід у цій вкладці вже підтверджено — додатковий запит не потрібен.', 'De aanmelding in dit tabblad is al bevestigd — er is geen extra vraag nodig.') : tr('Перед відкриттям сайт попросить підтвердити доступ (passkey, код із додатка або Google).', 'Vóór het openen vraagt de site de toegang te bevestigen (passkey, code uit de app of Google).')}</p>
         {blok ? uitleg(blok, 'note') : null}
         <p className='eo-meta' data-eo-caps-nu='1'>{capsNu.length ? <>{tr('У цьому слоті діятиме: ', 'In dit slot geldt: ')}{capsNu.map((c) => (uk ? CAP_TEKST[c]?.[0] : CAP_TEKST[c]?.[1]) ?? c).join(', ')}{tr(' — ваші дозволи («Що може ШІ») у межах політики власника; строк і можливості нижче — єдине джерело для розширення.', ' — uw toestemmingen («Wat mag de AI») binnen het beleid van de eigenaar; termijn en mogelijkheden hieronder zijn de enige bron voor de extensie.')}</> : tr('Ще немає жодного дозволу для ШІ в цьому браузері.', 'Nog geen enkele toestemming voor de AI in deze browser.')}</p>
-        <label className='eo-veld'>
-          <span>{tr('Строк', 'Termijn')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></span>
-          <select data-hulp='extensie.prive.dagen' value={gekozen || ''} disabled={!keuzes.length || !!bezig} onChange={(e) => setDagen(Number(e.target.value))} data-eo-dagen='1'>
-            {keuzes.map((d) => <option key={d} value={d}>{d === 1 ? tr('1 день', '1 dag') : tr(`${d} днів`, `${d} dagen`)}</option>)}
-          </select>
-        </label>
+        {keuzes.length ? (
+          <PeriodeKiezer naam={`${kopId}-dagen`} keuzes={dagKeuzes(keuzes, uk)} waarde={gekozen} disabled={!!bezig} onChange={setDagen}
+            hulp='extensie.prive.dagen' data={{ 'data-eo-dagen': String(gekozen) }}
+            kop={<>{tr('Строк доступу', 'Termijn van de toegang')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></>}
+            uitleg={(k) => tr(`Доступ закриється сам через ${k.naam}. Довший строк — рідше підтверджувати, але довше відкрите вікно; закрити раніше можна кнопкою «Відкликати зараз».`, `De toegang sluit vanzelf na ${k.naam}. Langer = minder vaak bevestigen, maar het venster staat langer open; eerder sluiten kan met «Nu intrekken».`)}
+            kalender={{ uk, min: nu + 15 * 60_000, max: kalMax, tot, onTot: setTot,
+              uitleg: tr('До дати: відкриває календар, де можна обрати будь-який день, місяць і рік (у межах правил власника) та час — тоді доступ закриється сам саме в цей момент.', 'Tot datum: opent een kalender waarin u elke dag, maand en jaar (binnen het beleid van de eigenaar) en een tijd kiest — de toegang sluit dan vanzelf op dat moment.') }}
+            einde={<>{tr('Закриється сам ', 'Sluit vanzelf op ')}<b>{new Date(tot ?? (nuServer + gekozen * 86_400_000 - live.scheef)).toLocaleString(uk ? 'uk-UA' : 'nl-NL', { weekday: 'short', day: 'numeric', month: 'long', year: tot !== null || gekozen > 300 ? 'numeric' : undefined, hour: '2-digit', minute: '2-digit' })}</b>{tr(' (якщо правила власника не скоротять)', ' (tenzij het beleid van de eigenaar korter is)')}</>} />
+        ) : null}
+        {keuzes.length && (maxDagen < PRIVE_MAX_DAGEN || (toestemmingTot && toestemmingTot - live.scheef < nu + maxDagen * 86_400_000)) ? (
+          <p className='pk-grens' data-eo-grens='1'>
+            {toestemmingTot && toestemmingTot - live.scheef < nu + maxDagen * 86_400_000
+              ? tr(`Найпізніше — ${new Date(toestemmingTot - live.scheef).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}: тоді закінчуються дозволи «Що може ШІ». Щоб обрати пізнішу дату, продовжте дозволи.`, `Uiterlijk ${new Date(toestemmingTot - live.scheef).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}: dan lopen de toestemmingen «Wat mag de AI» af. Verleng ze om een latere datum te kiezen.`)
+              : tr(`Найдовший строк для вас — ${maxDagen} ${maxDagen === 1 ? 'день' : maxDagen < 5 ? 'дні' : 'днів'}: так задано в правилах власника. Змінити ліміт (до року) можна в «Доступи».`, `De langste termijn voor u is ${maxDagen} ${maxDagen === 1 ? 'dag' : 'dagen'}: zo staat het in het beleid van de eigenaar. De grens (tot een jaar) wijzigen kan in «Toegang».`)}
+            {' '}<a href='#toegang' data-eo-grens-link='1' title={tr('Відкриває сторінку «Доступи»: там власник задає найдовший строк для кожного користувача. Зміна діє з наступного відкриття доступу.', 'Opent de pagina «Toegang»: daar stelt de eigenaar de langste termijn per gebruiker in. De wijziging geldt vanaf de volgende toegang.')}>{tr('Змінити', 'Wijzigen')}</a>
+          </p>
+        ) : null}
+        {keuzes.length ? null : <p className='eo-meta'>{tr('Строк зараз не можна вибрати: власник не дав дозволу на доступ у цьому браузері.', 'Er is nu geen termijn te kiezen: de eigenaar gaf geen toestemming voor toegang in deze browser.')}</p>}
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Ваші сторінки', 'Uw pagina’s')} <HulpVraag k='extensie.prive.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {toegestaan.map((h) => (
-            <label key={h} className='eo-vink'>
-              <input data-hulp='extensie.prive.domeinen' type='checkbox' checked={gekozenDomeinen.includes(h)} onChange={(e) => setDomeinen(e.target.checked ? [...gekozenDomeinen, h] : gekozenDomeinen.filter((x) => x !== h))} data-eo-prive-domein={h} />
-              <code>{h}</code>
-            </label>
+            <HostSchakelaar key={h} host={h} uk={uk} aan={gekozenDomeinen.includes(h)}
+              onChange={(aan) => setDomeinen(aan ? [...gekozenDomeinen, h] : gekozenDomeinen.filter((x) => x !== h))}
+              uitleg={tr('Увімкнено — ваш ШІ зможе читати цю сторінку й діяти на ній у межах дозволів нижче. Вимкнено — розширення її не торкається.', 'Aan — uw AI kan deze pagina lezen en er handelen binnen de rechten hieronder. Uit — de extensie raakt ze niet aan.')}
+              hulp='extensie.prive.domeinen' data={{ 'data-eo-prive-domein': h }} />
           ))}
           {!gekozenDomeinen.length ? <small className='eo-fout'>{tr('Оберіть хоча б одну сторінку.', 'Kies minstens één pagina.')}</small> : null}
         </fieldset>
+        <fieldset className='eo-domeinen eo-ai-sites' disabled={!!bezig} data-eo-ai-sites='1'>
+          <legend><span className='gevaar-teken' aria-hidden='true'>!</span> {tr('Сайти ШІ — лише читання', 'AI-sites — alleen lezen')} <HulpVraag k='extensie.prive.ai-sites' uk={uk} label={tr('Сайти ШІ', 'AI-sites')} /></legend>
+          <small className='eo-uitleg'>{tr('Ризик: ШІ читатиме текст ваших розмов на цих сайтах (там можуть бути особисті дані). Він ніколи не натискає й не вводить там текст. Працює, лише якщо в налаштуваннях розширення «Сайти ШІ» стоїть «Завжди». Кожне читання потрапляє в центр сповіщень.', 'Risico: de AI leest de tekst van uw gesprekken op deze sites (daar kunnen persoonlijke gegevens in staan). Hij klikt of typt daar nooit. Werkt alleen als «AI-sites» in de instellingen van de extensie op «Altijd» staat. Elke keer lezen komt in het meldingencentrum.')}</small>
+          {AI_SITE_HOSTS.map((h) => (
+            <HostSchakelaar key={h} host={h} uk={uk} aan={aiSites.includes(h)}
+              onChange={(aan) => setAiSites(aan ? [...aiSites, h] : aiSites.filter((x) => x !== h))}
+              uitleg={tr('Увімкнено — ШІ зможе лише читати відкриті вкладки цього сайту (ваші розмови там). Натискати й писати там він не може. Кожне читання — у центрі сповіщень.', 'Aan — de AI kan open tabbladen van deze site alleen lezen (uw gesprekken daar). Klikken en typen kan hij er niet. Elke lezing staat in het meldingencentrum.')}
+              hulp='extensie.prive.ai-sites' data={{ 'data-eo-ai-site': h }} />
+          ))}
+        </fieldset>
         {recht?.lokaal !== false ? (
-          <label className='eo-vink eo-lokaal'>
-            <input data-hulp='extensie.prive.lokaal' type='checkbox' checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-prive-lokaal='1' />
-            <span>{tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')}</span> <HulpVraag k='extensie.prive.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} />
+          <label className={`hs-rij eo-lokaal${lokaal ? ' is-aan' : ''}`} title={tr('Увімкнено — локальний агент на вашому комп’ютері зможе лише читати ці сторінки (без натискань і введення). Вимкнено — йому сюди зась.', 'Aan — de lokale agent op uw computer kan deze pagina’s alleen lezen (geen klikken of typen). Uit — hij komt er niet in.')}>
+            <span className='hs-logo is-dienst' aria-hidden='true'><Laptop /></span>
+            <span className='hs-tekst'><b>{tr('Локальний агент', 'Lokale agent')} <HulpVraag k='extensie.prive.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} /></b><small>{tr('програма на вашому комп’ютері · лише читання', 'programma op uw computer · alleen lezen')}</small></span>
+            <input data-hulp='extensie.prive.lokaal' type='checkbox' role='switch' className='hs-schakel' aria-label={tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')} checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-prive-lokaal='1' />
           </label>
         ) : null}
         <div className='eo-knoppen'>

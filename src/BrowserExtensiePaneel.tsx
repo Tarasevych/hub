@@ -19,6 +19,7 @@ import { combineer, slotVan, useExtensieLiveToestand, type Slot } from './extens
 // 0.6: slot «як користувач» (step-up, geen technisch profiel nodig).
 import ExtensiePrive, { toestemmingId } from './extensie/ExtensiePrive';
 import './agenten-paneel.css';
+import './extensie/extensie-ontwerp.css';
 import './agenten/agenten-toegang-maquette.css';
 import { alleenMens, geenAi } from './menselijke-actie'; // SEC-002 extensie-02 (g10a-2)
 
@@ -243,11 +244,24 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
   const installBlock = (
     <section ref={rootRef}>
       {mismatchKaart}
-      <ExtensionWizard
-        tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
-        busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
-        onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
-      />
+      {(() => {
+        const wizard = (
+          <ExtensionWizard
+            tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
+            busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
+            onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
+          />
+        );
+        // EXTUI-001: розширення вже є й підключене → покрокове встановлення не займає пів сторінки, а згорнуте (для іншого браузера
+        // чи перевстановлення). Extensie aanwezig en gekoppeld → de installatiehulp staat ingeklapt.
+        if (!(presence === 'present' && slotGekoppeld && !welcome)) return wizard;
+        return (
+          <details className='ext-klap' data-ext-klap='installatie'>
+            <summary><span className='ext-klap-icoon' aria-hidden='true'><Globe /></span><span>{tr('Встановити в іншому браузері або перевстановити', 'In een andere browser installeren of opnieuw installeren')}<small>{tr('У цьому браузері розширення вже встановлене й підключене', 'In deze browser is de extensie al geïnstalleerd en gekoppeld')}</small></span></summary>
+            <div className='ext-klap-inhoud'>{wizard}</div>
+          </details>
+        );
+      })()}
       {ruimte ? null : <ExtensieOntgrendeling tr={tr} />}
     </section>
   );
@@ -302,7 +316,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
           });
           const naarOntgrendelen = () => { const el = document.getElementById(`extensie-ontgrendeling-${a.id}`); el?.scrollIntoView({ block: 'start', behavior: 'smooth' }); el?.querySelector<HTMLElement>('h3')?.focus({ preventScroll: true }); };
           const btn: Partial<Record<ExtAction, ReactNode>> = {
-            test: <IconButton key='test' icon={<FlaskConical />} disabled={busy || !local} title={local ? '' : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
+            test: <IconButton key='test' kort icon={<FlaskConical />} disabled={busy || !local} title={local ? tr('Тест: перевіряє, чи розширення в цьому браузері справді відповідає. Нічого не змінює; результат з’явиться нижче', 'Test: controleert of de extensie in deze browser echt antwoordt. Verandert niets; het resultaat verschijnt hieronder') : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
             stop: <AiStopKnop key='stop' tr={tr} onDone={() => void load()} />,
             enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => { if ((navigator as unknown as { userActivation?: { isActive?: boolean } }).userActivation?.isActive === false) return; void setEnabled(a, true); }}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
             repair: <IconButton key='repair' icon={<RefreshCw />} disabled={busy} onClick={() => void connect()}>{tr('Підключити знову', 'Opnieuw koppelen')}</IconButton>,

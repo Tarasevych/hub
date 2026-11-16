@@ -265,3 +265,75 @@ progress{width:100%;height:8px;accent-color:var(--primair)}
 /* 0.9.1 (EXT090-001): «Увійти» in de kop in plaats van een leeg account */
 .account[data-ingelogd="0"]{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-weight:600}
 .account button.klein{min-height:32px;padding:4px 14px;font-size:.88rem;width:auto}
+
+/* ===================== 0.9.5 (EXTUI-001, 15.11.2026): сучасний вигляд · modern ontwerp =====================
+   Прохання власника: інтерфейс розширення має виглядати сучасно, як сайт. Один шар поверх 0.8.0: ті самі класи й розмітка,
+   лише токени, глибина, заокруглення й акцентний градієнт. Kleur blijft betekenis dragen (groen/amber/rood); accent = merk. */
+:root{
+  --merk-1:#14b8a6;--merk-2:#6366f1;--merk:linear-gradient(135deg,var(--merk-1),var(--merk-2));
+  --primair:#0f9488;--link:#0f766e;--bg:#f4f6fb;--vlak:#ffffff;--rand:#dfe4ee;--zacht:#5a6577;
+  --schaduw:0 1px 2px rgba(15,23,42,.05),0 8px 24px -16px rgba(15,23,42,.25);--straal:16px;
+  --glas:color-mix(in srgb,var(--vlak) 82%,transparent);
+}
+@media (prefers-color-scheme:dark){
+  :root{--primair:#14b8a6;--link:#5eead4;--bg:#0b0f17;--vlak:#121826;--rand:#253047;--zacht:#9aa6bb;--fg:#eef2f8;--grijs-bg:#18202f;
+    --schaduw:0 1px 0 rgba(255,255,255,.04) inset,0 10px 30px -18px rgba(0,0,0,.8)}
+}
+body{background:
+  radial-gradient(120% 60% at 0% 0%,color-mix(in srgb,var(--merk-1) 12%,transparent),transparent 60%),
+  radial-gradient(90% 50% at 100% 0%,color-mix(in srgb,var(--merk-2) 10%,transparent),transparent 60%),
+  var(--bg);background-attachment:fixed;font-feature-settings:"ss01","cv11"}
+/* логотип: градієнтна плитка зі значком-пазлом (inline SVG у розмітці, без <img> і без зовнішніх посилань у CSS) */
+.kop .logo,.logo{background:var(--merk);border-radius:11px;box-shadow:0 6px 16px -6px color-mix(in srgb,var(--merk-2) 70%,transparent)}
+.kop .logo::after,.logo::after{content:none}
+.logo{display:inline-grid!important;place-items:center;color:#fff}
+.logo svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.kop .logo{width:34px;height:34px}
+h1{letter-spacing:-.01em}
+/* кнопки */
+button,a.pict-knop{border-radius:12px}
+button.primair,#chat-verstuur,.kaart button.primair{background:var(--merk);border:0;color:#fff;box-shadow:0 6px 18px -8px color-mix(in srgb,var(--merk-2) 75%,transparent)}
+button.primair:hover:not(:disabled),#chat-verstuur:hover:not(:disabled){filter:brightness(1.08);background:var(--merk)}
+button:not(.primair):not(.pict-knop):not(.help):not(.gevaar):not(#chat-verstuur){background:var(--glas);border-color:var(--rand)}
+button:not(.primair):not(.pict-knop):not(.help):not(.gevaar):not(#chat-verstuur):hover:not(:disabled){border-color:color-mix(in srgb,var(--primair) 55%,var(--rand));background:color-mix(in srgb,var(--primair) 8%,var(--vlak))}
+button.pict-knop:hover:not(:disabled),a.pict-knop:hover{background:color-mix(in srgb,var(--primair) 12%,transparent);color:var(--fg)}
+/* картки, блоки, розділи: одна мова — 16 px, тонка рамка, м'яка тінь, «скло» */
+.kaart,.kop-info,.diag,.sectie,details.paneel-blok,.chat-berichten li,.ziet li,.tijdlijn li{border-radius:var(--straal);border:1px solid var(--rand);background:var(--glas);backdrop-filter:blur(8px);box-shadow:var(--schaduw)}
+.chat-berichten li,.ziet li,.tijdlijn li{border-radius:12px;box-shadow:none}
+.kaart{border-left:1px solid var(--rand);position:relative;overflow:hidden;padding:12px 14px}
+.kaart::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--kleur)}
+.kaart[data-staat="ontgrendeld"]::before,.kaart[data-staat="agent"]::before{background:linear-gradient(var(--groen),color-mix(in srgb,var(--groen) 40%,var(--merk-1)))}
+.kaart .pict{width:34px;height:34px;padding:7px;margin-top:0;border-radius:11px;background:color-mix(in srgb,var(--kleur) 14%,transparent)}
+.kaart-titel{letter-spacing:.06em}
+.staat-tekst{font-size:1rem}
+.kop-info{padding:10px 12px}
+.avatar{background:var(--merk)}.avatar svg{stroke:#fff}
+.chips li{background:color-mix(in srgb,var(--primair) 8%,var(--vlak));border-color:color-mix(in srgb,var(--primair) 25%,var(--rand))}
+.chat-berichten li[data-rol="user"]{border-color:color-mix(in srgb,var(--primair) 55%,var(--rand));background:color-mix(in srgb,var(--primair) 8%,var(--vlak))}
+.chat-form textarea,.veld select,.veld input,.veld textarea,.lokale-ai select,.lokale-ai textarea{border-radius:12px;border:1px solid var(--rand);background:var(--vlak)}
+.chat-form textarea:focus,.lokale-ai textarea:focus{border-color:var(--primair);box-shadow:0 0 0 3px color-mix(in srgb,var(--primair) 22%,transparent);outline:0}
+details.paneel-blok>summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--zacht);border-bottom:2px solid var(--zacht);transform:rotate(-45deg);margin-right:4px}
+details.paneel-blok[open]>summary::after{transform:rotate(45deg)}
+/* кнопка «Увійти» та швидкі дії */
+nav.snel button{min-height:48px}
+/* налаштування: бічна навігація як у сайту */
+.opties-nav a{border-radius:12px}
+.opties-nav a[aria-current="page"]{background:color-mix(in srgb,var(--primair) 14%,transparent);color:var(--link);box-shadow:inset 3px 0 0 var(--primair)}
+.sectie{padding:16px 18px}
+.sectie-kop h2{font-size:1.08rem;letter-spacing:-.01em}
+ul.toestand li{min-height:40px;border-bottom-color:color-mix(in srgb,var(--rand) 70%,transparent)}
+.stip{width:10px;height:10px;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 0%,transparent)}
+li[data-stand="ja"] .stip{box-shadow:0 0 0 3px color-mix(in srgb,var(--groen) 22%,transparent)}
+li[data-stand="nee"] .stip{box-shadow:0 0 0 3px color-mix(in srgb,var(--rood) 22%,transparent)}
+li[data-stand="let-op"] .stip{box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 22%,transparent)}
+label.schakel.slank input:checked{background:var(--merk)}
+
+/* «Де працює» (popup, бічна панель): ця вкладка, фон, сайти ШІ */
+.waar{display:grid;gap:6px;padding:10px 12px;border-radius:var(--straal);border:1px solid var(--rand);background:var(--glas);box-shadow:var(--schaduw)}
+.waar h2{margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--zacht)}
+.waar ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.waar li{--k:var(--grijs);display:grid;grid-template-columns:28px 1fr;align-items:center;gap:2px 10px;min-height:40px;font-size:.84rem}
+.waar li[data-stand="ok"]{--k:var(--groen)}.waar li[data-stand="let-op"]{--k:var(--amber)}
+.waar .waar-pict{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--k) 15%,transparent);color:var(--k);font-weight:800;font-size:.8rem}
+.waar li b{font-weight:600}
+.waar li small{grid-column:2;color:var(--zacht);font-size:.76rem;line-height:1.3}

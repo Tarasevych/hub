@@ -35,8 +35,8 @@ export async function main(): Promise<number> {
   {
     const m = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
     const html = readFileSync(join(EXT, 'offscreen.html'), 'utf8');
-    check('manifest 0.9.4 (0.9.3 = SEC-002; 0.9.4 = tabblad-hint; offscreen sinds 0.9.2): recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
-      m.version === '0.9.4' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
+    check('manifest 0.9.5 (0.9.5 = EXTUI-001; 0.9.3 = SEC-002; 0.9.4 = tabblad-hint; offscreen sinds 0.9.2): recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
+      m.version === '0.9.5' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
     const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
     check('offscreen.html: lokale-ai.js vóór offscreen.js, geen inline code (CSP)', scripts.length === 2 && /src="lokale-ai\.js"/.test(scripts[0][1]) && /src="offscreen\.js"/.test(scripts[1][1]) && scripts.every((x) => x[2].trim() === ''));
   }
@@ -127,6 +127,9 @@ export async function main(): Promise<number> {
     const ping = await vraag(fx, { type: 'PING' }, site);
     check('PING: lokaleAi met het contract {ondersteund:true, siteToegang:false} én de publieke keuzes (niet overschreven)',
       ping?.lokaleAi?.ondersteund === true && ping.lokaleAi.siteToegang === false && ping.lokaleAi.aan === true && Array.isArray(ping.lokaleAi.apis), JSON.stringify(ping?.lokaleAi));
+    // LAI-REDEN (0.9.5): kant-en-klare reden voor de site; zonder «!» siteToegang = site-uit, per API uit de meting.
+    check('PING: lokaleAi.reden = site-uit en redenen per API (klaar / model-ontbreekt / uit), alleen bekende API\'s',
+      ping?.lokaleAi?.reden === 'site-uit' && JSON.stringify(ping.lokaleAi.redenen) === '{"prompt":"klaar","writer":"uit","translator":"model-ontbreekt","detector":"model-ontbreekt"}', JSON.stringify(ping?.lokaleAi));
     const geweigerd = await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'hallo' }, site);
     check('LOKALE_AI zonder «!» siteToegang → SITE_TOEGANG_UIT, niets naar offscreen', geweigerd?.ok === false && geweigerd.reason === 'SITE_TOEGANG_UIT' && off.gevraagd.length === 1);
     const vreemd = await vraag(fx, { type: 'LOKALE_AI_STAND' }, { origin: 'https://example.com', url: 'https://example.com/' });
@@ -141,6 +144,10 @@ export async function main(): Promise<number> {
     check('te lange tekst → TE_LANG', lang?.ok === false && lang.reason === 'TE_LANG');
     const st2 = await vraag(f, { op: 'status' }, opties);
     check('status meldt siteToegang aan (de site toont dan het proefformulier)', st2?.lokaleAi?.siteToegang === true);
+    await tot(() => off.gevraagd.filter((m) => m.op === 'lokale-ai-stand').length >= 2, 3000); await rust(60);
+    const ping2 = await vraag(fx, { type: 'PING' }, site);
+    check('PING met «!» siteToegang en een klaar model: reden = klaar', ping2?.lokaleAi?.reden === 'klaar' && ping2.lokaleAi.redenen?.prompt === 'klaar', JSON.stringify(ping2?.lokaleAi));
+    check('status (eigen pagina\'s) blijft zonder reden-velden', !('reden' in (st2?.lokaleAi ?? {})));
 
     // Hoofdschakelaar uit → geen nieuwe meting en geen stand in de status.
     const voor = off.gevraagd.length;
@@ -148,6 +155,8 @@ export async function main(): Promise<number> {
     for (const l of opslagLuister) l({ lokaleAi: { newValue: opslag.lokaleAi } }, 'local');
     const uit = await vraag(f, { op: 'status' }, opties); await rust(60);
     check('hoofdschakelaar uit: geen meting en geen stand in de status', off.gevraagd.length === voor && uit?.lokaleAi?.aan === false && !('stand' in (uit?.lokaleAi ?? {})), JSON.stringify(uit?.lokaleAi));
+    const ping3 = await vraag(fx, { type: 'PING' }, site);
+    check('PING met hoofdschakelaar uit: reden = uit, geen redenen per API', ping3?.lokaleAi?.reden === 'uit' && !('redenen' in (ping3?.lokaleAi ?? {})), JSON.stringify(ping3?.lokaleAi));
 
     // Weer aan na een wijziging → meteen opnieuw meten; geen bruikbaar antwoord → geen stand (de site meet dan zelf).
     offAntwoord = undefined;

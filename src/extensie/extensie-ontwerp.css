@@ -1,0 +1,119 @@
+/* EXTUI-001 (15.11.2026): сучасний вигляд розділу «Розширення браузера» на /agents.
+   Лише токени теми (--accent, --line, --panel, --surface, --muted, --ok, --warn), тож працює в усіх палітрах і обох темах.
+   Принципи власника: заокруглені кути, блоки не на всю ширину екрана (колонка сторінки), без карток у картках, небезпечне —
+   м'який колірний натяк, а не крик. Alleen thema-tokens; tap ≥ 44 px; 390 px zonder horizontale scroll. */
+
+/* ---------- Шапка (ExtensieHero) ---------- */
+.exh{--exh-r:18px;position:relative;display:grid;gap:16px;padding:20px;border-radius:var(--exh-r);border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));
+  background:
+    radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--accent) 16%,transparent) 0%,transparent 55%),
+    radial-gradient(90% 120% at 100% 100%,color-mix(in srgb,var(--accent) 9%,transparent) 0%,transparent 60%),
+    var(--panel);
+  box-shadow:0 1px 0 color-mix(in srgb,#fff 6%,transparent) inset,0 10px 30px -18px color-mix(in srgb,var(--accent) 60%,transparent);
+  overflow:hidden;min-width:0}
+.exh-kop{display:flex;gap:14px;align-items:center;min-width:0}
+.exh-logo{flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:var(--accentText,#fff);
+  background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#7c3aed));
+  box-shadow:0 8px 20px -8px color-mix(in srgb,var(--accent) 80%,transparent)}
+.exh-logo svg{width:26px;height:26px}
+.exh-kop-tekst{min-width:0}
+.exh-kop h3{margin:0;font-size:1.25rem;line-height:1.25;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.exh-kop p{margin:4px 0 0;color:var(--muted);line-height:1.45;max-width:70ch}
+.exh-versie{font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-variant-numeric:tabular-nums}
+
+.exh-tegels{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.exh-tegel{--k:var(--muted);display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--surface) 70%,transparent);backdrop-filter:blur(6px);cursor:help;transition:border-color .2s,transform .2s}
+.exh-tegel:hover{border-color:color-mix(in srgb,var(--k) 55%,var(--line))}
+.exh-tegel[data-stand="ok"]{--k:var(--ok)}
+.exh-tegel[data-stand="let"]{--k:var(--warn)}
+.exh-tegel-icoon{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:var(--k);background:color-mix(in srgb,var(--k) 15%,transparent)}
+.exh-tegel-icoon svg{width:19px;height:19px}
+.exh-tegel-tekst{display:grid;gap:1px;min-width:0}
+.exh-tegel small{color:var(--muted);font-size:.76rem;letter-spacing:.01em}
+.exh-tegel b{font-size:.98rem;color:var(--k)}
+.exh-tegel[data-stand="uit"] b{color:var(--text,inherit)}
+
+.exh-waar{display:grid;gap:8px}
+.exh-waar h4{margin:0;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.exh-waar ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.exh-waar li{--k:var(--muted);display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 14px 6px 10px;border-radius:999px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 60%,transparent);cursor:help;min-width:0}
+.exh-waar li[data-stand="ok"]{--k:var(--ok)}
+.exh-waar li.exh-gevaar{--k:var(--warn);border-style:dashed;border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.exh-waar li>svg{flex:none;width:18px;height:18px;color:var(--k)}
+.exh-waar li span{display:grid;line-height:1.2;min-width:0}
+.exh-waar li b{font-size:.86rem;display:flex;align-items:center;gap:6px}
+.exh-waar li small{font-size:.74rem;color:var(--muted)}
+.exh-badge{font-style:normal;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;font-size:.7rem;font-weight:800;color:var(--warn);border:1.5px solid var(--warn)}
+
+/* ---------- Розкривні блоки розділу ---------- */
+details.ext-klap{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+details.ext-klap>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 16px;font-weight:700}
+details.ext-klap>summary::-webkit-details-marker{display:none}
+details.ext-klap>summary::after{content:'';margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex:0 0 9px;min-width:9px;margin-right:6px}
+details.ext-klap[open]>summary::after{transform:rotate(-135deg)}
+details.ext-klap>summary small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+details.ext-klap>summary .ext-klap-icoon{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent)}
+details.ext-klap>summary .ext-klap-icoon svg{width:18px;height:18px}
+details.ext-klap>.ext-klap-inhoud{padding:0 16px 16px;display:grid;gap:12px}
+details.ext-klap>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* ---------- Картка підключеного браузера: без «картки в картці» ---------- */
+.ag-ext .ag-ext-lijst{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ag-ext .ag-ext-slot{border-radius:16px;border:1px solid var(--line);background:var(--panel);padding:14px 16px;display:grid;gap:10px}
+.ag-ext .ag-ext-naam{margin:0;display:flex;align-items:center;gap:10px;font-size:1rem}
+.ag-ext .ag-ext-naam::before{content:'';width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 20%,transparent)}
+.ag-ext .ag-ext-slot .hub-agent.is-compact{border:0;background:none;padding:0;box-shadow:none;display:grid;gap:12px}
+.ag-ext .ag-ext-slot .ext-state{border:0;background:none;padding:0;display:grid;gap:10px}
+.ag-ext .ag-ext-slot .hub-note{border-radius:12px}
+.ag-ext .ag-ext-slot .hub-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ag-ext .ag-ext-slot .ext-toestemmingen{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:6px}
+.ag-ext .ag-ext-slot .ext-toestemmingen h4{margin:0;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ag-ext .ag-ext-slot .ext-toestemmingen .hub-note{background:none;border:0;padding:0;box-shadow:none;color:var(--muted)}
+
+/* Профіль вкладки — тиха смужка, а не окрема плитка */
+.ag-ext .ag-ext-profiel{border-radius:12px}
+
+@media (max-width:560px){
+  .exh{padding:16px;gap:14px}
+  .exh-logo{width:44px;height:44px;border-radius:13px}
+  .exh-kop h3{font-size:1.1rem}
+  .exh-waar ul{display:grid}
+  .exh-waar li{border-radius:14px}
+}
+@media (prefers-reduced-motion:reduce){.exh-tegel,details.ext-klap>summary::after{transition:none}}
+/* Блок кольорів усередині розкривного: заголовок уже в підсумку */
+details.ext-klap .ag-agentkleuren.ag-blok{border:0;background:none;box-shadow:none;padding:0;margin:0}
+details.ext-klap .ag-agentkleuren .ag-blok-titel{display:none}
+/* EXTUI-001: сайти ШІ у вікні відкриття доступу — м'який попереджувальний натяк, не крик */
+.eo-ai-sites{border-inline-start:3px solid color-mix(in srgb,var(--warn) 70%,transparent);padding-inline-start:10px;border-radius:10px}
+.eo-ai-sites legend{display:flex;align-items:center;gap:6px}
+.eo-ai-sites .gevaar-teken{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--warn);color:var(--warn);font-weight:800;font-size:.75rem}
+.eo-ai-sites .eo-uitleg{display:block;grid-column:1/-1;color:var(--muted);line-height:1.4;margin:2px 0 6px;max-width:75ch}
+
+/* EXTUI-001 · телефон. Було: «картка в картці в картці» (шість вкладених рамок), блок доступу завширшки ~170 px, три кнопки
+   стовпчиком. Стало: картка розділу й картка браузера лишаються, усе всередині пласке; «Тест» і «Стоп» — піктограми з підказками
+   в одному ряду з головною дією. Laatste laag in het bestand (anders winnen latere regels).
+   Telefoon: de sectiekaart en de browserkaart blijven, alles daarbinnen is vlak; «Test» en «Stop» zijn pictogrammen met uitleg. */
+@media (max-width:560px){
+  html .ag-pagina .ag-blok-hoofd>.ag-blok-inhoud:has(>.ag-tab.ag-ext){padding-inline:10px}
+  html .ag-tab.ag-ext>.ag-blok{padding-inline:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-kaart.ag-ext-slot{padding:12px 10px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-agent.mcp-browser,
+  html .ag-tab.ag-ext .ag-ext-slot section.eo,
+  html .ag-tab.ag-ext .ag-ext-slot .ext-state,
+  html .ag-tab.ag-ext .ag-ext-slot .eo-form{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions{display:flex;flex-wrap:wrap;gap:8px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>*{width:auto;flex:1 1 150px;min-width:0}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"]):not(:has(.ag-melding)){flex:0 0 44px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop[data-ai-stop="vraag"],
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:has(.ag-melding){flex:1 1 100%}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"])>.hub-btn{width:44px;min-width:44px;padding-inline:0;justify-content:center}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort>.hub-btn-icon~span,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"])>.hub-btn>.hub-btn-icon~span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  html .ag-tab.ag-ext .ag-ext-profiel{font-size:.9rem;line-height:1.45;padding:12px}
+  html .ag-tab.ag-ext .eo-domeinen{padding-inline:8px}
+  html .ag-tab.ag-ext .eo-vink code{overflow-wrap:anywhere;min-width:0}
+}

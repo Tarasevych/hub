@@ -26,7 +26,7 @@ html.theme-dark:not(.theme-light) .eo,html.theme-plum-dark:not(.theme-light) .eo
 .eo-veld>span,.eo-domeinen legend{font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .eo-veld select{min-height:44px;max-width:260px;padding:6px 10px;border-radius:10px;border:1px solid var(--line,#d7dee8);background:var(--surface,#fff);color:inherit;font:inherit}
 .eo-veld small{color:var(--muted,#475569)}
-.eo-domeinen{border:1px solid var(--line,#d7dee8);border-radius:12px;padding:8px 12px;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 12px}
+.eo-domeinen{border:1px solid var(--line,#d7dee8);border-radius:12px;padding:8px 12px;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:2px 12px;min-width:0}
 .eo-domeinen legend{padding:0 4px}
 .eo-vink{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
 .eo-vink input{width:20px;height:20px;margin:0;accent-color:var(--accent,#2f6f73)}

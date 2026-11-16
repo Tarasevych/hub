@@ -32,6 +32,11 @@
 
 /* ---------------------------------------------------------------- сторінка · pagina */
 .ag-pagina{width:100%;max-width:1200px;margin-inline:auto;box-sizing:border-box;min-width:0}
+/* EXTUI-001 · швидкість на телефоні: ці обгортки — сітки з однією колонкою без заданої ширини (auto). Браузер тоді для кожного
+   рівня окремо вимірює вміст (min/max-content), а рівнів сім: на вузькому екрані одна розкладка тривала ~1,5 с і сторінка
+   з’їдала гігабайти пам’яті. Колонка minmax(0,1fr) дає ту саму одну колонку без вимірювання вмісту.
+   Snelheid op de telefoon: zeven geneste rasters met een auto-kolom lieten de browser de inhoud per niveau opnieuw meten. */
+.ag-pagina,.ag-pagina .ag-paneel,.ag-pagina .ag-secties,.ag-pagina .ag-sectie,.ag-pagina .ag-blok-inhoud,.ag-pagina .ag-tab{grid-template-columns:minmax(0,1fr)}
 .ag-portaal{display:contents}
 .ag-pagina :is(.ag-paneel,.ag-secties){gap:var(--ruimte-5)}
 .ag-pagina .ag-tab{gap:var(--ruimte-4)}

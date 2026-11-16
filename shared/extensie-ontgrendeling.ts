@@ -100,6 +100,17 @@ export const PRIVE_HOSTS = Object.freeze([
   'github.tarasevych.com', 'huis.tarasevych.com', 'mcp.tarasevych.com',
 ]);
 export const isPriveHost = (h: unknown): h is string => typeof h === 'string' && PRIVE_HOSTS.includes(h);
+/**
+ * EXTUI-001 (рішення власника 16.11.2026): сайти ШІ для слоту 'prive' — лише ЧИТАННЯ (AI_SITE_TYPES), лише якщо користувач позначив
+ * їх під час відкриття доступу (типово НЕ позначені) і Chrome дав розширенню дозвіл (перемикач «Сайти ШІ», типово «Вимкнено»).
+ * AI-sites voor het privéslot: alleen lezen, alleen als aangevinkt bij het openen van de toegang. Zelfde lijst als extension/shared.js.
+ */
+export const AI_SITE_HOSTS = Object.freeze(['claude.ai', 'chatgpt.com', 'gemini.google.com', 'grok.com', 'copilot.microsoft.com']);
+export const isAiSiteHost = (h: unknown): h is string => typeof h === 'string' && AI_SITE_HOSTS.includes(h);
+/** Opdrachten die op een AI-site mogen (alleen lezen); al het andere weigeren server én extensie. */
+export const AI_SITE_TYPES = Object.freeze(['browser.tabs', 'browser.snapshot', 'browser.scroll', 'browser.wait']);
+/** Mag een privé-ontgrendeling deze host NOEMEN? Eigen diensten of (gekozen) AI-site. */
+export const isPriveOfAiHost = (h: unknown): h is string => isPriveHost(h) || isAiSiteHost(h);
 /** Welke hosts mogen in een ontgrendeling van deze ruimte staan. */
 export const hostsVoorRuimte = (ruimte: AiRuimte): readonly string[] => (ruimte === 'prive' ? PRIVE_HOSTS : ADMIN_HOSTS_TOEGESTAAN);
 
