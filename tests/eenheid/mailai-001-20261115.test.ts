@@ -108,7 +108,7 @@ export async function main(): Promise<number> {
     check('C /settings: balkTonen зберігається; інше налаштування його не скидає',
       aan.data.settings.balkTonen === true && nogmaals.data.settings.balkTonen === true && andere.data.settings.balkTonen === true && uit.data.settings.balkTonen === false);
     check('C центр сповіщень: рівно два записи (увімкнено, вимкнено), тип mail_ai_balk, обидві мови, посилання на пошту',
-      nieuw.length === 2 && nieuw.every((m) => m.kind === 'mail_ai_balk' && m.link === '/mail') && /увімкнено/.test(nieuw[0].title) && /aangezet/.test(nieuw[0].title) && /вимкнено/.test(nieuw[1].title) && /«Вигляд»/.test(nieuw[1].message),
+      nieuw.length === 2 && nieuw.every((m) => m.kind === 'mail_ai_balk' && m.link === 'https://mail.tarasevych.com/' /* MELDLINK-001: abs. adres, '/mail' bestond niet */) && /увімкнено/.test(nieuw[0].title) && /aangezet/.test(nieuw[0].title) && /вимкнено/.test(nieuw[1].title) && /«Вигляд»/.test(nieuw[1].message),
       JSON.stringify(nieuw.map((m) => m.title)));
     check('C журнал аудиту фіксує кожну зміну налаштувань', audit.filter((a) => a === 'owner.mail.ai_vertaling.settings').length === 4);
     check('C тип сповіщення зареєстровано: пошта, приватний простір (після 0107 — через префікс)',

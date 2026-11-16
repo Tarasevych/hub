@@ -38,6 +38,7 @@ import { meld } from './melder';
 import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
 import { stapOpUitKaart } from './stap-op-noodschakelaar';
 import { actieveActivatie, heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const sys = () => getPool('systeem');
 export const BEWAKING_MS = 10 * 60 * 1000;
@@ -340,7 +341,7 @@ export async function uitzetten(sleutel: SchakelaarSleutel, door: { id: string |
   const regel = await schrijfBeheerAudit({ actor: door.id ? { id: door.id, email: door.email } : null, doel: { soort: 'beveiliging', naam: sleutel }, actie: automatisch ? 'admin.beveiliging.zekering' : 'admin.beveiliging.uit', resultaat: 'success', reden, voor: { stand: 'aan' }, na: { stand: 'uit', ...(automatisch ? { automatisch } : {}) } });
   // SEC-002 (privacy-logboek-02): uitzetten is ook de NOODWEG terug (zekering, een bescherming die de site breekt) en mag daarom niet
   // afhangen van het logboek. Maar een uitgezette bescherming zonder journaalregel blijft niet stil: de mens die het deed krijgt een melding.
-  if (!regel && door.id && !automatisch) await meld(door.id, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» вимкнено, але запис у журнал не вдався`, `Перемикач змінено, проте рядок у журналі адміністрування не збережено (збій бази даних). Якщо це були не ви — увімкніть захист знову й перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} is uitgezet, maar de regel in het beheerlogboek kon niet worden geschreven (databasefout). Was u dit niet: zet de bescherming weer aan en controleer «Diagnostiek → Bescherming».`, '/diagnostiek');
+  if (!regel && door.id && !automatisch) await meld(door.id, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» вимкнено, але запис у журнал не вдався`, `Перемикач змінено, проте рядок у журналі адміністрування не збережено (збій бази даних). Якщо це були не ви — увімкніть захист знову й перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} is uitgezet, maar de regel in het beheerlogboek kon niet worden geschreven (databasefout). Was u dit niet: zet de bescherming weer aan en controleer «Diagnostiek → Bescherming».`, `https://${SERVICE_HOSTS.admin}/diagnostiek`);
 }
 
 /** Wie krijgt de melding: wie het aanzette, anders de eigenaar (OWNER_EMAIL) — nooit stil. */
@@ -370,7 +371,7 @@ export async function zekeringControleren(nu = Date.now()): Promise<Array<{ sleu
       const [vuk, vnl] = ZEKERING_TEKST[voorstel] || [voorstel, voorstel];
       await schrijfBeheerAudit({ actor: null, doel: { soort: 'beveiliging', naam: sleutel }, actie: 'admin.beveiliging.zekering-voorstel', resultaat: 'success', reden: `voorstel: ${vnl}`, details: { voorstel, recent: { totaal: recent.totaal, '5xx': recent['5xx'], '403': recent['403'], poort401: recent.poort401, poort401routes: recent.poort401routes } } }).catch(() => null);
       const aan = await meldingOntvanger(b.doorId);
-      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» увімкнено, але є ${vuk}`, `Протягом 10 хв після увімкнення: ${vuk}. Захист НЕ вимкнено автоматично: такі помилки може спричинити й звичайний користувач некоректним запитом. Перевірте «Діагностика → Захист»; якщо помилки через захист — вимкніть його (вимкнення діє одразу, без passkey). / ${NAAM[sleutel][1]} staat aan, maar er is een ${vnl}. De bescherming is NIET automatisch uitgezet: zulke fouten kan ook een gewone gebruiker met een fout verzoek veroorzaken. Controleer «Diagnostiek → Bescherming»; komen de fouten door de bescherming, zet haar dan uit (meteen, zonder passkey).`, '/diagnostiek');
+      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» увімкнено, але є ${vuk}`, `Протягом 10 хв після увімкнення: ${vuk}. Захист НЕ вимкнено автоматично: такі помилки може спричинити й звичайний користувач некоректним запитом. Перевірте «Діагностика → Захист»; якщо помилки через захист — вимкніть його (вимкнення діє одразу, без passkey). / ${NAAM[sleutel][1]} staat aan, maar er is een ${vnl}. De bescherming is NIET automatisch uitgezet: zulke fouten kan ook een gewone gebruiker met een fout verzoek veroorzaken. Controleer «Diagnostiek → Bescherming»; komen de fouten door de bescherming, zet haar dan uit (meteen, zonder passkey).`, `https://${SERVICE_HOSTS.admin}/diagnostiek`);
       console.warn(`[beveiliging] zekering: voorstel voor ${sleutel} (${voorstel}), bescherming blijft aan`);
       continue;
     }
@@ -380,7 +381,7 @@ export async function zekeringControleren(nu = Date.now()): Promise<Array<{ sleu
       uit.push({ sleutel, reden });
       console.warn(`[beveiliging] zekering: ${sleutel} automatisch uitgezet (${reden})`);
       const aan = await meldingOntvanger(b.doorId);
-      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» автоматично вимкнено`, `Протягом 10 хв після увімкнення: ${uk}. Сайт повернувся до попереднього стану. Перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} automatisch uitgezet: ${nl}.`, '/diagnostiek');
+      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» автоматично вимкнено`, `Протягом 10 хв після увімкнення: ${uk}. Сайт повернувся до попереднього стану. Перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} automatisch uitgezet: ${nl}.`, `https://${SERVICE_HOSTS.admin}/diagnostiek`);
     } catch (e) { console.error('[beveiliging] zekering kon niet uitzetten:', (e as Error).message); }
   }
   return uit;

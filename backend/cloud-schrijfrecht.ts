@@ -20,6 +20,7 @@ import { alsSysteem } from '../server/platform/context';
 import { ladeVelden } from '../shared/ruimte-scheiding';
 import { denyMutation } from './rbac';
 import { ladeOf } from './ruimte-cloud-agenda';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 type Mens = { id: string; email?: string; role?: string; status?: string; accessLevel?: string };
 type Antwoord = ReturnType<typeof error>;
@@ -64,7 +65,7 @@ export async function cloudWeigeringVastleggen(userId: string, route: string, co
   laatsteMelding.set(userId, nu);
   if (laatsteMelding.size > 5000) for (const [k, t] of laatsteMelding) if (nu - t >= 60 * 60_000) laatsteMelding.delete(k);
   await meld(userId, 'cloud_alleen_lezen', 'Хмара: у вас лише перегляд / Cloud: u heeft alleen leesrechten',
-    'Зміну не збережено: ваша роль — «лише перегляд», тож файли можна відкривати, але не змінювати. Щоб змінювати, попросіть власника простору надати роль «учасник». / De wijziging is niet opgeslagen: uw rol is «alleen bekijken», dus u kunt bestanden openen maar niet wijzigen. Vraag de eigenaar van de ruimte om de rol «lid» om te kunnen wijzigen.', '/cloud');
+    'Зміну не збережено: ваша роль — «лише перегляд», тож файли можна відкривати, але не змінювати. Щоб змінювати, попросіть власника простору надати роль «учасник». / De wijziging is niet opgeslagen: uw rol is «alleen bekijken», dus u kunt bestanden openen maar niet wijzigen. Vraag de eigenaar van de ruimte om de rol «lid» om te kunnen wijzigen.', `https://${SERVICE_HOSTS.cloud}/`);
 }
 const laatsteMelding = new Map<string, number>();
 

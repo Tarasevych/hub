@@ -1,5 +1,6 @@
 // Модель даних єдиної екосистеми сповіщень («застосунок у застосунку», GEMINI-002).
 // Усі типи та нормалізатори сумісні як із сервером (Node.js), так і з оглядачем (React).
+import { LINK_DIENSTEN, routeerMeldingLink, type LinkDienst } from '../melding-link';
 
 export const SUBDOMEINEN = ['hub', 'id', 'ai', 'mail', 'cloud', 'github', 'huis', 'mcp', 'api', 'admin', 'systeem'] as const;
 export type MeldingSubdomein = (typeof SUBDOMEINEN)[number];
@@ -197,6 +198,17 @@ export function veiligeMeldingUrl(raw: unknown, maxLen = 800): string | undefine
   }
 }
 
+/**
+ * MELDLINK-001: посилання сторінки зі сповіщення → абсолютна адреса ДІЙСНОЇ сторінки (shared/melding-link.ts), потім та сама
+ * перевірка безпеки. Відносний шлях отримує піддомен джерела (subdomein), а не той, де сповіщення читають.
+ * Paginalink van een melding → absolute adres van een bestaande pagina, daarna dezelfde veiligheidscontrole.
+ */
+export function veiligePaginaLink(raw: unknown, hint: { soort?: string; subdomein?: string } = {}, maxLen = 800): string | undefined {
+  const sub = String(hint.subdomein || '');
+  const dienst = sub === 'id' ? 'identity' : (LINK_DIENSTEN as readonly string[]).includes(sub) ? (sub as LinkDienst) : undefined;
+  return veiligeMeldingUrl(routeerMeldingLink(raw, { soort: hint.soort, dienst }) || undefined, maxLen);
+}
+
 export function standaardKanaalVoorkeuren(): Record<MeldingKanaal, KanaalVoorkeur> {
   const base = (drempelPrioriteit: MeldingPrioriteit = 'laag', popUp = true, geluid = true): KanaalVoorkeur => ({
     actief: true,
@@ -366,7 +378,7 @@ export function normaliseerBijlagen(raw: unknown): MeldingBijlage[] {
   return uit;
 }
 
-export function normaliseerActies(raw: unknown): MeldingActie[] {
+export function normaliseerActies(raw: unknown, hint: { soort?: string; subdomein?: string } = {}): MeldingActie[] {
   if (!Array.isArray(raw)) return [];
   const soorten = ['navigeer', 'status', 'api', 'ai', 'bijlage'] as const;
   const uit: MeldingActie[] = [];
@@ -376,7 +388,8 @@ export function normaliseerActies(raw: unknown): MeldingActie[] {
     const labelUk = String(item.labelUk || item.label || '').trim().slice(0, 120);
     const labelNl = String(item.labelNl || item.label || labelUk).trim().slice(0, 120);
     if (!id || (!labelUk && !labelNl)) continue;
-    const veiligHref = veiligeMeldingUrl(item.href, 500);
+    // Лише «navigeer» веде на сторінку сайту; «api» — це адреса запиту, її не переписуємо.
+    const veiligHref = item.soort === 'navigeer' ? veiligePaginaLink(item.href, hint, 500) : veiligeMeldingUrl(item.href, 500);
     uit.push({
       id,
       labelUk: labelUk || labelNl,
@@ -409,7 +422,7 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     if (!isRecord(raw.meta)) return {};
     const kopie: Record<string, unknown> = { ...raw.meta };
     if ('link' in kopie) {
-      const veilig = veiligeMeldingUrl(kopie.link, 500);
+      const veilig = veiligePaginaLink(kopie.link, { soort: String(raw.bron || ''), subdomein: String(raw.subdomein || '') }, 500);
       if (veilig) kopie.link = veilig;
       else delete kopie.link;
     }
@@ -431,7 +444,7 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     herhalingen: begrensGetal(raw.herhalingen, 1, 99_999, 1),
     uitgesteldTot: raw.uitgesteld_tot || raw.uitgesteldTot ? ts(raw.uitgesteld_tot ?? raw.uitgesteldTot, 0) || null : null,
     bijlagen: normaliseerBijlagen(raw.bijlagen),
-    acties: normaliseerActies(raw.acties),
+    acties: normaliseerActies(raw.acties, { soort: String(raw.bron || ''), subdomein: String(raw.subdomein || '') }),
     meta: schoonMeta,
     aiSamenvatting: ai
       ? {

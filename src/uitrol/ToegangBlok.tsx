@@ -10,6 +10,7 @@ import HulpVraag from '../hulp/HulpVraag';
 import Persoon from './Persoon';
 import { effectieveToegang, TOEGANG_TEKST } from './weergave-v2';
 import { SOORT, datum, tr, type Grant, type Lang, type Overzicht } from './types';
+import { useAnkerScroll } from '../anker-scroll';
 
 const OMVANG: Record<Grant['soort'], [string, string]> = { account: ['свій акаунт', 'eigen account'], agent: ['усі підключення агента', 'alle koppelingen van de agent'], 'mcp-koppeling': ['одне підключення', 'één koppeling'], agenttoken: ['один токен', 'één token'] };
 const kortTermijn = (lang: Lang, g: Grant) => {
@@ -27,10 +28,11 @@ export function technischeKoppelingen(g: Grant, data: Pick<Overzicht, 'beleid'>)
 }
 
 export default function ToegangBlok({ lang, data, naarInstellen }: { lang: Lang; data: Overzicht; naarInstellen: () => void }) {
+  useAnkerScroll('toegang'); // MELDLINK-001: сповіщення про право готувати оновлення ведуть на admin.*/updates#toegang
   const rijen = data.voorbereiders.filter((g) => g.status === 'actief').map((g) => ({ g, staat: effectieveToegang(g, data) }));
   const zelfde = (g: Grant) => rijen.filter((r) => r.g.soort !== 'account' && r.g.label === g.label).length > 1;
   const klikUitleg = tr(lang, 'Натисніть, щоб відкрити «Налаштування → Хто готує оновлення»: там можна змінити термін або вимкнути доступ.', 'Klik om «Instellingen → Wie bereidt updates voor» te openen: daar wijzigt u de termijn of zet u de toegang uit.');
-  return <section className='ut-kaart ut-toegang' data-ut-toegang aria-labelledby='ut-toegang-titel'>
+  return <section className='ut-kaart ut-toegang' id='toegang' data-ut-toegang aria-labelledby='ut-toegang-titel'>
     <header className='ut-toegang-kop'><h2 id='ut-toegang-titel'>{tr(lang, 'Хто має доступ до підготовки', 'Wie heeft toegang tot voorbereiden')}</h2><HulpVraag k='uitrol.toegang' lang={lang} /></header>
     {rijen.length === 0 ? <p className='ut-hint'>{tr(lang, 'Ніхто окремо. Власний архів можна завантажити завжди.', 'Niemand apart. Uw eigen archief kunt u altijd uploaden.')}</p>
       : <ul className='ut-toegang-lijst'>{rijen.map(({ g, staat }) => {

@@ -2,7 +2,7 @@
 // Перетворює сигнали з будь-якого піддомену, серверного журналу, ПК-агента, розширення оглядача,
 // сторінки (інформаційної смуги) чи пошти/сховища/ШІ в єдину структуровану подію екосистеми з діями, контекстом і вкладеннями.
 
-import { normaliseerActies, normaliseerBijlagen, veiligeMeldingUrl, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
+import { normaliseerActies, normaliseerBijlagen, veiligeMeldingUrl, veiligePaginaLink, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
 
 export type RuweBronGebeurtenis = {
   id?: string;
@@ -126,12 +126,15 @@ export function bouwStandaardActies(subdomein: MeldingSubdomein, kanaal: Melding
 export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallback: RuimteType = 'prive'): MeldingEcosysteemGebeurtenis {
   const nu = Number(invoer.aangemaaktOp) || Date.now();
   const ruimte: RuimteType = invoer.ruimte === 'technisch' ? 'technisch' : ruimteFallback;
-  const veiligeLink = veiligeMeldingUrl(invoer.link, 500);
-  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', veiligeLink || '', 'hub');
+  // MELDLINK-001: het subdomein herkennen aan de link zoals de bron hem gaf; de link zelf wordt een absolute adres van een bestaande pagina.
+  const ruweLink = veiligeMeldingUrl(invoer.link, 500);
+  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', ruweLink || '', 'hub');
+  const linkHint = { soort: invoer.soort || invoer.bron || '', subdomein: invoer.subdomein };
+  const veiligeLink = veiligePaginaLink(invoer.link, linkHint, 500);
   const kanaal = invoer.kanaal ?? herkenKanaal(invoer.bron || '', invoer.soort || '', subdomein);
   const prioriteit = berekenPrioriteit(invoer.soort || '', invoer.ernst || '', kanaal);
   const bijlagen = normaliseerBijlagen(invoer.bijlagen);
-  const eigenActies = normaliseerActies(invoer.acties);
+  const eigenActies = normaliseerActies(invoer.acties, linkHint);
   const acties = eigenActies.length ? eigenActies : bouwStandaardActies(subdomein, kanaal, veiligeLink, bijlagen.length);
   const titel = String(invoer.titel || '').trim() || 'Подія системи / Systeemgebeurtenis';
   const externeSleutel = String(invoer.externeSleutel || invoer.id || '').trim().slice(0, 180);

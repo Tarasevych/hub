@@ -9,6 +9,7 @@
 // Een ongeldig, verlopen of te ver STAP_OP_UIT_TOT wordt ook gemeld: dan staat de bevestiging AAN, maar de eigenaar denkt misschien van niet.
 // Exploitatie-aanbeveling (deploy/DRAAIBOEK-*): STAP_OP_UIT_TOT=<tijdstip> (hoogstens 24 uur) in plaats van STAP_OP_UIT=1.
 import { stapOpUitStand, STAP_OP_UIT_MAX_MS, type StapOpUitStand } from './stap-op';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 export const STAP_OP_UIT_HERHAAL_MS = 24 * 60 * 60 * 1000;
 
@@ -50,7 +51,7 @@ const standaardDeps = (): Deps => ({
   log: (regel) => console.warn(regel),
   audit: async (i) => (await import('./audit-gebeurtenis')).schrijfBeheerAudit({ actor: null, doel: { soort: 'beveiliging', naam: 'stap-op' }, actie: i.actie, resultaat: 'success', reden: i.reden, na: i.na }),
   eigenaarId: async () => (await import('./integraties-kluis')).eigenaarUserId(),
-  melden: async (userId, titel, tekst) => (await import('./melder')).meld(userId, 'beveiliging.zekering', titel, tekst, '/diagnostiek'),
+  melden: async (userId, titel, tekst) => (await import('./melder')).meld(userId, 'beveiliging.zekering', titel, tekst, `https://${SERVICE_HOSTS.admin}/diagnostiek`),
 });
 
 /**

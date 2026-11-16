@@ -8,6 +8,7 @@
 // Niets verzinnen: velden komen uit de melding zelf (titel/tekst/link/bron). Wat de bron niet geeft, staat er eerlijk als
 // «джерело не передало» (zie veld()).
 import type { V2Melding } from './groepering';
+import { routeerMeldingLink } from '../melding-link';
 
 type Tw = readonly [uk: string, nl: string];
 export type Risico = 'laag' | 'midden' | 'hoog';
@@ -41,7 +42,11 @@ export type UitlegSoort = {
 const ID = 'https://id.tarasevych.com';
 const MCP = 'https://mcp.tarasevych.com/agents';
 const UPD = 'https://admin.tarasevych.com/updates';
-const viaLink = (vast: string) => (m: V2Melding) => (m.link && /^(\/|https:\/\/([a-z0-9-]+\.)?tarasevych\.com\/)/.test(m.link) ? m.link : vast);
+// MELDLINK-001: de link van de bron eerst naar een bestaande pagina (relatief → eigen subdomein, oud pad → nieuw); anders het vaste doel.
+const viaLink = (vast: string) => (m: V2Melding) => {
+  const doel = m.link && /^(\/|https:\/\/([a-z0-9-]+\.)?tarasevych\.com\/)/.test(m.link) ? routeerMeldingLink(m.link, { soort: m.soort }) : '';
+  return doel || vast;
+};
 const s = (m: V2Melding) => `${m.soort || ''} ${m.categorie || ''}`.toLowerCase();
 const tekst = (m: V2Melding) => `${m.titel} ${m.tekst || ''}`.toLowerCase();
 

@@ -20,6 +20,7 @@ import { buildMime, encodeWord, headerSafe, parseAddressList, toGmailRaw } from 
 import { ladeVereist } from './mail-ruimte';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { jsonbTekst } from '../shared/tekst-veilig';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const systeem = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 
@@ -329,9 +330,9 @@ async function wachtrijSpoor(userId: string, actie: 'refused' | 'cancelled', cod
   await auditToevoegen({ ownerId: userId, actorId: null, action: `owner.mail.queue.${actie}`, type: 'mail', result: 'denied', details: { code, ...details }, service: 'systeem' }).catch(() => undefined);
   const aantal = Number(details.aantal || 1);
   if (actie === 'refused') await meld(userId, 'mail_queue_refused', 'Запланований лист не надіслано / Gepland bericht niet verzonden',
-    `Код ${code}: на момент надсилання ваш обліковий запис або поштовий простір більше не дозволяє надсилати. Лист залишено в «Запланованих» зі статусом «помилка». / Code ${code}: op het moment van verzenden stond uw account of postruimte verzenden niet meer toe. Het bericht staat bij «Gepland» als «fout».`, '/');
+    `Код ${code}: на момент надсилання ваш обліковий запис або поштовий простір більше не дозволяє надсилати. Лист залишено в «Запланованих» зі статусом «помилка». / Code ${code}: op het moment van verzenden stond uw account of postruimte verzenden niet meer toe. Het bericht staat bij «Gepland» als «fout».`, `https://${SERVICE_HOSTS.mail}/gepland`);
   else await meld(userId, 'mail_queue_cancelled', 'Заплановані листи скасовано / Geplande berichten geannuleerd',
-    `${aantal} запланованих листів скасовано (${code}): доступ до надсилання змінено адміністратором. / ${aantal} geplande berichten geannuleerd (${code}): de beheerder wijzigde het recht om te verzenden.`, '/');
+    `${aantal} запланованих листів скасовано (${code}): доступ до надсилання змінено адміністратором. / ${aantal} geplande berichten geannuleerd (${code}): de beheerder wijzigde het recht om te verzenden.`, `https://${SERVICE_HOSTS.mail}/gepland`);
 }
 
 /** SEC-002 (post-10): bij blokkeren of verlagen naar «alleen lezen» gaat ingeplande mail van dit account niet meer de deur uit. */

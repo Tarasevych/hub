@@ -2,6 +2,7 @@
 // zijn notify(); zonder registratie (tests) wordt er alleen gelogd. Optioneel een link (eigen pad of https://*.tarasevych.com),
 // die het meldingencentrum als knop toont (bv. «Переглянути зміну» bij «Це були ви?»).
 import type { MeldingVoorkeuren } from '../shared/menu-meldingen-voorkeuren';
+import { routeerMeldingLink } from '../shared/melding-link';
 type Melder = (userId: string, email: string, kind: string, title: string, message: string, link?: string) => Promise<unknown>;
 let melder: Melder | null = null;
 export function registreerMelder(fn: Melder): void { melder = fn; }
@@ -15,6 +16,14 @@ export function meldLink(v: unknown): string {
     const u = new URL(href);
     return u.protocol === 'https:' && !u.username && !u.password && (u.hostname === 'tarasevych.com' || u.hostname.endsWith('.tarasevych.com')) ? u.toString() : '';
   } catch { return ''; }
+}
+/**
+ * MELDLINK-001: link van een melding als absolute adres naar een BESTAANDE pagina (shared/melding-link.ts) én veilig (meldLink).
+ * Bij schrijven én lezen gebruikt: oude meldingen in de database met een relatief of verdwenen pad openen zo toch de juiste pagina.
+ * Посилання сповіщення → абсолютна адреса дійсної сторінки; і під час запису, і під час читання старих сповіщень.
+ */
+export function meldingLink(v: unknown, soort?: string): string {
+  return meldLink(routeerMeldingLink(v, { soort }));
 }
 /**
  * UITROL-001: ongelezen meldingen van een soort sluiten (gelezen zetten) als ze over iets gaan dat al voorbij is — bv. «Оновлення X чекає

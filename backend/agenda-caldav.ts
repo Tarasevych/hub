@@ -33,6 +33,7 @@ import { meld } from './melder';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { ladeNogGeldig, ladeOf, metLade } from './ruimte-cloud-agenda';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const sys = () => getPool('systeem');
 const kort = (value: unknown, max = 500) => String(value ?? '').replace(/\u0000/g, '').trim().slice(0, max);
@@ -332,7 +333,7 @@ async function caldavAfkappenMelden(ownerUserId: string, id: string, rij: Record
     + 'Решту подій у календарі не показано. Щоб бачити все, приховайте або вилучіть зайві календарі в цьому обліковому записі. '
     + `/ Het account «${naam}» gaf meer afspraken dan we bewaren: hoogstens ${perAgenda} per agenda en ${perAccount} per account. `
     + 'De rest staat niet in de agenda. Wilt u alles zien, verberg of verwijder dan overbodige agenda’s in dat account.',
-    '/agenda');
+    `https://${SERVICE_HOSTS.hub}/agenda`);
 }
 
 async function caldavAfronden(ownerUserId: string, id: string, staat: 'klaar' | 'fout', aantal: number, fout: string, agendas?: CaldavAgenda[]) {
