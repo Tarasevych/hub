@@ -59,6 +59,9 @@ export async function main(): Promise<number> {
   check('werkruimte ververst bij openen van het menu en luistert naar bfcache/zichtbaarheid/meldingen',
     (werk.match(/onOpen=\{\(\)=>mailboxRefreshRef\.current\.fn\(\)\}/g) || []).length === 2 && werk.includes('luisterMailAccounts(') && werk.includes('const refreshMailboxes='));
   check('beide wisselaars gebruiken het gedeelde model (geen eigen filter meer)', badge.includes('wisselRijen(') && wissel.includes('wisselRijen(') && !badge.includes("['revoked', 'disconnected']"));
+  // 16.11.2026 (klacht eigenaar): tijdens het laden stond «Перевіряємо підключення Gmail», ook bij Ukr.net/Outlook.
+  check('laadtekst van de mailpagina noemt geen Gmail meer (controleert alle mailboxen)',
+    !werk.includes('Перевіряємо підключення Gmail') && werk.includes('Перевіряємо підключені поштові скриньки') && !werk.includes('Не вдалося перевірити підключення Gmail'));
   check('koppelvenster en accountpagina melden een wijziging', venster.includes('meldMailAccountsGewijzigd()') && hub.includes('meldMailAccountsGewijzigd()'));
 
   // ---------------------------------------------------------------- ПІСЛЯ: verversen (luisteraar) in een nagebootst venster
