@@ -7,20 +7,54 @@
 // zetten een sleutel in een doorzoekbare tabel — daarom liever iets te streng bij regels met een expliciete sleutelnaam.
 
 export type GeheimSoort = 'privésleutel' | 'GitHub-token' | 'AWS-sleutel' | 'Anthropic-sleutel' | 'Slack-token' | 'OpenAI-sleutel' | 'Google-API-sleutel'
-  | 'Stripe-sleutel' | 'JWT' | 'Bearer-token' | 'wachtwoordregel' | 'sleutelregel' | 'verbindingsreeks' | 'app-wachtwoord';
+  | 'Stripe-sleutel' | 'JWT' | 'Bearer-token' | 'wachtwoordregel' | 'sleutelregel' | 'verbindingsreeks' | 'app-wachtwoord'
+  | 'age-sleutel' | 'Telegram-bottoken' | 'Google-OAuth-geheim' | 'npm-token';
 
 /**
  * De STRIKTE lijst: vaste voorvoegsels en PEM-koppen, vrijwel nooit fout-positief. Dit is precies wat de uitrol-voorcontrole
  * al sinds 18.10.2026 over een heel bronpakket laat lopen (daar zou een breder patroon elke release een waarschuwing geven:
  * tests en documentatie bevatten «wachtwoord: …»-voorbeelden). [patroon, soort]; zonder g-vlag (geen lastIndex-geheugen).
+ *
+ * SEC-PAKKET-001 (16.11.2026): uitgebreid met de andere vaste voorvoegsels die bij diefstal uit repositories het meest
+ * worden misbruikt (alle GitHub-tokensoorten, fijnmazige PAT, age-sleutel, Telegram-bot, Google-OAuth, npm, Stripe live).
+ * Розширено (16.11.2026) іншими сталими префіксами, які найчастіше крадуть із репозиторіїв. Тестові зразки в tests/
+ * збирайте під час виконання (tests/eenheid/hulp/nep-geheim.ts), щоб пакет оновлення не давав хибного попередження.
  */
 export const GEHEIM_PATRONEN_STRIKT: ReadonlyArray<readonly [RegExp, GeheimSoort]> = Object.freeze([
-  [/-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/, 'privésleutel'],
-  [/\bghp_[A-Za-z0-9]{36}\b/, 'GitHub-token'],
+  [/-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY-----/, 'privésleutel'],
+  [/\bgh[pousr]_[A-Za-z0-9]{36,}\b/, 'GitHub-token'],
+  [/\bgithub_pat_[A-Za-z0-9_]{60,}\b/, 'GitHub-token'],
   [/\bAKIA[0-9A-Z]{16}\b/, 'AWS-sleutel'],
   [/\bsk-ant-[A-Za-z0-9_-]{20,}/, 'Anthropic-sleutel'],
+  [/\bsk-proj-[A-Za-z0-9_-]{40,}/, 'OpenAI-sleutel'],
   [/\bxox[abprs]-[A-Za-z0-9-]{10,}/, 'Slack-token'],
+  [/\bAGE-SECRET-KEY-1[0-9A-Z]{50,}/, 'age-sleutel'],
+  [/\b\d{8,10}:AA[A-Za-z0-9_-]{33}\b/, 'Telegram-bottoken'],
+  [/\bGOCSPX-[A-Za-z0-9_-]{20,}/, 'Google-OAuth-geheim'],
+  [/\bAIza[0-9A-Za-z_-]{35}\b/, 'Google-API-sleutel'],
+  [/\bnpm_[A-Za-z0-9]{36}\b/, 'npm-token'],
+  [/\b(?:sk|rk)_live_[A-Za-z0-9]{16,}\b/, 'Stripe-sleutel'],
 ]);
+
+/**
+ * Bestandsnaam in een uitrolpakket die zelf al op een geheim wijst (.env, sleutelbestand). Één bron voor
+ * backend/uitrol-voorcontrole.ts en de bewaker tests/eenheid/pakket-geheimen-20261116.test.ts. null = niets.
+ * Назва файла в пакеті, що сама вказує на секрет. .env.example/.sample/.dist — зразки, не секрети.
+ */
+export function pakketGeheimNaam(pad: string): string | null {
+  const n = pad.replace(/\\/g, '/');
+  if (/(^|\/)\.env(\.|$)/.test(n) && !/\.(example|sample|dist)$/.test(n)) return '.env-bestand';
+  if (/\.(pem|key|p12|pfx)$/i.test(n) && !/^tests?\//.test(n)) return 'sleutelbestand';
+  return null;
+}
+/** Welke tekstbestanden de voorcontrole op inhoud doorzoekt (zelfde filter als backend/uitrol-voorcontrole.ts). */
+export const pakketTekstBestand = (pad: string): boolean =>
+  /\.(ts|tsx|js|mjs|json|sh|md|txt|ya?ml|env|sql)$/i.test(pad) && !/(^|\/)package-lock\.json$/.test(pad);
+/** Eerste strikte treffer in de tekst (alleen de soort, nooit de waarde). null = niets. */
+export function pakketGeheimInhoud(tekst: string): GeheimSoort | null {
+  for (const [re, soort] of GEHEIM_PATRONEN_STRIKT) if (re.test(tekst)) return soort;
+  return null;
+}
 /** De VOLLEDIGE lijst voor de zoekindex: de strikte patronen plus tokens, JWT's, verbindingsreeksen en wachtwoordregels. */
 export const GEHEIM_PATRONEN: ReadonlyArray<readonly [RegExp, GeheimSoort]> = Object.freeze([
   // Een volledig PEM-blok (kop t/m voet) in één keer weg; de losse kop uit de strikte lijst vangt de rest.

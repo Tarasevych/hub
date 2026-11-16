@@ -29,7 +29,7 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 import { bronCommit } from '../shared/bron-commit';
-import { GEHEIM_PATRONEN_STRIKT } from '../shared/geheim-patronen';
+import { pakketGeheimInhoud, pakketGeheimNaam, pakketTekstBestand } from '../shared/geheim-patronen';
 import { beoordeelToegepasteMigraties } from '../shared/uitrol-vereisten';
 export type Niveau = 'ok' | 'waarschuwing' | 'fout';
 export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[] };
@@ -184,8 +184,9 @@ const SQL_RISICO: Array<[RegExp, string, string]> = [
   [/\bALTER\s+TABLE\b[^;]*\bRENAME\b/i, 'RENAME', 'RENAME'],
   [/\bALTER\s+COLUMN\b[^;]*\b(?:SET\s+DATA\s+)?TYPE\b/i, 'kolomtype wijzigen', 'kolomtype wijzigen'],
 ];
-// De patronen staan sinds 22.10.2026 in shared/geheim-patronen.ts (GEHEIM_PATRONEN_STRIKT), gedeeld met de zoekindex.
-const GEHEIM_PATRONEN = GEHEIM_PATRONEN_STRIKT;
+// De patronen staan sinds 22.10.2026 in shared/geheim-patronen.ts (GEHEIM_PATRONEN_STRIKT), gedeeld met de zoekindex;
+// sinds 16.11.2026 ook de naam- en bestandsregels (pakketGeheimNaam/pakketTekstBestand/pakketGeheimInhoud), zodat de
+// bewaker tests/eenheid/pakket-geheimen-20261116.test.ts precies hetzelfde controleert als deze stap.
 
 /** UITROL-001: de proef vóór het uploaden (backend/uitrol-vereisten.ts → proefVoorArchief), met per migratie de SHA-256 van de geprobeerde SQL. */
 export type ProefVoorControle = { id: string; ok: boolean; status: string; sqlSha256: ReadonlyMap<string, string> };
@@ -409,15 +410,15 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     // ---- 7. geheimen (alleen namen)
     const gevonden: string[] = [];
     for (const f of alle) {
-      const n = f.replace(/\\/g, '/');
-      if (/(^|\/)\.env(\.|$)/.test(n) && !/\.(example|sample|dist)$/.test(n)) gevonden.push(`${n}: .env-bestand`);
-      if (/\.(pem|key|p12|pfx)$/i.test(n) && !/^tests?\//.test(n)) gevonden.push(`${n}: sleutelbestand`);
+      const soort = pakketGeheimNaam(f);
+      if (soort) gevonden.push(`${f.replace(/\\/g, '/')}: ${soort}`);
     }
-    for (const f of alle.filter((x) => /\.(ts|tsx|js|mjs|json|sh|md|txt|ya?ml|env|sql)$/i.test(x) && !/(^|\/)package-lock\.json$/.test(x)).slice(0, 4000)) {
+    for (const f of alle.filter(pakketTekstBestand).slice(0, 10000)) {
       if (gevonden.length > 20) break;
       const st = await lstat(path.join(bron, f)).catch(() => null); if (!st || !st.isFile() || st.size > 2 * 1024 * 1024) continue;
       const t = (await lees(f, 2 * 1024 * 1024))?.toString('utf8') ?? '';
-      for (const [re, soort] of GEHEIM_PATRONEN) if (re.test(t)) { gevonden.push(`${f.replace(/\\/g, '/')}: ${soort}`); break; }
+      const soort = pakketGeheimInhoud(t);
+      if (soort) gevonden.push(`${f.replace(/\\/g, '/')}: ${soort}`);
     }
     if (gevonden.length) voeg('geheimen', 'waarschuwing', 'Схоже, у пакеті є секрети (ключі/токени/.env). Перевірте перед схваленням.', 'Het pakket lijkt geheimen te bevatten (sleutels/tokens/.env). Controleer vóór het goedkeuren.', gevonden);
     else voeg('geheimen', 'ok', 'Явних секретів (приватні ключі, токени, .env) не знайдено.', 'Geen duidelijke geheimen (privésleutels, tokens, .env) gevonden.');

@@ -255,7 +255,7 @@ export async function main(): Promise<number> {
       const gevallen: Array<[string, () => unknown]> = [
         ['stripTrackingAndSecrets: «<img » × 80 000', () => stripTrackingAndSecrets('<img '.repeat(n(80_000, 16_000)))],
         ['stripTrackingAndSecrets: «eyJaaaaaaaaaa-» × 28 000', () => stripTrackingAndSecrets('eyJaaaaaaaaaa-'.repeat(n(28_000, 6_000)))],
-        ['stripTrackingAndSecrets: «-----BEGIN PRIVATE KEY-----» × 14 000', () => stripTrackingAndSecrets('-----BEGIN PRIVATE KEY-----'.repeat(n(14_000, 3_000)))],
+        ['stripTrackingAndSecrets: «-----BEGIN ' + 'PRIVATE KEY-----» × 14 000', () => stripTrackingAndSecrets(('-----BEGIN ' + 'PRIVATE KEY-----').repeat(n(14_000, 3_000)))],
         ['stripTrackingAndSecrets: 12 MB «<» (begrensd)', () => stripTrackingAndSecrets('<'.repeat(n(12_000_000, 200_000)))],
         ['extractSignificantKeywords: «<» × 300 000', () => extractSignificantKeywords('<'.repeat(n(300_000, 60_000)))],
         ['splitSentences: «<» × 300 000', () => _vertalingIntern.splitSentences('<'.repeat(n(300_000, 60_000)))],
@@ -266,7 +266,7 @@ export async function main(): Promise<number> {
       for (const [naam, f] of gevallen) { const { ms } = meet(f); check(`aanv-gat-b-01/aanv-ronde1-03: ${naam} binnen het budget`, ms < BUDGET_MS, `${ms.toFixed(0)} ms`); }
       const b = begrensAiVertalingInvoer({ userId: 'u', mode: 'summary', targetLang: 'uk', messageId: 'm', subject: 's'.repeat(5_000_000), bodyText: 'b'.repeat(5_000_000), from: 'f'.repeat(10_000), to: Array.from({ length: 500 }, () => 'x'.repeat(1000)) });
       check('aanv-gat-b-01: invoer van /ai-vertaling/run begrensd vóór elke bewerking (tekst, onderwerp, adressen)', b.bodyText!.length === AI_VERTALING_MAX.body && b.subject!.length === AI_VERTALING_MAX.subject && b.from!.length === AI_VERTALING_MAX.adres && b.to!.length === AI_VERTALING_MAX.adressen && b.to!.every((x) => x.length <= AI_VERTALING_MAX.adres));
-      const geheim = stripTrackingAndSecrets('a eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJlLXZlcnppbg b -----BEGIN RSA PRIVATE KEY-----\nMIIEverzonnen\n-----END RSA PRIVATE KEY----- c <img src="https://open.tracker.example.test/p.gif" width="1"> d');
+      const geheim = stripTrackingAndSecrets('a eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJlLXZlcnppbg b -----BEGIN ' + 'RSA PRIVATE KEY-----\nMIIEverzonnen\n-----END RSA PRIVATE KEY----- c <img src="https://open.tracker.example.test/p.gif" width="1"> d');
       check('aanv-gat-b-01: gedrag blijft — JWT, PRIVATE KEY-blok en volgpixel worden nog steeds verwijderd', !/eyJhbGci|MIIEverzonnen|tracker/.test(geheim.text) && geheim.redactedSecrets === 2 && geheim.strippedTrackingPixels === 1 && /^a \[ПРИХОВАНО_СЕКРЕТ\] b \[ПРИХОВАНО_СЕКРЕТ\] c  d$/.test(geheim.text), geheim.text);
       check('aanv-ronde1-03: zinnen en bedragen ongewijzigd voor gewone tekst', JSON.stringify(_vertalingIntern.splitSentences('<p>Dit is de eerste zin.</p> En dit is de tweede zin!')) === JSON.stringify(['Dit is de eerste zin.', 'En dit is de tweede zin!']) && _vertalingIntern.extractSumsFromText('Te betalen: € 1.250,00 vóór vrijdag of 300 EUR.').length === 2);
       const routes = bron('backend/ai-vertaling-routes.ts');
