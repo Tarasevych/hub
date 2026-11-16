@@ -15,3 +15,10 @@
 @media (prefers-reduced-motion:reduce){
   html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{transition:none!important}
 }
+/* PRIJ-003 (16.11.2026): підказка «⋮» не світиться при кожному наведенні — лише після правого кліку (data-hint-open ставить
+   MailRijSnelleActies), сама зникає за 4 с або коли курсор іде з кнопки; при відкритому меню схована (mail-rij-snelle-acties.css).
+   Tooltip van «⋮» alleen na rechtsklik. */
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more:not([data-hint-open])>span[role='tooltip']{opacity:0!important;visibility:hidden}
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more[data-hint-open]:not([aria-expanded=true])>span[role='tooltip']{opacity:1;visibility:visible}
+/* «⋮» стоїть біля правого краю: підказка вирівнюється по правому краю кнопки й переноситься, а не виходить за екран · rechts uitgelijnd, binnen beeld */
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more>span[role='tooltip']{right:0;translate:0 0;width:max-content;max-width:min(260px,calc(100vw - 24px));white-space:normal;text-align:left;line-height:1.35}

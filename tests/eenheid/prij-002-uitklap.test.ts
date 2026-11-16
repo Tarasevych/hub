@@ -20,7 +20,14 @@ export async function main(): Promise<number> {
   check('«⋮» не згортається (правило лише для прямих кнопок, «⋮» — у .mail-row-actions-overflow)', !/actions-overflow[^{]*\{[^}]*width:0/.test(css));
   check('без анімації за prefers-reduced-motion', /@media \(prefers-reduced-motion:reduce\)\{[^@]*transition:none!important/.test(css));
   check('«око» в даті ховається лише коли «Перегляд» у смужці справді видно', bron.includes(`(balk.querySelector<HTMLElement>("[data-mail-actie='preview']")?.offsetWidth||0)>0`));
-  check('підказка «⋮» пояснює наслідок натискання (uk/nl)', (bron.match(/Натисніть, щоб відкрити всі дії з листом/g) || []).length === 2 && bron.includes('Klik om alle acties voor dit bericht te openen'));
+  // PRIJ-003 (16.11.2026): Павло — підказка «⋮» лише за правим кліком, щоб не світилася постійно
+  check('PRIJ-003: «⋮» без data-tooltip (загальний шар підказок її не показує при наведенні)', !/className='mail-row-actions-more'[^>]*data-tooltip=/.test(bron));
+  check('PRIJ-003: правий клік (contextmenu) показує підказку, без системного меню; сама зникає за 4 с і коли курсор іде з кнопки', bron.includes('data-hint-open={hint?\'true\':undefined} onContextMenu={event=>{') && bron.includes('event.preventDefault();event.stopPropagation();setHint(true)') && bron.includes('setTimeout(()=>setHint(false),4000)') && bron.includes('onPointerLeave={()=>{window.clearTimeout(hintTimer.current);setHint(false)}}'));
+  check('PRIJ-003: таймер прибирається при демонтажі рядка', bron.includes('useEffect(()=>()=>window.clearTimeout(hintTimer.current),[])'));
+  check('PRIJ-003: підказка пояснює наслідки наведення й натискання (uk/nl)', bron.includes('Наведіть — розгорнуться швидкі дії; натисніть — меню з усіма діями з листом') && bron.includes('Aanwijzen toont snelle acties; klikken opent het menu met alle berichtacties'));
+  const css2 = zc(lees('src/mail-rij-uitklap.css'));
+  check('PRIJ-003: CSS ховає підказку без data-hint-open і показує з ним (не при відкритому меню)', css2.includes(".mail-row-actions-more:not([data-hint-open])>span[role='tooltip']{opacity:0!important;visibility:hidden}") && css2.includes(".mail-row-actions-more[data-hint-open]:not([aria-expanded=true])>span[role='tooltip']{opacity:1;visibility:visible}"));
   check('мобільний шар у кінці: mail-mobiel.css не змінено цим файлом, а uitklap не має @media max-width', !/max-width:\s*720px/.test(css));
+  check('PRIJ-003: підказка «⋮» вирівняна по правому краю й переноситься (не виходить за екран)', css2.includes(".mail-row-actions-more>span[role='tooltip']{right:0;translate:0 0;width:max-content;max-width:min(260px,calc(100vw - 24px));white-space:normal;"));
   return einde();
 }
