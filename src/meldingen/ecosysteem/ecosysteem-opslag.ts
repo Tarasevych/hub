@@ -517,6 +517,8 @@ export function useMeldingEcosysteem(opties: {
   ruimte: RuimteType;
   subdomeinNu: MeldingSubdomein;
   actief: boolean;
+  /** MELDINGEN-UX-001 (16.11.2026): het venster is de gekozen vorm → de stroom één keer vooraf laden, zodat de bel al vóór het openen klopt. */
+  telVooraf?: boolean;
   paginaSignalen: PaginaSignaal[];
   serverItems: CanonicalServerNotification[];
   techItems: CanonicalServerNotification[];
@@ -587,6 +589,10 @@ export function useMeldingEcosysteem(opties: {
     }, 35_000);
     return () => window.clearInterval(t);
   }, [opties.actief, profiel.geometrie.minimalePil, verversStroom]);
+
+  useEffect(() => {
+    if (opties.telVooraf) void verversStroom();
+  }, [opties.telVooraf, verversStroom]);
 
   const werkProfielBij = useCallback(
     (updater: (oud: MeldingEcosysteemProfiel) => MeldingEcosysteemProfiel, directOpslaan = true) => {
