@@ -35,3 +35,8 @@
   .la-blok>summary{min-height:var(--tik-hoogte,44px)}
   .la-keuzes button,.la-kleuren button{min-height:var(--tik-hoogte,44px)}
 }
+/* Павло (16.11): кнопка «Типові значення» на всю ширину різала око. Тепер компактна, праворуч під блоками, яких стосується. */
+.thema-knop.la-standaard{justify-self:end;align-self:start;width:auto;min-height:0;padding:.35rem .7rem;gap:.35rem;font-size:.85rem;border-radius:10px;color:var(--muted)}
+.thema-knop.la-standaard:hover:not(:disabled),.thema-knop.la-standaard:focus-visible{color:var(--text)}
+.thema-knop.la-standaard svg{width:.95rem;height:.95rem}
+@media (pointer: coarse){.thema-knop.la-standaard{min-height:var(--tik-hoogte,44px)}}

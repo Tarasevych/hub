@@ -111,7 +111,7 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
       <p className='thema-uitleg'>{tr('Фон малюється в окремому потоці на маленькому полотні, яке браузер лише розтягує, тож прокрутка й кліки не гальмують. На прихованій вкладці фон стоїть і нічого не витрачає.', 'De achtergrond wordt in een aparte thread op een klein canvas getekend dat de browser alleen uitrekt, dus scrollen en klikken blijven vlot. In een verborgen tabblad staat hij stil en kost hij niets.')}</p>
     </details>
 
-    <button type='button' className='thema-knop' onClick={() => zetAchtergrond(undefined)} title={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')} data-achtergrond-herstel>
+    <button type='button' className='thema-knop la-standaard' aria-label={tr('Типові значення живого фону', 'Standaardwaarden van de levende achtergrond')} onClick={() => zetAchtergrond(undefined)} title={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')} data-achtergrond-herstel>
       <RotateCcw aria-hidden />{tr('Типові значення', 'Standaardwaarden')}
     </button>
   </section>;
