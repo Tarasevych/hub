@@ -119,6 +119,8 @@ if (existsSync(pad)) {
 // 8. bedrading: regel verbergt alleen de strook, niet het gedrag
 const tekst = readFileSync('src/MailBerichtTekst.tsx', 'utf8');
 check('beelden: «toestaan» hangt niet van regels af', /const toestaan=instelling==='altijd'\|\|altijdAfzender\|\|eenmaal,/.test(tekst) && !/toestaan=[^;]*(regel|strookStaat)/.test(tekst));
+// Павло 16.11: «Завжди від цього відправника» не казало, показувати чи не показувати — назва з дієсловом
+check('knop zegt wat hij doet: «Завжди показувати від цього відправника»', tekst.includes("t('Завжди показувати від цього відправника','Altijd tonen van deze afzender')") && !tekst.includes("t('Завжди від цього відправника'"));
 check('beelden: keuzeregel en regelhint bedraad', tekst.includes("<StrookNazorg lang={lang} strook='beelden'") && tekst.includes('<RegelHint'));
 const gesprek = readFileSync('src/MailGesprekInhoud.tsx', 'utf8');
 check('taal: keuzeregel en regelhint bedraad', gesprek.includes("<StrookNazorg lang={lang} strook='taal'") && gesprek.includes('regelHint={'));
