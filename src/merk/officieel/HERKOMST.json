@@ -56,6 +56,19 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "colornote",
+      "bestand": "colornote.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.colornote.com/wp-content/uploads/2016/05/favicon.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 6658,
+      "sha256": "35462754f450fa7ff33bc91db95bbbec7adbc74a07d38b0f8d976dcdab0e8a4c",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "copilot",
       "bestand": "copilot.svg",
       "soort": "pakket",
@@ -144,6 +157,33 @@
       "bytes": 3965,
       "sha256": "4dbba9cc522ddf8355dacebe90533f8102061bd896a01a30ee098dfd666ef117",
       "ondergrond": "licht"
+    },
+    {
+      "sleutel": "fastmail",
+      "bestand": "fastmail.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.fastmail.com/favicon.svg",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 1091,
+      "sha256": "e08438ceae760a3d712a202da67db79ee7f1450de28a9d9b85fd59927ada079a",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "freshdesk",
+      "bestand": "freshdesk.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.freshworks.com/beta/icons/template-2026/freshdesk-logo-icon.svg",
+      "bronPagina": "https://www.freshworks.com/freshdesk/",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 1935,
+      "sha256": "51b269f38f65faf6aae45b0322a90e1b1b368f570721764a82f7cad3b7da46d7",
+      "ondergrond": "vrij"
     },
     {
       "sleutel": "gemini",
@@ -257,6 +297,45 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "honor",
+      "bestand": "honor.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.honor.com/etc/designs/honor-site/assets/favicon-192x192.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 9608,
+      "sha256": "30cedb7430b55e813ef49a48dd32e69ca87bb05f0c62f004e06217d6b120268f",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "huawei",
+      "bestand": "huawei.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://consumer.huawei.com/dam/content/dam/huawei-cbg-site/common/huawei-logo.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 10597,
+      "sha256": "fd49545a22729d1a8fada49915bdf592a094ffcda235e8278d2a48ef3cfa1eed",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "iua",
+      "bestand": "iua.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://i3.i.ua/logo_new1.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 10299,
+      "sha256": "ddc36a9440a8fcbf1031841f79ac179cdf48587560da75eebbfb80a84259a0f7",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "microsoft",
       "bestand": "microsoft.svg",
       "soort": "pakket",
@@ -290,6 +369,19 @@
       "mime": "image/svg+xml",
       "bytes": 1539,
       "sha256": "8e34b7f9cfc00ed4f91dbbcc078198c631526c5238e2df8855f7b72186b1f77c",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "microsoftentra",
+      "bestand": "microsoftentra.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://download.microsoft.com/download/3/1/a/31a56038-856a-4489-88e4-ee5a1c4352be/Microsoft%20Entra%20architecture%20icons%20-%20Oct%202023.zip",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 1300,
+      "sha256": "87af8123718a71375f75319f2e1145cd7015fa32e24fae45303679419480e9cf",
       "ondergrond": "licht"
     },
     {
@@ -367,6 +459,20 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "mollie",
+      "bestand": "mollie.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://framerusercontent.com/images/SeL6IJlQ4Ae7noV1fXjkTlqvo.png",
+      "bronPagina": "https://www.mollie.com/",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 6936,
+      "sha256": "ed34d6afdf070202fc65134ffaa2d698a518027313db040a4b79ad2fb159d2f8",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "mondaydotcom",
       "bestand": "mondaydotcom.svg",
       "soort": "pakket",
@@ -421,6 +527,32 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "onlineua",
+      "bestand": "onlineua.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.online.ua/apple-touch-icon.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 11213,
+      "sha256": "bb0c0d1bc931e0450025a66135304a8a7c3e2dad8516de1b34a77313995f8c7f",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "pcloud",
+      "bestand": "pcloud.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://pcdn-www.pcloud.com/ZWLPH/images/favicons/android-icon-192x192.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 10141,
+      "sha256": "a33c7620adcb1852d113e42290ba6b41f5997b8d1271617b3d7606d6b14400ef",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "pipedrive",
       "bestand": "pipedrive.svg",
       "soort": "pakket",
@@ -456,6 +588,33 @@
       "bytes": 1177,
       "sha256": "a8b87d956a1a43782c8e6880d82a9cab09bee06e6586bf44ed7e693e94714212",
       "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "tuya",
+      "bestand": "tuya.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.tuya.com/",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 1885,
+      "sha256": "b17e2458b83b1c2b4f14b95fadc2e4daf0986953ebf029ffc7421d6042e61a50",
+      "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "ukrnet",
+      "bestand": "ukrnet.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://upst.fwdcdn.com/ukrnet-icon-144x144.png",
+      "bronPagina": "https://www.ukr.net/",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 19698,
+      "sha256": "7c55b611c21c5a072c634e0a5518826c93c1f59a4f02166d6ee249523052c7be",
+      "ondergrond": "licht"
     },
     {
       "sleutel": "webhook",
@@ -531,14 +690,5 @@
       "opmerking": "woordmerk (Yahoo heeft geen los beeldmerk in een open pakket)"
     }
   ],
-  "afwezig": [
-    "microsoftentra",
-    "fastmail",
-    "freshdesk",
-    "mollie",
-    "tuya",
-    "ukrnet",
-    "iua",
-    "onlineua"
-  ]
+  "afwezig": []
 }

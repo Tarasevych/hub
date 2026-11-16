@@ -156,7 +156,10 @@ if (UA_MAP && existsSync(join(UA_MAP, 'bron.json'))) {
     if (!u.ok) { console.error(`overgeslagen ${sleutel}: ${u.reden}`); continue; }
     writeFileSync(join(UIT, bestand), u.inhoud);
     const regel = {
-      sleutel, bestand, soort: 'officiele-site', bronUrl: url, opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
+      sleutel, bestand, soort: 'officiele-site', bronUrl: url,
+      // Ligt het bestand op een CDN van de dienst (ander domein), dan de eigen pagina van de dienst die het toont.
+      ...(/^https:\/\/[a-z0-9.-]+\//i.test(String(r.pagina || '')) ? { bronPagina: String(r.pagina) } : {}),
+      opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
       licentie: 'handelsmerk-van-de-eigenaar', licentieUitleg: 'officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst',
       mime: soort === 'png' ? 'image/png' : 'image/svg+xml', bytes: u.inhoud.length, sha256: sha(u.inhoud),
       ondergrond: soort === 'svg' ? ondergrondVan(u.inhoud.toString('utf8')) : 'licht',

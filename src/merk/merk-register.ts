@@ -247,6 +247,8 @@ export function registreerDirecteMerken(tabel: Readonly<Record<string, Officieel
 export function officieelMerk(v: unknown): OfficieelBeeld | null { const s = merkSleutel(v); return (s && OFFICIEEL.get(s)) || null; }
 export const officieelGeladen = (): boolean => officieelBinnen;
 export const officieleSleutels = (): string[] => [...OFFICIEEL.keys()].sort();
+/** Voor tests: haalt de officiële laag van deze merken weg (zo is de databaselaag eronder te toetsen). Alleen tests. */
+export function _officieelWeg(sleutels: readonly string[]): void { for (const k of sleutels) OFFICIEEL.delete(merkSleutel(k)); }
 /** Laadt de ingebouwde officiële logo's (eigen bundelstuk, één keer per sessie). */
 export function laadOfficieel(): Promise<void> {
   return (officieelBelofte ??= import('./merk-officieel').then(() => { officieelBinnen = true; for (const fn of [...kijkers]) fn(); }).catch(() => { officieelBelofte = null; }));

@@ -60,8 +60,15 @@ export async function main() {
   check('5: календар, нотатки, джерела нотаток і вікно підключення календаря малюють логотип із реєстру; літера — лише без бренду',
     /aanbieder\.logo \? <MerkLogo/.test(agenda) && /'honor-calendar': 'honor'/.test(koppel) && /'huawei-calendar': 'huawei'/.test(koppel)
     && /'proton-calendar': 'protonmail'/.test(koppel) && /app\.logo && app\.logo !== 'markdown' \? <MerkLogo/.test(notities) && /b\.merk \? <span[^>]*><MerkLogo/.test(vnBron));
-  check('5: нові знаки на місці (HONOR, Huawei, pCloud, ColorNote — нейтральні плитки; Google Keep — офіційний файл)',
-    ['honor', 'huawei', 'pcloud', 'colornote'].every((k) => MERKEN[k]?.neutraal && in_.has(k)) && OFFICIEEL_SLEUTELS.has('googlekeep') && in_.has('googlekeep'));
+  // Павло (16.11): «треба щоб ти знайшов на офіційних сайтах та виправив це зараз» — у галереї не лишилось жодної плитки з літерами
+  // там, де є справжній знак: кожна нейтральна плитка перекрита офіційним файлом (пакет CC0/MIT або сайт самого сервісу).
+  const lettersOnly = galerij.filter((r) => MERKEN[r.sleutel]?.neutraal && !OFFICIEEL_SLEUTELS.has(r.sleutel)).map((r) => r.sleutel);
+  const herkomst = JSON.parse(readFileSync('src/merk/officieel/HERKOMST.json', 'utf8')) as { regels: Array<{ sleutel: string; soort: string; bronUrl?: string }> };
+  const vanSite = ['honor', 'huawei', 'pcloud', 'colornote', 'fastmail', 'freshdesk', 'mollie', 'tuya', 'microsoftentra', 'ukrnet', 'iua', 'onlineua'];
+  check('5: нові знаки на місці: Google Keep з пакета CC0; HONOR, Huawei, pCloud, ColorNote, Fastmail, Freshdesk, Mollie, Tuya, Entra, Ukr.net, I.ua, Online.ua — з офіційних сайтів (адреса записана в HERKOMST.json)',
+    OFFICIEEL_SLEUTELS.has('googlekeep') && vanSite.every((k) => OFFICIEEL_SLEUTELS.has(k) && in_.has(k) && herkomst.regels.some((r) => r.sleutel === k && r.soort === 'officiele-site' && /^https:\/\//.test(r.bronUrl || ''))));
+  check('5: жодної плитки з літерами там, де сайт знає бренд (крім агентів, що отримують знак у PR #143)',
+    lettersOnly.every((k) => ['windsurf', 'cline', 'devin', 'opencode'].includes(k)), lettersOnly.join(','));
 
   // 6. Eén rij per merk, met een menselijke naam.
   const kaal = galerij.filter((r) => !r.naam || (r.naam === r.sleutel && /^[a-z0-9]{4,}$/.test(r.naam)));
