@@ -458,6 +458,30 @@ function laiStandFilter(d) {
   for (const id of LAI_APIS) if (LAI_STANDEN.includes(a[id])) uit[id] = a[id];
   return Object.keys(uit).length ? uit : null;
 }
+// 0.9.5 (LAI-REDEN): kant-en-klare reden voor de site (PING lokaleAi.reden + redenen per API), zodat de site niets zelf hoeft af te leiden.
+// Готова причина для сайту. Codes van de extensie: uit · site-uit · niet-hier · model-ontbreekt · klaar (beleid-uit = gereserveerd voor
+// het beleid van de beheerder; telefoon / geen-extensie / oud bepaalt de site zelf, want dan antwoordt er geen extensie).
+const LAI_REDEN_VAN_STAND = { available: 'klaar', downloadable: 'model-ontbreekt', downloading: 'model-ontbreekt', stil: 'model-ontbreekt', unavailable: 'niet-hier', ontbreekt: 'niet-hier', fout: 'niet-hier' };
+const LAI_REDEN_RANG = ['klaar', 'model-ontbreekt', 'niet-hier'];
+/**
+ * Zuiver. k = lokaleAiKeuze() ({aan, apis[], stand?}), siteToegang = «!»-schakelaar. → {reden?, redenen?}; zonder meting geen reden
+ * (de site meet dan zelf of toont «перевіряємо»). Volgorde: uit gaat voor site-uit, site-uit voor de stand van het model.
+ */
+function laiRedenen(k, siteToegang) {
+  if (!k || typeof k !== 'object') return {};
+  if (k.aan === false) return { reden: 'uit' };
+  const apis = Array.isArray(k.apis) ? k.apis : [];
+  const stand = k.stand && typeof k.stand === 'object' ? k.stand : null;
+  const redenen = {};
+  for (const id of LAI_APIS) {
+    if (!apis.includes(id)) redenen[id] = 'uit';
+    else if (stand && LAI_REDEN_VAN_STAND[stand[id]]) redenen[id] = LAI_REDEN_VAN_STAND[stand[id]];
+  }
+  if (siteToegang !== true) return { reden: 'site-uit', ...(stand ? { redenen } : {}) };
+  if (!stand) return {};
+  const beste = LAI_REDEN_RANG.find((r) => Object.values(redenen).includes(r));
+  return { ...(beste ? { reden: beste } : { reden: 'uit' }), redenen };
+}
 async function meetLokaleAi() {
   // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
   const r = await Promise.race([naarOffscreen({ op: 'lokale-ai-stand' }).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), 20_000))]);
@@ -1674,7 +1698,10 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       const vt = await voorTab(s);
       // lokaleAi: publieke keuzes (aan/apis/stand) PLUS het PING-contract {ondersteund, siteToegang}; na de spread, anders overschreven.
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
-        diagOptIn: s.diagOptIn, ...vt, lokaleAi: { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: (await lokaleAiInstellingen()).siteToegang === true } });
+        diagOptIn: s.diagOptIn, ...vt, lokaleAi: await (async () => {
+          const site = (await lokaleAiInstellingen()).siteToegang === true;
+          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, ...laiRedenen(vt.lokaleAi, site) };
+        })() });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
     // 0.9.1: lokale AI voor pagina's van de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
