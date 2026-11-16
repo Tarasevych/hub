@@ -36,9 +36,12 @@ export const BROWSER_ALTIJD_AAN: readonly BrowserType[] = ['browser.lokale_ai'];
 export const isBrowserType = (v: unknown): v is BrowserType => typeof v === 'string' && (BROWSER_TYPES as readonly string[]).includes(v);
 
 /** De ingeschakelde typen van een browseragent: de keuze van de gebruiker, of de standaard als er nog niets is gekozen. */
-export function enabledTypes(policy: { enabled?: unknown } | null | undefined): string[] {
+export function enabledTypes(policy: { enabled?: unknown; kent?: unknown } | null | undefined): string[] {
   const list = policy?.enabled;
   if (!Array.isArray(list)) return [...BROWSER_DEFAULT_ENABLED];
   const gekozen = list.filter(isBrowserType);
-  return [...gekozen, ...BROWSER_ALTIJD_AAN.filter((t) => !gekozen.includes(t))];
+  // Review PR #137: alleen typen die de gebruiker bij zijn keuze nog NIET kende (policy.kent, sinds 0.9.6) krijgen hun standaard;
+  // wat hij kende en wegliet, blijft uit.
+  const kent = Array.isArray(policy?.kent) ? (policy!.kent as unknown[]) : [];
+  return [...gekozen, ...BROWSER_ALTIJD_AAN.filter((t) => !gekozen.includes(t) && !kent.includes(t))];
 }

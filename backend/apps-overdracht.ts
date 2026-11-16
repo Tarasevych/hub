@@ -77,10 +77,13 @@ export function bewaarVluchtig(ticket: unknown, agentId: string, data: unknown):
   vluchtigOpruimen();
   if (typeof ticket !== 'string') return false;
   const v = vluchtig.get(ticket);
+  // Niet (meer) verwacht, andere agent of al gevuld: niet bewaren. De gateway zet een lokale-AI-resultaat dan óók niet in de database.
   if (!v || v.agentId !== agentId || v.data !== undefined) return false;
   v.data = data;
   return true;
 }
+/** Connector: verwachting en eventueel resultaat meteen weggooien (opdracht niet geslaagd): een later resultaat gaat dan nergens heen. */
+export function vergeetVluchtig(ticket: string): void { vluchtig.delete(ticket); }
 /** Connector: resultaat één keer ophalen (daarna weg). */
 export function haalVluchtig(ticket: string): unknown {
   vluchtigOpruimen();

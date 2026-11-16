@@ -111,11 +111,16 @@ export async function main(): Promise<number> {
     check('resultaat van de verwachte agent → in het geheugen, één keer; tweede keer vullen geweigerd',
       bewaarVluchtig(tv, 'agent-browser', { tekst: 'VERTALING' }) === true && bewaarVluchtig(tv, 'agent-browser', { tekst: 'OVERSCHRIJVEN' }) === false
       && JSON.stringify(haalVluchtig(tv)) === '{"tekst":"VERTALING"}' && haalVluchtig(tv) === undefined);
+    const { vergeetVluchtig } = await import('../../backend/apps-overdracht');
+    const tw = 'w'.repeat(43);
+    verwachtVluchtig(tw, 'agent-browser'); vergeetVluchtig(tw);
+    check('opdracht mislukt → verwachting weg; een laat resultaat wordt niet meer bewaard', bewaarVluchtig(tw, 'agent-browser', { tekst: 'LAAT' }) === false && haalVluchtig(tw) === undefined);
     // Review PR #137 (b): «доступний всім» — ook in een eerder opgeslagen keuze van de browser staat browser.lokale_ai aan.
     const { enabledTypes, BROWSER_DEFAULT_ENABLED, BROWSER_DEFAULT_AUTO } = await import('../../backend/browser-mogelijkheden');
     check('standaardbeleid van de browser: browser.lokale_ai aan en zonder klik; oude opgeslagen keuze krijgt het er ook bij',
       BROWSER_DEFAULT_ENABLED.includes('browser.lokale_ai') && BROWSER_DEFAULT_AUTO.includes('browser.lokale_ai')
       && enabledTypes({ enabled: ['browser.snapshot'] }).includes('browser.lokale_ai') && enabledTypes(null).includes('browser.lokale_ai'));
+    check('wie het type al kende (policy.kent) en wegliet, houdt het uit', !enabledTypes({ enabled: ['browser.snapshot'], kent: ['browser.snapshot', 'browser.lokale_ai'] }).includes('browser.lokale_ai'));
     check('hulpmiddel browser_local_ai → opdracht browser.lokale_ai; functies gelijk op server en in de extensie',
       TOOL_TO_COMMAND.browser_local_ai === 'browser.lokale_ai' && JSON.stringify([...LOKALE_AI_MODI]) === JSON.stringify([...ext.LOKALE_AI_MODI]) && ext.ALLOWED_COMMANDS.includes('browser.lokale_ai') && ext.TYPE_CAPABILITY['browser.lokale_ai'] === 'browser.read');
     check('extensie valideert: nooit de tekst in params, wel functie + ticket + talen',

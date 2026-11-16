@@ -1694,6 +1694,18 @@ const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detec
  * in de opdracht: de extensie haalt hem één keer op met het eigen token (POST /api/owner/agents/overdracht, soort 'lokale-ai').
  * Volgorde: beleid van de beheerder → hoofdschakelaar → functie aan → limieten → ticket → offscreen.html. Nooit een modeldownload.
  */
+/** Vaste uitleg per foutcode van offscreen.html voor de AI (Engels: de AI leest het), zonder tekst van de gebruiker. */
+const LAI_AGENT_UITLEG = Object.freeze({
+  MODEL_NIET_GELADEN: 'the model is not downloaded yet; the user downloads it with a click in the extension settings, this tool never does',
+  NIET_BESCHIKBAAR: 'this function is not available in this Chrome or on this computer',
+  NotSupportedError: 'this language or combination of options is not supported by the model',
+  QuotaExceededError: 'the text is too long for the model; send a shorter text',
+  AbortError: 'stopped after 120 seconds',
+  ONTBREEKT: 'this Chrome does not have this function (flag or newer Chrome needed)',
+  API_UIT: 'the user switched this function off in the extension settings',
+  UIT: 'the user switched the built-in AI off in the extension settings',
+  LEEG: 'empty text', MODUS: 'unknown function',
+});
 async function lokaleAiVoorAgent(r, st, params) {
   const beleid = laiBeleid();
   if (beleid && beleid.aan === false) throw new Error(`EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.door ? ` (${beleid.door})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.reden}". Tell the user; do not retry.`);
@@ -1722,7 +1734,9 @@ async function lokaleAiVoorAgent(r, st, params) {
     const uit = await naarOffscreen({ op: 'lokale-ai-voer', id, modus: params.modus, tekst, vanTaal: params.bron, naarTaal: params.doel, limietMs: 120000 });
     if (!uit || uit.ok !== true) {
       const reden = uit && typeof uit.reason === 'string' ? uit.reason.slice(0, 60) : 'FOUT';
-      throw new Error(`EXTENSIE_LOKALE_AI: ${reden}${uit && uit.detail ? ` — ${String(uit.detail).slice(0, 300)}` : ''}${reden === 'MODEL_NIET_GELADEN' ? ' (the user must download the model with a click in the extension settings; this tool never downloads it)' : ''}`);
+      // Review PR #137: nooit uit.detail doorgeven (een foutmelding van het model kan stukken tekst bevatten, en de fout komt in de
+      // database); alleen de code plus een vaste uitleg.
+      throw new Error(`EXTENSIE_LOKALE_AI: ${/^[A-Za-z_]{1,40}$/.test(reden) ? reden : 'FOUT'}${LAI_AGENT_UITLEG[reden] ? ` (${LAI_AGENT_UITLEG[reden]})` : ''}`);
     }
     // vluchtig = het ticket: de server bewaart dit resultaat dan alleen in het geheugen (nooit in de opdrachtgeschiedenis).
     return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true, vluchtig: params.ticket };

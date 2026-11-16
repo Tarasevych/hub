@@ -333,11 +333,14 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
     if ((msg?.t === 'term.out' || msg?.t === 'term.exit' || msg?.t === 'result') && terminalHooks?.vanAgent(agentId, msg)) return;
     // SEC-002 http-rand-03: alleen een echt opdracht-id (uuid) gaat naar de database; iets anders gaf 22P02 en liet het proces vallen.
     if (msg?.t === 'result' && store.isOpdrachtId(msg.id)) {
-      // LAI-CON-001: resultaat van browser_local_ai (data.vluchtig = het verwachte ticket van DEZE agent) alleen in het geheugen;
-      // in de database blijft metadata (op het apparaat, aantal tekens). Een niet verwacht ticket → gewoon pad (niets verborgen).
+      // LAI-CON-001: een resultaat met data.vluchtig (alleen browser_local_ai) komt NOOIT met inhoud in de database. Verwachtte de
+      // connector dit ticket van DEZE agent, dan in het geheugen (bewaarVluchtig); anders (te laat, verlopen, andere agent) weg.
+      // In de database blijft alleen metadata (op het apparaat, aantal tekens, of het bewaard werd).
       const vl = msg.ok && msg.data && typeof msg.data === 'object' ? (msg.data as { vluchtig?: unknown; tekst?: unknown }) : null;
-      const vluchtigBewaard = !!vl && typeof vl.vluchtig === 'string' && bewaarVluchtig(vl.vluchtig, agentId, msg.data);
-      if (vluchtigBewaard) msg.data = { opApparaat: true, vluchtig: true, tekens: typeof vl!.tekst === 'string' ? vl!.tekst.length : 0 };
+      if (vl && 'vluchtig' in vl) {
+        const bewaard = typeof vl.vluchtig === 'string' && bewaarVluchtig(vl.vluchtig, agentId, msg.data);
+        msg.data = { opApparaat: true, vluchtig: true, bewaard, tekens: typeof vl.tekst === 'string' ? vl.tekst.length : 0 };
+      }
       // Alleen een opdracht van DEZE gebruiker, naar DEZE agent en in stand 'sent' wordt afgesloten (audit M3).
       await store.transitionCommand(
         msg.id, ['sent'], msg.ok ? 'succeeded' : 'failed',

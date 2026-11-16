@@ -19,7 +19,7 @@ import { huidigeLade, huidigeNamens, huidigeRuimte, metNamens } from './mcp-name
 import { apparaatInRuimte, ruimteOf } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { agentOnline } from './connectors-gateway';
-import { haalVluchtig, maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, verwachtVluchtig, vergeetTicket } from './apps-overdracht';
+import { haalVluchtig, maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, verwachtVluchtig, vergeetTicket, vergeetVluchtig } from './apps-overdracht';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as store from './connectors-opslag';
 import { controleerBrowserOpdracht } from './extensie-ontgrendeling';
@@ -1254,6 +1254,8 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
           if (uitleg) return text(uitleg.fout, true);
         }
       }
+      // Review PR #137: niet geslaagd (fout, wachtend, verlopen) → ticket en eventueel resultaat meteen uit het geheugen.
+      if (done.status !== 'succeeded' && name === 'browser_local_ai' && ticket) { vergeetTicket(ticket); vergeetVluchtig(ticket); }
       if (done.status === 'succeeded' && name === 'browser_local_ai' && ticket) {
         const v = haalVluchtig(ticket) as Record<string, unknown> | undefined;
         if (!v) return text('The result of the local AI is no longer available on the server (it is kept only in memory, once). Call the tool again.', true);
