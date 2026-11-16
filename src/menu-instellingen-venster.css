@@ -21,3 +21,5 @@
 .miv-keuzes input{position:absolute;opacity:0;width:1px;height:1px}
 .miv-twee{grid-template-columns:repeat(auto-fit,minmax(13rem,1fr))}
 .miv-twee legend{grid-column:1/-1}
+/* ICONEN-001: три стилі іконок в один ряд (на вузькому вікні переносяться самі). · drie icoonstijlen op één rij. */
+.miv-twee.miv-drie{grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr))}

@@ -250,6 +250,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
   useEffect(() => { document.querySelector('.mr-at-treffer.is-gekozen')?.scrollIntoView({ block: 'nearest' }); }, [keuze]);
 
   const kleurIconen = zijbalk.icoonStijl === 'kleur';
+  const tintIconen = zijbalk.icoonStijl === 'tint'; // ICONEN-001: усі гліфи в улюбленому відтінку · alle gliefen in de voorkeurstint
   const inhoud = secties.find(item => ontwerp(item.id) === huidig.id)?.inhoud;
   const vorige = index > 0 ? bron.secties[index - 1] : null;
   const volgende = index < bron.secties.length - 1 ? bron.secties[index + 1] : null;
@@ -277,7 +278,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
   const voortgang = <div className='mr-at-voortgang' aria-hidden='true'>{bron.secties.map((s, i) => <i key={s.id} className={i <= index ? 'is-gedaan' : ''}/>)}</div>;
 
   return <AtelierInhoud.Provider value={true}>
-    <div ref={wortel} className={`mr-at plaats-${plaats} stijl-${stijl}${licht ? ' is-licht' : ''}${kleurIconen ? ' iconen-kleur' : ''}`}
+    <div ref={wortel} className={`mr-at plaats-${plaats} stijl-${stijl}${licht ? ' is-licht' : ''}${kleurIconen ? ' iconen-kleur' : ''}${tintIconen ? ' iconen-tint' : ''}`}
       style={{ '--mr-boven': `${boven}px` } as CSSProperties} data-actief={werkelijk(huidig.id)}>
       <div className='mr-at-raster'>
         <aside className='mr-at-gids' aria-label={vertaal(lang, 'Навігація за розділами', 'Navigatie per onderdeel')}>

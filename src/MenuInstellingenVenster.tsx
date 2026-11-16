@@ -57,9 +57,9 @@ export default function MenuInstellingenVenster({ lang, modus, onModus, onBewerk
             <I aria-hidden='true' /><span><strong>{naam}</strong><small>{uitleg}</small></span>
           </label>)}
         </fieldset>
-        <fieldset className='miv-keuzes miv-twee'>
+        <fieldset className='miv-keuzes miv-twee miv-drie'>
           <legend><Palette aria-hidden='true' />{tr('Іконки', 'Iconen')}</legend>
-          {([['klassiek', tr('Класичні', 'Klassiek'), tr('Колір розділу — лише при наведенні й в активного', 'Kleur van het onderdeel alleen bij aanwijzen en actief')], ['kleur', tr('Кольорові', 'Kleurrijk'), tr('Кожен розділ завжди у своєму кольорі', 'Elk onderdeel altijd in zijn eigen kleur')]] as const).map(([id, naam, uitleg]) => <label key={id} className={v.icoonStijl === id ? 'actief' : ''}>
+          {([['klassiek', tr('Класичні', 'Klassiek'), tr('Колір розділу — лише при наведенні й в активного', 'Kleur van het onderdeel alleen bij aanwijzen en actief')], ['kleur', tr('Кольорові', 'Kleurrijk'), tr('Кожен розділ завжди у своєму кольорі', 'Elk onderdeel altijd in zijn eigen kleur')], ['tint', tr('У відтінку', 'In tint'), tr('Усі іконки — в улюбленому відтінку; кольори розділів у меню не показуються', 'Alle iconen in de voorkeurstint; kleuren van onderdelen worden in het menu niet getoond')]] as const).map(([id, naam, uitleg]) => <label key={id} className={v.icoonStijl === id ? 'actief' : ''}>
             <input type='radio' name='miv-stijl' checked={v.icoonStijl === id} onChange={() => zetZijbalk({ icoonStijl: id })} />
             <span><strong>{naam}</strong><small>{uitleg}</small></span>
           </label>)}

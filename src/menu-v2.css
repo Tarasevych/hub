@@ -107,6 +107,13 @@
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 12%,var(--zb-hover))}
+/* ICONEN-001 (16.11.2026): «У відтінку» — усі піктограми меню завжди в улюбленому відтінку (акцент облікового запису; без обраного відтінку — акцент палітри).
+   Кольори служб і власні кольори пунктів у меню не діють; :not(#_is1) перемагає правила [data-accent] вище.
+   «In tint»: alle menu-iconen altijd in de voorkeurstint (accountaccent; zonder tint het paletaccent). Dienstkleuren gelden dan niet in het menu. */
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-sidebar:not(#_is1),.canonical-chrome[data-icoon-stijl='tint'] .canonical-sidebar *:not(#_is1){--a:var(--accent);--a2:color-mix(in srgb,var(--accent) 78%,var(--muted));--a-item:var(--a2)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-service-button .menu-lucide-glyph{color:var(--accent)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='tint'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--accent) 12%,var(--zb-hover))}
 
 /* --------------------------------------------------------------- smal: ALLES een cirkel zonder tekst (ook actief, ook e-mail) */
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-group{justify-items:center}
@@ -161,6 +168,8 @@
 .zijbalk-voorbeeld>span.actief{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent);color:var(--a,var(--accent))}
 .zijbalk-voorbeeld[data-icoon-stijl='kleur']>span{color:var(--a)}
 .zijbalk-voorbeeld[data-icoon-stijl='kleur']>span.actief{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
+.zijbalk-voorbeeld[data-icoon-stijl='tint']>span{color:var(--accent)}
+.zijbalk-voorbeeld[data-icoon-stijl='tint']>span.actief{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .zijbalk-modus-icoon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--muted)}
 .zijbalk-modus-icoon svg{width:18px;height:18px}
 .zijbalk-keuze label.actief .zijbalk-modus-icoon{color:var(--accent)}

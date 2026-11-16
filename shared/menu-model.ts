@@ -83,7 +83,8 @@ export function menuNodes(): MenuNode[] {
 /** auto = smal, verbreedt bij aanwijzen; open = altijd breed (vastgezet); dicht = altijd smal (vastgezet, geen hover). */
 export const ZIJBALK_MODI = ['auto', 'open', 'dicht'] as const;
 export type ZijbalkModus = typeof ZIJBALK_MODI[number];
-export const ICOON_STIJLEN = ['klassiek', 'kleur'] as const;
+// ICONEN-001 (16.11.2026): 'tint' — усі піктограми меню в улюбленому відтінку (акцент облікового запису). · alle menu-iconen in de voorkeurstint.
+export const ICOON_STIJLEN = ['klassiek', 'kleur', 'tint'] as const;
 export type IcoonStijl = typeof ICOON_STIJLEN[number];
 /** Fase 2: waar het menu staat. */
 export const DOCK_POSITIES = ['links', 'rechts', 'boven', 'onder'] as const;
