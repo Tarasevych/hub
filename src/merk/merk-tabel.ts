@@ -70,6 +70,10 @@ export const MERKEN: MerkTabel = Object.freeze({
   mollie: { naam: "Mollie", kleur: "#FFFFFF", vlak: "#0051FF", neutraal: true, letter: "Mo" },
   mondaydotcom: { naam: "monday.com", kleur: "#000000", vlak: "#FF3D57", neutraal: true, letter: "Md" },
   pipedrive: { naam: "Pipedrive", kleur: "#FFFFFF", vlak: "#017737", neutraal: true, letter: "Pd" },
+  honor: { naam: "HONOR", kleur: "#FFFFFF", vlak: "#1F2937", neutraal: true, letter: "Ho" },
+  huawei: { naam: "Huawei", kleur: "#FFFFFF", vlak: "#C7000B", neutraal: true, letter: "Hu" },
+  pcloud: { naam: "pCloud", kleur: "#000000", vlak: "#20C2D8", neutraal: true, letter: "pC" },
+  colornote: { naam: "ColorNote", kleur: "#000000", vlak: "#F5C400", neutraal: true, letter: "CN" },
   tuya: { naam: "Tuya", kleur: "#000000", vlak: "#FF4800", neutraal: true, letter: "Tu" },
   // OAuth: tot 21.10 een zelfgetekend sleuteltje (geen herkomst). Nu het officiële logo uit @iconify-json/logos (src/merk/officieel/oauth.svg).
   oauth: { naam: "OAuth", kleur: "#FFFFFF", vlak: "#2F6F73", neutraal: true, letter: "OA" },

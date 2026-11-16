@@ -201,6 +201,25 @@
       "opmerking": "vlakke uitvoering (2020), in dezelfde stijl als het vierkleurige «G»"
     },
     {
+      "sleutel": "googlekeep",
+      "bestand": "googlekeep.svg",
+      "soort": "pakket",
+      "pakket": "@iconify-json/logos",
+      "versie": "1.2.17",
+      "integriteit": "sha512-ruCr6y5h8FW+loXwRJkz+6cJj3njyX5Ccpi+ifMgaWZPbTSCbsCccNyGomZxIdhoyDKNOmNdZuURC3tyBvDr7A==",
+      "icoon": "google-keep-2020",
+      "verzameling": "SVG Logos",
+      "auteur": "Gil Barbara",
+      "bronUrl": "https://github.com/gilbarbara/logos",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+      "mime": "image/svg+xml",
+      "bytes": 448,
+      "sha256": "5ab09835a867fddbd2b53af18410af352a71f07c8623d0f17c63480bce8080c1",
+      "ondergrond": "vrij",
+      "opmerking": "vlakke uitvoering (2020), zoals Google Drive"
+    },
+    {
       "sleutel": "gpt",
       "bestand": "gpt.svg",
       "soort": "pakket",

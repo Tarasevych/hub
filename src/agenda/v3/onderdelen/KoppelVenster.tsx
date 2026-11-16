@@ -23,7 +23,7 @@ type Props = { lang: Lang; smal: boolean; data: client.AgendaOverzicht | null; g
 // REESTR-LOGO-001 (16.11.2026): het merk uit het ENE merkregister (src/merk; de grote tabel komt lui, pas als dit venster opent);
 // een monogram alleen voor wat geen merk is (ICS, CalDAV) of geen logo met eerlijke herkomst heeft (Honor, Huawei, Proton).
 // Логотипи сервісів календаря — з єдиного реєстру; літери лише там, де справжнього знака немає.
-const MERK: Record<string, string> = { 'google-calendar': 'googlecalendar', 'apple-icloud': 'icloud', 'samsung-calendar': 'samsung', 'microsoft-outlook': 'microsoftoutlook', fastmail: 'fastmail' };
+const MERK: Record<string, string> = { 'google-calendar': 'googlecalendar', 'apple-icloud': 'icloud', 'samsung-calendar': 'samsung', 'microsoft-outlook': 'microsoftoutlook', fastmail: 'fastmail', 'honor-calendar': 'honor', 'huawei-calendar': 'huawei', 'proton-calendar': 'protonmail' };
 const MONOGRAM: Record<string, string> = { 'google-calendar': 'G', 'apple-icloud': 'iC', 'samsung-calendar': 'S', 'honor-calendar': 'Ho', 'huawei-calendar': 'Hu', caldav: 'C', fastmail: 'F', 'ics-abonnement': '.ics', 'proton-calendar': 'P', 'microsoft-outlook': 'O' };
 const VOLGORDE = ['google-calendar', 'apple-icloud', 'samsung-calendar', 'honor-calendar', 'microsoft-outlook', 'ics-abonnement', 'caldav', 'fastmail', 'huawei-calendar', 'proton-calendar'];
 

@@ -11,26 +11,11 @@ import { MERK_EIGEN_MAX_BYTES, merkEigenRedenTekst } from '../../shared/merk-eig
 import MerkLogo from './MerkLogo';
 import Wenk from '../hulp/Wenk';
 import { gebruikerMerkenLijst, gebruikerMerkenZetten, merkGebruikerPost, type GebruikerMerkenAntwoord } from './merk-gebruiker-laden';
-import { laadMerken, merkDef, merkSleutel, opMerken } from './merk-register';
-import { OFFICIEEL_SLEUTELS } from './officieel-sleutels';
+import { laadMerken, merkDef, opMerken } from './merk-register';
+import { laadGalerij, OFFICIEEL_NAMEN, type GalerijRij as Rij } from './merk-galerij';
 import './mijn-logos.css';
 
 type Tr = (uk: string, nl: string) => string;
-type Rij = { sleutel: string; naam: string };
-
-/** Namen voor merken die alleen een officieel bestand hebben (geen vorm in merk-tabel.ts). */
-const OFFICIEEL_NAMEN: Readonly<Record<string, string>> = { telegram: 'Telegram', discord: 'Discord', whatsapp: 'WhatsApp', dropbox: 'Dropbox', googledrive: 'Google Drive' };
-
-/** Alle merken die de site kent, met een menselijke naam: het register (agents, browsers …), de koppelingen en de officiële bestanden. */
-async function catalogus(): Promise<Rij[]> {
-  await laadMerken();
-  const [{ MERKEN }, { INTEGRATIES }] = await Promise.all([import('./merk-tabel'), import('../../shared/integraties-catalogus')]);
-  const uit = new Map<string, string>();
-  for (const [k, d] of Object.entries(MERKEN)) if (!d.lijn) uit.set(k, d.naam);
-  for (const i of INTEGRATIES) { const k = merkSleutel(i.logo); if (k && !uit.has(k) && !MERKEN[k]?.lijn) uit.set(k, i.naam); }
-  for (const k of OFFICIEEL_SLEUTELS) if (!uit.has(k)) uit.set(k, OFFICIEEL_NAMEN[k] || merkDef(k)?.naam || k);
-  return [...uit].map(([sleutel, naam]) => ({ sleutel, naam })).sort((a, b) => a.naam.localeCompare(b.naam));
-}
 
 const leesBestand = (f: File) => new Promise<string>((ok, nee) => { const r = new FileReader(); r.onload = () => ok(String(r.result || '').split(',')[1] || ''); r.onerror = () => nee(new Error('LEZEN')); r.readAsDataURL(f); });
 
@@ -49,7 +34,8 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
     void gebruikerMerkenLijst().then((r) => { if (r) { setLijst(r); gebruikerMerkenZetten(r); } else setLijst({ merken: [] }); }).catch(() => setLijst({ merken: [] }));
     // Mislukt het laden van een bundelstuk (netwerk, nieuwe versie), dan nog één keer na 2 s — anders bleef het zoeken voorgoed leeg.
     let weg = false;
-    void catalogus().catch(() => new Promise<Rij[]>((ok, nee) => setTimeout(() => void catalogus().then(ok, nee), 2000))).then((r) => { if (!weg) setAlle(r); }).catch(() => undefined);
+    void laadMerken();
+    void laadGalerij().catch(() => new Promise<Rij[]>((ok, nee) => setTimeout(() => void laadGalerij().then(ok, nee), 2000))).then((r) => { if (!weg) setAlle(r); }).catch(() => undefined);
     return () => { weg = true; af(); };
   }, []);
 

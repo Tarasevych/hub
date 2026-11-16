@@ -65,6 +65,8 @@ const KEUZE = [
   // De menupictogrammen «Google Drive» en «Dropbox» waren letters in een kader; nu de echte beeldmerken.
   { sleutel: 'googledrive', pakket: '@iconify-json/logos', icoon: 'google-drive-2020', opmerking: 'vlakke uitvoering (2020), in dezelfde stijl als het vierkleurige «G»' },
   { sleutel: 'dropbox', pakket: '@iconify-json/logos', icoon: 'dropbox' },
+  // Павло (16.11): «перконайся, що в цю галерею входять всі логотипи, згадані на сайті» — Google Keep (джерело нотаток) був літерою.
+  { sleutel: 'googlekeep', pakket: '@iconify-json/logos', icoon: 'google-keep-2020', opmerking: 'vlakke uitvoering (2020), zoals Google Drive' },
   { sleutel: 'copilot', pakket: '@iconify-json/logos', icoon: 'github-copilot' },
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
   { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },

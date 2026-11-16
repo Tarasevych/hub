@@ -27,6 +27,7 @@ import {
   ordenNotities, schoonEtiket, tekstUitLijst, vormUitEtiketten, zoekNotities,
   type NotitieKleur, type NotitieSoort, type NotitieVorm,
 } from '../shared/notities-model';
+import MerkLogo from './merk/MerkLogo';
 import './hub-notities.css';
 import './notities/notities-maquette.css';
 
@@ -266,7 +267,7 @@ function HubNotesOud({ lang }: { lang: 'uk' | 'nl' }) {
           <ul className='hub-notes-apps-lijst'>
             {NOTITIE_APPS.map((app) => (
               <li key={app.id} data-hub-notes-app={app.id} data-hub-notes-app-stand={app.stand}>
-                <span className='hub-notes-app-monogram' aria-hidden='true'>{app.naam.slice(0, 1)}</span>
+                {app.logo && app.logo !== 'markdown' ? <MerkLogo id={app.id} naam={app.naam} logo={app.logo} maat={34} /> : <span className='hub-notes-app-monogram' aria-hidden='true'>{app.naam.slice(0, 1)}</span>}
                 <div>
                   <strong>{app.naam}</strong>
                   <small>{notitieTekst(app.uitleg, lang)}</small>
