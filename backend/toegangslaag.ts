@@ -252,7 +252,7 @@ async function ontkoppelEnkel(table:string,row:{id:string}&Record<string,unknown
 /** Een hele methode ontkoppelen (bindingen + bijbehorend wachtwoord/telefoon/Google-identiteiten). */
 async function ontkoppelMethode(userId:string,method:LoginMethodId,door:Door){
   await ontkoppelBindingen((await bindingsFor(userId)).filter(item=>item.method===method&&item.status!=='disabled'),door);
-  if(method==='password')await ontkoppelEnkel(PASSWORDS,await passwordFor(userId),door);
+  if(method==='password'){await ontkoppelEnkel(PASSWORDS,await passwordFor(userId),door);/* KLUIS-AANMELDEN: geen wachtwoord meer = geen wachtwoordomslag van de gegevenssleutel */await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(userId)).catch(()=>undefined);}
   if(method==='phone')await ontkoppelEnkel(PHONES,await phoneFor(userId),door);
   if(method==='google')await ontkoppelIdentiteiten(await googleIdentities(userId),door);
 }
@@ -644,6 +644,8 @@ export function createAccessPlaneRoutes(deps:{
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
       else await db.add(PASSWORDS,[record]);
       await upsertLoginBinding(auth.user.id,'password',auth.user.id,auth.user.email);
+      /* KLUIS-AANMELDEN: het nieuwe wachtwoord opent voortaan de gegevenssleutel (open sleutel: meteen; dicht: zodra hij opengaat) */
+      await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordGewijzigd(auth.user.id,password)).catch(e=>console.error('[sleutelkluis] wachtwoord gezet:',(e as Error).message));
       await deps.audit(auth.user.id,'access.password.set','success',{});
       await meldBeveiligingsWijziging(auth.user.id,'wachtwoord-gezet');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -684,7 +686,7 @@ export function createAccessPlaneRoutes(deps:{
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
       if(identity)await ontkoppelIdentiteiten([identity],zelf(auth));
-      if(row){await ontkoppelBindingen([row],zelf(auth));if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active'))await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id),zelf(auth));}
+      if(row){await ontkoppelBindingen([row],zelf(auth));if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active')){await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id),zelf(auth));await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(auth.user.id)).catch(()=>undefined);}}
       await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email,herstelbaarTot:Date.now()+HERSTEL_MS});
       await meldOntkoppeld(auth.user.id,identity?'google':String(row?.method||''));
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -998,6 +1000,8 @@ export function createAccessPlaneRoutes(deps:{
       const record={userId:ctx.params.id,...envelope,mustChange:true,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
       else await db.add(PASSWORDS,[record]);
+      /* KLUIS-AANMELDEN: een tijdelijk wachtwoord van de beheerder opent NOOIT de gegevenssleutel; de oude omslag gaat weg */
+      await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(String(ctx.params.id))).catch(()=>undefined);
       await deps.audit(auth.user.id,'access.user.reset-password','success',{userId:ctx.params.id});
       /* SEC-002 (privacy-logboek-03): ook in het logboek en de bel van wie het wachtwoord kreeg, niet alleen in dat van de beheerder */
       if(ctx.params.id!==auth.user.id){await deps.audit(ctx.params.id,'access.password.reset-door-beheer','success',{door:auth.user.id});await meldBeveiligingsWijziging(ctx.params.id,'wachtwoord-door-beheer');}

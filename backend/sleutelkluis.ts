@@ -185,9 +185,15 @@ export async function sleutelOpenen(lade: KluisLade, dek: Buffer, houder: { soor
   const nu = Date.now();
   const h: Houder = { id: String(houder.id), soort: houder.soort, tot: houder.tot ?? nu + SESSIE_HOUDER_MS, gecontroleerd: nu };
   const bestaand = geheugen.get(sleutel);
-  if (bestaand) { bestaand.houders.set(houderId(h.soort, h.id), h); return; }
-  geheugen.set(sleutel, { dek: Buffer.from(dek), houders: new Map([[houderId(h.soort, h.id), h]]) });
+  if (bestaand) { bestaand.houders.set(houderId(h.soort, h.id), h); }
+  else geheugen.set(sleutel, { dek: Buffer.from(dek), houders: new Map([[houderId(h.soort, h.id), h]]) });
+  // KLUIS-AANMELDEN: wie wacht op een open sleutel (een wachtwoordomslag die bij de aanmelding nog niet gemaakt kon worden), krijgt
+  // een EIGEN kopie; een fout daar raakt het openen nooit.
+  for (const fn of naOpenenLijst) { const kopie = Buffer.from(dek); void Promise.resolve().then(() => fn(lade, kopie)).catch((e) => console.error('[sleutelkluis] na openen:', (e as Error).message)).finally(() => nul(kopie)); }
 }
+const naOpenenLijst: Array<(lade: KluisLade, dek: Buffer) => Promise<void> | void> = [];
+/** Registreer een stap die na elk geslaagd openen loopt (met een kopie van de DEK die daarna genuld wordt). */
+export const naOpenen = (fn: (lade: KluisLade, dek: Buffer) => Promise<void> | void): void => { naOpenenLijst.push(fn); };
 /** Een sessie of verbinding is weg: haal haar als houder weg; zonder houders verdwijnt de DEK uit het geheugen. */
 export function sleutelSluitenVoorHouder(soort: HouderSoort, id: string): number {
   let n = 0;
@@ -232,7 +238,10 @@ export async function kluisStand(lade: KluisLade): Promise<KluisStand> {
   return sleutelIsOpen(lade) ? 'open' : 'gesloten';
 }
 
-type OmslagRij = { id: string; soort: 'passkey' | 'herstelcode' | 'grant'; houder: string; deel: string; parameters: Record<string, unknown>; envelop: string; aangemaakt_op: Date; laatst_gebruikt_op: Date | null };
+// KLUIS-AANMELDEN (0289): 'wachtwoord' (KEK = scrypt van het wachtwoord) en 'passkey-aanmelden' (KEK = PRF met het vaste
+// aanmeldzout, zodat de aanmelding zelf de DEK opent) — zie backend/sleutelkluis-aanmelden.ts.
+export type OmslagSoort = 'passkey' | 'herstelcode' | 'grant' | 'wachtwoord' | 'passkey-aanmelden';
+type OmslagRij = { id: string; soort: OmslagSoort; houder: string; deel: string; parameters: Record<string, unknown>; envelop: string; aangemaakt_op: Date; laatst_gebruikt_op: Date | null };
 async function omslagen(lade: KluisLade, soort?: OmslagRij['soort'], houder?: string): Promise<OmslagRij[]> {
   const r = await sys().query(
     `SELECT id::text AS id, soort, houder, deel, parameters, envelop, aangemaakt_op, laatst_gebruikt_op FROM app.sleutelkluis_omslag
@@ -247,7 +256,10 @@ async function omslagSchrijven(lade: KluisLade, soort: OmslagRij['soort'], houde
      ON CONFLICT (user_id, ruimte, soort, houder, deel) DO UPDATE SET parameters = EXCLUDED.parameters, envelop = EXCLUDED.envelop, aangemaakt_op = now(), laatst_gebruikt_op = NULL`,
     [lade.userId, ruimteOf(lade.ruimte), soort, houder, deel, JSON.stringify(parameters), envelop]);
 }
-const omslagGebruikt = (id: string) => sys().query('UPDATE app.sleutelkluis_omslag SET laatst_gebruikt_op = now() WHERE id = $1::uuid', [id]).catch(() => undefined);
+/** Voor backend/sleutelkluis-aanmelden.ts: dezelfde lees- en schrijfweg, geen tweede SQL. */
+export const omslagenVan = omslagen;
+export const omslagZetten = omslagSchrijven;
+export const omslagGebruikt = (id: string) => sys().query('UPDATE app.sleutelkluis_omslag SET laatst_gebruikt_op = now() WHERE id = $1::uuid', [id]).catch(() => undefined);
 
 /** Journaal: tellers per tabel (geen inhoud). Fire-and-forget. */
 export function journaalTellen(lade: KluisLade, tabel: string, soort: 'serversleutel-gelezen' | 'herversleuteld' | 'gesloten-overgeslagen', aantal = 1): void {
@@ -385,7 +397,7 @@ export async function passkeyOmslagen(lade: KluisLade): Promise<Array<{ passkeyI
   return (await omslagen(lade, 'passkey')).map((r) => ({ passkeyId: r.houder, salt: String(r.parameters.salt || ''), envelop: r.envelop, prf: r.parameters.prf !== false, aangemaaktOp: new Date(r.aangemaakt_op).getTime(), laatstGebruiktOp: r.laatst_gebruikt_op ? new Date(r.laatst_gebruikt_op).getTime() : 0 }));
 }
 export async function passkeyOmslagWeg(lade: KluisLade, passkeyId: string): Promise<boolean> {
-  const r = await sys().query(`DELETE FROM app.sleutelkluis_omslag WHERE user_id = $1 AND ruimte = $2 AND soort = 'passkey' AND houder = $3`, [lade.userId, ruimteOf(lade.ruimte), passkeyId]);
+  const r = await sys().query(`DELETE FROM app.sleutelkluis_omslag WHERE user_id = $1 AND ruimte = $2 AND soort IN ('passkey', 'passkey-aanmelden') AND houder = $3`, [lade.userId, ruimteOf(lade.ruimte), passkeyId]);
   return (r.rowCount ?? 0) > 0;
 }
 /** De browser opende de DEK met de PRF van een passkey en stuurt hem; de server verifieert en houdt hem in het geheugen. */
@@ -719,6 +731,8 @@ export async function overzicht(lade: KluisLade) {
   const stand: KluisStand = !kluis ? 'uit' : sleutelIsOpen(lade) ? 'open' : 'gesloten';
   const [pk, gr, journaal, apparaten] = kluis ? await Promise.all([passkeyOmslagen(lade), grantOmslagen(lade), journaalVan(lade), apparatenVan(lade).catch(() => [] as OnthoudenApparaat[])]) : [[], [], [], [] as OnthoudenApparaat[]];
   const herstel = kluis ? (await omslagen(lade, 'herstelcode'))[0] : undefined;
+  const wachtwoord = kluis ? (await omslagen(lade, 'wachtwoord'))[0] : undefined;
+  const aanmeldPasskeys = kluis ? (await omslagen(lade, 'passkey-aanmelden')).map((r) => r.houder) : [];
   return {
     ruimte: ruimteOf(lade.ruimte), stand, ingeschakeldOp: kluis?.ingeschakeldOp || 0, herversleuteldOp: kluis?.herversleuteldOp || 0,
     herversleutelVoortgang: kluis ? await herversleutelVoortgang(lade) : null, // IDENTITEIT-015: перебіг N з M і «Продовжити»
@@ -728,6 +742,9 @@ export async function overzicht(lade: KluisLade) {
       passkeys: pk.map(({ envelop: _e, salt: _s, ...rest }) => rest),
       grants: gr,
       apparaten,
+      // KLUIS-AANMELDEN: opent de aanmelding met wachtwoord / met deze passkeys de sleutel meteen?
+      wachtwoord: wachtwoord ? { aangemaaktOp: new Date(wachtwoord.aangemaakt_op).getTime(), laatstGebruiktOp: wachtwoord.laatst_gebruikt_op ? new Date(wachtwoord.laatst_gebruikt_op).getTime() : 0 } : null,
+      aanmeldPasskeys,
     },
     journaal,
     register: SLEUTELKLUIS_REGISTER,

@@ -25,6 +25,12 @@ export const isServerEnvelop = (v: unknown): boolean => typeof v === 'string' &&
 
 /** HKDF-info (en PRF-salt-label) voor de KEK uit een passkey: browser en test rekenen exact hetzelfde. */
 export const KEK_INFO = 'mijn-ruimte-sleutelkluis-kek-v1';
+/**
+ * KLUIS-AANMELDEN: vast PRF-zout voor de AANMELDING met een passkey. Bij het aanmelden weet de browser nog niet welke passkey
+ * de mens kiest (geen allowCredentials), dus kan hij geen zout per passkey meegeven — wel dit ene. Het is geen geheim: de
+ * PRF-uitkomst hangt af van de passkey zelf. Waarde = sha256('mijn-ruimte-sleutelkluis-aanmelden-prf-v1') in base64url.
+ */
+export const AANMELD_PRF_ZOUT = '0Hr7U5Nx5t7IEBLmorFEhMRYKDJ3FVpU4pW6RdhxnyA';
 /** Omslag van de DEK (zelfde vorm voor passkey, herstelcode en grant): 'omslag1.<iv>.<ct>.<tag>'. */
 export const OMSLAG = 'omslag1';
 /** AAD van een omslag: aan mens, ruimte, soort en houder gebonden — een omslag van de ene ruimte gaat nooit open voor de andere. */
@@ -153,6 +159,7 @@ export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = 
   SLEUTELKLUIS_GESLOTEN: { uk: 'Ключ даних закритий. Розблокуйте його passkey або кодом відновлення.', nl: 'De gegevenssleutel is gesloten. Ontgrendel hem met een passkey of de herstelcode.' },
   SLEUTELKLUIS_APPARAAT_ONBEKEND: { uk: 'Цей пристрій більше не запам’ятано. Розшифруйте passkey або кодом відновлення.', nl: 'Dit apparaat is niet meer onthouden. Ontsleutel met een passkey of de herstelcode.' },
   SLEUTELKLUIS_APPARAAT_VERLOPEN: { uk: 'Пам’ять цього пристрою закінчилася (30 днів без використання). Розшифруйте ще раз, і пристрій запам’ятається знову.', nl: 'Het geheugen van dit apparaat is verlopen (30 dagen ongebruikt). Ontsleutel opnieuw en het apparaat wordt weer onthouden.' },
+  SLEUTELKLUIS_AANMELD_TOKEN: { uk: 'Час на розшифрування після входу минув. Розшифруйте в картці вгорі сторінки.', nl: 'De tijd om na het aanmelden te ontsleutelen is voorbij. Ontsleutel via de kaart bovenaan de pagina.' },
   SLEUTELKLUIS_UIT: { uk: 'Шифрування ще не ввімкнено.', nl: 'Versleuteling staat nog niet aan.' },
   SLEUTELKLUIS_AL_AAN: { uk: 'Шифрування вже ввімкнено для цього простору.', nl: 'Versleuteling staat al aan voor deze ruimte.' },
   SLEUTELKLUIS_HERSTELCODE_ONGELDIG: { uk: 'Код відновлення не підійшов.', nl: 'De herstelcode klopt niet.' },

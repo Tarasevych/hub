@@ -36,6 +36,9 @@ import { verifyPasswordLogin } from './toegangslaag';
 import { gebruikerHandle, passkeyAantal, passkeyRp } from './toegangssleutels';
 import { tweedeFactorVastleggen } from './tweede-factor-poort';
 import { registreerExtraWerkend } from './telegram-aanmelden/plaatsing';
+import { aanmeldTokenGebruiken, naPasskeyAanmelding, naWachtwoordAanmelding } from './sleutelkluis-aanmelden';
+import { SleutelkluisFout } from './sleutelkluis';
+import { AANMELD_PRF_ZOUT } from '../shared/sleutelkluis';
 
 export type Weg = 'passkey' | 'password' | 'microsoft' | 'discord' | 'apple';
 type Extern = 'microsoft' | 'discord' | 'apple';
@@ -131,7 +134,7 @@ export async function werkendePubliek(deps: Pick<AanmeldWegDeps, 'vlagPubliek'>)
 }
 
 // ------------------------------------------------------------------------------------------------ спільне завершення
-async function afronden(deps: AanmeldWegDeps, rc: RouterContext, o: { transactieId: string; userId: string; methode: Weg; tweedeFactor: boolean; details?: Record<string, unknown> }): Promise<RouterResponse> {
+async function afronden(deps: AanmeldWegDeps, rc: RouterContext, o: { transactieId: string; userId: string; methode: Weg; tweedeFactor: boolean; details?: Record<string, unknown>; sessie?: { id: string } }): Promise<RouterResponse> {
   if (!(await deps.vlagAan(o.userId, WEG_VLAG[o.methode]).catch(() => false))) {
     await audit(o.userId, `aanmelden.${o.methode}`, 'denied', { reden: 'METHODE_NIET_VOOR_U' });
     await deps.afbreken?.(o.transactieId).catch(() => undefined);
@@ -139,6 +142,7 @@ async function afronden(deps: AanmeldWegDeps, rc: RouterContext, o: { transactie
   }
   const { antwoord, sessieId } = await deps.voltooien(rc, { transactieId: o.transactieId, userId: o.userId, methode: o.methode });
   if (!sessieId) { await audit(o.userId, `aanmelden.${o.methode}`, 'denied', { reden: 'GEEN_SESSIE', ...(o.details || {}) }); return antwoord; }
+  if (o.sessie) o.sessie.id = sessieId; // KLUIS-AANMELDEN: de nieuwe sessie wordt houder van de gegevenssleutel
   if (o.tweedeFactor) await tweedeFactorVastleggen(o.userId, sessieIds(sessieId)).catch(() => undefined);
   await audit(o.userId, `aanmelden.${o.methode}`, 'success', { tweedeFactor: o.tweedeFactor, ...(o.details || {}) });
   const [uk, nl] = WEG_NAAM[o.methode];
@@ -175,7 +179,9 @@ export function aanmeldMethodenRoutes(deps: AanmeldWegDeps): Record<string, Rout
       const uitdaging = randomBytes(32).toString('base64url');
       const uitdagingId = randomBytes(24).toString('base64url');
       await uitdagingBewaren({ soort: 'passkey', sleutel: uitdagingId, transactieId: tx.transactieId, uitdaging, ms: UITDAGING_MS });
-      return metCookie(json({ uitdagingId, publicKey: { challenge: uitdaging, rpId: passkeyRp().rpId, timeout: 120000, userVerification: 'required', allowCredentials: [] } }), tx.setCookie);
+      return metCookie(json({ uitdagingId, publicKey: { challenge: uitdaging, rpId: passkeyRp().rpId, timeout: 120000, userVerification: 'required', allowCredentials: [],
+        // KLUIS-AANMELDEN: PRF met het vaste aanmeldzout — de browser opent daarmee de gegevenssleutel; de uitkomst komt hier nooit.
+        extensions: { prf: { eval: { first: AANMELD_PRF_ZOUT } } } } }), tx.setCookie);
     }),
     // 2) відповідь браузера: ключ за credentialId → підпис, origin, rpId, UV, лічильник → той самий сеанс, що й Google.
     'POST /api/aanmelden/passkey/voltooien': r(async (rc) => {
@@ -203,8 +209,15 @@ export function aanmeldMethodenRoutes(deps: AanmeldWegDeps): Record<string, Rout
       const ok = v as Extract<typeof v, { ok: true }>;
       if (!kern.tellerOk(Number(sleutel.sign_count), ok.signCount)) { await audit(sleutel.user_id, 'aanmelden.passkey', 'denied', { reden: 'TELLER_TERUG' }); return fout('PASSKEY_TELLER_TERUG', 403); }
       await sys().query('UPDATE app.passkeys SET sign_count = GREATEST(sign_count, $2), laatst_gebruikt_op = now(), backup_state = $3 WHERE id = $1', [sleutel.id, Math.max(0, ok.signCount), (ok.vlaggen & kern.VLAG.BS) !== 0]);
-      const antwoord = await afronden(deps, rc, { transactieId: rij.transactie_id, userId: sleutel.user_id, methode: 'passkey', tweedeFactor: true, details: { vingerafdruk: sleutel.vingerafdruk.slice(0, 16) } });
+      const sessie = { id: '' };
+      const antwoord = await afronden(deps, rc, { transactieId: rij.transactie_id, userId: sleutel.user_id, methode: 'passkey', tweedeFactor: true, details: { vingerafdruk: sleutel.vingerafdruk.slice(0, 16) }, sessie });
       if (antwoord.statusCode < 300) await gebruikVastleggen(sleutel.user_id, 'passkey', String(sleutel.id), 'inloggen', { dienst: 'identity' }).catch(() => undefined);
+      // KLUIS-AANMELDEN: dichte ruimtes met een aanmeldomslag van DEZE passkey → omslag + eenmalig token; de browser opent hem met de
+      // PRF van deze aanmelding en stuurt de DEK naar /api/aanmelden/kluis. Open ruimtes kregen de sessie al als houder.
+      if (antwoord.statusCode < 300 && sessie.id) {
+        const kluis = await naPasskeyAanmelding(sleutel.user_id, String(sleutel.id), sessieIds(sessie.id)).catch(() => null);
+        if (kluis) { try { antwoord.body = JSON.stringify({ ...JSON.parse(String(antwoord.body || '{}')), kluis }); } catch { /* geen JSON: dan de kaart */ } }
+      }
       return antwoord;
     }),
 
@@ -249,7 +262,23 @@ export function aanmeldMethodenRoutes(deps: AanmeldWegDeps): Record<string, Rout
       // IDENTITEIT-015 (давня вада): тимчасовий пароль (mustChange) відомий тому, хто його видав, — сеансу він не дає. Людина входить іншим
       // способом і задає власний пароль у «Способах входу». Перевірка ПІСЛЯ пароля й коду: відповідь не розкриває нічого стороннім.
       if (uit.mustChange) { await audit(uit.user.id, 'aanmelden.password', 'denied', { reden: 'ACCESS_PASSWORD_MUST_CHANGE' }); await deps.afbreken?.(rij.transactie_id).catch(() => undefined); return fout('ACCESS_PASSWORD_MUST_CHANGE', 403); }
-      return afronden(deps, rc, { transactieId: rij.transactie_id, userId: uit.user.id, methode: 'password', tweedeFactor: uit.tweedeFactor === true });
+      const sessie = { id: '' };
+      const antwoord = await afronden(deps, rc, { transactieId: rij.transactie_id, userId: uit.user.id, methode: 'password', tweedeFactor: uit.tweedeFactor === true, sessie });
+      // KLUIS-AANMELDEN: hetzelfde wachtwoord opent de gegevenssleutel voor deze sessie (omslag 'wachtwoord'); het wachtwoord zelf
+      // verlaat deze functie niet en wordt nergens bewaard. Een fout hier breekt de aanmelding niet.
+      if (antwoord.statusCode < 300 && sessie.id) {
+        const open = await naWachtwoordAanmelding(uit.user.id, str(d.password, 1024), sessieIds(sessie.id)).catch(() => []);
+        if (open.length) { try { antwoord.body = JSON.stringify({ ...JSON.parse(String(antwoord.body || '{}')), kluisOpen: open }); } catch { /* geen JSON */ } }
+      }
+      return antwoord;
+    }),
+
+    // KLUIS-AANMELDEN: de DEK die de browser met de PRF van de aanmelding opende (eenmalig token, 2 min, per ruimte één keer).
+    'POST /api/aanmelden/kluis': r(async (rc) => {
+      { const l = await ipLimiet(rc, 'kluis', 30); if (l) return l; }
+      const d = lichaam(rc);
+      try { const uit = await aanmeldTokenGebruiken(str(d.token, 64), d.ruimte, str(d.dek, 64)); return json({ ok: true, ruimte: uit.ruimte, stand: 'open' }); }
+      catch (e) { if (e instanceof SleutelkluisFout) return fout(e.code, e.status); throw e; }
     }),
 
     // ================================================================ Microsoft / Discord / Apple за прив'язаною особою
@@ -309,4 +338,5 @@ export const AANMELD_METHODEN_PUBLIEKE_ROUTES: Readonly<Record<string, string>> 
   'POST /api/aanmelden/wachtwoord/start': 'вхід паролем: транзакція і бінд-кукі (без пароля)',
   'POST /api/aanmelden/wachtwoord/voltooien': 'вхід паролем: адреса, пароль, код другого чинника одним запитом; блокування спроб',
   'POST /api/aanmelden/extern/start': 'вхід через прив’язаний Microsoft/Discord/Apple: state + PKCE + nonce, транзакція і бінд-кукі',
+  'POST /api/aanmelden/kluis': 'одразу після входу ключем доступу: розшифрований браузером ключ даних з одноразовим токеном (2 хв), перевірка за контрольним значенням',
 });
