@@ -76,6 +76,8 @@ export const CLAUDE_CONNECTORS_URL = 'https://claude.ai/settings/connectors';
 // mode» naar #settings/Connectors/Advanced. Dus deze twee adressen, geen verzonnen nieuwe.
 export const CHATGPT_CONNECTORS_URL = 'https://chatgpt.com/#settings/Connectors';
 export const CHATGPT_GEAVANCEERD_URL = 'https://chatgpt.com/#settings/Connectors/Advanced';
+// Microsoft Copilot Studio (16.11.2026): het adres uit Microsoft Learn; de consumentenversie copilot.microsoft.com kent geen eigen MCP.
+export const COPILOT_STUDIO_URL = 'https://copilotstudio.microsoft.com';
 
 const PLAK = (naam: string): Tweetalig => [`Вставте адресу конектора (вона скопійована кнопкою вище) у ${naam}.`, `Plak het connectoradres (de knop hierboven kopieert het) in ${naam}.`];
 const DOZVIL: Tweetalig = ['Клієнт відкриє цей сайт у вікні «Дозволити»: ви вже ввійшли — перевірте дозволи й натисніть «Дозволити». Жодного client id чи токена вводити не треба: сайт реєструє клієнта сам.', 'De client opent deze site in het venster «Toestaan»: u bent al aangemeld — controleer de rechten en klik «Toestaan». Geen client-id of token nodig: de site registreert de client zelf.'];
@@ -157,6 +159,11 @@ export function recept(slug: AgentSlug): Recept {
         DOZVIL,
         ['Copilot у github.com (coding agent): Repository → Settings → Copilot → Coding agent → MCP configuration — той самий JSON з полем "url".', 'Copilot op github.com (coding agent): Repository → Settings → Copilot → Coding agent → MCP configuration — dezelfde JSON met het veld "url".'],
         KLAAR,
+      ],
+      // 16.11.2026: het adres /copilot is nu van Microsoft Copilot; GitHub Copilot heeft /githubcopilot. Wie VS Code eerder koppelde, moet opnieuw.
+      grens: [
+        `Адреса GitHub Copilot тепер ${url} (раніше закінчувалась на /copilot — та адреса відтепер належить Microsoft Copilot). Якщо ви підключали VS Code раніше, додайте сервер заново кнопкою вище: старе підключення за старою адресою більше не працює.`,
+        `Het adres van GitHub Copilot is nu ${url} (vroeger eindigde het op /copilot — dat adres is voortaan van Microsoft Copilot). Koppelde u VS Code eerder, voeg de server dan opnieuw toe met de knop hierboven: de oude koppeling op het oude adres werkt niet meer.`,
       ],
     };
     case 'gemini': return {
@@ -249,6 +256,25 @@ export function recept(slug: AgentSlug): Recept {
         [`Виконайте в терміналі скопійовану команду або додайте блок із адресою ${url} до ~/.config/opencode/opencode.json.`, `Voer in de terminal de gekopieerde opdracht uit of voeg het blok met het adres ${url} toe aan ~/.config/opencode/opencode.json.`],
         ['Запустіть opencode auth або першу дію MCP — клієнт відкриє оглядач для OAuth-підтвердження.', 'Voer opencode auth uit of start de eerste MCP-actie — de client opent de browser voor OAuth-bevestiging.'],
         DOZVIL, KLAAR,
+      ],
+    };
+    // 16.11.2026: Microsoft Copilot ≠ GitHub Copilot. Stappen en veldnamen letterlijk uit Microsoft Learn («Connect your agent to an
+    // existing Model Context Protocol (MCP) server», Copilot Studio). Hier NIET tegen een echte tenant getest: dat vraagt een werkaccount.
+    case 'mscopilot': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'web', label: ['Відкрити Copilot Studio', 'Copilot Studio openen'], href: COPILOT_STUDIO_URL, uitleg: ['Microsoft Copilot Studio (copilotstudio.microsoft.com): тут створюють агента й додають йому інструменти. У звичайному Microsoft Copilot (copilot.microsoft.com) власного MCP-сервера додати не можна.', 'Microsoft Copilot Studio (copilotstudio.microsoft.com): hier maakt u een agent en geeft u die hulpmiddelen. In de gewone Microsoft Copilot (copilot.microsoft.com) kunt u geen eigen MCP-server toevoegen.'] },
+      ],
+      stappen: [
+        ['У Copilot Studio відкрийте свого агента (або створіть нового) і перевірте, що в його налаштуваннях увімкнено генеративну оркестрацію (generative orchestration) — без неї інструменти MCP не викликаються.', 'Open in Copilot Studio uw agent (of maak een nieuwe) en controleer dat in de instellingen generatieve orkestratie (generative orchestration) aan staat — zonder die worden MCP-hulpmiddelen niet aangeroepen.'],
+        [`Перейдіть на вкладку Tools → «Add a tool» → «New tool» → «Model Context Protocol». Заповніть: Server name — ${SERVER_NAAM}, Server description — кілька слів про ваш простір, Server URL — ${url}.`, `Ga naar het tabblad Tools → «Add a tool» → «New tool» → «Model Context Protocol». Vul in: Server name ${SERVER_NAAM}, Server description een paar woorden over uw ruimte, Server URL ${url}.`],
+        ['В Authentication виберіть «OAuth 2.0», тип — «Dynamic discovery», і натисніть «Create». Client id і secret не потрібні: Copilot Studio сам знаходить адреси входу й реєструється на сайті.', 'Kies bij Authentication «OAuth 2.0», type «Dynamic discovery», en klik «Create». Geen client-id of secret nodig: Copilot Studio vindt de aanmeldadressen zelf en registreert zich bij de site.'],
+        ['У вікні «Add tool» натисніть «Create a new connection» і ввійдіть: відкриється цей сайт із вікном «Дозволити» — перевірте дозволи й підтвердьте. Потім «Add to agent».', 'Klik in het venster «Add tool» op «Create a new connection» en meld u aan: deze site opent met het venster «Toestaan» — controleer de rechten en bevestig. Daarna «Add to agent».'],
+        KLAAR,
+      ],
+      vereist: [
+        'Лише робочий або навчальний обліковий запис Microsoft із доступом до Copilot Studio; з особистим обліковим записом і в споживчому Microsoft Copilot це не працює. Сервер підключається лише через Streamable HTTP. Кроки взято з довідки Microsoft (листопад 2026); на справжньому робочому обліковому записі це підключення ще не перевірено.',
+        'Alleen een werk- of schoolaccount van Microsoft met toegang tot Copilot Studio; met een persoonlijk account en in de consumentenversie van Microsoft Copilot werkt dit niet. De server koppelt alleen via Streamable HTTP. De stappen komen uit de handleiding van Microsoft (november 2026); op een echt werkaccount is deze koppeling nog niet getest.',
       ],
     };
   }

@@ -70,7 +70,7 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
   },
   {
     id: 'copilot', naam: 'Copilot',
-    kan: 'Працює з вашим простором через MCP у VS Code.',
+    kan: 'GitHub Copilot: працює з вашим простором через MCP у VS Code (власна адреса /githubcopilot).',
     toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: null,
     mcpUk: 'VS Code → команда «MCP: Add Server» → HTTP → вставте адресу конектора.',
     tokenUk: 'Токен консолі можна передати як Bearer, якщо сервер MCP у VS Code це приймає.',
@@ -131,6 +131,13 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
     mcpUk: 'OpenCode → opencode mcp add або ~/.config/opencode/opencode.json → вставте адресу /opencode.',
     tokenUk: 'Токен консолі можна використати в заголовку Authorization: Bearer для безінтерактивних сеансів.',
   },
+  {
+    id: 'mscopilot', naam: 'Microsoft Copilot',
+    kan: 'Працює з вашим простором через власну MCP-адресу /copilot як інструмент агента в Microsoft Copilot Studio (потрібен робочий обліковий запис Microsoft).',
+    toegang: TOEGANG, methoden: ['mcp'], vendorUrl: 'https://copilotstudio.microsoft.com',
+    mcpUk: 'Copilot Studio → агент → Tools → Add a tool → New tool → Model Context Protocol → вставте адресу /copilot, автентифікація OAuth 2.0 → Dynamic discovery.',
+    tokenUk: '',
+  },
 ]);
 
 const BORD_MAP = new Map(BORD_AGENTEN.map((a) => [a.id, a]));
@@ -151,7 +158,7 @@ export type SiteStaat = {
 };
 export const STANDAARD_STAAT: SiteStaat = { agent: {}, methode: {}, cap: {} };
 
-const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|codex|gemini|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode)$/;
+const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|codex|gemini|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode|mscopilot)$/;
 const METHODE_SLEUTEL = /^methode:(mcp|token)$/;
 const CAP_SLEUTEL = /^cap:[a-z][a-z0-9.]{1,40}$/;
 

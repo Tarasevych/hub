@@ -114,7 +114,8 @@ export async function main(): Promise<number> {
   check('server/start.ts: GET /<agent> met text/event-stream opent de stroom, en alle RFC 8414-ontdekkingsvormen van de app-issuer horen bij de app',
     // SEC-002 (http-rand-07): de stroom krijgt nu ook het IP voor de emmer per IP — alleen de eerste drie argumenten zijn hier wezenlijk.
     // SEC-002: потік тепер отримує ще й IP (ліміт на IP) — суттєві лише перші три аргументи.
-    /stroomVerzoek\(req, res, m\[1\][,)]/.test(start) && /'\/\.well-known\/openid-configuration\/oauth2': '\/api\/mcp-connector\/asm'/.test(start) && /'\/\.well-known\/oauth-authorization-server': '\/api\/mcp-connector\/asm'/.test(start));
+    // 16.11.2026: het padstuk wordt eerst naar de interne agentcode vertaald (agentUitPadNaam).
+    /stroomVerzoek\(req, res, agentUitPadNaam\(m\[1\]\) \?\? ''[,)]/.test(start) && /'\/\.well-known\/openid-configuration\/oauth2': '\/api\/mcp-connector\/asm'/.test(start) && /'\/\.well-known\/oauth-authorization-server': '\/api\/mcp-connector\/asm'/.test(start));
   check('tunnelsjabloon stuurt /claude niet meer naar de deur (de regel die op de server nog stond, is de oorzaak)',
     !/\(\?i:grok\|claude\|chatgpt\|gemini\|copilot\)/.test(readFileSync('deploy/cloudflared-config.yml', 'utf8')));
 

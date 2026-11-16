@@ -11,6 +11,7 @@
 // - Beveiligingsheaders (CSP als HTTP-header, HSTS, nosniff, ...) op alle antwoorden.
 // - Fase B: CSRF-controle (Origin-allow-list) en rate limiting voor /api/* (zie SECURITY-NOTES.md).
 import http from 'node:http';
+import { agentPad, agentUitPadNaam, type AgentSlug } from '../shared/connector-v2/agenten';
 import { createReadStream, realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
@@ -464,17 +465,23 @@ const CONNECTOR_PADEN: Record<string, string> = {
 //
 // Het OUDE pad /ai/<agent> blijft bereikbaar met 308 Permanent Redirect — niet 301/302: MCP praat over POST, en 301/302 mag een
 // client in een GET veranderen (RFC 9110 §15.4), waardoor elke bestaande koppeling zou breken. 308 houdt methode én body.
-const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
+// De groep bevat PUBLIEKE padstukken (shared/connector-v2/agenten.ts → AGENT_PADNAMEN): /copilot is Microsoft Copilot (interne code
+// mscopilot), /githubcopilot is GitHub Copilot (interne code copilot). Vertalen naar de code: agentUitPadNaam().
+const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|githubcopilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|githubcopilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
+// Het oude pad /ai/<code> draagt de interne code van vóór 20.10.2026: /ai/copilot was GitHub Copilot en leidt nu naar /githubcopilot.
 const V2_OUD = /^\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
 const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
+// Stroom (GET + text/event-stream) per agentadres: dezelfde agenten als V2_KORT. Vóór 16.11.2026 stonden hier maar acht agenten,
+// zodat codex, windsurf, cline, devin en opencode nooit notifications/tools/list_changed kregen.
+const V2_STROOM = /^\/(claude|gpt|codex|grok|gemini|copilot|githubcopilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
 
 /** Oud connectoradres → het nieuwe, korte adres (of null). Alleen een pad: query en host blijven van het verzoek. */
 export function oudConnectorPad(pathname: string): string | null {
   const oud = V2_OUD.exec(pathname);
-  if (oud) return `/${oud[1]}${oud[2] ?? ''}`;
+  if (oud) return `${agentPad(oud[1] as AgentSlug)}${oud[2] ?? ''}`;
   const oudPrm = V2_OUD_PRM.exec(pathname);
-  if (oudPrm) return `/.well-known/oauth-protected-resource/${oudPrm[1]}`;
+  if (oudPrm) return `/.well-known/oauth-protected-resource${agentPad(oudPrm[1] as AgentSlug)}`;
   // Het agentloze /mcp blijft bestaan zolang er koppelingen van vóór connector v2 (en agenttokens tvh_…) zijn: nooit omleiden.
   return null;
 }
@@ -483,7 +490,10 @@ function connectorPad(url: URL): URL | null {
   const kort = V2_KORT.exec(url.pathname), kortPrm = V2_KORT_PRM.exec(url.pathname);
   if (kort || kortPrm) {
     const naar = new URL(url.toString());
-    naar.pathname = kortPrm ? `/api/connector-v2/${kortPrm[1]}/prm` : `/api/connector-v2/${kort![1]}/${kort![2] ? 'prm' : 'rpc'}`;
+    // Publiek padstuk → interne agentcode (de interne route /api/connector-v2/<code>/… kent alleen codes).
+    const code = agentUitPadNaam(kortPrm ? kortPrm[1] : kort![1]);
+    if (!code) return null;
+    naar.pathname = kortPrm ? `/api/connector-v2/${code}/prm` : `/api/connector-v2/${code}/${kort![2] ? 'prm' : 'rpc'}`;
     return naar;
   }
   const intern = CONNECTOR_PADEN[url.pathname];
@@ -587,12 +597,12 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
     // SEC-002 (http-rand-07): ook deze ingangen (elk een tokenopzoeking in de database) tellen in de algemene emmer per IP.
-    if ((url.pathname === '/mcp' || url.pathname === '/mcp/' || /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.test(url.pathname)) && vroegGeweigerd(res, clientIp(req))) return;
+    if ((url.pathname === '/mcp' || url.pathname === '/mcp/' || V2_STROOM.test(url.pathname)) && vroegGeweigerd(res, clientIp(req))) return;
     // MCP-001: Origin-controle (DNS-rebinding) vóór elke stroom.
     if (mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res, clientIp(req)); return; }
-    const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
-    if (m) { await stroomVerzoek(req, res, m[1], clientIp(req)); return; }
+    const m = V2_STROOM.exec(url.pathname);
+    if (m) { await stroomVerzoek(req, res, agentUitPadNaam(m[1]) ?? '', clientIp(req)); return; }
   }
   // APPARAAT-001: de snelle stroom van de site zelf (GET /api/owner/stroom, Accept: text/event-stream) — het venster «Це ви?» op het
   // andere apparaat binnen een seconde. Zelfde sessiecontrole als elke route (via backend/apparaat-bevestiging/routes.ts), dezelfde

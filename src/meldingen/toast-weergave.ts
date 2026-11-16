@@ -11,6 +11,9 @@ export type ToastTitel = { titel: string; code?: string; agent?: { naam: string;
 const AGENTEN: Array<[RegExp, string, LogoKind]> = [
   [/^claude(?: code)?$/i, 'Claude', 'claude'], [/^(?:chatgpt|openai)$/i, 'ChatGPT', 'openai'], [/^codex$/i, 'Codex', 'codex'],
   [/^gemini$/i, 'Gemini', 'gemini'], [/^grok$/i, 'Grok', 'grok'], [/^(?:github )?copilot$/i, 'Copilot', 'copilot'],
+  [/^(?:mscopilot|(?:microsoft|m365|microsoft 365) copilot|copilot studio)$/i, 'Microsoft Copilot', 'mscopilot'],
+  // Tot 16.11.2026 ontbraken deze vijf: hun meldingen kregen het algemene teken in plaats van het eigen logo.
+  [/^autoclaw$/i, 'AutoClaw', 'autoclaw'], [/^windsurf$/i, 'Windsurf', 'windsurf'], [/^cline$/i, 'Cline', 'cline'], [/^devin$/i, 'Devin', 'devin'], [/^opencode$/i, 'OpenCode', 'opencode'],
   [/^cursor$/i, 'Cursor', 'cursor'], [/^antigravity$/i, 'Antigravity', 'antigravity'], [/^github$/i, 'GitHub', 'github'],
 ];
 const CODE = /\s*[([]\s*([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|[A-Z]{2,}[0-9]{2,})\s*[)\]]\s*/;

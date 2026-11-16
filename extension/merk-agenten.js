@@ -20,6 +20,7 @@ export const MERK_AGENTEN = Object.freeze({
   cline: { naam: "Cline", kleur: "#FFFFFF", vlak: "#B45309", neutraal: true, letter: "Cl" },
   devin: { naam: "Devin", kleur: "#FFFFFF", vlak: "#4338CA", neutraal: true, letter: "Dv" },
   opencode: { naam: "OpenCode", kleur: "#FFFFFF", vlak: "#1E293B", neutraal: true, letter: "OC" },
+  mscopilot: { naam: "Microsoft Copilot", kleur: "#FFFFFF", vlak: "#0F6CBD", neutraal: true, letter: "MC" },
 });
 
 /** Beginletters voor een agent zonder logo (zelfde regel als monogram() in src/merk/merk-register.ts). */

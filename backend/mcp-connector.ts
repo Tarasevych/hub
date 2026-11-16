@@ -287,7 +287,7 @@ export async function authorize(query: Record<string, string>, ip = ''): Promise
   const agent: AgentSlug | null = slugUitResource(query.resource);
   if (query.resource && !agent && query.resource.replace(/\/+$/, '') !== RESOURCE) return fail('invalid_target', 'Onbekende resource');
   if (agent && !redirectPastBijAgent(agent, redirectUri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()])) {
-    return fail('invalid_target', `Dit adres is alleen voor ${agent}; gebruik het connectoradres van uw eigen AI`);
+    return fail('invalid_target', `Dit adres is alleen voor ${V2_AGENTEN.find((a) => a.slug === agent)?.naam ?? agent}; gebruik het connectoradres van uw eigen AI`);
   }
 
   const id = randomToken(24);

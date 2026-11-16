@@ -106,7 +106,7 @@ export function aiTeller(
  */
 const LOGO_PER_SLUG: Readonly<Record<AgentSlug, LogoKind>> = Object.freeze({
   claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor',
-  antigravity: 'antigravity', autoclaw: 'autoclaw', windsurf: 'windsurf', cline: 'cline', devin: 'devin', opencode: 'opencode',
+  antigravity: 'antigravity', autoclaw: 'autoclaw', windsurf: 'windsurf', cline: 'cline', devin: 'devin', opencode: 'opencode', mscopilot: 'mscopilot',
 });
 export function aiLogo(naam: string): LogoKind {
   const slug = agentSlugUitNaam(naam);
@@ -114,7 +114,7 @@ export function aiLogo(naam: string): LogoKind {
 }
 const EIGENAAR_PER_SLUG: Readonly<Record<AgentSlug, string>> = Object.freeze({
   claude: 'Anthropic', gpt: 'OpenAI', codex: 'OpenAI', grok: 'xAI', gemini: 'Google', copilot: 'GitHub / Microsoft', cursor: 'Anysphere',
-  antigravity: 'Google DeepMind', autoclaw: 'Z.ai (Zhipu AI)', windsurf: 'Windsurf (Codeium)', cline: 'Cline', devin: 'Cognition', opencode: 'OpenCode',
+  antigravity: 'Google DeepMind', autoclaw: 'Z.ai (Zhipu AI)', windsurf: 'Windsurf (Codeium)', cline: 'Cline', devin: 'Cognition', opencode: 'OpenCode', mscopilot: 'Microsoft',
 });
 export function aiEigenaar(naam: string): string {
   const slug = agentSlugUitNaam(naam);

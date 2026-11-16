@@ -1,3 +1,4 @@
+// (16.11.2026: агентів стало 14 — додано Microsoft Copilot через Copilot Studio, міграція 0297; назва файла лишилась.)
 // Одиничні та інтеграційні перевірки для 13 ШІ-агентів та безперервного переходу задач між сесіями (0284):
 //   1. Повний паритет усіх 13 канонічних агентів (+windsurf, cline, devin, opencode) у V2_AGENTEN, KLANTEN,
 //      BORD_AGENTEN, MATRIX_AGENTEN, MERKEN, MERK_AGENTEN, AGENT_ACCENT, AGENT_NAAM, recept() і каталозі інтеграцій;
@@ -34,6 +35,8 @@ import { maakGeheugenInGeheugenOpslag } from '../../backend/geheugen-stroom';
 import { maakBotsInGeheugenOpslag } from '../../backend/geheugen-agent-bots';
 import { maakTakenInGeheugenOpslag, pgTakenOpslag } from '../../backend/geheugen-taken';
 import { getPool } from '../../server/platform/pg';
+import { redirectPastBijAgent, agentUrl, agentUitPadNaam, slugUitPad, slugUitResource } from '../../shared/connector-v2/agenten';
+import { redirectSoort } from '../../shared/ai-verbinding';
 
 const VERWACHTE_13: readonly AgentSlug[] = [
   'claude',
@@ -49,6 +52,7 @@ const VERWACHTE_13: readonly AgentSlug[] = [
   'cline',
   'devin',
   'opencode',
+  'mscopilot',
 ];
 
 export async function main(): Promise<number> {
@@ -56,8 +60,8 @@ export async function main(): Promise<number> {
 
   // ================================================================ 1. Повна матриця 13 ШІ-агентів
   const slugs = V2_AGENTEN.map((a) => a.slug);
-  check('1a: V2_AGENTEN містить усіх 13 очікуваних ШІ-агентів без дублікатів',
-    slugs.length === 13 && VERWACHTE_13.every((s) => slugs.includes(s)) && new Set(slugs).size === 13,
+  check('1a: V2_AGENTEN містить усіх 14 очікуваних ШІ-агентів без дублікатів',
+    slugs.length === 14 && VERWACHTE_13.every((s) => slugs.includes(s)) && new Set(slugs).size === 14,
     slugs.join(','));
 
   check('1b: KLANTEN, BORD_AGENTEN, MATRIX_AGENTEN, MERKEN і AGENT_NAAM покривають усіх 13 агентів',
@@ -70,8 +74,27 @@ export async function main(): Promise<number> {
     && V2_AGENTEN.every((a) => INTEGRATIES.some((i) => i.levend === `agent:${a.slug}` && i.status === 'klaar')));
 
   const accenten = V2_AGENTEN.map((a) => AGENT_ACCENT[a.slug]);
-  check('1c: усі 13 агентів мають унікальні кольори акцентів (жоден не дорівнює ONBEKEND_ACCENT)',
-    new Set(accenten).size === 13 && accenten.every((c) => c && c !== ONBEKEND_ACCENT));
+  // Палітра сайту має 13 кольорів окрім «grijs» (невідомий ШІ). Чотирнадцятий агент (mscopilot) тому ділить «hemel» з Antigravity;
+  // решта тринадцять лишаються унікальними, і власник може обрати інший колір у «Кольори агентів».
+  const zonderMs = V2_AGENTEN.filter((a) => a.slug !== 'mscopilot').map((a) => AGENT_ACCENT[a.slug]);
+  check('1c: 13 агентів мають унікальні кольори акцентів, mscopilot ділить «hemel» з Antigravity; жоден не дорівнює ONBEKEND_ACCENT',
+    new Set(zonderMs).size === 13 && new Set(accenten).size === 13 && AGENT_ACCENT.mscopilot === AGENT_ACCENT.antigravity
+    && accenten.every((c) => c && c !== ONBEKEND_ACCENT));
+
+  // Microsoft Copilot і GitHub Copilot — різні продукти з однаковим словом у назві: розпізнавання не має їх плутати.
+  check('1c2: «Microsoft Copilot» / «Copilot Studio» → mscopilot, а «GitHub Copilot» / «VS Code Copilot» / «copilot» → copilot',
+    klantVan('Microsoft Copilot') === 'mscopilot' && klantVan('Microsoft-Copilot-Studio') === 'mscopilot' && klantVan('Copilot Studio') === 'mscopilot'
+    && klantVan('Power Platform connector') === 'mscopilot' && klantVan('mscopilot') === 'mscopilot'
+    && klantVan('GitHub Copilot') === 'copilot' && klantVan('copilot') === 'copilot' && klantVan('Visual Studio Code') === 'copilot'
+    && agentSlugUitNaam('Microsoft Copilot') === 'mscopilot' && agentSlugUitNaam('Microsoft 365 Copilot') === 'mscopilot' && agentSlugUitNaam('copilot studio') === 'mscopilot'
+    && agentSlugUitNaam('GitHub Copilot') === 'copilot' && agentSlugUitNaam('VS Code Copilot') === 'copilot' && agentSlugUitNaam('copilot') === 'copilot');
+
+  const ms = V2_AGENTEN.find((a) => a.slug === 'mscopilot')!;
+  check('1c3: Microsoft Copilot — хмарний клієнт: адреса повернення лише Power Platform (global.consent.azure-apim.net), без loopback і схем застосунків',
+    ms.naam === 'Microsoft Copilot' && ms.klant === 'mscopilot' && ms.loopback === false && ms.appSchemas.length === 0
+    && JSON.stringify(ms.webHosts) === JSON.stringify(['global.consent.azure-apim.net'])
+    && recept('mscopilot').knoppen[0].soort === 'web' && /copilotstudio\.microsoft\.com/.test(String(recept('mscopilot').knoppen[0].href))
+    && /Dynamic discovery/.test(JSON.stringify(recept('mscopilot').stappen)) && Boolean(recept('mscopilot').vereist));
 
   check('1d: розпізнавання імен клієнтів працює для windsurf, cline, devin та opencode',
     klantVan('Windsurf Cascade') === 'windsurf'
@@ -88,7 +111,7 @@ export async function main(): Promise<number> {
   check('1e: recept() повертає індивідуальний рецепт і власну MCP-адресу для кожного з 13 агентів',
     V2_AGENTEN.every((a) => {
       const r = recept(a.slug);
-      return r.slug === a.slug && r.stappen.length >= 3 && decodeURIComponent(JSON.stringify(r)).includes(`/${a.slug}`);
+      return r.slug === a.slug && r.stappen.length >= 3 && decodeURIComponent(JSON.stringify(r)).includes(agentUrl(a.slug));
     }));
 
   check('1f: каталог ботів має 17+ профілів включно з windsurf, cline, autoclaw, devin та opencode',
@@ -97,6 +120,25 @@ export async function main(): Promise<number> {
       .every((s) => AGENT_PROFIEL_CATALOGUS.some((p) => p.slug === s)));
 
   // ================================================================ 2. Міграція 0284, RLS, права і реєстр
+  // Справжня перевірка адрес повернення: сторінка згоди Power Platform проходить лише на /mscopilot, чужі адреси й localhost — ні.
+  const MS_TERUG = 'https://global.consent.azure-apim.net/redirect/mijn-2druimte-5f1a2b3c';
+  check('1c4: адреса повернення Copilot Studio приймається лише для mscopilot; claude.ai, vscode.dev і localhost для нього — ні',
+    redirectSoort(MS_TERUG) === 'web' && redirectPastBijAgent('mscopilot', MS_TERUG)
+    && !redirectPastBijAgent('copilot', MS_TERUG) && !redirectPastBijAgent('claude', MS_TERUG)
+    && !redirectPastBijAgent('mscopilot', 'https://claude.ai/api/mcp/auth_callback') && !redirectPastBijAgent('mscopilot', 'https://vscode.dev/redirect')
+    && !redirectPastBijAgent('mscopilot', 'http://127.0.0.1:33418/callback') && !redirectPastBijAgent('mscopilot', 'https://consent.azure-apim.net.kwaad.example/redirect/x')
+    && !redirectPastBijAgent('mscopilot', 'https://kwaad.example/?global.consent.azure-apim.net'));
+
+  // Адреса ≠ внутрішній код (рішення власника 16.11.2026): /copilot — Microsoft Copilot, /githubcopilot — GitHub Copilot.
+  check('1c5: адреса /copilot належить Microsoft Copilot (код mscopilot), /githubcopilot — GitHub Copilot (код copilot); код mscopilot сам не є адресою; старе /ai/copilot лишається за GitHub Copilot',
+    agentUrl('mscopilot') === 'https://mcp.tarasevych.com/copilot' && agentUrl('copilot') === 'https://mcp.tarasevych.com/githubcopilot'
+    && agentUitPadNaam('copilot') === 'mscopilot' && agentUitPadNaam('githubcopilot') === 'copilot' && agentUitPadNaam('mscopilot') === null && agentUitPadNaam('claude') === 'claude'
+    && slugUitPad('/copilot') === 'mscopilot' && slugUitPad('/githubcopilot/') === 'copilot' && slugUitPad('/mscopilot') === null
+    && slugUitPad('/ai/copilot') === 'copilot' && slugUitPad('/ai/mscopilot') === null && slugUitPad('/ai/githubcopilot') === null
+    && slugUitResource('https://mcp.tarasevych.com/copilot') === 'mscopilot' && slugUitResource('https://mcp.tarasevych.com/githubcopilot') === 'copilot'
+    && V2_AGENTEN.every((a) => slugUitResource(agentUrl(a.slug)) === a.slug)
+    && recept('copilot').stappen.length >= 3 && JSON.stringify(recept('mscopilot')).includes('https://mcp.tarasevych.com/copilot.'));
+
   const sql0284 = readFileSync('migrations/0284_geheugen_taken_en_13_agenten.sql', 'utf8');
   const rechtenSql = readFileSync('migrations/rechten.sql', 'utf8');
   check('2a: міграція 0284 містить FORCE RLS на app.geheugen_taken та app.geheugen_taak_stappen й 13 агентів у CHECK',
@@ -107,6 +149,14 @@ export async function main(): Promise<number> {
     && ['windsurf', 'cline', 'devin', 'opencode'].every((s) => sql0284.includes(s))
     && rechtenSql.includes('app.geheugen_taken')
     && rechtenSql.includes('app.geheugen_taak_stappen'));
+
+  const sql0297 = readFileSync('migrations/0297_agent_microsoft_copilot.sql', 'utf8');
+  check('2a2: міграція 0297 додає mscopilot у ті самі вісім CHECK-обмежень, що й 0284, і нічого іншого не створює',
+    ['ai_site_schakelaars', 'ai_gebruiker_caps', 'mcp_oauth_auth', 'mcp_oauth_tokens', 'connector_v2_rechten', 'connector_v2_voorkeur', 'agent_kleuren', 'extensie_matrix']
+      .every((t) => sql0297.includes(`ALTER TABLE app.${t}`) && sql0297.includes(`to_regclass('app.${t}')`))
+    && (sql0297.match(/ADD CONSTRAINT/g) ?? []).length === 8
+    && (sql0297.match(/'opencode', 'mscopilot'\)|opencode\|mscopilot\)/g) ?? []).length === 8
+    && !/CREATE TABLE|DROP TABLE|DELETE FROM|UPDATE app\./.test(sql0297));
 
   check('2b: SLEUTELKLUIS_REGISTER та переклади статусів містять актуальні записи 0280, 0281 і 0284',
     SLEUTELKLUIS_REGISTER.some((r) => r.tabel === 'app.geheugen_taken')

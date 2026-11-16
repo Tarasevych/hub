@@ -3,7 +3,7 @@
 // backend/mcp-connector.ts, backend/connector-v2.ts, backend/mcp-inspector-routes.ts), і в клієнтському інтерфейсі
 // вбудованого Інспектора та Студії MCP (src/agenten/McpInspectorStudio.tsx).
 
-import { V2_AGENTEN, agentUrl, type AgentSlug } from './connector-v2/agenten';
+import { V2_AGENTEN, agentPad, agentUrl, type AgentSlug } from './connector-v2/agenten';
 import { V2_GROEPEN, type GroepId as Groep } from './connector-v2/catalogus';
 import { knipTekst, tekstVeilig } from './tekst-veilig';
 
@@ -734,7 +734,7 @@ export function bouwServerCard(baseUrl: string, slug?: AgentSlug) {
     authentication: {
       type: 'oauth2',
       resourceMetadataUrl: slug
-        ? `${baseUrl}/.well-known/oauth-protected-resource/${slug}`
+        ? `${baseUrl}/.well-known/oauth-protected-resource${agentPad(slug)}`
         : `${baseUrl}/.well-known/oauth-protected-resource/mcp`,
       authorizationServerMetadataUrl: `${baseUrl}/.well-known/oauth-authorization-server/oauth2`,
       pkceRequired: true,
@@ -755,7 +755,7 @@ export function bouwServerCard(baseUrl: string, slug?: AgentSlug) {
       agent: a.slug,
       name: a.naam,
       url: agentUrl(a.slug),
-      prmUrl: `${baseUrl}/.well-known/oauth-protected-resource/${a.slug}`,
+      prmUrl: `${baseUrl}/.well-known/oauth-protected-resource${agentPad(a.slug)}`,
     })),
   };
 }

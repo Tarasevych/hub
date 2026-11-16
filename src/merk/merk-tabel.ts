@@ -36,6 +36,7 @@ export const MERKEN: MerkTabel = Object.freeze({
   cline: { naam: "Cline", kleur: "#FFFFFF", vlak: "#B45309", neutraal: true, letter: "Cl" },
   devin: { naam: "Devin", kleur: "#FFFFFF", vlak: "#4338CA", neutraal: true, letter: "Dv" },
   opencode: { naam: "OpenCode", kleur: "#FFFFFF", vlak: "#1E293B", neutraal: true, letter: "OC" },
+  mscopilot: { naam: "Microsoft Copilot", kleur: "#FFFFFF", vlak: "#0F6CBD", neutraal: true, letter: "MC" },
 
   // — browsers, besturingssystemen en platformen —
   chrome: { naam: "Google Chrome", kleur: "#4285F4", d: "M12 0C8.21 0 4.83 1.76 2.63 4.5l3.95 6.85A5.45 5.45 0 0 1 12 6.55h10.7A12 12 0 0 0 12 0M1.93 5.47A12 12 0 0 0 0 12a12 12 0 0 0 10.19 11.86l3.95-6.84a5.45 5.45 0 0 1-6.86-2.3zm13.34 2.17a5.45 5.45 0 0 1 1.45 7.09l-5.34 9.25.62.02A12 12 0 0 0 23.18 7.64zM12 16.36a4.36 4.36 0 1 1 0-8.72 4.36 4.36 0 0 1 0 8.72" },

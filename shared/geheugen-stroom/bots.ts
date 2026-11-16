@@ -187,6 +187,15 @@ export const AGENT_PROFIEL_CATALOGUS: readonly AgentProfielSjabloon[] = Object.f
     standaardActies: ['gebeurtenis', 'overdracht', 'rapport', 'bestand'],
   },
   {
+    slug: 'mscopilot',
+    dienstNaam: 'Microsoft Copilot Studio',
+    weergaveNaam: 'Microsoft Copilot',
+    beschrijvingUk: 'Агент Copilot Studio в робочому середовищі Microsoft 365.',
+    beschrijvingNl: 'Copilot Studio-agent in de werkomgeving van Microsoft 365.',
+    avatarKleur: '#0f6cbd',
+    standaardActies: ['gebeurtenis', 'overdracht', 'rapport'],
+  },
+  {
     slug: 'ollama',
     dienstNaam: 'Ollama (локально)',
     weergaveNaam: 'Ollama',

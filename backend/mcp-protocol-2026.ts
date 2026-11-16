@@ -175,8 +175,8 @@ export async function lijstResourceSjablonenVoor(ctx: McpProtocolContext, taal?:
       uriTemplate: 'mr://agent/{slug}/info',
       name: t === 'uk' ? 'Картка окремого конектора ШІ' : 'Kaart van een specifieke AI-connector',
       description: t === 'uk'
-        ? 'Метадані кінцевої точки конкретного ШІ-агента (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).'
-        : 'Metadata van het eindpunt van een specifieke AI-agent (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).',
+        ? 'Метадані кінцевої точки конкретного ШІ-агента (claude, gpt, gemini, grok, codex, copilot, mscopilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).'
+        : 'Metadata van het eindpunt van een specifieke AI-agent (claude, gpt, gemini, grok, codex, copilot, mscopilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).',
       mimeType: 'application/json',
     },
   ];

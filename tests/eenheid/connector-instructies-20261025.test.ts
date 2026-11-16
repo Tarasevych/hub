@@ -41,7 +41,8 @@ export async function main(): Promise<number> {
     const slug: AgentSlug = a.slug;
     const kop = instructiesKop(slug);
     langste = Math.max(langste, kop.length);
-    const anderen = V2_AGENTEN.filter((x) => x.slug !== slug).map((x) => x.naam);
+    // «Microsoft Copilot» bevat de naam «Copilot» (GitHub Copilot, een andere agent): een naam die letterlijk in de eigen naam zit, telt niet.
+    const anderen = V2_AGENTEN.filter((x) => x.slug !== slug).map((x) => x.naam).filter((n) => !a.naam.includes(n));
     const koppen = new Set<string>();
     for (const s of STANDEN) {
       const t = instructies(slug, s.kanten, s.ruimte);

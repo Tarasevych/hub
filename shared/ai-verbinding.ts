@@ -39,6 +39,7 @@ export type KlantId =
   | 'cline'
   | 'devin'
   | 'opencode'
+  | 'mscopilot'
   | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
@@ -56,6 +57,7 @@ export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'cline', naam: 'Cline', deur: null },
   { id: 'devin', naam: 'Devin', deur: null },
   { id: 'opencode', naam: 'OpenCode', deur: null },
+  { id: 'mscopilot', naam: 'Microsoft Copilot', deur: null },
   { id: 'overig', naam: 'Інший клієнт', deur: null },
 ]);
 const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -63,6 +65,8 @@ const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0
 export function klantVan(naam: string | null | undefined): KlantId {
   const n = normaal(String(naam || ''));
   if (!n) return 'overig';
+  // «Microsoft Copilot» (Copilot Studio) is een andere klant dan GitHub Copilot, maar bevat hetzelfde woord: daarom eerst.
+  if (/\b(mscopilot|microsoft copilot|microsoft 365 copilot|m365 copilot|copilot studio|power platform|powerplatform)\b/.test(n)) return 'mscopilot';
   for (const k of KLANTEN) if (k.id !== 'overig' && (n === k.id || n.split(' ').includes(k.id))) return k.id;
   if (/\bcodex\b/.test(n)) return 'codex';
   if (/\b(openai|gpt)\b/.test(n)) return 'chatgpt';
@@ -91,6 +95,9 @@ export type RedirectSoort = 'web' | 'loopback' | 'app';
 export const WEB_HOSTS: readonly string[] = Object.freeze([
   'claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com',
   'autoclaw.z.ai', 'chat.z.ai', 'z.ai', 'windsurf.com', 'codeium.com', 'cline.bot', 'app.devin.ai', 'devin.ai', 'opencode.ai',
+  // Copilot Studio (Power Platform): het terugkeeradres van elke eigen koppeling is https://global.consent.azure-apim.net/redirect/<naam>
+  // (Microsoft Learn, «custom connectors»). Die host is gedeeld door alle Power Platform-tenants; de toestemming blijft dus het slot.
+  'global.consent.azure-apim.net',
 ]);
 /** Eigen schema's van desktopapps (RFC 8252 §7.1): alleen deze, met een host (cursor://anysphere.cursor-mcp/oauth/callback). */
 export const APP_SCHEMAS: readonly string[] = Object.freeze(['cursor', 'vscode', 'vscode-insiders', 'windsurf']);
