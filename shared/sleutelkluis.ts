@@ -66,6 +66,7 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.ai_bevestiging', veld: 'parameters/resultaat (verzoeken van AI ter bevestiging, 0094)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/ai-bevestiging.ts' },
   { tabel: 'app.afzender_beeld', veld: 'data_versleuteld (foto\'s van afzenders: Google-contacten, vCard, Gravatar)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/merk-bron.ts' },
   { tabel: 'app.geheugen_stroom_knopen', veld: 'inhoud_versleuteld (вузли довготривалої пам’яті ШІ / knopen van de geheugenstroom, 0280)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/geheugen-stroom.ts' },
+  { tabel: 'app.mail_beeld_voorraad', veld: 'data_versleuteld (зовнішні зображення нових листів, завантажені при отриманні / externe beelden van nieuwe brieven, bij ontvangst opgehaald, 0296)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/mail-beelden-voorraad.ts' },
   { tabel: 'app.geheugen_agent_bots', veld: 'sleutel_versleuteld (окремий токен Telegram-бота агента / afzonderlijk bot-token per AI-agent, 0281)', klasse: 'geheim', stand: 'dek', module: 'backend/geheugen-agent-bots.ts' },
   // --- nog niet: met reden ---
   { tabel: 'mail_oauth_tokens_v2', veld: 'token (Microsoft 365)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/index.ts (Microsoft-tak)',

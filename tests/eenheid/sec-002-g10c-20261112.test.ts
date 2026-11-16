@@ -160,7 +160,7 @@ export async function main(): Promise<number> {
     // indeling krijgt vanzelf de wacht (weigeren tenzij ingedeeld); deze lijst hieronder verandert alleen bewust.
     const zonderWacht = Object.keys(routes).filter((k) => !(routes[k][0] as any)?.[SCHRIJFWACHT]).map((k) => k.replace('POST /api/owner/mail/google-suite/', '')).sort();
     const verwacht = ['account/select', 'accounts', 'attachment', 'attachments/metadata', 'connect/start', 'labels', 'message', 'message/raw', 'messages', 'period-bounds', 'reader/capabilities', 'reader/n10/capabilities',
-      'reader/remote-image', 'reader/translate', 'save-folders', 'save-targets', 'selection/resolve', 'state-bulk/status', 'state-intents/status', 'subscriptions', 'thread'].sort();
+      'reader/beelden-voorraad', 'reader/remote-image', 'reader/translate', 'save-folders', 'save-targets', 'selection/resolve', 'state-bulk/status', 'state-intents/status', 'subscriptions', 'thread'].sort();
     check('post-04: inventaris — alleen de bekende lees-/keuzeroutes staan zonder schrijfwacht', JSON.stringify(zonderWacht) === JSON.stringify(verwacht), `zonder wacht: ${zonderWacht.join(', ')}`);
     // De buitenste laag (index.ts) zet geen tweede wacht voor een keten die er al een heeft, en nog steeds wel voor de rest.
     const buiten = wrapFactoryMutations(routes, async () => ({ service: 'mail', user }) as never);

@@ -50,7 +50,8 @@ export type LeesVensterApi = {
 /** Wat elke sneltoets doet (GoogleMailWerkruimte); een ontbrekende actie = de toets doet niets. F6 en «?» regelt het kader zelf. */
 export type LezerSneltoetsen = Partial<Record<Exclude<Sneltoets, 'wissel' | 'hulp'>, () => void>>;
 
-const LeesVensterContext = createContext<LeesVensterApi | null>(null);
+/** Ook geëxporteerd voor stands en tests (een «Вигляд»-paneel zonder het hele kader). */
+export const LeesVensterContext = createContext<LeesVensterApi | null>(null);
 export const useLeesVenster = () => useContext(LeesVensterContext);
 
 const schermBreedte = () => (typeof innerWidth === 'number' ? innerWidth : 1280);

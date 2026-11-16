@@ -1,0 +1,65 @@
+/* MAILBEELD-001 (16.11.2026): regel «Збережено: N · X МБ» met een compacte wisknop onder «Зовнішні зображення» in «Вигляд».
+   Rustig: geen pil, een rond pictogram dat pas bij hover/focus een zachte waarschuwingstint krijgt (wissen is niet terug te draaien).
+   Specificiteit bewust hoog: de «Макет»-regels voor knoppen in het weergavepaneel zouden er anders een pil met rand van maken. */
+html body .lz-beelden-voorraad {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+html body .lz-beelden-voorraad > small {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) svg {
+  width: 15px;
+  height: 15px;
+}
+
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--danger, #d64545) 12%, transparent);
+  color: var(--danger, #d64545);
+  outline: none;
+}
+
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):focus-visible {
+  box-shadow: 0 0 0 2px var(--focus);
+}
+
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):disabled {
+  opacity: .5;
+  cursor: progress;
+}
+
+/* ---- telefoon / smal venster (mobiele laag: laatst in dit bestand) ---- */
+@media (pointer: coarse) {
+  html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}

@@ -5,13 +5,15 @@
 // (standaard; de brief toont een strook «N … приховано · Показати один раз») of «Завжди показувати» (via de eigen server, zoals vroeger).
 // Pakket 3: «Мова листа» — «Оригінал» (standaard) of «Перекладати» (een brief in een andere taal wordt bij het openen vertaald door de
 // privé-AI-agent; dat de tekst dan naar die agent gaat, staat eronder — zonder agent blijft alles in het origineel).
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal } from './lees-modus';
 import { useLeesVenster } from './LeesVenster';
 import { useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
 import AiUitleg from './AiUitleg';
 import { StrookRegelsLijst } from './StrookNazorg';
+import { formaatGrootte, useVoorraad, wisVoorraad, zetBijOntvangst } from './beelden-voorraad';
+import './beelden-voorraad.css';
 
 /**
  * MAILAI-001: «ШІ-аналіз над листом» — панель «ШІ-аналіз і переклад» над кожним листом. Типово вимкнено; налаштування облікового
@@ -57,10 +59,20 @@ function AiBalkKeuze({ lang }: { lang: 'uk' | 'nl' }) {
   );
 }
 
-/** «Питати»: verborgen tot «Показати» (geen verzoek naar buiten, ook niet via de server — een pixel verraadt anders het openen). */
-const BEELDEN: Array<{ id: LezerBeelden; uk: string; nl: string }> = [
-  { id: 'vragen', uk: 'Питати', nl: 'Vragen' },
-  { id: 'altijd', uk: 'Завжди показувати', nl: 'Altijd tonen' },
+/** «Питати»: verborgen tot «Показати» (geen verzoek naar buiten, ook niet via de server — een pixel verraadt anders het openen).
+ *  MAILBEELD-001: «При отриманні (приватно)» — de server haalt de beelden van nieuwe brieven op bij aankomst en bewaart ze versleuteld;
+ *  die keuze staat op de server (alle apparaten), de andere twee op dit apparaat. De drie sluiten elkaar uit; wisselen kan altijd. */
+type BeeldKeuze = LezerBeelden | 'ontvangst';
+const BEELDEN: Array<{ id: BeeldKeuze; uk: string; nl: string; tipUk: string; tipNl: string }> = [
+  { id: 'vragen', uk: 'Питати', nl: 'Vragen',
+    tipUk: 'Зображення приховані, доки ви не натиснете «Показати». Нічого не завантажується наперед — відправник не дізнається, що лист відкрито. Типово.',
+    tipNl: 'Afbeeldingen blijven verborgen tot u «Tonen» kiest. Er wordt niets vooraf geladen — de afzender weet niet dat het bericht geopend is. Standaard.' },
+  { id: 'ontvangst', uk: 'При отриманні (приватно)', nl: 'Bij ontvangst (privé)',
+    tipUk: 'Ваш сервер завантажує зображення нових листів одразу при надходженні (крім Спаму) і зберігає їх зашифрованими. Під час читання нічого не йде назовні: відправник не знає, чи й коли ви відкрили лист, і не бачить вашої IP-адреси — лише що лист доставлено. Діє для облікового запису на всіх пристроях.',
+    tipNl: 'Uw server laadt de afbeeldingen van nieuwe berichten direct bij aankomst (behalve Spam) en bewaart ze versleuteld. Bij het lezen gaat er niets naar buiten: de afzender weet niet óf en wanneer u het bericht opende en ziet uw IP-adres niet — alleen dat het is afgeleverd. Geldt voor uw account op elk apparaat.' },
+  { id: 'altijd', uk: 'Завжди показувати', nl: 'Altijd tonen',
+    tipUk: '! Зображення завантажуються в момент відкриття листа (через ваш сервер): відправник може дізнатися, що й коли ви прочитали лист. Діє лише на цьому пристрої.',
+    tipNl: '! Afbeeldingen worden geladen op het moment dat u het bericht opent (via uw server): de afzender kan zien dat en wanneer u het las. Geldt alleen op dit apparaat.' },
 ];
 const TALEN: Array<{ id: LezerTaal; uk: string; nl: string }> = [
   { id: 'origineel', uk: 'Оригінал', nl: 'Origineel' },
@@ -122,21 +134,63 @@ function Keuzes({ lang }: { lang: 'uk' | 'nl' }) {
             : t('Лист показується як прийшов; переклад — лише коли ви оберете його в листі.', 'Het bericht staat er zoals het kwam; vertalen alleen als u dat in het bericht kiest.')}
         </small>
       </fieldset>
-      <fieldset>
-        <legend>{t('Зовнішні зображення', 'Externe afbeeldingen')}</legend>
-        <span className='lz-segment'>
-          {BEELDEN.map((b) => (
-            <label key={b.id}>
-              <input type='radio' name={`${id}-b`} checked={w.beelden === b.id} onChange={() => lv.zetWeergave({ beelden: b.id })} />
-              <span>{t(b.uk, b.nl)}</span>
-            </label>
-          ))}
-        </span>
-      </fieldset>
+      <BeeldenKeuze lang={lang} naam={`${id}-b`} lokaal={w.beelden} zetLokaal={(b) => lv.zetWeergave({ beelden: b })} />
       {/* STROOK-002: regels «смугу не показувати» (taal, afzender, alle berichten), elk met ✕ */}
       <StrookRegelsLijst lang={lang} />
-      <small>{t('Діє лише на цьому пристрої, в усіх режимах вікна.', 'Geldt alleen op dit apparaat, in elke vorm van het venster.')}</small>
+      <small>{t('Діє лише на цьому пристрої, в усіх режимах вікна (крім «ШІ-аналіз» і «При отриманні» — вони для облікового запису).', 'Geldt alleen op dit apparaat, in elke vorm van het venster (behalve «AI-analyse» en «Bij ontvangst» — die gelden voor het account).')}</small>
     </div>
+  );
+}
+
+/** «Зовнішні зображення»: drie standen, op elk moment te wisselen (MAILBEELD-001). Onder de keuze: wat er nu gebeurt, hoeveel er
+ *  bewaard is en een compacte wisknop (alleen als er iets bewaard is). */
+function BeeldenKeuze({ lang, naam, lokaal, zetLokaal }: { lang: 'uk' | 'nl'; naam: string; lokaal: LezerBeelden; zetLokaal: (b: LezerBeelden) => void }) {
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  const vr = useVoorraad();
+  const [bezig, setBezig] = useState(false);
+  const huidig: BeeldKeuze = vr.bijOntvangst ? 'ontvangst' : lokaal;
+  const kies = (b: BeeldKeuze) => {
+    if (b === 'ontvangst') { zetLokaal('vragen'); void zetBijOntvangst(lang, true); return; }
+    zetLokaal(b);
+    if (vr.bijOntvangst) void zetBijOntvangst(lang, false);
+  };
+  const wis = () => { setBezig(true); void wisVoorraad(lang).finally(() => setBezig(false)); };
+  return (
+    <fieldset data-weergave-beelden={huidig}>
+      <legend>{t('Зовнішні зображення', 'Externe afbeeldingen')}</legend>
+      <span className='lz-segment'>
+        {BEELDEN.map((b) => (
+          <label key={b.id} title={t(b.tipUk, b.tipNl)}>
+            <input type='radio' name={naam} value={b.id} checked={huidig === b.id} disabled={b.id === 'ontvangst' && vr.fout && !vr.bijOntvangst} onChange={() => kies(b.id)} />
+            <span>{t(b.uk, b.nl)}</span>
+          </label>
+        ))}
+      </span>
+      <small className='lz-weergave-noot'>
+        {huidig === 'ontvangst'
+          ? t('Зображення нових листів (крім Спаму) сервер завантажує при отриманні й зберігає зашифрованими; під час читання нічого не йде назовні. Старі листи питають, як раніше.',
+            'Afbeeldingen van nieuwe berichten (behalve Spam) laadt de server bij ontvangst en bewaart ze versleuteld; bij het lezen gaat er niets naar buiten. Oude berichten vragen zoals voorheen.')
+          : huidig === 'altijd'
+            ? t('Зображення завантажуються під час відкриття листа: відправник може дізнатися, що й коли ви його прочитали.', 'Afbeeldingen worden bij het openen geladen: de afzender kan zien dat en wanneer u het bericht las.')
+            : t('Зображення приховані, доки ви не натиснете «Показати» в листі.', 'Afbeeldingen blijven verborgen tot u in het bericht «Tonen» kiest.')}
+        {vr.fout && !vr.bijOntvangst ? ` ${t('Режим «При отриманні» зараз недоступний: сервер не відповів.', 'De stand «Bij ontvangst» is nu niet beschikbaar: de server antwoordde niet.')}` : ''}
+      </small>
+      {(vr.aantal > 0 || vr.wachtrij > 0) && (
+        <span className='lz-beelden-voorraad' data-beelden-voorraad>
+          <small>
+            {vr.aantal > 0 && t(`Збережено: ${vr.aantal} · ${formaatGrootte('uk', vr.bytes)}`, `Bewaard: ${vr.aantal} · ${formaatGrootte('nl', vr.bytes)}`)}
+            {vr.wachtrij > 0 && ` ${t(`· ${vr.wachtrij} листів чекають відкриття сховища ключів`, `· ${vr.wachtrij} berichten wachten op het openen van de sleutelkluis`)}`}
+          </small>
+          {vr.aantal > 0 && (
+            <button type='button' className='lz-beelden-wis' disabled={bezig} onClick={wis}
+              aria-label={t('Видалити збережені зображення листів', 'Bewaarde afbeeldingen van berichten wissen')}
+              title={t('Видаляє всі зображення, які сервер зберіг при отриманні. Їх не можна повернути: старі листи знову питатимуть перед показом (і тоді відправник може побачити відкриття). Вибір режиму не змінюється.', 'Wist alle afbeeldingen die de server bij ontvangst bewaarde. Niet terug te halen: oude berichten vragen weer voordat ze tonen (en dan kan de afzender het openen zien). De gekozen stand blijft.')}>
+              <Trash2 aria-hidden='true' />
+            </button>
+          )}
+        </span>
+      )}
+    </fieldset>
   );
 }
 
