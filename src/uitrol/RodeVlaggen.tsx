@@ -6,10 +6,7 @@
 // Rode vlaggen vóór het goedkeuren: ringdiagram, tegels per soort (filter), verschilbalk per punt, voor → na als kaartjes met pijl,
 // gelijke veiligere wijzigingen samengevoegd, uitleg van de maker als citaat.
 import { useMemo, useState } from 'react';
-import {
-  AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2,
-  Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat } from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
@@ -86,6 +83,46 @@ function Verschil({ tekst, afgekapt, lang }: { tekst: string; afgekapt?: boolean
   </div>;
 }
 
+type Paar = NonNullable<RisicoItemUit['leesbaar']>['voorNa'][number];
+/**
+ * «Було → стане» компактно (власник 16.11.2026: довгий стовпчик червоних і зелених блоків «не гарний»).
+ * Модулі GitHub — один рядок: назва, мітка «було» (перекреслена) → закріплена версія із замком, «×N». Решта — рядок із кольоровою
+ * позначкою (додано / прибрано / змінено), «було» дрібно й перекреслено над «стане». Повний текст — у підказці.
+ * Voor → na compact: modules als één regel (label → vastgezette versie), de rest als regel met gekleurd teken.
+ */
+/** 1 модуль · 2 модулі · 5 модулів. */
+const modWoord = (n: number) => { const d = n % 10, h = n % 100; return d === 1 && h !== 11 ? "модуль" : d >= 2 && d <= 4 && (h < 12 || h > 14) ? "модулі" : "модулів"; };
+function Wissels({ lang, paren }: { lang: Lang; paren: Paar[] }) {
+  const t = (x: { uk: string; nl: string } | null) => (x ? (lang === 'uk' ? x.uk : x.nl) : '');
+  const modules = paren.filter((p) => p.module); const rest = paren.filter((p) => !p.module);
+  const allesVast = modules.length > 0 && modules.every((p) => p.module?.vast && p.module.van);
+  return <div className='ut-rv-wissels'>
+    {modules.length > 0 && <div className='ut-rv-mods'>
+      <div className='ut-rv-mods-kop'><Lock aria-hidden='true' /><span>{allesVast
+        ? tr(lang, `${modules.length} ${modWoord(modules.length)} GitHub закріплено — тихо підмінити не можна`, `${modules.length} GitHub-${modules.length === 1 ? "module" : "modules"} vastgezet — niet ongemerkt te vervangen`)
+        : tr(lang, 'Готові модулі GitHub', 'Kant-en-klare GitHub-modules')}</span></div>
+      <ul>{modules.map((p, i) => { const m = p.module!; return <li key={i} title={[t(p.voor), t(p.na)].filter(Boolean).join(' → ')} data-toon={p.toon}>
+        <span className='ut-rv-mod-naam'><Github aria-hidden='true' /><code>{m.naam}</code>{p.keer && p.keer > 1 ? <em>×{p.keer}</em> : null}</span>
+        <span className='ut-rv-mod-versies'>
+          {m.van ? <span className='ut-rv-ver' data-k='van' title={tr(lang, 'Мітка: автор модуля може змінити вміст за нею', 'Label: de maker van de module kan de inhoud erachter wijzigen')}><Tag aria-hidden='true' />{m.van}</span> : <span className='ut-rv-ver' data-k='nieuw'>{tr(lang, 'новий', 'nieuw')}</span>}
+          <ArrowRight aria-hidden='true' className='ut-rv-ver-pijl' />
+          {m.naar ? <span className='ut-rv-ver' data-k={m.vast ? 'vast' : 'label'} title={m.vast ? tr(lang, 'Закріплено за точною версією: вміст не зміниться', 'Vastgezet op een exacte versie: de inhoud verandert niet') : tr(lang, 'Мітка: вміст може змінитися', 'Label: inhoud kan veranderen')}>{m.vast ? <Lock aria-hidden='true' /> : <Tag aria-hidden='true' />}{m.naar}</span> : <span className='ut-rv-ver' data-k='weg'>{tr(lang, 'прибрано', 'verwijderd')}</span>}
+        </span></li>; })}</ul>
+    </div>}
+    {rest.length > 0 && <ul className='ut-rv-rest'>{rest.map((p, i) => { const soort = !p.voor ? 'plus' : !p.na ? 'min' : 'wissel';
+      const I = soort === 'plus' ? Plus : soort === 'min' ? Minus : Repeat;
+      return <li key={i} data-toon={p.toon || 'neutraal'}>
+        <span className='ut-rv-rest-icoon' aria-hidden='true'><I /></span>
+        <span className='ut-rv-rest-tekst'>
+          <small>{soort === 'plus' ? tr(lang, 'Додано', 'Toegevoegd') : soort === 'min' ? tr(lang, 'Прибрано', 'Verwijderd') : tr(lang, 'Змінено', 'Gewijzigd')}
+            {p.toon === 'veiliger' ? tr(lang, ' · безпечніше', ' · veiliger') : p.toon === 'risico' ? tr(lang, ' · ризиковіше', ' · risicovoller') : ''}
+            {p.keer && p.keer > 1 ? ` · ×${p.keer}` : ''}</small>
+          {soort === 'wissel' && <s>{t(p.voor)}</s>}
+          <span>{soort === 'min' ? t(p.voor) : t(p.na)}</span>
+        </span></li>; })}</ul>}
+  </div>;
+}
+
 /** Вміст розгорнутого пункту: що робити, пояснення автора, «було → стане», підозрілі рядки, подробиці й код. */
 function Uitleg({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
   const t = (x: { uk: string; nl: string }) => (lang === 'uk' ? x.uk : x.nl);
@@ -96,10 +133,7 @@ function Uitleg({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
       : l && <p className='ut-rv-doen' data-o={o.o}><Lightbulb aria-hidden='true' /><span><b>{tr(lang, 'Що робити: ', 'Wat te doen: ')}</b>{t(l.doen)}</span></p>}
     {it.auteur && <blockquote className='ut-rv-auteur'><MessageSquareQuote aria-hidden='true' /><div><small>{tr(lang, 'Пояснення автора (з досьє випуску)', 'Uitleg van de maker (uit het releasedossier)')}</small><p>{t(it.auteur)}</p>
       <small className='ut-rv-auteur-noot'>{tr(lang, 'Це слова автора, а не доказ. Порівняйте їх із тим, що змінилося.', 'Dit zijn woorden van de maker, geen bewijs. Vergelijk ze met wat er veranderde.')}</small></div></blockquote>}
-    {l?.voorNa.length ? <ul className='ut-rv-voorna'>{l.voorNa.map((p, i) => <li key={i}>
-      <span data-k='voor'><small>{tr(lang, 'Було', 'Was')}</small>{p.voor ? t(p.voor) : tr(lang, 'не було', 'bestond niet')}</span>
-      <ArrowRight aria-hidden='true' className='ut-rv-pijl-rechts' />
-      <span data-k='na'><small>{tr(lang, 'Стане', 'Wordt')}{p.keer && p.keer > 1 ? ` · ${tr(lang, `у ${p.keer} місцях`, `op ${p.keer} plekken`)}` : ''}</small>{p.na ? t(p.na) : tr(lang, 'прибрано', 'verwijderd')}</span></li>)}</ul> : null}
+    {l?.voorNa.length ? <Wissels lang={lang} paren={l.voorNa} /> : null}
     {l?.overig ? <p className='ut-rv-overig'><Code2 aria-hidden='true' />{tr(lang, `Ще ${l.overig} рядк. логіки програми — їх словами не перекласти${it.auteur ? '; про них — у поясненні автора.' : '.'}`, `Nog ${l.overig} regel(s) programmalogica — niet in woorden te vatten${it.auteur ? '; zie de uitleg van de maker.' : '.'}`)}</p> : null}
     {it.opvallend?.length ? <ul className='ut-rv-opvallend'>{it.opvallend.map((x, i) => <li key={i}><AlertTriangle aria-hidden='true' />{t(x)}</li>)}</ul> : null}
     {(t(it.wat) || it.betekenis?.length) && <details className='ut-rv-meer'><summary><Info aria-hidden='true' />{tr(lang, 'Докладніше', 'Meer uitleg')}</summary>

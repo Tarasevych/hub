@@ -382,20 +382,22 @@ export async function verklaarVlaggen(vlaggen: string[], p: { bron: string; gein
 // Voor een beheerder zonder programmeerkennis: voor → na in gewone zinnen, een oordeel en één advies wat te doen.
 
 export type Oordeel = 'veiliger' | 'gewoon' | 'aandacht';
-export type VoorNa = { voor: Tekst | null; na: Tekst | null; keer?: number };
+/** toon: як змінилось (безпечніше / ризиковіше); module: модуль GitHub з міткою «було» й версією «стане» — для компактного рядка в інтерфейсі.
+ *  toon: veiliger/risico; module: GitHub-module met label vóór en versie na — voor een compacte regel in de interface. */
+export type VoorNa = { voor: Tekst | null; na: Tekst | null; keer?: number; toon?: 'veiliger' | 'risico'; module?: { naam: string; van?: string; naar?: string; vast?: boolean } };
 export type Leesbaar = { oordeel: Oordeel; kort: Tekst; voorNa: VoorNa[]; overig: number; doen: Tekst;
   /** Без пояснення автора таку зміну не схвалити: перевірка пакета блокує встановлення · zonder uitleg blokkeert de voorcontrole. */ uitlegNodig?: boolean };
 
-type Zin = { uk: string; nl: string; veiliger?: boolean; risico?: boolean } | null;
+type Zin = { uk: string; nl: string; veiliger?: boolean; risico?: boolean; module?: { naam: string; versie: string; vast: boolean } } | null;
 /** Один рядок налаштувань → речення. null = незнайомий рядок (логіка програми). */
 function zinVoor(r: string): Zin | 'stil' {
   const t = r.trim();
   if (!t || /^#/.test(t) || /^\/\//.test(t)) return 'stil';
   let m = /^-?\s*uses:\s*([^@\s]+)@(\S+)(?:\s*#\s*(\S+))?/.exec(t);
   if (m) {
-    const naam = m[1]; const hash = /^[0-9a-f]{40}$/.test(m[2]);
-    return hash ? { uk: `готовий модуль GitHub «${naam}» точної версії ${m[3] || m[2].slice(0, 7)} (закріплено, підмінити не можна)`, nl: `kant-en-klare GitHub-module «${naam}» exacte versie ${m[3] || m[2].slice(0, 7)} (vastgezet, niet te vervangen)`, veiliger: true }
-      : { uk: `готовий модуль GitHub «${naam}» за міткою «${m[2]}» (його автор може непомітно змінити вміст)`, nl: `kant-en-klare GitHub-module «${naam}» via label «${m[2]}» (de maker kan de inhoud ongemerkt wijzigen)` };
+    const naam = m[1]; const hash = /^[0-9a-f]{40}$/.test(m[2]); const versie = hash ? (m[3] || m[2].slice(0, 7)) : m[2];
+    return hash ? { uk: `готовий модуль GitHub «${naam}» точної версії ${versie} (закріплено, підмінити не можна)`, nl: `kant-en-klare GitHub-module «${naam}» exacte versie ${versie} (vastgezet, niet te vervangen)`, veiliger: true, module: { naam, versie, vast: true } }
+      : { uk: `готовий модуль GitHub «${naam}» за міткою «${m[2]}» (його автор може непомітно змінити вміст)`, nl: `kant-en-klare GitHub-module «${naam}» via label «${m[2]}» (de maker kan de inhoud ongemerkt wijzigen)`, module: { naam, versie, vast: false } };
   }
   if (/^persist-credentials:\s*false/.test(t)) return { uk: 'ключ доступу GitHub не зберігається на диску після завантаження коду', nl: 'de GitHub-toegangssleutel blijft na het ophalen van de code niet op schijf', veiliger: true };
   if ((m = /\bnpm\s+(ci|install|i)\b(.*)$/.exec(t))) return /--ignore-scripts/.test(m[2])
@@ -451,7 +453,14 @@ export function leesbaarVerschil(verschil: string): { voorNa: VoorNa[]; overig: 
       // Однакові пари (той самий модуль у кількох місцях файла) показуємо один раз із кількістю.
       const dubbel = voorNa.find((x) => x.voor?.uk === za?.uk && x.na?.uk === zc?.uk);
       if (dubbel) dubbel.keer = (dubbel.keer ?? 1) + 1;
-      else if (voorNa.length < 30) voorNa.push({ voor: za ? { uk: za.uk, nl: za.nl } : null, na: zc ? { uk: zc.uk, nl: zc.nl } : null });
+      else if (voorNa.length < 30) {
+        const p: VoorNa = { voor: za ? { uk: za.uk, nl: za.nl } : null, na: zc ? { uk: zc.uk, nl: zc.nl } : null };
+        const toon = zc?.risico ? 'risico' : zc?.veiliger ? 'veiliger' : !zc && za?.veiliger ? 'risico' : !zc && za?.risico ? 'veiliger' : undefined;
+        if (toon) p.toon = toon;
+        const mod = (za?.module && (!zc?.module || zc.module.naam === za.module.naam)) || (zc?.module && !za) ? (za?.module || zc!.module)! : null;
+        if (mod) p.module = { naam: mod.naam, ...(za?.module ? { van: za.module.versie } : {}), ...(zc?.module ? { naar: zc.module.versie, vast: zc.module.vast } : {}) };
+        voorNa.push(p);
+      }
     }
   }
   return { voorNa, overig, veiliger, risico };

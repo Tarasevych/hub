@@ -400,6 +400,37 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-rv-auteur div{display:grid;gap:3px;min-width:0}
 .ut-rv-auteur small{color:var(--ut-muted);font-size:.74rem}
 .ut-rv-auteur p{font-style:italic;overflow-wrap:anywhere}
+/* «Було → стане» компактно (власник 16.11.2026). Voor → na compact: modules als regel, rest als regel met teken. */
+.ut-rv-wissels{display:grid;gap:10px;min-width:0}
+.ut-rv-mods{border:1px solid var(--ut-line);border-radius:14px;overflow:hidden;background:var(--ut-bg)}
+.ut-rv-mods-kop{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:.82rem;font-weight:600;color:var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-rv-mods-kop svg{width:16px;height:16px;flex:none}
+.ut-rv-mods ul,.ut-rv-rest{list-style:none;margin:0;padding:0}
+.ut-rv-mods li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:8px 12px;border-top:1px solid var(--ut-line);min-width:0}
+.ut-rv-mods li:first-child{border-top:0}
+.ut-rv-mod-naam{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.ut-rv-mod-naam svg{width:16px;height:16px;flex:none;color:var(--ut-muted)}
+.ut-rv-mod-naam code{font-size:.84rem;overflow-wrap:anywhere;background:none;padding:0}
+.ut-rv-mod-naam em{font-style:normal;font-size:.72rem;font-weight:700;padding:0 6px;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-mod-versies{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.ut-rv-ver{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-family:var(--mono,ui-monospace,monospace);font-size:.76rem;font-weight:600;white-space:nowrap}
+.ut-rv-ver svg{width:12px;height:12px}
+.ut-rv-ver[data-k='van'],.ut-rv-ver[data-k='weg']{background:var(--ut-err-bg);color:var(--ut-err);text-decoration:line-through;text-decoration-thickness:1px}
+.ut-rv-ver[data-k='vast']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-ver[data-k='label'],.ut-rv-ver[data-k='nieuw']{background:var(--ut-warn-bg);color:var(--ut-warn)}
+.ut-rv-ver-pijl{width:14px;height:14px;color:var(--ut-muted)}
+.ut-rv-rest{display:grid;border:1px solid var(--ut-line);border-radius:14px;overflow:hidden;background:var(--ut-bg)}
+.ut-rv-rest li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:9px 12px;border-top:1px solid var(--ut-line)}
+.ut-rv-rest li:first-child{border-top:0}
+.ut-rv-rest-icoon{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-rest-icoon svg{width:15px;height:15px}
+.ut-rv-rest li[data-toon='veiliger'] .ut-rv-rest-icoon{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-rest li[data-toon='risico'] .ut-rv-rest-icoon{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-rv-rest-tekst{display:grid;gap:1px;min-width:0;font-size:.88rem;overflow-wrap:anywhere}
+.ut-rv-rest-tekst small{font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ut-muted)}
+.ut-rv-rest li[data-toon='veiliger'] small{color:var(--ut-ok)}
+.ut-rv-rest li[data-toon='risico'] small{color:var(--ut-err)}
+.ut-rv-rest-tekst s{color:var(--ut-muted);font-size:.8rem}
 .ut-rv-voorna{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ut-rv-voorna li{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch}
 .ut-rv-voorna span{display:grid;gap:2px;align-content:start;padding:7px 9px;border-radius:10px;overflow-wrap:anywhere}
@@ -708,6 +739,8 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
   .ut-afwijs-acties{flex-direction:column;align-items:stretch}
   .admin-uitrol .ut-afwijs-acties .ut-knop{justify-content:center;width:100%}
   .ut-afwijs-raster{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ut-rv-mod-versies{margin-left:23px}
+  .ut-rv-mods li{justify-content:flex-start}
   .admin-uitrol .ut-afwijs-tegel{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px;align-items:start}
   .admin-uitrol .ut-afwijs-tegel .ut-afwijs-tegel-keuze{position:absolute;top:8px;right:8px}
   .admin-uitrol .ut-afwijs-tegel[data-voorstel]{grid-template-columns:auto minmax(0,1fr) auto;align-items:center}

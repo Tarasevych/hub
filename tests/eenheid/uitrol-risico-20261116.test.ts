@@ -150,5 +150,16 @@ export async function main(): Promise<number> {
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+  // Компактний вигляд «було → стане» (16.11): модулі GitHub зі структурою, тон зміни. Compacte weergave: module-structuur en toon.
+  {
+    const H = 'a'.repeat(40);
+    const lv = leesbaarVerschil(['--- a', '+++ b', '@@', '-      - uses: actions/checkout@v4', `+      - uses: actions/checkout@${H} # v4.2.2`, ' x', '-      - uses: actions/checkout@v4', `+      - uses: actions/checkout@${H} # v4.2.2`, ' y', '+          persist-credentials: false', ' z', '-  contents: read', '+  contents: write'].join('\n'));
+    const mod = lv.voorNa.find((p) => p.module);
+    check('compact: module met label → vastgezette versie, ×2', !!mod && mod.module!.naam === 'actions/checkout' && mod.module!.van === 'v4' && mod.module!.naar === 'v4.2.2' && mod.module!.vast === true && mod.keer === 2 && mod.toon === 'veiliger', JSON.stringify(mod));
+    const pc = lv.voorNa.find((p) => !p.voor && p.na?.uk.includes('ключ доступу'));
+    check('compact: toegevoegde beveiliging → toon veiliger, geen module', !!pc && pc.toon === 'veiliger' && !pc.module);
+    const w = lv.voorNa.find((p) => p.na?.uk.includes('ЗМІНЮВАТИ'));
+    check('compact: schrijfrecht → toon risico', !!w && w.toon === 'risico');
+  }
   return einde();
 }
