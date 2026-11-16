@@ -1829,6 +1829,29 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--am3-danger-icon) 55%, var(--am3-line));
 }
 
+/* Пауза: на кнопці «Технічний» — маленька кругла позначка ⏸ кольором технічної смуги, щит теж підсвічено (стан видно без читання підпису) */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-btn.is-tech-btn.is-pauze > svg {
+  color: var(--am3-shield-color, #d97706);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--am3-shield-color, #d97706) 18%, transparent);
+  color: var(--am3-shield-color, #d97706);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze > svg {
+  width: 10px;
+  height: 10px;
+}
+
 [data-account-menu-v3] .am3-tech-tip {
   position: absolute;
   right: -4px;

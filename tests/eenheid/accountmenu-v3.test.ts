@@ -255,6 +255,10 @@ export async function main(): Promise<number> {
       (v3.match(/className=\{`am3-tech-tip/g) || []).length === 2 && /aria-label=\{sessiePauze \?/.test(v3) && /if \(techWasLang\(\)\) return;/.test(v3));
     check('RUIMTE-WEERGAVE-001: круглі піктограми 24 px у межах [data-account-menu-v3], підказка не лише для миші',
       /\.am3-tech-actie\{[^}]*width:\s*24px[^}]*border-radius:\s*50%/.test(v3css.replace(/\s*\{\s*/g, '{').replace(/;\s+/g, ';')) && /\.am3-tech-tip\.is-open/.test(v3css));
+    const zr = readFileSync('src/tech/ruimtes/ZijbalkRuimte.tsx', 'utf8');
+    check('RUIMTE-WEERGAVE-001: на паузі кнопка «Технічний» показує позначку ⏸ у меню й у бічному перемикачі, з поясненням для читача екрана',
+      /const techOpPauze = sessiePauze && !isTechActief;/.test(v3) && v3.includes("data-am3-tech-pauze='1'") && /aria-label=\{techOpPauze \?/.test(v3)
+      && zr.includes("data-zijbalk-pauze='1'") && /const pauze = id === 'technisch' && !actief && !!s\.sessie && s\.pauze;/.test(zr));
   }
 
   return einde();

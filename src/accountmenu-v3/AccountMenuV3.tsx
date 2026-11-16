@@ -307,6 +307,8 @@ export function AccountMenuV3({
   const sessiePauze = !!v2Sessie && !!ruimtes.status?.pauze;
   // Дії технічного сеансу належать блоку «Технічний»: у звичайному просторі їх не видно (там «Технічний» сам продовжує паузу).
   const toonTechActies = !!v2Sessie && isTechActief;
+  // Пауза: вкладка у звичайному просторі, але сеанс живий — кнопка «Технічний» сама показує цей стан (зауваження власника 16.11).
+  const techOpPauze = sessiePauze && !isTechActief;
   const ruimteSubtekst = !isTechActief
     ? (v2Sessie
       ? (sessiePauze ? (uk ? 'Звичайний · технічний доступ на паузі' : 'Gewoon · technische toegang gepauzeerd') : (uk ? 'Звичайний · технічний сеанс працює' : 'Gewoon · technische sessie loopt'))
@@ -1259,13 +1261,16 @@ export function AccountMenuV3({
                   <span className={`am3-seg-tech${isTechActief ? ' active' : ''}${toonTechActies ? ' heeft-acties' : ''}`} data-am3-tech-blok='1'>
                     <button
                       type='button'
-                      className={`am3-seg-btn is-tech-btn${isTechActief ? ' active' : ''}`}
+                      className={`am3-seg-btn is-tech-btn${isTechActief ? ' active' : ''}${techOpPauze ? ' is-pauze' : ''}`}
                       aria-pressed={isTechActief}
-                      data-am3-tech-knop={isTechActief ? 'actief' : 'inactief'}
+                      data-am3-tech-knop={isTechActief ? 'actief' : techOpPauze ? 'pauze' : 'inactief'}
+                      aria-label={techOpPauze ? (uk ? 'Технічний простір на паузі. Натисніть, щоб продовжити без нового входу' : 'Technische ruimte gepauzeerd. Klik om door te gaan zonder opnieuw aan te melden') : undefined}
+                      title={techOpPauze ? (uk ? 'Технічний доступ на паузі в усіх вкладках. Натисніть, щоб продовжити: новий вхід не потрібен, доки діє термін.' : 'Technische toegang gepauzeerd in alle tabbladen. Klik om door te gaan: opnieuw aanmelden is niet nodig zolang de termijn loopt.') : undefined}
                       onClick={() => void schakelRuimte('technisch')}
                     >
                       <ShieldCheck />
                       <span>{uk ? 'Технічний' : 'Technisch'}</span>
+                      {techOpPauze ? <span className='am3-tech-pauze' data-am3-tech-pauze='1' aria-hidden='true'><Pause /></span> : null}
                     </button>
                     {toonTechActies ? (
                       <span className='am3-tech-acties' role='group' data-ruimte-acties='1' aria-label={uk ? 'Керування технічним сеансом' : 'Technische sessie beheren'}>

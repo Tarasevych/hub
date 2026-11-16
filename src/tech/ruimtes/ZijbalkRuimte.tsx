@@ -3,7 +3,7 @@
 // de accentkleur. Ingeklapt menu: twee kleine ronde pictogrammen. Zelfde logica als de band en Ctrl+Alt+1/2 (kiesRuimte): wisselen
 // zonder opnieuw aan te melden zolang de technische termijn loopt. Alleen zichtbaar met vlag tech-ruimtes-v2 en technisch recht.
 import { useEffect, useState } from 'react';
-import { Home, ShieldCheck } from 'lucide-react';
+import { Home, Pause, ShieldCheck } from 'lucide-react';
 import { startRuimtes, useRuimtes } from './ruimtes-opslag';
 import { kiesRuimte } from './RuimteWissel';
 import { SNELTOETS_TEKST } from './sneltoets';
@@ -21,10 +21,13 @@ export default function ZijbalkRuimte({ lang, breed }: { lang: 'uk' | 'nl'; bree
   const knop = (id: 'prive' | 'technisch') => {
     const naam = id === 'prive' ? (uk ? 'Звичайний' : 'Gewoon') : (uk ? 'Технічний' : 'Technisch');
     const actief = s.actief === id;
+    // Пауза технічного сеансу: кнопка «Технічний» показує ⏸, щоб стан було видно без відкривання меню.
+    const pauze = id === 'technisch' && !actief && !!s.sessie && s.pauze;
+    const pauzeTekst = uk ? 'на паузі, натисніть, щоб продовжити без нового входу' : 'gepauzeerd, klik om door te gaan zonder opnieuw aan te melden';
     return (
-      <button key={id} type='button' role='radio' aria-checked={actief} className={`zr-knop is-${id}`} onClick={() => void kies(id)}
-        aria-label={breed ? undefined : naam} title={`${naam} (${SNELTOETS_TEKST[id]})`} aria-keyshortcuts={id === 'prive' ? 'Control+Alt+1' : 'Control+Alt+2'} data-zijbalk-ruimte={id}>
-        {id === 'prive' ? <Home aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}{breed ? <span>{naam}</span> : null}
+      <button key={id} type='button' role='radio' aria-checked={actief} className={`zr-knop is-${id}${pauze ? ' is-pauze' : ''}`} onClick={() => void kies(id)}
+        aria-label={pauze ? `${naam}: ${pauzeTekst}` : breed ? undefined : naam} title={pauze ? `${naam}: ${pauzeTekst} (${SNELTOETS_TEKST[id]})` : `${naam} (${SNELTOETS_TEKST[id]})`} aria-keyshortcuts={id === 'prive' ? 'Control+Alt+1' : 'Control+Alt+2'} data-zijbalk-ruimte={id}>
+        {id === 'prive' ? <Home aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}{breed ? <span>{naam}</span> : null}{pauze ? <i className='zr-pauze' data-zijbalk-pauze='1' aria-hidden='true'><Pause /></i> : null}
       </button>
     );
   };
