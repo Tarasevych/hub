@@ -1,6 +1,6 @@
 // MAILBEELD-001 (16.11.2026) — «Завантажувати при отриманні (приватно)» in de browser: de keuze staat op de SERVER (de server doet
 // het ophalen, ook als geen enkel tabblad open is), per mens en ruimte, en geldt dus op elk apparaat. Wijzigen kan op elk moment
-// («Вигляд» → «Зовнішні зображення»). Elke wijziging en het wissen komen in het centrum van meldingen, met «Скасувати».
+// («Вигляд» → «Зображення»). Elke wijziging en het wissen komen in het centrum van meldingen, met «Скасувати».
 // Uk: вибір зберігається на сервері (діє на всіх пристроях), змінюється будь-коли; кожна зміна — у центрі сповіщень.
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
@@ -73,15 +73,15 @@ export async function zetBijOntvangst(lang: 'uk' | 'nl', aan: boolean, metMeldin
     emitCanonicalNotice({
       text: t('Не вдалося змінити режим зовнішніх зображень', 'Wijzigen van de stand voor externe afbeeldingen is niet gelukt'),
       kind: 'error', source: 'mail', topic: 'mail|beelden-voorraad|fout',
-      explain: t('Сервер не зберіг вибір; лишився попередній режим. Спробуйте ще раз у «Вигляд» → «Зовнішні зображення».', 'De server heeft de keuze niet bewaard; de vorige stand blijft. Probeer het opnieuw in «Weergave» → «Externe afbeeldingen».'),
+      explain: t('Сервер не зберіг вибір; лишився попередній режим. Спробуйте ще раз у «Вигляд» → «Зображення».', 'De server heeft de keuze niet bewaard; de vorige stand blijft. Probeer het opnieuw in «Weergave» → «Afbeeldingen».'),
     });
     return false;
   }
   if (metMelding) {
     emitCanonicalNotice({
       text: aan
-        ? t('Зображення нових листів завантажуються при отриманні', 'Afbeeldingen van nieuwe berichten worden bij ontvangst geladen')
-        : t('Зображення нових листів більше не завантажуються при отриманні', 'Afbeeldingen van nieuwe berichten worden niet meer bij ontvangst geladen'),
+        ? t('Зображення нових листів тепер завантажуються наперед, щойно лист надходить', 'Afbeeldingen van nieuwe berichten worden nu vooraf opgehaald, zodra het bericht binnenkomt')
+        : t('Зображення нових листів більше не завантажуються наперед', 'Afbeeldingen van nieuwe berichten worden niet meer vooraf opgehaald'),
       kind: aan ? 'success' : 'info',
       source: 'mail',
       topic: 'mail|beelden-voorraad|stand',
@@ -108,7 +108,7 @@ export async function wisVoorraad(lang: 'uk' | 'nl'): Promise<boolean> {
       text: t(`Видалено збережені зображення листів (${voor.aantal}, ${formaatGrootte('uk', voor.bytes)})`, `Bewaarde afbeeldingen van berichten gewist (${voor.aantal}, ${formaatGrootte('nl', voor.bytes)})`),
       kind: 'info', source: 'mail', topic: 'mail|beelden-voorraad|wissen',
       explain: staat.bijOntvangst
-        ? t('Зображення старих листів тепер знову питатимуть перед показом. Нові листи й далі завантажуються при отриманні.', 'Afbeeldingen van oude berichten vragen nu weer voordat ze getoond worden. Nieuwe berichten worden nog steeds bij ontvangst geladen.')
+        ? t('Зображення старих листів тепер знову питатимуть перед показом. Зображення нових листів і далі завантажуються наперед, щойно лист надходить.', 'Afbeeldingen van oude berichten vragen nu weer voordat ze getoond worden. Afbeeldingen van nieuwe berichten worden nog steeds vooraf opgehaald zodra het bericht binnenkomt.')
         : t('Зображення в листах знову питатимуть перед показом.', 'Afbeeldingen in berichten vragen weer voordat ze getoond worden.'),
     });
     return true;

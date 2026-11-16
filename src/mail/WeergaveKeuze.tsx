@@ -6,7 +6,7 @@
 // Pakket 3: «Мова листа» — «Оригінал» (standaard) of «Перекладати» (een brief in een andere taal wordt bij het openen vertaald door de
 // privé-AI-agent; dat de tekst dan naar die agent gaat, staat eronder — zonder agent blijft alles in het origineel).
 // MAILBEELD-002 (16.11.2026): het paneel was een muur van ±900 px. Nu vier inklapbare zones (<details>) met pictogram, titel en de
-// HUIDIGE waarde in de kop («Зображення · При отриманні», «Читання · Звичайно · 100 %», …): één zone tegelijk open, de laatst
+// HUIDIGE waarde in de kop («Зображення · Завантажити наперед», «Читання · Звичайно · 100 %», …): één zone tegelijk open, de laatst
 // geopende onthouden per apparaat. Uk: панель «Вигляд» — чотири згортані зони з поточним значенням у заголовку.
 // Afwerking (zelfde dag, na de jury): de waarde staat alleen in de kop van een DICHTE zone (open zegt de inhoud het zelf); de regel
 // «Збережено …» staat er altijd (geen sprong in hoogte); de tegels zijn even breed, met een klein merk onder de naam («типово» ·
@@ -77,7 +77,8 @@ function AiBalkKeuze({ lang }: { lang: 'uk' | 'nl' }) {
 }
 
 /** «Питати»: verborgen tot «Показати» (geen verzoek naar buiten, ook niet via de server — een pixel verraadt anders het openen).
- *  MAILBEELD-001: «При отриманні (приватно)» — de server haalt de beelden van nieuwe brieven op bij aankomst en bewaart ze versleuteld;
+ *  MAILBEELD-001: «Завантажувати наперед (приватно)» (tot MAILBEELD-004 «При отриманні»: Павло vond dat dubbelzinnig — het ontvangen
+ *  van wát, en wat gebeurt er dan? De naam zegt nu de handeling en de zin het moment: «до відкриття») — de server haalt de beelden van nieuwe brieven op bij aankomst en bewaart ze versleuteld;
  *  die keuze staat op de server (alle apparaten), de andere twee op dit apparaat. De drie sluiten elkaar uit; wisselen kan altijd.
  *  MAILBEELD-002: per stand een pictogram, een korte naam voor de tegel (`kort…`), een merk van één woord onder de naam (`merk…`:
  *  «типово» · «приватно» · «ризик»), één zin «wat gebeurt er nu» (`nu…` — kort: elk van de drie past ook op een scherm van
@@ -93,12 +94,12 @@ const BEELDEN: Array<{ id: BeeldKeuze; icoon: LucideIcon; uk: string; nl: string
     kernUk: 'Приховані, доки самі не покажете', kernNl: 'Verborgen tot u ze zelf toont', overal: false,
     tipUk: 'Зображення приховані, доки не натиснете «Показати»: нічого не завантажується, тож відправник не дізнається, що лист відкрито. Типово. Лише на цьому пристрої.',
     tipNl: 'Afbeeldingen blijven verborgen tot u «Tonen» kiest: er wordt niets geladen, dus de afzender weet niet dat het bericht geopend is. Standaard. Alleen op dit apparaat.' },
-  { id: 'ontvangst', icoon: ShieldCheck, uk: 'При отриманні (приватно)', nl: 'Bij ontvangst (privé)', kortUk: 'При отриманні', kortNl: 'Bij ontvangst', merkUk: 'приватно', merkNl: 'privé',
-    nuUk: 'Сервер зберігає їх наперед\u00a0— відправник не бачить відкриття.',
-    nuNl: 'De server bewaart ze vooraf\u00a0— de afzender ziet niet wanneer u leest.',
-    kernUk: 'Сервер зберігає наперед — відправник не бачить, коли ви читаєте', kernNl: 'De server bewaart ze vooraf — de afzender ziet niet wanneer u leest', overal: true,
-    tipUk: 'Сервер завантажує зображення нових листів при надходженні (крім Спаму) і зберігає зашифрованими. Відправник не бачить, чи й коли ви читаєте, ані вашої IP-адреси — лише що лист доставлено. Старі листи питають, як раніше. На всіх пристроях.',
-    tipNl: 'De server laadt afbeeldingen van nieuwe berichten bij aankomst (behalve Spam) en bewaart ze versleuteld. De afzender ziet niet óf en wanneer u leest, en ook uw IP-adres niet — alleen dat het is afgeleverd. Oude berichten vragen zoals voorheen. Op elk apparaat.' },
+  { id: 'ontvangst', icoon: ShieldCheck, uk: 'Завантажувати наперед (приватно)', nl: 'Vooraf ophalen (privé)', kortUk: 'Завантажити наперед', kortNl: 'Vooraf ophalen', merkUk: 'приватно', merkNl: 'privé',
+    nuUk: 'Сервер завантажує їх до відкриття\u00a0— відправник не бачить читання.',
+    nuNl: 'De server haalt ze vóór het openen\u00a0— de afzender ziet het lezen niet.',
+    kernUk: 'Сервер завантажує їх, щойно лист надійшов, ще до відкриття — відправник не бачить, коли ви читаєте', kernNl: 'De server haalt ze op zodra de brief binnenkomt, nog vóór het openen — de afzender ziet niet wanneer u leest', overal: true,
+    tipUk: 'Щойно новий лист надходить у скриньку (крім Спаму), сервер сам завантажує його зображення і зберігає зашифрованими — ще до того, як ви його відкриєте. Відправник не бачить, чи й коли ви читаєте, ані вашої IP-адреси — лише що лист доставлено. Старі листи питають, як раніше. На всіх пристроях.',
+    tipNl: 'Zodra een nieuw bericht binnenkomt (behalve Spam), haalt de server zelf de afbeeldingen op en bewaart ze versleuteld — nog vóór u het bericht opent. De afzender ziet niet óf en wanneer u leest, en ook uw IP-adres niet — alleen dat het is afgeleverd. Oude berichten vragen zoals voorheen. Op elk apparaat.' },
   { id: 'altijd', icoon: Eye, uk: 'Завжди показувати', nl: 'Altijd tonen', kortUk: 'Завжди', kortNl: 'Altijd', merkUk: 'ризик', merkNl: 'risico',
     nuUk: 'Завантажуються під час відкриття\u00a0— відправник це бачить.',
     nuNl: 'Geladen bij het openen\u00a0— de afzender ziet wanneer u leest.',
@@ -269,7 +270,7 @@ function Keuzes({ lang }: { lang: 'uk' | 'nl' }) {
       <ZoneBlok id='stroken' {...zone} icoon={EyeOff} titel={t('Сховані смуги', 'Verborgen stroken')} waarde={aantalRegels ? String(aantalRegels) : t('немає', 'geen')}>
         <StrookRegelsLijst lang={lang} />
       </ZoneBlok>
-      <small>{t('Налаштування цього пристрою. «При отриманні» та «ШІ-аналіз» діють для облікового запису.', 'Instellingen van dit apparaat. «Bij ontvangst» en «AI-analyse» gelden voor uw account.')}</small>
+      <small>{t('Налаштування цього пристрою. «Завантажити наперед» та «ШІ-аналіз» діють для облікового запису.', 'Instellingen van dit apparaat. «Vooraf ophalen» en «AI-analyse» gelden voor uw account.')}</small>
     </div>
   );
 }
@@ -287,7 +288,7 @@ const woordBeelden = (lang: 'uk' | 'nl', n: number): string => {
 /** «Зовнішні зображення»: drie even brede tegels, op elk moment te wisselen (MAILBEELD-001). Eronder één zin: wat er nu gebeurt;
  *  «Докладніше» (dicht) met de drie standen in één regel elk; en altijd de regel van de voorraad — hoeveel er bewaard is (of «Ще
  *  нічого не збережено»), de wachtrij als kort merk, en een compacte wisknop als er iets te wissen is. Antwoordt de server niet, dan
- *  staat dát in die regel en is de tegel «При отриманні» uit (gestippelde rand). */
+ *  staat dát in die regel en is de tegel «Завантажити наперед» uit (gestippelde rand). */
 function BeeldenKeuze({ lang, naam, lokaal, zetLokaal, opMaat }: { lang: 'uk' | 'nl'; naam: string; lokaal: LezerBeelden; zetLokaal: (b: LezerBeelden) => void; opMaat?: () => void }) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const vr = useVoorraad();
@@ -296,7 +297,7 @@ function BeeldenKeuze({ lang, naam, lokaal, zetLokaal, opMaat }: { lang: 'uk' | 
   const aanraak = useAanraak();
   const huidig: BeeldKeuze = vr.bijOntvangst ? 'ontvangst' : lokaal;
   const kies = (b: BeeldKeuze) => {
-    // «При отриманні» staat op de server; lokaal hoort daar «Питати» bij. Bewaart de server de keuze niet, dan terug naar wat er stond
+    // «Завантажити наперед» staat op de server; lokaal hoort daar «Питати» bij. Bewaart de server de keuze niet, dan terug naar wat er stond
     // (anders werd «Завжди» stil «Питати», terwijl de melding zegt dat de vorige stand blijft).
     if (b === 'ontvangst') { const vorig = lokaal; zetLokaal('vragen'); void zetBijOntvangst(lang, true).then((ok) => { if (!ok) zetLokaal(vorig); }); return; }
     zetLokaal(b);
@@ -324,7 +325,7 @@ function BeeldenKeuze({ lang, naam, lokaal, zetLokaal, opMaat }: { lang: 'uk' | 
     const b = BEELDEN.find((x) => x.id === k);
     if (!b) return '';
     return b.id === 'ontvangst' && serverWeg
-      ? t('Зараз недоступно: сервер не відповів, тож увімкнути «При отриманні» не можна. Поточний режим не змінено — спробуйте пізніше.', 'Nu niet beschikbaar: de server antwoordde niet, dus «Bij ontvangst» kan niet aan. De huidige stand blijft — probeer het later opnieuw.')
+      ? t('Зараз недоступно: сервер не відповів, тож увімкнути «Завантажити наперед» не можна. Поточний режим не змінено — спробуйте пізніше.', 'Nu niet beschikbaar: de server antwoordde niet, dus «Vooraf ophalen» kan niet aan. De huidige stand blijft — probeer het later opnieuw.')
       : t(b.tipUk, b.tipNl);
   };
   const tipRef = useRef(tipVan);
@@ -400,7 +401,7 @@ function BeeldenKeuze({ lang, naam, lokaal, zetLokaal, opMaat }: { lang: 'uk' | 
         {serverWeg ? <CloudOff aria-hidden='true' /> : <Database aria-hidden='true' />}
         <small>
           {serverWeg
-            ? <span>{t('Режим «При отриманні» зараз недоступний: сервер не відповів.', 'De stand «Bij ontvangst» is nu niet beschikbaar: de server antwoordde niet.')}</span>
+            ? <span>{t('Режим «Завантажити наперед» зараз недоступний: сервер не відповів.', 'De stand «Vooraf ophalen» is nu niet beschikbaar: de server antwoordde niet.')}</span>
             : !vr.geladen
               ? <span aria-hidden='true'>…</span>
               : vr.aantal > 0

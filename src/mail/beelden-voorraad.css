@@ -11,7 +11,7 @@
    рядок сховища. */
 
 /* ---- het paneel in de kop: vaste breedte (geen sprong bij het wisselen van zone of stand); past het niet in een laag venster,
-   dan schuift het paneel zelf. 376 px: «При отриманні» past dan op één regel in zijn tegel, met lucht links en rechts ---- */
+   dan schuift het paneel zelf. 376 px: «Завантажити наперед» staat dan in twee regels in zijn tegel, met lucht links en rechts ---- */
 html body .lz-weergave-paneel {
   width: min(376px, calc(100vw - 24px));
   max-width: none;
@@ -229,7 +229,7 @@ html body .lz-beelden-keuze input {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* de tegel: pictogram, naam, merk. De naam staat op één regel waar dat past; waar niet (telefoon, «При отриманні») breekt hij in
+/* de tegel: pictogram, naam, merk. De naam staat op één regel waar dat past; waar niet («Завантажити наперед») breekt hij in
    tweeën en blijven de drie tegels even breed en even hoog */
 html body .lz-beelden-keuze input + span {
   position: relative;
@@ -380,7 +380,7 @@ html body .lz-beelden-keuze input:focus-visible + span {
   outline-offset: 2px;
 }
 
-/* de server antwoordt niet: «При отриманні» kan nu niet — gestippelde rand, gedempte inhoud, de aanwijzer «niet toegestaan»
+/* de server antwoordt niet: «Завантажити наперед» kan nu niet — gestippelde rand, gedempte inhoud, de aanwijzer «niet toegestaan»
    (de reden staat in de regel eronder en in de knopinfo). De invoer zelf vangt geen aanwijzer meer: zo krijgt de tegel (het label)
    de aanwijzer en ziet de knopinfo-laag hem ook in browsers die op een uitgeschakeld veld geen gebeurtenissen geven. */
 html body .lz-beelden-keuze input:disabled {

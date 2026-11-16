@@ -194,7 +194,7 @@ export async function main(): Promise<number> {
       /<span class="lz-beelden-voorraad" data-beelden-voorraad="true" data-staat="laden"><small><span aria-hidden="true">…<\/span><\/small><\/span>/.test(kaal) && !beeldBlok.includes('lz-beelden-wis'), kaal.slice(kaal.indexOf('lz-beelden-voorraad') - 20));
     check('D плитки: під назвою мітка одним словом («типово» · «приватно» · «! ризик» — знак «!» у мітці, не в кутку); на обраній плитці галочка (не лише колір); підказка наслідку — data-tooltip (шар підказок сайту), не title: одна на весь ряд плиток, ліворуч від панелі (не поверх сусідніх плиток і рядка стану), з текстом обраного режиму; у «Завжди» вона починається з «!»',
       /<label data-keuze="vragen"><input[^>]*checked=""[^>]*\/><span><span class="lz-beelden-naam">Питати<\/span><span class="lz-beelden-merk">типово<\/span>✓<\/span><\/label>/.test(beeldBlok.replace(/<svg[^>]*lz-beelden-vink[\s\S]*?<\/svg>/g, '✓').replace(/<svg[\s\S]*?<\/svg>/g, ''))
-      && kaal.includes('<span class="lz-beelden-naam">При отриманні</span><span class="lz-beelden-merk">приватно</span></span></label>')
+      && kaal.includes('<span class="lz-beelden-naam">Завантажити наперед</span><span class="lz-beelden-merk">приватно</span></span></label>')
       && kaal.includes('<span class="lz-beelden-naam">Завжди</span><span class="lz-beelden-merk"><i class="lz-beelden-let" aria-hidden="true">!</i>ризик</span></span></label>')
       && (beeldBlok.match(/lz-beelden-vink/g) || []).length === 1 && !/<label[^>]* (?:title|data-tooltip)=/.test(beeldBlok)
       && /<span class="lz-beelden-keuze" data-tooltip="Зображення приховані, доки не натиснете «Показати»: [^"]+" data-tooltip-placement="left"><label data-keuze="vragen">/.test(beeldBlok)
@@ -218,21 +218,26 @@ export async function main(): Promise<number> {
         wkTip.includes('const TIP_RUIMTE_LINKS = 317;') && wkTip.includes("window.addEventListener('pointerover', zet, true);") && wkTip.includes("window.addEventListener('focusin', zet, true);") && wkTip.includes("window.removeEventListener('pointerover', zet, true); window.removeEventListener('focusin', zet, true);")
         && wkTip.includes("if ((e as PointerEvent).pointerType === 'touch' || !(e.target instanceof Element) || !r.contains(e.target)) return;")
         && wkTip.includes("if (r.getBoundingClientRect().left < TIP_RUIMTE_LINKS) r.removeAttribute('data-tooltip');") && wkTip.includes("else if (tip) r.setAttribute('data-tooltip', tip);")
-        && wkTip.includes("return b.id === 'ontvangst' && serverWeg\n      ? t('Зараз недоступно: сервер не відповів, тож увімкнути «При отриманні» не можна. Поточний режим не змінено — спробуйте пізніше.', 'Nu niet beschikbaar: de server antwoordde niet, dus «Bij ontvangst» kan niet aan. De huidige stand blijft — probeer het later opnieuw.')")
+        && wkTip.includes("return b.id === 'ontvangst' && serverWeg\n      ? t('Зараз недоступно: сервер не відповів, тож увімкнути «Завантажити наперед» не можна. Поточний режим не змінено — спробуйте пізніше.', 'Nu niet beschikbaar: de server antwoordde niet, dus «Vooraf ophalen» kan niet aan. De huidige stand blijft — probeer het later opnieuw.')")
         && !lees('src/ViewportKnopinfoLaag.tsx').includes('lz-beelden'));
     }
     check('D «Докладніше» (згорнуте; для сенсорних екранів без підказок): три режими по одному короткому рядку наслідку й тиха мітка «цей пристрій» / «усі пристрої»',
       /<details class="lz-beelden-meer"><summary><span>Докладніше<\/span><\/summary><ul>/.test(kaal)
       && kaal.includes('<li data-keuze="vragen"><span><b>Питати</b><em>цей пристрій</em><span>Приховані, доки самі не покажете</span></span></li>')
-      && kaal.includes('<li data-keuze="ontvangst"><span><b>При отриманні</b><em>усі пристрої</em><span>Сервер зберігає наперед — відправник не бачить, коли ви читаєте</span></span></li>')
+      && kaal.includes('<li data-keuze="ontvangst"><span><b>Завантажити наперед</b><em>усі пристрої</em><span>Сервер завантажує їх, щойно лист надійшов, ще до відкриття — відправник не бачить, коли ви читаєте</span></span></li>')
       && kaal.includes('<li data-keuze="altijd"><span><b>Завжди</b><em>цей пристрій</em><span>Відправник бачить, коли ви читаєте</span></span></li>'), kaal.slice(kaal.indexOf('lz-beelden-meer') - 20, kaal.indexOf('lz-beelden-voorraad')));
     const nlBlok = (/<fieldset class="lz-beelden"[\s\S]*?<\/fieldset>/.exec(kader(createElement(WeergaveBlok, { lang: 'nl' }), 'nl')) || [''])[0].replace(/<svg[\s\S]*?<\/svg>/g, '');
     check('D nl: мітки «standaard» · «privé» · «risico», «Meer uitleg» з «dit apparaat» / «alle apparaten»',
-      ['<span class="lz-beelden-merk">standaard</span>', '<span class="lz-beelden-merk">privé</span>', '!</i>risico</span>', '<summary><span>Meer uitleg</span></summary>', '<em>dit apparaat</em><span>Verborgen tot u ze zelf toont</span>', '<em>alle apparaten</em><span>De server bewaart ze vooraf — de afzender ziet niet wanneer u leest</span>', '<em>dit apparaat</em><span>De afzender ziet wanneer u leest</span>'].every((x) => nlBlok.includes(x)), nlBlok);
+      ['<span class="lz-beelden-merk">standaard</span>', '<span class="lz-beelden-merk">privé</span>', '!</i>risico</span>', '<summary><span>Meer uitleg</span></summary>', '<em>dit apparaat</em><span>Verborgen tot u ze zelf toont</span>', '<b>Vooraf ophalen</b><em>alle apparaten</em><span>De server haalt ze op zodra de brief binnenkomt, nog vóór het openen — de afzender ziet niet wanneer u leest</span>', '<em>dit apparaat</em><span>De afzender ziet wanneer u leest</span>'].every((x) => nlBlok.includes(x)), nlBlok);
     const wkBron = lees('src/mail/WeergaveKeuze.tsx');
+    check('D MAILBEELD-004: режим називається «Завантажити наперед» / «Vooraf ophalen» — старої двозначної назви «При отриманні» / «Bij ontvangst» немає ні в інтерфейсі, ні в сповіщеннях',
+      !/'[^'\n]*(?:При отриманні|Bij ontvangst|при отриманні|bij ontvangst)[^'\n]*'/.test(wkBron + lees('src/mail/beelden-voorraad.ts'))
+      && wkBron.includes("uk: 'Завантажувати наперед (приватно)', nl: 'Vooraf ophalen (privé)', kortUk: 'Завантажити наперед', kortNl: 'Vooraf ophalen',")
+      && lees('src/mail/beelden-voorraad.ts').includes("t('Зображення нових листів тепер завантажуються наперед, щойно лист надходить',")
+      && lees('src/mail/beelden-voorraad.ts').includes("«Вигляд» → «Зображення»") && !lees('src/mail/beelden-voorraad.ts').includes('«Зовнішні зображення»'));
     check('D сховище, тексти: порожній стан, черга коротким значком із поясненням про сховище ключів, помилка сервера — речення з іменником; нерозривний пробіл у «37 МБ»',
       wkBron.includes("t('Ще нічого не збережено', 'Nog niets bewaard')") && wkBron.includes('t(`У черзі: ${vr.wachtrij}`, `In wachtrij: ${vr.wachtrij}`)') && /data-tooltip=\{tip\(t\(`Листів у черзі: \$\{vr\.wachtrij\}\. Вони чекають, доки відкриється сховище ключів/.test(wkBron)
-      && wkBron.includes("t('Режим «При отриманні» зараз недоступний: сервер не відповів.', 'De stand «Bij ontvangst» is nu niet beschikbaar: de server antwoordde niet.')")
+      && wkBron.includes("t('Режим «Завантажити наперед» зараз недоступний: сервер не відповів.', 'De stand «Vooraf ophalen» is nu niet beschikbaar: de server antwoordde niet.')")
       && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('uk', 38_400_000) === '37\u00a0МБ' && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('nl', 1_500_000) === '1,4\u00a0MB' && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('nl', 2048) === '2\u00a0kB');
     check('D поведінка: відмова сервера на «При отриманні» повертає попередній локальний режим; кнопка стирання під час роботи — aria-disabled (фокус не падає на <body>); клік у тіло листа (iframe) закриває панель',
       wkBron.includes("if (b === 'ontvangst') { const vorig = lokaal; zetLokaal('vragen'); void zetBijOntvangst(lang, true).then((ok) => { if (!ok) zetLokaal(vorig); }); return; }")
@@ -298,10 +303,11 @@ export async function main(): Promise<number> {
     // Afwerking 2 (16.11.2026, na de tweede controle).
     {
       const wk2 = lees('src/mail/WeergaveKeuze.tsx'), laag = lees('src/ViewportKnopinfoLaag.tsx');
+      // MAILBEELD-004 (16.11.2026): grens 66 tekens, elk deel ≤ 34 — op de stand gemeten (320 px, uk): de nieuwe zin over «Завантажити наперед» staat in 2 regels
       const nuUk = [...wk2.matchAll(/nuUk: '([^']+)'/g)].map((m) => m[1].replace(/\\u00a0/g, '\u00a0'));
       check('D рядок «що зараз» (uk): три короткі речення — кожне вміщається у два рядки й на екрані 320 px (не лишається порожнього третього рядка під коротшими); наслідок для приватності названо в кожному',
-        nuUk.length === 3 && nuUk.every((z) => z.length <= 60 && z.includes('\u00a0— відправник ') && z.split('\u00a0— ').every((d) => d.length <= 34))
-        && nuUk[0] === 'Приховані, доки не покажете\u00a0— відправник нічого не бачить.' && nuUk[1] === 'Сервер зберігає їх наперед\u00a0— відправник не бачить відкриття.' && nuUk[2] === 'Завантажуються під час відкриття\u00a0— відправник це бачить.', nuUk.join(' | '));
+        nuUk.length === 3 && nuUk.every((z) => z.length <= 66 && z.includes('\u00a0— відправник ') && z.split('\u00a0— ').every((d) => d.length <= 34))
+        && nuUk[0] === 'Приховані, доки не покажете\u00a0— відправник нічого не бачить.' && nuUk[1] === 'Сервер завантажує їх до відкриття\u00a0— відправник не бачить читання.' && nuUk[2] === 'Завантажуються під час відкриття\u00a0— відправник це бачить.', nuUk.join(' | '));
       check('D рядок «що зараз»: перед тире — нерозривний пробіл (рядок ніколи не починається з «—»), обидві мови; рядки врівноважені (text-wrap: balance — без самотнього слова в другому рядку)',
         [...wk2.matchAll(/nu(?:Uk|Nl): '([^']+)'/g)].length === 6 && [...wk2.matchAll(/nu(?:Uk|Nl): '([^']+)'/g)].every((m) => m[1].includes('\\u00a0— ') && !m[1].includes(' — '))
         && /html body \.lz-beelden-nu > span \{\s*grid-area: 1 \/ 2;\s*min-width: 0;\s*text-wrap: balance;\s*\}/.test(lees('src/mail/beelden-voorraad.css')));
