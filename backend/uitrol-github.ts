@@ -135,6 +135,46 @@ async function gh(token: string, url: string, init: { method?: string; body?: un
 }
 const httpFout = (status: number) => new GithubFout(`GITHUB_HTTP_${status}`, status, status >= 500 || status === 429);
 
+// ------------------------------------------------------------------------------------------------ afwijzing op GitHub (SEC-PAKKET-001)
+// Власник (16.11.2026): «причина відхилення має автоматично бути і на GitHub, щоб розуміти, чому оновлення не встановлено, бо GitHub
+// теж джерело». Тому після відхилення сайт пише коментар до коміту пакета (BRON-COMMIT) у сховищі випусків: версія, причина, хто
+// відхилив і коли. Коментар до коміту видно і на сторінці коміту, і в PR, до якого цей коміт належить. Сховище публічне, тому e-mail
+// показано частково (перша літера й домен); повні дані лишаються в історії сайту. Помилка GitHub не скасовує відхилення: результат
+// (посилання або код) зберігається в записі пропозиції. Токен — той самий, що й для публікації випусків; він не потрапляє в текст чи журнал.
+// Afwijzing automatisch als commit-commentaar op GitHub: versie, reden, wie en wanneer; e-mail half gemaskeerd (publieke repository).
+export const maskeerEmail = (e: string) => { const m = /^([^@\s]+)@([^@\s]+)$/.exec(e.trim()); return m ? `${[...m[1]][0]}•••@${m[2]}` : ''; };
+export function afwijzingTekst(a: { versie: string; reden: string; naam: string; email: string; tijd: string }): string {
+  const wie = [a.naam, maskeerEmail(a.email)].filter(Boolean).join(', ') || 'власник / eigenaar';
+  const schoon = (t: string) => t.replace(/[\r\n]+/g, ' ').replace(/[<>]/g, '').replace(/@(?=[A-Za-z0-9-])/g, '@\u200b').slice(0, 500);
+  return [
+    `### ⛔ Оновлення \`${a.versie}\` відхилено · Update \`${a.versie}\` afgewezen`,
+    '',
+    `**Причина · Reden:** ${schoon(a.reden)}`,
+    '',
+    `**Відхилив · Afgewezen door:** ${schoon(wie)}`,
+    `**Коли · Wanneer:** ${a.tijd}`,
+    '',
+    'Пакет не встановлено. Повні дані — в історії оновлень сайту. · Het pakket is niet geïnstalleerd. Volledige gegevens staan in de updategeschiedenis van de site.',
+    '',
+    '<sub>Автоматичне повідомлення Mijn Ruimte · Automatisch bericht van Mijn Ruimte</sub>',
+  ].join('\n');
+}
+export type AfwijzingGithub = { stand: 'ok'; url: string; repo: string } | { stand: 'overgeslagen' | 'fout'; code: string; repo?: string };
+export async function afwijzingOpGithub(eigenaarId: string, a: { versie: string; commit: string; reden: string; naam: string; email: string; tijd: string }, standaardRepo: string): Promise<AfwijzingGithub> {
+  if (!COMMIT40.test(a.commit)) return { stand: 'overgeslagen', code: 'GEEN_COMMIT' };
+  let repo = '';
+  try { repo = (await instellingenVan(eigenaarId)).repo || standaardRepo; } catch { repo = standaardRepo; }
+  if (!REPO.test(repo)) return { stand: 'overgeslagen', code: 'GEEN_REPO' };
+  const tok = await tokenOf(eigenaarId).catch(() => null);
+  if (!tok) return { stand: 'overgeslagen', code: 'GEEN_TOKEN', repo };
+  try {
+    const r = await gh(tok.token, `${API}/repos/${repo}/commits/${a.commit}/comments`, { method: 'POST', body: { body: afwijzingTekst(a) } });
+    if (r.status !== 201) return { stand: 'fout', code: `GITHUB_HTTP_${r.status}`, repo };
+    const url = String(r.data?.html_url || '');
+    return { stand: 'ok', url: /^https:\/\/github\.com\//.test(url) ? url.slice(0, 300) : `https://github.com/${repo}/commit/${a.commit}`, repo };
+  } catch (e) { return { stand: 'fout', code: e instanceof GithubFout ? e.code : 'GITHUB_NETWERK', repo }; }
+}
+
 async function eenPoging(token: string, repo: string, run: RunRij) {
   const tag = `uitrol-${run.versie}`;
   // Idempotent: bestaat de release al (vorige poging, of handmatig), dan die gebruiken.

@@ -33,7 +33,8 @@ import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
 import { geinstalleerdeRelease, vraagtRisicoBevestiging } from './uitrol-risico';
 import { VereistenFout, proefAanvragen, proefVoorArchief, standaardOmgeving, vereistenStand, vereistenStarten } from './uitrol-vereisten';
-import { uitrolArchiefToken } from './uitrol-github';
+import { afwijzingOpGithub, uitrolArchiefToken } from './uitrol-github';
+import { ONTWIKKELARCHIEF_REPO } from '../shared/ontwikkelarchief';
 import { releaseInfo } from './uitgave-info';
 import { diagnose, liveStand, runDetail, runRegels, runsLijst, runsSynchroniseren } from './uitrol-runs';
 import { huidigeStand } from './uitrol-bron';
@@ -776,7 +777,12 @@ export async function afwijzen(eigenaar: Eigenaar, id: unknown, redenRuw: unknow
   const ontvangers = [...new Set([eigenaar.id, String(v.account_id ?? '')].map((x) => x.trim()).filter((x) => x && x !== 'null'))];
   for (const ontvanger of ontvangers) await meld(ontvanger, 'uitrol', titel, tekstMelding, 'https://admin.tarasevych.com/updates').catch((err) => console.error('[uitrol-goedkeuring] melding afwijzing:', (err as Error).message));
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(id), 'afgewezen', eigenaar.id)).catch(() => undefined);
-  return { id: String(id), status: 'afgewezen', reden, door };
+  // Автоматично й на GitHub (власник 16.11.2026: «GitHub також джерело»): коментар до коміту пакета. Результат — у записі пропозиції.
+  const github = await afwijzingOpGithub(eigenaar.id, { versie, commit: String(v.bron_commit || ''), reden, naam: door.naam, email: door.email, tijd }, ONTWIKKELARCHIEF_REPO)
+    .catch(() => ({ stand: 'fout' as const, code: 'GITHUB_ONBEKEND' }));
+  await sys().query(`UPDATE app.uitrol_voorstellen SET uitkomst = uitkomst || jsonb_build_object('github', $2::jsonb) WHERE id = $1`, [String(id), JSON.stringify(github)]).catch(() => undefined);
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_afwijzing_github', github.stand === 'ok' ? 'success' : 'failure', { voorstel: String(id), versie, ...github });
+  return { id: String(id), status: 'afgewezen', reden, door, github };
 }
 
 // ------------------------------------------------------------------------------------------------ stoppen (UITROL-001)

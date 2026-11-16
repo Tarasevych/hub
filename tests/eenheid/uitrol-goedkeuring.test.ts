@@ -12,6 +12,7 @@ import { closePool, getPool } from '../../server/platform/pg';
 import { bevestig, nieuwePasskey, registreer, type NepPasskey } from './hulp/nep-toegangssleutel';
 import { checker } from './hulp/nep-google';
 import { registreerMelder } from '../../backend/melder';
+import { afwijzingTekst, maskeerEmail, setUitrolGithubDeps } from '../../backend/uitrol-github';
 
 const HULP = resolve('deploy/goedkeuring/goedkeur-hulp.mjs');
 const UITROL = resolve('deploy/uitrol/mijn-ruimte-uitrol.sh');
@@ -548,10 +549,23 @@ async function appTests(basis: string, check: Check) {
       check('afwijzen met reden > 500 tekens → 400 AFWIJS_REDEN_TE_LANG', lang.status === 400 && lang.data?.error === 'AFWIJS_REDEN_TE_LANG');
       const meldingen: Array<{ wie: string; soort: string; titel: string; tekst: string }> = [];
       registreerMelder(async (wie, _e, soort, titel, tekst) => { meldingen.push({ wie, soort, titel, tekst }); });
+      const ghVerzoeken: Array<{ url: string; methode: string; body: any; auth: string }> = [];
+      setUitrolGithubDeps({ token: async () => ({ token: 'test-token-niet-echt', doel: 'github-uitrol', naam: 'x' }),
+        fetch: (async (url: string, init: any) => { ghVerzoeken.push({ url: String(url), methode: init?.method, body: JSON.parse(init?.body || 'null'), auth: String(init?.headers?.Authorization || '') });
+          return new Response(JSON.stringify({ html_url: 'https://github.com/Tarasevych/hub/commit/abc#commitcomment-1' }), { status: 201 }); }) as any });
       const af = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'nee' });
+      setUitrolGithubDeps(null);
       registreerMelder(async () => undefined);
+      const gv = ghVerzoeken[0];
+      check('afwijzing automatisch op GitHub: commentaar bij de commit van het pakket met versie, reden en (half gemaskeerde) e-mail',
+        ghVerzoeken.length === 1 && gv.methode === 'POST' && /^https:\/\/api\.github\.com\/repos\/Tarasevych\/hub\/commits\/[0-9a-f]{40}\/comments$/.test(gv.url)
+        && gv.body.body.includes('20261008-150003') && gv.body.body.includes('nee') && !gv.body.body.includes(`${users[OWNER].id}@example.test`) && gv.body.body.includes('•••@') && gv.auth === 'Bearer test-token-niet-echt', JSON.stringify(gv));
+      check('GitHub-resultaat (link) bewaard bij het voorstel en teruggegeven', af.data?.github?.stand === 'ok' && String(af.data.github.url).startsWith('https://github.com/'));
+      check('afwijzingTekst: @vermelding en HTML onschadelijk, e-mail gemaskeerd', !afwijzingTekst({ versie: 'v', reden: 'zie @iemand <script>', naam: '', email: 'pavlo@voorbeeld.test', tijd: 't' }).includes('<script>')
+        && !/@iemand/.test(afwijzingTekst({ versie: 'v', reden: 'zie @iemand', naam: '', email: '', tijd: 't' })) && maskeerEmail('pavlo@voorbeeld.test') === 'p•••@voorbeeld.test');
       check('app: afwijzen door de eigenaar met één woord als reden', af.data?.status === 'afgewezen' && af.data?.reden === 'nee');
       const rij = (await sys.query('SELECT beslist_door, uitkomst FROM app.uitrol_voorstellen WHERE id = $1', [u2.id])).rows[0];
+      check('GitHub-link staat ook in de bewaarde uitkomst (geschiedenis)', rij?.uitkomst?.github?.stand === 'ok' && String(rij.uitkomst.github.url).includes('commitcomment'));
       check('afwijzing bewaard met reden, account (id + e-mail) en tijd; tekst voor de geschiedenis in uk en nl',
         rij?.uitkomst?.reden === 'nee' && rij.uitkomst.door?.id === users[OWNER].id && rij.uitkomst.door?.email === `${users[OWNER].id}@example.test` && !!rij.uitkomst.tijd
         && rij.uitkomst.uk.includes('Відхилено: nee') && rij.uitkomst.nl.includes('Afgewezen: nee') && rij.beslist_door === `${users[OWNER].id}@example.test`, JSON.stringify(rij));

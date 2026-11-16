@@ -1,6 +1,6 @@
 // Pakketten die op uw goedkeuring wachten: wie bereidde voor, wat verandert, tests; goedkeuren = WebAuthn-passkey (de server en root controleren opnieuw).
 import { useState } from 'react';
-import { Fingerprint, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, Fingerprint, ShieldCheck, X } from 'lucide-react';
 import { foutTekst } from './fouten';
 import Voorcontrole from './Voorcontrole';
 import CommitTekst from './CommitTekst';
@@ -50,10 +50,10 @@ export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goe
         <label htmlFor={`afwijs-${v.id}`}>{tr(lang, 'Причина відхилення (обов’язково, можна одним словом)', 'Reden van afwijzen (verplicht, één woord mag)')}</label>
         <textarea id={`afwijs-${v.id}`} rows={2} maxLength={500} required aria-required='true' aria-describedby={`afwijs-uitleg-${v.id}`} value={afwijs.reden} onChange={(e) => setAfwijs({ id: v.id, reden: e.target.value })} disabled={!!busy}
           placeholder={tr(lang, 'Наприклад: «не замовляв», «незрозумілий rm -rf», «чекаю пояснення»', 'Bijvoorbeeld: «niet besteld», «onduidelijke rm -rf», «wacht op uitleg»')} />
-        <p className='ut-hint' id={`afwijs-uitleg-${v.id}`}>{tr(lang, 'Причину збережемо в історії оновлень разом із вашим іменем і e-mail та автоматично надішлемо в центр сповіщень вам і автору пакета.', 'De reden wordt in de updategeschiedenis bewaard met uw naam en e-mail en automatisch in het meldingencentrum gezet, voor u en de maker van het pakket.')}</p>
+        <p className='ut-hint' id={`afwijs-uitleg-${v.id}`}>{tr(lang, 'Причину збережемо в історії оновлень із вашим іменем і e-mail, надішлемо в центр сповіщень вам і автору пакета та опублікуємо коментарем біля коміту на GitHub (e-mail там частково приховано).', 'De reden wordt bewaard in de updategeschiedenis met uw naam en e-mail, gemeld aan u en de maker van het pakket en als commentaar bij de commit op GitHub geplaatst (e-mail daar half verborgen).')}</p>
         <div className='ut-acties'>
           <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy || !afwijsRedenGeldig(afwijs.reden)} title={afwijsRedenGeldig(afwijs.reden) ? undefined : tr(lang, 'Спершу напишіть причину — хоч одне слово.', 'Schrijf eerst een reden — al is het één woord.')} onClick={() => { afwijzen(v, afwijs.reden.replace(/\s+/g, ' ').trim().slice(0, 500)); setAfwijs(null); }}><X aria-hidden='true' />{tr(lang, 'Відхилити версію', 'Versie afwijzen')}</button>
-          <button type='button' className='ut-knop' disabled={!!busy} onClick={() => setAfwijs(null)}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
+          <button type='button' className='ut-knop' disabled={!!busy} onClick={() => setAfwijs(null)} title={tr(lang, 'Закрити поле причини й нічого не відхиляти: пакет і далі чекатиме вашого рішення.', 'Het redenveld sluiten zonder iets af te wijzen: het pakket blijft op uw beslissing wachten.')}><ArrowLeft aria-hidden='true' />{tr(lang, 'Назад, не відхиляти', 'Terug, niet afwijzen')}</button>
         </div>
       </div>}
       {!klaar && <p className='ut-hint'>{!data.schakelaar ? foutTekst(lang, 'PASSKEY_GOEDKEURING_UIT') : !data.passkeys.length ? foutTekst(lang, 'GEEN_PASSKEY') : tr(lang, 'Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.')}</p>}

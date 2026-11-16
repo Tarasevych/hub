@@ -186,6 +186,9 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
         <dt>{tr(lang, 'Підготував', 'Voorbereid door')}</dt><dd>{it.voorstel.voorbereider} · {datumLang(lang, it.voorstel.aangemaaktOp)}</dd>
         {it.voorstel.beslistDoor && <><dt>{tr(lang, 'Вирішив', 'Besloten door')}</dt><dd>{[it.voorstel.uitkomst?.door?.naam, it.voorstel.uitkomst?.door?.email || it.voorstel.beslistDoor].filter(Boolean).join(' · ')} · {datumLang(lang, it.voorstel.beslistOp)}</dd></>}
         {(it.voorstel.uitkomst?.reden || samenvatting) && <><dt>{tr(lang, 'Причина', 'Reden')}</dt><dd>{it.voorstel.uitkomst?.reden || samenvatting}</dd></>}
+        {it.voorstel.uitkomst?.github && <><dt>GitHub</dt><dd>{it.voorstel.uitkomst.github.stand === 'ok' && it.voorstel.uitkomst.github.url?.startsWith('https://github.com/')
+          ? <a href={it.voorstel.uitkomst.github.url} target='_blank' rel='noopener noreferrer' title={tr(lang, 'Коментар із причиною відхилення біля коміту пакета на GitHub', 'Commentaar met de reden van afwijzen bij de commit van het pakket op GitHub')}>{tr(lang, 'Причину опубліковано', 'Reden gepubliceerd')}</a>
+          : tr(lang, `Не опубліковано (${it.voorstel.uitkomst.github.code || '—'})`, `Niet gepubliceerd (${it.voorstel.uitkomst.github.code || '—'})`)}</dd></>}
         <dt>{tr(lang, 'Коміт', 'Commit')}</dt><dd><CommitTekst lang={lang} commit={it.voorstel.pakketMeta?.commit || it.voorstel.commit} /></dd>
         <dt>{tr(lang, 'Розмір', 'Grootte')}</dt><dd>{mb(it.voorstel.bytes)}</dd>
         {it.voorstel.voorcontrole && <><dt>{tr(lang, 'Перевірка сайту', 'Voorcontrole')}</dt><dd><Voorcontrole lang={lang} v={it.voorstel.voorcontrole} /></dd></>}
