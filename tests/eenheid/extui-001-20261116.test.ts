@@ -168,6 +168,14 @@ export async function main(): Promise<number> {
     check('manifest: AI-adressen alleen in optional_host_permissions (precies de vijf sites)', JSON.stringify(manifest.optional_host_permissions) === JSON.stringify(AI_ORIGINS), JSON.stringify(manifest.optional_host_permissions));
     const vast = JSON.stringify([manifest.host_permissions, manifest.content_scripts]);
     check('manifest: host_permissions en content_scripts noemen geen AI-site (alleen tarasevych.com)', !TS.AI_SITE_HOSTS.some((h) => vast.includes(h)) && (manifest.host_permissions as string[]).every((p) => /tarasevych\.com/.test(p)));
+    // Швидкість на телефоні: сім вкладених сіток-обгорток сторінки «Агенти» мають явну колонку minmax(0,1fr) (інакше розкладка ~1,5 с).
+    const cssPagina = readFileSync(join(W, 'src/agenten/agenten-pagina.css'), 'utf8');
+    check('telefoon: de geneste rasters van de agentenpagina hebben een vaste kolom minmax(0,1fr) (geen meting van de inhoud per niveau)',
+      /\.ag-pagina,\.ag-pagina \.ag-paneel,\.ag-pagina \.ag-secties,\.ag-pagina \.ag-sectie,\.ag-pagina \.ag-blok-inhoud,\.ag-pagina \.ag-tab\{grid-template-columns:minmax\(0,1fr\)\}/.test(cssPagina));
+    const uiBron = readFileSync(join(W, 'src/BrowserExtensiePaneel.tsx'), 'utf8');
+    check('telefoon: «Тест» is een korte knop mét uitleg (pictogram op smal scherm), «Стоп» houdt zijn uitleg',
+      /test: <IconButton key='test' kort .*?title=\{local \? tr\('Тест: перевіряє/.test(uiBron) && readFileSync(join(W, 'src/mcp-ui.tsx'), 'utf8').includes("kort ? ' is-kort' : ''")
+      && readFileSync(join(W, 'src/extensie/extensie-ontwerp.css'), 'utf8').includes('.hub-actions>.hub-btn.is-kort'));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

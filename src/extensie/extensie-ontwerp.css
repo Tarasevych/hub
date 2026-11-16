@@ -91,15 +91,29 @@ details.ext-klap .ag-agentkleuren .ag-blok-titel{display:none}
 .eo-ai-sites .gevaar-teken{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--warn);color:var(--warn);font-weight:800;font-size:.75rem}
 .eo-ai-sites .eo-uitleg{display:block;grid-column:1/-1;color:var(--muted);line-height:1.4;margin:2px 0 6px;max-width:75ch}
 
-/* EXTUI-001 · телефон: шість вкладених рамок з’їдали ширину, тож блок «Ваші сторінки» / «Сайти ШІ» стискався до ~170 px і рядки
-   вилазили за рамку. Картка розділу лишається; внутрішні підкладки стають тонкими, а внутрішні рамки зникають.
-   Telefoon: zes geneste kaders aten de breedte op; de sectiekaart blijft, de binnenste opvulling wordt dun. Laatste laag in het bestand. */
+/* EXTUI-001 · телефон. Було: «картка в картці в картці» (шість вкладених рамок), блок доступу завширшки ~170 px, три кнопки
+   стовпчиком. Стало: картка розділу й картка браузера лишаються, усе всередині пласке; «Тест» і «Стоп» — піктограми з підказками
+   в одному ряду з головною дією. Laatste laag in het bestand (anders winnen latere regels).
+   Telefoon: de sectiekaart en de browserkaart blijven, alles daarbinnen is vlak; «Test» en «Stop» zijn pictogrammen met uitleg. */
 @media (max-width:560px){
-  html .ag-tab.ag-ext .ag-blok{padding-inline:8px}
-  html .ag-tab.ag-ext .ag-kaart.ag-ext-slot{padding-inline:8px}
-  html .ag-tab.ag-ext .ag-ext-slot .hub-agent.mcp-browser{padding-inline:0;border-inline:0;background:transparent;box-shadow:none}
-  html .ag-tab.ag-ext .ag-ext-slot section.eo{padding-inline:0;border-inline:0;background:transparent;box-shadow:none}
-  html .ag-tab.ag-ext .ag-ext-slot .eo-form{padding-inline:10px}
+  html .ag-pagina .ag-blok-hoofd>.ag-blok-inhoud:has(>.ag-tab.ag-ext){padding-inline:10px}
+  html .ag-tab.ag-ext>.ag-blok{padding-inline:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-kaart.ag-ext-slot{padding:12px 10px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-agent.mcp-browser,
+  html .ag-tab.ag-ext .ag-ext-slot section.eo,
+  html .ag-tab.ag-ext .ag-ext-slot .ext-state,
+  html .ag-tab.ag-ext .ag-ext-slot .eo-form{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions{display:flex;flex-wrap:wrap;gap:8px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>*{width:auto;flex:1 1 150px;min-width:0}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"]):not(:has(.ag-melding)){flex:0 0 44px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop[data-ai-stop="vraag"],
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:has(.ag-melding){flex:1 1 100%}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"])>.hub-btn{width:44px;min-width:44px;padding-inline:0;justify-content:center}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.hub-btn.is-kort>.hub-btn-icon~span,
+  html .ag-tab.ag-ext .ag-ext-slot .hub-actions>.ai-stop:not([data-ai-stop="vraag"])>.hub-btn>.hub-btn-icon~span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  html .ag-tab.ag-ext .ag-ext-profiel{font-size:.9rem;line-height:1.45;padding:12px}
   html .ag-tab.ag-ext .eo-domeinen{padding-inline:8px}
   html .ag-tab.ag-ext .eo-vink code{overflow-wrap:anywhere;min-width:0}
 }

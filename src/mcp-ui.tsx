@@ -127,11 +127,13 @@ export function StatusDot({ state, label }: { state: 'on' | 'wait' | 'off' | 'ba
 }
 
 /** Soort kleine knop met pictogram en tekst (de tekst blijft zichtbaar; op een smal scherm verdwijnt alleen de ruimte). */
-export function IconButton({ icon, children, onClick, disabled, tone = 'default', title, type = 'button' }: {
-  icon: ReactNode; children: ReactNode; onClick?: () => void; disabled?: boolean; tone?: 'default' | 'primary' | 'danger'; title?: string; type?: 'button' | 'submit';
+// kort: на вузькому екрані кнопка може стати піктограмою (напис лишається для читача екрана, пояснення — у title).
+// kort: op een smal scherm mag de knop een pictogram worden (het opschrift blijft voor de schermlezer, de uitleg staat in title).
+export function IconButton({ icon, children, onClick, disabled, tone = 'default', title, type = 'button', kort = false }: {
+  icon: ReactNode; children: ReactNode; onClick?: () => void; disabled?: boolean; tone?: 'default' | 'primary' | 'danger'; title?: string; type?: 'button' | 'submit'; kort?: boolean;
 }) {
   return (
-    <button type={type} className={`hub-btn tone-${tone}`} onClick={onClick} disabled={disabled} title={title}>
+    <button type={type} className={`hub-btn tone-${tone}${kort ? ' is-kort' : ''}`} onClick={onClick} disabled={disabled} title={title}>
       <span className='hub-btn-icon' aria-hidden='true'>{icon}</span>
       <span>{children}</span>
     </button>
