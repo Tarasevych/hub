@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "ELDERS-001",
+  "agent": "claude",
+  "tak": "feature/elders-001-20261116-192500",
+  "basisCommit": "bf1571454017f1154fc0fb8625a93cdb17f6a073",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-16T18:43:58.079Z",
+  "bijgewerkt": "2026-11-16T18:43:58.081Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
