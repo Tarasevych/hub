@@ -64,7 +64,7 @@ const KEUZE = [
   { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
   // 16.11.2026: нові агенти каталогу (Cline, Devin, OpenCode) — теж справжні знаки з того самого пакета CC0, а не літери на плитці.
   // Windsurf і AutoClaw немає в жодному відкритому пакеті: їхні файли взято з власних сайтів (soort 'officiele-site', --ua).
-  { sleutel: 'cline', pakket: '@iconify-json/logos', icoon: 'cline-icon' },
+  // Cline: НЕ з пакета — там старіший (округліший) малюнок; чинний знак узято з cline.bot/assets/branding/logos/cline-icon-dark.svg.
   { sleutel: 'devin', pakket: '@iconify-json/logos', icoon: 'devin' },
   // OpenCode: НЕ з пакета — світлий варіант знака на білій плитці читається як порожній прямокутник; узято піктограму застосунку
   // з opencode.ai/apple-touch-icon-v3.png. NL: de lichte variant uit het pakket is op een witte plaat onleesbaar.

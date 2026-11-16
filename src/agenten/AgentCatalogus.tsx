@@ -15,6 +15,11 @@ type Tr = (uk: string, nl: string) => string;
 type Plek = 'browser' | 'pc' | 'terminal' | 'ide';
 
 /** Één zin «wat is het» + waar het werkt. Alleen feiten uit verbind-recepten.ts en shared/connector-v2/agenten.ts. */
+/** Назва на картці. «Copilot» сам по собі плутають із Microsoft Copilot (кольорова стрічка) — картка підключає саме GitHub Copilot
+ *  у VS Code, тож і зветься так (16.11.2026, зауваження власника). NL: de kaart koppelt GitHub Copilot in VS Code, dus zo heet ze ook. */
+const KAARTNAAM: Partial<Record<AgentSlug, string>> = { copilot: 'GitHub Copilot' };
+const kaartNaam = (a: { slug: AgentSlug; naam: string }): string => KAARTNAAM[a.slug] ?? a.naam;
+
 const PRESENTATIE: Record<AgentSlug, { uk: string; nl: string; plekken: Plek[] }> = {
   claude: { uk: 'Помічник Anthropic: веде розмову, пише й аналізує, працює з вашою поштою, файлами й нотатками.', nl: 'Assistent van Anthropic: voert gesprekken, schrijft en analyseert, werkt met uw e-mail, bestanden en notities.', plekken: ['browser', 'pc', 'terminal'] },
   gpt: { uk: 'ChatGPT від OpenAI у браузері: шукає й читає дані вашого простору просто в розмові.', nl: 'ChatGPT van OpenAI in de browser: zoekt en leest gegevens uit uw ruimte rechtstreeks in het gesprek.', plekken: ['browser'] },
@@ -79,7 +84,7 @@ export default function AgentCatalogus({ tr, hubUrl, actiefIn, kopieer }: AgentC
           const actief = actiefIn(a.slug);
           const detailId = `agc-detail-${a.slug}`;
           const tipId = `agc-tip-${a.slug}`;
-          const uitleg = hoofdUitleg(hoofd, a.naam, tr);
+          const uitleg = hoofdUitleg(hoofd, kaartNaam(a), tr);
           const naOpen = () => setOpen(a.slug);
           const hoofdKnop = !hoofd ? (
             <a className='agc-hoofd' href={hubUrl(`agent/${a.slug}`)} aria-describedby={tipId}>{tr('Підключити', 'Koppelen')}</a>
@@ -88,16 +93,16 @@ export default function AgentCatalogus({ tr, hubUrl, actiefIn, kopieer }: AgentC
               {tr('Підключити', 'Koppelen')}{hoofd.soort === 'web' ? <ExternalLink size={14} aria-hidden='true' /> : null}
             </a>
           ) : (
-            <button type='button' className='agc-hoofd' onClick={() => { void kopieerKnop(`${a.slug}-0`, hoofd.kopieer || '', a.naam); naOpen(); }} aria-describedby={tipId}>
+            <button type='button' className='agc-hoofd' onClick={() => { void kopieerKnop(`${a.slug}-0`, hoofd.kopieer || '', kaartNaam(a)); naOpen(); }} aria-describedby={tipId}>
               {gekopieerd === `${a.slug}-0` ? <><Check size={15} aria-hidden='true' /> {tr('Скопійовано', 'Gekopieerd')}</> : tr('Підключити', 'Koppelen')}
             </button>
           );
           return (
             <li key={a.slug} className={`agc-kaart${isOpen ? ' is-open' : ''}`} data-agc={a.slug}>
               <div className='agc-hoofdrij'>
-                <span className='agc-logo' aria-hidden='true'><AgentLogo agent={a.slug} naam={a.naam} size={44} /></span>
+                <span className='agc-logo' aria-hidden='true'><AgentLogo agent={a.slug} naam={kaartNaam(a)} size={44} /></span>
                 <div className='agc-tekst'>
-                  <h3>{a.naam}</h3>
+                  <h3>{kaartNaam(a)}</h3>
                   <p>{tr(p.uk, p.nl)}</p>
                   <ul className='agc-plekken' aria-label={tr('Де працює', 'Waar het werkt')}>
                     {p.plekken.map((pl) => { const I = PLEK[pl].icoon; return <li key={pl}><I size={13} aria-hidden='true' />{tr(PLEK[pl].uk, PLEK[pl].nl)}</li>; })}
@@ -129,7 +134,7 @@ export default function AgentCatalogus({ tr, hubUrl, actiefIn, kopieer }: AgentC
                           {k.href ? (
                             <a className='agc-tweede' href={k.href} target={k.soort === 'web' ? '_blank' : undefined} rel='noopener noreferrer'>{tr(k.label[0], k.label[1])}{k.soort === 'web' ? <ExternalLink size={13} aria-hidden='true' /> : null}</a>
                           ) : (
-                            <button type='button' className='agc-tweede' onClick={() => void kopieerKnop(sleutel, k.kopieer || '', a.naam)}>
+                            <button type='button' className='agc-tweede' onClick={() => void kopieerKnop(sleutel, k.kopieer || '', kaartNaam(a))}>
                               {gekopieerd === sleutel ? <Check size={14} aria-hidden='true' /> : <Copy size={14} aria-hidden='true' />} {gekopieerd === sleutel ? tr('Скопійовано', 'Gekopieerd') : tr(k.label[0], k.label[1])}
                             </button>
                           )}
@@ -143,7 +148,7 @@ export default function AgentCatalogus({ tr, hubUrl, actiefIn, kopieer }: AgentC
                   <p className='agc-noot'>{r.vereist ? tr(r.vereist[0], r.vereist[1]) : ''}{r.vereist && r.grens ? ' ' : ''}{r.grens ? tr(r.grens[0], r.grens[1]) : ''}</p>
                 ) : null}
                 <a className='agc-rechten' href={hubUrl(`agent/${a.slug}`)}>
-                  <KeyRound size={14} aria-hidden='true' /> {tr(`Права, токени й журнал ${a.naam}`, `Rechten, tokens en logboek van ${a.naam}`)}
+                  <KeyRound size={14} aria-hidden='true' /> {tr(`Права, токени й журнал ${kaartNaam(a)}`, `Rechten, tokens en logboek van ${kaartNaam(a)}`)}
                 </a>
               </div>
             </li>

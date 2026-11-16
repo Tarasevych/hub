@@ -128,9 +128,9 @@ export async function main(): Promise<number> {
   const ac = perBestand.get('autoclaw.png');
   check('AutoClaw має справжній знак із власного сайту виробника (officiele-site, https://autoclaw.z.ai/…), а не перемальовану фігуру',
     existsSync(`${MAP}/autoclaw.png`) && ac?.soort === 'officiele-site' && /^https:\/\/autoclaw\.z\.ai\//.test(String(ac?.bronUrl)) && OFFICIEEL_SLEUTELS.has('autoclaw') && reg.merkLaag('autoclaw') === 'officieel');
-  const NIEUW = ['cline', 'devin'];
+  const NIEUW = ['devin'];
   const ws = perBestand.get('windsurf.svg');
-  check('нові агенти каталогу теж мають справжні знаки: Cline, Devin з пакета CC0, Windsurf — з windsurf.com', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel');
+  check('нові агенти каталогу теж мають справжні знаки: Devin з пакета CC0, Windsurf — з windsurf.com, Cline — з cline.bot', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel' && perBestand.get('cline.svg')?.soort === 'officiele-site' && String(perBestand.get('cline.svg')?.bronUrl).startsWith('https://cline.bot/'));
   // Павло (16.11.2026) побачив на знімку, що знаки Copilot і OpenCode «не такі»: пакет мав старіший малюнок Copilot (суцільний шолом)
   // і світлий варіант OpenCode, який на білій плитці читався як порожній прямокутник. Тепер обидва — файли з власних сайтів.
   const cp = perBestand.get('copilot.svg'); const oc = perBestand.get('opencode.png');
