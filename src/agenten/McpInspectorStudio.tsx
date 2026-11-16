@@ -1,6 +1,6 @@
 // Вбудований Інспектор, Студія та Реєстр MCP (2026-07-28 + 2025-11-25) для сторінки https://mcp.tarasevych.com/agenten.
 // Поєднує:
-//   • інтерактивний вебінспектор кінцевих точок (/claude, /gpt, /codex, /grok, /gemini, /copilot, /cursor, /antigravity, /autoclaw, /windsurf, /cline, /devin, /opencode, /mcp)
+//   • інтерактивний вебінспектор кінцевих точок (/claude, /gpt, /codex, /grok, /gemini, /copilot, /cursor, /antigravity, /autoclaw, /windsurf, /cline, /devin, /opencode, /mscopilot, /mcp)
 //     із перемикачем епохи протоколу (auto, modern 2026-07-28, legacy 2025-11-25) та суворими перевірками (--strict);
 //   • готові рецепти інспектора (Recipes) з однокліковим виконанням на сайті та копіюванням команд CLI / TUI / mcpdo;
 //   • живу 7-крокову перевірку безпеки OAuth 2.1 (RFC 9728 PRM, RFC 8414 AS Metadata, PKCE S256, Origin 403, CIMD анти-SSRF,

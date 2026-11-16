@@ -8,6 +8,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { AlertTriangle, CalendarClock, Check, ChevronDown, Clock3, Hourglass, Infinity as Oneindig, LogOut, PauseCircle, ShieldCheck, ShieldOff, Users, Wrench } from 'lucide-react';
 import AgentLogo from '../../agenten/AgentLogo';
+import { AGENT_NAAM as GEDEELDE_AGENT_NAAM } from '../../../shared/markering-agenten';
 import {
   AFMELDEN_NAAM, GEVAAR_UITLEG, INACTIEF_KEUZES, INTREK_REDEN, PAUZE_NAAM, PAUZE_UITLEG, SNELKNOPPEN, STANDAARD_REGELS, TERMIJN_NAAM, TERMIJN_UITLEG,
   gevaren, inactiefNaam, type AiRegels, type AiTermijn, type BijAfmelden, type BijPauze,
@@ -19,7 +20,9 @@ import './ai-toegang.css';
 export type AiKaartGroep = { sleutel: string; agent: string | null; naam: string; verbindingen: ToegangRegel[]; delegatie: AiDelegatieWeergave | null };
 export type AiOpslaan = { sleutel: string; naam: string; termijn: AiTermijn; minuten?: number; eindOp?: number | null; regels: AiRegels };
 
-const AGENT_NAAM: Record<string, string> = { claude: 'Claude', gpt: 'ChatGPT', codex: 'Codex', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity', autoclaw: 'AutoClaw' };
+// Eén bron voor de namen (shared/markering-agenten.ts). De eigen lijst hier kende tot 16.11.2026 maar negen agenten, zodat
+// Windsurf, Cline, Devin en OpenCode als kale code op de kaart stonden.
+const AGENT_NAAM: Record<string, string> = GEDEELDE_AGENT_NAAM;
 
 /** Rijen van het tabblad «Доступ ШІ» → één groep per agent; verbindingen zonder bekende agent elk apart; '*' als eigen groep. */
 export function groepeerAi(regels: readonly ToegangRegel[]): AiKaartGroep[] {

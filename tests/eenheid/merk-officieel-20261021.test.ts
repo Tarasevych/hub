@@ -128,6 +128,12 @@ export async function main(): Promise<number> {
   const ac = perBestand.get('autoclaw.png');
   check('AutoClaw має справжній знак із власного сайту виробника (officiele-site, https://autoclaw.z.ai/…), а не перемальовану фігуру',
     existsSync(`${MAP}/autoclaw.png`) && ac?.soort === 'officiele-site' && /^https:\/\/autoclaw\.z\.ai\//.test(String(ac?.bronUrl)) && OFFICIEEL_SLEUTELS.has('autoclaw') && reg.merkLaag('autoclaw') === 'officieel');
+  // Microsoft Copilot (16.11.2026) — окремий від GitHub Copilot агент із власним кольоровим знаком (стрічка), файл із CDN,
+  // на який посилається сам copilot.com.
+  const msc = perBestand.get('mscopilot.png');
+  check('Microsoft Copilot має власний знак (officiele-site, res.cdn.office.net), окремий від знака GitHub Copilot',
+    existsSync(`${MAP}/mscopilot.png`) && msc?.soort === 'officiele-site' && /^https:\/\/res\.cdn\.office\.net\//.test(String(msc?.bronUrl))
+    && OFFICIEEL_SLEUTELS.has('mscopilot') && reg.merkLaag('mscopilot') === 'officieel' && msc?.sha256 !== perBestand.get('copilot.svg')?.sha256);
   const NIEUW = ['devin'];
   const ws = perBestand.get('windsurf.svg');
   check('нові агенти каталогу теж мають справжні знаки: Devin з пакета CC0, Windsurf — з windsurf.com, Cline — з cline.bot', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel' && perBestand.get('cline.svg')?.soort === 'officiele-site' && String(perBestand.get('cline.svg')?.bronUrl).startsWith('https://cline.bot/'));

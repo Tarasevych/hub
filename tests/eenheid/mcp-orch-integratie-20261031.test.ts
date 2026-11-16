@@ -156,7 +156,7 @@ export async function main(): Promise<number> {
   try {
     // ============================================================== 1. Semantische agent-mapping & PR #11 / PR #13 beveiliging (zonder DB)
     const beleidIds = new Set((beleid.agenten as Array<{ id: string }>).map((a) => a.id));
-    const nieuweIdeSlugs = new Set(['windsurf', 'cline', 'devin', 'opencode']);
+    const nieuweIdeSlugs = new Set(['windsurf', 'cline', 'devin', 'opencode', 'mscopilot']);
     check('alle Connector v2 agent-slugs mappen via orchAgentVan correct (9 orch-agenten in beleid.json + 4 IDE-uitbreidingen)',
       V2_AGENTEN.every((a) => {
         const mapped = orchAgentVan(a.slug);

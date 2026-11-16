@@ -332,6 +332,19 @@
       "ondergrond": "vrij"
     },
     {
+      "sleutel": "mscopilot",
+      "bestand": "mscopilot.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://res.cdn.office.net/officehub/images/content/images/unauth-copilotcom/copilot-mobile-logo-static-286643fc8c.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 23931,
+      "sha256": "98a5ebda1f77e63fcbe9fd30705075e9d0e8b632a84e4ab76dfa8c37bb318d87",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "node",
       "bestand": "node.svg",
       "soort": "pakket",

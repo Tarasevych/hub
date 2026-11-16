@@ -34,7 +34,8 @@ export type AgentSlug =
   | 'windsurf'
   | 'cline'
   | 'devin'
-  | 'opencode';
+  | 'opencode'
+  | 'mscopilot';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -93,6 +94,13 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'opencode', naam: 'OpenCode', klant: 'opencode', webHosts: ['opencode.ai'], appSchemas: [], loopback: true,
     uk: 'OpenCode (термінал і середовище): opencode mcp add або ~/.config/opencode/opencode.json → mcp.mijn-ruimte із власною адресою /opencode.',
     nl: 'OpenCode (terminal en IDE): opencode mcp add of ~/.config/opencode/opencode.json → mcp.mijn-ruimte met het eigen adres /opencode.' },
+  // 16.11.2026: Microsoft Copilot is een ANDER product dan GitHub Copilot (slug copilot). De consumentenversie (copilot.microsoft.com)
+  // neemt geen eigen MCP-server aan; het kan alleen via Copilot Studio (werk- of schoolaccount). Bron: learn.microsoft.com,
+  // «Connect your agent to an existing MCP server». Alleen Streamable HTTP; OAuth 2.0 «Dynamic discovery» = ontdekking + DCR.
+  // Terugkeeradres: https://global.consent.azure-apim.net/redirect/<naam> (Power Platform). Geen loopback: het draait in de cloud.
+  { slug: 'mscopilot', naam: 'Microsoft Copilot', klant: 'mscopilot', webHosts: ['global.consent.azure-apim.net'], appSchemas: [], loopback: false,
+    uk: 'Microsoft Copilot Studio (робочий обліковий запис): агент → Tools → Add a tool → New tool → Model Context Protocol, OAuth 2.0 → Dynamic discovery, власна адреса /mscopilot.',
+    nl: 'Microsoft Copilot Studio (werkaccount): agent → Tools → Add a tool → New tool → Model Context Protocol, OAuth 2.0 → Dynamic discovery, eigen adres /mscopilot.' },
 ]);
 
 const PER_SLUG = new Map(V2_AGENTEN.map((a) => [a.slug, a]));

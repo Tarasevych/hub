@@ -34,6 +34,7 @@ const PRESENTATIE: Record<AgentSlug, { uk: string; nl: string; plekken: Plek[] }
   cline: { uk: 'Розширення Cline і Roo Code у VS Code або Cursor: конфігурація streamableHttp.', nl: 'Cline- en Roo Code-extensie in VS Code of Cursor: streamableHttp-configuratie.', plekken: ['ide'] },
   devin: { uk: 'Автономний інженер Devin: підключається у вебналаштуваннях через OAuth.', nl: 'Autonome ontwikkelaar Devin: koppelt in de webinstellingen via OAuth.', plekken: ['browser', 'ide'] },
   opencode: { uk: 'OpenCode у терміналі й середовищі: одна команда чи opencode.json із OAuth.', nl: 'OpenCode in terminal en IDE: één opdracht of opencode.json met OAuth.', plekken: ['terminal', 'ide'] },
+  mscopilot: { uk: 'Агент у Microsoft Copilot Studio: лише з робочим обліковим записом Microsoft.', nl: 'Agent in Microsoft Copilot Studio: alleen met een werkaccount van Microsoft.', plekken: ['browser'] },
 };
 
 const PLEK: Record<Plek, { uk: string; nl: string; icoon: typeof Globe }> = {

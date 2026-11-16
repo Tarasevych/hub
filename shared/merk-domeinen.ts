@@ -10,5 +10,7 @@ export const MERK_DOMEIN: Readonly<Record<string, string>> = Object.freeze({
   autoclaw: 'autoclaw.z.ai', windsurf: 'windsurf.com', opencode: 'opencode.ai', cline: 'cline.bot',
   // Copilot: знак лежить на домені статичних файлів GitHub (github.githubassets.com/favicons/). NL: het assetdomein van GitHub.
   copilot: 'githubassets.com',
+  // Microsoft Copilot (16.11.2026): de kleurige strik komt van het CDN waar copilot.com zelf naar verwijst (res.cdn.office.net).
+  mscopilot: 'cdn.office.net',
 });
 export const MERK_DOMEINEN: ReadonlySet<string> = new Set(Object.values(MERK_DOMEIN));

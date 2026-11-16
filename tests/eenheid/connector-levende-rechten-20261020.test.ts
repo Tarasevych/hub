@@ -88,7 +88,10 @@ export async function main(): Promise<number> {
     /isEigenaar/.test(v2Routes) && !/technischeRuimte/.test(v2Routes));
   const start = readFileSync('server/start.ts', 'utf8');
   check('server/start.ts: de korte paden horen bij de app en het oude pad krijgt 308 (nooit 301/302)',
-    /V2_KORT = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|antigravity\|autoclaw\)/.test(start)
+    /V2_KORT = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|mscopilot\|antigravity\|autoclaw\)/.test(start)
+    // De stroom (GET + text/event-stream) kent dezelfde agenten als de korte paden (vóór 16.11.2026 maar acht van de dertien).
+    && /V2_STROOM = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|mscopilot\|antigravity\|autoclaw\)/.test(start)
+    && !/\(claude\|gpt\|grok\|gemini\|copilot\|cursor\|antigravity\|autoclaw\)/.test(start)
     && /send\(res, 308, \{ Location: naar/.test(start)
     && !/send\(res, 30[12], \{ Location: naar/.test(start));
   const tunnel = readFileSync('deploy/cloudflared-config.yml', 'utf8');
@@ -120,9 +123,10 @@ export async function main(): Promise<number> {
   const init = async (slug: string, token: string) => json(await rpc(slug, token, { jsonrpc: '2.0', id: 3, method: 'initialize', params: { protocolVersion: '2025-06-18' } }))?.result;
 
   /** Volledige koppeling via de echte OAuth-route (autorisatie → toestemming → token), met de keuze uit het venster. */
-  async function koppel(userId: string, slug: 'claude' | 'gpt', keuze: v2st.V2Keuze) {
-    const redirect = slug === 'claude' ? 'https://claude.ai/api/mcp/auth_callback' : 'http://127.0.0.1/cb';
-    const reg = json(await c.registerClient(JSON.stringify({ client_name: slug === 'gpt' ? 'ChatGPT' : 'Claude', redirect_uris: [redirect] })));
+  async function koppel(userId: string, slug: 'claude' | 'gpt' | 'mscopilot', keuze: v2st.V2Keuze) {
+    // mscopilot (16.11.2026): het terugkeeradres van Copilot Studio is dat van Power Platform (Microsoft Learn, custom connectors).
+    const redirect = slug === 'claude' ? 'https://claude.ai/api/mcp/auth_callback' : slug === 'mscopilot' ? 'https://global.consent.azure-apim.net/redirect/mijn-2druimte-5f1a2b3c' : 'http://127.0.0.1/cb';
+    const reg = json(await c.registerClient(JSON.stringify({ client_name: slug === 'gpt' ? 'ChatGPT' : slug === 'mscopilot' ? 'Microsoft Copilot Studio' : 'Claude', redirect_uris: [redirect] })));
     clients.push(reg.client_id);
     const p = pkce();
     const a = await c.authorize({ response_type: 'code', client_id: reg.client_id, redirect_uri: redirect, code_challenge: p.challenge, code_challenge_method: 'S256', state: 's', resource: agentUrl(slug) });
@@ -251,6 +255,23 @@ export async function main(): Promise<number> {
     // Met de hand beheer-sleutels in de rechten van dit lid zetten (zoals een aanvaller of een oude rij zou doen).
     await sys.query("UPDATE app.connector_v2_rechten SET kanten = ARRAY['beheer','gebruiker'], sleutels = $2::text[] WHERE grant_id = $1",
       [lidGrant, ['v2_whoami:gebruiker', 'machine_list:gebruiker', 'machine_list:beheer', 'get_live_release:beheer']]);
+    // ============================================================== veertiende agent: Microsoft Copilot (Copilot Studio), echte OAuth-weg
+    const msKort = await verzoek(poort, 'POST', '/mscopilot', JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' }));
+    const msPrm = await verzoek(poort, 'GET', '/mscopilot/.well-known/oauth-protected-resource');
+    check('POST /mscopilot is een eigen agentadres: 401 met de metadata van DEZE agent, en de metadata noemt het eigen adres',
+      msKort.status === 401 && msKort.kop('www-authenticate').includes(`resource_metadata="${agentPrmUrl('mscopilot')}"`) && msKort.kop('www-authenticate').includes('realm="mcp-mscopilot"')
+      && msPrm.status === 200 && json(msPrm).resource === agentUrl('mscopilot'), `${msKort.status} ${msKort.kop('www-authenticate').slice(0, 120)} | ${msPrm.status}`);
+    const km = await koppel(M, 'mscopilot', { kanten: ['gebruiker'], sleutels: ['v2_whoami:gebruiker', 'machine_list:gebruiker'] });
+    const msRij = (await sys.query('SELECT agent, ruimte FROM app.mcp_oauth_tokens WHERE access_hash = $1', [sha256(km.token)])).rows[0];
+    const msLijst = (await lijst('mscopilot', km.token)).map((t) => t.name);
+    const msOpCopilot = json(await rpc('copilot', km.token, { jsonrpc: '2.0', id: 9, method: 'tools/list' }));
+    check('Microsoft Copilot koppelt via registratie → toestemming → token met het terugkeeradres van Power Platform; de koppeling staat als agent «mscopilot» in de database (migratie 0297) en geeft alleen eigen hulpmiddelen',
+      km.token.length > 20 && msRij?.agent === 'mscopilot' && msRij?.ruimte === 'prive'
+      && msLijst.includes('tonen_apparaten_mscopilot_mcp_tarasevych_com_gebruiker') && msLijst.every((n) => n.includes('_mscopilot_')) && !msLijst.some((n) => n.endsWith('_beheer')),
+      `${JSON.stringify(msRij)} | ${msLijst.slice(0, 4).join(',')}`);
+    check('het token van Microsoft Copilot werkt NIET op het adres van GitHub Copilot (/copilot): andere agent, geen hulpmiddelen',
+      !(msOpCopilot?.result?.tools?.length > 0), JSON.stringify(msOpCopilot).slice(0, 160));
+
     const lidLijst = (await lijst('gpt', kl.token)).map((t) => t.name);
     const lidPoging = await roep('gpt', kl.token, 'tonen_live_release_gpt_admin_tarasevych_com_beheer');
     check('niet-eigenaar: beheer-sleutels in de rechten geven nog steeds NIETS — niet in de lijst en niet bij de aanroep (OWNER_REQUIRED)',

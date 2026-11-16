@@ -266,8 +266,8 @@ export default function GeheugenTakenPaneel({ tr, onStroomBijgewerkt }: Props) {
           </h3>
           <p className='gs-subtekst'>
             {tr(
-              'Фіксуйте спільну задачу під сталим ключем, передавайте естафету між Claude, ChatGPT, Codex, Gemini, Grok, Copilot, Cursor, Antigravity, AutoClaw, Windsurf, Cline, Devin і OpenCode та отримуйте чистий контекст для продовження без повторів.',
-              'Leg elke doorlopende taak onder een vaste sleutel vast, draag het werk over tussen alle 13 AI-agenten en ontvang een schone vervolginstructie zonder dubbel werk.',
+              'Фіксуйте спільну задачу під сталим ключем, передавайте естафету між Claude, ChatGPT, Codex, Gemini, Grok, Copilot, Cursor, Antigravity, AutoClaw, Windsurf, Cline, Devin, OpenCode і Microsoft Copilot та отримуйте чистий контекст для продовження без повторів.',
+              'Leg elke doorlopende taak onder een vaste sleutel vast, draag het werk over tussen alle 14 AI-agenten en ontvang een schone vervolginstructie zonder dubbel werk.',
             )}
           </p>
         </div>
