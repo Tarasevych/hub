@@ -83,7 +83,7 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 .gm-chip[data-toon=bad]{color:var(--gm-bad);border-color:transparent;background:color-mix(in srgb,var(--gm-bad) 12%,var(--gm-bg))}
 .gm-logo{display:inline-grid;place-items:center;flex:none;border-radius:11px;color:#fff;font-weight:800;letter-spacing:-.02em;user-select:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .gm-logo b{font-weight:800;line-height:1}
-.gm-logo.is-google{background:conic-gradient(from -45deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0)}
+/* .gm-logo.is-google (намальоване колесо кольорів Google) прибрано: знак Google малює лише <Merk> з офіційного файла. */
 /* Merklogo uit het register (src/merk): de tegel tekent <Merk> zelf — geen eigen vlak, geen witte letters. */
 .gm-logo.is-merk{background:none;box-shadow:none;color:inherit}
 .gm-avatar{display:inline-grid;place-items:center;flex:none;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--gm-accent) 22%,var(--gm-bg));color:var(--gm-text);font-weight:700}

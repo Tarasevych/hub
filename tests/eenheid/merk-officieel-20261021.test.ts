@@ -89,7 +89,39 @@ export async function main(): Promise<number> {
   check('na de eerste geslaagde ophaling door de server: laag «database» voor die merken', afwezig.every((k) => reg.merkLaag(k) === 'database'));
   reg.registreerDatabaseMerken([{ domein: 'mollie.com', data: 'https://mollie.com/favicon.ico', bron: 'favicon', mime: 'image/png' }, { domein: 'tuya.com', data: 'javascript:alert(1)', bron: 'x', mime: 'x' }]);
   check('de database neemt alleen data-URI\'s van een beeldtype aan (geen extern adres, geen javascript:)', reg.databaseMerk('mollie')?.data === png && reg.databaseMerk('tuya')?.data === png);
-  check('een vorm met herkomst gaat vóór de database (Google, GitHub blijven hun simple-icons-vorm)', reg.merkLaag('google') === 'vorm' && reg.merkLaag('github') === 'vorm');
+  check('een vorm met herkomst gaat vóór de database (GitHub blijft zijn simple-icons-vorm)', reg.merkLaag('github') === 'vorm');
+  // GOOGLE-OFFICIEEL (2026-11-16, слово власника): знак Google — офіційний чотириколірний, не одноколірна фігура.
+  check('Google: het officiële vierkleurige teken (laag «officieel»), niet de eenkleurige vorm', reg.merkLaag('google') === 'officieel' && officieel.includes('google'));
+  {
+    const { createHash } = await import('node:crypto');
+    const { readFileSync, readdirSync, statSync } = await import('node:fs');
+    const svg = readFileSync('src/merk/officieel/google.svg', 'utf8');
+    const kleuren = ['#4285f4', '#34a853', '#fbbc05', '#eb4335'];
+    check('Google: het bestand is het vierkleurige «G» (vier merkkleuren, vier paden) en is hetzelfde als op de aanmeldknop',
+      kleuren.every((k) => svg.toLowerCase().includes(k)) && (svg.match(/<path/g) || []).length === 4
+      && createHash('sha256').update(svg).digest('hex') === '88bffb6a27a569159edbf47d5f8e54b25ce1bba6cda409ec50d2bf6f4911c666');
+    const g = renderToString(createElement((await import('../../src/merk/Merk')).default, { merk: 'google', vorm: 'gliefje', maat: 20 }));
+    check('<Merk merk="google"> tekent het officiële bestand als <img>, niet de eenkleurige vorm', g.includes('data-merk-officieel="google"') && !g.includes('<path'), g.slice(0, 200));
+    // Сторож: знак Google ніде не малюється літерою чи від руки поза реєстром марок.
+    const lopen = (map: string, uit: string[] = []): string[] => { for (const n of readdirSync(map)) { const p = map + '/' + n; if (statSync(p).isDirectory()) lopen(p, uit); else if (/\.(tsx?|css)$/.test(n)) uit.push(p); } return uit; };
+    const toegestaan = (p: string) => p.startsWith('src/merk/');
+    const fout: string[] = [];
+    for (const p of lopen('src')) {
+      if (toegestaan(p)) continue;
+      const s = readFileSync(p, 'utf8');
+      if (/icoon === 'google' \? <b>G<\/b>/.test(s) || /if \(icoon === 'google'\) return <span[^>]*>G<\/span>/.test(s) || /\.is-google\{background:conic-gradient/.test(s)) fout.push(p + ' (letter of kleurenwiel)');
+      // Намальований від руки чотириколірний знак: шлях із кольором Google поза офіційним файлом.
+      if (/brand-google"(?![^>]*data-merk-officieel)/.test(s.replace(/\\"/g, '"'))) fout.push(p + ' (nagetekend teken)');
+    }
+    check('nergens buiten het merkenregister wordt het Google-teken als letter, kleurenwiel of nagetekend pad getekend', fout.length === 0, fout.join('; '));
+    const motor = readFileSync('src/identiteit/maquette/maquette-motor.ts', 'utf8');
+    const binnen = svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+    check('weergave «Ontwerp»: het Google-teken heeft dezelfde paden als het officiële bestand', motor.includes(binnen) && motor.includes('data-merk-officieel="google"'));
+    const kaartBron = readFileSync('src/aanmeld-vnext/onderdelen/MethodeKaart.tsx', 'utf8');
+    const menuBron = readFileSync('src/menu-voorkeuren.tsx', 'utf8');
+    const diagBron = readFileSync('src/diagnostiek/Diagnostiek.tsx', 'utf8');
+    check('methodekaart, menupictogram en diagnostiek tekenen Google via <Merk merk="google">', /<Merk merk='google'/.test(kaartBron) && /google:'google'/.test(menuBron) && /<Merk merk=\{MENU_MERK\[icon\]\}/.test(menuBron) && /<Merk merk='google'/.test(diagBron));
+  }
   reg.registreerEigenMerken([{ sleutel: 'windows', soort: 'png', data: png, hash: 'x' }, { sleutel: 'ukrnet', soort: 'png', data: png, hash: 'y' }]);
   check('een eigen bestand van de beheerder gaat vóór het officiële logo en vóór de database', reg.merkLaag('windows') === 'eigen' && reg.merkLaag('ukrnet') === 'eigen');
   reg._eigenMerkenOpnieuw();
