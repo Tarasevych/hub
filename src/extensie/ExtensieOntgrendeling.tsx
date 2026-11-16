@@ -13,6 +13,7 @@ import { passkeyBevestigen, type AssertieOpties } from '../platform/webauthn';
 import { openTechVenster, techBody, useTech } from '../tech/tech-opslag';
 import HulpVraag from '../hulp/HulpVraag';
 import HostSchakelaar from './HostSchakelaar';
+import PeriodeKiezer, { minuutKeuzes } from './PeriodeKiezer';
 import { versionAtLeast } from '../extensie-toestand';
 import {
   ADMIN_HOSTS_STANDAARD, ADMIN_HOSTS_TOEGESTAAN, DUUR_KEUZES, MAX_MINUTEN, MIN_EXTENSIE_VERSIE, STAAT_TEKST, STANDAARD_MINUTEN, WEIGER_UITLEG,
@@ -287,14 +288,14 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
       <form className='eo-form' onSubmit={(e) => { e.preventDefault(); void doeOntgrendelen(); }} data-eo-form='1' aria-describedby={blok ? `${kopId}-blok` : undefined}>
         <p className='eo-lead'>{open ? tr('Нове розблокування замінить поточне.', 'Een nieuwe ontgrendeling vervangt de huidige.') : tr('Розблокувати може лише користувач із технічним профілем, увімкненим у цій вкладці, своїм власним passkey.', 'Alleen een gebruiker met een technisch profiel dat in dit tabblad aan staat kan ontgrendelen, met de eigen passkey.')}</p>
         {blok ? <div id={`${kopId}-blok`}>{uitlegBlok(blok, 'note')}</div> : null}
-        <label className='eo-veld'>
-          <span>{tr('Тривалість', 'Duur')} <HulpVraag k='extensie.duur' uk={uk} label={tr('Тривалість', 'Duur')} /></span>
-          <select data-hulp='extensie.duur' value={gekozen || ''} disabled={!keuzes.length || !!bezig} onChange={(e) => setMinuten(Number(e.target.value))} data-eo-duur='1'>
-            {keuzes.map((d) => <option key={d} value={d}>{restTekst(d * 60000, uk)}</option>)}
-          </select>
-          <small data-eo-tot='1'>{eindKeuze ? tr(`діятиме до ${tijd(eindKeuze - live.scheef, true)}`, `geldt tot ${tijd(eindKeuze - live.scheef, false)}`) : tr('немає часу: технічна активація закінчується', 'geen tijd: de technische activering loopt af')}
-            {live.recht?.activatieTot ? tr(` · технічна активація до ${tijd(live.recht.activatieTot - live.scheef, true)}`, ` · technische activering tot ${tijd(live.recht.activatieTot - live.scheef, false)}`) : ''}</small>
-        </label>
+        {keuzes.length ? (
+          <PeriodeKiezer naam={`${kopId}-duur`} keuzes={minuutKeuzes(keuzes, uk)} waarde={gekozen} disabled={!!bezig} onChange={setMinuten}
+            hulp='extensie.duur' data={{ 'data-eo-duur': String(gekozen) }}
+            kop={<>{tr('Тривалість', 'Duur')} <HulpVraag k='extensie.duur' uk={uk} label={tr('Тривалість', 'Duur')} /></>}
+            uitleg={(k) => tr(`Технічний доступ закриється сам через ${k.naam}, але не пізніше кінця технічної активації. Коротший строк — менше ризику, якщо забудете закрити.`, `De technische toegang sluit vanzelf na ${k.naam}, maar niet later dan het einde van de technische activering. Korter = minder risico als u vergeet te sluiten.`)}
+            einde={<span data-eo-tot='1'>{eindKeuze ? <>{tr('Діятиме до ', 'Geldt tot ')}<b>{tijd(eindKeuze - live.scheef, uk)}</b></> : tr('немає часу: технічна активація закінчується', 'geen tijd: de technische activering loopt af')}
+              {live.recht?.activatieTot ? tr(` · технічна активація до ${tijd(live.recht.activatieTot - live.scheef, true)}`, ` · technische activering tot ${tijd(live.recht.activatieTot - live.scheef, false)}`) : ''}</span>} />
+        ) : <p className='eo-meta' data-eo-tot='1'>{tr('Немає часу для розблокування: технічна активація закінчується.', 'Geen tijd om te ontgrendelen: de technische activering loopt af.')}</p>}
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Сторінки сайту', 'Pagina’s van de site')} <HulpVraag k='extensie.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {ADMIN_HOSTS_TOEGESTAAN.map((h) => (

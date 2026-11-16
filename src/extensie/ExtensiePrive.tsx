@@ -9,6 +9,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { Bot, KeyRound, Lock, LockOpen, ShieldOff, Laptop } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
 import HostSchakelaar from './HostSchakelaar';
+import PeriodeKiezer, { dagKeuzes } from './PeriodeKiezer';
 import {
   AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
@@ -135,12 +136,13 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
         <p className='eo-lead'>{open ? tr('Нове відкриття замінить поточне.', 'Een nieuwe toegang vervangt de huidige.') : recht?.stapOpGeldig ? tr('Вхід у цій вкладці вже підтверджено — додатковий запит не потрібен.', 'De aanmelding in dit tabblad is al bevestigd — er is geen extra vraag nodig.') : tr('Перед відкриттям сайт попросить підтвердити доступ (passkey, код із додатка або Google).', 'Vóór het openen vraagt de site de toegang te bevestigen (passkey, code uit de app of Google).')}</p>
         {blok ? uitleg(blok, 'note') : null}
         <p className='eo-meta' data-eo-caps-nu='1'>{capsNu.length ? <>{tr('У цьому слоті діятиме: ', 'In dit slot geldt: ')}{capsNu.map((c) => (uk ? CAP_TEKST[c]?.[0] : CAP_TEKST[c]?.[1]) ?? c).join(', ')}{tr(' — ваші дозволи («Що може ШІ») у межах політики власника; строк і можливості нижче — єдине джерело для розширення.', ' — uw toestemmingen («Wat mag de AI») binnen het beleid van de eigenaar; termijn en mogelijkheden hieronder zijn de enige bron voor de extensie.')}</> : tr('Ще немає жодного дозволу для ШІ в цьому браузері.', 'Nog geen enkele toestemming voor de AI in deze browser.')}</p>
-        <label className='eo-veld'>
-          <span>{tr('Строк', 'Termijn')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></span>
-          <select data-hulp='extensie.prive.dagen' value={gekozen || ''} disabled={!keuzes.length || !!bezig} onChange={(e) => setDagen(Number(e.target.value))} data-eo-dagen='1'>
-            {keuzes.map((d) => <option key={d} value={d}>{d === 1 ? tr('1 день', '1 dag') : tr(`${d} днів`, `${d} dagen`)}</option>)}
-          </select>
-        </label>
+        {keuzes.length ? (
+          <PeriodeKiezer naam={`${kopId}-dagen`} keuzes={dagKeuzes(keuzes, uk)} waarde={gekozen} disabled={!!bezig} onChange={setDagen}
+            hulp='extensie.prive.dagen' data={{ 'data-eo-dagen': String(gekozen) }}
+            kop={<>{tr('Строк доступу', 'Termijn van de toegang')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></>}
+            uitleg={(k) => tr(`Доступ закриється сам через ${k.naam}. Довший строк — рідше підтверджувати, але довше відкрите вікно; закрити раніше можна кнопкою «Відкликати зараз».`, `De toegang sluit vanzelf na ${k.naam}. Langer = minder vaak bevestigen, maar het venster staat langer open; eerder sluiten kan met «Nu intrekken».`)}
+            einde={<>{tr('Закриється сам ', 'Sluit vanzelf op ')}<b>{new Date(nuServer + gekozen * 86_400_000 - live.scheef).toLocaleString(uk ? 'uk-UA' : 'nl-NL', { weekday: 'short', day: 'numeric', month: 'long', year: gekozen > 300 ? 'numeric' : undefined, hour: '2-digit', minute: '2-digit' })}</b>{tr(' (якщо правила власника не скоротять)', ' (tenzij het beleid van de eigenaar korter is)')}</>} />
+        ) : <p className='eo-meta'>{tr('Строк зараз не можна вибрати: власник не дав дозволу на доступ у цьому браузері.', 'Er is nu geen termijn te kiezen: de eigenaar gaf geen toestemming voor toegang in deze browser.')}</p>}
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Ваші сторінки', 'Uw pagina’s')} <HulpVraag k='extensie.prive.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {toegestaan.map((h) => (

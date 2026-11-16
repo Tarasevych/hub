@@ -16,6 +16,7 @@ import { pathToFileURL } from 'node:url';
 import { checker } from './hulp/nep-google';
 import { signCommand } from '../../backend/connectors-crypto';
 import * as TS from '../../shared/extensie-ontgrendeling';
+import * as pk from '../../src/extensie/periode-keuzes';
 
 const W = process.cwd();
 const ID = 'ofpffonakgjioahgfejmiblfmbkobmmi';
@@ -182,6 +183,20 @@ export async function main(): Promise<number> {
     const oudeVinkjes = ['src/extensie/ExtensiePrive.tsx', 'src/extensie/ExtensieOntgrendeling.tsx', 'src/extensie/BrowserEnAgenten.tsx'].filter((f) => /<code>\{h\}<\/code>/.test(readFileSync(join(W, f), 'utf8')));
     check('paginalijsten: elke adres heeft logo + naam in HostSchakelaar, schakelaar is role=switch, geen kale adreslijst meer',
       zonderLogo.length === 0 && oudeVinkjes.length === 0 && /type='checkbox' role='switch' className='hs-schakel'/.test(hsBron), JSON.stringify({ zonderLogo, oudeVinkjes }));
+    // 16.11 (Павло: «тумблери наче посіріли», «періоди — щоб візуально легко»): вимкнений вмикач щільний, увімкнений — колір сервісу;
+    // строк доступу — плитки PeriodeKiezer у обох вікнах, без випадного списку.
+    const hsCss = readFileSync(join(W, 'src/extensie/host-schakelaar.css'), 'utf8');
+    check('schakelaar: uit = dichte baan met duidelijke rand (niet doorschijnend), aan = kleur van de dienst (--a), data-accent op de rij',
+      /\.hs-schakel\{[^}]*background:color-mix\(in srgb,var\(--text,#1f2937\) 9%,var\(--surface,#fff\)\)/.test(hsCss) && !/\.hs-schakel\{[^}]*transparent\)/.test(hsCss)
+      && /\.hs-schakel:checked\{background:var\(--a,var\(--ok/.test(hsCss) && /data-hs-host=\{host\} data-accent=/.test(hsBron));
+    const pkVeld = ['src/extensie/ExtensiePrive.tsx', 'src/extensie/ExtensieOntgrendeling.tsx'].map((f) => readFileSync(join(W, f), 'utf8'));
+    check('termijn: tegels (PeriodeKiezer) in privé en technisch, geen <select> meer voor dagen/duur',
+      pkVeld.every((s) => /<PeriodeKiezer naam=/.test(s) && !/<select data-hulp='extensie\.(prive\.dagen|duur)'/.test(s)));
+    {
+      const d = pk.dagKeuzes([1, 7, 30, 182, 365], true).map((k) => `${k.groot} ${k.eenheid}`).join(' | ');
+      const m = pk.minuutKeuzes([15, 30, 60, 120, 240], false).map((k) => `${k.groot} ${k.eenheid}`).join(' | ');
+      check('termijn-tegels tonen menselijke eenheden (dagen → maanden → jaar, minuten → uur)', d === '1 день | 7 днів | 30 днів | 6 місяців | 1 рік' && m === '15 min | 30 min | 1 uur | 2 uur | 4 uur', `${d} ## ${m}`);
+    }
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

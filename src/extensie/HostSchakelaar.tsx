@@ -62,8 +62,10 @@ export type HostSchakelaarProps = {
 
 export default function HostSchakelaar({ host, aan, uk, disabled, onChange, hulp, data, uitleg }: HostSchakelaarProps) {
   const naam = hostNaam(host, uk);
+  const d = DIENSTEN[host];
+  // Колір сервісу на всьому рядку: увімкнений вмикач фарбується тим самим кольором, що й значок (а не чорним).
   return (
-    <label className={`hs-rij${aan ? ' is-aan' : ''}`} title={uitleg} data-hs-host={host}>
+    <label className={`hs-rij${aan ? ' is-aan' : ''}`} title={uitleg} data-hs-host={host} data-accent={d ? DIENST_ACCENT[d.dienst] : undefined}>
       <HostLogo host={host} />
       <span className='hs-tekst'>
         <b>{naam}</b>

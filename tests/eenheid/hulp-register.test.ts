@@ -71,7 +71,7 @@ export async function main(): Promise<number> {
         if (!src.includes(`<HulpVraag k={\`${dyn[1]}\${`)) geenVraag.push(`${plek}: geen <HulpVraag k={\`${dyn[1]}…\`} /> in dit bestand`);
       } else zonder.push(`${plek}: ${t.tekst.replace(/\s+/g, ' ').slice(0, 90)}`);
     // EXTUI-001: <HostSchakelaar hulp='…'> is een schakelaar per pagina; de sleutel en de «?» horen in het bestand van de aanroep.
-    for (const m of src.matchAll(/<HostSchakelaar\b[^]*?\/>/g)) {
+    for (const m of src.matchAll(/<(?:HostSchakelaar|PeriodeKiezer)\b[^]*?\/>/g)) {
       aantal++;
       const plek = `${f}:${src.slice(0, m.index).split('\n').length} <HostSchakelaar>`;
       const k = /\bhulp=['"]([a-z0-9.-]+)['"]/.exec(m[0])?.[1];

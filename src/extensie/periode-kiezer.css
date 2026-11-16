@@ -1,0 +1,27 @@
+/* EXTUI-001 · строк доступу плитками. Termijn als tegels.
+   :is(html) — бо тема «Макет» жорсткіше стилізує fieldset/label у вікнах доступу (agenten-toegang-maquette.css). */
+:is(html) .pk{display:grid;gap:8px;min-width:0;margin:0;padding:0;border:0;background:none}
+:is(html) .pk-kop{display:flex;align-items:center;gap:6px;margin:0 0 2px;padding:0;font-weight:600;font-size:.92rem;color:var(--text)}
+.pk-tegels{display:flex;flex-wrap:wrap;gap:6px}
+:is(html) .pk-tegel{flex:1 1 58px;max-width:92px;position:relative;display:grid;justify-items:center;align-content:center;gap:0;min-height:72px;margin:0;padding:8px 4px 10px;
+  border:1.5px solid var(--line,#d7dee8);border-radius:14px;background:var(--surface,#fff);color:var(--text);cursor:pointer;
+  transition:border-color .15s ease,background-color .15s ease,box-shadow .15s ease}
+.pk-tegel input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.pk-tegel b{font-size:1.35rem;line-height:1.1;font-weight:700;font-variant-numeric:tabular-nums}
+.pk-tegel small{font-size:.74rem;line-height:1.2;color:var(--muted)}
+.pk-schaal{display:block;width:70%;height:4px;margin-top:6px;border-radius:99px;background:color-mix(in srgb,var(--text,#1f2937) 10%,transparent);overflow:hidden}
+.pk-schaal i{display:block;height:100%;border-radius:inherit;background:color-mix(in srgb,var(--accent,#2f6f73) 55%,var(--muted,#64748b))}
+:is(html) .pk-tegel:hover{border-color:color-mix(in srgb,var(--accent,#2f6f73) 45%,var(--line,#d7dee8))}
+:is(html) .pk-tegel.is-aan{border-color:var(--accent,#2f6f73);background:var(--accent,#2f6f73);color:var(--text-on-accent,#fff);
+  box-shadow:0 4px 12px color-mix(in srgb,var(--accent,#2f6f73) 28%,transparent)}
+:is(html) .pk-tegel.is-aan small{color:inherit;opacity:.85}
+.pk-tegel.is-aan .pk-schaal{background:color-mix(in srgb,var(--text-on-accent,#fff) 30%,transparent)}
+.pk-tegel.is-aan .pk-schaal i{background:var(--text-on-accent,#fff)}
+.pk-vink{position:absolute;top:5px;right:5px;width:14px;height:14px;color:inherit}
+:is(html) .pk-tegel:has(input:focus-visible){outline:2px solid var(--accent,#2f6f73);outline-offset:2px}
+:is(html) .pk:disabled .pk-tegel{cursor:default;opacity:.6}
+.pk-einde{display:flex;align-items:center;gap:8px;margin:0;font-size:.85rem;color:var(--muted)}
+.pk-einde svg{flex:none;width:16px;height:16px;color:var(--accent,#2f6f73)}
+.pk-einde b{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){:is(html) .pk-tegel{transition:none}}
+@media (max-width:420px){.pk-tegels{gap:5px}:is(html) .pk-tegel{flex-basis:52px}:is(html) .pk-tegel{min-height:66px}.pk-tegel b{font-size:1.2rem}}
