@@ -1819,6 +1819,19 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   outline-offset: 1px;
 }
 
+/* Зауваження власника 16.11: контурний знак паузи (дві порожні смужки) погано читався — смужки й трикутник «продовжити» суцільні,
+   кольором основного тексту. NL: pauze- en hervat-teken gevuld in plaats van omlijnd. */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:not(.is-gevaar) {
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:not(.is-gevaar) > svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  stroke-width: 1.5;
+}
+
 /* Небезпечна дія: натяк кольором, не крик; підтвердження трохи помітніше */
 /* Зауваження власника 16.11: сама червона піктограма губилася на тлі пігулки — тепер має власне м'яке червоне коло й товщу лінію */
 [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar {
@@ -1866,9 +1879,10 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze > svg {
-  width: 10px;
-  height: 10px;
-  stroke-width: 3;
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+  stroke-width: 1.5;
 }
 
 [data-account-menu-v3] .am3-tech-tip {
