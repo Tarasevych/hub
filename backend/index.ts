@@ -20,6 +20,7 @@ import * as aiGrants from './ai-toestemmingen'
 import { annuleerGeplandeMail, createMailComposeRoutes, runMailQueue } from './mail-opstel'
 import { createMailAssistantRoutes } from './ai-mail-assistent'
 import { createAiVertalingRoutes } from './ai-vertaling-routes'
+import { aiDienstMotorenRoutes } from './ai-dienst-motoren'
 import { createGithubRoutes } from './github-platform'
 import { gedelegeerdeSessie } from './site-aanroep'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
@@ -861,6 +862,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...createMailComposeRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createMailAssistantRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
   ...createAiVertalingRoutes({requireSession:ownerRequireSession,audit:ownerAudit}),
+  ...aiDienstMotorenRoutes({requireSession:ownerRequireSession as never,audit:ownerAudit,stepUp:stapOpVereist as never}),
   ...createGithubRoutes({requireSession:ownerRequireSession,audit:ownerAudit,anchor:ownerRequireRedirectAnchor,sessieCookie:OWNER_ECOSYSTEM_COOKIE}),
   ...wrapFactoryMutations(createCloudRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createM10CloudAdminRoutes((event,body)=>ownerRequireSession(event,body), (ctx,auth)=>sterkeStapOpVereist(ctx,auth as never)),(event,body)=>ownerRequireSession(event,body)),

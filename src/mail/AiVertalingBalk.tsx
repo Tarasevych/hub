@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArrowLeftRight,
-  Bot,
   Columns2,
   Plug,
   Check,
@@ -10,14 +9,12 @@ import {
   ExternalLink,
   FileQuestion,
   GitBranch,
-  Globe,
   Languages,
   LoaderCircle,
   Lock,
   Paperclip,
   Settings,
   ShieldCheck,
-  Sparkles,
   TextQuote,
   X,
 } from 'lucide-react';
@@ -44,8 +41,14 @@ import {
   type VertaalWeergave,
 } from '../../shared/ai-vertaling';
 import { InfoTip } from '../InfoTip';
-import { aiHrefOplossen, useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
+import { aiHrefOplossen, herlaadAiStaat, zetDienstAkkoord, zetMotorGebruik, useBalkSessieVerborgen, useLaatsteAiStaat, useMotorVoorkeur, zetAiBalkTonen, zetBalkSessieVerborgen, zetMotorVoorkeur } from './ai-staat';
 import AiUitleg from './AiUitleg';
+import MotorKiezer, { MotorLogo } from './MotorKiezer';
+import { lokaalExtra, lokaalGebruik, LokaleFout, useLokaleStand, vatSamenLokaal, vertaalLokaal } from './lokale-motor';
+import { andereMotor, kiesMotor, LOKAAL_MOTOR_ID, MOTOR_AUTO, motorenVoorPost, verwerktDoor, type MotorKaart, type MotorPrijzen } from '../../shared/mail-ai-motor';
+import { gebruikSleutelDienst, gebruikSleutelEigen, type DienstGebruik, type DienstMotorPubliek } from '../../shared/ai-dienst-motor';
+import type { AiAanbiederId } from '../../shared/ai-aanbieders';
+import './motor-kiezer.css';
 import './ai-vertaling-balk.css';
 
 /* 21.10.2026 (рецензія UX): на телефоні й в альбомній орієнтації панель ШІ займала 200+ px над листом (на 390×844 текст листа
@@ -57,10 +60,14 @@ const AI_BALK_OPEN_SLEUTEL = 'mr-ai-balk-open-v1';
    nu «Що від вас потрібно?» en de vertaalstrook «Оригінал / Переклад / Порівняти». Deze panel begint daarom op ELK scherm als één regel
    (ook op de computer, met dezelfde knop); wie hem uitklapt, krijgt hem uitgeklapt bij de volgende brieven (zelfde sleutel als sinds
    21.10). Ingeklapt blijven de resultaten zichtbaar en werkt «Переклад» gewoon (het verzoek hangt niet aan het uitklappen). */
+/* MAILAI-005 (16.11.2026, Павло затвердив макет «Рядок дій»): панель тепер сама є одним рядком — головна кнопка «Перекласти» з мовою,
+   поруч інструменти, праворуч хто обробляє. Тому інструменти типово ВИДНО на кожному екрані; стрілка лише ховає їх для того, хто так
+   хоче (значення '0' у тому самому ключі; старе '1' = «розгорнуто» читається як і раніше).
+   Het paneel is nu zelf één regel; de hulpmiddelen staan standaard open, het pijltje verbergt ze voor wie dat wil. */
 export function aiBalkStartIngeklapt(): boolean {
-  if (typeof window === 'undefined') return true;
-  try { if (window.localStorage.getItem(AI_BALK_OPEN_SLEUTEL) === '1') return false; } catch { /* privévenster: standaard */ }
-  return true;
+  if (typeof window === 'undefined') return false;
+  try { if (window.localStorage.getItem(AI_BALK_OPEN_SLEUTEL) === '0') return true; } catch { /* privévenster: standaard */ }
+  return false;
 }
 /** Мова інтерфейсу (uk | nl) з <html lang>: панель не отримує lang у пропсах. */
 const isNl = () => typeof document !== 'undefined' && /^nl/i.test(document.documentElement.lang || '');
@@ -163,11 +170,33 @@ export default function AiVertalingBalk({
   // MAILAI-001: панель видно лише після відповіді сервера, якщо людина її ввімкнула і є робочий рушій (aiBalkZichtbaar).
   const [staatGeladen, setStaatGeladen] = useState(false);
   const gedeeldeStaat = useLaatsteAiStaat();
+  // MAILAI-002: рушії (локальний ШІ Chrome + ваші ключі), ваш вибір на цьому пристрої, «сховати зараз» і запропонований інший рушій.
+  const lokaal = useLokaleStand();
+  const voorkeur = useMotorVoorkeur();
+  // MAILAI-003: спільні рушії сайту (лише ввімкнені власником), лічильник на сьогодні, орієнтовні ціни; стан перечитується після згоди.
+  const [dienst, setDienst] = useState<DienstMotorPubliek[]>([]);
+  const [motorGebruik, setMotorGebruik] = useState<Record<string, DienstGebruik>>({});
+  const [prijzen, setPrijzen] = useState<MotorPrijzen | null>(null);
+  const [staatVersie, setStaatVersie] = useState(0);
+  const lExtra = lokaalExtra();
+  const kaarten = useMemo(
+    () => motorenVoorPost(agents, lokaal, { dienst, gebruik: motorGebruik, prijzen, lokaalPrompt: lExtra.lokaalPrompt, beleid: lExtra.beleid }),
+    [agents, lokaal, dienst, motorGebruik, prijzen, lExtra.lokaalPrompt, lExtra.beleid?.reden, lExtra.beleid?.door],
+  );
+  const telGebruik = (teller: string, g?: DienstGebruik | null) => {
+    if (!g || !teller) return;
+    setMotorGebruik(curr => ({ ...curr, [teller]: g }));
+    setDienst(curr => curr.map(d => (gebruikSleutelDienst(d.id) === teller ? { ...d, vandaag: g.vandaag } : d)));
+    zetMotorGebruik(teller, g);
+  };
+  const sessieVerborgen = useBalkSessieVerborgen();
+  const [sluitKeuzeOpen, setSluitKeuzeOpen] = useState(false);
+  const [voorstel, setVoorstel] = useState<{ mode: AiVertalingMode; motor: MotorKaart } | null>(null);
   const balkId = useId();
   const nl = isNl();
   const t = (uk: string, nlTekst: string) => (nl ? nlTekst : uk);
   const wisselIngeklapt = () => setIngeklapt((was) => {
-    try { if (was) window.localStorage.setItem(AI_BALK_OPEN_SLEUTEL, '1'); else window.localStorage.removeItem(AI_BALK_OPEN_SLEUTEL); } catch { /* optioneel */ }
+    try { window.localStorage.setItem(AI_BALK_OPEN_SLEUTEL, was ? '1' : '0'); } catch { /* optioneel */ }
     return !was;
   });
 
@@ -193,9 +222,15 @@ export default function AiVertalingBalk({
           agents?: AiVertalingAgentInfo[];
           settings?: AiVertalingInstellingen;
           motoren?: VertaalMotor[];
+          dienstMotoren?: DienstMotorPubliek[];
+          gebruik?: Record<string, DienstGebruik>;
+          prijzen?: MotorPrijzen | null;
         };
         const loadedAgents = Array.isArray(data?.agents) ? data.agents : [];
         setAgents(loadedAgents);
+        setDienst(Array.isArray(data?.dienstMotoren) ? data.dienstMotoren : []);
+        setMotorGebruik(data?.gebruik && typeof data.gebruik === 'object' ? data.gebruik : {});
+        setPrijzen(data?.prijzen || null);
         setStaatGeladen(true);
         setMotoren(Array.isArray(data?.motoren) && data.motoren.length ? data.motoren : motorenMetStand(loadedAgents, isDocumentView));
         if (data?.settings) {
@@ -225,7 +260,7 @@ export default function AiVertalingBalk({
     return () => {
       active = false;
     };
-  }, [context.service, context.tabContext, context.sourceOrigin]);
+  }, [context.service, context.tabContext, context.sourceOrigin, staatVersie]);
 
   // Reset displayed panel when switching to a different message/document
   useEffect(() => {
@@ -276,11 +311,21 @@ export default function AiVertalingBalk({
       const depth = overrides?.depth || summaryDepth;
       const crossMailbox = overrides?.crossMailbox !== undefined ? overrides.crossMailbox : crossMailboxContext;
       const withAttachments = overrides?.withAttachments !== undefined ? overrides.withAttachments : includeAttachments;
-      const agentId = overrides?.agent || selectedAgentId || 'prive:mijn-ruimte-assistent';
+      // MAILAI-002: welke motor? Uw keuze (of «авто» = eerst gratis); een expliciete keuze die deze functie niet kan → niets versturen.
+      const motor = overrides?.agent ? kaarten.find(k => k.id === overrides.agent) || null : kiesMotor(kaarten, voorkeur, mode);
+      const agentId = motor?.agentId || overrides?.agent || selectedAgentId || 'prive:mijn-ruimte-assistent';
 
       setActiveMode(mode);
       setRefusal(null);
       setErrorText('');
+      setVoorstel(null);
+      if (!motor || motor.staat !== 'klaar' || !motor.functies.includes(mode)) {
+        setErrorText(t(
+          'Обраний рушій цього не вміє або ще не готовий. Оберіть інший у «Рушії ШІ» — текст без вашого вибору нікуди не надсилається.',
+          'De gekozen motor kan dit niet of is nog niet klaar. Kies een andere in «AI-motoren» — zonder uw keuze gaat de tekst nergens heen.',
+        ));
+        return;
+      }
 
       const payloadSegments: AiVertalingSegment[] = [
         ...(subject.trim() ? [{ id: 'subject', text: subject.trim() }] : []),
@@ -305,6 +350,41 @@ export default function AiVertalingBalk({
           setHasTranslation(true);
           onTranslationsReady(cached.translations, cached.detectedSourceLang, { motorNaam: cached.motorNaam || '', doelTaal: cached.targetLang, onvertaald: cached.onvertaald || 0 });
           onToggleTranslationActive(true);
+        }
+        return;
+      }
+
+      if (motor.soort === 'lokaal') {
+        setBusyMode(mode);
+        try {
+          const basis: AiVertalingRunResponse = {
+            ok: true, mode, targetLang, targetLangLabelUk: taalLabelUk(targetLang), detectedSourceLang: '', agentId: LOKAAL_MOTOR_ID,
+            agentName: t('Локальний ШІ Chrome', 'Lokale AI van Chrome'), cached: false, motorId: LOKAAL_MOTOR_ID, motorNaam: t('Локальний ШІ Chrome', 'Lokale AI van Chrome'),
+            privacy: { strippedTrackingPixels: 0, strippedTrackingParams: 0, redactedSecrets: 0, scopeVerified: [], ruimte: 'prive' },
+          };
+          let data: AiVertalingRunResponse;
+          if (mode === 'translate') {
+            const r = await vertaalLokaal(payloadSegments, targetLang);
+            data = { ...basis, translations: r.translations, onvertaald: r.onvertaald };
+          } else {
+            data = { ...basis, summary: await vatSamenLokaal([subject, bodyText].filter(Boolean).join('\n\n')) };
+          }
+          if (!aliveRef.current) return;
+          localCacheRef.current.set(cacheKey, data);
+          setLastResult(data);
+          if (mode === 'translate' && data.translations) {
+            setHasTranslation(true);
+            onTranslationsReady(data.translations, '', { motorNaam: data.motorNaam || '', doelTaal: targetLang, onvertaald: data.onvertaald || 0 });
+            onToggleTranslationActive(true);
+          }
+        } catch (err) {
+          if (!aliveRef.current) return;
+          const reden = err instanceof LokaleFout ? err.tekst(nl) : t('Не вдалося виконати на цьому пристрої.', 'Uitvoeren op dit apparaat mislukt.');
+          setErrorText(`${reden} ${t('Оригінал листа не змінено.', 'Het origineel is niet veranderd.')}`);
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+        } finally {
+          if (aliveRef.current) setBusyMode(null);
         }
         return;
       }
@@ -338,6 +418,8 @@ export default function AiVertalingBalk({
         const data = res.data as AiVertalingRunResponse;
         localCacheRef.current.set(cacheKey, data);
         setLastResult(data);
+        // MAILAI-003: лічильник цього рушія одразу після відповіді — «сьогодні 5 із 30», залишок у постачальника.
+        telGebruik(data.dienstId ? gebruikSleutelDienst(data.dienstId) : data.aanbiederId ? gebruikSleutelEigen(data.aanbiederId as AiAanbiederId) : '', data.gebruik);
 
         if (!settings.recentLangs.includes(targetLang) || settings.recentLangs[0] !== targetLang) {
           setSettings(curr => ({
@@ -354,7 +436,23 @@ export default function AiVertalingBalk({
       } catch (err: any) {
         if (!aliveRef.current) return;
         const errBody = err?.response?.data || err?.data || {};
-        if (errBody?.messageUk || err?.response?.status === 403 || err?.status === 403) {
+        // MAILAI-002: ліміт постачальника або недійсний ключ — сказати саме це і запропонувати інший готовий рушій.
+        const code = String(errBody?.error || '');
+        // MAILAI-003: спільний рушій сайту — межа на людину, вимкнено власником, немає згоди, сервер не відповів. Кажемо саме це,
+        // пропонуємо інший готовий рушій і перечитуємо стан (картки мають показати правду).
+        const dienstFout = ['DIENST_LIMIET', 'DIENST_AANBIEDER_LIMIET', 'DIENST_ONBEREIKBAAR', 'DIENST_UIT', 'DIENST_AKKOORD_NODIG', 'DIENST_FUNCTIE', 'MOTOR_NIET_BESCHIKBAAR'].includes(code);
+        if (errBody?.gebruik) telGebruik(errBody.dienstId ? gebruikSleutelDienst(String(errBody.dienstId)) : errBody.aanbiederId ? gebruikSleutelEigen(errBody.aanbiederId as AiAanbiederId) : '', errBody.gebruik as DienstGebruik);
+        if (dienstFout) {
+          setErrorText(String((nl ? errBody.messageNl : errBody.messageUk) || errBody.messageUk || ''));
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+          if (code === 'DIENST_UIT' || code === 'DIENST_AKKOORD_NODIG' || code === 'MOTOR_NIET_BESCHIKBAAR') { setStaatVersie(v => v + 1); void herlaadAiStaat(context); }
+          if (code === 'DIENST_AKKOORD_NODIG') setMotorenOpen(true);
+        } else if (errBody?.error === 'AANBIEDER_LIMIET' || errBody?.error === 'AANBIEDER_SLEUTEL_ONGELDIG' || errBody?.error === 'VERTAALMOTOR_GEEN_ANTWOORD') {
+          setErrorText(String((nl ? errBody.messageNl : errBody.messageUk) || errBody.messageUk || ''));
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+        } else if (errBody?.messageUk || err?.response?.status === 403 || err?.status === 403) {
           setRefusal({
             code: String(errBody.error || 'ACCESS_DENIED'),
             messageUk:
@@ -393,6 +491,9 @@ export default function AiVertalingBalk({
       settings.recentLangs,
       onTranslationsReady,
       onToggleTranslationActive,
+      kaarten,
+      voorkeur,
+      nl,
     ],
   );
 
@@ -413,97 +514,56 @@ export default function AiVertalingBalk({
   };
   // Вимкнено або немає жодного робочого рушія: панелі немає зовсім (без порожнього місця). Хуки вище працюють далі, тож переклад,
   // який людина обрала в смузі над листом чи в «Вигляд → Мова листа», і далі виконується (якщо є робочий агент).
-  if (!voorbeeldZichtbaar && !aiBalkZichtbaar({ geladen: staatGeladen, balkTonen, motoren })) return null;
+  if (!voorbeeldZichtbaar && (sessieVerborgen || !aiBalkZichtbaar({ geladen: staatGeladen, balkTonen, motoren, lokaalKlaar: lokaal === 'klaar' }))) return null;
+  // Wie krijgt de tekst nu (voor vertalen)? Altijd zichtbaar, ook ingeklapt.
+  const actief = kiesMotor(kaarten, voorkeur, 'translate');
+  const kiesVoorkeur = (id: string) => {
+    zetMotorVoorkeur(id);
+    const k = kaarten.find(x => x.id === id);
+    if (k?.agentId) { setSelectedAgentId(k.agentId); void persistSettings({ defaultAgentId: k.agentId }); }
+    setErrorText(''); setVoorstel(null); setRefusal(null);
+    if (translationActive || activeMode === 'translate') void runAction('translate', { agent: id === MOTOR_AUTO ? undefined : id });
+  };
+  // Куди йде текст і хто платить — повним реченням у підказці чипа (у самому чипі лише логотип, назва й лічильник).
+  const wieTitel = !actief ? t('Обраний рушій зараз не готовий. Натисніть, щоб обрати інший.', 'De gekozen motor is nu niet klaar. Klik om een andere te kiezen.')
+    : `${actief.soort === 'lokaal' ? t('Текст не покидає цей комп’ютер', 'De tekst verlaat deze computer niet')
+      : actief.soort === 'eigen-server' ? t('Сервер Mijn Ruimte → власний сервер сайту, без ШІ-компаній', 'Server van Mijn Ruimte → eigen server van de site, geen AI-bedrijf')
+      : actief.soort === 'dienst-eigenaar' ? t('Сервер Mijn Ruimte → постачальник, ключем сайту (не вашим); платить власник сайту', 'Server van Mijn Ruimte → aanbieder, met de sleutel van de site (niet de uwe); de eigenaar van de site betaalt')
+      : t('Ваш сервер → постачальник, вашим ключем', 'Uw server → aanbieder, met uw sleutel')}. ${actief.gebruikUk ? `${t(actief.gebruikUk, actief.gebruikNl || actief.gebruikUk)}. ` : ''}${t('Натисніть, щоб обрати, хто обробляє текст.', 'Klik om te kiezen wie de tekst verwerkt.')}`;
+  const kanFunctie = (mode: AiVertalingMode) => Boolean(kiesMotor(kaarten, voorkeur, mode));
+  // MAILAI-003: згода на спільний рушій (або відкликання). Після відкликання обраний рушій повертається до «Авто»: він більше не готовий.
+  const dienstAkkoord = async (id: string, aan: boolean) => {
+    await zetDienstAkkoord(id, aan, context);
+    if (!aan && voorkeur === `dienst:${id}`) zetMotorVoorkeur(MOTOR_AUTO);
+    setStaatVersie(v => v + 1);
+  };
+  const nietKanTitel = t('Обраний рушій цього не вміє (локальний ШІ: лише переклад і підсумок). Оберіть інший у «Рушії ШІ».', 'De gekozen motor kan dit niet (lokale AI: alleen vertaling en samenvatting). Kies een andere in «AI-motoren».');
+  const gebruik = actief?.soort === 'lokaal' ? lokaalGebruik() : null;
 
   return (
     <section
-      className={`ai-vertaling-balk${translationActive ? ' is-translated' : ''}${isDocumentView ? ' is-document' : ''}`}
+      className={`ai-vertaling-balk is-rij${translationActive ? ' is-translated' : ''}${isDocumentView ? ' is-document' : ''}`}
       data-ai-vertaling-balk
       data-translation-state={translationActive ? 'translated' : 'original'}
       data-ingeklapt={ingeklapt ? 'ja' : 'nee'}
       aria-label={t('Інтелектуальна панель перекладу, підсумку та контексту ШІ', 'AI-paneel voor vertaling, samenvatting en context')}
     >
+      {/* MAILAI-005: один рядок. Ліворуч головна дія (переклад + мова), далі інструменти, праворуч — хто обробляє текст. */}
       <div className="ai-vb-main-row">
-        <div className="ai-vb-brand">
-          <Sparkles className="ai-vb-sparkle" size={15} aria-hidden="true" />
-          <span className="ai-vb-title">{t('ШІ-аналіз і переклад', 'AI-analyse en vertaling')}</span>
-          {/* Punt 16: «незрозуміла кнопка ШІ» — dit is geen tweede motor en geen knop die iets start. Het is het label van de
-              balk, met uitleg erbij; de motor kiest u in «Рушії перекладу», de taal ernaast. */}
-          <InfoTip className="ai-vb-uitleg" label={t('Що таке «ШІ» в цій панелі', 'Wat «AI» in dit paneel betekent')}>
-            {nl ? (
-              <><strong>Dit is geen aparte motor en geen knop.</strong> Het is de naam van het paneel: vertaling, samenvatting en context
-              doet de motor die u kiest in «Vertaalmotoren» (nu uw privé-AI-agent met eigen sleutel). Er wordt niets verstuurd zonder dat u
-              klikt, en de tekst van de brief verandert pas als u op «Vertalen» klikt.</>
-            ) : (
-              <><strong>Це не окремий рушій і не кнопка.</strong> Це назва панелі: переклад, підсумок і контекст робить той рушій,
-            який ви обрали в «Рушії перекладу» (зараз це ваш приватний ШІ-агент із власним ключем). Нічого не надсилається без
-            вашого натискання, і текст листа не змінюється, доки ви не натиснете «Перекласти».</>
-            )}
-          </InfoTip>
-          <span className="ai-vb-space-badge" title="Працює виключно через ваш приватний простір (AiRuimte = prive) лише за вашим запитом">
-            <Lock size={11} aria-hidden="true" />
-            {t('Приватний простір', 'Privéruimte')}
-          </span>
+        <div className="ai-vb-hoofd" id={`${balkId}-kiezers`}>
           <button
             type="button"
-            className="ai-vb-inklap"
-            aria-expanded={!ingeklapt}
-            aria-controls={`${balkId}-kiezers ${balkId}-modi`}
-            aria-label={ingeklapt ? t('Показати інструменти ШІ: мова, переклад, підсумок', 'AI-hulpmiddelen tonen: taal, vertaling, samenvatting') : t('Сховати інструменти ШІ', 'AI-hulpmiddelen verbergen')}
-            title={ingeklapt ? t('Показати інструменти ШІ', 'AI-hulpmiddelen tonen') : t('Сховати інструменти ШІ', 'AI-hulpmiddelen verbergen')}
-            onClick={wisselIngeklapt}
-            data-testid="ai-vb-inklap"
+            className={`ai-vb-mode-btn ai-vb-hoofd-knop${activeMode === 'translate' || translationActive ? ' active' : ''}`}
+            disabled={busyMode !== null}
+            onClick={() => void runAction('translate')}
+            title={t('Перекладає текст листа обраною мовою тим рушієм, що показаний праворуч. Оригінал не змінюється: повернутися можна одним натисканням.', 'Vertaalt de tekst van het bericht naar de gekozen taal met de motor die rechts staat. Het origineel verandert niet: terug kan met één klik.')}
+            data-testid="ai-vb-btn-translate"
           >
-            <ChevronDown size={18} aria-hidden="true" />
+            {busyMode === 'translate' ? <LoaderCircle size={16} className="spin" /> : <Languages size={16} />}
+            <span>{t('Перекласти', 'Vertalen')}</span>
           </button>
-          <button
-            type="button"
-            className="ai-vb-sluit"
-            aria-label={t('Сховати панель ШІ над усіма листами', 'AI-paneel boven alle berichten verbergen')}
-            title={t(
-              'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
-              'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
-            )}
-            onClick={sluitBalk}
-            data-testid="ai-vb-sluit"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="ai-vb-selectors" id={`${balkId}-kiezers`}>
-          <label className="ai-vb-select-group" title="Оберіть підключеного приватного ШІ-агента">
-            <Bot size={13} aria-hidden="true" />
-            <span className="ai-vb-sr">ШІ-агент</span>
-            <select
-              value={selectedAgentId}
-              onChange={e => {
-                const nextAgentId = e.target.value;
-                setSelectedAgentId(nextAgentId);
-                setRefusal(null);
-                void persistSettings({ defaultAgentId: nextAgentId });
-                if (translationActive || activeMode === 'translate') {
-                  void runAction('translate', { agent: nextAgentId });
-                } else if (activeMode) {
-                  void runAction(activeMode, { agent: nextAgentId });
-                }
-              }}
-              aria-label={t('Підключений ШІ-агент', 'Gekoppelde AI-agent')}
-              data-testid="ai-vb-agent-select"
-            >
-              {agents.map(agent => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name}
-                  {!agent.allowedMailRead && !isDocumentView ? ' (немає mail.read)' : ''}
-                  {!agent.allowedFilesRead && isDocumentView ? ' (немає files.read)' : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="ai-vb-select-group" title="Цільова мова перекладу та відповідей ШІ">
-            <Globe size={13} aria-hidden="true" />
-            <span className="ai-vb-sr">Цільова мова</span>
+          <label className="ai-vb-select-group ai-vb-taal" title={t('Мова, якою перекладати й відповідати. Якщо переклад уже показано, зміна мови одразу перекладає заново.', 'De taal waarin vertaald en geantwoord wordt. Staat de vertaling al open, dan wordt meteen opnieuw vertaald.')}>
+            <span className="ai-vb-sr">{t('Цільова мова', 'Doeltaal')}</span>
             <select
               value={selectedLang}
               onChange={e => {
@@ -521,16 +581,16 @@ export default function AiVertalingBalk({
               {orderedLanguages.recentItems.length > 0 && (
                 <optgroup label="Нещодавно обрані">
                   {orderedLanguages.recentItems.map(langItem => (
-                    <option key={`rec-${langItem.code}`} value={langItem.code}>
-                      {langItem.labelUk} ({langItem.nativeLabel})
+                    <option key={`rec-${langItem.code}`} value={langItem.code} title={langItem.nativeLabel}>
+                      {nl ? langItem.nativeLabel : langItem.labelUk}
                     </option>
                   ))}
                 </optgroup>
               )}
               <optgroup label="Усі мови">
                 {orderedLanguages.restItems.map(langItem => (
-                  <option key={langItem.code} value={langItem.code}>
-                    {langItem.labelUk} ({langItem.nativeLabel})
+                  <option key={langItem.code} value={langItem.code} title={langItem.nativeLabel}>
+                    {nl ? langItem.nativeLabel : langItem.labelUk}
                   </option>
                 ))}
               </optgroup>
@@ -539,62 +599,54 @@ export default function AiVertalingBalk({
         </div>
 
         <div className="ai-vb-modes" id={`${balkId}-modi`} role="toolbar" aria-label={t('Режими роботи ШІ', 'AI-functies')}>
-          <button
-            type="button"
-            className={`ai-vb-mode-btn${activeMode === 'translate' || translationActive ? ' active' : ''}`}
-            disabled={busyMode !== null}
-            onClick={() => void runAction('translate')}
-            data-testid="ai-vb-btn-translate"
-          >
-            {busyMode === 'translate' ? <LoaderCircle size={14} className="spin" /> : <Languages size={14} />}
-            <span>{t('Перекласти', 'Vertalen')}</span>
-          </button>
-
           {(hasTranslation || translationActive) && (
             <button
               type="button"
               className={`ai-vb-toggle-orig-btn${translationActive ? ' showing-translation' : ' showing-original'}`}
               onClick={() => onToggleTranslationActive(!translationActive)}
               data-testid="ai-vb-btn-toggle-original"
-              title="Миттєве перемикання між оригіналом і перекладом без втрати форматування"
+              title={t('Миттєве перемикання між оригіналом і перекладом без втрати форматування. Переклад лишається в пам’яті вкладки, новий запит не надсилається.', 'Meteen wisselen tussen origineel en vertaling, zonder verlies van opmaak. De vertaling blijft in het geheugen van het tabblad; er gaat geen nieuw verzoek weg.')}
             >
               <ArrowLeftRight size={13} />
-              <span>{translationActive ? 'Показати оригінал ↔ Переклад' : 'Переклад ↔ Показати оригінал'}</span>
+              <span>{translationActive ? t('Показати оригінал', 'Origineel tonen') : t('Показати переклад', 'Vertaling tonen')}</span>
             </button>
           )}
 
           <button
             type="button"
             className={`ai-vb-mode-btn${activeMode === 'summary' ? ' active' : ''}`}
-            disabled={busyMode !== null}
+            disabled={busyMode !== null || !kanFunctie('summary')}
+            title={kanFunctie('summary') ? t('Короткий підсумок листа: головне, дати й суми.', 'Korte samenvatting van het bericht: de kern, datums en bedragen.') : nietKanTitel}
             onClick={() => void runAction('summary')}
             data-testid="ai-vb-btn-summary"
           >
-            {busyMode === 'summary' ? <LoaderCircle size={14} className="spin" /> : <TextQuote size={14} />}
-            <span>{t('Короткий підсумок', 'Korte samenvatting')}</span>
+            {busyMode === 'summary' ? <LoaderCircle size={15} className="spin" /> : <TextQuote size={15} />}
+            <span>{t('Підсумок', 'Samenvatting')}</span>
           </button>
 
           <button
             type="button"
             className={`ai-vb-mode-btn${activeMode === 'purpose' ? ' active' : ''}`}
-            disabled={busyMode !== null}
+            disabled={busyMode !== null || !kanFunctie('purpose')}
+            title={kanFunctie('purpose') ? t('Що це за документ, про що, для чого і чому його надіслали.', 'Wat voor document dit is, waarover, waarvoor en waarom het is gestuurd.') : nietKanTitel}
             onClick={() => void runAction('purpose')}
             data-testid="ai-vb-btn-purpose"
           >
-            {busyMode === 'purpose' ? <LoaderCircle size={14} className="spin" /> : <FileQuestion size={14} />}
-            <span>{t('Що це за документ, про що, для чого і чому', 'Wat voor document is dit, waarover, waarvoor en waarom')}</span>
+            {busyMode === 'purpose' ? <LoaderCircle size={15} className="spin" /> : <FileQuestion size={15} />}
+            <span>{t('Про що лист', 'Waar het over gaat')}</span>
           </button>
 
           {!isDocumentView && (
             <button
               type="button"
               className={`ai-vb-mode-btn${activeMode === 'context' ? ' active' : ''}`}
-              disabled={busyMode !== null}
+              disabled={busyMode !== null || !kanFunctie('context')}
+              title={kanFunctie('context') ? t('Контекст і зв’язки: шукає пов’язані листи у ваших скриньках і показує, як вони стосуються цього.', 'Context en verbanden: zoekt verwante berichten in uw postvakken en toont hoe ze hierbij horen.') : nietKanTitel}
               onClick={() => void runAction('context')}
               data-testid="ai-vb-btn-context"
             >
-              {busyMode === 'context' ? <LoaderCircle size={14} className="spin" /> : <GitBranch size={14} />}
-              <span>{t('Контекст і зв’язки', 'Context en verbanden')}</span>
+              {busyMode === 'context' ? <LoaderCircle size={15} className="spin" /> : <GitBranch size={15} />}
+              <span>{t('Зв’язки', 'Verbanden')}</span>
             </button>
           )}
 
@@ -602,55 +654,126 @@ export default function AiVertalingBalk({
           {onWeergave && (
             <button
               type="button"
-              className={`ai-vb-mode-btn${weergave === 'naast' ? ' active' : ''}`}
+              className={`ai-vb-mode-btn is-icoon${weergave === 'naast' ? ' active' : ''}`}
               aria-pressed={weergave === 'naast'}
-              title="Оригінал і переклад поруч: оригінал ліворуч, переклад праворуч. На телефоні — одне під одним."
+              aria-label={weergave === 'naast' ? t('Поруч: увімкнено', 'Naast elkaar: aan') : t('Оригінал і переклад поруч', 'Origineel en vertaling naast elkaar')}
+              title={t('Оригінал і переклад поруч: оригінал ліворуч, переклад праворуч. На телефоні — одне під одним.', 'Origineel en vertaling naast elkaar: origineel links, vertaling rechts. Op de telefoon onder elkaar.')}
               onClick={() => onWeergave(normaliseerVertaalWeergave(weergave === 'naast' ? 'inline' : 'naast'))}
               data-testid="ai-vb-btn-naast"
             >
-              <Columns2 size={14} />
-              <span>{weergave === 'naast' ? t('Поруч: увімкнено', 'Naast elkaar: aan') : t('Оригінал і переклад поруч', 'Origineel en vertaling naast elkaar')}</span>
+              <Columns2 size={15} />
             </button>
           )}
+        </div>
 
+        <div className="ai-vb-brand">
           <button
             type="button"
-            className={`ai-vb-motoren-trigger${motorenOpen ? ' active' : ''}`}
+            className={`ai-vb-motor-chip${motorenOpen ? ' active' : ''}`}
             aria-expanded={motorenOpen}
-            title="Які рушії перекладу є, що працює зараз, що треба підключити і чого ще немає"
+            aria-haspopup="dialog"
+            aria-label={`${t('Рушії ШІ', 'AI-motoren')}: ${actief ? (actief.dienst ? actief.dienst.naam : t(actief.naamUk, actief.naamNl)) : t('не обрано', 'niet gekozen')}`}
+            title={wieTitel}
             onClick={() => setMotorenOpen(v => !v)}
             data-testid="ai-vb-btn-motoren"
           >
-            <Plug size={14} />
-            <span>{t('Рушії перекладу', 'Vertaalmotoren')}</span>
+            {actief ? <MotorLogo k={actief} maat={24} /> : <AlertTriangle size={16} aria-hidden="true" />}
+            <span className="ai-vb-wie" data-testid="ai-vb-wie" data-motor-actief={actief?.id || ''}>
+              {actief ? (actief.dienst ? actief.dienst.naam : t(actief.naamUk, actief.naamNl)) : t('Оберіть рушій', 'Kies een motor')}
+            </span>
+            {actief?.dienst && <span className="mk-teller" data-testid="ai-vb-wie-gebruik">{t(`${actief.dienst.vandaag} з ${actief.dienst.limietPerDag}`, `${actief.dienst.vandaag} van ${actief.dienst.limietPerDag}`)}</span>}
+            {gebruik && <span className="mk-teller" title={t('Розширення пропускає до 20 запитів за хвилину з цієї сторінки.', 'De extensie laat tot 20 verzoeken per minuut van deze pagina door.')}>{gebruik.minuut}/{gebruik.max}</span>}
+            <ChevronDown size={14} aria-hidden="true" />
           </button>
-
           <button
             type="button"
             className={`ai-vb-settings-trigger${settingsOpen ? ' active' : ''}`}
             aria-expanded={settingsOpen}
             aria-label={t('Налаштування панелі ШІ', 'Instellingen van het AI-paneel')}
-            title="Гнучкі налаштування підсумку, міжскринькового контексту та вкладень"
+            title={t('Налаштування: глибина підсумку, пошук зв’язків у всіх скриньках, читання вкладень, типова мова.', 'Instellingen: diepte van de samenvatting, verbanden in alle postvakken, bijlagen lezen, standaardtaal.')}
             onClick={() => setSettingsOpen(v => !v)}
             data-testid="ai-vb-btn-settings"
           >
-            <Settings size={14} />
-            <span>{t('Налаштування', 'Instellingen')}</span>
+            <Settings size={16} aria-hidden="true" />
           </button>
+          <button
+            type="button"
+            className="ai-vb-inklap"
+            aria-expanded={!ingeklapt}
+            aria-controls={`${balkId}-modi`}
+            aria-label={ingeklapt ? t('Показати інструменти ШІ: мова, переклад, підсумок', 'AI-hulpmiddelen tonen: taal, vertaling, samenvatting') : t('Сховати інструменти ШІ', 'AI-hulpmiddelen verbergen')}
+            title={ingeklapt ? t('Показати інструменти ШІ', 'AI-hulpmiddelen tonen') : t('Сховати інструменти ШІ', 'AI-hulpmiddelen verbergen')}
+            onClick={wisselIngeklapt}
+            data-testid="ai-vb-inklap"
+          >
+            <ChevronDown size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="ai-vb-sluit"
+            aria-label={t('Сховати панель ШІ над усіма листами', 'AI-paneel boven alle berichten verbergen')}
+            title={t(
+              'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
+              'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
+            )}
+            onClick={() => setSluitKeuzeOpen(o => !o)}
+            aria-expanded={sluitKeuzeOpen}
+            aria-haspopup="true"
+            data-testid="ai-vb-sluit"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+          {sluitKeuzeOpen && (
+            <div className="ai-vb-sluit-keuze" role="group" aria-label={t('Як сховати панель ШІ', 'Hoe het AI-paneel verbergen')} data-testid="ai-vb-sluit-keuze"
+              onKeyDown={e => { if (e.key === 'Escape') setSluitKeuzeOpen(false); }}>
+              <button type="button" className="mk-knop" autoFocus data-sluit="sessie"
+                onClick={() => { setSluitKeuzeOpen(false); zetBalkSessieVerborgen(true); }}>
+                <strong>{t('Сховати зараз', 'Nu verbergen')}</strong>
+                <small>{t('Лише до закриття цієї вкладки, щоб не відволікало. Налаштування не змінюються.', 'Alleen tot u dit tabblad sluit, zodat het niet afleidt. De instellingen blijven zoals ze zijn.')}</small>
+              </button>
+              <button type="button" className="mk-knop" data-sluit="uit" onClick={() => { setSluitKeuzeOpen(false); sluitBalk(); }}>
+                <strong>{t('Вимкнути зовсім', 'Helemaal uitzetten')}</strong>
+                <small>{t('На всіх ваших пристроях, доки не ввімкнете знову: «Вигляд» у шапці листа → «ШІ-аналіз над листом».', 'Op al uw apparaten, tot u het weer aanzet: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht».')}</small>
+              </button>
+              <button type="button" className="ai-vb-wie-knop" data-sluit="annuleer" onClick={() => setSluitKeuzeOpen(false)}>{t('Скасувати', 'Annuleren')}</button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Punt 16: каталог рушіїв з чесним станом — «що працює зараз, що треба підключити, чого ще немає», з кнопкою підключення
           такою ж, як на інших картках інтеграцій. Нічого не імітуємо: у рушія зі станом «ще немає» кнопки немає взагалі. */}
+      {motorenOpen && <div className="ai-vb-scherm" onClick={() => setMotorenOpen(false)} aria-hidden="true" />}
       {motorenOpen && (
-        <div className="ai-vb-motoren" role="region" aria-label={t('Рушії перекладу', 'Vertaalmotoren')} data-testid="ai-vb-motoren">
+        <div className="ai-vb-motoren" role="dialog" aria-label={t('Рушії перекладу', 'Vertaalmotoren')} data-testid="ai-vb-motoren"
+          onKeyDown={e => { if (e.key === 'Escape') setMotorenOpen(false); }}>
+          <i className="ai-vb-greep" aria-hidden="true" />
           <div className="ai-vb-settings-header">
-            <strong>{t('Рушії перекладу', 'Vertaalmotoren')}</strong>
-            <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label={t('Закрити перелік рушіїв', 'Lijst met motoren sluiten')}>
-              <X size={14} />
+            <strong>{t('Хто обробляє текст', 'Wie de tekst verwerkt')}</strong>
+            <InfoTip className="ai-vb-uitleg" label={t('Що таке «ШІ» в цій панелі', 'Wat «AI» in dit paneel betekent')}>
+              {nl ? (
+                <><strong>Dit is geen aparte motor en geen knop.</strong> Vertaling, samenvatting en context doet de motor die u hier kiest. Er wordt niets verstuurd zonder dat u klikt, en de
+                tekst van de brief verandert pas als u op «Vertalen» klikt.</>
+              ) : (
+                <><strong>Це не окремий рушій і не кнопка.</strong> Переклад, підсумок і зв’язки робить той рушій, який ви обрали тут. Нічого не надсилається без вашого натискання, і
+                текст листа не змінюється, доки ви не натиснете «Перекласти».</>
+              )}
+            </InfoTip>
+            <span className="ai-vb-space-badge" title={t('Працює виключно через ваш приватний простір і лише за вашим запитом.', 'Werkt alleen via uw privéruimte en alleen op uw verzoek.')}>
+              <Lock size={11} aria-hidden="true" />
+              {t('Приватний простір', 'Privéruimte')}
+            </span>
+            <button type="button" className="ai-vb-close-btn" autoFocus onClick={() => setMotorenOpen(false)} aria-label={t('Закрити перелік рушіїв', 'Lijst met motoren sluiten')}>
+              <X size={16} />
             </button>
           </div>
-          <AiUitleg nl={nl} />
+          <MotorKiezer nl={nl} kaarten={kaarten} voorkeur={voorkeur} onKies={kiesVoorkeur} lokaal={lokaal} onAkkoord={dienstAkkoord} />
+          <details className="mk-later">
+            <summary>{t('Як працює ШІ в пошті й конфіденційність', 'Hoe de AI in de post werkt en privacy')}</summary>
+            <AiUitleg nl={nl} />
+          </details>
+          <details className="mk-later">
+            <summary>{t('Служби перекладу без ШІ (каталог)', 'Vertaaldiensten zonder AI (catalogus)')}</summary>
           <ul className="ai-vb-motoren-lijst">
             {motoren.map(motor => (
               <li key={motor.id} className="ai-vb-motor-kaart" data-motor={motor.id} data-motor-staat={motor.staat}>
@@ -676,6 +799,7 @@ export default function AiVertalingBalk({
               </li>
             ))}
           </ul>
+          </details>
         </div>
       )}
 
@@ -794,7 +918,20 @@ export default function AiVertalingBalk({
         <div className="ai-vb-error-banner" role="alert">
           <AlertTriangle size={15} />
           <span>{errorText}</span>
+          {voorstel && (
+            <button type="button" className="mk-knop" data-testid="ai-vb-ander-motor"
+              title={t('Виконати цей запит іншим готовим рушієм. Ваш основний вибір не змінюється.', 'Dit verzoek uitvoeren met een andere motor die klaar is. Uw vaste keuze blijft.')}
+              onClick={() => { const x = voorstel; setVoorstel(null); void runAction(x.mode, { agent: x.motor.id }); }}>
+              {t(`Спробувати: ${voorstel.motor.naamUk}`, `Proberen met: ${voorstel.motor.naamNl}`)}
+            </button>
+          )}
         </div>
+      )}
+      {lastResult && !errorText && (
+        <p className="ai-vb-verwerkt" data-testid="ai-vb-verwerkt">
+          <ShieldCheck size={13} aria-hidden="true" />
+          {t('Оброблено: ', 'Verwerkt: ')}{verwerktDoor({ lokaal: lastResult.motorId === LOKAAL_MOTOR_ID, aanbiederId: lastResult.aanbiederId, agentName: lastResult.agentName, dienst: lastResult.dienstId ? dienst.find(d => d.id === lastResult.dienstId) || null : null }, nl)}
+        </p>
       )}
 
       {lastResult && activeMode === 'translate' && (

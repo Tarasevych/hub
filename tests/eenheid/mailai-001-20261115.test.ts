@@ -130,8 +130,9 @@ export async function main(): Promise<number> {
     check('D у панелі більше немає вигаданого «Приватного асистента» при збої та мертвих адрес /ai і #sleutels',
       !bron.includes("name: 'Приватний асистент Мого Простору'") && !bron.includes('mcp.tarasevych.com/agents#sleutels') && !/href=\{AI_TOEGANG_HREF\}/.test(bron) && !/href=\{motor\.aansluitenHref\}/.test(bron));
     const uitleg = lees('src/mail/AiUitleg.tsx');
-    check('D пояснення «Як працює ШІ в пошті» в обох мовах: ключ API, конектор не перекладає, Gemini безкоштовний рівень, Chrome ще не підключено',
-      uitleg.includes('Як працює ШІ в пошті') && uitleg.includes('Hoe de AI in de post werkt') && /конектор/.test(uitleg) && /безкоштовний рівень/.test(uitleg) && /ще не користується/.test(uitleg) && /gebruikt het nog niet/.test(uitleg));
+    // MAILAI-002 (16.11): Chrome тепер робочий локальний рушій — пояснення каже це, а не «ще не користується».
+    check('D пояснення «Як працює ШІ в пошті» в обох мовах: ключ API, конектор лише в один бік, Gemini безкоштовний рівень, локальний ШІ Chrome',
+      uitleg.includes('Як працює ШІ в пошті') && uitleg.includes('Hoe de AI in de post werkt') && /Конектор/.test(uitleg) && /в один бік/.test(uitleg) && /безкоштовний рівень/.test(uitleg) && /вбудований ШІ Chrome/.test(uitleg) && /ingebouwde AI van Chrome/.test(uitleg));
     const weergave = lees('src/mail/WeergaveKeuze.tsx');
     check('D перемикач у «Вигляд»: «ШІ-аналіз над листом» Вимкнено/Увімкнено, обидві мови, підказки з наслідками',
       weergave.includes("t('ШІ-аналіз над листом', 'AI-analyse boven het bericht')") && weergave.includes('zetAiBalkTonen') && /title=\{t\('Над кожним листом/.test(weergave));

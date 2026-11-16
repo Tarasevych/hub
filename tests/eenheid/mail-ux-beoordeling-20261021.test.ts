@@ -117,7 +117,7 @@ export async function main(): Promise<number> {
   const balkCss = lees('src/mail/ai-vertaling-balk.css');
   const balkBlok = zc(balkCss.slice(balkCss.indexOf('21.10.2026 рецензія UX')));
   check('R9 малий екран = (max-width: 700px), (max-height: 500px) — те саме в TSX і CSS', balkBron.includes("export const AI_BALK_KLEIN_SCHERM = '(max-width: 700px), (max-height: 500px)';") && balkBlok.includes('@media (max-width:700px), (max-height:500px) {'));
-  check('R9 згорнуто ховає вибір агента/мови, режими, рушії, налаштування й значок (результати лишаються)', balkBlok.includes(".ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-selectors, .ai-vb-modes, .ai-vb-motoren, .ai-vb-settings-drawer, .ai-vb-space-badge) { display:none; }") && !/ai-vb-result|ai-vb-refusal/.test(balkBlok.slice(balkBlok.indexOf("[data-ingeklapt='ja'] :is"))));
+  check('R9 згорнуто ховає інструменти й налаштування; головна кнопка «Перекласти» і чип рушія лишаються (MAILAI-005; результати лишаються)', balkBlok.includes(".ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-modes, .ai-vb-settings-drawer, .ai-vb-settings-trigger) { display:none; }") && !/ai-vb-result|ai-vb-refusal/.test(balkBlok.slice(balkBlok.indexOf("[data-ingeklapt='ja'] :is"))));
   check('R9 кнопка згортання: 44×44 (дотик), лише токени; з пакета 3 (24.10) — на кожному екрані (раніше на великому прихована)', !/\.ai-vb-inklap \{ display:none; \}/.test(balkBlok) && /\.ai-vb-inklap \{\s*display:inline-grid;/.test(balkBlok) && /width:var\(--tik-hoogte\); height:var\(--tik-hoogte\);/.test(balkBlok) && !HEX.test(balkBlok) && !/prefers-color-scheme/.test(balkBlok));
   // початковий стан через matchMedia/localStorage (нагадування: privévenster кидає на localStorage)
   const g = globalThis as Record<string, unknown>;
@@ -131,21 +131,23 @@ export async function main(): Promise<number> {
   zetBrowser(false); const computer = aiBalkStartIngeklapt();
   opslag.set('mr-ai-balk-open-v1', '1'); zetBrowser(true); const gekozen = aiBalkStartIngeklapt(); opslag.clear();
   zetBrowser(true, true); const prive = aiBalkStartIngeklapt();
-  check('R9 старт: телефон згорнуто, комп\'ютер теж згорнуто (пакет 3, 24.10; раніше розгорнуто), «розгорнути» пам\'ятається, privévenster не ламає', telefoon && computer && !gekozen && prive, JSON.stringify({ telefoon, computer, gekozen, prive }));
+  opslag.set('mr-ai-balk-open-v1', '0'); zetBrowser(true); const dicht = aiBalkStartIngeklapt(); opslag.clear();
+  // MAILAI-005 (16.11.2026, затверджений власником макет «Рядок дій»): панель сама стала одним рядком, інструменти типово видно на кожному екрані.
+  check('R9 старт (MAILAI-005): інструменти типово видно на телефоні й комп\'ютері, «згорнути» пам\'ятається, старе «розгорнуто» читається, privévenster не ламає', !telefoon && !computer && !gekozen && dicht && !prive, JSON.stringify({ telefoon, computer, gekozen, dicht, prive }));
   const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', from: 'X <x@y.test>', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined, voorbeeldZichtbaar: true /* MAILAI-001: zonder serverstaat is het paneel weg */ } as unknown as Parameters<typeof AiVertalingBalk>[0];
   zetBrowser(true);
   const ukHtml = renderToString(createElement(AiVertalingBalk, props));
-  const ids = /aria-controls="([^" ]+)-kiezers \1-modi"/.exec(ukHtml);
-  check('R9 SSR телефон: data-ingeklapt="ja", кнопка aria-expanded="false" з aria-controls на #…-kiezers і #…-modi (обидва є)', ukHtml.includes('data-ingeklapt="ja"') && /class="ai-vb-inklap" aria-expanded="false"/.test(ukHtml) && !!ids && ukHtml.includes(`id="${ids![1]}-kiezers"`) && ukHtml.includes(`id="${ids![1]}-modi"`) && ukHtml.includes('Показати інструменти ШІ'));
+  const ids = /aria-controls="([^" ]+)-modi"/.exec(ukHtml);
+  check('R9 SSR телефон (MAILAI-005): data-ingeklapt="nee", кнопка aria-expanded="true" з aria-controls на #…-modi (є), підказка «Сховати інструменти ШІ»', ukHtml.includes('data-ingeklapt="nee"') && /class="ai-vb-inklap" aria-expanded="true"/.test(ukHtml) && !!ids && ukHtml.includes(`id="${ids![1]}-modi"`) && ukHtml.includes('Сховати інструменти ШІ'));
   zetBrowser(false);
   const pcHtml = renderToString(createElement(AiVertalingBalk, props));
-  check('R9 SSR комп\'ютер: з пакета 3 теж згорнуто (data-ingeklapt="ja", aria-expanded="false"; раніше розгорнуто)', pcHtml.includes('data-ingeklapt="ja"') && /class="ai-vb-inklap" aria-expanded="false"/.test(pcHtml));
+  check('R9 SSR комп\'ютер (MAILAI-005): той самий рядок, інструменти видно (data-ingeklapt="nee", aria-expanded="true")', pcHtml.includes('data-ingeklapt="nee"') && /class="ai-vb-inklap" aria-expanded="true"/.test(pcHtml));
   g.document = { documentElement: { lang: 'nl' } };
   const nlHtml = renderToString(createElement(AiVertalingBalk, props));
   delete g.document;
-  const nlTeksten = ['AI-analyse en vertaling', 'Privéruimte', 'Vertalen', 'Korte samenvatting', 'Context en verbanden', 'Vertaalmotoren', 'Instellingen', 'AI-paneel voor vertaling, samenvatting en context'];
+  const nlTeksten = ['Vertalen', 'Samenvatting', 'Waar het over gaat', 'Verbanden', 'AI-motoren', 'Instellingen', 'AI-paneel voor vertaling, samenvatting en context']; // MAILAI-005: назва панелі й «Privéruimte» переїхали у віконце вибору рушія
   const ontbreekt = nlTeksten.filter((x) => !nlHtml.includes(x));
-  const ukResten = ['ШІ-аналіз і переклад', 'Приватний простір', '>Перекласти<', 'Короткий підсумок', 'Рушії перекладу'].filter((x) => nlHtml.includes(x));
+  const ukResten = ['ШІ-аналіз і переклад', 'Приватний простір', '>Перекласти<', 'Підсумок', 'Про що лист', 'Рушії ШІ'].filter((x) => nlHtml.includes(x));
   check('R9 nl (<html lang="nl">): зверху панелі все нідерландською (раніше «ШІ-аналіз і переклад», «Перекласти»… у nl)', ontbreekt.length === 0 && ukResten.length === 0, `ontbreekt: ${ontbreekt.join(', ')}; uk-resten: ${ukResten.join(', ')}`);
   delete g.window;
 

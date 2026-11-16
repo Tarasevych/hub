@@ -65,6 +65,8 @@ const SITE_LABELS: Record<string, [string, string]> = {
   'owner.mail.compose.send': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.compose.scheduled': ['Лист заплановано', 'Bericht ingepland'], 'owner.mail.compose.cancelled': ['Заплановане надсилання скасовано', 'Geplande verzending geannuleerd'],
   'owner.mail.send.prepared': ['Лист підготовлено до надсилання', 'Bericht klaargezet voor verzending'], 'owner.mail.item.updated': ['Лист змінено', 'Bericht gewijzigd'], 'owner.mail.item.imported': ['Листи імпортовано', 'Berichten geïmporteerd'],
   'owner.mail.ai_vertaling.settings': ['Змінено налаштування панелі ШІ в пошті', 'Instellingen van het AI-paneel in de mail gewijzigd'],
+  // MAILAI-005: подія згоди на спільний рушій (MAILAI-003) не мала назви й показувалася як «Дія на сайті: …».
+  'owner.mail.ai_vertaling.dienst_akkoord': ['Змінено згоду на спільний рушій ШІ в пошті', 'Akkoord voor een gedeelde AI-motor in de mail gewijzigd'],
   'owner.mail.google-oauth.completed': ['Gmail підключено', 'Gmail gekoppeld'], 'owner.mail.google-account.disconnected': ['Gmail відключено', 'Gmail ontkoppeld'],
   'owner.mail.microsoft-oauth.started': ['Почато підключення Outlook', 'Koppelen van Outlook gestart'], 'owner.mail.microsoft-oauth.completed': ['Outlook підключено', 'Outlook gekoppeld'],
   'owner.mail.primary-identity-linked': ['Основну пошту пов’язано з обліковим записом', 'Hoofdmailbox aan het account gekoppeld'], 'owner.mail.additional-account-recorded': ['Додано ще одну поштову скриньку', 'Extra mailbox toegevoegd'],
