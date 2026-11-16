@@ -86,6 +86,8 @@ export default function AanmeldTelegram({
   const [pictogram, setPictogram] = useState<number | null>(null);
   const [codeInVenster, setCodeInVenster] = useState(false);
   const [symboolOk, setSymboolOk] = useState(false);
+  // TELEGRAM-004: plaats van DIT toestel (geolocatie van de browser) naast de plaats volgens het IP-adres — alleen na toestemming.
+  const [geo, setGeo] = useState<'' | 'bezig' | 'gegeven' | 'geweigerd' | 'mislukt'>('');
   const [bevestiger, setBevestiger] = useState<TelegramPersoon[]>([]);
   const [code, setCode] = useState('');
   const [fout, setFout] = useState('');
@@ -197,10 +199,31 @@ export default function AanmeldTelegram({
     return () => { actief = false; window.clearTimeout(t); };
   }, [lopend]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // De browser vraagt zelf om toestemming; wij sturen alleen het punt (server rondt af op ≈ 1 km) of de weigering. Nooit blokkerend.
+  const plaatsDelen = (l: Lopend) => {
+    if (!('geolocation' in navigator)) { setGeo('mislukt'); return; }
+    setGeo('bezig');
+    const meld = (body: Record<string, unknown>, stand: 'gegeven' | 'geweigerd' | 'mislukt') =>
+      void openbaarPost('/api/aanmelden/telegram/plaats', { id: l.id, geheim: l.geheim, ...body, stand }).then(() => setGeo(stand)).catch(() => setGeo('mislukt'));
+    navigator.geolocation.getCurrentPosition(
+      (p) => meld({ lat: p.coords.latitude, lon: p.coords.longitude, nauwkeurig: p.coords.accuracy }, 'gegeven'),
+      (e) => meld({}, e.code === e.PERMISSION_DENIED ? 'geweigerd' : 'mislukt'),
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+  };
+  // Gaf de gebruiker deze site al eerder toestemming, dan delen we de plaats meteen (geen extra klik, geen nieuwe vraag).
+  useEffect(() => {
+    if (!lopend || stand !== 'wacht' || geo !== '') return;
+    const p = (navigator as Navigator & { permissions?: { query: (d: { name: string }) => Promise<{ state: string }> } }).permissions;
+    if (!p?.query) return;
+    let actief = true;
+    void p.query({ name: 'geolocation' }).then((s) => { if (actief && s.state === 'granted') plaatsDelen(lopend); }).catch(() => undefined);
+    return () => { actief = false; };
+  }, [lopend, stand]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const start = () => {
     if (pauze.actief) return;
     void doe(async () => {
-      setFout(''); setStand(''); setReden(''); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setSymboolOk(false); klaar.current = false;
+      setFout(''); setStand(''); setReden(''); setGeo(''); setCodeNodig(false); setCodeInVenster(false); setPictogram(null); setSymboolOk(false); klaar.current = false;
       try {
         const tab = ecosystemTabContext();
         const r = await openbaarPost<Lopend>('/api/aanmelden/telegram/start', {
@@ -305,6 +328,17 @@ export default function AanmeldTelegram({
         <li>{tr(lang, 'Сторінка відкриється сама.', 'De pagina opent vanzelf.')}</li>
       </ol>
       {!symboolOk && stand === 'wacht' && <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span></a>}
+      {!symboolOk && stand === 'wacht' && <div className='tg2-plaats' data-tg-plaats={geo || 'open'}>
+        {geo === 'gegeven' ? <p className='tga-klein' role='status'>{tr(lang, '📍 Місце цього пристрою додано до запиту. У вікні Telegram ви побачите його поруч із місцем за IP-адресою.', '📍 De plaats van dit apparaat is aan het verzoek toegevoegd. In het Telegram-venster ziet u die naast de plaats volgens het IP-adres.')}</p>
+          : geo === 'geweigerd' ? <p className='tga-klein' role='status'>{tr(lang, 'Доступ до місця не надано. У вікні Telegram буде лише місце за IP-адресою — вхід від цього не залежить.', 'Geen toegang tot de locatie gegeven. In het Telegram-venster staat alleen de plaats volgens het IP-adres — aanmelden hangt hier niet van af.')}</p>
+          : geo === 'mislukt' ? <p className='tga-klein' role='status'>{tr(lang, 'Пристрій не зміг визначити місце. У вікні Telegram буде лише місце за IP-адресою.', 'Het apparaat kon de plaats niet bepalen. In het Telegram-venster staat alleen de plaats volgens het IP-adres.')}</p>
+          : <>
+            <button type='button' className='tga-link' disabled={geo === 'bezig'} onClick={() => plaatsDelen(lopend)}
+              title={tr(lang, 'Браузер запитає дозвіл на доступ до місця. Якщо дозволите, приблизне місце цього пристрою (з точністю близько 1 км) збережеться лише в цьому запиті на вхід і з’явиться у вікні Telegram поруч із місцем за IP-адресою. Якщо вони далеко одне від одного, вікно попередить: так видно чужий запит або VPN. Відмова на вхід не впливає.', 'De browser vraagt toestemming voor de locatie. Staat u die toe, dan wordt de plaats van dit apparaat bij benadering (ongeveer 1 km nauwkeurig) alleen bij dit aanmeldverzoek bewaard en verschijnt die in het Telegram-venster naast de plaats volgens het IP-adres. Liggen ze ver uit elkaar, dan waarschuwt het venster: zo valt een vreemd verzoek of een VPN op. Weigeren heeft geen invloed op het aanmelden.')}>
+              {geo === 'bezig' ? tr(lang, '📍 Визначаємо місце…', '📍 Plaats bepalen…') : tr(lang, '📍 Додати місце цього пристрою для звірки', '📍 Plaats van dit apparaat toevoegen ter controle')}</button>
+            <p className='tga-klein'>{tr(lang, 'Необов’язково. Браузер запитає дозвіл; у Telegram ви побачите місце пристрою поруч із місцем за IP-адресою й одразу помітите розбіжність.', 'Niet verplicht. De browser vraagt toestemming; in Telegram ziet u de plaats van het apparaat naast de plaats volgens het IP-adres en merkt u een afwijking meteen op.')}</p>
+          </>}
+      </div>}
       {!symboolOk && stand === 'wacht' && <a className='tga-link' href={lopend.widgetUrl}>{tr(lang, 'Telegram на іншому пристрої? Увійти через офіційне вікно входу Telegram', 'Telegram op een ander apparaat? Aanmelden via het officiële aanmeldvenster van Telegram')}</a>}
       <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {codeInVenster ? tr(lang, `Чекаємо на таємний код у вікні Telegram… залишилось ${mmss}`, `Wachten op de geheime code in het Telegram-venster… nog ${mmss}`) : tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
       <p className='tg2-waarom'><b>{tr(lang, 'Чому піктограма, а не просто «Так»?', 'Waarom een pictogram en niet gewoon «Ja»?')}</b> {tr(lang, 'Якщо у ваш акаунт намагається увійти хтось інший, запит у Telegram ви отримаєте, але не знатимете, яка піктограма правильна, — випадкове натискання нічого не відкриє.', 'Probeert iemand anders zich aan te melden, dan krijgt u het verzoek in Telegram wel, maar weet u niet welk pictogram juist is — per ongeluk tikken opent niets.')}</p>

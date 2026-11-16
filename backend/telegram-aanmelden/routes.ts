@@ -10,7 +10,7 @@ import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikba
 import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagHoofdschakelaar, vlagVoor } from './opslag';
 import { koppelAnnuleren, koppelBevestigen, koppelStart, koppelStatus, magTelegram, profielFotoData } from './koppelen';
 import { getPool } from '../../server/platform/pg';
-import { inlogCode, inlogGeluktMelden, inlogInwisselen, inlogSessieVastleggen, inlogStart, inlogStatus, inlogTerugAdres, inlogTransactieId, publiekeConfig, veiligEigenTerugAdres, widgetTerug, type InlogContextMeta } from './inloggen';
+import { inlogCode, inlogGeluktMelden, inlogInwisselen, inlogPlaats, inlogSessieVastleggen, inlogStart, inlogStatus, inlogTerugAdres, inlogTransactieId, publiekeConfig, veiligEigenTerugAdres, widgetTerug, type InlogContextMeta } from './inloggen';
 import { bevestigingAanvragen, bevestigingStatus, codeVoorActie } from './bevestigen';
 import { codeHerstellen, codeInstellen, codeStand, codeVerwijderen } from './code';
 import { ontkoppelen, koppelingAanpassen } from './ontkoppelen';
@@ -258,6 +258,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       return antwoord;
     }),
     'POST /api/aanmelden/telegram/status': openbaar(async (rc) => { const d = lichaam(rc); return json(await inlogStatus(str(d.id, 12), str(d.geheim, 64))); }),
+    // TELEGRAM-004: plaats van het toestel (geolocatie van de browser, na toestemming) of de weigering; zelfde sleutel als «status».
+    'POST /api/aanmelden/telegram/plaats': openbaar(async (rc) => { const d = lichaam(rc); return json(await inlogPlaats(str(d.id, 12), str(d.geheim, 64), { stand: d.stand, lat: d.lat, lon: d.lon, nauwkeurig: d.nauwkeurig })); }),
     'POST /api/aanmelden/telegram/code': openbaar(async (rc) => { const d = lichaam(rc); return json(await inlogCode(str(d.id, 12), str(d.geheim, 64), str(d.code, 64))); }),
     'POST /api/aanmelden/telegram/voltooien': openbaar(async (rc) => {
       const d = lichaam(rc);
@@ -430,6 +432,7 @@ export const TELEGRAM_PUBLIEKE_ROUTES: Readonly<Record<string, string>> = Object
   'POST /api/aanmelden/telegram/start': 'Telegram-aanmelding starten (vóór de sessie; transactie + bindingscookie)',
   'POST /api/aanmelden/telegram/status': 'Telegram-aanmelding volgen (id + geheim van deze browser)',
   'POST /api/aanmelden/telegram/code': 'geheime code bij Telegram-aanmelding (id + geheim; tellers en pauzes)',
+  'POST /api/aanmelden/telegram/plaats': 'plaats van het toestel bij Telegram-aanmelding (id + geheim; alleen na toestemming in de browser)',
   'POST /api/aanmelden/telegram/voltooien': 'Telegram-aanmelding inwisselen (id + geheim + bindingscookie, eenmalig)',
   'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële aanmeldvenster van Telegram (eigen smalle CSP)',
   'GET /api/aanmelden/telegram/widget-terug': 'terugkeer uit het aanmeldvenster van Telegram (HMAC-handtekening, 5 min, eenmalig)',

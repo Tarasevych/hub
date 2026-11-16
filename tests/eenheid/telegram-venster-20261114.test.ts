@@ -189,9 +189,45 @@ export async function main(): Promise<number> {
       check('venster: volledig adres zichtbaar, plaats één keer (alleen op de regel «Звідки»), met de manier van bepalen in uk en nl',
         uk.includes(volAdres) && (uk.match(/Брюссель/g) || []).length === 1 && (nl.match(/Brussel/g) || []).length === 1
         && uk.includes('Визначено за IP-адресою') && nl.includes('Bepaald via het IP-adres'));
+      // TELEGRAM-004: plaats volgens het toestel naast die volgens het IP-adres.
+      const pv = await import('../../shared/telegram-aanmelden/plaats-vergelijking');
+      const brussel = { lat: 50.85, lon: 4.35 }, kyiv = { lat: 50.45, lon: 30.52 };
+      check('plaatsvergelijking: afstand Brussel–Kyiv ≈ 1830 km, dichtstbijzijnde stad, grenzen van het oordeel',
+        Math.abs(pv.afstandKm(brussel, kyiv) - 1835) < 30 && pv.dichtstbij({ lat: 50.86, lon: 4.36 }).sleutel === 'brussels'
+        && pv.vergelijkPlaats(brussel, { punt: null, plaats: 'Brussels' }, 'uk').oordeel === 'gelijk' && pv.vergelijkPlaats(kyiv, { punt: null, plaats: 'Brussels' }, 'uk').oordeel === 'afwijkend'
+        && pv.vergelijkPlaats({ lat: 50.94, lon: 6.96 }, { punt: null, plaats: 'Brussels' }, 'nl').oordeel === 'twijfel' && pv.vergelijkPlaats(brussel, { punt: null, plaats: 'Nergenshuizen' }, 'uk').oordeel === 'onbekend'
+        && pv.vergelijkPlaats(kyiv, { punt: { lat: 50.5, lon: 30.5 }, plaats: '' }, 'uk').oordeel === 'gelijk');
+      check('plaatsvergelijking: ongeldige punten geweigerd ((0,0), buiten de bol, geen getal); elke stad met punt heeft een naam in uk en nl',
+        pv.geldigPunt(0, 0) === null && pv.geldigPunt(91, 4) === null && pv.geldigPunt('x', 4) === null && pv.geldigPunt('50.8', '4.3')?.lat === 50.8
+        && Object.keys(pv.STAD_PUNTEN).every((k) => !!pv.geoPlaatsTekst(pv.STAD_PUNTEN[k], 'uk') && !!pv.geoPlaatsTekst(pv.STAD_PUNTEN[k], 'nl'))
+        && pv.geoPlaatsTekst(brussel, 'uk') === 'поблизу: Брюссель, Бельгія' && pv.geoPlaatsTekst(brussel, 'nl') === 'bij Brussel, België');
+      const metGeo = ven.paginaHtml({ ...basisW, geoPunt: brussel, geoStand: 'gegeven' } as never, 'uk');
+      const ver = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'uk'), verNl = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'nl');
+      const geweigerd = ven.paginaHtml({ ...basisW, geoStand: 'geweigerd' } as never, 'nl');
+      check('venster: plaats van het toestel naast die volgens het IP — «За дозволом браузера», afstand, zonder waarschuwing als het klopt',
+        uk.includes('Пристрій каже') && uk.includes('не надано') && metGeo.includes('поблизу: Брюссель, Бельгія') && metGeo.includes('менше ніж 1 км від місця за IP') && metGeo.includes('За дозволом браузера') && metGeo.includes('Визначено за IP-адресою') && !metGeo.includes('geo-let') && metGeo.includes('geo-ok'));
+      check('venster: ver uit elkaar → waarschuwing (role=alert) in uk en nl; weigering wordt eerlijk getoond; geen coördinaten in de pagina',
+        ver.includes('geo-let') && ver.includes('role="alert"') && /не збігаються \(≈ 18\d\d км\)/.test(ver) && verNl.includes('komen niet overeen') && geweigerd.includes('geen toestemming gegeven') && !geweigerd.includes('geo-let')
+        && !/30\.52|50\.45/.test(ver));
+      check('venster: bevestiging van een handeling (geen geolocatie gevraagd) → geen regel «Пристрій каже»', !ven.paginaHtml({ ...basisW, soort: 'b' } as never, 'uk').includes('Пристрій каже'));
       check('venster: plaats onbekend → «місце невідоме» zonder bewering over de manier van bepalen', zonder.includes('місце невідоме') && !zonder.includes('Визначено за IP-адресою'));
     }
     const i1 = await inl.inlogStart('tx-v1', ua, { herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Brussels', land: 'BE' } });
+    {
+      // TELEGRAM-004: de browser meldt de plaats van het toestel — alleen met het geheim, afgerond, één keer; niets in het logboek.
+      const fout = await inl.inlogPlaats(i1.id, 'x'.repeat(43), { stand: 'gegeven', lat: 50.8503, lon: 4.3517 }).then(() => '', (e) => String((e as Error).message));
+      const nee = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'geweigerd' });
+      const ongeldig = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 0, lon: 0 });
+      const ja = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 50.850346, lon: 4.351721, nauwkeurig: 42.7 });
+      const nogEens = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 50.45, lon: 30.52 });
+      const [rij] = (await pool.query('SELECT geo_lat::text AS lat, geo_lon::text AS lon, geo_nauwkeurig AS n, geo_stand AS st FROM app.tg_inlog_verzoeken WHERE id = $1', [i1.id])).rows;
+      const logRijen = (await pool.query("SELECT details::text AS d FROM app.audit WHERE action = 'telegram.inlog.plaats' ORDER BY id DESC LIMIT 5")).rows as Array<{ d: string }>;
+      const log = logRijen.map((x) => x.d).join(' ');
+      check('plaats van het toestel: fout geheim geweigerd; weigering en ongeldig punt bewaard zonder punt; daarna een punt, afgerond op 2 decimalen; een tweede punt overschrijft niet',
+        fout === 'VERZOEK_ONBEKEND' && nee.ok && nee.stand === 'geweigerd' && ongeldig.stand === 'mislukt' && ja.ok && ja.stand === 'gegeven' && !nogEens.ok
+        && rij.lat === '50.85' && rij.lon === '4.35' && rij.n === 43 && rij.st === 'gegeven', JSON.stringify({ fout, nee, ongeldig, ja, nogEens, rij }));
+      check('plaats van het toestel: het logboek kent alleen de stand, geen coördinaten', logRijen.length >= 3 && /gegeven/.test(log) && !/50\.8|4\.35|lat|lon/.test(log), log);
+    }
     check('start geeft de browser meteen het juiste pictogram (geen emoji-symbool meer)', typeof i1.pictogram === 'number' && i1.symbool === undefined);
     const s1 = await inl.inlogStatus(i1.id, i1.geheim);
     const j1 = await juistePos(i1.id);
