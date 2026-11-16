@@ -6,7 +6,8 @@ import { AlertTriangle, CheckCircle2, Cpu, Play, Settings, XCircle } from 'lucid
 import type { Tr } from '../mcp-ui';
 import { vergelijkVersie } from '../../shared/extensie-update';
 import { sendToExtension } from '../extensie-toestand';
-import { LOKALE_AI_APIS, LOKALE_AI_INFO, LOKALE_AI_MAX_TEKST, LOKALE_AI_MIN_EXTENSIE, LOKALE_AI_REDENEN, filterLokaleAiAntwoord, kiesStand, type LokaleAiAntwoord, laiRegel, meetPagina, type LokaleAiApi, type LokaleAiKeuze, type PaginaStand } from '../../shared/lokale-ai-model';
+import { LOKALE_AI_APIS, LOKALE_AI_INFO, LOKALE_AI_MAX_TEKST, LOKALE_AI_MIN_EXTENSIE, LOKALE_AI_REDENEN, filterLokaleAiAntwoord, kiesStand, type LokaleAiAntwoord, laiRegel, meetPagina, type LokaleAiApi, type LokaleAiKeuze, type PaginaStand,
+  beheerderLink, beleidTekst, type LokaleAiBeleidWeergave } from '../../shared/lokale-ai-model';
 import '../agenten/agenten-toegang-maquette.css';
 
 const ouder = (a: string, b: string) => vergelijkVersie(a, b) < 0;
@@ -53,8 +54,26 @@ export default function LokaleAiPaneel({ tr, keuze, extVersie, extId = '' }: { t
           'Вимоги Chrome: Windows 10/11, macOS 13+, Linux або ChromeOS (Chromebook Plus); ≥ 22 ГБ вільного місця; GPU понад 4 ГБ або 16 ГБ RAM і 4 ядра; безлімітне з’єднання для першого завантаження моделі. Українська та нідерландська — через перекладач.',
           'Vereisten van Chrome: Windows 10/11, macOS 13+, Linux of ChromeOS (Chromebook Plus); ≥ 22 GB vrij; GPU met meer dan 4 GB of 16 GB RAM en 4 kernen; een onbeperkte verbinding voor de eerste download van het model. Oekraïens en Nederlands gaan via de vertaler.')}</p>
       </details>
-      <SiteToegang tr={tr} keuze={keuze} extId={extId} />
+      {keuze?.beleid ? <BeleidUit tr={tr} beleid={keuze.beleid} /> : <SiteToegang tr={tr} keuze={keuze} extId={extId} />}
     </section>
+  );
+}
+
+/**
+ * 0.9.6 (LAI-CON-001, рішення власника 16.11.2026): адміністратор вимкнув — не ховаємо, а пояснюємо: хто (з посиланням), чому, що
+ * зробити. Beheerder zette het uit: niet verbergen maar uitleggen — wie (met link), waarom, wat te doen.
+ */
+function BeleidUit({ tr, beleid }: { tr: Tr; beleid: LokaleAiBeleidWeergave }) {
+  const link = beheerderLink(beleid.door);
+  const [uk, nl] = beleidTekst(beleid);
+  return (
+    <div className='ag-ext-lai-site' data-lai-site='beleid-uit'>
+      <p className='ag-rij ag2-rij is-warn' role='status'><AlertTriangle aria-hidden='true' /><span>
+        <b>{tr('Використання сайтом і ШІ-агентами вимкнув адміністратор', 'Gebruik door de site en AI-agenten uitgezet door de beheerder')}</b>{' — '}{tr(uk, nl)}
+        {beleid.op ? ` (${new Date(beleid.op).toLocaleDateString(tr('uk-UA', 'nl-NL'))})` : ''}
+      </span></p>
+      {link ? <a className='ag-knop' href={link} data-lai-actie='beheerder'>{tr(`Написати адміністратору (${beleid.door})`, `De beheerder schrijven (${beleid.door})`)}</a> : null}
+    </div>
   );
 }
 
@@ -121,7 +140,8 @@ function SiteToegang({ tr, keuze, extId }: { tr: Tr; keuze: LokaleAiKeuze | null
       </button>
       <div role='status' aria-live='polite' data-lai-uitkomst={uitkomst ? (uitkomst.ok ? 'ok' : uitkomst.reden) : ''}>
         {uitkomst?.ok ? <pre className='ag-ext-lai-uit'>{uitkomst.tekst}</pre> : null}
-        {uitkomst && !uitkomst.ok ? <p className='ag-rij ag2-rij is-warn'><XCircle aria-hidden='true' /><span>{tr(...(LOKALE_AI_REDENEN[uitkomst.reden] ?? LOKALE_AI_REDENEN.FOUT))}</span></p> : null}
+        {uitkomst && !uitkomst.ok && uitkomst.beleid ? <BeleidUit tr={tr} beleid={uitkomst.beleid} /> : null}
+        {uitkomst && !uitkomst.ok && !uitkomst.beleid ? <p className='ag-rij ag2-rij is-warn'><XCircle aria-hidden='true' /><span>{tr(...(LOKALE_AI_REDENEN[uitkomst.reden] ?? LOKALE_AI_REDENEN.FOUT))}</span></p> : null}
       </div>
     </div>
   );

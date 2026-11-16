@@ -13,6 +13,7 @@
 // Alle queries lopen via de app-rol (mijnruimte_app, strikte RLS) met app.user_id = de betrokken gebruiker.
 import { appRolActief, getPool } from '../server/platform/pg';
 import { huidigeContext } from '../server/platform/context';
+import { lokaleAiVoorExtensie } from './extensie-beleid';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
@@ -273,9 +274,11 @@ async function bumpEpoch(q: Q, userId: string): Promise<number> {
 /** Duw de actuele toestemmingen naar de verbonden agents van de gebruiker (na elke wijziging). */
 export async function pushSettings(userId: string, agentIds?: string[]): Promise<void> {
   const ids = agentIds ?? (await alsGebruiker(userId, async (q) => (await q('SELECT id FROM app.agents WHERE user_id = $1 AND revoked_at IS NULL', [userId])).rows.map((r) => r.id as string)));
+  // 0287 (LAI-CON-001): beleid van de beheerder voor de lokale AI gaat mee (extensie ≥ 0.9.6 leest het; andere agents negeren het veld).
+  const lokaleAi = await lokaleAiVoorExtensie(userId);
   for (const id of ids) {
     const eff = await effectiveCaps(userId, id);
-    pusher.push(userId, id, { t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked });
+    pusher.push(userId, id, { t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked, ...(lokaleAi ? { lokaleAi } : {}) });
   }
 }
 

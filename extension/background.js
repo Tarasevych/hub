@@ -443,7 +443,10 @@ async function lokaleAiKeuze() {
   // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
   if (aan) laiMeetAls();
   // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
-  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+  // 0.9.6 (LAI-CON-001): beleid van de beheerder alleen als het UIT staat (reden + wie + wanneer); aan = geen veld (status ongewijzigd).
+  const b = laiBeleid();
+  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}),
+    ...(b && !b.aan ? { beleid: { aan: false, reden: b.reden, door: b.door, op: b.op } } : {}) };
 }
 // ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
 // Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
@@ -467,8 +470,10 @@ const LAI_REDEN_RANG = ['klaar', 'model-ontbreekt', 'niet-hier'];
  * Zuiver. k = lokaleAiKeuze() ({aan, apis[], stand?}), siteToegang = «!»-schakelaar. → {reden?, redenen?}; zonder meting geen reden
  * (de site meet dan zelf of toont «перевіряємо»). Volgorde: uit gaat voor site-uit, site-uit voor de stand van het model.
  */
-function laiRedenen(k, siteToegang) {
+function laiRedenen(k, siteToegang, beleid = null) {
   if (!k || typeof k !== 'object') return {};
+  // 0.9.6 (LAI-CON-001): de beheerder zette het uit — gaat vóór alles; de site toont reden, wie en wanneer (nooit meer dan dat).
+  if (beleid && beleid.aan === false) return { reden: 'beleid-uit', beleid: { reden: beleid.reden, door: beleid.door, op: beleid.op } };
   if (k.aan === false) return { reden: 'uit' };
   const apis = Array.isArray(k.apis) ? k.apis : [];
   const stand = k.stand && typeof k.stand === 'object' ? k.stand : null;
@@ -481,6 +486,25 @@ function laiRedenen(k, siteToegang) {
   if (!stand) return {};
   const beste = LAI_REDEN_RANG.find((r) => Object.values(redenen).includes(r));
   return { ...(beste ? { reden: beste } : { reden: 'uit' }), redenen };
+}
+/**
+ * 0.9.6 (LAI-CON-001): beleid van de beheerder voor de lokale AI, uit het settings-bericht van de server (migratie 0287). Zuiver filter:
+ * alleen {aan, reden ≤ 300, door ≤ 200, op}; iets anders → null (= geen bericht van de server, dus niets beperkt).
+ */
+function laiBeleidFilter(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v) || typeof v.aan !== 'boolean') return null;
+  if (v.aan) return { aan: true, reden: '', door: null, op: null };
+  return { aan: false, reden: String(v.reden || '').slice(0, 300), door: typeof v.door === 'string' && v.door ? v.door.slice(0, 200) : null, op: Number.isFinite(v.op) ? v.op : null };
+}
+/** Geldend beleid: één gebruiker per extensie; zegt één slot «uit», dan is het uit (strengste wint). */
+function laiBeleid() {
+  let aan = null;
+  for (const r of RUIMTES) {
+    const b = sloten[r] && sloten[r].settings ? laiBeleidFilter(sloten[r].settings.lokaleAi) : null;
+    if (b && !b.aan) return b;
+    if (b) aan = b;
+  }
+  return aan;
 }
 async function meetLokaleAi() {
   // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
@@ -794,7 +818,11 @@ async function handle(r, socket, raw) {
   if (msg.t === 'ping') { socket.send(pong(r)); return; }
   if (msg.t === 'settings') {
     if (typeof msg.epoch === 'number' && msg.epoch >= s.settings.epoch) {
-      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true };
+      // 0.9.6: lokaleAi = beleid van de beheerder (0287); ontbreekt het veld (oude server, DB-fout), dan blijft de vorige stand staan.
+      const lai = laiBeleidFilter(msg.lokaleAi);
+      const vorigeLai = s.settings && s.settings.lokaleAi ? s.settings.lokaleAi : null;
+      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true, ...(lai || vorigeLai ? { lokaleAi: lai || vorigeLai } : {}) };
+      if (JSON.stringify(lai) !== JSON.stringify(vorigeLai) && lai) void statusWijziging();
       await sessie.set({ [K.settings(r)]: s.settings });
     }
     return;
@@ -1658,6 +1686,9 @@ async function naarOffscreen(bericht) {
 const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
+  // 0.9.6 (LAI-CON-001): beheerder zette het uit → weigeren MET reden en wie (de site toont dat; nooit stil weigeren).
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) return { ok: false, reason: 'BELEID_UIT', detail: beleid.reden, door: beleid.door, op: beleid.op };
   if (inst.aan === false) return { ok: false, reason: 'UIT' };
   if (inst.siteToegang !== true) return { ok: false, reason: 'SITE_TOEGANG_UIT' };
   if (message.type === 'LOKALE_AI_STAND') return naarOffscreen({ op: 'lokale-ai-stand' });
@@ -1700,7 +1731,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
         diagOptIn: s.diagOptIn, ...vt, lokaleAi: await (async () => {
           const site = (await lokaleAiInstellingen()).siteToegang === true;
-          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, ...laiRedenen(vt.lokaleAi, site) };
+          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, ...laiRedenen(vt.lokaleAi, site, laiBeleid()) };
         })() });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }

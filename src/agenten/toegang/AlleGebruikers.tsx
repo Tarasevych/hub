@@ -8,7 +8,7 @@ import HulpVraag from '../../hulp/HulpVraag';
 import { Knop, Melding, exact, type Uitkomst } from '../ui';
 import { beheerBeleid, beheerIntrekken, beheerVerlengen, laadBeheer, useBeheerToegang, wisBeheer } from './bron';
 import { Aftellen, Chips, RuimteBadge, Venster, tgFout } from './delen';
-import { ALLE_BROWSER_CAPS, BELEID_MAX_DAGEN, BELEID_MAX_MINUTEN, PRIVE_DAGEN, TECH_MINUTEN, capMens, filterGebruikers, type BeheerBrowser, type BeheerFilter, type BeheerGebruiker, type Beleid, type Ruimte } from './model';
+import { ALLE_BROWSER_CAPS, BELEID_MAX_DAGEN, BELEID_MAX_MINUTEN, PRIVE_DAGEN, TECH_MINUTEN, capMens, filterGebruikers, LOKALE_AI_REDEN_MAX, LOKALE_AI_REDEN_MIN, lokaleAiRedenOk, type BeheerBrowser, type BeheerFilter, type BeheerGebruiker, type Beleid, type Ruimte } from './model';
 import { MAX_DAGEN, MAX_MINUTEN } from '../../../shared/extensie-ontgrendeling';
 import '../agenten-toegang-maquette.css';
 
@@ -132,7 +132,7 @@ function GebruikerKaart({ u, tr, uk, ikEigenaar, bezig, onIntrekken, onVerleng, 
       <details className='tg-beleid-wrap'>
         <summary>{tr('Політика', 'Beleid')}{' '}
           {/* Eén (?) voor het hele beleid; preventDefault: een tik op (?) klapt de <details> niet open of dicht. */}
-          <span onClick={(e) => e.preventDefault()}><HulpVraag k='toegang.beleid.prive-aan' naam={['Профіль користувача дозволено', 'Gebruikersprofiel toegestaan']} meer={[['toegang.beleid.technisch-aan', 'Технічний профіль дозволено', 'Technisch profiel toegestaan'], ['toegang.beleid.max-dagen', 'Макс. строк (користувач)', 'Max. termijn (gebruiker)'], ['toegang.beleid.max-minuten', 'Макс. строк (технічний)', 'Max. termijn (technisch)'], ['toegang.beleid.lokaal', 'Локальний агент', 'Lokale agent'], ['toegang.beleid.notitie', 'Нотатка', 'Notitie']]} uk={uk} label={tr('Політика', 'Beleid')} /></span>{u.beleid.gewijzigdOp ? <small> · {tr('змінено', 'gewijzigd')} {exact(u.beleid.gewijzigdOp)}{u.beleid.gewijzigdDoor ? ` · ${u.beleid.gewijzigdDoor}` : ''}</small> : null}</summary>
+          <span onClick={(e) => e.preventDefault()}><HulpVraag k='toegang.beleid.prive-aan' naam={['Профіль користувача дозволено', 'Gebruikersprofiel toegestaan']} meer={[['toegang.beleid.technisch-aan', 'Технічний профіль дозволено', 'Technisch profiel toegestaan'], ['toegang.beleid.max-dagen', 'Макс. строк (користувач)', 'Max. termijn (gebruiker)'], ['toegang.beleid.max-minuten', 'Макс. строк (технічний)', 'Max. termijn (technisch)'], ['toegang.beleid.lokaal', 'Локальний агент', 'Lokale agent'], ['toegang.beleid.lokale-ai', 'Вбудований ШІ Chrome', 'Ingebouwde AI van Chrome'], ['toegang.beleid.notitie', 'Нотатка', 'Notitie']]} uk={uk} label={tr('Політика', 'Beleid')} /></span>{u.beleid.gewijzigdOp ? <small> · {tr('змінено', 'gewijzigd')} {exact(u.beleid.gewijzigdOp)}{u.beleid.gewijzigdDoor ? ` · ${u.beleid.gewijzigdDoor}` : ''}</small> : null}</summary>
         <BeleidForm u={u} tr={tr} uk={uk} beschermd={beschermd} bezig={bezig === `bel:${u.userId}`} onBewaar={onBewaar} />
       </details>
     </li>
@@ -187,6 +187,7 @@ function BeleidForm({ u, tr, uk, beschermd, bezig, onBewaar }: { u: BeheerGebrui
   useEffect(() => { setB(u.beleid); }, [u.beleid]);
   const zet = (p: Partial<Beleid>) => setB((x) => ({ ...x, ...p }));
   const uit = beschermd || bezig;
+  const redenOk = lokaleAiRedenOk(b);
   const capsVeld = (ruimte: Ruimte) => {
     const sleutel = ruimte === 'prive' ? 'priveCaps' : 'technischCaps';
     const waarde = b[sleutel];
@@ -209,7 +210,7 @@ function BeleidForm({ u, tr, uk, beschermd, bezig, onBewaar }: { u: BeheerGebrui
     );
   };
   return (
-    <form className='tg-beleid' data-tg-beleid={u.userId} onSubmit={(e) => { e.preventDefault(); if (!uit) void onBewaar(b); }}>
+    <form className='tg-beleid' data-tg-beleid={u.userId} onSubmit={(e) => { e.preventDefault(); if (!uit && redenOk) void onBewaar(b); }}>
       <label className='tg-vink'>
         <input type='checkbox' data-hulp='toegang.beleid.prive-aan' checked={b.priveAan} disabled={uit} onChange={(e) => zet({ priveAan: e.target.checked })} />
         <span>{tr('Профіль користувача дозволено', 'Gebruikersprofiel toegestaan')}</span>
@@ -238,12 +239,26 @@ function BeleidForm({ u, tr, uk, beschermd, bezig, onBewaar }: { u: BeheerGebrui
         <input type='checkbox' data-hulp='toegang.beleid.lokaal' checked={b.lokaalAan} disabled={uit} onChange={(e) => zet({ lokaalAan: e.target.checked })} />
         <span>{tr('Локальний агент дозволено', 'Lokale agent toegestaan')}</span>
       </label>
+      {/* 0287 (LAI-CON-001): lokale AI van Chrome — standaard aan; uit alleen met een reden die de gebruiker ziet (wie, waarom, wat te doen). */}
+      <label className='tg-vink'>
+        <input type='checkbox' data-hulp='toegang.beleid.lokale-ai' data-tg-lokale-ai={u.userId} checked={b.lokaleAiAan} disabled={uit} onChange={(e) => zet({ lokaleAiAan: e.target.checked })} />
+        <span>{tr('Вбудований ШІ Chrome для сайту й ШІ-агентів дозволено', 'Ingebouwde AI van Chrome voor site en AI-agenten toegestaan')}</span>
+      </label>
+      {!b.lokaleAiAan ? (
+        <label className='tg-veld' data-tg-lokale-ai-reden={u.userId}>
+          <span>{tr(`Причина вимкнення (обов’язково, щонайменше ${LOKALE_AI_REDEN_MIN} символів) — людина побачить її разом із вашою адресою`, `Reden voor uitzetten (verplicht, minstens ${LOKALE_AI_REDEN_MIN} tekens) — de persoon ziet hem samen met uw adres`)}</span>
+          <textarea data-hulp='toegang.beleid.lokale-ai' rows={2} maxLength={LOKALE_AI_REDEN_MAX} required minLength={LOKALE_AI_REDEN_MIN} value={b.lokaleAiReden} disabled={uit}
+            aria-invalid={!redenOk} onChange={(e) => zet({ lokaleAiReden: e.target.value })} />
+          {!redenOk ? <small className='tg-noot' role='status'>{tr('Без причини вимкнути не можна: користувач має знати, чому функцію вимкнено й що зробити.', 'Zonder reden kan het niet uit: de gebruiker moet weten waarom de functie uit staat en wat hij kan doen.')}</small> : null}
+          {u.beleid.lokaleAiDoor && !u.beleid.lokaleAiAan ? <small>{tr('Вимкнув', 'Uitgezet door')} {u.beleid.lokaleAiDoor}{u.beleid.lokaleAiOp ? ` · ${exact(u.beleid.lokaleAiOp)}` : ''}</small> : null}
+        </label>
+      ) : null}
       <label className='tg-veld'>
         <span>{tr('Нотатка', 'Notitie')}</span>
         <textarea data-hulp='toegang.beleid.notitie' rows={2} maxLength={500} value={b.notitie} disabled={uit} onChange={(e) => zet({ notitie: e.target.value })} />
       </label>
       <div className='tg-knoppen'>
-        <Knop type='submit' toon='primary' icoon={<Save />} bezig={bezig} disabled={beschermd} data={`tg-beleid-bewaar:${u.userId}`}>{tr('Зберегти', 'Opslaan')}</Knop>
+        <Knop type='submit' toon='primary' icoon={<Save />} bezig={bezig} disabled={beschermd || !redenOk} data={`tg-beleid-bewaar:${u.userId}`}>{tr('Зберегти', 'Opslaan')}</Knop>
       </div>
     </form>
   );

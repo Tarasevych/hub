@@ -39,7 +39,9 @@ export const paginaStandVan = (v: unknown): PaginaStand => (typeof v === 'string
  * Keuzes uit de extensie (publieke status 0.9.0): hoofdschakelaar + ingeschakelde API's. null = extensie meldt niets.
  * 0.9.1: `stand` = wat Chrome IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()); ontbreekt bij 0.9.0.
  */
-export type LokaleAiKeuze = { aan: boolean; apis: LokaleAiApi[]; siteToegang?: boolean; stand?: Partial<Record<LokaleAiApi, PaginaStand>> };
+export type LokaleAiKeuze = { aan: boolean; apis: LokaleAiApi[]; siteToegang?: boolean; stand?: Partial<Record<LokaleAiApi, PaginaStand>>;
+  /** 0.9.6: alleen aanwezig als de beheerder het uitzette (reden, wie, wanneer). */
+  beleid?: LokaleAiBeleidWeergave };
 export function filterLokaleAiKeuze(v: unknown): LokaleAiKeuze | null {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
   const d = v as Record<string, unknown>;
@@ -51,6 +53,8 @@ export function filterLokaleAiKeuze(v: unknown): LokaleAiKeuze | null {
     for (const api of LOKALE_AI_APIS) if (typeof st[api] === 'string' && (PAGINA_STANDEN as readonly string[]).includes(st[api] as string)) s[api] = st[api] as PaginaStand;
     if (Object.keys(s).length) uit.stand = s;
   }
+  const b = filterBeleid(d.beleid);
+  if (b) uit.beleid = b;
   return uit;
 }
 
@@ -118,7 +122,32 @@ export async function meetPagina(g: Record<string, unknown> = globalThis as unkn
 // Alleen als de gebruiker in de extensie «!» siteToegang aanzette (standaard uit). Tekst blijft op het apparaat.
 export const LOKALE_AI_SITE_MIN_EXTENSIE = '0.9.1';
 export const LOKALE_AI_MAX_TEKST = 20000;
-export type LokaleAiAntwoord = { ok: true; tekst: string; notities: string[]; correcties: unknown[] } | { ok: false; reden: string };
+export type LokaleAiAntwoord = { ok: true; tekst: string; notities: string[]; correcties: unknown[] } | { ok: false; reden: string; beleid?: LokaleAiBeleidWeergave };
+
+/**
+ * 0.9.6 (LAI-CON-001, migratie 0287): beleid van de beheerder zoals de extensie het meldt — alleen als het UIT staat.
+ * Рішення власника 16.11.2026: користувач бачить причину, хто вимкнув (з посиланням) і що зробити.
+ */
+export type LokaleAiBeleidWeergave = { reden: string; door: string | null; op: number | null };
+const EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}$/;
+export function filterBeleid(v: unknown): LokaleAiBeleidWeergave | null {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  const d = v as Record<string, unknown>;
+  if (d.aan === true) return null;
+  const reden = typeof d.reden === 'string' ? d.reden.slice(0, 300) : '';
+  if (!reden) return null;
+  return { reden, door: typeof d.door === 'string' && d.door ? d.door.slice(0, 200) : null, op: typeof d.op === 'number' && Number.isFinite(d.op) ? d.op : null };
+}
+/** Link naar de beheerder: mailto alleen voor een geldig e-mailadres (nooit een vrije URL uit de extensie). */
+export const beheerderLink = (door: string | null): string | null => (door && EMAIL.test(door) ? `mailto:${door}` : null);
+/** Eén zin voor de gebruiker: wie, waarom, wat te doen. */
+export function beleidTekst(b: LokaleAiBeleidWeergave): [string, string] {
+  const wie = b.door || 'адміністратор', wieNl = b.door || 'de beheerder';
+  return [
+    `Вимкнув ${wie}: «${b.reden}». Щоб знову ввімкнути, зверніться до цього адміністратора. У власній бічній панелі розширення локальний ШІ працює й далі.`,
+    `Uitgezet door ${wieNl}: «${b.reden}». Om het weer aan te zetten, neem contact op met deze beheerder. In het eigen zijpaneel van de extensie werkt de lokale AI gewoon verder.`,
+  ];
+}
 /** Zuiver: antwoord van de extensie → veilig object (alleen tekst en korte notities; reden uit een vaste lijst of 'FOUT'). */
 export function filterLokaleAiAntwoord(v: unknown): LokaleAiAntwoord {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return { ok: false, reden: 'GEEN_ANTWOORD' };
@@ -127,6 +156,10 @@ export function filterLokaleAiAntwoord(v: unknown): LokaleAiAntwoord {
     return { ok: true, tekst: d.tekst.slice(0, 200_000), notities: Array.isArray(d.notities) ? d.notities.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, 500)).slice(0, 20) : [], correcties: Array.isArray(d.correcties) ? d.correcties.slice(0, 500) : [] };
   }
   const r = typeof d.reason === 'string' ? d.reason : '';
+  if (r === 'BELEID_UIT') {
+    const b = filterBeleid({ aan: false, reden: d.detail, door: d.door, op: d.op });
+    return { ok: false, reden: r, ...(b ? { beleid: b } : {}) };
+  }
   return { ok: false, reden: r in LOKALE_AI_REDENEN ? r : 'FOUT' };
 }
 /** Uitleg per reden (uk, nl): wat er gebeurde en wat de gebruiker kan doen. */
@@ -140,6 +173,8 @@ export const LOKALE_AI_REDENEN: Readonly<Record<string, [string, string]>> = Obj
   BEZIG: ['Вже виконуються два запити. Дочекайтеся їх завершення.', 'Er lopen al twee verzoeken. Wacht tot ze klaar zijn.'],
   MODEL_NIET_GELADEN: ['Модель ще не завантажена. Завантаження (кілька ГБ) запускається лише вашим натисканням у налаштуваннях розширення.', 'Het model is nog niet gedownload. De download (enkele GB) start alleen met uw klik in de instellingen van de extensie.'],
   NIET_BESCHIKBAAR: ['Ця функція недоступна в цьому Chrome або на цьому пристрої.', 'Deze functie is niet beschikbaar in deze Chrome of op dit apparaat.'],
+  // 0.9.6 (LAI-CON-001, migratie 0287): de beheerder zette het uit — de reden en wie het deed staan in `beleid` (zie beleidTekst).
+  BELEID_UIT: ['Адміністратор сервера вимкнув це для вашого облікового запису.', 'De beheerder van de server zette dit uit voor uw account.'],
   AbortError: ['Перервано: перевищено ліміт 120 секунд.', 'Afgebroken: limiet van 120 seconden overschreden.'],
   OFFSCREEN_ONTBREEKT: ['Цей Chrome не підтримує прихований документ offscreen.html — оновіть Chrome.', 'Deze Chrome ondersteunt het verborgen document offscreen.html niet — werk Chrome bij.'],
   GEEN_ANTWOORD: ['Розширення не відповіло. Перевірте, що воно ввімкнене, і спробуйте ще раз.', 'De extensie antwoordde niet. Controleer of ze aan staat en probeer opnieuw.'],
