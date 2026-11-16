@@ -549,6 +549,32 @@ async function appTests(basis: string, check: Check) {
       check('stop (inbox): stop.json als vangnet (root pakte het misschien net op) en daarna geen tweede stop meer mogelijk', existsSync(join(o.inbox, 'stop.json')) && (await (async () => { stepUp = true; const r = await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u3.id, reden: 'Nog eens proberen te stoppen' }); stepUp = false; return r; })()).fout === 'STATUS_ONGELDIG');
       rmSync(join(o.inbox, 'stop.json'), { force: true }); }
 
+    // UITROL-002: hervatten zonder nieuwe upload na een technische mislukking (archief blijft op de server) + één installatie tegelijk.
+    { const u4 = await upload(HELPER, '20261008-150011');
+      const sha4 = shaHex(u4.buf);
+      const pad4 = join(voorstelDir, `${u4.id}.tar.gz`);
+      await sys.query("UPDATE app.uitrol_voorstellen SET status = 'mislukt', uitkomst_code = 'INSTALLATIE_MISLUKT', uitkomst = '{\"uk\":\"збій на кроці «міграції»\",\"nl\":\"fout in stap «migraties»\"}'::jsonb, beslist_op = now(), bijgewerkt_op = now() WHERE id = $1", [u4.id]);
+      const ovH = await call('POST /api/owner/uitrol/overzicht', OWNER);
+      check('hervat: mislukt voorstel met archief op de server → pakketAanwezig', existsSync(pad4) && ovH.data.voorstellen.find((v: any) => v.id === u4.id)?.pakketAanwezig === true, JSON.stringify(ovH.data.voorstellen.find((v: any) => v.id === u4.id)));
+      check('hervat: verkeerde sha256 geweigerd (SHA256_VERSCHILT)', (await call('POST /api/uitrol/voorstel/hervat', HELPER, { id: u4.id, sha256: 'c'.repeat(64) })).fout === 'SHA256_VERSCHILT');
+      check('hervat: een ander (zonder grant) kan niet hervatten', (await call('POST /api/uitrol/voorstel/hervat', ANDER, { id: u4.id, sha256: sha4 })).status >= 400);
+      const hv = await call('POST /api/uitrol/voorstel/hervat', HELPER, { id: u4.id, sha256: sha4 });
+      check('hervat: nieuw voorstel wacht-op-goedkeuring ZONDER upload, voorcontrole opnieuw gedaan, hervatVan = het oude', hv.status === 200 && hv.data.status === 'wacht-op-goedkeuring' && hv.data.hervat === true && (hv.data.hervatVan === u4.id || hv.data.hervatVan?.id === u4.id) && hv.data.id !== u4.id && hv.data.voorcontrole?.ok === true && existsSync(join(voorstelDir, `${hv.data.id}.tar.gz`)), JSON.stringify(hv.data));
+      check('hervat: staat in de audit (uitrol_voorstel_hervat)', (await sys.query("SELECT 1 FROM app.audit WHERE action = 'uitrol_voorstel_hervat' AND details->>'hervatVan' = $1", [u4.id]).catch(() => ({ rows: [] }))).rows.length === 1);
+      await sys.query(`INSERT INTO app.uitrol_runs (id, methode, versie, staat, stap, pct, wie, gestart_op, bijgewerkt_op) VALUES ('20261008T150011Z-test0002', 'passkey', '20261008-150003', 'bezig', 'installeren', 60, 'ander-apparaat', now(), now())`);
+      const uitH = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: hv.data.id });
+      const okH = await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: hv.data.id, uitdagingId: uitH.data.uitdagingId, assertie: bevestig(telefoon, uitH.data.publicKey.challenge) });
+      check('samenloop: goedkeuren terwijl een andere run bezig is → UITROL_BEZIG (409), pakket niet in de inbox', okH.status === 409 && okH.fout === 'UITROL_BEZIG' && !existsSync(join(o.inbox, 'mijn-ruimte-20261008-150011.tar.gz')), JSON.stringify(okH));
+      const lop = await m.lopendeInstallatie();
+      check('samenloop: lopendeInstallatie meldt de run met versie en wie', lop?.soort === 'run' && lop.versie === '20261008-150003' && lop.wie === 'ander-apparaat', JSON.stringify(lop));
+      await sys.query("DELETE FROM app.uitrol_runs WHERE id = '20261008T150011Z-test0002'");
+      check('samenloop: zonder lopende run geen blokkade op een run', (await m.lopendeInstallatie())?.soort !== 'run');
+      const weg = await call('POST /api/uitrol/voorstel/pakket-verwijderen', HELPER, { id: u4.id });
+      check('hervat: archief verwijderen → weg van de schijf, pakketAanwezig false', weg.status === 200 && weg.data.pakketAanwezig === false && !existsSync(pad4), JSON.stringify(weg));
+      check('hervat: zonder archief geweigerd (PAKKET_NIET_AANWEZIG)', (await call('POST /api/uitrol/voorstel/hervat', HELPER, { id: u4.id, sha256: sha4 })).fout === 'PAKKET_NIET_AANWEZIG');
+      await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: hv.data.id, reden: 'test' });
+      check('hervat: na afwijzen door de eigenaar is het archief weg (niet meer bruikbaar)', !existsSync(join(voorstelDir, `${hv.data.id}.tar.gz`)));
+    }
     // Agents: alleen voorbereiden en status.
     check('agents: MCP-hulpmiddelen bevatten geen goedkeuren', m.UITROL_TOOLS.every((t) => !m.isGoedkeurPoging(t.name)) && m.UITROL_TOOLS.length === 5);
     let geweigerd = '';

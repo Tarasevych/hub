@@ -12,6 +12,7 @@ import path from 'node:path';
 import { getPool } from '../server/platform/pg';
 import { parseRootGebeurtenissen, type RootGebeurtenis } from './server-beheer';
 import { RUN_STIL_MINUTEN } from '../shared/uitrol-tijden';
+import { stapDurenUitRegels, verwachtUitRuns, type VerwachtDuren } from '../shared/uitrol-duur';
 
 const statusDir = () => process.env.OPDRACHT_STATUS_DIR || '/var/lib/mijn-ruimte-uitrol-status';
 const sys = () => getPool('systeem');
@@ -382,6 +383,23 @@ export async function runRegels(id: unknown, na: unknown, limiet = 400) {
 
 /** Aantal regels per live-aanroep; de browser haalt bij een volle pagina meteen de volgende op (geen wachttijd van een pollinterval). */
 export const LIVE_PAGINA = 2000;
+// UITROL-002: gebruikelijke duur per installer-onderdeel en van het hele pakket — mediaan van de laatste vijf geslaagde installaties
+// (geen ssh, geen terugdraaiingen). De terminal toont ernaast «зазвичай ≈ …»; zonder geschiedenis toont hij alleen wat verstreek.
+let verwachtCache: { tijd: number; waarde: VerwachtDuren } | null = null;
+export async function verwachteDuren(): Promise<VerwachtDuren> {
+  if (verwachtCache && Date.now() - verwachtCache.tijd < 300_000) return verwachtCache.waarde;
+  const runs = (await sys().query(`SELECT id, gestart_op, geeindigd_op FROM app.uitrol_runs WHERE staat = 'klaar' AND methode <> 'ssh' AND code NOT IN ('TERUG_OK', 'SSH_TERUG')
+      AND geeindigd_op IS NOT NULL AND log_regels > 0 ORDER BY gestart_op DESC LIMIT 5`)).rows;
+  const uit: Array<{ duren: Record<string, number>; totaalMs: number }> = [];
+  for (const r of runs) {
+    const regels = (await sys().query(`SELECT tijd, tekst FROM app.uitrol_run_regels WHERE run_id = $1 AND tekst LIKE '[installeer] stap: %' ORDER BY nr`, [r.id])).rows.map((x) => ({ tijd: iso(x.tijd), tekst: String(x.tekst) }));
+    const totaalMs = Date.parse(iso(r.geeindigd_op)) - Date.parse(iso(r.gestart_op));
+    if (Number.isFinite(totaalMs) && totaalMs > 0) uit.push({ duren: stapDurenUitRegels(regels, iso(r.geeindigd_op)), totaalMs });
+  }
+  const waarde = verwachtUitRuns(uit);
+  verwachtCache = { tijd: Date.now(), waarde };
+  return waarde;
+}
 /** Eén poll voor de levende kaart: de gekozen (of lopende, of laatste) run met de nieuwe logregels sinds `na`. */
 export async function liveStand(runId: unknown, na: unknown) {
   await runsSynchroniseren();
@@ -393,7 +411,7 @@ export async function liveStand(runId: unknown, na: unknown) {
   if (!id) return { run: null, regels: [] as Awaited<ReturnType<typeof runRegels>>, nu: new Date().toISOString() };
   const { rows } = await sys().query('SELECT * FROM app.uitrol_runs WHERE id = $1', [id]);
   if (!rows[0]) return { run: null, regels: [], nu: new Date().toISOString() };
-  return { run: runUit(rows[0]), regels: await runRegels(id, na, LIVE_PAGINA), nu: new Date().toISOString() };
+  return { run: runUit(rows[0]), regels: await runRegels(id, na, LIVE_PAGINA), nu: new Date().toISOString(), verwacht: await verwachteDuren().catch(() => null) };
 }
 
 export type Diagnose = { tijd: string; leeftijdSec: number; gezond: boolean; problemen: Array<{ code: string; uk: string; nl: string }>; [k: string]: unknown };

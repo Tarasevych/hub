@@ -17,7 +17,7 @@ type Props = {
   lang: Lang;
   pogingen: PogingUit[];
   /** Naar de wizard «Нове оновлення»; `hervat` = er staat nog een deel op de server, dus verder gaan waar het stopte. */
-  naarUpload?: (hervat: boolean) => void;
+  naarUpload?: (hervat: boolean, voorstelId?: string) => void;
   /** Compacte vorm (het blok onder «Останні розгортання»): zonder eigen kaartkop. */
   compact?: boolean;
 };
@@ -52,7 +52,7 @@ export default function Pogingen({ lang, pogingen, naarUpload, compact = false }
         </span>
         {naarUpload && <span className='ut-poging-acties'>
           {actie === 'hervatten'
-            ? <button type='button' className='ut-knop ut-knop-primair' data-ut-poging-hervat onClick={() => naarUpload(true)}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button>
+            ? <button type='button' className='ut-knop ut-knop-primair' data-ut-poging-hervat onClick={() => naarUpload(true, p.voorstelId)}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button>
             : <button type='button' className='ut-knop' data-ut-poging-opnieuw onClick={() => naarUpload(false)}><RotateCcw aria-hidden='true' />{tr(lang, 'Почати заново', 'Opnieuw beginnen')}</button>}
         </span>}
       </li>;

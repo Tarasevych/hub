@@ -5,7 +5,8 @@
 // migraties…); eigen scriptmeldingen standaard in de paginataal (uk) met «оригінал» als schakelaar; lettertype met emoji-terugval.
 // Термінал: розтягується, згортається, на весь екран, повертається у попередній стан; кольорові мітки; мовою сторінки.
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
-import { Check, ChevronsDownUp, ChevronsUpDown, ClipboardCopy, Download, Maximize2, Minimize2, Minus, Plus, Undo2 } from 'lucide-react';
+import { Check, ChevronsDownUp, ChevronsUpDown, ClipboardCopy, Download, Maximize2, Minimize2, Minus, Moon, Palette, Plus, Sun, Undo2 } from 'lucide-react';
+import { duurTekst, type VoortgangStand } from './terminal-voortgang';
 import { kleurRegel, zonderAnsi } from './terminal-kleur';
 import { vertaalRegel } from '../../shared/terminal-taal';
 import { regelTags, type Tag } from '../../shared/terminal-tags';
@@ -18,15 +19,32 @@ const STAP_HOOGTE = 120;
 const maxHoogte = () => (typeof window !== 'undefined' ? Math.max(MIN_HOOGTE, Math.round(window.innerHeight * 0.8)) : 2000);
 const klem = (h: number) => Math.max(MIN_HOOGTE, Math.min(maxHoogte(), Math.round(h)));
 
-type Props = { lang: Lang; regels: Regel[]; live?: boolean; bestandsnaam: string; leeg?: string; hoogte?: number; /** gekleurde labels per regel (standaard aan) */ labels?: boolean };
+type Props = { lang: Lang; regels: Regel[]; live?: boolean; bestandsnaam: string; leeg?: string; hoogte?: number; /** gekleurde labels per regel (standaard aan) */ labels?: boolean;
+  /** UITROL-002: lopend onderdeel, %, verstreken en gebruikelijke duur (src/uitrol/terminal-voortgang.ts) */ voortgang?: VoortgangStand | null };
 
-export default function Terminal({ lang, regels, live, bestandsnaam, leeg, hoogte, labels = true }: Props) {
+// UITROL-002 (eigenaar 16.11.2026): de terminal volgt de site. «donker» = klassiek terminalvenster (ook op de lichte site), «licht» = licht
+// venster, «site» = de kleuren van het actieve thema van de site (paneel, tekst, accent) — standaard, zodat licht/donker vanzelf meegaat.
+// Тема термінала: темна, світла або як сайт (типово); вибір запам'ятовується на цьому пристрої.
+export type TerminalThema = 'site' | 'donker' | 'licht';
+const THEMA_SLEUTEL = 'ut-terminal-thema';
+const leesThema = (): TerminalThema => { try { const t = localStorage.getItem(THEMA_SLEUTEL); return t === 'donker' || t === 'licht' || t === 'site' ? t : 'site'; } catch { return 'site'; } };
+const siteDonker = () => (typeof document !== 'undefined' ? document.documentElement.classList.contains('theme-dark') : true);
+
+export default function Terminal({ lang, regels, live, bestandsnaam, leeg, hoogte, labels = true, voortgang }: Props) {
   const [alleen, setAlleen] = useState(false);
   const [alles, setAlles] = useState(false);
   const [gekopieerd, setGekopieerd] = useState(false);
   // UI-010 fase 2 → UITROL-001: eigen scriptmeldingen in de paginataal (alleen weergave; kopiëren/downloaden blijven het origineel).
   // Vroeger alleen achter de vlag uitrol-weergave-v2; nu standaard — de eigenaar wil de terminal in de taal van de site.
   const [origineel, setOrigineel] = useState(false);
+  const [thema, setThema] = useState<TerminalThema>(leesThema);
+  const [donkereSite, setDonkereSite] = useState(siteDonker);
+  useEffect(() => { try { localStorage.setItem(THEMA_SLEUTEL, thema); } catch { /* geen opslag */ } }, [thema]);
+  // Het thema van de site kan wisselen zonder herladen (schakelaar in de kop): de terminal in stand «site» volgt via de class op <html>.
+  useEffect(() => { if (typeof MutationObserver === 'undefined') return undefined; const mo = new MutationObserver(() => setDonkereSite(siteDonker())); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] }); return () => mo.disconnect(); }, []);
+  const licht = thema === 'licht' || (thema === 'site' && !donkereSite);
+  const volgendThema: Record<TerminalThema, TerminalThema> = { site: 'donker', donker: 'licht', licht: 'site' };
+  const themaTekst = (t: TerminalThema) => (t === 'site' ? tr(lang, 'як сайт', 'als de site') : t === 'donker' ? tr(lang, 'темна', 'donker') : tr(lang, 'світла', 'licht'));
   const toon = (t: string) => (!origineel ? vertaalRegel(t, lang) : { tekst: t, vertaald: false });
   // Lokale tijd (of de gekozen zone) met zichtbare zone-afkorting in de balk; vroeger UTC zonder uitleg (audit 18.10.2026, 8d).
   const [zone, setZone] = useState<ZoneKeuze>(zoneKeuze());
@@ -68,12 +86,13 @@ export default function Terminal({ lang, regels, live, bestandsnaam, leeg, hoogt
   const kopieer = async () => { try { await navigator.clipboard.writeText(zonderAnsi(regelsNaarTekst(regels))); setGekopieerd(true); window.setTimeout(() => setGekopieerd(false), 1800); } catch { /* klembord niet beschikbaar */ } };
   const tagTekst = (t: Tag) => (lang === 'uk' ? t.uk : t.nl);
 
-  return <div className='ut-terminal' data-live={live ? 'true' : 'false'} data-volledig={volledig || undefined} data-ingeklapt={ingeklapt || undefined} role={volledig ? 'dialog' : undefined} aria-modal={volledig || undefined} aria-label={volledig ? tr(lang, 'Термінал на весь екран', 'Terminal schermvullend') : undefined}>
+  return <div className='ut-terminal' data-live={live ? 'true' : 'false'} data-thema={thema} data-licht={licht || undefined} data-volledig={volledig || undefined} data-ingeklapt={ingeklapt || undefined} role={volledig ? 'dialog' : undefined} aria-modal={volledig || undefined} aria-label={volledig ? tr(lang, 'Термінал на весь екран', 'Terminal schermvullend') : undefined}>
     <div className='ut-terminal-balk'>
       <span className='ut-terminal-titel'><i aria-hidden='true' />{tr(lang, 'Термінал встановлення', 'Installatieterminal')}{live && <b>{tr(lang, 'наживо', 'live')}</b>}<small className='ut-terminal-zone' title={tr(lang, 'Часова зона рядків — змінюється в «Налаштування»', 'Tijdzone van de regels — te wijzigen bij «Instellingen»')}>{tr(lang, 'час', 'tijd')}: {zoneAfkorting(new Date(), zone, lang)}</small>{ingeklapt && <small className='ut-terminal-tel'>{tr(lang, `${regels.length} рядків`, `${regels.length} regels`)}</small>}</span>
       <span className='ut-terminal-knoppen'>
         {lang === 'uk' && <label className='ut-terminal-schakel' title='Показати рядки точно так, як їх записав сервер (без перекладу)'><input data-hulp-vrij='filter' type='checkbox' checked={origineel} onChange={(e) => setOrigineel(e.target.checked)} data-ut-origineel />оригінал</label>}
         <label className='ut-terminal-schakel'><input data-hulp-vrij='filter' type='checkbox' checked={alleen} onChange={(e) => setAlleen(e.target.checked)} />{tr(lang, 'лише попередження й помилки', 'alleen waarschuwingen en fouten')}</label>
+        <button type='button' className='ut-terminal-thema' data-ut-thema={thema} onClick={() => setThema(volgendThema[thema])} title={tr(lang, `Тема термінала: ${themaTekst(thema)}. Натисніть, щоб перемкнути (далі: ${themaTekst(volgendThema[thema])}). «Як сайт» бере кольори активної теми сайту.`, `Terminalthema: ${themaTekst(thema)}. Klik om te wisselen (volgende: ${themaTekst(volgendThema[thema])}). «Als de site» neemt de kleuren van het actieve sitethema.`)} aria-label={tr(lang, `Тема термінала: ${themaTekst(thema)}`, `Terminalthema: ${themaTekst(thema)}`)}>{thema === 'site' ? <Palette aria-hidden='true' /> : thema === 'donker' ? <Moon aria-hidden='true' /> : <Sun aria-hidden='true' />}<span>{themaTekst(thema)}</span></button>
         <button type='button' onClick={() => void kopieer()} disabled={!regels.length} aria-label={tr(lang, 'Копіювати журнал', 'Logboek kopiëren')}>{gekopieerd ? <Check aria-hidden='true' /> : <ClipboardCopy aria-hidden='true' />}<span>{gekopieerd ? tr(lang, 'Скопійовано', 'Gekopieerd') : tr(lang, 'Копіювати', 'Kopiëren')}</span></button>
         <button type='button' onClick={() => bestandOpslaan(bestandsnaam, zonderAnsi(regelsNaarTekst(regels)))} disabled={!regels.length} aria-label={tr(lang, 'Завантажити журнал', 'Logboek downloaden')}><Download aria-hidden='true' /><span>{tr(lang, 'Завантажити', 'Downloaden')}</span></button>
         <span className='ut-terminal-venster' role='group' aria-label={tr(lang, 'Розмір вікна термінала', 'Grootte van het terminalvenster')}>
@@ -85,6 +104,14 @@ export default function Terminal({ lang, regels, live, bestandsnaam, leeg, hoogt
         </span>
       </span>
     </div>
+    {/* UITROL-002: voortgangsregel — welk onderdeel loopt, %, verstreken op het onderdeel en in totaal, gebruikelijke duur uit eerdere runs. */}
+    {voortgang && !ingeklapt && (() => { const p = voortgang; const naam = lang === 'uk' ? p.uk : p.nl; const d = (x: number | null) => (x === null ? null : duurTekst(lang, x));
+      const stap = d(p.stapMs), stapV = d(p.verwachtStapMs), tot = d(p.totaalMs), totV = d(p.verwachtTotaalMs), rest = d(p.resterendMs);
+      return <div className='ut-terminal-voortgang' data-ut-voortgang={p.id} data-klaar={p.klaar || undefined} role='status' aria-live='off'>
+        <div className='ut-terminal-voortgang-balk' aria-hidden='true'><i style={{ width: `${p.pct}%` }} /></div>
+        <span className='ut-terminal-voortgang-nu'><b>{p.pct}%</b> {p.klaar ? tr(lang, 'завершено', 'afgerond') : tr(lang, 'зараз', 'nu')}: <em>{naam}</em>{stap !== null && !p.klaar ? <> · {tr(lang, 'крок триває', 'onderdeel loopt')} {stap}{stapV !== null ? <small> ({tr(lang, 'зазвичай', 'gewoonlijk')} ≈ {stapV})</small> : null}</> : null}</span>
+        <span className='ut-terminal-voortgang-totaal'>{tot !== null ? <>{tr(lang, 'усього', 'totaal')} {tot}</> : null}{totV !== null ? <small> ({tr(lang, 'пакет зазвичай', 'pakket gewoonlijk')} ≈ {totV})</small> : null}{rest !== null && !p.klaar ? <> · {tr(lang, 'лишилося', 'resterend')} ≈ {rest}</> : null}{totV === null && !p.klaar ? <small> · {tr(lang, 'очікувану тривалість буде видно після першого вдалого встановлення', 'de gebruikelijke duur verschijnt na de eerste geslaagde installatie')}</small> : null}</span>
+      </div>; })()}
     {!ingeklapt && <div className='ut-terminal-bak' ref={bak} onScroll={opScroll} style={volledig ? undefined : { height: h, maxHeight: 'none' }} role='log' aria-live={live ? 'polite' : 'off'} tabIndex={0} data-labels={labels || undefined} data-gezet={h !== basis || undefined}>
       {verborgen > 0 && <button type='button' className='ut-terminal-meer' onClick={() => setAlles(true)}>{tr(lang, `Показати ще ${verborgen} ранніх рядків`, `Toon nog ${verborgen} eerdere regels`)}</button>}
       {getoond.map((r) => { const v = toon(r.tekst); const tags = tagsPerNr.get(r.nr) || [];

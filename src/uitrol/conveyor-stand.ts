@@ -36,7 +36,7 @@ export const ONDERDELEN: Record<string, { uk: string; nl: string; knoop: KnoopId
   nabewaken: { uk: 'нагляд за новим випуском', nl: 'nabewaking van de nieuwe release', knoop: 'gezondheid' },
   gestopt: { uk: 'зупинено власником', nl: 'gestopt door de eigenaar', knoop: 'voorbereiding' },
 };
-const ROOT_STAPPEN: Record<string, { uk: string; nl: string }> = {
+export const ROOT_STAPPEN: Record<string, { uk: string; nl: string }> = {
   ontvangen: { uk: 'пакет отримано', nl: 'pakket ontvangen' }, kopie: { uk: 'копія в робочу теку root', nl: 'kopie naar de werkmap van root' },
   echtheid: { uk: 'перевірка passkey і sha256', nl: 'passkey en sha256 controleren' }, inhoud: { uk: 'перевірка вмісту', nl: 'inhoud controleren' },
 };
