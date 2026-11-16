@@ -462,9 +462,10 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
  *  beelden en de tekst (grootte, taal). Zelfde lijnstijl als lucide (24-raster, lijn 2, ronde einden), dus kleurt en schaalt mee met
  *  de andere knoppen. Uk: піктограма «зображення + літера» — зображення й текст листа. */
 function BeeldTekstIcoon() {
-  // Павло (20:28): «коли піктограма маленька, погано видно — можливо зробити кольоровою». Dus: een gekleurd fotootje (lucht, berg,
-  // zon — leest ook op 20 px als «afbeelding») en de letter A in de tekstkleur; rond de A een masker, zodat de twee niet in elkaar
-  // overlopen. Vaste kleuren voor de foto (lucht/berg/zon lezen in licht én donker), lijnen in currentColor. 20 px i.p.v. 17
+  // Павло (20:28): «коли піктограма маленька, погано видно — можливо зробити кольоровою»; (20:34) «букву А треба зробити більшою і
+  // додати, можливо, третій елемент». Dus drie delen, elk een zone van het paneel: een gekleurd fotootje (Зображення), een
+  // wereldbol (Мова й ШІ) en een grote letter A over de hele hoogte (Читання). Vaste kleuren voor foto en bol (lezen in licht én
+  // donker), de A in de tekstkleur, met een masker eromheen zodat de delen niet in elkaar overlopen. 22 px i.p.v. 17
   // (.lz-weergave-icoon in beelden-voorraad.css). Masker-id per knop uniek (useId).
   const masker = `lz-weergave-a${useId().replace(/[^\w-]/g, '')}`;
   return (
@@ -472,17 +473,22 @@ function BeeldTekstIcoon() {
       <defs>
         <mask id={masker}>
           <rect width='24' height='24' fill='white' stroke='none' />
-          <path d='M13.5 22 18 10.5 22.5 22' stroke='black' strokeWidth='5.5' />
+          <path d='M11.5 22.5 17.25 3 23 22.5' stroke='black' strokeWidth='5.8' />
         </mask>
       </defs>
       <g mask={`url(#${masker})`}>
-        <rect x='1.5' y='2' width='15' height='13' rx='2.5' fill='#7cc4f2' stroke='none' />
-        <path d='M1.5 13 7 8l4 4 2-2 3.5 3.5V15H1.5z' fill='#34a26b' stroke='none' />
-        <circle cx='12' cy='6.2' r='1.8' fill='#f7b500' stroke='none' />
-        <rect x='1.5' y='2' width='15' height='13' rx='2.5' strokeWidth='1.6' />
+        {/* foto (zone «Зображення») */}
+        <rect x='1.2' y='1.5' width='11' height='9.5' rx='2' fill='#7cc4f2' stroke='none' />
+        <path d='M1.2 9.1 5.38 5.49l2.97 2.85 1.43-1.24 2.42 2.28V11H1.2z' fill='#34a26b' stroke='none' />
+        <circle cx='8.9' cy='4.35' r='1.33' fill='#f7b500' stroke='none' />
+        <rect x='1.2' y='1.5' width='11' height='9.5' rx='2' strokeWidth='1.6' />
+        {/* wereldbol (zone «Мова й ШІ») */}
+        <circle cx='6.5' cy='18' r='4.4' fill='#d8ecff' stroke='#2f6fd6' strokeWidth='1.5' />
+        <path d='M2.3 18h8.4M6.5 13.6c-1.6 1.6-1.6 7.2 0 8.8M6.5 13.6c1.6 1.6 1.6 7.2 0 8.8' stroke='#2f6fd6' strokeWidth='1.2' />
       </g>
-      <path d='M13.5 22 18 10.5 22.5 22' />
-      <path d='M15.3 17.8h5.4' />
+      {/* grote letter A (zone «Читання»: tekst) */}
+      <path d='M11.5 22.5 17.25 3 23 22.5' strokeWidth='2.4' />
+      <path d='M14.09 15.09h6.33' strokeWidth='2.4' />
     </svg>
   );
 }

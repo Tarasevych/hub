@@ -690,12 +690,12 @@ html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x)[aria-disabl
   cursor: progress;
 }
 
-/* MAILBEELD-004: de knop «Вигляд» in de kop — gekleurd pictogram (foto + A) op 20 px i.p.v. 17: klein was het slecht te lezen.
-   Alleen deze knop; de cirkel van de knop blijft even groot. Uk: піктограма «Вигляд» 20 px, кольорова. */
+/* MAILBEELD-004: de knop «Вигляд» in de kop — gekleurd pictogram (foto, wereldbol, grote A) op 22 px i.p.v. 17: klein was het
+   slecht te lezen. Alleen deze knop; de cirkel van de knop blijft even groot. Uk: піктограма «Вигляд» 22 px, кольорова. */
 html body .mail-reader-weergave > summary > svg.lz-weergave-icoon {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
 }
 
 /* ---- muis: zachte achtergrond onder de aanwijzer (niet op aanraakschermen: daar blijft «hover» na een tik hangen) ---- */
