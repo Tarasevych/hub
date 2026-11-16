@@ -243,7 +243,7 @@ export async function verbruik(userId: string, sessieId: string, actie: string):
 /**
  * Klassieke step-up voor A nadat de poort van TELEGRAM-001 de handeling «stap-op» heeft goedgekeurd (routes.ts, /stap-op/poort).
  * Kiest de sterkste bron: een bevestiging vanaf een ander apparaat met toegangssleutel (sterk, als de beheerder dat toestaat),
- * anders Telegram (nooit sterk). Geeft de vastgelegde methode terug, of '' als er niets te leggen was.
+ * anders Telegram (sterk alleen als de mens dat zelf koos: voorkeur telegramSterk). Geeft de vastgelegde methode terug, of ''.
  */
 export async function stapOpNaPoort(auth: Auth, voldaanMethoden: ReadonlySet<string>): Promise<'apparaat' | 'telegram' | ''> {
   const sessie = stapOpSessieId(auth);
@@ -256,8 +256,9 @@ export async function stapOpNaPoort(auth: Auth, voldaanMethoden: ReadonlySet<str
     return 'apparaat';
   }
   if (voldaanMethoden.has('telegram')) {
-    await stapOpVoorSessieVastleggen(auth.user.id, sessie, 'telegram');
-    await audit(auth.user.id, 'stap-op', 'success', { methode: 'telegram' });
+    const sterk = (await voorkeuren(auth.user.id)).waarde.telegramSterk === true;
+    await stapOpVoorSessieVastleggen(auth.user.id, sessie, 'telegram', { sterk });
+    await audit(auth.user.id, 'stap-op', 'success', { methode: 'telegram', sterk });
     return 'telegram';
   }
   return '';
@@ -278,7 +279,20 @@ export async function overzicht(auth: Auth) {
     recent: recent.map((r) => ({ ...publiek(r, true), juist: undefined })),
   };
 }
-export async function voorkeurenZetten(auth: Auth, invoer: unknown) { return voorkeurenOpslaan(auth.user.id, invoer); }
+export async function voorkeurenZetten(auth: Auth, invoer: unknown) {
+  const voor = (await voorkeuren(auth.user.id)).waarde;
+  const na = await voorkeurenOpslaan(auth.user.id, invoer);
+  // Telegram als «sterke» bevestiging: elke wijziging in het auditlogboek én in het meldingencentrum (zichtbaar als iemand anders het aanzette).
+  if (voor.telegramSterk !== na.telegramSterk) {
+    await audit(auth.user.id, 'telegram-sterk', 'success', { aan: na.telegramSterk });
+    await siteMelding(auth.user.id,
+      na.telegramSterk ? ['Telegram тепер підтверджує найважливіші дії', 'Telegram bevestigt nu ook de gevoeligste handelingen'] : ['Telegram більше не підтверджує найважливіші дії', 'Telegram bevestigt de gevoeligste handelingen niet meer'],
+      na.telegramSterk
+        ? ['Ви дозволили підтверджувати в Telegram і дії, що вимагають сильного підтвердження (відкликання прав, ключі, шифрування). Якщо це були не ви, вимкніть це в «Способах входу» і змініть таємний код Telegram.', 'U stond toe dat Telegram ook handelingen bevestigt die een sterke bevestiging vragen (rechten intrekken, sleutels, versleuteling). Was u dit niet, zet het dan uit bij «Aanmeldmethoden» en wijzig de geheime Telegram-code.']
+        : ['Для найважливіших дій знову потрібен passkey, код із застосунку або код відновлення.', 'Voor de gevoeligste handelingen is weer een passkey, app-code of herstelcode nodig.']);
+  }
+  return na;
+}
 /** Herstel na «uit»: alleen met een verse toegangssleutel op DEZE sessie (de route controleert dat vóór de aanroep). */
 export async function herstelNaSleutel(auth: Auth): Promise<void> { await herstellen(auth.user.id); await audit(auth.user.id, 'hersteld', 'success'); }
 

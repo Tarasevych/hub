@@ -148,6 +148,8 @@ const PER_PAD: readonly Regel[] = [
     'Сховище без жодного ключа повернеться до стану «вимкнено»; дані не втрачаються.', 'Een kluis zonder sleutel gaat terug naar «uit»; er gaan geen gegevens verloren.'],
   [/\/sleutelkluis\/passkey\/koppelen\/opties$/, 'Прив’язати passkey як ключ до зашифрованих даних', 'Een passkey koppelen als sleutel voor de versleutelde gegevens',
     'Цим passkey можна буде відкривати ваші зашифровані дані.', 'Met deze passkey kunnen uw versleutelde gegevens geopend worden.', true],
+  [/\/sleutelkluis\/wachtwoord\/aan$/, 'Дозволити паролю одразу розшифровувати дані', 'Het wachtwoord de gegevens meteen laten ontsleutelen',
+    'Після цього вхід паролем одразу відкриватиме ваші зашифровані дані. Ризик: хто скопіює базу даних, може підбирати слабкий пароль без обмежень.', 'Daarna opent aanmelden met wachtwoord uw versleutelde gegevens meteen. Risico: wie de database kopieert, kan een zwak wachtwoord onbeperkt raden.', true],
   [/\/sleutelkluis\/passkey\/ontkoppelen$/, 'Від’єднати passkey від зашифрованих даних', 'Een passkey loskoppelen van de versleutelde gegevens',
     'Цим passkey більше не можна буде відкрити зашифровані дані; лишаться інші ключі й код відновлення.', 'Met deze passkey kunnen de versleutelde gegevens niet meer geopend worden; andere sleutels en de herstelcode blijven.', true],
   [/\/sleutelkluis\/herversleutelen$/, 'Перешифрувати збережені дані', 'Opgeslagen gegevens opnieuw versleutelen',

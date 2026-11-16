@@ -15,7 +15,7 @@ import {apparaat} from '../server/platform/audit';
 import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
 import {kritiekeActie} from '../shared/kritieke-acties';
-import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
+import {stapOpKanalen,telegramSterkGekozen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
 import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
@@ -252,7 +252,7 @@ async function ontkoppelEnkel(table:string,row:{id:string}&Record<string,unknown
 /** Een hele methode ontkoppelen (bindingen + bijbehorend wachtwoord/telefoon/Google-identiteiten). */
 async function ontkoppelMethode(userId:string,method:LoginMethodId,door:Door){
   await ontkoppelBindingen((await bindingsFor(userId)).filter(item=>item.method===method&&item.status!=='disabled'),door);
-  if(method==='password')await ontkoppelEnkel(PASSWORDS,await passwordFor(userId),door);
+  if(method==='password'){await ontkoppelEnkel(PASSWORDS,await passwordFor(userId),door);/* KLUIS-AANMELDEN: geen wachtwoord meer = geen wachtwoordomslag van de gegevenssleutel */await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(userId)).catch(()=>undefined);}
   if(method==='phone')await ontkoppelEnkel(PHONES,await phoneFor(userId),door);
   if(method==='google')await ontkoppelIdentiteiten(await googleIdentities(userId),door);
 }
@@ -572,8 +572,10 @@ export function createAccessPlaneRoutes(deps:{
       const onthoudMag=body.sterk!==true&&onthoudMagVoorActie(actieVan(body.actie));
       const onthoudTot=Number(onthouden[onthoudSessieId(auth as unknown as StapOpAuth)]||0);
       // APPARAAT-001: kanalen zonder sleutel op dit apparaat (Telegram, ander apparaat) volgens de bevestigingstabel; nooit voor «sterk».
-      const kanalen=body.sterk===true?null:await stapOpKanalen(auth as never).catch(()=>null);
-      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,
+      // 16.11.2026: Telegram ook bij «sterk», maar alleen als de mens dat zelf koos (voorkeur telegramSterk); «ander apparaat» blijft weg.
+      const sterkTg=body.sterk===true&&await telegramSterkGekozen(auth.user.id).catch(()=>false);
+      const kanalen=body.sterk===true&&!sterkTg?null:await stapOpKanalen(auth as never).then(k=>body.sterk===true?{...k,apparaat:false,apparaten:0}:k).catch(()=>null);
+      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,telegramSterk:sterkTg,
         methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true,codewoord:heeftCodewoord,telegram:!!kanalen?.telegram,apparaat:!!kanalen?.apparaat},
         kanalen:kanalen?{apparaten:kanalen.apparaten,reden:kanalen.reden,eis:kanalen.eis,eisTekst:kanalen.eisTekst}:null,
         geldigTot,maxAgeSeconds:STAP_OP_MS/1000,onthoudMag,onthoudTot,onthoudUren:Math.round(STAP_OP_ONTHOUD_MS/3600000)});
@@ -644,6 +646,8 @@ export function createAccessPlaneRoutes(deps:{
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
       else await db.add(PASSWORDS,[record]);
       await upsertLoginBinding(auth.user.id,'password',auth.user.id,auth.user.email);
+      /* KLUIS-AANMELDEN: het nieuwe wachtwoord opent voortaan de gegevenssleutel (open sleutel: meteen; dicht: zodra hij opengaat) */
+      await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordGewijzigd(auth.user.id,password)).catch(e=>console.error('[sleutelkluis] wachtwoord gezet:',(e as Error).message));
       await deps.audit(auth.user.id,'access.password.set','success',{});
       await meldBeveiligingsWijziging(auth.user.id,'wachtwoord-gezet');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -684,7 +688,7 @@ export function createAccessPlaneRoutes(deps:{
       if(blocked)return deps.fail(blocked,409);
       const stap=await stapOp(auth);if(stap)return stap;
       if(identity)await ontkoppelIdentiteiten([identity],zelf(auth));
-      if(row){await ontkoppelBindingen([row],zelf(auth));if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active'))await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id),zelf(auth));}
+      if(row){await ontkoppelBindingen([row],zelf(auth));if(row.method==='password'&&!(await bindingsFor(auth.user.id)).some(b=>b.method==='password'&&b.status==='active')){await ontkoppelEnkel(PASSWORDS,await passwordFor(auth.user.id),zelf(auth));await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(auth.user.id)).catch(()=>undefined);}}
       await deps.audit(auth.user.id,'access.binding.unbind','success',{method:identity?'google':row?.method,email:identity?.email||row?.email,herstelbaarTot:Date.now()+HERSTEL_MS});
       await meldOntkoppeld(auth.user.id,identity?'google':String(row?.method||''));
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
@@ -998,6 +1002,8 @@ export function createAccessPlaneRoutes(deps:{
       const record={userId:ctx.params.id,...envelope,mustChange:true,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
       else await db.add(PASSWORDS,[record]);
+      /* KLUIS-AANMELDEN: een tijdelijk wachtwoord van de beheerder opent NOOIT de gegevenssleutel; de oude omslag gaat weg */
+      await import('./sleutelkluis-aanmelden').then(m=>m.wachtwoordVervallen(String(ctx.params.id))).catch(()=>undefined);
       await deps.audit(auth.user.id,'access.user.reset-password','success',{userId:ctx.params.id});
       /* SEC-002 (privacy-logboek-03): ook in het logboek en de bel van wie het wachtwoord kreeg, niet alleen in dat van de beheerder */
       if(ctx.params.id!==auth.user.id){await deps.audit(ctx.params.id,'access.password.reset-door-beheer','success',{door:auth.user.id});await meldBeveiligingsWijziging(ctx.params.id,'wachtwoord-door-beheer');}

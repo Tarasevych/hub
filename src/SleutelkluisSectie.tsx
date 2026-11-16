@@ -17,7 +17,7 @@ import {api} from './platform/client';
 import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
-import {kanPrf,kekUitPrf,omslaan,omslagOpenen,passkeyMetPrf,type PrfAssertieOpties} from './platform/sleutelkluis-client';
+import {aanmeldOmslag,kanPrf,kekUitPrf,omslaan,omslagOpenen,passkeyMetPrf,type PrfAssertieOpties} from './platform/sleutelkluis-client';
 import {InfoTip} from './InfoTip';
 import {apparaatRecords,apparaatVergetenLokaal} from './platform/kluis-apparaat';
 import type {Lang} from './toegangslaag-teksten';
@@ -26,11 +26,13 @@ import {KLUIS_FOUT,KLUIS_TEKST,opmaakHerstelcode,type KluisStand,type RegisterRe
 type Overzicht={
   ruimte:'prive'|'technisch';stand:KluisStand;ingeschakeldOp:number;herversleuteldOp:number;
   houders:Array<{soort:'sessie'|'grant'|'intern';tot:number}>;
-  omslagen:{herstelcode:{aangemaaktOp:number;laatstGebruiktOp:number}|null;passkeys:Array<{passkeyId:string;prf:boolean;aangemaaktOp:number;laatstGebruiktOp:number}>;grants:Array<{grantId:string;aangemaaktOp:number;laatstGebruiktOp:number}>;apparaten?:Array<{id:string;label:string;aangemaaktOp:number;laatstGebruiktOp:number;verlooptOp:number}>};
+  omslagen:{wachtwoord?:{aangemaaktOp:number;laatstGebruiktOp:number}|null;aanmeldPasskeys?:string[];herstelcode:{aangemaaktOp:number;laatstGebruiktOp:number}|null;passkeys:Array<{passkeyId:string;prf:boolean;aangemaaktOp:number;laatstGebruiktOp:number}>;grants:Array<{grantId:string;aangemaaktOp:number;laatstGebruiktOp:number}>;apparaten?:Array<{id:string;label:string;aangemaaktOp:number;laatstGebruiktOp:number;verlooptOp:number}>};
   journaal:Array<{tabel:string;soort:string;aantal:number;laatstOp:number}>;
   register:RegisterRegel[];passkeys:Array<{id:string;naam:string;gekoppeld:boolean}>;pepperAanwezig:boolean;
   /** SEC-002 (geheimen-04): er wacht een nieuwe herstelcode op bevestiging / de kluis heeft geen enkele omslag. */
   herstelcodeWacht?:boolean;zonderOmslag?:boolean;
+  /** KLUIS-AANMELDEN: mag de aanmelding met wachtwoord de sleutel openen (voorkeur, standaard ja). */
+  wachtwoordOpent?:boolean;
   /** IDENTITEIT-015: перебіг повторного шифрування (стан у app.records) — «оброблено N з M», «Продовжити» після переривання. */
   herversleutelVoortgang?:Voortgang|null;
 };
@@ -82,20 +84,21 @@ export function SleutelkluisSectie({lang,context}:Props){
   const kluisHerstellen=()=>doe('herstellen',async()=>{await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herstellen`,context));setMelding({ok:true,tekst:tr(lang,'Стан скинуто. Тепер увімкніть шифрування заново.','Toestand teruggezet. Schakel de versleuteling nu opnieuw in.')});});
   const vergrendelen=()=>doe('vergrendel',async()=>{await api.post(`${P}/vergrendelen`,context);});
   const ontgrendelPasskey=()=>doe('ontgrendel-passkey',async()=>{
-    const opt=(await api.post(`${P}/passkey/ontgrendelen/opties`,context)).data as {uitdagingId:string;omslagen:Array<{passkeyId:string;credentialId:string;salt:string;envelop:string;aad:string}>;publicKey:PrfAssertieOpties};
+    const opt=(await api.post(`${P}/passkey/ontgrendelen/opties`,context)).data as {uitdagingId:string;omslagen:Array<{passkeyId:string;credentialId:string;salt:string;envelop:string;aad:string;aanmeldAad?:string}>;publicKey:PrfAssertieOpties};
     const a=await passkeyMetPrf(opt.publicKey);
     if(!a.prf){setMelding({ok:false,tekst:t2(lang,KLUIS_TEKST.geenPrf)});return;}
     const omslag=opt.omslagen.find(x=>x.credentialId===a.credentialId);
     if(!omslag)throw Object.assign(new Error('SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG'),{name:'SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG'});
     const dek=await omslagOpenen(await kekUitPrf(a.prf),omslag.envelop,omslag.aad);
-    const{prf:_p,...assertie}=a;
-    await api.post(`${P}/passkey/ontgrendelen`,{...context,uitdagingId:opt.uitdagingId,assertie,dek});
+    const{prf:_p,prf2,...assertie}=a;
+    const aanmeldEnvelop=await aanmeldOmslag(prf2,dek,omslag.aanmeldAad); /* KLUIS-AANMELDEN: voortaan opent de aanmelding met deze passkey de gegevens */
+    await api.post(`${P}/passkey/ontgrendelen`,{...context,uitdagingId:opt.uitdagingId,assertie,dek,...(aanmeldEnvelop?{aanmeldEnvelop}:{})});
     setMelding({ok:true,tekst:tr(lang,'Ключ відкрито для цієї сесії.','Sleutel geopend voor deze sessie.')});
   });
   const passkeyKoppelen=()=>doe('koppelen',async()=>{
-    const opt=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/passkey/koppelen/opties`,context))).data as {uitdagingId:string;dek:string;passkeys:Array<{id:string;credentialId:string;naam:string;salt:string;aad:string}>;publicKey:PrfAssertieOpties};
+    const opt=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/passkey/koppelen/opties`,context))).data as {uitdagingId:string;dek:string;passkeys:Array<{id:string;credentialId:string;naam:string;salt:string;aad:string;aanmeldAad?:string}>;publicKey:PrfAssertieOpties};
     const a=await passkeyMetPrf(opt.publicKey);
-    const{prf,...assertie}=a;
+    const{prf,prf2,...assertie}=a;
     if(!prf){await api.post(`${P}/passkey/koppelen`,{...context,uitdagingId:opt.uitdagingId,assertie,prfOndersteund:false});setMelding({ok:false,tekst:t2(lang,KLUIS_TEKST.geenPrf)});return;}
     const pk=opt.passkeys.find(x=>x.credentialId===a.credentialId);
     if(!pk)throw Object.assign(new Error('SLEUTELKLUIS_PASSKEY_ONBEKEND'),{name:'SLEUTELKLUIS_PASSKEY_ONBEKEND'});
@@ -103,11 +106,14 @@ export function SleutelkluisSectie({lang,context}:Props){
     const envelop=await omslaan(kek,opt.dek,pk.aad);
     // Zelfproef vóór het opslaan: gaat de omslag hier open, dan werkt hij straks ook bij het ontgrendelen.
     if((await omslagOpenen(kek,envelop,pk.aad))!==opt.dek)throw Object.assign(new Error('SLEUTELKLUIS_OMSLAG_ONGELDIG'),{name:'SLEUTELKLUIS_OMSLAG_ONGELDIG'});
-    await api.post(`${P}/passkey/koppelen`,{...context,uitdagingId:opt.uitdagingId,assertie,salt:pk.salt,envelop,prfOndersteund:true});
+    const aanmeldEnvelop=await aanmeldOmslag(prf2,opt.dek,pk.aanmeldAad); /* KLUIS-AANMELDEN: ook de aanmelding met deze passkey opent de sleutel */
+    await api.post(`${P}/passkey/koppelen`,{...context,uitdagingId:opt.uitdagingId,assertie,salt:pk.salt,envelop,prfOndersteund:true,...(aanmeldEnvelop?{aanmeldEnvelop}:{})});
     setMelding({ok:true,tekst:tr(lang,`Passkey «${pk.naam}» тепер відкриває ваш ключ.`,`Passkey «${pk.naam}» opent nu uw sleutel.`)});
   });
   // KLUIS-APPARAAT-001: een onthouden apparaat vergeten — de serverhelft weg (de browserhelft wordt waardeloos), op dit apparaat ook lokaal.
   const apparaatVergeten=(id:string)=>doe('apparaat',async()=>{await api.post(`${P}/apparaat/vergeten`,{...context,apparaatId:id});if(lokaal.includes(id))await apparaatVergetenLokaal(id);setMelding({ok:true,tekst:tr(lang,'Пристрій забуто: там дані знову розшифровуватимуться лише passkey або кодом.','Apparaat vergeten: daar worden de gegevens weer alleen met passkey of code ontsleuteld.')});});
+  /* KLUIS-AANMELDEN: пароль відкриває ключ під час входу — увімкнути (сильне підтвердження) або вимкнути (обгортку стерто одразу). */
+  const wachtwoordZetten=(aan:boolean)=>doe('wachtwoord',async()=>{await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/wachtwoord/${aan?'aan':'uit'}`,context));setMelding({ok:true,tekst:aan?tr(lang,'Увімкнено: наступний вхід паролем одразу розшифрує дані.','Aan: de volgende aanmelding met wachtwoord ontsleutelt de gegevens meteen.'):tr(lang,'Вимкнено: пароль лише впускає в акаунт, обгортку ключа стерто.','Uit: het wachtwoord laat u alleen binnen; de omslag van de sleutel is gewist.')});});
   const ontkoppelen=(passkeyId:string)=>doe('ontkoppelen',async()=>{await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/passkey/ontkoppelen`,{...context,passkeyId}));});
   // IDENTITEIT-015 (етап 1.3): кроками по одній таблиці — видно «оброблено N з M»; закрили ключ або вкладку — стан лишається на сервері,
   // і «Продовжити» доводить роботу до кінця (уже оброблені таблиці не повторюються). Старт — із сильним підтвердженням, продовження — ні.
@@ -196,8 +202,11 @@ export function SleutelkluisSectie({lang,context}:Props){
           <ul className='herstel-lijst sleutelkluis-lijst'>
             <li data-omslag='herstelcode'><span>{tr(lang,'Код відновлення','Herstelcode')}</span><small>{o.omslagen?.herstelcode?`${tr(lang,'створено','gemaakt')} ${datum(lang,o.omslagen.herstelcode.aangemaaktOp)}`:tr(lang,'немає','geen')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void codeVernieuwen()}><RefreshCw/>{tr(lang,'Новий код','Nieuwe code')}</button>}</li>
-            {gekoppeld.map(p=><li key={p.id} data-omslag='passkey'><span>Passkey «{p.naam}»</span><small>{tr(lang,'відкриває ключ (PRF)','opent de sleutel (PRF)')}</small>
+            {gekoppeld.map(p=><li key={p.id} data-omslag='passkey'><span>Passkey «{p.naam}»</span><small>{tr(lang,'відкриває ключ (PRF)','opent de sleutel (PRF)')} · {(o.omslagen?.aanmeldPasskeys||[]).includes(p.id)?tr(lang,'вхід цим passkey одразу розшифровує дані','aanmelden met deze passkey ontsleutelt meteen'):tr(lang,'вхід ним розшифровуватиме одразу після наступного розшифрування цим passkey','aanmelden ontsleutelt meteen na de volgende ontgrendeling met deze passkey')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void ontkoppelen(p.id)}><Unplug/>{tr(lang,'Відʼєднати','Loskoppelen')}</button>}</li>)}
+            {(o.omslagen?.wachtwoord||o.wachtwoordOpent===false)&&<li data-omslag='wachtwoord'><span style={{display:'inline-flex',alignItems:'center',gap:6,flexWrap:'nowrap'}}><KeyRound aria-hidden='true' style={{width:16,height:16,flex:'none'}}/>{tr(lang,'Пароль','Wachtwoord')}{o.wachtwoordOpent!==false&&<span role='img' data-wachtwoord-risico aria-label={tr(lang,'Увага: ризик слабкого пароля','Let op: risico van een zwak wachtwoord')} title={tr(lang,'Ризик: копія бази даних дозволяє підбирати пароль без обмежень. Сильний довгий пароль, якого немає на інших сайтах, робить це марним; короткий — ні. Якщо пароль слабкий, вимкніть: вхід паролем працюватиме, а дані розшифровуватиме passkey або знайомий пристрій.','Risico: met een kopie van de database kan het wachtwoord onbeperkt geraden worden. Een sterk, lang wachtwoord dat u nergens anders gebruikt maakt dat zinloos; een kort niet. Is het wachtwoord zwak, zet dit dan uit: aanmelden met wachtwoord blijft werken, ontsleutelen gaat dan met passkey of een bekend apparaat.')} style={{display:'inline-flex',cursor:'help'}}><AlertTriangle aria-hidden='true' style={{width:14,height:14,flex:'none',color:'var(--warning,#b86e00)'}}/></span>}</span>
+              <small>{o.wachtwoordOpent===false?tr(lang,'вимкнено: пароль лише впускає в акаунт','uit: het wachtwoord laat u alleen binnen'):tr(lang,'вхід паролем одразу розшифровує дані','aanmelden met wachtwoord ontsleutelt meteen')}{o.omslagen?.wachtwoord?.laatstGebruiktOp?` · ${tr(lang,'востаннє','laatst')} ${datum(lang,o.omslagen.wachtwoord.laatstGebruiktOp)}`:''}</small>
+              <button type='button' className='secondary' disabled={!!bezig} onClick={()=>void wachtwoordZetten(o.wachtwoordOpent===false)} title={o.wachtwoordOpent===false?tr(lang,'Після ввімкнення вхід паролем одразу розшифровуватиме дані. Ризик: хто скопіює базу даних, може підбирати слабкий пароль без обмежень. Потрібне підтвердження passkey або кодом.','Na het aanzetten ontsleutelt aanmelden met wachtwoord meteen. Risico: wie de database kopieert, kan een zwak wachtwoord onbeperkt raden. Bevestiging met passkey of code nodig.'):tr(lang,'Сервер стирає обгортку ключа під паролем. Вхід паролем далі працює, але дані доведеться розшифрувати passkey, кодом або на знайомому пристрої.','De server wist de omslag onder het wachtwoord. Aanmelden met wachtwoord blijft werken, maar ontsleutelen gaat dan met passkey, code of een bekend apparaat.')}>{o.wachtwoordOpent===false?<><LockOpen/>{tr(lang,'Увімкнути','Aanzetten')}</>:<><Unplug/>{tr(lang,'Вимкнути','Uitzetten')}</>}</button></li>}
             {nietGekoppeld.map(p=><li key={p.id} data-omslag='passkey-los'><span>Passkey «{p.naam}»</span><small>{tr(lang,'ще не відкриває ключ','opent de sleutel nog niet')}</small></li>)}
             {(Array.isArray(o.omslagen?.apparaten)?o.omslagen.apparaten:[]).map(d=><li key={d.id} data-omslag='apparaat'><span><MonitorSmartphone aria-hidden='true' style={{width:16,height:16,verticalAlign:'-3px',marginRight:6}}/>{d.label||tr(lang,'Пристрій','Apparaat')}{lokaal.includes(d.id)?` · ${tr(lang,'цей пристрій','dit apparaat')}`:''}</span><small>{tr(lang,'розшифровує сам після входу та оновлень','ontsleutelt vanzelf na aanmelden en updates')} · {tr(lang,'до','tot')} {datum(lang,d.verlooptOp)}{d.laatstGebruiktOp?` · ${tr(lang,'востаннє','laatst')} ${datum(lang,d.laatstGebruiktOp)}`:''}</small>
               <button type='button' className='secondary' disabled={!!bezig} onClick={()=>void apparaatVergeten(d.id)} title={tr(lang,'Сервер стирає свою половину ключа для цього пристрою. Там знадобиться passkey або код відновлення. На ваші дані це не впливає.','De server wist zijn helft van de sleutel voor dit apparaat. Daar is dan een passkey of de herstelcode nodig. Uw gegevens blijven onaangeroerd.')}><Unplug/>{tr(lang,'Забути','Vergeten')}</button></li>)}

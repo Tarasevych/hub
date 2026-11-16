@@ -20,7 +20,7 @@ import { doorMens, geenAi } from '../menselijke-actie';
 type Lang = 'uk' | 'nl';
 type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean; apparaat?: boolean; telegram?: boolean };
 type Kanalen = { apparaten: number; reden: string; eis: string[][]; eisTekst: { uk: string; nl: string } } | null;
-type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number; kanalen?: Kanalen };
+type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number; kanalen?: Kanalen; telegramSterk?: boolean };
 const ALLE: StapOpMethode[] = ['passkey', 'totp', 'apparaat', 'telegram', 'herstelcode', 'codewoord', 'google'];
 
 const T = {
@@ -66,6 +66,7 @@ const T = {
   geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
   sterk: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора або код відновлення. Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, code uit de authenticator-app of een herstelcode. Opnieuw inloggen bij Google is niet genoeg.'],
+  sterkTelegram: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора, код відновлення або Telegram (ви самі дозволили Telegram для таких дій). Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, app-code, herstelcode of Telegram (u stond Telegram zelf toe voor zulke handelingen). Opnieuw inloggen bij Google is niet genoeg.'],
 } as const;
 const FOUT: Record<string, readonly [string, string]> = {
   NotAllowedError: ['Підтвердження passkey скасовано або час вийшов. Спробуйте ще раз або виберіть інший спосіб.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken. Probeer opnieuw of kies een andere manier.'],
@@ -277,7 +278,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
 
       <div className='bevestig-toegang-kaart' {...geenAi}>
         {!info && <p className='bevestig-toegang-uitleg'>{t('laden')}</p>}
-        {info && opties.sterk && <p className='bevestig-toegang-uitleg' data-sterk='1'>{t('sterk')}</p>}
+        {info && opties.sterk && <p className='bevestig-toegang-uitleg' data-sterk='1'>{t(info.telegramSterk ? 'sterkTelegram' : 'sterk')}</p>}
         {info && !weergave && <p className='bevestig-toegang-fout' role='alert'>{t('geenMethode')}</p>}
 
         {weergave === 'passkey' && <>
