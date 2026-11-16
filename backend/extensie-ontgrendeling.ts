@@ -417,7 +417,7 @@ export async function veeg(): Promise<number> {
   } catch (err) { console.error('[extensie-ontgrendeling] vegen mislukt:', (err as Error).message); return 0; }
 }
 // Noodstop «Стоп» (ai-grants.stopAll): ook elke ontgrendeling van de gebruiker meteen intrekken.
-grants.bijNoodstop((userId, actorId) => { void intrekken(userId, { alles: true }, 'noodstop', 'site', actorId).catch(() => 0); });
+grants.bijNoodstop((userId, actorId) => intrekken(userId, { alles: true }, 'noodstop', 'site', actorId).catch(() => 0));
 
 /** De extensie trok zelf in (pop-up, zijpaneel, opties, noodstop van de extensie): via WS of HTTP met het agenttoken. Geen passkey. */
 export async function vergrendelVerzoek(agentId: string, userId: string, input: { gid?: unknown; reden?: unknown }): Promise<number> {

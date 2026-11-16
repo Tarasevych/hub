@@ -35,8 +35,9 @@ export async function main(): Promise<number> {
   process.env.TELEGRAM_API_BASIS = `http://127.0.0.1:${(nep.address() as { port: number }).port}`;
   process.env.AANMELD_TERUG_BASIS = 'https://id.tarasevych.com';
 
-  const vlaggenVoor = (await sql("SELECT sleutel, aan, standaard FROM app.feature_flags WHERE sleutel IN ('telegram-aanmelden-v1','meldingen-uitleg-v3')")) as Array<{ sleutel: string; aan: boolean; standaard: boolean }>;
+  const vlaggenVoor = (await sql("SELECT sleutel, aan, standaard FROM app.feature_flags WHERE sleutel IN ('telegram-aanmelden-v1','meldingen-uitleg-v3','telegram-v2')")) as Array<{ sleutel: string; aan: boolean; standaard: boolean }>;
   await sql("UPDATE app.feature_flags SET aan = true, standaard = true WHERE sleutel IN ('telegram-aanmelden-v1','meldingen-uitleg-v3')");
+  await sql("UPDATE app.feature_flags SET aan = false WHERE sleutel = 'telegram-v2'");
   const echteFetch = globalThis.fetch;
   const G = await nepGoogle({ ownerEmail: `g10h-tg-eig-${sfx}@example.test` });
   // nep-Google onderschept fetch; verzoeken naar de lokale nep-Telegram gaan gewoon door.
@@ -55,6 +56,8 @@ export async function main(): Promise<number> {
   const opslag = await import('../../backend/telegram-aanmelden/opslag');
   opslag.vlagCacheWissen(); opslag.instellingenCacheWissen();
   opslag.registreerVlagBeoordelaar(async () => true);
+  const vs = await import('../../backend/telegram-aanmelden/venster-sleutel');
+  vs.vensterCacheWissen();
   const ac = await import('../../backend/apparaat-cookie');
   const na = await import('../../backend/nieuw-apparaat');
   const inl = await import('../../backend/telegram-aanmelden/inloggen');
@@ -215,6 +218,8 @@ export async function main(): Promise<number> {
       await sql('DELETE FROM app.bekende_apparaten WHERE user_id = $1', [u]).catch(() => undefined);
     }
     for (const v of vlaggenVoor) await sql('UPDATE app.feature_flags SET aan = $2, standaard = $3 WHERE sleutel = $1', [v.sleutel, v.aan, v.standaard]).catch(() => undefined);
+    opslag.vlagCacheWissen();
+    vs.vensterCacheWissen();
     sleutels.zetKluisVoorTest(null);
     opslag.registreerVlagBeoordelaar(null);
   }

@@ -9,7 +9,7 @@
 //   2. grens per soort: met Cookie of Authorization de gewone grens (12 MB); ZONDER (anoniem) 256 KB — publieke routes (aanmelden,
 //      OAuth, koppelen, webhooks) hebben nooit meer nodig; uitzondering: de ondertekende GitHub-webhook;
 //   3. hoogstens N lichamen tegelijk per IP (IPv6: per /64) → 429: anoniem 8, met Cookie/Authorization 64 (hmara-upload van een map);
-//      «met Cookie/Authorization» telt pas na een goedkope controle dat de sessie of het token echt bestaat (body-aanmelding.ts),
+//      «met Cookie/Authorization» telt pas na een goedkope controle dat de sessie of het token echt bestaat (tekst-aanmelding.ts),
 //      en per IP hoogstens 96 MB gebufferd tegelijk (een vals of echt account neemt nooit het hele budget);
 //   4. één budget voor ALLE lichamen die nu in het geheugen worden opgebouwd (256 MB) → 503 met Retry-After;
 //   5. anoniem: het lichaam moet binnen 15 s binnen zijn (een half lichaam vasthouden kost dan geen twee minuten geheugen).
@@ -40,7 +40,7 @@ export const BODY_GRENZEN = {
   klein: getal(process.env.MAX_BODY_KLEIN_BYTES, 64 * 1024),
 };
 /**
- * SEC-002 (toets g10e-toets-2): controle of een Cookie/Bearer ECHT is (server/platform/body-aanmelding.ts, gezet door server/start.ts).
+ * SEC-002 (toets g10e-toets-2): controle of een Cookie/Bearer ECHT is (server/platform/tekst-aanmelding.ts, gezet door server/start.ts).
  * Zonder controle (losse tests van dit bestand) telt de aanwezigheid van de kop, zoals vroeger.
  */
 let aanmeldControle: ((headers: http.IncomingHttpHeaders) => Promise<boolean>) | null = null;

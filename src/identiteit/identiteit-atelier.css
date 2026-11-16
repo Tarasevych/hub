@@ -92,7 +92,7 @@
 .mr-at-held-acties{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
 .mr-at-knop-hoofd,.mr-at-knop-glas{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:45px;padding:0 18px;border-radius:13px;font-weight:620;font-size:14px;transition:transform .2s,background .2s,box-shadow .2s}
 .mr-at-knop-hoofd{border:0;background:#f4efff;color:#322d54;box-shadow:0 14px 34px rgba(10,8,30,.35)}
-.mr-at-knop-hoofd:hover{transform:translateY(-1px);background:#fff}
+.mr-at-knop-hoofd:hover{transform:translateY(-1px);background:var(--papier,#fff)}
 .mr-at-knop-glas{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mr-at-knop-glas:hover{background:rgba(255,255,255,.14)}
 .mr-at-held-cijfers{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:24px;font-size:12px;color:rgba(235,238,255,.72)}

@@ -357,8 +357,8 @@ export async function main(): Promise<number> {
     const alleSleutels = V2_OPTIES.filter((o) => o.status === 'actief').map((o) => o.key);
     const alleGebruikerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'gebruiker').length;
     const alleBeheerAantal = V2_OPTIES.filter((o) => o.status === 'actief' && o.kant === 'beheer').length;
-    check('catalogus telt 102 gebruiker + 64 beheer = 166 actieve sleutels',
-      alleGebruikerAantal === 102 && alleBeheerAantal === 64 && alleSleutels.length === 166,
+    check(`catalogus telt ${alleGebruikerAantal} gebruiker + ${alleBeheerAantal} beheer = ${alleSleutels.length} actieve sleutels`,
+      alleGebruikerAantal === 123 && alleBeheerAantal === 79 && alleSleutels.length === 202,
       `${alleGebruikerAantal}+${alleBeheerAantal}=${alleSleutels.length}`);
 
     const cur = await koppelAgent(uid, 'cursor', { kanten: ['gebruiker', 'beheer'], sleutels: alleSleutels });
@@ -376,7 +376,7 @@ export async function main(): Promise<number> {
       voorkeur: null,
     });
     check('Scenario 1 (sessie UIT): denialCode === GEEN_TECH_SESSIE, effectiveTechnicalAccess === false, beheer === 0',
-      d1.denialCode === 'GEEN_TECH_SESSIE' && !d1.effectiveTechnicalAccess && d1.effectiveBeheerVisibleCount === 0 && d1.effectiveGebruikerVisibleCount === 102);
+      d1.denialCode === 'GEEN_TECH_SESSIE' && !d1.effectiveTechnicalAccess && d1.effectiveBeheerVisibleCount === 0 && d1.effectiveGebruikerVisibleCount === alleGebruikerAantal);
 
     const curPriveZonderBeleid = (await lijstTools('cursor', cur.accessToken)).length;
     const who1 = JSON.parse((await roepTool('cursor', cur.accessToken, whoamiCurNaam)).content[0].text);
@@ -385,7 +385,7 @@ export async function main(): Promise<number> {
       && who1.connection.diagnostics.statusCode === 'GEEN_TECH_SESSIE'
       && who1.connection.diagnostics.effectiveToolsNow === curPriveZonderBeleid
       && curPriveZonderBeleid > 20
-      && who1.connection.diagnostics.grantedToolsTotal === 166
+      && who1.connection.diagnostics.grantedToolsTotal === alleSleutels.length
       && !JSON.stringify(who1.connection.diagnostics).includes(eigenaarEmail)
       && !JSON.stringify(who1.connection.diagnostics).includes(sessieId),
       JSON.stringify(who1.connection.diagnostics));
@@ -395,24 +395,24 @@ export async function main(): Promise<number> {
       weiger1?.isError === true && /TECH_PROFILE_OFF/.test(weiger1.content[0].text) && /Cause: GEEN_TECH_SESSIE/.test(weiger1.content[0].text),
       weiger1?.content?.[0]?.text);
 
-    // ================================================================== SCENARIO 2: Exacte reproductie van «1 uit 166» (ondertekend AI-beleid)
+    // ================================================================== SCENARIO 2: Exacte reproductie van «1 uit volledige catalogus» (ondertekend AI-beleid)
     schrijfKeten({
       claude: { name: 'Claude', enabled: true, defaultMode: { kind: 'always' }, capabilities: {} },
     } as Policy['agents']);
 
     const curLijstBeleidOnbekend = await lijstTools('cursor', cur.accessToken);
     const gptLijstBeleidOnbekend = await lijstTools('gpt', gpt.accessToken);
-    check('Scenario 2a (keten.json zonder cursor/gpt): tools/list snijdt 102 privétools terug tot exact 1 (v2_whoami) voor ZOWEL Cursor als ChatGPT',
+    check(`Scenario 2a (keten.json zonder cursor/gpt): tools/list snijdt ${alleGebruikerAantal} privétools terug tot exact 1 (v2_whoami) voor ZOWEL Cursor als ChatGPT`,
       curLijstBeleidOnbekend.length === 1 && curLijstBeleidOnbekend[0].name === whoamiCurNaam
       && gptLijstBeleidOnbekend.length === 1);
 
     const ovBeleid = await v2.overzicht(uid);
     const curStandBeleid = ovBeleid.agenten.find((a) => a.slug === 'cursor')!;
-    check('Scenario 2b (overzicht liegt NIET): effectiveVisibleToolsCount === 1 (niet 102 of 166!) en aiPolicyState === agent-onbekend',
+    check(`Scenario 2b (overzicht liegt NIET): effectiveVisibleToolsCount === 1 (niet ${alleGebruikerAantal} of ${alleSleutels.length}!) en aiPolicyState === agent-onbekend`,
       curStandBeleid.diagnose.effectiveVisibleToolsCount === 1
       && curStandBeleid.diagnose.effectiveGebruikerVisibleCount === 1
       && curStandBeleid.diagnose.aiPolicyState === 'agent-onbekend'
-      && curStandBeleid.diagnose.aiPolicyBlockedCount === 101
+      && curStandBeleid.diagnose.aiPolicyBlockedCount === alleGebruikerAantal - 1
       && curStandBeleid.diagnose.blokkades.some((bl) => bl.code === 'BELEID_AGENT_ONBEKEND'));
 
     // Verlopen tijdvenster in ondertekend beleid → BELEID_VERLOPEN
@@ -434,8 +434,8 @@ export async function main(): Promise<number> {
       cursor: { name: 'Cursor', enabled: true, defaultMode: { kind: 'always' }, capabilities: {} },
       gpt: { name: 'ChatGPT', enabled: true, defaultMode: { kind: 'always' }, capabilities: {} },
     } as Policy['agents']);
-    check('Scenario 2d (agents toegestaan in keten.json): alle 102 privétools direct weer zichtbaar',
-      (await lijstTools('cursor', cur.accessToken)).length === 102 && (await lijstTools('gpt', gpt.accessToken)).length === 102);
+    check(`Scenario 2d (agents toegestaan in keten.json): alle ${alleGebruikerAantal} privétools direct weer zichtbaar`,
+      (await lijstTools('cursor', cur.accessToken)).length === alleGebruikerAantal && (await lijstTools('gpt', gpt.accessToken)).length === alleGebruikerAantal);
 
     // ================================================================== SCENARIO 3: Technische sessie AAN, AI-delegatie UIT (AI_NIET_TOEGESTAAN)
     await stapOp();
@@ -458,18 +458,18 @@ export async function main(): Promise<number> {
     check('Scenario 4a: technische sessiedelegatie alleen voor Cursor grantId gezet', aiZetCur.status === 200);
 
     const volledigMetTechAantal = (await lijstTools('cursor', cur.accessToken)).length;
-    const beheerZichtbaarAantal = volledigMetTechAantal - 102;
+    const beheerZichtbaarAantal = volledigMetTechAantal - alleGebruikerAantal;
     const ov4 = await v2.overzicht(uid);
     const curD4 = ov4.agenten.find((a) => a.slug === 'cursor')!.diagnose;
     const gptD4 = ov4.agenten.find((a) => a.slug === 'gpt')!.diagnose;
-    check('Scenario 4b (ISOLATIE): Cursor heeft nu effectiveTechnicalAccess=true (volledige _beheer tools), maar ChatGPT blijft geïsoleerd op AI_NIET_TOEGESTAAN (102 privétools)!',
+    check(`Scenario 4b (ISOLATIE): Cursor heeft nu effectiveTechnicalAccess=true (volledige _beheer tools), maar ChatGPT blijft geïsoleerd op AI_NIET_TOEGESTAAN (${alleGebruikerAantal} privétools)!`,
       beheerZichtbaarAantal >= 30
       && curD4.effectiveTechnicalAccess === true
       && curD4.effectiveVisibleToolsCount === volledigMetTechAantal
       && curD4.effectiveBeheerVisibleCount === beheerZichtbaarAantal
       && curD4.denialCode === null
       && gptD4.effectiveTechnicalAccess === false
-      && gptD4.effectiveVisibleToolsCount === 102
+      && gptD4.effectiveVisibleToolsCount === alleGebruikerAantal
       && gptD4.effectiveBeheerVisibleCount === 0
       && gptD4.denialCode === 'AI_NIET_TOEGESTAAN',
       `cur=${curD4.effectiveVisibleToolsCount} (beheer=${curD4.effectiveBeheerVisibleCount}, denial=${curD4.denialCode}), gpt=${gptD4.effectiveVisibleToolsCount} (denial=${gptD4.denialCode})`);
@@ -497,8 +497,8 @@ export async function main(): Promise<number> {
     // ================================================================== SCENARIO 5: Dienst 'ai' UIT, BEVROREN en KEUZE_ONTBREEKT
     await rs.dienstZetten(uid, 'ai', 'ontkoppel', { actorId: uid, stapOpGedaan: true });
     const d5Uit = (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose;
-    check('Scenario 5a (dienst ai UIT): denialCode === DIENST_UIT, _beheer direct verborgen (102 tools)',
-      d5Uit.denialCode === 'DIENST_UIT' && !d5Uit.effectiveTechnicalAccess && d5Uit.effectiveVisibleToolsCount === 102);
+    check(`Scenario 5a (dienst ai UIT): denialCode === DIENST_UIT, _beheer direct verborgen (${alleGebruikerAantal} tools)`,
+      d5Uit.denialCode === 'DIENST_UIT' && !d5Uit.effectiveTechnicalAccess && d5Uit.effectiveVisibleToolsCount === alleGebruikerAantal);
 
     await sys.query(
       `INSERT INTO app.ruimte_dienst_stand (user_id, dienst, stand, vorige_stand, bevestigd_door, bevroren_op, bevroren_oorzaak)
@@ -524,7 +524,7 @@ export async function main(): Promise<number> {
     check('Scenario 6a: gewisseld naar persoonlijke ruimte (pauze)', pauzeRes.status === 200 && pauzeRes.data.pauze === true);
     const d6Pauze = (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose;
     check('Scenario 6b (PAUZE): profileSessionPaused === true, denialCode === PAUZE, _beheer direct verborgen',
-      d6Pauze.profileSessionPaused === true && !d6Pauze.profileSessionActive && d6Pauze.denialCode === 'PAUZE' && d6Pauze.effectiveVisibleToolsCount === 102);
+      d6Pauze.profileSessionPaused === true && !d6Pauze.profileSessionActive && d6Pauze.denialCode === 'PAUZE' && d6Pauze.effectiveVisibleToolsCount === alleGebruikerAantal);
 
     const hervatRes = await apiPost('mcp.tarasevych.com', 'mcp', '/api/owner/hub/tech/ruimtes/wisselen', { naar: 'technisch' });
     check('Scenario 6c (HERVAT): terug in technische ruimte zonder stap-op → direct weer alle technische tools',
@@ -537,7 +537,7 @@ export async function main(): Promise<number> {
     );
     const d7Verlopen = (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose;
     check('Scenario 7 (VERLOPEN): verlopen tijdsessie → denialCode === VERLOPEN, _beheer verborgen',
-      d7Verlopen.denialCode === 'VERLOPEN' && !d7Verlopen.effectiveTechnicalAccess && d7Verlopen.effectiveVisibleToolsCount === 102);
+      d7Verlopen.denialCode === 'VERLOPEN' && !d7Verlopen.effectiveTechnicalAccess && d7Verlopen.effectiveVisibleToolsCount === alleGebruikerAantal);
     await sys.query(
       "UPDATE app.tech_ruimte_sessies SET beeindigd_op = NOW(), beeindigd_reden = 'verlopen' WHERE user_id = $1 AND beeindigd_op IS NULL",
       [uid],
@@ -561,7 +561,7 @@ export async function main(): Promise<number> {
     );
     const d8Weg = (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose;
     check('Scenario 8b (SITE_SESSIE_WEG): verlopen site-sessie → denialCode === SITE_SESSIE_WEG en _beheer onmiddellijk dicht',
-      d8Weg.denialCode === 'SITE_SESSIE_WEG' && !d8Weg.effectiveTechnicalAccess && d8Weg.effectiveVisibleToolsCount === 102);
+      d8Weg.denialCode === 'SITE_SESSIE_WEG' && !d8Weg.effectiveTechnicalAccess && d8Weg.effectiveVisibleToolsCount === alleGebruikerAantal);
 
     // Herstel site-sessie en sluit oude tech_ruimte_sessies rij netjes via echte /beeindigen route
     await sys.query(
@@ -738,11 +738,11 @@ export async function main(): Promise<number> {
         heeftDubbeleStartKnop: Boolean(document.querySelector('[data-diagnose-actie="start_tech_sessie"]')),
         dienstStaat: document.querySelector('[data-diagnose-laag="dienst"]')?.getAttribute('data-diagnose-staat') || '',
         heeftDubbeleDienstKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_dienst_eigen"]')),
-        heeftDelegatieKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]')),
+        heeftDelegatieKnop: Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]')),
       }))()`);
 
-      check('Scenario 12b (Chrome #agent/cursor geen UI-leugen): toont 102 zichtbare tools en AI_NIET_TOEGESTAAN i.p.v. «ці інструменти ШІ бачить зараз»',
-        uiControleVoor.hulpmiddelenAttr === '102'
+      check(`Scenario 12b (Chrome #agent/cursor geen UI-leugen): toont ${alleGebruikerAantal} zichtbare tools en AI_NIET_TOEGESTAAN i.p.v. «ці інструменти ШІ бачить зараз»`,
+        uiControleVoor.hulpmiddelenAttr === String(alleGebruikerAantal)
         && uiControleVoor.beheerStatus === 'AI_NIET_TOEGESTAAN'
         && !uiControleVoor.beheerTekst.includes('ці інструменти ШІ бачить зараз'),
         JSON.stringify(uiControleVoor));
@@ -755,12 +755,12 @@ export async function main(): Promise<number> {
         && uiControleVoor.heeftDelegatieKnop === true,
         JSON.stringify(uiControleVoor));
 
-      // 12d. Klik op de directe 1-klik knop «Дозволити до кінця сеансу» op #agent/cursor!
-      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]').click()`);
+      // 12d. Klik op de directe 1-klik knop «Дозволити» (типові правила) op #agent/cursor!
+      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]').click()`);
       await wachtOp('gereedheidspaneel springt naar OK en volledige tools',
         `document.querySelector('[data-agent-diagnose]')?.getAttribute('data-agent-diagnose') === 'OK' && document.querySelector('[data-agent-hulpmiddelen]')?.getAttribute('data-agent-hulpmiddelen') === '${volledigMetTechAantal}'`);
 
-      const heeftNogDelegatieAanKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]'))`);
+      const heeftNogDelegatieAanKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]'))`);
       const heeftIntrekDelegatieKnop = await evalJs<boolean>(`Boolean(document.querySelector('[data-diagnose-actie="trek_ai_sessie_in"]'))`);
       check('Scenario 12d (Chrome na 1-klik vrijgave): diagnose=OK, alle technische tools zichtbaar, «Дозволити»-knop verdwenen en vervangen door intrekknop',
         !heeftNogDelegatieAanKnop && heeftIntrekDelegatieKnop);

@@ -135,7 +135,7 @@ export function aanbiederVoorAgentSlug(slug: string): AiAanbiederId {
   if (s === 'gemini' || s === 'antigravity') return 'gemini';
   if (s === 'grok') return 'grok';
   if (s === 'autoclaw') return 'autoclaw';
-  if (s === 'gpt' || s === 'codex' || s === 'copilot' || s === 'cursor') return 'openai';
+  if (s === 'gpt' || s === 'codex' || s === 'copilot' || s === 'cursor' || s === 'windsurf') return 'openai';
   return 'anthropic';
 }
 

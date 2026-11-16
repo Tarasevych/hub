@@ -1,0 +1,481 @@
+{
+  "schema": 1,
+  "doel": "Короткі відомості для добору навичок. Сам покажчик не надає прав доступу.",
+  "vaardigheden": [
+    {
+      "naam": "project-verkennen",
+      "pad": ".agents/skills/project-verkennen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "samenvatting": {
+        "uk": "Огляд будови проєкту, служб, правил і залежностей без змін.",
+        "nl": "Projectopbouw, diensten, regels en afhankelijkheden verkennen zonder wijzigingen."
+      },
+      "termen": {
+        "uk": [
+          "оглянь проєкт",
+          "будова проєкту",
+          "структура",
+          "ознайомлення",
+          "розташовано",
+          "де знайти",
+          "залежності",
+          "служби",
+          "проєкт",
+          "архітектура"
+        ],
+        "nl": [
+          "project verkennen",
+          "projectopbouw",
+          "structuur",
+          "waar staat",
+          "afhankelijkheden",
+          "diensten",
+          "architectuur",
+          "verkennen"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "site-ontwikkelen",
+      "pad": ".agents/skills/site-ontwikkelen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "project-verkennen"
+      ],
+      "samenvatting": {
+        "uk": "Створення й удосконалення сторінок та служб з перевірками і координацією.",
+        "nl": "Webpagina's en diensten ontwikkelen met controles en coördinatie."
+      },
+      "termen": {
+        "uk": [
+          "розроби",
+          "створи сторінку",
+          "додай розділ",
+          "удоскональ",
+          "макет",
+          "кнопки",
+          "сайт",
+          "сторінку",
+          "створення сайту"
+        ],
+        "nl": [
+          "ontwikkel",
+          "maak een pagina",
+          "verbeter",
+          "website",
+          "pagina",
+          "knoppen",
+          "opmaak",
+          "bouw",
+          "aanpassen"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "orch_taak_start:beheer"
+      ]
+    },
+    {
+      "naam": "wijziging-controleren",
+      "pad": ".agents/skills/wijziging-controleren/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "project-verkennen"
+      ],
+      "samenvatting": {
+        "uk": "Перевірка змін, випробувань, безпеки, мобільного вигляду й міграцій.",
+        "nl": "Wijzigingen, tests, beveiliging, mobiel ontwerp en migraties controleren."
+      },
+      "termen": {
+        "uk": [
+          "перевір зміни",
+          "перевірка змін",
+          "перевірити зміни",
+          "випробування",
+          "безпека",
+          "готовність",
+          "знайди вади",
+          "безпеку",
+          "аудит змін",
+          "звірити міграції"
+        ],
+        "nl": [
+          "controleer wijzigingen",
+          "wijzigingen controleren",
+          "testen",
+          "beveiliging",
+          "klaar voor uitgave",
+          "toetsen",
+          "kwaliteit",
+          "nazicht"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "uitgave-voorbereiden",
+      "pad": ".agents/skills/uitgave-voorbereiden/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "wijziging-controleren",
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "samenvatting": {
+        "uk": "Підготовка випуску, перевірка основи, міграцій на PostgreSQL 18.6, каталогу пошуку, запасних копій, встановлення й повернення версії.",
+        "nl": "Uitgave voorbereiden, basis, PostgreSQL 18.6-migraties, zoekcatalogus, reservekopieën, installatie en terugdraaien controleren."
+      },
+      "termen": {
+        "uk": [
+          "випуск",
+          "випуски",
+          "випуску",
+          "випусків",
+          "збирання випуску",
+          "підготуй випуск",
+          "опублікуй випуск",
+          "перевір випуск",
+          "оновлення",
+          "розгортання",
+          "архів",
+          "встановлення",
+          "встановити",
+          "встанови",
+          "пам'ятка встановлення",
+          "пам’ятка встановлення",
+          "резервна копія",
+          "резервні копії",
+          "резервних копій",
+          "запасна копія",
+          "запасні копії",
+          "запасних копій",
+          "відновлення",
+          "відновлюваність",
+          "відкотити",
+          "відкат",
+          "повернення версії",
+          "повернути попередню версію",
+          "ключ доступу",
+          "міграція",
+          "міграції",
+          "каталог пошуку",
+          "отримай архів",
+          "копія в телеграм",
+          "телеграм випуск"
+        ],
+        "nl": [
+          "uitgave",
+          "uitrol",
+          "versie",
+          "release",
+          "pakket",
+          "archief",
+          "installeren",
+          "installatie",
+          "bijwerken",
+          "publiceren",
+          "updates",
+          "reservekopie",
+          "reservekopieën",
+          "herstel",
+          "terugdraaien",
+          "voorcontrole",
+          "migratie",
+          "migraties",
+          "zoekcatalogus",
+          "ontwikkelarchief",
+          "passkey",
+          "telegram kopie",
+          "telegram release"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "uitrol_voorstel_begin:beheer"
+      ]
+    },
+    {
+      "naam": "ontwikkelgeheugen-bewaken",
+      "pad": ".agents/skills/ontwikkelgeheugen-bewaken/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "samenvatting": {
+        "uk": "Пам’ять розвитку: ідеї, рішення, історія агентів, передавання роботи, повторне використання файлів і попередніх виправлень.",
+        "nl": "Ontwikkelgeheugen: ideeën, besluiten, agentgeschiedenis, werkoverdracht, bestanden hergebruiken en eerdere oplossingen terugvinden."
+      },
+      "termen": {
+        "uk": [
+          "пам’ять розвитку",
+          "пам'ять розвитку",
+          "спільна пам’ять",
+          "пам'ять проєкту",
+          "запам’ятай",
+          "запам'ятай",
+          "зафіксуй ідею",
+          "збережи ідею",
+          "історія агентів",
+          "історію агентів",
+          "історія роботи",
+          "історію роботи",
+          "передавання роботи",
+          "передай іншому агенту",
+          "передати роботу",
+          "віднови сеанс",
+          "відновити розмову",
+          "попереднє виправлення",
+          "старе виправлення",
+          "знайди попередній файл",
+          "знайди створений файл",
+          "не створюй заново",
+          "повторне використання",
+          "раніше створені файли",
+          "де збереглися файли",
+          "знайти історію",
+          "центру роботи агентів",
+          "журнал агентів"
+        ],
+        "nl": [
+          "ontwikkelgeheugen",
+          "projectgeheugen",
+          "onthoud het idee",
+          "idee vastleggen",
+          "agentgeschiedenis",
+          "werkoverdracht",
+          "draag het werk over",
+          "eerder gemaakte bestanden",
+          "oude bestanden terugvinden",
+          "eerdere oplossing",
+          "terugkerende fout",
+          "werk hervatten",
+          "gespreksgeschiedenis",
+          "besluiten bewaren",
+          "bestanden hergebruiken",
+          "agentenjournaal"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "koppelingen-echte-vorm-testen",
+      "pad": ".agents/skills/koppelingen-echte-vorm-testen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "samenvatting": {
+        "uk": "Випробування підключень Telegram, IMAP і зовнішніх служб на знеособленій справжній будові даних, правах, повторах і відмовах.",
+        "nl": "Telegram-, IMAP- en externe koppelingen testen met geanonimiseerde echte gegevensvormen, rechten, herhalingen en weigeringen."
+      },
+      "termen": {
+        "uk": [
+          "підключення",
+          "підключень",
+          "справжня будова",
+          "справжній будові",
+          "справжні дані",
+          "справжніх даних",
+          "реальні дані",
+          "реальних даних",
+          "знеособлений зразок",
+          "знеособлені зразки",
+          "телеграм",
+          "вхід через telegram",
+          "приймач подій",
+          "вхідні сповіщення",
+          "пошта imap",
+          "підпис",
+          "нові поля",
+          "необов'язкові поля",
+          "повторна доставка",
+          "застаріла відповідь",
+          "застарів",
+          "відмова доступу",
+          "межові стани",
+          "зовнішня служба"
+        ],
+        "nl": [
+          "koppeling",
+          "koppelingen",
+          "echte vorm",
+          "echte gegevensvormen",
+          "echte berichten",
+          "geanonimiseerd",
+          "telegram",
+          "initdata",
+          "signature",
+          "imap",
+          "webhook",
+          "nieuwe velden",
+          "herhaling",
+          "verlopen",
+          "weigering",
+          "rechten",
+          "randgevallen"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "uiterlijk-van-schermafdruk-herstellen",
+      "pad": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "samenvatting": {
+        "uk": "Усунення вад інтерфейсу за знімком екрана на телефоні й комп’ютері, у світлому й темному оформленні, двома мовами з аналізом каскаду стилів.",
+        "nl": "Uiterlijke fouten vanaf een schermafdruk herstellen op telefoon en desktop, licht en donker thema, in beide talen met stijlanalyse."
+      },
+      "termen": {
+        "uk": [
+          "знімок екрана",
+          "знімком екрана",
+          "знімку екрана",
+          "зі знімка",
+          "за знімком",
+          "вада вигляду",
+          "вади вигляду",
+          "виправ вигляд",
+          "вигляд інтерфейсу",
+          "інтерфейс",
+          "каскад стилів",
+          "конфліктні стилі",
+          "стилі",
+          "верстка",
+          "гострі кути",
+          "накладання",
+          "обрізання",
+          "горизонтальна прокрутка",
+          "вузький екран",
+          "вузькому екрані",
+          "світле оформлення",
+          "темне оформлення",
+          "світла тема",
+          "темна тема",
+          "темній темі",
+          "світлій темі",
+          "обидві мови",
+          "двома мовами",
+          "телефон і комп’ютер",
+          "переглядач"
+        ],
+        "nl": [
+          "schermafdruk",
+          "uiterlijk",
+          "opmaakfout",
+          "visuele fout",
+          "stijlen",
+          "cascade",
+          "overlapping",
+          "afgeknipt",
+          "horizontaal scrollen",
+          "smal scherm",
+          "telefoon en desktop",
+          "licht en donker",
+          "donker thema",
+          "licht thema",
+          "beide talen",
+          "contrast",
+          "browser"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "prestatie-meten",
+      "pad": ".agents/skills/prestatie-meten/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "samenvatting": {
+        "uk": "Вимірювання швидкодії до й після змін на умовно повільному телефоні з навантаженням процесора й мережі, причинами, цифрами й похибкою.",
+        "nl": "Prestaties vóór en na wijzigingen meten op een trage telefoon met CPU- en netwerkbeperking, oorzaken, cijfers en foutmarges."
+      },
+      "termen": {
+        "uk": [
+          "швидкодія",
+          "швидкодію",
+          "швидкодії",
+          "виміряй швидкодію",
+          "вимірювання швидкодії",
+          "швидкість",
+          "повільний телефон",
+          "повільному телефоні",
+          "навантаження процесора",
+          "затримка мережі",
+          "холодний запуск",
+          "теплий запуск",
+          "похибка",
+          "розкид",
+          "медіана",
+          "каскад запитів",
+          "довгі завдання",
+          "гальмує",
+          "повільно відкривається",
+          "оптимізація",
+          "порівняння до і після"
+        ],
+        "nl": [
+          "prestatie",
+          "prestaties",
+          "snelheid",
+          "trage telefoon",
+          "cpu beperking",
+          "netwerkvertraging",
+          "meten",
+          "meting",
+          "foutmarge",
+          "mediaan",
+          "spreiding",
+          "koud laden",
+          "warm laden",
+          "lange taken",
+          "traag",
+          "voor en na"
+        ]
+      },
+      "vereisteHulpmiddelen": []
+    },
+    {
+      "naam": "mijn-ruimte",
+      "pad": ".agents/skills/mijn-ruimte/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "samenvatting": {
+        "uk": "Двосторонній з’єднувач MCP і міст Google Antigravity та AutoClaw для сайту, оглядача, ПК і сервера.",
+        "nl": "Tweerichtings-MCP-connector en brug van Google Antigravity en AutoClaw voor site, browser, pc en server."
+      },
+      "termen": {
+        "uk": [
+          "мій простір",
+          "з’єднувач",
+          "антигравіті",
+          "antigravity",
+          "autoclaw",
+          "розширення оглядача",
+          "локальний пк",
+          "керування оглядачем",
+          "mcp міст",
+          "договори",
+          "правнича перевірка",
+          "двосторонній з’єднувач"
+        ],
+        "nl": [
+          "mijn ruimte",
+          "mijn-ruimte",
+          "antigravity",
+          "autoclaw",
+          "browserextensie",
+          "lokale pc",
+          "tweerichtingsbrug",
+          "mcp connector",
+          "juridische controle",
+          "serverbeheer"
+        ]
+      },
+      "vereisteHulpmiddelen": [
+        "v2_whoami:gebruiker"
+      ]
+    }
+  ]
+}

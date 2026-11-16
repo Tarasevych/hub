@@ -15,3 +15,15 @@ button.info-tip-knop.info-tip-knop:hover,.info-tip[data-open] button.info-tip-kn
 @media (max-width:700px),(pointer:coarse){
   button.tech-vraag-knop.tech-vraag-knop::after,button.info-tip-knop.info-tip-knop::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%}
 }
+
+/* MAILAI-001 (15.11.2026): basisopmaak van InfoTip (src/InfoTip.tsx) — verhuisd uit src/toegangslaag.css. Die wordt alleen geladen door
+   de toegangslaag; in de post (ШІ-аналіз і переклад) stond de uitleg daardoor als ongestileerde tekst in de regel, in het donkere thema
+   als witte vlak met lichte tekst. Nu laadt elke InfoTip zijn eigen opmaak (InfoTip.tsx importeert dit bestand). */
+.info-tip{position:relative;display:inline-flex;align-items:center}
+.info-tip-knop{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;line-height:1;cursor:help}
+.info-tip-knop:hover,.info-tip[data-open] .info-tip-knop{color:var(--text);border-color:var(--muted)}
+.info-tip-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.info-tip-tekst{position:fixed;z-index:900;width:max-content;max-width:min(320px,calc(100vw - 24px));padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3,0 10px 30px rgba(0,0,0,.25));font-size:.84rem;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
+.info-tip-tekst[hidden]{display:none}
+.info-tip-tekst p{margin:0}
+.info-tip-tekst p+p{margin-top:6px}

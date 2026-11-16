@@ -167,7 +167,8 @@ export async function main(): Promise<number> {
     // alle latere migraties die de CHECK zetten (0012 t/m 0110, ook de nieuwere dan 0099) opnieuw, in volgorde: ze zijn idempotent en herstellen samen de nieuwste stand
     for (const f of readdirSync(join(process.cwd(), 'migrations')).filter((n) => /^\d{4}_.*\.sql$/.test(n) && Number(n.slice(0, 4)) > 11).sort()) {
       const tekst = readFileSync(join(process.cwd(), 'migrations', f), 'utf8');
-      if (tekst.includes('agent_commands_type_check')) await mig.query(tekst);
+      const m = /ALTER TABLE app\.agent_commands DROP CONSTRAINT[^;]+;\s*ALTER TABLE app\.agent_commands ADD CONSTRAINT agent_commands_type_check[\s\S]*?;/m.exec(tekst);
+      if (m) await mig.query(m[0]);
     }
     check('na het herhalen van 0011 herstellen de latere migraties de volledige typelijst (zelfde als COMMAND_TYPES)',
       JSON.stringify(((await sys.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conrelid = 'app.agent_commands'::regclass AND conname = 'agent_commands_type_check'`)).rows[0].d.match(/'([a-z_.]+)'::text/g) ?? []).map((m: string) => m.slice(1, m.indexOf("'", 1))).sort())

@@ -247,20 +247,47 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     const tot = Date.now() + 4000;
     vastTot.current = Math.max(vastTot.current, tot + 300);
     let gevonden = false, n = 0;
+    let hadVorige = false, vorigeScroll = 0, vorigeDocTop = 0;
+    const leesStand = (el: HTMLElement) => {
+      const o = scrollOuder(el);
+      const s = o instanceof HTMLElement ? o.scrollTop : window.scrollY;
+      const oTop = o instanceof HTMLElement ? o.getBoundingClientRect().top : 0;
+      const docTop = s + el.getBoundingClientRect().top - oTop;
+      return { s, docTop };
+    };
     const stop = () => { window.clearInterval(t); weg(); };
     const door = () => { vastTot.current = 0; stop(); };
-    const weg = () => { window.removeEventListener('wheel', door, true); window.removeEventListener('touchstart', door, true); window.removeEventListener('keydown', door, true); };
+    const weg = () => {
+      window.removeEventListener('wheel', door, true);
+      window.removeEventListener('touchstart', door, true);
+      window.removeEventListener('pointerdown', door, true);
+      window.removeEventListener('mousedown', door, true);
+      window.removeEventListener('keydown', door, true);
+    };
     const t = window.setInterval(() => {
       n += 1;
       const el = document.getElementById(id);
       if (!el) { if (n > 20) stop(); return; }
+      const { s: nuScroll, docTop: nuDocTop } = leesStand(el);
       const top = el.getBoundingClientRect().top;
+      const deltaScroll = nuScroll - vorigeScroll;
+      const deltaDoc = nuDocTop - vorigeDocTop;
+      if (hadVorige && Math.abs(deltaScroll) > 3 && (Math.abs(deltaScroll - deltaDoc) > 4 || top < doelBoven(el) - 4)) {
+        stop();
+        return;
+      }
       if (!gevonden || Math.abs(top - doelBoven(el)) > 4) { try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch { /* geen DOM */ } }
+      const na = leesStand(el);
+      vorigeScroll = na.s;
+      vorigeDocTop = na.docTop;
+      hadVorige = true;
       gevonden = true;
       if (Date.now() > tot) stop();
     }, 60);
     window.addEventListener('wheel', door, { capture: true, passive: true });
     window.addEventListener('touchstart', door, { capture: true, passive: true });
+    window.addEventListener('pointerdown', door, { capture: true, passive: true });
+    window.addEventListener('mousedown', door, { capture: true, passive: true });
     window.addEventListener('keydown', door, true);
     return stop;
   }, [plek.tab, plek.anker]);
@@ -286,7 +313,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const oauthActief = (overzicht?.oauth ?? []).filter((g) => g.status === 'active').length;
   const tokensActief = (tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
   // HUB-02: één teller voor «ШІ підключено» (verschillende AI-clients), overal dezelfde.
-  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu);
+  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu, v2.data?.agenten);
   const toolPending = calls.filter((c) => c.status === 'pending_approval');
   const wachten = pending.length + toolPending.length;
 

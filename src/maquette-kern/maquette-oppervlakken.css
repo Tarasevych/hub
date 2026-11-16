@@ -156,6 +156,62 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="on
   padding-bottom: 92px;
 }
 
+/* BREEDTE-001 (15.11.2026, побажання власника): на сторінках служб (ШІ, «Підключення ШІ», розумний дім, GitHub) вітрина й усі блоки
+   стоять в ОДНІЙ колонці однакової ширини (--mq-kolom, 1180 px — як admin «Оновлення») по центру робочої області. Раніше кожен шар мав
+   свою межу: вітрина — уся ширина мінус меню якорів, «ШІ для вас» — 1360 px, картки агентів — 1180 px мінус внутрішній відступ, тож
+   краї стрибали на трьох різних лініях. Поля рахуються як у CENTR-001: колонка по центру, коли місця досить; запас під меню якорів
+   (284 px, згорнуте — 96 px) — нижня межа, тож вміст ніколи не заходить під меню, а за будь-якого положення меню поля однакові.
+   До 960 px макет сам прибирає запаси — тому лише від 961 px.
+   NL: op dienstpagina's staan de vitrine en alle blokken in één kolom van gelijke breedte, gecentreerd; de menuruimte blijft de ondergrens. */
+@media (min-width: 961px) {
+  html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mq-schil:is(.ai-maquette-wikkel, .mcp-maquette-wikkel, .domotica-maquette-wikkel, .gh-maquette-wikkel) {
+    --mq-kolom: 1180px;
+    --mq-kolom-rail: 0px;
+    --mq-kolom-rand: max(0px, calc((100% - var(--mq-kolom)) / 2));
+    max-width: none;
+    margin-inline: 0;
+    padding-left: var(--mq-kolom-rand);
+    padding-right: var(--mq-kolom-rand);
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mq-schil:is(.ai-maquette-wikkel, .mcp-maquette-wikkel, .domotica-maquette-wikkel, .gh-maquette-wikkel):is([data-mq-rail-zijde="rechts"], [data-mq-rail-zijde="links"]) {
+    --mq-kolom-rail: 284px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mq-schil:is(.ai-maquette-wikkel, .mcp-maquette-wikkel, .domotica-maquette-wikkel, .gh-maquette-wikkel):is([data-mq-rail-zijde="rechts"], [data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"] {
+    --mq-kolom-rail: 96px;
+  }
+
+  /* Бік меню: щонайменше запас під меню; протилежний бік: стільки ж, скільки по центру, але не більше, ніж лишає меню. */
+  html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mq-schil:is(.ai-maquette-wikkel, .mcp-maquette-wikkel, .domotica-maquette-wikkel, .gh-maquette-wikkel)[data-mq-rail-zijde="rechts"] {
+    padding-right: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));
+    padding-left: max(0px, min(calc((100% - var(--mq-kolom)) / 2), calc(100% - var(--mq-kolom) - var(--mq-kolom-rail))));
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mq-schil:is(.ai-maquette-wikkel, .mcp-maquette-wikkel, .domotica-maquette-wikkel, .gh-maquette-wikkel)[data-mq-rail-zijde="links"] {
+    padding-left: max(var(--mq-kolom-rail), calc((100% - var(--mq-kolom)) / 2));
+    padding-right: max(0px, min(calc((100% - var(--mq-kolom)) / 2), calc(100% - var(--mq-kolom) - var(--mq-kolom-rail))));
+  }
+
+}
+
+/* Внутрішні обгортки не звужують колонку вдруге (на будь-якій ширині, також на телефоні й планшеті): «ШІ для вас» (1360 px) і панель
+   агентів (1180 px + 28 px відступу) займають рівно колонку, тож краї вітрини, стрічки «ШІ для вас», плиток «Підключити» і карток
+   збігаються; між блоками однаковий проміжок (gap обгортки), тому панель агентів — без власного верхнього відступу.
+   width:100% обов'язкова: у flex-стовпчику з margin:auto панель інакше стискається до ширини свого вмісту. */
+html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .ai-maquette-wikkel .ai-maquette-inhoud,
+html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .ai-maquette-wikkel .aie-container,
+html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .mcp-maquette-wikkel .ag-pagina {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  padding-inline: 0;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq):not(#_kolom) .ai-maquette-wikkel .aie-container {
+  padding-top: 0;
+}
+
 html.palet-maquette .canonical-chrome:not(#_mq) .mq-overzicht-wikkel {
   max-width: 1520px;
   width: 100%;
@@ -1514,7 +1570,7 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
 }
 
 :is(html.palet-maquette.theme-light, html.palet-maquette.theme-plum-light, html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light))) .mq-anker-rail :is(.mq-anker-knop, .mq-anker-groep-toggle):not(.is-actief):not(.is-tak-actief) {
-  background: #ffffff;
+  background: var(--mq-oppervlak);
   border-color: #c4cde0;
   box-shadow: 0 5px 17px rgba(38, 52, 82, 0.14);
   color: var(--mq-tekst, #192640);
@@ -1541,7 +1597,7 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
 }
 
 :is(html.palet-maquette.theme-light, html.palet-maquette.theme-plum-light, html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light))) .mq-anker-rail :is(.mq-anker-groep-toggle.is-tak-actief:not(.is-actief), .mq-anker-groep.is-open > .mq-anker-groep-toggle:not(.is-actief)) {
-  background: color-mix(in srgb, #ffffff 82%, var(--mq-accent) 18%);
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-accent) 18%);
   border-color: rgba(var(--mq-accent-rgb), 0.62);
 }
 

@@ -42,6 +42,8 @@ export const SFEER_PER_SOORT: Readonly<Record<string, MeldingSfeer>> = Object.fr
   access_decision: 'prive', workspace_share: 'prive', impersonatie: 'prive', ondersteuning: 'prive', ai_bevestiging: 'prive',
   // SEC-002 (g10c): geplande brieven geweigerd/geannuleerd — na 0107 toegevoegd; zie NA_0107_VIA_VOORVOEGSEL.
   mail_queue_refused: 'prive', mail_queue_cancelled: 'prive',
+  // MAILAI-001: paneel «ШІ-аналіз і переклад» aan/uit — na 0107, voorvoegsel «mail» → prive (NA_0107_VIA_VOORVOEGSEL).
+  mail_ai_balk: 'prive',
   // SEC-002 (g03, afwerking A): schrijven in de hmara geweigerd voor «лише перегляд» — na 0107, sfeer volgens het voorvoegsel «cloud».
   cloud_alleen_lezen: 'prive',
   // SEC-002 (slot «u»): dezelfde weigering buiten de hmara (voorvoegsel «toegang_» → prive) en de agenda (voorvoegsel «agenda» → prive),
@@ -170,7 +172,7 @@ export function activiteitenVanSfeer<T extends ActiviteitVoorSfeer>(items: reado
  * migratie verandert niet), en een nieuwe migratie is niet nodig: de database geeft via het voorvoegsel dezelfde sfeer. De test
  * (meldingen-sferen) eist dat de voorvoegselregel voor elk van hen precies de geregistreerde sfeer geeft.
  */
-export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_ownership_transferred', 'workspace_access_revoked', 'workspace_invite_accepted', 'access_recovery_low', 'workspace_share_link_created', 'workspace_share_link_revoked', 'workspace_member_left', 'access_method_login', 'access_method_telefoon', 'passkey_vertrouwd', 'passkey_vertrouwen_ingetrokken']);
+export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'mail_ai_balk', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_ownership_transferred', 'workspace_access_revoked', 'workspace_invite_accepted', 'access_recovery_low', 'workspace_share_link_created', 'workspace_share_link_revoked', 'workspace_member_left', 'access_method_login', 'access_method_telefoon', 'passkey_vertrouwd', 'passkey_vertrouwen_ingetrokken']);
 /** Sfeer volgens alleen de voorvoegsels (de regel van 0107 voor een soort die niet in haar lijsten staat). */
 export const sfeerVolgensVoorvoegsel = (kind: unknown): MeldingSfeer => {
   const k = String(kind || '').toLowerCase().slice(0, 80);

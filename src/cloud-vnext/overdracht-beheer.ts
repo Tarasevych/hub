@@ -178,7 +178,7 @@ export class OverdrachtBeheer {
   private teller = 0;
   private losVenster: (() => void) | null = null;
   // SEC-002 (toets g10e-toets-7): hoogstens UPLOADS_TEGELIJK bestanden tegelijk (× PARALLEL_STUKKEN stukken). Een map van 20 bestanden
-  // stuurde vroeger 60 lichamen van ~5,6 MB tegelijk: boven de geheugengrenzen van de server (server/platform/body-budget.ts).
+  // stuurde vroeger 60 lichamen van ~5,6 MB tegelijk: boven de geheugengrenzen van de server (server/platform/tekst-budget.ts).
   private uploadsBezig = 0;
   private uploadWachtrij: Array<() => void> = [];
 

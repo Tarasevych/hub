@@ -47,20 +47,34 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* Тонка смужка стану технічного простору у верхній крайці вікна */
+/* ACCENT-001 (знімок Павла 15.11): смужка висотою 5 px не могла мати радіус 23 px — браузер зменшував його до ~5 px, і рівні
+   кути смужки виступали за заокруглені кути вікна. Тепер смужку малює ::before висотою з радіус кута (24 px) із тим самим
+   заокругленням, а маска лишає видимими лише верхні 5 px — смуга йде точно по дузі кута. Місце в розкладці — ті самі 5 px.
+   De strook volgt nu de afgeronde hoek van het venster in plaats van eruit te steken. */
 [data-account-menu-v3] .am3-tech-strip {
+  position: relative;
   height: 0;
-  overflow: hidden;
-  border-radius: 23px 23px 0 0;
   transition: height 0.2s ease;
+  pointer-events: none;
 }
 
 [data-account-menu-v3] .am3-tech-strip.is-active {
   height: 5px;
+}
+
+[data-account-menu-v3] .am3-tech-strip.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 24px;
+  border-radius: 23px 23px 0 0;
   background: repeating-linear-gradient(
     -45deg,
     var(--am3-shield-color, #d97706) 0 8px,
     color-mix(in srgb, var(--am3-shield-color, #d97706) 68%, #000000) 8px 16px
   );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 5px, transparent 5px);
+  mask-image: linear-gradient(to bottom, #000 0 5px, transparent 5px);
 }
 
 /* 1. Шапка профілю та Орбіта світлин (Режим А) / Секційна картка (Режим Б) */
@@ -168,11 +182,11 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   height: 10px;
   border-radius: 50%;
   border: 2px solid var(--am3-bg);
-  background: #16a34a;
+  background: var(--ok-vlak, #16a34a);
 }
 
 [data-account-menu-v3] .am3-orbit-dot.is-expired {
-  background: #d97706;
+  background: var(--warn-vlak, #d97706);
 }
 
 [data-account-menu-v3] .am3-center-avatar-wrap {
@@ -996,6 +1010,52 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   height: 12px;
 }
 
+/* ACCENT-001: «Як у палітрі», перемикач і повзунок прозорості блоків. */
+[data-account-menu-v3] .am3-tint-reset {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+[data-account-menu-v3] .am3-transp-schakel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-transp-schakel input {
+  accent-color: var(--am3-accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+[data-account-menu-v3] .am3-transp-schuif {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-transp-schuif input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--am3-accent);
+}
+
+[data-account-menu-v3] .am3-transp-schuif output {
+  min-width: 3.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--am3-text);
+  font-weight: 700;
+}
+
 [data-account-menu-v3] .am3-tray-footer-row {
   display: flex;
   align-items: center;
@@ -1381,8 +1441,13 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* 6. Підвал (Конфіденційність · Умови · Масштаб) та кутики розтягування */
+/* MENU-STROOK-001 (15.11.2026): margin:0 і flex-direction:row — інакше загальні правила src/index.css «footer{margin:2rem auto 0}»
+   і на телефоні «footer{flex-direction:column}» додавали порожню смугу 32 px між «Вийти» і підвалом та ставили посилання стовпчиком.
+   NL: de globale footer-regels gaven 32 px lege ruimte boven de voet en zetten de links op de telefoon onder elkaar. */
 [data-account-menu-v3] .am3-footer {
   position: relative;
+  margin: 0;
+  flex-direction: row;
   padding: 8px 26px 10px;
   border-top: 1px solid var(--am3-line);
   display: flex;
@@ -1620,6 +1685,49 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 
 [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg-btn {
   flex: 1 1 0;
+}
+
+/* MENU-KRUISJE-001 (15.11.2026, побажання власника): «Прибрати запис» у рядку «Інші облікові записи» — охайний простий хрестик,
+   а не важкий квадратний бокс (рамка, тло, на ПК розтягнутий до 28×44 px). Видно лише хрестик; коло-підсвітка з'являється при
+   наведенні/фокусі, з м'яким червоним натяком (дія прибирає запис). Специфічність (0,7,0) перемагає мобільні правила нижче (0,6,0)
+   і загальне min-height:44px; зона дотику на телефоні — прозорий ::after (правило нижче).
+   NL: «Account verwijderen» is een eenvoudig kruisje zonder kader of vlak; een zachte rode cirkel verschijnt alleen bij hover/focus. */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  flex: 0 0 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--am3-muted);
+  opacity: 0.8;
+  transition: background-color 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:is(:hover, :focus-visible):not(:disabled) {
+  background: color-mix(in srgb, var(--am3-danger-icon) 12%, transparent);
+  color: var(--am3-danger-icon);
+  opacity: 1;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--am3-danger-icon) 55%, transparent);
+  outline-offset: 1px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-account-actions .am3-acc-btn.canonical-account-forget:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок

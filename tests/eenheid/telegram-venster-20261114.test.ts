@@ -106,8 +106,9 @@ export async function main(): Promise<number> {
 
   const pool = getPool('systeem');
   const sql = async (q: string, w: unknown[] = []) => (await pool.query(q, w)).rows;
-  const bestaand = (await pool.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1")).rows[0];
+  const bestaand = (await pool.query("SELECT id, data FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1")).rows[0];
   const eigenaar = bestaand ? String(bestaand.id) : randomUUID();
+  const vorigeData = bestaand ? bestaand.data : null;
   if (!bestaand) await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', eigenaar, { email: `tg2-${eigenaar.slice(0, 8)}@voorbeeld.test`, role: 'owner', status: 'approved', name: 'Pavlo' }]);
   const opruimen = async () => {
     await sql('DELETE FROM app.tg_koppelingen WHERE user_id = $1 OR telegram_id = $2', [eigenaar, String(TG)]);
@@ -169,7 +170,7 @@ export async function main(): Promise<number> {
     const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0.0.0 Safari/537.36';
     // TELEGRAM-002 (foto's): het site-account krijgt een eigen foto; die moet in het venster en boven de kaart van de bot staan.
     const ACCOUNT_FOTO = `data:image/png;base64,${Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), Buffer.alloc(240, 7)]).toString('base64')}`;
-    await pool.query("UPDATE app.records SET data = data || $2::jsonb WHERE tbl = 'users' AND id = $1", [eigenaar, JSON.stringify({ picture: ACCOUNT_FOTO })]);
+    await pool.query("UPDATE app.records SET data = $2::jsonb WHERE tbl = 'users' AND id = $1", [eigenaar, JSON.stringify({ email: `tg2-${eigenaar.slice(0, 8)}@voorbeeld.test`, role: 'owner', status: 'approved', name: 'Pavlo', picture: ACCOUNT_FOTO })]);
     const af = await import('../../backend/telegram-aanmelden/account-foto');
     check('foto-regels: eigen data-URI en googleusercontent mogen, vreemd adres niet', af.veiligeFoto(ACCOUNT_FOTO) === ACCOUNT_FOTO && af.veiligeFoto('https://lh3.googleusercontent.com/a/x=s96').startsWith('https://lh3.') && af.veiligeFoto('https://kwaad.example/x.png') === '' && af.veiligeFoto('javascript:alert(1)') === '');
     const ab = await af.accountBeeld(eigenaar);
@@ -298,6 +299,9 @@ export async function main(): Promise<number> {
     check('ook na ontkoppelen blijven de foto\'s bewaard', (await sql('SELECT count(*)::int AS n FROM app.tg_fotos WHERE telegram_id = $1', [String(TG)]))[0].n === 2);
   } finally {
     await opruimen();
+    await sql('DELETE FROM app.tg_fotos WHERE telegram_id = $1', [String(TG)]);
+    if (!bestaand) await sql('DELETE FROM app.records WHERE id = $1', [eigenaar]);
+    else await pool.query("UPDATE app.records SET data = $2::jsonb WHERE tbl = 'users' AND id = $1", [eigenaar, JSON.stringify(vorigeData ?? {})]);
     await sql("UPDATE app.feature_flags SET aan = false, standaard = false WHERE sleutel = 'telegram-aanmelden-v1'");
     sleutels.zetKluisVoorTest(null);
     opslag.registreerVlagBeoordelaar(null);

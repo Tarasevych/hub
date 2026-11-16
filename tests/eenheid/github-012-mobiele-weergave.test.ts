@@ -18,7 +18,7 @@ console.log('GITHUB-012 · перевірка повної мобільної т
 
 const css = lees('src/github-weergave.css');
 const weergave = lees('src/GitHubWeergave.tsx');
-const codePaneel = lees('src/github/CodeEnEditorPaneel.tsx');
+const codePaneel = lees('src/github/CodeEnBewerkerPaneel.tsx');
 const eenklikPaneel = lees('src/github/EenklikKoppelPaneel.tsx');
 const actiesPaneel = lees('src/github/ActiesEnUitgavenPaneel.tsx');
 const zakenPaneel = lees('src/github/ZakenEnSamenvoegingenPaneel.tsx');
@@ -99,7 +99,7 @@ test('7. Дотримання мовного закону (відсутніст�
   for (const [naam, inhoud] of [
     ['src/github-weergave.css', css],
     ['src/GitHubWeergave.tsx', weergave],
-    ['src/github/CodeEnEditorPaneel.tsx', codePaneel],
+    ['src/github/CodeEnBewerkerPaneel.tsx', codePaneel],
     ['src/github/EenklikKoppelPaneel.tsx', eenklikPaneel],
     ['src/github/ActiesEnUitgavenPaneel.tsx', actiesPaneel],
     ['src/github/ZakenEnSamenvoegingenPaneel.tsx', zakenPaneel],

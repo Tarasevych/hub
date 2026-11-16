@@ -63,7 +63,7 @@ export const WS_TICKET_TTL_MS = 60_000;
 /** Oude agents sturen hun token zelf in het eerste bericht. Uitzetten met AGENT_WS_TOKEN_AUTH_LEGACY=0 zodra alle agents ≥ 0.4 zijn. */
 export const legacyTokenAuthAllowed = (): boolean => process.env.AGENT_WS_TOKEN_AUTH_LEGACY !== '0';
 
-type Live = { ws: WebSocket; userId: string; alive: boolean; platform: string | null };
+type Live = { ws: WebSocket; userId: string; alive: boolean; platform: string | null; ruimte: 'prive' | 'technisch' };
 const live = new Map<string, Live>();
 let started = false;
 
@@ -93,7 +93,7 @@ type TerminalHooks = { vanAgent: (agentId: string, msg: any) => boolean; upgrade
 let terminalHooks: TerminalHooks | null = null;
 export const TERMINAL_WS_PATH = '/terminal/ws';
 export function registreerTerminal(h: TerminalHooks): void { terminalHooks = h; }
-export type AgentMeldingHook = (invoer: { userId: string; agentId: string; platform: string | null; msg: Record<string, unknown> }) => void | Promise<void>;
+export type AgentMeldingHook = (invoer: { userId: string; agentId: string; platform: string | null; agentRuimte?: 'prive' | 'technisch'; msg: Record<string, unknown> }) => void | Promise<void>;
 let meldingHook: AgentMeldingHook | null = null;
 export function registreerMeldingHook(h: AgentMeldingHook | null): void { meldingHook = h; }
 // Andere browser-WS-paden van de eigen site (bv. /api/owner/remote/tunnel, backend/remote-bureaublad.ts): zelfde host-controle, nooit ?ticket/?token.
@@ -284,7 +284,8 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
       voorAuthVrij();
       agentId = agent.id;
       live.get(agentId)?.ws.close(4409, 'replaced by new connection');
-      live.set(agentId, { ws, userId: agent.user_id, alive: true, platform: agent.platform ?? null });
+      const agentRuimte = agent.ruimte === 'technisch' ? 'technisch' : 'prive';
+      live.set(agentId, { ws, userId: agent.user_id, alive: true, platform: agent.platform ?? null, ruimte: agentRuimte });
       const caps = capCheck.caps;
       const nieuweVersie = typeof msg.version === 'string' ? msg.version.slice(0, 40) : '';
       // Journaal op /agents: «оновлено з x до y» wanneer de agent of extensie met een andere versie terugkomt.
@@ -314,7 +315,7 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
     }
     if (msg?.t === 'status' && entry.platform === 'browser') { ext.bijStatus(agentId, msg); return; }
     if (msg?.t === 'melding' && msg && typeof msg === 'object' && meldingHook) {
-      void Promise.resolve(meldingHook({ userId: entry.userId, agentId, platform: entry.platform, msg: msg as Record<string, unknown> })).catch(() => undefined);
+      void Promise.resolve(meldingHook({ userId: entry.userId, agentId, platform: entry.platform, agentRuimte: entry.ruimte, msg: msg as Record<string, unknown> })).catch(() => undefined);
       return;
     }
     if (msg?.t === 'vergrendel-verzoek' && entry.platform === 'browser') {

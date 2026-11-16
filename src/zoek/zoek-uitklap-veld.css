@@ -1,0 +1,46 @@
+/* ZOEK-002 (15.11.2026) — поле пошуку в панелі розгортається НА МІСЦІ, як у Google (src/zoek/ZoekGlobaal.tsx).
+   Павло: «замість того щоб розгорталося існуюче, збільшуючись за потреби, зверху накладається ще одне вікно пошуку».
+   Тепер: кнопка-поле сама стає полем вводу тієї самої висоти (--zk-h = висота кнопки), плавно ширшає, а підказки й результати
+   випадають із нього однією карткою з одним контуром: поле — верх картки, список — низ, між ними тонка риска.
+   Het veld in de bovenbalk wordt zelf het invoerveld (.is-op-plek, in de groep rechtsboven, geen portaal) of groeit in een laag uit de
+   knop (.is-laag: telefoon, zoekknop in het menu, «Макет»). Alleen vorm en beweging hier: kleuren blijven van zoek.css / zoek-maquette.css.
+   Specificiteit (0,6,0) via :root + [data-zoek-palet]: sterker dan de themaregels (tot (0,4,1) in «klassiek»), zonder !important.
+   Dit bestand wordt NA zoek.css en zoek-maquette.css geladen; de telefoonlaag staat onderaan (mobiel-cascade). */
+
+/* ---------------------------------------------------------------- plek en groei */
+:root .zk-uitklap.is-veld[data-zoek-palet]{--zk-h:2.75rem;--zk-straal:calc(var(--zk-h) / 2);--zk-rand-actief:color-mix(in srgb,var(--focus,var(--accent)) 55%,var(--line));
+  box-sizing:border-box;max-width:calc(100vw - 16px);transition:width .24s cubic-bezier(.2,.8,.2,1)}
+/* Op de plek: in de groep rechtsboven (geen vaste laag), even hoog als de knop; de groep zelf groeit naar links mee. */
+:root .zk-uitklap.is-veld.is-op-plek[data-zoek-palet]{position:relative;z-index:30;display:block;flex:none;min-width:0}
+/* In een laag (.is-laag) blijft de vaste plaatsing van zoek.css (.zk-uitklap: position:fixed, z-index 760). */
+.zk-anker.is-op-plek{flex:none}
+html.palet-maquette .zk-uitklap.is-veld[data-zoek-palet]{--zk-rand-actief:color-mix(in srgb,var(--mq-accent) 55%,var(--mq-rand-sterk))}
+
+/* ---------------------------------------------------------------- het veld: bovenkant van de kaart */
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box{box-sizing:border-box;height:var(--zk-h);min-height:0;padding-top:0;padding-bottom:0;padding-right:4px;
+  border-radius:var(--zk-straal) var(--zk-straal) 0 0;border-bottom-color:transparent;box-shadow:none}
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box:focus-within{box-shadow:none}
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box input{height:100%;min-height:0;padding-top:0;padding-bottom:0;font-size:.95rem}
+/* Wissen en «Перейти до пошуку» als ronde pictogrammen in het veld (de uitleg staat in de tooltip, de sneltoets in de voet). */
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box :is(.zk-wis,.zk-naar-pagina){display:inline-grid;place-items:center;flex:none;box-sizing:border-box;
+  width:calc(var(--zk-h) - 8px);min-width:calc(var(--zk-h) - 8px);height:calc(var(--zk-h) - 8px);min-height:0;margin:0;padding:0;border-radius:50%}
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box .zk-naar-pagina>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-box :is(.zk-wis,.zk-naar-pagina) svg{width:1.05rem;height:1.05rem}
+
+/* ---------------------------------------------------------------- de lijst: onderkant van dezelfde kaart */
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-pop-kader{top:100%;margin-top:-1px;border-top-width:0;border-radius:0 0 var(--zk-straal) var(--zk-straal);
+  padding:0 var(--ruimte-1,4px) var(--ruimte-1,4px);box-shadow:0 22px 44px -18px var(--shadow,rgba(0,0,0,.4));transition:opacity .18s ease,transform .18s ease}
+:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-pop-kader::before{content:'';display:block;flex:none;height:1px;margin:0 var(--ruimte-3,12px) var(--ruimte-1,4px);background:currentColor;opacity:.14}
+:root .zk-uitklap.is-veld[data-zoek-palet][data-gegroeid='0']>.zk-veld>.zk-pop-kader{opacity:0;transform:translateY(-4px)}
+/* Eén contour: met de focus in het veld krijgen veld en lijst samen de accentrand. */
+:root .zk-uitklap.is-veld[data-zoek-palet]:focus-within>.zk-veld>:is(.zk-box,.zk-pop-kader){border-color:var(--zk-rand-actief)}
+:root .zk-uitklap.is-veld[data-zoek-palet] .zk-pop-voet{margin-top:var(--ruimte-1,4px)}
+
+@media (prefers-reduced-motion:reduce){
+  :root .zk-uitklap.is-veld[data-zoek-palet],:root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-pop-kader{transition:none}
+}
+/* ---------------------------------------------------------------- telefoon (laatste blok van het bestand) */
+@media (max-width:900px){
+  :root .zk-uitklap.is-veld[data-zoek-palet]{--zk-h:var(--tik-hoogte-mobiel,44px)}
+  :root .zk-uitklap.is-veld[data-zoek-palet]>.zk-veld>.zk-pop-kader{max-height:calc(100dvh - var(--zk-h) - 24px);overflow:auto}
+}

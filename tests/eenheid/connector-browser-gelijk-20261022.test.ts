@@ -46,7 +46,7 @@ export async function main(): Promise<number> {
   const U = `cbg-u-${T}`;
   const verplaatst = (await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner-tijdelijk\"') WHERE tbl = 'users' AND data->>'role' = 'owner' RETURNING id")).rows.map((r: { id: string }) => r.id);
   try {
-    await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', U, { email: 'eigenaar@test.invalid', role: 'owner', status: 'approved', name: U }]);
+    await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', U, { email: process.env.OWNER_EMAIL || 'eigenaar@test.invalid', role: 'owner', status: 'approved', name: U }]);
     await aiDienstAan(U);
     // een browser in BEIDE sloten (de technische kant toont browserhulpmiddelen alleen met een technisch browserslot)
     for (const ruimte of ['prive', 'technisch'] as const) {

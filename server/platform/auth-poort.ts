@@ -95,6 +95,8 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
   'POST /api/github/webhook/:sleutel': 'inkomende GitHub-webhook (verplichte HMAC-SHA256-handtekening in X-Hub-Signature-256)',
+  'POST /api/uitrol/github/webhook': 'inkomende GitHub-release-webhook voor uitrolvoorstellen (verplichte HMAC-SHA256-handtekening in X-Hub-Signature-256)',
+  'POST /api/uitrol/telegram/webhook': 'inkomende Telegram-webhook van de uitrolbot (verplichte controle van X-Telegram-Bot-Api-Secret-Token met timingSafeEqual; alleen /status en /help in ingestelde groep/topic)',
   // Toegangscodes voor anderen (§13.11): inwisselen heeft (nog) geen sessie; de code zelf is de referentie (alleen hash-opzoeking,
   // strikt per IP begrensd + blokkade). Uitloggen is idempotent. De overige /api/gast/*-routes eisen de gastcookie.
   'POST /api/gast/inwisselen': 'toegangscode inwisselen voor een beperkte gastsessie (code in de body, gehasht opgezocht)',

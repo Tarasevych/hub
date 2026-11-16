@@ -114,7 +114,10 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
   const conflict = useRef<{ klasse: ApparaatKlasse; actueel: LaagStand | null } | null>(null);
   const mislukt = useRef<{ klasse: ApparaatKlasse; layout: CanvasLayout; extra: { achtergrond?: string } } | null>(null);
 
-  const rctx = useMemo<RegisterContext>(() => ({ ruimte, rechten: { apiPlatform: rechten.apiPlatform, eigenaar: rechten.eigenaar } }), [ruimte, rechten.apiPlatform, rechten.eigenaar]);
+  // BIB-002: технічний доступ = у акаунта є технічний профіль (його дає власник). Тоді ярлики технічних сторінок можна ставити й на
+  // приватний стіл — як двері; сама сторінка однаково відкривається лише через браму технічного профілю.
+  const techToegang = techProfiel || !!tech.profiel;
+  const rctx = useMemo<RegisterContext>(() => ({ ruimte, rechten: { apiPlatform: rechten.apiPlatform, eigenaar: rechten.eigenaar }, techToegang }), [ruimte, rechten.apiPlatform, rechten.eigenaar, techToegang]);
   const wctx = useMemo<WerkbladContext>(() => ({ ruimte, eigenaar: rechten.eigenaar, apiPlatform: rechten.apiPlatform }), [ruimte, rechten.eigenaar, rechten.apiPlatform]);
   const persoonlijk = useMemo(() => persoonlijkUit(lagen, lokaalUsr), [lagen, lokaalUsr]);
   const persoonlijkRef = useRef(persoonlijk); persoonlijkRef.current = persoonlijk;
@@ -319,10 +322,14 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
           {magBewerken ? (bewerken ? (
             <>
               <button type='button' className='knop-secundair is-klein' data-wb3='bibliotheek' aria-expanded={bib} onClick={() => zetBib((b) => !b)}><Library aria-hidden='true' />{tr(lang, 'Бібліотека', 'Bibliotheek')}</button>
-              <button type='button' className='knop-stil is-klein' data-wb3='instellingen' aria-expanded={instellingen} onClick={() => zetInstellingen((b) => !b)}><Settings2 aria-hidden='true' />{tr(lang, 'Параметри', 'Instellingen')}</button>
+              <button type='button' className='knop-stil is-klein' data-wb3='instellingen' aria-expanded={instellingen} onClick={() => zetInstellingen((b) => !b)}><Settings2 aria-hidden='true' /><span>{tr(lang, 'Параметри', 'Instellingen')}</span></button>
               <button type='button' className='knop-primair is-klein' data-wb3='klaar' onClick={() => { zetBewerken(false); zetBib(false); zetInstellingen(false); }}><Check aria-hidden='true' />{tr(lang, 'Готово', 'Klaar')}</button>
             </>
-          ) : <button type='button' className='knop-secundair is-klein' data-wb3='instellen' onClick={() => zetBewerken(true)}><Settings2 aria-hidden='true' />{tr(lang, 'Налаштувати робочий стіл', 'Werkblad instellen')}</button>) : null}
+          ) : /* WB-HOEK-001: замість широкої кнопки з підписом — маленька піктограма в куті; назва й наслідок — у підказці та для читачів екрана.
+             Klein icoon in de hoek i.p.v. een brede knop met tekst; naam en gevolg staan in de tooltip en voor schermlezers. */
+            <button type='button' className='knop-stil is-klein wb3-instellen-icoon' data-wb3='instellen' onClick={() => zetBewerken(true)}
+              aria-label={tr(lang, 'Налаштувати робочий стіл', 'Werkblad instellen')}
+              data-tooltip={tr(lang, 'Налаштувати робочий стіл: переставляти й змінювати розмір блоків, додавати нові з бібліотеки, змінити фон. Нічого не змінюється, доки ви не перетягнете чи не додасте блок.', 'Werkblad instellen: blokken verplaatsen en van formaat veranderen, nieuwe toevoegen uit de bibliotheek, de achtergrond wijzigen. Er verandert niets tot u een blok versleept of toevoegt.')}><Settings2 aria-hidden='true' /></button>) : null}
         </div>
       </div>
       {bewerken ? <p className='wb-uitleg'>{tr(lang, 'Перетягуйте об’єкти куди завгодно; краї й кути змінюють розмір. На телефоні — довге натискання. Клавіатура: стрілки, Shift+стрілки, Enter — меню, Ctrl+Z / Ctrl+Y — скасувати/повторити. Ярлик, покладений на теку, потрапляє в теку.', 'Sleep objecten waar u wilt; randen en hoeken wijzigen het formaat. Op de telefoon: lang indrukken. Toetsenbord: pijltjes, Shift+pijltjes, Enter — menu, Ctrl+Z / Ctrl+Y — ongedaan/opnieuw. Een snelkoppeling op een map gaat de map in.')}{blk.aan ? ` ${tr(lang, 'Блоки: клік по значку в «Швидкому доступі» чи теці — властивості; Shift+клік — вибрати кілька; утримайте й перетягніть значок в інший блок, на стіл або в меню; M — «Перемістити в…».', 'Blokken: klik op een icoon in «Snelle toegang» of een map — eigenschappen; Shift+klik — meerdere kiezen; houd vast en sleep een icoon naar een ander blok, het werkblad of het menu; M — «Verplaatsen naar…».')}` : ''}</p> : null}
@@ -353,7 +360,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       ) : null}
       {bewerken && bib ? (
         <div className='wb3-bibliotheek' data-wb3-paneel='bibliotheek'>
-          <Bibliotheek lang={lang} ctx={rctx} persoonlijk={persoonlijk}
+          <Bibliotheek lang={lang} ctx={rctx} persoonlijk={persoonlijk} opWerkblad={new Set((klasse && lagen[klasse]?.layout.items || []).map((e) => e.itemId))}
             onPersoonlijk={(lijst) => zetLokaalUsr(lijst.filter((r) => r.basis).map((r) => ({ id: r.id, basis: String(r.basis), titel: r.titel.uk, icoon: r.icoon })))}
             onSluiten={() => zetBib(false)} />
         </div>

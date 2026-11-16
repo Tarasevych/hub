@@ -180,7 +180,7 @@ export async function main(): Promise<number> {
   check('telefoon/tablet: omhoog/omlaag-knoppen onder 12 kolommen; formaatgreep niet op de telefoon', /kolommen < 12 \?/.test(pagina) && /instellen && kolommen > 1 && !KAAL\.has\(item\.id\)/.test(pagina));
   check('hulp: de bedieningselementen van de instelmodus dragen data-hulp (achtergrond = role=radio, instellen, terugzetten) en src/werkblad valt onder de hulp-scanner',
     /role='radio' data-hulp='werkblad\.achtergrond'/.test(pagina) && /data-hulp='werkblad\.instellen'/.test(pagina) && /data-hulp='werkblad\.terugzetten'/.test(pagina) && /'src\/werkblad'/.test(lees('tests/eenheid/hulp-register.test.ts')));
-  check('opmaak: telefoon zonder vaste rijhoogtes (tegels groeien mee), container queries voor smalle tegels', /\.wb-tegel\{grid-column:1 \/ -1!important;grid-row:auto!important/.test(css) && /container-type:inline-size/.test(css) && /@container \(max-width:380px\)/.test(css));
+  check('opmaak: telefoon zonder vaste rijhoogtes (tegels groeien mee), container queries voor smalle tegels', /\.wb-tegel\{grid-column:1 \/ -1!important;grid-row:auto!important/.test(css) && /container(?:-type)?:(?:wb-inhoud \/ )?inline-size/.test(css) && /@container (?:wb-inhoud )?\(max-width:380px\)/.test(css)); // WOORDBREUK-001: запит віджета названий (wb-inhoud), бо плитка швидкого доступу тепер сама контейнер
 
   return einde();
 }

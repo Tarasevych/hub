@@ -48,8 +48,8 @@ import { schakelaarsVerversen } from './platform/schakelaars';
 import { procesVangnetInstellen } from './platform/proces-vangnet';
 import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 */
 import { limietSleutel } from '../shared/ip-limiet';
-import { leesBodyBegrensd, zetAanmeldControle } from './platform/body-budget';
-import { aanmeldingEcht } from './platform/body-aanmelding';
+import { leesBodyBegrensd, zetAanmeldControle } from './platform/tekst-budget';
+import { aanmeldingEcht } from './platform/tekst-aanmelding';
 // SEC-002 (toets g10e-toets-2): ruimere grenzen voor lichamen alleen bij een ECHTE sessie of een echt token (niet «Cookie: x=1»).
 zetAanmeldControle(aanmeldingEcht);
 
@@ -151,7 +151,7 @@ const sendJson = (res: http.ServerResponse, status: number, data: unknown) =>
   send(res, status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, JSON.stringify(data));
 
 // SEC-002 (http-rand-06, keten-config-05): Content-Length vooraf, 256 KB zonder Cookie/Authorization, budget voor alle lichamen
-// samen, lichamen per IP en een korte termijn voor anonieme lichamen — server/platform/body-budget.ts. MAX_BODY_BYTES blijft de bovengrens.
+// samen, lichamen per IP en een korte termijn voor anonieme lichamen — server/platform/tekst-budget.ts. MAX_BODY_BYTES blijft de bovengrens.
 async function readBody(req: http.IncomingMessage, pad = '', ip = clientIp(req)): Promise<string> {
   return leesBodyBegrensd(req, pad, ip);
 }
@@ -200,10 +200,12 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
     const pakketten = (process.env.UITROL_PAKKETTEN_DIR || "/srv/mijn-ruimte/pakketten").replace(/\\/g, "/").replace(/\/+$/, "");
     const backups = (process.env.BACKUP_DIR || "/srv/backups/mijn-ruimte").replace(/\\/g, "/").replace(/\/+$/, "");
     const archiefUit = (process.env.ARCHIEF_UIT || "/var/lib/mijn-ruimte-archief/uitgifte").replace(/\\/g, "/").replace(/\/+$/, "");
+    const telegramHerstel = `${(process.env.UPLOADS_DIR || "/srv/data/uploads").replace(/\\/g, "/").replace(/\/+$/, "")}/uitrol-telegram-herstel`;
     const isPakket = canon.startsWith(pakketten + "/") && /^mijn-ruimte-\d{8}-\d{6}\.tar\.gz$/.test(canon.slice(pakketten.length + 1));
     const isBackup = canon.startsWith(backups + "/") && /^\d{8}-\d{6}\/(database\.dump\.age|uploads\.tar\.gz\.age|systeem\.tar\.gz\.age|systeem-info\.txt|info\.txt|SHA256SUMS)$/.test(canon.slice(backups.length + 1));
     const isArchief = canon === `${archiefUit}/archief-laatste.tar.age`;
-    const allowed = !file.includes("\0") && fileNorm === canon && !fileNorm.includes("..") && (isArchief || isBackup || isPakket);
+    const isTelegramHerstel = canon.startsWith(telegramHerstel + "/") && /^[A-Za-z0-9_-]{16,64}\.tar\.gz$/.test(canon.slice(telegramHerstel.length + 1));
+    const allowed = !file.includes("\0") && fileNorm === canon && !fileNorm.includes("..") && (isArchief || isBackup || isPakket || isTelegramHerstel);
     const s = allowed ? await fileStat(file) : null;
     if (!s) return sendText(res, 404, "NOT_FOUND");
     const headers: Record<string, string> = {
@@ -214,7 +216,10 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
     };
     if (/^[0-9a-f]{64}$/.test(String(response.headers["X-Pakket-Sha256"] || ""))) headers["X-Pakket-Sha256"] = String(response.headers["X-Pakket-Sha256"]);
     res.writeHead(response.statusCode || 200, { ...BASE_HEADERS, ...headers });
-    createReadStream(file).on("error", () => res.destroy()).pipe(res);
+    const stream = createReadStream(file);
+    stream.on("error", () => res.destroy());
+    if (isTelegramHerstel) stream.on("close", () => { void import("node:fs/promises").then((fs) => fs.unlink(file)).catch(() => undefined); });
+    stream.pipe(res);
     return;
   }
   const headers: Record<string, string | string[]> = { "Cache-Control": "no-store" };
@@ -459,10 +464,10 @@ const CONNECTOR_PADEN: Record<string, string> = {
 //
 // Het OUDE pad /ai/<agent> blijft bereikbaar met 308 Permanent Redirect — niet 301/302: MCP praat over POST, en 301/302 mag een
 // client in een GET veranderen (RFC 9110 §15.4), waardoor elke bestaande koppeling zou breken. 308 houdt methode én body.
-const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
-const V2_OUD = /^\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
+const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
+const V2_OUD = /^\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw)\/?$/;
 
 /** Oud connectoradres → het nieuwe, korte adres (of null). Alleen een pad: query en host blijven van het verzoek. */
 export function oudConnectorPad(pathname: string): string | null {

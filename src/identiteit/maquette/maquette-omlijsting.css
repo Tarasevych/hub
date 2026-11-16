@@ -180,7 +180,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true'] .mq-sectie-pijl{transform:rotate(180deg)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{
   display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;
-  border-radius:50%;border:1px solid var(--card-border);background:var(--card-bg);color:var(--muted);
+  border-radius:50%;border:1px solid var(--card-border);background:var(--surface);color:var(--muted);
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie:hover{color:var(--text);border-color:rgba(var(--global-rgb),.42)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie svg{width:17px;height:17px}
@@ -304,5 +304,36 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-label{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:50px;font-size:9.5px;font-weight:700;vertical-align:middle;color:var(--muted,#7a7f8c);border:1px dashed rgba(var(--global-rgb),.35)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{cursor:pointer;background:transparent;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+/* ACCENT-001 (15.11.2026): вісім «улюблених відтінків» меню облікового запису як --global «Макета» (темний — світліший тон, світлий —
+   насиченіший, контраст ≥ 3:1 до тла), кружечки вибору в шухляді «Теми» і прозорі картки за html[data-transparantie]. Давні чотири акценти
+   макета не змінено. De acht voorkeurstinten als --global van het ontwerp, de kleurstippen en doorschijnende kaarten. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=blauw]{--global:#7aa7ff;--global-rgb:122,167,255}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=blauw]{--global:#1a5fd6;--global-rgb:26,95,214}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=blauw]{--mq-stip:#1a5fd6;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=hemel]{--global:#67e8f9;--global-rgb:103,232,249}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=hemel]{--global:#0279b4;--global-rgb:2,121,180}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=hemel]{background:#0279b4}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=teal]{--global:#5eead4;--global-rgb:94,234,212}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=teal]{--global:#0f766e;--global-rgb:15,118,110}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=teal]{--mq-stip:#0f766e;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=groen]{--global:#4ade80;--global-rgb:74,222,128}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=groen]{--global:#15803d;--global-rgb:21,128,61}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=groen]{--mq-stip:#15803d;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=oranje]{--global:#fdba74;--global-rgb:253,186,116}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=oranje]{--global:#b8530b;--global-rgb:184,83,11}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=oranje]{background:#b8530b}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=roze]{--global:#f9a8d4;--global-rgb:249,168,212}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=roze]{--global:#be185d;--global-rgb:190,24,93}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=roze]{background:#be185d}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=indigo]{--global:#a5b4fc;--global-rgb:165,180,252}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=indigo]{--global:#4f46e5;--global-rgb:79,70,229}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=indigo]{background:#4f46e5}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=bruin]{--global:#d6b48f;--global-rgb:214,180,143}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=bruin]{--global:#8b5a2b;--global-rgb:139,90,43}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=bruin]{background:#8b5a2b}
+.mr-mq.mr-mq.mr-mq.mr-mq .drawer-swatches{flex-wrap:wrap}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq{--surface-dicht:var(--surface);--surface2-dicht:var(--surface2);--bg2-dicht:var(--bg2)}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :where(.main-content){--surface:color-mix(in srgb,var(--surface-dicht) calc(var(--blok-dekking,1)*100%),transparent);--surface2:color-mix(in srgb,var(--surface2-dicht) calc(var(--blok-dekking,1)*100%),transparent);--bg2:color-mix(in srgb,var(--bg2-dicht) calc(var(--blok-dekking,1)*100%),transparent)}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :where(.topbar,.anchor-rail,.popover-panel,.command-dialog,.search-overlay,.profile-photo-dialog,.settings-drawer,[role=dialog]){--surface:var(--surface-dicht);--surface2:var(--surface2-dicht);--bg2:var(--bg2-dicht)}
 @media (max-width:520px){.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-eerlijk .drawer-control-top{flex-wrap:wrap}.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{margin-left:auto}}
-@media(max-width:730px){html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:auto}.mr-mq.mr-mq.mr-mq.mr-mq :is(.topbar,.anchor-rail,.popover-panel,.search-overlay,.toast,.horizontal-nav-popup,.mq-sectie-balk){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+@media(max-width:730px){html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:auto}.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :is(.topbar,.anchor-rail,.popover-panel,.search-overlay,.toast,.horizontal-nav-popup,.mq-sectie-balk){-webkit-backdrop-filter:none;backdrop-filter:none}}

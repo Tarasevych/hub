@@ -17,6 +17,7 @@ import {
 } from './merk-register';
 import { eigenMerkenOphalen } from './merk-eigen-laden';
 import { merkBeeldVragen } from './merk-beeld-laden';
+import { OFFICIEEL_SLEUTELS } from './officieel-sleutels';
 import './merk.css';
 
 /** tegel = afgerond vlak met het logo erin · rond = zelfde, maar rond · gliefje = alleen de vorm, zonder vlak. */
@@ -61,6 +62,9 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
     if (sleutel && (!gevonden || gevonden.neutraal)) {
       void laadOfficieel().then(() => { const d = merkDomein(sleutel); if (d && !officieelMerk(sleutel) && !eigenMerk(sleutel)) merkBeeldVragen(d); });
     }
+    // Merk MET een eigen vorm, maar ook met een officieel bestand (bv. de AI-agenten): het officiële bestand wint (merkLaag), dus
+    // de luie tabel moet ook dan geladen worden — anders bleef de nagetekende vorm staan. Справжній логотип має перевагу над фігурою.
+    else if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel)) void laadOfficieel();
     return af;
   }, [gevonden, sleutel]);
 
