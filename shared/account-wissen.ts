@@ -101,7 +101,11 @@ export const WIS_UITZONDERING: Record<string, string> = {
   uitrol_github_publicaties: 'door — «automatisch» або пошта в спільному журналі релізів',
   uitrol_runs: 'спільний журнал викладів сайту; goedgekeurd_door — підпис, не рядок акаунта',
   ai_media_generator: 'bijgewerkt_door на спільному налаштуванні генератора',
-  extensie_beleid: 'user_id стирається стандартно; gewijzigd_door — хто змінив політику',
+  extensie_beleid: 'user_id стирається стандартно; gewijzigd_door і lokale_ai_door (0287) — хто змінив політику чи вимкнув локальний ШІ',
+  // UPD-003 (0295, MAILAI-003): спільний рушій ШІ «для всіх» — рядок сайту, який створює лише власник сайту; eigenaar_user_id і
+  // bijgewerkt_door кажуть, хто його створив і змінив. Лічильник app.ai_motor_gebruik стирається стандартно за user_id.
+  // Gedeelde AI-motor: een rij van de site (alleen de eigenaar maakt hem); de gebruiksteller gaat standaard weg via user_id.
+  ai_dienst_motoren: 'рядок сайту: спільний рушій ШІ власника сайту; eigenaar_user_id — хто створив, bijgewerkt_door — хто змінив',
   extensie_matrix: 'user_id стирається стандартно; gewijzigd_door — хто змінив матрицю',
   tg_instellingen: 'door — хто востаннє змінив спільні налаштування входу через Telegram (рядок сайту, не облікового запису); прив’язки, коди й запити стираються стандартно за user_id',
   // APPARAAT-001: zelfde patroon als tg_instellingen — 'door' is wie de site-instelling het laatst wijzigde; verzoeken en voorkeuren gaan standaard weg via user_id.
@@ -118,9 +122,9 @@ const ontkoppelVan = (schema: string, tabel: string) => ONTKOPPELEN.filter((o) =
 const geenAccount = (tabel: string, kolom: string) => Boolean(GEEN_ACCOUNT_KOLOM[tabel]?.[kolom]);
 
 /** Колонка з id людини, але це не «свій рядок»: чужий журнал або підпис на спільному стані. */
-export const NIET_EIGEN_KOLOM = ['actor_id', 'gewijzigd_door', 'bijgewerkt_door', 'door_id', 'door', 'beeindigd_door', 'ingetrokken_door', 'besluit_door', 'goedgekeurd_door', 'toegekend_door', 'besloten_door', 'gelezen_door', 'gekozen_door', 'bevestigd_door', 'ongedaan_door', 'verbonden_door', 'geverifieerd_door', 'gegeven_door', 'beslist_door'] as const;
+export const NIET_EIGEN_KOLOM = ['actor_id', 'gewijzigd_door', 'bijgewerkt_door', 'door_id', 'door', 'beeindigd_door', 'ingetrokken_door', 'besluit_door', 'goedgekeurd_door', 'toegekend_door', 'besloten_door', 'gelezen_door', 'gekozen_door', 'bevestigd_door', 'ongedaan_door', 'verbonden_door', 'geverifieerd_door', 'gegeven_door', 'beslist_door', 'lokale_ai_door'] as const;
 
-export const ACCOUNT_KOLOM = /^(owner_id|user_id|account_id|created_by|aanvrager_id|doel_id|beheerder_id|eigenaar_id|owner_key|actor_id|door_id|gewijzigd_door|bijgewerkt_door|door|beeindigd_door|ingetrokken_door|besluit_door|goedgekeurd_door|toegekend_door|besloten_door|gelezen_door|gekozen_door|bevestigd_door|ongedaan_door|verbonden_door|geverifieerd_door|gegeven_door|beslist_door|door_user_id)$/;
+export const ACCOUNT_KOLOM = /^(owner_id|user_id|account_id|created_by|aanvrager_id|doel_id|beheerder_id|eigenaar_id|owner_key|actor_id|door_id|gewijzigd_door|bijgewerkt_door|door|beeindigd_door|ingetrokken_door|besluit_door|goedgekeurd_door|toegekend_door|besloten_door|gelezen_door|gekozen_door|bevestigd_door|ongedaan_door|verbonden_door|geverifieerd_door|gegeven_door|beslist_door|door_user_id|lokale_ai_door)$/;
 
 const expressie = (t: WisTabel, kolom: string) =>
   kolom === 'eigenaar_id' || (t.tabel === 'agent_namens_sessies' && kolom === 'user_id') || t.uuidKolommen?.includes(kolom)
