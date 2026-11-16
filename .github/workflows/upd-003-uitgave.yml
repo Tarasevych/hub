@@ -2,7 +2,7 @@ name: 'UPD-003 · Спільний випуск 23 PR: пошта зі ШІ, р�
 
 # Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері (звіряється з /api/version),
 # правила координації, типи, статичні контракти, TRACE-001, хмарні випробування, 116 безбазових і 11 післяскладальних випробувань,
-# подвійний прогін усіх міграцій на PostgreSQL 16 із трьома ролями та 110 випробувань із базою даних і Хроміумом, повне складання,
+# подвійний прогін усіх міграцій на PostgreSQL 16 із трьома ролями та 116 випробувань із базою даних і Хроміумом, повне складання,
 # маніфест встановлювача та контрольну суму SHA-256.
 # Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, typen, statische contracten, TRACE-001,
 # cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
@@ -328,7 +328,7 @@ jobs:
             printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
-      - name: Підготувати ролі й міграції PostgreSQL 16 (двічі), Хроміум і запустити 110 випробувань із БД
+      - name: Підготувати ролі й міграції PostgreSQL 16 (двічі), Хроміум і запустити 116 випробувань із БД
         shell: bash
         run: |
           set -euo pipefail
@@ -447,7 +447,10 @@ jobs:
             afwijs-venster-20261116 \
             agent-een-plek-20261020 \
             agentscheiding-20261116 \
+            apps-overdracht \
+            beheer-overzicht \
             browser-keten \
+            cloud-vnext-catalogus-20261029 \
             connector-beide-kanten-20261020 \
             connector-instructies-20261025 \
             extensie-ontgrendeling \
@@ -483,10 +486,13 @@ jobs:
             merk-gebruiker-20261116 \
             merk-register \
             notities-vnext-20261028 \
+            ontwerp-fundament-20261020 \
             opstelpil-001-20261116 \
             pakket-geheimen-20261116 \
             prij-001-rijknop-menu \
             prij-002-uitklap \
+            sec-002-afwerking-a-20261112 \
+            sec-002-g08-20261112 \
             sec-002-g10c-20261112 \
             strook-regels-20261116 \
             tech-ruimtes-ui \
@@ -535,7 +541,7 @@ jobs:
               "Інше (#95, #147): підказка «⋮» лише за правим кліком; сторож мосту Windows для віртуальної машини після перезавантаження (deploy/nat-bewaker, ставиться на ПК окремо)."
             ],
             "fixes": [
-              "Пройдено перевірку правил координації, TRACE-001, типів клієнта та сервера, повного складання (включно з розширенням 0.9.6 і «Макетом оселі»), подвійних міграцій 0286–0300 на PostgreSQL 16 із трьома ролями та 258 випробувань (TRACE-001, 20 хмарних, 116 безбазових, 11 післяскладальних і 110 із БД та Хроміумом)."
+              "Пройдено перевірку правил координації, TRACE-001, типів клієнта та сервера, повного складання (включно з розширенням 0.9.6 і «Макетом оселі»), подвійних міграцій 0286–0300 на PostgreSQL 16 із трьома ролями та 264 випробувань (TRACE-001, 20 хмарних, 116 безбазових, 11 післяскладальних і 116 із БД та Хроміумом)."
             ],
             "beperkingen": [
               "Автоматичного встановлення немає: пакунок встановлює лише власник через Admin → Оновлення з ключем доступу.",
@@ -556,7 +562,7 @@ jobs:
               "Overig (#95, #147): tooltip van «⋮» alleen na rechtsklik; bewaker van de Windows-brug voor de VM na herstart (deploy/nat-bewaker, apart op de pc)."
             ],
             "fixes": [
-              "Geslaagd: coördinatieregels, TRACE-001, typecontrole client en server, volledige bouw (met extensie 0.9.6 en Huis-maquette), dubbele migraties 0286–0300 op PostgreSQL 16 met drie rollen en 258 tests (TRACE-001, 20 cloud, 116 zonder DB, 11 na bouw en 110 met DB en Chromium)."
+              "Geslaagd: coördinatieregels, TRACE-001, typecontrole client en server, volledige bouw (met extensie 0.9.6 en Huis-maquette), dubbele migraties 0286–0300 op PostgreSQL 16 met drie rollen en 264 tests (TRACE-001, 20 cloud, 116 zonder DB, 11 na bouw en 116 met DB en Chromium)."
             ],
             "beperkingen": [
               "Geen automatische installatie: alleen de eigenaar installeert via Beheer → Updates met toegangssleutel.",

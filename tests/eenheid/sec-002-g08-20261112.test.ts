@@ -357,7 +357,7 @@ export async function main(): Promise<number> {
       `audit=${afkapSpoor.length} meldingen=${afkapMeldingen.length} ${JSON.stringify(afkapSpoor[0]?.details)}`);
     check('g08-3: die melding is tweetalig, zegt wat er gebeurde en wat de mens kan doen, en linkt naar /agenda',
       afkapMeldingen.length === 1 && tweetalig(`${afkapMeldingen[0].title} ${afkapMeldingen[0].message}`) && /\b2\s?000\b/.test(afkapMeldingen[0].message)
-      && /10\s?000/.test(afkapMeldingen[0].message) && afkapMeldingen[0].link === '/agenda', JSON.stringify(afkapMeldingen[0]));
+      && /10\s?000/.test(afkapMeldingen[0].message) && /^(https:\/\/hub\.[a-z0-9.-]+)?\/agenda$/.test(String(afkapMeldingen[0].link)) /* UPD-003 (#138): absolute link */, JSON.stringify(afkapMeldingen[0]));
     // Een gewone, kleine ronde meldt niets en laat geen CALDAV_AFGEKAPT achter.
     caldav.zetCaldavVerzoekerVoorTest(async (v) => new Response(v.methode === 'REPORT'
       ? `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:response><d:href>/x.ics</d:href><d:propstat><d:prop><c:calendar-data>BEGIN:VCALENDAR&#13;\nBEGIN:VEVENT&#13;\nUID:een@example.invalid&#13;\nDTSTART:${stempel(new Date(basis))}&#13;\nSUMMARY:Eén&#13;\nEND:VEVENT&#13;\nEND:VCALENDAR</c:calendar-data></d:prop></d:propstat></d:response></d:multistatus>`
@@ -584,7 +584,7 @@ export async function main(): Promise<number> {
       `${tempoSpoor.length}: ${soorten.join(',')}`);
     const tempoMeldingen = meldingenVan(gebruiker);
     check('g08-3: en precies één tweetalige melding in het meldingencentrum, die zegt wanneer het weer mag en dat de planner gewoon doorloopt',
-      tempoMeldingen.length === 1 && tweetalig(`${tempoMeldingen[0].title} ${tempoMeldingen[0].message}`) && /\d+\s*(хв|min)/.test(tempoMeldingen[0].message) && tempoMeldingen[0].link === '/agenda',
+      tempoMeldingen.length === 1 && tweetalig(`${tempoMeldingen[0].title} ${tempoMeldingen[0].message}`) && /\d+\s*(хв|min)/.test(tempoMeldingen[0].message) && /^(https:\/\/hub\.[a-z0-9.-]+)?\/agenda$/.test(String(tempoMeldingen[0].link)) /* UPD-003 (#138): absolute link */,
       JSON.stringify(tempoMeldingen));
     // Een ander mens heeft zijn eigen teller.
     const ander = randomUUID(); opruimEigenaars.push(ander);
