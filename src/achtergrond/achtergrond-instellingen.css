@@ -43,3 +43,4 @@
 .la-standaard:hover,.la-standaard:focus-visible{color:var(--text);border-color:var(--accent)}
 .la-standaard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (pointer: coarse){.la-standaard{width:var(--tik-hoogte,44px);height:var(--tik-hoogte,44px)}}
+.la-kop>.wenk{margin-left:auto}

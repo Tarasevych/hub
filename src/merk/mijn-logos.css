@@ -24,7 +24,6 @@
 .mijn-logos-naam strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mijn-logos-naam small { font-size: 12px; color: var(--muted); }
 .mijn-logos-systeem { display: inline-flex; align-items: center; gap: 4px; opacity: .8; }
-.mijn-logos-systeem::before { content: '↺'; font-size: 12px; color: var(--muted); }
 .mijn-logos-knop { flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface, var(--panel)); color: var(--text); cursor: pointer; }
 .mijn-logos-knop svg { width: 18px; height: 18px; }
 .mijn-logos-knop:hover:not(:disabled), .mijn-logos-knop:focus-visible { border-color: var(--accent); }
@@ -47,3 +46,9 @@
 @media (max-width: 520px) {
   .mijn-logos-systeem { display: none; }
 }
+/* Скинути всі — у заголовку блоку, праворуч перед стрілкою; після першого натискання червоніше (чекає підтвердження). */
+.mijn-logos > summary > .wenk { margin-left: auto; }
+.mijn-logos > summary > .wenk + .mijn-logos-pijl { margin-left: .5rem; }
+.mijn-logos-knop.mijn-logos-alles { width: 32px; height: 32px; }
+.mijn-logos-knop.mijn-logos-alles svg { width: 16px; height: 16px; color: currentColor; }
+.mijn-logos-knop.is-zacht-gevaar.is-klaar { color: #fff; background: var(--fout); border-color: var(--fout); }

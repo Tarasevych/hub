@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
 import { MERK_EIGEN_MAX_BYTES, merkEigenRedenTekst } from '../../shared/merk-eigen';
 import MerkLogo from './MerkLogo';
+import Wenk from '../hulp/Wenk';
 import { gebruikerMerkenLijst, gebruikerMerkenZetten, merkGebruikerPost, type GebruikerMerkenAntwoord } from './merk-gebruiker-laden';
 import { laadMerken, merkDef, merkSleutel, opMerken } from './merk-register';
 import { OFFICIEEL_SLEUTELS } from './officieel-sleutels';
@@ -89,6 +90,25 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
     } finally { setBezig(''); }
   };
 
+  // Скинути всі свої логотипи — піктограма в заголовку цього блоку. Дія відчутна, тож у два кроки: перше натискання лише «озброює»
+  // кнопку на 5 с (червоний натяк і інша підказка), друге — виконує. Alle eigen logo's wissen: twee stappen.
+  const [alleKlaar, setAlleKlaar] = useState(false);
+  useEffect(() => { if (!alleKlaar) return; const t = window.setTimeout(() => setAlleKlaar(false), 5000); return () => window.clearTimeout(t); }, [alleKlaar]);
+  const allesTerug = async () => {
+    if (!alleKlaar) { setAlleKlaar(true); return; }
+    setAlleKlaar(false); setBezig('*'); setMelding(null);
+    const sleutels = eigen.map((m) => m.sleutel);
+    let r: GebruikerMerkenAntwoord | null = null, mis = 0;
+    for (const k of sleutels) { try { r = await merkGebruikerPost('wissen', { sleutel: k }); } catch { mis++; } }
+    if (r) { setLijst(r); gebruikerMerkenZetten(r); }
+    const tekst = mis ? tr(`Не вдалося скинути ${mis} з ${sleutels.length}. Спробуйте ще раз.`, `${mis} van ${sleutels.length} niet teruggezet. Probeer opnieuw.`)
+      : tr(`Усі ваші логотипи (${sleutels.length}) скинуто — знову системні.`, `Al uw logo's (${sleutels.length}) teruggezet — weer de systeemlogo's.`);
+    setMelding({ fout: mis > 0, tekst });
+    emitCanonicalNotice({ text: tekst, kind: mis ? 'error' : 'info', source: 'instellingen', context: tr('Логотипи сервісів', 'Logo\'s van diensten'), topic: 'merk-gebruiker|*',
+      explain: tr('Ваші файли видалено з сервера; скрізь на сайті знову логотипи сайту. Будь-коли можна призначити нові.', 'Uw bestanden zijn van de server gewist; overal staan weer de logo\'s van de site. U kunt altijd nieuwe kiezen.') });
+    setBezig('');
+  };
+
   const terugzetten = async (sleutel: string) => {
     const naam = naamVan(sleutel);
     setBezig(sleutel); setMelding(null);
@@ -108,7 +128,12 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
 
   // Павло (16.11): блок як сусідні картки («Кадри й батарея»): на всю ширину, згортається, вміст по центру. Een eigen kaart zoals de buren.
   return <details className='mijn-logos' open={eigen.length > 0 || undefined} data-mijn-logos>
-    <summary><Shapes aria-hidden /><h3 id='mijn-logos-kop' className='mijn-logos-kop'>{tr('Логотипи сервісів', 'Logo\'s van diensten')}</h3>{eigen.length > 0 && <small className='mijn-logos-teller'>{eigen.length}</small>}<ChevronDown className='mijn-logos-pijl' aria-hidden /></summary>
+    <summary><Shapes aria-hidden /><h3 id='mijn-logos-kop' className='mijn-logos-kop'>{tr('Логотипи сервісів', 'Logo\'s van diensten')}</h3>{eigen.length > 0 && <small className='mijn-logos-teller'>{eigen.length}</small>}
+      {eigen.length > 0 && <Wenk tekst={alleKlaar ? tr('Натисніть ще раз, щоб скинути всі свої логотипи. Ваші файли буде видалено, повернуться системні.', 'Klik nog eens om al uw logo\'s terug te zetten. Uw bestanden worden gewist, de systeemlogo\'s komen terug.') : tr(`Скинути всі мої логотипи (${eigen.length}): скрізь на сайті знову будуть системні. Потрібне підтвердження.`, `Al mijn logo's terugzetten (${eigen.length}): overal weer de systeemlogo's. Bevestiging nodig.`)}>
+        <button type='button' className={`mijn-logos-knop mijn-logos-alles is-zacht-gevaar${alleKlaar ? ' is-klaar' : ''}`} disabled={!!bezig} data-mijn-logos-alles
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); void allesTerug(); }}
+          aria-label={alleKlaar ? tr('Підтвердити: скинути всі мої логотипи', 'Bevestigen: al mijn logo\'s terugzetten') : tr('Скинути всі мої логотипи', 'Al mijn logo\'s terugzetten')}><RotateCcw aria-hidden /></button>
+      </Wenk>}<ChevronDown className='mijn-logos-pijl' aria-hidden /></summary>
     <div className='mijn-logos-binnen'>
     <p className='mijn-logos-noot'>{tr('Свій логотип для будь-якого сервісу. Бачите його лише ви.', 'Uw eigen logo voor elke dienst. Alleen u ziet het.')}</p>
 
@@ -118,15 +143,13 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
         return <li key={m.sleutel} className='mijn-logos-rij is-eigen' data-mijn-logo={m.sleutel}>
           <MerkLogo id={m.sleutel} naam={naam} logo={m.sleutel} maat={36} />
           <span className='mijn-logos-naam'><strong>{naam}</strong><small>{tr('ваш логотип', 'uw logo')}</small></span>
-          <span className='mijn-logos-systeem' title={tr('Системний логотип — повернеться, якщо прибрати ваш', 'Systeemlogo — komt terug als u het uwe wist')}>
+          <Wenk tekst={tr('Системний логотип — повернеться, якщо прибрати ваш', 'Systeemlogo — komt terug als u het uwe wist')}><span className='mijn-logos-systeem'>
             <MerkLogo id={m.sleutel} naam={naam} logo={m.sleutel} maat={22} zonderGebruiker />
-          </span>
-          <button type='button' className='mijn-logos-knop' disabled={!!bezig} onClick={() => kiesBestand(m.sleutel)} data-mijn-logo-vervang={m.sleutel}
-            title={tr(`Замінити: новий файл одразу замінить ваш логотип «${naam}» скрізь на сайті`, `Vervangen: een nieuw bestand vervangt meteen uw logo «${naam}» op de hele site`)}
-            aria-label={tr(`Замінити логотип ${naam}`, `Logo ${naam} vervangen`)}><Upload aria-hidden /></button>
-          <button type='button' className='mijn-logos-knop is-zacht-gevaar' disabled={!!bezig} onClick={() => void terugzetten(m.sleutel)} data-mijn-logo-terug={m.sleutel}
-            title={tr(`Повернути системний: ваш файл буде видалено, і для «${naam}» знову з'явиться логотип сайту`, `Terugzetten: uw bestand wordt gewist en voor «${naam}» staat weer het logo van de site`)}
-            aria-label={tr(`Повернути системний логотип ${naam}`, `Systeemlogo ${naam} terugzetten`)}><RotateCcw aria-hidden /></button>
+          </span></Wenk>
+          <Wenk tekst={tr(`Замінити: новий файл одразу замінить ваш логотип «${naam}» скрізь на сайті`, `Vervangen: een nieuw bestand vervangt meteen uw logo «${naam}» op de hele site`)}><button type='button' className='mijn-logos-knop' disabled={!!bezig} onClick={() => kiesBestand(m.sleutel)} data-mijn-logo-vervang={m.sleutel}
+            aria-label={tr(`Замінити логотип ${naam}`, `Logo ${naam} vervangen`)}><Upload aria-hidden /></button></Wenk>
+          <Wenk tekst={tr(`Повернути системний: ваш файл буде видалено, і для «${naam}» знову з'явиться логотип сайту`, `Terugzetten: uw bestand wordt gewist en voor «${naam}» staat weer het logo van de site`)}><button type='button' className='mijn-logos-knop is-zacht-gevaar' disabled={!!bezig} onClick={() => void terugzetten(m.sleutel)} data-mijn-logo-terug={m.sleutel}
+            aria-label={tr(`Повернути системний логотип ${naam}`, `Systeemlogo ${naam} terugzetten`)}><RotateCcw aria-hidden /></button></Wenk>
         </li>;
       })}
     </ul>}
@@ -141,9 +164,8 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
       {treffers.map((r) => <li key={r.sleutel} className='mijn-logos-rij' data-mijn-logo-treffer={r.sleutel}>
         <MerkLogo id={r.sleutel} naam={r.naam} logo={r.sleutel} maat={36} />
         <span className='mijn-logos-naam'><strong>{r.naam}</strong><small>{tr('системний логотип', 'systeemlogo')}</small></span>
-        <button type='button' className='mijn-logos-knop is-hoofd' disabled={!!bezig} onClick={() => kiesBestand(r.sleutel)} data-mijn-logo-kies={r.sleutel}
-          title={tr(`Призначити свій: ваш файл (SVG або PNG) замінить логотип «${r.naam}» скрізь на сайті, лише для вас`, `Eigen kiezen: uw bestand (SVG of PNG) vervangt het logo «${r.naam}» op de hele site, alleen voor u`)}
-          aria-label={tr(`Призначити свій логотип для ${r.naam}`, `Eigen logo kiezen voor ${r.naam}`)}><ImagePlus aria-hidden /></button>
+        <Wenk tekst={tr(`Призначити свій: ваш файл (SVG або PNG) замінить логотип «${r.naam}» скрізь на сайті, лише для вас`, `Eigen kiezen: uw bestand (SVG of PNG) vervangt het logo «${r.naam}» op de hele site, alleen voor u`)}><button type='button' className='mijn-logos-knop is-hoofd' disabled={!!bezig} onClick={() => kiesBestand(r.sleutel)} data-mijn-logo-kies={r.sleutel}
+          aria-label={tr(`Призначити свій логотип для ${r.naam}`, `Eigen logo kiezen voor ${r.naam}`)}><ImagePlus aria-hidden /></button></Wenk>
       </li>)}
     </ul>}
     {zoek.trim() && !treffers.length && alle.length > 0 && <p className='mijn-logos-noot'>{tr('Такого сервісу на сайті немає.', 'Deze dienst komt op de site niet voor.')}</p>}

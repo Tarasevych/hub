@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, BatteryMedium, Blend, Gauge, Layers, Monito
 import type { ReactNode } from 'react';
 import { ACHTERGROND_GRENZEN, achtergrondVolledig, normaliseerAchtergrond, type AchtergrondKader, type AchtergrondKleuren, type AchtergrondOvergang, type AchtergrondStand, type UiterlijkAchtergrond } from '../../shared/uiterlijk';
 import { useThemaStand, zetAchtergrond } from '../thema/useThema';
+import Wenk from '../hulp/Wenk';
 import './achtergrond-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -63,9 +64,10 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
     {/* Павло (16.11): «Типові значення» внизу було незрозуміло, до чого належить. Тепер піктограма прямо в заголовку «Живий фон». */}
     <div className='la-kop'>
       <h3 id='thema-achtergrond-kop'>{tr('Живий фон', 'Levende achtergrond')}</h3>
-      <button type='button' className='la-standaard' onClick={() => zetAchtergrond(undefined)} data-achtergrond-standaard
-        title={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')}
-        aria-label={tr('Типові значення живого фону', 'Standaardwaarden van de levende achtergrond')}><RotateCcw aria-hidden /></button>
+      <Wenk tekst={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')}>
+        <button type='button' className='la-standaard' onClick={() => zetAchtergrond(undefined)} data-achtergrond-standaard
+          aria-label={tr('Типові значення живого фону', 'Standaardwaarden van de levende achtergrond')}><RotateCcw aria-hidden /></button>
+      </Wenk>
     </div>
     <p className='thema-uitleg'>{tr('Великі розмиті плями різних форм повільно переливаються з відтінку у відтінок за всім вмістом сторінки. Зміни видно одразу на тлі цієї сторінки; зберігаються в обліковому записі окремо для звичайного й технічного профілю.', 'Grote, zachte vlekken in verschillende vormen vloeien langzaam van tint naar tint achter de hele pagina. Wijzigingen zie je meteen achter deze pagina; ze worden in het account bewaard, apart voor het gewone en het technische profiel.')}</p>
 
