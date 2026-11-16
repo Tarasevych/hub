@@ -51,6 +51,16 @@ const KEUZE = [
   { sleutel: 'oauth', pakket: '@iconify-json/logos', icoon: 'oauth' },
   { sleutel: 'microsoftoutlook', pakket: '@iconify-json/vscode-icons', icoon: 'file-type-outlook', opmerking: 'het Outlook-logo zoals vscode-icons het meelevert (ontwerp 2013–2018)' },
   { sleutel: 'microsoftonenote', pakket: '@iconify-json/vscode-icons', icoon: 'file-type-onenote', opmerking: 'het OneNote-logo zoals vscode-icons het meelevert (ontwerp 2013–2018)' },
+  // AI-агенти (15.11.2026, Павло: «чому логотип не береться з бази справжнього логотипа?») — справжні знаки з того самого пакета CC0.
+  // AI-agents: echte beeldmerken uit hetzelfde CC0-pakket in plaats van de nagetekende vormen op een gekleurde plaat.
+  { sleutel: 'claude', pakket: '@iconify-json/logos', icoon: 'claude-icon' },
+  { sleutel: 'gpt', pakket: '@iconify-json/logos', icoon: 'openai-icon', opmerking: 'ChatGPT draagt het beeldmerk van OpenAI' },
+  { sleutel: 'codex', pakket: '@iconify-json/logos', icoon: 'codex' },
+  { sleutel: 'grok', pakket: '@iconify-json/logos', icoon: 'grok-icon' },
+  { sleutel: 'gemini', pakket: '@iconify-json/logos', icoon: 'google-gemini-icon' },
+  { sleutel: 'copilot', pakket: '@iconify-json/logos', icoon: 'github-copilot' },
+  { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
+  { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:
@@ -157,4 +167,11 @@ ${sleutels.map((s) => `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`).jo
 registreerOfficieleMerken(OFFICIEEL);
 `;
 writeFileSync(join(WORTEL, 'src/merk/merk-officieel.ts'), kop);
+// Kleine lijst (alleen de sleutels) in de hoofdbundel: zo weet <Merk> dat er voor een merk MET een eigen vorm toch een officieel
+// bestand is, en laadt het de luie tabel. Zonder deze lijst won de nagetekende vorm altijd (15.11.2026: Copilot, Claude …).
+// Невеликий список ключів у головній збірці: щоб <Merk> знав, що й для марки з власною фігурою є справжній логотип.
+writeFileSync(join(WORTEL, 'src/merk/officieel-sleutels.ts'), `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen. Welke merken een officieel bestand hebben.
+// Згенеровано scripts/merk-officieel-maken.mjs — які марки мають справжній логотип у вбудованій базі.
+export const OFFICIEEL_SLEUTELS: ReadonlySet<string> = new Set(${JSON.stringify(sleutels)});
+`);
 console.log(`${sleutels.length} officiële logo's (${herkomst.filter((r) => r.soort === 'pakket').length} uit pakketten, ${herkomst.filter((r) => r.soort === 'officiele-site').length} van de eigen website); nog zonder: ${AFWEZIG.filter((s) => !tabel[s]).join(', ') || '—'}`);

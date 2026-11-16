@@ -47,6 +47,23 @@
 :root:root[data-accent="pink"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="pink"] :is(.theme-dark,.theme-plum-dark) { --accent:#f9a8d4; --accentText:#10161c; --accent-soft:#50223a; }
 :root:root[data-accent="amber"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="amber"] :is(.theme-light,.theme-plum-light) { --accent:#92400e; --accentText:#ffffff; --accent-soft:#fef3c7; }
 :root:root[data-accent="amber"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="amber"] :is(.theme-dark,.theme-plum-dark) { --accent:#fcd34d; --accentText:#10161c; --accent-soft:#4a3410; }
+/* ACCENT-001: «улюблені відтінки» меню облікового запису — той самий акцент поверх будь-якої палітри. */
+:root:root[data-accent="blauw"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="blauw"] :is(.theme-light,.theme-plum-light) { --accent:#1a5fd6; --accentText:#ffffff; --accent-soft:#dfe9f9; }
+:root:root[data-accent="blauw"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="blauw"] :is(.theme-dark,.theme-plum-dark) { --accent:#7aa7ff; --accentText:#10161c; --accent-soft:#2f3e57; }
+:root:root[data-accent="hemel"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="hemel"] :is(.theme-light,.theme-plum-light) { --accent:#0279b4; --accentText:#ffffff; --accent-soft:#dcedf6; }
+:root:root[data-accent="hemel"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="hemel"] :is(.theme-dark,.theme-plum-dark) { --accent:#67e8f9; --accentText:#10161c; --accent-soft:#2b4c55; }
+:root:root[data-accent="teal"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="teal"] :is(.theme-light,.theme-plum-light) { --accent:#0f766e; --accentText:#ffffff; --accent-soft:#ddeceb; }
+:root:root[data-accent="teal"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="teal"] :is(.theme-dark,.theme-plum-dark) { --accent:#5eead4; --accentText:#10161c; --accent-soft:#294c4d; }
+:root:root[data-accent="groen"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="groen"] :is(.theme-light,.theme-plum-light) { --accent:#15803d; --accentText:#ffffff; --accent-soft:#deede4; }
+:root:root[data-accent="groen"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="groen"] :is(.theme-dark,.theme-plum-dark) { --accent:#4ade80; --accentText:#10161c; --accent-soft:#254a3b; }
+:root:root[data-accent="oranje"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="oranje"] :is(.theme-light,.theme-plum-light) { --accent:#b8530b; --accentText:#ffffff; --accent-soft:#f6e7dd; }
+:root:root[data-accent="oranje"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="oranje"] :is(.theme-dark,.theme-plum-dark) { --accent:#fdba74; --accentText:#10161c; --accent-soft:#4c4238; }
+:root:root[data-accent="roze"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="roze"] :is(.theme-light,.theme-plum-light) { --accent:#be185d; --accentText:#ffffff; --accent-soft:#f6dfe8; }
+:root:root[data-accent="roze"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="roze"] :is(.theme-dark,.theme-plum-dark) { --accent:#f9a8d4; --accentText:#10161c; --accent-soft:#4b3e4d; }
+:root:root[data-accent="indigo"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="indigo"] :is(.theme-light,.theme-plum-light) { --accent:#4f46e5; --accentText:#ffffff; --accent-soft:#e6e5fb; }
+:root:root[data-accent="indigo"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="indigo"] :is(.theme-dark,.theme-plum-dark) { --accent:#a5b4fc; --accentText:#10161c; --accent-soft:#394156; }
+:root:root[data-accent="bruin"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="bruin"] :is(.theme-light,.theme-plum-light) { --accent:#8b5a2b; --accentText:#ffffff; --accent-soft:#efe8e1; }
+:root:root[data-accent="bruin"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="bruin"] :is(.theme-dark,.theme-plum-dark) { --accent:#d6b48f; --accentText:#10161c; --accent-soft:#43413e; }
 
 /* Виразність декоративних ефектів: сяйво ілюстрацій центру облікового запису («Макет» і «Студія»). 0 % — без сяйва,
    45 % — як задумано в макеті, 100 % — насиченіше. На текст, кнопки й контраст не впливає. */
@@ -73,3 +90,28 @@
     transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
   }
 }
+
+/* ACCENT-001 (15.11.2026): прозорий режим блоків (shared/uiterlijk.ts → transparantie; weergave-stijl.ts ставить
+   html[data-transparantie="aan"] і --blok-dekking). Суцільні кольори палітри запам'ятовуються на оболонці (--…-dicht), а в робочій
+   області підкладки панелей і карток стають напівпрозорими — крізь них видно тло сторінки й «Живий фон». Без backdrop-filter:
+   розмиття під кожною карткою перемальовується з кожним кадром живого тла й гальмує телефони (ZAVYSANNIA-001); тло й так м'яке.
+   Меню, вікна, підказки й поля введення лишаються суцільними, щоб текст у них читався. Системне «зменшити прозорість» вимикає режим.
+   Doorschijnende blokken: alleen de ondergrond van panelen en kaarten, zonder backdrop-filter; menu's, vensters en velden blijven dicht. */
+/* Суцільні значення запам'ятовуються на оболонці; у робочій області кожен елемент (сервіси «Макета» перевизначають свої поверхні на
+   власних контейнерах, тож потрібен шар на всіх нащадках із вищою специфічністю) отримує ті самі кольори напівпрозорими.
+   Центр облікового запису «Макет» (.mr-mq) має власні змінні — його правила в src/identiteit/maquette/maquette-omlijsting.css. */
+html[data-transparantie="aan"] .canonical-chrome { --panel-dicht:var(--panel); --surface-dicht:var(--surface); --surface2-dicht:var(--surface2); --mq-oppervlak-dicht:var(--mq-oppervlak); --mq-oppervlak-2-dicht:var(--mq-oppervlak-2); --mq-bg-2-dicht:var(--mq-bg-2); }
+html[data-transparantie="aan"] .canonical-chrome .canonical-workspace:not(#_tr1):not(#_tr2):not(.mr-mq):not(.mr-mq *), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace *:not(#_tr1):not(#_tr2):not(.mr-mq):not(.mr-mq *) {
+  --panel:color-mix(in srgb, var(--panel-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --surface:color-mix(in srgb, var(--surface-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --surface2:color-mix(in srgb, var(--surface2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-oppervlak:color-mix(in srgb, var(--mq-oppervlak-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-oppervlak-2:color-mix(in srgb, var(--mq-oppervlak-2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-bg-2:color-mix(in srgb, var(--mq-bg-2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+}
+html[data-transparantie="aan"] .canonical-chrome .canonical-workspace :is([role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog, input, select, textarea):not(#_tr1):not(#_tr2):not(#_tr3), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace :is([role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog, input, select, textarea) *:not(#_tr1):not(#_tr2):not(#_tr3) { --panel:var(--panel-dicht); --surface:var(--surface-dicht); --surface2:var(--surface2-dicht); --mq-oppervlak:var(--mq-oppervlak-dicht); --mq-oppervlak-2:var(--mq-oppervlak-2-dicht); --mq-bg-2:var(--mq-bg-2-dicht); }
+@media (prefers-reduced-transparency: reduce) {
+  html[data-transparantie="aan"] .canonical-chrome .canonical-workspace:not(#_tr1):not(#_tr2):not(#_tr3):not(.mr-mq):not(.mr-mq *), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace *:not(#_tr1):not(#_tr2):not(#_tr3):not(.mr-mq):not(.mr-mq *) { --panel:var(--panel-dicht); --surface:var(--surface-dicht); --surface2:var(--surface2-dicht); --mq-oppervlak:var(--mq-oppervlak-dicht); --mq-oppervlak-2:var(--mq-oppervlak-2-dicht); --mq-bg-2:var(--mq-bg-2-dicht); }
+}
+/* ACCENT-001: з обраним відтінком і рамка фокусу клавіатури — того ж кольору (типово вона синя в кожній палітрі). */
+:root:root[data-accent], :root:root[data-accent] :is(.theme-light, .theme-dark, .theme-plum-light, .theme-plum-dark) { --focus:var(--accent); }

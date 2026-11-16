@@ -29,7 +29,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('klassiek-004b-github-brontekst');
 
   const brontekstCss = readFileSync('src/github/github-brontekst-maquette.css', 'utf8');
-  const codePaneelTsx = readFileSync('src/github/CodeEnEditorPaneel.tsx', 'utf8');
+  const codePaneelTsx = readFileSync('src/github/CodeEnBewerkerPaneel.tsx', 'utf8');
   const ghToepassingTsx = readFileSync('src/github/github-client.tsx', 'utf8');
   const zelf = readFileSync('tests/eenheid/klassiek-004b-github-brontekst.test.ts', 'utf8');
 
@@ -242,7 +242,7 @@ export async function main(): Promise<number> {
   // 10. Мовна чистота всіх файлів ділянки KLASSIEK-004B.
   const bestanden: readonly [string, string][] = [
     ['src/github/github-brontekst-maquette.css', brontekstCss],
-    ['src/github/CodeEnEditorPaneel.tsx', codePaneelTsx],
+    ['src/github/CodeEnBewerkerPaneel.tsx', codePaneelTsx],
     ['src/github/github-client.tsx', ghToepassingTsx],
     ['tests/eenheid/klassiek-004b-github-brontekst.test.ts', zelf],
   ];

@@ -78,6 +78,22 @@ export async function deurIntrekken(id: string): Promise<boolean> {
   return r.status === 200;
 }
 
+/**
+ * SEC-002 / VEILIG-002 (noodstop): при аварійній зупинці, блокуванні користувача або відкликанні технічного простору
+ * закрити й активні OAuth-підключення на серверній MCP-двері (deploy/mcp/server.mjs). Якщо двері не працюють (BYOS),
+ * безпечно повертає 0 і не зупиняє решту блокування.
+ */
+export async function deurIntrekkenVoorGebruiker(userId: string, eigenaar = false): Promise<number> {
+  if (!userId || !(await internSleutel())) return 0;
+  let lijst: DeurVerbinding[];
+  try { lijst = await deurVerbindingen(); }
+  catch { return 0; }
+  const doelen = lijst.filter((v) => v.wie?.id === userId || (eigenaar && !v.wie?.id));
+  if (!doelen.length) return 0;
+  const res = await Promise.allSettled(doelen.map((v) => deurIntrekken(v.id)));
+  return res.filter((r) => r.status === 'fulfilled' && r.value === true).length;
+}
+
 /** Komt dit verzoek van de deur zelf? (loopback, geen tunnelkoppen, juiste sleutel; tijdconstant vergeleken) */
 export async function vanDeur(headers: Record<string, string | undefined>): Promise<boolean> {
   const h = (n: string) => String(headers[n] ?? '');

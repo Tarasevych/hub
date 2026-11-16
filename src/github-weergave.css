@@ -40,7 +40,7 @@
 .gh-repo-desc{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
 .gh-repo-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);align-items:center}
 .gh-repo-meta span{display:inline-flex;align-items:center;gap:3px}
-.gh-chip{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);font-size:.75rem;font-weight:500;max-width:100%;overflow-wrap:anywhere}
+.gh-chip{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);font-size:.75rem;font-weight:500;max-width:100%;overflow-wrap:break-word}
 .gh-chip-warn{border-color:var(--warn);color:var(--warn)}
 .gh-detail{display:grid;gap:10px;min-width:0}
 .gh-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
@@ -58,7 +58,7 @@ a.gh-item:hover{background:var(--soft)}
 .gh-item-main strong{font-weight:600;overflow-wrap:anywhere;word-break:break-word}
 .gh-sub{font-size:.78rem;color:var(--muted);overflow-wrap:anywhere;word-break:break-word;line-height:1.4}
 .gh-labels{display:flex;gap:4px;flex-wrap:wrap}
-.gh-label{font-size:.75rem;padding:1px 7px;border-radius:99px;border:1px solid;max-width:100%;overflow-wrap:anywhere}
+.gh-label{font-size:.75rem;padding:1px 7px;border-radius:99px;border:1px solid;max-width:100%;overflow-wrap:break-word}
 .gh-ok{color:var(--ok)}.gh-bad{color:var(--fout)}.gh-muted{color:var(--muted)}
 .gh-empty{margin:0;color:var(--muted);font-size:.86rem}
 .gh-busy{display:flex;align-items:center;gap:8px;color:var(--muted);flex-wrap:wrap}
@@ -232,7 +232,7 @@ a.gh-item:hover{background:var(--soft)}
 .gh-kleur-knop{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;display:grid;place-items:center;flex-shrink:0}
 .gh-kleur-knop.is-on,.gh-kleur-knop.is-actief{border-color:var(--ink);transform:scale(1.1)}
 .gh-kleur-stip{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
-.gh-label-knop{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:.8rem;max-width:100%;overflow-wrap:anywhere}
+.gh-label-knop{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);cursor:pointer;background:transparent;color:inherit;font:inherit;font-size:.8rem;max-width:100%;overflow-wrap:break-word}
 .gh-label-knop:hover{background:var(--soft)}
 .gh-label-knop.is-on,.gh-label-knop.is-actief{font-weight:700;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent)}
 .gh-review-soort{display:flex;gap:10px;flex-wrap:wrap;align-items:center}

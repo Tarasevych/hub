@@ -90,6 +90,18 @@ function verwerkRegel(regel, bpPrefix) {
     if (d.prop === 'transition' || d.prop.startsWith('transition-')) d.important = true;
     if (d.prop === 'position' && d.value === 'sticky' && regel.selector.includes('.topbar')) { /* top ставимо окремо */ }
     if (d.prop === 'top' && regel.selectors.some(s => /\.scroll-progress$/.test(s)) && d.value === '0') d.value = 'var(--mq-site)';
+    // Змінні контрасту й орбіти (b2e6634a): щоб перезбирання генератором не стирало світлі поверхні та мітки.
+    if (d.prop === 'width' && d.value === '380px' && regel.selectors.some(s => /\.orbit-one$/.test(s))) {
+      d.cloneBefore({ prop: '--mq-orbit-w', value: '380px' });
+      d.value = 'var(--mq-orbit-w)';
+    }
+    if ((d.prop === 'background' || d.prop === 'background-color') && d.value.includes('#fff')) {
+      if (regel.selectors.some(s => /\.light\b[^,]*\.(popover-panel|anchor-rail)\b/.test(s))) {
+        d.value = d.value.replace(/#fff\b/g, 'var(--surface)');
+      } else if (regel.selectors.some(s => /(\.switch-look:before|\.drawer-toggle span|\.mini-live-switch i|\.mini-theme-light \.drawer-browser-row|\.primary-button|\.language-flag-nl|\.methods-art-brand)$/.test(s.trim()))) {
+        d.value = d.value.replace(/#fff\b/g, 'var(--white)');
+      }
+    }
   });
   return true;
 }

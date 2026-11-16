@@ -249,11 +249,11 @@ export function pictogramSvg(index: number, stijl = ''): string {
  */
 export function tegelStijlen(kleur: string, groot = false): { tegel: Record<string, string>; vorm: Record<string, string>; naam: Record<string, string> } {
   return {
-    tegel: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', width: '100%', aspectRatio: '1 / 1', boxSizing: 'border-box',
+    tegel: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', width: '100%', minHeight: groot ? '128px' : '90px', padding: groot ? '12px 8px' : '8px 4px', aspectRatio: '1 / 1', boxSizing: 'border-box',
       borderRadius: groot ? '30px' : '22px', background: /^#[0-9a-f]{6}$/i.test(kleur) ? kleur : '#4f5b66', color: inktVoor(kleur), position: 'relative',
       fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', boxShadow: '0 2px 6px rgba(0,0,0,.18)' },
-    vorm: { display: 'block', width: '56%', height: 'auto', aspectRatio: '1 / 1', flex: 'none' },
-    naam: { fontSize: groot ? '1.1rem' : '0.8rem', overflowWrap: 'anywhere', fontWeight: '650', letterSpacing: '0.01em', lineHeight: '1.2', textAlign: 'center', padding: '0 4px' },
+    vorm: { display: 'block', width: groot ? '56%' : '50%', height: 'auto', aspectRatio: '1 / 1', flex: 'none' },
+    naam: { fontSize: groot ? '1.1rem' : 'clamp(0.68rem, 2.7vw, 0.8rem)', overflowWrap: 'break-word', hyphens: 'auto', maxWidth: '100%', fontWeight: '650', letterSpacing: '0.01em', lineHeight: '1.18', textAlign: 'center', padding: '0 2px' },
   };
 }
 /** React-stijl → `style`-attribuut («placeItems» → «place-items»). */

@@ -114,7 +114,7 @@ export default function NotificationPanelBody(p: Props) {
     }
     for (const e of p.events) {
       const st = statusInfo(e.status, p.lang);
-      const source = e.kind === 'site' ? e.source : e.source === 'claude' ? 'claude' : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
+      const source = e.kind === 'site' ? e.source : /^claude(:|$)/.test(e.source) ? e.source : e.source === 'browser' ? `browser:${/edge/i.test(e.subject) ? 'edge' : /opera/i.test(e.subject) ? 'opera' : /firefox/i.test(e.subject) ? 'firefox' : 'chrome'}` : `agent:${/win/i.test(e.platform || '') ? 'windows' : /darwin|mac/i.test(e.platform || '') ? 'macos' : 'linux'}`;
       const eigen = activityLink(e, p.lang).href ? activityLink(e, p.lang) : sectieLink(styleOf(source, p.lang).section, p.lang);
       out.push({
         key: `a:${e.id}`, group: `${source}|${e.kind}|${e.type}|${st.group}`, origin: 'activity', sfeer: e.sfeer, source, createdAt: e.createdAt, read: p.readEvents.has(e.id),

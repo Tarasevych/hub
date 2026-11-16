@@ -1,5 +1,11 @@
 // HET GLOBALE ZOEKVELD IN DE BOVENBALK (zoekronde 02.11.2026, vervangt het modale palet ⌘K van 22.10.2026; INTEG-001 03.11.2026: menu).
 // Klik op de veldknop (of ⌘K / Ctrl+K) en het veld klapt uit op dezelfde plek, zoals Windows-zoeken: er opent een MENU eronder met
+// ZOEK-002 (15.11.2026, Павло: «замість того щоб розгорталося існуюче, збільшуючись за потреби, як у Google, зверху накладається ще
+// одне вікно»): op de computer wordt het veld in de bovenbalk ZELF het invoerveld — het groeit op zijn plek (de groep rechtsboven groeit
+// naar links mee, profielfoto en bel blijven staan) en het menu hangt eraan als één kaart met één rand (veld boven, lijst onder), zoals
+// Google. Geen tweede veld erboven meer. Alleen op de telefoon, met de zoekknop in het menu en op het «Макет» (eigen bovenbalk) staat het
+// veld in een laag over de pagina — maar ook daar groeit het uit de knop zelf (zelfde hoogte, zelfde rechterrand) i.p.v. ergens anders.
+// Знову українською: поле в панелі саме стає полем вводу й розширюється на місці; список випадає з нього як одна картка.
 //   • bij een leeg veld de recente zoekopdrachten, elk met TYPE (zoekopdracht / functie / pagina), PICTOGRAM en SECTIE (zoek-recent.ts: per
 //     account, alleen op dit apparaat);
 //   • bij typen de suggesties van de server, het HUIDIGE RESULTAAT van de zoekopdracht (de eerste resultaten, met type en sectie) en de
@@ -27,16 +33,18 @@ import { MENU_MIN_TEKENS, bouwMenuRijen, keuzeActie, meldZoekPagina, menuToets, 
 import ZoekVeld, { type VeldSuggestie } from './ZoekVeld';
 import './zoek.css';
 import './zoek-maquette.css';
+import './zoek-uitklap-veld.css';
 
 export const PALET_EVENT = 'tsv:zoek-palet';
 export const openZoekPalet = () => window.dispatchEvent(new CustomEvent(PALET_EVENT));
 const DEBOUNCE_MS = 250;
 const UITKLAP_MAX_PX = 576; // 36rem: de breedte waarop het uitklapvenster niet verder groeit
+const VELD_MIN_PX = 440; // ZOEK-002: smaller is een geopend veld met resultaten niet meer goed te lezen
 const T = {
-  uk: { veld: 'Пошук у «Мій простір»…', open: 'Відкрити пошук (⌘K)', menu: 'Пошук у «Мій простір»', titel: 'Швидкий пошук', ph: 'Функція, сторінка, лист, файл…', zoekpagina: 'Перейти до пошуку', zoekpaginaTitel: 'Перейти до сторінки пошуку з поточним результатом', wisRecent: 'Очистити нещодавні', geenRecent: 'Тут з’являться ваші останні пошуки на цьому пристрої.',
+  uk: { veld: 'Пошук у «Мій простір»…', open: 'Відкрити пошук (⌘K)', menu: 'Пошук у «Мій простір»', titel: 'Швидкий пошук', ph: 'Функція, сторінка, лист, файл…', zoekpagina: 'Перейти до пошуку', zoekpaginaTitel: 'Перейти до сторінки пошуку з поточним результатом: там фільтри, сортування й усі знайдені, а не лише перші (Ctrl+Enter)', wisRecent: 'Очистити нещодавні', geenRecent: 'Тут з’являться ваші останні пошуки на цьому пристрої.',
     hint: (mac: boolean) => `Enter — шукати · ↑↓ — вибір · Esc — закрити · ${mac ? '⌘' : 'Ctrl'}+Enter — сторінка пошуку`,
     groepen: { recent: 'Нещодавні', suggesties: 'Підказки', resultaten: 'Результати' }, zoekt: 'Шукаємо…', gevonden: (n: number) => `Знайдено: ${n}`, geenResultaat: 'Нічого не знайдено', fout: 'Пошук не виконано' },
-  nl: { veld: 'Zoeken in «Mijn Ruimte»…', open: 'Zoeken openen (⌘K)', menu: 'Zoeken in «Mijn Ruimte»', titel: 'Snel zoeken', ph: 'Functie, pagina, e-mail, bestand…', zoekpagina: 'Naar zoeken', zoekpaginaTitel: 'Naar de zoekpagina met het huidige resultaat', wisRecent: 'Recent wissen', geenRecent: 'Hier verschijnen uw laatste zoekopdrachten op dit apparaat.',
+  nl: { veld: 'Zoeken in «Mijn Ruimte»…', open: 'Zoeken openen (⌘K)', menu: 'Zoeken in «Mijn Ruimte»', titel: 'Snel zoeken', ph: 'Functie, pagina, e-mail, bestand…', zoekpagina: 'Naar zoeken', zoekpaginaTitel: 'Naar de zoekpagina met het huidige resultaat: daar staan filters, sortering en alles wat gevonden is, niet alleen de eerste (Ctrl+Enter)', wisRecent: 'Recent wissen', geenRecent: 'Hier verschijnen uw laatste zoekopdrachten op dit apparaat.',
     hint: (mac: boolean) => `Enter — zoeken · ↑↓ — kiezen · Esc — sluiten · ${mac ? '⌘' : 'Ctrl'}+Enter — zoekpagina`,
     groepen: { recent: 'Recent', suggesties: 'Suggesties', resultaten: 'Resultaten' }, zoekt: 'Zoeken…', gevonden: (n: number) => `Gevonden: ${n}`, geenResultaat: 'Niets gevonden', fout: 'Zoeken lukte niet' },
 };
@@ -59,7 +67,7 @@ const sectieVan = (dienst: string): Categorie => (dienst === 'mail' ? 'mail' : d
 
 // Додаткові ключові слова для миттєвого пошуку 13 розділів центру облікового запису (uk + nl) з пріоритетом поточної сторінки.
 const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
-  personalization: 'огляд вигляд оформлення початкова overzicht uiterlijk sfeer start',
+  personalization: 'огляд вигляд оформлення початкова живий фон плями перелив overzicht uiterlijk sfeer start levende achtergrond vlekken',
   menu: 'бічна панель навігація док швидкий доступ zijbalk navigatie dock snelkoppelingen',
   themes: 'тема світла темна сливова палітра контраст licht donker pruim kleur contrast',
   languages: 'мова українська нідерландська переклад oekraiens nederlands vertaling',
@@ -69,7 +77,7 @@ const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
   identity: 'ідентичність технічний профіль звичайний простір псевдонім technisch profiel ruimte',
   account: 'обліковий запис фото світлина пошта видалення дані profielfoto gegevens verwijderen',
   sessions: 'сесії пристрої активні входи вийти оглядач apparaten aanmeldingen afmelden',
-  methods: 'способи входу ключ доступу google телеграм пароль sleutel telegram aanmelden',
+  methods: 'способи входу ключ доступу google телеграм вхід бот підтвердження пароль sleutel telegram aanmelden bot bevestiging',
   security: 'безпека захист двофакторна підтвердження сповіщення журналювання bescherming bevestiging',
   recovery: 'відновлення запасні коди доступ порятунок herstelcodes noodtoegang',
 };
@@ -81,7 +89,26 @@ export function ZoekMenuKnop({ lang, className = 'zk-menu-knop', voorOpenen, sne
   return <button type='button' ref={knopRef} className={className} aria-label={tekst} aria-keyshortcuts='Control+K Meta+K' aria-haspopup='dialog' title={tooltip ? undefined : tekst} data-tooltip={tooltip ? tekst : undefined} data-tooltip-placement={tooltip ? tooltipKant : undefined} data-zoek-trigger='menu' onClick={() => { voorOpenen?.(); openZoekPalet(); }}><Search aria-hidden='true' /></button>;
 }
 
-type Positie = { top: number; left: number; width: number };
+/** Plek van het veld in een laag (telefoon, zoekknop in het menu, «Макет»): verticaal op de knop, vast aan de rechter- of linkerrand van de
+ *  knop (`kant`/`x`), groeiend van de knopbreedte `van` naar `naar`. `h` = hoogte van de knop (het veld is even hoog, 0 = eigen hoogte). */
+type Positie = { top: number; kant: 'left' | 'right'; x: number; van: number; naar: number; h: number };
+/** Het veld OP ZIJN PLEK in de bovenbalk (computer): het groeit van de knopbreedte `van` naar `naar`, even hoog als de knop (`h`). */
+type Plek = { van: number; naar: number; h: number };
+
+/** ZOEK-002: waar een veld dat uit een knop groeit heen kan — vast aan de rand met de meeste ruimte, nooit buiten het beeld (8 px marge). */
+export const groeiPlek = (r: { left: number; right: number; width: number }, vw: number, doel: number): { kant: 'left' | 'right'; x: number; van: number; naar: number } => {
+  const naarLinks = Math.max(0, r.right - 8); const naarRechts = Math.max(0, vw - 8 - r.left);
+  if (naarLinks >= doel || naarLinks >= naarRechts) return { kant: 'right', x: Math.max(0, vw - r.right), van: r.width, naar: Math.max(r.width, Math.min(doel, naarLinks)) };
+  return { kant: 'left', x: Math.max(0, r.left), van: r.width, naar: Math.max(r.width, Math.min(doel, naarRechts)) };
+};
+/** ZOEK-002: hoe breed het veld op zijn plek in de bovenbalk mag worden — tot UITKLAP_MAX_PX, en normaal niet over het menu links
+ *  (`linksGrens`): extra = de ruimte tussen die grens en de linkerrand van de groep. Is die ruimte te klein om resultaten te lezen (menu
+ *  bovenaan als dock naast de groep), dan toch VELD_MIN_PX: dan schuift het veld tijdelijk over het einde van het dock (de groep ligt
+ *  erboven), maar nooit buiten het beeld (8 px). */
+export const veldDoel = (knopBreedte: number, groepLinks: number, linksGrens: number, max = UITKLAP_MAX_PX): number => {
+  const ruim = knopBreedte + Math.max(0, groepLinks - linksGrens), hard = knopBreedte + Math.max(0, groepLinks - 8);
+  return Math.round(Math.max(knopBreedte, Math.min(max, hard, Math.max(VELD_MIN_PX, ruim))));
+};
 /** Het huidige resultaat van het menu: de vraag (zonder «-woord»), de sectie waarin gezocht is, het antwoord van de server en de uit te sluiten woorden. */
 type MenuUitkomst = { q: string; cat: Categorie; a: ZoekUitkomst; uitsluit: string[] };
 type Stand = 'rust' | 'laden' | 'fout';
@@ -90,8 +117,11 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
   const t = T[lang]; const uid = useId();
   const [open, setOpen] = useState(false); const [q, setQ] = useState(''); const [server, setServer] = useState<ZoekSuggestie[]>([]); const [recent, setRecent] = useState<RecenteZoekopdracht[]>([]);
   const [uitkomst, setUitkomst] = useState<MenuUitkomst | null>(null); const [stand, setStand] = useState<Stand>('rust'); const [vers, setVers] = useState(0);
-  const [pos, setPos] = useState<Positie | null>(null);
+  const [pos, setPos] = useState<Positie | null>(null); const [plek, setPlek] = useState<Plek | null>(null);
+  // ZOEK-002: eerst op de knopbreedte tekenen, één frame later de doelbreedte → de overgang (CSS) laat het veld zichtbaar groeien.
+  const [gegroeid, setGegroeid] = useState<boolean>(false); // geen tweede open-stand: alleen de overgang
   const vorigeFocus = useRef<HTMLElement | null>(null); const anker = useRef<HTMLDivElement | null>(null); const paneel = useRef<HTMLDivElement | null>(null); const input = useRef<HTMLInputElement | null>(null);
+  const vanVeld = useRef(false);
   const direct = useRef(0); // > 0: de eerstvolgende zoekopdracht zonder wachttijd (Enter, een recente rij)
   const sectie = sectieVan(dienst);
   // Ruimte van de recente lijst (ORCH-001): vastgelegd bij het OPENEN, volgens de technische activering van dit tabblad; lezen, bewaren
@@ -101,27 +131,59 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
   const ruimte = useRef<RecentRuimte>('gebruiker');
   const doOpen = useCallback(() => {
     vorigeFocus.current = document.activeElement as HTMLElement | null;
+    // ZOEK-002: de veldknop zelf verdwijnt zolang het veld op zijn plek open is → bij het sluiten de (nieuwe) veldknop focussen, niet de eerste zoekknop van de pagina.
+    vanVeld.current = !!(vorigeFocus.current && anker.current?.contains(vorigeFocus.current));
     const st = techToestand();
     ruimte.current = recentRuimteVoor({ geladen: st.geladen, technisch: profielVan(st) === 'technisch' });
     setRecent(leesRecent(undefined, undefined, ruimte.current)); setOpen(true);
   }, []);
-  const doClose = useCallback(() => { setOpen(false); setQ(''); setServer([]); setUitkomst(null); setStand('rust'); window.setTimeout(() => { if (!focusTerug(vorigeFocus.current) && !focusTerug(document.querySelector<HTMLElement>(TERUG_ALS_KNOP_WEG))) document.body.focus(); }, 0); }, []);
+  const doClose = useCallback(() => { setOpen(false); setPlek(null); setPos(null); setGegroeid(false); setQ(''); setServer([]); setUitkomst(null); setStand('rust'); window.setTimeout(() => { if (!focusTerug(vorigeFocus.current) && !focusTerug(vanVeld.current ? anker.current?.querySelector<HTMLElement>('[data-zoek-trigger]') ?? null : null) && !focusTerug(document.querySelector<HTMLElement>(TERUG_ALS_KNOP_WEG))) document.body.focus(); }, 0); }, []);
 
-  // Positie van het uitklapvenster: op de plek van de veldknop (zoals Windows-zoeken), in het beeld gehouden. Het venster is
-  // geportaleerd naar body, dus de coördinaten zijn die van het beeld (ook met de technische band erboven).
+  // ZOEK-002. Twee manieren, één gedrag: het veld groeit UIT de knop.
+  //  • Computer, veldknop zichtbaar in de bovenbalk → OP DE PLEK (`plek`): de knop wordt het veld in dezelfde groep (geen portaal). De groep
+  //    staat rechtsboven vast (position:fixed; right), dus een breder veld schuift alleen wat links ervan staat (knop «Живий фон») mee naar
+  //    links; profielfoto en bel blijven waar ze zijn. Breedte: tot 36rem, niet over het menu links heen.
+  //  • Anders (telefoon, zoekknop in het menu, «Макет» met eigen bovenbalk) → laag (`pos`, portaal naar body) op de hoogte van de knop,
+  //    vast aan diens rechter- (of linker)rand; zonder zichtbare knop midden bovenaan.
   const meet = useCallback(() => {
     const vw = document.documentElement.clientWidth;
-    const breed = Math.min(UITKLAP_MAX_PX, vw - 16);
+    const knop = anker.current?.querySelector<HTMLElement>('[data-zoek-trigger]') || null;
     const eigen = anker.current && getComputedStyle(anker.current).visibility !== 'hidden' ? anker.current.getBoundingClientRect() : null;
+    if (!mobiel && !zonderKnop && eigen && eigen.width > 0) {
+      const groep = anker.current?.closest<HTMLElement>('.canonical-account-anchor')?.getBoundingClientRect() || eigen;
+      // Linkergrens = de rechterrand van wat links van de groep vast staat (het menu, als dat links staat), plus lucht.
+      let grens = 8;
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>('.canonical-sidebar'))) { const z = el.getBoundingClientRect(); if (z.width > 0 && z.right <= groep.left + 1) grens = Math.max(grens, z.right + 16); }
+      setPlek(p => {
+        // Tijdens het openstaan is de knop weg: de begin- en knopbreedte blijven die van het moment van openen.
+        const van = p?.van ?? (knop?.getBoundingClientRect().width || eigen.width); const h = p?.h ?? (knop?.getBoundingClientRect().height || eigen.height);
+        // Linkerrand van de groep als het veld nog knopbreed was: de huidige rand + wat het veld nu (ook midden in de overgang) breder is.
+        const nu = p && paneel.current ? paneel.current.getBoundingClientRect().width : van;
+        const naar = veldDoel(van, groep.left + (nu - van), grens);
+        return p && p.naar === naar ? p : { van, naar, h };
+      });
+      setPos(null); return;
+    }
+    const breed = Math.min(UITKLAP_MAX_PX, vw - 16);
+    // Nooit onder de technische band (die ligt boven #root): de bovenste plek is 8 px onder de bovenkant van #root.
+    const bovenMin = Math.max(8, (document.getElementById('root')?.getBoundingClientRect().top || 0) + 8);
+    const groepBoven = document.querySelector<HTMLElement>('.canonical-account-anchor')?.getBoundingClientRect();
+    const rij = groepBoven && groepBoven.width > 0 && groepBoven.top >= bovenMin - 8 ? Math.max(bovenMin, groepBoven.top) : bovenMin;
     const mqKnop = !mobiel && (!eigen || eigen.width === 0) ? document.querySelector<HTMLElement>('[data-zoek-trigger="maquette"]') : null;
     const r = eigen && eigen.width > 0 ? eigen : mqKnop?.getBoundingClientRect();
-    // Telefoon of zonder zichtbare veldknop (de knop staat in het menu): midden bovenaan, de volle breedte die past.
-    if (mobiel || zonderKnop || !r || r.width === 0) { setPos({ top: 8, left: Math.max(8, (vw - breed) / 2), width: mobiel ? vw - 16 : breed }); return; }
-    const width = Math.max(r.width, breed);
-    const left = Math.min(Math.max(8, r.left), Math.max(8, vw - width - 8));
-    setPos({ top: Math.max(8, r.top), left, width });
+    // Zonder zichtbare veldknop (de knop staat in het menu): midden bovenaan, de volle breedte die past.
+    if (zonderKnop || !r || r.width === 0) { setPos({ top: rij, kant: 'left', x: Math.max(8, (vw - breed) / 2), van: breed, naar: mobiel ? vw - 16 : breed, h: 0 }); setPlek(null); return; }
+    const g = groeiPlek(r, vw, mobiel ? vw - 16 : breed);
+    // Een knop die uit beeld gescrold is (de eigen bovenbalk van het «Макет» scrolt mee): het veld komt op de bovenste rij.
+    setPos(p => ({ top: r.top >= bovenMin ? r.top : rij, ...g, van: p?.van ?? g.van, h: p?.h ?? r.height }));
+    setPlek(null);
   }, [mobiel, zonderKnop]);
   useLayoutEffect(() => { if (open) meet(); }, [open, meet]);
+  useEffect(() => {
+    if (!open || !(plek || pos) || gegroeid) return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setGegroeid(true)));
+    return () => cancelAnimationFrame(id);
+  }, [open, plek, pos, gegroeid]);
   useEffect(() => {
     if (!open) return;
     // Scrollen BINNEN het menu (de lijst) verplaatst het venster niet: alleen scrollen van de pagina zelf meet opnieuw.
@@ -251,13 +313,21 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
     ? <button type='button' className={`zk-trigger-mobiel${open ? ' is-verborgen' : ''}`} aria-label={t.open} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} data-zoek-trigger='mobiel' onClick={doOpen}><Search aria-hidden='true' /></button>
     : <button type='button' className={`zk-trigger${open ? ' is-verborgen' : ''}`} aria-label={t.open} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} aria-haspopup='listbox' data-zoek-trigger='veld' onClick={doOpen}><Search aria-hidden='true' /><span className='zk-trigger-tekst'>{t.veld}</span><kbd aria-hidden='true'>{isMac() ? '⌘' : 'Ctrl'} K</kbd></button>;
 
+  const veld = (
+    <ZoekVeld lang={lang} value={q} onChange={setQ} onSubmit={zoekNu} onKies={kies} suggesties={rijen} placeholder={t.ph} label={t.titel} inputRef={input} autoFocus vast beschrijvingId={`${uid}-hint`} voet={voet}
+      rechts={<button type='button' className='zk-naar-pagina' data-zoek-naar-pagina='1' onMouseDown={e => e.preventDefault()} onClick={naarPagina} aria-label={t.zoekpaginaTitel} title={t.zoekpaginaTitel}><ArrowUpRight aria-hidden='true' /><span>{t.zoekpagina}</span></button>} />);
+  const opPlek = open && !!plek;
+  const groei = (p: { van: number; naar: number }) => (gegroeid ? p.naar : p.van);
+
   return (
     <>
-      {zonderKnop ? null : <div ref={anker} className={`zk-anker${open ? ' is-open' : ''}${mobiel ? ' is-mobiel' : ''}`}>{trigger}</div>}
-      {open && pos ? createPortal(
-        <div ref={paneel} className={`zk-uitklap${mobiel ? ' is-mobiel' : ''}`} style={{ top: pos.top, left: pos.left, width: pos.width }} data-zoek-palet='open' onKeyDownCapture={onKeyCapture}>
-          <ZoekVeld lang={lang} value={q} onChange={setQ} onSubmit={zoekNu} onKies={kies} suggesties={rijen} placeholder={t.ph} label={t.titel} inputRef={input} autoFocus vast beschrijvingId={`${uid}-hint`} voet={voet}
-            rechts={<button type='button' className='zk-naar-pagina' data-zoek-naar-pagina='1' onMouseDown={e => e.preventDefault()} onClick={naarPagina} aria-label={t.zoekpaginaTitel} title={t.zoekpaginaTitel}><ArrowUpRight aria-hidden='true' /><span>{t.zoekpagina}</span></button>} />
+      {zonderKnop ? null : <div ref={anker} className={`zk-anker${open ? ' is-open' : ''}${opPlek ? ' is-op-plek' : ''}${mobiel ? ' is-mobiel' : ''}`}>
+        {opPlek ? null : trigger}
+        {opPlek && plek ? <div ref={paneel} className='zk-uitklap is-veld is-op-plek' data-zoek-palet='open' data-gegroeid={gegroeid ? '1' : '0'} style={{ width: groei(plek), ['--zk-h' as string]: `${plek.h}px` }} onKeyDownCapture={onKeyCapture}>{veld}</div> : null}
+      </div>}
+      {open && pos && !plek ? createPortal(
+        <div ref={paneel} className={`zk-uitklap is-veld is-laag${mobiel ? ' is-mobiel' : ''}`} data-zoek-palet='open' data-gegroeid={gegroeid ? '1' : '0'} style={{ top: pos.top, [pos.kant]: pos.x, width: groei(pos), ['--zk-h' as string]: pos.h ? `${pos.h}px` : undefined }} onKeyDownCapture={onKeyCapture}>
+          {veld}
         </div>, document.body) : null}
     </>);
 }

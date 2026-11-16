@@ -311,7 +311,19 @@ export async function main(): Promise<number> {
       c.$('ontgrendelen-technisch').click(); await wacht();
       check('technisch vergrendeld: «Розблокувати на сайті» → ?ontgrendelen=technisch#extensie', c.tabs.at(-1) === 'https://mcp.tarasevych.com/agents?ontgrendelen=technisch#extensie');
       const geen = await laad('popup', status({ prive: 'vergrendeld', profielTab: null }));
-      check('actief tabblad niet op de site: profielregel zegt dat', /не на tarasevych\.com/.test(geen.$('profiel-tab').textContent));
+      // 0.9.4: het actieve tabblad is geen voorwaarde: neutrale tekst, geen «не на tarasevych.com», samenvatting niet amber.
+      check('0.9.4: geen site-tabblad open → «ШІ відкриє потрібну сам», geen «активна вкладка не на tarasevych.com»',
+        /ШІ відкриє потрібну сам/.test(geen.$('profiel-tab').textContent) && !/не на tarasevych\.com/.test(geen.$('profiel-tab').textContent), geen.$('profiel-tab').textContent);
+      const fon = await laad('options', { ...status({ prive: 'agent', profielTab: null }), siteTabs: 3 });
+      check('0.9.4: actief tabblad elders, 3 site-tabbladen op de achtergrond → «Відкрито сторінок tarasevych.com: 3 (працюють у фоні)»; samenvatting groen; tab-regel info',
+        /Відкрито сторінок tarasevych\.com: 3 \(працюють у фоні\)/.test(fon.$('profiel-tab').textContent) && fon.$('status-regel').getAttribute('data-niveau') === 'ok'
+        && (fon.$('toestand').children as El[]).some((li) => li.getAttribute('data-id') === 'tab' && li.getAttribute('data-stand') === 'info'),
+        `${fon.$('profiel-tab').textContent} | ${fon.$('status-regel').getAttribute('data-niveau')}`);
+      const zonderMail = await laad('options', { ...status({ prive: 'ontgrendeld', technisch: 'ontgrendeld' }), accountEmail: '' });
+      check('0.9.4: beide profielen gekoppeld, /self zonder e-mail → kop «Обліковий запис: підключено», nooit «не підключено» of «завантажується»',
+        /Обліковий запис: підключено$/.test(zonderMail.$('account').textContent) && !/не підключено|завантажується/.test(`${zonderMail.$('account').textContent} ${zonderMail.$('status-regel').textContent}`)
+        && (zonderMail.$('toestand').children as El[]).some((li) => li.getAttribute('data-id') === 'account' && li.getAttribute('data-stand') === 'ja'),
+        `${zonderMail.$('account').textContent} | ${zonderMail.$('status-regel').textContent}`);
       innerHtml.push(a.doc.innerHtmlPogingen, b.doc.innerHtmlPogingen, c.doc.innerHtmlPogingen);
     }
 

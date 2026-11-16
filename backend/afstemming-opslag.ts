@@ -22,7 +22,7 @@ export const IMPORTS = 'afstemming_import_v1';
 // Eigendom van afstemming-koppel.ts (B-deel); de namen staan hier zodat kern/overzicht ze READ-ONLY kan tellen.
 export const KOPPELINGEN = 'afstemming_koppelingen_v1';
 export const BESLUITEN = 'afstemming_besluiten_v1';
-export const RELEASES = 'afstemming_releases_v1';
+export const RELEASES = 'afstemming_release_v1';
 
 const LEES_PLAFOND = 20_000;
 export type Tweetekst = [string, string];

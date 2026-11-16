@@ -91,11 +91,18 @@ export interface RegisterRegel extends RegisterItem {
   basis?: string;
   /** Korte omschrijving (widgets: uitleg uit werkblad-indeling). */
   uitleg?: Tweetalig;
+  /**
+   * BIB-002 (15.11.2026): ярлик технічної сторінки, який людина з технічним доступом (власник або уповноважена особа) може
+   * поставити й на робочий стіл приватного простору. Це лише ДВЕРІ: ярлик не дає доступу й не показує технічних даних; клік веде
+   * на сторінку, де стоїть звичайна брама технічного профілю (TechPoort: перемикання простору, passkey). Технічні ВІДЖЕТИ
+   * (показують дані) лишаються тільки в технічному просторі.
+   * Snelkoppeling naar een technische pagina: ook op het privéwerkblad voor wie technische toegang heeft. Alleen een deur.
+   */
+  techDeur?: boolean;
 }
 
 const ALLE_APPARATEN: ApparaatKlasse[] = ['computer', 'tablet', 'telefoon'];
 const BEIDE: WerkbladRuimte[] = ['prive', 'technisch'];
-const TECH: WerkbladRuimte[] = ['technisch'];
 /** Ruwe rastermaat van v2 (kolom van 12 ≈ 100 px, rij 96 px) → logische px. */
 const KOLOM_PX = 100, RIJ_PX = 96;
 export const SNELKOPPELING_AFM = { standaard: { w: 96, h: 104 }, min: { w: 72, h: 80 }, max: { w: 192, h: 208 } } as const;
@@ -108,7 +115,7 @@ function dienstRegel(d: typeof DIENST_IDS[number]): RegisterRegel {
   const tech = TECH_DIENST(d);
   return {
     id: `svc:${d}`, kind: 'shortcut', dienst: d, route: `${def.doel}/${def.tab}`, titel: def.titel, icoon: def.icoon,
-    categorie: tech ? 'technisch' : 'dienst', ruimtes: tech ? TECH : BEIDE, beschikbaarheid: def.planned ? 'planned' : 'ready',
+    categorie: tech ? 'technisch' : 'dienst', ruimtes: BEIDE, ...(tech ? { techDeur: true } : {}), beschikbaarheid: def.planned ? 'planned' : 'ready',
     standaardAfm: { ...SNELKOPPELING_AFM.standaard }, minAfm: { ...SNELKOPPELING_AFM.min }, maxAfm: { ...SNELKOPPELING_AFM.max },
     apparaten: ALLE_APPARATEN, zoekwoorden: [d, def.titel.uk, def.titel.nl], accent: itemAccent(`svc:${d}`),
     ...(def.planned ? { reden: PLANNED_DIENST } : { doel: { dienst: def.doel, tab: def.tab } }),
@@ -121,7 +128,7 @@ function paginaRegel(d: string, p: string): RegisterRegel {
   const titel = { uk: serviceTabLabel(p, 'uk'), nl: serviceTabLabel(p, 'nl') };
   return {
     id: `pg:${d}/${p}`, kind: 'shortcut', dienst: d, route: `${d}/${p}`, titel, icoon: paginaIcoon(d, p),
-    categorie: tech ? 'technisch' : 'pagina', ruimtes: tech ? TECH : BEIDE, beschikbaarheid: 'ready',
+    categorie: tech ? 'technisch' : 'pagina', ruimtes: BEIDE, ...(tech ? { techDeur: true } : {}), beschikbaarheid: 'ready',
     standaardAfm: { ...SNELKOPPELING_AFM.standaard }, minAfm: { ...SNELKOPPELING_AFM.min }, maxAfm: { ...SNELKOPPELING_AFM.max },
     apparaten: ALLE_APPARATEN, zoekwoorden: [d, p, titel.uk, titel.nl, dienstTitel.uk, dienstTitel.nl], accent: itemAccent(`pg:${d}/${p}`),
     doel: { dienst: d as CanoniekeDienst, tab: p },
@@ -227,10 +234,18 @@ export type RegisterContext = {
   rechten?: RegisterRechten;
   /** Optioneel: diensten die deze mens nu heeft (bv. alleen zichtbare/gekoppelde). Ontbreekt = geen extra beperking. */
   diensten?: readonly string[];
+  /**
+   * BIB-002: має технічний доступ (технічний профіль, який дає власник; у технічному просторі завжди так). Відкриває «двері»
+   * (techDeur) у приватному просторі. Лише для вигляду — сервер і сторінка-ціль перевіряють права самі.
+   * Heeft technische toegang (een technisch profiel). Alleen weergave; de server en de doelpagina controleren zelf.
+   */
+  techToegang?: boolean;
 };
 export type Toestemming = { ok: true } | { ok: false; beschikbaarheid: Exclude<Beschikbaarheid, 'ready'>; reden: Tweetalig };
 
 const R_TECH: Tweetalig = { uk: 'Лише в технічному просторі (технічний профіль).', nl: 'Alleen in de technische ruimte (technisch profiel).' };
+const R_TECH_WIDGET: Tweetalig = { uk: 'Віджет показує технічні дані, тому живе лише на столі технічного простору.', nl: 'De widget toont technische gegevens en staat daarom alleen op het werkblad van de technische ruimte.' };
+const R_TECH_TOEGANG: Tweetalig = { uk: 'Потрібен технічний доступ — його надає власник сайту.', nl: 'Technische toegang nodig — die geeft de eigenaar van de site.' };
 const R_RECHT: Tweetalig = { uk: 'Немає права «api-platform» для цього розділу.', nl: 'Geen recht «api-platform» voor dit onderdeel.' };
 const R_DIENST: Tweetalig = { uk: 'Ця служба для вашого акаунта недоступна.', nl: 'Deze dienst is voor uw account niet beschikbaar.' };
 const R_RUIMTE: Tweetalig = { uk: 'Недоступно в цьому просторі.', nl: 'Niet beschikbaar in deze ruimte.' };
@@ -250,8 +265,11 @@ export function toegestaanVoor(item: RegisterRegel | undefined, ctx: RegisterCon
   if (!item) return { ok: false, beschikbaarheid: 'denied', reden: R_ONBEKEND };
   if (item.beschikbaarheid !== 'ready') return { ok: false, beschikbaarheid: item.beschikbaarheid, reden: item.reden ?? PLANNED_DIENST };
   if (item.legacy) return { ok: false, beschikbaarheid: 'denied', reden: R_LEGACY };
-  const tech = ctx.ruimte === 'technisch';
-  if (!item.ruimtes.includes(ctx.ruimte)) return { ok: false, beschikbaarheid: 'denied', reden: item.categorie === 'technisch' ? R_TECH : R_RUIMTE };
+  if (!item.ruimtes.includes(ctx.ruimte)) return { ok: false, beschikbaarheid: 'denied', reden: item.categorie === 'technisch' ? (item.kind === 'widget' ? R_TECH_WIDGET : R_TECH) : R_RUIMTE };
+  // У приватному просторі двері в технічну частину — лише для тих, хто має технічний доступ; клік однаково проходить браму профілю.
+  const deur = !!item.techDeur && ctx.ruimte === 'prive';
+  if (deur && !ctx.techToegang) return { ok: false, beschikbaarheid: 'denied', reden: R_TECH_TOEGANG };
+  const tech = ctx.ruimte === 'technisch' || deur;
   const diensten = [item.dienst, item.doel?.dienst].filter((d): d is string => !!d);
   for (const d of diensten) {
     if (!dienstToegestaanRegister(d, ctx.rechten, tech)) return { ok: false, beschikbaarheid: 'denied', reden: d === 'mcp' ? R_RECHT : R_TECH };
@@ -353,3 +371,16 @@ export const REGISTER_V3_HAKEN = Object.freeze({
   },
   singleton(itemId: string): boolean { return PER_ID.get(itemId)?.singleton === true; },
 });
+
+/** BIB-002: is dit canvasobject een deur naar een technische pagina (ook via een persoonlijke kopie usr: met zo'n basis)? */
+export const isTechDeur = (itemId: string, config?: Record<string, unknown>): boolean => registerItemVoorEntry(itemId, config)?.techDeur === true;
+
+/**
+ * BIB-002: haak voor iemand ZONDER technische toegang — deuren naar technische pagina's vallen van de privélaag (ook bij het lezen,
+ * zodat een ingetrokken technisch profiel de deuren meeneemt). Met toegang blijft de gewone haak. De server beslist met het
+ * technische profiel uit de database (backend/werkblad-v3.ts), niet met wat de browser zegt.
+ */
+export function zonderTechDeuren<H extends (itemId: string, kind: ItemSoort, ruimte: WerkbladRuimte, apparaat: ApparaatKlasse, config?: Record<string, unknown>) => boolean>(haak: H): H {
+  return ((itemId: string, kind: ItemSoort, ruimte: WerkbladRuimte, apparaat: ApparaatKlasse, config?: Record<string, unknown>) =>
+    !(ruimte === 'prive' && isTechDeur(itemId, config)) && haak(itemId, kind, ruimte, apparaat, config)) as H;
+}

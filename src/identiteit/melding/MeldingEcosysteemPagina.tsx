@@ -182,7 +182,7 @@ function maakVoorbeeldBijlagen(lang: 'uk' | 'nl'): MeldingBijlage[] {
       naam: 'contact-beheer.vcf',
       mime: 'text/vcard',
       grootteBytes: 148,
-      tekstVoorbeeld: 'BEGIN:VCARD\nFN:Pavlo Tarasevych\nORG:Mijn Ruimte\nEMAIL:tarasevych.pavlo@gmail.com\nEND:VCARD',
+      tekstVoorbeeld: 'BEGIN:VCARD\nFN:Olena Koval\nORG:Mijn Ruimte (Demo)\nEMAIL:olena.koval@example.test\nEND:VCARD',
       bronDienst: 'mail',
     },
     {

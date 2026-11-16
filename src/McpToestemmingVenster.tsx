@@ -209,7 +209,8 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
   }
 
   const busy = phase === 'deciding' || phase === 'redirecting';
-  const name = info?.clientName || 'Claude';
+  // AGENTSCHEIDING-001: nooit «Claude» als terugval — de naam komt van de server (weergaveNaam: agent van het connectorpad).
+  const name = info?.clientName || tr('ШІ-клієнт', 'AI-klant');
   const technischGroups: Array<{ id: string; Icon: typeof Eye; title: string; note?: string; items: string[] }> = [
     { id: 'read', Icon: Eye, title: tr('Читання', 'Lezen'), items: [
       tr('Поточний випуск сайту, список випусків і файли випуску (без секретів, ключів і бази даних)', 'De actieve release, de lijst van releases en bestanden van de release (zonder geheimen, sleutels en database)'),

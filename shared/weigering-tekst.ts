@@ -11,7 +11,7 @@
 export type Lang = 'uk' | 'nl';
 export type WeigeringRegel = { uk: string; nl: string; doenUk: string; doenNl: string };
 
-/** De bovengrens van de lichamen (server/platform/body-budget.ts) stuurt Retry-After: 5. Zonder getal uit het antwoord: dit. */
+/** De bovengrens van de lichamen (server/platform/tekst-budget.ts) stuurt Retry-After: 5. Zonder getal uit het antwoord: dit. */
 export const STANDAARD_WACHT_SECONDEN = 5;
 
 const secUk = (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'секунду' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'секунди' : 'секунд'}`;
@@ -26,7 +26,7 @@ export const ALLEEN_LEZEN: WeigeringRegel = Object.freeze({
   doenNl: 'Moet u kunnen wijzigen, vraag dan de eigenaar of een beheerder van de site uw rol aan te passen (Beheer → Gebruikers). De poging staat in het journaal.',
 });
 
-/** Grenzen van de lichamen (server/platform/body-budget.ts): het verzoek is NIET aangenomen, er is niets bewaard. */
+/** Grenzen van de lichamen (server/platform/tekst-budget.ts): het verzoek is NIET aangenomen, er is niets bewaard. */
 function lichaamRegel(code: string, s: number): WeigeringRegel | null {
   const doenUk = `Спробуйте за ${secUk(s)} — повторіть ту саму дію.`;
   const doenNl = `Probeer het over ${secNl(s)} opnieuw — herhaal dezelfde actie.`;

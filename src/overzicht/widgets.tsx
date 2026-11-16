@@ -180,6 +180,7 @@ function Uitrol({ ctx }: { ctx: WidgetCtx }) {
   const { o, lang } = ctx;
   return (
     <>
+      {o.uitrol.stand?.versie && <p className="ov-klein">{tr(lang, 'Поточна версія', 'Huidige versie')}: <span className="ov-mono">{o.uitrol.stand.versie}</span></p>}
       {o.uitrol.wacht > 0 && <a className="ov-banner" href={padVan('updates')}><Rocket aria-hidden="true" /> {getal(lang, o.uitrol.wacht)} {tr(lang, 'оновлення чекає вашого схвалення', 'update(s) wachten op uw goedkeuring')} →</a>}
       {o.uitrol.runs.length === 0 ? <Leeg>{tr(lang, 'Розгортань ще не було.', 'Er zijn nog geen uitrol-runs.')}</Leeg> : (
         <ul className="ov-lijst">

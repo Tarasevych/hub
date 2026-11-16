@@ -30,6 +30,8 @@ import '../agenten/agenten-kern-maquette.css';
 type Tr = (uk: string, nl: string) => string;
 export type V2ConsentInfo = {
   clientName: string; redirectHost: string; expiresAt: number; agent: AgentSlug; klant: string;
+  /** ANTISPOOF-001: klant volgens de naam die de klant zelf opgeeft, en of het terugkeeradres de identiteit bevestigt. */
+  klantGeclaimd?: string; geverifieerd?: boolean; redirectSoort?: 'web' | 'loopback' | 'app' | null;
   v2: {
     agent: AgentSlug; url: string; naam: string;
     vorige: { kanten: Kant[]; sleutels: string[] } | null;
@@ -67,7 +69,8 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
   const [over, setOver] = useState(Math.max(0, info.expiresAt - Date.now()));
   useEffect(() => { const t = window.setInterval(() => setOver(Math.max(0, info.expiresAt - Date.now())), 1000); return () => window.clearInterval(t); }, [info.expiresAt]);
   useEffect(() => { setSleutels((s) => schoon(s, kanten)); }, [kanten]);
-  const klantPast = info.klant === agent.klant;
+  // ANTISPOOF-001: vergelijk de BEWEERDE naam met de agent van het adres (info.klant is de agent zelf en past dus altijd).
+  const klantPast = (info.klantGeclaimd ?? info.klant) === agent.klant || info.klantGeclaimd === 'overig';
   const gekozen = schoon(sleutels, kanten);
   const risico = hoogsteRisico(gekozen);
 
@@ -133,11 +136,15 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
           <section className='v2-wizard-deel'>
             <dl className='v2-feiten'>
               <div><dt>{tr('Агент', 'Agent')}</dt><dd><b>{agent.naam}</b></dd></div>
-              <div><dt>{tr('Клієнт називає себе', 'Client noemt zich')}</dt><dd>{info.clientName}</dd></div>
+              <div><dt>{tr('Клієнт називає себе', 'Client noemt zich')}</dt><dd>{info.clientName || tr('(без назви)', '(zonder naam)')}</dd></div>
+              <div data-v2-identiteit={info.geverifieerd ? 'bevestigd' : 'onbevestigd'}><dt>{tr('Чи це справді він', 'Is het echt deze AI')}</dt><dd>{info.geverifieerd
+                ? <span title={tr(`Код доступу повернеться лише на адресу ${info.redirectHost}, що належить ${agent.naam}. Інша програма не отримає його, навіть якщо назветься так само.`, `De toegangscode gaat alleen terug naar ${info.redirectHost}, dat van ${agent.naam} is. Een ander programma krijgt hem niet, ook niet onder dezelfde naam.`)}><Check size={12} aria-hidden='true' /> {tr(`Підтверджено адресою ${info.redirectHost}`, `Bevestigd door het adres ${info.redirectHost}`)}</span>
+                : <span className='v2-let-kort'><TriangleAlert size={12} aria-hidden='true' /> {tr('Не підтверджено: це програма на комп’ютері, вона може назватися будь-як', 'Niet bevestigd: dit is een programma op de computer, het kan zich elke naam geven')}</span>}</dd></div>
               <div><dt>{tr('Після рішення повернетеся на', 'Na uw keuze terug naar')}</dt><dd><code>{info.redirectHost}</code></dd></div>
               <div><dt>{tr('Адреса конектора', 'Connectoradres')}</dt><dd><code>{v.url}</code></dd></div>
             </dl>
             {!klantPast ? <p className='v2-let' role='note'><TriangleAlert size={16} aria-hidden='true' />{tr(`Клієнт називає себе «${info.clientName}», а адреса — для ${agent.naam}. Якщо ви не підключали ${agent.naam} щойно, заборонити.`, `De client noemt zich «${info.clientName}», maar het adres is voor ${agent.naam}. Als u ${agent.naam} niet net koppelde: weigeren.`)}</p> : null}
+            {!info.geverifieerd ? <p className='v2-let' role='note' data-v2-onbevestigd=''><TriangleAlert size={16} aria-hidden='true' />{tr(`Сайт не може перевірити, що це справді ${agent.naam}: локальна програма чи застосунок може взяти будь-яку назву. Дозволяйте, лише якщо ви самі щойно запустили підключення ${agent.naam} на цьому комп’ютері. Доступ отримає саме ця програма, а не ${agent.naam} на інших пристроях.`, `De site kan niet nagaan dat dit echt ${agent.naam} is: een lokaal programma of een app kan elke naam aannemen. Sta alleen toe als u net zelf ${agent.naam} op deze computer koppelde. De toegang gaat naar precies dit programma, niet naar ${agent.naam} op andere apparaten.`)}</p> : null}
             <p className='v2-uitleg'>{tr('Ця адреса працює лише для цього агента: токен з неї не підійде іншому ШІ, а назви інструментів містять ім’я агента.', 'Dit adres werkt alleen voor deze agent: het token past bij geen andere AI en de namen van de hulpmiddelen bevatten de naam van de agent.')}</p>
           </section>
         ) : null}

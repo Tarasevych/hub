@@ -37,7 +37,9 @@ import {
   normaliseerProfiel,
   pasVensterMaatAan,
   prioriteitLabel,
+  schoonSvgTekst,
   standaardProfiel,
+  veiligeMeldingUrl,
   zonderGeheimen,
   type MeldingEcosysteemGebeurtenis,
   type RandRichting,
@@ -453,6 +455,74 @@ export async function main(): Promise<number> {
       locMetAi?.herhalingen === 3 &&
       locMetAi?.aiSamenvatting?.aanbieder === 'lokale-tolk' &&
       heeftArchiefLaatst,
+  );
+
+  // 7. Захист посилань, санітаризація SVG та пріоритет свіжих серверних оновлень
+  check(
+    '7a veiligeMeldingUrl і нормалізатори блокують небезпечні схеми посилань',
+    veiligeMeldingUrl('/instellingen?tab=melding') === '/instellingen?tab=melding' &&
+      veiligeMeldingUrl('#sectie') === '#sectie' &&
+      veiligeMeldingUrl('https://mail.tarasevych.com/inbox') === 'https://mail.tarasevych.com/inbox' &&
+      veiligeMeldingUrl('http://localhost:3000/test') === 'http://localhost:3000/test' &&
+      veiligeMeldingUrl('javascript:alert(1)') === undefined &&
+      veiligeMeldingUrl('JAVASCRIPT:void(0)') === undefined &&
+      veiligeMeldingUrl('data:text/html,<script>1</script>') === undefined &&
+      veiligeMeldingUrl('//extern.example/pad') === undefined &&
+      veiligeMeldingUrl('http://extern.example/pad') === undefined &&
+      veiligeMeldingUrl('file:///etc/passwd') === undefined &&
+      normaliseerBijlagen([{ naam: 'bad.pdf', url: 'javascript:alert(1)' }])[0].url === undefined &&
+      normaliseerActies([{ id: 'x', labelUk: 'Тест', soort: 'navigeer', href: 'data:text/html,xss' }])[0].href === undefined &&
+      interpreteerGebeurtenis({ id: 'xss-1', link: 'javascript:alert(9)' }, 'prive').meta.link === undefined,
+  );
+
+  const vuileSvg = '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><foreignObject><div>html</div></foreignObject><a xlink:href="javascript:alert(3)"><circle cx="10" cy="10" r="8" onclick="alert(4)"/></a></svg>';
+  const schoneSvg = schoonSvgTekst(vuileSvg);
+  check(
+    '7b schoonSvgTekst вирізає script, foreignObject, DOCTYPE/ENTITY, обробники подій та javascript:-посилання',
+    !schoneSvg.toLowerCase().includes('<script') &&
+      !schoneSvg.toLowerCase().includes('foreignobject') &&
+      !schoneSvg.toLowerCase().includes('doctype') &&
+      !schoneSvg.toLowerCase().includes('entity') &&
+      !schoneSvg.toLowerCase().includes('onload') &&
+      !schoneSvg.toLowerCase().includes('onclick') &&
+      !schoneSvg.toLowerCase().includes('javascript:') &&
+      schoneSvg.includes('<circle'),
+  );
+
+  const extraGeheimen = zonderGeheimen(
+    'cookie: session_abc=secretValue123456\naws=AKIAIOSFODNN7EXAMPLE\nbot=123456789:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPP12\nhttps://hub.tarasevych.com/?access_token=topsecret_999',
+  );
+  check(
+    '7c zonderGeheimen приховує cookie, AWS, Telegram bot-ключі та samenvatting локального аналізу',
+    !extraGeheimen.includes('secretValue123456') &&
+      !extraGeheimen.includes('AKIAIOSFODNN7EXAMPLE') &&
+      !extraGeheimen.includes('AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPP12') &&
+      !extraGeheimen.includes('topsecret_999') &&
+      !analyseUk.samenvatting.includes('AIzaSyDummySecretValue1234567890abcd') &&
+      !analyseUk.samenvatting.includes('mySecretToken1234567890'),
+  );
+
+  const versVanServer: MeldingEcosysteemGebeurtenis = {
+    ...interpreteerGebeurtenis({ id: 'srv-fresh', ruimte: 'prive', externeSleutel: 'fresh:1', titel: 'Оновлено сервером' }, 'prive'),
+    status: 'nieuw',
+    bijgewerktOp: nu,
+  };
+  const stroomMetOudeOverride = bouwUniformeStroom({
+    lang: 'uk',
+    ruimte: 'prive',
+    subdomeinNu: 'hub',
+    serverGebeurtenissen: [versVanServer],
+    paginaSignalen: [],
+    serverItems: [],
+    techItems: [],
+    localRows: [],
+    activityEvents: [],
+    activityRead: new Set(),
+    overrides: { 'fresh:1': { status: 'opgelost', op: nu - 10_000 } },
+  });
+  check(
+    '7d свіжіша серверна подія переважає старий локальний override',
+    stroomMetOudeOverride.find((x) => x.id === 'srv-fresh')?.status === 'nieuw',
   );
 
   return einde();

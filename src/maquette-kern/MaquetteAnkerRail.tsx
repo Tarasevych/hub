@@ -351,9 +351,42 @@ export function MaquetteAnkerRail({
   }, [opslagSleutel]);
 
   // Автоматично розкриваємо батьківські групи для активного елемента або позначки openStandaard.
+  // MAILANKER-001: лише коли змінився активний пункт або з'явилася нова група. Раніше це спрацьовувало на кожне
+  // відмальовування (масив items щоразу новий), тож групу з активним пунктом неможливо було згорнути — вона одразу відкривалася.
+  // Alleen bij een nieuw actief item of een nieuwe groep; anders klapte een groep met het actieve item meteen weer open.
+  const bekendeGroepenRef = useRef<Set<string> | null>(null);
+  const vorigActiefRef = useRef<string>(actief);
   useEffect(() => {
+    const alleGroepen = new Set<string>();
+    const nieuweGroepen: MaquetteAnkerItem[] = [];
+    const eerste = bekendeGroepenRef.current === null;
+    const loop = (lijst: ReadonlyArray<MaquetteAnkerItem>) => {
+      for (const item of lijst) {
+        if (!item.kinderen?.length) continue;
+        alleGroepen.add(item.id);
+        if (!eerste && !bekendeGroepenRef.current?.has(item.id)) nieuweGroepen.push(item);
+        loop(item.kinderen);
+      }
+    };
+    loop(items);
+    bekendeGroepenRef.current = alleGroepen;
+    const actiefGewijzigd = vorigActiefRef.current !== actief;
+    vorigActiefRef.current = actief;
+    if (eerste) return; // початковий стан уже враховано в useState
     const nodig = new Set<string>();
-    verzamelOpenGroepen(items, actief, nodig);
+    if (actiefGewijzigd) {
+      const loopActief = (lijst: ReadonlyArray<MaquetteAnkerItem>) => {
+        for (const item of lijst) {
+          if (!item.kinderen?.length) continue;
+          if (heeftActiefInTak(item, actief)) nodig.add(item.id);
+          loopActief(item.kinderen);
+        }
+      };
+      loopActief(items);
+    }
+    for (const groep of nieuweGroepen) {
+      if (groep.openStandaard || heeftActiefInTak(groep, actief)) nodig.add(groep.id);
+    }
     if (nodig.size === 0) return;
     setOpenGroepen((oud) => {
       let gewijzigd = false;
@@ -374,6 +407,18 @@ export function MaquetteAnkerRail({
   const toonAlsPil = isKlassiek && ingeklapt && !mobielOpen;
 
   const ankerPlekRef = useRef<HTMLDivElement>(null);
+  const lijstRef = useRef<HTMLDivElement>(null);
+  // ANKERS-002: довгий перелік прокручується всередині меню; активний пункт сам стає видимим (не ховається за нижнім краєм).
+  // Het actieve anker schuift binnen de lijst in beeld, ook als de lijst langer is dan het scherm.
+  useEffect(() => {
+    const lijst = lijstRef.current;
+    if (!lijst || lijst.scrollHeight <= lijst.clientHeight + 1) return;
+    const knop = lijst.querySelector<HTMLElement>('.is-actief');
+    if (!knop) return;
+    const l = lijst.getBoundingClientRect(), k = knop.getBoundingClientRect();
+    if (k.top < l.top + 8) lijst.scrollTop -= l.top + 8 - k.top;
+    else if (k.bottom > l.bottom - 8) lijst.scrollTop += k.bottom - (l.bottom - 8);
+  }, [actief, items.length]); // niet [items]: dat is bij elke render een nieuwe array en zou handmatig scrollen terugzetten
   const railRef = useRef<HTMLElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const grenzenCacheRef = useRef(new WeakMap<HTMLElement, string>());
@@ -916,7 +961,7 @@ export function MaquetteAnkerRail({
               </button>
             </div>
 
-            <div className="mq-rail-lijst">
+            <div className="mq-rail-lijst" ref={lijstRef}>
               {items.map((item, index) => renderItem(item, index, 0))}
             </div>
 

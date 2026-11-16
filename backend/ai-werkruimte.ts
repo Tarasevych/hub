@@ -34,6 +34,7 @@ import {
   filterHulpmiddelenVoorWerkruimte,
 } from '../shared/ai-ecosysteem';
 import { ecosysteemLade, leesWerkruimteEnContextVoorChat, type EcosysteemOpslag } from './ai-ecosysteem';
+import { leesGeheugenPakketVoorChat, pgStroomOpslag, type StroomOpslag } from './geheugen-stroom';
 
 /** Diensten waarvan dit scherm bereikbaar is: ai.* (het scherm zelf), mcp.* (de hub ernaast) en 'api' voor clients. */
 const DIENSTEN = ['ai', 'mcp', 'api'] as const;
@@ -141,6 +142,7 @@ export type WerkruimteDeps = {
   feiten?: (user: { id: string; email?: string }, recht: boolean) => Promise<Feiten>;
   chatDeps?: ChatDeps;
   ecosysteemOpslag?: EcosysteemOpslag;
+  geheugenOpslag?: StroomOpslag;
   /** Alleen voor tests: zonder teller. Standaard 20 verzoeken per minuut per account (de sleutel kost de gebruiker geld). */
   limiet?: (userId: string) => Promise<boolean>;
 };
@@ -202,11 +204,33 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
 
       let werkruimte = null as Awaited<ReturnType<typeof leesWerkruimteEnContextVoorChat>>['werkruimte'];
       let extraSystem = '';
-      if (werkruimteId || contextSleutels.length > 0) {
+      const metGeheugen = body.metGeheugen === true;
+      let geheugenAantal = 0;
+
+      if (werkruimteId || contextSleutels.length > 0 || metGeheugen) {
         const lade = await ecosysteemLade(p.user.id, ctx.body);
-        const geladen = await leesWerkruimteEnContextVoorChat(lade, werkruimteId, contextSleutels, deps.ecosysteemOpslag);
-        werkruimte = geladen.werkruimte;
-        extraSystem = bouwWerkruimteSysteemInstructie(werkruimte, geladen.contextItems);
+        if (werkruimteId || contextSleutels.length > 0) {
+          const geladen = await leesWerkruimteEnContextVoorChat(lade, werkruimteId, contextSleutels, deps.ecosysteemOpslag);
+          werkruimte = geladen.werkruimte;
+          extraSystem = bouwWerkruimteSysteemInstructie(werkruimte, geladen.contextItems);
+        }
+        if (metGeheugen) {
+          try {
+            const laatsteVraag = String(berichten[berichten.length - 1]?.content ?? '');
+            const gRes = await leesGeheugenPakketVoorChat(
+              lade,
+              laatsteVraag,
+              werkruimteId || undefined,
+              deps.geheugenOpslag ?? pgStroomOpslag,
+            );
+            geheugenAantal = gRes.pakket.items.length;
+            if (gRes.systeemPrompt) {
+              extraSystem = [extraSystem, gRes.systeemPrompt].filter(Boolean).join('\n\n');
+            }
+          } catch {
+            // Стрім пам’яті не блокує основну відповідь чату, якщо сховище ключів тимчасово закрите чи ще не перенесене.
+          }
+        }
       }
 
       const samengesteldeDeps: ChatDeps = {
@@ -232,8 +256,8 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
         if (uit.error === 'no_api_key') return error(WERKRUIMTE_FOUTEN.geenSleutel, 409);
         return error(aanbiederFout(uit.status), 502);
       }
-      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}) } }).catch(() => undefined);
-      return json({ ...uit, model, ...(werkruimte ? { werkruimteId: werkruimte.id } : {}) });
+      await auditToevoegen({ ownerId: p.user.id, action: 'owner.ai.werkruimte.chat', result: 'success', details: { model, stappen: uit.steps.map((s) => s.tool), ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) } }).catch(() => undefined);
+      return json({ ...uit, model, ...(werkruimte ? { werkruimteId: werkruimte.id } : {}), ...(metGeheugen ? { geheugenAantal } : {}) });
     }) as RouterMiddleware],
   };
 }

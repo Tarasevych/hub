@@ -60,8 +60,15 @@ export const codexCliOpdracht = (slug: AgentSlug) => `codex mcp add ${SERVER_NAA
 export const codexTomlConfig = (slug: AgentSlug) => `[mcp_servers.${SERVER_NAAM}]\nurl = "${agentUrl(slug)}"\n`;
 /** Gemini CLI: ~/.gemini/settings.json → mcpServers.<naam>.httpUrl (OAuth wordt automatisch ontdekt, RFC 9728). */
 export const geminiCliConfig = (slug: AgentSlug) => JSON.stringify({ mcpServers: { [SERVER_NAAM]: { httpUrl: agentUrl(slug) } } }, null, 2);
-/** Gewone mcp.json (Cursor, Windsurf en andere clients die een bestand lezen). */
+/** Gewone mcp.json (Cursor, Cline en andere clients die een bestand lezen). */
 export const mcpJsonConfig = (slug: AgentSlug) => JSON.stringify({ mcpServers: { [SERVER_NAAM]: { url: agentUrl(slug) } } }, null, 2);
+/** Windsurf (Cascade): ~/.codeium/windsurf/mcp_config.json → mcpServers.<naam>.serverUrl. */
+export const windsurfConfig = (slug: AgentSlug) => JSON.stringify({ mcpServers: { [SERVER_NAAM]: { serverUrl: agentUrl(slug) } } }, null, 2);
+/** Cline / Roo Code: cline_mcp_settings.json → mcpServers.<naam> з type: streamableHttp. */
+export const clineConfig = (slug: AgentSlug) => JSON.stringify({ mcpServers: { [SERVER_NAAM]: { type: 'streamableHttp', url: agentUrl(slug) } } }, null, 2);
+/** OpenCode: ~/.config/opencode/opencode.json → mcp.<naam> з type: remote та OAuth. */
+export const opencodeConfig = (slug: AgentSlug) => JSON.stringify({ $schema: 'https://opencode.ai/config.json', mcp: { [SERVER_NAAM]: { type: 'remote', url: agentUrl(slug), enabled: true, oauth: {} } } }, null, 2);
+export const opencodeCliOpdracht = (slug: AgentSlug) => `opencode mcp add ${SERVER_NAAM} --url ${agentUrl(slug)}`;
 
 export const CLAUDE_CONNECTORS_URL = 'https://claude.ai/settings/connectors';
 // ChatGPT (25.10.2026, nagekeken in developers.openai.com/api/docs/guides/developer-mode): het menu heet nu «Settings → Apps»,
@@ -196,6 +203,51 @@ export function recept(slug: AgentSlug): Recept {
       stappen: [
         [`У настільному застосунку AutoClaw (https://autoclaw.z.ai/) відкрийте налаштування MCP або виконайте скопійовану команду з адресою ${url}.`, `Open in de AutoClaw-desktopapp (https://autoclaw.z.ai/) de MCP-instellingen of voer de gekopieerde opdracht met het adres ${url} uit.`],
         ['Оберіть модель GLM-5.3-flashX-Legal (для правничої практики й дослівної перевірки договорів) або основну модель GLM для багатоагентної координації.', 'Kies het model GLM-5.3-flashX-Legal (voor de juridische praktijk en letterlijke contractcontrole) of het algemene GLM-model voor multi-agent-coördinatie.'],
+        DOZVIL, KLAAR,
+      ],
+    };
+    case 'windsurf': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'config', label: ['Скопіювати mcp_config.json для Windsurf', 'mcp_config.json voor Windsurf kopiëren'], kopieer: windsurfConfig(slug), uitleg: ['Windsurf (Cascade): вставте блок у ~/.codeium/windsurf/mcp_config.json або через Manage MCPs → View raw config.', 'Windsurf (Cascade): plak het blok in ~/.codeium/windsurf/mcp_config.json of via Manage MCPs → View raw config.'] },
+      ],
+      stappen: [
+        [`У редакторі Windsurf відкрийте панель Cascade → значок молотка (MCP) → Configure → вставте скопійований JSON з адресою ${url}.`, `Open in Windsurf het Cascade-paneel → hamerpictogram (MCP) → Configure → plak de gekopieerde JSON met het adres ${url}.`],
+        ['Натисніть Refresh біля сервера «mijn-ruimte» — Windsurf автоматично відкриє оглядач для OAuth-входу.', 'Klik op Refresh bij server «mijn-ruimte» — Windsurf opent vanzelf de browser voor OAuth-aanmelding.'],
+        DOZVIL, KLAAR,
+      ],
+    };
+    case 'cline': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'config', label: ['Скопіювати cline_mcp_settings.json для Cline', 'cline_mcp_settings.json voor Cline kopiëren'], kopieer: clineConfig(slug), uitleg: ['Cline / Roo Code у VS Code чи Cursor: конфігурація streamableHttp для власної адреси /cline.', 'Cline / Roo Code in VS Code of Cursor: streamableHttp-configuratie voor het eigen adres /cline.'] },
+      ],
+      stappen: [
+        [`У панелі Cline відкрийте MCP Servers → Configure → Configure MCP Servers → додайте блок у cline_mcp_settings.json (адреса ${url}).`, `Open in het Cline-paneel MCP Servers → Configure → Configure MCP Servers → voeg het blok toe in cline_mcp_settings.json (adres ${url}).`],
+        ['Збережіть файл і підтвердьте підключення через OAuth або вкажіть резервний токен у заголовку Authorization, якщо розширення працює в автономному середовищі.', 'Bewaar het bestand en bevestig via OAuth of gebruik een reservetoken in de Authorization-kop als de extensie zonder browser draait.'],
+        DOZVIL, KLAAR,
+      ],
+    };
+    case 'devin': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'config', label: ['Скопіювати налаштування MCP для Devin', 'MCP-configuratie voor Devin kopiëren'], kopieer: mcpJsonConfig(slug), uitleg: ['Cognition Devin (app.devin.ai): Settings → MCP Servers → Add MCP Server (HTTP / OAuth).', 'Cognition Devin (app.devin.ai): Settings → MCP Servers → Add MCP Server (HTTP / OAuth).'] },
+      ],
+      stappen: [
+        [`На сторінці Devin (https://app.devin.ai) перейдіть до Settings → MCP Servers → Add MCP Server і вкажіть URL ${url}.`, `Ga op Devin (https://app.devin.ai) naar Settings → MCP Servers → Add MCP Server en vul URL ${url} in.`],
+        ['Увімкніть OAuth-авторизацію (Dynamic Client Registration) та запустіть перевірку з’єднання.', 'Schakel OAuth-autorisatie (Dynamic Client Registration) in en start de verbindingscontrole.'],
+        DOZVIL, KLAAR,
+      ],
+    };
+    case 'opencode': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'opdracht', label: ['Скопіювати команду для OpenCode', 'Opdracht voor OpenCode kopiëren'], kopieer: opencodeCliOpdracht(slug), uitleg: ['Термінал OpenCode: одна команда підключає віддалений сервер /opencode з автовиявленням OAuth.', 'OpenCode-terminal: één opdracht koppelt de externe server /opencode met automatische OAuth-ontdekking.'] },
+        { soort: 'config', label: ['Скопіювати opencode.json', 'opencode.json kopiëren'], kopieer: opencodeConfig(slug), uitleg: ['Альтернатива: додайте секцію mcp.mijn-ruimte до ~/.config/opencode/opencode.json або opencode.json у проєкті.', 'Alternatief: voeg sectie mcp.mijn-ruimte toe aan ~/.config/opencode/opencode.json of opencode.json in uw project.'] },
+      ],
+      stappen: [
+        [`Виконайте в терміналі скопійовану команду або додайте блок із адресою ${url} до ~/.config/opencode/opencode.json.`, `Voer in de terminal de gekopieerde opdracht uit of voeg het blok met het adres ${url} toe aan ~/.config/opencode/opencode.json.`],
+        ['Запустіть opencode auth або першу дію MCP — клієнт відкриє оглядач для OAuth-підтвердження.', 'Voer opencode auth uit of start de eerste MCP-actie — de client opent de browser voor OAuth-bevestiging.'],
         DOZVIL, KLAAR,
       ],
     };

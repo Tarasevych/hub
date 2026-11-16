@@ -23,7 +23,7 @@ type AdminRole='super_admin'|'security_admin'|'apps_admin'|'directory_admin'|'su
 const ADMIN_TABS=['overview','access','ai','apps','devices','sso','directories','roles','diagnostics','audit','contour','updates']as const;
 type AdminTabId=typeof ADMIN_TABS[number];
 const isAdminTab=(waarde:string):waarde is AdminTabId=>(ADMIN_TABS as readonly string[]).includes(waarde);
-const ADMIN_MODAAL_SELECTOR='.admin-key-dialog, .ov-modal-schaduw, .il-modal, .aj-schaduw, .venster-achter, .venster:not([hidden]), .aib-keuze, [data-mq-laag-open="1"], dialog[open], [role="dialog"][aria-modal="true"]';
+const ADMIN_MODAAL_SELECTOR='.admin-key-dialog, .ov-modal-schaduw, .ut-modal-schaduw, .ut-vr-scrim, .il-modal, .aj-schaduw, .venster-achter, .venster:not([hidden]), .aib-keuze, [data-mq-laag-open="1"], dialog[open], [role="dialog"][aria-modal="true"]';
 const ADMIN_RAIL_TITEL_PER_TAB:Record<AdminTabId,readonly[string,string]>={
   overview:['Розділи огляду','Onderdelen van het overzicht'],
   access:['Учасники й доступ','Deelnemers en toegang'],

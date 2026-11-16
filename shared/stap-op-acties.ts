@@ -37,3 +37,28 @@ export function actieVoorPad(pad: string): string {
   for (const [re, actie] of ACTIE_PER_PAD) if (re.test(p)) return actie;
   return 'onbekend';
 }
+
+// STAPOP-OMSCHR-001 (15.11.2026): voor de tekst van het venster «Підтвердіть доступ» (shared/stap-op-beschrijving.ts). Hier, en niet
+// daar, zodat src/platform/stap-op.ts (hoofdbundel) het register met alle teksten niet hoeft mee te laden.
+/** Відомі поля запиту, з яких складається опис (не весь запит: у ньому можуть бути секрети, напр. значення ключа). */
+export type VerzoekKern = { actie?: string; agent?: string; termijn?: string; minuten?: number; unblock?: boolean; aan?: boolean; verbinding?: boolean; alleVerbindingen?: boolean; eindOp?: boolean };
+
+/** Vist uit het verzoek alleen de velden die het venster nodig heeft; vrije tekst wordt niet doorgegeven. */
+export function verzoekKern(body: unknown): VerzoekKern {
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+  const uit: VerzoekKern = {};
+  if (typeof b.actie === 'string' && /^[a-z][a-z-]{1,30}$/.test(b.actie)) uit.actie = b.actie;
+  if (typeof b.agent === 'string' && /^[a-z][a-z0-9-]{1,30}$/.test(b.agent)) uit.agent = b.agent;
+  if (typeof b.termijn === 'string' && /^[a-z][a-z-]{1,30}$/.test(b.termijn)) uit.termijn = b.termijn;
+  const m = Number(b.minuten);
+  if (b.minuten !== undefined && b.minuten !== null && Number.isFinite(m) && m > 0 && m <= 100_000) uit.minuten = Math.round(m);
+  if (b.unblock === true) uit.unblock = true;
+  if (typeof b.aan === 'boolean') uit.aan = b.aan;
+  // Alleen OF er een bepaalde koppeling (token) genoemd is. '*' en 'agent:<slug>' zijn geen koppeling: de server neemt dan de regel
+  // van de agent (AGENTSCHEIDING-001); «alle AI's» alleen via het expliciete alleVerbindingen === true.
+  if (typeof b.verbindingId === 'string' && b.verbindingId.trim() && b.verbindingId.trim() !== '*' && !b.verbindingId.trim().startsWith('agent:')) uit.verbinding = true;
+  if (b.alleVerbindingen === true) uit.alleVerbindingen = true;
+  if (b.eindOp !== undefined && b.eindOp !== null && b.eindOp !== '') uit.eindOp = true;
+  return uit;
+}
+

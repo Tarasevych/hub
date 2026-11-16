@@ -2,7 +2,7 @@
 // Перетворює сигнали з будь-якого піддомену, серверного журналу, ПК-агента, розширення оглядача,
 // сторінки (інформаційної смуги) чи пошти/сховища/ШІ в єдину структуровану подію екосистеми з діями, контекстом і вкладеннями.
 
-import { normaliseerActies, normaliseerBijlagen, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
+import { normaliseerActies, normaliseerBijlagen, veiligeMeldingUrl, type MeldingActie, type MeldingBijlage, type MeldingEcosysteemGebeurtenis, type MeldingKanaal, type MeldingPrioriteit, type MeldingSubdomein, type RuimteType, SUBDOMEINEN } from './model';
 
 export type RuweBronGebeurtenis = {
   id?: string;
@@ -71,13 +71,14 @@ export function berekenPrioriteit(soort = '', ernst = '', kanaal: MeldingKanaal 
 
 export function bouwStandaardActies(subdomein: MeldingSubdomein, kanaal: MeldingKanaal, link?: string, bijlagenCount = 0): MeldingActie[] {
   const acties: MeldingActie[] = [];
-  if (link) {
+  const veiligeLink = veiligeMeldingUrl(link, 500);
+  if (veiligeLink) {
     acties.push({
       id: 'open-link',
       labelUk: 'Відкрити на сторінці',
       labelNl: 'Openen op de pagina',
       soort: 'navigeer',
-      href: link,
+      href: veiligeLink,
     });
   } else {
     acties.push({
@@ -125,14 +126,25 @@ export function bouwStandaardActies(subdomein: MeldingSubdomein, kanaal: Melding
 export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallback: RuimteType = 'prive'): MeldingEcosysteemGebeurtenis {
   const nu = Number(invoer.aangemaaktOp) || Date.now();
   const ruimte: RuimteType = invoer.ruimte === 'technisch' ? 'technisch' : ruimteFallback;
-  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', invoer.link || '', 'hub');
+  const veiligeLink = veiligeMeldingUrl(invoer.link, 500);
+  const subdomein = invoer.subdomein ?? herkenSubdomein(invoer.bron || '', veiligeLink || '', 'hub');
   const kanaal = invoer.kanaal ?? herkenKanaal(invoer.bron || '', invoer.soort || '', subdomein);
   const prioriteit = berekenPrioriteit(invoer.soort || '', invoer.ernst || '', kanaal);
   const bijlagen = normaliseerBijlagen(invoer.bijlagen);
   const eigenActies = normaliseerActies(invoer.acties);
-  const acties = eigenActies.length ? eigenActies : bouwStandaardActies(subdomein, kanaal, invoer.link, bijlagen.length);
+  const acties = eigenActies.length ? eigenActies : bouwStandaardActies(subdomein, kanaal, veiligeLink, bijlagen.length);
   const titel = String(invoer.titel || '').trim() || 'Подія системи / Systeemgebeurtenis';
   const externeSleutel = String(invoer.externeSleutel || invoer.id || '').trim().slice(0, 180);
+  const schoonMeta = (() => {
+    const base: Record<string, unknown> = invoer.meta && typeof invoer.meta === 'object' ? { ...invoer.meta } : {};
+    if ('link' in base) {
+      const mLink = veiligeMeldingUrl(base.link, 500);
+      if (mLink) base.link = mLink;
+      else delete base.link;
+    }
+    if (veiligeLink) base.link = veiligeLink;
+    return base;
+  })();
 
   return {
     id: String(invoer.id || externeSleutel || `geb-${nu}-${Math.random().toString(36).slice(2, 8)}`),
@@ -151,7 +163,7 @@ export function interpreteerGebeurtenis(invoer: RuweBronGebeurtenis, ruimteFallb
     uitgesteldTot: null,
     bijlagen,
     acties,
-    meta: { ...(invoer.meta || {}), ...(invoer.link ? { link: invoer.link } : {}) },
+    meta: schoonMeta,
     aiSamenvatting: null,
     aangemaaktOp: nu,
     bijgewerktOp: nu,

@@ -282,12 +282,11 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-sc
   box-shadow: none;
 }
 
-html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-pagination-selection-dock:not(:empty) {
-  padding: 4px 12px;
-  border: 1px solid var(--mq-rand);
+/* MAILDOK-001: без підкладки на всю ширину — пігулки за розміром вмісту.
+   Geen paneel over de hele breedte — pillen op inhoudsbreedte. */
+html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > :is(.mail-category-pager, .mail-selection-strip) {
   border-radius: 16px;
   background: var(--mq-oppervlak);
-  box-shadow: var(--mq-schaduw-zacht);
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .mail-selection-split-control {
@@ -899,8 +898,8 @@ html.palet-maquette[data-maquette-stijl="klassiek"] :is(
     padding: 2px 3px;
   }
 
-  html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-pagination-selection-dock:not(:empty) {
-    padding: 4px 8px;
+  html.palet-maquette[data-maquette-stijl="klassiek"] .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > :is(.mail-category-pager, .mail-selection-strip) {
+    border-radius: 14px;
   }
 
   html.palet-maquette[data-maquette-stijl="klassiek"] .mail-layered-controls {

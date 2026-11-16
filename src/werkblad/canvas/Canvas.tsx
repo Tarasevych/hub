@@ -9,7 +9,7 @@
 //   9000       contextmenu
 //   9100       statusbalk (opslaan / fout / 409)
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ApparaatKlasse, CanvasLayout, DesktopEntry } from '../../../shared/werkblad-v3-types';
+import { WERKBLAD_V3_LIMIETEN, type ApparaatKlasse, type CanvasLayout, type DesktopEntry } from '../../../shared/werkblad-v3-types';
 import * as K from './kern';
 import { useContainerBreedte, usePointerGestures, type Actief } from './hooks';
 import './canvas.css';
@@ -166,8 +166,51 @@ export function Canvas(p: CanvasProps) {
     }
   };
 
+  // ── Hoogte van het veld (VELD-001): ручка знизу + «Прибрати порожнє» ──
+  // Buiten de instelmodus: alleen wat de blokken innemen (geen lege staart). In de instelmodus: de gekozen hoogte (canvasHeight),
+  // nooit lager dan de blokken. Tijdens het slepen van de ручка leeft de hoogte in `veldLive` (logisch px); bij loslaten één commit.
+  const [veldLive, zetVeldLive] = useState<number | null>(null);
+  const veldSleep = useRef<{ pointerId: number; y0: number; h0: number } | null>(null);
+  const veldOpDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (!p.editMode || e.button > 0) return;
+    e.preventDefault(); e.stopPropagation(); spoelToetsen();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* al los */ }
+    veldSleep.current = { pointerId: e.pointerId, y0: e.clientY, h0: K.benodigdeHoogte(werkRef.current) };
+    zetVeldLive(veldSleep.current.h0);
+  };
+  const veldOpMove = (e: React.PointerEvent<HTMLElement>) => {
+    const s = veldSleep.current; if (!s || s.pointerId !== e.pointerId) return;
+    const doel = s.h0 + (e.clientY - s.y0) / schaalRef.current;
+    zetVeldLive(Math.round(K.klem(doel, K.inhoudHoogte(werkRef.current), WERKBLAD_V3_LIMIETEN.maxCanvas)));
+  };
+  const veldOpEinde = (e: React.PointerEvent<HTMLElement>, annuleren = false) => {
+    const s = veldSleep.current; if (!s || s.pointerId !== e.pointerId) return;
+    veldSleep.current = null;
+    try { if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* al los */ }
+    const h = veldLive; zetVeldLive(null);
+    if (annuleren || h === null) return;
+    const nieuw = K.zetVeldHoogte(werkRef.current, h);
+    if (nieuw !== werkRef.current) voerUit(nieuw, T.veld.hoogte(nieuw.canvasHeight));
+    else if (h <= K.inhoudHoogte(werkRef.current)) zeg(T.veld.minimum);
+  };
+  const veldOpToets = (e: React.KeyboardEvent<HTMLElement>) => {
+    const huidig = K.benodigdeHoogte(werkRef.current), stap = K.VELD_STAP * (e.shiftKey ? 5 : 1);
+    const doel = e.key === 'ArrowDown' ? huidig + stap : e.key === 'ArrowUp' ? huidig - stap : e.key === 'Home' ? 0
+      : e.key === 'PageDown' ? huidig + K.VELD_STAP * 10 : e.key === 'PageUp' ? huidig - K.VELD_STAP * 10 : null;
+    if (doel === null) return;
+    e.preventDefault(); e.stopPropagation();
+    const nieuw = K.zetVeldHoogte(werkRef.current, doel);
+    if (nieuw === werkRef.current) { zeg(T.veld.minimum); return; }
+    if (!toetsBasis.current) toetsBasis.current = werkRef.current;
+    zetWerk(nieuw); werkRef.current = nieuw; zeg(T.veld.hoogte(nieuw.canvasHeight));
+    clearTimeout(toetsTimer.current); toetsTimer.current = window.setTimeout(spoelToetsen, TOETS_RUST_MS);
+  };
+  const veldPassend = () => { const n = K.veldPassend(werkRef.current); if (n === werkRef.current) { zeg(T.veld.passendNiets); return; } voerUit(n, T.veld.hoogte(n.canvasHeight)); };
+  const veldHoogte = veldLive ?? (p.editMode ? K.benodigdeHoogte(werk) : K.inhoudHoogte(werk));
+  const legeStaart = K.heeftLegeStaart(werk);
+
   // Open menu: het canvas groeit mee zodat geen menu-item buiten beeld of onder de rand valt (7 × 44 px + marge).
-  const hoogte = Math.max(K.benodigdeHoogte(werk) * schaal, a ? (a.g.live.y + a.g.live.h + 24) * schaal : 0, menu ? menu.y + 7 * 44 + 24 : 0);
+  const hoogte = Math.max(veldHoogte * schaal, a ? (a.g.live.y + a.g.live.h + 24) * schaal : 0, menu ? menu.y + 7 * 44 + 24 : 0);
   const helpId = useMemo(() => `wbc-hulp-${Math.random().toString(36).slice(2, 8)}`, []);
   const zichtbaar = werk.items.filter((e) => !e.parent);
   const menuItem = menu ? K.zoek(werk, menu.id) : undefined;
@@ -220,6 +263,19 @@ export function Canvas(p: CanvasProps) {
           <span>{T.status[st]}</span>
           {st === 'error' && p.onRetry && <button type="button" onClick={p.onRetry}>{T.opnieuwProberen}</button>}
           {st === 'conflict' && p.onReload && <button type="button" onClick={p.onReload}>{T.herladen}</button>}
+        </div>
+      )}
+      {p.editMode && (
+        <div className={`wbc-veld${veldLive !== null ? ' wbc-veld-actief' : ''}`} data-wbc-veld="" onClick={(e) => e.stopPropagation()}>
+          <span className="wbc-veld-greep" role="separator" aria-orientation="horizontal" tabIndex={0}
+            aria-label={T.veld.greep} aria-valuemin={K.inhoudHoogte(werk)} aria-valuemax={WERKBLAD_V3_LIMIETEN.maxCanvas} aria-valuenow={Math.round(veldHoogte)}
+            aria-valuetext={T.veld.hoogte(Math.round(veldHoogte))} title={T.veld.tip} data-wbc-veld-greep=""
+            onPointerDown={veldOpDown} onPointerMove={veldOpMove} onPointerUp={(e) => veldOpEinde(e)} onPointerCancel={(e) => veldOpEinde(e, true)}
+            onKeyDown={veldOpToets} onBlur={() => spoelToetsen()}>
+            <span className="wbc-veld-streep" aria-hidden="true" />
+          </span>
+          <button type="button" className="wbc-veld-passend" data-wbc-veld-passend="" aria-disabled={!legeStaart || undefined}
+            title={legeStaart ? T.veld.passendTip : T.veld.passendNiets} onClick={veldPassend}>{T.veld.passend}</button>
         </div>
       )}
       <div className="wbc-sr" aria-live="polite" aria-atomic="true">{melding}</div>

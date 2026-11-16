@@ -2,7 +2,7 @@
 // Alle routes zijn POST met de gebruikelijke sessie-body ({service:'api', ...}), zoals de overige /api/owner/api-platform/*.
 import { error, json, rateLimit } from '../server/platform';
 import { auditLijst, auditToevoegen } from '../server/platform/audit';
-import { SITE_RUIS, siteEventsFromAudit } from './site-activiteit';
+import { aiBron, SITE_RUIS, siteEventsFromAudit } from './site-activiteit';
 import { GEEN_RECHT, heeftApiRecht, weigerCode } from './api-recht';
 import { approveCommand, CommandRefused, rejectCommand, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { geheimVerzoek, geheimVerzoekenVan, haalTicket, maakTicket, vergeetTicket, verzoekPubliek } from './apps-overdracht';
@@ -23,6 +23,7 @@ import { meldingenLade } from './meldingen-ruimte';
 import { meld } from './melder';
 import { TECHNISCHE_ACTIE, activiteitenVanSfeer, sfeerVanActiviteit } from '../shared/meldingen-soorten';
 import { V2_OPTIES } from '../shared/connector-v2/catalogus';
+import { veiligeWebUrl } from '../shared/adres-controle';
 
 /** 23.10.2026 (sfeer): interne hulpmiddelen die UITSLUITEND aan de beheerkant van de koppeling bestaan (catalogus v2: kanten = ['beheer']).
  *  Hun wachtrij-aanroepen (app.connector_tool_calls kent geen ruimte) zijn dus altijd technisch; een hulpmiddel van beide kanten blijft
@@ -137,6 +138,20 @@ async function agentSelf(token: string) {
   // 0.6: ruimte = het slot van deze koppeling (migratie van een enkele 0.5-koppeling); techRecht = mag dit account een technisch slot hebben
   // (de extensie toont de kaart «Технічний профіль» alleen dan of als dat slot al gekoppeld is). Geen andere persoonsgegevens.
   return json({ name: agent.name, enabled: agent.browser_enabled === true, active: armed, capabilities: enabledTypes(agent.policy), ruimte: ruimteOf(agent.ruimte), techRecht: await heeftTechProfiel(agent.user_id) });
+}
+
+/** Очищує список додатків від небезпечних схем URL (javascript:/data:/vbscript:/file:), повернутих агентом. */
+export function schoonAppLijst(rawApps: unknown): unknown[] {
+  if (!Array.isArray(rawApps)) return [];
+  return rawApps.map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const r = item as Record<string, unknown>;
+    return {
+      ...r,
+      url: veiligeWebUrl(r.url, { max: 500, alleHttp: true }) ?? '',
+      localUrl: veiligeWebUrl(r.localUrl, { max: 500, lokaalHttp: true }) ?? '',
+    };
+  });
 }
 
 export function createAgentRoutes(deps: Deps) {
@@ -323,8 +338,8 @@ export function createAgentRoutes(deps: Deps) {
       const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
       const alles = [
         ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', platform: r.platform || '', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ruimte: ruimteOf(r.ruimte), ...(r.pad ? { doel: String(r.pad) } : {}), ...(r.fout && r.status === 'failed' ? { reden: String(r.fout) } : {}) })),
-        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: aanvragerNaam(r), status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
-        ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
+        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: aiBron({ agent: r.agent, client: aanvragerNaam(r) }), kind: 'tool', type: r.tool, subject: aanvragerNaam(r), status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
+        ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: aiBron({ agent: g.agent, client: g.clientName }), kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
         ...siteEventsFromAudit(audit),
       ].map((e) => ({ ...e, sfeer: sfeerVanActiviteit(e) }));
       const events = activiteitenVanSfeer(alles, lade.ruimte).map((e) => { const { ruimte: _r, ...rest } = e as typeof e & { ruimte?: unknown }; return rest; }).sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 140);
@@ -474,7 +489,9 @@ export function createAgentRoutes(deps: Deps) {
         try {
           const { command } = await submitCommand(a, auth.user.id, 'apps.list', {}, { aanvrager: SITE_AANVRAGER });
           const klaar = (await waitForCommand(auth.user.id, command.id, 20_000)) ?? command;
-          if (klaar.status === 'succeeded') return { ...basis, lijst: ((klaar.result?.data as { apps?: unknown[] } | undefined)?.apps ?? []) };
+          if (klaar.status === 'succeeded') {
+            return { ...basis, lijst: schoonAppLijst((klaar.result?.data as { apps?: unknown[] } | undefined)?.apps) };
+          }
           return { ...basis, fout: klaar.status === 'pending_approval' ? 'WACHT_OP_GOEDKEURING' : String(klaar.result?.error ?? klaar.status).slice(0, 200) };
         } catch (err) { if (err instanceof CommandRefused) return { ...basis, fout: err.code }; throw err; }
       }));

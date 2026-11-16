@@ -2,7 +2,7 @@
 // Порівняти»». Oorspronkelijk = de brief zoals hij kwam (met al zijn opmaak, altijd bereikbaar); Переклад = de bestaande vertaling op de
 // plaats zelf (src/mail/AiVertalingBalk.tsx doet het verzoek); Порівняти = de tabel per alinea (src/mail/VergelijkTabel.tsx).
 // Zonder privé-agent met mail.read: alleen «Оригінал» kan, en dat staat erbij — er wordt niets weggestuurd.
-import { Languages, LoaderCircle } from 'lucide-react';
+import { Languages, LoaderCircle, X } from 'lucide-react';
 import { useId } from 'react';
 import { taalLabel } from '../../shared/ai-vertaling';
 import './ai-blok.css';
@@ -18,6 +18,8 @@ type Props = {
   bezig: boolean;
   /** «Перекладено … рушієм …» staat al op de plaat boven de tekst; hier alleen de talen. */
   onModus: (m: VertaalModus) => void;
+  /** STROOK-001: ✕ — verbergt alleen de strook voor deze brief (src/mail/stroken-sluiten.ts); de weergave blijft. */
+  onSluit?: () => void;
 };
 
 const KEUZES: Array<{ id: VertaalModus; uk: string; nl: string }> = [
@@ -26,7 +28,7 @@ const KEUZES: Array<{ id: VertaalModus; uk: string; nl: string }> = [
   { id: 'vergelijk', uk: 'Порівняти', nl: 'Vergelijken' },
 ];
 
-export default function VertaalStrook({ lang, modus, bronTaal, doelTaal, kan, bezig, onModus }: Props) {
+export default function VertaalStrook({ lang, modus, bronTaal, doelTaal, kan, bezig, onModus, onSluit }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const id = useId();
   return (
@@ -44,6 +46,7 @@ export default function VertaalStrook({ lang, modus, bronTaal, doelTaal, kan, be
         ))}
       </span>
       {bezig && <LoaderCircle className='spin vertaal-strook-bezig' aria-label={t('Перекладаємо…', 'Bezig met vertalen…')} />}
+      {onSluit && <button type='button' className='mail-strook-sluit' data-strook-sluit='taal' aria-label={t('Сховати смугу мови для цього листа', 'Taalstrook verbergen voor dit bericht')} title={t('Сховати смугу для цього листа. Лист лишиться в поточному вигляді (оригінал, переклад чи порівняння). Повернути смугу — кнопка з літерами в шапці листа, поруч з ⓘ.', 'Verbergt de strook voor dit bericht. Het bericht blijft in de huidige weergave (origineel, vertaling of vergelijking). Terughalen — de knop met letters in de kop van het bericht, naast ⓘ.')} onClick={onSluit}><X aria-hidden='true' /></button>}
       {!kan && <small className='vertaal-strook-zonder'>{t('Переклад потребує ШІ-агента («Доступ ШІ»); без нього лист нікуди не надсилається.', 'Vertalen vraagt een AI-agent («AI-toegang»); zonder agent gaat het bericht nergens heen.')}</small>}
     </div>
   );

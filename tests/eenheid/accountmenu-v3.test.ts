@@ -54,13 +54,14 @@ export async function main(): Promise<number> {
 
   // 3. Модель В гортання палітр по колу
   const reeksZonderViolet: string[] = [];
+  // ACCENT-001: у колі лише палітри (6 без violet); відтінки — окремий акцент облікового запису.
   let p = PALET_KEUZES_INFO[0]!.id;
-  for (let i = 0; i < PALET_KEUZES_INFO.length; i++) {
+  for (let i = 0; i < 7; i++) {
     reeksZonderViolet.push(p);
     p = volgendePaletKeuze(p, false);
   }
   check('Модель В: поза простором ШІ палітри гортаються по колу без violet і повертаються на початок', !reeksZonderViolet.includes('violet') && reeksZonderViolet[0] === 'kleur' && reeksZonderViolet[reeksZonderViolet.length - 1] === 'kleur');
-  check('Модель В: у просторі ШІ violet входить у коло перемикання', volgendePaletKeuze('puur', true) === 'violet' && volgendePaletKeuze('violet', true) === 'blauw');
+  check('Модель В: у просторі ШІ violet входить у коло перемикання', volgendePaletKeuze('puur', true) === 'violet' && volgendePaletKeuze('violet', true) === 'kleur' && !reeksZonderViolet.includes('blauw'));
   check('колір піктограми палітри відповідає обраному тону', paletIcoonKleur('blauw', 'hub', false).startsWith('#') && paletIcoonKleur('oranje', 'hub', true).startsWith('#'));
 
   // 4. Перевірка компонента, мобільного поверхневого вікна та інтеграції з оболонкою сайту

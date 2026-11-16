@@ -6,6 +6,7 @@
 html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b1220);--ut-line:var(--line,#263041);--ut-text:var(--text,#e5e7eb);--ut-muted:var(--muted,#94a3b8);
   --ut-ok:var(--ok);--ut-ok-bg:var(--ok-zacht);--ut-warn:var(--warn);--ut-warn-bg:var(--warn-zacht);--ut-err:var(--fout);--ut-err-bg:var(--fout-zacht);--ut-info:var(--info);--ut-info-bg:var(--info-zacht);--ut-term-bg:#060a13}
 .ut-root *{box-sizing:border-box}
+.ut-portaal{display:contents}
 .ut-root h1,.ut-root h2,.ut-root h3,.ut-root p{margin:0}
 .ut-mono,.ut-root code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
 .ut-root code{overflow-wrap:anywhere}
