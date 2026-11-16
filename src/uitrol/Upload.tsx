@@ -18,6 +18,7 @@ import { meldAfbreking } from './poging-melden';
 import { vereistenControleren } from './vereisten-client';
 import type { VereistenAntwoord } from '../../shared/uitrol-vereisten';
 import Voorcontrole from './Voorcontrole';
+import RodeVlaggen, { rodeVlaggen } from './RodeVlaggen';
 import Vereisten from './Vereisten';
 import { commitWeergave } from '../../shared/bron-commit';
 import { herkenBestand, type Pictogram, type Soort } from './bestandssoort';
@@ -74,7 +75,7 @@ function Tegel({ Icoon, pict, label, waarde, mono = false, kopieer }: { Icoon: L
 
 type Props = {
   lang: Lang; context: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; kanPasskey: boolean;
-  doe: (sleutel: string, run: () => Promise<string | void>) => Promise<void>; laden: () => Promise<void>; goedkeurenId: (id: string) => void;
+  doe: (sleutel: string, run: () => Promise<string | void>) => Promise<void>; laden: () => Promise<void>; goedkeurenId: (id: string, risicoBevestigd?: boolean) => void;
   onFlow: (f: Flow) => void; onNieuwId: (id: string) => void; naarLive: () => void;
 };
 
@@ -112,6 +113,9 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const mijnGrant = data.voorbereiders.find((g) => g.status === 'actief' && g.soort === 'account' && !!data.ik && g.onderwerp === data.ik.id);
 
   const nieuw = useMemo(() => data.voorstellen.find((v) => v.id === nieuwId), [data.voorstellen, nieuwId]);
+  // SEC-PAKKET-001: rode vlaggen vragen een eigen bevestiging vóór de passkey (червоні прапорці — окреме підтвердження).
+  const vlaggenNieuw = rodeVlaggen(nieuw?.voorcontrole);
+  const [rvBevestigd, setRvBevestigd] = useState('');
   const hervatbaar = useMemo(() => (analyse && bestand && !analyse.info.problemen.length
     ? data.voorstellen.find((v) => v.status === 'uploaden' && v.versie === analyse.info.versie && v.sha256 === analyse.sha256 && v.bytes === bestand.size) : undefined), [data.voorstellen, analyse, bestand]);
   const onvoltooid = data.voorstellen.filter((v) => v.status === 'uploaden' && v.id !== hervatbaar?.id);
@@ -452,8 +456,9 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
           <li><Undo2 aria-hidden='true' />{tr(lang, 'Ще 30 хвилин працює окрема сторожова служба root: якщо сайт «ляже» пізніше — вона сама відкотить версію, навіть коли вас немає поруч.', 'Nog 30 minuten bewaakt een aparte root-dienst de site: valt hij later alsnog om, dan draait ze zelf terug — ook als u er niet bent.')}</li>
           <li><AlertTriangle aria-hidden='true' />{tr(lang, 'Міграції бази при відкаті не відкочуються — тому сайт показує попередження про руйнівні міграції.', 'Databasemigraties worden bij terugdraaien niet teruggedraaid — daarom waarschuwt de site voor ingrijpende migraties.')}</li>
         </ul></details>
+      {nieuw.status === 'wacht-op-goedkeuring' && vlaggenNieuw && <RodeVlaggen lang={lang} id={nieuw.id} vlaggen={vlaggenNieuw} bevestigd={rvBevestigd === nieuw.id} onBevestig={(b) => setRvBevestigd(b ? nieuw.id : '')} disabled={!!busy} />}
       {nieuw.status === 'wacht-op-goedkeuring' && <div className='ut-acties'>
-        <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!klaar || !kanPasskey || !!busy || (nieuw.voorcontrole ? !nieuw.voorcontrole.ok : false)} onClick={() => goedkeurenId(nieuw.id)}><Fingerprint aria-hidden='true' />{busy === `ok-${nieuw.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити (passkey)', 'Goedkeuren en installeren (passkey)')}</button>
+        <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!klaar || !kanPasskey || !!busy || (nieuw.voorcontrole ? !nieuw.voorcontrole.ok : false) || (!!vlaggenNieuw && rvBevestigd !== nieuw.id)} onClick={() => goedkeurenId(nieuw.id, vlaggenNieuw ? true : undefined)}><Fingerprint aria-hidden='true' />{busy === `ok-${nieuw.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити (passkey)', 'Goedkeuren en installeren (passkey)')}</button>
         <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => annuleren(nieuw.id)}><X aria-hidden='true' />{tr(lang, 'Скасувати пакет', 'Pakket annuleren')}</button>
       </div>}
       {nieuw.status === 'wacht-op-goedkeuring' && !klaar && <p className='ut-hint'>{tr(lang, 'Щоб схвалити, налаштуйте passkey у вкладці «Налаштування». Пакет чекатиме до 7 днів.', 'Stel een passkey in via het tabblad «Instellingen» om goed te keuren. Het pakket wacht tot 7 dagen.')}</p>}

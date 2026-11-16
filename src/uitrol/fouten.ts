@@ -17,6 +17,7 @@ const FOUTEN: Record<string, [string, string]> = {
   EERSTE_VIA_SSH: ['Перший passkey підтверджується лише через SSH-команду.', 'De eerste passkey wordt alleen met de SSH-opdracht bevestigd.'],
   UITDAGING_ONGELDIG: ['Запит застарів або вже використаний. Спробуйте ще раз.', 'Het verzoek is verlopen of al gebruikt. Probeer het opnieuw.'],
   STATUS_ONGELDIG: ['Стан оновлення змінився. Оновіть сторінку.', 'De status van de update is gewijzigd. Vernieuw de pagina.'],
+  RISICO_NIET_BEVESTIGD: ['Пакет має червоні прапорці: перегляньте їх і поставте позначку «Я переглянув ці зміни» перед схваленням.', 'Het pakket heeft rode vlaggen: bekijk ze en zet het vinkje «Ik heb deze wijzigingen bekeken» vóór het goedkeuren.'],
   PAKKET_GEWIJZIGD: ['Пакет змінився після завантаження — схвалення скасовано.', 'Het pakket is na het uploaden gewijzigd — goedkeuring geannuleerd.'],
   NotAllowedError: ['Підтвердження passkey скасовано або час вийшов.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken.'],
   InvalidStateError: ['Цей passkey уже зареєстровано.', 'Deze passkey is al geregistreerd.'],

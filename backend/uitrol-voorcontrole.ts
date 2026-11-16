@@ -31,6 +31,7 @@ const run = promisify(execFile);
 import { bronCommit } from '../shared/bron-commit';
 import { pakketGeheimInhoud, pakketGeheimNaam, pakketTekstBestand } from '../shared/geheim-patronen';
 import { beoordeelToegepasteMigraties } from '../shared/uitrol-vereisten';
+import { risicoVlaggen } from './uitrol-risico';
 export type Niveau = 'ok' | 'waarschuwing' | 'fout';
 export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[] };
 export type PakketMeta = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string;
@@ -190,9 +191,9 @@ const SQL_RISICO: Array<[RegExp, string, string]> = [
 
 /** UITROL-001: de proef vóór het uploaden (backend/uitrol-vereisten.ts → proefVoorArchief), met per migratie de SHA-256 van de geprobeerde SQL. */
 export type ProefVoorControle = { id: string; ok: boolean; status: string; sqlSha256: ReadonlyMap<string, string> };
-export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle>; proef?: ProefVoorControle | null }): Promise<VoorcontroleUitkomst> {
+export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle>; proef?: ProefVoorControle | null; geinstalleerd?: string | null }): Promise<VoorcontroleUitkomst> {
   const controles: Controle[] = [];
-  const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : 12) } : {}) }); };
+  const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : id === 'risico' ? 40 : 12) } : {}) }); };
   const meta: PakketMeta = { auteur: '', agent: '', samenvatting: '', bestanden: 0, bytesUitgepakt: 0, commit: '', bovenmap: '' };
   let werk = '';
   try {
@@ -346,7 +347,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
 
     // ---- 6. migraties
     const mig = alle.map((f) => f.replace(/\\/g, '/')).filter((f) => /^migrations\/[^/]+\.sql$/.test(f)).sort();
-    const migFout: string[] = []; const migNamen: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = []; const nieuwSha = new Map<string, string>();
+    const migFout: string[] = []; const migNamen: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = []; const nieuwSha = new Map<string, string>(); const nieuwSql = new Map<string, string>();
     for (const f of mig) {
       const naam = path.basename(f, '.sql');
       if (!/^\d{4}_[a-z0-9_]+$/.test(naam) && naam !== 'rechten') { if (naam !== 'rechten') migFout.push(`ongeldige naam: ${naam}`); continue; }
@@ -361,6 +362,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
         if (!inhoud) { migFout.push(`niet leesbaar als gewoon bestand: ${naam}`); continue; }
         const ruw = inhoud.toString('utf8');
         nieuwSha.set(naam, createHash('sha256').update(ruw, 'utf8').digest('hex'));
+        nieuwSql.set(naam, ruw);
         const sql = ruw.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
         for (const [re, , nl] of SQL_RISICO) if (re.test(sql)) risico.push(`${naam}: ${nl}`);
       }
@@ -425,6 +427,15 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     // Een gevonden geheim BLOKKEERT de uitrol; een waarschuwing werd na verloop van tijd genegeerd.
     if (gevonden.length) voeg('geheimen', 'fout', 'Встановлення заблоковано: у пакеті знайдено схожий на справжній ключ, токен або файл із обліковими даними. Приберіть його з коду, замініть ключ (він уже міг потрапити до чужих рук) і зберіть пакет знову.', 'Installatie geblokkeerd: het pakket bevat iets dat op een echte sleutel, token of bestand met inloggegevens lijkt. Haal het uit de code, vervang de sleutel (die kan al zijn uitgelekt) en bouw het pakket opnieuw.', gevonden);
     else voeg('geheimen', 'ok', 'Секретів не знайдено (приватні ключі, токени й ключі доступу 60 шаблонів для понад 45 сервісів, .env, файли з обліковими даними).', 'Geen geheimen gevonden (privésleutels, tokens en toegangssleutels: 60 patronen voor meer dan 45 diensten, .env, bestanden met inloggegevens).');
+
+    // ---- 7b. SEC-PAKKET-001: rode vlaggen — wat de meeste macht over de server geeft, vergeleken met de GEÏNSTALLEERDE release
+    // (backend/uitrol-risico.ts). Een vlag blokkeert niet, maar de goedkeuring vraagt dan een aparte bevestiging (site én server).
+    // Червоні прапорці: зміни з найбільшою владою над сервером; схвалення тоді вимагає окремого підтвердження.
+    if (opties.geinstalleerd !== undefined) {
+      const r = await risicoVlaggen({ bron, pakketBestanden: alle, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql });
+      if (r.vlaggen.length) voeg('risico', 'waarschuwing', `Червоні прапорці: ${r.vlaggen.length}. Ці зміни дають найбільшу владу над сервером (root, залежності, права в базі). Перегляньте їх — перед схваленням потрібне окреме підтвердження.`, `Rode vlaggen: ${r.vlaggen.length}. Deze wijzigingen geven de meeste macht over de server (root, afhankelijkheden, rechten in de database). Bekijk ze — vóór het goedkeuren is een aparte bevestiging nodig.`, r.vlaggen);
+      else voeg('risico', 'ok', 'Червоних прапорців немає: файли root, залежності npm, процеси GitHub і права в базі не змінено порівняно з встановленою версією.', 'Geen rode vlaggen: root-bestanden, npm-afhankelijkheden, GitHub-werkstromen en databaserechten zijn niet gewijzigd t.o.v. de geïnstalleerde versie.');
+    }
 
     // ---- 8. tests van de voorbereider (informatief): uit het voorstel (MCP-weg), en anders uit het bestand TESTRESULTATEN
     // in het pakket zelf (JSON {geslaagd, mislukt, samenvatting}; deploy/uitrol/maak-voorstelpakket.sh schrijft het mee).

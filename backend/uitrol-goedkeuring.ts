@@ -31,6 +31,7 @@ import { ruimteOf } from '../shared/ai-ruimte';
 import { V2_AGENTEN, isAgentSlug } from '../shared/connector-v2/agenten';
 import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
+import { geinstalleerdeRelease, vraagtRisicoBevestiging } from './uitrol-risico';
 import { VereistenFout, proefAanvragen, proefVoorArchief, standaardOmgeving, vereistenStand, vereistenStarten } from './uitrol-vereisten';
 import { uitrolArchiefToken } from './uitrol-github';
 import { releaseInfo } from './uitgave-info';
@@ -396,7 +397,7 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   try { archiefToken = await uitrolArchiefToken(grant.accountId); } catch { /* Geen kluis: een publiek dossier kan nog bevestigd worden. */ }
   // UITROL-001: de proef van vóór het uploaden (zelfde sha256) wordt aan dit archief gebonden: de SQL in het archief moet gelijk zijn aan de geprobeerde.
   const proef = proefVoorArchief(String(row.sha256));
-  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null, archiefToken, proef });
+  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null, archiefToken, proef, geinstalleerd: geinstalleerdeRelease() });
   // De beschrijving komt uit het pakket zelf (SAMENVATTING): wat de voorbereider bij het begin opgaf, is niet leidend.
   const beschrijving = vc.meta.samenvatting.slice(0, 8000);
   if (!vc.resultaat.ok) {
@@ -604,7 +605,7 @@ export const assertieOpties = (uitdaging: string, b: Awaited<ReturnType<typeof l
 
 // ------------------------------------------------------------------------------------------------ goedkeuren / afwijzen (eigenaar)
 type Eigenaar = { id: string; email?: string };
-export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown) {
+export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown, risicoBevestigd?: unknown) {
   if (!(await schakelaarAan())) fout('PASSKEY_GOEDKEURING_UIT', 409);
   const b = await leesSleutels();
   if (!b.sleutels.length) fout('GEEN_PASSKEY', 409);
@@ -613,13 +614,15 @@ export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown)
   const v = rows[0];
   if (!v) fout('NIET_GEVONDEN', 404);
   if (v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  // SEC-PAKKET-001: rode vlaggen vragen een aparte bevestiging, al vóór de passkey-vraag (червоні прапорці — окреме підтвердження).
+  if (vraagtRisicoBevestiging(v.voorcontrole) && risicoBevestigd !== true) fout('RISICO_NIET_BEVESTIGD', 409);
   const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
   if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   const u = await uitdagingMaken(eigenaar.id, 'goedkeuren', String(v.id), { voorstelId: String(v.id), versie: String(v.versie), sha256: String(v.sha256) });
   return { uitdagingId: u.id, verloopt: u.verloopt, publicKey: assertieOpties(u.uitdaging, b), voorstel: { id: String(v.id), versie: String(v.versie), sha256: String(v.sha256) } };
 }
 
-export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitdagingId?: unknown; assertie?: unknown }) {
+export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitdagingId?: unknown; assertie?: unknown; risicoBevestigd?: unknown }) {
   const assertie = assertieUit(input.assertie);
   const u = await uitdagingVerbruiken(eigenaar.id, input.uitdagingId, 'goedkeuren');
   if (u.onderwerp !== String(input.id || '')) fout('UITDAGING_ONGELDIG', 403);
@@ -627,6 +630,8 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   const { rows } = await sys().query('SELECT * FROM app.uitrol_voorstellen WHERE id = $1', [u.onderwerp]);
   const v = rows[0];
   if (!v || v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  const risicoVraag = vraagtRisicoBevestiging(v.voorcontrole);
+  if (risicoVraag && input.risicoBevestigd !== true) fout('RISICO_NIET_BEVESTIGD', 409);
   const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
   if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   // Opnieuw uitrekenen uit de HUIDIGE gegevens: een gewijzigd voorstel (andere sha/versie) past niet meer bij de challenge.
@@ -649,7 +654,7 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   await rename(tmp, path.join(inbox, naam));
   await writeFile(path.join(inbox, 'aanvraag'), `${new Date().toISOString()} ${v.versie}\n`, { mode: 0o640 });
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'goedgekeurd', beslist_op = now(), beslist_door = $2, bijgewerkt_op = now() WHERE id = $1`, [String(v.id), eigenaar.email || eigenaar.id]);
-  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label) });
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label), ...(risicoVraag ? { rodeVlaggenBevestigd: (v.voorcontrole?.controles?.find((c: { id: string }) => c.id === 'risico')?.details?.length ?? 0) } : {}) });
   await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(v.id), 'goedgekeurd', eigenaar.id)).catch(() => undefined);
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
@@ -994,7 +999,7 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/termijn': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantTermijn(wie(auth), body(ctx.body).id, body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],
-    'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id))],
+    'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id, body(ctx.body).risicoBevestigd))],
     'POST /api/owner/uitrol/voorstel/goedkeuren': [eigenaar({}, async (ctx, auth) => {
       const limiet = await rateLimit(`uitrol-goedkeuren:${auth.user.id}`, 10, 600);
       if (!limiet.ok) fout('RATE_LIMITED', 429);

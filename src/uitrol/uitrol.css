@@ -234,6 +234,19 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ut-form input[type=number]{width:72px}
 .ut-reden-veld{flex-basis:100%;display:grid;gap:6px;padding:10px;border:1px solid var(--ut-warn);border-radius:10px}
+/* SEC-PAKKET-001: rode vlaggen vóór de goedkeuring — een zachte rode tint, compact; details ingeklapt. Червоні прапорці перед схваленням. */
+.ut-rode-vlaggen{display:grid;gap:8px;margin:10px 0;padding:10px 12px;border:1px solid var(--ut-err);border-radius:12px;background:var(--ut-err-bg)}
+.ut-rode-vlaggen[data-bevestigd]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-rv-kop{display:flex;align-items:center;gap:8px;margin:0;color:var(--ut-err)}
+.ut-rode-vlaggen[data-bevestigd] .ut-rv-kop{color:var(--ut-warn)}
+.ut-rv-kop svg{width:18px;height:18px;flex:none}
+.ut-rode-vlaggen summary{cursor:pointer;font-size:.88rem;color:var(--ut-muted)}
+.ut-rv-lijst{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;max-height:260px;overflow:auto}
+.ut-rv-lijst li{display:flex;gap:8px;align-items:baseline;min-width:0;font-size:.84rem}
+.ut-rv-lijst code{overflow-wrap:anywhere;min-width:0}
+.ut-rv-soort{flex:none;padding:1px 7px;border-radius:999px;background:var(--ut-bg);border:1px solid var(--ut-line);font-size:.74rem}
+.ut-rv-bevestig{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.ut-rv-bevestig input{width:18px;height:18px;flex:none}
 .ut-reden-veld textarea{width:100%;resize:vertical}
 .ut-pakket{border:1px solid var(--ut-line);border-radius:12px;padding:14px;display:grid;gap:10px;background:var(--ut-bg2)}
 .ut-problemen{margin:0;padding-left:20px;display:grid;gap:4px;color:var(--ut-err)}

@@ -354,7 +354,11 @@ async function appTests(basis: string, check: Check) {
   const oud = { a: process.env.UITROL_VOORSTEL_DIR, b: process.env.GOEDKEUR_INBOX, c: process.env.GOEDKEUR_SLEUTELS, d: process.env.MCP_RECHTEN_PAD, e: process.env.OPDRACHT_STATUS_DIR };
   Object.assign(process.env, { UITROL_VOORSTEL_DIR: voorstelDir, GOEDKEUR_INBOX: o.inbox, GOEDKEUR_SLEUTELS: o.sleutels, MCP_RECHTEN_PAD: o.rechten, OPDRACHT_STATUS_DIR: o.statusDir });
   // De voorcontrole vergelijkt met de actieve versie (releaseInfo): een eigen, oude release in een tijdelijke map.
-  { const rel = join(o.dir, 'actieve-release'); mkdirSync(join(rel, 'dist'), { recursive: true }); writeFileSync(join(rel, 'UITROL-VERSIE'), '20200101-000000\n'); process.env.DIST_DIR = join(rel, 'dist'); (await import('../../backend/uitgave-info'))._resetReleaseInfo(); }
+  { const rel = join(o.dir, 'actieve-release'); mkdirSync(join(rel, 'dist'), { recursive: true }); writeFileSync(join(rel, 'UITROL-VERSIE'), '20200101-000000\n');
+    // SEC-PAKKET-001: de geïnstalleerde release bevat dezelfde root-bestanden en package.json als de testpakketten → geen rode vlaggen.
+    mkdirSync(join(rel, 'deploy'), { recursive: true }); writeFileSync(join(rel, 'deploy/installeer-app.sh'), '#!/bin/bash\necho "ECHTE INSTALLER MAG IN DE TEST NIET DRAAIEN"; exit 99\n');
+    writeFileSync(join(rel, 'package.json'), '{"scripts":{"build":"vite build"}}'); writeFileSync(join(rel, 'package-lock.json'), '{}');
+    process.env.DIST_DIR = join(rel, 'dist'); (await import('../../backend/uitgave-info'))._resetReleaseInfo(); }
   const OWNER = `ug-owner-${randomUUID()}`, HELPER = `ug-helper-${randomUUID()}`, ANDER = `ug-ander-${randomUUID()}`, NEPEIGENAAR = `ug-nep-${randomUUID()}`;
   const users: Record<string, any> = {
     [OWNER]: { id: OWNER, role: 'owner', status: 'approved', email: process.env.OWNER_EMAIL || 'eigenaar@test.invalid' },
@@ -401,7 +405,7 @@ async function appTests(basis: string, check: Check) {
 
     const u1 = await upload(HELPER, '20261008-150001');
     check('app: voorbereider uploadt in stukken → wacht-op-goedkeuring', u1.klaar?.data?.status === 'wacht-op-goedkeuring', JSON.stringify(u1.begin.data) + JSON.stringify(u1.klaar?.data));
-    check('app: voorcontrole bij «klaar» is opgeslagen en meegegeven (elf controles incl. commit, manifest en — UITROL-001 — migratie-proef, ok)', u1.klaar?.data?.voorcontrole?.ok === true && u1.klaar.data.voorcontrole.controles.length === 11 && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'migratie-proef' && c.niveau === 'ok') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'manifest') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'commit' && c.niveau === 'ok'), JSON.stringify(u1.klaar?.data?.voorcontrole?.controles?.map((c: any) => c.id + ':' + c.niveau)));
+    check('app: voorcontrole bij «klaar» is opgeslagen en meegegeven (twaalf controles incl. commit, manifest, — UITROL-001 — migratie-proef en — SEC-PAKKET-001 — rode vlaggen, ok)', u1.klaar?.data?.voorcontrole?.ok === true && u1.klaar.data.voorcontrole.controles.length === 12 && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'risico' && c.niveau === 'ok') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'migratie-proef' && c.niveau === 'ok') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'manifest') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'commit' && c.niveau === 'ok'), JSON.stringify(u1.klaar?.data?.voorcontrole?.controles?.map((c: any) => c.id + ':' + c.niveau)));
     { const slecht = await upload(HELPER, '20261008-150050', 3000, 'SAMENVATTING');
       check('app: pakket zonder SAMENVATTING (geen beschrijving) → afgebroken met VOORCONTROLE_MISLUKT en uitleg, nooit goedkeurbaar',
         slecht.klaar?.data?.status === 'afgebroken' && slecht.klaar.data.code === 'VOORCONTROLE_MISLUKT' && slecht.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'metadata' && c.niveau === 'fout'), JSON.stringify(slecht.klaar?.data));
@@ -476,6 +480,20 @@ async function appTests(basis: string, check: Check) {
     check('app: verlopen challenge geweigerd', (await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uit4.data.uitdagingId, assertie: bevestig(telefoon, uit4.data.publicKey.challenge) })).fout === 'UITDAGING_ONGELDIG');
     const uit5 = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id });
     check('app: assertie zonder UV geweigerd', (await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uit5.data.uitdagingId, assertie: bevestig(telefoon, uit5.data.publicKey.challenge, { uv: false }) })).fout === 'PASSKEY_GEEN_VERIFICATIE');
+    // SEC-PAKKET-001: rode vlaggen → zonder aparte bevestiging geen challenge en geen goedkeuring (червоні прапорці — окреме підтвердження).
+    {
+      const oudVc = (await sys.query('SELECT voorcontrole FROM app.uitrol_voorstellen WHERE id = $1', [u1.id])).rows[0].voorcontrole;
+      const metVlag = { ...(oudVc || { versie: 1, tijd: new Date().toISOString(), ok: true, fouten: 0, waarschuwingen: 0, controles: [] }) };
+      metVlag.controles = [...(metVlag.controles || []), { id: 'risico', niveau: 'waarschuwing', uk: 'x', nl: 'x', details: ['[root] ~ deploy/installeer-app.sh'] }];
+      await sys.query('UPDATE app.uitrol_voorstellen SET voorcontrole = $2::jsonb WHERE id = $1', [u1.id, JSON.stringify(metVlag)]);
+      check('app: rode vlaggen zonder bevestiging → geen challenge (RISICO_NIET_BEVESTIGD)', (await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id })).fout === 'RISICO_NIET_BEVESTIGD');
+      check('app: rode vlaggen, bevestiging als tekst «true» telt niet', (await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id, risicoBevestigd: 'true' })).fout === 'RISICO_NIET_BEVESTIGD');
+      const uitR = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id, risicoBevestigd: true });
+      check('app: rode vlaggen met bevestiging → challenge', !!uitR.data?.uitdagingId, JSON.stringify(uitR).slice(0, 200));
+      check('app: goedkeuren zonder bevestiging geweigerd, ook met geldige passkey', (await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uitR.data.uitdagingId, assertie: bevestig(telefoon, uitR.data.publicKey.challenge) })).fout === 'RISICO_NIET_BEVESTIGD');
+      check('app: na de weigering staat het voorstel nog op goedkeuring te wachten', (await sys.query('SELECT status FROM app.uitrol_voorstellen WHERE id = $1', [u1.id])).rows[0].status === 'wacht-op-goedkeuring');
+      await sys.query('UPDATE app.uitrol_voorstellen SET voorcontrole = $2::jsonb WHERE id = $1', [u1.id, oudVc == null ? null : JSON.stringify(oudVc)]);
+    }
     const uit6 = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id });
     const ok = await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uit6.data.uitdagingId, assertie: bevestig(telefoon, uit6.data.publicKey.challenge) });
     const naam = 'mijn-ruimte-20261008-150001.tar.gz';
