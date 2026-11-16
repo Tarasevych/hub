@@ -1820,13 +1820,29 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* Небезпечна дія: натяк кольором, не крик; підтвердження трохи помітніше */
+/* Зауваження власника 16.11: сама червона піктограма губилася на тлі пігулки — тепер має власне м'яке червоне коло й товщу лінію */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar {
+  background: color-mix(in srgb, var(--am3-danger-icon) 16%, var(--am3-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--am3-danger-icon) 42%, transparent);
+}
+
 [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar > svg {
   color: var(--am3-danger-icon);
+  stroke-width: 2.6;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar:hover,
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar:focus-visible {
+  background: color-mix(in srgb, var(--am3-danger-icon) 26%, var(--am3-bg));
 }
 
 [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar.is-bevestig {
-  background: color-mix(in srgb, var(--am3-danger-icon) 20%, var(--am3-bg));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--am3-danger-icon) 55%, var(--am3-line));
+  background: var(--am3-danger-icon);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--am3-danger-icon) 35%, transparent);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar.is-bevestig > svg {
+  color: var(--am3-bg);
 }
 
 /* Пауза: на кнопці «Технічний» — маленька кругла позначка ⏸ кольором технічної смуги, щит теж підсвічено (стан видно без читання підпису) */
@@ -1843,13 +1859,16 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   height: 18px;
   margin-left: 2px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--am3-shield-color, #d97706) 18%, transparent);
-  color: var(--am3-shield-color, #d97706);
+  /* Зауваження власника 16.11: напівпрозора позначка зливалася з тлом — тепер суцільне коло кольором смуги з контрастним знаком */
+  background: var(--am3-shield-color, #d97706);
+  color: var(--am3-shield-fg, #1a1a1a);
+  box-shadow: 0 0 0 1.5px var(--am3-surface-2);
 }
 
 [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze > svg {
   width: 10px;
   height: 10px;
+  stroke-width: 3;
 }
 
 [data-account-menu-v3] .am3-tech-tip {

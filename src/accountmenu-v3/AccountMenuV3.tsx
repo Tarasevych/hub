@@ -546,6 +546,7 @@ export function AccountMenuV3({
       data-am3-mobiel={mobiel ? 'ja' : undefined}
       style={{
         ['--am3-shield-color' as string]: schildKleur,
+        ['--am3-shield-fg' as string]: BAND_KLEUREN[bandKleurId]?.fg || '#1a1a1a',
         ['--am3-palette-color' as string]: paletKleur,
       }}
     >
