@@ -301,8 +301,13 @@ export async function main(): Promise<number> {
   const neutraalMail = mailMerken.filter((m) => MERKEN[m]?.neutraal);
   check(`elke mailtegel: óf een vorm uit simple-icons (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
     echteHerkomst.length + neutraalMail.length === mailMerken.length && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail'));
-  const plaat = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
-  check('<Merk> tekent de neutrale plaat (data-merk="neutraal", tekst, geen pad) — geen monogram «onbekend»', plaat.includes('data-merk="neutraal"') && plaat.includes('>Uk</text>') && !plaat.includes('<path') && !plaat.includes('onbekend'), plaat.slice(0, 200));
+  // UPD-003 (REESTR-LOGO-001, #149): ukr.net heeft nu een officieel bestand (src/merk/officieel/ukrnet.png) — dat wint van de neutrale plaat.
+  // Офіційний файл перемагає нейтральну плитку; саму плитку перевіряємо на тимчасовому нейтральному записі без офіційного файла.
+  await reg.laadOfficieel();
+  const officieel = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
+  check('ukr.net: het officiële bestand wint van de neutrale plaat (data-merk-officieel)', officieel.includes('data-merk-officieel="ukrnet"') && !officieel.includes('data-merk="neutraal"'), officieel.slice(0, 200));
+  const plaat = renderToString(createElement(Merk, { def: { ...MERKEN.ukrnet, naam: 'Proefmerk', letter: 'Pr' }, maat: 36 }));
+  check('<Merk> tekent de neutrale plaat (data-merk="neutraal", tekst, geen pad) — geen monogram «onbekend»', plaat.includes('data-merk="neutraal"') && plaat.includes('>Pr</text>') && !plaat.includes('<path') && !plaat.includes('onbekend'), plaat.slice(0, 200));
   reg.registreerEigenMerken([{ sleutel: 'ukrnet', soort: 'svg', data: `data:image/svg+xml;base64,${Buffer.from('<svg viewBox="0 0 1 1"/>').toString('base64')}`, hash: 'x' }]);
   const eigen = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
   reg._eigenMerkenOpnieuw();

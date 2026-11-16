@@ -792,7 +792,7 @@ async function meldDienstStoring(rij: DienstRij, status: number): Promise<void> 
       : ['рушій не відповів (сервер недоступний або повернув помилку)', 'de motor antwoordde niet (server onbereikbaar of fout)'];
   await meld(rij.eigenaarUserId, 'beheer.ai_motor', `Спільний рушій «${rij.naam}» не обробив запит / Gedeelde motor «${rij.naam}» verwerkte een verzoek niet`,
     `Користувач отримав чесну відмову й пораду обрати інший рушій. Причина: ${wat[0]} (код ${status || 'мережа'}). Текст листа не збережено. Перевірте рушій кнопкою «Перевірити». / Reden: ${wat[1]} (code ${status || 'netwerk'}). De tekst is niet bewaard.`,
-    '/agenten#tech').catch(() => undefined);
+    `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
 }
 
 const UNTRUSTED_GUARD_SYSTEM = [
@@ -1728,7 +1728,7 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
             aan
               ? `${dienstWaarheen(pub)} Текст іде туди лише після вашого натискання в листі, не більше ${rij.limietPerDag} запитів на день. Відкликати: «Рушії ШІ» у відкритому листі. / ${dienstWaarheen(pub, true)} Alleen na uw klik, hoogstens ${rij.limietPerDag} verzoeken per dag. Intrekken: «AI-motoren» in een geopend bericht.`
               : 'Цей рушій більше не отримає тексту ваших листів, доки ви не погодитеся знову. / Deze motor krijgt de tekst van uw berichten niet meer tot u opnieuw akkoord gaat.',
-            '/mail').catch(() => undefined);
+            `https://${SERVICE_HOSTS.mail}/`).catch(() => undefined);
         }
         return json({ ok: true, settings });
       },

@@ -5,6 +5,7 @@
 // Типово вимкнено. Текст листа сервер не зберігає й не журналює; у базі лише лічильник запитів на людину й день.
 // Gedeelde AI-motoren en de gebruiksteller. Lezen/schrijven alleen met de systeemrol; ontbreekt de tabel (migratie nog niet
 // gedraaid) dan bestaan er geen gedeelde motoren en telt de teller in het geheugen.
+import { SERVICE_HOSTS } from './deployment-identiteit'; // MELDLINK-001: absolute links in meldingen
 import { error, json } from '../server/platform';
 import { isOwnerEmail, rateLimit } from '../server/platform/beveiliging';
 import { getPool } from '../server/platform/pg';
@@ -349,7 +350,7 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       if (oud?.aan && !nieuw.aan) {
         await meld(auth.user.id, 'beheer.ai_motor', `Спільний рушій «${nieuw.naam}» вимкнено після зміни / Gedeelde motor «${nieuw.naam}» uitgezet na wijziging`,
           'Ви змінили, куди йде текст (постачальника, адресу, модель або ключ). Рушій вимкнено, а згоди користувачів скинуто: увімкніть його знову, коли перевірите. / U wijzigde waar de tekst heen gaat. De motor is uitgezet en de akkoorden zijn vervallen: zet hem weer aan na controle.',
-          '/agenten#tech').catch(() => undefined);
+          `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
       }
       return json(await overzicht());
     }],
@@ -375,7 +376,7 @@ export function aiDienstMotorenRoutes(deps: Deps) {
         b.aan
           ? `Користувачі побачать його в пошті серед рушіїв ШІ й зможуть користуватися після власної згоди, не більше ${rij.limietPerDag} запитів на людину на день. ${dienstRisicos(rij)[0]} / Gebruikers zien hem in de post en kunnen hem na eigen akkoord gebruiken, hoogstens ${rij.limietPerDag} verzoeken per persoon per dag.`
           : 'Запити користувачів цим рушієм одразу відхиляються; їхні особисті ключі й локальний ШІ працюють далі. / Verzoeken via deze motor worden meteen geweigerd; persoonlijke sleutels en lokale AI werken door.',
-        '/agenten#tech').catch(() => undefined);
+        `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
       return json(await overzicht());
     }],
 
@@ -419,7 +420,7 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       await deps.audit(auth.user.id, 'owner.ai.dienst_motor.verwijder', 'success', { id });
       await meld(auth.user.id, 'beheer.ai_motor', `Спільний рушій «${rij.naam}» прибрано / Gedeelde motor «${rij.naam}» verwijderd`,
         'Рушій зник зі списку в пошті, його ключ прибрано зі «Сховища ключів». Лічильник використання за минулі дні лишається. / De motor is uit de lijst in de post, de sleutel is uit de «Sleutelkluis» gehaald. De gebruiksteller van eerdere dagen blijft.',
-        '/agenten#tech').catch(() => undefined);
+        `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
       return json(await overzicht());
     }],
   };

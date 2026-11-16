@@ -27,7 +27,7 @@ import {
 } from '../../backend/mcp-protocol-2026.ts';
 import { serverCardMetadata, registryServerMetadata } from '../../backend/mcp-connector.ts';
 import { MCP_KLANT_VERSIES, MCP_KLANT_VOORKEUR } from '../../shared/mcp-klant-model.ts';
-import { V2_AGENTEN } from '../../shared/connector-v2/agenten.ts';
+import { V2_AGENTEN, agentUrl } from '../../shared/connector-v2/agenten.ts';
 
 export async function main(): Promise<number> {
   let fouten = 0;
@@ -247,11 +247,12 @@ export async function main(): Promise<number> {
   is(
     reg.name === 'com.tarasevych/mijn-ruimte' &&
       Array.isArray(reg.remotes) &&
-      V2_AGENTEN.length === 13 &&
+      // BREEDTE-003 (#143): 14 агентів; публічні адреси через agentUrl (/copilot = Microsoft Copilot, /githubcopilot = GitHub Copilot).
+      V2_AGENTEN.length === 14 &&
       reg.remotes.length === V2_AGENTEN.length + 1 &&
-      V2_AGENTEN.every((a) => reg.remotes.some((r) => r.url.endsWith(`/${a.slug}`))) &&
+      V2_AGENTEN.every((a) => reg.remotes.some((r) => r.url === agentUrl(a.slug))) &&
       reg.remotes.some((r) => r.url === 'https://mcp.tarasevych.com/mcp'),
-    'bouwRegistryServerJson формує маніфест реєстру з усіма 13 агентами та /mcp',
+    'bouwRegistryServerJson формує маніфест реєстру з усіма 14 агентами та /mcp',
   );
 
   const cCardResp = serverCardMetadata();

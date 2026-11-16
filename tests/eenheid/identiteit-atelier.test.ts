@@ -31,7 +31,7 @@ export async function main(): Promise<number> {
   check('de oorspronkelijke zevenenveertig groepen behouden', Object.values(gegevens.groepen).flat().length === 47);
   check('de oorspronkelijke honderddrieënzeventig keuzen behouden', (Object.values(gegevens.groepen).flat() as { рядки: unknown[] }[]).reduce((a, g) => a + g.рядки.length, 0) === 173);
   check('de nieuwe weergave ontvangt de bestaande onderdelen en hun handelingen', pagina.includes('secties={secties}') && atelier.includes("<div className='mr-at-paneel-inhoud ia-at-werkelijk'>{inhoud}</div>"));
-  check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier && vormgeving === 'studio') return <IdentiteitAtelier ") && pagina.includes("<div className='ia-account'>"));
+  check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier && vormgeving === 'studio') return <IdentiteitAtelier ") && pagina.includes("<div className='ia-account mq-schil'>")); // UNIF-ANKER-001 (#146): класична сторінка на спільній оболонці «Макета»
   // IDENTITEIT-007: de gebruiker kiest zelf de weergave; zonder vlag blijft alles klassiek en zonder kiezer.
   const vormgeving = readFileSync('src/identiteit/identiteit-vormgeving.ts', 'utf8');
   const kiezerBron = readFileSync('src/identiteit/VormgevingKiezer.tsx', 'utf8');

@@ -1,5 +1,5 @@
 // TELEGRAM-AANMELDEN v1 — eenheidstests zonder netwerk of database: beleid, wijzigingen, status, cryptografie, routes en bronnen.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { createHash, createHmac } from 'node:crypto';
 import { checker } from './hulp/nep-google';
 import { beoordeel, eisVan, INGEBOUWDE_ACTIES, keuzeToegestaan, KEUZE_IDS, voorinstellingToepassen, werkelijkeEis } from '../../shared/telegram-aanmelden/beleid';
@@ -122,7 +122,8 @@ export async function main(): Promise<number> {
   const fe = readdirSync('src/telegram-aanmelden').map((f) => lees(`src/telegram-aanmelden/${f}`)).join('\n');
   check('frontend toont de botsleutel nooit (alleen een password-veld dat leeg wordt na opslaan)', !/\{\s*sleutel\s*\}\s*</.test(fe) && fe.includes("type='password' autoComplete='off' spellCheck={false} value={sleutel}") && fe.includes("setSleutel('')"));
   check('identiteit niet gemaskeerd (geen •••/*** rond telefoon)', !/telefoon[^\n]{0,80}(•|\*\*\*|slice\(-4\))/.test(fe));
-  check('officieel Telegram-logo aanwezig', fe.includes("data-merk-officieel='telegram'") && fe.includes('#37aee2'));
+  // UPD-003 (REESTR-LOGO-001, #149): het logo komt uit het merkregister (src/merk/officieel/telegram.svg), niet meer inline · логотип із реєстру
+  check('officieel Telegram-logo aanwezig', fe.includes("<Merk merk='telegram'") && existsSync('src/merk/officieel/telegram.svg') && readFileSync('src/merk/officieel/telegram.svg', 'utf8').includes('<svg'));
   check('frontend kent STEP_UP_PASSKEY_REQUIRED en TELEGRAM_BEVESTIGING_NODIG', fe.includes('STEP_UP_PASSKEY_REQUIRED') && fe.includes('TELEGRAM_BEVESTIGING_NODIG'));
   check('alleen Oekraïens en Nederlands in de bot', !/['"]en['"]\s*:/.test(lees('shared/telegram-aanmelden/teksten.ts')));
   const routesSrc = lees('backend/telegram-aanmelden/routes.ts');

@@ -209,7 +209,7 @@ export async function main(): Promise<number> {
   );
   check(
     'main.tsx відкладає registration.update() у requestIdleCallback за межами naActivering',
-    mainTsx.includes('registration.update()') && mainTsx.includes('requestIdleCallback') && (mainTsx.match(/createRoot\(/g) || []).length === 5,
+    (mainTsx.includes('registration.update()') || mainTsx.includes('registration?.update?.()')) && mainTsx.includes('requestIdleCallback') && (mainTsx.match(/createRoot\(/g) || []).length === 5,
   );
 
   // 7. Скасування важких backdrop-filter та перемикання плавної прокрутки на auto для смартфонів.

@@ -39,7 +39,8 @@ export async function main(): Promise<number> {
       accountPagina.includes('<MaquetteGrens terugval={klassiek}>') &&
       accountPagina.includes("vormgeving === 'maquette'") &&
       accountPagina.includes("vormgeving === 'studio'") &&
-      accountPagina.includes('<VormgevingKiezer lang={lang} compact />') &&
+      // UNIF-ANKER-001 (#146): липке меню класичної сторінки — спільне MaquetteAnkerRail; перемикач вигляду вгорі й унизу сторінки.
+      accountPagina.includes('<MaquetteAnkerRail') && accountPagina.includes('{atelier && <VormgevingKiezer lang={lang} />}') &&
       accountPagina.includes("<div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>") &&
       accountPagina.includes('werkruimte.scrollTo({ top: 0 })'),
   );
