@@ -110,10 +110,10 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     try { return await vervolg(await maak()); }
     catch (e) { if (foutCode(e) === 'NotAllowedError') setHerhaal(() => async () => vervolg(await maak())); throw e; }
   };
-  const goedkeuren = useCallback((v: Voorstel) => doe(`ok-${v.id}`, async () => {
-    const u = (await api.post('/api/owner/uitrol/voorstel/uitdaging', { ...context, id: v.id })).data as { uitdagingId: string; publicKey: { challenge: string; rpId: string; timeout: number; allowCredentials: Array<{ type: string; id: string }> } };
+  const goedkeuren = useCallback((v: Voorstel, risicoBevestigd?: boolean) => doe(`ok-${v.id}`, async () => {
+    const u = (await api.post('/api/owner/uitrol/voorstel/uitdaging', { ...context, id: v.id, ...(risicoBevestigd ? { risicoBevestigd: true } : {}) })).data as { uitdagingId: string; publicKey: { challenge: string; rpId: string; timeout: number; allowCredentials: Array<{ type: string; id: string }> } };
     return metPasskey(() => passkeyBevestigen(u.publicKey), async (assertie) => {
-      await api.post('/api/owner/uitrol/voorstel/goedkeuren', { ...context, id: v.id, uitdagingId: u.uitdagingId, assertie });
+      await api.post('/api/owner/uitrol/voorstel/goedkeuren', { ...context, id: v.id, uitdagingId: u.uitdagingId, assertie, ...(risicoBevestigd ? { risicoBevestigd: true } : {}) });
       setTab('overzicht'); window.scrollTo({ top: 0, behavior: 'smooth' });
       return tr(lang, `Схвалено. Стежте за ходом встановлення версії ${v.versie} у картці вище — кожен крок і рядок терміналу з’являється в реальному часі.`, `Goedgekeurd. Volg de installatie van versie ${v.versie} in de kaart hierboven — elke stap en terminalregel verschijnt in real time.`);
     });
@@ -224,7 +224,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const wachtend = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring').length;
   const goedgekeurd = data.voorstellen.filter((v) => v.status === 'goedgekeurd').map((v) => ({ id: v.id, versie: v.versie, beslistOp: v.beslistOp }));
   const klaar = data.schakelaar && data.passkeys.length > 0 && kanPasskey;
-  const goedkeurenId = (id: string) => { const v = data.voorstellen.find((x) => x.id === id); if (v) void goedkeuren(v); };
+  const goedkeurenId = (id: string, risicoBevestigd?: boolean) => { const v = data.voorstellen.find((x) => x.id === id); if (v) void goedkeuren(v, risicoBevestigd); };
   const TABS: Array<{ id: Tab; Icoon: typeof Activity; uk: string; nl: string; badge?: number }> = [
     { id: 'overzicht', Icoon: Activity, uk: 'Огляд', nl: 'Overzicht', badge: wachtend },
     { id: 'stroom', Icoon: ClipboardCheck, uk: 'Потік і докази', nl: 'Stroom en bewijs' },

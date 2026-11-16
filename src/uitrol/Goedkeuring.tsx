@@ -1,25 +1,30 @@
 // Pakketten die op uw goedkeuring wachten: wie bereidde voor, wat verandert, tests; goedkeuren = WebAuthn-passkey (de server en root controleren opnieuw).
 import { useState } from 'react';
 import { Fingerprint, ShieldCheck, X } from 'lucide-react';
+import AfwijsVenster from './AfwijsVenster';
 import { foutTekst } from './fouten';
 import Voorcontrole from './Voorcontrole';
 import CommitTekst from './CommitTekst';
 import UitrolStroomKaart from './UitrolStroomKaart';
+import RodeVlaggen, { rodeVlaggen } from './RodeVlaggen';
 import { datum, lopendTekst, mb, tr, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel } from './types';
 
-type Props = { lang: Lang; context?: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string; naarStroom?: (versie: string) => void;
+export { afwijsRedenGeldig } from './AfwijsVenster';
+
+type Props = { lang: Lang; context?: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel, risicoBevestigd?: boolean) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string; naarStroom?: (versie: string) => void;
   /** UITROL-002: er loopt al een installatie (run bezig of goedgekeurd pakket wacht op root) — goedkeuren staat dan uit. */ lopend?: LopendeInstallatie | null };
 
 export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goedkeuren, afwijzen, verberg, naarStroom, lopend }: Props) {
   // Het pakket dat de wizard «Нове оновлення» zelf net uploadde wordt daar (stap 4) getoond; hier alleen de rest (bv. door een agent voorbereid).
   const wachtenden = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring' && v.id !== verberg);
   const [afwijs, setAfwijs] = useState<{ id: string; reden: string } | null>(null);
+  const [bevestigd, setBevestigd] = useState<Record<string, boolean>>({});
   // Alleen tonen als er echt iets op goedkeuring wacht: een lege kaart met uitleg is ruis.
   if (wachtenden.length === 0) return null;
   return <section className='ut-kaart' data-ut-goedkeuring aria-labelledby='ut-goed-titel'>
     <header className='ut-kaart-kop'><div><h2 id='ut-goed-titel'><ShieldCheck aria-hidden='true' /> {tr(lang, 'Чекають схвалення', 'Wachten op goedkeuring')}{wachtenden.length > 0 && <span className='ut-teller'>{wachtenden.length}</span>}</h2>
       <p className='ut-sub'>{tr(lang, 'Схвалення діє лише для цього пакета (його sha256) і лише 5 хвилин. Сервер (root) перевіряє підпис passkey сам.', 'Een goedkeuring geldt alleen voor dit pakket (de sha256) en maar 5 minuten. De server (root) controleert de passkey-handtekening zelf.')}</p></div></header>
-    {wachtenden.map((v) => <article key={v.id} className='ut-pakket' data-voorstel={v.id}>
+    {wachtenden.map((v) => { const vlaggen = rodeVlaggen(v.voorcontrole); const rvOk = !vlaggen || !!bevestigd[v.id]; return <article key={v.id} className='ut-pakket' data-voorstel={v.id}>
       <h3>{tr(lang, 'Версія ', 'Versie ')}<span className='ut-mono'>{v.versie}</span></h3>
       <dl className='ut-dl'>
         <dt>{tr(lang, 'Підготував', 'Voorbereid door')}</dt><dd>{v.voorbereider} · {datum(lang, v.aangemaaktOp)}</dd>
@@ -34,19 +39,14 @@ export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goe
       <UitrolStroomKaart lang={lang} context={context} versie={v.versie} compact naarStroom={naarStroom} />
       {v.wijzigingen && <details open><summary>{tr(lang, 'Що змінено', 'Wat er verandert')}</summary><pre className='ut-pre'>{v.wijzigingen}</pre></details>}
       {v.diffSamenvatting && <details><summary>{tr(lang, 'Зміни у файлах', 'Gewijzigde bestanden')}</summary><pre className='ut-pre'>{v.diffSamenvatting}</pre></details>}
+      {vlaggen && <RodeVlaggen lang={lang} id={v.id} vlaggen={vlaggen} bevestigd={!!bevestigd[v.id]} onBevestig={(b) => setBevestigd((x) => ({ ...x, [v.id]: b }))} disabled={!!busy} />}
       <div className='ut-acties'>
-        <button type='button' className='ut-knop ut-knop-primair' disabled={!klaar || !!busy || !!lopend} title={lopend ? lopendTekst(lang, lopend) : undefined} onClick={() => goedkeuren(v)}><Fingerprint aria-hidden='true' />{busy === `ok-${v.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити', 'Goedkeuren en installeren')}</button>
+        <button type='button' className='ut-knop ut-knop-primair' disabled={!klaar || !!busy || !!lopend || !rvOk} title={lopend ? lopendTekst(lang, lopend) : !rvOk ? tr(lang, 'Спершу перегляньте червоні прапорці й поставте позначку.', 'Bekijk eerst de rode vlaggen en zet het vinkje.') : undefined} onClick={() => goedkeuren(v, vlaggen ? true : undefined)}><Fingerprint aria-hidden='true' />{busy === `ok-${v.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити', 'Goedkeuren en installeren')}</button>
         {afwijs?.id !== v.id && <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => setAfwijs({ id: v.id, reden: '' })}><X aria-hidden='true' />{tr(lang, 'Відхилити', 'Afwijzen')}</button>}
       </div>
-      {afwijs?.id === v.id && <div className='ut-reden-veld' role='group' data-afwijzen-voorstel={v.id}>
-        <label htmlFor={`afwijs-${v.id}`}>{tr(lang, 'Причина відхилення (необов’язково)', 'Reden van afwijzen (optioneel)')}</label>
-        <textarea id={`afwijs-${v.id}`} rows={2} maxLength={500} value={afwijs.reden} onChange={(e) => setAfwijs({ id: v.id, reden: e.target.value })} disabled={!!busy} />
-        <div className='ut-acties'>
-          <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => { afwijzen(v, afwijs.reden.trim().slice(0, 500)); setAfwijs(null); }}><X aria-hidden='true' />{tr(lang, 'Відхилити версію', 'Versie afwijzen')}</button>
-          <button type='button' className='ut-knop' disabled={!!busy} onClick={() => setAfwijs(null)}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
-        </div>
-      </div>}
+      {afwijs?.id === v.id && <AfwijsVenster lang={lang} v={v} reden={afwijs.reden} setReden={(r) => setAfwijs({ id: v.id, reden: r })} busy={!!busy}
+        onAfwijzen={(r) => { afwijzen(v, r); setAfwijs(null); }} onTerug={() => setAfwijs(null)} />}
       {!klaar && <p className='ut-hint'>{!data.schakelaar ? foutTekst(lang, 'PASSKEY_GOEDKEURING_UIT') : !data.passkeys.length ? foutTekst(lang, 'GEEN_PASSKEY') : tr(lang, 'Відкрийте цю сторінку в браузері з підтримкою passkey.', 'Open deze pagina in een browser die passkeys ondersteunt.')}</p>}
-    </article>)}
+    </article>; })}
   </section>;
 }

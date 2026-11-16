@@ -23,6 +23,7 @@ import { releaseInfo } from './uitgave-info';
 import { REPO, uitrolArchiefToken } from './uitrol-github';
 import { UITROL_LIMIETEN } from './uitrol-goedkeuring';
 import { proefVoorArchief } from './uitrol-vereisten';
+import { geinstalleerdeRelease } from './uitrol-risico';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
 
 const execFileAsync = promisify(execFile);
@@ -587,6 +588,7 @@ export async function haalGithubReleaseOp(invoer: {
       actieveVersie: releaseInfo().versie || undefined,
       toegepasteMigraties: toegepast,
       archiefToken: token,
+      geinstalleerd: geinstalleerdeRelease(),
       ...(archiefControleOverride ? { archiefControle: archiefControleOverride } : {}),
       proef,
     });

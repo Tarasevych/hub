@@ -485,7 +485,10 @@ export async function main(): Promise<number> {
     let cdnHadAuth = false;
     setUitrolGithubOntvangenDeps({
       ghToken: async () => 'ghp_TestGeheimToken1234567890',
-      archiefControle: async (ref) => ({ ok: true, code: 'OK', reden: 'test', url: ref.url }),
+      // SEC-PAKKET-001: тестовий архів змінює deploy/installeer-app.sh відносно встановленої версії (кореня сховища), тож досьє
+      // мусить пояснювати цю зміну — інакше перевірка пакета блокує встановлення. Het dossier legt die wijziging uit.
+      archiefControle: async (ref) => ({ ok: true, code: 'OK', reden: 'test', url: ref.url,
+        risicoUitleg: [{ pad: 'deploy/installeer-app.sh', uk: 'Тестовий архів: скрипт встановлення спрощено до одного рядка для перевірки приймача.', nl: 'Testarchief: het installatiescript is ingekort tot één regel om de ontvanger te testen.' }] }),
       fetch: async (input, init) => {
         const url = String(input);
         const h = (init?.headers || {}) as Record<string, string>;

@@ -430,7 +430,7 @@ export function analyseerUitrolStroom(invoer: StroomAnalyseInvoer): StroomDuidin
   // 4. Таємниці у пакеті
   const cGeheim = vindControle(vc, 'geheimen');
   if (cGeheim && cGeheim.niveau !== 'ok') {
-    voegFactor('kritiek', 45, 'У вмісті пакета виявлено ознаки секретів (.env, приватні ключі або ключі доступу). Необхідна перевірка перед схваленням!', 'In de pakketinhoud zijn tekenen van geheimen gevonden (.env, privésleutels of tokens). Controle vóór goedkeuring vereist!');
+    voegFactor('kritiek', 45, 'У пакеті знайдено ключ, токен або файл із обліковими даними — встановлення заблоковано. Приберіть секрет, замініть ключ і зберіть пакет знову.', 'Het pakket bevat een sleutel, token of bestand met inloggegevens — installatie geblokkeerd. Verwijder het geheim, vervang de sleutel en bouw het pakket opnieuw.');
   }
 
   // 5. Результати тестів

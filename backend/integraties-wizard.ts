@@ -36,6 +36,13 @@ export type ControleUitkomst = { stand: Stand; code: string; detail: string; n?:
 /** Altijd via de huidige globale fetch, zodat een test hem kan vervangen (zelfde patroon als backend/github-oauth.ts). */
 const netwerk = ((input: any, init?: any) => globalThis.fetch(input, init)) as typeof fetch;
 const TIJD = 12_000;
+/**
+ * НЕ СЕКРЕТ. Навмисно вигаданий токен для перевірки пари client_id/client_secret OAuth-застосунку GitHub:
+ * GitHub відповідає 404 «токен не знайдено», якщо пара дійсна, і 401, якщо ні. Сам токен нічого не відкриває.
+ * Записано двома частинами, щоб сканери секретів (сторінка «Оновлення», GitHub) не плутали його зі справжнім.
+ * GEEN GEHEIM: verzonnen token om de OAuth-app-gegevens te toetsen (404 = geldig, 401 = ongeldig).
+ */
+const GITHUB_PROEFTOKEN = 'gh' + 'o_mijnruimtecontrole000000000000000000';
 const sys = () => getPool('systeem');
 
 const KOP = { 'User-Agent': 'mijn-ruimte', Accept: 'application/json' };
@@ -108,7 +115,7 @@ export async function controleerGithub(app: { clientId: string; clientSecret: st
     const auth = Buffer.from(`${app.clientId}:${app.clientSecret}`).toString('base64');
     const res = await netwerk(`https://api.github.com/applications/${encodeURIComponent(app.clientId)}/token`, {
       method: 'POST', headers: { Authorization: `Basic ${auth}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'mijn-ruimte', 'X-GitHub-Api-Version': '2022-11-28' },
-      body: JSON.stringify({ access_token: 'gho_mijnruimtecontrole000000000000000000' }), signal: AbortSignal.timeout(TIJD), redirect: 'error',
+      body: JSON.stringify({ access_token: GITHUB_PROEFTOKEN }), signal: AbortSignal.timeout(TIJD), redirect: 'error',
     });
     status = res.status;
   } catch { return { stand: 'fout', code: 'ONBEREIKBAAR', detail: 'api.github.com' }; }

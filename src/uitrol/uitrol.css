@@ -256,6 +256,274 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ut-form input[type=number]{width:72px}
 .ut-reden-veld{flex-basis:100%;display:grid;gap:6px;padding:10px;border:1px solid var(--ut-warn);border-radius:10px}
+.ut-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* SEC-PAKKET-001 · вікно відхилення (власник 16.11.2026): картка з піктограмою, готові причини одним дотиком, куди піде причина — значками.
+   Afwijsvenster: kaart met icoon, snelle redenen als chips, bestemming als iconen. */
+.ut-afwijs{display:grid;gap:12px;margin-top:10px;padding:16px;border:1px solid color-mix(in srgb,var(--ut-err) 35%,var(--ut-line));border-radius:18px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ut-err-bg) 70%,transparent),var(--ut-bg) 120px);min-width:0;animation:ut-afwijs-in .18s ease-out}
+@keyframes ut-afwijs-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ut-afwijs{animation:none}}
+.ut-afwijs-kop{display:flex;gap:12px;align-items:flex-start}
+.ut-afwijs-icoon{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-afwijs-icoon svg{width:22px;height:22px}
+.ut-afwijs-kop h4{margin:0;font-size:1rem;line-height:1.3;overflow-wrap:anywhere}
+.ut-afwijs-kop p{margin:2px 0 0;color:var(--ut-muted);font-size:.86rem}
+.ut-afwijs-sectie{display:grid;gap:8px;min-width:0}
+.ut-afwijs-sectie-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.84rem;font-weight:600;color:var(--ut-text)}
+.ut-afwijs-gekozen{padding:1px 8px;border-radius:999px;background:var(--ut-err-bg);color:var(--ut-err);font-size:.74rem;font-weight:600}
+/* Плитки причин: кольорова піктограма, назва, підпис, кружок вибору. Tegels: gekleurd icoon, titel, korte regel, keuzerondje. */
+.ut-afwijs-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.ut-afwijs-aanbevolen-rij{display:grid;gap:8px}
+.admin-uitrol .ut-afwijs-tegel{--h:#64748b;position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;min-width:0;
+  padding:10px 10px 10px 10px;border-radius:14px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .15s,background .15s,box-shadow .15s,transform .15s}
+.admin-uitrol .ut-afwijs-tegel:hover:not(:disabled){border-color:color-mix(in srgb,var(--h) 55%,var(--ut-line));box-shadow:0 4px 14px -8px color-mix(in srgb,var(--h) 60%,transparent);transform:translateY(-1px)}
+.admin-uitrol .ut-afwijs-tegel:focus-visible{outline:2px solid var(--h);outline-offset:2px}
+.ut-afwijs-tegel-icoon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:color-mix(in srgb,var(--h) 14%,transparent);color:var(--h);transition:background .15s,color .15s}
+.ut-afwijs-tegel-icoon svg{width:19px;height:19px}
+.ut-afwijs-tegel-tekst{display:grid;gap:1px;min-width:0}
+.ut-afwijs-tegel-tekst strong{font-size:.9rem;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.ut-afwijs-tegel-tekst small{font-size:.76rem;line-height:1.3;color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-afwijs-tegel-keuze{display:grid;place-items:center;width:22px;height:22px;border-radius:999px;border:1.5px solid var(--ut-line);color:#fff;transition:background .15s,border-color .15s}
+.ut-afwijs-tegel-keuze svg{width:14px;height:14px;stroke-width:3}
+.admin-uitrol .ut-afwijs-tegel[aria-pressed="true"]{border-color:var(--h);background:color-mix(in srgb,var(--h) 8%,var(--ut-bg));box-shadow:inset 0 0 0 1px var(--h)}
+.admin-uitrol .ut-afwijs-tegel[aria-pressed="true"] .ut-afwijs-tegel-icoon{background:var(--h);color:#fff}
+.admin-uitrol .ut-afwijs-tegel[aria-pressed="true"] .ut-afwijs-tegel-keuze{background:var(--h);border-color:var(--h)}
+/* Рекомендація за перевіркою сайту: широка плитка з теплим тлом. Aanbeveling uit de voorcontrole: brede tegel. */
+.admin-uitrol .ut-afwijs-tegel[data-voorstel]{padding:12px;border-color:color-mix(in srgb,var(--h) 40%,var(--ut-line));
+  background:linear-gradient(110deg,color-mix(in srgb,var(--h) 13%,var(--ut-bg)),var(--ut-bg) 75%)}
+.admin-uitrol .ut-afwijs-tegel[data-voorstel] .ut-afwijs-tegel-icoon{width:42px;height:42px;border-radius:13px}
+.admin-uitrol .ut-afwijs-tegel[data-voorstel] .ut-afwijs-tegel-keuze{width:28px;height:28px;border-color:var(--h);color:var(--h)}
+.admin-uitrol .ut-afwijs-tegel[data-voorstel][aria-pressed="true"] .ut-afwijs-tegel-keuze{color:#fff}
+.ut-afwijs-aanbevolen{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--h)}
+.ut-afwijs-aanbevolen svg{width:12px;height:12px}
+@media (prefers-reduced-motion:reduce){.admin-uitrol .ut-afwijs-tegel{transition:none}.admin-uitrol .ut-afwijs-tegel:hover:not(:disabled){transform:none}}
+.ut-afwijs-veld-kop{display:inline-flex;align-items:center;gap:6px;padding:9px 12px 0;font-size:.78rem;font-weight:600;color:var(--ut-muted)}
+.ut-afwijs-veld-kop svg{width:14px;height:14px}
+.ut-afwijs-veld{display:grid;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.ut-afwijs-veld:focus-within{border-color:var(--ut-err);box-shadow:0 0 0 3px color-mix(in srgb,var(--ut-err) 18%,transparent)}
+.ut-afwijs-veld[data-geldig]:not(:focus-within){border-color:color-mix(in srgb,var(--ut-ok) 55%,var(--ut-line))}
+.admin-uitrol .ut-afwijs-veld textarea{width:100%;box-sizing:border-box;min-height:56px;padding:4px 12px 4px;border:0;outline:0;background:transparent;color:var(--ut-text);font:inherit;resize:vertical}
+.ut-afwijs-voet{display:flex;align-items:center;gap:8px;padding:4px 8px 6px 12px;font-size:.8rem;color:var(--ut-muted)}
+.ut-afwijs-stand{display:inline-flex;align-items:center;gap:5px;flex:1;min-width:0}
+.ut-afwijs-stand svg{width:15px;height:15px}
+.ut-afwijs-veld[data-geldig] .ut-afwijs-stand{color:var(--ut-ok)}
+.ut-afwijs-teller{font-variant-numeric:tabular-nums}
+.ut-afwijs-teller[data-bijna]{color:var(--ut-warn);font-weight:600}
+.admin-uitrol .ut-afwijs-wis{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--ut-muted);cursor:pointer}
+.admin-uitrol .ut-afwijs-wis:hover{background:var(--ut-panel,rgba(127,127,127,.12));color:var(--ut-text)}
+.ut-afwijs-wis svg{width:16px;height:16px}
+.ut-afwijs-waar{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.ut-afwijs-waar li{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info);font-size:.78rem;cursor:help}
+.ut-afwijs-waar li svg{width:14px;height:14px}
+.ut-afwijs-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.admin-uitrol .ut-afwijs-ja{background:var(--ut-err-bg)}
+.admin-uitrol .ut-afwijs-ja:not(:disabled):hover{background:var(--ut-err);color:#fff}
+.admin-uitrol .ut-afwijs-terug{border-color:transparent;background:transparent;color:var(--ut-muted)}
+.admin-uitrol .ut-afwijs-terug:hover{color:var(--ut-text);background:var(--ut-bg)}
+/* SEC-PAKKET-001: rode vlaggen vóór de goedkeuring — een zachte rode tint, compact; details ingeklapt. Червоні прапорці перед схваленням. */
+/* SEC-PAKKET-001 · rode vlaggen als moderne kaarten: ringdiagram, tegels per soort, verschilbalk, voor → na met pijl (eigenaar 16.11). */
+.ut-rode-vlaggen{display:grid;gap:12px;margin:10px 0;padding:14px;border:1px solid var(--ut-line);border-radius:16px;background:var(--ut-bg);min-width:0;
+  box-shadow:inset 4px 0 0 var(--ut-err)}
+.ut-rode-vlaggen[data-staat='ok']{box-shadow:inset 4px 0 0 var(--ut-ok)}
+.ut-rode-vlaggen[data-bevestigd]{box-shadow:inset 4px 0 0 var(--ut-warn)}
+.ut-rv-held{display:flex;gap:14px;align-items:center;min-width:0}
+.ut-rv-ring{width:88px;height:88px;flex:none}
+.ut-rv-ring circle{fill:none;stroke-width:12}
+.ut-rv-ring-spoor{stroke:var(--ut-line)}
+.ut-rv-ring circle[data-o='let']{stroke:var(--ut-err)}
+.ut-rv-ring circle[data-o='gewoon']{stroke:var(--ut-info)}
+.ut-rv-ring circle[data-o='ok']{stroke:var(--ut-ok)}
+.ut-rv-ring-getal{font-size:22px;font-weight:700;fill:var(--ut-text)}
+.ut-rv-ring-label{font-size:10px;fill:var(--ut-muted)}
+.ut-rv-held-tekst{display:grid;gap:6px;min-width:0}
+.ut-rv-kop{display:flex;align-items:center;gap:8px;margin:0;font-size:1.02rem;color:var(--ut-err)}
+.ut-rode-vlaggen[data-staat='ok'] .ut-rv-kop{color:var(--ut-ok)}
+.ut-rode-vlaggen[data-bevestigd] .ut-rv-kop{color:var(--ut-warn)}
+.ut-rv-kop svg{width:20px;height:20px;flex:none}
+.ut-rv-staat{margin:0;font-size:.86rem;line-height:1.45;color:var(--ut-text)}
+.ut-rv-tellers{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.ut-rv-tellers span{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:.76rem;font-weight:600}
+.ut-rv-tellers svg{width:13px;height:13px}
+.ut-rv-soorten{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.ut-rv-soorten button{display:inline-flex;align-items:center;gap:6px;flex:none;padding:6px 10px;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg2);color:var(--ut-text);font:inherit;font-size:.8rem;cursor:pointer}
+.ut-rv-soorten button svg{width:16px;height:16px;color:var(--ut-muted)}
+.ut-rv-soorten button[data-o='let'] svg{color:var(--ut-err)}
+.ut-rv-soorten button[data-o='ok'] svg{color:var(--ut-ok)}
+.ut-rv-soorten button b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ut-bg);font-size:.72rem}
+.ut-rv-soorten button[aria-pressed='true']{border-color:var(--ut-accent);background:color-mix(in srgb,var(--ut-accent) 10%,var(--ut-bg));color:var(--ut-accent)}
+.ut-rv-soorten button:focus-visible{outline:2px solid var(--ut-accent);outline-offset:1px}
+.ut-rv-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px;min-width:0}
+.ut-rv-kaart{display:block;min-width:0;border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg);transition:border-color .15s,box-shadow .15s}
+.ut-rv-kaart[data-oordeel='aandacht'],.ut-rv-kaart[data-blok]{border-color:color-mix(in srgb,var(--ut-err) 45%,var(--ut-line))}
+.ut-rv-kaart[data-open]{box-shadow:0 2px 10px color-mix(in srgb,var(--ut-text) 8%,transparent)}
+.ut-rv-rij{display:flex;gap:10px;align-items:center;width:100%;min-width:0;padding:10px;border:0;border-radius:12px;background:none;color:inherit;font:inherit;font-size:.86rem;text-align:left;cursor:pointer}
+.ut-rv-rij:hover:not(:disabled){background:var(--ut-bg2)}
+.ut-rv-rij:disabled{cursor:default}
+.ut-rv-rij:focus-visible{outline:2px solid var(--ut-accent);outline-offset:-2px}
+.ut-rv-icoon{position:relative;display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;background:var(--ut-bg2);color:var(--ut-muted)}
+.ut-rv-icoon svg{width:19px;height:19px}
+.ut-rv-icoon[data-o='let']{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-rv-icoon[data-o='ok']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-icoon[data-o='gewoon']{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-icoon em{position:absolute;right:-6px;bottom:-4px;padding:0 5px;border-radius:999px;background:var(--ut-bg);border:1px solid var(--ut-line);color:var(--ut-text);font-size:.66rem;font-style:normal;font-weight:700;line-height:16px}
+.ut-rv-kort{flex:1;min-width:0;display:grid;gap:2px}
+.ut-rv-kort>span{overflow-wrap:anywhere;font-weight:600;line-height:1.35}
+.ut-rv-kort small{color:var(--ut-muted);font-size:.74rem;overflow-wrap:anywhere;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ut-rv-aantal{margin-left:6px;font-style:normal;font-weight:400;color:var(--ut-muted);font-size:.78rem}
+.ut-rv-rechts{display:flex;align-items:center;gap:8px;flex:none}
+.ut-rv-schaal{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-variant-numeric:tabular-nums}
+.ut-rv-schaal [data-r='+']{color:var(--ut-ok);font-weight:600}
+.ut-rv-schaal [data-r='-']{color:var(--ut-err);font-weight:600}
+.ut-rv-blokken{display:inline-flex;gap:2px;margin-left:2px}
+.ut-rv-blokken i{width:8px;height:8px;border-radius:2px}
+.ut-rv-blokken i[data-r='+']{background:var(--ut-ok)}
+.ut-rv-blokken i[data-r='-']{background:var(--ut-err)}
+.ut-rv-oordeel{display:inline-flex;align-items:center;gap:4px;flex:none;padding:3px 9px;border-radius:999px;font-size:.74rem;font-weight:600;white-space:nowrap}
+.ut-rv-oordeel svg{width:13px;height:13px}
+.ut-rv-oordeel[data-o='ok'],.ut-rv-tellers [data-o='ok']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-oordeel[data-o='gewoon'],.ut-rv-tellers [data-o='gewoon']{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-oordeel[data-o='let'],.ut-rv-tellers [data-o='let']{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-rv-pijl{width:16px;height:16px;flex:none;color:var(--ut-muted);transition:transform .15s}
+.ut-rv-kaart[data-open] .ut-rv-pijl{transform:rotate(180deg)}
+.ut-rv-keuze{display:flex;gap:4px;flex-wrap:wrap;padding:0 10px 4px 58px}
+/* Перемикач файлів групи (власник 16.11.2026). Bestandenwisselaar. */
+.ut-rv-bestanden{display:grid;gap:8px;margin:0 10px 8px 58px;padding:10px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg);min-width:0}
+.ut-rv-best-kop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.ut-rv-best-icoon{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-best-icoon svg{width:19px;height:19px}
+.ut-rv-best-icoon em{position:absolute;right:-6px;bottom:-5px;padding:0 4px;border-radius:5px;background:var(--ut-info);color:#fff;font-style:normal;font-size:.56rem;font-weight:800;letter-spacing:.02em;line-height:1.5}
+.ut-rv-best-naam{display:grid;gap:1px;min-width:0}
+.ut-rv-best-naam b{font-size:.92rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-rv-best-naam small{color:var(--ut-muted);font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-rv-best-naam code{background:none;padding:0;font-size:inherit}
+.ut-rv-best-nav{display:inline-flex;gap:4px}
+.admin-uitrol .ut-rv-best-nav button{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg);color:var(--ut-text);cursor:pointer}
+.admin-uitrol .ut-rv-best-nav button:hover{border-color:var(--ut-info);color:var(--ut-info)}
+.ut-rv-best-nav svg{width:16px;height:16px}
+.admin-uitrol .ut-rv-best-nav .ut-rv-best-alles{width:auto;display:inline-flex;align-items:center;gap:5px;padding:0 10px;font:inherit;font-size:.8rem;font-weight:600}
+.admin-uitrol .ut-rv-best-nav .ut-rv-best-alles[aria-expanded='true']{background:var(--ut-info-bg);border-color:var(--ut-info);color:var(--ut-info)}
+.ut-rv-best-alles-pijl{transition:transform .15s}
+.ut-rv-best-alles[aria-expanded='true'] .ut-rv-best-alles-pijl{transform:rotate(180deg)}
+.ut-rv-best-lijst{list-style:none;margin:0;padding:0;display:grid;border:1px solid var(--ut-line);border-radius:12px;overflow:hidden;animation:ut-afwijs-in .15s ease-out}
+.ut-rv-best-lijst li+li{border-top:1px solid var(--ut-line)}
+.admin-uitrol .ut-rv-best-lijst button{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;background:transparent;color:var(--ut-text);font:inherit;text-align:left;cursor:pointer}
+.admin-uitrol .ut-rv-best-lijst button:hover{background:color-mix(in srgb,var(--ut-info-bg) 50%,transparent)}
+.admin-uitrol .ut-rv-best-lijst button[aria-current]{background:var(--ut-info-bg)}
+.admin-uitrol .ut-rv-best-lijst button[aria-current] .ut-rv-best-nr{background:var(--ut-info);color:#fff}
+.ut-rv-best-lijst-naam{display:grid;min-width:0}
+.ut-rv-best-lijst-naam b{font-size:.86rem;font-weight:600;overflow-wrap:anywhere}
+.ut-rv-best-lijst-naam small{font-family:var(--mono,ui-monospace,monospace);font-size:.72rem;color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-rv-best-lijst-tel{display:inline-flex;gap:6px;font-family:var(--mono,ui-monospace,monospace);font-size:.76rem;font-weight:600}
+.ut-rv-best-lijst-tel [data-r='+']{color:var(--ut-ok)}
+.ut-rv-best-lijst-tel [data-r='-']{color:var(--ut-err)}
+.ut-rv-best-oog{width:16px;height:16px;color:var(--ut-muted)}
+button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
+@media (prefers-reduced-motion:reduce){.ut-rv-best-lijst{animation:none}.ut-rv-best-alles-pijl{transition:none}}
+.ut-rv-best-strook{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:2px;margin:0 -2px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent)}
+.ut-rv-best-strook::-webkit-scrollbar{display:none}
+.admin-uitrol .ut-rv-best-strook button{flex:none;display:inline-flex;align-items:center;gap:6px;scroll-snap-align:center;padding:4px 10px 4px 4px;border:1px solid var(--ut-line);border-radius:999px;
+  background:var(--ut-bg);color:var(--ut-muted);font:inherit;font-size:.78rem;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.admin-uitrol .ut-rv-best-strook button:hover{color:var(--ut-text);border-color:color-mix(in srgb,var(--ut-info) 50%,var(--ut-line))}
+.ut-rv-best-nr{display:grid;place-items:center;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info);font-size:.68rem;font-weight:700}
+.admin-uitrol .ut-rv-best-strook button[aria-selected='true']{background:var(--ut-info);border-color:var(--ut-info);color:#fff;font-weight:600}
+.admin-uitrol .ut-rv-best-strook button[aria-selected='true'] .ut-rv-best-nr{background:rgba(255,255,255,.25);color:#fff}
+.ut-rv-keuze button{padding:2px 8px;border:1px solid var(--ut-line);border-radius:999px;background:var(--ut-bg2);color:var(--ut-muted);font:inherit;font-size:.72rem;cursor:pointer}
+.ut-rv-keuze button[aria-selected='true']{border-color:var(--ut-accent);color:var(--ut-accent)}
+.ut-rv-uitleg{display:grid;gap:8px;padding:0 12px 12px 58px;font-size:.86rem;line-height:1.45;min-width:0}
+.ut-rv-uitleg p{margin:0}
+.ut-rv-doen{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:var(--ut-info-bg)}
+.ut-rv-doen>svg{width:17px;height:17px;flex:none;margin-top:1px;color:var(--ut-info)}
+.ut-rv-doen[data-o='ok']{background:var(--ut-ok-bg)}.ut-rv-doen[data-o='ok']>svg{color:var(--ut-ok)}
+.ut-rv-doen[data-o='let']{background:var(--ut-err-bg)}.ut-rv-doen[data-o='let']>svg{color:var(--ut-err)}
+.ut-rv-auteur{display:flex;gap:8px;margin:0;padding:10px 12px;border-radius:12px;border:1px dashed var(--ut-line);background:var(--ut-bg2)}
+.ut-rv-auteur>svg{width:18px;height:18px;flex:none;color:var(--ut-accent);margin-top:2px}
+.ut-rv-auteur div{display:grid;gap:3px;min-width:0}
+.ut-rv-auteur small{color:var(--ut-muted);font-size:.74rem}
+.ut-rv-auteur p{font-style:italic;overflow-wrap:anywhere}
+/* «Було → стане» компактно (власник 16.11.2026). Voor → na compact: modules als regel, rest als regel met teken. */
+.ut-rv-wissels{display:grid;gap:10px;min-width:0}
+.ut-rv-mods{border:1px solid var(--ut-line);border-radius:14px;overflow:hidden;background:var(--ut-bg)}
+.ut-rv-mods-kop{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:.82rem;font-weight:600;color:var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-rv-mods-kop svg{width:16px;height:16px;flex:none}
+.ut-rv-mods ul,.ut-rv-rest{list-style:none;margin:0;padding:0}
+.ut-rv-mods li{border-top:1px solid var(--ut-line);min-width:0}
+.ut-rv-mod summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:8px 12px;cursor:pointer;list-style:none;transition:background .15s}
+.ut-rv-mod summary::-webkit-details-marker{display:none}
+.ut-rv-mod summary:hover{background:color-mix(in srgb,var(--ut-info-bg) 50%,transparent)}
+.ut-rv-mod summary:focus-visible{outline:2px solid var(--ut-info);outline-offset:-2px}
+.ut-rv-mod-pijl{width:16px;height:16px;color:var(--ut-muted);transition:transform .15s}
+.ut-rv-mod[open] .ut-rv-mod-pijl{transform:rotate(180deg)}
+.ut-rv-mod[open] summary{background:color-mix(in srgb,var(--ut-info-bg) 60%,transparent)}
+.ut-rv-mod-meer{display:grid;gap:8px;padding:4px 12px 12px 35px}
+.ut-rv-mod-meer dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:0;font-size:.84rem}
+.ut-rv-mod-meer dt{font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding-top:2px}
+.ut-rv-mod-meer dt:nth-of-type(1){color:var(--ut-err)}
+.ut-rv-mod-meer dt:nth-of-type(2){color:var(--ut-ok)}
+.ut-rv-mod-meer dd{margin:0;overflow-wrap:anywhere}
+.ut-rv-mod-waarom{display:flex;gap:8px;margin:0;padding:8px 10px;border-radius:10px;background:var(--ut-ok-bg);font-size:.82rem}
+.ut-rv-mod-waarom svg{width:16px;height:16px;flex:none;color:var(--ut-ok);margin-top:1px}
+@media (prefers-reduced-motion:reduce){.ut-rv-mod-pijl{transition:none}}
+.ut-rv-mods li:first-child{border-top:0}
+.ut-rv-mod-naam{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.ut-rv-mod-naam svg{width:16px;height:16px;flex:none;color:var(--ut-muted)}
+.ut-rv-mod-naam code{font-size:.84rem;overflow-wrap:anywhere;background:none;padding:0}
+.ut-rv-mod-naam em{font-style:normal;font-size:.72rem;font-weight:700;padding:0 6px;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-mod-versies{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.ut-rv-ver{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-family:var(--mono,ui-monospace,monospace);font-size:.76rem;font-weight:600;white-space:nowrap}
+.ut-rv-ver svg{width:12px;height:12px}
+.ut-rv-ver[data-k='van'],.ut-rv-ver[data-k='weg']{background:var(--ut-err-bg);color:var(--ut-err);text-decoration:line-through;text-decoration-thickness:1px}
+.ut-rv-ver[data-k='vast']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-ver[data-k='label'],.ut-rv-ver[data-k='nieuw']{background:var(--ut-warn-bg);color:var(--ut-warn)}
+.ut-rv-ver-pijl{width:14px;height:14px;color:var(--ut-muted)}
+.ut-rv-rest{display:grid;border:1px solid var(--ut-line);border-radius:14px;overflow:hidden;background:var(--ut-bg)}
+.ut-rv-rest li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:9px 12px;border-top:1px solid var(--ut-line)}
+.ut-rv-rest li:first-child{border-top:0}
+.ut-rv-rest-icoon{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-rv-rest-icoon svg{width:15px;height:15px}
+.ut-rv-rest li[data-toon='veiliger'] .ut-rv-rest-icoon{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-rest li[data-toon='risico'] .ut-rv-rest-icoon{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-rv-rest-tekst{display:grid;gap:1px;min-width:0;font-size:.88rem;overflow-wrap:anywhere}
+.ut-rv-rest-tekst small{font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ut-muted)}
+.ut-rv-rest li[data-toon='veiliger'] small{color:var(--ut-ok)}
+.ut-rv-rest li[data-toon='risico'] small{color:var(--ut-err)}
+.ut-rv-rest-tekst s{color:var(--ut-muted);font-size:.8rem}
+.ut-rv-voorna{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-rv-voorna li{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch}
+.ut-rv-voorna span{display:grid;gap:2px;align-content:start;padding:7px 9px;border-radius:10px;overflow-wrap:anywhere}
+.ut-rv-voorna small{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.ut-rv-voorna [data-k='voor']{background:var(--ut-err-bg)}
+.ut-rv-voorna [data-k='voor'] small{color:var(--ut-err)}
+.ut-rv-voorna [data-k='na']{background:var(--ut-ok-bg)}
+.ut-rv-voorna [data-k='na'] small{color:var(--ut-ok)}
+.ut-rv-pijl-rechts{width:16px;height:16px;align-self:center;color:var(--ut-muted)}
+.ut-rv-overig{display:flex;gap:6px;align-items:center;color:var(--ut-muted);font-size:.8rem}
+.ut-rv-overig svg{width:14px;height:14px;flex:none}
+.ut-rv-opvallend{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ut-rv-opvallend li{display:flex;gap:6px;align-items:flex-start;padding:6px 9px;border-radius:10px;background:var(--ut-err-bg);color:var(--ut-err);overflow-wrap:anywhere;font-size:.82rem}
+.ut-rv-opvallend svg{width:15px;height:15px;flex:none;margin-top:2px}
+.ut-rv-betekenis{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ut-rv-betekenis li{display:flex;gap:6px;align-items:flex-start;padding:6px 9px;border-radius:10px;background:var(--ut-ok-bg);color:var(--ut-text);overflow-wrap:anywhere}
+.ut-rv-betekenis svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--ut-ok)}
+.ut-rv-meer summary{cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ut-muted)}
+.ut-rv-meer summary svg{width:15px;height:15px}
+.ut-rv-meer[open]{display:grid;gap:6px}
+.ut-rv-bevestig{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--ut-bg2);font-weight:600;cursor:pointer}
+.ut-rv-bevestig input{width:18px;height:18px;flex:none}
+.ut-rv-bevestig svg{width:16px;height:16px;flex:none;color:var(--ut-err)}
+.ut-rode-vlaggen[data-bevestigd] .ut-rv-bevestig svg{color:var(--ut-warn)}
+.ut-rv-geblokkeerd{display:flex;gap:8px;align-items:center;margin:0;padding:10px 12px;border-radius:12px;background:var(--ut-err-bg);color:var(--ut-err);font-weight:600;font-size:.86rem}
+.ut-rv-geblokkeerd svg{width:16px;height:16px;flex:none}
+.ut-rv-diff{display:grid;gap:4px;min-width:0}
+.ut-rv-legenda{display:flex;gap:10px;margin:0;font-size:.76rem}
+.ut-rv-legenda span{padding:0 6px;border-radius:6px}
+.ut-rv-diff pre{margin:0;max-height:360px;overflow:auto;padding:6px 0;border:1px solid var(--ut-line);border-radius:8px;background:var(--ut-bg2,var(--ut-bg));font-size:.76rem;line-height:1.4}
+.ut-rv-diff pre span{display:block;padding:0 8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ut-rv-diff [data-r='+']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-diff [data-r='-']{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-rv-diff [data-r='blok']{color:var(--ut-muted)}
+.ut-rv-diff [data-r='kop']{color:var(--ut-muted);font-weight:600}
 .ut-reden-veld textarea{width:100%;resize:vertical}
 .ut-pakket{border:1px solid var(--ut-line);border-radius:12px;padding:14px;display:grid;gap:10px;background:var(--ut-bg2)}
 .ut-problemen{margin:0;padding-left:20px;display:grid;gap:4px;color:var(--ut-err)}
@@ -505,3 +773,47 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-recent>li[data-ut-recent-poging] small svg{width:13px;height:13px;color:var(--ut-warn)}
 .ut-recent-acties{display:flex;gap:6px;padding:0 10px 0 0;flex-wrap:wrap}
 @media (max-width:520px){.ut-recent-acties{padding:0 10px 8px}}
+/* SEC-PAKKET-001 · telefoon: oordeel en pijl op de eerste regel, de zin eronder over de volle breedte (mobiele laag, aan het eind). */
+@media (max-width:560px){
+  .ut-rode-vlaggen{padding:12px 10px 12px 14px}
+  .ut-rv-held{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px 12px;align-items:center}
+  .ut-rv-held-tekst{display:contents}
+  .ut-rv-staat,.ut-rv-tellers{grid-column:1/-1}
+  .ut-rv-ring{width:64px;height:64px}
+  .ut-rv-rij{flex-wrap:wrap;row-gap:6px;padding:9px}
+  .ut-rv-kort{flex-basis:calc(100% - 48px)}
+  .ut-rv-rechts{flex-basis:100%;box-sizing:border-box;min-width:0;padding-left:48px;flex-wrap:wrap;row-gap:4px}
+  .ut-rv-pijl{margin-left:auto}
+  .ut-rv-oordeel{margin-right:auto}
+  .ut-rv-uitleg{padding:0 10px 10px}
+  .ut-rv-keuze{padding:0 10px 4px}
+  .ut-rv-bestanden{margin:0 10px 8px}
+  .ut-rv-best-naam b{white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+  .ut-rv-best-naam small code,.ut-rv-best-scheid{display:none}
+  .ut-rv-best-icoon{width:34px;height:34px}
+  .admin-uitrol .ut-rv-best-nav button{width:30px;height:30px}
+  .ut-rv-best-kop{grid-template-columns:auto minmax(0,1fr)}
+  .ut-rv-best-nav{grid-column:1/-1;justify-content:flex-end}
+  .admin-uitrol .ut-rv-best-lijst button{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:8px}
+  .ut-rv-best-lijst .ut-rv-best-oog{display:none}
+  .ut-rv-best-lijst-naam b{font-size:.82rem}
+  .ut-rv-best-lijst-tel{flex-direction:column;align-items:flex-end;gap:0;font-size:.72rem}
+  .ut-rv-voorna li{grid-template-columns:1fr}
+  .ut-rv-pijl-rechts{transform:rotate(90deg);justify-self:center}
+}
+
+/* SEC-PAKKET-001 · вікно відхилення на телефоні: кнопки на всю ширину, головна зверху. Afwijsvenster op de telefoon. */
+@media (max-width:560px){
+  .ut-afwijs{padding:14px 12px;border-radius:16px}
+  .ut-afwijs-acties{flex-direction:column;align-items:stretch}
+  .admin-uitrol .ut-afwijs-acties .ut-knop{justify-content:center;width:100%}
+  .ut-afwijs-raster{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ut-rv-mod-versies{margin-left:23px}
+  .ut-rv-mod summary{justify-content:flex-start}
+  .ut-rv-mod-meer{padding-left:12px}
+  .admin-uitrol .ut-afwijs-tegel{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px;align-items:start}
+  .admin-uitrol .ut-afwijs-tegel .ut-afwijs-tegel-keuze{position:absolute;top:8px;right:8px}
+  .admin-uitrol .ut-afwijs-tegel[data-voorstel]{grid-template-columns:auto minmax(0,1fr) auto;align-items:center}
+  .admin-uitrol .ut-afwijs-tegel[data-voorstel] .ut-afwijs-tegel-keuze{position:static}
+  .ut-afwijs-waar li{font-size:.74rem;padding:2px 8px 2px 6px}
+}

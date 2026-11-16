@@ -129,7 +129,7 @@ export function bestandOpslaan(naam: string, tekst: string) {
 export const regelsNaarTekst = (regels: Regel[]) => regels.map((r) => `${String(r.nr).padStart(5, '0')} ${r.tijd ? r.tijd.slice(11, 19) : '--:--:--'} ${r.niveau.toUpperCase().padEnd(5)} ${r.tekst}`).join('\n');
 
 // ---- Overzicht van het bestaande goedkeur-/grantsysteem (POST /api/owner/uitrol/overzicht)
-export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string } | null; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null;
+export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string; door?: { id?: string; email?: string; naam?: string }; tijd?: string; github?: { stand?: string; url?: string; code?: string } } | null; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null;
   /** UITROL-002: het archief van deze (mislukte/verlopen/afgebroken) poging ligt nog op de server — hervatten zonder upload kan. */
   pakketAanwezig?: boolean };
 export type GrantSoort = 'account' | 'agenttoken' | 'mcp-koppeling' | 'agent';
@@ -183,7 +183,11 @@ export const VOORSTEL_STATUS: Record<string, [string, string]> = {
 
 // Voorcontrole van de site vóór de goedkeuring (backend/uitrol-voorcontrole.ts) en metadata uit het pakket zelf.
 export type ControleNiveau = 'ok' | 'waarschuwing' | 'fout';
-export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[] };
+/** SEC-PAKKET-001: червоний прапорець із поясненням людською мовою і справжньою різницею (backend/uitrol-risico.ts → RisicoItem). */
+export type TekstUit = { uk: string; nl: string };
+export type LeesbaarUit = { oordeel: 'veiliger' | 'gewoon' | 'aandacht'; kort: TekstUit; voorNa: Array<{ voor: TekstUit | null; na: TekstUit | null; keer?: number; toon?: 'veiliger' | 'risico'; module?: { naam: string; van?: string; naar?: string; vast?: boolean } }>; overig: number; doen: TekstUit; uitlegNodig?: boolean };
+export type RisicoItemUit = { leesbaar?: LeesbaarUit; vlag: string; wat: TekstUit; wijziging: TekstUit; let: TekstUit; opvallend?: TekstUit[]; betekenis?: TekstUit[]; verschil?: string; verschilAfgekapt?: boolean; sleutel?: string; auteur?: TekstUit };
+export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItemUit[] };
 export type VoorcontroleUit = { versie: number; tijd: string; ok: boolean; fouten: number; waarschuwingen: number; controles: ControleUit[] };
 export type PakketMetaUit = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string; manifest?: import('../../shared/uitrol-manifest').Manifest | null };
 /** Stand van de «nieuwe update» (de wizard op het tabblad Огляд), zodat de vier fasen bovenaan bij een nieuw bestand opnieuw beginnen. */

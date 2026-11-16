@@ -60,6 +60,13 @@ export async function main(): Promise<number> {
       archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url})});
     check('TRACE-001: geverifieerd dossier wordt getoond',
       niv(traceGoed,'ontwikkelarchief')==='ok' && traceGoed.meta.ontwikkelArchiefUrl===traceRef.url);
+    // SEC-PAKKET-001: архів, завантажений у випуск вручну (власник так робить) — не відхиляється, а дає червоний прапорець.
+    const traceHand=await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url,handmatig:{uploader:'Tarasevych',auteur:'Tarasevych'}})});
+    const rvHand=traceHand.resultaat.controles.find((c)=>c.id==='risico');
+    check('SEC-PAKKET-001: met de hand geüpload GitHub-archief → ontwikkelarchief ok + rode vlag (geen weigering)',
+      niv(traceHand,'ontwikkelarchief')==='ok' && rvHand?.niveau==='waarschuwing' && !!rvHand.details?.[0]?.startsWith('[GitHub]') && rvHand.details[0].includes('Tarasevych'), JSON.stringify(rvHand));
+    check('SEC-PAKKET-001: door GitHub Actions geüpload → geen vlag', !traceGoed.resultaat.controles.some((c)=>c.id==='risico'));
     const traceKapot=await pakketVoorcontrole(tracePakket,{...traceBasis,
       archiefControle:async()=>({ok:false,code:'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT',reden:'SHA ongelijk'})});
     check('TRACE-001: afwijkende GitHub SHA-256 → blokkerende fout',
@@ -105,7 +112,15 @@ export async function main(): Promise<number> {
     const ontbreektToegepast = await pakketVoorcontrole(maak({ zonder: ['migrations/0001_basis.sql'] }), opties);
     check('echt ontbrekende al toegepaste migratie → blokkerende fout MIGRATIES_ONTBREKEN', !ontbreektToegepast.resultaat.ok && niv(ontbreektToegepast, 'migraties') === 'fout' && /MIGRATIES_ONTBREKEN/.test(ontbreektToegepast.resultaat.controles.find((c) => c.id === 'migraties')?.uk || ''));
     const geheim = await pakketVoorcontrole(maak({ extra: { 'src/x.ts': '// -----BEGIN PRIVATE' + ' KEY-----\nabc', '.env': 'A=1' } }), opties);
-    check('geheimen: privésleutel en .env → waarschuwing met alleen bestandsnamen, niet geblokkeerd', geheim.resultaat.ok && niv(geheim, 'geheimen') === 'waarschuwing' && !JSON.stringify(geheim.resultaat).includes('abc'));
+    // SEC-PAKKET-001 (16.11.2026, besluit eigenaar): een geheim BLOKKEERT nu de uitrol, met alleen bestandsnamen in de uitleg.
+    check('geheimen: privésleutel en .env → «fout», pakket geblokkeerd, alleen bestandsnamen (geen inhoud)', !geheim.resultaat.ok && niv(geheim, 'geheimen') === 'fout' && !JSON.stringify(geheim.resultaat).includes('abc') && /заблоковано/.test(geheim.resultaat.controles.find((c) => c.id === 'geheimen')!.uk));
+    const nieuweSoorten = await pakketVoorcontrole(maak({ extra: { 'src/telegram.ts': 'const t = "' + '123456789:AA' + 'Bb'.repeat(16) + 'c";', 'deploy/id_ed25519': 'x' } }), opties);
+    const nd = nieuweSoorten.resultaat.controles.find((c) => c.id === 'geheimen')!;
+    check('geheimen: ook nieuwe soorten blokkeren (Telegram-bottoken, SSH-sleutel zonder extensie)', nd.niveau === 'fout' && nd.details!.some((d) => /Telegram-bottoken/.test(d)) && nd.details!.some((d) => /id_ed25519: sleutelbestand/.test(d)), JSON.stringify(nd.details));
+    const lokaal = await pakketVoorcontrole(maak({ extra: { 'deploy/ci.sh': 'export DATABASE_URL=postgres://' + 'migratie:ci-wachtwoord-123@127.0.0.1:5432/x\nexport B=postgresql://u:' + 'langwachtwoord99@db.voorbeeld.test/x' } }), opties);
+    check('geheimen: wachtwoord voor een lokale/test-database blokkeert niet', niv(lokaal, 'geheimen') === 'ok', JSON.stringify(lokaal.resultaat.controles.find((c) => c.id === 'geheimen')));
+    const extern = await pakketVoorcontrole(maak({ extra: { 'server/db.ts': 'const u = "postgres://' + 'beheer:Zr8kLq2mWp4x@db.mijnbedrijf.nl:5432/prod";' } }), opties);
+    check('geheimen: wachtwoord voor een externe database blokkeert wel', niv(extern, 'geheimen') === 'fout');
     check('mislukte tests van de voorbereider → waarschuwing', niv(await pakketVoorcontrole(maak(), { ...opties, tests: { geslaagd: 10, mislukt: 2 } }), 'tests') === 'waarschuwing');
     // 29.10.2026: tests ook uit het pakket zelf (TESTRESULTATEN), zodat een upload via wizard/SSH niet altijd «geen testresultaten» geeft.
     const trOk = await pakketVoorcontrole(maak({ extra: { TESTRESULTATEN: '{"geslaagd":42,"mislukt":0,"samenvatting":"alles groen"}' } }), { ...opties, tests: null });
@@ -130,7 +145,7 @@ export async function main(): Promise<number> {
     // De geheimenscan blijft onverzwakt óók onder tests/ gelden: een echt PEM-blok daar waarschuwt nog steeds. (De eigen
     // testbestanden van de site knippen hun neppe sleutels daarom op in de BRON — zie bv. tests/eenheid/zoek-isolatie.)
     const pemInTests = await pakketVoorcontrole(maak({ extra: { 'tests/eenheid/fixture.ts': `const pem = \`-----BEGIN PRIVATE` + ` KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n-----END PRIVATE` + ` KEY-----\`;` } }), opties);
-    check('een echt PEM-blok onder tests/ waarschuwt nog steeds (scan niet verzwakt)', niv(pemInTests, 'geheimen') === 'waarschuwing');
+    check('een echt PEM-blok onder tests/ blokkeert nog steeds (scan niet verzwakt)', niv(pemInTests, 'geheimen') === 'fout');
     check('tijdelijke map is opgeruimd', !execFileSync('sh', ['-c', `ls -d ${tmpdir()}/uitrol-voorcontrole-* 2>/dev/null | wc -l`]).toString().trim().replace(/^0$/, '') );
   } finally { rmSync(basis, { recursive: true, force: true }); }
   return einde();

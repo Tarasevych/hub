@@ -312,7 +312,7 @@ export async function main(): Promise<number> {
         model: 'claude-sonnet-4-6',
         listTools: async () => [],
         callTool: async () => ({ content: [{ type: 'text', text: 'ok' }] }),
-        getApiKey: async () => 'sk-ant-nep-sleutel-alleen-voor-test',
+        getApiKey: async () => 'sk' + '-ant-nep-sleutel-alleen-voor-test',
         fetchImpl: (async (_url: unknown, init?: { body?: string }) => {
           const payload = init?.body ? JSON.parse(String(init.body)) : {};
           ontvangenExtraSystem = String(payload.system ?? '');

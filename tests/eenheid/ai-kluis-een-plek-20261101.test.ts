@@ -926,7 +926,7 @@ export async function main(): Promise<number> {
       // Vul nu geldige Client ID + Client Secret in en sla versleuteld op!
       await stapOpVoor(mcpSessieId, mcpSessieCreated);
       await zetReactWaarde('[data-kluis-veld="client-id"]', 'Ov23liChromeTest98765');
-      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'ghs_ChromeTestClientSecretValue987654321');
+      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'gh' + 's_ChromeTestClientSecretValue987654321');
       await evalJs(`document.querySelector('[data-kluis-opslaan="1"]').click()`);
       await wachtOp('Modal sluit na opslaan en hoofdknop springt naar «Увійти через GitHub» (oauthKlaar=true!)',
         `!document.querySelector('[data-venster="gh-kluis-venster"]') && (document.querySelector('[data-gh-hoofd-actie="1"]')?.textContent || '').includes('Увійти через GitHub')`);
@@ -935,7 +935,7 @@ export async function main(): Promise<number> {
       const gelezenOauth = leesOauthApp(ontsleuteld);
       check('Chrome Deel 2.3 (AES-256-GCM opslag + leesOauthApp): kluis bewaart versleuteld geheim en KoppelKaart herkent oauthKlaar direct',
         gelezenOauth?.clientId === 'Ov23liChromeTest98765'
-        && gelezenOauth?.clientSecret === 'ghs_ChromeTestClientSecretValue987654321');
+        && gelezenOauth?.clientSecret === 'gh' + 's_ChromeTestClientSecretValue987654321');
 
       // ------------------------------------------------------------------ Chrome Deel 2.4: api.tarasevych.com/kluis?doel=github-app
       // api.* en admin.* zijn technische diensten (niet in publicServiceIds), dus start technische sessie op deze browsersessie:

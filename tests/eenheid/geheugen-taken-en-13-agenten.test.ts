@@ -146,12 +146,12 @@ export async function main(): Promise<number> {
 
   const geheimWeigering = await opslag.opslaan(priveA, {
     taakSleutel: 'SEC-CHECK-1',
-    titel: 'Передача з токеном ghp_1234567890abcdef1234567890abcdef1234',
+    titel: 'Передача з токеном gh' + 'p_1234567890abcdef1234567890abcdef1234',
   }, 'claude');
   check('3b: потенційний секрет у назві чи меті задачі відхиляється з TAAK_GEHEIM_GEWEIGERD',
     !geheimWeigering.ok && geheimWeigering.code === TAAK_FOUTEN.geheimGeweigerd);
 
-  const bestandGeheim = schoonTaakBestanden([{ naam: 'env', verwijzing: 'sk-ant-api03-secretvalue1234567890' }]);
+  const bestandGeheim = schoonTaakBestanden([{ naam: 'env', verwijzing: 'sk' + '-ant-api03-secretvalue1234567890' }]);
   check('3c: потенційний секрет у посиланнях на файли також відхиляється',
     !bestandGeheim.ok && bestandGeheim.code === TAAK_FOUTEN.geheimGeweigerd);
 

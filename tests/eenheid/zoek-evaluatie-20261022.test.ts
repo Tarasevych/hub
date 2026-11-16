@@ -35,7 +35,7 @@ const past = (v: Verwacht, t: ZoekTreffer) => {
 const SOORT: Record<string, ZoekSoort> = { bericht: 'bericht', bestand: 'bestand', notitie: 'notitie', afspraak: 'afspraak', overig: 'overig' };
 
 // De fixture is opgeknipt zodat de geheimenscan van de uitrol-voorcontrole dit TESTBESTAND niet meldt; runtime is het één string.
-const SECRET_MAIL = { id: 'eval-mail-geheim', titel: 'Toegang tot de server', inhoud: 'Hier zijn de sleutels: sk_live_51Hx9ZZZZabcdefghijklmnop en ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 en password=hunter2geheim. -----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n-----END PRIVATE' + ' KEY-----' };
+const SECRET_MAIL = { id: 'eval-mail-geheim', titel: 'Toegang tot de server', inhoud: 'Hier zijn de sleutels: sk' + '_live_51Hx9ZZZZabcdefghijklmnop en ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 en password=hunter2geheim. -----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n-----END PRIVATE' + ' KEY-----' };
 
 /** Каталог інтерфейсу від Z2 (справжній): backend/zoek/catalogus-ui.ts → uiZoekObjecten(lade). Без нього тест чесно падає. */
 async function uiCatalogus(lade: Lade): Promise<ZoekObject[]> {

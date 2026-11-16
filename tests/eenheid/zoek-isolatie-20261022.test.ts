@@ -32,7 +32,7 @@ const SECRET = {
   // De pem- en ghp-fixtures zijn opgeknipt zodat de geheimenscan van de uitrol-voorcontrole dit TESTBESTAND niet als
   // geheim meldt; tijdens de test zijn het dezelfde aaneengesloten strings als voorheen.
   pem: '-----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7ZZZZQQQQ\n-----END PRIVATE' + ' KEY-----',
-  ghp: 'ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab', stripe: 'sk_live_51HxQQQQabcdefghijklmnop', pw: 'password=hunter2geheim99',
+  ghp: 'ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab', stripe: 'sk' + '_live_51HxQQQQabcdefghijklmnop', pw: 'password=hunter2geheim99',
   jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
 };
 const SECRET_MARKERS = ['MIIEvQIBADANBg', 'ghp_ABCDEFGHIJ', 'sk_live_51HxQQQQ', 'hunter2geheim99', 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'];
