@@ -256,6 +256,52 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ut-form input[type=number]{width:72px}
 .ut-reden-veld{flex-basis:100%;display:grid;gap:6px;padding:10px;border:1px solid var(--ut-warn);border-radius:10px}
+.ut-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* SEC-PAKKET-001 · вікно відхилення (власник 16.11.2026): картка з піктограмою, готові причини одним дотиком, куди піде причина — значками.
+   Afwijsvenster: kaart met icoon, snelle redenen als chips, bestemming als iconen. */
+.ut-afwijs{display:grid;gap:12px;margin-top:10px;padding:16px;border:1px solid color-mix(in srgb,var(--ut-err) 35%,var(--ut-line));border-radius:18px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ut-err-bg) 70%,transparent),var(--ut-bg) 120px);min-width:0;animation:ut-afwijs-in .18s ease-out}
+@keyframes ut-afwijs-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ut-afwijs{animation:none}}
+.ut-afwijs-kop{display:flex;gap:12px;align-items:flex-start}
+.ut-afwijs-icoon{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-afwijs-icoon svg{width:22px;height:22px}
+.ut-afwijs-kop h4{margin:0;font-size:1rem;line-height:1.3;overflow-wrap:anywhere}
+.ut-afwijs-kop p{margin:2px 0 0;color:var(--ut-muted);font-size:.86rem}
+.ut-afwijs-groep{display:grid;gap:6px;min-width:0}
+.ut-afwijs-groep-kop{display:inline-flex;align-items:center;gap:6px;color:var(--ut-muted);font-size:.74rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.ut-afwijs-groep-kop svg{width:14px;height:14px}
+.ut-afwijs-chips{display:flex;flex-wrap:wrap;gap:6px}
+.admin-uitrol .ut-afwijs-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 12px 5px 9px;border-radius:999px;border:1px solid var(--ut-line);
+  background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.86rem;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.admin-uitrol .ut-afwijs-chip svg{width:16px;height:16px;color:var(--ut-muted)}
+.admin-uitrol .ut-afwijs-chip:hover:not(:disabled){border-color:var(--ut-err);background:color-mix(in srgb,var(--ut-err-bg) 50%,var(--ut-bg))}
+.admin-uitrol .ut-afwijs-chip[data-voorstel]{border-color:color-mix(in srgb,var(--ut-warn) 55%,var(--ut-line));background:var(--ut-warn-bg)}
+.admin-uitrol .ut-afwijs-chip[data-voorstel] svg{color:var(--ut-warn)}
+.admin-uitrol .ut-afwijs-chip[aria-pressed="true"]{border-color:var(--ut-err);background:var(--ut-err-bg);color:var(--ut-err);font-weight:600}
+.admin-uitrol .ut-afwijs-chip[aria-pressed="true"] svg{color:var(--ut-err)}
+.admin-uitrol .ut-afwijs-chip:focus-visible{outline:2px solid var(--ut-err);outline-offset:2px}
+.ut-afwijs-veld{display:grid;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.ut-afwijs-veld:focus-within{border-color:var(--ut-err);box-shadow:0 0 0 3px color-mix(in srgb,var(--ut-err) 18%,transparent)}
+.ut-afwijs-veld[data-geldig]:not(:focus-within){border-color:color-mix(in srgb,var(--ut-ok) 55%,var(--ut-line))}
+.admin-uitrol .ut-afwijs-veld textarea{width:100%;box-sizing:border-box;min-height:64px;padding:10px 12px 4px;border:0;outline:0;background:transparent;color:var(--ut-text);font:inherit;resize:vertical}
+.ut-afwijs-voet{display:flex;align-items:center;gap:8px;padding:4px 8px 6px 12px;font-size:.8rem;color:var(--ut-muted)}
+.ut-afwijs-stand{display:inline-flex;align-items:center;gap:5px;flex:1;min-width:0}
+.ut-afwijs-stand svg{width:15px;height:15px}
+.ut-afwijs-veld[data-geldig] .ut-afwijs-stand{color:var(--ut-ok)}
+.ut-afwijs-teller{font-variant-numeric:tabular-nums}
+.ut-afwijs-teller[data-bijna]{color:var(--ut-warn);font-weight:600}
+.admin-uitrol .ut-afwijs-wis{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--ut-muted);cursor:pointer}
+.admin-uitrol .ut-afwijs-wis:hover{background:var(--ut-panel,rgba(127,127,127,.12));color:var(--ut-text)}
+.ut-afwijs-wis svg{width:16px;height:16px}
+.ut-afwijs-waar{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.ut-afwijs-waar li{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info);font-size:.78rem;cursor:help}
+.ut-afwijs-waar li svg{width:14px;height:14px}
+.ut-afwijs-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.admin-uitrol .ut-afwijs-ja{background:var(--ut-err-bg)}
+.admin-uitrol .ut-afwijs-ja:not(:disabled):hover{background:var(--ut-err);color:#fff}
+.admin-uitrol .ut-afwijs-terug{border-color:transparent;background:transparent;color:var(--ut-muted)}
+.admin-uitrol .ut-afwijs-terug:hover{color:var(--ut-text);background:var(--ut-bg)}
 /* SEC-PAKKET-001: rode vlaggen vóór de goedkeuring — een zachte rode tint, compact; details ingeklapt. Червоні прапорці перед схваленням. */
 /* SEC-PAKKET-001 · rode vlaggen als moderne kaarten: ringdiagram, tegels per soort, verschilbalk, voor → na met pijl (eigenaar 16.11). */
 .ut-rode-vlaggen{display:grid;gap:12px;margin:10px 0;padding:14px;border:1px solid var(--ut-line);border-radius:16px;background:var(--ut-bg);min-width:0;
@@ -635,4 +681,13 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
   .ut-rv-keuze{padding:0 10px 4px}
   .ut-rv-voorna li{grid-template-columns:1fr}
   .ut-rv-pijl-rechts{transform:rotate(90deg);justify-self:center}
+}
+
+/* SEC-PAKKET-001 · вікно відхилення на телефоні: кнопки на всю ширину, головна зверху. Afwijsvenster op de telefoon. */
+@media (max-width:560px){
+  .ut-afwijs{padding:14px 12px;border-radius:16px}
+  .ut-afwijs-acties{flex-direction:column;align-items:stretch}
+  .admin-uitrol .ut-afwijs-acties .ut-knop{justify-content:center;width:100%}
+  .admin-uitrol .ut-afwijs-chip{min-height:36px;font-size:.84rem}
+  .ut-afwijs-waar li{font-size:.74rem;padding:2px 8px 2px 6px}
 }
