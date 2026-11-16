@@ -781,6 +781,10 @@ try:
     digest=hashlib.file_digest(open(pakket,'rb'),'sha256').hexdigest()
     if asset.get('digest')!='sha256:'+digest:
         print('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT');sys.exit()
+    # SEC-PAKKET-001: alleen een asset die GitHub Actions zelf uploadde (niet met de hand, met een gestolen token).
+    bot=lambda w: isinstance(w,dict) and w.get('login')=='github-actions[bot]' and w.get('id')==41898282 and w.get('type')=='Bot'
+    if not bot(asset.get('uploader')) or not bot(release.get('author')):
+        print('ONTWIKKELARCHIEF_PAKKET_HANDMATIG');sys.exit()
     print('OK')
 except urllib.error.HTTPError as e:
     print('ONTWIKKELARCHIEF_NIET_GEVONDEN' if e.code==404 else 'ONTWIKKELARCHIEF_ONBEREIKBAAR')
@@ -790,6 +794,8 @@ PY
 )"
   case "$ARCHIEF_UITKOMST" in
     OK) log "TRACE-001: GitHub commit, tak, dossier en exact pakketdigest bevestigd" ;;
+    ONTWIKKELARCHIEF_PAKKET_HANDMATIG)
+      weiger "$ARCHIEF_UITKOMST" "Архів у випуску на GitHub завантажено вручну, а не зібрано GitHub Actions. Так виглядає підробка з викраденим токеном. Установлення відхилено." "Het archief in de GitHub-release is met de hand geüpload, niet door GitHub Actions gebouwd. Zo ziet een vervalsing met een gestolen token eruit. Installatie geweigerd." ;;
     GEEN_ONTWIKKELARCHIEF|ONTWIKKELARCHIEF_ONGELDIG|ONTWIKKELARCHIEF_SHA_VERSCHILT|ONTWIKKELARCHIEF_TAK_ONGELDIG|ONTWIKKELARCHIEF_PAKKET_ONTBREEKT|ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT|ONTWIKKELARCHIEF_NIET_GEVONDEN|ONTWIKKELARCHIEF_ONBEREIKBAAR)
       weiger "$ARCHIEF_UITKOMST" "GitHub не підтвердив повну історію розробки й точний архів ($ARCHIEF_UITKOMST). Установлення відхилено." "GitHub kon het ontwikkeldossier en het exacte archief niet bevestigen ($ARCHIEF_UITKOMST). Installatie geweigerd." ;;
     *) weiger ONTWIKKELARCHIEF_ONBEREIKBAAR "Перевірка GitHub не завершилась. Установлення відхилено." "GitHub-verificatie niet voltooid. Installatie geweigerd." ;;

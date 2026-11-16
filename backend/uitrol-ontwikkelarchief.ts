@@ -9,6 +9,12 @@ import {
 
 export type ArchiefControle = { ok: boolean; code: string; reden: string; url?: string };
 const fout = (code: string, reden: string): ArchiefControle => ({ok:false,code,reden});
+/** De vaste bot-identiteit waarmee GitHub Actions (GITHUB_TOKEN) releases en assets aanmaakt. */
+export const GITHUB_ACTIONS_BOT = Object.freeze({ login: 'github-actions[bot]', id: 41898282, type: 'Bot' });
+export const doorGithubActions = (wie: unknown): boolean => {
+  const w = wie as { login?: unknown; id?: unknown; type?: unknown } | null | undefined;
+  return !!w && w.login === GITHUB_ACTIONS_BOT.login && w.id === GITHUB_ACTIONS_BOT.id && w.type === GITHUB_ACTIONS_BOT.type;
+};
 type Net = typeof fetch;
 
 export async function sha256VanBestand(pad: string): Promise<string> {
@@ -60,6 +66,10 @@ export async function controleerOntwikkelArchiefOnline(
     const asset=Array.isArray(release?.assets)?release.assets.find((a:any)=>a?.name===ref.pakket):null;
     if(!asset || asset.state!=='uploaded') return fout('ONTWIKKELARCHIEF_PAKKET_ONTBREEKT','Exacte tar.gz ontbreekt op GitHub Release');
     if(asset.digest!==`sha256:${pakketSha}`) return fout('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT','Release-asset wijkt af van het geüploade tar.gz');
+    // SEC-PAKKET-001 (16.11.2026): alleen een archief dat GitHub Actions zelf bouwde en uploadde. Met een gestolen token kan iemand
+    // een eigen tar.gz met de hand in een release zetten; dan is de uploader een gebruiker, geen bot. Root controleert hetzelfde.
+    // Лише архів, який зібрав і завантажив сам GitHub Actions; архів, завантажений вручну чиїмось токеном, відхиляється.
+    if(!doorGithubActions(asset?.uploader) || !doorGithubActions(release?.author)) return fout('ONTWIKKELARCHIEF_PAKKET_HANDMATIG',`Release-asset niet door GitHub Actions geüpload (uploader: ${String(asset?.uploader?.login||'onbekend').slice(0,40)})`);
     return {ok:true,code:'OK',reden:'Vastgelegd dossier, taak-tak en exact GitHub Release-archief bevestigd',url:ref.url};
   } catch (e) {
     const probleem=e instanceof Error?e.message:'netwerk';

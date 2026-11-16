@@ -20,7 +20,7 @@ const sha=(b:Buffer|string)=>createHash('sha256').update(b).digest('hex');
 const r={...ref,sha256:sha(dosBytes)};
 const pakketHash=sha('fake-pakket-content');
 function antwoord(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json'}});}
-function fakeNet(o:{geenDossier?:boolean; foutDossier?:boolean; afwijkTak?:boolean; geenRelease?:boolean; afwijkPakket?:boolean; netwerk?:boolean; git404?:boolean}={}):typeof fetch{
+function fakeNet(o:{geenDossier?:boolean; foutDossier?:boolean; afwijkTak?:boolean; geenRelease?:boolean; afwijkPakket?:boolean; handmatig?:boolean; handmatigRelease?:boolean; botVervalst?:boolean; netwerk?:boolean; git404?:boolean}={}):typeof fetch{
   return (async(url)=>{
     const u=String(url);
     if(o.netwerk) throw new Error('netwerk geen verbinding');
@@ -28,7 +28,11 @@ function fakeNet(o:{geenDossier?:boolean; foutDossier?:boolean; afwijkTak?:boole
     if(u.includes('/contents/')) return antwoord(o.geenDossier?{}:{type:'file',encoding:'base64',content:(o.foutDossier?Buffer.from('ongewenst'):dosBytes).toString('base64')});
     if(u.includes('/branches/')) return antwoord({commit:{sha:C}});
     if(u.includes('/compare/')) return antwoord({status:o.afwijkTak?'diverged':'identical'});
-    if(u.includes('/releases/tags/')) return antwoord({assets:o.geenRelease?[]:[{name:r.pakket,state:'uploaded',digest:'sha256:'+(o.afwijkPakket?'0'.repeat(64):pakketHash)}]});
+    // SEC-PAKKET-001: GitHub Actions uploadt als github-actions[bot] (id 41898282, type Bot); met een gestolen token is het een gebruiker.
+    const bot={login:'github-actions[bot]',id:41898282,type:'Bot'};
+    const mens={login:'Tarasevych',id:29941857,type:'User'};
+    const uploader=o.handmatig?mens:o.botVervalst?{login:'github-actions[bot]',id:1,type:'User'}:bot;
+    if(u.includes('/releases/tags/')) return antwoord({author:o.handmatigRelease?mens:bot,assets:o.geenRelease?[]:[{name:r.pakket,state:'uploaded',uploader,digest:'sha256:'+(o.afwijkPakket?'0'.repeat(64):pakketHash)}]});
     throw Error('unexpected url '+u);
   }) as typeof fetch;
 }
@@ -51,6 +55,9 @@ export async function main():Promise<number>{
     ['commit niet in tak',{afwijkTak:true},'ONTWIKKELARCHIEF_TAK_ONGELDIG'],
     ['release zonder tar.gz',{geenRelease:true},'ONTWIKKELARCHIEF_PAKKET_ONTBREEKT'],
     ['ander tar.gz op GitHub',{afwijkPakket:true},'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT'],
+    ['tar.gz met de hand geüpload (gestolen token)',{handmatig:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
+    ['release met de hand aangemaakt',{handmatigRelease:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
+    ['gebruiker die zich github-actions[bot] noemt',{botVervalst:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
     ['GitHub offline',{netwerk:true},'ONTWIKKELARCHIEF_ONBEREIKBAAR'],
     ['GitHub 404',{git404:true},'ONTWIKKELARCHIEF_NIET_GEVONDEN']
   ] as const){
