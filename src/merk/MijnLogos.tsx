@@ -4,7 +4,7 @@
 // видалено користувацький або не замінено». Hier kiest de mens voor elk merk uit het ENE merkregister zijn eigen bestand. Het geldt
 // meteen op de hele site (elk <Merk> tekent het), alleen voor hem en alleen in deze ruimte. Rij = logo + menselijke naam + compacte
 // knoppen met uitleg in de tooltip; uitleg over bescherming staat ingeklapt. Elke wijziging komt in het meldingencentrum.
-import { ChevronDown, ImagePlus, Info, RotateCcw, Search, Shapes, Upload } from 'lucide-react';
+import { ChevronDown, Info, RotateCcw, Search, Shapes, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
 import { MERK_EIGEN_MAX_BYTES, merkEigenRedenTekst } from '../../shared/merk-eigen';
@@ -56,11 +56,21 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
   const naamVan = (k: string) => alle.find((r) => r.sleutel === k)?.naam || merkDef(k)?.naam || OFFICIEEL_NAMEN[k] || k;
   const eigen = lijst?.merken || [];
   const eigenSet = useMemo(() => new Set(eigen.map((m) => m.sleutel)), [eigen]);
-  const treffers = useMemo(() => {
-    const q = zoek.trim().toLowerCase();
-    if (!q) return [];
-    return alle.filter((r) => !eigenSet.has(r.sleutel) && (r.naam.toLowerCase().includes(q) || r.sleutel.includes(q))).slice(0, 8);
-  }, [zoek, alle, eigenSet]);
+  // Павло (16.11): «де кнопка показати логотипи? … один рядок розгортається до більшої кількості». Галерея всіх логотипів сайту:
+  // згорнуто — рівно один ряд (скільки влазить у ширину), кнопка «Показати всі» розгортає решту. Пошук фільтрує ту саму галерею.
+  // Galerij van alle merken: ingeklapt precies één rij, «Alle tonen» klapt de rest uit; zoeken filtert dezelfde galerij.
+  const [uitgeklapt, setUitgeklapt] = useState(false);
+  const [kolommen, setKolommen] = useState(6);
+  const galerijRef = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const el = galerijRef.current; if (!el || typeof ResizeObserver === 'undefined') return;
+    const meet = () => { const n = getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length; if (n > 0) setKolommen(n); };
+    meet(); const ro = new ResizeObserver(meet); ro.observe(el); return () => ro.disconnect();
+  }, [alle.length > 0]);
+  const zoekQ = zoek.trim().toLowerCase();
+  const gefilterd = useMemo(() => (zoekQ ? alle.filter((r) => r.naam.toLowerCase().includes(zoekQ) || r.sleutel.includes(zoekQ)) : alle), [zoekQ, alle]);
+  const open = uitgeklapt || !!zoekQ;
+  const zichtbaar = open ? gefilterd : gefilterd.slice(0, kolommen);
 
   const kiesBestand = (sleutel: string) => { doel.current = sleutel; setMelding(null); invoer.current?.click(); };
 
@@ -157,18 +167,26 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
 
     <div className='mijn-logos-zoek' role='search'>
       <Search aria-hidden />
-      <input type='search' value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={tr('Знайти сервіс, щоб призначити свій логотип…', 'Zoek een dienst om uw eigen logo te kiezen…')}
+      <input type='search' value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={tr('Знайти сервіс серед логотипів…', 'Zoek een dienst tussen de logo\'s…')}
         aria-label={tr('Знайти сервіс', 'Dienst zoeken')} data-mijn-logos-zoek />
     </div>
-    {treffers.length > 0 && <ul className='mijn-logos-lijst' aria-label={tr('Знайдені сервіси', 'Gevonden diensten')}>
-      {treffers.map((r) => <li key={r.sleutel} className='mijn-logos-rij' data-mijn-logo-treffer={r.sleutel}>
-        <MerkLogo id={r.sleutel} naam={r.naam} logo={r.sleutel} maat={36} />
-        <span className='mijn-logos-naam'><strong>{r.naam}</strong><small>{tr('системний логотип', 'systeemlogo')}</small></span>
-        <Wenk tekst={tr(`Призначити свій: ваш файл (SVG або PNG) замінить логотип «${r.naam}» скрізь на сайті, лише для вас`, `Eigen kiezen: uw bestand (SVG of PNG) vervangt het logo «${r.naam}» op de hele site, alleen voor u`)}><button type='button' className='mijn-logos-knop is-hoofd' disabled={!!bezig} onClick={() => kiesBestand(r.sleutel)} data-mijn-logo-kies={r.sleutel}
-          aria-label={tr(`Призначити свій логотип для ${r.naam}`, `Eigen logo kiezen voor ${r.naam}`)}><ImagePlus aria-hidden /></button></Wenk>
-      </li>)}
+    {alle.length > 0 && <ul ref={galerijRef} className='mijn-logos-galerij' id='mijn-logos-galerij' aria-label={tr('Усі логотипи сайту', 'Alle logo\'s van de site')} data-mijn-logos-galerij data-open={open || undefined}>
+      {zichtbaar.map((r) => {
+        const is = eigenSet.has(r.sleutel);
+        return <li key={r.sleutel}><Wenk tekst={is
+          ? tr(`«${r.naam}»: зараз ваш логотип. Натисніть, щоб замінити його іншим файлом.`, `«${r.naam}»: nu uw logo. Klik om het door een ander bestand te vervangen.`)
+          : tr(`«${r.naam}»: системний логотип. Натисніть і виберіть свій файл (SVG або PNG) — він замінить цей логотип скрізь на сайті, лише для вас.`, `«${r.naam}»: systeemlogo. Klik en kies uw bestand (SVG of PNG) — het vervangt dit logo op de hele site, alleen voor u.`)}>
+          <button type='button' className={`mijn-logos-tegel${is ? ' is-eigen' : ''}`} disabled={!!bezig} onClick={() => kiesBestand(r.sleutel)} data-mijn-logo-kies={r.sleutel}
+            aria-label={is ? tr(`Замінити свій логотип ${r.naam}`, `Eigen logo ${r.naam} vervangen`) : tr(`Призначити свій логотип для ${r.naam}`, `Eigen logo kiezen voor ${r.naam}`)}>
+            <MerkLogo id={r.sleutel} naam={r.naam} logo={r.sleutel} maat={32} /><span>{r.naam}</span>
+          </button></Wenk></li>;
+      })}
     </ul>}
-    {zoek.trim() && !treffers.length && alle.length > 0 && <p className='mijn-logos-noot'>{tr('Такого сервісу на сайті немає.', 'Deze dienst komt op de site niet voor.')}</p>}
+    {zoekQ && !gefilterd.length && alle.length > 0 && <p className='mijn-logos-noot'>{tr('Такого сервісу на сайті немає.', 'Deze dienst komt op de site niet voor.')}</p>}
+    {!zoekQ && alle.length > kolommen && <button type='button' className='mijn-logos-meer' aria-expanded={uitgeklapt} aria-controls='mijn-logos-galerij' data-mijn-logos-meer
+      onClick={() => setUitgeklapt((v) => !v)}>
+      {uitgeklapt ? tr('Згорнути до одного ряду', 'Inklappen tot één rij') : tr(`Показати всі логотипи (${alle.length})`, `Alle logo's tonen (${alle.length})`)}<ChevronDown aria-hidden />
+    </button>}
 
     {melding && <p className={`mijn-logos-melding${melding.fout ? ' is-fout' : ''}`} role={melding.fout ? 'alert' : 'status'}>{melding.tekst}</p>}
 

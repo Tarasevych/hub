@@ -52,3 +52,17 @@
 .mijn-logos-knop.mijn-logos-alles { width: 32px; height: 32px; }
 .mijn-logos-knop.mijn-logos-alles svg { width: 16px; height: 16px; color: currentColor; }
 .mijn-logos-knop.is-zacht-gevaar.is-klaar { color: #fff; background: var(--fout); border-color: var(--fout); }
+/* Галерея всіх логотипів (Павло, 16.11): згорнуто — один ряд, «Показати всі» розгортає. Плитка = кнопка: логотип і назва під ним. */
+.mijn-logos-galerij { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.mijn-logos-galerij > li { display: contents; }
+.mijn-logos-galerij .wenk { display: flex; min-width: 0; }
+.mijn-logos-tegel { flex: 1; min-width: 0; display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 10px 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+.mijn-logos-tegel > span { max-width: 100%; font-size: 12px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mijn-logos-tegel:hover:not(:disabled), .mijn-logos-tegel:focus-visible { border-color: var(--accent); outline: none; }
+.mijn-logos-tegel.is-eigen { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
+.mijn-logos-tegel:disabled { opacity: .5; cursor: progress; }
+.mijn-logos-meer { justify-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.mijn-logos-meer svg { width: 16px; height: 16px; color: var(--muted); transition: transform .2s; }
+.mijn-logos-meer[aria-expanded='true'] svg { transform: rotate(180deg); }
+.mijn-logos-meer:hover, .mijn-logos-meer:focus-visible { border-color: var(--accent); }
+@media (max-width: 520px) { .mijn-logos-galerij { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); } .mijn-logos-tegel { min-height: 76px; } }
