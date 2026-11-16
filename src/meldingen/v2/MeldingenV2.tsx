@@ -143,6 +143,9 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const nieuwVoorBel = sectieLijst(groepen, 'nieuw', nu, { vastNieuw: vastNieuw.current }).filter((g) => !(later[g.sleutel] > nu)).length;
   const meldNieuw = p.onNieuwAantal;
   useEffect(() => { meldNieuw?.(nieuwVoorBel); }, [meldNieuw, nieuwVoorBel]);
+  // MELDINGEN-UX-001 (16.11.2026): elk nieuw item draagt zijn volgnummer («Нове · 1 з 5»), zodat duidelijk is WELKE meldingen het getal telt.
+  // Кожне нове сповіщення має порядковий номер із загальної кількості нових; прочитані мають свою мітку.
+  const nieuwNr = useMemo(() => new Map(sectieLijsten.nieuw.map((g, i) => [g.sleutel, i + 1] as const)), [sectieLijsten]);
   const lijstAlles = useMemo(() => filterGroepen(groepen, 'alle', f), [groepen, f]);
   const lijst = geschiedenis ? lijstAlles : sectieLijsten[sectie];
   const uitgeschakeld = groepen.filter((g) => !g.levering.centrum && !g.levering.beschermd && sectieVanGroep(g, nu) !== 'archief').length;
@@ -197,13 +200,16 @@ export default function MeldingenV2(p: MeldingenV2Props) {
     const inArchief = sectieVanGroep(g, nu) === 'archief';
     // Terugzetten kan alleen wat u (of de bewaartermijn) opruimde/oploste — een fout die een latere gelukte stap oploste, blijft opgelost.
     const herstelbaar = isHerstelbaar(g);
+    const nr = nieuwNr.get(g.sleutel), merk = nr ? 'nieuw' : sectieVanGroep(g, nu) === 'gelezen' ? 'gelezen' : undefined;
     return (
-      <li key={g.sleutel} className={`mv2-rij e-${g.ernst}${g.ongelezen ? ' is-nieuw' : ''}${isOpen ? ' is-open' : ''}${kiezen ? ' is-kiezen' : ''}`} data-modus={g.levering.modus} data-toestand={g.toestand} data-sectie={sectieVanGroep(g, nu)} data-verborgen={verborgenReden(g) || undefined} aria-labelledby={id}>
+      <li key={g.sleutel} data-merk={merk} className={`mv2-rij e-${g.ernst}${g.ongelezen ? ' is-nieuw' : ''}${isOpen ? ' is-open' : ''}${kiezen ? ' is-kiezen' : ''}`} data-modus={g.levering.modus} data-toestand={g.toestand} data-sectie={sectieVanGroep(g, nu)} data-verborgen={verborgenReden(g) || undefined} aria-labelledby={id}>
         {v3 && kiezen ? <label className='mv2-kies'><input type='checkbox' checked={gekozen.has(g.sleutel)} aria-label={t(`Вибрати: ${m.titel}`, `Kiezen: ${m.titel}`)} onChange={() => setGekozen((c) => { const n = new Set(c); if (n.has(g.sleutel)) n.delete(g.sleutel); else n.add(g.sleutel); return n; })} /></label> : null}
         <span className='mv2-status' aria-hidden='true'><b.Icon className='mv2-bron-icoon' />{g.ernst !== 'info' ? <EIcon className='mv2-ernst' /> : null}</span>
         <button type='button' className='mv2-hoofd' aria-expanded={isOpen} onClick={() => { setOpen(isOpen ? null : g.sleutel); markeerGroep(g); }}>
           <span className='mv2-titel' id={id}>{g.ongelezen ? <i className='mv2-punt' aria-label={t('Непрочитане', 'Ongelezen')} /> : null}{m.titel}{v3 && m.object && /^command\.fs\./.test(m.soort || '') ? <span className='mv2-object'>{` · ${m.object.split(/[\\/]/).pop()}`}</span> : null}</span>
           <span className='mv2-meta'>
+            {nr ? <span className='mv2-merk is-nieuw' data-mv2-merk='nieuw' title={t(`Нове сповіщення ${nr} з ${nieuwNr.size}: саме їх рахує число біля дзвіночка. Після закриття панелі переглянуте стане прочитаним.`, `Nieuwe melding ${nr} van ${nieuwNr.size}: deze telt het getal bij de bel. Na het sluiten van het paneel wordt wat u zag gelezen.`)}>{t(`Нове · ${nr} з ${nieuwNr.size}`, `Nieuw · ${nr} van ${nieuwNr.size}`)}</span>
+              : merk === 'gelezen' ? <span className='mv2-merk is-gelezen' data-mv2-merk='gelezen' title={t('Ви вже бачили це сповіщення; у число біля дзвіночка воно не входить.', 'U hebt deze melding al gezien; ze telt niet mee bij de bel.')}>{t('Прочитане', 'Gelezen')}</span> : null}
             <span className='mv2-bron'>{b.label}</span>
             {b.aanbieder ? <span className='mv2-aanbieder'>{b.logo ? <Logo kind={b.logo} size={12} label={b.aanbieder} /> : null}{b.aanbieder}</span> : null}
             {b.account ? <span className='mv2-account' title={volledigAdres ? undefined : t('Акаунт', 'Account')}>{b.account}</span> : null}
@@ -422,8 +428,8 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             {SECTIES.map((s) => {
               const I = SECTIE_ICOON[s], n = sectieLijsten[s].length, naam = t(...SECTIE_NAAM[s]);
               return (
-                <button key={s} type='button' role='tab' className='mv2-sectie' data-sectie={s} aria-selected={sectie === s} aria-label={`${naam}: ${n}`} data-tip={naam} onClick={() => kiesSectie(s)}>
-                  <I aria-hidden='true' /><span className='mv2-n' data-n={n}>{n > 99 ? '99+' : n}</span>
+                <button key={s} type='button' role='tab' className='mv2-sectie' data-sectie={s} aria-selected={sectie === s} aria-label={s === 'nieuw' ? `${naam}: ${n}` : naam} data-tip={naam} onClick={() => kiesSectie(s)}>
+                  <I aria-hidden='true' />{s === 'nieuw' ? <span className='mv2-n' data-n={n}>{n > 99 ? '99+' : n}</span> : null}
                 </button>
               );
             })}

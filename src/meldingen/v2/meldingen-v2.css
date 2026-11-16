@@ -52,6 +52,13 @@
 .mv2-titel{display:block;overflow:hidden;font-weight:500;line-height:1.3;white-space:nowrap;text-overflow:ellipsis}
 .mv2-rij.is-nieuw .mv2-titel{font-weight:650}
 .mv2-rij.is-open .mv2-titel{white-space:normal}
+/* MELDINGEN-UX-001 (16.11.2026): mitka «Нове · 1 з 5» (kleur + nummer) en «Прочитане» (grijs) · мітка нового з номером і мітка прочитаного */
+.mv2-merk{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mv2-merk.is-nieuw{background:var(--accent);color:var(--accentText,#fff)}
+html.theme-dark .mv2-merk.is-nieuw{color:#04161d}
+.mv2-merk.is-gelezen{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted);font-weight:600}
+.mv2-rij[data-merk='nieuw']{box-shadow:inset 3px 0 0 var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.mv2-rij[data-merk='gelezen'] .mv2-titel{color:var(--muted)}
 .mv2-punt{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--accent);vertical-align:1px}
 .mv2-meta{display:flex;align-items:center;gap:0;min-width:0;overflow:hidden;color:var(--muted);font-size:11.5px;white-space:nowrap}
 .mv2-meta>*+*::before{content:'·';margin:0 5px;opacity:.6}

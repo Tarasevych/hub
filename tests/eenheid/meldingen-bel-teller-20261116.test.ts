@@ -32,5 +32,12 @@ export async function main(): Promise<number> {
   const opslag = lees('src/meldingen/ecosysteem/ecosysteem-opslag.ts');
   check('opslag: telVooraf laadt de stroom één keer (geen extra interval)', /if \(opties\.telVooraf\) void verversStroom\(\);\n  \}, \[opties\.telVooraf, verversStroom\]\);/.test(opslag));
 
+  // Mitka's: een getal alleen bij «Нові»; elk nieuw item draagt «Нове · n з N», gelezen items «Прочитане» (kleur + tekst).
+  check('tabs: getal alleen bij «Нові» (ook in de naam voor de schermlezer)', v2.includes("aria-label={s === 'nieuw' ? `${naam}: ${n}` : naam}") && v2.includes("{s === 'nieuw' ? <span className='mv2-n' data-n={n}>"));
+  check('rij: volgnummer uit dezelfde lijst «Нові» als de tab', v2.includes('new Map(sectieLijsten.nieuw.map((g, i) => [g.sleutel, i + 1] as const))') && v2.includes('t(`Нове · ${nr} з ${nieuwNr.size}`, `Nieuw · ${nr} van ${nieuwNr.size}`)'));
+  check('rij: «Прочитане» voor wat al gezien is, met uitleg in de tooltip', v2.includes("data-mv2-merk='gelezen'") && v2.includes('у число біля дзвіночка воно не входить'));
+  const css = lees('src/meldingen/v2/meldingen-v2.css');
+  check('css: nieuw = accentkleur + streep, gelezen = grijs', /\.mv2-merk\.is-nieuw\{background:var\(--accent\)/.test(css) && css.includes(".mv2-rij[data-merk='nieuw']{box-shadow:inset 3px 0 0 var(--accent)") && /\.mv2-merk\.is-gelezen\{[^}]*color:var\(--muted\)/.test(css));
+
   return einde();
 }
