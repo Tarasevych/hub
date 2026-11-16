@@ -4,7 +4,7 @@
 //   · картка виявлених змін даних («Було → Стало», «Ні, це не я» діє одразу, «Так, це я» — після відліку та ключа доступу);
 //   · згрупована таблиця підтверджень за 3 категоріями, таємний і тривожний код та журнал останніх входів через Telegram.
 import { ChevronDown, Fingerprint, KeyRound, MapPin } from 'lucide-react';
-import Merk from '../merk/Merk';
+import MethodeMerk from '../merk/MethodeMerk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { leesBewaard } from '../lees-cache';
 import { foutTekst, identiteitCtx, tgPost, type Ctx } from './api';
@@ -627,19 +627,6 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
 }
 
 // ------------------------------------------------------------------------------------------------ таємний код (згорнутий за замовчуванням)
-/** Logo van een aanmeldmethode. Het register (src/merk/merk-tabel.ts) kent Google, Microsoft en Apple; Discord staat alleen in de
- *  grote tabel (src/merk/merk-logos.ts), die pas wordt opgehaald als deze kaart getoond wordt — het register moet licht blijven. */
-function MethodeMerk({ merk, naam }: { merk: string; naam: string }) {
-  const [def, setDef] = useState<{ naam: string; kleur: string; d: string } | null>(null);
-  useEffect(() => {
-    if (merk !== 'discord') return;
-    let leeft = true;
-    void import('../merk/merk-logos').then((m) => { const hit = (m.LOGOS as Readonly<Record<string, readonly [string, string]>>)[merk]; if (leeft && hit) setDef({ naam, kleur: `#${hit[1]}`, d: hit[0] }); }).catch(() => undefined);
-    return () => { leeft = false; };
-  }, [merk, naam]);
-  return <Merk def={def} merk={merk} naam={naam} vorm='gliefje' maat={24} />;
-}
-
 /** TELEGRAM-004 (0299): preventieve bescherming — de gebruiker kiest PER aanmeldmethode of aanmelden alleen lukt als de browser de
  *  plaats van het toestel deelt. Standaard overal UIT; «!» + korte regel op de kaart, de rest onder «Докладніше». Niets wordt
  *  verboden: ook «alle methoden» mag, met een duidelijke waarschuwing over het gevolg. */

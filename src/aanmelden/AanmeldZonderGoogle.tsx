@@ -17,7 +17,7 @@ import { kekUitPrf, omslagOpenen, passkeyAanmeldenMetPrf, type PrfAssertieOpties
 import { ecosystemTabContext, setEcosystemSessionLikely } from '../tab-context';
 import { aanmeldWeigering } from '../weigeringen';
 import { plaatsVoorStart, plaatsVragen } from './plaats';
-import Merk from '../merk/Merk';
+import MethodeMerk from '../merk/MethodeMerk';
 import './aanmelden-zonder-google.css';
 
 type Lang = 'uk' | 'nl';
@@ -194,7 +194,7 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
   const k = KNOP[id];
   return <div data-aanmeld-zonder-google={id}>
     <button type='button' className={klas} disabled={bezig} aria-busy={bezig} onClick={() => void (id === 'passkey' ? passkey() : extern(id))}>
-      <span className={hoofd ? 'mr-sign-in-logo' : 'mr-sign-in-optie-logo'} aria-hidden='true'>{k.merk ? <Merk merk={k.merk} vorm='gliefje' maat={20} terugval={null} /> : <Fingerprint />}</span>
+      <span className={hoofd ? 'mr-sign-in-logo' : 'mr-sign-in-optie-logo'} aria-hidden='true'>{k.merk ? <MethodeMerk merk={k.merk} naam={k.nl.replace('Aanmelden met ', '')} maat={20} terugval={null} /> : <Fingerprint />}</span>
       <span className={hoofd ? 'mr-sign-in-main-tekst' : 'mr-sign-in-optie-tekst'}><strong>{bezig ? tr(lang, 'Зачекайте…', 'Even geduld…') : tr(lang, k.uk, k.nl)}</strong>{!hoofd && <small>{tr(lang, k.uitleg[0], k.uitleg[1])}</small>}</span>
     </button>
     {foutRegel}
