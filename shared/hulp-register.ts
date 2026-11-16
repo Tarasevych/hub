@@ -272,6 +272,12 @@ hulpRegistreren({
     T('Після вдалого розгортання сервер сам створює коміт/тег у вказаному репозиторії.', 'Na een geslaagde uitrol maakt de server zelf een commit/tag in de opgegeven repository.'),
     T('Код піде в репозиторій без ручної перевірки; переконайтеся, що репозиторій приватний і в пакеті немає секретів.', 'De code gaat zonder handcontrole naar de repository; zorg dat die privé is en dat er geen geheimen in het pakket zitten.'),
     T('backend/uitrol-github.ts; токен у сховищі (GITHUB_TOKEN), не в браузері; вимкнено = лише кнопка «Опублікувати».', 'backend/uitrol-github.ts; token in de kluis (GITHUB_TOKEN), niet in de browser; uit = alleen de knop «Publiceren».')),
+  // UPD-003: позначка під червоними прапорцями SEC-PAKKET-001 (#145) · vinkje onder de rode vlaggen
+  'uitrol.risico-bevestig': item('src/uitrol/RodeVlaggen.tsx',
+    T('Ви підтверджуєте, що переглянули позначені зміни (файли root, процеси GitHub, пакети, права міграцій) і очікували їх.', 'U bevestigt dat u de gemarkeerde wijzigingen (root-bestanden, GitHub-processen, pakketten, rechten van migraties) hebt bekeken en verwachtte.'),
+    T('Без цієї позначки сервер не прийме схвалення встановлення; з нею кнопка схвалення стає доступною, але passkey усе одно потрібен.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan; met het vinkje wordt goedkeuren mogelijk, maar de passkey blijft nodig.'),
+    T('Високий ризик, якщо змін ви не чекали: хтось міг змінити код через доступ до GitHub. Тоді краще відхилити пакет і змінити пароль GitHub.', 'Hoog risico als u de wijzigingen niet verwachtte: iemand kan via GitHub-toegang code hebben gewijzigd. Wijs het pakket dan af en wijzig uw GitHub-wachtwoord.'),
+    T('backend/uitrol-risico.ts (vraagtRisicoBevestiging); позначку перевіряє сервер під час схвалення, не лише браузер.', 'backend/uitrol-risico.ts (vraagtRisicoBevestiging); de server controleert het vinkje bij de goedkeuring, niet alleen de browser.')),
   'uitrol.zone': item('src/uitrol/ZoneKiezer.tsx',
     T('Часова зона для терміналу, кроків та історії розгортання.', 'Tijdzone voor de terminal, stappen en historie van de uitrol.'),
     T('Усі часи на сторінці перераховуються в обрану зону; сервер і далі пише UTC.', 'Alle tijden op de pagina worden in de gekozen zone omgerekend; de server schrijft nog steeds UTC.'),

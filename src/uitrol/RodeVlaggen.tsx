@@ -8,6 +8,7 @@
 import { useId, useMemo, useState, useEffect, useRef, type KeyboardEvent } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat, FileCode2, ChevronLeft, ChevronRight, List, Eye } from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
+import HulpVraag from '../hulp/HulpVraag';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
 export const rodeVlaggen = (vc: VoorcontroleUit | null | undefined): RisicoItemUit[] | null => {
@@ -300,8 +301,8 @@ export default function RodeVlaggen({ lang, vlaggen, bevestigd, onBevestig, id, 
     <ul className='ut-rv-lijst'>{groepeer(zichtbaar).map((gr, i) => <Kaart key={`${filter}-${i}`} groep={gr} lang={lang} />)}</ul>
     {zonder ? <p className='ut-rv-geblokkeerd'><Lock aria-hidden='true' />{tr(lang, 'Схвалення недоступне, доки автор не пояснить усі позначені зміни.', 'Goedkeuren kan pas als de maker alle gemarkeerde wijzigingen heeft uitgelegd.')}</p>
       : <label className='ut-rv-bevestig' title={tr(lang, 'Без цієї позначки сервер не прийме схвалення. Якщо ви не очікували таких змін — відхиліть пакет: можливо, хтось отримав доступ до GitHub.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan. Verwachtte u deze wijzigingen niet, wijs het pakket dan af: misschien heeft iemand toegang tot GitHub gekregen.')}>
-        <input type='checkbox' checked={bevestigd} disabled={disabled} onChange={(e) => onBevestig(e.target.checked)} />
-        <Flag aria-hidden='true' /><span>{tr(lang, 'Я переглянув ці зміни й очікував їх', 'Ik heb deze wijzigingen bekeken en verwachtte ze')}</span>
+        <input data-hulp='uitrol.risico-bevestig' type='checkbox' checked={bevestigd} disabled={disabled} onChange={(e) => onBevestig(e.target.checked)} />
+        <Flag aria-hidden='true' /><span>{tr(lang, 'Я переглянув ці зміни й очікував їх', 'Ik heb deze wijzigingen bekeken en verwachtte ze')}</span> <HulpVraag k='uitrol.risico-bevestig' lang={lang} />
       </label>}
   </div>;
 }
