@@ -14,7 +14,10 @@ export async function main(): Promise<number> {
   const pil = zc(lees('src/mail/mail-opstel-pil.css')), lui = zc(lees('src/mail-nieuw-bericht.css')), menu = lees('src/MailZijbalkNavigatie.tsx'), zwevend = lees('src/MailOpstelZwevend.tsx');
   check('меню пошти саме підключає стилі кнопки «Написати лист»', menu.includes("import'./mail/mail-opstel-pil.css'") && menu.includes('mail-compose-pill'));
   check('кнопка — один рядок: піктограма й підпис поруч, заокруглена', /\.mail-compose-pill\{[^}]*display:flex;align-items:center;gap:8px[^}]*\}/.test(pil) && /\.mail-compose-pill\{[^}]*border-radius:9px/.test(pil) && /\.mail-compose-pill\{[^}]*height:40px/.test(pil));
-  check('дві піктограми лежать одна на одній, видно лише одну', /\.mail-compose-pill-icon\{position:relative;width:17px;height:17px/.test(pil) && /\.mail-compose-pill-icon svg\{position:absolute;inset:0/.test(pil) && /\.mail-compose-pill-icon \.pen\{opacity:0\}/.test(pil));
+  check('дві піктограми лежать одна на одній, видно лише одну', /\.mail-compose-pill-icon\{position:relative;width:17px;height:17px/.test(pil) && /\.mail-compose-pill-icon svg\{position:absolute;inset:0/.test(pil) && /\.mail-compose-pill-icon \.pen\{opacity:0;/.test(pil));
+  check('конверт перетворюється на олівець під мишею, з клавіатури й під пальцем (не на вимкненій кнопці)', /\.mail-compose-pill:is\(:hover,:focus-visible,:active\):not\(:disabled\) \.mail-compose-pill-icon \.env\{opacity:0;/.test(pil) && /\.mail-compose-pill:is\(:hover,:focus-visible,:active\):not\(:disabled\) \.mail-compose-pill-icon \.pen\{opacity:1;transform:none;animation:mail-opstel-pil-schrijf [^}]* 2\}/.test(pil));
+  check('олівець «пише» двома штрихами й зупиняється (не нескінченно)', /@keyframes mail-opstel-pil-schrijf\{/.test(pil) && !/mail-opstel-pil-schrijf[^;}]*infinite/.test(pil));
+  check('«менше руху» (система й налаштування сайту): без обертання й штрихів', /@media \(prefers-reduced-motion:reduce\)\{[^@]*animation:none/.test(pil) && /html\[data-beweging='minder'\][^{]*\{[^}]*animation:none/.test(pil));
   check('у ліниво завантажуваному файлі вікна листа цих правил більше немає (одне джерело)', !lui.includes('.mail-compose-pill'));
   check('вікно листа й далі ліниве (PERF-001 не зачеплено)', /lazy\(\(\) => import\('\.\/MailNieuwBerichtDialoog'\)\)/.test(zwevend));
   return einde();
