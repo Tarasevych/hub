@@ -46,6 +46,12 @@ const pub = (over: Partial<DienstMotorPubliek> = {}): DienstMotorPubliek => ({
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('mailai-003-20261116');
+  // UPD-003: власні налаштування тестової людини з попереднього прогону прибрати — інакше «згоди ще немає» залежить від історії бази.
+  // Eigen voorkeuren van de testgebruiker uit een vorige run weghalen, zodat «nog geen akkoord» niet van de databasegeschiedenis afhangt.
+  try {
+    const { getPool } = await import('../../server/platform/pg');
+    await getPool('systeem').query(`DELETE FROM app.records WHERE owner_id = $1 AND tbl = 'ai_vertaling_preferences_v1'`, [UID]);
+  } catch { /* zonder database: niets op te ruimen */ }
 
   // ================================================================ A
   {
@@ -194,7 +200,7 @@ export async function main(): Promise<number> {
     const m2 = meldingen.slice(meldVoor2);
     check('C згода: сервер сам обчислює, на що вона (клієнт не може «погодитися» на інше); запис у центрі сповіщень людини; неіснуючий рушій → 409',
       akkoord.status === 200 && akkoord.data.settings.dienstAkkoord.length === 1 && akkoord.data.settings.dienstAkkoord[0] === d0.akkoordSleutel
-      && vals.status === 409 && m2.length === 1 && m2[0].uid === UID && m2[0].kind === 'mail_ai_motor' && /Ви дозволили спільний рушій/.test(m2[0].title) && /ключем сайту/.test(m2[0].message) && m2[0].link === '/mail');
+      && vals.status === 409 && m2.length === 1 && m2[0].uid === UID && m2[0].kind === 'mail_ai_motor' && /Ви дозволили спільний рушій/.test(m2[0].title) && /ключем сайту/.test(m2[0].message) && /^(https:\/\/mail\.[a-z0-9.-]+)?\/(mail)?$/.test(String(m2[0].link)) /* UPD-003 (#138): absolute link */);
 
     antwoord = () => anthropicOk({ detectedSourceLang: 'nl', translations: { s0: 'Привіт' } }, { 'anthropic-ratelimit-requests-remaining': '48', 'anthropic-ratelimit-requests-limit': '50' });
     clearAiVertalingCache(UID);
