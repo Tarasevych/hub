@@ -1,5 +1,5 @@
 import{api}from'./platform/client';
-import{ImageOff,Languages,X}from'lucide-react';import{isGesloten,meldBeeldenStrook,useStroken,zetStrookGesloten}from'./mail/stroken-sluiten';
+import{ImageOff,Languages,X}from'lucide-react';import{isNazorg,meldBeeldenStrook,sluitStrook,strookStaat,useStroken,zetStrookNazorg}from'./mail/stroken-sluiten';import{useStrookRegels}from'./mail/strook-regels';import{RegelHint,StrookNazorg}from'./mail/StrookNazorg';import type{ReactNode}from'react';
 import{useEffect,useLayoutEffect,useMemo,useRef,useState}from'react';
 import{useLeesVenster}from'./mail/LeesVenster';import{beeldenInstelling,beeldenVoor,useBeeldenAltijd}from'./mail/beelden-toestemming';
 import{loadMailAttachmentBlob}from'./mail-bijlage-lader';
@@ -58,9 +58,10 @@ export default function MailMessageBody(outer:Props){
   const{lang,translation}=props;
   const t=(uk:string,nl:string)=>lang==='uk'?uk:nl;
   /* STROOK-001: ✕ verbergt alleen de strook voor deze brief; de beelden blijven verborgen. De kop toont dan een terugknop (src/mail/stroken-sluiten.ts). */
-  const stroken=useStroken(),sluitbaar=!!outer.strookSluitbaar,beschikbaar=!toestaan&&verborgen>0,dicht=sluitbaar&&isGesloten(stroken,outer.messageId,'beelden');
+  /* STROOK-002: ook blijvende regels (afzender, overal); een regel verbergt alleen de strook, de beelden blijven verborgen */
+  const stroken=useStroken(),regels=useStrookRegels(outer.cacheAccountId),sluitbaar=!!outer.strookSluitbaar,beschikbaar=!toestaan&&verborgen>0,kenmerken={afzender:outer.afzender||''},st=sluitbaar?strookStaat(stroken,regels,outer.messageId,'beelden',kenmerken):null,dicht=!!st?.verborgen;
   useEffect(()=>{if(!sluitbaar)return;meldBeeldenStrook(outer.messageId,beschikbaar?verborgen:0);return()=>meldBeeldenStrook(outer.messageId,0)},[outer.messageId,sluitbaar,beschikbaar,verborgen]);
-  const strook=beschikbaar&&!dicht?<BeeldenStrook lang={lang} aantal={verborgen} afzender={outer.afzender||''} bereik={outer.cacheAccountId} onEenmaal={()=>setEenmaal(true)} onSluit={sluitbaar?()=>zetStrookGesloten(outer.messageId,'beelden',true):undefined}/>:null;
+  const strook=beschikbaar&&!dicht?<BeeldenStrook lang={lang} aantal={verborgen} afzender={outer.afzender||''} bereik={outer.cacheAccountId} onEenmaal={()=>setEenmaal(true)} onSluit={sluitbaar?()=>sluitStrook(outer.messageId,'beelden',outer.cacheAccountId,kenmerken,regels):undefined} regelHint={st?.getoond&&st.regel?<RegelHint lang={lang} bereik={outer.cacheAccountId} regel={st.regel}/>:null}/>:beschikbaar&&sluitbaar&&isNazorg(stroken,outer.messageId,'beelden')?<StrookNazorg lang={lang} strook='beelden' bereik={outer.cacheAccountId} kenmerken={kenmerken} onKlaar={()=>zetStrookNazorg(outer.messageId,'beelden',false)}/>:null;
   const naast=!!translation?.active&&translation?.weergave==='naast';
   if(!naast)return <>{translation?<VertaalPlaat lang={lang} translation={translation}/>:null}{strook}<Lichaam {...props}/></>;
   return <div className='mail-vertaal-naast' data-mail-vertaal-weergave='naast'>
@@ -79,7 +80,7 @@ export default function MailMessageBody(outer:Props){
 
 /** Veiligheidsstrook boven de brief: hoeveel externe beelden verborgen bleven, en wat je kunt doen. Nooit vertaald (data-mail-translation-skip). */
 const ukBeelden=(n:number)=>{const m10=n%10,m100=n%100;return m10===1&&m100!==11?'зовнішнє зображення':m10>=2&&m10<=4&&(m100<12||m100>14)?'зовнішні зображення':'зовнішніх зображень'};
-function BeeldenStrook({lang,aantal,afzender,bereik,onEenmaal,onSluit}:{lang:'uk'|'nl';aantal:number;afzender:string;bereik:string;onEenmaal:()=>void;onSluit?:()=>void}){
+function BeeldenStrook({lang,aantal,afzender,bereik,onEenmaal,onSluit,regelHint}:{lang:'uk'|'nl';aantal:number;afzender:string;bereik:string;onEenmaal:()=>void;onSluit?:()=>void;regelHint?:ReactNode}){
   const t=(uk:string,nl:string)=>lang==='uk'?uk:nl;
   /* SEC-002 (interface-06): «altijd» geldt voor DIT account en DEZE mailbox, niet voor elk account in deze browser. */
   const{zet:zetBeeldenAltijd}=beeldenVoor(bereik);
@@ -88,6 +89,7 @@ function BeeldenStrook({lang,aantal,afzender,bereik,onEenmaal,onSluit}:{lang:'uk
     <span>{t(`${aantal} ${ukBeelden(aantal)} приховано`,`${aantal} externe ${aantal===1?'afbeelding':'afbeeldingen'} verborgen`)}<small>{t('Так відправник не дізнається, що лист відкрито. Показані — завантажує ваш сервер, не браузер.','Zo weet de afzender niet dat het bericht geopend is. Getoond — via uw server, niet de browser.')}</small></span>
     <button type='button' onClick={onEenmaal}>{t('Показати один раз','Eén keer tonen')}</button>
     {afzender&&<button type='button' title={t('! Зображення від цього відправника завантажуватимуться одразу (через ваш сервер): відправник зможе дізнатися, що лист відкрито й коли. Діє лише для цього облікового запису й цієї скриньки на цьому пристрої; вимкнути можна в панелі «Відправник».','! Afbeeldingen van deze afzender worden dan meteen geladen (via uw server): de afzender kan zien dat en wanneer het bericht geopend is. Geldt alleen voor dit account en deze mailbox op dit apparaat; uitzetten kan in het paneel «Afzender».')} onClick={()=>zetBeeldenAltijd(afzender,true)}>{t('Завжди від цього відправника','Altijd van deze afzender')}</button>}
+    {regelHint}
     {onSluit&&<button type='button' className='mail-strook-sluit' data-strook-sluit='beelden' aria-label={t('Сховати смугу про зображення для цього листа','Strook over afbeeldingen verbergen voor dit bericht')} title={t('Сховати смугу для цього листа. Зображення лишаться прихованими. Повернути смугу (і показати зображення) — кнопка з перекресленим зображенням у шапці листа, поруч з ⓘ.','Verbergt de strook voor dit bericht. De afbeeldingen blijven verborgen. Terughalen (en de afbeeldingen tonen) — de knop met de doorgestreepte afbeelding in de kop van het bericht, naast ⓘ.')} onClick={onSluit}><X aria-hidden='true'/></button>}
   </div>;
 }

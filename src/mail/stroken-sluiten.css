@@ -48,8 +48,175 @@ html body .mail-thread-message-antwoord.mail-thread-strook-terug {
   color: color-mix(in srgb, var(--accent) 70%, var(--muted));
 }
 
+/* STROOK-002: smalle keuzeregel na ✕ («Ховати й надалі: мова · відправник · усі листи»), de hint «сховано правилом» in een strook,
+   en de lijst «Сховані смуги» in «Вигляд». Rustig: dunne rand, pillen zonder vulling; alleen het voorstel krijgt een zachte accenttint. */
+html body .mail-strook-nazorg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px dashed color-mix(in srgb, var(--line) 90%, transparent);
+  border-radius: var(--straal-m, 12px);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+html body .mail-strook-nazorg-tekst {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+html body .mail-strook-nazorg-tekst b {
+  color: var(--text);
+  font-weight: 650;
+}
+
+html body .mail-strook-nazorg-keuzes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+html body .mail-strook-nazorg-keuzes > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  max-width: 100%;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html body .mail-strook-nazorg-keuzes > button > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .mail-strook-nazorg-keuzes > button svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+html body .mail-strook-nazorg-keuzes > button.is-voorstel {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+}
+
+html body .mail-strook-nazorg-keuzes > button:is(:hover, :focus-visible) {
+  border-color: var(--accent);
+  outline: none;
+}
+
+html body .mail-strook-nazorg-keuzes > button:focus-visible,
+html body .mail-strook-nazorg-sluit:focus-visible,
+html body :is(.vertaal-strook, .mail-beelden-strook) .mail-strook-regel-hint > button[type]:not(:disabled):focus-visible,
+html body .lz-strook-regels button:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus);
+}
+
+html body .mail-strook-nazorg-sluit,
+html body .lz-strook-regels button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+html body :is(.mail-strook-nazorg-sluit, .lz-strook-regels button) svg {
+  width: 15px;
+  height: 15px;
+}
+
+html body :is(.mail-strook-nazorg-sluit, .lz-strook-regels button):is(:hover, :focus-visible) {
+  background: var(--nav-hover);
+  color: var(--text);
+  outline: none;
+}
+
+html body .mail-strook-regel-hint {
+  flex: 1 1 100%;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html body :is(.vertaal-strook, .mail-beelden-strook) .mail-strook-regel-hint > button[type]:not(:disabled) {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+html body .lz-strook-regels {
+  display: grid;
+  gap: 4px;
+  margin: 2px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+html body .lz-strook-regels > li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 2px 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+html body .lz-strook-regels > li > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* ---- telefoon / smal venster (mobiele laag: laatst in dit bestand) ---- */
 @media (pointer: coarse) {
+  html body .mail-strook-nazorg-keuzes > button {
+    min-height: 44px;
+  }
+
+  /* inline koppeling in de hint: raakvlak 44 px zonder de regelafstand te veranderen */
+  html body :is(.vertaal-strook, .mail-beelden-strook) .mail-strook-regel-hint > button[type]:not(:disabled) {
+    padding-block: 13px;
+    margin-block: -13px;
+  }
+
+  html body :is(.mail-strook-nazorg-sluit, .lz-strook-regels button) {
+    width: 44px;
+    height: 44px;
+  }
+
   html body :is(.vertaal-strook, .mail-beelden-strook):has(> .mail-strook-sluit) {
     padding-right: 52px;
   }
@@ -68,5 +235,17 @@ html body .mail-thread-message-antwoord.mail-thread-strook-terug {
   html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled) {
     top: 2px;
     transform: none;
+  }
+
+  /* de keuzeregel na ✕: zijn eigen ✕ in de hoek, niet op een eigen regel */
+  html body .mail-strook-nazorg {
+    position: relative;
+    padding-right: 50px;
+  }
+
+  html body .mail-strook-nazorg-sluit {
+    position: absolute;
+    top: 2px;
+    right: 2px;
   }
 }

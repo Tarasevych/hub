@@ -11,6 +11,7 @@ import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal }
 import { useLeesVenster } from './LeesVenster';
 import { useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
 import AiUitleg from './AiUitleg';
+import { StrookRegelsLijst } from './StrookNazorg';
 
 /**
  * MAILAI-001: «ШІ-аналіз над листом» — панель «ШІ-аналіз і переклад» над кожним листом. Типово вимкнено; налаштування облікового
@@ -132,6 +133,8 @@ function Keuzes({ lang }: { lang: 'uk' | 'nl' }) {
           ))}
         </span>
       </fieldset>
+      {/* STROOK-002: regels «смугу не показувати» (taal, afzender, alle berichten), elk met ✕ */}
+      <StrookRegelsLijst lang={lang} />
       <small>{t('Діє лише на цьому пристрої, в усіх режимах вікна.', 'Geldt alleen op dit apparaat, in elke vorm van het venster.')}</small>
     </div>
   );

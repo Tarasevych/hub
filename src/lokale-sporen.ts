@@ -24,6 +24,8 @@ export const ZOEK_RECENT_VOORVOEGSEL = 'tsv:mail-recent-searches-v1:';
 export const ZOEK_LAATST_VOORVOEGSEL = 'tsv:mail-last-search-v1:';
 /** Post: «altijd externe beelden van deze afzender» — `<voorvoegsel><encodeURIComponent(account␟mailbox)>`. */
 export const BEELDEN_VOORVOEGSEL = 'mail-beelden-afzenders-v2:';
+/** Post: regels «смугу не показувати» voor een taal of afzender (STROOK-002, src/mail/strook-regels.ts) — `<voorvoegsel><encodeURIComponent(account␟mailbox)>`. */
+export const STROOK_REGELS_VOORVOEGSEL = 'mail-strook-regels-v1:';
 
 /**
  * Notities: lokale concepten — `<voorvoegsel><u-xxxxxxxx>:<prive|technisch>:<id>` (src/notities/notities-client.ts, SEC-002 aanv-ronde1-07).
@@ -31,7 +33,7 @@ export const BEELDEN_VOORVOEGSEL = 'mail-beelden-afzenders-v2:';
  */
 export const NOTITIE_KLAD_VOORVOEGSEL = 'mr-notitie-klad:';
 
-const VOORVOEGSELS = [MELDINGEN_VOORVOEGSEL, MELDINGEN_OUD_VOORVOEGSEL, ZOEK_BEWAARD_VOORVOEGSEL, ZOEK_RECENT_VOORVOEGSEL, ZOEK_LAATST_VOORVOEGSEL, BEELDEN_VOORVOEGSEL, NOTITIE_KLAD_VOORVOEGSEL] as const;
+const VOORVOEGSELS = [MELDINGEN_VOORVOEGSEL, MELDINGEN_OUD_VOORVOEGSEL, ZOEK_BEWAARD_VOORVOEGSEL, ZOEK_RECENT_VOORVOEGSEL, ZOEK_LAATST_VOORVOEGSEL, BEELDEN_VOORVOEGSEL, STROOK_REGELS_VOORVOEGSEL, NOTITIE_KLAD_VOORVOEGSEL] as const;
 const SCHEIDING = '\u001f';
 
 /** Modules met een kopie in het geheugen (de lijst met afzenders) melden zich hier aan: na het wissen vergeten zij hun kopie. */
