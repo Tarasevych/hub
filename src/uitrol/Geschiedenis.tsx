@@ -184,7 +184,7 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
       {it.soort === 'voorstel' && it.voorstel && <dl className='ut-dl'>
         <dt>{tr(lang, 'Стан', 'Stand')}</dt><dd>{VOORSTEL_STATUS[it.voorstel.status] ? tr(lang, VOORSTEL_STATUS[it.voorstel.status][0], VOORSTEL_STATUS[it.voorstel.status][1]) : it.voorstel.status}{it.code ? ` · ${it.code}` : ''}</dd>
         <dt>{tr(lang, 'Підготував', 'Voorbereid door')}</dt><dd>{it.voorstel.voorbereider} · {datumLang(lang, it.voorstel.aangemaaktOp)}</dd>
-        {it.voorstel.beslistDoor && <><dt>{tr(lang, 'Вирішив', 'Besloten door')}</dt><dd>{it.voorstel.beslistDoor} · {datumLang(lang, it.voorstel.beslistOp)}</dd></>}
+        {it.voorstel.beslistDoor && <><dt>{tr(lang, 'Вирішив', 'Besloten door')}</dt><dd>{[it.voorstel.uitkomst?.door?.naam, it.voorstel.uitkomst?.door?.email || it.voorstel.beslistDoor].filter(Boolean).join(' · ')} · {datumLang(lang, it.voorstel.beslistOp)}</dd></>}
         {(it.voorstel.uitkomst?.reden || samenvatting) && <><dt>{tr(lang, 'Причина', 'Reden')}</dt><dd>{it.voorstel.uitkomst?.reden || samenvatting}</dd></>}
         <dt>{tr(lang, 'Коміт', 'Commit')}</dt><dd><CommitTekst lang={lang} commit={it.voorstel.pakketMeta?.commit || it.voorstel.commit} /></dd>
         <dt>{tr(lang, 'Розмір', 'Grootte')}</dt><dd>{mb(it.voorstel.bytes)}</dd>

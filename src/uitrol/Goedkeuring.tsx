@@ -8,6 +8,9 @@ import UitrolStroomKaart from './UitrolStroomKaart';
 import RodeVlaggen, { rodeVlaggen } from './RodeVlaggen';
 import { datum, lopendTekst, mb, tr, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel } from './types';
 
+/** Те саме правило, що й на сервері (afwijsReden): щонайменше 2 літери чи цифри. Zelfde regel als de server. */
+export const afwijsRedenGeldig = (r: string) => [...r.replace(/[^\p{L}\p{N}]/gu, '')].length >= 2;
+
 type Props = { lang: Lang; context?: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel, risicoBevestigd?: boolean) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string; naarStroom?: (versie: string) => void;
   /** UITROL-002: er loopt al een installatie (run bezig of goedgekeurd pakket wacht op root) — goedkeuren staat dan uit. */ lopend?: LopendeInstallatie | null };
 
@@ -42,10 +45,14 @@ export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goe
         {afwijs?.id !== v.id && <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => setAfwijs({ id: v.id, reden: '' })}><X aria-hidden='true' />{tr(lang, 'Відхилити', 'Afwijzen')}</button>}
       </div>
       {afwijs?.id === v.id && <div className='ut-reden-veld' role='group' data-afwijzen-voorstel={v.id}>
-        <label htmlFor={`afwijs-${v.id}`}>{tr(lang, 'Причина відхилення (необов’язково)', 'Reden van afwijzen (optioneel)')}</label>
-        <textarea id={`afwijs-${v.id}`} rows={2} maxLength={500} value={afwijs.reden} onChange={(e) => setAfwijs({ id: v.id, reden: e.target.value })} disabled={!!busy} />
+        {/* SEC-PAKKET-001 (власник 16.11.2026): причина обов'язкова, хоч одним словом; зберігається в історії разом з акаунтом і
+            автоматично надсилається в центр сповіщень — вам і автору пакета. Reden verplicht; bewaard met account en gemeld. */}
+        <label htmlFor={`afwijs-${v.id}`}>{tr(lang, 'Причина відхилення (обов’язково, можна одним словом)', 'Reden van afwijzen (verplicht, één woord mag)')}</label>
+        <textarea id={`afwijs-${v.id}`} rows={2} maxLength={500} required aria-required='true' aria-describedby={`afwijs-uitleg-${v.id}`} value={afwijs.reden} onChange={(e) => setAfwijs({ id: v.id, reden: e.target.value })} disabled={!!busy}
+          placeholder={tr(lang, 'Наприклад: «не замовляв», «незрозумілий rm -rf», «чекаю пояснення»', 'Bijvoorbeeld: «niet besteld», «onduidelijke rm -rf», «wacht op uitleg»')} />
+        <p className='ut-hint' id={`afwijs-uitleg-${v.id}`}>{tr(lang, 'Причину збережемо в історії оновлень разом із вашим іменем і e-mail та автоматично надішлемо в центр сповіщень вам і автору пакета.', 'De reden wordt in de updategeschiedenis bewaard met uw naam en e-mail en automatisch in het meldingencentrum gezet, voor u en de maker van het pakket.')}</p>
         <div className='ut-acties'>
-          <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => { afwijzen(v, afwijs.reden.trim().slice(0, 500)); setAfwijs(null); }}><X aria-hidden='true' />{tr(lang, 'Відхилити версію', 'Versie afwijzen')}</button>
+          <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy || !afwijsRedenGeldig(afwijs.reden)} title={afwijsRedenGeldig(afwijs.reden) ? undefined : tr(lang, 'Спершу напишіть причину — хоч одне слово.', 'Schrijf eerst een reden — al is het één woord.')} onClick={() => { afwijzen(v, afwijs.reden.replace(/\s+/g, ' ').trim().slice(0, 500)); setAfwijs(null); }}><X aria-hidden='true' />{tr(lang, 'Відхилити версію', 'Versie afwijzen')}</button>
           <button type='button' className='ut-knop' disabled={!!busy} onClick={() => setAfwijs(null)}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
         </div>
       </div>}

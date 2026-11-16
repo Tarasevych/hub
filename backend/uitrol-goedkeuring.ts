@@ -739,15 +739,44 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
 }
 
-export async function afwijzen(eigenaar: Eigenaar, id: unknown, reden: unknown) {
+/**
+ * SEC-PAKKET-001 (власник, 16.11.2026): «той, хто відхиляє, має написати причину, яка зберігається з історією й публікується
+ * автоматично, включаючи дані акаунта того, хто відхилив; коментар має бути, навіть якщо одним словом».
+ * Тому: причина обов'язкова (≥ 2 знаки, не лише пробіли й розділові знаки), ≤ 500. Разом із нею в записі пропозиції (uitkomst)
+ * зберігаються ім'я, e-mail та id акаунта й час. Публікується автоматично: історія оновлень, журнал аудиту, потік розгортання
+ * і центр сповіщень — того, хто відхилив, і автора пакета (акаунта, що його завантажив), якщо це інша людина.
+ * Afwijzen vraagt altijd een reden (ook één woord); reden + account worden bewaard en automatisch gemeld (geschiedenis, audit, stroom, meldingen).
+ */
+export const AFWIJS_REDEN_MIN = 2;
+export const AFWIJS_REDEN_MAX = 500;
+export function afwijsReden(v: unknown): string {
+  const r = (typeof v === 'string' ? v : '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  if ([...r.replace(/[^\p{L}\p{N}]/gu, '')].length < AFWIJS_REDEN_MIN) fout('AFWIJS_REDEN_VEREIST', 400);
+  if ([...r].length > AFWIJS_REDEN_MAX) fout('AFWIJS_REDEN_TE_LANG', 400);
+  return r;
+}
+export async function afwijzen(eigenaar: Eigenaar, id: unknown, redenRuw: unknown) {
   if (!UUID.test(String(id || ''))) fout('NIET_GEVONDEN', 404);
+  const reden = afwijsReden(redenRuw);
+  const kaart = (await eigenaren([eigenaar.id])).get(eigenaar.id);
+  const door = { id: eigenaar.id, email: tekst(kaart?.email || eigenaar.email || '', 120), naam: tekst(kaart?.naam || '', 120) };
+  const wieTekst = [door.naam, door.email].filter(Boolean).join(', ') || door.id;
+  const tijd = new Date().toISOString();
+  const uitkomst = { reden, door, tijd, uk: `Відхилено: ${reden} (відхилив ${wieTekst})`, nl: `Afgewezen: ${reden} (afgewezen door ${wieTekst})` };
   const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgewezen', beslist_op = now(), beslist_door = $2, uitkomst_code = 'AFGEWEZEN', uitkomst = $3::jsonb, bijgewerkt_op = now()
-    WHERE id = $1 AND status IN ('uploaden', 'wacht-op-goedkeuring') RETURNING *`, [String(id), eigenaar.email || eigenaar.id, JSON.stringify({ reden: tekst(reden, 500) })]);
+    WHERE id = $1 AND status IN ('uploaden', 'wacht-op-goedkeuring') RETURNING *`, [String(id), door.email || door.id, JSON.stringify(uitkomst)]);
   if (!rows[0]) fout('STATUS_ONGELDIG', 409);
+  const v = rows[0]; const versie = tekst(v.versie, 40);
   await rm(pakketPad(String(id)), { force: true }); await rm(`${pakketPad(String(id))}.deel`, { force: true });
-  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_afgewezen', 'success', { voorstel: String(id), versie: String(rows[0].versie), reden: tekst(reden, 200) });
-  await wachtMeldingSluiten(rows[0].versie);
-  return { id: String(id), status: 'afgewezen' };
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_afgewezen', 'success', { voorstel: String(id), versie, reden, door, voorbereider: tekst(v.voorbereider_label, 120) });
+  await wachtMeldingSluiten(v.versie);
+  // Автоматична публікація: центр сповіщень того, хто відхилив, і автора пакета. Automatisch melden aan beslisser en maker.
+  const titel = `Оновлення ${versie} відхилено / Update ${versie} afgewezen`;
+  const tekstMelding = `Причина: «${reden}». Відхилив: ${wieTekst}. Автор: «${tekst(v.voorbereider_label, 80)}». / Reden: «${reden}». Afgewezen door: ${wieTekst}. Maker: «${tekst(v.voorbereider_label, 80)}».`;
+  const ontvangers = [...new Set([eigenaar.id, String(v.account_id ?? '')].map((x) => x.trim()).filter((x) => x && x !== 'null'))];
+  for (const ontvanger of ontvangers) await meld(ontvanger, 'uitrol', titel, tekstMelding, 'https://admin.tarasevych.com/updates').catch((err) => console.error('[uitrol-goedkeuring] melding afwijzing:', (err as Error).message));
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(id), 'afgewezen', eigenaar.id)).catch(() => undefined);
+  return { id: String(id), status: 'afgewezen', reden, door };
 }
 
 // ------------------------------------------------------------------------------------------------ stoppen (UITROL-001)

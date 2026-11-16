@@ -11,6 +11,7 @@ import * as kern from '../../deploy/goedkeuring/webauthn-kern.mjs';
 import { closePool, getPool } from '../../server/platform/pg';
 import { bevestig, nieuwePasskey, registreer, type NepPasskey } from './hulp/nep-toegangssleutel';
 import { checker } from './hulp/nep-google';
+import { registreerMelder } from '../../backend/melder';
 
 const HULP = resolve('deploy/goedkeuring/goedkeur-hulp.mjs');
 const UITROL = resolve('deploy/uitrol/mijn-ruimte-uitrol.sh');
@@ -536,7 +537,29 @@ async function appTests(basis: string, check: Check) {
     writeFileSync(join(o.statusDir, 'status.json'), JSON.stringify({ staat: 'klaar', code: 'SSH_OK', versie: '20261008-150003', methode: 'ssh', uk: 'з SSH', nl: 'via SSH', tijd: new Date().toISOString() }));
     const ovSsh = await call('POST /api/owner/uitrol/overzicht', OWNER);
     check('app: status.json met methode ssh installeert geen wachtend voorstel', ovSsh.data.voorstellen.find((v: any) => v.id === u2.id)?.status === 'wacht-op-goedkeuring' && ovSsh.data.voorstellen.find((v: any) => v.id === u1.id)?.status === 'geinstalleerd');
-    check('app: afwijzen door de eigenaar', (await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'nee' })).data?.status === 'afgewezen');
+    // SEC-PAKKET-001 (власник 16.11.2026): причина відхилення обов'язкова (хоч одним словом), зберігається з акаунтом і йде в сповіщення.
+    { const leeg = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: '' });
+      const spaties = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: '  ... !! ' });
+      const zonder = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id });
+      const nogWacht = (await sys.query('SELECT status FROM app.uitrol_voorstellen WHERE id = $1', [u2.id])).rows[0]?.status;
+      check('afwijzen zonder reden (leeg, alleen leestekens, ontbrekend) → 400 AFWIJS_REDEN_VEREIST; voorstel blijft wachten',
+        [leeg, spaties, zonder].every((r) => r.status === 400 && r.data?.error === 'AFWIJS_REDEN_VEREIST') && nogWacht === 'wacht-op-goedkeuring', JSON.stringify([leeg, spaties, zonder].map((r) => [r.status, r.data])));
+      const lang = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'x'.repeat(501) });
+      check('afwijzen met reden > 500 tekens → 400 AFWIJS_REDEN_TE_LANG', lang.status === 400 && lang.data?.error === 'AFWIJS_REDEN_TE_LANG');
+      const meldingen: Array<{ wie: string; soort: string; titel: string; tekst: string }> = [];
+      registreerMelder(async (wie, _e, soort, titel, tekst) => { meldingen.push({ wie, soort, titel, tekst }); });
+      const af = await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'nee' });
+      registreerMelder(async () => undefined);
+      check('app: afwijzen door de eigenaar met één woord als reden', af.data?.status === 'afgewezen' && af.data?.reden === 'nee');
+      const rij = (await sys.query('SELECT beslist_door, uitkomst FROM app.uitrol_voorstellen WHERE id = $1', [u2.id])).rows[0];
+      check('afwijzing bewaard met reden, account (id + e-mail) en tijd; tekst voor de geschiedenis in uk en nl',
+        rij?.uitkomst?.reden === 'nee' && rij.uitkomst.door?.id === users[OWNER].id && rij.uitkomst.door?.email === `${users[OWNER].id}@example.test` && !!rij.uitkomst.tijd
+        && rij.uitkomst.uk.includes('Відхилено: nee') && rij.uitkomst.nl.includes('Afgewezen: nee') && rij.beslist_door === `${users[OWNER].id}@example.test`, JSON.stringify(rij));
+      const audit = (await sys.query("SELECT details FROM app.audit WHERE action = 'uitrol_voorstel_afgewezen' AND details->>'voorstel' = $1", [u2.id]).catch(() => ({ rows: [] }))).rows[0]?.details;
+      check('afwijzing in het auditlogboek met reden en account', audit?.reden === 'nee' && audit?.door?.id === users[OWNER].id, JSON.stringify(audit));
+      check('afwijzing automatisch gemeld aan de beslisser én de maker (eigen account), met reden en wie',
+        meldingen.some((m) => m.wie === users[OWNER].id && m.tekst.includes('«nee»')) && meldingen.some((m) => m.wie === users[HELPER].id && m.tekst.includes('«nee»') && m.tekst.includes(`${users[OWNER].id}@example.test`)), JSON.stringify(meldingen));
+    }
     // UITROL-001: stoppen vóórdat root het pakket oppakte → pakket + goedkeuring uit de inbox, voorstel «afgebroken GESTOPT», stop.json als vangnet.
     { const u3 = await upload(HELPER, '20261008-150009');
       const uit7 = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u3.id });
