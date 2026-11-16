@@ -424,7 +424,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     // стали звичними й їх перестали читати. Тестові зразки збираються під час виконання, тож хибних блокувань немає (сторож у CI).
     // Een gevonden geheim BLOKKEERT de uitrol; een waarschuwing werd na verloop van tijd genegeerd.
     if (gevonden.length) voeg('geheimen', 'fout', 'Встановлення заблоковано: у пакеті знайдено схожий на справжній ключ, токен або файл із обліковими даними. Приберіть його з коду, замініть ключ (він уже міг потрапити до чужих рук) і зберіть пакет знову.', 'Installatie geblokkeerd: het pakket bevat iets dat op een echte sleutel, token of bestand met inloggegevens lijkt. Haal het uit de code, vervang de sleutel (die kan al zijn uitgelekt) en bouw het pakket opnieuw.', gevonden);
-    else voeg('geheimen', 'ok', 'Секретів не знайдено (приватні ключі, токени й ключі доступу понад 60 видів, .env, файли з обліковими даними).', 'Geen geheimen gevonden (privésleutels, tokens en toegangssleutels van meer dan 60 soorten, .env, bestanden met inloggegevens).');
+    else voeg('geheimen', 'ok', 'Секретів не знайдено (приватні ключі, токени й ключі доступу 60 шаблонів для понад 45 сервісів, .env, файли з обліковими даними).', 'Geen geheimen gevonden (privésleutels, tokens en toegangssleutels: 60 patronen voor meer dan 45 diensten, .env, bestanden met inloggegevens).');
 
     // ---- 8. tests van de voorbereider (informatief): uit het voorstel (MCP-weg), en anders uit het bestand TESTRESULTATEN
     // in het pakket zelf (JSON {geslaagd, mislukt, samenvatting}; deploy/uitrol/maak-voorstelpakket.sh schrijft het mee).
