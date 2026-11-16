@@ -17,7 +17,9 @@ import * as rs from './ruimte-scheiding';
 import * as tp from './tech-profiel';
 import { isEigenaar } from './tech-profiel';
 import * as kern from './tech-ruimtes-kern';
-import { agentVanVerbinding } from './ai-delegatie-kern';
+import { getPool } from '../server/platform/pg';
+
+const sys = () => getPool('systeem');
 import { sterkeMethoden } from './toegang-context';
 import { weigerCode, type RechtWeigering } from './api-recht';
 
@@ -49,8 +51,12 @@ export async function eigenVerbinding(userId: string, slug: AgentSlug, ruw: unkn
   if (!v || v === '*' || v === `agent:${slug}`) return { vid: null };
   if (v.startsWith('agent:')) return { fout: 'VERBINDING_ANDERE_AGENT', status: 409 };
   if (!/^[0-9a-f-]{36}$/i.test(v)) return { fout: 'VERBINDING_ONGELDIG', status: 400 };
-  const van = await agentVanVerbinding(userId, v);
-  if (!van) return { fout: 'VERBINDING_ONBEKEND', status: 404 };
+  // ANTISPOOF-001: alleen de agent die bij de UITGIFTE vastlag (connectorpad /<agent>, kolom agent) telt — nooit een gok op de
+  // klantnaam: «Claude» noemen maakt een koppeling nog geen Claude-koppeling. Лише агент, записаний при видачі токена; не назва.
+  const rij = (await sys().query('SELECT agent FROM app.mcp_oauth_tokens WHERE id::text = $1 AND user_id = $2 AND revoked_at IS NULL', [v, userId])
+    .catch(() => ({ rows: [] as Array<{ agent: string | null }> }))).rows[0];
+  if (!rij) return { fout: 'VERBINDING_ONBEKEND', status: 404 };
+  const van = rij.agent ? String(rij.agent) : null;
   if (van !== slug) return { fout: 'VERBINDING_ANDERE_AGENT', status: 409 };
   return { vid: v };
 }

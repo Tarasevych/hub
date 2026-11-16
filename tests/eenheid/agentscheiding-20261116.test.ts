@@ -15,6 +15,7 @@ import { aiDienstAan, aiDienstOpruimen } from './hulp/ruimte-ai';
 import { agentUrl, weergaveNaam, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { pasModusToe } from '../../shared/connector-v2/rechten';
 import { aiBron, siteEventsFromAudit } from '../../backend/site-activiteit';
+import { bootsKlantNa } from '../../shared/ai-verbinding';
 
 const parseJson = (s: string) => (s ? JSON.parse(s) : null);
 const form = (o: Record<string, string>) => new URLSearchParams(o).toString();
@@ -27,7 +28,13 @@ export async function main(): Promise<number> {
   // ------------------------------------------------------------------ чисті перевірки (без бази)
   check('weergaveNaam: підключення для агента має назву САМЕ цього агента; чужа назва чи безіменний клієнт не стає «Claude»',
     weergaveNaam('Claude', 'gpt') === 'ChatGPT' && weergaveNaam('Claude Code', 'claude') === 'Claude Code' && weergaveNaam('MCP · localhost', 'codex') === 'Codex'
-    && weergaveNaam('', 'grok') === 'Grok' && weergaveNaam('Mijn tool', 'gpt') === 'ChatGPT (Mijn tool)' && weergaveNaam('Cursor', null) === 'Cursor');
+    && weergaveNaam('', 'grok') === 'Grok' && weergaveNaam('Mijn tool', 'gpt') === 'ChatGPT' && weergaveNaam('Cursor', null) === 'Cursor');
+  // ANTISPOOF-001: підробка через назву
+  check('підробка назвою: «Сlaude» (кирилична С), «C.l.a.u.d.e», «Grоk», «0penAI» розпізнано як імітацію; справжні назви — ні',
+    bootsKlantNa('Сlaude') === 'claude' && bootsKlantNa('C.l.a.u.d.e') === 'claude' && bootsKlantNa('Grоk') === 'grok' && bootsKlantNa('0penAI') === 'chatgpt'
+    && ['Claude', 'Claude Code', 'ChatGPT', 'Cursor', 'GitHub Copilot', 'Gemini CLI', 'My tool'].every((n) => bootsKlantNa(n) === null));
+  check('підробка назвою в списках: вільна чи схожа назва ніколи не стоїть поруч з ім’ям агента',
+    weergaveNaam('Сlaude ✓ офіційний', 'gpt') === 'ChatGPT' && weergaveNaam('Claude ✓', 'claude') === 'Claude' && weergaveNaam('Claude Code', 'claude') === 'Claude Code');
   check('центр сповіщень: подія підключення ШІ має логотип свого ШІ (agent → клієнт), невідомий — без логотипа Claude',
     aiBron({ agent: 'gpt' }) === 'claude:chatgpt' && aiBron({ client: 'Grok' }) === 'claude:grok' && aiBron({ agent: 'claude' }) === 'claude:claude'
     && aiBron({ client: 'MCP · localhost' }) === 'claude' && aiBron({}) === 'claude');
@@ -79,7 +86,7 @@ export async function main(): Promise<number> {
     const code = 'redirect' in d ? new URL(d.redirect).searchParams.get('code') || '' : '';
     const tok = parseJson((await c.token(form({ grant_type: 'authorization_code', code, code_verifier: p.verifier, client_id: reg.client_id, redirect_uri: redirect }))).body);
     const rij = (await sys.query('SELECT id::text AS id, client_name, agent FROM app.mcp_oauth_tokens WHERE access_hash = $1', [createHash('sha256').update(String(tok?.access_token)).digest('hex')])).rows[0];
-    return { grantId: String(rij?.id ?? ''), clientName: String(rij?.client_name ?? ''), agent: rij?.agent ?? null, consentNaam: String(info?.clientName ?? ''), regNaam: String(reg.client_name) };
+    return { grantId: String(rij?.id ?? ''), clientName: String(rij?.client_name ?? ''), agent: rij?.agent ?? null, consentNaam: String((info as any)?.naam ?? ''), regNaam: String(reg.client_name) };
   };
 
   try {
@@ -126,6 +133,35 @@ export async function main(): Promise<number> {
       JSON.stringify({ claude, gpt }));
     check('клієнт без назви (локальний Codex) НЕ називається «Claude»: реєстрація нейтральна, вікно згоди й токен — «Codex»',
       codex.regNaam === 'MCP · 127.0.0.1' && codex.consentNaam === 'Codex' && codex.clientName === 'Codex' && codex.agent === 'codex', JSON.stringify(codex));
+
+    // ANTISPOOF-001: реєстрація й вікно згоди
+    const nep = parseJson((await c.registerClient(JSON.stringify({ client_name: 'Сlaude', redirect_uris: ['http://127.0.0.1:43124/cb'] }))).body);
+    check('реєстрація з назвою-імітацією («Сlaude» з кириличною С) відхилена', nep?.error === 'invalid_client_metadata' && /na/.test(String(nep?.error_description)), JSON.stringify(nep));
+    const infoVan = async (naam: string, redirect: string, slug: AgentSlug) => {
+      const reg = parseJson((await c.registerClient(JSON.stringify({ client_name: naam, redirect_uris: [redirect] }))).body);
+      clients.push(reg.client_id);
+      const p = pkce();
+      const a = await c.authorize({ response_type: 'code', client_id: reg.client_id, redirect_uri: redirect, code_challenge: p.challenge, code_challenge_method: 'S256', state: 's', resource: agentUrl(slug) });
+      return c.consentInfo(new URL(kopVan(a, 'location')).searchParams.get('consent') || '', uid) as Promise<any>;
+    };
+    const echt = await infoVan('Claude', 'https://claude.ai/api/mcp/auth_callback', 'claude');
+    const lokaal = await infoVan('Claude', 'http://127.0.0.1:43125/cb', 'gpt');
+    check('вікно згоди: claude.ai — «підтверджено адресою»; локальна програма, що називає себе «Claude» на адресі ChatGPT — не підтверджено, і видно справжню заявлену назву (для попередження)',
+      echt?.geverifieerd === true && lokaal?.geverifieerd === false && lokaal?.clientName === 'Claude' && lokaal?.klantGeclaimd === 'claude' && lokaal?.naam === 'ChatGPT' && lokaal?.klant === 'chatgpt',
+      JSON.stringify({ echt: echt && { g: echt.geverifieerd }, lokaal: lokaal && { n: lokaal.clientName, k: lokaal.klantGeclaimd, g: lokaal.geverifieerd } }));
+    const wiz = readFileSync('src/connector-v2/KoppelWizard.tsx', 'utf8');
+    check('майстер підключення: попередження «Сайт не може перевірити, що це справді …» для непідтвердженої програми; невідповідність назви порівнюється з ЗАЯВЛЕНОЮ назвою',
+      wiz.includes('data-v2-onbevestigd') && /info\.klantGeclaimd \?\? info\.klant\) === agent\.klant/.test(wiz));
+    // старий токен без агента, що лише називається «Claude», не вважається підключенням Claude
+    const oud = (await sys.query(`INSERT INTO app.mcp_oauth_tokens (user_id, client_id, client_name, scope, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+      SELECT $1, client_id, 'Claude', 'mcp', $2, $3, now() + interval '1 hour', now() + interval '1 day' FROM app.mcp_oauth_tokens WHERE id::text = $4 RETURNING id::text AS id`,
+      [uid, randomBytes(16).toString('hex'), randomBytes(16).toString('hex'), codex.grantId]).catch((e) => ({ rows: [{ id: '', fout: String(e.message) }] }))).rows[0] as { id: string; fout?: string };
+    if (oud.id) {
+      await stapOp();
+      const viaNaam = await post('/api/owner/connector-v2/activeer-tech', { agent: 'claude', actie: 'alles-aan', verbindingId: oud.id });
+      check('токен без агента, що лише НАЗИВАЄТЬСЯ «Claude», не приймається як підключення Claude (409), прав не отримує',
+        viaNaam.status === 409 && !(await rijen()).some((r) => r.vid === oud.id), JSON.stringify(viaNaam));
+    } else check('старий токен для перевірки підробки назвою створено', false, oud.fout);
 
     // (1) стара сторінка: «Дозволити» для Claude без підключення слала verbindingId '*'
     await stapOp();

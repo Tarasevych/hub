@@ -148,6 +148,9 @@
 .v2-uitleg{margin:0;color:var(--muted);font-size:.88rem;line-height:1.45;display:flex;gap:6px;align-items:flex-start}
 .v2-let{margin:0;display:block;padding:8px 10px;border-radius:8px;border:1px solid var(--v2-hoog);background:var(--v2-b-zacht);font-size:.88rem;line-height:1.45}
 .v2-let>svg{vertical-align:-3px;margin-right:6px}
+/* ANTISPOOF-001: korte mark «не підтверджено» in de feitenlijst van de wizard */
+.v2-let-kort{color:var(--v2-hoog);font-weight:600}
+.v2-let-kort>svg,[data-v2-identiteit] svg{vertical-align:-2px}
 .v2-let a{display:inline-flex;align-items:center;gap:4px}
 .v2-let-klein{color:var(--v2-hoog);font-size:.78rem}
 .v2-ok{margin:0;display:inline-flex;gap:6px;align-items:center;color:var(--v2-laag);font-weight:600}

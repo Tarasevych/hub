@@ -169,6 +169,10 @@ export function weergaveNaam(clientNaam: string | null | undefined, agent: Agent
   const a = agent ? V2_AGENTEN.find((x) => x.slug === agent) : undefined;
   if (!a) return naam || 'MCP';
   if (!naam) return a.naam;
-  const k = klantVan(naam);
-  return k === a.klant ? naam : k === 'overig' && !/^MCP\b/.test(naam) ? `${a.naam} (${naam})` : a.naam;
+  // ANTISPOOF-001: een vrije naam wordt NOOIT naast een agentnaam getoond (geen «ChatGPT (Сlaude ✓ офіційний)» met lookalike-
+  // letters). Alleen een naam die al bij DEZE agent hoort én uit gewone Latijnse tekens bestaat («Claude Code») blijft staan.
+  // Вільна назва клієнта ніколи не показується поруч з ім'ям агента; лише «рідна» назва з простих латинських символів.
+  return klantVan(naam) === a.klant && VEILIGE_NAAM.test(naam) ? naam : a.naam;
 }
+/** Gewone Latijnse letters, cijfers, spatie en . _ ( ) -; geen lookalikes uit andere schriften, geen emoji of vinkjes. */
+const VEILIGE_NAAM = /^[A-Za-z0-9 ._()-]{1,40}$/;

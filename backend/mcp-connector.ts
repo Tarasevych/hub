@@ -10,7 +10,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { grantOpenen, grantRoteren, grantSluiten, grantVerzegelen } from './sleutelkluis';
 import { getPool } from '../server/platform/pg';
 import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
-import { gereserveerdeKlantNaam, isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId, type KlantId } from '../shared/ai-verbinding';
+import { bootsKlantNa, gereserveerdeKlantNaam, isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId, type KlantId } from '../shared/ai-verbinding';
 import { connectGeweigerd, toolGeweigerd, verbindingGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
@@ -138,6 +138,8 @@ export { GERESERVEERDE_NAAM, gereserveerdeKlantNaam } from '../shared/ai-verbind
 export function klantNaamFout(name: string, uris: string[]): string | null {
   // SEC-002 (slot m, MR-2/MRG-01): de gereserveerde namen (g10a-4) gelden ook voor CIMD — valideerCimd gebruikt deze functie als naamFout.
   if (gereserveerdeKlantNaam(name)) return 'client_name is gereserveerd';
+  // ANTISPOOF-001: geen naam die een bekende AI nabootst met lookalike-letters of tekens ertussen («Сlaude», «C.l.a.u.d.e»).
+  if (bootsKlantNa(name)) return 'client_name bootst een andere AI na';
   const beweerdeKlant = klantVan(name);
   if (beweerdeKlant === 'overig') return null;
   for (const rawUri of uris) {
@@ -323,6 +325,20 @@ function klantVanVerzoek(a: { client_name?: string | null; agent?: string | null
   return ag ? ag.klant : klantVan(a.client_name);
 }
 
+/**
+ * ANTISPOOF-001: is de identiteit van de klant door het TERUGKEERADRES bevestigd? Alleen een https-adres op een eigen webhost van
+ * de agent (claude.ai voor Claude, chatgpt.com voor ChatGPT …) bewijst dat de code bij die aanbieder terechtkomt. Een lokale
+ * klant (localhost) of een app-schema kan elke naam opgeven: de site kan niet nagaan dat het echt die AI is.
+ * Чи підтверджено, що це справді цей ШІ: лише https-адреса самого постачальника. Локальна програма може назватися будь-як.
+ */
+export function identiteitBevestigd(redirectUri: unknown, agent: AgentSlug | null): boolean {
+  const ag = agent ? V2_AGENTEN.find((x) => x.slug === agent) : undefined;
+  const u = parseUrl(String(redirectUri ?? ''));
+  if (!ag || !u || u.protocol !== 'https:') return false;
+  const h = u.hostname.toLowerCase();
+  return ag.webHosts.some((w) => h === w || h.endsWith(`.${w}`));
+}
+
 export async function consentInfo(rid: string, userId?: string) {
   const a = await st.getPendingAuth(rid);
   if (!a) return null;
@@ -330,7 +346,10 @@ export async function consentInfo(rid: string, userId?: string) {
   const klant = klantVanVerzoek(a);
   return {
     // SEC-002 (ai-mcp-14): ook het VOLLEDIGE terugkeeradres, zodat het venster meer kan tonen dan alleen de host.
-    clientName: weergaveNaam(a.client_name, (a.agent ?? null) as AgentSlug | null), redirectHost: u ? (u.host || u.protocol) : '', redirectAdres: String(a.redirect_uri || '').slice(0, 300), loopback: !!u && isLoopback(u),
+    // ANTISPOOF-001: clientName = wat de klant ZELF beweert (het venster toont het als «Клієнт називає себе» en waarschuwt bij
+    // een andere AI); naam = wat de site ervan maakt (de agent van het connectorpad). klantGeclaimd = klant volgens die bewering.
+    clientName: String(a.client_name ?? ''), naam: weergaveNaam(a.client_name, (a.agent ?? null) as AgentSlug | null),
+    klantGeclaimd: klantVan(a.client_name), geverifieerd: identiteitBevestigd(a.redirect_uri, (a.agent ?? null) as AgentSlug | null), redirectHost: u ? (u.host || u.protocol) : '', redirectAdres: String(a.redirect_uri || '').slice(0, 300), loopback: !!u && isLoopback(u),
     redirectSoort: redirectSoort(a.redirect_uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]),
     scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant, agent: (a.agent ?? null) as AgentSlug | null,
     duur: userId ? (await leesDuren(userId))[klant] : '1u',
@@ -354,8 +373,14 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   }
   // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
   if (ruimteOf(ruimte) === 'prive') {
-    const w = connectGeweigerd(await leesStaat(), { ruimte: 'prive', klant: klantVanVerzoek(a), methode: 'mcp' });
-    if (w) return { error: w.code };
+    // ANTISPOOF-001: het plafond geldt voor de agent van het pad ÉN voor de klant die de naam beweert — een uitgeschakelde AI
+    // komt er niet in door zich via een ander pad of onder een andere naam aan te melden.
+    const staat = await leesStaat();
+    for (const klant of new Set([klantVanVerzoek(a), klantVan(a.client_name)])) {
+      if (klant === 'overig') continue;
+      const w = connectGeweigerd(staat, { ruimte: 'prive', klant, methode: 'mcp' });
+      if (w) return { error: w.code };
+    }
   }
   if ((await st.countActiveGrants(userId)) >= st.LIMITS.maxActiveGrantsPerUser) return { error: 'GRANT_LIMIT' };
   const code = randomToken(32);
@@ -375,6 +400,7 @@ async function issue(userId: string, clientId: string, clientName: string, scope
   const d = isDuurId(duur) ? duur : null;
   const r = ruimteOf(ruimte);
   // AGENTSCHEIDING-001: een koppeling voor een agent krijgt de naam van DIE agent als de klantnaam bij een andere hoort.
+  const geclaimd = clientName;
   if (agent) clientName = weergaveNaam(clientName, agent);
   const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d, ruimte: r, agent });
   // Sleutelkluis (0092): staat de gegevenssleutel van de mens open (hij geeft nu toestemming in zijn sessie), dan krijgt deze
@@ -394,7 +420,7 @@ async function issue(userId: string, clientId: string, clientName: string, scope
   }
   meldLijstGewijzigd(userId);
   // Journaal op /agents: «ШІ підключено» met clientnaam, scope, duur en ruimte (de toestemming zelf staat al als owner.mcp.grant.approved).
-  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, scope, duur: d ?? 'standaard', ruimte: r, sleutelOmslag, ...(agent && v2 ? { agent, kanten: v2.kanten, rechten: v2.sleutels.length } : {}) } }).catch(() => undefined);
+  await auditToevoegen({ ownerId: userId, actorId: userId, action: 'owner.mcp.grant.connected', type: 'ai', result: 'success', details: { grantId, clientId, clientName, ...(geclaimd !== clientName ? { geclaimdeNaam: geclaimd.slice(0, 80) } : {}), scope, duur: d ?? 'standaard', ruimte: r, sleutelOmslag, ...(agent && v2 ? { agent, kanten: v2.kanten, rechten: v2.sleutels.length } : {}) } }).catch(() => undefined);
   return tokenResponse(access, refresh, scope, d);
 }
 

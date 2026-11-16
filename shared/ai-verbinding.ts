@@ -141,3 +141,22 @@ export const GERESERVEERDE_NAAM = /^(?:\s*site\s*:|\s*\?+\s*$|\s*(?:ви|you|u|j
 // witruimte samenpersen — anders glippen «Ви<U+200B> (з сайту)» en «Ви (з  сайту)» erdoor. Geldt voor DCR, CIMD en aanvragerNu.
 export const naamVoorControle = (naam: string): string => String(naam ?? '').normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ');
 export const gereserveerdeKlantNaam = (naam: string): boolean => GERESERVEERDE_NAAM.test(naamVoorControle(naam));
+
+/**
+ * ANTISPOOF-001 (16.11.2026): een klantnaam die met letters uit een ander schrift (Cyrillisch «С», Grieks «Α» …) of met tekens
+ * tussen de letters een BEKENDE AI nabootst — «Сlaude», «Chat GPT✓», «C-l-a-u-d-e» — terwijl de naam zelf niet als die AI telt.
+ * Zo'n naam zou in lijsten en meldingen als «Claude» lezen zonder het te zijn. Gedeeld door DCR, CIMD en de tests.
+ * Назва, що лише «схожа» на відомий ШІ (кирилична «С» замість латинської тощо), відхиляється.
+ */
+const SCHIJNLETTER: Record<string, string> = {
+  а: 'a', в: 'b', е: 'e', ё: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p', с: 'c', т: 't', у: 'y', х: 'x', і: 'i', ї: 'i', ј: 'j', ӏ: 'l', ԁ: 'd', ɡ: 'g', ս: 'u', ո: 'n',
+  α: 'a', β: 'b', ε: 'e', η: 'n', ι: 'i', κ: 'k', ν: 'v', ο: 'o', ρ: 'p', τ: 't', υ: 'u', χ: 'x', '0': 'o', '1': 'l', '|': 'l',
+};
+export function bootsKlantNa(naam: string): KlantId | null {
+  const n = naamVoorControle(naam).toLowerCase();
+  const skelet = [...n].map((ch) => SCHIJNLETTER[ch] ?? ch).join('');
+  const aaneen = skelet.replace(/[^a-z]+/g, '');
+  const kandidaat = klantVan(skelet) !== 'overig' ? klantVan(skelet) : klantVan(aaneen);
+  if (kandidaat === 'overig') return null;
+  return klantVan(naam) === kandidaat ? null : kandidaat;
+}
