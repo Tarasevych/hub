@@ -7,7 +7,7 @@
 .dm-inleiding{margin:0;max-width:70ch;color:var(--muted);font-size:.88rem;line-height:1.5}
 
 /* Картки рушіїв */
-.dm-lijst{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(17.5rem,24rem));gap:12px}
+.dm-lijst{list-style:none;margin:0;padding:0;display:grid;align-items:start;grid-template-columns:repeat(auto-fill,minmax(17.5rem,24rem));gap:12px}
 .dm-kaart{display:grid;gap:10px;align-content:start;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface,var(--panel));color:var(--text)}
 .dm-kaart[data-aan='true']{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
 .dm-kaart-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
@@ -15,6 +15,17 @@
 .dm-kaart-naam b{font-size:.98rem;overflow-wrap:anywhere}
 .dm-kaart-naam small{color:var(--muted);font-size:.8rem;line-height:1.35}
 .dm-kaart-kop .ag-badge{flex:none;margin-left:0}
+/* MAILAI-004: один рядок цифр у картці; таблиця фактів і повна статистика — під «Докладніше». */
+.dm-kort{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0;color:var(--muted);font-size:.82rem;line-height:1.4}
+.dm-kort b{color:var(--text);font-variant-numeric:tabular-nums}
+.dm-meer{display:block;margin:-4px 0}
+.dm-meer>summary{display:inline-flex;align-items:center;gap:4px;min-height:28px;color:var(--muted);font-size:.8rem;cursor:pointer;list-style:none;border-radius:8px}
+.dm-meer>summary::-webkit-details-marker{display:none}
+.dm-meer>summary::after{content:'▾';font-size:11px;line-height:1}
+.dm-meer[open]>summary::after{content:'▴'}
+.dm-meer>summary:hover{color:var(--text)}
+.dm-meer>summary:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px}
+.dm-meer>:not(summary){margin-top:8px}
 .dm-feiten{display:grid;gap:4px;margin:0;font-size:.85rem}
 .dm-feiten>div{display:flex;flex-wrap:wrap;gap:2px 8px;min-width:0}
 .dm-feiten dt{flex:0 0 8.5rem;color:var(--muted)}

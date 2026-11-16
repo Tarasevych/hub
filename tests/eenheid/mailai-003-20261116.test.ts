@@ -402,8 +402,8 @@ export async function main(): Promise<number> {
     // інтерфейс і джерела
     const kiezer = lees('src/mail/MotorKiezer.tsx');
     check('G вибір рушія: кнопка «Погоджуюся, дозволити цей рушій» лише для стану «потрібна згода», «Відкликати згоду», підказки про наслідки обома мовами',
-      /data-motor-akkoord=\{k\.dienst\.id\}/.test(kiezer) && /k\.staat === 'akkoord' && onAkkoord/.test(kiezer) && /data-motor-akkoord-weg/.test(kiezer) && /Погоджуюся, дозволити цей рушій/.test(kiezer)
-      && /Ik ga akkoord, deze motor toestaan/.test(kiezer) && /Запис про згоду з’явиться в центрі сповіщень/.test(kiezer) && /data-motor-prijs/.test(kiezer) && /data-motor-gebruik/.test(kiezer));
+      /data-motor-akkoord=\{k\.dienst\.id\}/.test(kiezer) && /k\.staat === 'akkoord' && onAkkoord/.test(kiezer) && /data-motor-akkoord-weg/.test(kiezer) && /t\('Погоджуюся', 'Ik ga akkoord'\)/.test(kiezer)
+      && /data-motor-meer/.test(kiezer) && /data-motor-kort/.test(kiezer) && /Запис про згоду з’явиться в центрі сповіщень/.test(kiezer) && /data-motor-prijs/.test(kiezer) && /data-motor-gebruik/.test(kiezer));
     const balk = lees('src/mail/AiVertalingBalk.tsx');
     check('G панель: лічильник активного рушія в рядку «Обробляє», «платить власник сайту», відмови спільного рушія пропонують інший рушій',
       /data-testid="ai-vb-wie-gebruik"/.test(balk) && /платить власник сайту/.test(balk) && /'DIENST_LIMIET'/.test(balk) && /'DIENST_AKKOORD_NODIG'/.test(balk) && /ключем сайту \(не вашим\)/.test(balk) && /onAkkoord=\{dienstAkkoord\}/.test(balk));

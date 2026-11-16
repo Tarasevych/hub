@@ -16,8 +16,23 @@
 .mk-label[data-staat='akkoord'], .mk-label[data-staat='op'] { border-color:color-mix(in srgb, var(--warn, #b26a00) 40%, var(--line)); color:var(--text); background:color-mix(in srgb, var(--warn, #b26a00) 8%, var(--panel)); }
 .mk-knop:disabled { opacity:.6; cursor:default; }
 .ai-vb-wie-gebruik { color:var(--muted); }
-.mk-kop { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
-.mk-kop strong { flex:1 1 12em; min-width:0; }
+/* MAILAI-004: картка — один рядок (піктограма, назва з коротким підписом, позначки, головна кнопка); подробиці згорнуто під «Докладніше». */
+.mk-kop { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.mk-icoon { flex:none; display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--surface2); color:var(--muted); }
+.mk-naam { flex:1 1 14em; min-width:0; display:grid; gap:1px; }
+.mk-naam strong { font-size:14px; overflow-wrap:anywhere; }
+.mk-kort { color:var(--muted); font-size:12.5px; line-height:1.35; }
+.mk-labels { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+.mk-hoofd { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.mk-hoofd:empty { display:none; }
+.mk-meer { margin:2px 0 -4px 40px; }
+.mk-meer > summary { display:inline-flex; align-items:center; gap:4px; min-height:28px; cursor:pointer; color:var(--muted); font-size:12.5px; list-style:none; border-radius:8px; }
+.mk-meer > summary::-webkit-details-marker { display:none; }
+.mk-meer > summary::after { content:'▾'; font-size:11px; line-height:1; }
+.mk-meer[open] > summary::after { content:'▴'; }
+.mk-meer > summary:hover { color:var(--text); }
+.mk-meer > summary:focus-visible { outline:2px solid var(--focus, var(--accent)); outline-offset:2px; }
+.mk-meer .mk-knoppen:empty { display:none; }
 .mk-label {
   display:inline-flex; align-items:center; padding:1px 8px; border-radius:999px; font-size:12px; line-height:1.6;
   border:1px solid var(--line); background:var(--surface2); color:var(--muted);
@@ -58,6 +73,11 @@
 .ai-vb-sluit-keuze .mk-knop { min-height:auto; padding:8px 10px; flex-direction:column; align-items:flex-start; gap:2px; }
 .ai-vb-verwerkt { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); margin:4px 0 0; }
 @media (max-width:520px) {
+  .mk-naam { flex-basis:calc(100% - 44px); }
+  .mk-hoofd { flex:1 1 100%; }
+  .mk-hoofd .mk-knop { flex:1 1 auto; justify-content:center; }
+  .mk-meer { margin-left:0; }
+  .mk-meer > summary { min-height:var(--tik-hoogte, 36px); }
   .mk-feiten { grid-template-columns:1fr; }
   .mk-feiten dd { margin-bottom:4px; }
   .mk-auto { flex-wrap:wrap; }

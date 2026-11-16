@@ -144,7 +144,7 @@ export async function main(): Promise<number> {
     const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined, voorbeeldZichtbaar: true } as unknown as Parameters<typeof AiVertalingBalk>[0];
     const html = renderToString(createElement(AiVertalingBalk, props));
     check('E панель: рядок «Обробляє / хто обробляє» з кнопкою «Змінити · як обробляється текст»; вибір закриття закритий типово',
-      html.includes('data-testid="ai-vb-wie"') && html.includes('Змінити · як обробляється текст') && !html.includes('ai-vb-sluit-keuze') && html.includes('aria-haspopup="true"'));
+      html.includes('data-testid="ai-vb-wie"') && html.includes('>Змінити<') && !html.includes('ai-vb-sluit-keuze') && html.includes('aria-haspopup="true"'));
     const bron = lees('src/mail/AiVertalingBalk.tsx');
     check('E хрестик: «Сховати зараз» (лише вкладка, налаштування не змінюються) і «Вимкнути зовсім» (усі пристрої) — обидві мови',
       bron.includes('data-sluit="sessie"') && bron.includes('data-sluit="uit"') && bron.includes('zetBalkSessieVerborgen(true)') && /Лише до закриття цієї вкладки/.test(bron) && /Alleen tot u dit tabblad sluit/.test(bron) && /На всіх ваших пристроях/.test(bron));

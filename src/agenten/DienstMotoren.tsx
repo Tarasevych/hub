@@ -194,15 +194,10 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
             <span>{open ? tr('Згорнути', 'Inklappen') : tr('Розгорнути', 'Uitklappen')}</span><ChevronDown className='ag-chevron' aria-hidden='true' />
           </button>
         </div>
-        <p className='ag-blok-uitleg'>{tr('Рушії ШІ, які ви відкриваєте всім користувачам сайту — окремо від особистих ключів; типово все вимкнено.', 'AI-motoren die u voor alle gebruikers van de site openzet — los van persoonlijke sleutels; standaard staat alles uit.')}</p>
+        <p className='ag-blok-uitleg'>{tr('Рушії, які ви відкриваєте всім користувачам. Окремо від ваших особистих ключів; кожен користувач погоджується сам.', 'Motoren die u voor alle gebruikers openzet. Los van uw persoonlijke sleutels; elke gebruiker geeft zelf akkoord.')}</p>
       </header>
 
       <div className='dm-inhoud' id={`${veld}-inhoud`} hidden={!open}>
-        <p className='dm-inleiding'>
-          {tr('Це окремо від ваших особистих ключів: «для себе» — у «Сховищі ключів», «для всіх» — тут. Кожен користувач сам погоджується на кожен рушій і бачить, куди піде текст. Текст листів сайт не зберігає — є лише лічильник запитів.',
-            'Dit staat los van uw persoonlijke sleutels: «voor uzelf» — in de «Sleutelkluis», «voor iedereen» — hier. Elke gebruiker geeft zelf akkoord per motor en ziet waar de tekst heen gaat. De site bewaart de tekst van brieven niet — er is alleen een teller van verzoeken.')}
-        </p>
-
         {melding ? <p className={`ag-melding ag-melding-${melding.ok ? 'ok' : 'fout'}`} role={melding.ok ? 'status' : 'alert'} data-testid={melding.ok ? 'dienst-melding' : 'dienst-fout'}>{melding.tekst}</p> : null}
 
         {data === null ? (melding ? null : <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>) : motoren.length === 0 ? (
@@ -218,16 +213,22 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
               const bezigHier = bezig.endsWith(`:${m.id}`);
               return (
                 <li key={m.id} className='dm-kaart' data-testid='dienst-kaart' data-dienst-id={m.id} data-aan={String(m.aan)}>
+                  {/* MAILAI-004 (Павло: «як вікіпедія»): у картці лише назва, куди йде текст і один рядок цифр; подробиці — під «Докладніше». */}
                   <div className='dm-kaart-kop'>
                     <div className='dm-kaart-naam'>
                       <b>{m.naam}</b>
-                      <small>{nl ? m.soortNaamNl : m.soortNaamUk}</small>
+                      <small>{m.soort === 'aanbieder' ? `${m.aanbieder ? naamVan(m.aanbieder) : '—'} · ${tr('ключ сайту', 'sleutel van de site')}` : `${hostVan(m.url) || '—'} · ${tr('власний сервер', 'eigen server')}`}</small>
                     </div>
-                    {m.klaar ? <Badge toon='ok' data='dienst-staat'>{tr('увімкнено', 'aan')}</Badge>
-                      : zonderSleutel ? <Badge toon='warn' data='dienst-staat'>{tr('немає ключа', 'geen sleutel')}</Badge>
-                        : <Badge toon='off' data='dienst-staat'>{tr('вимкнено', 'uit')}</Badge>}
+                    {/* Стан показує сам перемикач нижче; позначка лише тоді, коли чогось бракує. */}
+                    {zonderSleutel ? <Badge toon='warn' data='dienst-staat'>{tr('немає ключа', 'geen sleutel')}</Badge> : null}
                   </div>
-
+                  <p className='dm-kort' data-testid='dienst-kort'>
+                    <span><b>{s.vandaag}</b> {tr('запитів сьогодні', 'verzoeken vandaag')}</span>
+                    <span><b>{s.mensenVandaag}</b> {tr('людей', 'mensen')}</span>
+                    <span>{tr(`межа ${m.limietPerDag} на людину`, `limiet ${m.limietPerDag} per persoon`)}</span>
+                  </p>
+                  <details className='dm-meer' data-testid='dienst-meer'>
+                    <summary>{tr('Докладніше', 'Meer')}</summary>
                   <dl className='dm-feiten'>
                     <div><dt>{m.soort === 'aanbieder' ? tr('Постачальник', 'Aanbieder') : tr('Сервер', 'Server')}</dt><dd>{m.soort === 'aanbieder' ? (m.aanbieder ? naamVan(m.aanbieder) : '—') : (hostVan(m.url) || '—')}</dd></div>
                     <div><dt>{tr('Модель', 'Model')}</dt><dd>{m.model || (m.standaardModel ? tr(`типова: ${m.standaardModel}`, `standaard: ${m.standaardModel}`) : '—')}</dd></div>
@@ -242,6 +243,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                     <li><b>{s.mensenVandaag}</b><span>{tr(`людей сьогодні (найбільше за день: ${s.mensenMax})`, `mensen vandaag (hoogste per dag: ${s.mensenMax})`)}</span></li>
                     <li><b>{s.geweigerd}</b><span>{tr('відмов через межу', 'geweigerd door limiet')}</span></li>
                   </ul>
+                  </details>
 
                   <div className='dm-kaart-acties'>
                     <button type='button' className='dm-schakel' aria-pressed={m.aan} aria-expanded={m.aan ? undefined : risicoVoor === m.id} aria-controls={m.aan ? undefined : risicoId}

@@ -608,22 +608,22 @@ export default function AiVertalingBalk({
           {actief ? (
             <>
               <span>{t('Обробляє:', 'Verwerkt door:')}</span>
-              <strong>{t(actief.naamUk, actief.naamNl)}</strong>
-              <span className="mk-label" data-kosten={actief.kosten}>{actief.kosten === 'gratis' ? t('безкоштовно', 'gratis') : actief.kosten === 'gratis-niveau' ? t('безкоштовний рівень або платно', 'gratis niveau of betaald') : actief.kosten === 'eigenaar' ? t('для вас безкоштовно, платить власник сайту', 'voor u gratis, de eigenaar van de site betaalt') : t('платно', 'betaald')}</span>
-              <span>{actief.soort === 'lokaal' ? t('текст не покидає цей комп’ютер', 'de tekst verlaat deze computer niet')
+              {/* MAILAI-004: один короткий рядок; повний шлях тексту й хто платить — у підказках (і в «Рушії ШІ» → «Докладніше»). */}
+              <strong title={actief.soort === 'lokaal' ? t('текст не покидає цей комп’ютер', 'de tekst verlaat deze computer niet')
                 : actief.soort === 'eigen-server' ? t('сервер Mijn Ruimte → власний сервер сайту, без ШІ-компаній', 'server van Mijn Ruimte → eigen server van de site, geen AI-bedrijf')
                 : actief.soort === 'dienst-eigenaar' ? t('сервер Mijn Ruimte → постачальник, ключем сайту (не вашим)', 'server van Mijn Ruimte → aanbieder, met de sleutel van de site (niet de uwe)')
-                : t('ваш сервер → постачальник, вашим ключем', 'uw server → aanbieder, met uw sleutel')}</span>
-              {actief.gebruikUk && <span className="ai-vb-wie-gebruik" data-testid="ai-vb-wie-gebruik" title={t('Лічильник оновлюється після кожного запиту. Залишок у постачальника — за його власними заголовками відповіді (Anthropic, OpenAI); Gemini такого не повідомляє.', 'De teller wordt na elk verzoek bijgewerkt. Het resterende aantal bij de aanbieder komt uit zijn eigen antwoordkoppen (Anthropic, OpenAI); Gemini meldt dat niet.')}>{t(actief.gebruikUk, actief.gebruikNl || actief.gebruikUk)}</span>}
+                : t('ваш сервер → постачальник, вашим ключем', 'uw server → aanbieder, met uw sleutel')}>{actief.dienst ? actief.dienst.naam : t(actief.naamUk, actief.naamNl)}</strong>
+              {actief.dienst && <span>{t('спільний рушій', 'gedeelde motor')}</span>}
+              <span className="mk-label" data-kosten={actief.kosten} title={actief.kosten === 'eigenaar' ? t('Для вас безкоштовно: платить власник сайту, у межах денної кількості запитів на людину.', 'Voor u gratis: de eigenaar van de site betaalt, binnen het dagelijkse aantal verzoeken per persoon.') : actief.kosten === 'gratis-niveau' ? t('Безкоштовний рівень постачальника з лімітами або платно — залежить від вашого облікового запису в нього.', 'Gratis niveau van de aanbieder met limieten of betaald — hangt af van uw account bij de aanbieder.') : undefined}>{actief.kosten === 'gratis' ? t('безкоштовно', 'gratis') : actief.kosten === 'gratis-niveau' ? t('безкоштовно з лімітом', 'gratis met limiet') : actief.kosten === 'eigenaar' ? t('для вас безкоштовно', 'voor u gratis') : t('платно', 'betaald')}</span>
+              {actief.gebruikUk && <span className="ai-vb-wie-gebruik" data-testid="ai-vb-wie-gebruik" title={`${t(actief.gebruikUk, actief.gebruikNl || actief.gebruikUk)}. ${t('Лічильник оновлюється після кожного запиту. Залишок у постачальника — за його власними заголовками відповіді (Anthropic, OpenAI); Gemini такого не повідомляє.', 'De teller wordt na elk verzoek bijgewerkt. Het resterende aantal bij de aanbieder komt uit zijn eigen antwoordkoppen (Anthropic, OpenAI); Gemini meldt dat niet.')}`}>{t(actief.gebruikUk, actief.gebruikNl || actief.gebruikUk).split(';')[0]}</span>}
               {gebruik && <span title={t('Розширення пропускає до 20 запитів за хвилину з цієї сторінки.', 'De extensie laat tot 20 verzoeken per minuut van deze pagina door.')}>{t(`запитів за хвилину: ${gebruik.minuut}/${gebruik.max}`, `verzoeken per minuut: ${gebruik.minuut}/${gebruik.max}`)}</span>}
-              {voorkeur === MOTOR_AUTO && <span>{t('(авто)', '(auto)')}</span>}
             </>
           ) : (
             <span>{t('Обраний рушій зараз не готовий.', 'De gekozen motor is nu niet klaar.')}</span>
           )}
           <button type="button" className="ai-vb-wie-knop" onClick={() => setMotorenOpen(true)} data-testid="ai-vb-wie-wissel"
             title={t('Обрати, хто обробляє текст: локальний ШІ на цьому комп’ютері або постачальник з вашим ключем. Там же — куди йде текст, вартість і умови.', 'Kiezen wie de tekst verwerkt: lokale AI op deze computer of een aanbieder met uw sleutel. Daar ook: waar de tekst heen gaat, kosten en voorwaarden.')}>
-            {t('Змінити · як обробляється текст', 'Wijzigen · hoe de tekst verwerkt wordt')}
+            {t('Змінити', 'Wijzigen')}
           </button>
         </p>
 
