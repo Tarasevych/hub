@@ -76,8 +76,9 @@ export async function main(): Promise<number> {
   check('прапорець identiteit-account-maquette має пояснення обома мовами', Boolean(VLAG_UITLEG['identiteit-account-maquette']) && VLAG_UITLEG['identiteit-account-maquette'].gevolg.every((t) => t.length > 40));
   check('без прапорця «Макет» лишається в списку неактивним з поясненням, типовим стає перший доступний вигляд', vormgeving.includes("VORMGEVINGEN.filter((v) => v !== 'maquette')") && vormgeving.includes("return beschikbaar[0] ?? 'studio';") && kiezer.includes('VORMGEVINGEN.map(') && kiezer.includes('disabled={!kan}') && kiezer.includes("className='ia-vormgeving-hint'") && kiezer.includes('Перемикачі функцій'));
   check('з прапорцем макет — перший і типовий, «Студія» та класичний лишаються', vormgeving.includes("['maquette', 'studio', 'klassiek']") && pagina.includes("vormgeving === 'maquette'") && pagina.includes("vormgeving === 'studio'"));
-  check('класичний вигляд: компактний перемикач у липкому меню, перемикач під розділами, зміна вигляду прокручує вгору',
-    pagina.includes('<VormgevingKiezer lang={lang} compact />') && pagina.includes("<div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>") &&
+  // UNIF-ANKER-001: компактний перемикач жив у липкій смузі пігулок; тепер вибір вигляду — група дій у спільному меню якорів.
+  check('класичний вигляд: вибір вигляду в меню якорів, перемикач під розділами, зміна вигляду прокручує вгору',
+    /onActie: \(\) => kiesVormgeving\(v\)/.test(pagina) && pagina.includes("<div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>") &&
     pagina.includes("werkruimte.scrollTo({ top: 0 })") && kiezer.includes("<details ref={details} className='ia-vormgeving-compact'>") &&
     kiezer.includes('details.current.open = false'));
   const migratie = readFileSync('migrations/0200_identiteit_account_maquette.sql', 'utf8');

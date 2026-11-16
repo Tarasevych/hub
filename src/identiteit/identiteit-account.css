@@ -13,68 +13,34 @@
   padding: var(--ruimte-3) 4px 40px;
 }
 
-/* Меню-зміст: залипає зверху, щоб перехід був завжди під рукою. */
-.ia-toc {
-  position: sticky;
-  /* 70 px — відступ робочої області під командною смугою (canoniek-omlijsting.css: padding:70px …);
-     без цього меню заїжджає під шапку при прокрутці. */
-  top: 70px;
-  z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ruimte-2);
-  padding: var(--ruimte-2);
-  border: 1px solid var(--line);
-  border-radius: var(--straal-l);
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  backdrop-filter: blur(8px);
-}
-
-.ia-toc-knop {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ruimte-2);
-  min-height: var(--tik-hoogte);
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--tekst-klein);
-  cursor: pointer;
-}
-
-.ia-toc-knop:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.ia-toc-knop.actief {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--text-on-accent);
-}
-
-.ia-toc-knop:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.ia-toc-nummer {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: inherit;
-  font-size: var(--tekst-mini);
-  font-weight: 700;
-}
-
-.ia-toc-knop.actief .ia-toc-nummer {
-  background: color-mix(in srgb, var(--text-on-accent) 22%, transparent);
+/* UNIF-ANKER-001 (16.11.2026): розділи — у спільному меню якорів (MaquetteAnkerRail), як на інших сторінках сайту.
+   Рейка стоїть біля обраного краю робочої області, тож сторінка лишає під неї запас; колонка вмісту (1100 px)
+   стоїть по центру, коли місця досить, а запас під меню — нижня межа (як BREEDTE-001 / CENTR-001).
+   Селектори з :not(#_mq):not(#_kolom) — сильніші за загальні правила .mq-schil «Макета» (284 px без центрування).
+   NL: de onderdelen staan in het gedeelde ankermenu; de kolom blijft gecentreerd met de menuruimte als ondergrens. */
+@media (min-width: 961px) {
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil {
+    --ia-kolom: 1100px;
+    --ia-rail: 0px;
+    max-width: none;
+    margin: 0;
+    padding-left: max(4px, calc((100% - var(--ia-kolom)) / 2));
+    padding-right: max(4px, calc((100% - var(--ia-kolom)) / 2));
+  }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil:is([data-mq-rail-zijde="rechts"], [data-mq-rail-zijde="links"]) { --ia-rail: 300px; }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil:is([data-mq-rail-zijde="rechts"], [data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"] { --ia-rail: 104px; }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil[data-mq-rail-zijde="rechts"] {
+    padding-right: max(var(--ia-rail), calc((100% - var(--ia-kolom)) / 2));
+    padding-left: max(4px, min(calc((100% - var(--ia-kolom)) / 2), calc(100% - var(--ia-kolom) - var(--ia-rail))));
+  }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil[data-mq-rail-zijde="links"] {
+    padding-left: max(var(--ia-rail), calc((100% - var(--ia-kolom)) / 2));
+    padding-right: max(4px, min(calc((100% - var(--ia-kolom)) / 2), calc(100% - var(--ia-kolom) - var(--ia-rail))));
+  }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil[data-mq-rail-zijde="boven"] { padding-top: 92px; }
+  html .canonical-chrome:not(#_mq):not(#_kolom) .ia-account.mq-schil[data-mq-rail-zijde="onder"] { padding-bottom: 104px; }
+  /* Меню згори закриває верх робочої області: розділ після переходу зупиняється під ним. */
+  .ia-account.mq-schil[data-mq-rail-zijde="boven"] .ia-sectie { scroll-margin-top: 104px; }
 }
 
 .ia-secties {
@@ -83,7 +49,7 @@
 }
 
 .ia-sectie {
-  scroll-margin-top: 170px;
+  scroll-margin-top: 24px;
   display: grid;
   gap: var(--ruimte-3);
   padding: var(--ruimte-4);
@@ -579,29 +545,9 @@
 .ia-vormgeving-compact-paneel .ia-vormgeving button { flex: 1 1 0; border-radius: 10px; }
 
 @media (max-width: 700px) {
-  .ia-toc {
-    top: 62px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    gap: 6px;
-    padding: 6px;
-  }
-
-  .ia-toc::-webkit-scrollbar {
-    display: none;
-  }
-
-  .ia-toc-knop {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    min-height: 40px;
-    padding: 5px 10px;
-  }
-
+  /* Над розділом — липка підсмуга меню якорів (≈ 60 px). */
   .ia-sectie {
-    scroll-margin-top: 150px;
+    scroll-margin-top: 76px;
   }
 
   .ia-vormgeving-compact { display: none; }

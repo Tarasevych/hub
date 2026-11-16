@@ -2027,64 +2027,157 @@ html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
   cursor: pointer;
 }
 
+/* UNIF-ANKER-001 (16.11.2026): вікно положення має ту саму будову й вигляд, що й вікно «Положення якорів» центру облікового
+   запису в «Макеті» (maquette-stijlen.css: .dock-picker, .dock-diagram, .nav-style-picker, .nav-mode-picker): плитки країв зі схемою,
+   групи «Вміст кнопок» і «Поведінка меню», пояснення внизу. Кольори — лише токени --mq-*, тож це діє в усіх палітрах.
+   NL: zelfde opbouw en vorm als het positievenster van het accountcentrum in «Maquette». */
 .mq-zijde-kiezer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 9px;
+  margin-top: 18px;
 }
 
 .mq-zijde-knop {
-  min-height: 44px;
-  padding: 10px 8px;
+  min-height: 0;
+  padding: 15px 8px 12px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.mq-zijde-knop:hover {
+  background: rgba(var(--mq-accent-rgb), 0.10);
+}
+
+.mq-zijde-knop.is-gekozen {
+  border-color: rgba(var(--mq-accent-rgb), 0.60);
+  background: rgba(var(--mq-accent-rgb), 0.17);
+  color: var(--mq-tekst);
+}
+
+/* Схема краю: рамка екрана з позначкою, де стоятиме панель. */
+.mq-zijde-schema {
+  position: relative;
+  display: block;
+  width: 47px;
+  height: 34px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 6px;
+}
+
+.mq-zijde-schema::before {
+  content: "";
+  position: absolute;
+  border-radius: 2px;
+  background: var(--mq-accent);
+}
+
+.mq-zijde-schema.is-links::before { left: 3px; top: 3px; bottom: 3px; width: 7px; }
+.mq-zijde-schema.is-rechts::before { right: 3px; top: 3px; bottom: 3px; width: 7px; }
+.mq-zijde-schema.is-boven::before { left: 3px; right: 3px; top: 3px; height: 6px; }
+.mq-zijde-schema.is-onder::before { left: 3px; right: 3px; bottom: 3px; height: 6px; }
+
+.mq-popover-groep {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+.mq-popover-groep > strong {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+.mq-popover-keuze {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mq-popover-keuze > button,
+.mq-popover-modus > button {
+  min-height: 43px;
+  padding: 9px 10px;
   border-radius: 12px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak-zacht);
   color: var(--mq-gedempt);
   font: inherit;
   font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  font-weight: 650;
+  line-height: 1.3;
   cursor: pointer;
 }
 
-.mq-zijde-knop.is-gekozen {
-  border-color: rgba(var(--mq-accent-rgb), 0.55);
-  background: rgba(var(--mq-accent-rgb), 0.16);
-  color: var(--mq-tekst);
+.mq-popover-modus {
+  display: grid;
+  gap: 7px;
 }
 
-.mq-popover-rij {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--mq-rand);
+.mq-popover-modus > button {
+  min-height: 40px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 12.5px;
+  gap: 11px;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 13px;
 }
 
-.mq-popover-schakelaar {
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--mq-rand);
-  background: var(--mq-oppervlak-zacht);
+/* Перемикач-кружечок, як у «Макеті». */
+.mq-popover-modus > button::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.55;
+  box-sizing: border-box;
+}
+
+:is(.mq-popover-keuze, .mq-popover-modus) > button:hover {
+  background: rgba(var(--mq-accent-rgb), 0.10);
+}
+
+:is(.mq-popover-keuze, .mq-popover-modus) > button.is-gekozen {
   color: var(--mq-tekst);
-  font: inherit;
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
+  border-color: rgba(var(--mq-accent-rgb), 0.62);
+  background: rgba(var(--mq-accent-rgb), 0.18);
 }
 
-.mq-popover-schakelaar[aria-pressed="true"] {
+.mq-popover-modus > button.is-gekozen::before {
+  border-color: var(--mq-accent);
   background: var(--mq-accent);
-  color: var(--mq-accent-op);
-  border-color: transparent;
+  box-shadow: inset 0 0 0 3px var(--mq-popover-glas, var(--mq-oppervlak));
+  opacity: 1;
+}
+
+:is(.mq-zijde-knop, .mq-popover-keuze > button, .mq-popover-modus > button):focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+.mq-popover-noot {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--mq-gedempt);
 }
 
 .mq-popover-tip {
