@@ -366,6 +366,20 @@ export async function main(): Promise<number> {
     const pAdmin = await eo.controleerBrowserOpdracht(P.id, U, 'browser.navigate', { url: 'https://admin.tarasevych.com/' });
     const pKlik = await eo.controleerBrowserOpdracht(P.id, U, 'browser.click', { name: 'x' });
     check('prive-ontgrendeling: admin.* geweigerd (ook al staat de toestemming het toe); cap buiten de ontgrendeling → EXTENSIE_CAP', !pAdmin.ok && /EXTENSIE_HOST/.test((pAdmin as { fout: string }).fout) && !pKlik.ok && /^EXTENSIE_CAP/.test((pKlik as { fout: string }).fout));
+    // EXTUI-001 (16.11.2026): сайти ШІ — лише prive, лише якщо позначено, лише читання; у технічному слоті — ніколи.
+    await reset();
+    const poAi = await eo.priveOntgrendelen(aP, { agentId: P.id, dagen: 1, domeinen: ['mail.tarasevych.com', 'claude.ai'] });
+    const aiNav = await eo.controleerBrowserOpdracht(P.id, U, 'browser.navigate', { url: 'https://claude.ai/new' });
+    const aiLees = await eo.controleerBrowserOpdracht(P.id, U, 'browser.snapshot', {});
+    const gptNav = await eo.controleerBrowserOpdracht(P.id, U, 'browser.navigate', { url: 'https://chatgpt.com/' });
+    check('EXTUI-001: prive met claude.ai aangevinkt → ondertekend; navigate naar claude.ai → EXTENSIE_AI_SITE; lezen mag; niet-aangevinkte AI-site → geweigerd',
+      poAi.ontgrendeling.domeinen.join() === 'claude.ai,mail.tarasevych.com' && !aiNav.ok && /^EXTENSIE_AI_SITE/.test((aiNav as { fout: string }).fout) && aiLees.ok === true
+      && !gptNav.ok && /EXTENSIE_(AI_SITE|HOST)/.test((gptNav as { fout: string }).fout), JSON.stringify({ d: poAi.ontgrendeling.domeinen, aiNav, gptNav }));
+    await reset();
+    check('EXTUI-001: technisch slot met claude.ai → DOMEIN_ONGELDIG; prive standaard (niets gekozen) zonder AI-sites',
+      (await codeR(eo.uitdaging(aU, { agentId: agent.id, minuten: 30, domeinen: ['claude.ai'] }))) === 'DOMEIN_ONGELDIG@technisch'
+      && !po.ontgrendeling.domeinen.some((d: string) => ['claude.ai', 'chatgpt.com', 'gemini.google.com', 'grok.com', 'copilot.microsoft.com'].includes(d)));
+    await reset();
     const viaToolP = await callTool(U, 'browser_snapshot', {});
     check('callTool in de prive-ruimte kiest het prive slot (ontgrendeld) en voert uit', viaToolP.isError !== true, viaToolP.content[0].text.slice(0, 160));
     // Browserhulpmiddelen volgen de ruimte van het apparaat: nooit kruislings.

@@ -85,6 +85,8 @@ export function stripQuery(raw) {
 
 /** Valt een adres binnen de domeinen van een grant? Leeg = alle eigen subdomeinen. Zelfde regel als ai-toestemmingen.ts urlInScope. */
 export function urlInScope(raw, domains) {
+  // 0.9.5: сайт ШІ — у межах серверного дозволу, якщо список порожній (= без обмеження) або host у ньому явно.
+  if (isAiSiteUrl(raw)) return !Array.isArray(domains) || domains.length === 0 || domains.includes(new URL(raw).hostname);
   if (!isOwnSiteUrl(raw)) return false;
   if (!Array.isArray(domains) || domains.length === 0) return true;
   const host = new URL(raw).hostname;
@@ -239,6 +241,24 @@ export const PRIVE_HOSTS = Object.freeze([
 ]);
 /** Hosts die een ontgrendeling van deze ruimte mag noemen. */
 export const hostsVoorRuimte = (ruimte) => (ruimte === 'technisch' ? ADMIN_HOSTS_TOEGESTAAN : PRIVE_HOSTS);
+/**
+ * 0.9.5 (EXTUI-001, рішення власника 16.11.2026): сайти ШІ. Лише слот 'prive', лише якщо (1) Chrome дав розширенню дозвіл
+ * (optional_host_permissions, перемикач «Сайти ШІ» в налаштуваннях), (2) користувач позначив цей сайт у підписаному відкритті
+ * доступу на сайті (domeinen) і (3) лише ЧИТАННЯ: AI_SITE_TYPES. Ніякого мосту, ніяких кліків чи введення тексту там.
+ * Zelfde lijst als shared/extensie-ontgrendeling.ts AI_SITE_HOSTS (tests/eenheid vergelijkt ze).
+ */
+export const AI_SITE_HOSTS = Object.freeze(['claude.ai', 'chatgpt.com', 'gemini.google.com', 'grok.com', 'copilot.microsoft.com']);
+export const AI_SITE_TYPES = Object.freeze(['browser.tabs', 'browser.snapshot', 'browser.scroll', 'browser.wait']);
+/** https, exacte host uit AI_SITE_HOSTS, zonder poort en inloggegevens. */
+export function isAiSiteUrl(raw) {
+  if (typeof raw !== 'string' || raw.length > 2000) return false;
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'https:' && !u.username && !u.password && u.port === '' && AI_SITE_HOSTS.includes(u.hostname);
+  } catch { return false; }
+}
+/** Hosts die een ontgrendeling van deze ruimte mag NOEMEN (prive: eigen diensten + sites van AI, die laatste alleen als gekozen). */
+export const ondertekendeHostsVoorRuimte = (ruimte) => (ruimte === 'technisch' ? ADMIN_HOSTS_TOEGESTAAN : [...PRIVE_HOSTS, ...AI_SITE_HOSTS]);
 /** Prive: hoogstens 30 dagen (keuze 1|7|30 op de site); technisch: hoogstens 480 minuten (lopende activering). */
 export const PRIVE_MAX_MINUTEN = 366 * 24 * 60;
 export const maxMinutenVoorRuimte = (ruimte) => (ruimte === 'technisch' ? MAX_MINUTEN : PRIVE_MAX_MINUTEN);
@@ -308,6 +328,8 @@ export const AI_VERBORGEN_SELECTOR = [`[${AI_VERBORGEN}]`, '[data-vers-token]', 
 export const inAiVerborgen = (el) => binnen(el, AI_VERBORGEN_SELECTOR);
 /** Adres binnen een ontgrendeling van `ruimte`: exacte host ∈ domeinen én ∈ hosts van die ruimte (prive dus nooit admin.*). */
 export function adresInRuimte(ruimte, url, domeinen) {
+  // 0.9.5: сайт ШІ — лише слот prive і лише якщо його host у підписаних domeinen. AI-site: alleen prive en alleen als ondertekend.
+  if (isAiSiteUrl(url)) return ruimte === 'prive' && Array.isArray(domeinen) && domeinen.includes(new URL(url).hostname);
   if (!hostToegestaan(url, domeinen)) return false;
   return hostsVoorRuimte(ruimte).includes(new URL(url).hostname);
 }
@@ -373,7 +395,7 @@ export async function verifyOntgrendeling(keyB64url, grant, sig, eigen, now = Da
   if (g.exp <= now) return { ok: false, code: 'VERLOPEN' };
   if (g.exp <= g.iat || g.exp - g.iat > maxMinutenVoorRuimte(g.ruimte) * 60_000) return { ok: false, code: 'TE_LANG' };
   if (!g.caps.every((c) => BROWSER_CAPS.includes(c))) return { ok: false, code: 'CAPS' };
-  if (!g.domeinen.every((d) => hostsVoorRuimte(g.ruimte).includes(d))) return { ok: false, code: 'DOMEINEN' };
+  if (!g.domeinen.every((d) => ondertekendeHostsVoorRuimte(g.ruimte).includes(d))) return { ok: false, code: 'DOMEINEN' };
   return { ok: true, grant: g };
 }
 

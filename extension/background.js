@@ -22,7 +22,7 @@
 //   een PAIR met de andere ruimte laat het andere slot staan. Nooit geheimen naar de site.
 import {
   ALLOWED_COMMANDS, DIAG_CAP, DIAG_PAKKET, DIAG_RUIMTE, LOKAAL_CAPS, MARKERING_BADGE, MARKERING_KLEUREN, RUIMTES, TYPE_CAPABILITY,
-  accountState, adresInRuimte, debuggerToegestaan, isOwnSiteUrl, isRuimte,
+  AI_SITE_TYPES, accountState, adresInRuimte, debuggerToegestaan, isAiSiteUrl, isOwnSiteUrl, isRuimte,
   parseAccountClaim, parseProfiel, profielToegestaan, ruimteOf, stripQuery, urlInScope, valideerOpdracht, verifyCommand, verifyOntgrendeling,
 } from './shared.js';
 // 0.6.2 (opdracht eigenaar 20.10.2026): WIE leest het tabblad nu, en welke kleur hoort bij die agent.
@@ -882,15 +882,22 @@ async function guarded(r, msg, bron) {
   // SEC-002 extensie-03: opdrachten die een LIJST van tabbladen tonen of zelf een tabblad kiezen (tabs, pages, navigate) eisen voor
   // elke kandidaat ook het juiste account — net als het doeltabblad van elke andere opdracht (stap 7).
   const lijstOpdracht = type === 'browser.tabs' || type === 'browser.pages' || type === 'browser.navigate';
-  const tabOk = (t) => !!t && inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id))
-    && (!lijstOpdracht || accountState((tabInfo.get(t.id) || {}).claim, st.userId) === 'ok');
+  // 0.9.5 (EXTUI-001): вкладка сайту ШІ — лише слот prive, лише читання (AI_SITE_TYPES), лише підписаний host і дозвіл Chrome
+  // (перевіряється перед виконанням). Профілю й облікового запису там немає: моста на чужих сайтах ми не ставимо.
+  const tabOk = (t) => !!t && (isAiSiteUrl(t.url || '')
+    ? r === 'prive' && AI_SITE_TYPES.includes(type) && inBereik(t.url || '')
+    : inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id))
+      && (!lijstOpdracht || accountState((tabInfo.get(t.id) || {}).claim, st.userId) === 'ok'));
   if (typeof params.url === 'string' && !inBereik(params.url)) throw new Error('EXTENSIE_DOMEIN: the address is outside the pages that were unlocked on the site');
+  // 0.9.5 (EXTUI-001): адресу сайту ШІ можна лише читати — не відкривати, не переходити туди (дзеркало перевірки на сервері).
+  if (typeof params.url === 'string' && isAiSiteUrl(params.url) && !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.');
   if (type === 'browser.self_test') return selfTest(r);
   // Profiel en account van de kandidaten VERS bij de brug ophalen: altijd voor lijstopdrachten, anders alleen voor wie onbekend is.
   await verversProfielen(inBereik, lijstOpdracht);
   if (type === 'browser.tabs' || (type === 'browser.pages' && params.action === 'new') || type === 'browser.navigate') return run(r, type, params, null, inBereik, tabOk, msg);
   // 7. doeltabblad: host + profiel (vers gevraagd aan de brug), accountclaim = userId van DIT slot
   const tab = await needTab(tabOk);
+  if (isAiSiteUrl(tab.url || '')) return leesAiSite(r, type, params, tab, msg);
   const vers = await claimVan(tab.id, true);
   if (!profielToegestaan(r, vers.profiel)) throw new Error(PROFIEL_FOUT[r]);
   const acc = accountState(vers.claim, st.userId);
@@ -925,8 +932,17 @@ async function zijpaneelChat(message) {
 
 // ---------------------------------------------------------------- tabbladen
 async function ownTabs() { return chrome.tabs.query({ url: 'https://*.tarasevych.com/*' }); }
+/** 0.9.5: вкладки сайтів ШІ — лише коли Chrome дав дозвіл («Сайти ШІ» → «Завжди»); інакше порожньо. */
+const AI_ORIGINS = () => (chrome.runtime.getManifest().optional_host_permissions || []);
+async function aiSitesToegestaan() { try { return await chrome.permissions.contains({ origins: AI_ORIGINS() }); } catch { return false; } }
+async function aiTabs() { return (await aiSitesToegestaan()) ? ((await stil(() => chrome.tabs.query({ url: AI_ORIGINS() }))) || []).filter((t) => isAiSiteUrl(t.url || '')) : []; }
+/** Kandidaten voor een opdracht: eigen tabbladen + (alleen als toegestaan) AI-sites; de grens zelf legt `mag` (tabOk) op. */
+async function kandidaatTabs() {
+  const gezien = new Set();
+  return [...(await ownTabs()), ...(await aiTabs())].filter((t) => t && !gezien.has(t.id) && gezien.add(t.id));
+}
 async function targetTab(mag) {
-  const tabs = (await ownTabs()).filter((t) => mag(t));
+  const tabs = (await kandidaatTabs()).filter((t) => mag(t));
   return tabs.find((t) => t.active && t.lastFocusedWindow) || tabs.find((t) => t.active) || tabs[0] || null;
 }
 async function needTab(mag) {
@@ -1351,6 +1367,47 @@ function meldLezerIn(r, tab, type, opdracht) {
 }
 let badgeStaart = null;
 
+/**
+ * 0.9.5 (EXTUI-001): ЧИТАННЯ сторінки сайту ШІ (claude.ai, chatgpt.com, …) без моста — одна ізольована функція через
+ * chrome.scripting, лише з дозволом Chrome. Повертає заголовок, адресу без query і видимий текст (≤ 30 000 знаків); значення полів
+ * введення не читаються (innerText їх не містить, паролі й поля оплати пропускаються). Кожне читання — у центр сповіщень.
+ * Lezen van een AI-site zonder brug, alleen met het recht van Chrome; nooit klikken of typen.
+ */
+async function leesAiSite(r, type, params, tab, opdracht) {
+  if (r !== 'prive' || !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs). Tell the user; do not retry.');
+  if (!(await aiSitesToegestaan())) throw new Error('EXTENSIE_AI_SITE: the user has not allowed AI sites in the extension settings (Браузер і вкладки → Сайти ШІ). Tell the user; do not retry.');
+  // Значок на піктограмі — так; повідомлення на чужу сторінку — ні (моста там немає). Badge wel, bericht naar de vreemde pagina niet.
+  meldLezerIn(r, null, type, opdracht);
+  const [res] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id }, world: 'ISOLATED',
+    args: [type, params || {}],
+    func: async (soort, p) => {
+      const MAX = 30000;
+      if (soort === 'browser.scroll') {
+        const h = innerHeight * (typeof p.pages === 'number' ? p.pages : 1);
+        if (p.direction === 'top') scrollTo(0, 0); else if (p.direction === 'bottom') scrollTo(0, document.documentElement.scrollHeight);
+        else scrollBy(0, p.direction === 'up' ? -h : h);
+        return { scrollY: Math.round(scrollY), hoogte: document.documentElement.scrollHeight };
+      }
+      if (soort === 'browser.wait') {
+        const tot = Date.now() + Math.min(15, Math.max(1, Number(p.timeout_seconds) || 5)) * 1000;
+        while (Date.now() < tot) { if ((document.body && document.body.innerText || '').includes(String(p.text || ''))) return { gevonden: true }; await new Promise((x) => setTimeout(x, 250)); }
+        return { gevonden: false };
+      }
+      const tekst = (document.body && document.body.innerText) || '';
+      const koppen = [...document.querySelectorAll('h1,h2,h3')].slice(0, 40).map((h) => (h.innerText || '').trim().slice(0, 160)).filter(Boolean);
+      return { title: document.title.slice(0, 200), koppen, tekst: tekst.slice(0, MAX), afgekapt: tekst.length > MAX };
+    },
+  });
+  const data = res && res.result ? res.result : {};
+  stuurMeldingNaarServer(r, {
+    sleutel: `ext:ai-site:${tab.id}:${Date.now()}`, soort: 'extensie', ernst: 'info',
+    titel: `ШІ прочитав сайт ШІ / De AI las een AI-site: ${new URL(tab.url).hostname}`,
+    bericht: `${type} · ${stripQuery(tab.url)} — лише читання / alleen lezen`,
+  });
+  return { ...data, url: stripQuery(tab.url), aiSite: true, alleenLezen: true };
+}
+
 async function run(r, type, params, tab, inBereik, tabOk, opdracht) {
   meldLezerIn(r, tab, type, opdracht);
   if (type === 'browser.navigate' || (type === 'browser.pages' && params.action === 'new')) {
@@ -1365,7 +1422,7 @@ async function run(r, type, params, tab, inBereik, tabOk, opdracht) {
   }
   if (type === 'browser.tabs') {
     // 0.7.0: `idx` = plaats in deze lijst (pageIdx van chrome-devtools-mcp: select_page / close_page).
-    return { tabs: (await ownTabs()).filter(tabOk).map((t, idx) => ({ idx, id: t.id, title: t.title, url: stripQuery(t.url), active: !!t.active })) };
+    return { tabs: (await kandidaatTabs()).filter(tabOk).map((t, idx) => ({ idx, id: t.id, title: t.title, url: stripQuery(t.url), active: !!t.active, ...(isAiSiteUrl(t.url || '') ? { aiSite: true, alleenLezen: true } : {}) })) };
   }
   if (type === 'browser.pages') {
     const lijst = (await ownTabs()).filter(tabOk);

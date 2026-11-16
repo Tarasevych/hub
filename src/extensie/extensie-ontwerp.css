@@ -85,3 +85,8 @@ details.ext-klap>summary:focus-visible{outline:2px solid var(--accent);outline-o
 /* Блок кольорів усередині розкривного: заголовок уже в підсумку */
 details.ext-klap .ag-agentkleuren.ag-blok{border:0;background:none;box-shadow:none;padding:0;margin:0}
 details.ext-klap .ag-agentkleuren .ag-blok-titel{display:none}
+/* EXTUI-001: сайти ШІ у вікні відкриття доступу — м'який попереджувальний натяк, не крик */
+.eo-ai-sites{border-inline-start:3px solid color-mix(in srgb,var(--warn) 70%,transparent);padding-inline-start:10px;border-radius:10px}
+.eo-ai-sites legend{display:flex;align-items:center;gap:6px}
+.eo-ai-sites .gevaar-teken{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--warn);color:var(--warn);font-weight:800;font-size:.75rem}
+.eo-ai-sites .eo-uitleg{display:block;grid-column:1/-1;color:var(--muted);line-height:1.4;margin:2px 0 6px;max-width:75ch}

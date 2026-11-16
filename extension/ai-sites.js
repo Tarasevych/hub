@@ -15,7 +15,7 @@
     sel.value = aan ? 'altijd' : 'uit';
     stand.className = `diag-werkelijk ${aan ? 'fout' : 'ok'}`;
     stand.textContent = aan
-      ? t('Завжди: Chrome дав розширенню доступ до сайтів ШІ. Дії ШІ там з’являться лише після окремого кроку на сервері.', 'Altijd: Chrome gaf de extensie toegang tot AI-sites. Acties van de AI daar komen pas na een aparte stap op de server.')
+      ? t('Завжди: ШІ може ЛИШЕ ЧИТАТИ ті сайти ШІ, які ви позначили під час відкриття доступу на сайті. Натискати чи вводити текст там він не може.', 'Altijd: de AI mag ALLEEN LEZEN op de AI-sites die u bij het openen van de toegang op de site aanvinkte. Klikken of typen daar kan hij niet.')
       : t('Вимкнено: на сайтах ШІ розширення нічого не читає й не виконує.', 'Uit: op AI-sites leest en doet de extensie niets.');
   };
   sel.addEventListener('change', () => {

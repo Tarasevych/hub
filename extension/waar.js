@@ -22,11 +22,11 @@
     const lijst = UI.maak('ul', {},
       eigen ? rij('ok', '✓', t(`Ця вкладка · ${h}`, `Dit tabblad · ${h}`), t('Працює: ШІ бачить лише те, що ви дозволили.', 'Werkt: de AI ziet alleen wat u toestaat.'), 'tab')
         : rij(ai ? 'let-op' : 'uit', ai ? '!' : '–', h ? t(`Ця вкладка · ${h}`, `Dit tabblad · ${h}`) : t('Ця вкладка', 'Dit tabblad'),
-          ai ? t('Сайт ШІ: тут розширення поки не діє — потрібен ваш окремий дозвіл (типово вимкнено).', 'AI-site: hier werkt de extensie nog niet — uw aparte toestemming is nodig (standaard uit).')
+          ai ? (aiAan ? t('Сайт ШІ: лише читання, якщо його позначено під час відкриття доступу.', 'AI-site: alleen lezen, als die bij het openen van de toegang is aangevinkt.') : t('Сайт ШІ: тут розширення не діє — увімкніть «Сайти ШІ» в налаштуваннях (типово вимкнено).', 'AI-site: hier werkt de extensie niet — zet «AI-sites» aan in de instellingen (standaard uit).'))
             : t('Тут розширення не діє: воно працює лише на tarasevych.com.', 'Hier werkt de extensie niet: alleen op tarasevych.com.'), 'tab'),
       rij('ok', '↻', t('У фоні', 'Op de achtergrond'), t('Зв’язок із сервером тримає саме розширення — сайт можна закрити.', 'De extensie houdt zelf de verbinding met de server — de site mag dicht.'), 'achtergrond'),
       rij('let-op', '!', t('Сайти ШІ', 'AI-sites'), aiAan
-        ? t('«Завжди»: Chrome дав доступ. Вимкнути — у налаштуваннях розширення → Браузер і вкладки.', '«Altijd»: Chrome gaf toegang. Uitzetten — instellingen van de extensie → Browser en tabbladen.')
+        ? t('«Завжди»: лише читання сайтів, позначених під час відкриття доступу. Вимкнути — налаштування → Браузер і вкладки.', '«Altijd»: alleen lezen van de sites die bij het openen van de toegang zijn aangevinkt. Uitzetten — instellingen → Browser en tabbladen.')
         : t('Вимкнено (типово). Увімкнення дасть ШІ бачити текст цих сторінок — у налаштуваннях розширення → Браузер і вкладки.', 'Uit (standaard). Aanzetten laat de AI de tekst van die pagina’s zien — instellingen van de extensie → Browser en tabbladen.'), 'ai-sites'),
     );
     el.replaceChildren(UI.maak('h2', {}, t('Де працює', 'Waar ze werkt')), lijst);

@@ -9,7 +9,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { Bot, KeyRound, Lock, LockOpen, ShieldOff } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
 import {
-  PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
+  AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
 import { eindeWeergave } from '../../shared/extensie-matrix';
 import { restTekst, useExtensieLive } from './extensie-live';
@@ -44,6 +44,8 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const toegestaan = useMemo(() => (recht?.domeinen?.length ? PRIVE_HOSTS.filter((h) => recht.domeinen.includes(h)) : [...PRIVE_HOSTS]), [recht?.domeinen]);
   const [domeinen, setDomeinen] = useState<string[] | null>(null);
   const gekozenDomeinen = (domeinen ?? toegestaan).filter((h) => toegestaan.includes(h));
+  // EXTUI-001: сайти ШІ — типово НЕ позначені; лише читання і лише з дозволом Chrome у розширенні. AI-sites: standaard uit.
+  const [aiSites, setAiSites] = useState<string[]>([]);
   const [lokaal, setLokaal] = useState(false);
   const [bezig, setBezig] = useState<'' | 'open' | 'intrekken'>('');
   const [melding, setMelding] = useState<{ ok: boolean; tekst: string; weigering?: Weigering } | null>(null);
@@ -88,7 +90,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const doeOpen = async () => {
     if (knopUit || !live.agentId) return;
     setBezig('open'); setMelding(null);
-    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, domeinen: gekozenDomeinen, lokaal: lokaal && recht?.lokaal !== false });
+    const r = await ontgrendelenPrive({ agentId: live.agentId, dagen: gekozen, domeinen: [...gekozenDomeinen, ...aiSites], lokaal: lokaal && recht?.lokaal !== false });
     setBezig('');
     setMelding(r.ok
       ? { ok: true, tekst: r.verzonden ? tr('Доступ відкрито. Розширення вже отримало підписаний дозвіл.', 'Toegang open. De extensie heeft de ondertekende ontgrendeling al ontvangen.') : tr('Доступ відкрито. Розширення отримає дозвіл, щойно з’єднається із сервером.', 'Toegang open. De extensie krijgt de ontgrendeling zodra ze met de server verbindt.') }
@@ -147,6 +149,16 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
             </label>
           ))}
           {!gekozenDomeinen.length ? <small className='eo-fout'>{tr('Оберіть хоча б одну сторінку.', 'Kies minstens één pagina.')}</small> : null}
+        </fieldset>
+        <fieldset className='eo-domeinen eo-ai-sites' disabled={!!bezig} data-eo-ai-sites='1'>
+          <legend><span className='gevaar-teken' aria-hidden='true'>!</span> {tr('Сайти ШІ — лише читання', 'AI-sites — alleen lezen')}</legend>
+          <small className='eo-uitleg'>{tr('Ризик: ШІ читатиме текст ваших розмов на цих сайтах (там можуть бути особисті дані). Він ніколи не натискає й не вводить там текст. Працює, лише якщо в налаштуваннях розширення «Сайти ШІ» стоїть «Завжди». Кожне читання потрапляє в центр сповіщень.', 'Risico: de AI leest de tekst van uw gesprekken op deze sites (daar kunnen persoonlijke gegevens in staan). Hij klikt of typt daar nooit. Werkt alleen als «AI-sites» in de instellingen van de extensie op «Altijd» staat. Elke keer lezen komt in het meldingencentrum.')}</small>
+          {AI_SITE_HOSTS.map((h) => (
+            <label key={h} className='eo-vink'>
+              <input type='checkbox' checked={aiSites.includes(h)} onChange={(e) => setAiSites(e.target.checked ? [...aiSites, h] : aiSites.filter((x) => x !== h))} data-eo-ai-site={h} />
+              <code>{h}</code>
+            </label>
+          ))}
         </fieldset>
         {recht?.lokaal !== false ? (
           <label className='eo-vink eo-lokaal'>

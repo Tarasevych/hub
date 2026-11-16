@@ -34,7 +34,7 @@ import { stapOpGeldig, stapOpMethode, type StapOpAuth } from './stap-op';
 import * as tp from './tech-profiel';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import {
-  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveHost, isToegestaneHost,
+  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveOfAiHost, isAiSiteHost, AI_SITE_TYPES, AI_SITE_HOSTS, isToegestaneHost,
   MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
   type BrowserCap, type DiagRechtStand, type EindeSoort, type ExtensieAgentStatus, type ExtensieBeleid, type ExtensieBrowser, type ExtensieStaat, type ExtensieStatusAntwoord, type Ontgrendeling,
   type OntgrendelingWeergave, type RechtPrive, type RechtTechnisch, type VergrendelReden, type Weigercode,
@@ -536,12 +536,25 @@ export async function controleerBrowserOpdracht(agentId: string, userId: string,
   if (cap === 'browser.script' && (ruimte !== 'technisch' || !versieMinstens(liveVersie(agentId), EXTENSIE_VERSIE_MATRIX))) {
     return { ok: false, fout: `EXTENSIE_SCRIPT: evaluate_script runs only in the TECHNICAL slot, with extension ${EXTENSIE_VERSIE_MATRIX} or newer in the «diagnose» package and the row «Скрипти» ticked at ${BROWSER_BEHEER_PAD_EN}. Tell the user; do not retry.` };
   }
-  const domeinen = ruimte === 'prive' ? r.domeinen.filter(isPriveHost) : r.domeinen;
-  const buiten = grants.commandUrls(params).filter((u) => !domeinen.includes(hostVan(u)));
+  const domeinen = ruimte === 'prive' ? r.domeinen.filter(isPriveOfAiHost) : r.domeinen;
+  const urls = grants.commandUrls(params);
+  const buiten = urls.filter((u) => !domeinen.includes(hostVan(u)));
+  // EXTUI-001: адреса на сайті ШІ — лише для команд читання (AI_SITE_TYPES). Navigeren/klikken op een AI-site: altijd weigeren.
+  const aiFout = aiSiteOpdrachtFout(type, urls);
+  if (aiFout) return { ok: false, fout: aiFout };
   if (buiten.length) {
     return { ok: false, fout: `EXTENSIE_HOST: the extension is unlocked only for ${domeinen.join(', ')}; this address is outside. The user adds the page when opening access at ${BROWSER_BEHEER_PAD_EN}. Tell the user, do not retry with another address.` };
   }
   return { ok: true, gid: String(r.id), ruimte };
+}
+
+/**
+ * EXTUI-001: команда з адресою на сайті ШІ дозволена лише для читання (AI_SITE_TYPES). Повертає текст відмови або null.
+ * Een opdracht met een adres op een AI-site mag alleen lezen; navigeren, klikken of typen daar wordt altijd geweigerd.
+ */
+export function aiSiteOpdrachtFout(type: string, urls: readonly string[]): string | null {
+  if (!urls.some((u) => isAiSiteHost(hostVan(u))) || AI_SITE_TYPES.includes(type)) return null;
+  return 'EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.';
 }
 
 /** Technische grant: moet een activatie_id hebben en de ankersessie van de site moet nog leven. Geeft een fouttekst of null. */
@@ -728,13 +741,14 @@ async function browserAgent(userId: string, agentId: unknown, ruimte: AiRuimte):
 
 function domeinenUit(v: unknown, ruimte: AiRuimte): string[] {
   const lijst = ruimte === 'prive' ? PRIVE_HOSTS : null;
+  // Standaard (niets gekozen): alleen eigen diensten — AI-sites komen er nooit vanzelf bij.
   if (v === undefined || v === null) return [...(lijst ?? ADMIN_HOSTS_STANDAARD)].sort();
-  const max = lijst ? lijst.length : 10;
+  const max = lijst ? lijst.length + AI_SITE_HOSTS.length : 10;
   if (!Array.isArray(v) || !v.length || v.length > max) weiger('DOMEIN_ONGELDIG', '', ruimte);
   const s = new Set<string>();
   for (const d of v as unknown[]) {
     const h = String(d ?? '').trim().toLowerCase();
-    if (!(ruimte === 'prive' ? isPriveHost(h) : isToegestaneHost(h))) weiger('DOMEIN_ONGELDIG', '', ruimte);
+    if (!(ruimte === 'prive' ? isPriveOfAiHost(h) : isToegestaneHost(h))) weiger('DOMEIN_ONGELDIG', '', ruimte);
     s.add(h);
   }
   return [...s].sort();
