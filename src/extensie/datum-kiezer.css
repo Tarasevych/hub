@@ -38,16 +38,50 @@
 .dk-tijd.is-open .dk-tijd-pijl{transform:rotate(180deg)}
 :is(html) .dk-tijd:hover,:is(html) .dk-tijd.is-open{border-color:color-mix(in srgb,var(--accent,#2f6f73) 50%,var(--line,#d7dee8))}
 :is(html) .dk-tijd:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:1px}
-.dk-tijdpaneel{display:grid;gap:6px;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--text,#1f2937) 4%,transparent);animation:dk-zoom-in .18s ease-out}
-.dk-tijdkop{font-size:.72rem;color:var(--muted)}
-.dk-uren{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+/* Частини доби: свій відтінок (ніч — індиго, ранок — персик, день — небо, вечір — захід). Dagdelen met eigen tint. */
+.dk-tijdpaneel{--dd:#4f46e5;display:grid;gap:10px;padding:10px;border-radius:14px;animation:dk-zoom-in .18s ease-out;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--dd) 16%,transparent),color-mix(in srgb,var(--dd) 4%,transparent));transition:background .3s ease}
+[data-dagdeel='nacht']{--dd:#4f46e5}
+[data-dagdeel='ochtend']{--dd:#ea8a3c}
+[data-dagdeel='dag']{--dd:#0ea5e9}
+[data-dagdeel='avond']{--dd:#c2416b}
+:is(.theme-dark,.theme-plum-dark) [data-dagdeel='nacht']{--dd:#a5b4fc}
+:is(.theme-dark,.theme-plum-dark) [data-dagdeel='ochtend']{--dd:#fdba74}
+:is(.theme-dark,.theme-plum-dark) [data-dagdeel='dag']{--dd:#7dd3fc}
+:is(.theme-dark,.theme-plum-dark) [data-dagdeel='avond']{--dd:#f9a8d4}
+:is(.theme-dark,.theme-plum-dark) .dk-minuut.is-aan{color:#10161c}
+.dk-dagdelen{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+:is(html) .dk-dagdeel{display:grid;justify-items:center;gap:2px;min-width:0;min-height:52px;margin:0;padding:6px 2px;border:1px solid transparent;border-radius:12px;
+  background:transparent;color:var(--muted);font:inherit;font-size:.74rem;cursor:pointer;transition:background-color .15s ease,color .15s ease}
+.dk-dagdeel svg{width:20px;height:20px;color:var(--dd)}
+:is(html) .dk-dagdeel:hover{background:color-mix(in srgb,var(--dd) 10%,transparent)}
+:is(html) .dk-dagdeel.is-aan{background:var(--surface,#fff);border-color:color-mix(in srgb,var(--dd) 45%,transparent);color:var(--text);font-weight:600;
+  box-shadow:0 2px 8px color-mix(in srgb,var(--dd) 22%,transparent)}
+.dk-wielkader{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;align-items:center;gap:2px}
+:is(html) .dk-wielpijl{display:grid;place-items:center;width:28px;height:40px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.dk-wielpijl svg{width:18px;height:18px}
+:is(html) .dk-wielpijl:disabled{opacity:.25;cursor:default}
+/* Колесо: горизонтальна смужка зі «склом» посередині; годину ставить прокрутка з прилипанням до центру. */
+.dk-wiel{position:relative;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-inline:calc(50% - 24px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--dd) 14%,transparent),transparent) center/56px 100% no-repeat local}
+.dk-wiel::-webkit-scrollbar{display:none}
+:is(html) .dk-uur{flex:0 0 48px;height:48px;margin:0;padding:0;border:0;border-radius:12px;background:transparent;scroll-snap-align:center;
+  color:var(--text);font:inherit;font-variant-numeric:tabular-nums;font-size:1rem;cursor:pointer;transition:transform .15s ease,opacity .15s ease,color .15s ease}
+.dk-uur[data-afstand='1']{opacity:.7;transform:scale(.9)}
+.dk-uur[data-afstand='2']{opacity:.45;transform:scale(.8)}
+.dk-uur[data-afstand='3']{opacity:.28;transform:scale(.72)}
+:is(html) .dk-uur.is-aan{color:var(--dd);font-size:1.45rem;font-weight:700}
+:is(html) .dk-uur:focus-visible,:is(html) .dk-dagdeel:focus-visible,:is(html) .dk-minuut:focus-visible{outline:2px solid var(--dd);outline-offset:1px}
 .dk-minuten{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-:is(html) .dk-cel.is-klein{min-height:34px;font-size:.85rem}
+:is(html) .dk-minuut{min-height:34px;margin:0;padding:0;border:1px solid color-mix(in srgb,var(--dd) 25%,transparent);border-radius:99px;background:transparent;
+  color:var(--text);font:inherit;font-size:.82rem;font-variant-numeric:tabular-nums;cursor:pointer}
+:is(html) .dk-minuut.is-aan{background:var(--dd);border-color:var(--dd);color:#fff;font-weight:600}
 .dk-knoppen{display:flex;gap:6px}
 :is(html) .dk-knop{min-height:36px;margin:0;padding:0 14px;border:1px solid var(--line,#d7dee8);border-radius:10px;background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
 :is(html) .dk-knop.is-hoofd{border-color:var(--accent,#2f6f73);background:var(--accent,#2f6f73);color:var(--text-on-accent,#fff)}
 :is(html) .dk-knop:disabled{opacity:.45;cursor:default}
 .dk-samenvatting{margin:0;font-size:.82rem;color:var(--muted)}
 .dk-samenvatting b{color:var(--text);font-weight:600}
-@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel,.dk-titel-pijl{transition:none}.dk-zoom-uit,.dk-zoom-in,.dk-tijdpaneel{animation:none}.dk-tijd .dk-tijd-pijl{transition:none}}
+@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel,.dk-titel-pijl{transition:none}.dk-zoom-uit,.dk-zoom-in,.dk-tijdpaneel{animation:none}.dk-uur,.dk-dagdeel,.dk-tijdpaneel{transition:none}.dk-tijd .dk-tijd-pijl{transition:none}}
 @media (max-width:420px){:is(html) .dk{padding:10px}.dk-voet{flex-wrap:nowrap;gap:6px}.dk-knoppen{gap:4px}:is(html) .dk-knop{padding:0 10px}:is(html) .dk-tijd{padding:0 8px 0 10px}:is(html) .dk-dag{min-height:34px}}

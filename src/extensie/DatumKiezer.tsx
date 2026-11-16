@@ -2,8 +2,8 @@
 // Три рівні, як у звичних календарях: дні → місяці → роки (натиск на заголовок), час закриття окремо.
 // Eigen kalender in de stijl van de site: dagen → maanden → jaren (klik op de titel), sluittijd apart.
 // Дні поза межами [min, max] вимкнені: межі ставить сервер (максимум простору й правила власника).
-import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, Clock, Moon, Sun, Sunrise, Sunset, type LucideIcon } from 'lucide-react';
 import './datum-kiezer.css';
 
 type Weergave = 'dagen' | 'maanden' | 'jaren';
@@ -117,25 +117,79 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
           </button>
         </span>
       </div>
-      {tijdOpen ? (
-        <div className='dk-tijdpaneel' data-dk-tijdpaneel='1'>
-          <span className='dk-tijdkop'>{uk ? 'Година' : 'Uur'}</span>
-          <div className='dk-uren' role='group' aria-label={uk ? 'Година закриття' : 'Uur van sluiten'}>
-            {Array.from({ length: 24 }, (_, u) => String(u).padStart(2, '0')).map((u) => (
-              <button key={u} type='button' className={`dk-cel is-klein${tijd.slice(0, 2) === u ? ' is-aan' : ''}`} aria-pressed={tijd.slice(0, 2) === u}
-                onClick={() => setTijd(`${u}:${tijd.slice(3)}`)} data-dk-uur={u}>{u}</button>
-            ))}
-          </div>
-          <span className='dk-tijdkop'>{uk ? 'Хвилини' : 'Minuten'}</span>
-          <div className='dk-minuten' role='group' aria-label={uk ? 'Хвилини закриття' : 'Minuten van sluiten'}>
-            {['00', '15', '30', '45'].map((m) => (
-              <button key={m} type='button' className={`dk-cel is-klein${tijd.slice(3) === m ? ' is-aan' : ''}`} aria-pressed={tijd.slice(3) === m}
-                onClick={() => { setTijd(`${tijd.slice(0, 2)}:${m}`); setTijdOpen(false); }} data-dk-minuut={m}>:{m}</button>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {tijdOpen ? <TijdWiel uk={uk} tijd={tijd} onTijd={setTijd} onKlaar={() => setTijdOpen(false)} /> : null}
       {gekozen !== null ? <p className='dk-samenvatting'>{uk ? 'Закриється ' : 'Sluit op '}<b>{new Date(gekozen).toLocaleString(taal, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</b></p> : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- час: частини доби + колесо годин
+// 16.11 (Павло: «не калькулятор, а частини доби з логотипами й відтінком, смужка, що гортається, як колесо»).
+// Tijd: dagdelen met pictogram en tint, plus een uurwiel dat horizontaal scrolt en op het midden klikt (scroll-snap).
+type Dagdeel = { id: 'nacht' | 'ochtend' | 'dag' | 'avond'; van: number; icoon: LucideIcon; uk: string; nl: string };
+const DAGDELEN: readonly Dagdeel[] = [
+  { id: 'nacht', van: 0, icoon: Moon, uk: 'Ніч', nl: 'Nacht' },
+  { id: 'ochtend', van: 6, icoon: Sunrise, uk: 'Ранок', nl: 'Ochtend' },
+  { id: 'dag', van: 12, icoon: Sun, uk: 'День', nl: 'Dag' },
+  { id: 'avond', van: 18, icoon: Sunset, uk: 'Вечір', nl: 'Avond' },
+];
+const deelVan = (u: number) => DAGDELEN[Math.min(3, Math.floor(u / 6))];
+const UUR_B = 48; // ширина однієї години в колесі, px
+
+function TijdWiel({ uk, tijd, onTijd, onKlaar }: { uk: boolean; tijd: string; onTijd: (t: string) => void; onKlaar: () => void }) {
+  const uur = Number(tijd.slice(0, 2)) || 0;
+  const min = tijd.slice(3);
+  const deel = deelVan(uur);
+  const wiel = useRef<HTMLDivElement>(null);
+  const wacht = useRef<number>(0);
+  const zet = (u: number, m = min) => onTijd(`${String(u).padStart(2, '0')}:${m}`);
+  const rolNaar = (u: number, zacht: boolean) => wiel.current?.scrollTo({ left: u * UUR_B, behavior: zacht ? 'smooth' : 'auto' });
+  useEffect(() => { rolNaar(uur, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Колесо зупинилося — година посередині стає вибраною («клац»). Het wiel staat stil: het middelste uur is gekozen.
+  const opRol = () => {
+    window.clearTimeout(wacht.current);
+    wacht.current = window.setTimeout(() => {
+      const el = wiel.current; if (!el) return;
+      const u = Math.max(0, Math.min(23, Math.round(el.scrollLeft / UUR_B)));
+      if (u !== uur) zet(u);
+    }, 110);
+  };
+  const kies = (u: number) => { zet(u); rolNaar(u, true); };
+  return (
+    <div className='dk-tijdpaneel' data-dagdeel={deel.id} data-dk-tijdpaneel='1'>
+      <div className='dk-dagdelen' role='group' aria-label={uk ? 'Частина доби' : 'Dagdeel'}>
+        {DAGDELEN.map((d) => {
+          const I = d.icoon;
+          return (
+            <button key={d.id} type='button' className={`dk-dagdeel${d.id === deel.id ? ' is-aan' : ''}`} data-dagdeel={d.id} aria-pressed={d.id === deel.id}
+              onClick={() => kies(d.id === deel.id ? uur : d.van + (d.id === 'nacht' ? 0 : 2))}
+              title={uk ? `${d.uk}: ${String(d.van).padStart(2, '0')}:00–${String(d.van + 5).padStart(2, '0')}:59` : `${d.nl}: ${String(d.van).padStart(2, '0')}:00–${String(d.van + 5).padStart(2, '0')}:59`}>
+              <I aria-hidden='true' /><span>{uk ? d.uk : d.nl}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className='dk-wielkader'>
+        <button type='button' className='dk-wielpijl' onClick={() => kies(Math.max(0, uur - 1))} disabled={uur === 0} aria-label={uk ? 'На годину раніше' : 'Een uur eerder'}><ChevronLeft aria-hidden='true' /></button>
+        <div className='dk-wiel' ref={wiel} onScroll={opRol} role='listbox' aria-label={uk ? 'Година закриття' : 'Uur van sluiten'} data-dk-wiel='1'>
+          {Array.from({ length: 24 }, (_, u) => {
+            const afstand = Math.abs(u - uur);
+            return (
+              <button key={u} type='button' role='option' aria-selected={u === uur} className={`dk-uur${u === uur ? ' is-aan' : ''}`} data-dagdeel={deelVan(u).id}
+                data-afstand={Math.min(afstand, 3)} onClick={() => kies(u)} data-dk-uur={String(u).padStart(2, '0')}>
+                {String(u).padStart(2, '0')}
+              </button>
+            );
+          })}
+        </div>
+        <button type='button' className='dk-wielpijl' onClick={() => kies(Math.min(23, uur + 1))} disabled={uur === 23} aria-label={uk ? 'На годину пізніше' : 'Een uur later'}><ChevronRight aria-hidden='true' /></button>
+      </div>
+      <div className='dk-minuten' role='group' aria-label={uk ? 'Хвилини' : 'Minuten'}>
+        {['00', '15', '30', '45'].map((m) => (
+          <button key={m} type='button' className={`dk-minuut${m === min ? ' is-aan' : ''}`} aria-pressed={m === min}
+            onClick={() => { zet(uur, m); onKlaar(); }} data-dk-minuut={m}>{String(uur).padStart(2, '0')}:{m}</button>
+        ))}
+      </div>
     </div>
   );
 }
