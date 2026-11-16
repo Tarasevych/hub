@@ -62,6 +62,16 @@
       <div class="sectie-kop"><h2 id="kop-tab" data-nl="Browser en tabbladen">Браузер і вкладки</h2><button type="button" class="help" data-help="uitleg-tab"></button></div>
       <p id="uitleg-tab" class="zacht" hidden data-nl="De extensie werkt alleen op tarasevych.com en alleen op de sites die u bij het openen van de toegang koos. Andere sites leest ze nooit.">Розширення працює лише на tarasevych.com і лише на сайтах, які ви обрали під час відкриття доступу. Інші сайти воно ніколи не читає.</p>
       <ul id="tab-info" class="toestand"></ul>
+      <!-- 0.9.5 (EXTUI-001, рішення власника 16.11.2026): сайти ШІ — опція, типово «Вимкнено»; Chrome питає дозвіл лише після вибору «Завжди». -->
+      <div class="instelling gevaar-instelling" id="ai-sites-instelling">
+        <label class="veld"><span><span class="gevaar-teken" aria-hidden="true">!</span><span data-nl="AI-sites (claude.ai, chatgpt.com, Gemini, Grok, Copilot)">Сайти ШІ (claude.ai, chatgpt.com, Gemini, Grok, Copilot)</span></span>
+          <select id="ai-sites" aria-describedby="ai-sites-uitleg ai-sites-stand">
+            <option value="uit" data-nl="Uit (standaard)">Вимкнено (типово)</option>
+            <option value="altijd" data-nl="Altijd">Завжди</option>
+          </select></label>
+        <p id="ai-sites-uitleg" class="zacht" data-nl="Risico: met «Altijd» mag de extensie op deze sites de tekst lezen van pagina’s die u opent, en Chrome toont dat recht in zijn eigen venster. Gesprekken met andere AI’s kunnen persoonlijke gegevens bevatten. Op «Uit» geeft de extensie het recht meteen terug aan Chrome. Uw keuze komt in het meldingencentrum.">Ризик: у режимі «Завжди» розширення може читати текст сторінок, які ви відкриваєте на цих сайтах, і Chrome покаже цей дозвіл у своєму вікні. Розмови з іншими ШІ можуть містити особисті дані. У режимі «Вимкнено» розширення одразу повертає дозвіл Chrome. Ваш вибір потрапляє в центр сповіщень.</p>
+        <p id="ai-sites-stand" class="diag-werkelijk" role="status" aria-live="polite"></p>
+      </div>
     </section>
 
     <section id="diagnose" class="sectie" aria-labelledby="kop-diag" hidden>
@@ -124,5 +134,6 @@
 <script src="options.js"></script>
 <script src="lokale-ai.js"></script>
 <script src="options-lokale-ai.js"></script>
+<script src="ai-sites.js"></script>
 </body>
 </html>

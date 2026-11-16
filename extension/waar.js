@@ -15,6 +15,8 @@
   const teken = async () => {
     let h = '';
     try { const [tab] = await chrome.tabs.query({ active: true, currentWindow: true }); h = host(tab?.url || ''); } catch { /* geen tabs-API */ }
+    let aiAan = false;
+    try { aiAan = await chrome.permissions.contains({ origins: chrome.runtime.getManifest().optional_host_permissions || [] }); } catch { aiAan = false; }
     const eigen = h === 'tarasevych.com' || h.endsWith('.tarasevych.com');
     const ai = AI_SITES.some((s) => h === s || h.endsWith(`.${s}`));
     const lijst = UI.maak('ul', {},
@@ -23,7 +25,9 @@
           ai ? t('Сайт ШІ: тут розширення поки не діє — потрібен ваш окремий дозвіл (типово вимкнено).', 'AI-site: hier werkt de extensie nog niet — uw aparte toestemming is nodig (standaard uit).')
             : t('Тут розширення не діє: воно працює лише на tarasevych.com.', 'Hier werkt de extensie niet: alleen op tarasevych.com.'), 'tab'),
       rij('ok', '↻', t('У фоні', 'Op de achtergrond'), t('Зв’язок із сервером тримає саме розширення — сайт можна закрити.', 'De extensie houdt zelf de verbinding met de server — de site mag dicht.'), 'achtergrond'),
-      rij('let-op', '!', t('Сайти ШІ', 'AI-sites'), t('Вимкнено. Увімкнення дасть ШІ бачити текст цих сторінок — вирішуєте ви на сайті.', 'Uit. Aanzetten laat de AI de tekst van die pagina’s zien — u beslist op de site.'), 'ai-sites'),
+      rij('let-op', '!', t('Сайти ШІ', 'AI-sites'), aiAan
+        ? t('«Завжди»: Chrome дав доступ. Вимкнути — у налаштуваннях розширення → Браузер і вкладки.', '«Altijd»: Chrome gaf toegang. Uitzetten — instellingen van de extensie → Browser en tabbladen.')
+        : t('Вимкнено (типово). Увімкнення дасть ШІ бачити текст цих сторінок — у налаштуваннях розширення → Браузер і вкладки.', 'Uit (standaard). Aanzetten laat de AI de tekst van die pagina’s zien — instellingen van de extensie → Browser en tabbladen.'), 'ai-sites'),
     );
     el.replaceChildren(UI.maak('h2', {}, t('Де працює', 'Waar ze werkt')), lijst);
     el.hidden = false;

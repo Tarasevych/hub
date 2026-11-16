@@ -572,6 +572,24 @@ function stuurMeldingNaarServer(r, data = {}) {
     }));
   } catch { /* з'єднання закрито */ }
 }
+// 0.9.5 (EXTUI-001): «Сайти ШІ» — кожна зміна дозволу йде в центр сповіщень (обидва слоти, якщо на зв'язку).
+// Elke wijziging van het recht op AI-sites gaat naar het meldingencentrum.
+function meldAiSites(aan) {
+  for (const r of ['prive', 'technisch']) stuurMeldingNaarServer(r, {
+    sleutel: `ext:ai-sites:${aan ? 'aan' : 'uit'}:${Date.now()}`,
+    soort: 'extensie',
+    ernst: aan ? 'waarschuwing' : 'info',
+    titel: aan ? 'Розширення: сайти ШІ — «Завжди» / Extensie: AI-sites — «Altijd»' : 'Розширення: сайти ШІ вимкнено / Extensie: AI-sites uit',
+    bericht: aan
+      ? 'Chrome дав розширенню доступ до claude.ai, chatgpt.com, Gemini, Grok, Copilot. Вимкнути: налаштування розширення → Браузер і вкладки.'
+      : 'Розширення повернуло Chrome доступ до сайтів ШІ.',
+  });
+}
+try {
+  const isAi = (p) => (p.origins || []).some((o) => (chrome.runtime.getManifest().optional_host_permissions || []).includes(o));
+  chrome.permissions.onAdded.addListener((p) => { if (isAi(p)) meldAiSites(true); });
+  chrome.permissions.onRemoved.addListener((p) => { if (isAi(p)) meldAiSites(false); });
+} catch { /* geen permissions-API */ }
 const pong = (r) => JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(r), ...statusVelden(r) });
 
 // ---------------------------------------------------------------- badge + tooltip (samen voor beide sloten)
