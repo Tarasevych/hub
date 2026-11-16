@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "taakId": "ELDERS-001",
+  "agent": "claude",
+  "agentPlatform": "Claude Code",
+  "model": { "id": null, "versie": null, "bron": "onbekend" },
+  "basisCommit": "bf1571454017f1154fc0fb8625a93cdb17f6a073",
+  "basisVersie": "UPD-002 (feature/upd-002-uitgave-20261115-181000)",
+  "installatie": { "versie": "20261115-044530", "commit": "dfdb7356703e0ace554a07f76cd48a43ed8b1aab", "bron": "geinstalleerd.json" },
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "tak": "feature/elders-001-20261116-192500",
+  "kanaal": "pr",
+  "zonderGit": null,
+  "commits": ["70180182"],
+  "bestanden": {
+    "gewijzigd": ["backend/ai-bevestiging.ts", "backend/index.ts"],
+    "toegevoegd": ["tests/eenheid/melding-elders-20261116.test.ts", "orchestratie/taken/ELDERS-001.json", "overdrachten/ELDERS-001/ORCH-OVERDRACHT.json"],
+    "verwijderd": []
+  },
+  "samenvatting": {
+    "uk": "Запит ШІ на підтвердження був видно лише в дзвіночку свого простору; з адмінки (технічний простір) власник не бачив запиту з «Мого простору». Тепер дзвіночок показує живий рядок «N запитів ШІ чекає у …» з кнопкою, без змісту запиту, і навпаки. Рядок не зберігається й зникає, коли нічого не чекає.",
+    "nl": "Een AI-verzoek was alleen zichtbaar in het meldingencentrum van de eigen ruimte; vanuit de beheeromgeving zag de eigenaar een verzoek uit «Mijn ruimte» niet. Nu toont het centrum een levende regel «N AI-verzoeken wachten in …» met knop, zonder inhoud, en omgekeerd. Niet opgeslagen; verdwijnt als niets meer wacht."
+  },
+  "tests": {
+    "geslaagd": 192,
+    "mislukt": 0,
+    "falend": [],
+    "uitleg": {
+      "uk": "Нова melding-elders-20261116 17/17 з реальною PG (порт 56329), зокрема весь ланцюжок через справжні маршрути (bootstrap, notifications/read); без виправлення 13/17 (червоний). Регресія: ai-bevestiging-20261021 43/43, ruimte-meldingen-20261020 36/36, meldingen-sferen-20261022 46/46, melding-soorten 50/50. tsc -p tsconfig.server.json без помилок. В інтерфейсі в браузері не перевірено.",
+      "nl": "Nieuw melding-elders-20261116 17/17 met echte PG, incl. de hele keten via echte routes; zonder fix 13/17 (rood). Regressie: ai-bevestiging 43/43, ruimte-meldingen 36/36, meldingen-sferen 46/46, melding-soorten 50/50. tsc zonder fouten. Niet in de browser-UI gecontroleerd."
+    }
+  },
+  "nietGedaan": {
+    "uk": "Не змінено правило, що підтвердити запит можна лише з його простору (безпека). Кнопка веде на сторінку запитів; якщо вкладка в іншому просторі, у тексті рядка сказано, як перемкнутися. Окремої сторінки-перемикача простору не робив.",
+    "nl": "De regel dat een verzoek alleen vanuit de eigen ruimte bevestigd kan worden is ongewijzigd (veiligheid). De regel legt uit hoe je wisselt; geen aparte wisselpagina gemaakt."
+  },
+  "conflicten": [],
+  "aangemaakt": "2026-11-16T18:58:00Z"
+}
