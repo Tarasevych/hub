@@ -31,7 +31,7 @@ const run = promisify(execFile);
 import { bronCommit } from '../shared/bron-commit';
 import { pakketGeheimInhoud, pakketGeheimNaam, pakketTekstBestand } from '../shared/geheim-patronen';
 import { beoordeelToegepasteMigraties } from '../shared/uitrol-vereisten';
-import { risicoVlaggen, verklaarVlaggen, type RisicoItem } from './uitrol-risico';
+import { risicoVlaggen, verklaarVlaggen, pasUitlegToe, type RisicoItem } from './uitrol-risico';
 export type Niveau = 'ok' | 'waarschuwing' | 'fout';
 export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItem[] };
 export type PakketMeta = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string;
@@ -196,6 +196,8 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
   const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : id === 'risico' ? 40 : 12) } : {}) }); };
   // SEC-PAKKET-001: vlaggen uit eerdere stappen (bv. een met de hand geüpload GitHub-archief) die in «risico» meetellen.
   const extraVlaggen: string[] = [];
+  // SEC-PAKKET-001: пояснення автора до ризикованих змін із досьє випуску (risicoUitleg) · uitleg van de maker uit het dossier.
+  let auteursUitleg: ReadonlyArray<{ pad: string; uk: string; nl?: string }> = [];
   const meta: PakketMeta = { auteur: '', agent: '', samenvatting: '', bestanden: 0, bytesUitgepakt: 0, commit: '', bovenmap: '' };
   let werk = '';
   try {
@@ -313,6 +315,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
             [online.reden]);
           else {
             meta.ontwikkelArchiefUrl = archief.ref.url;
+            if (online.risicoUitleg) auteursUitleg = online.risicoUitleg;
             if (online.handmatig) extraVlaggen.push(`[GitHub] архів у випуску завантажено вручну (${online.handmatig.uploader}), не GitHub Actions; автор випуску: ${online.handmatig.auteur} · archief met de hand in de release gezet`);
             voeg('ontwikkelarchief', 'ok',
               'GitHub: документ історії, коміт, гілку та SHA-256 точного пакета перевірено.',
@@ -437,8 +440,18 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     if (opties.geinstalleerd !== undefined || extraVlaggen.length) {
       const r = opties.geinstalleerd !== undefined ? await risicoVlaggen({ bron, pakketBestanden: alle, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }) : { vergeleken: false, vlaggen: [] };
       r.vlaggen = [...extraVlaggen, ...r.vlaggen];
-      if (r.vlaggen.length) voeg('risico', 'waarschuwing', `Червоні прапорці: ${r.vlaggen.length}. Ці зміни дають найбільшу владу над сервером (root, залежності, права в базі). Перегляньте їх — перед схваленням потрібне окреме підтвердження.`, `Rode vlaggen: ${r.vlaggen.length}. Deze wijzigingen geven de meeste macht over de server (root, afhankelijkheden, rechten in de database). Bekijk ze — vóór het goedkeuren is een aparte bevestiging nodig.`, r.vlaggen);
-      if (r.vlaggen.length) { const c = controles[controles.length - 1]; c.vlaggen = await verklaarVlaggen(r.vlaggen, { bron, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }); }
+      if (r.vlaggen.length) {
+        // Власник (16.11.2026): «чому такі описи не включити як вимогу одразу? інакше би відхилялося автоматично».
+        // Кожна зміна, яку адмін інакше мав би «спитати в автора», мусить мати пояснення в досьє (risicoUitleg). Бракує — fout.
+        // Eigenaar: elke wijziging die uitleg vraagt, moet die in het dossier hebben; anders blokkeert de voorcontrole automatisch.
+        const { items, ontbreekt } = pasUitlegToe(await verklaarVlaggen(r.vlaggen, { bron, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }), auteursUitleg);
+        if (ontbreekt.length) voeg('risico', 'fout',
+          `Встановлення заблоковано: автор не пояснив ${ontbreekt.length} ${ontbreekt.length === 1 ? 'ризиковану зміну' : ontbreekt.length < 5 ? 'ризиковані зміни' : 'ризикованих змін'}. Кожна зміна, що потребує уваги, мусить мати пояснення в досьє випуску (поле risicoUitleg). Попросіть автора дописати пояснення й зібрати пакет знову.`,
+          `Installatie geblokkeerd: de maker heeft ${ontbreekt.length} risicovolle wijziging(en) niet uitgelegd. Elke wijziging die aandacht vraagt, moet uitleg hebben in het releasedossier (veld risicoUitleg). Vraag de maker de uitleg toe te voegen en het pakket opnieuw te bouwen.`,
+          [...ontbreekt.map((k) => `zonder uitleg · без пояснення: ${k}`), ...r.vlaggen]);
+        else voeg('risico', 'waarschuwing', `Червоні прапорці: ${r.vlaggen.length}. Ці зміни дають найбільшу владу над сервером (root, залежності, права в базі). Перегляньте їх — перед схваленням потрібне окреме підтвердження.`, `Rode vlaggen: ${r.vlaggen.length}. Deze wijzigingen geven de meeste macht over de server (root, afhankelijkheden, rechten in de database). Bekijk ze — vóór het goedkeuren is een aparte bevestiging nodig.`, r.vlaggen);
+        controles[controles.length - 1].vlaggen = items;
+      }
       else voeg('risico', 'ok', 'Червоних прапорців немає: файли root, залежності npm, процеси GitHub і права в базі не змінено порівняно з встановленою версією.', 'Geen rode vlaggen: root-bestanden, npm-afhankelijkheden, GitHub-werkstromen en databaserechten zijn niet gewijzigd t.o.v. de geïnstalleerde versie.');
     }
 

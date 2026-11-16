@@ -185,8 +185,8 @@ export const VOORSTEL_STATUS: Record<string, [string, string]> = {
 export type ControleNiveau = 'ok' | 'waarschuwing' | 'fout';
 /** SEC-PAKKET-001: червоний прапорець із поясненням людською мовою і справжньою різницею (backend/uitrol-risico.ts → RisicoItem). */
 export type TekstUit = { uk: string; nl: string };
-export type LeesbaarUit = { oordeel: 'veiliger' | 'gewoon' | 'aandacht'; kort: TekstUit; voorNa: Array<{ voor: TekstUit | null; na: TekstUit | null; keer?: number }>; overig: number; doen: TekstUit };
-export type RisicoItemUit = { leesbaar?: LeesbaarUit; vlag: string; wat: TekstUit; wijziging: TekstUit; let: TekstUit; opvallend?: TekstUit[]; betekenis?: TekstUit[]; verschil?: string; verschilAfgekapt?: boolean };
+export type LeesbaarUit = { oordeel: 'veiliger' | 'gewoon' | 'aandacht'; kort: TekstUit; voorNa: Array<{ voor: TekstUit | null; na: TekstUit | null; keer?: number }>; overig: number; doen: TekstUit; uitlegNodig?: boolean };
+export type RisicoItemUit = { leesbaar?: LeesbaarUit; vlag: string; wat: TekstUit; wijziging: TekstUit; let: TekstUit; opvallend?: TekstUit[]; betekenis?: TekstUit[]; verschil?: string; verschilAfgekapt?: boolean; sleutel?: string; auteur?: TekstUit };
 export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItemUit[] };
 export type VoorcontroleUit = { versie: number; tijd: string; ok: boolean; fouten: number; waarschuwingen: number; controles: ControleUit[] };
 export type PakketMetaUit = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string; manifest?: import('../../shared/uitrol-manifest').Manifest | null };

@@ -1,28 +1,83 @@
 // Червоні прапорці перед схваленням (SEC-PAKKET-001): окремий блок зі змінами, які дають найбільшу владу над сервером, і окреме
 // підтвердження. Без позначки кнопка «Схвалити» неактивна; сервер так само відхиляє схвалення без неї (RISICO_NIET_BEVESTIGD).
-// Rode vlaggen vóór het goedkeuren: een apart blok met de wijzigingen die de meeste macht over de server geven, en een eigen bevestiging.
-import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, Code2, Flag, Info } from 'lucide-react';
+// Власник (16.11.2026): «не бухгалтерський звіт, а сучасне оформлення з піктограмами й графіками, де зміни видно оком».
+// Тому: кільце-діаграма висновків, плитки «де саме зміни» з піктограмами (фільтр), шкала доданих/прибраних рядків у кожному пункті,
+// «було → стане» як дві картки зі стрілкою, однакові безпечніші зміни згорнуто в одну групу, пояснення автора — як цитата.
+// Rode vlaggen vóór het goedkeuren: ringdiagram, tegels per soort (filter), verschilbalk per punt, voor → na als kaartjes met pijl,
+// gelijke veiligere wijzigingen samengevoegd, uitleg van de maker als citaat.
+import { useMemo, useState } from 'react';
+import {
+  AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2,
+  Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon
+} from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
 export const rodeVlaggen = (vc: VoorcontroleUit | null | undefined): RisicoItemUit[] | null => {
   const c = vc?.controles?.find((x) => x.id === 'risico');
   if (!c || c.niveau === 'ok') return null;
-  return c.vlaggen?.length ? c.vlaggen : (c.details ?? []).map((vlag) => ({ vlag, wat: { uk: '', nl: '' }, wijziging: { uk: '', nl: '' }, let: { uk: '', nl: '' } }));
+  return c.vlaggen?.length ? c.vlaggen : (c.details ?? []).filter((d) => d.startsWith('[')).map((vlag) => ({ vlag, wat: { uk: '', nl: '' }, wijziging: { uk: '', nl: '' }, let: { uk: '', nl: '' } }));
 };
 
-const SOORT: Record<string, [string, string, string, string]> = {
-  root: ['Root', 'Root', 'Файл у deploy/: його виконує або встановлює root (скрипти, служби, sudoers). Шкідлива зміна тут = повний контроль над сервером.', 'Bestand in deploy/: root voert het uit of installeert het. Een kwaadaardige wijziging hier = volledige controle over de server.'],
-  npm: ['npm', 'npm', 'Новий або змінений пакет npm чи скрипт встановлення: чужий код потрапляє у збірку на сервері.', 'Nieuw of gewijzigd npm-pakket of installatiescript: vreemde code komt in de build op de server.'],
-  lock: ['Джерело', 'Bron', 'Пакет завантажується не з офіційного реєстру npm.', 'Een pakket komt niet uit het officiële npm-register.'],
-  GitHub: ['Вручну', 'Handmatig', 'Архів у випуску на GitHub завантажила людина, а не GitHub Actions. Якщо це зробили ви — усе гаразд. Якщо ні — відхиліть: так виглядає підробка з украденим токеном.', 'Het archief in de GitHub-release is door een mens geüpload, niet door GitHub Actions. Deed u dat zelf, dan is het goed. Zo niet: afwijzen — zo ziet een vervalsing met een gestolen token eruit.'],
-  CI: ['GitHub', 'GitHub', 'Змінено процес GitHub Actions, який збирає випуск.', 'Een GitHub Actions-werkstroom die de release bouwt is gewijzigd.'],
-  SQL: ['База', 'Database', 'Нова міграція змінює права в базі (функції з правами власника, ролі, RLS, доступ до файлів).', 'Een nieuwe migratie wijzigt rechten in de database (functies met eigenaarsrechten, rollen, RLS, bestandstoegang).'],
-  '!': ['Увага', 'Let op', 'Не вдалося порівняти з встановленою версією.', 'Vergelijken met de geïnstalleerde versie lukte niet.'],
+/** Без пояснення автора (досьє, поле risicoUitleg) — встановлення заблоковано перевіркою пакета. */
+export const zonderUitleg = (it: RisicoItemUit) => !!it.leesbaar?.uitlegNodig && !it.auteur;
+
+type Soort = { icoon: LucideIcon; uk: string; nl: string; tipUk: string; tipNl: string };
+const SOORT: Record<string, Soort> = {
+  root: { icoon: Server, uk: 'Сервер (root)', nl: 'Server (root)', tipUk: 'Файли в deploy/: їх виконує або встановлює root (скрипти, служби, sudoers). Шкідлива зміна тут = повний контроль над сервером.', tipNl: 'Bestanden in deploy/: root voert ze uit of installeert ze. Een kwaadaardige wijziging hier = volledige controle over de server.' },
+  CI: { icoon: Workflow, uk: 'Збирання на GitHub', nl: 'Bouwen op GitHub', tipUk: 'Процеси GitHub Actions: від них залежить, що потрапить в архів для сервера.', tipNl: 'GitHub Actions-werkstromen: ze bepalen wat er in het archief voor de server komt.' },
+  npm: { icoon: Package, uk: 'Пакети npm', nl: 'npm-pakketten', tipUk: 'Чужий готовий код, який сервер завантажує й виконує під час збирання.', tipNl: 'Kant-en-klare code van anderen die de server downloadt en uitvoert bij het bouwen.' },
+  lock: { icoon: Link2, uk: 'Джерела пакетів', nl: 'Pakketbronnen', tipUk: 'Адреси, звідки сервер завантажує пакети. Нестандартна адреса = чужий код.', tipNl: 'Adressen waar de server pakketten haalt. Ongebruikelijk adres = vreemde code.' },
+  SQL: { icoon: Database, uk: 'База даних', nl: 'Database', tipUk: 'Нові міграції змінюють права в базі (ролі, RLS, функції з правами власника). При відкаті не скасовуються.', tipNl: 'Nieuwe migraties wijzigen rechten in de database. Ze worden bij terugdraaien niet teruggedraaid.' },
+  GitHub: { icoon: Upload, uk: 'Архів вручну', nl: 'Archief met de hand', tipUk: 'Архів у випуску на GitHub поклала людина, а не автоматична збірка.', tipNl: 'Het archief in de GitHub-release is door een mens geplaatst, niet door de automatische build.' },
+  '!': { icoon: HelpCircle, uk: 'Без порівняння', nl: 'Niet vergeleken', tipUk: 'Не вдалося порівняти з встановленою версією.', tipNl: 'Vergelijken met de geïnstalleerde versie lukte niet.' },
+};
+const soortVan = (it: RisicoItemUit) => { const k = /^\[([^\]]+)\]/.exec(it.vlag)?.[1] ?? '!'; return SOORT[k] ? k : '!'; };
+const padVan = (it: RisicoItemUit) => /^\[[^\]]+\]\s*(.*)$/.exec(it.vlag)?.[1] ?? it.vlag;
+const oordeelVan = (it: RisicoItemUit) => it.leesbaar?.oordeel ?? 'aandacht';
+
+const RANG: Record<string, number> = { aandacht: 0, gewoon: 1, veiliger: 2 };
+const OORDEEL: Record<string, { uk: string; nl: string; o: string; icoon: LucideIcon }> = {
+  aandacht: { uk: 'Потребує уваги', nl: 'Aandacht nodig', o: 'let', icoon: AlertTriangle },
+  gewoon: { uk: 'Звичайна зміна', nl: 'Gewone wijziging', o: 'gewoon', icoon: Info },
+  veiliger: { uk: 'Безпечніше', nl: 'Veiliger', o: 'ok', icoon: CheckCircle2 },
 };
 
-/** Різниця «було → стане»: червоні рядки були, зелені з’являться. Нумерація не потрібна — це не редактор. */
+/** Кількість доданих і прибраних рядків у різниці — для наочної шкали. */
+function telRegels(verschil?: string): { plus: number; min: number } {
+  let plus = 0; let min = 0;
+  for (const r of (verschil ?? '').split('\n')) {
+    if (r.startsWith('+++') || r.startsWith('---')) continue;
+    if (r[0] === '+') plus++; else if (r[0] === '-') min++;
+  }
+  return { plus, min };
+}
+
+/** Шкала змін, як у GitHub: 5 клітинок, зелені = додано, червоні = прибрано. */
+function Schaal({ verschil, lang }: { verschil?: string; lang: Lang }) {
+  const { plus, min } = telRegels(verschil);
+  if (!plus && !min) return null;
+  const tot = plus + min; const groen = Math.round((plus / tot) * 5); const blokken = Array.from({ length: 5 }, (_, i) => (i < groen ? '+' : '-'));
+  return <span className='ut-rv-schaal' title={tr(lang, `Додано рядків: ${plus}, прибрано: ${min}`, `Regels toegevoegd: ${plus}, verwijderd: ${min}`)}>
+    <span data-r='+'>+{plus}</span><span data-r='-'>−{min}</span>
+    <span className='ut-rv-blokken' aria-hidden='true'>{blokken.map((b, i) => <i key={i} data-r={b} />)}</span>
+  </span>;
+}
+
+/** Кільце-діаграма висновків (SVG, без бібліотек). */
+function Ring({ a, g, v, lang }: { a: number; g: number; v: number; lang: Lang }) {
+  const tot = Math.max(1, a + g + v); const R = 34; const O = 2 * Math.PI * R;
+  let start = 0;
+  const boog = (n: number, k: string) => { if (!n) return null; const len = (n / tot) * O; const el = <circle key={k} data-o={k} r={R} cx='44' cy='44' strokeDasharray={`${len} ${O - len}`} strokeDashoffset={-start} />; start += len; return el; };
+  return <svg className='ut-rv-ring' viewBox='0 0 88 88' role='img' aria-label={tr(lang, `Уваги: ${a}, звичайних: ${g}, безпечніших: ${v}`, `Aandacht: ${a}, gewoon: ${g}, veiliger: ${v}`)}>
+    <circle className='ut-rv-ring-spoor' r={R} cx='44' cy='44' />
+    <g transform='rotate(-90 44 44)'>{boog(a, 'let')}{boog(g, 'gewoon')}{boog(v, 'ok')}</g>
+    <text x='44' y='42' textAnchor='middle' className='ut-rv-ring-getal'>{a + g + v}</text>
+    <text x='44' y='57' textAnchor='middle' className='ut-rv-ring-label'>{tr(lang, 'змін', 'wijz.')}</text>
+  </svg>;
+}
+
+/** Різниця «було → стане»: червоні рядки були, зелені з'являться. */
 function Verschil({ tekst, afgekapt, lang }: { tekst: string; afgekapt?: boolean; lang: Lang }) {
   return <div className='ut-rv-diff' role='region' aria-label={tr(lang, 'Різниця: було → стане', 'Verschil: voorheen → straks')}>
     <p className='ut-rv-legenda'><span data-r='-'>− {tr(lang, 'було', 'voorheen')}</span><span data-r='+'>+ {tr(lang, 'стане', 'straks')}</span></p>
@@ -31,69 +86,118 @@ function Verschil({ tekst, afgekapt, lang }: { tekst: string; afgekapt?: boolean
   </div>;
 }
 
-const RANG: Record<string, number> = { aandacht: 0, gewoon: 1, veiliger: 2 };
-const OORDEEL: Record<string, [string, string, string]> = {
-  veiliger: ['Безпечніше', 'Veiliger', 'ok'], gewoon: ['Звичайна зміна', 'Gewone wijziging', 'gewoon'], aandacht: ['Потребує уваги', 'Aandacht nodig', 'let'],
-};
-
-function Item({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
-  const [open, setOpen] = useState(false);
-  const m = /^\[([^\]]+)\]\s*(.*)$/.exec(it.vlag); const s = SOORT[m?.[1] ?? ''] ?? SOORT['!'];
+/** Вміст розгорнутого пункту: що робити, пояснення автора, «було → стане», підозрілі рядки, подробиці й код. */
+function Uitleg({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
   const t = (x: { uk: string; nl: string }) => (lang === 'uk' ? x.uk : x.nl);
-  const l = it.leesbaar; const o = OORDEEL[l?.oordeel ?? 'aandacht'];
-  const OIcoon = l?.oordeel === 'veiliger' ? CheckCircle2 : l?.oordeel === 'gewoon' ? Info : AlertTriangle;
-  const heeftUitleg = !!(l || t(it.wat) || it.verschil);
-  return <li data-open={open || undefined} data-oordeel={l?.oordeel ?? 'aandacht'}>
-    <button type='button' className='ut-rv-rij' aria-expanded={open} disabled={!heeftUitleg} onClick={() => setOpen(!open)} title={tr(lang, s[2], s[3])}>
-      <span className='ut-rv-oordeel' data-o={o[2]}><OIcoon aria-hidden='true' />{tr(lang, o[0], o[1])}</span>
-      <span className='ut-rv-kort'><span>{l ? t(l.kort) : (m ? m[2] : it.vlag)}</span>{l && <small><code>{m ? m[2] : it.vlag}</code></small>}</span>
-      {heeftUitleg && <ChevronDown aria-hidden='true' className='ut-rv-pijl' />}
-    </button>
-    {open && <div className='ut-rv-uitleg'>
-      {l && <p className='ut-rv-doen' data-o={o[2]}><b>{tr(lang, 'Що робити: ', 'Wat te doen: ')}</b>{t(l.doen)}</p>}
-      {l?.voorNa.length ? <ul className='ut-rv-voorna'>{l.voorNa.map((p, i) => <li key={i}>
-        <span data-k='voor'><b>{tr(lang, 'Було: ', 'Was: ')}</b>{p.voor ? t(p.voor) : tr(lang, 'не було', 'bestond niet')}</span>
-        <span data-k='na'><b>{tr(lang, 'Стане: ', 'Wordt: ')}</b>{p.na ? t(p.na) : tr(lang, 'прибрано', 'verwijderd')}</span>{p.keer && p.keer > 1 ? <small>{tr(lang, `у ${p.keer} місцях файла`, `op ${p.keer} plekken in het bestand`)}</small> : null}</li>)}</ul> : null}
-      {l?.overig ? <p className='ut-hint'>{tr(lang, `Ще змінено рядків логіки програми: ${l.overig}. Їх словами не перекласти — потрібне пояснення автора або опис оновлення.`, `Nog ${l.overig} regel(s) programmalogica gewijzigd. Die zijn niet in woorden te vertalen — daarvoor is uitleg van de maker of de beschrijving van de update nodig.`)}</p> : null}
-      {it.opvallend?.length ? <ul className='ut-rv-opvallend'>{it.opvallend.map((x, i) => <li key={i}><AlertTriangle aria-hidden='true' />{t(x)}</li>)}</ul> : null}
-      {(t(it.wat) || it.betekenis?.length) && <details className='ut-rv-meer'><summary>{tr(lang, 'Докладніше', 'Meer uitleg')}</summary>
-        {t(it.wat) && <p><b>{tr(lang, 'Що це: ', 'Wat is dit: ')}</b>{t(it.wat)}</p>}
-        {t(it.wijziging) && <p><b>{tr(lang, 'Що змінилося: ', 'Wat verandert: ')}</b>{t(it.wijziging)}</p>}
-        {it.betekenis?.length ? <ul className='ut-rv-betekenis'>{it.betekenis.map((x, i) => <li key={i}><CheckCircle2 aria-hidden='true' />{t(x)}</li>)}</ul> : null}
-        {t(it.let) && <p><b>{tr(lang, 'На що звернути увагу: ', 'Waar op letten: ')}</b>{t(it.let)}</p>}
-      </details>}
-      {it.verschil && <details className='ut-rv-meer'><summary><Code2 aria-hidden='true' />{tr(lang, 'Для програміста: код змін', 'Voor de programmeur: code van de wijziging')}</summary>
-        <Verschil tekst={it.verschil} afgekapt={it.verschilAfgekapt} lang={lang} /></details>}
-    </div>}
-  </li>;
-}
-
-/** Загальний підсумок угорі: скільки безпечніших, звичайних і тих, що потребують уваги, і одна порада. */
-function Samenvatting({ vlaggen, lang }: { vlaggen: RisicoItemUit[]; lang: Lang }) {
-  const n = (o: string) => vlaggen.filter((v) => (v.leesbaar?.oordeel ?? 'aandacht') === o).length;
-  const a = n('aandacht'); const g = n('gewoon'); const v = n('veiliger');
-  return <div className='ut-rv-samen' data-o={a ? 'let' : 'ok'}>
-    <p className='ut-rv-tellers'>
-      {a > 0 && <span data-o='let'><AlertTriangle aria-hidden='true' />{tr(lang, `Потребують уваги: ${a}`, `Aandacht nodig: ${a}`)}</span>}
-      {g > 0 && <span data-o='gewoon'><Info aria-hidden='true' />{tr(lang, `Звичайні: ${g}`, `Gewoon: ${g}`)}</span>}
-      {v > 0 && <span data-o='ok'><CheckCircle2 aria-hidden='true' />{tr(lang, `Безпечніше: ${v}`, `Veiliger: ${v}`)}</span>}
-    </p>
-    <p>{a ? tr(lang, 'Відкрийте пункти «Потребує уваги»: у кожному написано, що робити. Якщо сумніваєтеся — натисніть «Відхилити», нічого не зламається.', 'Open de punten «Aandacht nodig»: bij elk staat wat te doen. Twijfelt u, kies dan «Afwijzen» — er gaat niets stuk.')
-      : tr(lang, 'Підозрілого не знайдено. Можна схвалювати, якщо ви очікували це оновлення.', 'Niets verdachts gevonden. U kunt goedkeuren als u deze update verwachtte.')}</p>
+  const l = it.leesbaar; const o = OORDEEL[oordeelVan(it)];
+  return <div className='ut-rv-uitleg'>
+    {zonderUitleg(it)
+      ? <p className='ut-rv-doen' data-o='let'><ShieldAlert aria-hidden='true' /><span><b>{tr(lang, 'Автор не пояснив цю зміну. ', 'De maker heeft deze wijziging niet uitgelegd. ')}</b>{tr(lang, 'Тому встановлення заблоковано. Автор має дописати пояснення в досьє випуску й зібрати пакет знову.', 'Daarom is de installatie geblokkeerd. De maker moet uitleg in het releasedossier zetten en het pakket opnieuw bouwen.')}</span></p>
+      : l && <p className='ut-rv-doen' data-o={o.o}><Lightbulb aria-hidden='true' /><span><b>{tr(lang, 'Що робити: ', 'Wat te doen: ')}</b>{t(l.doen)}</span></p>}
+    {it.auteur && <blockquote className='ut-rv-auteur'><MessageSquareQuote aria-hidden='true' /><div><small>{tr(lang, 'Пояснення автора (з досьє випуску)', 'Uitleg van de maker (uit het releasedossier)')}</small><p>{t(it.auteur)}</p>
+      <small className='ut-rv-auteur-noot'>{tr(lang, 'Це слова автора, а не доказ. Порівняйте їх із тим, що змінилося.', 'Dit zijn woorden van de maker, geen bewijs. Vergelijk ze met wat er veranderde.')}</small></div></blockquote>}
+    {l?.voorNa.length ? <ul className='ut-rv-voorna'>{l.voorNa.map((p, i) => <li key={i}>
+      <span data-k='voor'><small>{tr(lang, 'Було', 'Was')}</small>{p.voor ? t(p.voor) : tr(lang, 'не було', 'bestond niet')}</span>
+      <ArrowRight aria-hidden='true' className='ut-rv-pijl-rechts' />
+      <span data-k='na'><small>{tr(lang, 'Стане', 'Wordt')}{p.keer && p.keer > 1 ? ` · ${tr(lang, `у ${p.keer} місцях`, `op ${p.keer} plekken`)}` : ''}</small>{p.na ? t(p.na) : tr(lang, 'прибрано', 'verwijderd')}</span></li>)}</ul> : null}
+    {l?.overig ? <p className='ut-rv-overig'><Code2 aria-hidden='true' />{tr(lang, `Ще ${l.overig} рядк. логіки програми — їх словами не перекласти${it.auteur ? '; про них — у поясненні автора.' : '.'}`, `Nog ${l.overig} regel(s) programmalogica — niet in woorden te vatten${it.auteur ? '; zie de uitleg van de maker.' : '.'}`)}</p> : null}
+    {it.opvallend?.length ? <ul className='ut-rv-opvallend'>{it.opvallend.map((x, i) => <li key={i}><AlertTriangle aria-hidden='true' />{t(x)}</li>)}</ul> : null}
+    {(t(it.wat) || it.betekenis?.length) && <details className='ut-rv-meer'><summary><Info aria-hidden='true' />{tr(lang, 'Докладніше', 'Meer uitleg')}</summary>
+      {t(it.wat) && <p><b>{tr(lang, 'Що це: ', 'Wat is dit: ')}</b>{t(it.wat)}</p>}
+      {t(it.wijziging) && <p><b>{tr(lang, 'Що змінилося: ', 'Wat verandert: ')}</b>{t(it.wijziging)}</p>}
+      {it.betekenis?.length ? <ul className='ut-rv-betekenis'>{it.betekenis.map((x, i) => <li key={i}><CheckCircle2 aria-hidden='true' />{t(x)}</li>)}</ul> : null}
+      {t(it.let) && <p><b>{tr(lang, 'На що звернути увагу: ', 'Waar op letten: ')}</b>{t(it.let)}</p>}
+    </details>}
+    {it.verschil && <details className='ut-rv-meer'><summary><Code2 aria-hidden='true' />{tr(lang, 'Для програміста: код змін', 'Voor de programmeur: code van de wijziging')}</summary>
+      <Verschil tekst={it.verschil} afgekapt={it.verschilAfgekapt} lang={lang} /></details>}
   </div>;
 }
 
+/** Одна картка: піктограма виду, коротке речення, шлях, шкала змін, висновок. Група = кілька однакових змін в одній картці. */
+function Kaart({ groep, lang }: { groep: RisicoItemUit[]; lang: Lang }) {
+  const [open, setOpen] = useState(false); const [gekozen, setGekozen] = useState(0);
+  const it = groep[Math.min(gekozen, groep.length - 1)]; const eerste = groep[0];
+  const s = SOORT[soortVan(eerste)]; const o = OORDEEL[oordeelVan(eerste)]; const OIcoon = o.icoon; const SIcoon = s.icoon;
+  const t = (x: { uk: string; nl: string }) => (lang === 'uk' ? x.uk : x.nl);
+  const blok = groep.some(zonderUitleg); const heeftUitleg = !!(eerste.leesbaar || t(eerste.wat) || eerste.verschil);
+  const titel = eerste.leesbaar ? t(eerste.leesbaar.kort) : padVan(eerste);
+  const verschilSom = groep.length > 1 ? groep.map((g) => g.verschil ?? '').join('\n') : eerste.verschil;
+  return <li className='ut-rv-kaart' data-open={open || undefined} data-oordeel={oordeelVan(eerste)} data-blok={blok || undefined}>
+    <button type='button' className='ut-rv-rij' aria-expanded={open} disabled={!heeftUitleg} onClick={() => setOpen(!open)} title={tr(lang, s.tipUk, s.tipNl)}>
+      <span className='ut-rv-icoon' data-o={blok ? 'let' : o.o}><SIcoon aria-hidden='true' />{groep.length > 1 && <em>×{groep.length}</em>}</span>
+      <span className='ut-rv-kort'>
+        <span>{titel}{groep.length > 1 && <em className='ut-rv-aantal'>{tr(lang, `${groep.length} файлів`, `${groep.length} bestanden`)}</em>}</span>
+        <small><code>{groep.length > 1 ? groep.map(padVan).map((p) => p.replace(/^[+~−]\s+/, '').split('/').pop()).join(' · ') : padVan(eerste)}</code></small>
+      </span>
+      <span className='ut-rv-rechts'>
+        <Schaal verschil={verschilSom} lang={lang} />
+        <span className='ut-rv-oordeel' data-o={blok ? 'let' : o.o}>{blok ? <Lock aria-hidden='true' /> : <OIcoon aria-hidden='true' />}{blok ? tr(lang, 'Без пояснення', 'Zonder uitleg') : tr(lang, o.uk, o.nl)}</span>
+        {heeftUitleg && <ChevronDown aria-hidden='true' className='ut-rv-pijl' />}
+      </span>
+    </button>
+    {open && <>
+      {groep.length > 1 && <div className='ut-rv-keuze' role='tablist' aria-label={tr(lang, 'Файли групи', 'Bestanden van de groep')}>
+        {groep.map((g, i) => <button key={i} type='button' role='tab' aria-selected={i === gekozen} onClick={() => setGekozen(i)}>{padVan(g).replace(/^[+~−]\s+/, '').split('/').pop()}</button>)}
+      </div>}
+      <Uitleg it={it} lang={lang} />
+    </>}
+  </li>;
+}
+
+/** Однакові зміни одного виду з однаковим висновком і реченням (наприклад, 9 процесів GitHub, що стали безпечнішими) — одна картка. */
+function groepeer(lijst: RisicoItemUit[]): RisicoItemUit[][] {
+  const uit: RisicoItemUit[][] = []; const per = new Map<string, RisicoItemUit[]>();
+  for (const it of lijst) {
+    const sleutel = it.leesbaar && oordeelVan(it) !== 'aandacht' && !zonderUitleg(it) ? `${soortVan(it)}|${oordeelVan(it)}|${it.leesbaar.kort.uk}` : '';
+    if (!sleutel) { uit.push([it]); continue; }
+    const g = per.get(sleutel); if (g) g.push(it); else { const n = [it]; per.set(sleutel, n); uit.push(n); }
+  }
+  return uit;
+}
+
 export default function RodeVlaggen({ lang, vlaggen, bevestigd, onBevestig, id, disabled }: { lang: Lang; vlaggen: RisicoItemUit[]; bevestigd: boolean; onBevestig: (b: boolean) => void; id: string; disabled?: boolean }) {
-  return <div className='ut-rode-vlaggen' role='group' aria-labelledby={`rv-kop-${id}`} data-ut-rode-vlaggen data-bevestigd={bevestigd || undefined}>
-    <p className='ut-rv-kop' id={`rv-kop-${id}`}><Flag aria-hidden='true' /><b>{tr(lang, `Червоні прапорці: ${vlaggen.length}`, `Rode vlaggen: ${vlaggen.length}`)}</b></p>
-    <Samenvatting vlaggen={vlaggen} lang={lang} />
-    <details open>
-      <summary>{tr(lang, 'Усі зміни (натисніть пункт — що було, що стане і що робити)', 'Alle wijzigingen (klik een punt — wat was, wat wordt en wat te doen)')}</summary>
-      <ul className='ut-rv-lijst'>{[...vlaggen].sort((x, y) => RANG[x.leesbaar?.oordeel ?? 'aandacht'] - RANG[y.leesbaar?.oordeel ?? 'aandacht']).map((it, i) => <Item key={i} it={it} lang={lang} />)}</ul>
-    </details>
-    <label className='ut-rv-bevestig' title={tr(lang, 'Без цієї позначки сервер не прийме схвалення. Якщо ви не очікували таких змін — відхиліть пакет: можливо, хтось отримав доступ до GitHub.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan. Verwachtte u deze wijzigingen niet, wijs het pakket dan af: misschien heeft iemand toegang tot GitHub gekregen.')}>
-      <input type='checkbox' checked={bevestigd} disabled={disabled} onChange={(e) => onBevestig(e.target.checked)} />
-      <span>{tr(lang, 'Я переглянув ці зміни й очікував їх', 'Ik heb deze wijzigingen bekeken en verwachtte ze')}</span>
-    </label>
+  const [filter, setFilter] = useState('');
+  const n = (o: string) => vlaggen.filter((v) => oordeelVan(v) === o).length;
+  const a = n('aandacht'); const g = n('gewoon'); const v = n('veiliger');
+  const zonder = vlaggen.filter(zonderUitleg).length;
+  const soorten = useMemo(() => {
+    const m = new Map<string, RisicoItemUit[]>();
+    for (const it of vlaggen) { const k = soortVan(it); m.set(k, [...(m.get(k) ?? []), it]); }
+    return [...m.entries()];
+  }, [vlaggen]);
+  const zichtbaar = [...vlaggen].filter((it) => !filter || soortVan(it) === filter)
+    .sort((x, y) => Number(zonderUitleg(y)) - Number(zonderUitleg(x)) || RANG[oordeelVan(x)] - RANG[oordeelVan(y)]);
+  const staat = zonder ? 'blok' : a ? 'let' : 'ok';
+  const StaatIcoon = zonder ? Lock : a ? ShieldAlert : ShieldCheck;
+  return <div className='ut-rode-vlaggen' role='group' aria-labelledby={`rv-kop-${id}`} data-ut-rode-vlaggen data-staat={staat} data-bevestigd={bevestigd || undefined}>
+    <div className='ut-rv-held'>
+      <Ring a={a} g={g} v={v} lang={lang} />
+      <div className='ut-rv-held-tekst'>
+        <p className='ut-rv-kop' id={`rv-kop-${id}`}><StaatIcoon aria-hidden='true' /><b>{zonder
+          ? tr(lang, 'Встановлення заблоковано', 'Installatie geblokkeerd')
+          : a ? tr(lang, 'Потрібне ваше рішення', 'Uw beslissing is nodig') : tr(lang, 'Підозрілого не знайдено', 'Niets verdachts gevonden')}</b></p>
+        <p className='ut-rv-staat'>{zonder
+          ? tr(lang, `Автор не пояснив ${zonder === 1 ? '1 зміну, яка потребує' : `${zonder} змін, які потребують`} уваги. Без пояснень цей пакет не встановити — попросіть автора дописати їх у досьє випуску.`, `De maker heeft ${zonder} wijziging(en) die aandacht vragen niet uitgelegd. Zonder uitleg is dit pakket niet te installeren — vraag de maker die in het releasedossier te zetten.`)
+          : a ? tr(lang, 'Відкрийте картки з червоною позначкою: у кожній є пояснення автора і що робити. Якщо сумніваєтеся — «Відхилити», нічого не зламається.', 'Open de kaarten met een rode markering: bij elk staat de uitleg van de maker en wat te doen. Twijfelt u, kies «Afwijzen» — er gaat niets stuk.')
+            : tr(lang, 'Можна схвалювати, якщо ви очікували це оновлення.', 'U kunt goedkeuren als u deze update verwachtte.')}</p>
+        <p className='ut-rv-tellers'>
+          {a > 0 && <span data-o='let'><AlertTriangle aria-hidden='true' />{tr(lang, `Уваги: ${a}`, `Aandacht: ${a}`)}</span>}
+          {g > 0 && <span data-o='gewoon'><Info aria-hidden='true' />{tr(lang, `Звичайні: ${g}`, `Gewoon: ${g}`)}</span>}
+          {v > 0 && <span data-o='ok'><CheckCircle2 aria-hidden='true' />{tr(lang, `Безпечніше: ${v}`, `Veiliger: ${v}`)}</span>}
+        </p>
+      </div>
+    </div>
+    <div className='ut-rv-soorten' role='toolbar' aria-label={tr(lang, 'Де саме зміни', 'Waar de wijzigingen zitten')}>
+      <button type='button' aria-pressed={!filter} onClick={() => setFilter('')} title={tr(lang, 'Показати всі зміни', 'Alle wijzigingen tonen')}><Layers aria-hidden='true' /><span>{tr(lang, 'Усі', 'Alle')}</span><b>{vlaggen.length}</b></button>
+      {soorten.map(([k, lijst]) => { const S = SOORT[k]; const I = S.icoon; const lt = lijst.some((x) => oordeelVan(x) === 'aandacht');
+        return <button key={k} type='button' aria-pressed={filter === k} data-o={lt ? 'let' : 'ok'} onClick={() => setFilter(filter === k ? '' : k)} title={tr(lang, S.tipUk, S.tipNl)}>
+          {k === 'CI' ? <Github aria-hidden='true' /> : <I aria-hidden='true' />}<span>{tr(lang, S.uk, S.nl)}</span><b>{lijst.length}</b></button>; })}
+    </div>
+    <ul className='ut-rv-lijst'>{groepeer(zichtbaar).map((gr, i) => <Kaart key={`${filter}-${i}`} groep={gr} lang={lang} />)}</ul>
+    {zonder ? <p className='ut-rv-geblokkeerd'><Lock aria-hidden='true' />{tr(lang, 'Схвалення недоступне, доки автор не пояснить усі позначені зміни.', 'Goedkeuren kan pas als de maker alle gemarkeerde wijzigingen heeft uitgelegd.')}</p>
+      : <label className='ut-rv-bevestig' title={tr(lang, 'Без цієї позначки сервер не прийме схвалення. Якщо ви не очікували таких змін — відхиліть пакет: можливо, хтось отримав доступ до GitHub.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan. Verwachtte u deze wijzigingen niet, wijs het pakket dan af: misschien heeft iemand toegang tot GitHub gekregen.')}>
+        <input type='checkbox' checked={bevestigd} disabled={disabled} onChange={(e) => onBevestig(e.target.checked)} />
+        <Flag aria-hidden='true' /><span>{tr(lang, 'Я переглянув ці зміни й очікував їх', 'Ik heb deze wijzigingen bekeken en verwachtte ze')}</span>
+      </label>}
   </div>;
 }

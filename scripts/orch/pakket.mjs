@@ -100,6 +100,17 @@ export function maakOverdrachtPakket(o) {
           !['tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen'].every((k)=>Array.isArray(dossier[k]) && dossier[k].length)) {
         return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал без обов’язкових розділів','dossier mist verplichte rubrieken')] };
       }
+      // SEC-PAKKET-001: пояснення автора до ризикованих змін (risicoUitleg). Формат перевіряється вже тут, щоб пакет не зібрався даремно;
+      // чи пояснено КОЖНУ ризиковану зміну, вирішує перевірка пакета на сервері (порівняння зі встановленою версією).
+      // Uitleg per risicovolle wijziging: vorm hier al controleren; volledigheid beslist de voorcontrole op de server.
+      if (dossier.risicoUitleg !== undefined) {
+        const r = dossier.risicoUitleg;
+        const goed = Array.isArray(r) && r.length <= 200 && r.every((e) => e && typeof e.pad === 'string' && e.pad.trim() && e.pad.length <= 300 &&
+          typeof e.uk === 'string' && e.uk.trim().length >= 20 && e.uk.trim().length <= 1200 &&
+          (e.nl === undefined || (typeof e.nl === 'string' && e.nl.trim().length >= 20 && e.nl.trim().length <= 1200))) &&
+          new Set(r.map((e) => e.pad.trim())).size === r.length;
+        if (!goed) return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','поле risicoUitleg у журналі має неправильний формат','veld risicoUitleg in het dossier heeft een onjuiste vorm')] };
+      }
       const ref = { schema:1, taakId:o.taakId, repo:'Tarasevych/hub', tak, commit:head, pad,
         sha256:createHash('sha256').update(bytes).digest('hex'),
         url:`https://github.com/Tarasevych/hub/blob/${head}/${pad}`,

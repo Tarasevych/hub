@@ -176,6 +176,8 @@ export type RisicoItem = {
   /** Уніфікована різниця: рядки «-» = було (встановлена версія), «+» = стане (цей пакет). */ verschil?: string;
   verschilAfgekapt?: boolean;
   /** Для адміна без програмування: висновок, «було → стане» словами, порада. */ leesbaar?: Leesbaar;
+  /** Ключ, за яким автор пояснює зміну в досьє (risicoUitleg[].pad) · sleutel voor de uitleg in het dossier. */ sleutel?: string;
+  /** Пояснення автора з досьє випуску · uitleg van de maker uit het dossier. */ auteur?: Tekst;
 };
 
 const MAX_VERSCHIL_REGELS = 400;
@@ -381,7 +383,8 @@ export async function verklaarVlaggen(vlaggen: string[], p: { bron: string; gein
 
 export type Oordeel = 'veiliger' | 'gewoon' | 'aandacht';
 export type VoorNa = { voor: Tekst | null; na: Tekst | null; keer?: number };
-export type Leesbaar = { oordeel: Oordeel; kort: Tekst; voorNa: VoorNa[]; overig: number; doen: Tekst };
+export type Leesbaar = { oordeel: Oordeel; kort: Tekst; voorNa: VoorNa[]; overig: number; doen: Tekst;
+  /** Без пояснення автора таку зміну не схвалити: перевірка пакета блокує встановлення · zonder uitleg blokkeert de voorcontrole. */ uitlegNodig?: boolean };
 
 type Zin = { uk: string; nl: string; veiliger?: boolean; risico?: boolean } | null;
 /** Один рядок налаштувань → речення. null = незнайомий рядок (логіка програми). */
@@ -454,8 +457,54 @@ export function leesbaarVerschil(verschil: string): { voorNa: VoorNa[]; overig: 
   return { voorNa, overig, veiliger, risico };
 }
 
-/** Висновок і порада для адміна без програмування. */
+/**
+ * Ключ пояснення в досьє (risicoUitleg[].pad) для прапорця, або null, якщо пояснення тут не має сенсу
+ * (архів, покладений вручну, чи невдале порівняння — для них лишається окреме підтвердження).
+ * root/CI → шлях файла; npm → «npm:назва», «npm:overrides», «npm-script:назва»; lock → «package-lock.json»; SQL → назва міграції.
+ */
+export function uitlegSleutel(vlag: string): string | null {
+  const m = /^\[([^\]]+)\]\s*(.*)$/.exec(vlag); if (!m) return null;
+  const [, soort, rest] = m;
+  if (soort === 'root' || soort === 'CI') return /^[+~−] /.test(rest) ? rest.slice(2).trim() : null;
+  if (soort === 'npm') {
+    const p = /^[+~−]\s+(@?[^@\s:]+)/.exec(rest); if (p) return `npm:${p[1]}`;
+    if (/overrides/.test(rest)) return 'npm:overrides';
+    const sc = /«([^»]+)»/.exec(rest); return sc ? `npm-script:${sc[1]}` : null;
+  }
+  if (soort === 'lock') return 'package-lock.json';
+  if (soort === 'SQL') return rest.split(':')[0].trim() || null;
+  return null;
+}
+
+/** Висновок і порада для адміна без програмування; позначає, чи потрібне пояснення автора. */
 export function leesbaarVoor(item: RisicoItem): Leesbaar {
+  const l = leesbaarBasis(item);
+  const teken = /^\[[^\]]+\]\s*([+~−])?/.exec(item.vlag)?.[1];
+  // Пояснення потрібне там, де порада адміну інакше звучала б «спитайте автора» або «подивіться опис оновлення».
+  const nodig = uitlegSleutel(item.vlag) !== null && teken !== '−' && (l.oordeel === 'aandacht' || /опис[іу]? оновлення/.test(l.doen.uk));
+  return { ...l, uitlegNodig: nodig };
+}
+
+const NA_UITLEG: Tekst = { uk: 'Автор пояснив цю зміну (нижче). Прочитайте пояснення й порівняйте з тим, що змінилося: якщо воно збігається — можна схвалювати; якщо ні — натисніть «Відхилити».', nl: 'De maker heeft deze wijziging uitgelegd (hieronder). Lees de uitleg en vergelijk met wat er veranderde: klopt het, dan kunt u goedkeuren; zo niet, kies «Afwijzen».' };
+
+/**
+ * Додає до прапорців пояснення автора з досьє (risicoUitleg) і повертає ключі, яких бракує.
+ * Якщо бракує хоч одного — перевірка пакета блокує встановлення (рівень «fout»).
+ */
+export function pasUitlegToe(items: RisicoItem[], uitleg: ReadonlyArray<{ pad: string; uk: string; nl?: string }>): { items: RisicoItem[]; ontbreekt: string[] } {
+  const per = new Map(uitleg.map((u) => [u.pad, u]));
+  const ontbreekt = new Set<string>();
+  const uit = items.map((it) => {
+    const sleutel = uitlegSleutel(it.vlag); const u = sleutel ? per.get(sleutel) : undefined;
+    const basis: RisicoItem = sleutel ? { ...it, sleutel } : it;
+    if (u) return { ...basis, auteur: { uk: u.uk, nl: u.nl ?? u.uk }, ...(basis.leesbaar?.uitlegNodig ? { leesbaar: { ...basis.leesbaar, doen: NA_UITLEG } } : {}) };
+    if (sleutel && basis.leesbaar?.uitlegNodig) ontbreekt.add(sleutel);
+    return basis;
+  });
+  return { items: uit, ontbreekt: [...ontbreekt] };
+}
+
+function leesbaarBasis(item: RisicoItem): Leesbaar {
   const m = /^\[([^\]]+)\]\s*([+~−])?/.exec(item.vlag); const soort = m?.[1] ?? '!'; const teken = m?.[2];
   const uitleg = item.verschil && (soort === 'root' || soort === 'CI') ? leesbaarVerschil(item.verschil) : { voorNa: [], overig: 0, veiliger: 0, risico: 0 };
   const verdacht = (item.opvallend?.length ?? 0) > 0 || uitleg.risico > 0;

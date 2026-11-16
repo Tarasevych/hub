@@ -4,10 +4,11 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import {
   type OntwikkelArchief, ontwikkelArchiefApi, ontwikkelReleaseApi,
-  valideerOntwikkelDossier, ONTWIKKELARCHIEF_REPO
+  valideerOntwikkelDossier, leesRisicoUitleg, type RisicoUitleg, ONTWIKKELARCHIEF_REPO
 } from '../shared/ontwikkelarchief';
 
-export type ArchiefControle = { ok: boolean; code: string; reden: string; url?: string; handmatig?: { uploader: string; auteur: string } };
+export type ArchiefControle = { ok: boolean; code: string; reden: string; url?: string; handmatig?: { uploader: string; auteur: string };
+  /** SEC-PAKKET-001: пояснення автора до ризикованих змін із досьє · uitleg van de maker uit het dossier. */ risicoUitleg?: RisicoUitleg[] };
 const fout = (code: string, reden: string): ArchiefControle => ({ok:false,code,reden});
 /** De vaste bot-identiteit waarmee GitHub Actions (GITHUB_TOKEN) releases en assets aanmaakt. */
 export const GITHUB_ACTIONS_BOT = Object.freeze({ login: 'github-actions[bot]', id: 41898282, type: 'Bot' });
@@ -72,7 +73,7 @@ export async function controleerOntwikkelArchiefOnline(
     // Архів, завантажений у випуск вручну, не відхиляється (власник теж так робить), а стає червоним прапорцем з окремим підтвердженням.
     const bot=doorGithubActions(asset?.uploader) && doorGithubActions(release?.author);
     const naam=(w:any)=>String(w?.login||'onbekend').replace(/[^A-Za-z0-9_.\[\]-]/g,'').slice(0,40)||'onbekend';
-    return {ok:true,code:'OK',reden:'Vastgelegd dossier, taak-tak en exact GitHub Release-archief bevestigd',url:ref.url,
+    return {ok:true,code:'OK',reden:'Vastgelegd dossier, taak-tak en exact GitHub Release-archief bevestigd',url:ref.url,risicoUitleg:leesRisicoUitleg(dossier).uitleg,
       ...(bot?{}:{handmatig:{uploader:naam(asset?.uploader),auteur:naam(release?.author)}})};
   } catch (e) {
     const probleem=e instanceof Error?e.message:'netwerk';

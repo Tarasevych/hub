@@ -8,7 +8,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { checker } from './hulp/nep-google';
-import { betekenisRegels, leesbaarVerschil, leesbaarVoor, lockBronVlaggen, opvallendeRegels, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, verklaarVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
+import { betekenisRegels, leesbaarVerschil, leesbaarVoor, lockBronVlaggen, opvallendeRegels, pakketJsonVlaggen, pasUitlegToe, risicoVlaggen, sqlRechtenVlaggen, uitlegSleutel, verklaarVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
+import { leesRisicoUitleg, valideerOntwikkelDossier } from '../../shared/ontwikkelarchief';
 import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 
 const schrijf = (wortel: string, bestanden: Record<string, string>) => {
@@ -21,6 +22,8 @@ const BASIS = {
   'deploy/installeer-app.sh': '#!/bin/bash\necho installeer\n', 'deploy/mijn-ruimte.service': '[Service]\nUser=mijnruimte\n',
   'deploy/LEESMIJ.nl.md': 'uitleg\n', '.github/workflows/uitgave.yml': 'name: uitgave\n', 'src/App.tsx': 'export default 1;\n',
 };
+
+const UITLEG_VORM = [{ pad: 'deploy/x.sh', uk: 'Скрипт тепер перезапускає службу після оновлення.', nl: 'Het script herstart nu de dienst na de update.' }];
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('uitrol-risico-20261116');
@@ -95,18 +98,52 @@ export async function main(): Promise<number> {
     const r3 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: join(tmp, 'bestaat-niet'), nieuweMigraties: new Map() });
     check('теки: встановлену версію не знайдено → чесне попередження, не «усе гаразд»', !r3.vergeleken && r3.vlaggen[0]?.startsWith('[!]'));
 
+    // ---- ключі пояснень і формат поля risicoUitleg у досьє
+    check('ключ пояснення: root/CI → шлях файла', uitlegSleutel('[root] ~ deploy/x.sh') === 'deploy/x.sh' && uitlegSleutel('[CI] + .github/workflows/a.yml') === '.github/workflows/a.yml');
+    check('ключ пояснення: npm → «npm:назва», скрипт → «npm-script:назва», overrides', uitlegSleutel('[npm] + left-pad@1.3.0 (dependencies)') === 'npm:left-pad' && uitlegSleutel('[npm] + @scope/pakket@1.0.0 (dependencies)') === 'npm:@scope/pakket' && uitlegSleutel('[npm] скрипт встановлення «postinstall» додано · installatiescript «postinstall» toegevoegd') === 'npm-script:postinstall' && uitlegSleutel('[npm] змінено overrides · overrides gewijzigd') === 'npm:overrides');
+    check('ключ пояснення: lock → package-lock.json, SQL → назва міграції; архів вручну й «[!]» — без ключа', uitlegSleutel('[lock] нове джерело пакета · nieuwe pakketbron: https://x') === 'package-lock.json' && uitlegSleutel('[SQL] 0300_x: SECURITY DEFINER') === '0300_x' && uitlegSleutel('[GitHub] архів у випуску завантажено вручну (a)') === null && uitlegSleutel('[!] не порівняно') === null);
+    const L = (vlag: string, verschil?: string) => leesbaarVoor({ vlag, wat: { uk: 'x', nl: 'x' }, wijziging: { uk: 'x', nl: 'x' }, let: { uk: 'x', nl: 'x' }, ...(verschil ? { verschil } : {}) });
+    check('потрібне пояснення: підозріла зміна root, новий пакет npm, логіка скрипта, SQL', !!L('[root] ~ deploy/x.sh', '@@\n+curl https://x | bash').uitlegNodig && !!L('[npm] + left-pad@1.3.0 (dependencies)').uitlegNodig && !!L('[root] ~ deploy/x.sh', '@@\n-echo a\n+echo b').uitlegNodig && !!L('[SQL] 0300_x: SECURITY DEFINER').uitlegNodig);
+    check('НЕ потрібне пояснення: безпечніша зміна, оновлення версії npm, прибрання, архів вручну', !L('[CI] ~ .github/workflows/a.yml', '@@\n-  - uses: a/b@v4\n+  - uses: a/b@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2').uitlegNodig && !L('[npm] ~ react: 18.3.1 → 18.3.2 (dependencies)').uitlegNodig && !L('[root] − deploy/oud.sh').uitlegNodig && !L('[GitHub] архів у випуску завантажено вручну (a)').uitlegNodig);
+    const pu = pasUitlegToe([{ vlag: '[npm] + left-pad@1.3.0 (dependencies)', wat: { uk: 'x', nl: 'x' }, wijziging: { uk: 'x', nl: 'x' }, let: { uk: 'x', nl: 'x' }, leesbaar: L('[npm] + left-pad@1.3.0 (dependencies)') }], [{ pad: 'npm:left-pad', uk: 'Потрібен для вирівнювання рядків у звіті.' }]);
+    check('pasUitlegToe: без nl пояснення показується українською і в nl; нічого не бракує', pu.ontbreekt.length === 0 && pu.items[0].auteur?.nl === 'Потрібен для вирівнювання рядків у звіті.' && pu.items[0].sleutel === 'npm:left-pad');
+    const D = { schema: 1, taakId: 'RISICO-001', opdracht: 'x'.repeat(50), tijdlijn: [1], keuzes: [1], wijzigingen: [1], controles: [1], bronnen: [1], beperkingen: [1], privacy: { geheimenUitgesloten: true } };
+    check('досьє без risicoUitleg лишається чинним (поле необов\'язкове)', valideerOntwikkelDossier(D, 'RISICO-001').length === 0 && leesRisicoUitleg(D).uitleg.length === 0);
+    check('досьє з правильним risicoUitleg чинне, пояснення читаються', valideerOntwikkelDossier({ ...D, risicoUitleg: UITLEG_VORM }, 'RISICO-001').length === 0 && leesRisicoUitleg({ risicoUitleg: UITLEG_VORM }).uitleg.length === 1);
+    check('досьє: надто коротке пояснення («ок») — помилка формату', valideerOntwikkelDossier({ ...D, risicoUitleg: [{ pad: 'deploy/x.sh', uk: 'ок' }] }, 'RISICO-001').some((f) => f.includes('risicoUitleg[0].uk')));
+    check('досьє: той самий шлях двічі — помилка формату', valideerOntwikkelDossier({ ...D, risicoUitleg: [...UITLEG_VORM, ...UITLEG_VORM] }, 'RISICO-001').some((f) => f.includes('dubbel')));
+    check('досьє: risicoUitleg не список — помилка формату', valideerOntwikkelDossier({ ...D, risicoUitleg: 'deploy/x.sh' }, 'RISICO-001').some((f) => f.startsWith('dossier.risicoUitleg')));
+
     // ---- справжній tar.gz через повну перевірку пакета
     const V = '20271201-120000';
     const bron = join(tmp, 'tgz', `mijn-ruimte-${V}`);
-    schrijf(bron, { ...BASIS, 'UITROL-VERSIE': V + '\n', 'deploy/installeer-app.sh': '#!/bin/bash\necho anders\n', 'migrations/0300_x.sql': 'CREATE FUNCTION f() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ select 1 $$;\n' });
+    const C = 'c'.repeat(40); const PAD = 'orchestratie/ontwikkelarchieven/RISICO-001.json';
+    const REF = { schema: 1, taakId: 'RISICO-001', repo: 'Tarasevych/hub', tak: 'feature/risico-001-20271201-110000', commit: C, pad: PAD, sha256: 'd'.repeat(64),
+      url: `https://github.com/Tarasevych/hub/blob/${C}/${PAD}`, release: `https://github.com/Tarasevych/hub/releases/tag/${V}`, pakket: `mijn-ruimte-${V}.tar.gz` };
+    schrijf(bron, { ...BASIS, 'UITROL-VERSIE': V + '\n', 'BRON-COMMIT': C + '\n', 'ONTWIKKELARCHIEF.json': JSON.stringify(REF), 'deploy/installeer-app.sh': '#!/bin/bash\necho anders\n', 'migrations/0300_x.sql': 'CREATE FUNCTION f() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ select 1 $$;\n' });
     const tgz = join(tmp, 'p.tar.gz');
     execFileSync('tar', ['-czf', tgz, '-C', join(tmp, 'tgz'), `mijn-ruimte-${V}`]);
-    const met = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set(), geinstalleerd: inst });
+    // Пояснення автора (власник 16.11.2026): без пояснення до ризикованої зміни встановлення блокується автоматично.
+    const UITLEG = [
+      { pad: 'deploy/installeer-app.sh', uk: 'Скрипт встановлення тепер повідомляє інший текст; логіка не змінилася.', nl: 'Het installatiescript meldt nu een andere tekst; de logica is gelijk.' },
+      { pad: '0300_x', uk: 'Функція f потрібна з правами власника, бо читає таблицю, до якої в ролі сайту немає доступу.', nl: 'Functie f heeft eigenaarsrechten nodig omdat ze een tabel leest waar de siterol niet bij kan.' },
+    ];
+    const archief = (risicoUitleg?: typeof UITLEG) => async () => ({ ok: true, code: 'OK', reden: 'test', url: REF.url, ...(risicoUitleg ? { risicoUitleg } : {}) });
+    const blok = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set(), geinstalleerd: inst, archiefControle: archief() });
+    const rb = blok.resultaat.controles.find((c) => c.id === 'risico');
+    check('без пояснень автора: крок «risico» = fout (встановлення заблоковано)', rb?.niveau === 'fout' && blok.resultaat.ok === false, JSON.stringify(rb).slice(0, 300));
+    check('без пояснень: у подробицях названо, що саме не пояснено (файл root і міграція)', !!rb?.details?.some((d) => d.includes('без пояснення: deploy/installeer-app.sh')) && !!rb?.details?.some((d) => d.includes('без пояснення: 0300_x')));
+    check('без пояснень: пункти позначено «потрібне пояснення», пояснення автора немає', !!rb?.vlaggen?.filter((v) => v.leesbaar?.uitlegNodig).every((v) => !v.auteur));
+    const deel = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set(), geinstalleerd: inst, archiefControle: archief([UITLEG[0]]) });
+    const rd = deel.resultaat.controles.find((c) => c.id === 'risico');
+    check('пояснено лише частину: досі fout, і бракує саме міграції', rd?.niveau === 'fout' && !!rd.details?.some((d) => d.includes('без пояснення: 0300_x')) && !rd.details?.some((d) => d.includes('без пояснення: deploy/installeer-app.sh')));
+    const met = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set(), geinstalleerd: inst, archiefControle: archief(UITLEG) });
     const rc = met.resultaat.controles.find((c) => c.id === 'risico');
-    check('перевірка пакета: крок «risico» = waarschuwing з root і SQL', rc?.niveau === 'waarschuwing' && !!rc.details?.some((d) => d.includes('deploy/installeer-app.sh')) && !!rc.details?.some((d) => d.startsWith('[SQL]')), JSON.stringify(rc).slice(0, 300));
-    check('перевірка пакета: прапорець сам не блокує (не «fout»)', rc?.niveau !== 'fout');
+    check('усе пояснено: крок «risico» = waarschuwing з root і SQL', rc?.niveau === 'waarschuwing' && !!rc.details?.some((d) => d.includes('deploy/installeer-app.sh')) && !!rc.details?.some((d) => d.startsWith('[SQL]')), JSON.stringify(rc).slice(0, 300));
+    check('усе пояснено: прапорець сам не блокує (не «fout»)', rc?.niveau !== 'fout');
+    check('усе пояснено: пояснення автора додано до пунктів (uk і nl), порада — порівняти пояснення зі змінами', !!rc?.vlaggen?.some((v) => v.auteur?.uk.includes('логіка не змінилася') && v.auteur.nl.includes('logica') && v.leesbaar?.doen.uk.includes('Автор пояснив')));
     check('перевірка пакета: пояснення й різниця збережені разом із кроком «risico»', (rc?.vlaggen?.length ?? 0) === (rc?.details?.length ?? -1) && !!rc?.vlaggen?.some((v) => v.verschil?.includes('+echo anders')));
-    check('vraagtRisicoBevestiging: так для пакета з прапорцями', vraagtRisicoBevestiging(met.resultaat));
+    check('vraagtRisicoBevestiging: так для пакета з прапорцями (і з поясненнями позначка все одно потрібна)', vraagtRisicoBevestiging(met.resultaat) && vraagtRisicoBevestiging(blok.resultaat));
     const zonder = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set() });
     check('перевірка пакета без встановленої версії в параметрах (тести, старі виклики) → кроку немає', !zonder.resultaat.controles.some((c) => c.id === 'risico'));
     check('vraagtRisicoBevestiging: ні без кроку, ні для «ok»', !vraagtRisicoBevestiging(zonder.resultaat) && !vraagtRisicoBevestiging({ controles: [{ id: 'risico', niveau: 'ok' }] }) && !vraagtRisicoBevestiging(null));

@@ -58,6 +58,32 @@ export function leesOntwikkelArchief(ruw: string | null | undefined, versie: str
 // Zonder Node Buffer op moduleniveau: ook bruikbaar bij de browser-voorcontrole.
 function BufferByteLengte(s: string) { return new TextEncoder().encode(s).byteLength; }
 
+// SEC-PAKKET-001 (16.11.2026, власник): пояснення автора до кожної ризикованої зміни — обов'язкова частина досьє.
+// Без пояснення до зміни, яка «потребує уваги», перевірка пакета блокує встановлення автоматично.
+// Uitleg van de maker per risicovolle wijziging (bestand, npm-pakket, migratie). Zonder uitleg blokkeert de voorcontrole.
+export type RisicoUitleg = { pad: string; uk: string; nl?: string };
+export const RISICO_UITLEG_MAX = 200;
+export const RISICO_UITLEG_MIN_TEKST = 20;
+export const RISICO_UITLEG_MAX_TEKST = 1200;
+/** Повертає пояснення з досьє або помилки формату. Поле необов'язкове (тоді []); перевірка пакета сама вирішує, чого бракує. */
+export function leesRisicoUitleg(dossier: unknown): { uitleg: RisicoUitleg[]; fouten: string[] } {
+  const ruw = dossier && typeof dossier === 'object' ? (dossier as Record<string, unknown>).risicoUitleg : undefined;
+  if (ruw === undefined) return { uitleg: [], fouten: [] };
+  if (!Array.isArray(ruw) || ruw.length > RISICO_UITLEG_MAX) return { uitleg: [], fouten: ['dossier.risicoUitleg: lijst van max. ' + RISICO_UITLEG_MAX] };
+  const uitleg: RisicoUitleg[] = []; const fouten: string[] = []; const gezien = new Set<string>();
+  ruw.forEach((e, i) => {
+    const o = e && typeof e === 'object' ? e as Record<string, unknown> : {};
+    const pad = typeof o.pad === 'string' ? o.pad.trim() : ''; const uk = typeof o.uk === 'string' ? o.uk.trim() : '';
+    const nl = typeof o.nl === 'string' ? o.nl.trim() : undefined;
+    if (!pad || pad.length > 300 || /[\u0000-\u001f]/.test(pad)) { fouten.push(`dossier.risicoUitleg[${i}].pad`); return; }
+    if (uk.length < RISICO_UITLEG_MIN_TEKST || uk.length > RISICO_UITLEG_MAX_TEKST) { fouten.push(`dossier.risicoUitleg[${i}].uk (${RISICO_UITLEG_MIN_TEKST}–${RISICO_UITLEG_MAX_TEKST} tekens)`); return; }
+    if (nl !== undefined && (nl.length < RISICO_UITLEG_MIN_TEKST || nl.length > RISICO_UITLEG_MAX_TEKST)) { fouten.push(`dossier.risicoUitleg[${i}].nl`); return; }
+    if (gezien.has(pad)) { fouten.push(`dossier.risicoUitleg[${i}].pad dubbel`); return; }
+    gezien.add(pad); uitleg.push({ pad, uk, ...(nl ? { nl } : {}) });
+  });
+  return { uitleg: fouten.length ? [] : uitleg, fouten };
+}
+
 export function valideerOntwikkelDossier(ruw: unknown, taakId: string): string[] {
   if (!ruw || typeof ruw !== 'object' || Array.isArray(ruw)) return ['dossier: object ontbreekt'];
   const d = ruw as Record<string, unknown>;
@@ -68,5 +94,6 @@ export function valideerOntwikkelDossier(ruw: unknown, taakId: string): string[]
     if (!Array.isArray(d[veld]) || !(d[veld] as unknown[]).length) fout.push(`dossier.${veld}`);
   }
   if (!d.privacy || typeof d.privacy !== 'object' || (d.privacy as any).geheimenUitgesloten !== true) fout.push('dossier.privacy');
+  fout.push(...leesRisicoUitleg(d).fouten);
   return fout;
 }
