@@ -18,6 +18,8 @@ import { dienstVan } from './meldingen/v2/omzetten';
 import { bouwModel } from './meldingen/v2/model';
 import { useStatusStand, wijzigStatus } from './meldingen/v2/status-opslag';
 import { pasStatusToe } from '../shared/meldingen-v2/status';
+import { belAantal } from '../shared/meldingen-v2/bel-teller';
+import { sectieLijst } from '../shared/meldingen-v2/secties';
 import NotificationPanelBody from './MeldingenpaneelInhoud';
 import { sectieLink, useConnectorActivity } from './connector-activiteit';
 import { activiteitenVanSfeer, type MeldingSfeer } from '../shared/meldingen-soorten';
@@ -838,10 +840,17 @@ export default function CanonicalNotificationCenter(p: Props) {
   const serverUnread = server.filter((item) => !item.read && !afgehandeld(`s:${item.id}`)).length;
   const localUnread = zichtbaarLokaal.filter((item) => !item.read && !item.opgelost && !afgehandeld(`l:${item.id}`)).length;
   const activityUnread = events.filter((event) => !activity.read.has(event.id) && !afgehandeld(`a:${event.id}`)).length;
-  const unreadCountOud = localUnread + serverUnread + activityUnread + (techRegel ? techUnread : 0);
   const v2Model = useMemo(() => (v2
     ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, (ms) => pasStatusToe(ms, v3Status))
     : null), [v2, v2Regels, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
+  /* MELDINGEN-UX-001 (16.11.2026): het zwevende venster krijgt dezelfde bronnen als de compacte panel — types die de gebruiker verbergt
+   * vallen weg, en wat op de server al gelezen/opgeruimd/opgelost is (status), is ook hier niet meer «нове». Zo telt elk paneel hetzelfde.
+   * Вікно бачить ті самі дані, що й компактна панель: приховані типи не показуються, оброблене не «нове». */
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const ecoServerItems = useMemo(() => server.map((item) => (!item.read && afgehandeld(`s:${item.id}`) ? { ...item, read: true } : item)), [p.serverItems, p.typen, v3Status, ruimteNu]);
+  const ecoLokaal = useMemo(() => zichtbaarLokaal.map((item) => (!item.read && afgehandeld(`l:${item.id}`) ? { ...item, read: true } : item)), [retained, p.typen, v3Status]);
+  const ecoActiviteitGelezen = useMemo(() => new Set([...activity.read, ...events.filter((event) => afgehandeld(`a:${event.id}`)).map((event) => event.id)]), [activity.read, activity.events, p.typen, v3Status, belSfeer]);
+  /* eslint-enable react-hooks/exhaustive-deps */
   const subdomeinNu = naarMeldingSubdomein(typeof location !== 'undefined' ? dienstVanHostnaam(location.hostname) : 'hub');
   const ecoRuimte = (belSfeer === 'technisch' || (ruimteFilterActief() && ruimteNu === 'technisch')) ? 'technisch' : 'prive';
   const eco = useMeldingEcosysteem({
@@ -850,18 +859,27 @@ export default function CanonicalNotificationCenter(p: Props) {
     ruimte: ecoRuimte,
     subdomeinNu,
     actief: panelOpen && ecosysteemActief,
+    telVooraf: ecosysteemActief,
     paginaSignalen,
-    serverItems: p.serverItems || [],
+    serverItems: ecoServerItems,
     techItems: p.techItems || [],
-    localRows: zichtbaarLokaal,
+    localRows: ecoLokaal,
     activityEvents: events,
-    activityRead: activity.read,
+    activityRead: ecoActiviteitGelezen,
     tekstVanServer: (s) => meldingInTaal(s, p.lang),
     titelVanActiviteit: (ev) => activityTitle(ev, p.lang),
     contextVanActiviteit: (ev) => activiteitContext(ev, p.lang) || '',
   });
-  const ecoExtraUnread = eco.stroom.filter((g) => g.status === 'nieuw' && !g.externeSleutel.startsWith('site_notif:') && !g.externeSleutel.startsWith('act:') && !g.externeSleutel.startsWith('l:')).length;
-  const unreadCount = v2Model ? v2Model.tellers.bel + (techRegel ? techUnread : 0) + ecoExtraUnread : unreadCountOud + ecoExtraUnread;
+  /* MELDINGEN-UX-001 (16.11.2026): één getal — zie shared/meldingen-v2/bel-teller.ts. Bel = lengte van «Нові» in het gekozen paneel. */
+  const [v2OpenNieuw, setV2OpenNieuw] = useState<number | null>(null);
+  useEffect(() => { if (!panelOpen || ecosysteemActief) setV2OpenNieuw(null); }, [panelOpen, ecosysteemActief]);
+  const vensterNieuw = eco.stroom.filter((g) => g.status === 'nieuw').length;
+  const compactNieuw = v2Model ? sectieLijst(v2Model.groepen, 'nieuw', Date.now()).length : 0;
+  const unreadCount = belAantal({
+    vorm: ecosysteemActief ? 'venster' : v2Model ? 'compact' : 'klassiek',
+    vensterNieuw, compactNieuw, compactOpenNieuw: panelOpen ? v2OpenNieuw : null,
+    klassiekOngelezen: localUnread + serverUnread + activityUnread, tech: techRegel ? techUnread : 0,
+  });
   const historyCount = zichtbaarLokaal.length + server.length + events.length;
   const removeRetained = (id: string) => { releaseCanonicalNoticeAction(id); saveRetained((rows) => rows.filter((row) => row.id !== id)); };
   const markLocalRead = markRetainedRead;
@@ -1123,6 +1141,7 @@ export default function CanonicalNotificationCenter(p: Props) {
             {v2 ? (
               <MeldingenV2
                 lang={p.lang}
+                onNieuwAantal={setV2OpenNieuw}
                 local={zichtbaarLokaal as never}
                 server={server as never}
                 events={events}

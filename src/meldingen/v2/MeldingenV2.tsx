@@ -36,6 +36,8 @@ export type MeldingenV2Props = Bronnen & {
   onMarkAll: () => void | Promise<void>; geluid: boolean; onGeluid: () => void; onSluiten: () => void;
   /** MELDINGEN-UX-001: naar het zwevende venster wisselen (dezelfde knop-plek als «Компактно» in dat venster). */
   onVenster?: () => void;
+  /** MELDINGEN-UX-001 (16.11.2026): hoeveel er nu in «Нові» staat (zonder filters) — de bel toont hetzelfde getal terwijl de panel open is. */
+  onNieuwAantal?: (aantal: number) => void;
   tech?: { aantal: number; open: () => void; tekst: string } | null;
   /** Voor schermafbeeldingen/tests: vaste «nu». */
   nu?: number;
@@ -137,6 +139,10 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const sectieLijsten = useMemo(() => Object.fromEntries(SECTIES.map((s) => [s, metFilters(sectieLijst(groepen, s, nu, { toonVerborgen, vastNieuw: vastNieuw.current }))])) as Record<Sectie, V2Groep[]>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [groepen, nu, toonVerborgen, f, later]);
+  // Bel = «Нові» zonder filters (ook wat net gezien is en tot sluiten blijft staan) · дзвіночок показує те саме число, що й «Нові».
+  const nieuwVoorBel = sectieLijst(groepen, 'nieuw', nu, { vastNieuw: vastNieuw.current }).filter((g) => !(later[g.sleutel] > nu)).length;
+  const meldNieuw = p.onNieuwAantal;
+  useEffect(() => { meldNieuw?.(nieuwVoorBel); }, [meldNieuw, nieuwVoorBel]);
   const lijstAlles = useMemo(() => filterGroepen(groepen, 'alle', f), [groepen, f]);
   const lijst = geschiedenis ? lijstAlles : sectieLijsten[sectie];
   const uitgeschakeld = groepen.filter((g) => !g.levering.centrum && !g.levering.beschermd && sectieVanGroep(g, nu) !== 'archief').length;
