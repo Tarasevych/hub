@@ -90,3 +90,16 @@ details.ext-klap .ag-agentkleuren .ag-blok-titel{display:none}
 .eo-ai-sites legend{display:flex;align-items:center;gap:6px}
 .eo-ai-sites .gevaar-teken{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--warn);color:var(--warn);font-weight:800;font-size:.75rem}
 .eo-ai-sites .eo-uitleg{display:block;grid-column:1/-1;color:var(--muted);line-height:1.4;margin:2px 0 6px;max-width:75ch}
+
+/* EXTUI-001 · телефон: шість вкладених рамок з’їдали ширину, тож блок «Ваші сторінки» / «Сайти ШІ» стискався до ~170 px і рядки
+   вилазили за рамку. Картка розділу лишається; внутрішні підкладки стають тонкими, а внутрішні рамки зникають.
+   Telefoon: zes geneste kaders aten de breedte op; de sectiekaart blijft, de binnenste opvulling wordt dun. Laatste laag in het bestand. */
+@media (max-width:560px){
+  html .ag-tab.ag-ext .ag-blok{padding-inline:8px}
+  html .ag-tab.ag-ext .ag-kaart.ag-ext-slot{padding-inline:8px}
+  html .ag-tab.ag-ext .ag-ext-slot .hub-agent.mcp-browser{padding-inline:0;border-inline:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-ext-slot section.eo{padding-inline:0;border-inline:0;background:transparent;box-shadow:none}
+  html .ag-tab.ag-ext .ag-ext-slot .eo-form{padding-inline:10px}
+  html .ag-tab.ag-ext .eo-domeinen{padding-inline:8px}
+  html .ag-tab.ag-ext .eo-vink code{overflow-wrap:anywhere;min-width:0}
+}
