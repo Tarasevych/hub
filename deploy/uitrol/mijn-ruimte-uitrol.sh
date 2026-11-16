@@ -849,6 +849,9 @@ rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
 status bezig INSTALLEREN "Встановлюю випуск $VERSIE." "Release $VERSIE wordt geïnstalleerd." "$VERSIE"
 stap installeren bezig 42 "Встановлюю: копіювання, збірка, міграції, перезапуск, перевірка роботи." "Installeren: kopiëren, bouwen, migraties, herstart, gezondheidscontrole."
 export MIJN_RUIMTE_UITROL_MODUS="$MODUS"
+# UITROL-002: de sha256 van root's EIGEN kopie van het archief gaat mee, zodat installeer-app.sh een al gebouwde release van ditzelfde
+# archief kan hervatten (kopie, npm ci en bouwen overslaan). Nooit een waarde van de app: root rekent hem hier zelf uit.
+MIJN_RUIMTE_PAKKET_SHA256="$(sha256sum -- "$WERK/pakket.tar.gz" | cut -c1-64)"; export MIJN_RUIMTE_PAKKET_SHA256
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 publiceer_log
 set +e

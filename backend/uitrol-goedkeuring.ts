@@ -39,6 +39,7 @@ import { huidigeStand } from './uitrol-bron';
 import { agentAudit } from './agent-audit';
 import { PogingFout, pogingMelden, pogingServerMelden, pogingenLijst } from './uitrol-pogingen';
 import { POGING_LIMIETEN } from '../shared/uitrol-pogingen';
+import { HERVAT_LIMIETEN, HERVAT_STATUSSEN, pakketBewarenNaUitkomst } from '../shared/uitrol-hervatten';
 import { p } from '../shared/hulpmiddel-teksten';
 import { ToegangFout, gebruikVastleggen, redenVan, viaAppIngetrokken, wijzigingVastleggen } from './toegang-context';
 
@@ -298,6 +299,13 @@ async function kandidaten(zoek = '') {
 }
 
 // ------------------------------------------------------------------------------------------------ voorstellen (voorbereiden)
+/**
+ * UITROL-002: `pakketAanwezig` — ligt het archief van een technisch mislukte poging nog op de server (zelfde grootte)? Alleen de server
+ * stelt dit vast (stat op zijn eigen map); de browser toont dan «Продовжити без завантаження». Nooit voor lopende of geïnstalleerde rijen.
+ */
+async function metPakketAanwezig<T extends { id: string; status: string; bytes: number }>(lijst: T[]): Promise<Array<T & { pakketAanwezig: boolean }>> {
+  return Promise.all(lijst.map(async (v) => ({ ...v, pakketAanwezig: HERVAT_STATUSSEN.has(v.status) && !!(await stat(pakketPad(v.id)).then((s) => s.isFile() && s.size === v.bytes).catch(() => false)) })));
+}
 const voorstelUit = (r: any) => ({
   id: String(r.id), versie: String(r.versie), status: String(r.status), bytes: Number(r.bytes), sha256: String(r.sha256), ontvangen: Number(r.ontvangen),
   voorbereider: String(r.voorbereider_label), voorbereiderId: String(r.voorbereider_id), commit: r.bron_commit ? String(r.bron_commit) : '',
@@ -389,6 +397,15 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   try { await fh.read(kop, 0, 2, 0); } finally { await fh.close(); }
   if (kop[0] !== 0x1f || kop[1] !== 0x8b) { await afbreken(row.id, 'GEEN_GZIP'); fout('GEEN_GZIP'); }
   if ((await sha256Bestand(deel)) !== row.sha256) { await afbreken(row.id, 'SHA256_VERSCHILT'); fout('SHA256_VERSCHILT'); }
+  return afrondenNaUpload(grant, row, deel);
+}
+
+/**
+ * Na een volledige, sha256-gelijke upload (of een hervatting met een bewaard archief): voorcontrole, dan «wacht-op-goedkeuring».
+ * `hervatVan` = het mislukte voorstel waarvan het archief werd hergebruikt (alleen voor audit en melding).
+ */
+type GrantRij = NonNullable<Awaited<ReturnType<typeof actieveGrant>>>;
+async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatVan?: { id: string; code: string }) {
   // Voorcontrole (statisch, nooit code uit het pakket uitvoeren): zie backend/uitrol-voorcontrole.ts. Een fout houdt het pakket buiten de goedkeuring.
   let toegepast: Set<string> | null = null;
   try { toegepast = new Set((await sys().query('SELECT version FROM app.schema_migrations')).rows.map((r: { version: string }) => String(r.version))); } catch { toegepast = null; }
@@ -414,13 +431,55 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'wacht-op-goedkeuring', bijgewerkt_op = now(), voorcontrole = $2::jsonb, pakket_meta = $3::jsonb,
     wijzigingen = CASE WHEN length($4) >= 20 THEN $4 ELSE wijzigingen END, bron_commit = COALESCE(NULLIF($5, ''), bron_commit)
     WHERE id = $1 AND status = 'uploaden'`, [row.id, JSON.stringify(vc.resultaat), JSON.stringify(vc.meta), beschrijving, vc.meta.commit]);
-  await auditeer(grant.accountId, grant.accountId, 'uitrol_voorstel_klaar', 'success', { voorstel: row.id, versie: row.versie, sha256: row.sha256, voorbereider: grant.label });
+  await auditeer(grant.accountId, grant.accountId, hervatVan ? 'uitrol_voorstel_hervat' : 'uitrol_voorstel_klaar', 'success', { voorstel: row.id, versie: row.versie, sha256: row.sha256, voorbereider: grant.label, ...(hervatVan ? { hervatVan: hervatVan.id, vorigeCode: hervatVan.code } : {}) });
   // UI-014: nieuw pakket wacht op goedkeuring → melding (vroeger alleen zichtbaar als men zelf /updates opende).
   await meld(grant.accountId, 'uitrol', `Оновлення ${tekst(row.versie, 40)} чекає схвалення / Update ${tekst(row.versie, 40)} wacht op goedkeuring`,
     `Завантажив: «${grant.label}». Перевірку пройдено. Схвалити чи відхилити — на сторінці оновлень (з passkey). / Geüpload door: «${grant.label}». Controle geslaagd. Goedkeuren of afwijzen op de updatepagina (met passkey).`,
     'https://admin.tarasevych.com/updates');
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'klaar', grant.accountId)).catch(() => undefined);
-  return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat };
+  return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat, ...(hervatVan ? { hervat: true, hervatVan: hervatVan.id } : {}) };
+}
+/**
+ * UITROL-002: hervatten zonder upload. De voorbereider koos hetzelfde bestand (de browser rekende de sha256 lokaal uit) en het archief
+ * van een eerdere, technisch mislukte poging ligt nog op de server. Dan: een NIEUW voorstel (de geschiedenis houdt de mislukte rij),
+ * het bewaarde bestand wordt gekopieerd, de server berekent de sha256 van die kopie OPNIEUW (niets uit het verzoek wordt vertrouwd)
+ * en daarna loopt alles als na een gewone upload: voorcontrole, wacht-op-goedkeuring, passkey. Alleen het eigen voorstel (grant).
+ */
+export async function voorstelHervat(onderwerpen: Onderwerp[], a: Record<string, unknown>) {
+  const { grant, row: oud } = await eigenVoorstel(onderwerpen, a.id);
+  if (!HERVAT_STATUSSEN.has(String(oud.status))) fout('STATUS_ONGELDIG', 409);
+  const sha = String(a.sha256 || '').toLowerCase();
+  if (!SHA.test(sha) || sha !== String(oud.sha256)) fout('SHA256_VERSCHILT', 409);
+  const limiet = await rateLimit(`uitrol-voorstel:${grant.id}`, 10, 3600);
+  if (!limiet.ok) fout('RATE_LIMITED', 429);
+  await opruimenVoorstellen();
+  const bron = pakketPad(String(oud.id));
+  const st = await stat(bron).catch(() => null);
+  if (!st || !st.isFile() || st.size !== Number(oud.bytes)) fout('PAKKET_NIET_AANWEZIG', 409);
+  if ((await sha256Bestand(bron)) !== String(oud.sha256)) { await rm(bron, { force: true }); fout('PAKKET_GEWIJZIGD', 409); }
+  const open = Number((await sys().query(`SELECT count(*)::int AS n FROM app.uitrol_voorstellen WHERE voorbereider_id = $1 AND status IN ('uploaden', 'wacht-op-goedkeuring')`, [grant.id])).rows[0].n);
+  if (open >= UITROL_LIMIETEN.openPerVoorbereider) fout('TE_VEEL_OPEN', 409);
+  let row;
+  try {
+    row = (await sys().query(`INSERT INTO app.uitrol_voorstellen (versie, bytes, sha256, ontvangen, voorbereider_id, voorbereider_label, account_id, bron_commit, wijzigingen, tests, diff_samenvatting)
+      VALUES ($1, $2, $3, $2, $4, $5, $6, $7, $8, $9::jsonb, $10) RETURNING *`,
+      [oud.versie, Number(oud.bytes), oud.sha256, grant.id, grant.label, grant.accountId, oud.bron_commit || null, String(oud.wijzigingen || ''), JSON.stringify(oud.tests || {}), String(oud.diff_samenvatting || '')])).rows[0];
+  } catch (err) {
+    if (String((err as { code?: string }).code) === '23505') fout('VERSIE_BESTAAT_AL', 409);
+    throw err;
+  }
+  const deel = `${pakketPad(row.id)}.deel`;
+  await copyFile(bron, deel);
+  await auditeer(grant.accountId, grant.accountId, 'uitrol_voorstel_begonnen', 'success', { voorstel: row.id, versie: row.versie, bytes: Number(row.bytes), sha256: row.sha256, voorbereider: grant.label, soort: grant.soort, hervatVan: String(oud.id) });
+  return afrondenNaUpload(grant, row, deel, { id: String(oud.id), code: String(oud.uitkomst_code || '') });
+}
+/** UITROL-002: het bewaarde archief van een mislukte poging alsnog weghalen (eigen voorstel). De rij en de geschiedenis blijven. */
+export async function voorstelPakketVerwijderen(onderwerpen: Onderwerp[], a: Record<string, unknown>) {
+  const { grant, row } = await eigenVoorstel(onderwerpen, a.id);
+  if (!HERVAT_STATUSSEN.has(String(row.status))) fout('STATUS_ONGELDIG', 409);
+  await rm(pakketPad(String(row.id)), { force: true });
+  await auditeer(grant.accountId, grant.accountId, 'uitrol_voorstel_pakket_verwijderd', 'success', { voorstel: row.id, versie: row.versie, sha256: row.sha256, voorbereider: grant.label });
+  return { id: String(row.id), pakketAanwezig: false };
 }
 async function afbreken(id: string, code: string) {
   const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', uitkomst_code = $2, bijgewerkt_op = now() WHERE id = $1 RETURNING versie`, [id, code]);
@@ -470,7 +529,8 @@ export async function synchroniseer() {
       if (nieuw) {
         const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now()
           WHERE versie = $1 AND status = 'goedgekeurd' RETURNING id, versie`, [st.versie, nieuw, tekst(st.code, 40), JSON.stringify({ uk: tekst(st.uk, 300), nl: tekst(st.nl, 300), tijd: tekst(st.tijd, 40) })]);
-        for (const r of rows) { await rm(pakketPad(r.id), { force: true }); await wachtMeldingSluiten(r.versie); }
+        // UITROL-002: na een technische fout blijft het archief liggen (hervatten zonder upload); na een weigering om de inhoud niet.
+        for (const r of rows) { if (!pakketBewarenNaUitkomst(nieuw, String(st.code || ''))) await rm(pakketPad(r.id), { force: true }); await wachtMeldingSluiten(r.versie); }
       }
     }
   } catch { /* nog geen status */ }
@@ -497,6 +557,10 @@ export async function opruimenVoorstellen() {
     RETURNING id, versie, sha256, bytes, ontvangen, uitkomst_code, voorbereider_id, voorbereider_label, account_id`, [UITROL_LIMIETEN.uploadUren, UPLOAD_STIL_MINUTEN]);
   for (const r of half.rows) await pogingServerMelden({ ...r, code: String(r.uitkomst_code || 'UPLOAD_NIET_VOLTOOID') });
   for (const r of [...verlopen.rows, ...half.rows]) { await rm(pakketPad(r.id), { force: true }); await rm(`${pakketPad(r.id)}.deel`, { force: true }); }
+  // UITROL-002: een archief dat na een technische fout bleef liggen, gaat na bewaarDagen alsnog weg (schijfruimte; en een week later
+  // is er meestal een nieuwere release). De rij blijft: de geschiedenis verandert niet, alleen `pakketAanwezig` wordt false.
+  const oudeArchieven = await sys().query(`SELECT id FROM app.uitrol_voorstellen WHERE status = ANY($1::text[]) AND bijgewerkt_op < now() - make_interval(days => $2)`, [[...HERVAT_STATUSSEN], HERVAT_LIMIETEN.bewaarDagen]);
+  for (const r of oudeArchieven.rows) await rm(pakketPad(String(r.id)), { force: true });
 }
 
 /**
@@ -522,7 +586,7 @@ export async function rootUitkomstenOpnemen() {
       const nieuwRun = run.staat === 'klaar' ? 'geinstalleerd' : run.staat === 'geweigerd' ? 'geweigerd' : 'mislukt';
       const upd = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now() WHERE id = $1 AND status = 'goedgekeurd' RETURNING id`,
         [v.id, nieuwRun, tekst(run.code || (run.staat === 'klaar' ? 'OK' : 'INSTALLATIE_MISLUKT'), 40), JSON.stringify({ uk: tekst(run.uk, 300), nl: tekst(run.nl, 300), tijd: tekst(iso(run.geeindigd_op), 40) })]);
-      if (upd.rows[0]) { await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
+      if (upd.rows[0]) { if (!pakketBewarenNaUitkomst(nieuwRun, String(run.code || 'INSTALLATIE_MISLUKT'))) await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
       if (upd.rows[0] && nieuwRun === 'mislukt') await meldMislukt(v, String(run.uk || ''), String(run.nl || ''));
       if (upd.rows[0] && nieuwRun === 'geinstalleerd') await meldGeinstalleerd(v);
       continue;
@@ -541,7 +605,7 @@ export async function rootUitkomstenOpnemen() {
     if (!nieuw) continue;
     const upd = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now() WHERE id = $1 AND status = 'goedgekeurd' RETURNING id`,
       [v.id, nieuw, tekst(code, 40), JSON.stringify({ uk: tekst(uk, 300), nl: tekst(nl, 300), tijd: tekst(tijd, 40) })]);
-    if (upd.rows[0]) { await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
+    if (upd.rows[0]) { if (!pakketBewarenNaUitkomst(nieuw, code)) await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
     if (upd.rows[0] && (nieuw === 'mislukt' || nieuw === 'verlopen')) await meldMislukt(v, uk, nl);
     if (upd.rows[0] && nieuw === 'geinstalleerd') await meldGeinstalleerd(v);
   }
@@ -619,6 +683,20 @@ export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown)
   return { uitdagingId: u.id, verloopt: u.verloopt, publicKey: assertieOpties(u.uitdaging, b), voorstel: { id: String(v.id), versie: String(v.versie), sha256: String(v.sha256) } };
 }
 
+// UITROL-002 (eigenaar 16.11.2026, «захист від дурака»): twee beheerders op twee apparaten mogen elkaars installatie niet in de weg
+// zitten. Root voert sowieso maar één uitrol tegelijk uit (vergrendeling in mijn-ruimte-uitrol.sh), maar een tweede goedkeuring zou
+// in de inbox wachten en METEEN na de eerste starten — zonder dat iemand de uitkomst van de eerste zag. Daarom weigert de site een
+// goedkeuring zolang er een run bezig is of een goedgekeurd pakket op root wacht (UITROL_BEZIG, met wie/wat/wanneer). Uploaden en
+// controleren mag wél: dat raakt de lopende installatie niet.
+export type LopendeInstallatie = { soort: 'run' | 'goedgekeurd'; id: string; versie: string; wie: string; adres: string; sinds: string };
+export async function lopendeInstallatie(): Promise<LopendeInstallatie | null> {
+  const run = (await sys().query(`SELECT id, versie, wie, adres, gestart_op FROM app.uitrol_runs WHERE staat = 'bezig' AND methode <> 'ssh' AND bijgewerkt_op > now() - interval '3 hours' ORDER BY gestart_op DESC LIMIT 1`)).rows[0];
+  if (run) return { soort: 'run', id: String(run.id), versie: String(run.versie || ''), wie: String(run.wie || ''), adres: String(run.adres || ''), sinds: new Date(run.gestart_op).toISOString() };
+  const g = (await sys().query(`SELECT id, versie, beslist_door, beslist_op FROM app.uitrol_voorstellen WHERE status = 'goedgekeurd' ORDER BY beslist_op DESC LIMIT 1`)).rows[0];
+  if (g) return { soort: 'goedgekeurd', id: String(g.id), versie: String(g.versie || ''), wie: String(g.beslist_door || ''), adres: '', sinds: new Date(g.beslist_op).toISOString() };
+  return null;
+}
+
 export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitdagingId?: unknown; assertie?: unknown }) {
   const assertie = assertieUit(input.assertie);
   const u = await uitdagingVerbruiken(eigenaar.id, input.uitdagingId, 'goedkeuren');
@@ -627,6 +705,7 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   const { rows } = await sys().query('SELECT * FROM app.uitrol_voorstellen WHERE id = $1', [u.onderwerp]);
   const v = rows[0];
   if (!v || v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  if (await lopendeInstallatie()) fout('UITROL_BEZIG', 409);
   const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
   if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   // Opnieuw uitrekenen uit de HUIDIGE gegevens: een gewijzigd voorstel (andere sha/versie) past niet meer bij de challenge.
@@ -848,7 +927,7 @@ export async function overzicht(eigenaar?: { id: string; email?: string }) {
     catch (err) { console.error('[uitrol-goedkeuring] beleid-synchronisatie mislukt:', (err as Error).message); }
   }
   const b = await leesSleutels();
-  const voorstellen = (await sys().query('SELECT * FROM app.uitrol_voorstellen ORDER BY aangemaakt_op DESC LIMIT 50')).rows.map(voorstelUit);
+  const voorstellen = await metPakketAanwezig((await sys().query('SELECT * FROM app.uitrol_voorstellen ORDER BY aangemaakt_op DESC LIMIT 50')).rows.map(voorstelUit));
   let rootStatus: unknown = null; let sleutelStatus: unknown = null; let ruw = '';
   try { rootStatus = JSON.parse(await readFile(path.join(statusDir(), 'status.json'), 'utf8')); } catch { rootStatus = null; }
   try { sleutelStatus = JSON.parse(await readFile(path.join(statusDir(), 'goedkeur-sleutels.json'), 'utf8')); } catch { sleutelStatus = null; }
@@ -1010,6 +1089,9 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     'POST /api/uitrol/voorstel/klaar': [voorbereider(voorstelKlaar)],
     'POST /api/uitrol/voorstel/status': [voorbereider(voorstelStatus)],
     'POST /api/uitrol/voorstel/annuleren': [voorbereider(voorstelAnnuleren)],
+    // UITROL-002: hetzelfde archief ligt nog op de server na een technische fout → verder zonder upload; of dat archief weghalen.
+    'POST /api/uitrol/voorstel/hervat': [voorbereider(voorstelHervat)],
+    'POST /api/uitrol/voorstel/pakket-verwijderen': [voorbereider(voorstelPakketVerwijderen)],
     // Afbreking in de BROWSER (leesfout van de schijf, netwerk weg, tabblad gesloten): zonder deze route hoorde de server er nooit van.
     'POST /api/uitrol/poging/afgebroken': [voorbereider(voorstelPogingAfgebroken)],
   };

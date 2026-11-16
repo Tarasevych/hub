@@ -131,33 +131,55 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 @media (max-width:520px){.ut-delen li{grid-template-columns:22px minmax(0,1fr)}.ut-deel-stand{grid-column:2}}
 
 /* terminal */
-.ut-terminal{border:1px solid #1e293b;border-radius:12px;overflow:hidden;background:var(--ut-term-bg);color:var(--ut-term-text)}
-.ut-terminal-balk{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 10px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+/* UITROL-002: de terminal heeft eigen tokens; [data-licht] (thema «licht», of «site» op de lichte site) zet ze om. Контраст «наживо»: білий текст на суцільному зеленому. */
+.ut-terminal{--ut-term-rand:#1e293b;--ut-term-laag:rgba(255,255,255,.05);--ut-term-lijn:rgba(255,255,255,.08);--ut-term-knop-lijn:rgba(255,255,255,.18);--ut-term-knop-hover:rgba(255,255,255,.08);--ut-term-knop-aan:rgba(255,255,255,.14);--ut-term-knop-tekst:#cbd5e1;--ut-term-faint:#94a3b8;--ut-term-muted:#7c8a9a;
+  border:1px solid var(--ut-term-rand);border-radius:12px;overflow:hidden;background:var(--ut-term-bg);color:var(--ut-term-text)}
+.ut-terminal[data-licht]{--ut-term-bg:#f8fafc;--ut-term-text:#0f172a;--ut-term-rand:var(--ut-line);--ut-term-laag:rgba(15,23,42,.04);--ut-term-lijn:rgba(15,23,42,.1);--ut-term-knop-lijn:rgba(15,23,42,.2);--ut-term-knop-hover:rgba(15,23,42,.06);--ut-term-knop-aan:rgba(15,23,42,.12);--ut-term-knop-tekst:var(--ut-text);--ut-term-faint:#475569;--ut-term-muted:#64748b}
+.ut-terminal[data-thema="site"]{--ut-term-bg:var(--ut-bg2);--ut-term-text:var(--ut-text);--ut-term-rand:var(--ut-line)}
+.ut-terminal[data-thema="site"]:not([data-licht]){--ut-term-bg:color-mix(in srgb,var(--ut-bg2) 85%,#000)}
+.ut-terminal[data-licht] .ut-k-tag{color:#0e7490}.ut-terminal[data-licht] .ut-k-cmd{color:#6d28d9}.ut-terminal[data-licht] .ut-k-pad{color:#0369a1}.ut-terminal[data-licht] .ut-k-vlag{color:#a21caf}.ut-terminal[data-licht] .ut-k-versie{color:#be185d}.ut-terminal[data-licht] .ut-k-tekst{color:#4d7c0f}.ut-terminal[data-licht] .ut-k-sleutel{color:#4338ca}.ut-terminal[data-licht] .ut-k-url{color:#0369a1;text-decoration-color:rgba(3,105,161,.4)}
+.ut-terminal[data-licht] .ut-regel-nr,.ut-terminal[data-licht] .ut-regel-tijd{color:var(--ut-term-muted)}
+.ut-terminal[data-licht] .ut-regel:hover{background:rgba(15,23,42,.04)}
+.ut-terminal-balk{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px 10px;background:var(--ut-term-laag);border-bottom:1px solid var(--ut-term-lijn)}
+.admin-uitrol .ut-terminal-thema{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:3px 9px;border-radius:8px;border:1px solid var(--ut-term-knop-lijn);background:transparent;color:var(--ut-term-knop-tekst);font-size:.75rem;cursor:pointer}
+.admin-uitrol .ut-terminal-thema:hover{background:var(--ut-term-knop-hover)}
+.admin-uitrol .ut-terminal-thema svg{width:14px;height:14px}
+.ut-terminal-voortgang{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline;padding:6px 10px 7px;border-bottom:1px solid var(--ut-term-lijn);background:var(--ut-term-laag);font-size:.78rem;font-variant-numeric:tabular-nums}
+.ut-terminal-voortgang-balk{flex:0 0 100%;height:4px;border-radius:999px;background:var(--ut-term-knop-lijn);overflow:hidden}
+.ut-terminal-voortgang-balk i{display:block;height:100%;border-radius:inherit;background:var(--ut-accent);transition:width .6s ease}
+.ut-terminal-voortgang[data-klaar] .ut-terminal-voortgang-balk i{background:var(--ok-vlak,#15803d)}
+.ut-terminal-voortgang-nu b{font-size:.88rem;color:var(--ut-accent)}
+.ut-terminal-voortgang[data-klaar] .ut-terminal-voortgang-nu b{color:var(--ok)}
+.ut-terminal-voortgang em{font-style:normal;font-weight:600}
+.ut-terminal-voortgang small{color:var(--ut-term-faint)}
+.ut-terminal-voortgang-nu{flex:1 1 auto;min-width:0}
+.ut-terminal-voortgang-totaal{flex:0 1 auto;margin-left:auto;color:var(--ut-term-faint);text-align:right}
+@media (max-width:640px){.ut-terminal-voortgang-totaal{margin-left:0;text-align:left}}
 .ut-terminal-titel{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600}
 .ut-terminal-titel i{width:9px;height:9px;border-radius:50%;background:#64748b}
 .ut-terminal[data-live="true"] .ut-terminal-titel i{background:var(--ok-vlak);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:ut-puls 1.6s infinite}
-.ut-terminal-titel b{font-size:.7rem;padding:1px 7px;border-radius:999px;background:rgba(34,197,94,.2);color:var(--ok);text-transform:uppercase;letter-spacing:.04em}
+.ut-terminal-titel b{font-size:.7rem;padding:1px 7px;border-radius:999px;background:var(--ok-vlak,#15803d);color:var(--text-on-vlak,#fff);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
 @keyframes ut-puls{70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 @media (prefers-reduced-motion:reduce){.ut-terminal[data-live="true"] .ut-terminal-titel i{animation:none}}
 .ut-terminal-knoppen{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.ut-terminal-schakel{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;color:var(--faint)}
-.admin-uitrol .ut-terminal-knoppen button{min-height:30px;padding:3px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--line);font-size:.78rem}
-.admin-uitrol .ut-terminal-knoppen button:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.ut-terminal-schakel{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;color:var(--ut-term-faint)}
+.admin-uitrol .ut-terminal-knoppen button{min-height:30px;padding:3px 9px;border-radius:8px;border:1px solid var(--ut-term-knop-lijn);background:transparent;color:var(--ut-term-knop-tekst);font-size:.78rem}
+.admin-uitrol .ut-terminal-knoppen button:hover:not(:disabled){background:var(--ut-term-knop-hover)}
 .ut-terminal-bak{max-height:340px;overflow:auto;padding:8px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;line-height:1.5}
 .ut-terminal-bak:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .ut-regel{display:grid;grid-template-columns:5ch 8ch minmax(0,1fr);gap:8px;padding:0 10px}
-.ut-regel:hover{background:rgba(255,255,255,.04)}
-.ut-regel-nr{color:var(--muted);text-align:right;user-select:none}
-.ut-regel-tijd{color:var(--muted);user-select:none}
+.ut-regel:hover{background:var(--ut-term-laag)}
+.ut-regel-nr{color:var(--ut-term-muted);text-align:right;user-select:none}
+.ut-regel-tijd{color:var(--ut-term-muted);user-select:none}
 .ut-regel-tekst{white-space:pre-wrap;overflow-wrap:anywhere}
 .ut-regel[data-niveau="ok"] .ut-regel-tekst{color:var(--ok)}
 .ut-regel[data-niveau="warn"] .ut-regel-tekst{color:var(--warn)}
 .ut-regel[data-niveau="error"] .ut-regel-tekst{color:var(--fout);font-weight:600}
-.ut-cursor .ut-regel-tekst{animation:ut-knip 1s steps(2) infinite;color:var(--faint)}
+.ut-cursor .ut-regel-tekst{animation:ut-knip 1s steps(2) infinite;color:var(--ut-term-faint)}
 @keyframes ut-knip{50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ut-cursor .ut-regel-tekst{animation:none}}
-.ut-terminal-leeg{padding:14px 12px;color:var(--faint);font-family:inherit}
-.admin-uitrol .ut-terminal-meer{display:block;width:calc(100% - 20px);margin:0 10px 6px;padding:5px;border:1px dashed rgba(255,255,255,.25);border-radius:8px;background:transparent;color:var(--info);font-size:.78rem;cursor:pointer}
+.ut-terminal-leeg{padding:14px 12px;color:var(--ut-term-faint);font-family:inherit}
+.admin-uitrol .ut-terminal-meer{display:block;width:calc(100% - 20px);margin:0 10px 6px;padding:5px;border:1px dashed var(--ut-term-knop-lijn);border-radius:8px;background:transparent;color:var(--info);font-size:.78rem;cursor:pointer}
 @media (max-width:520px){.ut-regel{grid-template-columns:4ch minmax(0,1fr)}.ut-regel-tijd{display:none}.ut-terminal-schakel{display:none}}
 
 /* geschiedenis: filters + tabel */
@@ -227,8 +249,8 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-lijst>li[data-status="ingetrokken"],.ut-lijst>li[data-status="verlopen"]{opacity:.6}
 .ut-lijst-klein small{display:block;color:var(--ut-muted)}
 .ut-recent>li{padding:0}
-.admin-uitrol .ut-recent button{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%;text-align:left;padding:9px 12px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;border-radius:10px}
-.ut-recent button:hover{background:var(--ut-bg)}
+.admin-uitrol .ut-recent>li>button{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%;text-align:left;padding:9px 12px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;border-radius:10px}
+.ut-recent>li>button:hover{background:var(--ut-bg)}
 .ut-recent small{flex-basis:100%;color:var(--ut-muted);overflow-wrap:anywhere}
 .ut-recent span{color:var(--ut-muted);font-size:.82rem;min-width:0;flex:1 1 200px}
 .ut-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -422,12 +444,12 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-terminal{display:flex;flex-direction:column;min-width:0;transition:border-color .2s}
 .ut-terminal-bak{font-family:ui-monospace,"Cascadia Code","JetBrains Mono",SFMono-Regular,Menlo,Consolas,"Noto Sans Mono","DejaVu Sans Mono",monospace,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji";flex:1 1 auto;min-height:0}
 .ut-terminal-tel{font-size:.7rem;opacity:.75;font-variant-numeric:tabular-nums}
-.ut-terminal-venster{display:inline-flex;gap:2px;align-items:center;margin-left:4px;padding-left:6px;border-left:1px solid rgba(255,255,255,.14)}
-.admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon{display:grid;place-items:center;width:30px;min-width:30px;padding:0;color:var(--line)}
+.ut-terminal-venster{display:inline-flex;gap:2px;align-items:center;margin-left:4px;padding-left:6px;border-left:1px solid var(--ut-term-knop-lijn)}
+.admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon{display:grid;place-items:center;width:30px;min-width:30px;padding:0;color:var(--ut-term-knop-tekst)}
 .admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon svg{width:15px;height:15px}
-.admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon[aria-pressed="true"]{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35)}
-.ut-terminal-greep{display:grid;place-items:center;height:14px;cursor:ns-resize;touch-action:none;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.08);user-select:none}
-.ut-terminal-greep i{display:block;width:44px;height:4px;border-radius:999px;background:rgba(255,255,255,.3)}
+.admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon[aria-pressed="true"]{background:var(--ut-term-knop-aan);border-color:var(--ut-term-knop-lijn)}
+.ut-terminal-greep{display:grid;place-items:center;height:14px;cursor:ns-resize;touch-action:none;background:var(--ut-term-laag);border-top:1px solid var(--ut-term-lijn);user-select:none}
+.ut-terminal-greep i{display:block;width:44px;height:4px;border-radius:999px;background:var(--ut-term-knop-lijn)}
 .ut-terminal-greep:hover i,.ut-terminal-greep:focus-visible i{background:var(--info)}
 .ut-terminal-greep:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .ut-terminal[data-ingeklapt] .ut-terminal-balk{border-bottom:0}
@@ -476,3 +498,10 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
   .admin-uitrol .ut-terminal-knoppen .ut-terminal-icoon{width:36px;min-width:36px;min-height:36px}
   .ut-terminal-greep{height:18px}
 }
+/* UITROL-002: afgebroken pogingen in «Останні розгортання» (naast de runs) · обриви в «Останні розгортання» */
+.ut-recent>li[data-ut-recent-poging],.ut-recent>li:has(>.ut-recent-acties){display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ut-recent>li[data-ut-recent-poging]>button,.ut-recent>li:has(>.ut-recent-acties)>button{flex:1 1 240px}
+.ut-recent>li[data-ut-recent-poging] small{display:inline-flex;align-items:center;gap:4px;color:var(--ut-muted)}
+.ut-recent>li[data-ut-recent-poging] small svg{width:13px;height:13px;color:var(--ut-warn)}
+.ut-recent-acties{display:flex;gap:6px;padding:0 10px 0 0;flex-wrap:wrap}
+@media (max-width:520px){.ut-recent-acties{padding:0 10px 8px}}

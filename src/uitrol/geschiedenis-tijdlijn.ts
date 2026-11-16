@@ -67,17 +67,19 @@ export function bouwTijdlijn(i: TijdlijnInvoer): TijdlijnItem[] {
   const uit: TijdlijnItem[] = [];
   const binnen = (tijd: string) => { const t = ms(tijd); if (!i.venster) return true; if (i.venster.van !== undefined && t < i.venster.van) return false; if (i.venster.tot !== undefined && t > i.venster.tot) return false; return true; };
   const opnieuw = (staat: TijdlijnStaat, tijd: string, versie: string, hervat = false) => ({ ...opnieuwMogelijk({ staat, tijd, versie }, i.runs, i.actieveVersie), hervat });
+  // UITROL-002: ligt het archief van het voorstel nog op de server (pakketAanwezig), dan is «opnieuw» een hervatting zonder upload.
+  const archiefAanwezig = (voorstelId: string) => !!voorstelId && i.voorstellen.some((v) => v.id === voorstelId && v.pakketAanwezig === true);
   for (const r of i.runs) {
     if (!binnen(r.gestart)) continue;
     const staat = runStaat(r);
-    uit.push({ id: `run:${r.id}`, soort: 'run', staat, tijd: r.gestart, versie: r.versie || r.release || '', code: r.code, uk: r.uk, nl: r.nl, methode: r.methode, wie: r.wie || r.voorbereider || '', run: r, opnieuw: opnieuw(staat, r.gestart, r.versie || '') });
+    uit.push({ id: `run:${r.id}`, soort: 'run', staat, tijd: r.gestart, versie: r.versie || r.release || '', code: r.code, uk: r.uk, nl: r.nl, methode: r.methode, wie: r.wie || r.voorbereider || '', run: r, opnieuw: opnieuw(staat, r.gestart, r.versie || '', archiefAanwezig(r.voorstelId)) });
   }
   const metPoging = new Set<string>();
   for (const p of i.pogingen) {
     if (!binnen(p.tijd)) continue;
     metPoging.add(p.voorstelId);
     uit.push({ id: `poging:${p.id}`, soort: 'poging', staat: 'afgebroken', tijd: p.tijd, versie: p.versie, code: p.code, uk: '', nl: '', methode: p.gemeldDoor, wie: p.voorbereider, poging: p,
-      opnieuw: opnieuw('afgebroken', p.tijd, p.versie, pogingActie(p) === 'hervatten') });
+      opnieuw: opnieuw('afgebroken', p.tijd, p.versie, pogingActie(p) === 'hervatten' || archiefAanwezig(p.voorstelId)) });
   }
   for (const v of i.voorstellen) {
     const staat = VOORSTEL_EIND[v.status];
@@ -85,7 +87,7 @@ export function bouwTijdlijn(i: TijdlijnInvoer): TijdlijnItem[] {
     const tijd = v.beslistOp || v.bijgewerktOp || v.aangemaaktOp;
     if (!binnen(tijd)) continue;
     uit.push({ id: `voorstel:${v.id}`, soort: 'voorstel', staat, tijd, versie: v.versie, code: v.uitkomstCode || '', uk: v.uitkomst?.uk || v.uitkomst?.reden || '', nl: v.uitkomst?.nl || v.uitkomst?.reden || '', methode: 'passkey', wie: v.voorbereider, voorstel: v,
-      opnieuw: opnieuw(staat, tijd, v.versie, v.status === 'uploaden' && v.ontvangen > 0) });
+      opnieuw: opnieuw(staat, tijd, v.versie, (v.status === 'uploaden' && v.ontvangen > 0) || v.pakketAanwezig === true) });
   }
   return uit.sort((a, b) => ms(b.tijd) - ms(a.tijd) || a.id.localeCompare(b.id));
 }
