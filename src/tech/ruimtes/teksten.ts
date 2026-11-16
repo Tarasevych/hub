@@ -25,8 +25,8 @@ export function termijnUitleg(modus: TermijnModus, taal: Taal, eindTijd?: number
     ? 'Діє, доки ви не натиснете «Завершити технічний сеанс». Вихід з акаунта на сайті теж його завершує.'
     : 'Geldt tot u op «Technische sessie beëindigen» klikt. Afmelden op de site beëindigt hem ook.';
   return taal === 'uk'
-    ? 'Перехід у звичайний простір лише ставить його на паузу. Завершується, коли ви вийдете з акаунта на сайті.'
-    : 'Overschakelen naar de gewone ruimte pauzeert hem alleen. Hij stopt wanneer u zich afmeldt op de site.';
+    ? 'Перемикання у звичайний простір його не зупиняє, а «Пауза» лише ставить на паузу. Завершується, коли ви вийдете з акаунта на сайті або натиснете «Завершити».'
+    : 'Overschakelen naar de gewone ruimte stopt hem niet, «Pauze» pauzeert hem alleen. Hij stopt wanneer u zich afmeldt op de site of op «Beëindigen» klikt.';
 }
 export const duurKort = (min: number, taal: Taal) => (min >= 60 ? `${+(min / 60).toFixed(1)} ${taal === 'uk' ? 'год' : 'u'}` : `${min} ${taal === 'uk' ? 'хв' : 'min'}`);
 /** Resterende tijd «ще 1 год 5 хв» / «nog 1 u 5 min»; null als er geen eindtijd is. */
@@ -42,7 +42,9 @@ export function standTekst(s: Pick<RuimtesStatus, 'actief' | 'pauze' | 'sessie' 
   if (!s.technischToegestaan) return taal === 'uk' ? 'немає доступу' : 'geen toegang';
   if (!s.sessie) return taal === 'uk' ? 'не розпочато' : 'niet gestart';
   const termijn = s.sessie.modus === 'tijd' ? restTekst(s.sessie.eindTijd, nu, taal) ?? '' : s.sessie.modus === 'tot-technisch-einde' ? (taal === 'uk' ? 'до завершення сеансу' : 'tot einde sessie') : (taal === 'uk' ? 'до виходу з сайту' : 'tot afmelden');
-  return s.pauze || s.actief === 'prive' ? `${taal === 'uk' ? 'пауза' : 'pauze'} · ${termijn}` : termijn;
+  // RUIMTE-WEERGAVE-001: «пауза» alleen bij een bewuste pauze; gewone weergave in dit tabblad = sessie loopt door.
+  if (s.pauze) return `${taal === 'uk' ? 'пауза' : 'pauze'} · ${termijn}`;
+  return s.actief === 'prive' ? `${taal === 'uk' ? 'сеанс відкритий' : 'sessie loopt'} · ${termijn}` : termijn;
 }
 /** Lijst voor de startdialoog: de server levert ze; ontbreekt er een, dan toch tonen (uitgegrijsd) — nooit verbergen. */
 export function termijnenVolledig(lijst: Termijn[], taal: Taal): Termijn[] {

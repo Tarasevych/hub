@@ -20,24 +20,25 @@ type Page = import('playwright-core').Page;
 
 /** Nepserver: één toestand per browsercontext. */
 function nep(opties: { vlag: boolean; openMag: boolean; recht: boolean }) {
-  const s = { vlag: opties.vlag, actief: 'prive' as 'prive' | 'technisch', sessie: null as null | { id: string; modus: string; eindTijd: number | null; gestartOp: number }, aanroepen: [] as string[], aiLaatst: null as any };
+  const s = { vlag: opties.vlag, actief: 'prive' as 'prive' | 'technisch', pauze: false, sessie: null as null | { id: string; modus: string; eindTijd: number | null; gestartOp: number }, aanroepen: [] as string[], aiLaatst: null as any };
   const termijnen = () => [
     ...[15, 30, 60, 120, 240, 480].map((m) => ({ modus: 'tijd', minuten: m, label: { uk: '', nl: '' }, beschikbaar: m <= 60 || opties.openMag, ...(m > 60 && !opties.openMag ? { reden: { uk: 'роль «Адміністратор» дозволяє не більше 1 год.', nl: 'de rol «Beheerder» staat hoogstens 1 u toe.' } } : {}) })),
     { modus: 'tot-technisch-einde', label: { uk: '', nl: '' }, beschikbaar: opties.openMag, ...(opties.openMag ? {} : { reden: { uk: 'роль «Адміністратор» дозволяє не більше 1 год.', nl: 'de rol «Beheerder» staat hoogstens 1 u toe.' } }) },
     { modus: 'tot-site-uitloggen', label: { uk: '', nl: '' }, beschikbaar: opties.openMag, ...(opties.openMag ? {} : { reden: { uk: 'роль «Адміністратор» дозволяє не більше 1 год.', nl: 'de rol «Beheerder» staat hoogstens 1 u toe.' } }) },
   ];
   const iso = (x: number | null) => (x === null ? null : new Date(x).toISOString());
-  const status = () => ({ aan: s.vlag, actief: s.actief, technischToegestaan: opties.recht, pauze: s.actief === 'prive' && !!s.sessie, sessie: s.sessie ? { ...s.sessie, eindTijd: iso(s.sessie.eindTijd), gestartOp: iso(s.sessie.gestartOp), grensTijd: iso(Date.now() + 864e5), rollen: ['eigenaar'], mogelijkheden: [], reden: 'stand' } : null, eigenaar: true, schaduw: false, nu: new Date().toISOString(), termijnen: termijnen(), maxMinuten: opties.openMag ? 480 : 60, rollen: [{ naam: 'Власник', maxMinuten: 480 }, ...(opties.openMag ? [] : [{ naam: 'Адміністратор', maxMinuten: 60 }])] });
+  const tech = () => !!s.sessie && s.actief === 'technisch' && !s.pauze;
+  const status = () => ({ aan: s.vlag, actief: tech() ? 'technisch' : 'prive', technischToegestaan: opties.recht, pauze: s.pauze && !!s.sessie, sessie: s.sessie ? { ...s.sessie, eindTijd: iso(s.sessie.eindTijd), gestartOp: iso(s.sessie.gestartOp), grensTijd: iso(Date.now() + 864e5), rollen: ['eigenaar'], mogelijkheden: [], reden: 'stand' } : null, eigenaar: true, schaduw: false, nu: new Date().toISOString(), termijnen: termijnen(), maxMinuten: opties.openMag ? 480 : 60, rollen: [{ naam: 'Власник', maxMinuten: 480 }, ...(opties.openMag ? [] : [{ naam: 'Адміністратор', maxMinuten: 60 }])] });
   const techStatus = () => ({
     nu: Date.now(),
     profiel: opties.recht ? { userId: 'u1', profielId: 'tp-1', rollen: ['eigenaar'], maxMinuten: 480, maxNu: 480, band: { kleur: 'amber', patroon: 'strepen' }, laatstActief: null, ervenNieuweTabbladen: false } : null,
-    activatie: s.sessie && s.actief === 'technisch' ? { id: s.sessie.id, profielId: 'tp-1', rollen: ['eigenaar'], mogelijkheden: [], reden: 'stand', begin: s.sessie.gestartOp, eind: s.sessie.eindTijd ?? Date.now() + 366 * 864e5, modus: s.sessie.modus === 'tijd' ? 'tijd' : s.sessie.modus === 'tot-site-uitloggen' ? 'tot-uitloggen' : 'tot-verlaten' } : null,
+    activatie: s.sessie && tech() ? { id: s.sessie.id, profielId: 'tp-1', rollen: ['eigenaar'], mogelijkheden: [], reden: 'stand', begin: s.sessie.gestartOp, eind: s.sessie.eindTijd ?? Date.now() + 366 * 864e5, modus: s.sessie.modus === 'tijd' ? 'tijd' : s.sessie.modus === 'tot-site-uitloggen' ? 'tot-uitloggen' : 'tot-verlaten' } : null,
     catalogus: { rollen: [], kleuren: { amber: { bg: '#f5b400', fg: '#1a1200', naam: ['Бурштин', 'Amber'] } }, patronen: { strepen: ['Смуги', 'Strepen'] }, duren: [15, 30, 60] },
   });
   // Vorm exact zoals docs/ontwerp/TECH-RUIMTES-API.md (ISO-tijden, aparte lijsten).
-  const toegang = () => ({ magBeheren: s.actief === 'technisch',
-    mensen: s.actief === 'technisch' ? [{ userId: 'u2', email: 'helper@example.org', naam: 'Helper', rollen: ['ondersteuning'], maxMinuten: 60, eigenaar: false, actiefTot: iso(Date.now() + 3600e3), ingetrokken: false }] : [],
-    sessies: s.sessie ? [{ id: s.sessie.id, modus: s.sessie.modus, eindTijd: iso(s.sessie.eindTijd), grensTijd: iso(Date.now() + 864e5), gestartOp: iso(s.sessie.gestartOp), actief: s.actief === 'technisch', dezeSessie: true }] : [],
+  const toegang = () => ({ magBeheren: tech(),
+    mensen: tech() ? [{ userId: 'u2', email: 'helper@example.org', naam: 'Helper', rollen: ['ondersteuning'], maxMinuten: 60, eigenaar: false, actiefTot: iso(Date.now() + 3600e3), ingetrokken: false }] : [],
+    sessies: s.sessie ? [{ id: s.sessie.id, modus: s.sessie.modus, eindTijd: iso(s.sessie.eindTijd), grensTijd: iso(Date.now() + 864e5), gestartOp: iso(s.sessie.gestartOp), actief: !s.pauze, dezeSessie: true }] : [],
     ai: [{ verbindingId: 'ai-1', naam: 'Claude (MCP)', agent: 'claude', ruimtes: ['prive'], termijn: null, eindTijd: null, tokenTot: null, bron: 'mcp-oauth' }],
     extensie: [{ id: 'e1', agentId: 'Chrome · цей ПК', ruimte: 'prive', eindeSoort: 'tot-site-uitloggen', eindTijd: null, overleeftTabUitloggen: true }],
     codes: [{ id: 'c1', naam: 'Код для гостя', scopes: ['mail.lezen'], verlooptOp: iso(Date.now() + 7200e3) }],
@@ -53,11 +54,12 @@ function nep(opties: { vlag: boolean; openMag: boolean; recht: boolean }) {
       const op = pad.slice(R.length);
       if (op === 'status') return status();
       if (op === 'starten') { if (!body.reden || String(body.reden).trim().length < 3) throw new Error('REDEN_ONGELDIG'); s.sessie = { id: 'ts-1', modus: body.modus, eindTijd: body.modus === 'tijd' ? Date.now() + body.minuten * 60000 : null, gestartOp: Date.now() }; s.actief = 'technisch'; return status(); }
-      if (op === 'wisselen') { if (body.naar === 'technisch' && !s.sessie) throw new Error('GEEN_TECH_SESSIE'); s.actief = body.naar; return status(); }
+      if (op === 'wisselen') { if (body.naar === 'technisch' && !s.sessie) throw new Error('GEEN_TECH_SESSIE'); s.actief = body.naar; if (body.naar === 'technisch') s.pauze = false; return status(); }
+      if (op === 'pauzeren') { if (!s.sessie) throw new Error('GEEN_TECH_SESSIE'); s.pauze = body.aan === true; return status(); }
       if (op === 'verlengen') { if (s.sessie) s.sessie.eindTijd = body.soort === 'bijtellen' ? (s.sessie.eindTijd ?? Date.now()) + body.minuten * 60000 : Date.now() + body.minuten * 60000; return status(); }
-      if (op === 'beeindigen') { s.sessie = null; s.actief = 'prive'; return status(); }
+      if (op === 'beeindigen') { s.sessie = null; s.actief = 'prive'; s.pauze = false; return status(); }
       if (op === 'toegang') return toegang();
-      if (op === 'ai-zetten') { if (s.actief !== 'technisch') throw new Error('TECH_RUIMTE_VEREIST'); s.aiLaatst = body; return toegang(); }
+      if (op === 'ai-zetten') { if (!tech()) throw new Error('TECH_RUIMTE_VEREIST'); s.aiLaatst = body; return toegang(); }
     }
     return {};
   };
@@ -83,10 +85,12 @@ export async function main(): Promise<number> {
   const { chromium } = createRequire(import.meta.url)(PW) as typeof import('playwright-core');
   const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: chromeArgs(1) });
   const geweigerd: string[] = [], fouten: string[] = [];
-  const open = async (o: { vlag: boolean; openMag?: boolean; recht?: boolean; breedte?: number; donker?: boolean; nl?: boolean }) => {
+  const open = async (o: { vlag: boolean; openMag?: boolean; recht?: boolean; breedte?: number; donker?: boolean; nl?: boolean; strook?: Record<string, unknown> }) => {
     const n = nep({ vlag: o.vlag, openMag: o.openMag ?? false, recht: o.recht ?? true });
     const breedte = o.breedte ?? 1280;
     const c = await browser.newContext({ viewport: { width: breedte, height: breedte < 500 ? 844 : 900 }, colorScheme: o.donker ? 'dark' : 'light', hasTouch: breedte < 500, locale: o.nl ? 'nl-BE' : 'uk-UA', timezoneId: 'Europe/Brussels' });
+    // Strookvoorkeur vooraf (standaard is nu «auto»: de band klapt zelf in); scenario 6 test het handmatig in- en uitklappen.
+    if (o.strook) await c.addInitScript((v) => { try { localStorage.setItem('mr-tech-strook', v); } catch { /* geen opslag */ } }, JSON.stringify(o.strook));
     const page = await c.newPage();
     await page.route('**/*', async (r) => {
       const u = new URL(r.request().url());
@@ -158,15 +162,33 @@ export async function main(): Promise<number> {
       check('kop: tumbler aan', await page.locator('.stand-kop [role="switch"][aria-checked="true"]').count() === 1);
       await page.waitForTimeout(800);
       await shot(page, 'technisch-licht-1280');
-      // pauze via klik
+      // RUIMTE-WEERGAVE-001: wisselen naar de gewone ruimte = alleen de weergave van dit tabblad; GEEN pauze.
+      check('knoppen «Пауза» en «Завершити» onder de tumbler', await page.locator('.stand-kop [data-ruimte-pauze-knop="aan"]').count() === 1 && await page.locator('.stand-kop [data-ruimte-einde-knop]').count() === 1);
       await page.click('.stand-kop [data-naar="prive"]');
       await page.waitForSelector('.stand-kop [data-ruimte-uitkomst]');
-      check('uitkomst wissel «…технічний сеанс на паузі.»', ((await page.textContent('.stand-kop [data-ruimte-uitkomst]')) || '').includes('на паузі'));
+      check('uitkomst wissel «…Технічний сеанс і ШІ працюють далі.»', ((await page.textContent('.stand-kop [data-ruimte-uitkomst]')) || '').includes('працюють далі'), (await page.textContent('.stand-kop [data-ruimte-uitkomst]')) || '');
       await page.waitForFunction(() => !document.querySelector('.tech-band'), undefined, { timeout: 5000 }).catch(() => undefined);
-      check('pauze: band weg, geen herladen', await page.locator('.tech-band').count() === 0 && await standId(page) === id0);
-      check('pauze zichtbaar in stand', /^пауза · ще (1 год|60 хв|59 хв)/.test((await page.textContent('.stand-kop .rw-stand')) || ''), (await page.textContent('.stand-kop .rw-stand')) || '');
-      check('wisselen zonder nieuw startvenster/step-up', n.s.aanroepen.filter((x) => x.endsWith('/starten')).length === 1 && n.s.aanroepen.some((x) => x.endsWith('/wisselen')));
+      check('gewone weergave: band weg, geen herladen', await page.locator('.tech-band').count() === 0 && await standId(page) === id0);
+      check('gewone weergave: stand «сеанс відкритий · ще …», niet «пауза»', /^сеанс відкритий · ще (1 год|60 хв|59 хв)/.test((await page.textContent('.stand-kop .rw-stand')) || ''), (await page.textContent('.stand-kop .rw-stand')) || '');
+      check('wisselen: geen pauzeren-aanroep, geen nieuw startvenster/step-up', !n.s.aanroepen.some((x) => x.endsWith('/pauzeren')) && n.s.pauze === false && n.s.aanroepen.filter((x) => x.endsWith('/starten')).length === 1 && n.s.aanroepen.some((x) => x.endsWith('/wisselen')));
+      await shot(page, 'weergave-prive-licht-1280');
+      // Bewuste pauze met de eigen knop
+      await page.click('.stand-kop [data-ruimte-pauze-knop="aan"]');
+      await page.waitForSelector('.stand-kop [data-ruimte-pauze-knop="uit"]');
+      check('«Пауза»: server krijgt pauzeren {aan:true}, stand «пауза · ще …», knop wordt «Продовжити»', n.s.pauze === true && /^пауза · ще (1 год|60 хв|59 хв)/.test((await page.textContent('.stand-kop .rw-stand')) || '') && ((await page.textContent('.stand-kop [data-ruimte-pauze-knop="uit"]')) || '').includes('Продовжити'), (await page.textContent('.stand-kop .rw-stand')) || '');
+      check('«Пауза»: uitkomst noemt «усіх вкладках»', ((await page.textContent('.stand-kop [data-ruimte-uitkomst]')) || '').includes('усіх вкладках'));
       await shot(page, 'pauze-licht-1280');
+      await page.click('.stand-kop [data-ruimte-pauze-knop="uit"]');
+      await page.waitForSelector('.stand-kop [data-ruimte-pauze-knop="aan"]');
+      check('«Продовжити»: pauze weg, tabblad blijft in de gewone weergave', n.s.pauze === false && await page.locator('.stand-kop [role="switch"][aria-checked="false"]').count() === 1);
+      // «Завершити» vraagt eerst bevestiging
+      await page.click('.stand-kop [data-ruimte-einde-knop]');
+      check('«Завершити»: eerste klik = bevestiging, nog niets beëindigd', ((await page.textContent('.stand-kop [data-ruimte-einde-knop]')) || '').includes('Так, завершити') && !!n.s.sessie);
+      await page.click('.stand-kop [data-naar="technisch"]');
+      await page.waitForSelector('.stand-kop [role="switch"][aria-checked="true"]');
+      check('wisselen trekt de bevestiging in (geen per-ongeluk beëindigen)', ((await page.textContent('.stand-kop [data-ruimte-einde-knop]')) || '') === 'Завершити');
+      await page.click('.stand-kop [data-naar="prive"]');
+      await page.waitForSelector('.stand-kop [role="switch"][aria-checked="false"]');
       // toetsenbord
       await page.focus('.stand-kop [role="switch"]');
       await page.keyboard.press('ArrowRight');
@@ -182,7 +204,8 @@ export async function main(): Promise<number> {
       await page.waitForSelector('[data-tech-venster="toegang"]');
       const tabs = await page.locator('.rt-tabs [role=tab]').allTextContents();
       check('zes tabbladen exact', tabs.join('|') === 'Мій технічний доступ|Вхід і підтвердження|Доступ ШІ|Люди з технічним доступом|Коди доступу і гості|Перемикачі функцій', tabs.join('|'));
-      check('«Мій технічний доступ»: deze browser uit sessies[]', ((await page.textContent('[data-rt-paneel="eigen"]')) || '').includes('Цей браузер'));
+      // AI-TERMIJN-001 (#129) toont de aanmelding als «Вхід на сайт · ця вкладка» (was «Цей браузер»); de test liep daar sindsdien op vast.
+      check('«Мій технічний доступ»: deze aanmelding uit sessies[] («ця вкладка», sessie werkt)', /ця вкладка/.test((await page.textContent('[data-rt-paneel="eigen"]')) || '') && ((await page.textContent('[data-rt-regel="sessie"] .rt-sessie-stand')) || '') === 'працює');
       check('«Мій технічний доступ»: termijn exact', /^На час \(до \d\d:\d\d\)$/.test((await page.textContent('[data-rt-termijn]')) || ''));
       await shot(page, 'toegang-eigen-licht-1280');
       await page.focus('.rt-tabs [aria-selected=true]');
@@ -190,10 +213,10 @@ export async function main(): Promise<number> {
       check('tabs: → naar «Вхід і підтвердження»', await page.locator('.rt-tabs [aria-selected=true]').textContent() === 'Вхід і підтвердження');
       check('extensie-ontgrendeling in «Вхід і підтвердження» met «До виходу з акаунта на сайті»', ((await page.textContent('[data-rt-regel="extensie"]')) || '').includes('До виходу з акаунта на сайті'));
       await page.keyboard.press('ArrowRight');
-      await page.waitForSelector('[data-rt-regel="ai"]');
-      const ai = await page.locator('[data-rt-ai-termijn] option').allTextContents();
-      check('AI: één termijnenset = de drie termijnen', ai.join('|') === 'Змінити доступ…|Лише звичайний простір|+ технічний: на 1 год|+ технічний: на 4 год|+ технічний: до завершення технічного сеансу|+ технічний: до виходу з акаунта на сайті', ai.join('|'));
-      check('AI op pauze: keuze uit + reden', await page.locator('[data-rt-ai-termijn]').isDisabled() && ((await page.textContent('[data-rt-ai-reden]')) || '').startsWith('Змінювати доступ ШІ можна лише в технічному просторі'));
+      // AI-TERMIJN-001: kaart per AI (geen <select> meer). Buiten de technische weergave: knop uit + reden.
+      await page.waitForSelector('[data-ait-kaart]');
+      check('AI: kaart voor Claude (MCP)', ((await page.textContent('[data-ait-kaart]')) || '').includes('Claude (MCP)'));
+      check('AI buiten technische weergave: knop uit + reden', await page.locator('[data-ait-wijzig]').first().isDisabled() && ((await page.textContent('[data-rt-ai-reden]')) || '').startsWith('Давати чи змінювати доступ ШІ можна лише в технічному просторі'), (await page.textContent('[data-rt-ai-reden]')) || '');
       await shot(page, 'toegang-ai-licht-1280');
       await page.keyboard.press('End');
       check('tabs: End → «Перемикачі функцій»', await page.locator('.rt-tabs [aria-selected=true]').textContent() === 'Перемикачі функцій');
@@ -215,6 +238,33 @@ export async function main(): Promise<number> {
       check('site afmelden na bevestiging → accountmenu-gebeurtenis', await page.evaluate(() => window.__uitgelogd) === 1);
       await c.close();
     }
+    // ── 2b. RUIMTE-WEERGAVE-001 (16.11.2026): «Пауза / Продовжити / Завершити» op telefoon en computer, licht en donker ──
+    for (const v of [{ breedte: 390, donker: false }, { breedte: 390, donker: true }, { breedte: 1280, donker: true }]) {
+      const naam = `${v.breedte}-${v.donker ? 'donker' : 'licht'}`;
+      const { c, page, n } = await open({ vlag: true, openMag: true, breedte: v.breedte, donker: v.donker });
+      n.s.sessie = { id: 'ts-rw', modus: 'tot-site-uitloggen', eindTijd: null, gestartOp: Date.now() - 600_000 };
+      n.s.actief = 'prive';
+      await page.reload();
+      await page.waitForSelector('.stand-kop [data-ruimte-pauze-knop="aan"]');
+      await page.waitForTimeout(400);
+      const binnen = await page.evaluate(() => [...document.querySelectorAll('.stand-kop [data-ruimte-acties] button')].every((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.right <= innerWidth; }));
+      check(`rw ${naam}: «Пауза» en «Завершити» zichtbaar en binnen het scherm`, binnen);
+      check(`rw ${naam}: stand «сеанс відкритий», band weg (gewone weergave)`, ((await page.textContent('.stand-kop .rw-stand')) || '').startsWith('сеанс відкритий') && await page.locator('.tech-band').count() === 0);
+      await shot(page, `rw-weergave-prive-${naam}`);
+      await page.click('.stand-kop [data-ruimte-pauze-knop="aan"]');
+      await page.waitForSelector('.stand-kop [data-ruimte-pauze-knop="uit"]');
+      await page.waitForTimeout(250);
+      await shot(page, `rw-pauze-${naam}`);
+      await page.click('.stand-kop [data-ruimte-pauze-knop="uit"]');
+      await page.click('.stand-kop [data-ruimte-einde-knop]');
+      await page.waitForTimeout(150);
+      check(`rw ${naam}: «Так, завершити» vraagt bevestiging`, ((await page.textContent('.stand-kop [data-ruimte-einde-knop]')) || '').includes('Так, завершити'));
+      await shot(page, `rw-einde-bevestig-${naam}`);
+      await page.click('.stand-kop [data-ruimte-einde-knop]');
+      await page.waitForFunction(() => !document.querySelector('.stand-kop [data-ruimte-acties]'), undefined, { timeout: 4000 }).catch(() => undefined);
+      check(`rw ${naam}: na «Так, завершити» geen sessie en geen knoppen meer`, n.s.sessie === null && await page.locator('.stand-kop [data-ruimte-acties]').count() === 0);
+      await c.close();
+    }
     // ── 3. Vlag AAN, open termijnen toegestaan, lopende sessie: «Змінити термін» ──
     {
       const { c, page, n } = await open({ vlag: true, openMag: true });
@@ -230,18 +280,22 @@ export async function main(): Promise<number> {
       await page.click('[data-stand="toegang"]');
       await page.waitForSelector('[data-tech-venster="toegang"]');
       await page.click('[data-rt-tab="ai"]');
-      await page.waitForSelector('[data-rt-regel="ai"]');
-      await page.selectOption('[data-rt-ai-termijn="ai-1"]', 'tot-technisch-einde');
-      await page.waitForFunction(() => /Збережено/.test(document.querySelector('[data-tech-venster="toegang"]')?.textContent || ''));
-      check('AI zetten (technisch actief): juiste body naar ai-zetten', JSON.stringify([n.s.aiLaatst?.verbindingId, n.s.aiLaatst?.ruimtes, n.s.aiLaatst?.termijn]) === JSON.stringify(['ai-1', ['prive', 'technisch'], 'tot-technisch-einde']), JSON.stringify(n.s.aiLaatst));
+      await page.waitForSelector('[data-ait-kaart]');
+      await page.click('[data-ait-wijzig]');
+      await page.click('[data-ait-termijn="tot-technisch-einde"]');
+      await page.click('[data-ait-opslaan]');
+      await page.waitForFunction(() => !!(window as any).__aiKlaar || /Збережено|Надано/.test(document.querySelector('[data-tech-venster="toegang"]')?.textContent || ''), undefined, { timeout: 5000 }).catch(() => undefined);
+      check('AI zetten (technisch actief): juiste body naar ai-zetten', ['ai-1', 'agent:claude'].includes(String(n.s.aiLaatst?.verbindingId)) && JSON.stringify([n.s.aiLaatst?.ruimtes, n.s.aiLaatst?.termijn]) === JSON.stringify([['prive', 'technisch'], 'tot-technisch-einde']), JSON.stringify(n.s.aiLaatst));
       await page.click('[data-rt-tab="mensen"]');
       check('mensen-tab (magBeheren) toont helper', ((await page.textContent('[data-rt-paneel="mensen"]')) || '').includes('helper@example.org'));
       await shot(page, 'toegang-mensen-licht-1280');
       await page.keyboard.press('Escape');
       await page.locator('#tech-ruimte-toegang').waitFor({ state: 'detached', timeout: 3000 }).catch(async () => { await page.click('[data-tech-venster="toegang"] > .tech-knoppen button'); });
+      // Smalle band (ingeklapt): eerst uitklappen, dan pas «Усі дії» — anders staat «Змінити термін» in een verborgen menu.
+      if (!(await page.locator('[data-tech-knop="meer"]').isVisible()) && await page.locator('[data-tech-knop="inklappen"][aria-expanded="false"]').isVisible()) { await page.click('[data-tech-knop="inklappen"]'); await page.waitForTimeout(400); }
       if (await page.locator('[data-tech-knop="meer"]').isVisible()) await page.click('[data-tech-knop="meer"]');
       check('band-menu: «Змінити термін» i.p.v. «Подовжити» + «Доступ і терміни»', await page.locator('[data-tech-knop="verlengen"]', { hasText: 'Змінити термін' }).count() === 1 && await page.locator('[data-tech-knop="toegang"]').count() === 1);
-      await page.click('[data-tech-knop="verlengen"]');
+      await page.locator('[data-tech-knop="verlengen"]:visible').first().click(); // band + menu kunnen beide de knop dragen: de zichtbare
       await page.waitForSelector('[data-rs-wijzig]');
       check('wijzigen: «Новий термін рахується від зараз.»', (await page.textContent('[data-rs-wijzig]')) === 'Новий термін рахується від зараз.');
       await c.close();
@@ -297,7 +351,7 @@ export async function main(): Promise<number> {
     // ── 6. Wissel 28.10: dok, sneltoets, inklappen, afbakening, geen lek van het leesvenster (390/768/1440, licht+donker) ──
     for (const breedte of [390, 768, 1440]) for (const donker of [false, true]) {
       const naam = `${breedte}-${donker ? 'donker' : 'licht'}`;
-      const { c, page, n } = await open({ vlag: true, openMag: true, breedte, donker });
+      const { c, page, n } = await open({ vlag: true, openMag: true, breedte, donker, strook: { modus: 'uitgeklapt', laatsteInklap: 'ingeklapt' } });
       await page.waitForSelector('[data-zijbalk-ruimtes="prive"]');
       check(`${naam}: ingeklapt menu — twee kleine ronde pictogrammen`, await page.evaluate(() => { const k = Array.from(document.querySelectorAll('.zr.is-smal .zr-knop')); return k.length === 2 && k.every((b) => { const r = b.getBoundingClientRect(); return Math.round(r.width) === 36 && getComputedStyle(b).borderRadius === '50%'; }); }));
       await page.click('[data-stand="menu-knop"]');
@@ -356,8 +410,9 @@ export async function main(): Promise<number> {
       await page.waitForSelector('.tech-band.is-ingeklapt');
       await page.waitForTimeout(300);
       const h = await page.evaluate(() => document.querySelector('.tech-band')!.getBoundingClientRect().height);
-      check(`${naam}: band ingeklapt (28 px), wissel blijft onderaan het zijmenu`, Math.round(h) === 28 && await page.locator('[data-zijbalk-ruimtes="technisch"]').count() === 1, String(h));
-      check(`${naam}: inklappen onthouden op dit apparaat`, await page.evaluate(() => localStorage.getItem('mr-tech-band-ingeklapt')) === '1');
+      // Strook-voorkeur (grootte «middel»): ingeklapt is nu 24 px (was 28).
+      check(`${naam}: band ingeklapt (24 px), wissel blijft onderaan het zijmenu`, Math.round(h) === 24 && await page.locator('[data-zijbalk-ruimtes="technisch"]').count() === 1, String(h));
+      check(`${naam}: inklappen onthouden op dit apparaat`, await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('mr-tech-strook') || '{}').modus; } catch { return ''; } }) === 'ingeklapt');
       await shot(page, `wissel-ingeklapt-${naam}`);
       if (mobiel) { await page.click('[data-tech-band] [data-tech-knop="meer"]'); await page.click('[data-tech-mobiel="inklappen"]'); } else await page.click('[data-tech-knop="inklappen"]');
       await page.waitForSelector('.tech-band:not(.is-ingeklapt)');

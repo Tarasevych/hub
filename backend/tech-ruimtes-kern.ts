@@ -174,7 +174,13 @@ export async function besluit(userId: string, h: Herkomst, ruimte: Ruimte = 'tec
       return naGeen(b0, rij);
     }
     if (streng && !h.sessieId) return metCode(ruimteToegang({ ...basis, sessie: null }, ruimte), null);
-    return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, gebonden, streng ? { verzoekSessie: h.sessieId ?? null, magBinden: true } : undefined) }, ruimte), rij);
+    const b = ruimteToegang({ ...basis, sessie: await feitVan(rij, gebonden, streng ? { verzoekSessie: h.sessieId ?? null, magBinden: true } : undefined) }, ruimte);
+    // RUIMTE-WEERGAVE-001 (0286): het tabblad toont de gewone ruimte → dit verzoek is privé, de sessie zelf loopt door (geen pauze).
+    // Alleen verkleinen: een tabblad kan zo nooit méér krijgen dan de sessie toelaat.
+    if (b.toegestaan && b.ruimte === 'technisch' && rij && h.tab && (await weergaveVan(String(rij.id), h.tab)) === 'prive') {
+      return metCode({ toegestaan: false, ruimte: 'prive', mogelijkheden: [], rollen: [], eind: null, code: 'WEERGAVE_PRIVE', sessieId: null }, rij);
+    }
+    return naGeen(b, rij);
   } catch (err) { console.error('[tech-ruimtes] besluit faalde, privé:', (err as Error).message); return leeg; }
 }
 
@@ -193,6 +199,18 @@ export async function registreerTab(userId: string, sessieId: string, tab: strin
   await sys().query(`INSERT INTO app.tech_ruimte_tabs (ruimte_sessie_id, user_id, tab_hash)
     SELECT r.id, r.user_id, $3 FROM app.tech_ruimte_sessies r WHERE r.user_id = $1 AND r.sessie_id = $2 AND r.beeindigd_op IS NULL
     ON CONFLICT (ruimte_sessie_id, tab_hash) DO UPDATE SET gezien_op = now()`, [userId, sessieId, sha(`tech-ruimte-tab:${tab}`)]);
+}
+
+/** RUIMTE-WEERGAVE-001: welke ruimte toont dit tabblad bij deze sessie? Onbekend tabblad = 'technisch' (de sessie beslist). */
+export async function weergaveVan(rijId: string, tab: string): Promise<Ruimte> {
+  if (!tp.TAB_RE.test(tab)) return 'technisch';
+  const r = (await sys().query('SELECT weergave FROM app.tech_ruimte_tabs WHERE ruimte_sessie_id = $1 AND tab_hash = $2', [rijId, sha(`tech-ruimte-tab:${tab}`)])).rows[0];
+  return r?.weergave === 'prive' ? 'prive' : 'technisch';
+}
+async function zetWeergave(userId: string, rijId: string, tab: string, weergave: Ruimte): Promise<void> {
+  if (!tp.TAB_RE.test(tab)) return;
+  await sys().query(`INSERT INTO app.tech_ruimte_tabs (ruimte_sessie_id, user_id, tab_hash, weergave) VALUES ($1, $2, $3, $4)
+    ON CONFLICT (ruimte_sessie_id, tab_hash) DO UPDATE SET weergave = EXCLUDED.weergave, gezien_op = now()`, [rijId, userId, sha(`tech-ruimte-tab:${tab}`), weergave]);
 }
 
 // ---------------------------------------------------------------- acties
@@ -240,12 +258,28 @@ export async function wisselen(u: tp.Gebruiker, s: SiteSessie, tab: string, naar
   if (naar !== 'prive' && naar !== 'technisch') fout('NAAR_ONGELDIG');
   const { rij } = await rijVoor(u.id, { bron: 'site', sessieId: sid });
   if (!rij) { if (naar === 'prive') return; fout('GEEN_TECH_SESSIE', 409); }
-  // Geen stap-op: de sessie is al met stap-op gestart en hangt aan DEZE aanmelding.
-  await sys().query(`UPDATE app.tech_ruimte_sessies SET actief = $2, pauze_op = CASE WHEN $2 = 'prive' THEN now() ELSE NULL END WHERE id = $1`, [rij!.id, naar]);
-  await registreerTab(u.id, sid, tab);
-  await audit(u.id, naar === 'prive' ? 'owner.tech.ruimte.pauze' : 'owner.tech.ruimte.hervat', { ruimteSessie: rij!.id, sessie: sid });
-  if (naar === 'prive') { tp.meldTechEindeExtern(u.id); await dk.veeg(u.id); } // regel «bij pauze: intrekken» meteen toepassen
+  // RUIMTE-WEERGAVE-001: wisselen verandert ALLEEN wat dit tabblad toont. De sessie, AI-verbindingen en andere tabbladen lopen door;
+  // pauzeren en beëindigen zijn eigen, bewuste acties (pauzeren/beeindigen). Geen stap-op: de sessie hangt al aan DEZE aanmelding.
+  await zetWeergave(u.id, String(rij!.id), tab, naar as Ruimte);
+  await audit(u.id, 'owner.tech.ruimte.weergave', { ruimteSessie: rij!.id, sessie: sid, weergave: naar });
+  // Terug naar technisch terwijl de sessie op pauze staat = de gebruiker wil verder werken: pauze opheffen.
+  if (naar === 'technisch' && rij!.actief === 'prive') await zetPauze(u, sid, rij!, false);
+}
+
+/** Pauze van de hele technische sessie van deze aanmelding (alle tabbladen; AI volgens «bij pauze»). Alleen via de knop «Пауза». */
+async function zetPauze(u: tp.Gebruiker, sid: string, rij: Rij, aan: boolean): Promise<void> {
+  await sys().query(`UPDATE app.tech_ruimte_sessies SET actief = $2, pauze_op = CASE WHEN $2 = 'prive' THEN now() ELSE NULL END WHERE id = $1`, [rij.id, aan ? 'prive' : 'technisch']);
+  await audit(u.id, aan ? 'owner.tech.ruimte.pauze' : 'owner.tech.ruimte.hervat', { ruimteSessie: rij.id, sessie: sid });
+  if (aan) { tp.meldTechEindeExtern(u.id); await dk.veeg(u.id); } // regel «bij pauze: intrekken» meteen toepassen
   meldMcpLijst(u.id);
+}
+export async function pauzeren(u: tp.Gebruiker, s: SiteSessie, aan: unknown) {
+  const sid = vereisSessie(s);
+  if (typeof aan !== 'boolean') fout('PAUZE_ONGELDIG');
+  const { rij } = await rijVoor(u.id, { bron: 'site', sessieId: sid });
+  if (!rij) fout('GEEN_TECH_SESSIE', 409);
+  if ((rij!.actief === 'prive') === aan) return; // al zo: niets te doen, geen dubbele journaalregel
+  await zetPauze(u, sid, rij!, aan as boolean);
 }
 
 export async function verlengen(u: tp.Gebruiker, s: SiteSessie, minutenIn: unknown, soort: unknown) {
@@ -300,7 +334,8 @@ export async function status(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   let sessie = null as null | Record<string, unknown>, actief: Ruimte = 'prive', pauze = false;
   if (aan && s?.id) {
     await registreerTab(u.id, String(s.id), tab);
-    const b = await besluit(u.id, { bron: 'site', sessieId: String(s.id) });
+    // Mét tabblad: «actief» = wat DIT tabblad toont (weergave), «pauze» = de bewuste pauze van de sessie.
+    const b = await besluit(u.id, { bron: 'site', sessieId: String(s.id), tab });
     const r = b.rij;
     if (r) {
       sessie = { id: String(r.id), modus: r.modus, eindTijd: iso(r.eind_op), gestartOp: iso(r.begin_op), grensTijd: iso(r.grens_op), rollen: b.toegestaan ? b.rollen : r.rollen, mogelijkheden: b.mogelijkheden, reden: r.reden };

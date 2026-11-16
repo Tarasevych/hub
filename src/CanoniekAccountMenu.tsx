@@ -1400,7 +1400,7 @@ export default function CanonicalAccountMenu({
           {am2 ? controlsV2 : controls}
           {am2 && displayUser && tech.profiel && v2 ? (
             <div className='am2-ruimte' data-ruimtes-menu='1' data-am2-blok='ruimte'>
-              <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact /></Suspense>
+              <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact acties /></Suspense>
             </div>
           ) : null}
           {footer}

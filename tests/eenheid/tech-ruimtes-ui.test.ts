@@ -13,7 +13,7 @@ export async function main(): Promise<number> {
   check('termijn tot-site-uitloggen UA exact', termijnNaam('tot-site-uitloggen', 'uk') === 'До виходу з акаунта на сайті');
   check('NL-namen aanwezig', termijnNaam('tot-technisch-einde', 'nl').startsWith('Tot het einde') && termijnNaam('tot-site-uitloggen', 'nl').includes('site'));
   check('uitleg tijd noemt eindtijd en «вхід на сайт лишається»', termijnUitleg('tijd', 'uk', eind).includes('18:40') && termijnUitleg('tijd', 'uk', eind).includes('вхід на сайт лишається'));
-  check('uitleg tot-site-uitloggen: pauze ≠ einde', termijnUitleg('tot-site-uitloggen', 'uk').includes('паузу'));
+  check('uitleg tot-site-uitloggen: pauze ≠ einde', termijnUitleg('tot-site-uitloggen', 'uk').includes('на паузу'));
   check('uurMinuut 24-uurs', uurMinuut(new Date(2026, 0, 1, 7, 5).getTime(), 'nl') === '07:05');
   const nu = eind - 65 * 60000;
   check('restTekst «ще 1 год 5 хв»', restTekst(eind, nu, 'uk') === 'ще 1 год 5 хв', String(restTekst(eind, nu, 'uk')));
@@ -22,6 +22,7 @@ export async function main(): Promise<number> {
   const sessie = { id: 's', modus: 'tijd' as const, eindTijd: eind, gestartOp: nu };
   check('standTekst pauze', standTekst({ actief: 'prive', pauze: true, sessie, technischToegestaan: true }, nu, 'uk') === 'пауза · ще 1 год 5 хв');
   check('standTekst actief', standTekst({ actief: 'technisch', pauze: false, sessie, technischToegestaan: true }, nu, 'uk') === 'ще 1 год 5 хв');
+  check('RUIMTE-WEERGAVE-001: standTekst privé-weergave zonder pauze = «сеанс відкритий»', standTekst({ actief: 'prive', pauze: false, sessie, technischToegestaan: true }, nu, 'uk') === 'сеанс відкритий · ще 1 год 5 хв');
   check('standTekst geen recht', standTekst({ actief: 'prive', pauze: false, sessie: null, technischToegestaan: false }, nu, 'uk') === 'немає доступу');
   check('standTekst niet gestart', standTekst({ actief: 'prive', pauze: false, sessie: null, technischToegestaan: true }, nu, 'nl') === 'niet gestart');
   const vol = termijnenVolledig([{ modus: 'tijd', minuten: 60, label: { uk: '', nl: '' }, beschikbaar: true }], 'uk');
