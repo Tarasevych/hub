@@ -87,6 +87,7 @@ import { diagnoseRoutes } from './diagnose';
 import { adminDiagnostiekRoutes } from './beheer-diagnostiek';
 import { beveiligingRoutes } from './beveiliging-schakelaars';
 import { merkEigenRoutes } from './merk-eigen'; // 21.10.2026: officiële logo's die de beheerder zelf neerlegt (shared/merk-eigen.ts)
+import { merkGebruikerRoutes } from './merk-gebruiker'; // REESTR-LOGO-001 (16.11.2026): eigen logo van de gebruiker bovenop het systeemlogo (0300)
 // 21.10.2026 (agent D): routes van PR/CI/beeld/schema/ontwerp/Stripe/eigen domein, en de twee bevestigingssoorten (registreren bij laden).
 import { devMgRoutes } from './dev-mg-routes';
 import './dev-mg-bevestiging';
@@ -800,6 +801,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // «Захист» (0066): auth-poort / OPA-afdwingen / RLS aan-uit door de eigenaar. Bewust NIET achter adminContext/afdwingAdmin: uitzetten moet altijd kunnen.
   ...beveiligingRoutes({ requireSession: ownerRequireSession as never }),
   ...merkEigenRoutes({ requireSession: ownerRequireSession as never }),
+  ...merkGebruikerRoutes({ requireSession: ownerRequireSession as never }),
   ...devMgRoutes({ requireSession: ownerRequireSession as never }),
   ...merkBronRoutes({ requireSession: ownerRequireSession as never }),
   ...adminIntegratieRoutes((ctx, capability) => adminContext(ctx.event, ctx.body, capability as AdminCapability) as never, ownerRequireSession as never),

@@ -35,3 +35,12 @@
   .la-blok>summary{min-height:var(--tik-hoogte,44px)}
   .la-keuzes button,.la-kleuren button{min-height:var(--tik-hoogte,44px)}
 }
+/* Павло (16.11): «Типові значення» — піктограма в заголовку «Живий фон», щоб було видно, до чого вона належить. */
+.la-kop{display:flex;align-items:center;gap:.6rem}
+.la-kop>h3{margin:0}
+.la-standaard{margin-left:auto;display:inline-grid;place-items:center;width:2.25rem;height:2.25rem;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--muted);cursor:pointer;flex:none}
+.la-standaard svg{width:1rem;height:1rem}
+.la-standaard:hover,.la-standaard:focus-visible{color:var(--text);border-color:var(--accent)}
+.la-standaard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (pointer: coarse){.la-standaard{width:var(--tik-hoogte,44px);height:var(--tik-hoogte,44px)}}
+.la-kop>.wenk{margin-left:auto}

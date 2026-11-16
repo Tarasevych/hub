@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { ACHTERGROND_GRENZEN, achtergrondVolledig, normaliseerAchtergrond, type AchtergrondKader, type AchtergrondKleuren, type AchtergrondOvergang, type AchtergrondStand, type UiterlijkAchtergrond } from '../../shared/uiterlijk';
 import { useThemaStand, zetAchtergrond } from '../thema/useThema';
 import { TLO_VOORBEELD } from '../thema/VormgevingZone';
+import Wenk from '../hulp/Wenk';
 import './achtergrond-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -55,7 +56,14 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
   const wisselTekst = (v: number) => (v === 0 ? tr('без зміни', 'geen wissel') : v < 35 ? tr('повільно', 'traag') : v < 70 ? tr('помірно', 'matig') : tr('швидко', 'snel'));
 
   return <section id='thema-achtergrond' className='la-instellingen' aria-labelledby='thema-achtergrond-kop' data-achtergrond-instellingen>
-    <h3 id='thema-achtergrond-kop'>{tr('Живий фон', 'Levende achtergrond')}</h3>
+    {/* Павло (16.11): «Типові значення» внизу було незрозуміло, до чого належить. Тепер піктограма прямо в заголовку «Живий фон». */}
+    <div className='la-kop'>
+      <h3 id='thema-achtergrond-kop'>{tr('Живий фон', 'Levende achtergrond')}</h3>
+      <Wenk tekst={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')}>
+        <button type='button' className='la-standaard' onClick={() => zetAchtergrond(undefined)} data-achtergrond-standaard
+          aria-label={tr('Типові значення живого фону', 'Standaardwaarden van de levende achtergrond')}><RotateCcw aria-hidden /></button>
+      </Wenk>
+    </div>
     <p className='thema-uitleg'>{tr('Великі розмиті плями різних форм повільно переливаються з відтінку у відтінок за всім вмістом сторінки. Зміни видно одразу на тлі цієї сторінки; зберігаються в обліковому записі окремо для звичайного й технічного профілю.', 'Grote, zachte vlekken in verschillende vormen vloeien langzaam van tint naar tint achter de hele pagina. Wijzigingen zie je meteen achter deze pagina; ze worden in het account bewaard, apart voor het gewone en het technische profiel.')}</p>
 
     <div className='thema-modi' role='radiogroup' aria-label={tr('Режим живого фону', 'Modus van de levende achtergrond')}>
@@ -105,9 +113,5 @@ export default function AchtergrondInstellingen({ tr }: { tr: Tr }) {
       </div>
       <p className='thema-uitleg'>{tr('Фон малюється в окремому потоці на маленькому полотні, яке браузер лише розтягує, тож прокрутка й кліки не гальмують. На прихованій вкладці фон стоїть і нічого не витрачає.', 'De achtergrond wordt in een aparte thread op een klein canvas getekend dat de browser alleen uitrekt, dus scrollen en klikken blijven vlot. In een verborgen tabblad staat hij stil en kost hij niets.')}</p>
     </details>
-
-    <button type='button' className='thema-knop' onClick={() => zetAchtergrond(undefined)} title={tr('Повертає всі параметри живого фону до типових; тема й палітра не змінюються.', 'Zet alle instellingen van de levende achtergrond terug; thema en palet blijven.')} data-achtergrond-herstel>
-      <RotateCcw aria-hidden />{tr('Типові значення', 'Standaardwaarden')}
-    </button>
   </section>;
 }

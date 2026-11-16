@@ -27,3 +27,7 @@ button.info-tip-knop.info-tip-knop:hover,.info-tip[data-open] button.info-tip-kn
 .info-tip-tekst[hidden]{display:none}
 .info-tip-tekst p{margin:0}
 .info-tip-tekst p+p{margin-top:6px}
+
+/* Wenk (REESTR-LOGO-001): zwevende hint rond een pictogramknop; de tekst gebruikt .info-tip-tekst. */
+.wenk{display:inline-flex;flex:none}
+.wenk-tekst{font-size:13px;line-height:1.4;pointer-events:none}

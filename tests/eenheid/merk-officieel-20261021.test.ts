@@ -20,6 +20,7 @@ import { renderToString } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
 import { ontsmetSvg } from '../../shared/merk-eigen';
 import { controleerBeeld } from '../../shared/merk-bron';
+import { MERK_SITE_DOMEIN } from '../../shared/merk-domeinen';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
 const sha = (b: Buffer | string) => createHash('sha256').update(b).digest('hex');
@@ -47,7 +48,7 @@ export async function main(): Promise<number> {
   });
   check(`uit een pakket (${pakketRegels.length}): licentie CC0/MIT/Apache, versie + integriteit zoals package-lock.json, exacte devDependency`, pakketRegels.length >= 14 && pakketFout.length === 0, pakketFout.map((r) => r.sleutel).join());
   const siteRegels = herkomst.regels.filter((r) => r.soort === 'officiele-site');
-  const siteFout = siteRegels.filter((r) => { const d = reg.MERK_DOMEIN[String(r.sleutel)]; let host = ''; try { host = new URL(String(r.bronUrl)).hostname; } catch { /* */ } return !d || !/^https:\/\//.test(String(r.bronUrl)) || !(host === d || host.endsWith(`.${d}`)) || r.licentie !== 'handelsmerk-van-de-eigenaar'; });
+  const siteFout = siteRegels.filter((r) => { const ds = [reg.MERK_DOMEIN[String(r.sleutel)], MERK_SITE_DOMEIN[String(r.sleutel)]].filter(Boolean); const op = (u: unknown) => { try { const h = new URL(String(u)).hostname; return ds.some((d) => h === d || h.endsWith(`.${d}`)); } catch { return false; } }; return !ds.length || !/^https:\/\//.test(String(r.bronUrl)) || !(op(r.bronUrl) || (/^https:\/\//.test(String(r.bronPagina || '')) && op(r.bronPagina))) || r.licentie !== 'handelsmerk-van-de-eigenaar'; });
   check(`van de eigen website (${siteRegels.length}): https-URL op het domein van de dienst zelf, gemarkeerd als handelsmerk van de eigenaar`, siteFout.length === 0, siteFout.map((r) => r.sleutel).join());
   check('elke regel is óf een open pakket óf de eigen website — geen derde soort', herkomst.regels.every((r) => r.soort === 'pakket' || r.soort === 'officiele-site'));
   check('licentieteksten met bron en auteur (gilbarbara/logos, vscode-icons)', pakketRegels.every((r) => /^https:\/\//.test(String(r.licentieUrl)) && String(r.auteur).length > 2));
@@ -85,8 +86,15 @@ export async function main(): Promise<number> {
   const afwezig = DE_21.filter((k) => !officieel.includes(k));
   check(`zonder bestand in een open pakket (${afwezig.join(', ')}): elk een domein voor de merkendatabase, tot dan de neutrale plaat`, afwezig.every((k) => !!reg.MERK_DOMEIN[k] && lagen[k] === 'neutraal') && JSON.stringify([...afwezig].sort()) === JSON.stringify([...herkomst.afwezig].sort()), afwezig.map((k) => `${k}:${lagen[k]}`).join());
   const png = 'data:image/png;base64,' + Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]), Buffer.from('IHDR'), Buffer.alloc(17)]).toString('base64');
-  reg.registreerDatabaseMerken(afwezig.map((k) => ({ domein: reg.MERK_DOMEIN[k], data: png, bron: 'favicon', mime: 'image/png' })));
-  check('na de eerste geslaagde ophaling door de server: laag «database» voor die merken', afwezig.every((k) => reg.merkLaag(k) === 'database'));
+  // REESTR-LOGO-001 (16.11.2026): alle merken met een domein hebben nu een officieel bestand. De databaselaag blijft bestaan (voor
+  // een merk dat later zonder bestand bijkomt); we toetsen hem met de officiële laag van drie merken tijdelijk weg.
+  const DB_PROEF = ['mollie', 'tuya', 'iua'];
+  check('de databaselaag ligt ONDER de officiële: met een officieel bestand wint dat, ook als de server een database-logo heeft',
+    DB_PROEF.every((k) => reg.merkLaag(k) === 'officieel'));
+  reg._officieelWeg(DB_PROEF);
+  const dbMerken = [...afwezig, ...DB_PROEF];
+  reg.registreerDatabaseMerken(dbMerken.map((k) => ({ domein: reg.MERK_DOMEIN[k], data: png, bron: 'favicon', mime: 'image/png' })));
+  check('na de eerste geslaagde ophaling door de server: laag «database» voor die merken', dbMerken.every((k) => reg.merkLaag(k) === 'database'));
   reg.registreerDatabaseMerken([{ domein: 'mollie.com', data: 'https://mollie.com/favicon.ico', bron: 'favicon', mime: 'image/png' }, { domein: 'tuya.com', data: 'javascript:alert(1)', bron: 'x', mime: 'x' }]);
   check('de database neemt alleen data-URI\'s van een beeldtype aan (geen extern adres, geen javascript:)', reg.databaseMerk('mollie')?.data === png && reg.databaseMerk('tuya')?.data === png);
   check('een vorm met herkomst gaat vóór de database (GitHub blijft zijn simple-icons-vorm)', reg.merkLaag('github') === 'vorm');

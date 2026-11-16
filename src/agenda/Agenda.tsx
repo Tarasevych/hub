@@ -36,6 +36,7 @@ import ICloudVenster from './ICloudVenster';
 import * as client from './agenda-client';
 import { agendaFoutCode, foutCodeTekst } from './abonnement-fouten';
 import { weigeringZinUitFout } from '../../shared/weigering-tekst';
+import MerkLogo from '../merk/MerkLogo';
 import './agenda.css';
 import './agenda-maquette.css';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
@@ -60,9 +61,9 @@ function Kaart({ lang, aanbieder, stand, onVerbinden }: { lang: Lang; aanbieder:
   return (
     <li className='agenda-kaart' data-agenda-aanbieder={aanbieder.id} data-agenda-stand={stand}>
       <div className='agenda-kaart-kop'>
-        {/* Geen merkenlogo's hier: die tabel (src/merk/merk-logos.ts) hoort bij de beheerpagina en mag niet in de
-            hub-bundel terechtkomen. Een monogram zegt genoeg, de naam staat ernaast. */}
-        <span className='agenda-monogram' aria-hidden='true'>{aanbieder.naam.slice(0, 1)}</span>
+        {/* REESTR-LOGO-001: het merk uit het ENE register (grote tabel lui, eigen bundelstuk) — dus ook het eigen logo van de mens;
+            een letter alleen voor wat geen merk is (ICS). Логотип із реєстру; літера лише там, де бренду немає. */}
+        {aanbieder.logo ? <MerkLogo id={aanbieder.id} naam={aanbieder.naam} logo={aanbieder.logo} maat={34} /> : <span className='agenda-monogram' aria-hidden='true'>{aanbieder.naam.slice(0, 1)}</span>}
         <div>
           <strong>{aanbieder.naam}</strong>
           <small>{agendaTekst(aanbieder.uitleg, lang)}</small>

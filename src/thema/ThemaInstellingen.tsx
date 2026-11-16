@@ -4,7 +4,7 @@
 // Eén zone voor alles wat de site kleurt: een levend voorbeeld en drie inklapbare blokken in de volgorde van de lagen.
 // Режим — це шар поверх кольорів: кожен палет має світлий і темний тон.
 import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon, X } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import type { ThemePreference } from '../gedeelde-voorkeuren';
 import { isKlassiekPalet, leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
@@ -16,6 +16,8 @@ import { ACCENT_NAMEN } from './weergave-stijl';
 import { LAAG_UITLEG, VoorbeeldVenster, ZoneBlok, ZoneVoet, type ZoneLaag } from './VormgevingZone';
 import { achtergrondNiveau, achtergrondVolledig, UITERLIJK_EFFECTEN_STANDAARD } from '../../shared/uiterlijk';
 import AchtergrondInstellingen from '../achtergrond/AchtergrondInstellingen';
+// REESTR-LOGO-001: власні логотипи сервісів — окремий лінивий шматок (каталог марок потрібен лише тут).
+const MijnLogos = lazy(() => import('../merk/MijnLogos'));
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tr: Tr; lang: 'uk' | 'nl'; theme: ThemePreference; onTheme: (t: ThemePreference) => void; violetToegestaan: boolean };
@@ -158,5 +160,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       <TransparantieEnEffecten tr={tr} />
     </ZoneBlok>
     <ZoneVoet tr={tr} />
+    {/* REESTR-LOGO-001: «Логотипи сервісів» — свій логотип поверх системного, лише для цієї людини · eigen logo's van diensten */}
+    <Suspense fallback={null}><MijnLogos tr={tr} lang={lang} /></Suspense>
   </div>;
 }

@@ -71,6 +71,7 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.venster_stand', veld: 'vensters_versleuteld', klasse: 'voorkeur', stand: 'dek', module: 'backend/vensters-onthouden.ts' },
   { tabel: 'app.ai_bevestiging', veld: 'parameters/resultaat (verzoeken van AI ter bevestiging, 0094)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/ai-bevestiging.ts' },
   { tabel: 'app.afzender_beeld', veld: 'data_versleuteld (foto\'s van afzenders: Google-contacten, vCard, Gravatar)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/merk-bron.ts' },
+  { tabel: 'app.merk_gebruiker', veld: 'data_versleuteld (власні логотипи користувача / eigen logo\'s van de gebruiker, 0300)', klasse: 'voorkeur', stand: 'dek', module: 'backend/merk-gebruiker.ts' },
   { tabel: 'app.geheugen_stroom_knopen', veld: 'inhoud_versleuteld (вузли довготривалої пам’яті ШІ / knopen van de geheugenstroom, 0280)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/geheugen-stroom.ts' },
   { tabel: 'app.mail_beeld_voorraad', veld: 'data_versleuteld (зовнішні зображення нових листів, завантажені при отриманні / externe beelden van nieuwe brieven, bij ontvangst opgehaald, 0296)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/mail-beelden-voorraad.ts' },
   { tabel: 'app.geheugen_agent_bots', veld: 'sleutel_versleuteld (окремий токен Telegram-бота агента / afzonderlijk bot-token per AI-agent, 0281)', klasse: 'geheim', stand: 'dek', module: 'backend/geheugen-agent-bots.ts' },

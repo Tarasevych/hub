@@ -1,13 +1,14 @@
 // UI-015 — de EERLIJKE catalogus van toekomstige aanbieders (dossier §2.2 + gebruikerseis §4): Apple, Telegram, Discord,
 // WhatsApp, Microsoft en SMS staan hier met hun echte stand uit de levende statusroute. Een koppelknop bestaat ALLEEN
 // wanneer de server «klaarVoorKoppeling: true» zegt (alle sleutels aanwezig én de zelftest geslaagd) — tot die tijd toont
-// de kaart de sleutelchecklist (alleen NAMEN, nooit waarden) en de eerlijke uitleg of omweg. Monogrammen, geen vreemde logo's.
+// de kaart de sleutelchecklist (alleen NAMEN, nooit waarden) en de eerlijke uitleg of omweg. Merktekens uit het ene merkregister (src/merk), monogram alleen als het register het merk niet kent.
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../platform/client';
 import { pauzeBericht, useTelegramPauze } from '../../telegram-aanmelden/api';
 import { AANBIEDER_STAND_LABEL, AANMELD_AANBIEDERS, aanmeldTekst } from '../../../shared/aanmeld-vnext-model';
 import type { Lang } from '../../toegangslaag-teksten';
+import MethodeMerk from '../../merk/MethodeMerk'; // REESTR-LOGO-001: het merk uit het ene register, monogram alleen als terugval
 
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
@@ -83,7 +84,7 @@ export default function AanbiederCatalogus({ lang, context, zonder = [], beheer 
           return (
             <article key={a.id} className={`amv-tegel is-${a.stand}`} role='listitem' data-amv-aanbieder={a.id}>
               <span className='amv-tegel-kop'>
-                <span className='amv-brand is-neutraal' aria-hidden='true'>{a.monogram}</span>
+                <MethodeMerk merk={a.id} naam={a.naam} maat={28} terugval={<span className='amv-brand is-neutraal' aria-hidden='true'>{a.monogram}</span>} />
                 <strong>{a.naam}</strong>
                 <span className='amv-staat is-catalogus'>{aanmeldTekst(AANBIEDER_STAND_LABEL[a.stand], lang)}</span>
               </span>

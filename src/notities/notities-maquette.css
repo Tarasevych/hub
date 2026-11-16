@@ -853,6 +853,7 @@ html.palet-maquette .vn-monogram {
   background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
   color: var(--mq-accent);
 }
+html.palet-maquette .vn-monogram.is-merk { border: 0; background: none; }
 
 html.palet-maquette .vn-bron-link {
   color: var(--mq-accent);

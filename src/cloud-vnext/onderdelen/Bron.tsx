@@ -102,7 +102,7 @@ export default function Bron(props: OnderdeelProps & { bron: 'google-drive' | 'o
     return (
       <section className='cvn-blok cvi' data-cvi-bron={bron}>
         <div className='cvi-kaart-kop'>
-          <Monogram tekst={a.monogram} />
+          <Monogram tekst={a.monogram} merk={a.merk} naam={a.naam} />
           <div className='cvi-kaart-naam'><strong>{a.naam}</strong><span className='cvi-richting'>{cloudTekst(CLOUD_RICHTING_LABEL[a.richting], lang)}</span></div>
           <span className={`cvi-stand is-${a.stand}`}>{cloudTekst(CLOUD_STAND_LABEL[a.stand], lang)}</span>
         </div>

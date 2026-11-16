@@ -65,6 +65,8 @@ const KEUZE = [
   // De menupictogrammen «Google Drive» en «Dropbox» waren letters in een kader; nu de echte beeldmerken.
   { sleutel: 'googledrive', pakket: '@iconify-json/logos', icoon: 'google-drive-2020', opmerking: 'vlakke uitvoering (2020), in dezelfde stijl als het vierkleurige «G»' },
   { sleutel: 'dropbox', pakket: '@iconify-json/logos', icoon: 'dropbox' },
+  // Павло (16.11): «перконайся, що в цю галерею входять всі логотипи, згадані на сайті» — Google Keep (джерело нотаток) був літерою.
+  { sleutel: 'googlekeep', pakket: '@iconify-json/logos', icoon: 'google-keep-2020', opmerking: 'vlakke uitvoering (2020), zoals Google Drive' },
   // Copilot: НЕ з пакета — там старіший малюнок (суцільний шолом). Власник помітив різницю (16.11.2026); чинний знак GitHub узято з
   // github.githubassets.com/favicons/favicon-copilot.svg (soort 'officiele-site'). NL: het pakket heeft een oudere tekening.
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
@@ -75,6 +77,13 @@ const KEUZE = [
   { sleutel: 'devin', pakket: '@iconify-json/logos', icoon: 'devin' },
   // OpenCode: НЕ з пакета — світлий варіант знака на білій плитці читається як порожній прямокутник; узято піктограму застосунку
   // з opencode.ai/apple-touch-icon-v3.png. NL: de lichte variant uit het pakket is op een witte plaat onleesbaar.
+  // REESTR-LOGO-001 (16.11.2026, Павло: «всі логотипи мають братися з того реєстру, а не розкидані по сайту»). Telegram, Discord і
+  // WhatsApp мали власні копії: TelegramLogo.tsx, сторінка Telegram-входу на сервері, «Макет» (намальовані від руки) і велика
+  // таблиця. Тепер один справжній файл із того самого пакета CC0 для всіх місць.
+  // Telegram, Discord en WhatsApp hadden eigen kopieën (twee keer nagetekend in «Макет»); nu één echt bestand voor elke plek.
+  { sleutel: 'telegram', pakket: '@iconify-json/logos', icoon: 'telegram' },
+  { sleutel: 'discord', pakket: '@iconify-json/logos', icoon: 'discord-icon' },
+  { sleutel: 'whatsapp', pakket: '@iconify-json/logos', icoon: 'whatsapp-icon' },
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:
@@ -163,7 +172,10 @@ if (UA_MAP && existsSync(join(UA_MAP, 'bron.json'))) {
     if (!u.ok) { console.error(`overgeslagen ${sleutel}: ${u.reden}`); continue; }
     writeFileSync(join(UIT, bestand), u.inhoud);
     const regel = {
-      sleutel, bestand, soort: 'officiele-site', bronUrl: url, opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
+      sleutel, bestand, soort: 'officiele-site', bronUrl: url,
+      // Ligt het bestand op een CDN van de dienst (ander domein), dan de eigen pagina van de dienst die het toont.
+      ...(/^https:\/\/[a-z0-9.-]+\//i.test(String(r.pagina || '')) ? { bronPagina: String(r.pagina) } : {}),
+      opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
       licentie: 'handelsmerk-van-de-eigenaar', licentieUitleg: 'officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst',
       mime: soort === 'png' ? 'image/png' : 'image/svg+xml', bytes: u.inhoud.length, sha256: sha(u.inhoud),
       ondergrond: soort === 'svg' ? ondergrondVan(u.inhoud.toString('utf8')) : 'licht',
@@ -187,14 +199,33 @@ herkomst.sort((a, b) => a.sleutel.localeCompare(b.sleutel));
 writeFileSync(join(UIT, 'HERKOMST.json'), `${JSON.stringify({ gemaakt: 'scripts/merk-officieel-maken.mjs', regels: herkomst, afwezig: AFWEZIG.filter((s) => !tabel[s]) }, null, 2)}\n`);
 
 const sleutels = Object.keys(tabel).sort();
+// REESTR-LOGO-001: «DIRECT» = de paar logo's die al op het eerste scherm nodig zijn (aanmeldknop Google, Telegram-aanmelding,
+// de serverpagina van de Telegram-bevestiging). Zij staan in ÉÉN klein gedeeld bestand (shared/merk-direct.ts) dat de browser én
+// de server lezen; de luie tabel hieronder neemt ze daaruit over in plaats van ze een tweede keer mee te dragen. Zo staat elk logo
+// precies één keer in het installatiepakket. Логотипи першого екрана — в одному спільному файлі; лінива таблиця бере їх звідти.
+const DIRECT = ['google', 'telegram'].filter((s) => tabel[s]?.soort === 'svg');
+const directKop = `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen. Згенеровано — не редагувати вручну.
+// De officiële logo's die al op het EERSTE scherm nodig zijn (aanmelden) en op serverpagina's: browser en server lezen dit ene
+// bestand; src/merk/merk-officieel.ts neemt ze hieruit over. Bron, licentie en sha256: src/merk/officieel/HERKOMST.json.
+// Офіційні логотипи першого екрана (вхід) і сторінок сервера: браузер і сервер читають цей один файл.
+export type MerkDirect = { soort: 'svg'; inhoud: string; sha256: string; ondergrond: 'licht' | 'vrij'; bron: string };
+export const MERK_DIRECT: Readonly<Record<${DIRECT.map((s) => JSON.stringify(s)).join(' | ') || 'string'}, MerkDirect>> = Object.freeze({
+${DIRECT.map((s) => `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`).join('\n')}
+});
+/** data-URI voor een <img> (SVG als tekst; in een <img> voert een SVG nooit script uit). */
+export const merkDirectDataUri = (sleutel: keyof typeof MERK_DIRECT): string =>
+  \`data:image/svg+xml;charset=utf-8,\${encodeURIComponent(MERK_DIRECT[sleutel].inhoud)}\`;
+`;
+writeFileSync(join(WORTEL, 'shared/merk-direct.ts'), directKop);
 const kop = `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen (de test merk-officieel-20261021 vergelijkt elke
 // regel met src/merk/officieel/<sleutel>.* en HERKOMST.json). Officiële logo's uit open pakketten (CC0-1.0/MIT) of van de eigen
 // website van een dienst; geen enkele vorm is nagetekend. Lui geladen (eigen bundelstuk), registreert zich bij het merkregister.
 // Merknamen en logo's blijven eigendom van de rechthebbenden; ze dienen hier uitsluitend om een dienst te herkennen.
 import { registreerOfficieleMerken, type OfficieelMerk } from './merk-register';
+import { MERK_DIRECT } from '../../shared/merk-direct';
 
 export const OFFICIEEL: Readonly<Record<string, OfficieelMerk>> = Object.freeze({
-${sleutels.map((s) => `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`).join('\n')}
+${sleutels.map((s) => (DIRECT.includes(s) ? `  ${JSON.stringify(s)}: MERK_DIRECT[${JSON.stringify(s)}],` : `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`)).join('\n')}
 });
 
 registreerOfficieleMerken(OFFICIEEL);

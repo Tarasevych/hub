@@ -34,7 +34,10 @@ export function SoortIcoon({soort}:{soort:string}){const v=soort.toLowerCase();r
 export function GoogleIcoon(){return <Merk merk='google' vorm='gliefje' className='sessie-icoon klein' terugval={<Globe className='sessie-icoon klein' aria-hidden/>}/>}
 
 // Vlaggen: elk land is een apart klein module (± 0,5 kB); Vite maakt er losse stukjes van die pas bij gebruik laden.
-const VLAGGEN=import.meta.glob<string>('/node_modules/country-flag-icons/string/3x2/*.js',{import:'default'});
+// REESTR-LOGO-001 (16.11.2026): het patroon '*.js' ving ook index.js, index.cjs.js en index.commonjs.js van het pakket — drie
+// VOLLEDIGE vlaggensets (± 365 kB) belandden zo naast de 250 losse vlaggen in het installatiepakket. Alleen landcodes (AA.js,
+// GB-ENG.js) horen erbij. Стара вада: прапори потрапляли у встановлення тричі.
+const VLAGGEN=import.meta.glob<string>('/node_modules/country-flag-icons/string/3x2/[A-Z]*.js',{import:'default'});
 const vlagCache=new Map<string,string>();
 export function Vlag({land,naam}:{land?:string;naam:string}){
   const cc=landCode(land);const[svg,setSvg]=useState(()=>vlagCache.get(cc)||'');

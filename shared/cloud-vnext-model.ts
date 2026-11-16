@@ -282,6 +282,8 @@ export type CloudRichting = 'lezen' | 'lezen-en-schrijven' | 'importeren' | 'gee
 export type CloudLevend = 'google' | 'm4' | 'photos';
 export type CloudVnextAanbieder = {
   id: string; naam: string; monogram: string; site: string;
+  /** REESTR-LOGO-001: sleutel in het ene merkregister (src/merk); zonder = monogram (geen logo met eerlijke herkomst). */
+  merk?: string;
   stand: CloudAanbiederStand; richting: CloudRichting;
   uitleg: Tweetalig;
   /** Wat er vandaag ECHT werkt zodra gekoppeld (of waarom niet). Verplicht. */
@@ -293,47 +295,47 @@ export type CloudVnextAanbieder = {
   levend?: CloudLevend;
 };
 export const CLOUD_VNEXT_AANBIEDERS: readonly CloudVnextAanbieder[] = Object.freeze([
-  { id: 'google-drive', naam: 'Google Drive', monogram: 'G', site: 'https://drive.google.com', stand: 'werkt', richting: 'lezen-en-schrijven', levend: 'google',
+  { id: 'google-drive', merk: 'googledrive', naam: 'Google Drive', monogram: 'G', site: 'https://drive.google.com', stand: 'werkt', richting: 'lezen-en-schrijven', levend: 'google',
     uitleg: ['Повне підключення через Google-доступ: перегляд тек, пошук, завантаження, перейменування, переміщення, кошик, зірочки; кілька акаунтів.', 'Volledige koppeling via Google-toegang: mappen, zoeken, uploaden, hernoemen, verplaatsen, prullenbak, sterren; meerdere accounts.'],
     detail: ['Межі сьогодні: завантаження на Drive до 5 МБ за раз, прев’ю до 32 МБ (відео 128 МБ), спільні диски не показуються.', 'Grenzen vandaag: upload naar Drive tot 5 MB per keer, preview tot 32 MB (video 128 MB), gedeelde schijven worden niet getoond.'] },
-  { id: 'google-photos', naam: 'Google Photos', monogram: 'GP', site: 'https://photos.google.com', stand: 'werkt', richting: 'importeren', levend: 'photos',
+  { id: 'google-photos', merk: 'googlephotos', naam: 'Google Photos', monogram: 'GP', site: 'https://photos.google.com', stand: 'werkt', richting: 'importeren', levend: 'photos',
     uitleg: ['Офіційний Picker: ви обираєте фото у вікні Google, до 10 за раз зберігаються у вашу хмару.', 'De officiële Picker: u kiest foto’s in het Google-venster; tot 10 per keer worden in uw cloud bewaard.'],
     detail: ['Лише імпорт за вашим вибором — Google не дає сайтам читати всю бібліотеку.', 'Alleen import op uw keuze — Google laat sites niet de hele bibliotheek lezen.'] },
-  { id: 'onedrive', naam: 'Microsoft OneDrive', monogram: '1D', site: 'https://onedrive.live.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
+  { id: 'onedrive', merk: 'microsoftonedrive', naam: 'Microsoft OneDrive', monogram: '1D', site: 'https://onedrive.live.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
     uitleg: ['OAuth, список тек і безпечне прев’ю вже в коді (особистий і робочий OneDrive).', 'OAuth, mappenlijst en veilige preview staan al in de code (persoonlijke én werk-OneDrive).'],
     detail: ['Щоб увімкнути: зареєструйте застосунок у Microsoft Entra і задайте CLOUD_MICROSOFT_CLIENT_ID/SECRET + CLOUD_M4_CONNECTIONS_STAGING; поки що лише читання+прев’ю, запис/синхронізація — наступний крок.', 'Aanzetten: registreer een app in Microsoft Entra en zet CLOUD_MICROSOFT_CLIENT_ID/SECRET + CLOUD_M4_CONNECTIONS_STAGING; voorlopig lezen+preview, schrijven/synchronisatie is de volgende stap.'],
     vereist: ['CLOUD_MICROSOFT_CLIENT_ID', 'CLOUD_MICROSOFT_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
-  { id: 'dropbox', naam: 'Dropbox', monogram: 'Dx', site: 'https://www.dropbox.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
+  { id: 'dropbox', merk: 'dropbox', naam: 'Dropbox', monogram: 'Dx', site: 'https://www.dropbox.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
     uitleg: ['OAuth (PKCE), список тек і прев’ю в коді; чанкові завантаження підготовлені.', 'OAuth (PKCE), mappenlijst en preview in de code; upload in stukken is voorbereid.'],
     detail: ['Щоб увімкнути: створіть застосунок у Dropbox App Console і задайте CLOUD_DROPBOX_CLIENT_ID/SECRET + ті самі staging-прапорці.', 'Aanzetten: maak een app in de Dropbox App Console en zet CLOUD_DROPBOX_CLIENT_ID/SECRET + dezelfde staging-vlaggen.'],
     vereist: ['CLOUD_DROPBOX_CLIENT_ID', 'CLOUD_DROPBOX_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
-  { id: 'box', naam: 'Box', monogram: 'Bx', site: 'https://www.box.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
+  { id: 'box', merk: 'box', naam: 'Box', monogram: 'Bx', site: 'https://www.box.com', stand: 'sleutels-nodig', richting: 'lezen', levend: 'm4',
     uitleg: ['OAuth, список і прев’ю в коді (Box API).', 'OAuth, lijst en preview in de code (Box API).'],
     detail: ['Щоб увімкнути: застосунок у Box Developer Console і CLOUD_BOX_CLIENT_ID/SECRET + staging-прапорці.', 'Aanzetten: een app in de Box Developer Console en CLOUD_BOX_CLIENT_ID/SECRET + staging-vlaggen.'],
     vereist: ['CLOUD_BOX_CLIENT_ID', 'CLOUD_BOX_CLIENT_SECRET', 'CLOUD_M4_CONNECTIONS_STAGING', 'CLOUD_M10_STAGING_RUNTIME', 'CLOUD_M8_DIRECTORY_STAGING'] },
-  { id: 'icloud-drive', naam: 'iCloud Drive', monogram: 'iC', site: 'https://www.icloud.com/iclouddrive', stand: 'niet-mogelijk', richting: 'geen',
+  { id: 'icloud-drive', merk: 'icloud', naam: 'iCloud Drive', monogram: 'iC', site: 'https://www.icloud.com/iclouddrive', stand: 'niet-mogelijk', richting: 'geen',
     uitleg: ['Файли iCloud Drive з вебсайту недоступні.', 'iCloud Drive-bestanden zijn vanaf een website niet bereikbaar.'],
     detail: ['Apple не має публічного API для iCloud Drive (CloudKit працює лише всередині застосунків розробника). Жоден сайт не може чесно «підключити iCloud Drive».', 'Apple heeft geen publieke API voor iCloud Drive (CloudKit werkt alleen binnen de apps van de ontwikkelaar). Geen enkele site kan iCloud Drive eerlijk «koppelen».'],
     omweg: ['Обхід: на iPhone/iPad поділіться файлом у цю хмару (Завантажити тут) або тримайте файли в теці, яку синхронізує інший сервіс. Календар iCloud — підключається (див. Агенду).', 'Omweg: deel op iPhone/iPad het bestand naar deze cloud (hier uploaden) of bewaar bestanden in een map die een andere dienst synchroniseert. De iCloud-agenda koppelt wél (zie Agenda).'] },
-  { id: 'mega', naam: 'MEGA', monogram: 'M', site: 'https://mega.io', stand: 'gepland', richting: 'geen',
+  { id: 'mega', merk: 'mega', naam: 'MEGA', monogram: 'M', site: 'https://mega.io', stand: 'gepland', richting: 'geen',
     uitleg: ['Сховище з наскрізним шифруванням.', 'Opslag met end-to-end-versleuteling.'],
     detail: ['Адаптера в коді немає: у MEGA власний протокол шифрування на боці клієнта; чесна інтеграція вимагає окремого клієнта, якого ще не збудовано.', 'Er is geen adapter in de code: MEGA versleutelt met een eigen protocol aan de clientzijde; een eerlijke integratie vraagt een aparte cliënt die nog niet gebouwd is.'],
     omweg: ['Обхід: експортуйте потрібні файли з MEGA і завантажте сюди.', 'Omweg: exporteer de bestanden uit MEGA en upload ze hier.'] },
-  { id: 'nextcloud', naam: 'Nextcloud', monogram: 'N', site: 'https://nextcloud.com', stand: 'gepland', richting: 'geen',
+  { id: 'nextcloud', merk: 'nextcloud', naam: 'Nextcloud', monogram: 'N', site: 'https://nextcloud.com', stand: 'gepland', richting: 'geen',
     uitleg: ['Self-hosted сховище з відкритим WebDAV.', 'Self-hosted opslag met open WebDAV.'],
     detail: ['У коді вже є читання списків через WebDAV PROPFIND (модуль M9), але немає підключення акаунта (адреса+пароль застосунку), маршрутів і UI — тому чесно «заплановано», без кнопки.', 'De code leest al lijsten via WebDAV PROPFIND (module M9), maar er is geen accountkoppeling (adres+app-wachtwoord), geen routes en geen UI — dus eerlijk «gepland», zonder knop.'],
     omweg: ['Обхід: синхронізуйте теку Nextcloud на ПК і завантажуйте звідти.', 'Omweg: synchroniseer de Nextcloud-map op de pc en upload van daaruit.'] },
-  { id: 'pcloud', naam: 'pCloud', monogram: 'P', site: 'https://www.pcloud.com', stand: 'gepland', richting: 'geen',
+  { id: 'pcloud', merk: 'pcloud', naam: 'pCloud', monogram: 'P', site: 'https://www.pcloud.com', stand: 'gepland', richting: 'geen',
     uitleg: ['Європейське сховище з OAuth API.', 'Europese opslag met een OAuth-API.'],
     detail: ['Транспорт і OAuth-ескіз є в модулі M5, але без онбордингу, маршрутів і сховища токенів — «заплановано».', 'Transport en een OAuth-schets staan in module M5, maar zonder onboarding, routes en tokenopslag — «gepland».'] },
-  { id: 'proton-drive', naam: 'Proton Drive', monogram: 'Pr', site: 'https://proton.me/drive', stand: 'niet-mogelijk', richting: 'geen',
+  { id: 'proton-drive', merk: 'protonmail', naam: 'Proton Drive', monogram: 'Pr', site: 'https://proton.me/drive', stand: 'niet-mogelijk', richting: 'geen',
     uitleg: ['Сховище з наскрізним шифруванням від Proton.', 'End-to-end-versleutelde opslag van Proton.'],
     detail: ['Proton не має публічного API для Drive: файли зашифровані на боці клієнта, сторонній сайт їх прочитати не може. Будь-яка кнопка «підключити Proton Drive» була б обманом.', 'Proton heeft geen publieke API voor Drive: bestanden zijn aan de clientzijde versleuteld; een site kan ze niet lezen. Elke knop «Proton Drive koppelen» zou bedrog zijn.'],
     omweg: ['Обхід: завантажте файл з Proton і додайте сюди вручну.', 'Omweg: download het bestand uit Proton en voeg het hier handmatig toe.'] },
   { id: 'nas-webdav', naam: 'NAS / WebDAV / SFTP', monogram: 'NAS', site: 'https://www.synology.com/en-global/dsm/feature/webdav', stand: 'gepland', richting: 'geen',
     uitleg: ['Власний NAS (Synology, QNAP, TrueNAS…) через WebDAV або SFTP.', 'Een eigen NAS (Synology, QNAP, TrueNAS…) via WebDAV of SFTP.'],
     detail: ['Той самий WebDAV-рушій, що для Nextcloud (M9), покриє NAS; SFTP-клієнта немає. Онбордингу й маршрутів ще немає — «заплановано». Порти NAS в інтернет не відкриваємо: лише вихідне з’єднання з сервера в LAN/VPN.', 'Dezelfde WebDAV-motor als voor Nextcloud (M9) dekt een NAS; een SFTP-cliënt is er niet. Onboarding en routes ontbreken nog — «gepland». NAS-poorten gaan niet open naar internet: alleen een uitgaande verbinding vanaf de server in LAN/VPN.'] },
-  { id: 'gmail-bijlagen', naam: 'Gmail-вкладення', monogram: '@', site: 'https://mail.google.com', stand: 'werkt', richting: 'importeren', levend: 'google',
+  { id: 'gmail-bijlagen', merk: 'gmail', naam: 'Gmail-вкладення', monogram: '@', site: 'https://mail.google.com', stand: 'werkt', richting: 'importeren', levend: 'google',
     uitleg: ['Вкладення з Пошти зберігаються у хмару через сторінку Пошти.', 'Bijlagen uit E-mail bewaart u in de cloud via de mailpagina.'],
     detail: ['Працює з боку Пошти (вікно листа → вкладення → зберегти); окремого масового імпорту тут ще немає.', 'Werkt vanaf de mailkant (bericht → bijlage → bewaren); een aparte massa-import bestaat hier nog niet.'] },
 ]);
