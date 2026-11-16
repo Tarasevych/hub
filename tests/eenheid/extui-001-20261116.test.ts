@@ -169,6 +169,13 @@ export async function main(): Promise<number> {
     const vast = JSON.stringify([manifest.host_permissions, manifest.content_scripts]);
     check('manifest: host_permissions en content_scripts noemen geen AI-site (alleen tarasevych.com)', !TS.AI_SITE_HOSTS.some((h) => vast.includes(h)) && (manifest.host_permissions as string[]).every((p) => /tarasevych\.com/.test(p)));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
+    // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
+    const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');
+    const cssOntwerp = readFileSync(join(W, 'src/extensie/extensie-ontwerp.css'), 'utf8');
+    const laatsteLaag = cssOntwerp.slice(cssOntwerp.lastIndexOf('@media (max-width:560px)'));
+    check('telefoon: rooster van sites past in zijn kader (min(210px,100%)) en de telefoonlaag is de laatste laag van het bestand',
+      /\.eo-domeinen\{[^}]*minmax\(min\(210px,100%\),1fr\)[^}]*min-width:0/.test(cssOntgr) && !cssOntgr.includes('minmax(210px,1fr)')
+      && laatsteLaag.includes('.eo-domeinen{padding-inline:8px}') && laatsteLaag.trimEnd().endsWith('}') && !/\n\.[a-z]/.test(laatsteLaag.replace(/\n {2}/g, ' ')));
     check('AI_SITE_TYPES bevat alleen leesopdrachten (cap browser.read)', TS.AI_SITE_TYPES.every((t) => shared.TYPE_CAPABILITY[t] === 'browser.read'));
     check('isAiSiteUrl: alleen https, exacte host, geen poort/inlog/subdomein', shared.isAiSiteUrl('https://claude.ai/chat/1') && !shared.isAiSiteUrl('http://claude.ai/') && !shared.isAiSiteUrl('https://claude.ai:8443/')
       && !shared.isAiSiteUrl('https://x@claude.ai/') && !shared.isAiSiteUrl('https://evil.claude.ai/') && !shared.isAiSiteUrl('https://claude.ai.evil.com/'));
