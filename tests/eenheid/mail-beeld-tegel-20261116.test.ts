@@ -95,19 +95,21 @@ check('inkt: rgb en rgba uit de berekende stijl, onbekend → neutraal grijs', T
   zet(weg);
   check('een beeld dat de brief zelf verbergt (display:none) krijgt geen tegel', body.children.length === 2 && weg.style.cssText === 'display:none');
 
+  // MAILBEELD-003: een tegel met vaste ruimte (breedte in px) heeft eerst het onzichtbare <svg> van b × h, dan de laag met pictogram en tekst
+  const binnen = (t: El): El => (t.children[0]?.dataset?.mailBeeldRuimte !== undefined ? t.children[1] : t);
   const donker = maak('td'); donker.kleur = 'rgb(231, 233, 238)'; body.appendChild(donker);
   const logo = beeld({ width: '120', height: '40', alt: 'Logo', style: 'max-width:100%;height:auto;background-color:#f3f4f6;border-radius:4px' }, donker);
   zet(logo);
   const lt = donker.children[0];
-  check('donkere weergave: het lichte logoplaatje (4 px) wordt in de tegel vervangen door de zachte tint, lichte inkt, afronding 12 px', lt.style.getPropertyValue('background-color') === 'rgba(231, 233, 238, 0.07)' && lt.style.getPropertyValue('border-radius') === '12px' && lt.style.getPropertyValue('display') === 'inline-flex', lt.style.cssText);
-  check('donkere weergave: laag en breed met vaste breedte → pictogram en tekst naast elkaar', lt.dataset.mailBeeldTegel === 'rij' && lt.style.getPropertyValue('flex-direction') === 'row' && lt.children.length === 2);
+  check('donkere weergave: het lichte logoplaatje (4 px) wordt in de tegel vervangen door de zachte tint, lichte inkt, afronding 12 px', lt.style.getPropertyValue('background-color') === 'rgba(231, 233, 238, 0.07)' && lt.style.getPropertyValue('border-radius') === '12px' && lt.style.getPropertyValue('display') === 'inline-block' && lt.children[0].getAttribute('width') === '120' && lt.children[0].getAttribute('height') === '40', lt.style.cssText);
+  check('donkere weergave: laag en breed met vaste breedte → pictogram en tekst naast elkaar', lt.dataset.mailBeeldTegel === 'rij' && binnen(lt).style.getPropertyValue('flex-direction') === 'row' && binnen(lt).children.length === 2);
   wis(logo);
   check('donkere weergave: na het wissen heeft het beeld zijn logoplaatje terug', logo.style.getPropertyValue('background-color') === '#f3f4f6' && logo.style.getPropertyValue('display') === '');
 
   const pixel = beeld({ width: '1', height: '1', alt: '', style: 'max-width:100%;height:auto' });
   zet(pixel);
   const pt = body.children[body.children.indexOf(pixel) - 1];
-  check('volgpixel: lege tegel zonder vlak, rand of pictogram (niets te zien, plaats blijft)', pt.dataset.mailBeeldTegel === 'leeg' && pt.children.length === 0 && pt.style.getPropertyValue('background-color') === 'transparent' && pt.style.getPropertyValue('border') === '0');
+  check('volgpixel: lege tegel zonder vlak, rand of pictogram (niets te zien, plaats blijft)', pt.dataset.mailBeeldTegel === 'leeg' && binnen(pt).children.length === 0 && pt.style.getPropertyValue('background-color') === 'transparent' && pt.style.getPropertyValue('border') === '0' && pt.style.getPropertyValue('box-shadow') === 'none' && pt.children[0].getAttribute('width') === '1');
   // Рев'ю 16.11.2026: порожня плитка (піксель стеження, розпірка) не оголошується читачем екрана й не має підказки.
   check('volgpixel: voor de schermlezer bestaat de lege tegel niet (aria-hidden, geen role/naam/knopinfo) — tientallen spacer.gif gaven anders tientallen «Зображення приховано»',
     pt.getAttribute('aria-hidden') === 'true' && pt.getAttribute('role') === null && pt.getAttribute('aria-label') === null && pt.title === '');
@@ -119,40 +121,40 @@ check('inkt: rgb en rgba uit de berekende stijl, onbekend → neutraal grijs', T
   const ft = body.children[body.children.indexOf(foto) - 1];
   const laden = { soort: 'laden' as const, naam: (alt: string) => `Зображення завантажується: ${alt}`, uitleg: () => 'laden' };
   const mislukt = { soort: 'mislukt' as const, naam: (alt: string) => `Зображення не завантажилось: ${alt}`, regel: (alt: string) => alt || 'Зображення не завантажилось', onder: (alt: string) => (alt ? 'Зображення не завантажилось' : ''), uitleg: () => 'mislukt' };
-  const eerstePad = ft.children[0].children.map((d: El) => d.tagName).join(), aantalVoor = body.children.length;
+  const eerstePad = binnen(ft).children[0].children.map((d: El) => d.tagName).join(), aantalVoor = body.children.length;
   T.zetBeeldTegel(foto as unknown as HTMLImageElement, laden);
   check('laden: dezelfde tegel (geen tweede, geen sprong), naam «завантажується», pictogram «beeld» in plaats van «beeld verborgen», regel blijft de alt-tekst',
     body.children[body.children.indexOf(foto) - 1] === ft && body.children.length === aantalVoor && ft.getAttribute('aria-label') === 'Зображення завантажується: Foto' && ft.title === 'laden'
-    && ft.children.length === 2 && ft.children[0].children.map((d: El) => d.tagName).join() === 'RECT,CIRCLE,PATH' && eerstePad === 'LINE,PATH,LINE,LINE,PATH,PATH' && ft.children[1].textContent === 'Foto', `${ft.children[0].children.map((d: El) => d.tagName).join()} / ${eerstePad}`);
+    && binnen(ft).children.length === 2 && binnen(ft).children[0].children.map((d: El) => d.tagName).join() === 'RECT,CIRCLE,PATH' && eerstePad === 'LINE,PATH,LINE,LINE,PATH,PATH' && binnen(ft).children[1].textContent === 'Foto', `${binnen(ft).children[0].children.map((d: El) => d.tagName).join()} / ${eerstePad}`);
   T.zetBeeldTegel(foto as unknown as HTMLImageElement, mislukt);
   check('niet geladen: eigen pictogram («let op»), de alt-tekst en eronder de eigen korte tekst «Зображення не завантажилось» (ook in de naam); nog steeds geen bron op het beeld',
-    ft.getAttribute('aria-label') === 'Зображення не завантажилось: Foto' && ft.title === 'mislukt' && ft.children.length === 3 && ft.children[0].children.map((d: El) => d.tagName).join() === 'CIRCLE,LINE,LINE' && ft.children[1].textContent === 'Foto' && ft.children[2].textContent === 'Зображення не завантажилось'
-    && ft.children[2].style.getPropertyValue('color') === 'rgba(34, 34, 59, 1)' && !foto.heeft('src') && foto.style.getPropertyValue('display') === 'none');
+    ft.getAttribute('aria-label') === 'Зображення не завантажилось: Foto' && ft.title === 'mislukt' && binnen(ft).children.length === 3 && binnen(ft).children[0].children.map((d: El) => d.tagName).join() === 'CIRCLE,LINE,LINE' && binnen(ft).children[1].textContent === 'Foto' && binnen(ft).children[2].textContent === 'Зображення не завантажилось'
+    && binnen(ft).children[2].style.getPropertyValue('color') === 'rgba(34, 34, 59, 1)' && !foto.heeft('src') && foto.style.getPropertyValue('display') === 'none');
   const laag = beeld({ width: '200', height: '60', alt: 'Laag', style: '' });
   T.zetBeeldTegel(laag as unknown as HTMLImageElement, mislukt);
-  check('niet geladen, lage tegel: geen plaats voor de tweede regel — pictogram «let op» en de alt-tekst', body.children[body.children.indexOf(laag) - 1].children.length === 2 && body.children[body.children.indexOf(laag) - 1].children[1].textContent === 'Laag');
+  check('niet geladen, lage tegel: geen plaats voor de tweede regel — pictogram «let op» en de alt-tekst', binnen(body.children[body.children.indexOf(laag) - 1]).children.length === 2 && binnen(body.children[body.children.indexOf(laag) - 1]).children[1].textContent === 'Laag');
   wis(laag);
   const kaal = beeld({ width: '300', height: '150', alt: '', style: '' });
   T.zetBeeldTegel(kaal as unknown as HTMLImageElement, mislukt);
   const kt = body.children[body.children.indexOf(kaal) - 1];
-  check('niet geladen zonder alt: de eigen tekst telt als regel (niet alleen een pictogram)', kt.dataset.mailBeeldTegel === 'volledig' && kt.children[1].textContent === 'Зображення не завантажилось' && kt.getAttribute('aria-label') === 'Зображення не завантажилось: ');
+  check('niet geladen zonder alt: de eigen tekst telt als regel (niet alleen een pictogram)', kt.dataset.mailBeeldTegel === 'volledig' && binnen(kt).children[1].textContent === 'Зображення не завантажилось' && kt.getAttribute('aria-label') === 'Зображення не завантажилось: ');
   // Afwerking 2 (16.11.2026, na de controle): in een tegel van 200 px zonder alt brak «Зображення не завантажилось» af op «…завантажи…».
   // De melding staat nu in de kleine letter van de tweede regel; hoog genoeg → hooguit twee regels; laag en te smal → alleen het pictogram.
-  const kr = kt.children[1].style;
+  const kr = binnen(kt).children[1].style;
   check('niet geladen zonder alt: de melding in de kleine letter (11 px, gewoon gewicht) en in een hoge tegel over hooguit twee regels — niet afgekapt; de regel telt nog steeds niet mee voor de kleinste breedte',
     kr.getPropertyValue('font-size') === '11px' && kr.getPropertyValue('font-weight') === '400' && kr.getPropertyValue('white-space') === 'normal' && kr.getPropertyValue('display') === '-webkit-box'
     && kr.getPropertyValue('-webkit-line-clamp') === '2' && kr.getPropertyValue('-webkit-box-orient') === 'vertical' && kr.getPropertyValue('width') === '0' && kr.getPropertyValue('min-width') === '100%', kr.cssText);
   check('met alt blijft de regel de alt-tekst: 12 px van de tegel, één regel met «…» (geen kleine letter, geen tweede regel tekst erin)',
-    ft.children[1].style.getPropertyValue('font-size') === '' && ft.children[1].style.getPropertyValue('white-space') === 'nowrap' && ft.children[2].style.getPropertyValue('font-size') === '11px');
+    binnen(ft).children[1].style.getPropertyValue('font-size') === '' && binnen(ft).children[1].style.getPropertyValue('white-space') === 'nowrap' && binnen(ft).children[2].style.getPropertyValue('font-size') === '11px');
   const tegelVan = (i: El) => body.children[body.children.indexOf(i) - 1];
   const smalLaag = beeld({ width: '130', height: '60', alt: '', style: '' }), breedLaag = beeld({ width: '210', height: '60', alt: '', style: '' }), smalHoog = beeld({ width: '130', height: '110', alt: '', style: '' });
   for (const i of [smalLaag, breedLaag, smalHoog]) T.zetBeeldTegel(i as unknown as HTMLImageElement, mislukt);
   check('niet geladen zonder alt, lage tegel: past de melding niet op één regel, dan alleen het pictogram «let op» (geen afgekapte tekst; naam en knopinfo zeggen het volledig); past ze wel, dan één regel',
-    tegelVan(smalLaag).dataset.mailBeeldTegel === 'pictogram' && tegelVan(smalLaag).children.length === 1 && tegelVan(smalLaag).children[0].children.map((d: El) => d.tagName).join() === 'CIRCLE,LINE,LINE'
+    tegelVan(smalLaag).dataset.mailBeeldTegel === 'pictogram' && binnen(tegelVan(smalLaag)).children.length === 1 && binnen(tegelVan(smalLaag)).children[0].children.map((d: El) => d.tagName).join() === 'CIRCLE,LINE,LINE'
     && tegelVan(smalLaag).getAttribute('aria-label') === 'Зображення не завантажилось: ' && tegelVan(smalLaag).title === 'mislukt'
-    && tegelVan(breedLaag).dataset.mailBeeldTegel === 'volledig' && tegelVan(breedLaag).children[1].textContent === 'Зображення не завантажилось' && tegelVan(breedLaag).children[1].style.getPropertyValue('white-space') === 'nowrap' && tegelVan(breedLaag).children[1].style.getPropertyValue('font-size') === '11px',
+    && tegelVan(breedLaag).dataset.mailBeeldTegel === 'volledig' && binnen(tegelVan(breedLaag)).children[1].textContent === 'Зображення не завантажилось' && binnen(tegelVan(breedLaag)).children[1].style.getPropertyValue('white-space') === 'nowrap' && binnen(tegelVan(breedLaag)).children[1].style.getPropertyValue('font-size') === '11px',
     `${tegelVan(smalLaag).dataset.mailBeeldTegel} / ${tegelVan(breedLaag).dataset.mailBeeldTegel}`);
-  check('niet geladen zonder alt, smalle hoge tegel (130 × 110): de melding over twee regels', tegelVan(smalHoog).dataset.mailBeeldTegel === 'volledig' && tegelVan(smalHoog).children[1].style.getPropertyValue('-webkit-line-clamp') === '2');
+  check('niet geladen zonder alt, smalle hoge tegel (130 × 110): de melding over twee regels', tegelVan(smalHoog).dataset.mailBeeldTegel === 'volledig' && binnen(tegelVan(smalHoog)).children[1].style.getPropertyValue('-webkit-line-clamp') === '2');
   wis(smalLaag); wis(breedLaag); wis(smalHoog);
   wis(foto); wis(kaal);
 
@@ -162,11 +164,11 @@ check('inkt: rgb en rgba uit de berekende stijl, onbekend → neutraal grijs', T
   zet(rechts);
   const rt = body.children[body.children.indexOf(rechts) - 1];
   check('align="right" hspace: de tegel zweeft en houdt de marges van het beeld (uit de berekende stijl); wat de stijl zelf al zegt, blijft',
-    rt.style.getPropertyValue('float') === 'right' && rt.style.getPropertyValue('margin-left') === '12px' && rt.style.getPropertyValue('margin-bottom') === '4px' && rt.style.getPropertyValue('margin-top') === '' && rt.style.getPropertyValue('display') === 'flex', rt.style.cssText);
+    rt.style.getPropertyValue('float') === 'right' && rt.style.getPropertyValue('margin-left') === '12px' && rt.style.getPropertyValue('margin-bottom') === '4px' && rt.style.getPropertyValue('margin-top') === '' && rt.style.getPropertyValue('display') === 'block' && rt.style.getPropertyValue('width') === 'fit-content', rt.style.cssText);
   const midden = beeld({ width: '24', height: '24', alt: 'i', style: 'margin-left:3px' }); midden.lijn = 'middle'; midden.marges = { 'margin-left': '3px' };
   zet(midden);
   const mt = body.children[body.children.indexOf(midden) - 1];
-  check('align="middle": de tegel houdt de uitlijning van het beeld; zonder eigen uitlijning blijft het «bottom»', mt.style.getPropertyValue('vertical-align') === 'middle' && mt.style.getPropertyValue('margin-left') === '3px' && lt.style.getPropertyValue('vertical-align') === 'bottom', mt.style.cssText);
+  check('align="middle": de tegel houdt de uitlijning van het beeld; zonder eigen uitlijning de basislijn, net als het beeld (vaste ruimte: een inline-block met alleen een blok-<svg> heeft zijn basislijn onderaan)', mt.style.getPropertyValue('vertical-align') === 'middle' && mt.style.getPropertyValue('margin-left') === '3px' && lt.style.getPropertyValue('vertical-align') === 'baseline', mt.style.cssText);
   wis(rechts); wis(midden);
 
   // in één keer voor de hele brief: eerst alles lezen, dan alles schrijven, dan één keer meten — niet per beeld opnieuw opmaken
@@ -188,7 +190,8 @@ check('inkt: rgb en rgba uit de berekende stijl, onbekend → neutraal grijs', T
   // <img> krijgt «приховано»; wat nu geladen wordt «завантажується» (toon() haalt de tegel weg — geen sprong, geen «kapot beeld»
   // tijdens het laden); wat niet te laden is «не завантажилось». De oude regel «else wisBeeldTegel(node)» is daarmee weg.
   check('brieftekst: tegels in één keer voor de hele brief, vóór de voorraad-poging; verborgen extern <img> → «приховано», anders «завантажується» of (niet te laden) «не завантажилось»',
-    bt.includes("zetBeeldTegels(nodes.filter(node=>node.dataset.mailResourceSrc&&node.tagName==='IMG').map(node=>{const img=node as HTMLImageElement,source=node.dataset.mailResourceSrc||'';if(!externToestaan&&/^https:/i.test(source)&&!inlineVan(source)){")
+    // (MAILBEELD-003 zet tussen de bron en de keuze eerst de bewaarde maat: één blok {…} zonder verzoek)
+    /zetBeeldTegels\(nodes\.filter\(node=>node\.dataset\.mailResourceSrc&&node\.tagName==='IMG'\)\.map\(node=>\{const img=node as HTMLImageElement,source=node\.dataset\.mailResourceSrc\|\|'';(?:\/\*[^*]*\*\/\{[^{}]*\})?if\(!externToestaan&&\/\^https:\/i\.test\(source\)&&!inlineVan\(source\)\)\{/.test(bt)
     && bt.includes("return[img,inlineVan(source)?teksten.ladenEigen:/^https:/i.test(source)?teksten.laden:teksten.mislukt]as const}))}let cursor=0;const worker=async()=>{")
     && bt.indexOf('zetBeeldTegels(nodes.filter(') < bt.indexOf('const blob=await remoteBlob(context,accountId,source,true)') && !bt.includes('else wisBeeldTegel(node)'));
   // Afwerking 1: een beeld uit de brief zelf (cid:-bijlage) komt niet van de server — de tegel «завантажується» zegt dat dan ook niet

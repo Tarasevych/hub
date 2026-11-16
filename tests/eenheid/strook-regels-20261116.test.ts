@@ -126,7 +126,7 @@ const gesprek = readFileSync('src/MailGesprekInhoud.tsx', 'utf8');
 check('taal: keuzeregel en regelhint bedraad', gesprek.includes("<StrookNazorg lang={lang} strook='taal'") && gesprek.includes('regelHint={'));
 check('taal: ✕ via sluitStrook (telt mee)', gesprek.includes("onSluit={()=>sluitStrook(message.id,'taal'"));
 check('«Вигляд» toont de lijst', readFileSync('src/mail/WeergaveKeuze.tsx', 'utf8').includes('<StrookRegelsLijst lang={lang} />'));
-check('afmelden kent het voorvoegsel', /STROOK_REGELS_VOORVOEGSEL, NOTITIE_KLAD_VOORVOEGSEL\]/.test(readFileSync('src/lokale-sporen.ts', 'utf8')));
+check('afmelden kent het voorvoegsel', /const VOORVOEGSELS = \[[^\]]*STROOK_REGELS_VOORVOEGSEL[^\]]*\]/.test(readFileSync('src/lokale-sporen.ts', 'utf8')));
 const css = readFileSync('src/mail/stroken-sluiten.css', 'utf8');
 check('CSS: geen ruwe kleuren', !/#[0-9a-f]{3,8}\b|rgba?\(\s*\d/i.test(css));
 check('CSS: keuzes 44 px op aanraakschermen', /pointer:\s*coarse[\s\S]*mail-strook-nazorg-keuzes > button[\s\S]*min-height:\s*44px/.test(css));

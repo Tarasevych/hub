@@ -159,6 +159,23 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-
 .mail-beelden-strook>button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media (pointer:coarse){.mail-beelden-strook>button{min-height:44px}}
 
+/* MAILBEELD-003 (16.11.2026, Павло: «кнопки треба візуально відобразити гарно, типу піктограмами, щоб можна було візуально зрозуміти
+   значення кнопки»): pictogram + woord. «Показати один раз» = oog (accent), «Завжди показувати від цього відправника» = persoon met vinkje
+   en een klein oranje «!» (riskanter: de afzender kan zien wanneer u leest). Is de strook smal (telefoon, smal leesvenster), dan alleen
+   «Показати» / «Завжди показувати» — de volledige naam blijft de naam voor de schermlezer, de knopinfo vertelt het gevolg. */
+.mail-beelden-strook{container:beeldenstrook/inline-size}
+.mail-beelden-strook>button.mail-beelden-knop{gap:7px;padding:0 14px 0 11px;white-space:nowrap;text-align:start;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease}
+.mail-beelden-strook>button.mail-beelden-knop svg{flex:0 0 auto;width:16px;height:16px}
+.mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-kort{display:none}
+.mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='eenmaal']:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 30%,transparent)}
+.mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='afzender']:hover{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
+.mail-beelden-knop-icoon{position:relative;display:inline-flex;flex:0 0 auto}
+.mail-beelden-knop-icoon>b{position:absolute;top:-5px;right:-6px;display:grid;place-items:center;width:12px;height:12px;border-radius:50%;background:var(--warn);color:var(--panel);font:800 9px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;box-shadow:0 0 0 2px var(--panel)}
+@container beeldenstrook (max-width:640px){
+  .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-lang{display:none}
+  .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-kort{display:inline}
+}
+
 /* Telefoon: een open brief vult het scherm en is een modaal venster. Kaartjes van ANDERE, geminimaliseerde brieven (z-index 445) lagen
    erover — over «Ще»/⋮ en de onderste regels van de brief (stand: «mail-minimized-viewer intercepts pointer events»). Zolang deze brief
    open is, liggen ze eronder; bij sluiten of minimaliseren zijn ze er meteen weer. */
