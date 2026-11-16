@@ -20,6 +20,7 @@ import { koppelingVan } from './connector-v2';
 import { authenticate, unauthorized } from './mcp-connector';
 import { rateLimit } from '../server/platform';
 import { limietSleutel } from '../shared/ip-limiet';
+import { registreerStroomNoodstop } from './ai-toestemmingen';
 
 /**
  * SEC-002 (http-rand-07, afwerking A): een eigen, strenge emmer voor MISLUKTE aanmeldingen op de SSE-ingangen (elk een tokenopzoeking):
@@ -47,6 +48,7 @@ type Stroom = { userId: string; agent: string; res: http.ServerResponse; ruimte:
 const stromen = new Set<Stroom>();
 
 export const LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' });
+export const RESOURCES_LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/resources/list_changed' });
 
 const schrijf = (s: Stroom, tekst: string): boolean => { try { return s.res.write(tekst); } catch { return false; } };
 
@@ -57,6 +59,17 @@ export function meldLijstGewijzigd(userId: string, ruimte?: AiRuimte): number {
     if (s.userId !== userId) continue;
     if (ruimte !== undefined) s.ruimte = ruimte;
     if (schrijf(s, `event: message\ndata: ${LIST_CHANGED}\n\n`)) n++;
+  }
+  return n;
+}
+
+/** Alle open stromen van deze mens (of één agent) melden dat vaardigheden en MCP-bronnen gewijzigd zijn. */
+export function meldBronnenGewijzigd(userId: string, agent?: string): number {
+  let n = 0;
+  for (const s of stromen) {
+    if (s.userId !== userId) continue;
+    if (agent && agent !== '*' && s.agent !== agent) continue;
+    if (schrijf(s, `event: message\ndata: ${RESOURCES_LIST_CHANGED}\n\n`)) n++;
   }
   return n;
 }
@@ -76,6 +89,20 @@ export function sluitStromenVan(userId: string, agent?: string): number {
 
 /** Alle stromen netjes sluiten (bij het stoppen van de server). */
 export function sluitAlleStromen(): void { for (const s of [...stromen]) s.sluit(); }
+
+/** Noodstop: stuur `event: noodstop` en sluit actieve SSE-stromen (voor één gebruiker of voor iedereen). */
+export function sluitAlleStroomenVoorNoodstop(userId?: string): number {
+  let n = 0;
+  const payload = JSON.stringify({ reden: 'noodstop' });
+  for (const s of [...stromen]) {
+    if (userId !== undefined && s.userId !== userId) continue;
+    schrijf(s, `event: noodstop\ndata: ${payload}\n\n`);
+    s.sluit();
+    n++;
+  }
+  return n;
+}
+registreerStroomNoodstop(sluitAlleStroomenVoorNoodstop);
 
 /**
  * Een geauthenticeerde GET /<agent> als SSE-stroom openen. De aanroeper (server/start.ts) heeft het token al gecontroleerd en de

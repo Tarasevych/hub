@@ -22,7 +22,7 @@ export async function main(): Promise<number> {
     check('detail: «binnenkort» krijgt geen verzonnen scopes of stappen (geen koppelknop)', soon.every((i) => { const d = detailVan(i); return /ще не|nog niet|немає|Nog geen|Поки/.test(d.rechten[0].join(' ')) && !d.kluis && !d.loskoppelbaar; }));
     check('detail: loskoppelbaar alleen voor sleutels in de kluis (die een levende toestand hebben)', klaar.filter((i) => detailVan(i).loskoppelbaar).every((i) => ['github', 'telegram', 'anthropic', 'home-assistant'].includes(i.levend || '')));
     check('populair/nieuw: ids bestaan in de catalogus', [...POPULAIR, ...NIEUW].every((id) => integratie(id)));
-    check('populair: minstens 20; nieuw: de zes agenten + eigen client', POPULAIR.size >= 20 && NIEUW.size === 7 && [...NIEUW].every((id) => integratie(id)?.status === 'klaar'));
+    check('populair: minstens 20; nieuw: de zeven agenten + eigen client', POPULAIR.size >= 20 && NIEUW.size === 8 && [...NIEUW].every((id) => integratie(id)?.status === 'klaar'));
 
     // ---- standUitLevend: eerlijk, geen verzonnen «ok»
     const gh = integratie('github')!, slack = integratie('slack')!, claude = integratie('claude')!;

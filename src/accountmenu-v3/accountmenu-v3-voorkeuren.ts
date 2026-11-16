@@ -2,6 +2,9 @@
 // - вигляд переліку облікових записів: 'orbita' (Режим А, типово) або 'kaart' (Режим Б);
 // - пропорційний масштаб вікна: 0.78 .. 1.34 (типово 1.00);
 // - палітра кольорів (Модель В): короткий натиск гортає палітри по колу, правий натиск або утримання відкриває повний перелік.
+// ACCENT-001 (15.11.2026): «улюблений відтінок» більше не окрема палітра лише цього браузера (вона перемикала палітру на «Кольоровий»
+// і програвала його правилам за специфічністю, тож відтінок майже нічого не змінював). Тепер це акцент облікового запису
+// (shared/uiterlijk.ts → accent) поверх БУДЬ-ЯКОЇ палітри; давній локальний вибір один раз переноситься в обліковий запис.
 import { useSyncExternalStore } from 'react';
 import { ACCENT_KLEUREN, DIENST_ACCENT, type Accent, type DienstId } from '../../shared/menu-model';
 import { contrast, meng, type Waarden } from '../thema/paletten';
@@ -256,9 +259,9 @@ export function huidigePaletKeuze(systeemPalet: Palet | undefined, voorkeuren: A
   return 'grifel';
 }
 
-/** Модель В: короткий натиск перемикає на наступну доступну палітру по колу. */
+/** Модель В: короткий натиск перемикає на наступну доступну палітру по колу (лише палітри; відтінок — окремий вибір). */
 export function volgendePaletKeuze(huidig: AccountmenuV3PaletKeuze, violetToegestaan: boolean): AccountmenuV3PaletKeuze {
-  const beschikbaar = PALET_KEUZES_INFO.filter((p) => p.id !== 'violet' || violetToegestaan).map((p) => p.id);
+  const beschikbaar = PALET_KEUZES_INFO.filter((p) => p.groep === 'systeem' && (p.id !== 'violet' || violetToegestaan)).map((p) => p.id);
   const idx = beschikbaar.indexOf(huidig);
   if (idx < 0) return beschikbaar[0] || 'kleur';
   return beschikbaar[(idx + 1) % beschikbaar.length]!;
@@ -283,6 +286,17 @@ export function kiesAccountmenuV3Palet(
   pasVasteTintStijlToe(null);
   zetSysteemPalet?.(sys);
   return sys;
+}
+
+/** ACCENT-001: давній локальний «фіксований відтінок» → акцент облікового запису (один раз). Повертає відтінок, який треба
+ *  записати як акцент (якщо акценту ще немає), і прибирає локальний запис та старий стиль. Oude lokale tint → accent van het account. */
+export function migreerVasteTint(heeftAccent: boolean): AccountmenuV3VasteTint | null {
+  const huidig = leesAccountmenuV3Voorkeuren();
+  const tint = huidig.vasteTint && isVasteTint(huidig.vasteTint) ? huidig.vasteTint : null;
+  if (!tint) { pasVasteTintStijlToe(null); return null; }
+  schrijfNaarOpslag({ ...huidig, vasteTint: null });
+  pasVasteTintStijlToe(null);
+  return heeftAccent ? null : tint;
 }
 
 /** Очищує фіксований відтінок, якщо в системних налаштуваннях обрано іншу базову палітру. */

@@ -31,9 +31,12 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import {
   classificeerBijlage,
   formaatGrootte,
+  schoonSvgTekst,
+  veiligeMeldingUrl,
   type BijlageWeergaveVoorkeur,
   type MeldingBijlage,
 } from '../../../shared/meldingen-ecosysteem';
@@ -189,6 +192,11 @@ export default function MeldingBijlageSpeler({
   const [laden, setLaden] = useState(false);
   const [fout, setFout] = useState('');
   const mailPreviewRef = useRef<MailAttachmentPreview | null>(null);
+  const copyTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => {
+    if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+  }, []);
 
   useEffect(() => {
     setZoom(1);
@@ -202,6 +210,7 @@ export default function MeldingBijlageSpeler({
     let lokaalUrl = '';
     setMailVoorbeeld(null);
     setHexDump('');
+    setObjectUrl('');
     setTekstInhoud(bijlage.tekstVoorbeeld || '');
 
     const prepareer = async () => {
@@ -216,19 +225,50 @@ export default function MeldingBijlageSpeler({
         return;
       }
 
+      const isSvg = info.mime === 'image/svg+xml' || bijlage.naam.toLowerCase().endsWith('.svg');
+      const sanitizeSvg = (ruwSvg: string): string => {
+        const stap1 = schoonSvgTekst(ruwSvg);
+        try {
+          if (typeof window !== 'undefined' && typeof DOMPurify?.sanitize === 'function') {
+            return DOMPurify.sanitize(stap1, {
+              USE_PROFILES: { svg: true, svgFilters: true },
+              FORBID_TAGS: ['script', 'foreignObject', 'iframe', 'object', 'embed', 'base', 'link', 'meta', 'handler'],
+              FORBID_ATTR: ['onload', 'onerror', 'onclick', 'onmouseover', 'onfocus', 'onanimationstart'],
+            });
+          }
+        } catch {
+          /* базове очищення вже застосоване */
+        }
+        return stap1;
+      };
+
       let blob: Blob | null = null;
       if (bijlage.inhoudBase64) {
         try {
           const bytes = base64NaarBytes(bijlage.inhoudBase64);
-          blob = new Blob([bytes as unknown as BlobPart], { type: info.mime });
+          if (isSvg) {
+            const schoon = sanitizeSvg(new TextDecoder('utf-8', { fatal: false }).decode(bytes));
+            blob = new Blob([schoon], { type: 'image/svg+xml' });
+          } else {
+            blob = new Blob([bytes as unknown as BlobPart], { type: info.mime });
+          }
         } catch {
           setFout(t('Не вдалося розкодувати вміст вкладення.', 'Kan de bijlage-inhoud niet decoderen.'));
         }
       } else if (bijlage.tekstVoorbeeld) {
-        blob = new Blob([bijlage.tekstVoorbeeld], { type: info.mime });
+        if (isSvg) {
+          const schoon = sanitizeSvg(bijlage.tekstVoorbeeld);
+          blob = new Blob([schoon], { type: 'image/svg+xml' });
+        } else {
+          blob = new Blob([bijlage.tekstVoorbeeld], { type: info.mime });
+        }
       } else if (bijlage.url && !['beeld', 'video', 'audio', 'pdf'].includes(info.weergave)) {
         // Для текстових, табличних, архівних та офісних файлів підвантажуємо через безпечне завантаження у межах сеансу
-        if (bijlage.url.startsWith('/') || bijlage.url.startsWith(window.location.origin) || bijlage.url.startsWith('blob:') || bijlage.url.startsWith('data:')) {
+        const veiligVoorFetch =
+          (bijlage.url.startsWith('/') && !bijlage.url.startsWith('//')) ||
+          (typeof window !== 'undefined' && bijlage.url.startsWith(window.location.origin)) ||
+          bijlage.url.startsWith('blob:');
+        if (veiligVoorFetch) {
           setLaden(true);
           try {
             const resp = await fetch(bijlage.url, { credentials: 'same-origin' });
@@ -287,7 +327,8 @@ export default function MeldingBijlageSpeler({
           }
         }
       } else if (bijlage.url) {
-        setObjectUrl(bijlage.url);
+        const veiligeUrl = veiligeMeldingUrl(bijlage.url, 800) || (bijlage.url.startsWith('blob:') ? bijlage.url : '');
+        setObjectUrl(veiligeUrl);
       } else {
         setObjectUrl('');
       }
@@ -319,7 +360,8 @@ export default function MeldingBijlageSpeler({
     try {
       await navigator.clipboard.writeText(data);
       setGekopieerd(true);
-      window.setTimeout(() => setGekopieerd(false), 1800);
+      if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setGekopieerd(false), 1800);
     } catch {
       /* буфер обміну недоступний */
     }
@@ -398,7 +440,13 @@ export default function MeldingBijlageSpeler({
     }
 
     if (info.weergave === 'pdf' && objectUrl) {
-      return <iframe className='mel-speler-pdf' src={objectUrl} title={bijlage.naam} />;
+      const veiligFrame =
+        objectUrl.startsWith('blob:') ||
+        (objectUrl.startsWith('/') && !objectUrl.startsWith('//')) ||
+        (typeof window !== 'undefined' && objectUrl.startsWith(window.location.origin));
+      if (veiligFrame) {
+        return <iframe className='mel-speler-pdf' src={objectUrl} title={bijlage.naam} />;
+      }
     }
 
     if (info.weergave === 'agenda' && tekstInhoud) {

@@ -8,7 +8,7 @@ html.theme-plum-light:has(.canonical-chrome .mr-sign-in) body{background:#f0eef5
 html.theme-plum-dark:has(.canonical-chrome .mr-sign-in),
 html.theme-plum-dark:has(.canonical-chrome .mr-sign-in) body{background:#1f1722}
 html.palet-puur.theme-light:has(.canonical-chrome .mr-sign-in),
-html.palet-puur.theme-light:has(.canonical-chrome .mr-sign-in) body{background:#ffffff}
+html.palet-puur.theme-light:has(.canonical-chrome .mr-sign-in) body{background:var(--panel)}
 html.palet-puur.theme-dark:has(.canonical-chrome .mr-sign-in),
 html.palet-puur.theme-dark:has(.canonical-chrome .mr-sign-in) body{background:#000000}
 
@@ -46,7 +46,7 @@ html.palet-puur .canonical-chrome.theme-light:has(.mr-sign-in){
  --mr-login-sheet:#ffffff;--mr-login-card:#f7f7f7;
  --mr-login-sec-bg:#ffffff;--mr-login-sec-bg-hover:#f2f2f2;--mr-login-sec-bg-active:#e6e6e6;
  --mr-login-sec-border:rgba(0,0,0,.38);--mr-login-sec-border-hover:#000000;--mr-login-sec-ring:rgba(0,0,0,.12);
- background:#ffffff;
+ background:var(--panel);
 }
 html.palet-puur .canonical-chrome.theme-dark:has(.mr-sign-in){
  --mr-login-ink:#ffffff;--mr-login-muted:#c2c2c2;--mr-login-border:rgba(255,255,255,.28);
@@ -144,9 +144,9 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
  background:var(--mr-login-card);color:var(--mr-login-ink)
 }
 .mr-sign-in-account-row:has(.mr-sign-in-account:hover:not(:disabled)),
-.mr-sign-in-account-row:focus-within{border-color:rgba(115,139,171,.42);background:color-mix(in srgb,var(--mr-login-card) 82%,#ffffff)}
+.mr-sign-in-account-row:focus-within{border-color:rgba(115,139,171,.42);background:color-mix(in srgb,var(--mr-login-card) 82%,var(--papier))}
 .canonical-chrome:is(.theme-dark,.theme-plum-dark) .mr-sign-in-account-row:has(.mr-sign-in-account:hover:not(:disabled)),
-.canonical-chrome:is(.theme-dark,.theme-plum-dark) .mr-sign-in-account-row:focus-within{border-color:rgba(185,199,220,.34);background:color-mix(in srgb,var(--mr-login-card) 86%,#ffffff)}
+.canonical-chrome:is(.theme-dark,.theme-plum-dark) .mr-sign-in-account-row:focus-within{border-color:rgba(185,199,220,.34);background:color-mix(in srgb,var(--mr-login-card) 86%,var(--papier))}
 .canonical-signed-out.mr-sign-in .mr-sign-in-account{
  display:flex!important;align-items:center;gap:13px;width:100%;flex:1;min-width:0;min-height:66px;box-sizing:border-box;padding:9px 18px 9px 12px!important;
  border:1px solid var(--mr-login-border)!important;border-radius:999px!important;

@@ -10,7 +10,7 @@
 export type ActieSoort =
   | 'bekijken' | 'screenshot' | 'diagnose' | 'navigeren' | 'invoer'
   | 'lezen' | 'schrijven' | 'commando' | 'docker' | 'meten' | 'apps'
-  | 'mail' | 'agenda' | 'schijf' | 'github' | 'bord' | 'server' | 'zoeken' | 'uitrol' | 'onbekend';
+  | 'mail' | 'agenda' | 'schijf' | 'github' | 'bord' | 'server' | 'zoeken' | 'geheugen' | 'uitrol' | 'onbekend';
 
 type Vormen = { uk: readonly [string, string, string]; nl: readonly [string, string] };
 /** Lucide-icoonnaam per soort + meervoudsvormen (uk: 1 / 2–4 / 5+, nl: 1 / meer). */
@@ -33,6 +33,7 @@ export const SOORT_INFO: Readonly<Record<ActieSoort, { icoon: string } & Vormen>
   bord: { icoon: 'kanban', uk: ['дія на дошці', 'дії на дошці', 'дій на дошці'], nl: ['bordactie', 'bordacties'] },
   server: { icoon: 'server', uk: ['перевірка сервера', 'перевірки сервера', 'перевірок сервера'], nl: ['servercontrole', 'servercontroles'] },
   zoeken: { icoon: 'search', uk: ['пошук', 'пошуки', 'пошуків'], nl: ['zoekopdracht', 'zoekopdrachten'] },
+  geheugen: { icoon: 'brain', uk: ['дія з пам’яттю', 'дії з пам’яттю', 'дій із пам’яттю'], nl: ['geheugenactie', 'geheugenacties'] },
   uitrol: { icoon: 'rocket', uk: ['дія з оновленням', 'дії з оновленням', 'дій з оновленням'], nl: ['update-actie', 'update-acties'] },
   onbekend: { icoon: 'circle-help', uk: ['інша дія', 'інші дії', 'інших дій'], nl: ['andere actie', 'andere acties'] },
 };
@@ -69,9 +70,12 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   get_github_projects: 'github', draft_email_reply: 'mail',
   mcp_archive_status: 'server', mcp_backups_list: 'server', mcp_services_health: 'server', mcp_traffic_recent: 'server',
   site_search: 'zoeken', global_search: 'zoeken',
-  uitrol_voorstel_begin: 'uitrol', uitrol_voorstel_stuk: 'uitrol', uitrol_voorstel_klaar: 'uitrol', uitrol_voorstel_status: 'uitrol', uitrol_voorstel_annuleren: 'uitrol',
+  uitrol_voorstel_begin: 'uitrol', uitrol_voorstel_stuk: 'uitrol', uitrol_voorstel_klaar: 'uitrol', uitrol_voorstel_status: 'uitrol', uitrol_voorstel_annuleren: 'uitrol', uitrol_github_ophalen: 'uitrol',
   audit_read: 'server', siem_status: 'server', users_manage: 'server', flags_manage: 'server',
   orch_overzicht: 'uitrol', orch_context: 'uitrol', orch_taak_start: 'uitrol', orch_inleveren_begin: 'uitrol', orch_inleveren_stuk: 'uitrol', orch_inleveren_klaar: 'uitrol',
+  geheugen_stroom_zoeken: 'geheugen', geheugen_stroom_bewaren: 'geheugen', geheugen_stroom_verbinden: 'geheugen',
+  geheugen_agent_bots_overzicht: 'geheugen', geheugen_agent_bots_bezorgen: 'geheugen',
+  geheugen_taak_lezen: 'geheugen', geheugen_taak_opslaan: 'geheugen', geheugen_taak_overdracht: 'geheugen',
 };
 const zonderPrefix = (t: string) => String(t || '').replace(/^mcp__[^_]+(?:_[^_]+)*?__/, '');
 export const actieSoort = (tool: string): ActieSoort => TOOL_SOORT[zonderPrefix(tool)] ?? 'onbekend';
@@ -121,6 +125,56 @@ export function actieDoel(tool: string, args: unknown): string | undefined {
     case 'browser_invoke_action': { const x = tekst(a.action) ?? tekst(a.name); return x ? kort(verberg(x), 50) : undefined; }
     case 'users_manage': { const act = tekst(a.action); const id = tekst(a.user_id); const rol = tekst(a.role); return act && /^[a-z_]{3,10}$/.test(act) ? kort(`${act}${id && /^[A-Za-z0-9_.:-]{1,80}$/.test(id) ? ` ${id}` : ''}${rol && /^[a-z]{3,8}$/.test(rol) ? ` → ${rol}` : ''}`, 100) : undefined; }
     case 'flags_manage': { const act = tekst(a.action); const k = tekst(a.key); return act && /^[a-z]{3,8}$/.test(act) ? kort(`${act}${k && /^[a-z][a-z0-9-]{2,40}$/.test(k) ? ` ${k}` : ''}`, 60) : undefined; }
+    case 'geheugen_stroom_zoeken': { const d = tekst(a.doel_dienst); return d && /^[a-z0-9-]{1,24}$/.test(d) ? d : undefined; }
+    case 'geheugen_stroom_bewaren': { const k = tekst(a.sleutel); return k && /^[a-z0-9][a-z0-9._:-]{1,95}$/.test(k) ? kort(k, 80) : undefined; }
+    case 'geheugen_stroom_verbinden': { const r = tekst(a.relatie_soort); return r && /^(vervangt|ondersteunt|spreekt_tegen|afhankelijk_van|verwijst_naar)$/.test(r) ? r : undefined; }
+    case 'geheugen_agent_bots_overzicht': {
+      const ag = tekst(a.agent_slug);
+      const tk = tekst(a.taak_id);
+      const delen = [
+        ag && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(ag) ? ag : '',
+        tk && /^[A-Za-z0-9._:-]{1,60}$/.test(tk) ? tk : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 80) : undefined;
+    }
+    case 'geheugen_agent_bots_bezorgen': {
+      const ag = tekst(a.agent_slug);
+      const tk = tekst(a.taak_id);
+      const sr = tekst(a.soort_bericht);
+      const delen = [
+        ag && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(ag) ? ag : '',
+        sr && /^(gebeurtenis|besluit|overdracht|rapport|bestand|gesprek)$/.test(sr) ? sr : '',
+        tk && /^[A-Za-z0-9._:-]{1,60}$/.test(tk) ? tk : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 90) : undefined;
+    }
+    case 'geheugen_taak_lezen': {
+      const tk = tekst(a.taak_sleutel);
+      const ag = tekst(a.agent);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        ag && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(ag) ? ag : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 80) : undefined;
+    }
+    case 'geheugen_taak_opslaan': {
+      const tk = tekst(a.taak_sleutel);
+      const st = tekst(a.status);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        st && /^(open|bezig|wacht_op_eigenaar|klaar|gepauzeerd|geannuleerd)$/.test(st) ? st : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' · '), 80) : undefined;
+    }
+    case 'geheugen_taak_overdracht': {
+      const tk = tekst(a.taak_sleutel);
+      const naar = tekst(a.naar_agent);
+      const delen = [
+        tk && /^[A-Za-z0-9._:-]{2,80}$/.test(tk) ? tk : '',
+        naar && /^[a-z0-9][a-z0-9._:-]{1,47}$/.test(naar) ? `→ ${naar}` : '',
+      ].filter(Boolean);
+      return delen.length ? kort(delen.join(' '), 90) : undefined;
+    }
     default: {
       const repo = tekst(a.repo) ?? tekst(a.repository);
       return repo && /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : undefined;
@@ -191,6 +245,7 @@ const Z: Readonly<Record<string, [string, string]>> = {
   uitrol_voorstel_begin: ['Почав готувати оновлення сайту', 'Begon een update van de site voor te bereiden'], uitrol_voorstel_stuk: ['Надіслав частину пакета оновлення', 'Stuurde een deel van een updatepakket'],
   uitrol_voorstel_klaar: ['Підготував оновлення (чекає вашого схвалення)', 'Bereidde een update voor (wacht op uw goedkeuring)'],
   uitrol_voorstel_status: ['Перевірив стан оновлення', 'Controleerde de status van een update'], uitrol_voorstel_annuleren: ['Скасував підготовлене оновлення', 'Annuleerde een voorbereide update'],
+  uitrol_github_ophalen: ['Завантажив випуск із GitHub на попередню перевірку', 'Haalde een release uit GitHub op voor voorcontrole'],
   audit_read: ['Прочитав журнал безпеки (замасковано)', 'Las het beveiligingslogboek (gemaskeerd)'], siem_status: ['Перевірив передачу в SIEM', 'Controleerde de SIEM-export'],
   users_manage: ['Запропонував зміну користувача (чекає вашого passkey)', 'Stelde een wijziging van een gebruiker voor (wacht op uw passkey)'],
   flags_manage: ['Запропонував зміну прапорця функції (чекає підтвердження)', 'Stelde een wijziging van een functievlag voor (wacht op bevestiging)'],
@@ -198,6 +253,14 @@ const Z: Readonly<Record<string, [string, string]>> = {
   orch_overzicht: ['Переглянув координацію агентів', 'Bekeek de agentcoördinatie'], orch_context: ['Прочитав компактний контекст правил', 'Las de compacte regelcontext'],
   orch_taak_start: ['Зареєстрував задачу агента', 'Registreerde een agenttaak'], orch_inleveren_begin: ['Почав передачу результату', 'Begon een overdracht van een resultaat'],
   orch_inleveren_stuk: ['Надіслав частину пакета передачі', 'Stuurde een deel van een overdrachtspakket'], orch_inleveren_klaar: ['Завершив передачу (пакет у черзі перевірки)', 'Rondde een overdracht af (pakket in de controlerij)'],
+  geheugen_stroom_zoeken: ['Звернувся до Стріму пам’яті', 'Raadpleegde de geheugenstroom'],
+  geheugen_stroom_bewaren: ['Зберіг вузол у Стрімі пам’яті', 'Sloeg een knoop op in de geheugenstroom'],
+  geheugen_stroom_verbinden: ['Пов’язав вузли в Стрімі пам’яті', 'Verbond knopen in de geheugenstroom'],
+  geheugen_agent_bots_overzicht: ['Перевірив реєстр ботів агентів і чергу доставлення', 'Bekeek het register van agentbots en de bezorgwachtrij'],
+  geheugen_agent_bots_bezorgen: ['Підготував або надіслав запис пам’яті агента', 'Bezorgde of plaatste een geheugenbericht voor een agent'],
+  geheugen_taak_lezen: ['Переглянув наскрізні задачі й досьє переходу', 'Bekeek doorlopende taken en het overdrachtsdossier'],
+  geheugen_taak_opslaan: ['Зберіг наскрізну задачу для продовження', 'Sloeg een doorlopende taak op voor voortzetting'],
+  geheugen_taak_overdracht: ['Передав естафету задачі іншому агенту чи сесії', 'Droeg een taak over aan een andere agent of sessie'],
 };
 const SYNONIEM: Readonly<Record<string, string>> = {
   browser_snapshot: 'take_snapshot', browser_pages: 'list_pages', browser_list_tabs: 'list_pages', browser_console: 'list_console_messages', browser_network: 'list_network_requests',
@@ -268,6 +331,21 @@ const FOUT_UITLEG: Readonly<Record<string, readonly [string, string]>> = {
   GITHUB_RATE_LIMITED: ['ліміт запитів GitHub вичерпано', 'GitHub-limiet bereikt'],
   GITHUB_NOT_FOUND: ['GitHub: не знайдено (немає репозиторію або доступу)', 'GitHub: niet gevonden (repo bestaat niet of geen toegang)'],
   AI_UIT: ['ШІ вимкнено перемикачем адміністратора', 'AI uitgeschakeld door een beheerschakelaar'],
+  GEHEUGEN_GEHEIM_GEWEIGERD: ['Стрім пам’яті відхилив запис через виявлений секрет', 'De geheugenstroom weigerde opslag wegens een herkend geheim'],
+  GEHEUGEN_NIET_GEVONDEN: ['вузол пам’яті не знайдено в цьому просторі', 'geheugenknoop niet gevonden in deze ruimte'],
+  GEHEUGEN_ZELF_RELATIE_ONGELDIG: ['вузол пам’яті не можна пов’язати із самим собою', 'een geheugenknoop kan niet aan zichzelf worden gekoppeld'],
+  SLEUTELKLUIS_GESLOTEN: ['Сховище ключів заблоковано в поточній сесії', 'De sleutelkluis is in deze sessie vergrendeld'],
+  BOT_NIET_GEVONDEN: ['бота цього агента ще не налаштовано в поточній області', 'bot voor deze agent is nog niet ingesteld in deze ruimte'],
+  BOT_SLEUTEL_ONTBREEKT: ['токен бота ще не збережено', 'botsleutel ontbreekt nog'],
+  BOT_SLEUTEL_ONGELDIG: ['некоректний або відхилений токен бота', 'ongeldige of geweigerde botsleutel'],
+  BOT_GEPAUZEERD: ['бота призупинено — публікація зупинена', 'bot is gepauzeerd — bezorging gestopt'],
+  BOT_INGETROKKEN: ['бота відкликано — надсилання заборонено', 'bot is ingetrokken — bezorging geblokkeerd'],
+  BOT_GEEN_PUBLICATIERECHT: ['бот не має підтвердженого права публікувати в групі або темі', 'bot heeft geen bevestigd publicatierecht in groep of onderwerp'],
+  BOT_SOORT_NIET_TOEGESTAAN: ['цей вид повідомлень вимкнено в налаштуваннях бота', 'dit berichttype is uitgeschakeld in de botinstellingen'],
+  BOT_CHAT_ONGELDIG: ['не вказано або недійсний ідентифікатор групи', 'ongeldig of ontbrekend chat-id'],
+  BOT_FORUM_VEREIST: ['для теми потрібна група у форматі форуму', 'een onderwerpnummer vereist een forumgroep'],
+  BOT_TELEGRAM_FOUT: ['помилка доставлення через Телеграм — запис збережено для повтору', 'Telegram-bezorgfout — item bewaard voor herhaling'],
+  BEZORGING_NIET_GEVONDEN: ['запис доставлення не знайдено', 'bezorgitem niet gevonden'],
 };
 const REDEN_UITLEG: Readonly<Record<string, readonly [string, string]>> = {
   ruimte: ['інструмент належить до іншого простору (приватний/технічний) — ця AI-прив’язка його не має', 'hulpmiddel hoort bij de andere ruimte (privé/technisch) — deze AI-verbinding heeft het niet'],

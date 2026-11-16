@@ -17,10 +17,15 @@ export async function main(): Promise<number> {
   const { handler } = await import('../../backend/index');
   const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
 
+  const vorigeOwnerEmail = process.env.OWNER_EMAIL;
   const bestaand = (await pool.query(`SELECT id, data->>'email' AS email FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1`)).rows[0];
   const uid = bestaand ? String(bestaand.id) : randomUUID();
   if (bestaand) process.env.OWNER_EMAIL = String(bestaand.email);
-  else await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', uid, { email: process.env.OWNER_EMAIL || 'eigenaar@eenheid.test', role: 'owner', status: 'approved', name: 'Eigenaar' }]);
+  else {
+    const email = process.env.OWNER_EMAIL || 'eigenaar@eenheid.test';
+    process.env.OWNER_EMAIL = email;
+    await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', uid, { email, role: 'owner', status: 'approved', name: 'Eigenaar' }]);
+  }
   const eig = { id: uid, email: String(process.env.OWNER_EMAIL), role: 'owner', status: 'approved' };
   const sessies: string[] = [];
   const tabs: string[] = [];
@@ -132,6 +137,8 @@ export async function main(): Promise<number> {
     if (sessies.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id = ANY($1)`, [sessies]).catch(() => undefined);
     if (tabs.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_tab_sessions_v1' AND id = ANY($1)`, [tabs]).catch(() => undefined);
     if (!bestaand) { await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [uid]).catch(() => undefined); await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [uid]).catch(() => undefined); }
+    if (vorigeOwnerEmail === undefined) delete process.env.OWNER_EMAIL;
+    else process.env.OWNER_EMAIL = vorigeOwnerEmail;
   }
   return einde();
 }

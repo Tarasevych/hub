@@ -6,6 +6,7 @@ import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences, 
 import { echteWissel, hervat, isKlassiekPalet, isMaquetteStelsel, leesKeuze, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
 import './paletten.css';
 import './weergave-stijl.css';
+import './accent-laag.css';
 import './wissel-rust.css';
 import { themaWisselRust } from './wissel-rust';
 import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';
@@ -15,7 +16,7 @@ const GEBEURTENIS = 'tsv:thema';
 // IDENTITEIT-015: у стані ще щільність, рух, акцент і виразність ефектів (shared/uiterlijk.ts) — для <html> і для вигляду «Макет».
 // ACHTERGROND-001: ще налаштування «Живого фону» (src/achtergrond/). Ook de instellingen van de levende achtergrond.
 type Stand = { palet: Palet | undefined; auto: AutoInstelling | undefined; theme: unknown; stijl: WeergaveStijl; achtergrond: Partial<UiterlijkAchtergrond> | undefined };
-const uitVoorkeuren = (p: ReturnType<typeof readSharedPreferences>): Stand => ({ palet: p.palet, auto: p.auto, theme: p.theme, stijl: { dichtheid: p.dichtheid, beweging: p.beweging, accent: p.accent, effecten: p.effecten }, achtergrond: p.achtergrond });
+const uitVoorkeuren = (p: ReturnType<typeof readSharedPreferences>): Stand => ({ palet: p.palet, auto: p.auto, theme: p.theme, stijl: { dichtheid: p.dichtheid, beweging: p.beweging, accent: p.accent, effecten: p.effecten, transparantie: p.transparantie }, achtergrond: p.achtergrond });
 let stand: Stand = (() => { try { return uitVoorkeuren(readSharedPreferences()); } catch { return { palet: undefined, auto: undefined, theme: undefined, stijl: {}, achtergrond: undefined }; } })();
 const luisteraars = new Set<() => void>();
 const ververs = () => { const n = uitVoorkeuren(readSharedPreferences()); if (JSON.stringify(n) !== JSON.stringify(stand)) { stand = n; luisteraars.forEach((l) => l()); } };
@@ -75,7 +76,7 @@ export function useThemaPresentatie(theme: ThemePreference, apparaatDonker: bool
   }, [r.palet]);
   // IDENTITEIT-015: щільність, рух, акцент і ефекти облікового запису — на <html> кожного сервісу (оболонка викликає цей хук).
   const st = s.stijl;
-  useLayoutEffect(() => { pasWeergaveStijlToe(st); }, [st.dichtheid, st.beweging, st.accent, st.effecten]);
+  useLayoutEffect(() => { pasWeergaveStijlToe(st); }, [st.dichtheid, st.beweging, st.accent, st.effecten, st.transparantie]);
   return r.presentatie;
 }
 

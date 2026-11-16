@@ -1,14 +1,15 @@
 /* Werkblad v3 — bibliotheek, snelkoppelingen, mappen. Kleuren uit de thema-variabelen van de site; accent per herkomstdienst. */
 .bib-paneel{--bib-rand:color-mix(in srgb,currentColor 16%,transparent);display:flex;flex-direction:column;gap:.6rem;max-height:100%;min-height:0;padding:1rem;background:var(--surface,Canvas);color:var(--text,CanvasText);border:1px solid var(--bib-rand);border-radius:16px;box-sizing:border-box;min-width:0;overflow:hidden}
-.bib-kop{display:flex;align-items:center;justify-content:space-between}
-.bib-kop h2{margin:0;font-size:1.15rem}
+.bib-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}
+.bib-kop h2{margin:0;font-size:1.25rem;letter-spacing:-.01em}
+.bib-kop-tekst p{margin:.2rem 0 0;font-size:.88rem;opacity:.72;max-width:60ch}
 .bib-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .bib-zoek{display:flex;align-items:center;gap:.5rem;border:1px solid var(--bib-rand);border-radius:12px;padding:0 .75rem;min-height:44px}
 .bib-zoek svg{width:18px;height:18px;opacity:.7}
 .bib-zoek input{flex:1;min-height:42px;border:0;background:transparent;color:inherit;font:inherit;outline:none}
 .bib-zoek:focus-within{outline:2px solid var(--accent,#0f766e);outline-offset:2px}
 .bib-chips{min-width:0;display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.bib-chip{min-height:44px;padding:0 .9rem;border-radius:999px;border:1px solid var(--bib-rand);background:transparent;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}
+.bib-chip{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;padding:0 .55rem 0 .8rem;border-radius:999px;border:1px solid var(--bib-rand);background:transparent;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}
 .bib-chip[aria-pressed=true]{background:var(--accent,#0f766e);border-color:transparent;color:var(--text-on-accent)}
 .bib-balk{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
 .bib-balk select{min-height:44px;margin-left:.4rem;border-radius:10px;border:1px solid var(--bib-rand);background:transparent;color:inherit;font:inherit;padding:0 .5rem}
@@ -19,21 +20,6 @@
 .bib-knop:disabled,.bib-ikoonknop:disabled{opacity:.45;cursor:not-allowed}
 .bib-ikoonknop{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:10px;border:1px solid transparent;background:transparent;color:inherit;cursor:pointer}
 .bib-ikoonknop:hover,.bib-knop:hover:not(:disabled){border-color:var(--bib-rand);background:color-mix(in srgb,currentColor 7%,transparent)}
-.bib-lijst{list-style:none;margin:0;padding:0;overflow-y:auto;min-height:0;flex:1;display:flex;flex-direction:column;gap:2px}
-.bib-rij{display:grid;grid-template-columns:44px 40px minmax(0,1fr) auto;align-items:center;gap:.5rem;padding:.3rem .4rem;border-radius:12px;border-left:4px solid var(--bib-accent,transparent)}
-.bib-rij:hover{background:color-mix(in srgb,currentColor 5%,transparent)}
-.bib-rij[draggable=true]{cursor:grab}
-.bib-kies{display:grid;place-items:center;width:44px;height:44px;cursor:pointer}
-.bib-kies input{width:20px;height:20px}
-.bib-rij-icoon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;color:var(--bib-accent,currentColor);background:color-mix(in srgb,var(--bib-accent,currentColor) 12%,transparent)}
-.bib-rij-icoon svg{width:22px;height:22px}
-.bib-rij-tekst{display:flex;flex-direction:column;min-width:0}
-.bib-rij-tekst strong,.bib-rij-tekst small{overflow:hidden;text-overflow:ellipsis}
-.bib-rij-tekst small{opacity:.72;white-space:nowrap}
-.bib-rij-tekst .bib-reden{white-space:normal;opacity:.85;font-style:italic}
-.bib-acties{display:flex;gap:.25rem;flex-wrap:wrap;justify-content:flex-end}
-.bib-uit .bib-rij-icoon{filter:grayscale(1);opacity:.6}
-.bib-leeg{padding:1rem;opacity:.7}
 .bib-bewerk{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:60}
 .bib-bewerk form{width:min(92vw,480px);max-height:86vh;overflow:auto;display:flex;flex-direction:column;gap:.75rem;padding:1rem;border-radius:16px;background:var(--surface,Canvas);color:var(--text,CanvasText)}
 .bib-bewerk h3{margin:0}
@@ -63,10 +49,63 @@
 .bib-map-paneel li{height:100px}
 @keyframes bib-in{from{opacity:0;transform:translate(-50%,-4px)}to{opacity:1;transform:translate(-50%,0)}}
 @media (prefers-reduced-motion:reduce){.bib-map-paneel{animation:none}.bib-paneel *{transition:none!important}}
-@media (max-width:520px){.bib-rij{grid-template-columns:44px 40px minmax(0,1fr)}.bib-acties{grid-column:1/-1;justify-content:flex-start}.bib-paneel{border-radius:0;padding:.75rem}}
 
 /* Werkblad v3 (integratie): kleine tegels (telefoon, 72–90 px) — lange UA-namen afbreken binnen twee regels, icoon kleiner; volledige naam in title. */
 .wb3-tegel{container:wb3tegel/size;width:100%;height:100%}
 @container wb3tegel (max-width:92px){.bib-tegel{padding:.2rem;gap:.15rem}.bib-tegel-icoon{width:38px;height:38px;border-radius:12px}.bib-tegel-icoon svg{width:22px;height:22px}.bib-tegel-naam{font-size:.66rem;line-height:1.15}}
 @container wb3tegel (max-height:84px){.bib-tegel-naam{-webkit-line-clamp:1}}
 .bib-map-uit{margin-inline-start:.25rem;min-width:44px;min-height:44px;border:0;background:none;color:inherit;cursor:pointer;font-size:.75rem;text-decoration:underline}
+
+
+/* BIB-002 (15.11.2026): вигляд «магазину» — полиці за категоріями, картки з піктограмою, станом і кнопкою «Додати».
+   Winkelweergave: planken per categorie, kaarten met icoon, stand en «Toevoegen». Alle kleuren uit de themavariabelen. */
+.bib-chip svg{width:16px;height:16px;opacity:.8}
+.bib-chip-aantal{min-width:1.6rem;height:1.4rem;padding:0 .35rem;border-radius:999px;display:inline-grid;place-items:center;font-size:.75rem;font-variant-numeric:tabular-nums;background:color-mix(in srgb,currentColor 10%,transparent);box-sizing:border-box}
+.bib-chip[aria-pressed=true] .bib-chip-aantal{background:color-mix(in srgb,currentColor 22%,transparent)}
+.bib-schap{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:1.1rem;padding:.15rem .1rem .5rem;scrollbar-gutter:stable}
+.bib-groep-kop{display:flex;align-items:baseline;gap:.5rem;margin:0 0 .55rem;font-size:.95rem;font-weight:650}
+.bib-groep-kop small{font-weight:500;opacity:.6;font-variant-numeric:tabular-nums}
+.bib-raster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:.75rem}
+.bib-kaart{position:relative;display:flex;flex-direction:column;gap:.6rem;min-width:0;padding:.85rem;border-radius:16px;border:1px solid var(--bib-rand);background:color-mix(in srgb,var(--bib-accent,currentColor) 4%,transparent);transition:border-color .15s,box-shadow .15s,transform .15s}
+.bib-kaart:hover{border-color:color-mix(in srgb,var(--bib-accent,currentColor) 40%,transparent);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.bib-kaart[draggable=true]{cursor:grab}
+.bib-kaart.is-gekozen{border-color:var(--bib-accent,var(--accent,#0f766e));box-shadow:0 0 0 2px color-mix(in srgb,var(--bib-accent,var(--accent,#0f766e)) 35%,transparent)}
+.bib-kaart-boven{display:flex;align-items:flex-start;gap:.6rem}
+.bib-kaart-icoon{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:14px;color:color-mix(in srgb,var(--bib-accent,currentColor) 78%,currentColor);background:color-mix(in srgb,var(--bib-accent,currentColor) 15%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bib-accent,currentColor) 22%,transparent)}
+.bib-kaart-icoon svg{width:26px;height:26px}
+.bib-labels{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:.3rem;padding-top:.15rem}
+.bib-label{display:inline-flex;align-items:center;gap:.25rem;height:1.45rem;padding:0 .55rem;border-radius:999px;font-size:.72rem;font-weight:600;white-space:nowrap;background:color-mix(in srgb,currentColor 8%,transparent);color:inherit;opacity:.9}
+.bib-label svg{width:13px;height:13px}
+.bib-label.is-deur{background:color-mix(in srgb,var(--warn,#b45309) 14%,transparent);color:color-mix(in srgb,var(--warn,#b45309) 75%,currentColor)}
+.bib-label.is-op-stal{background:color-mix(in srgb,var(--good,#15803d) 14%,transparent);color:color-mix(in srgb,var(--good,#15803d) 70%,currentColor)}
+.bib-label.is-skoro{background:color-mix(in srgb,var(--accent,#0f766e) 12%,transparent)}
+.bib-label.is-uit{opacity:.75}
+.bib-kies{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:-.5rem -.5rem 0 0;border-radius:12px;cursor:pointer}
+.bib-kies input{width:20px;height:20px;accent-color:var(--bib-accent,var(--accent,#0f766e));cursor:pointer}
+.bib-kaart-tekst{display:flex;flex-direction:column;gap:.15rem;min-width:0;flex:1}
+.bib-kaart-tekst strong{font-size:.98rem;line-height:1.25;overflow-wrap:anywhere}
+.bib-kaart-tekst small{font-size:.8rem;line-height:1.35;opacity:.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bib-kaart-tekst .bib-reden{opacity:.85;font-style:normal;-webkit-line-clamp:3}
+.bib-acties{display:flex;align-items:center;gap:.25rem}
+.bib-toevoeg{flex:1;justify-content:center;font-weight:600;background:color-mix(in srgb,var(--bib-accent,var(--accent,#0f766e)) 12%,transparent);border-color:color-mix(in srgb,var(--bib-accent,var(--accent,#0f766e)) 30%,transparent)}
+.bib-toevoeg:hover:not(:disabled){background:color-mix(in srgb,var(--bib-accent,var(--accent,#0f766e)) 20%,transparent)!important}
+.bib-uit{background:transparent}
+.bib-uit .bib-kaart-icoon{filter:grayscale(1);opacity:.55}
+.bib-uit .bib-kaart-tekst strong{opacity:.75}
+.bib-leeg{padding:2rem 1rem;text-align:center;opacity:.7;margin:0}
+.bib-voet{position:sticky;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.6rem .75rem;border-radius:14px;border:1px solid var(--bib-rand);background:var(--surface,Canvas);box-shadow:0 -6px 20px rgba(0,0,0,.12)}
+.bib-voet>span{margin-inline-end:auto;font-weight:600}
+@media (prefers-reduced-motion:reduce){.bib-kaart{transition:none}}
+@media (min-width:521px){.bib-chips{flex-wrap:wrap;overflow:visible}}
+@media (max-width:520px){
+  .bib-kop-tekst p{font-size:.82rem}
+  .bib-raster{grid-template-columns:minmax(0,1fr);gap:.55rem}
+  .bib-kaart{display:grid;grid-template-columns:48px minmax(0,1fr) 44px;grid-template-areas:'i t k' 'i l l' 'a a a';column-gap:.65rem;row-gap:.4rem;padding:.7rem}
+  .bib-kaart-boven{display:contents}
+  .bib-kaart-icoon{grid-area:i;width:44px;height:44px}
+  .bib-labels{grid-area:l;padding-top:0}
+  .bib-kies{grid-area:k;margin:-.35rem -.35rem 0 0}
+  .bib-kaart-tekst{grid-area:t}
+  .bib-acties{grid-area:a}
+  .bib-voet>span{width:100%}
+}

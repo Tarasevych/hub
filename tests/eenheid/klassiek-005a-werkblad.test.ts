@@ -176,12 +176,11 @@ export async function main(): Promise<number> {
   const hubHeldMap = new Map((hubHeldRegel?.decls ?? []).map((d) => [d.eig, d.waarde]));
 
   check(
-    'ділова смуга .wb-balk, привітання .wb-begroeting та шапка огляду .mq-held мають компактну висоту min-height: 52px, щільні відступи, матове тло var(--mq-oppervlak) і нульове розмиття',
-    wbBalkMap.get('min-height') === '52px' &&
-      wbBalkMap.get('padding') === '8px 14px' &&
-      wbBalkMap.get('background') === 'var(--mq-oppervlak)' &&
-      wbBalkMap.get('background-image') === 'none' &&
-      wbBalkMap.get('backdrop-filter') === 'none' &&
+    'ділова смуга .wb-balk (без підкладки, WB-HOEK-001), привітання .wb-begroeting та шапка огляду .mq-held мають узгоджені відступи, прозорість і нульове розмиття',
+    wbBalkMap.get('min-height') === '0' &&
+      wbBalkMap.get('padding') === '0' &&
+      wbBalkMap.get('background') === 'transparent' &&
+      wbBalkMap.get('box-shadow') === 'none' &&
       wbBegroetingMap.get('min-height') === '52px' &&
       wbBegroetingMap.get('padding') === '10px 16px' &&
       wbBegroetingMap.get('background') === 'var(--mq-oppervlak)' &&

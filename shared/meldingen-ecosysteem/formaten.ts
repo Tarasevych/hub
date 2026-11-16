@@ -153,3 +153,22 @@ export function formaatGrootte(bytes: number): string {
   }
   return `${waarde.toFixed(waarde >= 10 ? 0 : 1)} ${eenheden[i]}`;
 }
+
+/** Видаляє з SVG небезпечні сценарії, обробники подій, зовнішні завантаження та XXE-блоки до відображення. */
+export function schoonSvgTekst(raw: string): string {
+  let s = String(raw || '').slice(0, 512_000);
+  s = s.replace(/<\?xml[\s\S]*?\?>/gi, '');
+  s = s.replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+  s = s.replace(/<!ENTITY[\s\S]*?>/gi, '');
+  const verbodenTags = ['script', 'foreignobject', 'iframe', 'object', 'embed', 'meta', 'link', 'base', 'noscript', 'template', 'handler'];
+  for (const tag of verbodenTags) {
+    s = s.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}\\s*>`, 'gi'), '');
+    s = s.replace(new RegExp(`<${tag}\\b[^>]*\\/?>`, 'gi'), '');
+  }
+  s = s.replace(/<(?:animate|animateTransform|set)\b[^>]*(?:href|xlink:href|on[a-z]+)[^>]*?(?:\/>|>[\s\S]*?<\/(?:animate|animateTransform|set)\s*>)/gi, '');
+  s = s.replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  s = s.replace(/\s+(?:xlink:)?href\s*=\s*(?:"\s*(?:javascript|vbscript|data:text\/html|data:image\/svg\+xml)[^"]*"|'\s*(?:javascript|vbscript|data:text\/html|data:image\/svg\+xml)[^']*')/gi, '');
+  s = s.replace(/url\(\s*(['"]?)\s*(?:https?:|javascript:|vbscript:|data:)[^)]*\1\s*\)/gi, 'none');
+  s = s.replace(/expression\s*\([^)]*\)/gi, '');
+  return s.trim();
+}

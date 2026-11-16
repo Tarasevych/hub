@@ -78,6 +78,7 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
   const [invoer, setInvoer] = useState('');
   const [actieveWerkruimteId, setActieveWerkruimteId] = useState('');
   const [gekozenContextSleutels, setGekozenContextSleutels] = useState<string[]>([]);
+  const [metGeheugen, setMetGeheugen] = useState(true);
 
   const lees = useCallback(async () => {
     try {
@@ -253,6 +254,8 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
               blokkadeUitleg={blokkadeUitleg}
               werkruimteId={actieveWerkruimteId}
               contextSleutels={gekozenContextSleutels}
+              metGeheugen={metGeheugen}
+              onToggleGeheugen={setMetGeheugen}
             />
           </>
         ) : (

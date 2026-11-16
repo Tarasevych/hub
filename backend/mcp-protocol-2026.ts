@@ -26,6 +26,7 @@ import {
 } from '../shared/mcp-protocol-2026-model';
 import { taalVanGebruiker } from './connectors-hulpmiddelen';
 import { knipTekst, tekstVeilig } from '../shared/tekst-veilig';
+import { leesVaardighedenVoorMcp, type VaardighedenOpslag } from './vaardigheden-opslag';
 
 export type McpProtocolContext = {
   userId: string;
@@ -45,6 +46,7 @@ export type McpProtocolContext = {
   instructions: string;
   modern: boolean;
   taal?: Taal;
+  vaardighedenOpslag?: VaardighedenOpslag;
 };
 
 async function taalVoorContext(ctx: McpProtocolContext, expliciet?: Taal): Promise<Taal> {
@@ -93,6 +95,7 @@ export const PROFIEL_BRONNEN: ReadonlySet<string> = new Set(['mr://identiteit/pr
 
 export async function lijstResourcesVoor(ctx: McpProtocolContext, taal?: Taal) {
   const t: Taal = await taalVoorContext(ctx, taal);
+  const actieveVaardigheden = await leesVaardighedenVoorMcp(ctx.userId, ctx.ruimte, ctx.agent, ctx.vaardighedenOpslag);
   const alles = [
     {
       uri: 'mr://identiteit/profiel',
@@ -126,10 +129,10 @@ export async function lijstResourcesVoor(ctx: McpProtocolContext, taal?: Taal) {
         : 'Lijst van alle beschikbare platformvaardigheden van Mijn Ruimte voor AI-agenten.',
       mimeType: 'application/json',
     },
-    ...MCP_VAARDIGHEDEN.map((v) => ({
+    ...actieveVaardigheden.map((v) => ({
       uri: v.uri,
       name: v.titel[t],
-      description: v.beschrijving[t],
+      description: v.samenvatting[t],
       mimeType: 'text/markdown',
     })),
   ];
@@ -172,8 +175,8 @@ export async function lijstResourceSjablonenVoor(ctx: McpProtocolContext, taal?:
       uriTemplate: 'mr://agent/{slug}/info',
       name: t === 'uk' ? 'Картка окремого конектора ШІ' : 'Kaart van een specifieke AI-connector',
       description: t === 'uk'
-        ? 'Метадані кінцевої точки конкретного ШІ-агента (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw).'
-        : 'Metadata van het eindpunt van een specifieke AI-agent (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw).',
+        ? 'Метадані кінцевої точки конкретного ШІ-агента (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).'
+        : 'Metadata van het eindpunt van een specifieke AI-agent (claude, gpt, gemini, grok, codex, copilot, cursor, antigravity, autoclaw, windsurf, cline, devin, opencode).',
       mimeType: 'application/json',
     },
   ];
@@ -261,13 +264,27 @@ export async function leesResourceVoor(
   }
 
   if (schoonUri === 'mr://skills/overzicht') {
+    const actieveVaardigheden = await leesVaardighedenVoorMcp(ctx.userId, ctx.ruimte, ctx.agent, ctx.vaardighedenOpslag);
     return {
       ok: true,
       contents: [{
         uri: schoonUri,
         mimeType: 'application/json',
         text: JSON.stringify({
-          skills: MCP_VAARDIGHEDEN.map((v) => ({ id: v.id, uri: v.uri, title: v.titel[t], description: v.beschrijving[t] })),
+          ruimte: ctx.ruimte,
+          agent: ctx.agent ?? null,
+          skills: actieveVaardigheden.map((v) => ({
+            id: v.id,
+            uri: v.uri,
+            source: v.bron,
+            space: v.ruimte,
+            version: v.versie,
+            ...(v.versieSemver ? { semver: v.versieSemver } : {}),
+            ...(v.afhankelijkheden?.length ? { dependencies: v.afhankelijkheden } : {}),
+            title: v.titel[t],
+            description: v.samenvatting[t],
+            requiredTools: v.vereisteHulpmiddelen,
+          })),
         }),
       }],
     };
@@ -275,8 +292,9 @@ export async function leesResourceVoor(
 
   if (schoonUri.startsWith('mr://skills/')) {
     const id = schoonUri.slice('mr://skills/'.length).trim();
-    const gevonden = MCP_VAARDIGHEDEN.find((v) => v.id === id);
-    if (!gevonden) return { ok: false, message: `Недійсні параметри: невідома навичка «${knipTekst(tekstVeilig(schoonUri), 120)}» · Ongeldige parameters: onbekende vaardigheid "${knipTekst(tekstVeilig(schoonUri), 120)}"` };
+    const actieveVaardigheden = await leesVaardighedenVoorMcp(ctx.userId, ctx.ruimte, ctx.agent, ctx.vaardighedenOpslag);
+    const gevonden = actieveVaardigheden.find((v) => v.id === id);
+    if (!gevonden) return { ok: false, message: `Недійсні параметри: навичка «${knipTekst(tekstVeilig(schoonUri), 120)}» не знайдена або вимкнена для поточного простору й агента · Ongeldige parameters: vaardigheid "${knipTekst(tekstVeilig(schoonUri), 120)}" niet gevonden of uitgeschakeld voor de huidige ruimte en agent` };
     return {
       ok: true,
       contents: [{
@@ -313,6 +331,7 @@ export async function leesResourceVoor(
     const slug = knipTekst(tekstVeilig(schoonUri.slice('mr://agent/'.length, -'/info'.length).trim()), 40);
     if (!isAgentSlug(slug)) return { ok: false, message: `Недійсні параметри: невідомий агент «${slug}» · Ongeldige parameters: onbekende agent "${slug}"` };
     const ag = v2Agent(slug);
+    const agentVaardigheden = await leesVaardighedenVoorMcp(ctx.userId, ctx.ruimte, slug, ctx.vaardighedenOpslag);
     return {
       ok: true,
       contents: [{
@@ -324,6 +343,8 @@ export async function leesResourceVoor(
           endpoint: agentUrl(ag.slug),
           webHosts: ag.webHosts,
           appSchemas: ag.appSchemas,
+          ruimte: ctx.ruimte,
+          activeSkills: agentVaardigheden.map((v) => ({ id: v.id, uri: v.uri, title: v.titel[t], source: v.bron })),
         }),
       }],
     };
@@ -482,7 +503,8 @@ export async function behandelMcpProtocolMethode(
       if (!arg || typeof arg.name !== 'string') {
         return { soort: 'error', code: MCP_RPC_FOUTCODES.ongeldigeParams, message: 'argument.name ontbreekt' };
       }
-      const completion = voltooiMcpArgument(ref, arg);
+      const actieveVaardigheden = await leesVaardighedenVoorMcp(ctx.userId, ctx.ruimte, ctx.agent, ctx.vaardighedenOpslag);
+      const completion = voltooiMcpArgument(ref, arg, { extraSkillIds: actieveVaardigheden.map((v) => v.id) });
       return {
         soort: 'result',
         result: omhulModernResultaat({ completion }, ctx.modern),

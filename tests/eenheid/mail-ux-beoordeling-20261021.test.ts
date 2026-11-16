@@ -51,9 +51,9 @@ export async function main(): Promise<number> {
   const ws = zc(lees('src/google-mail-werkruimte.css')) + zc(lees('src/mail-lezer-verbeteringen.css')) + zc(lees('src/mail-qa-2026-10.css'));
   const zLezer = Math.max(...[...ws.matchAll(/\.google-mail-reader-backdrop\{[^}]*z-index:(\d+)/g)].map((m) => Number(m[1])), 0);
   check('R1 z-index смуги: над рядками листів (їхні z ≤ 13), під вікном читання (воно в тій самій робочій області)', zStrook > 13 && zLezer > zStrook, `смуга ${zStrook}, вікно читання ${zLezer}`);
-  // висота смуги = відступ робочої області зверху: 70 px (комп'ютер), 62 px (≤ 700 px)
-  check('R1 висота = відступ .canonical-workspace зверху: 70 px і 62 px на телефоні (canoniek-omlijsting.css)', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;overflow:auto;[^}]*padding:70px /.test(chrome) && /@media\(max-width:700px\)\{[^@]*\.canonical-workspace,\.sidebar-pinned \.canonical-workspace\{padding:62px /.test(chrome)
-    && /height:var\(--mr-kop-hoogte, 70px\)/.test(r1) && /@media \(max-width:700px\) \{ html body \.canonical-chrome:has\(\.mail-top-command-bar\) \.canonical-workspace \{ --mr-kop-hoogte:62px; \} \}/.test(rev));
+  // висота смуги = відступ робочої області зверху: max(76px, --plaats-boven-onder + 14px) (комп'ютер), max(64px, --plaats-boven-onder + 12px) (≤ 700 px)
+  check('R1 висота = відступ .canonical-workspace зверху: формула ПК і телефону узгоджена з canoniek-omlijsting.css', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;[^}]*padding:max\(76px,calc\(var\(--plaats-boven-onder,62px\) \+ 14px\)\) /.test(chrome) && /@media\(max-width:700px\)\{[^@]*\.canonical-workspace,\.sidebar-pinned \.canonical-workspace\{padding:max\(64px,calc\(var\(--plaats-boven-onder,52px\) \+ 12px\)\) /.test(chrome)
+    && /height:var\(--mr-kop-hoogte, max\(76px, calc\(var\(--plaats-boven-onder, 62px\) \+ 14px\)\)\)/.test(r1) && /@media \(max-width:700px\) \{ html body \.canonical-chrome:has\(\.mail-top-command-bar\) \.canonical-workspace \{ --mr-kop-hoogte:max\(64px, calc\(var\(--plaats-boven-onder, 52px\) \+ 12px\)\); \} \}/.test(rev));
   check('R1 робоча область сама z 1 (своя площина) — смуга всередині не може лягти на шапку/дзвоник', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;/.test(chrome));
   check('R1 межа під шапкою лише після прокрутки (scroll-timeline, у @supports)', /@supports \(animation-timeline: scroll\(\)\)/.test(rev) && /scroll-timeline:--mr-kop block;/.test(rev) && /animation-range:0 48px;/.test(rev));
 

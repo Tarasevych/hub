@@ -15,8 +15,8 @@
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
 import { isOntbrekendeTabel, magTool, onderwerpVanGrantId } from './ai-toegang';
 import { TOEGANG_GESCHEIDEN, scopeVoorTool } from '../shared/ai-toegang';
-import { huidigeLade, huidigeNamens, huidigeRuimte } from './mcp-namens';
-import { apparaatInRuimte } from '../shared/ai-ruimte';
+import { huidigeLade, huidigeNamens, huidigeRuimte, metNamens } from './mcp-namens';
+import { apparaatInRuimte, ruimteOf } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { agentOnline } from './connectors-gateway';
 import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
@@ -41,12 +41,15 @@ import { getPool } from '../server/platform/pg';
 import { DEV_MG_ALLEEN_V2, DEV_MG_SET } from '../shared/dev-media-github';
 import { ECOSYSTEEM_TOOL_NAMEN } from '../shared/ai-ecosysteem';
 import { GITHUB_WERKRUIMTE_TOOL_NAMEN } from '../shared/github-werkruimte';
-/** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), ecosysteem- en nieuwe GitHub-werkruimtehulpmiddelen. */
+import { VAARDIGHEDEN_TOOL_NAMEN } from '../shared/vaardigheden-ecosysteem';
+/** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), uitrol_github_ophalen, ecosysteem-, vaardigheden- en nieuwe GitHub-werkruimtehulpmiddelen. */
 export const V2_ALLEEN: ReadonlySet<string> = new Set<string>([
   ...DEV_MG_SET,
   'browser_script',
+  'uitrol_github_ophalen',
   ...ECOSYSTEEM_TOOL_NAMEN,
   ...GITHUB_WERKRUIMTE_TOOL_NAMEN,
+  ...VAARDIGHEDEN_TOOL_NAMEN,
 ]);
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
 // 21.10.2026: de zes privé-rechten die «у розробці» stonden (backend/dev-gebruiker-hulpmiddeldefinities.ts; uitvoering in backend/dev-rechten-gebruiker.ts).
@@ -1355,6 +1358,14 @@ async function askSite(userId: string, site: SiteTool, args: any): Promise<ToolR
 export async function approveToolCall(userId: string, id: string) {
   const claimed = await store.transitionToolCall(id, userId, ['pending_approval'], 'approved');
   if (!claimed) return null;
+  const aanvraagRuimte = ruimteOf((claimed as { ruimte?: unknown }).ruimte);
+  const namensHerstel = {
+    client: String((claimed as { aanvrager_client?: unknown }).aanvrager_client ?? '').trim() || '?',
+    grantId: String((claimed as { aanvrager_grant?: unknown }).aanvrager_grant ?? ''),
+    agent: String((claimed as { aanvrager_agent?: unknown }).aanvrager_agent ?? ''),
+    ruimte: aanvraagRuimte,
+    lade: aanvraagRuimte,
+  };
   const extern = ontleedExterneToolNaam(claimed.tool);
   if (extern) {
     // De ruimtepoort is al gepasseerd toen de aanroep ontstond; de eigenaar keurt nu in zijn eigen sessie goed.
@@ -1364,7 +1375,7 @@ export async function approveToolCall(userId: string, id: string) {
       ? text('This tool was switched off before it could run.', true)
       : !verbinding
         ? text('That external MCP server is no longer connected.', true)
-        : await runExtern(userId, verbinding.id, extern.tool, claimed.args);
+        : await metNamens(namensHerstel, () => runExtern(userId, verbinding.id, extern.tool, claimed.args));
     await store.transitionToolCall(id, userId, ['approved'], uitkomst.isError ? 'failed' : 'succeeded', uitkomst);
     return store.getToolCall(userId, id);
   }
@@ -1375,7 +1386,9 @@ export async function approveToolCall(userId: string, id: string) {
   else if (effectiveMode(claimed.tool, modes[claimed.tool]) === 'off') result = text('This tool was switched off before it could run.', true);
   else {
     const invalid = site.validate(claimed.args);
-    result = invalid ? text(invalid, true) : await runSite(userId, site, claimed.args);
+    result = invalid
+      ? text(invalid, true)
+      : await metNamens(namensHerstel, () => runSite(userId, site, claimed.args));
   }
   await store.transitionToolCall(id, userId, ['approved'], result.isError ? 'failed' : 'succeeded', result);
   return store.getToolCall(userId, id);

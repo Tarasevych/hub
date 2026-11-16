@@ -38,7 +38,9 @@ import { openTechVenster, techActief, techBand, techBeeindigen, useTech } from '
 import type { TermijnModus } from '../tech/ruimtes-contract';
 import { beeindigen, starten, useRuimtes, verlengen } from '../tech/ruimtes/ruimtes-opslag';
 import { kiesRuimte } from '../tech/ruimtes/RuimteWissel';
-import { hervatAuto, pauzeerAuto, useAutoStatus, useThemaStand, zetPalet } from '../thema/useThema';
+import { hervatAuto, pauzeerAuto, useAutoStatus, useThemaStand, zetPalet, zetWeergaveStijl } from '../thema/useThema';
+import { ACCENT_NAMEN, ACCENT_TONEN, accentKeuzesMet, minderTransparantie } from '../thema/weergave-stijl';
+import { UITERLIJK_TRANSPARANTIE_STANDAARD_AAN, type UiterlijkAccent } from '../../shared/uiterlijk';
 import {
   begrensschaal,
   herstelAccountmenuV3Schaal,
@@ -46,11 +48,10 @@ import {
   kiesAccountmenuV3Palet,
   PALET_KEUZES_INFO,
   paletIcoonKleur,
-  pasVasteTintStijlToe,
   SCHAAL_STANDAARD,
   useAccountmenuV3Voorkeuren,
   volgendePaletKeuze,
-  wisAccountmenuV3VasteTint,
+  migreerVasteTint,
   zetAccountmenuV3Schaal,
   type AccountmenuV3PaletKeuze,
   type PaletKeuzeInfo,
@@ -58,7 +59,7 @@ import {
 import './accountmenu-v3.css';
 
 const OMTREK_32 = 97.4; // 2 * Math.PI * 15.5
-
+/** ACCENT-001: назви акцентів, обраних раніше в «Налаштування → Теми» (їх немає серед восьми відтінків меню). */
 function useAccountmenuV3PaletSync(violetToegestaan: boolean): {
   keuze: AccountmenuV3PaletKeuze;
   info: PaletKeuzeInfo;
@@ -67,15 +68,13 @@ function useAccountmenuV3PaletSync(violetToegestaan: boolean): {
 } {
   const thema = useThemaStand();
   const voorkeuren = useAccountmenuV3Voorkeuren();
+  // ACCENT-001: давній локальний відтінок → акцент облікового запису (діє в будь-якій палітрі й на всіх пристроях).
   useEffect(() => {
-    if (voorkeuren.vasteTint && thema.palet && thema.palet !== 'kleur') {
-      wisAccountmenuV3VasteTint();
-      return;
-    }
-    pasVasteTintStijlToe(voorkeuren.vasteTint);
-  }, [voorkeuren.vasteTint, thema.palet]);
+    const tint = migreerVasteTint(Boolean(thema.stijl.accent));
+    if (tint) zetWeergaveStijl({ accent: tint });
+  }, [voorkeuren.vasteTint, thema.stijl.accent]);
 
-  const keuze = huidigePaletKeuze(thema.palet, voorkeuren, violetToegestaan);
+  const keuze = huidigePaletKeuze(thema.palet, { ...voorkeuren, vasteTint: null }, violetToegestaan);
   const info = PALET_KEUZES_INFO.find((p) => p.id === keuze) || PALET_KEUZES_INFO[0]!;
   return {
     keuze,
@@ -209,6 +208,7 @@ export function AccountMenuV3({
   const dienst = typeof window !== 'undefined' ? serviceFromLocation() : 'hub';
   const violetToegestaan = dienst === 'ai';
   const paletSync = useAccountmenuV3PaletSync(violetToegestaan);
+  const themaStijl = useThemaStand().stijl;
   const autoStatus = useAutoStatus(theme);
   const tech = useTech();
   const ruimtes = useRuimtes();
@@ -254,7 +254,11 @@ export function AccountMenuV3({
   }, [voorkeuren.schaal, mobiel]);
 
   const donker = theme === 'dark' || theme === 'plum-dark' || (theme === 'auto' && autoStatus.presentatie === 'dark');
-  const paletKleur = paletIcoonKleur(paletSync.keuze, dienst, donker);
+  // ACCENT-001: з обраним відтінком піктограма палітри показує саме його — видно, що акцент діє поверх палітри.
+  const accentKeuze = themaStijl.accent as UiterlijkAccent | undefined;
+  const paletKleur = accentKeuze && ACCENT_TONEN[accentKeuze] ? ACCENT_TONEN[accentKeuze][donker ? 'donker' : 'licht'].accent : paletIcoonKleur(paletSync.keuze, dienst, donker);
+  const transparantie = typeof themaStijl.transparantie === 'number' ? themaStijl.transparantie : 0;
+  const accentInfo = accentKeuze ? ACCENT_NAMEN[accentKeuze] : undefined; // KLEUREN-001: назви з одного джерела · namen uit één bron
 
   // Стан технічного простору та колір технічної смуги (активні виключно для увімкненого облікового запису)
   const heeftTech = Boolean(displayUser) && (Boolean(tech.profiel) || Boolean(ruimtes.status?.technischToegestaan));
@@ -849,7 +853,9 @@ export function AccountMenuV3({
                           type='button'
                           className='am3-acc-btn is-icon-only canonical-account-forget'
                           disabled={busy || isSelecting || forgetting === item.grantId}
-                          title={uk ? 'Прибрати зі списку на цьому пристрої' : 'Verwijderen uit de lijst op dit apparaat'}
+                          title={uk
+                            ? 'Прибрати з цього пристрою: запис зникне зі списку, і щоб повернутися до нього, доведеться увійти знову. Сам обліковий запис, його дані та входи на інших пристроях не зміняться.'
+                            : 'Van dit apparaat verwijderen: het account verdwijnt uit de lijst en om terug te gaan moet u opnieuw aanmelden. Het account zelf, de gegevens en aanmeldingen op andere apparaten blijven ongewijzigd.'}
                           aria-label={uk ? `Прибрати запис: ${item.user.email}` : `Account verwijderen: ${item.user.email}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -995,7 +1001,7 @@ export function AccountMenuV3({
               <div className='am3-tray-head'>
                 <span>{uk ? 'Основні палітри' : 'Hoofdpaletten'}</span>
                 <span className='am3-tray-head-right'>
-                  <span>{uk ? paletSync.info.uk : paletSync.info.nl}</span>
+                  <span>{uk ? paletSync.info.uk : paletSync.info.nl}{accentInfo ? ` · ${uk ? accentInfo.uk : accentInfo.nl}` : ''}</span>
                   <button
                     type='button'
                     className='am3-tray-close'
@@ -1033,11 +1039,24 @@ export function AccountMenuV3({
 
               <div className='am3-tray-head' style={{ marginTop: '2px' }}>
                 <span>{uk ? 'Улюблений відтінок' : 'Vaste voorkeurstint'}</span>
+                {accentKeuze ? (
+                  <button
+                    type='button'
+                    className='am3-tray-link am3-tint-reset'
+                    data-am3-tint-reset=''
+                    title={uk ? 'Прибрати відтінок: кнопки, посилання, якорі й живе тло знову матимуть колір самої палітри' : 'Tint weghalen: knoppen, links, ankers en de levende achtergrond krijgen weer de kleur van het palet'}
+                    onClick={() => zetWeergaveStijl({ accent: undefined })}
+                  >
+                    {uk ? 'Як у палітрі' : 'Zoals het palet'}
+                  </button>
+                ) : null}
               </div>
 
               <div className='am3-tints-row' role='group' aria-label={uk ? 'Фіксовані кольорові відтінки' : 'Vaste kleurtinten'}>
-                {PALET_KEUZES_INFO.filter((p) => p.groep === 'vast').map((p) => {
-                  const isActief = paletSync.keuze === p.id;
+                {/* KLEUREN-001: той самий набір і ті самі назви, що в Налаштування → Теми → «Акцентна палітра» (раніше тут було 8, там 10). */}
+                {accentKeuzesMet(accentKeuze || undefined).map((id) => {
+                  const p = { id, kleur: ACCENT_TONEN[id].licht.accent, ...ACCENT_NAMEN[id] };
+                  const isActief = accentKeuze === p.id;
                   return (
                     <button
                       key={p.id}
@@ -1045,10 +1064,13 @@ export function AccountMenuV3({
                       className={`am3-tint-swatch${isActief ? ' active' : ''}`}
                       style={{ background: p.kleur }}
                       aria-pressed={isActief}
-                      title={`${uk ? p.uk : p.nl} — ${uk ? p.subUk : p.subNl}`}
+                      title={isActief
+                        ? (uk ? `${p.uk}: обрано. Натисніть ще раз, щоб повернути колір палітри.` : `${p.nl}: gekozen. Klik nogmaals om de kleur van het palet terug te zetten.`)
+                        : (uk ? `${p.uk}: кнопки, посилання, активні пункти меню й якорі, фокус і живе тло стануть цього кольору в будь-якій палітрі, світлій і темній. Фон і текст палітри не змінюються.` : `${p.nl}: knoppen, links, actieve menu-items en ankers, focus en de levende achtergrond krijgen deze kleur in elk palet, licht en donker. Achtergrond en tekst van het palet blijven.`)}
                       aria-label={uk ? p.uk : p.nl}
+                      data-am3-tint={p.id}
                       onClick={() => {
-                        paletSync.kies(p.id);
+                        zetWeergaveStijl({ accent: isActief ? undefined : (p.id as UiterlijkAccent) });
                       }}
                     >
                       {isActief ? <Check /> : null}
@@ -1056,6 +1078,42 @@ export function AccountMenuV3({
                   );
                 })}
               </div>
+
+              {/* ACCENT-001: прозорий режим блоків — типово вимкнено; найкраще видно з «Живим фоном». */}
+              <div className='am3-tray-head' style={{ marginTop: '2px' }}>
+                <span>{uk ? 'Прозорість блоків' : 'Doorschijnende blokken'}</span>
+                <label className='am3-transp-schakel' title={minderTransparantie()
+                  ? (uk ? 'На пристрої ввімкнено «Зменшити прозорість» — блоки лишаються суцільними, доки її не вимкнути в системі.' : 'Op het apparaat staat «Transparantie verminderen» aan — blokken blijven dicht tot u dat in het systeem uitzet.')
+                  : (uk ? 'Блоки й картки стають напівпрозорими, крізь них видно тло сторінки (найкраще — з «Живим фоном»). Текст, меню й вікна лишаються суцільними.' : 'Blokken en kaarten worden half doorschijnend, de achtergrond schemert erdoor (het mooist met de levende achtergrond). Tekst, menu\'s en vensters blijven dicht.')}>
+                  <input
+                    type='checkbox'
+                    role='switch'
+                    checked={transparantie > 0}
+                    data-am3-transparantie-aan=''
+                    onChange={(e) => zetWeergaveStijl({ transparantie: e.target.checked ? UITERLIJK_TRANSPARANTIE_STANDAARD_AAN : undefined })}
+                  />
+                  <span>{transparantie > 0 ? (uk ? 'Увімкнено' : 'Aan') : (uk ? 'Вимкнено' : 'Uit')}</span>
+                </label>
+              </div>
+              {transparantie > 0 ? (
+                <label className='am3-transp-schuif'>
+                  <small aria-hidden='true'>{uk ? 'Ледь' : 'Licht'}</small>
+                  <input
+                    type='range'
+                    min={5}
+                    max={100}
+                    step={5}
+                    value={transparantie}
+                    data-am3-transparantie=''
+                    aria-label={uk ? 'Ступінь прозорості блоків' : 'Mate van doorschijnendheid'}
+                    aria-valuetext={`${transparantie}%`}
+                    title={uk ? 'Ліворуч — ледь помітно, праворуч — виразно. Навіть на максимумі підкладка лишається щільною щонайменше на 30 %, щоб текст читався.' : 'Links — nauwelijks, rechts — duidelijk. Ook op het maximum blijft de ondergrond minstens voor 30 % dicht, zodat tekst leesbaar blijft.'}
+                    onChange={(e) => zetWeergaveStijl({ transparantie: Number(e.target.value) })}
+                  />
+                  <small aria-hidden='true'>{uk ? 'Виразно' : 'Sterk'}</small>
+                  <output aria-hidden='true'>{transparantie}%</output>
+                </label>
+              ) : null}
 
               <div className='am3-tray-footer-row'>
                 <span>{uk ? 'Короткий натиск на піктограму — по колу' : 'Kort klikken op pictogram — wisselt rond'}</span>

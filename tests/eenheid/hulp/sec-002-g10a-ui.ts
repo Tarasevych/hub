@@ -110,7 +110,7 @@ export async function uiBlok(check: Check): Promise<void> {
     check('extensie-02: lijst met wachtende opdrachten en hulpmiddelen ligt in een zone die de extensie niet bedient', /data-agents-pending="2"[^>]*data-ai-geen-actie="1"/.test(compact) && /data-mcp-approvals="2"[^>]*data-ai-geen-actie="1"/.test(ta));
     const consent = lees('src/McpToestemmingVenster.tsx'), bea = lees('src/extensie/BrowserEnAgenten.tsx'), prive = lees('src/extensie/ExtensiePrive.tsx'), tools = lees('src/McpHulpmiddelenPaneel.tsx'), srv = lees('src/ServerKoppelen.tsx');
     check('extensie-02: OAuth-toestemming «Дозволити» alleen bij een echte klik; matrix «Зберегти», «Так, дозволити все» en «Відкрити доступ» idem; zones gemarkeerd',
-      consent.includes('onClick={alleenMens(() => void decide(true))}') && consent.includes("data-mcp-consent-modal='true' {...geenAi}")
+      /data-mcp-consent-modal='true'[^>]*\{\.\.\.geenAi\}/.test(consent) && consent.includes('onClick={alleenMens(() => void decide(true))}')
       && bea.includes("onClick={alleenMens(() => void opslaan())}") && bea.includes("onClick={alleenMens(() => void snel('alles'))}") && bea.includes('alleenMens(() => void doeOpen())(e)') && /data-bea-ruimte=\{ruimte\} \{\.\.\.geenAi\}/.test(bea)
       && prive.includes('alleenMens(() => void doeOpen())(e)') && tools.includes('data-mcp-tools-panel=\'true\' data-mcp-tools={String(tools.length)} {...geenAi}')
       && (srv.match(/\{\.\.\.geenAi\} onClick=\{alleenMens\(\(\) => void geef\(/g) || []).length === 4);
@@ -181,10 +181,11 @@ export async function uiBlok(check: Check): Promise<void> {
     const o = beschrijfStapOp('onbekend', '/api/owner/iets/nieuws?x=1');
     check('interface-07: het venster weet WAT er bevestigd wordt (goedkeuren van een opdracht, passkey verwijderen) met het gevolg',
       a.bekend && /Дозволити дію на вашому пристрої/.test(a.uk) && a.gevaar && p.bekend && p.uk === 'Видалити passkey' && /не можна буде увійти/.test(p.gevolgUk));
-    check('interface-07: een onbekende actie zegt eerlijk het adres en «сайт не знає її опису» (met waarschuwing)', !o.bekend && o.gevaar && o.uk === 'Дія: /api/owner/iets/nieuws — сайт не знає її опису' && /kent er geen beschrijving/.test(o.nl));
+    // STAPOP-OMSCHR-001 (15.11.2026): het adres staat niet meer als hoofdtekst, maar klein in de details (o.technisch).
+    check('interface-07: een onbekende actie zegt eerlijk dat er geen beschrijving is (met waarschuwing); het adres staat in de details', !o.bekend && o.gevaar && o.uk === 'Важлива дія, для якої сайт не має опису' && o.technisch === '/api/owner/iets/nieuws' && /geen beschrijving/.test(o.nl));
     const venster = lees('src/platform/bevestig-toegang.tsx'), stap = lees('src/platform/stap-op.ts');
     check('interface-07: «Що ви підтверджуєте» en «Наслідок» staan in het venster; het pad gaat mee vanuit stapOpVragen',
-      venster.includes("data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'}") && venster.includes('beschrijfStapOp(opties.actie, opties.pad)') && stap.includes('pad: url, onthoudAanbieden: directGebaar()'));
+      venster.includes("data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'}") && venster.includes('beschrijfStapOp(opties.actie, opties.pad, opties.verzoek)') && stap.includes('pad: url, verzoek: verzoekKern(b), onthoudAanbieden: directGebaar()'));
     check('interface-07: «Запам’ятати» alleen bij een klik van de mens in dit tabblad (anders een eerlijke regel); het vinkje telt alleen een echte klik',
       venster.includes("weergave !== 'codewoord' && !nietDirect") && venster.includes("t('onthoudNietDirect')") && venster.includes('onClick={(e) => { if (!doorMens(e)) e.preventDefault(); }}'));
     const { directGebaar } = await import('../../../src/platform/stap-op');

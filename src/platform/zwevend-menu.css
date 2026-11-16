@@ -1,0 +1,4 @@
+/* ZWEVEND-001 (15.11.2026): спливне меню в порталі на рівні .canonical-chrome — завжди поверх карток, смуг і сусідніх блоків,
+   ніколи не обрізається краєм картки (overflow:hidden вітрини .mq-held). Координати ставить useZwevendePlek (top/left від кнопки).
+   Вище за вміст сторінки й нижнє меню, нижче за модальні вікна та центр сповіщень. */
+.zwevend-popover{position:fixed!important;z-index:530!important;right:auto!important;bottom:auto!important;margin:0!important;max-height:calc(100dvh - 20px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box}

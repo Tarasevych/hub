@@ -3,7 +3,7 @@
 //   - Внутрішній ШІ (локальний, без жодного передавання даних назовні — дозволений завжди, включно з критичною безпекою)
 //   - Зовнішній ШІ (Gemini, Claude, ChatGPT, Grok, AutoClaw) з обов’язковим очищенням секретів і забороною для конфіденційної безпеки.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, Copy, Cpu, Lock, ShieldAlert, Sparkles } from 'lucide-react';
 import {
   prioriteitLabel,
@@ -32,6 +32,11 @@ export default function MeldingAiPaneel({ lang, gebeurtenis, aiInstelling, onOnt
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const [bezig, setBezig] = useState<'intern' | 'extern' | null>(null);
   const [gekopieerd, setGekopieerd] = useState(false);
+  const copyTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => {
+    if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+  }, []);
 
   const uit = aiInstelling.modus === 'uit';
   const externGeblokkeerdDoorVeiligheid =
@@ -66,7 +71,8 @@ export default function MeldingAiPaneel({ lang, gebeurtenis, aiInstelling, onOnt
     try {
       await navigator.clipboard.writeText(tekst);
       setGekopieerd(true);
-      window.setTimeout(() => setGekopieerd(false), 2000);
+      if (copyTimerRef.current !== undefined) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setGekopieerd(false), 2000);
     } catch {
       /* без доступу до буфера обміну */
     }
@@ -137,7 +143,7 @@ export default function MeldingAiPaneel({ lang, gebeurtenis, aiInstelling, onOnt
               {samenvatting.bron === 'intern' ? <Cpu aria-hidden='true' /> : <Sparkles aria-hidden='true' />}
               {samenvatting.bron === 'intern'
                 ? t('Внутрішній ШІ (конфіденційно)', 'Interne AI (lokaal)')
-                : `${AANBIEDER_NAAM[aiInstelling.aanbieder]} · ${t('Зовнішній ШІ', 'Externe AI')}`}
+                : `${samenvatting.aanbieder || AANBIEDER_NAAM[aiInstelling.aanbieder]} · ${t('Зовнішній ШІ', 'Externe AI')}`}
             </span>
             {samenvatting.geschoond && (
               <span className='mel-chip is-schoon'>

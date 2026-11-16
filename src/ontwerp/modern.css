@@ -95,7 +95,8 @@
     box-shadow var(--ruimte-beweging), transform var(--ruimte-beweging);
 }
 .canonical-content .wb-snel-icoon { border-radius: var(--straal-m); }
-.canonical-content .wb-snel-naam { overflow-wrap: anywhere; }
+/* WOORDBREUK-001: тут було overflow-wrap:anywhere — назва служби рвалася посеред слова («Налаштува/ння»); тепер шрифт
+   зменшується разом із плиткою (src/werkblad/werkblad.css). NL: geen anywhere meer, de naam krimpt mee. */
 .canonical-content .wb-tip {
   border-radius: var(--straal-xl);
   background: linear-gradient(115deg, color-mix(in srgb, var(--accent) 12%, var(--panel)), var(--panel));

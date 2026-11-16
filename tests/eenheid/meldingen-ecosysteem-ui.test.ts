@@ -219,7 +219,7 @@ export async function main(): Promise<number> {
   const randen = ['n', 'z', 'w', 'o', 'nw', 'no', 'zw', 'zo'] as const;
   const alleRandenAanwezig = randen.every((r) => breedHtml.includes(`mel-rand mel-rand-${r}`));
   check(
-    '4a MeldingenPortaal відмальовує плавучу пігулку та широке 2-колонкове вікно з 8 ручками розміру',
+    '4a MeldingenPortaal відмальовує рухому пігулку та широке 2-колонкове вікно з 8 ручками розміру',
     pilHtml.includes('data-testid="mel-minimale-pil"') &&
       pilHtml.includes('mel-pil-teller') &&
       breedHtml.includes('mel-ecosysteem-portaal') &&
@@ -342,6 +342,45 @@ export async function main(): Promise<number> {
       agentMjs.includes("t: 'melding'") &&
       extBgJs.includes('stuurMeldingNaarServer') &&
       extBgJs.includes("t: 'melding'"),
+  );
+
+  // 9. Регресійні перевірки безпеки інтерфейсу, просторової ізоляції та реєстру ключ-сейфу
+  const vuileKaartGeb: typeof gewoneGeb = {
+    ...gewoneGeb,
+    id: 'geb-xss-url',
+    acties: [{ id: 'bad-nav', labelUk: 'Пастка', labelNl: 'Val', soort: 'navigeer', href: 'javascript:alert(1)' }],
+    meta: { link: 'javascript:alert(2)' },
+  };
+  const vuileKaartHtml = renderToStaticMarkup(
+    createElement(MeldingVeegKaart, {
+      lang: 'uk',
+      gebeurtenis: vuileKaartGeb,
+      profiel: profielBreed,
+      bijlageVoorkeur: profielBreed.bijlageWeergave,
+      onStatus: () => undefined,
+      onOntleden: async () => gewoneGeb.aiSamenvatting!,
+      onOpenBijlageModaal: () => undefined,
+    }),
+  );
+  const externPdfHtml = renderToStaticMarkup(
+    createElement(MeldingBijlageSpeler, {
+      lang: 'uk',
+      bijlagen: [{ id: 'ext-pdf', naam: 'extern.pdf', mime: 'application/pdf', grootteBytes: 1024, url: 'https://extern.example/doc.pdf' }],
+      actieveIndex: 0,
+      voorkeur: profielBreed.bijlageWeergave,
+    }),
+  );
+  const sleutelkluisTs = lees('shared/sleutelkluis.ts');
+  check(
+    '9a картка і переглядач блокують javascript:-посилання й зовнішній PDF iframe, а CSS не має !important',
+    !vuileKaartHtml.includes('javascript:') &&
+      !externPdfHtml.includes('<iframe') &&
+      !ecoCss.includes('!important') &&
+      backendEcoTs.includes("TECHNISCHE_RUIMTE_VEREIST") &&
+      backendEcoTs.includes('agentRuimte') &&
+      gatewayTs.includes('agentRuimte: entry.ruimte') &&
+      sleutelkluisTs.includes("tabel: 'app.melding_ecosysteem_profiel'") &&
+      sleutelkluisTs.includes("tabel: 'app.melding_ecosysteem_gebeurtenissen'"),
   );
 
   return einde();

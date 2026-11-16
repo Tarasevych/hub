@@ -21,7 +21,7 @@ import {
 import { useIsMaquette } from '../thema/useThema';
 import './github-brontekst-maquette.css';
 
-export default function CodeEnEditorPaneel({
+export default function CodeEnBewerkerPaneel({
   repo,
   tr,
   onOpenPulls,

@@ -12,7 +12,7 @@ import { enabledTypes } from './browser-mogelijkheden';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { gereserveerdeKlantNaam } from '../shared/ai-verbinding';
-import { huidigeNamens } from './mcp-namens';
+import { huidigeNamens, huidigeRuimte } from './mcp-namens';
 
 type QueryResult = { rows: any[]; rowCount: number | null };
 
@@ -402,10 +402,18 @@ export async function setDisabledTools(userId: string, disabled: string[]): Prom
 export type ToolCallStatus = 'pending_approval' | 'approved' | 'rejected' | 'succeeded' | 'failed' | 'timeout';
 export const TOOL_CALL_TTL_MIN = 10;
 
-export async function createToolCall(userId: string, tool: string, args: object, aanvrager: Aanvrager = aanvragerNu()) {
+export async function createToolCall(
+  userId: string,
+  tool: string,
+  args: object,
+  aanvrager: Aanvrager = aanvragerNu(),
+  ruimte: AiRuimte = huidigeRuimte(),
+) {
   const { rows } = await systeem(
-    `INSERT INTO app.connector_tool_calls (user_id, tool, args, aanvrager_client, aanvrager_grant, aanvrager_agent)
-     VALUES ($1, $2, $3::jsonb, $4, $5, $6) RETURNING *`, [userId, tool, jsonbTekst(args), aanvrager.client, aanvrager.grant, aanvrager.agent]);
+    `INSERT INTO app.connector_tool_calls (user_id, tool, args, aanvrager_client, aanvrager_grant, aanvrager_agent, ruimte)
+     VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7) RETURNING *`,
+    [userId, tool, jsonbTekst(args), aanvrager.client, aanvrager.grant, aanvrager.agent, ruimteOf(ruimte)],
+  );
   return rows[0];
 }
 /** SEC-002 ai-mcp-12: noodstop/blokkeren — alles wat nog op een klik wacht wordt afgewezen (de AI krijgt «rejected»). */
@@ -428,7 +436,7 @@ export async function getToolCall(userId: string, id: string) {
 export async function listToolCalls(userId: string, limit = 20) {
   await expireToolCalls(userId);
   const { rows } = await systeem(
-    `SELECT id, tool, args, status, result, created_at, decided_at, finished_at, aanvrager_client, aanvrager_grant, aanvrager_agent FROM app.connector_tool_calls
+    `SELECT id, tool, args, status, result, created_at, decided_at, finished_at, aanvrager_client, aanvrager_grant, aanvrager_agent, ruimte FROM app.connector_tool_calls
       WHERE user_id = $1 ORDER BY (status = 'pending_approval') DESC, created_at DESC LIMIT $2`, [userId, limit]);
   return rows;
 }

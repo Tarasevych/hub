@@ -219,7 +219,8 @@ export async function main(): Promise<number> {
   check(
     'мобільні таблиці стилів вимикають backdrop-filter і scroll-behavior: smooth на малих екранах',
     mqOmlijstingCss.includes('@media(max-width:730px){html[data-identiteit-maquette=\'aan\'] .canonical-chrome .canonical-workspace{scroll-behavior:auto}')
-      && mqOmlijstingCss.includes('backdrop-filter:none!important')
+      && mqOmlijstingCss.includes('backdrop-filter:none')
+      && !mqOmlijstingCss.includes('backdrop-filter:none!important')
       && mqOppCss.includes('.mq-held-voet')
       && mqOppCss.includes('.mq-anker-rail.mq-anker-rail[data-mobiel-open="ja"]')
       && mqOppCss.includes('scroll-behavior: auto;')

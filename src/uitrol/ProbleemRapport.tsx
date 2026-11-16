@@ -1,7 +1,8 @@
 // UITROL-001 · Вікно «Звіт про проблему»: опис (від вас), що включити, попередній перегляд і копіювання/збереження .md.
 // Усе, що потрапляє в текст, проходить маскування секретів (probleem-rapport.ts); у вікні видно, що саме приховано.
 // UITROL-001 · Venster «Probleemrapport»: beschrijving, keuze van de delen, voorbeeld, kopiëren of opslaan als .md. Zonder geheimen.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ClipboardCopy, Download, FileText, ShieldCheck, X } from 'lucide-react';
 import { kopieerNaarKlembord } from './kopieer';
 import { rapportTekst, type RapportDelen, type RapportInvoer } from './probleem-rapport';
@@ -20,15 +21,19 @@ export default function ProbleemRapport({ lang, invoer, onSluiten }: { lang: Lan
   const [delen, setDelen] = useState<RapportDelen>({ oorzaak: true, vereisten: true, log: true, context: true });
   const [gekopieerd, setGekopieerd] = useState(false);
   const venster = useRef<HTMLDivElement>(null);
+  const [portaalDoel, setPortaalDoel] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setPortaalDoel(document.querySelector<HTMLElement>('.canonical-chrome') || document.body);
+  }, []);
   const r = useMemo(() => rapportTekst({ ...invoer, lang, beschrijving, delen }), [invoer, lang, beschrijving, delen]);
 
   useEffect(() => {
     const vorige = document.activeElement as HTMLElement | null;
-    venster.current?.querySelector('textarea')?.focus();
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onSluiten(); };
     window.addEventListener('keydown', esc);
     return () => { window.removeEventListener('keydown', esc); vorige?.focus?.(); };
   }, [onSluiten]);
+  useEffect(() => { venster.current?.querySelector('textarea')?.focus(); }, [portaalDoel]);
 
   const kopieer = async () => {
     const ok = await kopieerNaarKlembord(r.tekst);
@@ -39,7 +44,7 @@ export default function ProbleemRapport({ lang, invoer, onSluiten }: { lang: Lan
   };
   const opslaan = () => bestandOpslaan(`probleem-${invoer.archief?.versie || 'uitrol'}.md`, r.tekst);
 
-  return <div className='ut-vr-scrim' onClick={(e) => { if (e.target === e.currentTarget) onSluiten(); }}>
+  const inhoud = <div className='ut-vr-scrim' onClick={(e) => { if (e.target === e.currentTarget) onSluiten(); }}>
     <div className='ut-vr-modal' role='dialog' aria-modal='true' aria-labelledby='ut-vr-rapport-titel' ref={venster} data-ut-rapport>
       <header>
         <div><h3 id='ut-vr-rapport-titel'><FileText aria-hidden='true' />{tr(lang, 'Звіт про проблему', 'Probleemrapport')}</h3>
@@ -64,4 +69,5 @@ export default function ProbleemRapport({ lang, invoer, onSluiten }: { lang: Lan
       </footer>
     </div>
   </div>;
+  return portaalDoel ? createPortal(<div className='admin-uitrol ut-root ut-portaal'>{inhoud}</div>, portaalDoel) : inhoud;
 }

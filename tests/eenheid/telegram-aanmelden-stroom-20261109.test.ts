@@ -29,10 +29,12 @@ export async function main(): Promise<number> {
   process.env.AANMELD_TERUG_BASIS = 'https://id.tarasevych.com';
 
   const pool = getPool('systeem');
+  const migPool = getPool('migratie');
   const mig0209 = readFileSync('migrations/0209_telegram_aanmelden_context.sql', 'utf8');
-  await pool.query(mig0209);
-  await pool.query(mig0209); // idempotentiecontrole van migratie 0209
+  await migPool.query(mig0209);
+  await migPool.query(mig0209); // idempotentiecontrole van migratie 0209
   const vlagVooraf = (await pool.query("SELECT aan, standaard FROM app.feature_flags WHERE sleutel = 'telegram-aanmelden-v1'")).rows[0];
+  const v2Vooraf = (await pool.query("SELECT aan, standaard FROM app.feature_flags WHERE sleutel = 'telegram-v2'")).rows[0];
   // Er mag maar één eigenaar zijn (records_een_eigenaar): de bestaande gebruiken, anders een tijdelijke maken.
   const bestaand = (await pool.query("SELECT id FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1")).rows[0];
   const eigenaar = bestaand ? String(bestaand.id) : randomUUID();
@@ -44,7 +46,8 @@ export async function main(): Promise<number> {
   // Deze test dekt de KLASSIEKE weg (knop «Так, це я»). Het beveiligde venster van TELEGRAM-002 staat hier uit; zijn eigen stroom
   // test tests/eenheid/telegram-venster-20261114.test.ts.
   await pool.query("UPDATE app.feature_flags SET aan = false WHERE sleutel = 'telegram-v2'");
-  (await import('../../backend/telegram-aanmelden/venster-sleutel')).vensterCacheWissen();
+  const vs = await import('../../backend/telegram-aanmelden/venster-sleutel');
+  vs.vensterCacheWissen();
   await pool.query('DELETE FROM app.tg_koppelingen WHERE telegram_id = $1', ['777']);
   await pool.query("DELETE FROM app.tg_chats WHERE telegram_id IN ('777','778')");
 
@@ -200,6 +203,9 @@ export async function main(): Promise<number> {
     check('bot plaatst nooit iets met parse_mode (geen opmaak-injectie)', !oproepen.some((o) => o.lichaam.includes('parse_mode')));
   } finally {
     if (vlagVooraf) await pool.query("UPDATE app.feature_flags SET aan = $1, standaard = $2 WHERE sleutel = 'telegram-aanmelden-v1'", [vlagVooraf.aan, vlagVooraf.standaard]);
+    if (v2Vooraf) await pool.query("UPDATE app.feature_flags SET aan = $1, standaard = $2 WHERE sleutel = 'telegram-v2'", [v2Vooraf.aan, v2Vooraf.standaard]);
+    opslag.vlagCacheWissen();
+    vs.vensterCacheWissen();
     await pool.query("DELETE FROM app.records WHERE tbl = 'owner_service_sessions_v1' AND id = $1", [proefSessie]).catch(() => undefined);
     await pool.query('DELETE FROM app.tg_koppelingen WHERE user_id = $1', [eigenaar]);
     await pool.query('DELETE FROM app.tg_matrix WHERE user_id = $1', [eigenaar]);
@@ -211,6 +217,7 @@ export async function main(): Promise<number> {
     await new Promise((ok) => setTimeout(ok, 50));
   }
   const uit = einde();
-  await pool.end?.().catch?.(() => undefined);
+  const { closePool } = await import('../../server/platform/pg');
+  await closePool().catch(() => undefined);
   return uit;
 }

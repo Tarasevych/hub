@@ -153,7 +153,7 @@ export async function main(): Promise<number> {
   // ================================================================ E. підказка «?»
   {
     const css = lees('src/hulp/hulp-knop.css'), toegang = lees('src/toegangslaag.css'), tip = lees('src/InfoTip.tsx');
-    check('E стилі спливаючої підказки (position:fixed, тло й текст з токенів) вантажить сам InfoTip',
+    check('E стилі спливної підказки (position:fixed, тло й текст з токенів) вантажить сам InfoTip',
       tip.includes("import './hulp/hulp-knop.css';") && /\.info-tip-tekst\{position:fixed;[^}]*background:var\(--panel\);color:var\(--text\)/.test(css) && /\.info-tip-tekst\[hidden\]\{display:none\}/.test(css));
     const overlay = lees('src/mail-overlay-oppervlak.css');
     check('E пошта не фарбує підказку «?» інвертованим тлом (var(--text)): білий-на-білому в темній, чорний-на-чорному у світлій темі',

@@ -246,6 +246,9 @@ export async function v2Roep(who: Koppeling, rechten: v2st.V2Keuze, naam: string
       void meldGeblokkeerdeAiPoging({ userId: who.userId, slug: who.agent, clientName: who.clientName, code: oorzaak, aanleiding: 'tools/call', hulpmiddel: naam }).catch(() => undefined);
       return weiger(who, naam, args, 'tech-profiel', `${TECH_PROFIEL_UIT(naam.slice(0, 80))} Cause: ${oorzaak}. Manage at ${agentPaginaUrl(who.agent)}.`);
     }
+    // AI-TERMIJN-001: echte technische aanroep = activiteit voor de regel «intrekken na N minuten zonder gebruik».
+    const vid = who.tokenId || who.grantId;
+    if (vid) void import('./ai-delegatie-kern').then((m) => m.gebruikt(who.userId, String(vid))).catch(() => undefined);
   }
   if (o.intern === WHOAMI) return whoami(who, rechten, ruimte, via);
   const uit = await roepTool(wieVoorKant(who, o.kant), o.intern as string, args, { naam, agent: who.agent });

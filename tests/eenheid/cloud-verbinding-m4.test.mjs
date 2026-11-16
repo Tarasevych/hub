@@ -96,7 +96,8 @@ test('Provider user identity verified on official host, no arbitrary browser ema
 });
 test('Encryption bind to record and prevent ciphertext relocation',async()=>{
  const poolStub=asUrl('export const getPool=()=>{throw Error("unused")};');
- const pg=await import(transpile('backend/cloud-verbinding-m4-pg.ts',{"'../server/platform/pg'":`'${poolStub}'`,"'./cloud-verbinding-m4'":`'${coreUrl}'`}));
+ const beveiligingUrl=await Promise.resolve(transpile('server/platform/beveiliging.ts',{"'./pg'":`'${poolStub}'`}));
+ const pg=await import(transpile('backend/cloud-verbinding-m4-pg.ts',{"'../server/platform/pg'":`'${poolStub}'`,"'../server/platform/beveiliging'":`'${beveiligingUrl}'`,"'./cloud-verbinding-m4'":`'${coreUrl}'`}));
  process.env.CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1='a'.repeat(64);
  try{const encrypted=pg.encryptCloudGrant({accessToken:'super-secret'},'owner:prive:account1');
   assert(!encrypted.includes('super-secret'));assert.deepEqual(pg.decryptCloudGrant(encrypted,'owner:prive:account1'),{accessToken:'super-secret'});
