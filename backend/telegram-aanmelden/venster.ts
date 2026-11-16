@@ -212,6 +212,7 @@ ${accounts}<div class="raster">${tegels}</div>
     ['pauze', 'Забагато невдалих спроб — код призупинено. Запит скасовано.', 'Te veel mislukte pogingen — de code is gepauzeerd. Het verzoek is geannuleerd.', false],
     ['uit', 'Код вимкнено після забагатьох помилок. Відновіть його на сайті ключем доступу.', 'De code is uitgeschakeld na te veel fouten. Herstel hem op de site met uw toegangssleutel.', false],
     ['netwerk', 'Немає зв’язку із сайтом. Спробуйте ще раз.', 'Geen verbinding met de site. Probeer opnieuw.', false],
+    ['plaats-nodig', 'Цей обліковий запис вимагає місце пристрою. Поверніться на сайт, дозвольте браузеру доступ до місця й оберіть піктограму ще раз. Спроба не втрачена.', 'Dit account eist de plaats van het apparaat. Ga terug naar de site, geef de browser toegang tot de locatie en kies het pictogram opnieuw. De poging is niet verbruikt.', false],
     ['account', 'Спершу оберіть обліковий запис.', 'Kies eerst een account.', false],
   ];
   const beginStap = w.stap === 'klaar' ? 'klaar' : w.stap === 'verlopen' ? 'verlopen' : w.stap === 'geweigerd' ? 'geweigerd' : '';
@@ -243,7 +244,7 @@ document.querySelectorAll('.keuze').forEach(k=>k.addEventListener('click',async(
   const r=await api('kies',{pos:Number(k.dataset.pos),koppeling:acc.value});bezig=false;
   if(r.uitkomst==='code'){$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();tgGebeurtenis('web_app_setup_closing_behavior',{need_confirmation:true});return}
   if(r.uitkomst==='ok'){einde('ok',true);return}
-  if(r.uitkomst==='netwerk'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon('netwerk');return}
+  if(r.uitkomst==='netwerk'||r.uitkomst==='plaats-nodig'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon(r.uitkomst);return}
   einde(r.uitkomst||'verlopen',false);
 }));
 const f=$('code-form'),fb=f?f.querySelector('button[type=submit]'):null;if(f)f.addEventListener('submit',async(e)=>{e.preventDefault();if(bezig)return;bezig=true;if(fb)fb.disabled=true;const v=$('code').value;

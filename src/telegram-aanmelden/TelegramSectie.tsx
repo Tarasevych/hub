@@ -74,6 +74,8 @@ type Mijn = {
   wijzigingen: Wijziging[];
   matrix: MatrixRij[];
   beschikbaar: string[];
+  /** 0299: aanmelden met Telegram alleen met de plaats van het toestel. */
+  plaatsVerplicht?: boolean;
   geblokkeerd: Array<{ apparaat: string; op: string; reden?: string }>;
   aanmeldingen: AanmeldingRij[];
   status: { stand: string; soort: string };
@@ -217,6 +219,9 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       instellen={(code, alarmCode) => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/instellen', { code, alarmCode }), tr(lang, 'Таємний код збережено.', 'Geheime code opgeslagen.'))}
       verwijderen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/verwijderen'), tr(lang, 'Таємний код видалено.', 'Geheime code verwijderd.'))}
       herstellen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/herstellen'), tr(lang, 'Таємний код знову працює.', 'De geheime code werkt weer.'))} />
+
+    <PlaatsEis lang={lang} aan={mijn.plaatsVerplicht === true}
+      zetten={(aan) => doeMet(() => tgPost(ctx, '/api/owner/telegram/plaats-eis', { aan }), aan ? tr(lang, 'Вимогу місця пристрою ввімкнено.', 'De eis van de plaats van het apparaat staat aan.') : tr(lang, 'Вимогу місця пристрою вимкнено.', 'De eis van de plaats van het apparaat staat uit.'))} />
 
     <Matrix ctx={ctx} lang={lang} rijen={mijn.matrix} beschikbaar={mijn.beschikbaar} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/matrix', body), tr(lang, 'Таблицю підтверджень збережено.', 'Bevestigingstabel opgeslagen.'))} />
 
@@ -619,6 +624,30 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
 }
 
 // ------------------------------------------------------------------------------------------------ таємний код (згорнутий за замовчуванням)
+/** TELEGRAM-004 (0299): preventieve bescherming — aanmelden met Telegram alleen als de browser de plaats van het toestel deelt.
+ *  Standaard UIT; «!» + uitleg van de gevolgen en hoe het weer uit kan (kort op de kaart, de rest onder «Докладніше»). */
+function PlaatsEis({ lang, aan, zetten }: { lang: Lang; aan: boolean; zetten: (aan: boolean) => Promise<void> }) {
+  const { bezig, doe } = useEenmalig();
+  return <div className='tga-blok' data-plaats-eis={aan ? 'aan' : 'uit'}>
+    <label className='tga-schakel-rij' title={tr(lang, 'Увімкнено: вхід через Telegram у цей обліковий запис відбудеться лише тоді, коли браузер надасть місце пристрою. Без дозволу на місце увійти через Telegram не вдасться — залишаться ключ доступу, Google та інші способи. Вимкнути можна тут будь-коли.', 'Aan: aanmelden met Telegram bij dit account lukt alleen als de browser de plaats van het apparaat deelt. Zonder toestemming voor de locatie kunt u zich niet met Telegram aanmelden — de toegangssleutel, Google en andere methoden blijven werken. Uitzetten kan hier altijd.')}>
+      <span className='tga-schakel-tekst'>
+        <strong><span aria-hidden='true'>❗ </span>{tr(lang, 'Вимагати місце пристрою', 'Plaats van het apparaat eisen')}</strong>
+        <small>{tr(lang, 'Вхід через Telegram лише з дозволом браузера на місце.', 'Aanmelden met Telegram alleen met toestemming voor de locatie.')}</small>
+      </span>
+      <input type='checkbox' role='switch' className='tga-schakel-invoer' checked={aan} disabled={bezig} onChange={(e) => { const nieuw = e.target.checked; void doe(() => zetten(nieuw)); }} />
+    </label>
+    <details className='tga-uitleg'>
+      <summary>{tr(lang, 'Докладніше: як це працює і як вимкнути', 'Meer: hoe het werkt en hoe u het uitzet')}</summary>
+      <ul className='tga-klein'>
+        <li>{tr(lang, 'Під час входу браузер запитає дозвіл на місце. У вікні Telegram ви побачите місце пристрою поруч із місцем за IP-адресою й попередження, якщо вони далеко одне від одного.', 'Bij het aanmelden vraagt de browser toestemming voor de locatie. In het Telegram-venster ziet u de plaats van het apparaat naast de plaats volgens het IP-adres, met een waarschuwing als ze ver uit elkaar liggen.')}</li>
+        <li>{tr(lang, 'Відмовили в дозволі або пристрій не може визначити місце — вхід через Telegram не відбудеться. Інші способи входу працюють як раніше.', 'Weigert u de toestemming of kan het apparaat de plaats niet bepalen, dan lukt aanmelden met Telegram niet. Andere aanmeldmethoden werken zoals voorheen.')}</li>
+        <li>{tr(lang, 'Передумали — вимкніть цей перемикач тут. Вимкнення, як і інші послаблення захисту, потребує підтвердження.', 'Bedacht u zich, zet deze schakelaar dan hier uit. Uitzetten vraagt, net als elke andere verzwakking van de beveiliging, een bevestiging.')}</li>
+        <li>{tr(lang, 'Обмеження: місце повідомляє сам браузер, тож це додаткова перешкода для чужого запиту, а не доказ особи. Зберігається лише приблизна точка (близько 1 км) у самому запиті на вхід.', 'Beperking: de browser meldt de plaats zelf, dus dit is een extra drempel voor een vreemd verzoek en geen bewijs van identiteit. Alleen een punt bij benadering (ongeveer 1 km) wordt bij het aanmeldverzoek bewaard.')}</li>
+      </ul>
+    </details>
+  </div>;
+}
+
 function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen }: { lang: Lang; code: Mijn['code']; telefoons: string; instellen: (c: string, a: string) => Promise<void>; verwijderen: () => Promise<void>; herstellen: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [c1, setC1] = useState(''); const [c2, setC2] = useState(''); const [alarm, setAlarm] = useState('');

@@ -5,6 +5,7 @@
 // uitsluitend de browser met het geheim én de bindingscookie van de transactie. Een Telegram-aanmelding geeft GEEN extra bevestiging.
 import { createHash } from 'node:crypto';
 import { plaatsTekst } from '../../shared/telegram-aanmelden/plaatsnamen';
+import { plaatsVerplicht } from './beleid-poort';
 import { geldigPunt, type GeoStand, type Punt } from '../../shared/telegram-aanmelden/plaats-vergelijking';
 import { apparaat as apparaatLabel } from '../../server/platform/audit';
 import { getPool } from '../../server/platform/pg';
@@ -87,6 +88,8 @@ type InlogRij = {
   soort: string | null; kandidaten: number[] | null; juist: number | null; symbool_ok: boolean; code_plek: 'site' | 'venster'; toestel: string; plaats: string; land: string;
   // TELEGRAM-004 (0298): punt volgens het IP-adres en volgens het toestel (na toestemming); numeric komt als tekst uit de database
   ip_lat?: string | number | null; ip_lon?: string | number | null; geo_lat?: string | number | null; geo_lon?: string | number | null; geo_nauwkeurig?: number | null; geo_stand?: GeoStand;
+  /** 0299: het gekozen account eist de plaats van het toestel en die ontbreekt nog. */
+  geo_vereist?: boolean;
 };
 const inlog = async (id: string): Promise<InlogRij | null> => (ID_RE.test(id) ? (await sql<InlogRij>('SELECT * FROM app.tg_inlog_verzoeken WHERE id = $1', [id]))[0] ?? null : null);
 const verlopen = (r: InlogRij): boolean => new Date(r.verloopt_op).getTime() < Date.now();
@@ -419,7 +422,7 @@ export async function inlogVoorVenster(id: string, tg: string): Promise<{ stand:
     kandidaten: r.kandidaten.map(Number), verlooptOp: new Date(r.verloopt_op).toISOString(), codeNodig: r.code_nodig, symboolOk: r.symbool_ok, codeOk: r.code_ok };
 }
 
-export type VensterKeuze = 'ok' | 'code' | 'passkey-nodig' | 'verlopen' | 'geweigerd' | 'fout-symbool';
+export type VensterKeuze = 'ok' | 'code' | 'passkey-nodig' | 'verlopen' | 'geweigerd' | 'fout-symbool' | 'plaats-nodig';
 /** Keuze in het venster: account + positie van het pictogram. Eén poging; een verkeerd pictogram sluit het verzoek. */
 export async function inlogVensterKiezen(id: string, tg: string, koppelingId: string, pos: number, bron: 'telegram' | 'browser'): Promise<VensterKeuze> {
   const r = await inlog(id);
@@ -429,6 +432,13 @@ export async function inlogVensterKiezen(id: string, tg: string, koppelingId: st
   if (!k || k.telegram_id !== tg || k.stand !== 'actief' || !k.rechten.includes('aanmelden') || !(await vlagVoor(k.user_id))) return 'geweigerd';
   const [geblokt] = await sql('SELECT 1 FROM app.tg_geblokkeerd WHERE user_id = $1 AND sleutel = $2', [k.user_id, blokSleutel(r)]);
   if (geblokt) { await inlogAfwijzen(id, 'apparaat-geblokkeerd'); return 'geweigerd'; }
+  // TELEGRAM-004 (0299): eist het account de plaats van het toestel en gaf de browser die niet, dan gaat het niet door. Het verzoek
+  // blijft open en de poging met het pictogram is NIET verbruikt: de site vraagt nu om de plaats, daarna kan de gebruiker opnieuw tikken.
+  if (r.geo_stand !== 'gegeven' && (await plaatsVerplicht(k.user_id))) {
+    await sql("UPDATE app.tg_inlog_verzoeken SET geo_vereist = true WHERE id = $1 AND stand = 'wacht'", [id]);
+    await audit(k.user_id, 'aanmelden.plaats-nodig', 'denied', { koppeling: k.id, apparaat: r.apparaat, geo: r.geo_stand || 'niet-gevraagd', bron });
+    return 'plaats-nodig';
+  }
   if (pos !== Number(r.juist)) {
     const upd = await sql("UPDATE app.tg_inlog_verzoeken SET stand = 'geweigerd', reden = 'fout-symbool', user_id = $2, koppeling_id = $3, afgehandeld_op = now() WHERE id = $1 AND stand = 'wacht' RETURNING id", [id, k.user_id, k.id]);
     if (!upd.length) return 'verlopen';
@@ -477,6 +487,12 @@ export async function inlogGoedkeuren(doel: string, tg: string): Promise<{ uitko
   if (r.kandidaten) return { uitkomst: 'verlopen', taal, terugUrl: '' };
   const k = await koppelingLezen(koppelingId || '');
   if (!k || k.telegram_id !== tg || k.stand !== 'actief' || !k.rechten.includes('aanmelden')) return { uitkomst: 'geweigerd', taal, terugUrl: '' };
+  // TELEGRAM-004 (0299): zonder venster kan de gebruiker niet opnieuw tikken → het verzoek sluit met een duidelijke reden op de site.
+  if (r.geo_stand !== 'gegeven' && (await plaatsVerplicht(k.user_id))) {
+    await sql("UPDATE app.tg_inlog_verzoeken SET stand = 'geweigerd', reden = 'plaats-nodig', geo_vereist = true, user_id = $2, koppeling_id = $3, afgehandeld_op = now() WHERE id = $1 AND stand = 'wacht'", [id, k.user_id, k.id]);
+    await audit(k.user_id, 'aanmelden.plaats-nodig', 'denied', { koppeling: k.id, apparaat: r.apparaat, geo: r.geo_stand || 'niet-gevraagd', bron: 'knop' });
+    return { uitkomst: 'geweigerd', taal, terugUrl: '' };
+  }
   const e = await eisenVoorAanmelden(k.user_id, r.apparaat_sleutel);
   if (!e.kan) {
     await sql("UPDATE app.tg_inlog_verzoeken SET stand = 'geweigerd', reden = 'passkey-nodig', user_id = $2, koppeling_id = $3, afgehandeld_op = now() WHERE id = $1 AND stand = 'wacht'", [id, k.user_id, k.id]);
@@ -513,6 +529,8 @@ export async function inlogWeigeren(id: string, tg: string): Promise<boolean> {
 // TELEGRAM-002: `pictogram` = index van het juiste pictogram (alleen voor deze browser, met het geheim); codePlek zegt waar de code moet.
 export type InlogStatus = { stand: InlogRij['stand']; reden: string; codeNodig: boolean; codeOk: boolean; verlooptOp: string; advies?: string; uitleg?: { uk: string; nl: string };
   pictogram: number | null; symboolOk: boolean; codePlek: 'site' | 'venster';
+  /** 0299: het account dat in Telegram gekozen werd, eist de plaats van dit toestel — de site vraagt er nu om. */
+  geoVereist: boolean;
   /** Pas NA het juiste pictogram: welke Telegram bevestigde (naam, @naam, foto) — vóór die tijd niets, anders lekt de opener van een vreemde link. */
   telegram?: TelegramBeeld };
 export async function inlogStatus(id: string, geheim: string): Promise<InlogStatus> {
@@ -524,7 +542,7 @@ export async function inlogStatus(id: string, geheim: string): Promise<InlogStat
     stand = 'verlopen';
   }
   const uit: InlogStatus = { stand, reden: stand === 'geweigerd' ? r.reden : '', codeNodig: r.code_nodig, codeOk: r.code_ok, verlooptOp: new Date(r.verloopt_op).toISOString(),
-    pictogram: r.kandidaten && r.juist !== null ? Number(r.kandidaten[Number(r.juist)]) : null, symboolOk: !!r.symbool_ok, codePlek: r.code_plek === 'venster' ? 'venster' : 'site' };
+    pictogram: r.kandidaten && r.juist !== null ? Number(r.kandidaten[Number(r.juist)]) : null, symboolOk: !!r.symbool_ok, codePlek: r.code_plek === 'venster' ? 'venster' : 'site', geoVereist: r.geo_vereist === true && r.geo_stand !== 'gegeven' };
   if (r.symbool_ok && r.koppeling_id && (stand === 'goedgekeurd' || stand === 'ingewisseld')) {
     const k = await koppelingLezen(r.koppeling_id).catch(() => null);
     if (k) uit.telegram = await telegramBeeld(k).catch(() => undefined);
@@ -575,6 +593,8 @@ export async function inlogInwisselen(id: string, geheim: string): Promise<{ use
   if (r.stand !== 'goedgekeurd' || !r.user_id || !r.koppeling_id) throw new Error('NOG_NIET_GOEDGEKEURD');
   if (r.code_nodig && !r.code_ok) throw new Error('CODE_NODIG');
   if (r.kandidaten && !r.symbool_ok) throw new Error('AANMELDEN_MISLUKT'); // TELEGRAM-002: zonder juist pictogram nooit
+  // TELEGRAM-004 (0299): laatste poort — welke weg er ook goedkeurde, zonder de geëiste plaats van het toestel komt er geen sessie.
+  if (r.geo_stand !== 'gegeven' && (await plaatsVerplicht(r.user_id))) { await audit(r.user_id, 'aanmelden.plaats-nodig', 'denied', { bron: 'inwisselen' }).catch(() => undefined); throw new Error('PLAATS_NODIG'); }
   const k = await koppelingLezen(r.koppeling_id);
   if (!k || k.stand !== 'actief') throw new Error('AANMELDEN_MISLUKT');
   const [claim] = await sql<{ id: string }>("UPDATE app.tg_inlog_verzoeken SET stand = 'ingewisseld' WHERE id = $1 AND stand = 'goedgekeurd' RETURNING id", [id]);

@@ -6,7 +6,7 @@
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../../server/platform/router';
 import { json } from '../../server/platform';
 import { passkeyStapOpGeldig, stapOpSessieId } from '../stap-op';
-import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, type PoortAuth } from './beleid-poort';
+import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, plaatsVerplicht, plaatsVerplichtZetten, type PoortAuth } from './beleid-poort';
 import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagHoofdschakelaar, vlagVoor } from './opslag';
 import { koppelAnnuleren, koppelBevestigen, koppelStart, koppelStatus, magTelegram, profielFotoData } from './koppelen';
 import { getPool } from '../../server/platform/pg';
@@ -20,7 +20,7 @@ import { kopKlopt, updateVerwerken, type Update } from './webhook';
 import { publiekeStand } from './status';
 import * as beheer from './beheer';
 import { SITE_BASIS } from './berichten';
-import { audit } from './meldingen';
+import { audit, siteMelding } from './meldingen';
 import { KOPPEL_STANDEN, STROOK_KLEUREN } from '../../shared/telegram-aanmelden/model';
 import { beoordeel, keuzeToegestaan, voorinstellingToepassen, werkelijkeEis, type KeuzeId, type Voorinstelling } from '../../shared/telegram-aanmelden/beleid';
 import { apparaat as apparaatLabel } from '../../server/platform/audit';
@@ -208,6 +208,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       matrix: soorten.map((s) => ({ sleutel: s.sleutel, naam: s.naam, minimum: s.minimum, standaard: s.standaard, gevoelig: s.gevoelig, keuze: keuzes[s.sleutel] ?? s.standaard,
         eis: werkelijkeEis(s, keuzes[s.sleutel], { codeVerplicht: inst.code.verplichtVoor.includes(s.sleutel) }) })),
       beschikbaar: [...beschikbaar],
+      // TELEGRAM-004 (0299): eist dit account de plaats van het toestel bij aanmelden met Telegram?
+      plaatsVerplicht: await plaatsVerplicht(a.user.id).catch(() => false),
       geblokkeerd: (await sql<{ sleutel: string; op: Date }>('SELECT sleutel, op FROM app.tg_geblokkeerd WHERE user_id = $1 ORDER BY op DESC LIMIT 50', [a.user.id])).map((g) => ({ apparaat: g.sleutel, op: new Date(g.op).toISOString() })),
       status: await publiekeStand(),
       standen: KOPPEL_STANDEN,
@@ -393,6 +395,17 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       await sql('INSERT INTO app.tg_matrix (user_id, keuzes) VALUES ($1,$2::jsonb) ON CONFLICT (user_id) DO UPDATE SET keuzes = EXCLUDED.keuzes, gewijzigd_op = now()', [a.user.id, JSON.stringify(keuzes)]);
       await audit(a.user.id, 'matrix.gewijzigd', 'success', { keuzes });
       return json({ ok: true, keuzes });
+    }),
+    // TELEGRAM-004 (0299): «Вимагати місце пристрою» aan/uit. Zelfde bewaking als de bevestigingstabel: uitzetten verzwakt de
+    // bescherming en vraagt dus dezelfde bevestiging; nooit buitensluiten — de andere aanmeldmethoden vallen niet onder deze eis.
+    'POST /api/owner/telegram/plaats-eis': bewaakt('matrix-wijzigen', async (_rc, a, d) => {
+      const aan = d.aan === true;
+      await plaatsVerplichtZetten(a.user.id, aan);
+      await audit(a.user.id, 'plaats-eis.gewijzigd', 'success', { aan });
+      await siteMelding(a.user.id, aan ? { uk: '📍 Вхід через Telegram тепер вимагає місце пристрою', nl: '📍 Aanmelden met Telegram eist nu de plaats van het apparaat' } : { uk: '📍 Вимогу місця пристрою для входу через Telegram вимкнено', nl: '📍 De eis van de plaats van het apparaat bij aanmelden met Telegram staat uit' },
+        aan ? { uk: 'Без дозволу браузера на доступ до місця вхід через Telegram у цей обліковий запис не відбудеться. Інші способи входу працюють як раніше. Вимкнути: «Способи входу» → Telegram → «Вимагати місце пристрою».', nl: 'Zonder toestemming van de browser voor de locatie lukt aanmelden met Telegram bij dit account niet. Andere aanmeldmethoden werken zoals voorheen. Uitzetten: «Aanmeldmethoden» → Telegram → «Plaats van het apparaat eisen».' }
+          : { uk: 'Вхід через Telegram знову можливий без місця пристрою. Якщо це зробили не ви — увімкніть вимогу знову й перевірте активні сеанси.', nl: 'Aanmelden met Telegram kan weer zonder de plaats van het apparaat. Deed u dit niet zelf, zet de eis dan weer aan en controleer de actieve sessies.' }).catch(() => undefined);
+      return json({ ok: true, plaatsVerplicht: aan });
     }),
     'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (rc, a, d) => {
       const m = contextMetaVan(rc);

@@ -19,6 +19,15 @@ import { beoordeel, werkelijkeEis, type ActieSoort, type Beoordeling, type Keuze
 export const BEVESTIGING_GELDIG_MS = 5 * 60 * 1000;
 export type PoortAuth = StapOpAuth & { user: { id: string; role?: string; email?: string } };
 
+/** TELEGRAM-004 (0299): eist dit account de plaats van het toestel bij aanmelden met Telegram? Standaard nee. */
+export async function plaatsVerplicht(userId: string): Promise<boolean> {
+  const [r] = await sql<{ g: boolean }>('SELECT geo_verplicht AS g FROM app.tg_matrix WHERE user_id = $1', [userId]);
+  return r?.g === true;
+}
+export async function plaatsVerplichtZetten(userId: string, aan: boolean): Promise<void> {
+  await sql("INSERT INTO app.tg_matrix (user_id, keuzes, geo_verplicht) VALUES ($1,'{}'::jsonb,$2) ON CONFLICT (user_id) DO UPDATE SET geo_verplicht = EXCLUDED.geo_verplicht, gewijzigd_op = now()", [userId, aan]);
+}
+
 export async function keuzesVan(userId: string): Promise<Record<string, KeuzeId>> {
   const [r] = await sql<{ keuzes: Record<string, KeuzeId> }>('SELECT keuzes FROM app.tg_matrix WHERE user_id = $1', [userId]);
   return r?.keuzes && typeof r.keuzes === 'object' ? r.keuzes : {};

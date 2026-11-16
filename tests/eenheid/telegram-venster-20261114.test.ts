@@ -228,6 +228,33 @@ export async function main(): Promise<number> {
         && rij.lat === '50.85' && rij.lon === '4.35' && rij.n === 43 && rij.st === 'gegeven', JSON.stringify({ fout, nee, ongeldig, ja, nogEens, rij }));
       check('plaats van het toestel: het logboek kent alleen de stand, geen coördinaten', logRijen.length >= 3 && /gegeven/.test(log) && !/50\.8|4\.35|lat|lon/.test(log), log);
     }
+    {
+      // TELEGRAM-004 (0299): «Вимагати місце пристрою» — zonder de plaats van het toestel geen aanmelding met Telegram bij dit account.
+      const bp = await import('../../backend/telegram-aanmelden/beleid-poort');
+      check('plaats-eis: standaard uit', (await bp.plaatsVerplicht(eigenaar)) === false);
+      await bp.plaatsVerplichtZetten(eigenaar, true);
+      const ie = await inl.inlogStart('tx-eis', ua, { herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Brussels', land: 'BE' } });
+      await bericht(`/start i_${ie.id}`);
+      const juistE = await juistePos(ie.id);
+      const zonder = await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram');
+      const stE = await inl.inlogStatus(ie.id, ie.geheim);
+      check('plaats-eis aan, geen plaats: het juiste pictogram wordt NIET aanvaard («plaats-nodig»), het verzoek blijft open en de site krijgt geoVereist',
+        zonder === 'plaats-nodig' && stE.stand === 'wacht' && stE.geoVereist === true && stE.symboolOk === false, JSON.stringify({ zonder, stE}));
+      await inl.inlogPlaats(ie.id, ie.geheim, { stand: 'geweigerd' });
+      check('plaats-eis aan, toestemming geweigerd: nog steeds geen aanmelding', (await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram')) === 'plaats-nodig');
+      await inl.inlogPlaats(ie.id, ie.geheim, { stand: 'gegeven', lat: 50.85, lon: 4.35, nauwkeurig: 30 });
+      const met = await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram');
+      const stE2 = await inl.inlogStatus(ie.id, ie.geheim);
+      check('plaats-eis aan, plaats gegeven: dezelfde poging slaagt nu en geoVereist is weg', (met === 'ok' || met === 'code') && stE2.stand === 'goedgekeurd' && stE2.geoVereist === false, JSON.stringify({ met, stE2 }));
+      // Laatste poort: een goedgekeurd verzoek zonder plaats (bv. goedgekeurd vóór het aanzetten) wordt niet ingewisseld.
+      await pool.query("UPDATE app.tg_inlog_verzoeken SET geo_stand = '', geo_lat = NULL, geo_lon = NULL, geo_nauwkeurig = NULL, code_nodig = false WHERE id = $1", [ie.id]);
+      const poort = await inl.inlogInwisselen(ie.id, ie.geheim).then(() => '', (e) => String((e as Error).message));
+      check('plaats-eis aan: inwisselen zonder plaats geweigerd (PLAATS_NODIG)', poort === 'PLAATS_NODIG', poort);
+      await bp.plaatsVerplichtZetten(eigenaar, false);
+      check('plaats-eis uit: weer uit, en hetzelfde verzoek wordt dan wel ingewisseld', (await bp.plaatsVerplicht(eigenaar)) === false && !!(await inl.inlogInwisselen(ie.id, ie.geheim).then((x) => x.userId, () => '')));
+      const vensterTekst = ven.paginaHtml({ soort: 'i', titel: 'T', wat: 'W', accounts: [], toestel: '', apparaat: '', plaats: '', land: '', kandidaten: [1, 2, 3], verlooptOp: '', stap: 'kiezen' } as never, 'uk');
+      check('venster: melding «plaats-nodig» in de pagina en het script laat de tegels dan weer vrij', vensterTekst.includes('id="m-plaats-nodig"') && ven.VENSTER_JS.includes("r.uitkomst==='plaats-nodig'"));
+    }
     check('start geeft de browser meteen het juiste pictogram (geen emoji-symbool meer)', typeof i1.pictogram === 'number' && i1.symbool === undefined);
     const s1 = await inl.inlogStatus(i1.id, i1.geheim);
     const j1 = await juistePos(i1.id);
