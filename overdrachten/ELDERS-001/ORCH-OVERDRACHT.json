@@ -23,12 +23,12 @@
     "nl": "Een AI-verzoek was alleen zichtbaar in het meldingencentrum van de eigen ruimte; vanuit de beheeromgeving zag de eigenaar een verzoek uit «Mijn ruimte» niet. Nu toont het centrum een levende regel «N AI-verzoeken wachten in …» met knop, zonder inhoud, en omgekeerd. Niet opgeslagen; verdwijnt als niets meer wacht."
   },
   "tests": {
-    "geslaagd": 184,
+    "geslaagd": 192,
     "mislukt": 0,
     "falend": [],
     "uitleg": {
-      "uk": "Нова melding-elders-20261116 9/9 з реальною PG (порт 56329). Регресія: ai-bevestiging-20261021 43/43, ruimte-meldingen-20261020 36/36, meldingen-sferen-20261022 46/46, melding-soorten 50/50. tsc -p tsconfig.server.json без помилок. В інтерфейсі в браузері не перевірено.",
-      "nl": "Nieuw melding-elders-20261116 9/9 met echte PG. Regressie: ai-bevestiging 43/43, ruimte-meldingen 36/36, meldingen-sferen 46/46, melding-soorten 50/50. tsc zonder fouten. Niet in de browser-UI gecontroleerd."
+      "uk": "Нова melding-elders-20261116 17/17 з реальною PG (порт 56329), зокрема весь ланцюжок через справжні маршрути (bootstrap, notifications/read); без виправлення 13/17 (червоний). Регресія: ai-bevestiging-20261021 43/43, ruimte-meldingen-20261020 36/36, meldingen-sferen-20261022 46/46, melding-soorten 50/50. tsc -p tsconfig.server.json без помилок. В інтерфейсі в браузері не перевірено.",
+      "nl": "Nieuw melding-elders-20261116 17/17 met echte PG, incl. de hele keten via echte routes; zonder fix 13/17 (rood). Regressie: ai-bevestiging 43/43, ruimte-meldingen 36/36, meldingen-sferen 46/46, melding-soorten 50/50. tsc zonder fouten. Niet in de browser-UI gecontroleerd."
     }
   },
   "nietGedaan": {
