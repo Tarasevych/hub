@@ -286,6 +286,28 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-rv-betekenis{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 .ut-rv-betekenis li{display:flex;gap:6px;align-items:flex-start;padding:6px 8px;border-radius:8px;background:var(--ut-ok-bg);color:var(--ut-text);overflow-wrap:anywhere}
 .ut-rv-betekenis svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--ut-ok)}
+.ut-rv-oordeel{display:inline-flex;align-items:center;gap:4px;flex:none;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:600;white-space:nowrap}
+.ut-rv-oordeel svg{width:13px;height:13px}
+.ut-rv-oordeel[data-o='ok'],.ut-rv-tellers [data-o='ok']{background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-rv-oordeel[data-o='gewoon'],.ut-rv-tellers [data-o='gewoon']{background:var(--ut-bg2,var(--ut-bg));color:var(--ut-muted);border:1px solid var(--ut-line)}
+.ut-rv-oordeel[data-o='let'],.ut-rv-tellers [data-o='let']{background:var(--ut-err-bg);color:var(--ut-err);border:1px solid var(--ut-err)}
+.ut-rv-kort{flex:1;min-width:0;display:grid;gap:1px}
+.ut-rv-kort>span{overflow-wrap:anywhere}
+.ut-rv-kort small{color:var(--ut-muted);font-size:.74rem;overflow-wrap:anywhere}
+.ut-rv-doen{padding:8px 10px;border-radius:8px;background:var(--ut-info-bg);border-left:3px solid var(--ut-info)}
+.ut-rv-doen[data-o='ok']{background:var(--ut-ok-bg);border-left-color:var(--ut-ok)}
+.ut-rv-doen[data-o='let']{background:var(--ut-err-bg);border-left-color:var(--ut-err)}
+.ut-rv-voorna{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-rv-voorna li{display:grid;gap:2px;padding:6px 8px;border:1px solid var(--ut-line);border-radius:8px;overflow-wrap:anywhere}
+.ut-rv-voorna [data-k='voor']{color:var(--ut-muted)}
+.ut-rv-meer summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.84rem;color:var(--ut-muted)}
+.ut-rv-meer summary svg{width:15px;height:15px}
+.ut-rv-meer[open]{display:grid;gap:6px}
+.ut-rv-samen{display:grid;gap:6px;font-size:.86rem}
+.ut-rv-samen p{margin:0}
+.ut-rv-tellers{display:flex;flex-wrap:wrap;gap:6px}
+.ut-rv-tellers span{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600}
+.ut-rv-tellers svg{width:13px;height:13px}
 .ut-rv-diff{display:grid;gap:4px;min-width:0}
 .ut-rv-legenda{display:flex;gap:10px;margin:0;font-size:.76rem}
 .ut-rv-legenda span{padding:0 6px;border-radius:6px}
@@ -544,3 +566,10 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-recent>li[data-ut-recent-poging] small svg{width:13px;height:13px;color:var(--ut-warn)}
 .ut-recent-acties{display:flex;gap:6px;padding:0 10px 0 0;flex-wrap:wrap}
 @media (max-width:520px){.ut-recent-acties{padding:0 10px 8px}}
+/* SEC-PAKKET-001 · telefoon: oordeel en pijl op de eerste regel, de zin eronder over de volle breedte (mobiele laag, aan het eind). */
+@media (max-width:560px){
+  .ut-rv-rij{flex-wrap:wrap;row-gap:4px}
+  .ut-rv-oordeel{margin-right:auto}
+  .ut-rv-pijl{order:1}
+  .ut-rv-kort{order:2;flex-basis:100%}
+}

@@ -2,7 +2,7 @@
 // підтвердження. Без позначки кнопка «Схвалити» неактивна; сервер так само відхиляє схвалення без неї (RISICO_NIET_BEVESTIGD).
 // Rode vlaggen vóór het goedkeuren: een apart blok met de wijzigingen die de meeste macht over de server geven, en een eigen bevestiging.
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, Flag } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, Code2, Flag, Info } from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
@@ -31,35 +31,65 @@ function Verschil({ tekst, afgekapt, lang }: { tekst: string; afgekapt?: boolean
   </div>;
 }
 
+const RANG: Record<string, number> = { aandacht: 0, gewoon: 1, veiliger: 2 };
+const OORDEEL: Record<string, [string, string, string]> = {
+  veiliger: ['Безпечніше', 'Veiliger', 'ok'], gewoon: ['Звичайна зміна', 'Gewone wijziging', 'gewoon'], aandacht: ['Потребує уваги', 'Aandacht nodig', 'let'],
+};
+
 function Item({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
   const [open, setOpen] = useState(false);
   const m = /^\[([^\]]+)\]\s*(.*)$/.exec(it.vlag); const s = SOORT[m?.[1] ?? ''] ?? SOORT['!'];
   const t = (x: { uk: string; nl: string }) => (lang === 'uk' ? x.uk : x.nl);
-  const heeftUitleg = !!(t(it.wat) || it.verschil);
-  return <li data-open={open || undefined} data-opvallend={it.opvallend?.length ? true : undefined}>
+  const l = it.leesbaar; const o = OORDEEL[l?.oordeel ?? 'aandacht'];
+  const OIcoon = l?.oordeel === 'veiliger' ? CheckCircle2 : l?.oordeel === 'gewoon' ? Info : AlertTriangle;
+  const heeftUitleg = !!(l || t(it.wat) || it.verschil);
+  return <li data-open={open || undefined} data-oordeel={l?.oordeel ?? 'aandacht'}>
     <button type='button' className='ut-rv-rij' aria-expanded={open} disabled={!heeftUitleg} onClick={() => setOpen(!open)} title={tr(lang, s[2], s[3])}>
-      <span className='ut-rv-soort'>{tr(lang, s[0], s[1])}</span><code>{m ? m[2] : it.vlag}</code>
-      {it.opvallend?.length ? <AlertTriangle aria-label={tr(lang, 'є підозрілі рядки', 'verdachte regels')} className='ut-rv-let' /> : null}
+      <span className='ut-rv-oordeel' data-o={o[2]}><OIcoon aria-hidden='true' />{tr(lang, o[0], o[1])}</span>
+      <span className='ut-rv-kort'><span>{l ? t(l.kort) : (m ? m[2] : it.vlag)}</span>{l && <small><code>{m ? m[2] : it.vlag}</code></small>}</span>
       {heeftUitleg && <ChevronDown aria-hidden='true' className='ut-rv-pijl' />}
     </button>
     {open && <div className='ut-rv-uitleg'>
-      {t(it.wat) && <p><b>{tr(lang, 'Що це: ', 'Wat is dit: ')}</b>{t(it.wat)}</p>}
-      {t(it.wijziging) && <p><b>{tr(lang, 'Що змінилося: ', 'Wat verandert: ')}</b>{t(it.wijziging)}</p>}
-      {it.betekenis?.length ? <><p><b>{tr(lang, 'Що означають зміни: ', 'Wat de wijzigingen betekenen: ')}</b></p><ul className='ut-rv-betekenis'>{it.betekenis.map((o, i) => <li key={i}><CheckCircle2 aria-hidden='true' />{t(o)}</li>)}</ul></> : null}
-      {it.opvallend?.length ? <ul className='ut-rv-opvallend'>{it.opvallend.map((o, i) => <li key={i}><AlertTriangle aria-hidden='true' />{t(o)}</li>)}</ul> : null}
-      {t(it.let) && <p><b>{tr(lang, 'На що звернути увагу: ', 'Waar op letten: ')}</b>{t(it.let)}</p>}
-      {it.verschil && <Verschil tekst={it.verschil} afgekapt={it.verschilAfgekapt} lang={lang} />}
+      {l && <p className='ut-rv-doen' data-o={o[2]}><b>{tr(lang, 'Що робити: ', 'Wat te doen: ')}</b>{t(l.doen)}</p>}
+      {l?.voorNa.length ? <ul className='ut-rv-voorna'>{l.voorNa.map((p, i) => <li key={i}>
+        <span data-k='voor'><b>{tr(lang, 'Було: ', 'Was: ')}</b>{p.voor ? t(p.voor) : tr(lang, 'не було', 'bestond niet')}</span>
+        <span data-k='na'><b>{tr(lang, 'Стане: ', 'Wordt: ')}</b>{p.na ? t(p.na) : tr(lang, 'прибрано', 'verwijderd')}</span>{p.keer && p.keer > 1 ? <small>{tr(lang, `у ${p.keer} місцях файла`, `op ${p.keer} plekken in het bestand`)}</small> : null}</li>)}</ul> : null}
+      {l?.overig ? <p className='ut-hint'>{tr(lang, `Ще змінено рядків логіки програми: ${l.overig}. Їх словами не перекласти — потрібне пояснення автора або опис оновлення.`, `Nog ${l.overig} regel(s) programmalogica gewijzigd. Die zijn niet in woorden te vertalen — daarvoor is uitleg van de maker of de beschrijving van de update nodig.`)}</p> : null}
+      {it.opvallend?.length ? <ul className='ut-rv-opvallend'>{it.opvallend.map((x, i) => <li key={i}><AlertTriangle aria-hidden='true' />{t(x)}</li>)}</ul> : null}
+      {(t(it.wat) || it.betekenis?.length) && <details className='ut-rv-meer'><summary>{tr(lang, 'Докладніше', 'Meer uitleg')}</summary>
+        {t(it.wat) && <p><b>{tr(lang, 'Що це: ', 'Wat is dit: ')}</b>{t(it.wat)}</p>}
+        {t(it.wijziging) && <p><b>{tr(lang, 'Що змінилося: ', 'Wat verandert: ')}</b>{t(it.wijziging)}</p>}
+        {it.betekenis?.length ? <ul className='ut-rv-betekenis'>{it.betekenis.map((x, i) => <li key={i}><CheckCircle2 aria-hidden='true' />{t(x)}</li>)}</ul> : null}
+        {t(it.let) && <p><b>{tr(lang, 'На що звернути увагу: ', 'Waar op letten: ')}</b>{t(it.let)}</p>}
+      </details>}
+      {it.verschil && <details className='ut-rv-meer'><summary><Code2 aria-hidden='true' />{tr(lang, 'Для програміста: код змін', 'Voor de programmeur: code van de wijziging')}</summary>
+        <Verschil tekst={it.verschil} afgekapt={it.verschilAfgekapt} lang={lang} /></details>}
     </div>}
   </li>;
+}
+
+/** Загальний підсумок угорі: скільки безпечніших, звичайних і тих, що потребують уваги, і одна порада. */
+function Samenvatting({ vlaggen, lang }: { vlaggen: RisicoItemUit[]; lang: Lang }) {
+  const n = (o: string) => vlaggen.filter((v) => (v.leesbaar?.oordeel ?? 'aandacht') === o).length;
+  const a = n('aandacht'); const g = n('gewoon'); const v = n('veiliger');
+  return <div className='ut-rv-samen' data-o={a ? 'let' : 'ok'}>
+    <p className='ut-rv-tellers'>
+      {a > 0 && <span data-o='let'><AlertTriangle aria-hidden='true' />{tr(lang, `Потребують уваги: ${a}`, `Aandacht nodig: ${a}`)}</span>}
+      {g > 0 && <span data-o='gewoon'><Info aria-hidden='true' />{tr(lang, `Звичайні: ${g}`, `Gewoon: ${g}`)}</span>}
+      {v > 0 && <span data-o='ok'><CheckCircle2 aria-hidden='true' />{tr(lang, `Безпечніше: ${v}`, `Veiliger: ${v}`)}</span>}
+    </p>
+    <p>{a ? tr(lang, 'Відкрийте пункти «Потребує уваги»: у кожному написано, що робити. Якщо сумніваєтеся — натисніть «Відхилити», нічого не зламається.', 'Open de punten «Aandacht nodig»: bij elk staat wat te doen. Twijfelt u, kies dan «Afwijzen» — er gaat niets stuk.')
+      : tr(lang, 'Підозрілого не знайдено. Можна схвалювати, якщо ви очікували це оновлення.', 'Niets verdachts gevonden. U kunt goedkeuren als u deze update verwachtte.')}</p>
+  </div>;
 }
 
 export default function RodeVlaggen({ lang, vlaggen, bevestigd, onBevestig, id, disabled }: { lang: Lang; vlaggen: RisicoItemUit[]; bevestigd: boolean; onBevestig: (b: boolean) => void; id: string; disabled?: boolean }) {
   return <div className='ut-rode-vlaggen' role='group' aria-labelledby={`rv-kop-${id}`} data-ut-rode-vlaggen data-bevestigd={bevestigd || undefined}>
     <p className='ut-rv-kop' id={`rv-kop-${id}`}><Flag aria-hidden='true' /><b>{tr(lang, `Червоні прапорці: ${vlaggen.length}`, `Rode vlaggen: ${vlaggen.length}`)}</b></p>
-    <p className='ut-rv-intro'>{tr(lang, 'Ці зміни дають найбільшу владу над сервером. Відкрийте кожну: що це, що саме змінилося, на що звернути увагу.', 'Deze wijzigingen geven de meeste macht over de server. Open elke regel: wat het is, wat er verandert en waar u op moet letten.')}</p>
+    <Samenvatting vlaggen={vlaggen} lang={lang} />
     <details open>
-      <summary>{tr(lang, 'Що саме змінено (натисніть рядок — пояснення й різниця «було → стане»)', 'Wat er precies verandert (klik een regel — uitleg en verschil «voorheen → straks»)')}</summary>
-      <ul className='ut-rv-lijst'>{vlaggen.map((it, i) => <Item key={i} it={it} lang={lang} />)}</ul>
+      <summary>{tr(lang, 'Усі зміни (натисніть пункт — що було, що стане і що робити)', 'Alle wijzigingen (klik een punt — wat was, wat wordt en wat te doen)')}</summary>
+      <ul className='ut-rv-lijst'>{[...vlaggen].sort((x, y) => RANG[x.leesbaar?.oordeel ?? 'aandacht'] - RANG[y.leesbaar?.oordeel ?? 'aandacht']).map((it, i) => <Item key={i} it={it} lang={lang} />)}</ul>
     </details>
     <label className='ut-rv-bevestig' title={tr(lang, 'Без цієї позначки сервер не прийме схвалення. Якщо ви не очікували таких змін — відхиліть пакет: можливо, хтось отримав доступ до GitHub.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan. Verwachtte u deze wijzigingen niet, wijs het pakket dan af: misschien heeft iemand toegang tot GitHub gekregen.')}>
       <input type='checkbox' checked={bevestigd} disabled={disabled} onChange={(e) => onBevestig(e.target.checked)} />

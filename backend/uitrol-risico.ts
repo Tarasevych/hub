@@ -175,6 +175,7 @@ export type RisicoItem = {
   /** Що означають знайомі нові рядки (зокрема ті, що роблять безпечніше). */ betekenis?: Tekst[];
   /** Уніфікована різниця: рядки «-» = було (встановлена версія), «+» = стане (цей пакет). */ verschil?: string;
   verschilAfgekapt?: boolean;
+  /** Для адміна без програмування: висновок, «було → стане» словами, порада. */ leesbaar?: Leesbaar;
 };
 
 const MAX_VERSCHIL_REGELS = 400;
@@ -230,7 +231,9 @@ const OPVALLEND: Array<[RegExp, string, string]> = [
   [/\b(?:https?:\/\/(?!(?:[\w-]+\.)*(?:tarasevych\.com|github\.com|githubusercontent\.com|npmjs\.org|nodejs\.org|debian\.org|ubuntu\.com|cloudflare\.com|google\.com|googleapis\.com)\b)[\w.-]+)/i, 'нова адреса в інтернеті поза звичними (GitHub, npm, Google, Cloudflare, власний домен): перевірте, кому вона належить', 'nieuw internetadres buiten de gebruikelijke (GitHub, npm, Google, Cloudflare, eigen domein): controleer van wie het is'],
 ];
 export function opvallendeRegels(verschil: string): Tekst[] {
-  const nieuw = verschil.split('\n').filter((r) => r.startsWith('+') && !r.startsWith('+++')).join('\n');
+  // Лише справді нові рядки: рядок, що просто переїхав (є і серед прибраних «-»), не підозрілий.
+  const weg = new Set(verschil.split('\n').filter((r) => r.startsWith('-') && !r.startsWith('---')).map((r) => r.slice(1).trim()));
+  const nieuw = verschil.split('\n').filter((r) => r.startsWith('+') && !r.startsWith('+++') && !weg.has(r.slice(1).trim())).join('\n');
   if (!nieuw) return [];
   const uit: Tekst[] = [];
   for (const [re, uk, nl] of OPVALLEND) {
@@ -367,5 +370,118 @@ export async function verklaarVlaggen(vlaggen: string[], p: { bron: string; gein
         let: { uk: 'Схвалюйте лише пакет, про зміст якого ви знаєте з інших джерел (опис випуску, PR).', nl: 'Keur alleen een pakket goed waarvan u de inhoud uit andere bron kent (releasebeschrijving, PR).' } });
     }
   }
-  return items;
+  return items.map((it) => ({ ...it, leesbaar: leesbaarVoor(it) }));
+}
+
+// ------------------------------------------------------------------------------------------------ для адміна без програмування
+// Власник (16.11.2026): «якщо встановлює адмін, а не програміст, йому ці коди нічого не скажуть … треба людською мовою, що має
+// бути та що є, і що йому робити». Тому з різниці виводимо: «було → стане» звичайними реченнями (для знайомих налаштувань),
+// висновок (безпечніше / звичайна зміна / потребує уваги) і одну пораду, що робити. Код лишається лише «для програміста».
+// Voor een beheerder zonder programmeerkennis: voor → na in gewone zinnen, een oordeel en één advies wat te doen.
+
+export type Oordeel = 'veiliger' | 'gewoon' | 'aandacht';
+export type VoorNa = { voor: Tekst | null; na: Tekst | null; keer?: number };
+export type Leesbaar = { oordeel: Oordeel; kort: Tekst; voorNa: VoorNa[]; overig: number; doen: Tekst };
+
+type Zin = { uk: string; nl: string; veiliger?: boolean; risico?: boolean } | null;
+/** Один рядок налаштувань → речення. null = незнайомий рядок (логіка програми). */
+function zinVoor(r: string): Zin | 'stil' {
+  const t = r.trim();
+  if (!t || /^#/.test(t) || /^\/\//.test(t)) return 'stil';
+  let m = /^-?\s*uses:\s*([^@\s]+)@(\S+)(?:\s*#\s*(\S+))?/.exec(t);
+  if (m) {
+    const naam = m[1]; const hash = /^[0-9a-f]{40}$/.test(m[2]);
+    return hash ? { uk: `готовий модуль GitHub «${naam}» точної версії ${m[3] || m[2].slice(0, 7)} (закріплено, підмінити не можна)`, nl: `kant-en-klare GitHub-module «${naam}» exacte versie ${m[3] || m[2].slice(0, 7)} (vastgezet, niet te vervangen)`, veiliger: true }
+      : { uk: `готовий модуль GitHub «${naam}» за міткою «${m[2]}» (його автор може непомітно змінити вміст)`, nl: `kant-en-klare GitHub-module «${naam}» via label «${m[2]}» (de maker kan de inhoud ongemerkt wijzigen)` };
+  }
+  if (/^persist-credentials:\s*false/.test(t)) return { uk: 'ключ доступу GitHub не зберігається на диску після завантаження коду', nl: 'de GitHub-toegangssleutel blijft na het ophalen van de code niet op schijf', veiliger: true };
+  if ((m = /\bnpm\s+(ci|install|i)\b(.*)$/.exec(t))) return /--ignore-scripts/.test(m[2])
+    ? { uk: 'встановлення пакетів без запуску їхніх власних програм', nl: 'pakketten installeren zonder hun eigen programma’s te starten', veiliger: true }
+    : { uk: 'встановлення пакетів разом із запуском їхніх власних програм', nl: 'pakketten installeren én hun eigen programma’s starten', risico: true };
+  if ((m = /^User\s*=\s*(\S*)/.exec(t))) return m[1] === 'root' || !m[1] ? { uk: 'служба працює від імені root (повні права на сервері)', nl: 'de dienst draait als root (volledige rechten op de server)', risico: true } : { uk: `служба працює від імені обмеженого користувача «${m[1]}»`, nl: `de dienst draait als beperkte gebruiker «${m[1]}»` };
+  if ((m = /^ExecStart\w*\s*=\s*(.+)$/.exec(t))) return { uk: `служба запускає: ${m[1].slice(0, 120)}`, nl: `de dienst start: ${m[1].slice(0, 120)}` };
+  if ((m = /^OnCalendar\s*=\s*(.+)$/.exec(t))) return { uk: `автоматичний запуск за розкладом: ${kalender(m[1], 'uk')}`, nl: `automatisch starten volgens schema: ${kalender(m[1], 'nl')}` };
+  if ((m = /^OnUnitActiveSec\s*=\s*(.+)$/.exec(t))) return { uk: `повторний запуск кожні ${m[1]}`, nl: `opnieuw starten elke ${m[1]}` };
+  if ((m = /^Environment\s*=\s*"?([A-Z0-9_]+)=/.exec(t))) return { uk: `налаштування служби «${m[1]}» (значення не показуємо)`, nl: `dienstinstelling «${m[1]}» (waarde niet getoond)` };
+  if ((m = /^(ReadWritePaths|ReadOnlyPaths)\s*=\s*(.+)$/.exec(t))) return m[1] === 'ReadWritePaths' ? { uk: `служба може змінювати теки: ${m[2].slice(0, 120)}`, nl: `de dienst mag mappen wijzigen: ${m[2].slice(0, 120)}` } : { uk: `служба може лише читати теки: ${m[2].slice(0, 120)}`, nl: `de dienst mag mappen alleen lezen: ${m[2].slice(0, 120)}`, veiliger: true };
+  if (/^(NoNewPrivileges\s*=\s*(yes|true)|ProtectSystem\s*=\s*(strict|full)|PrivateTmp\s*=\s*(yes|true)|ProtectHome\s*=\s*(yes|true|read-only))/i.test(t)) return { uk: `додаткове обмеження служби (${t.split('=')[0].trim()})`, nl: `extra beperking van de dienst (${t.split('=')[0].trim()})`, veiliger: true };
+  if ((m = /^(contents|packages|id-token|actions|pull-requests|issues):\s*(read|write|none)/.exec(t))) return m[2] === 'write' ? { uk: `процес GitHub може ЗМІНЮВАТИ «${m[1]}»`, nl: `de GitHub-werkstroom mag «${m[1]}» WIJZIGEN`, risico: true } : { uk: `процес GitHub може лише читати «${m[1]}»`, nl: `de GitHub-werkstroom mag «${m[1]}» alleen lezen`, veiliger: true };
+  if (/^(on:|pull_request_target|workflow_run|issue_comment)/.test(t) && /pull_request_target|workflow_run|issue_comment/.test(t)) return { uk: 'процес GitHub запускається на чужому коді з правами репозиторію', nl: 'de GitHub-werkstroom draait op vreemde code met de rechten van de repository', risico: true };
+  if (/\$\{\{\s*secrets\./.test(t)) return { uk: 'процес GitHub читає секретні ключі репозиторію', nl: 'de GitHub-werkstroom leest geheime sleutels van de repository', risico: true };
+  return null;
+}
+function kalender(v: string, taal: 'uk' | 'nl'): string {
+  const s = v.trim();
+  const w: Record<string, [string, string]> = { hourly: ['щогодини', 'elk uur'], daily: ['щодня', 'dagelijks'], weekly: ['щотижня', 'wekelijks'], monthly: ['щомісяця', 'maandelijks'] };
+  if (w[s]) return w[s][taal === 'uk' ? 0 : 1];
+  const m = /^\*-\*-\*\s+(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s);
+  if (m) return taal === 'uk' ? `щодня о ${m[1].padStart(2, '0')}:${m[2]}` : `dagelijks om ${m[1].padStart(2, '0')}:${m[2]}`;
+  return s;
+}
+
+/** Різницю (diff -u) → пари «було → стане» звичайними словами + кількість рядків логіки, яку словами не пояснити. */
+export function leesbaarVerschil(verschil: string): { voorNa: VoorNa[]; overig: number; veiliger: number; risico: number } {
+  const voorNa: VoorNa[] = []; let overig = 0; let veiliger = 0; let risico = 0;
+  const blokken: Array<{ min: string[]; plus: string[] }> = []; let cur: { min: string[]; plus: string[] } | null = null;
+  for (const r of verschil.split('\n')) {
+    if (r.startsWith('---') || r.startsWith('+++') || r.startsWith('@@')) { cur = null; continue; }
+    if (r[0] === '-' || r[0] === '+') {
+      if (!cur || (r[0] === '-' && cur.plus.length)) { cur = { min: [], plus: [] }; blokken.push(cur); }
+      (r[0] === '-' ? cur.min : cur.plus).push(r.slice(1));
+    } else cur = null;
+  }
+  // Речення, що є і серед «було», і серед «стане» (рядок переїхав або змінено лише відступ), — не зміна.
+  const alleMin = new Set(blokken.flatMap((b) => b.min.map(zinVoor)).filter((z): z is Exclude<Zin, null> => !!z && z !== 'stil').map((z) => z.uk));
+  const allePlus = new Set(blokken.flatMap((b) => b.plus.map(zinVoor)).filter((z): z is Exclude<Zin, null> => !!z && z !== 'stil').map((z) => z.uk));
+  for (const b of blokken) {
+    const zm = b.min.map(zinVoor).filter((z) => z !== 'stil'); const zp = b.plus.map(zinVoor).filter((z) => z !== 'stil');
+    const n = Math.max(zm.length, zp.length);
+    for (let i = 0; i < n; i++) {
+      const a = zm[i] ?? null; const c = zp[i] ?? null;
+      if ((a === null && i < zm.length) || (c === null && i < zp.length)) { overig++; continue; }
+      if (!a && !c) continue;
+      const za = a as Exclude<Zin, null> | null; const zc = c as Exclude<Zin, null> | null;
+      if (za && zc && za.uk === zc.uk) continue;
+      if ((zc && !za && alleMin.has(zc.uk)) || (za && !zc && allePlus.has(za.uk))) continue;
+      if (zc?.veiliger && !zc.risico) veiliger++;
+      if (zc?.risico) risico++;
+      // Однакові пари (той самий модуль у кількох місцях файла) показуємо один раз із кількістю.
+      const dubbel = voorNa.find((x) => x.voor?.uk === za?.uk && x.na?.uk === zc?.uk);
+      if (dubbel) dubbel.keer = (dubbel.keer ?? 1) + 1;
+      else if (voorNa.length < 30) voorNa.push({ voor: za ? { uk: za.uk, nl: za.nl } : null, na: zc ? { uk: zc.uk, nl: zc.nl } : null });
+    }
+  }
+  return { voorNa, overig, veiliger, risico };
+}
+
+/** Висновок і порада для адміна без програмування. */
+export function leesbaarVoor(item: RisicoItem): Leesbaar {
+  const m = /^\[([^\]]+)\]\s*([+~−])?/.exec(item.vlag); const soort = m?.[1] ?? '!'; const teken = m?.[2];
+  const uitleg = item.verschil && (soort === 'root' || soort === 'CI') ? leesbaarVerschil(item.verschil) : { voorNa: [], overig: 0, veiliger: 0, risico: 0 };
+  const verdacht = (item.opvallend?.length ?? 0) > 0 || uitleg.risico > 0;
+  const VRAAG: Tekst = { uk: 'Перш ніж схвалити, попросіть автора оновлення пояснити цю зміну одним реченням. Якщо пояснення немає або воно вас не переконує — натисніть «Відхилити».', nl: 'Vraag vóór het goedkeuren de maker van de update deze wijziging in één zin uit te leggen. Geen of geen overtuigende uitleg? Kies «Afwijzen».' };
+  if (soort === 'GitHub') return { oordeel: 'aandacht', kort: { uk: 'Архів поклали на GitHub вручну', nl: 'Archief met de hand op GitHub gezet' }, voorNa: [], overig: 0,
+    doen: { uk: 'Якщо архів на GitHub клали ви самі або людина, яку ви про це просили, — можна схвалювати. Якщо ні — натисніть «Відхилити» і змініть пароль до GitHub.', nl: 'Hebt u of iemand die u dat vroeg het archief zelf geplaatst, dan kunt u goedkeuren. Zo niet: «Afwijzen» en uw GitHub-wachtwoord wijzigen.' } };
+  if (soort === '!') return { oordeel: 'aandacht', kort: { uk: 'Не вдалося порівняти з поточною версією', nl: 'Vergelijken met de huidige versie lukte niet' }, voorNa: [], overig: 0, doen: VRAAG };
+  if (soort === 'npm') {
+    const plus = teken === '+'; const upd = teken === '~';
+    return { oordeel: plus || /скрипт|overrides/.test(item.vlag) ? 'aandacht' : 'gewoon', kort: item.wijziging, voorNa: [], overig: 0,
+      doen: plus ? { uk: 'Подивіться опис оновлення: чи згадано там цей новий пакет і навіщо він. Якщо так — можна схвалювати; якщо ні — попросіть автора пояснити.', nl: 'Kijk in de beschrijving van de update of dit nieuwe pakket en het doel ervan genoemd worden. Zo ja: goedkeuren; zo niet: vraag de maker om uitleg.' }
+        : upd ? { uk: 'Оновлення версії пакета — звичайна справа. Можна схвалювати, якщо решта прапорців у порядку.', nl: 'Een pakketversie bijwerken is gewoon. U kunt goedkeuren als de andere vlaggen in orde zijn.' }
+          : /скрипт|overrides/.test(item.vlag) ? VRAAG : { uk: 'Прибрання пакета зазвичай безпечне. Можна схвалювати.', nl: 'Een pakket verwijderen is meestal veilig. U kunt goedkeuren.' } };
+  }
+  if (soort === 'lock') return { oordeel: 'aandacht', kort: { uk: 'Пакет завантажуватиметься з нестандартної адреси', nl: 'Pakket komt van een ongebruikelijk adres' }, voorNa: [], overig: 0, doen: VRAAG };
+  if (soort === 'SQL') return { oordeel: 'aandacht', kort: { uk: 'Зміна прав доступу в базі даних', nl: 'Wijziging van toegangsrechten in de database' }, voorNa: [], overig: 0, doen: VRAAG };
+  // root / CI
+  const ding = soort === 'CI' ? { uk: 'процес збирання на GitHub', nl: 'het bouwproces op GitHub' } : { uk: 'програма сервера з правами root', nl: 'serverprogramma met root-rechten' };
+  if (teken === '+') return { oordeel: verdacht ? 'aandacht' : 'gewoon', kort: { uk: `Додано нову річ: ${ding.uk}`, nl: `Nieuw toegevoegd: ${ding.nl}` }, ...uitleg,
+    doen: verdacht ? VRAAG : { uk: 'Подивіться опис оновлення: чи згадано там цю нову можливість. Якщо так — можна схвалювати; якщо ні — попросіть автора пояснити.', nl: 'Kijk of de beschrijving van de update deze nieuwe functie noemt. Zo ja: goedkeuren; zo niet: vraag de maker om uitleg.' } };
+  if (teken === '−') return { oordeel: 'gewoon', kort: { uk: `Прибрано: ${ding.uk}`, nl: `Verwijderd: ${ding.nl}` }, ...uitleg,
+    doen: { uk: 'Прибрання зазвичай безпечне. Можна схвалювати, якщо в описі оновлення сказано, що ця річ більше не потрібна.', nl: 'Verwijderen is meestal veilig. U kunt goedkeuren als de beschrijving zegt dat dit niet meer nodig is.' } };
+  if (verdacht) return { oordeel: 'aandacht', kort: { uk: `Змінено: ${ding.uk}. Є підозрілі місця`, nl: `${ding.nl} gewijzigd: er zijn verdachte plekken` }, ...uitleg, doen: VRAAG };
+  if (uitleg.veiliger > 0 && uitleg.overig === 0) return { oordeel: 'veiliger', kort: { uk: `Змінено: ${ding.uk}. Стало безпечніше`, nl: `${ding.nl} gewijzigd: veiliger geworden` }, ...uitleg,
+    doen: { uk: 'Ця зміна лише посилює захист. Можна схвалювати.', nl: 'Deze wijziging versterkt alleen de beveiliging. U kunt goedkeuren.' } };
+  return { oordeel: 'gewoon', kort: { uk: `Змінено: ${ding.uk}${uitleg.overig ? ` (${uitleg.overig} рядк. логіки програми)` : ''}`, nl: `${ding.nl} gewijzigd${uitleg.overig ? ` (${uitleg.overig} regel(s) programmalogica)` : ''}` }, ...uitleg,
+    doen: uitleg.overig ? { uk: 'Підозрілих місць не знайдено, але зміни в логіці програми словами не пояснити. Можна схвалювати, якщо в описі оновлення сказано, навіщо змінено цю програму; інакше попросіть автора пояснити.', nl: 'Geen verdachte plekken gevonden, maar wijzigingen in de programmalogica zijn niet in woorden te vatten. Goedkeuren als de beschrijving van de update zegt waarom dit programma veranderde; anders de maker om uitleg vragen.' }
+      : { uk: 'Підозрілих місць не знайдено. Можна схвалювати.', nl: 'Geen verdachte plekken gevonden. U kunt goedkeuren.' } };
 }

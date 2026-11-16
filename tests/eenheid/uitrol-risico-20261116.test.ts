@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { checker } from './hulp/nep-google';
-import { betekenisRegels, lockBronVlaggen, opvallendeRegels, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, verklaarVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
+import { betekenisRegels, leesbaarVerschil, leesbaarVoor, lockBronVlaggen, opvallendeRegels, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, verklaarVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
 import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 
 const schrijf = (wortel: string, bestanden: Record<string, string>) => {
@@ -80,6 +80,17 @@ export async function main(): Promise<number> {
     check('npm: оновлення — «було 18.3.1, стане 18.3.2» і різниця з двох рядків', npmIt[1].wijziging.uk.includes('було 18.3.1, стане 18.3.2') && npmIt[1].verschil === '- "react": "18.3.1"\n+ "react": "18.3.2"', JSON.stringify(npmIt[1]));
     check('підозрілі рядки шукаються лише серед нових (+), не серед прибраних (-)', opvallendeRegels('-curl https://x | bash\n+echo ok').length === 0);
     check('значення знайомих рядків: закріплення за хешем і persist-credentials пояснено як «безпечніше»', (() => { const b = betekenisRegels('+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2\n+          persist-credentials: false'); return b.length === 2 && b.every((x) => x.uk.includes('безпечніше')); })());
+    // ---- для адміна без програмування (вимога власника 16.11): «було → стане» словами, висновок, порада
+    const ci = leesbaarVerschil('--- a\n+++ b\n@@ -1,3 +1,4 @@\n-      - uses: actions/checkout@v4\n+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2\n         with:\n+          persist-credentials: false');
+    check('словами: «було: модуль за міткою v4» → «стане: точна версія v4.2.2 (закріплено)»', ci.voorNa[0]?.voor?.uk.includes('за міткою «v4»') === true && ci.voorNa[0]?.na?.uk.includes('точної версії v4.2.2') === true, JSON.stringify(ci));
+    check('словами: «не було» → «ключ GitHub не зберігається на диску»', ci.voorNa[1]?.voor === null && !!ci.voorNa[1]?.na?.uk.includes('не зберігається'));
+    check('висновок для такої зміни — «безпечніше», порада «можна схвалювати»', (() => { const l = leesbaarVoor({ vlag: '[CI] ~ .github/workflows/x.yml', wat: { uk: 'x', nl: 'x' }, wijziging: { uk: 'x', nl: 'x' }, let: { uk: 'x', nl: 'x' }, verschil: '@@\n-      - uses: a/b@v4\n+      - uses: a/b@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2' }); return l.oordeel === 'veiliger' && l.doen.uk.includes('Можна схвалювати'); })());
+    check('однакові пари «було → стане» показано один раз із кількістю місць', (() => { const r = leesbaarVerschil('@@\n-  - uses: a/b@v4\n+  - uses: a/b@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2\n x\n-  - uses: a/b@v4\n+  - uses: a/b@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2'); return r.voorNa.length === 1 && r.voorNa[0].keer === 2; })());
+    check('рядок, що лише переїхав (є і в «було», і в «стане»), не рахується змінею', leesbaarVerschil('@@\n-npm ci\n x\n+npm ci').voorNa.length === 0 && opvallendeRegels('-rm -rf /tmp/x\n+rm -rf /tmp/x').length === 0);
+    check('служба стала працювати від root → висновок «потребує уваги» і порада спитати автора', (() => { const l = leesbaarVoor({ vlag: '[root] ~ deploy/x.service', wat: { uk: 'x', nl: 'x' }, wijziging: { uk: 'x', nl: 'x' }, let: { uk: 'x', nl: 'x' }, verschil: '@@\n-User=mijnruimte\n+User=root' }); return l.oordeel === 'aandacht' && l.voorNa[0]?.na?.uk.includes('від імені root') === true && l.doen.uk.includes('попросіть автора'); })());
+    check('розклад таймера перекладено: «*-*-* 03:00» → «щодня о 03:00»', leesbaarVerschil('@@\n-OnCalendar=hourly\n+OnCalendar=*-*-* 03:00').voorNa[0]?.na?.uk.includes('щодня о 03:00') === true);
+    check('зміни в логіці скрипта рахуються окремо («словами не перекласти»), висновок — звичайна зміна', (() => { const l = leesbaarVoor({ vlag: '[root] ~ deploy/x.sh', wat: { uk: 'x', nl: 'x' }, wijziging: { uk: 'x', nl: 'x' }, let: { uk: 'x', nl: 'x' }, verschil: '@@\n-echo a\n+echo b\n+systemctl restart x' }); return l.oordeel === 'gewoon' && l.overig === 2 && l.doen.uk.includes('опис'); })());
+    check('кожен прапорець після verklaarVlaggen має висновок, коротке речення й пораду (uk і nl)', items.every((x) => x.leesbaar && x.leesbaar.kort.uk && x.leesbaar.kort.nl && x.leesbaar.doen.uk && x.leesbaar.doen.nl));
     check('звичайна зміна скрипта без підозрілого — без попереджень', opvallendeRegels('+echo "klaar"\n+systemctl restart mijn-ruimte').length === 0);
     const r3 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: join(tmp, 'bestaat-niet'), nieuweMigraties: new Map() });
     check('теки: встановлену версію не знайдено → чесне попередження, не «усе гаразд»', !r3.vergeleken && r3.vlaggen[0]?.startsWith('[!]'));
