@@ -176,7 +176,7 @@ export async function main(): Promise<number> {
     laatsteKnoopId: knoopRes.knoop.id,
   }, 'claude') : { ok: false as const, code: 'FOUT' };
 
-  check('3d: створення задачі формує перший крок aangemaakt та двомовні промпти',
+  check('3d: створення задачі формує перший крок aangemaakt та двомовні вказівки',
     aangemaakt.ok && aangemaakt.nieuw
     && aangemaakt.pakket.stappen.length === 1
     && aangemaakt.pakket.stappen[0].stapSoort === 'aangemaakt'

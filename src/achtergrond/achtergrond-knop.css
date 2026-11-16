@@ -32,7 +32,7 @@
 .la-snel-voet{display:flex;align-items:center;gap:9px}
 .la-snel-voet button{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:32px;padding:4px 10px;border:1px solid var(--line,#c8d1dc);border-radius:10px;background:var(--surface,#f6f8fb);color:var(--text,#25364c);font:inherit;font-weight:600;cursor:pointer}
 .la-snel-voet button svg{width:14px;height:14px}
-.la-snel-voet small{color:var(--muted,#637083);font-size:11px;line-height:1.35}
+.la-snel-voet small{color:var(--muted,#637083);font-size:12px;line-height:1.35}
 .la-snel-paneel :is(button,select,input):focus-visible{outline:2px solid var(--accent,#7c6cf0);outline-offset:2px}
 .la-snel-paneel :is(button,select,input):disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:560px){

@@ -60,9 +60,49 @@ profielMetaBijwerken();
 export const techToestand = () => toestand;
 export const useTech = () => useSyncExternalStore((f) => { luisteraars.add(f); return () => luisteraars.delete(f); }, () => toestand, () => toestand);
 
+export const TECH_BAND_HINT = 'tsv-tech-band-hint-v1';
+function bewaarBandHint(activatie: TechActivatie | null, scheef: number): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const nu = Date.now() + scheef;
+    if (activatie && activatie.eind > nu) {
+      const eind = Math.min(activatie.eind - scheef, Date.now() + 8 * 3600_000);
+      sessionStorage.setItem(TECH_BAND_HINT, JSON.stringify({ eind }));
+    } else {
+      sessionStorage.removeItem(TECH_BAND_HINT);
+    }
+  } catch { /* opslag geblokkeerd: geen fout */ }
+}
+function wisBandHint(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(TECH_BAND_HINT);
+  } catch { /* opslag geblokkeerd: geen fout */ }
+}
+export function leesBandHintActief(nu = Date.now()): boolean {
+  try {
+    if (typeof sessionStorage === 'undefined') return false;
+    const ruw = sessionStorage.getItem(TECH_BAND_HINT);
+    if (!ruw) return false;
+    const g = JSON.parse(ruw) as { eind?: unknown } | null;
+    if (g && Number(g.eind) > nu) return true;
+    sessionStorage.removeItem(TECH_BAND_HINT);
+    return false;
+  } catch {
+    return false;
+  }
+}
+export const techBandGereserveerd = (t: TechStatus = toestand, nu = Date.now()): boolean =>
+  techActief(t) || (!t.geladen && leesBandHintActief(nu));
+
 export const techBody = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 let statussen = 0;
-const neem = (data: any) => (statussen += 1, zet({ geladen: true, profiel: data?.profiel ?? null, activatie: data?.activatie ?? null, catalogus: data?.catalogus ?? toestand.catalogus, scheef: data?.nu ? Number(data.nu) - Date.now() : 0, fout: null }));
+const neem = (data: any) => {
+  const scheef = data?.nu ? Number(data.nu) - Date.now() : 0;
+  const activatie = (data?.activatie ?? null) as TechActivatie | null;
+  bewaarBandHint(activatie, scheef);
+  statussen += 1;
+  return zet({ geladen: true, profiel: data?.profiel ?? null, activatie, catalogus: data?.catalogus ?? toestand.catalogus, scheef, fout: null });
+};
 
 /** HUB-01: alleen een DUIDELIJK antwoord van de server (401/403/404: geen sessie of geen recht) wist het profiel; netwerk/5xx houdt de vorige staat. */
 export const techFoutReset = (e: unknown): boolean => { const st = Number((e as { status?: number } | null)?.status || 0); return st === 401 || st === 403 || st === 404; };
@@ -79,7 +119,7 @@ function herkansPlannen(): void {
 export async function techVernieuwen(): Promise<void> {
   try { neem((await api.post('/api/owner/tech/status', techBody())).data); herkansMs = 0; }
   catch (e) {
-    if (techFoutReset(e)) { zet({ geladen: true, profiel: null, activatie: null, fout: null }); herkansMs = 0; }
+    if (techFoutReset(e)) { wisBandHint(); zet({ geladen: true, profiel: null, activatie: null, fout: null }); herkansMs = 0; }
     else { zet({ geladen: true, fout: 'netwerk' }); herkansPlannen(); }
   }
 }
@@ -89,7 +129,7 @@ export async function techActiveren(minuten: number, reden: string) {
   meld({ t: 'aan' });
 }
 /** «Вийти з технічного профілю»: de server sluit het in ELK tabblad van deze sessie; de andere tabbladen horen het meteen. */
-export async function techBeeindigen() { neem((await api.post('/api/owner/tech/beeindigen', techBody())).data); meld({ t: 'uit' }); }
+export async function techBeeindigen() { neem((await api.post('/api/owner/tech/beeindigen', techBody())).data); wisBandHint(); meld({ t: 'uit' }); }
 export async function techBand(kleur: BandKleur, patroon: BandPatroon) { neem((await api.post('/api/owner/tech/band', { ...techBody(), kleur, patroon })).data); }
 /**
  * «Нові вкладки: технічні / користувацькі» (migratie 0080). Standaard GEBRUIKER: anders is elk nieuw tabblad technisch en mag de
@@ -125,7 +165,7 @@ function herbeoordeel(): void {
   const k = gebruiker && dienst ? `${gebruiker}|${dienst}` : '';
   if (k === sleutel) return;
   sleutel = k;
-  if (k) void techVernieuwen(); else zet({ geladen: true, profiel: null, activatie: null, fout: null });
+  if (k) void techVernieuwen(); else { wisBandHint(); zet({ geladen: true, profiel: null, activatie: null, fout: null }); }
 }
 export function techGebruiker(userId: string | null | undefined): void { gebruiker = String(userId || ''); herbeoordeel(); }
 

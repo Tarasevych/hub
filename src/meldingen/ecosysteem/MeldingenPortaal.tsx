@@ -1,6 +1,6 @@
 // Незалежний портальний центр сповіщень формату «застосунок у застосунку» (GEMINI-002).
 // Відображається в окремому шарі безпосередньо в document.body поверх усіх вікон і меню сайту:
-// перетягування, 8-стороннє змінення розмірів, 4 режими розміру, плавуча міні-пігулка, картки зі змахами,
+// перетягування, 8-стороннє змінення розмірів, 4 режими розміру, рухома міні-пігулка, картки зі змахами,
 // вбудований програвач усіх форматів вкладень, ШІ-інспектор та контекстна адаптація до піддомену.
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
@@ -415,8 +415,8 @@ export default function MeldingenPortaal({
               onSlaGeometrieOp(v, true);
               onSluiten();
             }}
-            aria-label={t('Прибрати плавучу пігулку', 'Zwevende pil verbergen')}
-            title={t('Прибрати плавучу пігулку', 'Zwevende pil verbergen')}
+            aria-label={t('Прибрати рухому пігулку', 'Zwevende pil verbergen')}
+            title={t('Прибрати рухому пігулку', 'Zwevende pil verbergen')}
           >
             <X aria-hidden='true' />
           </button>
@@ -514,8 +514,8 @@ export default function MeldingenPortaal({
                 type='button'
                 className='mel-ikoon-knop'
                 onClick={() => togglePil(true)}
-                title={t('Згорнути в маленьку плаваючу кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
-                aria-label={t('Згорнути в плаваючу кнопку', 'Minimaliseren naar zwevende knop')}
+                title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
+                aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
               >
                 <Minus aria-hidden='true' />
               </button>

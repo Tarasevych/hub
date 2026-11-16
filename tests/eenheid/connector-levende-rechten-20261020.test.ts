@@ -88,7 +88,8 @@ export async function main(): Promise<number> {
     /isEigenaar/.test(v2Routes) && !/technischeRuimte/.test(v2Routes));
   const start = readFileSync('server/start.ts', 'utf8');
   check('server/start.ts: de korte paden horen bij de app en het oude pad krijgt 308 (nooit 301/302)',
-    /V2_KORT = \/\^\\\/\(claude\|gpt\|grok\|gemini\|copilot\|cursor\)/.test(start) && /send\(res, 308, \{ Location: naar/.test(start)
+    /V2_KORT = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|antigravity\|autoclaw\)/.test(start)
+    && /send\(res, 308, \{ Location: naar/.test(start)
     && !/send\(res, 30[12], \{ Location: naar/.test(start));
   const tunnel = readFileSync('deploy/cloudflared-config.yml', 'utf8');
   check('cloudflared-sjabloon: de deur krijgt niet langer /claude, /grok … (anders komt het nieuwe adres nooit bij de app)',

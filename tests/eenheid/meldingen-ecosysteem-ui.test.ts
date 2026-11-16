@@ -219,7 +219,7 @@ export async function main(): Promise<number> {
   const randen = ['n', 'z', 'w', 'o', 'nw', 'no', 'zw', 'zo'] as const;
   const alleRandenAanwezig = randen.every((r) => breedHtml.includes(`mel-rand mel-rand-${r}`));
   check(
-    '4a MeldingenPortaal відмальовує плавучу пігулку та широке 2-колонкове вікно з 8 ручками розміру',
+    '4a MeldingenPortaal відмальовує рухому пігулку та широке 2-колонкове вікно з 8 ручками розміру',
     pilHtml.includes('data-testid="mel-minimale-pil"') &&
       pilHtml.includes('mel-pil-teller') &&
       breedHtml.includes('mel-ecosysteem-portaal') &&

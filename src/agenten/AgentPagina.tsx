@@ -14,7 +14,7 @@
 //   6. Журнал — alleen de gebeurtenissen van deze agent.
 // Er komt GEEN nieuwe pagina bij: dit is een plek in de bestaande hub (#agent/<slug>). De algemene tabbladen blijven voor wat
 // echt gedeeld is (apparaten, externe MCP-servers, de browserextensie, het hele journaal).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, ArrowLeft, Check, ExternalLink, Fingerprint, KeyRound, Link2, Palette, Pause, Play, Plug, ShieldCheck, SlidersHorizontal, Trash2, UserRound, Wrench, Zap } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
@@ -735,10 +735,23 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
     catch (e) { setFout(e); }
   }, []);
   useEffect(() => { void laad(); }, [laad]);
+  const vorigeTechSig = useRef<string | null>(null);
+  const vorigeRuimteSig = useRef<string | null>(null);
+  const techSig = tech.geladen ? `${tech.activatie?.id ?? ''}|${tech.activatie?.eind ?? ''}` : null;
+  const ruimteSig = ruimtes.geladen ? `${Boolean(ruimtes.status?.actief)}|${Boolean(ruimtes.status?.pauze)}|${ruimtes.status?.sessie?.eindTijd ?? ''}` : null;
   // Wanneer het technische startvenster of de ruimtewissel sluit/verandert, direct de serverdiagnose herladen zonder paginaherladen.
   useEffect(() => {
-    if (tech.geladen || ruimtes.geladen) void laad();
-  }, [tech.activatie?.id, tech.activatie?.eind, ruimtes.status?.actief, ruimtes.status?.pauze, ruimtes.status?.sessie?.eindTijd, laad]); // eslint-disable-line react-hooks/exhaustive-deps
+    let herladen = false;
+    if (techSig !== null) {
+      if (vorigeTechSig.current !== null && vorigeTechSig.current !== techSig) herladen = true;
+      vorigeTechSig.current = techSig;
+    }
+    if (ruimteSig !== null) {
+      if (vorigeRuimteSig.current !== null && vorigeRuimteSig.current !== ruimteSig) herladen = true;
+      vorigeRuimteSig.current = ruimteSig;
+    }
+    if (herladen) void laad();
+  }, [techSig, ruimteSig, laad]);
   const naWijziging = useCallback(async () => { await Promise.all([laad(), tok.laad()]); setVersie((v) => v + 1); }, [laad, tok.laad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stand = useMemo(() => (data?.agenten ?? []).find((a) => a.slug === slug) ?? null, [data, slug]);

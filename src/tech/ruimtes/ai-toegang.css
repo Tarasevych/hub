@@ -26,8 +26,8 @@
 .ait-knop:focus-visible,.ait-seg:focus-visible,.ait-chip:focus-visible{outline:2px solid var(--focus,#2563eb);outline-offset:2px}
 .ait-knop-hoofd{background:var(--accent,#0f766e);border-color:var(--accent,#0f766e);color:var(--text-on-accent,#fff)}
 .ait-knop-hoofd:hover:not(:disabled){background:color-mix(in srgb,var(--accent,#0f766e) 88%,#000)}
-.ait-knop-hoofd.is-gevaar{background:#b42318;border-color:#b42318;color:#fff}
-.ait-knop-hoofd.is-gevaar:hover:not(:disabled){background:#9a1e14}
+.ait-knop-hoofd.is-gevaar{background:var(--fout-vlak);border-color:var(--fout);color:var(--text-on-vlak)}
+.ait-knop-hoofd.is-gevaar:hover:not(:disabled){background:color-mix(in srgb,var(--fout-vlak) 86%,#000)}
 .ait-knop-zacht-gevaar{color:var(--fout,#b42318);border-color:color-mix(in srgb,var(--fout,#b42318) 35%,var(--line,#ddd));background:color-mix(in srgb,var(--fout-zacht,#fdecec) 55%,transparent)}
 .ait-knop-zacht-gevaar:hover:not(:disabled){background:var(--fout-zacht,#fdecec)}
 .ait-editor{display:flex;flex-direction:column;gap:12px;padding-top:4px;border-top:1px dashed var(--line,#ddd)}
@@ -48,9 +48,9 @@
 .ait-chip{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 13px;border:1.5px solid var(--line,#d0d5dd);border-radius:999px;background:var(--surface,transparent);color:var(--text);font:600 13px/1 inherit;cursor:pointer}
 .ait-chip[aria-checked=true]{border-color:var(--accent,#0f766e);background:color-mix(in srgb,var(--accent,#0f766e) 14%,var(--surface,#fff))}
 .ait-chip.is-gevaar[aria-checked=true]{border-color:var(--fout,#b42318);background:color-mix(in srgb,var(--fout-zacht,#fdecec) 75%,var(--surface,#fff))}
-.ait-typisch{margin-left:auto;padding:1px 6px;border-radius:999px;background:var(--ok-zacht,#e8f6ee);color:var(--ok,#0f7a3d);font-size:10.5px;font-weight:700;white-space:nowrap}
+.ait-typisch{margin-left:auto;padding:1px 6px;border-radius:999px;background:var(--ok-zacht,#e8f6ee);color:var(--ok,#0f7a3d);font-size:12px;font-weight:700;white-space:nowrap}
 .ait-chip .ait-typisch{margin-left:2px}
-.ait-uitroep{display:inline-grid;place-items:center;flex:none;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--fout,#b42318) 85%,transparent);color:#fff;font:800 11px/1 inherit;cursor:help}
+.ait-uitroep{display:inline-grid;place-items:center;flex:none;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--fout,#b42318) 85%,transparent);color:var(--text-on-vlak);font:800 11px/1 inherit;cursor:help}
 .ait-seg .ait-uitroep{margin-left:auto}
 .ait-datum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .ait-datum label{font-weight:600;font-size:13px}
@@ -71,7 +71,7 @@
 .rt-sessie-tekst{display:flex;flex-direction:column;min-width:0}
 .rt-sessie-tekst b{font-size:14px}
 .rt-sessie-tekst small{color:var(--muted);font-size:12.5px}
-.rt-deze{margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--ok-zacht,#e8f6ee);color:var(--ok,#0f7a3d);font-size:11px;font-weight:700}
+.rt-deze{margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--ok-zacht,#e8f6ee);color:var(--ok,#0f7a3d);font-size:12px;font-weight:700}
 .rt-sessie-stand{font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--soft,var(--panel-2,#f2f4f7));color:var(--muted)}
 .rt-sessie-stand.is-tech{background:color-mix(in srgb,var(--rw-tech,#b45309) 14%,transparent);color:var(--rw-tech,#b45309)}
 @media (max-width:640px){

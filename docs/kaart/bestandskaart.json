@@ -3298,6 +3298,206 @@
    "pad": "server/platform/tekst-budget.ts",
    "wat": "Begrensd inlezen van verzoeklichamen met IP-, aanmeldings- en geheugenbudgetten (hernoemd vanuit Engelse naam).",
    "sinds": "SEC-002 / UPD-002"
+  },
+  {
+   "pad": "migrations/0285_ai_delegatie_termijnen.sql",
+   "wat": "Migratie voor termijnen, pauzeregels, inactiviteitstijd en intrekreden van technische AI-sessiedelegaties onder RLS.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "shared/ai-delegatie.ts",
+   "wat": "Puur beslissingsmodel, invoervalidatie en risicodetectie voor termijnen en intrekregels van AI-sessiedelegaties.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "backend/ai-delegatie-kern.ts",
+   "wat": "Databasekern voor het verzamelen van sessiefeiten, veilig intrekken met journaal en melding en het bijhouden van AI-activiteit.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "src/tech/ruimtes/AiToegangKaart.tsx",
+   "wat": "Tweetalige beheerkaart per AI-agent voor het kiezen van toegangstermijnen, pauzeregels, verloopregels en rechtstreeks intrekken.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "src/tech/ruimtes/ai-toegang.css",
+   "wat": "Stijlblad voor de kaarten van «Доступ ШІ» in lichte en donkere paletten met rustige gevaarstinten en mobiele tikhoogte.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "tests/eenheid/ai-delegatie-20261115.test.ts",
+   "wat": "Eenheidstest en PG-test voor termijnen, pauze, inactiviteit, per-agent delegaties en herstel van gedeelde teststaat bij opruimen.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "scripts/accent-laag-css.mjs",
+   "wat": "Generator voor de CSS-laag die de gekozen accountaccentkleur consistent over alle paletten inclusief Maquette toepast.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "src/thema/accent-laag.css",
+   "wat": "Gegenereerd stijlblad voor de uniforme accentkleurlaag en het transparante blokprofiel in alle kleurpaletten.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "tests/eenheid/accent-001-tint-transparantie.test.ts",
+   "wat": "Eenheidstest voor de samenhang tussen de voorkeurstint, de accentlaag-CSS en de transparante blokstijlen.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "src/agenten/AgentCatalogus.tsx",
+   "wat": "Catalogusweergave op /agents met één presentatiekaart per AI-agent, directe koppelknop en uitklapbare verbindingsstappen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/agenten/agent-catalogus.css",
+   "wat": "Adaptieve stijlen voor de afgeronde AI-cataloguskaarten op basis van Maquette- en klassieke kleurtokens.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/agenten/ai-ingangen-pictogrammen.css",
+   "wat": "Stijlblad voor de pictogramtegelrij «Підключити» met toetsenbordfocus, aanwijstips op pc en korte labels op aanraakschermen.",
+   "sinds": "BREEDTE-001 (PR #120)"
+  },
+  {
+   "pad": "tests/eenheid/breedte-001-kolom-20261115.test.ts",
+   "wat": "Eenheidstest voor de gelijke 1180px-kolombreedte van dienstpagina's, pictogrammenrij en de AI-cataloguskaarten.",
+   "sinds": "BREEDTE-001 / BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel-sleutels.ts",
+   "wat": "Gegenereerd overzicht van merksleutels waarvoor een officieel CC0-vectorlogo in de lokale merkmap aanwezig is.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/antigravity.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Antigravity in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/claude.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Claude in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/codex.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Codex in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/copilot.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Copilot in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/cursor.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Cursor in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/gemini.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Gemini in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/gpt.svg",
+   "wat": "Officieel vectorlogo voor OpenAI ChatGPT in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/grok.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Grok in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/meldingen/toast-weergave.ts",
+   "wat": "Zuivere opmaakfuncties voor mensvriendelijke zwevende meldingstitels zonder interne foutcodes in de hoofdkop.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "src/meldingen/voorkeur-algemeen.ts",
+   "wat": "Zuivere berekening van het meest gekozen meldingsprofiel voor de gedeelde voorkeurkaart op de instellingenpagina.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ux-001-20261115.test.ts",
+   "wat": "Eenheidstest voor de meldingspanelen onder de bel, wisselknop tussen venster en paneel en voorkeursberekening.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "src/platform/zwevend-menu.tsx",
+   "wat": "Herbruikbaar zwevend vervolgmenu in een portaal op canoniek schilniveau zodat kaarten met overflow-hidden het menu nooit afsnijden.",
+   "sinds": "ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "src/platform/zwevend-menu.css",
+   "wat": "Stijlblad voor het zwevende vervolgmenu in het portaal met vaste laagvolgorde boven werkbladinhoud.",
+   "sinds": "ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "tests/eenheid/werkblad-veld-zwevend-20261115.test.ts",
+   "wat": "Eenheidstest voor de verstelbare hoogte van het werkbladveld en de zwevende menupop-overs boven alle kaarten.",
+   "sinds": "VELD-001 + ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "src/zoek/zoek-uitklap-veld.css",
+   "wat": "Stijlblad voor het globale zoekveld dat op de desktopbalk naadloos uit de knop uitvouwt tot één geheel met de resultatenlijst.",
+   "sinds": "ZOEK-002 (PR #124)"
+  },
+  {
+   "pad": "tests/eenheid/zoek-veld-op-plek-20261115.test.ts",
+   "wat": "Eenheidstest voor breedteberekening, groeirichting en verenigde kaartopmaak van het uitklapbare zoekveld.",
+   "sinds": "ZOEK-002 (PR #124)"
+  },
+  {
+   "pad": "tests/eenheid/accountmenu-strook-20261115.test.ts",
+   "wat": "Eenheidstest tegen achtergrondstroken onder het accountmenu en voor het lichte kruisje bij het verwijderen van een account.",
+   "sinds": "MENU-STROOK-001 + MENU-KRUISJE-001 (PR #122)"
+  },
+  {
+   "pad": "tests/eenheid/blokken-001-account.test.ts",
+   "wat": "Eenheidstest voor correcte blokafmetingen, marges en opmaak in het accountcentrum en /menu.",
+   "sinds": "BLOKKEN-001 (PR #131)"
+  },
+  {
+   "pad": "tests/eenheid/maquette-generator-gelijk.test.ts",
+   "wat": "Bewakingstest die verifieert dat de gegenereerde Maquette-bestanden exact overeenkomen met de uitvoer van de bronbouwer.",
+   "sinds": "BLOKKEN-001 (PR #131)"
+  },
+  {
+   "pad": "tests/eenheid/extensie-tabblad-hint-20261115.test.ts",
+   "wat": "Eenheidstest voor de diagnosecontrole van extensie 0.9.4 zonder vereiste van een actief Mijn Ruimte-tabblad.",
+   "sinds": "EXT094-001 (PR #127)"
+  },
+  {
+   "pad": "tests/eenheid/hint-001-ankertip.test.ts",
+   "wat": "Eenheidstest die dubbele zweeftips bij de Maquette-ankernavigatie voorkomt en ze alleen op pictogrammen toont.",
+   "sinds": "HINT-001 (PR #130)"
+  },
+  {
+   "pad": "tests/eenheid/hulp/stap-op-routes.ts",
+   "wat": "Testhulpfunctie die in backendmodules alle HTTP-routes met vereiste herbevestiging (STEP_UP_REQUIRED) opspoort.",
+   "sinds": "STAPOP-OMSCHR-001 (PR #126)"
+  },
+  {
+   "pad": "tests/eenheid/stap-op-omschrijving-20261115.test.ts",
+   "wat": "Bewakingstest die voor elke beveiligde stap-oproute een tweetalige gebruikersomschrijving en gevolguitleg afdwingt.",
+   "sinds": "STAPOP-OMSCHR-001 (PR #126)"
+  },
+  {
+   "pad": "tests/eenheid/klap-alles-20261115.test.ts",
+   "wat": "Eenheidstest voor de knoppen «Alles inklappen / openklappen» in rechtenblokken zonder de toegekende rechten te wijzigen.",
+   "sinds": "KLAP-001 (PR #120)"
+  },
+  {
+   "pad": "tests/eenheid/kleuren-001-een-bron.test.ts",
+   "wat": "Eenheidstest die één consistente bron voor accentkleuren en kleurnamen afdwingt in Thema's, accountmenu en Maquette.",
+   "sinds": "KLEUREN-001 (PR #128)"
+  },
+  {
+   "pad": "tests/eenheid/woordbreuk-001-20261115.test.ts",
+   "wat": "Eenheidstest tegen afbreken van woorden middenin smalle tegelkoppen en statuslabels op het werkblad en in widgets.",
+   "sinds": "WOORDBREUK-001 (PR #132)"
   }
  ]
 }

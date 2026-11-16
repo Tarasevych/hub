@@ -25,7 +25,7 @@ export const POPULAIR: ReadonlySet<string> = new Set([
   'claude', 'chatgpt', 'gemini', 'github', 'gitlab', 'notion', 'trello', 'jira', 'asana', 'stripe', 'paypal', 'shopify', 'hubspot',
   'zapier', 'make', 'n8n', 'cloudflare', 'aws', 'home-assistant', 'openai-api', 'microsoft-teams', 'wordpress', 'mailchimp',
 ]);
-/** Recent toegevoegde koppelingen (filter «Нові»): de zes AI-agenten van de v2-connector en de eigen MCP-client (oktober 2026). */
+/** Recent toegevoegde koppelingen (filter «Нові»): de zeven AI-agenten van de v2-connector en de eigen MCP-client (oktober-november 2026). */
 export const NIEUW: ReadonlySet<string> = new Set(['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'mcp-server']);
 
 const MCP_STAPPEN = (naam: string): readonly Tekst[] => [

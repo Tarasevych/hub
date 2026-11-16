@@ -247,6 +247,14 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     const tot = Date.now() + 4000;
     vastTot.current = Math.max(vastTot.current, tot + 300);
     let gevonden = false, n = 0;
+    let hadVorige = false, vorigeScroll = 0, vorigeDocTop = 0;
+    const leesStand = (el: HTMLElement) => {
+      const o = scrollOuder(el);
+      const s = o instanceof HTMLElement ? o.scrollTop : window.scrollY;
+      const oTop = o instanceof HTMLElement ? o.getBoundingClientRect().top : 0;
+      const docTop = s + el.getBoundingClientRect().top - oTop;
+      return { s, docTop };
+    };
     const stop = () => { window.clearInterval(t); weg(); };
     const door = () => { vastTot.current = 0; stop(); };
     const weg = () => {
@@ -260,8 +268,19 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
       n += 1;
       const el = document.getElementById(id);
       if (!el) { if (n > 20) stop(); return; }
+      const { s: nuScroll, docTop: nuDocTop } = leesStand(el);
       const top = el.getBoundingClientRect().top;
+      const deltaScroll = nuScroll - vorigeScroll;
+      const deltaDoc = nuDocTop - vorigeDocTop;
+      if (hadVorige && Math.abs(deltaScroll) > 3 && (Math.abs(deltaScroll - deltaDoc) > 4 || top < doelBoven(el) - 4)) {
+        stop();
+        return;
+      }
       if (!gevonden || Math.abs(top - doelBoven(el)) > 4) { try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch { /* geen DOM */ } }
+      const na = leesStand(el);
+      vorigeScroll = na.s;
+      vorigeDocTop = na.docTop;
+      hadVorige = true;
       gevonden = true;
       if (Date.now() > tot) stop();
     }, 60);

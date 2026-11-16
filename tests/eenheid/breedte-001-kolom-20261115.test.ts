@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
   check('згорнуте меню (96 px) на 1440: колонка по центру, поля 130/130', rCompact.menu === 130 && rCompact.ander === 130, JSON.stringify(rCompact));
 
   // Частина 3. «Підключити» (BREEDTE-002, 15.11.2026): ряд піктограм замінено каталогом карток — одна картка на ШІ, одна кнопка
-  // «Підключити» й «Розгорнути»; слово «Підключити» більше не повторюється в окремому ряду над карточками.
+  // «Підключити» й «Розгорнути»; слово «Підключити» більше не повторюється в окремому ряду над картками.
   const cat = lees('src/agenten/AgentCatalogus.tsx');
   check('на ai/agents більше немає окремого ряду «Підключити X» — замість нього каталог карток', !tsx.includes("data-ai-agent-ingangen='1'") && lees('src/ai-ecosysteem/AiEcosysteemPaneel.tsx').includes('<AgentCatalogus '));
   check('у картки одна головна кнопка «Підключити» і «Розгорнути» з aria-expanded / aria-controls', cat.includes("tr('Підключити', 'Koppelen')") && cat.includes('aria-expanded={isOpen} aria-controls={detailId}'));

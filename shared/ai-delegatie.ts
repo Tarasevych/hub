@@ -2,7 +2,7 @@
 // eigenaar gebruiken, hoe lang, en wanneer vervalt dat). Puur: geen database, geen DOM — backend/ai-delegatie-kern.ts verzamelt de
 // feiten, de site (src/tech/ruimtes/AiToegangKaart.tsx) gebruikt dezelfde keuzes en teksten. Eenheidstests: tests/eenheid/ai-delegatie-20261115.test.ts.
 //
-// Терміни й правила делегування технічного простору підключенню ШІ. Чиста логіка без бази даних: бекенд збирає факти, сайт показує
+// Терміни й правила делегування технічного простору підключенню ШІ. Чиста логіка без бази даних: серверна частина збирає факти, сайт показує
 // ті самі варіанти. Раніше дозвіл висів на ОДНОМУ технічному сеансі (одному піддомені), тож пауза на mcp.* вимикала Claude, хоча на
 // admin.* власник лишався технічним. Тепер прив'язка — «увесь вхід власника», а правило паузи окреме й явне.
 //

@@ -280,9 +280,9 @@ export async function main(): Promise<number> {
   const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Власник', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
   check('«Підключені акаунти»: eigenaar@example.test met stand «Працює», «Основний», «Перепідключити», «Відключити», «Додати ще один Gmail»',
     html.includes('eigenaar@example.test') && html.includes('Працює') && html.includes('Основний') && html.includes('Перепідключити') && html.includes('data-mail-ontkoppel') && html.includes('Додати ще один<!-- --> <!-- -->Gmail'), html.slice(html.indexOf('data-mail-gekoppeld'), html.indexOf('data-mail-gekoppeld') + 400));
-  // Met een account (zoals hierboven): sinds MAILORBIT-001 toont een LEGE pagina de orbit in plaats van de tegels (05.11.2026).
+  // Met een account (zoals hierboven): sinds MAILORBIT-001/MAILACC-002 toont de orbit de nog niet beschikbare diensten onder data-mail-orbit-onbeschikbaar.
   const htmlNl = renderToString(createElement(MailAccountsHub, { lang: 'nl', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
-  check('tegels zonder weg: uitleg ingeklapt onder «Чому недоступно?» / «Waarom niet beschikbaar?»', html.includes('<summary>Чому недоступно?</summary>') && htmlNl.includes('<summary>Waarom niet beschikbaar?</summary>'));
+  check('tegels zonder weg: getoond in orbit-lijst onder «Поки не підключається» / «Nog niet te koppelen»', html.includes('data-mail-orbit-onbeschikbaar=') && html.includes('Поки не підключається') && htmlNl.includes('Nog niet te koppelen'));
   const css = bron('src/mail-accounts-hub.css');
   check('telefoon ≤ 480 px: één kolom met compacte tegels', /@media \(max-width:480px\)\{[^}]*\.mail-provider-rooster\{grid-template-columns:minmax\(0,1fr\)/.test(css.replace(/\s*\n\s*/g, '')));
 
@@ -332,7 +332,7 @@ export async function main(): Promise<number> {
     && !controleerMerkEigen('png', Buffer.from('GIF89a........................................')).ok && !controleerMerkEigen('png', Buffer.alloc(210 * 1024)).ok);
   check('bestandsnamen: alleen <sleutel>.svg|png in kleine letters', merkEigenBestandsnaam('ukrnet.svg')?.sleutel === 'ukrnet' && !merkEigenBestandsnaam('../x.svg') && !merkEigenBestandsnaam('Ukr.SVG') && !merkEigenBestandsnaam('x.gif'));
   const leesmij = bron('deploy/ОГЛЯД-РОЗГОРТАННЯ.md');
-  check('deploy/ОГЛЯД-РОЗГОРТАННЯ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && leesmij.includes('200 KB'));
+  check('deploy/ОГЛЯД-РОЗГОРТАННЯ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && /200 (?:KB|КБ)/.test(leesmij));
 
   return einde();
 }

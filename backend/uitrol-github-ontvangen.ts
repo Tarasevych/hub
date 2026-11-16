@@ -258,7 +258,7 @@ function downloadHostToegestaan(urlStr: string): boolean {
   try {
     const u = new URL(urlStr);
     if (u.protocol === 'https:') return TOEGESTANE_DOWNLOAD_HOSTS.has(u.hostname.toLowerCase());
-    // Лише тестові запуски з локальним фейковим сервером через явно заданий тестовий прапор або override fetch
+    // Лише тестові запуски з локальним імітаційним сервером через явно заданий тестовий прапор або підміною fetch
     if (process.env.UITROL_TEST_TOESTAAN_LOCAL_HTTP === '1' && u.protocol === 'http:' && (u.hostname === '127.0.0.1' || u.hostname === 'localhost')) return true;
     return false;
   } catch {

@@ -107,7 +107,7 @@ function schrijfLokaalProfiel(scope: string, ruimte: RuimteType, profiel: Meldin
   }
 }
 
-// MELDINGEN-UX-001: de keuze «компактна панель / плаваюче вікно» staat in de accountvoorkeuren (zijbalk `meldingen.paneel`,
+// MELDINGEN-UX-001: de keuze «компактна панель / рухоме вікно» staat in de accountvoorkeuren (zijbalk `meldingen.paneel`,
 // server, alle subdomeinen en apparaten). localStorage per subdomein is alleen de terugval voor wie nog niets koos — vroeger was
 // het ALLEEN localStorage, waardoor op een ander subdomein (mcp., cloud.) ineens het andere paneel opensprong.
 export function leesEcosysteemModusActief(): boolean {
@@ -145,7 +145,7 @@ export function zetEcosysteemModusActief(actief: boolean): void {
   }
 }
 
-/** Реактивна підписка на поточний режим панелі сповіщень (плаваюче вікно чи компактна панель) між вкладками, піддоменами й компонентами. */
+/** Реактивна підписка на поточний режим панелі сповіщень (рухоме вікно чи компактна панель) між вкладками, піддоменами й компонентами. */
 export function useEcosysteemModusActief(): boolean {
   const [actief, setActief] = useState<boolean>(() => leesEcosysteemModusActief());
   useEffect(() => {

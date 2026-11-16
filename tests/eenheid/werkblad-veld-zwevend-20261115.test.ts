@@ -49,7 +49,7 @@ export async function main() {
   const canvas = readFileSync('src/werkblad/canvas/Canvas.tsx', 'utf8');
   check('Canvas: висота поза налаштуванням = inhoudHoogte (без хвоста)', /p\.editMode \? K\.benodigdeHoogte\(werk\) : K\.inhoudHoogte\(werk\)/.test(canvas));
   check('Canvas: ручка — role=separator з aria-valuenow і підказкою', /role="separator"/.test(canvas) && /aria-valuenow=/.test(canvas) && /title=\{T\.veld\.tip\}/.test(canvas));
-  check('Canvas: ручка рендериться лише в режимі налаштування', /\{p\.editMode && \(\s*<div className=\{`wbc-veld/.test(canvas));
+  check('Canvas: ручка відмальовується лише в режимі налаштування', /\{p\.editMode && \(\s*<div className=\{`wbc-veld/.test(canvas));
   const css = readFileSync('src/werkblad/canvas/canvas.css', 'utf8');
   check('CSS: ручка не прокручує сторінку на телефоні (touch-action:none) і має тикову зону 44 px', /\.wbc-veld-greep\{[^}]*touch-action:none/.test(css) && /\.wbc-veld-greep::before\{[^}]*height:44px/.test(css));
   check('CSS: блок із відкритим меню піднімається над сусідами й не обрізає меню', /\.wbc-item:is\(:has\(\[aria-expanded="true"\]\),:has\(details\[open\]\)\)\{z-index:8050!important\}/.test(css)

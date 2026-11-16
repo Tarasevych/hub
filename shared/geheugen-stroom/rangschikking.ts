@@ -185,7 +185,7 @@ export function spoorTegenspraken(
       const heeftSterkeOverlap = overlap >= 3 || (overlap >= 2 && gedeeldeLabels.length >= 1) || (zelfdeFamilieSleutel && overlap >= 2);
       if (!heeftSterkeOverlap) continue;
 
-      // Суперечність імовірна, якщо є різна полярність на спільну тему або два конкуруючі нормативні правила однієї теми.
+      // Суперечність імовірна, якщо є різна полярність на спільну тему або два конкурентні нормативні правила однієї теми.
       if (tegenovergesteldePolariteit || (normatieveSoort(a) && normatieveSoort(b) && (gedeeldeLabels.length >= 2 || overlap >= 4))) {
         gezienParen.add(ps);
         resultaat.push({
