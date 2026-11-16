@@ -286,17 +286,24 @@ const RAIL_TEKSTEN = {
     sluiten: 'Закрити',
     links: 'Ліворуч',
     rechts: 'Праворуч',
-    boven: 'Згори',
+    boven: 'Зверху',
     onder: 'Знизу',
-    compactRij: 'Компактна ширина',
-    aan: 'Увімкнено',
-    uit: 'Вимкнено',
     inklapKnop: 'Згорнути',
-    inklapRij: 'Згорнути до капсули',
     inklapAria: 'Згорнути панель розділів',
     uitklapAria: 'Розгорнути панель розділів',
     sectiesPil: 'Розділи',
-    tip: 'Ви також можете перетягнути шапку панелі до будь-якого з чотирьох країв робочої області.',
+    tip: 'Можна також перетягнути заголовок панелі до потрібного краю екрана.',
+    inhoudKop: 'Вміст кнопок',
+    metNamen: 'Піктограми з назвами',
+    metNamenTip: 'Кнопки показують піктограму й назву розділу. Панель ширша й займає більше місця біля краю.',
+    alleenIconen: 'Лише піктограми',
+    alleenIconenTip: 'Вузька панель лише з піктограмами: сторінці лишається більше місця, назву розділу видно в підказці під мишею.',
+    gedragKop: 'Поведінка меню',
+    altijdOpen: 'Завжди розгорнуте',
+    altijdOpenTip: 'Панель розділів завжди відкрита біля обраного краю.',
+    capsule: 'Згорнуте в капсулу',
+    capsuleTip: 'Панель ховається в маленьку капсулу з назвою поточного розділу; натискання на капсулу знову відкриває панель.',
+    noot: 'Положення й вигляд діють лише на панель розділів цієї сторінки й зберігаються в цьому браузері. Головне меню сайту вони не змінюють.',
     mobielOpen: 'Відкрити розділи сторінки',
     mobielSluit: 'Закрити перелік розділів',
   },
@@ -315,15 +322,22 @@ const RAIL_TEKSTEN = {
     rechts: 'Rechts',
     boven: 'Boven',
     onder: 'Onder',
-    compactRij: 'Compacte breedte',
-    aan: 'Aan',
-    uit: 'Uit',
     inklapKnop: 'Inklappen',
-    inklapRij: 'Inklappen tot capsule',
     inklapAria: 'Sectiepaneel inklappen',
     uitklapAria: 'Sectiepaneel uitklappen',
     sectiesPil: 'Secties',
-    tip: 'U kunt de kop van het paneel ook rechtstreeks naar een van de vier randen van het werkgebied slepen.',
+    tip: 'U kunt de kop van het paneel ook naar de gewenste rand van het scherm slepen.',
+    inhoudKop: 'Inhoud van de knoppen',
+    metNamen: 'Pictogrammen met namen',
+    metNamenTip: 'De knoppen tonen pictogram en naam van het onderdeel. Het paneel is breder en neemt meer ruimte aan de rand.',
+    alleenIconen: 'Alleen pictogrammen',
+    alleenIconenTip: 'Smal paneel met alleen pictogrammen: de pagina houdt meer ruimte, de naam staat in de hint onder de muis.',
+    gedragKop: 'Gedrag van het menu',
+    altijdOpen: 'Altijd uitgeklapt',
+    altijdOpenTip: 'Het onderdelenpaneel staat altijd open aan de gekozen rand.',
+    capsule: 'Ingeklapt tot capsule',
+    capsuleTip: 'Het paneel krimpt tot een kleine capsule met de naam van het huidige onderdeel; een klik op de capsule opent het weer.',
+    noot: 'Positie en weergave gelden alleen voor het onderdelenpaneel van deze pagina en worden in deze browser bewaard. Het hoofdmenu van de site verandert niet.',
     mobielOpen: 'Onderdelen van de pagina openen',
     mobielSluit: 'Onderdelenlijst sluiten',
   },
@@ -1088,6 +1102,8 @@ export function MaquetteAnkerRail({
             </button>
           </div>
 
+          {/* UNIF-ANKER-001: будова й вигляд як у вікні «Положення якорів» центру облікового запису в «Макеті»:
+              плитки країв зі схемою, «Вміст кнопок», «Поведінка меню», пояснення, де діє вибір. Zelfde opbouw als het «Maquette»-venster. */}
           <div className="mq-zijde-kiezer">
             {(['links', 'rechts', 'boven', 'onder'] as const).map((z) => (
               <button
@@ -1097,36 +1113,39 @@ export function MaquetteAnkerRail({
                 aria-pressed={zijde === z}
                 onClick={() => pasZijdeToe(z)}
               >
+                <span className={`mq-zijde-schema is-${z}`} aria-hidden="true" />
                 <span>{t[z]}</span>
               </button>
             ))}
           </div>
 
-          <div className="mq-popover-rij">
-            <span>{t.compactRij}</span>
-            <button
-              type="button"
-              className="mq-popover-schakelaar"
-              aria-pressed={compact}
-              onClick={wisselCompact}
-            >
-              {compact ? t.aan : t.uit}
-            </button>
+          <div className="mq-popover-groep">
+            <strong id="mq-popover-inhoud">{t.inhoudKop}</strong>
+            <div className="mq-popover-keuze" role="group" aria-labelledby="mq-popover-inhoud">
+              <button type="button" className={!compact ? 'is-gekozen' : undefined} aria-pressed={!compact} title={t.metNamenTip} onClick={() => { if (compact) wisselCompact(); }}>
+                {t.metNamen}
+              </button>
+              <button type="button" className={compact ? 'is-gekozen' : undefined} aria-pressed={compact} title={t.alleenIconenTip} onClick={() => { if (!compact) wisselCompact(); }}>
+                {t.alleenIconen}
+              </button>
+            </div>
           </div>
 
           {isKlassiek ? (
-            <div className="mq-popover-rij">
-              <span>{t.inklapRij}</span>
-              <button
-                type="button"
-                className="mq-popover-schakelaar"
-                onClick={klapIn}
-              >
-                {t.inklapKnop}
-              </button>
+            <div className="mq-popover-groep">
+              <strong id="mq-popover-gedrag">{t.gedragKop}</strong>
+              <div className="mq-popover-modus" role="group" aria-labelledby="mq-popover-gedrag">
+                <button type="button" className="is-gekozen" aria-pressed={true} title={t.altijdOpenTip} onClick={() => pasIngeklaptToe(false)}>
+                  {t.altijdOpen}
+                </button>
+                <button type="button" aria-pressed={false} title={t.capsuleTip} onClick={klapIn}>
+                  {t.capsule}
+                </button>
+              </div>
             </div>
           ) : null}
 
+          <p className="mq-popover-noot">{t.noot}</p>
           <p className="mq-popover-tip">{t.tip}</p>
         </div>
       ) : null}

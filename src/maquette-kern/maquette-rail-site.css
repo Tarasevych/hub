@@ -28,10 +28,13 @@ html:not(.palet-maquette) :is(.mq-anker-rail, .mq-rail-popover, .mq-anker-onderb
   --mq-bovenbalk-glas: var(--panel);
   --mq-schaduw: 0 10px 28px var(--shadow, rgba(22, 31, 41, 0.13));
   --mq-schaduw-zacht: 0 6px 18px var(--shadow, rgba(22, 31, 41, 0.13));
+  /* --mq-straal-kaart: заокруглення вікна положення (.mq-rail-popover.is-klassiek) — як у «Макеті» (22 px); без нього кути були квадратні. */
+  --mq-straal-kaart: 22px;
   --mq-straal-rail: 22px;
   --mq-straal-knop: 13px;
   --mq-straal-veld: 13px;
   --mq-font-ui: inherit;
+  --mq-sluier-glas: color-mix(in srgb, var(--text) 22%, transparent);
 }
 
 /* Затінення під відкритим переліком на телефоні — м'якше, ніж у нічному «Макеті». */
@@ -39,27 +42,6 @@ html:not(.palet-maquette) .mq-anker-sluier {
   background: color-mix(in srgb, var(--text) 22%, transparent);
 }
 
-/* Вікно положення: тло й рамка з теми замість темного скла «Макета». */
-html:not(.palet-maquette) .mq-rail-popover.is-site {
-  border: 1px solid var(--mq-rand-sterk);
-  background: var(--mq-popover-glas);
-  color: var(--mq-tekst);
-  box-shadow: var(--mq-schaduw);
-}
-
-html:not(.palet-maquette) .mq-rail-popover.is-site :is(.mq-zijde-knop, .mq-popover-schakelaar, .mq-popover-sluit) {
-  border-color: var(--mq-rand-sterk);
-  background: var(--mq-oppervlak);
-  color: var(--mq-tekst);
-}
-
-html:not(.palet-maquette) .mq-rail-popover.is-site .mq-zijde-knop.is-gekozen,
-html:not(.palet-maquette) .mq-rail-popover.is-site .mq-popover-schakelaar[aria-pressed="true"] {
-  border-color: var(--mq-accent);
-  background: var(--mq-accent);
-  color: var(--mq-accent-op);
-}
-
-html:not(.palet-maquette) .mq-rail-popover.is-site :is(small, .mq-popover-tip) {
-  color: var(--mq-gedempt);
-}
+/* Вікно положення — той самий вигляд, що й у «Макеті» (maquette-oppervlakken.css): заокруглене вікно, кнопки країв
+   з м'яким акцентним тлом обраного краю. Тут нічого не перевизначаємо — лише кольори з теми через токени вище.
+   NL: het positievenster krijgt dezelfde vorm als in «Maquette»; alleen de kleuren komen uit het thema. */

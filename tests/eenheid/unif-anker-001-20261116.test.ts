@@ -52,6 +52,10 @@ export async function main(): Promise<number> {
   // 9. Стара вада класичного вигляду: ціль переходу тримається, поки ліниві розділи ростуть; дія людини зупиняє утримання.
   assert.ok(/function gaNaarSectie\(id: string, vasthouden/.test(pagina) && /Date\.now\(\) - begin > 5000/.test(pagina) && /\['wheel', 'touchstart', 'keydown'\]/.test(pagina), 'утримання цілі до 5 с');
   assert.ok(/if \(vasthouden\.current\) return;/.test(pagina), 'під час переходу підсвічування не стрибає');
-  console.log('unif-anker-001: 9 groepen controles geslaagd');
+  // 10. Вікно положення — той самий вигляд, що в «Макеті»: схеми країв, «Вміст кнопок», «Поведінка меню», заокруглені кути.
+  assert.ok(/className=\{`mq-zijde-schema is-\$\{z\}`\}/.test(rail), 'схема краю на кожній плитці');
+  assert.ok(rail.includes('mq-popover-keuze') && rail.includes('mq-popover-modus') && rail.includes('mq-popover-noot'), 'групи вікна як у «Макеті»');
+  assert.ok(siteCss.includes('--mq-straal-kaart: 22px;'), 'вікно положення заокруглене в палітрах сайту');
+  console.log('unif-anker-001: 10 groepen controles geslaagd');
   return 0;
 }
