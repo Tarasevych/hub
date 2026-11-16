@@ -61,6 +61,35 @@ export function haalTicket(agentId: string, id: string, soorten?: readonly Overd
 
 export function vergeetTicket(id: string) { tickets.delete(id); }
 
+// LAI-CON-001 (review PR #137): ook het RESULTAAT van browser_local_ai (vertaling, samenvatting) komt niet in app.agent_commands.result.
+// De connector meldt vóór het versturen welk ticket hij verwacht; de gateway legt het resultaat van die agent alleen hier in het geheugen
+// (en in de database alleen metadata); de connector haalt het één keer op. Na 15 minuten of na een herstart is het weg.
+const VLUCHTIG_TTL_MS = 15 * 60_000;
+const vluchtig = new Map<string, { agentId: string; verloopt: number; data?: unknown }>();
+function vluchtigOpruimen(nu = Date.now()) { for (const [k, v] of vluchtig) if (v.verloopt <= nu) vluchtig.delete(k); }
+/** Connector: dit ticket hoort bij deze agent; zijn resultaat mag alleen in het geheugen. */
+export function verwachtVluchtig(ticket: string, agentId: string): void {
+  vluchtigOpruimen();
+  if (TICKET_RE.test(ticket) && vluchtig.size < 2000) vluchtig.set(ticket, { agentId, verloopt: Date.now() + VLUCHTIG_TTL_MS });
+}
+/** Gateway: resultaat bewaren als het ticket verwacht werd voor precies deze agent (en nog niet gevuld is). true = niet in de database zetten. */
+export function bewaarVluchtig(ticket: unknown, agentId: string, data: unknown): boolean {
+  vluchtigOpruimen();
+  if (typeof ticket !== 'string') return false;
+  const v = vluchtig.get(ticket);
+  if (!v || v.agentId !== agentId || v.data !== undefined) return false;
+  v.data = data;
+  return true;
+}
+/** Connector: resultaat één keer ophalen (daarna weg). */
+export function haalVluchtig(ticket: string): unknown {
+  vluchtigOpruimen();
+  const v = vluchtig.get(ticket);
+  if (!v || v.data === undefined) return undefined;
+  vluchtig.delete(ticket);
+  return v.data;
+}
+
 export function maakGeheimVerzoek(v: Omit<GeheimVerzoek, 'id' | 'verloopt' | 'status' | 'aangemaakt'>): GeheimVerzoek {
   opruimen();
   if ([...verzoeken.values()].filter((x) => x.userId === v.userId && x.status === 'open').length >= MAX_PER_GEBRUIKER) throw new Error('VERZOEK_TE_VEEL');

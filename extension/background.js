@@ -1724,7 +1724,8 @@ async function lokaleAiVoorAgent(r, st, params) {
       const reden = uit && typeof uit.reason === 'string' ? uit.reason.slice(0, 60) : 'FOUT';
       throw new Error(`EXTENSIE_LOKALE_AI: ${reden}${uit && uit.detail ? ` — ${String(uit.detail).slice(0, 300)}` : ''}${reden === 'MODEL_NIET_GELADEN' ? ' (the user must download the model with a click in the extension settings; this tool never downloads it)' : ''}`);
     }
-    return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true };
+    // vluchtig = het ticket: de server bewaart dit resultaat dan alleen in het geheugen (nooit in de opdrachtgeschiedenis).
+    return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true, vluchtig: params.ticket };
   } finally { lokaleAiLopend.delete(id); }
 }
 

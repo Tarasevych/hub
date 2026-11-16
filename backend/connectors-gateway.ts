@@ -32,6 +32,7 @@ import { huidigeNamens } from './mcp-namens';
 import * as grants from './ai-toestemmingen';
 import * as ext from './extensie-ontgrendeling';
 import { lokaleAiVoorExtensie } from './extensie-beleid';
+import { bewaarVluchtig } from './apps-overdracht';
 import { VOORAUTH, voorAuthToelaten, zetBerichtGrens } from './ws-voorauth';
 import { jsonbVeilig, knipTekst, tekstVeilig } from '../server/platform/json-veilig';
 /** SEC-002 (toets-g10i №1): resultaat van een agent zó dat jsonb het altijd aanneemt (eenzame surrogaten/U+0000 → U+FFFD). */
@@ -332,6 +333,11 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
     if ((msg?.t === 'term.out' || msg?.t === 'term.exit' || msg?.t === 'result') && terminalHooks?.vanAgent(agentId, msg)) return;
     // SEC-002 http-rand-03: alleen een echt opdracht-id (uuid) gaat naar de database; iets anders gaf 22P02 en liet het proces vallen.
     if (msg?.t === 'result' && store.isOpdrachtId(msg.id)) {
+      // LAI-CON-001: resultaat van browser_local_ai (data.vluchtig = het verwachte ticket van DEZE agent) alleen in het geheugen;
+      // in de database blijft metadata (op het apparaat, aantal tekens). Een niet verwacht ticket → gewoon pad (niets verborgen).
+      const vl = msg.ok && msg.data && typeof msg.data === 'object' ? (msg.data as { vluchtig?: unknown; tekst?: unknown }) : null;
+      const vluchtigBewaard = !!vl && typeof vl.vluchtig === 'string' && bewaarVluchtig(vl.vluchtig, agentId, msg.data);
+      if (vluchtigBewaard) msg.data = { opApparaat: true, vluchtig: true, tekens: typeof vl!.tekst === 'string' ? vl!.tekst.length : 0 };
       // Alleen een opdracht van DEZE gebruiker, naar DEZE agent en in stand 'sent' wordt afgesloten (audit M3).
       await store.transitionCommand(
         msg.id, ['sent'], msg.ok ? 'succeeded' : 'failed',

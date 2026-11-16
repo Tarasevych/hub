@@ -19,7 +19,7 @@ import { huidigeLade, huidigeNamens, huidigeRuimte, metNamens } from './mcp-name
 import { apparaatInRuimte, ruimteOf } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { agentOnline } from './connectors-gateway';
-import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
+import { haalVluchtig, maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, verwachtVluchtig, vergeetTicket } from './apps-overdracht';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as store from './connectors-opslag';
 import { controleerBrowserOpdracht } from './extensie-ontgrendeling';
@@ -1209,11 +1209,13 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       // «Додатки»: bestanden en env van een uitrol gaan via een eenmalig ticket, nooit in de bewaarde opdracht (zie apps-overdracht.ts).
       let params: Record<string, unknown> = ruw;
       let ticket: string | null = null;
-      // LAI-CON-001: de tekst gaat via een eenmalig ticket (alleen deze extensie, 3 minuten); in de bewaarde opdracht staan alleen
-      // functie, talen en het aantal tekens — nooit de tekst zelf.
+      // LAI-CON-001: de tekst gaat via een eenmalig ticket (alleen deze extensie, standaard 10 minuten — dekt ook het wachten op een
+      // klik); in de bewaarde opdracht staan alleen functie, talen en het aantal tekens — nooit de tekst zelf. Het resultaat blijft
+      // ook buiten de database (review PR #137): de gateway legt het voor dit ticket alleen in het geheugen (bewaarVluchtig).
       if (name === 'browser_local_ai') {
-        try { ticket = maakTicket(agent.id, userId, 'lokale-ai', { tekst: String(ruw.tekst) }, 3 * 60_000); }
+        try { ticket = maakTicket(agent.id, userId, 'lokale-ai', { tekst: String(ruw.tekst) }); }
         catch { return text('Too many texts are waiting for the browser. Wait a minute and try again.', true); }
+        verwachtVluchtig(ticket, agent.id);
         params = { modus: ruw.modus, ticket, tekens: String(ruw.tekst).length, ...(ruw.bron ? { bron: ruw.bron } : {}), ...(ruw.doel ? { doel: ruw.doel } : {}) };
       }
       if (name === 'app_deploy') {
@@ -1251,6 +1253,12 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
           const uitleg = techn.verduidelijkExtensieFout(TOOL_TO_COMMAND[name], done.result?.error);
           if (uitleg) return text(uitleg.fout, true);
         }
+      }
+      if (done.status === 'succeeded' && name === 'browser_local_ai' && ticket) {
+        const v = haalVluchtig(ticket) as Record<string, unknown> | undefined;
+        if (!v) return text('The result of the local AI is no longer available on the server (it is kept only in memory, once). Call the tool again.', true);
+        const { vluchtig: _v, ...uitkomst } = v;
+        return untrusted(uitkomst);
       }
       if (done.status === 'succeeded') {
         // Een screenshot komt als afbeelding terug (MCP "image"-inhoud) met een korte tekst erbij; al het andere als onbetrouwbare tekst.

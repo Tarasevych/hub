@@ -102,6 +102,20 @@ export async function main(): Promise<number> {
     check('de browser krijgt nooit een geheim of bundel (route geeft alleen lokale-ai)', haalTicket('agent-browser', t3, ['lokale-ai']) === null);
     const t4 = maakTicket('agent-browser', 'u1', 'lokale-ai', { tekst: 'x' });
     check('ticket van een andere agent → null', haalTicket('agent-ander', t4, ['lokale-ai']) === null);
+    // Review PR #137 (a): het resultaat blijft alleen in het geheugen, één keer op te halen, alleen van de verwachte agent.
+    const { verwachtVluchtig, bewaarVluchtig, haalVluchtig } = await import('../../backend/apps-overdracht');
+    const tv = 'v'.repeat(43);
+    check('resultaat zonder verwachting → NIET vluchtig (gewoon pad, niets verborgen)', bewaarVluchtig(tv, 'agent-browser', { tekst: 'x' }) === false);
+    verwachtVluchtig(tv, 'agent-browser');
+    check('resultaat van een andere agent → niet bewaard', bewaarVluchtig(tv, 'agent-ander', { tekst: 'VALS' }) === false);
+    check('resultaat van de verwachte agent → in het geheugen, één keer; tweede keer vullen geweigerd',
+      bewaarVluchtig(tv, 'agent-browser', { tekst: 'VERTALING' }) === true && bewaarVluchtig(tv, 'agent-browser', { tekst: 'OVERSCHRIJVEN' }) === false
+      && JSON.stringify(haalVluchtig(tv)) === '{"tekst":"VERTALING"}' && haalVluchtig(tv) === undefined);
+    // Review PR #137 (b): «доступний всім» — ook in een eerder opgeslagen keuze van de browser staat browser.lokale_ai aan.
+    const { enabledTypes, BROWSER_DEFAULT_ENABLED, BROWSER_DEFAULT_AUTO } = await import('../../backend/browser-mogelijkheden');
+    check('standaardbeleid van de browser: browser.lokale_ai aan en zonder klik; oude opgeslagen keuze krijgt het er ook bij',
+      BROWSER_DEFAULT_ENABLED.includes('browser.lokale_ai') && BROWSER_DEFAULT_AUTO.includes('browser.lokale_ai')
+      && enabledTypes({ enabled: ['browser.snapshot'] }).includes('browser.lokale_ai') && enabledTypes(null).includes('browser.lokale_ai'));
     check('hulpmiddel browser_local_ai → opdracht browser.lokale_ai; functies gelijk op server en in de extensie',
       TOOL_TO_COMMAND.browser_local_ai === 'browser.lokale_ai' && JSON.stringify([...LOKALE_AI_MODI]) === JSON.stringify([...ext.LOKALE_AI_MODI]) && ext.ALLOWED_COMMANDS.includes('browser.lokale_ai') && ext.TYPE_CAPABILITY['browser.lokale_ai'] === 'browser.read');
     check('extensie valideert: nooit de tekst in params, wel functie + ticket + talen',

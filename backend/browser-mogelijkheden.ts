@@ -21,18 +21,24 @@ export const BROWSER_TYPES = [
 export type BrowserType = typeof BROWSER_TYPES[number];
 
 /** Standaard aan na het koppelen: alleen lezen en kijken. Al het andere zet de gebruiker zelf aan. */
-export const BROWSER_DEFAULT_ENABLED: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait'];
+// LAI-CON-001 (рішення власника 16.11.2026: «доступний всім користувачам»): browser.lokale_ai staat standaard aan en mag zonder klik —
+// het leest geen pagina en rekent op het apparaat van de gebruiker; beperken doen de beheerder (met reden), de matrix en de extensie.
+export const BROWSER_DEFAULT_ENABLED: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait', 'browser.lokale_ai'];
 
 /** Mogen zonder klik als de gebruiker dat kiest (de rest wacht altijd op "Toestaan"). */
-export const BROWSER_AUTO_APPROVABLE: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait', 'browser.navigate', 'browser.history'];
+export const BROWSER_AUTO_APPROVABLE: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait', 'browser.navigate', 'browser.history', 'browser.lokale_ai'];
 
 /** Standaard direct (zonder klik): het lezen en kijken. */
-export const BROWSER_DEFAULT_AUTO: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait'];
+export const BROWSER_DEFAULT_AUTO: readonly BrowserType[] = ['browser.snapshot', 'browser.diagnostics', 'browser.tabs', 'browser.scroll', 'browser.wait', 'browser.lokale_ai'];
+/** Altijd ingeschakeld, ook in een eerder opgeslagen keuze (die kende dit type nog niet): anders zou «voor iedereen» niet gelden. */
+export const BROWSER_ALTIJD_AAN: readonly BrowserType[] = ['browser.lokale_ai'];
 
 export const isBrowserType = (v: unknown): v is BrowserType => typeof v === 'string' && (BROWSER_TYPES as readonly string[]).includes(v);
 
 /** De ingeschakelde typen van een browseragent: de keuze van de gebruiker, of de standaard als er nog niets is gekozen. */
 export function enabledTypes(policy: { enabled?: unknown } | null | undefined): string[] {
   const list = policy?.enabled;
-  return Array.isArray(list) ? list.filter(isBrowserType) : [...BROWSER_DEFAULT_ENABLED];
+  if (!Array.isArray(list)) return [...BROWSER_DEFAULT_ENABLED];
+  const gekozen = list.filter(isBrowserType);
+  return [...gekozen, ...BROWSER_ALTIJD_AAN.filter((t) => !gekozen.includes(t))];
 }
