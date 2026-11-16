@@ -19,6 +19,7 @@ import { foutTekst } from './fouten';
 import { Badge } from './ui';
 // Як у SiteSchakelaars: те, що відкриває ШІ всім користувачам, натискає лише людина (зона без дій ШІ + лише справжній клік).
 import { alleenMens, geenAi } from '../menselijke-actie';
+import MotorLogo from '../mail/MotorLogo';
 import './dienst-motoren.css';
 
 type MotorRij = DienstMotor & {
@@ -214,7 +215,9 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
               return (
                 <li key={m.id} className='dm-kaart' data-testid='dienst-kaart' data-dienst-id={m.id} data-aan={String(m.aan)}>
                   {/* MAILAI-004 (Павло: «як вікіпедія»): у картці лише назва, куди йде текст і один рядок цифр; подробиці — під «Докладніше». */}
+                  {/* MAILAI-005 (затверджений макет): рядок — логотип, назва, цифри; праворуч дії піктограмами й перемикач. */}
                   <div className='dm-kaart-kop'>
+                    <MotorLogo k={{ soort: m.soort === 'aanbieder' ? 'dienst-eigenaar' : 'eigen-server', aanbieder: m.aanbieder, dienst: { soort: m.soort } }} maat={36} />
                     <div className='dm-kaart-naam'>
                       <b>{m.naam}</b>
                       <small>{m.soort === 'aanbieder' ? `${m.aanbieder ? naamVan(m.aanbieder) : '—'} · ${tr('ключ сайту', 'sleutel van de site')}` : `${hostVan(m.url) || '—'} · ${tr('власний сервер', 'eigen server')}`}</small>
@@ -248,6 +251,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                   <div className='dm-kaart-acties'>
                     <button type='button' className='dm-schakel' aria-pressed={m.aan} aria-expanded={m.aan ? undefined : risicoVoor === m.id} aria-controls={m.aan ? undefined : risicoId}
                       disabled={!!bezig || (!m.aan && zonderSleutel)} data-testid='dienst-aan'
+                      title={m.aan ? tr('Вимкнути для всіх: користувачі одразу втратять цей рушій; їхні згоди збережуться.', 'Uitzetten voor iedereen: gebruikers verliezen deze motor meteen; hun akkoorden blijven bewaard.') : tr('Увімкнути для всіх: спершу покажемо ризики й попросимо підтвердити. Кожен користувач ще має погодитися сам.', 'Aanzetten voor iedereen: eerst tonen we de risico’s en vragen we om bevestiging. Elke gebruiker moet zelf nog akkoord gaan.')}
                       onClick={alleenMens<Klik>(() => { if (m.aan) zet(m, false); else { setVerwijderVoor(''); setRisicoVoor(risicoVoor === m.id ? '' : m.id); } })}>
                       <span className='dm-schakel-spoor' aria-hidden='true'><span /></span>
                       <span>{m.aan ? tr('Увімкнено для всіх', 'Aan voor iedereen') : tr('Увімкнути для всіх', 'Aanzetten voor iedereen')}</span>
@@ -301,8 +305,8 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
         )}
 
         {data !== null && !formulier ? (
-          <div className='dm-rij-knoppen'>
-            <button type='button' className='ag-knop dm-knop' disabled={vol || !!bezig} data-testid='dienst-nieuw' onClick={alleenMens<Klik>(openNieuw)}><Plus aria-hidden='true' /> {tr('Додати рушій', 'Motor toevoegen')}</button>
+          <div className='dm-rij-knoppen dm-nieuw'>
+            <button type='button' className='ag-knop ag-knop-primary dm-knop' disabled={vol || !!bezig} data-testid='dienst-nieuw' onClick={alleenMens<Klik>(openNieuw)}><Plus aria-hidden='true' /> {tr('Додати рушій', 'Motor toevoegen')}</button>
             {vol ? <span className='dm-hint'>{tr(`Досягнуто межі: не більше ${data.max} спільних рушіїв.`, `Limiet bereikt: niet meer dan ${data.max} gedeelde motoren.`)}</span> : null}
           </div>
         ) : null}

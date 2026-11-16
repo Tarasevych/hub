@@ -82,3 +82,50 @@
   .mk-feiten dd { margin-bottom:4px; }
   .mk-auto { flex-wrap:wrap; }
 }
+
+/* MAILAI-005 (16.11.2026, затверджений макет «Рядок дій»): перелік рушіїв — групи з логотипами; рядок без рамки, обраний — з м'якою
+   рамкою відтінку; праворуч кружок вибору або одна кнопка кроку; шеврон розгортає подробиці. Лише токени теми.
+   Groepen met logo's; een rij zonder rand, de gekozen rij met een zachte accentrand; rechts keuzerondje of stapknop. */
+.mk { gap:10px; }
+.mk-groep { display:grid; gap:4px; }
+.mk-groep h4 { margin:0 0 0 6px; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.mk-lijst { gap:2px; }
+.mk-kaart { position:relative; border-color:transparent; background:none; padding:8px 40px 8px 8px; border-style:solid; }
+.mk-kaart:hover { background:var(--surface2); }
+.mk-kaart.is-gekozen { border-color:color-mix(in srgb, var(--accent) 55%, var(--line)); background:color-mix(in srgb, var(--accent) 7%, var(--panel)); }
+.mk-kaart[data-motor-staat='akkoord'] { border-style:solid; border-color:transparent; }
+.mk-kaart[data-motor-staat='nog-niet'], .mk-kaart[data-motor-staat='niet-hier'] { opacity:1; }
+.mk-kaart[data-motor-staat='op'] .mk-naam, .mk-kaart[data-motor-staat='niet-hier'] .mk-naam { opacity:.62; }
+.mk-kaart[data-motor-staat='op'] { opacity:1; }
+.mk-auto { padding:8px 10px 8px 8px; gap:10px; }
+.mk-kop { flex-wrap:nowrap; gap:10px; min-height:36px; }
+.mk-naam { flex:1 1 auto; }
+.mk-naam strong { line-height:1.25; }
+.mk-teller { display:inline-block; margin-inline-start:6px; padding:0 7px; border-radius:999px; background:var(--surface2); color:var(--text); font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mk-teller[data-op='ja'] { color:var(--warn, #b26a00); }
+.mk-kaart.is-gekozen .mk-teller, .mk-kaart:hover .mk-teller { background:var(--panel); }
+.mk-hoofd { flex:none; flex-wrap:nowrap; }
+.mk-hoofd .mk-knop { min-height:32px; padding:0 10px; border-radius:10px; font-weight:600; white-space:nowrap; }
+.mk-radio { flex:none; display:grid; place-items:center; width:22px; height:22px; padding:0; border:1.5px solid color-mix(in srgb, var(--text) 30%, var(--line)); border-radius:50%; background:none; color:var(--accentText, var(--panel)); cursor:pointer; position:relative; }
+.mk-radio::before { content:''; position:absolute; inset:-9px; }
+.mk button.mk-radio[aria-checked='true'] { background:var(--accent); border-color:var(--accent); color:var(--accentText, var(--panel)); }
+.mk-auto > .motor-logo-eigen { flex:none; }
+.mk-auto > .mk-naam { flex:1 1 auto; }
+.mk-radio:focus-visible { outline:2px solid var(--focus, var(--accent)); outline-offset:2px; }
+.mk-meer { margin:0; }
+.mk-meer > summary { position:absolute; inset-inline-end:6px; top:10px; width:30px; height:30px; min-height:0; justify-content:center; }
+.mk-meer > summary::after { content:none; }
+.mk-meer > summary svg { transition:rotate .15s ease; }
+.mk-meer[open] > summary svg { rotate:90deg; }
+.mk-meer[open] { margin:6px -32px 0 42px; }
+.mk-voet { display:flex; align-items:flex-start; gap:6px; margin:0 6px; font-size:12px; line-height:1.4; color:var(--muted); }
+.mk-voet svg { flex:none; margin-top:2px; }
+@media (prefers-reduced-motion:reduce) { .mk-meer > summary svg { transition:none; } }
+@media (max-width:520px) {
+  .mk-naam { flex-basis:auto; }
+  .mk-hoofd { flex:none; }
+  .mk-hoofd .mk-knop { flex:none; }
+  .mk-meer > summary { min-height:0; width:36px; height:36px; top:7px; inset-inline-end:2px; }
+  .mk-meer[open] { margin-inline:0 -32px; }
+  .mk-auto { flex-wrap:nowrap; }
+}

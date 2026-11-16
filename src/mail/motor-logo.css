@@ -1,0 +1,2 @@
+/* MAILAI-005: плитка-піктограма для рушія без власного знака (власний сервер, перекладач). Лише токени теми. */
+.motor-logo-eigen { flex:none; display:grid; place-items:center; border-radius:28%; background:color-mix(in srgb, var(--accent) 14%, var(--panel)); color:var(--accent); }

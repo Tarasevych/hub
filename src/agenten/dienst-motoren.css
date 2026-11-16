@@ -113,3 +113,28 @@
   /* Телефон: кнопки стоять ліворуч, тож підказка росте праворуч від кнопки — інакше вона виходить за лівий край екрана. */
   .dm-tip{left:0;right:auto;max-width:min(15rem,60vw)}
 }
+
+/* MAILAI-005 (16.11.2026, затверджений макет): перелік — рядки в одній заокругленій рамці; у рядку логотип, назва, один рядок цифр,
+   праворуч дії піктограмами й перемикач. Головна кнопка «Додати рушій» — над переліком. Лише токени теми.
+   Rijen in één afgerond kader: logo, naam, één regel cijfers, rechts de pictogramacties en de schakelaar. */
+.dm-nieuw{order:-1}
+.dm-lijst{grid-template-columns:1fr;gap:0;max-width:46rem;border:1px solid var(--line);border-radius:var(--straal-l,14px);overflow:visible;background:var(--panel)}
+.dm-kaart{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:0;border-radius:0;background:none}
+.dm-kaart+.dm-kaart{border-top:1px solid var(--line)}
+.dm-kaart[data-aan='true']{border-color:var(--line)}
+.dm-kaart>*{grid-column:1/-1}
+.dm-kaart>.dm-kaart-kop{grid-column:1;grid-row:1;align-items:center;justify-content:flex-start;gap:12px}
+.dm-kaart>.dm-kaart-acties{grid-column:2;grid-row:1;flex-wrap:nowrap;flex-direction:row-reverse;gap:6px}
+.dm-kaart[data-aan='false'] .dm-kaart-naam{opacity:.62}
+.dm-kaart>.dm-kort{padding-inline-start:48px}
+.dm-kaart>.dm-meer{margin:0;padding-inline-start:48px}
+.dm-kaart .dm-picto-knop:not(:hover):not([aria-expanded='true']){border-color:transparent;background:none}
+.dm-kaart .dm-schakel{padding:4px;border:0;background:none;min-height:32px}
+.dm-kaart .dm-schakel>span:last-child{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.dm-kaart .dm-schakel-spoor{width:40px;height:24px;padding:3px}
+.dm-kaart .dm-schakel-spoor>span{width:18px;height:18px;box-shadow:none}
+.dm-kaart .dm-schakel[aria-pressed='true'] .dm-schakel-spoor>span{transform:translateX(16px)}
+@media (max-width:640px){
+  .dm-kaart>.dm-kort,.dm-kaart>.dm-meer{padding-inline-start:0}
+  .dm-kaart>.dm-kaart-acties{grid-column:1/-1;grid-row:auto;justify-content:space-between}
+}

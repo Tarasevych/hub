@@ -661,9 +661,101 @@
 .ai-vb-sluit:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .ai-vertaling-balk[data-ingeklapt='ja'] { gap:0; padding-block:var(--ruimte-1); }
 .ai-vertaling-balk[data-ingeklapt='ja'] .ai-vb-brand { flex:1 1 auto; min-width:0; }
-.ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-selectors, .ai-vb-modes, .ai-vb-motoren, .ai-vb-settings-drawer, .ai-vb-space-badge) { display:none; }
+/* MAILAI-005: головна кнопка «Перекласти» з мовою і чип рушія лишаються завжди; стрілка ховає лише інструменти й налаштування. */
+.ai-vertaling-balk[data-ingeklapt='ja'] :is(.ai-vb-modes, .ai-vb-settings-drawer, .ai-vb-settings-trigger) { display:none; }
 @media (max-width:700px), (max-height:500px) {
   .ai-vb-brand { flex-wrap:wrap; min-width:0; }
   .ai-vb-title { white-space:normal; min-width:0; }
 }
 @media (prefers-reduced-motion:reduce) { .ai-vb-inklap svg { transition:none; } }
+
+/* ================================================================ MAILAI-005 (16.11.2026): «Рядок дій»
+   Павло: «сира оболонка без дизайну, без логотипів, не зрозуміло що основне». Затверджений макет: ОДНА смуга — ліворуч головна
+   дія (залита кнопка «Перекласти» + мова), далі тихі інструменти, праворуч чип «хто обробляє» з логотипом і лічильником.
+   Вибір рушія — віконце під чипом (на телефоні — аркуш знизу). Лише токени теми, жодних власних кольорів.
+   Eén regel: links de hoofdactie, dan de rustige hulpmiddelen, rechts de chip «wie verwerkt». Alleen thematokens. */
+.ai-vertaling-balk.is-rij { position:relative; align-self:start; min-width:0; max-width:100%; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:var(--straal-l, 16px); background:var(--panel); }
+.ai-vertaling-balk.is-rij.is-translated { border-color:color-mix(in srgb, var(--ok) 45%, var(--line)); background:var(--panel); }
+.ai-vertaling-balk.is-rij[data-ingeklapt='ja'] { gap:8px; padding-block:8px; }
+.ai-vertaling-balk.is-rij .ai-vb-main-row { flex-wrap:wrap; justify-content:flex-start; gap:8px; }
+.ai-vertaling-balk.is-rij .ai-vb-hoofd { display:inline-flex; flex:none; min-width:0; }
+.ai-vertaling-balk.is-rij .ai-vb-hoofd-knop {
+  min-height:38px; padding:0 14px; gap:7px; border-radius:12px 0 0 12px; border:1px solid var(--accent);
+  background:var(--accent); color:var(--accentText, var(--panel)); font-size:14px; font-weight:600;
+}
+.ai-vertaling-balk.is-rij .ai-vb-hoofd-knop:hover:not(:disabled) { background:color-mix(in srgb, var(--accent) 88%, var(--text)); border-color:var(--accent); }
+.ai-vertaling-balk.is-rij .ai-vb-hoofd-knop.active { background:var(--accent); border-color:var(--accent); color:var(--accentText, var(--panel)); }
+.ai-vertaling-balk.is-rij .ai-vb-taal { display:inline-flex; align-items:center; min-height:38px; padding:0; border:1px solid var(--line); border-inline-start:0; border-radius:0 12px 12px 0; background:var(--surface2); }
+.ai-vertaling-balk.is-rij .ai-vb-taal select { display:inline-flex; flex-wrap:nowrap; align-items:center; gap:6px; min-height:36px; max-width:11.5em; height:36px; padding:0 10px; white-space:nowrap; border:0; border-radius:0 12px 12px 0; background-color:transparent; color:var(--muted); font:inherit; font-size:13.5px; cursor:pointer; }
+.ai-vertaling-balk.is-rij .ai-vb-taal select:hover { color:var(--text); }
+.ai-vertaling-balk.is-rij .ai-vb-modes { flex:0 1 auto; gap:2px; min-width:0; }
+.ai-vertaling-balk.is-rij :is(.ai-vb-modes .ai-vb-mode-btn, .ai-vb-toggle-orig-btn) {
+  min-height:38px; padding:0 7px; gap:5px; border:0; border-radius:10px; background:none; color:var(--text); font-size:13.5px; font-weight:500;
+}
+.ai-vertaling-balk.is-rij .ai-vb-modes .ai-vb-mode-btn svg { color:var(--muted); }
+.ai-vertaling-balk.is-rij :is(.ai-vb-modes .ai-vb-mode-btn, .ai-vb-toggle-orig-btn):hover:not(:disabled) { background:var(--surface2); border:0; }
+.ai-vertaling-balk.is-rij .ai-vb-modes .ai-vb-mode-btn.active { background:color-mix(in srgb, var(--accent) 14%, var(--panel)); color:var(--text); }
+.ai-vertaling-balk.is-rij .ai-vb-modes .ai-vb-mode-btn.active svg { color:var(--accent); }
+.ai-vertaling-balk.is-rij .ai-vb-modes .ai-vb-mode-btn:disabled { opacity:.5; cursor:default; }
+.ai-vertaling-balk.is-rij .ai-vb-toggle-orig-btn { background:color-mix(in srgb, var(--ok) 12%, var(--panel)); }
+/* Чип стискається (назва з трьома крапками), а не падає на другий рядок, доки для нього лишається хоч 300px. */
+.ai-vertaling-balk.is-rij .ai-vb-brand { display:flex; align-items:center; justify-content:flex-end; gap:4px; flex:1 1 300px; flex-wrap:nowrap; min-width:0; margin-inline-start:auto; font-weight:400; position:relative; }
+.ai-vertaling-balk.is-rij[data-ingeklapt='ja'] .ai-vb-brand { flex:1 1 300px; }
+.ai-vertaling-balk.is-rij .ai-vb-motor-chip { flex:0 1 auto; min-width:0; }
+.ai-vb-motor-chip {
+  display:inline-flex; align-items:center; gap:7px; min-height:38px; max-width:100%; padding:3px 10px 3px 6px;
+  border:1px solid var(--line); border-radius:999px; background:var(--surface2); color:var(--text); font:inherit; font-size:13px; cursor:pointer;
+}
+.ai-vb-motor-chip:hover, .ai-vb-motor-chip.active { border-color:color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.ai-vb-motor-chip:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.ai-vb-motor-chip .ai-vb-wie { display:inline; flex:0 1 auto; max-width:14em; font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.ai-vb-motor-chip .mk-teller { margin:0; background:var(--panel); }
+.ai-vb-motor-chip > svg { flex:none; color:var(--muted); }
+.ai-vertaling-balk.is-rij :is(.ai-vb-settings-trigger, .ai-vb-inklap, .ai-vb-sluit) {
+  display:inline-grid; place-items:center; flex:none; width:32px; height:34px; margin:0; padding:0; border:0; border-radius:10px; background:none; color:var(--muted);
+}
+.ai-vertaling-balk.is-rij :is(.ai-vb-settings-trigger, .ai-vb-inklap, .ai-vb-sluit):hover { background:var(--surface2); color:var(--text); border:0; }
+.ai-vertaling-balk.is-rij .ai-vb-settings-trigger.active { background:color-mix(in srgb, var(--accent) 14%, var(--panel)); color:var(--accent); }
+/* Вибір рушія розкривається під чипом, праворуч. */
+.ai-vb-scherm, .ai-vb-greep { display:none; }
+.ai-vertaling-balk.is-rij .ai-vb-motoren {
+  /* У потоці, а не поверх листа: вікно читання обрізає все, що виходить за його межі, тож «плаваюче» віконце зрізалося б на короткому листі. */
+  position:static; align-self:flex-end; justify-self:end; margin-inline-start:auto; width:min(460px, 100%); box-sizing:border-box;
+  padding:12px; gap:10px; border:1px solid var(--line); border-radius:var(--straal-l, 16px); background:var(--panel); color:var(--text);
+  box-shadow:0 6px 18px color-mix(in srgb, var(--text) 8%, transparent);
+}
+.ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header { display:flex; align-items:center; gap:8px; }
+.ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header strong { font-size:15px; }
+.ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header .ai-vb-close-btn { margin-inline-start:auto; display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:10px; background:none; color:var(--muted); cursor:pointer; }
+.ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header .ai-vb-close-btn:hover { background:var(--surface2); color:var(--text); }
+.ai-vertaling-balk.is-rij .ai-vb-settings-drawer { border:1px solid var(--line); border-radius:var(--straal-m, 12px); background:var(--panel); }
+@media (max-width:640px) {
+  html body .ai-vertaling-balk.is-rij .ai-vb-main-row { flex-direction:row; align-items:center; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-hoofd { flex:1 1 100%; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-hoofd-knop { flex:1 1 auto; justify-content:center; min-height:44px; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-taal { flex:0 1 auto; min-height:44px; overflow:visible; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-taal select { min-height:42px; height:42px; width:auto; max-width:9.5em; }
+  /* Стрілка згортання лишається й на телефоні (рішення 24.10: на кожному екрані); щоб назва рушія не обрізалась — вужчі кнопки, без шеврона в чипі. */
+  html body .ai-vertaling-balk.is-rij .ai-vb-brand { gap:2px; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-motor-chip > svg:last-child { display:none; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-modes { flex:1 1 100%; width:100%; flex-wrap:nowrap; justify-content:space-between; overflow:visible; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-modes > :is(.ai-vb-mode-btn, .ai-vb-toggle-orig-btn) { flex:1 1 0; min-width:0; min-height:48px; flex-direction:column; gap:3px; padding:4px 2px; font-size:11px; line-height:1.2; white-space:normal; text-align:center; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-modes > .is-icoon { flex:0 0 44px; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-brand { flex:1 1 100%; margin-inline-start:0; flex-wrap:nowrap; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-motor-chip { flex:1 1 auto; min-width:0; min-height:44px; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-motor-chip .ai-vb-wie { max-width:none; flex:1 1 auto; text-align:start; }
+  /* Заголовок аркуша в один рядок: назва не переноситься, значок простору дрібніший. */
+  html body .ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header strong { white-space:nowrap; }
+  html body .ai-vertaling-balk.is-rij .ai-vb-motoren .ai-vb-settings-header .ai-vb-space-badge { font-size:11.5px; padding:2px 8px; white-space:nowrap; }
+  html body .ai-vertaling-balk.is-rij :is(.ai-vb-settings-trigger, .ai-vb-inklap, .ai-vb-sluit) { width:40px; height:44px; min-height:44px; }
+  /* Аркуш знизу: лист під ним затемнено; закривається хрестиком, дотиком поза аркушем або Esc. */
+  .ai-vb-scherm { display:block; position:fixed; inset:0; z-index:90; background:color-mix(in srgb, var(--text) 45%, transparent); }
+  html.theme-dark .ai-vb-scherm, html.theme-plum-dark .ai-vb-scherm { background:color-mix(in srgb, var(--bg) 70%, transparent); }
+  html body .ai-vertaling-balk.is-rij .ai-vb-motoren {
+    position:fixed; inset:auto 0 0 0; top:auto; z-index:91; width:auto; margin:0; max-height:82vh; overflow:auto; padding:8px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-width:1px 0 0; border-radius:22px 22px 0 0;
+  }
+  .ai-vb-greep { display:block; width:40px; height:4px; margin:2px auto 4px; border-radius:999px; background:var(--line); }
+}
+/* Згорнуто: налаштування теж ховаються (вище .is-rij дає кнопкам display:inline-grid, тому правило повторено з більшою вагою). */
+.ai-vertaling-balk.is-rij[data-ingeklapt='ja'] .ai-vb-settings-trigger { display:none; }

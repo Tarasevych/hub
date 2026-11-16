@@ -401,6 +401,14 @@
   {
    "sleutel": "src/platform/zwevend-menu.css :: .zwevend-popover",
    "reden": "ZWEVEND-001 (15.11.2026): спливне меню (напр. «⋯» у вітрині «Живий робочий стіл») у порталі на рівні .canonical-chrome. Не кнопка, а тимчасовий список дій біля своєї кнопки; position:fixed потрібен, бо вітрина .mq-held обрізає вміст (overflow:hidden) і меню ховалося під смугою лічильників. Закривається кліком поза ним, Escape і вибором пункту."
+  },
+  {
+   "sleutel": "src/mail/ai-vertaling-balk.css :: @media (max-width:640px) .ai-vb-scherm",
+   "reden": "MAILAI-005 (16.11.2026): затемнення під аркушем вибору рушія ШІ на телефоні. Не кнопка: тло на весь екран, дотик по ньому закриває аркуш."
+  },
+  {
+   "sleutel": "src/mail/ai-vertaling-balk.css :: @media (max-width:640px) html body .ai-vertaling-balk.is-rij .ai-vb-motoren",
+   "reden": "MAILAI-005 (16.11.2026): вибір рушія ШІ на телефоні — аркуш знизу (role=\"dialog\"), відкривається чипом «хто обробляє» над листом; закривається хрестиком, дотиком поза аркушем або Esc. Вікно, не плаваюча кнопка; на комп’ютері воно в потоці сторінки."
   }
  ],
  "kopReserves": [

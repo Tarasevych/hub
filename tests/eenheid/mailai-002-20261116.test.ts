@@ -143,8 +143,9 @@ export async function main(): Promise<number> {
     const { default: AiVertalingBalk } = await import('../../src/mail/AiVertalingBalk');
     const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined, voorbeeldZichtbaar: true } as unknown as Parameters<typeof AiVertalingBalk>[0];
     const html = renderToString(createElement(AiVertalingBalk, props));
-    check('E панель: рядок «Обробляє / хто обробляє» з кнопкою «Змінити · як обробляється текст»; вибір закриття закритий типово',
-      html.includes('data-testid="ai-vb-wie"') && html.includes('>Змінити<') && !html.includes('ai-vb-sluit-keuze') && html.includes('aria-haspopup="true"'));
+    // MAILAI-005: «хто обробляє» — чип із логотипом, який сам відкриває вибір рушія (окремого посилання «Змінити» більше немає).
+    check('E панель: чип «хто обробляє» відкриває вибір рушія (aria-haspopup="dialog", підказка про наслідки); вибір закриття закритий типово',
+      html.includes('data-testid="ai-vb-wie"') && /class="ai-vb-motor-chip" aria-expanded="false" aria-haspopup="dialog"/.test(html) && html.includes('Натисніть, щоб обрати') && !html.includes('ai-vb-sluit-keuze') && html.includes('aria-haspopup="true"'));
     const bron = lees('src/mail/AiVertalingBalk.tsx');
     check('E хрестик: «Сховати зараз» (лише вкладка, налаштування не змінюються) і «Вимкнути зовсім» (усі пристрої) — обидві мови',
       bron.includes('data-sluit="sessie"') && bron.includes('data-sluit="uit"') && bron.includes('zetBalkSessieVerborgen(true)') && /Лише до закриття цієї вкладки/.test(bron) && /Alleen tot u dit tabblad sluit/.test(bron) && /На всіх ваших пристроях/.test(bron));

@@ -219,7 +219,8 @@ export async function main(): Promise<number> {
   check('E «Пункт хибний — прибрати» onthoudt dit apparaat per gesprek (hoogstens 40 per gesprek, 200 gesprekken), «Повернути» zet terug',
     wn.includes("const WEG_SLEUTEL = 'mail-ai-weg-v1'") && wn.includes('lijst.slice(-40)') && wn.includes('sleutels.length - 200') && wn.includes('Повернути прибрані'));
   const { aiBalkStartIngeklapt } = await import('../../src/mail/AiVertalingBalk');
-  check('E ШІ-panel boven de brief begint ingeklapt (ook zonder window: SSR)', aiBalkStartIngeklapt() === true);
+  // MAILAI-005 (16.11.2026): het paneel is zelf één regel geworden (door de eigenaar goedgekeurd ontwerp «Рядок дій»); de hulpmiddelen staan standaard open.
+  check('E ШІ-panel boven de brief: één regel, hulpmiddelen standaard open (MAILAI-005; ook zonder window: SSR)', aiBalkStartIngeklapt() === false);
 
   // ------------------------------------------------------------------ F. CSS
   const blokCss = zc(lees('src/mail/ai-blok.css')), ctxCss = zc(lees('src/mail/context-paneel.css')), balkCss = zc(lees('src/mail/ai-vertaling-balk.css'));
