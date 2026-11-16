@@ -59,6 +59,8 @@ export async function main(): Promise<number> {
       const plek = `${f}:${t.regel} <${t.tag}>`;
       const v = /data-hulp-vrij=['"]([a-z]+)['"]/.exec(t.tekst);
       if (v) { if ((HULP_VRIJ as readonly string[]).includes(v[1])) vrij.push(`${plek} (${v[1]})`); else onbekend.push(`${plek}: data-hulp-vrij='${v[1]}' is geen toegestane reden (${HULP_VRIJ.join('|')})`); continue; }
+      // EXTUI-001: een component dat de sleutel van de aanroeper doorgeeft (data-hulp={hulp}); de aanroepen worden hieronder gecontroleerd.
+      if (/data-hulp=\{hulp\}/.test(t.tekst)) continue;
       const vast = /data-hulp=['"]([a-z0-9.-]+)['"]/.exec(t.tekst);
       const dyn = /data-hulp=\{`([a-z0-9.-]+\.)\$\{/.exec(t.tekst);
       if (vast) {
@@ -68,6 +70,15 @@ export async function main(): Promise<number> {
         if (!Object.keys(HULP_REGISTER).some((k) => k.startsWith(dyn[1]))) onbekend.push(`${plek}: geen sleutels met voorvoegsel ${dyn[1]}`);
         if (!src.includes(`<HulpVraag k={\`${dyn[1]}\${`)) geenVraag.push(`${plek}: geen <HulpVraag k={\`${dyn[1]}…\`} /> in dit bestand`);
       } else zonder.push(`${plek}: ${t.tekst.replace(/\s+/g, ' ').slice(0, 90)}`);
+    // EXTUI-001: <HostSchakelaar hulp='…'> is een schakelaar per pagina; de sleutel en de «?» horen in het bestand van de aanroep.
+    for (const m of src.matchAll(/<HostSchakelaar\b[^]*?\/>/g)) {
+      aantal++;
+      const plek = `${f}:${src.slice(0, m.index).split('\n').length} <HostSchakelaar>`;
+      const k = /\bhulp=['"]([a-z0-9.-]+)['"]/.exec(m[0])?.[1];
+      if (!k) { zonder.push(`${plek}: geen hulp='…'`); continue; }
+      if (!hulpVan(k)) onbekend.push(`${plek}: sleutel ${k} staat niet in shared/hulp-register.ts`);
+      if (!new RegExp(`<HulpVraag k=['"]${k.replace(/\./g, '\\.')}['"]`).test(src)) geenVraag.push(`${plek}: geen <HulpVraag k='${k}' /> in dit bestand`);
+    }
     }
   }
   check(`bediening: elk van de ${aantal} opties/schakelaars heeft data-hulp (of data-hulp-vrij met reden)`, zonder.length === 0, zonder.join('\n'));

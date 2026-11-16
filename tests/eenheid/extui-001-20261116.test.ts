@@ -176,6 +176,12 @@ export async function main(): Promise<number> {
     check('telefoon: «Тест» is een korte knop mét uitleg (pictogram op smal scherm), «Стоп» houdt zijn uitleg',
       /test: <IconButton key='test' kort .*?title=\{local \? tr\('Тест: перевіряє/.test(uiBron) && readFileSync(join(W, 'src/mcp-ui.tsx'), 'utf8').includes("kort ? ' is-kort' : ''")
       && readFileSync(join(W, 'src/extensie/extensie-ontwerp.css'), 'utf8').includes('.hub-actions>.hub-btn.is-kort'));
+    // Списки сторінок — рядки з логотипом, назвою й вмикачем (побажання власника 16.11): кожна адреса має свою назву й знак.
+    const hsBron = readFileSync(join(W, 'src/extensie/HostSchakelaar.tsx'), 'utf8');
+    const zonderLogo = [...TS.PRIVE_HOSTS, ...TS.ADMIN_HOSTS_TOEGESTAAN, ...TS.AI_SITE_HOSTS].filter((h) => !hsBron.includes(`'${h}': {`));
+    const oudeVinkjes = ['src/extensie/ExtensiePrive.tsx', 'src/extensie/ExtensieOntgrendeling.tsx', 'src/extensie/BrowserEnAgenten.tsx'].filter((f) => /<code>\{h\}<\/code>/.test(readFileSync(join(W, f), 'utf8')));
+    check('paginalijsten: elke adres heeft logo + naam in HostSchakelaar, schakelaar is role=switch, geen kale adreslijst meer',
+      zonderLogo.length === 0 && oudeVinkjes.length === 0 && /type='checkbox' role='switch' className='hs-schakel'/.test(hsBron), JSON.stringify({ zonderLogo, oudeVinkjes }));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

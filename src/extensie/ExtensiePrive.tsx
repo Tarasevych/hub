@@ -6,8 +6,9 @@
 //    bestaande venster «Підтвердіть доступ» en gaat het verzoek één keer opnieuw (client.ts). Geen technisch profiel nodig.
 //  - Wat de AI mag = de bestaande toestemmingen van deze browser (AiToestemmingen); zonder toestemming → uitleg + knop erheen.
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Bot, KeyRound, Lock, LockOpen, ShieldOff } from 'lucide-react';
+import { Bot, KeyRound, Lock, LockOpen, ShieldOff, Laptop } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
+import HostSchakelaar from './HostSchakelaar';
 import {
   AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
@@ -143,27 +144,28 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Ваші сторінки', 'Uw pagina’s')} <HulpVraag k='extensie.prive.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {toegestaan.map((h) => (
-            <label key={h} className='eo-vink'>
-              <input data-hulp='extensie.prive.domeinen' type='checkbox' checked={gekozenDomeinen.includes(h)} onChange={(e) => setDomeinen(e.target.checked ? [...gekozenDomeinen, h] : gekozenDomeinen.filter((x) => x !== h))} data-eo-prive-domein={h} />
-              <code>{h}</code>
-            </label>
+            <HostSchakelaar key={h} host={h} uk={uk} aan={gekozenDomeinen.includes(h)}
+              onChange={(aan) => setDomeinen(aan ? [...gekozenDomeinen, h] : gekozenDomeinen.filter((x) => x !== h))}
+              uitleg={tr('Увімкнено — ваш ШІ зможе читати цю сторінку й діяти на ній у межах дозволів нижче. Вимкнено — розширення її не торкається.', 'Aan — uw AI kan deze pagina lezen en er handelen binnen de rechten hieronder. Uit — de extensie raakt ze niet aan.')}
+              hulp='extensie.prive.domeinen' data={{ 'data-eo-prive-domein': h }} />
           ))}
           {!gekozenDomeinen.length ? <small className='eo-fout'>{tr('Оберіть хоча б одну сторінку.', 'Kies minstens één pagina.')}</small> : null}
         </fieldset>
         <fieldset className='eo-domeinen eo-ai-sites' disabled={!!bezig} data-eo-ai-sites='1'>
-          <legend><span className='gevaar-teken' aria-hidden='true'>!</span> {tr('Сайти ШІ — лише читання', 'AI-sites — alleen lezen')}</legend>
+          <legend><span className='gevaar-teken' aria-hidden='true'>!</span> {tr('Сайти ШІ — лише читання', 'AI-sites — alleen lezen')} <HulpVraag k='extensie.prive.ai-sites' uk={uk} label={tr('Сайти ШІ', 'AI-sites')} /></legend>
           <small className='eo-uitleg'>{tr('Ризик: ШІ читатиме текст ваших розмов на цих сайтах (там можуть бути особисті дані). Він ніколи не натискає й не вводить там текст. Працює, лише якщо в налаштуваннях розширення «Сайти ШІ» стоїть «Завжди». Кожне читання потрапляє в центр сповіщень.', 'Risico: de AI leest de tekst van uw gesprekken op deze sites (daar kunnen persoonlijke gegevens in staan). Hij klikt of typt daar nooit. Werkt alleen als «AI-sites» in de instellingen van de extensie op «Altijd» staat. Elke keer lezen komt in het meldingencentrum.')}</small>
           {AI_SITE_HOSTS.map((h) => (
-            <label key={h} className='eo-vink'>
-              <input type='checkbox' checked={aiSites.includes(h)} onChange={(e) => setAiSites(e.target.checked ? [...aiSites, h] : aiSites.filter((x) => x !== h))} data-eo-ai-site={h} />
-              <code>{h}</code>
-            </label>
+            <HostSchakelaar key={h} host={h} uk={uk} aan={aiSites.includes(h)}
+              onChange={(aan) => setAiSites(aan ? [...aiSites, h] : aiSites.filter((x) => x !== h))}
+              uitleg={tr('Увімкнено — ШІ зможе лише читати відкриті вкладки цього сайту (ваші розмови там). Натискати й писати там він не може. Кожне читання — у центрі сповіщень.', 'Aan — de AI kan open tabbladen van deze site alleen lezen (uw gesprekken daar). Klikken en typen kan hij er niet. Elke lezing staat in het meldingencentrum.')}
+              hulp='extensie.prive.ai-sites' data={{ 'data-eo-ai-site': h }} />
           ))}
         </fieldset>
         {recht?.lokaal !== false ? (
-          <label className='eo-vink eo-lokaal'>
-            <input data-hulp='extensie.prive.lokaal' type='checkbox' checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-prive-lokaal='1' />
-            <span>{tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')}</span> <HulpVraag k='extensie.prive.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} />
+          <label className={`hs-rij eo-lokaal${lokaal ? ' is-aan' : ''}`} title={tr('Увімкнено — локальний агент на вашому комп’ютері зможе лише читати ці сторінки (без натискань і введення). Вимкнено — йому сюди зась.', 'Aan — de lokale agent op uw computer kan deze pagina’s alleen lezen (geen klikken of typen). Uit — hij komt er niet in.')}>
+            <span className='hs-logo is-dienst' aria-hidden='true'><Laptop /></span>
+            <span className='hs-tekst'><b>{tr('Локальний агент', 'Lokale agent')} <HulpVraag k='extensie.prive.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} /></b><small>{tr('програма на вашому комп’ютері · лише читання', 'programma op uw computer · alleen lezen')}</small></span>
+            <input data-hulp='extensie.prive.lokaal' type='checkbox' role='switch' className='hs-schakel' aria-label={tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')} checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-prive-lokaal='1' />
           </label>
         ) : null}
         <div className='eo-knoppen'>

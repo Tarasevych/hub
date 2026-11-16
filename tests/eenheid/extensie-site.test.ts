@@ -314,7 +314,8 @@ export async function main(): Promise<number> {
   // ================================================================ 7. hulp «?» bij elke optie van het blok (zelfde regel als hulp-register.test)
   {
     const src = readFileSync('src/extensie/ExtensieOntgrendeling.tsx', 'utf8');
-    const bed = tags(src).filter(isBediening);
+    // EXTUI-001: pagina's zijn <HostSchakelaar hulp='…'> (schakelaar met logo); die tellen als bediening met hun hulp-sleutel.
+    const bed = [...tags(src).filter(isBediening), ...[...src.matchAll(/<HostSchakelaar\b[^]*?\/>/g)].map((m) => ({ tag: 'HostSchakelaar', tekst: m[0].replace(/\bhulp=/, 'data-hulp='), regel: src.slice(0, m.index).split('\n').length }))];
     const mis = bed.filter((t) => { const k = /data-hulp=['"]([a-z0-9.-]+)['"]/.exec(t.tekst)?.[1]; return !k || !hulpVan(k) || !new RegExp(`<HulpVraag k=['"]${k.replace(/\./g, '\\.')}['"]`).test(src); });
     check(`blok: alle ${bed.length} opties (select/checkbox) hebben data-hulp + «?»`, bed.length >= 3 && mis.length === 0, mis.map((t) => `r${t.regel}`).join(','));
     const gebreken = ['extensie.ontgrendeling', 'extensie.duur', 'extensie.domeinen', 'extensie.lokaal', 'extensie.intrekken'].flatMap((k) => hulpGebreken(k, hulpVan(k)));

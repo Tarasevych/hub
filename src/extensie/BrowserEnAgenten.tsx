@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Bot, Check, Eye, Hand, KeyRound, Lock, LockOpen, RefreshCw, Save, ShieldCheck, ShieldOff, User } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
+import HostSchakelaar from './HostSchakelaar';
 import { api } from '../platform/client';
 import { foutTekst } from '../agenten/fouten';
 import { openTechVenster, techActief, techBody, useTech } from '../tech/tech-opslag';
@@ -468,10 +469,10 @@ function SlotKaart({ tr, uk, ruimte, live, nu, stand, techProfiel, techActief: a
             <summary>{tr('Сторінки', 'Pagina’s')} ({domeinen.length}) <HulpVraag k='browser.matrix.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></summary>
             <div className='eo-domeinen'>
               {toegestaan.map((h) => (
-                <label key={h} className='eo-vink'>
-                  <input data-hulp='browser.matrix.domeinen' type='checkbox' checked={domeinen.includes(h)} disabled={!!bezig} onChange={(e) => setDomeinen(e.target.checked ? [...domeinen, h] : domeinen.filter((x) => x !== h))} data-bea-domein={`${ruimte}:${h}`} />
-                  <code>{h}</code>
-                </label>
+                <HostSchakelaar key={h} host={h} uk={uk} aan={domeinen.includes(h)} disabled={!!bezig}
+                  onChange={(aan) => setDomeinen(aan ? [...domeinen, h] : domeinen.filter((x) => x !== h))}
+                  uitleg={tr('Увімкнено — ця сторінка входить у доступ цього слота на обраний строк. Вимкнено — розширення її не торкається.', 'Aan — deze pagina valt onder de toegang van dit slot voor de gekozen termijn. Uit — de extensie raakt ze niet aan.')}
+                  hulp='browser.matrix.domeinen' data={{ 'data-bea-domein': `${ruimte}:${h}` }} />
               ))}
             </div>
           </details>

@@ -7,11 +7,12 @@
 //  - «Відкликати зараз»: zonder passkey, direct.
 // ?ontgrendelen=1 (bijv. vanuit de pop-up van de extensie) → naar dit blok scrollen en de focus erop zetten.
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { KeyRound, Lock, LockOpen, Bot, ShieldOff } from 'lucide-react';
+import { KeyRound, Lock, LockOpen, Bot, ShieldOff, Laptop } from 'lucide-react';
 import { api, ApiError } from '../platform/client';
 import { passkeyBevestigen, type AssertieOpties } from '../platform/webauthn';
 import { openTechVenster, techBody, useTech } from '../tech/tech-opslag';
 import HulpVraag from '../hulp/HulpVraag';
+import HostSchakelaar from './HostSchakelaar';
 import { versionAtLeast } from '../extensie-toestand';
 import {
   ADMIN_HOSTS_STANDAARD, ADMIN_HOSTS_TOEGESTAAN, DUUR_KEUZES, MAX_MINUTEN, MIN_EXTENSIE_VERSIE, STAAT_TEKST, STANDAARD_MINUTEN, WEIGER_UITLEG,
@@ -297,16 +298,17 @@ export default function ExtensieOntgrendeling({ tr, agentId, ruimte }: { tr: Tr;
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Сторінки сайту', 'Pagina’s van de site')} <HulpVraag k='extensie.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {ADMIN_HOSTS_TOEGESTAAN.map((h) => (
-            <label key={h} className='eo-vink'>
-              <input data-hulp='extensie.domeinen' type='checkbox' checked={domeinen.includes(h)} onChange={(e) => setDomeinen((d) => (e.target.checked ? [...d, h] : d.filter((x) => x !== h)))} data-eo-domein={h} />
-              <code>{h}</code>
-            </label>
+            <HostSchakelaar key={h} host={h} uk={uk} aan={domeinen.includes(h)}
+              onChange={(aan) => setDomeinen((d) => (aan ? [...d, h] : d.filter((x) => x !== h)))}
+              uitleg={tr('Увімкнено — ШІ зможе працювати з цією сторінкою в технічному профілі, поки діє доступ. Вимкнено — розширення її не торкається.', 'Aan — de AI kan met deze pagina werken in het technische profiel zolang de toegang geldt. Uit — de extensie raakt ze niet aan.')}
+              hulp='extensie.domeinen' data={{ 'data-eo-domein': h }} />
           ))}
           {!domeinen.length ? <small className='eo-fout'>{tr('Оберіть хоча б одну сторінку.', 'Kies minstens één pagina.')}</small> : null}
         </fieldset>
-        <label className='eo-vink eo-lokaal'>
-          <input data-hulp='extensie.lokaal' type='checkbox' checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-lokaal='1' />
-          <span>{tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')}</span> <HulpVraag k='extensie.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} />
+        <label className={`hs-rij eo-lokaal${lokaal ? ' is-aan' : ''}`} title={tr('Увімкнено — локальний агент на вашому комп’ютері зможе лише читати ці сторінки (без натискань і введення). Вимкнено — йому сюди зась.', 'Aan — de lokale agent op uw computer kan deze pagina’s alleen lezen (geen klikken of typen). Uit — hij komt er niet in.')}>
+          <span className='hs-logo is-dienst' aria-hidden='true'><Laptop /></span>
+          <span className='hs-tekst'><b>{tr('Локальний агент', 'Lokale agent')} <HulpVraag k='extensie.lokaal' uk={uk} label={tr('Локальний агент', 'Lokale agent')} /></b><small>{tr('програма на вашому комп’ютері · лише читання', 'programma op uw computer · alleen lezen')}</small></span>
+          <input data-hulp='extensie.lokaal' type='checkbox' role='switch' className='hs-schakel' aria-label={tr('Дозволити локального агента (лише читання)', 'Lokale agent toestaan (alleen lezen)')} checked={lokaal} disabled={!!bezig} onChange={(e) => setLokaal(e.target.checked)} data-eo-lokaal='1' />
         </label>
         {lokaal ? (
           <details className='eo-meta' id={agentId ? `extension-lokaal-${agentId}` : undefined}>
