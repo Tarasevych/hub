@@ -120,7 +120,7 @@ main{max-width:460px;margin:0 auto;display:grid;gap:14px}
 .kop{display:flex;align-items:center;gap:10px}.kop b{font-size:1.05rem}.kop small{display:block;color:var(--zacht);font-size:.8rem}
 .kaart{background:var(--kaart);border:1px solid var(--rand);border-radius:16px;padding:14px 16px;display:grid;gap:8px}
 h1{font-size:1.15rem;margin:0}h2{font-size:1.05rem;margin:0;text-align:center}.zacht{color:var(--zacht);font-size:.9rem;margin:0}
-.rij{display:flex;align-items:center;gap:8px}.rij>span:last-child{min-width:0;overflow-wrap:anywhere}.rij img{width:20px;height:20px;border-radius:4px;flex:none}.rij img.vlag{width:24px;height:16px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
+.rij{display:flex;align-items:center;gap:8px}.rij>span:last-child{min-width:0;overflow-wrap:anywhere}.rij img{width:20px;height:20px;border-radius:4px;flex:none}.rij small.bron{display:block;color:var(--zacht);font-size:.8rem}.rij img.vlag{width:24px;height:16px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
 .label{color:var(--zacht);min-width:5.5em;font-size:.9rem}
 .wie{display:grid;gap:6px}.persoon{display:flex;align-items:center;gap:10px;min-width:0}.persoon b{display:block;overflow-wrap:anywhere}.persoon small{display:block;color:var(--zacht);font-size:.85rem;overflow-wrap:anywhere}
 .rond{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px var(--rand)}.rond.leeg{display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:700;font-size:1.3rem}
@@ -177,7 +177,7 @@ export function paginaHtml(w: Weergave | null, taal: Taal): string {
 ${wie}
 <div class="rij"><span class="label">${t('Що', 'Wat')}</span><span>${esc(w.wat)}</span></div>
 <div class="rij"><span class="label">${t('Пристрій', 'Apparaat')}</span>${logo(merkLogo(b), b)}${logo(merkLogo(s, true), s)}<span>${esc(toestel)}</span></div>
-<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaatsTekst(w.plaats, w.land, taal) || tr(taal, 'місце невідоме', 'plaats onbekend'))}</span></div>
+<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaatsTekst(w.plaats, w.land, taal) || tr(taal, 'місце невідоме', 'plaats onbekend'))}${w.plaats || w.land ? `<small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : ''}</span></div>
 <div class="rij"><span class="label">${t('Коли', 'Wanneer')}</span><span>${esc(tijdTekst(taal))}</span></div></section>`;
   const kiezen = `<section class="kaart" id="stap-kiezen"${w.stap === 'kiezen' ? '' : ' hidden'}><h2>${t('Яку піктограму показує сайт?', 'Welk pictogram toont de site?')}</h2>
 ${accounts}<div class="raster">${tegels}</div>

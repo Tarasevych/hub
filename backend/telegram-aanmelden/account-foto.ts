@@ -22,15 +22,14 @@ export function veiligeFoto(waarde: unknown): string {
 
 export type AccountBeeld = { naam: string; email: string; foto: string; letter: string };
 
-/** Naam, e-mail (gemaskeerd) en foto van een site-account. «Без фото» (geenFoto) → geen foto. Nooit een fout naar buiten. */
+/** Naam, e-mail (VOLLEDIG — eis van de eigenaar 16.11.2026: bij gelijkende adressen moet je zien welk account het is; alleen de
+ *  houder van de gekoppelde Telegram of van de koppelcode krijgt dit te zien) en foto van een site-account. «Без фото» (geenFoto) → geen foto. Nooit een fout naar buiten. */
 export async function accountBeeld(userId: string): Promise<AccountBeeld> {
   const [r] = await sql<{ naam: string | null; email: string | null; foto: string | null; geen: string | null }>(
     "SELECT data->>'name' AS naam, data->>'email' AS email, data->>'picture' AS foto, data->>'geenFoto' AS geen FROM app.records WHERE tbl = 'users' AND id = $1", [userId]).catch(() => []);
   const email = String(r?.email || '');
   const naam = String(r?.naam || email || '').slice(0, 60);
-  const [lokaal, domein] = email.split('@');
-  const gemaskeerd = lokaal && domein ? `${lokaal.slice(0, 2)}…@${domein}`.slice(0, 80) : '';
-  return { naam, email: gemaskeerd, foto: r?.geen === 'true' ? '' : veiligeFoto(r?.foto), letter: ([...naam.trim()][0] || '?').toUpperCase() };
+  return { naam, email: /^[^@\s]+@[^@\s]+$/.test(email) ? email.slice(0, 254) : '', foto: r?.geen === 'true' ? '' : veiligeFoto(r?.foto), letter: ([...naam.trim()][0] || '?').toUpperCase() };
 }
 
 /** Voor sendPhoto van de bot: bytes van een eigen foto, of het https-adres (Telegram haalt het zelf op). */

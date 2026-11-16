@@ -89,7 +89,7 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
     if (/^k_[A-Za-z0-9_-]{12}$/.test(arg)) {
       const r = await koppelVanBot(arg.slice(2), van, chatId);
       if (r === 'telefoon') {
-        // TELEGRAM-002: eerst WIE vraagt — naam, e-mail (gemaskeerd) en foto van het site-account; daarna pas de vraag om het nummer.
+        // TELEGRAM-002: eerst WIE vraagt — naam, e-mail (volledig) en foto van het site-account; daarna pas de vraag om het nummer.
         const uid = await koppelAccountVan(arg.slice(2)).catch(() => '');
         const ab = uid ? await accountBeeld(uid).catch(() => null) : null;
         const wie = (x: 'uk' | 'nl') => (ab ? invullen(TEKST.koppelWie[x], { account: ab.naam, email: ab.email || '—' }) : '');

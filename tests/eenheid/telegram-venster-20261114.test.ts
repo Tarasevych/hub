@@ -174,7 +174,23 @@ export async function main(): Promise<number> {
     const af = await import('../../backend/telegram-aanmelden/account-foto');
     check('foto-regels: eigen data-URI en googleusercontent mogen, vreemd adres niet', af.veiligeFoto(ACCOUNT_FOTO) === ACCOUNT_FOTO && af.veiligeFoto('https://lh3.googleusercontent.com/a/x=s96').startsWith('https://lh3.') && af.veiligeFoto('https://kwaad.example/x.png') === '' && af.veiligeFoto('javascript:alert(1)') === '');
     const ab = await af.accountBeeld(eigenaar);
-    check('accountBeeld: naam, gemaskeerde e-mail, foto, eerste letter', ab.naam === 'Pavlo' && /^tg…@voorbeeld\.test$/.test(ab.email) && ab.foto === ACCOUNT_FOTO && ab.letter === 'P');
+    // Eis van de eigenaar 16.11.2026: het adres VOLLEDIG (gelijkende adressen), de tijd zonder stadsnaam, en bij de plaats HOE die bepaald is.
+    const volAdres = `tg2-${eigenaar.slice(0, 8)}@voorbeeld.test`;
+    check('accountBeeld: naam, VOLLEDIG e-mailadres (niet gemaskeerd), foto, eerste letter', ab.naam === 'Pavlo' && ab.email === volAdres && !ab.email.includes('…') && ab.foto === ACCOUNT_FOTO && ab.letter === 'P');
+    {
+      const { tijdTekst, tijdzoneTekst } = await import('../../backend/telegram-aanmelden/meldingen');
+      const winter = Date.UTC(2026, 10, 16, 10, 0), zomer = Date.UTC(2026, 6, 16, 10, 0);
+      check('tijd: geen stadsnaam achter de tijd, wel de tijdzone als UTC-verschil (winter +1, zomer +2)',
+        !/Брюссель|Brussel/.test(tijdTekst('uk', winter) + tijdTekst('nl', winter)) && tijdTekst('uk', winter).endsWith('(UTC+1)') && tijdTekst('nl', zomer).endsWith('(UTC+2)') && tijdzoneTekst(winter) === 'UTC+1',
+        `${tijdTekst('uk', winter)} | ${tijdTekst('nl', zomer)}`);
+      const basisW = { soort: 'i' as const, titel: 'T', wat: 'W', accounts: [{ koppelingId: 'k', naam: 'Pavlo', email: volAdres, foto: '', letter: 'P' }], toestel: 'Chrome 131 · Windows 11', apparaat: '', plaats: 'Brussels', land: 'BE', kandidaten: [1, 2, 3], verlooptOp: '', stap: 'kiezen' as const };
+      const uk = ven.paginaHtml(basisW as never, 'uk'), nl = ven.paginaHtml(basisW as never, 'nl');
+      const zonder = ven.paginaHtml({ ...basisW, plaats: '', land: '' } as never, 'uk');
+      check('venster: volledig adres zichtbaar, plaats één keer (alleen op de regel «Звідки»), met de manier van bepalen in uk en nl',
+        uk.includes(volAdres) && (uk.match(/Брюссель/g) || []).length === 1 && (nl.match(/Brussel/g) || []).length === 1
+        && uk.includes('Визначено за IP-адресою') && nl.includes('Bepaald via het IP-adres'));
+      check('venster: plaats onbekend → «місце невідоме» zonder bewering over de manier van bepalen', zonder.includes('місце невідоме') && !zonder.includes('Визначено за IP-адресою'));
+    }
     const i1 = await inl.inlogStart('tx-v1', ua, { herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Brussels', land: 'BE' } });
     check('start geeft de browser meteen het juiste pictogram (geen emoji-symbool meer)', typeof i1.pictogram === 'number' && i1.symbool === undefined);
     const s1 = await inl.inlogStatus(i1.id, i1.geheim);
@@ -188,7 +204,7 @@ export async function main(): Promise<number> {
     const t1 = tokenUit(adres1);
     const p1 = await pagina(t1);
     check('kaart van de bot: verstuurd als foto van het site-account (account.png)', oproepen.some((o) => o.methode === 'sendPhoto' && o.lichaam.includes('filename="account.png"')));
-    check('venster: foto van het site-account + naam + gemaskeerde e-mail, en de Telegram-account', p1.body.includes(`src="${ACCOUNT_FOTO}"`) && p1.body.includes('class="rond"') && p1.body.includes('tg…@voorbeeld.test') && /Ваш Telegram/.test(p1.body));
+    check('venster: foto van het site-account + naam + volledig e-mailadres, en de Telegram-account', p1.body.includes(`src="${ACCOUNT_FOTO}"`) && p1.body.includes('class="rond"') && p1.body.includes(volAdres) && /Ваш Telegram/.test(p1.body));
     check('status vóór de keuze: geen Telegram-gegevens naar de browser', s1.telegram === undefined);
     check('venster: 3 tegels op één rij, logo\'s en vlag, juiste pictogram NIET aangeduid', (p1.body.match(/class="keuze"/g) || []).length === 3 && p1.body.includes('repeat(3,') && p1.body.includes('data:image/svg+xml') && !/juist|is-uitgelicht|aria-current/.test(p1.body));
     check('venster: eigen CSP, X-Frame-Options weggelaten, geen verwijzer', p1.headers['Content-Security-Policy'] === VENSTER_CSP && p1.headers['X-Frame-Options'] === '' && p1.headers['Referrer-Policy'] === 'no-referrer');
