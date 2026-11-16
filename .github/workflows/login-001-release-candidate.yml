@@ -6,7 +6,7 @@ on:
       - feature/login-001-20261101-195230
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: login-001-release-candidate
@@ -14,17 +14,19 @@ concurrency:
 
 jobs:
   verify-and-package:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Checkout complete PR branch history
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: true
 
       - name: Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
@@ -52,7 +54,7 @@ jobs:
           JS
 
       - name: Install build dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Register task and regenerate UI catalogue (own branch only)
         shell: bash
@@ -169,7 +171,7 @@ jobs:
           echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Upload unsigned release candidate (NOT deployed)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mijn-ruimte-login-001-unsigned
           path: |

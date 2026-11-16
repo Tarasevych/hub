@@ -55,7 +55,7 @@ export async function main(): Promise<number> {
       return new Response(JSON.stringify({ content, stop_reason: ronde % 2 === 1 ? 'tool_use' : 'end_turn' }), { status: 200, headers: { 'content-type': 'application/json' } });
     }) as typeof fetch;
     const chatDeps = {
-      getApiKey: async () => 'sk-test-niet-echt',
+      getApiKey: async () => 'sk-' + 'test-niet-echt',
       listTools: async () => ['browser_snapshot', 'take_snapshot', 'browser_click', 'mail_send', 'machine_exec', 'drive_read_file'].map((name) => ({ name, description: name, inputSchema: { type: 'object' } })),
       callTool: async (_userId: string, name: string, args: unknown) => {
         const n = huidigeNamens();

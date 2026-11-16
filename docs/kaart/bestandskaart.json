@@ -2852,6 +2852,21 @@
    "pad": "tests/e2e/hulp/stand-blok1-toegang.ts",
    "wat": "Stand blok1-toegang-*: venster «Підтвердіть доступ» (label binnen het venster, contrast), chips van de toestemming op 390 px, pagina ChatGPT met de nieuwe stappen en de waarschuwing over het plan.",
    "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "src/mail-rekenblad-lezer.ts",
+   "wat": "Veilige browserlezer en -schrijver voor OOXML (.xlsx), ODF (.ods/.fods), DIF, SYLK, XML-rekenbladen en dBASE (.dbf) op basis van fflate zonder xlsx-afhankelijkheid, met XXE-blokkade en groottebegrenzingen.",
+   "sinds": "beveiligingsherstel SEC-003 (16.11.2026)"
+  },
+  {
+   "pad": "tests/eenheid/archief-herstellen-20261116.test.ts",
+   "wat": "Eenheidstests voor verharding van deploy/archief-herstellen.sh (mktemp, trap, sha256sum, vaste cloudflared-versie, geen bash -c) en deploy/pakketgegevens.py (Bandit B110).",
+   "sinds": "beveiligingsherstel SEC-003 (16.11.2026)"
+  },
+  {
+   "pad": "tests/eenheid/mail-rekenblad-lezer-20261116.test.ts",
+   "wat": "Eenheidstests voor mail-rekenblad-lezer.ts (XLSX, ODS, FODS, DIF, SYLK, DBF, XXE-afweer, AbortSignal en controle op afwezigheid van xlsx/Node-globals).",
+   "sinds": "beveiligingsherstel SEC-003 (16.11.2026)"
   }
  ]
 }

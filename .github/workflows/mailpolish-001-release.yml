@@ -4,21 +4,23 @@ on:
     branches:
       - feature/mailpolish-001-20261104-084133
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: mailpolish-001-release
   cancel-in-progress: false
 jobs:
   test-visual-build-prerelease:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:
       - name: Checkout the exact branch with its history
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
@@ -91,7 +93,7 @@ jobs:
             'http://127.0.0.1:4179/tests/visueel/mailpolish-voorbeeld.html?provider=gmail' uitvoer/mailpolish-gmail-desktop.png
           test -s uitvoer/mailpolish-gmail-390.png
       - name: Publish screenshots and test evidence for real visual comparison
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: MAILPOLISH-001-actual-react-screenshots
           path: |
@@ -197,7 +199,7 @@ jobs:
           echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Keep the entire unsigned handover for download
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: MAILPOLISH-001-unsigned-handover
           path: |

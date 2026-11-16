@@ -99,7 +99,7 @@ export async function main(): Promise<number> {
       await db.add('workspaces', [{ ownerUserId: dev.id, name: 'oude werkruimte', createdAt: 1, updatedAt: 1, archivedAt: 0 }]);
       await db.add('workspace_blocks', [{ ownerUserId: dev.id, workspaceId: 'oud', kind: 'focus', title: 'oud blok', position: 0, visible: true, custom: false }]);
     });
-    await koppelingBewaren(dev.id, 'oauth', { login: 'prive-login', scopes: ['repo'], tokenZegel: verzegel('gho_PERSOONLIJK', dev.id, 'oauth') });
+    await koppelingBewaren(dev.id, 'oauth', { login: 'prive-login', scopes: ['repo'], tokenZegel: verzegel('gh' + 'o_PERSOONLIJK', dev.id, 'oauth') });
     // Precies de situatie van vóór 0086: de bewaarde rij heeft helemaal geen veld `ruimte`.
     await pool.query(`UPDATE app.records SET data = data - 'ruimte' WHERE tbl = $1 AND data->>'userId' = $2`, [KOPPELING_TABEL, dev.id]);
 
@@ -110,7 +110,7 @@ export async function main(): Promise<number> {
     check('de GitHub-koppeling van vóór 0086 is zonder migratie van gegevens leesbaar als PERSOONLIJKE koppeling',
       !!priveKop && priveKop.login === 'prive-login');
     check('de persoonlijke GitHub-token blijft bruikbaar in de persoonlijke lade',
-      (await githubToegang(dev.id))?.token === 'gho_PERSOONLIJK');
+      (await githubToegang(dev.id))?.token === 'gh' + 'o_PERSOONLIJK');
 
     // ------------------------------------------------------------------ technisch profiel met lopende activering
     await pool.query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door)
@@ -178,22 +178,22 @@ export async function main(): Promise<number> {
     const ghEigen = await github();
     check('GitHub «власні дані»: de technische lade heeft nog GEEN verbinding — en pakt de persoonlijke PAT niet',
       ghEigen.ok && ghEigen.lade.ruimte === 'technisch' && (await githubToegang(dev.id, 'technisch')) === null);
-    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-login', scopes: ['repo'], tokenZegel: verzegel('gho_TECHNISCH', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
+    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-login', scopes: ['repo'], tokenZegel: verzegel('gh' + 'o_TECHNISCH', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
     const techToegang = await githubToegang(dev.id, 'technisch');
     const priveToegang = await githubToegang(dev.id, 'prive');
     check('twee laden, twee koppelingen: elke lade krijgt haar EIGEN token, nooit die van de andere',
-      techToegang?.token === 'gho_TECHNISCH' && techToegang?.login === 'tech-login'
-      && priveToegang?.token === 'gho_PERSOONLIJK' && priveToegang?.login === 'prive-login');
+      techToegang?.token === 'gh' + 'o_TECHNISCH' && techToegang?.login === 'tech-login'
+      && priveToegang?.token === 'gh' + 'o_PERSOONLIJK' && priveToegang?.login === 'prive-login');
     const techRij = await koppelingLezen(dev.id, 'oauth', 'technisch');
     // Het zegel hangt aan (mens, weg, RUIMTE). Een rij die iemand van vlag verwisselt levert dus geen bruikbare token op.
     const verkeerdePad = (() => { try { return ontzegel(String(techRij?.tokenZegel || ''), dev.id, 'oauth'); } catch { return ''; } })();
     check('een zegel van de technische lade gaat NIET open als zegel van de persoonlijke (gebonden aan de ruimte)',
-      !!techRij && verkeerdePad === '' && ontzegel(techRij.tokenZegel, dev.id, zegelPad('oauth', 'technisch')) === 'gho_TECHNISCH');
+      !!techRij && verkeerdePad === '' && ontzegel(techRij.tokenZegel, dev.id, zegelPad('oauth', 'technisch')) === 'gh' + 'o_TECHNISCH');
 
     await rs.dienstZetten(dev.id, 'github', 'ontkoppel');
     const ghNaLos = await github();
     check('ontkoppelen van GitHub is onmiddellijk, en de PERSOONLIJKE koppeling blijft heel',
-      !ghNaLos.ok && ghNaLos.code === 'DIENST_UIT' && (await githubToegang(dev.id))?.token === 'gho_PERSOONLIJK');
+      !ghNaLos.ok && ghNaLos.code === 'DIENST_UIT' && (await githubToegang(dev.id))?.token === 'gh' + 'o_PERSOONLIJK');
     await rs.dienstZetten(dev.id, 'github', 'verbind-eigen', { stapOpGedaan: true });
 
     // ------------------------------------------------------------------ 4: bevriezen snijdt alles af en trekt echt in
@@ -209,20 +209,20 @@ export async function main(): Promise<number> {
     await wacht();
     const naBevriezing = await koppelingLezen(dev.id, 'oauth', 'technisch');
     const priveNaBevriezing = await koppelingLezen(dev.id, 'oauth', 'prive');
-    const ingetrokkenBijGithub = bijGithub.some((r) => r.methode === 'DELETE' && /\/applications\/.*\/token$/.test(r.url) && r.body.includes('gho_TECHNISCH'));
+    const ingetrokkenBijGithub = bijGithub.some((r) => r.methode === 'DELETE' && /\/applications\/.*\/token$/.test(r.url) && r.body.includes('gh' + 'o_TECHNISCH'));
     check('de TECHNISCHE token is ECHT ingetrokken bij GitHub (DELETE /applications/{client_id}/token met die token)',
       ingetrokkenBijGithub, JSON.stringify(bijGithub.map((r) => `${r.methode} ${r.url}`)));
     check('en de technische rij is weg, terwijl de PERSOONLIJKE koppeling volledig intact blijft',
       naBevriezing === null && priveNaBevriezing?.login === 'prive-login'
-      && (await githubToegang(dev.id))?.token === 'gho_PERSOONLIJK');
+      && (await githubToegang(dev.id))?.token === 'gh' + 'o_PERSOONLIJK');
     check('de persoonlijke token is NOOIT aan GitHub aangeboden om in te trekken',
-      !bijGithub.some((r) => r.body.includes('gho_PERSOONLIJK')));
+      !bijGithub.some((r) => r.body.includes('gh' + 'o_PERSOONLIJK')));
     bijGithub.length = 0;
     await rbg.bevriezingAfdwingen(dev.id, 'test');
     check('bevriezing afdwingen is idempotent: er is niets meer om in te trekken, dus GitHub wordt niet opnieuw gebeld',
       bijGithub.length === 0);
     // De haak van de kern draagt beide luisteraars: de AI-verbindingen (kern) én GitHub (dit bestand).
-    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-2', tokenZegel: verzegel('gho_TECH2', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
+    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-2', tokenZegel: verzegel('gh' + 'o_TECH2', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
     meldRechtenVerlies(dev.id, 'rol-weg', 'system');
     await wacht(250);
     check('dezelfde haak als de kern (meldRechtenVerlies) trekt de technische GitHub-koppeling ook in',
@@ -236,7 +236,7 @@ export async function main(): Promise<number> {
       await db.add(bureauTabel(dev.id), [{ ownerUserId: dev.id, ruimte: 'technisch', indeling: { tegels: [] }, updatedAt: 2 }]);
       await db.add('workspaces', [{ ownerUserId: dev.id, ruimte: 'technisch', name: 'technische werkruimte', createdAt: 2, updatedAt: 2, archivedAt: 0 }]);
     });
-    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-3', scopes: ['repo'], tokenZegel: verzegel('gho_TECH3', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
+    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-3', scopes: ['repo'], tokenZegel: verzegel('gh' + 'o_TECH3', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
     await pool.query(`UPDATE app.ruimte_dienst_stand SET stand='bevroren', vorige_stand='eigen', bevroren_op=now(), bevroren_oorzaak='rol-weg', besluit='', besluit_op=NULL, verslag='{}'::jsonb
       WHERE user_id=$1 AND dienst = ANY($2)`, [dev.id, ['bord', 'github']]);
 
@@ -261,7 +261,7 @@ export async function main(): Promise<number> {
     const overGh = await rs.eigenaarsBesluit({ userId: dev.id, dienst: 'github', besluit: 'overdragen', eigenaarId, doorEigenaar: true, stapOpGedaan: true });
     const ghBijEigenaar = await koppelingLezen(eigenaarId, 'oauth', 'technisch');
     check('GitHub overdragen: de token is eerst ECHT ingetrokken en alleen de FEITEN gaan over (geen token mee)',
-      bijGithub.some((r) => r.methode === 'DELETE' && r.body.includes('gho_TECH3'))
+      bijGithub.some((r) => r.methode === 'DELETE' && r.body.includes('gh' + 'o_TECH3'))
       && ghBijEigenaar?.login === 'tech-3' && ghBijEigenaar?.tokenZegel === ''
       && (await koppelingLezen(dev.id, 'oauth', 'technisch')) === null,
       JSON.stringify(overGh.verslag?.regels ?? null));
@@ -271,7 +271,7 @@ export async function main(): Promise<number> {
     // verwijderen: nu echt niets meer over, en de persoonlijke kant blijft heel
     await pool.query(`INSERT INTO app.mcp_console_items (user_id, kind, title, body, status, author, ruimte)
       VALUES ($1,'task','nog een technische taak','', 'backlog','operator','technisch')`, [dev.id]);
-    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-4', tokenZegel: verzegel('gho_TECH4', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
+    await koppelingBewaren(dev.id, 'oauth', { login: 'tech-4', tokenZegel: verzegel('gh' + 'o_TECH4', dev.id, zegelPad('oauth', 'technisch')) }, 'technisch');
     await pool.query(`UPDATE app.ruimte_dienst_stand SET stand='bevroren', vorige_stand='eigen', besluit='', besluit_op=NULL, verslag='{}'::jsonb
       WHERE user_id=$1 AND dienst = ANY($2)`, [dev.id, ['bord', 'github']]);
     const wegBord = await rs.eigenaarsBesluit({ userId: dev.id, dienst: 'bord', besluit: 'verwijderen', eigenaarId, doorEigenaar: true, stapOpGedaan: true });

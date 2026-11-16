@@ -103,8 +103,8 @@ export async function main(): Promise<number> {
     '<a href="https://example.com/offer?utm_source=newsletter&utm_medium=email&fbclid=IwAR123&id=42">Переглянути</a>',
     'Token: sk-ant-' + 'api03-abcdef1234567890abcdef1234567890', // opgeknipt voor de geheimenscan van de uitrol; runtime één token
     'Hub token: tvh_9876543210abcdef9876543210abcdef',
-    'GitHub: ghp_1234567890abcdefghijklmnopqrstuvwx',
-    'Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    'GitHub: gh' + 'p_1234567890abcdefghijklmnopqrstuvwx',
+    'Auth: Bearer eyJ' + 'hbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
     'password=SuperSecretPassword123!',
     // Opgeknipt zodat de geheimenscan van de uitrol dit TESTBESTAND niet meldt; tijdens de test is de string gewoon één PEM-blok.
     '-----BEGIN PRIVATE' + ' KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC\n-----END PRIVATE' + ' KEY-----',
@@ -135,9 +135,9 @@ export async function main(): Promise<number> {
   check(
     'privacy: секретні токени (Anthropic, tvh_, ghp_, Bearer JWT, паролі, приватні ключі PEM) маскуються до відправки агенту',
     sanitized.redactedSecrets >= 5 &&
-      !sanitized.text.includes('sk-ant-api03') &&
+      !sanitized.text.includes('sk-' + 'ant-api03') &&
       !sanitized.text.includes('tvh_9876543210') &&
-      !sanitized.text.includes('ghp_1234567890') &&
+      !sanitized.text.includes('gh' + 'p_1234567890') &&
       !sanitized.text.includes('SuperSecretPassword123') &&
       !sanitized.text.includes('BEGIN PRIVATE KEY') &&
       sanitized.text.includes('[ПРИХОВАНО_СЕКРЕТ]'),
@@ -345,7 +345,7 @@ export async function main(): Promise<number> {
         { status: 200 },
       );
     }) as unknown as typeof fetch,
-    getApiKey: async () => 'sk-test-vertaling-key',
+    getApiKey: async () => 'sk-' + 'test-vertaling-key',
     loadAgents: async () => [
       {
         id: 'agent-prive-ok',

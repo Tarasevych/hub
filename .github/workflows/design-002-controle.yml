@@ -12,15 +12,19 @@ jobs:
     if: github.head_ref == 'feature/design-002-20261105-134500'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Перевірити правила й актуальність
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak DESIGN-002 --fase overdracht
   build:
@@ -28,10 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
@@ -49,10 +54,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
@@ -90,7 +96,7 @@ jobs:
         run: cat uitvoer/design-002/vite.log || true
       - name: Зберегти зображення
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: DESIGN-002-visueel
           path: |
@@ -104,11 +110,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Звірити встановлену основу і підготувати метадані
@@ -178,6 +185,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$GITHUB_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
           mkdir -p "$RUNNER_TEMP/design002-candidate"
           node scripts/orch.mjs pakket --taak DESIGN-002 --auteur "Власник" --platform "ChatGPT Codex" --versie "$PAKKET_VERSIE" --manifest "$RUNNER_TEMP/design002-manifest.json" --testresultaten "$RUNNER_TEMP/design002-tests.json" --uit "$RUNNER_TEMP/design002-candidate" --samenvatting-uk "Адаптивні поверхні сторінок і покращені порожні стани." --samenvatting-nl "Adaptieve paginaoppervlakken en verbeterde lege toestanden."
           node scripts/orch.mjs pakket-controleer --bron "$RUNNER_TEMP/design002-candidate/mijn-ruimte-$PAKKET_VERSIE-codex-overdracht.zip"
@@ -193,7 +201,7 @@ jobs:
         env:
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - name: Зберегти кандидат для перевірки
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: DESIGN-002-kandidaat-niet-installeren
           path: ${{ runner.temp }}/design002-candidate/

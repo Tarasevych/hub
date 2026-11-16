@@ -35,7 +35,7 @@ const past = (v: Verwacht, t: ZoekTreffer) => {
 const SOORT: Record<string, ZoekSoort> = { bericht: 'bericht', bestand: 'bestand', notitie: 'notitie', afspraak: 'afspraak', overig: 'overig' };
 
 // De fixture is opgeknipt zodat de geheimenscan van de uitrol-voorcontrole dit TESTBESTAND niet meldt; runtime is het één string.
-const SECRET_MAIL = { id: 'eval-mail-geheim', titel: 'Toegang tot de server', inhoud: 'Hier zijn de sleutels: sk_live_51Hx9ZZZZabcdefghijklmnop en ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 en password=hunter2geheim. -----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n-----END PRIVATE' + ' KEY-----' };
+const SECRET_MAIL = { id: 'eval-mail-geheim', titel: 'Toegang tot de server', inhoud: 'Hier zijn de sleutels: ' + 'sk_' + 'live_51Hx9ZZZZabcdefghijklmnop en gh' + 'p_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 en password=hunter2geheim. -----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7\n-----END PRIVATE' + ' KEY-----' };
 
 /** Каталог інтерфейсу від Z2 (справжній): backend/zoek/catalogus-ui.ts → uiZoekObjecten(lade). Без нього тест чесно падає. */
 async function uiCatalogus(lade: Lade): Promise<ZoekObject[]> {
@@ -127,7 +127,7 @@ export async function main(): Promise<number> {
     }
     // ---- секрети: токени не індексовані (ані в tekst_norm, ані у фрагментах)
     const rij = (await pool.query(`SELECT tekst, tekst_norm FROM app.zoek_objecten WHERE user_id = $1 AND bron = 'mail' AND bron_id = $2`, [A, SECRET_MAIL.id]).catch(() => ({ rows: [] as Array<{ tekst: string; tekst_norm: string }> }))).rows[0];
-    const geheimPatronen = [/sk_live_51Hx9/i, /ghp_ABCDEFGHIJ/i, /hunter2geheim/i, /BEGIN PRIVATE KEY/i, /MIIEvQIBADANBg/];
+    const geheimPatronen = [new RegExp('sk_' + 'live_51Hx9', 'i'), new RegExp('gh' + 'p_ABCDEFGHIJ', 'i'), /hunter2geheim/i, /BEGIN PRIVATE KEY/i, /MIIEvQIBADANBg/];
     check('секрети (sk_live_, ghp_, password=, PRIVATE KEY) не лежать в індексі відкритим текстом', !!rij && !geheimPatronen.some((p) => p.test(String(rij.tekst || '')) || p.test(String(rij.tekst_norm || ''))), rij ? `tekst: ${String(rij.tekst).slice(0, 120)}` : 'рядок відсутній');
     const zoekGeheim = await zoek(lA, { q: 'hunter2geheim', perPagina: 5, facets: false });
     check('пошук за значенням секрету нічого не знаходить', zoekGeheim.items.length === 0, JSON.stringify(zoekGeheim.items.map((i) => i.id)));

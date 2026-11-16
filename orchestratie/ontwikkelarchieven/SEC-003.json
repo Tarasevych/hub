@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "taakId": "SEC-003",
+  "datum": "2026-11-16",
+  "taal": "uk",
+  "opdracht": "Усунути помилки налаштування сканування коду на сторінці безпеки GitHub (osv-scanner, codeql.yml, crda.yml і зайві шаблони .github/workflows/), додати двомовну політику безпеки SECURITY.md у гілку voornaamst, усунути вразливості залежностей Dependabot #1 (xlsx і fast-xml-parser), опрацювати 2013 попереджень Code scanning (усунувши актуальні вади коду та описавши хроніку попередніх виправлень і хибних спрацювань) і перевірити всі сповіщення Secret scanning із розбиттям вигаданих тестових зразків.",
+  "herkomst": {
+    "agent": "antigravity",
+    "basis": "9347c8095c417bfe72ac4537dcfd5549ad47057b",
+    "basisVersie": "20261105-061659",
+    "tak": "fix/sec-003-20261116-222239"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Усі зміни та звітні документи відповідають вимогам PRIVACY-001 (B-010): відсутні паролі, маркери доступу, приватні ключі, реп'яшки сеансів, приватні адреси електронної пошти чи справжні мережеві адреси. Вигадані тестові рядки в коді та тестах розбито на складені частини."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Первинний аудит стану безпеки GitHub для сховища Tarasevych/hub: зафіксовано обмеження доступу зовнішніх маркерів (HTTP 403 на Security/Dependabot Alerts API), досліджено журнали та SARIF-артефакти запусків сканування, визначено причину збою osv-scanner.yml та виявлено 76 масово доданих сторонніх шаблонів у .github/workflows/ (разом 92 файли) й випуски лінії інтеграції до UPD-003 (20261116-221401).",
+      "bewijzen": [
+        ".github/workflows/osv-scanner.yml",
+        "docs/beveiliging/ЗВІТ-БЕЗПЕКИ-СКАНУВАННЯ-20261116.uk.md"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Зареєстровано задачу SEC-003 у робочій гілці fix/sec-003-20261116-222239 поверх основи 9347c8095c417bfe72ac4537dcfd5549ad47057b та розподілено роботу між п'ятьма спеціалізованими субагентами (сценарії відновлення, робочі процеси CI/CD, залежності й розбирач таблиць, аудит таємниць у коді й тестах, двомовна документація безпеки та хронологія).",
+      "bewijzen": [
+        "orchestratie/taken/SEC-003.json"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Усунуто актуальні вади в допоміжних сценаріях розгортання: укріплено deploy/archief-herstellen.sh (створення захищеної тимчасової теки через mktemp -d та права 0700, очищення через trap, видалення викликів bash -c і doe_sh, додавання перевірки SHASUMS256.txt для Node.js, закріплення cloudflared 2026.11.0 із SHA-256 для amd64/arm64, суворі параметри curl --proto '=https' --tlsv1.2) і виправлено Bandit B110 у deploy/pakketgegevens.py із точним перехопленням винятків та діагностикою; додано тест tests/eenheid/archief-herstellen-20261116.test.ts (19/19).",
+      "bewijzen": [
+        "deploy/archief-herstellen.sh",
+        "deploy/pakketgegevens.py",
+        "tests/eenheid/archief-herstellen-20261116.test.ts"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Упорядковано .github/workflows/: видалено 66 непрацездатних, конфліктних і невідповідних шаблонів (зокрема codeql.yml, що конфліктував із вбудованим CodeQL Default Setup, та небезпечний crda.yml з pull_request_target); виправлено osv-scanner.yml (оновлення до v2.7.1, додавання права actions: read, фіксація SHA); укріплено всі 10 залишених сканерів і всі 16 власних робочих процесів проєкту (закріплення дій 40-символьним відбитком SHA, звуження прав до contents: read на верхньому рівні, persist-credentials: false, --ignore-scripts для npm ci та передача значень через env: у design-002-controle.yml).",
+      "bewijzen": [
+        ".github/workflows/osv-scanner.yml",
+        ".github/workflows/scorecard.yml",
+        ".github/workflows/design-002-controle.yml"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Повністю усунуто вразливості залежностей Dependabot #1 та osv-scanner: вилучено пакунок xlsx із package.json і package-lock.json, створено власний безпечний браузерний модуль src/mail-rekenblad-lezer.ts поверх fflate з захистом від XXE, обмеженнями розміру архіву/глибини XML та підтримкою AbortSignal; переведено читання й експорт таблиць і DBF у src/mail-rekenblad-inhoud.ts, src/mail-rekenblad-mogelijkheden.ts і src/mail-database-inhoud.ts; оновлено транзитивний fast-xml-parser (5.11.2 → 5.12.1) через overrides (усунення CVE-2026-126066 / GHSA-474x-hrwr-fgx4) та додано тест tests/eenheid/mail-rekenblad-lezer-20261116.test.ts (12/12).",
+      "bewijzen": [
+        "package.json",
+        "package-lock.json",
+        "src/mail-rekenblad-lezer.ts",
+        "src/mail-rekenblad-inhoud.ts",
+        "src/mail-rekenblad-mogelijkheden.ts",
+        "src/mail-database-inhoud.ts",
+        "tests/eenheid/mail-rekenblad-lezer-20261116.test.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Перевірено корінь, гілку integratie, лінію випусків до UPD-003 і тестову базу щодо витоків таємниць: справжніх чинних таємниць не виявлено; у backend/integraties-wizard.ts і 31 файлі tests/eenheid/ вигадані синтетичні маркери (ghp_, gho_, sk_live_, AKIA, AIza, eyJ тощо) розбито на безпечне зчеплення рядків без зміни значень під час виконання.",
+      "bewijzen": [
+        "backend/integraties-wizard.ts",
+        "tests/eenheid/hulp/nep-github.ts"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Створено двомовну (uk/nl) кореневу політику безпеки SECURITY.md і вичерпний двомовний звіт безпеки docs/beveiliging/ЗВІТ-БЕЗПЕКИ-СКАНУВАННЯ-20261116.{uk,}.md та BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md із розкладанням 2013 попереджень Code scanning за інструментами, хронологією історичних виправлень (від AppDeploy і Фази A–B до SEC-001, SEC-002 / #75, IDENTITEIT-012, #145 та UPD-003) і таблицею статусів для закриття попереджень на GitHub; оновлено покажчики документації, нотатки безпеки та карту файлів docs/kaart/bestandskaart.json; пройдено повну перевірку складання, типів TypeScript, аудиту залежностей та модульних тестів.",
+      "bewijzen": [
+        "SECURITY.md",
+        "docs/beveiliging/ЗВІТ-БЕЗПЕКИ-СКАНУВАННЯ-20261116.uk.md",
+        "docs/beveiliging/BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md",
+        "НОТАТКИ-БЕЗПЕКИ.uk.md",
+        "BEVEILIGINGSNOTITIES.nl.md",
+        "docs/kaart/bestandskaart.json"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Повна заміна пакунка xlsx на власний браузерний модуль src/mail-rekenblad-lezer.ts поверх fflate замість залишення зовнішнього посилання SheetJS",
+      "reden": "Пакунок xlsx у відкритому реєстрі npm зупинився на вразливій версії 0.18.5 (GHSA-4r6h-8v6p-xvw6 та GHSA-5pgg-2g8v-p4x9), через що Dependabot і osv-scanner завжди видають попередження навіть при завантаженні 0.20.3 із зовнішнього джерела.",
+      "альтернатива": "Залишити xlsx@0.20.3 за зовнішнім URL і вручну приглушувати попередження — відхилено через постійні спрацювання сканерів і залежність від зовнішньої мережі розповсюдження."
+    },
+    {
+      "keuze": "Примусове закріплення fast-xml-parser@^5.12.1 у секції overrides файлу package.json",
+      "reden": "Усуває вразливість CVE-2026-126066 (GHSA-474x-hrwr-fgx4) у транзитивній залежності пакунка mdb-reader@3.2.0 без очікування випуску від супроводжувача пакунка вищого рівня.",
+      "альтернатива": "Відкласти оновлення до виходу нової версії mdb-reader — відхилено, бо залежність легко та безпечно оновлюється до 5.12.1."
+    },
+    {
+      "keuze": "Видалення ручного файла codeql.yml зі збереженням системного CodeQL Default Setup та видалення ще 65 зайвих шаблонів .github/workflows/",
+      "reden": "Ручний codeql.yml містив помилкове налаштування і конфліктував із вбудованим CodeQL Default Setup у налаштуваннях GitHub; небезпечний crda.yml використовував pull_request_target поверх неперевіреного коду; 64 інші шаблони стосувалися відсутніх мов або платних служб без ключів доступу.",
+      "альтернатива": "Спробувати налаштувати 76 сторонніх шаблонів окремими секретами — відхилено як надмірне, економічно невиправдане й таке, що породжує масові помилки налаштування."
+    },
+    {
+      "keuze": "Надання чіткої матриці статусів для закриття історичних та тестових попереджень у вебінтерфейсі GitHub Security без обходу контролю доступу",
+      "reden": "Зовнішні маркери інтеграції не мають адміністративних прав на зміну стану сповіщень GitHub Security Alerts API (отримують HTTP 403), що відповідає принципу найменших повноважень.",
+      "альтернатива": "Спроба обхідних маніпуляцій або ігнорування старих сповіщень без пояснення — відхилено правилами безпеки та вимогами прозорості власника."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "SECURITY.md",
+      "soort": "додано",
+      "опис": "Двомовна (uk/nl) політика безпеки з описом підтримуваних гілок/випусків, каналом приватних звернень, правилами приватності PRIVACY-001 та строками реагування."
+    },
+    {
+      "bestand": ".github/workflows/*",
+      "soort": "змінено",
+      "опис": "Видалено 66 зайвих і конфліктних шаблонів (у т. ч. codeql.yml, crda.yml); виправлено osv-scanner.yml (v2.7.1, actions: read, SHA); закріплено дії за 40-символьним SHA, звужено права та додано захист у 10 сканерах і всіх 16 власних робочих процесах."
+    },
+    {
+      "bestand": "package.json",
+      "soort": "змінено",
+      "опис": "Вилучено залежність xlsx і додано overrides для fast-xml-parser@^5.12.1 (відповідно оновлено package-lock.json)."
+    },
+    {
+      "bestand": "src/mail-rekenblad-lezer.ts",
+      "soort": "додано",
+      "опис": "Безпечний браузерний розбирач та експортер форматів XLSX, ODS, FODS, DIF, SYLK, SpreadsheetML 2003 і DBF на базі fflate із захистом від XXE та ZIP-бомб."
+    },
+    {
+      "bestand": "src/mail-rekenblad-inhoud.ts",
+      "soort": "змінено",
+      "опис": "Переведено резервне читання, формати таблиць та експорт із xlsx на src/mail-rekenblad-lezer.ts зі збереженням officeparser/slim і перевіркою AbortSignal."
+    },
+    {
+      "bestand": "src/mail-rekenblad-mogelijkheden.ts",
+      "soort": "змінено",
+      "опис": "Оновлено опис рушіїв та підтримуваних форматів експорту таблиць після вилучення xlsx."
+    },
+    {
+      "bestand": "src/mail-database-inhoud.ts",
+      "soort": "змінено",
+      "опис": "Переведено читання та запис DBF-таблиць із xlsx на leesDbf/schrijfDbf із src/mail-rekenblad-lezer.ts."
+    },
+    {
+      "bestand": "deploy/archief-herstellen.sh",
+      "soort": "змінено",
+      "опис": "Вилучено doe_sh/bash -c, закріплено cloudflared 2026.11.0 із SHA-256, додано перевірку контрольної суми Node.js та захищені тимчасові каталоги mktemp."
+    },
+    {
+      "bestand": "deploy/pakketgegevens.py",
+      "soort": "змінено",
+      "опис": "Усунуто Bandit B110 (заміна глухого except Exception: на точну обробку помилок із повідомленням у stderr та перевіркою типу bool)."
+    },
+    {
+      "bestand": "backend/integraties-wizard.ts",
+      "soort": "змінено",
+      "опис": "Розбито вигаданий зразок GITHUB_PROEFTOKEN на складене зчеплення для виключення хибних спрацювань сканерів таємниць."
+    },
+    {
+      "bestand": "tests/eenheid/*",
+      "soort": "змінено",
+      "опис": "Розбито вигадані тестові рядки в 31 наявному тесті та додано нові тести tests/eenheid/archief-herstellen-20261116.test.ts і tests/eenheid/mail-rekenblad-lezer-20261116.test.ts."
+    },
+    {
+      "bestand": "docs/beveiliging/ЗВІТ-БЕЗПЕКИ-СКАНУВАННЯ-20261116.{uk,}.md",
+      "soort": "додано",
+      "опис": "Вичерпний звіт безпеки (разом із BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md), оновленням НОТАТКИ-БЕЗПЕКИ.*, покажчиків документації та docs/kaart/bestandskaart.json."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "npm audit --json",
+      "результат": "total: 0 (0 критичних, 0 високих, 0 помірних, 0 низьких вразливостей на 490 залежностях; без xlsx, із fast-xml-parser@5.12.1).",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "npm run typecheck:server && npx tsc --noEmit",
+      "результат": "Обидві перевірки типів TypeScript (серверної і клієнтської частин) пройшли без жодної помилки (код 0).",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "NODE_OPTIONS=--max-old-space-size=2560 npm run build",
+      "результат": "Усі 11 етапів складання (карта файлів, розміщення, питання довідки, каталог інтерфейсу 1321 елемент, мовний аудит, поштовий аудит, контраст кольорів, Vite 5910 модулів, технічні пакунки, розширення 0.9.2 та серверний вихід у dist-server/) пройшли успішно з кодом 0.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "node scripts/kaart-controle.mjs && node scripts/orch.mjs controleer",
+      "результат": "Карта файлів: 543 перейменованих і 2242 файла без помилок; координатор: усе гаразд (regelsVersie 1.4.14, hash 568ee500104c…).",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Модульні тести безпеки, таблиць, сценарію відновлення, карти файлів, таємниць і безбазових модулів",
+      "результат": "archief-herstellen-20261116 (19/19), mail-rekenblad-lezer-20261116 (12/12), vendor-ongebundeld-20261023 (26/26), bestandskaart-20261024 (28/28), bestandsformaten-20261026 (8/8), mail-qa-2026-10-12 (37/37), mail-bijlagen (4/4), bijlage-viewer-v2-20261029 (11/11), sec-001-20261031 (29/29), trace-001-ontwikkelarchief (16/16), orch-kern-20261031 (78/78), uitrol-voorcontrole (42/42), geheimen (7/7), juridisch (9/9), cloud-m9-directory (16/16), ai-*, chat, vertaalpaneel, github-platform, github-koppelkaart, mcp-acties, meldingen-status — усі безбазові перевірки 100%.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Повна перевірка коду сканерами шаблонів таємниць (shared/geheim-patronen.ts) і перевірка чистоти мови доданих змін",
+      "результат": "totalHits = 0 справжніх чи синтетичних таємниць у відстежуваних і нових файлах; 0 порушень абсолютного мовного закону в доданих і змінених рядках SEC-003.",
+      "стан": "пройдено"
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "SECURITY.md",
+    "НОТАТКИ-БЕЗПЕКИ.uk.md",
+    "BEVEILIGINGSNOTITIES.nl.md",
+    "docs/beveiliging/ЗВІТ-БЕЗПЕКИ-СКАНУВАННЯ-20261116.uk.md",
+    "docs/beveiliging/BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md",
+    "GHSA-4r6h-8v6p-xvw6",
+    "GHSA-5pgg-2g8v-p4x9",
+    "CVE-2026-126066 (GHSA-474x-hrwr-fgx4)"
+  ],
+  "beperkingen": [
+    "Зовнішні маркери інтеграції отримують HTTP 403 при зверненні до кінцевих точок GitHub Security Alerts API; остаточне закриття тестових та історичних сповіщень (Used in tests / False positive) у вебінтерфейсі, ввімкнення Push Protection та синхронізацію лінії integratie (до випуску UPD-003) виконує власник сховища.",
+    "Під час тестування у контейнерному середовищі без PostgreSQL (DATABASE_URL_ONTBREEKT) інтеграційні блоки тестів, що викликають getPool() (beheer-overzicht міграції 0057/0058, zoek-*, ruimte-bord-github-20261020, uitrol-pakketten, integraties-wizard-20261020, extensie-zijpaneel-20261022, mcp-klant-20261020, uitrol-diagnose-run), зупиняються виключно на відсутності підключення до БД після проходження безбазових перевірок.",
+    "У тесті основи tests/eenheid/orch-inleveren-20261031.test.ts наявна попередня регресія K3 (40/41), спричинена обрізанням .slice(-6) у scripts/orch/inleveren.mjs (два попередження контролера зсувають рядок FOUT REGELS_NIET_VERGRENDELD за межі 6 останніх рядків); ядро оркестрації у межах SEC-003 не зачіпалося."
+  ]
+}
