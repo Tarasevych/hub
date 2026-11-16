@@ -81,8 +81,59 @@ BEWAAR="${BEWAAR_RELEASES:-5}"
 GEZONDHEID_URL="http://127.0.0.1:${PORT}/__gezondheid"
 TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruimte-opruimen.timer mijn-ruimte-backup.timer mijn-ruimte-mail-queue.timer mijn-ruimte-gitops.timer mijn-ruimte-diagnostiek-server.timer mijn-ruimte-zoek-index.timer)
 
-ONVOLTOOID=""   # pad van een release die nog niet klaar is; wordt bij een fout verwijderd
-opruimen_bij_afbreken() { if [ -n "$ONVOLTOOID" ] && [ -d "$ONVOLTOOID" ]; then echo "[installeer] onvolledige release $ONVOLTOOID verwijderd" >&2; rm -rf -- "$ONVOLTOOID"; fi; }
+ONVOLTOOID=""   # pad van een release die nog niet klaar is; wordt bij een fout verwijderd — tenzij hij al gebouwd is (UITROL-002, hieronder)
+ONVOLTOOID_BEWAAR=0
+opruimen_bij_afbreken() {
+  if [ -n "$ONVOLTOOID" ] && [ -d "$ONVOLTOOID" ]; then
+    if [ "$ONVOLTOOID_BEWAAR" = 1 ] && [ -f "$(hervat_markering "$ONVOLTOOID")" ]; then
+      echo "[installeer] onvolledige release $ONVOLTOOID bewaard om te hervatten: hetzelfde archief slaat kopie, npm ci en bouwen over / незавершений випуск збережено для продовження" >&2
+    else
+      echo "[installeer] onvolledige release $ONVOLTOOID verwijderd" >&2; rm -rf -- "$ONVOLTOOID"
+    fi
+  fi
+}
+# ---- UITROL-002: hervatten begin ----
+# Продовження з місця обриву (власник, 16.11.2026): якщо збій стався ПІСЛЯ збірки (back-up, міграції, зупинка власником, тайм-аут),
+# тека випуску лишається з позначкою .onvoltooid.json — sha256 архіву (root-скрипт передає MIJN_RUIMTE_PAKKET_SHA256 зі СВОЄЇ копії),
+# коміт, виконані підетапи. Наступне встановлення того самого архіву пропускає копіювання, npm ci і збірку й починає з проби та міграцій.
+# Безпека: позначку пише лише root у теці root:$GEBRUIKER 0750 (застосунок там не пише); власник теки й позначки має бути root,
+# dist/ і RELEASE-COMMIT мають існувати, sha256 має точно збігатися — інакше кандидат ігнорується і все будується з нуля.
+# Hervatten na een fout ná het bouwen: de releasemap blijft met een markering (sha256 van root's eigen kopie van het archief); dezelfde
+# sha256 slaat kopie, npm ci en bouwen over. Alleen root schrijft de markering; eigenaar, inhoud en sha256 worden gecontroleerd.
+hervat_markering() { printf '%s/.onvoltooid.json' "$1"; }
+hervat_markeren() { # hervat_markeren <doel> — na bouwen + deploy_herstellen; zonder sha256 (SSH-installatie) gebeurt er niets
+  local doel="$1" sha="${MIJN_RUIMTE_PAKKET_SHA256:-}" m
+  [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || return 0
+  m="$(hervat_markering "$doel")"
+  printf '{"sha256":"%s","commit":"%s","stappen":["proef","kopie","npm","bouwen"],"tijd":"%s"}\n' "$sha" "$(head -c 64 "$doel/RELEASE-COMMIT" 2>/dev/null | tr -d '\r\n' || echo onbekend)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$m.tmp" || return 0
+  chmod 0600 "$m.tmp" && mv -f -- "$m.tmp" "$m" && ONVOLTOOID_BEWAAR=1
+}
+hervat_kandidaat() { # drukt het pad van een bewaarde, al gebouwde release van HETZELFDE archief af; anders niets
+  local sha="${MIJN_RUIMTE_PAKKET_SHA256:-}" r m
+  [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || return 0
+  for r in $(ls -1d "$RELEASES"/*/ 2>/dev/null | sed 's#/$##' | sort -r); do
+    m="$(hervat_markering "$r")"
+    [ -f "$m" ] && [ ! -L "$m" ] || continue
+    [ "$(stat -c %u "$m" 2>/dev/null)" = "$(id -u)" ] && [ "$(stat -c %u "$r" 2>/dev/null)" = "$(id -u)" ] || continue
+    [ -f "$r/dist/index.html" ] && [ -f "$r/dist-server/start.mjs" ] && [ -s "$r/RELEASE-COMMIT" ] || continue
+    python3 - "$m" "$sha" 2>/dev/null <<'PY' || continue
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+sys.exit(0 if d.get("sha256") == sys.argv[2] and "bouwen" in d.get("stappen", []) else 1)
+PY
+    printf '%s\n' "$r"; return 0
+  done
+  return 0
+}
+hervat_opruimen() { # hervat_opruimen [behouden] — andere onvolledige releases weg (één bewaarde kandidaat is genoeg)
+  local r actief; actief="$(actieve_release)"
+  for r in $(ls -1d "$RELEASES"/*/ 2>/dev/null | sed 's#/$##'); do
+    [ -f "$(hervat_markering "$r")" ] || continue
+    [ "$r" != "${1:-}" ] && [ "$r" != "$actief" ] || continue
+    rm -rf -- "$r" && melding "oude onvolledige release verwijderd: $(basename "$r")"
+  done
+}
+# ---- UITROL-002: hervatten einde ----
 trap opruimen_bij_afbreken EXIT
 # UITROL-001: een stopverzoek van de eigenaar (root stuurt SIGTERM aan de hele procesgroep, zie mijn-ruimte-uitrol.sh) of een
 # systemd-timeout mag nooit stil eindigen: de EXIT-trap hierboven ruimt dan de onvolledige release op en het logboek zegt waar het stopte.
@@ -1122,19 +1173,34 @@ installeren() {
     waarschuwing "deze map ($pv) is NIET nieuwer dan de actieve versie ($hv). Pakte u de juiste map uit? (tar maakt een map met de naam van het archief.) Doorgaan over 8 s; Ctrl+C om te stoppen."
     sleep 8
   fi
-  datum="$(date +%Y%m%d-%H%M%S)"
-  doel="$RELEASES/$datum"
-  [ ! -e "$doel" ] || fout "$doel bestaat al"
-  install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
-  ONVOLTOOID="$doel"
-  migratie_proef "$bron"
-  voortgang kopie 45 "broncode kopiëren"; melding "bron kopiëren naar $doel…"; bron_kopieren "$bron" "$doel"
-  # Geen patch-scripts meer tijdens het installeren (vroeger o.a. een base64-blob die als root werd uitgevoerd): wat in de bron
-  # staat, is wat er gebouwd wordt. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
-  melding "bouwen (npm ci, audit, vite, server-bundel)…"; bouwen "$doel"
-  deploy_herstellen "$bron" "$doel"
+  # UITROL-002: een al gebouwde release van ditzelfde archief (vorige poging stokte ná het bouwen) wordt hervat: kopie, npm ci en
+  # bouwen overslaan; de migratieproef loopt wél opnieuw (de database kan intussen veranderd zijn).
+  local hervat; hervat="$(hervat_kandidaat || true)"
+  hervat_opruimen "$hervat"
+  if [ -n "$hervat" ]; then
+    doel="$hervat"; datum="$(basename "$doel")"
+    ONVOLTOOID="$doel"; ONVOLTOOID_BEWAAR=1
+    melding "hervatten: release $datum is al gebouwd uit hetzelfde archief (sha256 ${MIJN_RUIMTE_PAKKET_SHA256:0:12}…) — kopie, npm ci en bouwen worden overgeslagen / продовження: випуск уже зібрано з цього самого архіву"
+    migratie_proef "$bron"
+    voortgang kopie 45 "overgeslagen: broncode al gekopieerd (hervat) / пропущено: код уже скопійовано"
+    echo "[installeer] stap: npm (55%) overgeslagen: afhankelijkheden al geïnstalleerd (hervat) / пропущено: залежності вже встановлено"
+    echo "[installeer] stap: bouwen (70%) overgeslagen: al gebouwd (hervat) / пропущено: уже зібрано"
+  else
+    datum="$(date +%Y%m%d-%H%M%S)"
+    doel="$RELEASES/$datum"
+    [ ! -e "$doel" ] || fout "$doel bestaat al"
+    install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
+    ONVOLTOOID="$doel"
+    migratie_proef "$bron"
+    voortgang kopie 45 "broncode kopiëren"; melding "bron kopiëren naar $doel…"; bron_kopieren "$bron" "$doel"
+    # Geen patch-scripts meer tijdens het installeren (vroeger o.a. een base64-blob die als root werd uitgevoerd): wat in de bron
+    # staat, is wat er gebouwd wordt. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
+    melding "bouwen (npm ci, audit, vite, server-bundel)…"; bouwen "$doel"
+    deploy_herstellen "$bron" "$doel"
+    hervat_markeren "$doel"   # vanaf hier is een fout geen reden om de gebouwde release weg te gooien
+  fi
   migreren "$doel"
-  ONVOLTOOID=""   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
+  ONVOLTOOID=""; ONVOLTOOID_BEWAAR=0; rm -f -- "$(hervat_markering "$doel")"   # vanaf hier blijft de release bestaan (ook als activeren mislukt, voor diagnose)
   goedkeur_inbox_maken   # vóór het herstarten: de app-unit noemt deze map in ReadWritePaths
   install -d -o root -g "$GEBRUIKER" -m 0770 "$PAKKETTEN_DIR"   # idem: archieven van releases (ReadWritePaths, audit 18.10.2026 punt 4)
   units_installeren "$doel"
@@ -1659,6 +1725,7 @@ lijst() {
     label=""
     [ "$r" = "$actief" ] && label=" (actief)"
     [ "$r" = "$vorige" ] && label="$label (vorige)"
+    [ -f "$(hervat_markering "$r")" ] && label="$label (onvoltooid, te hervatten)"
     echo "$(basename "$r")  commit $(cat "$r/RELEASE-COMMIT" 2>/dev/null || echo '?')$label"
   done
 }

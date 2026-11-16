@@ -6,6 +6,7 @@ import Conveyor from './Conveyor';
 import { conveyorStand } from './conveyor-stand';
 import { api } from '../platform/client';
 import Terminal from './Terminal';
+import { voortgangStand, type VerwachtDuren } from './terminal-voortgang';
 import { codeTekst } from './fouten';
 import Oorzaak from './Oorzaak';
 import { DEELSTAPPEN, FASEN, deelStanden, duur, methodeTekst, runDuur, staatTekst, tijdKort, tr, type Fase, type Flow, type Lang, type LiveAntwoord, type Regel, type Run } from './types';
@@ -62,6 +63,7 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
   // De wizard (stap 5) kan het stopveld openen: één plek voor de knop, bereikbaar vanuit beide kaarten.
   useEffect(() => { const open = () => { setStopVeld(true); window.setTimeout(() => document.getElementById('ut-stop-reden')?.focus(), 350); }; window.addEventListener('ut-stop-open', open); return () => window.removeEventListener('ut-stop-open', open); }, []);
   const [regels, setRegels] = useState<Regel[]>([]);
+  const [verwacht, setVerwacht] = useState<VerwachtDuren | null>(null);
   const [fout, setFout] = useState('');
   const [nu, setNu] = useState(Date.now());
   const skew = useRef(0); // serverklok − browserklok, zodat «30 s na afloop» niet van een scheve klok afhangt
@@ -83,6 +85,7 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
     bezig.current = true; meer.current = false;
     try {
       const r = (await api.post('/api/owner/uitrol/live', { ...context, run: '', na: cursor.current })).data as LiveAntwoord;
+      if (r.verwacht) setVerwacht(r.verwacht);
       const sn = Date.parse(r.nu); if (Number.isFinite(sn)) skew.current = sn - Date.now();
       setNu(Date.now());
       const nieuwId = r.run?.id || '';
@@ -136,7 +139,7 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
       </div>
       <div className='ut-kop-rechts'>
         {!nieuweFlow && run && toon && <span className='ut-badge' data-staat={run.code === 'GESTOPT' ? 'gestopt' : run.staat}>{run.code === 'GESTOPT' ? tr(lang, 'Зупинено', 'Gestopt') : staatTekst(lang, run.staat)}</span>}
-        {!nieuweFlow && run && toon && <span className='ut-tijd' title={tr(lang, 'Минуло часу', 'Verstreken tijd')}><Clock aria-hidden='true' />{run.staat === 'bezig' ? duur(nu - Date.parse(run.gestart)) : runDuur(run)}</span>}
+        {!nieuweFlow && run && toon && <span className='ut-tijd' title={tr(lang, 'Минуло часу', 'Verstreken tijd')}><Clock aria-hidden='true' />{run.staat === 'bezig' ? duur(nu - Date.parse(run.gestart), lang) : runDuur(run, lang)}</span>}
         {!nieuweFlow && run && toon && <button type='button' className='ut-knop' onClick={() => openLog(run.id)}><ScrollText aria-hidden='true' />{tr(lang, 'Переглянути журнал', 'Logboek bekijken')}</button>}
       </div>
     </header>
@@ -149,7 +152,7 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
 
     {!nieuweFlow && rootStil && <div className='ut-waarschuwing' role='alert'>
       <AlertTriangle aria-hidden='true' />
-      <div><b>{tr(lang, `Сервер (root) не відповідає вже ${duur(wachtSec * 1000)} після схвалення.`, `De server (root) reageert al ${duur(wachtSec * 1000)} na de goedkeuring niet.`)}</b>
+      <div><b>{tr(lang, `Сервер (root) не відповідає вже ${duur(wachtSec * 1000, lang)} після схвалення.`, `De server (root) reageert al ${duur(wachtSec * 1000, lang)} na de goedkeuring niet.`)}</b>
         <p>{tr(lang, 'Схвалення збережене, але жодного кроку встановлення ще не з’явилося. Вкладка «Діагностика» покаже, на якій ланці зупинилось (юніт path, служба, блокування, inbox, диск).', 'De goedkeuring is bewaard, maar er verscheen nog geen installatiestap. Het tabblad «Діагностика» toont waar de keten stokt (path-unit, dienst, vergrendeling, inbox, schijf).')}</p>
         <button type='button' className='ut-knop' onClick={openDiagnose}>{tr(lang, 'Відкрити діагностику', 'Diagnose openen')}</button></div>
     </div>}
@@ -206,9 +209,9 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
       {/* UITROL-001: de lijst met negen deelstappen staat niet meer hier — de conveyor hierboven toont dezelfde onderdelen met echte tijdstippen en duur (uitklappen per knoop). */}
       {run.methode === 'ssh' && <p className='ut-hint'>{tr(lang, 'Це встановлення виконали вручну через SSH — сайт бачить лише результат, а не кожен крок.', 'Deze installatie is handmatig via SSH gedaan — de site ziet alleen de uitkomst, niet elke stap.')}</p>}
 
-      {/* De terminal hoort bij de installatiefase: eerder (ontvangen/controles) is er niets te zien en verschijnt hij pas als root met installeren begint. */}
-      {run.methode !== 'ssh' && fasen.uitrol !== 'wacht' && regels.length > 0 && <Terminal lang={lang} regels={regels} live={run.staat === 'bezig'} bestandsnaam={`uitrol-${run.id}.log`} hoogte={320} />}
-      {run.methode !== 'ssh' && fasen.uitrol === 'wacht' && run.staat === 'bezig' && <p className='ut-hint' data-ut-terminal-verborgen>{tr(lang, 'Термінал з’явиться тут, щойно сервер перейде до встановлення (після перевірок).', 'De terminal verschijnt hier zodra de server met installeren begint (na de controles).')}</p>}
+      {/* UITROL-002: de terminal toont het logboek vanaf de EERSTE regel van root (ontvangen, passkey, inhoud) — vroeger pas vanaf het installeren, zodat de eigenaar de controles nooit zag. Erboven de voortgangsregel (onderdeel, %, verstreken, gebruikelijke duur). */}
+      {run.methode !== 'ssh' && regels.length > 0 && <Terminal lang={lang} regels={regels} live={run.staat === 'bezig'} bestandsnaam={`uitrol-${run.id}.log`} hoogte={320} voortgang={voortgangStand(run, regels, verwacht, nu)} />}
+      {run.methode !== 'ssh' && regels.length === 0 && run.staat === 'bezig' && <p className='ut-hint' data-ut-terminal-verborgen>{tr(lang, 'Термінал з’явиться тут, щойно сервер запише перший рядок журналу.', 'De terminal verschijnt hier zodra de server de eerste logregel schrijft.')}</p>}
     </>}
 
     {!nieuweFlow && !run && !goedgekeurd.length && !wachtendOpGoedkeuring && <p className='ut-leeg' data-ut-leeg>{tr(lang, 'Готово до наступного розгортання. Кроки й термінал з’являться самі, коли почнеться нове.', 'Klaar voor de volgende uitrol. Stappen en terminal verschijnen vanzelf zodra er een nieuwe begint.')}</p>}

@@ -4,11 +4,12 @@ import { Fingerprint, ShieldCheck, X } from 'lucide-react';
 import { foutTekst } from './fouten';
 import Voorcontrole from './Voorcontrole';
 import CommitTekst from './CommitTekst';
-import { datum, mb, tr, type Lang, type Overzicht, type Voorstel } from './types';
+import { datum, lopendTekst, mb, tr, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel } from './types';
 
-type Props = { lang: Lang; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string };
+type Props = { lang: Lang; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string;
+  /** UITROL-002: er loopt al een installatie (run bezig of goedgekeurd pakket wacht op root) — goedkeuren staat dan uit. */ lopend?: LopendeInstallatie | null };
 
-export default function Goedkeuring({ lang, data, busy, klaar, goedkeuren, afwijzen, verberg }: Props) {
+export default function Goedkeuring({ lang, data, busy, klaar, goedkeuren, afwijzen, verberg, lopend }: Props) {
   // Het pakket dat de wizard «Нове оновлення» zelf net uploadde wordt daar (stap 4) getoond; hier alleen de rest (bv. door een agent voorbereid).
   const wachtenden = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring' && v.id !== verberg);
   const [afwijs, setAfwijs] = useState<{ id: string; reden: string } | null>(null);
@@ -32,7 +33,7 @@ export default function Goedkeuring({ lang, data, busy, klaar, goedkeuren, afwij
       {v.wijzigingen && <details open><summary>{tr(lang, 'Що змінено', 'Wat er verandert')}</summary><pre className='ut-pre'>{v.wijzigingen}</pre></details>}
       {v.diffSamenvatting && <details><summary>{tr(lang, 'Зміни у файлах', 'Gewijzigde bestanden')}</summary><pre className='ut-pre'>{v.diffSamenvatting}</pre></details>}
       <div className='ut-acties'>
-        <button type='button' className='ut-knop ut-knop-primair' disabled={!klaar || !!busy} onClick={() => goedkeuren(v)}><Fingerprint aria-hidden='true' />{busy === `ok-${v.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити', 'Goedkeuren en installeren')}</button>
+        <button type='button' className='ut-knop ut-knop-primair' disabled={!klaar || !!busy || !!lopend} title={lopend ? lopendTekst(lang, lopend) : undefined} onClick={() => goedkeuren(v)}><Fingerprint aria-hidden='true' />{busy === `ok-${v.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити', 'Goedkeuren en installeren')}</button>
         {afwijs?.id !== v.id && <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => setAfwijs({ id: v.id, reden: '' })}><X aria-hidden='true' />{tr(lang, 'Відхилити', 'Afwijzen')}</button>}
       </div>
       {afwijs?.id === v.id && <div className='ut-reden-veld' role='group' data-afwijzen-voorstel={v.id}>

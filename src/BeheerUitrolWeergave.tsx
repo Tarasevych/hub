@@ -30,7 +30,9 @@ import './uitrol/pakket.css';
 import Zijkant from './uitrol/Zijkant';
 import { foutTekst, isHerstart } from './uitrol/fouten';
 import { telPoging, wisPoging } from '../shared/foutuitleg';
-import { datum, methodeTekst, runDuur, staatTekst, tr, type Flow, type Grant, type GrantSoort, type Keuze, type Lang, type Overzicht, type Run, type RunsAntwoord, type Voorstel } from './uitrol/types';
+import { datum, methodeTekst, runDuur, staatTekst, tr, type Flow, type Grant, type GrantSoort, type Keuze, type Lang, type LopendeInstallatie, type Overzicht, type Run, type RunsAntwoord, type Voorstel } from './uitrol/types';
+import { etappeTekst, pogingActie, pogingOorzaak } from '../shared/uitrol-pogingen';
+import { AlertTriangle, PlayCircle, RotateCcw } from 'lucide-react';
 import './beheer-uitrol.css';
 import './uitrol/uitrol.css';
 import './uitrol/weergave-v2.css';
@@ -127,12 +129,30 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
    * eigenaar alleen hetzelfde bestand opnieuw te kiezen en gaat de upload verder waar hij stopte (src/uitrol/Upload.tsx doet dat
    * zelf). Is hervatten NIET mogelijk, dan opent meteen het bestandsvenster voor een nieuwe poging.
    */
-  const naarUploadPoging = useCallback((hervat: boolean) => {
+  // UITROL-002: ligt het archief van die poging nog op de server, dan krijgt de wizard het voorstel-id en hervat hij meteen (zonder upload).
+  const [hervatVerzoek, setHervatVerzoek] = useState<{ id: string; n: number } | null>(null);
+  const naarUploadPoging = useCallback((hervat: boolean, voorstelId = '') => {
     naarUpload();
-    if (!hervat) window.setTimeout(() => (document.querySelector('[data-meester-bestand]') as HTMLInputElement | null)?.click(), 400);
+    if (hervat && voorstelId) setHervatVerzoek((o) => ({ id: voorstelId, n: (o?.n || 0) + 1 }));
+    else if (!hervat) window.setTimeout(() => (document.querySelector('[data-meester-bestand]') as HTMLInputElement | null)?.click(), 400);
   }, [naarUpload]);
   const naarLive = useCallback(() => { document.getElementById('ut-live-titel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, []);
   const onRunVerandert = useCallback((r: Run | null) => { lopendeRun.current = r?.id || ''; }, []);
+
+  // Beide useMemo's staan vóór de vroege return hieronder: hooks mogen nooit achter een conditionele return komen.
+  // UITROL-002: wat er nu loopt of op root wacht (voor de wizard en de goedkeurkaart: één installatie tegelijk).
+  const lopendeInstallatie = useMemo<LopendeInstallatie | null>(() => {
+    const r = recent.find((x) => x.staat === 'bezig' && x.methode !== 'ssh');
+    if (r) return { soort: 'run', id: r.voorstelId || r.id, versie: r.versie || r.release || '', wie: r.goedgekeurdDoor || r.wie || '', adres: r.adres || '', sinds: r.gestart };
+    const g = data?.voorstellen.find((v) => v.status === 'goedgekeurd');
+    return g ? { soort: 'goedgekeurd', id: g.id, versie: g.versie, wie: g.beslistDoor || '', adres: '', sinds: g.beslistOp || g.bijgewerktOp || g.aangemaaktOp } : null;
+  }, [recent, data?.voorstellen]);
+  // UITROL-002 (eigenaar: «обриви на виборі файлу й першому етапі не показуються»): runs van root én afgebroken pogingen uit de
+  // browser samen op datum in «Останні розгортання» — niet alleen in de volledige geschiedenis.
+  const recentSamen = useMemo(() => [
+    ...recent.map((r) => ({ soort: 'run' as const, tijd: Date.parse(r.gestart) || 0, run: r })),
+    ...pogingen.filter((p) => !recent.some((r) => r.voorstelId && r.voorstelId === p.voorstelId && Math.abs(Date.parse(r.gestart) - Date.parse(p.tijd)) < 15 * 60_000)).map((p) => ({ soort: 'poging' as const, tijd: Date.parse(p.tijd) || 0, poging: p })),
+  ].sort((a, b) => b.tijd - a.tijd).slice(0, 6), [recent, pogingen]);
 
   if (!data) return <section className='admin-section ut-root' data-admin-uitrol><header><PackageCheck /><div><h2>{tr(lang, 'Оновлення сервера', 'Serverupdates')}</h2><p role='status'>{notice?.text || tr(lang, 'Завантаження…', 'Laden…')}</p></div></header></section>;
 
@@ -171,17 +191,24 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
       {tab === 'overzicht' && <div className='ut-raster'>
         <div className='ut-hoofdkolom'>
           {/* Eerst de handeling (uploaden); daarna de levende kaart en de goedkeuring, die alleen iets tonen als er echt iets loopt of wacht. */}
-          <Upload lang={lang} context={context} data={data} busy={busy} klaar={klaar} kanPasskey={kanPasskey} doe={doe} laden={laden} goedkeurenId={goedkeurenId} onFlow={setFlow} onNieuwId={setNieuwId} naarLive={naarLive} />
+          <Upload hervatVerzoek={hervatVerzoek} andereInstallatie={lopendeInstallatie} lang={lang} context={context} data={data} busy={busy} klaar={klaar} kanPasskey={kanPasskey} doe={doe} laden={laden} goedkeurenId={goedkeurenId} onFlow={setFlow} onNieuwId={setNieuwId} naarLive={naarLive} />
           <LiveKaart lang={lang} context={context} wachtendOpGoedkeuring={wachtend} goedgekeurd={goedgekeurd} openLog={openLog} openDiagnose={() => setTab('diagnose')} onRunVerandert={onRunVerandert} flow={flow} stoppen={stoppen} busy={busy} />
-          <Goedkeuring lang={lang} data={data} busy={busy} klaar={klaar} goedkeuren={(v) => void goedkeuren(v)} afwijzen={afwijzen} verberg={nieuwId} />
+          <Goedkeuring lang={lang} data={data} busy={busy} klaar={klaar} goedkeuren={(v) => void goedkeuren(v)} afwijzen={afwijzen} verberg={nieuwId} lopend={lopendeInstallatie} />
           <section className='ut-kaart' aria-labelledby='ut-recent-titel'>
             <header className='ut-kaart-kop'><h2 id='ut-recent-titel'>{tr(lang, 'Останні розгортання', 'Laatste uitrollen')}</h2><button type='button' className='ut-knop' onClick={() => setTab('historie')}>{tr(lang, 'Уся історія', 'Volledige geschiedenis')}</button></header>
             <ul className='ut-lijst ut-recent'>
-              {recent.slice(0, 5).map((r) => <li key={r.id} data-staat={r.staat}><button type='button' onClick={() => { setOpenRun(r.id); setTab('historie'); }}>
+              {recentSamen.map((it) => it.soort === 'poging' ? (() => { const p = it.poging; const oorzaak = pogingOorzaak(lang, p.code, p.redenBekend); const hervat = pogingActie(p) === 'hervatten' || data.voorstellen.some((v) => v.id === p.voorstelId && v.pakketAanwezig === true);
+                return <li key={`poging:${p.id}`} data-staat='afgebroken' data-ut-recent-poging={p.etappe}><button type='button' onClick={() => { setOpenRun(`poging:${p.id}`); setTab('historie'); }}>
+                  <b className='ut-mono'>{p.versie || tr(lang, 'версія невідома', 'versie onbekend')}</b><i className='ut-badge' data-staat='afgebroken'>{tr(lang, 'Обрив', 'Afgebroken')}</i>
+                  <span>{tr(lang, 'етап: ', 'etappe: ')}{etappeTekst(lang, p.etappe)}{p.bytes > 0 ? ` · ${p.procent}%` : ''} · {datum(lang, p.tijd)}</span><small><AlertTriangle aria-hidden='true' /> {oorzaak.waarom}</small></button>
+                  <span className='ut-recent-acties'>{hervat
+                    ? <button type='button' className='ut-knop ut-knop-primair' data-ut-recent-hervat onClick={() => naarUploadPoging(true, p.voorstelId)}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button>
+                    : <button type='button' className='ut-knop' data-ut-recent-opnieuw onClick={() => naarUploadPoging(false)}><RotateCcw aria-hidden='true' />{tr(lang, 'Почати заново', 'Opnieuw beginnen')}</button>}</span></li>; })()
+              : (() => { const r = it.run; return <li key={r.id} data-staat={r.staat}><button type='button' onClick={() => { setOpenRun(r.id); setTab('historie'); }}>
                 <b className='ut-mono'>{r.versie || r.release || '—'}</b><i className='ut-badge' data-staat={r.staat}>{staatTekst(lang, r.staat)}</i>
-                <span>{methodeTekst(lang, r.methode)} · {datum(lang, r.gestart)} · {runDuur(r)}</span><small>{lang === 'uk' ? r.uk : r.nl}</small>
+                <span>{methodeTekst(lang, r.methode)} · {datum(lang, r.gestart)} · {runDuur(r, lang)}</span><small>{lang === 'uk' ? r.uk : r.nl}</small>
                 {(() => { const meta = data.voorstellen.find((v) => v.id === r.voorstelId)?.pakketMeta; const door = r.voorbereider || '';
-                  return door || meta ? <span className='ut-recent-wie'>{door ? <i><UserCheck aria-hidden='true' />{tr(lang, 'Підготував: ', 'Voorbereid door: ')}{door}</i> : null}{meta?.auteur ? <i><UserRound aria-hidden='true' />{tr(lang, 'Автор: ', 'Auteur: ')}{meta.auteur}</i> : null}{meta?.agent ? <i><Bot aria-hidden='true' />{tr(lang, 'Агент: ', 'Agent: ')}{meta.agent}</i> : null}</span> : null; })()}</button></li>)}
+                  return door || meta ? <span className='ut-recent-wie'>{door ? <i><UserCheck aria-hidden='true' />{tr(lang, 'Підготував: ', 'Voorbereid door: ')}{door}</i> : null}{meta?.auteur ? <i><UserRound aria-hidden='true' />{tr(lang, 'Автор: ', 'Auteur: ')}{meta.auteur}</i> : null}{meta?.agent ? <i><Bot aria-hidden='true' />{tr(lang, 'Агент: ', 'Agent: ')}{meta.agent}</i> : null}</span> : null; })()}</button>{(r.staat === 'mislukt' || r.staat === 'afgebroken') && r.voorstelId && data.voorstellen.some((v) => v.id === r.voorstelId && v.pakketAanwezig === true) ? <span className='ut-recent-acties'><button type='button' className='ut-knop ut-knop-primair' data-ut-recent-hervat onClick={() => naarUploadPoging(true, r.voorstelId)} title={tr(lang, 'Архів цієї спроби ще на сервері: встановлення продовжиться без повторного завантаження (passkey знадобиться знову).', 'Het archief van deze poging ligt nog op de server: de installatie gaat verder zonder nieuwe upload (passkey is opnieuw nodig).')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити', 'Hervatten')}</button></span> : null}</li>; })())}
               {recent.length === 0 && pogingen.length === 0 && <li className='ut-leeg'>{tr(lang, 'Поки порожньо.', 'Nog leeg.')}</li>}
             </ul>
             {/* Elke poging laat een spoor na: ook die nooit een run op de server begon (afbreking in de browser). */}

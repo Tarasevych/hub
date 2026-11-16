@@ -24,7 +24,7 @@ type Filter = { q: string; staat: TijdlijnStaat[]; methode: Methode[]; van: stri
 const LEEG: Filter = { q: '', staat: [], methode: [], van: '', tot: '', pagina: 1 };
 const ms = (v: string) => { const t = Date.parse(v || ''); return Number.isFinite(t) ? t : 0; };
 
-type Props = { lang: Lang; context: Record<string, unknown>; openId: string; onOpenId: (id: string) => void; naarUpload?: (hervat: boolean) => void;
+type Props = { lang: Lang; context: Record<string, unknown>; openId: string; onOpenId: (id: string) => void; naarUpload?: (hervat: boolean, voorstelId?: string) => void;
   /** Het overzicht van de pagina (voorstellen zonder run, actieve versie): zonder dit staan alleen runs en pogingen in de tijdlijn. */
   data?: Overzicht | null;
   /** UI-010 fase 2 (vlag uitrol-weergave-v2): groepen, deelnemers, herstelacties, filters op agent/model. */
@@ -154,11 +154,11 @@ export default function Geschiedenis({ lang, context, openId, onOpenId, naarUplo
 }
 
 /** Eén regel van de tijdlijn + (opengeklapt) de details en de knop «Спробувати знову». */
-function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose, account, accounts }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
+function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose, account, accounts }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean, voorstelId?: string) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
   const it = item;
   const samenvatting = it.soort === 'poging' && it.poging ? pogingOorzaak(lang, it.poging.code, it.poging.redenBekend).waarom : (lang === 'uk' ? it.uk : it.nl);
   const vg = it.poging ? voortgang(it.poging) : null;
-  const duur = it.run ? runDuur(it.run) : it.poging && it.poging.bytes > 0 ? (v2 && vg ? `${tr(lang, 'етап', 'etappe')} ${vg.stap}/${vg.totaal} · ${vg.soort === 'gelezen' ? tr(lang, 'прочитано', 'gelezen') : vg.soort === 'verstuurd' ? tr(lang, 'передано', 'verstuurd') : ''} ${vg.procent}%` : `${it.poging.procent}%`) : v2 && vg ? `${tr(lang, 'етап', 'etappe')} ${vg.stap}/${vg.totaal}` : '';
+  const duur = it.run ? runDuur(it.run, lang) : it.poging && it.poging.bytes > 0 ? (v2 && vg ? `${tr(lang, 'етап', 'etappe')} ${vg.stap}/${vg.totaal} · ${vg.soort === 'gelezen' ? tr(lang, 'прочитано', 'gelezen') : vg.soort === 'verstuurd' ? tr(lang, 'передано', 'verstuurd') : ''} ${vg.procent}%` : `${it.poging.procent}%`) : v2 && vg ? `${tr(lang, 'етап', 'etappe')} ${vg.stap}/${vg.totaal}` : '';
   const wie = v2 && hoofd ? `${it.wie ? `${it.wie} · ` : ''}${hoofd}` : it.wie;
   const detailId = `ut-tl-d-${it.id.replace(/[^a-z0-9]/gi, '')}`;
   // Audit A5 (19.10) in de tijdlijn (23.10): Esc in de opengeklapte details klapt de regel dicht en zet de focus terug op de regelknop,
@@ -180,7 +180,7 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
       {it.soort === 'run' && it.run && <RunDetail lang={lang} context={context} runId={it.run.id} hoogte={360} />}
       {it.soort === 'poging' && it.poging && <PogingDetail lang={lang} p={it.poging} />}
       {v2 && <Betrokkenen lang={lang} it={it} v={voorstel} account={account} accounts={accounts} />}
-      {v2 && it.soort === 'poging' && it.poging && <Herstel lang={lang} acties={herstelActies(it.poging)} naarUpload={naarUpload} naarDiagnose={naarDiagnose} naarLog={naarLog && it.run ? () => naarLog(it.run!.id) : undefined} />}
+      {v2 && it.soort === 'poging' && it.poging && <Herstel lang={lang} acties={herstelActies(it.poging)} naarUpload={naarUpload ? (h) => naarUpload(h, it.poging?.voorstelId || '') : undefined} naarDiagnose={naarDiagnose} naarLog={naarLog && it.run ? () => naarLog(it.run!.id) : undefined} />}
       {it.soort === 'voorstel' && it.voorstel && <dl className='ut-dl'>
         <dt>{tr(lang, 'Стан', 'Stand')}</dt><dd>{VOORSTEL_STATUS[it.voorstel.status] ? tr(lang, VOORSTEL_STATUS[it.voorstel.status][0], VOORSTEL_STATUS[it.voorstel.status][1]) : it.voorstel.status}{it.code ? ` · ${it.code}` : ''}</dd>
         <dt>{tr(lang, 'Підготував', 'Voorbereid door')}</dt><dd>{it.voorstel.voorbereider} · {datumLang(lang, it.voorstel.aangemaaktOp)}</dd>
@@ -191,7 +191,7 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
         {it.voorstel.voorcontrole && <><dt>{tr(lang, 'Перевірка сайту', 'Voorcontrole')}</dt><dd><Voorcontrole lang={lang} v={it.voorstel.voorcontrole} /></dd></>}
       </dl>}
       {MISLUKT_STATEN.has(it.staat) && naarUpload && !(v2 && it.soort === 'poging') && <div className='ut-tl-acties' data-tl-opnieuw={it.opnieuw.kan ? 'ja' : it.opnieuw.reden}>
-        <button type='button' className={`ut-knop${it.opnieuw.kan ? ' ut-knop-primair' : ''}`} disabled={!it.opnieuw.kan} aria-describedby={it.opnieuw.kan ? undefined : `${detailId}-waarom`} onClick={() => naarUpload(it.opnieuw.hervat)}>
+        <button type='button' className={`ut-knop${it.opnieuw.kan ? ' ut-knop-primair' : ''}`} disabled={!it.opnieuw.kan} aria-describedby={it.opnieuw.kan ? undefined : `${detailId}-waarom`} onClick={() => naarUpload(it.opnieuw.hervat, it.voorstel?.id || it.run?.voorstelId || it.poging?.voorstelId || '')}>
           {it.opnieuw.hervat ? <><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити з місця зупинки', 'Hervatten waar het stopte')}</> : <><RotateCcw aria-hidden='true' />{tr(lang, 'Спробувати знову', 'Opnieuw proberen')}</>}
         </button>
         {!it.opnieuw.kan && it.opnieuw.reden && <p id={`${detailId}-waarom`} className='ut-tl-waarom'><AlertTriangle aria-hidden='true' /><span>{opnieuwRedenTekst(lang, it.opnieuw.reden)}</span></p>}

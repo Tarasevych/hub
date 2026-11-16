@@ -200,7 +200,7 @@ export default function Bronnen({ lang, context, kort = false }: { lang: Lang; c
           {b.release && <><dt>{tr(lang, 'Тека релізу', 'Releasemap')}</dt><dd className='ut-mono'>{b.release}</dd></>}
           {b.commit && <><dt>{tr(lang, 'Коміт', 'Commit')}</dt><dd className='ut-mono'>{b.commit.slice(0, 12)}</dd></>}
           {b.staat && <><dt>{tr(lang, 'Стан', 'Stand')}</dt><dd>{b.staat}{b.methode ? ` · ${b.methode}` : ''}</dd></>}
-          {b.tijd && <><dt>{tr(lang, 'Час', 'Tijd')}</dt><dd>{datum(lang, b.tijd)}{b.leeftijdSec !== null ? ` (${duur(b.leeftijdSec * 1000)} ${tr(lang, 'тому', 'geleden')})` : ''}</dd></>}
+          {b.tijd && <><dt>{tr(lang, 'Час', 'Tijd')}</dt><dd>{datum(lang, b.tijd)}{b.leeftijdSec !== null ? ` (${duur(b.leeftijdSec * 1000, lang)} ${tr(lang, 'тому', 'geleden')})` : ''}</dd></>}
           {Object.entries(b.detail).filter(([, v]) => v !== '' && v !== null && v !== undefined && typeof v !== 'object').slice(0, 8).map(([k, v]) => <span key={k} className='ut-bron-dl-paar'><dt>{k}</dt><dd>{String(v)}</dd></span>)}
         </dl>}
         {b && !b.beschikbaar && <p className='ut-hint'>{tr(lang, 'Це джерело зараз недоступне або порожнє.', 'Deze bron is nu niet beschikbaar of leeg.')}{b.detail.reden ? ` ${String(b.detail.reden)}` : ''}{b.detail.fout ? ` ${String(b.detail.fout)}` : ''}</p>}
