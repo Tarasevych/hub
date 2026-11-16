@@ -59,8 +59,56 @@ export async function main(): Promise<number> {
 
     // afgehandeld of verlopen telt niet meer
     if (v1.ok) await ab.weiger({ userId: A, id: v1.id, ruimte: 'prive' }).catch(() => undefined);
-    if (v2.ok) await sys.query("UPDATE app.ai_bevestiging SET aangemaakt_op = now() - interval '20 minutes', verloopt_op = now() - interval '1 minute' WHERE id = $1", [v2.id]);
-    check('geweigerd en verlopen tellen niet meer mee → geen regel in de technische lade', (await ab.wachtEldersMelding(A, 'technisch')) === null);
+    for (const v of [v2, v3]) if (v.ok) await sys.query("UPDATE app.ai_bevestiging SET aangemaakt_op = now() - interval '20 minutes', verloopt_op = now() - interval '1 minute' WHERE id = $1", [v.id]);
+    check('geweigerd en verlopen tellen niet meer mee → geen regel, in geen van beide ruimtes',
+      (await ab.wachtEldersMelding(A, 'technisch')) === null && (await ab.wachtEldersMelding(A, 'prive')) === null);
+
+    // ================================================================ ECHTE KETEN: verzoek → bel in het technische tabblad (echte routes)
+    // Precies het geval van 16.11: de AI vroeg in «Мій простір», de eigenaar keek in een tabblad met technisch profiel.
+    const idx = await import('../../backend/index');
+    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
+    const { tabHash } = await import('../../backend/tech-profiel');
+    const { createHash, randomBytes } = await import('node:crypto');
+    const sha = (v: string) => createHash('sha256').update(v).digest('hex');
+    const HOST = 'id.tarasevych.com';
+    const tD = randomBytes(24).toString('hex'), tP = randomBytes(24).toString('hex');
+    await sys.query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door) VALUES ($1,$2,ARRAY['beheerder'],60,'test')`, [A, `tech-${randomBytes(6).toString('hex')}`]);
+    const pid = String((await sys.query('SELECT profiel_id FROM app.tech_profielen WHERE user_id=$1', [A])).rows[0].profiel_id);
+    await sys.query(`INSERT INTO app.tech_activaties (user_id, profiel_id, tab_hash, rollen, reden, eind_op) VALUES ($1,$2,$3,ARRAY['beheerder'],'eenheidstest elders', now() + interval '60 minutes')`, [A, pid, tabHash(tD)]);
+    const sid = randomUUID(), token = randomBytes(32).toString('base64url'), nu = Date.now();
+    await sys.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['owner_service_sessions_v1', sid, { tokenHash: sha(token), userId: A, service: 'identity', sourceOrigin: `https://${HOST}`, tabHash: sha('ecosystem'), grantId: '', createdAt: nu - 3_600_000, authenticatedAt: nu - 3_600_000, lastSeenAt: nu, idleExpiresAt: nu + 7 * 864e5, absoluteExpiresAt: nu + 30 * 864e5, rotation: 0, version: 1, revocationEpoch: 0, scope: 'ecosystem', authMethod: 'google', ip: '203.0.113.9', userAgent: 'eenheid' }]);
+    const cookie = `${ECOSYSTEM_COOKIE}=${encodeURIComponent(`${sid}.${token}`)}`;
+    const roep = async (pad: string, body: Record<string, unknown>, tabContext: string) => {
+      const evt = { headers: { host: HOST, origin: `https://${HOST}`, 'content-type': 'application/json', cookie, 'user-agent': 'eenheid' }, body: JSON.stringify({ service: 'identity', tabContext, sourceOrigin: `https://${HOST}`, ...body }), isBase64Encoded: false, rawPath: pad, rawQueryString: '', queryStringParameters: {}, requestContext: { http: { method: 'POST', path: pad, sourceIp: '203.0.113.9', userAgent: 'eenheid' } } };
+      const r = await idx.handler(evt as never);
+      let data: Record<string, unknown> = {}; try { data = JSON.parse(String(r.body || '{}')); } catch { /* leeg */ }
+      return { status: r.statusCode, data };
+    };
+    type Item = { id: string; kind: string; title: string; message: string; ruimte?: string; link?: string; read?: boolean };
+    const bel = async (t: string) => { const r = await roep('/api/owner/session/bootstrap', {}, t); return { status: r.status, ruimte: r.data.meldingenRuimte, n: Number(r.data.notifications || 0), items: (r.data.notificationItems || []) as Item[] }; };
+
+    const voorT = await bel(tD);
+    check('keten 0: zonder wachtend verzoek is er in het technische tabblad geen regel «чекає»', voorT.status === 200 && voorT.ruimte === 'technisch' && !voorT.items.some((m) => m.id.startsWith('ai-wacht-elders:')), JSON.stringify({ s: voorT.status, r: voorT.ruimte }));
+
+    const echt = await vraag(A, 'prive', GEHEIM); // de AI vraagt in «Мій простір», precies zoals de connector
+    const naT = await bel(tD), naP = await bel(tP);
+    const regel = naT.items.find((m) => m.id.startsWith('ai-wacht-elders:'));
+    check('keten 1: de echte bootstrap-route van het TECHNISCHE tabblad toont de regel «1 запит ШІ чекає … у «Моєму просторі»» bovenaan',
+      !!regel && naT.items[0]?.id === regel.id && /1 запит ШІ чекає/.test(regel.title) && /Моєму просторі/.test(regel.title) && regel.ruimte === 'technisch' && regel.read === false, JSON.stringify(naT.items.slice(0, 2)));
+    check('keten 2: de teller van de bel in het technische tabblad telt de regel mee (+1)', naT.n === voorT.n + 1, `${voorT.n} → ${naT.n}`);
+    check('keten 3: de knop wijst naar dit verzoek op de pagina «Підключення ШІ», en de uitleg zegt hoe je naar «Мій простір» gaat',
+      echt.ok && !!regel?.link && regel.link.endsWith(`?bevestiging=${echt.id}`) && /без технічного профілю/.test(regel.message), regel?.link);
+    check('keten 4: in de bel staat NIETS van de inhoud van het verzoek (geen parameter, geen titel van de AI)', !JSON.stringify(naT.items).includes(GEHEIM) && !JSON.stringify(naT.items).includes('Тест '));
+    check('keten 5: in het persoonlijke tabblad geen extra regel (daar staat de gewone melding «просить вашого підтвердження»)',
+      naP.ruimte === 'prive' && !naP.items.some((m) => m.id.startsWith('ai-wacht-elders:')) && naP.items.some((m) => m.kind === 'ai_bevestiging'), JSON.stringify(naP.items.map((m) => m.title)));
+    const gelezen = await roep('/api/owner/notifications/read', { notificationId: regel?.id || '' }, tD);
+    check('keten 6: «прочитано» op de regel geeft geen fout (200), en de regel blijft zolang het verzoek wacht', gelezen.status === 200 && (await bel(tD)).items.some((m) => m.id === regel?.id), JSON.stringify(gelezen));
+    if (echt.ok) await ab.weiger({ userId: A, id: echt.id, ruimte: 'prive' });
+    const naBesluit = await bel(tD);
+    check('keten 7: na het besluit (hier: відхилити) verdwijnt de regel vanzelf uit de technische bel', !naBesluit.items.some((m) => m.id.startsWith('ai-wacht-elders:')) && naBesluit.n === voorT.n, `${naBesluit.n}`);
+    await sys.query("DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id=$1", [sid]).catch(() => undefined);
+    await sys.query('DELETE FROM app.tech_activaties WHERE user_id=$1', [A]).catch(() => undefined);
+    await sys.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [A]).catch(() => undefined);
   } finally {
     await sys.query("DELETE FROM app.ai_bevestiging WHERE user_id = ANY($1)", [[A, B]]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl = 'users' AND id = ANY($1)", [[A, B]]).catch(() => undefined);
