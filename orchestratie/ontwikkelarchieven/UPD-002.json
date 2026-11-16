@@ -168,6 +168,10 @@
     {
       "tijd": "2026-11-16T00:12:00Z",
       "stap": "Оформлено й перевірено картку завдання UPD-002.json та доказове досьє UPD-002.json за вимогами TRACE-001 і мовного закону перед фіксацією та пакуванням."
+    },
+    {
+      "tijd": "2026-11-16T02:24:00Z",
+      "stap": "Створено двозадачний процес випуску GitHub Actions (.github/workflows/upd-002-uitgave.yml) із перевіркою живої основи 20261115-162533, усіх 204 випробувань на PostgreSQL 16 із трьома ролями та Хроміумом, подвійними міграціями, TRACE-001 і розділеним оприлюдненням."
     }
   ],
   "keuzes": [
@@ -178,6 +182,10 @@
     "Незавершена окрема гілка EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не влита до UPD-002, щоб не порушити стабільність випуску, і зафіксована у примітках до випуску."
   ],
   "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "bestand": ".github/workflows/upd-002-uitgave.yml"
+    },
     {
       "soort": "toegevoegd",
       "bestand": ".agents/skills/koppelingen-echte-vorm-testen/SKILL.md"
@@ -1935,7 +1943,8 @@
     "Модульні тести хмарного сховища tests/eenheid/cloud-*.test.mjs: 20/20 пройдено.",
     "Безголовий Хроміум Chrome/156.0.8078.79 (scripts/rook-controle.mjs --stand): глибока перевірка здоров’я 7/7, усі 13/13 сторінок повернули HTTP 200 з нулем помилок у консолі й відхилених запитів, 696/696 пакунків без помилок та попереджень (плюс --alleen-modules 693/696 на попередніх 3, покритих у --stand).",
     "Перевірка типів і статичні перевірки: npx tsc --noEmit (0 помилок), npm run typecheck:server (0 помилок), node scripts/kaart-controle.mjs --stil (0 помилок і 0 попереджень), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), мовний аудит незафіксованих змін (0 порушень).",
-    "Виробниче складання (NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build): пройдено з кодом 0; усі вихідні файли старші або синхронні із зібраними артефактами."
+    "Виробниче складання (NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build): пройдено з кодом 0; усі вихідні файли старші або синхронні із зібраними артефактами.",
+    "Підготовка процесу GitHub Actions (.github/workflows/upd-002-uitgave.yml): на локальному етапі фактично пройдено 20/20 хмарних тестів, 116/116 безбазових модульних випробувань та всі статичні перевірки (kaart-controle, plaatsing-controle, l002-audit, hulp-vraagtekens-controle, kleur-contrast-controle, mail-slimme-inbox-audit, keten-controle --zonder-audit, zoek-ui-catalogus --controle, agent.mjs selftest); для віддаленого складання на GitHub Actions налаштовано повний прогін 204 випробувань із PostgreSQL 16 (три ролі) та безголовим Хроміумом."
   ],
   "bronnen": [
     {
