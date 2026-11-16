@@ -443,6 +443,7 @@ jobs:
             uitrol-vereisten-001 \
             veilig-002-noodstop-uiterlijk \
             werkblad-v3-routes; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM app.records WHERE tbl IN ('provider_endpoint_verifications_v1', 'mail_endpoint_verifications_v1');" >/dev/null
             printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done

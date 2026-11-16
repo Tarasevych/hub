@@ -172,6 +172,14 @@
     {
       "tijd": "2026-11-16T02:24:00Z",
       "stap": "Створено двозадачний процес випуску GitHub Actions (.github/workflows/upd-002-uitgave.yml) із перевіркою живої основи 20261115-162533, усіх 204 випробувань на PostgreSQL 16 із трьома ролями та Хроміумом, подвійними міграціями, TRACE-001 і розділеним оприлюдненням."
+    },
+    {
+      "tijd": "2026-11-16T02:32:12Z",
+      "stap": "Перший віддалений запуск GitHub Actions (№ 43792088279): підтверджено живу основу 20261115-162533, правила координації, TRACE-001, усі статичні перевірки, самоперевірку ПК-агента, 20 хмарних тестів, 116 безбазових випробувань, перевірку типів, повне складання (разом із розширенням 0.9.4), 11 післяскладальних випробувань, подвійні міграції на PostgreSQL 16 із трьома ролями та перші 25 випробувань із БД; зафіксовано збій 26-го тесту mail-accounts-beheer-20261021 (503 GOOGLE_SUITE_GATES_INCOMPLETE) через спільний 60-секундний запис provider_endpoint_verifications_v1 = 'rejected', утворений 27 с раніше у тесті № 7 (ai-kluis-een-plek-20261101)."
+    },
+    {
+      "tijd": "2026-11-16T02:55:00Z",
+      "stap": "До .github/workflows/upd-002-uitgave.yml перед кожним із 56 випробувань із БД додано очищення глобальних таблиць верифікації кінцевих точок (provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1) у app.records для повної часової ізоляції випробувань."
     }
   ],
   "keuzes": [
@@ -179,7 +187,8 @@
     "Усі зміни стилів «Макета» з № 128 та № 130 перенесено безпосередньо в генератор scripts/identiteit-maquette із тестом-сторожем maquette-generator-gelijk.test.ts, щоб наступне складання не загубило правок.",
     "Усунуто псування спільного стану між тестами: ai-delegatie-20261115.test.ts створює знімок прапорця, сесій і делегувань власника та відновлює їх у блоці finally.",
     "Модельний обліковий запис ШІ в UITROL-MANIFEST.json чесно зазначає фактичне середовище збирання й перевірки без вгадування ідентифікаторів сторонніх моделей.",
-    "Незавершена окрема гілка EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не влита до UPD-002, щоб не порушити стабільність випуску, і зафіксована у примітках до випуску."
+    "Незавершена окрема гілка EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не влита до UPD-002, щоб не порушити стабільність випуску, і зафіксована у примітках до випуску.",
+    "У циклі БД-випробувань .github/workflows/upd-002-uitgave.yml усунено 60-секундну часову взаємозалежність між ai-kluis-een-plek-20261101 і mail-accounts-beheer-20261021 очищенням спільних записів provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1 перед кожним тестом без зміни продуктової логіки."
   ],
   "wijzigingen": [
     {
@@ -1944,7 +1953,8 @@
     "Безголовий Хроміум Chrome/156.0.8078.79 (scripts/rook-controle.mjs --stand): глибока перевірка здоров’я 7/7, усі 13/13 сторінок повернули HTTP 200 з нулем помилок у консолі й відхилених запитів, 696/696 пакунків без помилок та попереджень (плюс --alleen-modules 693/696 на попередніх 3, покритих у --stand).",
     "Перевірка типів і статичні перевірки: npx tsc --noEmit (0 помилок), npm run typecheck:server (0 помилок), node scripts/kaart-controle.mjs --stil (0 помилок і 0 попереджень), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), мовний аудит незафіксованих змін (0 порушень).",
     "Виробниче складання (NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build): пройдено з кодом 0; усі вихідні файли старші або синхронні із зібраними артефактами.",
-    "Підготовка процесу GitHub Actions (.github/workflows/upd-002-uitgave.yml): на локальному етапі фактично пройдено 20/20 хмарних тестів, 116/116 безбазових модульних випробувань та всі статичні перевірки (kaart-controle, plaatsing-controle, l002-audit, hulp-vraagtekens-controle, kleur-contrast-controle, mail-slimme-inbox-audit, keten-controle --zonder-audit, zoek-ui-catalogus --controle, agent.mjs selftest); для віддаленого складання на GitHub Actions налаштовано повний прогін 204 випробувань із PostgreSQL 16 (три ролі) та безголовим Хроміумом."
+    "Перший віддалений запуск GitHub Actions № 43792088279 (.github/workflows/upd-002-uitgave.yml): кроки 1–11 пройдено (жива основа 20261115-162533, orch controleer, TRACE-001 16/16, статичні перевірки, самоперевірка ПК-агента, 20 хмарних тестів, 116 безбазових випробувань, tsc і typecheck:server, повне складання разом із розширенням 0.9.4, 11 післяскладальних випробувань), у кроці 12 пройдено подвійні міграції на PostgreSQL 16 із трьома ролями та перші 25 випробувань із БД; на 26-му тесті mail-accounts-beheer-20261021 виявлено взаємозалежність через спільний 60-секундний запис provider_endpoint_verifications_v1 = 'rejected'.",
+    "Повторна локальна перевірка після додавання очищення provider_endpoint_verifications_v1 і mail_endpoint_verifications_v1 перед кожним БД-тестом у .github/workflows/upd-002-uitgave.yml: node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16), sec-002-g01-20261112.test.ts (64/64, включно з перевіркою YAML і 16 процесів випуску), stroom-veilig-20261115.test.ts (16/16)."
   ],
   "bronnen": [
     {
@@ -2059,6 +2069,8 @@
     "4c0c00dbedc1cb452aefc27ddbb210c7e4116702",
     "209fb5d62bd800d8f13dd937000ebeca4eef9b38",
     "f69bbf0231078332dd66d2331b6e492320dcb38d",
-    "e8cc16d5149dbb8ed1b24d8587604b9b8a5b7006"
+    "e8cc16d5149dbb8ed1b24d8587604b9b8a5b7006",
+    "aad2288073598a6f86c55c30d123d4a4763ce673",
+    "5d870ef8378b7491f9ed78e2c636b4230c13f95e"
   ]
 }
