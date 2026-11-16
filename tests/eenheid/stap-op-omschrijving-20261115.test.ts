@@ -36,7 +36,7 @@ export async function main(): Promise<number> {
   const slecht: string[] = [];
   for (const r of routes) {
     const b = beschrijfStapOp(actieVoorPad(r.voorbeeld), r.voorbeeld);
-    if (!b.bekend) { zonder.push(`${r.methode} ${r.pad} (${r.bestand})`); continue; }
+    if (!b.bekend || b.algemeen) { zonder.push(`${r.methode} ${r.pad} (${r.bestand})`); continue; }
     if (!KYRILLISCH.test(b.uk) || !KYRILLISCH.test(b.gevolgUk) || KYRILLISCH.test(b.nl) || KYRILLISCH.test(b.gevolgNl)
       || b.uk.length < 8 || b.nl.length < 8 || b.gevolgUk.length < 15 || b.gevolgNl.length < 15 || /\/api\//.test(b.uk + b.nl)) slecht.push(`${r.pad}: «${b.uk}» / «${b.nl}»`);
   }
@@ -61,9 +61,21 @@ export async function main(): Promise<number> {
     && /De AI Claude laten werken in de technische ruimte tot het einde van de technische sessie/.test(einde_.nl) && /Alleen gewone ruimte laten/.test(einde_.gevolgNl),
     JSON.stringify(einde_));
   check('activeer-tech «На 1 год»: строк у назві обома мовами', /на 1 год$/.test(uur.uk) && /voor 1 uur$/.test(uur.nl), `${uur.uk} / ${uur.nl}`);
-  check('activeer-tech без конкретного підключення: чесно — дозвіл може діяти для всіх підключень ШІ (сервер бере «*»), не «лише цей ШІ»',
-    /ChatGPT/.test(zonderKoppeling.uk) && /для всіх ваших підключень ШІ/.test(zonderKoppeling.gevolgUk) && !/інші ШІ цього доступу не отримують/.test(zonderKoppeling.gevolgUk)
-    && /voor al uw AI-koppelingen/.test(zonderKoppeling.gevolgNl), zonderKoppeling.gevolgUk);
+  // AGENTSCHEIDING-001 (16.11.2026): без підключення сервер бере правило САМЕ цього агента ('agent:<slug>'), не «*».
+  check('activeer-tech без конкретного підключення: діє лише для цього ШІ (і після «Підключити знову»), інші ШІ не отримують; строк — до виходу з акаунта (як на сервері)',
+    /ChatGPT/.test(zonderKoppeling.uk) && /Діє лише для ChatGPT, також після «Підключити знову»; інші ШІ цього доступу не отримують/.test(zonderKoppeling.gevolgUk)
+    && /Geldt alleen voor ChatGPT/.test(zonderKoppeling.gevolgNl) && !/всіх ваших підключень/.test(zonderKoppeling.gevolgUk)
+    && /до кінця технічного сеансу$/.test(zonderKoppeling.uk), zonderKoppeling.gevolgUk);
+  const zonderTermijn = at({ actie: 'alles-aan', agent: 'grok' });
+  const alle = at({ actie: 'alles-aan', agent: 'claude', alleVerbindingen: true });
+  const ster = at({ actie: 'alles-aan', agent: 'claude', verbindingId: '*' });
+  check('activeer-tech: без строку — «до виходу з акаунта» (типовий строк сервера), «безстроково» і «до виходу з цього входу» названо',
+    /до виходу з акаунта$/.test(zonderTermijn.uk) && /tot u zich afmeldt van het account$/.test(zonderTermijn.nl)
+    && /безстроково/.test(at({ actie: 'alles-aan', agent: 'grok', termijn: 'onbepaald' }).uk) && /до виходу з цього входу на сайт$/.test(at({ agent: 'grok', termijn: 'tot-site-uitloggen' }).uk)
+    && /до вибраної дати$/.test(at({ agent: 'grok', termijn: 'tijd', eindOp: '2026-12-01' }).uk), zonderTermijn.uk);
+  check('activeer-tech: «усі ШІ» лише за явним alleVerbindingen — тоді попередження великими літерами; «*» у verbindingId НЕ означає «усі ШІ»',
+    /ВСІХ ваших підключень ШІ/.test(alle.gevolgUk) && /AL uw AI-koppelingen/.test(alle.gevolgNl)
+    && !/ВСІХ/.test(ster.gevolgUk) && /Діє лише для Claude/.test(ster.gevolgUk), `${alle.gevolgUk} | ${ster.gevolgUk}`);
   check('activeer-tech «Увімкнути (окремі дані / спільно)»: служба «Підключення ШІ» у технічному просторі, як від’єднати',
     /окремі дані/.test(eigen.uk) && /спільно з особистим/.test(gedeeld.uk) && /Від’єднати службу/.test(eigen.gevolgUk) && /Dienst losmaken/.test(gedeeld.gevolgNl) && eigen.gevaar,
     `${eigen.uk} / ${gedeeld.uk}`);
@@ -81,10 +93,19 @@ export async function main(): Promise<number> {
   check('ai/block: «Розблокувати» і «Заблокувати» — різні тексти за полем запиту', /^Розблокувати/.test(blok.uk) && /^Заблокувати/.test(blokkeer.uk) && /відкликано/.test(blokkeer.gevolgUk));
 
   // ------------------------------------------------------------------ (3) запасний вигляд без опису
-  const o = beschrijfStapOp('onbekend', '/api/owner/iets/nieuws?x=1');
+  // AGENTSCHEIDING-001: другий рівень реєстру — опис за розділом сайту. Нова кнопка без власного рядка однаково має зрозумілий опис.
+  const gebied = beschrijfStapOp('onbekend', '/api/owner/sleutelkluis/iets-nieuws/verwijderen');
+  const gebiedAi = beschrijfStapOp('onbekend', '/api/owner/connector-v2/weergave');
+  check('нова кнопка без власного рядка: опис за розділом (дія + розділ + де переглянути), позначено algemeen, адреса лише в «Подробицях»',
+    gebied.bekend && gebied.algemeen === true && gebied.uk === 'Видалити: налаштування сховища ключів і секретів' && /Сховище ключів/.test(gebied.gevolgUk)
+    && /Verwijderen: instelling van sleutelkluis en geheimen/.test(gebied.nl) && gebied.technisch === '/api/owner/sleutelkluis/iets-nieuws/verwijderen'
+    && /^Змінити: налаштування підключень ШІ$/.test(gebiedAi.uk) && !/\/api\//.test(gebied.uk + gebied.nl + gebied.gevolgUk + gebied.gevolgNl), JSON.stringify(gebied));
+  check('збірка зупиняється на маршруті з підтвердженням без власного опису: scripts/stap-op-register-controle.mjs стоїть у npm run build',
+    /"build": "[^"]*node scripts\/stap-op-register-controle\.mjs/.test(readFileSync('package.json', 'utf8')) && /b\.algemeen/.test(readFileSync('scripts/stap-op-register-controle.mjs', 'utf8')));
+  const o = beschrijfStapOp('onbekend', '/api/iets/nieuws?x=1');
   check('без опису: зрозуміле попередження, адреса API НЕ в головному тексті, лише в technisch (без ?query)',
     !o.bekend && o.gevaar && !/\/api\//.test(o.uk + o.nl + o.gevolgUk + o.gevolgNl) && /не має опису/.test(o.uk) && /скасуйте/.test(o.gevolgUk)
-    && o.technisch === '/api/owner/iets/nieuws' && /geen beschrijving/.test(o.nl), JSON.stringify(o));
+    && o.technisch === '/api/iets/nieuws' && /geen beschrijving/.test(o.nl), JSON.stringify(o));
   const venster = readFileSync('src/platform/bevestig-toegang.tsx', 'utf8');
   check('вікно показує технічну адресу дрібно в згорнутих «Подробицях» (details/summary), не в рядку «Що ви підтверджуєте»',
     /\{wat\.technisch && <details className='bevestig-toegang-details'/.test(venster) && venster.includes("details: ['Подробиці для перевірки', 'Details om te controleren']")

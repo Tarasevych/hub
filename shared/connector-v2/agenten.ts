@@ -14,7 +14,7 @@
 // RECHTEN ZITTEN NIET IN HET PAD: één connector per agent toont zowel de privé- als de technische hulpmiddelen; wat er op dit
 // moment zichtbaar en aanroepbaar is, beslist de LEVENDE staat van de gebruiker (backend/ai-ruimte-poort.ts → effectieveRuimte).
 // Puur (geen React/DOM/Node): browser en server gebruiken dezelfde lijst.
-import type { KlantId } from '../ai-verbinding';
+import { klantVan, type KlantId } from '../ai-verbinding';
 
 export const AGENT_PAD_PREFIX = '';
 /** Het pad van vóór 20.10.2026. Alleen om oude adressen te blijven lezen (en om er 308 op te antwoorden); nooit om er een te bouwen. */
@@ -156,4 +156,19 @@ export function redirectPastBijAgent(slug: AgentSlug, uri: string, altijd: reado
   if (schema === 'https') { const h = u.hostname.toLowerCase(); return a.webHosts.some((w) => h === w || h.endsWith(`.${w}`)); }
   if (schema === 'http') return a.loopback && ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname);
   return a.appSchemas.includes(schema);
+}
+
+/**
+ * AGENTSCHEIDING-001 (16.11.2026): de naam die mensen zien voor een koppeling. Is de koppeling uitgegeven voor een agent (connector-
+ * pad /gpt, /codex …), dan telt die agent: een klantnaam die bij een ANDERE aanbieder hoort (of een oude standaardnaam «Claude»
+ * van een klant die zich niet noemde) wordt vervangen door de naam van deze agent. «Claude Code» voor /claude blijft «Claude Code».
+ * Назва підключення для людей: якщо воно видане для агента, показуємо цього агента, а не чужу назву.
+ */
+export function weergaveNaam(clientNaam: string | null | undefined, agent: AgentSlug | null | undefined): string {
+  const naam = String(clientNaam ?? '').trim();
+  const a = agent ? V2_AGENTEN.find((x) => x.slug === agent) : undefined;
+  if (!a) return naam || 'MCP';
+  if (!naam) return a.naam;
+  const k = klantVan(naam);
+  return k === a.klant ? naam : k === 'overig' && !/^MCP\b/.test(naam) ? `${a.naam} (${naam})` : a.naam;
 }

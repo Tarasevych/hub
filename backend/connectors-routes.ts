@@ -2,7 +2,7 @@
 // Alle routes zijn POST met de gebruikelijke sessie-body ({service:'api', ...}), zoals de overige /api/owner/api-platform/*.
 import { error, json, rateLimit } from '../server/platform';
 import { auditLijst, auditToevoegen } from '../server/platform/audit';
-import { SITE_RUIS, siteEventsFromAudit } from './site-activiteit';
+import { aiBron, SITE_RUIS, siteEventsFromAudit } from './site-activiteit';
 import { GEEN_RECHT, heeftApiRecht, weigerCode } from './api-recht';
 import { approveCommand, CommandRefused, rejectCommand, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { geheimVerzoek, geheimVerzoekenVan, haalTicket, maakTicket, vergeetTicket, verzoekPubliek } from './apps-overdracht';
@@ -338,8 +338,8 @@ export function createAgentRoutes(deps: Deps) {
       const ms = (v: unknown) => (v ? new Date(v as string).getTime() : null);
       const alles = [
         ...commands.map((r: any) => ({ id: `cmd:${r.id}`, source: r.platform === 'browser' ? 'browser' : 'agent', platform: r.platform || '', kind: 'command', type: r.type, subject: r.agent_name, status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ruimte: ruimteOf(r.ruimte), ...(r.pad ? { doel: String(r.pad) } : {}), ...(r.fout && r.status === 'failed' ? { reden: String(r.fout) } : {}) })),
-        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: 'claude', kind: 'tool', type: r.tool, subject: aanvragerNaam(r), status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
-        ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: 'claude', kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
+        ...toolCalls.map((r: any) => ({ id: `tool:${r.id}`, source: aiBron({ agent: r.agent, client: aanvragerNaam(r) }), kind: 'tool', type: r.tool, subject: aanvragerNaam(r), status: r.status, createdAt: ms(r.created_at), finishedAt: ms(r.finished_at), ...(ALLEEN_BEHEER_HULPMIDDELEN.has(String(r.tool)) ? { ruimte: 'technisch' as const } : {}) })),
+        ...grants.map((g: any) => ({ id: `grant:${g.id}`, source: aiBron({ agent: g.agent, client: g.clientName }), kind: 'grant', type: 'grant', subject: g.clientName, status: 'active', createdAt: g.createdAt, finishedAt: null })),
         ...siteEventsFromAudit(audit),
       ].map((e) => ({ ...e, sfeer: sfeerVanActiviteit(e) }));
       const events = activiteitenVanSfeer(alles, lade.ruimte).map((e) => { const { ruimte: _r, ...rest } = e as typeof e & { ruimte?: unknown }; return rest; }).sort((x, y) => Number(y.createdAt) - Number(x.createdAt)).slice(0, 140);

@@ -8,6 +8,7 @@ import { foutCode, passkeyBevestigen, type AssertieOpties } from '../platform/we
 import { api } from '../platform/client';
 import { verwachteUitdaging, deelFoutTekst } from '../BeheerAiBeleidWeergave';
 import { bouwAgentBeleidOps } from '../../shared/ai-beleid/agent-ontwerp';
+import { agentSlugUitNaam } from '../../shared/markering-agenten';
 import type { Policy } from '../../shared/ai-beleid/model';
 import type { AgentSlug } from '../../shared/connector-v2/agenten';
 
@@ -53,11 +54,12 @@ export async function ondertekenAgentBeleidInPlaats(opties: {
     throw new Error(deelFoutTekst(opties.lang, 'overzicht', 'BELEID_KETEN_ONGELDIG'));
   }
 
-  const naamLaag = opties.naam.toLowerCase();
-  const slugLaag = opties.slug.toLowerCase();
-  const gekoppeldId = (ov.verbindingen ?? []).find(
-    (v) => v.agentId && (v.naam.toLowerCase().includes(slugLaag) || v.naam.toLowerCase().includes(naamLaag) || v.agentId.toLowerCase() === slugLaag),
-  )?.agentId ?? (ov.beleid.agents[opties.slug] ? opties.slug : null);
+  // AGENTSCHEIDING-001: vroeger «naam bevat slug of naam» — «ChatGPT Codex» telde dan voor ChatGPT én Codex, en de handtekening
+  // voor de ene AI veranderde het beleid van de andere. Nu: eerst de agent met precies deze slug; anders alleen een verbinding
+  // die ONDUBBELZINNIG bij deze agent hoort (agentSlugUitNaam). Підпис для одного ШІ більше не змінює політику іншого.
+  const gekoppeldId = ov.beleid.agents[opties.slug]
+    ? opties.slug
+    : (ov.verbindingen ?? []).find((v) => v.agentId && (v.agentId.toLowerCase() === opties.slug || agentSlugUitNaam(v.naam) === opties.slug))?.agentId ?? null;
 
   const ops = bouwAgentBeleidOps(ov.beleid, opties.slug, opties.naam, opties.sleutels, {
     bestaandeAgentId: gekoppeldId,

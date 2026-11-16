@@ -10,7 +10,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { grantOpenen, grantRoteren, grantSluiten, grantVerzegelen } from './sleutelkluis';
 import { getPool } from '../server/platform/pg';
 import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
-import { gereserveerdeKlantNaam, isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
+import { gereserveerdeKlantNaam, isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId, type KlantId } from '../shared/ai-verbinding';
 import { connectGeweigerd, toolGeweigerd, verbindingGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
@@ -36,7 +36,7 @@ import { DEV_MG_ALLEEN_V2, isDevMgTool } from '../shared/dev-media-github';
 import { isBrowserToolNaam, RUIMTE_GESCHEIDEN, RUIMTE_INSTRUCTIES, TECH_NU_UIT_INSTRUCTIE, TECH_PROFIEL_UIT, ruimteOf, toolInRuimte, type AiRuimte } from '../shared/ai-ruimte';
 import { aiDienstStand, aiPoortNu } from './ai-ruimte-poort';
 import { listAgents } from './connectors-opslag';
-import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
+import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, weergaveNaam, type AgentSlug } from '../shared/connector-v2/agenten';
 import { naUitgifte, type V2Keuze } from './connector-v2-opslag';
 import { pakketToegestaan, pakketUitvoeren } from './mcp-pakket'; // SEC-002 (ai-mcp-08)
 import { MCP_MODERNE_VERSIE, bouwRegistryServerJson, bouwServerCard, controleerModerneMeta, omhulModernResultaat } from '../shared/mcp-protocol-2026-model';
@@ -207,6 +207,13 @@ export async function klantVoorId(clientId: string, ip = '', ophaler?: Ophaler):
   }
 }
 
+/** Neutrale naam voor een klant die zich niet noemt: «MCP · localhost», «MCP · app.example» — nooit de naam van een andere AI. */
+export function neutraleKlantNaam(uris: readonly string[]): string {
+  const u = parseUrl(String(uris[0] ?? ''));
+  const waar = u ? (u.hostname || u.protocol.replace(/:$/, '')) : '';
+  return waar ? `MCP · ${waar}` : 'MCP';
+}
+
 export async function registerClient(rawBody: string, ip = ''): Promise<RouterResponse> {
   let body: any;
   try { body = JSON.parse(rawBody || '{}'); } catch { return respond(400, { error: 'invalid_client_metadata', error_description: 'JSON verwacht' }); }
@@ -223,7 +230,11 @@ export async function registerClient(rawBody: string, ip = ''): Promise<RouterRe
   if (opgegevenNaam && gereserveerdeKlantNaam(opgegevenNaam)) {
     return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name is gereserveerd' });
   }
-  const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
+  // AGENTSCHEIDING-001 (16.11.2026): zonder naam en zonder bekende aanbieder vroeger «Claude» — daardoor heette b.v. een lokale
+  // Codex- of Cursor-koppeling «Claude» in lijsten, meldingen en het toestemmingsvenster, en telde ze zelfs als Claude-token
+  // (agentSlugUitNaam). Nu een neutrale naam met het adres; de agent zelf komt uit het connectorpad (/gpt, /codex …).
+  // Без назви й без відомого постачальника раніше ставили «Claude»; тепер нейтральна назва з адресою.
+  const name = (opgegevenNaam || eersteEigenaar?.naam || neutraleKlantNaam(uris as string[])).slice(0, 80);
   if (opgegevenNaam) {
     const nf = klantNaamFout(name, uris as string[]);
     if (nf) return respond(400, { error: 'invalid_client_metadata', error_description: nf });
@@ -305,14 +316,21 @@ export async function consentBindingKlopt(rid: string, cookieKop: unknown): Prom
   return !a || bindingKlopt(rid, a.binding_hash ?? null, cookieKop);
 }
 
+/** AGENTSCHEIDING-001: de klant van een verzoek. Voor een agentkoppeling (/gpt …) is dat de agent zelf, niet wat de klantnaam beweert —
+ *  anders kreeg «Claude» via /gpt het plafond en de duur van Claude. Для підключення агента — сам агент, а не назва клієнта. */
+function klantVanVerzoek(a: { client_name?: string | null; agent?: string | null }): KlantId {
+  const ag = a.agent ? V2_AGENTEN.find((x) => x.slug === a.agent) : undefined;
+  return ag ? ag.klant : klantVan(a.client_name);
+}
+
 export async function consentInfo(rid: string, userId?: string) {
   const a = await st.getPendingAuth(rid);
   if (!a) return null;
   const u = parseUrl(a.redirect_uri);
-  const klant = klantVan(a.client_name);
+  const klant = klantVanVerzoek(a);
   return {
     // SEC-002 (ai-mcp-14): ook het VOLLEDIGE terugkeeradres, zodat het venster meer kan tonen dan alleen de host.
-    clientName: a.client_name ?? 'Claude', redirectHost: u ? (u.host || u.protocol) : '', redirectAdres: String(a.redirect_uri || '').slice(0, 300), loopback: !!u && isLoopback(u),
+    clientName: weergaveNaam(a.client_name, (a.agent ?? null) as AgentSlug | null), redirectHost: u ? (u.host || u.protocol) : '', redirectAdres: String(a.redirect_uri || '').slice(0, 300), loopback: !!u && isLoopback(u),
     redirectSoort: redirectSoort(a.redirect_uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]),
     scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant, agent: (a.agent ?? null) as AgentSlug | null,
     duur: userId ? (await leesDuren(userId))[klant] : '1u',
@@ -336,13 +354,13 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   }
   // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
   if (ruimteOf(ruimte) === 'prive') {
-    const w = connectGeweigerd(await leesStaat(), { ruimte: 'prive', klant: klantVan(a.client_name), methode: 'mcp' });
+    const w = connectGeweigerd(await leesStaat(), { ruimte: 'prive', klant: klantVanVerzoek(a), methode: 'mcp' });
     if (w) return { error: w.code };
   }
   if ((await st.countActiveGrants(userId)) >= st.LIMITS.maxActiveGrantsPerUser) return { error: 'GRANT_LIMIT' };
   const code = randomToken(32);
   // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
-  const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
+  const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVanVerzoek(a)];
   const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte), a.agent ? v2 : null);
   return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
 }
@@ -356,6 +374,8 @@ async function issue(userId: string, clientId: string, clientName: string, scope
   const refresh = `mcpr_${randomToken(32)}`;
   const d = isDuurId(duur) ? duur : null;
   const r = ruimteOf(ruimte);
+  // AGENTSCHEIDING-001: een koppeling voor een agent krijgt de naam van DIE agent als de klantnaam bij een andere hoort.
+  if (agent) clientName = weergaveNaam(clientName, agent);
   const grantId = await st.insertToken({ userId, clientId, clientName, scope, accessHash: sha256(access), refreshHash: sha256(refresh), duur: d, ruimte: r, agent });
   // Sleutelkluis (0092): staat de gegevenssleutel van de mens open (hij geeft nu toestemming in zijn sessie), dan krijgt deze
   // verbinding haar eigen omslag onder haar tokens — de agent werkt daarna zonder mens, zolang de verbinding geldig is.
