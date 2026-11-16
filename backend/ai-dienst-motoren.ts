@@ -82,7 +82,8 @@ const rijUitDb = (r: Record<string, unknown>): DienstRij => ({
   beheerder: String(r.bijgewerkt_door || ''), bijgewerktOp: new Date(String(r.bijgewerkt_op)).getTime(), eigenaarUserId: String(r.eigenaar_user_id),
 });
 
-const pgOpslag: DienstOpslag = {
+/** Сховище в PostgreSQL; експортовано лише для перевірки на справжній базі (tests/eenheid/mailai-003-db-20261116.test.ts). */
+export const pgOpslag: DienstOpslag = {
   async lijst() {
     try {
       const { rows } = await q('SELECT id, soort, naam, aanbieder, url, model, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id FROM app.ai_dienst_motoren ORDER BY id');
