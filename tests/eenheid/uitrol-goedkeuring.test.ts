@@ -493,6 +493,8 @@ async function appTests(basis: string, check: Check) {
       check('app: goedkeuren zonder bevestiging geweigerd, ook met geldige passkey', (await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uitR.data.uitdagingId, assertie: bevestig(telefoon, uitR.data.publicKey.challenge) })).fout === 'RISICO_NIET_BEVESTIGD');
       check('app: na de weigering staat het voorstel nog op goedkeuring te wachten', (await sys.query('SELECT status FROM app.uitrol_voorstellen WHERE id = $1', [u1.id])).rows[0].status === 'wacht-op-goedkeuring');
       await sys.query('UPDATE app.uitrol_voorstellen SET voorcontrole = $2::jsonb WHERE id = $1', [u1.id, oudVc == null ? null : JSON.stringify(oudVc)]);
+      // Deze extra poging telt niet mee voor de limiet van 10 goedkeuringen per 10 min (latere samenloopcontroles hebben die nodig).
+      await sys.query(`UPDATE app.rate_limits SET hits = GREATEST(hits - 1, 0) WHERE bucket = $1`, [`uitrol-goedkeuren:${OWNER}`]);
     }
     const uit6 = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u1.id });
     const ok = await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u1.id, uitdagingId: uit6.data.uitdagingId, assertie: bevestig(telefoon, uit6.data.publicKey.challenge) });
