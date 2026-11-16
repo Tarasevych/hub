@@ -174,8 +174,87 @@ export async function main(): Promise<number> {
     const af = await import('../../backend/telegram-aanmelden/account-foto');
     check('foto-regels: eigen data-URI en googleusercontent mogen, vreemd adres niet', af.veiligeFoto(ACCOUNT_FOTO) === ACCOUNT_FOTO && af.veiligeFoto('https://lh3.googleusercontent.com/a/x=s96').startsWith('https://lh3.') && af.veiligeFoto('https://kwaad.example/x.png') === '' && af.veiligeFoto('javascript:alert(1)') === '');
     const ab = await af.accountBeeld(eigenaar);
-    check('accountBeeld: naam, gemaskeerde e-mail, foto, eerste letter', ab.naam === 'Pavlo' && /^tg…@voorbeeld\.test$/.test(ab.email) && ab.foto === ACCOUNT_FOTO && ab.letter === 'P');
+    // Eis van de eigenaar 16.11.2026: het adres VOLLEDIG (gelijkende adressen), de tijd zonder stadsnaam, en bij de plaats HOE die bepaald is.
+    const volAdres = `tg2-${eigenaar.slice(0, 8)}@voorbeeld.test`;
+    check('accountBeeld: naam, VOLLEDIG e-mailadres (niet gemaskeerd), foto, eerste letter', ab.naam === 'Pavlo' && ab.email === volAdres && !ab.email.includes('…') && ab.foto === ACCOUNT_FOTO && ab.letter === 'P');
+    {
+      const { tijdTekst, tijdzoneTekst } = await import('../../backend/telegram-aanmelden/meldingen');
+      const winter = Date.UTC(2026, 10, 16, 10, 0), zomer = Date.UTC(2026, 6, 16, 10, 0);
+      check('tijd: geen stadsnaam achter de tijd, wel de tijdzone als UTC-verschil (winter +1, zomer +2)',
+        !/Брюссель|Brussel/.test(tijdTekst('uk', winter) + tijdTekst('nl', winter)) && tijdTekst('uk', winter).endsWith('(UTC+1)') && tijdTekst('nl', zomer).endsWith('(UTC+2)') && tijdzoneTekst(winter) === 'UTC+1',
+        `${tijdTekst('uk', winter)} | ${tijdTekst('nl', zomer)}`);
+      const basisW = { soort: 'i' as const, titel: 'T', wat: 'W', accounts: [{ koppelingId: 'k', naam: 'Pavlo', email: volAdres, foto: '', letter: 'P' }], toestel: 'Chrome 131 · Windows 11', apparaat: '', plaats: 'Brussels', land: 'BE', kandidaten: [1, 2, 3], verlooptOp: '', stap: 'kiezen' as const };
+      const uk = ven.paginaHtml(basisW as never, 'uk'), nl = ven.paginaHtml(basisW as never, 'nl');
+      const zonder = ven.paginaHtml({ ...basisW, plaats: '', land: '' } as never, 'uk');
+      check('venster: volledig adres zichtbaar, plaats één keer (alleen op de regel «Звідки»), met de manier van bepalen in uk en nl',
+        uk.includes(volAdres) && (uk.match(/Брюссель/g) || []).length === 1 && (nl.match(/Brussel/g) || []).length === 1
+        && uk.includes('Визначено за IP-адресою') && nl.includes('Bepaald via het IP-adres'));
+      // TELEGRAM-004: plaats volgens het toestel naast die volgens het IP-adres.
+      const pv = await import('../../shared/telegram-aanmelden/plaats-vergelijking');
+      const brussel = { lat: 50.85, lon: 4.35 }, kyiv = { lat: 50.45, lon: 30.52 };
+      check('plaatsvergelijking: afstand Brussel–Kyiv ≈ 1830 km, dichtstbijzijnde stad, grenzen van het oordeel',
+        Math.abs(pv.afstandKm(brussel, kyiv) - 1835) < 30 && pv.dichtstbij({ lat: 50.86, lon: 4.36 }).sleutel === 'brussels'
+        && pv.vergelijkPlaats(brussel, { punt: null, plaats: 'Brussels' }, 'uk').oordeel === 'gelijk' && pv.vergelijkPlaats(kyiv, { punt: null, plaats: 'Brussels' }, 'uk').oordeel === 'afwijkend'
+        && pv.vergelijkPlaats({ lat: 50.94, lon: 6.96 }, { punt: null, plaats: 'Brussels' }, 'nl').oordeel === 'twijfel' && pv.vergelijkPlaats(brussel, { punt: null, plaats: 'Nergenshuizen' }, 'uk').oordeel === 'onbekend'
+        && pv.vergelijkPlaats(kyiv, { punt: { lat: 50.5, lon: 30.5 }, plaats: '' }, 'uk').oordeel === 'gelijk');
+      check('plaatsvergelijking: ongeldige punten geweigerd ((0,0), buiten de bol, geen getal); elke stad met punt heeft een naam in uk en nl',
+        pv.geldigPunt(0, 0) === null && pv.geldigPunt(91, 4) === null && pv.geldigPunt('x', 4) === null && pv.geldigPunt('50.8', '4.3')?.lat === 50.8
+        && Object.keys(pv.STAD_PUNTEN).every((k) => !!pv.geoPlaatsTekst(pv.STAD_PUNTEN[k], 'uk') && !!pv.geoPlaatsTekst(pv.STAD_PUNTEN[k], 'nl'))
+        && pv.geoPlaatsTekst(brussel, 'uk') === 'поблизу: Брюссель, Бельгія' && pv.geoPlaatsTekst(brussel, 'nl') === 'bij Brussel, België');
+      const metGeo = ven.paginaHtml({ ...basisW, geoPunt: brussel, geoStand: 'gegeven' } as never, 'uk');
+      const ver = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'uk'), verNl = ven.paginaHtml({ ...basisW, geoPunt: kyiv, geoStand: 'gegeven' } as never, 'nl');
+      const geweigerd = ven.paginaHtml({ ...basisW, geoStand: 'geweigerd' } as never, 'nl');
+      check('venster: plaats van het toestel naast die volgens het IP — «За дозволом браузера», afstand, zonder waarschuwing als het klopt',
+        uk.includes('Пристрій каже') && uk.includes('не надано') && metGeo.includes('поблизу: Брюссель, Бельгія') && metGeo.includes('менше ніж 1 км від місця за IP') && metGeo.includes('За дозволом браузера') && metGeo.includes('Визначено за IP-адресою') && !metGeo.includes('geo-let') && metGeo.includes('geo-ok'));
+      check('venster: ver uit elkaar → waarschuwing (role=alert) in uk en nl; weigering wordt eerlijk getoond; geen coördinaten in de pagina',
+        ver.includes('geo-let') && ver.includes('role="alert"') && /не збігаються \(≈ 18\d\d км\)/.test(ver) && verNl.includes('komen niet overeen') && geweigerd.includes('geen toestemming gegeven') && !geweigerd.includes('geo-let')
+        && !/30\.52|50\.45/.test(ver));
+      check('venster: bevestiging van een handeling (geen geolocatie gevraagd) → geen regel «Пристрій каже»', !ven.paginaHtml({ ...basisW, soort: 'b' } as never, 'uk').includes('Пристрій каже'));
+      check('venster: plaats onbekend → «місце невідоме» zonder bewering over de manier van bepalen', zonder.includes('місце невідоме') && !zonder.includes('Визначено за IP-адресою'));
+    }
     const i1 = await inl.inlogStart('tx-v1', ua, { herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Brussels', land: 'BE' } });
+    {
+      // TELEGRAM-004: de browser meldt de plaats van het toestel — alleen met het geheim, afgerond, één keer; niets in het logboek.
+      const fout = await inl.inlogPlaats(i1.id, 'x'.repeat(43), { stand: 'gegeven', lat: 50.8503, lon: 4.3517 }).then(() => '', (e) => String((e as Error).message));
+      const nee = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'geweigerd' });
+      const ongeldig = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 0, lon: 0 });
+      const ja = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 50.850346, lon: 4.351721, nauwkeurig: 42.7 });
+      const nogEens = await inl.inlogPlaats(i1.id, i1.geheim, { stand: 'gegeven', lat: 50.45, lon: 30.52 });
+      const [rij] = (await pool.query('SELECT geo_lat::text AS lat, geo_lon::text AS lon, geo_nauwkeurig AS n, geo_stand AS st FROM app.tg_inlog_verzoeken WHERE id = $1', [i1.id])).rows;
+      const logRijen = (await pool.query("SELECT details::text AS d FROM app.audit WHERE action = 'telegram.inlog.plaats' ORDER BY id DESC LIMIT 5")).rows as Array<{ d: string }>;
+      const log = logRijen.map((x) => x.d).join(' ');
+      check('plaats van het toestel: fout geheim geweigerd; weigering en ongeldig punt bewaard zonder punt; daarna een punt, afgerond op 2 decimalen; een tweede punt overschrijft niet',
+        fout === 'VERZOEK_ONBEKEND' && nee.ok && nee.stand === 'geweigerd' && ongeldig.stand === 'mislukt' && ja.ok && ja.stand === 'gegeven' && !nogEens.ok
+        && rij.lat === '50.85' && rij.lon === '4.35' && rij.n === 43 && rij.st === 'gegeven', JSON.stringify({ fout, nee, ongeldig, ja, nogEens, rij }));
+      check('plaats van het toestel: het logboek kent alleen de stand, geen coördinaten', logRijen.length >= 3 && /gegeven/.test(log) && !/50\.8|4\.35|lat|lon/.test(log), log);
+    }
+    {
+      // TELEGRAM-004 (0299): «Вимагати місце пристрою» — zonder de plaats van het toestel geen aanmelding met Telegram bij dit account.
+      const bp = await import('../../backend/telegram-aanmelden/beleid-poort');
+      check('plaats-eis: standaard uit', (await bp.plaatsVerplicht(eigenaar)) === false);
+      await bp.plaatsVerplichtZetten(eigenaar, true);
+      const ie = await inl.inlogStart('tx-eis', ua, { herkenning: { toestel: 'Chrome 131 · Windows 11', plaats: 'Brussels', land: 'BE' } });
+      await bericht(`/start i_${ie.id}`);
+      const juistE = await juistePos(ie.id);
+      const zonder = await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram');
+      const stE = await inl.inlogStatus(ie.id, ie.geheim);
+      check('plaats-eis aan, geen plaats: het juiste pictogram wordt NIET aanvaard («plaats-nodig»), het verzoek blijft open en de site krijgt geoVereist',
+        zonder === 'plaats-nodig' && stE.stand === 'wacht' && stE.geoVereist === true && stE.symboolOk === false, JSON.stringify({ zonder, stE}));
+      await inl.inlogPlaats(ie.id, ie.geheim, { stand: 'geweigerd' });
+      check('plaats-eis aan, toestemming geweigerd: nog steeds geen aanmelding', (await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram')) === 'plaats-nodig');
+      await inl.inlogPlaats(ie.id, ie.geheim, { stand: 'gegeven', lat: 50.85, lon: 4.35, nauwkeurig: 30 });
+      const met = await inl.inlogVensterKiezen(ie.id, String(TG), kp.id, juistE, 'telegram');
+      const stE2 = await inl.inlogStatus(ie.id, ie.geheim);
+      check('plaats-eis aan, plaats gegeven: dezelfde poging slaagt nu en geoVereist is weg', (met === 'ok' || met === 'code') && stE2.stand === 'goedgekeurd' && stE2.geoVereist === false, JSON.stringify({ met, stE2 }));
+      // Laatste poort: een goedgekeurd verzoek zonder plaats (bv. goedgekeurd vóór het aanzetten) wordt niet ingewisseld.
+      await pool.query("UPDATE app.tg_inlog_verzoeken SET geo_stand = '', geo_lat = NULL, geo_lon = NULL, geo_nauwkeurig = NULL, code_nodig = false WHERE id = $1", [ie.id]);
+      const poort = await inl.inlogInwisselen(ie.id, ie.geheim).then(() => '', (e) => String((e as Error).message));
+      check('plaats-eis aan: inwisselen zonder plaats geweigerd (PLAATS_NODIG)', poort === 'PLAATS_NODIG', poort);
+      await bp.plaatsVerplichtZetten(eigenaar, false);
+      check('plaats-eis uit: weer uit, en hetzelfde verzoek wordt dan wel ingewisseld', (await bp.plaatsVerplicht(eigenaar)) === false && !!(await inl.inlogInwisselen(ie.id, ie.geheim).then((x) => x.userId, () => '')));
+      const vensterTekst = ven.paginaHtml({ soort: 'i', titel: 'T', wat: 'W', accounts: [], toestel: '', apparaat: '', plaats: '', land: '', kandidaten: [1, 2, 3], verlooptOp: '', stap: 'kiezen' } as never, 'uk');
+      check('venster: melding «plaats-nodig» in de pagina en het script laat de tegels dan weer vrij', vensterTekst.includes('id="m-plaats-nodig"') && ven.VENSTER_JS.includes("r.uitkomst==='plaats-nodig'"));
+    }
     check('start geeft de browser meteen het juiste pictogram (geen emoji-symbool meer)', typeof i1.pictogram === 'number' && i1.symbool === undefined);
     const s1 = await inl.inlogStatus(i1.id, i1.geheim);
     const j1 = await juistePos(i1.id);
@@ -188,7 +267,7 @@ export async function main(): Promise<number> {
     const t1 = tokenUit(adres1);
     const p1 = await pagina(t1);
     check('kaart van de bot: verstuurd als foto van het site-account (account.png)', oproepen.some((o) => o.methode === 'sendPhoto' && o.lichaam.includes('filename="account.png"')));
-    check('venster: foto van het site-account + naam + gemaskeerde e-mail, en de Telegram-account', p1.body.includes(`src="${ACCOUNT_FOTO}"`) && p1.body.includes('class="rond"') && p1.body.includes('tg…@voorbeeld.test') && /Ваш Telegram/.test(p1.body));
+    check('venster: foto van het site-account + naam + volledig e-mailadres, en de Telegram-account', p1.body.includes(`src="${ACCOUNT_FOTO}"`) && p1.body.includes('class="rond"') && p1.body.includes(volAdres) && /Ваш Telegram/.test(p1.body));
     check('status vóór de keuze: geen Telegram-gegevens naar de browser', s1.telegram === undefined);
     check('venster: 3 tegels op één rij, logo\'s en vlag, juiste pictogram NIET aangeduid', (p1.body.match(/class="keuze"/g) || []).length === 3 && p1.body.includes('repeat(3,') && p1.body.includes('data:image/svg+xml') && !/juist|is-uitgelicht|aria-current/.test(p1.body));
     check('venster: eigen CSP, X-Frame-Options weggelaten, geen verwijzer', p1.headers['Content-Security-Policy'] === VENSTER_CSP && p1.headers['X-Frame-Options'] === '' && p1.headers['Referrer-Policy'] === 'no-referrer');

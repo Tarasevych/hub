@@ -1,7 +1,9 @@
 // TELEGRAM-002 — herkenning van het vragende toestel voor mensen: browser + versie, systeem + versie, plaats en land.
 // Alleen weergave (officiële logo's en vlag in het venster en op de site); de grove sleutel «Chrome/Windows» (audit.apparaat)
 // blijft de sleutel voor blokkeren en «bekend apparaat». Nooit het IP zelf, nooit de volledige user-agent.
-export type Herkenning = { toestel: string; plaats: string; land: string };
+export type Herkenning = { toestel: string; plaats: string; land: string; /** TELEGRAM-004: punt volgens het IP-adres (koppen van de tunnel), afgerond op 1 decimaal. */ ipLat?: number | null; ipLon?: number | null };
+
+import { geldigPunt } from '../../shared/telegram-aanmelden/plaats-vergelijking';
 
 const kop = (headers: Record<string, unknown> | undefined, naam: string): string => {
   if (!headers) return '';
@@ -44,5 +46,6 @@ export function herkenning(ua: string, headers?: Record<string, unknown>): Herke
   const landRuw = kop(headers, 'cf-ipcountry').toUpperCase();
   const land = /^[A-Z]{2}$/.test(landRuw) && landRuw !== 'XX' && landRuw !== 'T1' ? landRuw : '';
   const plaats = [schoon(kop(headers, 'cf-ipcity'), 50), schoon(kop(headers, 'cf-region'), 50)].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ').slice(0, 120);
-  return { toestel, plaats, land };
+  const punt = geldigPunt(kop(headers, 'cf-iplatitude'), kop(headers, 'cf-iplongitude'));
+  return { toestel, plaats, land, ipLat: punt ? Math.round(punt.lat * 10) / 10 : null, ipLon: punt ? Math.round(punt.lon * 10) / 10 : null };
 }

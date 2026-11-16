@@ -51,6 +51,9 @@ span.merk-gliefje.merk-eigen > img { width: 100%; height: 100%; }
 span.merk-beeld { display: grid; place-items: center; overflow: hidden; border-radius: 28%; }
 span.merk-beeld.merk-plaat { background: #ffffff; box-shadow: inset 0 0 0 1px var(--line); }
 span.merk-beeld > img { width: 78%; height: 78%; object-fit: contain; display: block; }
-span.merk-gliefje.merk-beeld:not(.merk-plaat) { background: none; box-shadow: none; }
-span.merk-gliefje.merk-beeld:not(.merk-plaat) > img { width: 100%; height: 100%; }
+/* Знак без плитки не обрізаємо: раніше заокруглена рамка з overflow:hidden зрізала краї повноколірного знака (Google «G» мав
+   плаский верх і низ, бо файл 256×262 ставав вищим за рамку). Rij van het raster vast op de maat van het vlak, geen afgeronde
+   uitsnede, en een haar lucht rondom zodat de randen van het teken niet tegen de kant liggen. */
+span.merk-gliefje.merk-beeld:not(.merk-plaat) { background: none; box-shadow: none; overflow: visible; border-radius: 0 !important; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+span.merk-gliefje.merk-beeld:not(.merk-plaat) > img { width: 94%; height: 94%; min-width: 0; min-height: 0; }
 span.merk-gliefje.merk-beeld.merk-plaat > img { width: 86%; height: 86%; }

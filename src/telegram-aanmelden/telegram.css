@@ -94,6 +94,27 @@
 .tga-rechten legend{padding:0 6px;font-size:12px;font-weight:650;color:var(--muted)}
 .tga-vinkje{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
 .tga-sectie label.tga-schakel-rij,.tga-sectie label.tga-vinkje{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--panel);font-weight:400;cursor:pointer;min-width:0}
+/* TELEGRAM-004: uitleg onder een schakelaar — kort dicht, de rest onder «Докладніше». */
+.tga-uitleg summary{font-size:.9rem;cursor:pointer;color:var(--muted,inherit)}.tga-uitleg ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+/* TELEGRAM-004 · «Вимагати місце пристрою»: рядок «логотип + назва + вмикач», ті самі розміри, що й рядки сайтів у вікнах доступу
+   (EXTUI-001, src/extensie/host-schakelaar.css): 56 px, логотип 36 px, вмикач 44×26. */
+.tga-plaats-kop{display:flex;align-items:flex-start;gap:12px}.tga-plaats-kop .tga-schakel-tekst{gap:3px}
+.tga-plaats-kop h3{margin:0;font-size:15px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.tga-plaats-kop-icoon,.tga-plaats-logo{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px}
+.tga-plaats-kop-icoon,.tga-plaats-logo.is-teken{color:var(--accent,#2f6f73);background:color-mix(in srgb,var(--accent,#2f6f73) 13%,transparent)}
+.tga-plaats-kop-icoon svg,.tga-plaats-logo.is-teken svg{width:20px;height:20px}
+.tga-plaats-logo.is-merk{background:#fff;border:1px solid color-mix(in srgb,var(--line,#d7dee8) 80%,transparent)}
+.tga-plaats-methoden{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:8px;margin:12px 0 10px}
+.tga-sectie label.tga-plaats-methode{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;min-height:56px;margin:0;padding:10px 12px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--surface,var(--panel,#fff));cursor:pointer;transition:border-color .15s ease,background-color .15s ease}
+.tga-sectie label.tga-plaats-methode:hover{border-color:color-mix(in srgb,var(--accent,#2f6f73) 45%,var(--line,#d7dee8))}
+.tga-sectie label.tga-plaats-methode:has(input:checked){border-color:color-mix(in srgb,var(--accent,#2f6f73) 40%,var(--line,#d7dee8));background:color-mix(in srgb,var(--accent,#2f6f73) 6%,var(--surface,var(--panel,#fff)))}
+.tga-sectie label.tga-plaats-methode:has(input:disabled){cursor:default;opacity:.65}
+.tga-sectie label.tga-plaats-methode .tga-schakel-tekst strong{font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer{flex:none;width:44px;min-width:44px;height:26px;min-height:26px;border-color:color-mix(in srgb,var(--muted,#64748b) 45%,transparent);background:color-mix(in srgb,var(--muted,#64748b) 22%,transparent)}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer::after{width:20px;height:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer:checked{background:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73)}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer:checked::after{transform:translateX(18px);background:#fff}
+@media (prefers-reduced-motion:reduce){.tga-sectie label.tga-plaats-methode{transition:none}}
 .tga-schakel-tekst{display:grid;gap:2px;flex:1 1 auto;min-width:0}
 .tga-schakel-tekst strong{font-size:13.5px;font-weight:650;line-height:1.25}
 .tga-schakel-tekst small{font-size:12px;color:var(--muted);font-weight:400;line-height:1.35}

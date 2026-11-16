@@ -148,7 +148,8 @@ export async function main(): Promise<number> {
   check('kaart: hoofdactie retry → onRetry (herladen), nooit een nepactie', kaart.includes("actie === 'retry'") && kaart.includes('onRetry()'));
   check('kaart: beschermd-reden zichtbaar als tekst met data-amv-beschermd', kaart.includes('data-amv-beschermd') && kaart.includes('k.staatReden'));
   check('kaart: anker-id op de kaart zelf (deep-link landt op de kaart)', kaart.includes('id: anker') || kaart.includes('{ id: anker }'));
-  check('kaart: Google = merkmonogram, geen getekend vreemd logo of extern beeld', kaart.includes("amv-brand' aria-hidden='true'>G<") && !kaart.includes('img src'));
+  // GOOGLE-OFFICIEEL (2026-11-16): het officiële teken uit het merkenregister; de letter is alleen nog de terugval tijdens het laden.
+  check('kaart: Google = het officiële teken uit het merkenregister (<Merk merk="google">), geen extern beeld', kaart.includes("<Merk merk='google'") && kaart.includes("terugval={<span className='amv-brand'") && !kaart.includes('img src'));
 
   const filter = inhoud.get('src/aanmeld-vnext/onderdelen/MethodeFilter.tsx') || '';
   check('filter: zoeken debouncet ≥250 ms en is zuiver client-side (geen fetch/api)', /setTimeout\([\s\S]*?,\s*(2[5-9]\d|[3-9]\d\d)\)/.test(filter) && !filter.includes('api.') && !filter.includes('fetch('));

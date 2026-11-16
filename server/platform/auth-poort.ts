@@ -43,6 +43,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/aanmelden/telegram/start': 'Telegram-aanmelding starten (vóór de sessie; transactie + bindingscookie)',
   'POST /api/aanmelden/telegram/status': 'Telegram-aanmelding volgen (id + geheim van deze browser)',
   'POST /api/aanmelden/telegram/code': 'geheime code bij Telegram-aanmelding (id + geheim; tellers en pauzes)',
+  'POST /api/aanmelden/telegram/plaats': 'plaats van het toestel bij Telegram-aanmelding (id + geheim; alleen na toestemming in de browser)',
   'POST /api/aanmelden/telegram/voltooien': 'Telegram-aanmelding inwisselen (id + geheim + bindingscookie, eenmalig)',
   'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële aanmeldvenster van Telegram (eigen smalle CSP)',
   'GET /api/aanmelden/telegram/widget-terug': 'terugkeer uit het aanmeldvenster van Telegram (HMAC-handtekening, 5 min, eenmalig)',

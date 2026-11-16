@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "TELEGRAM-004",
+  "agent": "claude",
+  "tak": "fix/telegram-venster-adres-plaats-20261116-105000",
+  "basisCommit": "bf1571454017f1154fc0fb8625a93cdb17f6a073",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-16T10:50:37.207Z",
+  "bijgewerkt": "2026-11-16T10:50:37.207Z",
+  "omschrijving": "Вікно Telegram: повна адреса облікового запису, час без назви міста, спосіб визначення місця",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

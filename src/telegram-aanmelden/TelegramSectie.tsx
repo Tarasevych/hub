@@ -3,7 +3,8 @@
 //   · прив’язування у 3 кроки з поясненням кожного кроку (підтвердження власного номера та ключа доступу обов’язкове);
 //   · картка виявлених змін даних («Було → Стало», «Ні, це не я» діє одразу, «Так, це я» — після відліку та ключа доступу);
 //   · згрупована таблиця підтверджень за 3 категоріями, таємний і тривожний код та журнал останніх входів через Telegram.
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Fingerprint, KeyRound, MapPin } from 'lucide-react';
+import MethodeMerk from '../merk/MethodeMerk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { leesBewaard } from '../lees-cache';
 import { foutTekst, identiteitCtx, tgPost, type Ctx } from './api';
@@ -13,6 +14,7 @@ import { inlogStandNaam, koppelStandNaam, redenNaam, statusNaam } from './namen'
 import { KEUZE_IDS, KEUZE_NAMEN, eisVan, keuzeToegestaan, type ActieSoort, type KeuzeId } from '../../shared/telegram-aanmelden/beleid';
 import { KOPPEL_RECHTEN, tekstIn, type KoppelRecht } from '../../shared/telegram-aanmelden/model';
 import { VELD_NAMEN } from '../../shared/telegram-aanmelden/teksten';
+import { PLAATS_EIS_METHODEN, PLAATS_EIS_NAAM, type PlaatsEisMethode } from '../../shared/aanmeld-plaats-eis';
 import { codeRedenTekst, codeZwakte } from '../../shared/telegram-aanmelden/code-sterkte';
 import './telegram.css';
 
@@ -74,6 +76,9 @@ type Mijn = {
   wijzigingen: Wijziging[];
   matrix: MatrixRij[];
   beschikbaar: string[];
+  /** 0299: aanmelden met Telegram alleen met de plaats van het toestel. */
+  /** TELEGRAM-004 (0299): способи входу, для яких обліковий запис вимагає місце пристрою. */
+  plaatsEis?: string[];
   geblokkeerd: Array<{ apparaat: string; op: string; reden?: string }>;
   aanmeldingen: AanmeldingRij[];
   status: { stand: string; soort: string };
@@ -217,6 +222,9 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       instellen={(code, alarmCode) => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/instellen', { code, alarmCode }), tr(lang, 'Таємний код збережено.', 'Geheime code opgeslagen.'))}
       verwijderen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/verwijderen'), tr(lang, 'Таємний код видалено.', 'Geheime code verwijderd.'))}
       herstellen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/herstellen'), tr(lang, 'Таємний код знову працює.', 'De geheime code werkt weer.'))} />
+
+    <PlaatsEis lang={lang} methoden={mijn.plaatsEis || []}
+      zetten={(methoden) => doeMet(() => tgPost(ctx, '/api/owner/telegram/plaats-eis', { methoden }), methoden.length ? tr(lang, 'Вимогу місця пристрою збережено.', 'De eis van de plaats van het apparaat is opgeslagen.') : tr(lang, 'Вимогу місця пристрою вимкнено.', 'De eis van de plaats van het apparaat staat uit.'))} />
 
     <Matrix ctx={ctx} lang={lang} rijen={mijn.matrix} beschikbaar={mijn.beschikbaar} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/matrix', body), tr(lang, 'Таблицю підтверджень збережено.', 'Bevestigingstabel opgeslagen.'))} />
 
@@ -619,6 +627,46 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
 }
 
 // ------------------------------------------------------------------------------------------------ таємний код (згорнутий за замовчуванням)
+/** TELEGRAM-004 (0299): preventieve bescherming — de gebruiker kiest PER aanmeldmethode of aanmelden alleen lukt als de browser de
+ *  plaats van het toestel deelt. Standaard overal UIT; «!» + korte regel op de kaart, de rest onder «Докладніше». Niets wordt
+ *  verboden: ook «alle methoden» mag, met een duidelijke waarschuwing over het gevolg. */
+export function PlaatsEis({ lang, methoden, zetten }: { lang: Lang; methoden: string[]; zetten: (methoden: string[]) => Promise<void> }) {
+  const { bezig, doe } = useEenmalig();
+  const aan = new Set(methoden);
+  const wissel = (m: PlaatsEisMethode, nieuw: boolean) => { const n = new Set(aan); if (nieuw) n.add(m); else n.delete(m); void doe(() => zetten(PLAATS_EIS_METHODEN.filter((x) => n.has(x)))); };
+  const alles = PLAATS_EIS_METHODEN.every((m) => aan.has(m));
+  return <div className='tga-blok' data-plaats-eis={aan.size ? 'aan' : 'uit'}>
+    <div className='tga-plaats-kop'>
+      <span className='tga-plaats-kop-icoon' aria-hidden='true'><MapPin /></span>
+      <div className='tga-schakel-tekst'>
+        <h3><span><span aria-hidden='true'>❗ </span>{tr(lang, 'Вимагати місце пристрою', 'Plaats van het apparaat eisen')}</span>
+          <span className={`tga-pil ${aan.size ? 'tga-pil-actief' : ''}`} data-plaats-eis-aantal>{aan.size ? tr(lang, `Увімкнено: ${aan.size} із ${PLAATS_EIS_METHODEN.length}`, `Aan: ${aan.size} van ${PLAATS_EIS_METHODEN.length}`) : tr(lang, 'Вимкнено', 'Uit')}</span></h3>
+        <small>{tr(lang, 'Виберіть способи входу, які працюватимуть лише з дозволом браузера на місце.', 'Kies de aanmeldmethoden die alleen werken met toestemming voor de locatie.')}</small>
+      </div>
+    </div>
+    <div className='tga-plaats-methoden' role='group' aria-label={tr(lang, 'Способи входу, що вимагають місце пристрою', 'Aanmeldmethoden die de plaats van het apparaat eisen')}>
+      {PLAATS_EIS_METHODEN.map((m) => <label key={m} className='tga-schakel-rij tga-plaats-methode' data-plaats-eis-methode={m}
+        title={tr(lang, `Увімкнено: вхід способом «${PLAATS_EIS_NAAM[m].uk}» у цей обліковий запис відбудеться лише тоді, коли браузер надасть місце пристрою. Без дозволу на місце цей спосіб не спрацює; способи, де перемикач вимкнено, працюють як раніше. Вимкнути можна тут будь-коли.`, `Aan: aanmelden met «${PLAATS_EIS_NAAM[m].nl}» bij dit account lukt alleen als de browser de plaats van het apparaat deelt. Zonder toestemming voor de locatie werkt deze methode niet; methoden waarvan de schakelaar uit staat, werken zoals voorheen. Uitzetten kan hier altijd.`)}>
+        <span className={`tga-plaats-logo ${m === 'passkey' || m === 'password' ? 'is-teken' : 'is-merk'}`} aria-hidden='true'>{m === 'telegram' ? <TelegramLogo maat={24} /> : m === 'passkey' ? <Fingerprint /> : m === 'password' ? <KeyRound /> : <MethodeMerk merk={m} naam={PLAATS_EIS_NAAM[m].uk} />}</span>
+        <span className='tga-schakel-tekst'><strong>{PLAATS_EIS_NAAM[m][lang === 'nl' ? 'nl' : 'uk']}</strong></span>
+        <input type='checkbox' role='switch' className='tga-schakel-invoer' checked={aan.has(m)} disabled={bezig} onChange={(e) => wissel(m, e.target.checked)} />
+      </label>)}
+    </div>
+    {alles && <p className='waarschuwing tga-klein' role='alert' data-plaats-eis-alles>{tr(lang, '❗ Вимога діє для всіх способів: увійти можна буде лише з пристрою й браузера, які надають місце.', '❗ De eis geldt voor alle methoden: aanmelden kan alleen nog vanaf een apparaat en browser die de plaats delen.')}</p>}
+    <details className='tga-uitleg'>
+      <summary>{tr(lang, 'Докладніше: як це працює і як вимкнути', 'Meer: hoe het werkt en hoe u het uitzet')}</summary>
+      <ul className='tga-klein'>
+        <li>{tr(lang, 'Під час входу вибраним способом браузер запитає дозвіл на місце. Якщо дозвіл уже є, місце додається само.', 'Bij het aanmelden met een gekozen methode vraagt de browser toestemming voor de locatie. Is die er al, dan gaat de plaats vanzelf mee.')}</li>
+        <li>{tr(lang, 'Відмовили в дозволі або пристрій не може визначити місце — вхід цим способом не відбудеться, а ви отримаєте сповіщення про зупинену спробу. Способи без вимоги працюють як раніше.', 'Weigert u de toestemming of kan het apparaat de plaats niet bepalen, dan lukt aanmelden met die methode niet en krijgt u een melding over de gestopte poging. Methoden zonder eis werken zoals voorheen.')}</li>
+        <li>{tr(lang, 'Місце пристрою порівнюється з місцем за IP-адресою. Якщо вони далеко одне від одного, ви побачите попередження: у вікні Telegram — до підтвердження, для інших способів — у центрі сповіщень.', 'De plaats van het apparaat wordt naast de plaats volgens het IP-adres gelegd. Liggen ze ver uit elkaar, dan ziet u een waarschuwing: in het Telegram-venster vóór het bevestigen, bij andere methoden in het meldingencentrum.')}</li>
+        <li>{tr(lang, 'Увімкнули для всіх способів і пристрій не дає місце — увійти не вдасться, доки не знайдете пристрій, який його надає. Залишайте хоча б один спосіб без вимоги, якщо не певні.', 'Zette u de eis bij alle methoden aan en geeft het apparaat geen plaats, dan kunt u zich niet aanmelden tot u een apparaat vindt dat dat wel doet. Laat bij twijfel minstens één methode zonder eis.')}</li>
+        <li>{tr(lang, 'Передумали — вимкніть перемикач тут. Зміна, як і інші налаштування захисту, потребує підтвердження.', 'Bedacht u zich, zet de schakelaar dan hier uit. Wijzigen vraagt, net als andere beveiligingsinstellingen, een bevestiging.')}</li>
+        <li>{tr(lang, 'Обмеження: місце повідомляє сам браузер, тож це додаткова перешкода для чужого входу, а не доказ особи. Зберігається лише приблизна точка (близько 1 км) у самій спробі входу.', 'Beperking: de browser meldt de plaats zelf, dus dit is een extra drempel voor een vreemde aanmelding en geen bewijs van identiteit. Alleen een punt bij benadering (ongeveer 1 km) wordt bij de aanmeldpoging bewaard.')}</li>
+      </ul>
+    </details>
+  </div>;
+}
+
 function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen }: { lang: Lang; code: Mijn['code']; telefoons: string; instellen: (c: string, a: string) => Promise<void>; verwijderen: () => Promise<void>; herstellen: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [c1, setC1] = useState(''); const [c2, setC2] = useState(''); const [alarm, setAlarm] = useState('');

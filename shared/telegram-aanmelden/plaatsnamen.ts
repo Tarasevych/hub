@@ -43,6 +43,9 @@ const STEDEN: Record<string, Naam> = {
 
 const sleutel = (v: string): string => v.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
+/** Naam van een stad uit de lijst (sleutel zoals in STEDEN), of ''. */
+export const stadNaam = (stadSleutel: string, taal: 'uk' | 'nl'): string => STEDEN[sleutel(stadSleutel)]?.[taal] || '';
+
 /** Naam van een land in de taal van de lezer, of '' als onbekend. */
 export function landNaam(land: string, taal: 'uk' | 'nl'): string {
   if (!/^[A-Z]{2}$/.test(land)) return '';

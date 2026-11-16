@@ -11,8 +11,14 @@ import type { BotTekst } from '../../shared/telegram-aanmelden/teksten';
 import { TEKST, t } from '../../shared/telegram-aanmelden/teksten';
 import { SERVICE_HOSTS } from '../deployment-identiteit';
 
+/** Tijdzone van de getoonde tijd als verschil met UTC («UTC+1», zomer «UTC+2»). Bewust GEEN stadsnaam (eis van de eigenaar 16.11.2026):
+ *  «(Брюссель)» achter de tijd werd gelezen als de plaats van het verzoek, terwijl die op een eigen regel staat. */
+export const tijdzoneTekst = (ms = Date.now()): string => {
+  const deel = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', timeZoneName: 'shortOffset' }).formatToParts(new Date(ms)).find((p) => p.type === 'timeZoneName')?.value || 'GMT';
+  return deel.replace('GMT', 'UTC');
+};
 export const tijdTekst = (taal: 'uk' | 'nl' | 'beide', ms = Date.now()): string =>
-  taal === 'beide' ? `${brusselsTijd(ms, 'uk')} · ${brusselsTijd(ms, 'nl')}` : `${brusselsTijd(ms, taal)} (${taal === 'uk' ? 'Брюссель' : 'Brussel'})`;
+  taal === 'beide' ? `${brusselsTijd(ms, 'uk')} · ${brusselsTijd(ms, 'nl')}` : `${brusselsTijd(ms, taal)} (${tijdzoneTekst(ms)})`;
 
 /** Leesbare accountnaam voor de strook (naam of e-mail; nooit iets geheims). */
 export async function accountNaam(userId: string): Promise<string> {

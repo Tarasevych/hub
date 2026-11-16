@@ -2,6 +2,7 @@
 // zelf kan starten (alleen lezen), uitleg bij elke controle en een bewaarde geschiedenis van storingen.
 // Eerlijkheid: een controle die nooit is uitgevoerd toont «Не перевірено», nooit een groen vinkje.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Merk from '../merk/Merk';
 import {
   Activity, AlertTriangle, BookOpen, Check, ChevronDown, CircleHelp, Clock, Cloud, Code2, Cpu, Database, FileText, GitBranch, Globe, HardDrive, History, Home,
   ExternalLink, KeyRound, Layers, Loader2, Lock, Mail, MemoryStick, Monitor, Package, Play, Plug, RefreshCw, Rocket, ScrollText, Search, Server, Settings, ShieldCheck, Sparkles, Timer, UserRound, Users, Wrench, X, XCircle,
@@ -39,7 +40,7 @@ function Logo({ def, groot }: { def: ControleDef; groot?: boolean }) {
   const I = ICONEN[def.icoon] || Activity;
   return (
     <span className={`adg-logo${groot ? ' adg-logo-groot' : ''}`} style={kleur ? ({ '--adg-merk': kleur } as React.CSSProperties) : undefined} data-merk={kleur ? '1' : '0'} aria-hidden='true'>
-      {def.icoon === 'google' ? <b>G</b> : <I />}
+      {def.icoon === 'google' ? <Merk merk='google' vorm='gliefje' maat={groot ? 26 : 20} terugval={<b>G</b>} /> : <I />}
     </span>
   );
 }

@@ -76,10 +76,10 @@ export async function nepGoogle(opties: { ownerEmail: string }) {
     };
     const tab = randomBytes(24).toString('hex');
     /** Aanmelden via de redirect-flow (zoals productie). intent 'step-up' vraagt opnieuw om het wachtwoord. */
-    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string; ip?: string; ua?: string; kop?: Record<string, string>; /** IDENTITEIT-015: claim «picture» у токені (за замовчуванням немає) */ picture?: string } = {}) => {
+    const aanmelden = async (sub: string, email: string, o: { intent?: 'login' | 'replace-tab' | 'step-up'; authTime?: number | null; iat?: number; remember?: boolean; service?: string; tabContext?: string; returnTo?: string; ip?: string; ua?: string; kop?: Record<string, string>; /** IDENTITEIT-015: claim «picture» у токені (за замовчуванням немає) */ picture?: string; /** TELEGRAM-004: plaats van het toestel die de browser meestuurt */ plaats?: { lat: number; lon: number; nauwkeurig?: number } } = {}) => {
       const net = { ip: o.ip, ua: o.ua, kop: o.kop };
       const service = o.service || 'hub', host = `${service === 'identity' ? 'id' : service}.tarasevych.com`;
-      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false }, net);
+      const start = await verzoek(host, '/api/owner/identity/transactions/create', { service, tabContext: o.tabContext || tab, flowMode: 'redirect', returnTo: o.returnTo || `https://${host}/`, locale: 'nl', intent: o.intent || 'replace-tab', remember: o.remember ?? false, ...(o.plaats ? { plaats: o.plaats } : {}) }, net);
       const authUrl = String(start.data.authUrl || 'https://x.invalid/'); laatsteAuthUrls.push(authUrl);
       const u = new URL(authUrl);
       const code = `code-${randomBytes(6).toString('hex')}`;

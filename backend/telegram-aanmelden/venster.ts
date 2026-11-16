@@ -13,6 +13,7 @@ import type { RouterContext, RouterResponse } from '../../server/platform/router
 import { accountBeeld, telegramBeeld } from './account-foto';
 import { koppelingenVanTelegram } from './opslag';
 import { plaatsTekst } from '../../shared/telegram-aanmelden/plaatsnamen';
+import { vergelijkPlaats, type GeoStand, type Punt } from '../../shared/telegram-aanmelden/plaats-vergelijking';
 import { json } from '../../server/platform';
 import { initDataControle } from './cryptografie';
 import { botSleutel } from './sleutels';
@@ -81,6 +82,8 @@ export async function vensterWeigeren(d: Record<string, unknown>): Promise<{ uit
 // ------------------------------------------------------------------------------------------------ pagina
 type Weergave = {
   soort: 'i' | 'b'; titel: string; wat: string; accounts: Array<{ koppelingId: string; naam: string; email?: string; foto?: string; letter?: string }>; toestel: string; apparaat: string; plaats: string; land: string;
+  /** TELEGRAM-004: punt volgens het IP-adres en volgens het toestel (alleen bij aanmelden; bij een bevestiging is er geen geolocatie gevraagd). */
+  ipPunt?: Punt | null; geoPunt?: Punt | null; geoStand?: GeoStand;
   /** TELEGRAM-002: de Telegram-account die dit venster opent (naam, @naam, foto) — visueel kenmerk naast het site-account. */
   telegram?: { naam: string; gebruikersnaam: string; foto: string; letter: string } | null;
   kandidaten: number[]; verlooptOp: string; stap: 'kiezen' | 'code' | 'klaar' | 'verlopen' | 'geweigerd';
@@ -99,7 +102,7 @@ async function weergave(tok: VensterToken, taal: Taal): Promise<Weergave | null>
     const accounts = await Promise.all(ruw.map(async (a) => { const beeld = await accountBeeld(a.userId); return { koppelingId: a.koppelingId, naam: a.naam, email: beeld.email, foto: beeld.foto, letter: beeld.letter }; }));
     const stap = r.stand === 'wacht' ? 'kiezen' : r.stand === 'goedgekeurd' && r.codeNodig && !r.codeOk ? 'code' : r.stand === 'goedgekeurd' || r.stand === 'ingewisseld' ? 'klaar' : r.stand === 'verlopen' ? 'verlopen' : 'geweigerd';
     return { soort: 'i', titel: tr(taal, 'Запит на вхід', 'Aanmeldverzoek'), wat: tr(taal, 'вхід на сайт «Мій простір»', 'aanmelden op «Mijn Ruimte»'), accounts,
-      toestel: r.toestel, apparaat: r.apparaat, plaats: r.plaats, land: r.land, kandidaten: r.kandidaten, verlooptOp: r.verlooptOp, stap, telegram: await tgBeeld(tok.tg) };
+      toestel: r.toestel, apparaat: r.apparaat, plaats: r.plaats, land: r.land, ipPunt: r.ipPunt, geoPunt: r.geoPunt, geoStand: r.geoStand, kandidaten: r.kandidaten, verlooptOp: r.verlooptOp, stap, telegram: await tgBeeld(tok.tg) };
   }
   const b = await bevestigingVoorVenster(tok.id, tok.tg);
   if (!b) return null;
@@ -120,7 +123,7 @@ main{max-width:460px;margin:0 auto;display:grid;gap:14px}
 .kop{display:flex;align-items:center;gap:10px}.kop b{font-size:1.05rem}.kop small{display:block;color:var(--zacht);font-size:.8rem}
 .kaart{background:var(--kaart);border:1px solid var(--rand);border-radius:16px;padding:14px 16px;display:grid;gap:8px}
 h1{font-size:1.15rem;margin:0}h2{font-size:1.05rem;margin:0;text-align:center}.zacht{color:var(--zacht);font-size:.9rem;margin:0}
-.rij{display:flex;align-items:center;gap:8px}.rij>span:last-child{min-width:0;overflow-wrap:anywhere}.rij img{width:20px;height:20px;border-radius:4px;flex:none}.rij img.vlag{width:24px;height:16px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
+.rij{display:flex;align-items:center;gap:8px}.rij>span:last-child{min-width:0;overflow-wrap:anywhere}.rij img{width:20px;height:20px;border-radius:4px;flex:none}.rij small.bron{display:block;color:var(--zacht);font-size:.8rem}.rij img.vlag{width:24px;height:16px;border-radius:2px;box-shadow:0 0 0 1px var(--rand)}
 .label{color:var(--zacht);min-width:5.5em;font-size:.9rem}
 .wie{display:grid;gap:6px}.persoon{display:flex;align-items:center;gap:10px;min-width:0}.persoon b{display:block;overflow-wrap:anywhere}.persoon small{display:block;color:var(--zacht);font-size:.85rem;overflow-wrap:anywhere}
 .rond{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px var(--rand)}.rond.leeg{display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:700;font-size:1.3rem}
@@ -173,12 +176,24 @@ export function paginaHtml(w: Weergave | null, taal: Taal): string {
     const st = tegelStijlen(tg.kleur);
     return `<button type="button" class="keuze" data-pos="${pos}" aria-label="${esc(tg.naam)}"><span style="${esc(stijlTekst(st.tegel))}">${pictogramSvg(index, stijlTekst(st.vorm))}<b style="${esc(stijlTekst(st.naam))}">${esc(tg.naam)}</b></span></button>`;
   }).join('');
+  // TELEGRAM-004: plaats volgens het TOESTEL naast die volgens het IP-adres. De waarde komt van de browser en bewijst niets;
+  // ze dient om een afwijking te laten zien. Bij een bevestiging van een handeling (soort 'b') vragen we geen geolocatie → geen regel.
+  const vg = vergelijkPlaats(w.geoPunt ?? null, { punt: w.ipPunt ?? null, plaats: w.plaats }, taal);
+  const afstand = vg.km === null ? '' : vg.km < 1 ? tr(taal, 'менше ніж 1 км від місця за IP', 'minder dan 1 km van de plaats volgens het IP') : tr(taal, `≈ ${vg.km} км від місця за IP`, `≈ ${vg.km} km van de plaats volgens het IP`);
+  const geoBron = tr(taal, 'За дозволом браузера — місце пристрою, приблизно', 'Met toestemming van de browser — plaats van het apparaat, bij benadering');
+  const geoInhoud = w.geoPunt
+    ? `${esc([vg.geoTekst || tr(taal, 'місце пристрою отримано', 'plaats van het apparaat ontvangen'), afstand].filter(Boolean).join(' · '))}<small class="bron">${esc(geoBron)}</small>`
+    : `${esc(w.geoStand === 'geweigerd' ? tr(taal, 'дозвіл не надано', 'geen toestemming gegeven') : w.geoStand === 'mislukt' ? tr(taal, 'пристрій не зміг визначити місце', 'het apparaat kon de plaats niet bepalen') : tr(taal, 'не надано', 'niet gedeeld'))}<small class="bron">${t('За дозволом браузера — лише якщо його надано на сайті', 'Met toestemming van de browser — alleen als die op de site is gegeven')}</small>`;
+  const geoWaarschuwing = vg.oordeel === 'afwijkend'
+    ? `<p class="waarschuwing geo-let" role="alert">${t(`Місце пристрою й місце за IP-адресою не збігаються (≈ ${vg.km} км). Так буває через VPN. Якщо ви ним не користуєтеся й не починали вхід — це може бути шахрайство: натисніть «Це не я».`, `De plaats van het apparaat en de plaats volgens het IP-adres komen niet overeen (≈ ${vg.km} km). Dat kan door een VPN komen. Gebruikt u die niet en begon u niet met aanmelden, dan kan dit oplichting zijn: tik «Dit ben ik niet».`)}</p>`
+    : vg.oordeel === 'gelijk' ? `<p class="zacht geo-ok">${t('Місце пристрою узгоджується з місцем за IP-адресою. Це не доказ: звіряйте також пристрій і час.', 'De plaats van het apparaat past bij de plaats volgens het IP-adres. Dit is geen bewijs: controleer ook het apparaat en de tijd.')}</p>` : '';
+  const geoRij = w.soort === 'i' ? `<div class="rij"><span class="label">${t('Пристрій каже', 'Apparaat meldt')}</span><span>${geoInhoud}</span></div>${geoWaarschuwing}` : '';
   const info = `<section class="kaart" aria-labelledby="titel"><h1 id="titel">${esc(w.titel)}</h1>
 ${wie}
 <div class="rij"><span class="label">${t('Що', 'Wat')}</span><span>${esc(w.wat)}</span></div>
 <div class="rij"><span class="label">${t('Пристрій', 'Apparaat')}</span>${logo(merkLogo(b), b)}${logo(merkLogo(s, true), s)}<span>${esc(toestel)}</span></div>
-<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaatsTekst(w.plaats, w.land, taal) || tr(taal, 'місце невідоме', 'plaats onbekend'))}</span></div>
-<div class="rij"><span class="label">${t('Коли', 'Wanneer')}</span><span>${esc(tijdTekst(taal))}</span></div></section>`;
+<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaatsTekst(w.plaats, w.land, taal) || tr(taal, 'місце невідоме', 'plaats onbekend'))}${w.plaats || w.land ? `<small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : ''}</span></div>
+${geoRij}<div class="rij"><span class="label">${t('Коли', 'Wanneer')}</span><span>${esc(tijdTekst(taal))}</span></div></section>`;
   const kiezen = `<section class="kaart" id="stap-kiezen"${w.stap === 'kiezen' ? '' : ' hidden'}><h2>${t('Яку піктограму показує сайт?', 'Welk pictogram toont de site?')}</h2>
 ${accounts}<div class="raster">${tegels}</div>
 <p class="zacht" style="text-align:center">${t('Одна спроба: інша піктограма скасує запит і повідомить вас.', 'Eén poging: een ander pictogram annuleert het verzoek en waarschuwt u.')}</p>
@@ -197,6 +212,7 @@ ${accounts}<div class="raster">${tegels}</div>
     ['pauze', 'Забагато невдалих спроб — код призупинено. Запит скасовано.', 'Te veel mislukte pogingen — de code is gepauzeerd. Het verzoek is geannuleerd.', false],
     ['uit', 'Код вимкнено після забагатьох помилок. Відновіть його на сайті ключем доступу.', 'De code is uitgeschakeld na te veel fouten. Herstel hem op de site met uw toegangssleutel.', false],
     ['netwerk', 'Немає зв’язку із сайтом. Спробуйте ще раз.', 'Geen verbinding met de site. Probeer opnieuw.', false],
+    ['plaats-nodig', 'Цей обліковий запис вимагає місце пристрою. Поверніться на сайт, дозвольте браузеру доступ до місця й оберіть піктограму ще раз. Спроба не втрачена.', 'Dit account eist de plaats van het apparaat. Ga terug naar de site, geef de browser toegang tot de locatie en kies het pictogram opnieuw. De poging is niet verbruikt.', false],
     ['account', 'Спершу оберіть обліковий запис.', 'Kies eerst een account.', false],
   ];
   const beginStap = w.stap === 'klaar' ? 'klaar' : w.stap === 'verlopen' ? 'verlopen' : w.stap === 'geweigerd' ? 'geweigerd' : '';
@@ -228,7 +244,7 @@ document.querySelectorAll('.keuze').forEach(k=>k.addEventListener('click',async(
   const r=await api('kies',{pos:Number(k.dataset.pos),koppeling:acc.value});bezig=false;
   if(r.uitkomst==='code'){$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();tgGebeurtenis('web_app_setup_closing_behavior',{need_confirmation:true});return}
   if(r.uitkomst==='ok'){einde('ok',true);return}
-  if(r.uitkomst==='netwerk'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon('netwerk');return}
+  if(r.uitkomst==='netwerk'||r.uitkomst==='plaats-nodig'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon(r.uitkomst);return}
   einde(r.uitkomst||'verlopen',false);
 }));
 const f=$('code-form'),fb=f?f.querySelector('button[type=submit]'):null;if(f)f.addEventListener('submit',async(e)=>{e.preventDefault();if(bezig)return;bezig=true;if(fb)fb.disabled=true;const v=$('code').value;

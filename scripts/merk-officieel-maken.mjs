@@ -58,6 +58,13 @@ const KEUZE = [
   { sleutel: 'codex', pakket: '@iconify-json/logos', icoon: 'codex' },
   { sleutel: 'grok', pakket: '@iconify-json/logos', icoon: 'grok-icon' },
   { sleutel: 'gemini', pakket: '@iconify-json/logos', icoon: 'google-gemini-icon' },
+  // Google (16.11.2026, Павло: «логотип Google не офіційний … треба у всіх місцях виправити на офіційний») — чотириколірний знак «G»
+  // з того самого пакета CC0; до цього реєстр малював однокольорову форму simple-icons. Het vierkleurige «G» in plaats van de eenkleurige vorm.
+  { sleutel: 'google', pakket: '@iconify-json/logos', icoon: 'google-icon' },
+  // Піктограми меню «Google Drive» і «Dropbox» були літерами в рамці («G», «DB») — тепер справжні знаки з того самого пакета CC0.
+  // De menupictogrammen «Google Drive» en «Dropbox» waren letters in een kader; nu de echte beeldmerken.
+  { sleutel: 'googledrive', pakket: '@iconify-json/logos', icoon: 'google-drive-2020', opmerking: 'vlakke uitvoering (2020), in dezelfde stijl als het vierkleurige «G»' },
+  { sleutel: 'dropbox', pakket: '@iconify-json/logos', icoon: 'dropbox' },
   { sleutel: 'copilot', pakket: '@iconify-json/logos', icoon: 'github-copilot' },
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
   { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
