@@ -4,6 +4,7 @@
 // niets weg; het eenvoudige ontleden werkt altijd (in de browser, zonder model).
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
+import { MOTOR_AUTO, MOTOR_VOORKEUR_SLEUTEL } from '../../shared/mail-ai-motor';
 import { agentKanPost, AI_TOEGANG_HREF, STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
 
 export type AiStaat = { geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen };
@@ -87,7 +88,7 @@ export async function zetAiBalkTonen(aan: boolean, context: Record<string, strin
 }
 
 /** MAILAI-001: «/ai» bestaat op geen enkele host (404 op mail.*). Het echte adres: rechten → «Підключення ШІ → Доступи», sleutels → «Сховище ключів». */
-export function aiHrefOplossen(href: string | undefined | null, soort: 'toegang' | 'sleutels' = 'toegang'): string {
+export function aiHrefOplossen(href: string | undefined | null, soort: 'toegang' | 'sleutels' | 'extensie' = 'toegang'): string {
   const h = String(href || '');
   if (h && h !== AI_TOEGANG_HREF && !h.startsWith('/ai/') && !h.startsWith('/ai#') && !h.startsWith('/ai?')) return h;
   try {
@@ -96,9 +97,9 @@ export function aiHrefOplossen(href: string | undefined | null, soort: 'toegang'
     // venster (tests). Domeinen komen uit de eigen installatie (BYOS), niet hard uit tarasevych.com.
     const rt = (globalThis as { __TSV_CANONICAL_SERVICE__?: { canonicalUrl: (s: string, t: string, l: string, o: { explicitTab: boolean }) => string } }).__TSV_CANONICAL_SERVICE__;
     if (!rt) throw new Error('geen runtime');
-    return soort === 'sleutels' ? rt.canonicalUrl('api', 'vault', taal, { explicitTab: true }) : `${rt.canonicalUrl('mcp', 'agents', taal, { explicitTab: true })}#toegang`;
+    return soort === 'sleutels' ? rt.canonicalUrl('api', 'vault', taal, { explicitTab: true }) : `${rt.canonicalUrl('mcp', 'agents', taal, { explicitTab: true })}#${soort}`;
   } catch {
-    return soort === 'sleutels' ? 'https://api.tarasevych.com/kluis' : 'https://mcp.tarasevych.com/agenten#toegang';
+    return soort === 'sleutels' ? 'https://api.tarasevych.com/kluis' : `https://mcp.tarasevych.com/agenten#${soort}`;
   }
 }
 
@@ -120,4 +121,45 @@ export function aiFoutVan(err: unknown): AiFout {
 export async function aiRun(context: Record<string, string>, body: Record<string, unknown>): Promise<AiVertalingRunResponse> {
   const res = await api.post('/api/owner/mail/ai-vertaling/run', { ...context, ...body });
   return res.data as AiVertalingRunResponse;
+}
+
+// MAILAI-002: «Сховати зараз» ≠ «Вимкнути зовсім». Сховати — лише до закриття цієї вкладки (sessionStorage), щоб не відволікало;
+// налаштування облікового запису не змінюється. Verbergen voor deze sessie (tabblad) — de accountinstelling blijft zoals ze is.
+const SESSIE_SLEUTEL = 'mr-ai-balk-sessie-verborgen-v1';
+const SESSIE_GEBEURTENIS = 'mail:ai-balk-sessie';
+export function balkSessieVerborgen(): boolean {
+  try { return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SESSIE_SLEUTEL) === '1'; } catch { return false; }
+}
+export function zetBalkSessieVerborgen(v: boolean): void {
+  try { if (v) sessionStorage.setItem(SESSIE_SLEUTEL, '1'); else sessionStorage.removeItem(SESSIE_SLEUTEL); } catch { /* privévenster */ }
+  try { window.dispatchEvent(new CustomEvent(SESSIE_GEBEURTENIS)); } catch { /* geen venster */ }
+}
+export function useBalkSessieVerborgen(): boolean {
+  const [v, setV] = useState<boolean>(balkSessieVerborgen);
+  useEffect(() => {
+    const op = () => setV(balkSessieVerborgen());
+    window.addEventListener(SESSIE_GEBEURTENIS, op);
+    return () => window.removeEventListener(SESSIE_GEBEURTENIS, op);
+  }, []);
+  return v;
+}
+
+// MAILAI-002: обраний рушій (на цьому пристрої — локальний ШІ є лише тут). «auto» = спершу безкоштовний.
+const VOORKEUR_GEBEURTENIS = 'mail:ai-motor-voorkeur';
+export function leesMotorVoorkeur(): string {
+  try { return localStorage.getItem(MOTOR_VOORKEUR_SLEUTEL) || MOTOR_AUTO; } catch { return MOTOR_AUTO; }
+}
+export function zetMotorVoorkeur(id: string): void {
+  try { if (!id || id === MOTOR_AUTO) localStorage.removeItem(MOTOR_VOORKEUR_SLEUTEL); else localStorage.setItem(MOTOR_VOORKEUR_SLEUTEL, id); } catch { /* */ }
+  try { window.dispatchEvent(new CustomEvent(VOORKEUR_GEBEURTENIS)); } catch { /* */ }
+}
+export function useMotorVoorkeur(): string {
+  const [v, setV] = useState<string>(leesMotorVoorkeur);
+  useEffect(() => {
+    const op = () => setV(leesMotorVoorkeur());
+    window.addEventListener(VOORKEUR_GEBEURTENIS, op);
+    window.addEventListener('storage', op);
+    return () => { window.removeEventListener(VOORKEUR_GEBEURTENIS, op); window.removeEventListener('storage', op); };
+  }, []);
+  return v;
 }

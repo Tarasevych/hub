@@ -16,7 +16,8 @@ import {
   antwoordNodig, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas, normaliseer, telGevonden,
   type GecontroleerdPunt, type Opbouw,
 } from '../../shared/ai-bronnen';
-import { aiFoutVan, aiRun, useAiStaat, type AiFout } from './ai-staat';
+import { aiFoutVan, aiRun, useAiStaat, useMotorVoorkeur, type AiFout } from './ai-staat';
+import { LOKAAL_MOTOR_ID, verwerktDoor } from '../../shared/mail-ai-motor';
 import { useLeesVenster } from './LeesVenster';
 import { adresVan } from '../../shared/mail-afzenders';
 import './ai-blok.css';
@@ -86,7 +87,7 @@ const adres = (v: string) => adresVan(v).adres || (String(v || '').includes('<')
 
 /** Wat de agent voor een gesprek gaf, voor deze sessie (alleen in het geheugen van de pagina): de brief opnieuw openen toont het
  *  meteen weer, zonder nieuw verzoek. Sleutel = gesprek + laatste brief + aantal brieven; hoogstens 50 gesprekken. */
-type ModelUitkomst = { punten: GecontroleerdPunt[]; kort: GecontroleerdPunt[]; hints: string[]; nodig: boolean | null; agentNaam: string };
+type ModelUitkomst = { punten: GecontroleerdPunt[]; kort: GecontroleerdPunt[]; hints: string[]; nodig: boolean | null; agentNaam: string; aanbiederId?: string };
 const MODEL_GEHEUGEN = new Map<string, ModelUitkomst>();
 const onthoud = (k: string, m: ModelUitkomst | null) => {
   MODEL_GEHEUGEN.delete(k);
@@ -140,6 +141,9 @@ export default function WatNodigBlok(p: Props) {
   const id = useId();
   const lv = useLeesVenster();
   const ai = useAiStaat(p.context);
+  // MAILAI-002: обрано локальний ШІ Chrome — він ще не вміє «Що від вас потрібно?»; лист постачальнику без вашого вибору не йде.
+  const voorkeur = useMotorVoorkeur();
+  const lokaalGekozen = voorkeur === LOKAAL_MOTOR_ID;
   // Open of dicht: wat u koos (dit apparaat); anders open in een hoog venster en ingeklapt in een laag (< 860 px: op 1280×800 begon de
   // brief zelf anders pas onder de rand — «Головне — лист»). Ingeklapt zegt de kop nog steeds hoeveel punten en welke termijn.
   const [open, setOpen] = useState<boolean>(() => {
@@ -184,7 +188,7 @@ export default function WatNodigBlok(p: Props) {
   }, [p.threadId]);
 
   const vraagModel = async () => {
-    if (!ai.agent || bezig) return;
+    if (!ai.agent || bezig || lokaalGekozen) return;
     const k = geheugenSleutel;
     setBezig(true); setFout(null);
     try {
@@ -197,7 +201,7 @@ export default function WatNodigBlok(p: Props) {
       const a = r.acties;
       if (!a) throw { response: { data: { error: 'GEEN_ACTIES' } } };
       // Nog eens controleren, nu tegen de brief zoals hij hier getoond wordt (de server zag een opgeschoonde versie).
-      const m: ModelUitkomst = { punten: controleerPunten(a.punten, alineas), kort: controleerPunten(a.kort, alineas), hints: a.antwoordHints || [], nodig: a.antwoordNodig, agentNaam: r.agentName || ai.agent.name };
+      const m: ModelUitkomst = { punten: controleerPunten(a.punten, alineas), kort: controleerPunten(a.kort, alineas), hints: a.antwoordHints || [], nodig: a.antwoordNodig, agentNaam: r.agentName || ai.agent.name, aanbiederId: r.aanbiederId };
       onthoud(k, m);
       if (huidigeSleutel.current === k) setModelState(m);
     } catch (e) { if (huidigeSleutel.current === k) setFout(aiFoutVan(e)); } finally { setBezig(false); }
@@ -241,8 +245,8 @@ export default function WatNodigBlok(p: Props) {
         </button>
         <small className='ai-blok-herkomst'>
           {t('не частина листа', 'geen deel van het bericht')} · {opbouw === 'model'
-            ? t(`склав ваш ШІ-агент «${agentNaam}»`, `opgesteld door uw AI-agent «${agentNaam}»`)
-            : t('простий розбір у браузері, без моделі', 'eenvoudige ontleding in de browser, zonder model')}
+            ? t(`склав ваш ШІ «${agentNaam}» · ${verwerktDoor({ aanbiederId: model?.aanbiederId, agentName: agentNaam }, false)}`, `opgesteld door uw AI «${agentNaam}» · ${verwerktDoor({ aanbiederId: model?.aanbiederId, agentName: agentNaam }, true)}`)
+            : t('простий розбір у браузері, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}
         </small>
       </header>
       {zichtbaarOpen && (
@@ -270,9 +274,9 @@ export default function WatNodigBlok(p: Props) {
             <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => p.onConcept(uitkomst)}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
             <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => p.onTaak(voorstel('taak'))}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
             <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => p.onAgenda(voorstel('agenda'))}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
-            {ai.agent && !model && (
+            {ai.agent && !model && !lokaalGekozen && (
               <button type='button' className='ai-blok-knop ai-blok-knop-ai' data-actie='model' disabled={bezig || !genummerd.length} onClick={() => void vraagModel()}
-                title={t(`Надіслати гілку вашому ШІ-агенту «${ai.agent.name}» і перевірити кожен пункт за оригіналом`, `Het gesprek naar uw AI-agent «${ai.agent.name}» sturen en elk punt tegen het origineel controleren`)}>
+                title={t(`Надіслати гілку через ваш сервер вашому ШІ «${ai.agent.name}» (вашим власним ключем) і перевірити кожен пункт за оригіналом. Без натискання нічого не надсилається.`, `Het gesprek via uw server naar uw AI «${ai.agent.name}» sturen (met uw eigen sleutel) en elk punt tegen het origineel controleren. Zonder klik gaat er niets weg.`)}>
                 {bezig ? <LoaderCircle className='spin' aria-hidden='true' /> : <Sparkles aria-hidden='true' />}{t('Уточнити з ШІ', 'Verfijnen met AI')}
               </button>
             )}
@@ -295,6 +299,7 @@ export default function WatNodigBlok(p: Props) {
             <span>{t('Склав', 'Opgesteld door')}: {opbouw === 'model' ? agentNaam : t('простий розбір без моделі', 'eenvoudige ontleding zonder model')}</span>
             {nietGevonden.length > 0 && <button type='button' className='ai-blok-link' aria-expanded={toonNiet} onClick={() => setToonNiet((v) => !v)}>{toonNiet ? t('Сховати не знайдене', 'Niet-gevonden verbergen') : t(`Показати не знайдене (${nietGevonden.length})`, `Niet-gevonden tonen (${nietGevonden.length})`)}</button>}
             {wegHier > 0 && <button type='button' className='ai-blok-link' onClick={() => { bewaarWeg(p.threadId, []); setWeg([]); }}><Undo2 aria-hidden='true' />{t(`Повернути прибрані (${wegHier})`, `Weggehaalde terugzetten (${wegHier})`)}</button>}
+            {lokaalGekozen && ai.agent && !model && <span className='ai-blok-zonder' data-ai-lokaal-gekozen>{t('Обрано локальний ШІ Chrome: «Уточнити з ШІ» він ще не вміє, тому тут простий розбір. Щоб уточнити, оберіть постачальника в «Рушії ШІ» над листом.', 'Lokale AI van Chrome gekozen: «Verfijnen met AI» kan die nog niet, dus hier de eenvoudige ontleding. Om te verfijnen kiest u een aanbieder in «AI-motoren» boven het bericht.')}</span>}
             {!ai.agent && ai.geladen && <span className='ai-blok-zonder'>{t('ШІ-агента не підключено — лист нікуди не надсилається.', 'Geen AI-agent gekoppeld — het bericht gaat nergens heen.')}</span>}
           </footer>
         </div>

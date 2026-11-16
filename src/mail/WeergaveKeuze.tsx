@@ -9,8 +9,11 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal } from './lees-modus';
 import { useLeesVenster } from './LeesVenster';
-import { useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
+import { aiHrefOplossen, useBalkSessieVerborgen, useLaatsteAiStaat, zetAiBalkTonen, zetBalkSessieVerborgen } from './ai-staat';
+import { lokaalStap } from '../../shared/mail-ai-motor';
+import { openExtensieOpties, useLokaleStand } from './lokale-motor';
 import AiUitleg from './AiUitleg';
+import './motor-kiezer.css';
 
 /**
  * MAILAI-001: «ШІ-аналіз над листом» — панель «ШІ-аналіз і переклад» над кожним листом. Типово вимкнено; налаштування облікового
@@ -22,8 +25,11 @@ function AiBalkKeuze({ lang }: { lang: 'uk' | 'nl' }) {
   const [fout, setFout] = useState(false);
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const aan = ai?.instellingen.balkTonen === true;
-  const geenAgent = Boolean(ai?.geladen && !ai.agent);
-  const zet = (v: boolean) => { setFout(false); void zetAiBalkTonen(v).catch(() => setFout(true)); };
+  // MAILAI-002: робочий ШІ = ваш ключ АБО локальний ШІ Chrome на цьому комп’ютері.
+  const lokaal = useLokaleStand();
+  const sessieVerborgen = useBalkSessieVerborgen();
+  const geenAgent = Boolean(ai?.geladen && !ai.agent) && lokaal !== 'klaar';
+  const zet = (v: boolean) => { setFout(false); if (v) zetBalkSessieVerborgen(false); void zetAiBalkTonen(v).catch(() => setFout(true)); };
   return (
     <fieldset data-weergave-ai-balk>
       <legend>{t('ШІ-аналіз над листом', 'AI-analyse boven het bericht')}</legend>
@@ -42,10 +48,23 @@ function AiBalkKeuze({ lang }: { lang: 'uk' | 'nl' }) {
           ? t('Не вдалося зберегти. Спробуйте ще раз.', 'Opslaan is niet gelukt. Probeer het opnieuw.')
           : aan
             ? geenAgent
-              ? t('Увімкнено, але робочого ШІ немає (немає ключа API), тому панель не показується. Як підключити — нижче.', 'Aan, maar er is geen werkende AI (geen API-sleutel), dus het paneel blijft weg. Hoe koppelen staat hieronder.')
-              : t('Панель над листом показується. Сховати можна й хрестиком на самій панелі.', 'Het paneel staat boven het bericht. Verbergen kan ook met het kruisje op het paneel zelf.')
+              ? t('Увімкнено, але робочого ШІ немає (ні ключа API, ні локального ШІ Chrome), тому панель не показується. Як підключити — нижче.', 'Aan, maar er is geen werkende AI (geen API-sleutel en geen lokale AI van Chrome), dus het paneel blijft weg. Hoe koppelen staat hieronder.')
+              : sessieVerborgen
+                ? t('Увімкнено, але приховано до закриття цієї вкладки.', 'Aan, maar verborgen tot u dit tabblad sluit.')
+                : t('Панель над листом показується. Сховати можна й хрестиком на самій панелі.', 'Het paneel staat boven het bericht. Verbergen kan ook met het kruisje op het paneel zelf.')
             : t('Панель прихована й не займає місця. Діє для вашого облікового запису на всіх пристроях.', 'Het paneel is verborgen en neemt geen ruimte in. Geldt voor uw account op elk apparaat.')}
       </small>
+      {aan && sessieVerborgen && (
+        <button type='button' className='mk-knop' data-weergave-ai-sessie onClick={() => zetBalkSessieVerborgen(false)}
+          title={t('Повернути панель над листами зараз, у цій вкладці.', 'Het paneel nu terugzetten boven de berichten, in dit tabblad.')}>
+          {t('Показати знову', 'Weer tonen')}
+        </button>
+      )}
+      <p className='lz-weergave-noot' data-weergave-lokaal={lokaal}>
+        <b>{t('Безкоштовний локальний ШІ Chrome:', 'Gratis lokale AI van Chrome:')}</b>{' '}{t(...lokaalStap(lokaal))}{' '}
+        {(lokaal === 'site-uit' || lokaal === 'uit' || lokaal === 'model-ontbreekt') && <button type='button' className='mk-knop' onClick={openExtensieOpties}>{t('Відкрити налаштування розширення', 'Instellingen van de extensie openen')}</button>}
+        {(lokaal === 'geen-extensie' || lokaal === 'oud') && <a className='mk-knop' href={aiHrefOplossen('/ai', 'extensie')} target='_blank' rel='noreferrer'>{lokaal === 'oud' ? t('Оновити розширення', 'Extensie bijwerken') : t('Встановити розширення', 'Extensie installeren')}</a>}
+      </p>
       {(geenAgent || !aan) && (
         <details className='lz-ai-uitleg'>
           <summary>{t('Як це працює і що підключити', 'Hoe het werkt en wat te koppelen')}</summary>

@@ -918,6 +918,8 @@ export type AiVertalingRunResponse = {
   motorId?: string;
   motorNaam?: string;
   onvertaald?: number;
+  /** MAILAI-002: постачальник, який справді обробив текст вашим ключем (anthropic, gemini…). Ontbreekt bij een oude server. */
+  aanbiederId?: string;
   summary?: {
     depth: AiVertalingSummaryDepth;
     headline: string;
@@ -1058,8 +1060,9 @@ export function motorenMetStand(agents: readonly AiVertalingAgentInfo[], voorDoc
  * ввімкнула опцію і (3) хоча б один рушій справді працює (зараз — приватний ШІ-агент із правом читати пошту/файли). Інакше панелі
  * немає зовсім, без порожнього місця. Alleen tonen als de staat geladen is, de optie aan staat en minstens één motor echt werkt.
  */
-export function aiBalkZichtbaar(o: { geladen: boolean; balkTonen: boolean; motoren: readonly Pick<VertaalMotor, 'staat'>[] }): boolean {
-  return o.geladen && o.balkTonen === true && o.motoren.some(m => m.staat === 'werkt');
+/** MAILAI-002: `lokaalKlaar` = локальний ШІ Chrome через розширення готовий на цьому пристрої — теж робочий рушій (безкоштовний). */
+export function aiBalkZichtbaar(o: { geladen: boolean; balkTonen: boolean; motoren: readonly Pick<VertaalMotor, 'staat'>[]; lokaalKlaar?: boolean }): boolean {
+  return o.geladen && o.balkTonen === true && (o.lokaalKlaar === true || o.motoren.some(m => m.staat === 'werkt'));
 }
 
 /** De motor die een resultaat gemaakt heeft (voor de plaat boven de brief). */

@@ -44,8 +44,12 @@ import {
   type VertaalWeergave,
 } from '../../shared/ai-vertaling';
 import { InfoTip } from '../InfoTip';
-import { aiHrefOplossen, useLaatsteAiStaat, zetAiBalkTonen } from './ai-staat';
+import { aiHrefOplossen, useBalkSessieVerborgen, useLaatsteAiStaat, useMotorVoorkeur, zetAiBalkTonen, zetBalkSessieVerborgen, zetMotorVoorkeur } from './ai-staat';
 import AiUitleg from './AiUitleg';
+import MotorKiezer from './MotorKiezer';
+import { lokaalGebruik, LokaleFout, useLokaleStand, vatSamenLokaal, vertaalLokaal } from './lokale-motor';
+import { andereMotor, kiesMotor, LOKAAL_MOTOR_ID, MOTOR_AUTO, motorenVoorPost, verwerktDoor, type MotorKaart } from '../../shared/mail-ai-motor';
+import './motor-kiezer.css';
 import './ai-vertaling-balk.css';
 
 /* 21.10.2026 (рецензія UX): на телефоні й в альбомній орієнтації панель ШІ займала 200+ px над листом (на 390×844 текст листа
@@ -163,6 +167,13 @@ export default function AiVertalingBalk({
   // MAILAI-001: панель видно лише після відповіді сервера, якщо людина її ввімкнула і є робочий рушій (aiBalkZichtbaar).
   const [staatGeladen, setStaatGeladen] = useState(false);
   const gedeeldeStaat = useLaatsteAiStaat();
+  // MAILAI-002: рушії (локальний ШІ Chrome + ваші ключі), ваш вибір на цьому пристрої, «сховати зараз» і запропонований інший рушій.
+  const lokaal = useLokaleStand();
+  const voorkeur = useMotorVoorkeur();
+  const kaarten = useMemo(() => motorenVoorPost(agents, lokaal), [agents, lokaal]);
+  const sessieVerborgen = useBalkSessieVerborgen();
+  const [sluitKeuzeOpen, setSluitKeuzeOpen] = useState(false);
+  const [voorstel, setVoorstel] = useState<{ mode: AiVertalingMode; motor: MotorKaart } | null>(null);
   const balkId = useId();
   const nl = isNl();
   const t = (uk: string, nlTekst: string) => (nl ? nlTekst : uk);
@@ -276,11 +287,21 @@ export default function AiVertalingBalk({
       const depth = overrides?.depth || summaryDepth;
       const crossMailbox = overrides?.crossMailbox !== undefined ? overrides.crossMailbox : crossMailboxContext;
       const withAttachments = overrides?.withAttachments !== undefined ? overrides.withAttachments : includeAttachments;
-      const agentId = overrides?.agent || selectedAgentId || 'prive:mijn-ruimte-assistent';
+      // MAILAI-002: welke motor? Uw keuze (of «авто» = eerst gratis); een expliciete keuze die deze functie niet kan → niets versturen.
+      const motor = overrides?.agent ? kaarten.find(k => k.id === overrides.agent) || null : kiesMotor(kaarten, voorkeur, mode);
+      const agentId = motor?.agentId || overrides?.agent || selectedAgentId || 'prive:mijn-ruimte-assistent';
 
       setActiveMode(mode);
       setRefusal(null);
       setErrorText('');
+      setVoorstel(null);
+      if (!motor || motor.staat !== 'klaar' || !motor.functies.includes(mode)) {
+        setErrorText(t(
+          'Обраний рушій цього не вміє або ще не готовий. Оберіть інший у «Рушії ШІ» — текст без вашого вибору нікуди не надсилається.',
+          'De gekozen motor kan dit niet of is nog niet klaar. Kies een andere in «AI-motoren» — zonder uw keuze gaat de tekst nergens heen.',
+        ));
+        return;
+      }
 
       const payloadSegments: AiVertalingSegment[] = [
         ...(subject.trim() ? [{ id: 'subject', text: subject.trim() }] : []),
@@ -305,6 +326,41 @@ export default function AiVertalingBalk({
           setHasTranslation(true);
           onTranslationsReady(cached.translations, cached.detectedSourceLang, { motorNaam: cached.motorNaam || '', doelTaal: cached.targetLang, onvertaald: cached.onvertaald || 0 });
           onToggleTranslationActive(true);
+        }
+        return;
+      }
+
+      if (motor.soort === 'lokaal') {
+        setBusyMode(mode);
+        try {
+          const basis: AiVertalingRunResponse = {
+            ok: true, mode, targetLang, targetLangLabelUk: taalLabelUk(targetLang), detectedSourceLang: '', agentId: LOKAAL_MOTOR_ID,
+            agentName: t('Локальний ШІ Chrome', 'Lokale AI van Chrome'), cached: false, motorId: LOKAAL_MOTOR_ID, motorNaam: t('Локальний ШІ Chrome', 'Lokale AI van Chrome'),
+            privacy: { strippedTrackingPixels: 0, strippedTrackingParams: 0, redactedSecrets: 0, scopeVerified: [], ruimte: 'prive' },
+          };
+          let data: AiVertalingRunResponse;
+          if (mode === 'translate') {
+            const r = await vertaalLokaal(payloadSegments, targetLang);
+            data = { ...basis, translations: r.translations, onvertaald: r.onvertaald };
+          } else {
+            data = { ...basis, summary: await vatSamenLokaal([subject, bodyText].filter(Boolean).join('\n\n')) };
+          }
+          if (!aliveRef.current) return;
+          localCacheRef.current.set(cacheKey, data);
+          setLastResult(data);
+          if (mode === 'translate' && data.translations) {
+            setHasTranslation(true);
+            onTranslationsReady(data.translations, '', { motorNaam: data.motorNaam || '', doelTaal: targetLang, onvertaald: data.onvertaald || 0 });
+            onToggleTranslationActive(true);
+          }
+        } catch (err) {
+          if (!aliveRef.current) return;
+          const reden = err instanceof LokaleFout ? err.tekst(nl) : t('Не вдалося виконати на цьому пристрої.', 'Uitvoeren op dit apparaat mislukt.');
+          setErrorText(`${reden} ${t('Оригінал листа не змінено.', 'Het origineel is niet veranderd.')}`);
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+        } finally {
+          if (aliveRef.current) setBusyMode(null);
         }
         return;
       }
@@ -354,7 +410,12 @@ export default function AiVertalingBalk({
       } catch (err: any) {
         if (!aliveRef.current) return;
         const errBody = err?.response?.data || err?.data || {};
-        if (errBody?.messageUk || err?.response?.status === 403 || err?.status === 403) {
+        // MAILAI-002: ліміт постачальника або недійсний ключ — сказати саме це і запропонувати інший готовий рушій.
+        if (errBody?.error === 'AANBIEDER_LIMIET' || errBody?.error === 'AANBIEDER_SLEUTEL_ONGELDIG' || errBody?.error === 'VERTAALMOTOR_GEEN_ANTWOORD') {
+          setErrorText(String((nl ? errBody.messageNl : errBody.messageUk) || errBody.messageUk || ''));
+          const ander = andereMotor(kaarten, motor.id, mode);
+          if (ander) setVoorstel({ mode, motor: ander });
+        } else if (errBody?.messageUk || err?.response?.status === 403 || err?.status === 403) {
           setRefusal({
             code: String(errBody.error || 'ACCESS_DENIED'),
             messageUk:
@@ -393,6 +454,9 @@ export default function AiVertalingBalk({
       settings.recentLangs,
       onTranslationsReady,
       onToggleTranslationActive,
+      kaarten,
+      voorkeur,
+      nl,
     ],
   );
 
@@ -413,7 +477,18 @@ export default function AiVertalingBalk({
   };
   // Вимкнено або немає жодного робочого рушія: панелі немає зовсім (без порожнього місця). Хуки вище працюють далі, тож переклад,
   // який людина обрала в смузі над листом чи в «Вигляд → Мова листа», і далі виконується (якщо є робочий агент).
-  if (!voorbeeldZichtbaar && !aiBalkZichtbaar({ geladen: staatGeladen, balkTonen, motoren })) return null;
+  if (!voorbeeldZichtbaar && (sessieVerborgen || !aiBalkZichtbaar({ geladen: staatGeladen, balkTonen, motoren, lokaalKlaar: lokaal === 'klaar' }))) return null;
+  // Wie krijgt de tekst nu (voor vertalen)? Altijd zichtbaar, ook ingeklapt.
+  const actief = kiesMotor(kaarten, voorkeur, 'translate');
+  const kiesVoorkeur = (id: string) => {
+    zetMotorVoorkeur(id);
+    const k = kaarten.find(x => x.id === id);
+    if (k?.agentId) { setSelectedAgentId(k.agentId); void persistSettings({ defaultAgentId: k.agentId }); }
+    setErrorText(''); setVoorstel(null);
+  };
+  const kanFunctie = (mode: AiVertalingMode) => Boolean(kiesMotor(kaarten, voorkeur, mode));
+  const nietKanTitel = t('Обраний рушій цього не вміє (локальний ШІ: лише переклад і підсумок). Оберіть інший у «Рушії ШІ».', 'De gekozen motor kan dit niet (lokale AI: alleen vertaling en samenvatting). Kies een andere in «AI-motoren».');
+  const gebruik = actief?.soort === 'lokaal' ? lokaalGebruik() : null;
 
   return (
     <section
@@ -464,38 +539,69 @@ export default function AiVertalingBalk({
               'Сховати цю панель над усіма листами (налаштування вашого облікового запису). Повернути: «Вигляд» у шапці листа → «ШІ-аналіз над листом». Переклад у смузі над листом працює й без панелі.',
               'Dit paneel boven alle berichten verbergen (instelling van uw account). Terugzetten: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht». Vertalen in de strook boven het bericht werkt ook zonder paneel.',
             )}
-            onClick={sluitBalk}
+            onClick={() => setSluitKeuzeOpen(o => !o)}
+            aria-expanded={sluitKeuzeOpen}
+            aria-haspopup="true"
             data-testid="ai-vb-sluit"
           >
             <X size={16} aria-hidden="true" />
           </button>
+          {sluitKeuzeOpen && (
+            <div className="ai-vb-sluit-keuze" role="group" aria-label={t('Як сховати панель ШІ', 'Hoe het AI-paneel verbergen')} data-testid="ai-vb-sluit-keuze"
+              onKeyDown={e => { if (e.key === 'Escape') setSluitKeuzeOpen(false); }}>
+              <button type="button" className="mk-knop" autoFocus data-sluit="sessie"
+                onClick={() => { setSluitKeuzeOpen(false); zetBalkSessieVerborgen(true); }}>
+                <strong>{t('Сховати зараз', 'Nu verbergen')}</strong>
+                <small>{t('Лише до закриття цієї вкладки, щоб не відволікало. Налаштування не змінюються.', 'Alleen tot u dit tabblad sluit, zodat het niet afleidt. De instellingen blijven zoals ze zijn.')}</small>
+              </button>
+              <button type="button" className="mk-knop" data-sluit="uit" onClick={() => { setSluitKeuzeOpen(false); sluitBalk(); }}>
+                <strong>{t('Вимкнути зовсім', 'Helemaal uitzetten')}</strong>
+                <small>{t('На всіх ваших пристроях, доки не ввімкнете знову: «Вигляд» у шапці листа → «ШІ-аналіз над листом».', 'Op al uw apparaten, tot u het weer aanzet: «Weergave» in de kop van het bericht → «AI-analyse boven het bericht».')}</small>
+              </button>
+              <button type="button" className="ai-vb-wie-knop" data-sluit="annuleer" onClick={() => setSluitKeuzeOpen(false)}>{t('Скасувати', 'Annuleren')}</button>
+            </div>
+          )}
         </div>
+        <p className="ai-vb-wie" data-testid="ai-vb-wie" data-motor-actief={actief?.id || ''}>
+          {actief ? (
+            <>
+              <span>{t('Обробляє:', 'Verwerkt door:')}</span>
+              <strong>{t(actief.naamUk, actief.naamNl)}</strong>
+              <span className="mk-label" data-kosten={actief.kosten}>{actief.kosten === 'gratis' ? t('безкоштовно', 'gratis') : actief.kosten === 'gratis-niveau' ? t('безкоштовний рівень або платно', 'gratis niveau of betaald') : t('платно', 'betaald')}</span>
+              <span>{actief.soort === 'lokaal' ? t('текст не покидає цей комп’ютер', 'de tekst verlaat deze computer niet') : t('ваш сервер → постачальник, вашим ключем', 'uw server → aanbieder, met uw sleutel')}</span>
+              {gebruik && <span title={t('Розширення пропускає до 20 запитів за хвилину з цієї сторінки.', 'De extensie laat tot 20 verzoeken per minuut van deze pagina door.')}>{t(`запитів за хвилину: ${gebruik.minuut}/${gebruik.max}`, `verzoeken per minuut: ${gebruik.minuut}/${gebruik.max}`)}</span>}
+              {voorkeur === MOTOR_AUTO && <span>{t('(авто)', '(auto)')}</span>}
+            </>
+          ) : (
+            <span>{t('Обраний рушій зараз не готовий.', 'De gekozen motor is nu niet klaar.')}</span>
+          )}
+          <button type="button" className="ai-vb-wie-knop" onClick={() => setMotorenOpen(true)} data-testid="ai-vb-wie-wissel"
+            title={t('Обрати, хто обробляє текст: локальний ШІ на цьому комп’ютері або постачальник з вашим ключем. Там же — куди йде текст, вартість і умови.', 'Kiezen wie de tekst verwerkt: lokale AI op deze computer of een aanbieder met uw sleutel. Daar ook: waar de tekst heen gaat, kosten en voorwaarden.')}>
+            {t('Змінити · як обробляється текст', 'Wijzigen · hoe de tekst verwerkt wordt')}
+          </button>
+        </p>
 
         <div className="ai-vb-selectors" id={`${balkId}-kiezers`}>
-          <label className="ai-vb-select-group" title="Оберіть підключеного приватного ШІ-агента">
+          <label className="ai-vb-select-group" title={t('Хто обробляє текст: «Авто» — спершу безкоштовний; локальний ШІ — на цьому комп’ютері; інші — постачальник з вашим ключем.', 'Wie de tekst verwerkt: «Auto» — eerst gratis; lokale AI — op deze computer; andere — aanbieder met uw sleutel.')}>
             <Bot size={13} aria-hidden="true" />
-            <span className="ai-vb-sr">ШІ-агент</span>
+            <span className="ai-vb-sr">{t('Рушій ШІ', 'AI-motor')}</span>
             <select
-              value={selectedAgentId}
+              value={voorkeur}
               onChange={e => {
-                const nextAgentId = e.target.value;
-                setSelectedAgentId(nextAgentId);
+                const id = e.target.value;
+                kiesVoorkeur(id);
                 setRefusal(null);
-                void persistSettings({ defaultAgentId: nextAgentId });
                 if (translationActive || activeMode === 'translate') {
-                  void runAction('translate', { agent: nextAgentId });
-                } else if (activeMode) {
-                  void runAction(activeMode, { agent: nextAgentId });
+                  void runAction('translate', { agent: id === MOTOR_AUTO ? undefined : id });
                 }
               }}
-              aria-label={t('Підключений ШІ-агент', 'Gekoppelde AI-agent')}
+              aria-label={t('Рушій ШІ', 'AI-motor')}
               data-testid="ai-vb-agent-select"
             >
-              {agents.map(agent => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name}
-                  {!agent.allowedMailRead && !isDocumentView ? ' (немає mail.read)' : ''}
-                  {!agent.allowedFilesRead && isDocumentView ? ' (немає files.read)' : ''}
+              <option value={MOTOR_AUTO}>{t('Авто: спершу безкоштовний', 'Auto: eerst gratis')}</option>
+              {kaarten.filter(k => k.staat === 'klaar').map(k => (
+                <option key={k.id} value={k.id}>
+                  {t(k.naamUk, k.naamNl)} · {k.kosten === 'gratis' ? t('безкоштовно', 'gratis') : k.kosten === 'gratis-niveau' ? t('безкоштовний рівень', 'gratis niveau') : t('платно', 'betaald')}
                 </option>
               ))}
             </select>
@@ -566,7 +672,8 @@ export default function AiVertalingBalk({
           <button
             type="button"
             className={`ai-vb-mode-btn${activeMode === 'summary' ? ' active' : ''}`}
-            disabled={busyMode !== null}
+            disabled={busyMode !== null || !kanFunctie('summary')}
+            title={kanFunctie('summary') ? undefined : nietKanTitel}
             onClick={() => void runAction('summary')}
             data-testid="ai-vb-btn-summary"
           >
@@ -577,7 +684,8 @@ export default function AiVertalingBalk({
           <button
             type="button"
             className={`ai-vb-mode-btn${activeMode === 'purpose' ? ' active' : ''}`}
-            disabled={busyMode !== null}
+            disabled={busyMode !== null || !kanFunctie('purpose')}
+            title={kanFunctie('purpose') ? undefined : nietKanTitel}
             onClick={() => void runAction('purpose')}
             data-testid="ai-vb-btn-purpose"
           >
@@ -589,7 +697,8 @@ export default function AiVertalingBalk({
             <button
               type="button"
               className={`ai-vb-mode-btn${activeMode === 'context' ? ' active' : ''}`}
-              disabled={busyMode !== null}
+              disabled={busyMode !== null || !kanFunctie('context')}
+              title={kanFunctie('context') ? undefined : nietKanTitel}
               onClick={() => void runAction('context')}
               data-testid="ai-vb-btn-context"
             >
@@ -617,12 +726,12 @@ export default function AiVertalingBalk({
             type="button"
             className={`ai-vb-motoren-trigger${motorenOpen ? ' active' : ''}`}
             aria-expanded={motorenOpen}
-            title="Які рушії перекладу є, що працює зараз, що треба підключити і чого ще немає"
+            title={t('Хто може обробляти текст: локальний ШІ на цьому комп’ютері чи постачальник з вашим ключем; куди йде текст, вартість, умови і що зробити, щоб підключити', 'Wie de tekst kan verwerken: lokale AI op deze computer of een aanbieder met uw sleutel; waar de tekst heen gaat, kosten, voorwaarden en hoe te koppelen')}
             onClick={() => setMotorenOpen(v => !v)}
             data-testid="ai-vb-btn-motoren"
           >
             <Plug size={14} />
-            <span>{t('Рушії перекладу', 'Vertaalmotoren')}</span>
+            <span>{t('Рушії ШІ', 'AI-motoren')}</span>
           </button>
 
           <button
@@ -645,12 +754,18 @@ export default function AiVertalingBalk({
       {motorenOpen && (
         <div className="ai-vb-motoren" role="region" aria-label={t('Рушії перекладу', 'Vertaalmotoren')} data-testid="ai-vb-motoren">
           <div className="ai-vb-settings-header">
-            <strong>{t('Рушії перекладу', 'Vertaalmotoren')}</strong>
+            <strong>{t('Рушії ШІ: хто обробляє текст', 'AI-motoren: wie de tekst verwerkt')}</strong>
             <button type="button" className="ai-vb-close-btn" onClick={() => setMotorenOpen(false)} aria-label={t('Закрити перелік рушіїв', 'Lijst met motoren sluiten')}>
               <X size={14} />
             </button>
           </div>
-          <AiUitleg nl={nl} />
+          <MotorKiezer nl={nl} kaarten={kaarten} voorkeur={voorkeur} onKies={kiesVoorkeur} lokaal={lokaal} />
+          <details className="mk-later">
+            <summary>{t('Як працює ШІ в пошті й конфіденційність', 'Hoe de AI in de post werkt en privacy')}</summary>
+            <AiUitleg nl={nl} />
+          </details>
+          <details className="mk-later">
+            <summary>{t('Служби перекладу без ШІ (каталог)', 'Vertaaldiensten zonder AI (catalogus)')}</summary>
           <ul className="ai-vb-motoren-lijst">
             {motoren.map(motor => (
               <li key={motor.id} className="ai-vb-motor-kaart" data-motor={motor.id} data-motor-staat={motor.staat}>
@@ -676,6 +791,7 @@ export default function AiVertalingBalk({
               </li>
             ))}
           </ul>
+          </details>
         </div>
       )}
 
@@ -794,7 +910,20 @@ export default function AiVertalingBalk({
         <div className="ai-vb-error-banner" role="alert">
           <AlertTriangle size={15} />
           <span>{errorText}</span>
+          {voorstel && (
+            <button type="button" className="mk-knop" data-testid="ai-vb-ander-motor"
+              title={t('Виконати цей запит іншим готовим рушієм. Ваш основний вибір не змінюється.', 'Dit verzoek uitvoeren met een andere motor die klaar is. Uw vaste keuze blijft.')}
+              onClick={() => { const x = voorstel; setVoorstel(null); void runAction(x.mode, { agent: x.motor.id }); }}>
+              {t(`Спробувати: ${voorstel.motor.naamUk}`, `Proberen met: ${voorstel.motor.naamNl}`)}
+            </button>
+          )}
         </div>
+      )}
+      {lastResult && !errorText && (
+        <p className="ai-vb-verwerkt" data-testid="ai-vb-verwerkt">
+          <ShieldCheck size={13} aria-hidden="true" />
+          {t('Оброблено: ', 'Verwerkt: ')}{verwerktDoor({ lokaal: lastResult.motorId === LOKAAL_MOTOR_ID, aanbiederId: lastResult.aanbiederId, agentName: lastResult.agentName }, nl)}
+        </p>
       )}
 
       {lastResult && activeMode === 'translate' && (

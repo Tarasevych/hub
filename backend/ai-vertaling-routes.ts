@@ -546,6 +546,44 @@ function splitSentences(text: string): string[] {
     .filter(s => s.length >= 12);
 }
 
+/** MAILAI-002: що сталося з викликом постачальника — для чесної відповіді (ліміт, недійсний ключ) і для «хто обробив». */
+export type AanbiederMelding = { aanbieder?: AiAanbiederId; status?: number; wachtSec?: number };
+
+/**
+ * MAILAI-002: ключ і постачальник РАЗОМ. Ключ лише цього користувача (Sleutelkluis, призначення = постачальник) — ніколи ключ
+ * власника сервера чи іншого користувача. «Приватний асистент» не має власного постачальника: береться перший, для якого в людини є
+ * ключ, і запит іде САМЕ йому. Раніше тут брався будь-який ключ, а запит ішов на api.anthropic.com — ключ Gemini міг піти не туди.
+ * Sleutel en aanbieder samen: alleen de eigen sleutel van deze gebruiker, en het verzoek gaat naar de aanbieder van díe sleutel.
+ */
+export async function sleutelEnAanbieder(userId: string, chosenAgent?: AiVertalingAgentInfo | null): Promise<{ apiKey: string | null; aanbieder: AiAanbiederId }> {
+  const eigen = aanbiederUitAgent(chosenAgent);
+  const assistent = !chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent';
+  try {
+    if (customDeps?.getApiKeyForProvider) {
+      const k = await customDeps.getApiKeyForProvider(userId, eigen);
+      if (k || !assistent) return { apiKey: k, aanbieder: eigen };
+      for (const a of AI_AANBIEDERS) {
+        const v = await customDeps.getApiKeyForProvider(userId, a.id);
+        if (v) return { apiKey: v, aanbieder: a.id };
+      }
+      return { apiKey: null, aanbieder: eigen };
+    }
+    if (customDeps?.getApiKey) return { apiKey: await customDeps.getApiKey(userId), aanbieder: eigen };
+    if (defaultChatDeps.getApiKeyForPurpose) {
+      const k = await defaultChatDeps.getApiKeyForPurpose(userId, eigen);
+      if (k || !assistent) return { apiKey: k, aanbieder: eigen };
+      for (const a of AI_AANBIEDERS) {
+        const v = await defaultChatDeps.getApiKeyForPurpose(userId, a.id);
+        if (v) return { apiKey: v, aanbieder: a.id };
+      }
+      return { apiKey: null, aanbieder: eigen };
+    }
+    return { apiKey: await defaultChatDeps.getApiKey(userId), aanbieder: eigen };
+  } catch {
+    return { apiKey: null, aanbieder: eigen };
+  }
+}
+
 async function callAnthropicJson<T>(
   userId: string,
   systemPrompt: string,
@@ -553,26 +591,11 @@ async function callAnthropicJson<T>(
   maxTokens = 1400,
   chosenAgent?: AiVertalingAgentInfo | null,
   responseSchema?: Record<string, unknown>,
+  melding?: AanbiederMelding,
 ): Promise<T | null> {
-  const aanbieder = aanbiederUitAgent(chosenAgent);
   const fetchFn = customDeps?.fetch ?? fetch;
-  let apiKey: string | null = null;
-  try {
-    if (customDeps?.getApiKeyForProvider) {
-      apiKey = await customDeps.getApiKeyForProvider(userId, aanbieder);
-    } else if (customDeps?.getApiKey) {
-      apiKey = await customDeps.getApiKey(userId);
-    } else if (defaultChatDeps.getApiKeyForPurpose) {
-      apiKey = await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder);
-      if (!apiKey && (!chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent')) {
-        apiKey = await defaultChatDeps.getApiKey(userId);
-      }
-    } else {
-      apiKey = await defaultChatDeps.getApiKey(userId);
-    }
-  } catch {
-    apiKey = null;
-  }
+  const { apiKey, aanbieder } = await sleutelEnAanbieder(userId, chosenAgent);
+  if (melding) melding.aanbieder = aanbieder;
   if (!apiKey) return null;
 
   try {
@@ -634,7 +657,15 @@ async function callAnthropicJson<T>(
       });
     }
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // MAILAI-002: 429 = ліміт постачальника (безкоштовний рівень вичерпано тощо), 401/403 = ключ недійсний. Тексту листа тут немає.
+      if (melding) {
+        melding.status = res.status;
+        const wacht = Number(res.headers?.get?.('retry-after') || 0);
+        if (Number.isFinite(wacht) && wacht > 0) melding.wachtSec = Math.min(Math.round(wacht), 86_400);
+      }
+      return null;
+    }
     const data: any = await res.json().catch(() => null);
     let rawText = '';
     if (Array.isArray(data?.candidates) && data.candidates[0]?.content?.parts) {
@@ -855,10 +886,45 @@ export function begrensAiVertalingInvoer(input: ExecuteAiVertalingInput): Execut
   };
 }
 
+/**
+ * MAILAI-002: обгортка. Рушій не відповів через ліміт постачальника (429) чи недійсний ключ (401/403) — кажемо саме це (з порадою
+ * взяти інший рушій), а не загальне «не повернув». Успішна відповідь називає постачальника, який справді обробив текст.
+ */
 export async function executeAiVertalingRun(
   invoer: ExecuteAiVertalingInput,
 ): Promise<{ status: 200; body: AiVertalingRunResponse } | { status: number; body: Record<string, unknown> }> {
+  const melding: AanbiederMelding = {};
+  const r = await executeAiVertalingRunKern(invoer, melding);
+  if (r.status === 200) {
+    if (melding.aanbieder) (r.body as AiVertalingRunResponse).aanbiederId = melding.aanbieder;
+    return r;
+  }
+  if (r.status === 503 && melding.status) {
+    const naam = melding.aanbieder ? AI_AANBIEDER_BIJ_ID[melding.aanbieder].naamUk : 'постачальник ШІ';
+    if (melding.status === 429) {
+      const wacht = melding.wachtSec ? ` Спробуйте через ${melding.wachtSec < 120 ? `${melding.wachtSec} с` : `${Math.ceil(melding.wachtSec / 60)} хв`}.` : '';
+      const wachtNl = melding.wachtSec ? ` Probeer het over ${melding.wachtSec < 120 ? `${melding.wachtSec} s` : `${Math.ceil(melding.wachtSec / 60)} min`}.` : '';
+      return { status: 429, body: { ok: false, error: 'AANBIEDER_LIMIET', aanbiederId: melding.aanbieder, wachtSec: melding.wachtSec || 0,
+        messageUk: `Ліміт ${naam} вичерпано (для безкоштовного рівня це звично).${wacht} Або оберіть інший рушій — наприклад, локальний ШІ Chrome.`,
+        messageNl: `De limiet van ${naam} is bereikt (gewoon bij het gratis niveau).${wachtNl} Of kies een andere motor — bijvoorbeeld de lokale AI van Chrome.` } };
+    }
+    if (melding.status === 401 || melding.status === 403) {
+      return { status: 503, body: { ok: false, error: 'AANBIEDER_SLEUTEL_ONGELDIG', aanbiederId: melding.aanbieder,
+        messageUk: `${naam} не прийняв ваш ключ API (недійсний, відкликаний або без доступу до моделі). Перевірте ключ у «Сховищі ключів».`,
+        messageNl: `${naam} aanvaardde uw API-sleutel niet (ongeldig, ingetrokken of zonder toegang tot het model). Controleer de sleutel in de «Sleutelkluis».`,
+        actionLabelUk: 'Відкрити «Сховище ключів»', actionHref: AI_TOEGANG_HREF } };
+    }
+  }
+  return r;
+}
+
+async function executeAiVertalingRunKern(
+  invoer: ExecuteAiVertalingInput,
+  melding: AanbiederMelding,
+): Promise<{ status: 200; body: AiVertalingRunResponse } | { status: number; body: Record<string, unknown> }> {
   const input = begrensAiVertalingInvoer(invoer);
+  const vraagAanbieder = <T,>(u: string, sys: string, p: string, max?: number, a?: AiVertalingAgentInfo | null, schema?: Record<string, unknown>) =>
+    callAnthropicJson<T>(u, sys, p, max, a, schema, melding);
   const userId = String(input.userId || '').trim();
   if (!userId) {
     return { status: 401, body: { ok: false, error: 'OWNER_SESSION_REQUIRED' } };
@@ -1054,7 +1120,7 @@ export async function executeAiVertalingRun(
           ...(sanitizedBody.text ? [{ id: 'body:0', text: sanitizedBody.text }] : []),
         ];
 
-    const llmResult = await callAnthropicJson<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
+    const llmResult = await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
       userId,
       UNTRUSTED_GUARD_SYSTEM,
       [
@@ -1110,7 +1176,7 @@ export async function executeAiVertalingRun(
       };
     }
 
-    const llmActies = await callAnthropicJson<ActiesModelAntwoord>(
+    const llmActies = await vraagAanbieder<ActiesModelAntwoord>(
       userId,
       UNTRUSTED_GUARD_SYSTEM,
       [
@@ -1175,7 +1241,7 @@ export async function executeAiVertalingRun(
     .join('\n\n');
 
   if (mode === 'summary') {
-    const llmSummary = await callAnthropicJson<{
+    const llmSummary = await vraagAanbieder<{
       headline?: string;
       keyFacts?: string[];
       dates?: string[];
@@ -1244,7 +1310,7 @@ export async function executeAiVertalingRun(
   }
 
   if (mode === 'purpose') {
-    const llmPurpose = await callAnthropicJson<{
+    const llmPurpose = await vraagAanbieder<{
       documentType?: string;
       whatAbout?: string;
       whatFor?: string;
@@ -1376,7 +1442,7 @@ export async function executeAiVertalingRun(
     snippet: c.snippet,
   }));
 
-  const llmContext = await callAnthropicJson<{
+  const llmContext = await vraagAanbieder<{
     overview?: string;
     causeAndEffectLinks?: string[];
     nonObviousConnections?: string[];
