@@ -401,6 +401,25 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .admin-uitrol .ut-rv-best-nav button{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg);color:var(--ut-text);cursor:pointer}
 .admin-uitrol .ut-rv-best-nav button:hover{border-color:var(--ut-info);color:var(--ut-info)}
 .ut-rv-best-nav svg{width:16px;height:16px}
+.admin-uitrol .ut-rv-best-nav .ut-rv-best-alles{width:auto;display:inline-flex;align-items:center;gap:5px;padding:0 10px;font:inherit;font-size:.8rem;font-weight:600}
+.admin-uitrol .ut-rv-best-nav .ut-rv-best-alles[aria-expanded='true']{background:var(--ut-info-bg);border-color:var(--ut-info);color:var(--ut-info)}
+.ut-rv-best-alles-pijl{transition:transform .15s}
+.ut-rv-best-alles[aria-expanded='true'] .ut-rv-best-alles-pijl{transform:rotate(180deg)}
+.ut-rv-best-lijst{list-style:none;margin:0;padding:0;display:grid;border:1px solid var(--ut-line);border-radius:12px;overflow:hidden;animation:ut-afwijs-in .15s ease-out}
+.ut-rv-best-lijst li+li{border-top:1px solid var(--ut-line)}
+.admin-uitrol .ut-rv-best-lijst button{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;background:transparent;color:var(--ut-text);font:inherit;text-align:left;cursor:pointer}
+.admin-uitrol .ut-rv-best-lijst button:hover{background:color-mix(in srgb,var(--ut-info-bg) 50%,transparent)}
+.admin-uitrol .ut-rv-best-lijst button[aria-current]{background:var(--ut-info-bg)}
+.admin-uitrol .ut-rv-best-lijst button[aria-current] .ut-rv-best-nr{background:var(--ut-info);color:#fff}
+.ut-rv-best-lijst-naam{display:grid;min-width:0}
+.ut-rv-best-lijst-naam b{font-size:.86rem;font-weight:600;overflow-wrap:anywhere}
+.ut-rv-best-lijst-naam small{font-family:var(--mono,ui-monospace,monospace);font-size:.72rem;color:var(--ut-muted);overflow-wrap:anywhere}
+.ut-rv-best-lijst-tel{display:inline-flex;gap:6px;font-family:var(--mono,ui-monospace,monospace);font-size:.76rem;font-weight:600}
+.ut-rv-best-lijst-tel [data-r='+']{color:var(--ut-ok)}
+.ut-rv-best-lijst-tel [data-r='-']{color:var(--ut-err)}
+.ut-rv-best-oog{width:16px;height:16px;color:var(--ut-muted)}
+button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
+@media (prefers-reduced-motion:reduce){.ut-rv-best-lijst{animation:none}.ut-rv-best-alles-pijl{transition:none}}
 .ut-rv-best-strook{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding:2px;margin:0 -2px;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 24px),transparent)}
 .ut-rv-best-strook::-webkit-scrollbar{display:none}
@@ -773,6 +792,12 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
   .ut-rv-best-naam small code,.ut-rv-best-scheid{display:none}
   .ut-rv-best-icoon{width:34px;height:34px}
   .admin-uitrol .ut-rv-best-nav button{width:30px;height:30px}
+  .ut-rv-best-kop{grid-template-columns:auto minmax(0,1fr)}
+  .ut-rv-best-nav{grid-column:1/-1;justify-content:flex-end}
+  .admin-uitrol .ut-rv-best-lijst button{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:8px}
+  .ut-rv-best-lijst .ut-rv-best-oog{display:none}
+  .ut-rv-best-lijst-naam b{font-size:.82rem}
+  .ut-rv-best-lijst-tel{flex-direction:column;align-items:flex-end;gap:0;font-size:.72rem}
   .ut-rv-voorna li{grid-template-columns:1fr}
   .ut-rv-pijl-rechts{transform:rotate(90deg);justify-self:center}
 }

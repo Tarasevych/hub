@@ -5,8 +5,8 @@
 // «було → стане» як дві картки зі стрілкою, однакові безпечніші зміни згорнуто в одну групу, пояснення автора — як цитата.
 // Rode vlaggen vóór het goedkeuren: ringdiagram, tegels per soort (filter), verschilbalk per punt, voor → na als kaartjes met pijl,
 // gelijke veiligere wijzigingen samengevoegd, uitleg van de maker als citaat.
-import { useMemo, useState, useEffect, useRef, type KeyboardEvent } from 'react';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat, FileCode2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useId, useMemo, useState, useEffect, useRef, type KeyboardEvent } from 'react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat, FileCode2, ChevronLeft, ChevronRight, List, Eye } from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
@@ -175,12 +175,14 @@ function Uitleg({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
  * «1 з 9», стрілки вперед/назад; нижче — одна стрічка коротких назв, яку можна гортати (на телефоні пальцем), вибрана — залита.
  * Bestandenwisselaar: huidig bestand groot met map en «1 van 9», pijlen; daaronder één scrollbare strook met korte namen.
  */
-function Bestanden({ lang, paden, gekozen, kies }: { lang: Lang; paden: string[]; gekozen: number; kies: (i: number) => void }) {
-  const strook = useRef<HTMLDivElement>(null);
+function Bestanden({ lang, paden, verschillen = [], gekozen, kies }: { lang: Lang; paden: string[]; verschillen?: (string | undefined)[]; gekozen: number; kies: (i: number) => void }) {
+  const strook = useRef<HTMLDivElement>(null); const [alles, setAlles] = useState(false); const lijstId = useId();
   const n = paden.length; const pad = paden[gekozen] || '';
   const naam = pad.split('/').pop() || pad; const map = pad.includes('/') ? pad.slice(0, pad.lastIndexOf('/')) : '';
   const kort = (p: string) => (p.split('/').pop() || p).replace(/\.(ya?ml|json|sh|service|timer|sql)$/i, '');
   const ext = /\.([a-z]+)$/i.exec(naam)?.[1]?.toUpperCase() || '';
+  // Усі файли в одній теці — тека показана вгорі один раз, у рядках списку не повторюється. Eén map: niet per regel herhalen.
+  const mapVan = (p: string) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''); const eenMap = paden.every((p) => mapVan(p) === mapVan(paden[0]));
   useEffect(() => { // вибраний пункт — у видиму частину стрічки, без прокручування сторінки · gekozen tab in beeld, zonder de pagina te scrollen
     const s = strook.current; const b = s?.children[gekozen] as HTMLElement | undefined;
     if (s && b && typeof s.scrollTo === 'function') s.scrollTo({ left: b.offsetLeft - s.clientWidth / 2 + b.clientWidth / 2, behavior: 'smooth' });
@@ -196,12 +198,24 @@ function Bestanden({ lang, paden, gekozen, kies }: { lang: Lang; paden: string[]
       <span className='ut-rv-best-nav'>
         <button type='button' onClick={() => kies((gekozen - 1 + n) % n)} aria-label={tr(lang, 'Попередній файл', 'Vorig bestand')} title={tr(lang, 'Попередній файл групи: пояснення нижче зміниться під нього', 'Vorig bestand van de groep: de uitleg hieronder volgt mee')}><ChevronLeft aria-hidden='true' /></button>
         <button type='button' onClick={() => kies((gekozen + 1) % n)} aria-label={tr(lang, 'Наступний файл', 'Volgend bestand')} title={tr(lang, 'Наступний файл групи: пояснення нижче зміниться під нього', 'Volgend bestand van de groep: de uitleg hieronder volgt mee')}><ChevronRight aria-hidden='true' /></button>
+        <button type='button' className='ut-rv-best-alles' aria-expanded={alles} aria-controls={lijstId} onClick={() => setAlles(!alles)}
+          title={alles ? tr(lang, 'Згорнути список файлів', 'Bestandenlijst inklappen') : tr(lang, 'Показати всі файли групи списком: тека, кількість змінених рядків; натиск на файл показує його пояснення', 'Alle bestanden van de groep als lijst: map en gewijzigde regels; klik toont de uitleg van dat bestand')}>
+          <List aria-hidden='true' /><span>{tr(lang, `Усі ${n}`, `Alle ${n}`)}</span><ChevronDown aria-hidden='true' className='ut-rv-best-alles-pijl' /></button>
       </span>
     </div>
     <div className='ut-rv-best-strook' role='tablist' aria-label={tr(lang, 'Файли групи', 'Bestanden van de groep')} ref={strook} onKeyDown={toets}>
       {paden.map((p, i) => <button key={i} type='button' role='tab' aria-selected={i === gekozen} tabIndex={i === gekozen ? 0 : -1} title={p} onClick={() => kies(i)}>
         <span className='ut-rv-best-nr'>{i + 1}</span>{kort(p)}</button>)}
     </div>
+    {/* Повний список (власник 16.11.2026: «рядок лишається, але має також розгортатися»). Volledige lijst, stroken blijft staan. */}
+    {alles && <ol className='ut-rv-best-lijst' id={lijstId} data-een-map={eenMap || undefined}>{paden.map((p, i) => { const { plus, min } = telRegels(verschillen[i]);
+      const nm = p.split('/').pop() || p; const mp = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '';
+      return <li key={i}><button type='button' aria-current={i === gekozen || undefined} onClick={() => kies(i)} title={tr(lang, 'Показати пояснення цього файлу нижче', 'De uitleg van dit bestand hieronder tonen')}>
+        <span className='ut-rv-best-nr'>{i + 1}</span>
+        <span className='ut-rv-best-lijst-naam'><b>{nm}</b>{mp && !eenMap && <small>{mp}</small>}</span>
+        {(plus || min) ? <span className='ut-rv-best-lijst-tel'><span data-r='+'>+{plus}</span><span data-r='-'>−{min}</span></span> : null}
+        {i === gekozen ? <Eye aria-hidden='true' className='ut-rv-best-oog' /> : <ChevronRight aria-hidden='true' className='ut-rv-best-oog' />}
+      </button></li>; })}</ol>}
   </div>;
 }
 
@@ -228,7 +242,7 @@ function Kaart({ groep, lang }: { groep: RisicoItemUit[]; lang: Lang }) {
       </span>
     </button>
     {open && <>
-      {groep.length > 1 && <Bestanden lang={lang} paden={groep.map((g) => padVan(g).replace(/^[+~−]\s+/, ''))} gekozen={gekozen} kies={setGekozen} />}
+      {groep.length > 1 && <Bestanden lang={lang} paden={groep.map((g) => padVan(g).replace(/^[+~−]\s+/, ''))} verschillen={groep.map((g) => g.verschil)} gekozen={gekozen} kies={setGekozen} />}
       <Uitleg it={it} lang={lang} />
     </>}
   </li>;
