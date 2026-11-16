@@ -203,6 +203,11 @@ export async function main(): Promise<number> {
       pkVeld.every((s) => /kalender=\{/.test(s) && /tot: tot !== null \? tot \+ live\.scheef : null/.test(s))
       && /'dagen' \| 'maanden' \| 'jaren'/.test(readFileSync(join(W, 'src/extensie/DatumKiezer.tsx'), 'utf8'))
       && /input\.tot !== undefined[^]*?MAX_DUUR_MS\[ruimte\][^]*?o\.activatieEind[^]*?o\.plafondMs/.test(serverBron));
+    // 16.11 (Павло: «має бути на вибір користувача, а не лише 7 днів»): типові межі в «Доступи» = серверні (366 д), межа видна у вікні з посиланням.
+    const model = readFileSync(join(W, 'src/agenten/toegang/model.ts'), 'utf8');
+    check('beleid: standaardgrenzen in «Toegang» = die van de server (geen stille 30 dagen meer); venster toont de grens met «Змінити»',
+      /priveMaxDagen: MAX_DAGEN, technischMaxMinuten: MAX_MINUTEN/.test(model) && !/'prive_max_dagen', 30,/.test(model)
+      && /data-eo-grens='1'/.test(pkVeld[0]) && /href='#toegang' data-eo-grens-link='1'/.test(pkVeld[0]) && !/maxDagen \?\? 30/.test(pkVeld[0]));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

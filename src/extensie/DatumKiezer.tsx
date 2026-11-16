@@ -3,7 +3,7 @@
 // Eigen kalender in de stijl van de site: dagen → maanden → jaren (klik op de titel), sluittijd apart.
 // Дні поза межами [min, max] вимкнені: межі ставить сервер (максимум простору й правила власника).
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import './datum-kiezer.css';
 
 type Weergave = 'dagen' | 'maanden' | 'jaren';
@@ -25,7 +25,11 @@ export type DatumKiezerProps = {
 export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: DatumKiezerProps) {
   const taal = uk ? 'uk-UA' : 'nl-NL';
   const start = waarde ?? Math.min(max, Math.max(min, Date.now() + 7 * D));
-  const [weergave, setWeergave] = useState<Weergave>('dagen');
+  const [weergave, zetWeergave] = useState<Weergave>('dagen');
+  // Напрям «наближення»: вгору (дні → місяці → роки) сітка віддаляється, вниз — наближається. Richting van de zoom.
+  const [richting, setRichting] = useState<'uit' | 'in'>('uit');
+  const NIVEAU: Record<Weergave, number> = { dagen: 0, maanden: 1, jaren: 2 };
+  const setWeergave = (w: Weergave) => { setRichting(NIVEAU[w] > NIVEAU[weergave] ? 'uit' : 'in'); zetWeergave(w); };
   const [jaar, setJaar] = useState(() => new Date(start).getFullYear());
   const [maand, setMaand] = useState(() => new Date(start).getMonth());
   const [dag, setDag] = useState<number | null>(() => (waarde ? dagBegin(waarde) : null));
@@ -66,12 +70,16 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
       <div className='dk-kop'>
         <button type='button' className='dk-pijl' onClick={vorige} disabled={!kanVorige} aria-label={uk ? 'Назад' : 'Terug'} title={uk ? 'Попередній період' : 'Vorige periode'}><ChevronLeft aria-hidden='true' /></button>
         <button type='button' className='dk-titel' onClick={() => setWeergave(weergave === 'dagen' ? 'maanden' : weergave === 'maanden' ? 'jaren' : 'dagen')}
-          title={uk ? 'Натисніть, щоб швидко обрати місяць або рік' : 'Klik om snel een maand of jaar te kiezen'} data-dk-titel='1'>{titel}</button>
+          title={weergave === 'dagen' ? (uk ? 'Показати всі місяці року — швидкий перехід до потрібного місяця' : 'Alle maanden van het jaar tonen — snel naar de juiste maand')
+            : weergave === 'maanden' ? (uk ? 'Показати роки — швидкий перехід на інший рік' : 'Jaren tonen — snel naar een ander jaar') : (uk ? 'Повернутися до днів' : 'Terug naar de dagen')}
+          aria-expanded={weergave !== 'dagen'} data-dk-titel='1' data-dk-niveau={weergave}>
+          <span>{titel}</span><ChevronDown className='dk-titel-pijl' aria-hidden='true' />
+        </button>
         <button type='button' className='dk-pijl' onClick={volgende} disabled={!kanVolgende} aria-label={uk ? 'Далі' : 'Verder'} title={uk ? 'Наступний період' : 'Volgende periode'}><ChevronRight aria-hidden='true' /></button>
       </div>
 
       {weergave === 'dagen' ? (
-        <div className='dk-rooster is-dagen' role='grid'>
+        <div key='dagen' className={`dk-rooster is-dagen dk-zoom-${richting}`} role='grid'>
           {dagNamen.map((n) => <span key={n} className='dk-weekdag' aria-hidden='true'>{n}</span>)}
           {cellen.map((c, i) => c === null ? <span key={`l${i}`} /> : (
             <button key={c} type='button' className={`dk-dag${c === dag ? ' is-aan' : ''}${c === vandaag ? ' is-vandaag' : ''}`} disabled={c < minDag || c > maxDag}
@@ -81,14 +89,14 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
           ))}
         </div>
       ) : weergave === 'maanden' ? (
-        <div className='dk-rooster is-groot'>
+        <div key='maanden' className={`dk-rooster is-groot dk-zoom-${richting}`} data-dk-weergave='maanden'>
           {maandNamen.map((n, m) => {
             const uit = new Date(jaar, m + 1, 0).getTime() < minDag || new Date(jaar, m, 1).getTime() > maxDag;
             return <button key={n} type='button' className={`dk-cel${m === maand ? ' is-aan' : ''}`} disabled={uit} onClick={() => { setMaand(m); setWeergave('dagen'); }} data-dk-maand={m + 1}>{n}</button>;
           })}
         </div>
       ) : (
-        <div className='dk-rooster is-groot'>
+        <div key='jaren' className={`dk-rooster is-groot dk-zoom-${richting}`} data-dk-weergave='jaren'>
           {Array.from({ length: 12 }, (_, i) => jaar + i).map((j) => (
             <button key={j} type='button' className={`dk-cel${j === new Date(start).getFullYear() ? ' is-aan' : ''}`} disabled={j < minJaar || j > maxJaar} onClick={() => { setJaar(j); setWeergave('maanden'); }} data-dk-jaar={j}>{j}</button>
           ))}

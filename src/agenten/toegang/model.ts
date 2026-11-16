@@ -192,7 +192,9 @@ export type Beleid = {
   priveAan: boolean; technischAan: boolean; priveCaps: string[] | null; technischCaps: string[] | null;
   priveMaxDagen: number; technischMaxMinuten: number; lokaalAan: boolean; notitie: string; gewijzigdDoor: string; gewijzigdOp: number | null;
 };
-export const STANDAARD_BELEID: Beleid = Object.freeze({ priveAan: true, technischAan: true, priveCaps: null, technischCaps: null, priveMaxDagen: 30, technischMaxMinuten: 480, lokaalAan: true, notitie: '', gewijzigdDoor: '', gewijzigdOp: null }) as Beleid;
+export const STANDAARD_BELEID: Beleid = Object.freeze({ priveAan: true, technischAan: true, priveCaps: null, technischCaps: null, priveMaxDagen: MAX_DAGEN, technischMaxMinuten: MAX_MINUTEN, lokaalAan: true, notitie: '', gewijzigdDoor: '', gewijzigdOp: null }) as Beleid;
+// EXTUI-001 (16.11): типові межі = серверні (shared STANDAARD_BELEID, 0110: 366 днів / 366 днів у хвилинах). Раніше тут були 30 днів / 8 год:
+// збереження іншого поля політики мовчки обрізало строк доступу до 30 днів. Standaardgrenzen = die van de server.
 export type BeheerBrowser = { agentId: string; naam: string; ruimte: Ruimte; online: boolean; versie: string; ontgrendeling: Ontgrendeling | null };
 export type BeheerGebruiker = { userId: string; email: string; naam: string; techProfiel: boolean; eigenaar: boolean; beleid: Beleid; browsers: BeheerBrowser[] };
 
@@ -205,7 +207,7 @@ export function normBeleid(v: unknown): Beleid {
   return {
     priveAan: b('priveAan', 'prive_aan', true), technischAan: b('technischAan', 'technisch_aan', true),
     priveCaps: capsOfNull(veld(o, 'priveCaps', 'prive_caps')), technischCaps: capsOfNull(veld(o, 'technischCaps', 'technisch_caps')),
-    priveMaxDagen: n('priveMaxDagen', 'prive_max_dagen', 30, 1, MAX_DAGEN), technischMaxMinuten: n('technischMaxMinuten', 'technisch_max_minuten', 480, 15, MAX_MINUTEN),
+    priveMaxDagen: n('priveMaxDagen', 'prive_max_dagen', MAX_DAGEN, 1, MAX_DAGEN), technischMaxMinuten: n('technischMaxMinuten', 'technisch_max_minuten', MAX_MINUTEN, 15, MAX_MINUTEN),
     lokaalAan: b('lokaalAan', 'lokaal_aan', true), notitie: str(veld(o, 'notitie', 'notitie'), 500), gewijzigdDoor: str(veld(o, 'gewijzigdDoor', 'gewijzigd_door'), 120), gewijzigdOp: num(veld(o, 'gewijzigdOp', 'gewijzigd_op')),
   };
 }

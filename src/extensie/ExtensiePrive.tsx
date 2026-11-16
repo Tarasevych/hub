@@ -11,7 +11,7 @@ import HulpVraag from '../hulp/HulpVraag';
 import HostSchakelaar from './HostSchakelaar';
 import PeriodeKiezer, { dagKeuzes } from './PeriodeKiezer';
 import {
-  AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
+  AI_SITE_HOSTS, PRIVE_DAGEN_KEUZES, PRIVE_MAX_DAGEN, PRIVE_HOSTS, PRIVE_STANDAARD_DAGEN, STAAT_TEKST, isWeigercode, weigerUitleg, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
 import { eindeWeergave } from '../../shared/extensie-matrix';
 import { restTekst, useExtensieLive } from './extensie-live';
@@ -41,7 +41,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const kopId = useId();
   const [nu, setNu] = useState(() => Date.now());
   const recht = live.rechtPrive;
-  const keuzes = useMemo(() => PRIVE_DAGEN_KEUZES.filter((d) => d <= (recht?.maxDagen ?? 30)), [recht?.maxDagen]);
+  const keuzes = useMemo(() => PRIVE_DAGEN_KEUZES.filter((d) => d <= (recht?.maxDagen ?? PRIVE_MAX_DAGEN)), [recht?.maxDagen]);
   const [dagen, setDagen] = useState<number>(PRIVE_STANDAARD_DAGEN);
   // EXTUI-001: «До дати» — власний момент закриття з календаря (годинник браузера); null = діє плитка строку.
   const [tot, setTot] = useState<number | null>(null);
@@ -68,6 +68,10 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
     : recht && !recht.mag
       ? (() => { const c = recht.code && isWeigercode(recht.code) ? recht.code : 'BELEID_UIT'; return { code: c, ...weigerUitleg(c, 'prive') }; })()
       : live.geladen && live.agent && !capsNu.length ? { code: 'GEEN_BROWSER_RECHTEN', ...weigerUitleg('GEEN_BROWSER_RECHTEN', 'prive') } : null;
+  // EXTUI-001: календар — до межі власника (maxDagen), але не пізніше кінця дозволів «Що може ШІ» (сервер теж обрізає до них).
+  const maxDagen = recht?.maxDagen ?? PRIVE_MAX_DAGEN;
+  const toestemmingTot = live.agent?.toestemming?.tot ?? null;
+  const kalMax = Math.min(nu + maxDagen * 86_400_000, toestemmingTot ? toestemmingTot - live.scheef : Infinity);
   const knopUit = !!bezig || !!blok || !gekozen || !gekozenDomeinen.length || !live.agentId;
 
   if (!live.heeftBrowser) {
@@ -143,10 +147,19 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
             hulp='extensie.prive.dagen' data={{ 'data-eo-dagen': String(gekozen) }}
             kop={<>{tr('Строк доступу', 'Termijn van de toegang')} <HulpVraag k='extensie.prive.dagen' uk={uk} label={tr('Строк', 'Termijn')} /></>}
             uitleg={(k) => tr(`Доступ закриється сам через ${k.naam}. Довший строк — рідше підтверджувати, але довше відкрите вікно; закрити раніше можна кнопкою «Відкликати зараз».`, `De toegang sluit vanzelf na ${k.naam}. Langer = minder vaak bevestigen, maar het venster staat langer open; eerder sluiten kan met «Nu intrekken».`)}
-            kalender={{ uk, min: nu + 15 * 60_000, max: nu + (recht?.maxDagen ?? 30) * 86_400_000, tot, onTot: setTot,
+            kalender={{ uk, min: nu + 15 * 60_000, max: kalMax, tot, onTot: setTot,
               uitleg: tr('До дати: відкриває календар, де можна обрати будь-який день, місяць і рік (у межах правил власника) та час — тоді доступ закриється сам саме в цей момент.', 'Tot datum: opent een kalender waarin u elke dag, maand en jaar (binnen het beleid van de eigenaar) en een tijd kiest — de toegang sluit dan vanzelf op dat moment.') }}
             einde={<>{tr('Закриється сам ', 'Sluit vanzelf op ')}<b>{new Date(tot ?? (nuServer + gekozen * 86_400_000 - live.scheef)).toLocaleString(uk ? 'uk-UA' : 'nl-NL', { weekday: 'short', day: 'numeric', month: 'long', year: tot !== null || gekozen > 300 ? 'numeric' : undefined, hour: '2-digit', minute: '2-digit' })}</b>{tr(' (якщо правила власника не скоротять)', ' (tenzij het beleid van de eigenaar korter is)')}</>} />
-        ) : <p className='eo-meta'>{tr('Строк зараз не можна вибрати: власник не дав дозволу на доступ у цьому браузері.', 'Er is nu geen termijn te kiezen: de eigenaar gaf geen toestemming voor toegang in deze browser.')}</p>}
+        ) : null}
+        {keuzes.length && (maxDagen < PRIVE_MAX_DAGEN || (toestemmingTot && toestemmingTot - live.scheef < nu + maxDagen * 86_400_000)) ? (
+          <p className='pk-grens' data-eo-grens='1'>
+            {toestemmingTot && toestemmingTot - live.scheef < nu + maxDagen * 86_400_000
+              ? tr(`Найпізніше — ${new Date(toestemmingTot - live.scheef).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}: тоді закінчуються дозволи «Що може ШІ». Щоб обрати пізнішу дату, продовжте дозволи.`, `Uiterlijk ${new Date(toestemmingTot - live.scheef).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}: dan lopen de toestemmingen «Wat mag de AI» af. Verleng ze om een latere datum te kiezen.`)
+              : tr(`Найдовший строк для вас — ${maxDagen} ${maxDagen === 1 ? 'день' : maxDagen < 5 ? 'дні' : 'днів'}: так задано в правилах власника. Змінити ліміт (до року) можна в «Доступи».`, `De langste termijn voor u is ${maxDagen} ${maxDagen === 1 ? 'dag' : 'dagen'}: zo staat het in het beleid van de eigenaar. De grens (tot een jaar) wijzigen kan in «Toegang».`)}
+            {' '}<a href='#toegang' data-eo-grens-link='1' title={tr('Відкриває сторінку «Доступи»: там власник задає найдовший строк для кожного користувача. Зміна діє з наступного відкриття доступу.', 'Opent de pagina «Toegang»: daar stelt de eigenaar de langste termijn per gebruiker in. De wijziging geldt vanaf de volgende toegang.')}>{tr('Змінити', 'Wijzigen')}</a>
+          </p>
+        ) : null}
+        {keuzes.length ? null : <p className='eo-meta'>{tr('Строк зараз не можна вибрати: власник не дав дозволу на доступ у цьому браузері.', 'Er is nu geen termijn te kiezen: de eigenaar gaf geen toestemming voor toegang in deze browser.')}</p>}
         <fieldset className='eo-domeinen' disabled={!!bezig}>
           <legend>{tr('Ваші сторінки', 'Uw pagina’s')} <HulpVraag k='extensie.prive.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></legend>
           {toegestaan.map((h) => (

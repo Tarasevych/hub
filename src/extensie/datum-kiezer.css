@@ -4,7 +4,16 @@
 .dk-kop{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:4px}
 :is(html) .dk-pijl,:is(html) .dk-titel{display:grid;place-items:center;min-height:36px;margin:0;padding:0 8px;border:0;border-radius:10px;background:transparent;color:var(--text);font:inherit;cursor:pointer}
 :is(html) .dk-pijl svg{width:18px;height:18px}
-:is(html) .dk-titel{font-weight:600}
+:is(html) .dk-titel{display:inline-flex;align-items:center;justify-content:center;gap:6px;justify-self:center;padding:0 12px;font-weight:600;
+  background:color-mix(in srgb,var(--accent,#2f6f73) 8%,transparent);border-radius:99px}
+.dk-titel-pijl{width:16px;height:16px;color:var(--accent,#2f6f73);transition:transform .2s ease}
+.dk-titel[data-dk-niveau='maanden'] .dk-titel-pijl{transform:rotate(180deg)}
+.dk-titel[data-dk-niveau='jaren'] .dk-titel-pijl{transform:rotate(180deg)}
+/* Перехід між днями, місяцями й роками — легке «наближення» сітки. Zoom tussen dagen, maanden en jaren. */
+.dk-zoom-uit{animation:dk-zoom-uit .22s ease-out}
+.dk-zoom-in{animation:dk-zoom-in .22s ease-out}
+@keyframes dk-zoom-uit{from{opacity:0;transform:scale(1.12)}to{opacity:1;transform:none}}
+@keyframes dk-zoom-in{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
 :is(html) .dk-pijl:hover:not(:disabled),:is(html) .dk-titel:hover{background:color-mix(in srgb,var(--accent,#2f6f73) 10%,transparent)}
 :is(html) .dk-pijl:disabled{opacity:.3;cursor:default}
 .dk-rooster{display:grid;gap:3px}
@@ -30,5 +39,5 @@
 :is(html) .dk-knop:disabled{opacity:.45;cursor:default}
 .dk-samenvatting{margin:0;font-size:.82rem;color:var(--muted)}
 .dk-samenvatting b{color:var(--text);font-weight:600}
-@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel{transition:none}}
+@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel,.dk-titel-pijl{transition:none}.dk-zoom-uit,.dk-zoom-in{animation:none}}
 @media (max-width:420px){:is(html) .dk{padding:10px}:is(html) .dk-dag{min-height:34px}}
