@@ -1,0 +1,11 @@
+/* OPSTELPIL-001 (16.11.2026): кнопка «Написати лист» у бічному меню пошти. Ці правила жили в mail-nieuw-bericht.css, який від PERF-001
+   вантажиться ліниво разом із вікном нового листа (і взагалі не вантажиться, поки немає під'єднаної скриньки). До того моменту кнопка
+   стояла без вигляду: на всю ширину без заокруглення, дві піктограми купою, підпис під ними. Тепер стилі приходять разом із меню.
+   De knop «Bericht schrijven» in het zijmenu: de stijl komt nu mee met het menu en wacht niet op het lui geladen opstelvenster. */
+.mail-compose-pill{box-sizing:border-box;width:100%;height:40px;padding:0 12px;margin:4px 0 8px;border-radius:9px;background:var(--accent);border:none;color:var(--text-on-accent);display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;cursor:pointer}
+.mail-compose-pill:disabled{opacity:.55;cursor:default}
+.mail-compose-pill-icon{position:relative;width:17px;height:17px;flex:0 0 auto}
+.mail-compose-pill-icon svg{position:absolute;inset:0;width:17px;height:17px;transition:opacity .3s ease}
+.mail-compose-pill-icon .pen{opacity:0}
+.mail-compose-pill:hover .mail-compose-pill-icon .env{opacity:0}
+.mail-compose-pill:hover .mail-compose-pill-icon .pen{opacity:1}

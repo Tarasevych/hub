@@ -24,13 +24,7 @@
 .mail-new-message>footer button.primary svg{width:16px;height:16px}
 .mail-new-message-error{margin:0;color:var(--fout);font-size:.85rem}
 @media(max-width:560px){.mail-new-message-backdrop{padding:0;align-items:flex-end}.mail-new-message{width:100%;max-height:92vh;border-radius:16px 16px 0 0}.mail-new-message-resize{display:none}}
-.mail-compose-pill{box-sizing:border-box;width:100%;height:40px;padding:0 12px;margin:4px 0 8px;border-radius:9px;background:var(--accent);border:none;color:var(--text-on-accent);display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;cursor:pointer}
-.mail-compose-pill:disabled{opacity:.55;cursor:default}
-.mail-compose-pill-icon{position:relative;width:17px;height:17px;flex:0 0 auto}
-.mail-compose-pill-icon svg{position:absolute;inset:0;width:17px;height:17px;transition:opacity .3s ease}
-.mail-compose-pill-icon .pen{opacity:0}
-.mail-compose-pill:hover .mail-compose-pill-icon .env{opacity:0}
-.mail-compose-pill:hover .mail-compose-pill-icon .pen{opacity:1}
+/* OPSTELPIL-001 (16.11.2026): стилі кнопки «Написати лист» бічного меню переїхали в src/mail/mail-opstel-pil.css — цей файл вантажиться ліниво разом із вікном листа, і до того кнопка стояла без вигляду. */
 .mail-compose-float{position:fixed;z-index:460;box-sizing:border-box;width:44px;height:44px;padding:0;border-radius:50%;background:var(--accent);border:none;color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .25s ease,top .25s ease}
 /* brief open: «Написати» in de actiestapel verdwijnt (zijn gniezdo blijft) — src/plaatsing/plaatsing.css */
 .mail-compose-float:disabled{opacity:.55;cursor:default}
