@@ -25,6 +25,7 @@ const VERWACHTE_VAARDIGHEDEN = [
   'uiterlijk-van-schermafdruk-herstellen',
   'prestatie-meten',
   'mijn-ruimte',
+  'reyestr-lohotypiv', // REESTR-LOGO-001 (16.11.2026): логотипи лише з єдиного реєстру src/merk
 ] as const;
 
 const MET_VOORBEELD = [
@@ -39,7 +40,7 @@ export async function main(): Promise<number> {
   const cat = laadCatalogus();
 
   // ------------------------------------------------------------------ 1. Каталог, файли SKILL.md, SemVer та метадані uk/nl
-  check('каталог містить рівно 9 очікуваних навичок',
+  check(`каталог містить рівно ${VERWACHTE_VAARDIGHEDEN.length} очікуваних навичок`,
     cat.vaardigheden.length === VERWACHTE_VAARDIGHEDEN.length
     && VERWACHTE_VAARDIGHEDEN.every((n) => cat.vaardigheden.some((v: { naam: string }) => v.naam === n)));
 
@@ -92,6 +93,8 @@ export async function main(): Promise<number> {
     ['nl-controleren', 'controleer wijzigingen op kwaliteit en beveiliging', 'wijziging-controleren'],
     ['uk-мій-простір', 'налаштуй з’єднувач antigravity, autoclaw і розширення оглядача через mcp міст', 'mijn-ruimte'],
     ['nl-mijn-ruimte', 'koppel antigravity connector, autoclaw en browserextensie via tweerichtingsbrug', 'mijn-ruimte'],
+    ['uk-логотип', 'додай логотип сервісу в реєстр логотипів', 'reyestr-lohotypiv'],
+    ['nl-logo', 'voeg een logo toe aan het merkregister', 'reyestr-lohotypiv'],
   ];
 
   for (const [label, vraag, verwacht] of proeven) {
@@ -263,8 +266,8 @@ export async function main(): Promise<number> {
     && typeof prest === 'string');
 
   const valUit = valideerVaardigheden(process.cwd());
-  check('valideerVaardigheden(): 0 помилок і рівно 9 навичок із ключами Connector v2',
-    valUit.ok === true && valUit.fouten.length === 0 && valUit.aantallen.catalogus === 9,
+  check(`valideerVaardigheden(): 0 помилок і рівно ${VERWACHTE_VAARDIGHEDEN.length} навичок із ключами Connector v2`,
+    valUit.ok === true && valUit.fouten.length === 0 && valUit.aantallen.catalogus === VERWACHTE_VAARDIGHEDEN.length,
     valUit.fouten.join(' · '));
 
   const dossierPad = 'orchestratie/ontwikkelarchieven/VAARD-002.json';

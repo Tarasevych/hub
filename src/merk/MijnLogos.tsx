@@ -4,7 +4,7 @@
 // видалено користувацький або не замінено». Hier kiest de mens voor elk merk uit het ENE merkregister zijn eigen bestand. Het geldt
 // meteen op de hele site (elk <Merk> tekent het), alleen voor hem en alleen in deze ruimte. Rij = logo + menselijke naam + compacte
 // knoppen met uitleg in de tooltip; uitleg over bescherming staat ingeklapt. Elke wijziging komt in het meldingencentrum.
-import { ImagePlus, Info, RotateCcw, Search, Upload } from 'lucide-react';
+import { ChevronDown, ImagePlus, Info, RotateCcw, Search, Shapes, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
 import { MERK_EIGEN_MAX_BYTES, merkEigenRedenTekst } from '../../shared/merk-eigen';
@@ -106,9 +106,11 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
     } finally { setBezig(''); }
   };
 
-  return <section className='mijn-logos' aria-labelledby='mijn-logos-kop' data-mijn-logos>
-    <h3 id='mijn-logos-kop'>{tr('Логотипи сервісів', 'Logo\'s van diensten')}</h3>
-    <p className='thema-uitleg'>{tr('Свій логотип для будь-якого сервісу. Бачите його лише ви.', 'Uw eigen logo voor elke dienst. Alleen u ziet het.')}</p>
+  // Павло (16.11): блок як сусідні картки («Кадри й батарея»): на всю ширину, згортається, вміст по центру. Een eigen kaart zoals de buren.
+  return <details className='mijn-logos' open={eigen.length > 0 || undefined} data-mijn-logos>
+    <summary><Shapes aria-hidden /><h3 id='mijn-logos-kop' className='mijn-logos-kop'>{tr('Логотипи сервісів', 'Logo\'s van diensten')}</h3>{eigen.length > 0 && <small className='mijn-logos-teller'>{eigen.length}</small>}<ChevronDown className='mijn-logos-pijl' aria-hidden /></summary>
+    <div className='mijn-logos-binnen'>
+    <p className='mijn-logos-noot'>{tr('Свій логотип для будь-якого сервісу. Бачите його лише ви.', 'Uw eigen logo voor elke dienst. Alleen u ziet het.')}</p>
 
     {eigen.length > 0 && <ul className='mijn-logos-lijst' aria-label={tr('Ваші логотипи', 'Uw logo\'s')}>
       {eigen.map((m) => {
@@ -159,5 +161,6 @@ export default function MijnLogos({ tr, lang }: { tr: Tr; lang: 'uk' | 'nl' }) {
       </ul>
     </details>
     <input ref={invoer} type='file' hidden accept='.svg,.png,image/svg+xml,image/png' onChange={(e) => { void opladen(e.target.files?.[0]); e.target.value = ''; }} data-mijn-logos-bestand />
-  </section>;
+    </div>
+  </details>;
 }

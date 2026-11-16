@@ -476,6 +476,44 @@
       "vereisteHulpmiddelen": [
         "v2_whoami:gebruiker"
       ]
+    },
+    {
+      "naam": "reyestr-lohotypiv",
+      "pad": ".agents/skills/reyestr-lohotypiv/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "site-ontwikkelen"
+      ],
+      "titel": {
+        "uk": "Реєстр логотипів",
+        "nl": "Merkregister"
+      },
+      "samenvatting": {
+        "uk": "Логотипи сервісів, компаній і агентів лише з єдиного реєстру src/merk; власний логотип користувача.",
+        "nl": "Logo's van diensten, bedrijven en agenten alleen uit het ene merkregister src/merk; eigen logo van de gebruiker."
+      },
+      "termen": {
+        "uk": [
+          "логотип",
+          "логотипи",
+          "реєстр логотипів",
+          "знак",
+          "емблема",
+          "бренд",
+          "іконка сервісу",
+          "свій логотип"
+        ],
+        "nl": [
+          "logo",
+          "logo's",
+          "merkregister",
+          "merk",
+          "embleem",
+          "merkteken",
+          "eigen logo"
+        ]
+      },
+      "vereisteHulpmiddelen": []
     }
   ]
 }
