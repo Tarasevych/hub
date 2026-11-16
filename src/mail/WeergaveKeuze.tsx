@@ -462,33 +462,20 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
  *  beelden en de tekst (grootte, taal). Zelfde lijnstijl als lucide (24-raster, lijn 2, ronde einden), dus kleurt en schaalt mee met
  *  de andere knoppen. Uk: піктограма «зображення + літера» — зображення й текст листа. */
 function BeeldTekstIcoon() {
-  // Павло (20:28): «коли піктограма маленька, погано видно — можливо зробити кольоровою»; (20:34) «букву А треба зробити більшою і
-  // додати, можливо, третій елемент». Dus drie delen, elk een zone van het paneel: een gekleurd fotootje (Зображення), een
-  // wereldbol (Мова й ШІ) en een grote letter A over de hele hoogte (Читання). Vaste kleuren voor foto en bol (lezen in licht én
-  // donker), de A in de tekstkleur, met een masker eromheen zodat de delen niet in elkaar overlopen. 22 px i.p.v. 17
-  // (.lz-weergave-icoon in beelden-voorraad.css). Masker-id per knop uniek (useId).
-  const masker = `lz-weergave-a${useId().replace(/[^\w-]/g, '')}`;
+  // Павло (20:28) «кольоровою»; (20:34) «букву А більшою, третій елемент»; (20:46) «я відмічав іншу піктограму» (de lijnversie in de
+  // kleur van de site, niet de gekleurde foto) en «не просто одна біля одної — гармонійне, ілюзійне поєднання». Dus één beeld: een
+  // landschap in een lijst (Зображення), waarin de middelste bergtop de letter A is (Читання) en de zon een wereldbol (Мова й ШІ).
+  // Lijst, bergen en bol in --accent (volgt het thema en het palet), de A in de tekstkleur. 22 px (beelden-voorraad.css).
+  const accent = { stroke: 'var(--accent)' };
   return (
     <svg className='lz-weergave-icoon' xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
-      <defs>
-        <mask id={masker}>
-          <rect width='24' height='24' fill='white' stroke='none' />
-          <path d='M11.5 22.5 17.25 3 23 22.5' stroke='black' strokeWidth='5.8' />
-        </mask>
-      </defs>
-      <g mask={`url(#${masker})`}>
-        {/* foto (zone «Зображення») */}
-        <rect x='1.2' y='1.5' width='11' height='9.5' rx='2' fill='#7cc4f2' stroke='none' />
-        <path d='M1.2 9.1 5.38 5.49l2.97 2.85 1.43-1.24 2.42 2.28V11H1.2z' fill='#34a26b' stroke='none' />
-        <circle cx='8.9' cy='4.35' r='1.33' fill='#f7b500' stroke='none' />
-        <rect x='1.2' y='1.5' width='11' height='9.5' rx='2' strokeWidth='1.6' />
-        {/* wereldbol (zone «Мова й ШІ») */}
-        <circle cx='6.5' cy='18' r='4.4' fill='#d8ecff' stroke='#2f6fd6' strokeWidth='1.5' />
-        <path d='M2.3 18h8.4M6.5 13.6c-1.6 1.6-1.6 7.2 0 8.8M6.5 13.6c1.6 1.6 1.6 7.2 0 8.8' stroke='#2f6fd6' strokeWidth='1.2' />
-      </g>
-      {/* grote letter A (zone «Читання»: tekst) */}
-      <path d='M11.5 22.5 17.25 3 23 22.5' strokeWidth='2.4' />
-      <path d='M14.09 15.09h6.33' strokeWidth='2.4' />
+      <rect x='2' y='3' width='20' height='18' rx='3.5' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 16%, transparent)' }} />
+      <path d='m2.6 17.5 3-3 2.2 2.2' strokeWidth='1.7' style={accent} />
+      <path d='m15.2 16.7 2.8-2.8 3.4 3.4' strokeWidth='1.7' style={accent} />
+      <path d='M6.8 21 11.5 8.5 16.2 21' strokeWidth='2.3' />
+      <path d='M8.8 15.8h5.4' strokeWidth='2.3' />
+      <circle cx='17.6' cy='8' r='2.9' strokeWidth='1.6' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 28%, transparent)' }} />
+      <path d='M14.7 8h5.8M17.6 5.1c-1.5 1.5-1.5 4.3 0 5.8M17.6 5.1c1.5 1.5 1.5 4.3 0 5.8' strokeWidth='1.1' style={accent} />
     </svg>
   );
 }
