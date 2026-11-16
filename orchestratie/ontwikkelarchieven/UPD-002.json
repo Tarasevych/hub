@@ -180,6 +180,14 @@
     {
       "tijd": "2026-11-16T02:55:00Z",
       "stap": "До .github/workflows/upd-002-uitgave.yml перед кожним із 56 випробувань із БД додано очищення глобальних таблиць верифікації кінцевих точок (provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1) у app.records для повної часової ізоляції випробувань."
+    },
+    {
+      "tijd": "2026-11-16T03:04:36Z",
+      "stap": "Другий віддалений запуск GitHub Actions (№ 43795263825): пройдено всі кроки 1–11 і перші 49 випробувань із БД (включно з mail-accounts-beheer-20261021); у 50-му тесті telegram-venster-20261114 (80/82) виявлено дві невдачі через використання попереднього запису owner у app.records без тимчасових полів Pavlo, tg2-... і зняття ознаки geenFoto."
+    },
+    {
+      "tijd": "2026-11-16T03:10:34Z",
+      "stap": "У tests/eenheid/telegram-venster-20261114.test.ts збережено початкові дані власника (vorigeData), на час тесту встановлено чисті тестові поля email, name і picture та додано відновлення vorigeData у блоці finally; локально підтверджено 24/24 перевірок чистої частини, typecheck:server, orch controleer і trace-001-ontwikkelarchief (16/16)."
     }
   ],
   "keuzes": [
@@ -188,7 +196,8 @@
     "Усунуто псування спільного стану між тестами: ai-delegatie-20261115.test.ts створює знімок прапорця, сесій і делегувань власника та відновлює їх у блоці finally.",
     "Модельний обліковий запис ШІ в UITROL-MANIFEST.json чесно зазначає фактичне середовище збирання й перевірки без вгадування ідентифікаторів сторонніх моделей.",
     "Незавершена окрема гілка EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не влита до UPD-002, щоб не порушити стабільність випуску, і зафіксована у примітках до випуску.",
-    "У циклі БД-випробувань .github/workflows/upd-002-uitgave.yml усунено 60-секундну часову взаємозалежність між ai-kluis-een-plek-20261101 і mail-accounts-beheer-20261021 очищенням спільних записів provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1 перед кожним тестом без зміни продуктової логіки."
+    "У циклі БД-випробувань .github/workflows/upd-002-uitgave.yml усунено 60-секундну часову взаємозалежність між ai-kluis-een-plek-20261101 і mail-accounts-beheer-20261021 очищенням спільних записів provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1 перед кожним тестом без зміни продуктової логіки.",
+    "У tests/eenheid/telegram-venster-20261114.test.ts збережено ізоляцію без порушення часткового унікального індексу records_een_eigenaar: тест тимчасово встановлює чисті тестові поля єдиного запису owner у app.records і точно відновлює vorigeData у блоці finally."
   ],
   "wijzigingen": [
     {
@@ -1954,7 +1963,9 @@
     "Перевірка типів і статичні перевірки: npx tsc --noEmit (0 помилок), npm run typecheck:server (0 помилок), node scripts/kaart-controle.mjs --stil (0 помилок і 0 попереджень), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), мовний аудит незафіксованих змін (0 порушень).",
     "Виробниче складання (NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build): пройдено з кодом 0; усі вихідні файли старші або синхронні із зібраними артефактами.",
     "Перший віддалений запуск GitHub Actions № 43792088279 (.github/workflows/upd-002-uitgave.yml): кроки 1–11 пройдено (жива основа 20261115-162533, orch controleer, TRACE-001 16/16, статичні перевірки, самоперевірка ПК-агента, 20 хмарних тестів, 116 безбазових випробувань, tsc і typecheck:server, повне складання разом із розширенням 0.9.4, 11 післяскладальних випробувань), у кроці 12 пройдено подвійні міграції на PostgreSQL 16 із трьома ролями та перші 25 випробувань із БД; на 26-му тесті mail-accounts-beheer-20261021 виявлено взаємозалежність через спільний 60-секундний запис provider_endpoint_verifications_v1 = 'rejected'.",
-    "Повторна локальна перевірка після додавання очищення provider_endpoint_verifications_v1 і mail_endpoint_verifications_v1 перед кожним БД-тестом у .github/workflows/upd-002-uitgave.yml: node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16), sec-002-g01-20261112.test.ts (64/64, включно з перевіркою YAML і 16 процесів випуску), stroom-veilig-20261115.test.ts (16/16)."
+    "Повторна локальна перевірка після додавання очищення provider_endpoint_verifications_v1 і mail_endpoint_verifications_v1 перед кожним БД-тестом у .github/workflows/upd-002-uitgave.yml: node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16), sec-002-g01-20261112.test.ts (64/64, включно з перевіркою YAML і 16 процесів випуску), stroom-veilig-20261115.test.ts (16/16).",
+    "Другий віддалений запуск GitHub Actions № 43795263825 (.github/workflows/upd-002-uitgave.yml): кроки 1–11 і випробування з БД № 1–49 (включно з mail-accounts-beheer-20261021) пройдено без помилок; у № 50 telegram-venster-20261114 зафіксовано 80/82 через залишкові поля попереднього owner.",
+    "Локальна перевірка після ізоляції vorigeData у tests/eenheid/telegram-venster-20261114.test.ts: telegram-venster-20261114.test.ts (24/24 без БД), npm run typecheck:server (0 помилок), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16)."
   ],
   "bronnen": [
     {
@@ -2071,6 +2082,7 @@
     "f69bbf0231078332dd66d2331b6e492320dcb38d",
     "e8cc16d5149dbb8ed1b24d8587604b9b8a5b7006",
     "aad2288073598a6f86c55c30d123d4a4763ce673",
-    "5d870ef8378b7491f9ed78e2c636b4230c13f95e"
+    "5d870ef8378b7491f9ed78e2c636b4230c13f95e",
+    "7ef66ad196d18540ea35181d8072692dce8c4430"
   ]
 }
