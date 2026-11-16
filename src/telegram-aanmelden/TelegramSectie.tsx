@@ -3,7 +3,8 @@
 //   · прив’язування у 3 кроки з поясненням кожного кроку (підтвердження власного номера та ключа доступу обов’язкове);
 //   · картка виявлених змін даних («Було → Стало», «Ні, це не я» діє одразу, «Так, це я» — після відліку та ключа доступу);
 //   · згрупована таблиця підтверджень за 3 категоріями, таємний і тривожний код та журнал останніх входів через Telegram.
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Fingerprint, KeyRound, MapPin } from 'lucide-react';
+import Merk from '../merk/Merk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { leesBewaard } from '../lees-cache';
 import { foutTekst, identiteitCtx, tgPost, type Ctx } from './api';
@@ -626,6 +627,19 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
 }
 
 // ------------------------------------------------------------------------------------------------ таємний код (згорнутий за замовчуванням)
+/** Logo van een aanmeldmethode. Het register (src/merk/merk-tabel.ts) kent Google, Microsoft en Apple; Discord staat alleen in de
+ *  grote tabel (src/merk/merk-logos.ts), die pas wordt opgehaald als deze kaart getoond wordt — het register moet licht blijven. */
+function MethodeMerk({ merk, naam }: { merk: string; naam: string }) {
+  const [def, setDef] = useState<{ naam: string; kleur: string; d: string } | null>(null);
+  useEffect(() => {
+    if (merk !== 'discord') return;
+    let leeft = true;
+    void import('../merk/merk-logos').then((m) => { const hit = (m.LOGOS as Readonly<Record<string, readonly [string, string]>>)[merk]; if (leeft && hit) setDef({ naam, kleur: `#${hit[1]}`, d: hit[0] }); }).catch(() => undefined);
+    return () => { leeft = false; };
+  }, [merk, naam]);
+  return <Merk def={def} merk={merk} naam={naam} vorm='gliefje' maat={24} />;
+}
+
 /** TELEGRAM-004 (0299): preventieve bescherming — de gebruiker kiest PER aanmeldmethode of aanmelden alleen lukt als de browser de
  *  plaats van het toestel deelt. Standaard overal UIT; «!» + korte regel op de kaart, de rest onder «Докладніше». Niets wordt
  *  verboden: ook «alle methoden» mag, met een duidelijke waarschuwing over het gevolg. */
@@ -635,13 +649,18 @@ export function PlaatsEis({ lang, methoden, zetten }: { lang: Lang; methoden: st
   const wissel = (m: PlaatsEisMethode, nieuw: boolean) => { const n = new Set(aan); if (nieuw) n.add(m); else n.delete(m); void doe(() => zetten(PLAATS_EIS_METHODEN.filter((x) => n.has(x)))); };
   const alles = PLAATS_EIS_METHODEN.every((m) => aan.has(m));
   return <div className='tga-blok' data-plaats-eis={aan.size ? 'aan' : 'uit'}>
-    <div className='tga-schakel-tekst'>
-      <strong><span aria-hidden='true'>❗ </span>{tr(lang, 'Вимагати місце пристрою', 'Plaats van het apparaat eisen')}</strong>
-      <small>{tr(lang, 'Виберіть способи входу, які працюватимуть лише з дозволом браузера на місце.', 'Kies de aanmeldmethoden die alleen werken met toestemming voor de locatie.')}</small>
+    <div className='tga-plaats-kop'>
+      <span className='tga-plaats-kop-icoon' aria-hidden='true'><MapPin /></span>
+      <div className='tga-schakel-tekst'>
+        <h3><span><span aria-hidden='true'>❗ </span>{tr(lang, 'Вимагати місце пристрою', 'Plaats van het apparaat eisen')}</span>
+          <span className={`tga-pil ${aan.size ? 'tga-pil-actief' : ''}`} data-plaats-eis-aantal>{aan.size ? tr(lang, `Увімкнено: ${aan.size} із ${PLAATS_EIS_METHODEN.length}`, `Aan: ${aan.size} van ${PLAATS_EIS_METHODEN.length}`) : tr(lang, 'Вимкнено', 'Uit')}</span></h3>
+        <small>{tr(lang, 'Виберіть способи входу, які працюватимуть лише з дозволом браузера на місце.', 'Kies de aanmeldmethoden die alleen werken met toestemming voor de locatie.')}</small>
+      </div>
     </div>
     <div className='tga-plaats-methoden' role='group' aria-label={tr(lang, 'Способи входу, що вимагають місце пристрою', 'Aanmeldmethoden die de plaats van het apparaat eisen')}>
       {PLAATS_EIS_METHODEN.map((m) => <label key={m} className='tga-schakel-rij tga-plaats-methode' data-plaats-eis-methode={m}
         title={tr(lang, `Увімкнено: вхід способом «${PLAATS_EIS_NAAM[m].uk}» у цей обліковий запис відбудеться лише тоді, коли браузер надасть місце пристрою. Без дозволу на місце цей спосіб не спрацює; способи, де перемикач вимкнено, працюють як раніше. Вимкнути можна тут будь-коли.`, `Aan: aanmelden met «${PLAATS_EIS_NAAM[m].nl}» bij dit account lukt alleen als de browser de plaats van het apparaat deelt. Zonder toestemming voor de locatie werkt deze methode niet; methoden waarvan de schakelaar uit staat, werken zoals voorheen. Uitzetten kan hier altijd.`)}>
+        <span className={`tga-plaats-logo ${m === 'passkey' || m === 'password' ? 'is-teken' : 'is-merk'}`} aria-hidden='true'>{m === 'telegram' ? <TelegramLogo maat={24} /> : m === 'passkey' ? <Fingerprint /> : m === 'password' ? <KeyRound /> : <MethodeMerk merk={m} naam={PLAATS_EIS_NAAM[m].uk} />}</span>
         <span className='tga-schakel-tekst'><strong>{PLAATS_EIS_NAAM[m][lang === 'nl' ? 'nl' : 'uk']}</strong></span>
         <input type='checkbox' role='switch' className='tga-schakel-invoer' checked={aan.has(m)} disabled={bezig} onChange={(e) => wissel(m, e.target.checked)} />
       </label>)}
