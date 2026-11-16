@@ -84,5 +84,14 @@ export async function main(): Promise<number> {
   check('панель: швидкість, інтенсивність, перелив, кількість, форма, розмір', ['tempo', 'sterkte', 'kleurwissel', 'aantal', 'vervorming', 'grootte'].every((v) => knop.includes(`schuif('${v}'`)));
   check('панель закривається Esc і клацанням поза нею', /e\.key === 'Escape'/.test(knop) && /pointerdown/.test(knop));
 
+  // 6. ACHTERGROND-002: компактна панель і кнопка в шапці бічного меню там, де на телефоні немає верхньої смуги (пошта).
+  const knop2 = lees('src/achtergrond/AchtergrondKnop.tsx'), schil2 = lees('src/CanoniekOmlijsting.tsx'), knopCss = zonderCommentaar(lees('src/achtergrond/achtergrond-knop.css'));
+  const voorMeer = knop2.slice(0, knop2.indexOf("className='la-snel-meer'")), inMeer = knop2.slice(knop2.indexOf("className='la-snel-meer'"), knop2.indexOf('</details>'));
+  check('панель компактна: режим, рівень, швидкість та інтенсивність одразу', ["data-achtergrond-snel-stand", "data-achtergrond-niveau", "schuif('tempo'", "schuif('sterkte'"].every((v) => voorMeer.includes(v)));
+  check('решта параметрів — у згорнутому блоці «Тонке налаштування»', ["schuif('kleurwissel'", "schuif('aantal'", "schuif('vervorming'", "schuif('grootte'", 'data-achtergrond-snel-overgang', 'data-achtergrond-snel-kleuren', 'data-achtergrond-snel-kader'].every((v) => inMeer.includes(v)) && !/<details className='la-snel-meer'[^>]*\sopen/.test(knop2));
+  check('шапка бічного меню: кнопка фону лише там, де на телефоні немає верхньої смуги', schil2.includes("voorOpenen={closeDrawer}/>{touchMode&&!bovenTelefoon&&!signedOut&&<AchtergrondLadeKnop lang={lang} voorOpenen={closeDrawer}/>}"));
+  check('кнопка в меню спершу закриває меню, тоді відкриває панель (зміни видно на тлі)', /voorOpenen\?\.\(\); window\.dispatchEvent\(new Event\(PANEEL_GEBEURTENIS\)\)/.test(knop2) && schil2.includes('<AchtergrondPaneelLos lang={lang}/>'));
+  check('кнопка в меню маленька й без власного position:fixed', /\.la-lade-knop\{[^}]*width:40px;height:40px/.test(knopCss) && !/\.la-lade-knop[^{]*\{[^}]*position:fixed/.test(knopCss));
+
   return einde();
 }

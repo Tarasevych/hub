@@ -5,7 +5,7 @@
 // Snelle bediening van de levende achtergrond vanaf de pagina; dezelfde opgeslagen instellingen als Instellingen → Thema's.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, RotateCcw, Waves, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, RotateCcw, Waves, X } from 'lucide-react';
 import { ACHTERGROND_GRENZEN, ACHTERGROND_NIVEAUS, ACHTERGROND_NIVEAU_WAARDEN, achtergrondNiveau, achtergrondVolledig, normaliseerAchtergrond, type AchtergrondKader, type AchtergrondKleuren, type AchtergrondNiveau, type AchtergrondOvergang, type AchtergrondStand, type UiterlijkAchtergrond } from '../../shared/uiterlijk';
 import { useThemaStand, zetAchtergrond } from '../thema/useThema';
 import './achtergrond-knop.css';
@@ -50,6 +50,8 @@ export function AchtergrondPaneel({ tr, onSluit }: { tr: Tr; onSluit?: () => voi
     </div>
     {schuif('tempo', tr('Швидкість', 'Snelheid'), tr('Як швидко пливуть плями. На батарею майже не впливає.', 'Hoe snel de vlekken drijven. Bijna geen invloed op de batterij.'), traag)}
     {schuif('sterkte', tr('Інтенсивність', 'Sterkte'), tr('Яскравість плям. Вище 75 % текст поза картками читається гірше.', 'Helderheid van de vlekken. Boven 75 % leest tekst buiten de kaarten minder goed.'), (v) => `${v}%`)}
+    <details className='la-snel-meer' data-achtergrond-snel-meer>
+      <summary title={tr('Перелив, кількість, форма й розмір плям, рух, кольори, кадри. Згорнуто, щоб панель лишалася маленькою.', 'Kleurverloop, aantal, vorm en grootte van de vlekken, beweging, kleuren, beelden. Ingeklapt, zodat het paneel klein blijft.')}><ChevronDown aria-hidden />{tr('Тонке налаштування', 'Fijn afstellen')}</summary>
     {schuif('kleurwissel', tr('Плавність переливу', 'Kleurverloop'), tr('Як швидко плями переходять з відтінку у відтінок; 0 — сталі кольори.', 'Hoe snel de vlekken van tint wisselen; 0 — vaste kleuren.'), (v) => (v === 0 ? tr('сталі', 'vast') : traag(v)))}
     {schuif('aantal', tr('Кількість', 'Aantal'), tr('Більше плям — багатша картина й трохи більше роботи для пристрою (на телефоні в «Авто» не більше 4).', 'Meer vlekken — rijker beeld en iets meer werk (op een telefoon in «Auto» hoogstens 4).'), (v) => String(v))}
     {schuif('vervorming', tr('Форма', 'Vorm'), tr('0 — майже круглі; 100 — витягнуті, неправильні форми.', '0 — bijna rond; 100 — uitgerekt en grillig.'), (v) => `${v}%`)}
@@ -69,6 +71,7 @@ export function AchtergrondPaneel({ tr, onSluit }: { tr: Tr; onSluit?: () => voi
           <option value='zuinig'>{tr('Ощадно · 15/с', 'Zuinig · 15/s')}</option><option value='normaal'>{tr('Звичайно · 30/с', 'Normaal · 30/s')}</option><option value='vloeiend'>{tr('Плавно · 60/с ⚠', 'Vloeiend · 60/s ⚠')}</option>
         </select></label>
     </div>
+    </details>
     <div className='la-snel-voet'>
       <button type='button' onClick={() => zetAchtergrond(undefined)} title={tr('Повертає всі параметри фону до типових.', 'Zet alle instellingen van de achtergrond terug.')} data-achtergrond-snel-herstel><RotateCcw aria-hidden />{tr('Типово', 'Standaard')}</button>
       <small>{tr('Зберігається в обліковому записі; те саме — в Налаштування → Вигляд і кольори.', 'Bewaard in het account; hetzelfde staat in Instellingen → Weergave en kleuren.')}</small>
@@ -155,4 +158,43 @@ export function AchtergrondKnopMaquette({ lang }: { lang: 'uk' | 'nl' }) {
     return () => { attrMo?.disconnect(); opruimenDom(); plek?.remove(); };
   }, []);
   return gastheer ? createPortal(<AchtergrondKnop lang={lang} variant='maquette' />, gastheer) : null;
+}
+
+/** Подія «відкрити панель живого фону» — від кнопки, яка сама зникає (шапка бічного меню закривається). */
+const PANEEL_GEBEURTENIS = 'tsv:achtergrond-paneel';
+
+/**
+ * ACHTERGROND-002: кнопка в шапці бічного меню на телефоні — там, де верхньої смуги оболонки немає (пошта: праворуч угорі лежить
+ * аватар скриньки). Маленька, без підпису, поруч із пошуком; спершу закриває меню, тоді відкриває панель, щоб зміни було видно на тлі.
+ * Knop in de kop van de lade op de telefoon (post): sluit eerst de lade en opent dan het paneel.
+ */
+export function AchtergrondLadeKnop({ lang, voorOpenen }: { lang: 'uk' | 'nl'; voorOpenen?: () => void }) {
+  const tr: Tr = (uk, nl) => (lang === 'nl' ? nl : uk);
+  return <button type='button' className='la-lade-knop' data-achtergrond-lade-knop aria-haspopup='true'
+    aria-label={tr('Живий фон: вимкнути або налаштувати анімацію тла', 'Levende achtergrond: uitzetten of instellen')}
+    title={tr('Живий фон: вимкнути чи змінити анімацію тла. Меню закриється, щоб зміни було видно одразу.', 'Levende achtergrond: uitzetten of aanpassen. Het menu sluit, zodat u de wijziging meteen ziet.')}
+    onClick={() => { voorOpenen?.(); window.dispatchEvent(new Event(PANEEL_GEBEURTENIS)); }}><Waves aria-hidden /></button>;
+}
+
+/** Господар панелі без власної кнопки: відкривається подією, стоїть угорі праворуч. Paneel zonder eigen knop, rechtsboven. */
+export function AchtergrondPaneelLos({ lang }: { lang: 'uk' | 'nl' }) {
+  const tr: Tr = (uk, nl) => (lang === 'nl' ? nl : uk);
+  const [open, setOpen] = useState(false);
+  const paneel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const toon = () => setOpen(true);
+    window.addEventListener(PANEEL_GEBEURTENIS, toon);
+    return () => window.removeEventListener(PANEEL_GEBEURTENIS, toon);
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const buiten = (e: PointerEvent) => { if (!paneel.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('keydown', esc); document.addEventListener('pointerdown', buiten, true);
+    return () => { document.removeEventListener('keydown', esc); document.removeEventListener('pointerdown', buiten, true); };
+  }, [open]);
+  if (!open) return null;
+  return <div ref={paneel} className='la-snel-laag la-snel-laag-los' data-achtergrond-paneel-los>
+    <AchtergrondPaneel tr={tr} onSluit={() => setOpen(false)} />
+  </div>;
 }
