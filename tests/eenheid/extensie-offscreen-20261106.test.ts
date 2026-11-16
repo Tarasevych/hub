@@ -75,6 +75,33 @@ export async function main(): Promise<number> {
       v?.ok === false && v.reason === 'MODEL_NIET_GELADEN' && !aangeroepen.includes('Summarizer.create'), JSON.stringify(v));
   }
 
+  // ---------------------------------------------------------------- 2b. 0.9.6 (PR #117): prompt met rauw / schema / systeem in offscreen.js
+  {
+    const gemaakt: any[] = []; const gevraagd: any[] = []; let vernietigd = 0;
+    const luisteraars: Luisteraar[] = [];
+    const opslag = { lokaleAi: { aan: true, siteToegang: true, prompt: { systeem: 'INSTELLING-SYSTEEM', schema: '{"type":"string"}' } } };
+    const ctx = createContext({
+      chrome: { runtime: { id: ID, onMessage: { addListener: (f: Luisteraar) => { luisteraars.push(f); } } }, storage: { local: { get: async () => opslag, set: async () => undefined }, onChanged: { addListener: () => undefined } } },
+      LanguageModel: { availability: async () => 'available', create: async (o: any) => { gemaakt.push(o); return { prompt: async (m: unknown, opt: any) => { gevraagd.push({ m, opt }); return 'ANTWOORD'; }, destroy: () => { vernietigd++; } }; } },
+      Translator: { availability: async () => 'available', create: async (o: any) => ({ translate: async (s: string) => `[${o.sourceLanguage}->${o.targetLanguage}]${s}` }) },
+      LanguageDetector: { availability: async () => 'available', create: async () => ({ detect: async () => [{ detectedLanguage: 'en', confidence: 0.9 }] }) },
+      setTimeout, clearTimeout, console, AbortController, DOMException, navigator: { language: 'uk-UA' },
+    });
+    runInContext(readFileSync(join(EXT, 'lokale-ai.js'), 'utf8'), ctx);
+    runInContext(readFileSync(join(EXT, 'offscreen.js'), 'utf8'), ctx);
+    const f = luisteraars[0];
+    const gewoon = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p0', modus: 'prompt', tekst: 'Hello there', limietMs: 5000 }, { id: ID });
+    check('prompt zonder extra velden: instellingen van de gebruiker (systeem + schema uit de opties)', gewoon?.ok === true && gemaakt[0]?.initialPrompts?.[0]?.content === 'INSTELLING-SYSTEEM' && JSON.stringify(gevraagd[0]?.opt?.responseConstraint) === '{"type":"string"}', JSON.stringify(gewoon));
+    const rauw = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p1', modus: 'prompt', tekst: 'Hello there', rauw: true, schema: '', systeem: 'AANVRAAG-SYSTEEM', limietMs: 5000 }, { id: ID });
+    check('prompt rauw: antwoord NIET vertaald, systeem van de aanvraag, leeg schema = geen responseConstraint',
+      rauw?.ok === true && rauw.tekst === 'ANTWOORD' && gemaakt[1]?.initialPrompts?.[0]?.content === 'AANVRAAG-SYSTEEM' && gevraagd[1]?.opt?.responseConstraint === undefined, JSON.stringify({ rauw, opt: gevraagd[1]?.opt }));
+    const vertaald = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p2', modus: 'prompt', tekst: 'Hello there', schema: '', limietMs: 5000 }, { id: ID });
+    check('prompt zonder rauw en zonder schema: wél terugvertaald naar de interfacetaal (zoals voorheen)', vertaald?.ok === true && vertaald.tekst === '[en->uk]ANTWOORD', JSON.stringify(vertaald));
+    const metSchema = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p3', modus: 'prompt', tekst: 'Hello there', rauw: true, schema: '{"type":"object","properties":{"taken":{"type":"array"}}}', limietMs: 5000 }, { id: ID });
+    check('prompt met schema van de aanvraag: responseConstraint = dat schema (niet dat uit de instellingen)', metSchema?.ok === true && JSON.stringify(gevraagd[3]?.opt?.responseConstraint) === '{"type":"object","properties":{"taken":{"type":"array"}}}');
+    check('elke aanvraag geeft haar Prompt-sessie weer vrij (destroy)', vernietigd === 4, String(vernietigd));
+  }
+
   // ---------------------------------------------------------------- 3. background.js met nep-chrome en nep-offscreen
   {
     const opslag: Record<string, unknown> = { lokaleAi: { aan: true, apis: { prompt: true, summarizer: true, writer: false } } };
@@ -140,6 +167,22 @@ export async function main(): Promise<number> {
     const vorm = off.gevraagd.find((m) => m.op === 'lokale-ai-voer');
     check('met «!» siteToegang: aanvraag via offscreen (doel = adres, talen apart), resultaat terug',
       ok?.ok === true && ok.tekst === 'LOKAAL-RESULTAAT' && vorm && vorm.doel === 'offscreen' && vorm.modus === 'summarizer' && vorm.tekst === 'hallo', JSON.stringify({ ok, vorm }));
+    // 0.9.6 (PR #117): modus 'prompt' met rauw / schema / systeem per aanvraag; bij een andere modus genegeerd; ongeldig → PARAMS.
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'Wat moet ik doen?', rauw: true, schema: { type: 'object', properties: { taken: { type: 'array' } } }, systeem: 'Antwoord alleen met JSON.' }, site);
+    const pv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('prompt: rauw, schema (als JSON-tekst) en systeem gaan mee naar offscreen', pv?.modus === 'prompt' && pv.rauw === true && pv.schema === '{"type":"object","properties":{"taken":{"type":"array"}}}' && pv.systeem === 'Antwoord alleen met JSON.', JSON.stringify(pv));
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'hallo', rauw: true, schema: '{"type":"object"}', systeem: 'x' }, site);
+    const sv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('andere modus: rauw / schema / systeem worden genegeerd', sv?.modus === 'summarizer' && !('rauw' in sv) && !('schema' in sv) && !('systeem' in sv), JSON.stringify(sv));
+    const voorP = off.gevraagd.length;
+    const fouten = await Promise.all([{ schema: '{kapot' }, { schema: '[1,2]' }, { schema: 'x'.repeat(8001) }, { systeem: 'y'.repeat(2001) }, { systeem: 'a\u0000b' }, { rauw: 'ja' }]
+      .map((extra) => vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'x', ...extra }, site)));
+    check('prompt: ongeldig schema (geen JSON, geen object, > 8000), systeem (> 2000, stuurteken) of rauw (geen boolean) → PARAMS, niets naar offscreen',
+      fouten.every((r) => r?.ok === false && r.reason === 'PARAMS') && off.gevraagd.length === voorP, JSON.stringify(fouten));
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'x', rauw: true }, site);
+    const rv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('prompt rauw zonder schema/systeem: lege waarden mee, zodat de instellingen van de gebruiker niet gelden', rv?.rauw === true && rv.schema === '' && rv.systeem === '', JSON.stringify(rv));
+    check('PING meldt promptRauw (de site maakt het gebruik ervan afhankelijk)', (await vraag(fx, { type: 'PING' }, site))?.lokaleAi?.promptRauw === true);
     const lang = await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'x'.repeat(20001) }, site);
     check('te lange tekst → TE_LANG', lang?.ok === false && lang.reason === 'TE_LANG');
     const st2 = await vraag(f, { op: 'status' }, opties);

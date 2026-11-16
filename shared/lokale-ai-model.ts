@@ -167,6 +167,8 @@ export const LOKALE_AI_REDENEN: Readonly<Record<string, [string, string]>> = Obj
   UIT: ['У розширенні вимкнено вбудований ШІ (головний перемикач).', 'In de extensie staat de ingebouwde AI uit (hoofdschakelaar).'],
   SITE_TOEGANG_UIT: ['Сторінкам сайту не дозволено користуватися локальним ШІ. Увімкніть «!» перемикач у налаштуваннях розширення → «Локальний ШІ».', 'Pagina’s van de site mogen de lokale AI niet gebruiken. Zet de «!»-schakelaar aan in de instellingen van de extensie → «Lokale AI».'],
   MODUS: ['Невідома функція.', 'Onbekende functie.'],
+  // 0.9.6 (PR #117): ongeldige extra velden van modus 'prompt' (rauw, schema, systeem).
+  PARAMS: ['Запит до локального ШІ складено неправильно.', 'Het verzoek aan de lokale AI is onjuist opgebouwd.'],
   LEEG: ['Введіть текст.', 'Voer tekst in.'],
   TE_LANG: ['Текст задовгий (понад 20 000 символів).', 'Tekst te lang (meer dan 20 000 tekens).'],
   TE_VEEL: ['Забагато запитів: не більше 20 за хвилину. Зачекайте хвилину.', 'Te veel verzoeken: hoogstens 20 per minuut. Wacht een minuut.'],

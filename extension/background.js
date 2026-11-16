@@ -1743,6 +1743,32 @@ async function lokaleAiVoorAgent(r, st, params) {
   } finally { lokaleAiLopend.delete(id); }
 }
 
+/**
+ * 0.9.6 (PR #117, zuiver): extra velden van LOKALE_AI voor modus 'prompt'. rauw = true/false; schema = JSON Schema als tekst of object
+ * (≤ 8000 tekens, moet een JSON-object zijn); systeem = platte tekst ≤ 2000 tekens zonder stuurtekens. Bij een andere modus genegeerd.
+ */
+function laiPromptExtra(modus, message) {
+  if (modus !== 'prompt') return { ok: true, velden: {} };
+  const velden = {};
+  if (message.rauw !== undefined) { if (typeof message.rauw !== 'boolean') return { ok: false, veld: 'rauw' }; if (message.rauw) velden.rauw = true; }
+  if (message.schema !== undefined && message.schema !== null) {
+    let s = '';
+    try { s = typeof message.schema === 'string' ? message.schema : JSON.stringify(message.schema); } catch { return { ok: false, veld: 'schema' }; }
+    if (typeof s !== 'string' || !s || s.length > 8000) return { ok: false, veld: 'schema' };
+    let o = null; try { o = JSON.parse(s); } catch { return { ok: false, veld: 'schema' }; }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, veld: 'schema' };
+    velden.schema = s;
+  }
+  if (message.systeem !== undefined && message.systeem !== null) {
+    if (typeof message.systeem !== 'string' || message.systeem.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(message.systeem)) return { ok: false, veld: 'systeem' };
+    if (message.systeem.trim()) velden.systeem = message.systeem;
+  }
+  // rauw = de aanvraag staat op zichzelf: het schema en de systeeminstructie uit de INSTELLINGEN van de gebruiker (bedoeld voor zijn
+  // eigen zijpaneel) gelden dan niet; ontbreken ze in de aanvraag, dan gaat er een lege waarde mee die ze uitzet.
+  if (velden.rauw) { if (velden.schema === undefined) velden.schema = ''; if (velden.systeem === undefined) velden.systeem = ''; }
+  return { ok: true, velden };
+}
+
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
   // 0.9.6 (LAI-CON-001): beheerder zette het uit → weigeren MET reden en wie (de site toont dat; nooit stil weigeren).
@@ -1756,6 +1782,9 @@ async function lokaleAiVoorSite(message, origin) {
   const tekst = typeof message.tekst === 'string' ? message.tekst : '';
   if (!tekst.trim()) return { ok: false, reason: 'LEEG' };
   if (tekst.length > 20000) return { ok: false, reason: 'TE_LANG', max: 20000 };
+  // 0.9.6 (PR #117): alleen bij modus 'prompt' — rauw (geen terugvertaling), schema (JSON Schema) en systeem (systeeminstructie).
+  const promptExtra = laiPromptExtra(modus, message);
+  if (!promptExtra.ok) return { ok: false, reason: 'PARAMS', detail: promptExtra.veld };
   const nu = Date.now();
   const lijst = (lokaleAiTeller.get(origin) || []).filter((x) => nu - x < 60_000);
   if (lijst.length >= 20) return { ok: false, reason: 'TE_VEEL' };
@@ -1765,7 +1794,7 @@ async function lokaleAiVoorSite(message, origin) {
   lokaleAiLopend.add(id);
   try {
     const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
-    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000, ...promptExtra.velden });
   } catch (e) {
     return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
   } finally { lokaleAiLopend.delete(id); }
@@ -1790,7 +1819,8 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
         diagOptIn: s.diagOptIn, ...vt, lokaleAi: await (async () => {
           const site = (await lokaleAiInstellingen()).siteToegang === true;
-          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, ...laiRedenen(vt.lokaleAi, site, laiBeleid()) };
+          // promptRauw (0.9.6): LOKALE_AI modus 'prompt' kent rauw / schema / systeem per aanvraag (de site maakt het daarvan afhankelijk).
+          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, promptRauw: true, ...laiRedenen(vt.lokaleAi, site, laiBeleid()) };
         })() });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
