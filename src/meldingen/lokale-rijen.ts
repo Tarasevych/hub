@@ -8,6 +8,7 @@
 // er NU staat (werkRijenBij), en andere tabbladen volgen via het `storage`-event (CanoniekMeldingencentrum).
 import { resolveCanonicalNoticeAction, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeKind, type CanonicalNoticeSection } from '../canoniek-meldingen';
 import { MELDINGEN_VOORVOEGSEL } from '../lokale-sporen';
+import { dienstVoorHost, padBestaat, routeerMeldingLink } from '../../shared/melding-link';
 
 export type BewaardeRij = {
   id: string;
@@ -75,9 +76,16 @@ export const normalizeLink = (value: unknown): { href: string; label: string } |
   const href = String(raw.href || '').trim().slice(0, 300);
   const label = String(raw.label || '').trim().slice(0, 60);
   if (!label || !href) return undefined;
-  if (href.startsWith('/') && !href.startsWith('//')) return { href, label };
+  // MELDLINK-001: історія сповіщень спільна для всіх піддоменів, тож відносна адреса має отримати СВІЙ піддомен (інакше
+  // «/diagnostiek», відкрите на id.*, вело на сторінку 404). Поза нашими хостами (локальна розробка) лишається відносною.
+  const hier = typeof location !== 'undefined' ? dienstVoorHost(location.hostname) : undefined;
+  if (href.startsWith('/') && !href.startsWith('//')) {
+    if (!hier) return { href, label };
+    const doel = routeerMeldingLink(href, padBestaat(hier, href.split(/[?#]/)[0]) ? { dienst: hier } : {});
+    return doel ? { href: doel, label } : undefined;
+  }
   try {
-    const url = new URL(href);
+    const url = new URL(routeerMeldingLink(href) || href);
     return url.protocol === 'https:' && !url.username && !url.password && (url.hostname === 'tarasevych.com' || url.hostname.endsWith('.tarasevych.com'))
       ? { href: url.toString(), label }
       : undefined;

@@ -61,6 +61,7 @@ import {
   type RelatedMailCitation,
   type StoredMailContextItem,
 } from '../shared/ai-vertaling';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const AI_VERTALING_PREFS_TABLE = 'ai_vertaling_preferences_v1';
 const MAIL_ACCOUNTS_TABLE = 'mail_accounts_v1';
@@ -1716,7 +1717,7 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
             settings.balkTonen
               ? 'Над відкритим листом з\'явиться панель «ШІ-аналіз і переклад», якщо підключено приватного ШІ-агента з правом читати пошту. Текст листа надсилається агенту лише після вашого натискання. / Boven een geopend bericht staat het paneel «AI-analyse en vertaling» als er een privé-AI-agent met leesrecht op de post is. De tekst gaat pas naar de agent als u klikt.'
               : 'Панель «ШІ-аналіз і переклад» над листами прихована. Увімкнути знову: «Вигляд» у відкритому листі. / Het paneel «AI-analyse en vertaling» boven berichten is verborgen. Weer aanzetten: «Weergave» in een geopend bericht.',
-            '/mail');
+            `https://${SERVICE_HOSTS.mail}/`);
         }
         if (akkoordMelding) {
           const { rij, aan } = akkoordMelding;

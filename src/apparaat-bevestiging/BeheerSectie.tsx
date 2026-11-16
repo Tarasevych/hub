@@ -9,6 +9,7 @@ import { useApparaatVlag } from './vlag';
 import { foutTekst, tr, type Lang } from './teksten';
 import { SYMBOOL_SOORTEN, SYMBOOL_SOORT_NAMEN, type ApparaatInstellingen } from '../../shared/apparaat-bevestiging/model';
 import './apparaat.css';
+import { useAnkerScroll } from '../anker-scroll';
 
 export default function ApparaatBeheerSectie({ lang }: { lang: Lang }) {
   const vlag = useApparaatVlag();
@@ -20,6 +21,7 @@ export default function ApparaatBeheerSectie({ lang }: { lang: Lang }) {
   const [bezig, setBezig] = useState(false);
   const laden = useCallback(async () => { try { const r = await beheerOverzicht(ctx); setO(r); setI(r.instellingen); setFout(''); } catch (e) { setFout(foutTekst(lang, foutCode(e))); } }, [ctx, lang]);
   useEffect(() => { if (vlag) void laden(); }, [vlag, laden]);
+  useAnkerScroll('apparaat-beheer', Boolean(vlag && o && i)); // MELDLINK-001: тривога «Інший пристрій» у сповіщенні веде сюди
   if (!vlag || !o || !i) return null;
   const doe = async (fn: () => Promise<unknown>, ok: string) => {
     setBezig(true); setFout(''); setMelding('');
@@ -30,7 +32,7 @@ export default function ApparaatBeheerSectie({ lang }: { lang: Lang }) {
   const vink = (k: keyof ApparaatInstellingen, label: string, hulp: string) => <label className='apb-vinkje'><input type='checkbox' checked={Boolean(i[k])} onChange={(e) => setI({ ...i, [k]: e.target.checked })} /><span><strong>{label}</strong><br /><span className='apb-klein'>{hulp}</span></span></label>;
   const gewijzigd = JSON.stringify(i) !== JSON.stringify(o.instellingen);
 
-  return <section className='apb-beheer' data-apparaat-beheer aria-labelledby='apb-beheer-titel'>
+  return <section className='apb-beheer' id='apparaat-beheer' data-apparaat-beheer aria-labelledby='apb-beheer-titel'>
     <header className='apb-sectie-kop'><MonitorSmartphone aria-hidden='true' /><h2 id='apb-beheer-titel'>{tr(lang, 'Підтвердження з іншого пристрою', 'Bevestigen vanaf een ander apparaat')}</h2>
       <span className='apb-stand' data-stand={o.instellingen.aan ? 'werkt' : 'uit'}>{o.instellingen.aan ? tr(lang, 'Увімкнено', 'Aan') : tr(lang, 'Вимкнено для всіх', 'Voor iedereen uit')}</span></header>
     <div className='apb-tegels'>

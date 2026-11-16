@@ -20,6 +20,7 @@ import { publiceer } from './stroom';
 import { herstellen, instellingen, levendeApparaten, misluktTellen, misluktWissen, sql, vlagVoor, voorkeuren, voorkeurenOpslaan } from './opslag';
 import { effectieveSoort, type ApparaatInstellingen, type MethodeB, type Stand, type Tekst, type VerzoekPubliek } from '../../shared/apparaat-bevestiging/model';
 import { keuzeGeldig, trek, trekkingGeldig, type VasteSoort } from '../../shared/apparaat-bevestiging/symbolen';
+import { SERVICE_HOSTS } from '../deployment-identiteit';
 
 export const BEVESTIGING_GELDIG_MS = 5 * 60 * 1000;
 const ID_RE = /^[A-Za-z0-9_-]{12}$/;
@@ -62,12 +63,12 @@ async function audit(userId: string | null, actie: string, resultaat: string, de
   await auditToevoegen({ ownerId: userId, actorId: userId, action: `apparaat.${actie}`.slice(0, 120), type: 'identity', result: resultaat, details }).catch(() => undefined);
 }
 async function siteMelding(userId: string, titel: Tekst, tekst: Tekst, link = '/aanmeldmethoden'): Promise<void> {
-  await meld(userId, 'security', `${titel[0]} / ${titel[1]}`, `${tekst[0]} / ${tekst[1]}`, `https://id.tarasevych.com${link}`).catch(() => undefined);
+  await meld(userId, 'security', `${titel[0]} / ${titel[1]}`, `${tekst[0]} / ${tekst[1]}`, `https://${SERVICE_HOSTS.identity}${link}`).catch(() => undefined);
 }
 async function beheerAlarm(soort: string, details: Record<string, unknown>, tekst: Tekst): Promise<void> {
   const eigenaar = await eigenaarUserId().catch(() => '');
   await auditToevoegen({ ownerId: eigenaar || null, action: `apparaat.alarm.${soort}`.slice(0, 120), type: 'identity', result: 'alarm', details }).catch(() => undefined);
-  if (eigenaar) await meld(eigenaar, 'security', '🚨 Інший пристрій: тривога безпеки / Ander apparaat: beveiligingsalarm', `${tekst[0]} / ${tekst[1]}`, 'https://id.tarasevych.com/aanmeldmethoden-beheer').catch(() => undefined);
+  if (eigenaar) await meld(eigenaar, 'security', '🚨 Інший пристрій: тривога безпеки / Ander apparaat: beveiligingsalarm', `${tekst[0]} / ${tekst[1]}`, `https://${SERVICE_HOSTS.admin}/sso#apparaat-beheer`).catch(() => undefined);
 }
 
 // ------------------------------------------------------------------------------------------------ beschikbaarheid

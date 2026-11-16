@@ -13,6 +13,7 @@ import PlaatsingBeheer from './PlaatsingBeheer';
 import './telegram.css';
 
 import { bronNaam, koppelStandNaam, redenNaam, resultaatNaam, statusNaam } from './namen';
+import { useAnkerScroll } from '../anker-scroll';
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 type Actie = { sleutel: string; naam: readonly [string, string]; minimum: KeuzeId; standaard: KeuzeId; gevoelig: boolean; ingebouwd: boolean };
@@ -44,9 +45,10 @@ export default function TelegramBeheer({ lang }: { lang: Lang }) {
     setMelding(''); setFout('');
     try { await uitvoeren(fn); setMelding(ok); await laden(); } catch (e) { if ((e as Error).message !== 'GEANNULEERD') setFout(foutTekst(lang, e)); }
   };
+  useAnkerScroll('telegram-beheer', !!o); // MELDLINK-001: тривога Telegram у сповіщенні веде сюди
   if (!o) return fout ? <section className='admin-section tga-sectie'><p className='tga-fout'>{fout}</p></section> : null;
   const tel = (soort: string, ok: boolean, k: 'd1' | 'd7' | 'd30') => o.cijfers.find((c) => c.soort === soort && c.ok === ok)?.[k] ?? 0;
-  return <section className='admin-section tga-sectie tga-beheer' data-telegram-beheer>
+  return <section className='admin-section tga-sectie tga-beheer' id='telegram-beheer' data-telegram-beheer>
     {venster}
     <header className='tga-sectie-kop'><TelegramLogo maat={36} /><div><h2>{tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}</h2>
       <p>{tr(lang, `Бот @${o.instellingen.botGebruikersnaam}. Прапорець telegram-aanmelden-v1: ${o.vlagAan ? 'увімкнено' : 'вимкнено'} (керується в меню «Перемикачі функцій»).`, `Bot @${o.instellingen.botGebruikersnaam}. Vlag telegram-aanmelden-v1: ${o.vlagAan ? 'aan' : 'uit'} (beheer via het menu «Functieschakelaars»).`)}</p></div>

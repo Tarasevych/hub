@@ -24,6 +24,7 @@ import { caldavKoppelen, caldavLijst, caldavOphalen, caldavRondeVoorEigenaar, ca
 import { icsLijst, icsOphalen, icsRondeVoorEigenaar, icsSchakelen, icsToevoegen, icsVerwijderen } from './agenda-ics';
 import { synchroniseerAgendaVoorEigenaar } from './google-suite-agenda-sync';
 import { ladePoort, ruimteKop } from './ruimte-cloud-agenda';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 type User = { id: string; status: string; email?: string; sub?: string; name?: string };
 type AuthSuccess = { service: string; user: User };
@@ -94,7 +95,7 @@ const tempoGeweigerdMelden = async (soort: keyof typeof TEMPO, userId: string, r
     + 'Автоматична синхронізація за розкладом працює далі, тож нові події все одно з’являться. '
     + `/ Handmatig verversen van de agenda is tijdelijk gepauzeerd: te veel verzoeken in 10 minuten. Het kan weer over ongeveer ${minuten} min. `
     + 'De geplande synchronisatie loopt gewoon door, dus nieuwe afspraken komen er toch bij.',
-    '/agenda');
+    `https://${SERVICE_HOSTS.hub}/agenda`);
 };
 /** `null` als het mag; anders het 429-antwoord, met een stabiele code en wanneer het weer mag (Retry-After). */
 const teVaak = async (soort: keyof typeof TEMPO, userId: string) => {
