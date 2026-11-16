@@ -26,6 +26,6 @@ export async function main(): Promise<number> {
   check('css: alles onder [data-account-menu-v2] (behalve hulpklasse)', css.split('}').map((r) => r.trim()).filter((r) => r && !r.startsWith('/*') && !r.startsWith('@media') && !r.startsWith('.am2-verborgen')).every((r) => r.replace(/\/\*[\s\S]*?\*\//g, '').trim().startsWith('[data-account-menu-v2]') || !r.includes('{')));
   check('css: vlaggen krijgen geen filter/grayscale', /\.am2-vlag\{[^}]*filter:none!important/.test(css) && !/am2-vlag[^{]*\{[^}]*grayscale/.test(css));
   check('css: geen position:fixed (plaatsing-controle)', !/position:\s*fixed/.test(css));
-  check('beveiliging: RuimteWissel/tech-opslag niet gewijzigd door v2 (alleen compact-prop gebruikt)', /<RuimteWissel taal=\{lang === 'uk' \? 'uk' : 'nl'\} compact \/>/.test(menu));
+  check('beveiliging: RuimteWissel/tech-opslag niet gewijzigd door v2 (alleen compact- en acties-prop gebruikt; RUIMTE-WEERGAVE-001)', /<RuimteWissel taal=\{lang === 'uk' \? 'uk' : 'nl'\} compact(?: acties)? \/>/.test(menu));
   return einde();
 }

@@ -19,6 +19,8 @@ import {
   Monitor,
   Moon,
   Palette,
+  Pause,
+  Play,
   Plus,
   Power,
   Settings,
@@ -36,7 +38,7 @@ import type { ThemePreference } from '../gedeelde-voorkeuren';
 import { MOVA_VOLLEDIG, MoviPrapor } from '../MoviPrapor';
 import { openTechVenster, techActief, techBand, techBeeindigen, useTech } from '../tech/tech-opslag';
 import type { TermijnModus } from '../tech/ruimtes-contract';
-import { beeindigen, starten, useRuimtes, verlengen } from '../tech/ruimtes/ruimtes-opslag';
+import { beeindigen, pauzeer, starten, useRuimtes, verlengen } from '../tech/ruimtes/ruimtes-opslag';
 import { kiesRuimte } from '../tech/ruimtes/RuimteWissel';
 import { hervatAuto, pauzeerAuto, useAutoStatus, useThemaStand, zetPalet, zetWeergaveStijl } from '../thema/useThema';
 import { ACCENT_NAMEN, ACCENT_TONEN, accentKeuzesMet, minderTransparantie } from '../thema/weergave-stijl';
@@ -215,6 +217,9 @@ export function AccountMenuV3({
 
   const [paletOpen, setPaletOpen] = useState(false);
   const [toegangOpen, setToegangOpen] = useState(false);
+  // RUIMTE-WEERGAVE-001: «Завершити» з підтвердженням (друге натискання) і коротке повідомлення про наслідок дії.
+  const [eindeBevestig, setEindeBevestig] = useState(false);
+  const [ruimteMelding, setRuimteMelding] = useState('');
   const [paletMelding, setPaletMelding] = useState<{ tekst: string; kleur: string } | null>(null);
   const [houdtPaletVast, setHoudtPaletVast] = useState(false);
   const [afgemeldIngeklapt, setAfgemeldIngeklapt] = useState(false);
@@ -293,8 +298,13 @@ export function AccountMenuV3({
   const ringDashoffset = Math.round((OMTREK_32 * (1 - ringVerhouding)) * 10) / 10;
 
   // Підписи стану простору та спливної картки «Доступ і терміни»
+  // RUIMTE-WEERGAVE-001: перемикання лише змінює простір вкладки; сеанс може бути відкритий або на паузі.
+  const v2Sessie = v2Ruimtes && ruimtes.status?.aan ? ruimtes.status.sessie : null;
+  const sessiePauze = !!v2Sessie && !!ruimtes.status?.pauze;
   const ruimteSubtekst = !isTechActief
-    ? (uk ? 'Звичайний робочий простір' : 'Gewone werkruimte')
+    ? (v2Sessie
+      ? (sessiePauze ? (uk ? 'Звичайний · технічний доступ на паузі' : 'Gewoon · technische toegang gepauzeerd') : (uk ? 'Звичайний · технічний сеанс працює' : 'Gewoon · technische sessie loopt'))
+      : (uk ? 'Звичайний робочий простір' : 'Gewone werkruimte'))
     : actieveModus === 'tijd' && restMinuten > 0
       ? (uk ? `Технічний · ще ${formatMinuten(restMinuten, true)}` : `Technisch · nog ${formatMinuten(restMinuten, false)}`)
       : actieveModus === 'tot-technisch-einde'
@@ -380,6 +390,7 @@ export function AccountMenuV3({
 
   // Керування простором (Звичайний | Технічний) та умовами завершення
   const schakelRuimte = async (naar: 'prive' | 'technisch') => {
+    setEindeBevestig(false); setRuimteMelding('');
     if (naar === 'prive' && !isTechActief) return;
     if (naar === 'technisch' && isTechActief) return;
     if (v2Ruimtes && ruimtes.status?.aan) {
@@ -423,6 +434,23 @@ export function AccountMenuV3({
     await kiesVoorwaarde('tijd', minuten);
   };
 
+  const pauzeKnop = async (aan: boolean) => {
+    setEindeBevestig(false);
+    try {
+      await pauzeer(aan);
+      setRuimteMelding(aan ? (uk ? 'Технічний доступ на паузі в усіх вкладках. «Продовжити» — без нового входу.' : 'Technische toegang gepauzeerd in alle tabbladen. «Doorgaan» kan zonder opnieuw aan te melden.') : (uk ? 'Технічний доступ знову працює.' : 'De technische toegang werkt weer.'));
+    } catch { setRuimteMelding(uk ? 'Не вдалося. Спробуйте ще раз.' : 'Dat lukte niet. Probeer het opnieuw.'); }
+  };
+  const eindeKnop = async () => {
+    if (!eindeBevestig) {
+      setEindeBevestig(true);
+      setRuimteMelding(uk ? 'Натисніть «Так, завершити», щоб закрити технічний сеанс в усіх вкладках.' : 'Klik op «Ja, beëindigen» om de technische sessie in alle tabbladen te sluiten.');
+      return;
+    }
+    setEindeBevestig(false);
+    try { await beeindigen(); setRuimteMelding(uk ? 'Технічний доступ завершено. Щоб повернутися, потрібен новий вхід.' : 'Technische toegang beëindigd. Terugkomen vraagt een nieuwe aanmelding.'); }
+    catch { setRuimteMelding(uk ? 'Не вдалося завершити. Спробуйте ще раз.' : 'Beëindigen lukte niet. Probeer het opnieuw.'); }
+  };
   const zetTechnischUit = async () => {
     setToegangOpen(false);
     if (v2Ruimtes && ruimtes.status?.aan) {
@@ -1246,6 +1274,28 @@ export function AccountMenuV3({
                 </button>
               </div>
             </div>
+
+            {/* RUIMTE-WEERGAVE-001: свідома пауза і завершення — окремо від перемикача простору */}
+            {v2Sessie ? (
+              <div className='am3-ruimte-acties' data-ruimte-acties='1'>
+                {sessiePauze ? (
+                  <button type='button' className='am3-ruimte-actie' data-ruimte-pauze-knop='uit' onClick={() => void pauzeKnop(false)}
+                    title={uk ? 'Продовжити технічний сеанс: технічні сторінки, служби й ШІ знову працюють, без нового входу, доки діє термін.' : 'De technische sessie hervatten: technische pagina’s, diensten en AI werken weer, zonder opnieuw aan te melden zolang de termijn loopt.'}>
+                    <Play aria-hidden='true' /><span>{uk ? 'Продовжити' : 'Doorgaan'}</span>
+                  </button>
+                ) : (
+                  <button type='button' className='am3-ruimte-actie' data-ruimte-pauze-knop='aan' onClick={() => void pauzeKnop(true)}
+                    title={uk ? 'Пауза для всього технічного сеансу цього входу: технічні сторінки в усіх вкладках закриваються, ШІ поводиться за своїм правилом «під час паузи». Термін не зупиняється. «Продовжити» — без нового входу.' : 'Pauze voor de hele technische sessie van deze aanmelding: technische pagina’s in alle tabbladen sluiten, de AI volgt zijn regel «bij pauze». De termijn loopt door. «Doorgaan» kan zonder opnieuw aan te melden.'}>
+                    <Pause aria-hidden='true' /><span>{uk ? 'Пауза' : 'Pauze'}</span>
+                  </button>
+                )}
+                <button type='button' className={`am3-ruimte-actie is-gevaar${eindeBevestig ? ' is-bevestig' : ''}`} data-ruimte-einde-knop={eindeBevestig ? 'bevestig' : '1'} onClick={() => void eindeKnop()}
+                  title={uk ? 'Завершити технічний доступ цього входу: сеанс закривається в усіх вкладках, ШІ втрачає дозволи, прив’язані до цього сеансу. Щоб повернутися, потрібен новий вхід із Passkey. Дані не видаляються.' : 'De technische toegang van deze aanmelding beëindigen: de sessie sluit in alle tabbladen, de AI verliest toestemmingen die aan deze sessie hangen. Terugkomen vraagt een nieuwe aanmelding met Passkey. Er worden geen gegevens gewist.'}>
+                  <Power className='am3-danger-icon' aria-hidden='true' /><span>{eindeBevestig ? (uk ? 'Так, завершити' : 'Ja, beëindigen') : (uk ? 'Завершити' : 'Beëindigen')}</span>
+                </button>
+                {ruimteMelding ? <small className='am3-ruimte-melding' role='status' data-ruimte-uitkomst='1'>{ruimteMelding}</small> : null}
+              </div>
+            ) : null}
 
             {/* Вбудований лоток «Доступ і терміни» (3 чітко розмежовані умови завершення + колір смуги + 2 повноширинні кнопки) */}
             {toegangOpen ? (

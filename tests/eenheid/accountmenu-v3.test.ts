@@ -242,5 +242,16 @@ export async function main(): Promise<number> {
     delete g.__TSV_CANONICAL_SERVICE__;
   }
 
+  // RUIMTE-WEERGAVE-001 (16.11.2026): у меню «Макет» перемикач простору ≠ пауза; «Пауза/Продовжити» і «Завершити» — окремі кнопки.
+  {
+    const v3 = readFileSync('src/accountmenu-v3/AccountMenuV3.tsx', 'utf8');
+    const v3css = readFileSync('src/accountmenu-v3/accountmenu-v3.css', 'utf8');
+    check('RUIMTE-WEERGAVE-001: кнопки «Пауза/Продовжити» і «Завершити» є в меню «Макет» і викликають pauzeer/beeindigen',
+      v3.includes("data-ruimte-pauze-knop") && v3.includes("data-ruimte-einde-knop") && /pauzeer\(/.test(v3) && /beeindigen\(/.test(v3));
+    check('RUIMTE-WEERGAVE-001: «Завершити» питає підтвердження другим натиском', /eindeBevestig/.test(v3) && v3.includes('Так, завершити'));
+    check('RUIMTE-WEERGAVE-001: стилі кнопок із заокругленими кутами в межах [data-account-menu-v3]',
+      /\[data-account-menu-v3\][^{]*\.am3-ruimte-actie\{[^}]*border-radius:\s*1\dpx/.test(v3css.replace(/\s*\{/g, '{')));
+  }
+
   return einde();
 }
