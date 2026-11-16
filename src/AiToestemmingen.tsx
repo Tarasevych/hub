@@ -39,16 +39,28 @@ const errText = (tr: Tr, e: unknown, wat?: [string, string]) => foutTekst(e, tr,
 export function AiStopKnop({ tr, onDone }: { tr: Tr; onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [vraag, setVraag] = useState(false);
-  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [note, setNote] = useState<{ ok: boolean; text: string; rest?: Array<{ uk: string; nl: string }> } | null>(null);
   const stop = () => {
     setVraag(false); setBusy(true); setNote(null);
     void api.post('/api/owner/ai/stop', body())
       .then((r) => {
-        const n = Number(r.data?.grants ?? 0), c = Number(r.data?.commands ?? 0), k = Number(r.data?.connectors ?? 0), t = Number(r.data?.tokens ?? 0);
-        // D-01: ook de connectorverbindingen (Claude/ChatGPT…) zijn ingetrokken — dat moet de gebruiker weten, want die moeten opnieuw verbonden worden.
-        setNote({ ok: true, text: tr(
-          `Зупинено. Забрано дозволів: ${n}, скасовано дій: ${c}, відкликано підключень ШІ: ${k}, токенів: ${t}; браузери вимкнено. Підключення ШІ (Claude, ChatGPT…) доведеться під’єднати заново.`,
-          `Gestopt. Ingetrokken toestemmingen: ${n}, geannuleerde acties: ${c}, ingetrokken AI-verbindingen: ${k}, tokens: ${t}; browsers uitgezet. AI-verbindingen (Claude, ChatGPT…) moeten opnieuw verbonden worden.`) });
+        const d = r.data ?? {};
+        const n = Number(d.grants ?? 0), c = Number(d.commands ?? 0), k = Number(d.connectors ?? 0), t = Number(d.tokens ?? 0);
+        const nm = Number(d.namens ?? 0), vb = Number(d.voorbereiders ?? 0), st = Number(d.streams ?? 0), ag = Number(d.agents ?? 0);
+        const rest = Array.isArray(d.rapport?.nietAutomatischTeStoppen)
+          ? (d.rapport.nietAutomatischTeStoppen as Array<{ uk?: string; nl?: string }>)
+              .filter((x) => typeof x?.uk === 'string' && typeof x?.nl === 'string')
+              .map((x) => ({ uk: x.uk!, nl: x.nl! }))
+          : [];
+        // D-01 + VEILIG: точний підсумок зупинки й перелік того, що неможливо закрити сервером автоматично.
+        setNote({
+          ok: true,
+          text: tr(
+            `Зупинено. Забрано дозволів: ${n}, скасовано дій: ${c}, відкликано підключень ШІ: ${k}, токенів: ${t}, сесій від імені: ${nm}, прав підготовки випуску: ${vb}, закрито потоків SSE: ${st}, зупинок агентів/браузерів: ${ag}. Підключення ШІ (Claude, ChatGPT…) доведеться під’єднати заново.`,
+            `Gestopt. Ingetrokken toestemmingen: ${n}, geannuleerde acties: ${c}, ingetrokken AI-verbindingen: ${k}, tokens: ${t}, sessies namens u: ${nm}, voorbereidingsrechten: ${vb}, gesloten SSE-stromen: ${st}, gestopte agenten/browsers: ${ag}. AI-verbindingen (Claude, ChatGPT…) moeten opnieuw verbonden worden.`,
+          ),
+          rest,
+        });
         onDone?.();
       })
       .catch((e) => setNote({ ok: false, text: errText(tr, e, ['Не вдалося зупинити', 'Stoppen mislukt']) }))
@@ -67,7 +79,16 @@ export function AiStopKnop({ tr, onDone }: { tr: Tr; onDone?: () => void }) {
           {tr('Стоп', 'Stop')}
         </IconButton>
       )}
-      {note ? <small className={`ag-melding ag-melding-${note.ok ? 'ok' : 'fout'}`} role={note.ok ? 'status' : 'alert'}>{note.text}</small> : null}
+      {note ? (
+        <small className={`ag-melding ag-melding-${note.ok ? 'ok' : 'fout'}`} role={note.ok ? 'status' : 'alert'}>
+          <span>{note.text}</span>
+          {note.rest?.length ? (
+            <ul className='ai-stop-rest'>
+              {note.rest.map((item, i) => <li key={i}>{tr(item.uk, item.nl)}</li>)}
+            </ul>
+          ) : null}
+        </small>
+      ) : null}
     </span>
   );
 }

@@ -3,7 +3,7 @@
 //  A. Sessie verversen met auth-poort AAN: 200, geen poort401, de zekering zet de poort NIET uit; zekering telt verschillende routes.
 //  B. Rol «лише перегляд»: alle leesroutes zonder leeswoord open (eind-regressie midden-1), eigen toegang intrekken open, nieuwe
 //     toegang maken dicht; melding toegang_alleen_lezen hoogstens één per uur.
-//  C. body-aanmelding: alleen een levende sessie telt (niet ingetrokken, niet verlopen), hoogstens 4 cookies opgezocht.
+//  C. tekst-aanmelding: alleen een levende sessie telt (niet ingetrokken, niet verlopen), hoogstens 4 cookies opgezocht.
 //  D. NUL: in een waarde weggehaald (200), in een sleutel/padparameter/query 400 INVOER_NUL; koppeling-id geen uuid → geen 500.
 //  E. 415 JSON_VEREIST: journaalregel + melding (begrensd); CONSENT_ANDERE_BROWSER: journaal + melding (begrensd);
 //     JOURNAAL_NIET_BESCHIKBAAR met Retry-After.
@@ -139,8 +139,8 @@ export async function main(): Promise<number> {
     const tm = meldingen.filter((m) => m.userId === kijker && m.kind === 'toegang_alleen_lezen');
     check('B: weigering buiten de hmara → melding toegang_alleen_lezen, hoogstens één per uur (twee weigeringen = één melding)', tm.length === 1 && /лише перегляд/.test(tm[0].title) && /alleen-lezen/.test(tm[0].title), JSON.stringify(meldingen.map((m) => m.kind)));
 
-    // ------------------------------------------------------------------ C. body-aanmelding
-    const ba = await import('../../server/platform/body-aanmelding');
+    // ------------------------------------------------------------------ C. tekst-aanmelding
+    const ba = await import('../../server/platform/tekst-aanmelding');
     const kop = (c: string) => ({ cookie: `${ECOSYSTEM_COOKIE}=${encodeURIComponent(c)}` });
     const levend = await sessie(lid);
     const ingetrokken = await sessie(lid, { revokedAt: Date.now() - 1000 });

@@ -4,11 +4,12 @@ import { Fingerprint, ShieldCheck, X } from 'lucide-react';
 import { foutTekst } from './fouten';
 import Voorcontrole from './Voorcontrole';
 import CommitTekst from './CommitTekst';
+import UitrolStroomKaart from './UitrolStroomKaart';
 import { datum, mb, tr, type Lang, type Overzicht, type Voorstel } from './types';
 
-type Props = { lang: Lang; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string };
+type Props = { lang: Lang; context?: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; goedkeuren: (v: Voorstel) => void; afwijzen: (v: Voorstel, reden: string) => void; verberg?: string; naarStroom?: (versie: string) => void };
 
-export default function Goedkeuring({ lang, data, busy, klaar, goedkeuren, afwijzen, verberg }: Props) {
+export default function Goedkeuring({ lang, context = {}, data, busy, klaar, goedkeuren, afwijzen, verberg, naarStroom }: Props) {
   // Het pakket dat de wizard «Нове оновлення» zelf net uploadde wordt daar (stap 4) getoond; hier alleen de rest (bv. door een agent voorbereid).
   const wachtenden = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring' && v.id !== verberg);
   const [afwijs, setAfwijs] = useState<{ id: string; reden: string } | null>(null);
@@ -29,6 +30,7 @@ export default function Goedkeuring({ lang, data, busy, klaar, goedkeuren, afwij
         <dt>sha256</dt><dd><code className='admin-uitrol-sha'>{v.sha256}</code></dd>
       </dl>
       {v.voorcontrole && <details open={!v.voorcontrole.ok}><summary>{tr(lang, 'Перевірка сайту', 'Voorcontrole van de site')}</summary><Voorcontrole lang={lang} v={v.voorcontrole} /></details>}
+      <UitrolStroomKaart lang={lang} context={context} versie={v.versie} compact naarStroom={naarStroom} />
       {v.wijzigingen && <details open><summary>{tr(lang, 'Що змінено', 'Wat er verandert')}</summary><pre className='ut-pre'>{v.wijzigingen}</pre></details>}
       {v.diffSamenvatting && <details><summary>{tr(lang, 'Зміни у файлах', 'Gewijzigde bestanden')}</summary><pre className='ut-pre'>{v.diffSamenvatting}</pre></details>}
       <div className='ut-acties'>

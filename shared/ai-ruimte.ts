@@ -32,6 +32,7 @@ export type ToolRuimte = AiRuimte | 'apparaat';
 const TECHNISCH = new Set([
   // Updates voorbereiden (passkey-goedkeuring, backend/uitrol-goedkeuring.ts) — goedkeuren bestaat voor een AI nergens.
   'uitrol_voorstel_begin', 'uitrol_voorstel_stuk', 'uitrol_voorstel_klaar', 'uitrol_voorstel_status', 'uitrol_voorstel_annuleren',
+  'uitrol_github_ophalen',
   // Spiegel van de serverdeur in de connector (site-hulpmiddelen.ts): releases en gezondheid van de server.
   'get_live_release', 'list_releases', 'read_release_file', 'get_system_health',
   // Serverdeur (deploy/mcp/server.mjs, via backend/mcp-deur-brug.ts) en de eigenaarstools van de console-deur (backend/mcp-console.ts):
@@ -51,7 +52,7 @@ const TECHNISCH = new Set([
   'admin_list_access', 'dashboard_usage', 'server_status', 'server_releases', 'server_backup', 'server_uitrol_nu', 'server_terugdraaien',
   'write_staging', 'list_staging', 'read_staging', 'install_release', 'update_door', 'start_backup',
 ]);
-const APPARAAT_PREFIX = /^(machine_|docker_|app_|ecosysteem_|system_metrics$)/;
+const APPARAAT_PREFIX = /^(machine_|docker_|app_|ecosysteem_|geheugen_|system_metrics$)/;
 /**
  * Browserhulpmiddelen (extensie 0.6, 19.10.2026): de interne browser_*-namen en de namen naar chrome-devtools-mcp (DEVTOOLS_ALIASES in
  * backend/connectors-hulpmiddelen.ts; tests/eenheid/ai-ruimte.test.ts houdt beide lijsten gelijk). Ze werken op een gekoppelde browseragent en

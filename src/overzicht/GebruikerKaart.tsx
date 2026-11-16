@@ -1,7 +1,8 @@
 // Kaart van één gebruiker: wanneer actief, op welke apparaatklassen, en de tijdlijn van handelingen op de site.
 // Alleen soort handeling, sectie, tijd, uitkomst en apparaatklasse — nooit inhoud van mails/bestanden, geheimen, tokens of volledige IP-adressen
 // (de server levert die niet eens; zie backend/beheer-overzicht-kern.ts). Het openen van deze kaart wordt in het logboek vastgelegd.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RefreshCw, TriangleAlert, X } from 'lucide-react';
 import { haalGebruiker } from './api';
 import { Avatar, Geleden } from './widgets';
@@ -14,12 +15,16 @@ export default function GebruikerKaart({ id, ctx, lang, nu, onSluit }: { id: str
   const [fout, setFout] = useState('');
   const sluitRef = useRef<HTMLButtonElement>(null);
   const terug = useRef<Element | null>(null);
+  const [portaalDoel, setPortaalDoel] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setPortaalDoel(document.querySelector<HTMLElement>('.canonical-chrome') || document.body);
+  }, []);
 
   useEffect(() => {
     terug.current = document.activeElement;
-    sluitRef.current?.focus();
     return () => { if (terug.current instanceof HTMLElement) terug.current.focus(); };
   }, []);
+  useEffect(() => { sluitRef.current?.focus(); }, [portaalDoel]);
   useEffect(() => {
     let weg = false;
     setData(null); setFout('');
@@ -43,7 +48,7 @@ export default function GebruikerKaart({ id, ctx, lang, nu, onSluit }: { id: str
     const k = dagKop(e.t); const l = groepen[groepen.length - 1];
     if (l && l.dag === k) l.items.push(e); else groepen.push({ dag: k, items: [e] });
   }
-  return (
+  const inhoud = (
     <div className="ov-modal-schaduw" onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
       <aside className="ov-modal" role="dialog" aria-modal="true" aria-labelledby="ov-kaart-titel" data-testid="gebruikerskaart">
         <header className="ov-modal-kop">
@@ -59,6 +64,12 @@ export default function GebruikerKaart({ id, ctx, lang, nu, onSluit }: { id: str
           {!data && !fout && <p className="ov-leeg"><RefreshCw className="spin" aria-hidden="true" /> {tr(lang, 'Завантажуємо історію…', 'Geschiedenis laden…')}</p>}
           {data && (
             <>
+              {data.gedeeltelijkeFout && (
+                <p className="ov-banner" role="status">
+                  <TriangleAlert aria-hidden="true" />{' '}
+                  {tr(lang, `Деякі джерела тимчасово не відповіли (${data.bronFouten.join(', ')}).`, `Sommige bronnen reageerden tijdelijk niet (${data.bronFouten.join(', ')}).`)}
+                </p>
+              )}
               <p className="ov-privacy">{tr(lang, 'Показано лише тип дії, розділ, час, результат і клас пристрою. Вміст листів, файлів, секрети й IP не показуються.', 'Alleen soort actie, onderdeel, tijd, uitkomst en apparaatklasse. Mail- en bestandsinhoud, geheimen en IP worden niet getoond.')}</p>
               <dl className="ov-kaart-kpi">
                 <div><dt>{tr(lang, 'Стан', 'Status')}</dt><dd>{data.kpi.online ? <span className="ov-live"><i aria-hidden="true" />{tr(lang, 'онлайн', 'online')}</span> : tr(lang, 'не в мережі', 'offline')}</dd></div>
@@ -95,4 +106,5 @@ export default function GebruikerKaart({ id, ctx, lang, nu, onSluit }: { id: str
       </aside>
     </div>
   );
+  return portaalDoel ? createPortal(<div className="ov-root ov-portaal">{inhoud}</div>, portaalDoel) : inhoud;
 }

@@ -1,6 +1,6 @@
 // Незалежний портальний центр сповіщень формату «застосунок у застосунку» (GEMINI-002).
 // Відображається в окремому шарі безпосередньо в document.body поверх усіх вікон і меню сайту:
-// перетягування, 8-стороннє змінення розмірів, 4 режими розміру, плавуча міні-пігулка, картки зі змахами,
+// перетягування, 8-стороннє змінення розмірів, 4 режими розміру, рухома міні-пігулка, картки зі змахами,
 // вбудований програвач усіх форматів вкладень, ШІ-інспектор та контекстна адаптація до піддомену.
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
@@ -12,14 +12,13 @@ import {
   Maximize2,
   Minimize2,
   Minus,
-  PanelTopClose,
+  PanelRightClose,
   Pin,
   PinOff,
   RefreshCw,
   Search,
   Settings,
   SlidersHorizontal,
-  Sparkles,
   Volume2,
   VolumeX,
   X,
@@ -126,17 +125,22 @@ export default function MeldingenPortaal({
   const ctx = useMemo(() => contextVoorSubdomein(subdomeinNu, ruimte), [subdomeinNu, ruimte]);
 
   const [geo, setGeo] = useState<VensterGeometrie>(() => klemVenster(profiel.geometrie, leesScherm()));
+  const laatsteGeoRef = useRef<VensterGeometrie>(geo);
+  laatsteGeoRef.current = geo;
   const [zoek, setZoek] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('actief');
   const [kanaalFilter, setKanaalFilter] = useState<MeldingKanaal | 'alle'>('alle');
   const [alleenDitSubdomein, setAlleenDitSubdomein] = useState(false);
   const [toonVoorkeuren, setToonVoorkeuren] = useState(false);
   const [geselecteerdId, setGeselecteerdId] = useState<string>('');
+  const [detailBijlageIdx, setDetailBijlageIdx] = useState(0);
   const [modaalBijlage, setModaalBijlage] = useState<{ gebeurtenis: MeldingEcosysteemGebeurtenis; index: number } | null>(null);
   const vensterRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    setGeo(klemVenster(profiel.geometrie, leesScherm()));
+    const geklemd = klemVenster(profiel.geometrie, leesScherm());
+    laatsteGeoRef.current = geklemd;
+    setGeo(geklemd);
   }, [
     profiel.geometrie.x,
     profiel.geometrie.y,
@@ -147,16 +151,44 @@ export default function MeldingenPortaal({
     profiel.geometrie.minimalePil,
   ]);
 
+  // MELDINGEN-UX-001: zolang het venster nooit verplaatst is (standaardplek x 24 / y 72), opent het onder de bel, rechts uitgelijnd.
   useEffect(() => {
-    const onResize = () => setGeo((h) => klemVenster(h, leesScherm()));
+    if (!open) return;
+    const g = profiel.geometrie;
+    if (g.modus === 'volledig' || g.x !== 24 || g.y !== 72) return;
+    const bel = document.querySelector<HTMLElement>('.canonical-notification-bell');
+    const r = bel?.getBoundingClientRect();
+    if (!r || (!r.width && !r.height)) return;
+    setGeo((h) => klemVenster({ ...h, x: r.right - h.breedte, y: r.bottom + 10 }, leesScherm()));
+  }, [open, profiel.geometrie]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setGeo((h) => {
+        const geklemd = klemVenster(h, leesScherm());
+        laatsteGeoRef.current = geklemd;
+        return geklemd;
+      });
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
   useEffect(() => {
+    if (!open || modaalBijlage) return;
+    const r = requestAnimationFrame(() => {
+      const el = vensterRef.current;
+      if (el && !el.contains(document.activeElement)) {
+        el.focus({ preventScroll: true });
+      }
+    });
+    return () => cancelAnimationFrame(r);
+  }, [open, modaalBijlage]);
+
+  useEffect(() => {
     if (!open && !modaalBijlage) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (modaalBijlage) {
         e.preventDefault();
         e.stopPropagation();
@@ -165,11 +197,12 @@ export default function MeldingenPortaal({
       }
       if (open) {
         const doel = e.target as Element | null;
-        if (doel?.closest('.mel-ecosysteem-portaal')) {
-          e.preventDefault();
-          e.stopPropagation();
-          onSluiten();
+        if (doel && !doel.closest('.mel-ecosysteem-portaal') && !doel.closest('.canonical-notification-bell') && doel.closest('[role="dialog"],[aria-modal="true"]')) {
+          return;
         }
+        e.preventDefault();
+        e.stopPropagation();
+        onSluiten();
       }
     };
     window.addEventListener('keydown', onKey, true);
@@ -248,10 +281,15 @@ export default function MeldingenPortaal({
     const dx = e.clientX - s.startX;
     const dy = e.clientY - s.startY;
     const scherm = leesScherm();
-    if (s.soort === 'verplaats') {
-      setGeo(klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm));
-    } else if (s.richting) {
-      setGeo(pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm));
+    const volgende =
+      s.soort === 'verplaats'
+        ? klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm)
+        : s.richting
+          ? pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm)
+          : null;
+    if (volgende) {
+      laatsteGeoRef.current = volgende;
+      setGeo(volgende);
     }
   };
 
@@ -264,7 +302,18 @@ export default function MeldingenPortaal({
     } catch {
       /* ігноруємо */
     }
-    onSlaGeometrieOp(geo, true);
+    const dx = e.clientX - s.startX;
+    const dy = e.clientY - s.startY;
+    const scherm = leesScherm();
+    const eindGeo =
+      s.soort === 'verplaats'
+        ? klemVenster({ ...s.startGeo, x: s.startGeo.x + dx, y: s.startGeo.y + dy }, scherm)
+        : s.richting
+          ? pasVensterMaatAan(s.startGeo, s.richting, dx, dy, scherm)
+          : laatsteGeoRef.current;
+    laatsteGeoRef.current = eindGeo;
+    setGeo(eindGeo);
+    onSlaGeometrieOp(eindGeo, true);
   };
 
   const pasModusToe = (modus: VensterModus) => {
@@ -308,6 +357,10 @@ export default function MeldingenPortaal({
     if (!gefilterd.length) return null;
     return gefilterd.find((g) => g.id === geselecteerdId) ?? gefilterd[0];
   }, [gefilterd, geselecteerdId]);
+
+  useEffect(() => {
+    setDetailBijlageIdx(0);
+  }, [geselecteerd?.id]);
 
   const tellers = useMemo(() => {
     let nieuw = 0;
@@ -362,8 +415,8 @@ export default function MeldingenPortaal({
               onSlaGeometrieOp(v, true);
               onSluiten();
             }}
-            aria-label={t('Прибрати плавучу пігулку', 'Zwevende pil verbergen')}
-            title={t('Прибрати плавучу пігулку', 'Zwevende pil verbergen')}
+            aria-label={t('Прибрати рухому пігулку', 'Zwevende pil verbergen')}
+            title={t('Прибрати рухому пігулку', 'Zwevende pil verbergen')}
           >
             <X aria-hidden='true' />
           </button>
@@ -382,10 +435,10 @@ export default function MeldingenPortaal({
           tabIndex={-1}
           aria-label={t('Екосистема сповіщень', 'Meldingen-ecosysteem')}
           style={{
-            left: `${geo.x}px`,
-            top: `${geo.y}px`,
-            width: `${geo.breedte}px`,
-            height: `${geo.hoogte}px`,
+            ['--mel-x' as string]: `${geo.x}px`,
+            ['--mel-y' as string]: `${geo.y}px`,
+            ['--mel-w' as string]: `${geo.breedte}px`,
+            ['--mel-h' as string]: `${geo.hoogte}px`,
             ['--mel-accent' as string]: ctx.accent,
             ['--mel-tint' as string]: ctx.tintAchtergrond,
           }}
@@ -411,10 +464,10 @@ export default function MeldingenPortaal({
           >
             <div className='mel-kop-titel'>
               <span className='mel-kop-badge' aria-hidden='true'>
-                <Sparkles />
+                <Bell />
               </span>
               <div>
-                <strong>{t('Центр подій і сповіщень', 'Meldingen-ecosysteem')}</strong>
+                <strong>{t('Сповіщення', 'Meldingen')}</strong>
                 <small>
                   {lang === 'nl' ? ctx.naamNl : ctx.naamUk} ·{' '}
                   {tellers.nieuw > 0
@@ -425,51 +478,33 @@ export default function MeldingenPortaal({
             </div>
 
             <div className='mel-kop-gereedschap'>
-              <div className='mel-modus-groep' role='group' aria-label={t('Розмір вікна', 'Venstermodus')}>
-                <button
-                  type='button'
-                  className={geo.modus === 'kompakt' ? 'is-actief' : undefined}
-                  onClick={() => pasModusToe('kompakt')}
-                  title={t('Компактно', 'Compact')}
-                  aria-label={t('Компактно', 'Compact')}
-                >
-                  <Minimize2 aria-hidden='true' />
-                </button>
-                <button
-                  type='button'
-                  className={geo.modus === 'normaal' ? 'is-actief' : undefined}
-                  onClick={() => pasModusToe('normaal')}
-                  title={t('Звичайне вікно', 'Normaal')}
-                  aria-label={t('Звичайне вікно', 'Normaal')}
-                >
-                  <PanelTopClose aria-hidden='true' />
-                </button>
-                <button
-                  type='button'
-                  className={geo.modus === 'breed' ? 'is-actief' : undefined}
-                  onClick={() => pasModusToe('breed')}
-                  title={t('Широкий оглядач (2 колонки)', 'Breed (twee kolommen)')}
-                  aria-label={t('Широкий оглядач (2 колонки)', 'Breed (twee kolommen)')}
-                >
-                  <Columns2 aria-hidden='true' />
-                </button>
-                <button
-                  type='button'
-                  className={geo.modus === 'volledig' ? 'is-actief' : undefined}
-                  onClick={() => pasModusToe('volledig')}
-                  title={t('На весь екран', 'Volledig scherm')}
-                  aria-label={t('На весь екран', 'Volledig scherm')}
-                >
-                  <Maximize2 aria-hidden='true' />
-                </button>
-              </div>
+              <button
+                type='button'
+                className={`mel-ikoon-knop${geo.modus === 'breed' ? ' is-actief' : ''}`}
+                aria-pressed={geo.modus === 'breed'}
+                onClick={() => pasModusToe(geo.modus === 'breed' ? 'normaal' : 'breed')}
+                title={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки: список і подробиці поруч', 'Twee kolommen: lijst en details naast elkaar')}
+                aria-label={geo.modus === 'breed' ? t('Одна колонка', 'Eén kolom') : t('Дві колонки', 'Twee kolommen')}
+              >
+                <Columns2 aria-hidden='true' />
+              </button>
+              <button
+                type='button'
+                className={`mel-ikoon-knop${geo.modus === 'volledig' ? ' is-actief' : ''}`}
+                aria-pressed={geo.modus === 'volledig'}
+                onClick={() => pasModusToe(geo.modus === 'volledig' ? 'normaal' : 'volledig')}
+                title={geo.modus === 'volledig' ? t('Повернути звичайний розмір вікна', 'Terug naar de gewone venstergrootte') : t('На весь екран', 'Volledig scherm')}
+                aria-label={geo.modus === 'volledig' ? t('Звичайний розмір', 'Gewone grootte') : t('На весь екран', 'Volledig scherm')}
+              >
+                {geo.modus === 'volledig' ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}
+              </button>
 
               <button
                 type='button'
                 className={`mel-ikoon-knop${geo.vastgepind ? ' is-actief' : ''}`}
                 onClick={toggleVastpinnen}
                 aria-pressed={geo.vastgepind}
-                title={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
+                title={geo.vastgepind ? t('Відкріпити: вікно закриється від кліку поза ним', 'Losmaken: het venster sluit bij een klik erbuiten') : t('Закріпити: вікно лишається відкритим, коли працюєте на сторінці', 'Vastpinnen: het venster blijft open terwijl u op de pagina werkt')}
                 aria-label={geo.vastgepind ? t('Відкріпити вікно', 'Venster losmaken') : t('Закріпити поверх сайту', 'Vastpinnen boven de site')}
               >
                 {geo.vastgepind ? <Pin aria-hidden='true' /> : <PinOff aria-hidden='true' />}
@@ -479,10 +514,21 @@ export default function MeldingenPortaal({
                 type='button'
                 className='mel-ikoon-knop'
                 onClick={() => togglePil(true)}
-                title={t('Згорнути в плавучу пігулку', 'Minimaliseren naar zwevende pil')}
-                aria-label={t('Згорнути в плавучу пігулку', 'Minimaliseren naar zwevende pil')}
+                title={t('Згорнути в маленьку рухому кнопку з лічильником', 'Minimaliseren naar een kleine zwevende knop met teller')}
+                aria-label={t('Згорнути в рухому кнопку', 'Minimaliseren naar zwevende knop')}
               >
                 <Minus aria-hidden='true' />
+              </button>
+
+              <button
+                type='button'
+                className='mel-vorm-schakel'
+                data-qa-id='melding-vorm-compact'
+                onClick={onSwitchToClassic}
+                title={t('Показувати сповіщення компактною панеллю біля дзвіночка. Повернутися до вікна — кнопкою «Вікно» в тій панелі.', 'Meldingen tonen als compact paneel bij de bel. Terug naar het venster met de knop «Venster» in dat paneel.')}
+              >
+                <PanelRightClose aria-hidden='true' />
+                <span>{t('Компактно', 'Compact')}</span>
               </button>
 
               <button
@@ -675,9 +721,10 @@ export default function MeldingenPortaal({
                       <MeldingBijlageSpeler
                         lang={lang}
                         bijlagen={geselecteerd.bijlagen}
-                        actieveIndex={0}
+                        actieveIndex={Math.min(detailBijlageIdx, geselecteerd.bijlagen.length - 1)}
                         voorkeur={profiel.bijlageWeergave}
-                        onToggleModaal={() => setModaalBijlage({ gebeurtenis: geselecteerd, index: 0 })}
+                        onSelectIndex={setDetailBijlageIdx}
+                        onToggleModaal={() => setModaalBijlage({ gebeurtenis: geselecteerd, index: Math.min(detailBijlageIdx, geselecteerd.bijlagen.length - 1) })}
                       />
                     )}
 
@@ -701,14 +748,6 @@ export default function MeldingenPortaal({
               onClick={onMarkAll}
             >
               {t('Позначити все прочитаним', 'Alles als gelezen')}
-            </button>
-
-            <button
-              type='button'
-              className='mel-knop mel-knop-zacht'
-              onClick={onSwitchToClassic}
-            >
-              {t('Компактно біля дзвоника', 'Klassiek bij bel')}
             </button>
 
             <a href={instellingenHref} className='mel-knop mel-knop-primair'>

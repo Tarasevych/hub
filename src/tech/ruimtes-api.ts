@@ -5,6 +5,7 @@ import { ecosystemTabContext } from '../tab-context';
 import { sessieDienst } from '../canoniek-navigatie';
 import { naarRegels, normaliseerStatus, type Ruimte, type TermijnModus, type ToegangRuw } from './ruimtes-contract';
 export * from './ruimtes-contract';
+import type { AiRegels, AiTermijn } from '../../shared/ai-delegatie';
 
 export const RUIMTES_VLAG = 'tech-ruimtes-v2';
 const B = '/api/owner/hub/tech/ruimtes';
@@ -23,12 +24,17 @@ export const ruimtesApi = {
   /** Werker 1 (28.10): 200 {ruimte, eindTijd} | 401 | 403 {error, uitleg:{uk,nl}} — mag de technische ruimte nu gebruikt worden? */
   controle: () => post<{ ruimte: Ruimte; eindTijd: string | null }>('controle'),
   toegang: () => post<ToegangRuw>('toegang').then(naarRegels),
-  aiZetten: (verbindingId: string, ruimtes: Ruimte[], termijn: TermijnModus, minuten?: number, opties?: { activeerSessie?: boolean }) =>
+  /** AI-TERMIJN-001: termijn + regels per AI-verbinding (stap-op met passkey op de server). '*' vraagt alleVerbindingen: true. */
+  aiZetten: (verbindingId: string, ruimtes: Ruimte[], termijn: AiTermijn | TermijnModus, minuten?: number, opties?: { activeerSessie?: boolean; eindOp?: number | null; regels?: Partial<AiRegels>; naam?: string; alleVerbindingen?: boolean }) =>
     post<ToegangRuw>('ai-zetten', {
       verbindingId,
       ruimtes,
       termijn,
-      ...(termijn === 'tijd' ? { minuten } : {}),
+      ...(termijn === 'tijd' && opties?.eindOp ? { eindOp: opties.eindOp } : termijn === 'tijd' ? { minuten } : {}),
+      ...(opties?.regels ? { regels: opties.regels } : {}),
+      ...(opties?.naam ? { naam: opties.naam } : {}),
+      ...(opties?.alleVerbindingen ? { alleVerbindingen: true } : {}),
       ...(opties?.activeerSessie ? { activeerSessie: true } : {}),
     }).then(naarRegels),
+  aiIntrekken: (verbindingId: string, naam?: string) => post<ToegangRuw>('ai-intrekken', { verbindingId, ...(naam ? { naam } : {}) }).then(naarRegels),
 };

@@ -1,6 +1,6 @@
 // SEC-002 (toets g10e-toets-2): goedkope controle VÓÓR het lezen van een verzoeklichaam of een Cookie of Bearer-token ECHT is.
 //
-// server/platform/body-budget.ts geeft een verzoek met aanmelding ruimere grenzen (12 MB, 64 lichamen per IP, geen korte termijn).
+// server/platform/tekst-budget.ts geeft een verzoek met aanmelding ruimere grenzen (12 MB, 64 lichamen per IP, geen korte termijn).
 // Alleen de AANWEZIGHEID van een kop was daarvoor niet genoeg: «Cookie: x=1» van een aanvaller zonder account haalde alle anonieme
 // grenzen weg. Hier één opzoeking per verzoek (met een korte cache), op dezelfde hashes als de echte aanmelding:
 //   • cookie `__Secure-tsv_ecosystem_<app>` = «<sessie-id>.<token>» → app.records 'owner_service_sessions_v1' (tokenHash of

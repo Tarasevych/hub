@@ -1845,7 +1845,8 @@ html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.
 html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd),
 html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
   background-color: #fdeeee;
-  color: #991b1b;
+  --gh-verschil-color: #991b1b;
+  color: var(--gh-verschil-color);
 }
 
 html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr {
@@ -1860,7 +1861,8 @@ html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd),
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
   background-color: #11261b;
-  color: #86efac;
+  --gh-verschil-color: #86efac;
+  color: var(--gh-verschil-color);
 }
 
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr {
@@ -1875,7 +1877,8 @@ html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd),
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
   background-color: #2a1417;
-  color: #fecaca;
+  --gh-verschil-color: #fecaca;
+  color: var(--gh-verschil-color);
 }
 
 html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr {

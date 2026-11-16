@@ -199,6 +199,13 @@ export async function grantTermijn(door: { id: string; email?: string }, id: unk
   const na = onbepaald ? 'tot intrekking' : `tot ${iso(rows[0].verloopt_op)} (${dagen} dagen)`;
   await agentAudit({ ownerId: door.id, actor: { id: door.id, email: door.email }, action: 'agent.grant.termijn', target: { type: SOORT_TEKST[rows[0].soort as Soort], id: String(rows[0].onderwerp), label: String(rows[0].label || '') },
     agent: rows[0].soort === 'agent' ? String(rows[0].onderwerp) : null, before: voor, after: na, reason: tekst(input.reden, 300), extra: { grantId: String(id) } });
+  // TOEGANG-001: een termijnwijziging kwam alleen in het journaal, niet in het meldingencentrum. Nu wel (getroffen account = account van het recht).
+  const label = String(rows[0].label || '');
+  const totUk = onbepaald ? 'до відкликання (без терміну)' : `на ${dagen} дн., до ${iso(rows[0].verloopt_op).slice(0, 10)}`;
+  const totNl = onbepaald ? 'tot intrekking (zonder termijn)' : `voor ${dagen} d, tot ${iso(rows[0].verloopt_op).slice(0, 10)}`;
+  await meld(String(rows[0].account_id), 'security', 'Термін права готувати оновлення змінено / Termijn van het recht om updates voor te bereiden gewijzigd',
+    `${door.email || 'Власник'} змінив термін права «${label}»: ${totUk}. Було: ${voor}. / ${door.email || 'De eigenaar'} wijzigde de termijn van «${label}»: ${totNl}. Was: ${voor}.`,
+    'https://admin.tarasevych.com/updates').catch(() => undefined);
   return grantUit(rows[0]);
 }
 /**
@@ -400,6 +407,7 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
     await meld(grant.accountId, 'uitrol.mislukt', `Пакет ${tekst(row.versie, 40)} відхилено перевіркою / Pakket ${tekst(row.versie, 40)} geweigerd door de controle`,
       `Не пройшли перевірки: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Завантажив: «${grant.label}». / Niet geslaagd: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Geüpload door: «${grant.label}».`,
       'https://admin.tarasevych.com/updates');
+    await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'voorcontrole-mislukt', grant.accountId)).catch(() => undefined);
     return { id: String(row.id), versie: String(row.versie), status: 'afgebroken', code: 'VOORCONTROLE_MISLUKT', voorcontrole: vc.resultaat };
   }
   await rename(deel, pakketPad(row.id));
@@ -411,6 +419,7 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   await meld(grant.accountId, 'uitrol', `Оновлення ${tekst(row.versie, 40)} чекає схвалення / Update ${tekst(row.versie, 40)} wacht op goedkeuring`,
     `Завантажив: «${grant.label}». Перевірку пройдено. Схвалити чи відхилити — на сторінці оновлень (з passkey). / Geüpload door: «${grant.label}». Controle geslaagd. Goedkeuren of afwijzen op de updatepagina (met passkey).`,
     'https://admin.tarasevych.com/updates');
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'klaar', grant.accountId)).catch(() => undefined);
   return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat };
 }
 async function afbreken(id: string, code: string) {
@@ -604,6 +613,8 @@ export async function goedkeurUitdaging(eigenaar: Eigenaar, voorstelId: unknown)
   const v = rows[0];
   if (!v) fout('NIET_GEVONDEN', 404);
   if (v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
+  if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   const u = await uitdagingMaken(eigenaar.id, 'goedkeuren', String(v.id), { voorstelId: String(v.id), versie: String(v.versie), sha256: String(v.sha256) });
   return { uitdagingId: u.id, verloopt: u.verloopt, publicKey: assertieOpties(u.uitdaging, b), voorstel: { id: String(v.id), versie: String(v.versie), sha256: String(v.sha256) } };
 }
@@ -616,6 +627,8 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   const { rows } = await sys().query('SELECT * FROM app.uitrol_voorstellen WHERE id = $1', [u.onderwerp]);
   const v = rows[0];
   if (!v || v.status !== 'wacht-op-goedkeuring') fout('STATUS_ONGELDIG', 409);
+  const tgBlok = await import('./uitrol-telegram').then((m) => m.controleerTelegramBlokkade(eigenaar.id));
+  if (tgBlok.geblokkeerd) fout('TELEGRAM_ARCHIEF_VEREIST', 409);
   // Opnieuw uitrekenen uit de HUIDIGE gegevens: een gewijzigd voorstel (andere sha/versie) past niet meer bij de challenge.
   const verwacht = kern.uitdagingVoor('goedkeuren', { voorstelId: String(v.id), versie: String(v.versie), sha256: String(v.sha256), nonce: u.nonce, verloopt: u.verloopt });
   const b = await leesSleutels();
@@ -638,6 +651,7 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'goedgekeurd', beslist_op = now(), beslist_door = $2, bijgewerkt_op = now() WHERE id = $1`, [String(v.id), eigenaar.email || eigenaar.id]);
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label) });
   await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(v.id), 'goedgekeurd', eigenaar.id)).catch(() => undefined);
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
 }
 

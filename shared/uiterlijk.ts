@@ -53,11 +53,16 @@ export type UiterlijkDichtheid = typeof UITERLIJK_DICHTHEDEN[number];
 /** Рух: «systeem» — як на пристрої (prefers-reduced-motion), «minder» — менше руху завжди, поверх пристрою. Beweging. */
 export const UITERLIJK_BEWEGINGEN = ['systeem', 'minder'] as const;
 export type UiterlijkBeweging = typeof UITERLIJK_BEWEGINGEN[number];
-/** Акцентний колір поверх палітри (кнопки, виділення, перемикачі). Без поля — акцент самої палітри. Accentkleur boven het palet. */
-export const UITERLIJK_ACCENTEN = ['violet', 'cyan', 'pink', 'amber'] as const;
+/** Акцентний колір поверх палітри (кнопки, виділення, перемикачі, посилання, якорі, фокус, живий фон). Без поля — акцент самої палітри.
+ *  ACCENT-001 (15.11.2026): додано вісім «улюблених відтінків» меню облікового запису (раніше вони були окремою палітрою лише в цьому
+ *  браузері й губилися в будь-якій іншій палітрі). Старі чотири значення лишаються дійсними. Accentkleur boven elk palet. */
+export const UITERLIJK_ACCENTEN = ['violet', 'cyan', 'pink', 'amber', 'blauw', 'hemel', 'teal', 'groen', 'oranje', 'roze', 'indigo', 'bruin'] as const;
 export type UiterlijkAccent = typeof UITERLIJK_ACCENTEN[number];
 /** Виразність декоративних ефектів (сяйво ілюстрацій), 0–100 %. Без поля — 45 %, як у макеті. Sterkte van decoratieve effecten. */
 export const UITERLIJK_EFFECTEN_STANDAARD = 45;
+/** ACCENT-001: прозорий режим блоків, 0–100 % (0 або без поля — вимкнено, блоки суцільні). 100 % — найпрозоріше, але текст лишається
+ *  читабельним (непрозорість підкладки не нижча за 30 %). Doorschijnende blokken: 0 = uit; 100 = het meest doorschijnend. */
+export const UITERLIJK_TRANSPARANTIE_STANDAARD_AAN = 50;
 
 /** ACHTERGROND-001: «Живий фон» — повільні розмиті плями різних непропорційних форм, що переливаються від краю до краю сторінки.
  *  Зберігаються лише відмінні від типових поля (старі записи без поля = типовий фон). Levende achtergrond: alleen afwijkingen worden bewaard.
@@ -126,6 +131,8 @@ export type UiterlijkRuimte = {
   beweging?: UiterlijkBeweging;
   accent?: UiterlijkAccent;
   effecten?: number;
+  /** ACCENT-001: прозорість блоків (1–100); без поля — суцільні блоки. Doorschijnendheid van blokken. */
+  transparantie?: number;
   /** ACHTERGROND-001: лише поля, що відрізняються від ACHTERGROND_STANDAARD. Alleen afwijkingen van de standaard. */
   achtergrond?: Partial<UiterlijkAchtergrond>;
   op?: number;
@@ -220,6 +227,8 @@ export function normaliseerUiterlijkRuimte(raw: unknown): UiterlijkRuimte {
   if (accent) uit.accent = accent;
   const effecten = r.effecten === null || r.effecten === undefined || r.effecten === '' ? NaN : Number(r.effecten);
   if (Number.isFinite(effecten) && effecten >= 0 && effecten <= 100 && Math.round(effecten) !== UITERLIJK_EFFECTEN_STANDAARD) uit.effecten = Math.round(effecten);
+  const transparantie = typeof r.transparantie === 'number' || (typeof r.transparantie === 'string' && r.transparantie.trim() !== '') ? Number(r.transparantie) : NaN;
+  if (Number.isFinite(transparantie) && transparantie > 0 && transparantie <= 100) uit.transparantie = Math.round(transparantie);
   const achtergrond = normaliseerAchtergrond(r.achtergrond);
   if (achtergrond) uit.achtergrond = achtergrond;
   const op = Number(r.op);

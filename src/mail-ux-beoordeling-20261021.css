@@ -7,12 +7,12 @@
    «оновити», «налаштування», аватаром і «☰» — прозорі фіксовані шари над нею: прокручені листи просвічували між іконками
    («Олекс…» під «☰», час листа під шестернею). Смуга кольору тла сторінки лежить ВСЕРЕДИНІ робочої області (z 30): над листами,
    під шапкою й гамбургером (окремі шари поверх робочої області) і під вікном читання (z 230 там само). Висота = відступ робочої
-   області зверху (70 px; 62 px на телефоні). Лише там, де є смуга пошуку пошти (налаштування/акаунти мають власні липкі заголовки). */
+   області зверху (max(76px, --plaats-boven-onder + 14px); max(64px, --plaats-boven-onder + 12px) на телефоні). Лише там, де є смуга пошуку пошти (налаштування/акаунти мають власні липкі заголовки). */
 html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before {
-  content:''; position:fixed; z-index:30; inset:0 0 auto 0; height:var(--mr-kop-hoogte, 70px);
+  content:''; position:fixed; z-index:30; inset:0 0 auto 0; height:var(--mr-kop-hoogte, max(76px, calc(var(--plaats-boven-onder, 62px) + 14px)));
   background:var(--bg); pointer-events:auto;
 }
-@media (max-width:700px) { html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace { --mr-kop-hoogte:62px; } }
+@media (max-width:700px) { html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace { --mr-kop-hoogte:max(64px, calc(var(--plaats-boven-onder, 52px) + 12px)); } }
 /* Тонка межа з'являється лише тоді, коли під шапкою вже є прокручений вміст (scroll-driven; без підтримки — просто без межі). */
 @supports (animation-timeline: scroll()) {
   html body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace { scroll-timeline:--mr-kop block; }

@@ -26,3 +26,32 @@ export function isEmailAdres(waarde: unknown, max = 254): boolean {
 export function isOntvangerAdres(waarde: unknown, max = 254): boolean {
   return typeof waarde === 'string' && waarde.length > 0 && waarde.length <= max && ONTVANGER.test(waarde);
 }
+
+export type VeiligeWebUrlOpties = { max?: number; lokaalHttp?: boolean; alleHttp?: boolean };
+
+/**
+ * Перевіряє зовнішнє чи локальне вебпосилання перед збереженням або виведенням у <a href>.
+ * Контролює довжину першою, блокує javascript:/data:/vbscript:/file:, керувальні символи та облікові дані в URL.
+ * Controleert een web-URL vóór opslag of weergave: alleen https (en optioneel http), zonder gebruikersgegevens of stuurtekens.
+ */
+export function veiligeWebUrl(waarde: unknown, opties: VeiligeWebUrlOpties = {}): string | undefined {
+  if (typeof waarde !== 'string') return undefined;
+  const max = opties.max ?? 500;
+  const s = waarde.trim();
+  if (!s || s.length > max) return undefined;
+  if (/[\u0000-\u001f\u007f\\]/.test(s)) return undefined;
+  try {
+    const u = new URL(s);
+    if (u.username || u.password) return undefined;
+    if (u.protocol === 'https:') return u.href;
+    if (u.protocol === 'http:') {
+      if (opties.alleHttp) return u.href;
+      if (opties.lokaalHttp && (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '[::1]')) {
+        return u.href;
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}

@@ -1,4 +1,4 @@
-import { ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, Minimize2, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, Sparkles, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
+import { AppWindow, Archive, ArrowLeft, Bell, CheckCheck, ChevronDown, CircleCheck, Clock3, Cloud, Database, Ellipsis, History, Info, List, Mail, RefreshCw, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, Undo2, Users, Volume2, VolumeX, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
@@ -25,6 +25,8 @@ import { zetTechActiviteit } from './meldingen/tech-meldingen-opslag';
 import { pijlNaarBel, placeNear, zonderDok, type Pijl } from './melding-positie';
 import { zichtbaarKader, volgKader } from './platform/vast-kader';
 import { styleOf } from './melding-stijl';
+import { menselijkeTitel, tegelKleur } from './meldingen/toast-weergave';
+import { Logo } from './mcp-ui';
 // IDENTITEIT-015 (kaart-stille-uren): тихі години для всього центру — без спливання й звуку, після кінця один підсумок.
 import { samenvattingTekst, stilNu, type StilVoorkeur } from '../shared/stille-uren';
 import { stilAfronden, stilTellen } from './meldingen/stille-uren-opslag';
@@ -841,7 +843,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     ? bouwModel({ lang: p.lang, local: zichtbaarLokaal as never, server: server as never, events, readEvents: activity.read }, v2Regels, undefined, (ms) => pasStatusToe(ms, v3Status))
     : null), [v2, v2Regels, v3Status, p.lang, zichtbaarLokaal, server, events, activity.read]);
   const subdomeinNu = naarMeldingSubdomein(typeof location !== 'undefined' ? dienstVanHostnaam(location.hostname) : 'hub');
-  const ecoRuimte = belSfeer === 'technisch' ? 'technisch' : 'prive';
+  const ecoRuimte = (belSfeer === 'technisch' || (ruimteFilterActief() && ruimteNu === 'technisch')) ? 'technisch' : 'prive';
   const eco = useMeldingEcosysteem({
     lang: p.lang,
     scope: p.scope,
@@ -867,11 +869,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     activity.markAllRead();
     if (localUnread) saveRetained((rows) => rows.map((row) => ({ ...row, read: true })));
     if (serverUnread) await p.onReadAllServer?.();
-    for (const g of eco.stroom) {
-      if (g.status === 'nieuw' && !g.externeSleutel.startsWith('site_notif:') && !g.externeSleutel.startsWith('act:') && !g.externeSleutel.startsWith('l:')) {
-        void eco.wijzigGebeurtenisStatus(g, 'gelezen');
-      }
-    }
+    await eco.allesGelezenEcosysteem();
   };
   const resetPosition = () => {
     const klasse = plaatsStaat().ctx.klasse;
@@ -910,7 +908,10 @@ export default function CanonicalNotificationCenter(p: Props) {
   // INTEG-001: altijd een weg naar de plek waar u het oplost — de link van de melding, anders het onderdeel zelf («Відкрити: Пошта»).
   const toastLink = active ? (normalizeLink(active.link) ?? (toastStijl ? sectieLink(toastStijl.section, p.lang) : undefined)) : undefined;
   // Waar en over wie: onderdeel · dienst (Google, Microsoft …) · account, app of apparaat (alleen wat de bron weet).
-  const toastSectie = toastStijl ? [toastStijl.label, toastStijl.providerLabel && toastStijl.providerLabel !== toastStijl.label ? toastStijl.providerLabel : '', active?.context?.trim() || ''].filter(Boolean).join(' · ') : '';
+  // MELDINGEN-UX-001: de toast in mensentaal — interne code naar de details, agentnaam als logo, één regel bovenaan (dienst · context).
+  const toastTitel = active ? menselijkeTitel(active.text) : null;
+  const toastLogo = toastTitel?.agent?.logo ?? (toastStijl && toastStijl.provider && (toastStijl.section === 'ai' || toastStijl.section === 'claude' || toastStijl.section === 'github') ? toastStijl.provider : null);
+  const toastSectie = toastStijl ? [toastTitel?.agent?.naam || '', toastStijl.label, active?.context?.trim() || ''].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(' · ') : '';
 
   /**
    * «Очистити»: de melding is afgehandeld — gelezen en naar «Архів» (niet gewist; terug te zetten in het paneel). De status staat op de
@@ -937,13 +938,35 @@ export default function CanonicalNotificationCenter(p: Props) {
 
   const wijzigEnSyncStatus: Parameters<typeof MeldingenPortaalType>[0]['onStatusWijzigen'] = async (geb, status, uitstelMinuten) => {
     await eco.wijzigGebeurtenisStatus(geb, status, uitstelMinuten);
+    const serverId = geb.id.startsWith('s:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('site_notif:')
+        ? geb.externeSleutel.slice('site_notif:'.length)
+        : typeof geb.meta?.serverId === 'string'
+          ? geb.meta.serverId
+          : '';
+    const actId = geb.id.startsWith('a:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('act:')
+        ? geb.externeSleutel.slice('act:'.length)
+        : typeof geb.meta?.activiteitId === 'string'
+          ? geb.meta.activiteitId
+          : '';
+    const lokId = geb.id.startsWith('l:')
+      ? geb.id.slice(2)
+      : geb.externeSleutel.startsWith('l:')
+        ? geb.externeSleutel.slice(2)
+        : typeof geb.meta?.lokaalId === 'string'
+          ? geb.meta.lokaalId
+          : '';
     if (status !== 'nieuw') {
-      if (geb.id.startsWith('s:')) void p.onReadServer?.(geb.id.slice(2));
-      else if (geb.id.startsWith('a:')) activity.markRead(geb.id.slice(2));
-      else if (geb.id.startsWith('l:')) markLocalRead(geb.id.slice(2));
+      if (serverId) void p.onReadServer?.(serverId);
+      else if (actId) activity.markRead(actId);
+      else if (lokId) markLocalRead(lokId);
     }
-    if ((geb.id.startsWith('s:') || geb.id.startsWith('a:') || geb.id.startsWith('l:')) && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
-      void wijzigStatus({ ids: [geb.id], status, hoe: 'kaart' });
+    const v3Sleutel = serverId ? `s:${serverId}` : actId ? `a:${actId}` : lokId ? `l:${lokId}` : '';
+    if (v3Sleutel && (status === 'archief' || status === 'opgelost' || status === 'nieuw' || status === 'gelezen')) {
+      void wijzigStatus({ ids: [v3Sleutel], status, hoe: 'kaart' });
     }
   };
 
@@ -954,7 +977,7 @@ export default function CanonicalNotificationCenter(p: Props) {
           ref={toastRef as never}
           data-qa-id='canonical-notification-toast'
           data-no-edge-swipe='1'
-          className={`canonical-notification-toast kind-${active.kind}${active.action ? ' has-action' : ''}${active.expanded ? ' expanded' : ''}${paused ? ' is-paused' : ''}${active.levensduurMs == null ? ' is-sticky' : ''}`}
+          className={`canonical-notification-toast mr-toast kind-${active.kind}${active.action ? ' has-action' : ''}${active.expanded ? ' expanded' : ''}${paused ? ' is-paused' : ''}${active.levensduurMs == null ? ' is-sticky' : ''}`}
           style={toastPos
             ? {
                 left: toastPos.left,
@@ -1001,14 +1024,17 @@ export default function CanonicalNotificationCenter(p: Props) {
           onFocus={(event) => { let toets = false; try { toets = event.target instanceof Element && event.target.matches(':focus-visible'); } catch { toets = false; } if (toets) pauzeer('toets', true); }}
           onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pauzeer('toets', false); }}
         >
-          <Icon aria-hidden='true' />
+          <span className='mr-toast-tegel' data-kleur={tegelKleur(toastStijl?.section || 'site')} aria-hidden='true'>
+            {toastLogo ? <Logo kind={toastLogo} size={22} /> : toastStijl ? <toastStijl.Icon /> : <Icon />}
+            {active.kind !== 'info' ? <i className='mr-toast-ernst'><Icon /></i> : null}
+          </span>
           <div className='canonical-notification-toast-tekst'>
             {toastSectie ? <span className='canonical-notification-toast-sectie'>{toastSectie}</span> : null}
-            <span className='canonical-notification-toast-titel'>{active.text}</span>
+            <span className='canonical-notification-toast-titel'>{toastTitel?.titel || active.text}</span>
             {active.explain ? <p className='canonical-notification-toast-uitleg'>{active.explain}</p> : null}
             {toastLink || active.meldingId || active.bijlagen?.length ? (
               <div className='canonical-notification-toast-acties'>
-                {toastLink ? <a className='canonical-notification-link' href={toastLink.href} data-qa-id='melding-openen'>{toastLink.label} →</a> : null}
+                {toastLink ? <a className='canonical-notification-link mr-toast-hoofd' href={toastLink.href} data-qa-id='melding-openen'>{toastLink.label}</a> : null}
                 {active.bijlagen?.length ? (
                   <button
                     type='button'
@@ -1024,22 +1050,15 @@ export default function CanonicalNotificationCenter(p: Props) {
                   </button>
                 ) : null}
                 {active.meldingId ? (
-                  <button type='button' className='canonical-notification-opruimen' data-qa-id='melding-opruimen' onClick={ruimToastOp}
-                    title={t('Позначити прочитаним і перенести в «Архів» (можна повернути)', 'Als gelezen markeren en naar «Archief» (terug te zetten)')}>
-                    {t('Очистити', 'Opruimen')}
+                  <button type='button' className='canonical-notification-opruimen mr-toast-opruimen' data-qa-id='melding-opruimen' onClick={ruimToastOp}
+                    title={t('Очистити: позначити прочитаним і перенести в «Архів» (можна повернути)', 'Opruimen: als gelezen markeren en naar «Archief» (terug te zetten)')} aria-label={t('Очистити', 'Opruimen')}>
+                    <Archive aria-hidden='true' /><span>{t('Очистити', 'Opruimen')}</span>
                   </button>
                 ) : null}
               </div>
             ) : null}
-            {active.expanded ? <small className='canonical-notification-toast-meta'>{formatTime(active.createdAt)}</small> : null}
-            {active.levensduurMs == null ? <small className='canonical-notification-toast-meta'>{t('Лишається, доки ви не закриєте (так налаштовано для цього типу). Після закриття — у панелі сповіщень.', 'Blijft staan tot u sluit (zo ingesteld voor dit type). Daarna staat hij in het meldingenpaneel.')}</small> : null}
-            {paused && active.levensduurMs != null ? (
-              <small className='canonical-notification-toast-pauze' aria-hidden='true'>
-                {vastgehoudenMetAanraking
-                  ? t('Пауза — не зникне, поки тримаєте палець на сповіщенні', 'Pauze — verdwijnt niet zolang u de melding vasthoudt')
-                  : t('Пауза — не зникне, поки курсор на сповіщенні', 'Pauze — verdwijnt niet zolang de muis erop staat')}
-              </small>
-            ) : null}
+            {active.expanded ? <small className='canonical-notification-toast-meta'>{formatTime(active.createdAt)}{toastTitel?.code ? <>{' · '}{t('код', 'code')} <code>{toastTitel.code}</code></> : null}{active.levensduurMs == null ? t(' · лишається, доки ви не закриєте', ' · blijft staan tot u sluit') : ''}</small> : null}
+            {paused && active.levensduurMs != null ? <span className='mr-sr' role='status'>{vastgehoudenMetAanraking ? t('Пауза: не зникне, поки тримаєте палець', 'Pauze: verdwijnt niet zolang u vasthoudt') : t('Пауза: не зникне, поки курсор на сповіщенні', 'Pauze: verdwijnt niet zolang de muis erop staat')}</span> : null}
           </div>
           {active.action ? (
             <button type='button' className='canonical-notification-action-icon' aria-label={active.action.label} title={active.action.label} data-tooltip={active.action.label} onClick={() => void runAction(active.id, active.action!, true)}><Undo2 /></button>
@@ -1116,6 +1135,7 @@ export default function CanonicalNotificationCenter(p: Props) {
                 geluid={sound}
                 onGeluid={toggleSound}
                 onSluiten={() => setPanelOpen(false)}
+                onVenster={() => { zetEcosysteemModusActief(true); }}
                 techTypen={!!tech.profiel}
                 tech={techRegel ? { aantal: techUnread, open: () => { setPanelOpen(false); openTechMeldingen(); }, tekst: techSamenvattingTekst(p.lang, techUnread) } : null}
               />
@@ -1134,17 +1154,16 @@ export default function CanonicalNotificationCenter(p: Props) {
                   <button type='button' ref={meerKnopRef} className='cnc-meer-knop' data-qa-id='melding-meer' aria-expanded={meer} aria-controls='cnc-acties' aria-label={t('Інші дії: звук, типи, позначити все, повернути дзвоник на типове місце', 'Meer acties: geluid, soorten, alles gelezen, bel terug naar de standaardplek')} title={t('Інші дії', 'Meer acties')} onClick={() => setMeer((v) => !v)}>
                     <Ellipsis aria-hidden='true' />
                   </button>
-                  <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')} title={t('Згорнути панель сповіщень', 'Meldingenpaneel inklappen')}><Minimize2 /></button>
                   <button
                     type='button'
-                    className='cnc-ecosysteem-schakel'
+                    className='cnc-ecosysteem-schakel mv2-vorm-schakel'
                     data-qa-id='melding-ecosysteem-openen'
                     onClick={() => { zetEcosysteemModusActief(true); }}
-                    aria-label={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
-                    title={t('Відкрити незалежне вікно екосистеми', 'Onafhankelijk ecosysteemvenster openen')}
+                    title={t('Відкрити сповіщення у великому вікні. Повернутися — кнопкою «Компактно» у вікні.', 'Meldingen openen in een groot venster. Terug met de knop «Compact» in het venster.')}
                   >
-                    <Sparkles aria-hidden='true' />
+                    <AppWindow aria-hidden='true' /><span>{t('Вікно', 'Venster')}</span>
                   </button>
+                  <button type='button' onClick={() => setPanelOpen(false)} aria-label={t('Закрити панель сповіщень', 'Meldingenpaneel sluiten')} title={t('Закрити панель сповіщень', 'Meldingenpaneel sluiten')}><X /></button>
                 </header>
                 {techRegel && (
                   <button type='button' className='canonical-notification-tech' data-qa-id='tech-meldingen-samenvatting' data-tech-aantal={techUnread} onClick={() => { setPanelOpen(false); openTechMeldingen(); }}>

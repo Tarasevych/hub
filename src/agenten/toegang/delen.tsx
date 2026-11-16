@@ -1,5 +1,6 @@
 // Kleine bouwstenen voor «Доступи»: aftellen, chips, ruimte-badge, foutteksten en het bevestigingsvenster.
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { Tr } from '../../mcp-ui';
 import { foutTekst } from '../fouten';
 import { exact } from '../ui';
@@ -41,14 +42,18 @@ export function tgFout(e: unknown, tr: Tr, wat: [string, string]): string {
 export function Venster({ titel, children, ja, nee, onJa, onNee, bezig, data }: { titel: string; children: ReactNode; ja: string; nee: string; onJa: () => void; onNee: () => void; bezig?: boolean; data?: string }) {
   const id = useId();
   const neeRef = useRef<HTMLButtonElement | null>(null);
+  const [portaalDoel, setPortaalDoel] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setPortaalDoel(document.querySelector<HTMLElement>('.canonical-chrome') || document.body);
+  }, []);
   useEffect(() => {
     const terug = document.activeElement as HTMLElement | null;
-    neeRef.current?.focus();
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onNee(); } };
     document.addEventListener('keydown', esc, true);
     return () => { document.removeEventListener('keydown', esc, true); try { terug?.focus?.(); } catch { /* weg */ } };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
+  useEffect(() => { neeRef.current?.focus(); }, [portaalDoel]);
+  const inhoud = (
     <div className='tg-venster-achter' data-tg-venster={data}>
       <div className='tg-venster' role='alertdialog' aria-modal='true' aria-labelledby={`${id}-t`} aria-describedby={`${id}-b`}>
         <h3 id={`${id}-t`}>{titel}</h3>
@@ -60,4 +65,5 @@ export function Venster({ titel, children, ja, nee, onJa, onNee, bezig, data }: 
       </div>
     </div>
   );
+  return portaalDoel ? createPortal(<div className='ag-pagina ag-portaal'>{inhoud}</div>, portaalDoel) : inhoud;
 }

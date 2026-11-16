@@ -85,7 +85,7 @@ export async function main(): Promise<number> {
   // 1. Zuivere validatie & verschilweergave
   check(
     'veiligBestandPad laat geldige paden toe en weigert traversal of stuurtekens',
-    veiligBestandPad('/src/github/CodeEnEditorPaneel.tsx/') === 'src/github/CodeEnEditorPaneel.tsx' &&
+    veiligBestandPad('/src/github/CodeEnBewerkerPaneel.tsx/') === 'src/github/CodeEnBewerkerPaneel.tsx' &&
       veiligBestandPad('README.md') === 'README.md' &&
       ['', '/', '../geheim', 'a/../../b', 'a/./b', 'pad\\windows', 'nul\u0000byte'].every((x) => veiligBestandPad(x) === ''),
   );
@@ -477,7 +477,7 @@ export async function main(): Promise<number> {
     'src/GitHubWeergave.tsx',
     'src/github/github-client.tsx',
     'src/github/EenklikKoppelPaneel.tsx',
-    'src/github/CodeEnEditorPaneel.tsx',
+    'src/github/CodeEnBewerkerPaneel.tsx',
     'src/github/ZakenEnSamenvoegingenPaneel.tsx',
     'src/github/ActiesEnUitgavenPaneel.tsx',
     'src/github/SpiegelEnBrugPaneel.tsx',

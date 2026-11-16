@@ -43,6 +43,7 @@ import { mcpOriginBesluit } from './mcp-origin';
 import { cimdAan, isCimdClientId, isNietPubliekIp } from './mcp-cimd';
 import { taalVanGebruiker } from './connectors-hulpmiddelen';
 import * as extStore from './mcp-klant-opslag';
+import { leesVaardighedenVoorMcp } from './vaardigheden-opslag';
 
 type User = { id: string; status: string; email?: string; role?: string };
 type AuthSuccess = { service: string; user: User };
@@ -185,10 +186,11 @@ export function createMcpInspectorRoutes(authorize: Authorize) {
         magProfiel: true,
         modern: true,
       };
-      const [resources, resourceTemplates, prompts] = await Promise.all([
+      const [resources, resourceTemplates, prompts, levendeVaardigheden] = await Promise.all([
         lijstResourcesVoor(dummyCtx, taal),
         lijstResourceSjablonenVoor(dummyCtx, taal),
         lijstPromptsVoor(dummyCtx, taal),
+        leesVaardighedenVoorMcp(userId, v2Overzicht.poort.ruimte),
       ]);
 
       const eigenEindpunten = [
@@ -253,11 +255,14 @@ export function createMcpInspectorRoutes(authorize: Authorize) {
         resources,
         resourceTemplates,
         prompts,
-        vaardigheden: MCP_VAARDIGHEDEN.map((v) => ({
+        vaardigheden: levendeVaardigheden.map((v) => ({
           id: v.id,
           uri: v.uri,
+          bron: v.bron,
+          ruimte: v.ruimte,
+          versie: v.versie,
           titel: v.titel[taal],
-          beschrijving: v.beschrijving[taal],
+          beschrijving: v.samenvatting[taal],
         })),
         extensies: MCP_EXTENSIES.map((e) => ({
           id: e.id,

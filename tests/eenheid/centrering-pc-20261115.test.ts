@@ -35,8 +35,8 @@ export async function main(): Promise<number> {
   const links = regel(omlijsting, '.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-left .page-wrap');
   const rechts = regel(omlijsting, '.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-right .page-wrap');
   check('«Макет» понад 1280 px: .page-wrap на всю робочу область, поля симетричні, запас під меню якорів — нижня межа',
-    [links, rechts].every(r => r.includes('max-width:none!important') && r.includes('max(var(--mq-rand),calc((100% - 1240px) / 2))!important')
-      && r.includes('max(52px,min(calc((100% - 1240px) / 2),calc(100% - 1240px - var(--mq-rand))))!important')));
+    [links, rechts].every(r => r.includes('max-width:none!important') && r.includes('max(var(--mq-rand),calc((100% - 910px) / 2))!important')
+      && r.includes('max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important')));
   check('запаси --mq-rand повторюють чинні значення макета (168/96 px для «авто» й згорнутого меню)',
     omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.rail-left:is(.rail-mode-auto,.rail-compact){--mq-rand:168px}')
     && omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.rail-right:is(.rail-mode-auto,.rail-compact){--mq-rand:96px}'));
@@ -49,24 +49,43 @@ export async function main(): Promise<number> {
     omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}'));
   check('«Макет»: обгортка «Чинні налаштування» (.mq-echt-blok) прозора — лишаються лише блоки груп',
     omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}'));
+  // Розгорнута справжня панель: підкладка звужена до блоків (910 px), картка розділу закінчується заголовком; лише від 961 px.
+  const smal = omlijsting.slice(omlijsting.indexOf('Розгорнута справжня панель'));
+  check('«Макет»: під розгорнутою справжньою панеллю підкладка вужча (max-width:910px), а не на всю картку розділу',
+    /@media \(min-width:961px\)\{/.test(smal) && smal.includes('.setting-section:has(.mq-echt-blok[open]){background:transparent!important')
+    && smal.includes('>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0')
+    && !omlijsting.includes('.mq-echt-inhoud .access-plane{max-width:none}'));
+  // Перемикач «Делікатна поява блоків» і небезпечні кнопки (15.11.2026).
+  const thema = lees('src/thema/thema-instellingen.css');
+  check('перемикач руху — справжній перемикач (appearance:none), сильніший за .settings-center input{width:100%}',
+    thema.includes('.thema-soort-schakel.thema-soort-schakel input[role=switch]{appearance:none') && thema.lastIndexOf('@media (max-width:560px){') > thema.indexOf('.thema-soort-schakel.thema-soort-schakel'));
+  const toegangCss = lees('src/toegangslaag.css');
+  check('небезпечні кнопки (кошик) мають ніжний червоний відтінок із --fout, правило до мобільного шару',
+    /button:is\(\.secondary,\.danger,\[data-gevaar\]\):has\(>svg:is\(\.lucide-trash2[^{]*\{color:var\(--fout\)/.test(toegangCss) && toegangCss.indexOf('Небезпечні дії') < toegangCss.indexOf('@media (max-width'));
+  check('«Макет»: у картках «Приклад вигляду» кнопка переходить під текст', omlijsting.includes('.drawer-control-top:has(>.mq-demo-open){flex-wrap:wrap}'));
   check('правила без підкладок стоять перед мобільним шаром', omlijsting.indexOf('.section-inline-settings{background:none}') < omlijsting.indexOf('Мобільний шар наприкінці файла'));
   // Мобільний шар має лишитися в кінці файла (правило mobiel-cascade-20261105): новий блок стоїть до нього.
   check('новий блок центрування стоїть перед мобільним шаром', omlijsting.indexOf('Центрування сторінки на широкому ПК') < omlijsting.indexOf('Мобільний шар наприкінці файла'));
 
-  // Частина 2. Формула полів (те саме, що рахує браузер): робоча область B, вміст 1240 px, запас r з боку меню.
+  // Частина 2. Формула полів (те саме, що рахує браузер): робоча область B, вміст 910 px, запас r з боку меню.
   const velden = (B: number, r: number) => {
-    const half = (B - 1240) / 2;
+    const half = (B - 910) / 2;
     const menu = Math.max(r, half);
-    const ander = Math.max(52, Math.min(half, B - 1240 - r));
+    const ander = Math.max(52, Math.min(half, B - 910 - r));
     return { menu, ander, vlak: B - menu - ander };
   };
   // 1920 px екрана = 1860 px робочої області (смуга сайту 60 px). 2560 → 2500.
   const v1920 = velden(1860, 168), v2560 = velden(2500, 168);
-  check('1920 px, меню ліворуч («авто»): поля 310/310, колонка 1240 px по центру (було 308/192 і 1360 px)', v1920.menu === 310 && v1920.ander === 310 && v1920.vlak === 1240);
-  check('2560 px: поля 630/630 — сторінка точно по центру (було 628/512)', v2560.menu === 630 && v2560.ander === 630);
+  check('1920 px, меню ліворуч («авто»): поля 475/475, колонка 910 px по центру — ширина блоку ключів (було 308/192 і 1360 px)', v1920.menu === 475 && v1920.ander === 475 && v1920.vlak === 910);
+  check('2560 px: поля 795/795 — сторінка точно по центру (було 628/512)', v2560.menu === 795 && v2560.ander === 795);
   const v1366 = velden(1306, 168);
-  check('1366 px: місця мало — запас під меню 168 px зберігається, інший бік 52 px (як і раніше)', v1366.menu === 168 && v1366.ander === 52);
+  check('1366 px: колонка 910 px уміщується — поля 198/198, запас під меню (168 px) не порушено', v1366.menu === 198 && v1366.ander === 198);
   const vOpen = velden(1860, 320);
-  check('1920 px, розгорнуте меню (320 px): вміст не заходить під меню, інший бік поступається', vOpen.menu === 320 && vOpen.ander === 300 && vOpen.vlak === 1240);
+  check('1920 px, розгорнуте меню (320 px): вміст не заходить під меню, поля симетричні', vOpen.menu === 475 && vOpen.ander === 475 && vOpen.vlak === 910);
+  // Мітка стану Passkeys, як у застосунку-автентифікатора (зауваження 15.11.2026). NL: statuslabel bij Passkeys.
+  const sleutels = lees('src/ToegangssleutelsSectie.tsx');
+  check('Passkeys мають мітку стану «Налаштовано / Не налаштовано» з тими ж класами, що й автентифікатор',
+    /data-passkey-mitka className=\{`access-plane-badge tone-\$\{!data\|\|!aantal\?'muted':'good'\}`\}/.test(sleutels)
+    && sleutels.includes("tr(lang,'Налаштовано','Ingesteld'):tr(lang,'Не налаштовано','Niet ingesteld')"));
   return einde();
 }

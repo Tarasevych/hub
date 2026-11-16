@@ -101,3 +101,93 @@ html.theme-dark .mv-schakel input:checked+span{background:#4f8cff}
    half afgesneden laatste kaart en lege ruimte eronder). */
 .tm-aantal{padding:0 7px;border-radius:999px;border:1px solid var(--line);font-weight:700;color:var(--text)}
 @media (max-width: 700px) { .tm-paneel .tm-lijst { max-height: none; overflow: visible; } }
+
+/* ===================================================================================== MELDINGEN-UX-001 (15.11.2026)
+   «Як приходять сповіщення» als kaarten: «Загальне» bovenaan, groepen inklapbaar, per type een piktogram van de dienst,
+   een schakelaar «Показувати» en een samenvatting; eigen keuzes pas na openklappen. Ronde hoeken, geen volle breedte-tabellen. */
+.mvk{display:grid;gap:12px;min-width:0;font-size:13px;color:var(--text)}
+.mvk-kaart{display:grid;gap:8px;min-width:0;margin:0;padding:12px;border:1px solid var(--line,#d0d7de);border-radius:16px;background:color-mix(in srgb,var(--surface,#fff) 82%,transparent)}
+.mvk-kaart-kop,.mvk-groep>summary{display:flex;align-items:center;gap:10px;min-width:0}
+.mvk-kaart-titel{display:grid;gap:1px;flex:1 1 auto;min-width:0}
+.mvk-kaart-titel strong{font-size:14px;font-weight:700;line-height:1.25}
+.mvk-kaart-titel small{color:var(--muted,#57606a);font-size:12px;line-height:1.35}
+.mvk-groep{padding:0;gap:0;overflow:hidden}
+.mvk-groep>summary{padding:12px;cursor:pointer;list-style:none;border-radius:16px}
+.mvk-groep>summary::-webkit-details-marker{display:none}
+.mvk-groep>summary:hover{background:var(--nav-hover)}
+.mvk-groep>summary:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.mvk-groep[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--line,#d0d7de) 70%,transparent);border-radius:16px 16px 0 0}
+.mvk-pijl{flex:none;width:16px;height:16px;color:var(--muted);transition:transform .18s ease}
+.mvk-groep[open]>summary>.mvk-pijl,.mvk-rij.is-open .mvk-rij-hoofd>.mvk-pijl{transform:rotate(180deg)}
+.mvk-tellers{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.mvk-chip{padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted)}
+.mvk-chip.is-eigen{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--text)}
+/* Piktogram van de dienst: zachte gekleurde tegel. */
+.mvk-tegel{--k:#64748b;display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:10px;background:color-mix(in srgb,var(--k) 15%,transparent);color:var(--k)}
+.mvk-tegel.is-groot{width:38px;height:38px;border-radius:12px}
+.mvk-tegel svg{width:17px;height:17px}
+.mvk-tegel.is-groot svg{width:19px;height:19px}
+.mvk-tegel[data-kleur='blauw']{--k:#2563eb}.mvk-tegel[data-kleur='hemel']{--k:#0284c7}.mvk-tegel[data-kleur='oranje']{--k:#ea580c}
+.mvk-tegel[data-kleur='amber']{--k:#b45309}.mvk-tegel[data-kleur='rood']{--k:#dc2626}.mvk-tegel[data-kleur='groen']{--k:#16a34a}
+.mvk-tegel[data-kleur='paars']{--k:#9333ea}.mvk-tegel[data-kleur='teal']{--k:#0d9488}.mvk-tegel[data-kleur='grijs']{--k:#64748b}
+.mvk-tegel[data-kleur='accent']{--k:var(--accent)}
+html.theme-dark .mvk-tegel[data-kleur='blauw']{--k:#7aa7ff}html.theme-dark .mvk-tegel[data-kleur='hemel']{--k:#7dd3fc}
+html.theme-dark .mvk-tegel[data-kleur='oranje']{--k:#fdba74}html.theme-dark .mvk-tegel[data-kleur='amber']{--k:#fcd34d}
+html.theme-dark .mvk-tegel[data-kleur='rood']{--k:#fca5a5}html.theme-dark .mvk-tegel[data-kleur='groen']{--k:#86efac}
+html.theme-dark .mvk-tegel[data-kleur='paars']{--k:#d8b4fe}html.theme-dark .mvk-tegel[data-kleur='teal']{--k:#5eead4}
+html.theme-dark .mvk-tegel[data-kleur='grijs']{--k:#cbd5e1}
+.mvk-label{margin-top:2px;color:var(--muted,#57606a);font-size:12px;font-weight:600}
+.mvk-noot{display:flex;align-items:flex-start;gap:6px;margin:0;color:var(--muted,#57606a);font-size:12px;line-height:1.4}
+.mvk-noot svg{flex:none;width:14px;height:14px;margin-top:1px}
+/* Gesegmenteerde keuze: één rij knoppen, de gekozen is gevuld. Breekt netjes af op smalle schermen. */
+.mvk-segment{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:12px;background:color-mix(in srgb,var(--text) 6%,transparent)}
+.mvk-segment button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 auto;min-height:36px;padding:0 10px;border:0;border-radius:9px;background:transparent;color:var(--text);font:inherit;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;transition:background .15s ease,box-shadow .15s ease}
+.mvk-segment button svg{width:15px;height:15px;flex:none;opacity:.8}
+.mvk-segment button:hover:not(:disabled){background:color-mix(in srgb,var(--panel,#fff) 70%,transparent)}
+.mvk-segment button[aria-checked='true']{background:var(--panel,#fff);box-shadow:0 1px 3px rgba(15,23,42,.14),0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent);color:var(--text)}
+.mvk-segment button[aria-checked='true'] svg{opacity:1;color:var(--accent)}
+.mvk-segment button:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.mvk-segment button:disabled{opacity:.45;cursor:not-allowed}
+/* Schakelaar (role=switch). */
+.mvk-schakel{position:relative;display:grid;place-items:center;flex:none;width:52px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer}
+.mvk-schakel span{position:relative;width:38px;height:22px;border-radius:11px;background:color-mix(in srgb,var(--text,#1f2328) 22%,transparent);transition:background .18s ease}
+.mvk-schakel span::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s ease}
+.mvk-schakel[aria-checked='true'] span{background:var(--accent)}
+.mvk-schakel[aria-checked='true'] span::after{transform:translateX(16px)}
+.mvk-schakel:disabled{cursor:not-allowed}
+.mvk-schakel:disabled span{opacity:.55}
+.mvk-schakel:focus-visible span{outline:3px solid var(--focus);outline-offset:2px}
+/* Rijen per type. */
+.mvk-lijst{display:grid;margin:0;padding:4px 6px 6px;list-style:none}
+.mvk-rij{display:grid;border-radius:12px}
+.mvk-rij+.mvk-rij{border-top:1px solid color-mix(in srgb,var(--line,#d0d7de) 55%,transparent)}
+.mvk-rij.is-open{background:color-mix(in srgb,var(--accent) 5%,transparent);border-top-color:transparent}
+.mvk-rij-kop{display:flex;align-items:center;gap:10px;min-height:52px;padding:4px 0 4px 6px}
+.mvk-rij-hoofd{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;min-height:44px;padding:0;border:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.mvk-rij-hoofd:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+.mvk-naam{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 auto;min-width:0;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.mvk-slot{display:inline-flex;align-items:center;gap:3px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--fout-vlak) 12%,transparent);color:var(--fout);font-size:12px;font-weight:700}
+html.theme-dark .mvk-slot{color:var(--fout)}
+.mvk-slot svg{width:11px;height:11px}
+.mvk-samenvatting{flex:none;max-width:46%;color:var(--muted,#57606a);font-size:12px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvk-samenvatting[data-mvk-samenvatting='eigen']{color:var(--text);font-weight:600}
+.mvk-rij.is-uit .mvk-naam{opacity:.55}
+.mvk-rij.is-uit .mvk-tegel{filter:grayscale(1);opacity:.55}
+.mvk-detail{display:grid;gap:7px;padding:2px 10px 12px 48px;animation:mvk-open .18s ease}
+.mvk-detail-voet{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px}
+.mvk-knop{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border:1px solid var(--line,#d0d7de);border-radius:999px;background:var(--panel,#fff);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.mvk-knop:hover:not(:disabled){background:var(--nav-hover)}
+.mvk-knop:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.mvk-knop:disabled{opacity:.45;cursor:default}
+.mvk-knop svg{width:14px;height:14px}
+@keyframes mvk-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.mvk-detail{animation:none}.mvk-pijl,.mvk-schakel span,.mvk-schakel span::after{transition:none}}
+@media (max-width: 560px){
+  .mvk-detail{padding-left:10px}
+  .mvk-samenvatting{display:none}
+  .mvk-segment button{flex:1 1 calc(50% - 4px);min-height:40px}
+}
+
+/* MELDINGEN-UX-001: hoofdschakelaar geluid met zichtbaar label · головний перемикач звуку з підписом */
+.mvk-geluid-hoofd{display:inline-flex;align-items:center;gap:8px;flex:none;font-size:12.5px;font-weight:600;color:var(--muted,var(--text))}
+.mvk-geluid-hoofd > svg{width:16px;height:16px}

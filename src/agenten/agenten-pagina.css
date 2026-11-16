@@ -32,6 +32,7 @@
 
 /* ---------------------------------------------------------------- сторінка · pagina */
 .ag-pagina{width:100%;max-width:1200px;margin-inline:auto;box-sizing:border-box;min-width:0}
+.ag-portaal{display:contents}
 .ag-pagina :is(.ag-paneel,.ag-secties){gap:var(--ruimte-5)}
 .ag-pagina .ag-tab{gap:var(--ruimte-4)}
 

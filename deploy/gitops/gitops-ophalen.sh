@@ -257,7 +257,8 @@ with tarfile.open(pakket, "r:") as tf:
         totaal += m.size
         if totaal > maxb * 4:
             sys.exit("uitgepakt te groot")
-    tf.extractall(doel, members=leden, filter="data")
+    kwargs = dict(filter="data") if hasattr(tarfile, "data_filter") else {}
+    tf.extractall(doel, members=leden, **kwargs)
 PY
 then
   weiger_tag "$KIES" "$OBJ" INHOUD_ONVEILIG "Випуск містить недозволені елементи (посилання тощо)." "De release bevat niet-toegestane onderdelen (links e.d.): $(tail -c 200 "$WERK/tar.log" | tr '\n' ' ')"

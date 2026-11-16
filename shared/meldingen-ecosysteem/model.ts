@@ -174,6 +174,29 @@ const begrensGetal = (v: unknown, min: number, max: number, fallback: number): n
 
 const HH_MM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+/** Перевіряє посилання у сповіщеннях, діях та вкладеннях: дозволяє лише відносні шляхи сторінки (/ або #), HTTPS або локальний HTTP (для тестів). Відкидає javascript:, data:, vbscript:, file:, // та керувальні символи. */
+export function veiligeMeldingUrl(raw: unknown, maxLen = 800): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const s = raw.trim();
+  if (!s || s.length > maxLen) return undefined;
+  if (/[\u0000-\u001f\u007f\\]/.test(s)) return undefined;
+  if (s.startsWith('#')) return s;
+  if (s.startsWith('/')) {
+    if (s.startsWith('//')) return undefined;
+    return s;
+  }
+  try {
+    const u = new URL(s);
+    if (u.protocol === 'https:') return u.href;
+    if (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '[::1]')) {
+      return u.href;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function standaardKanaalVoorkeuren(): Record<MeldingKanaal, KanaalVoorkeur> {
   const base = (drempelPrioriteit: MeldingPrioriteit = 'laag', popUp = true, geluid = true): KanaalVoorkeur => ({
     actief: true,
@@ -325,12 +348,13 @@ export function normaliseerBijlagen(raw: unknown): MeldingBijlage[] {
     if (!isRecord(item)) continue;
     const naam = String(item.naam || '').trim().slice(0, 240);
     if (!naam) continue;
+    const veiligUrl = veiligeMeldingUrl(item.url, 800);
     uit.push({
       id: String(item.id || `bijlage-${uit.length + 1}`).slice(0, 80),
       naam,
       mime: String(item.mime || 'application/octet-stream').trim().slice(0, 120),
       grootteBytes: begrensGetal(item.grootteBytes, 0, 500_000_000, 0),
-      ...(typeof item.url === 'string' && item.url.trim() ? { url: item.url.trim().slice(0, 800) } : {}),
+      ...(veiligUrl ? { url: veiligUrl } : {}),
       ...(typeof item.inhoudBase64 === 'string' && item.inhoudBase64.length <= 2_500_000 ? { inhoudBase64: item.inhoudBase64 } : {}),
       ...(typeof item.tekstVoorbeeld === 'string' ? { tekstVoorbeeld: item.tekstVoorbeeld.slice(0, 64_000) } : {}),
       ...(typeof item.bronDienst === 'string' ? { bronDienst: kiesEnum(item.bronDienst, SUBDOMEINEN, 'hub') } : {}),
@@ -352,13 +376,14 @@ export function normaliseerActies(raw: unknown): MeldingActie[] {
     const labelUk = String(item.labelUk || item.label || '').trim().slice(0, 120);
     const labelNl = String(item.labelNl || item.label || labelUk).trim().slice(0, 120);
     if (!id || (!labelUk && !labelNl)) continue;
+    const veiligHref = veiligeMeldingUrl(item.href, 500);
     uit.push({
       id,
       labelUk: labelUk || labelNl,
       labelNl: labelNl || labelUk,
       soort: kiesEnum(item.soort, soorten, 'status'),
       ...(item.statusDoel ? { statusDoel: kiesEnum(item.statusDoel, GEBEURTENIS_STATUSSEN, 'gelezen') } : {}),
-      ...(typeof item.href === 'string' && item.href.trim() ? { href: item.href.trim().slice(0, 500) } : {}),
+      ...(veiligHref ? { href: veiligHref } : {}),
       ...(typeof item.tab === 'string' && item.tab.trim() ? { tab: item.tab.trim().slice(0, 64) } : {}),
       ...(Number.isFinite(Number(item.uitstelMinuten)) ? { uitstelMinuten: begrensGetal(item.uitstelMinuten, 1, 43_200, 30) } : {}),
       ...(item.bevestigingNodig ? { bevestigingNodig: true } : {}),
@@ -380,6 +405,16 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     }
     return fb;
   };
+  const schoonMeta = (() => {
+    if (!isRecord(raw.meta)) return {};
+    const kopie: Record<string, unknown> = { ...raw.meta };
+    if ('link' in kopie) {
+      const veilig = veiligeMeldingUrl(kopie.link, 500);
+      if (veilig) kopie.link = veilig;
+      else delete kopie.link;
+    }
+    return kopie;
+  })();
   return {
     id: String(raw.id || ''),
     ruimte: raw.ruimte === 'technisch' ? 'technisch' : 'prive',
@@ -397,7 +432,7 @@ export function normaliseerGebeurtenis(raw: Record<string, unknown>): MeldingEco
     uitgesteldTot: raw.uitgesteld_tot || raw.uitgesteldTot ? ts(raw.uitgesteld_tot ?? raw.uitgesteldTot, 0) || null : null,
     bijlagen: normaliseerBijlagen(raw.bijlagen),
     acties: normaliseerActies(raw.acties),
-    meta: isRecord(raw.meta) ? raw.meta : {},
+    meta: schoonMeta,
     aiSamenvatting: ai
       ? {
           bron: ai.bron === 'extern' ? 'extern' : 'intern',

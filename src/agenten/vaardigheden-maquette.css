@@ -1,0 +1,307 @@
+/* Стилі модуля «Навички й профілі агентів» у системі Maquette (чистий каскад, без фіксованого позиціювання, шрифти ≥ 12 px).
+   Stijlblad voor Vaardighedenbeheer en agentprofielen binnen .ag-pagina (Maquette-tokens). */
+
+.ag-vaard-kaart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-ag-glas, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+.ag-vaard-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ag-vaard-titel-blok {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ag-vaard-titel-blok h4 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--mq-tekst);
+}
+
+.ag-vaard-uitleg {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+.ag-vaard-profielen {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 10px;
+}
+
+.ag-vaard-profiel-knop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-ag-glas-binnen, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.ag-vaard-profiel-knop:hover {
+  border-color: var(--mq-ag-rand-sterk, var(--mq-rand-sterk));
+  background: var(--mq-ag-gloed-zacht);
+}
+
+.ag-vaard-profiel-knop.is-actief {
+  border-color: var(--mq-ag-accent);
+  background: var(--mq-ag-gloed-zacht);
+  box-shadow: 0 0 0 1px var(--mq-ag-accent);
+}
+
+.ag-vaard-profiel-kop {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ag-vaard-profiel-sub {
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
+.ag-vaard-gereedschap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ag-vaard-zoek-invoer {
+  flex: 1 1 240px;
+  min-width: 200px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-size: 14px;
+}
+
+.ag-vaard-lijst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ag-vaard-rij {
+  border-radius: 12px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-ag-glas-binnen, var(--mq-oppervlak-2));
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ag-vaard-rij-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ag-vaard-rij-info {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ag-vaard-rij-titel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ag-vaard-rij-tekst {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+.ag-vaard-rij-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
+.ag-vaard-details {
+  border-top: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ag-vaard-inhoud-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ag-vaard-inhoud-vak {
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ag-vaard-inhoud-vak h5 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mq-gedempt);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ag-vaard-code {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mq-font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--mq-tekst);
+  max-height: 280px;
+  overflow: auto;
+}
+
+.ag-vaard-formulier {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-ag-rand-sterk, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+}
+
+.ag-vaard-velden {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.ag-vaard-veld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.ag-vaard-veld span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mq-gedempt);
+}
+
+.ag-vaard-veld input,
+.ag-vaard-veld textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ag-vaard-veld textarea {
+  min-height: 110px;
+  resize: vertical;
+  font-family: var(--mq-font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ag-vaard-agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ag-vaard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ag-vaard-chip.is-aan {
+  border-color: var(--mq-ag-accent);
+  background: var(--mq-ag-gloed-zacht);
+  font-weight: 600;
+}
+
+.ag-vaard-revisies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ag-vaard-revisie-rij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-ag-rand, var(--mq-rand));
+  background: var(--mq-ag-glas-binnen, var(--mq-oppervlak-2));
+  font-size: 13px;
+}

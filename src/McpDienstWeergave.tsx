@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, Sparkles, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
@@ -22,6 +22,7 @@ import McpBackupsCard from "./McpBackupsKaart";
 import McpServerBeheerCard from "./McpServerBeheerKaart";
 import DeurSchakelaars from "./agenten/DeurSchakelaars";
 import AgentLogo from "./agenten/AgentLogo";
+import { useAgentAnkers } from "./agenten/anker-bron";
 import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from "./maquette-kern";
 import { useIsMaquette } from "./thema/useThema";
 import "./mcp-domein.css";
@@ -524,11 +525,11 @@ export default function McpServiceView({ lang, tab }: Props) {
 
   const isMaquette = useIsMaquette();
   const [laagOpen, setLaagOpen] = useState(false);
-  const [isAgentDetail, setIsAgentDetail] = useState(() =>
-    typeof window !== "undefined" && location.hash.startsWith("#agent/"),
-  );
 
   const [actiefBlok, setActiefBlok] = useState("mcp-boven");
+  const agentAnkers = useAgentAnkers();
+  // Op /agents volgt het menu het onderdeel in beeld (de pagina publiceert het); elders het laatst gekozen anker.
+  const railActief = section === "agents" && agentAnkers.actief ? `ag-tab-${agentAnkers.actief}` : actiefBlok;
 
   useEffect(() => {
     setActiefBlok(section === "agents" ? "ag-tab-overzicht" : "mcp-boven");
@@ -570,6 +571,10 @@ export default function McpServiceView({ lang, tab }: Props) {
     }
     if (typeof document === "undefined") return;
     if (ankerId.startsWith("ag-tab-")) {
+      if (agentAnkers.ga) {
+        agentAnkers.ga(ankerId.slice("ag-tab-".length));
+        return;
+      }
       const knop = document.getElementById(ankerId);
       if (knop) {
         knop.click();
@@ -595,29 +600,7 @@ export default function McpServiceView({ lang, tab }: Props) {
     return abonneerOpenLaag(MCP_MODAAL_SELECTOR, setLaagOpen, {
       wortel: "documentElement",
       attributeFilter: ["open", "hidden", "class", "aria-modal", "data-mq-laag-open"],
-      extraActie: () => {
-        if (typeof location !== "undefined") {
-          setIsAgentDetail(location.hash.startsWith("#agent/"));
-        }
-      },
     });
-  }, [isMaquette, section]);
-
-  useEffect(() => {
-    if (!isMaquette || typeof window === "undefined") {
-      setIsAgentDetail(false);
-      return;
-    }
-    const werkHashBij = () => {
-      setIsAgentDetail(location.hash.startsWith("#agent/"));
-    };
-    werkHashBij();
-    window.addEventListener("hashchange", werkHashBij);
-    window.addEventListener("popstate", werkHashBij);
-    return () => {
-      window.removeEventListener("hashchange", werkHashBij);
-      window.removeEventListener("popstate", werkHashBij);
-    };
   }, [isMaquette, section]);
 
   const bevestigd = probes.filter((p) => p.ok).length;
@@ -683,20 +666,10 @@ export default function McpServiceView({ lang, tab }: Props) {
             { id: "mcp-blok-notities", label: tr("Нотатки", "Notities"), icoon: <StickyNote />, badge: notes.length || undefined },
           ];
         case "agents":
+          // ANKERS-002: dezelfde onderdelen, namen, iconen en tellers als de pagina zelf (agenten/anker-bron.ts), ook op de pagina van één AI.
           return [
             bovenItem,
-            { id: "ag-tab-overzicht", label: tr("Огляд підключень", "Overzicht"), icoon: <LayoutDashboard /> },
-            { id: "ag-tab-connectors", label: tr("Конектори ШІ", "Connectors"), icoon: <Plug />, badge: V2_AGENTEN.length },
-            { id: "ag-tab-ai", label: tr("Підключені ШІ", "Verbonden AI"), icoon: <Sparkles /> },
-            { id: "ag-tab-extern", label: tr("Зовнішні MCP", "Externe MCP"), icoon: <Globe /> },
-            { id: "ag-tab-orch", label: tr("Координація", "Coördinatie"), icoon: <Compass /> },
-            { id: "ag-tab-extensie", label: tr("Розширення браузера", "Browserextensie"), icoon: <Boxes /> },
-            { id: "ag-tab-browser", label: tr("Браузер і агенти", "Browser en agenten"), icoon: <Globe /> },
-            { id: "ag-tab-apparaten", label: tr("Пристрої", "Apparaten"), icoon: <Server /> },
-            { id: "ag-tab-tokens", label: tr("Токени", "Tokens"), icoon: <ShieldCheck /> },
-            { id: "ag-tab-toegang", label: tr("Доступи", "Toegang"), icoon: <ListChecks /> },
-            ...(techAan ? [{ id: "ag-tab-technisch", label: tr("Технічне", "Technisch"), icoon: <Wrench /> }] : []),
-            { id: "ag-tab-journaal", label: tr("Журнал", "Logboek"), icoon: <Activity /> },
+            ...agentAnkers.onderdelen.map((o) => ({ id: `ag-tab-${o.tab}`, label: tr(o.uk, o.nl), icoon: o.icoon, badge: o.teller || undefined })),
           ];
         case "apps":
           return [
@@ -780,7 +753,7 @@ export default function McpServiceView({ lang, tab }: Props) {
         kinderen: actiesKinderen,
       },
     ];
-  }, [archive.history.length, bevestigd, lang, notes.length, probes.length, rows.length, section, tasks.length, techAan]);
+  }, [agentAnkers.onderdelen, archive.history.length, bevestigd, lang, notes.length, probes.length, rows.length, section, tasks.length]);
 
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
@@ -1214,14 +1187,14 @@ export default function McpServiceView({ lang, tab }: Props) {
         </>
       )}
       </>}
-      {isMaquette && !verborgen && !consent && !laagOpen && !(section === "agents" && isAgentDetail) ? (
+      {isMaquette && !verborgen && !consent && !laagOpen ? (
         <MaquetteAnkerRail
           lang={lang}
           opslagSleutel="mcp-anker"
           titel={t("На цій сторінці", "Op deze pagina")}
           ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
           items={ankerItems}
-          actief={actiefBlok}
+          actief={railActief}
           onKies={springNaarMcpBlok}
         />
       ) : null}

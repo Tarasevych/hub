@@ -33,8 +33,8 @@ function beeld() {
 }
 function lus(nu: number) {
   gepland = false;
-  if (!loopt || !plan) return;
-  const stap = 1000 / plan.fps;
+  if (!loopt || !plan) { vorige = 0; return; }
+  const stap = 1000 / Math.max(1, Math.min(plan.fps, 45));
   if (nu - laatsteBeeld >= stap - 2) {
     tijd += Math.min(0.25, Math.max(0, (nu - (vorige || nu)) / 1000));
     vorige = nu; laatsteBeeld = nu;

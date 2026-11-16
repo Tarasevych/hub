@@ -1,0 +1,212 @@
+/* BREEDTE-001 (15.11.2026, побажання власника) — блок «Підключити» на ai.*\/agenten: одне слово «Підключити» в заголовку,
+   плитки — ряд піктограм ШІ. Наведення / фокус клавіатурою трохи збільшує плитку й показує підказку з наслідком дії.
+   На сенсорних екранах (без наведення) під піктограмою видно коротку назву, а підказка не з'являється — вона б закривала сусідів.
+   :not(#_ing) — сильніше за правила «Макета» й «Класики» (.ai-maquette-wikkel …, :not(#_mqk)), які малювали широкі плитки з текстом.
+   NL: «Koppelen» één keer als kop; pictogramtegels die bij aanwijzen groeien en uitleggen wat er gebeurt; op aanraakschermen een kort label. */
+
+html:not(#_ing) .ag.ag-ai-ingangen {
+  display: grid;
+  gap: 12px;
+  overflow: visible;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  min-width: 0;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop .ag-ingangen-titel {
+  display: block;
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst, var(--text));
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-kop p {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.86rem;
+  color: var(--mq-gedempt, var(--muted));
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-agent-ingangen.ag-ingangen-pictogram {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: none;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram > li {
+  display: block;
+  position: relative;
+  min-width: 0;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-kaart.ag-agent-ingang {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  width: 64px;
+  height: 64px;
+  min-height: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 18px;
+  border: 1px solid var(--mq-ai-rand, var(--mq-rand, var(--line)));
+  background: color-mix(in srgb, var(--mq-oppervlak-2, var(--panel)) 92%, var(--mq-accent-ai, var(--accent)) 8%);
+  background-image: none;
+  box-shadow: inset 0 1px 0 var(--mq-ai-glas-glans, transparent);
+  color: var(--mq-tekst, var(--text));
+  text-decoration: none;
+  transform-origin: center bottom;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Стрілка «↗» старих широких плиток тут зайва — уся плитка є посиланням. */
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang::after {
+  content: none;
+  display: none;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-logo {
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-naam {
+  display: none;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  z-index: 30;
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  max-width: 250px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand-sterk, var(--mq-rand, var(--line)));
+  background: var(--mq-oppervlak, var(--panel));
+  box-shadow: var(--mq-schaduw-kaart, 0 10px 30px rgba(0, 0, 0, 0.25));
+  color: var(--mq-gedempt, var(--muted));
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+}
+
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-tip strong {
+  color: var(--mq-tekst, var(--text));
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+/* Перша й остання плитки ряду: підказка не вилазить за край картки. */
+html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram > li:first-child .ag-ingang-tip {
+  left: 0;
+  transform: translate(0, 4px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang:hover,
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang:focus-visible {
+    z-index: 2;
+    transform: scale(1.14);
+    border-color: var(--mq-accent-ai, var(--accent));
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--mq-accent-ai, var(--accent)) 26%, transparent);
+  }
+
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang:hover .ag-ingang-tip,
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang:focus-visible .ag-ingang-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0) scale(0.877);
+    transform-origin: bottom center;
+    transition-delay: 0s;
+  }
+
+  /* Плитка збільшена в 1,14 раза — підказку зменшуємо назад (0,877 ≈ 1/1,14), щоб текст лишався звичайного розміру. */
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram > li:first-child .ag-agent-ingang:is(:hover, :focus-visible) .ag-ingang-tip {
+    transform: translate(0, 0) scale(0.877);
+    transform-origin: bottom left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-kaart.ag-agent-ingang,
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-tip {
+    transition: none;
+  }
+}
+
+/* Сенсорні екрани: наведення немає — коротка назва під піктограмою, підказку не показуємо (повна назва — в aria-label). */
+@media (hover: none), (pointer: coarse) {
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-agent-ingangen.ag-ingangen-pictogram {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 10px 8px;
+  }
+
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-kaart.ag-agent-ingang {
+    width: 100%;
+    height: auto;
+    min-height: 76px;
+    padding: 10px 4px 8px;
+    align-content: center;
+  }
+
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-naam {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mq-tekst, var(--text));
+  }
+
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-ingang-tip {
+    display: none;
+  }
+
+  html:not(#_ing) .ag.ag-ai-ingangen .ag-ingangen-pictogram .ag-agent-ingang:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Класичні палітри (без «Макета»): стрічка «ШІ для вас», блок «Підключити» й панель агентів — прямі діти робочої області;
+   раніше перші два тягнулися на всю ширину, а панель стояла вузькою (1020 px) по центру. Тепер — одна колонка 1180 px по центру.
+   NL: klassieke paletten — dezelfde gecentreerde kolom van 1180 px voor alle blokken van de AI-onderdelen. */
+html:not(.palet-maquette):not(#_ing) .canonical-content > :is(.ai-richting, .ag.ag-ai-ingangen, .aie-container) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+html:not(.palet-maquette):not(#_ing) .canonical-content > .aie-container {
+  padding-inline: 0;
+}

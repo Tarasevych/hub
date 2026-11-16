@@ -132,7 +132,7 @@ export async function main(): Promise<number> {
 
   // Kritiek in de UI: «tonen» uitgeschakeld + uitleg.
   const paneel = lees('src/meldingen/MeldingVoorkeurenPaneel.tsx');
-  check('voorkeuren: kritiek → schakelaar «Показувати» disabled + uitleg; zetTypeVoorkeur weigert verbergen', paneel.includes('disabled={kritiek}') && paneel.includes("if (veld === 'tonen' && isKritiekType(type) && !waarde) return;") && /приховати — ні/.test(paneel));
+  check('voorkeuren: kritiek → schakelaar «Показувати» disabled + uitleg; zetTypeVoorkeur weigert verbergen', paneel.includes('uitgeschakeld={kritiek}') && paneel.includes('disabled={uitgeschakeld}') && paneel.includes("if (veld === 'tonen' && isKritiekType(type) && !waarde) return;") && /приховати — ні/.test(paneel));
 
   // ------------------------------------------------------------------ 4. server (echte DB): siteNotificationOverview filtert
   const { getPool, closePool } = await import('../../server/platform/pg');

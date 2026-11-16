@@ -1007,8 +1007,8 @@ html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ov-root .ov-fout
   }
 
   html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop-hoofd:hover:not(:disabled) {
-    border-color: var(--mq-knop-primair-hover);
-    background: var(--mq-knop-primair-hover);
+    border-color: var(--mq-accent-2);
+    background: var(--mq-accent-2);
     background-image: none;
     color: var(--mq-knop-primair-tekst);
     transform: none;

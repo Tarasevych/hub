@@ -9,6 +9,8 @@ import { useRuimtes } from './ruimtes-opslag';
 import { openTechVenster } from '../tech-opslag';
 import RuimteWissel from './RuimteWissel';
 import { foutTekst } from './StartVenster';
+import AiToegangKaart, { groepeerAi, type AiOpslaan } from './AiToegangKaart';
+import Merk from '../../merk/Merk';
 import './ruimtes.css';
 
 const TAB_SLEUTEL = 'mr-ruimtes-tab';
@@ -42,6 +44,8 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
   const laad = () => ruimtesApi.toegang().then((d) => { setData(d); setFout(''); }, (e) => setFout(String((e as Error)?.message || 'FOUT')));
   useEffect(() => { void laad(); }, []);
   useEffect(() => { try { localStorage.setItem(TAB_SLEUTEL, tab); } catch { /* geen opslag */ } }, [tab]);
+  // AI-TERMIJN-001: andere pagina's (bv. agentpagina «Терміни й правила…») kunnen een tabblad openen terwijl het venster al open is.
+  useEffect(() => { const h = (e: Event) => { const v = (e as CustomEvent<TabId>).detail; if (TABBLADEN.some((t) => t.id === v)) setTab(v); }; window.addEventListener('mr-ruimtes-tab', h); return () => window.removeEventListener('mr-ruimtes-tab', h); }, []);
   const toets = (e: KeyboardEvent<HTMLDivElement>) => {
     const i = TABBLADEN.findIndex((t) => t.id === tab);
     const n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? TABBLADEN.length - 1 : null;
@@ -51,15 +55,28 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
     setTab(nieuw); tabRefs.current[nieuw]?.focus();
   };
   const regels = (data?.regels ?? []).filter((x) => tabVanRegel(x) === tab);
-  const aiZet = async (x: ToegangRegel, keuze: (typeof AI_TERMIJNEN)[number]) => {
-    setBezig(x.id); setMelding(null);
-    try { setData(await ruimtesApi.aiZetten(x.id, [...keuze.ruimtes] as Ruimte[], keuze.termijn, 'minuten' in keuze ? keuze.minuten : undefined)); setMelding({ ok: true, tekst: uk ? `Збережено: ${x.naam}.` : `Opgeslagen: ${x.naam}.` }); }
-    catch (e) { setMelding({ ok: false, tekst: `${uk ? 'Не збережено' : 'Niet opgeslagen'}: ${foutTekst(String((e as Error)?.message || 'FOUT'), uk)}` }); }
+  const [openKaart, setOpenKaart] = useState('');
+  const [nu, setNu] = useState(() => Date.now());
+  useEffect(() => { const i = setInterval(() => setNu(Date.now()), 30_000); return () => clearInterval(i); }, []);
+  const aiOpslaan = async (o: AiOpslaan) => {
+    setBezig(o.sleutel); setMelding(null);
+    try {
+      setData(await ruimtesApi.aiZetten(o.sleutel, ['prive', 'technisch'] as Ruimte[], o.termijn, o.minuten, { eindOp: o.eindOp ?? null, regels: o.regels, naam: o.naam || undefined, alleVerbindingen: o.sleutel === '*' }));
+      setOpenKaart(''); setNu(Date.now());
+      setMelding({ ok: true, tekst: uk ? `Збережено: ${o.naam || 'усі ШІ'}. Запис додано в журнал і центр сповіщень.` : `Opgeslagen: ${o.naam || 'alle AI'}. Vastgelegd in journaal en meldingencentrum.` });
+    } catch (e) { setMelding({ ok: false, tekst: `${uk ? 'Не збережено' : 'Niet opgeslagen'}: ${foutTekst(String((e as Error)?.message || 'FOUT'), uk)}` }); }
     finally { setBezig(''); }
   };
+  const aiIntrekken = async (sleutel: string, naam: string) => {
+    setBezig(sleutel); setMelding(null);
+    try { setData(await ruimtesApi.aiIntrekken(sleutel, naam)); setMelding({ ok: true, tekst: uk ? `Технічний доступ знято: ${naam}. Звичайний простір лишається.` : `Technische toegang ingetrokken: ${naam}. De gewone ruimte blijft.` }); }
+    catch (e) { setMelding({ ok: false, tekst: `${uk ? 'Не знято' : 'Niet ingetrokken'}: ${foutTekst(String((e as Error)?.message || 'FOUT'), uk)}` }); }
+    finally { setBezig(''); }
+  };
+  void AI_TERMIJNEN; void actieveAiKeuzeId;
   const s = r.status;
   const aiMag = !!s && s.actief === 'technisch' && !!s.sessie;
-  const aiReden = uk ? 'Змінювати доступ ШІ можна лише в технічному просторі (не на паузі).' : 'AI-toegang wijzigen kan alleen in de technische ruimte (niet gepauzeerd).';
+  const aiReden = uk ? 'Давати чи змінювати доступ ШІ можна лише в технічному просторі (не на паузі) і з Passkey. Зняти доступ можна будь-коли.' : 'AI-toegang geven of wijzigen kan alleen in de technische ruimte (niet gepauzeerd) en met Passkey. Intrekken kan altijd.';
   return (
     <Venster id='tech-ruimte-toegang' titel={WOORDEN.toegangPagina[taal]} breedte={820} onSluit={sluit}>
       <div className='tech-venster rt' data-tech-venster='toegang'>
@@ -87,29 +104,32 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
           ) : null}
           {fout ? <p className='tech-melding' role='alert'>{uk ? 'Не вдалося завантажити' : 'Laden mislukt'} ({fout}). <button type='button' onClick={() => void laad()}>{uk ? 'Спробувати знову' : 'Opnieuw'}</button></p> : null}
           {!data && !fout ? <p className='tech-meta' role='status'>{uk ? 'Завантаження…' : 'Laden…'}</p> : null}
-          {data ? (regels.length ? (
+          {data && tab === 'ai' ? (
+            <div className='ait-lijst' data-rt-lijst='ai'>
+              <p className='ait-intro'>{uk
+                ? 'Тут ви вирішуєте, скільки часу кожен ШІ може працювати у вашому технічному просторі і коли доступ скидається. Типові правила найбезпечніші; ширші варіанти позначено «!».'
+                : 'Hier bepaalt u hoe lang elke AI in uw technische ruimte mag werken en wanneer die toegang vervalt. De standaardregels zijn het veiligst; ruimere keuzes dragen «!».'}</p>
+              {groepeerAi(regels).map((g) => (
+                <AiToegangKaart key={g.sleutel} taal={taal} groep={g} nu={nu} mag={aiMag} magReden={aiReden} bezig={bezig === g.sleutel} open={openKaart === g.sleutel}
+                  onOpen={(o) => setOpenKaart(o ? g.sleutel : '')} onOpslaan={(o) => void aiOpslaan(o)} onIntrekken={(k, n) => void aiIntrekken(k, n)} />
+              ))}
+              {!regels.length ? <p className='tech-meta' data-rt-leeg='1'>{uk ? 'Жоден ШІ ще не підключений.' : 'Nog geen AI gekoppeld.'}</p> : null}
+            </div>
+          ) : data ? (regels.length ? (
             <ul className='rt-lijst' data-rt-lijst={tab}>{regels.map((x) => (
               <li key={x.id} data-rt-regel={x.soort}>
-                <span className='rt-wie'><b>{x.soort === 'sessie' ? (x.deze ? (uk ? 'Цей браузер' : 'Deze browser') : (uk ? 'Інший браузер' : 'Andere browser')) : x.naam}</b>{x.detail ? <small>{x.detail}</small> : null}</span>
-                <span className='rt-termijn'>{termijnRegel(x, taal)}{x.termijn?.eindTijd && x.termijn.modus !== 'tijd' ? ` · ${uurMinuut(x.termijn.eindTijd, taal)}` : ''}</span>
-                {x.ruimtes ? <span className='rt-ruimtes'>{x.ruimtes.map((q) => RUIMTE_NAAM[q][taal]).join(' + ')}</span> : null}
-                {tab === 'ai' ? (() => {
-                  const actiefId = actieveAiKeuzeId(x);
-                  return (
-                    <span className='rt-ai'>
-                      <select aria-label={uk ? `Термін для ${x.naam}` : `Termijn voor ${x.naam}`} value='' data-rt-ai-termijn={x.id}
-                        disabled={bezig === x.id || !aiMag} title={aiMag ? undefined : aiReden}
-                        onChange={(e) => { const k = AI_TERMIJNEN.find((a) => a.id === e.target.value); if (k && k.id !== actiefId) void aiZet(x, k); }}>
-                        <option value=''>{uk ? 'Змінити доступ…' : 'Toegang wijzigen…'}</option>
-                        {AI_TERMIJNEN.map((a) => (
-                          <option key={a.id} value={a.id} disabled={actiefId === a.id} data-al-actief={actiefId === a.id ? '1' : undefined}
-                            title={actiefId === a.id ? (uk ? 'Цей режим уже діє зараз' : 'Deze stand geldt nu al') : undefined}>{a.label[taal]}</option>
-                        ))}
-                      </select>
-                      {bezig === x.id ? <small role='status'>{uk ? 'Зберігаю…' : 'Opslaan…'}</small> : null}
+                {x.soort === 'sessie' ? (
+                  <span className='rt-sessie'>
+                    <Merk merk={x.browser || 'browser'} naam={x.browser || 'Browser'} maat={28} />
+                    <span className='rt-sessie-tekst'>
+                      <b>{x.dienst ? `${x.dienst}.*` : (uk ? 'Вхід на сайт' : 'Aanmelding')}{x.deze ? <span className='rt-deze'>{uk ? 'ця вкладка' : 'dit tabblad'}</span> : null}</b>
+                      <small>{[x.browser, x.apparaat].filter(Boolean).join(' · ') || (uk ? 'пристрій невідомий' : 'apparaat onbekend')}</small>
                     </span>
-                  );
-                })() : null}
+                  </span>
+                ) : <span className='rt-wie'><b>{x.naam}</b>{x.detail ? <small>{x.detail}</small> : null}</span>}
+                <span className='rt-termijn'>{termijnRegel(x, taal)}{x.termijn?.eindTijd && x.termijn.modus !== 'tijd' ? ` · ${uurMinuut(x.termijn.eindTijd, taal)}` : ''}</span>
+                {x.soort === 'sessie' ? <span className={`rt-sessie-stand${x.actief ? ' is-tech' : ''}`}>{x.actief ? (uk ? 'технічний' : 'technisch') : (uk ? 'звичайний (пауза)' : 'gewoon (pauze)')}</span> : null}
+                {x.ruimtes && x.soort !== 'sessie' ? <span className='rt-ruimtes'>{x.ruimtes.map((q) => RUIMTE_NAAM[q][taal]).join(' + ')}</span> : null}
               </li>
             ))}</ul>
           ) : tab !== 'eigen' ? <p className='tech-meta' data-rt-leeg='1'>{uk ? 'Тут поки нічого немає.' : 'Hier staat nog niets.'}</p> : null) : null}

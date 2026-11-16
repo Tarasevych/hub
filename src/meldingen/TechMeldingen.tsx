@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bell, CheckCheck, ExternalLink } from 'lucide-react';
 import { Venster } from '../platform/vensters';
+import type { CanonicalServerNotification } from '../canoniek-meldingen';
 import { soortInfo } from '../../shared/melding-soorten';
 import { filterTechMeldingen, ongelezenTech, type Gelezen } from './tech-filter';
 import { typeInfo, type MeldingErnst, type MeldingType } from '../../shared/melding-typen';
@@ -11,6 +12,7 @@ import { useZijbalkVoorkeuren } from '../zijbalk-voorkeuren';
 import { TECH_MELDINGEN_EVENT, naActiverenMeldingen, ongelezenTechActiviteit, techMeldingenStaat, useTechMeldingen } from './tech-meldingen-opslag';
 import { activityCause, activityStatusText, activityTitle, sourceLabel, statusInfo } from '../connector-activiteit';
 import { styleOf } from '../melding-stijl';
+import { veiligeMeldingUrl } from '../../shared/meldingen-ecosysteem';
 import './meldingen.css';
 
 const ERNST: Record<MeldingErnst, [string, string]> = { kritiek: ['Критичне', 'Kritiek'], belangrijk: ['Важливе', 'Belangrijk'], info: ['Інформація', 'Informatie'] };
@@ -37,6 +39,37 @@ export function TechMeldingenKnop({ uk }: { uk: boolean }) {
       </button>
       {open ? <TechMeldingenPaneel uk={uk} sluit={() => setOpen(false)} /> : null}
     </>
+  );
+}
+
+export function TechMeldingenLijst({
+  uk,
+  lijst,
+  lees,
+}: {
+  uk: boolean;
+  lijst: readonly CanonicalServerNotification[];
+  lees?: ((id: string) => void | Promise<void>) | null;
+}) {
+  const t = (a: string, b: string) => (uk ? a : b);
+  const tijd = (v: number) => new Date(v).toLocaleString(uk ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' });
+  return (
+    <ul className='tm-lijst'>
+      {lijst.map((m) => {
+        const s = soortInfo(m.kind);
+        const link = veiligeMeldingUrl(m.link);
+        return (
+          <li key={m.id} className={`tm-item ernst-${s.ernst}${m.read ? ' is-gelezen' : ''}`} data-tm-id={m.id} data-tm-kind={m.kind}>
+            <div className='tm-meta'><span className={`tm-chip ernst-${s.ernst}`}>{uk ? ERNST[s.ernst][0] : ERNST[s.ernst][1]}</span><span>{uk ? typeInfo(s.type).naam[0] : typeInfo(s.type).naam[1]}</span><time dateTime={new Date(m.createdAt).toISOString()}>{tijd(m.createdAt)}</time></div>
+            <strong>{m.title}</strong>
+            {m.message ? <p>{m.message}</p> : null}
+            <div className='tech-knoppen'>
+              {link ? <a className='tm-link' href={link}><ExternalLink aria-hidden='true' />{t('Відкрити', 'Openen')}</a> : null}
+              {!m.read && lees ? <button type='button' data-tm-lees={m.id} onClick={() => void lees(m.id)}>{t('Прочитано', 'Gelezen')}</button> : null}
+            </div>
+          </li>);
+      })}
+    </ul>
   );
 }
 
@@ -99,21 +132,7 @@ export function TechMeldingenPaneel({ uk, sluit }: { uk: boolean; sluit: () => v
         {lijst.length === 0 ? (activiteitLijst.length && !type && !ernst ? null :
           <p className='tm-leeg' data-tm-leeg>{zichtbaar.length ? t('Нічого не відповідає фільтрам.', 'Niets voldoet aan de filters.') : t('Технічних сповіщень немає.', 'Geen technische meldingen.')}</p>
         ) : (
-          <ul className='tm-lijst'>
-            {lijst.map((m) => {
-              const s = soortInfo(m.kind);
-              return (
-                <li key={m.id} className={`tm-item ernst-${s.ernst}${m.read ? ' is-gelezen' : ''}`} data-tm-id={m.id} data-tm-kind={m.kind}>
-                  <div className='tm-meta'><span className={`tm-chip ernst-${s.ernst}`}>{uk ? ERNST[s.ernst][0] : ERNST[s.ernst][1]}</span><span>{uk ? typeInfo(s.type).naam[0] : typeInfo(s.type).naam[1]}</span><time dateTime={new Date(m.createdAt).toISOString()}>{tijd(m.createdAt)}</time></div>
-                  <strong>{m.title}</strong>
-                  {m.message ? <p>{m.message}</p> : null}
-                  <div className='tech-knoppen'>
-                    {m.link ? <a className='tm-link' href={m.link}><ExternalLink aria-hidden='true' />{t('Відкрити', 'Openen')}</a> : null}
-                    {!m.read && lees ? <button type='button' data-tm-lees={m.id} onClick={() => void lees(m.id)}>{t('Прочитано', 'Gelezen')}</button> : null}
-                  </div>
-                </li>);
-            })}
-          </ul>
+          <TechMeldingenLijst uk={uk} lijst={lijst} lees={lees} />
         )}
         {/* 22.10.2026: technische activiteiten (sfeer 'technisch', shared/meldingen-soorten.ts) — vroeger in de bel van de gebruiker als «Дія на сайті: …». */}
         {!type && !ernst && activiteitLijst.length > 0 ? (

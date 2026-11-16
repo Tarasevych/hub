@@ -7,7 +7,7 @@
 // vm-context ZONDER Buffer, process, require en fs — precies wat een browser biedt. Laadt een module dan niet, dan faalt dit hier,
 // niet pas op de server van de eigenaar.
 import { build } from 'esbuild';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
 import { checker } from './hulp/nep-google';
@@ -35,7 +35,8 @@ export async function main(): Promise<number> {
   // 2) elke module: browser-bundel + uitvoeren zonder Node-globals
   const kapot: string[] = [];
   for (const m of [...modules].sort()) {
-    const pad = join(W, 'shared', `${m}.ts`);
+    const recht = join(W, 'shared', `${m}.ts`);
+    const pad = existsSync(recht) ? recht : join(W, 'shared', m, 'index.ts');
     try {
       const r = await build({ entryPoints: [pad], bundle: true, write: false, platform: 'browser', format: 'iife', target: 'es2022', logLevel: 'silent', define: { 'process.env.NODE_ENV': '"production"' } });
       const code = r.outputFiles[0].text;

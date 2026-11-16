@@ -27,6 +27,7 @@ import {
 } from '../../backend/mcp-protocol-2026.ts';
 import { serverCardMetadata, registryServerMetadata } from '../../backend/mcp-connector.ts';
 import { MCP_KLANT_VERSIES, MCP_KLANT_VOORKEUR } from '../../shared/mcp-klant-model.ts';
+import { V2_AGENTEN } from '../../shared/connector-v2/agenten.ts';
 
 export async function main(): Promise<number> {
   let fouten = 0;
@@ -244,8 +245,13 @@ export async function main(): Promise<number> {
 
   const reg = bouwRegistryServerJson('https://mcp.tarasevych.com');
   is(
-    reg.name === 'com.tarasevych/mijn-ruimte' && Array.isArray(reg.remotes) && reg.remotes.length === 10,
-    'bouwRegistryServerJson формує маніфест реєстру з усіма 9 агентами та /mcp',
+    reg.name === 'com.tarasevych/mijn-ruimte' &&
+      Array.isArray(reg.remotes) &&
+      V2_AGENTEN.length === 13 &&
+      reg.remotes.length === V2_AGENTEN.length + 1 &&
+      V2_AGENTEN.every((a) => reg.remotes.some((r) => r.url.endsWith(`/${a.slug}`))) &&
+      reg.remotes.some((r) => r.url === 'https://mcp.tarasevych.com/mcp'),
+    'bouwRegistryServerJson формує маніфест реєстру з усіма 13 агентами та /mcp',
   );
 
   const cCardResp = serverCardMetadata();

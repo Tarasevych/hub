@@ -106,14 +106,6 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
 :is(.access-plane,.access-plane-section,.access-plane-group) label.access-plane-switch input[type='checkbox']:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* (?) підказки поруч із заголовками — InfoTip.tsx */
-.info-tip{position:relative;display:inline-flex;align-items:center}
-.info-tip-knop{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;line-height:1;cursor:help}
-.info-tip-knop:hover,.info-tip[data-open] .info-tip-knop{color:var(--text);border-color:var(--muted)}
-.info-tip-knop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.info-tip-tekst{position:fixed;z-index:900;width:max-content;max-width:min(320px,calc(100vw - 24px));padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-3,0 10px 30px rgba(0,0,0,.25));font-size:.84rem;font-weight:400;line-height:1.45;text-align:left;white-space:normal}
-.info-tip-tekst[hidden]{display:none}
-.info-tip-tekst p{margin:0}
-.info-tip-tekst p+p{margin-top:6px}
 :is(.access-plane,.access-plane-section,.access-plane-group) .info-tip .info-tip-knop{display:inline-flex;min-height:0;width:18px;height:18px;padding:0;gap:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:.75rem;font-weight:700;line-height:1;cursor:help;flex:0 0 auto}
 :is(.access-plane,.access-plane-section,.access-plane-group) .info-tip[data-open] .info-tip-knop,:is(.access-plane,.access-plane-section,.access-plane-group) .info-tip .info-tip-knop:hover{color:var(--text);border-color:var(--muted)}
 
@@ -274,6 +266,12 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
   .access-plane-row-actions:not(.access-plane-icon-acties){flex-basis:100%;padding-left:48px}
 }
 
+/* Небезпечні дії (видалити, вимкнути захист) навіть у спокійній темі мають ніжний червоний відтінок і колір тексту — колір теж
+   попереджає про наслідки, але кнопка не кричить: тонка рамка й ледь помітне тло з --fout (15.11.2026, побажання власника).
+   NL: gevaarlijke acties krijgen een zachte rode tint en tekstkleur, zonder schreeuwerig te worden. */
+:is(.access-plane,.settings-center) button:is(.secondary,.danger,[data-gevaar]):has(>svg:is(.lucide-trash2,.lucide-trash-2,.lucide-trash)){color:var(--fout);border-color:color-mix(in srgb,var(--fout) 42%,var(--line));background:color-mix(in srgb,var(--fout) 9%,transparent)}
+:is(.access-plane,.settings-center) button:is(.secondary,.danger,[data-gevaar]):has(>svg:is(.lucide-trash2,.lucide-trash-2,.lucide-trash)):hover:not(:disabled){border-color:color-mix(in srgb,var(--fout) 65%,var(--line));background:color-mix(in srgb,var(--fout) 15%,transparent)}
+:is(.access-plane,.settings-center) button:is(.secondary,.danger,[data-gevaar]):has(>svg:is(.lucide-trash2,.lucide-trash-2,.lucide-trash)) svg{color:inherit}
 /* Мобільна адаптація від 320 px: дотикова висота var(--tik-hoogte) і без роздування іконкових кнопок на всю ширину. */
 @media (max-width:700px){
   .access-plane-row-actions :is(button,a),.access-plane-button,.herstel-klaar button,.access-plane-actions button,.access-plane-owner button,.access-plane-subrow>button{min-height:var(--tik-hoogte)}

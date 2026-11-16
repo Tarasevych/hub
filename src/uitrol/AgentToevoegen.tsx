@@ -2,7 +2,8 @@
 // verbindingen), daarna de termijn (1 / 7 / 30 dagen of «до відкликання»). «Інший спосіб» (concrete koppeling, token of account) is een eigen
 // weergave met echte keuzekaarten en een uitleg als de lijst leeg is — de oude keuzelijst bleef zonder reden leeg, omdat privéverbindingen
 // nooit in aanmerking komen (zie backend/uitrol-goedkeuring.ts onderwerpControleren).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, Bot, CalendarClock, Check, Clock, ExternalLink, Info, KeyRound, Link2, Plug, ShieldAlert, ShieldCheck, UserRound, X } from 'lucide-react';
 import AgentLogo from '../agenten/AgentLogo';
 import { SOORT, tr, type AgentTegel, type Grant, type GrantSoort, type Keuze, type Lang, type Overzicht } from './types';
@@ -35,6 +36,10 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
   const [ander, setAnder] = useState<'mcp-koppeling' | 'agenttoken' | 'account'>('mcp-koppeling');
   const [keuze, setKeuze] = useState('');
   const sluitKnop = useRef<HTMLButtonElement>(null);
+  const [portaalDoel, setPortaalDoel] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setPortaalDoel(document.querySelector<HTMLElement>('.canonical-chrome') || document.body);
+  }, []);
   const max = data.limieten.voorbereiderMaxDagen;
   const beleid = data.beleid || null;
   const staat = beleid?.staat || 'niet-ingesteld';
@@ -43,10 +48,12 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
   const rechtVan = (slug: string) => actief.find((g) => g.soort === 'agent' && g.onderwerp === slug);
 
   useEffect(() => {
+    const vorige = document.activeElement as HTMLElement | null;
     const f = (e: KeyboardEvent) => { if (e.key === 'Escape') onSluit(); };
-    window.addEventListener('keydown', f); sluitKnop.current?.focus();
-    return () => window.removeEventListener('keydown', f);
+    window.addEventListener('keydown', f);
+    return () => { window.removeEventListener('keydown', f); try { vorige?.focus?.(); } catch { /* weg */ } };
   }, [onSluit]);
+  useEffect(() => { sluitKnop.current?.focus(); }, [portaalDoel]);
 
   const bevestig = () => {
     if (w.v === 'duur') { geven({ soort: w.soort, onderwerp: w.onderwerp, dagen: onbepaald ? 1 : Math.min(dagen, max), onbepaald, label: naam.trim() }); onSluit(); }
@@ -83,7 +90,7 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
   const prive = ander === 'mcp-koppeling' ? data.kandidaten.uitgesloten?.koppelingenPrive || 0 : ander === 'agenttoken' ? data.kandidaten.uitgesloten?.tokensPrive || 0 : 0;
   const bezet = (id: string) => actief.some((g) => g.soort === ander && g.onderwerp === id);
 
-  return <div className='ut-modal-schaduw' onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
+  const inhoud = <div className='ut-modal-schaduw' onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
     <div className='ut-modal ut-agentvenster' role='dialog' aria-modal='true' aria-labelledby='ut-agent-titel' data-agent-venster>
       <header>
         {w.v !== 'agents' && <button type='button' className='ut-icoon-knop' aria-label={tr(lang, 'Назад', 'Terug')} onClick={() => { setW({ v: 'agents' }); setKeuze(''); }}><ArrowLeft aria-hidden='true' /></button>}
@@ -101,6 +108,7 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
               <div className='ut-agenttegel-chips'>
                 <span className='ut-chip' data-toon={bc.toon === 'neutraal' ? undefined : bc.toon}>{bc.toon === 'ok' ? <ShieldCheck aria-hidden='true' /> : <ShieldAlert aria-hidden='true' />}{bc.tekst}</span>
                 {g ? <span className='ut-chip' data-toon='ok'><CalendarClock aria-hidden='true' />{g.onbepaald ? tr(lang, 'Дозволено · до відкликання', 'Toegestaan · tot intrekking') : tr(lang, `Дозволено · до ${kort(lang, g.verlooptOp)}`, `Toegestaan · tot ${kort(lang, g.verlooptOp)}`)}{g.bron === 'ai-beleid' ? ` · ${tr(lang, 'з політики ШІ', 'uit AI-beleid')}` : ''}</span>
+                  : t.uitgezetDoorEigenaar ? <span className='ut-chip' data-toon='warn' data-uitgezet-chip><ShieldAlert aria-hidden='true' />{tr(lang, `Вимкнено вами ${kort(lang, t.uitgezetDoorEigenaar)} — політика ШІ сама не повертає`, `Door u uitgezet op ${kort(lang, t.uitgezetDoorEigenaar)} — het AI-beleid geeft het niet vanzelf terug`)}</span>
                   : <span className='ut-chip'>{tr(lang, 'Ще без дозволу готувати оновлення', 'Nog geen toestemming om updates voor te bereiden')}</span>}
               </div>
               {t.modus === 'off' && <p className='ut-agenttegel-nb'><Info aria-hidden='true' />{tr(lang, 'Політика ШІ блокує «Розгортати сайт» для цього агента: навіть з дозволом тут він нічого не завантажить. Увімкніть це в «Доступ ШІ» (потрібен passkey).', 'Het AI-beleid blokkeert «Site uitrollen» voor deze agent: ook met toestemming hier kan hij niets uploaden. Zet het aan in «AI-toegang» (passkey nodig).')} <a href='/ai'>{tr(lang, 'Відкрити «Доступ ШІ»', '«AI-toegang» openen')}<ExternalLink aria-hidden='true' /></a></p>}
@@ -156,4 +164,5 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
       </>}
     </div>
   </div>;
+  return portaalDoel ? createPortal(<div className='admin-uitrol ut-root ut-portaal'>{inhoud}</div>, portaalDoel) : inhoud;
 }

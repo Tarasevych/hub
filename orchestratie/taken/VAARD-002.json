@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "VAARD-002",
+  "agent": "gemini",
+  "tak": "feature/vaard-002-vaardigheden-20261115-160000",
+  "basisCommit": "30119943e9b477082cb178b15c0965879a410383",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T16:19:32.897Z",
+  "bijgewerkt": "2026-11-15T16:19:32.898Z",
+  "omschrijving": "Навички агентів для перевірки підключень на справжніх даних, виправлення вигляду зі знімка, вимірювання швидкодії, збирання та встановлення випусків.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

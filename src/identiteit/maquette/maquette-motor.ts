@@ -5,6 +5,8 @@
 // Відмінності від макета позначено коментарями «САЙТ:». Тип-перевірку вимкнено свідомо: код лишається максимально близьким до джерела.
 // De motor van de weergave «Ontwerp»: de eigen scripts van het ontwerp van de eigenaar, gebundeld en aan de component-wortel gebonden.
 
+import type { UiterlijkAccent } from '../../../shared/uiterlijk';
+import { ACCENT_KEUZES, ACCENT_NAMEN } from '../../thema/weergave-stijl';
 export type MaquetteOpties = {
   lang: 'uk' | 'nl';
   licht: boolean;
@@ -27,7 +29,7 @@ export type MaquetteOpties = {
   bijTaal?: (lang: 'uk' | 'nl') => void;
 };
 export type MaquetteWeergave = {
-  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: 'violet' | 'cyan' | 'pink' | 'amber'; effecten: number;
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
   icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
 };
 export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
@@ -71,7 +73,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         dockInline:"Положення якорів",dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться",
         themeInline:"Атмосфера прототипу",themeInlineHint:"Відразу побачите різницю",
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
-        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
+        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Ціан",pink:"Рожевий",amber:"Медовий",blauw:"Синій",hemel:"Небесний",teal:"Бірюзовий",groen:"Зелений",oranje:"Бурштиновий",roze:"Малиновий",indigo:"Індиго",bruin:"Теракотовий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
         moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
@@ -183,7 +185,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         dockInline:"Positie van ankers",dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet",
         themeInline:"Sfeer van het prototype",themeInlineHint:"Bekijk direct het verschil",
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
-        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
+        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Cyaan",pink:"Roze",amber:"Honing",blauw:"Blauw",hemel:"Hemelsblauw",teal:"Teal",groen:"Groen",oranje:"Oranje",roze:"Framboos",indigo:"Indigo",bruin:"Terracotta"},
         langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",
         moved:"Ankernavigatie verplaatst naar:",demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel.",
         navDemoToast:"Dit is een visueel prototype. Echte diensten zijn hier niet verbonden.",
@@ -608,10 +610,13 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Тимчасове скасування автоматичного режиму","Automatische modus tijdelijk onderbreken","дія")
       ]),
       група("палітра","Основне кольорове оформлення","Basiskleuren","Наявні оформлення з різними світлими та темними відтінками.","Bestaande paletten met een lichte en donkere variant.","наявне",[
-        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Грифельне","Leisteen"],["Чисте","Zuiver"],["Фіолетове","Paars"]])
+        // САЙТ (KLEUREN-001): усі сім палітр, як у «Темах» і меню облікового запису (було чотири). Alle zeven paletten.
+        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Макет","Ontwerp"],["Біла класика","Witte klassiek"],["Чорна класика","Zwarte klassiek"],["Грифельне","Grafiet"],["Чисте","Puur"],["Фіолетове","Violet"]])
       ]),
-      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Допоміжний колір не замінює основного оформлення.","Accentkleur vervangt het basispalet niet.","макет",[
-        рядок("Акцентна палітра","Accentkleuren","вибір",[["Фіолетовий","Paars"],["Бірюзовий","Turkoois"],["Рожевий","Roze"],["Бурштиновий","Amber"]]),
+      // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
+      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
+        рядок("Акцентна палітра","Accentkleuren","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
         рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")
       ])
     ],
@@ -1157,6 +1162,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   }
 
   const демоДоСайту={melding:"#melding-modus",sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+  // BLOKKEN-001: точні справжні блоки для карток, де ціль розділу порожня. Ключ — «розділ-номер картки».
+  // NL: precieze echte blokken voor kaarten zonder doel in de sectie.
+  const ЦІЛЬ_КАРТКИ={"account-0":".ia-profiel","account-1":"#gegevensuitvoer","account-2":".settings-danger","sessions-0":".sessies-overzicht"};
   const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
   function чеснийЕлемент(control,i,sectionId,ціль,пояснення,кнопка){
     const nl=preferences.lang==="nl";
@@ -1188,7 +1196,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(sectionId==="identities"&&i===0)return карткаПростору(control,i,sectionId); // САЙТ (IDENTITEIT-015)
     const чесно=ЧЕСНО[sectionId+"-"+i];
     if(чесно)return чеснийЕлемент(control,i,sectionId,чесно[2],чесно[0],чесно[1]);
-    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,демоДоСайту[sectionId]);
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,ЦІЛЬ_КАРТКИ[sectionId+"-"+i]||демоДоСайту[sectionId]);
     if(sectionId==="themes"&&control.type==="theme")return чеснийЕлемент({...control,type:"theme"},i,sectionId,"#thema-modus-kop");
     if(sectionId==="widgets"&&control.type==="action")return чеснийЕлемент(control,i,sectionId,".settings-form");
     const key=sectionId+"-"+i,type=control.type,t=ui();
@@ -1209,7 +1217,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }else if(type==="theme"){
       widget='<div class="drawer-choice theme-illustrated"><button data-theme="dark" class="'+(preferences.theme==="dark"?"selected":"")+'"><span class="theme-miniature theme-miniature-dark"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 16a8.4 8.4 0 0 1-12-12 8.4 8.4 0 1 0 12 12Z"/></svg></span><span>'+t.dark+'</span></button><button data-theme="light" class="'+(preferences.theme==="light"?"selected":"")+'"><span class="theme-miniature theme-miniature-light"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span>'+t.light+'</span></button></div>';
     }else if(type==="accent"){
-      widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
+      // ACCENT-001: ті самі відтінки, що в меню облікового запису; давні «pink»/«amber» видно, лише поки обрані.
+      widget='<div class="swatches drawer-swatches">'+ACCENT_KEUZES.concat(ACCENT_KEUZES.includes(обранийАкцент())||!обранийАкцент()?[]:[обранийАкцент()]).map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
     }else if(type==="language"){
       widget='<div class="drawer-choice language-illustrated"><button data-demo-lang="uk" class="'+(preferences.lang==="uk"?"selected":"")+'"><span class="language-flag language-flag-uk" aria-hidden="true"></span><span>Українська</span></button><button data-demo-lang="nl" class="'+(preferences.lang==="nl"?"selected":"")+'"><span class="language-flag language-flag-nl" aria-hidden="true"></span><span>Nederlands</span></button></div>';
     }else if(type==="range"){
@@ -1366,14 +1375,20 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }
   }
 
-  function isIconNav(){
-    return preferences.iconOnly || ["top","bottom"].includes(preferences.position) || preferences.compact ||
-      ((breed()<=730)&&["left","right"].includes(preferences.position));
+  // HINT-001: підказка потрібна лише тоді, коли пункт справді показує саму піктограму. Налаштування «компактно»/«авто»
+  // не годиться як ознака: в авто-режимі панель розгортається при наведенні й назву вже видно (була подвійна назва).
+  // HINT-001: alleen een hint als het item echt alleen een pictogram toont; «auto» klapt bij aanwijzen uit en toont de naam al.
+  function isIconNav(el){
+    const naam=el&&el.querySelector(".anchor-name,.nav-group-name");
+    if(!naam)return true;
+    if(!naam.getClientRects().length)return true;
+    const st=getComputedStyle(naam);
+    return st.visibility==="hidden"||Number(st.opacity)<0.05;
   }
   function showAnchorTooltip(el){
-    if(!el||!isIconNav()||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
+    if(!el||!isIconNav(el)||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
     const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();
-    tooltip.textContent=el.dataset.tooltip;
+    tooltip.textContent=el.dataset.ankerTip||el.getAttribute("aria-label")||"";
     tooltip.hidden=false;
     tooltip.dataset.side=preferences.position;
     const tw=tooltip.offsetWidth,th=tooltip.offsetHeight,pad=9;
@@ -1385,8 +1400,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     tooltip.style.left=Math.max(pad,Math.min(innerWidth-tw-pad,x))+"px";
     tooltip.style.top=Math.max(pad,Math.min(innerHeight-th-pad,y))+"px";
     tooltip.classList.add("show");
+    ankerTipDoel=el;
+    // Авто-панель розгортається під мишею вже після показу: щойно назву видно, бубка зникає · verdwijnt zodra de naam zichtbaar is
+    clearTimeout(ankerTipHerzien);ankerTipHerzien=setTimeout(herzieAnkerTip,120);setTimeout(herzieAnkerTip,420);
   }
+  let ankerTipDoel=null,ankerTipHerzien=0;
+  function herzieAnkerTip(){if(ankerTipDoel&&!isIconNav(ankerTipDoel))hideAnchorTooltip();}
   function hideAnchorTooltip(){
+    ankerTipDoel=null;
     const tooltip=byId("anchorTooltip");
     tooltip.classList.remove("show");
     tooltip.hidden=true;
@@ -1932,12 +1953,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     for(const g of ["personal","social","account","security"]){
       byId("group-"+g).innerHTML=localized.filter(s=>s.group===g).map(renderCard).join("");
     }
-    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
+    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-anker-tip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
     const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп
     byId("railItems").innerHTML=navItem("intro",ui().beginning)+groups.map((group,index)=>{
       const label=ui().navGroups[index],opened=expandedNavGroups.has(group.id);
       return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
-        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-tooltip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
+        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-anker-tip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
         '<div class="nav-subitems" role="group" aria-label="'+label+'">'+localized.filter(s=>s.group===group.id).map(s=>navItem(s.id,s.short)).join("")+'</div></div>';
     }).join("");
     rehydrateInlineSettings();
@@ -1970,6 +1991,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   }
   function applyRailCollapsed(collapsed){
     body.classList.toggle("rail-compact",collapsed);
+    if(!collapsed)herzieAnkerTip();
     root.querySelectorAll("[data-drawer-compact]").forEach(b=>{b.setAttribute("aria-pressed",String(collapsed));b.classList.toggle("on",collapsed);});
     syncRailCompactButton();
     schedulePillUpdate();
@@ -2088,15 +2110,18 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!sections.some(s=>s.id===id))return;
     gaNaar(id,true);
     opties.bijOpenen(id);
-    if(!ціль)return;
+    // BLOKKEN-001: без точної цілі ведемо до самого гнізда справжніх налаштувань розділу (а не до верху розділу),
+    // а якщо селектор не знайшовся за ~3 с — теж до гнізда. NL: zonder doel naar het nest met echte instellingen.
     const рух=matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
     let спроби=0;
     const шукати=()=>{
       const гніздо=root.querySelector('.mq-echt[data-echt="'+id+'"]');
       let доціль=null;
-      try{доціль=гніздо?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      try{доціль=гніздо&&ціль?гніздо.querySelector(ціль):null;}catch{доціль=null;}
       // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
-      if(!доціль){if(++спроби<50)setTimeout(шукати,60);return;}
+      const гніздоГотове=гніздо&&гніздо.childElementCount>0&&гніздо.getBoundingClientRect().height>0;
+      if(!доціль&&!ціль&&гніздоГотове&&спроби>=3)доціль=гніздо;
+      if(!доціль){if(++спроби<50){setTimeout(шукати,60);return;}if(гніздоГотове)доціль=гніздо;else return;}
       for(let d=доціль.closest("details");d;d=d.parentElement?d.parentElement.closest("details"):null)if(!d.open)d.open=true;
       доціль.scrollIntoView({behavior:рух,block:"start"});
       const фокус=доціль.matches("summary,button,a,input,select,textarea")?доціль:(доціль.querySelector(":scope > summary")||доціль);
@@ -2536,6 +2561,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(el.classList.contains("active")||!el.dataset.dienst)jump("intro");else opties.bijDienst(el.dataset.dienst);
   }));
   byId("railItems").addEventListener("pointerover",e=>{
+    // HINT-001: на сенсорному екрані дотик не показує підказку · geen hint bij aanraken
+    if(e.pointerType==="touch")return;
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&item!==e.relatedTarget?.closest?.(".anchor-link,.nav-group-toggle"))showAnchorTooltip(item);
   });
@@ -2543,7 +2570,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&!item.contains(e.relatedTarget))hideAnchorTooltip();
   });
-  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item)showAnchorTooltip(item);});
+  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item&&item.matches(":focus-visible"))showAnchorTooltip(item);});
   byId("railItems").addEventListener("focusout",hideAnchorTooltip);
   byId("railItems").addEventListener("scroll",hideAnchorTooltip,{passive:true});
 
