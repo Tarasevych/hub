@@ -465,17 +465,19 @@ function BeeldTekstIcoon() {
   // Павло (20:28) «кольоровою»; (20:34) «букву А більшою, третій елемент»; (20:46) «я відмічав іншу піктограму» (de lijnversie in de
   // kleur van de site, niet de gekleurde foto) en «не просто одна біля одної — гармонійне, ілюзійне поєднання». Dus één beeld: een
   // landschap in een lijst (Зображення), waarin de middelste bergtop de letter A is (Читання) en de zon een wereldbol (Мова й ШІ).
+  // (20:53) «3 варіант, але щоб A трішки виступало за низ»: de lijst is onderaan open en de poten van de A lopen er net onder uit.
   // Lijst, bergen en bol in --accent (volgt het thema en het palet), de A in de tekstkleur. 22 px (beelden-voorraad.css).
   const accent = { stroke: 'var(--accent)' };
   return (
     <svg className='lz-weergave-icoon' xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
-      <rect x='2' y='3' width='20' height='18' rx='3.5' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 16%, transparent)' }} />
-      <path d='m2.6 17.5 3-3 2.2 2.2' strokeWidth='1.7' style={accent} />
-      <path d='m15.2 16.7 2.8-2.8 3.4 3.4' strokeWidth='1.7' style={accent} />
-      <path d='M6.8 21 11.5 8.5 16.2 21' strokeWidth='2.3' />
-      <path d='M8.8 15.8h5.4' strokeWidth='2.3' />
-      <circle cx='17.6' cy='8' r='2.9' strokeWidth='1.6' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 28%, transparent)' }} />
-      <path d='M14.7 8h5.8M17.6 5.1c-1.5 1.5-1.5 4.3 0 5.8M17.6 5.1c1.5 1.5 1.5 4.3 0 5.8' strokeWidth='1.1' style={accent} />
+      {/* lijst, onderaan open: de poten van de A steken er een klein stukje onder uit (Павло 20:53) */}
+      <path d='M5.4 20h.1A3.5 3.5 0 0 1 2 16.5V6a3.5 3.5 0 0 1 3.5-3.5h13A3.5 3.5 0 0 1 22 6v10.5a3.5 3.5 0 0 1-3.5 3.5h-.9' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 16%, transparent)' }} />
+      <path d='m2.6 16.5 3-3 2.2 2.2' strokeWidth='1.7' style={accent} />
+      <path d='m15.2 15.7 2.8-2.8 3.4 3.4' strokeWidth='1.7' style={accent} />
+      <path d='M6.6 22.6 11.5 8l4.9 14.6' strokeWidth='2.3' />
+      <path d='M8.86 16.76h5.28' strokeWidth='2.3' />
+      <circle cx='17.6' cy='7.5' r='2.9' strokeWidth='1.6' style={{ ...accent, fill: 'color-mix(in srgb, var(--accent) 28%, transparent)' }} />
+      <path d='M14.7 7.5h5.8M17.6 4.6c-1.5 1.5-1.5 4.3 0 5.8M17.6 4.6c1.5 1.5 1.5 4.3 0 5.8' strokeWidth='1.1' style={accent} />
     </svg>
   );
 }
