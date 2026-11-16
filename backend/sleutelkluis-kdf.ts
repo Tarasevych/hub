@@ -28,6 +28,16 @@ export const kdfDrukte = () => ({ bezig, wachtend: rij.length });
 
 /** Zelfde uitkomst als kekUitHerstelcode (backend/sleutelkluis.ts), maar in de threadpool. De parameters komen uit de omslag. */
 export async function kekUitHerstelcodeAsync(code: string, salt: Buffer, p: { N: number; r: number; p: number }): Promise<Buffer> {
+  return scryptBegrensd(normaliseerHerstelcode(code), salt, p);
+}
+/**
+ * KLUIS-AANMELDEN: KEK uit het WACHTWOORD (Unicode NFC, verder ongewijzigd — hoofdletters en spaties tellen). Zelfde scrypt, zelfde
+ * grenzen; een eigen zout per omslag. Het wachtwoord zelf wordt nergens bewaard.
+ */
+export async function kekUitWachtwoordAsync(wachtwoord: string, salt: Buffer, p: { N: number; r: number; p: number }): Promise<Buffer> {
+  return scryptBegrensd(String(wachtwoord).normalize('NFC'), salt, p);
+}
+async function scryptBegrensd(invoer: string, salt: Buffer, p: { N: number; r: number; p: number }): Promise<Buffer> {
   // Parameters uit de database zijn invoer: een vervalste rij mag geen onbegrensde rekentijd of geheugen afdwingen.
   const N = Number(p.N), r = Number(p.r), pp = Number(p.p);
   if (!Number.isInteger(N) || N < 2 || N > N_MAX || (N & (N - 1)) !== 0 || !Number.isInteger(r) || r < 1 || r > 16 || !Number.isInteger(pp) || pp < 1 || pp > 4) {
@@ -36,7 +46,7 @@ export async function kekUitHerstelcodeAsync(code: string, salt: Buffer, p: { N:
   await beurt();
   try {
     return await new Promise<Buffer>((klaar, mislukt) => {
-      scrypt(normaliseerHerstelcode(code), salt, 32, { N, r, p: pp, maxmem: MAXMEM }, (fout, sleutel) => (fout ? mislukt(fout) : klaar(sleutel)));
+      scrypt(invoer, salt, 32, { N, r, p: pp, maxmem: MAXMEM }, (fout, sleutel) => (fout ? mislukt(fout) : klaar(sleutel)));
     });
   } finally { vrij(); }
 }

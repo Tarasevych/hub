@@ -19,8 +19,9 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
 import { PASSKEY_LIMIETEN, stapOpOrigins, passkeyRp, transportsVoorGet } from './toegangssleutels';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
-import { stapOpSessieId, stapOpVerbruiken, type StapOpAuth } from './stap-op';
-import { KEK_INFO, KLUIS_TEKST, omslagAad } from '../shared/sleutelkluis';
+import { onthoudSessie, stapOpSessieId, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { AANMELD_PRF_ZOUT, KEK_INFO, KLUIS_TEKST, omslagAad } from '../shared/sleutelkluis';
+import { passkeyAanmeldOmslagOpslaan, wachtwoordOpentToegestaan, wachtwoordOpentZetten } from './sleutelkluis-aanmelden';
 import {
   SleutelkluisFout, apparaatLabel, apparaatOnthouden, apparaatVergeten, dekVoorBrowser, herversleutelen, inschakelen, ontgrendelMetApparaat,
   ontgrendelMetPasskey, overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen, sleutelSluitenVoorHouder, type KluisLade,
@@ -87,7 +88,7 @@ async function assertieControleren(auth: Auth, input: Record<string, unknown>): 
 const prfOpties = (rijen: Rij[], salts: Map<string, string>, uitdaging: string) => ({
   challenge: uitdaging, rpId: passkeyRp().rpId, timeout: 120000, userVerification: 'required',
   allowCredentials: rijen.map((r) => { const t = transportsVoorGet(r.transports); return { type: 'public-key', id: r.credential_id, ...(t ? { transports: t } : {}) }; }),
-  extensions: { prf: { evalByCredential: Object.fromEntries(rijen.filter((r) => salts.has(String(r.id))).map((r) => [r.credential_id, { first: salts.get(String(r.id)) }])) } },
+  extensions: { prf: { evalByCredential: Object.fromEntries(rijen.filter((r) => salts.has(String(r.id))).map((r) => [r.credential_id, { first: salts.get(String(r.id)), second: AANMELD_PRF_ZOUT }])) } },
 });
 
 export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, RouterMiddleware[]> {
@@ -136,7 +137,7 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       const passkeys = rijen.map((r) => ({ id: String(r.id), naam: r.naam, gekoppeld: o.omslagen.passkeys.some((p) => p.passkeyId === String(r.id)) }));
       // SEC-002 (geheimen-04): wacht er een nieuwe herstelcode op bevestiging, en is dit een kluis zonder één omslag?
       const aan = o.stand !== 'uit';
-      return { ...o, passkeys, teksten: KLUIS_TEKST, herstelcodeWacht: aan ? await herstelcodeWacht(lade) : false, zonderOmslag: aan ? await kluisZonderOmslag(lade) : false };
+      return { ...o, passkeys, teksten: KLUIS_TEKST, herstelcodeWacht: aan ? await herstelcodeWacht(lade) : false, zonderOmslag: aan ? await kluisZonderOmslag(lade) : false, wachtwoordOpent: aan ? await wachtwoordOpentToegestaan(lade).catch(() => true) : true };
     })],
     // Inschakelen: sterke step-up (passkey/TOTP/herstelcode). De herstelcode komt EENMALIG terug; de sleutel staat meteen open.
     [`POST ${P}/inschakelen`]: [route({ sterk: true }, async (a, lade) => {
@@ -167,7 +168,14 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       const uit = await eenmalig(a, () => weesKluisHerstellen(lade));
       return { ok: true, ...uit };
     })],
-    [`POST ${P}/vergrendelen`]: [route({}, async (a) => ({ ok: true, gesloten: sleutelSluitenVoorHouder('sessie', houder(a).id) }))],
+    // KLUIS-AANMELDEN: een aanmelding opent de sleutel voor de browsersessie (anker) én het tabblad; «Заблокувати» sluit hem dan
+    // voor beide, anders bleef hij via het anker open. Alleen het anker van DEZELFDE mens (onthoudSessie), nooit een ander account.
+    [`POST ${P}/vergrendelen`]: [route({}, async (a) => {
+      const eigen = houder(a).id, anker = onthoudSessie(a)?.id || '';
+      let gesloten = sleutelSluitenVoorHouder('sessie', eigen);
+      if (anker && anker !== eigen) gesloten += sleutelSluitenVoorHouder('sessie', anker);
+      return { ok: true, gesloten };
+    })],
     // Passkey koppelen: opties (+ de DEK om om te slaan, alleen hier en alleen na sterke step-up met open sleutel), dan opslaan.
     [`POST ${P}/passkey/koppelen/opties`]: [route({ sterk: true }, async (a, lade) => {
       // SEC-002 (geheimen-07): dit antwoord bevat de gegevenssleutel zelf. Daarom begrensd per mens: een gekaapte sessie
@@ -178,13 +186,15 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       const dek = dekVoorBrowser(lade);
       const { uitdagingId, uitdaging } = await uitdagingMaken(a);
       const salts = new Map(rijen.map((r) => [String(r.id), randomBytes(32).toString('base64url')]));
-      return { uitdagingId, dek, kekInfo: KEK_INFO, passkeys: rijen.map((r) => ({ id: String(r.id), credentialId: r.credential_id, naam: r.naam, salt: salts.get(String(r.id)), aad: omslagAad(lade.userId, lade.ruimte, 'passkey', String(r.id)) })), publicKey: prfOpties(rijen, salts, uitdaging) };
+      return { uitdagingId, dek, kekInfo: KEK_INFO, passkeys: rijen.map((r) => ({ id: String(r.id), credentialId: r.credential_id, naam: r.naam, salt: salts.get(String(r.id)), aad: omslagAad(lade.userId, lade.ruimte, 'passkey', String(r.id)), aanmeldAad: omslagAad(lade.userId, lade.ruimte, 'passkey-aanmelden', String(r.id)) })), publicKey: prfOpties(rijen, salts, uitdaging) };
     })],
     [`POST ${P}/passkey/koppelen`]: [route({}, async (a, lade, b) => {
       const rij = await assertieControleren(a, b);
       if (b.prfOndersteund === false) return { ok: false, prf: false, uitleg: KLUIS_TEKST.geenPrf, passkeyId: String(rij.id) };
       await passkeyOmslagOpslaan(lade, String(rij.id), String(b.salt || ''), String(b.envelop || ''), true);
-      return { ok: true, prf: true, passkeyId: String(rij.id) };
+      // KLUIS-AANMELDEN: dezelfde vraag gaf ook de PRF met het aanmeldzout → voortaan opent de AANMELDING met deze passkey de sleutel.
+      const aanmelden = await passkeyAanmeldOmslagOpslaan(lade, String(rij.id), b.aanmeldEnvelop).catch(() => false);
+      return { ok: true, prf: true, passkeyId: String(rij.id), aanmelden };
     })],
     [`POST ${P}/passkey/ontkoppelen`]: [route({ sterk: true }, async (_a, lade, b) => ({ ok: await passkeyOmslagWeg(lade, String(b.passkeyId || '')) }))],
     // Ontgrendelen: opties met per gekoppelde passkey haar salt én omslag; de browser opent en stuurt de DEK terug.
@@ -196,15 +206,21 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       if (!rijen.length) throw new SleutelkluisFout('SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG', 404);
       const { uitdagingId, uitdaging } = await uitdagingMaken(a);
       const salts = new Map(omslagen.map((o) => [o.passkeyId, o.salt]));
-      return { uitdagingId, kekInfo: KEK_INFO, omslagen: omslagen.map((o) => ({ passkeyId: o.passkeyId, credentialId: rijen.find((r) => String(r.id) === o.passkeyId)?.credential_id || '', salt: o.salt, envelop: o.envelop, aad: omslagAad(lade.userId, lade.ruimte, 'passkey', o.passkeyId) })), publicKey: prfOpties(rijen, salts, uitdaging) };
+      return { uitdagingId, kekInfo: KEK_INFO, omslagen: omslagen.map((o) => ({ passkeyId: o.passkeyId, credentialId: rijen.find((r) => String(r.id) === o.passkeyId)?.credential_id || '', salt: o.salt, envelop: o.envelop, aad: omslagAad(lade.userId, lade.ruimte, 'passkey', o.passkeyId), aanmeldAad: omslagAad(lade.userId, lade.ruimte, 'passkey-aanmelden', o.passkeyId) })), publicKey: prfOpties(rijen, salts, uitdaging) };
     })],
     [`POST ${P}/passkey/ontgrendelen`]: [route({}, async (a, lade, b) => {
       const limiet = await rateLimit(`sleutelkluis-passkey:${a.user.id}`, 20, 600);
       if (!limiet.ok) throw new SleutelkluisFout('RATE_LIMITED', 429);
       const rij = await assertieControleren(a, b);
       await ontgrendelMetPasskey(lade, String(rij.id), b.dek, houder(a));
-      return { ok: true, stand: 'open' };
+      // KLUIS-AANMELDEN: de DEK klopte (controle); de browser sloeg hem ook om onder de aanmeld-PRF van deze passkey.
+      const aanmelden = await passkeyAanmeldOmslagOpslaan(lade, String(rij.id), b.aanmeldEnvelop).catch(() => false);
+      return { ok: true, stand: 'open', aanmelden };
     })],
+    // KLUIS-AANMELDEN (0289): mag de aanmelding met wachtwoord deze sleutel openen? Aanzetten = een zwakker geheim toelaten, dus
+    // sterke step-up; uitzetten (de omslag weg) mag altijd.
+    [`POST ${P}/wachtwoord/aan`]: [route({ sterk: true }, async (a, lade) => { await begrens(a, 'wachtwoord-voorkeur', 20, 3600); await wachtwoordOpentZetten(lade, true); return { ok: true, aan: true }; })],
+    [`POST ${P}/wachtwoord/uit`]: [route({}, async (a, lade) => { await begrens(a, 'wachtwoord-voorkeur', 20, 3600); await wachtwoordOpentZetten(lade, false); return { ok: true, aan: false }; })],
     // KLUIS-APPARAAT-001 (0277): dit apparaat onthouden / er mee ontgrendelen / het vergeten. Agents komen hier nooit (agent-namens.ts).
     // Onthouden: alleen een sessie die de sleutel ZELF open houdt; terug gaat X = DEK ⊕ S, dat de browser onder een niet-exporteerbare
     // sleutel bewaart. Ontgrendelen: X terug, de server rekent DEK = X ⊕ S en controleert hem. Geen step-up nodig: wie X heeft, heeft het

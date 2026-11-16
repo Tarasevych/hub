@@ -37,6 +37,7 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/aanmelden/wachtwoord/start': 'aanmelden met wachtwoord: transactie en bindingscookie (zonder wachtwoord)',
   'POST /api/aanmelden/wachtwoord/voltooien': 'aanmelden met wachtwoord: adres, wachtwoord en tweede factor in één verzoek; lockout',
   'POST /api/aanmelden/extern/start': 'aanmelden met gekoppelde Microsoft/Discord/Apple: state + PKCE + nonce, transactie en bindingscookie',
+  'POST /api/aanmelden/kluis': 'meteen na aanmelden met een passkey: de door de browser geopende gegevenssleutel met een eenmalig token (2 min), gecontroleerd tegen de controlewaarde',
   // TELEGRAM-AANMELDEN v1 (achter vlag telegram-aanmelden-v1): zelfde lijst als TELEGRAM_PUBLIEKE_ROUTES in backend/telegram-aanmelden/routes.ts.
   'GET /api/aanmelden/telegram/config': 'Telegram-knop op het aanmeldscherm: zichtbaar ja/nee, botnaam, stand (geen geheimen)',
   'POST /api/aanmelden/telegram/start': 'Telegram-aanmelding starten (vóór de sessie; transactie + bindingscookie)',

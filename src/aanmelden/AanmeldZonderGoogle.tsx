@@ -12,7 +12,8 @@ import { rememberViewAccountEverywhere } from '../domein-weergave-cache';
 import { clearCachedAvatar, rememberAvatarUrl, zetWeergaveAccount } from '../gedeelde-voorkeuren';
 import GeheimInvoer from '../geheim/GeheimInvoer';
 import { api } from '../platform/client';
-import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from '../platform/webauthn';
+import { foutCode, kanPasskey } from '../platform/webauthn';
+import { kekUitPrf, omslagOpenen, passkeyAanmeldenMetPrf, type PrfAssertieOpties } from '../platform/sleutelkluis-client';
 import { ecosystemTabContext, setEcosystemSessionLikely } from '../tab-context';
 import { aanmeldWeigering } from '../weigeringen';
 import { plaatsVoorStart, plaatsVragen } from './plaats';
@@ -21,7 +22,24 @@ import './aanmelden-zonder-google.css';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
-type Voltooid = { ok?: boolean; sessionCreated?: boolean; reasonCode?: string; returnTo?: string; user?: { id?: string; picture?: string | null } | null };
+type Voltooid = { ok?: boolean; sessionCreated?: boolean; reasonCode?: string; returnTo?: string; user?: { id?: string; picture?: string | null } | null;
+  /* KLUIS-AANMELDEN: omslagen van de gegevenssleutel voor deze passkey + eenmalig token (alleen dichte ruimtes) */
+  kluis?: { token: string; omslagen: Array<{ ruimte: 'prive' | 'technisch'; envelop: string; aad: string }> } };
+/**
+ * KLUIS-AANMELDEN: dezelfde aanraking die aanmeldt, opent ook de gegevens. De PRF-uitkomst blijft in deze functie: de browser
+ * opent de omslag en stuurt alleen de DEK (zoals bij elk ontgrendelen met een passkey). Lukt het niet (oude passkey zonder
+ * aanmeldomslag, browser zonder PRF), dan gebeurt er niets bijzonders: de kaart «Ваші дані зараз зашифровані» neemt het over.
+ */
+async function kluisMeteenOpenen(prf: ArrayBuffer | null, k: Voltooid['kluis']): Promise<void> {
+  if (!prf || !k?.token || !Array.isArray(k.omslagen)) return;
+  const kek = await kekUitPrf(prf);
+  for (const o of k.omslagen) {
+    try {
+      const dek = await omslagOpenen(kek, o.envelop, o.aad);
+      await api.post('/api/aanmelden/kluis', { token: k.token, ruimte: o.ruimte, dek });
+    } catch (e) { console.warn('[aanmelden] gegevens niet meteen ontsleuteld:', foutCode(e)); }
+  }
+}
 export type ZonderGoogleId = 'passkey' | 'wachtwoord' | 'microsoft' | 'discord' | 'apple';
 export const ZONDER_GOOGLE: readonly ZonderGoogleId[] = ['passkey', 'wachtwoord', 'microsoft', 'discord', 'apple'];
 
@@ -131,11 +149,13 @@ export default function AanmeldZonderGoogle({ id, lang, remember = true, hoofd =
 
   const passkey = () => { opnieuw.current = () => void passkey(); return doe(async () => {
     if (!kanPasskey()) throw alsFout('NotAllowedError');
-    const o = (await api.post('/api/aanmelden/passkey/opties', await ctx(lang, remember))).data as { uitdagingId: string; publicKey: AssertieOpties };
-    let assertie;
-    try { assertie = await passkeyBevestigen(o.publicKey); } catch (e) { throw alsFout(foutCode(e) || 'NotAllowedError'); }
+    const o = (await api.post('/api/aanmelden/passkey/opties', await ctx(lang, remember))).data as { uitdagingId: string; publicKey: PrfAssertieOpties };
+    let a;
+    try { a = await passkeyAanmeldenMetPrf(o.publicKey); } catch (e) { throw alsFout(foutCode(e) || 'NotAllowedError'); }
+    const { prf, prf2: _p2, ...assertie } = a;
     const r = (await api.post('/api/aanmelden/passkey/voltooien', { uitdagingId: o.uitdagingId, assertie })).data as Voltooid;
     if (r?.ok === false || r?.sessionCreated === false) throw alsFout(String(r?.reasonCode || 'AANMELDEN_MISLUKT'));
+    await kluisMeteenOpenen(prf, r?.kluis).catch(() => undefined);
     naSessie(r);
   }); };
   const extern = (aanbieder: 'microsoft' | 'discord' | 'apple') => doe(async () => {

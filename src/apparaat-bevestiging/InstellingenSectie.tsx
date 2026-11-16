@@ -4,7 +4,7 @@
 // toestaat), de teller van verkeerde symbolen met herstel (toegangssleutel), en de laatste verzoeken. Wijzigen vraagt een verse
 // toegangssleutel (zoals alles wat de beveiliging zelf raakt).
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { ChevronDown, MonitorSmartphone, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ChevronDown, MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { ecosystemTabContext } from '../tab-context';
 import Symbool from './Symbool';
 import { foutCode, herstellen, metSleutel, overzicht, voorkeurenOpslaan, type Ctx, type Overzicht } from './api';
@@ -126,6 +126,18 @@ export default function ApparaatInstellingenSectie({ lang, service = 'identity' 
           </span>
         </label>}
       </>}
+
+      {/* 16.11.2026 (Павло): «вибір завжди за користувачем». Telegram для «сильних» дій — типово вимкнено, з «!» і поясненням ризику. */}
+      <label className='apb-vinkje' data-telegram-sterk={vk.telegramSterk ? 'aan' : 'uit'}>
+        <input type='checkbox' checked={vk.telegramSterk} onChange={(e) => setVk({ ...vk, telegramSterk: e.target.checked })} />
+        <span className='apb-vinkje-tekst'>
+          <strong><span role='img' aria-label={tr(lang, 'Увага', 'Let op')} title={tr(lang, 'Не рекомендовано: див. пояснення нижче.', 'Niet aanbevolen: zie de uitleg hieronder.')} style={{ display: 'inline-flex', marginRight: 6, verticalAlign: '-2px' }}><AlertTriangle aria-hidden='true' style={{ width: 15, height: 15, color: 'var(--warning,#b86e00)' }} /></span>
+            {tr(lang, 'Telegram підтверджує й найважливіші дії', 'Telegram bevestigt ook de gevoeligste handelingen')}</strong>
+          <span className='apb-klein'>{tr(lang,
+            'Типово вимкнено. Найважливіші дії: відкликання прав, ключі доступу, шифрування даних, схвалення оновлень. Для них потрібен ключ доступу, код із застосунку або код відновлення. Ці способи живуть лише на вашому пристрої чи папері. Telegram — чужий сервіс: хто отримав доступ до вашого Telegram (вкрадений телефон, перехоплена SIM-картка для входу, сеанс на чужому комп’ютері) і знає або підгледів ваш таємний код, зможе підтвердити такі дії від вашого імені. Увімкніть, лише якщо Telegram захищено власним паролем (двоетапна перевірка) і таємний код довгий. Зміна сповіщається в центрі сповіщень.',
+            'Standaard uit. Gevoeligste handelingen: rechten intrekken, toegangssleutels, versleuteling, updates goedkeuren. Daarvoor is een toegangssleutel, app-code of herstelcode nodig. Die bestaan alleen op uw apparaat of op papier. Telegram is een externe dienst: wie toegang tot uw Telegram krijgt (gestolen telefoon, overgenomen simkaart voor het aanmelden, sessie op een vreemde computer) en uw geheime code kent of afkeek, kan zulke handelingen namens u bevestigen. Zet dit alleen aan als Telegram een eigen wachtwoord heeft (verificatie in twee stappen) en de geheime code lang is. De wijziging verschijnt in het meldingencentrum.')}</span>
+        </span>
+      </label>
 
       {(gewijzigd || melding) && <div className='apb-voet'>
         {gewijzigd && <button type='button' className='apb-knop apb-knop-hoofd' disabled={bezig} onClick={() => void opslaan()}>{tr(lang, 'Зберегти (ключ доступу)', 'Opslaan (toegangssleutel)')}</button>}

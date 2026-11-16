@@ -56,7 +56,8 @@ export async function main(): Promise<number> {
     check('прапорці: чотири окремі, з поясненням обома мовами; небезпечні три — з «!»',
       VLAGGEN.every((v) => VLAG_UITLEG[v]?.wat[0] && VLAG_UITLEG[v]?.gevolg[1]) && ['aanmelden-passkey', 'aanmelden-wachtwoord', 'aanmelden-extern'].every((v) => VLAG_UITLEG[v].naam[0].startsWith('!')));
     const pub = Object.keys(AANMELD_METHODEN_PUBLIEKE_ROUTES);
-    check('публічні маршрути входу — у PUBLIEKE_ROUTES (вартовий auth-poort), рівно ті самі 5', pub.length === 5 && pub.every((k) => k in PUBLIEKE_ROUTES));
+    // KLUIS-AANMELDEN (16.11): шостий — POST /api/aanmelden/kluis (одноразовий токен із відповіді входу passkey → DEK; доступ дає токен, а не сеанс).
+    check('публічні маршрути входу — у PUBLIEKE_ROUTES (вартовий auth-poort), рівно ті самі 6 (з /api/aanmelden/kluis)', pub.length === 6 && pub.includes('POST /api/aanmelden/kluis') && pub.every((k) => k in PUBLIEKE_ROUTES));
     check('вхід за email-посиланням свідомо НЕ створено (сайт не вміє надсилати листи від свого імені): жодного маршруту email/magic-link',
       !Object.keys(PUBLIEKE_ROUTES).some((k) => /aanmelden\/(email|magic|link)|magic-link|email-link/i.test(k)));
     const oud = plaatsingNormaliseren({ volgorde: ['telegram', 'google', 'github', 'apple', 'microsoft', 'passkey'], plek: { google: 'hoofd', telegram: 'andere' } });

@@ -15,7 +15,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Check, ChevronDown, Copy, Download, Fingerprint, KeyRound, Lock, LockOpen, MonitorSmartphone, X } from 'lucide-react';
 import { KLUIS_FOUT, KLUIS_TEKST, opmaakHerstelcode } from '../../shared/sleutelkluis';
 import { apparaatBewaren, apparaatDeel, apparaatOpruimen } from './kluis-apparaat';
-import { kanPrf, kekUitPrf, omslagOpenen, passkeyMetPrf, type PrfAssertieOpties } from './sleutelkluis-client';
+import { aanmeldOmslag, kanPrf, kekUitPrf, omslagOpenen, passkeyMetPrf, type PrfAssertieOpties } from './sleutelkluis-client';
 import './kluis-poort.css';
 
 type Lang = 'uk' | 'nl';
@@ -206,14 +206,16 @@ function KluisKaart() {
     try { await fn(); } catch (e) { const c = foutCode(e); if (!(stil && (c === 'NotAllowedError' || c === 'AbortError' || c === 'SecurityError'))) setFout(foutTekst(c)); } finally { setBezig(''); }
   };
   const ontgrendelPasskey = (stil = false) => doe('passkey', async () => {
-    const opt = (await postNu(`${P}/passkey/ontgrendelen/opties`, lichaam())).data as { uitdagingId: string; omslagen: Array<{ credentialId: string; envelop: string; aad: string }>; publicKey: PrfAssertieOpties };
+    const opt = (await postNu(`${P}/passkey/ontgrendelen/opties`, lichaam())).data as { uitdagingId: string; omslagen: Array<{ credentialId: string; envelop: string; aad: string; aanmeldAad?: string }>; publicKey: PrfAssertieOpties };
     const a = await passkeyMetPrf(opt.publicKey);
     if (!a.prf) { setFout(taal() === 'nl' ? KLUIS_TEKST.geenPrf.nl : KLUIS_TEKST.geenPrf.uk); setToonCode(true); return; }
     const omslag = opt.omslagen.find((x) => x.credentialId === a.credentialId);
     if (!omslag) throw Object.assign(new Error('SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG'), { name: 'SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG' });
     const dek = await omslagOpenen(await kekUitPrf(a.prf), omslag.envelop, omslag.aad);
-    const { prf: _p, ...assertie } = a;
-    await postNu(`${P}/passkey/ontgrendelen`, lichaam({ uitdagingId: opt.uitdagingId, assertie, dek }));
+    const { prf: _p, prf2, ...assertie } = a;
+    // KLUIS-AANMELDEN: dezelfde aanraking leverde ook de PRF met het aanmeldzout → voortaan opent de aanmelding met deze passkey de gegevens zelf.
+    const aanmeldEnvelop = await aanmeldOmslag(prf2, dek, omslag.aanmeldAad);
+    await postNu(`${P}/passkey/ontgrendelen`, lichaam({ uitdagingId: opt.uitdagingId, assertie, dek, ...(aanmeldEnvelop ? { aanmeldEnvelop } : {}) }));
     await naOpenen();
   }, stil);
   const ontgrendelCode = () => doe('code', async () => {
