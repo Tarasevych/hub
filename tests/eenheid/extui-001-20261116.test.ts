@@ -187,7 +187,7 @@ export async function main(): Promise<number> {
     // строк доступу — плитки PeriodeKiezer у обох вікнах, без випадного списку.
     const hsCss = readFileSync(join(W, 'src/extensie/host-schakelaar.css'), 'utf8');
     check('schakelaar: uit = dichte baan met duidelijke rand (niet doorschijnend), aan = kleur van de dienst (--a), data-accent op de rij',
-      /\.hs-schakel\{[^}]*background:color-mix\(in srgb,var\(--text,#1f2937\) 9%,var\(--surface,#fff\)\)/.test(hsCss) && !/\.hs-schakel\{[^}]*transparent\)/.test(hsCss)
+      /\.hs-schakel\{[^}]*background:color-mix\(in srgb,var\(--text,#1f2937\) 16%,var\(--surface,#fff\)\)/.test(hsCss) && !/\.hs-schakel\{[^}]*transparent\)/.test(hsCss)
       && /\.hs-schakel:checked\{background:var\(--a,var\(--ok/.test(hsCss) && /data-hs-host=\{host\} data-accent=/.test(hsBron));
     const pkVeld = ['src/extensie/ExtensiePrive.tsx', 'src/extensie/ExtensieOntgrendeling.tsx'].map((f) => readFileSync(join(W, f), 'utf8'));
     check('termijn: tegels (PeriodeKiezer) in privé en technisch, geen <select> meer voor dagen/duur',
