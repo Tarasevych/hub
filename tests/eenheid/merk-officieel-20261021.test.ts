@@ -123,6 +123,17 @@ export async function main(): Promise<number> {
   check('справжній логотип має перевагу над фігурою: шар «officieel» для Copilot і Claude', reg.merkLaag('copilot') === 'officieel' && reg.merkLaag('claude') === 'officieel');
   const copilot = renderToString(createElement(Merk, { merk: 'copilot', maat: 40 }));
   check('<Merk merk="copilot"> малює справжній файл (<img data-merk-officieel="copilot">), а не фігуру <path>', copilot.includes('data-merk-officieel="copilot"') && !copilot.includes('<path'), copilot.slice(0, 160));
+// AutoClaw (16.11.2026, Павло: «треба спочатку його знайти і встановити»): у відкритих пакетах знака немає, тому файл узято з
+  // власного сайту виробника (autoclaw.z.ai) — як для українських служб: soort 'officiele-site' з адресою джерела.
+  const ac = perBestand.get('autoclaw.png');
+  check('AutoClaw має справжній знак із власного сайту виробника (officiele-site, https://autoclaw.z.ai/…), а не перемальовану фігуру',
+    existsSync(`${MAP}/autoclaw.png`) && ac?.soort === 'officiele-site' && /^https:\/\/autoclaw\.z\.ai\//.test(String(ac?.bronUrl)) && OFFICIEEL_SLEUTELS.has('autoclaw') && reg.merkLaag('autoclaw') === 'officieel');
+  const NIEUW = ['cline', 'devin', 'opencode'];
+  const ws = perBestand.get('windsurf.svg');
+  check('нові агенти каталогу теж мають справжні знаки: Cline, Devin, OpenCode з пакета CC0, Windsurf — з windsurf.com', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel');
+  const acBeeld = renderToString(createElement(Merk, { merk: 'autoclaw', maat: 40 }));
+  check('<Merk merk="autoclaw"> малює файл як <img> з data-URI PNG — без зовнішньої адреси', acBeeld.includes('data-merk-officieel="autoclaw"') && acBeeld.includes('src="data:image/png;base64,') && !/src="https?:/.test(acBeeld));
+  check('генератор зберігає файли з власних сайтів і без --ua (перечитує їх із HERKOMST.json і звіряє sha256)', lees('scripts/merk-officieel-maken.mjs').includes("o.soort === 'officiele-site' && existsSync(join(UIT, o.bestand))") && lees('scripts/merk-officieel-maken.mjs').includes('sha(u.inhoud) !== o.sha256'));
   check('<Merk> завантажує базу й для марки з власною фігурою, якщо для неї є справжній файл', lees('src/merk/Merk.tsx').includes('else if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel)) void laadOfficieel();'));
   return einde();
 }

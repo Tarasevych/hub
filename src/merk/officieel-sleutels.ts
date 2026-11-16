@@ -1,3 +1,3 @@
 // GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen. Welke merken een officieel bestand hebben.
 // Згенеровано scripts/merk-officieel-maken.mjs — які марки мають справжній логотип у вбудованій базі.
-export const OFFICIEEL_SLEUTELS: ReadonlySet<string> = new Set(["antigravity","claude","codex","copilot","cursor","edge","gemini","gpt","grok","microsoft","microsoftazure","microsoftonedrive","microsoftonenote","microsoftoutlook","microsoftteams","mondaydotcom","node","oauth","pipedrive","webhook","windows","yahoo"]);
+export const OFFICIEEL_SLEUTELS: ReadonlySet<string> = new Set(["antigravity","autoclaw","claude","cline","codex","copilot","cursor","devin","edge","gemini","gpt","grok","microsoft","microsoftazure","microsoftonedrive","microsoftonenote","microsoftoutlook","microsoftteams","mondaydotcom","node","oauth","opencode","pipedrive","webhook","windows","windsurf","yahoo"]);

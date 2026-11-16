@@ -61,6 +61,11 @@ const KEUZE = [
   { sleutel: 'copilot', pakket: '@iconify-json/logos', icoon: 'github-copilot' },
   { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
   { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
+  // 16.11.2026: нові агенти каталогу (Cline, Devin, OpenCode) — теж справжні знаки з того самого пакета CC0, а не літери на плитці.
+  // Windsurf і AutoClaw немає в жодному відкритому пакеті: їхні файли взято з власних сайтів (soort 'officiele-site', --ua).
+  { sleutel: 'cline', pakket: '@iconify-json/logos', icoon: 'cline-icon' },
+  { sleutel: 'devin', pakket: '@iconify-json/logos', icoon: 'devin' },
+  { sleutel: 'opencode', pakket: '@iconify-json/logos', icoon: 'opencode-icon' },
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:
@@ -94,6 +99,15 @@ const lock = JSON.parse(readFileSync(join(WORTEL, 'package-lock.json'), 'utf8'))
 const herkomst = [];
 const tabel = {};
 mkdirSync(UIT, { recursive: true });
+// Bestanden van de EIGEN website van een merk (soort 'officiele-site', bv. AutoClaw) blijven bewaard als het script zonder --ua
+// draait: ze worden vóór het opruimen ingelezen en hieronder opnieuw gecontroleerd en teruggezet. Zo verdwijnt een echt logo niet
+// bij een gewone hergeneratie. Файли з власного сайту марки зберігаються й при звичайній перегенерації (16.11.2026).
+const bewaard = [];
+if (existsSync(join(UIT, 'HERKOMST.json'))) {
+  for (const o of JSON.parse(readFileSync(join(UIT, 'HERKOMST.json'), 'utf8')).regels || []) {
+    if (o.soort === 'officiele-site' && existsSync(join(UIT, o.bestand))) bewaard.push({ regel: o, inhoud: readFileSync(join(UIT, o.bestand)) });
+  }
+}
 for (const f of readdirSync(UIT)) if (/\.(svg|png)$/.test(f)) rmSync(join(UIT, f));
 
 for (const k of KEUZE) {
@@ -148,6 +162,16 @@ if (UA_MAP && existsSync(join(UA_MAP, 'bron.json'))) {
     herkomst.push(regel);
     tabel[sleutel] = { soort, inhoud: soort === 'svg' ? u.inhoud.toString('utf8') : u.inhoud.toString('base64'), sha256: regel.sha256, ondergrond: regel.ondergrond, bron: `${url} · handelsmerk van de eigenaar` };
   }
+}
+
+for (const { regel: o, inhoud: oud } of bewaard) {
+  if (tabel[o.sleutel]) continue;
+  const soort = o.bestand.endsWith('.png') ? 'png' : 'svg';
+  const u = controleerMerkEigen(soort, oud);
+  if (!u.ok || sha(u.inhoud) !== o.sha256) { console.error(`niet teruggezet ${o.sleutel}: ${u.ok ? 'sha256 wijkt af van HERKOMST.json' : u.reden}`); continue; }
+  writeFileSync(join(UIT, o.bestand), u.inhoud);
+  herkomst.push(o);
+  tabel[o.sleutel] = { soort, inhoud: soort === 'svg' ? u.inhoud.toString('utf8') : u.inhoud.toString('base64'), sha256: o.sha256, ondergrond: o.ondergrond, bron: `${o.bronUrl} · handelsmerk van de eigenaar` };
 }
 
 herkomst.sort((a, b) => a.sleutel.localeCompare(b.sleutel));

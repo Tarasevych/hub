@@ -20,6 +20,19 @@
       "ondergrond": "vrij"
     },
     {
+      "sleutel": "autoclaw",
+      "bestand": "autoclaw.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://autoclaw.z.ai/apple-touch-icon.png",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 11861,
+      "sha256": "a1ba1e26f49b11ece4f988c9c2d83f5d132d5bc531694da7917b627979cb03a4",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "claude",
       "bestand": "claude.svg",
       "soort": "pakket",
@@ -36,6 +49,24 @@
       "bytes": 2031,
       "sha256": "2ed054e6ec993e01dc5af84a41b6a48fc58ccbc30278b0804711a7f3f1c82d74",
       "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "cline",
+      "bestand": "cline.svg",
+      "soort": "pakket",
+      "pakket": "@iconify-json/logos",
+      "versie": "1.2.17",
+      "integriteit": "sha512-ruCr6y5h8FW+loXwRJkz+6cJj3njyX5Ccpi+ifMgaWZPbTSCbsCccNyGomZxIdhoyDKNOmNdZuURC3tyBvDr7A==",
+      "icoon": "cline-icon",
+      "verzameling": "SVG Logos",
+      "auteur": "Gil Barbara",
+      "bronUrl": "https://github.com/gilbarbara/logos",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+      "mime": "image/svg+xml",
+      "bytes": 878,
+      "sha256": "a42078e76d570e9b5bf6648a46ea4099d8b2dd9276ebb15c5c6e3d7ce841b926",
+      "ondergrond": "licht"
     },
     {
       "sleutel": "codex",
@@ -89,6 +120,24 @@
       "mime": "image/svg+xml",
       "bytes": 555,
       "sha256": "1708f642afc11b3bcd10dbdef266c2126c0e9fa0afe9c1fbea4a440e13ec5658",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "devin",
+      "bestand": "devin.svg",
+      "soort": "pakket",
+      "pakket": "@iconify-json/logos",
+      "versie": "1.2.17",
+      "integriteit": "sha512-ruCr6y5h8FW+loXwRJkz+6cJj3njyX5Ccpi+ifMgaWZPbTSCbsCccNyGomZxIdhoyDKNOmNdZuURC3tyBvDr7A==",
+      "icoon": "devin",
+      "verzameling": "SVG Logos",
+      "auteur": "Gil Barbara",
+      "bronUrl": "https://github.com/gilbarbara/logos",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+      "mime": "image/svg+xml",
+      "bytes": 959,
+      "sha256": "f4fc1ebafe00c71d381b731d8cb3fa86ca615d6ad11702a833a2481b76acbebc",
       "ondergrond": "licht"
     },
     {
@@ -329,6 +378,24 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "opencode",
+      "bestand": "opencode.svg",
+      "soort": "pakket",
+      "pakket": "@iconify-json/logos",
+      "versie": "1.2.17",
+      "integriteit": "sha512-ruCr6y5h8FW+loXwRJkz+6cJj3njyX5Ccpi+ifMgaWZPbTSCbsCccNyGomZxIdhoyDKNOmNdZuURC3tyBvDr7A==",
+      "icoon": "opencode-icon",
+      "verzameling": "SVG Logos",
+      "auteur": "Gil Barbara",
+      "bronUrl": "https://github.com/gilbarbara/logos",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+      "mime": "image/svg+xml",
+      "bytes": 247,
+      "sha256": "237cd83c7539cdd31e7ce650b4f25ad7ec8668f212c1e5bc50bd5379d54c68eb",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "pipedrive",
       "bestand": "pipedrive.svg",
       "soort": "pakket",
@@ -382,6 +449,19 @@
       "bytes": 226,
       "sha256": "fcc2b060ad224347d4c4766e477cfac8cc4a670a2bb3e878b904a3898bfa087a",
       "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "windsurf",
+      "bestand": "windsurf.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://windsurf.com/favicon.svg",
+      "opgehaald": "2026-11-16",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 1343,
+      "sha256": "d867680ef7ee0c44befeb16a3fb509a6453e5c9215f6d0fff6a1c0e56a92a79b",
+      "ondergrond": "licht"
     },
     {
       "sleutel": "yahoo",
