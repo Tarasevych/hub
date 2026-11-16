@@ -208,6 +208,9 @@ export async function main(): Promise<number> {
     check('beleid: standaardgrenzen in «Toegang» = die van de server (geen stille 30 dagen meer); venster toont de grens met «Змінити»',
       /priveMaxDagen: MAX_DAGEN, technischMaxMinuten: MAX_MINUTEN/.test(model) && !/'prive_max_dagen', 30,/.test(model)
       && /data-eo-grens='1'/.test(pkVeld[0]) && /href='#toegang' data-eo-grens-link='1'/.test(pkVeld[0]) && !/maxDagen \?\? 30/.test(pkVeld[0]));
+    // 16.11 (Павло: «значки всі в один ряд, а не щоб одна переносилася»): плитки строку не переносяться.
+    const pkCss = readFileSync(join(W, 'src/extensie/periode-kiezer.css'), 'utf8');
+    check('termijn-tegels staan op één rij (geen wrap), ook «tot datum» op de telefoon', /\.pk-tegels\{display:flex;flex-wrap:nowrap/.test(pkCss) && /\.pk-tegel\{flex:1 1 0;min-width:0/.test(pkCss) && !/\.pk-tegels\{[^}]*flex-wrap:wrap/.test(pkCss));
     check('AI_SITE_HOSTS en AI_SITE_TYPES: TS (server) = JS (extensie)', JSON.stringify(shared.AI_SITE_HOSTS) === JSON.stringify(TS.AI_SITE_HOSTS) && JSON.stringify(shared.AI_SITE_TYPES) === JSON.stringify(TS.AI_SITE_TYPES));
     // Телефон: сітка сайтів не ширша за свій блок, а телефонний шар стоїть останнім у файлі (інакше пізніші правила його перекривають).
     const cssOntgr = readFileSync(join(W, 'src/extensie/ExtensieOntgrendeling.css'), 'utf8');

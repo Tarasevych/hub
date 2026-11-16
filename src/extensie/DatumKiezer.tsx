@@ -33,6 +33,7 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
   const [jaar, setJaar] = useState(() => new Date(start).getFullYear());
   const [maand, setMaand] = useState(() => new Date(start).getMonth());
   const [dag, setDag] = useState<number | null>(() => (waarde ? dagBegin(waarde) : null));
+  const [tijdOpen, setTijdOpen] = useState(false);
   const [tijd, setTijd] = useState(() => { const d = new Date(start); return `${String(d.getHours()).padStart(2, '0')}:${String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0')}`; });
 
   const maandNamen = useMemo(() => Array.from({ length: 12 }, (_, m) => new Date(2026, m, 1).toLocaleDateString(taal, { month: 'short' }).replace('.', '')), [taal]);
@@ -104,13 +105,10 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
       )}
 
       <div className='dk-voet'>
-        <label className='dk-tijd' title={uk ? 'О котрій доступ закриється того дня' : 'Hoe laat de toegang die dag sluit'}>
-          <Clock aria-hidden='true' />
-          <span>{uk ? 'о' : 'om'}</span>
-          <select data-hulp-vrij='keuze' value={tijd} onChange={(e) => setTijd(e.target.value)} aria-label={uk ? 'Час закриття' : 'Sluittijd'} data-dk-tijd='1'>
-            {Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, '0')}:${String((i % 4) * 15).padStart(2, '0')}`).map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
+        <button type='button' className={`dk-tijd${tijdOpen ? ' is-open' : ''}`} onClick={() => setTijdOpen((o) => !o)} aria-expanded={tijdOpen} data-dk-tijd='1'
+          title={uk ? 'О котрій доступ закриється обраного дня. Натисніть, щоб змінити годину й хвилини' : 'Hoe laat de toegang op de gekozen dag sluit. Klik om uur en minuten te wijzigen'}>
+          <Clock aria-hidden='true' /><b>{tijd}</b><ChevronDown className='dk-tijd-pijl' aria-hidden='true' />
+        </button>
         <span className='dk-knoppen'>
           <button type='button' className='dk-knop' onClick={onSluit}>{uk ? 'Скасувати' : 'Annuleren'}</button>
           <button type='button' className='dk-knop is-hoofd' disabled={gekozen === null} onClick={() => gekozen !== null && onKies(gekozen)} data-dk-kies='1'
@@ -119,6 +117,24 @@ export default function DatumKiezer({ uk, min, max, waarde, onKies, onSluit }: D
           </button>
         </span>
       </div>
+      {tijdOpen ? (
+        <div className='dk-tijdpaneel' data-dk-tijdpaneel='1'>
+          <span className='dk-tijdkop'>{uk ? 'Година' : 'Uur'}</span>
+          <div className='dk-uren' role='group' aria-label={uk ? 'Година закриття' : 'Uur van sluiten'}>
+            {Array.from({ length: 24 }, (_, u) => String(u).padStart(2, '0')).map((u) => (
+              <button key={u} type='button' className={`dk-cel is-klein${tijd.slice(0, 2) === u ? ' is-aan' : ''}`} aria-pressed={tijd.slice(0, 2) === u}
+                onClick={() => setTijd(`${u}:${tijd.slice(3)}`)} data-dk-uur={u}>{u}</button>
+            ))}
+          </div>
+          <span className='dk-tijdkop'>{uk ? 'Хвилини' : 'Minuten'}</span>
+          <div className='dk-minuten' role='group' aria-label={uk ? 'Хвилини закриття' : 'Minuten van sluiten'}>
+            {['00', '15', '30', '45'].map((m) => (
+              <button key={m} type='button' className={`dk-cel is-klein${tijd.slice(3) === m ? ' is-aan' : ''}`} aria-pressed={tijd.slice(3) === m}
+                onClick={() => { setTijd(`${tijd.slice(0, 2)}:${m}`); setTijdOpen(false); }} data-dk-minuut={m}>:{m}</button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {gekozen !== null ? <p className='dk-samenvatting'>{uk ? 'Закриється ' : 'Sluit op '}<b>{new Date(gekozen).toLocaleString(taal, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</b></p> : null}
     </div>
   );

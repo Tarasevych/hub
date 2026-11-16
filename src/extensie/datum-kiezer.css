@@ -30,14 +30,24 @@
 :is(html) .dk-dag:disabled,:is(html) .dk-cel:disabled{opacity:.28;cursor:default}
 :is(html) .dk-dag:focus-visible,:is(html) .dk-cel:focus-visible,:is(html) .dk-pijl:focus-visible,:is(html) .dk-titel:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:1px}
 .dk-voet{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--line,#d7dee8)}
-:is(html) .dk-tijd{display:flex;align-items:center;gap:6px;margin:0;font-size:.88rem;color:var(--muted)}
+:is(html) .dk-tijd{display:inline-flex;align-items:center;gap:6px;min-height:36px;margin:0;padding:0 10px 0 12px;border:1px solid var(--line,#d7dee8);border-radius:99px;
+  background:color-mix(in srgb,var(--accent,#2f6f73) 8%,transparent);color:var(--text);font:inherit;cursor:pointer}
 .dk-tijd svg{width:16px;height:16px;color:var(--accent,#2f6f73)}
-:is(html) .dk-tijd select{width:auto;min-height:36px;padding:0 8px;border:1px solid var(--line,#d7dee8);border-radius:10px;background:var(--surface,#fff);color:var(--text);font:inherit;font-variant-numeric:tabular-nums}
+.dk-tijd b{font-weight:600;font-variant-numeric:tabular-nums}
+.dk-tijd .dk-tijd-pijl{width:14px;height:14px;transition:transform .2s ease}
+.dk-tijd.is-open .dk-tijd-pijl{transform:rotate(180deg)}
+:is(html) .dk-tijd:hover,:is(html) .dk-tijd.is-open{border-color:color-mix(in srgb,var(--accent,#2f6f73) 50%,var(--line,#d7dee8))}
+:is(html) .dk-tijd:focus-visible{outline:2px solid var(--accent,#2f6f73);outline-offset:1px}
+.dk-tijdpaneel{display:grid;gap:6px;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--text,#1f2937) 4%,transparent);animation:dk-zoom-in .18s ease-out}
+.dk-tijdkop{font-size:.72rem;color:var(--muted)}
+.dk-uren{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.dk-minuten{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+:is(html) .dk-cel.is-klein{min-height:34px;font-size:.85rem}
 .dk-knoppen{display:flex;gap:6px}
 :is(html) .dk-knop{min-height:36px;margin:0;padding:0 14px;border:1px solid var(--line,#d7dee8);border-radius:10px;background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
 :is(html) .dk-knop.is-hoofd{border-color:var(--accent,#2f6f73);background:var(--accent,#2f6f73);color:var(--text-on-accent,#fff)}
 :is(html) .dk-knop:disabled{opacity:.45;cursor:default}
 .dk-samenvatting{margin:0;font-size:.82rem;color:var(--muted)}
 .dk-samenvatting b{color:var(--text);font-weight:600}
-@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel,.dk-titel-pijl{transition:none}.dk-zoom-uit,.dk-zoom-in{animation:none}}
-@media (max-width:420px){:is(html) .dk{padding:10px}:is(html) .dk-dag{min-height:34px}}
+@media (prefers-reduced-motion:reduce){:is(html) .dk-dag,:is(html) .dk-cel,.dk-titel-pijl{transition:none}.dk-zoom-uit,.dk-zoom-in,.dk-tijdpaneel{animation:none}.dk-tijd .dk-tijd-pijl{transition:none}}
+@media (max-width:420px){:is(html) .dk{padding:10px}.dk-voet{flex-wrap:nowrap;gap:6px}.dk-knoppen{gap:4px}:is(html) .dk-knop{padding:0 10px}:is(html) .dk-tijd{padding:0 8px 0 10px}:is(html) .dk-dag{min-height:34px}}
