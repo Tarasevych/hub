@@ -944,6 +944,11 @@ async function guarded(r, msg, bron) {
   // 0.9.5 (EXTUI-001): адресу сайту ШІ можна лише читати — не відкривати, не переходити туди (дзеркало перевірки на сервері).
   if (typeof params.url === 'string' && isAiSiteUrl(params.url) && !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.');
   if (type === 'browser.self_test') return selfTest(r);
+  // 0.9.6 (LAI-CON-001): ingebouwde AI van Chrome — geen tabblad nodig; alleen van de server (ondertekend), nooit van de lokale agent.
+  if (type === 'browser.lokale_ai') {
+    if (bron !== 'ws') throw new Error('EXTENSIE_LOKAAL: the local agent cannot use the built-in AI through the extension');
+    return lokaleAiVoorAgent(r, st, params);
+  }
   // Profiel en account van de kandidaten VERS bij de brug ophalen: altijd voor lijstopdrachten, anders alleen voor wie onbekend is.
   await verversProfielen(inBereik, lijstOpdracht);
   if (type === 'browser.tabs' || (type === 'browser.pages' && params.action === 'new') || type === 'browser.navigate') return run(r, type, params, null, inBereik, tabOk, msg);
@@ -1684,6 +1689,45 @@ async function naarOffscreen(bericht) {
   return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
 }
 const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+/**
+ * 0.9.6 (LAI-CON-001): browser_local_ai van een AI-agent via de connector (ondertekende opdracht van DIT slot). De tekst staat niet
+ * in de opdracht: de extensie haalt hem één keer op met het eigen token (POST /api/owner/agents/overdracht, soort 'lokale-ai').
+ * Volgorde: beleid van de beheerder → hoofdschakelaar → functie aan → limieten → ticket → offscreen.html. Nooit een modeldownload.
+ */
+async function lokaleAiVoorAgent(r, st, params) {
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) throw new Error(`EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.door ? ` (${beleid.door})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.reden}". Tell the user; do not retry.`);
+  const inst = await lokaleAiInstellingen();
+  if (inst.aan === false) throw new Error('EXTENSIE_LOKALE_AI_UIT: the user switched the built-in AI off in the extension settings («Вбудований ШІ Chrome»). Tell the user; do not retry.');
+  if (inst.apis && typeof inst.apis === 'object' && inst.apis[params.modus] === false) throw new Error(`EXTENSIE_LOKALE_AI_UIT: the user switched the function "${params.modus}" off in the extension settings. Tell the user; do not retry.`);
+  const sleutel = `agent:${r}`;
+  const nu = Date.now();
+  const lijst = (lokaleAiTeller.get(sleutel) || []).filter((x) => nu - x < 60_000);
+  if (lijst.length >= 20) throw new Error('EXTENSIE_LOKALE_AI_TE_VEEL: at most 20 requests per minute. Wait a minute.');
+  if (lokaleAiLopend.size >= 2) throw new Error('EXTENSIE_LOKALE_AI_BEZIG: two requests are already running on this computer. Try again in a moment.');
+  lijst.push(nu); lokaleAiTeller.set(sleutel, lijst);
+  const id = `${nu}-${Math.random().toString(36).slice(2)}`;
+  lokaleAiLopend.add(id);
+  try {
+    let tekst = '';
+    try {
+      const res = await fetch(`${st.server}/api/owner/agents/overdracht`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.agentToken}` }, credentials: 'omit', cache: 'no-store',
+        body: JSON.stringify({ ticket: params.ticket }),
+      });
+      const j = res.ok ? await res.json() : null;
+      tekst = j && j.soort === 'lokale-ai' && j.payload && typeof j.payload.tekst === 'string' ? j.payload.tekst.slice(0, 20000) : '';
+    } catch { tekst = ''; }
+    if (!tekst) throw new Error('EXTENSIE_LOKALE_AI_TICKET: the text could not be fetched (the one-time ticket expired or was already used). Call the tool again.');
+    const uit = await naarOffscreen({ op: 'lokale-ai-voer', id, modus: params.modus, tekst, vanTaal: params.bron, naarTaal: params.doel, limietMs: 120000 });
+    if (!uit || uit.ok !== true) {
+      const reden = uit && typeof uit.reason === 'string' ? uit.reason.slice(0, 60) : 'FOUT';
+      throw new Error(`EXTENSIE_LOKALE_AI: ${reden}${uit && uit.detail ? ` — ${String(uit.detail).slice(0, 300)}` : ''}${reden === 'MODEL_NIET_GELADEN' ? ' (the user must download the model with a click in the extension settings; this tool never downloads it)' : ''}`);
+    }
+    return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true };
+  } finally { lokaleAiLopend.delete(id); }
+}
+
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
   // 0.9.6 (LAI-CON-001): beheerder zette het uit → weigeren MET reden en wie (de site toont dat; nooit stil weigeren).

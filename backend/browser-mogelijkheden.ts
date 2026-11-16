@@ -15,6 +15,8 @@ export const BROWSER_TYPES = [
   'browser.audit',
   // 0.7 (0110, zone E): evaluate_script via de debugger (cap browser.script; alleen technisch slot, pakket «diagnose», vinkje in de matrix).
   'browser.script',
+  // LAI-CON-001 (0.9.6): ingebouwde AI van Chrome (offscreen.html); cap browser.read, beleid «Локальний ШІ» van de beheerder.
+  'browser.lokale_ai',
 ] as const;
 export type BrowserType = typeof BROWSER_TYPES[number];
 

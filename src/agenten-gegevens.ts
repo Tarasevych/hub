@@ -38,7 +38,7 @@ export const COMMAND_LABELS: Record<string, [string, string]> = {
   'fs.stat': ['Відомості про файл', 'Bestandsgegevens'], 'fs.search': ['Пошук файлів', 'Bestanden zoeken'],
   'browser.hover': ['Наведення на елемент', 'Element aanwijzen'], 'browser.fill_form': ['Заповнення форми', 'Formulier invullen'], 'browser.pages': ['Керування вкладками (відкрити/перемкнути/закрити)', 'Tabbladen beheren (openen/wisselen/sluiten)'],
   'browser.console': ['Читання консолі сторінки', 'Console van de pagina lezen'], 'browser.network': ['Читання мережевих запитів сторінки', 'Netwerkverzoeken van de pagina lezen'],
-  'browser.self_test': ['Самоперевірка розширення', 'Zelftest van de extensie'], 'browser.audit': ['Аудит сторінки', 'Paginacontrole'], 'browser.script': ['Виконання скрипту на сторінці', 'Script uitvoeren op de pagina'],
+  'browser.self_test': ['Самоперевірка розширення', 'Zelftest van de extensie'], 'browser.audit': ['Аудит сторінки', 'Paginacontrole'], 'browser.lokale_ai': ['Локальний ШІ Chrome на вашому ПК', 'Lokale AI van Chrome op uw pc'], 'browser.script': ['Виконання скрипту на сторінці', 'Script uitvoeren op de pagina'],
 };
 export const commandLabel = (type: string, tr: Tr) => { const l = COMMAND_LABELS[type]; return l ? tr(l[0], l[1]) : tr(`Невідома дія «${type}»`, `Onbekende actie «${type}»`); };
 export const STATUS_LABELS: Record<string, [string, string]> = {

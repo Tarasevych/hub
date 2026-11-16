@@ -134,6 +134,7 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   take_screenshot: 'browser.screenshot',
   browser_get_diagnostics: 'browser.diagnose',
   browser_audit: 'browser.diagnose',
+  browser_local_ai: 'browser.read',
   browser_get_deep_diagnostics: 'browser.diagnose',
   new_page: 'browser.navigate',
   navigate_page: 'browser.navigate',

@@ -78,8 +78,15 @@ function nepOmgeving(local: Record<string, any>, session: Record<string, any>, t
     runtime: {
       id: ID, getURL: (p: string) => `${BASIS}${p}`, getManifest: () => JSON.parse(readFileSync(join(W, 'extension/manifest.json'), 'utf8')),
       onMessage: ev(L.intern), onMessageExternal: ev(L.extern), onInstalled: ev(), onStartup: ev(), openOptionsPage: async () => undefined,
-      sendMessage: async (m: any) => { pushes.push(structuredClone(m)); return undefined; },
+      // LAI-CON-001: berichten aan offscreen.html (doel 'offscreen') krijgen een nep-antwoord, zoals het echte document zou geven.
+      sendMessage: async (m: any) => {
+        pushes.push(structuredClone(m));
+        if (m && m.doel === 'offscreen' && m.op === 'lokale-ai-voer') return { ok: true, tekst: `SAMENVATTING(${String(m.tekst).length})`, notities: [] };
+        if (m && m.doel === 'offscreen' && m.op === 'lokale-ai-stand') return { ok: true, aan: true, apis: {} };
+        return undefined;
+      },
     },
+    offscreen: { hasDocument: async () => true, createDocument: async () => undefined, closeDocument: async () => undefined },
     storage: { local: opslag(local), session: opslag(session), onChanged: ev() },
     alarms: { create: (n: string, o: any) => { alarmen[n] = o; }, clear: async (n: string) => { const had = n in alarmen; delete alarmen[n]; return had; }, onAlarm: ev(L.alarm) },
     tabs: {
@@ -149,6 +156,8 @@ export async function main(): Promise<number> {
     if (String(url).endsWith('/api/owner/agents/ws-ticket')) return json({ ticket: 'eenmalig-ticket' });
     if (String(url).endsWith('/api/owner/agents/self')) return json({ enabled: true, active: true, ruimte: 'technisch', techRecht: true, email: 'pavlo@test.invalid' });
     if (String(url).includes('/downloads/')) return json({}, 404);
+    // LAI-CON-001: eenmalig ticket voor browser.lokale_ai — alleen het bekende ticket geeft tekst, elk ander → 404 (zoals de server).
+    if (String(url).endsWith('/api/owner/agents/overdracht')) return JSON.parse(String(init.body || '{}')).ticket === 't'.repeat(43) ? json({ soort: 'lokale-ai', payload: { tekst: 'GEHEIM-LOKALE-TEKST' } }) : json({ error: 'TICKET_ONGELDIG' }, 404);
     return json({ ok: true });
   };
   g.WebSocket = NepWS;
@@ -314,6 +323,31 @@ export async function main(): Promise<number> {
     check("browser.audit (cap browser.read) → op 'audit' naar de brug", r7?.ok === true && r7.data?.soort === 'beveiliging' && tabOps().includes('audit'));
     const r8 = await opdracht('browser.audit', { soort: 'cookies' });
     check('browser.audit met onbekende soort → geweigerd', r8?.ok === false && /^EXTENSIE_PARAMS/.test(r8.error));
+
+    // ---- LAI-CON-001 (0.9.6): browser.lokale_ai — tekst via eenmalig ticket (overdracht), rekenen in offscreen.html, nooit tekst in params
+    {
+      const TICKET = 't'.repeat(43);
+      const voorFetch = fetches.length;
+      const l1 = await opdracht('browser.lokale_ai', { modus: 'summarizer', ticket: TICKET, tekens: 18, doel: 'uk' });
+      const haal = fetches.slice(voorFetch).find((x) => x.url.endsWith('/api/owner/agents/overdracht'));
+      const naarOff = env.pushes.filter((m: any) => m && m.doel === 'offscreen' && m.op === 'lokale-ai-voer').pop();
+      check('browser.lokale_ai: ticket opgehaald met het eigen agenttoken, tekst naar offscreen (functie + doeltaal), resultaat terug',
+        l1?.ok === true && l1.data?.tekst === 'SAMENVATTING(19)' && l1.data?.opApparaat === true && !!haal && /^Bearer /.test(String(haal.init?.headers?.Authorization))
+        && JSON.parse(String(haal.init.body)).ticket === TICKET && naarOff?.tekst === 'GEHEIM-LOKALE-TEKST' && naarOff?.modus === 'summarizer' && naarOff?.naarTaal === 'uk', JSON.stringify({ l1, naarOff }));
+      const l2 = await opdracht('browser.lokale_ai', { modus: 'summarizer', ticket: TICKET, tekst: 'tekst hoort niet in params' });
+      check('browser.lokale_ai met de tekst zelf in params → EXTENSIE_PARAMS (onbekende sleutel)', l2?.ok === false && /^EXTENSIE_PARAMS/.test(l2.error), JSON.stringify(l2));
+      const l3 = await opdracht('browser.lokale_ai', { modus: 'rm', ticket: TICKET });
+      check('browser.lokale_ai met onbekende functie → EXTENSIE_PARAMS', l3?.ok === false && /^EXTENSIE_PARAMS/.test(l3.error));
+      const l4 = await opdracht('browser.lokale_ai', { modus: 'translator', ticket: 'v'.repeat(43) });
+      check('verlopen of al gebruikt ticket → EXTENSIE_LOKALE_AI_TICKET (geen tekst = niets naar offscreen)', l4?.ok === false && /^EXTENSIE_LOKALE_AI_TICKET/.test(l4.error), JSON.stringify(l4));
+      ws.ontvang({ t: 'settings', epoch: 1, caps: ['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.console', 'browser.debug'].map((c) => ({ capability: c, domains: [] })), blocked: false,
+        lokaleAi: { aan: false, reden: 'Tijdelijk uit tijdens de audit', door: 'beheer@test.invalid', op: 1 } });
+      await new Promise((ok) => setTimeout(ok, 50));
+      const l5 = await opdracht('browser.lokale_ai', { modus: 'summarizer', ticket: TICKET });
+      check('beleid van de beheerder uit → EXTENSIE_BELEID_LOKALE_AI met reden en wie', l5?.ok === false && /^EXTENSIE_BELEID_LOKALE_AI/.test(l5.error) && l5.error.includes('Tijdelijk uit tijdens de audit') && l5.error.includes('beheer@test.invalid'), JSON.stringify(l5));
+      ws.ontvang({ t: 'settings', epoch: 1, caps: ['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.console', 'browser.debug'].map((c) => ({ capability: c, domains: [] })), blocked: false, lokaleAi: { aan: true } });
+      await new Promise((ok) => setTimeout(ok, 50));
+    }
 
     // ---- netwerk via chrome.webRequest: alleen ontgrendeld en host ∈ domeinen
     for (const f of env.L.netBegin) { f({ requestId: 'r1', tabId: 5, timeStamp: 100, url: 'https://admin.tarasevych.com/api/b?token=geheim', method: 'POST', type: 'xmlhttprequest' }); f({ requestId: 'r2', tabId: 6, timeStamp: 100, url: 'https://mail.tarasevych.com/api/c', method: 'GET', type: 'fetch' }); }

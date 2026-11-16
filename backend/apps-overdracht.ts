@@ -7,7 +7,9 @@
 // - Alles leeft alleen in het geheugen van dit proces (na een herstart opnieuw vragen); niets wordt gelogd.
 import { randomBytes } from 'node:crypto';
 
-export type OverdrachtSoort = 'bundel' | 'geheim';
+// LAI-CON-001 (16.11.2026): 'lokale-ai' = tekst voor de ingebouwde AI van Chrome (browser_local_ai). Zo staat de tekst van de
+// gebruiker nooit in app.agent_commands.params; alleen de browserextensie van dezelfde gebruiker haalt hem één keer op.
+export type OverdrachtSoort = 'bundel' | 'geheim' | 'lokale-ai';
 type Ticket = { agentId: string; userId: string; soort: OverdrachtSoort; payload: unknown; bytes: number; verloopt: number };
 export type GeheimVerzoek = {
   id: string; userId: string; agentId: string; agentNaam: string; app: string; sleutel: string; uitleg: string;
@@ -45,13 +47,15 @@ export function maakTicket(agentId: string, userId: string, soort: OverdrachtSoo
 }
 
 /** Eén keer ophalen, alleen door de agent waarvoor het ticket gemaakt is. Fout ticket of andere agent → null (en het ticket blijft niet bestaan). */
-export function haalTicket(agentId: string, id: string): { soort: OverdrachtSoort; payload: unknown } | null {
+export function haalTicket(agentId: string, id: string, soorten?: readonly OverdrachtSoort[]): { soort: OverdrachtSoort; payload: unknown } | null {
   opruimen();
   if (!TICKET_RE.test(id)) return null;
   const t = tickets.get(id);
   if (!t) return null;
   tickets.delete(id); // eenmalig, ook bij een verkeerde agent (een gelekt ticket is daarna waardeloos)
   if (t.agentId !== agentId) return null;
+  // LAI-CON-001: de route geeft per soort agent aan welke soorten mogen (een browser alleen 'lokale-ai', nooit bundels of geheimen).
+  if (soorten && !soorten.includes(t.soort)) return null;
   return { soort: t.soort, payload: t.payload };
 }
 

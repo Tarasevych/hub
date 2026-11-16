@@ -42,6 +42,7 @@ export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.stat', 'fs.search', 'fs.
   'browser.screenshot', 'browser.tabs', 'browser.history', 'browser.scroll', 'browser.wait', 'browser.select', 'browser.key', 'browser.deep_diagnostics',
   'browser.console', 'browser.network', 'browser.hover', 'browser.fill_form', 'browser.pages', 'browser.self_test', 'browser.audit',
   'browser.script', // 0110 (zone E): evaluate_script via de debugger, alleen technisch slot
+  'browser.lokale_ai', // LAI-CON-001: ingebouwde AI van Chrome; tekst via een eenmalig ticket (apps-overdracht), nooit in params
   'apps.deploy', 'apps.status', 'apps.list', 'apps.logs', 'apps.versions', 'apps.rollback', 'apps.control',
   'apps.route', 'apps.secret.list', 'apps.secret.set', 'apps.secret.delete'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];

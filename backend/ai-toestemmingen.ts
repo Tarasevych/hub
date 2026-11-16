@@ -38,6 +38,8 @@ export const TYPE_CAPABILITY: Readonly<Record<string, Capability>> = Object.free
   'browser.wait': 'browser.read', 'browser.console': 'browser.read', 'browser.network': 'browser.read', 'browser.self_test': 'browser.read',
   // 0.5 (0072): prestaties/beveiliging/DOM-structuur van de open pagina, zonder waarden van velden, cookies of querystrings.
   'browser.audit': 'browser.read',
+  // LAI-CON-001: ingebouwde AI van Chrome op het apparaat van de gebruiker; leest geen pagina, rekent alleen (cap browser.read).
+  'browser.lokale_ai': 'browser.read',
   'browser.navigate': 'browser.navigate', 'browser.history': 'browser.navigate', 'browser.pages': 'browser.navigate',
   'browser.invoke': 'browser.interact', 'browser.click': 'browser.interact', 'browser.type': 'browser.interact', 'browser.select': 'browser.interact',
   'browser.key': 'browser.interact', 'browser.hover': 'browser.interact', 'browser.fill_form': 'browser.interact',

@@ -89,6 +89,28 @@ export async function main(): Promise<number> {
     check('paneel zonder beleid: ongewijzigd («!»-schakelaar uitleg)', zonder.includes('data-lai-site="uit"') && !zonder.includes('beleid-uit'));
   }
 
+  // ---------------------------------------------------------------- 3b. etap 2: browser_local_ai (connector) — zuivere delen
+  {
+    const { maakTicket, haalTicket } = await import('../../backend/apps-overdracht');
+    const { LOKALE_AI_MODI, TOOL_TO_COMMAND } = await import('../../backend/connectors-hulpmiddelen');
+    const ext = await import(pathToFileURL(join(EXT, 'shared.js')).href);
+    const t1 = maakTicket('agent-browser', 'u1', 'lokale-ai', { tekst: 'GEHEIM' });
+    check('ticket lokale-ai: de browser haalt het één keer op, daarna is het weg', JSON.stringify(haalTicket('agent-browser', t1, ['lokale-ai'])) === JSON.stringify({ soort: 'lokale-ai', payload: { tekst: 'GEHEIM' } }) && haalTicket('agent-browser', t1, ['lokale-ai']) === null);
+    const t2 = maakTicket('agent-pc', 'u1', 'lokale-ai', { tekst: 'x' });
+    check('een pc-agent krijgt nooit een lokale-ai-ticket (route geeft alleen bundel/geheim)', haalTicket('agent-pc', t2, ['bundel', 'geheim']) === null);
+    const t3 = maakTicket('agent-browser', 'u1', 'geheim', { waarde: 'WACHTWOORD' });
+    check('de browser krijgt nooit een geheim of bundel (route geeft alleen lokale-ai)', haalTicket('agent-browser', t3, ['lokale-ai']) === null);
+    const t4 = maakTicket('agent-browser', 'u1', 'lokale-ai', { tekst: 'x' });
+    check('ticket van een andere agent → null', haalTicket('agent-ander', t4, ['lokale-ai']) === null);
+    check('hulpmiddel browser_local_ai → opdracht browser.lokale_ai; functies gelijk op server en in de extensie',
+      TOOL_TO_COMMAND.browser_local_ai === 'browser.lokale_ai' && JSON.stringify([...LOKALE_AI_MODI]) === JSON.stringify([...ext.LOKALE_AI_MODI]) && ext.ALLOWED_COMMANDS.includes('browser.lokale_ai') && ext.TYPE_CAPABILITY['browser.lokale_ai'] === 'browser.read');
+    check('extensie valideert: nooit de tekst in params, wel functie + ticket + talen',
+      ext.valideerOpdracht('browser.lokale_ai', { modus: 'translator', ticket: 'a'.repeat(43), doel: 'nl', bron: 'uk', tekens: 5 }).ok === true
+      && ext.valideerOpdracht('browser.lokale_ai', { modus: 'translator', ticket: 'a'.repeat(43), tekst: 'x' }).ok === false
+      && ext.valideerOpdracht('browser.lokale_ai', { modus: 'translator', ticket: 'kort' }).ok === false
+      && ext.valideerOpdracht('browser.lokale_ai', { modus: 'translator', ticket: 'a'.repeat(43), doel: '../x' }).ok === false);
+  }
+
   // ---------------------------------------------------------------- 4. extensie (echte background.js)
   {
     const opslag: Record<string, unknown> = { lokaleAi: { aan: true, siteToegang: true, apis: {} } };

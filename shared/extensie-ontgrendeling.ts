@@ -65,6 +65,8 @@ export type BrowserCap = typeof BROWSER_CAPS[number];
 export const BROWSER_CAPS_OUD: readonly BrowserCap[] = Object.freeze(['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.debug']);
 /** Vanaf deze versie kent de extensie de zeven mogelijkheden én termijnen tot een jaar (shared/extensie-matrix.ts). */
 export const EXTENSIE_VERSIE_MATRIX = '0.7.0';
+/** LAI-CON-001: eerste extensieversie met browser.lokale_ai (connector → ingebouwde AI van Chrome) en het beleid lokaleAi (0287). */
+export const EXTENSIE_VERSIE_LOKALE_AI = '0.9.6';
 export const isBrowserCap = (v: unknown): v is BrowserCap => typeof v === 'string' && (BROWSER_CAPS as readonly string[]).includes(v);
 
 /** Mogelijkheden per technische rol (shared/tech-rollen.ts). Unie over alle rollen van de activering. */

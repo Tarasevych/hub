@@ -464,10 +464,12 @@ export function createAgentRoutes(deps: Deps) {
       const token = bearerOf(ctx);
       if (token.length < 20 || token.length > 200) return error('TOKEN_INVALID', 401);
       const agent = await store.findAgentByTokenHash(sha256(token));
-      if (!agent || agent.platform === 'browser') return error('TOKEN_INVALID', 401);
+      if (!agent) return error('TOKEN_INVALID', 401);
       const limit = await rateLimit(`overdracht:${agent.id}`, 60, 60);
       if (!limit.ok) return error('RATE_LIMITED', 429);
-      const inhoud = haalTicket(agent.id, String(deps.body(ctx.body).ticket ?? ''));
+      // LAI-CON-001: de browserextensie mag ALLEEN tickets van de soort 'lokale-ai' ophalen (tekst voor browser_local_ai);
+      // bundels en geheimen blijven voor pc-agents. Andere agents nooit 'lokale-ai'.
+      const inhoud = haalTicket(agent.id, String(deps.body(ctx.body).ticket ?? ''), agent.platform === 'browser' ? ['lokale-ai'] : ['bundel', 'geheim']);
       if (!inhoud) return error('TICKET_ONGELDIG', 404);
       return json(inhoud);
     }],

@@ -23,6 +23,7 @@ import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from 
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as store from './connectors-opslag';
 import { controleerBrowserOpdracht } from './extensie-ontgrendeling';
+import { leesBeleid } from './extensie-beleid';
 import * as techn from './browser-technisch';
 import { callSite } from './site-aanroep';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-hulpmiddelen';
@@ -324,6 +325,10 @@ const NAAM_OF_UID = 'Invalid "name": pass the visible "name" (1-200 characters) 
 const SCROLL_DIRECTIONS = ['up', 'down', 'top', 'bottom'];
 /** browser_audit (extensie 0.5): welk deel van de audit. */
 export const AUDIT_SOORTEN = ['alles', 'prestaties', 'beveiliging', 'dom'] as const;
+/** browser_local_ai (LAI-CON-001, extensie 0.9.6): functies van de ingebouwde AI van Chrome en de grens van de tekst (= LOKALE_AI van de site). */
+export const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'] as const;
+const LOKALE_AI_MAX = 20000;
+const TAALCODE = /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/;
 const HISTORY_ACTIONS = ['back', 'forward', 'reload'];
 const ALLOWED_KEYS = ['Enter', 'Escape', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'];
 const CONSOLE_TYPES = ['error', 'warn', 'log', 'info', 'debug'];
@@ -430,6 +435,23 @@ const BROWSER_TOOLS: ToolDef[] = [
         browser: browserProp,
         soort: { type: 'string', enum: [...AUDIT_SOORTEN], description: p('Що перевіряти: "alles" — усе (типово), "prestaties" — швидкодію, "beveiliging" — безпеку, "dom" — структуру сторінки.', 'Wat er gecontroleerd wordt: "alles" (standaard), "prestaties" (snelheid), "beveiliging" (veiligheid) of "dom" (paginastructuur).') },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    // LAI-CON-001 (16.11.2026): ingebouwde AI van Chrome (Gemini Nano) op het apparaat van de gebruiker, via de extensie (offscreen.html).
+    name: 'browser_local_ai',
+    description: 'Process a text with Chrome\'s built-in AI (Gemini Nano) on the USER\'S OWN computer, through the Mijn Ruimte browser extension: summarize, write, rewrite, translate, detect the language, proofread or prompt. Free and private: nothing runs on the server or in a cloud; the text reaches the extension once through a one-time ticket and is never stored in the command history. Reads no page. Works only while the user\'s browser is open and the extension is unlocked; the model is never downloaded by this tool. If the administrator disabled it, the error gives the reason and who did it: tell the user, do not retry. Writer, rewriter and proofreader may be missing in the user\'s Chrome.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        browser: browserProp,
+        modus: { type: 'string', enum: [...LOKALE_AI_MODI], description: p('Функція зі списку: стислий виклад, написання, переписування, переклад, визначення мови, коректура або діалог.', 'Functie uit de lijst: samenvatten, schrijven, herschrijven, vertalen, taal herkennen, proeflezen of gesprek.') },
+        tekst: { type: 'string', description: p(`Текст або завдання (1–${LOKALE_AI_MAX} символів).`, `Tekst of opdracht (1 tot ${LOKALE_AI_MAX} tekens).`) },
+        bron: { type: 'string', description: p('Мова тексту для перекладу (код мови, наприклад "en"); без неї — визначається автоматично.', 'Taal van de tekst bij vertalen (taalcode, bijvoorbeeld "en"); zonder: automatisch herkend.') },
+        doel: { type: 'string', description: p('Мова перекладу (код мови, наприклад "uk" або "nl").', 'Doeltaal bij vertalen (taalcode, bijvoorbeeld "uk" of "nl").') },
+      },
+      required: ['modus', 'tekst'],
       additionalProperties: false,
     },
   },
@@ -606,6 +628,7 @@ const ANNOTATIONS: Record<string, ToolAnnotations> = {
   browser_snapshot: { readOnlyHint: true, openWorldHint: false },
   browser_get_diagnostics: { readOnlyHint: true, openWorldHint: false },
   browser_audit: { readOnlyHint: true, openWorldHint: false },
+  browser_local_ai: { readOnlyHint: true, openWorldHint: false },
   browser_list_tabs: { readOnlyHint: true, openWorldHint: false },
   browser_scroll: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   browser_wait_for_text: { readOnlyHint: true, openWorldHint: false },
@@ -652,6 +675,7 @@ export const TOOL_TO_COMMAND: Record<string, string> = {
   browser_click: 'browser.click', browser_type: 'browser.type',
   browser_hover: 'browser.hover', browser_fill_form: 'browser.fill_form', browser_console: 'browser.console', browser_network: 'browser.network', browser_pages: 'browser.pages',
   browser_script: 'browser.script',
+  browser_local_ai: 'browser.lokale_ai',
   app_deploy: 'apps.deploy', app_deploy_status: 'apps.status', app_list: 'apps.list', app_logs: 'apps.logs', app_versions: 'apps.versions',
   app_rollback: 'apps.rollback', app_control: 'apps.control', app_route: 'apps.route', app_secret_list: 'apps.secret.list', app_secret_delete: 'apps.secret.delete',
 };
@@ -717,6 +741,11 @@ function validateParams(name: string, args: any): string | null {
   }
   if (name === 'docker_list_containers' && args.include_stopped !== undefined && typeof args.include_stopped !== 'boolean') return 'Invalid "include_stopped": use true or false.';
   if (name === 'browser_audit' && args.soort !== undefined && !(AUDIT_SOORTEN as readonly unknown[]).includes(args.soort)) return 'Invalid "soort": use "alles", "prestaties", "beveiliging" or "dom".';
+  if (name === 'browser_local_ai') {
+    if (!(LOKALE_AI_MODI as readonly unknown[]).includes(args.modus)) return `Invalid "modus": use one of ${LOKALE_AI_MODI.join(', ')}.`;
+    if (typeof args.tekst !== 'string' || !args.tekst.trim() || args.tekst.length > LOKALE_AI_MAX) return `Invalid "tekst": 1-${LOKALE_AI_MAX} characters.`;
+    for (const k of ['bron', 'doel'] as const) if (args[k] !== undefined && (typeof args[k] !== 'string' || !TAALCODE.test(args[k]))) return `Invalid "${k}": a language code such as "en", "uk" or "nl".`;
+  }
   if (name === 'browser_open' && !isOwnSiteUrl(args.url)) return 'Invalid "url": only https addresses on tarasevych.com or its subdomains are allowed (for example "https://mail.tarasevych.com/").';
   if (name === 'browser_invoke_action') {
     if (typeof args.action !== 'string' || !ACTION_ID.test(args.action)) return 'Invalid "action": use an action id from browser_snapshot (lowercase letters, digits and "_").';
@@ -1122,6 +1151,13 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       }
       const invalid = validateParams(name, args);
       if (invalid) return text(invalid, true);
+      // LAI-CON-001: beleid van de beheerder vóór alles — met reden en wie, zodat de AI het de gebruiker eerlijk kan zeggen.
+      if (name === 'browser_local_ai') {
+        const b = await leesBeleid(userId).catch(() => null);
+        if (b && !b.lokaleAiAan) {
+          return text(`The administrator${b.lokaleAiDoor ? ` (${b.lokaleAiDoor})` : ''} disabled Chrome's built-in AI for this account. Reason: "${b.lokaleAiReden}". Tell the user this reason and that they can contact that administrator; do not retry and do not try another way.`, true);
+        }
+      }
       // Alleen eigen apparaten van deze gebruiker; browsers en pc's blijven gescheiden (een browsertool kiest nooit een pc).
       const wantBrowser = isBrowserTool(name);
       // Extensie 0.6.1 (20.10.2026): in de TECHNISCHE ruimte lopen browseropdrachten via het slot 'technisch'. De zes voorwaarden
@@ -1134,7 +1170,9 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
         const sloten = await techn.technischeSloten(userId);
         const kiesKey = args.browser ? String(args.browser) : '';
         techSlot = kiesKey ? sloten.find((a) => a.id === kiesKey || a.name.toLowerCase() === kiesKey.toLowerCase()) ?? null : sloten[0] ?? null;
-        const { machine: _m0, browser: _b0, ...zonderDoel } = args;
+        const { machine: _m0, browser: _b0, ...zonderDoel0 } = args;
+        // LAI-CON-001: de tekst van browser_local_ai komt nooit in het beheerjournaal (alleen functie en aantal tekens).
+        const zonderDoel = name === 'browser_local_ai' ? { modus: zonderDoel0.modus, tekens: String(zonderDoel0.tekst ?? '').length } : zonderDoel0;
         const uitslag = await techn.poort(userId, techSlot?.id ?? null, TOOL_TO_COMMAND[name], zonderDoel);
         if (!uitslag.ok) {
           await techn.journaal({ userId, type: TOOL_TO_COMMAND[name], params: zonderDoel, agent: techSlot, resultaat: 'denied', code: uitslag.code, fout: uitslag.fout });
@@ -1171,6 +1209,13 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       // «Додатки»: bestanden en env van een uitrol gaan via een eenmalig ticket, nooit in de bewaarde opdracht (zie apps-overdracht.ts).
       let params: Record<string, unknown> = ruw;
       let ticket: string | null = null;
+      // LAI-CON-001: de tekst gaat via een eenmalig ticket (alleen deze extensie, 3 minuten); in de bewaarde opdracht staan alleen
+      // functie, talen en het aantal tekens — nooit de tekst zelf.
+      if (name === 'browser_local_ai') {
+        try { ticket = maakTicket(agent.id, userId, 'lokale-ai', { tekst: String(ruw.tekst) }, 3 * 60_000); }
+        catch { return text('Too many texts are waiting for the browser. Wait a minute and try again.', true); }
+        params = { modus: ruw.modus, ticket, tekens: String(ruw.tekst).length, ...(ruw.bron ? { bron: ruw.bron } : {}), ...(ruw.doel ? { doel: ruw.doel } : {}) };
+      }
       if (name === 'app_deploy') {
         try { ticket = maakTicket(agent.id, userId, 'bundel', { files: ruw.files, env: ruw.env ?? {} }); }
         catch { return text('Too many or too large deployments are waiting to be picked up by the device. Wait a few minutes and try again.', true); }
@@ -1198,7 +1243,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       if (technischeBrowser) {
         const mislukt = done.status !== 'succeeded' && done.status !== 'pending_approval' && done.status !== 'approved' && done.status !== 'sent';
         await techn.journaal({
-          userId, type: TOOL_TO_COMMAND[name], params: ruw, agent: techSlot ?? agent,
+          userId, type: TOOL_TO_COMMAND[name], params: name === 'browser_local_ai' ? params : ruw, agent: techSlot ?? agent,
           resultaat: done.status === 'succeeded' ? 'success' : mislukt ? 'failure' : 'denied',
           fout: done.status === 'succeeded' ? null : String(done.result?.error ?? done.status).slice(0, 200),
         });
