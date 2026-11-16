@@ -61,6 +61,14 @@ export function haalTicket(agentId: string, id: string, soorten?: readonly Overd
 
 export function vergeetTicket(id: string) { tickets.delete(id); }
 
+/** UPD-003: alleen de SOORT van een ticket bekijken, zonder het op te gebruiken (null = onbekend of verlopen).
+ *  Тільки подивитися вид квитка, не використовуючи його: розширення не може «спалити» чужий квиток. */
+export function ticketSoort(id: string): OverdrachtSoort | null {
+  opruimen();
+  if (!TICKET_RE.test(id)) return null;
+  return tickets.get(id)?.soort ?? null;
+}
+
 // LAI-CON-001 (review PR #137): ook het RESULTAAT van browser_local_ai (vertaling, samenvatting) komt niet in app.agent_commands.result.
 // De connector meldt vóór het versturen welk ticket hij verwacht; de gateway legt het resultaat van die agent alleen hier in het geheugen
 // (en in de database alleen metadata); de connector haalt het één keer op. Na 15 minuten of na een herstart is het weg.

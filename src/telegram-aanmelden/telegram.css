@@ -69,7 +69,7 @@
 .tga-koppel-info small{font-size:12.5px;color:var(--muted);line-height:1.4}
 .tga-lijst{display:grid;gap:10px}
 .tga-bevestig-inline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 10px;border-radius:var(--straal-m,10px);background:var(--fout-zacht,rgba(220,38,38,.1));border:1px solid color-mix(in srgb,var(--fout,#dc2626) 35%,var(--line));font-size:13px}
-.tga-pil{display:inline-flex;align-items:center;font-size:11.5px;font-weight:650;padding:2px 9px;border-radius:999px;background:var(--surface2,rgba(128,128,128,.15));color:var(--muted)}
+.tga-pil{display:inline-flex;align-items:center;font-size:12px;font-weight:650;padding:2px 9px;border-radius:999px;background:var(--surface2,rgba(128,128,128,.15));color:var(--muted)}
 .tga-pil-actief{background:var(--ok-zacht,rgba(22,163,74,.14));color:var(--ok,#15803d)}
 .tga-pil-gepauzeerd{background:var(--warn-zacht,rgba(217,119,6,.16));color:var(--warn,#b45309)}
 .tga-pil-geblokkeerd,.tga-pil-uitgeschakeld{background:var(--fout-zacht,rgba(220,38,38,.14));color:var(--fout,#b91c1c)}
@@ -103,7 +103,7 @@
 .tga-plaats-kop-icoon,.tga-plaats-logo{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px}
 .tga-plaats-kop-icoon,.tga-plaats-logo.is-teken{color:var(--accent,#2f6f73);background:color-mix(in srgb,var(--accent,#2f6f73) 13%,transparent)}
 .tga-plaats-kop-icoon svg,.tga-plaats-logo.is-teken svg{width:20px;height:20px}
-.tga-plaats-logo.is-merk{background:#fff;border:1px solid color-mix(in srgb,var(--line,#d7dee8) 80%,transparent)}
+.tga-plaats-logo.is-merk{background:var(--merk-plaat, #ffffff);border:1px solid color-mix(in srgb,var(--line,#d7dee8) 80%,transparent)}
 .tga-plaats-methoden{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:8px;margin:12px 0 10px}
 .tga-sectie label.tga-plaats-methode{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;min-height:56px;margin:0;padding:10px 12px;border:1px solid var(--line,#d7dee8);border-radius:14px;background:var(--surface,var(--panel,#fff));cursor:pointer;transition:border-color .15s ease,background-color .15s ease}
 .tga-sectie label.tga-plaats-methode:hover{border-color:color-mix(in srgb,var(--accent,#2f6f73) 45%,var(--line,#d7dee8))}
@@ -111,9 +111,9 @@
 .tga-sectie label.tga-plaats-methode:has(input:disabled){cursor:default;opacity:.65}
 .tga-sectie label.tga-plaats-methode .tga-schakel-tekst strong{font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
 .tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer{flex:none;width:44px;min-width:44px;height:26px;min-height:26px;border-color:color-mix(in srgb,var(--muted,#64748b) 45%,transparent);background:color-mix(in srgb,var(--muted,#64748b) 22%,transparent)}
-.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer::after{width:20px;height:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer::after{width:20px;height:20px;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer:checked{background:var(--accent,#2f6f73);border-color:var(--accent,#2f6f73)}
-.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer:checked::after{transform:translateX(18px);background:#fff}
+.tga-sectie label.tga-plaats-methode input[type='checkbox'].tga-schakel-invoer:checked::after{transform:translateX(18px);background:var(--panel)}
 @media (prefers-reduced-motion:reduce){.tga-sectie label.tga-plaats-methode{transition:none}}
 .tga-schakel-tekst{display:grid;gap:2px;flex:1 1 auto;min-width:0}
 .tga-schakel-tekst strong{font-size:13.5px;font-weight:650;line-height:1.25}

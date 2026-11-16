@@ -304,7 +304,7 @@ export async function main(): Promise<number> {
     // 8: Nextcloud-metadata: begrensde regex (lineair op 64 KB van een vreemde server)
     check('8: Nextcloud stat — attributen/inhoud in de regex begrensd', /[^>]{0,256}/.test(bron('backend/cloud-overdracht-m3-providers.ts')));
     // 8: overige serverpunten (bron)
-    check('8: SSE-ingangen: strenge emmer voor mislukte aanmeldingen (30/min per IP)', bron('backend/connector-v2-stroom.ts').includes('sse-fout:') && bron('server/start.ts').includes('stroomVerzoek(req, res, m[1], clientIp(req))'));
+    check('8: SSE-ingangen: strenge emmer voor mislukte aanmeldingen (30/min per IP)', bron('backend/connector-v2-stroom.ts').includes('sse-fout:') && /stroomVerzoek\(req, res, (?:m\[1\]|agentUitPadNaam\(m\[1\]\) \?\? ''), clientIp\(req\)\)/.test(bron('server/start.ts'))); // UPD-003 (#143): pad → agentnaam, IP gaat nog mee
     check('8: lijsten met relevantie in de Gmail-module geven de event-loop vrij', (bron('backend/google-suite-mail-browser.ts').match(/await geefLusVrij()/g) || []).length >= 3);
     check('8: icloud_list_events met refresh telt in dezelfde emmer als «Оновити» (12 per 10 min)', bron('backend/dev-rechten-gebruiker.ts').includes('agenda-caldav-vernieuwen:'));
     check('8: media/afbeelding en media/diagram weigeren zonder schrijfrecht VÓÓR het genereren', bron('backend/dev-mg-routes.ts').split("denyMutation(auth.user as never, 'cloud.write')").length === 3);

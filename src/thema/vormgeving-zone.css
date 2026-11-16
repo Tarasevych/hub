@@ -17,7 +17,7 @@
 .vz-v-knop{display:inline-flex;align-items:center;min-height:1.6rem;padding:.15rem .7rem;border-radius:999px;background:var(--accent);color:var(--accentText,var(--panel));font-size:.76rem;font-weight:650}
 .vz-v-schakel{position:relative;flex:none;width:2.1rem;height:1.15rem;border-radius:999px;background:var(--accent)}
 .vz-v-schakel::before{content:'';position:absolute;top:50%;right:.14rem;width:.85rem;height:.85rem;border-radius:50%;background:var(--accentText,var(--panel));transform:translateY(-50%)}
-.vz-v-glans{position:absolute;right:.7rem;bottom:.7rem;width:1.5rem;height:1.5rem;border-radius:50%;background:radial-gradient(circle at 35% 35%,color-mix(in srgb,var(--accent) 55%,#fff),var(--accent));box-shadow:0 0 calc(var(--vz-glans,.45)*26px) calc(var(--vz-glans,.45)*7px) color-mix(in srgb,var(--accent) 70%,transparent)}
+.vz-v-glans{position:absolute;right:.7rem;bottom:.7rem;width:1.5rem;height:1.5rem;border-radius:50%;background:radial-gradient(circle at 35% 35%,color-mix(in srgb,var(--accent) 55%,var(--text-on-accent)),var(--accent));box-shadow:0 0 calc(var(--vz-glans,.45)*26px) calc(var(--vz-glans,.45)*7px) color-mix(in srgb,var(--accent) 70%,transparent)}
 /* Підсвічення шару: решта приклада тьмяніє, частини обраного шару отримують пунктирне кільце. */
 .vz-voorbeeld-vak[data-wijs] .vz-voorbeeld [data-laag]{transition:opacity .18s,outline-color .18s}
 .vz-voorbeeld-vak[data-wijs='accent'] .vz-voorbeeld :is(.vz-v-blok b,.vz-v-tekst,.vz-v-menu i:not(.is-actief),.vz-v-glans,.vz-v-tlo){opacity:.35}

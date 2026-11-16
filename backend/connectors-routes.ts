@@ -5,7 +5,7 @@ import { auditLijst, auditToevoegen } from '../server/platform/audit';
 import { aiBron, SITE_RUIS, siteEventsFromAudit } from './site-activiteit';
 import { GEEN_RECHT, heeftApiRecht, weigerCode } from './api-recht';
 import { approveCommand, CommandRefused, rejectCommand, submitCommand, waitForCommand } from './connectors-opdrachten';
-import { geheimVerzoek, geheimVerzoekenVan, haalTicket, maakTicket, vergeetTicket, verzoekPubliek } from './apps-overdracht';
+import { geheimVerzoek, geheimVerzoekenVan, haalTicket, maakTicket, ticketSoort, vergeetTicket, verzoekPubliek } from './apps-overdracht';
 import { newCommandKey, normalizePairingCode, pairingCode, randomToken, sealCommandKey, sha256 } from './connectors-crypto';
 import { agentOnline, COMMAND_TYPES, disconnectAgent, issueWsTicket } from './connectors-gateway';
 import * as grants from './ai-toestemmingen';
@@ -469,7 +469,12 @@ export function createAgentRoutes(deps: Deps) {
       if (!limit.ok) return error('RATE_LIMITED', 429);
       // LAI-CON-001: de browserextensie mag ALLEEN tickets van de soort 'lokale-ai' ophalen (tekst voor browser_local_ai);
       // bundels en geheimen blijven voor pc-agents. Andere agents nooit 'lokale-ai'.
-      const inhoud = haalTicket(agent.id, String(deps.body(ctx.body).ticket ?? ''), agent.platform === 'browser' ? ['lokale-ai'] : ['bundel', 'geheim']);
+      const ticketId = String(deps.body(ctx.body).ticket ?? '');
+      // UPD-003: een browser die om een bundel of geheim vraagt, krijgt 401 zonder dat het ticket opgebruikt wordt (zoals vóór #137) —
+      // anders kon elke extensie met een geldig token het eenmalige ticket van een pc-agent onbruikbaar maken.
+      // Розширення, що просить чужий пакет чи секрет, отримує 401, а квиток лишається живим для свого агента.
+      if (agent.platform === 'browser' && ticketSoort(ticketId) !== 'lokale-ai') return error('TOKEN_INVALID', 401);
+      const inhoud = haalTicket(agent.id, ticketId, agent.platform === 'browser' ? ['lokale-ai'] : ['bundel', 'geheim']);
       if (!inhoud) return error('TICKET_ONGELDIG', 404);
       return json(inhoud);
     }],

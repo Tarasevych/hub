@@ -51,7 +51,7 @@
 .mijn-logos > summary > .wenk + .mijn-logos-pijl { margin-left: .5rem; }
 .mijn-logos-knop.mijn-logos-alles { width: 32px; height: 32px; }
 .mijn-logos-knop.mijn-logos-alles svg { width: 16px; height: 16px; color: currentColor; }
-.mijn-logos-knop.is-zacht-gevaar.is-klaar { color: #fff; background: var(--fout); border-color: var(--fout); }
+.mijn-logos-knop.is-zacht-gevaar.is-klaar { color: var(--text-on-vlak); background: var(--fout); border-color: var(--fout); }
 /* Галерея всіх логотипів (Павло, 16.11): згорнуто — один ряд, «Показати всі» розгортає. Плитка = кнопка: логотип і назва під ним. */
 .mijn-logos-galerij { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
 .mijn-logos-galerij > li { display: contents; }

@@ -108,8 +108,9 @@ export async function main(): Promise<number> {
       check('database: tweede meting in hetzelfde uur overschrijft het uur niet', r2.uur === false && uurRij.length === 1 && uurRij[0].data.online === 1);
       const dagRij = (await sys().query(`SELECT data FROM app.admin_overzicht_momentopnamen WHERE soort='dag' AND emmer=$1`, [emmerVan('dag', t0)])).rows;
       check('database: dagwaarde = laatste meting van de dag', dagRij.length === 1 && dagRij[0].data.online === 9);
-      // volgende uur + oude rij (> 90 dagen) wordt opgeruimd
-      await sys().query(`INSERT INTO app.admin_overzicht_momentopnamen (soort, emmer, genomen_op, data) VALUES ('dag', 1, now() - interval '120 days', '{"v":1}'::jsonb) ON CONFLICT DO NOTHING`);
+      // volgende uur + oude rij (> 90 dagen) wordt opgeruimd. UPD-003: «oud» t.o.v. dezelfde vaste klok t0, niet now() — anders hing de
+      // uitkomst af van de echte datum (vanaf 16.11.2026 viel de rij binnen de 90 dagen). · Відносно тієї самої дати t0, не now().
+      await sys().query(`INSERT INTO app.admin_overzicht_momentopnamen (soort, emmer, genomen_op, data) VALUES ('dag', 1, to_timestamp($1::double precision / 1000) - interval '120 days', '{"v":1}'::jsonb) ON CONFLICT DO NOTHING`, [t0]);
       vergeetEmmers();
       await bewaarMomentopname(o, t0 + 3_700_000);
       const oud = (await sys().query(`SELECT count(*)::int AS n FROM app.admin_overzicht_momentopnamen WHERE emmer = 1`)).rows[0].n;
