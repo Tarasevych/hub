@@ -71,10 +71,12 @@ check('beschikbaarheid gemeld aan de kop', tekst.includes('meldBeeldenStrook(out
 
 // MailGesprekInhoud: terugknoppen in de kop, vertaalstrook met onSluit, body met strookSluitbaar
 const gesprek = lees('src/MailGesprekInhoud.tsx');
-check('terugknop taal in de kop', gesprek.includes("data-strook-terug='taal'"));
-check('terugknop beelden in de kop', gesprek.includes("data-strook-terug='beelden'"));
-check('terugknop staat vóór ⓘ', gesprek.indexOf("data-strook-terug='beelden'") > 0 && gesprek.indexOf("data-strook-terug='beelden'") < gesprek.indexOf('mail-thread-message-details-trigger'));
-check('vertaalstrook verborgen als gesloten', /!isGesloten\(stroken,message\.id,'taal'\)&&<VertaalStrook/.test(gesprek));
+// STROOK-002: de terugknoppen zijn één component (src/mail/StrookNazorg.tsx StrookTerugKnop), en «verborgen» komt uit strookStaat
+// (✕ voor deze brief of een blijvende regel).
+check('terugknop taal in de kop', gesprek.includes("<StrookTerugKnop lang={lang} strook='taal'"));
+check('terugknop beelden in de kop', gesprek.includes("<StrookTerugKnop lang={lang} strook='beelden'"));
+check('terugknop staat vóór ⓘ', gesprek.indexOf("strook='beelden' regel=") > 0 && gesprek.indexOf("strook='beelden' regel=") < gesprek.indexOf('mail-thread-message-details-trigger'));
+check('vertaalstrook verborgen als gesloten', /!taalStaat\(message\)\.verborgen&&<VertaalStrook/.test(gesprek));
 check('body in het gesprek is sluitbaar', /<MailMessageBody [^>]*strookSluitbaar/.test(gesprek));
 
 // voorbeeldvenster heeft geen terugknop → daar geen ✕
