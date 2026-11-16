@@ -2045,8 +2045,14 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     display: flex;
   }
 
+  /* Зауваження власника 16.11: три піктограми тулилися ліворуч, а «За добою» розтягувалася на решту — рядок виглядав
+     «роз'їханим». Тепер усі чотири кнопки ділять ширину рівномірно; текстова отримує трохи більше місця. */
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn:last-child {
-    flex: 1 1 auto;
+    flex: 2.1 1 0;
   }
 
   [data-account-menu-v3] .am3-shell.am3-shell .am3-tints-row {
