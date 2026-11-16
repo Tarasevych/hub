@@ -92,12 +92,12 @@ export async function main(): Promise<number> {
     !/flat-content'\]\s*\.canonical-content\s*:where\(section[^}]*border-radius:0/.test(canoniekCss), // ANKERS-002: правило прибрано цілком
   );
   check(
-    'класичний вигляд має горизонтальну липку смугу розділів без роздутої сітки на мобільних екранах, автоцентрування активної вкладки й сенсорну зону 44×44 px для скидання світлини',
-    pagina.includes("data-no-edge-swipe='1'") &&
-      pagina.includes("querySelector<HTMLElement>('.ia-toc-knop.actief')") &&
+    // UNIF-ANKER-001: на телефоні розділи — у липкій підсмузі спільного меню якорів (MaquetteAnkerRail, .mq-anker-onderbalk) замість горизонтальної смуги пігулок.
+    'класичний вигляд на телефоні має липку підсмугу спільного меню якорів без роздутої сітки й сенсорну зону 44×44 px для скидання світлини',
+    pagina.includes('<MaquetteAnkerRail') &&
+      !pagina.includes('ia-toc') &&
       !accountCss.includes('grid-template-columns: 1fr 1fr;') &&
-      accountCss.includes('.ia-avatar-prullenbak::after') &&
-      accountCss.includes('overflow-x: auto;'),
+      accountCss.includes('.ia-avatar-prullenbak::after'),
   );
   check(
     'режим «Студія» має кнопку «Вигляд і навігація» у мобільній смузі, відступ під верхню смугу сайту та прокручуваний мобільний аркуш налаштувань',

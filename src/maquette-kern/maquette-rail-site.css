@@ -1,0 +1,65 @@
+/* UNIF-ANKER-001 (16.11.2026): якірне меню сторінки (MaquetteAnkerRail) у звичайних палітрах сайту.
+   Раніше рейка жила лише в родині «Макет», а її кольори (--mq-*) визначалися тільки на html.palet-maquette, тож
+   центр облікового запису в інших палітрах мав власну смугу пігулок із номерами. Тепер та сама рейка з тими самими
+   опціями (чотири краї, компактна ширина, капсула, шкала перегляду, підсмуга на телефоні) бере кольори з токенів теми
+   (--panel, --surface, --line, --text, --muted, --accent; src/ontwerp/tokens.css) і має стриманий класичний вигляд (.is-klassiek).
+   --mq-accent-rgb рейка ставить сама (style), прочитавши --accent; тут — лише запасне значення.
+   NL: het ankermenu in gewone sitepaletten krijgt zijn kleuren uit de thematokens in plaats van uit het «Maquette»-stelsel. */
+
+html:not(.palet-maquette) :is(.mq-anker-rail, .mq-rail-popover, .mq-anker-onderbalk, .mq-anker-sluier, .mq-sleep-rand-wijzer) {
+  --mq-tekst: var(--text);
+  --mq-gedempt: var(--muted);
+  --mq-stil: var(--faint, var(--muted));
+  --mq-wit: #ffffff;
+  --mq-accent: var(--accent);
+  --mq-accent-rgb: 47, 111, 115;
+  --mq-accent-op: var(--text-on-accent, var(--accentText, #ffffff));
+  --mq-nacht-accent: var(--accent);
+  --mq-nacht-accent-rgb: var(--mq-accent-rgb);
+  --mq-oppervlak: var(--panel);
+  --mq-oppervlak-2: var(--surface);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--text) 4%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--text) 9%, transparent);
+  --mq-rand: var(--line);
+  --mq-rand-sterk: color-mix(in srgb, var(--text) 24%, var(--line));
+  /* Непрозорі: на телефоні розмиття тла вимкнено (швидкодія), і крізь напівпрозоре скло просвічував текст сторінки. */
+  --mq-rail-glas: var(--panel);
+  --mq-popover-glas: var(--panel);
+  --mq-bovenbalk-glas: var(--panel);
+  --mq-schaduw: 0 10px 28px var(--shadow, rgba(22, 31, 41, 0.13));
+  --mq-schaduw-zacht: 0 6px 18px var(--shadow, rgba(22, 31, 41, 0.13));
+  --mq-straal-rail: 22px;
+  --mq-straal-knop: 13px;
+  --mq-straal-veld: 13px;
+  --mq-font-ui: inherit;
+}
+
+/* Затінення під відкритим переліком на телефоні — м'якше, ніж у нічному «Макеті». */
+html:not(.palet-maquette) .mq-anker-sluier {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+/* Вікно положення: тло й рамка з теми замість темного скла «Макета». */
+html:not(.palet-maquette) .mq-rail-popover.is-site {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html:not(.palet-maquette) .mq-rail-popover.is-site :is(.mq-zijde-knop, .mq-popover-schakelaar, .mq-popover-sluit) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html:not(.palet-maquette) .mq-rail-popover.is-site .mq-zijde-knop.is-gekozen,
+html:not(.palet-maquette) .mq-rail-popover.is-site .mq-popover-schakelaar[aria-pressed="true"] {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+}
+
+html:not(.palet-maquette) .mq-rail-popover.is-site :is(small, .mq-popover-tip) {
+  color: var(--mq-gedempt);
+}

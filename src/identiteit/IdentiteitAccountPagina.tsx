@@ -1,12 +1,16 @@
 // Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, тринадцятьма розділами й підсвічуванням під час прокрутки.
 // Розділи наповнює наявний код сторінок категорії «ідентичність» — тут лише розкладка й перехід до розділу.
-import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Columns3, Settings2, ShieldCheck, Palette, UsersRound, type LucideIcon } from 'lucide-react';
+import '../maquette-kern/maquette-tokens.css';
+import '../maquette-kern/maquette-oppervlakken.css';
 import './identiteit-account.css';
+import { MaquetteAnkerRail, type MaquetteAnkerItem } from '../maquette-kern/MaquetteAnkerRail';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
-import { IdentiteitAtelier } from './IdentiteitAtelier';
+import { ATELIER_GROEPEN, ATELIER_SYMBOLEN, IdentiteitAtelier } from './IdentiteitAtelier';
 import { AtelierInhoud } from './atelier-inhoud';
-import { isKlassiekMaquettePalet, useVormgeving } from './identiteit-vormgeving';
+import { VORMGEVING_TEKST, isKlassiekMaquettePalet, useBeschikbareVormgevingen, useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
 import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
 import { IdentiteitKlassiekMaquette } from './IdentiteitKlassiekMaquette';
@@ -58,9 +62,55 @@ function LuiInhoud({ open, children }: { open: boolean; children: ReactNode }) {
   return <div ref={plek} className='ia-lui' aria-busy='true' style={{ minHeight: 160 }} />;
 }
 
+/** UNIF-ANKER-001 (стара вада, знайдена стендом): перехід до далекого розділу зупинявся на півдорозі. Розділи вище монтуються
+ *  ліниво (LuiInhoud) саме під час плавної прокрутки, сторінка росте (у стенді 6,9 → 13,4 тис. px), і браузер доїжджає до старої
+ *  позиції. Тепер ціль тримається до 5 с: коли прокрутка стала, а розділ не на місці, — ще раз без анімації; будь-яка дія людини
+ *  (колесо, дотик, клавіша) зупиняє утримання. Het doel blijft tot 5 s vastgehouden; gebruikersinvoer stopt dat meteen. */
+function gaNaarSectie(id: string, vasthouden: { current: (() => void) | null }) {
+  vasthouden.current?.();
+  vasthouden.current = null;
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const zonderBeweging = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  // Розділ може ще не існувати (сторінка відкривається за прямим посиланням, поки відомі не всі прапорці) — тоді чекаємо його появи.
+  // De sectie kan nog ontbreken bij een directe link; dan wachten we tot ze verschijnt.
+  let gestart = false;
+  const start = () => {
+    const doel = document.getElementById(sectieId(id));
+    if (!doel || typeof doel.scrollIntoView !== 'function') return false;
+    doel.scrollIntoView({ block: 'start', behavior: zonderBeweging ? 'auto' : 'smooth' });
+    gestart = true;
+    return true;
+  };
+  start();
+  const begin = Date.now();
+  let vorige = Number.NaN, rustig = 0;
+  const invoer = ['wheel', 'touchstart', 'keydown'] as const;
+  const stop = () => {
+    window.clearInterval(klok);
+    invoer.forEach((soort) => window.removeEventListener(soort, stop, true));
+    if (vasthouden.current === stop) vasthouden.current = null;
+  };
+  const klok = window.setInterval(() => {
+    if (Date.now() - begin > 5000) return stop();
+    if (!gestart && !start()) return;
+    const el = document.getElementById(sectieId(id));
+    if (!el) return stop();
+    const top = el.getBoundingClientRect().top;
+    if (Math.abs(top - vorige) >= 1) { vorige = top; rustig = 0; return; } // ще їде
+    el.scrollIntoView({ block: 'start', behavior: 'auto' });
+    const na = el.getBoundingClientRect().top;
+    rustig = Math.abs(na - top) < 2 ? rustig + 1 : 0;
+    vorige = na;
+    if (rustig >= 4) stop();
+  }, 120);
+  invoer.forEach((soort) => window.addEventListener(soort, stop, { capture: true, passive: true }));
+  vasthouden.current = stop;
+}
+
 export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker, onTaal }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
-  const tocRef = useRef<HTMLElement>(null);
+  const vasthouden = useRef<(() => void) | null>(null);
+  useEffect(() => () => vasthouden.current?.(), []);
   // Alleen de weergave wisselt. Dezelfde dertien bestaande onderdelen en hun handelingen blijven bestaan.
   const atelierVlag = useVlag('identiteit-account-atelier', false);
   const themaStand = useThemaStand();
@@ -69,7 +119,8 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   const isKlassiekPalet = isKlassiekMaquettePalet(huidigPalet);
   const atelier = atelierVlag || isThemaMaquette || isKlassiekPalet;
   // Прапорець або палітра «Макет» відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag of maquette-palet: altijd de klassieke weergave.
-  const [vormgeving] = useVormgeving();
+  const [vormgeving, kiesVormgeving] = useVormgeving();
+  const beschikbareVormgevingen = useBeschikbareVormgevingen();
   // Зміна вигляду користувачем: робоча область прокручується вгору, інакше новий вигляд відкривається на випадковій глибині
   // попереднього (і перемикач класичної сторінки лишається поза екраном). Bij een andere weergave begint de pagina bovenaan.
   const vorigeVormgeving = useRef(vormgeving);
@@ -89,10 +140,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   useEffect(() => {
     setInBeeld(actief);
     if (eigenWeergaveActief) return;
-    const doel = document.getElementById(sectieId(actief));
-    if (doel && typeof doel.scrollIntoView === 'function') {
-      doel.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
+    gaNaarSectie(actief, vasthouden);
   }, [actief, eigenWeergaveActief]);
 
   // Підсвічування під час прокрутки: визначаємо розділ, який зараз найбільше видно. Без спостережника перетинів — тихо лишаємо як є.
@@ -100,6 +148,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     if (eigenWeergaveActief || typeof IntersectionObserver !== 'function') return;
     const waarnemer = new IntersectionObserver(
       (entries) => {
+        if (vasthouden.current) return; // під час переходу підсвічено обраний розділ, а не ті, що пролітають повз
         const beste = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -115,25 +164,52 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     return () => waarnemer.disconnect();
   }, [secties, eigenWeergaveActief]);
 
-  // На вузьких екранах липка смуга розділів прокручується горизонтально: тримаємо активну пігулку видимою по центру.
-  useEffect(() => {
-    const toc = tocRef.current;
-    if (!toc || toc.scrollWidth <= toc.clientWidth + 2 || typeof toc.scrollTo !== 'function') return;
-    const knop = toc.querySelector<HTMLElement>('.ia-toc-knop.actief');
-    if (!knop) return;
-    const doelLinks = Math.max(0, knop.offsetLeft - (toc.clientWidth - knop.offsetWidth) / 2);
-    const zonderBeweging = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    toc.scrollTo({ left: doelLinks, behavior: zonderBeweging ? 'auto' : 'smooth' });
-  }, [inBeeld]);
-
   const kies = (id: string) => {
     setInBeeld(id);
     onKies(id);
-    const doel = document.getElementById(sectieId(id));
-    if (doel && typeof doel.scrollIntoView === 'function') {
-      doel.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
+    gaNaarSectie(id, vasthouden);
   };
+
+  // UNIF-ANKER-001 (16.11.2026): розділи класичного вигляду — у тому самому меню якорів, що й на інших сторінках сайту (MaquetteAnkerRail):
+  // чотири змістові групи з піктограмами, як у «Студії» та класичному центрі, а також вибір вигляду сторінки як дії меню.
+  // Раніше тут була власна липка смуга з 13 пігулок із номерами — без положення, компактності, згортання і шкали перегляду.
+  // Dezelfde ankernavigatie als op de andere pagina's: vier groepen met iconen, plus de keuze van de weergave als actie.
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    const GROEP_ICONEN: Record<(typeof ATELIER_GROEPEN)[number]['id'], LucideIcon> = { personal: Palette, social: UsersRound, account: Settings2, security: ShieldCheck };
+    const groepen: MaquetteAnkerItem[] = ATELIER_GROEPEN.map((groep) => ({
+      id: `groep-${groep.id}`,
+      label: lang === 'uk' ? groep.ukKort : groep.nlKort,
+      icoon: GROEP_ICONEN[groep.id],
+      soort: 'groep' as const,
+      badge: groep.bereik.replace(/\s+/g, ''),
+      kiesbaar: false,
+      kinderen: groep.ids.flatMap((atelierId) => {
+        const id = atelierId === 'identities' ? 'identity' : atelierId;
+        const index = IDENTITEIT_TABS.findIndex((t) => t.id === id);
+        const sectie = secties.find((x) => x.id === id);
+        if (!sectie || index < 0) return [];
+        return [{ id, label: sectie.titel, icoon: ATELIER_SYMBOLEN[atelierId] ?? Settings2, badge: String(index + 1).padStart(2, '0') }];
+      }),
+    }));
+    if (!atelier) return groepen;
+    // Вибір вигляду: та сама логіка, що й у перемикачі над заголовком (недоступний вигляд не показуємо — пояснення є в повному перемикачі).
+    const vormen = beschikbareVormgevingen.filter((v) => v !== vormgeving);
+    if (vormen.length === 0) return groepen;
+    return [...groepen, {
+      id: 'groep-weergave',
+      label: lang === 'uk' ? 'Вигляд сторінки' : 'Weergave',
+      icoon: Columns3,
+      soort: 'groep' as const,
+      kiesbaar: false,
+      kinderen: vormen.map((v) => ({
+        id: `weergave-${v}`,
+        label: lang === 'uk' ? `Перейти на «${VORMGEVING_TEKST[v].uk}»` : `Naar «${VORMGEVING_TEKST[v].nl}»`,
+        soort: 'actie' as const,
+        icoon: Columns3,
+        onActie: () => kiesVormgeving(v),
+      })),
+    }];
+  }, [lang, secties, atelier, beschikbareVormgevingen, vormgeving, kiesVormgeving]);
 
   // Поки прапорці не відомі, не показуємо жоден із двох виглядів: інакше старий вигляд на мить монтує всі 13 розділів,
   // їхні запити й прокрутки, а потім його змінює новий (сторінка «стрибала» вниз). Totdat de vlaggen bekend zijn: rustige plaatshouder.
@@ -142,25 +218,17 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
 
   const klassiek = (
     <AtelierInhoud.Provider value={true}>
-    <div className='ia-account'>
+    <div className='ia-account mq-schil'>
       {atelier && <VormgevingKiezer lang={lang} />}
       {kop}
-      <nav ref={tocRef} data-no-edge-swipe='1' className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
-        {IDENTITEIT_TABS.map((tab, index) => (
-          <button
-            key={tab.id}
-            type='button'
-            className={inBeeld === tab.id ? 'ia-toc-knop actief' : 'ia-toc-knop'}
-            aria-current={inBeeld === tab.id ? 'true' : undefined}
-            onClick={() => kies(tab.id)}
-          >
-            <span className='ia-toc-nummer' aria-hidden='true'>{index + 1}</span>
-            <span className='ia-toc-tekst'>{tab[lang]}</span>
-          </button>
-        ))}
-        {/* Компактний перемикач у липкому меню: класична сторінка відкривається на розділі, а не згори, тож верхній перемикач поза екраном. */}
-        {atelier && <VormgevingKiezer lang={lang} compact />}
-      </nav>
+      <MaquetteAnkerRail
+        lang={lang}
+        titel={lang === 'uk' ? 'Розділи' : 'Onderdelen'}
+        items={ankerItems}
+        actief={inBeeld}
+        onKies={kies}
+        opslagSleutel='identiteit-account'
+      />
       <div className='ia-secties'>
         {secties.map((sectie) => (
           <section

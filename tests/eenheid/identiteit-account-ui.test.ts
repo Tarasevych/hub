@@ -18,10 +18,11 @@ export async function main(): Promise<number> {
     && identiteitTitel('recovery', 'nl') === 'Toegangsherstel'
     && identiteitTitel('onbekend', 'uk') === 'onbekend');
 
-  check('IdentiteitAccountPagina відмальовує меню-зміст (.ia-toc) і всі 13 секцій (.ia-sectie) зі scrollIntoView',
-    pagina.includes("className='ia-toc'")
+  // UNIF-ANKER-001 (16.11.2026): власну смугу пігулок (.ia-toc) замінено спільним меню якорів сайту (MaquetteAnkerRail).
+  check('IdentiteitAccountPagina відмальовує спільне меню якорів (MaquetteAnkerRail) і всі 13 секцій (.ia-sectie) зі scrollIntoView',
+    pagina.includes('<MaquetteAnkerRail') && !pagina.includes("className='ia-toc'")
     && pagina.includes("className='ia-sectie'")
-    && pagina.includes('IDENTITEIT_TABS.map')
+    && pagina.includes('IDENTITEIT_TABS.findIndex')
     && pagina.includes('scrollIntoView'));
 
   check('Profielfoto підтримує 3 джерела фото (apparaat, dienst, link), центровану камеру та окремий смітничок',
@@ -43,10 +44,11 @@ export async function main(): Promise<number> {
     && Array.isArray(plaatsing.toegestaan)
     && plaatsing.toegestaan.some((l: { sleutel?: string }) => l.sleutel?.includes('.ia-dialoog-achtergrond')));
 
-  check('Аудит a318ba0 (проблема 4): sticky меню-зміст (.ia-toc) має top 70px/62px, а секції (.ia-sectie) мають scroll-margin-top 170px/150px',
-    /\.ia-toc\s*\{[\s\S]*?position:\s*sticky;[\s\S]*?top:\s*70px;/.test(css)
-    && /\.ia-sectie\s*\{[\s\S]*?scroll-margin-top:\s*170px;/.test(css)
-    && /@media\s*\(max-width:\s*700px\)\s*\{[\s\S]*?\.ia-toc\s*\{[\s\S]*?top:\s*62px;[\s\S]*?\.ia-sectie\s*\{[\s\S]*?scroll-margin-top:\s*150px;/.test(css));
+  check('UNIF-ANKER-001 (замість аудиту a318ba0, проблема 4): старої смуги .ia-toc немає; сторінка лишає запас під меню якорів біля обраного краю, колонка по центру',
+    !css.includes('.ia-toc')
+    && /\.ia-account\.mq-schil\[data-mq-rail-zijde="rechts"\]\s*\{[\s\S]*?padding-right:\s*max\(var\(--ia-rail\)/.test(css)
+    && /\.ia-account\.mq-schil\[data-mq-rail-zijde="links"\]\s*\{[\s\S]*?padding-left:\s*max\(var\(--ia-rail\)/.test(css)
+    && /\.ia-sectie\s*\{[\s\S]*?scroll-margin-top:/.test(css));
 
   return einde();
 }

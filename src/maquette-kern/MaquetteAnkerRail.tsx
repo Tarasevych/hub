@@ -12,11 +12,14 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Settings, type LucideIcon } from 'lucide-react';
 import { useIsKlassiekMaquette } from './klassiek-hulp';
+import { useIsMaquette, useThemaStand } from '../thema/useThema';
+import './maquette-rail-site.css';
 
 export type MaquetteRailZijde = 'rechts' | 'links' | 'boven' | 'onder';
 export type MaquetteAnkerSoort = 'item' | 'groep' | 'actie';
@@ -124,17 +127,17 @@ function schrijfRailStaat(
   }
 }
 
-function leesKlassiekRailStaat(extraSleutel?: string): {
+function leesKlassiekRailStaat(extraSleutel?: string, standaardIngeklapt = true): {
   zijde: MaquetteRailZijde;
   compact: boolean;
   ingeklapt: boolean;
 } {
   if (typeof window === 'undefined') {
-    return { zijde: 'rechts', compact: false, ingeklapt: true };
+    return { zijde: 'rechts', compact: false, ingeklapt: standaardIngeklapt };
   }
   try {
     const rauw = window.localStorage.getItem(OPSLAG_SLEUTEL_KLASSIEK);
-    if (!rauw) return { zijde: 'rechts', compact: false, ingeklapt: true };
+    if (!rauw) return { zijde: 'rechts', compact: false, ingeklapt: standaardIngeklapt };
     const data = JSON.parse(rauw) as Partial<OpgeslagenKlassiekRailStaat>;
     const specifiek = extraSleutel && data.perSleutel ? data.perSleutel[extraSleutel] : undefined;
     const zijde = isZijde(specifiek?.zijde)
@@ -153,10 +156,10 @@ function leesKlassiekRailStaat(extraSleutel?: string): {
         ? specifiek.ingeklapt
         : typeof data.ingeklapt === 'boolean'
           ? data.ingeklapt
-          : true;
+          : standaardIngeklapt;
     return { zijde, compact, ingeklapt };
   } catch {
-    return { zijde: 'rechts', compact: false, ingeklapt: true };
+    return { zijde: 'rechts', compact: false, ingeklapt: standaardIngeklapt };
   }
 }
 
@@ -190,6 +193,19 @@ function schrijfKlassiekRailStaat(
   }
 }
 
+/** UNIF-ANKER-001: акцент звичайної палітри сайту (--accent може бути будь-яким кольором CSS) як «r, g, b» для rgba(var(--mq-accent-rgb), …).
+ *  De accentkleur van een gewoon sitepalet als «r, g, b»; null als die niet te lezen is (server, tests). */
+function leesSiteAccentRgb(): string | null {
+  if (typeof document === 'undefined' || !document.body || typeof getComputedStyle !== 'function') return null;
+  const proef = document.createElement('span');
+  proef.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;color:var(--accent)';
+  document.body.appendChild(proef);
+  const kleur = getComputedStyle(proef).color || '';
+  proef.remove();
+  const m = kleur.match(/rgba?\(\s*(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)/);
+  return m ? `${Math.round(+m[1])}, ${Math.round(+m[2])}, ${Math.round(+m[3])}` : null;
+}
+
 function heeftExactActief(item: MaquetteAnkerItem, actief: string): boolean {
   if (item.id === actief) return true;
   if (item.actiefBij?.includes(actief)) return true;
@@ -201,15 +217,22 @@ function heeftActiefInTak(item: MaquetteAnkerItem, actief: string): boolean {
   return Boolean(item.kinderen?.some((kind) => heeftActiefInTak(kind, actief)));
 }
 
-function vindActiefItem(items: ReadonlyArray<MaquetteAnkerItem>, actief: string): MaquetteAnkerItem | null {
+// UNIF-ANKER-001 (стара вада): пошук у групі раніше повертав її перший пункт, коли активного там не було, тож підсмуга на телефоні
+// й капсула показували «Персоналізація» замість «Безпека» на будь-якій сторінці з групами. Тепер запасний перший пункт — лише на верхньому рівні.
+// Zoeken in een groep gaf het eerste item terug als het actieve er niet in zat; de terugval geldt nu alleen op het hoogste niveau.
+function zoekActiefItem(items: ReadonlyArray<MaquetteAnkerItem>, actief: string): MaquetteAnkerItem | null {
   for (const item of items) {
     if (item.kinderen?.length) {
-      const diep = vindActiefItem(item.kinderen, actief);
+      const diep = zoekActiefItem(item.kinderen, actief);
       if (diep) return diep;
     }
     if (heeftExactActief(item, actief)) return item;
   }
-  return items[0] ?? null;
+  return null;
+}
+
+function vindActiefItem(items: ReadonlyArray<MaquetteAnkerItem>, actief: string): MaquetteAnkerItem | null {
+  return zoekActiefItem(items, actief) ?? items[0] ?? null;
 }
 
 function verzamelOpenGroepen(
@@ -329,11 +352,20 @@ export function MaquetteAnkerRail({
   opslagSleutel,
 }: MaquetteAnkerRailProps) {
   const taal = lang === 'nl' ? 'nl' : 'uk';
-  const isKlassiek = useIsKlassiekMaquette();
+  const isKlassiekPalet = useIsKlassiekMaquette();
+  // UNIF-ANKER-001: у звичайних палітрах сайту (не «Макет» і не класичні) — та сама рейка в стриманому класичному вигляді
+  // (кольори з токенів теми, maquette-rail-site.css) і з тими самими опціями: чотири краї, компактна ширина, капсула.
+  // Типово розгорнута, бо інших засобів переходу на таких сторінках немає.
+  // In gewone sitepaletten: dezelfde rail in de klassieke vorm met de kleuren van het thema, standaard uitgeklapt.
+  const isSitePalet = !useIsMaquette() && !isKlassiekPalet;
+  const isKlassiek = isKlassiekPalet || isSitePalet;
+  const standaardIngeklapt = !isSitePalet;
+  const themaStand = useThemaStand();
   const t = RAIL_TEKSTEN[taal];
 
   const [maquetteStaat, setMaquetteStaat] = useState(() => leesRailStaat(opslagSleutel));
-  const [klassiekStaat, setKlassiekStaat] = useState(() => leesKlassiekRailStaat(opslagSleutel));
+  const [klassiekStaat, setKlassiekStaat] = useState(() => leesKlassiekRailStaat(opslagSleutel, standaardIngeklapt));
+  const [siteAccentRgb, setSiteAccentRgb] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
   const [mobielOpen, setMobielOpen] = useState<boolean>(false);
   const [uitlegOpen, setUitlegOpen] = useState<boolean>(false);
@@ -347,8 +379,15 @@ export function MaquetteAnkerRail({
 
   useEffect(() => {
     setMaquetteStaat(leesRailStaat(opslagSleutel));
-    setKlassiekStaat(leesKlassiekRailStaat(opslagSleutel));
-  }, [opslagSleutel]);
+    setKlassiekStaat(leesKlassiekRailStaat(opslagSleutel, standaardIngeklapt));
+  }, [opslagSleutel, standaardIngeklapt]);
+
+  // Акцент палітри сайту перечитуємо при кожній зміні теми, палітри чи акценту облікового запису (ставляться на <html> у layout-ефекті).
+  useEffect(() => {
+    if (!isSitePalet) { setSiteAccentRgb(null); return; }
+    setSiteAccentRgb(leesSiteAccentRgb());
+  }, [isSitePalet, themaStand]);
+  const siteStijl = (isSitePalet && siteAccentRgb ? { ['--mq-accent-rgb' as string]: siteAccentRgb } : undefined) as CSSProperties | undefined;
 
   // Автоматично розкриваємо батьківські групи для активного елемента або позначки openStandaard.
   // MAILANKER-001: лише коли змінився активний пункт або з'явилася нова група. Раніше це спрацьовувало на кожне
@@ -863,6 +902,7 @@ export function MaquetteAnkerRail({
   const railKlassen = [
     'mq-anker-rail',
     isKlassiek ? 'is-klassiek' : '',
+    isSitePalet ? 'is-site' : '',
     toonAlsPil ? 'is-ingeklapt' : '',
   ]
     .filter(Boolean)
@@ -882,6 +922,7 @@ export function MaquetteAnkerRail({
       <nav
         ref={railRef}
         className={railKlassen}
+        style={siteStijl}
         aria-label={titel || t.navAria}
         data-zijde={zijde}
         data-compact={compact ? 'ja' : 'nee'}
@@ -1025,7 +1066,8 @@ export function MaquetteAnkerRail({
       {popoverOpen ? (
         <div
           ref={popoverRef}
-          className={`mq-rail-popover${isKlassiek ? ' is-klassiek' : ''}`}
+          className={`mq-rail-popover${isKlassiek ? ' is-klassiek' : ''}${isSitePalet ? ' is-site' : ''}`}
+          style={siteStijl}
           role="dialog"
           aria-modal="false"
           aria-label={t.instellingenKnop}
@@ -1093,7 +1135,7 @@ export function MaquetteAnkerRail({
 
   return (
     <>
-      <div ref={ankerPlekRef} className="mq-anker-onderbalk">
+      <div ref={ankerPlekRef} className={`mq-anker-onderbalk${isSitePalet ? ' is-site' : ''}`} style={siteStijl}>
         <button
           type="button"
           className="mq-onderbalk-trekker"

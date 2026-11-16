@@ -200,7 +200,7 @@ export async function main(): Promise<number> {
       await b.page.reload({ waitUntil: 'networkidle' }); await b.page.waitForTimeout(900);
       check('A: «Класичний» з «Макета» → сервер vormgeving=klassiek, другий пристрій після F5 — класичний вигляд', (await serverWeergave(a.page)).vormgeving === 'klassiek' && (await welkeVormgeving(b.page)) === 'klassiek', await welkeVormgeving(b.page));
       // телефон: повний перемикач «Вигляд сторінки» над заголовком (компактний у смузі розділів на вузькому екрані схований задумано) → «Макет»
-      check('A: телефон — компактний перемикач у смузі розділів схований, повний «Вигляд сторінки» стоїть над заголовком', !(await b.page.locator('.ia-toc .ia-vormgeving-compact').isVisible()) && (await b.page.locator('.ia-account > .ia-vormgeving').first().isVisible()));
+      check('A: телефон — повний «Вигляд сторінки» стоїть над заголовком (розділи — у підсмузі меню якорів)', (await b.page.locator('.ia-account .mq-anker-onderbalk').first().isVisible()) && (await b.page.locator('.ia-account > .ia-vormgeving').first().isVisible()));
       await b.page.locator('.ia-account > .ia-vormgeving [data-vormgeving="maquette"]').first().tap();
       await b.page.locator('.mr-mq #group-security .setting-section').first().waitFor({ timeout: 15000 });
       await b.page.waitForTimeout(900);
