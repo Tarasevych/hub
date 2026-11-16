@@ -7,7 +7,7 @@ import {
   valideerOntwikkelDossier, ONTWIKKELARCHIEF_REPO
 } from '../shared/ontwikkelarchief';
 
-export type ArchiefControle = { ok: boolean; code: string; reden: string; url?: string };
+export type ArchiefControle = { ok: boolean; code: string; reden: string; url?: string; handmatig?: { uploader: string; auteur: string } };
 const fout = (code: string, reden: string): ArchiefControle => ({ok:false,code,reden});
 /** De vaste bot-identiteit waarmee GitHub Actions (GITHUB_TOKEN) releases en assets aanmaakt. */
 export const GITHUB_ACTIONS_BOT = Object.freeze({ login: 'github-actions[bot]', id: 41898282, type: 'Bot' });
@@ -66,11 +66,14 @@ export async function controleerOntwikkelArchiefOnline(
     const asset=Array.isArray(release?.assets)?release.assets.find((a:any)=>a?.name===ref.pakket):null;
     if(!asset || asset.state!=='uploaded') return fout('ONTWIKKELARCHIEF_PAKKET_ONTBREEKT','Exacte tar.gz ontbreekt op GitHub Release');
     if(asset.digest!==`sha256:${pakketSha}`) return fout('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT','Release-asset wijkt af van het geüploade tar.gz');
-    // SEC-PAKKET-001 (16.11.2026): alleen een archief dat GitHub Actions zelf bouwde en uploadde. Met een gestolen token kan iemand
-    // een eigen tar.gz met de hand in een release zetten; dan is de uploader een gebruiker, geen bot. Root controleert hetzelfde.
-    // Лише архів, який зібрав і завантажив сам GitHub Actions; архів, завантажений вручну чиїмось токеном, відхиляється.
-    if(!doorGithubActions(asset?.uploader) || !doorGithubActions(release?.author)) return fout('ONTWIKKELARCHIEF_PAKKET_HANDMATIG',`Release-asset niet door GitHub Actions geüpload (uploader: ${String(asset?.uploader?.login||'onbekend').slice(0,40)})`);
-    return {ok:true,code:'OK',reden:'Vastgelegd dossier, taak-tak en exact GitHub Release-archief bevestigd',url:ref.url};
+    // SEC-PAKKET-001 (16.11.2026): wie het archief in de release zette. Normaal is dat GitHub Actions zelf (bot). Een archief dat met de
+    // hand is geüpload (de eigenaar doet dat soms; een dief met een gestolen token zou het ook zo doen) wordt NIET geweigerd — het is een
+    // rode vlag: de voorcontrole toont wie uploadde en de goedkeuring vraagt een apart vinkje vóór de passkey. Root logt het.
+    // Архів, завантажений у випуск вручну, не відхиляється (власник теж так робить), а стає червоним прапорцем з окремим підтвердженням.
+    const bot=doorGithubActions(asset?.uploader) && doorGithubActions(release?.author);
+    const naam=(w:any)=>String(w?.login||'onbekend').replace(/[^A-Za-z0-9_.\[\]-]/g,'').slice(0,40)||'onbekend';
+    return {ok:true,code:'OK',reden:'Vastgelegd dossier, taak-tak en exact GitHub Release-archief bevestigd',url:ref.url,
+      ...(bot?{}:{handmatig:{uploader:naam(asset?.uploader),auteur:naam(release?.author)}})};
   } catch (e) {
     const probleem=e instanceof Error?e.message:'netwerk';
     return fout(probleem==='404'?'ONTWIKKELARCHIEF_NIET_GEVONDEN':'ONTWIKKELARCHIEF_ONBEREIKBAAR',

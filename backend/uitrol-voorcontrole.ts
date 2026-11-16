@@ -194,6 +194,8 @@ export type ProefVoorControle = { id: string; ok: boolean; status: string; sqlSh
 export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle>; proef?: ProefVoorControle | null; geinstalleerd?: string | null }): Promise<VoorcontroleUitkomst> {
   const controles: Controle[] = [];
   const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : id === 'risico' ? 40 : 12) } : {}) }); };
+  // SEC-PAKKET-001: vlaggen uit eerdere stappen (bv. een met de hand geüpload GitHub-archief) die in «risico» meetellen.
+  const extraVlaggen: string[] = [];
   const meta: PakketMeta = { auteur: '', agent: '', samenvatting: '', bestanden: 0, bytesUitgepakt: 0, commit: '', bovenmap: '' };
   let werk = '';
   try {
@@ -311,6 +313,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
             [online.reden]);
           else {
             meta.ontwikkelArchiefUrl = archief.ref.url;
+            if (online.handmatig) extraVlaggen.push(`[GitHub] архів у випуску завантажено вручну (${online.handmatig.uploader}), не GitHub Actions; автор випуску: ${online.handmatig.auteur} · archief met de hand in de release gezet`);
             voeg('ontwikkelarchief', 'ok',
               'GitHub: документ історії, коміт, гілку та SHA-256 точного пакета перевірено.',
               'GitHub: dossier, commit, tak en SHA-256 van het exacte pakket bevestigd.',
@@ -431,8 +434,9 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     // ---- 7b. SEC-PAKKET-001: rode vlaggen — wat de meeste macht over de server geeft, vergeleken met de GEÏNSTALLEERDE release
     // (backend/uitrol-risico.ts). Een vlag blokkeert niet, maar de goedkeuring vraagt dan een aparte bevestiging (site én server).
     // Червоні прапорці: зміни з найбільшою владою над сервером; схвалення тоді вимагає окремого підтвердження.
-    if (opties.geinstalleerd !== undefined) {
-      const r = await risicoVlaggen({ bron, pakketBestanden: alle, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql });
+    if (opties.geinstalleerd !== undefined || extraVlaggen.length) {
+      const r = opties.geinstalleerd !== undefined ? await risicoVlaggen({ bron, pakketBestanden: alle, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }) : { vergeleken: false, vlaggen: [] };
+      r.vlaggen = [...extraVlaggen, ...r.vlaggen];
       if (r.vlaggen.length) voeg('risico', 'waarschuwing', `Червоні прапорці: ${r.vlaggen.length}. Ці зміни дають найбільшу владу над сервером (root, залежності, права в базі). Перегляньте їх — перед схваленням потрібне окреме підтвердження.`, `Rode vlaggen: ${r.vlaggen.length}. Deze wijzigingen geven de meeste macht over de server (root, afhankelijkheden, rechten in de database). Bekijk ze — vóór het goedkeuren is een aparte bevestiging nodig.`, r.vlaggen);
       else voeg('risico', 'ok', 'Червоних прапорців немає: файли root, залежності npm, процеси GitHub і права в базі не змінено порівняно з встановленою версією.', 'Geen rode vlaggen: root-bestanden, npm-afhankelijkheden, GitHub-werkstromen en databaserechten zijn niet gewijzigd t.o.v. de geïnstalleerde versie.');
     }

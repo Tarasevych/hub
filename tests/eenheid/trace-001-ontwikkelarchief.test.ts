@@ -49,15 +49,18 @@ export async function main():Promise<number>{
   check('geen onveilige privacy',valideerOntwikkelDossier({...dossier,privacy:{geheimenUitgesloten:false}},'TRACE-001').length>0);
   const goed=await controleerOntwikkelArchiefOnline(r,pakketHash,{ophalen:fakeNet()});
   check('compleet dossier + commit in tak + release-asset+digest: OK',goed.ok,JSON.stringify(goed));
+  check('door GitHub Actions geüpload → geen vlag «handmatig»',goed.ok&&!goed.handmatig);
+  // SEC-PAKKET-001: met de hand geüpload = NIET weigeren (de eigenaar doet dat zelf ook), wel een rode vlag met wie uploadde.
+  for(const [label,opts] of [['tar.gz met de hand geüpload',{handmatig:true}],['release met de hand aangemaakt',{handmatigRelease:true}],['gebruiker die zich github-actions[bot] noemt',{botVervalst:true}]] as const){
+    const uit=await controleerOntwikkelArchiefOnline(r,pakketHash,{ophalen:fakeNet(opts)});
+    check(`${label} → toegelaten met vlag «handmatig»`,uit.ok&&!!uit.handmatig,JSON.stringify(uit));
+  }
   for(const [label,opts,verwacht] of [
     ['dossier ontbreekt',{geenDossier:true},'ONTWIKKELARCHIEF_ONGELDIG'],
     ['dossierhash gewijzigd',{foutDossier:true},'ONTWIKKELARCHIEF_SHA_VERSCHILT'],
     ['commit niet in tak',{afwijkTak:true},'ONTWIKKELARCHIEF_TAK_ONGELDIG'],
     ['release zonder tar.gz',{geenRelease:true},'ONTWIKKELARCHIEF_PAKKET_ONTBREEKT'],
     ['ander tar.gz op GitHub',{afwijkPakket:true},'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT'],
-    ['tar.gz met de hand geüpload (gestolen token)',{handmatig:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
-    ['release met de hand aangemaakt',{handmatigRelease:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
-    ['gebruiker die zich github-actions[bot] noemt',{botVervalst:true},'ONTWIKKELARCHIEF_PAKKET_HANDMATIG'],
     ['GitHub offline',{netwerk:true},'ONTWIKKELARCHIEF_ONBEREIKBAAR'],
     ['GitHub 404',{git404:true},'ONTWIKKELARCHIEF_NIET_GEVONDEN']
   ] as const){

@@ -60,6 +60,13 @@ export async function main(): Promise<number> {
       archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url})});
     check('TRACE-001: geverifieerd dossier wordt getoond',
       niv(traceGoed,'ontwikkelarchief')==='ok' && traceGoed.meta.ontwikkelArchiefUrl===traceRef.url);
+    // SEC-PAKKET-001: архів, завантажений у випуск вручну (власник так робить) — не відхиляється, а дає червоний прапорець.
+    const traceHand=await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url,handmatig:{uploader:'Tarasevych',auteur:'Tarasevych'}})});
+    const rvHand=traceHand.resultaat.controles.find((c)=>c.id==='risico');
+    check('SEC-PAKKET-001: met de hand geüpload GitHub-archief → ontwikkelarchief ok + rode vlag (geen weigering)',
+      niv(traceHand,'ontwikkelarchief')==='ok' && rvHand?.niveau==='waarschuwing' && !!rvHand.details?.[0]?.startsWith('[GitHub]') && rvHand.details[0].includes('Tarasevych'), JSON.stringify(rvHand));
+    check('SEC-PAKKET-001: door GitHub Actions geüpload → geen vlag', !traceGoed.resultaat.controles.some((c)=>c.id==='risico'));
     const traceKapot=await pakketVoorcontrole(tracePakket,{...traceBasis,
       archiefControle:async()=>({ok:false,code:'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT',reden:'SHA ongelijk'})});
     check('TRACE-001: afwijkende GitHub SHA-256 → blokkerende fout',
