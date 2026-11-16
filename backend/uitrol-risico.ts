@@ -14,8 +14,13 @@
 // de eigenaar. Daarom tonen we apart alleen wat de meeste macht over de server geeft, met een eigen bevestiging vóór het goedkeuren.
 //
 // Читаємо лише звичайні файли без переходу за посиланнями; код із пакета ніколи не виконується.
+import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { promisify } from 'node:util';
+
+const run = promisify(execFile);
 
 export const RISICO_MAX_VLAGGEN = 40;
 
@@ -153,3 +158,214 @@ export const vraagtRisicoBevestiging = (vc: { controles?: Array<{ id: string; ni
 
 /** Корінь встановленого випуску (той самий, з якого /api/version читає UITROL-VERSIE): на рівень вище dist. */
 export const geinstalleerdeRelease = (): string => path.resolve(process.env.DIST_DIR || path.join(process.cwd(), 'dist'), '..');
+
+// ------------------------------------------------------------------------------------------------ пояснення людською мовою + «було → стало»
+// Власник (16.11.2026): «треба розуміти, а не лише знати ці прапорці» і «треба знати, що конкретно в цьому файлі, до й після».
+// Тому до кожного прапорця: що це за річ простими словами, що саме змінилося (різниця рядків), на що звернути увагу, і окремо —
+// підозрілі нові рядки (завантаження з інтернету, root-права, ключі доступу…). Тексти uk + nl; різниця — справжній вміст файлів.
+// Eigenaar: «begrijpen, niet alleen weten». Per vlag: uitleg in gewone taal, het echte verschil (voor → na) en verdachte nieuwe regels.
+
+export type Tekst = { uk: string; nl: string };
+export type RisicoItem = {
+  vlag: string;
+  /** Що це і чому важливо (простими словами). */ wat: Tekst;
+  /** Що саме сталося з цією річчю в пакеті. */ wijziging: Tekst;
+  /** На що звернути увагу перед схваленням. */ let: Tekst;
+  /** Підозрілі нові рядки, знайдені в різниці. */ opvallend?: Tekst[];
+  /** Що означають знайомі нові рядки (зокрема ті, що роблять безпечніше). */ betekenis?: Tekst[];
+  /** Уніфікована різниця: рядки «-» = було (встановлена версія), «+» = стане (цей пакет). */ verschil?: string;
+  verschilAfgekapt?: boolean;
+};
+
+const MAX_VERSCHIL_REGELS = 400;
+const MAX_VERSCHIL_BYTES = 40_000;
+const MAX_VERSCHIL_TOTAAL = 400_000;
+
+function kap(tekst: string): { verschil: string; afgekapt: boolean } {
+  let regels = tekst.split('\n'); let afgekapt = false;
+  if (regels.length > MAX_VERSCHIL_REGELS) { regels = regels.slice(0, MAX_VERSCHIL_REGELS); afgekapt = true; }
+  let uit = regels.join('\n');
+  if (uit.length > MAX_VERSCHIL_BYTES) { uit = uit.slice(0, MAX_VERSCHIL_BYTES); afgekapt = true; }
+  return { verschil: uit, afgekapt };
+}
+const isBinair = (b: Buffer) => b.subarray(0, 8000).includes(0);
+const regelsMet = (teken: '+' | '-', tekst: string) => tekst.replace(/\n$/, '').split('\n').map((r) => teken + r).join('\n');
+
+/** Справжня різниця двох версій файла (diff -u із системи; код із пакета не виконується, файли лише читаються). */
+export async function bestandsVerschil(oudPad: string | null, nieuwPad: string | null, naam: string): Promise<{ verschil: string; afgekapt: boolean }> {
+  const oud = oudPad ? await leesGewoon(oudPad, 8 * 1024 * 1024) : null;
+  const nieuw = nieuwPad ? await leesGewoon(nieuwPad, 8 * 1024 * 1024) : null;
+  if ((oud && isBinair(oud)) || (nieuw && isBinair(nieuw))) {
+    const h = (b: Buffer | null) => (b ? createHash('sha256').update(b).digest('hex').slice(0, 16) : '—');
+    return { verschil: `(двійковий файл · binair bestand) ${naam}\n- sha256 ${h(oud)}… (${oud?.length ?? 0} B)\n+ sha256 ${h(nieuw)}… (${nieuw?.length ?? 0} B)`, afgekapt: false };
+  }
+  if (!oud && nieuw) return kap(`--- (не було · bestond niet)\n+++ ${naam} (новий пакет · nieuw pakket)\n` + regelsMet('+', nieuw.toString('utf8')));
+  if (oud && !nieuw) return kap(`--- ${naam} (встановлена версія · geïnstalleerd)\n+++ (прибрано · verwijderd)\n` + regelsMet('-', oud.toString('utf8')));
+  if (!oud || !nieuw) return { verschil: '', afgekapt: false };
+  try {
+    await run('/usr/bin/diff', ['-u', '--label', `${naam} (було · voorheen)`, '--label', `${naam} (стане · straks)`, oudPad!, nieuwPad!], { maxBuffer: 16 * 1024 * 1024, timeout: 15_000, env: { LC_ALL: 'C', PATH: '/usr/bin:/bin' } });
+    return { verschil: '', afgekapt: false }; // diff 0 = однакові
+  } catch (e) {
+    const x = e as { code?: number; stdout?: string };
+    if (x.code === 1 && typeof x.stdout === 'string') return kap(x.stdout.replace(/\n$/, ''));
+    // Без diff: показуємо обидві версії повністю.
+    return kap(`--- ${naam} (було · voorheen)\n+++ ${naam} (стане · straks)\n` + regelsMet('-', oud.toString('utf8')) + '\n' + regelsMet('+', nieuw.toString('utf8')));
+  }
+}
+
+/** Підозрілі НОВІ рядки (лише ті, що починаються з «+»). Пояснення, а не вирок: власник вирішує сам. */
+const OPVALLEND: Array<[RegExp, string, string]> = [
+  [/\b(?:curl|wget|Invoke-WebRequest|iwr)\b/i, 'завантаження чогось з інтернету (curl/wget): перевірте адресу; якщо результат одразу виконується (| bash, | sh) — це прямий запуск чужого коду з правами root', 'iets van internet downloaden (curl/wget): controleer het adres; wordt het meteen uitgevoerd (| bash, | sh), dan is dat vreemde code met root-rechten'],
+  [/\|\s*(?:ba)?sh\b|\beval\b|base64\s+(?:-d|--decode)/i, 'виконання тексту як команди (| bash, eval, base64 -d): так ховають шкідливий код', 'tekst als opdracht uitvoeren (| bash, eval, base64 -d): zo wordt kwaadaardige code verstopt'],
+  [/\b(?:nc|ncat|socat|telnet)\s+-?\w*\s*[\w.-]+\s+\d+|\/dev\/tcp\//i, 'пряме мережеве з’єднання (nc, /dev/tcp): так відкривають «задні двері» до сервера', 'rechtstreekse netwerkverbinding (nc, /dev/tcp): zo opent men een achterdeur'],
+  [/authorized_keys|ssh-keygen|\bAuthorizedKeys/i, 'робота з SSH-ключами: хтось може додати свій ключ і заходити на сервер без пароля', 'werken met SSH-sleutels: iemand kan zijn eigen sleutel toevoegen en zonder wachtwoord inloggen'],
+  [/NOPASSWD|\bsudoers\b|\bvisudo\b/i, 'права sudo: хтось отримує право виконувати команди від root без пароля', 'sudo-rechten: iemand mag opdrachten als root uitvoeren zonder wachtwoord'],
+  [/\b(?:useradd|adduser|usermod|passwd|chpasswd)\b/i, 'створення або зміна користувачів сервера чи паролів', 'gebruikers of wachtwoorden van de server aanmaken of wijzigen'],
+  [/chmod\s+(?:-R\s+)?(?:[0-7]?777|[ugoa]*\+s|u\+s|4[0-7]{3})/i, 'відкриті права (777) або setuid: файл зможе змінити будь-хто або він запускатиметься від root', 'open rechten (777) of setuid: iedereen kan het bestand wijzigen of het draait als root'],
+  [/\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r|\bshred\b|\bmkfs\b|\bdd\s+if=/i, 'масове видалення чи затирання (rm -rf, shred, dd): перевірте, що саме видаляється', 'massaal verwijderen of overschrijven (rm -rf, shred, dd): controleer wat er weg gaat'],
+  [/^\+\s*(?:User|Group)\s*=\s*root\b|^\+\s*User\s*=\s*$/im, 'служба запускатиметься від імені root (повні права)', 'de dienst draait voortaan als root (volledige rechten)'],
+  [/\b(?:CapabilityBoundingSet|AmbientCapabilities)\b|\bNoNewPrivileges\s*=\s*(?:no|false)|\bProtectSystem\s*=\s*(?:no|false)|\bPrivateTmp\s*=\s*(?:no|false)/i, 'послаблення захисту служби (можливості, NoNewPrivileges, ProtectSystem)', 'beveiliging van de dienst afgezwakt (capabilities, NoNewPrivileges, ProtectSystem)'],
+  [/\$\{\{\s*secrets\.|pull_request_target|workflow_run|permissions:\s*write-all|contents:\s*write/i, 'процес GitHub отримує секрети або права запису: украдений токен дав би більше влади', 'GitHub-werkstroom krijgt geheimen of schrijfrechten: een gestolen token geeft dan meer macht'],
+  [/uses:\s*[^\s#]+@(?![0-9a-f]{40}\b)/i, 'стороння дія GitHub не закріплена за хешем: її автор може непомітно змінити код', 'externe GitHub-actie niet vastgezet op een hash: de maker kan de code ongemerkt wijzigen'],
+  [/\b(?:https?:\/\/(?!(?:[\w-]+\.)*(?:tarasevych\.com|github\.com|githubusercontent\.com|npmjs\.org|nodejs\.org|debian\.org|ubuntu\.com|cloudflare\.com|google\.com|googleapis\.com)\b)[\w.-]+)/i, 'нова адреса в інтернеті поза звичними (GitHub, npm, Google, Cloudflare, власний домен): перевірте, кому вона належить', 'nieuw internetadres buiten de gebruikelijke (GitHub, npm, Google, Cloudflare, eigen domein): controleer van wie het is'],
+];
+export function opvallendeRegels(verschil: string): Tekst[] {
+  const nieuw = verschil.split('\n').filter((r) => r.startsWith('+') && !r.startsWith('+++')).join('\n');
+  if (!nieuw) return [];
+  const uit: Tekst[] = [];
+  for (const [re, uk, nl] of OPVALLEND) {
+    const m = nieuw.split('\n').find((r) => re.test(r));
+    if (m) uit.push({ uk: `${uk}. Рядок: ${m.slice(1).trim().slice(0, 160)}`, nl: `${nl}. Regel: ${m.slice(1).trim().slice(0, 160)}` });
+  }
+  return uit;
+}
+
+
+/** Знайомі нові рядки, які роблять систему БЕЗПЕЧНІШОЮ або є звичайними: пояснюємо, щоб власник не гадав. */
+const BETEKENIS: Array<[RegExp, string, string]> = [
+  [/uses:\s*[^\s#]+@[0-9a-f]{40}\b/i, 'дію GitHub закріплено за точною версією (хешем): її автор уже не зможе непомітно підмінити код. Це безпечніше', 'GitHub-actie vastgezet op een exacte versie (hash): de maker kan de code niet meer ongemerkt wijzigen. Dat is veiliger'],
+  [/persist-credentials:\s*false/i, 'після завантаження коду токен GitHub не лишається на диску, тож наступні кроки його не бачать. Це безпечніше', 'na het ophalen van de code blijft het GitHub-token niet op schijf staan, dus volgende stappen zien het niet. Dat is veiliger'],
+  [/--ignore-scripts/i, 'пакети npm встановлюються без запуску їхніх власних скриптів. Це безпечніше', 'npm-pakketten worden geïnstalleerd zonder hun eigen scripts uit te voeren. Dat is veiliger'],
+  [/^\+\s*permissions:|contents:\s*read/im, 'процесу GitHub дано лише право читання. Це безпечніше', 'de GitHub-werkstroom krijgt alleen leesrecht. Dat is veiliger'],
+  [/NoNewPrivileges\s*=\s*(?:yes|true)|ProtectSystem\s*=\s*(?:strict|full)|PrivateTmp\s*=\s*(?:yes|true)|ProtectHome\s*=\s*(?:yes|true|read-only)/i, 'службу додатково обмежено (не може підвищити права чи змінювати систему). Це безпечніше', 'de dienst is extra beperkt (kan geen rechten verhogen of het systeem wijzigen). Dat is veiliger'],
+  [/^\+\s*#/m, 'додано коментарі: пояснення в тексті файла, на роботу не впливають', 'opmerkingen toegevoegd: uitleg in het bestand, geen invloed op de werking'],
+];
+export function betekenisRegels(verschil: string): Tekst[] {
+  const nieuw = verschil.split('\n').filter((r) => r.startsWith('+') && !r.startsWith('+++'));
+  const uit: Tekst[] = [];
+  for (const [re, uk, nl] of BETEKENIS) {
+    const n = nieuw.filter((r) => re.test(r)).length;
+    if (n) uit.push({ uk: `${uk} (${n} ${n === 1 ? 'рядок' : 'рядків'})`, nl: `${nl} (${n} ${n === 1 ? 'regel' : 'regels'})` });
+  }
+  return uit;
+}
+
+/** Що це за файл у deploy/ — простими словами. */
+function watRootBestand(f: string): Tekst {
+  const b = path.posix.basename(f);
+  if (/sudoers/i.test(f)) return { uk: 'Правило sudo: визначає, кому на сервері дозволено виконувати команди від імені root (найвищі права).', nl: 'sudo-regel: bepaalt wie op de server opdrachten als root (hoogste rechten) mag uitvoeren.' };
+  if (/\.service$/.test(b)) return { uk: 'Служба systemd: програма, яку сервер сам запускає й тримає ввімкненою. У ній записано, що саме запускається (ExecStart), від чийого імені (User) і до чого має доступ.', nl: 'systemd-dienst: een programma dat de server zelf start en draaiende houdt. Erin staat wat er start (ExecStart), als wie (User) en waar het bij mag.' };
+  if (/\.timer$/.test(b)) return { uk: 'Таймер systemd: розклад, за яким сервер автоматично запускає певну службу (наприклад, щогодини).', nl: 'systemd-timer: een schema waarop de server automatisch een dienst start (bijvoorbeeld elk uur).' };
+  if (/\.path$/.test(b)) return { uk: 'Стеження за текою (systemd .path): сервер запускає дію, щойно в теці з’являється чи змінюється файл. Так, наприклад, працює схвалення оновлень.', nl: 'Mapbewaking (systemd .path): de server start een actie zodra er een bestand in een map verschijnt of verandert. Zo werkt bijvoorbeeld het goedkeuren van updates.' };
+  if (/\.(?:sh|bash)$/.test(b)) return { uk: 'Скрипт командного рядка, який виконується від імені root, тобто з повними правами на сервері: може змінити, прочитати або видалити будь-що.', nl: 'Shell-script dat als root draait, dus met volledige rechten op de server: het kan alles wijzigen, lezen of verwijderen.' };
+  if (/\.(?:py|mjs|js|cjs|ts)$/.test(b)) return { uk: 'Програма, яку сервер запускає під час встановлення чи обслуговування, часто з правами root.', nl: 'Programma dat de server tijdens installatie of onderhoud uitvoert, vaak met root-rechten.' };
+  if (/^deploy\/opa\//.test(f)) return { uk: 'Правило доступу (OPA): вирішує, що дозволено агентам і користувачам. Зміна може відкрити доступ, який раніше був заборонений.', nl: 'Toegangsregel (OPA): bepaalt wat agenten en gebruikers mogen. Een wijziging kan toegang openen die eerder verboden was.' };
+  if (/\.(?:json|ya?ml|conf|cfg|ini|toml)$/.test(b)) return { uk: 'Файл налаштувань, який сервер установлює з правами root (наприклад, для служб, мережі чи прав).', nl: 'Instellingenbestand dat de server met root-rechten installeert (bijvoorbeeld voor diensten, netwerk of rechten).' };
+  return { uk: 'Файл із теки deploy/: сервер установлює або використовує його з правами root.', nl: 'Bestand uit deploy/: de server installeert of gebruikt het met root-rechten.' };
+}
+
+const SQL_UITLEG: Array<[RegExp, Tekst]> = [
+  [/SECURITY DEFINER/, { uk: 'Функція в базі виконується з правами власника бази, а не того, хто її викликає. Якщо в ній помилка чи навмисна дірка, звичайний користувач обійде обмеження доступу до чужих даних.', nl: 'Een databasefunctie draait met de rechten van de eigenaar, niet van wie haar aanroept. Bevat ze een fout of een opzettelijk gat, dan omzeilt een gewone gebruiker de toegangsregels.' }],
+  [/ROLE|SUPERUSER|BYPASSRLS|CREATEROLE/, { uk: 'Створення або зміна ролі бази (облікового запису). BYPASSRLS чи SUPERUSER дають право бачити всі дані всіх користувачів.', nl: 'Een databaserol (account) aanmaken of wijzigen. BYPASSRLS of SUPERUSER geven toegang tot alle gegevens van alle gebruikers.' }],
+  [/ROW LEVEL SECURITY/, { uk: 'Вимкнення захисту рядків (RLS): саме він не дає одному користувачеві бачити дані іншого.', nl: 'Rijbeveiliging (RLS) uitgezet: juist die voorkomt dat de ene gebruiker de gegevens van de andere ziet.' }],
+  [/DEFAULT PRIVILEGES/, { uk: 'Права за замовчуванням: усі МАЙБУТНІ таблиці автоматично отримають ці права.', nl: 'Standaardrechten: alle TOEKOMSTIGE tabellen krijgen deze rechten automatisch.' }],
+  [/PUBLIC/, { uk: 'Права «для всіх» (PUBLIC): доступ отримує кожна роль бази.', nl: 'Rechten «voor iedereen» (PUBLIC): elke databaserol krijgt toegang.' }],
+  [/PROGRAM/, { uk: 'COPY … PROGRAM: база запускає команду операційної системи сервера.', nl: 'COPY … PROGRAM: de database voert een opdracht van het besturingssysteem uit.' }],
+  [/EXTENSION|LANGUAGE/, { uk: 'Розширення чи мова в базі: додає до бази нові можливості, деякі з них можуть звертатися до файлів чи мережі.', nl: 'Extensie of taal in de database: voegt mogelijkheden toe, sommige kunnen bestanden of het netwerk bereiken.' }],
+  [/файл|bestand/, { uk: 'Доступ бази до файлів сервера чи інших баз (pg_read_file, lo_import, dblink).', nl: 'Toegang van de database tot bestanden van de server of andere databases (pg_read_file, lo_import, dblink).' }],
+];
+
+/** Рядки міграції, через які спрацював прапорець, з номерами (лише текст SQL, без виконання). */
+function sqlFragment(sql: string, vlag: string): string {
+  const re = SQL_RECHTEN.find(([, t]) => vlag.endsWith(t))?.[0];
+  const regels = sql.split('\n');
+  const uit: string[] = [];
+  regels.forEach((r, i) => { if (re && re.test(r)) for (let j = Math.max(0, i - 2); j <= Math.min(regels.length - 1, i + 2); j++) uit.push(`${String(j + 1).padStart(4)}  ${regels[j]}`); });
+  return [...new Set(uit)].join('\n') || regels.slice(0, 40).map((r, i) => `${String(i + 1).padStart(4)}  ${r}`).join('\n');
+}
+
+const ZIN: Record<string, Tekst> = {
+  '+': { uk: 'Це НОВИЙ файл: у встановленій версії його не було. Нижче весь його вміст.', nl: 'Dit is een NIEUW bestand: het bestond niet in de geïnstalleerde versie. Hieronder de hele inhoud.' },
+  '~': { uk: 'Файл ЗМІНЕНО. Нижче різниця: рядки з «−» (червоні) були у встановленій версії, рядки з «+» (зелені) з’являться після встановлення.', nl: 'Het bestand is GEWIJZIGD. Hieronder het verschil: regels met «−» (rood) stonden in de geïnstalleerde versie, regels met «+» (groen) komen erbij.' },
+  '−': { uk: 'Файл ПРИБРАНО: після встановлення його не буде. Нижче, що в ньому було.', nl: 'Het bestand wordt VERWIJDERD. Hieronder wat erin stond.' },
+};
+
+/** Пояснення й різниця для кожного прапорця. Сервер зберігає це разом із перевіркою; сайт показує при розгортанні. */
+export async function verklaarVlaggen(vlaggen: string[], p: { bron: string; geinstalleerd: string | null | undefined; nieuweMigraties: ReadonlyMap<string, string> }): Promise<RisicoItem[]> {
+  const inst = p.geinstalleerd && (await lstat(path.join(p.geinstalleerd, 'package.json')).catch(() => null))?.isFile() ? p.geinstalleerd : null;
+  const items: RisicoItem[] = []; let totaal = 0;
+  const metVerschil = (item: RisicoItem, v: { verschil: string; afgekapt: boolean }) => {
+    if (!v.verschil) return item;
+    if (totaal + v.verschil.length > MAX_VERSCHIL_TOTAAL) return { ...item, verschil: '(різниця не вміщається в запис перевірки; подивіться коміт на GitHub · verschil past niet; zie de commit op GitHub)', verschilAfgekapt: true };
+    totaal += v.verschil.length;
+    const opv = opvallendeRegels(v.verschil); const bet = betekenisRegels(v.verschil);
+    return { ...item, verschil: v.verschil, ...(v.afgekapt ? { verschilAfgekapt: true } : {}), ...(opv.length ? { opvallend: opv } : {}), ...(bet.length ? { betekenis: bet } : {}) };
+  };
+  for (const vlag of vlaggen) {
+    const m = /^\[([^\]]+)\]\s*(.*)$/.exec(vlag); const soort = m?.[1] ?? '!'; const rest = m?.[2] ?? vlag;
+    if (soort === 'root' || soort === 'CI') {
+      const teken = rest[0] as '+' | '~' | '−'; const f = rest.slice(2).trim();
+      const wat = soort === 'root' ? watRootBestand(f) : { uk: 'Процес GitHub Actions: інструкція, за якою GitHub сам збирає й публікує випуск. Від неї залежить, що саме потрапить в архів для сервера.', nl: 'GitHub Actions-werkstroom: het recept waarmee GitHub de release bouwt en publiceert. Het bepaalt wat er in het archief voor de server komt.' };
+      const v = await bestandsVerschil(teken === '+' ? null : inst ? path.join(inst, f) : null, teken === '−' ? null : path.join(p.bron, f), f);
+      const lt: Tekst = soort === 'root'
+        ? { uk: 'Перегляньте зелені рядки (+). Якщо ви не замовляли цієї зміни або не розумієте, навіщо вона, — відхиліть пакет і спитайте автора. Особливо насторожують: завантаження з інтернету, нові ключі чи користувачі, sudo, root.', nl: 'Bekijk de groene regels (+). Hebt u deze wijziging niet gevraagd of begrijpt u niet waarom, wijs het pakket dan af en vraag het de maker. Extra verdacht: downloads van internet, nieuwe sleutels of gebruikers, sudo, root.' }
+        : { uk: 'Погано, якщо в нових рядках з’явилися секрети (secrets.), запис у репозиторій, нові сторонні дії без хеша або запуск на чужому коді (pull_request_target).', nl: 'Slecht als nieuwe regels geheimen (secrets.), schrijfrechten, externe acties zonder hash of uitvoering op vreemde code (pull_request_target) toevoegen.' };
+      items.push(metVerschil({ vlag, wat, wijziging: ZIN[teken] ?? ZIN['~'], let: lt }, v));
+    } else if (soort === 'npm') {
+      const pkg = /^([+~−])\s+(@?[^@\s:]+)(?:@|:\s*)?(.*)$/.exec(rest);
+      const wat = { uk: 'Пакет npm — це чужий готовий код, який сайт використовує. Під час збирання на сервері він завантажується з інтернету й виконується.', nl: 'Een npm-pakket is kant-en-klare code van anderen die de site gebruikt. Bij het bouwen op de server wordt het gedownload en uitgevoerd.' };
+      let wijziging: Tekst; let lt: Tekst; let verschil = '';
+      if (/скрипт встановлення|installatiescript/.test(rest)) {
+        wijziging = { uk: 'Змінено скрипт npm, що запускається АВТОМАТИЧНО під час встановлення пакетів.', nl: 'Een npm-script dat AUTOMATISCH draait bij het installeren van pakketten is gewijzigd.' };
+        lt = { uk: 'Саме так найчастіше підкидають шкідливий код. Якщо ви цього не замовляли — відхиліть.', nl: 'Zo wordt het vaakst kwaadaardige code binnengesmokkeld. Niet gevraagd? Afwijzen.' };
+      } else if (/overrides/.test(rest)) {
+        wijziging = { uk: 'Змінено overrides: примусова заміна версій пакетів усередині інших пакетів.', nl: 'overrides gewijzigd: versies van pakketten binnen andere pakketten worden geforceerd.' };
+        lt = { uk: 'Переконайтеся, що заміна потрібна (зазвичай для виправлення вразливості).', nl: 'Controleer dat de vervanging nodig is (meestal om een lek te dichten).' };
+      } else if (pkg?.[1] === '+') {
+        wijziging = { uk: `Додано новий пакет «${pkg[2]}» версії ${pkg[3]}.`, nl: `Nieuw pakket «${pkg[2]}» versie ${pkg[3]} toegevoegd.` };
+        lt = { uk: `Перевірте назву літера в літеру: шахраї публікують пакети зі схожими назвами. Відкрийте https://www.npmjs.com/package/${pkg[2]} — чи це відомий пакет із багатьма завантаженнями?`, nl: `Controleer de naam letter voor letter: oplichters publiceren pakketten met lijkende namen. Open https://www.npmjs.com/package/${pkg[2]} — is het een bekend pakket met veel downloads?` };
+        verschil = `+ "${pkg[2]}": "${pkg[3].replace(/\s*\(.*$/, '')}"`;
+      } else if (pkg?.[1] === '~') {
+        const [a, b] = pkg[3].replace(/\s*\(.*$/, '').split(' → ');
+        wijziging = { uk: `Пакет «${pkg[2]}» оновлено: було ${a}, стане ${b}.`, nl: `Pakket «${pkg[2]}» bijgewerkt: was ${a}, wordt ${b}.` };
+        lt = { uk: 'Оновлення зазвичай безпечні. Насторожує, якщо версія стрибнула незвично (наприклад, з 2.x на 9.x) або пакет маловідомий.', nl: 'Updates zijn meestal veilig. Verdacht bij een ongewone sprong (bv. 2.x → 9.x) of een onbekend pakket.' };
+        verschil = `- "${pkg[2]}": "${a}"\n+ "${pkg[2]}": "${b}"`;
+      } else {
+        wijziging = { uk: `Пакет «${pkg?.[2] ?? rest}» прибрано.`, nl: `Pakket «${pkg?.[2] ?? rest}» verwijderd.` };
+        lt = { uk: 'Прибрання пакета зазвичай безпечне.', nl: 'Een pakket verwijderen is meestal veilig.' };
+        verschil = `- "${pkg?.[2] ?? rest}"`;
+      }
+      items.push({ vlag, wat, wijziging, let: lt, ...(verschil ? { verschil } : {}) });
+    } else if (soort === 'lock') {
+      const url = rest.split(': ').slice(1).join(': ');
+      items.push({ vlag, wat: { uk: 'package-lock.json — точний список, звідки сервер завантажує кожен пакет npm.', nl: 'package-lock.json — de exacte lijst waar de server elk npm-pakket vandaan haalt.' },
+        wijziging: { uk: `Один пакет завантажуватиметься не з офіційного реєстру npm, а з адреси ${url}.`, nl: `Eén pakket komt niet uit het officiële npm-register maar van ${url}.` },
+        let: { uk: 'Безпечно лише якщо ви знаєте цю адресу і довіряєте їй. Чужа адреса = чужий код на сервері.', nl: 'Alleen veilig als u dit adres kent en vertrouwt. Vreemd adres = vreemde code op de server.' }, verschil: `+ "resolved": "${url}"` });
+    } else if (soort === 'SQL') {
+      const naam = rest.split(':')[0]; const sql = p.nieuweMigraties.get(naam) ?? '';
+      const u = SQL_UITLEG.find(([re]) => re.test(rest))?.[1] ?? { uk: 'Зміна прав у базі даних.', nl: 'Wijziging van rechten in de database.' };
+      items.push({ vlag, wat: { uk: `Міграція «${naam}» — інструкція, яка змінює будову бази даних. Вона виконується один раз під час встановлення і при відкаті НЕ скасовується.`, nl: `Migratie «${naam}» — een opdracht die de opbouw van de database wijzigt. Ze draait één keer bij de installatie en wordt bij terugdraaien NIET teruggedraaid.` },
+        wijziging: u, let: { uk: 'Нижче рядки, через які спрацював прапорець. Якщо незрозуміло, навіщо їх додано, — попросіть автора пояснити до схвалення.', nl: 'Hieronder de regels die de vlag gaven. Is niet duidelijk waarom ze er staan, vraag de maker dan om uitleg vóór het goedkeuren.' },
+        ...(sql ? { verschil: kap(sqlFragment(sql, vlag)).verschil } : {}) });
+    } else if (soort === 'GitHub') {
+      items.push({ vlag, wat: { uk: 'Випуск на GitHub — місце, звідки сайт бере архів оновлення. Зазвичай архів туди кладе сам GitHub Actions після автоматичної збірки й тестів.', nl: 'De GitHub-release is waar de site het update-archief vandaan haalt. Normaal zet GitHub Actions het daar na de automatische build en tests.' },
+        wijziging: { uk: `Цей архів поклала людина вручну (${rest.match(/\(([^)]+)\)/)?.[1] ?? 'невідомо'}), а не автоматична збірка.`, nl: `Dit archief is met de hand geplaatst (${rest.match(/\(([^)]+)\)/)?.[1] ?? 'onbekend'}), niet door de automatische build.` },
+        let: { uk: 'Якщо це зробили ви — усе гаразд. Якщо ні — відхиліть пакет і змініть пароль та токени GitHub: так виглядає підробка з украденим доступом.', nl: 'Deed u dat zelf, dan is het goed. Zo niet: afwijzen en uw GitHub-wachtwoord en tokens wijzigen — zo ziet een vervalsing met gestolen toegang eruit.' } });
+    } else {
+      items.push({ vlag, wat: { uk: 'Сайт не зміг порівняти пакет із встановленою версією.', nl: 'De site kon het pakket niet met de geïnstalleerde versie vergelijken.' },
+        wijziging: { uk: 'Тому не видно, що саме змінено у файлах root і залежностях.', nl: 'Daardoor is niet te zien wat er in root-bestanden en afhankelijkheden verandert.' },
+        let: { uk: 'Схвалюйте лише пакет, про зміст якого ви знаєте з інших джерел (опис випуску, PR).', nl: 'Keur alleen een pakket goed waarvan u de inhoud uit andere bron kent (releasebeschrijving, PR).' } });
+    }
+  }
+  return items;
+}

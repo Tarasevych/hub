@@ -183,7 +183,10 @@ export const VOORSTEL_STATUS: Record<string, [string, string]> = {
 
 // Voorcontrole van de site vóór de goedkeuring (backend/uitrol-voorcontrole.ts) en metadata uit het pakket zelf.
 export type ControleNiveau = 'ok' | 'waarschuwing' | 'fout';
-export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[] };
+/** SEC-PAKKET-001: червоний прапорець із поясненням людською мовою і справжньою різницею (backend/uitrol-risico.ts → RisicoItem). */
+export type TekstUit = { uk: string; nl: string };
+export type RisicoItemUit = { vlag: string; wat: TekstUit; wijziging: TekstUit; let: TekstUit; opvallend?: TekstUit[]; betekenis?: TekstUit[]; verschil?: string; verschilAfgekapt?: boolean };
+export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItemUit[] };
 export type VoorcontroleUit = { versie: number; tijd: string; ok: boolean; fouten: number; waarschuwingen: number; controles: ControleUit[] };
 export type PakketMetaUit = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string; manifest?: import('../../shared/uitrol-manifest').Manifest | null };
 /** Stand van de «nieuwe update» (de wizard op het tabblad Огляд), zodat de vier fasen bovenaan bij een nieuw bestand opnieuw beginnen. */
