@@ -132,3 +132,13 @@ export function vergeetMaten(): void {
   geheugen.clear();
 }
 naWissen.add(vergeetMaten);
+// Een ander tabblad wiste of schreef de maten (afmelden daar, of hetzelfde account in twee tabbladen): de kopie hier vergeten, zodat
+// een wachtende schrijfbeurt niets terugzet wat daar gewist is. Bij de volgende lezing komt de stand uit de opslag.
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('storage', (e: StorageEvent) => {
+    if (e.key !== null && !e.key.startsWith(MATEN_VOORVOEGSEL)) return;
+    if (e.key === null) { vergeetMaten(); return; }
+    geheugen.delete(e.key);
+    vuil.delete(e.key);
+  });
+}

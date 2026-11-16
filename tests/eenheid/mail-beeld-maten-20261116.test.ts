@@ -90,12 +90,12 @@ if (existsSync(pad)) {
     check('alleen een hoogte in de brief: het beeld tekent op eigen maat, de tegel ook', hoog.breedte === '200px' && hoog.hoogte === '' && hoog.verhouding === '200 / 48', JSON.stringify(hoog));
     const pixel = T.tegelMaat({ alt: '', echt: { b: 1, h: 1 } });
     check('volgpixel zonder maat in de brief: 1 × 1 in plaats van een blokje van 40 × 40', pixel.breedte === '1px' && pixel.verhouding === '1 / 1' && T.tegelVorm(pixel.schatB, pixel.schatH, '') === 'leeg', JSON.stringify(pixel));
-    check('vaste ruimte: echte maat zonder maat in de brief → onzichtbaar <svg> van 640 × 427 (krimpt mee als een beeld, duwt geen tabel open)', JSON.stringify(kaal.ruimte) === '{"b":640,"h":427}');
-    check('vaste ruimte: brief zegt width="600" → 600 × 400 met de verhouding van het beeld', JSON.stringify(fout.ruimte) === '{"b":600,"h":400}');
+    check('vaste ruimte: echte maat zonder maat in de brief → onzichtbaar <svg> van 640 × 427 (krimpt mee als een beeld, duwt geen tabel open)', JSON.stringify(kaal.ruimte) === '{"b":640,"h":427,"uitBrief":false}');
+    check('vaste ruimte: brief zegt width="600" → 600 × 400 met de verhouding van het beeld', JSON.stringify(fout.ruimte) === '{"b":600,"h":400,"uitBrief":true}');
     check('geen vaste ruimte bij een breedte in procent of in de stijl (die blijft van de brief)', pct.ruimte === null && stijl.ruimte === null);
     const banner = T.tegelMaat({ alt: 'Najaar', blok: true }), inline = T.tegelMaat({ alt: 'Logo' });
-    check('blokbeeld zonder enige maat: een banner van 600 × 240 die met de kolom meekrimpt; inline blijft het 220 px', JSON.stringify(banner.ruimte) === '{"b":600,"h":240}' && inline.breedte === '220px' && JSON.stringify(inline.ruimte) === '{"b":220,"h":124}', JSON.stringify(banner));
-    check('ook zonder echte maat een vaste ruimte voor een breedte in px (width="600" duwde een tabel op de telefoon breder dan het scherm)', JSON.stringify(T.tegelMaat({ breedteAttr: '600', hoogteAttr: '300', alt: 'x' }).ruimte) === '{"b":600,"h":300}' && JSON.stringify(T.tegelMaat({ breedteAttr: '600', alt: 'x' }).ruimte) === '{"b":600,"h":168}');
+    check('blokbeeld zonder enige maat: een banner van 600 × 240 die met de kolom meekrimpt; inline blijft het 220 px', JSON.stringify(banner.ruimte) === '{"b":600,"h":240,"uitBrief":false}' && inline.breedte === '220px' && JSON.stringify(inline.ruimte) === '{"b":220,"h":124,"uitBrief":false}', JSON.stringify(banner));
+    check('ook zonder echte maat een vaste ruimte voor een breedte in px (width="600" duwde een tabel op de telefoon breder dan het scherm)', JSON.stringify(T.tegelMaat({ breedteAttr: '600', hoogteAttr: '300', alt: 'x' }).ruimte) === '{"b":600,"h":300,"uitBrief":true}' && JSON.stringify(T.tegelMaat({ breedteAttr: '600', alt: 'x' }).ruimte) === '{"b":600,"h":168,"uitBrief":true}');
     check('zonder echte maat: alles zoals voorheen', T.tegelMaat({ alt: 'Foto' }).breedte === '220px' && T.tegelMaat({ alt: 'Foto', echt: null }).maxHoogte === '168px' && T.tegelMaat({ alt: 'Foto', echt: { b: 0, h: 5 } }).breedte === '220px');
   }
 }
@@ -108,18 +108,27 @@ if (existsSync(pad)) {
   check('tegel leest de maat van het data-attribuut van het beeld', tegel.includes("echt: leesMaatTekst(img.getAttribute('data-mail-beeld-maat'))"));
   const bt = readFileSync('src/MailBerichtTekst.tsx', 'utf8');
   check('lezer: maat alleen voor externe https-beelden uit het geheugen, anders het attribuut weg (de afzender kan het niet zetten)', bt.includes("bewaardeMaat(cacheAccountId,source):null;if(m)img.setAttribute('data-mail-beeld-maat',maatTekst(m));else img.removeAttribute('data-mail-beeld-maat')"));
-  check('lezer: pas na het tekenen (load) onthouden, met naturalWidth/naturalHeight', /addEventListener\('load',\(\)=>\{onthoudMaat\(cacheAccountId,source,img\.naturalWidth,img\.naturalHeight\)\},\{once:true\}\);img\.src=url/.test(bt));
+  check('lezer: pas na het tekenen (load) onthouden, met naturalWidth/naturalHeight — en niet meer na het opruimen (afmelden, andere brief)', /addEventListener\('load',\(\)=>\{if\(!cancelled\)onthoudMaat\(cacheAccountId,source,img\.naturalWidth,img\.naturalHeight\)\},\{once:true\}\);img\.src=url/.test(bt));
   check('lezer: de maat wordt gezet vóór de tegels geplaatst worden', bt.indexOf("img.setAttribute('data-mail-beeld-maat'") < bt.indexOf('let cursor=0;const worker'));
 
   // knoppen van de beeldenstrook
   const strook = bt.slice(bt.indexOf('function BeeldenStrook('), bt.indexOf('function BeeldenStrook(') + 4000);
   check('knoppen: pictogram oog (één keer) en persoon met vinkje (altijd van afzender)', strook.includes("data-beelden-knop='eenmaal'") && strook.includes('<Eye aria-hidden=') && strook.includes("data-beelden-knop='afzender'") && strook.includes('<UserCheck/>'));
   check('knoppen: «!» op de riskantere knop', /mail-beelden-knop-icoon' aria-hidden='true'><UserCheck\/><b>!<\/b>/.test(strook));
-  check('knoppen: knopinfo legt het gevolg uit (niet de naam herhalen)', strook.includes("data-tooltip={t('Показати зображення лише в цьому листі й лише зараз.") && strook.includes("data-tooltip={t('! Зображення від цього відправника завантажуватимуться одразу"));
-  check('knoppen: volledige naam voor de schermlezer, kort woord met dieselfde werkwoord', strook.includes("aria-label={t('Показати один раз','Eén keer tonen')}") && strook.includes("{t('Завжди показувати','Altijd tonen')}") && !strook.includes("t('Завжди','Altijd')"));
+  check('knoppen: knopinfo legt het gevolg uit (niet de naam herhalen), en dezelfde tekst is de beschrijving voor de schermlezer', strook.includes("uitlegEenmaal=t('Показати зображення лише в цьому листі й лише зараз.") && strook.includes("uitlegAfzender=t('! Зображення від цього відправника завантажуватимуться одразу")
+    && strook.includes('aria-describedby={`${uid}-eenmaal`} data-tooltip={uitlegEenmaal}') && strook.includes('aria-describedby={`${uid}-afzender`} data-tooltip={uitlegAfzender}') && strook.includes("<span className='mail-beelden-knop-uitleg' id={`${uid}-afzender`}>{uitlegAfzender}</span>") && /\.mail-beelden-knop-uitleg\{position:absolute;width:1px;height:1px;[^}]*clip:rect\(0,0,0,0\)/.test(readFileSync('src/mail/gesprek-opmaak.css', 'utf8')));
+  check('knoppen: volledige naam voor de schermlezer; «Завжди показувати від цього відправника» nooit ingekort (werkwoord én afzender)', strook.includes("aria-label={t('Показати один раз','Eén keer tonen')}") && strook.includes("<span className='mail-beelden-knop-lang'>{t('Завжди показувати від цього відправника','Altijd tonen van deze afzender')}</span>") && !strook.includes("t('Завжди показувати','Altijd tonen')") && !strook.includes("t('Завжди','Altijd')"));
   const css = readFileSync('src/mail/gesprek-opmaak.css', 'utf8');
   check('css: smalle strook → korte woorden (container query)', css.includes('.mail-beelden-strook{container:beeldenstrook/inline-size}') && /@container beeldenstrook \(max-width:640px\)\{[^}]*mail-beelden-knop-lang\{display:none\}/.test(css));
   check('css: «!» in de waarschuwingstint met themakleur (leesbaar licht én donker)', css.includes('background:var(--warn);color:var(--panel)'));
+  check('css: smalle strook → de afzenderknop breekt af in plaats van in te korten; telefoon → volle regels met de lange namen', /\.mail-beelden-strook>button\.mail-beelden-knop\[data-beelden-knop='afzender'\]\{white-space:normal/.test(css) && css.includes('html body .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-lang{display:inline}'));
+  const sporen = readFileSync('src/lokale-sporen.ts', 'utf8');
+  check('afmelden: de luisteraars vergeten hun kopie ook als er (nog) niets in de opslag stond', !/if \(n\) for \(const f of naWissen\)/.test(sporen) && sporen.includes('for (const f of naWissen) {'));
+  const mt = readFileSync('src/mail/beeld-maten.ts', 'utf8');
+  check('ander tabblad wiste of schreef: de kopie hier vergeten (storage-gebeurtenis)', mt.includes("window.addEventListener('storage'") && mt.includes('geheugen.delete(e.key)'));
+  const tg = readFileSync('src/mail/beeld-tegel.ts', 'utf8');
+  check('zwevend of los gepositioneerd beeld zonder maat → geen banner van 600 px (de browser maakt er een blok van, het is een logo naast tekst)', tg.includes('blok: n.blok && !n.los') && tg.includes("los: (!!eigen.float && eigen.float !== 'none') || eigen.position === 'absolute'"));
+  check('vaste ruimte telt binnenmarge en rand van het beeld mee (met width-attribuut zit die erin, border-box)', tg.includes('if (maat.ruimte.uitBrief) rh = Math.max(1, Math.round(Math.max(1, rb - rx) * maat.ruimte.h / maat.ruimte.b + ry));') && tg.includes("st.padding = '0';"));
 }
 
 process.exit(einde());

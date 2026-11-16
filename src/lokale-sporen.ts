@@ -78,7 +78,9 @@ function wis(kies: (rest: string) => boolean, opslag: Opslag | null): number {
     if (!voorvoegsel || !kies(k.slice(voorvoegsel.length))) continue;
     try { opslag.removeItem(k); n += 1; } catch { /* privévenster */ }
   }
-  if (n) for (const f of naWissen) { try { f(); } catch { /* een luisteraar mag het wissen niet breken */ } }
+  // ook bij n = 0: een module kan iets in het geheugen hebben dat nog niet weggeschreven is (MAILBEELD-003: maten wachten 800 ms) —
+  // anders schreef die het na het afmelden alsnog weg. De luisteraars vergeten alleen hun kopie; dat is altijd veilig.
+  for (const f of naWissen) { try { f(); } catch { /* een luisteraar mag het wissen niet breken */ } }
   return n;
 }
 

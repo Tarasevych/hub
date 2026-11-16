@@ -162,18 +162,35 @@ html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-
 /* MAILBEELD-003 (16.11.2026, Павло: «кнопки треба візуально відобразити гарно, типу піктограмами, щоб можна було візуально зрозуміти
    значення кнопки»): pictogram + woord. «Показати один раз» = oog (accent), «Завжди показувати від цього відправника» = persoon met vinkje
    en een klein oranje «!» (riskanter: de afzender kan zien wanneer u leest). Is de strook smal (telefoon, smal leesvenster), dan alleen
-   «Показати» / «Завжди показувати» — de volledige naam blijft de naam voor de schermlezer, de knopinfo vertelt het gevolg. */
+   «Показати»; «Завжди показувати від цього відправника» wordt niet ingekort (werkwoord én afzender horen erbij) maar breekt af. De
+   volledige naam is de naam voor de schermlezer; het gevolg staat in de knopinfo en in aria-describedby. */
 .mail-beelden-strook{container:beeldenstrook/inline-size}
 .mail-beelden-strook>button.mail-beelden-knop{gap:7px;padding:0 14px 0 11px;white-space:nowrap;text-align:start;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .mail-beelden-strook>button.mail-beelden-knop svg{flex:0 0 auto;width:16px;height:16px}
 .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-kort{display:none}
 .mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='eenmaal']:hover{box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 30%,transparent)}
 .mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='afzender']:hover{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
-.mail-beelden-knop-icoon{position:relative;display:inline-flex;flex:0 0 auto}
+/* de uitleg voor de schermlezer (aria-describedby): onzichtbaar, telt niet mee voor de maat van de knop. Eigen klasse: .sr-only bestaat niet in de post */
+.mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-uitleg{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
+.mail-beelden-knop-icoon{position:relative;display:inline-flex;flex:0 0 auto;margin-right:4px}
 .mail-beelden-knop-icoon>b{position:absolute;top:-5px;right:-6px;display:grid;place-items:center;width:12px;height:12px;border-radius:50%;background:var(--warn);color:var(--panel);font:800 9px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;box-shadow:0 0 0 2px var(--panel)}
 @container beeldenstrook (max-width:640px){
   .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-lang{display:none}
   .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-kort{display:inline}
+  .mail-beelden-strook>button.mail-beelden-knop{flex:1 1 auto;justify-content:center}
+  /* «від цього відправника» blijft staan (wie, niet alleen «altijd»): liever twee regels dan een knop die als «alles altijd tonen» leest */
+  .mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='afzender']{white-space:normal;text-align:center;padding-block:6px;line-height:1.25}
+}
+/* telefoon: ✕ staat hier in de hoek bij de titel (stroken-sluiten.css, max-width 560px). De knoppen krijgen dan de hele breedte en staan
+   naast elkaar op één regel (eerst stond elk op een eigen regel, de strook werd hoger dan nodig); alleen de titel houdt plaats vrij voor ✕. */
+@media (max-width:560px){
+  html body .mail-beelden-strook.mail-beelden-strook:has(> .mail-strook-sluit){padding-right:12px}
+  html body .mail-beelden-strook.mail-beelden-strook:has(> .mail-strook-sluit)>span{padding-right:40px}
+  html body .mail-beelden-strook>button.mail-beelden-knop{padding:0 10px;gap:6px}
+  /* hier staat elke knop op een eigen, volle regel: plaats genoeg voor «Показати один раз» */
+  html body .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-lang{display:inline}
+  html body .mail-beelden-strook>button.mail-beelden-knop .mail-beelden-knop-kort{display:none}
+  html body .mail-beelden-strook>button.mail-beelden-knop[data-beelden-knop='afzender']{padding-block:6px}
 }
 
 /* Telefoon: een open brief vult het scherm en is een modaal venster. Kaartjes van ANDERE, geminimaliseerde brieven (z-index 445) lagen

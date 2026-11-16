@@ -38,7 +38,7 @@ export type TegelMaat = {
    * met «max-width:100%; height:auto» telt in een tabelkolom voor 0 mee als kleinste breedte en voor zijn eigen breedte als grootste.
    * Een gewone tegel van 600 px duwde een tabel op de telefoon breder dan het scherm (en dan werd de hele brief verkleind).
    */
-  ruimte: { b: number; h: number } | null;
+  ruimte: { b: number; h: number; /** de breedte komt uit het width-attribuut van de brief (border-box: rand en binnenmarge zitten erin) */ uitBrief: boolean } | null;
 };
 
 const getal = (ruw: string | null | undefined) => { const m = /^\s*(\d+(?:\.\d+)?)\s*(?:px)?\s*$/i.exec(String(ruw ?? '')); return m ? Number(m[1]) : NaN; };
@@ -64,7 +64,8 @@ export function tegelMaat(k: MaatVraag): TegelMaat {
   let h = /px$/.test(m.hoogte) ? Number.parseFloat(m.hoogte) : verh ? b * Number(verh[2]) / Number(verh[1]) : NaN;
   if (/px$/.test(m.maxHoogte)) h = Math.min(h, Number.parseFloat(m.maxHoogte));
   if (!Number.isFinite(h) || h <= 0) return { ...m, ruimte: null };
-  return { ...m, ruimte: { b: Math.max(1, Math.round(b)), h: Math.max(1, Math.round(h)) } };
+  const uitBrief = Number.isFinite(getal(k.breedteAttr));
+  return { ...m, ruimte: { b: Math.max(1, Math.round(b)), h: Math.max(1, Math.round(h)), uitBrief } };
 }
 function maatKern(k: MaatVraag): Omit<TegelMaat, 'ruimte'> {
   const wPx = getal(k.breedteAttr), wPct = procent(k.breedteAttr), hPx = getal(k.hoogteAttr);
@@ -232,7 +233,7 @@ function vulTegel(img: HTMLImageElement, bewaard: Bewaard, b: number, h: number)
  * brief twee keer opmaakt in plaats van één keer per beeld (een nieuwsbrief met 1200 beelden kostte anders seconden).
  */
 export function zetBeeldTegels(werk: ReadonlyArray<readonly [HTMLImageElement, TegelTekst]>): void {
-  type Nieuw = { img: HTMLImageElement; tekst: TegelTekst; alt: string; stijl: string; blok: boolean; inkt: [number, number, number]; zweef: string; marges: string[]; lijn: string };
+  type Nieuw = { img: HTMLImageElement; tekst: TegelTekst; alt: string; stijl: string; blok: boolean; inkt: [number, number, number]; zweef: string; marges: string[]; lijn: string; los: boolean; rand: [number, number] };
   const nieuw: Nieuw[] = [], vullen: Array<[HTMLImageElement, Bewaard]> = [];
   // 1. lezen (geen enkele wijziging ertussen: één keer stijl berekenen)
   for (const [img, tekst] of werk) {
@@ -250,12 +251,16 @@ export function zetBeeldTegels(werk: ReadonlyArray<readonly [HTMLImageElement, T
       inkt: inktVan(venster.getComputedStyle(img.closest('a')?.parentElement || img.parentElement).color),
       // align/hspace/vspace zijn presentatie-attributen: ze staan niet in de stijl, wel in de berekende stijl
       zweef: String(eigen.float || ''), marges: ZIJDEN.map((z) => String(eigen.getPropertyValue?.(`margin-${z}`) || '')), lijn: String(eigen.verticalAlign || ''),
+      // MAILBEELD-003: zwevend of los gepositioneerd → de browser maakt er een blok van, maar het is geen banner (een logo naast tekst)
+      los: (!!eigen.float && eigen.float !== 'none') || eigen.position === 'absolute' || eigen.position === 'fixed',
+      // binnenmarge + rand van het beeld (horizontaal, verticaal): de vaste ruimte moet ze meetellen zoals het beeld zelf
+      rand: [['left', 'right'], ['top', 'bottom']].map((zz) => zz.reduce((som, z) => som + (Number.parseFloat(String(eigen.getPropertyValue?.(`padding-${z}`) || '0')) || 0) + (Number.parseFloat(String(eigen.getPropertyValue?.(`border-${z}-width`) || '0')) || 0), 0)) as [number, number],
     });
   }
   // 2. schrijven: de tegels maken en plaatsen, de beelden verbergen
   for (const n of nieuw) {
     const { img, alt } = n, doc = img.ownerDocument;
-    const maat = tegelMaat({ breedteAttr: img.getAttribute('width'), hoogteAttr: img.getAttribute('height'), stijlBreedte: img.style.width, alt, echt: leesMaatTekst(img.getAttribute('data-mail-beeld-maat')), blok: n.blok });
+    const maat = tegelMaat({ breedteAttr: img.getAttribute('width'), hoogteAttr: img.getAttribute('height'), stijlBreedte: img.style.width, alt, echt: leesMaatTekst(img.getAttribute('data-mail-beeld-maat')), blok: n.blok && !n.los });
     const inkt = (a: number) => `rgba(${n.inkt[0]}, ${n.inkt[1]}, ${n.inkt[2]}, ${a})`;
     const tegel = doc.createElement('span');
     // dezelfde plaats als het beeld: marge, zweven, breedte en afronding komen uit de stijl van het beeld zelf
@@ -272,8 +277,17 @@ export function zetBeeldTegels(werk: ReadonlyArray<readonly [HTMLImageElement, T
       st.position = 'relative'; st.boxSizing = 'border-box'; st.overflow = 'hidden'; st.minWidth = '0';
       if (!st.maxWidth) st.maxWidth = '100%';
       st.width = n.blok ? 'fit-content' : 'auto'; st.height = 'auto'; st.aspectRatio = 'auto'; st.minHeight = '0'; st.maxHeight = 'none';
+      // de plaats van het hele beeld, binnenmarge en rand inbegrepen (de tegel zelf heeft geen binnenmarge en geen rand): met een
+      // width-attribuut is dat precies die breedte (border-box, prepareHtml), anders de eigen maat plus binnenmarge en rand
+      let rb = maat.ruimte.b, rh = maat.ruimte.h;
+      const [rx, ry] = n.rand;
+      if (rx > 0 || ry > 0) {
+        if (maat.ruimte.uitBrief) rh = Math.max(1, Math.round(Math.max(1, rb - rx) * maat.ruimte.h / maat.ruimte.b + ry));
+        else { rb = Math.round(rb + rx); rh = Math.round(rh + ry); }
+      }
+      st.padding = '0';
       const ruimte = doc.createElementNS(SVG, 'svg');
-      for (const [naam, waarde] of Object.entries({ width: String(maat.ruimte.b), height: String(maat.ruimte.h), viewBox: `0 0 ${maat.ruimte.b} ${maat.ruimte.h}`, 'aria-hidden': 'true', focusable: 'false' })) ruimte.setAttribute(naam, waarde);
+      for (const [naam, waarde] of Object.entries({ width: String(rb), height: String(rh), viewBox: `0 0 ${rb} ${rh}`, 'aria-hidden': 'true', focusable: 'false' })) ruimte.setAttribute(naam, waarde);
       ruimte.style.display = 'block'; ruimte.style.maxWidth = '100%'; ruimte.style.height = 'auto';
       ruimte.dataset.mailBeeldRuimte = '';
       tegel.appendChild(ruimte);
