@@ -47,7 +47,9 @@ export async function main(): Promise<number> {
 
   // ================================================================ DEEL 1: één adres per agent
   check('elke agent heeft zijn eigen korte adres, nooit /mcp',
-    V2_AGENTEN.every((a) => agentUrl(a.slug) === `${MCP_BASIS}/${a.slug}`) && !V2_AGENTEN.some((a) => agentUrl(a.slug).endsWith('/mcp')));
+    // 16.11.2026: het publieke adres is los van de interne code — /copilot is Microsoft Copilot (mscopilot), /githubcopilot is GitHub Copilot (copilot).
+    V2_AGENTEN.every((a) => agentUrl(a.slug) === `${MCP_BASIS}/${a.slug === 'copilot' ? 'githubcopilot' : a.slug === 'mscopilot' ? 'copilot' : a.slug}`)
+    && new Set(V2_AGENTEN.map((a) => agentUrl(a.slug))).size === V2_AGENTEN.length && !V2_AGENTEN.some((a) => agentUrl(a.slug).endsWith('/mcp')));
   check('het oude gedeelde adres bestaat nog, maar alleen als benoemde constante', OUD_GEDEELD_URL === `${MCP_BASIS}/mcp`);
 
   const kaal: string[] = [];
