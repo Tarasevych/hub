@@ -164,6 +164,10 @@
  "wijzigingen": [
   {
    "soort": "toegevoegd",
+   "bestand": ".github/workflows/ankers-002-uitgave.yml"
+  },
+  {
+   "soort": "toegevoegd",
    "bestand": "backend/ai-delegatie-kern.ts"
   },
   {
@@ -213,6 +217,14 @@
   {
    "soort": "toegevoegd",
    "bestand": "migrations/0279_ai_delegatie_termijnen.sql"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/ANKERS-002.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/ANKERS-002.json"
   },
   {
    "soort": "toegevoegd",
@@ -909,18 +921,6 @@
   {
    "soort": "toegevoegd",
    "bestand": "tests/eenheid/zoek-veld-op-plek-20261115.test.ts"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": ".github/workflows/ankers-002-uitgave.yml"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": "orchestratie/ontwikkelarchieven/ANKERS-002.json"
-  },
-  {
-   "soort": "toegevoegd",
-   "bestand": "orchestratie/taken/ANKERS-002.json"
   }
  ],
  "controles": [
@@ -930,7 +930,8 @@
   "Стенд Playwright: /agents і #agent/claude у «Макеті» (studio, klassiek) і класичних палітрах, ПК і телефон; перехід до далекого розділу 8/8; метрика гострих кутів 0 на /agents, hub, cloud, github, huis.",
   "mail-ux-beoordeling-20261021 дає 46/47 (R1) так само на чистій основі 20261115-162533; не входить до переліку процесу випуску.",
   "Міграції на чистій PostgreSQL 16 двічі (0279 застосовано, повторний прогін — «niets te doen»), БД-тести процесу випуску зелені; tech-ruimtes-v2-20261027 у першому прогоні дав 58/59 (тіньове порівняння tab-zonder-sessie), у повторному 59/59.",
-  "Не входять: #119 (бібліотека, межа приватного й технічного просторів — чекає згоди власника), вигляд сторінки розширення 0.9.5 (макет на погодженні), карта «Вигляд і кольори» (макет)."
+  "Не входять: #119 (бібліотека, межа приватного й технічного просторів — чекає згоди власника), вигляд сторінки розширення 0.9.5 (макет на погодженні), карта «Вигляд і кольори» (макет).",
+  "identiteit-015-vormgeving 47/47 лише локально: його браузерна частина потребує Chrome і playwright-core, яких у CI немає; з переліку БД-тестів процесу випуску прибрано (у випуску UPD-001 його теж не було)."
  ],
  "bronnen": [
   {
@@ -949,6 +950,7 @@
   "На живому сайті не перевірено: хмара не має доступу до mcp.tarasevych.com."
  ],
  "commits": [
+  "8a165439dfb0edf0e61178e83597b08fde48e979",
   "aeb4ada702003c38b4ad3848b29c85929fa6fd51",
   "762939ea96969b4dcfef35838f8470d360577ceb",
   "84d2734c435c5b1f00eb0bf3fc9d102329030b35",
