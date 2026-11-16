@@ -441,8 +441,8 @@ async function deurBinding(check: Check) {
 // tijd ×10 versneld (naar het voorbeeld van de controleur, toets-g10e/hmara-upload.ts). Een map van 20 bestanden van 12 MB moet
 // helemaal «klaar» komen, zonder dat de grenzen van de server (96 MB per IP, 256 MB samen) losser worden.
 async function hmaraMap(check: Check) {
-  const bb = await import('../../server/platform/body-budget');
-  const { aanmeldingEcht } = await import('../../server/platform/body-aanmelding');
+  const bb = await import('../../server/platform/tekst-budget');
+  const { aanmeldingEcht } = await import('../../server/platform/tekst-aanmelding');
   const { OverdrachtBeheer } = await import('../../src/cloud-vnext/overdracht-beheer');
   bb.zetAanmeldControle(async () => true); // de klant is aangemeld (de echte sessiecontrole is elders getest)
   const SCHAAL = 10, UPLINK = 1.25 * 1024 * 1024 * SCHAAL, STUK = 4 * 1024 * 1024, N = 20, GROOTTE = 12 * 1024 * 1024;
@@ -598,7 +598,7 @@ async function httpRand(check: Check) {
   let n = 0;
   const ip = () => `${ipNet}${++n}`;
   const start = await import('../../server/start');
-  const bb = await import('../../server/platform/body-budget');
+  const bb = await import('../../server/platform/tekst-budget');
   const { attachAgentGateway } = await import('../../backend/connectors-gateway');
   const server = start.createServer();
   attachAgentGateway(server, new Set(['hub.tarasevych.com']));

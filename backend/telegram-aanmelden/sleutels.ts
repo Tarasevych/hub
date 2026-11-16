@@ -37,7 +37,10 @@ const echteKluis: Kluis = {
     const m = await import('../api-platform-kluis');
     const items = await alsSysteem(() => m.apiPlatformVaultItems(userId));
     const kandidaten = items
-      .filter((i) => i.purpose === DOEL && !EIGEN_SLEUTELS.has(i.keyName))
+      .filter((i) => i.purpose === DOEL
+        && !EIGEN_SLEUTELS.has(i.keyName)
+        && !i.keyName.startsWith('TELEGRAM_UITROL_')
+        && !i.keyName.startsWith('TELEGRAM_AGENT_'))
       .sort((a, b) => Number(b.keyName === 'telegram-bot-token') - Number(a.keyName === 'telegram-bot-token') || b.updatedAt - a.updatedAt);
     for (const item of kandidaten) {
       try {

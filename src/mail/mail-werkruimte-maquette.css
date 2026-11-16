@@ -372,12 +372,35 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection
   min-height: 0;
 }
 
+/* MAILDOK-001: смуга на всю ширину лише тримала гортання праворуч. Тепер сама
+   смуга прозора, а кожен вміст (гортання, панель вибору) має власну
+   заокруглену «пігулку» за своїм розміром.
+   De strook zelf is transparant; paginering en selectiebalk krijgen elk een
+   eigen afgeronde «pil» op inhoudsbreedte, i.p.v. één paneel over de hele breedte. */
 html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock:not(:empty) {
-  padding: 4px 12px;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > :is(.mail-category-pager, .mail-selection-strip) {
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  height: auto;
+  padding: 3px 8px;
   border: 1px solid var(--mq-rand);
   border-radius: 18px;
   background: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-oppervlak-2));
   box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > .mail-category-pager {
+  padding-inline: 4px;
 }
 
 html.palet-maquette :is(.mail-selection-strip, [class*="mail-selection-toolbar"]) {
@@ -912,9 +935,34 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace
     padding: 2px 3px;
   }
 
+  /* MAILDOK-001: на телефоні пігулки йдуть рядками, гортання праворуч,
+     вибір ліворуч, кожна за своїм розміром.
+     Telefoon: pillen onder elkaar, paginering rechts, selectie links. */
   html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock:not(:empty) {
-    padding: 4px 8px;
+    row-gap: 6px;
+  }
+
+  html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > :is(.mail-category-pager, .mail-selection-strip) {
+    box-sizing: border-box;
+    min-height: 44px;
     border-radius: 14px;
+  }
+
+  html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > .mail-category-pager {
+    justify-self: end;
+    width: auto;
+    padding: 0 2px;
+  }
+
+  html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > .mail-category-pager .mail-category-pager-selection-status {
+    padding-left: 10px;
+  }
+
+  html.palet-maquette .google-mail-workspace.mq-schil > .mail-pagination-selection-dock > .mail-selection-strip {
+    justify-self: start;
+    width: fit-content;
+    padding: 2px 6px;
+    overflow-x: auto;
   }
 
   html.palet-maquette .mail-layered-controls {

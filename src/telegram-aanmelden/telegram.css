@@ -144,8 +144,8 @@
 .tga-tegel span{font-size:12px;color:var(--muted)}
 .tga-reeks{display:flex;gap:2px;height:16px;align-items:stretch}
 .tga-reeks span{flex:1;max-width:6px;border-radius:2px;background:rgba(128,128,128,.25)}
-.tga-reeks .ok{background:#16a34a}
-.tga-reeks .nee{background:#dc2626}
+.tga-reeks .ok{background:var(--ok-vlak,#16a34a)}
+.tga-reeks .nee{background:var(--fout-vlak,#dc2626)}
 .tga-nood{border-radius:12px;padding:12px 14px;border:1px solid rgba(22,163,74,.38);background:rgba(22,163,74,.07);display:grid;gap:6px;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .tga-nood-uit{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.1)}
 .tga-stap-lijst,.tga-geblokkeerd{list-style:none;padding:0;margin:0;font-size:13px;display:grid;gap:6px}
@@ -168,7 +168,7 @@
 .tga-plaatsing-naam{display:flex;flex-direction:column;gap:2px;min-width:0}
 .tga-plaatsing-naam small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .tga-plaatsing-lijst select{width:100%;max-width:100%;min-width:0;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit;font-size:13px}
-.tga-plaatsing-lijst select option{color:#17212b;background:#fff}
+.tga-plaatsing-lijst select option{color:var(--text,#17212b);background:var(--panel,#fff)}
 .tga-plaatsing-pijlen{display:flex;gap:4px}
 .tga-plaatsing-voorbeeld{margin:8px 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line,rgba(128,128,128,.35));display:grid;gap:8px;max-width:min(100%,380px);width:100%}
 .tga-voorbeeld-hoofd{display:grid;gap:6px}

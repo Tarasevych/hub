@@ -44,6 +44,7 @@ export const ALLEEN_UITDRUKKELIJK: ReadonlySet<string> = new Set<string>([
   ...BEHEER_TOOL_NAMEN,
   ...DEV_GEBRUIKER_NAMEN,
   ...DEV_MG_TOOLS,
+  'uitrol_github_ophalen',
   ...ECOSYSTEEM_SCHRIJF_TOOL_NAMEN,
   ...GITHUB_WERKRUIMTE_SCHRIJF_TOOL_NAMEN,
 ]);

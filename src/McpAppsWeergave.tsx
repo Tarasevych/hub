@@ -13,6 +13,7 @@ import { Venster } from './platform/vensters';
 import { sessionBody } from './agenten-gegevens';
 import { foutCode, foutTekst } from './agenten/fouten';
 import ServerKoppelen from './ServerKoppelen';
+import { veiligeWebUrl } from '../shared/adres-controle';
 import './mcp-apps.css';
 import './mcp-uitrol-maquette.css';
 import GeheimInvoer from './geheim/GeheimInvoer';
@@ -207,6 +208,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
                 {a.lijst.map((app) => {
                   const loopt = app.status === 'running';
                   const gezond = loopt && app.listening;
+                  const veiligUrl = veiligeWebUrl(app.url, { max: 500, alleHttp: true });
                   return (
                     <li key={app.name} data-app={app.name}>
                       <div className='mapps-app-kop'>
@@ -220,7 +222,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
                         <div><dt>{tr('Версія', 'Versie')}</dt><dd>{app.version || '—'} <span className='mapps-dim'>({app.versions ?? 0} {tr('збережено', 'bewaard')})</span></dd></div>
                         <div><dt>{tr('Стан', 'Status')}</dt><dd>{app.uptime || '—'}</dd></div>
                         <div><dt>CPU · {tr('памʼять', 'geheugen')}</dt><dd>{app.cpu || '—'} · {app.memory || '—'}</dd></div>
-                        <div><dt>{tr('Адреса', 'Adres')}</dt><dd>{app.domain && app.url ? <a href={app.url} target='_blank' rel='noreferrer'>{app.domain}<ExternalLink aria-hidden='true' /></a> : <span className='mapps-dim'>{tr('лише на пристрої', 'alleen op het apparaat')}</span>}</dd></div>
+                        <div><dt>{tr('Адреса', 'Adres')}</dt><dd>{app.domain && veiligUrl ? <a href={veiligUrl} target='_blank' rel='noopener noreferrer'>{app.domain}<ExternalLink aria-hidden='true' /></a> : <span className='mapps-dim'>{tr('лише на пристрої', 'alleen op het apparaat')}</span>}</dd></div>
                       </dl>
                       <div className='mapps-knoppen'>
                         <button type='button' className='secondary' disabled={!!bezig} onClick={() => void actie(a, app, 'apps.logs', { lines: 100 }, ['Журнал', 'Logboek'])}><ScrollText aria-hidden='true' />{tr('Журнал', 'Logboek')}</button>

@@ -10,7 +10,6 @@ import { isAgentSlug, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/
 import { V2_GROEPEN, type GroepId } from '../shared/connector-v2/catalogus';
 import { isKant, isModus } from '../shared/connector-v2/rechten';
 import { vraagtSterkeBevestiging } from '../shared/connector-v2/massa';
-import type { RuimteModus } from '../shared/ruimte-toegang';
 import * as v2 from './connector-v2';
 import { actieveKoppelingen, leesInstellingen, zetInstellingen } from './connector-v2-opslag';
 import { meldLijstGewijzigd } from './connector-v2-stroom';
@@ -187,40 +186,31 @@ export function v2Routes(deps: Deps) {
           }
 
           if ((actie === 'alles-aan' || actie === 'delegatie-aan') && v2Actief) {
+            // AI-TERMIJN-001: vroeger viel dit zonder actieve koppeling STIL terug op '*' = toestemming voor ALLE AI-verbindingen.
+            // Nu: een opgegeven verbinding, anders de AGENT zelf ('agent:<slug>', geldt ook na herverbinden); '*' alleen bewust.
             const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
-            const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
-            const vid = rawVid || koppelingen[0]?.id || '*';
-            const termijn: RuimteModus = r.body.termijn === 'tijd'
-              ? 'tijd'
-              : r.body.termijn === 'tot-site-uitloggen'
-                ? 'tot-site-uitloggen'
-                : 'tot-technisch-einde';
+            const vid = r.body.alleVerbindingen === true ? '*' : rawVid || `agent:${r.slug}`;
             await kern.aiZetten(r.auth.user, sessie, {
               tabContext: tab,
               verbindingId: vid,
+              naam: typeof r.body.naam === 'string' ? r.body.naam : undefined,
               ruimtes: ['prive', 'technisch'],
-              termijn,
+              termijn: r.body.termijn ?? 'tot-account-uitloggen',
               minuten: r.body.minuten,
+              eindOp: r.body.eindOp,
+              regels: r.body.regels,
+              alleVerbindingen: vid === '*',
               activeerSessie: true,
             });
           }
         } else if (actie === 'dienst-uit') {
           await rs.dienstZetten(userId, 'ai', 'ontkoppel', { actorId: userId, stapOpGedaan: false });
         } else if (actie === 'delegatie-uit' && v2Actief) {
+          // Intrekken voor deze agent: de agentregel én (indien opgegeven) de eigen regel van het token — nooit '*' van anderen.
           const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
-          const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
-          const vid = rawVid || koppelingen[0]?.id || '*';
-          try {
-            await kern.aiZetten(r.auth.user, sessie, {
-              tabContext: tab,
-              verbindingId: vid,
-              ruimtes: ['prive'],
-              termijn: 'tot-site-uitloggen',
-              activeerSessie: false,
-            });
-          } catch (e) {
-            if (!(e instanceof tp.TechFout && e.code === 'TECH_RUIMTE_VEREIST')) throw e;
-          }
+          const naam = typeof r.body.naam === 'string' ? r.body.naam : undefined;
+          await kern.aiIntrekken(r.auth.user, sessie, { verbindingId: `agent:${r.slug}`, naam });
+          if (rawVid && rawVid !== '*') await kern.aiIntrekken(r.auth.user, sessie, { verbindingId: rawVid, naam });
         }
 
         meldLijstGewijzigd(userId);

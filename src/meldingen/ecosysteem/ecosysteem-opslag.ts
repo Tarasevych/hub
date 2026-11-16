@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../platform/client';
 import { meldingLichaam } from '../sessie-context';
+import { abonneerZijbalk, zetZijbalk, zijbalkVoorkeuren } from '../../zijbalk-voorkeuren';
 import type { PaginaSignaal } from '../../canoniek-meldingen';
 import type { CanonicalServerNotification } from '../../canoniek-meldingen';
 import type { ActivityEvent } from '../../connector-activiteit';
@@ -106,7 +107,16 @@ function schrijfLokaalProfiel(scope: string, ruimte: RuimteType, profiel: Meldin
   }
 }
 
+// MELDINGEN-UX-001: de keuze «компактна панель / рухоме вікно» staat in de accountvoorkeuren (zijbalk `meldingen.paneel`,
+// server, alle subdomeinen en apparaten). localStorage per subdomein is alleen de terugval voor wie nog niets koos — vroeger was
+// het ALLEEN localStorage, waardoor op een ander subdomein (mcp., cloud.) ineens het andere paneel opensprong.
 export function leesEcosysteemModusActief(): boolean {
+  try {
+    const keuze = zijbalkVoorkeuren().meldingen.paneel;
+    if (keuze) return keuze === 'venster';
+  } catch {
+    /* voorkeuren nog niet geladen */
+  }
   try {
     const v = localStorage.getItem(STAND_SLEUTEL);
     if (v === 'klassiek') return false;
@@ -122,6 +132,11 @@ export function zetEcosysteemModusActief(actief: boolean): void {
   } catch {
     /* безпечний ігнор */
   }
+  try {
+    zetZijbalk((cur) => ({ ...cur, meldingen: { ...cur.meldingen, paneel: actief ? 'venster' : 'compact' } }));
+  } catch {
+    /* voorkeuren niet beschikbaar: alleen lokaal */
+  }
   verwittigStand(actief);
   try {
     kanaal?.postMessage({ soort: 'stand', actief });
@@ -130,15 +145,17 @@ export function zetEcosysteemModusActief(actief: boolean): void {
   }
 }
 
-/** Реактивна підписка на поточний режим панелі сповіщень («Єдина екосистема» чи «Класика») між вкладками й компонентами. */
+/** Реактивна підписка на поточний режим панелі сповіщень (рухоме вікно чи компактна панель) між вкладками, піддоменами й компонентами. */
 export function useEcosysteemModusActief(): boolean {
   const [actief, setActief] = useState<boolean>(() => leesEcosysteemModusActief());
   useEffect(() => {
     setActief(leesEcosysteemModusActief());
     const luister = (waarde: boolean) => setActief(waarde);
     standLuisteraars.add(luister);
+    const weg = abonneerZijbalk(() => setActief(leesEcosysteemModusActief()));
     return () => {
       standLuisteraars.delete(luister);
+      weg();
     };
   }, []);
   return actief;
@@ -178,7 +195,7 @@ export async function haalProfielVanServer(scope: string, ruimte: RuimteType): P
   if (!scope || scope === 'anon') return leesLokaalProfiel(scope, ruimte);
   try {
     const r = await api.post('/api/owner/meldingen/ecosysteem/profiel', meldingLichaam({ ruimte }));
-    if (r.data?.profiel) {
+    if (r.data?.profiel && (!r.data?.ruimte || r.data.ruimte === ruimte)) {
       const p = normaliseerProfiel(r.data.profiel, ruimte);
       schrijfLokaalProfiel(scope, ruimte, p);
       return p;
@@ -199,7 +216,7 @@ export async function bewaarProfielOpServer(
   if (!scope || scope === 'anon') return genorm;
   try {
     const r = await api.post('/api/owner/meldingen/ecosysteem/profiel/opslaan', meldingLichaam({ ruimte, profiel: genorm }));
-    if (r.data?.profiel) {
+    if (r.data?.profiel && (!r.data?.ruimte || r.data.ruimte === ruimte)) {
       const vanServer = normaliseerProfiel(r.data.profiel, ruimte);
       schrijfLokaalProfiel(scope, ruimte, vanServer);
       return vanServer;
@@ -338,10 +355,11 @@ export function bouwUniformeStroom(invoer: UniformeStroomInvoer): MeldingEcosyst
   const voegToe = (g: MeldingEcosysteemGebeurtenis) => {
     const sleutel = g.externeSleutel || g.id;
     const bestaand = result.get(sleutel);
-    const ov = invoer.overrides?.[g.id] || (g.externeSleutel ? invoer.overrides?.[g.externeSleutel] : undefined);
+    const ruwOv = invoer.overrides?.[g.id] || (g.externeSleutel ? invoer.overrides?.[g.externeSleutel] : undefined);
+    const ov = ruwOv && g.bijgewerktOp <= ruwOv.op + 1500 ? ruwOv : undefined;
     const ai = g.aiSamenvatting || invoer.aiCache?.[g.id] || (g.externeSleutel ? invoer.aiCache?.[g.externeSleutel] : undefined) || null;
     let status = ov?.status ?? g.status;
-    let uitgesteldTot = ov?.uitgesteldTot ?? g.uitgesteldTot;
+    let uitgesteldTot = ov ? (ov.uitgesteldTot ?? null) : g.uitgesteldTot;
     if (status === 'uitgesteld' && uitgesteldTot && uitgesteldTot <= Date.now()) {
       status = 'nieuw';
       uitgesteldTot = null;
@@ -530,11 +548,17 @@ export function useMeldingEcosysteem(opties: {
     };
   }, [opties.scope, opties.ruimte]);
 
+  const ruimteRef = useRef<RuimteType>(opties.ruimte);
+  ruimteRef.current = opties.ruimte;
+
   const verversStroom = useCallback(async () => {
     if (!opties.scope || opties.scope === 'anon') return;
+    const doelRuimte = opties.ruimte;
     setLaden(true);
     try {
-      const r = await api.post('/api/owner/meldingen/ecosysteem/stroom', meldingLichaam({ ruimte: opties.ruimte, limiet: 80 }));
+      const r = await api.post('/api/owner/meldingen/ecosysteem/stroom', meldingLichaam({ ruimte: doelRuimte, limiet: 80 }));
+      if (ruimteRef.current !== doelRuimte) return;
+      if (r.data?.ruimte && r.data.ruimte !== doelRuimte) return;
       if (Array.isArray(r.data?.gebeurtenissen)) {
         setServerGebeurtenissen(r.data.gebeurtenissen.map((x: Record<string, unknown>) => normaliseerGebeurtenis(x)));
       }
@@ -546,7 +570,13 @@ export function useMeldingEcosysteem(opties: {
   }, [opties.scope, opties.ruimte]);
 
   useEffect(() => {
-    void haalProfielVanServer(opties.scope, opties.ruimte).then(setProfiel);
+    let levend = true;
+    void haalProfielVanServer(opties.scope, opties.ruimte).then((p) => {
+      if (levend) setProfiel(p);
+    });
+    return () => {
+      levend = false;
+    };
   }, [opties.scope, opties.ruimte]);
 
   useEffect(() => {
@@ -672,6 +702,29 @@ export function useMeldingEcosysteem(opties: {
     ],
   );
 
+  const allesGelezenEcosysteem = useCallback(async () => {
+    const sleutels: string[] = [];
+    for (const item of stroom) {
+      if (item.status === 'nieuw') {
+        if (item.id) sleutels.push(item.id);
+        if (item.externeSleutel) sleutels.push(item.externeSleutel);
+      }
+    }
+    if (sleutels.length) {
+      schrijfLokaleStatusOverride(opties.scope, opties.ruimte, sleutels, 'gelezen', null);
+      setOverrides(leesLokaleStatusOverrides(opties.scope, opties.ruimte));
+    }
+    setServerGebeurtenissen((lijst) =>
+      lijst.map((item) => (item.status === 'nieuw' ? { ...item, status: 'gelezen', bijgewerktOp: Date.now() } : item)),
+    );
+    if (!opties.scope || opties.scope === 'anon') return;
+    try {
+      await api.post('/api/owner/meldingen/ecosysteem/actie', meldingLichaam({ ruimte: opties.ruimte, actie: 'allesGelezen' }));
+    } catch {
+      /* локальний стан уже оновлено */
+    }
+  }, [opties.scope, opties.ruimte, stroom]);
+
   return {
     profiel,
     stroom,
@@ -680,6 +733,7 @@ export function useMeldingEcosysteem(opties: {
     werkProfielBij,
     slaGeometrieOp,
     wijzigGebeurtenisStatus,
+    allesGelezenEcosysteem,
     ontledenMetAi,
   };
 }

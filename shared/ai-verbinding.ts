@@ -25,7 +25,21 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'codex' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
+export type KlantId =
+  | 'grok'
+  | 'claude'
+  | 'chatgpt'
+  | 'codex'
+  | 'gemini'
+  | 'copilot'
+  | 'cursor'
+  | 'antigravity'
+  | 'autoclaw'
+  | 'windsurf'
+  | 'cline'
+  | 'devin'
+  | 'opencode'
+  | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
@@ -38,6 +52,10 @@ export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'cursor', naam: 'Cursor', deur: null },
   { id: 'antigravity', naam: 'Antigravity', deur: null },
   { id: 'autoclaw', naam: 'AutoClaw', deur: null },
+  { id: 'windsurf', naam: 'Windsurf', deur: null },
+  { id: 'cline', naam: 'Cline', deur: null },
+  { id: 'devin', naam: 'Devin', deur: null },
+  { id: 'opencode', naam: 'OpenCode', deur: null },
   { id: 'overig', naam: 'Інший клієнт', deur: null },
 ]);
 const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -54,6 +72,10 @@ export function klantVan(naam: string | null | undefined): KlantId {
   if (/\b(vscode|vs code|visual studio|github)\b/.test(n)) return 'copilot';
   if (/\b(antigravity|jetski)\b/.test(n)) return 'antigravity';
   if (/\b(autoclaw|openclaw|zhipu|zhipuai|chatglm|glm|zai|z ai)\b/.test(n)) return 'autoclaw';
+  if (/\b(windsurf|codeium|cascade)\b/.test(n)) return 'windsurf';
+  if (/\b(cline|roo|roo code|roocode)\b/.test(n)) return 'cline';
+  if (/\b(devin|cognition)\b/.test(n)) return 'devin';
+  if (/\b(opencode|open code)\b/.test(n)) return 'opencode';
   return 'overig';
 }
 export const klant = (id: unknown): Klant => KLANTEN.find((k) => k.id === id) ?? KLANTEN[KLANTEN.length - 1];
@@ -66,7 +88,10 @@ export function duurVoorKlant(instellingen: unknown, id: KlantId): DuurId {
 // ---------------------------------------------------------------- OAuth-terugkeeradressen (RFC 8252)
 export type RedirectSoort = 'web' | 'loopback' | 'app';
 /** https-hosts van bekende AI-klanten (exact of subdomein). */
-export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com', 'autoclaw.z.ai', 'chat.z.ai', 'z.ai']);
+export const WEB_HOSTS: readonly string[] = Object.freeze([
+  'claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com',
+  'autoclaw.z.ai', 'chat.z.ai', 'z.ai', 'windsurf.com', 'codeium.com', 'cline.bot', 'app.devin.ai', 'devin.ai', 'opencode.ai',
+]);
 /** Eigen schema's van desktopapps (RFC 8252 §7.1): alleen deze, met een host (cursor://anysphere.cursor-mcp/oauth/callback). */
 export const APP_SCHEMAS: readonly string[] = Object.freeze(['cursor', 'vscode', 'vscode-insiders', 'windsurf']);
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);

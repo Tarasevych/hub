@@ -493,7 +493,7 @@ export async function main(): Promise<number> {
       // а в рідному оглядачі — створити живу екосистемну сесію з поверненням на https://hub.tarasevych.com/?tab=notes.
       await pool.query(
         `UPDATE app.tg_inlog_verzoeken
-            SET stand = 'goedgekeurd', user_id = $2, koppeling_id = $3, telegram_id = $4, code_nodig = false
+            SET stand = 'goedgekeurd', user_id = $2, koppeling_id = $3, telegram_id = $4, code_nodig = false, symbool_ok = true
           WHERE id = $1`,
         [startHub.data.id, userId, koppelingId, tgUserId],
       );

@@ -14,7 +14,7 @@ import { error, json } from '../server/platform';
 import { alsGebruiker } from './ai-toestemmingen';
 import { isEigenaar } from './tech-profiel';
 import { werkbladLade } from './werkblad';
-import { overzetten } from './werkblad-v3';
+import { overzetten, registerVoor } from './werkblad-v3';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { APPARATEN, apparaatOf, type V3Context } from '../shared/werkblad-v3';
 import type { ApparaatKlasse, ItemSoort, WerkbladRuimte } from '../shared/werkblad-v3-types';
@@ -229,6 +229,8 @@ export type BlokkenRouteOpties = {
   /** Server-side: vlag 'werkblad-v3' ÉN 'werkblad-blokken' voor deze gebruiker (backend/index.ts). Fout → uit. */
   vlagAan: (user: User) => Promise<boolean>;
   register?: { itemToegestaan: ItemHaak } & Partial<Pick<V3Context, 'grenzen' | 'singleton'>>;
+  /** BIB-002: zie backend/werkblad-v3.ts V3RouteOpties.techToegang. */
+  techToegang?: (user: User) => Promise<boolean>;
 };
 const bodyOf = (b: unknown) => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {});
 
@@ -241,7 +243,8 @@ export const createWerkbladBlokkenRoutes = (authorize: Authorize, opties: Blokke
     try { aan = (await opties.vlagAan(auth.user)) === true; } catch { aan = false; }
     if (vlagNodig && !aan) return error('WERKBLAD_BLOKKEN_UIT', 403);
     const ruimte = lade.ruimte as WerkbladRuimte, eigenaar = isEigenaar(auth.user);
-    const ctx: BlokkenContext = { ruimte, eigenaar, itemToegestaan: opties.register?.itemToegestaan, v3: { ruimte, eigenaar, ...(opties.register ?? {}) } };
+    const register = await registerVoor(opties, auth.user, ruimte);
+    const ctx: BlokkenContext = { ruimte, eigenaar, itemToegestaan: register.itemToegestaan, v3: { ruimte, eigenaar, ...register } };
     try { return await fn(lade, ctx, { ...bodyOf(c.body), __aan: aan }); }
     catch (err) { console.error('[werkblad-blokken]', String((err as Error)?.message || err).slice(0, 200)); return error('WERKBLAD_BLOKKEN_MISLUKT', 500); }
   }];

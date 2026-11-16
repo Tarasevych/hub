@@ -999,8 +999,8 @@ html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(.gm-root, .gh
   }
 
   html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-knop.is-primair, .gm-knop-primair, .gm-knop-hoofd):hover:not(:disabled) {
-    border-color: var(--mq-knop-primair-hover);
-    background: var(--mq-knop-primair-hover);
+    border-color: var(--mq-accent-2);
+    background: var(--mq-accent-2);
     background-image: none;
     color: var(--mq-knop-primair-tekst);
     transform: none;

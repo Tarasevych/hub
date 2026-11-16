@@ -29,7 +29,12 @@ export type MeldingVoorkeuren = {
   reserveHerinnering: boolean;
   /** Per type (18.10.2026): geluid, opduiken (toast), tonen. Kritieke types altijd getoond (shared/melding-typen.ts). */
   soorten: Record<MeldingType, TypeVoorkeur>;
+  /** MELDINGEN-UX-001: welke panel bij de bel — 'compact' (aan de bel) of 'venster' (zwevend venster). Eén keuze voor alle
+   *  subdomeinen en apparaten (vroeger localStorage per subdomein: op mcp. sprong ineens het andere paneel open). Ontbreekt = nog niet gekozen. */
+  paneel?: PaneelVorm;
 };
+export const PANEEL_VORMEN = ['compact', 'venster'] as const;
+export type PaneelVorm = typeof PANEEL_VORMEN[number];
 export const standaardMeldingen = (): MeldingVoorkeuren => ({
   aan: true, stijl: 'getal', knipperen: true, herinneren: 0, bellen: true,
   categorieen: { post: true, beveiliging: true, toegang: true, delen: true, ai: true, systeem: true },
@@ -53,6 +58,7 @@ export function normaliseerMeldingen(raw: unknown): MeldingVoorkeuren {
     stil: { aan: bool(st.aan, false), van: TIJD.test(String(st.van)) ? String(st.van) : s.stil.van, tot: TIJD.test(String(st.tot)) ? String(st.tot) : s.stil.tot },
     reserveHerinnering: bool(r.reserveHerinnering, s.reserveHerinnering),
     soorten: normaliseerTypeVoorkeuren(r.soorten),
+    ...((PANEEL_VORMEN as readonly string[]).includes(String(r.paneel)) ? { paneel: r.paneel as PaneelVorm } : {}),
   };
 }
 /** Valt `nu` (minuten na middernacht, lokale tijd) binnen de stille uren? Ook over middernacht heen (22:00–07:00). */

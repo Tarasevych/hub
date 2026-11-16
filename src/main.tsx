@@ -16,6 +16,8 @@ import './maquette-kern/maquette-oppervlakken.css';
 import './maquette-kern/maquette-aanmelden.css';
 import './maquette-kern/maquette-klassiek.css';
 import './platform/sluitknop.css'; // gecentreerde sluitknoppen (specificiteit 0)
+import './tech/tech.css';
+import './tech/strook.css';
 import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026; herzien INTEG-001 print)
 import { installeerAfdruk } from './platform/afdruk'; // vlak vóór het afdrukken: vaste/afgeknipte vakken vrijmaken, knoppen sorteren (INTEG-001 print)
 

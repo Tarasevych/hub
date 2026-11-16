@@ -53,6 +53,12 @@ export default function TabOrch({ tr }: { tr: Tr }) {
         <div className='ag-knoppen'><Knop onClick={() => void laden()} icoon={<RefreshCw />} title={tr('Перечитати стан із робочої копії на сервері', 'De staat opnieuw uit de werkkopie op de server lezen')} data='orch-vernieuw'>{tr('Оновити', 'Vernieuwen')}</Knop></div>
         <p className='ag-blok-uitleg'>{tr('Координація агентів: одна пам’ять, одна система правил, одна черга інтеграції, один випуск — для Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Джерело правди: AGENTS.md і orchestratie/ у робочій копії на сервері; те саме читає node scripts/orch.mjs.', 'Agentcoördinatie: één geheugen, één regelsysteem, één integratiewachtrij, één release — voor Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Bron van waarheid: AGENTS.md en orchestratie/ in de werkkopie op de server; node scripts/orch.mjs leest hetzelfde.')}</p>
       </header>
+      <p className='ag-meta' data-orch-vaardigheden-links='1'>
+        {tr('Навички агентів:', 'Agentvaardigheden:')}{' '}
+        <a className='ag-link' href='#extern'>{tr('Бібліотека навичок та інспектор MCP', 'Vaardighedenbibliotheek en MCP-inspector')}</a>
+        {' · '}
+        <a className='ag-link' href='#agent/antigravity'>{tr('З’єднувач та навички Antigravity', 'Antigravity-connector en vaardigheden')}</a>
+      </p>
       {laadFout && <p className='ag-fout' role='alert'>{laadFout}</p>}
       {!data && !laadFout && <p className='bsl-stil'><Loader2 size={14} className='bsl-spin' aria-hidden='true' /> {tr('Завантаження…', 'Laden…')}</p>}
       {data && !data.repo.aanwezig && <div className='orch-waarsch' role='alert' data-orch-geen-repo><TriangleAlert size={18} aria-hidden='true' /><div>

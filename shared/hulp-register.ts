@@ -618,5 +618,39 @@ hulpRegistreren(HELP_MATRIX);
 hulpRegistreren(HELP_WERKBLAD);
 hulpRegistreren(HELP_ZOEK_INDEX);   // zone D 22.10.2026: zoek.index.* (src/zoek/ZoekIndexVenster.tsx)
 
+// ================================================================== UITROL-002 (приймач GitHub, Telegram-архів, потік розгортання)
+hulpRegistreren({
+  'uitrol.github-webhook-aan': item('src/uitrol/GithubInstellingen.tsx',
+    T('Приймати сповіщення GitHub про нові випуски з перевіркою підпису.', 'Meldingen van GitHub over nieuwe releases accepteren met handtekeningcontrole.'),
+    T('Коли з’явиться випуск із дозволеною міткою, сервер отримає подію й запише її в журнал надходжень.', 'Zodra er een release met een toegestane tag verschijnt, ontvangt de server het event en legt dit vast.'),
+    T('За слабкого чи розкритого секрету сторонній міг би надсилати підроблені події; використовуйте довгий випадковий секрет.', 'Bij een zwak of gelekt geheim kan een derde nepevents sturen; gebruik een lang willekeurig geheim.'),
+    T('Стовпець webhook_aan у налаштуваннях отримання випусків (backend/uitrol-github-ontvangst.ts, заголовок X-Hub-Signature-256).', 'Veld webhook_aan in de instellingen voor release-ontvangst (backend/uitrol-github-ontvangst.ts, kop X-Hub-Signature-256).')),
+  'uitrol.github-webhook-auto': item('src/uitrol/GithubInstellingen.tsx',
+    T('Автоматично завантажувати й перевіряти архів випуску з GitHub після події.', 'Het release-archief automatisch uit GitHub ophalen en voorcontroleren na een melding.'),
+    T('Архів з’являється у вкладці «Огляд» у стані «Очікує ключ доступу», але ніколи не встановлюється без вашого схвалення.', 'Het archief verschijnt op het tabblad «Overzicht» als «Wacht op passkey», maar wordt nooit zonder uw goedkeuring geïnstalleerd.'),
+    T('Автоматичне завантаження займає місце під архіви на диску; саме встановлення все одно блокується без ключа доступу власника.', 'Automatisch ophalen gebruikt schijfruimte voor archieven; installeren zelf blijft altijd geblokkeerd zonder passkey van de eigenaar.'),
+    T('Стовпець webhook_auto (backend/uitrol-github-ontvangst.ts); завантаження та перевірка контрольної суми SHA-256 без просування.', 'Veld webhook_auto (backend/uitrol-github-ontvangst.ts); ophalen en SHA-256-voorcontrole zonder bevordering.')),
+  'uitrol.telegram-archief-actief': item('src/uitrol/TelegramArchief.tsx',
+    T('Автоматично шифрувати й надсилати кожен встановлений випуск у Telegram.', 'Elke geslaagde installatie automatisch versleutelen en naar Telegram sturen.'),
+    T('Після успішного встановлення архів розрізається, шифрується вашим ключем і надсилається в задану тему Telegram.', 'Na elke geslaagde installatie wordt het archief gesplitst, met uw sleutel versleuteld en naar het gekozen Telegram-topic gestuurd.'),
+    T('Без збереженого ключа шифрування розшифрувати архів із Telegram на іншому сервері неможливо; зберігайте ключ окремо.', 'Zonder de bewaarde versleutelsleutel is een archief uit Telegram op een andere server niet te ontsleutelen; bewaar de sleutel apart.'),
+    T('backend/uitrol-telegram-archief.ts: шифрування AES-256-GCM із наскрізною перевіркою частин і збереженням ключа у Сховищі секретів.', 'backend/uitrol-telegram-archief.ts: versleuteling met AES-256-GCM, controle per deel en sleutelopslag in de Geheimenkluis.')),
+  'uitrol.telegram-archief-verplicht': item('src/uitrol/TelegramArchief.tsx',
+    T('Вимагати наявності зашифрованої копії поточного випуску в Telegram перед новим оновленням.', 'Een versleutelde kopie van de huidige release in Telegram vereisen vóór een nieuwe update.'),
+    T('Доки активний випуск не збережено в Telegram, схвалення наступного оновлення ключем доступу буде заблоковане.', 'Zolang de actieve release niet in Telegram staat, wordt goedkeuring van een volgende update met passkey tegengehouden.'),
+    T('Якщо бот або чат тимчасово недоступні, оновлення доведеться розблокувати після відновлення зв’язку або вимкнення вимоги.', 'Als de bot of chat tijdelijk onbereikbaar is, moet u eerst het archief versturen of de eis uitzetten voordat u kunt updaten.'),
+    T('Поле verplicht_voor_installatie у налаштуваннях Telegram-архіву (backend/uitrol-telegram-archief.ts); перевірка перед підтвердженням.', 'Veld verplicht_voor_installatie in het Telegram-archiefbeleid (backend/uitrol-telegram-archief.ts); controle vóór goedkeuring.')),
+  'uitrol.stroom-verplicht': item('src/uitrol/UitrolStroom.tsx',
+    T('Позначити власну перевірку як обов’язкову перед запуском розгортання.', 'Een eigen controle als verplicht en blokkerend voor de uitrol markeren.'),
+    T('Поки цей пункт не підтверджено або не пропущено з обґрунтованою причиною, готовність потоку лишається заблокованою.', 'Zolang dit punt niet is bevestigd of met reden overgeslagen, blijft de gereedheid van de uitrolstroom geblokkeerd.'),
+    T('Надто багато обов’язкових ручних пунктів може затримати термінове виправлення, тож позначайте так лише критичні умови.', 'Te veel verplichte handmatige punten kunnen een spoedherstel vertragen; markeer alleen kritieke voorwaarden als verplicht.'),
+    T('Поле verplicht у таблиці контрольного списку потоку розгортання (src/uitrol/UitrolStroom.tsx та shared/uitrol-stroom.ts).', 'Veld verplicht in de controlelijst van de uitrolstroom (src/uitrol/UitrolStroom.tsx en shared/uitrol-stroom.ts).')),
+  'uitrol.stroom-vastpinnen': item('src/uitrol/UitrolStroom.tsx',
+    T('Закріпити інженерну нотатку вгорі списку випуску.', 'Een uitrolnotitie bovenaan de lijst van deze release vastpinnen.'),
+    T('Закріплена нотатка завжди показується першою, щоб зауваження не загубилися серед пізніших записів.', 'Een vastgepinde notitie blijft bovenaan zichtbaar zodat aandachtspunten niet wegzakken tussen latere berichten.'),
+    T('Низький ризик: закріплення змінює лише порядок показу нотаток у межах поточного випуску.', 'Laag risico: vastpinnen verandert alleen de volgorde van notities binnen de huidige release.'),
+    T('Поле vastgepind у нотатках потоку розгортання (src/uitrol/UitrolStroom.tsx та shared/uitrol-stroom.ts); очищення таємниць перед збереженням.', 'Veld vastgepind bij notities in de uitrolstroom (src/uitrol/UitrolStroom.tsx en shared/uitrol-stroom.ts); geheimen worden automatisch geschoond.')),
+});
+
 /** Alleen-lezen weergave van het hele register (voor de test en het «?»-onderdeel). */
 export const HULP_REGISTER: Readonly<Record<string, HulpItem>> = R;

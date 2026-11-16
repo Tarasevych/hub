@@ -76,3 +76,8 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
   .bevestig-toegang-venster .bevestig-toegang-account strong{white-space:normal;overflow-wrap:anywhere}
   .bevestig-toegang-venster .bevestig-toegang-primair{min-height:47px}
 }
+/* STAPOP-OMSCHR-001: технічна адреса дії без опису — дрібно, у згорнутих «Подробицях», не головним текстом. */
+.bevestig-toegang-details{margin:4px 0 0;font-size:.76rem;color:var(--muted,var(--boot-muted,#6a7580))}
+.bevestig-toegang-details summary{cursor:pointer;width:max-content;max-width:100%}
+.bevestig-toegang-details p{margin:4px 0 0;overflow-wrap:anywhere}
+.bevestig-toegang-details code{font-size:.74rem}

@@ -64,6 +64,7 @@ export function apparaatRoutes(deps: ApparaatDeps): Record<string, RouterMiddlew
   const stroomAuth: StroomAuth = async (event, body) => {
     const a = await deps.requireSession(event, body);
     if ('errorCode' in a) return { fout: a.errorCode };
+    if (a.user.status && a.user.status !== 'approved') return { fout: 'ACCOUNT_NOT_APPROVED_FORBIDDEN' };
     if (!(await vlagVoor(a.user.id))) return { fout: 'NIET_GEVONDEN' };
     return { userId: a.user.id, anker: String(a.session?.id || '') };
   };
@@ -73,6 +74,7 @@ export function apparaatRoutes(deps: ApparaatDeps): Record<string, RouterMiddlew
     (async (rc: RouterContext) => {
       const a = await deps.requireSession(rc.event as unknown as Record<string, unknown>, rc.body);
       if ('errorCode' in a) return fout(a.errorCode, a.errorCode.includes('FORBIDDEN') ? 403 : 401);
+      if (a.user.status && a.user.status !== 'approved') return fout('ACCOUNT_NOT_APPROVED_FORBIDDEN', 403);
       if (o.vlag !== false && !(await vlagVoor(a.user.id))) return fout('NIET_GEVONDEN', 404);
       if (o.beheer && !isBeheerder(a.user)) return fout('BEHEERDER_NODIG', 403);
       if (o.sleutel && !(await passkeyStapOpGeldig(a))) return fout('STEP_UP_PASSKEY_REQUIRED', 403);

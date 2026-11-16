@@ -10,7 +10,7 @@ import {leegMeta,metaUitRecord,normaliseerVaultMeta,staatTekst,vandaag,vaultStaa
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 // Uitgebreid (fase «Секрети й ключі»): dezelfde lijst als shared/geheimen.ts, zodat groepen en logo's kloppen.
 export const OWNER_VAULT_PURPOSES=VAULT_DOELEN;
-const MAX_ITEMS=40;
+const MAX_ITEMS=120;
 const MAX_VALUE=8192;
 // SECURITY: dedicated vault key only. Previously fell back to other encryption keys and even to the
 // Google OAuth client secrets (key reuse; the client secret is also sent to Google on every token call).

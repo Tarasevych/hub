@@ -9,7 +9,7 @@ import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import { HELP_TECH, contrast, maxMinutenVoor, openEindeToegestaan, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { SSH_CA_VLAG } from '../../shared/ssh-ca';
 import { koppelInschuiven } from './band-inschuiven';
-import { neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
+import { leesBandHintActief, neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
@@ -159,9 +159,14 @@ export default function TechLaag() {
 
   // Band zichtbaar = kenmerk op <html> + kleuren als CSS-variabelen + [ТЕХ] in de titel van het tabblad (WCAG 1.4.1: niet alleen kleur).
   const kleur = t.profiel && t.catalogus ? t.catalogus.kleuren[t.profiel.band.kleur] : null;
+  const bandVoorbehoud = !t.geladen && leesBandHintActief();
+  const bandRuimteAan = actief || bandVoorbehoud;
   useEffect(() => {
     const html = document.documentElement;
-    if (!actief) { delete html.dataset.tech; if (v2) zetTabbladMerk(false); return; }
+    if (!actief) {
+      if (bandVoorbehoud) { html.dataset.tech = 'aan'; return undefined; }
+      delete html.dataset.tech; if (v2) zetTabbladMerk(false); return undefined;
+    }
     html.dataset.tech = 'aan';
     if (v2) zetTabbladMerk(true, kleur?.bg || '#f5b400');
     html.dataset.techPatroon = t.profiel?.band.patroon || 'strepen';
@@ -173,10 +178,10 @@ export default function TechLaag() {
     const mo = el ? new MutationObserver(titel) : null;
     if (el && mo) mo.observe(el, { childList: true, characterData: true, subtree: true });
     return () => { mo?.disconnect(); document.title = document.title.replace(/^\[(ТЕХ|TECH)\] /, ''); delete html.dataset.tech; if (v2) zetTabbladMerk(false); };
-  }, [actief, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
+  }, [actief, bandVoorbehoud, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
   // Gereserveerde ruimte (--tech-band-h in strook.css) hangt ALLEEN af van de modus en de grootte — nooit van het uitschuiven.
-  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && actief) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, actief]);
-  useEffect(() => { const h = document.documentElement; if (actief) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [actief, voorkeur.grootte]);
+  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && bandRuimteAan) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, bandRuimteAan]);
+  useEffect(() => { const h = document.documentElement; if (bandRuimteAan) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [bandRuimteAan, voorkeur.grootte]);
 
   // Past de band niet? Stap voor stap: 0 = zoals gekozen, 1 = knoppen alleen met pictogram (vorm «tekst» blijft tekst), 2 = ook zonder
   // rollen, «ще …» en reden; past het dan nog niet, dan verhuizen knoppen één voor één naar «⋯» (data-overvol) — nooit over elkaar.

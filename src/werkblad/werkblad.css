@@ -9,7 +9,10 @@
   /* zelfde lettertype als de schil (src/canoniek-omlijsting.css); de koppen van index.css (Georgia) gelden hier niet */
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text)}
 .werkblad :is(h2,h3,h4){font-family:inherit;letter-spacing:-.01em}
-.werkblad::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--wb-verloop,none)}
+.werkblad::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--wb-verloop,none);border-radius:inherit}
+/* ZWEVEND-001 (15.11.2026): поки в блоці полотна відкрите меню чи випадний список, стіл його не обрізає (інакше меню найнижчого
+   блоку зникало під краєм стола). Тло ::before заокруглене саме (border-radius:inherit), тож кути лишаються круглими. */
+.werkblad.wb3:has(.wbc-item :is([aria-expanded="true"],details[open])){overflow:visible}
 .wb-achtergrond-geen{--wb-verloop:none}
 /* Verlopen: alleen tonen uit de tokens, zodat ze in elke palet en elk thema passen (donker: dieper; licht: zachter). */
 .wb-achtergrond-nacht{--wb-verloop:linear-gradient(160deg,color-mix(in srgb,var(--info-vlak) 38%,var(--bg)) 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)) 45%,color-mix(in srgb,var(--warn-vlak) 18%,var(--bg)) 100%)}
@@ -39,6 +42,10 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb-balk h2 svg{width:18px;height:18px;color:var(--accent)}
 .wb-balk-acties{display:flex;flex-wrap:wrap;align-items:center;gap:var(--ruimte-2);margin-left:auto}
 .wb-balk-acties .knop-stil,.wb-balk-acties .knop-secundair{background:var(--wb-glas);border-color:var(--wb-glas-rand)}
+/* WB-HOEK-001: «Налаштувати робочий стіл» — кругла піктограма в куті замість широкої кнопки з підписом.
+   «Werkblad instellen» — rond icoon in de hoek i.p.v. een brede knop met tekst. */
+.wb-balk-acties .wb3-instellen-icoon{display:inline-grid;place-items:center;flex:0 0 auto;width:var(--tik-hoogte);min-width:var(--tik-hoogte);height:var(--tik-hoogte);padding:0;border-radius:999px}
+.wb-balk-acties .wb3-instellen-icoon svg{width:18px;height:18px}
 .wb-uitleg{margin:0;color:var(--muted);font-size:var(--tekst-klein)}
 .wb-melding,.wb-fout-balk{display:flex;align-items:center;gap:var(--ruimte-2);margin:0;font-size:var(--tekst-klein)}
 .wb-melding .wb-tip-sluit{margin-left:auto}
@@ -69,7 +76,7 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb-icoonknop.is-gevaar:hover{background:var(--fout-zacht);color:var(--fout)}
 .wb-icoonknop svg{width:16px;height:16px}
 .wb-icoonknop:disabled{opacity:.4;cursor:not-allowed}
-.wb-tegel-inhoud{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--ruimte-2) var(--ruimte-3) var(--ruimte-3);scrollbar-width:thin;container-type:inline-size}
+.wb-tegel-inhoud{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--ruimte-2) var(--ruimte-3) var(--ruimte-3);scrollbar-width:thin;container:wb-inhoud / inline-size}
 /* teller in de kop (ongelezen post, open taken) en op een tegel van snelle toegang */
 .wb-teller{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--text-on-accent);font-size:var(--tekst-mini);font-weight:700;line-height:1;flex:none}
 .wb-teller.is-op-icoon{position:absolute;top:-8px;right:-10px;min-width:20px;height:20px;padding:0 5px;box-shadow:0 0 0 2px var(--panel)}
@@ -117,12 +124,32 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb-rijen li>a{display:flex;align-items:center;gap:var(--ruimte-2);flex:1 1 auto;min-width:0;color:inherit;text-decoration:none}
 .wb-rijen li>a:hover .wb-rij-titel{color:var(--accent)}
 .wb-rijen li>a svg:last-child{width:14px;height:14px;flex:none;color:var(--muted)}
-.wb-rij-titel{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--tekst-klein);color:var(--text)}
-.wb-rij-titel small{color:var(--muted);font-size:var(--tekst-mini);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* WOORDBREUK-001 (15.11.2026): блок, а не флекс-стовпчик — у флекс-контейнері text-overflow не діє, і довга назва
+   («Рендеринг сторінок (браузер на серве») різалась посеред слова без «…». NL: blok i.p.v. flex, anders werkt «…» niet. */
+.wb-rij-titel{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--tekst-klein);color:var(--text)}
+.wb-rij-titel small{display:block;color:var(--muted);font-size:var(--tekst-mini);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 23.10 (integratie, stand H-EIND): de uitkomst van een uitrol («Повернуто на випуск 20261021-221718 за рішенням власника…») is de
    kern van de regel — twee regels tonen in plaats van na 360 px af te kappen; de volledige tekst staat ook in de title. */
-.wb-uitrol .wb-rij-titel{white-space:normal}
-.wb-uitrol .wb-rij-titel small{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:anywhere}
+/* WOORDBREUK-001: рядок «стан · назва · час» (оновлення, діагностика) — сітка: позначка стану не стискається, назва й
+   пояснення переносяться між словами (до двох рядків), час праворуч. У вузькому блоці (≤ 240 px) назва йде першим рядком
+   на всю ширину, а позначка й час — під нею. Ширину бере сам блок (container query), а не вікно.
+   NL: rij «stand · naam · tijd» als raster; in een smalle tegel staat de naam bovenaan en het label met de tijd eronder. */
+.wb-rijen li:has(> .pil:first-child){display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;column-gap:var(--ruimte-2);row-gap:2px;padding:6px 0}
+.wb-rijen li:has(> .pil:first-child)>.pil{justify-self:start;margin-top:1px;white-space:nowrap}
+.wb-rijen li:has(> .pil:first-child)>small{margin-top:2px;white-space:nowrap}
+.wb-rijen li:has(> .pil:first-child) .wb-rij-titel{white-space:normal}
+.wb-rijen li:has(> .pil:first-child) .wb-rij-titel small{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:break-word}
+/* Позначки однієї колонки: назви всіх рядків починаються з однієї лінії (subgrid), хоч «готово» коротше за «відкочено». */
+.wb-rijen:has(> li > .pil:first-child){grid-template-columns:auto minmax(0,1fr) auto}
+.wb-rijen:has(> li > .pil:first-child)>li{grid-column:1 / -1}
+@supports (grid-template-columns:subgrid){.wb-rijen>li:has(> .pil:first-child){grid-template-columns:subgrid}}
+.wb-rij-naam{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;white-space:normal;overflow-wrap:break-word}
+@container wb-inhoud (max-width:240px){
+  .wb-rijen li:has(> .pil:first-child){grid-template-columns:auto minmax(0,1fr)}
+  .wb-rijen li:has(> .pil:first-child)>.wb-rij-titel{grid-column:1 / -1;grid-row:1}
+  .wb-rijen li:has(> .pil:first-child)>.pil{grid-column:1;grid-row:2;justify-self:start}
+  .wb-rijen li:has(> .pil:first-child)>small{grid-column:2 / -1;grid-row:2;justify-self:end}
+}
 .wb-rijen li>small,.wb-rijen li>time{flex:none;color:var(--muted);font-size:var(--tekst-mini)}
 .wb-tellers{display:flex;flex-wrap:wrap;gap:var(--ruimte-3) var(--ruimte-4);padding:var(--ruimte-1) 0}
 .wb-tellers span{display:flex;flex-direction:column;min-width:56px}
@@ -136,14 +163,15 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 @media (pointer:coarse),(max-width:700px){.wb-chips button{min-height:var(--tik-hoogte-mobiel)}}
 .wb-merk{width:28px;height:28px;flex:none;display:inline-flex}
 .wb-avatar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:var(--tekst-mini);font-weight:700}
-.wb-inline-icoon{width:12px;height:12px;vertical-align:-2px}
+/* WOORDBREUK-001: inline-block — globale svg{display:block} розривав «Українська · ☀ світла» на три рядки. NL: inline houden. */
+.wb-inline-icoon{display:inline-block;width:12px;height:12px;vertical-align:-2px}
 .wb-balk .pil{margin-left:var(--ruimte-2);font-size:var(--tekst-mini)}
 
 /* ---------------------------------------------------------------- begroeting */
 .wb-begroeting{display:flex;align-items:center;gap:var(--ruimte-4);min-height:var(--wb-rij);padding:var(--ruimte-2) var(--ruimte-2);color:var(--text)}
 .wb-begroeting-icoon{width:44px;height:44px;flex:none;color:var(--warn-vlak)}
 .wb-begroeting-tekst{flex:1 1 auto;min-width:0}
-.wb-begroeting-tekst h2{margin:0;font-size:1.6rem;line-height:1.15;overflow-wrap:anywhere}
+.wb-begroeting-tekst h2{margin:0;font-size:1.6rem;line-height:1.15;overflow-wrap:break-word}
 .wb-begroeting-tekst p{margin:2px 0 0;color:var(--text);font-size:var(--tekst-klein)}
 .wb-begroeting-tijd{display:flex;flex-direction:column;align-items:flex-end;flex:none;text-align:right}
 .wb-begroeting-datum{color:var(--text);font-size:var(--tekst-klein)}
@@ -153,11 +181,14 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 /* ---------------------------------------------------------------- snelle toegang */
 .wb-snel{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));grid-auto-rows:minmax(68px,1fr);gap:var(--ruimte-2);height:100%}
 .wb-snel>li{display:flex;min-height:0}
-.wb-snel-tegel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-height:64px;padding:var(--ruimte-2) 4px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:var(--straal-m);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--text);font:inherit;cursor:pointer;transition:transform .15s ease,background .15s ease}
+.wb-snel-tegel{container-type:inline-size;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-height:64px;padding:var(--ruimte-2) 4px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:var(--straal-m);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--text);font:inherit;cursor:pointer;transition:transform .15s ease,background .15s ease}
 .wb-snel-tegel:hover{background:var(--surface2);transform:translateY(-1px)}
 .wb-snel-icoon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--straal-s);background:var(--accent-soft);color:var(--accent)}
 .wb-snel-icoon svg,.wb-snel-icoon .menu-lucide-glyph{width:20px;height:20px}
-.wb-snel-naam{font-size:var(--tekst-mini);font-weight:600;text-align:center;line-height:1.2;overflow-wrap:normal;word-break:normal;hyphens:auto;max-width:100%}
+/* WOORDBREUK-001: плитка — власний контейнер, шрифт назви зменшується разом із плиткою, тож «Налаштування» стоїть цілим
+   словом, без переносу з дефісом. Тому запити ширини віджета нижче названі (wb-inhoud).
+   NL: de tegel is een eigen container; de naam krimpt mee in plaats van met een koppelteken af te breken. */
+.wb-snel-naam{font-size:min(var(--tekst-mini),13cqi);font-weight:600;text-align:center;line-height:1.2;overflow-wrap:normal;word-break:normal;hyphens:manual;max-width:100%}
 @media (prefers-reduced-motion:reduce){.wb-snel-tegel{transition:none}}
 
 /* ---------------------------------------------------------------- snelle acties */
@@ -176,6 +207,9 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb-tip-knoppen{display:flex;flex-wrap:wrap;gap:var(--ruimte-2);flex:none}
 /* Smalle strook (tablet): alleen de kop en de knoppen — de uitleg zou een derde regel worden en afgeknipt. */
 @container (max-width:760px){.wb-tip-tekst small{display:none}}
+/* WOORDBREUK-001: вузьке привітання (4–5 колонок) — «Доброго вечора» не розривається на «Доброг / о»: без піктограми й дати
+   (лишається годинник; дата є в підказці годинника), менший шрифт. NL: smalle begroeting zonder icoon en datum, klok blijft. */
+@container (max-width:520px){.wb-begroeting{gap:var(--ruimte-2)}.wb-begroeting-icoon{display:none}.wb-begroeting-tekst h2,.wb-begroeting-klok{font-size:1.2rem}.wb-begroeting-tekst p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-begroeting-datum{display:none}}
 .wb-tip-sluit{display:inline-flex;align-items:center;justify-content:center;width:var(--tik-hoogte);height:var(--tik-hoogte);flex:none;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}
 .wb-tip-sluit:hover{background:var(--surface);color:var(--text)}
 .wb-tip-sluit svg{width:16px;height:16px}
@@ -229,7 +263,7 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 @container (max-width:240px){.wb-zoek-rij small{display:none}}
 @container (max-width:300px){.wb-post time{display:none}}
 /* Snelle toegang in een smalle tegel (tablet: halve breedte): kleinere tegels, zodat alle diensten passen. */
-@container (max-width:380px){.wb-snel{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));grid-auto-rows:minmax(54px,1fr);gap:6px}.wb-snel-tegel{min-height:52px;gap:4px;padding:4px 2px}.wb-snel-icoon{width:28px;height:28px}.wb-snel-icoon svg,.wb-snel-icoon .menu-lucide-glyph{width:16px;height:16px}}
+@container wb-inhoud (max-width:380px){.wb-snel{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));grid-auto-rows:minmax(54px,1fr);gap:6px}.wb-snel-tegel{min-height:52px;gap:4px;padding:4px 2px}.wb-snel-icoon{width:28px;height:28px}.wb-snel-icoon svg,.wb-snel-icoon .menu-lucide-glyph{width:16px;height:16px}}
 .wb-taak-stand{font-size:var(--tekst-mini);padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted)}
 .wb-taak-stand.is-blocked{background:var(--fout-zacht);color:var(--fout)}
 .wb-taak-stand.is-doing{background:var(--info-zacht);color:var(--info)}
@@ -254,11 +288,15 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 
 /* ---------------------------------------------------------------- systeem, technisch, diensten */
 .wb-systeem{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.wb-systeem li{display:flex;align-items:center;gap:var(--ruimte-2);min-height:34px;padding:2px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);min-width:0}
+.wb-systeem li{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--ruimte-2);min-height:34px;padding:2px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);min-width:0}
 .wb-systeem li:last-child{border-bottom:0}
 .wb-systeem li>svg{width:16px;height:16px;flex:none;color:var(--accent)}
 .wb-systeem li>small{flex:none;color:var(--muted);font-size:var(--tekst-mini);white-space:nowrap}
 .wb-systeem .pil{flex:none;font-size:var(--tekst-mini)}
+/* WOORDBREUK-001: назва не стискається під значенням («Час роботи прс»); якщо разом не вміщуються — значення переходить
+   рядком нижче й стоїть праворуч. NL: de waarde schuift naar de volgende regel in plaats van de naam af te kappen. */
+.wb-systeem li>.wb-rij-titel{flex:1 0 auto;max-width:calc(100% - 16px - var(--ruimte-2))}
+.wb-systeem li>.pil,.wb-systeem li>small{margin-left:auto;max-width:100%}
 .wb-release{display:flex;align-items:center;gap:var(--ruimte-2);padding:var(--ruimte-2);border-radius:var(--straal-s);background:var(--surface)}
 .wb-release>svg{width:18px;height:18px;flex:none;color:var(--accent)}
 .wb-diensten .pil{flex:none}
@@ -319,6 +357,8 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .werkblad :is(.knop,.knop-primair,.knop-secundair,.knop-stil,.knop-gevaar).is-klein,
   .wb-catalogus :is(.knop,.knop-primair,.knop-secundair,.knop-stil).is-klein,
   .wb-agenda-vandaag,.wb-alles,.wb-link-knop,.wb-acties button,.wb-zoek-rij,.wb-chips button{min-height:var(--tik-hoogte-mobiel)}
+  /* WB-HOEK-001: на телефоні піктограма теж у правому куті, а не на початку рядка. Telefoon: icoon blijft rechts. */
+  .wb-balk-acties:has(> .wb3-instellen-icoon){justify-content:flex-end}
   .wb-balk-acties .knop-stil.is-klein:not(:has(> :not(svg))),.wb-agenda-knoppen .wb-icoonknop{min-width:var(--tik-hoogte-mobiel);width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}
   .wb-rijen li>a,.wb-snelkoppeling{min-height:var(--tik-hoogte-mobiel)}
   /* Catalogus in het venster: op de telefoon scrollt alleen het venster (05.11.2026). Stond in het eerste mobiele blok en verloor daar
@@ -338,7 +378,9 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb3 .wb3-widget{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .wb3 .wb3-widget .wb-tegel-inhoud{flex:1;min-height:0;overflow:auto}
 .wb3-niet{margin:.5rem;font-size:.85rem;opacity:.8}
-.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--panel)}
+.wb3-bibliotheek{display:flex;box-sizing:border-box;width:100%;min-width:0;max-height:min(80vh,56rem);max-width:1180px;margin:0 auto .75rem;overflow:hidden;border-radius:18px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--panel)}
+/* BIB-002: één kader — het paneel binnenin heeft geen eigen rand/achtergrond meer (geen dubbele omlijsting); de plank scrolt, kop blijft. */
+.wb3-bibliotheek>.bib-paneel{flex:1;min-width:0;min-height:0;border:0;background:transparent;border-radius:inherit}
 .wb3-instellingen{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 .75rem}
 .wb3-veld{display:inline-flex;gap:.4rem;align-items:center;min-height:44px}
 .wb3-veld select{min-height:36px}

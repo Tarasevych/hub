@@ -1002,7 +1002,7 @@ nazorg_markeren() {
 # Omgeving: ROOK_UIT=1 (controle overslaan), ROOK_CHROMIUM (pad), ROOK_GEHEUGEN_MAX (1500M), ROOK_TIJD_SEC (600).
 ROOK_REDEN=""
 ROOK_STATUS="rook-controle.json"
-rook_chromium() { local k; for k in "${ROOK_CHROMIUM:-}" "$APP_ROOT/browser/chrome-headless-shell" /usr/bin/chromium /usr/bin/chromium-browser /usr/lib/chromium/chromium; do [ -n "$k" ] && [ -x "$k" ] && { echo "$k"; return 0; }; done; return 1; }
+rook_chromium() { local k; [ -n "${ROOK_CHROMIUM:-}" ] && { [ -x "$ROOK_CHROMIUM" ] && echo "$ROOK_CHROMIUM" && return 0; return 1; }; for k in "$APP_ROOT/browser/chrome-headless-shell" /usr/bin/chromium /usr/bin/chromium-browser /usr/lib/chromium/chromium; do [ -x "$k" ] && { echo "$k"; return 0; }; done; return 1; }
 # Databaserol uit de migratie-URL (migratie.env, anders geheimen.env): eigenaar van de wegwerpdatabase. Alleen de gebruikersnaam, nooit het wachtwoord.
 rook_db_rol() {
   python3 - "$MIGRATIE_ENV" "$GEHEIMEN" <<'PY'
@@ -1585,7 +1585,7 @@ apps_koppelen() {
   [[ "$naam" =~ ^[A-Za-z0-9._-]{1,60}$ ]] || fout "--naam: letters, cijfers, . _ -"
   if [ -z "$server" ]; then
     local domeinnaam
-    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
+    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identiteit.ts" 2>/dev/null | head -1)"
     [ -n "$domeinnaam" ] || fout "domein van de site niet gevonden; geef --server https://mcp.<uw-domein>"
     server="https://mcp.$domeinnaam"
   fi
@@ -1646,7 +1646,7 @@ beheer_koppelen() {
   [[ "$naam" =~ $naam_re ]] || fout "--naam: letters, cijfers, spatie, . _ - ( )"
   if [ -z "$server" ]; then
     local domeinnaam
-    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
+    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identiteit.ts" 2>/dev/null | head -1)"
     [ -n "$domeinnaam" ] || fout "domein van de site niet gevonden; geef --server https://mcp.<uw-domein>"
     server="https://mcp.$domeinnaam"
   fi
@@ -1811,8 +1811,8 @@ app_domein() {
   host="${host,,}"
   [[ "$poort" =~ ^[0-9]{4,5}$ ]] && [ "$poort" -ge 1024 ] && [ "$poort" -le 65535 ] || fout "--caddy-poort: 1024-65535 (standaard 8090, zoals apps-inrichten)"
   local domein
-  domein="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
-  [ -n "$domein" ] || fout "domein van de site niet gevonden in $HUIDIG/backend/deployment-identity.ts"
+  domein="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identiteit.ts" 2>/dev/null | head -1)"
+  [ -n "$domein" ] || fout "domein van de site niet gevonden in $HUIDIG/backend/deployment-identiteit.ts"
   app_domein_geldig "$host" "$domein" || fout "geweigerd"
   command -v cloudflared >/dev/null 2>&1 || fout "cloudflared ontbreekt op deze server"
   [ -s "$CF_CONFIG" ] || fout "$CF_CONFIG ontbreekt (eerst de tunnel inrichten, zie deploy/LEESMIJ.md)"

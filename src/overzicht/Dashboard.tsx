@@ -280,6 +280,16 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
       )}
 
       {fout && <p className="ov-fout" role="alert"><TriangleAlert aria-hidden="true" /> {fout}</p>}
+      {o?.gedeeltelijkeFout && (
+        <p className="ov-banner" role="status" data-testid="ov-gedeeltelijke-fout">
+          <TriangleAlert aria-hidden="true" />{' '}
+          {tr(
+            lang,
+            `Деякі джерела даних тимчасово не відповіли (${o.bronFouten.join(', ')}) — частина показників може бути неповною.`,
+            `Sommige gegevensbronnen reageerden tijdelijk niet (${o.bronFouten.join(', ')}) — een deel van de cijfers kan onvolledig zijn.`,
+          )}
+        </p>
+      )}
       <div className="ov-sr" aria-live="polite">{melding}</div>
 
       {!o && !fout && bezigLaden && <p className="ov-leeg"><RefreshCw className="spin" aria-hidden="true" /> {tr(lang, 'Завантажуємо живі дані…', 'Live gegevens laden…')}</p>}

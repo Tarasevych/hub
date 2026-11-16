@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import{execFileSync}from'node:child_process';import{createRequire}from'node:module';
-const require=createRequire(import.meta.url),ts=require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript');
+const require=createRequire(import.meta.url),ts=(()=>{try{return require('typescript')}catch{return require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript')}})();
 const root=new URL('../../',import.meta.url);
 const src=name=>readFileSync(new URL(name,root),'utf8');
 const compiled=(name,replacements={})=>{let s=src(name);for(const [a,b]of Object.entries(replacements))s=s.replaceAll(a,b);
@@ -15,8 +15,9 @@ test('M10: hostile chunked provider response is rejected after at most 1 MiB des
  assert(called<100,'provider response must not be fully buffered');
 });
 test('M10: new frontend is reachable only through an explicit build-stage flag and preserves existing Drive',()=>{
- const cloud=src('src/CloudFunctioneelWeergave.tsx');const nav=src('src/VerenigdDienstApp.tsx');
- assert(cloud.includes('VITE_CLOUD_FULL_STAGING'));assert(cloud.includes('CLOUD_M10_STAGE&&effectiveTab'));assert(nav.includes('CLOUD_M10_STAGE?[{id:\'files\''));
+ const cloud=src('src/CloudFunctioneelWeergave.tsx');const nav=src('src/VerenigdDienstApp.tsx');const wissel=src('src/CloudVnextWissel.tsx');
+ assert(cloud.includes('VITE_CLOUD_FULL_STAGING'));assert(cloud.includes('CLOUD_M10_STAGE&&effectiveTab'));
+ assert(nav.includes('./CloudVnextWissel'));assert(wissel.includes("props.tab === 'files' || props.tab === 'shared' ? 'overview' : props.tab"));
  assert(cloud.includes('<CloudAccountsPanel'));assert(cloud.includes('DriveBrowser'));
 });
 test('M10: release preflight always rejects absent real provider evidence and missing runtime',()=>{

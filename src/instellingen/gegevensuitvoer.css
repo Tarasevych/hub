@@ -13,7 +13,13 @@
 .gegevensuitvoer-formaat{display:grid;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
 .gegevensuitvoer-formaat legend{padding:0 4px;font-weight:700}
 .gegevensuitvoer-formaat label{display:flex;align-items:flex-start;gap:8px;min-height:var(--tik-hoogte,44px);cursor:pointer}
-.gegevensuitvoer-formaat label input{margin-top:4px;flex:none}
+/* BLOKKEN-001 (15.11.2026): раніше загальне .settings-center input{width:100%} розтягувало перемикач на всю ширину,
+   а підписи вилітали у вузький стовпчик за рамку. Тепер перемикач має сталий розмір, підпис займає решту рядка.
+   NL: vaste maat voor het keuzerondje; het label neemt de rest van de regel. */
+.gegevensuitvoer-formaat label{font-weight:400;padding:8px 10px;border:1px solid transparent;border-radius:10px}
+.gegevensuitvoer-formaat label:has(input:checked){border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.gegevensuitvoer-formaat label input[type=radio]{flex:0 0 18px;width:18px;height:18px;min-width:18px;min-height:0;margin:3px 0 0;padding:0;border:0;background:none;accent-color:var(--accent);appearance:auto}
+.gegevensuitvoer-formaat label > span{flex:1 1 auto}
 .gegevensuitvoer-formaat label span{display:grid;gap:2px;min-width:0}
 .gegevensuitvoer-formaat small{color:var(--muted);overflow-wrap:anywhere}
 .gegevensuitvoer-stand{display:grid;gap:6px;justify-items:start}

@@ -10,6 +10,7 @@
 // intentie op (neemHervat) en voert de actie zelf opnieuw uit; de server controleert de step-up zoals altijd.
 import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from './webauthn';
 import { actieVoorPad } from '../../shared/stap-op-acties';
+import { verzoekKern, type VerzoekKern } from '../../shared/stap-op-acties';
 
 // APPARAAT-001: 'apparaat' (bevestigen vanaf een ander aangemeld apparaat) en 'telegram' (kaart in de bot) — kanalen zonder
 // toegangssleutel op DIT apparaat; de server legt de step-up vast via POST /api/owner/access/stap-op/poort (bevestigingstabel).
@@ -184,6 +185,8 @@ export type BevestigOpties = {
   pad?: string;
   /** SEC-002 interface-07: false = het verzoek kwam niet uit een klik van de mens in dit tabblad → geen «Запам’ятати» aanbieden. */
   onthoudAanbieden?: boolean;
+  /** STAPOP-OMSCHR-001: bekende velden van het verzoek (welke AI, termijn, variant) — alleen voor de tekst «Що ви підтверджуєте». */
+  verzoek?: VerzoekKern;
 };
 /**
  * SEC-002 interface-07: komt dit verzoek NU uit een gebaar van de mens in dit tabblad? Zichtbaar, met focus, en (waar de browser
@@ -211,7 +214,7 @@ export async function stapOpVragen(body: unknown, post: Post, url = '', sterk = 
   const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   const service = String(b.service || ''), tabContext = String(b.tabContext || '');
   if (!SERVICES.has(service) || !tabContext) return false;
-  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende, actie: actieVoorUrl(url), sterk, pad: url, onthoudAanbieden: directGebaar() });
+  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende, actie: actieVoorUrl(url), sterk, pad: url, verzoek: verzoekKern(b), onthoudAanbieden: directGebaar() });
   if (!uit.ok && uit.reden === 'VENSTER_FOUT') throw new Error('VENSTER_FOUT');
   return uit.ok;
 }

@@ -55,13 +55,21 @@ export async function main(): Promise<number> {
 
   if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN agent-namens (integratie): geen database'); return einde(); }
   const sys = getPool('systeem');
+  const vorigeOwnerEmail = process.env.OWNER_EMAIL;
   let E = (await sys.query("SELECT id, data FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner' AND lower(data->>'email') = lower($1) LIMIT 1", [String(process.env.OWNER_EMAIL || '')])).rows[0] as { id: string; data: Record<string, unknown> } | undefined;
-  // Gedeelde test-db: een eerdere test kan de eigenaar hebben gedegradeerd. Dan een tijdelijke eigenaar aanmaken en na afloop wissen
-  // (net als tech-profiel), in plaats van de hele integratietest over te slaan.
+  // Gedeelde test-db: een eerdere test kan de eigenaar hebben gedegradeerd of met een ander adres achtergelaten.
+  // Verlaag dan tijdelijk een eventuele andere eigenaar (records_een_eigenaar), maak de test-eigenaar en herstel in finally.
   let tijdelijkeEigenaar = '';
+  const gedeeldeEigenaren: string[] = [];
   if (!E) {
+    for (const r of (await sys.query("SELECT id FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner'")).rows) {
+      gedeeldeEigenaren.push(String(r.id));
+      await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"member\"') WHERE tbl = 'users' AND id = $1", [r.id]);
+    }
     tijdelijkeEigenaar = randomUUID();
-    const data = { email: String(process.env.OWNER_EMAIL || `eigenaar-namens-${tijdelijkeEigenaar}@test.invalid`).toLowerCase(), role: 'owner', status: 'approved', name: 'Tijdelijke eigenaar' };
+    const email = String(process.env.OWNER_EMAIL || `eigenaar-namens-${tijdelijkeEigenaar}@test.invalid`).toLowerCase();
+    process.env.OWNER_EMAIL = email;
+    const data = { email, role: 'owner', status: 'approved', name: 'Tijdelijke eigenaar' };
     await sys.query("INSERT INTO app.records (tbl, id, data) VALUES ('users', $1, $2)", [tijdelijkeEigenaar, data]);
     E = { id: tijdelijkeEigenaar, data };
   }
@@ -211,6 +219,10 @@ export async function main(): Promise<number> {
     await sys.query("DELETE FROM app.records WHERE tbl='users' AND id = $1", [U]).catch(() => undefined);
     await sys.query("DELETE FROM app.records WHERE tbl='owner_step_up_v1' AND data->>'userId' = ANY($1::text[])", [[E.id, U]]).catch(() => undefined);
     if (tijdelijkeEigenaar) await sys.query("DELETE FROM app.records WHERE tbl='users' AND id = $1", [tijdelijkeEigenaar]).catch(() => undefined);
+    for (const id of gedeeldeEigenaren) {
+      await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner\"') WHERE tbl='users' AND id = $1", [id]).catch(() => undefined);
+    }
+    if (vorigeOwnerEmail === undefined) delete process.env.OWNER_EMAIL; else process.env.OWNER_EMAIL = vorigeOwnerEmail;
   }
   await closePool();
   return einde();

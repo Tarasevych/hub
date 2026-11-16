@@ -117,7 +117,7 @@ async function inChrome(check: Check) {
       await klik('[data-choice-group="personalization-1"][data-choice-index="2"]');
       await klik('[data-toggle-demo="personalization-2"]');
       await klik('[data-choice-group="personalization-0"][data-choice-index="0"]');
-      await klik('.swatches [data-accent="pink"]');
+      await klik('.swatches [data-accent="roze"]');
       await page.$eval('[data-range-demo="themes-2"]', (i: HTMLInputElement) => { i.value = '30'; i.dispatchEvent(new Event('input', { bubbles: true })); });
       await klik('#heroNavSettings');
       await klik('#navSettings [data-pos="left"]');
@@ -125,7 +125,7 @@ async function inChrome(check: Check) {
       await klik('#navSettings [data-rail-mode="auto"]');
       const dii = JSON.stringify(await log());
       check('Chrome: кожна дія людини — рівно один виклик справжнього налаштування сайту (щільність, рух, піктограми, акцент, ефекти, положення, режим)',
-        dii === JSON.stringify([['weergave', { dichtheid: 'ruim' }], ['weergave', { beweging: 'systeem' }], ['weergave', { icoonStijl: 'klassiek' }], ['weergave', { accent: 'pink' }], ['weergave', { effecten: 30 }], ['weergave', { positie: 'links' }], ['weergave', { modus: 'auto' }]]), dii);
+        dii === JSON.stringify([['weergave', { dichtheid: 'ruim' }], ['weergave', { beweging: 'systeem' }], ['weergave', { icoonStijl: 'klassiek' }], ['weergave', { accent: 'roze' }], ['weergave', { effecten: 30 }], ['weergave', { positie: 'links' }], ['weergave', { modus: 'auto' }]]), dii);
       await klik('[data-demo-lang="nl"]');
       await klik('[data-demo-lang="uk"]');
       await klik('.mq-demo-open[data-kaart-ga="widgets|dienst:hub"]');
@@ -140,7 +140,7 @@ async function inChrome(check: Check) {
       const naKlik = { log: await log(), open: await page.$eval('#navSettings', (e: HTMLElement) => !e.hidden) };
       check('давня вада: натискання в справжній панелі не «вибирає» акцент і закриває вікно навігації (корінь із data-accent — не кнопка)',
         openVoor && naKlik.log.length === 0 && naKlik.open === false, JSON.stringify({ openVoor, naKlik }));
-      await page.evaluate(() => (window as any).m.zetWeergave({ dichtheid: 'normaal', beweging: 'systeem', effecten: 45, icoonStijl: 'kleur', positie: 'onder', modus: 'open', accent: 'amber' }));
+      await page.evaluate(() => (window as any).m.zetWeergave({ dichtheid: 'normaal', beweging: 'systeem', effecten: 45, icoonStijl: 'kleur', positie: 'onder', modus: 'open', accent: 'oranje' }));
       const na = await page.evaluate(() => ({
         dicht: document.querySelector('[data-choice-group="personalization-1"].selected')?.textContent,
         acc: [...document.querySelectorAll('.swatches [data-accent].selected')].map((b) => (b as HTMLElement).dataset.accent).join(),
@@ -149,7 +149,7 @@ async function inChrome(check: Check) {
         eff: (document.querySelector('[data-range-demo="themes-2"]') as HTMLInputElement)?.value,
       }));
       check('Chrome: зміна на сайті (справжня панель, інший пристрій) оновлює макет без перемальовування й без луни назад',
-        na.dicht === 'Звичайна' && na.acc === 'amber' && na.rail === 'rail-bottom' && na.rust === 'true' && na.eff === '45' && (await log()).length === 0, JSON.stringify(na));
+        na.dicht === 'Звичайна' && na.acc === 'oranje' && na.rail === 'rail-bottom' && na.rust === 'true' && na.eff === '45' && (await log()).length === 0, JSON.stringify(na));
       const kaarten = await page.$$eval('.mq-demo-eerlijk .mq-demo-open', (bs: HTMLElement[]) => bs.map((b) => b.dataset.kaartGa).join(' '));
       check('Chrome: чесні картки «Приклад вигляду» з переходами; тумблер простору — гніздо в картці «Активний профіль»; пояснення у вікні навігації',
         kaarten.includes('menu|#menu-modus') && kaarten.includes('widgets|dienst:hub') && kaarten.includes('identities|accountmenu:') && await page.$$eval('[data-echt="ruimtewissel"]', (x: unknown[]) => x.length) === 1
@@ -179,8 +179,8 @@ export async function main(): Promise<number> {
     check('сумісність: старий запис без нових полів читається як раніше', oud.modus === 'dark' && oud.palet === 'puur' && oud.geluid === false && !('vormgeving' in oud) && !('dichtheid' in oud));
     const twee = metUiterlijkRuimte({ versie: 2, gebruiker: { modus: 'light' }, technisch: { modus: 'dark', accent: 'amber' } }, 'gebruiker', { dichtheid: 'ruim' });
     check('модель: зміна однієї ruimte не чіпає іншої (технічний простір зберігає свій акцент)', twee.technisch.accent === 'amber' && twee.gebruiker.dichtheid === 'ruim' && !twee.gebruiker.modus && uiterlijkVoorRuimte(twee, 'technisch').modus === 'dark');
-    check('модель: переліки збігаються з елементами «Макета» (3 вигляди, 3 щільності, 4 акценти)',
-      UITERLIJK_VORMGEVINGEN.join() === 'maquette,studio,klassiek' && UITERLIJK_DICHTHEDEN.join() === 'compact,normaal,ruim' && UITERLIJK_ACCENTEN.join() === 'violet,cyan,pink,amber'
+    check('модель: переліки збігаються з елементами «Макета» (3 вигляди, 3 щільності, 12 акцентів — ACCENT-001)',
+      UITERLIJK_VORMGEVINGEN.join() === 'maquette,studio,klassiek' && UITERLIJK_DICHTHEDEN.join() === 'compact,normaal,ruim' && UITERLIJK_ACCENTEN.join() === 'violet,cyan,pink,amber,blauw,hemel,teal,groen,oranje,roze,indigo,bruin'
       && normaliseerUiterlijkRuimtes({ vormgeving: 'studio' }).gebruiker.vormgeving === 'studio');
   }
 
@@ -193,7 +193,7 @@ export async function main(): Promise<number> {
       const regel = `:root:root[data-accent="${id}"]:is(.${sel}), :root:root[data-accent="${id}"] :is(.${sel}) { --accent:${t.accent}; --accentText:${t.tekst}; --accent-soft:${t.zacht}; }`;
       if (!css.includes(regel)) verschil.push(`${id}/${toon}`);
     }
-    check('акцент: правила weergave-stijl.css точно відповідають ACCENT_TONEN (обидві теми, усі 4 кольори)', verschil.length === 0, verschil.join(' '));
+    check('акцент: правила weergave-stijl.css точно відповідають ACCENT_TONEN (обидві теми, усі кольори)', verschil.length === 0, verschil.join(' '));
     // Тла всіх палітр: «Кольоровий» для кожного розділу, «Чистий», грифельний і фіолетовий (src/ontwerp/tokens.css).
     const tokens = readFileSync('src/ontwerp/tokens.css', 'utf8');
     const uitTokens = (sel: string) => { const m = new RegExp(`${sel.replace(/[.]/g, '\\.')} \\{([^}]*)\\}`).exec(tokens)?.[1] || ''; return ['--bg', '--panel', '--surface'].map((k) => new RegExp(`${k}:(#[0-9a-f]{3,6})`, 'i').exec(m)?.[1]).filter(Boolean) as string[]; };

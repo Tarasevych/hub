@@ -52,7 +52,10 @@ const datum = (ms: number | null, uk: boolean) => (ms ? new Date(ms).toLocaleStr
 
 // ---------------------------------------------------------------- hulpjes
 
-const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity', autoclaw: 'autoclaw' };
+const LOGO: Record<AgentSlug, LogoKind> = {
+  claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor',
+  antigravity: 'antigravity', autoclaw: 'autoclaw', windsurf: 'windsurf', cline: 'cline', devin: 'devin', opencode: 'opencode',
+};
 const s = (v: unknown) => (typeof v === 'string' ? v : '');
 const ALLE_SLUGS: AgentSlug[] = V2_AGENTEN.map((a) => a.slug);
 
@@ -83,6 +86,10 @@ export function agentVanItem(e: JournaalItem): AgentSlug | null {
   if (/cursor/.test(n)) return 'cursor';
   if (/antigravity|jetski/.test(n)) return 'antigravity';
   if (/autoclaw|openclaw|zhipu|chatglm|\bglm\b/.test(n)) return 'autoclaw';
+  if (/windsurf|codeium|cascade/.test(n)) return 'windsurf';
+  if (/\bcline\b|roo code|roocode/.test(n)) return 'cline';
+  if (/devin|cognition/.test(n)) return 'devin';
+  if (/opencode|open code/.test(n)) return 'opencode';
   return null;
 }
 
@@ -190,7 +197,6 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
           ...sessionBody(),
           agent: a.slug,
           actie: 'alles-aan',
-          termijn: 'tot-technisch-einde',
         });
         delen.push(tr('технічний сеанс делеговано', 'technische sessie gedelegeerd'));
       }

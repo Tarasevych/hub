@@ -1,6 +1,6 @@
 // Volledige verificatie van UX-AI-VAULT-001 (01.11.2026):
 //   DEEL 1 — 1-plek AI-agentbeheer op mcp.tarasevych.com/agenten#agent/<slug> zonder 4 slagbomen of blinde redirects:
-//     1a. Cross-subdomein actieve technische sessie (bv. gestart op admin.*) + 0-sessie 1-klik Rij 2 («Дозволити до кінця сеансу»)
+//     1a. Cross-subdomein actieve technische sessie (bv. gestart op admin.*) + 0-sessie 1-klik Rij 2 («Дозволити» (типові правила))
 //         via POST /api/owner/connector-v2/activeer-tech → nooit meer HTTP 403 TECH_RUIMTE_VEREIST;
 //     1b. Rij 4 («4. Підписана політика-стеля Доступ ШІ») tekent keten.json DIRECT TER PLAATSE op mcp.tarasevych.com/agents#agent/cursor
 //         met echte WebAuthn Passkey (WYSIWYS-hashcontrole in browser + root goedkeur-hulp.mjs verwerk, origin https://mcp.tarasevych.com);
@@ -772,12 +772,12 @@ export async function main(): Promise<number> {
 
       await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#agent/cursor' }, s);
       await wachtOp('Rij 2 knop zichtbaar zelfs zonder actieve tech-sessie',
-        `Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]'))`);
+        `Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]'))`);
 
-      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]').click()`);
+      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]').click()`);
       await wachtOp('1-klik Rij 2 start tech-sessie + zet ai-dienst aan + delegeert → OK',
         `document.querySelector('[data-agent-diagnose]')?.getAttribute('data-agent-diagnose') === 'OK'`);
-      check('Chrome Deel 1.1e: Rij 2 («Дозволити до кінця сеансу») activeert vanuit NUL-sessie + uitgeschakelde dienst in 1 klik alles naar OK!', true);
+      check('Chrome Deel 1.1e: Rij 2 («Дозволити» (типові правила)) activeert vanuit NUL-sessie + uitgeschakelde dienst in 1 klik alles naar OK!', true);
 
       // ------------------------------------------------------------------ Chrome Deel 1.2: In-place Rij 4 Passkey-ondertekening op #agent/cursor (geen redirect naar admin/ai!)
       schrijfKeten({

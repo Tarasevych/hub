@@ -206,7 +206,7 @@ export async function main(): Promise<number> {
       sleutelkluisAdres('https://mail.tarasevych.com/accounts') === 'https://id.tarasevych.com/aanmeldmethoden#aanmeldmethoden-sleutelkluis'
       && sleutelkluisAdres('https://mail.eigenknooppunt.nl:8443/?tab=accounts') === 'https://id.eigenknooppunt.nl:8443/aanmeldmethoden#aanmeldmethoden-sleutelkluis');
     check('1c: googleStartFoutTekst дає зрозуміле двомовне пояснення для SLEUTELKLUIS_GESLOTEN',
-      googleStartFoutTekst('SLEUTELKLUIS_GESLOTEN', 'uk').includes('Шифрування') && googleStartFoutTekst('SLEUTELKLUIS_GESLOTEN', 'nl').includes('Versleuteling'));
+      googleStartFoutTekst('SLEUTELKLUIS_GESLOTEN', 'uk').includes('Розшифрувати') && googleStartFoutTekst('SLEUTELKLUIS_GESLOTEN', 'nl').includes('Ontsleutelen'));
     check('1d: EigenaarIdentiteitTerug та MailKoppelVenster містять пряму дію відкриття сховища ключів при SLEUTELKLUIS_GESLOTEN',
       terugTsx.includes("case 'SLEUTELKLUIS_GESLOTEN':") && terugTsx.includes('Відкрити сховище ключів') && koppelTsx.includes("foutCode === 'SLEUTELKLUIS_GESLOTEN'"));
   }

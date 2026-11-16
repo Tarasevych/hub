@@ -1,7 +1,7 @@
 // Картка події екосистеми з горизонтальним змахом, швидкими діями, вкладеннями та ШІ-інспектором (GEMINI-002).
 // Захищає нові критичні сповіщення безпеки від випадкового прибирання змахом.
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Archive,
   Bell,
@@ -29,6 +29,7 @@ import {
   formaatGrootte,
   kanaalLabel,
   prioriteitLabel,
+  veiligeMeldingUrl,
   type AiAanbiederKeuze,
   type BijlageWeergaveVoorkeur,
   type MeldingActie,
@@ -119,8 +120,15 @@ export default function MeldingVeegKaart({
     id: number;
     startX: number;
     startY: number;
+    laatsteDx: number;
     locked: 'hor' | 'vert' | null;
-  }>({ actief: false, id: -1, startX: 0, startY: 0, locked: null });
+  }>({ actief: false, id: -1, startX: 0, startY: 0, laatsteDx: 0, locked: null });
+  const hintTimerRef = useRef<number | undefined>(undefined);
+  const negeerKlikRef = useRef(false);
+
+  useEffect(() => () => {
+    if (hintTimerRef.current !== undefined) window.clearTimeout(hintTimerRef.current);
+  }, []);
 
   const veegRegels = profiel.veeg;
   const richting: 'links' | 'rechts' | null = offsetX > 12 ? 'rechts' : offsetX < -12 ? 'links' : null;
@@ -130,7 +138,7 @@ export default function MeldingVeegKaart({
     if (!veegRegels.actief || e.button > 0) return;
     const doel = e.target as HTMLElement | null;
     if (doel?.closest('button,a,input,select,textarea,audio,video,iframe,[data-geen-veeg]')) return;
-    sleep.current = { actief: true, id: e.pointerId, startX: e.clientX, startY: e.clientY, locked: null };
+    sleep.current = { actief: true, id: e.pointerId, startX: e.clientX, startY: e.clientY, laatsteDx: 0, locked: null };
   };
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -154,6 +162,7 @@ export default function MeldingVeegKaart({
     }
     if (sleep.current.locked === 'hor') {
       const begrensd = Math.max(-150, Math.min(150, dx));
+      sleep.current.laatsteDx = begrensd;
       setOffsetX(begrensd);
     }
   };
@@ -161,9 +170,11 @@ export default function MeldingVeegKaart({
   const afrondenVeeg = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!sleep.current.actief || sleep.current.id !== e.pointerId) return;
     const wasHor = sleep.current.locked === 'hor';
-    const dx = offsetX;
+    const rawDx = e.type === 'pointercancel' ? sleep.current.laatsteDx : e.clientX - sleep.current.startX;
+    const dx = Math.max(-150, Math.min(150, Math.abs(rawDx) > 0 ? rawDx : sleep.current.laatsteDx));
     sleep.current.actief = false;
     sleep.current.locked = null;
+    sleep.current.laatsteDx = 0;
     try {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
@@ -171,6 +182,12 @@ export default function MeldingVeegKaart({
     }
     setOffsetX(0);
     if (!wasHor) return;
+    if (Math.abs(dx) > 12) {
+      negeerKlikRef.current = true;
+      window.setTimeout(() => {
+        negeerKlikRef.current = false;
+      }, 150);
+    }
 
     if (Math.abs(dx) < veegRegels.drempelPx) return;
     const kant = dx > 0 ? 'rechts' : 'links';
@@ -183,7 +200,8 @@ export default function MeldingVeegKaart({
             'Kritieke beveiligingsmelding is beschermd tegen per ongeluk archiveren.',
           ),
         );
-        window.setTimeout(() => setBeschermHint(''), 3200);
+        if (hintTimerRef.current !== undefined) window.clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = window.setTimeout(() => setBeschermHint(''), 3200);
       }
       return;
     }
@@ -231,13 +249,14 @@ export default function MeldingVeegKaart({
       await onStatus(actie.statusDoel, actie.uitstelMinuten);
       return;
     }
-    if (actie.href) {
+    const veiligeHref = veiligeMeldingUrl(actie.href, 500);
+    if (veiligeHref) {
       onOpenActie?.(actie);
-      if (typeof window !== 'undefined') window.location.assign(actie.href);
+      if (typeof window !== 'undefined') window.location.assign(veiligeHref);
     }
   };
 
-  const paginaLink = typeof gebeurtenis.meta?.link === 'string' ? gebeurtenis.meta.link : '';
+  const paginaLink = veiligeMeldingUrl(gebeurtenis.meta?.link, 500) || '';
 
   return (
     <div className='mel-veeg-houder' data-testid={`mel-kaart-${gebeurtenis.id}`}>
@@ -259,7 +278,10 @@ export default function MeldingVeegKaart({
         onPointerMove={onPointerMove}
         onPointerUp={afrondenVeeg}
         onPointerCancel={afrondenVeeg}
-        onClick={() => onSelect?.()}
+        onClick={() => {
+          if (negeerKlikRef.current) return;
+          onSelect?.();
+        }}
       >
         <div className='mel-kaart-kop'>
           <span className={`mel-kanaal-teken is-${gebeurtenis.kanaal}`}>
@@ -349,11 +371,12 @@ export default function MeldingVeegKaart({
 
         <div className='mel-kaart-acties' data-geen-veeg='1'>
           {gebeurtenis.acties
-            .filter((a) => a.soort === 'api' || (a.soort === 'navigeer' && a.href))
+            .filter((a) => a.soort === 'api' || (a.soort === 'navigeer' && Boolean(veiligeMeldingUrl(a.href, 500))))
             .slice(0, 2)
-            .map((actie) =>
-              actie.href ? (
-                <a key={actie.id} href={actie.href} className='mel-knop mel-knop-zacht' onClick={(e) => e.stopPropagation()}>
+            .map((actie) => {
+              const veiligeHref = veiligeMeldingUrl(actie.href, 500);
+              return veiligeHref ? (
+                <a key={actie.id} href={veiligeHref} className='mel-knop mel-knop-zacht' onClick={(e) => e.stopPropagation()}>
                   <ExternalLink aria-hidden='true' />
                   {lang === 'nl' ? actie.labelNl : actie.labelUk}
                 </a>
@@ -370,8 +393,8 @@ export default function MeldingVeegKaart({
                 >
                   {lang === 'nl' ? actie.labelNl : actie.labelUk}
                 </button>
-              ),
-            )}
+              );
+            })}
 
           {!gebeurtenis.acties.some((a) => a.href) && paginaLink && (
             <a href={paginaLink} className='mel-knop mel-knop-zacht' onClick={(e) => e.stopPropagation()}>

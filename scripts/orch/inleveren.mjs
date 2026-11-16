@@ -236,7 +236,7 @@ export function inleveren(o) {
         ? spawnSync(process.execPath, [join(o.wortel, 'scripts/orch.mjs'), 'controleer', '--wortel', map], { cwd: map, env, encoding: 'utf8', timeout: 120_000 })
         : spawnSync('sh', ['-c', cmd], { cwd: map, env, encoding: 'utf8', timeout: 600_000 });
       const ok = r.status === 0; record.tests[ok ? 'geslaagd' : 'mislukt']++;
-      record.tests.uitvoer.push({ cmd, vertrouwd: isVeilig(cmd), status: r.status, laatste: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-6).join('\n') });
+      record.tests.uitvoer.push({ cmd, vertrouwd: isVeilig(cmd), status: r.status, laatste: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-20).join('\n') });
       if (!ok) z.push(fout('TESTS_MISLUKT', isVeilig(cmd) ? `перевірка правил (довірений controleer) «${cmd}» не пройшла (код ${r.status})` : `тест «${cmd}» впав (код ${r.status})`, `${isVeilig(cmd) ? 'regelcontrole (vertrouwde controleer)' : 'test'} «${cmd}» faalde (code ${r.status})`));
     }
     if (z.some((x) => x.ernst === 'fout')) return record;

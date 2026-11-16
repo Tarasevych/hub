@@ -117,7 +117,7 @@ inrichten() {
   [[ "$naam" =~ ^[^$'\n'$'\r'|]{1,120}$ ]] || fout "--naam: max 60 tekens zonder | of regeleinden"
   if [ -z "$server" ]; then
     local domeinnaam
-    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identity.ts" 2>/dev/null | head -1)"
+    domeinnaam="$(sed -n "s/^export const PUBLIC_DOMAIN = '\([a-z0-9.-]*\)';.*/\1/p" "$HUIDIG/backend/deployment-identiteit.ts" 2>/dev/null | head -1)"
     [ -n "$domeinnaam" ] || fout "domein van de site niet gevonden; geef --server https://mcp.<uw-domein>"
     server="https://mcp.$domeinnaam"
   fi

@@ -30,12 +30,14 @@ import {
   type Actor, type Besluit, type BewijsStuk, type Gebeurtenis, type Kaart, type Koppeling, type KoppelSoort, type ReleaseKoppeling, type ScanBevinding,
 } from '../shared/afstemming-model';
 
+import { RELEASES } from './afstemming-opslag';
+
 // ------------------------------------------------------------------------------------------------ opslagvormen
 const KAARTEN = 'afstemming_kaarten_v1';            // eigendom van de kern (A-deel); hier lezen + alleen tellers bijwerken
 const GEBEURTENISSEN = 'afstemming_gebeurtenissen_v1'; // append-only
 const KOPPELINGEN = 'afstemming_koppelingen_v1';    // van dit bestand
 const BESLUITEN = 'afstemming_besluiten_v1';        // van dit bestand
-const RELEASE = 'afstemming_release_v1';            // van dit bestand
+const RELEASE = RELEASES;                           // gedeeld met afstemming-opslag.ts (A/B)
 const BEWIJS = 'afstemming_bewijs_v1';              // eigendom van de kern; hier alleen lezen (postflight/mogelijkheden/rapport)
 const LEES_PLAFOND = 20_000;
 

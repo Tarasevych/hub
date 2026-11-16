@@ -28,6 +28,8 @@ export type GebruikerCheck = {
   koppelingen: { oauth: Array<{ client: string; n: number; laatst: number }>; agenten: { verbonden: number; totaal: number }; mailMislukt: number; mailVast: number };
   diensten: DienstStand[];
   bevindingen: Bevinding[];
+  bronFouten: string[];
+  gedeeltelijkeFout: boolean;
 };
 
 export type BeoordeelInvoer = {
@@ -82,17 +84,22 @@ export async function zoekGebruikers(q: string): Promise<GebruikerKort[]> {
     .map((g) => ({ id: g.id, naam: weergaveNaam(g, g.id), email: g.email || '', foto: veiligeFoto(g.picture), status: String(g.status || '') }));
 }
 
-async function probeer<T>(f: () => Promise<T>, terug: T): Promise<T> {
-  try { return await f(); } catch (e) { console.error('[admin-diagnostiek-gebruiker]', (e as Error).message); return terug; }
+async function probeer<T>(bron: string, f: () => Promise<T>, terug: T, bronFouten: string[]): Promise<T> {
+  try { return await f(); } catch (e) {
+    console.error(`[admin-diagnostiek-gebruiker:${bron}]`, (e as Error).message);
+    if (!bronFouten.includes(bron)) bronFouten.push(bron);
+    return terug;
+  }
 }
 
 export async function gebruikerControle(id: string, laatste: Record<string, { stand: Stand } | undefined>, nu = Date.now()): Promise<GebruikerCheck | null> {
   if (!ID_RE.test(id)) return null;
   const [g] = await db.get<Gebruiker>('users', [id]);
   if (!g) return null;
-  const sessies = await probeer(async () => ((await db.list<Sessie & { userId: string }>(SESSIE_TABEL, { filter: { userId: id }, limit: 100, nieuwsteEerst: true })).items as unknown as Sessie[]), [] as Sessie[]);
+  const bronFouten: string[] = [];
+  const sessies = await probeer('sessies', async () => ((await db.list<Sessie & { userId: string }>(SESSIE_TABEL, { filter: { userId: id }, limit: 100, nieuwsteEerst: true })).items as unknown as Sessie[]), [] as Sessie[], bronFouten);
   const actief = sessies.filter((s) => sessieActief(s, nu));
-  const regels = await probeer(async () => (await auditLijst({ ownerId: id, van: nu - 7 * DAG, limit: 300 })).items, []);
+  const regels = await probeer('audit', async () => (await auditLijst({ ownerId: id, van: nu - 7 * DAG, limit: 300 })).items, [], bronFouten);
   const echt = regels.filter((r) => labelVan(r.action).sleutel !== 'overig' || FAIL_RE.test(r.result));
   const dag = echt.filter((r) => r.createdAt >= nu - DAG);
   const mislukt = (r: { result: string }) => FAIL_RE.test(r.result);
@@ -108,18 +115,18 @@ export async function gebruikerControle(id: string, laatste: Record<string, { st
     const n = dienstNaam(d);
     return { dienst: d, naam: [n.uk, n.nl], stand: u ?? 'nooit', acties: t.n, mislukt: t.f };
   });
-  const oauth = await probeer(async () => (await sys().query(
+  const oauth = await probeer('oauth', async () => (await sys().query(
     `SELECT client_name, count(*)::int AS n, max(last_used_at) AS laatst FROM app.mcp_oauth_tokens
       WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now() GROUP BY client_name ORDER BY n DESC LIMIT 6`, [id])).rows
-    .map((r) => ({ client: String(r.client_name).replace(/[^\p{L}\p{N} ._-]/gu, '').slice(0, 30), n: Number(r.n), laatst: r.laatst ? new Date(r.laatst).getTime() : 0 })), [] as GebruikerCheck['koppelingen']['oauth']);
-  const ag = await probeer(async () => (await sys().query(
+    .map((r) => ({ client: String(r.client_name).replace(/[^\p{L}\p{N} ._-]/gu, '').slice(0, 30), n: Number(r.n), laatst: r.laatst ? new Date(r.laatst).getTime() : 0 })), [] as GebruikerCheck['koppelingen']['oauth'], bronFouten);
+  const ag = await probeer('agents', async () => (await sys().query(
     `SELECT count(*) FILTER (WHERE status = 'connected')::int AS v, count(*)::int AS t,
             count(*) FILTER (WHERE status = 'connected' AND (last_seen_at IS NULL OR last_seen_at < now() - interval '10 minutes'))::int AS stil
-       FROM app.agents WHERE user_id = $1 AND revoked_at IS NULL`, [id])).rows[0], { v: 0, t: 0, stil: 0 });
-  const mail = await probeer(async () => (await sys().query(
+       FROM app.agents WHERE user_id = $1 AND revoked_at IS NULL`, [id])).rows[0], { v: 0, t: 0, stil: 0 }, bronFouten);
+  const mail = await probeer('mail_queue', async () => (await sys().query(
     `SELECT count(*) FILTER (WHERE status = 'failed' AND updated_at > now() - interval '24 hours')::int AS mislukt,
             count(*) FILTER (WHERE (status = 'sending' AND updated_at < now() - interval '15 minutes') OR (status = 'scheduled' AND send_at < now() - interval '15 minutes'))::int AS vast
-       FROM app.mail_queue WHERE user_id = $1`, [id])).rows[0], { mislukt: 0, vast: 0 });
+       FROM app.mail_queue WHERE user_id = $1`, [id])).rows[0], { mislukt: 0, vast: 0 }, bronFouten);
 
   const laatsteActiviteit = Math.max(0, ...sessies.map((s) => Number(s.lastSeenAt) || 0));
   const apparaten = [...new Set(actief.map((s) => [s.os, s.browser].filter(Boolean).join(' / ').slice(0, 40)).filter(Boolean))].slice(0, 5);
@@ -139,5 +146,7 @@ export async function gebruikerControle(id: string, laatste: Record<string, { st
     },
     koppelingen: { oauth, agenten: { verbonden: Number(ag.v), totaal: Number(ag.t) }, mailMislukt: Number(mail.mislukt), mailVast: Number(mail.vast) },
     diensten, bevindingen,
+    bronFouten,
+    gedeeltelijkeFout: bronFouten.length > 0,
   };
 }

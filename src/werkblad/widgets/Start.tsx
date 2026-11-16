@@ -33,7 +33,7 @@ export function Begroeting({ lang, naam }: WidgetProps) {
       </div>
       <div className='wb-begroeting-tijd'>
         <span className='wb-begroeting-datum'>{datum.charAt(0).toUpperCase() + datum.slice(1)}</span>
-        <time className='wb-begroeting-klok' dateTime={d.toISOString()}>{klok}</time>
+        <time className='wb-begroeting-klok' dateTime={d.toISOString()} title={datum.charAt(0).toUpperCase() + datum.slice(1)}>{klok}</time>
       </div>
     </div>
   );

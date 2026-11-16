@@ -85,6 +85,8 @@ export type Punt = { t: number; n: number; f: number };
 export type RunKort = { id: string; versie: string; staat: string; methode: string; pct: number; gestart: string; geeindigd: string; wie: string; samenvatting: string };
 export type ControleKort = { id: string; stand: string; ms?: number };
 
+export type UitrolStandKort = { versie: string; release: string; commit: string; staat: string; bron: string };
+
 export type Invoer = {
   nu: number;
   gebruikers: Gebruiker[];
@@ -101,6 +103,10 @@ export type Invoer = {
   wachtToegang: number;
   /** mag de aanroeper het auditlogboek zien? Zo niet: geen gebeurtenislijsten. */
   magAudit: boolean;
+  /** Namen van bronnen die bij deze laadbeurt faalden (eerlijke gedeeltelijke weergave). */
+  bronFouten?: string[];
+  /** Actueel geïnstalleerde versie volgens backend/uitrol-bron.ts (huidigeStand). */
+  actieveVersie?: UitrolStandKort | null;
 };
 
 export type Gebeurtenis = {
@@ -222,9 +228,11 @@ export function bouwOverzicht(inv: Invoer) {
     populariteit,
     stroom, fouten,
     diensten: { ...dienstenTelling, lijst: inv.diensten.slice(0, 20) },
-    uitrol: { runs: inv.runs.slice(0, 5), wacht: inv.wachtUitrol },
+    uitrol: { runs: inv.runs.slice(0, 5), wacht: inv.wachtUitrol, stand: inv.actieveVersie ?? null },
     wachtrij: { toegang: inv.wachtToegang, uitrol: inv.wachtUitrol, gebruikers: inv.telling.wachtGoedkeuring },
     beperkt: !inv.magAudit,
+    bronFouten: inv.bronFouten ?? [],
+    gedeeltelijkeFout: (inv.bronFouten?.length ?? 0) > 0,
     /** eerlijk: is er überhaupt iets om te tonen? */
     leeg: { activiteit: events24 === 0 && inv.dagen.length === 0, sessies: actief.length === 0 },
   };
@@ -233,7 +241,7 @@ export type Overzicht = ReturnType<typeof bouwOverzicht>;
 
 // ---------------------------------------------------------------------------------------------------------------- gebruikerskaart
 /** Historie van één gebruiker: alleen soort handeling, sectie, tijd, uitkomst en apparaatklasse — NOOIT details/IP/inhoud. */
-export function gebruikerHistorie(opts: { nu: number; gebruiker: Gebruiker | undefined; id: string; audit: AuditRegel[]; sessies: Sessie[]; dagen?: Emmer[] }) {
+export function gebruikerHistorie(opts: { nu: number; gebruiker: Gebruiker | undefined; id: string; audit: AuditRegel[]; sessies: Sessie[]; dagen?: Emmer[]; bronFouten?: string[] }) {
   const { nu, gebruiker: g, id } = opts;
   const users = new Map<string, Gebruiker>(g ? [[id, g]] : []);
   const tijdlijn = opts.audit.map((r) => gebeurtenisUit({ ...r, ownerId: id }, users)).filter((e): e is Gebeurtenis => !!e).slice(0, 120);
@@ -246,6 +254,7 @@ export function gebruikerHistorie(opts: { nu: number; gebruiker: Gebruiker | und
     (() => { const m = new Map<number, Emmer>(); for (const e of tijdlijn) { const b = Math.floor(e.t / DAG); const v = m.get(b) || { b, n: 0, f: 0 }; v.n++; if (e.mislukt) v.f++; m.set(b, v); } return [...m.values()]; })(),
     nu, DAG, 14,
   );
+  const bronFouten = opts.bronFouten ?? [];
   return {
     gebruiker: {
       id, naam: weergaveNaam(g, id), mail: maskeerMail(g?.email || ''), foto: veiligeFoto(g?.picture), rol: g?.role || '', status: g?.status || '',
@@ -256,6 +265,8 @@ export function gebruikerHistorie(opts: { nu: number; gebruiker: Gebruiker | und
     secties: [...secties.entries()].sort((a, b) => b[1] - a[1]).map(([sleutel, n]) => ({ sleutel, ...sectieNaam(sleutel), n })),
     perDag,
     tijdlijn,
+    bronFouten,
+    gedeeltelijkeFout: bronFouten.length > 0,
   };
 }
 export type GebruikerHistorie = ReturnType<typeof gebruikerHistorie>;
