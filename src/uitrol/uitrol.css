@@ -318,9 +318,10 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-afwijs-waar li svg{width:14px;height:14px}
 .ut-afwijs-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .admin-uitrol .ut-afwijs-ja{background:var(--ut-err-bg)}
-.admin-uitrol .ut-afwijs-ja:not(:disabled):hover{background:var(--ut-err);color:#fff}
+.admin-uitrol .ut-afwijs-ja:not(:disabled):hover{background:var(--fout-vlak);color:var(--text-on-vlak)}
 .admin-uitrol .ut-afwijs-terug{border-color:transparent;background:transparent;color:var(--ut-muted)}
 .admin-uitrol .ut-afwijs-terug:hover{color:var(--ut-text);background:var(--ut-bg)}
+/* UPD-003: заливки статусу через --*-vlak і --text-on-vlak (у темній темі білий текст на світлому --info був нечитабельний). */
 /* SEC-PAKKET-001: rode vlaggen vóór de goedkeuring — een zachte rode tint, compact; details ingeklapt. Червоні прапорці перед схваленням. */
 /* SEC-PAKKET-001 · rode vlaggen als moderne kaarten: ringdiagram, tegels per soort, verschilbalk, voor → na met pijl (eigenaar 16.11). */
 .ut-rode-vlaggen{display:grid;gap:12px;margin:10px 0;padding:14px;border:1px solid var(--ut-line);border-radius:16px;background:var(--ut-bg);min-width:0;
@@ -392,7 +393,7 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-rv-best-kop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
 .ut-rv-best-icoon{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--ut-info-bg);color:var(--ut-info)}
 .ut-rv-best-icoon svg{width:19px;height:19px}
-.ut-rv-best-icoon em{position:absolute;right:-6px;bottom:-5px;padding:0 4px;border-radius:5px;background:var(--ut-info);color:#fff;font-style:normal;font-size:.56rem;font-weight:800;letter-spacing:.02em;line-height:1.5}
+.ut-rv-best-icoon em{position:absolute;right:-6px;bottom:-5px;padding:0 4px;border-radius:5px;background:var(--info-vlak);color:var(--text-on-vlak);font-style:normal;font-size:.56rem;font-weight:800;letter-spacing:.02em;line-height:1.5}
 .ut-rv-best-naam{display:grid;gap:1px;min-width:0}
 .ut-rv-best-naam b{font-size:.92rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ut-rv-best-naam small{color:var(--ut-muted);font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -410,7 +411,7 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .admin-uitrol .ut-rv-best-lijst button{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;background:transparent;color:var(--ut-text);font:inherit;text-align:left;cursor:pointer}
 .admin-uitrol .ut-rv-best-lijst button:hover{background:color-mix(in srgb,var(--ut-info-bg) 50%,transparent)}
 .admin-uitrol .ut-rv-best-lijst button[aria-current]{background:var(--ut-info-bg)}
-.admin-uitrol .ut-rv-best-lijst button[aria-current] .ut-rv-best-nr{background:var(--ut-info);color:#fff}
+.admin-uitrol .ut-rv-best-lijst button[aria-current] .ut-rv-best-nr{background:var(--info-vlak);color:var(--text-on-vlak)}
 .ut-rv-best-lijst-naam{display:grid;min-width:0}
 .ut-rv-best-lijst-naam b{font-size:.86rem;font-weight:600;overflow-wrap:anywhere}
 .ut-rv-best-lijst-naam small{font-family:var(--mono,ui-monospace,monospace);font-size:.72rem;color:var(--ut-muted);overflow-wrap:anywhere}
@@ -427,8 +428,8 @@ button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
   background:var(--ut-bg);color:var(--ut-muted);font:inherit;font-size:.78rem;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 .admin-uitrol .ut-rv-best-strook button:hover{color:var(--ut-text);border-color:color-mix(in srgb,var(--ut-info) 50%,var(--ut-line))}
 .ut-rv-best-nr{display:grid;place-items:center;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:var(--ut-info-bg);color:var(--ut-info);font-size:.68rem;font-weight:700}
-.admin-uitrol .ut-rv-best-strook button[aria-selected='true']{background:var(--ut-info);border-color:var(--ut-info);color:#fff;font-weight:600}
-.admin-uitrol .ut-rv-best-strook button[aria-selected='true'] .ut-rv-best-nr{background:rgba(255,255,255,.25);color:#fff}
+.admin-uitrol .ut-rv-best-strook button[aria-selected='true']{background:var(--info-vlak);border-color:var(--info-vlak);color:var(--text-on-vlak);font-weight:600}
+.admin-uitrol .ut-rv-best-strook button[aria-selected='true'] .ut-rv-best-nr{background:color-mix(in srgb,var(--text-on-vlak) 22%,transparent);color:var(--text-on-vlak)}
 .ut-rv-keuze button{padding:2px 8px;border:1px solid var(--ut-line);border-radius:999px;background:var(--ut-bg2);color:var(--ut-muted);font:inherit;font-size:.72rem;cursor:pointer}
 .ut-rv-keuze button[aria-selected='true']{border-color:var(--ut-accent);color:var(--ut-accent)}
 .ut-rv-uitleg{display:grid;gap:8px;padding:0 12px 12px 58px;font-size:.86rem;line-height:1.45;min-width:0}
