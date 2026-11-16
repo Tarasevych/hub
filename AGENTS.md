@@ -46,6 +46,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Виявив стару помилку — виправ (окремим фіксацією змін), не ігноруй. Нічого не прибирай «щоб запрацювало»: кнопку, вкладку, тест, перевірку.
 - Секрети, маркери доступу, приватні ключі, вміст листів — ніколи в чат, журнал, фіксація змін чи пакет. Приватні ключі власника агентам не передаються.
 - Робоче середовище, основна гілка, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
+- Логотипи (REESTR-LOGO-001): лише з реєстру `src/merk/` (`<Merk>`, `MerkLogo`); новий знак — через `scripts/merk-officieel-maken.mjs`, без копій `<svg>`. Деталі — §6. · Elk logo uit het ene merkregister.
 - Діагностика й час власника (B-009): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `<VM-IP>` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо `structuur` пройдено). Деталі нижче, B-009.
 
 ## 4. Перед передаванням результату · Vóór overdracht
@@ -124,6 +125,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
 | Доступи агентів, MCP | `deploy/ІНСТРУКЦІЯ-АГЕНТІВ-0.4.md`, `deploy/ЗЄДНУВАЧ-ПРОТОКОЛУ-КОНТЕКСТУ.md`, `deploy/ЗЄДНУВАЧ-В2.md` |
 | Afstemming (задачі/конфлікти/випуски на сайті) | `shared/afstemming-model.ts`, `backend/afstemming-*.ts`, `src/afstemming-vnext/` |
+| Логотипи (REESTR-LOGO-001): єдиний реєстр, власні логотипи користувачів | `src/merk/` — `<Merk>`, `MerkLogo`, `MethodeMerk`, `Logo` із `src/mcp-ui.tsx`; сервер і перший екран — `shared/merk-direct.ts`. Новий офіційний знак — рядок у `KEUZE` генератора `scripts/merk-officieel-maken.mjs` (лише вільні ліцензії, без зовнішніх CDN; походження в `src/merk/officieel/HERKOMST.json`), а не копія `<svg>`/`<path>` у компоненті, CSS чи «Макеті». Власний логотип користувача (`app.merk_gebruiker`, міграція 0300, `backend/merk-gebruiker.ts`) діє поверх системного лише для нього й у його просторі, доки не видалить або не замінить. Сторож: `tests/eenheid/merk-een-register-20261116.test.ts` |
 | Спільна тека знань (поза репозиторієм) | проєктна тека `knowledge/claude/` — довідка, не джерело правил |
 
 ## 7. Команди · Opdrachten

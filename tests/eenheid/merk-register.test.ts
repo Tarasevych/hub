@@ -11,6 +11,7 @@ import { LOGOS } from '../../src/merk/merk-logos';
 import { MERKEN } from '../../src/merk/merk-tabel';
 import { MERK_ALIAS, merkDef, merkSleutel, merkSleutels, monogram, registreerMerken } from '../../src/merk/merk-register';
 import Merk from '../../src/merk/Merk';
+import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels';
 import { checker } from './hulp/nep-google';
 
 /** Padstructuur: elk commando heeft een veelvoud van zijn argumenten en de vlaggen van een boog zijn 0 of 1. */
@@ -92,7 +93,8 @@ export async function main(): Promise<number> {
   const sessie = uitBron('src/sessies/SessieIconen.tsx', /return '([a-z0-9]+)'/g);
   check(`elk browser-/OS-merk van de sessiepagina bestaat (${sessie.length})`, sessie.length >= 14 && ontbreekt(sessie).length === 0, ontbreekt(sessie).join());
   const metSlug = INTEGRATIES.filter((i) => i.logo);
-  const zonderEmbleem = metSlug.filter((i) => !LOGOS[i.logo] && !merkDef(i.logo));
+  // REESTR-LOGO-001: een officieel bestand (src/merk/officieel) is óók een embleem — het wint zelfs van elke vorm.
+  const zonderEmbleem = metSlug.filter((i) => !LOGOS[i.logo] && !merkDef(i.logo) && !OFFICIEEL_SLEUTELS.has(merkSleutel(i.logo)));
   check(`elke koppeling met een merk heeft een embleem (${metSlug.length} merken)`, zonderEmbleem.length === 0, zonderEmbleem.map((i) => `${i.naam}(${i.logo})`).join(', '));
 
   // 4. Aliassen wijzen altijd naar een merk dat bestaat (anders verdwijnt een logo stil).

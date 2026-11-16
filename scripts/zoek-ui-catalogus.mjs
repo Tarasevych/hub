@@ -48,6 +48,7 @@ export const PLEKKEN = [
   ['CanoniekAccountMenu', 'hub', 'overview', 'iedereen'], ['CanoniekOmlijsting', 'hub', 'overview', 'iedereen'], ['ZijbalkWerkbalk', 'hub', 'overview', 'iedereen'],
   ['RuimteStrook', 'hub', 'overview', 'iedereen'], ['ExtensieUpdateBand', 'hub', 'overview', 'iedereen'], ['CanoniekVerbindingBand', 'hub', 'overview', 'iedereen'],
   ['DomoticaWeergave', 'huis', 'overview', 'iedereen'],
+  ['merk/MijnLogos', 'identity', 'themes', 'iedereen'] /* REESTR-LOGO-001: «Логотипи сервісів» staat in Thema's, voor iedereen */,
   ['identiteit/melding/', 'identity', 'melding', 'iedereen'], ['thema/', 'identity', 'themes', 'iedereen'], ['weergave/', 'identity', 'personalization', 'iedereen'], ['achtergrond/', 'identity', 'personalization', 'iedereen'], ['instellingen/', 'identity', 'account', 'iedereen'],
   ['ZijbalkInstellingen', 'identity', 'menu', 'iedereen'], ['MenuAanpasser', 'identity', 'menu', 'iedereen'], ['MenuIndelingInstellingen', 'identity', 'menu', 'iedereen'],
   ['MenuInstellingenVenster', 'identity', 'menu', 'iedereen'], ['MenuItemActies', 'identity', 'menu', 'iedereen'], ['MenuMeldingen', 'identity', 'menu', 'iedereen'],

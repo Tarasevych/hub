@@ -352,6 +352,8 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'integration.merk-eigen.gezet': ['Додано власний логотип сервісу (офіційний файл)', 'Eigen logo van een dienst toegevoegd (officieel bestand)'],
   'integration.merk-eigen.gewist': ['Власний логотип сервісу видалено', 'Eigen logo van een dienst gewist'],
   'integration.merk-eigen.geweigerd': ['Відхилено зміну власного логотипа', 'Wijziging van een eigen logo geweigerd'],
+  'owner.ui.merk.gezet': ['Користувач призначив свій логотип сервісу (діє лише для нього)', 'Gebruiker koos een eigen logo voor een dienst (alleen voor hem)'],
+  'owner.ui.merk.gewist': ['Користувач прибрав свій логотип — знову системний', 'Gebruiker wiste zijn eigen logo — weer het systeemlogo'],
   'integration.test': ['Перевірено стан інтеграції', 'Status van integratie gecontroleerd'],
   'integration.disconnect': ['Інтеграцію відключено', 'Integratie losgekoppeld'],
   'integration.wizard.test': ['Майстер підключень: перевірено облікові дані у зовнішнього сервісу', 'Koppelwizard: gegevens bij de externe dienst gecontroleerd'],

@@ -1,7 +1,7 @@
 // Налаштування → Теми: режим (світлий / темний / як на пристрої / авто) + кольори (палет) + розклад автоперемикання.
 // Режим — це шар поверх кольорів: кожен палет має світлий і темний тон.
 import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon, X } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
 import type { ThemePreference } from '../gedeelde-voorkeuren';
 import { isKlassiekPalet, leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
@@ -9,6 +9,8 @@ import { KLASSIEK_WIT, KLASSIEK_ZWART, kleurWaarden, MAQUETTE, PUUR, SECTIES, ty
 import './thema-instellingen.css';
 import { AccentEnEffecten } from './WeergaveVoorkeuren';
 import AchtergrondInstellingen from '../achtergrond/AchtergrondInstellingen';
+// REESTR-LOGO-001: власні логотипи сервісів — окремий лінивий шматок (каталог марок потрібен лише тут).
+const MijnLogos = lazy(() => import('../merk/MijnLogos'));
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tr: Tr; lang: 'uk' | 'nl'; theme: ThemePreference; onTheme: (t: ThemePreference) => void; violetToegestaan: boolean };
@@ -128,5 +130,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     <AccentEnEffecten tr={tr} />
     {/* ACHTERGROND-001: «Живий фон» сторінок · levende achtergrond */}
     <AchtergrondInstellingen tr={tr} />
+    {/* REESTR-LOGO-001: «Логотипи сервісів» — свій логотип поверх системного, лише для цієї людини · eigen logo's van diensten */}
+    <Suspense fallback={null}><MijnLogos tr={tr} lang={lang} /></Suspense>
   </div>;
 }

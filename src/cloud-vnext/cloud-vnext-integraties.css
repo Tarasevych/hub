@@ -105,3 +105,5 @@
   .cvi-werkbalk-rechts { margin-left: 0; }
 }
 .cvi-stand.is-register { background: transparent; border-style: dashed; } /* UI-013 fase 2 */
+/* REESTR-LOGO-001: met een merk uit het register geen eigen rand of vlak — de tegel van <Merk> is de rand. */
+.cvi-monogram.is-merk { border: 0; background: none; }

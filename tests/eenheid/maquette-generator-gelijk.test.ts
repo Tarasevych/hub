@@ -13,7 +13,8 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('maquette-generator-gelijk');
   const wortel = resolve('.');
   const tmp = mkdtempSync(join(tmpdir(), 'maquette-gen-'));
-  for (const d of ['scripts/identiteit-maquette', 'docs/ontwerp/identiteit-account/maquette-bron', 'src/identiteit/maquette'])
+  // REESTR-LOGO-001: de generator neemt de merktekens uit het ene merkregister (officiële bestanden + merk-tabel.ts).
+  for (const d of ['scripts/identiteit-maquette', 'docs/ontwerp/identiteit-account/maquette-bron', 'src/identiteit/maquette', 'src/merk/officieel', 'src/merk/merk-tabel.ts'])
     cpSync(join(wortel, d), join(tmp, d), { recursive: true });
   if (existsSync(join(wortel, 'node_modules'))) symlinkSync(join(wortel, 'node_modules'), join(tmp, 'node_modules'), 'dir');
   let fout = '';

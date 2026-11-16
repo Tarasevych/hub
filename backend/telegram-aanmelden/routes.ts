@@ -21,6 +21,9 @@ import { kopKlopt, updateVerwerken, type Update } from './webhook';
 import { publiekeStand } from './status';
 import * as beheer from './beheer';
 import { SITE_BASIS } from './berichten';
+// REESTR-LOGO-001: het Telegram-logo van deze serverpagina komt uit het ene merkregister (shared/merk-direct.ts), geen eigen kopie meer.
+// Логотип Telegram на цій сторінці сервера — з єдиного реєстру логотипів.
+import { merkDirectDataUri } from '../../shared/merk-direct';
 import { audit, siteMelding } from './meldingen';
 import { KOPPEL_STANDEN, STROOK_KLEUREN } from '../../shared/telegram-aanmelden/model';
 import { beoordeel, keuzeToegestaan, voorinstellingToepassen, werkelijkeEis, type KeuzeId, type Voorinstelling } from '../../shared/telegram-aanmelden/beleid';
@@ -470,6 +473,7 @@ export const ANDERE_BROWSER_TEKST = 'Це посилання на вхід че�
 export const WIDGET_CSP = ["default-src 'none'", "script-src https://telegram.org", "frame-src https://oauth.telegram.org", "img-src https://telegram.org https://t.me data:",
   "style-src 'unsafe-inline'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'"].join('; ');
 
+const TELEGRAM_LOGO = merkDirectDataUri('telegram');
 const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 export function widgetPagina(bot: string, id: string, taal: 'uk' | 'nl', terugNaar = `${SITE_BASIS()}/`): string {
   const terug = `${SITE_BASIS()}/api/aanmelden/telegram/widget-terug?verzoek=${encodeURIComponent(id)}&i=${encodeURIComponent(id)}`;
@@ -480,7 +484,7 @@ export function widgetPagina(bot: string, id: string, taal: 'uk' | 'nl', terugNa
   return `<!doctype html><html lang="${taal}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>${esc(tekst.titel)}</title></head>
 <body style="margin:0;font:16px/1.5 system-ui,sans-serif;background:#f4f7fb;color:#17212b;display:flex;min-height:100vh;align-items:center;justify-content:center">
 <main style="background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.08);padding:32px;max-width:420px;text-align:center">
-<div style="width:56px;height:56px;border-radius:50%;background:#2AABEE;margin:0 auto 12px;display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M9.8 15.2 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7l2.7-12.7c.3-1.1-.4-1.6-1.1-1.3L3.7 10.8c-1.1.4-1 1-.2 1.3l4 1.2 9.3-5.9c.4-.3.8-.1.5.2"/></svg></div>
+<img src="${TELEGRAM_LOGO}" width="56" height="56" alt="" data-merk-officieel="telegram" style="display:block;margin:0 auto 12px">
 <h1 style="font-size:20px;margin:0 0 8px">${esc(tekst.kop)}</h1><p style="margin:0 0 20px;color:#4b5966">${esc(tekst.uitleg)}</p>
 <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="${esc(bot)}" data-size="large" data-radius="10" data-lang="${taal}" data-request-access="write" data-auth-url="${esc(terug)}"></script>
 <p style="margin:20px 0 0"><a href="${esc(veiligTerug)}" style="color:#229ED9">${esc(tekst.terug)}</a></p></main></body></html>`;

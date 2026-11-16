@@ -23,6 +23,7 @@ import { DIENSTEN, type DienstId } from '../../shared/geheimen';
 import { MERKEN } from '../../src/merk/merk-tabel';
 import { LOGOS } from '../../src/merk/merk-logos';
 import { DIENST_MERK } from '../../src/geheimen/logos';
+import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels'; // REESTR-LOGO-001: officieel bestand = embleem
 import {
   MERK_GRENZEN, MERK_MIN, MERK_TINT, merkContrast, merkDef, merkKleuren, merkLuminantie, merkMeng, merkNeutraal, merkVolgt, type MerkDef,
 } from '../../src/merk/merk-register';
@@ -112,11 +113,11 @@ export async function main(): Promise<number> {
     const i = INTEGRATIES.find((x) => x.id === id);
     check(`koppeling ${id}: categorie-icoon ${slug} (was monogram «${id === 'rest-api' ? 'RA' : id === 'scim' ? 'S2' : 'IS'}»)`, i?.logo === slug && !!merkDef(slug)?.lijn);
   }
-  const zonder = INTEGRATIES.filter((i) => !i.logo || (!merkDef(i.logo) && !LOGOS[i.logo]));
+  const zonder = INTEGRATIES.filter((i) => !i.logo || (!merkDef(i.logo) && !LOGOS[i.logo] && !OFFICIEEL_SLEUTELS.has(i.logo)));
   check(`geen enkele koppeling (${INTEGRATIES.length}) valt nog terug op een monogram`, zonder.length === 0, zonder.map((i) => i.id).join(', '));
   let icoonMin = 99; for (const p of vlakken) icoonMin = Math.min(icoonMin, merkContrast(p.w['--text'], merkMeng(p.w['--accent'], p.w['--panel'], MERK_TINT)));
   check(`categorie-icoon (tekstkleur op accenttint) ≥ 3:1 in alle paletten (laagste ${icoonMin.toFixed(2)})`, icoonMin >= 3);
-  const geheimZonder = (Object.keys(DIENSTEN) as DienstId[]).filter((d) => { const s = DIENST_MERK[d]; return !s || (!merkDef(s) && !LOGOS[s]); });
+  const geheimZonder = (Object.keys(DIENSTEN) as DienstId[]).filter((d) => { const s = DIENST_MERK[d]; return !s || (!merkDef(s) && !LOGOS[s] && !OFFICIEEL_SLEUTELS.has(s)); });
   check(`«Секрети й ключі»: elke dienst (${Object.keys(DIENSTEN).length}) heeft een merk of categorie-icoon uit het register — geen lettertegels meer`, geheimZonder.length === 0, geheimZonder.join(', '));
   check('geheimen/logos.tsx tekent geen letters meer (d.letters ongebruikt)', !/d\.letters/.test(lees('src/geheimen/logos.tsx')));
 

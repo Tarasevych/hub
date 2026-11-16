@@ -15,7 +15,7 @@ let belofte: Promise<Tabel> | null = null;
 /** De grote merkentabel (±43 kB gzip) wordt pas geladen als de pagina opent; één keer per sessie. */
 const laadGroot = (): Promise<Tabel> => (belofte ??= import('./merk-logos').then((m) => m.LOGOS).catch(() => { belofte = null; return {} as Tabel; }));
 
-export default function Logo({ id, naam, logo, maat = 44 }: { id: string; naam: string; logo: string; maat?: number }) {
+export default function Logo({ id, naam, logo, maat = 44, zonderGebruiker }: { id: string; naam: string; logo: string; maat?: number; zonderGebruiker?: boolean }) {
   const [tabel, setTabel] = useState<Tabel | null>(null);
   useEffect(() => {
     void laadMerken();
@@ -30,5 +30,5 @@ export default function Logo({ id, naam, logo, maat = 44 }: { id: string; naam: 
   const hit = !def && logo && tabel ? tabel[logo] : undefined;
   if (hit) def = { naam, kleur: `#${hit[1]}`, d: hit[0] };
 
-  return <Merk def={def} merk={logo} naam={naam || id} maat={maat} />;
+  return <Merk def={def} merk={logo} naam={naam || id} maat={maat} zonderGebruiker={zonderGebruiker} />;
 }

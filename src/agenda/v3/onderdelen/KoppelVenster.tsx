@@ -14,12 +14,16 @@ import ICloudVenster from '../../ICloudVenster';
 import type { GoogleKoppelStand } from '../haken/gebruikGoogleKoppeling';
 import { tr, type Lang } from '../tekst';
 import Laag from './Laag';
+import MerkLogo from '../../../merk/MerkLogo';
 import { DavVorm, IcsVorm } from './KoppelVormen';
 
 type Google = { stand: GoogleKoppelStand; foutCode: string; start: (doel?: 'lezen' | 'schrijven') => void };
 type Props = { lang: Lang; smal: boolean; data: client.AgendaOverzicht | null; google: Google; onVerversen: () => void; onSluit: () => void };
 
-// Monogrammen, geen merklogo's: de hub tekent geen logotypes, en de grote merkentabel hoort niet in deze bundel.
+// REESTR-LOGO-001 (16.11.2026): het merk uit het ENE merkregister (src/merk; de grote tabel komt lui, pas als dit venster opent);
+// een monogram alleen voor wat geen merk is (ICS, CalDAV) of geen logo met eerlijke herkomst heeft (Honor, Huawei, Proton).
+// Логотипи сервісів календаря — з єдиного реєстру; літери лише там, де справжнього знака немає.
+const MERK: Record<string, string> = { 'google-calendar': 'googlecalendar', 'apple-icloud': 'icloud', 'samsung-calendar': 'samsung', 'microsoft-outlook': 'microsoftoutlook', fastmail: 'fastmail' };
 const MONOGRAM: Record<string, string> = { 'google-calendar': 'G', 'apple-icloud': 'iC', 'samsung-calendar': 'S', 'honor-calendar': 'Ho', 'huawei-calendar': 'Hu', caldav: 'C', fastmail: 'F', 'ics-abonnement': '.ics', 'proton-calendar': 'P', 'microsoft-outlook': 'O' };
 const VOLGORDE = ['google-calendar', 'apple-icloud', 'samsung-calendar', 'honor-calendar', 'microsoft-outlook', 'ics-abonnement', 'caldav', 'fastmail', 'huawei-calendar', 'proton-calendar'];
 
@@ -60,7 +64,7 @@ export default function KoppelVenster({ lang, smal, data, google, onVerversen, o
       <div className='agv-kv-rooster' role='listbox' aria-label={tr(lang, 'Сервіси та пристрої', 'Diensten en toestellen')}>
         {kaarten.map((a) => { const st = stand(a); return (
           <button key={a.id} type='button' role='option' aria-selected={gekozen === a.id} className={`agv-kv-kaart${gekozen === a.id ? ' is-gekozen' : ''} is-${st}`} onClick={() => setGekozen(a.id)} data-agenda-kv-kaart={a.id} data-agenda-kv-stand={st}>
-            <span className='agv-kv-monogram' aria-hidden='true'>{MONOGRAM[a.id] ?? a.naam[0]}</span>
+            {MERK[a.id] ? <MerkLogo id={a.id} naam={a.naam} logo={MERK[a.id]} maat={30} /> : <span className='agv-kv-monogram' aria-hidden='true'>{MONOGRAM[a.id] ?? a.naam[0]}</span>}
             <strong>{a.naam}</strong>
             <small className={`agv-pil is-${st === 'verbonden' ? 'aan' : st}`}>{st === 'verbonden' ? tr(lang, 'підключено', 'gekoppeld') : st === 'binnenkort' ? tr(lang, 'ще ні — чому?', 'nog niet — waarom?') : agendaTekst(AGENDA_RICHTING_LABEL[a.richting], lang)}</small>
           </button>

@@ -1,0 +1,33 @@
+/* Налаштування → Теми → «Логотипи сервісів» (REESTR-LOGO-001). Вузький блок, рядки «логотип · назва · компактні кнопки»,
+   заокруглені кути, небезпечна дія з м'яким колірним натяком. Instellingen → Thema's → «Logo's van diensten». */
+.mijn-logos { display: grid; gap: 10px; max-width: 560px; }
+.mijn-logos-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mijn-logos-rij { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px 6px 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.mijn-logos-rij.is-eigen { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.mijn-logos-naam { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.mijn-logos-naam strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mijn-logos-naam small { font-size: 12px; color: var(--muted); }
+.mijn-logos-systeem { display: inline-flex; align-items: center; gap: 4px; opacity: .8; }
+.mijn-logos-systeem::before { content: '↺'; font-size: 12px; color: var(--muted); }
+.mijn-logos-knop { flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface, var(--panel)); color: var(--text); cursor: pointer; }
+.mijn-logos-knop svg { width: 18px; height: 18px; }
+.mijn-logos-knop:hover:not(:disabled), .mijn-logos-knop:focus-visible { border-color: var(--accent); }
+.mijn-logos-knop.is-hoofd { color: var(--accent); }
+.mijn-logos-knop.is-zacht-gevaar { color: var(--fout); background: color-mix(in srgb, var(--fout) 7%, var(--panel)); border-color: color-mix(in srgb, var(--fout) 25%, var(--line)); }
+.mijn-logos-knop:disabled { opacity: .5; cursor: progress; }
+.mijn-logos-zoek { display: flex; align-items: center; gap: 8px; padding: 0 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.mijn-logos-zoek svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
+/* Het zoekveld staat in één regel met het vergrootglas; de algemene veldstijl van de instellingen (eigen rand, hoogte, opvulling) geldt hier niet. */
+.mijn-logos .mijn-logos-zoek input { flex: 1; width: auto; min-width: 0; height: 38px; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: none; color: var(--text); font: inherit; outline: none; }
+.mijn-logos-zoek:focus-within { border-color: var(--accent); }
+.mijn-logos-noot, .mijn-logos-melding { margin: 0; font-size: 13px; color: var(--muted); }
+.mijn-logos-melding { color: var(--text); }
+.mijn-logos-melding.is-fout { color: var(--fout); }
+.mijn-logos-uitleg { font-size: 13px; color: var(--muted); }
+.mijn-logos-uitleg summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.mijn-logos-uitleg summary::-webkit-details-marker { display: none; }
+.mijn-logos-uitleg summary svg { width: 15px; height: 15px; }
+.mijn-logos-uitleg ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+@media (max-width: 520px) {
+  .mijn-logos-systeem { display: none; }
+}
