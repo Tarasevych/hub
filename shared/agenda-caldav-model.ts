@@ -25,7 +25,23 @@ export const AGENDA_CALDAV_SCHRIJVEN_ONTBREEKT: readonly (readonly [string, stri
 
 export const CALDAV_TIMEOUT_MS = 20000;
 export const CALDAV_MAX_BYTES = 8 * 1024 * 1024;
+/**
+ * SEC-002 (integraties-02): de drie PROPFIND-stappen van het ontdekken geven een klein antwoord (een paar honderd bytes
+ * tot enkele tientallen kB voor een account met veel agenda's). Alleen het REPORT met de afspraken zelf heeft de grote
+ * grens nodig. Zo kan een vreemde server het ontdekken niet met megabytes vullen.
+ */
+export const CALDAV_MAX_PROPFIND_BYTES = 1024 * 1024;
 export const CALDAV_MAX_AGENDAS = 25;
+/**
+ * SEC-002 (integraties-07): hoeveel afspraken er hoogstens in de spiegel komen — per agenda en per account. De grens van
+ * ICS (ICS_MAX_GEBEURTENISSEN) geldt per .ics-blok; een CalDAV-antwoord bevat er honderden, dus zonder deze twee getallen
+ * bepaalt de vreemde server hoeveel rijen wij schrijven. Wie erover gaat, ziet CALDAV_AFGEKAPT bij het account.
+ */
+export const CALDAV_MAX_GEBEURTENISSEN_PER_AGENDA = 2000;
+export const CALDAV_MAX_GEBEURTENISSEN_PER_ACCOUNT = 10000;
+/** Hoeveel waarden caldavWaarden hoogstens teruggeeft, en hoeveel «<» één aanroep hoogstens bekijkt. */
+export const CALDAV_MAX_WAARDEN = 500;
+export const CALDAV_MAX_TAGS = 250000;
 export const CALDAV_MIN_MINUTEN = 15;
 export const CALDAV_STANDAARD_MINUTEN = 60;
 /** Bekende basisadressen; de gebruiker mag ook een eigen (Nextcloud-)adres intikken. */
@@ -88,20 +104,45 @@ export function caldavQueryLichaam(vanaf: string, tot: string): string {
 
 // ---------------------------------------------------------------------------------------------- het antwoord
 const naamZonderRuimte = (naam: string) => naam.replace(/^[^:]+:/, '').toLowerCase();
-/** Alle waarden van een element, ongeacht de namespace-prefix die de server koos (d:, D:, ns0:, …). */
+/** Een teken van een elementnaam: letters, cijfers en «_ . : -» (dezelfde verzameling als het vroegere patroon). */
+const naamTeken = (code: number): boolean =>
+  (code >= 48 && code <= 58) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95 || code === 46 || code === 45;
+/**
+ * Alle waarden van een element, ongeacht de namespace-prefix die de server koos (d:, D:, ns0:, …).
+ *
+ * SEC-002 (integraties-02): dit is ÉÉN lineaire gang door de tekst. De vorige versie liet een regulier patroon vanaf elke
+ * «<» tot het einde zoeken en zocht voor elke open tag opnieuw naar de sluit-tag; een antwoord van een vreemde server met
+ * alleen open tags («<d:response><d:response>…» of «<href <href …») kostte daardoor kwadratische tijd en hield het hele
+ * proces minuten tot uren vast. Nu geldt:
+ *   • de wijzer gaat alleen vooruit: na een gevonden element verder ACHTER zijn sluit-tag (elementen met dezelfde naam
+ *     nesten in WebDAV niet), dus geen stuk tekst wordt twee keer doorzocht;
+ *   • een tag die nooit sluit («>» ontbreekt) of een element zonder sluit-tag BEËINDIGT het ontleden — dat is geen XML
+ *     meer, en wat ervoor stond blijft bruikbaar;
+ *   • lege elementen tellen mee voor de grens van CALDAV_MAX_WAARDEN, en één aanroep bekijkt hoogstens CALDAV_MAX_TAGS tags.
+ */
 export function caldavWaarden(xml: unknown, element: string): string[] {
   const inhoud = String(xml ?? '');
   const doel = element.toLowerCase();
   const uit: string[] = [];
-  const patroon = /<([A-Za-z0-9_.:-]+)([^>]*?)(\/)?>/g;
-  let treffer: RegExpExecArray | null;
-  while ((treffer = patroon.exec(inhoud))) {
-    if (naamZonderRuimte(treffer[1]) !== doel) continue;
-    if (treffer[3]) { uit.push(''); continue; }
-    const sluit = inhoud.indexOf(`</${treffer[1]}>`, patroon.lastIndex);
-    if (sluit < 0) continue;
-    uit.push(inhoud.slice(patroon.lastIndex, sluit));
-    if (uit.length >= 500) break;
+  let positie = 0, bekeken = 0;
+  while (uit.length < CALDAV_MAX_WAARDEN && bekeken < CALDAV_MAX_TAGS) {
+    const open = inhoud.indexOf('<', positie);
+    if (open < 0) break;
+    bekeken += 1;
+    let naamEinde = open + 1;
+    while (naamEinde < inhoud.length && naamTeken(inhoud.charCodeAt(naamEinde))) naamEinde += 1;
+    // «</…>», «<?…?>», «<!…>» of een losse «<»: geen open tag, verder zoeken.
+    if (naamEinde === open + 1) { positie = open + 1; continue; }
+    const dicht = inhoud.indexOf('>', naamEinde);
+    if (dicht < 0) break;
+    positie = dicht + 1;
+    const naam = inhoud.slice(open + 1, naamEinde);
+    if (naamZonderRuimte(naam) !== doel) continue;
+    if (inhoud.charCodeAt(dicht - 1) === 47) { uit.push(''); continue; }
+    const sluit = inhoud.indexOf(`</${naam}>`, positie);
+    if (sluit < 0) break;
+    uit.push(inhoud.slice(positie, sluit));
+    positie = sluit + naam.length + 3;
   }
   return uit;
 }
@@ -118,10 +159,35 @@ export function caldavResponses(xml: unknown): { href: string; inhoud: string }[
  * dus veel CalDAV-servers (iCloud onder andere) schrijven de regeleindes van een .ics als `&#13;`. Zonder dit
  * zou het .ics-blok één lange regel worden en zou er geen enkele afspraak uit komen.
  */
-const ontsnapXmlAf = (value: string) => value
-  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-  .replace(/&#x([0-9a-f]{1,6});/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-  .replace(/&#(\d{1,7});/g, (_, dec: string) => String.fromCodePoint(Number(dec)))
+/**
+ * CDATA-omhulsels weghalen, lineair (SEC-002, integraties-02): het vroegere patroon zocht vanaf ELKE «<![CDATA[» lui tot
+ * het einde; duizenden openingen zonder «]]>» kostten kwadratische tijd. Een opening zonder einde blijft staan zoals ze is
+ * (dat deed het patroon ook), maar er wordt daarna niet opnieuw gezocht.
+ */
+const zonderCdata = (value: string): string => {
+  let begin = value.indexOf('<![CDATA[');
+  if (begin < 0) return value;
+  const delen: string[] = [];
+  let positie = 0;
+  while (begin >= 0) {
+    const einde = value.indexOf(']]>', begin + 9);
+    if (einde < 0) break;
+    delen.push(value.slice(positie, begin), value.slice(begin + 9, einde));
+    positie = einde + 3;
+    begin = value.indexOf('<![CDATA[', positie);
+  }
+  delen.push(value.slice(positie));
+  return delen.join('');
+};
+/**
+ * Een numerieke tekenverwijzing naar een teken. Buiten Unicode (> U+10FFFF), een los surrogaat of nul wordt U+FFFD:
+ * String.fromCodePoint gooit anders «Invalid code point», en één zo'n verwijzing brak de hele synchronisatie af.
+ */
+const tekenVan = (code: number): string =>
+  (Number.isInteger(code) && code > 0 && code <= 0x10FFFF && !(code >= 0xD800 && code <= 0xDFFF) ? String.fromCodePoint(code) : '�');
+const ontsnapXmlAf = (value: string) => zonderCdata(value)
+  .replace(/&#x([0-9a-f]{1,6});/gi, (_, hex: string) => tekenVan(Number.parseInt(hex, 16)))
+  .replace(/&#(\d{1,7});/g, (_, dec: string) => tekenVan(Number(dec)))
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
 
 export type CaldavAgenda = { url: string; naam: string; ctag: string; syncToken: string; kleur: string; gebeurtenissen: boolean };

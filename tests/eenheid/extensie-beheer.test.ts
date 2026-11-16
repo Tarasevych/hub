@@ -38,7 +38,7 @@ export async function main(): Promise<number> {
   // Gedeelde test-DB: een eventuele bestaande eigenaarsrij (andere tests) tijdelijk degraderen (unieke index records_een_eigenaar).
   const verplaatst = (await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner-tijdelijk\"') WHERE tbl = 'users' AND data->>'role' = 'owner' RETURNING id")).rows.map((r: { id: string }) => r.id);
   try {
-    const mail = (id: string) => (id === E ? 'eigenaar@test.invalid' : `${id}@example.test`);
+    const mail = (id: string) => (id === E ? (process.env.OWNER_EMAIL || 'eigenaar@test.invalid') : `${id}@example.test`);
     for (const id of ALLE) {
       await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', id, { email: mail(id), role: id === E ? 'owner' : 'user', status: 'approved', name: id }]);
     }

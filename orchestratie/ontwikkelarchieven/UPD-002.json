@@ -1,0 +1,2088 @@
+{
+  "schema": 1,
+  "taakId": "UPD-002",
+  "datum": "2026-11-16",
+  "taal": "uk",
+  "titel": "Спільний випуск UPD-002: навички агентів, приймання випусків із GitHub і бот оновлень, Стрім пам’яті, 13 агентів, захист і поліпшення інтерфейсу",
+  "opdracht": "Консолідувати поверх чинної живої основи сервера 20261115-162533 (UPD-001 @ 07359e0e0d4bbea34277cebffc17e1321ae2563c) напрацювання паралельних потоків за зверненнями власника від 15.11.2026: бібліотеку навичок агентів (завдання № 96, № 106), автоматизоване приймання випусків із GitHub і незалежного Telegram-бота оновлень (завдання № 98), «Стрім пам’яті», 13 агентів і безперервний перехід завдань між сесіями (завдання № 102, міграції 0279–0285), посилення безпеки й швидкодії, розширення оглядача 0.9.4 та оновлення «Макета», робочого столу, пошти, сповіщень, пошуку, сторінок ШІ й облікового запису (запити на злиття № 114–133), не чіпаючи робочий сервер і не перетираючи змін інших агентів.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "gemini-3.1-pro-preview",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-002-uitgave-20261115-181000",
+    "basisCommit": "07359e0e0d4bbea34277cebffc17e1321ae2563c",
+    "basisVersie": "20261115-162533",
+    "geinstalleerdeBasis": "07359e0e0d4bbea34277cebffc17e1321ae2563c",
+    "geinstalleerdeVersie": "20261115-162533",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "samengevoegd": [
+      {
+        "taak": "VAARD-002 (№ 96, № 106)",
+        "commit": "63cca66c",
+        "reden": "Модульна бібліотека 9 двомовних навичок і добір за змістом без розширення прав"
+      },
+      {
+        "taak": "UITROL-002 (№ 98)",
+        "commit": "04463d9c",
+        "reden": "Приймання випусків GitHub, незалежний Telegram-бот випусків і розумний потік розгортання"
+      },
+      {
+        "taak": "GEHEUGEN-002 (№ 102)",
+        "commit": "f872db9b",
+        "reden": "«Стрім пам’яті» (граф знань, RLS/DEK), 13 ШІ-агентів, реєстр ботів і перехід завдань між сесіями (міграції 0279–0285)"
+      },
+      {
+        "taak": "VEILIG-002 (частини 1–4)",
+        "commit": "5bbc248c",
+        "reden": "Захист URL/SVG сповіщень, ізоляція просторів, аварійна зупинка ШІ, чесні збої БД, FPS живого фону, вузькі екрани"
+      },
+      {
+        "taak": "ANKERS-002 (№ 114)",
+        "commit": "65c73083",
+        "reden": "Заокруглені блоки й єдине меню якорів на сторінці «Підключення ШІ», сітка оселі й розумна автопрокрутка"
+      },
+      {
+        "taak": "MAILDOK-001 + WB-HOEK-001 (№ 115)",
+        "commit": "f8477fb3",
+        "reden": "Пігулки гортання над листами й кругла піктограма налаштування робочого столу в куті"
+      },
+      {
+        "taak": "STROOK-001 (№ 116)",
+        "commit": "59f7d3ac",
+        "reden": "Хрестик закриття на смугах мови та прихованих зображень у листі й повернення в шапці"
+      },
+      {
+        "taak": "MAILAI-001 (№ 117)",
+        "commit": "ed1a12d2",
+        "reden": "ШІ-аналіз і переклад листів лише як опція з перевіркою ключа та чистою довідкою «?»"
+      },
+      {
+        "taak": "MAILANKER-001 (№ 118)",
+        "commit": "55a66bb7",
+        "reden": "Розділи пошти в меню якорів і згорнута група налаштувань вигляду"
+      },
+      {
+        "taak": "BIB-002 (№ 119)",
+        "commit": "b90f7309",
+        "reden": "Бібліотека «Все на сайті» у вигляді полиць із картками й ярлики технічних сторінок на приватному столі"
+      },
+      {
+        "taak": "BREEDTE-001/002 + KLAP-001 (№ 120)",
+        "commit": "69e227fb",
+        "reden": "Однакова колонка 1180 px, блок «Підключити» піктограмами, каталог карток ШІ з логотипами CC0 і «Згорнути/Розгорнути все»"
+      },
+      {
+        "taak": "VELD-001 + ZWEVEND-001 (№ 121)",
+        "commit": "1d5f404f",
+        "reden": "Змінювана ручкою висота робочого столу, «Прибрати порожнє» і спливні меню в порталі поверх усього вмісту"
+      },
+      {
+        "taak": "MENU-STROOK-001 + MENU-KRUISJE-001 (№ 122)",
+        "commit": "2063a488",
+        "reden": "Меню облікових записів без зайвої смуги тла і простий хрестик «Прибрати запис»"
+      },
+      {
+        "taak": "MELDINGEN-UX-001 (№ 123)",
+        "commit": "5a9a812b",
+        "reden": "Рухоме вікно сповіщень без стиснутих карток, перемикач «Вікно ↔ Компактно» та правила картками"
+      },
+      {
+        "taak": "ZOEK-002 (№ 124)",
+        "commit": "fa8bcd3d",
+        "reden": "Поле пошуку в панелі розгортається на місці в єдиному контурі зі списком результатів"
+      },
+      {
+        "taak": "ACCENT-001 (№ 125)",
+        "commit": "86aa0902",
+        "reden": "Улюблений відтінок як акцент у будь-якій палітрі, прозорий режим блоків та заокруглена смужка меню"
+      },
+      {
+        "taak": "STAPOP-OMSCHR-001 (№ 126)",
+        "commit": "03c5cf08",
+        "reden": "Вікно «Підтвердіть доступ» двомовно пояснює кожну захищену дію й її наслідки"
+      },
+      {
+        "taak": "EXT094-001 (№ 127)",
+        "commit": "87c20654",
+        "reden": "Розширення оглядача 0.9.4: активна вкладка Mijn Ruimte більше не є умовою перевірки"
+      },
+      {
+        "taak": "KLEUREN-001 (№ 128)",
+        "commit": "deb22426",
+        "reden": "Єдиний набір і однакові назви відтінків у «Темах», меню облікового запису та «Макеті»"
+      },
+      {
+        "taak": "AI-TERMIJN-001 (№ 129)",
+        "commit": "e8cc16d5",
+        "reden": "Термін дії й правила скидання доступу ШІ налаштовує власник; чисте відновлення стану в тесті"
+      },
+      {
+        "taak": "HINT-001 (№ 130)",
+        "commit": "4c0c00db",
+        "reden": "Єдина спливна підказка навігації якорів «Макета», лише коли видно піктограму"
+      },
+      {
+        "taak": "BLOKKEN-001 (№ 131)",
+        "commit": "209fb5d6",
+        "reden": "Виправлення блоків центру облікового запису й /menu перенесено в генератор «Макета» з тестом-сторожем"
+      },
+      {
+        "taak": "WOORDBREUK-001 (№ 132)",
+        "commit": "f69bbf02",
+        "reden": "Усунення розривання слів посередині у вузьких заголовках і мітках робочого столу"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані зразки й локальний тимчасовий примірник бази даних; таємні ключі, токени доступу, облікові дані, вміст листів і внутрішні міркування моделей виключені."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T18:10:00Z",
+      "stap": "Відгалужено робочу гілку feature/upd-002-uitgave-20261115-181000 від підтвердженої живої основи 20261115-162533 (07359e0e)."
+    },
+    {
+      "tijd": "2026-11-15T19:00:00Z",
+      "stap": "Послідовно об’єднано великі потоки VAARD-002, UITROL-002, GEHEUGEN-002 і VEILIG-002 (частини 1–4), узгоджено каталоги пошуку, міграції 0279–0285, перевірку UUID і мовне очищення."
+    },
+    {
+      "tijd": "2026-11-15T21:35:00Z",
+      "stap": "Послідовно злито запити на злиття № 114–132 та враховано виправлення на основі № 133; конфлікти стилів і генератора «Макета» перенесено в scripts/identiteit-maquette із тестами-сторожами."
+    },
+    {
+      "tijd": "2026-11-15T23:45:00Z",
+      "stap": "Усунуто збої в тестах (очищення стану власника та прапорців у ai-delegatie-20261115.test.ts), додано маршрути windsurf/cline/devin/opencode у server/start.ts, токенізовано кольори й вичищено мову незафіксованих змін."
+    },
+    {
+      "tijd": "2026-11-16T00:03:18Z",
+      "stap": "Пройдено повне виробниче складання (vite build, huis-maquette, 6 технічних і відкриті пакунки, розширення 0.9.4 та dist-server), перевірку типів tsc і typecheck:server, карту файлів та правила координації."
+    },
+    {
+      "tijd": "2026-11-16T00:08:00Z",
+      "stap": "Пройдено повний прогін 542 модульних тестів (539/542, 18 117/18 125 з 3 відомими обмеженнями середовища), 20/20 cloud-*.test.mjs, ai-delegatie 51/51 та димовий контроль у безголовому Хроміумі 13/13 сторінок (HTTP 200, 0 помилок) і 696/696 пакунків."
+    },
+    {
+      "tijd": "2026-11-16T00:12:00Z",
+      "stap": "Оформлено й перевірено картку завдання UPD-002.json та доказове досьє UPD-002.json за вимогами TRACE-001 і мовного закону перед фіксацією та пакуванням."
+    },
+    {
+      "tijd": "2026-11-16T02:24:00Z",
+      "stap": "Створено двозадачний процес випуску GitHub Actions (.github/workflows/upd-002-uitgave.yml) із перевіркою живої основи 20261115-162533, усіх 204 випробувань на PostgreSQL 16 із трьома ролями та Хроміумом, подвійними міграціями, TRACE-001 і розділеним оприлюдненням."
+    },
+    {
+      "tijd": "2026-11-16T02:32:12Z",
+      "stap": "Перший віддалений запуск GitHub Actions (№ 43792088279): підтверджено живу основу 20261115-162533, правила координації, TRACE-001, усі статичні перевірки, самоперевірку ПК-агента, 20 хмарних тестів, 116 безбазових випробувань, перевірку типів, повне складання (разом із розширенням 0.9.4), 11 післяскладальних випробувань, подвійні міграції на PostgreSQL 16 із трьома ролями та перші 25 випробувань із БД; зафіксовано збій 26-го тесту mail-accounts-beheer-20261021 (503 GOOGLE_SUITE_GATES_INCOMPLETE) через спільний 60-секундний запис provider_endpoint_verifications_v1 = 'rejected', утворений 27 с раніше у тесті № 7 (ai-kluis-een-plek-20261101)."
+    },
+    {
+      "tijd": "2026-11-16T02:55:00Z",
+      "stap": "До .github/workflows/upd-002-uitgave.yml перед кожним із 56 випробувань із БД додано очищення глобальних таблиць верифікації кінцевих точок (provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1) у app.records для повної часової ізоляції випробувань."
+    },
+    {
+      "tijd": "2026-11-16T03:04:36Z",
+      "stap": "Другий віддалений запуск GitHub Actions (№ 43795263825): пройдено всі кроки 1–11 і перші 49 випробувань із БД (включно з mail-accounts-beheer-20261021); у 50-му тесті telegram-venster-20261114 (80/82) виявлено дві невдачі через використання попереднього запису owner у app.records без тимчасових полів Pavlo, tg2-... і зняття ознаки geenFoto."
+    },
+    {
+      "tijd": "2026-11-16T03:10:34Z",
+      "stap": "У tests/eenheid/telegram-venster-20261114.test.ts збережено початкові дані власника (vorigeData), на час тесту встановлено чисті тестові поля email, name і picture та додано відновлення vorigeData у блоці finally; локально підтверджено 24/24 перевірок чистої частини, typecheck:server, orch controleer і trace-001-ontwikkelarchief (16/16)."
+    }
+  ],
+  "keuzes": [
+    "Консолідація виконана виключно на окремій гілці feature/upd-002-uitgave-20261115-181000 від живої основи 07359e0e, без торкання захищених гілок чи робочого сервера.",
+    "Усі зміни стилів «Макета» з № 128 та № 130 перенесено безпосередньо в генератор scripts/identiteit-maquette із тестом-сторожем maquette-generator-gelijk.test.ts, щоб наступне складання не загубило правок.",
+    "Усунуто псування спільного стану між тестами: ai-delegatie-20261115.test.ts створює знімок прапорця, сесій і делегувань власника та відновлює їх у блоці finally.",
+    "Модельний обліковий запис ШІ в UITROL-MANIFEST.json чесно зазначає фактичне середовище збирання й перевірки без вгадування ідентифікаторів сторонніх моделей.",
+    "Незавершена окрема гілка EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не влита до UPD-002, щоб не порушити стабільність випуску, і зафіксована у примітках до випуску.",
+    "У циклі БД-випробувань .github/workflows/upd-002-uitgave.yml усунено 60-секундну часову взаємозалежність між ai-kluis-een-plek-20261101 і mail-accounts-beheer-20261021 очищенням спільних записів provider_endpoint_verifications_v1 та mail_endpoint_verifications_v1 перед кожним тестом без зміни продуктової логіки.",
+    "У tests/eenheid/telegram-venster-20261114.test.ts збережено ізоляцію без порушення часткового унікального індексу records_een_eigenaar: тест тимчасово встановлює чисті тестові поля єдиного запису owner у app.records і точно відновлює vorigeData у блоці finally."
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "bestand": ".github/workflows/upd-002-uitgave.yml"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/koppelingen-echte-vorm-testen/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/koppelingen-echte-vorm-testen/VOORBEELD.uk.md"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": ".agents/skills/mijn-ruimte/scripts/mijn-ruimte"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": ".agents/skills/mijn-ruimte/SKILL.md"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": ".agents/skills/mijn-ruimte/VAARDIGHEID.nl.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/ontwikkelgeheugen-bewaken/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/ontwikkelgeheugen-bewaken/WERKOVERDRACHT.uk.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/prestatie-meten/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/prestatie-meten/VOORBEELD.uk.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/project-verkennen/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/site-ontwikkelen/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/uiterlijk-van-schermafdruk-herstellen/VOORBEELD.uk.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/uitgave-voorbereiden/SKILL.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/uitgave-voorbereiden/VOORBEELD.uk.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".agents/skills/wijziging-controleren/SKILL.md"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "\".agents/skills/mijn-ruimte/\\320\\235\\320\\220\\320\\222\\320\\230\\320\\247\\320\\232\\320\\220-\\320\\234\\320\\206\\320\\231-\\320\\237\\320\\240\\320\\236\\320\\241\\320\\242\\320\\206\\320\\240.uk.md\""
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "\".agents/skills/mijn-ruimte/\\320\\235\\320\\220\\320\\222\\320\\230\\320\\247\\320\\232\\320\\220.uk.md\""
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/afstemming-koppel.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/afstemming-opslag.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/agent-namens.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ai-bevestiging.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/ai-delegatie-kern.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ai-toegang-diagnose.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ai-toestemmingen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ai-vertaling-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ai-werkruimte.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/api-platform-kluis.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/apparaat-bevestiging/routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/beheer-diagnostiek-gebruiker.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/beheer-overzicht-kern.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/beheer-overzicht.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connector-v2-erfenis.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connector-v2-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connector-v2-stroom.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connector-v2.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connectors-gateway.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connectors-hulpmiddelen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connectors-opslag.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/connectors-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/extensie-ontgrendeling.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/geheugen-agent-bots.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/geheugen-stroom.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/geheugen-taken.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/index.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/mcp-deur-brug.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/mcp-inspector-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/mcp-protocol-2026.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/meldingen-ecosysteem.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/ruimte-scheiding.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/site-aanroep.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/site-hulpmiddelen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/tech-ruimtes-kern.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/tech-ruimtes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/sleutels.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/venster.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/uitrol-github-ontvangen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/uitrol-goedkeuring.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/uitrol-runs.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/uitrol-stroom.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/uitrol-telegram.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/uitrol-vereisten.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/vaardigheden-opslag.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/vaardigheden-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/werkblad-blokken.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/werkblad-v3.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "deploy/agent/agent.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "deploy/apparaat-inrichten.sh"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "deploy/gitops/gitops-ophalen.sh"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "deploy/installeer-app.sh"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "deploy/mcp/server.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "docs/kaart/bestandskaart.json"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/background.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/manifest.json"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/markering-agenten.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/merk-agenten.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/options.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/ui.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "extension/ui.js"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "index.html"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0279_vaardigheden_ecosysteem.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0280_geheugen_stroom.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0281_geheugen_agent_bots.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0282_slimme_uitrol_stroom.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0283_uitrol_github_telegram_archief.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0284_geheugen_taken_en_13_agenten.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0285_ai_delegatie_termijnen.sql"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "migrations/rechten.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/ontwikkelarchieven/UPD-002.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/ontwikkelarchieven/VAARD-002.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/taken/UPD-002.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/taken/VAARD-002.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "scripts/accent-laag-css.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/identiteit-maquette/motor-aanpassingen.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/identiteit-maquette/stijlen.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/merk-officieel-maken.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/orch/inleveren.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/plaatsing-vaste-elementen.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "scripts/vaardigheden/catalogus.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "scripts/vaardigheden/kies.mjs"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "scripts/vaardigheden/valideer.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/zoek-ui-catalogus.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "server/platform/auth-poort.ts"
+    },
+    {
+      "soort": "hernoemd",
+      "van": "server/platform/body-aanmelding.ts",
+      "bestand": "server/platform/tekst-aanmelding.ts"
+    },
+    {
+      "soort": "hernoemd",
+      "van": "server/platform/body-budget.ts",
+      "bestand": "server/platform/tekst-budget.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "server/start.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/adres-controle.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-aanbieders.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-agent-bord.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-beleid/catalogus.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/ai-delegatie.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-ecosysteem.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-ruimte.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-toegang-diagnose.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-verbinding.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/ai-vertaling.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/apparaat-bevestiging/symbolen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/beheer-journaal.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/connector-v2/agenten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/connector-v2/catalogus.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/extensie-matrix.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/bots.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/index.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/model.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/rangschikking.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/taken.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/geheugen-stroom/uittreksel.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/hulp-register.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/integraties-catalogus.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/integraties-detail.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/integraties-register.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/markering-agenten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/mcp-acties.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/mcp-protocol-2026-model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/melding-soorten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-ecosysteem/ai.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-ecosysteem/formaten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-ecosysteem/model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-ecosysteem/tolk.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-soorten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/menu-meldingen-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/sleutelkluis.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/stap-op-acties.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/stap-op-beschrijving.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/uiterlijk.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/uitrol-codes.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/uitrol-stroom.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/vaardigheden-ecosysteem.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/weigering-tekst.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/werkblad-indeling.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/werkblad-register.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/zoek-ui-knoppen.generated.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/aanmeld-herontwerp.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/accountmenu-v3/accountmenu-v3-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/accountmenu-v3/accountmenu-v3.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/accountmenu-v3/AccountMenuV3.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/achtergrond/achtergrond-knop.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/achtergrond/AchtergrondKnop.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/achtergrond/levende-werker.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/achtergrond/LevendeAchtergrond.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/agent-catalogus.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/AgentCatalogus.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/agenten-kern-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/agenten-pagina.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/AgentenPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/AgentLogo.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/AgentPagina.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/ai-ingangen-pictogrammen.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/anker-bron.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/gegevens.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/Journaal.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/McpInspectorStudio.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/TabOrch.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/toegang/delen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/toegang/toegang.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/vaardigheden-maquette.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/agenten/VaardighedenBeheer.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/agenten/verbind-recepten.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/ai-ecosysteem/AgentTelegramBotsPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ai-ecosysteem/AiEcosysteemPaneel.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/ai-ecosysteem/geheugen-stroom.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/ai-ecosysteem/GeheugenStroomPaneel.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/ai-ecosysteem/GeheugenTakenPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/AIDienstWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/AiToestemmingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/AiWerkruimte.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/AiWerkruimteChat.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/App.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/beheer-console.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/BeheerConsoleWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/BeheerUitrolWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/canoniek-account-menu.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/canoniek-meldingencentrum.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/canoniek-omlijsting.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/CanoniekAccountMenu.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/CanoniekMeldingencentrum.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/cloud-vnext/onderdelen/Bestanden.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/cloud-vnext/overdracht-beheer.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/connector-v2/connector-v2.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/connector-v2/ConnectorsTab.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/connector-v2/RechtenKiezer.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/diagnostiek/GebruikerTab.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/domotica.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/extensie/LokaleAiPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/gedeelde-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/geheimen/geheimen-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/github-weergave.css"
+    },
+    {
+      "soort": "hernoemd",
+      "van": "src/github/CodeEnEditorPaneel.tsx",
+      "bestand": "src/github/CodeEnBewerkerPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/github/github-brontekst-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/GitHubWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/GoogleMailWerkruimte.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/hulp/hulp-knop.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/atelier-illustraties.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/identiteit-account.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/identiteit-atelier.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/IdentiteitAtelier.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-motor.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-stijlen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/melding/MeldingEcosysteemPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/instellingen/gegevensuitvoer.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/instellingencentrum.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-mobiel.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-overlay-oppervlak.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-ux-beoordeling-20261021.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-weergave-voorkeuren-cache.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-weergave-voorkeuren-server.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-zijbalk-navigatie.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail-zoeken-v2/mail-zoeken-v2.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/ai-staat.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/ai-uitleg.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/ai-vertaling-balk.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/AiUitleg.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/AiVertalingBalk.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/mail-achtergrond.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/mail-lijst-klassiek.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/mail-navigatie-model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/mail-werkruimte-maquette.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/stroken-sluiten.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/mail/stroken-sluiten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/VertaalStrook.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mail/WeergaveKeuze.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailBerichtTekst.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailGesprekInhoud.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailSnelleInstellingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MailZijbalkNavigatie.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/main.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/maquette-kern/maquette-oppervlakken.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/maquette-kern/MaquetteAnkerRail.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/mcp-ui.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/McpAppsWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/McpDienstWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/ecosysteem-opslag.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/MeldingAiPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/MeldingBijlageSpeler.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/meldingen-ecosysteem.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/MeldingenPortaal.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/ecosysteem/MeldingVeegKaart.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/meldingen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/MeldingVoorkeurenPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/TechMeldingen.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/meldingen/toast-weergave.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/v2/meldingen-v2.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/v2/MeldingenV2.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/meldingen/voorkeur-algemeen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/menu-v2.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/merk/merk-officieel.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/merk/merk-tabel.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/merk/Merk.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel-sleutels.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/antigravity.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/claude.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/codex.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/copilot.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/cursor.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/gemini.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/gpt.svg"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/merk/officieel/grok.svg"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/merk/officieel/HERKOMST.json"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ontwerp/modern.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ontwerp/primitieven.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/overzicht/Dashboard.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/overzicht/GebruikerKaart.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/overzicht/overzicht-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/overzicht/overzicht.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/overzicht/widgets.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/platform/bevestig-toegang.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/platform/bevestig-toegang.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/platform/stap-op.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/platform/zwevend-menu.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/platform/zwevend-menu.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tab-context.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/ruimtes-api.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/ruimtes-contract.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/tech/ruimtes/ai-toegang.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/tech/ruimtes/AiToegangKaart.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/ruimtes/ToegangPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/tech-opslag.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/tech/TechLaag.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/telegram-aanmelden/telegram.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/accent-laag.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/useThema.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/weergave-stijl.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/weergave-stijl.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/WeergaveVoorkeuren.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/toegangslaag.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/AgentToevoegen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/fouten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/Geschiedenis.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/GithubInstellingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/Goedkeuring.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/ProbleemRapport.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/RunDetail.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/uitrol/stroom.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/uitrol/TelegramArchief.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/uitrol-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/uitrol.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/uitrol/UitrolStroom.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/uitrol/UitrolStroomKaart.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/vereisten.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/uitrol/voorbereiders.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/verbindingen/verbindingen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/bibliotheek/bibliotheek.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/bibliotheek/Bibliotheek.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/bibliotheek/stand.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/canvas/canvas.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/canvas/Canvas.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/canvas/kern.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/werkblad-maquette.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/werkblad.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/WerkbladV3.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/widgets/Overig.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/werkblad/widgets/Start.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/zoek/zoek-uitklap-veld.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/zoek/ZoekGlobaal.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/e2e/werkblad-bibliotheek.e2e.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/accent-001-tint-transparantie.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/account-wissen-20261026.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/accountmenu-strook-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/accountmenu-v3.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/agent-namens.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/agent-verbinden-20261020.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/agenten.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/ai-delegatie-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/ai-ecosysteem-en-google-herstel.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/ai-kluis-een-plek-20261101.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/ankers-002-agenten-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/beheer-integraties.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/bestandskaart-20261024.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/blokken-001-account.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/breedte-001-kolom-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/browser-extensie.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/browser-gedeeld-20261022.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m10-integration-safety.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m11-voorbeeld.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m5-aanbieder-golf.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m6-beleid-bewaker.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m6-bestuur.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-m8-verenigd.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-verbinding-m4.test.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/connector-browser-gelijk-20261022.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/connector-levende-rechten-20261020.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-beheer.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-offscreen-20261106.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-opties.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-profielen.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/extensie-tabblad-hint-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-ui.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/extensie-vergrendeling.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/geheugen-agent-bots.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/geheugen-stroom.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/geheugen-taken-en-13-agenten.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/github-012-mobiele-weergave.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/github-volledige-werkruimte.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/hint-001-ankertip.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/hulp/sec-002-g10a-ui.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/hulp/stap-op-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-009-mobiel-veiligheid.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-010-aanmelden-ecosysteem.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-015-vormgeving.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-account-ui.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-maquette.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/integraties-catalogus-v2-20261029.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/klap-alles-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/klassiek-004b-github-brontekst.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/klassiek-005a-werkblad.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/kleuren-001-een-bron.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/lees-venster-20261024.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-accounts-beheer-20261021.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mail-dok-pil-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mail-ux-beoordeling-20261021.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mailai-001-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/mailanker-001-model.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/maquette-generator-gelijk.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/maquette-mobiel-prestatie.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mcp-2026-07-28-studio.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mcp-connector.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mcp-orch-integratie-20261031.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/mcp-toegang-diagnose-20261101.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/melding-soorten.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/meldingen-ecosysteem-kern.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/meldingen-ecosysteem-ui.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/meldingen-integ-20261103.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/meldingen-ux-001-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/merk-officieel-20261021.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/perf-001-20261109.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/ruimtes-compatibiliteit-db.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-afwerking-b-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-g10e-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-slot-s-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/site-hulpmiddelen.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sleutelkluis-20261020.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/ssh-ca.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/stap-op-omschrijving-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/stroken-sluiten-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/stroom-veilig-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/tech-ruimtes-v2-20261027.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/tech-sessies.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/telegram-inlog-apparaat-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/telegram-venster-20261114.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/uitrol-centrering-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/uitrol-goedkeuring.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/uitrol-stroom.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/uitrol-telegram-en-github-ontvangen-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/vaardigheden-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/vaardigheden-ecosysteem.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/veilig-002-noodstop-uiterlijk.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/veilig-002-uitbreiding.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/werkblad-hoek-20261115.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/werkblad-indeling-20261022.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/werkblad-register-20261027.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/werkblad-v3-routes.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/werkblad-veld-zwevend-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/woordbreuk-001-20261115.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/zoek-veld-op-plek-20261115.test.ts"
+    }
+  ],
+  "controles": [
+    "node scripts/eenheidstests.mjs (542 файли на локальному PostgreSQL 15.19 із 171 міграцією та rechten.sql): 539/542 пройдено (18 117 окремих перевірок пройдено, 8 невдалих у 3 відомих тестах середовища); після вичистки коментаря в shared/ai-delegatie.ts повторно перевірено ai-delegatie-20261115 (51/51), bestandskaart-20261024 (28/28), trace-001-ontwikkelarchief (16/16), uitrol-manifest (25/25), orch-pakket-20261031 (24/24).",
+    "Модульні тести хмарного сховища tests/eenheid/cloud-*.test.mjs: 20/20 пройдено.",
+    "Безголовий Хроміум Chrome/156.0.8078.79 (scripts/rook-controle.mjs --stand): глибока перевірка здоров’я 7/7, усі 13/13 сторінок повернули HTTP 200 з нулем помилок у консолі й відхилених запитів, 696/696 пакунків без помилок та попереджень (плюс --alleen-modules 693/696 на попередніх 3, покритих у --stand).",
+    "Перевірка типів і статичні перевірки: npx tsc --noEmit (0 помилок), npm run typecheck:server (0 помилок), node scripts/kaart-controle.mjs --stil (0 помилок і 0 попереджень), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), мовний аудит незафіксованих змін (0 порушень).",
+    "Виробниче складання (NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build): пройдено з кодом 0; усі вихідні файли старші або синхронні із зібраними артефактами.",
+    "Перший віддалений запуск GitHub Actions № 43792088279 (.github/workflows/upd-002-uitgave.yml): кроки 1–11 пройдено (жива основа 20261115-162533, orch controleer, TRACE-001 16/16, статичні перевірки, самоперевірка ПК-агента, 20 хмарних тестів, 116 безбазових випробувань, tsc і typecheck:server, повне складання разом із розширенням 0.9.4, 11 післяскладальних випробувань), у кроці 12 пройдено подвійні міграції на PostgreSQL 16 із трьома ролями та перші 25 випробувань із БД; на 26-му тесті mail-accounts-beheer-20261021 виявлено взаємозалежність через спільний 60-секундний запис provider_endpoint_verifications_v1 = 'rejected'.",
+    "Повторна локальна перевірка після додавання очищення provider_endpoint_verifications_v1 і mail_endpoint_verifications_v1 перед кожним БД-тестом у .github/workflows/upd-002-uitgave.yml: node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16), sec-002-g01-20261112.test.ts (64/64, включно з перевіркою YAML і 16 процесів випуску), stroom-veilig-20261115.test.ts (16/16).",
+    "Другий віддалений запуск GitHub Actions № 43795263825 (.github/workflows/upd-002-uitgave.yml): кроки 1–11 і випробування з БД № 1–49 (включно з mail-accounts-beheer-20261021) пройдено без помилок; у № 50 telegram-venster-20261114 зафіксовано 80/82 через залишкові поля попереднього owner.",
+    "Локальна перевірка після ізоляції vorigeData у tests/eenheid/telegram-venster-20261114.test.ts: telegram-venster-20261114.test.ts (24/24 без БД), npm run typecheck:server (0 помилок), node scripts/orch.mjs controleer (regelsVersie 1.4.14, 0 помилок), trace-001-ontwikkelarchief.test.ts (16/16)."
+  ],
+  "bronnen": [
+    {
+      "soort": "звернення власника",
+      "omschrijving": "Зведений підсумок обговорень і вимога від 15.11.2026 консолідувати готові напрацювання паралельних агентів у повноцінне оновлення без перетирання чужих змін.",
+      "inhoudGepubliceerd": false
+    },
+    {
+      "soort": "завдання й запити GitHub",
+      "omschrijving": "Завдання № 96, № 98, № 102, № 106 та запити на злиття № 114–133 у сховищі Tarasevych/hub.",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "жива основа сервера",
+      "omschrijving": "Підтвердження з https://hub.tarasevych.com/api/version: версія 20261115-162533 (UPD-001) @ 07359e0e0d4bbea34277cebffc17e1321ae2563c.",
+      "inhoudGepubliceerd": true
+    }
+  ],
+  "beperkingen": [
+    "Три відомі обмеження локального контейнера без прав root і з PostgreSQL 15.19: tests/eenheid/migraties-pg16-20261021.test.ts (15/19 — локальна СКБД PostgreSQL 15.19 замість 16), tests/eenheid/sec-002-g09-20261112.test.ts (68/71 — 3 перевірки вимагають прав root і temp_file_limit), tests/eenheid/ssh-ca-beheer.test.ts (0/1 — у контейнері відсутня служба sshd).",
+    "Автоматичного встановлення на робочий сервер немає: випуск публікується лише на GitHub; встановлення виконує власник вручну в Admin → Оновлення з ключем доступу після запасної копії на R:\\mijn-ruimte-reservekopie\\.",
+    "Окрему незавершену гілку EXTUI-001 (origin/claude/project-thread-mfmj77) свідомо не включено до UPD-002 і залишено на окремий цикл."
+  ],
+  "commits": [
+    "bf35a0d5e10dcde79c1ecbeae66a4c853e2c6cda",
+    "333bf1d952a92e6b6269477d810f9073612207fc",
+    "ee60f03e377ae7df40b87737597bbc2b32e49fcd",
+    "e9f04ba910f6db4257476c49e7930e22f3339b87",
+    "cdbd4f074cc6e8d9d5dcc7db43711ccef84cc423",
+    "23a0735def24e64ca16ac6d246d92b2520648283",
+    "fd0e06724eeaded80ed90c88168327d6ba5fdc13",
+    "4ed9cf9523be46aaec617f9b7af99c36ea318cfa",
+    "63cca66c932432bdb67564c8ec0ec7a4cf282c7e",
+    "914b52682ddc4e35b855c2431d1002c0f5f7734a",
+    "33b6ef833bddd67d5db8ae0f96eb135924368d2d",
+    "04463d9cd42373e0954c379e640c9ff652b09d65",
+    "2273d75735ac9a5dcaff522a6baf89463d9b2f4f",
+    "d22abb5fcd8f06f2a9fb009c8fc5ee9210c4122e",
+    "8a216ae062abbc9aee5f75283b57787fc6dfe5ed",
+    "4fe285b065253df2fea5c795e5a469303cba2e4e",
+    "90288dddc9589c8c50927716e2e2c0faeda16d8d",
+    "08ead77bbe9f2cff6e6052e8f115e76805472a64",
+    "cac59f0537de115900b7f9cde6a7996d02938c96",
+    "f872db9b917d7e68ad3fa8964e4303f26a6840c3",
+    "7aef418aedeb249dad1a93bbab4564694d2674fa",
+    "457c3546a46a50a73abde0427f86347ed63638bc",
+    "38ac73b10ff1b016372b1809fbcc4e5fb86541c8",
+    "f5f5cdbc68fd835126d3eddc5aeabda8f46c68b2",
+    "b2de12b12ad7b8fef151fd0f1b489cbbae5790d2",
+    "aeaf41f976abbce6e4dd1c81a61b299f5369c455",
+    "5bbc248ce8f32e802b447bff73ff5a80c4d03158",
+    "cad78cdb9e9e53d8d0815058f6e67f668658cdf5",
+    "caabe6af74f6b45c1aeedc31bee3c26a4a2548b0",
+    "ba014c353632a2384b4378004288cdbb1e881a2c",
+    "f18aafd4659c92fc53c297401d3d84bd25b678bd",
+    "cb4675dd9150a69a35d9c0b81495f0ae1d7da010",
+    "1d9a6838c1a568d7360d2f142bc6b4a0a8712230",
+    "1a8775a7dd6f6c46500807ee67043c58cf767fa1",
+    "b22899fae9915a65ebaee2de13d4c306cb6e38ed",
+    "f8477fb34c95cee63d5bc72719260807f2b0240d",
+    "59f7d3acd1af0fefb7ede22ec7ea462ad9b4c551",
+    "ed1a12d2a5354119b17081a8331e7e3becd2a8e6",
+    "55a66bb7a7e9fc2bb138db0c0b498708c2794fc9",
+    "259b9835f64bd0cfcb3a6ea61e77fd178a5dacb9",
+    "614d4a2d9e27b3e00b161653182e6717b649e364",
+    "3a46bea614550c894604acef71068f070540f003",
+    "680d732ce341a4eb0166e5ad40ade0726c681e96",
+    "b3d8d56785e6bef6d501557ea8ccfa5eb2f4d4a0",
+    "e146add0b3730e4b787d0b0e62173cea11310225",
+    "a621f6c5c4563938bd0bbebbcb504ad2fc3b44a6",
+    "d208944784adc1810ca0123b94cd9022e240bf88",
+    "f74ce71149355973c632ab2a8c08d325a0b67f86",
+    "1240f7ff99c441903db40571f19b168dde908abd",
+    "4561c2cdf9fbbc4ed6c85ad948161f390e81f525",
+    "3f0051bbcd1554d5f205644006c083d27688cce0",
+    "b36610f264a7349a465d1597d6d24c163648d9b2",
+    "23238ca6cd6e7f3e21204053b95c8d235971db54",
+    "3a2e6bc86cb57a28209eefc3ff699ed4efbe5620",
+    "c9c71f95de33235986376415d3f7299ea5f19db0",
+    "3765ae93bb810cf70b967a2ed5bf3f33f86bda54",
+    "a52868fa1037de591e1bb2ee0c57d49fa8f94bfd",
+    "d279e229697b69890f00f9d0c142cf41a220706f",
+    "2ab1e52a2e983a990a1120c70664087dc9220257",
+    "171e6a887953977473b0c9d268e852f9d4bff09b",
+    "c8c4193e2b19ddedb8092766ca8ccea4e3fccbf3",
+    "ae7edf009713b372f44e2f9496d6f0bf5b2f5f7e",
+    "ee6f8043ae4aa26ef936ae7d369c1d1feb8beef3",
+    "523edb0d07a8e7e84e85037d184d6d55d9708949",
+    "1d5f404fb337dfe2555e3a1135da1fb6e81cf3df",
+    "2063a488efdff6726cf4ceb9f250a4a0ea8c4364",
+    "fa8bcd3d8c8fb636afb199e5815f991902085f3e",
+    "86aa0902c88d7f5884d4e641954ee9d62d3ef1f9",
+    "03c5cf08fff89ec4f4dfc73c55753bfe1b30fcb0",
+    "87c206540fe6d39c86652d97d1a14627645552f1",
+    "df89149fe861d22d75af6a832784794d2efac91f",
+    "3154588f4468765bfd5108beaccd844cf1ff3c43",
+    "00c42b12e1def8a348fdd73d74b69b7de3980b06",
+    "ebfba029a27e861d8eaee6a376fae64e238f00ab",
+    "151544c674733666ba38f7464246cbedc3ce1abc",
+    "50143673a0769220ecedcbb47cc2d96446ba43e1",
+    "85b6ab22dd17822fba5b9c3f6c30ee7bab8e2825",
+    "84d2734c435c5b1f00eb0bf3fc9d102329030b35",
+    "762939ea96969b4dcfef35838f8470d360577ceb",
+    "b2e6634a5e1f080e8f9c32fa5c3847a06a2e6fa5",
+    "e3d266ad7e6603618f395a624635b4d73288cbed",
+    "aeb4ada702003c38b4ad3848b29c85929fa6fd51",
+    "65c73083da172e6d82b0574eeaf6b5a2dae18b85",
+    "b90f730921d208b26840c3b7e9398b8e983700e0",
+    "69e227fb4093020555e09d8bff53eae4474d5ab5",
+    "5a9a812b021f6de5d55184bad96dbdf63e2385f5",
+    "deb22426447be10c24ee4e43a24a4655834e1549",
+    "4c0c00dbedc1cb452aefc27ddbb210c7e4116702",
+    "209fb5d62bd800d8f13dd937000ebeca4eef9b38",
+    "f69bbf0231078332dd66d2331b6e492320dcb38d",
+    "e8cc16d5149dbb8ed1b24d8587604b9b8a5b7006",
+    "aad2288073598a6f86c55c30d123d4a4763ce673",
+    "5d870ef8378b7491f9ed78e2c636b4230c13f95e",
+    "7ef66ad196d18540ea35181d8072692dce8c4430"
+  ]
+}

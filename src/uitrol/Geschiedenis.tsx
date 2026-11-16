@@ -28,14 +28,14 @@ type Props = { lang: Lang; context: Record<string, unknown>; openId: string; onO
   /** Het overzicht van de pagina (voorstellen zonder run, actieve versie): zonder dit staan alleen runs en pogingen in de tijdlijn. */
   data?: Overzicht | null;
   /** UI-010 fase 2 (vlag uitrol-weergave-v2): groepen, deelnemers, herstelacties, filters op agent/model. */
-  v2?: boolean; naarLog?: (runId: string) => void; naarDiagnose?: () => void };
+  v2?: boolean; naarLog?: (runId: string) => void; naarDiagnose?: () => void; naarStroom?: (versie: string) => void };
 
 /** Manifest + uploader/goedkeurder van het voorstel achter een tijdlijnregel (run via voorstelId). */
 const voorstelVan = (it: TijdlijnItem, vs: readonly Voorstel[]): Voorstel | undefined => it.voorstel || (it.run?.voorstelId ? vs.find((v) => v.id === it.run!.voorstelId) : it.poging?.voorstelId ? vs.find((v) => v.id === it.poging!.voorstelId) : undefined);
 const manifestVan = (v?: Voorstel): Manifest | null => ((v?.pakketMeta as { manifest?: Manifest | null } | null | undefined)?.manifest) || null;
 const hoofdDeelnemer = (v?: Voorstel): string => { const m = manifestVan(v); const ai = m?.deelnemers.find((d) => d.soort === 'ai'); return ai ? `${ai.naam}${ai.model?.id ? ` · ${ai.model.id}` : ''}` : m?.auteur || v?.pakketMeta?.agent || v?.pakketMeta?.auteur || ''; };
 
-export default function Geschiedenis({ lang, context, openId, onOpenId, naarUpload, data, v2 = false, naarLog, naarDiagnose }: Props) {
+export default function Geschiedenis({ lang, context, openId, onOpenId, naarUpload, data, v2 = false, naarLog, naarDiagnose, naarStroom }: Props) {
   const [agent, setAgent] = useState(''); const [model, setModel] = useState('');
   const [groepOpen, setGroepOpen] = useState('');
   const [f, setF] = useState<Filter>(LEEG);
@@ -130,9 +130,9 @@ export default function Geschiedenis({ lang, context, openId, onOpenId, naarUplo
 
     {fout && <p className='ut-fout' role='alert'>{fout}</p>}
     <ol className='ut-tl' aria-label={tr(lang, 'Історія розгортань', 'Geschiedenis van uitrollen')} aria-busy={laadt} data-ut-tijdlijn={tijdlijn.length}>
-      {!v2 && tijdlijn.map((it) => <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} account={data?.ik} accounts={data?.kandidaten?.accounts} />)}
+      {!v2 && tijdlijn.map((it) => <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} naarStroom={naarStroom} account={data?.ik} accounts={data?.kandidaten?.accounts} />)}
       {v2 && groepeer(tijdlijn).map((g) => {
-        const regel = (it: TijdlijnItem) => { const v = voorstelVan(it, data?.voorstellen || []); return <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} v2 voorstel={v} hoofd={hoofdDeelnemer(v)} naarLog={naarLog} naarDiagnose={naarDiagnose} account={data?.ik} accounts={data?.kandidaten?.accounts} />; };
+        const regel = (it: TijdlijnItem) => { const v = voorstelVan(it, data?.voorstellen || []); return <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} v2 voorstel={v} hoofd={hoofdDeelnemer(v)} naarLog={naarLog} naarDiagnose={naarDiagnose} naarStroom={naarStroom} account={data?.ik} accounts={data?.kandidaten?.accounts} />; };
         if (g.items.length === 1) return regel(g.items[0]);
         const isOpen = groepOpen === g.sleutel || g.items.some((x) => x.id === open);
         return <li key={g.sleutel} className='ut-tl-groep' data-tl-groep={g.items.length} data-open={isOpen || undefined}>
@@ -154,7 +154,7 @@ export default function Geschiedenis({ lang, context, openId, onOpenId, naarUplo
 }
 
 /** Eén regel van de tijdlijn + (opengeklapt) de details en de knop «Спробувати знову». */
-function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose, account, accounts }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean, voorstelId?: string) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
+function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose, naarStroom, account, accounts }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean, voorstelId?: string) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void; naarStroom?: (versie: string) => void; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
   const it = item;
   const samenvatting = it.soort === 'poging' && it.poging ? pogingOorzaak(lang, it.poging.code, it.poging.redenBekend).waarom : (lang === 'uk' ? it.uk : it.nl);
   const vg = it.poging ? voortgang(it.poging) : null;
@@ -177,7 +177,7 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
       <ChevronDown className='ut-tl-pijl' aria-hidden='true' />
     </button>
     {open && <div className='ut-tl-detail' id={detailId} onKeyDown={opEsc}>
-      {it.soort === 'run' && it.run && <RunDetail lang={lang} context={context} runId={it.run.id} hoogte={360} />}
+      {it.soort === 'run' && it.run && <RunDetail lang={lang} context={context} runId={it.run.id} hoogte={360} naarStroom={naarStroom} />}
       {it.soort === 'poging' && it.poging && <PogingDetail lang={lang} p={it.poging} />}
       {v2 && <Betrokkenen lang={lang} it={it} v={voorstel} account={account} accounts={accounts} />}
       {v2 && it.soort === 'poging' && it.poging && <Herstel lang={lang} acties={herstelActies(it.poging)} naarUpload={naarUpload ? (h) => naarUpload(h, it.poging?.voorstelId || '') : undefined} naarDiagnose={naarDiagnose} naarLog={naarLog && it.run ? () => naarLog(it.run!.id) : undefined} />}

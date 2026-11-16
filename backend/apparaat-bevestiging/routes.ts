@@ -28,7 +28,11 @@ export type ApparaatDeps = {
 export const ALLEEN_SESSIE = Symbol.for('apparaat-bevestiging.alleen-sessie');
 export const MET_SLEUTEL = Symbol.for('apparaat-bevestiging.met-sleutel');
 
-const fout = (code: string, status = 400, extra: Record<string, unknown> = {}): RouterResponse => json({ error: code, reasonCode: code, ...extra }, status);
+const fout = (code: string, status = 400, extra: Record<string, unknown> = {}): RouterResponse => {
+  const basis = json({ error: code, reasonCode: code, ...extra }, status);
+  const sec = Number(extra.retryAfter || 0);
+  return Number.isFinite(sec) && sec > 0 ? { ...basis, headers: { ...basis.headers, 'Retry-After': String(Math.max(1, Math.ceil(sec))) } } : basis;
+};
 const STATUS: Record<string, number> = {
   VLAG_UIT: 404, VERZOEK_ONBEKEND: 404, ONBEKENDE_ACTIE: 400, RATE_LIMITED: 429, NIET_TOEGESTAAN: 403, UITGESCHAKELD: 409, METHODE_UIT: 409, METHODE_PAUZE: 429,
   GEEN_ANDER_APPARAAT: 409, VERLOPEN: 410, AL_AFGEROND: 409, ZELFDE_APPARAAT: 409, TE_SNEL: 425, KEUZE_ONGELDIG: 400, STEP_UP_PASSKEY_REQUIRED: 403, BEHEERDER_NODIG: 403, SESSIE_ONBEKEND: 401,
@@ -45,7 +49,13 @@ function vangen(run: () => Promise<RouterResponse>): Promise<RouterResponse> {
     const code = String((e as Error)?.message || 'APPARAAT_FOUT').replace(/[^A-Z0-9_]/g, '').slice(0, 60) || 'APPARAAT_FOUT';
     const bekend = /^[A-Z][A-Z0-9_]+$/.test(code) && code !== 'APPARAAT_FOUT';
     if (!bekend) console.error('[apparaat-bevestiging] route mislukt:', (e as Error)?.message);
-    return fout(bekend ? code : 'APPARAAT_FOUT', STATUS[code] ?? (bekend ? 400 : 500));
+    const meta = e as { retryAfter?: unknown; pauzeTot?: unknown; maxAttempts?: unknown; windowSec?: unknown };
+    const extra: Record<string, unknown> = {};
+    if (typeof meta?.retryAfter === 'number' && meta.retryAfter > 0) extra.retryAfter = Math.ceil(meta.retryAfter);
+    if (typeof meta?.pauzeTot === 'string' && meta.pauzeTot) extra.pauzeTot = meta.pauzeTot;
+    if (typeof meta?.maxAttempts === 'number' && meta.maxAttempts > 0) extra.maxAttempts = Math.ceil(meta.maxAttempts);
+    if (typeof meta?.windowSec === 'number' && meta.windowSec > 0) extra.windowSec = Math.ceil(meta.windowSec);
+    return fout(bekend ? code : 'APPARAAT_FOUT', STATUS[code] ?? (bekend ? 400 : 500), extra);
   });
 }
 
@@ -54,6 +64,7 @@ export function apparaatRoutes(deps: ApparaatDeps): Record<string, RouterMiddlew
   const stroomAuth: StroomAuth = async (event, body) => {
     const a = await deps.requireSession(event, body);
     if ('errorCode' in a) return { fout: a.errorCode };
+    if (a.user.status && a.user.status !== 'approved') return { fout: 'ACCOUNT_NOT_APPROVED_FORBIDDEN' };
     if (!(await vlagVoor(a.user.id))) return { fout: 'NIET_GEVONDEN' };
     return { userId: a.user.id, anker: String(a.session?.id || '') };
   };
@@ -63,6 +74,7 @@ export function apparaatRoutes(deps: ApparaatDeps): Record<string, RouterMiddlew
     (async (rc: RouterContext) => {
       const a = await deps.requireSession(rc.event as unknown as Record<string, unknown>, rc.body);
       if ('errorCode' in a) return fout(a.errorCode, a.errorCode.includes('FORBIDDEN') ? 403 : 401);
+      if (a.user.status && a.user.status !== 'approved') return fout('ACCOUNT_NOT_APPROVED_FORBIDDEN', 403);
       if (o.vlag !== false && !(await vlagVoor(a.user.id))) return fout('NIET_GEVONDEN', 404);
       if (o.beheer && !isBeheerder(a.user)) return fout('BEHEERDER_NODIG', 403);
       if (o.sleutel && !(await passkeyStapOpGeldig(a))) return fout('STEP_UP_PASSKEY_REQUIRED', 403);

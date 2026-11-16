@@ -2,7 +2,7 @@
 // вкладка MCP є лише там, де каталог клієнта її підтримує.
 import { checker } from './hulp/nep-google';
 import {
-  BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_REGEL, STANDAARD_STAAT, connectGeweigerd, mcpIngang, staatVanRijen, tabsVoor, toolGeweigerd,
+  BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_REGEL, STANDAARD_STAAT, connectGeweigerd, mcpIngang, staatVanRijen, tabsVoor, toolGeweigerd, verbindingGeweigerd,
 } from '../../shared/ai-agent-bord';
 
 export async function main(): Promise<number> {
@@ -33,6 +33,22 @@ export async function main(): Promise<number> {
   check('Gemini не має способу токена — видача відмовляється',
     connectGeweigerd(STANDAARD_STAAT, { ruimte: 'prive', klant: 'gemini', methode: 'token' })?.code === 'METHODE_NIET'
     && connectGeweigerd(STANDAARD_STAAT, { ruimte: 'prive', klant: 'gemini', methode: 'mcp' })?.code === 'METHODE_NIET');
+
+  // SEC-002 (ai-mcp-05): вимикач діє й на ЧИННЕ приватне підключення, а не лише на нове.
+  const tokenUit = { agent: {}, methode: { token: false as const }, cap: {} };
+  check('вимкнений агент зупиняє чинне приватне підключення (грант і токен), інші агенти й технічний простір — ні',
+    verbindingGeweigerd(claudeUit, { ruimte: 'prive', klant: 'claude', methode: 'mcp' })?.code === 'AGENT_UIT'
+    && verbindingGeweigerd(claudeUit, { ruimte: 'prive', klant: 'claude', methode: 'token' })?.code === 'AGENT_UIT'
+    && verbindingGeweigerd(claudeUit, { ruimte: 'prive', klant: 'grok', methode: 'mcp' }) === null
+    && verbindingGeweigerd(claudeUit, { ruimte: 'technisch', klant: 'claude', methode: 'mcp' }) === null);
+  check('вимкнений спосіб зупиняє чинні підключення цим способом, зокрема клієнта без картки («overig»)',
+    verbindingGeweigerd(tokenUit, { ruimte: 'prive', klant: 'cursor', methode: 'token' })?.code === 'METHODE_UIT'
+    && verbindingGeweigerd(tokenUit, { ruimte: 'prive', klant: 'overig', methode: 'token' })?.code === 'METHODE_UIT'
+    && verbindingGeweigerd(tokenUit, { ruimte: 'prive', klant: 'cursor', methode: 'mcp' }) === null);
+  check('адреса агента (connector v2) важить нарівні з назвою клієнта; каталог чинне підключення не ріже',
+    verbindingGeweigerd(claudeUit, { ruimte: 'prive', klant: 'overig', methode: 'mcp', agentKlant: 'claude' })?.code === 'AGENT_UIT'
+    && verbindingGeweigerd(STANDAARD_STAAT, { ruimte: 'prive', klant: 'gemini', methode: 'mcp' }) === null
+    && verbindingGeweigerd(STANDAARD_STAAT, { ruimte: 'prive', klant: 'claude', methode: 'mcp', agentKlant: null }) === null);
 
   const tekst = JSON.stringify(BORD_AGENTEN);
   check('дошка не виставляє двері й технічні інструменти',

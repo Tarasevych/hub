@@ -13,7 +13,7 @@ import type { LambdaEvent, RouterContext, RouterMiddleware, RouterResponse } fro
 import { error } from './router';
 import { isSessieGeverifieerd, sessieGeverifieerd } from './context';
 import { schakelaarAan } from './schakelaars';
-import { tel } from './antwoord-teller';
+import { telPoort401 } from './antwoord-teller';
 
 /** Routes die zonder sessie mogen slagen (patroon zoals in de routetabel) → reden. */
 export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
@@ -31,6 +31,12 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/auth/google/callback': 'OAuth-terugkeer van Google (state + bindingscookie)',
   'POST /api/owner/google-suite/callback': 'OAuth-terugkeer Google Suite (state + browserbindingscookie)',
   'GET /api/aanmeld/koppel/:aanbieder/terug': 'OAuth-terugkeer externe aanmeldmethode (eenmalige state + browserbindingscookie)',
+  // IDENTITEIT-015 (aanmelden): zelfde lijst als AANMELD_METHODEN_PUBLIEKE_ROUTES in backend/aanmelden-methoden.ts (achter vlaggen aanmelden-*).
+  'POST /api/aanmelden/passkey/opties': 'aanmelden met toegangssleutel: eenmalige uitdaging + transactie en bindingscookie (vóór de sessie)',
+  'POST /api/aanmelden/passkey/voltooien': 'aanmelden met toegangssleutel: handtekening, origin/rpId, UV, teller → sessie (bindingscookie, eenmalig)',
+  'POST /api/aanmelden/wachtwoord/start': 'aanmelden met wachtwoord: transactie en bindingscookie (zonder wachtwoord)',
+  'POST /api/aanmelden/wachtwoord/voltooien': 'aanmelden met wachtwoord: adres, wachtwoord en tweede factor in één verzoek; lockout',
+  'POST /api/aanmelden/extern/start': 'aanmelden met gekoppelde Microsoft/Discord/Apple: state + PKCE + nonce, transactie en bindingscookie',
   // TELEGRAM-AANMELDEN v1 (achter vlag telegram-aanmelden-v1): zelfde lijst als TELEGRAM_PUBLIEKE_ROUTES in backend/telegram-aanmelden/routes.ts.
   'GET /api/aanmelden/telegram/config': 'Telegram-knop op het aanmeldscherm: zichtbaar ja/nee, botnaam, stand (geen geheimen)',
   'POST /api/aanmelden/telegram/start': 'Telegram-aanmelding starten (vóór de sessie; transactie + bindingscookie)',
@@ -40,6 +46,11 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële aanmeldvenster van Telegram (eigen smalle CSP)',
   'GET /api/aanmelden/telegram/widget-terug': 'terugkeer uit het aanmeldvenster van Telegram (HMAC-handtekening, 5 min, eenmalig)',
   'POST /api/telegram/webhook': 'terugroepadres voor Telegram (geheime kop X-Telegram-Bot-Api-Secret-Token)',
+  'GET /api/telegram/venster': 'beveiligd Telegram-venster (ondertekende verwijzing; eigen smalle CSP, alleen in Telegram Web als frame)',
+  'GET /api/telegram/venster.js': 'het ene script van het beveiligde Telegram-venster (geen gegevens)',
+  'POST /api/telegram/venster/kies': 'pictogram kiezen in het Telegram-venster (ondertekende verwijzing + initData van Telegram; één poging)',
+  'POST /api/telegram/venster/code': 'geheime code in het Telegram-venster (ondertekende verwijzing + initData; tellers en pauzes)',
+  'POST /api/telegram/venster/weigeren': '«Це не я» in het Telegram-venster (ondertekende verwijzing + initData)',
   'POST /api/owner/identity/transactions/create': 'aanmeldtransactie starten (vóór de sessie)',
   'POST /api/owner/identity/transactions/status': 'aanmeldtransactie volgen (transactie-id + binding)',
   'POST /api/owner/identity/transactions/redeem': 'aanmeldtransactie inwisselen (binding)',
@@ -56,6 +67,8 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   // (OAuth-client + PKCE + eenmalige code, of Bearer-token bij /rpc). Zie backend/mcp-connector.ts.
   'GET /api/mcp-connector/prm': 'OAuth protected resource metadata (RFC 9728), openbaar',
   'GET /api/mcp-connector/asm': 'OAuth authorization server metadata (RFC 8414), openbaar',
+  'GET /api/mcp-connector/server-card': 'MCP Server Card (ext-server-card, /.well-known/mcp.json), openbaar',
+  'GET /api/mcp-connector/registry-server': 'MCP Registry-manifest (/server.json), openbaar',
   'POST /api/mcp-connector/register': 'dynamische clientregistratie (RFC 7591); alleen de callback van Claude is toegestaan',
   'GET /api/mcp-connector/authorize': 'autorisatieverzoek van Claude; redirect naar het toestemmingsscherm, geeft zelf geen toegang',
   'POST /api/mcp-connector/token': 'tokenuitgifte: eenmalige code + PKCE-verifier, of roterend refresh-token',
@@ -81,10 +94,17 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/agents/diagnostics/archive':'browserextensie levert met haar eigen token (Authorization-header) een diagnosebuffer aan; versleuteld per gebruiker opgeslagen, 90 dagen',
   'POST /api/owner/mail/microsoft/webhook': 'Microsoft Graph-webhook (clientState-controle)',
   'POST /api/owner/mail/google/pubsub/push': 'Google Pub/Sub-push (OIDC-token in Authorization)',
+  'POST /api/github/webhook/:sleutel': 'inkomende GitHub-webhook (verplichte HMAC-SHA256-handtekening in X-Hub-Signature-256)',
+  'POST /api/uitrol/github/webhook': 'inkomende GitHub-release-webhook voor uitrolvoorstellen (verplichte HMAC-SHA256-handtekening in X-Hub-Signature-256)',
+  'POST /api/uitrol/telegram/webhook': 'inkomende Telegram-webhook van de uitrolbot (verplichte controle van X-Telegram-Bot-Api-Secret-Token met timingSafeEqual; alleen /status en /help in ingestelde groep/topic)',
   // Toegangscodes voor anderen (§13.11): inwisselen heeft (nog) geen sessie; de code zelf is de referentie (alleen hash-opzoeking,
   // strikt per IP begrensd + blokkade). Uitloggen is idempotent. De overige /api/gast/*-routes eisen de gastcookie.
   'POST /api/gast/inwisselen': 'toegangscode inwisselen voor een beperkte gastsessie (code in de body, gehasht opgezocht)',
   'POST /api/gast/uitloggen': 'gastsessie beëindigen (idempotent; zonder sessie niets te doen)',
+  // Gedeelde cloudkoppelingen (CLOUD-001, backend/bestanden-delen.ts): referentie is de gehashte 192-bits koppelingscode (+ optioneel scrypt-wachtwoord of accountcontrole + rateLimit per IP).
+  'POST /api/cloud/gedeeld/info': 'metadata en toegestane boom van een gedeelde cloudkoppeling (gehashte code + IP-limiet)',
+  'POST /api/cloud/gedeeld/inhoud': 'inhoud of afgesneden deel van een gedeelde cloudkoppeling (gehashte code + strikt bereik)',
+  'POST /api/cloud/gedeeld/download': 'download van een gedeeld bestand, deel of map-zip (gehashte code + rechten- en limietcontrole)',
   'POST /api/owner/access/webauthn/options': 'passkey-opties (uitgeschakeld: 503)',
   'POST /api/owner/access/webauthn/register': 'passkey registreren (uitgeschakeld: 503)',
 };
@@ -116,7 +136,7 @@ export function poortNaVerzoek(patroon: string, event: LambdaEvent, antwoord: Ro
   }
   try { melder?.(patroon); } catch { /* melden mag nooit het verzoek breken */ }
   if (!poortAfdwingen()) return antwoord;
-  tel('poort401'); // zekering: piek in 401 van het vangnet na het aanzetten → automatisch uit
+  telPoort401(patroon); // zekering: piek in 401 van het vangnet over VERSCHILLENDE routes na het aanzetten → automatisch uit
   return error('AUTH_REQUIRED', 401);
 }
 

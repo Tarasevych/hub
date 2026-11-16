@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Activity, Archive, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from "../shared/ruimte-weergave";
@@ -21,18 +22,188 @@ import McpBackupsCard from "./McpBackupsKaart";
 import McpServerBeheerCard from "./McpServerBeheerKaart";
 import DeurSchakelaars from "./agenten/DeurSchakelaars";
 import AgentLogo from "./agenten/AgentLogo";
+import { useAgentAnkers } from "./agenten/anker-bron";
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from "./maquette-kern";
+import { useIsMaquette } from "./thema/useThema";
 import "./mcp-domein.css";
+import "./mcp-kern-maquette.css";
 
 type Lang = "uk" | "nl";
 type Props = { lang: Lang; tab: string };
 type Probe = { id: string; url: string; ok: boolean; status: number; ms: number; error?: string };
-type Task = { id: string; title: string; body: string; status: string };
+type Task = { id: string; title: string; body: string; status: string; thirdParty?: boolean; source?: string };
 type Note = { id: string; title: string; body: string; author: string; updatedAt: string };
 type LogRow = { id: string; at: string; method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number };
 type Tone = "ok" | "wait" | "bad" | "off";
 
+const MCP_SECTIES = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"] as const;
+type McpSectie = typeof MCP_SECTIES[number];
+
+const MCP_MODAAL_SELECTOR =
+  ".mcp-consent-backdrop, .venster-achter, .venster:not([hidden]), [data-mq-laag-open='1'], dialog[open], [role='dialog'][aria-modal='true']";
+
+const MCP_HELD_TEKSTEN: Record<McpSectie, {
+  boven: readonly [string, string];
+  voor: readonly [string, string];
+  cursief: readonly [string, string];
+  beschrijving: readonly [string, string];
+  primair: { tab: McpSectie; label: readonly [string, string] };
+  secundair: { tab: McpSectie; label: readonly [string, string] };
+}> = {
+  overview: {
+    boven: ["ІНЖЕНЕРНИЙ МІСТ · MCP.TARASEVYCH.COM", "TECHNISCHE BRUG · MCP.TARASEVYCH.COM"],
+    voor: ["Машинний договір", "Machinecontract"],
+    cursief: ["між агентами й маєтком.", "tussen agenten en domein."],
+    beschrijving: [
+      "Єдина захищена брама протоколу контексту для штучного інтелекту: окрема адреса для кожного помічника, чіткі межі повноважень, перевірка служб і повний облік звернень.",
+      "De centrale beveiligde protocolpoort voor kunstmatige intelligentie: een eigen adres per assistent, strikte bevoegdheidsgrenzen, dienstcontrole en volledige verantwoording.",
+    ],
+    primair: { tab: "agents", label: ["Осередок агентів", "Agentencentrum"] },
+    secundair: { tab: "dashboard", label: ["Пульт стану", "Overzichtspaneel"] },
+  },
+  dashboard: {
+    boven: ["ПУЛЬТ СТАНУ · MCP.TARASEVYCH.COM", "OVERZICHTSPANEEL · MCP.TARASEVYCH.COM"],
+    voor: ["Живий пульс", "Levende polsslag"],
+    cursief: ["інженерного мосту.", "van de technische brug."],
+    beschrijving: [
+      "Оперативний зріз стану всіх вузлів маєтку, доступності служб та готовності інструментів серверної брами в одному інженерному вікні.",
+      "Direct inzicht in de actuele staat van alle domeinknooppunten, de bereikbaarheid van diensten en de gereedheid van de serverpoort in één technisch overzicht.",
+    ],
+    primair: { tab: "services", label: ["Перевірити служби", "Diensten controleren"] },
+    secundair: { tab: "traffic", label: ["Журнал руху", "Verkeersjournaal"] },
+  },
+  services: {
+    boven: ["СЛУЖБИ МАЄТКУ · MCP.TARASEVYCH.COM", "DIENSTEN VAN HET DOMEIN · MCP.TARASEVYCH.COM"],
+    voor: ["Вузли та", "Knooppunten en"],
+    cursief: ["піддомени простору.", "subdomeinen van de ruimte."],
+    beschrijving: [
+      "Перевірка зв’язку наживо з усіма службами домашнього сервера, коди відповідей і розподіл призначення кожного піддомену за брамою особи.",
+      "Rechtstreekse verbindingscontrole van alle diensten op de thuisserver, antwoordcodes en de rolverdeling van elk subdomein achter de identiteitspoort.",
+    ],
+    primair: { tab: "tools", label: ["Каталог інструментів", "Hulpmiddelencatalogus"] },
+    secundair: { tab: "dashboard", label: ["До пульта стану", "Naar het overzichtspaneel"] },
+  },
+  tools: {
+    boven: ["ІНСТРУМЕНТИ БРАМИ · MCP.TARASEVYCH.COM", "POORTHULPMIDDELEN · MCP.TARASEVYCH.COM"],
+    voor: ["Дозволені дії", "Vrijgegeven handelingen"],
+    cursief: ["серверної брами.", "van de serverpoort."],
+    beschrijving: [
+      "Повний перелік відкритих можливостей для читання стану, спільної дошки, підготовки пакунків і захищеного обслуговування з поділом за рівнями прав.",
+      "Volledige lijst van beschikbare mogelijkheden voor statusinzage, het gedeelde werkbord, pakketvoorbereiding en beveiligd onderhoud per rechtenniveau.",
+    ],
+    primair: { tab: "playground", label: ["Випробувати у пісочниці", "Testen in de zandbak"] },
+    secundair: { tab: "agents", label: ["Керувати правами", "Rechten beheren"] },
+  },
+  board: {
+    boven: ["СПІЛЬНА ДОШКА · MCP.TARASEVYCH.COM", "GEDEELD WERKBORD · MCP.TARASEVYCH.COM"],
+    voor: ["Завдання та нотатки", "Taken en notities"],
+    cursief: ["людини й агентів.", "van mens en agenten."],
+    beschrijving: [
+      "Узгоджений робочий стіл між власником і підключеними помічниками: черга завдань, відокремлений огляд зовнішніх звернень та спільні робочі записи.",
+      "Afgestemde werktafel voor de eigenaar en gekoppelde assistenten: taakwachtrij, afzonderlijke beoordeling van externe meldingen en gedeelde werknotities.",
+    ],
+    primair: { tab: "agents", label: ["Координація агентів", "Coördinatie van agenten"] },
+    secundair: { tab: "traffic", label: ["Журнал звернень", "Verzoekenjournaal"] },
+  },
+  agents: {
+    boven: ["ОСЕРЕДОК ПІДКЛЮЧЕНЬ · MCP.TARASEVYCH.COM", "KOPPELCENTRUM · MCP.TARASEVYCH.COM"],
+    voor: ["Усі помічники та", "Alle assistenten en"],
+    cursief: ["межі повноважень.", "bevoegdheidsgrenzen."],
+    beschrijving: [
+      "Єдине місце приєднання зовнішніх агентів, пристроїв та оглядача: іменні адреси з’єднання, дозволи по кожному інструменту й черга багатоагентної координації.",
+      "De centrale plek voor het koppelen van externe assistenten, apparaten en browser: eigen verbindingsadressen, rechten per hulpmiddel en de integratiewachtrij.",
+    ],
+    primair: { tab: "apps", label: ["Застосунки на обладнанні", "Toepassingen op apparatuur"] },
+    secundair: { tab: "board", label: ["Спільна дошка", "Gedeeld werkbord"] },
+  },
+  apps: {
+    boven: ["ВЛАСНЕ ОБЛАДНАННЯ · MCP.TARASEVYCH.COM", "EIGEN APPARATUUR · MCP.TARASEVYCH.COM"],
+    voor: ["Ізольовані застосунки", "Geïsoleerde toepassingen"],
+    cursief: ["на вашому сервері.", "op uw eigen server."],
+    beschrijving: [
+      "Керування контейнерами без прав адміністратора на власних пристроях: перевірка стану, журнали, повернення до попередніх знімків і пряме передавання таємниць.",
+      "Beheer van containers zonder beheerdersrechten op uw eigen apparaten: statusbewaking, logboeken, terugzetten naar eerdere opnamen en directe geheimoverdracht.",
+    ],
+    primair: { tab: "agents", label: ["Пристрої та дозволи", "Apparaten en rechten"] },
+    secundair: { tab: "download", label: ["Архіви та випуски", "Archieven en uitgaven"] },
+  },
+  playground: {
+    boven: ["ВИПРОБУВАЛЬНА ПІСОЧНИЦЯ · MCP.TARASEVYCH.COM", "TESTZANDBAK · MCP.TARASEVYCH.COM"],
+    voor: ["Перевірка викликів", "Aanroepen beproeven"],
+    cursief: ["наживо через браму.", "rechtstreeks via de poort."],
+    beschrijving: [
+      "Інтерактивний стенд для ручного виклику інструментів мосту з власними параметрами, миттєвою перевіркою чинних дозволів та оглядом точної відповіді сервера.",
+      "Interactieve proefopstelling voor handmatige aanroepen van brughulpmiddelen met eigen parameters, directe rechtencontrole en weergave van het serverantwoord.",
+    ],
+    primair: { tab: "tools", label: ["Довідник інструментів", "Hulpmiddelengids"] },
+    secundair: { tab: "traffic", label: ["Переглянути рух", "Verkeer bekijken"] },
+  },
+  traffic: {
+    boven: ["ЖУРНАЛ РУХУ · MCP.TARASEVYCH.COM", "VERKEERSJOURNAAL · MCP.TARASEVYCH.COM"],
+    voor: ["Прозорий облік", "Inzichtelijke registratie"],
+    cursief: ["кожного звернення.", "van elke aanroep."],
+    beschrijving: [
+      "Хронологічний запис викликів до інженерного мосту із зазначенням помічника, способу передавання, тривалості виконання та підсумку обробки.",
+      "Chronologisch overzicht van alle aanroepen op de technische brug met vermelding van assistent, overdrachtswijze, uitvoeringsduur en resultaat.",
+    ],
+    primair: { tab: "playground", label: ["Відкрити пісочницю", "Zandbak openen"] },
+    secundair: { tab: "agents", label: ["Перевірити доступи", "Toegangen nakijken"] },
+  },
+  connect: {
+    boven: ["НАЛАШТУВАННЯ З’ЄДНАННЯ · MCP.TARASEVYCH.COM", "VERBINDINGSOPZET · MCP.TARASEVYCH.COM"],
+    voor: ["Іменні адреси", "Persoonlijke adressen"],
+    cursief: ["для кожного агента.", "voor elke agent."],
+    beschrijving: [
+      "Зразки підключення та індивідуальні точки входу другого покоління: кожен зовнішній помічник отримує власне захищене з’єднання з підтвердженням власника.",
+      "Koppelvoorbeelden en individuele toegangspunten van de tweede generatie: elke externe assistent krijgt een eigen beveiligde lijn met bevestiging door de eigenaar.",
+    ],
+    primair: { tab: "agents", label: ["Підключити помічника", "Assistent koppelen"] },
+    secundair: { tab: "tools", label: ["Оглянути інструменти", "Hulpmiddelen bekijken"] },
+  },
+  roadmap: {
+    boven: ["ДОРОЖНЯ КАРТА · MCP.TARASEVYCH.COM", "ROUTEKAART · MCP.TARASEVYCH.COM"],
+    voor: ["Послідовний розвиток", "Stapsgewijze uitbouw"],
+    cursief: ["архітектури мосту.", "van de brugarchitectuur."],
+    beschrijving: [
+      "Інженерні віхи становлення платформи: від першої захищеної брами й повної ізоляції просторів до багатоагентної координації та власного розміщення застосунків.",
+      "Technische mijlpalen van het platform: van de eerste beveiligde poort en volledige ruimte-isolatie tot multi-agentcoördinatie en toepassingen op eigen apparatuur.",
+    ],
+    primair: { tab: "overview", label: ["Огляд мосту", "Brugoverzicht"] },
+    secundair: { tab: "agents", label: ["Осередок агентів", "Agentencentrum"] },
+  },
+  download: {
+    boven: ["АРХІВИ ТА ВИПУСКИ · MCP.TARASEVYCH.COM", "ARCHIEVEN EN UITGAVEN · MCP.TARASEVYCH.COM"],
+    voor: ["Повні зліпки та", "Volledige archieven en"],
+    cursief: ["керування сервером.", "serverbeheer."],
+    beschrijving: [
+      "Зашифроване формування повного архіву відновлення, доступ до нічних запасних копій і захищене керування випусками сервера за підписом власника.",
+      "Versleutelde opbouw van een volledig herstelarchief, toegang tot nachtelijke reservekopieën en beveiligd uitgavebeheer met bevestiging van de eigenaar.",
+    ],
+    primair: { tab: "services", label: ["Стан служб", "Stand van diensten"] },
+    secundair: { tab: "apps", label: ["Застосунки сервера", "Servertoepassingen"] },
+  },
+  verbindingen: {
+    boven: ["ТЕХНІЧНІ З’ЄДНАННЯ · MCP.TARASEVYCH.COM", "TECHNISCHE KOPPELINGEN · MCP.TARASEVYCH.COM"],
+    voor: ["Перехід до єдиного", "Doorgang naar het"],
+    cursief: ["осередку агентів.", "centrale koppelpunt."],
+    beschrijving: [
+      "Усі технічні та особисті з’єднання зібрано в єдиному осередку керування помічниками із збереженням відкритих запитів на підтвердження доступу.",
+      "Alle technische en persoonlijke verbindingen zijn samengebracht in het centrale agentencentrum met behoud van openstaande toestemmingsverzoeken.",
+    ],
+    primair: { tab: "agents", label: ["Відкрити осередок агентів", "Agentencentrum openen"] },
+    secundair: { tab: "overview", label: ["Огляд мосту", "Brugoverzicht"] },
+  },
+};
+
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
 /** MCP-02: kolomnamen en knoppen «→ …» van het bord in gewone taal (uk/nl), niet de rauwe sleutels aan elkaar. */
+/**
+ * SEC-002 (integraties-08, g10f): kaarten uit GitHub van een derde. Status «inkomend» (migratie 0243, server: afwerking A) = nog niet
+ * door de mens bekeken: eigen kolom vóór de wachtrij. Er naartoe verplaatsen kan niet (alleen de server zet hem); eruit wel.
+ */
+const INKOMEND = "inkomend" as const;
+const KOLOMMEN = [INKOMEND, ...statuses] as const;
+const INKOMEND_TEKST: [string, string] = ["Вхідні (з GitHub)", "Binnenkomend (uit GitHub)"];
 const STATUS_TEKST: Record<typeof statuses[number], [string, string]> = { backlog: ["Черга", "Wachtrij"], doing: ["У роботі", "Bezig"], blocked: ["Заблоковано", "Geblokkeerd"], done: ["Готово", "Klaar"] };
 function initialTool() {
   if (typeof window === "undefined") return DOOR_TOOLS[0].name;
@@ -77,9 +248,9 @@ function PageHead({ icon, title, lead, actions, kicker }: { icon: ReactNode; tit
   );
 }
 /** Blok met eigen kop (icoon, titel, uitleg, acties) en de inhoud eronder. */
-function Block({ icon, title, hint, actions, tone, children }: { icon?: ReactNode; title: string; hint?: string; actions?: ReactNode; tone?: "ok" | "warn" | "bad"; children: ReactNode }) {
+function Block({ id, icon, title, hint, actions, tone, children }: { id?: string; icon?: ReactNode; title: string; hint?: string; actions?: ReactNode; tone?: "ok" | "warn" | "bad"; children: ReactNode }) {
   return (
-    <section className={`mcp-block${tone ? ` tone-${tone}` : ""}`}>
+    <section id={id} className={`mcp-block${tone ? ` tone-${tone}` : ""}`}>
       <header className="mcp-block-head">
         {icon ? <span className="mcp-block-icon" aria-hidden="true">{icon}</span> : null}
         <div className="mcp-block-title">
@@ -180,7 +351,7 @@ export function ingangAdres(basis: string, hash: string, search: string): string
 
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
-  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"].includes(tab) ? tab : "overview";
+  const section: McpSectie = (MCP_SECTIES as readonly string[]).includes(tab) ? (tab as McpSectie) : "overview";
   const tech = useTech();
   const consent = typeof location !== "undefined" && new URLSearchParams(location.search).has("consent");
   // Hub «Підключення ШІ» (19.10.2026): mcp.*/agents is voor iedereen de ene plek (ook #extension, ?extension=welcome); de extensie
@@ -265,7 +436,8 @@ export default function McpServiceView({ lang, tab }: Props) {
     setProbes(res.data.probes || []);
   }
   async function copyText(id: string, value: string) {
-    await navigator.clipboard.writeText(value);
+    // IDENTITEIT-013: відмову браузера показуємо, а не ковтаємо мовчки.
+    if (!(await kopieerTekst(value))) { setCopied(`fout:${id}`); window.setTimeout(() => setCopied(""), 2500); return; }
     setCopied(id);
     window.setTimeout(() => setCopied(""), 1500);
   }
@@ -351,6 +523,238 @@ export default function McpServiceView({ lang, tab }: Props) {
     return () => { window.clearInterval(id); window.clearInterval(poll); };
   }, [archive.state]);
 
+  const isMaquette = useIsMaquette();
+  const [laagOpen, setLaagOpen] = useState(false);
+
+  const [actiefBlok, setActiefBlok] = useState("mcp-boven");
+  const agentAnkers = useAgentAnkers();
+  // Op /agents volgt het menu het onderdeel in beeld (de pagina publiceert het); elders het laatst gekozen anker.
+  const railActief = section === "agents" && agentAnkers.actief ? `ag-tab-${agentAnkers.actief}` : actiefBlok;
+
+  useEffect(() => {
+    setActiefBlok(section === "agents" ? "ag-tab-overzicht" : "mcp-boven");
+  }, [section]);
+
+  const gaNaarMcpTab = useCallback(
+    (doelTab: string) => {
+      location.assign(canonicalNavigationUrl("mcp", doelTab, lang === "nl" ? "nl" : "uk"));
+    },
+    [lang],
+  );
+
+  const springNaarMcpBlok = (ankerId: string) => {
+    setActiefBlok(ankerId);
+    if (ankerId === "actie:probe") {
+      void run("probe", loadProbes);
+      return;
+    }
+    if (ankerId === "actie:traffic") {
+      void run("traffic", loadTraffic);
+      return;
+    }
+    if (ankerId === "actie:archive") {
+      void run("archive", downloadArchive);
+      return;
+    }
+    if (ankerId === "actie:apps-verversen") {
+      const knop = document.querySelector<HTMLButtonElement>("[data-apps-verversen]");
+      if (knop) knop.click();
+      return;
+    }
+    if (ankerId === "actie:board") {
+      gaNaarMcpTab("board");
+      return;
+    }
+    if (ankerId.startsWith("tab:")) {
+      gaNaarMcpTab(ankerId.slice(4));
+      return;
+    }
+    if (typeof document === "undefined") return;
+    if (ankerId.startsWith("ag-tab-")) {
+      if (agentAnkers.ga) {
+        agentAnkers.ga(ankerId.slice("ag-tab-".length));
+        return;
+      }
+      const knop = document.getElementById(ankerId);
+      if (knop) {
+        knop.click();
+        return;
+      }
+      const sectieEl = document.getElementById(`ag-sectie-${ankerId.slice("ag-tab-".length)}`);
+      if (sectieEl) {
+        sectieEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+    const doel = document.getElementById(ankerId);
+    if (doel) {
+      doel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  useEffect(() => {
+    if (!isMaquette || typeof document === "undefined") {
+      setLaagOpen(false);
+      return;
+    }
+    return abonneerOpenLaag(MCP_MODAAL_SELECTOR, setLaagOpen, {
+      wortel: "documentElement",
+      attributeFilter: ["open", "hidden", "class", "aria-modal", "data-mq-laag-open"],
+    });
+  }, [isMaquette, section]);
+
+  const bevestigd = probes.filter((p) => p.ok).length;
+  const techAan = techActief(tech);
+
+  const statistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(
+    () => [
+      { waarde: ESTATE.length, label: lang === "uk" ? "Служб маєтку" : "Domeindiensten" },
+      { waarde: V2_AGENTEN.length, label: lang === "uk" ? "Агентних мостів" : "Agentbruggen" },
+      { waarde: DOOR_TOOLS.length, label: lang === "uk" ? "Інструментів брами" : "Poorthulpmiddelen" },
+      {
+        waarde: probes.length
+          ? `${bevestigd}/${probes.length}`
+          : techAan
+            ? (lang === "uk" ? "Увімкнено" : "Actief")
+            : (lang === "uk" ? "Звичайний" : "Standaard"),
+        label: probes.length
+          ? (lang === "uk" ? "Вузлів на зв’язку" : "Bereikbare knopen")
+          : (lang === "uk" ? "Технічний профіль" : "Technisch profiel"),
+      },
+    ],
+    [bevestigd, lang, probes.length, techAan],
+  );
+
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    const tr = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
+    const bovenItem: MaquetteAnkerItem = { id: "mcp-boven", label: tr("На початок", "Naar boven"), icoon: <ArrowUp /> };
+
+    const inhoudKinderen: MaquetteAnkerItem[] = (() => {
+      switch (section) {
+        case "overview":
+          return [
+            bovenItem,
+            { id: "mcp-blok-stat", label: tr("Зведення мосту", "Kerngetallen"), icoon: <LayoutDashboard /> },
+            { id: "mcp-blok-lagen", label: tr("Шар мосту", "Laag van de brug"), icoon: <Layers /> },
+            { id: "mcp-blok-poort", label: tr("Брама ідентичності", "Identiteitspoort"), icoon: <ShieldCheck /> },
+            { id: "mcp-blok-adres", label: tr("Публічна адреса", "Publiek adres"), icoon: <Link2 /> },
+            { id: "mcp-blok-hosts", label: tr("Хости маєтку", "Hosts van het domein"), icoon: <Server />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "dashboard":
+          return [
+            bovenItem,
+            { id: "mcp-blok-serverbeheer", label: tr("Керування сервером", "Serverbeheer"), icoon: <Server /> },
+            { id: "mcp-blok-schakelaars", label: tr("Двері та перемикачі", "Deur en schakelaars"), icoon: <ShieldCheck /> },
+            { id: "mcp-blok-hosts", label: tr("Здоров’я сервісів", "Gezondheid diensten"), icoon: <Globe />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "services":
+          return [
+            bovenItem,
+            { id: "mcp-blok-hosts", label: tr("Усі хости маєтку", "Alle hosts"), icoon: <Globe />, badge: probes.length ? `${bevestigd}/${probes.length}` : ESTATE.length },
+          ];
+        case "tools":
+          return [
+            bovenItem,
+            { id: "mcp-blok-door-tools", label: tr("На дверях", "Op de deur"), icoon: <Terminal />, badge: DOOR_TOOLS.length },
+            { id: "mcp-blok-extra-tools", label: tr("Ще не на дверях", "Nog niet op de deur"), icoon: <Plus /> },
+          ];
+        case "board":
+          return [
+            bovenItem,
+            { id: "mcp-blok-nieuw", label: tr("Нова задача / нотатка", "Nieuwe taak / notitie"), icoon: <Plus /> },
+            { id: "mcp-blok-bord", label: tr("Колонки дошки", "Kolommen van het bord"), icoon: <ListChecks />, badge: tasks.length || undefined },
+            { id: "mcp-blok-notities", label: tr("Нотатки", "Notities"), icoon: <StickyNote />, badge: notes.length || undefined },
+          ];
+        case "agents":
+          // ANKERS-002: dezelfde onderdelen, namen, iconen en tellers als de pagina zelf (agenten/anker-bron.ts), ook op de pagina van één AI.
+          return [
+            bovenItem,
+            ...agentAnkers.onderdelen.map((o) => ({ id: `ag-tab-${o.tab}`, label: tr(o.uk, o.nl), icoon: o.icoon, badge: o.teller || undefined })),
+          ];
+        case "apps":
+          return [
+            bovenItem,
+            { id: "mapps-open", label: tr("Запити на секрети", "Verzoeken om geheimen"), icoon: <ShieldCheck /> },
+            { id: "mapps-apps", label: tr("Розгорнуті додатки", "Uitgerolde apps"), icoon: <Boxes /> },
+            { id: "mapps-aanzetten", label: tr("Інші пристрої", "Andere apparaten"), icoon: <Server /> },
+          ];
+        case "playground":
+          return [
+            bovenItem,
+            { id: "mcp-blok-kiezen", label: tr("Оберіть інструмент", "Hulpmiddel kiezen"), icoon: <Terminal />, badge: DOOR_TOOLS.length },
+            { id: "mcp-blok-aanroep", label: tr("Параметри та виклик", "Argumenten en aanroep"), icoon: <Play /> },
+          ];
+        case "traffic":
+          return [
+            bovenItem,
+            { id: "mcp-blok-verzoeken", label: tr("Журнал запитів", "Verzoeken"), icoon: <Activity />, badge: rows.length || undefined },
+          ];
+        case "connect":
+          return [
+            bovenItem,
+            { id: "mcp-blok-adressen", label: tr("Іменні адреси ШІ", "Adressen per AI"), icoon: <Plug />, badge: V2_AGENTEN.length },
+            { id: "mcp-blok-oud", label: tr("Стара спільна адреса", "Oude gedeelde adres"), icoon: <History /> },
+            { id: "mcp-blok-json", label: tr("Приклад MCP-client", "Voorbeeld MCP-client"), icoon: <Copy /> },
+          ];
+        case "roadmap":
+          return [
+            bovenItem,
+            { id: "mcp-blok-al", label: tr("Уже є", "Er is al"), icoon: <Check /> },
+            { id: "mcp-blok-nodig", label: tr("Наступні кроки", "Volgende stappen"), icoon: <Compass /> },
+            { id: "mcp-blok-niet", label: tr("Обмеження безпеки", "Niet doen"), icoon: <ShieldCheck /> },
+          ];
+        case "download":
+          return [
+            bovenItem,
+            { id: "mcp-blok-archief", label: tr("Повний архів", "Volledig archief"), icoon: <Archive /> },
+            { id: "mcp-blok-backups", label: tr("Нічні копії", "Nachtelijke kopieën"), icoon: <FileArchive /> },
+            { id: "mcp-blok-serverbeheer", label: tr("Керування сервером", "Serverbeheer"), icoon: <Server /> },
+            { id: "mcp-blok-geschiedenis", label: tr("Історія зборів", "Geschiedenis"), icoon: <History />, badge: archive.history.length || undefined },
+          ];
+        default:
+          return [bovenItem];
+      }
+    })();
+
+    const actiesKinderen: MaquetteAnkerItem[] = [];
+    if (section === "overview" || section === "dashboard" || section === "services") {
+      actiesKinderen.push({ id: "actie:probe", label: tr("Перевірити хости", "Hosts controleren"), icoon: <RefreshCw /> });
+    }
+    if (section === "traffic") {
+      actiesKinderen.push({ id: "actie:traffic", label: tr("Оновити журнал", "Verversen"), icoon: <RefreshCw /> });
+    }
+    if (section === "apps") {
+      actiesKinderen.push({ id: "actie:apps-verversen", label: tr("Оновити додатки", "Apps vernieuwen"), icoon: <RefreshCw /> });
+    }
+    if (section === "download") {
+      actiesKinderen.push({ id: "actie:archive", label: tr("Зібрати повний архів", "Volledig archief maken"), icoon: <Archive /> });
+    }
+    if (section !== "agents") {
+      actiesKinderen.push({ id: "tab:agents", label: tr("Осередок агентів", "Agentencentrum"), icoon: <Plug /> });
+    }
+    if (section !== "playground") {
+      actiesKinderen.push({ id: "tab:playground", label: tr("Пісочниця викликів", "Testzandbak"), icoon: <Terminal /> });
+    }
+    if (section !== "board") {
+      actiesKinderen.push({ id: "actie:board", label: tr("Спільна дошка", "Gedeeld werkbord"), icoon: <ListChecks /> });
+    }
+
+    return [
+      {
+        id: "mcp-groep-inhoud",
+        label: tr("Розділи сторінки", "Op deze pagina"),
+        icoon: <Layers />,
+        kinderen: inhoudKinderen,
+      },
+      {
+        id: "mcp-groep-acties",
+        label: tr("Швидкі дії", "Snelle acties"),
+        icoon: <Settings2 />,
+        kinderen: actiesKinderen,
+      },
+    ];
+  }, [agentAnkers.onderdelen, archive.history.length, bevestigd, lang, notes.length, probes.length, rows.length, section, tasks.length]);
+
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
   const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
@@ -383,14 +787,43 @@ export default function McpServiceView({ lang, tab }: Props) {
       })}
     </ul>
   );
-  const bevestigd = probes.filter((p) => p.ok).length;
+  const held = MCP_HELD_TEKSTEN[section];
 
   return (
-    <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
+    <div
+      id="mcp-boven"
+      className={isMaquette ? "mcp-estate mq-schil mcp-maquette-wikkel" : "mcp-estate"}
+      data-mcp-tab={section}
+      data-weergave-modus={weergave.modus ?? "onbekend"}
+      data-mq-dienst={isMaquette ? "mcp" : undefined}
+    >
       {/* De ruimte van het toestemmingsvenster komt NIET van de pagina maar van de levende staat van het technisch profiel
           (src/McpToestemmingVenster.tsx). Een pagina-afhankelijke ruimte liet het venster rondlopen zodra «Технічні підключення»
           een tab van de hub werd in plaats van een eigen adres. */}
       <McpConsentModal tr={t} />
+      {isMaquette && !verborgen ? (
+        <MaquetteHeld
+          key={`mcp-held-${section}`}
+          id="mcp-maquette-held"
+          dienst="mcp"
+          lang={lang}
+          modus={section === "overview" || section === "roadmap" || section === "connect" ? "volledig" : "compact"}
+          opslagSleutel={`mcp-${section}`}
+          bovenregel={t(held.boven[0], held.boven[1])}
+          titelVoor={t(held.voor[0], held.voor[1])}
+          titelCursief={t(held.cursief[0], held.cursief[1])}
+          beschrijving={t(held.beschrijving[0], held.beschrijving[1])}
+          statistieken={statistieken}
+          primair={{
+            label: t(held.primair.label[0], held.primair.label[1]),
+            onClick: () => gaNaarMcpTab(held.primair.tab),
+          }}
+          secundair={{
+            label: t(held.secundair.label[0], held.secundair.label[1]),
+            onClick: () => gaNaarMcpTab(held.secundair.tab),
+          }}
+        />
+      ) : null}
       {section === "overview" || verborgen ? <RichtingBand richting="mcp" uk={lang === "uk"} metModus /> : null}
       {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-error" role="alert">{error}</p> : null}
@@ -404,12 +837,12 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Будь-який агент заходить сюди. Не в браузер.", "Elke agent komt hier binnen. Niet via de browser.")}
             lead={t("Маєток tarasevych.com уже живий на домашньому вузлі, але за брамою ідентичності. ШІ не може увійти як людина. Цей MCP-міст — машинний контракт: інструменти, ресурси, спільна дошка.", "Het domein leeft al op de thuisknoop, achter de identiteitspoort. Een agent kan niet als mens inloggen. Deze brug is het machinecontract.")}
           />
-          <div className="mcp-stats">
+          <div id="mcp-blok-stat" className="mcp-stats">
             <Stat value="11" label={t("хостів маєтку", "hosts van het domein")} />
             <Stat value={DOOR_TOOLS.length} label={t("інструментів дверей", "hulpmiddelen van de deur")} />
             <Stat value="HTTP" label={t("JSON-RPC, без SSE", "JSON-RPC, geen SSE")} />
           </div>
-          <Block icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається brug, van binnen naar buiten.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
+          <Block id="mcp-blok-lagen" icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається brug, van binnen naar buiten.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
             <ul className="mcp-list">
               {LAYERS.map(([name, uk, nl]) => (
                 <li key={name} className="mcp-item">
@@ -419,14 +852,15 @@ export default function McpServiceView({ lang, tab }: Props) {
               ))}
             </ul>
           </Block>
-          <Block icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
+          <Block id="mcp-blok-poort" icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
             <p>{t("Кожен публічний хост відповідає, але id тримає браму. Браузерний логін — для людей. Агенту потрібен контракт: JSON-RPC, скоупи, аудит.", "Elke host antwoordt, maar id houdt de poort. Browserlogin is voor mensen. Een agent heeft een contract nodig.")}</p>
           </Block>
-          <Block icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
+          <Block id="mcp-blok-adres" icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
             <p className="mcp-url">{MCP_BASIS}</p>
             <p>{t(`Адреса конектора — у кожного ШІ своя: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`, `Het connectoradres is per AI: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`)}</p>
           </Block>
           <Block
+            id="mcp-blok-hosts"
             icon={<Server />}
             title={t("Хости маєтку", "Hosts van het domein")}
             hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : t("Ще не перевірено. Натисніть кнопку, щоб перевірити хости.", "Nog niet gecontroleerd. Druk op de knop om de hosts te testen.")}
@@ -444,9 +878,10 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Панель розгортання", "Deploy-dashboard")}
             lead={t("Стан сервера, історія випусків і відкат однією кнопкою. Дії, що щось змінюють, вимагають підтвердження passkey. Сервер встановлює лише випуски, підписані вашим ключем.", "Serverstatus, releasegeschiedenis en terugdraaien met één knop. Acties die iets wijzigen vragen een passkey-bevestiging. De server installeert alleen releases die met uw sleutel zijn ondertekend.")}
           />
-          <McpServerBeheerCard tr={t} />
-          <DeurSchakelaars tr={t} />
+          <div id="mcp-blok-serverbeheer"><McpServerBeheerCard tr={t} /></div>
+          <div id="mcp-blok-schakelaars"><DeurSchakelaars tr={t} /></div>
           <Block
+            id="mcp-blok-hosts"
             icon={<ShieldCheck />}
             title={t("Здоров’я сервісів", "Gezondheid van de diensten")}
             hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : t("Nog niet gecontroleerd.", "Nog niet gecontroleerd.")}
@@ -465,7 +900,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Статус береться з живої перевірки, не з зашитого значка. Посилання відкриває хост.", "De status komt uit een echte controle, niet uit een vaste badge. De link opent de host.")}
             actions={<button type="button" className="mcp-btn small" disabled={Boolean(busy)} onClick={() => void run("probe", loadProbes)}>{t("Перевірити хости", "Hosts controleren")}</button>}
           />
-          <Block icon={<Globe />} title={t("Усі хости", "Alle hosts")} hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : undefined}>
+          <Block id="mcp-blok-hosts" icon={<Globe />} title={t("Усі хости", "Alle hosts")} hint={probes.length ? `${bevestigd}/${probes.length} ${t("доступно", "bereikbaar")}` : undefined}>
             {hostRijen(() => ({ tone: "off", label: t("ще не перевірено", "nog niet gecontroleerd") }), true)}
           </Block>
         </>
@@ -478,7 +913,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Інструменти", "Hulpmiddelen")}
             lead={t("Тут лише те, що двері справді виконують. «Викликати» відкриває пісочницю саме з цим інструментом.", "Alleen wat de deur echt uitvoert. Aanroepen opent de zandbak met dat hulpmiddel.")}
           />
-          <Block icon={<Terminal />} title={t("На дверях", "Op de deur")} hint={t(`Зараз доступно інструментів: ${DOOR_TOOLS.length}.`, `${DOOR_TOOLS.length} hulpmiddelen zijn nu beschikbaar.`)}>
+          <Block id="mcp-blok-door-tools" icon={<Terminal />} title={t("На дверях", "Op de deur")} hint={t(`Зараз доступно інструментів: ${DOOR_TOOLS.length}.`, `${DOOR_TOOLS.length} hulpmiddelen zijn nu beschikbaar.`)}>
             <ul className="mcp-list">
               {DOOR_TOOLS.map((item) => (
                 <li key={item.name} className="mcp-item">
@@ -489,7 +924,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               ))}
             </ul>
           </Block>
-          <Block icon={<Plus />} title={t("Ще не на дверях", "Nog niet op de deur")} hint={t("Ці інструменти ще не на дверях, тож викликати їх тут не можна.", "Deze hulpmiddelen staan nog niet op de deur en kunnen hier dus niet worden aangeroepen.")}>
+          <Block id="mcp-blok-extra-tools" icon={<Plus />} title={t("Ще не на дверях", "Nog niet op de deur")} hint={t("Ці інструменти ще не на дверях, тож викликати їх тут не можна.", "Deze hulpmiddelen staan nog niet op de deur en kunnen hier dus niet worden aangeroepen.")}>
             <p className="mcp-code">{TOOL_HELP.filter(([name]) => !DOOR_TOOLS.some((item) => item.name === name)).map(([name]) => name).join(", ")}</p>
           </Block>
         </>
@@ -504,7 +939,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           />
           <RuimteStrook feiten={ruimte} lang={lang} />
           {bordDicht ? <RuimteGeslotenVlak gesloten={bordDicht} lang={lang} /> : null}
-          <Block icon={<Plus />} title={t("Нова задача або нотатка", "Nieuwe taak of notitie")} hint={t("Спершу оберіть тип, введіть назву і збережіть.", "Kies eerst wat het wordt, vul de naam in en sla op.")}>
+          <Block id="mcp-blok-nieuw" icon={<Plus />} title={t("Нова задача або нотатка", "Nieuwe taak of notitie")} hint={t("Спершу оберіть тип, введіть назву і збережіть.", "Kies eerst wat het wordt, vul de naam in en sla op.")}>
             <form className="mcp-compose" onSubmit={(event) => { event.preventDefault(); if (permsReady && !flags.board) return; void run("save", async () => { await api.post("/api/mcp/board", { ...ctx(), kind, title, body }); setTitle(""); setBody(""); await loadBoard(); }); }}>
               <div className="mcp-compose-row">
                 <div className="mcp-choice" role="group" aria-label={t("Soort", "Soort")}>
@@ -519,19 +954,21 @@ export default function McpServiceView({ lang, tab }: Props) {
               </div>
             </form>
           </Block>
-          <section className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
-            {statuses.map((status) => {
+          <section id="mcp-blok-bord" className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
+            {KOLOMMEN.map((status) => {
               const items = tasks.filter((task) => task.status === status);
+              if (status === INKOMEND && items.length === 0) return null; // geen lege kolom zolang er niets binnenkwam
               return (
                 <section key={status} className="mcp-col" data-board-kolom={status}>
                   <div className="mcp-col-head">
-                    <h2>{t(...STATUS_TEKST[status])}</h2>
+                    <h2>{t(...(status === INKOMEND ? INKOMEND_TEKST : STATUS_TEKST[status]))}</h2>
                     <span className="mcp-col-count">{items.length}</span>
                   </div>
                   {items.length === 0 ? <p className="mcp-meta">{t("У цій колонці немає задач.", "Geen taken in deze kolom.")}</p> : null}
                   {items.map((task) => (
                     <div key={task.id} className="mcp-task" data-board-item={task.id} data-zoek-doel={`bord:${task.id}`}>
                       <p>{task.title}</p>
+                      {task.thirdParty ? <small className="mcp-meta" data-board-derden="1">{t("Із GitHub від стороннього автора: це не ваше доручення. ШІ бачить текст як чужий; перегляньте, перш ніж брати в роботу.", "Uit GitHub van een derde: dit is geen opdracht van u. De AI ziet de tekst als vreemd; bekijk hem voordat u ermee aan de slag gaat.")}{task.source ? ` (${task.source})` : ""}</small> : null}
                       <div className="mcp-moves" role="group" aria-label={t("Перемістити до", "Verplaatsen naar")}>
                         {statuses.filter((next) => next !== status).map((next) => (
                           <button key={next} type="button" className="mcp-move" disabled={permsReady && !flags.board} onClick={() => void run("move", async () => { await api.post("/api/mcp/board", { ...ctx(), kind: "move", id: task.id, status: next }); await loadBoard(); })}>→ {t(...STATUS_TEKST[next])}</button>
@@ -543,7 +980,7 @@ export default function McpServiceView({ lang, tab }: Props) {
               );
             })}
           </section>
-          <Block icon={<StickyNote />} title={t("Нотатки", "Notities")} hint={t("Вільний текст, що належить до дошки.", "Vrije tekst die bij het bord hoort.")}>
+          <Block id="mcp-blok-notities" icon={<StickyNote />} title={t("Нотатки", "Notities")} hint={t("Вільний текст, що належить до дошки.", "Vrije tekst die bij het bord hoort.")}>
             {notes.length === 0
               ? <Empty icon={<StickyNote />}>{t("Ще немає нотаток. Оберіть «Нотатка», напишіть щось і збережіть.", "Nog geen notities. Kies hierboven «Notitie», schrijf iets op en sla op.")}</Empty>
               : <ul className="mcp-list">{notes.map((note) => (
@@ -573,7 +1010,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Список збігається з дверима. Аргументи підставляються самі. Вимкнений перемикач дає відмову, а не порожню кнопку.", "De lijst is dezelfde als op de deur. Argumenten worden ingevuld. Een uitgeschakelde schakelaar weigert, in plaats van een lege knop.")}
           />
           <div className="mcp-play">
-            <Block icon={<Terminal />} title={t("Оберіть інструмент", "Hulpmiddel kiezen")}>
+            <Block id="mcp-blok-kiezen" icon={<Terminal />} title={t("Оберіть інструмент", "Hulpmiddel kiezen")}>
               <div className="mcp-toolnav">
                 {DOOR_TOOLS.map((item) => (
                   <button key={item.name} type="button" className={item.name === tool ? "on" : ""} aria-pressed={item.name === tool} onClick={() => chooseTool(item.name)}>
@@ -583,7 +1020,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                 ))}
               </div>
             </Block>
-            <Block icon={<Activity />} title={tool} hint={t("Змініть аргументи як JSON і викличте інструмент.", "Pas de argumenten aan als JSON en roep het hulpmiddel aan.")}>
+            <Block id="mcp-blok-aanroep" icon={<Activity />} title={tool} hint={t("Змініть аргументи як JSON і викличте інструмент.", "Pas de argumenten aan als JSON en roep het hulpmiddel aan.")}>
               <form className="mcp-compose" onSubmit={(event) => { event.preventDefault(); void run(tool, async () => { const gate = toolGate(tool); if (permsReady && !flags[gate]) throw new Error(`PERMISSION_OFF:${gate}`); const parsed = args.trim() ? JSON.parse(args) : {}; const res = await api.post("/api/mcp/call", { ...ctx(), name: tool, arguments: parsed }); setOut(JSON.stringify(res.data, null, 2)); }); }}>
                 <textarea className="mcp-input" value={args} onChange={(event) => setArgs(event.target.value)} aria-label={t("Argumenten (JSON)", "Argumenten (JSON)")} />
                 <div className="mcp-compose-row">
@@ -604,7 +1041,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Кожен запит до мосту з результатом і часом, який він зайняв.","Elk verzoek dat de brug heeft gekregen, met het resultaat en de tijd die het kostte.")}
             actions={<button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("traffic", loadTraffic)}>{t("Оновити", "Verversen")}</button>}
           />
-          <Block icon={<Activity />} title={t("Запити", "Verzoeken")} hint={rows.length ? `${rows.length} ${t("рядків", "regels")}` : undefined}>
+          <Block id="mcp-blok-verzoeken" icon={<Activity />} title={t("Запити", "Verzoeken")} hint={rows.length ? `${rows.length} ${t("рядків", "regels")}` : undefined}>
             {rows.length === 0
               ? <Empty icon={<Activity />}>{t("Ще немає запитів у цьому журналі. Щойно агент скористається мостом, вони з’являться тут.","Nog geen verzoeken in dit logboek. Zodra een agent de brug gebruikt, verschijnen ze hier.")}</Empty>
               : <ul className="mcp-list">{rows.map((row) => (
@@ -625,31 +1062,34 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Підключити", "Verbinden")}
             lead={t("Кожен ШІ має власну адресу конектора (напр. /claude, /grok). Клієнт входить на неї через OAuth — токен моста не потрібен. Повне підключення (кнопка в один клік, кроки для саме цього клієнта, стан) — на сторінці того ШІ в хабі «Підключення ШІ».", "Elke AI heeft zijn eigen connectoradres (bv. /claude, /grok). De client komt daar via OAuth binnen — een brugtoken is niet nodig. Het volledige koppelen (knop in één klik, stappen voor juist die client, stand) staat op de plek van die AI in de hub «AI-koppelingen».")}
           />
-          {V2_AGENTEN.map((a) => (
-            <div key={a.slug} data-agent-adres={a.slug}>
-              <Block
-                icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
-                title={a.naam}
-                actions={<>
-                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : t("Копіювати адресу", "Adres kopiëren")}</button>
-                  <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
-                </>}
-              >
-                <p className="mcp-url">{agentUrl(a.slug)}</p>
-              </Block>
-            </div>
-          ))}
-          <div data-oud-adres="1">
+          <div id="mcp-blok-adressen">
+            {V2_AGENTEN.map((a) => (
+              <div key={a.slug} data-agent-adres={a.slug}>
+                <Block
+                  icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
+                  title={a.naam}
+                  actions={<>
+                    <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : copied === `fout:url-${a.slug}` ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати адресу", "Adres kopiëren")}</button>
+                    <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
+                  </>}
+                >
+                  <p className="mcp-url">{agentUrl(a.slug)}</p>
+                </Block>
+              </div>
+            ))}
+          </div>
+          <div id="mcp-blok-oud" data-oud-adres="1">
             <Block icon={<History />} title={t("Стара спільна адреса", "Het oude gedeelde adres")}>
               <p className="mcp-url">{OUD_GEDEELD_URL}</p>
               <p className="mcp-meta">{t("Вона ще відповідає для вже підключених клієнтів і перенаправляє (308) на адресу агента. Для нового підключення беріть адресу свого ШІ вище.", "Dit adres antwoordt nog voor al gekoppelde clients en leidt door (308) naar het adres van de agent. Gebruik voor een nieuwe koppeling het adres van uw AI hierboven.")}</p>
             </Block>
           </div>
           <Block
+            id="mcp-blok-json"
             icon={<Copy />}
             title={t("MCP-client", "MCP-client")}
             hint={t("Приклад налаштування для MCP-клієнта.", "Voorbeeld van de configuratie voor een MCP-client.")}
-            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : copied === "fout:json" ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
           >
             <pre className="mcp-out">{connectSample}</pre>
           </Block>
@@ -663,13 +1103,13 @@ export default function McpServiceView({ lang, tab }: Props) {
             title={t("Що далі", "Wat hierna")}
             lead={t("Проєкт живий. Цей міст — шар, через який агент працює з маєтком, а не через браузер людини.", "Het project leeft. Deze brug is de laag waarmee een agent het domein bedient.")}
           />
-          <Block icon={<Check />} tone="ok" title={t("Уже є", "Er is al")}>
+          <Block id="mcp-blok-al" icon={<Check />} tone="ok" title={t("Уже є", "Er is al")}>
             <p>{t("Каталог хостів, дошка, токени, журнал, пісочниця, двері /Grok.", "Catalogus, bord, tokens, logboek, zandbak, deur /Grok.")}</p>
           </Block>
-          <Block icon={<Compass />} title={t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}>
+          <Block id="mcp-blok-nodig" icon={<Compass />} title={t("Щоб агент дістався живого маєтку", "Om het levende domein te bereiken")}>
             <p>{t("Ідентичності з id, гранти з admin, JSON на api, аудит на dashboard. Без пароля людини.", "Identiteiten uit id, toekenningen uit admin, JSON op api, audit op het dashboard. Zonder wachtwoord van een mens.")}</p>
           </Block>
-          <Block icon={<X />} tone="bad" title={t("Чого не треба", "Niet doen")}>
+          <Block id="mcp-blok-niet" icon={<X />} tone="bad" title={t("Чого не треба", "Niet doen")}>
             <p>{t("Не давати агенту логін хаба чи пошти. Не парсити HTML за брамою. Не один пароль на всі моделі.", "Geen login van hub of post aan een agent. Geen HTML achter de poort. Geen enkel wachtwoord voor alle modellen.")}</p>
           </Block>
         </>
@@ -683,6 +1123,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             lead={t("Один зашифрований файл з усім, на чому працює сайт, щоб відновити його на новій машині.","Eén versleuteld bestand met alles waarop de site draait, om hem op een nieuwe machine terug te zetten.")}
           />
           <Block
+            id="mcp-blok-archief"
             icon={<Archive />}
             title={archive.state === "ready" ? t("Архів готовий", "Archief klaar") : archive.state === "failed" ? t("Збір зупинився", "Maken gestopt") : archive.state === "building" ? t("Збираю повний архів", "Volledig archief maken") : t("Ще не запускали", "Nog niet gestart")}
             hint={archive.state === "building" && archive.started ? `${t("Минуло", "Verstreken")} ${clock(Date.now() - new Date(archive.started).getTime() + (tick >= 0 ? 0 : 0))}${remain(archive.started, archive.pct) ? ` · ${t("ще", "nog")} ~${remain(archive.started, archive.pct)}` : ""}` : archive.bytes ? sizeText(archive.bytes) : undefined}
@@ -726,15 +1167,15 @@ export default function McpServiceView({ lang, tab }: Props) {
             ) : null}
             <p className="mcp-note">{t("Увесь файл цілком шифрується вашим наявним age-ключем (нового ключа не створюється): без вашого herstelsleutel його не відкрити. Після розшифрування лежить скрипт vidnovyty.sh. Завантаження — лише власнику, після повторного підтвердження входу, через одноразове посилання на 5 хвилин.", "Het hele bestand is versleuteld met uw bestaande age-sleutel (er komt geen nieuwe sleutel bij): zonder uw herstelsleutel is het niet te openen. Na ontsleutelen zit het script vidnovyty.sh erin. Downloaden kan alleen de eigenaar, na een nieuwe bevestiging van de aanmelding, via een eenmalige link van 5 minuten.")}</p>
           </Block>
-          <McpBackupsCard tr={t} />
-          <McpServerBeheerCard tr={t} />
-          <Block icon={<History />} title={t("Історія", "Geschiedenis")} hint={t("Кожен рядок — окремий збір. На сервері лишаються два останні архіви; ще старіші видаляються. Обидва зашифровані публічним ключем власника, тож без офлайн-ключа їх не відкрити. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijven de twee laatste archieven staan; ouder wordt opgeruimd. Beide zijn versleuteld met de publieke sleutel van de eigenaar; zonder de offline sleutel zijn ze niet te openen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}>
+          <div id="mcp-blok-backups"><McpBackupsCard tr={t} /></div>
+          <div id="mcp-blok-serverbeheer"><McpServerBeheerCard tr={t} /></div>
+          <Block id="mcp-blok-geschiedenis" icon={<History />} title={t("Історія", "Geschiedenis")} hint={t("Кожен рядок — окремий збір. На сервері лишаються два останні архіви; ще старіші видаляються. Обидва зашифровані публічним ключем власника, тож без офлайн-ключа їх не відкрити. Старі рядки лишаються як запис: коли і якого розміру.", "Elke rij is één keer maken. Op de server blijven de twee laatste archieven staan; ouder wordt opgeruimd. Beide zijn versleuteld met de publieke sleutel van de eigenaar; zonder de offline sleutel zijn ze niet te openen. Oudere rijen blijven als notitie: wanneer en hoe groot.")}>
             {archive.history.length ? (
               <ul className="mcp-list">
                 {archive.history.map((row) => (
                   <li key={`${row.at}-${row.name}`} className="mcp-item">
                     <span className="mcp-item-icon" aria-hidden="true"><FileArchive /></span>
-                    <div className="mcp-item-main"><b>{whenText(row.at)}</b><span>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</span></div>
+                    <div className="mcp-item-main"><b>{whenText(row.at)}</b><span>{sizeText(row.bytes)}{row.kod ? ` · ${t("код", "code")} ${sizeText(row.kod)} · ${t("база (шифр.)", "database")} ${sizeText(row.baza)} · ${t("файли", "bestanden")} ${sizeText(row.fajly)}` : ""}</span></div>
                     <div className="mcp-item-aside">
                       {row.kept ? <button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob(row.name))}>{t("Завантажити", "Downloaden")}</button> : <Badge tone="off">{t("вже видалено (лишаються два останні)", "al opgeruimd (er blijven twee over)")}</Badge>}
                     </div>
@@ -746,6 +1187,17 @@ export default function McpServiceView({ lang, tab }: Props) {
         </>
       )}
       </>}
+      {isMaquette && !verborgen && !consent && !laagOpen ? (
+        <MaquetteAnkerRail
+          lang={lang}
+          opslagSleutel="mcp-anker"
+          titel={t("На цій сторінці", "Op deze pagina")}
+          ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
+          items={ankerItems}
+          actief={railActief}
+          onKies={springNaarMcpBlok}
+        />
+      ) : null}
     </div>
   );
 }

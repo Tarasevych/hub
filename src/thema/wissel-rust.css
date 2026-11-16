@@ -1,0 +1,32 @@
+/* ZAVYSANNIA-001: під час зміни теми (клас thema-wissel на <html>, ставить src/thema/wissel-rust.ts) — без переходів і анімацій.
+   Специфічність з #_ (1 ідентифікатор) свідомо перемагає всі класові правила з !important, зокрема .mr-mq{transition:… !important}.
+   Tijdens de themawissel geen overgangen of animaties; de ID-specificiteit wint van alle klasse-regels met !important. */
+:root.thema-wissel:not(#_),
+:root.thema-wissel:not(#_) *,
+:root.thema-wissel:not(#_) *::before,
+:root.thema-wissel:not(#_) *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
+
+/* Телефони й планшети (сенсорний екран): у вигляді «Макет» — без розмиття тла під панелями. Понад 150 шарів backdrop-filter
+   (липка шапка, фіксована рейка розділів, нижня панель, вікна) перемальовуються на кожен кадр прокрутки й кожну зміну теми; це
+   головне навантаження на GPU телефона. Напівпрозорі поверхні лишаються, тож вигляд майже той самий.
+   Aanraakschermen: in de weergave «Maquette» geen achtergrondvervaging — de grootste GPU-last op telefoons. */
+@media (pointer: coarse) {
+  :root.palet-maquette:not(#_) *,
+  :root.palet-maquette:not(#_) *::before,
+  :root.palet-maquette:not(#_) *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  /* Лише рух (зсув, прозорість) лишається плавним; колір, тло, тінь і рамка змінюються одразу — без сотень переходів на кожну
+     зміну теми й без окремого класу thema-wissel (у wissel-rust.ts він на сенсорних екранах у «Макеті» не ставиться).
+     Alleen beweging blijft vloeiend; kleur, achtergrond, schaduw en rand wisselen meteen. */
+  :root.palet-maquette:not(#_) *,
+  :root.palet-maquette:not(#_) *::before,
+  :root.palet-maquette:not(#_) *::after {
+    transition-property: transform, opacity, translate, scale, rotate, grid-template-rows, height, max-height, width !important;
+  }
+}

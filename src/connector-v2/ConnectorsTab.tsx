@@ -24,6 +24,7 @@ import { useTech, techActief } from '../tech/tech-opslag';
 import RechtenKiezer, { Schakelaar, groepIcoon } from './RechtenKiezer';
 import './connector-v2.css';
 import './beheer.css';
+import '../agenten/agenten-kern-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Keuze = { kanten: Kant[]; sleutels: string[] };
@@ -51,7 +52,10 @@ const datum = (ms: number | null, uk: boolean) => (ms ? new Date(ms).toLocaleStr
 
 // ---------------------------------------------------------------- hulpjes
 
-const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity', autoclaw: 'autoclaw' };
+const LOGO: Record<AgentSlug, LogoKind> = {
+  claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor',
+  antigravity: 'antigravity', autoclaw: 'autoclaw', windsurf: 'windsurf', cline: 'cline', devin: 'devin', opencode: 'opencode',
+};
 const s = (v: unknown) => (typeof v === 'string' ? v : '');
 const ALLE_SLUGS: AgentSlug[] = V2_AGENTEN.map((a) => a.slug);
 
@@ -74,6 +78,7 @@ export function agentVanItem(e: JournaalItem): AgentSlug | null {
   if ((ALLE_SLUGS as string[]).includes(a)) return a as AgentSlug;
   const n = `${e.onderwerp?.naam ?? ''} ${s(e.details.client)}`.toLowerCase();
   if (/claude|anthropic/.test(n)) return 'claude';
+  if (/\bcodex\b/.test(n)) return 'codex';
   if (/chatgpt|openai|gpt/.test(n)) return 'gpt';
   if (/grok|xai/.test(n)) return 'grok';
   if (/gemini/.test(n)) return 'gemini';
@@ -81,6 +86,10 @@ export function agentVanItem(e: JournaalItem): AgentSlug | null {
   if (/cursor/.test(n)) return 'cursor';
   if (/antigravity|jetski/.test(n)) return 'antigravity';
   if (/autoclaw|openclaw|zhipu|chatglm|\bglm\b/.test(n)) return 'autoclaw';
+  if (/windsurf|codeium|cascade/.test(n)) return 'windsurf';
+  if (/\bcline\b|roo code|roocode/.test(n)) return 'cline';
+  if (/devin|cognition/.test(n)) return 'devin';
+  if (/opencode|open code/.test(n)) return 'opencode';
   return null;
 }
 
@@ -188,7 +197,6 @@ export function AgentInstellingen({ tr, uk, a, eigenaar, naWijziging }: { tr: Tr
           ...sessionBody(),
           agent: a.slug,
           actie: 'alles-aan',
-          termijn: 'tot-technisch-einde',
         });
         delen.push(tr('технічний сеанс делеговано', 'technische sessie gedelegeerd'));
       }
@@ -340,7 +348,7 @@ function MassaVenster({ tr, uk, voorbeeld, bezig, melding, klaar, onAnnuleer, on
   const herverbinden = voorbeeld.filter((v) => v.uitbreiding && v.verbonden).length;
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape' && !bezig) onAnnuleer(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [bezig, onAnnuleer]);
   return (
-    <div className='v2b-overlay' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget && !bezig) onAnnuleer(); }}>
+    <div className='v2b-overlay' data-mq-laag-open='1' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget && !bezig) onAnnuleer(); }}>
       <div className='v2b-venster' role='dialog' aria-modal='true' aria-labelledby='v2b-venster-titel'>
         <header>
           <h3 id='v2b-venster-titel'>{klaar ? tr('Готово', 'Klaar') : tr('Перевірте зміни перед застосуванням', 'Controleer de wijzigingen voor het toepassen')}</h3>

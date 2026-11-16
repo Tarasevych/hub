@@ -200,12 +200,18 @@ cat > "$W/LEES-MIJ.txt" <<EOT
   Скрипт сам: перевіряє суми, ставить пакети (Node 24, PostgreSQL 17, age, cloudflared), створює користувача й теки, розшифровує секрети,
   відновлює базу й файли, збирає сайт під вашу архітектуру, піднімає служби й перевіряє здоров'я.
   Потрібна приватна age-ключ-файл власника (herstelsleutel-age.txt). Без нього шифровані частини відкрити неможливо — це навмисно.
+  cloudflared (тунель) скрипт ставить лише закріпленої версії з перевіркою SHA-256 (вбудовано у vidnovyty.sh). Інша версія:
+  --cloudflared-versie V --cloudflared-sha256 HEX. ! --tunnel-ongecontroleerd бере найновішу версію БЕЗ перевірки й ставить її від root.
+  Без тунелю сайт працює локально; тунель можна під'єднати пізніше (--zonder-tunnel). Усі опції: sudo bash vidnovyty.sh --help
 
 ЯК ТРИМАТИ: у файлі весь сайт і його дані. Зберігайте на зовнішньому диску, не пересилайте поштою.
 
 WAT ZIT ERIN / HOE TERUGZETTEN (Nederlands)
   Pak uit met "age -d -i herstelsleutel-age.txt $naam | tar -x", ga naar de map en voer uit:  sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt
   (eerst proberen zonder wijzigingen: --proefrun). Database, bestanden en geheimen zijn met age versleuteld; de herstelsleutel van de eigenaar is nodig.
+  cloudflared (tunnel) wordt alleen in een vastgezette versie met SHA-256-controle geïnstalleerd (staat in vidnovyty.sh). Andere versie:
+  --cloudflared-versie V --cloudflared-sha256 HEX. ! --tunnel-ongecontroleerd haalt de nieuwste versie ZONDER controle en installeert die als root.
+  Zonder tunnel draait de site lokaal; de tunnel kan later (--zonder-tunnel). Alle opties: sudo bash vidnovyty.sh --help
 EOT
 cat > "$W/manifest.json" <<EOT
 {"stempel":"$stamp","release":"$(basename "$release")","commit":"$commit","architectuur":"$(uname -m)","node":"$(node --version 2>/dev/null)","grootte":{"kod":$kod,"baza":$baza,"fajly":$fajly,"sekrety":$sekrety,"systeem":$systeem},"versleuteld":["alles","baza","fajly","sekrety"],"herstel":"vidnovyty.sh"}

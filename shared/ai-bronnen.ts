@@ -1,3 +1,4 @@
+import { adresVan } from './mail-afzenders'; // SEC-002 (g10c-toets-1)
 // Bronnen bij AI-punten in een brief (pakket 3 «Adaptive Mail Canvas», 24.10.2026). Puur: geen DOM, geen netwerk — dezelfde regels
 // in de browser (src/mail/WatNodigBlok.tsx, src/mail/BronBlad.tsx, src/mail/VergelijkTabel.tsx) en op de server
 // (backend/ai-vertaling-routes.ts, modus 'acties').
@@ -346,7 +347,8 @@ export function eenvoudigeOntleding(brieven: readonly EenvoudigeBrief[]): { punt
 
 // ------------------------------------------------------------------ «Потребує відповіді»
 
-const adres = (v: string) => (/<([^>]+)>/.exec(String(v || ''))?.[1] || String(v || '')).trim().toLocaleLowerCase();
+/* SEC-002 (g10c-toets-1): adres uit de LAATSTE hoekhaken (adresVan), niet de eerste «<…>» uit de weergavenaam */
+const adres = (v: string) => adresVan(v).adres || (String(v || '').includes('<') ? '' : String(v || '').trim().toLocaleLowerCase());
 
 /**
  * Wacht dit gesprek op een antwoord van mij? Ja als de laatste brief niet van mij is en er na mijn laatste brief een vraag of

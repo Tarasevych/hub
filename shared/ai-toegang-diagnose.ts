@@ -79,6 +79,10 @@ export type AgentToegangDiagnose = {
   aiSessionDelegationScope: 'verbinding' | 'alle' | 'geen' | 'niet-van-toepassing';
   aiSessionDelegationTermijn: string | null;
   aiSessionDelegationEnd: number | null;
+  /** AI-TERMIJN-001: delegatie staat, maar wacht (AI_PAUZE / AI_WACHT_OP_SESSIE / AI_WACHT_OP_AANMELDING) */
+  aiSessionDelegationWacht?: string | null;
+  /** AI-TERMIJN-001: regels van de geldende delegatie (pauze, inactief, afmelden) of null */
+  aiSessionDelegationRegels?: { bijPauze: string; inactiefMinuten: number | null; bijAfmelden: string } | null;
   aiPolicyState: BeleidDiagnoseStaat;
   aiPolicyAgentId: string | null;
   aiPolicyBlockedCount: number;

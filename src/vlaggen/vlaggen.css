@@ -97,15 +97,16 @@
 .vlag-meer{border-top:1px solid var(--line);padding-top:12px}
 .vlag-meer summary{display:flex;align-items:center;gap:4px;min-height:36px;cursor:pointer;color:var(--text);list-style:none}
 .vlag-meer summary::-webkit-details-marker{display:none}
-.vlag-meer summary::before{content:'›';display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
-.vlag-meer[open] summary::before{transform:rotate(90deg)}
+.vlag-meer summary::after{display:none}
+.vlag-meer summary::before{content:'';flex:0 0 14px;width:14px;height:14px;color:var(--muted);background-color:currentColor;-webkit-mask:var(--icoon-pijl-omlaag) center/contain no-repeat;mask:var(--icoon-pijl-omlaag) center/contain no-repeat;transform:rotate(-90deg);transition:transform .18s ease}
+.vlag-meer[open] summary::before{transform:rotate(0deg)}
 .vlag-meer>p,.vlag-meer>div{margin:6px 0 0}
 .vlag-meer.is-gevaar summary{color:var(--fout)}
 .vlag-meer .vlag-segment{margin-top:8px}
 @keyframes vlag-in{from{opacity:0}}
 @keyframes vlag-rechts{from{transform:translateX(24px)}}
 @keyframes vlag-op{from{transform:translateY(32px)}}
-@media (prefers-reduced-motion:reduce){.vlag-laag,.vlag-lade-vak,.vlag-tuimel,.vlag-tuimel span{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.vlag-laag,.vlag-lade-vak,.vlag-tuimel,.vlag-tuimel span,.vlag-meer summary::before{animation:none;transition:none}}
 
 /* Telefoon */
 @media (max-width:600px){

@@ -7,7 +7,7 @@
 // WAT DEZE TEST VASTHOUDT:
 //   1. DE POORT. Geen sessie → 401; verkeerde dienst → 403; niet-goedgekeurd account → 403; identity én hub mogen.
 //   2. WAARHEID. Zonder omgevingssleutels: aanwezig=false, zelftest 'niet-uitgevoerd', klaarVoorKoppeling=false,
-//      gekoppeld=null; WhatsApp 'niet-mogelijk' en SMS 'gepland' krijgen nooit een koppelwaarheid of contour.
+//      gekoppeld=null; WhatsApp en SMS 'gepland' (TELEGRAM-002) krijgen nooit een koppelwaarheid of contour.
 //   3. ZELFTEST. Ontbrekende sleutels eerlijk benoemd; vormcontroles per aanbieder; één bewaarde rij per aanbieder
 //      (upsert); klaarVoorKoppeling pas na sleutels ÉN zelftest 'ok'; nooit een geheimwaarde in details of rij; audit.
 //   4. START. Poorten in volgorde (sleutels → zelftest → rate-limit); de authorize-URL draagt eenmalige state, PKCE
@@ -22,6 +22,7 @@ import { createHash, createHmac, generateKeyPairSync, randomBytes, randomUUID } 
 import { db } from '../../server/platform';
 import { getPool } from '../../server/platform/pg';
 import { aanmeldKoppelRoutes, appleClientSecret, maskLabel } from '../../backend/aanmeld-koppel';
+import { registreerMelder } from '../../backend/melder';
 import { checker } from './hulp/nep-google';
 import { nepAanbieder } from './hulp/nep-aanbieder';
 
@@ -42,6 +43,9 @@ const s256 = (v: string): string => createHash('sha256').update(v).digest('base6
 export async function main(): Promise<number> {
   const { check, einde } = checker('aanmeld-koppel-20261030');
   const pool = getPool('systeem');
+  // IDENTITEIT-012: сповіщення центру сповіщень перехоплюємо (у справжньому сервері їх записує notify із backend/index.ts).
+  const meldingen: Array<{ userId: string; kind: string; title: string }> = [];
+  registreerMelder(async (userId, _ws, kind, title) => { meldingen.push({ userId, kind, title }); });
   const sfx = randomBytes(4).toString('hex');
   const oudEnv = Object.fromEntries(ENV_SLEUTELS.map((k) => [k, process.env[k]]));
   for (const k of ENV_SLEUTELS) delete process.env[k];
@@ -53,7 +57,8 @@ export async function main(): Promise<number> {
   const a = await mk(`amk-a-${sfx}@eenheid.test`);
   const b = await mk(`amk-b-${sfx}@eenheid.test`);
   const c = await mk(`amk-c-${sfx}@eenheid.test`);
-  const maak = (id: string, service = 'identity') => aanmeldKoppelRoutes(async () => ({ user: { id, role: 'member', status: 'approved' }, service }));
+  // IDENTITEIT-012: самоперевірку запускає лише власник або адміністратор; прив'язка й відв'язка — після підтвердження доступу (тут stepUp пропускає).
+  const maak = (id: string, service = 'identity', role = 'owner') => aanmeldKoppelRoutes(async () => ({ user: { id, role, status: 'approved' }, service }), { stepUp: async () => null });
   const rA = maak(a);
   const rB = maak(b);
 
@@ -139,8 +144,23 @@ export async function main(): Promise<number> {
       && ms0.zelftest === 'niet-uitgevoerd' && ms0.klaarVoorKoppeling === false && ms0.gekoppeld === null);
     const wa0 = await statusVan(rA, 'whatsapp');
     const sms0 = await statusVan(rA, 'sms');
-    check('WhatsApp blijft eerlijk niet-mogelijk en SMS gepland — nooit klaarVoorKoppeling', wa0.stand === 'niet-mogelijk' && sms0.stand === 'gepland' && !wa0.klaarVoorKoppeling && !sms0.klaarVoorKoppeling && wa0.sleutels.length === 0);
+    check('WhatsApp en SMS gepland (TELEGRAM-002) — nooit klaarVoorKoppeling', wa0.stand === 'gepland' && sms0.stand === 'gepland' && !wa0.klaarVoorKoppeling && !sms0.klaarVoorKoppeling && wa0.sleutels.length === 0);
     check('het antwoord noemt het callback-pad', (await roep(rA, 'aanbieders')).uit.koppelPad === '/api/aanmeld/koppel/:aanbieder/terug');
+
+    // ================================================================ IDENTITEIT-012: хто може самоперевірку, прив'язку й відв'язку
+    {
+      const lid = maak(a, 'identity', 'member');
+      const zl = await roep(lid, 'zelftest', { id: 'microsoft' });
+      check('IDENTITEIT-012: звичайний учасник не запускає спільну самоперевірку → 403 ZELFTEST_ALLEEN_BEHEER', zl.status === 403 && zl.uit.error === 'ZELFTEST_ALLEEN_BEHEER');
+      const zonderStap = aanmeldKoppelRoutes(async () => ({ user: { id: a, role: 'owner', status: 'approved' }, service: 'identity' }));
+      const st = await roep(zonderStap, 'start', { id: 'microsoft' });
+      const ok = await roep(zonderStap, 'ontkoppel', { id: 'microsoft' });
+      check('IDENTITEIT-012: без підтвердження доступу прив’язка й відв’язка відмовляють (STEP_UP_REQUIRED)', st.status === 403 && st.uit.error === 'STEP_UP_REQUIRED' && (ok.uit.error === 'STEP_UP_REQUIRED' || ok.uit.error === 'KOPPELING_ONBEKEND'));
+      let gevraagd = 0;
+      const metStap = aanmeldKoppelRoutes(async () => ({ user: { id: a, role: 'owner', status: 'approved' }, service: 'identity' }), { stepUp: async () => { gevraagd++; return null; } });
+      await roep(metStap, 'start', { id: 'microsoft' });
+      check('IDENTITEIT-012: start питає підтвердження через передану функцію сайту', gevraagd === 1);
+    }
 
     // ================================================================ 3. zelftest
     check('zelftest onbekende aanbieder → AANBIEDER_ONBEKEND (404)', await roep(rA, 'zelftest', { id: 'verzonnen' }).then((r) => r.status === 404 && r.uit.error === 'AANBIEDER_ONBEKEND'));
@@ -319,6 +339,10 @@ export async function main(): Promise<number> {
       (await roep(rA, 'ontkoppel', { id: 'microsoft' })).uit.ok === true && (await koppelingen(a, 'microsoft')).length === 0
       && await statusVan(rA, 'microsoft').then((x) => x.gekoppeld === null));
     check('audit kreeg aanmeld.ontkoppeling', (await auditRijen(a)).some((x) => x.action === 'aanmeld.ontkoppeling' && x.result === 'ok'));
+    {
+      const teksten = meldingen.filter((m) => m.userId === a).map((m) => `${m.kind} ${m.title}`);
+      check('IDENTITEIT-012: прив’язка й відв’язка зовнішнього входу йдуть у центр сповіщень власника (вид security)', teksten.some((t) => t.startsWith('security') && t.includes('Прив’язано зовнішній спосіб входу')) && teksten.some((t) => t.startsWith('security') && t.includes('Відв’язано зовнішній спосіб входу')), teksten.join(' | '));
+    }
     check('nogmaals ontkoppelen → KOPPELING_ONBEKEND (404)', await roep(rA, 'ontkoppel', { id: 'microsoft' }).then((r) => r.status === 404 && r.uit.error === 'KOPPELING_ONBEKEND'));
     check('ontkoppel onbekende aanbieder → AANBIEDER_ONBEKEND', (await roep(rA, 'ontkoppel', { id: 'verzonnen' })).uit.error === 'AANBIEDER_ONBEKEND');
 

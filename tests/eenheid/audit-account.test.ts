@@ -64,15 +64,16 @@ export async function main(): Promise<number> {
     check('step-up met verse auth_time (redirect-flow) → admin-actie mag', stapVers.cb.data.ok === true && naVers.status === 200, `${naVers.status} ${naVers.body.slice(0, 160)}`);
 
     // ---- fix 1: zelf verwijderen ----
-    const delZonder = await A.b.verzoek('hub.tarasevych.com', '/api/account/delete', A.b.ctxBody('hub', { confirmEmail: A.email }));
+    // IDENTITEIT-015: старі /api/account/{delete,recover} → 410; hub ходить на /api/owner/identity/account/* (ті самі правила).
+    const delZonder = await A.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/delete', A.b.ctxBody('hub', { confirmEmail: A.email }));
     check('zelf verwijderen zonder step-up → 403 STEP_UP_REQUIRED', delZonder.status === 403 && delZonder.data.error === 'STEP_UP_REQUIRED', `${delZonder.status}`);
     await A.b.aanmelden(`sub-a-${T}`, A.email, { intent: 'step-up' });
-    const delA = await A.b.verzoek('hub.tarasevych.com', '/api/account/delete', A.b.ctxBody('hub', { confirmEmail: A.email }));
+    const delA = await A.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/delete', A.b.ctxBody('hub', { confirmEmail: A.email }));
     const bootNaDel = await A.b.verzoek('hub.tarasevych.com', '/api/owner/session/bootstrap', A.b.ctxBody());
     const aRij = await rij(A.email);
     check('zelf verwijderen (new) met step-up: status deleted, statusVoorVerwijdering=new, sessies ingetrokken', delA.status === 200 && aRij?.data.status === 'deleted' && aRij?.data.statusVoorVerwijdering === 'new' && bootNaDel.data.state === 'signed_out', `${delA.status} ${bootNaDel.status} ${bootNaDel.data.state}`);
     await A.b.aanmelden(`sub-a-${T}`, A.email, { authTime: oud });
-    const recA = await A.b.verzoek('hub.tarasevych.com', '/api/account/recover', A.b.ctxBody('hub', { mode: 'restore' }));
+    const recA = await A.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/recover', A.b.ctxBody('hub', { mode: 'restore' }));
     check('zelf herstellen na verwijderen vanuit "new" → 403 RECOVERY_NOT_ALLOWED, blijft deleted (geen ophoging naar approved)', recA.status === 403 && recA.data.error === 'RECOVERY_NOT_ALLOWED' && (await rij(A.email))?.data.status === 'deleted', `${recA.status} ${recA.body.slice(0, 120)}`);
 
     // goedgekeurde gebruiker: zelf verwijderen + zelf herstellen → exact terug naar approved
@@ -80,9 +81,9 @@ export async function main(): Promise<number> {
     const bId = (await rij(B.email))!.id;
     const goedB = await adminPost(O, `/api/owner/admin/users/${bId}`, { status: 'approved' });
     await B.b.aanmelden(`sub-b-${T}`, B.email, { intent: 'step-up' });
-    const delB = await B.b.verzoek('hub.tarasevych.com', '/api/account/delete', B.b.ctxBody('hub', { confirmEmail: B.email }));
+    const delB = await B.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/delete', B.b.ctxBody('hub', { confirmEmail: B.email }));
     await B.b.aanmelden(`sub-b-${T}`, B.email, { authTime: oud });
-    const recB = await B.b.verzoek('hub.tarasevych.com', '/api/account/recover', B.b.ctxBody('hub', { mode: 'restore' }));
+    const recB = await B.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/recover', B.b.ctxBody('hub', { mode: 'restore' }));
     const bNa = await rij(B.email);
     check('approved → zelf verwijderd → zelf hersteld = approved (precies de oude status)', goedB.status === 200 && delB.status === 200 && recB.status === 200 && bNa?.data.status === 'approved' && !bNa?.data.statusVoorVerwijdering, `${goedB.status} ${delB.status} ${recB.status} ${bNa?.data.status}`);
 
@@ -103,7 +104,7 @@ export async function main(): Promise<number> {
     await adminPost(O, `/api/owner/admin/users/${dId}`, { status: 'approved' });
     const delD = await adminPost(O, `/api/owner/admin/users/${dId}/delete`, { confirmEmail: D.email });
     await D.b.aanmelden(`sub-d-${T}`, D.email, { authTime: oud });
-    const recD = await D.b.verzoek('hub.tarasevych.com', '/api/account/recover', D.b.ctxBody('hub', { mode: 'restore' }));
+    const recD = await D.b.verzoek('hub.tarasevych.com', '/api/owner/identity/account/recover', D.b.ctxBody('hub', { mode: 'restore' }));
     check('door beheerder verwijderd → zelf herstellen 403 RECOVERY_ADMIN_DELETED', delD.status === 200 && recD.status === 403 && recD.data.error === 'RECOVERY_ADMIN_DELETED', `${delD.status} ${recD.status} ${recD.body.slice(0, 100)}`);
     const O3 = G.browser(); await O3.aanmelden(`sub-o-${T}`, eigenaar, { service: 'admin', authTime: oud });
     const recDZonder = await adminPost(O3, `/api/owner/admin/users/${dId}/recover`, { mode: 'restore' });

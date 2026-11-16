@@ -2,16 +2,24 @@
 // ssh.host (alleen rol Власник) in een lopende activering is de poort — terminal.servers alleen is NIET genoeg (14.10: een
 // SSH-sessie als beheer is toegang tot de host zelf, meer dan een terminal in een container zonder netwerk); de root-schakelaar ssh-ca (exact true) is de handtekening.
 // De principal, de duur en de opties kiest het root-script, niet dit verzoek.
+//
+// SEC-002 (server-uitrol-06): root tekent alleen nog met een passkey-assertie van de eigenaar over precies dit certificaat
+// (publieke sleutel, principals, duur). De site vraagt die assertie in de browser (tekenUitdaging → uitgevenVoor) en legt haar
+// in het verzoek; root rekent de challenge zelf opnieuw uit en verbruikt de nonce. De site controleert vooraf, root beslist.
 import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { access, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import * as kern from '../deploy/goedkeuring/webauthn-kern.mjs';
 import { auditToevoegen } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
-import { identiteitVan, minutenUit, principalsVoor, publiekeSleutel, schakelaarAan, SSH_CA_MINUTEN, SSH_CA_PRINCIPAL } from '../shared/ssh-ca';
+import { identiteitVan, minutenUit, principalsVoor, publiekeSleutel, schakelaarAan, tekenPasskeyVereist, SSH_CA_MINUTEN, SSH_CA_PRINCIPAL } from '../shared/ssh-ca';
 import { actieveActivatie, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
+import type { PasskeyDeps } from './ssh-ca-beheer';
 
-const CODES = new Set(['SSH_CA_UIT', 'SSH_CA_NIET_GEREED', 'SSH_CA_SLEUTEL', 'SSH_CA_LIMIET', 'SSH_CA_CONTROLE', 'SSH_CA_TE_OUD', 'SSH_CA_DUUR', 'SSH_CA_PRINCIPAL']);
+const CODES = new Set(['SSH_CA_UIT', 'SSH_CA_NIET_GEREED', 'SSH_CA_SLEUTEL', 'SSH_CA_LIMIET', 'SSH_CA_CONTROLE', 'SSH_CA_TE_OUD', 'SSH_CA_DUUR', 'SSH_CA_PRINCIPAL', 'SSH_CA_PASSKEY']);
+/** Het verzoek aan root draagt nu ook de assertie (credentialId, clientDataJSON, authenticatorData, handtekening). Root hanteert dezelfde grens. */
+const MAX_VERZOEK = 8192;
 const CERT_RE = /^ssh-ed25519-cert-v01@openssh.com [A-Za-z0-9+/=]{20,2000}$/;
 const VINGER_RE = /^SHA256:[A-Za-z0-9+/]{43}$/;
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -24,11 +32,16 @@ export type SshIo = {
   wis: (id: string) => Promise<void>;
   start: () => Promise<void>;
   lees: (id: string) => Promise<string | null>;
+  /** Eist root een passkey voor elk certificaat? Ontbreekt deze functie (alleen in tests met een eigen io): nee. */
+  passkeyVereist?: () => Promise<boolean>;
 };
+/** Wat de eigenaar met zijn passkey bevestigde: nonce + vervaltijd van de challenge en de assertie zelf. */
+export type TekenPasskey = { nonce: string; verloopt: number; assertie: kern.Assertie };
 
 const inboxDir = () => process.env.SSH_CA_INBOX || '/srv/mijn-ruimte/ssh-ca-inbox';
 const uitDir = () => process.env.SSH_CA_UIT || '/var/lib/mijn-ruimte/ssh-ca-uit';
 const rechtenPad = () => process.env.SSH_CA_RECHTEN || '/etc/mijn-ruimte/mcp-rechten.json';
+const sleutelsPad = () => process.env.GOEDKEUR_SLEUTELS || '/etc/mijn-ruimte/goedkeur-passkeys.json';
 
 const audit = (actorId: string, action: string, details: Record<string, unknown>, result: 'success' | 'denied' = 'success') =>
   auditToevoegen({ ownerId: actorId, actorId, action, type: 'beveiliging', result, details }).catch(() => undefined);
@@ -62,20 +75,70 @@ const slaap = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Vraag een certificaat. `activatie` komt van de server (actieveActivatie), nooit uit de body.
  * De vlag speelt hier geen rol: zonder ssh.host (Власник) weigert de server ook als de knop zichtbaar zou zijn.
  */
-export async function uitgeven(u: Gebruiker, tab: string, publiekIn: unknown, io: SshIo, activatie: ActivatieKort, opties: { wachtMs?: number; slaapMs?: number; minuten?: unknown } = {}): Promise<Uitgifte> {
+type Aanvraag = { publiek: string; minuten: number; toegang: string[] };
+/** Alles wat vóór root al vaststaat: tabblad, ssh.host, sleutel, duur, principals, schakelaar. Zelfde controles voor challenge en uitgifte. */
+async function aanvraagVan(tab: string, publiekIn: unknown, io: SshIo, activatie: ActivatieKort, minutenIn: unknown): Promise<Aanvraag> {
   if (!TAB_RE.test(tab)) throw new TechFout('TAB_ONGELDIG');
   if (!activatie?.mogelijkheden.includes('ssh.host')) throw new TechFout('TECH_SSH_CA_VEREIST', 403);
   const publiek = publiekeSleutel(publiekIn);
   if (!publiek) throw new TechFout('SSH_CA_SLEUTEL');
-  const minuten = minutenUit(opties.minuten);
+  const minuten = minutenUit(minutenIn);
   if (minuten === null) throw new TechFout('SSH_CA_DUUR');
   // Principals per rol (shared/ssh-ca.ts); zonder rollen-informatie: ssh.host hoort alleen bij de eigenaar → beheer.
   const toegang = principalsVoor(activatie.rollen?.length ? activatie.rollen : ['eigenaar']);
   if (!toegang.length) throw new TechFout('TECH_SSH_CA_VEREIST', 403);
   if (!(await io.schakelaar())) throw new TechFout('SSH_CA_UIT', 409);
+  return { publiek, minuten, toegang };
+}
+/** Velden van de challenge «teken» (webauthn-kern uitdagingVoor) en het onderwerp waaronder de site haar bewaart. */
+const tekenVelden = (a: Aanvraag) => ({ actie: kern.SSH_CA_TEKEN, sleutelHash: kern.sshCaSleutelHash(a.publiek), toegang: a.toegang, minuten: a.minuten });
+const tekenOnderwerp = (a: Aanvraag) => `teken:${kern.sshCaSleutelHash(a.publiek)}:${[...a.toegang].sort().join(',')}:${a.minuten}`;
+
+/**
+ * Stap 1 van de uitgifte (SEC-002): eenmalige challenge voor PRECIES deze sleutel, principals en duur (≤ 5 min).
+ * `passkeyNodig: false` alleen als root de controle bewust heeft uitgezet ("ssh-ca-teken-passkey": false).
+ */
+export async function tekenUitdaging(u: Gebruiker, tab: string, publiekIn: unknown, minutenIn: unknown, io: SshIo, activatie: ActivatieKort, pk: PasskeyDeps, bronOrigin?: unknown) {
+  const a = await aanvraagVan(tab, publiekIn, io, activatie, minutenIn);
+  if (!(io.passkeyVereist ? await io.passkeyVereist() : false)) return { passkeyNodig: false as const, minuten: a.minuten };
+  const b = await pk.sleutels();
+  if (!b.sleutels.length) throw new TechFout('GEEN_PASSKEY', 409);
+  // SEC-002 (зауваження 1): root aanvaardt de passkey alleen van de origins uit zijn sleutelbestand (admin.*, id.*). De browser laat
+  // de passkey ook op dev.*/terminal.*/mcp.* toe, waarna site én root ORIGIN_ONJUIST gaven en de challenge al op was. Zegt de pagina
+  // waar ze staat (sourceOrigin, alleen voor een duidelijke melding — de echte controle blijft de assertie), dan meteen eerlijk weigeren.
+  const bron = typeof bronOrigin === 'string' ? bronOrigin.trim() : '';
+  if (bron && !b.origins.includes(bron)) throw new TechFout('SSH_CA_ORIGIN', 409);
+  const c = await pk.maak(u.id, tekenOnderwerp(a), tekenVelden(a));
+  return { passkeyNodig: true as const, minuten: a.minuten, uitdagingId: c.id, verloopt: c.verloopt, origins: [...b.origins], publicKey: pk.opties(c.uitdaging, b as never) };
+}
+
+/** Stap 2: challenge verbruiken en de assertie vooraf controleren. Hoort ze bij een andere sleutel, duur of principal → geweigerd. */
+export async function tekenPasskeyUit(u: Gebruiker, a: Aanvraag, input: { uitdagingId?: unknown; assertie?: unknown }, pk: PasskeyDeps): Promise<TekenPasskey> {
+  if (!input.assertie || !input.uitdagingId) throw new TechFout('SSH_CA_PASSKEY_VEREIST', 403);
+  let assertie: kern.Assertie;
+  try { assertie = pk.assertie(input.assertie); } catch { throw new TechFout('SSH_CA_PASSKEY_VEREIST', 403); }
+  let c: { onderwerp: string; nonce: string; verloopt: number };
+  try { c = await pk.verbruik(u.id, input.uitdagingId); } catch { throw new TechFout('UITDAGING_ONGELDIG', 403); }
+  if (c.onderwerp !== tekenOnderwerp(a)) throw new TechFout('UITDAGING_ONGELDIG', 403);
+  const b = await pk.sleutels();
+  const r = kern.verifieerAssertie({ assertie, verwachteUitdaging: kern.uitdagingVoor('ssh-ca', { ...tekenVelden(a), nonce: c.nonce, verloopt: c.verloopt }), rpId: b.rpId, origins: b.origins, sleutels: b.sleutels as never });
+  if (!r.ok) throw new TechFout(`PASSKEY_${r.code}`, 403);
+  return { nonce: c.nonce, verloopt: c.verloopt, assertie };
+}
+
+export async function uitgeven(u: Gebruiker, tab: string, publiekIn: unknown, io: SshIo, activatie: ActivatieKort,
+  opties: { wachtMs?: number; slaapMs?: number; minuten?: unknown; passkey?: TekenPasskey | ((a: Aanvraag) => Promise<TekenPasskey>) | null } = {}): Promise<Uitgifte> {
+  const aanvraag = await aanvraagVan(tab, publiekIn, io, activatie, opties.minuten);
+  const { publiek, minuten, toegang } = aanvraag;
+  // Eist root een passkey, dan gaat er zonder assertie niets naar root (root zou toch weigeren; zo blijft de fout duidelijk).
+  let passkey: TekenPasskey | null = null;
+  if (io.passkeyVereist ? await io.passkeyVereist() : false) {
+    if (!opties.passkey) throw new TechFout('SSH_CA_PASSKEY_VEREIST', 403);
+    passkey = typeof opties.passkey === 'function' ? await opties.passkey(aanvraag) : opties.passkey;
+  }
   const id = randomUUID();
-  const body = JSON.stringify({ id, publiek, identiteit: identiteitVan(u.email), minuten, toegang });
-  if (body.includes('"principal"') || body.includes('"ttl"') || body.length > 2048) throw new TechFout('SSH_CA_SLEUTEL');
+  const body = JSON.stringify({ id, publiek, identiteit: identiteitVan(u.email), minuten, toegang, ...(passkey ? { passkey } : {}) });
+  if (body.includes('"principal"') || body.includes('"ttl"') || body.length > MAX_VERZOEK) throw new TechFout('SSH_CA_SLEUTEL');
   await io.schrijf(id, body);
   await io.start().catch(() => undefined);
   const wacht = opties.wachtMs ?? 8000;
@@ -109,6 +172,14 @@ export function standaardIo(): SshIo {
   return {
     async schakelaar() {
       try { return schakelaarAan(JSON.parse(await readFile(rechtenPad(), 'utf8'))); } catch { return false; }
+    },
+    async passkeyVereist() {
+      // Zelfde regel als root (shared/ssh-ca.ts tekenPasskeyVereist). Onleesbaar rechten-bestand → geen expliciete «false» → vereist
+      // zodra het sleutelbestand bestaat: bij twijfel vragen we de passkey, root beslist toch zelf.
+      let rechten: unknown = null;
+      try { rechten = JSON.parse(await readFile(rechtenPad(), 'utf8')); } catch { /* onleesbaar */ }
+      const bestaat = await access(sleutelsPad()).then(() => true, () => false);
+      return tekenPasskeyVereist(rechten, bestaat);
     },
     async schrijf(id, body) {
       const doel = await padIn(inboxDir(), id);
@@ -144,12 +215,23 @@ export async function vastleggen(u: Gebruiker, r: Uitgifte, activatieId = ''): P
   [r.serie, await caVinger(), r.vinger, u.id, String(u.email || ''), identiteitVan(u.email), r.principals, r.minuten, activatieId]);
 }
 
-export async function uitgevenVoor(u: Gebruiker, tab: string, publiekIn: unknown, minuten?: unknown): Promise<Uitgifte> {
+/** Productiepad van stap 1 (route /api/ssh-ca/uitgifte/uitdaging). */
+export async function tekenUitdagingVoor(u: Gebruiker, tab: string, publiekIn: unknown, minuten: unknown, pk: PasskeyDeps, bronOrigin?: unknown) {
+  const a = TAB_RE.test(tab) ? await actieveActivatie(u.id, tab) : null;
+  try { return await tekenUitdaging(u, tab, publiekIn, minuten, standaardIo(), a, pk, bronOrigin); }
+  catch (e) {
+    if (e instanceof TechFout) await audit(u.id, 'owner.ssh-ca.geweigerd', { code: e.code, stap: 'uitdaging' }, 'denied');
+    throw e;
+  }
+}
+
+export async function uitgevenVoor(u: Gebruiker, tab: string, publiekIn: unknown, minuten?: unknown, passkeyIn?: { uitdagingId?: unknown; assertie?: unknown }, pk?: PasskeyDeps, io: SshIo = standaardIo()): Promise<Uitgifte> {
   const a = TAB_RE.test(tab) ? await actieveActivatie(u.id, tab) : null;
   try {
-    const r = await uitgeven(u, tab, publiekIn, standaardIo(), a, { minuten });
+    const metPasskey = { waarde: false };
+    const r = await uitgeven(u, tab, publiekIn, io, a, { minuten, passkey: pk ? async (aanvraag) => { const p = await tekenPasskeyUit(u, aanvraag, passkeyIn || {}, pk); metPasskey.waarde = true; return p; } : null });
     await vastleggen(u, r, a?.id).catch((e) => console.error('[ssh-ca] vastleggen', (e as Error).message));
-    await audit(u.id, 'owner.ssh-ca.uitgegeven', { vinger: r.vinger, principal: r.principal, principals: r.principals, minuten: r.minuten, serie: r.serie, viaActivatie: a?.id });
+    await audit(u.id, 'owner.ssh-ca.uitgegeven', { vinger: r.vinger, principal: r.principal, principals: r.principals, minuten: r.minuten, serie: r.serie, viaActivatie: a?.id, passkey: metPasskey.waarde });
     return r;
   } catch (e) {
     if (e instanceof TechFout) await audit(u.id, 'owner.ssh-ca.geweigerd', { code: e.code }, 'denied');

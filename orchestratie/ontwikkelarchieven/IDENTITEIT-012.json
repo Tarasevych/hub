@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-012",
+  "titel": "Безпека сервера: виправлення, знайдені під час звірки «Макета»",
+  "opdracht": "Власник погодив фазу 1 плану (PR #76): 11 виправлень безпеки сервера без зміни вигляду; кожна вада — з тестом, що її відтворює.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "fix/identiteit-012-server-veiligheid-20261113-200208",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": {
+      "taak": "IDENTITEIT-011",
+      "pr": "https://github.com/Tarasevych/hub/pull/78"
+    }
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Тести — лише з вигаданими даними й випадковими тестовими ключами в одноразовій локальній базі. Без облікових даних, вмісту листів і прихованих міркувань моделі."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T20:02:08Z",
+      "stap": "Гілка від живої версії 5f2325d7; orch taak-start, versheid start — свіжо."
+    },
+    {
+      "tijd": "2026-11-13T20:10:00Z",
+      "stap": "Локальний PostgreSQL 16 з міграціями (двічі) і ролями mijnruimte_app/system за deploy/db-rollen.sql — як у CI."
+    },
+    {
+      "tijd": "2026-11-13T20:25:00Z",
+      "stap": "11 виправлень у backend/index.ts, toegangslaag, toegangssleutels, sleutelkluis-routes, aanmeld-koppel, beveiliging-meldingen; спільні shared/blok-invoer.ts і shared/eigen-toegang.ts."
+    },
+    {
+      "tijd": "2026-11-13T20:40:00Z",
+      "stap": "Тест identiteit-012-server-veiligheid через справжні маршрути: на 5f2325d7 — 5/21 (16 вад відтворено), з виправленнями — 21/21. Оновлено tech-sessies і aanmeld-koppel під нове підтвердження."
+    },
+    {
+      "tijd": "2026-11-13T20:50:00Z",
+      "stap": "Давній збій sleutelkluis (реєстр модулів, CLOUD-001) виправлено винятком із поясненням; два збої RLS у toegangscodes виявилися умовою середовища (потрібна окрема роль бази) — з ролями 56/56."
+    }
+  ],
+  "keuzes": [
+    "Застаріле видалення облікового запису й відновлення простору не закрито, бо їх досі кличе hub (src/App.tsx); натомість вони отримали ті самі наслідки й аудит, що й нові маршрути.",
+    "«Вийти всюди» та «Завершити всі інші входи» — посилене підтвердження (passkey, TOTP чи код; Google — лише коли сильнішого способу немає). Аварійне завершення лишилося без нового підтвердження, бо це вимикач для зламаного облікового запису.",
+    "Умова доступу до власних налаштувань захисту — «схвалений або власник» скрізь; це послабило лише площину доступу для власника з неапрувнутим статусом, щоб він не втратив доступу до сховища ключів.",
+    "Посилання блоків — лише https (без http), як фонові зображення блоків."
+  ],
+  "wijzigingen": {
+    "toegevoegd": [
+      "orchestratie/taken/IDENTITEIT-012.json",
+      "shared/blok-invoer.ts",
+      "shared/eigen-toegang.ts",
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    ],
+    "gewijzigd": [
+      "backend/aanmeld-koppel.ts",
+      "backend/beveiliging-meldingen.ts",
+      "backend/index.ts",
+      "backend/sleutelkluis-routes.ts",
+      "backend/toegangslaag.ts",
+      "backend/toegangssleutels.ts",
+      "src/BeveiligingSessiesPaneel.tsx",
+      "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+      "tests/eenheid/sleutelkluis-20261020.test.ts",
+      "tests/eenheid/tech-sessies.test.ts"
+    ],
+    "verwijderd": []
+  },
+  "controles": [
+    "identiteit-012-server-veiligheid 21/21 (на 5f2325d7 — 5/21).",
+    "tech-sessies 20/20, aanmeld-koppel 69/69, toegangssleutels 88/88, toegangscodes 56/56, sleutelkluis 63/63, sessies-weergave 18/18, ruimte-aanvallen 31/31, account-wissen 29/29, rest 27/27, audit-account 20/20, sec-002-g0x усі, sec-002-g10b 60/60, melding-soorten 50/50, zijbalk-opslaan 9/9, routes 5/5, identiteit усі.",
+    "npx tsc --noEmit, npm run typecheck:server — без помилок; npm run build — успішно.",
+    "orch-inleveren K3 (давній) лишається червоним у цій гілці — виправлення в HISTORIE-001 (PR #77)."
+  ],
+  "bronnen": [
+    {
+      "soort": "встановлена версія",
+      "omschrijving": "https://id.tarasevych.com/api/version — 20261113-121403, 5f2325d788e2",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "план",
+      "omschrijving": "docs/ontwerp/identiteit-account/ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md, фаза 1",
+      "inhoudGepubliceerd": true
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сайт — лише з погодження власника, після резервної копії на R:\\ і перевірки накладання.",
+    "Для повних тестів RLS у CI потрібна окрема роль mijnruimte_app (DATABASE_URL_APP); у тестах без неї дві перевірки toegangscodes падають і на основі."
+  ],
+  "commits": [
+    "4618fbdfd05c1850f926d4d81a591827fafa8c2c",
+    "70517491af14a66e0325c6fd67e8530d936d6857",
+    "46ed83f19e767bdaccda634418e4cd8b906a80f7"
+  ]
+}

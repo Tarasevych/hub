@@ -50,6 +50,10 @@ BEGIN
     IF to_regclass('app.uitrol_runs') IS NOT NULL THEN REVOKE ALL ON app.uitrol_runs, app.uitrol_run_regels FROM mijnruimte_app; END IF;
     -- 0081: pogingen die niet tot een installatie kwamen (ook afbrekingen die de browser meldde): alleen de systeemrol.
     IF to_regclass('app.uitrol_pogingen') IS NOT NULL THEN REVOKE ALL ON app.uitrol_pogingen FROM mijnruimte_app; END IF;
+    -- 0282: slimme uitrolstroom (notities, controlelijsten, bewijs van controles): uitsluitend systeemrol (beheercontour) onder FORCE RLS.
+    IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen FROM mijnruimte_app;
+    END IF;
     -- 0105: besluiten van de eigenaar met passkey (terugdraaien, externe MCP-hosts): lezen onder RLS (eigen rijen), schrijven alleen de systeemrol.
     IF to_regclass('app.eigenaar_besluiten') IS NOT NULL THEN
       GRANT SELECT ON app.eigenaar_besluiten TO mijnruimte_app;
@@ -60,6 +64,10 @@ BEGIN
     -- 0114/0116 (Werkblad v3 + blokken): lade/laag/items/plekken, eigen rijen onder RLS (zelfde vorm als 0112).
     IF to_regclass('app.werkblad_items') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_v3_lade, app.werkblad_layout, app.werkblad_items TO mijnruimte_app; END IF;
     IF to_regclass('app.werkblad_plekken') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_plekken TO mijnruimte_app; END IF;
+    -- 0207: AI-ecosysteem (geïsoleerde agent-werkruimtes, gedeelde context, overdrachten en ruimte-uitbreidingen): eigen rijen onder RLS.
+    IF to_regclass('app.ai_agent_werkruimtes') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.ai_agent_werkruimtes, app.ai_gedeelde_context, app.ai_agent_overdrachten, app.ai_ruimte_uitbreidingen TO mijnruimte_app;
+    END IF;
     -- 0115: technische ruimtes v2 (alleen lezen onder RLS voor app-rol).
     IF to_regclass('app.tech_ruimte_sessies') IS NOT NULL THEN
       GRANT SELECT ON app.tech_ruimte_sessies, app.tech_ruimte_tabs, app.tech_ruimte_ai TO mijnruimte_app;
@@ -184,6 +192,46 @@ BEGIN
     IF to_regclass('app.agenda_koppeling') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.agenda_koppeling, app.agenda_abonnement, app.agenda_externe_gebeurtenis TO mijnruimte_app;
     END IF;
+    -- 0207 & 0208: AI-ecosysteem en tweerichtings-GitHub-werkruimte onder RLS per gebruiker en ruimte.
+    IF to_regclass('app.ai_agent_werkruimtes') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.ai_agent_werkruimtes, app.ai_gedeelde_context, app.ai_agent_overdrachten, app.ai_ruimte_uitbreidingen TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.github_spiegel_repos') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.github_spiegel_repos, app.github_spiegel_gebeurtenissen, app.github_bord_koppelingen, app.github_eenklik_manifesten TO mijnruimte_app;
+    END IF;
+    -- 0210: gedeelde koppelingen en weergave-/downloadlogboek van Cloud vNext onder RLS per eigenaar en ruimte.
+    IF to_regclass('app.cloud_deel_koppelingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.cloud_deel_koppelingen, app.cloud_deel_gebeurtenissen TO mijnruimte_app;
+      GRANT USAGE, SELECT ON SEQUENCE app.cloud_deel_gebeurtenissen_id_seq TO mijnruimte_app;
+    END IF;
+    -- 0278 (GEMINI-002): екосистема споживчих сповіщень («застосунок у застосунку») під RLS за користувачем і простором.
+    IF to_regclass('app.melding_ecosysteem_profiel') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.melding_ecosysteem_profiel, app.melding_ecosysteem_gebeurtenissen, app.melding_ecosysteem_actie_log TO mijnruimte_app;
+    END IF;
+    -- 0279: екосистема навичок, прив'язок до агентів та версійних ревізій під RLS.
+    IF to_regclass('app.vaardigheden_eigen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.vaardigheden_eigen, app.vaardigheden_agent_stand, app.vaardigheden_revisies TO mijnruimte_app;
+    END IF;
+    -- 0283 (UITROL-002): Telegram-архівування та прийом GitHub-випусків — суто адміністративний контур через mijnruimte_system.
+    IF to_regclass('app.uitrol_telegram_instellingen') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_telegram_instellingen, app.uitrol_telegram_archief, app.uitrol_github_ontvangen, app.uitrol_github_webhook_leveringen FROM mijnruimte_app;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
+      REVOKE ALL ON app.uitrol_telegram_updates FROM mijnruimte_app;
+    END IF;
+    -- 0280 (stroom-geheugen): Стрім пам’яті — жива, версійна й простір-ізольована пам’ять ШІ під RLS за користувачем і простором.
+    IF to_regclass('app.geheugen_stroom_knopen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_stroom_knopen, app.geheugen_stroom_relaties, app.geheugen_stroom_gebeurtenissen TO mijnruimte_app;
+      GRANT USAGE, SELECT ON SEQUENCE app.geheugen_stroom_gebeurtenissen_id_seq TO mijnruimte_app;
+    END IF;
+    -- 0281 (stroom-geheugen): окремі Telegram-боти по агентах і черга доставлення пам’яті під RLS за користувачем і простором.
+    IF to_regclass('app.geheugen_agent_bots') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_agent_bots, app.geheugen_telegram_bezorging TO mijnruimte_app;
+    END IF;
+    -- 0284 (stroom-geheugen): наскрізні задачі та кроки передачі естафети між сесіями й 13 агентами під RLS.
+    IF to_regclass('app.geheugen_taken') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.geheugen_taken, app.geheugen_taak_stappen TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).
@@ -207,6 +255,15 @@ BEGIN
     GRANT USAGE ON SCHEMA app TO mijnruimte_system;
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app TO mijnruimte_system;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_system;
+    IF to_regclass('app.uitrol_stroom_notities') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_stroom_notities, app.uitrol_stroom_controlelijsten, app.uitrol_stroom_bewijzen TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_instellingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_telegram_instellingen, app.uitrol_telegram_archief, app.uitrol_github_ontvangen, app.uitrol_github_webhook_leveringen TO mijnruimte_system;
+    END IF;
+    IF to_regclass('app.uitrol_telegram_updates') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.uitrol_telegram_updates TO mijnruimte_system;
+    END IF;
     REVOKE INSERT, UPDATE, DELETE ON app.schema_migrations FROM mijnruimte_system;
     -- De RLS-stand en de allowlist wijzigt alleen het rollenscript (postgres/migrator), nooit de app zelf.
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON app.rls_instellingen, app.rls_gedeelde_tabellen FROM mijnruimte_system; END IF;

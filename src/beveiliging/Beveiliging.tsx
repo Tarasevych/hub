@@ -17,6 +17,8 @@ type Kaart = {
   klaar: boolean; controles: Controle[]; uren: number; laatst: { op: number; door: string; reden: string } | null; bewakingTot: number | null; automatischUit: { op: number; reden: string } | null;
 };
 type Ctx = { service: string; sourceOrigin: string; tabContext: string };
+/** SEC-002 (g07, aanv-gat-a-04): noodschakelaar van de herbevestiging (STAP_OP_UIT_TOT / STAP_OP_UIT), zoals de server hem ziet. */
+export type StapOpStand = { ernst: '' | 'rood' | 'oranje'; tekst: [string, string]; totIso?: string; uit?: boolean };
 
 const INFO: Record<Kaart['sleutel'], { icoon: typeof Shield; naam: [string, string]; wat: [string, string] }> = {
   'auth-poort': { icoon: KeyRound, naam: ['Шлюз автентифікації', 'Toegangspoort'], wat: ['Маршрут поза списком публічних, що відповів би анонімному запиту 2xx, отримає 401. Зараз такі випадки лише записуються.', 'Een route buiten de publieke lijst die een anoniem verzoek met 2xx zou beantwoorden, krijgt 401. Nu wordt dat alleen geteld.'] },
@@ -39,6 +41,7 @@ const UREN = [1, 6, 24, 72, 168];
 
 export default function Beveiliging({ lang, ctx }: { lang: Lang; ctx: Ctx }) {
   const [kaarten, setKaarten] = useState<Kaart[] | null>(null);
+  const [stapOp, setStapOp] = useState<StapOpStand | null>(null);
   const [uren, setUren] = useState(24);
   const [laden, setLaden] = useState(false);
   const [bezig, setBezig] = useState('');
@@ -50,7 +53,7 @@ export default function Beveiliging({ lang, ctx }: { lang: Lang; ctx: Ctx }) {
 
   const lees = useCallback(async () => {
     setLaden(true);
-    try { setKaarten(((await api.post('/api/owner/beveiliging/stand', { ...ctx, uren })).data as { kaarten: Kaart[] }).kaarten); }
+    try { const d = (await api.post('/api/owner/beveiliging/stand', { ...ctx, uren })).data as { kaarten: Kaart[]; stapOp?: StapOpStand }; setKaarten(d.kaarten); setStapOp(d.stapOp ?? null); }
     catch (e) { setMelding({ soort: 'fout', tekst: fout(lang, e) }); }
     setLaden(false);
   }, [ctx, uren, lang]);
@@ -90,6 +93,7 @@ export default function Beveiliging({ lang, ctx }: { lang: Lang; ctx: Ctx }) {
         </div>
       </div>
       {melding && <p className='adg-melding' data-soort={melding.soort === 'ok' ? 'ok' : 'fout'} role='status'><span>{melding.tekst}</span><button type='button' onClick={() => setMelding(null)} aria-label={tr(lang, 'Закрити', 'Sluiten')}><X /></button></p>}
+      <StapOpStrook lang={lang} stand={stapOp} />
       {!kaarten && <p className='adg-laden'><RefreshCw className='adg-spin' />{tr(lang, 'Перевіряю…', 'Controleren…')}</p>}
       <div className='bvs-kaarten'>
         {kaarten?.map((k) => {
@@ -140,5 +144,29 @@ export default function Beveiliging({ lang, ctx }: { lang: Lang; ctx: Ctx }) {
         })}
       </div>
     </section>
+  );
+}
+
+/**
+ * SEC-002 (g07): de noodschakelaar van de herbevestiging boven de kaarten. Rood = herbevestiging staat UIT (geheimen, rollen,
+ * SSH-certificaten, account verwijderen gaan met alleen een sessie); oranje = de variabele staat er, maar werkt niet (herbevestiging
+ * staat AAN). Geen variabele → niets tonen. De tekst (met «!» en de gevolgen) komt van de server; uitzetten kan alleen op de server.
+ */
+export function StapOpStrook({ lang, stand }: { lang: Lang; stand: StapOpStand | null }) {
+  if (!stand || !stand.ernst || !Array.isArray(stand.tekst)) return null;
+  const tekst = lang === 'uk' ? stand.tekst[0] : stand.tekst[1];
+  if (!tekst) return null;
+  return (
+    <div className='bvs-stapop' data-stapop-ernst={stand.ernst} role={stand.ernst === 'rood' ? 'alert' : 'status'}
+      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', margin: '0 0 12px', borderRadius: 12,
+        border: `2px solid ${stand.ernst === 'rood' ? 'var(--danger, #b42318)' : 'var(--warning, #b54708)'}`,
+        background: stand.ernst === 'rood' ? 'var(--danger-bg, #fef3f2)' : 'var(--warning-bg, #fffaeb)' }}>
+      {stand.ernst === 'rood' ? <ShieldOff aria-hidden='true' /> : <AlertTriangle aria-hidden='true' />}
+      <div>
+        <strong>{stand.ernst === 'rood' ? tr(lang, 'Повторне підтвердження входу вимкнено', 'Herbevestiging van de aanmelding staat uit') : tr(lang, 'Аварійне вимкнення підтверджень задано неправильно', 'De noodschakelaar van de herbevestiging is verkeerd ingesteld')}</strong>
+        <p style={{ margin: '4px 0 0' }}>{tekst}</p>
+        <small>{tr(lang, 'Змінити це можна лише в налаштуваннях сервера (/etc/mijn-ruimte/geheimen.env) з перезапуском служби — не з цієї сторінки.', 'Dit verandert alleen in de serverinstellingen (/etc/mijn-ruimte/geheimen.env) met een herstart van de dienst — niet vanaf deze pagina.')}</small>
+      </div>
+    </div>
   );
 }

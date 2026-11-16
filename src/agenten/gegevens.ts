@@ -81,11 +81,21 @@ export function useJournaal(filter: { soort: string; onderwerp: string; limit?: 
 
 /** HUB-02: ÉÉN teller «ШІ підключено» voor overzicht, tabrij en connectors: het aantal VERSCHILLENDE AI-clients met een actieve
  * verbinding (Claude ×3 + een token van Claude = 1), niet het aantal grants + tokens. */
-export function aiTeller(oauth: readonly { clientName: string; status?: string }[] | null | undefined, tokens: readonly { name: string; revokedAt?: string | null; expiresAt?: string | null }[] | null | undefined = [], nu = Date.now()): number {
+export function aiTeller(
+  oauth: readonly { clientName: string; status?: string }[] | null | undefined,
+  tokens: readonly { name: string; revokedAt?: string | null; expiresAt?: string | null }[] | null | undefined = [],
+  nu = Date.now(),
+  v2Agenten?: V2OverzichtData['agenten'] | null,
+): number {
   const sleutel = (naam: string) => { const k = aiLogo(naam); return k === 'aiclient' ? `naam:${naam.trim().toLowerCase()}` : k; };
   const s = new Set<string>();
   for (const g of oauth ?? []) if (g.status === undefined || g.status === 'active') s.add(sleutel(g.clientName));
   for (const t of tokens ?? []) if (!t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu && aiLogo(t.name) !== 'aiclient') s.add(sleutel(t.name));
+  for (const a of v2Agenten ?? []) {
+    if ((Array.isArray(a.koppelingen) && a.koppelingen.length > 0) || (Array.isArray(a.deur) && a.deur.length > 0)) {
+      s.add(sleutel(a.slug));
+    }
+  }
   return s.size;
 }
 
@@ -94,12 +104,18 @@ export function aiTeller(oauth: readonly { clientName: string; status?: string }
  * als de logo's en de markering (shared/markering-agenten.ts), zodat Gemini en Copilot geen «pseudo-logo» (sterretje) meer krijgen
  * maar hun merk uit het ene register (src/merk). De sleutels zijn die van het merkregister (`gpt` heet daar 'openai' als alias).
  */
-const LOGO_PER_SLUG: Readonly<Record<AgentSlug, LogoKind>> = Object.freeze({ claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity', autoclaw: 'autoclaw' });
+const LOGO_PER_SLUG: Readonly<Record<AgentSlug, LogoKind>> = Object.freeze({
+  claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor',
+  antigravity: 'antigravity', autoclaw: 'autoclaw', windsurf: 'windsurf', cline: 'cline', devin: 'devin', opencode: 'opencode',
+});
 export function aiLogo(naam: string): LogoKind {
   const slug = agentSlugUitNaam(naam);
   return slug ? LOGO_PER_SLUG[slug] : 'aiclient';
 }
-const EIGENAAR_PER_SLUG: Readonly<Record<AgentSlug, string>> = Object.freeze({ claude: 'Anthropic', gpt: 'OpenAI', grok: 'xAI', gemini: 'Google', copilot: 'GitHub / Microsoft', cursor: 'Anysphere', antigravity: 'Google DeepMind', autoclaw: 'Z.ai (Zhipu AI)' });
+const EIGENAAR_PER_SLUG: Readonly<Record<AgentSlug, string>> = Object.freeze({
+  claude: 'Anthropic', gpt: 'OpenAI', codex: 'OpenAI', grok: 'xAI', gemini: 'Google', copilot: 'GitHub / Microsoft', cursor: 'Anysphere',
+  antigravity: 'Google DeepMind', autoclaw: 'Z.ai (Zhipu AI)', windsurf: 'Windsurf (Codeium)', cline: 'Cline', devin: 'Cognition', opencode: 'OpenCode',
+});
 export function aiEigenaar(naam: string): string {
   const slug = agentSlugUitNaam(naam);
   return slug ? EIGENAAR_PER_SLUG[slug] : '';

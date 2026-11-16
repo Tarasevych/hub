@@ -19,7 +19,7 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { isOwnerEmail } from '../server/platform';
 import { isAgentSlug, V2_AGENTEN } from '../shared/connector-v2/agenten';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 
 export const NAMENS_MIN_MINUTEN = 15;
@@ -29,7 +29,7 @@ export const NAMENS_STANDAARD_MINUTEN = 60;
 /** Omvang: groepen van ALLEEN-LEZEN beheerroutes die een agent met een namens-sessie via callSite mag aanroepen. */
 export const NAMENS_OMVANG: Readonly<Record<string, { uk: string; nl: string; routes: readonly string[] }>> = Object.freeze({
   overzicht: { uk: 'Огляд адміністрування (лічильники, стан)', nl: 'Beheeroverzicht (tellers, stand)', routes: ['POST /api/owner/admin/overview'] },
-  uitrol: { uk: 'Історія розгортань (лише читання)', nl: 'Uitrolgeschiedenis (alleen lezen)', routes: ['POST /api/owner/uitrol/overzicht', 'POST /api/owner/uitrol/runs'] },
+  uitrol: { uk: 'Історія розгортань (лише читання)', nl: 'Uitrolgeschiedenis (alleen lezen)', routes: ['POST /api/owner/uitrol/overzicht', 'POST /api/owner/uitrol/runs', 'POST /api/owner/uitrol/stroom/stand'] },
   diagnostiek: { uk: 'Діагностика сервісів (лише читання)', nl: 'Diagnostiek van diensten (alleen lezen)', routes: ['POST /api/owner/admin/diagnostiek/overzicht'] },
   journaal: { uk: 'Журнал аудиту (лише читання)', nl: 'Auditlogboek (alleen lezen)', routes: ['POST /api/owner/audit/beheer/lijst'] },
 });
@@ -46,10 +46,11 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/identity\/admin\//,            // rollen van anderen
   /^[A-Z]+ \/api\/owner\/identity\/codewoord(\/|$)/,    // codewoord instellen/wijzigen
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
-  /^[A-Z]+ \/api\/owner\/admin\/(users|roles|access)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/admin\/(users|roles|access|access-requests)(\/|$)/, // SEC-002 aanv-gat-a-01: ook besluiten over toegangsverzoeken
   /^[A-Z]+ \/api\/owner\/agent-namens\//,               // namens-sessies zelf
   /^[A-Z]+ \/api\/owner\/uitrol\/voorbereiders(\/|$)/,  // wie updates mag voorbereiden (grants)
   /^[A-Z]+ \/api\/owner\/uitrol\/(goedkeuren|goedkeuring)(\/|$)/,
+  /^[A-Z]+ \/api\/owner\/uitrol\/stroom\/(?!stand$).+/, // enkel de eigenaar mag stroomnotities, controlelijsten en bewijsrapporten schrijven/verwijderen
   /^[A-Z]+ \/api\/owner\/ai-beleid(\/|$)/,              // AI-beleid (ondertekend door de eigenaar)
   /^[A-Z]+ \/api\/owner\/geheimen(\/|$)/,               // «Секрети й ключі»
   /^[A-Z]+ \/api\/owner\/(sleutelkluis|codewoord|tech-ruimtes|besluit|aanmeld|orch)(\/|$)/,
@@ -58,6 +59,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/mcp-connector\/(grants|approvals|consent)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp\/consent(\/|$)/,
   /^[A-Z]+ \/api\/owner\/connector-v2\//,
+  /^[A-Z]+ \/api\/owner\/mcp-inspector\//,             // SEC-002 (slot m, MR-6): MCP-studio voert hulpmiddelen uit en toont koppelingen: alleen een mens
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/(ontgrendeling|extensie-status|extensie-beheer|register|ws-ticket|block|unblock)(\/|$)/, // browserextensie ontgrendelen/intrekken/status (0.5), beheer/beleid (0.6) en agentregistratie: alleen een mens
   /^[A-Z]+ \/api\/owner\/tech\//,                       // technisch profiel activeren/verlengen
@@ -70,6 +72,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/beveiliging\//,              // «Захист»: auth-poort, OPA, RLS aan/uit (alleen de eigenaar zelf)
   /^[A-Z]+ \/api\/impersonatie\//,                     // «Подивитися як користувач»: alleen mensen vragen, geven en gebruiken toegang (0068)
   /^[A-Z]+ \/api\/ondersteuning\//,                    // «Підтримка від імені»: idem
+  /^[A-Z]+ \/api\/owner\/ai\/geheugen\/bots\/(opslaan|testen|status|verwijderen)(\/|$)/, // botsleutels en botstatus van agentbots: alleen een mens met actieve sleutelkluis
 ]);
 export const agentRouteVerboden = (route: string): boolean => AGENT_VERBODEN.some((r) => r.test(route));
 export const AGENT_NIET_TOEGESTAAN_TEKST = Object.freeze({
@@ -167,17 +170,15 @@ export function agentNamensRoutes(deps: { requireSession: RequireSession }): Rec
       await schrijfBeheerAudit({ actor: { id: auth.user.id, email: auth.user.email }, doel: { soort: 'agent', naam: 'namens-sessie' }, actie: 'agent.namens.geweigerd', resultaat: 'denied', reden: 'OWNER_REQUIRED' });
       return error('OWNER_REQUIRED', 403);
     }
-    if (opts.passkey) {
-      // Alleen een passkey telt (geen Google, geen TOTP): dit geeft een AI tijdelijk verhoogde rechten.
-      if (!(await passkeyStapOpGeldig(auth as StapOpAuth))) {
+    try {
+      // Alleen een passkey telt (geen Google, geen TOTP): dit geeft een AI tijdelijk verhoogde rechten. Eén bevestiging = één
+      // aanmaak/opruiming: controleren en verbruiken ondeelbaar (SEC-002 g06), bij een fout van run() teruggezet.
+      const stap = await metStapOpEenmalig(auth as StapOpAuth, opts.passkey ? passkeyStapOpGeldig : null, () => run(ctx, auth));
+      if (!stap.ok) {
         await schrijfBeheerAudit({ actor: { id: auth.user.id, email: auth.user.email }, doel: { soort: 'agent', naam: 'namens-sessie' }, actie: 'agent.namens.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
         return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
       }
-    }
-    try {
-      const uit = await run(ctx, auth);
-      if (opts.passkey) await stapOpVerbruiken(auth as StapOpAuth); // één bevestiging = één aanmaak/opruiming
-      return json(uit);
+      return json(stap.uit);
     } catch (e) {
       const code = (e as Error).message || 'NAMENS_FOUT';
       if (/^[A-Z][A-Z0-9_]{2,60}$/.test(code)) return error(code, 400);

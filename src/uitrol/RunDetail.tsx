@@ -9,10 +9,12 @@ import Oorzaak from './Oorzaak';
 import PakketActies from './PakketActies';
 import './pakket.css';
 import CommitTekst from './CommitTekst';
+import UitrolStroomKaart from './UitrolStroomKaart';
+import { VERSIE_RE } from '../../shared/uitrol-stroom';
 import { commitWeergave } from '../../shared/bron-commit';
 import { DEELSTAPPEN, datumLang, deelStanden, duur, methodeTekst, mb, runDuur, staatTekst, subTijden, tijdKort, tr, type Gebeurtenis, type Lang, type Regel, type Run } from './types';
 
-type Props = { lang: Lang; context: Record<string, unknown>; runId: string; hoogte?: number };
+type Props = { lang: Lang; context: Record<string, unknown>; runId: string; hoogte?: number; naarStroom?: (versie: string) => void };
 
 function Kopieerbaar({ lang, tekst }: { lang: Lang; tekst: string }) {
   const [ok, setOk] = useState(false);
@@ -20,7 +22,7 @@ function Kopieerbaar({ lang, tekst }: { lang: Lang; tekst: string }) {
     <button type='button' className='ut-icoon' aria-label={tr(lang, 'Копіювати', 'Kopiëren')} onClick={() => { void navigator.clipboard?.writeText(tekst).then(() => { setOk(true); window.setTimeout(() => setOk(false), 1500); }).catch(() => undefined); }}>{ok ? <Check aria-hidden='true' /> : <ClipboardCopy aria-hidden='true' />}</button></span>;
 }
 
-export default function RunDetail({ lang, context, runId, hoogte }: Props) {
+export default function RunDetail({ lang, context, runId, hoogte, naarStroom }: Props) {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<Gebeurtenis[]>([]);
   const [regels, setRegels] = useState<Regel[]>([]);
@@ -118,6 +120,7 @@ export default function RunDetail({ lang, context, runId, hoogte }: Props) {
     </div>
 
     {run.staat !== 'bezig' && <PakketActies lang={lang} context={context} run={run} />}
+    {VERSIE_RE.test(run.versie || '') && <UitrolStroomKaart lang={lang} context={context} versie={run.versie} compact naarStroom={naarStroom} />}
 
     {run.methode !== 'ssh' && <section>
       <h3>{tr(lang, 'Кроки', 'Stappen')}</h3>

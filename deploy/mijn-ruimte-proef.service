@@ -11,3 +11,14 @@ Nice=5
 # via systemd-run als de app-gebruiker met de migratierol (NOSUPERUSER) in een wegwerpdatabase.
 ProtectHome=yes
 PrivateTmp=yes
+# SEC-002 (server-uitrol-11): dat «schrijft alleen in» stond hier als belofte, niet als grens — het script verwerkt een verzoek
+# van de app met volledige root-rechten op het bestandssysteem. Nu is alles alleen-lezen behalve precies die mappen en het slot
+# (/run/lock/mijn-ruimte-migratie-proef.lock). De installer maakt de mappen aan vóór hij mijn-ruimte-proef.path aanzet;
+# «-» laat de unit ook starten als er één ontbreekt. psql/pg_dump (als postgres) en systemd-run werken via sockets en
+# hebben geen schrijfbaar bestandssysteem nodig.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=-/var/lib/mijn-ruimte-proef -/var/lib/mijn-ruimte-uitrol-status -/srv/mijn-ruimte/proef-inbox -/run/lock
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes

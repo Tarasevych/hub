@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 // UI-010 / BUG-004: shared/uitrol-manifest.ts — tweetalige metadata, deelnemers, modellen, TESTRESULTATEN v2.
-import { fotoVeilig, kiesBeschrijving, leesTestresultaten, manifestVerplicht, mensFotoUitAccount, mensWeergaveNaam, testDetails, valideerManifest } from '../../shared/uitrol-manifest';
+import { fotoVeilig, isEigenAccount, kiesBeschrijving, leesTestresultaten, manifestVerplicht, mensFotoUitAccount, mensWeergaveNaam, testDetails, valideerManifest } from '../../shared/uitrol-manifest';
 import { manifestVoor } from '../fixtures/uitrol/manifest-voorbeeld';
 import { checker } from './hulp/nep-google';
 
@@ -40,6 +41,26 @@ export async function main(): Promise<number> {
     fotoVeilig(groteFoto) === groteFoto
     && mensFotoUitAccount('Тарасевич Павло (tarasevych.pavlo@gmail.com)', { naam: 'Тарасевич Павло', email: 'tarasevych.pavlo@gmail.com', foto: groteFoto }) === groteFoto
     && mensWeergaveNaam('Власник', { naam: 'Тарасевич Павло', email: 'tarasevych.pavlo@gmail.com' }) === 'Тарасевич Павло (tarasevych.pavlo@gmail.com)');
+
+  // 15.11.2026: власник бачив в «Автор» чуже/старе фото. Перший обліковий запис, чиє ім'я було ПІДРЯДКОМ імені автора, вигравав
+  // (список відсортовано за адресою), навіть коли в імені автора стояла точна адреса іншого запису. Тепер: адреса > сам глядач > унікальне ім'я.
+  const fotoIk = 'data:image/png;base64,SUs=', fotoAnder = 'https://lh3.googleusercontent.com/a/oud-foto';
+  const ik = { id: 'u1', naam: 'Pavlo Tarasevych (Павло Тарасевич)', email: 'tarasevych.pavlo@gmail.com', foto: fotoIk };
+  const lijst = [{ id: 'u2', naam: 'Павло Тарасевич', label: 'p.tarasevych@voorbeeld.test', email: 'p.tarasevych@voorbeeld.test', foto: fotoAnder }, { id: 'u1', naam: ik.naam, label: ik.email, email: ik.email, foto: fotoIk }];
+  check('автор з адресою: фото облікового запису з ТІЄЮ адресою, а не першого з подібним ім\'ям',
+    mensFotoUitAccount('Павло Тарасевич (tarasevych.pavlo@gmail.com)', ik, lijst) === fotoIk
+    && mensFotoUitAccount('Павло Тарасевич (tarasevych.pavlo@gmail.com)', null, lijst) === fotoIk
+    && mensFotoUitAccount('Павло Тарасевич (p.tarasevych@voorbeeld.test)', ik, lijst) === fotoAnder);
+  check('автор без адреси: лише унікальне точне ім\'я; два записи з таким ім\'ям → без фото (ініціали), а не вгадування',
+    mensFotoUitAccount('Павло Тарасевич', null, lijst) === fotoAnder
+    && mensFotoUitAccount('Павло Тарасевич', null, [...lijst, { id: 'u3', naam: 'Павло Тарасевич', email: 'derde@voorbeeld.test', foto: fotoIk }]) === ''
+    && mensFotoUitAccount('Тарас', null, lijst) === '');
+  check('адреса чужого запису, якого немає в списку → без фото, а не фото глядача',
+    mensFotoUitAccount('Хтось (iemand@voorbeeld.test)', ik, lijst) === '' && !isEigenAccount('Хтось (iemand@voorbeeld.test)', ik)
+    && isEigenAccount('Власник', ik) && isEigenAccount('Павло Тарасевич (TARASEVYCH.PAVLO@gmail.com)', ik));
+  const persoon = readFileSync('src/uitrol/Persoon.tsx', 'utf8'), beschr = readFileSync('src/uitrol/UitgaveBeschrijving.tsx', 'utf8');
+  check('фото з кешу/шапки (того, хто дивиться) — лише для власного облікового запису, не для інших учасників',
+    /if \(direct \|\| !ikZelf\) return direct;/.test(persoon) && beschr.includes('isEigenAccount(naam, account) ? actieveAccountFoto(account?.foto, true)'));
 
   // taalkeuze en terugval
   const m = goed.manifest!;

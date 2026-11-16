@@ -113,12 +113,24 @@ export function metOvergang(doe: () => void) {
 
 // ------------------------------------------------------------------------------------------------ vooruitladen (Speculation Rules)
 const ondersteunt = () => { try { return typeof HTMLScriptElement !== 'undefined' && typeof (HTMLScriptElement as unknown as { supports?: (t: string) => boolean }).supports === 'function' && (HTMLScriptElement as unknown as { supports: (t: string) => boolean }).supports('speculationrules'); } catch { return false; } };
-const MAX_VOORUIT = 4;
+const MAX_VOORUIT = 10;
+const voorverbonden = new Set<string>();
 /** Bij aanwijzen/focus van een menu-item naar een ander onderdeel: alvast ophalen (of voorbereiden). */
 export function vooruitladen(href: string) {
   const s = instellingen();
   if (!s.vooruitladen || prefetchMode() === 'off' || typeof document === 'undefined') return '';
   const url = vooruitUrl(href); if (!url) return '';
+  try {
+    const u = new URL(url);
+    if (u.origin !== location.origin && !voorverbonden.has(u.origin)) {
+      voorverbonden.add(u.origin);
+      const pre = document.createElement('link');
+      pre.rel = 'preconnect';
+      pre.href = u.origin;
+      pre.dataset.tsvVooruit = 'preconnect';
+      document.head.appendChild(pre);
+    }
+  } catch { /* ongeldige URL */ }
   const soort = s.prerender ? 'prerender' : 'prefetch';
   let doos = document.getElementById('tsv-vooruit');
   if (!doos) { doos = document.createElement('div'); doos.id = 'tsv-vooruit'; doos.setAttribute('aria-hidden', 'true'); document.body.appendChild(doos); }

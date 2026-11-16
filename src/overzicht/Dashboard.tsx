@@ -13,6 +13,7 @@ import { WIDGET_ICOON, WidgetInhoud, type WidgetCtx } from './widgets';
 import type { Bron, Context, Lang, Overzicht } from './types';
 import { tr } from './types';
 import './overzicht.css';
+import './overzicht-maquette.css';
 
 const POLL_MS = 15_000;
 const RIJ_PX = 118; const GAP_PX = 14;
@@ -194,6 +195,41 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
 
   const ctx: WidgetCtx | null = useMemo(() => (o ? { o, lang, bron, codes, nu: o.nu, openGebruiker: setOpen, pauze, zetPauze: setPauze, context } : null), [o, lang, bron, codes, pauze, context]);
 
+  const zichtbaarIds = useMemo(() => indeling.items.filter((i) => !i.verborgen).map((i) => i.id), [indeling]);
+  const zendStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:overview-stand', {
+      detail: { pauze, bewerken, zichtbaarIds },
+    }));
+  }, [pauze, bewerken, zichtbaarIds]);
+
+  useEffect(() => {
+    zendStand();
+  }, [zendStand]);
+
+  useEffect(() => {
+    const onActie = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ actie?: 'vernieuw' | 'pauze' | 'bewerken'; selector?: string }>).detail;
+      if (!detail) return;
+      if (detail.actie === 'vernieuw') { void laden(); return; }
+      if (detail.actie === 'pauze') { setPauze((v) => !v); return; }
+      if (detail.actie === 'bewerken') {
+        if (bewerken) klaarRef.current();
+        else if (indelingKlaar) setBewerken(true);
+        return;
+      }
+      if (detail.selector) {
+        document.querySelector(detail.selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    const onVraag = () => zendStand();
+    window.addEventListener('tsv:overview-actie', onActie);
+    window.addEventListener('tsv:overview-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:overview-actie', onActie);
+      window.removeEventListener('tsv:overview-vraag-stand', onVraag);
+    };
+  }, [bewerken, indelingKlaar, laden, zendStand]);
+
   const statusTekst = opslag === 'bezig' ? tr(lang, 'Зберігаємо…', 'Opslaan…') : opslag === 'ok' ? tr(lang, 'Розташування збережено', 'Indeling opgeslagen') : opslag === 'fout' ? tr(lang, 'Не вдалося зберегти розташування', 'Indeling kon niet worden opgeslagen') : aangepast ? tr(lang, 'Ваше розташування', 'Uw indeling') : tr(lang, 'Типове розташування', 'Standaardindeling');
 
   return (
@@ -244,6 +280,16 @@ export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; 
       )}
 
       {fout && <p className="ov-fout" role="alert"><TriangleAlert aria-hidden="true" /> {fout}</p>}
+      {o?.gedeeltelijkeFout && (
+        <p className="ov-banner" role="status" data-testid="ov-gedeeltelijke-fout">
+          <TriangleAlert aria-hidden="true" />{' '}
+          {tr(
+            lang,
+            `Деякі джерела даних тимчасово не відповіли (${o.bronFouten.join(', ')}) — частина показників може бути неповною.`,
+            `Sommige gegevensbronnen reageerden tijdelijk niet (${o.bronFouten.join(', ')}) — een deel van de cijfers kan onvolledig zijn.`,
+          )}
+        </p>
+      )}
       <div className="ov-sr" aria-live="polite">{melding}</div>
 
       {!o && !fout && bezigLaden && <p className="ov-leeg"><RefreshCw className="spin" aria-hidden="true" /> {tr(lang, 'Завантажуємо живі дані…', 'Live gegevens laden…')}</p>}

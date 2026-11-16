@@ -11,19 +11,20 @@ import { routeLang } from '../canoniek-navigatie';
 import HulpVraag from '../hulp/HulpVraag';
 import './integraties.css';
 
-export function strookItems(dienst: DoelDienst) {
-  const alle = INTEGRATIES.filter((i) => registerVan(i.id)?.doelDienst === dienst);
+export function strookItems(dienst: DoelDienst, overslaan: readonly string[] = []) {
+  const uitgesloten = overslaan.length ? new Set(overslaan) : null;
+  const alle = INTEGRATIES.filter((i) => registerVan(i.id)?.doelDienst === dienst && (!uitgesloten || !uitgesloten.has(i.id)));
   const zichtbaar = alle.filter((i) => groepVan(i, null) !== 'ontwikkeling');
   return { zichtbaar, inOntwikkeling: alle.length - zichtbaar.length, totaal: alle.length };
 }
 
-export default function IntegratieStrook({ lang: taal, dienst }: { lang?: 'uk' | 'nl'; dienst: DoelDienst }) {
+export default function IntegratieStrook({ lang: taal, dienst, overslaan }: { lang?: 'uk' | 'nl'; dienst: DoelDienst; overslaan?: readonly string[] }) {
   const aan = useCatalogusV2() === true;
   const lang: 'uk' | 'nl' = taal ?? (routeLang() === 'nl' ? 'nl' : 'uk');
   if (!aan) return null;
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
-  const { zichtbaar, inOntwikkeling, totaal } = strookItems(dienst);
-  if (!totaal) return null;
+  const { zichtbaar, inOntwikkeling } = strookItems(dienst, overslaan);
+  if (!zichtbaar.length && !inOntwikkeling) return null;
   let catalogus = ''; try { catalogus = canonicalServiceUrl('admin', 'directories', lang, true); } catch { catalogus = ''; }
   return (
     <section className='is2' data-integratie-strook={dienst} aria-label={tr('Підключення для цього розділу', 'Koppelingen voor dit onderdeel')}>

@@ -7,6 +7,7 @@
 // melding met «Оновити сторінку» in plaats van een witte pagina. Bewust NIET technisch (staat in src/tech/): nodig vóór de bundel.
 import { Component, lazy, type ComponentType, type ReactNode } from 'react';
 import { techActief, techVernieuwen } from './tech-opslag';
+import './tech-maquette.css';
 
 export const isBundelFout = (e: unknown) => /dynamically imported module|Importing a module script failed|error loading dynamically|Failed to fetch|ChunkLoadError|Unable to preload CSS|TECH_BUNDEL/i.test(String((e as Error)?.message || e || ''));
 

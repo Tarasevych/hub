@@ -19,6 +19,7 @@ import MerkEigenBeheer from './MerkEigenBeheer';
 import LokaleGenerator from './LokaleGenerator';
 import MerkBronBeheer from './MerkBronBeheer';
 import './integraties.css';
+import './integraties-maquette.css';
 import TabsRij from '../ontwerp/TabsRij';
 // UI-013: vernieuwde catalogus achter vlag `integraties-catalogus-v2` (standaard UIT).
 import CatalogusV2 from './CatalogusV2';
@@ -201,6 +202,45 @@ export default function Integraties({ lang, context, ssoActief, directories, map
 
   const mijn = useMemo(() => INTEGRATIES.filter((i) => { const l = levend(i); return l === 'verbonden' || l === 'ingesteld'; }), [levend]);
   const wensLijst = useMemo(() => INTEGRATIES.filter((i) => wens.includes(i.id)), [wens]);
+
+  const leesStatusRef = useRef(leesStatus);
+  leesStatusRef.current = leesStatus;
+  const broadcastIntegratiesStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:integraties-stand', {
+      detail: {
+        weergave,
+        mijnAantal: mijn.length,
+        totaal: INTEGRATIES.length,
+        mappenAantal: directories.length,
+      },
+    }));
+  }, [weergave, mijn.length, directories.length]);
+
+  useEffect(() => {
+    broadcastIntegratiesStand();
+  }, [broadcastIntegratiesStand]);
+
+  useEffect(() => {
+    const onTab = (ev: Event) => {
+      const d = (ev as CustomEvent<{ weergave?: Weergave; actie?: 'vernieuw'; selector?: string }>).detail;
+      if (!d) return;
+      if (d.actie === 'vernieuw') { void leesStatusRef.current(); return; }
+      if (d.weergave && ['catalogus', 'mijn', 'mappen', 'wizard'].includes(d.weergave)) {
+        setWeergave(d.weergave);
+      }
+      if (d.selector) {
+        const sel = d.selector;
+        window.setTimeout(() => document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 70);
+      }
+    };
+    const onVraag = () => broadcastIntegratiesStand();
+    window.addEventListener('tsv:integraties-tab', onTab);
+    window.addEventListener('tsv:integraties-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:integraties-tab', onTab);
+      window.removeEventListener('tsv:integraties-vraag-stand', onVraag);
+    };
+  }, [broadcastIntegratiesStand]);
 
   const statusChip = (s: IntegratieStatus) => <span className='il-status' data-status={s}>{s === 'klaar' ? <CheckCircle2 aria-hidden /> : s === 'instellen' ? <Settings2 aria-hidden /> : <Clock3 aria-hidden />}{STATUS_LABEL[s][lang === 'uk' ? 0 : 1]}</span>;
   const levendChip = (i: Integratie) => {

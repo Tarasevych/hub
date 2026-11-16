@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "GITHUB-011",
+  "agent": "gemini",
+  "tak": "fix/github-011-oauth-sleutelkluis-20261112-032000",
+  "basisCommit": "f9db50747048f7dc7a6937fff65b0ae4c1058f72",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-12T03:17:14.394Z",
+  "bijgewerkt": "2026-11-12T03:17:14.398Z",
+  "omschrijving": "Виправлення зворотного виклику OAuth та однонатискового підключення GitHub при закритому сховищі ключів (SLEUTELKLUIS_GESLOTEN), передача простору (prive/technisch) і підтримка маркерів GitHub App на основі встановленої версії 20261112-024707",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

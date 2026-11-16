@@ -1,0 +1,27 @@
+/* IDENTITEIT-014: «Ваші дані» / «Uw gegevens» — вивантаження даних облікового запису. Лише токени теми. */
+[data-gegevensuitvoer] .gegevensuitvoer-draai{animation:gegevensuitvoer-draai 1s linear infinite}
+@keyframes gegevensuitvoer-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){[data-gegevensuitvoer] .gegevensuitvoer-draai{animation:none}}
+[data-gegevensuitvoer] .settings-primary{justify-self:start;max-width:100%}
+/* Значок попередження в одному рядку з текстом (без окремого «!» у тексті). */
+[data-gegevensuitvoer] [data-gegevensuitvoer-waarschuwing]{display:flex;align-items:flex-start;gap:8px}
+[data-gegevensuitvoer] [data-gegevensuitvoer-waarschuwing] svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--danger)}
+.gegevensuitvoer-compact{display:grid;gap:6px;justify-items:start}
+.gegevensuitvoer-knop{display:inline-flex;align-items:center;gap:6px;min-height:var(--tik-hoogte,44px);padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-weight:700;max-width:100%}
+.gegevensuitvoer-knop svg{width:17px;height:17px;flex:none}
+/* IDENTITEIT-015: вибір формату й стан «готово». Keuze van het formaat en de stand «klaar». */
+.gegevensuitvoer-formaat{display:grid;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
+.gegevensuitvoer-formaat legend{padding:0 4px;font-weight:700}
+.gegevensuitvoer-formaat label{display:flex;align-items:flex-start;gap:8px;min-height:var(--tik-hoogte,44px);cursor:pointer}
+/* BLOKKEN-001 (15.11.2026): раніше загальне .settings-center input{width:100%} розтягувало перемикач на всю ширину,
+   а підписи вилітали у вузький стовпчик за рамку. Тепер перемикач має сталий розмір, підпис займає решту рядка.
+   NL: vaste maat voor het keuzerondje; het label neemt de rest van de regel. */
+.gegevensuitvoer-formaat label{font-weight:400;padding:8px 10px;border:1px solid transparent;border-radius:10px}
+.gegevensuitvoer-formaat label:has(input:checked){border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.gegevensuitvoer-formaat label input[type=radio]{flex:0 0 18px;width:18px;height:18px;min-width:18px;min-height:0;margin:3px 0 0;padding:0;border:0;background:none;accent-color:var(--accent);appearance:auto}
+.gegevensuitvoer-formaat label > span{flex:1 1 auto}
+.gegevensuitvoer-formaat label span{display:grid;gap:2px;min-width:0}
+.gegevensuitvoer-formaat small{color:var(--muted);overflow-wrap:anywhere}
+.gegevensuitvoer-stand{display:grid;gap:6px;justify-items:start}
+.gegevensuitvoer-stand p{display:flex;align-items:flex-start;gap:6px}
+.gegevensuitvoer-stand p svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--success,var(--accent))}

@@ -7,6 +7,9 @@ import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { Help, IconButton, type Tr } from './mcp-ui';
 import { foutTekst } from './agenten/fouten';
+// SEC-002 extensie-02 (g10a-2): rechten geven mag alleen de mens — zone voor de brug van de extensie + alleen een echte klik.
+import { alleenMens, geenAi } from './menselijke-actie';
+import './ai-bevestiging/ai-bevestigingen-maquette.css';
 
 type Capability = 'browser.read' | 'browser.navigate' | 'browser.interact' | 'browser.screenshot' | 'browser.console' | 'browser.debug' | 'browser.script' | 'machine.read' | 'machine.write' | 'machine.exec' | 'machine.docker';
 type Grant = { id: string; agentId: string; capability: Capability; domains: string[]; always: boolean; preset: string | null; grantedAt: number; expiresAt: number; revokedAt: number | null };
@@ -36,16 +39,28 @@ const errText = (tr: Tr, e: unknown, wat?: [string, string]) => foutTekst(e, tr,
 export function AiStopKnop({ tr, onDone }: { tr: Tr; onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [vraag, setVraag] = useState(false);
-  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [note, setNote] = useState<{ ok: boolean; text: string; rest?: Array<{ uk: string; nl: string }> } | null>(null);
   const stop = () => {
     setVraag(false); setBusy(true); setNote(null);
     void api.post('/api/owner/ai/stop', body())
       .then((r) => {
-        const n = Number(r.data?.grants ?? 0), c = Number(r.data?.commands ?? 0), k = Number(r.data?.connectors ?? 0), t = Number(r.data?.tokens ?? 0);
-        // D-01: ook de connectorverbindingen (Claude/ChatGPT…) zijn ingetrokken — dat moet de gebruiker weten, want die moeten opnieuw verbonden worden.
-        setNote({ ok: true, text: tr(
-          `Зупинено. Забрано дозволів: ${n}, скасовано дій: ${c}, відкликано підключень ШІ: ${k}, токенів: ${t}; браузери вимкнено. Підключення ШІ (Claude, ChatGPT…) доведеться під’єднати заново.`,
-          `Gestopt. Ingetrokken toestemmingen: ${n}, geannuleerde acties: ${c}, ingetrokken AI-verbindingen: ${k}, tokens: ${t}; browsers uitgezet. AI-verbindingen (Claude, ChatGPT…) moeten opnieuw verbonden worden.`) });
+        const d = r.data ?? {};
+        const n = Number(d.grants ?? 0), c = Number(d.commands ?? 0), k = Number(d.connectors ?? 0), t = Number(d.tokens ?? 0);
+        const nm = Number(d.namens ?? 0), vb = Number(d.voorbereiders ?? 0), st = Number(d.streams ?? 0), ag = Number(d.agents ?? 0);
+        const rest = Array.isArray(d.rapport?.nietAutomatischTeStoppen)
+          ? (d.rapport.nietAutomatischTeStoppen as Array<{ uk?: string; nl?: string }>)
+              .filter((x) => typeof x?.uk === 'string' && typeof x?.nl === 'string')
+              .map((x) => ({ uk: x.uk!, nl: x.nl! }))
+          : [];
+        // D-01 + VEILIG: точний підсумок зупинки й перелік того, що неможливо закрити сервером автоматично.
+        setNote({
+          ok: true,
+          text: tr(
+            `Зупинено. Забрано дозволів: ${n}, скасовано дій: ${c}, відкликано підключень ШІ: ${k}, токенів: ${t}, сесій від імені: ${nm}, прав підготовки випуску: ${vb}, закрито потоків SSE: ${st}, зупинок агентів/браузерів: ${ag}. Підключення ШІ (Claude, ChatGPT…) доведеться під’єднати заново.`,
+            `Gestopt. Ingetrokken toestemmingen: ${n}, geannuleerde acties: ${c}, ingetrokken AI-verbindingen: ${k}, tokens: ${t}, sessies namens u: ${nm}, voorbereidingsrechten: ${vb}, gesloten SSE-stromen: ${st}, gestopte agenten/browsers: ${ag}. AI-verbindingen (Claude, ChatGPT…) moeten opnieuw verbonden worden.`,
+          ),
+          rest,
+        });
         onDone?.();
       })
       .catch((e) => setNote({ ok: false, text: errText(tr, e, ['Не вдалося зупинити', 'Stoppen mislukt']) }))
@@ -64,7 +79,16 @@ export function AiStopKnop({ tr, onDone }: { tr: Tr; onDone?: () => void }) {
           {tr('Стоп', 'Stop')}
         </IconButton>
       )}
-      {note ? <small className={`ag-melding ag-melding-${note.ok ? 'ok' : 'fout'}`} role={note.ok ? 'status' : 'alert'}>{note.text}</small> : null}
+      {note ? (
+        <small className={`ag-melding ag-melding-${note.ok ? 'ok' : 'fout'}`} role={note.ok ? 'status' : 'alert'}>
+          <span>{note.text}</span>
+          {note.rest?.length ? (
+            <ul className='ai-stop-rest'>
+              {note.rest.map((item, i) => <li key={i}>{tr(item.uk, item.nl)}</li>)}
+            </ul>
+          ) : null}
+        </small>
+      ) : null}
     </span>
   );
 }
@@ -111,7 +135,7 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
     <div className='ai-grants' data-ai-grants={agentId}>
       {geblokkeerd ? <p className='hub-note is-warn' role='alert'><Ban size={14} /> {tr('Доступ ШІ для вашого облікового запису заблоковано. Дозволи не діють.', 'AI-toegang voor uw account is geblokkeerd. Toestemmingen werken niet.')}</p> : null}
 
-      <div className='ai-blok'>
+      <div className='ai-blok' {...geenAi}>
         <div className='ai-blok-kop'><h4>{tr('Набір дозволів', 'Set toestemmingen')}</h4><small className='hub-meta'>{tr('Застосування набору замінює чинні дозволи цього пристрою.', 'Een set toepassen vervangt de huidige toestemmingen van dit apparaat.')}</small></div>
         <div className='ag-segment ai-presets' role='radiogroup' aria-label={tr('Набір дозволів', 'Set toestemmingen')}>
           {presets.map(([id, p]) => {
@@ -120,9 +144,9 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
             return (
               <span key={id} className='ag-segment-optie'>
                 <button type='button' role='radio' aria-checked={huidig === id} disabled={!!busy || geblokkeerd} data-preset={id}
-                  onClick={() => void act(`preset:${id}`, () => api.post('/api/owner/ai/grants/preset', { ...body(), agentId, preset: id }),
+                  onClick={alleenMens(() => void act(`preset:${id}`, () => api.post('/api/owner/ai/grants/preset', { ...body(), agentId, preset: id }),
                     () => tr(`Набір «${p.uk}» застосовано: ${list.length} дозв. на ${duur(p.minutes)}; попередні дозволи цього пристрою замінено.`, `Set "${p.nl}" toegepast: ${list.length} toest. voor ${duur(p.minutes)}; eerdere toestemmingen van dit apparaat vervangen.`),
-                    ['Не вдалося застосувати набір', 'Set toepassen mislukt'])}>
+                    ['Не вдалося застосувати набір', 'Set toepassen mislukt']))}>
                   {busy === `preset:${id}` ? <Loader2 className='ag-spin' aria-hidden='true' /> : id === 'spostericach' ? <Eye aria-hidden='true' /> : id === 'razovo' ? <Clock aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
                   <span>{tr(p.uk, p.nl)}</span>
                 </button>
@@ -155,9 +179,9 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
         ) : <p className='hub-meta'>{tr('Немає дозволів: ШІ нічого не може робити на цьому пристрої.', 'Geen toestemmingen: de AI kan niets op dit apparaat.')}</p>}
       </div>
 
-      <div className='ai-blok'>
+      <div className='ai-blok' {...geenAi}>
         <div className='ai-blok-kop'><h4>{tr('Окремий дозвіл', 'Losse toestemming')}</h4></div>
-        <form className='ai-grant-form' onSubmit={(e) => { e.preventDefault(); void act('add', () => api.post('/api/owner/ai/grants/add', { ...body(), agentId, capability: cap, minutes: always && minutes > maxDays * 1440 ? maxDays * 1440 : minutes, always, ...(platform === 'browser' && domainList.length ? { domains: domainList } : {}) }), () => tr(`Дозвіл «${capNaam(cap)}» додано на ${duur(minutes)}.`, `Toestemming "${capNaam(cap)}" toegevoegd voor ${duur(minutes)}.`), ['Не вдалося додати дозвіл', 'Toevoegen mislukt']); }}>
+        <form className='ai-grant-form' onSubmit={alleenMens((e: { preventDefault: () => void }) => { e.preventDefault(); void act('add', () => api.post('/api/owner/ai/grants/add', { ...body(), agentId, capability: cap, minutes: always && minutes > maxDays * 1440 ? maxDays * 1440 : minutes, always, ...(platform === 'browser' && domainList.length ? { domains: domainList } : {}) }), () => tr(`Дозвіл «${capNaam(cap)}» додано на ${duur(minutes)}.`, `Toestemming "${capNaam(cap)}" toegevoegd voor ${duur(minutes)}.`), ['Не вдалося додати дозвіл', 'Toevoegen mislukt']);})}>
           <label className='ai-veld'><span>{tr('Що', 'Wat')}</span>
             <select value={cap} onChange={(e) => setCap(e.target.value as Capability)} disabled={!!busy}>
               {caps.map((c) => <option key={c} value={c}>{capNaam(c)}</option>)}

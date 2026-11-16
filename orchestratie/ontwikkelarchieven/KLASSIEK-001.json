@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-001",
+  "titel": "Хвиля 0 тем оформлення «Біла класика» та «Чорна класика»: прагматичне ядро палітр, ділове спрощення maquette-kern та центр облікового запису id.tarasevych.com",
+  "opdracht": "Запровадити дві незалежні прагматичні безколірні теми макета — «Біла класика» (palet: 'klassiek-wit') та «Чорна класика» (palet: 'klassiek-zwart') — поруч із кольоровим студійним «Макетом» та іншими темами платформи Mijn Ruimte, нічого не видаляючи. У Хвилі 0 (KLASSIEK-001) збудувати наскрізне ядро обох класичних тем з миттєвим першим кадром без миготіння та фіксованим світлим чи темним тоном незалежно від перемикача режиму, підготувати прагматичний класичний режим спільних складників src/maquette-kern/ із компактною однорядковою шапкою, плавними заокругленнями (16px на картках, 11px на кнопках і полях), згорнутою за замовчуванням якірною навігацією та швидким переходом Ctrl+K, а також оформити центр облікового запису id.tarasevych.com, екрани входу, гостьовий зал і сторінку 404.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-001-20261114-044130",
+    "basis": "f07883bfa1a890f3e71b726ccdb9e8a570e3d6e6",
+    "geinstalleerdeBasis": "f3f3fabba7f7c9248a09d9d5b1a0c7f5b4e2f300",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "f07883bfa1a890f3e71b726ccdb9e8a570e3d6e6",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, вміст приватних листів і файлів, внутрішні мережеві адреси, службові шляхи середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T04:41:24Z",
+      "stap": "Створено окрему робочу гілку feature/klassiek-001-20261114-044130 від базової фіксації f07883bfa1a890f3e71b726ccdb9e8a570e3d6e6 та зареєстровано завдання KLASSIEK-001."
+    },
+    {
+      "tijd": "2026-11-14T04:55:00Z",
+      "stap": "Додано канонічні палітри klassiek-wit і klassiek-zwart до shared/uiterlijk.ts, src/thema/*, public/canonical-service.js, index.html, scripts/kleur-contrast-controle.mjs та перемикачів у Налаштування → Теми й обох меню облікового запису (AccountMenuV3 і CanoniekAccountMenu)."
+    },
+    {
+      "tijd": "2026-11-14T05:10:00Z",
+      "stap": "Створено прагматичне класичне ядро src/maquette-kern/klassiek-hulp.ts та src/maquette-kern/maquette-klassiek.css і доповнено MaquetteHeld, MaquetteSectieKaart, MaquetteAnkerRail (згорнута капсула за замовчуванням у mr-klassiek-rail-v1), MaquetteSnelNaar та MaquetteVoet."
+    },
+    {
+      "tijd": "2026-11-14T05:25:00Z",
+      "stap": "Створено прагматичний класичний центр облікового запису IdentiteitKlassiekMaquette для id.tarasevych.com та оформлено діловий монохромний вигляд екранів входу, гостьового залу та сторінки 404."
+    },
+    {
+      "tijd": "2026-11-14T05:36:00Z",
+      "stap": "Узгоджено позиціонування липкої панелі розділів у центрі облікового запису, прогнано повне складання проєкту, модульні перевірки контрасту на 28 палітрах і живий огляд у безголовому оглядачі Chromium."
+    }
+  ],
+  "keuzes": [
+    "Теми «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) запроваджено як дві окремі наскрізні палітри поруч із kleur, maquette, grifel, puur та violet без жодного видалення наявних тем чи виглядів.",
+    "Кожна з двох класичних тем тримає власний сталий світловий тон (завжди світлий у klassiek-wit та завжди темний у klassiek-zwart), не перезаписуючи збережене налаштування режиму користувача для інших палітр.",
+    "На елементі <html> одночасно виставляються клас palet-maquette та ознака data-maquette-stijl='klassiek' (для студійного Макета — 'studio'), що дозволяє перевизначати кольорові декорації на всіх піддоменах чистими селекторами без порушення студійного вигляду.",
+    "Бічна якірна навігація MaquetteAnkerRail у класичних темах типово згорнута у компактну капсулу біля краю екрана (окремий ключ mr-klassiek-rail-v1), щоб не перекривати робочі таблиці та списки."
+  ],
+  "wijzigingen": [
+    "index.html",
+    "orchestratie/ontwikkelarchieven/KLASSIEK-001.json",
+    "orchestratie/taken/KLASSIEK-001.json",
+    "public/canonical-service.js",
+    "scripts/kleur-contrast-controle.mjs",
+    "shared/uiterlijk.ts",
+    "src/CanoniekAccountMenu.tsx",
+    "src/CanoniekOmlijsting.tsx",
+    "src/GastToegang.tsx",
+    "src/NietGevonden.tsx",
+    "src/accountmenu-v3/accountmenu-v3-voorkeuren.ts",
+    "src/agenten/agenten-kern-maquette.css",
+    "src/identiteit/IdentiteitAccountPagina.tsx",
+    "src/identiteit/IdentiteitKlassiekMaquette.tsx",
+    "src/identiteit/identiteit-klassiek-maquette.css",
+    "src/identiteit/identiteit-vormgeving.ts",
+    "src/main.tsx",
+    "src/maquette-kern/MaquetteAnkerRail.tsx",
+    "src/maquette-kern/MaquetteHeld.tsx",
+    "src/maquette-kern/MaquetteSectieKaart.tsx",
+    "src/maquette-kern/MaquetteSnelNaar.tsx",
+    "src/maquette-kern/MaquetteVoet.tsx",
+    "src/maquette-kern/index.ts",
+    "src/maquette-kern/klassiek-hulp.ts",
+    "src/maquette-kern/maquette-aanmelden.css",
+    "src/maquette-kern/maquette-klassiek.css",
+    "src/maquette-kern/maquette-tokens.css",
+    "src/thema/ThemaInstellingen.tsx",
+    "src/thema/kern.ts",
+    "src/thema/paletten.css",
+    "src/thema/paletten.ts",
+    "src/thema/thema-instellingen.css",
+    "src/thema/useThema.ts",
+    "tests/eenheid/contrast-knoppen-logos-20261021.test.ts",
+    "tests/eenheid/klassiek-001-kern.test.ts",
+    "tests/eenheid/thema.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-001 --fase overdracht — успішно.",
+    "Перевірка типів: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle на 28 палітрах, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: klassiek-001-kern (8/8), maquette-001-kern (10/10), thema (22/22, 11 520 комбінацій), contrast-knoppen-logos-20261021 (38/38), accountmenu-v3 (30/30), identiteit-atelier (36/36), identiteit-maquette (46/46), mobiel-cascade-20261105 (22/22).",
+    "Жива візуальна перевірка у безголовому оглядачі Chromium через локальний HTTPS для id.tarasevych.com та hub.tarasevych.com у темах «Біла класика» та «Чорна класика» на широкому та мобільному екранах."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "src/identiteit/IdentiteitAccountPagina.tsx",
+    "src/maquette-kern/MaquetteHeld.tsx"
+  ],
+  "beperkingen": [
+    "Хвиля 0 (KLASSIEK-001) охоплює наскрізне ядро палітр klassiek-wit і klassiek-zwart, прагматичний режим maquette-kern, екрани входу та піддомен id.tarasevych.com; внутрішні робочі екрани решти дев'яти піддоменів (mail, cloud, github, hub, ai, huis, mcp, api, admin) послідовно оформлюються у Хвилях 1–9 (KLASSIEK-002 — KLASSIEK-010)."
+  ]
+}

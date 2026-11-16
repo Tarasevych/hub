@@ -125,11 +125,13 @@ export default function ApparaatLuisteraar({ lang, service }: { lang: Lang; serv
   const laad = useCallback(async () => {
     try {
       const r = await open(ctx);
-      setTotp(r.totp); setGeluid(r.geluid); setToonAls(r.toonAls);
+      if (!r || !Array.isArray(r.verzoeken)) return;
+      const lijst = r.verzoeken;
+      setTotp(Boolean(r.totp)); setGeluid(Boolean(r.geluid)); setToonAls(r.toonAls === 'melding' ? 'melding' : 'venster');
       setVerzoeken((oud) => {
         // Nieuwe verzoeken: geluid (als gewenst). Afgeronde die we nog tonen, houden we even met hun eindstand.
-        for (const v of r.verzoeken) if (!gezien.current.has(v.id)) { gezien.current.add(v.id); if (r.geluid) piep(); }
-        const nieuw = new Map(r.verzoeken.map((v) => [v.id, v] as const));
+        for (const v of lijst) if (!gezien.current.has(v.id)) { gezien.current.add(v.id); if (r.geluid) piep(); }
+        const nieuw = new Map(lijst.map((v) => [v.id, v] as const));
         for (const o of oud) if (!nieuw.has(o.id) && o.stand === 'wacht') nieuw.set(o.id, { ...o, stand: 'verlopen' });
         return [...nieuw.values()];
       });

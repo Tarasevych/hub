@@ -24,3 +24,5 @@
 .zijbalk-modus-segmenten .zijbalk-modus-icoon svg{width:1.15rem;height:1.15rem}
 @media (prefers-reduced-motion:reduce){.zijbalk-blok-pijl{transition:none}}
 .zijbalk-modus-segmenten .zijbalk-modus-icoon{background:none!important;width:auto!important;height:auto!important;padding:0!important}
+/* IDENTITEIT-014: «Типи сповіщень» (MeldingVoorkeurenPaneel) у блоці #menu-meldingtypen — відступ дає сам блок, прокрутку — сторінка. */
+.zijbalk-blok-inhoud .mv-paneel{padding:0;overflow:visible}

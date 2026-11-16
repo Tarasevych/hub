@@ -4,8 +4,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
 import { vlagBody } from '../tech/ruimtes/ruimtes-vlag';
+import { HUIS_VLAG } from '../../shared/huis-model';
 
-export const HUIS_VLAG = 'huis-vnext';
+// HUIS-001 (10.11.2026): de sleutel stond hier én in shared/huis-model.ts; nu één bron (zoals cloud-vlag.ts ↔ cloud-vnext-model).
+export { HUIS_VLAG };
 const OPSLAG = `mr-vlag:${HUIS_VLAG}`;
 let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPSLAG); return v === '1' ? true : v === '0' ? false : null; } catch { return null; } })();
 let bezig: Promise<boolean> | null = null;

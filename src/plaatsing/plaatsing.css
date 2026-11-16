@@ -66,7 +66,7 @@
 /* menu rechts: de stapel blijft in het inhoudsvlak, links van het menu */
 @media (min-width:701px){
   .canonical-chrome[data-dock='rechts'] .plaats-actiestapel{--plaats-rechts:var(--zijbalk-rail,60px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .plaats-actiestapel{--plaats-rechts:310px}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .plaats-actiestapel{--plaats-rechts:340px}
 }
 /* technische band verborgen: #root schuift omhoog (translate); de stapel blijft aan de onderrand — regel in src/tech/tech.css */
 /* ruimte onder de inhoud: elke regel kan boven de stapel worden gescrold */
@@ -78,6 +78,7 @@ html[data-tech=aan] #root .canonical-chrome[data-plaats-stapel]:not([data-focus-
    er schuift niets op en er springt niets naar een andere plek). Eén regel per venster, niet per combinatie. */
 html body:has(.mail-new-message-backdrop) .plaats-actiestapel,
 html body:has(.zk-uitklap) .plaats-actiestapel,
+html body:has(.am3-mobiel-laag) .plaats-actiestapel,
 .canonical-chrome.sidebar-drawer .plaats-actiestapel{visibility:hidden}
 @media (max-width:900px){html body:has(.zk-scrim) .plaats-actiestapel{visibility:hidden}}
 /* alleen «Написати» in de stapel weg (zijn gniezdo blijft staan): brief open, paneel van de meldingen open */

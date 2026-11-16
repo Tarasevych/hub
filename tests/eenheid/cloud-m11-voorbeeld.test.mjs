@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url);
-const ts=require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript');
+const ts=(()=>{try{return require('typescript')}catch{return require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript')}})();
 const root=new URL('../../',import.meta.url);
 const src=(p)=>readFileSync(new URL(p,root),'utf8');
 const moduleUrl=(path,replace={})=>{let code=src(path);for(const [a,b]of Object.entries(replace))code=code.replaceAll(a,b);

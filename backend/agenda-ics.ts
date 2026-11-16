@@ -20,7 +20,7 @@ import {
   ICS_MAX_BYTES, ICS_TIMEOUT_MS, ICS_VENSTER_TERUG_DAGEN, ICS_VENSTER_VOORUIT_DAGEN,
   binnenIcsVenster, icsIsAanDeBeurt, normaliseerIcsInterval, ontleedIcs, veiligIcsAdres,
 } from '../shared/agenda-ics-model';
-import { externeSpiegelVervang, externeSpiegelWis, type ExterneRij } from './agenda-spiegel';
+import { externStatusSpoor, externeSpiegelVervang, externeSpiegelWis, type ExterneRij } from './agenda-spiegel';
 import { pinnedFetch } from './veilige-fetch';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { ladeNogGeldig, ladeOf, metLade } from './ruimte-cloud-agenda';
@@ -146,7 +146,11 @@ export async function icsOphalen(ownerUserId: string, id: string): Promise<IcsHa
     const code = bericht === 'ICS_BESTAND_TE_GROOT' ? 'ICS_BESTAND_TE_GROOT'
       : bericht === 'REMOTE_TIMEOUT' ? 'ICS_TIJD_OVERSCHREDEN'
         : bericht === 'SSRF_ADRES_GEWEIGERD' ? 'ICS_ADRES_GEWEIGERD'
-          : bericht === 'REMOTE_URL_INVALID' ? 'ICS_ADRES_ONGELDIG' : 'ICS_OPHALEN_MISLUKT';
+          : bericht === 'REMOTE_URL_INVALID' ? 'ICS_ADRES_ONGELDIG'
+            // SEC-002 (integraties-03): een statuscode buiten 200–599 (bv. 999) is een fout van de aanbieder, net als een 5xx.
+            : bericht === 'REMOTE_STATUS_INVALID' ? 'ICS_AANBIEDER_FOUT' : 'ICS_OPHALEN_MISLUKT';
+    // Nacontrole g08-3: een ongeldige status laat een spoor in de audit na (alleen de host).
+    if (bericht === 'REMOTE_STATUS_INVALID') await externStatusSpoor(ownerUserId, 'ics', id, adres);
     await afronden(ownerUserId, id, 'fout', 0, code, '');
     return { staat: 'fout', aantal: 0, fout: code, vevents: 0, afgekapt: false };
   }

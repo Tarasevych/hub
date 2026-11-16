@@ -18,6 +18,7 @@ import { alsGebruiker } from './ai-toestemmingen';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { zoekNorm } from '../shared/zoek-normalisatie';
+import { jsonbTekst } from '../shared/tekst-veilig';
 
 export type Treffer = { bron: string; id: string };
 export type GeschiedenisStand = 'vers' | 'verouderd' | 'vernieuwd' | 'fout';
@@ -117,7 +118,7 @@ export async function geschiedenisBewaren(lade: Lade, invoer: BewaarInvoer): Pro
   const standGevraagd = String(invoer.stand || '') === 'fout' ? 'fout' : null;
   return alsGebruiker(lade.userId, async q => {
     const vorige = (await q(`SELECT ${KOLOMMEN} FROM app.zoek_geschiedenis WHERE user_id = $1 AND ruimte = $2 AND vraag_norm = $3 AND filters_sleutel = md5($4::jsonb::text)`,
-      [lade.userId, lade.ruimte, vraagNorm, JSON.stringify(filters)])).rows[0];
+      [lade.userId, lade.ruimte, vraagNorm, jsonbTekst(filters)])).rows[0];
     const bestond = !!vorige;
     const verschil = bestond ? samenvoegen(rij(vorige).treffers, treffers) : { nieuw: [] as Treffer[], weg: [] as Treffer[], gebleven: [] as Treffer[] };
     const stand: GeschiedenisStand = standGevraagd ?? (bestond ? 'vernieuwd' : 'vers');
@@ -132,7 +133,7 @@ export async function geschiedenisBewaren(lade: Lade, invoer: BewaarInvoer): Pro
          algoritme_versie = EXCLUDED.algoritme_versie, index_versie = EXCLUDED.index_versie,
          treffers = EXCLUDED.treffers, totaal = EXCLUDED.totaal, stand = EXCLUDED.stand
        RETURNING ${KOLOMMEN}`,
-      [lade.userId, lade.ruimte, vraag, vraagNorm, JSON.stringify(filters), alg, idx, JSON.stringify(bewaarTreffers), bewaarTotaal, stand])).rows[0];
+      [lade.userId, lade.ruimte, vraag, vraagNorm, jsonbTekst(filters), alg, idx, jsonbTekst(bewaarTreffers), bewaarTotaal, stand])).rows[0];
     // Begrenzing per lade: de oudste rijen boven GESCHIEDENIS_MAX gaan weg (binnen dezelfde lade, dubbel beveiligd).
     await q(`DELETE FROM app.zoek_geschiedenis WHERE user_id = $1 AND ruimte = $2 AND id IN (
                SELECT id FROM app.zoek_geschiedenis WHERE user_id = $1 AND ruimte = $2 ORDER BY laatst_op DESC OFFSET $3)`, [lade.userId, lade.ruimte, GESCHIEDENIS_MAX]);

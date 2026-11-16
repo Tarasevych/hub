@@ -46,21 +46,55 @@ async function ruimteWeigeringMelden(lichaam: unknown): Promise<void> {
 // ---------------------------------------------------------------------------------------------
 export type ApiResponse<T = any> = { data: T; status: number; headers: Headers };
 
-/** Fout met dezelfde velden die de app-code al uitleest (response.status/data, status, responseText). */
+/** Fout met dezelfde velden die de app-code al uitleest (response.status/data, status, retryAfter, responseText). */
 export class ApiError extends Error {
   status: number;
   statusCode: number;
+  readonly retryAfter: number;
+  readonly maxAttempts?: number;
+  readonly windowSec?: number;
   responseText: string;
   response: { status: number; statusText: string; data: any; responseText: string };
-  constructor(status: number, statusText: string, data: any, responseText: string) {
-    const code = data && typeof data === 'object' ? String((data as { error?: unknown }).error || (data as { reasonCode?: unknown }).reasonCode || '') : '';
+  constructor(
+    status: number,
+    statusText: string,
+    data: any,
+    responseText: string,
+    retryAfter = 0,
+    maxAttempts?: number,
+    windowSec?: number,
+  ) {
+    const obj = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
+    const code = obj ? String(obj.error || obj.reasonCode || '') : '';
     super(code || `HTTP_${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.statusCode = status;
+    const uitBody = obj ? Number(obj.retryAfter) : 0;
+    this.retryAfter = retryAfter > 0 && Number.isFinite(retryAfter)
+      ? Math.min(86_400, Math.max(1, Math.ceil(retryAfter)))
+      : Number.isFinite(uitBody) && uitBody > 0
+        ? Math.min(86_400, Math.max(1, Math.ceil(uitBody)))
+        : 0;
+    const pogingen = maxAttempts !== undefined ? maxAttempts : obj ? Number(obj.maxAttempts) : NaN;
+    if (Number.isFinite(pogingen) && pogingen > 0) this.maxAttempts = Math.round(pogingen);
+    const venster = windowSec !== undefined ? windowSec : obj ? Number(obj.windowSec) : NaN;
+    if (Number.isFinite(venster) && venster > 0) this.windowSec = Math.round(venster);
     this.responseText = responseText;
     this.response = { status, statusText, data, responseText };
   }
+}
+
+function leesRetryAfter(kopWaarde: string | null, lichaamWaarde: unknown): number {
+  const uitLichaam = Number(lichaamWaarde);
+  if (Number.isFinite(uitLichaam) && uitLichaam > 0) return Math.min(86_400, Math.max(1, Math.ceil(uitLichaam)));
+  if (!kopWaarde) return 0;
+  const sec = Number(kopWaarde.trim());
+  if (Number.isFinite(sec) && sec > 0) return Math.min(86_400, Math.max(1, Math.ceil(sec)));
+  const datum = Date.parse(kopWaarde);
+  return Number.isFinite(datum) && datum > Date.now()
+    ? Math.min(86_400, Math.max(1, Math.ceil((datum - Date.now()) / 1000)))
+    : 0;
 }
 
 function withQuery(url: string, data: unknown): string {
@@ -125,6 +159,8 @@ function metEigenSignaal<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
 }
 
 const VLAG_PAD = /^\/api\/ofrep\/v1\/evaluate\/flags\/([a-z0-9][a-z0-9._-]{0,79})$/i;
+/** Запит прапорців (OFREP або спільний /api/flags). Een vlaggenverzoek (OFREP of de bundel /api/flags). */
+export const vlagVerzoek = (url: string): boolean => url === '/api/flags' || url === '/api/ofrep/v1/evaluate/flags' || VLAG_PAD.test(url);
 type VlagWacht = { sleutel: string; ok: (r: ApiResponse) => void; nee: (e: unknown) => void };
 const vlagRijen = new Map<string, { lichaam: unknown; wacht: VlagWacht[] }>();
 const ofrepVorm = (x: Record<string, unknown>) => ({ key: x.key, value: x.value, reason: x.reason, variant: x.variant, ...(x.errorCode ? { errorCode: x.errorCode, errorDetails: 'flag not found' } : {}), metadata: x.metadata ?? {} });
@@ -168,6 +204,13 @@ function vlagInBundel(sleutel: string, lichaam: unknown): Promise<ApiResponse> {
 async function request(method: string, url: string, data?: unknown, opnieuw = false, opties: ApiOpties = {}): Promise<ApiResponse> {
   meldActiviteit(1);
   try {
+    // IDENTITEIT-015 (gastcodes e2e): прапорці потребують сесії. Поки не відомо, чи вона є (перше відкриття, bootstrap ще йде), чекаємо
+    // відповіді (не довше 4 с); «out» — відмова тут же, без запиту й без 401 у консолі відвідувача чи гостя.
+    // Vlaggen vragen een sessie: eerst wachten tot bekend is of er een is; zonder sessie meteen weigeren, zonder netwerkverzoek.
+    if (method === 'POST' && typeof window !== 'undefined' && vlagVerzoek(url) && (await (await import('../tab-context')).wachtOpSessieHint()) === 'out') {
+      const weiger = { error: 'OWNER_SESSION_REQUIRED' };
+      throw new ApiError(401, 'Unauthorized', weiger, JSON.stringify(weiger));
+    }
     const vlag = method === 'POST' && !opnieuw && !opties.signal && typeof window !== 'undefined' ? VLAG_PAD.exec(url) : null;
     if (vlag) return await vlagInBundel(vlag[1], data);
     if (magSamenvoegen(method, url, opnieuw)) {
@@ -185,6 +228,13 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
     }
     return await requestKern(method, url, data, opnieuw, opties);
   } finally { meldActiviteit(-1); }
+}
+
+/** Dienst en tabblad uit het lichaam van een verzoek: de sleutelkluis-routes hebben dezelfde sessiegegevens nodig. */
+function kluisContextUit(data: unknown): { service?: string; tabContext?: string; sourceOrigin?: string } {
+  const b = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  const t = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  return { service: t(b.service), tabContext: t(b.tabContext), sourceOrigin: t(b.sourceOrigin) };
 }
 
 async function requestKern(method: string, url: string, data: unknown, opnieuw: boolean, opties: ApiOpties): Promise<ApiResponse> {
@@ -219,14 +269,29 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   const antwoordCode = parsed && typeof parsed === 'object' ? String((parsed as { error?: unknown }).error || (parsed as { reasonCode?: unknown }).reasonCode || '') : '';
   const poortVlag = parsed && typeof parsed === 'object' && typeof (parsed as { codewoordPoort?: unknown }).codewoordPoort === 'boolean' ? (parsed as { codewoordPoort: boolean }).codewoordPoort : undefined;
   if (poortVlag !== undefined && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(poortVlag));
+  // IDENTITEIT-015: ворота «другий чинник обов'язковий» — той самий шлях, що й для кодового слова (поле bootstrap).
+  const tweedeVlag = parsed && typeof parsed === 'object' && typeof (parsed as { tweedeFactorPoort?: unknown }).tweedeFactorPoort === 'boolean' ? (parsed as { tweedeFactorPoort: boolean }).tweedeFactorPoort : undefined;
+  if (tweedeVlag !== undefined && typeof window !== 'undefined') void import('../geheim/tweede-factor-poort-brug').then((m) => m.zetTweedeFactorPoort(tweedeVlag));
   meldServerAntwoord(response.status, { route, code: antwoordCode || `HTTP_${response.status}`, lichaam: response.ok ? '' : text });
+  // Routes die «dicht» melden in een gewoon antwoord ({ ok:false, fout:'SLEUTELKLUIS_GESLOTEN' }): geen herhaling mogelijk, wel de kaart.
+  if (response.ok && typeof window !== 'undefined' && parsed && typeof parsed === 'object' && (parsed as { fout?: unknown }).fout === 'SLEUTELKLUIS_GESLOTEN') {
+    void import('./kluis-poort').then((m) => m.kluisGeslotenGezien(kluisContextUit(data))).catch(() => undefined);
+  }
   // Ruimtes-scheiding: elk antwoord met kop X-Ruimte of een 401/403 gaat als gebeurtenis naar src/tech/ruimtes/ruimtes-opslag.ts,
   // die dan de controle-route vraagt en de uitleg toont. Zonder vlag stuurt de server geen kop en blijft alleen 401/403 over (onschuldig).
   if (typeof window !== 'undefined' && (response.headers.get('X-Ruimte') || response.status === 401 || response.status === 403)) {
     try { window.dispatchEvent(new CustomEvent('mr-ruimte-antwoord', { detail: { status: response.status, ruimte: response.headers.get('X-Ruimte'), pad: target.split('?')[0], code: antwoordCode } })); } catch { /* geen venster */ }
   }
   if (!response.ok) {
-    const fout = new ApiError(response.status, response.statusText, parsed, text);
+    const parsedObj = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+    const retryAfter = leesRetryAfter(
+      response.headers?.get?.('Retry-After') ?? response.headers?.get?.('retry-after') ?? null,
+      parsedObj ? parsedObj.retryAfter : undefined,
+    );
+    if (retryAfter > 0 && parsedObj && parsedObj.retryAfter === undefined) {
+      parsedObj.retryAfter = retryAfter;
+    }
+    const fout = new ApiError(response.status, response.statusText, parsed, text, retryAfter);
     if (fout.message === 'CODEWOORD_POORT' && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(true));
     // KLACHT 3 VAN DE EIGENAAR (20.10.2026), het vangnet: weigert de poort van de gescheiden gegevensruimtes een dienst
     // (KEUZE_ONTBREEKT / DIENST_UIT / BEVROREN), dan hoort de mens de ECHTE reden te horen en de volgende stap te zien —
@@ -234,6 +299,14 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
     // antwoord langskomt, wordt die 403 één keer omgezet in een gewone melding met een knop. De pagina blijft onaangeraakt:
     // de fout wordt niet opgegeten maar gewoon doorgegeven.
     if (response.status === 403) void ruimteWeigeringMelden(parsed);
+    // KLUIS-APPARAAT-001 (14.11.2026): de gegevenssleutel is dicht (afgemeld, of de server herstartte na een update). Niet stil «leeg»
+    // tonen: het verzoek wacht, kluis-poort.tsx probeert eerst stil het onthouden apparaat en anders een kaart met één knop op de
+    // pagina zelf; daarna gaat dit verzoek één keer opnieuw. «Пізніше» → de fout gaat door zoals vroeger.
+    if (fout.message === 'SLEUTELKLUIS_GESLOTEN' && !opnieuw && typeof window !== 'undefined' && !url.startsWith('/api/owner/sleutelkluis/')) {
+      let open = false;
+      try { open = await (await import('./kluis-poort')).kluisGesloten(kluisContextUit(data)); } catch { open = false; }
+      if (open) return request(method, url, data, true, opties);
+    }
     // Audit-fix 5/7: extra bevestiging gevraagd → venster «Підтвердіть доступ» (passkey, app-code, herstelcode of Google); daarna één herhaling.
     // STEP_UP_STRONG_REQUIRED (§13.10): rechten intrekken / «Це був не я» — Google alleen telt dan niet.
     if (response.status === 403 && (fout.message === 'STEP_UP_REQUIRED' || fout.message === 'STEP_UP_STRONG_REQUIRED') && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {
@@ -260,38 +333,73 @@ export const api = {
 // image
 // ---------------------------------------------------------------------------------------------
 export interface PreparedImage { data: string; mimeType: string; width: number; height: number; bytes: number; resized: boolean }
-export interface ImageResizeOptions { maxDimension?: number; maxPixels?: number; quality?: number; mimeType?: 'image/jpeg' | 'image/webp' | 'image/png' }
+export interface ImageResizeOptions {
+  maxDimension?: number;
+  maxPixels?: number;
+  quality?: number;
+  mimeType?: 'image/jpeg' | 'image/webp' | 'image/png';
+  square?: boolean;
+  maxBase64Length?: number;
+}
 
 // Lezen van de schijf gaat door shared/bestand-lezen.ts: `reader.error` is een DOMException van de File API (NotReadableError
 // bij een verplaatst bestand of een cloudmap «op aanvraag») en mag nooit rauw bij de gebruiker komen. Eigenaar 20.10.2026.
 const blobToBase64 = (blob: Blob) => leesBase64(blob);
 
 export const image = {
-  /** Verklein en hercodeer (standaard max 1600 px, max 2 MP, JPEG 0,82). */
+  /** Verklein en hercodeer (standaard max 1600 px, max 2 MP, JPEG 0,82; met square=true gecentreerd 1:1 voor profielfoto's). */
   async resizeIfNeeded(file: File | Blob, options: ImageResizeOptions = {}): Promise<PreparedImage> {
     const maxDimension = options.maxDimension ?? 1600;
     const maxPixels = options.maxPixels ?? 2_000_000;
     const quality = options.quality ?? 0.82;
     const mimeType = options.mimeType ?? 'image/jpeg';
+    const square = options.square === true;
+    const maxBase64Length = options.maxBase64Length ?? 0;
     // createImageBitmap leest het bestand ZELF van de schijf: ook dat is een leesbewerking (NotReadableError, InvalidStateError).
-    const bitmap = await metLeesfout(file, () => createImageBitmap(file));
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await metLeesfout(file, () => createImageBitmap(file, { imageOrientation: 'from-image' }));
+    } catch (err) {
+      if ((err as { oorzaak?: unknown })?.oorzaak instanceof TypeError) {
+        bitmap = await metLeesfout(file, () => createImageBitmap(file));
+      } else {
+        throw err;
+      }
+    }
     try {
       const { width, height } = bitmap;
-      const scale = Math.min(1, maxDimension / Math.max(width, height), Math.sqrt(maxPixels / Math.max(1, width * height)));
-      if (scale >= 1 && file.type === mimeType) {
-        return { data: await blobToBase64(file), mimeType, width, height, bytes: file.size, resized: false };
+      const bronBreedte = square ? Math.min(width, height) : width;
+      const bronHoogte = square ? Math.min(width, height) : height;
+      const bronX = square ? Math.floor((width - bronBreedte) / 2) : 0;
+      const bronY = square ? Math.floor((height - bronHoogte) / 2) : 0;
+      const scale = Math.min(1, maxDimension / Math.max(bronBreedte, bronHoogte), Math.sqrt(maxPixels / Math.max(1, bronBreedte * bronHoogte)));
+      if (scale >= 1 && file.type === mimeType && (!square || width === height)) {
+        const ongewijzigd = await blobToBase64(file);
+        if (!maxBase64Length || ongewijzigd.length <= maxBase64Length) {
+          return { data: ongewijzigd, mimeType, width: bronBreedte, height: bronHoogte, bytes: file.size, resized: false };
+        }
       }
-      const w = Math.max(1, Math.round(width * scale));
-      const h = Math.max(1, Math.round(height * scale));
+      const w = Math.max(1, Math.round(bronBreedte * scale));
+      const h = Math.max(1, Math.round(bronHoogte * scale));
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('IMAGE_CANVAS_UNAVAILABLE');
       if (mimeType === 'image/jpeg') { context.fillStyle = '#fff'; context.fillRect(0, 0, w, h); }
-      context.drawImage(bitmap, 0, 0, w, h);
-      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('IMAGE_ENCODE_FAILED'))), mimeType, quality));
-      return { data: await blobToBase64(blob), mimeType, width: w, height: h, bytes: blob.size, resized: true };
+      context.drawImage(bitmap, bronX, bronY, bronBreedte, bronHoogte, 0, 0, w, h);
+      const stappen = maxBase64Length && mimeType !== 'image/png'
+        ? Array.from(new Set([quality, Math.min(quality, 0.76), 0.64, 0.52]))
+        : [quality];
+      let laatsteBlob: Blob | null = null;
+      let laatsteData = '';
+      for (const q of stappen) {
+        laatsteBlob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('IMAGE_ENCODE_FAILED'))), mimeType, q));
+        laatsteData = await blobToBase64(laatsteBlob);
+        if (!maxBase64Length || laatsteData.length <= maxBase64Length) break;
+      }
+      if (!laatsteBlob) throw new Error('IMAGE_ENCODE_FAILED');
+      return { data: laatsteData, mimeType, width: w, height: h, bytes: laatsteBlob.size, resized: true };
     } finally {
       bitmap.close();
     }
@@ -338,9 +446,11 @@ export const invitesClient = {
     try { sessionStorage.removeItem(INVITE_STORAGE_KEY); } catch { /* negeren */ }
   },
   /** Bouw een absolute uitnodigingslink, bijv. path '#/join' of '/join' of '?join=1'. */
-  buildJoinUrl(code: string, options: { path?: string } = {}): string {
+  // IDENTITEIT-014: `origin` — op welke host de link opent. Een link die op id.* wordt gemaakt moet naar de hub (alleen die leest
+  // de code, slaat hem op en sluit aan); sessionStorage hoort bij één host. / Посилання з id.* має вести на hub.
+  buildJoinUrl(code: string, options: { path?: string; origin?: string } = {}): string {
     const target = options.path || '/';
-    const base = `${location.origin}/`;
+    const base = `${options.origin || location.origin}/`;
     if (target.startsWith('#')) {
       const [hashPath, hashQuery = ''] = target.split('?', 2);
       const params = new URLSearchParams(hashQuery);

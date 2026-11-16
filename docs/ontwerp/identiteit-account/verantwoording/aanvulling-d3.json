@@ -1,0 +1,14 @@
+[
+{"sectie":"personalization","schermafdrukken":["tests/e2e/знімки-015/schermen-personalization-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-personalization-uk-licht-380.jpg"]},
+{"sectie":"menu","schermafdrukken":["tests/e2e/знімки-015/schermen-menu-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-menu-uk-licht-380.jpg"]},
+{"sectie":"themes","schermafdrukken":["tests/e2e/знімки-015/schermen-kaart-themes-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-kaart-themes-uk-licht-380.jpg","tests/e2e/знімки-015/schermen-themes-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-themes-uk-licht-380.jpg"]},
+{"sectie":"languages","schermafdrukken":["tests/e2e/знімки-015/schermen-languages-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-languages-uk-licht-380.jpg"]},
+{"sectie":"widgets","schermafdrukken":["tests/e2e/знімки-015/schermen-widgets-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-widgets-uk-licht-380.jpg"]},
+{"sectie":"sharing","schermafdrukken":["tests/e2e/знімки-015/schermen-sharing-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-sharing-uk-licht-380.jpg"]},
+{"sectie":"identities","schermafdrukken":["tests/e2e/знімки-015/schermen-identities-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-identities-uk-licht-380.jpg"]},
+{"sectie":"account","schermafdrukken":["tests/e2e/знімки-015/schermen-account-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-account-uk-licht-380.jpg"]},
+{"sectie":"sessions","schermafdrukken":["tests/e2e/знімки-015/schermen-sessions-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-sessions-uk-licht-380.jpg"]},
+{"sectie":"methods","schermafdrukken":["tests/e2e/знімки-015/schermen-methods-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-methods-uk-licht-380.jpg"]},
+{"sectie":"security","schermafdrukken":["tests/e2e/знімки-015/schermen-security-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-security-uk-licht-380.jpg"]},
+{"sectie":"recovery","schermafdrukken":["tests/e2e/знімки-015/schermen-recovery-nl-donker-1280.jpg","tests/e2e/знімки-015/schermen-recovery-uk-licht-380.jpg"]}
+]

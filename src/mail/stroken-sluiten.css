@@ -1,0 +1,72 @@
+/* STROOK-001 (15.11.2026): ✕ op de taalstrook en de beeldenstrook boven een brief, en de terugknoppen in de kop (src/mail/stroken-sluiten.ts).
+   ✕ staat rechtsboven in de strook, als rustig rond pictogram (geen pil), zodat hij niet met «Показати один раз» concurreert.
+   Specificiteit bewust hoog ([data-strook-sluit]:not(:disabled)): de «Макет»-regels voor knoppen in deze stroken
+   (mail-lezer-opstel-maquette.css, tot (0,3,3)) zouden er anders een pil met rand van maken. Alleen thema-variabelen. */
+html body :is(.vertaal-strook, .mail-beelden-strook):has(> .mail-strook-sluit) {
+  position: relative;
+  padding-right: 46px;
+}
+
+html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled) {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled) svg {
+  width: 16px;
+  height: 16px;
+}
+
+html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled):is(:hover, :focus-visible) {
+  background: var(--nav-hover);
+  color: var(--text);
+  outline: none;
+}
+
+html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled):focus-visible {
+  box-shadow: 0 0 0 2px var(--focus);
+}
+
+/* terugknop in de kop: zelfde rond pictogram als ↩ (.mail-thread-message-antwoord), alleen een zachte accenttint als hint */
+html body .mail-thread-message-antwoord.mail-thread-strook-terug {
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+/* ---- telefoon / smal venster (mobiele laag: laatst in dit bestand) ---- */
+@media (pointer: coarse) {
+  html body :is(.vertaal-strook, .mail-beelden-strook):has(> .mail-strook-sluit) {
+    padding-right: 52px;
+  }
+
+  html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled) {
+    right: 2px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 560px) {
+  /* de stroken lopen hier over meerdere regels: ✕ in de hoek, niet halverwege */
+  html body :is(.vertaal-strook, .mail-beelden-strook) > button.mail-strook-sluit[data-strook-sluit]:not(:disabled) {
+    top: 2px;
+    transform: none;
+  }
+}

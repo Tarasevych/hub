@@ -27,6 +27,8 @@ export const FOUTEN: Record<string, [string, string]> = {
   METHODE_ONBESCHIKBAAR: ['Потрібний спосіб підтвердження зараз не працює. Скористайтеся іншим.', 'De nodige bevestigingsmanier werkt nu niet. Gebruik een andere.'],
   TELEGRAM_BEVESTIGING_NODIG: ['Потрібне ще одне підтвердження.', 'Er is nog een bevestiging nodig.'],
   NETWORK_ERROR: ['Немає з’єднання із сервером. Перевірте інтернет — спроба повториться сама.', 'Geen verbinding met de server. Controleer uw internet — er wordt vanzelf opnieuw geprobeerd.'],
+  // SEC-002 (autorisatie-09): een account dat nog op goedkeuring wacht, kan niets bevestigen.
+  ACCOUNT_NOT_APPROVED_FORBIDDEN: ['Ваш обліковий запис ще чекає на схвалення: підтверджувати дії з іншого пристрою можна лише після нього.', 'Uw account wacht nog op goedkeuring: handelingen bevestigen vanaf een ander apparaat kan pas daarna.'],
 };
 export const foutTekst = (lang: Lang, code: string): string => {
   const f = FOUTEN[code];

@@ -3,11 +3,17 @@
 // zonder integratie een eerlijke lege toestand met één knop. Alles via /api/huis/*; toestanden alleen zoals waargenomen.
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, AlertCircle, Bot, Calculator, ChevronDown, CloudOff, Eye, Gauge, Home, LayoutGrid, Lightbulb, MoreHorizontal, Plug, RefreshCw, Settings, ShieldCheck, Sparkles, Store, Workflow } from 'lucide-react';
+import { Activity, AlertCircle, ArrowUp, Bot, Calculator, ChevronDown, CloudOff, Eye, Gauge, Home, LayoutGrid, Lightbulb, MoreHorizontal, Plug, RefreshCw, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Store, Workflow } from 'lucide-react';
 import { HUIS_TABS, HUIS_TAB_LABEL, type HuisTab } from '../../shared/huis-model';
 import { HuisFout, gekozenWoning, huisClient, kiesWoning, type Overzicht as OverzichtUit } from './huis-client';
 import { foutTekst, geledenTekst, serverFout, tr, useSmal, type Lang } from './tekst';
+import { emitCanonicalNotice } from '../canoniek-meldingen';
+import { MaquetteAnkerRail, MaquetteHeld, abonneerOpenLaag, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from '../maquette-kern';
+import { useIsMaquette } from '../thema/useThema';
 import './huis.css';
+import './huis-kern-maquette.css';
+// SEC-002 (g02): wie zelf nog geen woning heeft, ziet de uitnodigingen al op het startscherm (anders pas onder «Налаштування»).
+import UitnodigingenVoorMij from './onderdelen/UitnodigingenVoorMij';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Kamers = lazy(() => import('./onderdelen/Kamers'));
@@ -23,17 +29,171 @@ const Instellingen = lazy(() => import('./onderdelen/Instellingen'));
 const Showroom = lazy(() => import('./onderdelen/Showroom'));
 const Planner = lazy(() => import('./onderdelen/Planner'));
 
-export type OnderdeelProps = { lang: Lang; smal: boolean; woningId: string; ov: OverzichtUit; vernieuw: () => Promise<void>; toon: (t: string) => void; naarTab: (t: HuisTab) => void };
+export type OnderdeelProps = { lang: Lang; smal: boolean; woningId: string; ov: OverzichtUit; vernieuw: () => Promise<void>; toon: (t: string, soort?: 'ok' | 'fout') => void; naarTab: (t: HuisTab) => void };
 const ICOON: Record<HuisTab, typeof Home> = { overview: Home, rooms: LayoutGrid, devices: Lightbulb, scenes: Sparkles, automations: Workflow, security: ShieldCheck, energy: Gauge, activity: Activity, integrations: Plug, assistant: Bot, settings: Settings, showroom: Store, planner: Calculator };
 
+const HUIS_LAAG_SELECTOR = ".hv-laag, .hv-bevestig, [data-mq-laag-open='1'], dialog[open], [role='dialog'][aria-modal='true']";
+
+type HeldTekst = {
+  boven: readonly [string, string];
+  voor: readonly [string, string];
+  cursief: readonly [string, string];
+  beschrijving: readonly [string, string];
+  secundairDoel: HuisTab;
+};
+
+const HUIS_HELD_START: Omit<HeldTekst, 'secundairDoel'> = {
+  boven: ['ПОЧАТОК ОСЕЛІ · HUIS.TARASEVYCH.COM', 'START VAN UW WONING · HUIS.TARASEVYCH.COM'],
+  voor: ['Ваша оселя починається з', 'Uw woning begint met'],
+  cursief: ['чистого аркуша.', 'een schone lei.'],
+  beschrijving: [
+    'Дайте назву своєму домові, підключіть локальний шлюз Home Assistant або огляньте інтерактивну вітрину. Тут відображаються лише справжні спостереження ваших пристроїв.',
+    'Geef uw woning een naam, koppel uw lokale Home Assistant-gateway of bekijk de interactieve toonzaal. Hier verschijnen uitsluitend echte waarnemingen van uw apparaten.',
+  ],
+};
+
+const HUIS_HELD_TEKSTEN: Record<HuisTab, HeldTekst> = {
+  overview: {
+    boven: ['ПРОСТІР РОЗУМНОЇ ОСЕЛІ · HUIS.TARASEVYCH.COM', 'SLIMME WOONRUIMTE · HUIS.TARASEVYCH.COM'],
+    voor: ['Затишок дому та', 'Wooncomfort en'],
+    cursief: ['справжні спостереження.', 'echte waarnemingen.'],
+    beschrijving: [
+      'Живий огляд вашої оселі без вигаданих показників: температура з часом виміру, підтверджене освітлення, споживання енергії, охорона й останні події локального шлюзу.',
+      'Een levend overzicht van uw woning zonder verzonnen cijfers: temperatuur met meettijd, bevestigde verlichting, energieverbruik, beveiliging en recente meldingen van de lokale gateway.',
+    ],
+    secundairDoel: 'rooms',
+  },
+  rooms: {
+    boven: ['ПРОСТОРОВА БУДОВА · HUIS.TARASEVYCH.COM', 'RUIMTELIJKE INDELING · HUIS.TARASEVYCH.COM'],
+    voor: ['Кімнати, поверхи й', 'Kamers, verdiepingen en'],
+    cursief: ['живий план.', 'levende plattegrond.'],
+    beschrijving: [
+      'Упорядковуйте простори вашого дому за поверхами та переглядайте підтверджені стани пристроїв просто на кресленні оселі.',
+      'Orden de ruimtes van uw woning per verdieping en bekijk bevestigde apparaattoestanden rechtstreeks op de plattegrond.',
+    ],
+    secundairDoel: 'devices',
+  },
+  devices: {
+    boven: ['ВУЗЛИ ТА КЕРУВАННЯ · HUIS.TARASEVYCH.COM', 'APPARATEN EN BEDIENING · HUIS.TARASEVYCH.COM'],
+    voor: ['Кожен пристрій із', 'Elk apparaat met'],
+    cursief: ['чесною свіжістю.', 'eerlijke versheid.'],
+    beschrijving: [
+      'Керуйте освітленням, кліматом і механізмами з обов’язковим очікуванням відповіді шлюзу та видимою актуальністю кожного виміру.',
+      'Bedien verlichting, klimaat en mechanismen met verplichte terugkoppeling van de gateway en zichtbare actualiteit van elke meting.',
+    ],
+    secundairDoel: 'scenes',
+  },
+  scenes: {
+    boven: ['СЦЕНАРІЇ НАСТРОЮ · HUIS.TARASEVYCH.COM', 'SFEERSCÈNES · HUIS.TARASEVYCH.COM'],
+    voor: ['Гармонія світла й тепла', 'Harmonie van licht en warmte'],
+    cursief: ['одним дотиком.', 'met één aanraking.'],
+    beschrijving: [
+      'Поєднуйте узгоджені дії для ранку, вечора чи відпочинку з покроковою перевіркою виконання на кожному пристрої.',
+      'Bundel afgestemde handelingen voor ochtend, avond of rust met stapsgewijze uitvoeringsbevestiging per apparaat.',
+    ],
+    secundairDoel: 'automations',
+  },
+  automations: {
+    boven: ['ПРАВИЛА Й ЗАПОБІЖНИКИ · HUIS.TARASEVYCH.COM', 'REGELS EN VEILIGHEIDSMARGES · HUIS.TARASEVYCH.COM'],
+    voor: ['Зважена автоматика', 'Doordachte automatisering'],
+    cursief: ['без замкнених петель.', 'zonder eindeloze lussen.'],
+    beschrijving: [
+      'Визначайте прозорі умови часу й подій із перевіркою пробного прогону, періодом охолодження та забороною самовільних критичних дій.',
+      'Stel heldere tijd- en gebeurtenisvoorwaarden in met proefloopcontrole, afkoeltijd en uitsluiting van zelfstandige kritieke acties.',
+    ],
+    secundairDoel: 'activity',
+  },
+  security: {
+    boven: ['ОХОРОННИЙ КОНТУР · HUIS.TARASEVYCH.COM', 'BEVEILIGINGSKRING · HUIS.TARASEVYCH.COM'],
+    voor: ['Спокій оселі під', 'Gemoedsrust onder'],
+    cursief: ['рішенням людини.', 'menselijk besluit.'],
+    beschrijving: [
+      'Контролюйте датчики руху, протікання, диму, замки та охоронні режими: критичні перемикання вимагають явного підтвердження мешканця.',
+      'Bewaak bewegings-, lek- en rookmelders, sloten en alarmstanden: kritieke schakelingen vereisen altijd uitdrukkelijke bevestiging van een bewoner.',
+    ],
+    secundairDoel: 'activity',
+  },
+  energy: {
+    boven: ['ОБЛІК ТА ПОТУЖНІСТЬ · HUIS.TARASEVYCH.COM', 'METING EN VERMOGEN · HUIS.TARASEVYCH.COM'],
+    voor: ['Прозорий баланс', 'Heldere balans van'],
+    cursief: ['енергії дому.', 'huisenergie.'],
+    beschrijving: [
+      'Спостерігайте за миттєвою потужністю та накопиченими показниками лічильників виключно на основі датованих вимірів.',
+      'Volg het actuele vermogen en opgebouwde meterstanden uitsluitend op basis van gedateerde waarnemingen.',
+    ],
+    secundairDoel: 'devices',
+  },
+  activity: {
+    boven: ['ХРОНІКА СПОСТЕРЕЖЕНЬ · HUIS.TARASEVYCH.COM', 'WAARNEMINGSKRONIEK · HUIS.TARASEVYCH.COM'],
+    voor: ['Послідовний літопис', 'Sluitend logboek van'],
+    cursief: ['подій і команд.', 'gebeurtenissen en opdrachten.'],
+    beschrijving: [
+      'Переглядайте повний журнал сигналів датчиків, надісланих команд і підтверджень шлюзу з точними часовими позначками.',
+      'Raadpleeg het volledige journaal van sensorsignalen, verzonden opdrachten en gatewaybevestigingen met exacte tijdstempels.',
+    ],
+    secundairDoel: 'security',
+  },
+  integrations: {
+    boven: ['ЛОКАЛЬНИЙ МІСТ · HUIS.TARASEVYCH.COM', 'LOKALE BRUG · HUIS.TARASEVYCH.COM'],
+    voor: ['Прямий зв’язок із', 'Rechtstreekse verbinding met'],
+    cursief: ['домашнім шлюзом.', 'uw thuisgateway.'],
+    beschrijving: [
+      'Підключайте Home Assistant у власній мережі без сторонніх хмар і перевіряйте пульс зв’язку та перелік виявлених вузлів.',
+      'Koppel Home Assistant binnen uw eigen netwerk zonder externe wolken en controleer de hartslag en gevonden eenheden.',
+    ],
+    secundairDoel: 'devices',
+  },
+  assistant: {
+    boven: ['ДОРАДЧИЙ ІНТЕЛЕКТ · HUIS.TARASEVYCH.COM', 'ADVISERENDE INTELLIGENTIE · HUIS.TARASEVYCH.COM'],
+    voor: ['Уважний порадник,', 'Zorgvuldige raadgever,'],
+    cursief: ['де вирішуєте ви.', 'waarbij u beslist.'],
+    beschrijving: [
+      'Отримуйте обґрунтовані пропозиції щодо сцен і правил на основі спостережень оселі — жодна критична дія не виконується сама.',
+      'Ontvang onderbouwde voorstellen voor scènes en regels op basis van woningwaarnemingen — geen enkele kritieke handeling gebeurt vanzelf.',
+    ],
+    secundairDoel: 'scenes',
+  },
+  settings: {
+    boven: ['УСТРІЙ ОСЕЛІ · HUIS.TARASEVYCH.COM', 'WONINGBEHEER · HUIS.TARASEVYCH.COM'],
+    voor: ['Мешканці, права й', 'Bewoners, rechten en'],
+    cursief: ['спільний лад.', 'gedeelde orde.'],
+    beschrijving: [
+      'Керуйте назвою оселі, поверхами, учасниками, рівнями доступу та запрошеннями в єдиному захищеному просторі.',
+      'Beheer de woningnaam, verdiepingen, deelnemers, toegangsniveaus en uitnodigingen in één afgeschermde omgeving.',
+    ],
+    secundairDoel: 'integrations',
+  },
+  showroom: {
+    boven: ['ДЕМОНСТРАЦІЙНА ВІТРИНА · HUIS.TARASEVYCH.COM', 'DEMONSTRATIETOONZAAL · HUIS.TARASEVYCH.COM'],
+    voor: ['Наочний ланцюжок', 'Zichtbare keten van'],
+    cursief: ['від датчика до дії.', 'sensor tot bevestiging.'],
+    beschrijving: [
+      'Досліджуйте інтерактивні сценарії на умовних даних та повноцінний макет «Живий дім» без жодного впливу на ваші справжні пристрої.',
+      'Verken interactieve scenario’s met voorbeeldgegevens en de volledige maquette «Levend huis» zonder enige invloed op uw echte apparaten.',
+    ],
+    secundairDoel: 'overview',
+  },
+  planner: {
+    boven: ['АРХІТЕКТУРНИЙ РОЗРАХУНОК · HUIS.TARASEVYCH.COM', 'ARCHITECTURAAL ONTWERP · HUIS.TARASEVYCH.COM'],
+    voor: ['Продумана будова', 'Doordachte opbouw van'],
+    cursief: ['майбутньої системи.', 'uw toekomstige systeem.'],
+    beschrijving: [
+      'Оцінюйте орієнтовну кількість зон, вузлів та чинників складності за площею й типом житла без вигаданих цінових обіцянок.',
+      'Bepaal een eerlijke indicatie van zones, eenheden en complexiteitsfactoren naar oppervlakte en woningtype zonder verzonnen prijsbeloften.',
+    ],
+    secundairDoel: 'showroom',
+  },
+};
+
 export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; tab: string; onNavigateTab: (id: string) => void }) {
+  const isMaquette = useIsMaquette();
+  const [laagOpen, setLaagOpen] = useState(false);
   const smal = useSmal();
   const huidig: HuisTab = (HUIS_TABS as readonly string[]).includes(tab) ? (tab as HuisTab) : 'overview';
   const [woningen, setWoningen] = useState<Awaited<ReturnType<typeof huisClient.woningen>> | null>(null);
   const [woningId, setWoningId] = useState(gekozenWoning());
   const [ov, setOv] = useState<OverzichtUit | null>(null);
   const [fout, setFout] = useState('');
-  const [melding, setMelding] = useState('');
   const [nieuweNaam, setNieuweNaam] = useState('');
   const [bezig, setBezig] = useState(false);
   const [kiezer, setKiezer] = useState(false);
@@ -43,7 +203,10 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
   const naamVeld = useRef<HTMLInputElement | null>(null);
   const laadTeller = useRef(0);
 
-  const toon = useCallback((t: string) => { setMelding(t); window.setTimeout(() => setMelding(''), 4500); }, []);
+  // HUIS-001 (10.11.2026): elke uitkomst gaat naar het meldingencentrum van het platform (pop-up + regel in het paneel, dienst «Дім / Huis»),
+  // niet meer naar een eigen regel die na 4,5 s spoorloos verdween. `context` zegt over welke woning het gaat.
+  const woningNaam = useRef('');
+  const toon = useCallback((t: string, soort: 'ok' | 'fout' = 'ok') => { emitCanonicalNotice({ text: t, kind: soort === 'fout' ? 'error' : 'success', source: 'huis', context: woningNaam.current || undefined }); }, []);
   const laadWoningen = useCallback(async () => {
     try { const w = await huisClient.woningen(); setWoningen(w); setFout(''); setLijstFout(''); const keuze = w.find((x) => x.id === woningId) ? woningId : (w[0]?.id ?? ''); if (keuze !== woningId) { setWoningId(keuze); kiesWoning(keuze); } }
     catch (e) { setLijstFout(foutTekst(lang, e instanceof HuisFout ? (serverFout(e.status) ? 'SERVER' : e.code) : 'NETWERK')); setWoningen(null); }
@@ -59,6 +222,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
   // Polling (geen WS in deze release): elke 30 s de waarnemingen verversen zolang het tabblad zichtbaar is.
   useEffect(() => { const t = window.setInterval(() => { if (document.visibilityState === 'visible') void vernieuw(); }, 30_000); return () => window.clearInterval(t); }, [vernieuw]);
   const naarTab = useCallback((t: HuisTab) => onNavigateTab(t), [onNavigateTab]);
+  woningNaam.current = woningen?.find((w) => w.id === woningId)?.naam ?? '';
 
   const maakWoning = async () => {
     const naam = nieuweNaam.trim(); if (!naam || bezig) return;
@@ -89,10 +253,225 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
     }
   };
   const Titel = ICOON[huidig];
+  const [actiefAnker, setActiefAnker] = useState('hv-ov-tegels');
   const publiek = huidig === 'showroom' || huidig === 'planner';
+  const zonderWoning = !publiek && Boolean(woningen && !woningen.length);
+
+  useEffect(() => {
+    if (zonderWoning) setActiefAnker('hv-start');
+    else if (huidig === 'overview') setActiefAnker('hv-ov-tegels');
+    else if (huidig === 'settings') setActiefAnker('hv-inst-woning');
+    else setActiefAnker('hv-inhoud');
+  }, [huidig, zonderWoning]);
+
+  const springNaarSectie = useCallback(
+    (id: string) => {
+      if (id.startsWith('tab:')) {
+        const doel = id.slice(4) as HuisTab;
+        naarTab(doel);
+        document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (id === 'actie:vernieuw') {
+        void vernieuw();
+        return;
+      }
+      setActiefAnker(id);
+      if (id === 'hv-boven') {
+        document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (typeof document !== 'undefined') {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    },
+    [naarTab, vernieuw],
+  );
+
+  useEffect(() => {
+    if (!isMaquette || typeof document === 'undefined') {
+      setLaagOpen(false);
+      return;
+    }
+    return abonneerOpenLaag(HUIS_LAAG_SELECTOR, setLaagOpen, {
+      wortel: 'documentElement',
+      attributeFilter: ['open', 'hidden', 'class', 'aria-modal', 'data-mq-laag-open'],
+    });
+  }, [isMaquette, huidig]);
+
+  const statistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(
+    () => [
+      { waarde: ov?.ruimtes.length ?? 0, label: tr(lang, 'Кімнат', 'Kamers') },
+      { waarde: ov?.apparaten.length ?? 0, label: tr(lang, 'Пристроїв', 'Apparaten') },
+      { waarde: ov?.scenes.length ?? 0, label: tr(lang, 'Сцен', 'Scènes') },
+      { waarde: kanaal.tekst, label: tr(lang, 'Канал шлюзу', 'Gatewaykanaal') },
+    ],
+    [ov, kanaal.tekst, lang],
+  );
+
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    if (zonderWoning) {
+      return [
+        {
+          id: 'hv-groep-start',
+          label: tr(lang, 'Початок оселі', 'Startstappen'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-kop', label: tr(lang, 'Заголовок', 'Kop'), icoon: <Home size={15} /> },
+            { id: 'hv-start', label: tr(lang, 'Створення оселі', 'Woning aanmaken'), icoon: <Sparkles size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-verken',
+          label: tr(lang, 'Огляд можливостей', 'Mogelijkheden'),
+          kinderen: [
+            { id: 'tab:showroom', label: tr(lang, 'Демонстраційна вітрина', 'Toonzaal bekijken'), icoon: <Store size={15} /> },
+            { id: 'tab:planner', label: tr(lang, 'Планувальник системи', 'Structuurplanner'), icoon: <Calculator size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    if (huidig === 'overview') {
+      return [
+        {
+          id: 'hv-groep-secties',
+          label: tr(lang, 'Секції огляду', 'Overzichtsblokken'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-ov-tegels', label: tr(lang, 'Показники дому', 'Kerncijfers'), icoon: <Gauge size={15} /> },
+            { id: 'hv-ov-plan', label: tr(lang, 'План оселі', 'Plattegrond'), badge: ov?.ruimtes.length || undefined, icoon: <LayoutGrid size={15} /> },
+            { id: 'hv-ov-scenes', label: tr(lang, 'Швидкі сцени', 'Snelle scènes'), badge: ov?.scenes.length || undefined, icoon: <Sparkles size={15} /> },
+            { id: 'hv-ov-recent', label: tr(lang, 'Останні події', 'Recente gebeurtenissen'), badge: ov?.gebeurtenissen.length || undefined, icoon: <Activity size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-acties',
+          label: tr(lang, 'Швидкі дії', 'Snelle acties'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'actie:vernieuw', label: tr(lang, 'Оновити спостереження', 'Waarnemingen verversen'), icoon: <RefreshCw size={15} /> },
+            { id: 'tab:devices', label: tr(lang, 'Усі пристрої', 'Alle apparaten'), badge: ov?.apparaten.length || undefined, icoon: <Lightbulb size={15} /> },
+            { id: 'tab:integrations', label: tr(lang, 'Шлюз та інтеграції', 'Gateway en koppelingen'), icoon: <Plug size={15} /> },
+            { id: 'tab:settings', label: tr(lang, 'Налаштування оселі', 'Woninginstellingen'), icoon: <Settings size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    if (huidig === 'settings') {
+      return [
+        {
+          id: 'hv-groep-inst',
+          label: tr(lang, 'Розділи налаштувань', 'Instellingsblokken'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-inst-woning', label: tr(lang, 'Назва і поверхи', 'Woning en verdiepingen'), icoon: <Home size={15} /> },
+            { id: 'hv-inst-leden', label: tr(lang, 'Учасники й запрошення', 'Leden en uitnodigingen'), icoon: <SlidersHorizontal size={15} /> },
+            { id: 'hv-inst-nieuw', label: tr(lang, 'Ще одна оселя', 'Nog een woning'), icoon: <Sparkles size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-acties',
+          label: tr(lang, 'Дії сторінки', 'Acties'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'actie:vernieuw', label: tr(lang, 'Оновити стан', 'Status verversen'), icoon: <RefreshCw size={15} /> },
+            { id: 'tab:overview', label: tr(lang, 'До огляду оселі', 'Naar huisoverzicht'), icoon: <Home size={15} /> },
+            { id: 'tab:integrations', label: tr(lang, 'Шлюз оселі', 'Thuisgateway'), icoon: <Plug size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    const ActiefIcoon = ICOON[huidig];
+    const acties: MaquetteAnkerItem[] = [];
+    if (!publiek) {
+      acties.push({ id: 'actie:vernieuw', label: tr(lang, 'Оновити спостереження', 'Waarnemingen verversen'), icoon: <RefreshCw size={15} /> });
+    }
+    acties.push({ id: 'tab:overview', label: tr(lang, 'До огляду оселі', 'Naar huisoverzicht'), icoon: <Home size={15} /> });
+    if (!publiek && huidig !== 'devices') {
+      acties.push({ id: 'tab:devices', label: tr(lang, 'Пристрої', 'Apparaten'), badge: ov?.apparaten.length || undefined, icoon: <Lightbulb size={15} /> });
+    }
+    if (!publiek && huidig !== 'integrations') {
+      acties.push({ id: 'tab:integrations', label: tr(lang, 'Шлюз та інтеграції', 'Gateway en koppelingen'), icoon: <Plug size={15} /> });
+    }
+    if (huidig === 'showroom') {
+      acties.push({ id: 'tab:planner', label: tr(lang, 'Планувальник системи', 'Structuurplanner'), icoon: <Calculator size={15} /> });
+    } else if (huidig === 'planner') {
+      acties.push({ id: 'tab:showroom', label: tr(lang, 'Демонстраційна вітрина', 'Toonzaal bekijken'), icoon: <Store size={15} /> });
+    }
+
+    return [
+      {
+        id: 'hv-groep-secties',
+        label: tr(lang, 'На цій сторінці', 'Op deze pagina'),
+        standaardOpen: true,
+        kinderen: [
+          { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+          { id: 'hv-kop', label: tr(lang, 'Заголовок і шлюз', 'Kop en gateway'), icoon: <SlidersHorizontal size={15} /> },
+          { id: 'hv-inhoud', label: tr(lang, HUIS_TAB_LABEL[huidig][0], HUIS_TAB_LABEL[huidig][1]), icoon: <ActiefIcoon size={15} /> },
+        ],
+      },
+      {
+        id: 'hv-groep-acties',
+        label: tr(lang, 'Супутні дії', 'Verwante acties'),
+        standaardOpen: true,
+        kinderen: acties,
+      },
+    ];
+  }, [huidig, lang, ov?.apparaten.length, ov?.gebeurtenissen.length, ov?.ruimtes.length, ov?.scenes.length, publiek, zonderWoning]);
+
+  const heldTekst = zonderWoning ? HUIS_HELD_START : HUIS_HELD_TEKSTEN[huidig];
+  const heldPrimair = zonderWoning
+    ? { label: tr(lang, 'Назвати оселю', 'Woning benoemen'), onClick: () => naamVeld.current?.focus() }
+    : huidig === 'overview'
+      ? {
+          label: ov && !ov.integraties.length ? tr(lang, 'Підключити шлюз', 'Gateway koppelen') : tr(lang, 'До пристроїв', 'Naar apparaten'),
+          onClick: () => naarTab(ov && !ov.integraties.length ? 'integrations' : 'devices'),
+        }
+      : huidig === 'showroom'
+        ? { label: tr(lang, 'Планувальник структури', 'Structuurplanner'), onClick: () => naarTab('planner') }
+        : huidig === 'planner'
+          ? { label: tr(lang, 'Демонстраційна вітрина', 'Demonstratietoonzaal'), onClick: () => naarTab('showroom') }
+          : { label: tr(lang, 'До огляду оселі', 'Naar huisoverzicht'), onClick: () => naarTab('overview') };
+
+  const heldSecundair = zonderWoning
+    ? { label: tr(lang, 'Переглянути вітрину', 'Toonzaal bekijken'), onClick: () => naarTab('showroom') }
+    : {
+        label: tr(lang, HUIS_TAB_LABEL[HUIS_HELD_TEKSTEN[huidig].secundairDoel][0], HUIS_TAB_LABEL[HUIS_HELD_TEKSTEN[huidig].secundairDoel][1]),
+        onClick: () => naarTab(HUIS_HELD_TEKSTEN[huidig].secundairDoel),
+      };
 
   return (
-    <section className={`hv${smal ? ' is-smal' : ''}`} data-hv-pagina={huidig} aria-labelledby='hv-kop'>
+    <section
+      id='hv-boven'
+      className={`hv${smal ? ' is-smal' : ''}${isMaquette ? ' mq-schil huis-maquette-wikkel' : ''}`}
+      data-hv-pagina={huidig}
+      data-mq-dienst={isMaquette ? 'huis' : undefined}
+      aria-labelledby='hv-kop'
+    >
+      {isMaquette ? (
+        <MaquetteHeld
+          key={'huis-held-' + huidig}
+          id='huis-maquette-held'
+          dienst='huis'
+          lang={lang}
+          modus={huidig === 'overview' || huidig === 'showroom' || Boolean(woningen && !woningen.length) ? 'volledig' : 'compact'}
+          opslagSleutel={'huis-' + huidig}
+          bovenregel={tr(lang, heldTekst.boven[0], heldTekst.boven[1])}
+          titelVoor={tr(lang, heldTekst.voor[0], heldTekst.voor[1])}
+          titelCursief={tr(lang, heldTekst.cursief[0], heldTekst.cursief[1])}
+          beschrijving={tr(lang, heldTekst.beschrijving[0], heldTekst.beschrijving[1])}
+          statistieken={statistieken}
+          primair={heldPrimair}
+          secundair={heldSecundair}
+        />
+      ) : null}
+
       <header className='hv-kop'>
         <div className='hv-kop-tekst'>
           <h2 id='hv-kop'><Titel aria-hidden='true' />{tr(lang, HUIS_TAB_LABEL[huidig][0], HUIS_TAB_LABEL[huidig][1])}{publiek ? <span className='hv-demo-label' data-hv-demo-label='1'>{tr(lang, 'Демо', 'Demo')}</span> : null}</h2>
@@ -112,7 +491,6 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
         </div>
       </header>
       {fout ? <p className='hv-melding is-fout' role='alert'><AlertCircle aria-hidden='true' />{fout}</p> : null}
-      {melding ? <p className='hv-toost' role='status' aria-live='polite'>{melding}</p> : null}
 
       {!publiek && lijstFout ? (
         <section className='hv-foutkaart' role='alert' data-hv-fout-kaart='1'>
@@ -127,11 +505,12 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
       {!publiek && !lijstFout && woningen === null ? <p className='hv-hint' role='status' aria-busy='true' data-hv-laden='1'>{tr(lang, 'Завантаження…', 'Laden…')}</p> : null}
 
       {!publiek && woningen && !woningen.length ? (
-        <section className='hv-start' data-hv-start='1' aria-labelledby='hv-start-kop'>
+        <section id='hv-start' className='hv-start' data-hv-start='1' aria-labelledby='hv-start-kop'>
           <div className='hv-start-kop'>
             <h3 id='hv-start-kop'>{tr(lang, 'Ваш розумний будинок — в одному місці', 'Uw slimme huis — op één plek')}</h3>
             <p>{tr(lang, 'Кімнати, пристрої, сцени й події. Показуємо лише те, що справді повідомив ваш шлюз, — без вигаданих станів.', 'Kamers, apparaten, scènes en gebeurtenissen. We tonen alleen wat uw gateway echt meldt — geen verzonnen toestanden.')}</p>
           </div>
+          <UitnodigingenVoorMij lang={lang} toon={toon} naAanvaarden={async (id) => { kiesWoning(id); setWoningId(id); await laadWoningen(); }} />
           <div className='hv-start-acties'>
             <div className='hv-start-actie is-hoofd' data-hv-actie='woning'>
               <span className='hv-start-icoon' aria-hidden='true'><Home /></span>
@@ -166,7 +545,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
         </section>
       ) : null}
 
-      <div className='hv-inhoud'>
+      <div id='hv-inhoud' className='hv-inhoud'>
         <Suspense fallback={<p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
           {publiek || (woningen && woningen.length && !ov) ? (publiek ? onderdeel() : <p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>) : onderdeel()}
         </Suspense>
@@ -182,6 +561,18 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
             </div>
           </details>
         </nav>
+      ) : null}
+
+      {isMaquette && !smal && !laagOpen && !kiezer && (publiek || (woningen && woningen.length > 0 && !lijstFout)) ? (
+        <MaquetteAnkerRail
+          lang={lang}
+          opslagSleutel='huis-anker'
+          titel={tr(lang, 'На цій сторінці', 'Op deze pagina')}
+          ondertitel={tr(lang, 'Перетягніть до зручного краю', 'Sleep naar een gewenste rand')}
+          items={ankerItems}
+          actief={actiefAnker}
+          onKies={springNaarSectie}
+        />
       ) : null}
     </section>
   );

@@ -35,7 +35,9 @@ export function getPool(soort: PoolSoort = 'systeem'): pg.Pool {
   }
   const connectionString = poolUrl(soort);
   if (!connectionString) throw new Error('DATABASE_URL_ONTBREEKT');
-  const bestaand = pools.get(connectionString);
+  // De migratiepool staat altijd los (eigen sleutel): zij krijgt nooit de tijdslimieten hieronder, ook niet als de URL gelijk is.
+  const sleutel = soort === 'migratie' ? `migratie:${connectionString}` : connectionString;
+  const bestaand = pools.get(sleutel);
   if (bestaand) return bestaand;
   const pool = new pg.Pool({
     connectionString,
@@ -43,10 +45,25 @@ export function getPool(soort: PoolSoort = 'systeem'): pg.Pool {
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
     application_name: `mijn-ruimte-${soort}`,
+    ...(soort === 'migratie' ? {} : pgTijdslimieten()),
   });
   pool.on('error', (err) => console.error('[pg] fout in idle-verbinding:', err.message));
-  pools.set(connectionString, pool);
+  pools.set(sleutel, pool);
   return pool;
+}
+
+/**
+ * SEC-002 (keten-config-05): tijdslimieten voor de pools app en systeem. Vroeger geen enkele: één hangende query of een transactie die
+ * openbleef (fout tussen BEGIN en COMMIT, trage klant) hield een van de tien verbindingen vast — onder een vloed van verzoeken was de
+ * pool dan leeg voor iedereen (aanmelden, sessies, achtergrondwerk). Nu: een opdracht duurt hoogstens 120 s en een transactie mag
+ * hoogstens 60 s stil openstaan. In te stellen (ms; 0 = uit): PG_STATEMENT_TIMEOUT_MS, PG_IDLE_IN_TRANSACTION_TIMEOUT_MS.
+ * De migratiepool (migrate.mjs, migratieproef) krijgt ze niet: een migratie mag lang duren.
+ */
+export function pgTijdslimieten(): { statement_timeout?: number; idle_in_transaction_session_timeout?: number } {
+  const ms = (naam: string, standaard: number) => { const v = process.env[naam]; const n = v === undefined || v === '' ? standaard : Number(v); return Number.isFinite(n) && n >= 0 ? Math.floor(n) : standaard; };
+  const opdracht = ms('PG_STATEMENT_TIMEOUT_MS', 120_000);
+  const stil = ms('PG_IDLE_IN_TRANSACTION_TIMEOUT_MS', 60_000);
+  return { ...(opdracht > 0 ? { statement_timeout: opdracht } : {}), ...(stil > 0 ? { idle_in_transaction_session_timeout: stil } : {}) };
 }
 
 export async function closePool(): Promise<void> {

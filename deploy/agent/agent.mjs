@@ -99,20 +99,34 @@ const CODE_FLAGS = {
   python: ['-c', '-m', '-i'], python3: ['-c', '-m', '-i'], py: ['-c', '-m', '-i'], pythonw: ['-c', '-m', '-i'],
   ruby: ['-e', '-r', '-I'], perl: ['-e', '-E', '-M', '-m', '-I'], php: ['-r', '-B', '-R', '-E', '-a'],
   lua: ['-e', '-l'], Rscript: ['-e', '--expr'], R: ['-e'], java: ['-jar'], jshell: ['-'], tclsh: ['-c'],
-  git: ['-c', '--config-env', '--exec-path', '--upload-pack', '-u', '--receive-pack'],
+  git: ['-c', '--config-env', '--exec-path', '--exec', '--upload-pack', '-u', '--receive-pack'],
   npx: ['-c', '--call'], npm: ['exec', 'x', 'explore', '--call', '-c'],
 };
+/** Programma's waarvan de optie-ontleder elk ondubbelzinnig voorvoegsel van een lange vlag aanneemt (git parse-options, nopt). */
+const AFKORTBAAR = new Set(['git', 'npm', 'npx']);
 function checkInterpreterArgs(name, args) {
   const key = Object.keys(CODE_FLAGS).find((k) => k.toLowerCase() === name.toLowerCase());
   if (SHELLS.has(name.toLowerCase())) throw new Error(`"${name}" is a shell and can never be run by the agent`);
   if (!key) return;
   const flags = CODE_FLAGS[key];
+  let naScript = false;
   for (const a of args) {
     const head = a.split('=')[0];
     // Ook samengevoegde korte vlaggen: node -pe, python -Sc, perl -we.
     const short = /^-[A-Za-z]{2,}$/.test(head) ? [...head.slice(1)].map((c) => `-${c}`) : [head];
-    if (short.some((f) => flags.includes(f)) || flags.includes(head)) throw new Error(`argument "${head}" of ${name} runs code from text and is refused`);
+    // SEC-002 (toets g10a-1): ook een AFKORTING van een lange code-vlag telt — git parse-options en getopt_long nemen elk
+    // ondubbelzinnig voorvoegsel aan (`git ls-remote --upload-pa=<programma>`, synoniem `--exec=`).
+    // Bij git/npm/npx (die afkortingen ECHT aannemen: parse-options, nopt) telt elke positie. Bij de andere interpreters alleen de
+    // eigen opties VÓÓR het script: `node meta.js --in=.env` geeft «--in=.env» aan het script door — dat is een (pad)argument dat de
+    // padcontrole moet zien, geen code-vlag (anders zag de agent-selftest «runs code» in plaats van «protected secret»).
+    // Git/npm/npx — будь-яка позиція; інші інтерпретатори — лише власні опції до назви скрипту.
+    const afgekort = (AFKORTBAAR.has(key) || !naScript) && head.startsWith('--') && head.length > 2 && flags.some((f) => f.startsWith('--') && f.startsWith(head));
+    if (short.some((f) => flags.includes(f)) || flags.includes(head) || afgekort) throw new Error(`argument "${head}" of ${name} runs code from text and is refused`);
     if (key === 'git' && /^(core\.|alias\.|credential\.|protocol\.)/i.test(a)) throw new Error('git configuration overrides are refused');
+    // SEC-002 (naast server-uitrol-09): een adres `ext::<opdracht>` of `fd::` laat git zelf een willekeurig programma starten
+    // (git ls-remote/fetch/clone/pull/push 'ext::sh -c …') — dat is een shell langs de allow-lijst om.
+    if (key === 'git' && /(^|[=\s])(ext|fd)::/i.test(a)) throw new Error('git remote helper addresses (ext::, fd::) run arbitrary programs and are refused');
+    if (!a.startsWith('-')) naScript = true;
   }
 }
 
@@ -742,6 +756,22 @@ function termAllesSluiten(reden) { for (const s of [...termSessies.values()]) s.
 // PowerShell (Windows): de regel is ÉÉN argument na -NoProfile -NonInteractive -Command; nooit shell:true, nooit cmd.exe.
 // Binnen PowerShell is de tekst willekeurig — daarom bevestigt de site ELKE PowerShell-opdracht vóór ze hier aankomt.
 const POWERSHELL = new Set(['powershell', 'pwsh']);
+/**
+ * SEC-002 ai-mcp-02: PowerShell start ALLEEN onder een exacte kale naam. Vroeger ging het achtervoegsel .exe|.cmd|.bat er eerst af,
+ * dus `powershell.cmd` / `PWSH.BAT` startte hier PowerShell terwijl de site (die alleen `.exe` kende) er een gewoon programma in zag
+ * en bij een «altijd»-toestemming geen bevestiging vroeg. 'ja' = exacte naam; 'vermomd' = PowerShell onder een andere naam → weigeren;
+ * 'nee' = iets anders (gaat de gewone weg: allow-lijst, geen shells).
+ */
+const POWERSHELL_EXACT = new Set(['powershell', 'pwsh', 'powershell.exe', 'pwsh.exe']);
+export function powershellSoort(command) {
+  const ruw = String(command ?? '');
+  const kaal = ruw.replace(/^.*[\\/]/, '').replace(/[\s.]+$/, '').replace(/^\s+/, '');
+  let naam = kaal;
+  for (let i = 0; i < 6; i++) { const k = naam.replace(/\.(exe|cmd|bat|com|ps1)$/i, '').replace(/[\s.]+$/, ''); if (k === naam) break; naam = k; }
+  if (!POWERSHELL.has(naam.toLowerCase())) return 'nee';
+  return POWERSHELL_EXACT.has(ruw.toLowerCase()) ? 'ja' : 'vermomd';
+}
+const POWERSHELL_VERMOMD = 'refused: PowerShell runs only under its exact name (powershell, pwsh, powershell.exe, pwsh.exe)';
 /** Spiegel van LEZEND + opdrachtSoort in shared/terminal-opdrachten.ts (tests/eenheid/terminal-opdrachten-20261022 houdt ze gelijk).
  *  Lezend = zonder bevestiging op de site, en mag een alleen-lezen root als werkmap hebben; al het andere is wijzigend. */
 export const LEZEND = Object.freeze({
@@ -756,24 +786,43 @@ export const LEZEND = Object.freeze({
   tree: { nietMet: ['-o'] },
   file: { nietMet: ['-C', '--compile'] },
   dmesg: { nietMet: ['-C', '--clear', '-c', '--read-clear', '-D', '--console-off', '-E', '--console-on', '-n', '--console-level'] },
-  ss: { nietMet: ['-K', '--kill'] },
-  ip: { nietMet: ['set', 'add', 'del', 'delete', 'change', 'replace', 'flush', 'append', 'prepend', 'restore', 'save', 'exec'] },
+  ss: { nietMet: ['-K', '--kill', '-D', '--diag'] },
+  ip: { nietMet: ['set', 'add', 'del', 'delete', 'change', 'replace', 'flush', 'append', 'prepend', 'restore', 'save', 'exec'], nietExact: ['-b', '-ba', '-bat', '-batc', '-batch', '--batch'] },
   ipconfig: { nietMet: ['/release', '/renew', '/flushdns', '/registerdns', '/release6', '/renew6', '/setclassid', '/setclassid6'] },
-  git: { sub: ['status', 'log', 'diff', 'show', 'branch', 'remote', 'ls-files', 'rev-parse', 'describe', 'tag', 'blame', 'shortlog', 'ls-remote', 'reflog', 'worktree'], nietMet: ['--output'] },
-  systemctl: { sub: ['status', 'is-active', 'is-enabled', 'is-failed', 'is-system-running', 'list-units', 'list-timers', 'list-unit-files', 'list-dependencies', 'list-sockets', 'show', 'cat'] },
-  journalctl: { nietMet: ['--vacuum-size', '--vacuum-time', '--vacuum-files', '--rotate', '--flush', '--sync', '--relinquish-var', '--smart-relinquish-var', '--setup-keys', '--update-catalog'] },
+  git: { sub: ['status', 'log', 'diff', 'show', 'branch', 'remote', 'ls-files', 'rev-parse', 'describe', 'tag', 'blame', 'shortlog', 'ls-remote', 'reflog', 'worktree'], nietMet: ['--output', '--exec', '--upload-pack', '--receive-pack'] },
+  systemctl: { sub: ['status', 'is-active', 'is-enabled', 'is-failed', 'is-system-running', 'list-units', 'list-timers', 'list-unit-files', 'list-dependencies', 'list-sockets', 'show', 'cat'], nietMet: ['-H', '--host', '-M', '--machine'] },
+  journalctl: { nietMet: ['--vacuum-size', '--vacuum-time', '--vacuum-files', '--rotate', '--flush', '--sync', '--relinquish-var', '--smart-relinquish-var', '--setup-keys', '--update-catalog', '--cursor-file', '-M', '--machine', '--root', '--image'] },
   npm: { sub: ['ls', 'list', 'view', 'info', 'show', 'outdated', 'explain', 'why', 'ping', 'root', 'prefix', 'bin', '-v', '--version', 'version'] },
   node: { sub: ['-v', '--version', '-h', '--help'], zonderSub: false },
   podman: { sub: ['ps', 'images', 'logs', 'inspect', 'stats', 'top', 'version', 'info', 'port', 'diff', 'history', 'events', 'volume', 'network', 'pod', 'system'] },
   docker: { sub: ['ps', 'images', 'logs', 'inspect', 'stats', 'top', 'version', 'info', 'port', 'diff', 'history', 'events'] },
   'mijn-ruimte-installeer': { sub: ['lijst', 'apps-status'] },
   apt: { sub: ['list', 'search', 'show', 'policy'] }, 'apt-get': { sub: [] },
-  tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command'] },
+  tar: { alleenMet: ['-t', '--list', '-tf', '-tzf', '-tvf', '-tzvf', '-tjf', '-tJf'], nietMet: ['-I', '-F', '--use-compress-program', '--to-command', '--checkpoint-action', '--info-script', '--new-volume-script', '--rsh-command', '--rmt-command', '--index-file', '--one-top-level', '-O', '--to-stdout', '--record-file', '-g', '--listed-incremental', '--volno-file', '--remove-files'] },
 });
 const VOOR_SUB_VLAGGEN = ['--no-pager', '--no-legend', '--plain', '--full', '-q', '--quiet'];
-/** Een argument uit een «niet met»-lijst: exact, met `=waarde`, of — bij een korte vlag `-x` — aangeplakt of gebundeld (`-ofile`, `-tK`). */
-const raakt = (args, lijst) => !!lijst && args.some((a) => lijst.some((v) =>
-  a === v || a.startsWith(`${v}=`) || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))));
+// SEC-002 server-uitrol-09: `git branch` is alleen lezend met deze kijk-vlaggen (spiegel van shared/terminal-opdrachten.ts).
+const BRANCH_KIJK = ['--all', '--remotes', '--verbose', '--list', '--show-current', '--no-color', '--no-column', '--no-abbrev', '--color', '--column', '--abbrev'];
+const BRANCH_KIJK_MET_WAARDE = ['--contains', '--no-contains', '--merged', '--no-merged', '--points-at', '--sort', '--format'];
+const branchLezend = (rest) => {
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (BRANCH_KIJK.includes(a) || /^-[arvl]+$/.test(a)) continue;
+    if ([...BRANCH_KIJK_MET_WAARDE, '--color', '--column', '--abbrev'].some((v) => a.startsWith(`${v}=`))) continue;
+    if (BRANCH_KIJK_MET_WAARDE.includes(a)) { if (i + 1 < rest.length && (a === '--sort' || !rest[i + 1].startsWith('-'))) i++; continue; }
+    return false;
+  }
+  return true;
+};
+/** Een argument uit een «niet met»-lijst: exact, met `=waarde`, bij een korte vlag `-x` aangeplakt of gebundeld (`-ofile`, `-tK`), of
+ *  (SEC-002 server-uitrol-09, toets g10a-1) een AFKORTING van een lange vlag — getopt_long en git nemen elk ondubbelzinnig voorvoegsel
+ *  aan (`--index-fil=x`, `--checkpoint-ac=exec=…`). `vrij` = lange vlaggen die exact zo bestaan en lezend zijn (`tar --list`). Spiegel van de site. */
+const raakt = (args, lijst, vrij = []) => !!lijst && args.some((a) => {
+  const kop = a.startsWith('--') ? a.split('=')[0] : '';
+  return lijst.some((v) => a === v || a.startsWith(`${v}=`)
+    || (/^-[A-Za-z]$/.test(v) && /^-[A-Za-z]/.test(a) && !a.startsWith('--') && a.slice(1).includes(v[1]))
+    || (kop.length > 2 && v.startsWith('--') && v.startsWith(kop) && !vrij.includes(kop)));
+});
 /** Lezend of wijzigend. PowerShell en onbekende programma's zijn altijd wijzigend. */
 export function opdrachtSoort(programma, args) {
   const naam = String(programma || '').replace(/^.*[\\/]/, '').replace(/\.(exe|cmd|bat)$/i, '');
@@ -781,7 +830,8 @@ export function opdrachtSoort(programma, args) {
   const regel = LEZEND[naam];
   if (!regel) return 'wijzigend';
   if (regel === true) return 'lezend';
-  if (raakt(args, regel.nietMet)) return 'wijzigend';
+  if (raakt(args, regel.nietMet, regel.alleenMet)) return 'wijzigend';
+  if (regel.nietExact) { const exact = regel.nietExact; if (args.some((a) => exact.some((v) => a === v || a.startsWith(`${v}=`)))) return 'wijzigend'; }
   if (regel.alleenMet) { const alleen = regel.alleenMet; return args.some((a) => alleen.includes(a)) ? 'lezend' : 'wijzigend'; }
   const sub = regel.sub;
   if (!sub) return 'lezend';
@@ -790,6 +840,7 @@ export function opdrachtSoort(programma, args) {
   if (!eerste) return regel.zonderSub === false ? (args.length > 0 && args.every((a) => sub.includes(a)) ? 'lezend' : 'wijzigend') : 'lezend';
   if (!sub.includes(eerste)) return 'wijzigend';
   if (args.slice(0, args.indexOf(eerste)).some((a) => !VOOR_SUB_VLAGGEN.includes(a))) return 'wijzigend';
+  if (naam === 'git' && eerste === 'branch') return branchLezend(args.slice(args.indexOf(eerste) + 1)) ? 'lezend' : 'wijzigend';
   if (['volume', 'network', 'pod', 'system', 'worktree', 'remote', 'branch', 'tag', 'stash', 'reflog', 'version'].includes(eerste)) {
     const tweede = args.slice(args.indexOf(eerste) + 1).find((a) => !a.startsWith('-')) ?? '';
     const lezendeTweede = ['ls', 'list', 'inspect', 'df', 'info', 'show', 'get-url', '-v', ''];
@@ -804,9 +855,20 @@ async function powershellUitvoeren(cfg, tekst, dir) {
   const file = isWin ? 'powershell.exe' : 'pwsh';
   return programmaStarten(file, ['-NoProfile', '-NonInteractive', '-Command', tekst], dir);
 }
+const actieveProcessen = new Set();
+function stopActieveProcessen(reden = 'noodstop') {
+  for (const child of [...actieveProcessen]) {
+    try { child.kill('SIGTERM'); } catch { /* reken op kill */ }
+    const killTimer = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* al gestopt */ } }, 1500);
+    killTimer.unref?.();
+    actieveProcessen.delete(child);
+  }
+  if (reden) console.log(`[agent] actieve processen gestopt (${reden})`);
+}
 function programmaStarten(command, args, dir) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd: dir, shell: false, windowsHide: true });
+    actieveProcessen.add(child);
     let out = ''; let err = ''; let truncated = false; let gedood = false;
     const add = (buf, which) => {
       const s = buf.toString();
@@ -816,8 +878,8 @@ function programmaStarten(command, args, dir) {
     child.stdout.on('data', (d) => add(d, 'o'));
     child.stderr.on('data', (d) => add(d, 'e'));
     const timer = setTimeout(() => { gedood = true; child.kill('SIGKILL'); }, EXEC_TIMEOUT_MS);
-    child.on('error', (e) => { clearTimeout(timer); reject(e); });
-    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout: out, stderr: err, truncated, timeout: gedood }); });
+    child.on('error', (e) => { clearTimeout(timer); actieveProcessen.delete(child); reject(e); });
+    child.on('close', (code, signal) => { clearTimeout(timer); actieveProcessen.delete(child); resolve({ code, signal, stdout: out, stderr: err, truncated, timeout: gedood }); });
   });
 }
 async function controleerArgPaden(cfg, dir, args) {
@@ -853,7 +915,9 @@ async function termExec(cfg, { command, args = [], cwd = '' } = {}) {
     if (!st?.isDirectory()) throw new Error('cd: not a directory');
     return { cwd: doel };
   }
-  if (POWERSHELL.has(name.toLowerCase())) {
+  const ps = powershellSoort(command);
+  if (ps === 'vermomd' && t.powershell) throw new Error(POWERSHELL_VERMOMD);
+  if (ps === 'ja') {
     if (!t.powershell) throw new Error('refused: PowerShell is switched off on this device (node agent.mjs terminal-config on --powershell)');
     const dir = await safePath(cfg, start);
     const r = await powershellUitvoeren(cfg, args.join(' '), dir);
@@ -1014,7 +1078,10 @@ const handlers = {
     const name = path.basename(command).replace(/\.(exe|cmd|bat)$/i, '');
     // 0.8.0: PowerShell als ÉÉN vast programma (alleen met terminal-config on --powershell): de argumenten worden één -Command-tekst.
     // De site vraagt voor machine_exec altijd een bevestiging (destructief); de tekst binnen PowerShell is willekeurig.
-    if (POWERSHELL.has(name.toLowerCase()) && command === path.basename(command) && terminalDefaults(cfg.terminal).powershell) {
+    // SEC-002 ai-mcp-02: alleen de EXACTE naam; `powershell.cmd` / `pwsh.bat` (voor de site vroeger een gewoon programma) wordt geweigerd.
+    const ps = powershellSoort(command);
+    if (ps === 'vermomd' && terminalDefaults(cfg.terminal).powershell) throw new Error(POWERSHELL_VERMOMD);
+    if (ps === 'ja' && terminalDefaults(cfg.terminal).powershell) {
       return powershellUitvoeren(cfg, args.join(' '), await safePath(cfg, cwd));
     }
     if (command !== path.basename(command) || !cfg.allow.includes(name)) throw new Error(`command "${command}" is not in the agent allow-list`);
@@ -1217,11 +1284,42 @@ function run() {
       ws.send(JSON.stringify({ t: 'auth', ...(t ? { ticket: t } : { token: cfg.token }), version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
       pinger = setInterval(() => { try { ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) })); } catch { /* dicht */ } }, 20_000);
     };
+    const stuurMelding = (data) => {
+      if (ws.readyState !== 1) return;
+      try {
+        ws.send(JSON.stringify({
+          t: 'melding',
+          ruimte: 'prive',
+          context: `${os.hostname()} (${os.platform()})`,
+          link: 'https://mcp.tarasevych.com/',
+          ...data,
+        }));
+      } catch { /* з'єднання закрито */ }
+    };
     ws.onmessage = async (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
-      if (msg.t === 'ready') { delay = 1000; console.log(`[agent] connected as ${msg.agentId}`); }
+      if (msg.t === 'ready') {
+        delay = 1000;
+        console.log(`[agent] connected as ${msg.agentId}`);
+        const vrijMb = Math.round(os.freemem() / (1024 * 1024));
+        const laagGeheugen = vrijMb < 512;
+        stuurMelding({
+          sleutel: `pc-agent:ready:${msg.agentId}`,
+          soort: laagGeheugen ? 'waarschuwing' : 'systeem',
+          ernst: laagGeheugen ? 'warning' : 'info',
+          titel: laagGeheugen
+            ? `Мало вільної пам’яті на ${os.hostname()} (${vrijMb} MB) / Weinig vrij geheugen op ${os.hostname()}`
+            : `ПК-агент ${os.hostname()} підключено / Pc-agent ${os.hostname()} verbonden`,
+          bericht: `Вільно ОЗП: ${vrijMb} MB · Дозволених тек: ${cfg.roots?.length || 0} / Vrij RAM: ${vrijMb} MB · Mappen: ${cfg.roots?.length || 0}`,
+        });
+      }
       else if (msg.t === 'ping') ws.send(JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(cfg.roots, cfg.allow, cfg.readonlyRoots, cfg.apps, cfg.terminal) }));
-      else if (msg.t === 'stop') { console.log('[agent] Стоп: усі дозволи відкликано на сайті'); termAllesSluiten('noodstop'); }
+      else if (msg.t === 'stop' || msg.type === 'noodstop') {
+        console.log('[agent] Стоп: усі дозволи відкликано на сайті');
+        stuurMelding({ sleutel: `pc-agent:stop:${Date.now()}`, soort: 'beveiliging', ernst: 'warning', titel: 'Аварійна зупинка ПК-агента / Noodstop van pc-agent', bericht: 'Усі дозволи відкликано на сайті. / Alle machtigingen ingetrokken op de site.' });
+        termAllesSluiten('noodstop');
+        stopActieveProcessen('noodstop');
+      }
       else if (msg.t === 'term.in' || msg.t === 'term.close') termBericht(msg);
       else if (msg.t === 'cmd') {
         console.log(`[agent] ${msg.type}`, JSON.stringify(msg.params).slice(0, 200));
@@ -1234,6 +1332,13 @@ function run() {
           if (!rechtAan(msg.type)) throw new Error(`refused: "${msg.type}" is switched off on this device (rechten.json)`);
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: true, data: await h(cfg, msg.params ?? {}) }));
         } catch (e) {
+          stuurMelding({
+            sleutel: `pc-agent:cmd-fout:${msg.type}:${String(e.message).slice(0, 40)}`,
+            soort: 'beveiliging',
+            ernst: 'error',
+            titel: `Відхилено команду агента (${msg.type}) / Agentopdracht geweigerd (${msg.type})`,
+            bericht: String(e.message || 'Помилка виконання').slice(0, 300),
+          });
           ws.send(JSON.stringify({ t: 'result', id: msg.id, ok: false, error: e.message }));
         }
       }
@@ -1242,6 +1347,10 @@ function run() {
       clearInterval(pinger);
       termAllesSluiten('verbinding');
       if (ev.code === 4403) die('токен відкликано або недійсний. Виконайте pair заново.');
+      if (ev.code === 4410) {
+        stopActieveProcessen('noodstop');
+        die('аварійна зупинка на сайті (код 4410): усі дозволи відкликано, повторне підключення зупинено. Запустіть агент знову вручну після видачі дозволів.');
+      }
       console.log(`[agent] disconnected (${ev.code}), retry in ${delay / 1000}s`);
       setTimeout(connect, delay);
       delay = Math.min(delay * 2, 30_000);

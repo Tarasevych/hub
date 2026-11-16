@@ -32,10 +32,12 @@ export async function main(): Promise<number> {
   check('двигун не чіпає document.body і не шукає в document', !motor.includes('document.body') && !motor.includes('document.getElementById(') && !motor.includes('document.querySelector'));
   check('усі слухачі вікна/документа реєструються через luister і знімаються в stop()', !/\n\s*(window|doc)\.addEventListener\(/.test(motor) && motor.includes('stop() { for (const weg of luisteraars) weg(); }'));
   check('пороги ширини макета стали класами кореня за шириною робочої області, без зайвої специфічності (:where)', drempels.includes(730) && drempels.includes(1040) && motor.includes('root.classList.toggle("bp-max-"+n,b<=n)') && !/@media\s*\((max|min)-width/.test(stijlen) && stijlen.includes(':where(.bp-max-730)') && !/\.mr-mq\.bp-(max|min)-\d+/.test(stijlen));
-  check('правило flat-content сайту (радіуси, тіні) не торкається елементів макета; герой — без відступів index.css', readFileSync('src/canoniek-omlijsting.css', 'utf8').includes(':not(.auth-card):not(.mr-mq *){border-inline:0;border-radius:0;box-shadow:none}') && omlijsting.includes(":where(.hero):where(:not(.mq-echt *)){display:revert;margin:revert;padding:revert") && (omlijsting.match(/:where\([^)]*\):where\(:not\(\.mq-echt \*\)\)\{[^}]*revert/g) || []).length > 15);
+  check('правило flat-content сайту (радіуси, тіні) не торкається елементів макета; герой — без відступів index.css', !/flat-content'\]\s*\.canonical-content\s*:where\(section[^}]*border-radius:0/.test(readFileSync('src/canoniek-omlijsting.css', 'utf8')) && omlijsting.includes(":where(.hero):where(:not(.mq-echt *)){display:revert;margin:revert;padding:revert") && (omlijsting.match(/:where\([^)]*\):where\(:not\(\.mq-echt \*\)\)\{[^}]*revert/g) || []).length > 15);
   check('мова й тема беруться із сайту, не з макета', motor.includes('preferences.lang=opties.lang;') && motor.includes('preferences.theme=opties.licht?"light":"dark";'));
   check('перехід до розділу повідомляє застосунок, який змінює адресу', motor.includes('opties.bijKies(id)') && component.includes('onKiesRef.current(s)'));
-  check('Ctrl+K усередині вигляду перехоплюється раніше за глобальний пошук сайту', motor.includes('e.stopImmediatePropagation();searchOverlay.hidden?openSearch():closeSearch();') && /luister\(window,"keydown",[\s\S]*?\},true\);/.test(motor));
+  check('пошук у вигляді «Макет» відкриває загальносайтовий пошук сайту (tsv:zoek-palet) без блокування Ctrl+K', sjabloon.includes('data-zoek-trigger=\\"maquette\\"') && motor.includes('new CustomEvent("tsv:zoek-palet")') && !motor.includes('stopImmediatePropagation'));
+  check('внутрішній дороговказ сторінки відокремлено від шапки у підсмугу #mqSectieBalk із векторним шевроном без імітації гамбургера', sjabloon.includes('id=\\"mqSectieBalk\\"') && sjabloon.includes('class=\\"mq-sectie-pijl\\"') && !/class=\\"topbar-start\\">\s*<button id=\\"adaptiveNavToggle\\"/.test(sjabloon) && !sjabloon.includes('M4 7h16M4 12h16M4 17h16'));
+  check('діалог світлини має правдивий стан безФото та векторні шеврони замість сирих символів ⌄ і ⌃', motor.includes('початковаАдреса?"акаунт":"безФото"') && !motor.includes('>⌄<') && !motor.includes('>⌃<') && omlijsting.includes(':where(.mr-mq .mq-echt-inhoud svg)'));
 
   // Елементи макета один в один; справжні панелі — у згортаному блоці «Чинні налаштування» під ними.
   check('перемикачі, вибори й зразки макета лишаються в картках і панелях (drawerControl, drawerPreview)', motor.includes('drawerControl(control,i,s.id)') && motor.includes('drawerControl(control,i,id)') && motor.includes('drawerPreview(s)') && !motor.includes("'<div class=\"inline-settings-controls\"><div class=\"mq-echt\""));
@@ -48,15 +50,15 @@ export async function main(): Promise<number> {
   check('смуга сервісів веде на справжні сервіси через застосунок, а не показує підказку макета', motor.includes('opties.bijDienst(el.dataset.dienst)') && !motor.includes('showToast(ui().navDemoToast)') && component.includes("new CustomEvent(GA_NAAR_DIENST, { detail: id })") && app.includes('window.addEventListener(GA_NAAR_DIENST,h)') && app.includes('navigateMenuRef.current(id as MenuItemId)'));
   check('стилі смуги сервісів і .main-content збережено, зсув 74px став виміряною змінною', stijlen.includes('.app-rail{width:74px;height:100dvh;position:fixed') && stijlen.includes('.main-content{margin-left:var(--mq-links)') && stijlen.includes(':where(.bp-max-730) .app-rail{display:none}'));
   check('ширина смуги сервісів вимірюється двигуном (на телефоні 0)', motor.includes('getComputedStyle(rail).display!=="none"?rail.offsetWidth:0') && motor.includes('const links=maat("paddingLeft")+railBreed'));
-  check('хром сайту схований, поки вигляд відкритий; меню облікового запису й сповіщення лишаються видимими', component.includes("document.documentElement.dataset.identiteitMaquette = 'aan'") && omlijsting.includes("html[data-identiteit-maquette='aan'] .canonical-chrome :is(.canonical-sidebar,.canonical-sidebar-edge-zone,.canonical-scroll-top){display:none!important}") && omlijsting.includes('.canonical-topbar{visibility:hidden') && omlijsting.includes(':is(.canonical-account-panel,.canonical-notification-toast){visibility:visible'));
+  check('головне меню сайту (.canonical-sidebar) лишається доступним у вигляді «Макет», демо-смужку .app-rail сховано, а меню облікового запису й сповіщення видимі', component.includes("document.documentElement.dataset.identiteitMaquette = 'aan'") && !/\.canonical-sidebar[^{]*display\s*:\s*none/.test(omlijsting) && omlijsting.includes('.mr-mq.mr-mq.mr-mq.mr-mq .app-rail{display:none!important}') && omlijsting.includes('.canonical-topbar{visibility:hidden') && omlijsting.includes(':is(.canonical-account-panel,.canonical-notification-toast){visibility:visible'));
   check('відступ прокрутки макета (html{scroll-padding-top:110px}) перенесено на робочу область сайту', omlijsting.includes(".canonical-workspace{scroll-behavior:smooth;scroll-padding-top:110px}"));
   check('типовий розділ відкривається на герої без автопрокрутки; пряме посилання на інший розділ прокручує до нього', component.includes("const TYPISCH = 'personalization'") && component.includes("actief !== 'intro' && actief !== TYPISCH) m.ga(naarOntwerp(actief), true)"));
   check('аватар шапки відкриває діалог світлини макета; його кнопки ведуть до розділу «Акаунт» і меню облікового запису сайту', sjabloon.includes('data-open-profile-photo') && sjabloon.includes('data-echt-actie=\\"account-foto\\"') && sjabloon.includes('data-echt-actie=\\"account-menu\\"') && motor.includes('if(actie==="account-foto")gaNaar("account",true);else if(actie==="account-menu")opties.bijAccountMenu();') && component.includes("'.canonical-topbar .canonical-avatar-trigger'"));
   check('смуга сервісів зареєстрована як закріплений елемент', registratie.toegestaan.some((t) => t.sleutel === map + 'maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .app-rail' && t.reden.length > 30));
   check('компонент монтує панелі порталами в гнізда й перезбирає їх після перемальовування', component.includes('createPortal(') && component.includes("querySelectorAll<HTMLElement>('.mq-echt[data-echt]')") && motor.includes('opties.bijRender();'));
-  check('усі дванадцять розділів сайту знаходять свою картку (identities ↔ identity)', component.includes("id === 'identities' ? 'identity' : id") && IDENTITEIT_TABS.every((t) => motor.includes(`id:"${t.id === 'identity' ? 'identities' : t.id}"`)));
+  check('усі тринадцять розділів сайту знаходять свою картку (identities ↔ identity)', component.includes("id === 'identities' ? 'identity' : id") && IDENTITEIT_TABS.every((t) => motor.includes(`id:"${t.id === 'identity' ? 'identities' : t.id}"`)));
   check('вибору файла світлини в макеті немає: світлина й ім’я — з облікового запису', !sjabloon.includes('profilePhotoFile') && weergave.includes('gebruiker={{naam:p.user.name,foto:p.user.picture}}') && component.includes('zetProfiel('));
-  check('тема сайту відстежується, поки вигляд відкритий', component.includes("attributeFilter: ['class']") && component.includes('m.zetLicht(helder())'));
+  check('тема сайту відстежується, поки вигляд відкритий', component.includes("attributeFilter: ['class']") && /m\.zetLicht\((helder\(\)|l)\)/.test(component) /* ZAVYSANNIA-001: лише за справжньої зміни теми */);
   check('збій двигуна макета повертає класичну сторінку, а не порожній екран', pagina.includes('class MaquetteGrens extends Component') && pagina.includes('<MaquetteGrens terugval={klassiek}>'));
 
   // Стилі в просторі імен сайту.
@@ -101,6 +103,50 @@ export async function main(): Promise<number> {
   const teLang = readdirSync('migrations').filter((n) => n.endsWith('.sql')).flatMap((n) => omschrijvingen(readFileSync('migrations/' + n, 'utf8')).filter((o) => [...o].length > grens).map((o) => n + ' (' + [...o].length + ')'));
   check('жодна міграція не вставляє опис перемикача довший за межу схеми', teLang.length === 0, teLang.join(', '));
   check('перемикач вигляду є у вікні навігації та під підвалом макета', sjabloon.includes('data-echt=\\"vormgeving-venster\\"') && sjabloon.includes('data-echt=\\"vormgeving-voet\\"') && component.includes("id.startsWith('vormgeving')"));
+
+  // IDENTITEIT-011: жива карта розвитку замість «Можливостей для доопрацювання» — рендер реальних джерел макета в ізоляції, обома мовами.
+  const iconen = readFileSync(bron + 'піктограми.js', 'utf8');
+  const register = readFileSync(bron + 'реєстр.js', 'utf8');
+  const stomp = { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } };
+  type Kaart = { tekenМайбутніМожливості: (s: string) => string; реєстрНалаштувань: Record<string, { id: string; рядки: unknown[] }[]>; піктограмиДій: Record<string, Record<string, string[]>>; станНаСайті: Record<string, Record<string, { стан: string }>> };
+  const laadKaart = (lang: 'uk' | 'nl') => (new Function('document', 'preferences', 'showToast', 'openInlineSettings',
+    `${iconen}\n${register}\n;return {tekenМайбутніМожливості,реєстрНалаштувань,піктограмиДій,станНаСайті};`) as (...a: unknown[]) => Kaart)(stomp, { lang }, () => {}, () => {});
+  const kaartUk = laadKaart('uk'), kaartNl = laadKaart('nl');
+  const htmlVan = (k: Kaart) => Object.keys(k.реєстрНалаштувань).map((s) => k.tekenМайбутніМожливості(s)).join('');
+  const uk = htmlVan(kaartUk), nl = htmlVan(kaartNl);
+  check('жива карта: мітки «Звірити підключення» / «Koppeling controleren» більше немає (джерело, двигун, рендер)',
+    !uk.includes('Звірити підключення') && !nl.includes('Koppeling controleren') && !motor.includes('Звірити підключення') && !register.includes("'Звірити підключення'"));
+  check('жива карта: заголовок «Карта розвитку» / «Ontwikkelkaart» з чесним поясненням', uk.includes('Карта розвитку') && nl.includes('Ontwikkelkaart') && !uk.includes('Ці елементи не змінюють справжній обліковий запис'));
+  // IDENTITEIT-015 (kaart-stille-uren): «Палітра» не працює повністю для всіх — фіолетова лише з правом plum-theme від власника сайту
+  // (рядок themes.палітра.0.fioletove — «потребує налаштування власника»), тому розділ «Теми» лишається на карті з одним чесним рядком.
+  check('жива карта: групи, що повністю працюють, зникають (швидкий доступ і швидкодія меню; активні входи); у «Темах» лише «Палітра» — «Потребує налаштування власника»',
+    (kaartUk.tekenМайбутніМожливості('themes').match(/class="future-option(?: |")/g) || []).length === 1 && /future-stand-eigenaar">Потребує налаштування власника/.test(kaartUk.tekenМайбутніМожливості('themes')) && !uk.includes('Керування улюбленими кнопками') && !uk.includes('Параметри завантаження й перемикання') && !uk.includes('Огляд пристроїв і керування завершенням входів'));
+  const knoppen = [...uk.matchAll(/data-kaart-ga="([^"]+)"/g)].map((m) => m[1].replace(/&quot;/g, '"'));
+  // IDENTITEIT-014: після фази 3 групи «Запрошення», «Чинні», «Пароль», «Другий чинник» і весь «Відновлення» працюють повністю й зникають
+  // з карти — тому кнопок стало менше (було ≥30). Що кожна ціль існує в коді, перевіряє identiteit-014-kaart.test.ts.
+  // IDENTITEIT-015 (крок «profiel-blokken»): групи «Додати віджет або сервіс» і «Видалення облікового запису» тепер працюють повністю
+  // («Скасувати», «Відкрити в просторі», пояснення адреси, передача простору) і теж зникають з карти — кнопок 16 (з кроком «delen» — 14),
+  // тому нижня межа 12. Що кожна ціль існує в коді, як і раніше перевіряє identiteit-014-kaart.test.ts.
+  // IDENTITEIT-015 (крок «sleutels-gasten»): «Основні способи входу» (стан ключа «вхід/підтвердження» і «Довірений») і «Ключі доступу»
+  // (довіра до ключа) тепер працюють повністю й зникають з карти — без кроку «delen» кнопок 7, з ним менше; нижня межа 4. Формат і
+  // існування кожної цілі перевіряються як і раніше (тут і в identiteit-014-kaart.test.ts).
+  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 4 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
+  check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
+  // IDENTITEIT-014: QR і «Замінити автентифікатор» тепер працюють у старій панелі → уся група «Двофакторна автентифікація» в-чинних і зникає.
+  const tweede = (kaartUk.станНаСайті.security['другий-чинник'] as unknown as { додати?: { uk: string; стан: string }[] }).додати || [];
+  // IDENTITEIT-015 (aanmelden): SMS-підтвердження номера тепер у коді (server/platform/sms.ts, рядок #aanmeldmethoden-telefoon), але потребує
+  // провайдера власника — тому «Частково реалізовано» (future-stand-deels), а не «Потребує розробки».
+  // IDENTITEIT-015 (kaart-stille-uren): SMS — номер підтверджується, коди надсилаються після провайдера власника (SMS_AANBIEDER) — точний підпис
+  // «Потребує налаштування власника» (future-stand-eigenaar) замість «Частково реалізовано».
+  check('жива карта: WhatsApp — «Недоступно», SMS — «Потребує налаштування власника», нові рядки автентифікатора — працюють (групи на карті немає)',
+    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-eigenaar">Потребує налаштування власника/.test(uk) && /Sms — configuratie van eigenaar nodig<\/span><small class="future-option-status future-stand-eigenaar">Eigenaar moet dit instellen/.test(nl) && uk.includes('SMS — потрібне налаштування власника') && !uk.includes('SMS — потребує окремої розробки') && tweede.length === 2 && tweede.every((r) => r.стан === 'в-чинних') && !uk.includes('QR-код для застосунку-автентифікатора') && !uk.includes('Замінити автентифікатор'));
+  const zonderIcoon: string[] = [];
+  for (const [sectie, groepen] of Object.entries(kaartUk.реєстрНалаштувань)) for (const g of groepen) g.рядки.forEach((_, i) => { if (!kaartUk.піктограмиДій[sectie]?.[g.id]?.[i]) zonderIcoon.push(`${sectie}/${g.id}/${i}`); });
+  check('кожен рядок реєстру має змістовну піктограму (запасний знак лише для захисту від збою)', zonderIcoon.length === 0 && register.includes('if(!назва)return піктограмаЗаСуттю("інструмент")'), zonderIcoon.join(', '));
+  check('стани живої карти посилаються лише на наявні групи реєстру', Object.entries(kaartUk.станНаСайті).every(([s, gs]) => Object.keys(gs).every((g) => kaartUk.реєстрНалаштувань[s]?.some((x) => x.id === g))));
+  check('перехід із карти розгортає розділ, «Чинні налаштування» й ціль у змонтованій панелі', motor.includes('function відкритиНаСайті(розділ,ціль)') && motor.includes("if(typeof відкритиНаСайті==='function')") && motor.includes('mq-kaart-doel'));
+  check('гнізда «Макета» мають межі розділів і сталі контейнери (стан форм не губиться, панель монтується після відкриття)',
+    component.includes('<AtelierInhoud.Provider value={true}>') && component.includes('houders.current.get(id)') && component.includes("gat.closest('details.mq-echt-blok')") && component.includes('gemonteerd.has(id)'));
 
   return einde();
 }

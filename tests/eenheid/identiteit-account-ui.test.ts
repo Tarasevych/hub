@@ -1,4 +1,4 @@
-// IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (12 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
+// IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (13 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
 import { readFileSync } from 'node:fs';
 import { IDENTITEIT_TABS, identiteitTitel, isIdentiteitTab } from '../../src/identiteit/identiteit-tabs';
 import { checker } from './hulp/nep-google';
@@ -10,15 +10,15 @@ export async function main(): Promise<number> {
   const css = readFileSync('src/identiteit/identiteit-account.css', 'utf8');
   const plaatsing = JSON.parse(readFileSync('scripts/plaatsing-vaste-elementen.json', 'utf8'));
 
-  check('IDENTITEIT_TABS містить рівно 12 розділів у канонічному порядку з двомовними назвами (uk/nl)',
-    IDENTITEIT_TABS.length === 12
+  check('IDENTITEIT_TABS містить рівно 13 розділів у канонічному порядку з двомовними назвами (uk/nl)',
+    IDENTITEIT_TABS.length === 13
     && IDENTITEIT_TABS.every((t) => isIdentiteitTab(t.id) && t.uk.length > 0 && t.nl.length > 0)
     && !isIdentiteitTab('onbekend')
     && identiteitTitel('personalization', 'uk') === 'Персоналізація'
     && identiteitTitel('recovery', 'nl') === 'Toegangsherstel'
     && identiteitTitel('onbekend', 'uk') === 'onbekend');
 
-  check('IdentiteitAccountPagina рендерить меню-зміст (.ia-toc) і всі 12 секцій (.ia-sectie) зі scrollIntoView',
+  check('IdentiteitAccountPagina відмальовує меню-зміст (.ia-toc) і всі 13 секцій (.ia-sectie) зі scrollIntoView',
     pagina.includes("className='ia-toc'")
     && pagina.includes("className='ia-sectie'")
     && pagina.includes('IDENTITEIT_TABS.map')
@@ -32,8 +32,10 @@ export async function main(): Promise<number> {
     && foto.includes("setBron('link')")
     && foto.includes("className='ia-dialoog-achtergrond'"));
 
-  check('Аудит cbeb3d0 (проблеми 1 і 2): камера 22×22 px по центру аватара, смітничок 24×24 px у куті без перекриття',
-    /\.ia-avatar-camera\s*\{[\s\S]*?top:\s*50%;[\s\S]*?left:\s*50%;[\s\S]*?transform:\s*translate\(-50%,\s*-50%\);[\s\S]*?width:\s*22px;[\s\S]*?height:\s*22px;/.test(css)
+  // BLOKKEN-001 (15.11.2026): камера по центру закривала обличчя («зайва крапка на фото» — скарга власника); тепер у правому нижньому куті.
+  check('Аудит cbeb3d0 + BLOKKEN-001: камера 22×22 px у правому нижньому куті аватара, смітничок 24×24 px угорі праворуч без перекриття',
+    /\.ia-avatar-camera\s*\{[\s\S]*?right:\s*-2px;[\s\S]*?bottom:\s*-2px;[\s\S]*?width:\s*22px;[\s\S]*?height:\s*22px;/.test(css)
+    && !/\.ia-avatar-camera\s*\{[^}]*translate\(-50%/.test(css)
     && /\.ia-avatar-prullenbak\s*\{[\s\S]*?top:\s*-6px;[\s\S]*?right:\s*-6px;[\s\S]*?width:\s*24px;[\s\S]*?height:\s*24px;/.test(css));
 
   check('Аудит a318ba0 (проблема 3): модальне вікно фото (.ia-dialoog-achtergrond) має z-index 99500 вище шапки (.app-header 99000) і безпечний відступ зверху',

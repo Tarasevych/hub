@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-006",
+  "titel": "Хвиля 5 тем оформлення «Біла класика» та «Чорна класика»: простір штучного інтелекту ai.tarasevych.com та вільне полотно Werkblad v3",
+  "opdracht": "Оформити всі п’ять робочих розділів піддомену штучного інтелекту ai.tarasevych.com (робочу бесіду, екосистему агентів, процеси й спільний контекст, сценарії та самостійне розгортання, матрицю дозволів і підтверджень дій), а також вільне полотно робочого столу Werkblad v3 і нейтралізацію градієнтних шпалер оболонки у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-006-20261114-081554",
+    "basis": "a35137f261dfc718e5f752c1089af6ada88b42f2",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Ключі постачальників штучного інтелекту, маркери доступу з’єднувачів, приватні повідомлення бесід, облікові дані, внутрішні адреси середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T08:15:54Z",
+      "stap": "Створено робочу гілку feature/klassiek-006-20261114-081554 від базової фіксації a35137f261dfc718e5f752c1089af6ada88b42f2 та зареєстровано завдання KLASSIEK-006."
+    },
+    {
+      "tijd": "2026-11-14T08:34:50Z",
+      "stap": "Доповнено src/ai-ecosysteem/ai-ecosysteem-maquette.css та src/ai-bevestiging/ai-bevestigingen-maquette.css класичним діловим шаром зі світлочутливим терміналом команд агентів, однорядковою внутрішньою шапкою, суцільними картками прав і підтверджень без скляних градієнтів."
+    },
+    {
+      "tijd": "2026-11-14T08:36:35Z",
+      "stap": "Оформлено src/ai-werkruimte-maquette.css із відсіканням аметистового замісу світлого режиму й примусового темного склепіння шапки, виведенням вікна бесіди на перший план, усуненням декоративних зірочок та монохромними плашками станів інструментів."
+    },
+    {
+      "tijd": "2026-11-14T08:38:55Z",
+      "stap": "Доповнено src/werkblad/werkblad-maquette.css правилами для вільного полотна Werkblad v3, бібліотеки віджетів, панелі властивостей і нейтралізації кольорових шпалер оболонки зі збереженням власного фото користувача."
+    }
+  ],
+  "keuzes": [
+    "Усі класичні перетворення простору ai.tarasevych.com та Werkblad v3 реалізовано суто в чотирьох таблицях стилів макета без втручання у вихідний код компонентів TSX та двомовні тексти інтерфейсу.",
+    "У робочій області штучного інтелекту вікно живої бесіди винесено на початок екрана за допомогою порядку гнучкого стовпчика, а оглядова довідка кількості інструментів і поточної моделі збережена в компактному рядку стану.",
+    "Кольорові шпалери оболонки (ніч, море, ліс, вечір) у класичних темах замінено чистим полотном палітри (--mq-bg), тоді як власне фонове зображення користувача (eigen) залишено чинним."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-006.json",
+    "orchestratie/taken/KLASSIEK-006.json",
+    "src/ai-bevestiging/ai-bevestigingen-maquette.css",
+    "src/ai-ecosysteem/ai-ecosysteem-maquette.css",
+    "src/ai-werkruimte-maquette.css",
+    "src/werkblad/werkblad-maquette.css",
+    "tests/eenheid/klassiek-006a-ai-gesprek.test.ts",
+    "tests/eenheid/klassiek-006b-ai-kaarten.test.ts",
+    "tests/eenheid/klassiek-006c-werkblad.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-006 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-005a-werkblad (10/10), klassiek-006a-ai-gesprek (12/12), klassiek-006b-ai-kaarten (12/12), klassiek-006c-werkblad (12/12), contrast-knoppen-logos-20261021 (38/38), mobiel-cascade-20261105 (22/22), mobiel-geometrie-20261021, plaatsing-20261025, schil-achtergrond-20261026 (10/10), ai-werkruimte-20261019 (43/43), ai-kluis-een-plek-20261101, ai-doorverwijzing-ui004, ai-ecosysteem-en-google-herstel (26/26), ai-onafhankelijke-agenten (13/13), bevestig-toegang-opmaak-20261025 (19/19), sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка кадрів ai.tarasevych.com (робоча область і бесіда, екосистема агентів, процеси, сценарії, мобільні вигляди та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/ai-werkruimte-maquette.css",
+    "src/ai-ecosysteem/ai-ecosysteem-maquette.css",
+    "src/ai-bevestiging/ai-bevestigingen-maquette.css",
+    "src/werkblad/werkblad-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 5 (KLASSIEK-006) охоплює піддомен ai.tarasevych.com та вільне полотно Werkblad v3; решта чотири піддомени (huis, mcp, api, admin) послідовно оформлюються у Хвилях 6–9 (KLASSIEK-007 — KLASSIEK-010)."
+  ]
+}

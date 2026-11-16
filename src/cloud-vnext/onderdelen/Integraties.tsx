@@ -14,6 +14,7 @@ import { foutTekst, tr, type Lang } from '../tekst';
 
 import { registerGroep } from '../register-koppeling';
 import { useCatalogusV2 } from '../../integraties/catalogus-vlag';
+import '../cloud-integraties-maquette.css';
 
 const POLL_MS = 3000, POLL_MAX_MS = 4 * 60_000;
 
@@ -74,7 +75,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
 
   const laad = useCallback(async (): Promise<IntegratiesUit | null> => {
     try { const vers = await cloudClient.integraties(); setData(vers); setFout(''); return vers; }
-    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); return null; }
+    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); return null; }
     finally { setLaden(false); }
   }, [lang]);
   useEffect(() => { void laad(); }, [laad]);
@@ -104,7 +105,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
       const r = await cloudClient.googleStart(rol);
       if (r.authUrl) { if (venster) venster.location.href = r.authUrl; else location.assign(r.authUrl); startPoll(); }
       else { venster?.close(); await laad(); }
-    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setBezig(false); }
   };
 

@@ -27,7 +27,8 @@ export const IMPERSONATIE_ALTIJD_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
   /^[A-Z]+ \/api\/(owner\/)?admin\//,                   // beheer en rollen
   /^[A-Z]+ \/api\/([^ ]*\/)?(admin|beheer|security)(\/|$)/, // ook /api/service/admin, /api/beheer, /journaal/beheer, /api/security
-  /^[A-Z]+ \/api\/owner\/(tech|tech-ruimtes|uitrol|orch|agent-namens|ai-beleid|geheimen|sleutelkluis|google-contour|connector-v2|mcp-connector|agents|apps|aanmeld|besluit|codewoord)(\/|$)/,
+  // SEC-002 (slot m, MR-6): mcp-inspector (studio) toont dezelfde koppelingsgegevens als connector-v2/mcp-connector en voert hulpmiddelen uit.
+  /^[A-Z]+ \/api\/owner\/(tech|tech-ruimtes|uitrol|orch|agent-namens|ai-beleid|geheimen|sleutelkluis|google-contour|connector-v2|mcp-connector|mcp-inspector|agents|apps|aanmeld|besluit|codewoord)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/api-platform\//,               // sleutels en kluis
   /^[A-Z]+ \/api\/owner\/audit\/beheer(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
@@ -35,12 +36,47 @@ export const IMPERSONATIE_ALTIJD_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/(impersonatie|ondersteuning)\//,
   /^[A-Z]+ \/api\/(aanmeld|huis\/vertrouwde-toestellen)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/stap-op(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(passkeys?|webauthn|totp|recovery|herstelcodes?)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(export|takeout|download-all)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(secrets?|vault|reveal|tokens?|api-keys?)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(billing|payments?|betalingen?|abonnement|checkout)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(logout(-[a-z0-9-]+)?|sign-?out|uitloggen|afmelden|revoke-all|revoke-others)(\/|$)/,
-  /^[A-Z]+ \/api\/[^ ]*\/(account\/delete|delete-account|forget)(\/|$)/,
+  // SEC-002 (aanmelden-06): «([^ ]*\/)?» in plaats van «[^ ]*\/». Het oude patroon eiste een tussensegment en miste daardoor routes
+  // op het bovenste niveau (POST /api/account/delete, /api/export, /api/logout …).
+  /^[A-Z]+ \/api\/([^ ]*\/)?(passkeys?|webauthn|totp|recovery|herstelcodes?)(\/|$)/,
+  /^[A-Z]+ \/api\/([^ ]*\/)?(export|takeout|download-all)(\/|$)/,
+  /^[A-Z]+ \/api\/([^ ]*\/)?(secrets?|vault|reveal|tokens?|api-keys?)(\/|$)/,
+  /^[A-Z]+ \/api\/([^ ]*\/)?(billing|payments?|betalingen?|abonnement|checkout)(\/|$)/,
+  /^[A-Z]+ \/api\/([^ ]*\/)?(logout(-[a-z0-9-]+)?|sign-?out|uitloggen|afmelden|revoke-all|revoke-others)(\/|$)/,
+  /^[A-Z]+ \/api\/([^ ]*\/)?(account\/delete|delete-account|forget)(\/|$)/,
+  // OAuth-stromen: de callback is een GET (telt dus als «lezen»), maar rondt een koppeling van een account af.
+  /^[A-Z]+ \/api\/([^ ]*\/)?(oauth|callback)(\/|$)/,
+]);
+
+/**
+ * SEC-002 (aanmelden-06) — «з правом дій» is een TOELATINGSLIJST, geen verbodslijst. Vroeger mocht met recht op acties alles wat niet
+ * in IMPERSONATIE_ALTIJD_VERBODEN stond: de beheerder kon zo zichzelf blijvend uitnodigen in de ruimte van de gebruiker (/api/share/*),
+ * rechten van AI-klanten verruimen, accounts koppelen, het codewoord proberen en /api/account/delete aanroepen. Nu mag schrijven,
+ * sturen en instellen alleen in de onderdelen die het toestemmingsvenster noemt (mail, bestanden, agenda, bord, notities, weergave)
+ * plus de diensten die de beheerder mag bekijken (GitHub, huis). Een nieuwe routefamilie is dus dicht tot ze hier bewust bijkomt.
+ * Lezen (isLeesRoute) loopt niet langs deze lijst: dat blijft zoals het was.
+ * Werkt op het concrete pad (hek 1) én op het routepatroon met «:id» (hek 2, ownerRequireSession).
+ */
+export const IMPERSONATIE_ACTIES_TOEGESTAAN: readonly RegExp[] = Object.freeze([
+  /^[A-Z]+ \/api\/owner\/(mail|cloud|agenda|github|hub)\//,                       // mail, bestanden, agenda, GitHub, overzicht
+  /^[A-Z]+ \/api\/owner\/(ui|vensters|menu|zoek|weergave)(\/|$)/,                 // weergave-instellingen, vensters, menu, zoeken
+  /^[A-Z]+ \/api\/owner\/(notifications\/read|meldingen\/gelezen)(\/|$)/,         // meldingen als gelezen markeren
+  /^[A-Z]+ \/api\/(notifications\/read|blocks|workspaces|notities|huis)(\/|$)/,   // blokken van het overzicht, notities, huis
+  /^[A-Z]+ \/api\/mcp\/board(\/|$)/,                                              // bord
+]);
+/**
+ * Binnen de toegelaten onderdelen blijft dicht wat blijvende toegang geeft of wegneemt: accounts en diensten koppelen/ontkoppelen
+ * (OAuth, IMAP, CalDAV, apparaatcode, GitHub-app), toestemming aan Google of een aanbieder, leden van een woning, webhooks en andere
+ * machine-eindpunten, en opdrachten naar een eigen apparaat van de gebruiker (git clone/deploy via de GitHub-brug).
+ * Een woord geldt voor elk padsegment.
+ */
+export const IMPERSONATIE_ACTIES_VERBODEN: readonly RegExp[] = Object.freeze([
+  /\/(koppel[a-z]*|ontkoppel[a-z]*|verbinden|connect|disconnect|link|unlink|device|eenklik|imap|caldav|onboarding|account|providers)(\/|$)/,
+  /\/(toegang|[a-z-]*toestemming|consent|leden|members|integraties|webhook|pubsub|apparaat)(\/|$)/,
+  // Delen met anderen (openbare deellinks voor bestanden, CLOUD-001: /api/owner/cloud/vnext/delen/*): geeft toegang aan wie de link heeft.
+  /\/(delen|share|sharing|gedeeld)(\/|$)/,
+  /\/accounts\/start$/,                                                           // nieuw cloudaccount verbinden
+  /\/spiegel\/instellen$/,                                                        // uitrol naar een apparaat instellen (apparaat, lokaal pad)
 ]);
 
 /** Laatste padsegmenten die bij POST alleen LEZEN (al het andere telt als schrijven, sturen of instellen). */
@@ -74,7 +110,10 @@ export function routeOordeel(route: string, metActies: boolean): RouteOordeel {
   const r = String(route || '');
   if (!/^(GET|HEAD|POST|PUT|PATCH|DELETE) \/api\/[A-Za-z0-9/_:.-]*$/.test(r)) return 'IMPERSONATIE_VERBODEN';
   if (IMPERSONATIE_ALTIJD_VERBODEN.some((x) => x.test(r))) return 'IMPERSONATIE_VERBODEN';
-  if (!metActies && !isLeesRoute(r)) return 'IMPERSONATIE_ALLEEN_LEZEN';
+  if (isLeesRoute(r)) return '';
+  if (!metActies) return 'IMPERSONATIE_ALLEEN_LEZEN';
+  // SEC-002 (aanmelden-06): schrijven met recht op acties alleen binnen de toelatingslijst, en daarbinnen nooit koppelen/toegang geven.
+  if (!IMPERSONATIE_ACTIES_TOEGESTAAN.some((x) => x.test(r)) || IMPERSONATIE_ACTIES_VERBODEN.some((x) => x.test(r))) return 'IMPERSONATIE_VERBODEN';
   return '';
 }
 
@@ -84,13 +123,13 @@ export const IMPERSONATIE_ZICHTBAAR = Object.freeze({
     ziet: 'ваші сторінки так, як бачите їх ви: огляд, пошту, файли, календар, дошку, налаштування вигляду',
     nooit: 'пароль, passkey, коди, секрети й ключі; змінювати безпеку, способи входу, ролі; видаляти акаунт; експортувати дані; оплату',
     lezen: 'Лише перегляд: нічого не надсилається, не змінюється і не видаляється.',
-    acties: 'З правом дій: може натискати кнопки від вашого імені (крім заборонених вище). Кожна дія — у вашому журналі.',
+    acties: 'З правом дій: може натискати кнопки від вашого імені лише в пошті, файлах, календарі, на дошці, в нотатках, GitHub, «Домі» та налаштуваннях вигляду. Не може: надавати доступ іншим людям, під’єднувати чи від’єднувати облікові записи й сервіси, змінювати дозволи ШІ. Кожна дія — у вашому журналі.',
   },
   nl: {
     ziet: 'uw pagina’s zoals u ze ziet: overzicht, mail, bestanden, agenda, bord, weergave-instellingen',
     nooit: 'wachtwoord, passkey, codes, geheimen en sleutels; beveiliging, aanmeldmethoden of rollen wijzigen; account verwijderen; gegevens exporteren; betalingen',
     lezen: 'Alleen bekijken: er wordt niets verzonden, gewijzigd of verwijderd.',
-    acties: 'Met recht op acties: mag knoppen namens u gebruiken (behalve het verbodene hierboven). Elke actie staat in uw journaal.',
+    acties: 'Met recht op acties: mag knoppen namens u gebruiken, alleen in mail, bestanden, agenda, bord, notities, GitHub, «Huis» en de weergave-instellingen. Mag niet: anderen toegang geven, accounts of diensten koppelen of ontkoppelen, AI-rechten wijzigen. Elke actie staat in uw journaal.',
   },
 });
 
@@ -112,6 +151,6 @@ export const HELP_IMP_TOESTEMMING: HelpLagen = {
 export const HELP_IMP_AANVRAGEN: HelpLagen = {
   wat: ['Запит до користувача: побачити його сайт його очима на 5–60 хв (типово 15).', 'Verzoek aan een gebruiker om zijn site met zijn ogen te zien, 5–60 min (standaard 15).'],
   gevolg: ['Користувач бачить вашу пошту, причину, термін і що буде видно; вирішує сам із passkey. Після дозволу ця вкладка показує його сайт під червоною смугою з таймером; усе інше у вас не змінюється.', 'De gebruiker ziet uw e-mail, reden, duur en wat zichtbaar is; beslist zelf met passkey. Daarna toont dit tabblad zijn site onder een rode band met timer; verder verandert er niets voor u.'],
-  risico: ['Типово лише перегляд. Дії — тільки якщо користувач сам поставив галочку, і навіть тоді заборонено безпеку, входи, passkey, видалення акаунта, секрети, експорт, ролі. Вихід із технічного профілю чи з акаунта одразу завершує перегляд.', 'Standaard alleen bekijken. Acties alleen als de gebruiker dat zelf aanvinkte, en ook dan nooit beveiliging, aanmelden, passkeys, account verwijderen, geheimen, export of rollen. Technisch profiel of account verlaten beëindigt meteen.'],
+  risico: ['Типово лише перегляд. Дії — тільки якщо користувач сам поставив галочку, і лише в пошті, файлах, календарі, на дошці, в нотатках, GitHub, «Домі» та вигляді. Навіть тоді заборонено: безпеку, входи, passkey, видалення акаунта, секрети, експорт, ролі, спільний доступ, під’єднання сервісів і дозволи ШІ. Вихід із технічного профілю чи з акаунта одразу завершує перегляд.', 'Standaard alleen bekijken. Acties alleen als de gebruiker dat zelf aanvinkte, en alleen in mail, bestanden, agenda, bord, notities, GitHub, «Huis» en weergave. Ook dan nooit: beveiliging, aanmelden, passkeys, account verwijderen, geheimen, export, rollen, delen met anderen, diensten koppelen of AI-rechten. Technisch profiel of account verlaten beëindigt meteen.'],
   dev: ['Лише в цій вкладці (хеш tabContext) і поки активна активація з ‘impersonatie.aanvragen’. Агенти ШІ не можуть ні просити, ні користуватися (AGENT_VERBODEN). Читальні запити — один запис у журналі на маршрут за хвилину; кожна дія й кожна відмова — окремо.', 'Alleen in dit tabblad (hash van tabContext) en zolang de activering met ‘impersonatie.aanvragen’ loopt. AI-agenten kunnen niet vragen of gebruiken (AGENT_VERBODEN). Leesaanroepen: één journaalregel per route per minuut; elke actie en weigering apart.'],
 };

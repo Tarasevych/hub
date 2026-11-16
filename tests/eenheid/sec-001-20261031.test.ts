@@ -20,7 +20,7 @@ import { ontleed } from '../../shared/terminal-opdrachten';
 import { agentVoor } from '../../backend/ai-beleid';
 import { registerClient } from '../../backend/mcp-connector';
 import { _tellerLeeg, som, telAntwoord } from '../../server/platform/antwoord-teller';
-import { zekeringOordeel } from '../../backend/beveiliging-schakelaars';
+import { zekeringOordeel, zekeringVoorstel } from '../../backend/beveiliging-schakelaars';
 import { clientIp } from '../../server/start';
 import { terminalOriginToegestaan } from '../../backend/terminal';
 import { ontzegelMetDek, verzegelMetDek } from '../../backend/sleutelkluis';
@@ -34,6 +34,8 @@ import { sha256 } from '../../backend/connectors-crypto';
 import { storage } from '../../server/platform/opslag';
 import { accountMeteenWissen } from '../../backend/account-wissen';
 import { persoonsgegevensExport } from '../../backend/privacy';
+import { openWithEnvKey, sealWithEnvKey } from '../../server/platform/beveiliging';
+import { decryptCloudGrant, encryptCloudGrant } from '../../backend/cloud-verbinding-m4-pg';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('sec-001-20261031');
@@ -230,8 +232,9 @@ export async function main(): Promise<number> {
       sAnon.totaal === 25 && sAnon['403'] === 0 && zekeringOordeel('opa-afdwingen', sAnon) === null);
     for (let i = 0; i < 15; i++) telAntwoord(403, nu, { geverifieerd: true });
     const sAuth = som(nu - 1000, nu + 1000);
-    check('SEC-001-11: geverifieerde 403\'s tellen WEL mee voor de zekering',
-      sAuth['403'] === 15 && zekeringOordeel('opa-afdwingen', sAuth) === '403-piek');
+    // SEC-002 (afwerking A): een algemene 403-piek kan elke ingelogde gebruiker maken → alleen een voorstel aan de eigenaar, niet zelf uit.
+    check('SEC-001-11: geverifieerde 403\'s tellen WEL mee (voorstel aan de eigenaar, geen automatisch uitzetten)',
+      sAuth['403'] === 15 && zekeringOordeel('opa-afdwingen', sAuth) === null && zekeringVoorstel('opa-afdwingen', sAuth) === '403-piek-algemeen');
     _tellerLeeg();
 
     const prevApp = process.env.DATABASE_URL_APP;
@@ -276,6 +279,28 @@ export async function main(): Promise<number> {
     try { ontzegelMetDek(dek, vervalst, 'aad-1'); } catch { korteTagGeweigerd = true; }
     check('SEC-001-16: sleutelkluis AES-256-GCM vereist 16-byte authTag en opent geldige envelop',
       ontzegelMetDek(dek, goed, 'aad-1') === 'geheim-123' && korteTagGeweigerd);
+
+    // SEC-002 (geheimen-06): dezelfde eis op de andere plekken die een envelop openen (serversleutel, cloud-tokens).
+    {
+      const naam = 'SEC001_PROEFSLEUTEL_V1';
+      process.env[naam] = randomBytes(32).toString('hex'); // verzonnen sleutel, alleen voor deze test
+      const env = sealWithEnvKey(naam, 'verzonnen-geheim', 'aad-2');
+      const [v, i2, c2, t2] = env.split('.');
+      const kort = [4, 8, 12].map((n) => [v, i2, c2, Buffer.from(t2, 'base64url').subarray(0, n).toString('base64url')].join('.'));
+      const aanvaard = kort.filter((e) => { try { openWithEnvKey(naam, e, 'aad-2'); return true; } catch { return false; } }).length;
+      const goedOpen = openWithEnvKey(naam, env, 'aad-2') === 'verzonnen-geheim';
+      delete process.env[naam];
+      const vorig = process.env.CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1;
+      process.env.CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1 = randomBytes(32).toString('hex'); // verzonnen sleutel
+      const cloud = encryptCloudGrant({ a: 1 }, 'aad-3');
+      const [cv, ci, ctg, cp] = cloud.split('.');
+      const cloudKort = [4, 8, 12].map((n) => [cv, ci, Buffer.from(ctg, 'base64url').subarray(0, n).toString('base64url'), cp].join('.'));
+      const cloudAanvaard = cloudKort.filter((e) => { try { decryptCloudGrant(e, 'aad-3'); return true; } catch { return false; } }).length;
+      const cloudGoed = decryptCloudGrant<{ a: number }>(cloud, 'aad-3').a === 1;
+      if (vorig === undefined) delete process.env.CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1; else process.env.CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1 = vorig;
+      check('SEC-002 geheimen-06: openWithEnvKey en decryptCloudGrant weigeren een afgekapte authTag (4/8/12 bytes) en openen een geldige envelop',
+        aanvaard === 0 && goedOpen && cloudAanvaard === 0 && cloudGoed, `${aanvaard}/${cloudAanvaard}`);
+    }
 
     check('SEC-001-16: gecommit tar.gz-archief in incoming/ is verwijderd', !existsSync('incoming/mijn-ruimte-20261030-133556.tar.gz'));
   }

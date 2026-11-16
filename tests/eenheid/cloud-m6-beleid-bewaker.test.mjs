@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
-const require=createRequire(import.meta.url);const TS=require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript');
+const require=createRequire(import.meta.url);const TS=(()=>{try{return require('typescript')}catch{return require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript')}})();
 const root=new URL('../../',import.meta.url);
 function moduleUrl(file,replace={}){let content=readFileSync(new URL(file,root),'utf8');
  for(const[k,v]of Object.entries(replace)){assert(content.includes(k));content=content.replaceAll(k,v);}

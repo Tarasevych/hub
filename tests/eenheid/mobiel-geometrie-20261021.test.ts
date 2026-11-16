@@ -24,10 +24,10 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ 1. mail/accounts
   const hub = lees('src/MailAccountsHub.tsx'), hubCss = zc(lees('src/mail-accounts-hub.css'));
-  check('1 MailAccountsHub: geen inline raster «minmax(0,1fr) 320px» meer; layout in mail-accounts-hub.css', !hub.includes("gridTemplateColumns: 'minmax(0,1fr) 320px'") && hub.includes("import './mail-accounts-hub.css'") && hub.includes("<div className='mail-accounts-hub'>"));
+  check('1 MailAccountsHub: geen inline raster «minmax(0,1fr) 320px» meer; layout in mail-accounts-hub.css', !hub.includes("gridTemplateColumns: 'minmax(0,1fr) 320px'") && hub.includes("import './mail-accounts-hub.css'") && hub.includes("<div className='mail-accounts-hub mail-accounts-met-orbit'"));
   check('1 raster: standaard één kolom, twee kolommen pas vanaf 1100 px (dan 320 px als maximum, niet als vaste breedte)', /\.mail-accounts-hub\{display:grid;grid-template-columns:minmax\(0,1fr\);/.test(hubCss) && /@media \(min-width:1100px\)\{\.mail-accounts-hub\{grid-template-columns:minmax\(0,1fr\) minmax\(0,320px\)\}\}/.test(hubCss));
-  check('1 de uitlegkolom is een <aside> ná de tegels (in één kolom eronder, nooit eroverheen)', hub.includes("<aside className='mail-accounts-kant'>") && hub.indexOf('mail-provider-rooster') < hub.indexOf("<aside className='mail-accounts-kant'>"));
-  check('1 tegels: minmax(min(100%,190px),1fr) — nooit breder dan de kolom; tegel ≥ tikhoogte', hubCss.includes('repeat(auto-fill,minmax(min(100%,190px),1fr))') && /\.mail-provider-tegel\{[^}]*min-height:var\(--tik-hoogte\)/.test(hubCss) && hub.includes("className='mail-provider-tegel'"));
+  check('1 de uitlegkolom is een <aside> ná de tegels (in één kolom eronder, nooit eroverheen)', hub.includes("<aside className='mail-accounts-kant'>") && hub.indexOf('mail-accounts-gekoppeld-kaart') < hub.indexOf("<aside className='mail-accounts-kant'>"));
+  check('1 tegels: minmax(min(100%,190px),1fr) — nooit breder dan de kolom; tegel ≥ tikhoogte', hubCss.includes('repeat(auto-fill,minmax(min(100%,190px),1fr))') && /\.mail-provider-tegel\{[^}]*min-height:var\(--tik-hoogte\)/.test(hubCss) ); // MAILACC-002: de tegels zelf zijn vervangen door de orbit; de CSS blijft voor oudere standen
   check('1 mail-accounts-hub.css: geen hex, geen vaste breedte > 360 px', !HEX.test(hubCss) && !/(?:^|[;{\s])width:\s*\d{3,}px/.test(hubCss));
   // (renderen met de nagebootste browser doet gebruiker-audit-2026-10-19 al: U-01 tegels + begroeting)
 

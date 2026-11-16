@@ -29,19 +29,22 @@
 // ACTIE_ONGELDIG (onbekende actie in map/bestand/upload).
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, open, readdir, readFile, rename, rm, statfs, writeFile } from 'node:fs/promises';
+import { mkdir, open, readdir, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import { unzipSync } from 'fflate';
 import { db, error, json, storage } from '../server/platform';
-import { isAlleenLezen } from '../server/platform/context';
+import { alsSysteem, isAlleenLezen } from '../server/platform/context';
 import type { RouterMiddleware } from '../server/platform/router';
 import { can, denyMutation } from './rbac';
 import {
-  CLOUD_SORTERING, CLOUD_VNEXT_LIMIETEN as LIMIET, cloudSoort, schoneNaam, schoneTag,
-  type CloudBestand, type CloudMap, type CloudSoort, type CloudSortering, type CloudVersie,
+  CLOUD_SORTERING, CLOUD_VNEXT_LIMIETEN as LIMIET, cloudSoort, mimeToegestaan as mimeToegestaanGedeeld, schoneNaam, schoneTag, veiligeMime, veiligUploadMime,
+  type CloudArchiefIngang, type CloudBestand, type CloudMap, type CloudSoort, type CloudSortering, type CloudVersie,
 } from '../shared/cloud-vnext-model';
 import { SESSIE_UREN_MAX, geldigStukOffset, ontbrekendeStukken, stukTotaal } from '../shared/cloud-overdracht-model';
 import { hoortBij, ladeFilter, ladeVelden, type Lade } from '../shared/ruimte-scheiding';
 import { cloudVoorvoegsel, ladeOf, padInLade } from './ruimte-cloud-agenda';
+import { vnextFoutAntwoord } from './cloud-vnext-fout';
 
 // ------------------------------------------------------------------------------------------------ opslagvormen
 const ITEMS = 'cloud_items_v1';          // bestaande collectie van de oude pagina — zelfde records, extra velden
@@ -75,15 +78,18 @@ const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
 const fout = (code: string): never => { throw new Error(code); };
 
 /** MIME normaliseren (kleine letters, zonder parameters) en keuren. Ruimer dan capture — zie de kop van dit bestand. */
-const MIME_VERBODEN = /^(text\/html|application\/xhtml\+xml|image\/svg\+xml|application\/(x-msdownload|x-msdos-program|x-sh|x-httpd-php|hta))$|javascript/;
 export const schoneMime = (raw: unknown): string => str(raw).split(';')[0].trim().toLowerCase().slice(0, 160);
-export const mimeToegestaan = (mime: string): boolean => /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(mime) && !MIME_VERBODEN.test(mime);
+// SEC-002 (wolk-09): de keuring staat nu in shared/cloud-vnext-model.ts (ook flash, vbscript, x-httpd-*; XML-familie → text/plain
+// via veiligeMime), zodat upload, archief, Drive→eigen en de uitgaande antwoorden dezelfde regel volgen.
+export const mimeToegestaan = (mime: string): boolean => mimeToegestaanGedeeld(mime);
+/** Het type waarmee een record de server verlaat (lijst, download): nooit een actief type of XML-document. */
+const uitMime = (raw: unknown): string => (str(raw) ? veiligeMime(raw) : '');
 
 /** De soort van een record: notitie/link op kind, anders uit MIME + naam (shared/cloud-vnext-model.ts). */
 const soortVan = (r: ItemRecord): CloudSoort => (r.kind === 'note' ? 'notitie' : r.kind === 'link' ? 'link' : cloudSoort(str(r.mimeType), str(r.originalName) || str(r.title)));
 const buitenNaam = (r: ItemRecord): string => (str(r.title).trim() || str(r.originalName).trim() || 'Zonder naam').slice(0, LIMIET.naamMax);
 const naarBuiten = (r: MetId<ItemRecord>): CloudBestand => ({
-  id: r.id, naam: buitenNaam(r), soort: soortVan(r), mime: schoneMime(r.mimeType), bytes: num(r.sizeBytes),
+  id: r.id, naam: buitenNaam(r), soort: soortVan(r), mime: uitMime(r.mimeType), bytes: num(r.sizeBytes),
   sha256: str(r.sha256), mapId: idOfNull(r.mapId), workspaceId: idOfNull(r.workspaceId),
   tags: Array.isArray(r.tags) ? (r.tags as unknown[]).map((t) => String(t)).filter(Boolean).slice(0, LIMIET.tagsMax) : [],
   favoriet: r.favoriet === true, kind: r.kind === 'note' || r.kind === 'link' ? r.kind : 'file',
@@ -181,6 +187,11 @@ type UploadSessie = {
 };
 const sessies = new Map<string, UploadSessie>();
 const SESSIE_TTL_MS = SESSIE_UREN_MAX * 3600 * 1000;
+// toets-g10d №1: een sessie die nog GEEN byte ontving, leeft maar 2 uur (een aankondiging alleen houdt geen schijf vast);
+// wie vordert, houdt de lange termijn van SESSIE_UREN_MAX.
+const LEEG_TTL_MS = 2 * 3600 * 1000;
+/** Is deze sessie verlopen (lange termijn, of korte termijn zonder één ontvangen byte)? */
+const verlopen = (s: { laatst: number; stukken: Set<number> }, nu = Date.now()): boolean => nu - s.laatst > SESSIE_TTL_MS || (s.stukken.size === 0 && nu - s.laatst > LEEG_TTL_MS);
 const SESSIES_PER_MENS = 8;
 const SESSIE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const sessieWortel = () => join(resolve(process.env.UPLOADS_DIR || '/srv/data/uploads'), '.vnext-sessies');
@@ -194,6 +205,76 @@ let vrijeBytes = async (): Promise<number | null> => {
   try { const s = await statfs(sessieWortel()); return Number(s.bavail) * Number(s.bsize); } catch { return null; }
 };
 const SCHIJF_RESERVE = 256 * 1024 * 1024;
+// SEC-002 (wolk-04, 12.11.2026) — DE SCHIJF IS VAN IEDEREEN.
+//   • «begin» telt de nog NIET ontvangen bytes van ALLE open sessies (alle mensen) mee: vroeger zag elke nieuwe sessie dezelfde
+//     vrije ruimte (het inhoudsbestand begint leeg), zodat acht sessies van «net minder dan vrij» samen de schijf vulden;
+//   • «stuk» schrijft niet meer zodra de vrije ruimte onder SCHIJF_BODEM zakt (SCHIJF_VOL; de sessie blijft, later hervatten kan);
+//   • optioneel een quota per mens: CLOUD_EIGEN_QUOTA_BYTES (bewaarde bytes + versies + aangekondigde bytes van open sessies);
+//     de eigenaar van de server valt erbuiten; zonder de instelling geen verzonnen plafond (zoals voorheen);
+//   • opruimen bekijkt ALLE sessiemappen (niet alleen de eerste 200): bij de eerste aanroep na de start en daarna hoogstens
+//     eens per VOLLEDIGE_RONDE_MS; tussendoor alleen het geheugen.
+const SCHIJF_BODEM = 64 * 1024 * 1024;
+const VOLLEDIGE_RONDE_MS = 10 * 60 * 1000;
+// aanv-ronde1-09: een map zonder sessie.json die jonger is dan dit, is een «begin» die nog bezig is — niet weggooien.
+const WEES_JONG_MS = 10 * 60 * 1000;
+let laatsteVolledigeRonde = 0;
+/**
+ * Ruimte die open sessies nog zullen innemen (aangekondigd min al ontvangen), gezien vanuit `userId`.
+ * toets-g10d №1: een aankondiging is gratis, dus mag die van ANDEREN nooit de hele schijf opeisen: de eigen sessies tellen
+ * volledig, die van alle anderen samen hoogstens ANDERMANS_DEEL van de vrije ruimte boven de reserve. Volloopt de schijf toch
+ * (iedereen stuurt echt), dan houdt de bodem bij «stuk» (SCHIJF_BODEM) haar tegen — dat is de harde grens.
+ */
+const ANDERMANS_DEEL = 0.5;
+const beloofdeBytes = (userId: string, vrij: number | null): number => {
+  let eigen = 0, anderen = 0;
+  for (const s of sessies.values()) { const rest = Math.max(0, s.bytes - ontvangenBytes(s)); if (s.userId === userId) eigen += rest; else anderen += rest; }
+  const plafond = vrij === null ? anderen : Math.max(0, Math.floor((vrij - SCHIJF_RESERVE) * ANDERMANS_DEEL));
+  return eigen + Math.min(anderen, plafond);
+};
+/** De ingestelde quota per mens in bytes, of null (geen quota). */
+const quotaBytes = (): number | null => { const q = Number(process.env.CLOUD_EIGEN_QUOTA_BYTES); return Number.isSafeInteger(q) && q > 0 ? q : null; };
+/** Wat deze mens nu in de eigen opslag bewaart (beide laden, prullenbak en versies inbegrepen). */
+async function gebruikteBytes(userId: string): Promise<number> {
+  const items = await alleRecords<ItemRecord>(ITEMS, { ownerUserId: userId });
+  let n = 0;
+  for (const r of items) {
+    if (str(r.ownerUserId) !== userId) continue;
+    n += num(r.sizeBytes);
+    if (Array.isArray(r.versies)) for (const v of r.versies) n += num(v?.bytes);
+  }
+  return n;
+}
+/**
+ * Quota-oordeel voor `extra` nieuwe bytes van deze mens (ook voor backend/cloud-vnext-taken.ts, Drive → eigen).
+ * null = mag; anders de cijfers voor het antwoord QUOTA_BEREIKT.
+ */
+type QuotaStand = { quota: number; gebruikt: number };
+type QuotaWeigering = { quotaBytes: number; gebruiktBytes: number; openBytes: number; nodigBytes: number };
+/** toets-g10d №2: bytes die een lopend uitpakken al heeft geclaimd (per mens), zodat een gelijktijdige aanvraag ze meetelt. */
+const quotaGeclaimd = new Map<string, number>();
+/** Stand uit de database (await!) — null = geen quota voor deze mens. */
+export async function eigenQuotaStand(userId: string, rol: string | undefined): Promise<QuotaStand | null> {
+  const quota = quotaBytes();
+  if (quota === null || rol === 'owner') return null;
+  return { quota, gebruikt: await gebruikteBytes(userId) };
+}
+/**
+ * SYNCHROON oordeel: stand + de open sessies en claims van DIT moment. toets-g10d №2: wie de quota bewaakt, roept dit aan zonder
+ * await tussen het oordeel en het vastleggen (sessies.set / claim) — anders zagen gelijktijdige «begin» allemaal de stand «vóór».
+ */
+export function quotaOordeel(stand: QuotaStand | null, userId: string, extra: number): QuotaWeigering | null {
+  if (!stand) return null;
+  let open = quotaGeclaimd.get(userId) || 0;
+  for (const s of sessies.values()) if (s.userId === userId) open += s.bytes;
+  return stand.gebruikt + open + extra > stand.quota ? { quotaBytes: stand.quota, gebruiktBytes: stand.gebruikt, openBytes: open, nodigBytes: extra } : null;
+}
+/**
+ * Quota-oordeel voor `extra` nieuwe bytes van deze mens (ook voor backend/cloud-vnext-taken.ts, Drive → eigen).
+ * null = mag; anders de cijfers voor het antwoord QUOTA_BEREIKT.
+ */
+export async function eigenQuotaWeigering(userId: string, rol: string | undefined, extra: number): Promise<QuotaWeigering | null> {
+  return quotaOordeel(await eigenQuotaStand(userId, rol), userId, extra);
+}
 
 /** sessie.json atomisch wegschrijven; schrijfacties per sessie geserialiseerd via de slot-keten. */
 function sessieBewaar(id: string, s: UploadSessie): Promise<void> {
@@ -205,38 +286,58 @@ function sessieBewaar(id: string, s: UploadSessie): Promise<void> {
   }).catch(() => undefined);
   return s.slot;
 }
-/** Een sessie van schijf terughalen (na een herstart of in een ander proces-leven). null = bestaat niet of kapot. */
-async function sessieLaad(id: string): Promise<UploadSessie | null> {
+/** Een sessie van schijf LEZEN (zonder iets in het geheugen te zetten). null = bestaat niet (nog niet) of kapot. */
+async function sessieLees(id: string): Promise<UploadSessie | null> {
   try {
     const rauw = JSON.parse(await readFile(join(sessieDir(id), 'sessie.json'), 'utf8')) as Record<string, unknown>;
     const bytes = Number(rauw.bytes);
     if (!str(rauw.userId) || !Number.isInteger(bytes) || bytes < 1 || bytes > LIMIET.uploadMaxBytes) return null;
     const s: UploadSessie = {
       userId: str(rauw.userId), ruimte: rauw.ruimte === 'technisch' ? 'technisch' : 'prive', naam: schoneNaam(rauw.naam) || 'bestand',
-      mime: schoneMime(rauw.mime) || 'application/octet-stream', bytes, mapId: idOfNull(rauw.mapId),
+      mime: veiligeMime(rauw.mime), bytes, mapId: idOfNull(rauw.mapId),
       stukken: new Set((Array.isArray(rauw.stukken) ? rauw.stukken : []).map(Number).filter((i) => Number.isInteger(i) && i >= 0 && i < stukTotaal(bytes))),
       laatst: num(rauw.laatst) || Date.now(), slot: Promise.resolve(),
     };
-    sessies.set(id, s);
     return s;
   } catch { return null; }
+}
+/** Een sessie van schijf terughalen (na een herstart of in een ander proces-leven); wat intussen in het geheugen staat, wint. */
+async function sessieLaad(id: string): Promise<UploadSessie | null> {
+  const s = await sessieLees(id);
+  if (!s) return null;
+  const al = sessies.get(id);
+  if (al) return al;
+  sessies.set(id, s);
+  return s;
 }
 async function sessieWeg(id: string): Promise<void> {
   sessies.delete(id);
   if (SESSIE_ID.test(id)) await rm(join(sessieWortel(), id), { recursive: true, force: true }).catch(() => undefined);
 }
-/** Lui opruimen: verlopen sessies uit het geheugen én (begrensd) wees-mappen op schijf. */
-async function sessiesOpruimen(): Promise<void> {
-  const nu = Date.now();
-  for (const [id, s] of sessies) if (nu - s.laatst > SESSIE_TTL_MS) await sessieWeg(id);
-  try {
-    const namen = (await readdir(sessieWortel())).filter((n) => SESSIE_ID.test(n)).slice(0, 200);
-    for (const id of namen) {
-      if (sessies.has(id)) continue;
-      const s = await sessieLaad(id);
-      if (!s || nu - s.laatst > SESSIE_TTL_MS) { sessies.delete(id); if (!s) await rm(join(sessieWortel(), id), { recursive: true, force: true }).catch(() => undefined); else await sessieWeg(id); }
-    }
-  } catch { /* geen sessieboom = niets op te ruimen */ }
+/**
+ * Lui opruimen: verlopen sessies uit het geheugen; en — bij de eerste aanroep na de start en daarna hoogstens eens per
+ * VOLLEDIGE_RONDE_MS — ALLE mappen op schijf: verlopen sessies en wezen weg, levende sessies in het geheugen (zodat de grens
+ * per mens en de schijfrekening ook na een herstart kloppen).
+ * aanv-ronde1-09: een sessie die tijdens deze ronde in het geheugen verschijnt (een «begin» die bezig is) en een map zonder
+ * sessie.json die jonger is dan WEES_JONG_MS worden NIET aangeraakt — vroeger wiste een parallel verzoek zo een nieuwe sessie.
+ */
+async function sessiesOpruimen(nu = Date.now()): Promise<void> {
+  for (const [id, s] of sessies) if (verlopen(s, nu)) await sessieWeg(id);
+  if (laatsteVolledigeRonde && nu - laatsteVolledigeRonde < VOLLEDIGE_RONDE_MS && nu >= laatsteVolledigeRonde) return;
+  laatsteVolledigeRonde = nu;
+  let namen: string[];
+  try { namen = (await readdir(sessieWortel())).filter((n) => SESSIE_ID.test(n)); } catch { return; /* geen sessieboom */ }
+  for (const id of namen) {
+    if (sessies.has(id)) continue;
+    const s = await sessieLees(id);
+    if (sessies.has(id)) continue; // intussen geregistreerd (begin of eigenSessie): van hen
+    if (!s) {
+      const st = await stat(join(sessieWortel(), id)).catch(() => null);
+      if (!st || nu - st.mtimeMs < WEES_JONG_MS || sessies.has(id)) continue;
+      await rm(join(sessieWortel(), id), { recursive: true, force: true }).catch(() => undefined);
+    } else if (verlopen(s, nu)) await sessieWeg(id);
+    else sessies.set(id, s);
+  }
 }
 /** De sessie van DEZE mens in DEZE lade — eerst het geheugen, dan de schijf. Verlopen → SESSIE_VERLOPEN. */
 async function eigenSessie(id: unknown, userId: string, lade: Lade): Promise<{ id: string; s: UploadSessie }> {
@@ -244,17 +345,402 @@ async function eigenSessie(id: unknown, userId: string, lade: Lade): Promise<{ i
   if (!SESSIE_ID.test(schoon)) fout('UPLOAD_ONBEKEND');
   const s = sessies.get(schoon) ?? await sessieLaad(schoon) ?? fout('UPLOAD_ONBEKEND');
   if (s.userId !== userId || s.ruimte !== lade.ruimte) fout('UPLOAD_ONBEKEND');
-  if (Date.now() - s.laatst > SESSIE_TTL_MS) { await sessieWeg(schoon); fout('SESSIE_VERLOPEN'); }
+  if (verlopen(s)) { await sessieWeg(schoon); fout('SESSIE_VERLOPEN'); }
   return { id: schoon, s };
 }
 
 /** Alleen voor tests: het geheugen leegmaken (nabootsing van een herstart) en de schijfmeting vervangen. */
 export const cloudVnextProef = {
-  wisSessieGeheugen: () => { sessies.clear(); },
+  wisSessieGeheugen: () => { sessies.clear(); laatsteVolledigeRonde = 0; },
+  /** De volgende aanroep doet weer een volledige ronde over de schijf (zonder het geheugen te wissen). */
+  volledigeRondeNu: () => { laatsteVolledigeRonde = 0; },
+  opruimenNu: (nu?: number) => sessiesOpruimen(nu),
   zetVrijeBytes: (fn: (() => Promise<number | null>) | null) => {
     vrijeBytes = fn ?? (async () => { try { const s = await statfs(sessieWortel()); return Number(s.bavail) * Number(s.bsize); } catch { return null; } });
   },
 };
+
+// ------------------------------------------------------------------------------------------------ mappenboom, lege bestanden & archieven (CLOUD-001)
+const ARCHIEF_INVOER_MAX = 64 * 1024 * 1024;
+const ARCHIEF_UITPAK_MAX = 128 * 1024 * 1024;
+const ARCHIEF_ITEMS_MAX = 2500;
+
+function schoonArchiefSegmenten(rauw: string): { segmenten: string[]; isMap: boolean } | null {
+  const tekst = String(rauw || '').replace(/\\/g, '/').trim();
+  if (!tekst || /[\u0000-\u001f]/.test(tekst)) return null;
+  const isMap = tekst.endsWith('/');
+  const rauweDelen = tekst.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  if (!rauweDelen.length) return null;
+  if (rauweDelen.some((s) => s === '.' || s === '..')) return null;
+  if (rauweDelen[0] === '__MACOSX' || rauweDelen[rauweDelen.length - 1] === '.DS_Store') return null;
+  const segmenten = rauweDelen.map((s) => schoneNaam(s));
+  if (segmenten.some((s) => !s)) return null;
+  return { segmenten, isMap };
+}
+
+function leesTarBuffer(tarBuf: Buffer, alleenPaden?: Set<string>): { ingangen: CloudArchiefIngang[]; bestandenData: Map<string, Uint8Array>; totaalBytes: number } {
+  const ingangen: CloudArchiefIngang[] = [];
+  const bestandenData = new Map<string, Uint8Array>();
+  const gezienePaden = new Set<string>();
+  let totaalBytes = 0;
+  let pos = 0;
+  let langPad = '';
+  const leesTekst = (vanaf: number, lengte: number): string => {
+    const einde = Math.min(tarBuf.length, vanaf + lengte);
+    let nul = vanaf;
+    while (nul < einde && tarBuf[nul] !== 0) nul += 1;
+    return tarBuf.subarray(vanaf, nul).toString('utf8').trim();
+  };
+  const leesOctaal = (vanaf: number, lengte: number): number => {
+    const s = leesTekst(vanaf, lengte).replace(/[^0-7]/g, '');
+    return s ? parseInt(s, 8) : 0;
+  };
+  while (pos + 512 <= tarBuf.length) {
+    let leegBlok = true;
+    for (let i = 0; i < 512; i += 1) { if (tarBuf[pos + i] !== 0) { leegBlok = false; break; } }
+    if (leegBlok) break;
+    const naamKop = leesTekst(pos, 100);
+    const grootte = leesOctaal(pos + 124, 12);
+    const tijdSec = leesOctaal(pos + 136, 12);
+    const soortTeken = tarBuf[pos + 156] === 0 ? '0' : String.fromCharCode(tarBuf[pos + 156]);
+    const voorvoegsel = leesTekst(pos + 345, 155);
+    const dataStart = pos + 512;
+    const blokken = Math.ceil(grootte / 512);
+    const volgendePos = dataStart + blokken * 512;
+    if (grootte < 0 || dataStart + grootte > tarBuf.length) fout('ARCHIEF_BESCHADIGD');
+    if (soortTeken === 'L') {
+      langPad = tarBuf.subarray(dataStart, dataStart + grootte).toString('utf8').replace(/\0+$/, '');
+      pos = volgendePos;
+      continue;
+    }
+    if (soortTeken === 'x' || soortTeken === 'g') {
+      const paxTekst = tarBuf.subarray(dataStart, dataStart + grootte).toString('utf8');
+      const m = /(?:^|\n)\d+ path=([^\n]+)\n/.exec(paxTekst);
+      if (m?.[1]) langPad = m[1];
+      pos = volgendePos;
+      continue;
+    }
+    const volledigRauw = langPad || (voorvoegsel ? `${voorvoegsel}/${naamKop}` : naamKop);
+    langPad = '';
+    const isMap = soortTeken === '5' || volledigRauw.endsWith('/');
+    const gewoonBestand = soortTeken === '0' || soortTeken === '\0' || soortTeken === '';
+    if (isMap || gewoonBestand) {
+      const schoon = schoonArchiefSegmenten(volledigRauw + (isMap ? '/' : ''));
+      if (schoon) {
+        const pad = schoon.segmenten.join('/');
+        if (!gezienePaden.has(pad)) {
+          gezienePaden.add(pad);
+          if (ingangen.length >= ARCHIEF_ITEMS_MAX) fout('ARCHIEF_TE_VEEL_ITEMS');
+          if (!isMap) {
+            totaalBytes += grootte;
+            if (totaalBytes > ARCHIEF_UITPAK_MAX) fout('ARCHIEF_TE_GROOT');
+          }
+          const naam = schoon.segmenten[schoon.segmenten.length - 1];
+          const mime = isMap ? 'inode/directory' : veiligUploadMime('', naam);
+          ingangen.push({
+            pad,
+            naam,
+            map: isMap,
+            bytes: isMap ? 0 : grootte,
+            soort: isMap ? 'overig' : cloudSoort(mime, naam),
+            gewijzigdOp: tijdSec > 0 ? new Date(tijdSec * 1000).toISOString() : null,
+          });
+          if (!isMap && (!alleenPaden || alleenPaden.has(pad))) {
+            bestandenData.set(pad, new Uint8Array(tarBuf.subarray(dataStart, dataStart + grootte)));
+          }
+        }
+      }
+    }
+    pos = volgendePos;
+  }
+  return { ingangen, bestandenData, totaalBytes };
+}
+
+function vulOuderMappenAan(ingangen: CloudArchiefIngang[]): CloudArchiefIngang[] {
+  const geziene = new Set(ingangen.map((i) => i.pad));
+  const extra: CloudArchiefIngang[] = [];
+  for (const ing of ingangen) {
+    const segs = ing.pad.split('/').filter(Boolean);
+    for (let d = 1; d < segs.length; d += 1) {
+      const ouderPad = segs.slice(0, d).join('/');
+      if (!geziene.has(ouderPad)) {
+        geziene.add(ouderPad);
+        extra.push({
+          pad: ouderPad,
+          naam: segs[d - 1],
+          map: true,
+          bytes: 0,
+          soort: 'overig',
+          gewijzigdOp: null,
+        });
+      }
+    }
+  }
+  return [...extra, ...ingangen];
+}
+
+/**
+ * Leest en keurt een archiefbuffer (.zip, .tar, .tar.gz / .tgz) met strikte grenzen tegen archiefbommen en pad-ontsnapping.
+ * Voor formaten zoals .7z/.rar/.xz/.zst geeft de functie eerlijk `{ ondersteund: false }` terug: opslaan en delen werken wél.
+ */
+export function leesArchiefUitBuffer(
+  buf: Buffer,
+  bestandsnaam: string,
+  opties: { alleenLijst?: boolean; alleenPaden?: Set<string> } = {},
+): { ondersteund: boolean; reden?: string; ingangen: CloudArchiefIngang[]; bestandenData: Map<string, Uint8Array>; totaalBytes: number } {
+  if (buf.length > ARCHIEF_INVOER_MAX) fout('ARCHIEF_TE_GROOT');
+  const lager = String(bestandsnaam || '').toLowerCase();
+  const isZip = lager.endsWith('.zip') || (buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b);
+  const isTarGz = lager.endsWith('.tar.gz') || lager.endsWith('.tgz');
+  const isTar = lager.endsWith('.tar');
+  if (!isZip && !isTarGz && !isTar) {
+    return { ondersteund: false, reden: 'ARCHIEF_FORMAAT_ALLEEN_OPSLAG', ingangen: [], bestandenData: new Map(), totaalBytes: 0 };
+  }
+  if (isTarGz || isTar) {
+    let tarBuf = buf;
+    if (isTarGz) {
+      try { tarBuf = gunzipSync(buf, { maxOutputLength: ARCHIEF_UITPAK_MAX }); }
+      catch (err) {
+        const msg = String((err as Error)?.message || '');
+        if (/maxOutputLength|Cannot create a Buffer/i.test(msg)) fout('ARCHIEF_TE_GROOT');
+        fout('ARCHIEF_BESCHADIGD');
+      }
+    }
+    const uit = leesTarBuffer(tarBuf, opties.alleenLijst ? new Set<string>() : opties.alleenPaden);
+    return { ondersteund: true, ingangen: vulOuderMappenAan(uit.ingangen), bestandenData: uit.bestandenData, totaalBytes: uit.totaalBytes };
+  }
+  let totaalBytes = 0;
+  let aantalGezien = 0;
+  const rauwIngangen: Array<{ naam: string; bytes: number }> = [];
+  let uitgepakt: Record<string, Uint8Array> = {};
+  try {
+    uitgepakt = unzipSync(new Uint8Array(buf), {
+      filter: (info) => {
+        aantalGezien += 1;
+        if (aantalGezien > ARCHIEF_ITEMS_MAX) fout('ARCHIEF_TE_VEEL_ITEMS');
+        const gr = Number(info.originalSize || 0);
+        if (gr > 0) {
+          totaalBytes += gr;
+          if (totaalBytes > ARCHIEF_UITPAK_MAX) fout('ARCHIEF_TE_GROOT');
+        }
+        rauwIngangen.push({ naam: info.name, bytes: gr });
+        if (opties.alleenLijst) return false;
+        if (!opties.alleenPaden) return true;
+        const schoon = schoonArchiefSegmenten(info.name);
+        return Boolean(schoon && !schoon.isMap && opties.alleenPaden.has(schoon.segmenten.join('/')));
+      },
+    });
+  } catch (err) {
+    const code = String((err as Error)?.message || '');
+    if (code === 'ARCHIEF_TE_GROOT' || code === 'ARCHIEF_TE_VEEL_ITEMS') throw err;
+    fout('ARCHIEF_BESCHADIGD');
+  }
+  const ingangen: CloudArchiefIngang[] = [];
+  const bestandenData = new Map<string, Uint8Array>();
+  const gezienePaden = new Set<string>();
+  for (const r of rauwIngangen) {
+    const schoon = schoonArchiefSegmenten(r.naam);
+    if (!schoon) continue;
+    const pad = schoon.segmenten.join('/');
+    if (gezienePaden.has(pad)) continue;
+    gezienePaden.add(pad);
+    const naam = schoon.segmenten[schoon.segmenten.length - 1];
+    const mime = schoon.isMap ? 'inode/directory' : veiligUploadMime('', naam);
+    const data = uitgepakt[r.naam];
+    const bytes = schoon.isMap ? 0 : (data ? data.byteLength : Math.max(0, r.bytes));
+    ingangen.push({
+      pad,
+      naam,
+      map: schoon.isMap,
+      bytes,
+      soort: schoon.isMap ? 'overig' : cloudSoort(mime, naam),
+      gewijzigdOp: null,
+    });
+    if (!schoon.isMap && data) bestandenData.set(pad, data);
+  }
+  return { ondersteund: true, ingangen: vulOuderMappenAan(ingangen), bestandenData, totaalBytes };
+}
+
+/** Zorgt idempotent voor alle gevraagde relatieve mappaden onder `ouderId` en geeft `relatiefPad -> mapId` terug. */
+async function zorgMapPadenInLade(lade: Lade, ouderId: string | null, ruwePaden: string[][]): Promise<{ kaart: Record<string, string>; aangemaakt: number }> {
+  const mappen = await eigenMappen(lade);
+  if (ouderId && !mappen.some((m) => m.id === ouderId)) fout('MAP_ONBEKEND');
+  const basisDiepte = diepte(mappen, ouderId);
+  const schoneLijst: string[][] = [];
+  for (const pad of ruwePaden.slice(0, 1000)) {
+    if (!Array.isArray(pad) || !pad.length) continue;
+    const segs = pad.map((s) => schoneNaam(s));
+    if (segs.some((s) => !s)) fout('NAAM_ONGELDIG');
+    if (basisDiepte + segs.length > LIMIET.mapDiepteMax) fout('MAP_DIEPTE');
+    schoneLijst.push(segs);
+  }
+  const kinderenIndex = new Map<string, string>();
+  for (const m of mappen) {
+    const sleutel = `${idOfNull(m.ouderId) ?? ''}::${(str(m.naam) || '').toLowerCase()}`;
+    if (!kinderenIndex.has(sleutel)) kinderenIndex.set(sleutel, m.id);
+  }
+  const kaart: Record<string, string> = {};
+  if (ouderId) kaart[''] = ouderId;
+  let totaalMappen = mappen.length;
+  let aangemaakt = 0;
+  const maxDiepte = schoneLijst.reduce((mx, p) => Math.max(mx, p.length), 0);
+  for (let niveau = 1; niveau <= maxDiepte; niveau += 1) {
+    const teMaken: Array<{ padSleutel: string; ouder: string | null; naam: string; indexSleutel: string }> = [];
+    const gepland = new Set<string>();
+    for (const segs of schoneLijst) {
+      if (segs.length < niveau) continue;
+      const voorPad = segs.slice(0, niveau - 1).join('/');
+      const huidigePad = segs.slice(0, niveau).join('/');
+      if (kaart[huidigePad]) continue;
+      const ouder = niveau === 1 ? ouderId : (kaart[voorPad] || null);
+      const naam = segs[niveau - 1];
+      const idxSleutel = `${ouder ?? ''}::${naam.toLowerCase()}`;
+      const bestaandId = kinderenIndex.get(idxSleutel);
+      if (bestaandId) {
+        kaart[huidigePad] = bestaandId;
+      } else if (!gepland.has(idxSleutel)) {
+        gepland.add(idxSleutel);
+        teMaken.push({ padSleutel: huidigePad, ouder, naam, indexSleutel: idxSleutel });
+      }
+    }
+    if (!teMaken.length) continue;
+    if (totaalMappen + teMaken.length > LIMIET.mappenMax) fout('MAP_VOL');
+    const nu = Date.now();
+    const records = teMaken.map((item) => ({ ...ladeVelden(lade), naam: item.naam, ouderId: item.ouder, createdAt: nu }));
+    const ids = await db.add(MAPPEN, records);
+    for (let i = 0; i < teMaken.length; i += 1) {
+      const nieuwId = ids[i];
+      if (!nieuwId) throw new Error('CLOUD_MAP_AANMAKEN_MISLUKT');
+      kinderenIndex.set(teMaken[i].indexSleutel, nieuwId);
+      kaart[teMaken[i].padSleutel] = nieuwId;
+      totaalMappen += 1;
+      aangemaakt += 1;
+    }
+    for (const segs of schoneLijst) {
+      if (segs.length < niveau) continue;
+      const voorPad = segs.slice(0, niveau - 1).join('/');
+      const huidigePad = segs.slice(0, niveau).join('/');
+      if (!kaart[huidigePad]) {
+        const ouder = niveau === 1 ? ouderId : (kaart[voorPad] || null);
+        const gevonden = kinderenIndex.get(`${ouder ?? ''}::${segs[niveau - 1].toLowerCase()}`);
+        if (gevonden) kaart[huidigePad] = gevonden;
+      }
+    }
+  }
+  return { kaart, aangemaakt };
+}
+
+/** Schrijft een buffer (inclusief 0 bytes) atomisch naar de lade-opslag en werkt `cloud_items_v1` (met versiebeheer) bij. */
+async function schrijfBestandBufferInLade(
+  lade: Lade,
+  userId: string,
+  naamRauw: string,
+  mimeRauw: string,
+  inhoud: Buffer,
+  mapIdRauw: string | null,
+  bestaandeLijst?: Array<MetId<ItemRecord>>,
+  bron = 'upload',
+): Promise<MetId<ItemRecord>> {
+  const naam = schoneNaam(naamRauw) || fout('NAAM_ONGELDIG');
+  const mimeIn = schoneMime(veiligUploadMime(mimeRauw, naam));
+  if (!mimeToegestaan(mimeIn)) fout('MIME_NIET_TOEGESTAAN');
+  const mime = veiligeMime(mimeIn);
+  const vrij = await vrijeBytes();
+  if (vrij !== null && vrij < inhoud.length + SCHIJF_RESERVE + beloofdeBytes(userId, vrij)) fout('SCHIJF_VOL'); // wolk-04: open sessies tellen mee
+  await mkdir(sessieWortel(), { recursive: true, mode: 0o700 });
+  const tmpPad = join(sessieWortel(), `.direct-${randomUUID()}`);
+  await writeFile(tmpPad, inhoud, { mode: 0o600 });
+  const nu = Date.now();
+  const storagePath = `${cloudVoorvoegsel(lade)}/${nu}-${randomBytes(10).toString('hex')}${extensie(naam)}`;
+  try {
+    const [geschreven] = await storage.writeVanPad([{ path: storagePath, vanPad: tmpPad, contentType: mime, ownerId: userId }]);
+    if (!geschreven) throw new Error('CLOUD_OPSLAG_SCHRIJVEN_MISLUKT');
+  } finally {
+    await rm(tmpPad, { force: true }).catch(() => undefined);
+  }
+  const echt = createHash('sha256').update(inhoud).digest('hex');
+  const items = bestaandeLijst ?? await eigenItems(lade);
+  const bestaand = items.find((r) => !str(r.verwijderdOp) && (r.kind ?? 'file') === 'file' && buitenNaam(r) === naam && (idOfNull(r.mapId) ?? null) === mapIdRauw);
+  if (bestaand) {
+    const versies: Versie[] = [...(Array.isArray(bestaand.versies) ? bestaand.versies : [])];
+    if (str(bestaand.storagePath)) versies.push({ pad: str(bestaand.storagePath), bytes: num(bestaand.sizeBytes), sha256: str(bestaand.sha256), op: iso(num(bestaand.updatedAt) || num(bestaand.createdAt)) });
+    while (versies.length > LIMIET.versiesMax) {
+      const afgevallen = versies.shift();
+      if (afgevallen && padInLade(afgevallen.pad, lade)) await storage.delete([afgevallen.pad]).catch(() => undefined);
+    }
+    const record: ItemRecord = { ...zonderId(bestaand), storagePath, sizeBytes: inhoud.length, mimeType: mime, sha256: echt, versies, mapId: mapIdRauw, updatedAt: nu, bron: str(bestaand.bron) || bron };
+    const [gelukt] = await db.update(ITEMS, [{ id: bestaand.id, record: record as Record<string, unknown> }]);
+    if (!gelukt) { await storage.delete([storagePath]).catch(() => undefined); throw new Error('CLOUD_BIJWERKEN_MISLUKT'); }
+    return { ...record, id: bestaand.id };
+  }
+  const record: ItemRecord = {
+    ...ladeVelden(lade), workspaceId: '', suggestedWorkspaceId: '', kind: 'file', title: naam, originalName: naam,
+    description: '', textContent: '', sourceUrl: '', mimeType: mime, sizeBytes: inhoud.length, storagePath,
+    tags: [], people: [], status: 'captured', aiState: 'fallback', aiConfidence: 0, createdAt: nu, updatedAt: nu, openedAt: 0,
+    mapId: mapIdRauw, favoriet: false, verwijderdOp: null, versies: [], sha256: echt, bron,
+  };
+  const [nieuwId] = await db.add(ITEMS, [record as Record<string, unknown>]);
+  if (!nieuwId) { await storage.delete([storagePath]).catch(() => undefined); throw new Error('CLOUD_AANMAKEN_MISLUKT'); }
+  return { ...record, id: nieuwId };
+}
+
+/** Poort voor `backend/bestanden-delen.ts`: leest de niet-verwijderde bestanden en mappen van één lade. */
+export async function leesLadeInventarisVoorDelen(lade: Lade, alsSysteemLezen = false): Promise<{ bestanden: CloudBestand[]; mappen: CloudMap[] }> {
+  const laad = async () => {
+    const [items, mappen] = await Promise.all([eigenItems(lade), eigenMappen(lade)]);
+    const actief = items.filter((r) => !str(r.verwijderdOp));
+    const perMap = new Map<string, number>();
+    for (const r of actief) { const m = idOfNull(r.mapId); if (m) perMap.set(m, (perMap.get(m) || 0) + 1); }
+    return {
+      bestanden: actief.map(naarBuiten),
+      mappen: mappen.map((m) => buitenMap(m, perMap.get(m.id) || 0)),
+    };
+  };
+  return alsSysteemLezen ? alsSysteem(laad) : laad();
+}
+
+/** Poort voor `backend/bestanden-delen.ts`: leest één niet-verwijderd bestand (of exact bytebereik) uit een gecontroleerde lade. */
+export async function leesLadeBestandVoorDelen(
+  lade: Lade,
+  id: string,
+  opties: { offset?: number; lengte?: number; enkelMeta?: boolean; alsSysteemLezen?: boolean } = {},
+): Promise<{ bestand: CloudBestand; data: Buffer; totaalBytes: number } | null> {
+  const laad = async () => {
+    const r = await eenItem(lade, id);
+    if (!r || str(r.verwijderdOp)) return null;
+    const bestand = naarBuiten(r);
+    if (opties.enkelMeta) return { bestand, data: Buffer.alloc(0), totaalBytes: bestand.bytes };
+    const kind = r.kind === 'note' || r.kind === 'link' ? r.kind : 'file';
+    if (kind !== 'file') {
+      const volledig = Buffer.from(kind === 'note' ? str(r.textContent) : str(r.sourceUrl), 'utf8');
+      if (opties.offset !== undefined) {
+        const off = Math.max(0, opties.offset);
+        const len = opties.lengte !== undefined ? Math.max(0, opties.lengte) : volledig.length - off;
+        return { bestand: { ...bestand, bytes: volledig.length, mime: kind === 'note' ? 'text/plain' : 'text/uri-list' }, data: volledig.subarray(off, off + len), totaalBytes: volledig.length };
+      }
+      return { bestand: { ...bestand, bytes: volledig.length, mime: kind === 'note' ? 'text/plain' : 'text/uri-list' }, data: volledig, totaalBytes: volledig.length };
+    }
+    const pad = str(r.storagePath);
+    if (!pad || !padInLade(pad, lade)) return null;
+    const bytes = num(r.sizeBytes);
+    if (bytes === 0) return { bestand, data: Buffer.alloc(0), totaalBytes: 0 };
+    if (opties.offset !== undefined) {
+      const off = opties.offset;
+      const len = opties.lengte ?? LIMIET.downloadDeelBytes;
+      if (!Number.isInteger(off) || off < 0 || off >= bytes || !Number.isInteger(len) || len < 1) return null;
+      const deel = await storage.leesDeel(pad, off, len, { eigenaar: str(r.ownerUserId) || lade.userId });
+      if (!deel) return null;
+      return { bestand, data: deel.data, totaalBytes: deel.totaal };
+    }
+    if (bytes > LIMIET.downloadMaxBytes) fout('TE_GROOT');
+    // SEC-002 (slot t, omzeiling-6): sizeBytes van het record kan verouderd zijn — de grens ook bij het lezen zelf (stat vóór readFile).
+    const [gelezen] = await storage.read([pad], { eigenaar: str(r.ownerUserId) || lade.userId, maxBytes: LIMIET.downloadMaxBytes });
+    if (gelezen?.teGroot) fout('TE_GROOT');
+    if (!gelezen || gelezen.content === null) return null;
+    return { bestand, data: Buffer.from(gelezen.content, 'base64'), totaalBytes: bytes };
+  };
+  return opties.alsSysteemLezen ? alsSysteem(laad) : laad();
+}
 
 // ------------------------------------------------------------------------------------------------ routes
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
@@ -264,10 +750,16 @@ type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
 const bodyOf = (b: unknown): Record<string, unknown> => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {});
 const DIENSTEN = ['cloud', 'hub'] as const;
-const FOUT_404 = new Set(['MAP_ONBEKEND', 'BESTAND_ONBEKEND', 'UPLOAD_ONBEKEND', 'VERSIE_ONBEKEND']);
+const FOUT_404 = new Set(['MAP_ONBEKEND', 'BESTAND_ONBEKEND', 'UPLOAD_ONBEKEND', 'VERSIE_ONBEKEND', 'ARCHIEF_BESTAND_ONBEKEND']);
 const CODE_PATROON = /^[A-Z][A-Z_]{2,39}$/;
 
-export function cloudVnextBestandenRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+/**
+ * SEC-002 (wolk-05): `vlagAan` = heeft de eigenaar de nieuwe hmara (vlag cloud-vnext) voor DEZE mens aangezet? Zo niet: 404
+ * CLOUD_VNEXT_UIT op ELKE route — vroeger verborg de vlag alleen de interface en stonden upload (32 GiB), download en de rest open
+ * voor elk goedgekeurd account. Kan de vlag niet bepaald worden: «uit». Zonder opties (eenheidstests) open zoals voorheen;
+ * backend/index.ts geeft de vlag altijd mee.
+ */
+export function cloudVnextBestandenRoutes(requireSession: RequireSession, opties: { vlagAan?: (u: SessionOk['user']) => Promise<boolean> } = {}): Record<string, RouterMiddleware[]> {
   type Run = (ctx: Ctx, auth: SessionOk, lade: Lade, d: Record<string, unknown>) => Promise<Resp>;
   const route = (run: Run): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
@@ -275,14 +767,19 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+    if (opties.vlagAan && !(await opties.vlagAan(auth.user).catch(() => false))) return error('CLOUD_VNEXT_UIT', 404);
     try { return await run(ctx, auth, ladeOf(auth.user.id), bodyOf(ctx.body)); }
     catch (err) {
       const code = String((err as Error)?.message || '');
       if (CODE_PATROON.test(code) && !code.startsWith('CLOUD_') && !code.startsWith('DB_')) return error(code, FOUT_404.has(code) ? 404 : 400);
-      console.error('[cloud-vnext]', code);
-      return error(code.slice(0, 80) || 'CLOUD_VNEXT_FOUT', 500);
+      // SEC-002 (wolk-10): nooit de ruwe fouttekst (paden, PostgreSQL) naar de client — vaste code + incidentnummer.
+      return vnextFoutAntwoord('cloud-vnext', err);
     }
   }) as unknown as RouterMiddleware];
+  // SEC-002 (wolk-06): «geopend op» alleen als VELD samenvoegen (db.patch) — nooit het hele record uit een oud beeld terugschrijven.
+  const geopend = async (auth: SessionOk, id: string): Promise<void> => {
+    if (can(auth.user, 'cloud.write') && !isAlleenLezen()) await db.patch(ITEMS, id, { openedAt: Date.now() }).catch(() => undefined);
+  };
 
   // ---------------------------------------------------------------- overzicht
   const overzicht: Run = async (_c, auth, lade) => {
@@ -370,6 +867,14 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
   const map: Run = async (_c, auth, lade, d) => {
     const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
     const actie = str(d.actie);
+    if (actie === 'paden_zorg') {
+      const ouderId = idOfNull(d.ouderId);
+      const rauwePaden = Array.isArray(d.paden)
+        ? (d.paden as unknown[]).map((p) => (Array.isArray(p) ? p.map((s) => String(s ?? '')) : []))
+        : [];
+      const uit = await zorgMapPadenInLade(lade, ouderId, rauwePaden);
+      return json(uit);
+    }
     const mappen = await eigenMappen(lade);
     const eigenMap = (id: unknown) => mappen.find((m) => m.id === idOfNull(id)) ?? fout('MAP_ONBEKEND');
     if (actie === 'nieuw') {
@@ -422,10 +927,19 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     return fout('ACTIE_ONGELDIG');
   };
 
-  // ---------------------------------------------------------------- bestand (hernoem / verplaats / tags / favoriet / prullenbak)
+  // ---------------------------------------------------------------- bestand (hernoem / verplaats / tags / favoriet / prullenbak / nieuw_leeg)
   const bestand: Run = async (_c, auth, lade, d) => {
     const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
     const actie = str(d.actie);
+    if (actie === 'nieuw_leeg') {
+      const mapId = idOfNull(d.mapId);
+      if (mapId) {
+        const mappenLijst = await eigenMappen(lade);
+        if (!mappenLijst.some((m) => m.id === mapId)) fout('MAP_ONBEKEND');
+      }
+      const uit = await schrijfBestandBufferInLade(lade, auth.user.id, str(d.naam), str(d.mime), Buffer.alloc(0), mapId);
+      return json({ bestand: naarBuiten(uit) });
+    }
     const enkel = !Array.isArray(d.ids);
     const ids = (Array.isArray(d.ids) ? d.ids.map(idOfNull).filter((x): x is string => x !== null) : [idOfNull(d.id)].filter((x): x is string => x !== null)).slice(0, 400);
     if (!ids.length) fout('BESTAND_ONBEKEND');
@@ -488,24 +1002,40 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     }
     if (actie === 'begin') {
       const naam = schoneNaam(d.naam) || fout('NAAM_ONGELDIG');
-      const mime = schoneMime(d.mime);
-      if (!mimeToegestaan(mime)) fout('MIME_NIET_TOEGESTAAN');
+      const mimeIn = schoneMime(d.mime);
+      if (!mimeToegestaan(mimeIn)) fout('MIME_NIET_TOEGESTAAN');
+      const mime = veiligeMime(mimeIn); // SEC-002 wolk-09: XML-familie wordt text/plain
       const bytes = Number(d.bytes);
       if (!Number.isInteger(bytes) || bytes < 1 || bytes > LIMIET.uploadMaxBytes) fout('TE_GROOT');
-      // De enige ECHTE grens van de eigen opslag is de schijf: meten vóór we beginnen, met een reserve.
-      const vrij = await vrijeBytes();
-      if (vrij !== null && vrij < bytes + SCHIJF_RESERVE) return json({ error: 'SCHIJF_VOL', vrijBytes: vrij, nodigBytes: bytes + SCHIJF_RESERVE }, 400);
       const mapId = idOfNull(d.mapId);
       if (mapId) { const mappen = await eigenMappen(lade); if (!mappen.some((m) => m.id === mapId)) fout('MAP_ONBEKEND'); }
+      // SEC-002 (wolk-04): quota per mens (alleen als de eigenaar van de server haar instelt).
+      const quotaStand = await eigenQuotaStand(auth.user.id, auth.user.role);
+      const quota = quotaOordeel(quotaStand, auth.user.id, bytes);
+      if (quota) return json({ error: 'QUOTA_BEREIKT', ...quota }, 400);
+      // De enige ECHTE grens van de eigen opslag is de schijf: meten vóór we beginnen, met een reserve — en met de ruimte die
+      // de open sessies van IEDEREEN nog zullen innemen (wolk-04). Vanaf de meting tot sessies.set geen await meer: twee
+      // gelijktijdige «begin» zien elkaar zo altijd.
+      const vrij = await vrijeBytes();
+      // toets-g10d №2: de quota NOG EENS, synchroon, met de open sessies van nu (een gelijktijdige «begin» staat er dan al in).
+      const quotaNu = quotaOordeel(quotaStand, auth.user.id, bytes);
+      if (quotaNu) return json({ error: 'QUOTA_BEREIKT', ...quotaNu }, 400);
+      const nodig = bytes + SCHIJF_RESERVE + beloofdeBytes(auth.user.id, vrij);
+      if (vrij !== null && vrij < nodig) return json({ error: 'SCHIJF_VOL', vrijBytes: vrij, nodigBytes: nodig }, 400);
       let lopend = 0;
       for (const s of sessies.values()) if (s.userId === auth.user.id) lopend += 1;
       if (lopend >= SESSIES_PER_MENS) fout('LIMIET_BEREIKT');
       const id = randomUUID();
-      await mkdir(sessieDir(id), { recursive: true, mode: 0o700 });
-      await writeFile(inhoudPad(id), Buffer.alloc(0), { mode: 0o600 });
+      // aanv-ronde1-09: EERST in het geheugen, dan pas de map — het opruimen van een parallel verzoek laat een geregistreerde
+      // sessie staan. Mislukt het aanmaken op schijf, dan verdwijnt ook de registratie.
       const s: UploadSessie = { userId: auth.user.id, ruimte: lade.ruimte, naam, mime, bytes, mapId, stukken: new Set(), laatst: Date.now(), slot: Promise.resolve() };
       sessies.set(id, s);
-      await sessieBewaar(id, s);
+      try {
+        await mkdir(sessieDir(id), { recursive: true, mode: 0o700 });
+        await writeFile(inhoudPad(id), Buffer.alloc(0), { mode: 0o600 });
+        await sessieBewaar(id, s);
+        await stat(join(sessieDir(id), 'sessie.json'));
+      } catch { await sessieWeg(id); throw new Error('CLOUD_SESSIE_AANMAKEN_MISLUKT'); }
       return json({ id, stukMax: LIMIET.stukMaxBytes, ontvangen: 0 });
     }
     if (actie === 'stuk') {
@@ -518,6 +1048,11 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
       const index = offset / LIMIET.stukMaxBytes;
       // Elk stuk is exact zijn rasterlengte (het laatste korter): zo is «compleet» = «alle indexen binnen».
       if (stuk.length !== stukLengte(index, s.bytes)) fout(stuk.length > LIMIET.stukMaxBytes ? 'TE_GROOT' : 'STUK_BUITEN_ORDE');
+      // SEC-002 (wolk-04): onder de bodem van de schijf niets meer bijschrijven (de sessie blijft; later hervatten kan).
+      if (!s.stukken.has(index)) {
+        const vrij = await vrijeBytes();
+        if (vrij !== null && vrij < stuk.length + SCHIJF_BODEM) return json({ error: 'SCHIJF_VOL', vrijBytes: vrij, nodigBytes: stuk.length + SCHIJF_BODEM }, 400);
+      }
       // Positioneel schrijven: stukken mogen parallel en in elke volgorde komen; hetzelfde stuk nogmaals is idempotent.
       const fh = await open(inhoudPad(id), 'r+');
       try { await fh.write(stuk, 0, stuk.length, offset); } finally { await fh.close(); }
@@ -539,7 +1074,7 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
       try { for (const nm of (await readdir(sessieWortel())).filter((n) => SESSIE_ID.test(n)).slice(0, 200)) if (!sessies.has(nm)) await sessieLaad(nm); } catch { /* geen boom */ }
       for (const [id, s] of sessies) {
         if (s.userId !== auth.user.id || s.ruimte !== lade.ruimte) continue;
-        if (Date.now() - s.laatst > SESSIE_TTL_MS) continue;
+        if (verlopen(s)) continue;
         if (s.naam === naam && s.bytes === bytes && (s.mapId ?? null) === (mapId ?? null)) return json({ sessie: { id, ontvangen: ontvangenBytes(s) } });
       }
       return json({ sessie: null });
@@ -610,6 +1145,12 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     const pad = gekozen ? gekozen.pad : str(r.storagePath);
     if (!pad || !padInLade(pad, lade)) fout('BESTAND_ONBEKEND'); // een pad buiten deze lade bestaat hier niet
     const bytes = gekozen ? gekozen.bytes : num(r.sizeBytes);
+    if (bytes === 0) {
+      if (d.offset !== undefined && Number(d.offset) !== 0) fout('DEEL_BUITEN_BEREIK');
+      await geopend(auth, r.id);
+      const legeSha = gekozen ? gekozen.sha256 : (str(r.sha256) || createHash('sha256').update(Buffer.alloc(0)).digest('hex'));
+      return json({ naam: buitenNaam(r), mime: veiligeMime(r.mimeType), bytes: 0, sha256: legeSha, ...(d.offset !== undefined ? { offset: 0 } : {}), data: '' });
+    }
     // Downloaden IN DELEN (29.10.2026): met `offset` komt één deel terug (≤ downloadDeelBytes), geteld in
     // oorspronkelijke bytes — zo haalt de client élke grootte binnen, met herhaling per deel bij een netwerkbreuk.
     if (d.offset !== undefined) {
@@ -619,16 +1160,19 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
       const lengte = Math.min(Number.isInteger(lengteRauw) && lengteRauw > 0 ? lengteRauw : LIMIET.downloadDeelBytes, LIMIET.downloadDeelBytes);
       const deel = await storage.leesDeel(pad, offset, lengte, { eigenaar: str(r.ownerUserId) || undefined });
       if (!deel) fout('DEEL_BUITEN_BEREIK');
-      if (can(auth.user, 'cloud.write') && !isAlleenLezen()) await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
-      return json({ naam: buitenNaam(r), mime: schoneMime(r.mimeType) || 'application/octet-stream', bytes: deel!.totaal, sha256: gekozen ? gekozen.sha256 : str(r.sha256), offset, data: deel!.data.toString('base64') });
+      // Alleen het EERSTE deel zet «geopend op»; de honderden volgende delen van een groot bestand schrijven niets.
+      if (offset === 0) await geopend(auth, r.id);
+      return json({ naam: buitenNaam(r), mime: veiligeMime(r.mimeType), bytes: deel!.totaal, sha256: gekozen ? gekozen.sha256 : str(r.sha256), offset, data: deel!.data.toString('base64') });
     }
     if (bytes > LIMIET.downloadMaxBytes) fout('TE_GROOT');
-    const [gelezen] = await storage.read([pad], { eigenaar: str(r.ownerUserId) || undefined });
-    if (!gelezen?.content) throw new Error('CLOUD_OPSLAG_LEZEN_MISLUKT');
+    // SEC-002 (slot t, omzeiling-6): ook hier de grens bij het lezen zelf — een verouderde sizeBytes laat anders tot 384 MB binnen.
+    const [gelezen] = await storage.read([pad], { eigenaar: str(r.ownerUserId) || undefined, maxBytes: LIMIET.downloadMaxBytes });
+    if (gelezen?.teGroot) fout('TE_GROOT'); // de client haalt het bestand dan in delen (offset), zoals bij elk groot bestand
+    if (!gelezen || gelezen.content === null) throw new Error('CLOUD_OPSLAG_LEZEN_MISLUKT');
     // storage.read geeft base64 terug voor binaire inhoud en de (zelf al base64 geschreven) tekst voor tekst-typen:
     // in beide gevallen is `content` de base64 van de oorspronkelijke bytes.
-    if (can(auth.user, 'cloud.write') && !isAlleenLezen()) await db.update(ITEMS, [{ id: r.id, record: { ...zonderId(r), openedAt: Date.now() } as Record<string, unknown> }]).catch(() => undefined);
-    return json({ naam: buitenNaam(r), mime: schoneMime(r.mimeType) || 'application/octet-stream', bytes, sha256: gekozen ? gekozen.sha256 : str(r.sha256), data: gelezen.content });
+    await geopend(auth, r.id);
+    return json({ naam: buitenNaam(r), mime: veiligeMime(r.mimeType), bytes, sha256: gekozen ? gekozen.sha256 : str(r.sha256), data: gelezen.content });
   };
 
   // ---------------------------------------------------------------- versies (lijst en herstel)
@@ -652,6 +1196,105 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     return json({ bestand: naarBuiten({ ...record, id: r.id }) });
   };
 
+  // ---------------------------------------------------------------- archief (inhoud / bestand / uitpakken)
+  const archiefRoute: Run = async (_c, auth, lade, d) => {
+    const actie = str(d.actie) || 'inhoud';
+    if (actie !== 'inhoud' && actie !== 'bestand' && actie !== 'uitpakken') fout('ACTIE_ONGELDIG');
+    if (actie === 'uitpakken') {
+      const denied = denyMutation(auth.user, 'cloud.write'); if (denied) return denied;
+    }
+    const r = (await eenItem(lade, d.id)) ?? fout('BESTAND_ONBEKEND');
+    if (str(r.verwijderdOp) || (r.kind ?? 'file') !== 'file') fout('BESTAND_ONBEKEND');
+    const pad = str(r.storagePath);
+    if (!pad || !padInLade(pad, lade)) fout('BESTAND_ONBEKEND');
+    const bytes = num(r.sizeBytes);
+    if (bytes > ARCHIEF_INVOER_MAX) fout('ARCHIEF_TE_GROOT');
+    // SEC-002 (slot t, omzeiling-6): de grens van het archief ook bij het lezen (vroeger eerst tot 384 MB in het geheugen, dan pas geweigerd).
+    const [gelezen] = bytes === 0 ? [{ path: pad, content: '' as string | null, teGroot: undefined as true | undefined }] : await storage.read([pad], { eigenaar: str(r.ownerUserId) || undefined, maxBytes: ARCHIEF_INVOER_MAX });
+    if (gelezen?.teGroot) fout('ARCHIEF_TE_GROOT');
+    if (!gelezen || gelezen.content === null) throw new Error('CLOUD_OPSLAG_LEZEN_MISLUKT');
+    const archiefBuf = Buffer.from(gelezen.content, 'base64');
+    const bestandsnaam = buitenNaam(r);
+    if (actie === 'inhoud') {
+      const uit = leesArchiefUitBuffer(archiefBuf, bestandsnaam, { alleenLijst: true });
+      return json({ ondersteund: uit.ondersteund, ...(uit.reden ? { reden: uit.reden } : {}), ingangen: uit.ingangen, totaalBytes: uit.totaalBytes });
+    }
+    if (actie === 'bestand') {
+      const schoon = schoonArchiefSegmenten(str(d.pad)) ?? fout('ARCHIEF_BESTAND_ONBEKEND');
+      if (schoon.isMap) fout('ARCHIEF_BESTAND_ONBEKEND');
+      const doelPad = schoon.segmenten.join('/');
+      const uit = leesArchiefUitBuffer(archiefBuf, bestandsnaam, { alleenPaden: new Set([doelPad]) });
+      if (!uit.ondersteund) fout(uit.reden || 'ARCHIEF_NIET_ONDERSTEUND');
+      const inhoud = uit.bestandenData.get(doelPad) ?? fout('ARCHIEF_BESTAND_ONBEKEND');
+      const naam = schoon.segmenten[schoon.segmenten.length - 1];
+      const mime = veiligeMime(veiligUploadMime('', naam));
+      const buf = Buffer.from(inhoud);
+      return json({
+        naam,
+        pad: doelPad,
+        mime,
+        soort: cloudSoort(mime, naam),
+        bytes: buf.length,
+        sha256: createHash('sha256').update(buf).digest('hex'),
+        data: buf.toString('base64'),
+      });
+    }
+    // actie === 'uitpakken'
+    const gekozenFilter = Array.isArray(d.paden)
+      ? new Set(
+          (d.paden as unknown[])
+            .map((p) => schoonArchiefSegmenten(String(p ?? ''))?.segmenten.join('/') || '')
+            .filter(Boolean),
+        )
+      : null;
+    const uit = leesArchiefUitBuffer(archiefBuf, bestandsnaam);
+    if (!uit.ondersteund) fout(uit.reden || 'ARCHIEF_NIET_ONDERSTEUND');
+    // SEC-002 (wolk-04): ook uitpakken (tot ARCHIEF_UITPAK_MAX) telt voor de quota en de schijf.
+    // toets-g10d №2: oordeel en claim zonder await ertussen; de claim geldt tot het uitpakken klaar is.
+    const quotaStandUit = await eigenQuotaStand(auth.user.id, auth.user.role);
+    const quotaUit = quotaOordeel(quotaStandUit, auth.user.id, uit.totaalBytes);
+    if (quotaUit) return json({ error: 'QUOTA_BEREIKT', ...quotaUit }, 400);
+    const claim = quotaStandUit ? uit.totaalBytes : 0;
+    if (claim) quotaGeclaimd.set(auth.user.id, (quotaGeclaimd.get(auth.user.id) || 0) + claim);
+    try {
+    const pastBijFilter = (p: string): boolean => {
+      if (!gekozenFilter || !gekozenFilter.size) return true;
+      for (const f of gekozenFilter) if (p === f || p.startsWith(`${f}/`)) return true;
+      return false;
+    };
+    const teVerwerken = uit.ingangen.filter((ing) => pastBijFilter(ing.pad));
+    let doelWortelId = idOfNull(d.doelMapId) ?? idOfNull(r.mapId);
+    if (d.inEigenMap !== false) {
+      const basisNaam = schoneNaam(bestandsnaam.replace(/\.(tar\.gz|tar\.bz2|tar\.xz|tgz|tbz2|txz|zip|tar|gz|7z|rar|bz2|xz|zst)$/i, '')) || 'Uitgepakt archief';
+      const wortelZorg = await zorgMapPadenInLade(lade, doelWortelId, [[basisNaam]]);
+      doelWortelId = wortelZorg.kaart[basisNaam] || doelWortelId;
+    }
+    const mapPaden: string[][] = [];
+    for (const ing of teVerwerken) {
+      const segs = ing.pad.split('/').filter(Boolean);
+      const mapSegs = ing.map ? segs : segs.slice(0, -1);
+      if (mapSegs.length) mapPaden.push(mapSegs);
+    }
+    const gezorgd = await zorgMapPadenInLade(lade, doelWortelId, mapPaden);
+    const bestaandeItems = await eigenItems(lade);
+    let uitgepakteBestanden = 0;
+    for (const ing of teVerwerken) {
+      if (ing.map) continue;
+      const inhoud = uit.bestandenData.get(ing.pad);
+      if (!inhoud) continue;
+      const segs = ing.pad.split('/').filter(Boolean);
+      const ouderSleutel = segs.slice(0, -1).join('/');
+      const mapVoorBestand = ouderSleutel ? (gezorgd.kaart[ouderSleutel] ?? doelWortelId) : doelWortelId;
+      const nieuw = await schrijfBestandBufferInLade(lade, auth.user.id, ing.naam, '', Buffer.from(inhoud), mapVoorBestand, bestaandeItems, 'archief');
+      bestaandeItems.push(nieuw);
+      uitgepakteBestanden += 1;
+    }
+    return json({ mapId: doelWortelId, uitgepakteBestanden, aangemaakteMappen: gezorgd.aangemaakt });
+    } finally {
+      if (claim) { const rest = (quotaGeclaimd.get(auth.user.id) || 0) - claim; if (rest > 0) quotaGeclaimd.set(auth.user.id, rest); else quotaGeclaimd.delete(auth.user.id); }
+    }
+  };
+
   return {
     'POST /api/owner/cloud/vnext/overzicht': route(overzicht),
     'POST /api/owner/cloud/vnext/bestanden': route(bestanden),
@@ -660,5 +1303,6 @@ export function cloudVnextBestandenRoutes(requireSession: RequireSession): Recor
     'POST /api/owner/cloud/vnext/upload': route(upload),
     'POST /api/owner/cloud/vnext/download': route(download),
     'POST /api/owner/cloud/vnext/versies': route(versiesRoute),
+    'POST /api/owner/cloud/vnext/archief': route(archiefRoute),
   };
 }

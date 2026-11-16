@@ -1,5 +1,20 @@
 /* Admin → «Оновлення» / «Updates» (passkey-goedkeuring) */
-.admin-uitrol{display:grid;gap:16px}
+.admin-uitrol{display:grid;gap:16px;min-width:0;max-width:100%}
+/* 15.11.2026, побажання власника: головне — у центрі, блоки не на всю ширину, щоб очі не бігали екраном. Уся консоль на вкладці
+   «Оновлення» вужча (1180 px замість 1320) і по центру; заголовок консолі вирівняний із картками. Картки не сплющує flat-content
+   (див. :not(.ut-root *) у canoniek-omlijsting.css), тож мають власні заокруглення й рамки. Термінал і таблиці прокручуються всередині.
+   NL: op het tabblad «Updates» is de console smaller (1180 px) en gecentreerd; de kaarten houden hun afgeronde hoeken. */
+/* :not(#_uitrol) — сильніше за «Макет» (html.palet-maquette .admin-console.mq-schil, 1460 px). · Sterker dan de maquette-regel. */
+html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:1180px}
+/* «Макет» з меню розділів збоку: консоль займає всю робочу область, а поля рахуються так, щоб колонка 1180 px стояла по центру екрана,
+   коли місця досить; запас під меню (284 px, згорнуте — 96 px) лишається нижньою межею, тож вміст ніколи не заходить під меню (як CENTR-001).
+   До 960 px макет сам прибирає запаси — тому лише від 961 px. · Maquette met zijmenu: kolom gecentreerd, de ruimte voor het menu blijft de ondergrens. */
+@media (min-width:961px){
+html.palet-maquette:not(#_uitrol) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-rail:284px;max-width:none}
+html.palet-maquette:not(#_uitrol) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
+html.palet-maquette:not(#_uitrol) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){padding-right:max(var(--ut-rail),calc((100% - 1180px) / 2));padding-left:max(0px,min(calc((100% - 1180px) / 2),calc(100% - 1180px - var(--ut-rail))))}
+html.palet-maquette:not(#_uitrol) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){padding-left:max(var(--ut-rail),calc((100% - 1180px) / 2));padding-right:max(0px,min(calc((100% - 1180px) / 2),calc(100% - 1180px - var(--ut-rail))))}
+}
 .admin-uitrol .admin-section>header{position:relative}
 .admin-uitrol-ververs{position:absolute;right:0;top:0;background:none;border:0;cursor:pointer;color:inherit;opacity:.7}
 .admin-uitrol-ververs svg{width:18px;height:18px}
@@ -9,14 +24,14 @@
 .admin-uitrol-stand li[data-ok="true"] svg{color:#1f7a4a}
 .admin-uitrol-stand li[data-ok="false"] svg{color:var(--fout)}
 .admin-uitrol .admin-notice[data-ok="false"]{border-color:var(--fout)}
-.admin-uitrol-voorstel{border:1px solid rgba(127,127,127,.3);border-radius:10px;padding:12px 14px;margin:10px 0}
+.admin-uitrol-voorstel{border:1px solid rgba(127,127,127,.3);border-radius:10px;padding:12px 14px;margin:10px 0;min-width:0;max-width:100%}
 .admin-uitrol-voorstel h3{margin:0 0 8px}
 .admin-uitrol-voorstel dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:0 0 8px}
 .admin-uitrol-voorstel dt{opacity:.7}
 .admin-uitrol-voorstel dd{margin:0;overflow-wrap:anywhere}
 .admin-uitrol-voorstel dd[data-ok="false"]{color:var(--fout)}
 .admin-uitrol-voorstel pre{white-space:pre-wrap;max-height:320px;overflow:auto;font-size:.85em;background:rgba(127,127,127,.08);padding:8px;border-radius:6px}
-.admin-uitrol-sha{font-size:.8em;word-break:break-all}
+.admin-uitrol-sha{font-size:.8em;overflow-wrap:anywhere;word-break:normal}
 .admin-uitrol-knoppen{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 /* Punt 1 (хрестики): deze knopstijl is van de OUDE updatepagina. De nieuwe pagina staat in dezelfde <div class="admin-uitrol ut-root">,
    dus een kale `.admin-uitrol button` (0,1,1) won van `.ut-tabs-pijl{display:none}` (0,1,0): BEIDE schuifpijlen van de tabbalk werden
@@ -32,7 +47,7 @@
 .admin-uitrol-lijst li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:rgba(127,127,127,.06)}
 .admin-uitrol-lijst li[data-status="ingetrokken"],.admin-uitrol-lijst li[data-status="verlopen"]{opacity:.6}
 .admin-uitrol-leeg{opacity:.7}
-.admin-uitrol-ssh{user-select:all;word-break:break-all}
+.admin-uitrol-ssh{user-select:all;overflow-wrap:anywhere;word-break:normal}
 .admin-uitrol-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .admin-uitrol-form input,.admin-uitrol-form select{padding:7px 9px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;font:inherit;min-width:0}
 .admin-uitrol-form input[type=number]{width:70px}

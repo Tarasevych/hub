@@ -37,14 +37,14 @@
 .vbc-vraag[aria-expanded='true'] { color: var(--accent); border-color: var(--accent); }
 .vbc-uitleg { flex-basis: 100%; margin: 0; color: var(--muted); max-width: 70ch; }
 .vbc-lijst, .vbc-raster, .vbc-synclijst { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ruimte-2); }
-.vbc-raster { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-.vbc-kaart { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); min-width: 0; }
+.vbc-raster { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.vbc-kaart { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--surface); min-width: 0; max-width: 100%; }
 .vbc-kaart.is-aandacht { border-color: var(--warn); }
-.vbc-kaart-kop { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.vbc-naam { display: grid; min-width: 0; flex: 1; }
-.vbc-naam strong { font-weight: 600; }
+.vbc-kaart-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.vbc-naam { display: grid; min-width: 0; flex: 1 1 160px; }
+.vbc-naam strong { font-weight: 600; overflow-wrap: anywhere; }
 .vbc-naam span { color: var(--muted); overflow-wrap: anywhere; }
-.vbc-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px; border-radius: 999px; font-size: var(--tekst-mini); white-space: nowrap; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.vbc-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px; border-radius: 999px; font-size: var(--tekst-mini); white-space: normal; max-width: 100%; overflow-wrap: break-word; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
 .vbc-badge.is-ok, .vbc-badge.is-verbonden { background: var(--ok-zacht); color: var(--ok); border-color: transparent; }
 .vbc-badge.is-aandacht { background: var(--warn-zacht); color: var(--text); border-color: var(--warn); }
 .vbc-badge.is-beschikbaar { background: var(--info-zacht); color: var(--info); border-color: transparent; }

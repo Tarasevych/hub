@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "taakId": "GITHUB-010",
+  "titel": "Повноцінне двостороннє робоче середовище GitHub (github.tarasevych.com), однонатискове підключення та екосистемні мости",
+  "opdracht": "Створити сучасне, інтуїтивно зрозуміле, повністю сумісне й адаптивне для комп’ютерів і смартфонів двостороннє робоче середовище https://github.tarasevych.com/ у стилі платформи «Мій простір»: пропрацювати оформлення та функціональність усіх 13 розділів підменю, робочих і спливних вікон (провідник дерева файлів, керування гілками й мітками версій, вбудований вебредактор коду з по-рядковою різницею змін та збереженням у гілку або запит на злиття, порівняння гілок, робочі вікна задач, рецензій і захищеного злиття, конвеєри дій і випуски), реалізувати підключення GitHub в один натиск без ручного введення додаткових ключів, двостороннє ізольоване дзеркало в межах облікового запису з живим підписаним перехоплювачем подій, тісну взаємодію з підключеними пристроями, Дошкою завдань і спільним контекстом ШІ, а також майстер самостійного розгортання на власному чи серверному обладнанні.",
+  "herkomst": {
+    "tak": "feature/github-010-volledige-omgeving-20261111-210000",
+    "basis": "7734fc3b779b78cac79fc7bb3d55e03a4b183937",
+    "geinstalleerdeBasis": "7734fc3b779b78cac79fc7bb3d55e03a4b183937",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, вміст поштових листів, сеанси оглядача та приховані міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-11T20:54:00Z",
+      "stap": "Звірено встановлену на сервері версію 20261111-191818 (7734fc3b779b78cac79fc7bb3d55e03a4b183937), зареєстровано задачу координації GITHUB-010 та досліджено всі наявні серверні й клієнтські модулі служби github."
+    },
+    {
+      "tijd": "2026-11-11T21:15:00Z",
+      "stap": "Розроблено міграцію 0208_github_spiegel_en_werkruimte.sql із суворими правилами ізоляції рядків (ENABLE + FORCE ROW LEVEL SECURITY) та розмежуванням приватного і технічного просторів для двостороннього дзеркала сховищ, журналу подій, зв’язків із Дошкою завдань і одноразових станів однонатискового підключення."
+    },
+    {
+      "tijd": "2026-11-11T21:30:00Z",
+      "stap": "Реалізовано серверні модулі однонатискового підключення (github-eenklik.ts: прямий OAuth, потік маніфесту застосунку GitHub та потік входу за 8-значним кодом пристрою із шифруванням AES-256-GCM) і повного робочого середовища (github-werkruimte.ts: операції зі сховищами, гілками, деревом файлів, вебредактором, порівнянням, задачами, запитами на злиття, конвеєрами, випусками, підписаним перехоплювачем подій HMAC-SHA256, Дошкою завдань, спільним контекстом ШІ та підключеними пристроями), а також 7 нових двомовних інструментів ШІ у каталозі v2."
+    },
+    {
+      "tijd": "2026-11-11T21:45:00Z",
+      "stap": "Розширено навігаційне підменю служби github до 13 розділів, створено клієнтські робочі панелі та нативні діалогові спливні вікна (<dialog>) для комп’ютерів і смартфонів (GitHubWeergave.tsx, EenklikKoppelPaneel.tsx, CodeEnEditorPaneel.tsx, ZakenEnSamenvoegingenPaneel.tsx, ActiesEnUitgavenPaneel.tsx, SpiegelEnBrugPaneel.tsx, github-weergave.css) і оновлено пошуковий каталог кнопок."
+    },
+    {
+      "tijd": "2026-11-11T22:01:00Z",
+      "stap": "Створено та пройдено модульне випробування github-volledige-werkruimte.test.ts (18/18), перевірено маршрути шлюзу повноважень (1009 маршрутів), правила розміщення (68/68), типи клієнта і сервера, виробниче складання та суворе дотримання мовного закону."
+    }
+  ],
+  "keuzes": [
+    "Зберегти єдину точку зберігання й читання маркерів доступу в backend/github-toegang.ts та backend/github-koppeling-opslag.ts: жоден секрет чи маркер ніколи не залишає сервер і не потрапляє до адресного рядка чи журналів.",
+    "Втілити підключення GitHub в один натиск через три взаємодоповнювальні офіційні шляхи без ручного копіювання ключів: прямий OAuth-перехід (якщо застосунок налаштовано на платформі чи у просторі), офіційний потік маніфесту застосунку GitHub для свіжорозгорнутих серверів з автоматичним запечатуванням ключів AES-256-GCM та вхід за коротким 8-значним кодом пристрою.",
+    "Побудувати ізольоване двостороннє дзеркало сховищ на кожен простір користувача (prive / technisch) із вхідним перехоплювачем подій POST /api/github/webhook/:sleutel, який перевіряє побайтовий підпис X-Hub-Signature-256 (HMAC-SHA256 через timingSafeEqual) до будь-якого розбору JSON.",
+    "Використовувати нативний елемент верхнього шару <dialog className=\"gh-dialoog\"> замість нових фіксованих шарів CSS, що забезпечує повноекранні зручні вікна на смартфонах і зберігає всі інваріанти системи розміщення платформи.",
+    "Додати 7 нових двомовних інструментів ШІ (github_tree_read, github_file_read, github_file_write, github_branches_manage, github_workflow_dispatch, github_release_create, github_sync_mirror) із обов’язковим прапорцем запису для всіх змінювальних дій та збереженням вимоги ручного підтвердження власником для злиття запитів на злиття.",
+    "Передбачити вбудований формувач налаштувань самостійного розгортання зі сховища (Docker Compose, команди для власного обладнання та одноклікова відправка команд git clone/pull/push і apps.deploy на підключені пристрої користувача з підтвердженням)."
+  ],
+  "wijzigingen": [
+    "migrations/0208_github_spiegel_en_werkruimte.sql",
+    "migrations/rechten.sql",
+    "shared/github-werkruimte.ts",
+    "shared/github-koppeling.ts",
+    "shared/connector-v2/catalogus.ts",
+    "shared/ai-beleid/catalogus.ts",
+    "shared/ai-toegang.ts",
+    "shared/mcp-acties.ts",
+    "shared/menu-model.ts",
+    "shared/werkblad-register.ts",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "backend/github-koppeling-opslag.ts",
+    "backend/github-eenklik.ts",
+    "backend/github-werkruimte.ts",
+    "backend/github-platform.ts",
+    "backend/ruimte-bord-github.ts",
+    "backend/site-aanroep.ts",
+    "backend/site-hulpmiddelen.ts",
+    "backend/connectors-hulpmiddelen.ts",
+    "backend/connector-v2-erfenis.ts",
+    "server/platform/auth-poort.ts",
+    "public/canonical-service.js",
+    "scripts/zoek-ui-catalogus.mjs",
+    "src/dienst-tab-labels.ts",
+    "src/VerenigdDienstApp.tsx",
+    "src/menu-voorkeuren.tsx",
+    "src/GitHubWeergave.tsx",
+    "src/github-weergave.css",
+    "src/github/github-client.tsx",
+    "src/github/EenklikKoppelPaneel.tsx",
+    "src/github/CodeEnEditorPaneel.tsx",
+    "src/github/ZakenEnSamenvoegingenPaneel.tsx",
+    "src/github/ActiesEnUitgavenPaneel.tsx",
+    "src/github/SpiegelEnBrugPaneel.tsx",
+    "tests/eenheid/site-hulpmiddelen.test.ts",
+    "tests/eenheid/github-volledige-werkruimte.test.ts",
+    "orchestratie/taken/GITHUB-010.json",
+    "orchestratie/ontwikkelarchieven/GITHUB-010.json",
+    ".github/workflows/github-010-uitgave.yml"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи: node scripts/orch.mjs controleer і versheid --taak GITHUB-010 --fase overdracht.",
+    "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
+    "Будівельна перевірка розміщення та пошукового каталогу інтерфейсу: node scripts/plaatsing-controle.mjs і node scripts/zoek-ui-catalogus.mjs --controle (1428 елементів).",
+    "Одиничні випробування: github-volledige-werkruimte.test.ts (18/18), github-oauth-20261020.test.ts (17/17), github-koppelkaart-20261019.test.ts (22/22), github-platform.test.ts (13/13), routes.test.ts (5/5, 1009 маршрутів), plaatsing-20261025.test.ts (68/68), zoek-ui-tabblad-20261105.test.ts (46/46), connector-v2.test.ts, hulpmiddelen-tweetalig-20261020.test.ts, menu-v2.test.ts, menu-indeling.test.ts, werkblad-register-20261027.test.ts, site-hulpmiddelen.test.ts та ruimte-bord-github-20261020.test.ts.",
+    "Перевірка типів клієнтського та серверного коду (tsc --noEmit і npm run typecheck:server) та повне виробниче складання застосунку і модуля розширення (npm run build).",
+    "Подвійний прогін усіх міграцій включно з 0208_github_spiegel_en_werkruimte.sql на чистій випробувальній базі PostgreSQL 16 із перевіркою ENABLE + FORCE ROW LEVEL SECURITY на всіх чотирьох нових таблицях.",
+    "Перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://github.com/Tarasevych/hub/commit/7734fc3b779b78cac79fc7bb3d55e03a4b183937",
+    "https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "https://github.com/Tarasevych/hub/tree/feature/github-010-volledige-omgeving-20261111-210000"
+  ],
+  "beperkingen": [
+    "Злиття запитів на злиття на сторінці github.tarasevych.com навмисно вимагає явної позначки підтвердження користувача перед відправленням запиту до GitHub.",
+    "Команди клонування, синхронізації та розгортання на підключених пристроях (agent.mjs) подаються через чергу підтвердження дій користувача згідно з правилами безпеки платформи.",
+    "Пакет випуску не встановлюється автоматично: завантаження та встановлення на робочий сервер виконуються виключно власником із підтвердженням ключем доступу."
+  ]
+}

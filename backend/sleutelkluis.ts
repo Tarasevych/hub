@@ -31,6 +31,8 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, sc
 import { getPool } from '../server/platform/pg';
 import { clearLoginFailures, envKey32, openWithEnvKey, pogingReserveren, sealWithEnvKey } from '../server/platform/beveiliging';
 import { auditToevoegen } from '../server/platform/audit';
+import { kekUitHerstelcodeAsync } from './sleutelkluis-kdf';
+import { meldBeveiligingsWijziging } from './beveiliging-meldingen'; // SEC-002 privacy-logboek-03
 import type { AiRuimte } from '../shared/ai-ruimte';
 import {
   DEK_ENVELOP, HERSTELCODE_ALFABET, HERSTELCODE_LENGTE, KEK_INFO, OMSLAG, SLEUTEL_GESLOTEN_CODE, SLEUTELKLUIS_REGISTER,
@@ -50,7 +52,15 @@ export const controleVan = (dek: Buffer): string => createHmac('sha256', dek).up
 const veiligGelijk = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 
 // ------------------------------------------------------------------------------------------------ AES-256-GCM
+// SEC-002 (geheimen-01): een sleutel van alleen nullen is nooit een echte sleutel — het is een buffer die bij het SLUITEN van de
+// kluis genuld werd terwijl iemand hem nog vasthield. Daarmee verzegelen zou gegevens onder een voor iedereen bekende sleutel
+// zetten (en ze voor de echte sleutel verliezen). Vangnet voor de hele klasse: eerlijk «sleutel dicht», nooit stil doorwerken.
+const NUL_SLEUTEL = Buffer.alloc(32);
+const weigerNulSleutel = (key: Buffer): void => {
+  if (Buffer.isBuffer(key) && key.length === NUL_SLEUTEL.length && timingSafeEqual(key, NUL_SLEUTEL)) throw new SleutelkluisFout(SLEUTEL_GESLOTEN_CODE, 423);
+};
 const gcmDicht = (prefix: string, key: Buffer, plaintext: Buffer, aad: string): string => {
+  weigerNulSleutel(key);
   const iv = randomBytes(12);
   const c = createCipheriv('aes-256-gcm', key, iv);
   c.setAAD(Buffer.from(aad, 'utf8'));
@@ -63,6 +73,7 @@ const gcmOpen = (prefix: string, key: Buffer, envelop: string, aad: string): Buf
   const ivBuf = Buffer.from(iv, 'base64url');
   const tagBuf = Buffer.from(tag, 'base64url');
   if (ivBuf.length !== 12 || tagBuf.length !== 16) throw new SleutelkluisFout('ENVELOP_ONGELDIG');
+  weigerNulSleutel(key);
   const d = createDecipheriv('aes-256-gcm', key, ivBuf, { authTagLength: 16 });
   d.setAAD(Buffer.from(aad, 'utf8'));
   d.setAuthTag(tagBuf);
@@ -124,7 +135,9 @@ export const zetHouderControle = (fn: typeof houderLeeft | null) => { houderLeef
 const nul = (b: Buffer) => { try { b.fill(0); } catch { /* niets */ } };
 const opruimen = (sleutel: string, o: Open, nu = Date.now()) => {
   for (const [k, h] of o.houders) if (h.tot <= nu) o.houders.delete(k);
-  if (!o.houders.size) { nul(o.dek); geheugen.delete(sleutel); }
+  // SEC-002 (geheimen-01): alleen het EIGEN item uit het geheugen halen. Een late lui-controle van een al gesloten item mag de
+  // sleutel die de mens intussen opnieuw opende (een nieuw item onder dezelfde naam) niet meenemen.
+  if (!o.houders.size) { nul(o.dek); if (geheugen.get(sleutel) === o) geheugen.delete(sleutel); }
 };
 /** Lui: houders die lang niet gecontroleerd zijn, nameten tegen de database (fire-and-forget, dus nooit op het pad van een verzoek). */
 const luiControleren = (sleutel: string, o: Open) => {
@@ -282,30 +295,48 @@ export async function inschakelen(lade: KluisLade, houder: { soort: HouderSoort;
   const dek = randomBytes(32);
   const code = nieuweHerstelcode();
   const salt = randomBytes(16);
-  const envelop = omslaan(kekUitHerstelcode(code, salt), dek, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
-  await sys().query('INSERT INTO app.sleutelkluis (user_id, ruimte, controle) VALUES ($1, $2, $3)', [lade.userId, ruimteOf(lade.ruimte), controleVan(dek)]);
-  standCacheLeeg(lade);
-  await omslagSchrijven(lade, 'herstelcode', 'herstelcode', '', { kdf: 'scrypt', N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: salt.toString('base64url') }, envelop);
+  const envelop = omslaan(await kekUitHerstelcodeAsync(code, salt, SCRYPT), dek, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
+  // SEC-002 (geheimen-04): kluisrij en herstelcode-omslag in ÉÉN transactie. Los van elkaar liet een fout ertussen een kluis
+  // achter zonder één omslag: «aan» voor altijd, met niets te openen (de DEK bestond alleen in deze functie).
+  const client = await sys().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('INSERT INTO app.sleutelkluis (user_id, ruimte, controle) VALUES ($1, $2, $3)', [lade.userId, ruimteOf(lade.ruimte), controleVan(dek)]);
+    await client.query(`INSERT INTO app.sleutelkluis_omslag (user_id, ruimte, soort, houder, deel, parameters, envelop) VALUES ($1, $2, 'herstelcode', 'herstelcode', '', $3::jsonb, $4)`,
+      [lade.userId, ruimteOf(lade.ruimte), JSON.stringify({ kdf: 'scrypt', N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: salt.toString('base64url') }), envelop]);
+    await client.query('COMMIT');
+  } catch (e) { await client.query('ROLLBACK').catch(() => undefined); throw e; } finally { client.release(); standCacheLeeg(lade); }
   await sleutelOpenen(lade, dek, houder);
   nul(dek);
   await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.ingeschakeld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte) } }).catch(() => undefined);
+  await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: 'kluis ingeschakeld / сховище увімкнено' }); // SEC-002 privacy-logboek-03
   return { herstelcode: code };
 }
 /** Nieuwe herstelcode (de oude werkt meteen niet meer). Alleen met een open sleutel. */
 export async function herstelcodeVernieuwen(lade: KluisLade): Promise<{ herstelcode: string }> {
   if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
-  const dek = sleutelOpen(lade);
-  if (!dek) fout(SLEUTEL_GESLOTEN_CODE, 423);
+  const open = sleutelOpen(lade);
+  if (!open) fout(SLEUTEL_GESLOTEN_CODE, 423);
+  // SEC-002 (geheimen-02): scrypt loopt nu buiten de hoofdthread. Daarom een KOPIE van de DEK: sluit iemand intussen de sleutel,
+  // dan wordt de buffer in het geheugen genuld — en een omslag van nullen zou een herstelcode opleveren die niets opent.
+  const dek = Buffer.from(open!);
   const code = nieuweHerstelcode();
   const salt = randomBytes(16);
-  const envelop = omslaan(kekUitHerstelcode(code, salt), dek!, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
+  const envelop = omslaan(await kekUitHerstelcodeAsync(code, salt, SCRYPT), dek, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
+  nul(dek);
   await omslagSchrijven(lade, 'herstelcode', 'herstelcode', '', { kdf: 'scrypt', N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: salt.toString('base64url') }, envelop);
   await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herstelcode_vernieuwd', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte) } }).catch(() => undefined);
+  await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: 'herstelcode vernieuwd / код відновлення оновлено' }); // SEC-002 privacy-logboek-03
   return { herstelcode: code };
 }
 /**
  * Ontgrendelen met de herstelcode: lockout zoals bij aanmelden (5 pogingen, oplopend), KEK direct weggegooid. De code werkt
- * ÉÉN keer: na gebruik wordt meteen een nieuwe gemaakt en eenmalig teruggegeven (wie de oude ooit zag, kan er niets meer mee).
+ * ÉÉN keer: na gebruik wordt meteen een nieuwe gemaakt en eenmalig teruggegeven.
+ * SEC-002 (geheimen-07), eerlijk: «wie de oude code ooit zag, kan er niets meer mee» geldt alleen tegen de HUIDIGE database.
+ * De gegevenssleutel (DEK) zelf verandert niet: wie de oude code én een OUDERE kopie van de database (back-up) met de oude
+ * omslag heeft, opent daarmee nog steeds dezelfde DEK. Een DEK-wissel bestaat nog niet (zie deploy/GEHEIMEN-REGISTER.nl.md).
+ * SEC-002 (geheimen-04): de ROUTE gebruikt ontgrendelMetHerstelcodeVeilig (backend/sleutelkluis-herstel.ts): daar blijft de
+ * gebruikte code geldig tot de mens bevestigt dat de nieuwe bewaard is — een verloren antwoord sluit de sleutel dan niet voorgoed.
  */
 export async function ontgrendelMetHerstelcode(lade: KluisLade, code: unknown, houder: { soort: HouderSoort; id: string }): Promise<{ herstelcode: string }> {
   if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
@@ -318,7 +349,7 @@ export async function ontgrendelMetHerstelcode(lade: KluisLade, code: unknown, h
   const p = rij!.parameters as { N?: number; r?: number; p?: number; salt?: string };
   let dek: Buffer;
   try {
-    const kek = kekUitHerstelcode(String(code), Buffer.from(String(p.salt || ''), 'base64url'), { N: Number(p.N) || SCRYPT.N, r: Number(p.r) || SCRYPT.r, p: Number(p.p) || SCRYPT.p });
+    const kek = await kekUitHerstelcodeAsync(String(code), Buffer.from(String(p.salt || ''), 'base64url'), { N: Number(p.N) || SCRYPT.N, r: Number(p.r) || SCRYPT.r, p: Number(p.p) || SCRYPT.p });
     dek = omslagOpenen(kek, rij!.envelop, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
     nul(kek);
   } catch { fout('SLEUTELKLUIS_HERSTELCODE_ONGELDIG', 403); }
@@ -326,11 +357,12 @@ export async function ontgrendelMetHerstelcode(lade: KluisLade, code: unknown, h
   // Eenmalig: de oude omslag wordt NU vervangen door een nieuwe code (de oude gaat nooit meer open).
   const nieuw = nieuweHerstelcode();
   const salt = randomBytes(16);
-  const envelop = omslaan(kekUitHerstelcode(nieuw, salt), dek!, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
+  const envelop = omslaan(await kekUitHerstelcodeAsync(nieuw, salt, SCRYPT), dek!, omslagAad(lade.userId, ruimteOf(lade.ruimte), 'herstelcode', 'herstelcode'));
   await omslagSchrijven(lade, 'herstelcode', 'herstelcode', '', { kdf: 'scrypt', N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: salt.toString('base64url') }, envelop);
   nul(dek!);
   await clearLoginFailures(onderwerp);
   await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.ontgrendeld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), methode: 'herstelcode', nieuweCode: true } }).catch(() => undefined);
+  await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: 'geopend met herstelcode / відкрито кодом відновлення' }); // SEC-002 privacy-logboek-03
   return { herstelcode: nieuw };
 }
 
@@ -347,6 +379,7 @@ export async function passkeyOmslagOpslaan(lade: KluisLade, passkeyId: string, s
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(salt) || !/^omslag1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(envelop) || envelop.length > 400) fout('SLEUTELKLUIS_OMSLAG_ONGELDIG');
   await omslagSchrijven(lade, 'passkey', passkeyId, '', { salt, prf: !!prf }, envelop);
   await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.passkey_gekoppeld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), passkey: passkeyId.slice(0, 8) } }).catch(() => undefined);
+  await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: 'passkey gekoppeld / passkey приєднано' }); // SEC-002 privacy-logboek-03
 }
 export async function passkeyOmslagen(lade: KluisLade): Promise<Array<{ passkeyId: string; salt: string; envelop: string; prf: boolean; aangemaaktOp: number; laatstGebruiktOp: number }>> {
   return (await omslagen(lade, 'passkey')).map((r) => ({ passkeyId: r.houder, salt: String(r.parameters.salt || ''), envelop: r.envelop, prf: r.parameters.prf !== false, aangemaaktOp: new Date(r.aangemaakt_op).getTime(), laatstGebruiktOp: r.laatst_gebruikt_op ? new Date(r.laatst_gebruikt_op).getTime() : 0 }));
@@ -383,16 +416,20 @@ async function grantLade(grantId: string): Promise<(KluisLade & { tot: number })
 export async function grantVerzegelen(grantId: string, tokens: { toegang: string; vernieuw: string }): Promise<boolean> {
   const lade = await grantLade(grantId);
   if (!lade || !(await isIngeschakeld(lade))) return false;
-  const dek = sleutelOpen(lade);
+  const open = sleutelOpen(lade);
   const p = pepper();
-  if (!dek || !p) return false;
-  for (const deel of GRANT_DELEN) {
-    const kek = kekUitToken(tokens[deel], p);
-    await omslagSchrijven(lade, 'grant', grantId, deel, { kdf: 'hkdf' }, omslaan(kek, dek, omslagAad(lade.userId, lade.ruimte, 'grant', grantId, deel)));
-    nul(kek);
-  }
-  // De verbinding zelf houdt de sleutel open zolang zij geldig is (besluit van de eigenaar: agenten werken zonder sessie).
-  await sleutelOpenen(lade, dek, { soort: 'grant', id: grantId, tot: lade.tot });
+  if (!open || !p) return false;
+  // SEC-002 (geheimen-01): eigen kopie over de await-grenzen (zie herversleutelen); gaat de sleutel intussen dicht, dan geen houder.
+  const dek = Buffer.from(open);
+  try {
+    for (const deel of GRANT_DELEN) {
+      const kek = kekUitToken(tokens[deel], p);
+      await omslagSchrijven(lade, 'grant', grantId, deel, { kdf: 'hkdf' }, omslaan(kek, dek, omslagAad(lade.userId, lade.ruimte, 'grant', grantId, deel)));
+      nul(kek);
+    }
+    // De verbinding zelf houdt de sleutel open zolang zij geldig is (besluit van de eigenaar: agenten werken zonder sessie).
+    await sleutelOpenen(lade, dek, { soort: 'grant', id: grantId, tot: lade.tot });
+  } finally { nul(dek); }
   return true;
 }
 /** Een agentverzoek met zijn token: omslag openen → DEK in het geheugen (houder = de verbinding, tot het refresh-token verloopt). */
@@ -420,15 +457,19 @@ export async function grantRoteren(grantId: string, oudVernieuw: string, nieuw: 
   const lade = await grantLade(grantId);
   if (!lade) return false;
   if (!sleutelIsOpen(lade) && !(await grantOpenen(grantId, 'vernieuw', oudVernieuw))) return false;
-  const dek = sleutelOpen(lade);
+  const open = sleutelOpen(lade);
   const p = pepper();
-  if (!dek || !p) return false;
-  for (const deel of GRANT_DELEN) {
-    const kek = kekUitToken(nieuw[deel], p);
-    await omslagSchrijven(lade, 'grant', grantId, deel, { kdf: 'hkdf' }, omslaan(kek, dek, omslagAad(lade.userId, lade.ruimte, 'grant', grantId, deel)));
-    nul(kek);
-  }
-  await sleutelOpenen(lade, dek, { soort: 'grant', id: grantId, tot: lade.tot });
+  if (!open || !p) return false;
+  // SEC-002 (geheimen-01): eigen kopie over de await-grenzen (zie herversleutelen).
+  const dek = Buffer.from(open);
+  try {
+    for (const deel of GRANT_DELEN) {
+      const kek = kekUitToken(nieuw[deel], p);
+      await omslagSchrijven(lade, 'grant', grantId, deel, { kdf: 'hkdf' }, omslaan(kek, dek, omslagAad(lade.userId, lade.ruimte, 'grant', grantId, deel)));
+      nul(kek);
+    }
+    await sleutelOpenen(lade, dek, { soort: 'grant', id: grantId, tot: lade.tot });
+  } finally { nul(dek); }
   return true;
 }
 /** Intrekken/verlopen: de houder weg uit het geheugen én de omslagen weg uit de database. */
@@ -452,23 +493,115 @@ const herversleutelaars = new Map<string, Herversleutelaar>();
 /** Elke module met een gevoelige tabel meldt zich hier (bij import). De naam = de tabel in shared/sleutelkluis.ts → register. */
 export function registreerHerversleutelaar(tabel: string, fn: Herversleutelaar): void { herversleutelaars.set(tabel, fn); }
 export const geregistreerdeHerversleutelaars = (): string[] => [...herversleutelaars.keys()].sort();
-/** «Перешифрувати мої дані зараз»: alle oude v1-rijen van deze lade onder de DEK zetten. Alleen met een open sleutel. */
-export async function herversleutelen(lade: KluisLade): Promise<{ tabellen: Array<{ tabel: string; gevonden: number; herversleuteld: number; fout?: string }> }> {
+// IDENTITEIT-015 (етап 1.3): перебіг «оброблено N з M», стан у app.records і продовження після переривання.
+// Раніше повторне шифрування йшло одним запитом без стану: закрили ключ або вкладку — робота обривалася з 423, людина не знала,
+// скільки зроблено, і могла лише почати все спочатку (з лімітом 6 на годину). Тепер:
+//   • одиниця перебігу — зареєстрована таблиця (M = кількість herversleutelaars); стан — запис app.records
+//     tbl='sleutelkluis_herversleutel_v1', id='<userId>:<ruimte>' (owner_id = userId → RLS як для інших записів людини);
+//   • старт (sterke step-up, 6/год) скидає стан і обробляє стільки таблиць, скільки попросили (maxTabellen; без нього — усі);
+//   • «Продовжити» (/herversleutelen/verder) бере лише ще не оброблені таблиці; кожен herversleutelaar ідемпотентний (переводить
+//     лише v1-обгортки), тож повтор уже обробленої таблиці нічого не псує;
+//   • ключ закрито посеред роботи → стан «onderbroken» (reden 'sleutel-gesloten'), 423; вкладку закрито → стан лишається «bezig»
+//     з часом останнього кроку, і сторінка показує «Продовжити»;
+//   • одночасний другий запуск для тієї ж шухляди → 409 HERVERSLEUTELEN_BEZIG (у цьому процесі).
+// Herversleutelen in stappen: voortgang N van M in app.records, hervatten na onderbreking, idempotent.
+export const HERVERSLEUTEL_TABEL = 'sleutelkluis_herversleutel_v1';
+export type HerversleutelUitkomst = { tabel: string; gevonden: number; herversleuteld: number; fout?: string };
+export type HerversleutelVoortgang = {
+  status: 'geen' | 'bezig' | 'onderbroken' | 'klaar'; totaal: number; gedaan: number; tabellen: HerversleutelUitkomst[];
+  gestartOp: number; bijgewerktOp: number; klaarOp: number; reden?: string;
+};
+type HerversleutelStand = { userId: string; ruimte: string; status: HerversleutelVoortgang['status']; gedaan: string[]; tabellen: HerversleutelUitkomst[]; gestartOp: number; bijgewerktOp: number; klaarOp: number; reden?: string };
+const herversleutelId = (lade: KluisLade) => `${lade.userId}:${ruimteOf(lade.ruimte)}`;
+const lopend = new Set<string>();
+async function herversleutelStandLezen(lade: KluisLade): Promise<HerversleutelStand | null> {
+  const r = await sys().query('SELECT data FROM app.records WHERE tbl = $1 AND id = $2', [HERVERSLEUTEL_TABEL, herversleutelId(lade)]);
+  const d = r.rows[0]?.data as HerversleutelStand | undefined;
+  return d && Array.isArray(d.gedaan) ? d : null;
+}
+async function herversleutelStandSchrijven(lade: KluisLade, stand: HerversleutelStand): Promise<void> {
+  await sys().query(
+    `INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) ON CONFLICT (tbl, id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+    [HERVERSLEUTEL_TABEL, herversleutelId(lade), JSON.stringify(stand)]);
+}
+const voortgangVan = (stand: HerversleutelStand | null): HerversleutelVoortgang => {
+  const totaal = Math.max(herversleutelaars.size, stand?.gedaan.length || 0);
+  if (!stand) return { status: 'geen', totaal, gedaan: 0, tabellen: [], gestartOp: 0, bijgewerktOp: 0, klaarOp: 0 };
+  const gedaan = stand.gedaan.filter((t) => herversleutelaars.has(t)).length;
+  return { status: stand.status, totaal, gedaan: stand.status === 'klaar' ? totaal : gedaan, tabellen: stand.tabellen || [], gestartOp: stand.gestartOp, bijgewerktOp: stand.bijgewerktOp, klaarOp: stand.klaarOp || 0, ...(stand.reden ? { reden: stand.reden } : {}) };
+};
+/** Стан перебігу для сторінки (без секретів). */
+export async function herversleutelVoortgang(lade: KluisLade): Promise<HerversleutelVoortgang> {
+  return voortgangVan(await herversleutelStandLezen(lade).catch(() => null));
+}
+/**
+ * «Перешифрувати мої дані зараз» (verder=false) або «Продовжити» (verder=true): старі v1-рядки цієї шухляди під DEK, таблиця за
+ * таблицею, зі станом після кожної. Лише з відкритим ключем. maxTabellen обмежує роботу одного запиту (сторінка показує перебіг).
+ */
+export async function herversleutelen(lade: KluisLade, opties: { verder?: boolean; maxTabellen?: number } = {}): Promise<{ tabellen: HerversleutelUitkomst[]; voortgang: HerversleutelVoortgang }> {
   if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
-  const dek = sleutelOpen(lade);
-  if (!dek) fout(SLEUTEL_GESLOTEN_CODE, 423);
-  const tabellen: Array<{ tabel: string; gevonden: number; herversleuteld: number; fout?: string }> = [];
-  for (const [tabel, fn] of herversleutelaars) {
+  const open = sleutelOpen(lade);
+  if (!open) fout(SLEUTEL_GESLOTEN_CODE, 423);
+  const sleutel = herversleutelId(lade);
+  if (lopend.has(sleutel)) fout('HERVERSLEUTELEN_BEZIG', 409);
+  lopend.add(sleutel);
+  try {
+    const nu = Date.now();
+    const vorige = await herversleutelStandLezen(lade);
+    if (opties.verder && (!vorige || vorige.status === 'klaar')) fout('HERVERSLEUTELEN_NIETS_TE_HERVATTEN', 409);
+    const stand: HerversleutelStand = opties.verder && vorige
+      ? { ...vorige, status: 'bezig', reden: undefined, bijgewerktOp: nu }
+      : { userId: lade.userId, ruimte: ruimteOf(lade.ruimte), status: 'bezig', gedaan: [], tabellen: [], gestartOp: nu, bijgewerktOp: nu, klaarOp: 0 };
+    await herversleutelStandSchrijven(lade, stand);
+    const max = Number.isFinite(opties.maxTabellen) && Number(opties.maxTabellen) > 0 ? Math.floor(Number(opties.maxTabellen)) : Infinity;
+    // SEC-002 (geheimen-01): een EIGEN kopie, niet de levende buffer uit het geheugen. Dit werk loopt over veel await-grenzen; sluit
+    // de mens intussen zijn sleutel (afmelden, «Заблокувати», verlopen sessie), dan wordt de levende buffer genuld en zouden de
+    // resterende rijen onder de NUL-sleutel verzegeld worden: verloren voor de echte sleutel en leesbaar voor wie de database heeft.
+    const dek = Buffer.from(open!);
+    const dezeKeer: HerversleutelUitkomst[] = [];
+    let afgebroken = false, verwerkt = 0;
     try {
-      const u = await fn(lade, dek!);
-      tabellen.push({ tabel, ...u });
-      if (u.herversleuteld > 0) journaalTellen(lade, tabel, 'herversleuteld', u.herversleuteld);
-    } catch (e) { tabellen.push({ tabel, gevonden: 0, herversleuteld: 0, fout: String((e as Error).message || e).slice(0, 80) }); }
-  }
-  await sys().query('UPDATE app.sleutelkluis SET herversleuteld_op = now() WHERE user_id = $1 AND ruimte = $2', [lade.userId, ruimteOf(lade.ruimte)]);
-  standCacheLeeg(lade);
-  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), tabellen: tabellen.map((t) => `${t.tabel}:${t.herversleuteld}/${t.gevonden}`) } }).catch(() => undefined);
-  return { tabellen };
+      for (const [tabel, fn] of herversleutelaars) {
+        if (stand.gedaan.includes(tabel)) continue;
+        if (verwerkt >= max) break;
+        // De sleutel ging dicht tijdens de vorige tabel: niet verder werken met de kopie (dicht is dicht) en geen succes melden.
+        if (!sleutelIsOpen(lade)) { afgebroken = true; break; }
+        let u: HerversleutelUitkomst;
+        try {
+          const r = await fn(lade, dek);
+          u = { tabel, ...r };
+          if (r.herversleuteld > 0) journaalTellen(lade, tabel, 'herversleuteld', r.herversleuteld);
+        } catch (e) { u = { tabel, gevonden: 0, herversleuteld: 0, fout: String((e as Error).message || e).slice(0, 80) }; }
+        // Ключ закрили ПІД ЧАС цієї таблиці: її не зараховуємо — «Продовжити» пройде її ще раз (ідемпотентно).
+        if (!sleutelIsOpen(lade)) { afgebroken = true; break; }
+        dezeKeer.push(u); verwerkt++;
+        stand.gedaan = [...stand.gedaan, tabel];
+        stand.tabellen = [...stand.tabellen.filter((x) => x.tabel !== tabel), u];
+        stand.bijgewerktOp = Date.now();
+        await herversleutelStandSchrijven(lade, stand);
+      }
+    } finally { nul(dek); }
+    const tabellenUitkomst = stand.tabellen.map((x) => `${x.tabel}:${x.herversleuteld}/${x.gevonden}`);
+    if (afgebroken) {
+      stand.status = 'onderbroken'; stand.reden = 'sleutel-gesloten'; stand.bijgewerktOp = Date.now();
+      await herversleutelStandSchrijven(lade, stand).catch(() => undefined);
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'failure', details: { ruimte: ruimteOf(lade.ruimte), reden: 'sleutel-gesloten', gedaan: stand.gedaan.length, totaal: herversleutelaars.size, tabellen: tabellenUitkomst } }).catch(() => undefined);
+      fout(SLEUTEL_GESLOTEN_CODE, 423);
+    }
+    const alles = [...herversleutelaars.keys()].every((t) => stand.gedaan.includes(t));
+    if (alles) {
+      stand.status = 'klaar'; stand.klaarOp = Date.now(); stand.bijgewerktOp = stand.klaarOp;
+      await herversleutelStandSchrijven(lade, stand);
+      await sys().query('UPDATE app.sleutelkluis SET herversleuteld_op = now() WHERE user_id = $1 AND ruimte = $2', [lade.userId, ruimteOf(lade.ruimte)]);
+      standCacheLeeg(lade);
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), hervat: !!opties.verder, tabellen: tabellenUitkomst } }).catch(() => undefined);
+      const aantal = stand.tabellen.reduce((s, x) => s + (x.herversleuteld || 0), 0);
+      await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: `herversleuteld: ${aantal} / перешифровано записів: ${aantal}` });
+    } else {
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'partial', details: { ruimte: ruimteOf(lade.ruimte), hervat: !!opties.verder, gedaan: stand.gedaan.length, totaal: herversleutelaars.size } }).catch(() => undefined);
+    }
+    return { tabellen: dezeKeer, voortgang: voortgangVan(stand) };
+  } finally { lopend.delete(sleutel); }
 }
 /** Hulp voor herversleutelaars: één v1-envelop → dek1-envelop (zelfde AAD). */
 export const herversleutelEnvelop = (dek: Buffer, envelop: string, aad: string, serverSleutel: string): string =>
@@ -478,19 +611,123 @@ export const herversleutelEnvelop = (dek: Buffer, envelop: string, aad: string, 
 export const registerZonderHerversleutelaar = (): string[] =>
   SLEUTELKLUIS_REGISTER.filter((r) => r.stand === 'dek' && !herversleutelaars.has(r.tabel)).map((r) => r.tabel);
 
+// ------------------------------------------------------------------------------------------------ onthouden apparaat (0277)
+// Пам'ять ключа на знайомому пристрої · geheugen van de sleutel op een bekend apparaat. Zie migrations/0277_sleutelkluis_apparaat.sql.
+// De server bewaart S (verzegeld met een omgevingssleutel); de browser X = DEK ⊕ S onder een niet-exporteerbare sleutel.
+export const APPARAAT_ONGEBRUIKT_MS = 30 * 24 * 60 * 60 * 1000;
+export const APPARAAT_MAX_MS = 90 * 24 * 60 * 60 * 1000;
+export const APPARAAT_MAX_PER_LADE = 20;
+const APPARAAT_SLEUTELS = ['SLEUTELKLUIS_SLEUTEL_V1', 'TOTP_ENCRYPTION_KEY_V1'] as const;
+const apparaatAad = (lade: KluisLade, id: string) => `sleutelkluis-apparaat|${lade.userId}|${ruimteOf(lade.ruimte)}|${id}`;
+const xorBuf = (a: Buffer, b: Buffer): Buffer => { const u = Buffer.alloc(32); for (let i = 0; i < 32; i++) u[i] = a[i] ^ b[i]; return u; };
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Label voor de mens uit de User-Agent: alleen browser + systeem, nooit de volledige tekst. */
+export function apparaatLabel(ua: unknown): string {
+  const t = String(ua || '');
+  const browser = /Edg\//.test(t) ? 'Edge' : /OPR\//.test(t) ? 'Opera' : /Firefox\//.test(t) ? 'Firefox' : /Chrome\//.test(t) ? 'Chrome' : /Safari\//.test(t) ? 'Safari' : '';
+  const os = /Android/.test(t) ? 'Android' : /iPhone|iPad|iPod/.test(t) ? 'iOS' : /Windows/.test(t) ? 'Windows' : /Mac OS X|Macintosh/.test(t) ? 'macOS' : /Linux/.test(t) ? 'Linux' : '';
+  return [browser, os].filter(Boolean).join(' · ').slice(0, 120);
+}
+/** Is deze sessie zelf een houder van de open sleutel? (Onthouden mag alleen de sessie die net ontgrendelde of al houder is.) */
+export function isHouder(lade: KluisLade, soort: HouderSoort, id: string): boolean {
+  if (!sleutelOpen(lade)) return false;
+  const o = geheugen.get(sleutelVan(lade));
+  const h = o?.houders.get(houderId(soort, id));
+  return !!h && h.tot > Date.now();
+}
+/**
+ * Dit apparaat onthouden: nieuwe S, verzegeld bewaard; terug gaat X = DEK ⊕ S (hex) voor de browser, die het onder zijn eigen
+ * niet-exporteerbare sleutel opslaat. Vereist: de sleutel staat open voor DEZE sessie.
+ */
+export async function apparaatOnthouden(lade: KluisLade, houder: { soort: HouderSoort; id: string }, label: string): Promise<{ apparaatId: string; deel: string; verlooptOp: number }> {
+  if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
+  if (!isHouder(lade, houder.soort, houder.id)) fout(SLEUTEL_GESLOTEN_CODE, 423);
+  const sleutelNaam = APPARAAT_SLEUTELS.find((n) => envKey32(n));
+  if (!sleutelNaam) fout('SLEUTELKLUIS_PEPPER_ONTBREEKT', 503);
+  const dek = sleutelOpen(lade)!;
+  // Oude en verlopen rijen van deze lade opruimen; hoogstens APPARAAT_MAX_PER_LADE actieve apparaten (de oudste valt weg).
+  await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 AND (ingetrokken_op IS NOT NULL OR verloopt_op < now() OR COALESCE(laatst_gebruikt_op, aangemaakt_op) < now() - make_interval(secs => $3))`,
+    [lade.userId, ruimteOf(lade.ruimte), APPARAAT_ONGEBRUIKT_MS / 1000]);
+  await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id IN (SELECT id FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 ORDER BY COALESCE(laatst_gebruikt_op, aangemaakt_op) DESC OFFSET $3)`,
+    [lade.userId, ruimteOf(lade.ruimte), APPARAAT_MAX_PER_LADE - 1]);
+  const s = randomBytes(32);
+  const idRij = await sys().query(`SELECT gen_random_uuid()::text AS id`);
+  const id = String(idRij.rows[0].id);
+  const verlooptOp = Date.now() + APPARAAT_MAX_MS;
+  const verzegeld = sealWithEnvKey(sleutelNaam!, s.toString('hex'), apparaatAad(lade, id));
+  await sys().query(`INSERT INTO app.sleutelkluis_apparaat (id, user_id, ruimte, deel_verzegeld, label, verloopt_op) VALUES ($1::uuid, $2, $3, $4, $5, to_timestamp($6 / 1000.0))`,
+    [id, lade.userId, ruimteOf(lade.ruimte), verzegeld, String(label || '').slice(0, 120), verlooptOp]);
+  const x = xorBuf(dek, s);
+  const deel = x.toString('hex');
+  nul(x); nul(s);
+  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.apparaat_onthouden', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), apparaat: id.slice(0, 8), label: String(label || '').slice(0, 60) } }).catch(() => undefined);
+  return { apparaatId: id, deel, verlooptOp };
+}
+/** Ontgrendelen met een onthouden apparaat: X van de browser ⊕ S van de server = DEK, gecontroleerd tegen `controle`. */
+export async function ontgrendelMetApparaat(lade: KluisLade, apparaatId: unknown, deelHex: unknown, houder: { soort: HouderSoort; id: string }): Promise<void> {
+  if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
+  const id = String(apparaatId || '');
+  if (!UUID_RE.test(id) || !/^[0-9a-f]{64}$/i.test(String(deelHex || ''))) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const r = await sys().query(`SELECT deel_verzegeld, verloopt_op, laatst_gebruikt_op, aangemaakt_op, ingetrokken_op FROM app.sleutelkluis_apparaat WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+    [id, lade.userId, ruimteOf(lade.ruimte)]);
+  const rij = r.rows[0] as { deel_verzegeld: string; verloopt_op: Date; laatst_gebruikt_op: Date | null; aangemaakt_op: Date; ingetrokken_op: Date | null } | undefined;
+  if (!rij || rij.ingetrokken_op) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const nu = Date.now();
+  const laatst = new Date(rij!.laatst_gebruikt_op || rij!.aangemaakt_op).getTime();
+  if (new Date(rij!.verloopt_op).getTime() < nu || laatst + APPARAAT_ONGEBRUIKT_MS < nu) {
+    await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id = $1::uuid`, [id]).catch(() => undefined);
+    fout('SLEUTELKLUIS_APPARAAT_VERLOPEN', 410);
+  }
+  let sHex = '';
+  for (const naam of APPARAAT_SLEUTELS) { if (!envKey32(naam)) continue; try { sHex = openWithEnvKey(naam, rij!.deel_verzegeld, apparaatAad(lade, id)); break; } catch { /* volgende sleutel */ } }
+  if (!/^[0-9a-f]{64}$/.test(sHex)) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const s = Buffer.from(sHex, 'hex'), x = Buffer.from(String(deelHex), 'hex');
+  const dek = xorBuf(x, s);
+  nul(s); nul(x);
+  try { await sleutelOpenen(lade, dek, houder); }
+  finally { nul(dek); }
+  await sys().query(`UPDATE app.sleutelkluis_apparaat SET laatst_gebruikt_op = now() WHERE id = $1::uuid`, [id]).catch(() => undefined);
+  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.ontgrendeld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), methode: 'apparaat', apparaat: id.slice(0, 8) } }).catch(() => undefined);
+}
+export type OnthoudenApparaat = { id: string; label: string; aangemaaktOp: number; laatstGebruiktOp: number; verlooptOp: number };
+/** Actieve onthouden apparaten (nooit S). `verlooptOp` = het vroegste van «90 dagen» en «30 dagen niet gebruikt». */
+export async function apparatenVan(lade: KluisLade): Promise<OnthoudenApparaat[]> {
+  const r = await sys().query(`SELECT id::text AS id, label, aangemaakt_op, laatst_gebruikt_op, verloopt_op FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 AND ingetrokken_op IS NULL AND verloopt_op > now() ORDER BY COALESCE(laatst_gebruikt_op, aangemaakt_op) DESC`,
+    [lade.userId, ruimteOf(lade.ruimte)]);
+  return r.rows.map((x) => {
+    const aangemaaktOp = new Date(x.aangemaakt_op).getTime(), laatstGebruiktOp = x.laatst_gebruikt_op ? new Date(x.laatst_gebruikt_op).getTime() : 0;
+    return { id: String(x.id), label: String(x.label || ''), aangemaaktOp, laatstGebruiktOp, verlooptOp: Math.min(new Date(x.verloopt_op).getTime(), (laatstGebruiktOp || aangemaaktOp) + APPARAAT_ONGEBRUIKT_MS) };
+  }).filter((x) => x.verlooptOp > Date.now());
+}
+/** Eén onthouden apparaat vergeten (de browserhelft wordt daarmee waardeloos). */
+export async function apparaatVergeten(lade: KluisLade, apparaatId: unknown): Promise<boolean> {
+  const id = String(apparaatId || '');
+  if (!UUID_RE.test(id)) return false;
+  const r = await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`, [id, lade.userId, ruimteOf(lade.ruimte)]);
+  if ((r.rowCount ?? 0) > 0) await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.apparaat_vergeten', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), apparaat: id.slice(0, 8) } }).catch(() => undefined);
+  return (r.rowCount ?? 0) > 0;
+}
+/** «Overal afmelden», blokkeren, verwijderen: alle onthouden apparaten van deze mens weg (beide ruimtes). */
+export async function apparatenVergetenVoorGebruiker(userId: string): Promise<number> {
+  const r = await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE user_id = $1`, [userId]);
+  return r.rowCount ?? 0;
+}
+
 /** Samenvatting voor de pagina (nooit geheimen). */
 export async function overzicht(lade: KluisLade) {
   const kluis = await kluisVan(lade);
   const stand: KluisStand = !kluis ? 'uit' : sleutelIsOpen(lade) ? 'open' : 'gesloten';
-  const [pk, gr, journaal] = kluis ? await Promise.all([passkeyOmslagen(lade), grantOmslagen(lade), journaalVan(lade)]) : [[], [], []];
+  const [pk, gr, journaal, apparaten] = kluis ? await Promise.all([passkeyOmslagen(lade), grantOmslagen(lade), journaalVan(lade), apparatenVan(lade).catch(() => [] as OnthoudenApparaat[])]) : [[], [], [], [] as OnthoudenApparaat[]];
   const herstel = kluis ? (await omslagen(lade, 'herstelcode'))[0] : undefined;
   return {
     ruimte: ruimteOf(lade.ruimte), stand, ingeschakeldOp: kluis?.ingeschakeldOp || 0, herversleuteldOp: kluis?.herversleuteldOp || 0,
+    herversleutelVoortgang: kluis ? await herversleutelVoortgang(lade) : null, // IDENTITEIT-015: перебіг N з M і «Продовжити»
     houders: houdersVan(lade),
     omslagen: {
       herstelcode: herstel ? { aangemaaktOp: new Date(herstel.aangemaakt_op).getTime(), laatstGebruiktOp: herstel.laatst_gebruikt_op ? new Date(herstel.laatst_gebruikt_op).getTime() : 0 } : null,
       passkeys: pk.map(({ envelop: _e, salt: _s, ...rest }) => rest),
       grants: gr,
+      apparaten,
     },
     journaal,
     register: SLEUTELKLUIS_REGISTER,

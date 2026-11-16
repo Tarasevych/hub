@@ -4,7 +4,7 @@ on:
     branches:
       - fix/mailfix-001-20261104-095000
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: mailfix-001-checks
   cancel-in-progress: false
@@ -12,13 +12,15 @@ jobs:
   tests-and-visual-evidence:
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    permissions:
+      contents: read
     steps:
       - name: Checkout complete historical branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          persist-credentials: true
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -35,9 +37,19 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add orchestratie/taken/MAILFIX-001.json
-            git commit -m 'MAILFIX-001: registreer traceerbare taak [skip ci]'
-            git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
           fi
+      - name: Register task and enforce canonical rules — lokaal vastleggen (zonder sleutel; push in de publicatietaak) · локальна фіксація (без ключа)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SEC-002 (g01-7): alleen lokaal vastleggen; de publicatietaak controleert en pusht deze commit.
+          if ! git diff --cached --quiet; then
+            git -c core.hooksPath=/dev/null -c core.fsmonitor=false commit -m 'MAILFIX-001: registreer traceerbare taak [skip ci]'
+          fi
+      - name: Register task and enforce canonical rules — controle na het vastleggen · перевірка після фіксації
+        shell: bash
+        run: |
+          set -euo pipefail
           node scripts/orch.mjs versheid --taak MAILFIX-001 --fase start
       - name: Install exact dependencies
         run: npm ci --ignore-scripts
@@ -50,8 +62,14 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add shared/zoek-ui-knoppen.generated.ts
-            git commit -m 'MAILFIX-001: actualiseer canonieke knoppenindex [skip ci]'
-            git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
+          fi
+      - name: Maintain canonical button index — lokaal vastleggen (zonder sleutel; push in de publicatietaak) · локальна фіксація (без ключа)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SEC-002 (g01-7): alleen lokaal vastleggen; de publicatietaak controleert en pusht deze commit.
+          if ! git diff --cached --quiet; then
+            git -c core.hooksPath=/dev/null -c core.fsmonitor=false commit -m 'MAILFIX-001: actualiseer canonieke knoppenindex [skip ci]'
           fi
       - name: Unit, client/server typing and production build
         shell: bash
@@ -85,7 +103,7 @@ jobs:
           test -s uitvoer/mailfix-full-390.png
       - name: Upload unaltered visual screenshots and logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: MAILFIX-001-full-page-evidence
           retention-days: 30
@@ -115,10 +133,113 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add orchestratie/ontwikkelarchieven/MAILFIX-001.json
-          git commit -m 'MAILFIX-001: archive verified full-page CI evidence [skip ci]'
-          git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
+      - name: Append verified results to TRACE-001 development journal — lokaal vastleggen (zonder sleutel; push in de publicatietaak) · локальна фіксація (без ключа)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SEC-002 (g01-7): alleen lokaal vastleggen; de publicatietaak controleert en pusht deze commit.
+          if ! git diff --cached --quiet; then
+            git -c core.hooksPath=/dev/null -c core.fsmonitor=false commit -m 'MAILFIX-001: archive verified full-page CI evidence [skip ci]'
+          fi
+      - name: Append verified results to TRACE-001 development journal — controle na het vastleggen · перевірка після фіксації
+        shell: bash
+        run: |
+          set -euo pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak MAILFIX-001 --fase overdracht
+      - name: Дані для задачі публікації · gegevens voor de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SEC-002 (g01-7): deze taak heeft geen schrijfrecht. Wat gepubliceerd moet worden, gaat als artefact naar de publicatietaak:
+          # de lokale commits (git-bundel bovenop GITHUB_SHA), de verwachte HEAD, de pakketgegevens en de pakketbestanden.
+          # Ця задача не має права запису: зміни й пакет передаються артефактом задачі публікації, яка все перевіряє сама.
+          P="$RUNNER_TEMP/publicatie"
+          mkdir -p "$P/uitvoer"
+          git rev-parse HEAD > "$P/HEAD"
+          if [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]; then
+            git -c core.hooksPath=/dev/null bundle create "$P/wijzigingen.bundle" HEAD "^$GITHUB_SHA"
+          fi
+          : > "$P/vars"
+      - name: Передати дані задачі публікації · gegevens aan de publicatietaak doorgeven
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mailfix-001-checks-publicatie
+          path: ${{ runner.temp }}/publicatie/
+          if-no-files-found: error
+          retention-days: 7
+
+  publicatie:
+    name: Публікація лише з перевірених даних (git і gh, з ключем) · publicatie uit gecontroleerde gegevens (git en gh, met sleutel)
+    needs: tests-and-visual-evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Вихідна фіксація без збереженого ключа · broncommit zonder bewaarde sleutel
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Дані із задачі складання · gegevens uit de bouwtaak
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mailfix-001-checks-publicatie
+          path: ${{ runner.temp }}/publicatie
+      - name: Перевірити передані дані · overgedragen gegevens controleren
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SEC-002 (g01-7): de bouwtaak draaide npm, tests en eigen scripts — wat ze doorgeeft is NIET vertrouwd. Alleen aanvaarden:
+          #  - commits bovenop GITHUB_SHA, zonder samenvoegingen, die uitsluitend de verwachte bestanden wijzigen (gewone bestanden);
+          #  - pakketgegevens met een vaste vorm; de SHA-256 wordt hier opnieuw berekend.
+          # Приймаються лише очікувані файли поверх GITHUB_SHA і дані випуску суворого вигляду; SHA-256 обчислюється тут заново.
+          P="$RUNNER_TEMP/publicatie"
+          TOEGESTAAN='orchestratie/taken/MAILFIX-001.json shared/zoek-ui-knoppen.generated.ts orchestratie/ontwikkelarchieven/MAILFIX-001.json'
+          DOEL="$GITHUB_SHA"
+          if [ -e "$P/wijzigingen.bundle" ]; then
+            test -n "$TOEGESTAAN" || { echo 'Задача складання передала зміни, хоча цей процес їх не очікує — зупинено. · Onverwachte commits van de bouwtaak — gestopt.' >&2; exit 1; }
+            git -c core.hooksPath=/dev/null fetch --quiet --no-tags "$P/wijzigingen.bundle" "+HEAD:refs/sec002/publicatie"
+            DOEL="$(git rev-parse --verify 'refs/sec002/publicatie^{commit}')"
+            git merge-base --is-ancestor "$GITHUB_SHA" "$DOEL" || { echo 'Зміни не лежать поверх GITHUB_SHA — зупинено. · De commits liggen niet bovenop GITHUB_SHA — gestopt.' >&2; exit 1; }
+            test -z "$(git rev-list --merges "$GITHUB_SHA..$DOEL")" || { echo 'Злиття в переданих змінах — зупинено. · Samenvoeging in de overgedragen commits — gestopt.' >&2; exit 1; }
+            git diff --name-only --no-renames -z "$GITHUB_SHA" "$DOEL" | while IFS= read -r -d '' PAD; do
+              case " $TOEGESTAAN " in *" $PAD "*) ;; *) echo "Неочікуваний файл у переданих змінах · onverwacht bestand in de overgedragen commits: $PAD" >&2; exit 1 ;; esac
+              MODUS="$(git ls-tree "$DOEL" -- "$PAD" | cut -d' ' -f1)"
+              [ -z "$MODUS" ] || [ "$MODUS" = 100644 ] || { echo "Не звичайний файл · geen gewoon bestand: $PAD ($MODUS)" >&2; exit 1; }
+            done
+          fi
+          [ "$(tr -d '\r\n' < "$P/HEAD")" = "$DOEL" ] || { echo 'Передана HEAD не збігається зі змінами — зупинено. · De overgedragen HEAD klopt niet — gestopt.' >&2; exit 1; }
+          echo "RELEASE_COMMIT=$DOEL" >> "$GITHUB_ENV"
+          V=''
+          while IFS='=' read -r SLEUTEL WAARDE; do
+            [ -n "$SLEUTEL" ] || continue
+            case "$SLEUTEL" in
+              RELEASE_VERSION|VERSIE|UITGAVE_VERSIE|LIVE_VERSIE) [[ "$WAARDE" =~ ^[0-9]{8}-[0-9]{6}$ ]] ;;
+              LIVE_COMMIT) [[ "$WAARDE" =~ ^[0-9a-f]{40}$ ]] ;;
+              *) false ;;
+            esac || { echo "Недійсні дані випуску · ongeldige pakketgegevens: $SLEUTEL" >&2; exit 1; }
+            case "$SLEUTEL" in RELEASE_VERSION|VERSIE|UITGAVE_VERSIE) V="$WAARDE" ;; esac
+            echo "$SLEUTEL=$WAARDE" >> "$GITHUB_ENV"
+          done < "$P/vars"
+          if [ -n "$V" ]; then
+            mkdir -p uitvoer
+            cp -R "$P/uitvoer/." uitvoer/
+            RELEASE_SHA="$(sha256sum "uitvoer/mijn-ruimte-$V.tar.gz" | cut -d' ' -f1)"
+            if [ -f "uitvoer/mijn-ruimte-$V.tar.gz.sha256" ]; then
+              [ "$(cut -d' ' -f1 < "uitvoer/mijn-ruimte-$V.tar.gz.sha256")" = "$RELEASE_SHA" ] || { echo 'Контрольна сума архіву не збігається — зупинено. · Controlesom van het archief klopt niet — gestopt.' >&2; exit 1; }
+            fi
+            echo "RELEASE_SHA=$RELEASE_SHA" >> "$GITHUB_ENV"
+          fi
+      - name: Відправити перевірені зміни гілки (лише git, з ключем) · gecontroleerde wijzigingen pushen (alleen git, met sleutel)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$RELEASE_COMMIT" != "$GITHUB_SHA" ]; then
+            git -c core.hooksPath=/dev/null -c core.fsmonitor=false push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$RELEASE_COMMIT:refs/heads/fix/mailfix-001-20261104-095000"
+          fi
 
 # No release, production deployment or installable archive until the owner validates
 # the actual Google callback reason and explicitly approves a fresh release.

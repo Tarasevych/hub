@@ -41,7 +41,8 @@ export const statusInfo = (status: string, lang: Lang) => {
 const SITE_LABELS: Record<string, [string, string]> = {
   'owner.mail.send.committed': ['Лист надіслано', 'Bericht verzonden'], 'owner.mail.account.disconnected': ['Поштовий акаунт відключено', 'Mailaccount ontkoppeld'], 'owner.mail.labels.modified': ['Мітки листа змінено', 'Labels van bericht gewijzigd'],
   'owner.github.issue_create': ['Створено issue на GitHub', 'Issue aangemaakt op GitHub'], 'owner.github.issue_comment': ['Коментар додано на GitHub', 'Reactie geplaatst op GitHub'],
-  'owner.mcp.grant.approved': ['Claude отримав доступ', 'Claude kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для Claude відхилено', 'Toegang voor Claude geweigerd'], 'owner.mcp.grant.revoked': ['Доступ Claude відкликано', 'Toegang van Claude ingetrokken'],
+  // SEC-002 interface-02: geen vaste «Claude» — WELKE klant staat in de context van de regel (e.client, zie activiteitContext).
+  'owner.mcp.grant.approved': ['ШІ-клієнт отримав доступ', 'AI-klant kreeg toegang'], 'owner.mcp.grant.denied': ['Доступ для ШІ-клієнта відхилено', 'Toegang voor AI-klant geweigerd'], 'owner.mcp.grant.revoked': ['Доступ ШІ-клієнта відкликано', 'Toegang van AI-klant ingetrokken'],
   'owner.browser.grant.created': ['Браузер підключено', 'Browser gekoppeld'], 'owner.browser.grant.revoked': ['Доступ браузера відкликано', 'Browsertoegang ingetrokken'], 'owner.browser.account.logout': ['Вихід у браузері', 'Afgemeld in de browser'],
   'owner.agent.paired': ['Пристрій або браузер підключено', 'Apparaat of browser gekoppeld'], 'owner.agent.revoked': ['Пристрій або браузер відключено', 'Apparaat of browser losgekoppeld'],
   'owner.browser.enabled': ['ШІ отримав доступ до браузера', 'AI kreeg toegang tot de browser'], 'owner.browser.disabled': ['Доступ ШІ до браузера вимкнено', 'Toegang van de AI tot de browser uitgeschakeld'],
@@ -93,7 +94,7 @@ const siteTitle = (e: ActivityEvent, lang: Lang): string => {
 /** Naam van de actie in de taal van de site (nooit de Engelse beschrijving). */
 export function activityTitle(e: ActivityEvent, lang: Lang): string {
   if (e.kind === 'site') return siteTitle(e, lang);
-  if (e.kind === 'grant') return lang === 'uk' ? `Claude підключено: ${e.subject}` : `Claude verbonden: ${e.subject}`;
+  if (e.kind === 'grant') return lang === 'uk' ? `ШІ підключено: ${e.subject || 'невідомий клієнт'}` : `AI verbonden: ${e.subject || 'onbekende klant'}`;
   // INTEG-001: zonder eigen naam zeggen WAT het is (een hulpmiddel, een commando op welk apparaat) — niet alleen de kale code.
   if (e.kind === 'tool') return textOf(e.type, lang)?.title || (lang === 'uk' ? `Інструмент «${e.type}»` : `Hulpmiddel «${e.type}»`);
   const label = COMMAND_LABELS[e.type];
@@ -107,7 +108,7 @@ export function activityLink(e: ActivityEvent, lang: Lang): { href: string; labe
   return { href: `https://mcp.tarasevych.com/agents#${pending ? 'pending' : 'overview'}`, label: pending ? (lang === 'uk' ? 'Прийняти рішення' : 'Beslissen') : (lang === 'uk' ? 'Відкрити' : 'Openen') };
 }
 export const sourceLabel = (source: string, lang: Lang): string => ({
-  claude: 'Claude', agent: lang === 'uk' ? 'Пристрій' : 'Apparaat', browser: lang === 'uk' ? 'Браузер' : 'Browser',
+  claude: lang === 'uk' ? 'ШІ-підключення' : 'AI-verbinding', agent: lang === 'uk' ? 'Пристрій' : 'Apparaat', browser: lang === 'uk' ? 'Браузер' : 'Browser',
 } as Record<string, string>)[source] || source;
 
 /** Besturingssysteem van een apparaat in gewone woorden (alleen wat de agent zelf opgeeft). */
@@ -124,8 +125,9 @@ export const platformNaam = (p?: string): string => {
 export function activiteitContext(e: ActivityEvent, lang: Lang): string | undefined {
   const delen: string[] = [];
   if (e.kind === 'command') delen.push(`${sourceLabel(e.source, lang)} «${e.subject}»`);
-  else if (e.kind === 'grant') delen.push(`Claude · ${e.subject}`);
-  else if (e.kind === 'tool') delen.push(sourceLabel(e.source, lang));
+  else if (e.kind === 'grant') delen.push(`${lang === 'uk' ? 'ШІ' : 'AI'} · ${e.subject}`);
+  // SEC-002 interface-02: de server geeft bij een aanroep de naam van de klant die hem vroeg (subject); anders de algemene bron.
+  else if (e.kind === 'tool') delen.push(e.subject || sourceLabel(e.source, lang));
   else if (e.client) delen.push(e.client);
   const os = platformNaam(e.platform);
   if (os) delen.push(os);
@@ -194,7 +196,8 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
           // INTEG-001: de pop-up weet welke regel in het paneel bij haar hoort (meldingId) en over wie/wat het gaat (context).
           const meldingId = `a:${e.id}`, context = activiteitContext(e, l);
           if (e.status === 'pending_approval') {
-            const who = `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
+            // SEC-002 interface-02: bij een aanroep WIE vraagt (naam van de klant van de server), niet de algemene bron.
+            const who = e.kind === 'tool' && e.subject ? e.subject : `${sourceLabel(e.source, l)}${e.kind === 'command' ? `, ${e.subject}` : ''}`;
             say({
               text: l === 'uk' ? `Очікує вашого рішення: ${title} (${who})` : `Wacht op uw beslissing: ${title} (${who})`,
               explain: meldingUitleg({ groep: 'waiting', sectie: 'mcp', lang: l }), kind: 'warning', source: 'mcp', transient: true, link: activityLink(e, l), topic: onderwerp, meldingId, context,
@@ -202,7 +205,7 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
           } else if (e.kind === 'grant') {
             say({
               text: title, kind: 'success', source: 'mcp', transient: true, meldingId, context, link: activityLink(e, l),
-              explain: l === 'uk' ? 'Claude має доступ. Його можна будь-коли відкликати в розділі «Агенти».' : 'Claude heeft toegang. Die kunt u altijd intrekken onder Agenten.',
+              explain: l === 'uk' ? `«${e.subject || 'невідомий клієнт'}» має доступ. Якщо це підключали не ви — відкличте його в розділі «Агенти».` : `«${e.subject || 'onbekende klant'}» heeft toegang. Koppelde u dit niet zelf, trek het dan in onder Agenten.`,
             });
           } else if (st.group !== 'active' && st.group !== 'waiting') {
             const m = activiteitMeldingTekst(e, l);
@@ -232,11 +235,12 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
   useEffect(() => {
     const opOpslag = (ev: StorageEvent) => { if (ev.key === READ_KEY(scope)) setRead((current) => mergeRead(current, loadRead(scope))); };
     window.addEventListener('storage', opOpslag);
+    if (!scope || scope === 'anon') return () => { window.removeEventListener('storage', opOpslag); };
     const stop = abonneerGelezen((ids) => setRead((current) => { const next = mergeRead(current, ids); if (next.size === current.size) return current; saveRead(scope, next); return next; }));
     return () => { window.removeEventListener('storage', opOpslag); stop(); };
   }, [scope]);
-  const markRead = (id: string) => { stuurGelezen([id]); setRead((current) => { if (current.has(id)) return current; const next = new Set(current); next.add(id); return saveRead(scope, next); }); };
-  const markAllRead = () => { stuurGelezen(events.map((e) => e.id)); setRead((current) => { const next = new Set(current); for (const e of events) next.add(e.id); return saveRead(scope, next); }); };
+  const markRead = (id: string) => { if (scope && scope !== 'anon') stuurGelezen([id]); setRead((current) => { if (current.has(id)) return current; const next = new Set(current); next.add(id); return saveRead(scope, next); }); };
+  const markAllRead = () => { if (scope && scope !== 'anon') stuurGelezen(events.map((e) => e.id)); setRead((current) => { const next = new Set(current); for (const e of events) next.add(e.id); return saveRead(scope, next); }); };
   return { events, read, available, markRead, markAllRead, refresh: poll };
 }
 

@@ -3,6 +3,7 @@
 // Nu bewaart de server een begrensde lijst gelezen activiteit-ids per account (backend/meldingen-gelezen.ts) en volgen alle
 // tabbladen en apparaten die lijst. Mislukt de server (oud pakket, offline), dan blijft het gedrag zoals vroeger: alleen lokaal.
 import { api } from '../platform/client';
+import { meldingLichaam } from './sessie-context';
 
 type Luisteraar = (ids: string[]) => void;
 const luisteraars = new Set<Luisteraar>();
@@ -14,7 +15,7 @@ let uit = false;
 const geldig = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length <= 120;
 export function laadGelezen(): Promise<void> {
   if (uit) return Promise.resolve();
-  if (!geladen) geladen = api.post('/api/owner/meldingen/gelezen', {}).then((r) => {
+  if (!geladen) geladen = api.post('/api/owner/meldingen/gelezen', meldingLichaam()).then((r) => {
     const ids = Array.isArray(r.data?.ids) ? (r.data.ids as unknown[]).filter(geldig) as string[] : [];
     if (ids.length) luisteraars.forEach((f) => f(ids));
   }, (e: { status?: number }) => { if (e?.status === 404) uit = true; geladen = null; });
@@ -33,6 +34,6 @@ export function stuurGelezen(ids: readonly string[]): void {
   if (timer || !wachtrij.size) return;
   timer = setTimeout(() => {
     timer = null; const stuk = [...wachtrij].slice(0, 500); wachtrij = new Set([...wachtrij].slice(500));
-    void api.post('/api/owner/meldingen/gelezen/toevoegen', { ids: stuk }).catch((e: { status?: number }) => { if (e?.status === 404) uit = true; });
+    void api.post('/api/owner/meldingen/gelezen/toevoegen', meldingLichaam({ ids: stuk })).catch((e: { status?: number }) => { if (e?.status === 404) uit = true; });
   }, 400);
 }

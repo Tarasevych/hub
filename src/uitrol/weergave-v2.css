@@ -17,7 +17,7 @@
 .ut-betrokkenen{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:6px 0;font-size:.84rem}
 .ut-betrokkenen dt{color:var(--ut-muted)}
 .ut-betrokkenen dd{margin:0;min-width:0}
-.ut-breek{overflow-wrap:anywhere;word-break:break-all;font-family:ui-monospace,monospace;font-size:.78rem}
+.ut-breek{overflow-wrap:anywhere;word-break:normal;font-family:ui-monospace,monospace;font-size:.78rem}
 .ut-herstel{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .ut-herstel .ut-knop{min-height:44px}
 .ut-vereisten{flex:1 1 100%;border:1px solid var(--ut-line);border-radius:10px;padding:6px 10px;background:var(--ut-bg)}

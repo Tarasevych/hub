@@ -42,7 +42,7 @@ export const beheerNoodUit = (ctx: Ctx) => post<{ instellingen: ApparaatInstelli
 export type PoortNodig = { actie: string; ontbreekt: string[]; onbeschikbaar: string[]; eis: string[][] };
 export const poort = (ctx: Ctx) => post<{ ok: true; stepUp: 'telegram' | 'apparaat' }>(ctx, '/api/owner/access/stap-op/poort');
 // ---- Telegram-kanaal voor de klassieke step-up (dienst «stap-op» in de bevestigingstabel)
-export type TelegramAangevraagd = { id: string; verlooptOp: string; verstuurd: number; soort?: VasteSoort; kandidaten?: number[]; juist?: number };
+export type TelegramAangevraagd = { id: string; verlooptOp: string; verstuurd: number; soort?: VasteSoort; kandidaten?: number[]; juist?: number; venster?: boolean; codeNodig?: boolean; ontvangers?: unknown };
 export const telegramAanvragen = (ctx: Ctx, actie = 'stap-op') => post<TelegramAangevraagd>(ctx, '/api/owner/telegram/bevestiging/aanvragen', { actie });
 export const telegramStatus = (ctx: Ctx, id: string) => post<{ stand: string }>(ctx, '/api/owner/telegram/bevestiging/status', { id });
 export const telegramCode = (ctx: Ctx, code: string, actie = 'stap-op') => post<{ ok: boolean; uitkomst: string }>(ctx, '/api/owner/telegram/bevestiging/code', { actie, code });

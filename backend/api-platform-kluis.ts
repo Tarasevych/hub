@@ -1,6 +1,6 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {db,isOwnerEmail,secrets} from '../server/platform';
-import {stapOpMethode,stapOpVerbruiken,type StapOpAuth} from './stap-op';
+import {stapOpMethode,stapOpVerbruikIndienGeldig,type StapOpAuth} from './stap-op';
 import {sterkeStapOpFout} from './toegang-context';
 import {VAULT_DOELEN} from '../shared/geheimen';
 import {leesAppSleutel,leesOauthApp} from '../shared/github-koppeling';
@@ -10,7 +10,7 @@ import {leegMeta,metaUitRecord,normaliseerVaultMeta,staatTekst,vandaag,vaultStaa
 export const OWNER_VAULT_TABLE='owner_vault_v1';
 // Uitgebreid (fase «Секрети й ключі»): dezelfde lijst als shared/geheimen.ts, zodat groepen en logo's kloppen.
 export const OWNER_VAULT_PURPOSES=VAULT_DOELEN;
-const MAX_ITEMS=40;
+const MAX_ITEMS=120;
 const MAX_VALUE=8192;
 // SECURITY: dedicated vault key only. Previously fell back to other encryption keys and even to the
 // Google OAuth client secrets (key reuse; the client secret is also sent to Google on every token call).
@@ -68,11 +68,11 @@ const normalizePurpose=(value:unknown):OwnerVaultPurpose=>{
  * Aanroepen pas NA de invoercontrole en vlak vóór de actie, zodat een typefout geen bevestiging kost.
  */
 const gevoelig=async(auth:unknown):Promise<{fout:string;methode:string}>=>{
-  const fout=await sterkeStapOpFout(auth as StapOpAuth);
-  if(fout)return{fout,methode:''};
+  // SEC-002 (g06): controleren en verbruiken in één ondeelbare stap per account: twee gelijktijdige acties op één bevestiging kan niet meer.
   const methode=await stapOpMethode(auth as StapOpAuth);
-  await stapOpVerbruiken(auth as StapOpAuth);
-  return{fout:'',methode};
+  let fout='';
+  const ok=await stapOpVerbruikIndienGeldig(auth as StapOpAuth,async(a)=>{fout=await sterkeStapOpFout(a);return!fout});
+  return ok?{fout:'',methode}:{fout:fout||'STEP_UP_STRONG_REQUIRED',methode:''};
 };
 const publicItem=(item:OwnerVaultRecord)=>({
   id:item.id,

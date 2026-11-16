@@ -50,6 +50,12 @@ export function foutTekst(e: unknown, tr: Tr, wat?: [string, string]): string {
     return `${begin}${tr(`Забагато запитів за короткий час. Зачекайте ${s} с і спробуйте ще раз; списки оновляться самі.`, `Te veel verzoeken in korte tijd. Wacht ${s} s en probeer opnieuw; de lijsten verversen vanzelf.`)}${staart}`;
   }
   if (code === RECHT_CODE) return `${begin}${tr(RECHT_UITLEG[0], RECHT_UITLEG[1])}${staart}`;
+  // SEC-002 (toets-g10d №5): een interne fout van een hulpmiddel komt zonder ruwe tekst, met een incidentnummer voor het serverlogboek.
+  if (code === 'TOOL_FAILED') {
+    const nr = String((e as { response?: { data?: { incident?: unknown } } })?.response?.data?.incident ?? '');
+    const veilig = /^[A-Za-z0-9-]{1,40}$/.test(nr) ? nr : '';
+    return met(`Інструмент не виконано через внутрішню помилку сервера${veilig ? ` (номер для власника: #${veilig})` : ''}. Спробуйте ще раз; якщо повториться — передайте номер власникові сайту.`, `Het hulpmiddel is niet uitgevoerd door een interne serverfout${veilig ? ` (nummer voor de eigenaar: #${veilig})` : ''}. Probeer het opnieuw; gebeurt het weer, geef het nummer dan door aan de eigenaar van de site.`);
+  }
   if (/STEP_UP/.test(code)) return met('Потрібно підтвердити доступ ще раз.', 'U moet de toegang opnieuw bevestigen.');
   if (/SESSION_REQUIRED|SESSION_EXPIRED/.test(code) || status === 401) return met('Сесія закінчилася. Оновіть сторінку й увійдіть знову.', 'De sessie is verlopen. Ververs de pagina en meld u opnieuw aan.');
   if (/NOT_FOUND$/.test(code) || status === 404) return met('Цього вже немає — можливо, його відкликано в іншій вкладці.', 'Dit bestaat niet meer — misschien al ingetrokken in een ander tabblad.');

@@ -20,7 +20,8 @@
 export const DEK_ENVELOP = 'dek1';
 export const SERVER_ENVELOP = 'v1';
 export const isDekEnvelop = (v: unknown): boolean => typeof v === 'string' && v.startsWith(`${DEK_ENVELOP}.`);
-export const isServerEnvelop = (v: unknown): boolean => typeof v === 'string' && v.startsWith(`${SERVER_ENVELOP}.`);
+/** SEC-002 (geheimen-07): ook 'v2.' … 'v9.' (dezelfde serversleutel na rotatie, server/platform/beveiliging.ts) is de serverweg. */
+export const isServerEnvelop = (v: unknown): boolean => typeof v === 'string' && /^v[1-9]\./.test(v);
 
 /** HKDF-info (en PRF-salt-label) voor de KEK uit een passkey: browser en test rekenen exact hetzelfde. */
 export const KEK_INFO = 'mijn-ruimte-sleutelkluis-kek-v1';
@@ -64,6 +65,8 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
   { tabel: 'app.venster_stand', veld: 'vensters_versleuteld', klasse: 'voorkeur', stand: 'dek', module: 'backend/vensters-onthouden.ts' },
   { tabel: 'app.ai_bevestiging', veld: 'parameters/resultaat (verzoeken van AI ter bevestiging, 0094)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/ai-bevestiging.ts' },
   { tabel: 'app.afzender_beeld', veld: 'data_versleuteld (foto\'s van afzenders: Google-contacten, vCard, Gravatar)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/merk-bron.ts' },
+  { tabel: 'app.geheugen_stroom_knopen', veld: 'inhoud_versleuteld (вузли довготривалої пам’яті ШІ / knopen van de geheugenstroom, 0280)', klasse: 'persoonlijk', stand: 'dek', module: 'backend/geheugen-stroom.ts' },
+  { tabel: 'app.geheugen_agent_bots', veld: 'sleutel_versleuteld (окремий токен Telegram-бота агента / afzonderlijk bot-token per AI-agent, 0281)', klasse: 'geheim', stand: 'dek', module: 'backend/geheugen-agent-bots.ts' },
   // --- nog niet: met reden ---
   { tabel: 'mail_oauth_tokens_v2', veld: 'token (Microsoft 365)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/index.ts (Microsoft-tak)',
     reden: { uk: 'Гілка Microsoft у backend/index.ts — спільний файл; переносимо в окремому випуску після зняття блокування.', nl: 'De Microsoft-tak zit in backend/index.ts (gedeeld bestand); volgt in een eigen uitrol.' } },
@@ -89,6 +92,20 @@ export const SLEUTELKLUIS_REGISTER: readonly RegisterRegel[] = Object.freeze([
     reden: { uk: 'Архів пишеться агентом розширення без сесії сайту; потрібен грант-шлях для токена агента. Наступний випуск.', nl: 'Het archief wordt door de extensie-agent zonder sitesessie geschreven; vraagt de grant-weg voor agenttokens. Volgende uitrol.' } },
   { tabel: 'app.huis_integraties', veld: 'token_envelop (Home Assistant-koppeling van de woning)', klasse: 'geheim', stand: 'nog-niet', module: 'backend/huis-vnext.ts',
     reden: { uk: 'Інтеграція оселі спільна для учасників дому (app.huis_leden) та автоматизацій без сесії однієї людини; потрібен окремий ключ оселі.', nl: 'Een woningintegratie wordt gedeeld door leden van de woning (app.huis_leden) en automatiseringen zonder één mensensessie; vraagt een eigen woningsleutel.' } },
+  { tabel: 'app.vaardigheden_eigen', veld: 'instructies van agentvaardigheden (0279)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/vaardigheden-opslag.ts',
+    reden: { uk: 'Настанови й рецепти навичок не містять секретів (валідатор блокує секретні ключі доступу) і читаються під час виявлення ресурсів MCP.', nl: 'Instructies van vaardigheden bevatten nooit geheimen (de validator weigert sleutels en tokens) en worden bij MCP-brondetectie gelezen.' } },
+  { tabel: 'app.uitrol_telegram_instellingen / app.uitrol_telegram_archief / app.uitrol_telegram_updates / app.uitrol_github_ontvangen / app.uitrol_github_webhook_leveringen', veld: 'chat_id, manifest en ontvangststatus (geheimen zelf in owner_vault_v1)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/uitrol-telegram.ts, backend/uitrol-github-ontvangen.ts',
+    reden: { uk: 'Фонові процеси (приймачі подій GitHub і Telegram та архівування випусків у Telegram) читають ці налаштування без браузерної сесії; секретні ключі доступу й ключ шифрування зберігаються зашифрованими в owner_vault_v1.', nl: 'Achtergrondtaken (GitHub/Telegram-webhook en Telegram-releasearchief) lezen deze instellingen zonder browsersessie; tokens en de archiefsleutel staan versleuteld in owner_vault_v1.' } },
+  { tabel: 'app.geheugen_telegram_bezorging', veld: 'titel/samenvatting/bestands_verwijzingen (пошукова черга доставлення в Telegram, 0281)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/geheugen-agent-bots.ts',
+    reden: { uk: 'Усі заголовки, підсумки та посилання проходять обов’язкову перевірку фільтром таємниць (bevatGevoeligGeheim) і зберігаються без секретів для пошуку за завданням та агентом.', nl: 'Alle titels, samenvattingen en verwijzingen doorlopen verplicht het geheimenfilter (bevatGevoeligGeheim) en blijven zonder geheimen doorzoekbaar op taak en agent.' } },
+  { tabel: 'app.geheugen_taken', veld: 'titel/doel/geheugen_sleutels (наскрізні задачі між сесіями й 13 агентами, 0284)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/geheugen-taken.ts',
+    reden: { uk: 'Наскрізні задачі індексуються за taak_sleutel і проходять обов’язковий фільтр таємниць (bevatGevoeligGeheim) на вході, щоб наступний агент міг підхопити задачу без розблокування DEK.', nl: 'Doorlopende taken zijn geïndexeerd op taak_sleutel en doorlopen verplicht het geheimenfilter (bevatGevoeligGeheim), zodat een volgende agent kan overnemen zonder DEK-ontgrendeling.' } },
+  { tabel: 'app.geheugen_taak_stappen', veld: 'samenvatting/bestands_verwijzingen (ланцюжок кроків передачі задач, 0284)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/geheugen-taken.ts',
+    reden: { uk: 'Кроки естафети очищаються фільтром таємниць і посилаються на шифровані вузли пам’яті за knoop_id без зберігання приватних ключів або вмісту листів.', nl: 'Overdrachtsstappen worden door het geheimenfilter gecontroleerd en verwijzen naar versleutelde geheugenknopen via knoop_id zonder geheimen of mailinhoud.' } },
+  { tabel: 'app.melding_ecosysteem_profiel', veld: 'instellingen (venstergeometrie, veegregels en kanalen per ruimte)', klasse: 'voorkeur', stand: 'nog-niet', module: 'backend/meldingen-ecosysteem.ts',
+    reden: { uk: 'Налаштування геометрії й режимів порталу потрібні одразу при завантаженні сторінки до розблокування ключа; не містять секретів або листів.', nl: 'Portaalgeometrie en -voorkeuren zijn direct bij paginalaad nodig vóór het ontgrendelen van de sleutel; bevatten geen geheimen of berichten.' } },
+  { tabel: 'app.melding_ecosysteem_gebeurtenissen', veld: 'titel/bericht/uitleg/bijlagen (uniforme meldingsstroom)', klasse: 'persoonlijk', stand: 'nog-niet', module: 'backend/meldingen-ecosysteem.ts',
+    reden: { uk: 'Події сповіщень пишуться також від ПК-агента й розширення через WebSocket без сеансу оглядача та фільтруються в SQL; окреме шифрування через грант-обгортки заплановане в наступному випуску.', nl: 'Meldingen worden ook door pc-agent en extensie via WebSocket zonder browsersessie opgeslagen en in SQL gefilterd; aparte versleuteling via grant-omslagen volgt in een volgende uitrol.' } },
 ]);
 export const registerVan = (stand: RegisterStand) => SLEUTELKLUIS_REGISTER.filter((r) => r.stand === stand);
 
@@ -107,9 +124,35 @@ export const KLUIS_TEKST = Object.freeze({
     uk: 'Цей passkey не підтримує PRF (старіший пристрій або браузер). Розблокувати можна кодом відновлення; додайте passkey на новішому пристрої, щоб не вводити код.',
     nl: 'Deze passkey ondersteunt geen PRF (ouder apparaat of browser). Ontgrendelen kan met de herstelcode; voeg een passkey toe op een nieuwer apparaat om de code niet te hoeven typen.',
   },
+  // SEC-002 (geheimen-04): de nieuwe herstelcode wacht op bevestiging; tot dan werkt de vorige nog.
+  codeWacht: {
+    uk: 'Новий код відновлення ще не підтверджено. Доки ви не підтвердите, що зберегли його, попередній код теж відкриває ключ. Після підтвердження попередній код перестане діяти назавжди.',
+    nl: 'De nieuwe herstelcode is nog niet bevestigd. Tot u bevestigt dat u hem bewaard hebt, opent ook de vorige code de sleutel. Na bevestiging werkt de vorige code nooit meer.',
+  },
+  codeWachtZonderCode: {
+    uk: 'Якщо ви не встигли зберегти новий код — не підтверджуйте: натисніть «Новий код», щоб отримати інший (усі попередні коди тоді перестануть діяти).',
+    nl: 'Hebt u de nieuwe code niet kunnen bewaren, bevestig dan niet: kies «Nieuwe code» voor een andere (alle eerdere codes werken dan niet meer).',
+  },
+  // SEC-002 (geheimen-04): kluis «aan» zonder één omslag — niets te openen; opruimen is zonder verlies.
+  zonderOmslag: {
+    uk: 'Шифрування позначене як увімкнене, але ключ не має жодного способу відкриття (збій під час увімкнення). Під цим ключем ще немає даних, тож нічого не втрачається: скиньте цей стан і ввімкніть шифрування заново. Доки цього не зроблено, нові підключення пошти, календаря й хмари в цьому просторі не зберігаються.',
+    nl: 'Versleuteling staat als ingeschakeld, maar de sleutel heeft geen enkele manier om open te gaan (storing tijdens het inschakelen). Onder deze sleutel staan nog geen gegevens, dus er gaat niets verloren: zet deze toestand terug en schakel de versleuteling opnieuw in. Tot dan worden nieuwe koppelingen van post, agenda en cloud in deze ruimte niet bewaard.',
+  },
+  // IDENTITEIT-014 (herstel): наслідки втрати ключа і різниця між двома кодами — один текст для розділу «Відновлення».
+  // Gevolgen van sleutelverlies en het verschil tussen de twee codes — één tekst voor het onderdeel «Herstel».
+  verlies: {
+    uk: 'Втрата коду відновлення сховища й усіх passkey, що відкривають ключ, означає втрату зашифрованих даних: ніхто не зможе їх відновити — ні ви, ні власник сайту. Вхід в обліковий запис при цьому можна повернути, а дані під цим ключем — ні.',
+    nl: 'Wie de herstelcode van de kluis én alle passkeys die de sleutel openen kwijt is, verliest de versleutelde gegevens: niemand kan ze terughalen — u niet en de eigenaar van de site niet. De toegang tot het account komt wel terug, de gegevens onder deze sleutel niet.',
+  },
+  tweeCodes: {
+    uk: 'Це два різні коди. Коди відновлення облікового запису (10 штук, вигляд XXXX-XXXX-XXXX) підтверджують дії й вимикають автентифікатор, але не відкривають зашифровані дані. Код відновлення сховища ключів (один, 5 груп по 4 символи) відкриває лише ключ даних і не підходить для входу.',
+    nl: 'Dit zijn twee verschillende codes. De herstelcodes van het account (10 stuks, vorm XXXX-XXXX-XXXX) bevestigen handelingen en zetten de authenticator uit, maar openen geen versleutelde gegevens. De herstelcode van de sleutelkluis (één, 5 groepen van 4 tekens) opent alleen de gegevenssleutel en werkt niet om aan te melden.',
+  },
 });
 export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
   SLEUTELKLUIS_GESLOTEN: { uk: 'Ключ даних закритий. Розблокуйте його passkey або кодом відновлення.', nl: 'De gegevenssleutel is gesloten. Ontgrendel hem met een passkey of de herstelcode.' },
+  SLEUTELKLUIS_APPARAAT_ONBEKEND: { uk: 'Цей пристрій більше не запам’ятано. Розшифруйте passkey або кодом відновлення.', nl: 'Dit apparaat is niet meer onthouden. Ontsleutel met een passkey of de herstelcode.' },
+  SLEUTELKLUIS_APPARAAT_VERLOPEN: { uk: 'Пам’ять цього пристрою закінчилася (30 днів без використання). Розшифруйте ще раз, і пристрій запам’ятається знову.', nl: 'Het geheugen van dit apparaat is verlopen (30 dagen ongebruikt). Ontsleutel opnieuw en het apparaat wordt weer onthouden.' },
   SLEUTELKLUIS_UIT: { uk: 'Шифрування ще не ввімкнено.', nl: 'Versleuteling staat nog niet aan.' },
   SLEUTELKLUIS_AL_AAN: { uk: 'Шифрування вже ввімкнено для цього простору.', nl: 'Versleuteling staat al aan voor deze ruimte.' },
   SLEUTELKLUIS_HERSTELCODE_ONGELDIG: { uk: 'Код відновлення не підійшов.', nl: 'De herstelcode klopt niet.' },
@@ -117,6 +160,12 @@ export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = 
   SLEUTELKLUIS_DEK_ONGELDIG: { uk: 'Розгорнутий ключ не відповідає контрольному значенню.', nl: 'De aangeboden sleutel komt niet overeen met de controlewaarde.' },
   SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG: { uk: 'Для цього passkey ще немає обгортки ключа.', nl: 'Voor deze passkey bestaat nog geen omslag van de sleutel.' },
   SLEUTELKLUIS_PEPPER_ONTBREEKT: { uk: 'На сервері немає перцю для обгорток ШІ-підключень (SLEUTELKLUIS_SLEUTEL_V1).', nl: 'De server mist de pepper voor omslagen van AI-verbindingen (SLEUTELKLUIS_SLEUTEL_V1).' },
+  SLEUTELKLUIS_TE_VAAK: { uk: 'Цю дію виконано забагато разів за короткий час. Спробуйте пізніше.', nl: 'Deze actie is te vaak uitgevoerd in korte tijd. Probeer het later opnieuw.' },
+  SLEUTELKLUIS_BEZET: { uk: 'Сервер зараз зайнятий обчисленням ключів. Спробуйте за хвилину.', nl: 'De server is nu bezet met het berekenen van sleutels. Probeer het over een minuut opnieuw.' },
+  SLEUTELKLUIS_HEEFT_OMSLAGEN: { uk: 'Скинути можна лише ключ без жодного способу відкриття. У цього ключа вони є — розблокуйте його passkey або кодом відновлення.', nl: 'Terugzetten kan alleen voor een sleutel zonder enige manier om hem te openen. Deze sleutel heeft die wel — ontgrendel hem met een passkey of de herstelcode.' },
+  // IDENTITEIT-015: повторне шифрування кроками з продовженням.
+  HERVERSLEUTELEN_BEZIG: { uk: 'Повторне шифрування вже триває в іншій вкладці. Дочекайтеся завершення — перебіг оновиться тут.', nl: 'Het herversleutelen loopt al in een ander tabblad. Wacht tot het klaar is — de voortgang verschijnt hier.' },
+  HERVERSLEUTELEN_NIETS_TE_HERVATTEN: { uk: 'Незавершеного повторного шифрування немає. Щоб почати знову, натисніть «Перешифрувати мої дані зараз».', nl: 'Er is geen onafgemaakt herversleutelen. Kies «Mijn gegevens nu herversleutelen» om opnieuw te beginnen.' },
   STEP_UP_REQUIRED: { uk: '', nl: '' },
   STEP_UP_STRONG_REQUIRED: { uk: '', nl: '' },
 });

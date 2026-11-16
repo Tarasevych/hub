@@ -7,9 +7,11 @@ import { antwoordVerwerken, ernstVan, verschillen, snelGenoegGeweigerd, verlopen
 import { codeZwakte } from '../../shared/telegram-aanmelden/code-sterkte';
 import { instellingenNormaliseren, isBotGebruikersnaam, STANDAARD_INSTELLINGEN } from '../../shared/telegram-aanmelden/model';
 import { volgendeStand, LANG_NA_MS } from '../../backend/telegram-aanmelden/status';
-import { widgetControle, knopSleutel, knopTekenen, knopLezen, knopHandtekeningKlopt, codeHashen, codeKlopt } from '../../backend/telegram-aanmelden/cryptografie';
+import { widgetControle, knopSleutel, knopTekenen, knopLezen, knopHandtekeningKlopt, codeHashen, codeKlopt, KNOP_ACTIES } from '../../backend/telegram-aanmelden/cryptografie';
+import { veiligEigenTerugAdres } from '../../backend/telegram-aanmelden/inloggen';
 import { telegramRoutes, TELEGRAM_PUBLIEKE_ROUTES, WIDGET_CSP } from '../../backend/telegram-aanmelden/routes';
 import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR } from '../../backend/telegram-aanmelden/beleid-poort';
+import { OPDRACHTEN, TEKST } from '../../shared/telegram-aanmelden/teksten';
 import { PUBLIEKE_ROUTES } from '../../server/platform/auth-poort';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
@@ -88,13 +90,17 @@ export async function main(): Promise<number> {
   const data = Object.entries(velden).map(([k, v]) => `${k}=${v}`).sort().join('\n');
   const hash = createHmac('sha256', createHash('sha256').update(token).digest()).update(data).digest('hex');
   check('aanmeldvenster: juiste handtekening + vers = ok', widgetControle({ ...velden, hash }, token, nu).ok && widgetControle({ ...velden, hash }, token, nu).vers);
+  check('aanmeldvenster: eigen routeparameters (verzoek/i/state/taal) verstoren de handtekening niet', widgetControle({ ...velden, hash, verzoek: 'abcdefghijkl', i: 'abcdefghijkl', state: 'st1', taal: 'uk' }, token, nu).ok);
   check('aanmeldvenster: gewijzigd veld = HANDTEKENING_ONGELDIG', widgetControle({ ...velden, id: '43', hash }, token, nu).reden === 'HANDTEKENING_ONGELDIG');
   check('aanmeldvenster: ouder dan 5 min = VERLOPEN', widgetControle({ ...velden, hash }, token, nu + 600).reden === 'VERLOPEN');
   check('aanmeldvenster: andere bot-sleutel = ongeldig', !widgetControle({ ...velden, hash }, '987654321:BBexampleexampleexampleexample00', nu).ok);
+  check('terugkeeradres: eigen subdomeinen toegestaan, tg_inlog/tg_fout geschoond', veiligEigenTerugAdres('https://hub.tarasevych.com/postvak?tg_inlog=oud&tg_fout=X') === 'https://hub.tarasevych.com/postvak');
+  check('terugkeeradres: vreemd domein, http of inloggegevens geweigerd', veiligEigenTerugAdres('https://boosdoener.voorbeeld/stelen') === 'https://id.tarasevych.com/' && veiligEigenTerugAdres('http://hub.tarasevych.com/') === 'https://id.tarasevych.com/' && veiligEigenTerugAdres('https://gebruiker:geheim@hub.tarasevych.com/') === 'https://id.tarasevych.com/');
   const ks = knopSleutel('geheim'.repeat(8));
   const kd = knopTekenen(ks, 'i', 'abcdefghijkl', '42', nu + 120);
   const kl = knopLezen(kd)!;
-  check('knop: past in 64 bytes callback_data', Buffer.byteLength(kd) <= 64);
+  const kz = knopTekenen(ks, 'z', 'abcdefghijkl', '42', nu + 120);
+  check('knop: past in 64 bytes callback_data (ook sessie-intrekken «z»)', Buffer.byteLength(kd) <= 64 && Buffer.byteLength(kz) <= 64 && KNOP_ACTIES.z === 'sessie-intrekken' && knopLezen(kz)?.letter === 'z');
   check('knop: handtekening klopt alleen voor dezelfde Telegram-gebruiker', knopHandtekeningKlopt(ks, kl, '42', nu + 120) && !knopHandtekeningKlopt(ks, kl, '43', nu + 120));
   check('knop: vervalste letter wordt niet aanvaard', !knopHandtekeningKlopt(ks, { ...kl, letter: 'b' }, '42', nu + 120));
 
@@ -121,7 +127,10 @@ export async function main(): Promise<number> {
   check('alleen Oekraïens en Nederlands in de bot', !/['"]en['"]\s*:/.test(lees('shared/telegram-aanmelden/teksten.ts')));
   const routesSrc = lees('backend/telegram-aanmelden/routes.ts');
   check('officieel aanmeldvenster gebruikt de ingestelde botnaam (data-telegram-login) in omleidingsmodus', routesSrc.includes('data-telegram-login') && routesSrc.includes('data-auth-url') && !routesSrc.includes('data-onauth'));
-  check('migraties 0201/0202 bestaan, vlag standaard UIT', /standaard[^\n]*false|false[^\n]*standaard|DEFAULT false|, false/.test(lees('migrations/0201_telegram_aanmelden_vlag.sql')));
+  check('migraties 0201/0202 bestaan, vlag standaard UIT in 0201', /standaard[^\n]*false|false[^\n]*standaard|DEFAULT false|, false/.test(lees('migrations/0201_telegram_aanmelden_vlag.sql')));
+  const mig0209 = lees('migrations/0209_telegram_aanmelden_context.sql');
+  check('migratie 0209 breidt context + sessiebeheer uit en staat in het terugdraaiscript', ['ADD COLUMN IF NOT EXISTS onthouden', 'ADD COLUMN IF NOT EXISTS terug_adres', 'ADD COLUMN IF NOT EXISTS sessie_ingetrokken_op', 'ADD COLUMN IF NOT EXISTS gekoppeld_ip'].every((s) => mig0209.includes(s)) && lees('deploy/telegram-aanmelden-terugdraaien.sql').includes("'0209_telegram_aanmelden_context'"));
+  check('botopdrachten bevatten /sessies en inlogtekst toont dienst, netwerk en onthouden', OPDRACHTEN.includes('sessies') && ['{dienst}', '{netwerk}', '{onthouden}'].every((s) => TEKST.inlogVraag.uk.includes(s) && TEKST.inlogVraag.nl.includes(s)));
   // Regressie (e2e 09.11): elke ingebouwde standaard moet zelf toegestaan zijn, anders toont de keuzelijst een lege waarde.
   check('elke ingebouwde standaard is minstens zo streng als het minimum', INGEBOUWDE_ACTIES.every((s) => keuzeToegestaan(s, s.standaard)), INGEBOUWDE_ACTIES.filter((s) => !keuzeToegestaan(s, s.standaard)).map((s) => s.sleutel).join(','));
   return einde();

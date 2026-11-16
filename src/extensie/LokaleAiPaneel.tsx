@@ -7,6 +7,7 @@ import type { Tr } from '../mcp-ui';
 import { vergelijkVersie } from '../../shared/extensie-update';
 import { sendToExtension } from '../extensie-toestand';
 import { LOKALE_AI_APIS, LOKALE_AI_INFO, LOKALE_AI_MAX_TEKST, LOKALE_AI_MIN_EXTENSIE, LOKALE_AI_REDENEN, filterLokaleAiAntwoord, kiesStand, type LokaleAiAntwoord, laiRegel, meetPagina, type LokaleAiApi, type LokaleAiKeuze, type PaginaStand } from '../../shared/lokale-ai-model';
+import '../agenten/agenten-toegang-maquette.css';
 
 const ouder = (a: string, b: string) => vergelijkVersie(a, b) < 0;
 
@@ -100,13 +101,13 @@ function SiteToegang({ tr, keuze, extId }: { tr: Tr; keuze: LokaleAiKeuze | null
         {tr('спробуйте тут: текст обробляє модель на цьому комп’ютері, сервер його не отримує.', 'probeer het hier: het model op deze computer verwerkt de tekst, de server krijgt hem niet.')}
       </span></p>
       <label className='ag-veld'>{tr('Функція', 'Functie')}
-        <select value={modus} onChange={(e) => setModus(e.target.value as LokaleAiApi)} data-lai-veld='modus'>
+        <select value={modus} onChange={(e) => setModus(e.target.value as LokaleAiApi)} data-lai-veld='modus' data-hulp-vrij='keuze'>
           {beschikbaar.map((a) => <option key={a} value={a}>{tr(LOKALE_AI_INFO[a].uk, LOKALE_AI_INFO[a].nl)}</option>)}
         </select>
       </label>
       {modus === 'translator' ? (
         <label className='ag-veld'>{tr('Мова перекладу', 'Doeltaal')}
-          <select value={doelTaal} onChange={(e) => setDoelTaal(e.target.value)} data-lai-veld='doel'>
+          <select value={doelTaal} onChange={(e) => setDoelTaal(e.target.value)} data-lai-veld='doel' data-hulp-vrij='keuze'>
             <option value='uk'>{tr('українська', 'Oekraïens')}</option><option value='nl'>{tr('нідерландська', 'Nederlands')}</option><option value='en'>{tr('англійська', 'Engels')}</option>
           </select>
         </label>

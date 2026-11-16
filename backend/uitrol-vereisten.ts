@@ -17,7 +17,7 @@ import { pgVersie, pgVersieMelding } from '../server/pg-versie';
 import { releaseInfo } from './uitgave-info';
 import { leesOntwikkelArchief, ontwikkelArchiefVerplicht } from '../shared/ontwikkelarchief';
 import { controleerOntwikkelArchiefOnline, type ArchiefControle } from './uitrol-ontwikkelarchief';
-import { MIGRATIE_NAAM, PROEF_MAX_BYTES, PROEF_MAX_MIGRATIES, oorzaakUitProef, telVereisten, type ArchiefBeschrijving, type MigratieProefUitslag, type Vereiste, type VereisteLogRegel, type VereistenAntwoord } from '../shared/uitrol-vereisten';
+import { MIGRATIE_NAAM, PROEF_MAX_BYTES, PROEF_MAX_MIGRATIES, beoordeelToegepasteMigraties, oorzaakUitProef, telVereisten, type ArchiefBeschrijving, type MigratieProefUitslag, type Vereiste, type VereisteLogRegel, type VereistenAntwoord } from '../shared/uitrol-vereisten';
 
 const sys = () => getPool('systeem');
 const statusDir = () => process.env.OPDRACHT_STATUS_DIR || '/var/lib/mijn-ruimte-uitrol-status';
@@ -29,7 +29,7 @@ const tekst = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u001f
 
 export class VereistenFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
 
-type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number; sha256: string };
+type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number; sha256: string; versie: string };
 const SESSIES = new Map<string, Sessie>();
 const opruimen = () => { const grens = Date.now() - 3600_000; for (const [k, s] of SESSIES) if (s.gemaakt < grens) SESSIES.delete(k); };
 
@@ -153,12 +153,27 @@ export async function vereistenBeoordelen(invoer: ArchiefBeschrijving & { sha256
   const dubbel = [...nummers].filter(([, k]) => k > 1).map(([n]) => n);
   const toegepast = await omg.toegepast();
   const nieuw = toegepast ? namen.filter((n) => MIGRATIE_NAAM.test(n) && !toegepast.has(n)).sort() : [];
-  const ontbreekt = toegepast ? [...toegepast].filter((n) => !namen.includes(n)) : [];
-  voeg({ id: 'migratie-namen', groep: 'compatibiliteit', niveau: slecht.length || dubbel.length ? 'fout' : ontbreekt.length ? 'waarschuwing' : 'ok', uk: 'Нумерація міграцій', nl: 'Nummering van de migraties',
-    waardeUk: slecht.length || dubbel.length ? `хибні назви: ${slecht.slice(0, 3).join(', ')}${dubbel.length ? `; дублікати: ${dubbel.join(', ')}` : ''}` : `${namen.length} файлів; нових: ${nieuw.length}${ontbreekt.length ? `; в архіві немає ${ontbreekt.length} уже застосованих` : ''}`,
-    waardeNl: slecht.length || dubbel.length ? `ongeldige namen: ${slecht.slice(0, 3).join(', ')}${dubbel.length ? `; dubbel: ${dubbel.join(', ')}` : ''}` : `${namen.length} bestanden; nieuw: ${nieuw.length}${ontbreekt.length ? `; ${ontbreekt.length} toegepaste ontbreken in het archief` : ''}`,
-    details: ontbreekt.slice(0, 12),
-    waaromUk: 'Міграції виконуються за номером рівно один раз. Дубль або пропуск означає, що архів зібрано не від тієї бази.', waaromNl: 'Migraties draaien op nummer en precies één keer. Een dubbel of gat betekent dat het archief niet op deze basis is gebouwd.' }, t);
+  const { echtOntbrekend, historischHernoemd } = beoordeelToegepasteMigraties(namen, toegepast);
+  const migNamenFout = slecht.length > 0 || dubbel.length > 0 || echtOntbrekend.length > 0;
+  const hernoemdTekstUk = historischHernoemd.length ? `; підтверджено історичні перейменування: ${historischHernoemd.length}` : '';
+  const hernoemdTekstNl = historischHernoemd.length ? `; historische hernoemingen bevestigd: ${historischHernoemd.length}` : '';
+  const migDetails = echtOntbrekend.length
+    ? echtOntbrekend.slice(0, 12).map((n) => `MIGRATIES_ONTBREKEN: ${n}`)
+    : historischHernoemd.map((h) => `${h.oud} → ${h.nieuw}`);
+  voeg({ id: 'migratie-namen', groep: 'compatibiliteit', niveau: migNamenFout ? 'fout' : 'ok', uk: 'Нумерація й повнота міграцій', nl: 'Nummering en volledigheid van de migraties',
+    waardeUk: slecht.length || dubbel.length
+      ? `хибні назви: ${slecht.slice(0, 3).join(', ')}${dubbel.length ? `; дублікати: ${dubbel.join(', ')}` : ''}`
+      : echtOntbrekend.length
+        ? `MIGRATIES_ONTBREKEN: в архіві бракує ${echtOntbrekend.length} уже застосованих на сервері міграцій (${echtOntbrekend.slice(0, 3).join(', ')})`
+        : `${namen.length} файлів; нових: ${nieuw.length}${hernoemdTekstUk}`,
+    waardeNl: slecht.length || dubbel.length
+      ? `ongeldige namen: ${slecht.slice(0, 3).join(', ')}${dubbel.length ? `; dubbel: ${dubbel.join(', ')}` : ''}`
+      : echtOntbrekend.length
+        ? `MIGRATIES_ONTBREKEN: ${echtOntbrekend.length} al op de server toegepaste migraties ontbreken in het archief (${echtOntbrekend.slice(0, 3).join(', ')})`
+        : `${namen.length} bestanden; nieuw: ${nieuw.length}${hernoemdTekstNl}`,
+    details: migDetails.length ? migDetails : undefined,
+    waaromUk: 'Міграції виконуються за номером рівно один раз. Якщо в архіві зникла вже застосована міграція, пакунок зібрано від застарілої основи й він міг би затерти новіші зміни сервера — тому встановлення блокується. Задокументовані жовтневі перейменування розпізнаються автоматично за наявності міграції-спадкоємиці.',
+    waaromNl: 'Migraties draaien op nummer en precies één keer. Ontbreekt een al toegepaste migratie in het archief, dan is het pakket op een verouderde basis gebouwd en zou het nieuwere wijzigingen overschrijven — daarom wordt het geblokkeerd. Gedocumenteerde hernoemingen uit oktober worden herkend zodra de opvolger aanwezig is.' }, t);
   const proefKan = await omg.proefBeschikbaar();
   v.push({ id: 'migratie-proef', groep: 'compatibiliteit', niveau: !nieuw.length ? 'ok' : !proefKan ? 'waarschuwing' : 'wacht', uk: 'Проба нових міграцій на копії схеми', nl: 'Nieuwe migraties geprobeerd op een kopie van het schema',
     waardeUk: !nieuw.length ? 'нових міграцій немає' : !proefKan ? 'служба проби ще не встановлена на сервері (зʼявиться після цього випуску)' : `${nieuw.length} нових: ${nieuw.slice(0, 4).join(', ')}`,
@@ -228,10 +243,16 @@ export async function vereistenStarten(eigenaar: string, invoer: Record<string, 
     basis: a.basis ? { versie: tekst(a.basis.versie, 32), commit: tekst(a.basis.commit, 64) } : null, migraties: a.migraties.slice(0, 5000).map((m) => ({ naam: tekst(m.naam, 120), bytes: Math.max(0, Number(m.bytes) || 0) })),
     sha256: tekst(a.sha256, 64).toLowerCase(), ontwikkelArchief: a.ontwikkelArchief ? String(a.ontwikkelArchief).slice(0, 9000) : null };
   const ant = await vereistenBeoordelen(schoon as never, omg);
-  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0, sha256: schoon.sha256 });
+  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0, sha256: schoon.sha256, versie: schoon.versie });
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_vereisten_gecontroleerd', type: 'beveiliging', result: ant.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: ant.id, versie: schoon.versie, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id), nieuw: ant.nieuweMigraties.length } }).catch(() => undefined);
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVereisten(eigenaar, ant, { versie: schoon.versie, sha256: schoon.sha256, commit: schoon.commit, voorbereider: schoon.auteur })).catch(() => undefined);
   return ant;
+}
+
+/** SEC-002: vingerafdruk van de SQL die naar de proef gaat (voor de audit): naam, grootte en SHA-256 — nooit de tekst. Puur. */
+export function proefSqlVingerafdrukken(migraties: Array<{ naam: string; sql: string }>): Array<{ naam: string; bytes: number; sha256: string }> {
+  return migraties.map((m) => ({ naam: m.naam, bytes: Buffer.byteLength(m.sql), sha256: createHash('sha256').update(m.sql, 'utf8').digest('hex') }));
 }
 
 export async function proefAanvragen(eigenaar: string, invoer: Record<string, unknown>): Promise<VereistenAntwoord> {
@@ -247,6 +268,12 @@ export async function proefAanvragen(eigenaar: string, invoer: Record<string, un
     migraties.push({ naam, sql }); s.sql.set(naam, sql);
   }
   if (migraties.length !== verwacht.size) throw new VereistenFout('PROEF_SQL_ONVOLLEDIG');
+  // SEC-002 (server-uitrol-04): de tekst van de SQL bereikte vroeger geen enkel logboek (alleen de uitslag). Vóór het verzoek naar
+  // root gaat, komt per migratie de SHA-256 en de grootte in de audit — nooit de SQL zelf. Zo is achteraf te bewijzen wélke SQL op
+  // verzoek van wie is geprobeerd (en te vergelijken met de migratie in het archief, zie proefVoorArchief).
+  // У журнал аудиту — лише SHA-256 і розмір кожного SQL (не сам текст): видно, який саме SQL і хто просив виконати.
+  await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_migratieproef_aangevraagd', type: 'beveiliging', result: 'ok', service: 'admin',
+    details: { id: s.antwoord.id, archiefSha256: s.sha256, sqlBytes: bytes, migraties: proefSqlVingerafdrukken(migraties) } }).catch(() => undefined);
   const doel = path.join(proefInbox(), `proef-${s.antwoord.id}.json`);
   const tmp = path.join(proefInbox(), `.proef-${s.antwoord.id}.tmp`);
   await writeFile(tmp, JSON.stringify({ id: s.antwoord.id, versie: s.antwoord.vereisten.find((x) => x.id === 'versie')?.waardeNl?.split(' ')[0] || '', migraties }), { mode: 0o640 });
@@ -269,6 +296,8 @@ export async function vereistenStand(eigenaar: string, invoer: Record<string, un
   s.antwoord = proefVerwerken(s.antwoord, u, (n) => s.sql.get(n));
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_migratieproef', type: 'beveiliging', result: u.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: s.antwoord.id, status: u.status, migraties: u.migraties.map((m) => ({ naam: m.naam, ms: m.ms, ok: m.ok, code: m.fout?.code })) } }).catch(() => undefined);
+  const vingerafdrukken = proefSqlVingerafdrukken([...s.sql.entries()].map(([naam, sql]) => ({ naam, sql })));
+  await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanProef(eigenaar, s.versie, u, s.sha256, vingerafdrukken)).catch(() => undefined);
   return s.antwoord;
 }
 

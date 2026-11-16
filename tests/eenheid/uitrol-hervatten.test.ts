@@ -54,6 +54,7 @@ set -uo pipefail
 RELEASES="$1"; MIJN_RUIMTE_PAKKET_SHA256="\${2:-}"; ACTIEF="\${3:-}"; GEBRUIKER="$(id -un)"
 melding() { echo "[installeer] $*"; }
 actieve_release() { echo "$ACTIEF"; }
+commit_van() { local c=""; [ -f "$1/RELEASE-COMMIT" ] && [ ! -L "$1/RELEASE-COMMIT" ] && c="$(head -c 64 "$1/RELEASE-COMMIT" | tr -d '\r\n[:space:]')"; [ -n "$c" ] && echo "$c"; }
 ${script.slice(van, tot)}
 case "$4" in
   kandidaat) hervat_kandidaat ;;

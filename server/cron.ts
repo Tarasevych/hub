@@ -6,6 +6,12 @@ import { randomUUID } from 'node:crypto';
 import cronDefinitions from '../cron.json';
 import * as backend from '../backend/index';
 import { closePool, getPool } from './platform/pg';
+import { procesVangnetInstellen, procesVangnetStand } from './platform/proces-vangnet';
+
+// SEC-002 (keten-config-01): een onopgevangen uitzondering of afgewezen belofte in achtergrondwerk van een backend-module mag
+// de run niet halverwege afbreken (rij in app.cron_runs bleef dan op «bezig» staan). Het vangnet logt en laat de run afmaken;
+// de run eindigt daarna wél met een foutcode (zie onderaan), zodat de timer-unit het als mislukt meldt — net als vroeger.
+procesVangnetInstellen();
 
 type CronDefinition = { name: string; cron: string; handler: string; timezone?: string; payload?: Record<string, unknown> };
 const definitions = cronDefinitions as CronDefinition[];
@@ -70,7 +76,15 @@ if (!arg || arg === '--lijst') {
   process.exit(arg ? 0 : 2);
 } else {
   run(arg)
-    .then((code) => { process.exitCode = code; })
+    .then((code) => {
+      // Was er onderweg een onopgevangen fout (vangnet), dan is «0» niet eerlijk: meld de run als mislukt.
+      const v = procesVangnetStand();
+      const onopgevangen = v.uitzonderingen + v.afwijzingen;
+      if (onopgevangen) console.error(`[cron] ${arg}: ${onopgevangen} onopgevangen fout(en) tijdens de run (zie hierboven)`);
+      process.exitCode = code || (onopgevangen ? 1 : 0);
+    })
+    // Kan de run niet eens beginnen (bv. geen databaseverbinding), dan eindigde het proces vroeger met code 0: stil «gelukt».
+    .catch((err) => { console.error(`[cron] ${arg}: niet gestart:`, String((err as Error)?.message || err).slice(0, 300)); process.exitCode = 1; })
     .finally(async () => {
       await closePool().catch(() => undefined);
       // Backend-modules kunnen timers hebben; expliciet stoppen zodat de oneshot-unit eindigt.

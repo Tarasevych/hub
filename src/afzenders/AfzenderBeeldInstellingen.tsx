@@ -13,7 +13,7 @@ import { MERK_BRON_TEKST } from '../../shared/merk-bron-tekst';
 
 type Lang = 'uk' | 'nl';
 type Stand = {
-  voorkeur: { gravatar: boolean; googleContacten: boolean; googleStand: string; googleOp: number };
+  voorkeur: { gravatar: boolean; googleContacten: boolean; googleStand: string; googleOp: number; onbekendeAfzenders?: boolean };
   google: { gekoppeld: boolean; lezen: boolean; ontbreekt: string[] };
   domeinen: boolean;
 };
@@ -76,6 +76,17 @@ export default function AfzenderBeeldInstellingen({ lang }: { lang: Lang }) {
     <label className='afz-beelden-keuze'>
       <input type='checkbox' checked={v?.gravatar === true} disabled={bezig || !v} onChange={(e) => void laden({ gravatar: e.target.checked })} />
       <span><strong>{MERK_BRON_TEKST.gravatar[L]}</strong><small>{MERK_BRON_TEKST.gravatarUitleg[L]}</small></span>
+    </label>
+    {/* SEC-002 (post-06): logo van een ONBEKENDE afzender ophalen = de server vraagt het domein van die afzender iets; wie het domein
+        beheert, ziet dan dat «iemand hier» zijn brief opende. Veilige keuze: «Вимкнено» (alleen bekende afzenders). */}
+    <label className='afz-beelden-keuze' data-afzender-onbekend-keuze>
+      <span><strong>{t(lang, 'Логотипи невідомих відправників', 'Logo\'s van onbekende afzenders')}</strong>
+        <small>{t(lang, '«Вимкнено» (безпечно): логотип шукається лише для відомих відправників — з ваших контактів, тих, кому ви писали, і відомих сервісів. «Завжди (!)»: сервер звертається до домену будь-якого відправника; власник того домену може побачити, що лист відкрили на цьому сайті (це використовують для стеження).', '«Uit» (veilig): een logo wordt alleen gezocht voor bekende afzenders — uit uw contacten, mensen aan wie u schreef en bekende diensten. «Altijd (!)»: de server vraagt het domein van elke afzender; de beheerder van dat domein kan zien dat de brief op deze site is geopend (dat wordt gebruikt om te volgen).')}</small></span>
+      <select value={v?.onbekendeAfzenders === true ? 'altijd' : 'uit'} disabled={bezig || !v} data-afzender-onbekend={v?.onbekendeAfzenders === true ? 'altijd' : 'uit'}
+        onChange={(e) => { const altijd = e.target.value === 'altijd'; if (altijd && !window.confirm(t(lang, 'Увімкнути логотипи для ВСІХ відправників? Власники чужих доменів зможуть бачити, що ви відкрили їхній лист.', 'Logo\'s voor ALLE afzenders aanzetten? Beheerders van vreemde domeinen kunnen dan zien dat u hun brief opende.'))) return; void laden({ onbekendeAfzenders: altijd }); }}>
+        <option value='uit'>{t(lang, 'Вимкнено (лише відомі відправники)', 'Uit (alleen bekende afzenders)')}</option>
+        <option value='altijd'>{t(lang, 'Завжди (!) — будь-який відправник', 'Altijd (!) — elke afzender')}</option>
+      </select>
     </label>
     {melding && <p role={melding.fout ? 'alert' : 'status'} className='afz-stil' style={melding.fout ? { color: 'var(--fout)' } : undefined}>{melding.tekst}</p>}
   </section>;

@@ -9,7 +9,7 @@ import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import { HELP_TECH, contrast, maxMinutenVoor, openEindeToegestaan, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { SSH_CA_VLAG } from '../../shared/ssh-ca';
 import { koppelInschuiven } from './band-inschuiven';
-import { neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
+import { leesBandHintActief, neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
@@ -22,6 +22,8 @@ import { useRemoteAantal } from '../extern/extern-opslag';
 const VlaggenVenster = lazyTech(() => import('../vlaggen/Vlaggen'));
 // Kaart «SSH-сертифікати» (18.10.2026): stand, voorbereiden/aan/uit, uitgeven 5–60 min, lijst en intrekken. Vervangt het losse venster.
 const SshCertificaat = lazyTech(() => import('../ssh/SshBeheer'));
+/** SEC-002 (g10f): alleen hier aanvaardt root de passkey voor een SSH-certificaat (zelfde lijst als SSH_PASSKEY_ADRESSEN in SshBeheer). */
+const SSH_HIER = (() => { try { return ['https://admin.tarasevych.com', 'https://id.tarasevych.com'].includes(location.origin); } catch { return true; } })();
 import './tech.css';
 import HulpVraag from '../hulp/HulpVraag';
 import { TechMeldingenKnop } from '../meldingen/TechMeldingen';
@@ -45,6 +47,7 @@ import { bewaarVoorkeur, dropPlek, leesVoorkeur, metModus, STROOK_KNOP_IDS, STRO
 import { knopMenu, type KnopMenuItem } from './strook-menu';
 import { StrookInstelPaneel, StrookKnopMenu } from './StrookPaneel';
 import './strook.css';
+import './tech-maquette.css';
 import { zetTabbladMerk } from './ruimtes/tabblad-pictogram';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
@@ -156,9 +159,14 @@ export default function TechLaag() {
 
   // Band zichtbaar = kenmerk op <html> + kleuren als CSS-variabelen + [ТЕХ] in de titel van het tabblad (WCAG 1.4.1: niet alleen kleur).
   const kleur = t.profiel && t.catalogus ? t.catalogus.kleuren[t.profiel.band.kleur] : null;
+  const bandVoorbehoud = !t.geladen && leesBandHintActief();
+  const bandRuimteAan = actief || bandVoorbehoud;
   useEffect(() => {
     const html = document.documentElement;
-    if (!actief) { delete html.dataset.tech; if (v2) zetTabbladMerk(false); return; }
+    if (!actief) {
+      if (bandVoorbehoud) { html.dataset.tech = 'aan'; return undefined; }
+      delete html.dataset.tech; if (v2) zetTabbladMerk(false); return undefined;
+    }
     html.dataset.tech = 'aan';
     if (v2) zetTabbladMerk(true, kleur?.bg || '#f5b400');
     html.dataset.techPatroon = t.profiel?.band.patroon || 'strepen';
@@ -170,10 +178,10 @@ export default function TechLaag() {
     const mo = el ? new MutationObserver(titel) : null;
     if (el && mo) mo.observe(el, { childList: true, characterData: true, subtree: true });
     return () => { mo?.disconnect(); document.title = document.title.replace(/^\[(ТЕХ|TECH)\] /, ''); delete html.dataset.tech; if (v2) zetTabbladMerk(false); };
-  }, [actief, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
+  }, [actief, bandVoorbehoud, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
   // Gereserveerde ruimte (--tech-band-h in strook.css) hangt ALLEEN af van de modus en de grootte — nooit van het uitschuiven.
-  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && actief) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, actief]);
-  useEffect(() => { const h = document.documentElement; if (actief) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [actief, voorkeur.grootte]);
+  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && bandRuimteAan) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, bandRuimteAan]);
+  useEffect(() => { const h = document.documentElement; if (bandRuimteAan) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [bandRuimteAan, voorkeur.grootte]);
 
   // Past de band niet? Stap voor stap: 0 = zoals gekozen, 1 = knoppen alleen met pictogram (vorm «tekst» blijft tekst), 2 = ook zonder
   // rollen, «ще …» en reden; past het dan nog niet, dan verhuizen knoppen één voor één naar «⋯» (data-overvol) — nooit over elkaar.
@@ -232,10 +240,21 @@ export default function TechLaag() {
     void document.fonts?.ready.then(meet);
     const laat = window.setTimeout(meet, 800);
     // Zijbalk open/dicht (of thema/taal) verandert klassen op <html>/<body>: opnieuw meten, ook als de band zelf even breed blijft.
-    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => window.requestAnimationFrame(meet)) : null;
+    // ZAVYSANNIA-001: один кадр на пачку змін і лише коли ширина смуги чи мова справді інші. Раніше кожна зміна класу <html>
+    // (тема: кілька змін за одне натискання) запускала окремий meet(), а кожен його запис data-pas/data-overvol із наступним
+    // читанням розмірів перераховував стилі ВСЬОГО документа (селектори :has на <html>) — 200–700 мс кожен на телефоні.
+    let moKader = 0;
+    let vorigeMaat = '';
+    const zonderThema = (k: DOMTokenList | undefined) => (k ? Array.from(k).filter((c) => !/^(theme-|palet-|thema-wissel)/.test(c)).sort().join(' ') : '');
+    const maat = () => `${Math.round(el.getBoundingClientRect().width)}|${document.documentElement.lang}|${zonderThema(document.documentElement.classList)}|${zonderThema(document.body?.classList)}`;
+    vorigeMaat = maat();
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
+      if (moKader) return;
+      moKader = window.requestAnimationFrame(() => { moKader = 0; const m = maat(); if (m === vorigeMaat) return; vorigeMaat = m; meet(); });
+    }) : null;
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang', 'data-theme'] });
     if (document.body) mo?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => { ro?.disconnect(); mo?.disconnect(); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
+    return () => { ro?.disconnect(); mo?.disconnect(); if (moKader) window.cancelAnimationFrame(moKader); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
   }, [bandStatus, actief, knoppenSleutel]);
   useEffect(() => {
     if (!meer) return;
@@ -267,7 +286,9 @@ export default function TechLaag() {
     groep('hulpmiddelen', uk ? 'Інструменти' : 'Hulpmiddelen', [
       (techMag('terminal.test', t) || techMag('terminal.servers', t)) && { k: 'terminal', icoon: <SquareTerminal aria-hidden='true' />, naam: uk ? 'Термінал' : 'Terminal', uitleg: uk ? 'Командний рядок із записом' : 'Opdrachtregel met opname', doe: () => kies('terminal') },
       techMag('terminal.servers', t) && { k: 'remote', icoon: <MonitorUp aria-hidden='true' />, naam: uk ? 'Віддалений стіл' : 'Extern bureaublad', uitleg: uk ? 'Екран сервера в браузері' : 'Scherm van de server in de browser', doe: () => kies('remote') },
-      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten', uitleg: uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min', doe: () => kies('ssh') },
+      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten',
+        // SEC-002 (g10f): uitgeven met passkey kan alleen op admin.* en id.*; elders blijft de kaart (bekijken, intrekken) bereikbaar, met die uitleg.
+        uitleg: SSH_HIER ? (uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min') : (uk ? 'Перегляд і відкликання; видача — на admin.tarasevych.com' : 'Bekijken en intrekken; uitgeven op admin.tarasevych.com'), doe: () => kies('ssh') },
       (techMag('flags.test', t) || techMag('diensten.beheren', t)) && { k: 'vlaggen', icoon: <Flag aria-hidden='true' />, naam: uk ? 'Перемикачі функцій' : 'Functieschakelaars', uitleg: uk ? 'Нові можливості: спробувати для себе' : 'Nieuwe mogelijkheden voor uzelf proberen', doe: () => kies('vlaggen') },
     ]),
     groep('mensen', uk ? 'Люди й підтримка' : 'Mensen en ondersteuning', [

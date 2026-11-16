@@ -40,22 +40,22 @@ export async function main(): Promise<number> {
     allePaletten: () => Promise<{ vlakken: Palet[] }>; controleer: () => Promise<{ fouten: string[]; paren: unknown[]; vlakken: number }>;
   };
   const { vlakken } = await allePaletten();
-  check(`26 paletten gevonden (grifel, violet, puur, 10 × kleur; licht + donker) — ${vlakken.length}`, vlakken.length === 26);
+  check(`28 paletten gevonden (grifel, violet, puur, maquette, klassiek-wit, klassiek-zwart, 10 × kleur; licht + donker) — ${vlakken.length}`, vlakken.length === 28);
   const OPP = ['--bg', '--panel', '--surface', '--surface2'];
 
   // ------------------------------------------------------------------ 0. contrastcontrole van de tokens blijft groen
   const r = await controleer();
   check(`kleur-contrast-controle: 0 fouten (${r.paren.length} paren × ${r.vlakken} paletten), incl. accentText/accent in elk palet`, r.fouten.length === 0, r.fouten.slice(0, 4).join(' | '));
   const minAccent = Math.min(...vlakken.map((v) => merkContrast(v.w['--accentText'], v.w['--accent'])));
-  check(`tekst-op-accent haalt in alle 26 paletten ≥ 4,5:1 (laagste ${minAccent.toFixed(2)})`, minAccent >= 4.5);
+  check(`tekst-op-accent haalt in alle 28 paletten ≥ 4,5:1 (laagste ${minAccent.toFixed(2)})`, minAccent >= 4.5);
   const witOpAccentDonker = vlakken.filter((v) => v.donker && merkContrast('#ffffff', v.w['--accent']) < 4.5).length;
-  check(`WIT op het accent faalt in ${witOpAccentDonker} van 13 donkere paletten — dáárom nergens #fff op het accent`, witOpAccentDonker >= 10);
+  check(`WIT op het accent faalt in ${witOpAccentDonker} van 14 donkere paletten — dáárom nergens #fff op het accent`, witOpAccentDonker >= 10);
 
   // ------------------------------------------------------------------ 1. de grenzen van het merkregister kloppen
   const ext = (donker: boolean, sleutels: string[]) => { const w = vlakken.filter((v) => v.donker === donker).flatMap((v) => sleutels.map((k) => v.w[k])); const s = [...w].sort((a, b) => merkLuminantie(a) - merkLuminantie(b)); return [s[0], s[s.length - 1]]; };
   const gelijk = (a: readonly string[], b: string[]) => a[0].toLowerCase() === b[0].toLowerCase() && a[1].toLowerCase() === b[1].toLowerCase();
-  check('MERK_GRENZEN.licht = donkerste/lichtste paneel en oppervlak van de 13 lichte paletten', gelijk(MERK_GRENZEN.licht.panel, ext(false, ['--panel'])) && gelijk(MERK_GRENZEN.licht.vlak, ext(false, OPP)), `${ext(false, ['--panel'])} / ${ext(false, OPP)}`);
-  check('MERK_GRENZEN.donker = donkerste/lichtste paneel en oppervlak van de 13 donkere paletten', gelijk(MERK_GRENZEN.donker.panel, ext(true, ['--panel'])) && gelijk(MERK_GRENZEN.donker.vlak, ext(true, OPP)), `${ext(true, ['--panel'])} / ${ext(true, OPP)}`);
+  check('MERK_GRENZEN.licht = donkerste/lichtste paneel en oppervlak van de 14 lichte paletten', gelijk(MERK_GRENZEN.licht.panel, ext(false, ['--panel'])) && gelijk(MERK_GRENZEN.licht.vlak, ext(false, OPP)), `${ext(false, ['--panel'])} / ${ext(false, OPP)}`);
+  check('MERK_GRENZEN.donker = donkerste/lichtste paneel en oppervlak van de 14 donkere paletten', gelijk(MERK_GRENZEN.donker.panel, ext(true, ['--panel'])) && gelijk(MERK_GRENZEN.donker.vlak, ext(true, OPP)), `${ext(true, ['--panel'])} / ${ext(true, OPP)}`);
 
   // ------------------------------------------------------------------ 2. elk merk × elk palet, tegel en los gliefje
   const alle: Array<[string, MerkDef]> = [...Object.entries(MERKEN)];
@@ -77,7 +77,7 @@ export async function main(): Promise<number> {
       }
     }
   }
-  check(`ELK merkgliefje ≥ 3:1 in ELK palet (${alle.length} merken × 26 paletten × tegel/gliefje = ${gemeten} metingen; laagste vóór ${voorMin.toFixed(2)}, na ${naMin.toFixed(2)})`, mislukt.length === 0, mislukt.slice(0, 6).join(' | '));
+  check(`ELK merkgliefje ≥ 3:1 in ELK palet (${alle.length} merken × ${vlakken.length} paletten × tegel/gliefje = ${gemeten} metingen; laagste vóór ${voorMin.toFixed(2)}, na ${naMin.toFixed(2)})`, mislukt.length === 0, mislukt.slice(0, 6).join(' | '));
   console.log(`  info: tekstkleur (monochroom) in minstens één modus: ${tekst.size} — ${[...tekst].sort().join(', ')}`);
   console.log(`  info: eigen toon verschoven tot 3:1 in minstens één modus: ${toon.size} — ${[...toon].sort().join(', ')}`);
   const neutraalMetToon = [...toon].filter((s) => { const d = merkDef(s) ?? (LOGOS[s] ? { kleur: `#${LOGOS[s][1]}` } : null); return d && merkNeutraal(d.kleur) && !(d as MerkDef).vlak; });

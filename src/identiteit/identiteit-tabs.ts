@@ -1,7 +1,7 @@
-// Оформлення сторінки облікового запису (завдання IDENTITY-002): один екран для дванадцяти сторінок категорії «ідентичність».
+// Оформлення сторінки облікового запису (завдання IDENTITY-002): один екран для тринадцяти сторінок категорії «ідентичність».
 // Перелік ідентичний shared/menu-model.ts:23 і public/canonical-service.js:6; порядок — як у меню.
 export type IdentiteitTab =
-  | 'personalization' | 'menu' | 'themes' | 'languages' | 'widgets' | 'sharing'
+  | 'personalization' | 'menu' | 'themes' | 'languages' | 'widgets' | 'melding' | 'sharing'
   | 'identity' | 'account' | 'sessions' | 'methods' | 'security' | 'recovery';
 
 export type IdentiteitTabTitel = { id: IdentiteitTab; uk: string; nl: string };
@@ -11,10 +11,11 @@ export const IDENTITEIT_TABS: readonly IdentiteitTabTitel[] = [
   { id: 'menu', uk: 'Меню', nl: 'Menu' },
   { id: 'themes', uk: 'Теми', nl: 'Thema’s' },
   { id: 'languages', uk: 'Мови', nl: 'Talen' },
-  { id: 'widgets', uk: 'Віджети', nl: 'Widgets' },
+  { id: 'widgets', uk: 'Блоки', nl: 'Blokken' },
+  { id: 'melding', uk: 'Сповіщення', nl: 'Meldingen' },
   { id: 'sharing', uk: 'Спільний доступ', nl: 'Delen' },
   { id: 'identity', uk: 'Ідентичності', nl: 'Identiteiten' },
-  { id: 'account', uk: 'Акаунт і дані', nl: 'Account en gegevens' },
+  { id: 'account', uk: 'Обліковий запис і дані', nl: 'Account en gegevens' },
   { id: 'sessions', uk: 'Сесії та пристрої', nl: 'Sessies en apparaten' },
   { id: 'methods', uk: 'Способи входу', nl: 'Aanmeldmethoden' },
   { id: 'security', uk: 'Безпека', nl: 'Beveiliging' },

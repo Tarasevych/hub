@@ -9,12 +9,13 @@ import { api, isAfgebroken } from './platform/client';
 const MAX = 40, MAX_LEEFTIJD = 10 * 60_000;
 type Item = { data: unknown; op: number };
 const cache = new Map<string, Item>();
+const lopend = new Map<string, Promise<{ data: unknown }>>();
 let account = '';
 
 /** Uit de bootstrap: id van het goedgekeurde account ('' = geen). Ander account → cache leeg. */
-export function leesCacheAccount(id: string) { const nieuw = String(id || ''); if (nieuw !== account) { cache.clear(); account = nieuw; } }
+export function leesCacheAccount(id: string) { const nieuw = String(id || ''); if (nieuw !== account) { cache.clear(); lopend.clear(); account = nieuw; } }
 export const leesCacheAccountId = () => account;
-export function leesCacheWissen() { cache.clear(); }
+export function leesCacheWissen() { cache.clear(); lopend.clear(); }
 export const __leesCacheGrootte = () => cache.size;
 
 const sleutelVan = (pad: string, body: unknown) => {
@@ -35,7 +36,15 @@ export async function swrPost<T>(pad: string, body: unknown, bijData: (d: T, ver
   const oud = leesBewaard<T>(pad, body);
   if (oud !== undefined && !opties.alleenVers) bijData(oud, false);
   try {
-    const r = await api.post(pad, body, { signal: opties.signal });
+    let belofte = !opties.signal ? lopend.get(k) : undefined;
+    if (!belofte) {
+      belofte = api.post(pad, body, { signal: opties.signal });
+      if (!opties.signal) {
+        lopend.set(k, belofte);
+        void belofte.finally(() => { if (lopend.get(k) === belofte) lopend.delete(k); }).catch(() => undefined);
+      }
+    }
+    const r = await belofte;
     if (account === wasAccount && account) {
       cache.delete(k); cache.set(k, { data: r.data, op: Date.now() });
       while (cache.size > MAX) cache.delete(cache.keys().next().value as string);
@@ -48,4 +57,7 @@ export async function swrPost<T>(pad: string, body: unknown, bijData: (d: T, ver
   }
 }
 /** Na een schrijvende actie: bewaarde versie(s) van dit pad vergeten (de volgende `swrPost` haalt vers op). */
-export function leesVergeten(pad: string) { for (const k of [...cache.keys()]) if (k.split('|')[1] === pad) cache.delete(k); }
+export function leesVergeten(pad: string) {
+  for (const k of [...cache.keys()]) if (k.split('|')[1] === pad) cache.delete(k);
+  for (const k of [...lopend.keys()]) if (k.split('|')[1] === pad) lopend.delete(k);
+}

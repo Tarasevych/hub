@@ -6,8 +6,8 @@
 .mail-achtergrond-tandwiel:hover,.mail-achtergrond-tandwiel[aria-expanded='true']{border-color:#55a5c7;background:var(--panel,#fff)}
 .mail-achtergrond-bediening button:focus-visible,.mail-achtergrond-instellingen :is(input,select):focus-visible{outline:3px solid #318db4;outline-offset:3px}
 .mail-achtergrond-instellingen{position:absolute;right:0;top:47px;z-index:31;width:min(298px,calc(100vw - 36px));max-height:min(640px,68dvh);box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;display:grid;gap:12px;padding:16px;border:1px solid color-mix(in srgb,var(--line,#cad4e4) 85%,transparent);border-radius:20px;background:var(--panel,#fff);color:var(--text,#25364c);box-shadow:0 16px 50px rgba(29,48,83,.2);text-align:left;font-size:13px;line-height:1.4;backdrop-filter:blur(22px)}
-.mail-achtergrond-instellingen-portaal{position:fixed!important;left:auto!important;right:max(12px,env(safe-area-inset-right,0px))!important;z-index:10020!important;width:min(298px,calc(100vw - 24px))!important;min-width:0;overflow-x:hidden}
-.mail-achtergrond-instellingen-portaal :is(input,select,button):focus-visible{outline:3px solid #318db4;outline-offset:2px}
+body .mail-achtergrond-instellingen.mail-achtergrond-instellingen-portaal{position:fixed;left:auto;right:max(12px,env(safe-area-inset-right,0px));z-index:960;width:min(298px,calc(100vw - 24px));min-width:0;overflow-x:hidden}
+body .mail-achtergrond-instellingen.mail-achtergrond-instellingen-portaal :is(input,select,button):focus-visible{outline:3px solid #318db4;outline-offset:2px}
 .mail-orbit-intro:has(.mail-achtergrond[data-tekenen='ja']),.mail-accounts-hub:has(.mail-achtergrond[data-tekenen='ja']){touch-action:none}
 .mail-achtergrond-kop{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mail-achtergrond-kop strong{font-size:15px}
@@ -29,9 +29,9 @@
 .canonical-signed-out.mr-sign-in:has(.mail-achtergrond) .mr-sign-in-legal{z-index:1}
 .canonical-signed-out.mr-sign-in:has(.mail-achtergrond) .mail-achtergrond-doek{opacity:.9}
 @media(max-width:640px){
-  .mail-achtergrond-bediening{top:9px;right:9px}
-  .mail-achtergrond-tandwiel{width:36px;height:36px;border-radius:12px}
-  .mail-achtergrond-instellingen{top:43px;max-height:60dvh}
+  .mail-achtergrond-bediening{top:9px;right:max(9px,env(safe-area-inset-right,0px))}
+  .mail-achtergrond-tandwiel{width:40px;height:40px;border-radius:12px}
+  .mail-achtergrond-instellingen{top:47px;max-height:68dvh}
   .mail-orbit-intro>.mail-achtergrond~.mail-orbit-kop{padding-inline:32px}
   .mail-achtergrond-doek{opacity:.66}
 }

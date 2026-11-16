@@ -1,5 +1,6 @@
 import { ruimteOf, RUIMTE_GESCHEIDEN, type AiRuimte } from './ai-ruimte';
 import type { GecontroleerdPunt } from './ai-bronnen';
+import { adresVan } from './mail-afzenders';
 
 /** 'acties' (pakket 3 «Adaptive Mail Canvas»): «Що від вас потрібно?» — punten met een letterlijke bron, zie shared/ai-bronnen.ts. */
 export type AiVertalingMode = 'translate' | 'summary' | 'purpose' | 'context' | 'acties';
@@ -90,6 +91,11 @@ export type AiVertalingInstellingen = {
   summaryDepth: AiVertalingSummaryDepth;
   crossMailboxContext: boolean;
   includeAttachments: boolean;
+  /**
+   * MAILAI-001 (15.11.2026): панель «ШІ-аналіз і переклад» над листом — лише якщо людина сама її ввімкнула (типово вимкнено, також для
+   * наявних записів без цього поля). Het paneel boven de brief verschijnt alleen als de gebruiker het zelf aanzette (standaard uit).
+   */
+  balkTonen: boolean;
 };
 
 export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
@@ -99,6 +105,7 @@ export const STANDAARD_AI_VERTALING_INSTELLINGEN: AiVertalingInstellingen = {
   summaryDepth: 'brief',
   crossMailboxContext: true,
   includeAttachments: true,
+  balkTonen: false,
 };
 
 export function normalizeAiVertalingTaal(raw: unknown, fallback = 'uk'): string {
@@ -137,6 +144,7 @@ export function normalizeAiVertalingInstellingen(
     typeof src.crossMailboxContext === 'boolean' ? src.crossMailboxContext : current.crossMailboxContext;
   const includeAttachments =
     typeof src.includeAttachments === 'boolean' ? src.includeAttachments : current.includeAttachments;
+  const balkTonen = typeof src.balkTonen === 'boolean' ? src.balkTonen : current.balkTonen === true;
   return {
     defaultLang,
     recentLangs: recentSet,
@@ -144,6 +152,7 @@ export function normalizeAiVertalingInstellingen(
     summaryDepth,
     crossMailboxContext,
     includeAttachments,
+    balkTonen,
   };
 }
 
@@ -283,10 +292,54 @@ const SECRET_PATTERNS: ReadonlyArray<RegExp> = [
   /\bya29\.[0-9A-Za-z_-]{20,}\b/g,
   /\bxox[baprs]-[0-9A-Za-z-]{16,}\b/g,
   /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}\b/gi,
-  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
-  /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g,
+  // SEC-002 (aanv-gat-b-01): JWT («eyJ…») en PRIVATE KEY-blokken staan hieronder als lineaire functies (vervangJwt, vervangSleutelBlokken):
+  // de reguliere vormen zochten per «eyJ» binnen één lange reeks zonder «.» (of per BEGIN zonder END) tot het einde — kwadratisch.
   /\b(?:password|пароль|secret|api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*['"]?([^\s'",;]{6,})['"]?/gi,
 ];
+
+/**
+ * SEC-002 (aanv-gat-b-01, aanv-ronde1-03): /<…[^>]*>/ alleen toepassen tot en met de LAATSTE «>»: daarna kan niets meer passen,
+ * en anders zocht elke «<» (of «<img ») zonder sluiting vergeefs tot het einde (kwadratisch, de hele server stond stil).
+ * Binnen dat deel heeft elke «<» een latere «>», dus elke poging slaagt en schuift mee: lineair, met dezelfde uitkomst.
+ */
+export function totLaatsteGt(tekst: string, vervang: (kop: string) => string): string {
+  const grens = tekst.lastIndexOf('>') + 1;
+  return grens ? vervang(tekst.slice(0, grens)) + tekst.slice(grens) : tekst;
+}
+export const zonderTagsLineair = (tekst: string, door = ' '): string => totLaatsteGt(String(tekst ?? ''), (kop) => kop.replace(/<[^>]*>/g, door));
+
+const WOORD_OF_STREEP = /[A-Za-z0-9_-]/;
+/** Zelfde als /\beyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{10,}\b/g, maar met een vooraf berekend einde van elke reeks: lineair. */
+function vervangJwt(tekst: string, teller: () => void): string {
+  if (!tekst.includes('eyJ')) return tekst;
+  const n = tekst.length, einde = new Int32Array(n + 1);
+  einde[n] = n;
+  for (let i = n - 1; i >= 0; i -= 1) einde[i] = WOORD_OF_STREEP.test(tekst[i]) ? einde[i + 1] : i;
+  const woord = (c: string | undefined) => !!c && /[A-Za-z0-9_]/.test(c);
+  let uit = '', pos = 0;
+  for (let p = tekst.indexOf('eyJ'); p >= 0; p = tekst.indexOf('eyJ', p + 1)) {
+    if (p < pos || woord(tekst[p - 1])) continue;
+    const e1 = einde[p];
+    if (e1 - p < 13 || tekst[e1] !== '.') continue;
+    const e2 = einde[e1 + 1];
+    if (e2 - (e1 + 1) < 10 || tekst[e2] !== '.') continue;
+    let e3 = einde[e2 + 1];
+    while (e3 > e2 + 1 && !woord(tekst[e3 - 1])) e3 -= 1; // \b aan het einde: laatste teken van een woord
+    if (e3 - (e2 + 1) < 10) continue;
+    uit += `${tekst.slice(pos, p)}[ПРИХОВАНО_СЕКРЕТ]`; pos = e3; teller();
+  }
+  return uit + tekst.slice(pos);
+}
+/** Zelfde als /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, alleen tot het laatste END-merk: lineair. */
+function vervangSleutelBlokken(tekst: string, teller: () => void): string {
+  if (!tekst.includes('PRIVATE KEY-----')) return tekst;
+  let grens = 0;
+  for (const m of tekst.matchAll(/-----END [A-Z0-9 ]*PRIVATE KEY-----/g)) grens = (m.index ?? 0) + m[0].length;
+  if (!grens) return tekst;
+  return tekst.slice(0, grens).replace(/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g, () => { teller(); return '[ПРИХОВАНО_СЕКРЕТ]'; }) + tekst.slice(grens);
+}
+/** Bovengrens voor stripTrackingAndSecrets (tekens): meer wordt niet bekeken en niet doorgegeven. */
+export const STRIP_MAX = 400_000;
 
 const TRACKING_IMG_REGEX = /<img\b[^>]*>/gi;
 const TRACKING_URL_PARAMS = /\b(?:utm_[a-z0-9_]+|fbclid|gclid|mc_cid|mc_eid|mkt_tok|vero_id|_hsenc|_hsmi|rb_clickid)=[^&\s"'<>]+/gi;
@@ -296,12 +349,12 @@ const TRACKING_URL_PARAMS = /\b(?:utm_[a-z0-9_]+|fbclid|gclid|mc_cid|mc_eid|mkt_
  * and redacts secrets/tokens/keys before any user text or HTML is sent to an AI agent.
  */
 export function stripTrackingAndSecrets(input: string): SanitizedPayloadReport {
-  let text = String(input ?? '');
+  let text = String(input ?? '').slice(0, STRIP_MAX); // SEC-002 (aanv-gat-b-01): begrensd werk
   let strippedTrackingPixels = 0;
   let strippedTrackingParams = 0;
   let redactedSecrets = 0;
 
-  text = text.replace(TRACKING_IMG_REGEX, imgTag => {
+  text = totLaatsteGt(text, (kop) => kop.replace(TRACKING_IMG_REGEX, imgTag => {
     const lower = imgTag.toLowerCase();
     const isOneByOne =
       /\b(?:width|height)\s*=\s*['"]?(?:0|1)(?:px)?['"]?/i.test(imgTag) ||
@@ -313,7 +366,7 @@ export function stripTrackingAndSecrets(input: string): SanitizedPayloadReport {
       return '';
     }
     return imgTag;
-  });
+  }));
 
   // Pakket 3 (24.10.2026): vroeger ruimde `.replace(/[?&](?=['"\s<>]|$)/g, '')` ELK «?» of «&» vóór een spatie op — ook in
   // gewone zinnen («Kunt u dit bevestigen? En …» → «bevestigen En»): de vertaling verloor haar vraagtekens en een letterlijk
@@ -325,6 +378,8 @@ export function stripTrackingAndSecrets(input: string): SanitizedPayloadReport {
   });
   if (strippedTrackingParams) text = text.replace(/\u0000&/g, '').replace(/[?&]\u0000/g, '').replace(/\u0000/g, '');
 
+  text = vervangSleutelBlokken(text, () => { redactedSecrets += 1; });
+  text = vervangJwt(text, () => { redactedSecrets += 1; });
   for (const pattern of SECRET_PATTERNS) {
     text = text.replace(pattern, match => {
       redactedSecrets += 1;
@@ -354,7 +409,20 @@ export type AiVertalingAgentInfo = {
   allowedMailRead: boolean;
   allowedFilesRead: boolean;
   statusUk: string;
+  /**
+   * MAILAI-001: чи може сервер справді виконати запит від імені цього агента — у Sleutelkluis є ключ API його постачальника.
+   * Підключення через MCP-конектор (наприклад, Claude на claude.ai) саме по собі нічого не перекладає: конектор лише дає ШІ доступ
+   * до сайту, а не навпаки. false = показується, але кнопки не працюватимуть. Ontbreekt (oude server) = onbekend, telt als bruikbaar.
+   */
+  heeftSleutel?: boolean;
 };
+
+/** MAILAI-001: агент, яким сайт справді може перекласти/підсумувати пошту (приватний, mail.read, є ключ API). */
+export const agentKanPost = (a: Pick<AiVertalingAgentInfo, 'ruimte' | 'allowedMailRead' | 'heeftSleutel'> | null | undefined): boolean =>
+  !!a && a.ruimte === 'prive' && a.allowedMailRead === true && a.heeftSleutel !== false;
+/** Те саме для документів (files.read). */
+export const agentKanBestand = (a: Pick<AiVertalingAgentInfo, 'ruimte' | 'allowedFilesRead' | 'heeftSleutel'> | null | undefined): boolean =>
+  !!a && a.ruimte === 'prive' && a.allowedFilesRead === true && a.heeftSleutel !== false;
 
 export type AiVertalingToegangCheckInput = {
   userId: string;
@@ -579,10 +647,10 @@ export function normalizeComparableSubject(subject: string): string {
 }
 
 export function extractSignificantKeywords(text: string, maxKeywords = 18): string[] {
-  const normalized = String(text ?? '')
+  // SEC-002 (aanv-gat-b-01): invoer begrensd en tags lineair weg (vroeger /<[^>]*>/g: kwadratisch op «<» zonder «>»).
+  const normalized = zonderTagsLineair(String(text ?? '').slice(0, STRIP_MAX)
     .normalize('NFKC')
-    .toLowerCase()
-    .replace(/<[^>]*>/g, ' ')
+    .toLowerCase())
     .replace(/[^\p{L}\p{N}@._-]+/gu, ' ');
   const counts = new Map<string, number>();
   for (const raw of normalized.split(/\s+/)) {
@@ -597,8 +665,8 @@ export function extractSignificantKeywords(text: string, maxKeywords = 18): stri
 }
 
 function extractEmailAddress(raw: string): string {
-  const m = /<([^>]+)>/.exec(String(raw ?? ''));
-  return (m?.[1] || String(raw ?? '')).trim().toLowerCase();
+  /* SEC-002 (g10c-toets-1): adres uit de LAATSTE hoekhaken (adresVan), niet de eerste «<…>» uit de weergavenaam */
+  return adresVan(raw).adres || (String(raw ?? '').includes('<') ? '' : String(raw ?? '').trim().toLowerCase());
 }
 
 /**
@@ -729,8 +797,7 @@ export function findRelatedMailContext(
       causalLinkUk = `Попередня взаємодія з ${senderLabel} (${dateStr}) щодо «${matchedKeywords.slice(0, 3).join(', ')}».`;
     }
 
-    const cleanSnippet = stripTrackingAndSecrets(item.snippet || item.body || '')
-      .text.replace(/<[^>]*>/g, ' ')
+    const cleanSnippet = zonderTagsLineair(stripTrackingAndSecrets(item.snippet || item.body || '').text)
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 220);
@@ -981,8 +1048,18 @@ export const VERTAAL_MOTOREN: readonly VertaalMotor[] = [
  * (of files.read in een documentweergave). Alle andere motoren blijven staan zoals ze zijn — nooit «werkt» zonder koppeling.
  */
 export function motorenMetStand(agents: readonly AiVertalingAgentInfo[], voorDocument = false): VertaalMotor[] {
-  const bruikbaar = (agents || []).some(a => (voorDocument ? a.allowedFilesRead : a.allowedMailRead));
+  // MAILAI-001: «працює» лише агент, якого сервер справді може виконати (є ключ API), не просто будь-яке підключення.
+  const bruikbaar = (agents || []).some(a => (voorDocument ? agentKanBestand({ ruimte: a.ruimte ?? 'prive', allowedFilesRead: a.allowedFilesRead, heeftSleutel: a.heeftSleutel }) : agentKanPost({ ruimte: a.ruimte ?? 'prive', allowedMailRead: a.allowedMailRead, heeftSleutel: a.heeftSleutel })));
   return VERTAAL_MOTOREN.map(m => (m.id === 'eigen-agent' ? { ...m, staat: (bruikbaar ? 'werkt' : 'aansluiten') as VertaalMotorStaat } : { ...m }));
+}
+
+/**
+ * MAILAI-001: чи показувати панель «ШІ-аналіз і переклад» над листом. Лише коли (1) стан уже завантажено з сервера, (2) людина
+ * ввімкнула опцію і (3) хоча б один рушій справді працює (зараз — приватний ШІ-агент із правом читати пошту/файли). Інакше панелі
+ * немає зовсім, без порожнього місця. Alleen tonen als de staat geladen is, de optie aan staat en minstens één motor echt werkt.
+ */
+export function aiBalkZichtbaar(o: { geladen: boolean; balkTonen: boolean; motoren: readonly Pick<VertaalMotor, 'staat'>[] }): boolean {
+  return o.geladen && o.balkTonen === true && o.motoren.some(m => m.staat === 'werkt');
 }
 
 /** De motor die een resultaat gemaakt heeft (voor de plaat boven de brief). */

@@ -127,6 +127,16 @@ export function sessieGeverifieerd(): void {
 /** Heeft dit verzoek een gecontroleerde referentie? (vangnet in auth-poort.ts) */
 export const isSessieGeverifieerd = (): boolean => Boolean(opslag.getStore()?.poort?.geverifieerd);
 
+/**
+ * SEC-002 (wolk-03, 12.11.2026): voer fn uit ZONDER de verzoekcontext van de aanroeper. Voor achtergrondwerk dat binnen een
+ * verzoek gestart wordt (setInterval, setTimeout, een losgelaten belofte): AsyncLocalStorage geeft de context van het
+ * verzoek anders door aan ELKE latere tik — gebruiker en RLS (app.user_id), impersonatie en «alleen lezen» van wie het eerst
+ * kwam, voor altijd. Binnen fn is huidigeContext() undefined; daarna staat de context van de aanroeper er weer.
+ */
+export function buitenVerzoek<T>(fn: () => T): T {
+  return opslag.exit(fn);
+}
+
 /** Voer fn uit als systeem (BYPASSRLS-rol): voor bewuste gebruikersoverstijgende stappen. */
 export function alsSysteem<T>(fn: () => Promise<T>): Promise<T> {
   const c = opslag.getStore();

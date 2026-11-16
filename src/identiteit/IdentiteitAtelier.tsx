@@ -1,10 +1,10 @@
-// Центр облікового запису «Студія» (завдання IDENTITEIT-006): новий вигляд дванадцяти розділів за прапорцем identiteit-account-atelier.
+// Центр облікового запису «Студія» (завдання IDENTITEIT-006): вигляд тринадцяти розділів за прапорцем identiteit-account-atelier.
 // Принцип: одна сцена — один розділ. Ліворуч (або в іншому вибраному місці) — навігатор, у центрі — справжні налаштування
 // розділу без змін (ті самі обробники, форми й серверні перевірки прав). На телефоні навігатор стає компактною смугою з аркушем.
-// Зміст, підписи та ілюстрації беруться без змін з atelier-v49-gegevens.json (12 розділів, 43 групи, 153 позиції).
-// Accountcentrum «Studio»: één onderdeel tegelijk, met dezelfde echte handelingen. Inhoud en illustraties ongewijzigd uit versie 49.
+// Зміст, підписи та ілюстрації беруться з atelier-v49-gegevens.json (13 розділів, 47 груп, 173 позиції).
+// Accountcentrum «Studio»: één onderdeel tegelijk, met dezelfde echte handelingen. Inhoud en illustraties uit versie 49 + meldingen-ecosysteem.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, ChevronDown, CircleHelp, ContactRound, CornerDownLeft, Globe, KeyRound, LayoutGrid, Menu, MonitorSmartphone, Palette, PanelBottom, PanelLeft, PanelRight, PanelTop, PencilRuler, Search, Settings2, ShieldCheck, Sparkles, UsersRound, X, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Bell, ChevronDown, CircleHelp, ContactRound, CornerDownLeft, Globe, KeyRound, LayoutGrid, Menu, MonitorSmartphone, Palette, PanelBottom, PanelLeft, PanelRight, PanelTop, PencilRuler, Search, Settings2, ShieldCheck, Sparkles, UsersRound, X, type LucideIcon } from 'lucide-react';
 import type { IdentiteitSectie } from './IdentiteitAccountPagina';
 import { useZijbalkVoorkeuren } from '../zijbalk-voorkeuren';
 import { AtelierInhoud } from './atelier-inhoud';
@@ -27,17 +27,17 @@ const ontwerp = (id: string) => id === 'identity' ? 'identities' : id;
 
 export const ATELIER_SYMBOLEN: Record<string, LucideIcon> = {
   personalization: Sparkles, menu: Menu, themes: Palette, languages: Globe,
-  widgets: LayoutGrid, sharing: UsersRound, identities: ContactRound,
+  widgets: LayoutGrid, melding: Bell, sharing: UsersRound, identities: ContactRound,
   account: Settings2, sessions: MonitorSmartphone, methods: KeyRound,
   security: ShieldCheck, recovery: CircleHelp,
 };
 
 /** Чотири змістові групи з погодженого опису (§3). */
 export const ATELIER_GROEPEN = [
-  { id: 'personal', ids: ['personalization', 'menu', 'themes', 'languages', 'widgets'], uk: 'Обличчя вашого простору', nl: 'De sfeer van jouw ruimte', ukKort: 'Вигляд і меню', nlKort: 'Uiterlijk en menu', bereik: '01 — 05' },
-  { id: 'social', ids: ['sharing', 'identities'], uk: 'Люди та ідентичність', nl: 'Mensen en identiteit', ukKort: 'Доступ і ролі', nlKort: 'Toegang en rollen', bereik: '06 — 07' },
-  { id: 'account', ids: ['account', 'sessions', 'methods'], uk: 'Ваш обліковий запис', nl: 'Jouw account', ukKort: 'Обліковий запис', nlKort: 'Account', bereik: '08 — 10' },
-  { id: 'security', ids: ['security', 'recovery'], uk: 'Безпека та відновлення', nl: 'Beveiliging en herstel', ukKort: 'Захист', nlKort: 'Bescherming', bereik: '11 — 12' },
+  { id: 'personal', ids: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'melding'], uk: 'Обличчя вашого простору', nl: 'De sfeer van jouw ruimte', ukKort: 'Вигляд і меню', nlKort: 'Uiterlijk en menu', bereik: '01 — 06' },
+  { id: 'social', ids: ['sharing', 'identities'], uk: 'Люди та ідентичність', nl: 'Mensen en identiteit', ukKort: 'Доступ і ролі', nlKort: 'Toegang en rollen', bereik: '07 — 08' },
+  { id: 'account', ids: ['account', 'sessions', 'methods'], uk: 'Ваш обліковий запис', nl: 'Jouw account', ukKort: 'Обліковий запис', nlKort: 'Account', bereik: '09 — 11' },
+  { id: 'security', ids: ['security', 'recovery'], uk: 'Безпека та відновлення', nl: 'Beveiliging en herstel', ukKort: 'Захист', nlKort: 'Bescherming', bereik: '12 — 13' },
 ] as const;
 
 const opslag = 'identiteit-atelier-v49-navigatie';
@@ -52,7 +52,7 @@ const stanTekst = (lang: Taal, stan: string) => STAN[stan]?.[lang] || stan;
 const helder = () => typeof document !== 'undefined' &&
   (document.documentElement.classList.contains('theme-light') || document.documentElement.classList.contains('theme-plum-light'));
 const zonderBeweging = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-const normaal = (t: string) => t.toLowerCase().replace(/[’'ʼ`«»"„“]/g, '').replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+const normaal = (t: string) => t.toLowerCase().replace(/[’'ʼ`«»"„“]/g, '').replace(/\u0451/g, 'е').replace(/\s+/g, ' ').trim();
 
 /** Найближчий предок, що прокручується (на сайті це робоча область, а не вікно). */
 function schuifouder(el: HTMLElement | null): HTMLElement | null {
@@ -198,7 +198,9 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
   useEffect(() => { setToekomstOpen(false); setPlan(''); }, [huidig.id]);
   useEffect(() => {
     const toets = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setVraag(''); setKiezer('zoek'); }
+      // ZOEK-002 (стара вада): Ctrl+K відкривав одночасно наскрізний пошук у панелі (ZoekGlobaal, який на id уже ставить розділи цієї
+      // сторінки першими) і власний вибирач «Пошук налаштувань», що забирав фокус. Є наскрізний пошук — Ctrl+K лишаємо йому.
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !document.querySelector('[data-zoek-trigger]')) { e.preventDefault(); setVraag(''); setKiezer('zoek'); }
       if (e.key === 'Escape') { setKiezer(null); setInstellingen(false); }
     };
     window.addEventListener('keydown', toets);
@@ -258,6 +260,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
   const overzicht = huidig.id === 'personalization';
   const plaatsNamen: Record<Plaats, string> = { left: vertaal(lang, 'Ліворуч', 'Links'), right: vertaal(lang, 'Праворуч', 'Rechts'), top: vertaal(lang, 'Угорі', 'Boven'), bottom: vertaal(lang, 'Унизу', 'Onder') };
   const plaatsTekens: Record<Plaats, LucideIcon> = { left: PanelLeft, right: PanelRight, top: PanelTop, bottom: PanelBottom };
+  const totaalSecties = bron.secties.length;
   const totaalRijen = Object.values(bron.groepen as Record<string, BronGroep[]>).flat().reduce((a, g) => a + g.рядки.length, 0);
   const totaalGroepen = Object.values(bron.groepen as Record<string, BronGroep[]>).flat().length;
 
@@ -285,7 +288,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
               aria-label={vertaal(lang, 'Розташування навігації', 'Positie van navigatie')}><Settings2 size={17}/></button>
           </div>
           <button type='button' className='mr-at-zoekknop' onClick={() => { setVraag(''); setKiezer('zoek'); }}
-            title={vertaal(lang, 'Пошук серед 12 розділів, 43 груп і 153 налаштувань. Вибір відкриває потрібне місце.', 'Zoeken in 12 onderdelen, 43 groepen en 153 instellingen. Een keuze opent de juiste plek.')}>
+            title={vertaal(lang, `Пошук серед ${totaalSecties} розділів, ${totaalGroepen} груп і ${totaalRijen} налаштувань. Вибір відкриває потрібне місце.`, `Zoeken in ${totaalSecties} onderdelen, ${totaalGroepen} groepen en ${totaalRijen} instellingen. Een keuze opent de juiste plek.`)}>
             <Search size={16}/><span>{vertaal(lang, 'Знайти налаштування', 'Instelling zoeken')}</span><kbd>Ctrl K</kbd>
           </button>
           <nav className='mr-at-gids-lijst'>
@@ -295,7 +298,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
             </div>)}
           </nav>
           <div className='mr-at-gids-voet'>
-            <span>{vertaal(lang, `Розділ ${index + 1} з 12`, `Onderdeel ${index + 1} van 12`)}</span>{voortgang}
+            <span>{vertaal(lang, `Розділ ${index + 1} з ${totaalSecties}`, `Onderdeel ${index + 1} van ${totaalSecties}`)}</span>{voortgang}
           </div>
         </aside>
 
@@ -304,10 +307,11 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
             <button type='button' className={`mr-at-balk-kies accent-${huidig.accent}`} aria-haspopup='dialog' aria-expanded={kiezer === 'nav'}
               onClick={() => { setVraag(''); setKiezer('nav'); }} aria-label={vertaal(lang, `Розділ: ${naam.name}. Відкрити всі розділи`, `Onderdeel: ${naam.name}. Alle onderdelen openen`)}>
               <span className='mr-at-glief'><Teken size={18}/></span>
-              <span className='mr-at-balk-tekst'><small>{huidig.number} / 12 · {lang === 'uk' ? ATELIER_GROEPEN.find(g => (g.ids as readonly string[]).includes(huidig.id))?.ukKort : ATELIER_GROEPEN.find(g => (g.ids as readonly string[]).includes(huidig.id))?.nlKort}</small><strong>{naam.name}</strong></span>
+              <span className='mr-at-balk-tekst'><small>{huidig.number} / {totaalSecties} · {lang === 'uk' ? ATELIER_GROEPEN.find(g => (g.ids as readonly string[]).includes(huidig.id))?.ukKort : ATELIER_GROEPEN.find(g => (g.ids as readonly string[]).includes(huidig.id))?.nlKort}</small><strong>{naam.name}</strong></span>
               <ChevronDown size={18} className='mr-at-pijl'/>
             </button>
             <button type='button' className='mr-at-rond' onClick={() => { setVraag(''); setKiezer('zoek'); }} aria-label={vertaal(lang, 'Знайти налаштування', 'Instelling zoeken')}><Search size={18}/></button>
+            <button type='button' className='mr-at-rond' aria-haspopup='dialog' aria-expanded={instellingen} onClick={() => setInstellingen(v => !v)} aria-label={vertaal(lang, 'Вигляд і навігація', 'Weergave en navigatie')}><Settings2 size={18}/></button>
             {voortgang}
           </div>
 
@@ -322,7 +326,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
                 <button type='button' className='mr-at-knop-glas' onClick={() => { setVraag(''); setKiezer('zoek'); }}><Search size={16}/>{vertaal(lang, 'Знайти налаштування', 'Instelling zoeken')}</button>
               </div>
               <div className='mr-at-held-cijfers'>
-                <span><b>12</b>{vertaal(lang, 'розділів', 'onderdelen')}</span>
+                <span><b>{totaalSecties}</b>{vertaal(lang, 'розділів', 'onderdelen')}</span>
                 <span><b>{totaalGroepen}</b>{vertaal(lang, 'груп', 'groepen')}</span>
                 <span><b>{totaalRijen}</b>{vertaal(lang, 'налаштувань', 'instellingen')}</span>
               </div>
@@ -332,7 +336,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
           </div> : <div role='region' key={huidig.id} id={`identity-sectie-${werkelijk(huidig.id)}`} data-sectie={werkelijk(huidig.id)}
             className={`mr-at-kop accent-${huidig.accent}`} aria-labelledby='mr-at-kop-titel'>
             <div className='mr-at-kop-tekst'>
-              <div className='mr-at-kop-lijn'><span className='mr-at-glief'><Teken size={19}/></span><span><b>{huidig.number}</b> / 12</span><i/><span>{naam.kicker}</span></div>
+              <div className='mr-at-kop-lijn'><span className='mr-at-glief'><Teken size={19}/></span><span><b>{huidig.number}</b> / {totaalSecties}</span><i/><span>{naam.kicker}</span></div>
               <h1 id='mr-at-kop-titel'>{naam.title}</h1>
               <p>{naam.description}</p>
               <ul className='mr-at-facetten'>{huidig.uk.details.map((d, i) => {
@@ -424,7 +428,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
                 <span className='mr-at-treffer-tekst'><strong>{t.titel}</strong><small>{t.soort === 'sectie' ? `${s.number} · ${t.pad}` : t.pad}</small></span>
                 {t.stan && t.stan !== 'наявне' ? <span className={`mr-at-stan stan-${STAN[t.stan]?.toon}`}>{stanTekst(lang, t.stan)}</span> : <CornerDownLeft size={15} className='mr-at-treffer-enter'/>}
               </button>;
-            }) : <p className='mr-at-leeg'>{vertaal(lang, 'Нічого не знайдено. Спробуйте інше слово — пошук охоплює всі 153 налаштування обома мовами.', 'Niets gevonden. Probeer een ander woord — er wordt in alle 153 instellingen in beide talen gezocht.')}</p>)
+            }) : <p className='mr-at-leeg'>{vertaal(lang, `Нічого не знайдено. Спробуйте інше слово — пошук охоплює всі ${totaalRijen} позицій обома мовами.`, `Niets gevonden. Probeer een ander woord — er wordt in alle ${totaalRijen} instellingen in beide talen gezocht.`)}</p>)
               : ATELIER_GROEPEN.map(g => <div key={g.id} className='mr-at-kiezer-groep'>
                 <div className='mr-at-gids-label'><span>{g.bereik}</span>{lang === 'uk' ? g.uk : g.nl}</div>
                 <div className='mr-at-kiezer-raster'>{bron.secties.filter(s => (g.ids as readonly string[]).includes(s.id)).map(s => navItem(s))}</div>

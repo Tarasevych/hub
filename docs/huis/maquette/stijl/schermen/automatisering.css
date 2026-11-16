@@ -1,0 +1,513 @@
+/* automatisering.css — розділ «Автоматика»: правила (рядок hv-regel, редактор «Коли / Якщо / Тоді» зі стежкою hv-traject),
+   пробний прогін (hv-wasword), перебіг, версії, сцени (hv-scenetegel), режими дому (hv-standkaart, hv-matrix, hv-regie),
+   порядок дня (hv-agenda, тижневий розклад). Усе з числами — на папері; тон — лише стан і ризик і ніколи не єдина ознака.
+   Кольори — лише токени; адаптивність — контейнерні запити (aut — сторінка розділу, autflow — редактор, autkaart — аркуш). */
+
+/* ───────────── Сітка сторінки ───────────── */
+.hv-aut { container: aut / inline-size; display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-aut .hv-blok { min-inline-size: 0; }
+.hv-aut-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-aut-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-aut-kolom > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+@container aut (min-width: 980px) {
+  .hv-aut-rooster { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+  .hv-aut-rooster--editor { grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); }
+  .hv-aut-rooster--verloop { grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.5fr); }
+}
+
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя й власних форм лічильників зона не має. Тут лише ряд дій: у «Правил» і «Сцен» їх дві-три, тож вони
+   стоять окремим рядом під реченням і лічильниками; рядок «Керує зараз» (hv-regie) займає в цьому ряду всю ширину. */
+.hv-aut-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; }
+.hv-aut-zoneheld .hv-zoneheld__acties > .hv-regie { flex: 1 1 100%; min-inline-size: 0; }
+@container zoneheld (min-width: 720px) {
+  .hv-aut-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
+  .hv-aut-zoneheld .hv-zoneheld__sub { max-inline-size: 72ch; text-wrap: pretty; }
+}
+/* телефон: кожна дія росте на ширину рядка й не ламає підпис; чотири лічильники стають сіткою 2 × 2 —
+   у чотирьох вузьких колонках «спостереження» розривалося посеред слова */
+@container zoneheld (max-width: 519px) {
+  .hv-aut-zoneheld .hv-zoneheld__acties > .hv-knop { flex: 1 1 auto; justify-content: center; }
+  .hv-aut-zoneheld--vier .hv-zoneheld__tellers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-aut-zoneheld--vier .hv-zoneheld__teller:nth-child(odd) { padding-inline-start: 0; border-inline-start: 0; }
+}
+@container aut (max-width: 759px) {
+  .hv-scenetegel { padding: var(--ruimte-2) var(--ruimte-3); }
+  .hv-scenetegel__start { inline-size: 52px; block-size: 52px; }
+}
+
+/* ───────────── Дрібниці ───────────── */
+.hv-aut-noot { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); margin-block-start: var(--ruimte-2); }
+.hv-aut-noot > .hv-ic { flex: none; margin-block-start: 1px; }
+.hv-aut-tussenkop { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 700; color: var(--text); margin-block: var(--ruimte-4) var(--ruimte-2); }
+.hv-aut-bladvraag { font-size: var(--tekst-basis); font-weight: 700; color: var(--text); margin-block: var(--ruimte-2) var(--ruimte-3); }
+.hv-aut-staatrij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); margin-block: var(--ruimte-2); }
+.hv-aut-acties { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); align-items: center; }
+.hv-aut-filters { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-aut-filters .hv-segment--rol { margin-inline: calc(var(--ruimte-1) * -1); padding-inline: var(--ruimte-1); }
+.hv-formulier { display: grid; gap: var(--hv-kier); }
+.hv-veld > .hv-stand { border-block-start: 0; padding-block-start: 0; }
+.hv-aut .hv-veld .hv-stapper__getal, .hv-laag .hv-veld .hv-stapper__getal { font-size: var(--hv-tekst-kop); min-inline-size: 84px; text-align: center; }
+.hv-aut .hv-veld:first-child, .hv-laag .hv-kaart > .hv-veld:first-child { border-block-start: 0; padding-block-start: 0; }
+
+/* ───────────── Чип «логіки» правила і чип істинності ───────────── */
+.hv-chip--logica { flex: none; }
+.hv-chip--logica.is-concept::before { border-style: dashed; border-color: var(--hv-omtrek); }
+.hv-chip--logica.is-meekijken::before { background: var(--surface); border-color: var(--hv-omtrek); }
+.hv-chip--logica.is-uit > .hv-ic, .hv-chip--logica.is-pauze > .hv-ic { color: var(--muted); }
+.hv-chip--logica .hv-chip__sub { white-space: normal; }
+.hv-waarheid { display: inline-flex; align-items: center; gap: 6px; min-block-size: 24px; padding-inline: 8px; border-radius: 999px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--line); white-space: nowrap; flex: none; }
+.hv-waarheid__teken { inline-size: 10px; block-size: 10px; border-radius: 50%; flex: none; border: 2px solid var(--hv-omtrek); }
+.hv-waarheid.is-waar { background: var(--ok-zacht); border-color: transparent; }
+.hv-waarheid.is-waar .hv-waarheid__teken { background: var(--ok); border-color: var(--ok); }
+.hv-waarheid.is-onbekend .hv-waarheid__teken { border-radius: 2px; background: repeating-linear-gradient(var(--hv-arcering-hoek), var(--hv-arcering) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 3px); }
+.hv-doel { display: inline-flex; align-items: center; gap: 4px; justify-self: start; min-block-size: 24px; padding-inline: 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; }
+.hv-doel > .hv-ic { color: var(--muted); flex: none; }
+
+/* ───────────── Список правил hv-regel ───────────── */
+.hv-regels { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); overflow: hidden; margin-block-start: var(--ruimte-2); }
+.hv-regel { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0 var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-2) var(--ruimte-3); border-block-start: 1px solid var(--line); transition: background var(--hv-duur-1); }
+.hv-regel:first-child { border-block-start: 0; }
+.hv-regel::before { content: ""; position: absolute; inset-block: 10px; inset-inline-start: 0; inline-size: 3px; border-radius: 0 3px 3px 0; background: transparent; }
+.hv-regel.is-actief::before, .hv-regel.is-loopt::before { background: var(--ok); }
+.hv-regel.is-deels::before { background: var(--warn); }
+.hv-regel.is-quarantaine::before { background: var(--fout); }
+.hv-regel.is-meekijken::before { background: repeating-linear-gradient(180deg, var(--hv-omtrek) 0 6px, transparent 6px 10px); }
+.hv-regel__schakel { align-self: start; padding-block-start: 2px; }
+.hv-regel__lijf { display: grid; gap: 4px; min-inline-size: 0; text-align: start; padding-block: var(--ruimte-2); min-block-size: var(--hv-tik); border-radius: var(--straal-s); }
+.hv-regel__kop { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ruimte-2); min-inline-size: 0; }
+.hv-regel__naam { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); line-height: var(--hv-regel-basis); }
+.hv-regel__kop .hv-chip { min-block-size: var(--hv-chip-klein); }
+.hv-regel__zin { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hv-regel__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-regel__pijl { color: var(--muted); }
+.hv-regel.is-concept .hv-regel__naam, .hv-regel.is-uit .hv-regel__naam { color: var(--muted); }
+@media (hover: hover) { .hv-regel:hover { background: var(--surface); } }
+
+/* ───────────── «Зараз виконується», «Несправні», «Пропозиції», обмеження ───────────── */
+.hv-aut-looptlijst { display: grid; gap: var(--ruimte-3); }
+.hv-aut-loopt { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
+.hv-aut-loopt + .hv-aut-loopt { border-block-start: 1px solid var(--line); padding-block-start: var(--ruimte-3); }
+.hv-aut-loopt .hv-aftel { display: inline-flex; align-items: center; gap: var(--ruimte-2); }
+.hv-aut-loopt .hv-aftel__tekst { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-aut-loopt__naam { font-weight: 600; }
+.hv-aut-loopt__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-aut-loopt__knoppen { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+@container aut (min-width: 620px) {
+  .hv-aut-loopt { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .hv-aut-loopt__knoppen { grid-column: auto; }
+}
+.hv-aut-stuk { display: grid; gap: var(--ruimte-3); }
+.hv-aut-stuk__rij { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2) var(--ruimte-3); align-items: center; }
+.hv-aut-stuk__rij + .hv-aut-stuk__rij { border-block-start: 1px solid var(--line); padding-block-start: var(--ruimte-3); }
+.hv-aut-stuk__rij > .hv-knop { grid-column: 2; justify-self: start; }
+.hv-aut-stuk__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-m); background: var(--toon-zacht); color: var(--toon); }
+.hv-aut-stuk__naam { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ruimte-2); font-weight: 600; }
+.hv-aut-stuk__sub { font-size: var(--tekst-klein); color: var(--muted); }
+@container aut (min-width: 620px) { .hv-aut-stuk__rij { grid-template-columns: auto minmax(0, 1fr) auto; } .hv-aut-stuk__rij > .hv-knop { grid-column: auto; } }
+
+.hv-aut-voorstellen { display: grid; gap: var(--hv-kier); }
+.hv-aut-voorstel { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: var(--hv-streep) dashed var(--hv-omtrek); }
+.hv-aut-voorstel__kop { display: flex; justify-content: space-between; align-items: center; gap: var(--ruimte-2); }
+.hv-aut-voorstel__tijd { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-aut-voorstel__wat { font-weight: 600; line-height: 1.35; }
+.hv-aut-voorstel__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-aut-voorstel .hv-knoppen { margin-block-start: 0; }
+
+.hv-begrenzing { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-3); padding-block: var(--ruimte-1); }
+.hv-begrenzing + .hv-begrenzing { border-block-start: 1px solid var(--line); }
+.hv-begrenzing__naam { font-weight: 600; font-size: var(--tekst-klein); }
+.hv-begrenzing__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+
+/* ───────────── Рецепти й наміри «Що сталося?» ───────────── */
+.hv-recepten, .hv-intenties { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--ruimte-2); }
+.hv-recept, .hv-intentie {
+  display: grid; align-content: start; justify-items: start; gap: 4px; min-block-size: 104px; padding: var(--ruimte-3); text-align: start;
+  border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); transition: background var(--hv-duur-1), transform var(--hv-duur-1);
+}
+.hv-laag .hv-intentie { box-shadow: none; }
+.hv-recept:active, .hv-intentie:active { transform: scale(0.98); background: var(--surface2); }
+.hv-recept__teken, .hv-intentie__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-m); background: var(--surface2); color: var(--text); margin-block-end: 4px; }
+.hv-recept__naam, .hv-intentie__naam { font-size: var(--tekst-klein); font-weight: 600; line-height: var(--hv-regel-klein); color: var(--text); }
+.hv-recept__sub, .hv-intentie__sub { font-size: var(--tekst-mini); font-weight: 500; line-height: var(--hv-regel-mini); color: var(--muted); }
+@media (hover: hover) { .hv-recept:hover, .hv-intentie:hover { background: var(--surface); } }
+
+/* ───────────── Шапка правила ───────────── */
+.hv-regelkop {
+  display: grid; gap: var(--ruimte-3); padding: var(--ruimte-5); min-inline-size: 0;
+  border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+  background: var(--panel);
+}
+/* увімкнене правило: папір без градієнта — стан несуть слово й знак у шапці */
+.hv-regelkop.is-aan { background: var(--panel); }
+.hv-regelkop.is-concept { background: var(--panel); border: var(--hv-streep) dashed var(--hv-omtrek); }
+.hv-regelkop__boven { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
+.hv-regelkop__boven > .hv-chip { grid-column: 1 / -1; justify-self: start; }
+.hv-regelkop__teken { display: grid; place-items: center; inline-size: 52px; block-size: 52px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--text); box-shadow: var(--schaduw-1); }
+.hv-regelkop__titel { font-size: var(--hv-tekst-kop); font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; color: var(--text); }
+.hv-regelkop__kamer { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-regelzin { font-size: var(--tekst-basis); font-weight: 500; line-height: 1.5; color: var(--text); text-wrap: pretty; padding-inline-start: var(--ruimte-3); border-inline-start: 3px solid var(--line); }
+.hv-regelzin--klein { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); margin-block-end: var(--ruimte-2); }
+.hv-regelkop__oordeel { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-regelkop__namens { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); min-block-size: var(--hv-tik); }
+.hv-regelkop__namens > .hv-ic { flex: none; }
+@container aut (min-width: 760px) {
+  .hv-regelkop { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr); column-gap: var(--ruimte-6); }
+  .hv-regelkop > * { grid-column: 1; }
+  .hv-regelkop__boven { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .hv-regelkop__boven > .hv-chip { grid-column: auto; justify-self: end; }
+  .hv-regelkop__titel { font-size: var(--hv-getal-m); }
+  .hv-regelzin { font-size: var(--hv-tekst-kop); line-height: 1.4; }
+  .hv-regelzin--klein { font-size: var(--tekst-klein); }
+  .hv-regelkop > .hv-traject { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+}
+
+/* ───────────── Стежка hv-traject ───────────── */
+.hv-traject { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; counter-reset: traject; padding: var(--ruimte-1); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); }
+.hv-traject__stap { position: relative; display: grid; }
+.hv-traject__stap + .hv-traject__stap::before { content: ""; position: absolute; inset-block-start: 26px; inset-inline-start: calc(-50% + 20px); inline-size: calc(100% - 40px); block-size: 2px; background: var(--line); }
+.hv-traject__stap.is-voorbij + .hv-traject__stap::before, .hv-traject__stap.is-voorbij + .hv-traject__stap.is-nu::before { background: var(--text); }
+.hv-traject__knop { position: relative; display: grid; justify-items: center; gap: 4px; min-block-size: 72px; padding: var(--ruimte-2) var(--ruimte-1); border-radius: var(--straal-m); text-align: center; }
+.hv-traject__punt { display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%; background: var(--surface); border: var(--hv-streep) solid var(--hv-omtrek); color: var(--muted); }
+.hv-traject__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: var(--hv-regel-mini); }
+.hv-traject__stap.is-voorbij .hv-traject__punt { background: var(--surface2); border: 2px solid var(--text); color: var(--text); }
+.hv-traject__stap.is-voorbij .hv-traject__naam { color: var(--text); }
+.hv-traject__stap.is-nu .hv-traject__punt { background: var(--text); border: 2px solid var(--text); color: var(--panel); box-shadow: 0 0 0 4px var(--surface2); }
+.hv-traject__stap.is-nu .hv-traject__naam { color: var(--text); font-weight: 700; }
+.hv-traject__knop:active { background: var(--surface2); }
+@media (hover: hover) { .hv-traject__knop:hover { background: var(--surface); } }
+
+/* ───────────── Смуга незбережених змін і перегляду наживо ───────────── */
+.hv-aut-werk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-4); border-radius: var(--straal-l); background: var(--surface2); border: 1.5px solid var(--text); color: var(--text); box-shadow: var(--schaduw-1); }
+.hv-aut-werk > .hv-ic { color: var(--text); flex: none; }
+.hv-aut-werk__tekst { flex: 1 1 220px; font-size: var(--tekst-klein); font-weight: 600; }
+.hv-aut-werk.is-proef { background: var(--panel); border: var(--hv-streep) dashed var(--text); }
+.hv-aut-werk.is-proef > .hv-ic { color: var(--text); }
+
+/* ───────────── Редактор «Коли / Якщо / Тоді» ───────────── */
+.hv-aut-flowkaart { padding: var(--ruimte-4) var(--ruimte-3); }
+.hv-flow { container: autflow / inline-size; position: relative; display: grid; gap: var(--ruimte-4); }
+.hv-flow__sectie { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-flow__label { display: flex; align-items: center; gap: var(--ruimte-2); }
+.hv-flow__woord { display: inline-flex; align-items: center; min-block-size: 28px; padding-inline: 12px; border-radius: 999px; background: var(--text); color: var(--panel); font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.hv-flow__sectie--als .hv-flow__woord { background: var(--surface2); color: var(--text); border: 1px solid var(--hv-omtrek); }
+.hv-flow__sectie--dan .hv-flow__woord { background: var(--panel); color: var(--text); border: 2px solid var(--text); }
+.hv-flow__inhoud { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-flow__wijze .hv-segment { max-inline-size: 360px; }
+.hv-flow__lijst { display: grid; gap: var(--ruimte-2); }
+.hv-flow__stap { position: relative; min-inline-size: 0; }
+.hv-flow__knop {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "teken tekst pijl" "teken rechts pijl"; align-items: center; gap: 6px var(--ruimte-3);
+  inline-size: 100%; min-block-size: 64px; padding: var(--ruimte-3); text-align: start; border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); transition: background var(--hv-duur-1), border-color var(--hv-duur-1);
+}
+.hv-flow__nr { display: none; }
+.hv-flow__teken { grid-area: teken; position: relative; display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-m); background: var(--surface2); color: var(--text); align-self: start; }
+.hv-flow__tekst { grid-area: tekst; display: grid; gap: 2px; min-inline-size: 0; }
+.hv-flow__naam { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ruimte-2); font-weight: 600; line-height: var(--hv-regel-basis); }
+.hv-flow__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-flow__waarde { font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-flow__tekst > .hv-doel { margin-block-start: 4px; }
+.hv-flow__rechts { grid-area: rechts; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hv-flow__rechts:empty { display: none; }
+.hv-flow__pijl { grid-area: pijl; color: var(--muted); }
+.hv-flow__stand { display: inline-flex; align-items: center; gap: 4px; min-block-size: 24px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; }
+.hv-flow__stand.is-uit { color: var(--muted); }
+.hv-flow__stand .hv-ic--risico { inline-size: 18px; block-size: 18px; }
+.hv-flow__fout { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-flow__fout > .hv-ic { color: var(--fout); }
+.hv-flow__stap.is-waar .hv-flow__knop { border-color: var(--ok); box-shadow: inset 3px 0 0 var(--ok); }
+.hv-flow__stap.is-onwaar .hv-flow__teken { background: var(--surface); color: var(--muted); }
+.hv-flow__stap.is-onbekend .hv-flow__teken::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 35%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)); }
+.hv-flow__stap.is-fout .hv-flow__knop { border: 2px solid var(--fout); }
+.hv-flow__leeg { font-size: var(--tekst-klein); color: var(--muted); padding: var(--ruimte-3); border-radius: var(--straal-m); border: var(--hv-streep) dashed var(--line); }
+.hv-flow__plus .hv-knop { text-decoration: none; }
+.hv-flow.is-lezen .hv-flow__knop { background: var(--surface); }
+button.hv-flow__knop:active { background: var(--surface2); }
+@media (hover: hover) { button.hv-flow__knop:hover { background: var(--surface); } }
+@container autflow (min-width: 520px) {
+  .hv-flow { gap: var(--ruimte-5); }
+  .hv-flow::before { content: ""; position: absolute; inset-block: 14px 14px; inset-inline-start: 43px; inline-size: 2px; background: linear-gradient(180deg, var(--text), var(--hv-omtrek) 45%, var(--line)); border-radius: 2px; }
+  .hv-flow__sectie { grid-template-columns: 88px minmax(0, 1fr); align-items: start; gap: var(--ruimte-3); }
+  .hv-flow__label { justify-content: center; padding-block-start: 18px; position: relative; z-index: 1; }
+  .hv-flow__knop { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "teken tekst rechts pijl"; }
+  .hv-flow__rechts { justify-content: flex-end; max-inline-size: 240px; }
+}
+
+/* ───────────── Права колонка редактора ───────────── */
+.hv-aut-problemen { display: grid; gap: var(--ruimte-1); }
+.hv-aut-problemen li { display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: 32px; font-size: var(--tekst-klein); }
+.hv-aut-problemen li > .hv-ic { flex: none; }
+.hv-aut-problemen li.is-zwaar > .hv-ic { color: var(--fout); }
+.hv-aut-problemen li.is-let > .hv-ic { color: var(--warn); }
+.hv-aut-problemen li.is-info > .hv-ic { color: var(--muted); }
+.hv-aut-problemen .hv-link { text-align: start; }
+
+/* дуга сонця: схід, захід, «зараз» */
+.hv-zonboog { display: grid; gap: var(--ruimte-2); margin-block-end: var(--ruimte-2); }
+.hv-zonboog__veld { position: relative; block-size: 132px; border-radius: var(--straal-m); background: linear-gradient(180deg, var(--surface) 0%, var(--panel) 82%); border: 1px solid var(--line); overflow: hidden; }
+.hv-zonboog__vlak { position: absolute; inset: 0 0 22px 0; }
+.hv-zonboog__vlak svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; }
+.hv-zonboog__merk { position: absolute; inline-size: 10px; block-size: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--panel); border: 2px solid var(--text); }
+.hv-zonboog__merk--nu { inline-size: 14px; block-size: 14px; margin: -7px 0 0 -7px; background: var(--accent); border-color: var(--panel); box-shadow: 0 0 0 1.5px var(--accent); }
+/* подія запуску: поле вище на один рядок — «зараз» у першому, підпис події в другому; підпис стоїть з того боку лінії, де є місце */
+.hv-zonboog.heeft-doel .hv-zonboog__veld { block-size: 156px; }
+.hv-zonboog.heeft-doel .hv-zonboog__vlak { inset-block-start: 24px; }
+.hv-zonboog__doel { position: absolute; inset-block: 2px 0; inline-size: 0; border-inline-start: 1.5px dashed var(--text); }
+.hv-zonboog__doeltekst { position: absolute; inset-block-start: 2px; inset-inline-start: calc(var(--hv-doel) + 6px); max-inline-size: calc(100% - var(--hv-doel) - 10px); padding: 0 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.hv-zonboog__doeltekst.is-links { inset-inline-start: auto; inset-inline-end: calc(100% - var(--hv-doel) + 6px); max-inline-size: calc(var(--hv-doel) - 10px); }
+.hv-zonboog__horizon { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.hv-zonboog__pad { fill: none; stroke: var(--text); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.hv-zonboog__label { position: absolute; inset-block-end: 2px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 3px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hv-zonboog__label.is-nu { inset-block-end: auto; inset-block-start: 4px; padding: 0 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.hv-zonboog__zin { font-size: var(--tekst-klein); color: var(--muted); }
+
+/* ───────────── Було → стане (hv-wasword) ───────────── */
+.hv-wasword { display: grid; gap: 0; }
+.hv-wasword__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding-block: var(--ruimte-3); border-block-start: 1px solid var(--line); min-block-size: var(--hv-tik); }
+.hv-wasword__rij:first-child { border-block-start: 0; }
+.hv-wasword__teken { display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: var(--straal-s); background: var(--surface); color: var(--text); }
+.hv-wasword__teken .hv-flow__nr { display: inline; font-size: var(--tekst-klein); font-weight: 700; }
+.hv-wasword__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-wasword__naam { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-wasword__delta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: var(--tekst-klein); }
+.hv-wasword__delta > .hv-ic { color: var(--muted); flex: none; }
+.hv-wasword__was { color: var(--muted); }
+.hv-wasword__wordt { font-weight: 600; color: var(--text); }
+.hv-wasword__wordt.is-intentie { text-decoration: underline; text-decoration-style: dashed; text-decoration-thickness: 1.5px; text-underline-offset: 0.25em; text-decoration-color: var(--hv-omtrek); }
+.hv-wasword__noot { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-wasword__rij.is-noot .hv-wasword__teken { background: var(--surface2); }
+.hv-wasword__rij.is-waar .hv-wasword__teken { background: var(--ok-zacht); color: var(--text); }
+.hv-wasword__rij.is-onbekend .hv-wasword__teken { position: relative; overflow: hidden; }
+.hv-wasword__rij.is-onbekend .hv-wasword__teken::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 35%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)); }
+.hv-wasword__rij.is-gelijk .hv-wasword__wordt { color: var(--muted); font-weight: 500; }
+.hv-aut-proef__oordeel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); font-size: var(--tekst-klein); font-weight: 600; margin-block-end: var(--ruimte-2); }
+.hv-aut-proef__oordeel.is-waar { background: var(--ok-zacht); }
+.hv-aut-stelrij { display: flex; align-items: center; gap: var(--ruimte-3); font-size: var(--tekst-klein); }
+
+/* шапка підсторінок (прогін, перебіг, версії, сцена, режим) */
+.hv-aut-subkop { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-xl); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-aut-subkop > .hv-knop { grid-column: 1 / -1; justify-self: start; }
+.hv-aut-subkop__teken { display: grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+.hv-aut-subkop.is-actief .hv-aut-subkop__teken { background: var(--text); color: var(--panel); border-color: var(--text); }
+.hv-aut-subkop__tekst { display: grid; min-inline-size: 0; }
+.hv-aut-subkop__pad { display: inline-flex; align-items: center; gap: 2px; justify-self: start; min-block-size: var(--hv-tik); margin-block: -10px -6px; padding-inline-end: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); border-radius: var(--straal-s); }
+.hv-aut-subkop__pad > span { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.hv-aut-subkop__titel { font-size: var(--hv-tekst-kop); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.hv-aut-subkop__sub { font-size: var(--tekst-klein); color: var(--muted); }
+@container aut (min-width: 620px) { .hv-aut-subkop { grid-template-columns: auto minmax(0, 1fr) auto; } .hv-aut-subkop > .hv-knop { grid-column: auto; } }
+
+/* ───────────── Перебіг і версії ───────────── */
+.hv-runlijst { display: grid; gap: 2px; margin-block-end: var(--ruimte-2); }
+.hv-runrij { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-areas: "tijd dag uitkomst" "tijd bron uitkomst"; align-items: center; gap: 0 var(--ruimte-2); min-block-size: 52px; padding: var(--ruimte-1) var(--ruimte-2); border-radius: var(--straal-m); text-align: start; border: 2px solid transparent; }
+.hv-runrij__tijd { grid-area: tijd; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hv-runrij__dag { grid-area: dag; font-size: var(--tekst-klein); font-weight: 600; }
+.hv-runrij__bron { grid-area: bron; font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-runrij__uitkomst { grid-area: uitkomst; display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-runrij__uitkomst > .hv-ic { color: var(--toon); }
+.hv-runrij__uitkomst.hv-toon-neutraal > .hv-ic { color: var(--muted); }
+.hv-runrij.is-gekozen { background: var(--surface2); border-color: var(--text); }
+@media (hover: hover) { .hv-runrij:not(.is-gekozen):hover { background: var(--surface); } }
+
+.hv-waaromketen { display: grid; gap: 0; counter-reset: keten; }
+.hv-waaromketen li { position: relative; display: grid; gap: 2px; padding: var(--ruimte-2) 0 var(--ruimte-3) var(--ruimte-5); }
+.hv-waaromketen li::before { content: ""; position: absolute; inset-inline-start: 6px; inset-block-start: 14px; inline-size: 10px; block-size: 10px; border-radius: 50%; border: 2px solid var(--text); background: var(--panel); }
+.hv-waaromketen li + li::after { content: ""; position: absolute; inset-inline-start: 11px; inset-block-start: -8px; block-size: 22px; inline-size: 2px; background: var(--hv-omtrek); }
+.hv-waaromketen li:last-child::before { background: var(--text); }
+.hv-waaromketen__label { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.hv-waaromketen__wat { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); }
+.hv-chip--uitkomst { flex: none; }
+
+.hv-versies { position: relative; display: grid; gap: 2px; }
+.hv-versies::before { content: ""; position: absolute; inset-block: 18px; inset-inline-start: 17px; inline-size: 2px; background: var(--line); }
+.hv-versies__punt { position: relative; }
+.hv-versies__knop { position: relative; display: grid; gap: 2px; inline-size: 100%; min-block-size: var(--hv-tik); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) 40px; border-radius: var(--straal-m); text-align: start; border: 2px solid transparent; }
+.hv-versies__knop::before { content: ""; position: absolute; inset-inline-start: 11px; inset-block-start: 14px; inline-size: 14px; block-size: 14px; border-radius: 50%; background: var(--panel); border: 2px solid var(--hv-omtrek); }
+.hv-versies__punt.is-nu .hv-versies__knop::before { background: var(--text); border-color: var(--text); box-shadow: 0 0 0 3px var(--surface2); }
+.hv-versies__punt.is-gekozen .hv-versies__knop { background: var(--surface2); border-color: var(--text); }
+.hv-versies__nr { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-versies__punt.is-nu .hv-versies__nr { color: var(--text); }
+.hv-versies__wat { font-weight: 600; font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); }
+.hv-versies__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+@media (hover: hover) { .hv-versies__punt:not(.is-gekozen) .hv-versies__knop:hover { background: var(--surface); } }
+
+.hv-verschil { display: grid; gap: var(--ruimte-1); margin-block: var(--ruimte-2); }
+.hv-verschil li { display: grid; grid-template-columns: 24px auto minmax(0, 1fr); align-items: baseline; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); font-size: var(--tekst-klein); background: var(--surface); }
+.hv-verschil li.is-plus { background: var(--ok-zacht); }
+.hv-verschil li.is-min { background: var(--fout-zacht); }
+.hv-verschil__teken { font-weight: 700; font-size: var(--tekst-basis); text-align: center; color: var(--text); }
+.hv-verschil__sectie { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.hv-verschil li.is-min .hv-verschil__tekst { text-decoration: line-through; text-decoration-thickness: 1px; }
+.hv-aut-vergelijk { border: var(--hv-streep) dashed var(--hv-omtrek); }
+
+/* ───────────── Сцени (hv-scenetegel) ───────────── */
+.hv-scenetegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--hv-kier); margin-block-start: var(--ruimte-2); }
+.hv-scenetegel {
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: var(--ruimte-2) var(--ruimte-3);
+  padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0;
+}
+.hv-scenetegel.is-actief { border: 2px solid var(--text); padding: calc(var(--ruimte-3) - 1px); background: var(--panel); }
+.hv-scenetegel__start { display: grid; place-items: center; inline-size: 60px; block-size: 60px; border-radius: 50%; background: var(--surface); border: var(--hv-streep) solid var(--hv-omtrek); color: var(--text); transition: transform var(--hv-duur-1), background var(--hv-duur-1); }
+.hv-scenetegel.is-actief .hv-scenetegel__start { background: var(--text); color: var(--panel); border-color: var(--text); }
+.hv-scenetegel__start:active { transform: scale(0.93); }
+.hv-scenetegel__lijf { display: grid; gap: 2px; min-inline-size: 0; min-block-size: 60px; text-align: start; align-content: center; border-radius: var(--straal-s); }
+.hv-scenetegel__naam { font-weight: 600; line-height: var(--hv-regel-basis); }
+.hv-scenetegel__sub { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-scenetegel__staven { display: flex; align-items: flex-end; gap: 3px; block-size: 24px; margin-block-start: 4px; }
+.hv-scenetegel__staven i { inline-size: 6px; min-block-size: 3px; border-radius: 2px; background: var(--text); opacity: 0.78; }
+.hv-scenetegel__chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ruimte-2); }
+.hv-scenetegel__chips:empty { display: none; }
+@media (hover: hover) { .hv-scenetegel__start:hover { background: var(--surface2); } .hv-scenetegel__lijf:hover .hv-scenetegel__naam { text-decoration: underline; text-underline-offset: 0.2em; } }
+.hv-scenemeter { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-scenemeter__getal { grid-row: 1 / span 2; font-size: var(--hv-getal-m); font-weight: 600; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hv-scenemeter__getal > span { font-size: var(--tekst-basis); font-weight: 500; color: var(--muted); }
+.hv-scenemeter__tekst { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-scenemeter__balk { block-size: 8px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.hv-scenemeter__balk > i { display: block; block-size: 100%; background: var(--text); border-radius: inherit; }
+.hv-scenegroep + .hv-scenegroep { margin-block-start: var(--ruimte-2); }
+.hv-scenegroep .hv-wasword__rij { grid-template-columns: auto minmax(0, 1fr) auto; }
+
+/* добова сцена */
+.hv-dagdeel__rij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); }
+.hv-dagdeel__deel { display: grid; gap: 2px; justify-items: start; min-block-size: 76px; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border: 2px solid transparent; text-align: start; }
+.hv-dagdeel__deel.is-nu { background: var(--panel); border-color: var(--text); }
+.hv-dagdeel__naam { font-weight: 700; font-size: var(--tekst-klein); }
+.hv-dagdeel__uren { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hv-dagdeel__scene { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+@container aut (min-width: 520px) { .hv-aut-kolom--hoofd .hv-dagdeel__rij { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ───────────── Режими дому ───────────── */
+.hv-regie { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); padding: var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-klein); }
+.hv-regie > .hv-ic { flex: none; color: var(--muted); }
+.hv-regie__tekst { flex: 1 1 200px; font-weight: 600; }
+.hv-regie__acties { display: inline-flex; align-items: center; gap: var(--ruimte-1); flex: none; margin-inline-start: auto; }
+.hv-regie.is-vast { background: var(--surface2); border: 1.5px solid var(--text); }
+.hv-regie.is-vast > .hv-ic { color: var(--text); }
+.hv-standkaarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--hv-kier); }
+.hv-standkaart { display: grid; grid-template-rows: 1fr auto; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; min-inline-size: 0; }
+.hv-standkaart.is-nu { border: 2px solid var(--text); background: var(--panel); }
+.hv-standkaart__lijf { display: grid; align-content: start; justify-items: start; gap: 4px; padding: var(--ruimte-4) var(--ruimte-4) var(--ruimte-2); text-align: start; min-block-size: 132px; }
+.hv-standkaart__teken { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 14px; background: var(--surface2); color: var(--text); margin-block-end: 4px; }
+.hv-standkaart.is-nu .hv-standkaart__teken { background: var(--text); color: var(--panel); }
+.hv-standkaart__naam { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-weight: 700; }
+.hv-standkaart__nu { display: inline-flex; align-items: center; min-block-size: 20px; padding-inline: 8px; border-radius: 999px; background: var(--accent-soft); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; }
+.hv-standkaart__gevolg { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-standkaart__meta { font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-standkaart__voet { padding: 0 var(--ruimte-4) var(--ruimte-3); }
+.hv-standkaart__voet .hv-knop { inline-size: 100%; }
+@container aut (max-width: 619px) {
+  .hv-standkaarten { grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-2); }
+  .hv-standkaart { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; }
+  .hv-standkaart__lijf { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--ruimte-3); min-block-size: 0; padding: var(--ruimte-3); }
+  .hv-standkaart__teken { grid-row: 1 / span 3; margin: 0; }
+  .hv-standkaart__voet { padding: 0 var(--ruimte-3) 0 0; }
+  .hv-standkaart__voet .hv-knop { inline-size: auto; }
+}
+
+.hv-matrix { inline-size: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--tekst-klein); }
+.hv-matrix th, .hv-matrix td { padding: 2px 4px; border-block-end: 1px solid var(--line); text-align: center; }
+.hv-matrix thead th { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); padding-block: var(--ruimte-2); }
+.hv-matrix thead th:first-child { text-align: start; }
+.hv-matrix tbody th { text-align: start; font-weight: 600; position: sticky; inset-inline-start: 0; background: var(--panel); z-index: 1; }
+.hv-matrix__kop { display: inline-grid; justify-items: center; gap: 2px; }
+.hv-matrix__regel { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); text-align: start; padding-inline-end: var(--ruimte-2); min-inline-size: 160px; }
+.hv-matrix__cel { display: inline-grid; place-items: center; inline-size: var(--hv-tik); block-size: var(--hv-tik); border-radius: var(--straal-s); color: var(--muted); }
+.hv-matrix__cel.is-aan { color: var(--text); }
+.hv-matrix__cel.is-aan .hv-ic { inline-size: 28px; block-size: 28px; padding: 5px; border-radius: 8px; background: var(--surface2); box-shadow: inset 0 0 0 1.5px var(--text); }
+@media (hover: hover) { .hv-matrix__cel:hover { background: var(--surface); } }
+
+.hv-overgang { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding-block: var(--ruimte-2); }
+.hv-overgang + .hv-overgang { border-block-start: 1px solid var(--line); }
+.hv-overgang > .hv-stapper { grid-column: 2; justify-self: start; }
+.hv-overgang .hv-stapper__getal { font-size: var(--tekst-basis); min-inline-size: 64px; text-align: center; }
+.hv-overgang__zin { display: grid; gap: 2px; font-size: var(--tekst-klein); font-weight: 600; line-height: var(--hv-regel-klein); }
+.hv-overgang__zin .hv-rij__sub { font-weight: 500; }
+@container aut (min-width: 980px) { .hv-aut-kolom--hoofd .hv-overgang { grid-template-columns: auto minmax(0, 1fr) auto; } .hv-aut-kolom--hoofd .hv-overgang > .hv-stapper { grid-column: auto; } }
+.hv-aut-gevolglijst { display: grid; gap: var(--ruimte-2); }
+.hv-aut-gevolglijst li { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); }
+.hv-aut-gevolglijst li > .hv-ic { flex: none; margin-block-start: 1px; color: var(--muted); }
+.hv-aut-bewaking { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2) var(--ruimte-3); align-items: center; margin-block-start: var(--ruimte-4); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-aut-bewaking > .hv-ic { inline-size: 32px; block-size: 32px; padding: 6px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.hv-aut-bewaking > .hv-knop { grid-column: 1 / -1; justify-self: start; }
+.hv-aut-bewaking__naam { font-weight: 600; font-size: var(--tekst-klein); }
+.hv-aut-bewaking__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-aut-standregel .hv-schakel { flex: none; }
+
+/* «Зберегти поточне»: що ввійде */
+.hv-snlijst { display: grid; }
+.hv-snrij { display: grid; grid-template-columns: var(--hv-tik) auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); border-block-start: 1px solid var(--line); }
+.hv-snrij:first-child { border-block-start: 0; }
+.hv-snrij__vak { display: grid; place-items: center; inline-size: var(--hv-tik); block-size: var(--hv-tik); position: relative; color: var(--muted); }
+.hv-snrij__vak::before { content: ""; position: absolute; inset: 10px; border-radius: 7px; border: var(--hv-streep) solid var(--hv-omtrek); background: var(--panel); }
+.hv-snrij__vak > .hv-ic { position: relative; }
+.hv-snrij__vak.is-aan { color: var(--panel); }
+.hv-snrij__vak.is-aan::before { background: var(--text); border-color: var(--text); }
+.hv-snrij.is-onbekend .hv-snrij__vak::before { border-style: dashed; background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 30%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 5px); }
+.hv-snrij__teken { color: var(--muted); }
+.hv-snrij__tekst { display: grid; min-inline-size: 0; }
+.hv-snrij__naam { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-snrij__waarde { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+
+/* ───────────── Порядок дня (hv-agenda) ───────────── */
+.hv-agenda-strook { padding-block-end: var(--ruimte-3); }
+.hv-agenda-kaart { padding: var(--ruimte-4) var(--ruimte-3); }
+.hv-agenda__dag + .hv-agenda__dag { margin-block-start: var(--ruimte-5); }
+.hv-agenda__dagkop { position: sticky; inset-block-start: 0; z-index: 1; padding: var(--ruimte-1) var(--ruimte-2); margin-block-end: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 700; color: var(--text); background: var(--panel); }
+.hv-agenda { position: relative; display: grid; }
+.hv-agenda::before { content: ""; position: absolute; inset-block: 8px; inset-inline-start: 63px; inline-size: 2px; background: var(--line); }
+.hv-agenda__rij, .hv-agenda__nu { position: relative; display: grid; grid-template-columns: 48px 16px minmax(0, 1fr); align-items: start; gap: 0 var(--ruimte-2); }
+.hv-agenda__rij > .hv-agenda__knop { grid-column: 3; padding-block-end: var(--ruimte-2); }
+.hv-agenda__tijd { padding-block-start: 14px; font-size: var(--tekst-klein); font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; }
+.hv-agenda__punt { position: relative; z-index: 1; justify-self: center; margin-block-start: 18px; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--panel); border: 2px solid var(--text); }
+.hv-agenda__rij.is-voorbij .hv-agenda__punt { background: var(--hv-omtrek); border-color: var(--hv-omtrek); }
+.hv-agenda__rij.is-voorbij .hv-agenda__tijd, .hv-agenda__rij.is-voorbij .hv-agenda__naam { color: var(--muted); }
+.hv-agenda__rij.is-zon .hv-agenda__punt { border-radius: 3px; border-style: dashed; }
+.hv-agenda__lijf { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: var(--ruimte-1) var(--ruimte-3); inline-size: 100%; min-block-size: var(--hv-tik); padding: var(--ruimte-2) var(--ruimte-2); border-radius: var(--straal-m); text-align: start; }
+button.hv-agenda__lijf:active { background: var(--surface2); }
+@media (hover: hover) { button.hv-agenda__lijf:hover { background: var(--surface); } }
+.hv-agenda__teken { display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 10px; background: var(--surface); color: var(--text); }
+.hv-agenda__teken--regel { background: var(--surface2); }
+.hv-agenda__teken--energie { background: var(--hv-auto-zacht); color: var(--hv-auto); }
+.hv-agenda__teken--zon { background: var(--hv-zon-zacht); color: var(--hv-zon); }
+.hv-agenda__teken--afval { background: var(--ok-zacht); color: var(--ok); }
+.hv-agenda__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-agenda__naam { font-size: var(--tekst-klein); font-weight: 600; line-height: var(--hv-regel-klein); }
+.hv-agenda__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-agenda__status { display: flex; flex-wrap: wrap; gap: 4px; margin-block-start: 2px; }
+.hv-agenda__status .hv-chip { min-block-size: 24px; }
+.hv-agenda__pijl { color: var(--muted); align-self: center; }
+.hv-agenda__nu { align-items: center; min-block-size: 32px; }
+.hv-agenda__nu .hv-agenda__tijd { padding: 0; color: var(--text); }
+.hv-agenda__nustreep { grid-column: 2 / -1; position: relative; display: flex; align-items: center; block-size: 2px; background: var(--accent); border-radius: 2px; }
+.hv-agenda__nustreep > span { position: absolute; inset-inline-start: 24px; padding: 0 8px; border-radius: 999px; background: var(--accent); color: var(--accentText); font-size: var(--tekst-mini); font-weight: 600; line-height: 20px; }
+.hv-agenda__nustreep::before { content: ""; position: absolute; inset-inline-start: 2px; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--accent); }
+.hv-agenda__leeg { padding: var(--ruimte-3) 0 var(--ruimte-3) 72px; font-size: var(--tekst-klein); color: var(--muted); }
+@container aut (min-width: 620px) {
+  .hv-agenda__rij { grid-template-columns: 48px 16px minmax(0, 1fr) auto; }
+  .hv-agenda__rij > .hv-agenda__knop { grid-column: auto; align-self: center; padding: 0; }
+}
+
+/* тижневий розклад */
+.hv-week { display: grid; gap: 6px; }
+.hv-week__rij { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: var(--ruimte-2); }
+.hv-week__dag { font-size: var(--tekst-mini); font-weight: 700; color: var(--muted); }
+.hv-week__rij.is-vandaag .hv-week__dag { color: var(--text); }
+.hv-week__spoor { position: relative; block-size: 22px; border-radius: 6px; background: var(--surface); }
+.hv-week__rij.is-vandaag .hv-week__spoor { box-shadow: inset 0 0 0 1.5px var(--hv-omtrek); }
+.hv-week__blok { position: absolute; inset-block: 3px; border-radius: 4px; background: var(--hv-warm-zacht); box-shadow: inset 0 0 0 1px var(--hv-warm); }
+.hv-week__merk { position: absolute; inset-block-start: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; inline-size: 16px; block-size: 16px; border-radius: 50%; background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+.hv-week__nu { position: absolute; inset-block: -3px; inline-size: 2px; margin-inline-start: -1px; background: var(--accent); border-radius: 2px; }
+.hv-week__as .hv-week__spoor { background: none; block-size: 16px; }
+.hv-week__uur { position: absolute; transform: translateX(-50%); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hv-week__uur.is-begin { transform: none; }
+.hv-week__uur.is-eind { transform: translateX(-100%); }
+.hv-week__legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-block-start: var(--ruimte-3); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-week__leg-blok { inline-size: 16px; block-size: 10px; border-radius: 3px; background: var(--hv-warm-zacht); box-shadow: inset 0 0 0 1px var(--hv-warm); }
+
+/* ───────────── Аркуші (вузька колонка) ───────────── */
+.hv-laag .hv-regelzin { font-size: var(--tekst-klein); }
+.hv-laag .hv-recepten, .hv-laag .hv-intenties { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.hv-laag .hv-zonboog__veld { block-size: 120px; }
+.hv-laag .hv-zonboog.heeft-doel .hv-zonboog__veld { block-size: 146px; }
+
+/* ───────────── Чорнило ───────────── */
+.theme-inkt .hv-regelkop, .theme-inkt .hv-aut-subkop, .theme-inkt .hv-scenetegel.is-actief, .theme-inkt .hv-standkaart.is-nu { background: var(--panel); }

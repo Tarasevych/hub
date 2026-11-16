@@ -45,7 +45,8 @@ async function deur(method: 'GET' | 'POST', pad: string, body?: unknown): Promis
   return { status: res.status, data };
 }
 
-export type DeurVerzoek = { clientName: string; redirectHost: string; redirectSoort: 'web' | 'loopback' | 'app' | null; deur: string; resource: string; expiresAt: number; scope: string };
+/** bindingHash (SEC-002 ai-mcp-14 / toets g10e-toets-5): SHA-256 van het bindingscookie van de browser die de autorisatie bij de deur begon; null = oude deur. */
+export type DeurVerzoek = { clientName: string; redirectHost: string; redirectSoort: 'web' | 'loopback' | 'app' | null; deur: string; resource: string; expiresAt: number; scope: string; bindingHash: string | null };
 export async function deurVerzoek(rid: string): Promise<DeurVerzoek | null> {
   if (!isDeurRid(rid)) return null;
   const r = await deur('GET', `/intern/verzoek?rid=${encodeURIComponent(rid)}`);
@@ -55,6 +56,7 @@ export async function deurVerzoek(rid: string): Promise<DeurVerzoek | null> {
     clientName: String(r.data.clientName || 'MCP-client').slice(0, 80), redirectHost: String(r.data.redirectHost || '').slice(0, 200),
     redirectSoort: ['web', 'loopback', 'app'].includes(r.data.redirectSoort) ? r.data.redirectSoort : null,
     deur: String(r.data.deur || '').slice(0, 40), resource: String(r.data.resource || '').slice(0, 200), expiresAt: Number(r.data.expiresAt) || 0, scope: 'read',
+    bindingHash: typeof r.data.bindingHash === 'string' && /^[0-9a-f]{64}$/.test(r.data.bindingHash) ? r.data.bindingHash : null,
   };
 }
 export async function deurBesluit(rid: string, approve: boolean, duur: DuurId, wie: { id: string; email?: string }): Promise<{ redirect: string } | null> {
@@ -74,6 +76,22 @@ export async function deurIntrekken(id: string): Promise<boolean> {
   if (!/^[A-Za-z0-9_-]{6,40}$/.test(id)) return false;
   const r = await deur('POST', '/intern/intrekken', { id });
   return r.status === 200;
+}
+
+/**
+ * SEC-002 / VEILIG-002 (noodstop): при аварійній зупинці, блокуванні користувача або відкликанні технічного простору
+ * закрити й активні OAuth-підключення на серверній MCP-двері (deploy/mcp/server.mjs). Якщо двері не працюють (BYOS),
+ * безпечно повертає 0 і не зупиняє решту блокування.
+ */
+export async function deurIntrekkenVoorGebruiker(userId: string, eigenaar = false): Promise<number> {
+  if (!userId || !(await internSleutel())) return 0;
+  let lijst: DeurVerbinding[];
+  try { lijst = await deurVerbindingen(); }
+  catch { return 0; }
+  const doelen = lijst.filter((v) => v.wie?.id === userId || (eigenaar && !v.wie?.id));
+  if (!doelen.length) return 0;
+  const res = await Promise.allSettled(doelen.map((v) => deurIntrekken(v.id)));
+  return res.filter((r) => r.status === 'fulfilled' && r.value === true).length;
 }
 
 /** Komt dit verzoek van de deur zelf? (loopback, geen tunnelkoppen, juiste sleutel; tijdconstant vergeleken) */

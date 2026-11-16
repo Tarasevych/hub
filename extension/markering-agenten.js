@@ -10,7 +10,8 @@ export const MARKERING_MAX_AGENTEN = 3;
 
 /** Standaardaccent per agent (namen uit ACCENTEN van shared/menu-model.ts). */
 export const AGENT_ACCENT = Object.freeze({
-  claude: 'oranje', gpt: 'teal', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo', antigravity: 'hemel', autoclaw: 'groen',
+  claude: 'oranje', gpt: 'teal', codex: 'limoen', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo', antigravity: 'hemel', autoclaw: 'groen',
+  windsurf: 'roze', cline: 'oker', devin: 'bruin', opencode: 'rood',
 });
 export const ONBEKEND_ACCENT = 'grijs';
 
@@ -43,12 +44,17 @@ export const ONBEKENDE_KLEUR = Object.freeze(kleurVanAccent(ONBEKEND_ACCENT));
 export function agentSlugUitNaam(v) {
   const t = String(v ?? '').trim().toLowerCase();
   if (!t) return null;
-  if (t === 'claude' || t === 'gpt' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor' || t === 'antigravity' || t === 'autoclaw') return t;
+  if (t === 'claude' || t === 'gpt' || t === 'codex' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor' || t === 'antigravity' || t === 'autoclaw' || t === 'windsurf' || t === 'cline' || t === 'devin' || t === 'opencode') return t;
+  if (/\bcodex\b/.test(t)) return 'codex';
   if (/chatgpt|openai|\bgpt/.test(t)) return 'gpt';
   if (/claude|anthropic/.test(t)) return 'claude';
   if (/grok|\bxai\b|x\.ai/.test(t)) return 'grok';
   if (/antigravity|jetski/.test(t)) return 'antigravity';
   if (/autoclaw|openclaw|zhipu|chatglm|\bglm\b|z\.ai|\bzai\b/.test(t)) return 'autoclaw';
+  if (/windsurf|codeium|cascade/.test(t)) return 'windsurf';
+  if (/\bcline\b|roo code|roocode/.test(t)) return 'cline';
+  if (/devin|cognition/.test(t)) return 'devin';
+  if (/opencode|open code/.test(t)) return 'opencode';
   if (/gemini|google ai|bard/.test(t)) return 'gemini';
   if (/copilot|vscode|visual studio code/.test(t)) return 'copilot';
   if (/cursor/.test(t)) return 'cursor';
@@ -64,7 +70,8 @@ export function kleurVoorAgent(slug, accent) {
 }
 
 export const AGENT_NAAM = Object.freeze({
-  claude: 'Claude', gpt: 'ChatGPT', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity', autoclaw: 'AutoClaw',
+  claude: 'Claude', gpt: 'ChatGPT', codex: 'Codex', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity', autoclaw: 'AutoClaw',
+  windsurf: 'Windsurf', cline: 'Cline', devin: 'Devin', opencode: 'OpenCode',
 });
 
 /** Welke actie hoort bij welke browseropdracht ([uk, nl]). */

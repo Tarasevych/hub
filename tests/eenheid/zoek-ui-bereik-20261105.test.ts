@@ -57,8 +57,10 @@ export async function main(): Promise<number> {
   const DOOD = ['src/AgentenPaneel.tsx', 'src/McpConnectorPaneel.tsx', 'src/agenten/ExtensieTechAanbod.tsx', 'src/BeheerSleutelsWeergave.tsx', 'src/bureau/Bureau.tsx', 'src/agenten/VerbindingenHub.tsx'];
   check('3b dode bestanden (geen enkele import) zijn niet bereikbaar', DOOD.every((f) => !is(f)), DOOD.filter(is).join(','));
   const dood3 = gen.onbereikbaar(wortel, geladen) as string[];
-  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 16 stuks (14 zonder import, 2 alleen vanuit andere dode bestanden)',
-    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 16 && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
+  // SEC-002 (server-uitrol-06): src/ssh/SshCertificaat.tsx is nu bereikbaar (SshBeheer laadt het venster voor het certificaat) —
+  // dus 15 i.p.v. 16, en het bestand mag niet meer in de lijst staan. / SshCertificaat.tsx тепер досяжний: 15 замість 16.
+  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 15 stuks (SshCertificaat.tsx is sinds SEC-002 bereikbaar)',
+    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 15 && !dood3.includes('src/ssh/SshCertificaat.tsx') && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
     `${dood3.length}: ${dood3.join(', ')}`);
   check('3c en ze leveren geen enkel element aan de catalogus', !UI_ELEMENTEN.some((e) => DOOD.includes(e.bestand)), UI_ELEMENTEN.filter((e) => DOOD.includes(e.bestand)).map((e) => `${e.bestand}:${e.uk}`).join(', '));
 

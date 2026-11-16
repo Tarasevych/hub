@@ -22,6 +22,8 @@ import { checker } from './hulp/nep-google';
 const P: RegisterContext = { ruimte: 'prive', rechten: { apiPlatform: false, eigenaar: false } };
 const PA: RegisterContext = { ruimte: 'prive', rechten: { apiPlatform: true, eigenaar: true } };
 const T: RegisterContext = { ruimte: 'technisch', rechten: { apiPlatform: true, eigenaar: true } };
+/** BIB-002: privéruimte van iemand MET technische toegang (technisch profiel van de eigenaar of een gemachtigde). */
+const PT: RegisterContext = { ...PA, techToegang: true };
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('werkblad-register-20261027');
@@ -44,8 +46,18 @@ export async function main(): Promise<number> {
 
   // rechten
   const svc = (id: string) => registerItem(id)!;
-  check('technisch: api/admin + beheerpagina\'s + tech-widgets alleen in de technische ruimte',
-    WERKBLAD_REGISTER.filter((r) => r.dienst === 'api' || r.dienst === 'admin' || (r.id.startsWith('pg:') && isBeheerPagina(r.dienst!, r.id.split('/')[1])) || r.id.startsWith('wdg:tech-')).every((r) => r.categorie === 'technisch' && !toegestaanVoor(r, PA).ok && (r.beschikbaarheid !== 'ready' || toegestaanVoor(r, T).ok)));
+  const technisch = WERKBLAD_REGISTER.filter((r) => r.dienst === 'api' || r.dienst === 'admin' || (r.id.startsWith('pg:') && isBeheerPagina(r.dienst!, r.id.split('/')[1])) || r.id.startsWith('wdg:tech-'));
+  check('technisch: api/admin + beheerpagina\'s + tech-widgets — zonder technische toegang nooit in privé, in de technische ruimte wel',
+    technisch.length > 20 && technisch.every((r) => r.categorie === 'technisch' && !toegestaanVoor(r, PA).ok && !toegestaanVoor(r, P).ok && (r.beschikbaarheid !== 'ready' || toegestaanVoor(r, T).ok)));
+  // BIB-002: snelkoppelingen naar technische pagina's zijn DEUREN — met technische toegang ook op het privéwerkblad; widgets niet.
+  check('BIB-002: technische snelkoppelingen = deur (techDeur), in privé alleen mét technische toegang',
+    technisch.filter((r) => r.kind === 'shortcut').every((r) => r.techDeur === true && r.ruimtes.includes('prive') && (r.beschikbaarheid !== 'ready' || toegestaanVoor(r, PT).ok))
+    && JSON.stringify(launchDoel(svc('pg:admin/updates'), PT)) === '{"dienst":"admin","tab":"updates"}' && !launchDoel(svc('pg:admin/updates'), PA));
+  check('BIB-002: technische widgets blijven alleen in de technische ruimte, ook mét technische toegang (ze tonen technische gegevens)',
+    technisch.filter((r) => r.kind === 'widget').every((r) => !r.techDeur && !r.ruimtes.includes('prive') && !toegestaanVoor(r, PT).ok));
+  check('BIB-002: reden zonder toegang verwijst naar de eigenaar; widget legt uit waarom alleen technisch',
+    (() => { const a = toegestaanVoor(svc('pg:admin/updates'), PA); const b = toegestaanVoor(svc('wdg:tech-server'), PT); return !a.ok && a.reden.uk.includes('власник') && !b.ok && b.reden.uk.includes('технічні дані'); })());
+  check('BIB-002: gewone items krijgen geen deur-vlag', WERKBLAD_REGISTER.filter((r) => r.categorie !== 'technisch').every((r) => !r.techDeur));
   check('mcp: zonder api-platform geweigerd in privé, mét toegestaan', !toegestaanVoor(svc('svc:mcp'), P).ok && toegestaanVoor(svc('svc:mcp'), PA).ok && !toegestaanVoor(svc('cmd:bord-openen'), P).ok);
   check('gewone dienst in privé toegestaan, en beperking via ctx.diensten', toegestaanVoor(svc('svc:mail'), P).ok && !toegestaanVoor(svc('svc:mail'), { ...P, diensten: ['ai'] }).ok);
   check('planned (social, GitHub-widget) zichtbaar met reden, nooit startbaar', beschikbaarheidVoor(svc('svc:social'), PA) === 'planned' && !launchDoel(svc('svc:social')) && beschikbaarheidVoor(svc('wdg:github'), PA) === 'planned' && !!svc('wdg:github').reden?.uk);
@@ -67,7 +79,7 @@ export async function main(): Promise<number> {
   check('persoonlijk: eigen naam (gesaneerd) en icoon, basis blijft', !!u && u.titel.uk === 'bМій спам/b' && u.icoon === 'star' && u.basis === 'pg:mail/spam' && svc('pg:mail/spam').titel.uk === 'Спам');
   check('persoonlijk: geen vrij icoon/URL, geen widget/usr als basis, ongeldige id geweigerd',
     persoonlijkItem({ id: 'usr:k2', basis: 'svc:mail', icoon: 'https://x/y.svg' })?.icoon === 'mail' && !persoonlijkItem({ id: 'usr:k3', basis: 'wdg:post' }) && !persoonlijkItem({ id: 'usr:K!', basis: 'svc:mail' }) && !persoonlijkItem({ id: 'usr:k4', basis: 'https://evil' }));
-  check('persoonlijk erft rechten van de basis', !!u && toegestaanVoor(u, P).ok && !toegestaanVoor(persoonlijkItem({ id: 'usr:k5', basis: 'pg:admin/audit' })!, PA).ok);
+  check('persoonlijk erft rechten van de basis', !!u && toegestaanVoor(u, P).ok && !toegestaanVoor(persoonlijkItem({ id: 'usr:k5', basis: 'pg:admin/audit' })!, PA).ok && toegestaanVoor(persoonlijkItem({ id: 'usr:k5', basis: 'pg:admin/audit' })!, PT).ok);
 
   // contract
   check('contract: event- en MIME-naam', BIBLIOTHEEK_EVENT === 'werkblad-bibliotheek:toevoegen' && BIBLIOTHEEK_MIME === 'application/x-werkblad-bibliotheek');
@@ -80,7 +92,9 @@ export async function main(): Promise<number> {
   // integratie (etappe D): serverhaken
   check('haken: map:m1 = map, usr: alleen met bestaande basis, onbekend/verkeerde soort weg', H.itemToegestaan('map:m1', 'folder', 'prive', 'telefoon') && H.itemToegestaan('usr:k1', 'shortcut', 'prive', 'computer', { basis: 'pg:mail/inbox' })
     && !H.itemToegestaan('usr:k1', 'shortcut', 'prive', 'computer', { basis: 'https://x.test' }) && !H.itemToegestaan('usr:k1', 'shortcut', 'prive', 'computer') && !H.itemToegestaan('pg:mail/nope', 'shortcut', 'prive', 'computer') && !H.itemToegestaan('svc:mail', 'widget', 'prive', 'computer'));
-  check('haken: privé/technisch gescheiden (beheerpagina/technische widget alleen technisch)', !H.itemToegestaan('pg:admin/audit', 'shortcut', 'prive', 'computer') && H.itemToegestaan('pg:admin/audit', 'shortcut', 'technisch', 'computer') && !H.itemToegestaan('wdg:tech-server', 'widget', 'prive', 'computer') && H.itemToegestaan('wdg:tech-server', 'widget', 'technisch', 'computer'));
+  // BIB-002: een deur (snelkoppeling naar een beheerpagina) mag op de privélaag staan — een positie is geen recht: de klik
+  // controleert opnieuw (toegestaanVoor + TechPoort op de doelpagina). Technische widgets (gegevens) blijven gescheiden.
+  check('haken: technische widget alleen technisch; deur naar beheerpagina mag op beide lagen', H.itemToegestaan('pg:admin/audit', 'shortcut', 'prive', 'computer') && H.itemToegestaan('pg:admin/audit', 'shortcut', 'technisch', 'computer') && !H.itemToegestaan('wdg:tech-server', 'widget', 'prive', 'computer') && H.itemToegestaan('wdg:tech-server', 'widget', 'technisch', 'computer'));
   check('haken: grenzen uit het register; singleton', H.grenzen('wdg:post', 'widget')?.min.w === registerItem('wdg:post')!.minAfm.w && H.grenzen('usr:k1', 'shortcut')?.min.w === 72 && H.grenzen('map:m3', 'folder')?.max.w === 192 && H.grenzen('wdg:post', 'shortcut') === undefined && H.singleton('wdg:begroeting') === !!registerItem('wdg:begroeting')!.singleton);
   const telLaag = normaliseerLaag({ canvasWidth: 390, items: [{ instanceId: 'a', itemId: 'wdg:begroeting', kind: 'widget', x: 50, y: 0, w: 5000, h: 10, z: 1 }] }, 'telefoon', { ruimte: 'prive', ...H });
   check('minimum breder dan het canvas (v2-widget op 390 px) → canvasbreedte, nooit buiten beeld', telLaag.items[0].w <= 390 && telLaag.items[0].x + telLaag.items[0].w <= 390 && grenzenVan(() => ({ minW: 1200 }), 'wdg:x', 390).minW === 390);

@@ -135,6 +135,7 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   BASIS_ONGELDIG: { uk: 'UITROL-BASIS у пакеті неповний', nl: 'UITROL-BASIS in het pakket is onvolledig', doenUk: 'Збирайте пакет через node scripts/orch.mjs pakket — він сам пише versie= і commit= встановленої бази.', doenNl: 'Bouw het pakket met node scripts/orch.mjs pakket — dat schrijft versie= en commit= van de geïnstalleerde basis zelf.' },
   BASIS_VEROUDERD: { uk: 'Пакет зібрано на застарілій базі', nl: 'Pakket gebouwd op een verouderde basis', doenUk: 'На сервері вже стоїть новіша версія. Перебазуйте зміни на встановлену версію (git rebase на integratie), повторіть тести й зберіть знову.', doenNl: 'Op de server staat al een nieuwere versie. Rebase op de geïnstalleerde versie (git rebase op integratie), test opnieuw en bouw opnieuw.' },
   BASIS_COMMIT_VERSCHILT: { uk: 'Базовий commit пакета не збігається зі встановленим', nl: 'Basiscommit van het pakket is niet de geïnstalleerde', doenUk: 'Код на сервері відрізняється від того, від якого працював агент. Звірте orchestratie/geinstalleerd.json з сервером і перебазуйтесь.', doenNl: 'De code op de server verschilt van waar de agent van vertrok. Vergelijk orchestratie/geinstalleerd.json met de server en rebase.' },
+  MIGRATIES_ONTBREKEN: { uk: 'В архіві відсутні вже застосовані на сервері міграції', nl: 'Al op de server toegepaste migraties ontbreken in het archief', doenUk: 'Пакунок зібрано від застарілої або неповної гілки й міг би затерти новіші зміни сервера. Перенесіть гілку на актуальну інтеграційну основу (integratie), повторіть перевірки й зберіть новий випуск.', doenNl: 'Het pakket is op een verouderde of onvolledige tak gebouwd en zou nieuwere wijzigingen overschrijven. Zet de tak over op de actuele integratietak (integratie), voer de controles opnieuw uit en bouw een nieuwe release.' },
   GEEN_BASIS: { uk: 'У пакеті немає UITROL-BASIS', nl: 'UITROL-BASIS ontbreekt', doenUk: 'Для нових випусків обовʼязково: збирайте через node scripts/orch.mjs pakket або задайте BASIS_VERSIE і BASIS_COMMIT при maak-voorstelpakket.sh.', doenNl: 'Verplicht voor nieuwe releases: bouw met node scripts/orch.mjs pakket of geef BASIS_VERSIE en BASIS_COMMIT aan maak-voorstelpakket.sh.' },
   REGELS_NIET_VERGRENDELD: { uk: 'Правила в пакеті не збігаються з lock', nl: 'Regels in het pakket wijken af van de lock', doenUk: 'Підвищте regelsVersie в orchestratie/beleid.json, додайте рішення в BESLUITEN.md, виконайте node scripts/orch.mjs vergrendel і зберіть знову.', doenNl: 'Verhoog regelsVersie in orchestratie/beleid.json, voeg een besluit toe in BESLUITEN.md, voer node scripts/orch.mjs vergrendel uit en bouw opnieuw.' },
   MODUS_NIET_TOEGESTAAN: { uk: 'Режим встановлення не дозволений політикою', nl: 'Installatiemodus niet toegestaan door het beleid', doenUk: 'Автоматичний режим (GitOps) потребує «automatisch_beperkt» у kritiek.installatieModi і підпису власника в regels.lock.json. Встановіть через підтвердження passkey або вручну.', doenNl: 'Automatische modus (GitOps) vraagt «automatisch_beperkt» in kritiek.installatieModi en de handtekening van de eigenaar in regels.lock.json. Installeer via passkey-bevestiging of handmatig.' },
@@ -142,6 +143,10 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
 
   // ---- passkey-hulp (webauthn-kern.mjs): SSH-CA-goedkeuring met een onbekende actie (alleen «voorbereiden»/«aanzetten» zijn geldig)
   ACTIE_ONGELDIG: { uk: 'Невідома дія для SSH-сертифікатів', nl: 'Onbekende actie voor SSH-certificaten', doenUk: 'Оновіть сторінку «SSH-сертифікати» і повторіть дію; підтвердження passkey діє лише для «Підготувати» або «Увімкнути».', doenNl: 'Vernieuw de pagina «SSH-certificaten» en herhaal de actie; de passkey-bevestiging geldt alleen voor «Voorbereiden» of «Aanzetten».' },
+  // ---- passkey-hulp (webauthn-kern.mjs, SEC-002 server-uitrol-06): de challenge voor het tekenen van ÉÉN SSH-certificaat
+  SLEUTELHASH_ONGELDIG: { uk: 'Відбиток SSH-ключа в запиті на сертифікат недійсний', nl: 'Vingerafdruk van de SSH-sleutel in de certificaataanvraag ongeldig', doenUk: 'Оновіть сторінку «SSH-сертифікати», вставте відкритий ключ ще раз і повторіть запит; підтвердження ключем доступу стосується саме цього ключа.', doenNl: 'Vernieuw de pagina «SSH-certificaten», plak de publieke sleutel opnieuw en vraag het certificaat nog eens aan; de bevestiging met uw toegangssleutel geldt precies voor die sleutel.' },
+  TOEGANG_ONGELDIG: { uk: 'Перелік облікових записів для SSH-сертифіката недійсний (від 1 до 8 різних імен, лише дозволені символи)', nl: 'Lijst met accounts voor het SSH-certificaat ongeldig (1 tot 8 verschillende namen, alleen toegestane tekens)', doenUk: 'Виберіть облікові записи на сторінці «SSH-сертифікати» ще раз (без повторів) і повторіть запит.', doenNl: 'Kies de accounts op de pagina «SSH-certificaten» opnieuw (zonder dubbele) en vraag opnieuw aan.' },
+  MINUTEN_ONGELDIG: { uk: 'Строк дії SSH-сертифіката має бути цілим числом від 5 до 60 хвилин', nl: 'De geldigheid van het SSH-certificaat moet een geheel getal van 5 tot 60 minuten zijn', doenUk: 'Виберіть строк від 5 до 60 хвилин на сторінці «SSH-сертифікати» і повторіть запит.', doenNl: 'Kies een geldigheid van 5 tot 60 minuten op de pagina «SSH-certificaten» en vraag opnieuw aan.' },
   // ---- GitOps (gitops-ophalen.sh)
   ENV_RECHTEN: { uk: 'gitops.env має неправильні права', nl: 'gitops.env heeft verkeerde rechten', ...viaSsh },
   REPO_ONGELDIG: { uk: 'Неправильна адреса репозиторію GitOps', nl: 'Ongeldig GitOps-repository-adres', ...viaSsh },
@@ -189,6 +194,80 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   ONTWERP_VERLOPEN: { uk: 'Чернетка політики застаріла', nl: 'Beleidsontwerp verouderd' },
   BELEID_ONGELDIG: { uk: 'Чернетка політики недійсна', nl: 'Beleidsontwerp ongeldig' },
   BELEID_EIGENAAR_ALLEEN: { uk: 'Це право не можна видати агентові', nl: 'Dit recht kan niet aan een agent worden gegeven' },
+  // Slimme uitrolstroom (0282, backend/uitrol-stroom.ts)
+  STROOM_VERSIE_ONGELDIG: { uk: 'Неправильний формат версії потоку (очікується YYYYMMDD-HHMMSS)', nl: 'Ongeldig versienummer van de uitrolstroom (verwacht YYYYMMDD-HHMMSS)' },
+  STROOM_NOTITIE_NIET_GEVONDEN: { uk: 'Нотатку потоку розгортання не знайдено', nl: 'Uitrolnotitie niet gevonden' },
+  STROOM_CONTROLE_NIET_GEVONDEN: { uk: 'Пункт контрольного списку не знайдено', nl: 'Onderdeel van de controlelijst niet gevonden' },
+  STROOM_REDEN_VEREIST: { uk: 'Щоб пропустити обов’язковий пункт, зазначте причину (щонайменше 10 символів)', nl: 'Geef een reden op (minstens 10 tekens) om een verplicht onderdeel over te slaan' },
+  STROOM_VERPLICHT_HANDMATIG: { uk: 'Цей пункт не можна позначити виконаним автоматично — підтвердьте його вручну', nl: 'Dit onderdeel kan niet automatisch worden afgerond — bevestig het handmatig' },
+  STROOM_NIET_VERWIJDERBAAR: { uk: 'Системний пункт або автодоказ не можна видалити', nl: 'Een systeemonderdeel of automatisch bewijs kan niet worden verwijderd' },
+  // Telegram-archief en GitHub-ontvangst (0283, backend/uitrol-telegram.ts en backend/uitrol-github-ontvangen.ts)
+  TELEGRAM_ARCHIEF_VEREIST: {
+    uk: 'Спершу зашифрований архів поточного випуску має бути збережений у Telegram',
+    nl: 'Het versleutelde archief van de huidige release moet eerst in Telegram zijn bewaard',
+    doenUk: 'Увімкнено обов’язкове резервування перед новим установленням. Натисніть «Заархівувати поточний випуск у Telegram» або перевірте налаштування в розділі «Налаштування → Архів у Telegram».',
+    doenNl: 'Verplichte reservekopie vóór een nieuwe installatie staat aan. Kies «Huidige release naar Telegram archiveren» of controleer «Instellingen → Archief in Telegram».',
+  },
+  TELEGRAM_SLEUTEL_ONTBREEKT: {
+    uk: 'Не вказано 256-бітний ключ шифрування архіву для Telegram',
+    nl: 'Geen 256-bits versleutelingssleutel voor het Telegram-archief ingesteld',
+    doenUk: 'Збережіть власний або згенеруйте 256-бітний ключ шифрування у розділі «Налаштування → Архів у Telegram». Без шифрування файли не надсилаються.',
+    doenNl: 'Sla een eigen sleutel op of genereer er een in «Instellingen → Archief in Telegram». Zonder versleuteling wordt niets verstuurd.',
+  },
+  TELEGRAM_CHAT_ONTBREEKT: {
+    uk: 'Не вказано ідентифікатор каналу або групи Telegram (chat_id) чи ключ доступу бота',
+    nl: 'Telegram chat_id of botsleutel ontbreekt',
+    doenUk: 'Вкажіть ключ доступу бота і chat_id у «Налаштування → Архів у Telegram» та натисніть «Перевірити з’єднання».',
+    doenNl: 'Vul botsleutel en chat_id in bij «Instellingen → Archief in Telegram» en kies «Verbinding testen».',
+  },
+  TELEGRAM_HERSTEL_INTEGRITEIT: {
+    uk: 'Контрольна сума розшифрованого архіву з Telegram не збігається з оригіналом',
+    nl: 'Controlesom van het uit Telegram herstelde archief wijkt af van het origineel',
+  },
+  TELEGRAM_BOT_NIET_IN_GROEP: {
+    uk: 'Бота не додано до зазначеного каналу чи групи Telegram або його було видалено',
+    nl: 'De bot is geen lid van het opgegeven Telegram-kanaal of de groep',
+    doenUk: 'Додайте нового бота випусків до каналу/групи та повторіть перевірку.',
+    doenNl: 'Voeg de nieuwe releasebot toe aan het kanaal of de groep en test opnieuw.',
+  },
+  TELEGRAM_GEEN_SCHRIJFRECHT: {
+    uk: 'Бот не має прав надсилати повідомлення чи документи в цей чат або канал',
+    nl: 'De bot heeft in deze chat of dit kanaal geen recht om berichten of documenten te sturen',
+    doenUk: 'Надайте боту права публікації повідомлень і документів (у каналі — статус адміністратора).',
+    doenNl: 'Geef de bot het recht om berichten en documenten te plaatsen (in een kanaal als beheerder).',
+  },
+  TELEGRAM_GEEN_FORUM: {
+    uk: 'Для вказаної теми групи потрібна супергрупа з увімкненими темами (форум), а не звичайна група',
+    nl: 'Een opgegeven topicnummer (message_thread_id) vereist een supergroep met topics (forum), geen gewone groep',
+    doenUk: 'Увімкніть теми в налаштуваннях супергрупи або очистіть поле message_thread_id.',
+    doenNl: 'Schakel topics in voor de supergroep of maak het veld message_thread_id leeg.',
+  },
+  TELEGRAM_WEBHOOK_ONGELDIG: {
+    uk: 'Секретний ключ вхідного приймача сповіщень від Telegram відсутній або недійсний',
+    nl: 'Het geheime token van de inkomende Telegram-webhook ontbreekt of is ongeldig',
+  },
+  GITHUB_WEBHOOK_ONGELDIG: {
+    uk: 'Підпис або заголовок вхідного приймача сповіщень від GitHub не пройшов перевірку',
+    nl: 'Handtekening of kop van de inkomende GitHub-webhook is ongeldig',
+  },
+  GITHUB_WEBHOOK_HERHALING: {
+    uk: 'Повторну доставку тієї самої події GitHub (X-GitHub-Delivery) проігноровано',
+    nl: 'Herhaalde aflevering van dezelfde GitHub-gebeurtenis (X-GitHub-Delivery) genegeerd',
+  },
+  GITHUB_ASSET_ONTBREEKT: {
+    uk: 'У цьому випуску на GitHub немає архіву (*.tar.gz)',
+    nl: 'Deze GitHub-release bevat geen release-archief (*.tar.gz)',
+  },
+  GITHUB_SHA256_VERSCHILT: {
+    uk: 'Контрольна сума завантаженого з GitHub архіву не збігається із заявленою у випуску',
+    nl: 'SHA-256 van het uit GitHub opgehaalde archief komt niet overeen met de opgegeven som',
+  },
+  GITHUB_ONJUISTE_BRON: {
+    uk: 'Передане сховище GitHub не збігається з дозволеним джерелом оновлень',
+    nl: 'De opgegeven GitHub-opslagplaats komt niet overeen met de toegestane bron voor updates',
+    doenUk: 'Використовуйте налаштоване сховище власника або оновіть його в налаштуваннях із підтвердженням ключем доступу.',
+    doenNl: 'Gebruik de ingestelde opslagplaats van de eigenaar of werk deze bij met passkey-bevestiging in de instellingen.',
+  },
 });
 
 const kies = (lang: 'uk' | 'nl', uk: string, nl: string) => (lang === 'uk' ? uk : nl);

@@ -1,7 +1,11 @@
 // LOGIN-001 / INTEG-001 — «Інші способи входу» op de afgemelde pagina: een uitklapbare lijst met GitHub, Apple, Microsoft en passkey
 // (volgorde en woorden van de eigenaar, 03.11.2026). Google staat hier NIET: dat is de hoofdknop erboven.
 //
-// EERLIJK, nagekeken in de code van 03.11.2026 — vandaag geeft de server ALLEEN via Google een sessie uit:
+// IDENTITEIT-015 (aanmelden, 14.11.2026): passkey, Apple en Microsoft (en wachtwoord, Discord) KUNNEN nu een sessie geven — achter
+// de vlaggen aanmelden-* van de eigenaar (backend/aanmelden-methoden.ts). Werkt een weg, dan noemt de server hem in /config → methoden
+// en geeft het aanmeldscherm hier een echte knop mee via `extra` (src/aanmelden/AanmeldZonderGoogle.tsx). De lijst hieronder blijft
+// de UITGESCHAKELDE weergave met de reden voor wegen die NIET werken; de redenen zeggen nu precies wat er ontbreekt.
+// Geschiedenis (03.11.2026) — toen gaf de server ALLEEN via Google een sessie uit:
 //   • GitHub: backend/github-oauth.ts koppelt GitHub na het aanmelden als DIENST (repositories, token in de kluis); een aanmeldweg
 //     «увійти через GitHub» bestaat niet;
 //   • Apple en Microsoft: backend/aanmeld-koppel.ts heeft de volledige OAuth-contour, maar KOPPELT de identiteit alleen aan een al
@@ -40,21 +44,21 @@ export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
   },
   {
     id: 'apple', merk: 'apple', titel: ['Увійти через Apple', 'Aanmelden met Apple'], beschikbaar: false,
-    reden: ['Ще не працює для входу: Apple ID можна лише прив’язати до вже відкритого облікового запису, коли власник сервера додасть ключі Apple.',
-      'Werkt nog niet voor aanmelden: een Apple ID kan alleen aan een al geopend account worden gekoppeld, zodra de servereigenaar de Apple-sleutels zet.'],
+    reden: ['Зараз недоступно: вхід через Apple вмикає власник сайту — ключі Apple, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Apple у «Способах входу».',
+      'Nu niet beschikbaar: aanmelden met Apple zet de site-eigenaar aan — Apple-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Apple bij «Aanmeldmethoden».'],
   },
   {
     id: 'microsoft', merk: 'microsoft', titel: ['Увійти через Microsoft', 'Aanmelden met Microsoft'], beschikbaar: false,
-    reden: ['Ще не працює для входу: обліковий запис Microsoft можна лише прив’язати до вже відкритого облікового запису, коли власник сервера додасть ключі Microsoft.',
-      'Werkt nog niet voor aanmelden: een Microsoft-account kan alleen aan een al geopend account worden gekoppeld, zodra de servereigenaar de Microsoft-sleutels zet.'],
+    reden: ['Зараз недоступно: вхід через Microsoft вмикає власник сайту — ключі Microsoft, пройдена самоперевірка й прапорець «Вхід через Microsoft, Discord або Apple». Потім прив’яжіть Microsoft у «Способах входу».',
+      'Nu niet beschikbaar: aanmelden met Microsoft zet de site-eigenaar aan — Microsoft-sleutels, geslaagde zelftest en de vlag «Aanmelden met Microsoft, Discord of Apple». Koppel daarna Microsoft bij «Aanmeldmethoden».'],
   },
   {
     id: 'passkey', merk: '',
     // Dezelfde woorden als de bevestigingsstap (src/platform/bevestig-toegang.tsx) en als de eigenaar ze vroeg.
     titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de toegangssleutel staat'],
     beschikbaar: false,
-    reden: ['Вхід лише з ключем доступу ще не працює. Зараз ключ доступу підтверджує важливі дії після входу через Google; додати його можна в «Способи входу».',
-      'Aanmelden met alleen een toegangssleutel werkt nog niet. Nu bevestigt een toegangssleutel belangrijke acties na het aanmelden met Google; toevoegen kan bij «Aanmeldmethoden».'],
+    reden: ['Зараз недоступно: вхід лише ключем доступу вмикає власник сайту (прапорець «Вхід лише ключем доступу»). До того ключ підтверджує важливі дії після входу через Google; додати його можна в «Безпеці».',
+      'Nu niet beschikbaar: aanmelden met alleen een toegangssleutel zet de site-eigenaar aan (vlag «Aanmelden met alleen een toegangssleutel»). Tot dan bevestigt de sleutel belangrijke acties na het aanmelden met Google; toevoegen kan bij «Beveiliging».'],
   },
 ]);
 

@@ -17,6 +17,8 @@ type Detail = {
   koppelingen: { oauth: Array<{ client: string; n: number; laatst: number }>; agenten: { verbonden: number; totaal: number }; mailMislukt: number; mailVast: number };
   diensten: Array<{ dienst: string; naam: Tekst; stand: 'ok' | 'let-op' | 'fout' | 'onbekend' | 'nooit'; acties: number; mislukt: number }>;
   bevindingen: Bevinding[];
+  bronFouten?: string[];
+  gedeeltelijkeFout?: boolean;
 };
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
 const tijd = (lang: Lang, ms: number) => (ms ? new Date(ms).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : '—');
@@ -100,6 +102,16 @@ export default function GebruikerTab({ lang, ctx, openCategorie }: { lang: Lang;
           </div>
 
           <AccountTabel lang={lang} ctx={ctx} gebruikerId={detail.gebruiker.id} />
+
+          {detail.gedeeltelijkeFout && (
+            <p className='adg-melding' data-soort='let-op' role='status'>
+              {tr(
+                lang,
+                `Деякі джерела даних тимчасово не відповіли (${(detail.bronFouten ?? []).join(', ')}) — частина показників може бути неповною.`,
+                `Sommige gegevensbronnen reageerden tijdelijk niet (${(detail.bronFouten ?? []).join(', ')}) — een deel van de gegevens kan onvolledig zijn.`,
+              )}
+            </p>
+          )}
 
           <ul className='adg-gb-bevindingen' aria-label={tr(lang, 'Висновки', 'Bevindingen')}>
             {detail.bevindingen.map((b) => (

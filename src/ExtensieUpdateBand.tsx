@@ -7,6 +7,7 @@ import { ArrowUpCircle, ChevronDown, ChevronUp, Clock, Download, RefreshCw, X } 
 import { EXTENSION_ID_RE, sendToExtension } from './extensie-toestand';
 import { LATER_MS, updateAdvies, EXT_MIN_VERSIE } from '../shared/extensie-update';
 import { routeLang } from './canoniek-navigatie';
+import { publiceerPaginaSignaal, verwijderPaginaSignaal } from './canoniek-meldingen';
 import './extensie-update-band.css';
 
 const LATER_SLEUTEL = 'mr-ext-update-later-v1';
@@ -49,7 +50,6 @@ export default function ExtensieUpdateBand() {
   }, [id, release.crx?.extensionId]);
 
   const advies = updateAdvies({ heeft, nieuwste: release.version, min: release.minVersion || EXT_MIN_VERSIE, crxVersie: release.crx?.version ?? null, zelfGehost: zelf, laterTot: later });
-  if (!advies.toon) return null;
 
   const automatisch = async () => {
     setBezig(true); setMelding('');
@@ -60,6 +60,37 @@ export default function ExtensieUpdateBand() {
     else if (r?.ok) setMelding(t('Chrome ще не бачить нової версії. Скористайтеся кроками вручну.', 'Chrome ziet nog geen nieuwe versie. Gebruik de stappen hieronder.'));
     else { setMelding(r?.reason === 'UNPACKED' ? t('Це розширення встановлене вручну («Завантажити розпаковане») — Chrome не оновлює його сам. Кроки нижче.', 'Deze extensie is handmatig geladen («Uitgepakt laden») — Chrome werkt die niet zelf bij. Stappen hieronder.') : t('Розширення не відповіло.', 'De extensie antwoordde niet.')); setStappen(true); }
   };
+
+  useEffect(() => {
+    if (!advies.toon) {
+      verwijderPaginaSignaal('band:extensie-update');
+      return;
+    }
+    const downloadHref = `/downloads/${release.file || 'mijn-ruimte-extension.zip'}`;
+    publiceerPaginaSignaal({
+      id: 'band:extensie-update',
+      bron: 'extensie-band',
+      kanaal: 'extensie',
+      subdomein: 'mcp',
+      soort: advies.verplicht ? 'kritiek' : 'waarschuwing',
+      ernst: advies.verplicht ? 'kritiek' : 'hoog',
+      titelUk: advies.verplicht ? `Розширення застаріло (${advies.van} → ${advies.naar})` : `Доступне оновлення розширення (${advies.van} → ${advies.naar})`,
+      titelNl: advies.verplicht ? `De extensie is verouderd (${advies.van} → ${advies.naar})` : `Update van de extensie beschikbaar (${advies.van} → ${advies.naar})`,
+      berichtUk: advies.verplicht ? `Нижче ${advies.naar} ШІ не може керувати браузером.` : 'Оновіть розширення для повної сумісності керування сторінками та сповіщень.',
+      berichtNl: advies.verplicht ? `Onder ${advies.naar} kan de AI de browser niet bedienen.` : 'Werk de extensie bij voor volledige ondersteuning.',
+      contextLabel: `${advies.van} → ${advies.naar}`,
+      link: downloadHref,
+      acties: [
+        ...(advies.automatisch ? [{ id: 'auto', labelUk: 'Оновити автоматично', labelNl: 'Automatisch bijwerken', primair: true, uitvoer: automatisch }] : []),
+        { id: 'zip', labelUk: 'Завантажити пакет', labelNl: 'Pakket downloaden', href: downloadHref },
+        ...(!advies.verplicht ? [{ id: 'later', labelUk: 'Нагадати через 24 год', labelNl: 'Over 24 uur herinneren', uitvoer: () => { const tot = Date.now() + LATER_MS; zetLater(tot); setLater(tot); } }] : []),
+      ],
+    });
+    return () => verwijderPaginaSignaal('band:extensie-update');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advies.toon, advies.verplicht, advies.van, advies.naar, advies.automatisch, release.file]);
+
+  if (!advies.toon) return null;
 
   return <div className='ext-band' role='region' aria-label={t('Оновлення розширення', 'Update van de extensie')} data-verplicht={advies.verplicht || undefined} data-ext-update-band>
     <div className='ext-band-rij'>

@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/hulp-vraagtekens-controle.mjs --stil && node scripts/zoek-ui-catalogus.mjs && node scripts/l002-audit.mjs && node scripts/mail-slimme-inbox-audit.mjs && node scripts/kleur-contrast-controle.mjs --stil && vite build && node scripts/tech-bundels-controle.mjs dist && node scripts/bouw-extensie.mjs && npm run build:server",
+        "build": "node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/hulp-vraagtekens-controle.mjs --stil && node scripts/zoek-ui-catalogus.mjs && node scripts/l002-audit.mjs && node scripts/mail-slimme-inbox-audit.mjs && node scripts/kleur-contrast-controle.mjs --stil && vite build && node scripts/huis-maquette.mjs --site dist/huis-maquette && node scripts/tech-bundels-controle.mjs dist && node scripts/bouw-extensie.mjs && npm run build:server",
         "build:server": "node scripts/build-server.mjs",
         "typecheck:server": "tsc -p tsconfig.server.json",
         "migrate": "node dist-server/migrate.mjs",

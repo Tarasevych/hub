@@ -1,0 +1,117 @@
+/* IDENTITEIT-015 (крок «vormgeving»): щільність, рух, акцент і виразність ефектів — налаштування облікового запису для всього
+   сайту (src/thema/weergave-stijl.ts ставить атрибути на <html>). Типові значення атрибутів не мають — тоді діє те, що й раніше.
+   Dichtheid, beweging, accent en effecten: accountinstellingen voor de hele site. Zonder attribuut blijft alles zoals vroeger. */
+
+/* Щільність: масштаб ритму відступів (src/ontwerp/tokens.css, --ruimte-1…6 — понад 900 використань). Розмір тексту й висота
+   дотику не змінюються: компактний вигляд не робить кнопки дрібнішими за 40/44 px. */
+:root[data-dichtheid="compact"] { --ruimte-1:3px; --ruimte-2:6px; --ruimte-3:9px; --ruimte-4:12px; --ruimte-5:18px; --ruimte-6:24px; }
+:root[data-dichtheid="ruim"] { --ruimte-1:5px; --ruimte-2:10px; --ruimte-3:15px; --ruimte-4:20px; --ruimte-5:30px; --ruimte-6:40px; }
+
+/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion — окреме правило нижче). Анімації й переходи майже миттєві,
+   плавна прокрутка вимкнена; зміст і стан не змінюються, лише рух. */
+:root[data-beweging="minder"] { --ruimte-beweging: 0ms; scroll-behavior: auto !important; }
+:root[data-beweging="minder"] *, :root[data-beweging="minder"] *::before, :root[data-beweging="minder"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+  transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}
+/* IDENTITEIT-015 (приймання thema): «Макет» задає власні переходи з !important і специфічністю до 0,8,0 (maquette-stijlen.css, понад 70
+   правил), тож загальне правило вище (0,2,0) їх не перемагало — у «Макеті» лишалося понад сто рухомих елементів. Те саме правило з
+   вищою специфічністю (0,10,0) для самого «Макета» і всього в ньому; тест стежить, щоб макет не мав сильніших правил руху.
+   In het ontwerp wint «minder beweging» nu ook. */
+:root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq, :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *,
+:root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+  transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}
+/* IDENTITEIT-015 (приймання vormgeving): та сама вада для СИСТЕМНОГО «зменшити рух» (prefers-reduced-motion). Правило v49
+   (maquette-stijlen.css: @media(prefers-reduced-motion:reduce) … *:where(:not(.mq-echt *)), 0,4,0) програвало власним переходам
+   «Макета» з !important (0,5,0…0,8,0): у справжньому Chromium із reducedMotion лишалося 95 рухомих елементів (кнопки сервісів 250 мс,
+   знак 300 мс, смуга прогресу…). Тепер — як «менше руху» в обліковому записі, специфічність 0,10,0 (:root:root + 8 класів).
+   Het systeemverzoek «minder beweging» wint nu ook in het ontwerp. */
+@media (prefers-reduced-motion: reduce) {
+  :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq, :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *,
+  :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* Акцент поверх палітри. Специфічність (:root:root + атрибут + клас теми = 0,4,0) вища за палітри (html.palet-kleur[…] .theme-*
+   = 0,3,1) і оболонку (.canonical-chrome.theme-* = 0,2,0). Пари перевіряє tests/eenheid/identiteit-015-vormgeving.test.ts:
+   текст на заливці ≥ 4,5:1, заливка на тлі кожної палітри ≥ 3:1. Значення — ACCENT_TONEN у weergave-stijl.ts. */
+:root:root[data-accent="violet"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="violet"] :is(.theme-light,.theme-plum-light) { --accent:#6d28d9; --accentText:#ffffff; --accent-soft:#ede9fe; }
+:root:root[data-accent="violet"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="violet"] :is(.theme-dark,.theme-plum-dark) { --accent:#c4b5fd; --accentText:#10161c; --accent-soft:#3b3160; }
+:root:root[data-accent="cyan"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="cyan"] :is(.theme-light,.theme-plum-light) { --accent:#155e75; --accentText:#ffffff; --accent-soft:#cffafe; }
+:root:root[data-accent="cyan"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="cyan"] :is(.theme-dark,.theme-plum-dark) { --accent:#67e8f9; --accentText:#10161c; --accent-soft:#164e63; }
+:root:root[data-accent="pink"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="pink"] :is(.theme-light,.theme-plum-light) { --accent:#be185d; --accentText:#ffffff; --accent-soft:#fce7f3; }
+:root:root[data-accent="pink"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="pink"] :is(.theme-dark,.theme-plum-dark) { --accent:#f9a8d4; --accentText:#10161c; --accent-soft:#50223a; }
+:root:root[data-accent="amber"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="amber"] :is(.theme-light,.theme-plum-light) { --accent:#92400e; --accentText:#ffffff; --accent-soft:#fef3c7; }
+:root:root[data-accent="amber"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="amber"] :is(.theme-dark,.theme-plum-dark) { --accent:#fcd34d; --accentText:#10161c; --accent-soft:#4a3410; }
+/* ACCENT-001: «улюблені відтінки» меню облікового запису — той самий акцент поверх будь-якої палітри. */
+:root:root[data-accent="blauw"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="blauw"] :is(.theme-light,.theme-plum-light) { --accent:#1a5fd6; --accentText:#ffffff; --accent-soft:#dfe9f9; }
+:root:root[data-accent="blauw"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="blauw"] :is(.theme-dark,.theme-plum-dark) { --accent:#7aa7ff; --accentText:#10161c; --accent-soft:#2f3e57; }
+:root:root[data-accent="hemel"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="hemel"] :is(.theme-light,.theme-plum-light) { --accent:#0279b4; --accentText:#ffffff; --accent-soft:#dcedf6; }
+:root:root[data-accent="hemel"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="hemel"] :is(.theme-dark,.theme-plum-dark) { --accent:#67e8f9; --accentText:#10161c; --accent-soft:#2b4c55; }
+:root:root[data-accent="teal"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="teal"] :is(.theme-light,.theme-plum-light) { --accent:#0f766e; --accentText:#ffffff; --accent-soft:#ddeceb; }
+:root:root[data-accent="teal"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="teal"] :is(.theme-dark,.theme-plum-dark) { --accent:#5eead4; --accentText:#10161c; --accent-soft:#294c4d; }
+:root:root[data-accent="groen"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="groen"] :is(.theme-light,.theme-plum-light) { --accent:#15803d; --accentText:#ffffff; --accent-soft:#deede4; }
+:root:root[data-accent="groen"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="groen"] :is(.theme-dark,.theme-plum-dark) { --accent:#4ade80; --accentText:#10161c; --accent-soft:#254a3b; }
+:root:root[data-accent="oranje"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="oranje"] :is(.theme-light,.theme-plum-light) { --accent:#b8530b; --accentText:#ffffff; --accent-soft:#f6e7dd; }
+:root:root[data-accent="oranje"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="oranje"] :is(.theme-dark,.theme-plum-dark) { --accent:#fdba74; --accentText:#10161c; --accent-soft:#4c4238; }
+:root:root[data-accent="roze"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="roze"] :is(.theme-light,.theme-plum-light) { --accent:#be185d; --accentText:#ffffff; --accent-soft:#f6dfe8; }
+:root:root[data-accent="roze"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="roze"] :is(.theme-dark,.theme-plum-dark) { --accent:#f9a8d4; --accentText:#10161c; --accent-soft:#4b3e4d; }
+:root:root[data-accent="indigo"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="indigo"] :is(.theme-light,.theme-plum-light) { --accent:#4f46e5; --accentText:#ffffff; --accent-soft:#e6e5fb; }
+:root:root[data-accent="indigo"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="indigo"] :is(.theme-dark,.theme-plum-dark) { --accent:#a5b4fc; --accentText:#10161c; --accent-soft:#394156; }
+:root:root[data-accent="bruin"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="bruin"] :is(.theme-light,.theme-plum-light) { --accent:#8b5a2b; --accentText:#ffffff; --accent-soft:#efe8e1; }
+:root:root[data-accent="bruin"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="bruin"] :is(.theme-dark,.theme-plum-dark) { --accent:#d6b48f; --accentText:#10161c; --accent-soft:#43413e; }
+
+/* Виразність декоративних ефектів: сяйво ілюстрацій центру облікового запису («Макет» і «Студія»). 0 % — без сяйва,
+   45 % — як задумано в макеті, 100 % — насиченіше. На текст, кнопки й контраст не впливає. */
+:root { --effect-sterkte: .45; }
+:is(.mr-mq, .mr-kunst, .mr-kunst-raam) :is(.art-halo, .hero-orb, .art-spark, .orb-star) {
+  opacity: clamp(0, calc(var(--effect-sterkte) * 2.2), 1);
+  filter: saturate(calc(.55 + var(--effect-sterkte)));
+}
+/* IDENTITEIT-015 (приймання thema): на вузьких екранах макет приглушує кулю вступу власним opacity (≤1040 — .72, 731–900 — .22,
+   ≤730 — .45; maquette-stijlen.css, специфічність 0,5,0), і повзунок ефектів на телефоні й планшеті її не змінював. Тут той самий
+   множник × виразність ефектів, специфічність вища (0,6,0); за типових 45 % вигляд як у макеті. Op smalle schermen telt de schuif nu ook. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-1040) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .72), 1); }
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731.bp-max-900) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .22), 1); }
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .45), 1); }
+
+/* IDENTITEIT-015 (приймання D2 «пристрої й доступність»): системне «зменшити рух» (prefers-reduced-motion) для оболонки сайту.
+   Спільного правила не було (лише точкові), тож піктограми меню (.menu-lucide-glyph — .14 с з !important) і шар сповіщень (.2 с)
+   рухалися попри налаштування пристрою. Загальне правило — як «менше руху» (0,2,0). «Макет» має власні сильніші правила — їх
+   виправляє лінія D1. Ook de omlijsting van de site volgt nu de systeeminstelling «minder beweging». */
+@media (prefers-reduced-motion: reduce) {
+  :root:root { scroll-behavior: auto !important; }
+  :root:root *, :root:root *::before, :root:root *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* ACCENT-001 (15.11.2026): прозорий режим блоків (shared/uiterlijk.ts → transparantie; weergave-stijl.ts ставить
+   html[data-transparantie="aan"] і --blok-dekking). Суцільні кольори палітри запам'ятовуються на оболонці (--…-dicht), а в робочій
+   області підкладки панелей і карток стають напівпрозорими — крізь них видно тло сторінки й «Живий фон». Без backdrop-filter:
+   розмиття під кожною карткою перемальовується з кожним кадром живого тла й гальмує телефони (ZAVYSANNIA-001); тло й так м'яке.
+   Меню, вікна, підказки й поля введення лишаються суцільними, щоб текст у них читався. Системне «зменшити прозорість» вимикає режим.
+   Doorschijnende blokken: alleen de ondergrond van panelen en kaarten, zonder backdrop-filter; menu's, vensters en velden blijven dicht. */
+/* Суцільні значення запам'ятовуються на оболонці; у робочій області кожен елемент (сервіси «Макета» перевизначають свої поверхні на
+   власних контейнерах, тож потрібен шар на всіх нащадках із вищою специфічністю) отримує ті самі кольори напівпрозорими.
+   Центр облікового запису «Макет» (.mr-mq) має власні змінні — його правила в src/identiteit/maquette/maquette-omlijsting.css. */
+html[data-transparantie="aan"] .canonical-chrome { --panel-dicht:var(--panel); --surface-dicht:var(--surface); --surface2-dicht:var(--surface2); --mq-oppervlak-dicht:var(--mq-oppervlak); --mq-oppervlak-2-dicht:var(--mq-oppervlak-2); --mq-bg-2-dicht:var(--mq-bg-2); }
+html[data-transparantie="aan"] .canonical-chrome .canonical-workspace:not(#_tr1):not(#_tr2):not(.mr-mq):not(.mr-mq *), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace *:not(#_tr1):not(#_tr2):not(.mr-mq):not(.mr-mq *) {
+  --panel:color-mix(in srgb, var(--panel-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --surface:color-mix(in srgb, var(--surface-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --surface2:color-mix(in srgb, var(--surface2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-oppervlak:color-mix(in srgb, var(--mq-oppervlak-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-oppervlak-2:color-mix(in srgb, var(--mq-oppervlak-2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+  --mq-bg-2:color-mix(in srgb, var(--mq-bg-2-dicht) calc(var(--blok-dekking, 1) * 100%), transparent);
+}
+html[data-transparantie="aan"] .canonical-chrome .canonical-workspace :is([role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog, input, select, textarea):not(#_tr1):not(#_tr2):not(#_tr3), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace :is([role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog, input, select, textarea) *:not(#_tr1):not(#_tr2):not(#_tr3) { --panel:var(--panel-dicht); --surface:var(--surface-dicht); --surface2:var(--surface2-dicht); --mq-oppervlak:var(--mq-oppervlak-dicht); --mq-oppervlak-2:var(--mq-oppervlak-2-dicht); --mq-bg-2:var(--mq-bg-2-dicht); }
+@media (prefers-reduced-transparency: reduce) {
+  html[data-transparantie="aan"] .canonical-chrome .canonical-workspace:not(#_tr1):not(#_tr2):not(#_tr3):not(.mr-mq):not(.mr-mq *), html[data-transparantie="aan"] .canonical-chrome .canonical-workspace *:not(#_tr1):not(#_tr2):not(#_tr3):not(.mr-mq):not(.mr-mq *) { --panel:var(--panel-dicht); --surface:var(--surface-dicht); --surface2:var(--surface2-dicht); --mq-oppervlak:var(--mq-oppervlak-dicht); --mq-oppervlak-2:var(--mq-oppervlak-2-dicht); --mq-bg-2:var(--mq-bg-2-dicht); }
+}
+/* ACCENT-001: з обраним відтінком і рамка фокусу клавіатури — того ж кольору (типово вона синя в кожній палітрі). */
+:root:root[data-accent], :root:root[data-accent] :is(.theme-light, .theme-dark, .theme-plum-light, .theme-plum-dark) { --focus:var(--accent); }

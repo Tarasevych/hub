@@ -28,9 +28,29 @@ export function composeErrorText(error: unknown, t: (uk: string, nl: string) => 
     AI_INVALID: ['Немає що обробляти: перевірте текст.', 'Er is niets te verwerken: controleer de tekst.'],
     AI_TOO_LONG: ['Текст задовгий для ШІ (максимум 20 000 символів).', 'De tekst is te lang voor de AI (maximaal 20 000 tekens).'],
     MAIL_SCHEDULED_NOT_CANCELLABLE: ['Цей лист уже не можна скасувати.', 'Dit bericht kan niet meer worden geannuleerd.'],
+    // SEC-002 (g10c-toets-2/-4): nieuwe codes van de server, met uitleg wat de gebruiker kan doen.
+    MAIL_BODY_TOO_LARGE: ['Лист завеликий (понад 2 млн знаків). Зменште зображення або додайте його вкладенням.', 'Het bericht is te groot (meer dan 2 miljoen tekens). Verklein de afbeelding of voeg haar toe als bijlage.'],
+    ...WACHTRIJ_FOUTEN,
   };
   const hit = map[code];
   return hit ? t(hit[0], hit[1]) : t('Не вдалося виконати дію. Спробуйте ще раз.', 'De actie is niet gelukt. Probeer het opnieuw.');
+}
+
+/** SEC-002 (g10c-toets-2): redenen waarom het systeem een gepland bericht niet verstuurde of annuleerde (last_error van de wachtrij). */
+const WACHTRIJ_FOUTEN: Record<string, [string, string]> = {
+  MAIL_SENDER_NOT_ALLOWED: ['Не надіслано: ваш обліковий запис на момент надсилання не був схвалений (заблоковано або очікує рішення).', 'Niet verzonden: uw account was op het moment van verzenden niet goedgekeurd (geblokkeerd of in afwachting).'],
+  MAIL_SENDER_NO_WRITE: ['Не надіслано: у вас тепер лише перегляд пошти — надсилати не можна.', 'Niet verzonden: u hebt nu alleen leesrechten voor post — verzenden kan niet.'],
+  MAIL_SENDER_BLOCKED: ['Скасовано: обліковий запис заблоковано адміністратором.', 'Geannuleerd: het account is door de beheerder geblokkeerd.'],
+  MAIL_SPACE_DIENST_UIT: ['Не надіслано: пошту в технічному просторі вимкнено.', 'Niet verzonden: post is in de technische ruimte uitgeschakeld.'],
+  MAIL_SPACE_BEVROREN: ['Не надіслано: технічний простір пошти заморожено.', 'Niet verzonden: de technische postruimte is bevroren.'],
+  MAIL_SPACE_KEUZE_ONTBREEKT: ['Не надіслано: для технічного простору не зроблено вибір даних.', 'Niet verzonden: voor de technische ruimte is geen gegevenskeuze gemaakt.'],
+  MAIL_SPACE_GEEN_GEBRUIKER: ['Не надіслано: обліковий запис не знайдено.', 'Niet verzonden: het account is niet gevonden.'],
+  MAIL_SPACE_DIENST_ONBEKEND: ['Не надіслано: простір пошти недоступний.', 'Niet verzonden: de postruimte is niet beschikbaar.'],
+};
+/** Tekst bij een mislukt of geannuleerd gepland bericht; onbekende code → algemene «помилка/fout». */
+export function wachtrijFoutTekst(code: string, t: (uk: string, nl: string) => string): string {
+  const hit = WACHTRIJ_FOUTEN[String(code || '')];
+  return hit ? t(hit[0], hit[1]) : t('помилка', 'fout');
 }
 
 const post = async (path: string, context: Context, body: Record<string, unknown>) => (await api.post(path, { ...context, ...body })).data;

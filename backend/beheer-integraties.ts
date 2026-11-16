@@ -267,6 +267,9 @@ export function adminIntegratieRoutes(gate: AdminGate, requireSession: RequireSe
       const ctx = raw as unknown as Ctx;
       const auth = await requireSession(ctx.event, ctx.body);
       if ('errorCode' in auth) return error('OWNER_SESSION_REQUIRED', 403);
+      // SEC-002 (autorisatie-09): de sessiecontrole laat ook niet-goedgekeurde accounts (new/pending) door (wachtscherm);
+      // welke koppelingen de beheerder beschikbaar stelde, is alleen voor goedgekeurde gebruikers.
+      if (auth.user.status !== 'approved') return error('ACCOUNT_NOT_APPROVED', 403);
       try {
         const m = await beleidMap();
         const ids = Object.entries(m).filter(([id, v]) => v.voorGebruikers && integratie(id)?.status === 'klaar').map(([id]) => id);

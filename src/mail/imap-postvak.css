@@ -1,0 +1,33 @@
+/* MAIL-IMAP-LEZEN-001 (15.11.2026): inbox en lezer van een IMAP-mailbox. Alleen tokens (src/ontwerp/tokens.css). */
+.imap-postvak{display:grid;gap:8px;padding:4px 0 96px;min-width:0}
+.imap-balk{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;color:var(--muted);font-size:var(--tekst-mini)}
+.imap-balk button,.imap-terug{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:inherit;font:inherit;cursor:pointer}
+.imap-lijst{display:grid;margin:0;padding:0;list-style:none;border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);overflow:hidden}
+.imap-lijst li+li{border-top:1px solid var(--line)}
+.imap-lijst button{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 14px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.imap-lijst button:hover,.imap-lijst button:focus-visible{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.imap-lijst button.ongelezen strong,.imap-lijst button.ongelezen .imap-onderwerp{font-weight:700;color:var(--text)}
+.imap-avatar{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700}
+.imap-regel{display:grid;gap:2px;min-width:0;flex:1}
+.imap-kop{display:flex;align-items:center;gap:6px;min-width:0}
+.imap-kop strong,.imap-onderwerp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imap-kop strong{flex:1;min-width:0;font-weight:500}
+.imap-kop time{flex:none;color:var(--muted);font-size:var(--tekst-mini)}
+.imap-onderwerp{color:var(--muted)}
+.imap-leeg,.imap-noot{margin:8px;color:var(--muted);font-size:var(--tekst-mini)}
+.imap-fout{display:grid;gap:8px;margin:0 8px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel)}
+.imap-fout p{margin:0}
+.imap-fout div{display:flex;flex-wrap:wrap;gap:8px}
+.imap-fout button,.imap-meer{min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--accent);font:inherit;font-weight:600;cursor:pointer}
+.imap-meer{justify-self:center}
+.imap-lezer{gap:12px;padding:8px}
+.imap-lezer header{display:grid;gap:8px}
+.imap-lezer h2{margin:0;font-size:1.25rem;line-height:1.3;overflow-wrap:anywhere}
+.imap-lezer header p{display:flex;flex-wrap:wrap;gap:6px;margin:0;color:var(--muted)}
+.imap-lezer header p strong{color:var(--text)}
+.imap-lezer header time{margin-left:auto}
+.imap-terug{justify-self:start}
+.imap-bijlagen{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.imap-bijlagen li{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:var(--tekst-mini)}
+.imap-bijlagen small{color:var(--muted)}
+.imap-tekst{padding:14px;border:1px solid var(--line);border-radius:var(--straal-l);background:var(--panel);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}

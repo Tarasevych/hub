@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-007",
+  "agent": "antigravity",
+  "tak": "feature/maquette-007-20261113-224251",
+  "basisCommit": "eba4d0f7b3724732cb36cf843f11943f6d700fab",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T22:42:51.344Z",
+  "bijgewerkt": "2026-11-13T22:42:51.344Z",
+  "omschrijving": "Хвиля 6 теми «Макет»: повне студійне перевтілення розумної оселі huis.tarasevych.com (усі 13 вкладок HuisPagina та класичний вигляд DomoticaWeergave).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

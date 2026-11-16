@@ -29,11 +29,13 @@ type Antw = { status: number; uit: Record<string, any> };
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('afstemming-kern-20261030');
-  // INTEG-001: het dossiervoorbeeld (sectie 7) staat NIET in de repository maar in een scratchpad van de dossiermaker. Ontbreekt het,
-  // dan melden we dat luid en slaan alleen de controles over die het nodig hebben; alle andere controles blijven actief.
-  const voorbeeldPad = '/tmp/claude-0/-home-claude/f943cf5d-3cc4-51bc-b43c-9444f1095af1/scratchpad/ui014/Mijn_Ruimte_UI-014_Afstemming_vNext/03_Examples/feature-UI-014-example.json';
-  const heeftVoorbeeld = existsSync(voorbeeldPad);
-  if (!heeftVoorbeeld) console.log(`OVERGESLAGEN afstemming-kern: fixture ontbreekt (${voorbeeldPad})`);
+  // INTEG-001: het dossiervoorbeeld (sectie 7, feature-UI-014-example.json uit het dossier «UI-014 Afstemming vNext») staat NIET in de
+  // repository. Wie het heeft, geeft het pad mee in AFSTEMMING_VOORBEELD_PAD. Ontbreekt het, dan melden we dat luid en slaan alleen de
+  // controles over die het nodig hebben; alle andere controles blijven actief.
+  // SEC-002 (slot x, SEC002-SECR-01): vroeger stond hier een vast pad naar de werkmap van een agent (met sessie-id) — weg.
+  const voorbeeldPad = String(process.env.AFSTEMMING_VOORBEELD_PAD || '');
+  const heeftVoorbeeld = !!voorbeeldPad && existsSync(voorbeeldPad);
+  if (!heeftVoorbeeld) console.log(`OVERGESLAGEN afstemming-kern: fixture ontbreekt (zet AFSTEMMING_VOORBEELD_PAD op feature-UI-014-example.json)${voorbeeldPad ? ` — niet gevonden: ${voorbeeldPad}` : ''}`);
   // Deze test draait tegen de echte Postgres (zonder stubs); zonder database is er niets te controleren (zelfde stijl als agent-namens).
   if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) { console.log('OVERGESLAGEN afstemming-kern (integratie): geen database'); return einde(); }
   const pool = getPool('systeem');

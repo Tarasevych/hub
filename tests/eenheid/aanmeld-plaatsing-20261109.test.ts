@@ -44,12 +44,12 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------ нормалізація й порядок
   const n = plaatsingNormaliseren({ volgorde: ['passkey', 'passkey', 'onzin', 'google'], plek: { google: 'verborgen', telegram: 'raar', x: 'hoofd' } });
-  check('нормалізація: дублікати й невідомі відкидаються, відсутні — в кінці', J(n.volgorde) === J(['passkey', 'google', 'telegram', 'github', 'apple', 'microsoft']));
+  check('нормалізація: дублікати й невідомі відкидаються, відсутні — в кінці', J(n.volgorde) === J(['passkey', 'google', 'telegram', 'github', 'apple', 'microsoft', 'discord', 'wachtwoord']) /* IDENTITEIT-015: два нові способи в кінці */);
   check('нормалізація: неправильне місце → типове', n.plek.telegram === 'hoofd' && n.plek.google === 'verborgen' && !('x' in n.plek));
   check('нормалізація сміття → типове розміщення', J(plaatsingNormaliseren(null)) === J(STANDAARD_PLAATSING) && J(plaatsingNormaliseren('x')) === J(STANDAARD_PLAATSING));
   check('усі способи мають назву й місце', METHODEN.every((m) => STANDAARD_PLAATSING.plek[m]));
   const op = verschuiven(STANDAARD_PLAATSING, 'telegram', -1);
-  check('вище/нижче: Telegram на перше місце; межі не порушуються', op.volgorde[0] === 'telegram' && verschuiven(op, 'telegram', -1) === op && J(verschuiven(STANDAARD_PLAATSING, 'passkey', 1)) === J(STANDAARD_PLAATSING));
+  check('вище/нижче: Telegram на перше місце; межі не порушуються', op.volgorde[0] === 'telegram' && verschuiven(op, 'telegram', -1) === op && J(verschuiven(STANDAARD_PLAATSING, 'wachtwoord', 1)) === J(STANDAARD_PLAATSING) /* IDENTITEIT-015: останній тепер «wachtwoord» */);
 
   // ------------------------------------------------ «Інші способи входу»
   check('порожній список → кнопку «Інші способи входу» не показано', renderToStaticMarkup(createElement(AanmeldAndereOpties, { lang: 'uk', ids: [] })) === '');

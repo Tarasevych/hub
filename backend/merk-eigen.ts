@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { error, json } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
 import { isEigenaar } from './tech-profiel';
 import {
   MERK_EIGEN_MAX_AANTAL, MERK_EIGEN_MAX_BYTES, MERK_EIGEN_SLEUTEL, MERK_EIGEN_STANDAARD_MAP,
@@ -114,14 +114,14 @@ export function merkEigenRoutes(deps: Deps): Record<string, RouterMiddleware[]> 
       await schrijfBeheerAudit({ actor, doel: { soort: 'merk', naam: sleutel || '-' }, actie: 'integration.merk-eigen.geweigerd', resultaat: 'denied', reden: 'OWNER_REQUIRED' });
       return error('OWNER_REQUIRED', 403);
     }
-    if (!(await passkeyStapOpGeldig(auth as unknown as StapOpAuth))) {
-      await schrijfBeheerAudit({ actor, doel: { soort: 'merk', naam: sleutel || '-' }, actie: 'integration.merk-eigen.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
-      return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
-    }
     try {
-      const uit = await run(auth, b);
-      await stapOpVerbruiken(auth as unknown as StapOpAuth);
-      return json(uit);
+      // SEC-002 (g06): controleren en verbruiken ondeelbaar; bij een fout van run() teruggezet.
+      const stap = await metStapOpEenmalig(auth as unknown as StapOpAuth, passkeyStapOpGeldig, () => run(auth, b));
+      if (!stap.ok) {
+        await schrijfBeheerAudit({ actor, doel: { soort: 'merk', naam: sleutel || '-' }, actie: 'integration.merk-eigen.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
+        return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
+      }
+      return json(stap.uit);
     } catch (e) {
       const code = (e as Error).message || 'MERK_EIGEN_FOUT';
       if (/^[A-Z][A-Z0-9_]{2,60}$/.test(code)) return error(code, 400);

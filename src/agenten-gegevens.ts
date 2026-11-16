@@ -12,7 +12,9 @@ export type Agent = {
   /** Ruimte van het apparaat (0042): 'prive' (eigen pc/browser) of 'technisch' (server/beheer); gezet bij het koppelen. */
   ruimte?: 'prive' | 'technisch';
 };
-export type Pending = { id: string; agentId: string; agentName: string; type: string; params: unknown; createdAt: number };
+/** SEC-002 interface-02: WIE vroeg dit (de server geeft de naam van de klant uit de geauthenticeerde verbinding; leeg = onbekend). */
+export type Aanvrager = { client: string; agent: string; verbinding: string; site: boolean };
+export type Pending = { id: string; agentId: string; agentName: string; type: string; params: unknown; createdAt: number; aanvrager?: Aanvrager };
 export type LastCommand = { id: string; agentId: string; type: string; status: string; preview: string; createdAt: number };
 type Tr = (uk: string, nl: string) => string;
 
@@ -32,8 +34,13 @@ export const COMMAND_LABELS: Record<string, [string, string]> = {
   'browser.history': ['Назад/вперед/оновити', 'Terug/vooruit/vernieuwen'], 'browser.invoke': ['Дія сайту', 'Actie van de site'], 'browser.click': ['Клік', 'Klik'],
   'browser.type': ['Введення тексту', 'Tekst typen'], 'browser.select': ['Вибір у списку', 'Keuze in lijst'], 'browser.key': ['Натискання клавіші', 'Toetsaanslag'],
   'browser.screenshot': ['Знімок екрана', 'Schermafbeelding'], 'browser.deep_diagnostics': ['Глибока діагностика', 'Diepe diagnose'],
+  // SEC-002 interface-01: ook deze typen kregen tot nu toe hun ruwe code in het beslisvenster (bv. «browser.fill_form»).
+  'fs.stat': ['Відомості про файл', 'Bestandsgegevens'], 'fs.search': ['Пошук файлів', 'Bestanden zoeken'],
+  'browser.hover': ['Наведення на елемент', 'Element aanwijzen'], 'browser.fill_form': ['Заповнення форми', 'Formulier invullen'], 'browser.pages': ['Керування вкладками (відкрити/перемкнути/закрити)', 'Tabbladen beheren (openen/wisselen/sluiten)'],
+  'browser.console': ['Читання консолі сторінки', 'Console van de pagina lezen'], 'browser.network': ['Читання мережевих запитів сторінки', 'Netwerkverzoeken van de pagina lezen'],
+  'browser.self_test': ['Самоперевірка розширення', 'Zelftest van de extensie'], 'browser.audit': ['Аудит сторінки', 'Paginacontrole'], 'browser.script': ['Виконання скрипту на сторінці', 'Script uitvoeren op de pagina'],
 };
-export const commandLabel = (type: string, tr: Tr) => { const l = COMMAND_LABELS[type]; return l ? tr(l[0], l[1]) : type; };
+export const commandLabel = (type: string, tr: Tr) => { const l = COMMAND_LABELS[type]; return l ? tr(l[0], l[1]) : tr(`Невідома дія «${type}»`, `Onbekende actie «${type}»`); };
 export const STATUS_LABELS: Record<string, [string, string]> = {
   pending_approval: ['чекає вашого рішення', 'wacht op uw beslissing'], approved: ['схвалено', 'goedgekeurd'], succeeded: ['виконано', 'uitgevoerd'], failed: ['помилка', 'mislukt'],
   rejected: ['відхилено', 'geweigerd'], timeout: ['час вийшов', 'verlopen'],
@@ -126,7 +133,7 @@ export function useAgentsData(tr: Tr) {
   return { agents: d.agents, pending: d.pending, last: d.last, loaded: p.geladen(), reload, fout: p.fout() };
 }
 
-export type ToolCall = { id: string; tool: string; args: Record<string, unknown>; status: string; createdAt: number; preview: string };
+export type ToolCall = { id: string; tool: string; args: Record<string, unknown>; status: string; createdAt: number; preview: string; aanvrager?: Aanvrager };
 
 let approvalsPoller: ReturnType<typeof maakGedeeldePoller<ToolCall[]>> | null = null;
 /** Aanroepen van site-hulpmiddelen in de modus "Vragen": één poller voor de hele pagina. Meldingen komen van het meldingencentrum (connector-activiteit.ts). */

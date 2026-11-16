@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
-const TS=require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript');
+const TS=(()=>{try{return require('typescript')}catch{return require('/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript')}})();
 const root=new URL('../../',import.meta.url);
 function transpile(path,changes={}){
  let code=readFileSync(new URL(path,root),'utf8');

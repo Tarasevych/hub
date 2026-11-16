@@ -18,6 +18,25 @@ import { aiPoortNu } from './ai-ruimte-poort';
 import { isAgentSlug } from '../shared/connector-v2/agenten';
 import { koppelingVan } from './connector-v2';
 import { authenticate, unauthorized } from './mcp-connector';
+import { rateLimit } from '../server/platform';
+import { limietSleutel } from '../shared/ip-limiet';
+import { registreerStroomNoodstop } from './ai-toestemmingen';
+
+/**
+ * SEC-002 (http-rand-07, afwerking A): een eigen, strenge emmer voor MISLUKTE aanmeldingen op de SSE-ingangen (elk een tokenopzoeking):
+ * 30 per minuut per IP (/64), daarboven 429 met Retry-After — ook vóór de opzoeking. Geslaagde stromen tellen niet mee.
+ * Окремий суворий кошик невдалих автентифікацій SSE: 30 за хвилину на IP.
+ */
+export const SSE_FOUT_MAX = 30;
+async function sseFoutGeweigerd(res: http.ServerResponse, ip: string): Promise<boolean> {
+  if (!ip) return false;
+  const sleutel = `sse-fout:${limietSleutel(ip)}`;
+  const r = await rateLimit(sleutel, SSE_FOUT_MAX, 60, { failClosed: true });
+  if (r.ok) return false;
+  res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(r.retryAfter || 60) });
+  res.end(JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: r.retryAfter || 60 }));
+  return true;
+}
 import type { AiRuimte } from '../shared/ai-ruimte';
 
 const pollMs = () => Math.max(200, Number(process.env.MCP_LIJST_POLL_MS) || 10_000);
@@ -29,6 +48,7 @@ type Stroom = { userId: string; agent: string; res: http.ServerResponse; ruimte:
 const stromen = new Set<Stroom>();
 
 export const LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed' });
+export const RESOURCES_LIST_CHANGED = JSON.stringify({ jsonrpc: '2.0', method: 'notifications/resources/list_changed' });
 
 const schrijf = (s: Stroom, tekst: string): boolean => { try { return s.res.write(tekst); } catch { return false; } };
 
@@ -39,6 +59,17 @@ export function meldLijstGewijzigd(userId: string, ruimte?: AiRuimte): number {
     if (s.userId !== userId) continue;
     if (ruimte !== undefined) s.ruimte = ruimte;
     if (schrijf(s, `event: message\ndata: ${LIST_CHANGED}\n\n`)) n++;
+  }
+  return n;
+}
+
+/** Alle open stromen van deze mens (of één agent) melden dat vaardigheden en MCP-bronnen gewijzigd zijn. */
+export function meldBronnenGewijzigd(userId: string, agent?: string): number {
+  let n = 0;
+  for (const s of stromen) {
+    if (s.userId !== userId) continue;
+    if (agent && agent !== '*' && s.agent !== agent) continue;
+    if (schrijf(s, `event: message\ndata: ${RESOURCES_LIST_CHANGED}\n\n`)) n++;
   }
   return n;
 }
@@ -58,6 +89,20 @@ export function sluitStromenVan(userId: string, agent?: string): number {
 
 /** Alle stromen netjes sluiten (bij het stoppen van de server). */
 export function sluitAlleStromen(): void { for (const s of [...stromen]) s.sluit(); }
+
+/** Noodstop: stuur `event: noodstop` en sluit actieve SSE-stromen (voor één gebruiker of voor iedereen). */
+export function sluitAlleStroomenVoorNoodstop(userId?: string): number {
+  let n = 0;
+  const payload = JSON.stringify({ reden: 'noodstop' });
+  for (const s of [...stromen]) {
+    if (userId !== undefined && s.userId !== userId) continue;
+    schrijf(s, `event: noodstop\ndata: ${payload}\n\n`);
+    s.sluit();
+    n++;
+  }
+  return n;
+}
+registreerStroomNoodstop(sluitAlleStroomenVoorNoodstop);
 
 /**
  * Een geauthenticeerde GET /<agent> als SSE-stroom openen. De aanroeper (server/start.ts) heeft het token al gecontroleerd en de
@@ -104,18 +149,22 @@ export async function openStroom(req: http.IncomingMessage, res: http.ServerResp
  * /mcp-token van dezelfde klant), daarna de stroom. Zonder geldig token: dezelfde 401 met WWW-Authenticate als de POST-kant, zodat
  * de klant gewoon (opnieuw) aanmeldt. Een GET zonder event-stream-Accept hoort hier niet (de router antwoordt 405).
  */
-export async function stroomVerzoek(req: http.IncomingMessage, res: http.ServerResponse, slug: string): Promise<void> {
+export async function stroomVerzoek(req: http.IncomingMessage, res: http.ServerResponse, slug: string, ip = ''): Promise<void> {
   if (!isAgentSlug(slug)) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ error: 'unknown_agent' })); return; }
   const toegang = await koppelingVan(slug, String(req.headers.authorization || ''));
-  if ('statusCode' in toegang) { res.writeHead(toegang.statusCode, toegang.headers); res.end(toegang.body); return; }
+  if ('statusCode' in toegang) {
+    if (await sseFoutGeweigerd(res, ip)) return;
+    res.writeHead(toegang.statusCode, toegang.headers); res.end(toegang.body); return;
+  }
   await openStroom(req, res, { userId: toegang.koppeling.userId, agent: slug, verbindingId: toegang.koppeling.tokenId || toegang.koppeling.grantId || null });
 }
 
 /** GET /mcp met `Accept: text/event-stream`: SSE-stroom voor het oude /mcp-eindpunt (list_changed bij herauthenticatie of UI-wijziging). */
-export async function stroomVerzoekMcp(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+export async function stroomVerzoekMcp(req: http.IncomingMessage, res: http.ServerResponse, ip = ''): Promise<void> {
   const authHeader = String(req.headers.authorization || '');
   const who = await authenticate(authHeader);
   if (!who || who.agent) {
+    if (await sseFoutGeweigerd(res, ip)) return;
     const weigering = unauthorized(!!authHeader.trim());
     res.writeHead(weigering.statusCode, weigering.headers);
     res.end(weigering.body);

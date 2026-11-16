@@ -1,4 +1,4 @@
-// ZOEKKERN v2 (Z1, 22.10.2026) — MET DATABASE (PG16, migraties 0093/0094/0100). Contract: scratchpad/zoek-API.md.
+// ZOEKKERN v2 (Z1, 22.10.2026) — MET DATABASE (PG16, migraties 0093/0094/0100). Contract: shared/zoek-model.ts (uitleg: docs/zoek/ZOEKEN.nl.md §4).
 // Toetst: upsert zonder dubbels, overslaan van ongewijzigde versies, verwijderen, exact/voorvoegsel/vaag/synoniem/
 // meertalig/surzhyk/transliteratie/deel van een naam/omschrijving, rangschikking (exacte titel > zwakke treffer),
 // percent 0–100 monotoon, facets, paginering, suggesties ALLEEN uit eigen lade, C-locale (Харків), twee gebruikers met

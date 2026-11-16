@@ -17,6 +17,7 @@ import { googleSuiteDriveProviderSnapshot, googleSuiteFotoScopeStatus } from './
 import { PostgresCloudConnections } from './cloud-verbinding-m4-pg';
 import { ladeOf } from './ruimte-cloud-agenda';
 import { INDEX_BRONNEN } from './zoek/bronnen';
+import { veiligeFoutcode, vnextFoutAntwoord } from './cloud-vnext-fout';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessionFail = { errorCode: string };
@@ -74,7 +75,10 @@ async function googleDeel(ownerUserId: string): Promise<IntegratiesUit['google']
     const metSync = accounts.map((item) => { const f = feiten.get(item.id); return f ? { ...item, sync: f } : item; });
     return { gekoppeld: accounts.some((item) => item.status === 'connected'), accounts: metSync };
   } catch (caught) {
-    return { gekoppeld: false, accounts: [], fout: String((caught as Error)?.message || 'CLOUD_GOOGLE_STATUS_ONBESCHIKBAAR').slice(0, 80) };
+    // SEC-002 (wolk-10): alleen een vaste code naar de client; een vrije fouttekst (pad, SQL) blijft in het serverlogboek.
+    const fout = veiligeFoutcode(caught, 'CLOUD_GOOGLE_STATUS_ONBESCHIKBAAR');
+    if (fout === 'CLOUD_GOOGLE_STATUS_ONBESCHIKBAAR') console.error('[cloud-vnext-integraties] google:', String((caught as Error)?.message || caught).slice(0, 500));
+    return { gekoppeld: false, accounts: [], fout };
   }
 }
 
@@ -108,15 +112,21 @@ async function m4Deel(ownerUserId: string): Promise<IntegratiesUit['m4']> {
   };
 }
 
-export function cloudVnextIntegratiesRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+/**
+ * SEC-002 (wolk-05): `vlagAan` = mag DEZE mens dit overzicht zien (backend/index.ts: vlag cloud-vnext of verbindingen-centrum-v2).
+ * Zonder vlag 404 CLOUD_VNEXT_UIT; kan de vlag niet bepaald worden, dan is het antwoord «uit» (veilige kant).
+ * Zonder opties (eenheidstests, oude aanroepers) blijft de route open zoals voorheen.
+ */
+export function cloudVnextIntegratiesRoutes(requireSession: RequireSession, opties: { vlagAan?: (u: SessionOk['user']) => Promise<boolean> } = {}): Record<string, RouterMiddleware[]> {
   const route = (run: (ctx: Ctx, auth: SessionOk) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+    if (opties.vlagAan && !(await opties.vlagAan(auth.user).catch(() => false))) return error('CLOUD_VNEXT_UIT', 404);
     try { return await run(ctx, auth); }
-    catch (err) { return error(String((err as Error)?.message || 'CLOUD_VNEXT_FOUT').slice(0, 80), 500); }
+    catch (err) { return vnextFoutAntwoord('cloud-vnext-integraties', err); }
   }) as unknown as RouterMiddleware];
   return {
     'POST /api/owner/cloud/vnext/integraties': route(async (_ctx, auth) => {

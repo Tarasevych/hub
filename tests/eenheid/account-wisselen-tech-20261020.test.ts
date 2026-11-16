@@ -95,8 +95,8 @@ export async function main(): Promise<number> {
       check(`${pad}: de wissel meldt aan het menu of het technische profiel van het vorige account is beëindigd`,
         s.includes("api.post('/api/owner/session/replace-tab-remembered'") && s.includes('return{techBeeindigd:Number(response.data?.techBeeindigd||0)}'));
     }
-    check('de server blijft degene die de activering van het VORIGE account beëindigt (R-05 blijft staan)',
-      bron('backend/index.ts').includes('const techBeeindigd=vorigeUserId&&vorigeUserId!==grant.userId?await techBeeindigenBijUitloggen(vorigeUserId,anchor.tab):0;'));
+    check('de server blijft degene die de activering van het VORIGE account beëindigt (R-05 blijft staan via ownerActivateBrowserAccount)',
+      bron('backend/index.ts').includes('techBeeindigenBijUitloggen(vorigeUserId,tab)') && bron('backend/index.ts').includes("techBeeindigenBijIntrekken(vorigeUserId,'uitgelogd',{sessieId:oldAnchor.id})") && bron('backend/index.ts').includes('const activated=await ownerActivateBrowserAccount(anchor.session,user,service,sourceOrigin,tab,grantId,ctx.event,'));
   }
 
   // ================================================================ 2/5 — de grens zelf, met de echte database

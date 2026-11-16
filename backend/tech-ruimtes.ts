@@ -61,5 +61,7 @@ export function techRuimtesRoutes(requireSession: RequireSession, deps: TechRuim
     })],
     [`POST ${P}/toegang`]: [gate({}, async (_b, a, tab) => json(await k.toegang(a.user, sessie(a), tab)))],
     [`POST ${P}/ai-zetten`]: [gate({ schrijven: true, stepUp: true }, async (b, a, tab) => { await k.aiZetten(a.user, sessie(a), b); return json(await k.toegang(a.user, sessie(a), tab)); })],
+    // AI-TERMIJN-001: intrekken is de veilige richting → geen stap-op nodig (zoals «Вийти»).
+    [`POST ${P}/ai-intrekken`]: [gate({ schrijven: true }, async (b, a, tab) => { await k.aiIntrekken(a.user, sessie(a), b); return json(await k.toegang(a.user, sessie(a), tab)); })],
   };
 }

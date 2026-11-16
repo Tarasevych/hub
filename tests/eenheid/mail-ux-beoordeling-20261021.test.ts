@@ -11,7 +11,7 @@
 //  R9 панель ШІ над листом розгорнута завжди: на 390×844 текст листа з y≈555, на 844×390 не видно зовсім; рядки лише українською;
 //  R10 панель сповіщень в альбомній орієнтації: на список лишалося 0 px (заголовок + пошук + два рядки чипів + 4 кнопки);
 //  R11 підказка пошуку «Пошук у пошті» обрізана посеред слова («Пошук у по», «Пошу»).
-// Кожна перевірка фіксує правило, яке це виправляє; ДО/ПІСЛЯ — знімки рецензента (scratchpad/rev1/DO|NA).
+// Кожна перевірка фіксує правило, яке це виправляє; ДО/ПІСЛЯ — знімки екрана рецензента до й після виправлення (у сховище не входять).
 import { readdirSync, readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
@@ -51,9 +51,9 @@ export async function main(): Promise<number> {
   const ws = zc(lees('src/google-mail-werkruimte.css')) + zc(lees('src/mail-lezer-verbeteringen.css')) + zc(lees('src/mail-qa-2026-10.css'));
   const zLezer = Math.max(...[...ws.matchAll(/\.google-mail-reader-backdrop\{[^}]*z-index:(\d+)/g)].map((m) => Number(m[1])), 0);
   check('R1 z-index смуги: над рядками листів (їхні z ≤ 13), під вікном читання (воно в тій самій робочій області)', zStrook > 13 && zLezer > zStrook, `смуга ${zStrook}, вікно читання ${zLezer}`);
-  // висота смуги = відступ робочої області зверху: 70 px (комп'ютер), 62 px (≤ 700 px)
-  check('R1 висота = відступ .canonical-workspace зверху: 70 px і 62 px на телефоні (canoniek-omlijsting.css)', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;overflow:auto;[^}]*padding:70px /.test(chrome) && /@media\(max-width:700px\)\{[^@]*\.canonical-workspace,\.sidebar-pinned \.canonical-workspace\{padding:62px /.test(chrome)
-    && /height:var\(--mr-kop-hoogte, 70px\)/.test(r1) && /@media \(max-width:700px\) \{ html body \.canonical-chrome:has\(\.mail-top-command-bar\) \.canonical-workspace \{ --mr-kop-hoogte:62px; \} \}/.test(rev));
+  // висота смуги = відступ робочої області зверху: max(76px, --plaats-boven-onder + 14px) (комп'ютер), max(64px, --plaats-boven-onder + 12px) (≤ 700 px)
+  check('R1 висота = відступ .canonical-workspace зверху: формула ПК і телефону узгоджена з canoniek-omlijsting.css', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;[^}]*padding:max\(76px,calc\(var\(--plaats-boven-onder,62px\) \+ 14px\)\) /.test(chrome) && /@media\(max-width:700px\)\{[^@]*\.canonical-workspace,\.sidebar-pinned \.canonical-workspace\{padding:max\(64px,calc\(var\(--plaats-boven-onder,52px\) \+ 12px\)\) /.test(chrome)
+    && /height:var\(--mr-kop-hoogte, max\(76px, calc\(var\(--plaats-boven-onder, 62px\) \+ 14px\)\)\)/.test(r1) && /@media \(max-width:700px\) \{ html body \.canonical-chrome:has\(\.mail-top-command-bar\) \.canonical-workspace \{ --mr-kop-hoogte:max\(64px, calc\(var\(--plaats-boven-onder, 52px\) \+ 12px\)\); \} \}/.test(rev));
   check('R1 робоча область сама z 1 (своя площина) — смуга всередині не може лягти на шапку/дзвоник', /\.canonical-workspace\{position:fixed;inset:0;z-index:1;/.test(chrome));
   check('R1 межа під шапкою лише після прокрутки (scroll-timeline, у @supports)', /@supports \(animation-timeline: scroll\(\)\)/.test(rev) && /scroll-timeline:--mr-kop block;/.test(rev) && /animation-range:0 48px;/.test(rev));
 
@@ -132,7 +132,7 @@ export async function main(): Promise<number> {
   opslag.set('mr-ai-balk-open-v1', '1'); zetBrowser(true); const gekozen = aiBalkStartIngeklapt(); opslag.clear();
   zetBrowser(true, true); const prive = aiBalkStartIngeklapt();
   check('R9 старт: телефон згорнуто, комп\'ютер теж згорнуто (пакет 3, 24.10; раніше розгорнуто), «розгорнути» пам\'ятається, privévenster не ламає', telefoon && computer && !gekozen && prive, JSON.stringify({ telefoon, computer, gekozen, prive }));
-  const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', from: 'X <x@y.test>', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined } as unknown as Parameters<typeof AiVertalingBalk>[0];
+  const props = { context: { service: 'mail' }, accountId: 'a', messageId: 'm1', subject: 'Тема', from: 'X <x@y.test>', bodyText: 'Текст', segments: [{ id: 's0', text: 'Текст' }], translationActive: false, onToggleTranslationActive: () => undefined, onTranslationsReady: () => undefined, voorbeeldZichtbaar: true /* MAILAI-001: zonder serverstaat is het paneel weg */ } as unknown as Parameters<typeof AiVertalingBalk>[0];
   zetBrowser(true);
   const ukHtml = renderToString(createElement(AiVertalingBalk, props));
   const ids = /aria-controls="([^" ]+)-kiezers \1-modi"/.exec(ukHtml);

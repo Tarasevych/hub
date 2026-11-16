@@ -11,7 +11,13 @@ import { startImpersonatieModus } from './impersonatie/modus'; // «Подиви
 import './index.css';
 import './ontwerp/fundament.css'; // фундамент дизайну 20.10.2026: токени → примітиви → мобільна верстка (після preflight)
 import './mobiel-ux.css';
+import './maquette-kern/maquette-tokens.css';
+import './maquette-kern/maquette-oppervlakken.css';
+import './maquette-kern/maquette-aanmelden.css';
+import './maquette-kern/maquette-klassiek.css';
 import './platform/sluitknop.css'; // gecentreerde sluitknoppen (specificiteit 0)
+import './tech/tech.css';
+import './tech/strook.css';
 import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026; herzien INTEG-001 print)
 import { installeerAfdruk } from './platform/afdruk'; // vlak vóór het afdrukken: vaste/afgeknipte vakken vrijmaken, knoppen sorteren (INTEG-001 print)
 
@@ -54,4 +60,4 @@ naActivering(() => {
   }
 });
 
-const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>undefined)},{once:true})}
+const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>{const update=()=>{void registration.update().catch(()=>undefined)};const ric=(window as Window&{requestIdleCallback?:(cb:()=>void,opts?:{timeout:number})=>void}).requestIdleCallback;if(ric)ric(update,{timeout:4000});else window.setTimeout(update,2500)}).catch(()=>undefined)},{once:true})}

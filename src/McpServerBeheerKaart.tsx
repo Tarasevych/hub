@@ -4,6 +4,7 @@ import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import TerugdraaiMeester from './besluit/TerugdraaiMeester';
 import './mcp-backups-kaart.css';
+import './mcp-uitrol-maquette.css';
 
 // Methode 3 (gepantserde opdracht): vaste werkwoorden, de server controleert alles opnieuw als root.
 // Uitrol-nu vraagt een bevestiging van de aanmelding (client.ts vraagt die zelf bij STEP_UP_REQUIRED).

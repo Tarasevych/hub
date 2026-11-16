@@ -1,0 +1,43 @@
+/* ACHTERGROND-001 (крок 2): кнопка «Живий фон» вгорі й компактна панель (у дусі тла поштової служби). Мобільний шар — у кінці файла. */
+.la-knop{display:grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:1px solid color-mix(in srgb,var(--line,#bdc9d9) 82%,transparent);border-radius:14px;background:color-mix(in srgb,var(--panel,#fff) 86%,transparent);color:var(--text,#314);cursor:pointer}
+.la-knop svg{width:19px;height:19px}
+.la-knop:hover,.la-knop[aria-expanded='true']{border-color:var(--accent,#7c6cf0);color:var(--accent,#7c6cf0)}
+.la-knop:focus-visible{outline:3px solid var(--accent,#7c6cf0);outline-offset:2px}
+.la-knop-maquette{margin-right:2px;align-self:center;border-color:color-mix(in srgb,currentColor 16%,transparent);background:color-mix(in srgb,currentColor 5%,transparent);color:inherit}
+.la-knop-gastheer{display:contents}
+.la-snel-laag{position:fixed;z-index:10020;width:min(320px,calc(100vw - 24px));overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line,#c8d1dc);border-radius:18px;background:var(--panel,#fff);color:var(--text,#25364c);box-shadow:0 18px 48px rgba(6,10,24,.32)}
+.la-snel-paneel{display:grid;gap:11px;padding:14px;font-size:13px}
+.la-snel-kop{display:flex;align-items:center;gap:8px}
+.la-snel-kop svg{width:18px;height:18px;color:var(--accent,#7c6cf0)}
+.la-snel-kop strong{flex:1;font-size:14px}
+.la-snel-kop button{display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted,#637083);cursor:pointer}
+.la-snel-kop button svg{color:inherit}
+.la-snel-segment{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border:1px solid var(--line,#c8d1dc);border-radius:12px;background:var(--surface,#f6f8fb)}
+.la-snel-segment button{min-height:32px;border:0;border-radius:9px;background:transparent;color:var(--text,#25364c);font:inherit;font-weight:600;cursor:pointer}
+.la-snel-segment button[aria-checked='true']{background:var(--panel,#fff);box-shadow:0 1px 3px rgba(0,0,0,.18),inset 0 0 0 1.5px var(--accent,#7c6cf0)}
+.la-snel-niveaus{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.la-snel-niveaus button{display:flex;align-items:center;gap:7px;min-height:34px;padding:5px 9px;border:1.5px solid var(--line,#c8d1dc);border-radius:11px;background:var(--surface,#f6f8fb);color:var(--text,#25364c);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.la-snel-niveaus button[aria-checked='true']{border-color:var(--accent,#7c6cf0);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#7c6cf0) 30%,transparent)}
+.la-snel-niveaus i{display:block;flex:none;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--accent,#7c6cf0),transparent 70%)}
+.la-snel-niveaus i[data-n='subtiel']{opacity:.3}.la-snel-niveaus i[data-n='rustig']{opacity:.55}.la-snel-niveaus i[data-n='levendig']{opacity:.8}
+.la-snel-niveaus i[data-n='opvallend']{background:conic-gradient(#f472b6,#a78bfa,#38bdf8,var(--ok-vlak,#34d399),#f472b6)}
+.la-snel-niveaus .la-let-op{width:14px;height:14px;margin-left:auto;color:var(--warn,#d97706)}
+.la-snel-schuif{display:grid;gap:3px;font-weight:600}
+.la-snel-schuif span{display:flex;justify-content:space-between;gap:8px}
+.la-snel-schuif output{color:var(--muted,#637083);font-weight:500;font-variant-numeric:tabular-nums}
+.la-snel-schuif input[type=range]{width:100%;min-height:22px;margin:0;accent-color:var(--accent,#7c6cf0);cursor:pointer}
+.la-snel-keuzes{display:grid;gap:7px}
+.la-snel-keuzes label{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-weight:600}
+.la-snel-keuzes select{width:100%;min-height:34px;padding:5px 8px;border:1px solid var(--line,#c8d1dc);border-radius:10px;background:var(--surface,#f6f8fb);color:var(--text,#25364c);font:inherit}
+.la-snel-voet{display:flex;align-items:center;gap:9px}
+.la-snel-voet button{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:32px;padding:4px 10px;border:1px solid var(--line,#c8d1dc);border-radius:10px;background:var(--surface,#f6f8fb);color:var(--text,#25364c);font:inherit;font-weight:600;cursor:pointer}
+.la-snel-voet button svg{width:14px;height:14px}
+.la-snel-voet small{color:var(--muted,#637083);font-size:12px;line-height:1.35}
+.la-snel-paneel :is(button,select,input):focus-visible{outline:2px solid var(--accent,#7c6cf0);outline-offset:2px}
+.la-snel-paneel :is(button,select,input):disabled{opacity:.5;cursor:not-allowed}
+@media (max-width:560px){
+  .la-knop{width:40px;height:40px;border-radius:12px}
+  .la-knop.la-knop-maquette{width:36px;height:36px;border-radius:11px}
+  .la-snel-segment button,.la-snel-niveaus button,.la-snel-keuzes select,.la-snel-voet button{min-height:var(--tik-hoogte,44px)}
+  .la-snel-schuif input[type=range]{min-height:32px}
+}

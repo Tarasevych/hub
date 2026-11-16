@@ -189,6 +189,14 @@ export async function main(): Promise<number> {
     check('step-up: met de bevestiging kan de passkey weg', (await id(A2, `${P}/verwijderen`, { id: pA2.id })).status === 200 && (await id(A2, `${P}/lijst`)).data.passkeys.length === 1);
 
     // herstelcodes
+    // SEC-002 (aanmelden-01, 12.11.2026): ook de EERSTE TOTP-inschrijving vraagt step-up (met passkeys: een sterke).
+    // Vroeger startte deze test TOTP op sessie A zonder bevestiging — dat was precies het lek: een gestolen sessie gaf
+    // zichzelf TOTP + herstelcodes en daarmee een «sterke» bevestiging. Nu: eerst bewijzen dat het zonder step-up geweigerd
+    // wordt (verse sessie, geen geheim), daarna passkey-step-up op A en pas dan inschrijven.
+    const A9 = G.browser(); await A9.aanmelden(`sub-a-${T}`, aMail, { authTime: oud });
+    const ts0 = await id(A9, '/api/owner/access/totp/start');
+    check('herstel: TOTP eerste keer instellen zonder step-up → 403, geen geheim uitgegeven', ts0.status === 403 && /^STEP_UP_/.test(String(ts0.data.error || '')) && !ts0.data.secret, `${ts0.status} ${ts0.data.error}`);
+    check('herstel: passkey-step-up vóór TOTP-inschrijving', (await stapOpMet(A, a1)).status === 200);
     if (Date.now() % 30000 > 25000) await new Promise((r) => setTimeout(r, 30000 - (Date.now() % 30000) + 200));
     const stap = Math.floor(Date.now() / 30000);
     const ts = await id(A, '/api/owner/access/totp/start');

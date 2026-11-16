@@ -30,6 +30,8 @@ import { MARKERING_STAART_MS, agentSlugUitNaam, kleurVoorAgent } from './markeri
 // Statische import: import() is in een service worker niet toegestaan (HTML-spec), dus native.js moet in het pakket zitten.
 import * as nativeModule from './native.js';
 import { ruimteFout, sluitFout } from './ruimte-fouten.js';
+// SEC-002 extensie-06: de debugger blijft alleen aan een tabblad op een toegestane administratieve host (zie debugger-wacht.js).
+import { contextWacht, debugAdresMag } from './debugger-wacht.js';
 
 const VERSION = chrome.runtime.getManifest().version;
 const SITE = 'https://mcp.tarasevych.com';
@@ -262,7 +264,10 @@ async function eindeBereikt(r) {
   if (s.ontgrendeling && eindeLokaal(s.ontgrendeling) <= Date.now() + 1000) await vergrendel(r, 'verlopen');
 }
 
-async function bewaarIntrekking(r) { const s = sloten[r]; await sessie.set({ [K.intrek(r)]: { ingetrokken: s.ingetrokken, laatsteIat: s.laatsteIat, wachtrij: s.wachtrij } }); }
+// SEC-002 extensie-08: ook in chrome.storage.local (geen geheim: alleen gid's, tijdstempel en reden). chrome.storage.session is leeg
+// na het sluiten van de browser of het herladen van de extensie; zonder deze kopie aanvaardde de extensie daarna weer een toegang die
+// de mens had ingetrokken terwijl de verbinding verbroken was, en bleef de intrekking zelf nooit bij de server aankomen.
+async function bewaarIntrekking(r) { const s = sloten[r]; const w = { [K.intrek(r)]: { ingetrokken: s.ingetrokken, laatsteIat: s.laatsteIat, wachtrij: s.wachtrij } }; await sessie.set(w); await stil(() => chrome.storage.local.set(w)); }
 function markeerIngetrokken(r, gid) {
   const s = sloten[r];
   if (typeof gid !== 'string' || !gid || s.ingetrokken.includes(gid)) return;
@@ -374,7 +379,9 @@ async function bevestigIntrekking(r, gid) {
 }
 
 // ---------------------------------------------------------------- tabbladen: profiel en regels per slot
-const profielVan = (tabId) => { const i = tabInfo.get(tabId); return i ? i.profiel : 'gebruiker'; };
+// SEC-002 extensie-03/04: een tabblad ZONDER bekende stand (net genavigeerd, service worker gewekt, brug zwijgt) is 'onbekend' en
+// geldt voor GEEN slot — vroeger was dat stilzwijgend 'gebruiker', waardoor het privé-slot een technisch tabblad zag en bediende.
+const profielVan = (tabId) => { const i = tabInfo.get(tabId); return i ? i.profiel : 'onbekend'; };
 /** Mag slot r (met grant g) dit tabblad raken? Host exact ∈ domeinen ∩ hosts van de ruimte, en het profiel volgens de regel. */
 function tabMag(r, g, tab, profiel = profielVan(tab.id)) {
   return !!(g && tab && isOwnSiteUrl(tab.url || '') && adresInRuimte(r, tab.url || '', g.domeinen) && profielToegestaan(r, profiel));
@@ -474,13 +481,15 @@ async function statusKern() {
   const tech = await slotStatus('technisch');
   const tab = await actiefTabblad();
   const opSite = !!(tab && isOwnSiteUrl(tab.url || ''));
+  // 0.9.4: hoeveel tarasevych.com-tabbladen staan er open (alle vensters)? De kop zegt dan «у фоні» i.p.v. «активна вкладка не на сайті».
+  const siteTabs = ((await stil(() => ownTabs())) || []).length;
   const userId = await accountUserId();
   const nativeAan = gl.nativeOptIn === true;
   const nr = nativeRuimte();
   const techBestaat = tech.gekoppeld || accountInfo.techRecht === true;
   return {
     // 0.9.1: e-mail alleen zolang er een koppeling is (na ontkoppelen geen oude e-mail in de kop, maar de knop «Увійти»).
-    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
+    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, siteTabs, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
     account: opSite ? accountState(tabInfo.get(tab.id) ? tabInfo.get(tab.id).claim : null, userId) : 'unknown',
     sloten: { prive, technisch: techBestaat ? tech : null },
     lokaal: { toegestaan: nativeAan && !!nr, verbonden: lokaalInfo().verbonden, ruimte: nativeAan ? nr : null },
@@ -549,6 +558,19 @@ function stuurStatusNaarServer(r, extra = {}) {
   const s = sloten[r];
   if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
   try { s.ws.send(JSON.stringify({ t: 'status', ...statusVelden(r), ...extra, version: VERSION })); } catch { /* dicht */ }
+}
+function stuurMeldingNaarServer(r, data = {}) {
+  const s = sloten[r];
+  if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
+  try {
+    s.ws.send(JSON.stringify({
+      t: 'melding',
+      ruimte: r === 'technisch' ? 'technisch' : 'prive',
+      link: 'https://mcp.tarasevych.com/#extensie',
+      context: `Chrome ${VERSION} · ${r}`,
+      ...data,
+    }));
+  } catch { /* з'єднання закрито */ }
 }
 const pong = (r) => JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(r), ...statusVelden(r) });
 
@@ -714,6 +736,17 @@ async function handle(r, socket, raw) {
     await wachtrijVersturen(r);
     void selfInfo(r, true).then(() => statusWijziging());
     await statusWijziging();
+    stuurMeldingNaarServer(r, {
+      sleutel: `ext:ready:${r}:${VERSION}`,
+      soort: 'extensie',
+      ernst: 'info',
+      titel: r === 'technisch'
+        ? `Розширення Chrome v${VERSION} (технічний контур) підключено / Chrome-extensie v${VERSION} (technisch) verbonden`
+        : `Розширення Chrome v${VERSION} готове до роботи / Chrome-extensie v${VERSION} gereed`,
+      bericht: r === 'technisch'
+        ? 'Слот технічного профілю активний. Доступ дозволяється лише після passkey.'
+        : 'Слот користувача на зв’язку з порталом.',
+    });
     return;
   }
   if (msg.t === 'ping') { socket.send(pong(r)); return; }
@@ -828,9 +861,15 @@ async function guarded(r, msg, bron) {
   // 6. host ∈ grant.domeinen ∩ hosts van de ruimte (prive nooit admin.*) en binnen de domeinen van de server-grant
   const scope = msg.scope && Array.isArray(msg.scope.domains) ? msg.scope.domains : (Array.isArray(serverGrant.domains) ? serverGrant.domains : []);
   const inBereik = (url) => adresInRuimte(r, url || '', g.domeinen) && urlInScope(url || '', scope);
-  const tabOk = (t) => !!t && inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id));
+  // SEC-002 extensie-03: opdrachten die een LIJST van tabbladen tonen of zelf een tabblad kiezen (tabs, pages, navigate) eisen voor
+  // elke kandidaat ook het juiste account — net als het doeltabblad van elke andere opdracht (stap 7).
+  const lijstOpdracht = type === 'browser.tabs' || type === 'browser.pages' || type === 'browser.navigate';
+  const tabOk = (t) => !!t && inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id))
+    && (!lijstOpdracht || accountState((tabInfo.get(t.id) || {}).claim, st.userId) === 'ok');
   if (typeof params.url === 'string' && !inBereik(params.url)) throw new Error('EXTENSIE_DOMEIN: the address is outside the pages that were unlocked on the site');
   if (type === 'browser.self_test') return selfTest(r);
+  // Profiel en account van de kandidaten VERS bij de brug ophalen: altijd voor lijstopdrachten, anders alleen voor wie onbekend is.
+  await verversProfielen(inBereik, lijstOpdracht);
   if (type === 'browser.tabs' || (type === 'browser.pages' && params.action === 'new') || type === 'browser.navigate') return run(r, type, params, null, inBereik, tabOk, msg);
   // 7. doeltabblad: host + profiel (vers gevraagd aan de brug), accountclaim = userId van DIT slot
   const tab = await needTab(tabOk);
@@ -943,18 +982,40 @@ async function zetTabInfo(tabId, claim, profiel) {
  */
 async function claimVan(tabId, vers = false) {
   if (!vers && tabInfo.has(tabId)) return tabInfo.get(tabId);
-  const a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  let a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  // 0.9.4: geen antwoord = meestal GEEN brug (tabblad open van vóór installeren/bijwerken van de extensie). Dan eerst zelf plaatsen
+  // (zorgVoorBrug, alleen eigen tabbladen) en één keer opnieuw vragen — anders bleef zo'n tabblad 'onbekend' en vond geen enkele
+  // opdracht of zelftest het, ook al stond het gewoon open. Немає відповіді → спершу під'єднати міст, потім спитати ще раз.
+  if (!(a && a.ok === true) && (await stil(() => zorgVoorBrug(tabId)))) a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
   if (a && a.ok === true && a.data && typeof a.data === 'object') {
     const claim = typeof a.data.claim === 'string' ? parseAccountClaim(a.data.claim) : null;
     const profiel = parseProfiel(a.data.profiel);
     if (await zetTabInfo(tabId, claim, profiel)) void statusWijziging();
+  } else if (vers && tabInfo.has(tabId)) {
+    // SEC-002 extensie-03: vers gevraagd en GEEN antwoord van de brug → de oude stand is niets meer waard (onbekend = geen slot).
+    tabInfo.delete(tabId);
+    void statusWijziging();
   }
-  return tabInfo.get(tabId) || { claim: null, profiel: 'gebruiker' };
+  return tabInfo.get(tabId) || { claim: null, profiel: 'onbekend' };
+}
+/** SEC-002 extensie-03: de stand van de kandidaat-tabbladen vers ophalen. `alles` = elke kandidaat; anders alleen wie onbekend is. */
+async function verversProfielen(inBereik, alles) {
+  const kandidaten = (await ownTabs()).filter((t) => inBereik(t.url || '') && (alles || !tabInfo.has(t.id)));
+  await Promise.all(kandidaten.map((t) => claimVan(t.id, true)));
 }
 chrome.tabs.onRemoved.addListener((tabId) => { tabInfo.delete(tabId); attached.delete(tabId); for (const r of RUIMTES) netwerk.delete(`${r}:${tabId}`); tabUrls.delete(tabId); });
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  // SEC-002 extensie-06: een tabblad met de debugger eraan gaat naar een adres buiten de toegestane hosts (klik op een extern adres,
+  // «terug» in de geschiedenis) → METEEN los: diagnose of script van de AI mag niets van de vreemde site zien of daar draaien.
+  if (info.url && attached.has(tabId) && !debugAdresMag(info.url, (huidigeGrant(DIAG_RUIMTE) || {}).domeinen)) {
+    attached.delete(tabId);
+    void stil(() => chrome.debugger.detach({ tabId })).then(() => statusWijziging());
+  }
   if (info.url) { // nieuwe pagina: claim en profiel opnieuw lezen; netwerkring alleen houden als het slot er nog mag verzamelen
     tabInfo.delete(tabId);
+    // SEC-002 extensie-03: niet stil wissen maar meteen opnieuw vragen. Bij een overgang binnen de pagina (pushState) verandert de
+    // meta niet en meldt de brug uit zichzelf niets; tot het antwoord er is, is het tabblad 'onbekend' (geen slot raakt het).
+    void claimVan(tabId, true);
     tabUrls.set(tabId, info.url);
     const r = verzamelRuimte(tabId, info.url);
     for (const x of RUIMTES) if (x !== r) netwerk.delete(`${x}:${tabId}`);
@@ -1120,6 +1181,8 @@ const DEBUG_WEIGER = {
   HOST: 'Refused: the Chrome debugger is only allowed on the administrative hosts of the own site',
   PROFIEL: 'Refused: the tab is not in technical mode (activate the technical profile in that tab)',
   ONGELDIG: 'Refused: deep diagnostics is not allowed here',
+  // SEC-002 extensie-06
+  VERLATEN: 'Refused: the tab left the administrative pages of the own site while the debugger was attached; the debugger was detached and nothing from the other page is returned',
 };
 async function detachAll() {
   for (const tabId of [...attached]) { try { await chrome.debugger.detach({ tabId }); } catch { /* al los */ } attached.delete(tabId); }
@@ -1129,8 +1192,12 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
   const secs = Math.min(10, Math.max(1, Number(seconds) || 5));
   const consoleLines = []; const exceptions = []; const failed = []; const slow = []; const pending = new Map();
   let total = 0;
+  // SEC-002 extensie-06: alleen gebeurtenissen uit contexten/documenten op toegestane hosts; na loskoppelen niets meer.
+  const domeinen = (huidigeGrant(r) || {}).domeinen || [];
+  const wacht = contextWacht(domeinen);
   const onEvent = (src, method, p) => {
     if (src.tabId !== tab.id) return;
+    if (!attached.has(tab.id) || !wacht.gebeurtenis(method, p)) return;
     if (method === 'Runtime.consoleAPICalled' && (p.type === 'error' || p.type === 'warning')) {
       consoleLines.push({ level: p.type, text: (p.args || []).map((a) => String(a.value ?? a.description ?? '')).join(' ').slice(0, 300) });
     } else if (method === 'Runtime.exceptionThrown') {
@@ -1153,6 +1220,9 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
     await cdp({ tabId: tab.id }, 'Runtime.enable'); await cdp({ tabId: tab.id }, 'Network.enable');
     if (reload) await chrome.tabs.reload(tab.id);
     await sleep(secs * 1000);
+    // Is het tabblad intussen weggegaan (of de debugger losgemaakt)? Dan geen (gedeeltelijk) resultaat.
+    const nu = await stil(() => chrome.tabs.get(tab.id));
+    if (!attached.has(tab.id) || !nu || !debugAdresMag(nu.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
   } finally {
     chrome.debugger.onEvent.removeListener(onEvent);
     await detach();
@@ -1167,10 +1237,26 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
  * uitzondering in de pagina komt als fout terug. Nooit in het privéslot.
  */
 async function uitvoerScript(r, tab, expression, tabOk) {
+  // SEC-002 extensie-06: niet «in wat er nu toevallig geladen is» uitvoeren, maar in de standaardcontext van het hoofdframe, en alleen
+  // als die op een toegestane host draait (contextId). Navigeert het tabblad tussendoor, dan verdwijnt die context → fout, geen run.
+  const domeinen = (huidigeGrant(r) || {}).domeinen || [];
+  const wacht = contextWacht(domeinen);
+  const onEvent = (src, method, p) => { if (src.tabId === tab.id) wacht.gebeurtenis(method, p); };
   const detach = await humanAttach(r, tab, tabOk, 'browser.script');
+  chrome.debugger.onEvent.addListener(onEvent);
   try {
     await cdp({ tabId: tab.id }, 'Runtime.enable');
-    const uit = await cdp({ tabId: tab.id }, 'Runtime.evaluate', { expression: String(expression), returnByValue: true, awaitPromise: true, timeout: 10000, userGesture: false });
+    const boom = await cdp({ tabId: tab.id }, 'Page.getFrameTree');
+    const hoofd = boom && boom.frameTree && boom.frameTree.frame;
+    if (!hoofd || !debugAdresMag(hoofd.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
+    let contextId = wacht.hoofdContext(hoofd.id);
+    // De gebeurtenissen over bestaande contexten komen bij Runtime.enable; even wachten als ze nog onderweg zijn.
+    for (let i = 0; contextId === null && i < 10; i += 1) { await sleep(50); contextId = wacht.hoofdContext(hoofd.id); }
+    if (contextId === null || !attached.has(tab.id)) throw new Error(DEBUG_WEIGER.VERLATEN);
+    const uit = await cdp({ tabId: tab.id }, 'Runtime.evaluate', { expression: String(expression), contextId, returnByValue: true, awaitPromise: true, timeout: 10000, userGesture: false });
+    // Na het uitvoeren nog eens: staat het tabblad nog op een toegestane pagina? Anders het resultaat niet teruggeven.
+    const na = await stil(() => chrome.tabs.get(tab.id));
+    if (!attached.has(tab.id) || !na || !debugAdresMag(na.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
     if (uit && uit.exceptionDetails) {
       const d = uit.exceptionDetails;
       throw new Error('Script threw: ' + String((d.exception && d.exception.description) || d.text || 'exception').split('\n')[0].slice(0, 300));
@@ -1182,7 +1268,7 @@ async function uitvoerScript(r, tab, expression, tabOk) {
     try { tekst = JSON.stringify(waarde === undefined ? null : waarde); } catch { tekst = JSON.stringify(String(waarde)); }
     const afgekapt = tekst.length > 20000;
     return { url: stripQuery(tab.url), type: res.type || 'undefined', result: afgekapt ? tekst.slice(0, 20000) : tekst, truncated: afgekapt };
-  } finally { await detach(); }
+  } finally { chrome.debugger.onEvent.removeListener(onEvent); await detach(); }
 }
 
 async function screenshot(tab) {
@@ -1191,7 +1277,10 @@ async function screenshot(tab) {
   // De brug zet haar weg, wacht één frame, en zet haar daarna terug; blijft het antwoord weg, dan komt ze er zelf weer op
   // (markering.js heeft een eigen tijdslot in verberg()).
   const terug = await stil(() => chrome.tabs.sendMessage(tab.id, { op: 'markering-verberg', ms: 2000 }));
-  if (terug) await sleep(60);
+  // SEC-002 extensie-09: dezelfde brug verbergt ook [data-ai-verborgen] (koppelcodes, nieuwe tokens). Antwoordt zij niet, of meldt
+  // zij dat verbergen mislukte (geheim: -1), dan GEEN foto: anders stond zo'n code gewoon op de schermafbeelding voor de AI.
+  if (!terug || (terug.data && terug.data.geheim === -1)) { await stil(() => chrome.tabs.sendMessage(tab.id, { op: 'markering-toon' })); throw new Error('Refused: the page could not hide its secret fields for the screenshot; nothing was captured'); }
+  await sleep(60);
   try {
   const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 60 });
   const image = String(dataUrl).replace(/^data:image\/jpeg;base64,/, '');
@@ -1321,10 +1410,26 @@ async function selfTest(r) {
   const ds = await diagStand();
   add('debugger_permission', ds.recht, ds.stand === 'niet-aanvraagbaar' ? 'debugger ontbreekt: standaardpakket (diepe diagnose vereist pakket diagnose)' : ds.laatsteFout ? `${ds.stand}, laatste aanhaking: ${ds.laatsteFout.code}` : ds.stand);
   add('diag_opt_in', ds.optIn);
-  const doel = r || 'prive';
+  // 0.9.4: «Відкрита вкладка Mijn Ruimte» is een HINT, geen voorwaarde. De extensie zoekt eigen tabbladen in ALLE vensters op de
+  // achtergrond (ownTabs/targetTab) — welk tabblad actief is doet er niet toe; de AI opent zelf een pagina (navigate) als er geen is.
+  // Vroeger faalde deze regel ook mét open tabbladen: na het wekken van de service worker (of na bijwerken, zonder brug) was hun
+  // profiel 'onbekend' en paste geen enkel tabblad. Nu eerst de stand van de eigen tabbladen vers ophalen (brug zo nodig plaatsen),
+  // en zonder r beide sloten bekijken (een admin-tabblad hoort bij het technische slot, niet bij «Як користувач»).
+  // Підказка, а не умова: вкладки сайту шукаються у фоні в усіх вікнах; активна вкладка значення не має.
+  await stil(() => verversProfielen((u) => isOwnSiteUrl(u), false));
+  const doelen = r ? [r] : RUIMTES.filter((x) => huidigeGrant(x));
+  let tab = null;
+  let doel = r || 'prive';
+  for (const x of doelen) {
+    const gx = huidigeGrant(x);
+    tab = await stil(() => targetTab((t) => (gx ? tabMag(x, gx, t) : isOwnSiteUrl(t.url || ''))));
+    if (tab) { doel = x; break; }
+  }
+  if (!doelen.length) tab = await stil(() => targetTab((t) => isOwnSiteUrl(t.url || '')));
   const g = huidigeGrant(doel);
-  const tab = await stil(() => targetTab((t) => (g ? tabMag(doel, g, t) : isOwnSiteUrl(t.url || ''))));
+  const aantal = ((await stil(() => ownTabs())) || []).length;
   add('site_tab', !!tab, tab && g ? stripQuery(tab.url) : ''); // vergrendeld: geen adres of titel
+  checks[checks.length - 1].tabs = aantal; // alleen een getal: hoeveel tarasevych.com-tabbladen er open staan (de UI legt uit)
   if (tab) {
     // 0.9.1: ontbreekt de brug, dan eerst zelf plaatsen (geen F5); pas daarna de echte controle.
     await stil(() => zorgVoorBrug(tab.id, tab.url));
@@ -1337,6 +1442,8 @@ async function selfTest(r) {
     add('account', accountState(i.claim, await accountUserId()) === 'ok', accountState(i.claim, await accountUserId()));
     add('profiel', true, i.profiel);
   }
+  // 0.9.4: hint = puur ter informatie (geen ✗ in de UI, telt niet als «не виконано»). Alleen site_tab: zonder open tabblad werkt alles.
+  for (const c of checks) if (c.id === 'site_tab' && !c.ok) c.hint = true;
   return { version: VERSION, ok: checks.filter((c) => !info.includes(c.id)).every((c) => c.ok), checks };
 }
 
@@ -1527,6 +1634,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const claim = message.claim && typeof message.claim === 'object' && typeof message.claim.userId === 'string' ? parseAccountClaim(`${message.claim.userId}:${message.claim.sessionTag || ''}`) : null;
       const profiel = parseProfiel(message.profiel);
       await zetTabInfo(sender.tab.id, claim, profiel);
+      // SEC-002 extensie-04: het profiel is pas NU bekend (vroeger gold «onbekend» meteen als gebruiker): de verzamelmodus opnieuw zetten.
+      { const vr = verzamelRuimte(sender.tab.id, sender.tab.url); void stil(() => chrome.tabs.sendMessage(sender.tab.id, { op: 'diag-modus', aan: !!vr, ruimte: vr })); }
       const acc = accountState(claim, await accountUserId());
       if (acc === 'mismatch' && (await accountUserId())) await badge('warn');
       await statusWijziging();
@@ -1671,10 +1780,18 @@ const geladen = (async () => {
     const s = sloten[r];
     const v = await sessie.get([K.ontgr(r), K.settings(r), K.intrek(r)]);
     if (v[K.settings(r)] && typeof v[K.settings(r)] === 'object') s.settings = v[K.settings(r)];
-    const i = v[K.intrek(r)] && typeof v[K.intrek(r)] === 'object' ? v[K.intrek(r)] : {};
-    if (Array.isArray(i.ingetrokken)) s.ingetrokken = i.ingetrokken.filter((x) => typeof x === 'string').slice(-MAX_INGETROKKEN);
-    if (Number.isFinite(i.laatsteIat)) s.laatsteIat = i.laatsteIat;
-    if (Array.isArray(i.wachtrij)) s.wachtrij = i.wachtrij.filter((w) => w && typeof w.gid === 'string' && typeof w.reden === 'string').slice(-50);
+    // SEC-002 extensie-08: sessie én de blijvende kopie (local) samenvoegen — na een herstart van de browser is alleen de laatste er nog.
+    const iS = v[K.intrek(r)] && typeof v[K.intrek(r)] === 'object' ? v[K.intrek(r)] : {};
+    const lok = ((await stil(() => chrome.storage.local.get(K.intrek(r)))) || {})[K.intrek(r)];
+    const iL = lok && typeof lok === 'object' ? lok : {};
+    const i = {
+      ingetrokken: [...(Array.isArray(iL.ingetrokken) ? iL.ingetrokken : []), ...(Array.isArray(iS.ingetrokken) ? iS.ingetrokken : [])],
+      laatsteIat: Math.max(Number.isFinite(iL.laatsteIat) ? iL.laatsteIat : 0, Number.isFinite(iS.laatsteIat) ? iS.laatsteIat : 0),
+      wachtrij: [...(Array.isArray(iL.wachtrij) ? iL.wachtrij : []), ...(Array.isArray(iS.wachtrij) ? iS.wachtrij : [])].filter((w, n, a) => w && a.findIndex((x) => x && x.gid === w.gid) === n),
+    };
+    if (i.ingetrokken.length) s.ingetrokken = [...new Set(i.ingetrokken.filter((x) => typeof x === 'string'))].slice(-MAX_INGETROKKEN);
+    if (i.laatsteIat > 0) s.laatsteIat = i.laatsteIat;
+    if (i.wachtrij.length) s.wachtrij = i.wachtrij.filter((w) => w && typeof w.gid === 'string' && typeof w.reden === 'string').slice(-50);
     const o = v[K.ontgr(r)];
     if (o && typeof o === 'object') {
       const st = await stil(() => slotState(r)) || {};
@@ -1707,7 +1824,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // Een wekker (30 s) controleert de verbindingen van beide sloten. Tijdens een verbinding houdt het levensteken (20 s) hem wakker.
 chrome.alarms.create('keepalive', { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'keepalive') { connect(); for (const r of RUIMTES) void eindeBereikt(r); }
+  // SEC-002 extensie-08: openstaande intrekkingen elke 30 s opnieuw proberen (WS of de HTTP-terugval), tot de server bevestigt.
+  // Alleen als er voor dat slot géén WebSocket opent of open is: dan gaat het verzoek bij 'ready' toch over de WS (zie handle).
+  if (alarm.name === 'keepalive') {
+    const poging = connect();
+    for (const r of RUIMTES) void eindeBereikt(r);
+    void Promise.resolve(poging).then(() => geladen).then(() => { for (const r of RUIMTES) { const s = sloten[r]; if (s.wachtrij.length && !(s.ws && s.ws.readyState <= 1)) void wachtrijVersturen(r); } }).catch(() => undefined);
+  }
   if (alarm.name === 'versie') void versieOphalen();
   for (const r of RUIMTES) if (alarm.name === K.alarm(r)) void eindeBereikt(r);
 });

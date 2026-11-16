@@ -25,11 +25,11 @@ export async function main(): Promise<number> {
   const sleutel = 'identiteit-account-atelier';
   const vlag: Vlag = { sleutel, omschrijving: '', aan: false, standaard: false, percentage: 0, gebruikers: [] };
 
-  check('de nieuwe weergave heeft twaalf bestaande onderdelen', IDENTITEIT_TABS.length === 12);
+  check('de nieuwe weergave heeft dertien bestaande onderdelen', IDENTITEIT_TABS.length === 13);
   check('alle onderdelen hebben een eigen inhoudelijk symbool', IDENTITEIT_TABS.every((tab) => atelier.includes(`${tab.id === 'identity' ? 'identities' : tab.id}: `)));
-  check('de oorspronkelijke twaalf illustraties zijn overgenomen', gegevens.secties.length === 12 && gegevens.secties.every((s: { art: { uk: string; nl: string } }) => s.art.uk.includes('class="art art-') && s.art.nl.includes('class="art art-')));
-  check('de oorspronkelijke drieënveertig groepen behouden', Object.values(gegevens.groepen).flat().length === 43);
-  check('de oorspronkelijke honderddrieënvijftig keuzen behouden', (Object.values(gegevens.groepen).flat() as { рядки: unknown[] }[]).reduce((a, g) => a + g.рядки.length, 0) === 153);
+  check('de oorspronkelijke dertien illustraties zijn overgenomen', gegevens.secties.length === 13 && gegevens.secties.every((s: { art: { uk: string; nl: string } }) => s.art.uk.includes('class="art art-') && s.art.nl.includes('class="art art-')));
+  check('de oorspronkelijke zevenenveertig groepen behouden', Object.values(gegevens.groepen).flat().length === 47);
+  check('de oorspronkelijke honderddrieënzeventig keuzen behouden', (Object.values(gegevens.groepen).flat() as { рядки: unknown[] }[]).reduce((a, g) => a + g.рядки.length, 0) === 173);
   check('de nieuwe weergave ontvangt de bestaande onderdelen en hun handelingen', pagina.includes('secties={secties}') && atelier.includes("<div className='mr-at-paneel-inhoud ia-at-werkelijk'>{inhoud}</div>"));
   check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier && vormgeving === 'studio') return <IdentiteitAtelier ") && pagina.includes("<div className='ia-account'>"));
   // IDENTITEIT-007: de gebruiker kiest zelf de weergave; zonder vlag blijft alles klassiek en zonder kiezer.
@@ -47,7 +47,7 @@ export async function main(): Promise<number> {
   check('de toegangsmethode heeft een herkenbaar eigen teken', gegevens.secties.some((s: { id: string; art: { uk: string } }) => s.id === 'methods' && s.art.uk.includes('methods-art-brand')));
   check('de pictogrammen behouden hun contrasterende achtergrond', stijl.includes('.mr-at.iconen-kleur .mr-at-glief') && stijl.includes('background:color-mix(in srgb,var(--a) 15%,transparent)'));
   check('de kleurrijke pictogrammen volgen de werkelijke menuvoorkeur in alle onderdelen', atelier.includes('useZijbalkVoorkeuren') && atelier.includes("zijbalk.icoonStijl === 'kleur'") && atelier.includes('data-jump={s.id}') && atelier.includes("iconen-kleur"));
-  check('alleen het gekozen onderdeel wordt getoond (geen twaalf verborgen formulieren tegelijk)', atelier.includes('const inhoud = secties.find(item => ontwerp(item.id) === huidig.id)?.inhoud;'));
+  check('alleen het gekozen onderdeel wordt getoond (geen dertien verborgen formulieren tegelijk)', atelier.includes('const inhoud = secties.find(item => ontwerp(item.id) === huidig.id)?.inhoud;'));
   check('de illustraties gebruiken een eigen schaal en een eigen naamruimte', kunst.includes('.mr-kunst{position:absolute') && !kunst.includes('.ia-at-v49') && (kunst.match(/\.mr-kunst /g) || []).length > 150);
   check('zolang de vlaggen laden, verschijnt het oude uiterlijk niet even', vlagLezer.includes('export const vlaggenBekend') && pagina.includes('if (!vlaggenBekend())'));
   check('het mobiele blok staat aan het einde van het stijlbestand', /@media \(max-width:640px\)[\s\S]*$/.test(stijl) && stijl.lastIndexOf('@media (max-width:640px)') > stijl.lastIndexOf('@container'));
@@ -57,12 +57,15 @@ export async function main(): Promise<number> {
   check('verminderde beweging wordt gerespecteerd', stijl.includes('prefers-reduced-motion:reduce'));
   check('de nieuwe accountvorm scheidt de toegangsfuncties van het oude formulier',
     atelier.includes('<AtelierInhoud.Provider value={true}>') && toegangWeergave.includes('useContext(AtelierInhoud)') && toegangWeergave.includes('alleen={alleen}'));
-  check('aanmelden bevat alleen de aanmeldmethoden en tijdelijke toegangscodes',
-    toegang.includes("p.alleen==='methods'") && toegang.includes('{toonMethoden&&<Toegangscodes') && toegang.includes('{toonMethoden&&<section'));
+  // IDENTITEIT-011: passkeys en toegangscodes voor anderen horen bij «Beveiliging» (ontwikkelkaart); «Aanmelden» verwijst ernaar.
+  check('aanmelden bevat alleen de aanmeldmethoden; passkeys en toegangscodes staan bij beveiliging',
+    toegang.includes("p.alleen==='methods'") && toegang.includes('{toonMethoden&&<section') && toegang.includes('{toonBeveiliging&&<Toegangscodes') && toegang.includes("id='aanmeldmethoden-sleutels'") && toegang.includes('data-passkeys-verwijzing'));
+  check('beveiliging toont herstelcodes alleen eenmalig na het instellen van de authenticator',
+    toegang.includes('(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie'));
   check('beveiliging bevat authenticator en sleutelkluis, niet de herstelcodes',
     toegang.includes("p.alleen==='security'") && toegang.includes('{toonBeveiliging&&<SleutelkluisSectie') && toegang.includes('{toonBeveiliging&&<section'));
   check('herstel toont herstelcodes en tijdelijke wachtwoorden precies één keer',
-    toegang.includes("p.alleen==='recovery'") && toegang.includes('{toonHerstel&&<HerstelcodesSectie') && toegang.includes('{toonHerstel&&p.tempPassword'));
+    toegang.includes("p.alleen==='recovery'") && toegang.includes('{(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie') && (toegang.match(/<HerstelcodesSectie/g) || []).length === 1 && toegang.includes('{toonHerstel&&p.tempPassword'));
   check('een tweede aanmeldweergave toont geen beveiligings- of herstelkaarten in het atelier',
     aanmeldWeergave.includes("['google', 'password', 'passkey', 'guest-code'].includes(k.id)") && aanmeldWeergave.includes('!p.alleen&&<Hero') && aanmeldWeergave.includes("['alles', 'inloggen', 'passkey', 'delegatie']"));
   const basis = {

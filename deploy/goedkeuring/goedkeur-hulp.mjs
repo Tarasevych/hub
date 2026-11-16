@@ -14,6 +14,7 @@
 // Opdrachten:
 //   verifieer-goedkeuring <pakket> <goedkeuring.json> <versie>   (door mijn-ruimte-uitrol --goedkeuring)  → exit 0 ok, 2 geweigerd
 //   verifieer-ssh-ca <verzoek.json> <inrichten|aan>              (door mijn-ruimte-ssh-ca beheer)         → exit 0 ok, 2 geweigerd
+//   verifieer-ssh-ca <genormaliseerd.json> teken                 (door mijn-ruimte-ssh-ca verwerk/tekenen, SEC-002) → exit 0 ok, 2 geweigerd
 //   verifieer-besluit <besluit.json>                              (door mijn-ruimte-besluit verwerk, §15)  → exit 0 ok, 2 geweigerd
 //   verwerk                                                       sleutelverzoeken uit de inbox (path-unit)
 //   wachtend | lijst                                              tonen (SSH)
@@ -30,7 +31,7 @@ import { closeSync, constants as FS, existsSync, fstatSync, lstatSync, mkdirSync
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { OUDE_RP_ID, STANDAARD_RP, normaliseerSleutelbestand, originHoortBijRp, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
+import { OUDE_RP_ID, SSH_CA_TEKEN, STANDAARD_RP, normaliseerSleutelbestand, originHoortBijRp, sshCaSleutelHash, tellerOk, uitdagingVoor, verifieerAssertie, verlooptGeldig, vingerafdruk, vingerafdrukKort } from "./webauthn-kern.mjs";
 import { beleidFout, beleidHash, controleerEd25519, ketenFout, sleutelVingerafdruk, volgendeFout } from "./ai-beleid-kern.mjs";
 import { besluitHash, besluitKanaalOpen, isBesluitSoort, normaliseerInhoud } from "./besluit-kern.mjs";
 
@@ -265,6 +266,7 @@ function verifieerBesluit(besluitPad) {
 // richting). Los van de schakelaar passkey-goedkeuring: die gaat over updates, niet over SSH.
 function verifieerSshCa(verzoekPad, actie) {
   const uit = (code, extra = {}) => { const [uk, nl] = tekst(code); process.stdout.write(JSON.stringify({ ok: code === "OK", code, uk, nl, ...extra }) + "\n"); return code === "OK" ? 0 : 2; };
+  if (String(actie) === SSH_CA_TEKEN) return verifieerSshCaTeken(verzoekPad, uit);
   if (!["inrichten", "aan"].includes(String(actie))) return uit("GOEDKEURING_ONGELDIG");
   let g;
   try { g = JSON.parse(leesBegrensd(verzoekPad).toString("utf8")); } catch { return uit("GOEDKEURING_ONGELDIG"); }
@@ -272,6 +274,26 @@ function verifieerSshCa(verzoekPad, actie) {
   let bestand;
   try { bestand = leesSleutelbestand(); } catch (err) { return uit(err.message === "SLEUTELBESTAND_RECHTEN" ? "SLEUTELBESTAND_RECHTEN" : "GEEN_SLEUTELS"); }
   const r = controleerEnVerbruik("ssh-ca", { actie: String(actie), nonce: g.nonce, verloopt: Number(g.verloopt) }, g.assertie, bestand);
+  if (!r.ok) return uit(r.code);
+  return uit("OK", { label: r.label || "", vingerafdruk: r.vingerafdruk });
+}
+
+// SEC-002 (server-uitrol-06): `verifieer-ssh-ca <bestand> teken` vóór ELKE handtekening van de SSH-CA. Vroeger tekende root elk
+// verzoek uit de inbox van de app zodra de schakelaar ssh-ca aan stond: wie code als de app kon uitvoeren, gaf zichzelf een
+// certificaat voor de host. Nu rekent root de challenge zelf uit over wat hij gaat tekenen — sha256 van de publieke sleutel,
+// de principals, de duur — en eist daarover een assertie van een passkey uit ZIJN sleutelbestand; de nonce wordt verbruikt.
+// Het bestand is door mijn-ruimte-ssh-ca zelf geschreven (genormaliseerd, root 0600): het verzoek van de app wordt maar één
+// keer gelezen, dus de app kan niet het ene laten controleren en het andere laten tekenen.
+function verifieerSshCaTeken(verzoekPad, uit) {
+  let g;
+  try { g = JSON.parse(leesBegrensd(verzoekPad).toString("utf8")); } catch { return uit("GOEDKEURING_ONGELDIG"); }
+  const p = g && typeof g === "object" ? g.passkey : null;
+  if (!g || typeof g !== "object" || g.doel !== "ssh-ca" || g.actie !== SSH_CA_TEKEN || !p || typeof p !== "object" || !p.assertie || typeof p.assertie !== "object") return uit("GOEDKEURING_ONGELDIG");
+  let sleutelHash;
+  try { sleutelHash = sshCaSleutelHash(g.publiek); } catch { return uit("GOEDKEURING_ONGELDIG"); }
+  let bestand;
+  try { bestand = leesSleutelbestand(); } catch (err) { return uit(err.message === "SLEUTELBESTAND_RECHTEN" ? "SLEUTELBESTAND_RECHTEN" : "GEEN_SLEUTELS"); }
+  const r = controleerEnVerbruik("ssh-ca", { actie: SSH_CA_TEKEN, sleutelHash, toegang: g.toegang, minuten: g.minuten, nonce: p.nonce, verloopt: Number(p.verloopt) }, p.assertie, bestand);
   if (!r.ok) return uit(r.code);
   return uit("OK", { label: r.label || "", vingerafdruk: r.vingerafdruk });
 }

@@ -205,6 +205,13 @@ function pakketMaken(werk: string, versie: string, volledig = false, zonder = ''
     // Wat de voorcontrole van de site (backend/uitrol-voorcontrole.ts) minimaal verwacht om een pakket door te laten.
     for (const [f, inh] of Object.entries({ 'package.json': '{"scripts":{"build":"vite build"}}', 'package-lock.json': '{}', 'index.html': '<html></html>', 'vite.config.ts': 'export default {}',
       'server/migrate.ts': '//', 'scripts/build-server.mjs': '//', 'backend/index.ts': '//' })) { mkdirSync(join(binnen, f, '..'), { recursive: true }); writeFileSync(join(binnen, f), inh); }
+    for (const mf of readdirSync('migrations')) {
+      if (mf === 'rechten.sql' || !/^\d{4}_[a-z0-9_]+\.sql$/.test(mf)) continue;
+      const rel = `migrations/${mf}`;
+      if (rel === zonder) continue;
+      mkdirSync(join(binnen, 'migrations'), { recursive: true });
+      writeFileSync(join(binnen, rel), '-- test\n');
+    }
   }
   if (zonder) rmSync(join(binnen, zonder), { force: true });
   const uit = join(werk, `mijn-ruimte-${versie}.tar.gz`);

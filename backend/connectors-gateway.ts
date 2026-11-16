@@ -30,6 +30,10 @@ import * as store from './connectors-opslag';
 import { huidigeNamens } from './mcp-namens';
 import * as grants from './ai-toestemmingen';
 import * as ext from './extensie-ontgrendeling';
+import { VOORAUTH, voorAuthToelaten, zetBerichtGrens } from './ws-voorauth';
+import { jsonbVeilig, knipTekst, tekstVeilig } from '../server/platform/json-veilig';
+/** SEC-002 (toets-g10i №1): resultaat van een agent zó dat jsonb het altijd aanneemt (eenzame surrogaten/U+0000 → U+FFFD). */
+const veiligeJson = (v: unknown): unknown => { if (v === undefined) return v; try { return JSON.parse(jsonbVeilig(JSON.stringify(v))); } catch { return v; } };
 
 export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.stat', 'fs.search', 'fs.write', 'exec', 'sys.info', 'docker.ps', 'docker.manage', 'sys.metrics',
   'browser.snapshot', 'browser.navigate', 'browser.invoke', 'browser.click', 'browser.type', 'browser.diagnostics',
@@ -59,7 +63,7 @@ export const WS_TICKET_TTL_MS = 60_000;
 /** Oude agents sturen hun token zelf in het eerste bericht. Uitzetten met AGENT_WS_TOKEN_AUTH_LEGACY=0 zodra alle agents ≥ 0.4 zijn. */
 export const legacyTokenAuthAllowed = (): boolean => process.env.AGENT_WS_TOKEN_AUTH_LEGACY !== '0';
 
-type Live = { ws: WebSocket; userId: string; alive: boolean; platform: string | null };
+type Live = { ws: WebSocket; userId: string; alive: boolean; platform: string | null; ruimte: 'prive' | 'technisch' };
 const live = new Map<string, Live>();
 let started = false;
 
@@ -89,6 +93,9 @@ type TerminalHooks = { vanAgent: (agentId: string, msg: any) => boolean; upgrade
 let terminalHooks: TerminalHooks | null = null;
 export const TERMINAL_WS_PATH = '/terminal/ws';
 export function registreerTerminal(h: TerminalHooks): void { terminalHooks = h; }
+export type AgentMeldingHook = (invoer: { userId: string; agentId: string; platform: string | null; agentRuimte?: 'prive' | 'technisch'; msg: Record<string, unknown> }) => void | Promise<void>;
+let meldingHook: AgentMeldingHook | null = null;
+export function registreerMeldingHook(h: AgentMeldingHook | null): void { meldingHook = h; }
 // Andere browser-WS-paden van de eigen site (bv. /api/owner/remote/tunnel, backend/remote-bureaublad.ts): zelfde host-controle, nooit ?ticket/?token.
 const wsPaden = new Map<string, (req: IncomingMessage, socket: Duplex, head: Buffer) => void>();
 export function registreerWsPad(pad: string, f: (req: IncomingMessage, socket: Duplex, head: Buffer) => void): void { wsPaden.set(pad, f); }
@@ -200,9 +207,12 @@ export function attachAgentGateway(server: Server, allowedHosts: ReadonlySet<str
   started = true;
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD });
 
-  server.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+  const upgradeAfhandelen = (req: IncomingMessage, socket: Duplex, head: Buffer) => {
     const host = String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
-    const url = new URL(req.url || '/', 'http://intern.invalid');
+    // SEC-002 (http-rand-01): «GET //», «//x:y» e.d. laten new URL gooien; zo'n doel krijgt 400 i.p.v. een onopgevangen uitzondering.
+    let url: URL;
+    try { url = new URL(req.url || '/', 'http://intern.invalid'); }
+    catch { socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
     // Een token of ticket in de URL wordt geweigerd (komt in logs terecht); zo valt een verkeerd gebouwde client meteen op.
     const extra = wsPaden.get(url.pathname);
     if (extra && allowedHosts.has(host) && !url.searchParams.has('ticket') && !url.searchParams.has('token')) { extra(req, socket, head); return; }
@@ -212,7 +222,18 @@ export function attachAgentGateway(server: Server, allowedHosts: ReadonlySet<str
       socket.destroy();
       return;
     }
-    wss.handleUpgrade(req, socket, head, (ws) => onConnection(ws));
+    // SEC-002 (keten-config-05): onaangemelde verbindingen begrensd (totaal en per IP), plaats vrij bij aanmelding of sluiten.
+    const plaats = voorAuthToelaten(req);
+    if (!plaats) { socket.write('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 5\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
+    socket.once('close', plaats);
+    wss.handleUpgrade(req, socket, head, (ws) => onConnection(ws, plaats));
+  };
+  // SEC-002 (http-rand-01): deze luisteraar draait synchroon in de EventEmitter van de HTTP-server; een fout hier (of een
+  // socketfout zonder luisteraar — Node haalt bij een upgrade zijn eigen 'error'-luisteraar weg) zou het hele proces stoppen.
+  server.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
+    socket.on('error', () => undefined);
+    try { upgradeAfhandelen(req, socket, head); }
+    catch (err) { console.error('[upgrade] geweigerd na fout:', String((err as Error)?.message || err).slice(0, 200)); socket.destroy(); }
   });
 
   // Dode verbindingen (uitgezette pc, netwerkbreuk) worden Disconnected.
@@ -231,12 +252,16 @@ export function attachAgentGateway(server: Server, allowedHosts: ReadonlySet<str
 }
 
 /** Exporteren voor tests (zonder HTTP-server): verwerkt één verbinding. */
-export function onConnection(ws: WebSocket): void {
+export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => undefined): void {
+  // SEC-002 (keten-config-05): tot de aanmelding hoogstens 64 KiB per bericht (backend/ws-voorauth.ts); daarna de gewone grens.
+  zetBerichtGrens(ws, VOORAUTH.maxPayload);
   let agentId: string | null = null;
   let busy = false;
-  const authTimer = setTimeout(() => { if (!agentId) ws.close(4401, 'auth timeout'); }, AUTH_TIMEOUT_MS);
+  // SEC-002 (keten-config-05): na de nette sluiting nog hoogstens 2 s wachten op de andere kant (ws wacht anders tot 30 s), dan hard dicht.
+  const authTimer = setTimeout(() => { if (!agentId) { ws.close(4401, 'auth timeout'); setTimeout(() => { if (!agentId) ws.terminate(); }, 2_000).unref?.(); } }, AUTH_TIMEOUT_MS);
 
-  ws.on('message', async (raw) => {
+  // SEC-002 http-rand-03: de afhandeling is een eigen functie; de luisteraar onderaan vangt ELKE afwijzing (database, jsonb, uuid) op.
+  const bijBericht = async (raw: { toString(): string }) => {
     let msg: any;
     try { msg = JSON.parse(raw.toString()); } catch { ws.close(4400, 'bad json'); return; }
 
@@ -255,9 +280,12 @@ export function onConnection(ws: WebSocket): void {
       const capCheck = begrensCapabilities(msg.capabilities);
       if (!capCheck.ok) { ws.close(4400, 'capabilities too large'); return; }
       clearTimeout(authTimer);
+      zetBerichtGrens(ws, MAX_PAYLOAD);
+      voorAuthVrij();
       agentId = agent.id;
       live.get(agentId)?.ws.close(4409, 'replaced by new connection');
-      live.set(agentId, { ws, userId: agent.user_id, alive: true, platform: agent.platform ?? null });
+      const agentRuimte = agent.ruimte === 'technisch' ? 'technisch' : 'prive';
+      live.set(agentId, { ws, userId: agent.user_id, alive: true, platform: agent.platform ?? null, ruimte: agentRuimte });
       const caps = capCheck.caps;
       const nieuweVersie = typeof msg.version === 'string' ? msg.version.slice(0, 40) : '';
       // Journaal op /agents: «оновлено з x до y» wanneer de agent of extensie met een andere versie terugkomt.
@@ -286,6 +314,10 @@ export function onConnection(ws: WebSocket): void {
       return;
     }
     if (msg?.t === 'status' && entry.platform === 'browser') { ext.bijStatus(agentId, msg); return; }
+    if (msg?.t === 'melding' && msg && typeof msg === 'object' && meldingHook) {
+      void Promise.resolve(meldingHook({ userId: entry.userId, agentId, platform: entry.platform, agentRuimte: entry.ruimte, msg: msg as Record<string, unknown> })).catch(() => undefined);
+      return;
+    }
     if (msg?.t === 'vergrendel-verzoek' && entry.platform === 'browser') {
       const n = await ext.vergrendelVerzoek(agentId, entry.userId, { gid: msg.gid, reden: msg.reden }).catch(() => 0);
       // Bevestiging; de extensie had al lokaal vergrendeld.
@@ -293,14 +325,24 @@ export function onConnection(ws: WebSocket): void {
       return;
     }
     if ((msg?.t === 'term.out' || msg?.t === 'term.exit' || msg?.t === 'result') && terminalHooks?.vanAgent(agentId, msg)) return;
-    if (msg?.t === 'result' && typeof msg.id === 'string') {
+    // SEC-002 http-rand-03: alleen een echt opdracht-id (uuid) gaat naar de database; iets anders gaf 22P02 en liet het proces vallen.
+    if (msg?.t === 'result' && store.isOpdrachtId(msg.id)) {
       // Alleen een opdracht van DEZE gebruiker, naar DEZE agent en in stand 'sent' wordt afgesloten (audit M3).
       await store.transitionCommand(
         msg.id, ['sent'], msg.ok ? 'succeeded' : 'failed',
-        msg.ok ? { data: msg.data } : { error: String(msg.error ?? 'unknown error').slice(0, 500) },
+        // SEC-002 (toets-g10i №1): een halve emoji (afgekapte uitvoer of foutmelding) werd door jsonb geweigerd → verbinding 1011, opdracht
+        // bleef 'sent'. Fout afkappen zonder halve emoji; data via jsonbVeilig (eenzame surrogaten en U+0000 → U+FFFD, ook in sleutels).
+        msg.ok ? { data: veiligeJson(msg.data) } : { error: tekstVeilig(knipTekst(String(msg.error ?? 'unknown error'), 500)) },
         entry.userId, agentId,
       );
     }
+  };
+  ws.on('message', (raw) => {
+    bijBericht(raw).catch((err) => {
+      // Nooit de inhoud van het bericht loggen (kan bestandsinhoud of uitvoer van een opdracht zijn); alleen de soort fout.
+      console.error('[agents] bericht van een agent niet verwerkt:', String((err as { code?: string })?.code || (err as Error)?.name || 'fout').slice(0, 60));
+      try { ws.close(1011, 'internal error'); } catch { /* al dicht */ }
+    });
   });
 
   ws.on('close', () => {

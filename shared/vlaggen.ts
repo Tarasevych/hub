@@ -104,6 +104,38 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Спершу тільки для себе: у адмінці введіть ключ бота й натисніть «Налаштувати бота», прив’яжіть свій Telegram і перевірте. Потім — для частини людей або всіх.', 'Eerst alleen voor uzelf: voer in het beheer de botsleutel in en kies «Bot instellen», koppel uw eigen Telegram en test. Daarna voor een deel van de mensen of iedereen.'],
     gevolg: ['Вимкнення одразу ховає кнопку Telegram і зупиняє бота; прив’язки, коди й налаштування зберігаються до наступного вмикання. Інші способи входу не змінюються.', 'Uitschakelen verbergt de Telegram-knop meteen en zet de bot stil; koppelingen, codes en instellingen blijven bewaard tot de volgende inschakeling. Andere aanmeldmethoden veranderen niet.'],
   },
+  // IDENTITEIT-015 (aanmelden): чотири окремі шляхи без Google; міграція 0275 ставить кожен на «Тільки я» (лише власник сайту).
+  'aanmelden-passkey': {
+    naam: ['! Вхід лише ключем доступу (без Google)', '! Aanmelden met alleen een toegangssleutel (zonder Google)'],
+    wat: ['На сторінці входу з’являється «Увійти ключем доступу»: браузер пропонує збережений ключ (відбиток, обличчя, PIN або телефон), і сайт відкриває той самий сеанс, що й після Google. Ключ із перевіркою користувача — одразу два чинники.', 'Op de aanmeldpagina verschijnt «Aanmelden met toegangssleutel»: de browser biedt een bewaarde sleutel aan (vingerafdruk, gezicht, pincode of telefoon) en de site opent dezelfde sessie als na Google. Een sleutel met gebruikerscontrole telt meteen als twee factoren.'],
+    wanneer: ['Спершу тільки для себе: додайте ключ доступу в «Безпеці», вийдіть і увійдіть ним. Ризик: хто має розблокований пристрій із вашим ключем, той увійде без Google — тож давайте іншим лише тоді, коли вони розуміють це.', 'Eerst alleen voor uzelf: voeg een sleutel toe bij «Beveiliging», meld af en meld aan met de sleutel. Risico: wie uw ontgrendelde apparaat met de sleutel heeft, meldt aan zonder Google — geef het anderen pas als ze dat begrijpen.'],
+    gevolg: ['Вимкнення одразу прибирає кнопку і відмовляє новим входам ключем; відкриті сеанси й самі ключі лишаються. Підтвердження дій ключем працює як раніше.', 'Uitschakelen haalt de knop meteen weg en weigert nieuwe aanmeldingen met een sleutel; open sessies en de sleutels zelf blijven. Handelingen bevestigen met een sleutel werkt zoals voorheen.'],
+  },
+  'aanmelden-wachtwoord': {
+    naam: ['! Вхід паролем', '! Aanmelden met wachtwoord'],
+    wat: ['На сторінці входу з’являється форма «Увійти паролем»: адреса, пароль і (якщо налаштовано) код із застосунку або код відновлення — одним запитом. Після кількох помилок спроби тимчасово блокуються.', 'Op de aanmeldpagina verschijnt het formulier «Aanmelden met wachtwoord»: adres, wachtwoord en (als ingesteld) app-code of herstelcode in één verzoek. Na enkele fouten worden pogingen tijdelijk geblokkeerd.'],
+    wanneer: ['Коли комусь потрібен вхід без Google. Ризик: пароль можна вгадати або викрасти — радьте додати код із застосунку.', 'Wanneer iemand zonder Google moet kunnen aanmelden. Risico: een wachtwoord kan geraden of gestolen worden — raad een app-code aan.'],
+    gevolg: ['Вимкнення прибирає форму й відмовляє новим входам паролем; паролі не видаляються. Захист від блокування тоді не рахує пароль як спосіб входу.', 'Uitschakelen haalt het formulier weg en weigert nieuwe wachtwoord-aanmeldingen; wachtwoorden blijven bewaard. De bescherming tegen buitensluiten telt het wachtwoord dan niet als aanmeldweg.'],
+  },
+  'aanmelden-extern': {
+    naam: ['! Вхід через Microsoft, Discord або Apple', '! Aanmelden met Microsoft, Discord of Apple'],
+    wat: ['Людина, яка прив’язала свій Microsoft, Discord чи Apple у «Способах входу», може ним і входити. Кнопка з’являється лише для провайдера, у якого є ключі власника й пройдена самоперевірка.', 'Wie zijn Microsoft, Discord of Apple koppelde bij «Aanmeldmethoden», kan er ook mee aanmelden. De knop verschijnt alleen voor een aanbieder met sleutels van de eigenaar en een geslaagde zelftest.'],
+    wanneer: ['Після того, як ключі AANMELD_* введено й самоперевірку пройдено. Ризик: доступ до облікового запису залежить і від безпеки чужого облікового запису.', 'Nadat de AANMELD_*-sleutels zijn ingevoerd en de zelftest geslaagd is. Risico: de toegang hangt dan ook af van de beveiliging van dat andere account.'],
+    gevolg: ['Вимкнення прибирає кнопки й відмовляє новим входам; прив’язки лишаються.', 'Uitschakelen haalt de knoppen weg en weigert nieuwe aanmeldingen; koppelingen blijven.'],
+  },
+  // IDENTITEIT-015 (sleutels-gasten): міграція 0274 ставить «Тільки я» — коди доступу видає лише власник сайту, як і раніше.
+  'gastcodes-iedereen': {
+    naam: ['! Коди доступу для гостей — і для інших облікових записів', '! Gastcodes — ook voor andere accounts'],
+    wat: ['Схвалені облікові записи, яким увімкнено прапорець, бачать у «Безпеці» блок «Коди доступу для інших» і можуть видати гостю код на перегляд СВОЇХ даних (ім’я й фото, пристрої, журнал агентів). Гість ніколи не бачить даних інших людей чи сайту; кожне використання видно власникові коду, кожен код можна відкликати.', 'Goedgekeurde accounts met deze vlag zien bij «Beveiliging» het blok «Toegangscodes voor anderen» en kunnen een gast een code geven om hun EIGEN gegevens te bekijken (naam en foto, apparaten, journaal van agents). Een gast ziet nooit gegevens van anderen of van de site; elk gebruik is zichtbaar voor de eigenaar van de code en elke code is in te trekken.'],
+    wanneer: ['Коли людям потрібно показати комусь свої пристрої чи журнал без входу в обліковий запис. Ризик: код відкриває перегляд без входу будь-кому, хто його знає, — давайте лише тим, хто це розуміє.', 'Wanneer mensen iemand hun apparaten of journaal moeten tonen zonder aanmelding. Risico: de code opent het bekijken zonder aanmelding voor iedereen die hem kent — geef het alleen wie dat begrijpt.'],
+    gevolg: ['Вимкнення одразу ховає блок у тих, кому його вимкнено; їхні коди перестають відкривати дані, а гостьові сеанси — показувати будь-що. Самі коди й журнал зберігаються; ваші коди власника сайту діють як раніше.', 'Uitschakelen verbergt het blok meteen voor wie het niet meer heeft; hun codes openen geen gegevens meer en gastsessies tonen niets meer. De codes en het journaal blijven bewaard; uw eigen codes als site-eigenaar werken zoals voorheen.'],
+  },
+  'aanmelden-sms': {
+    naam: ['Підтвердження номера кодом із SMS', 'Telefoonnummer bevestigen met sms-code'],
+    wat: ['У «Способах входу» людина вводить номер і отримує код у SMS; після правильного коду номер стає «Підтверджено». Входу за номером немає.', 'Bij «Aanmeldmethoden» voert iemand een nummer in en krijgt een sms-code; na de juiste code staat het nummer op «Bevestigd». Aanmelden met het nummer kan niet.'],
+    wanneer: ['Коли в «Сховищі секретів» є ключ SMS_AANBIEDER (Twilio). Кожне SMS коштує грошей власнику — ліміт 5 на годину на людину.', 'Als de geheimenkluis de sleutel SMS_AANBIEDER (Twilio) bevat. Elke sms kost de eigenaar geld — limiet 5 per uur per persoon.'],
+    gevolg: ['Вимкнення приховує надсилання коду; підтверджені номери лишаються.', 'Uitschakelen verbergt het versturen van codes; bevestigde nummers blijven.'],
+  },
   'aanmeldmethoden-vnext': {
     naam: ['Нові «Способи входу» (UI-015)', 'Nieuwe aanmeldmethoden (UI-015)'],
     wat: ['Сучасна сторінка способів входу: банер, зрозумілі картки методів з однією дією, деталі в бокових панелях. Усі чинні механізми (Google, passkeys, TOTP, коди відновлення, шифрування, коди доступу, step-up) — ті самі, лише в новому поданні; плюс чесний каталог майбутніх провайдерів.', 'Moderne aanmeldmethoden-pagina: hero, duidelijke methodekaarten met één hoofdactie, details in zijpanelen. Alle bestaande mechanismen (Google, passkeys, TOTP, herstelcodes, versleuteling, toegangscodes, step-up) blijven dezelfde; plus een eerlijke catalogus van toekomstige aanbieders.'],
@@ -157,6 +189,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wat: ['Велике фото й імʼя лишаються, кнопки компактні й згруповані, пояснення сховані під ⓘ, справжні прапорці мов, перемикач «Звичайний / Технічний» унизу меню.', 'Grote foto en naam blijven, knoppen compact en gegroepeerd, uitleg achter ⓘ, echte taalvlaggen, wissel «Gewone / Technische» onderaan het menu.'],
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд.', 'Zet eerst alleen voor uzelf aan om de nieuwe weergave te proberen.'],
     gevolg: ['Усі дії ті самі; змінюється лише вигляд. Вимкнено — старе меню без змін.', 'Alle acties blijven; alleen het uiterlijk verandert. Uit = het oude menu, ongewijzigd.'],
+  },
+  'accountmenu-v3': {
+    naam: ['Нове меню облікового запису (орбіта світлин, палітра та доступ)', 'Nieuw accountmenu (foto-orbita, palet en toegang)'],
+    wat: ['Єдина композиція спадного меню облікового запису: «Орбіта світлин» у шапці (або «Секційна картка» у Налаштуваннях), швидке перемикання палітри кольорів, концентричне кільце часу доступу з трьома умовами завершення технічного простору, вихід у два стовпці з міні-кружечками та масштабування за кутик.', 'Eén samenhangend accountmenu: foto-orbita bovenaan (of sectiekaart via Instellingen), snelle paletwissel, concentrische tijdring met drie duidelijke eindvoorwaarden van de technische ruimte, tweekoloms afmelden met minicirkels en schalen via de hoek.'],
+    wanneer: ['Увімкніть спершу лише для себе у «Перемикачах функцій», перевірте обидва режими вигляду в «Налаштування → Налаштувати меню», а далі за потреби відкрийте вибраним людям або всім.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», probeer beide weergaven via «Instellingen → Menu instellen» en open daarna zo nodig voor gekozen mensen of iedereen.'],
+    gevolg: ['Вимкнення миттєво повертає попереднє меню облікового запису без втрати сеансів, кольорів чи налаштувань. Перемикач не змінює прав доступу.', 'Uitzetten brengt meteen het vorige accountmenu terug zonder sessies, kleuren of instellingen te verliezen. De schakelaar verandert geen rechten.'],
   },
   'integraties-catalogus-v2': {
     naam: ['Новий каталог інтеграцій (теми й групи)', 'Nieuwe integratiecatalogus (thema’s en groepen)'],

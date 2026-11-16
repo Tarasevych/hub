@@ -6,6 +6,7 @@
 import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { brotliDecompressSync, gunzipSync } from 'node:zlib';
 import { checker } from './hulp/nep-google';
 
@@ -16,9 +17,22 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ nep-browser + nep-fetch
   const g = globalThis as unknown as Record<string, unknown>;
+  const voor = new Map(['window', 'name', 'document', 'location', 'sessionStorage', 'localStorage', 'CustomEvent', 'fetch', 'addEventListener', 'removeEventListener', '__TSV_CANONICAL_SERVICE__'].map((k) => [k, Object.getOwnPropertyDescriptor(g, k)]));
   const oproepen: Oproep[] = [];
   let antwoord: (o: Oproep) => { status: number; body: unknown; vertraging?: number } = () => ({ status: 200, body: { ok: true } });
+  const maakOpslag = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, String(v)); }, removeItem: (k: string) => { m.delete(k); } }; };
+  const u = new URL('https://hub.tarasevych.com/overzicht');
+  const maakEl = () => ({ dataset: {}, style: {}, setAttribute: () => undefined, getAttribute: () => null, getContext: () => null });
+  const doc = { hidden: false, title: '', cookie: '', head: { appendChild: (el: unknown) => el }, body: null, addEventListener: () => undefined, removeEventListener: () => undefined, querySelector: () => null, querySelectorAll: () => [], getElementById: () => null, createElement: () => maakEl(),
+    documentElement: { lang: 'uk', dataset: {}, style: { setProperty: () => undefined }, classList: { contains: () => false, add: () => undefined, remove: () => undefined } } };
   g.window = globalThis;
+  g.name = '';
+  g.addEventListener ??= () => undefined;
+  g.removeEventListener ??= () => undefined;
+  g.document ??= doc;
+  g.location ??= { href: u.href, origin: u.origin, host: u.host, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash, protocol: u.protocol, assign: () => undefined, replace: () => undefined, reload: () => undefined };
+  g.sessionStorage ??= maakOpslag();
+  g.localStorage ??= maakOpslag();
   g.CustomEvent ??= class extends Event { detail: unknown; constructor(t: string, i?: { detail?: unknown }) { super(t); this.detail = i?.detail; } };
   g.fetch = async (url: string, init: RequestInit) => {
     const o: Oproep = { url, method: String(init.method), body: init.body ? JSON.parse(String(init.body)) : undefined };
@@ -28,9 +42,13 @@ export async function main(): Promise<number> {
     if (init.signal?.aborted) throw new DOMException('aborted', 'AbortError');
     return new Response(JSON.stringify(a.body), { status: a.status, headers: { 'Content-Type': 'application/json' } });
   };
-  const { api, magSamenvoegen, ApiError } = await import('../../src/platform/client');
-  const tel = (deel: string) => oproepen.filter((o) => o.url.includes(deel)).length;
-  const leeg = () => { oproepen.length = 0; };
+  runInNewContext(readFileSync('public/canonical-service.js', 'utf8'), { window: g, location: g.location, document: g.document, addEventListener: () => undefined, Date, Math, Number, String, Object, Array, JSON, URLSearchParams, URL });
+  try {
+    const { setEcosystemSessionLikely } = await import('../../src/tab-context');
+    setEcosystemSessionLikely(true);
+    const { api, magSamenvoegen, ApiError } = await import('../../src/platform/client');
+    const tel = (deel: string) => oproepen.filter((o) => o.url.includes(deel)).length;
+    const leeg = () => { oproepen.length = 0; };
 
   // ------------------------------------------------------------------ 1. samenvoegen van lezen
   antwoord = () => ({ status: 200, body: { lijst: [{ id: 1, naam: 'a' }] } });
@@ -150,5 +168,10 @@ export async function main(): Promise<number> {
   let parseerbaar = false;
   try { new Function(init); parseerbaar = true; } catch { parseerbaar = false; }
   check('index.html: presentation-init zonder syntaxisfout (typografische apostrof)', init.length > 1000 && parseerbaar && init.includes('під’єднань'));
+  } finally {
+    for (const [k, d] of voor) {
+      try { if (d) Object.defineProperty(g, k, d); else delete g[k]; } catch { /* negeer niet-configureerbare eigenschappen */ }
+    }
+  }
   return einde();
 }

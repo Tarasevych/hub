@@ -10,6 +10,8 @@ const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql,
 
 export const LIMITS = {
   maxClients: 500,
+  /** SEC-002 (ai-mcp-10): registraties per IP (IPv6: per /64) per etmaal — boven op 20/min van server/start.ts. */
+  maxRegistratiesPerIpPerDag: 100,
   maxActiveGrantsPerUser: 10,
   authRequestTtlMin: 10,
   codeTtlSec: 120,
@@ -30,6 +32,8 @@ export interface AuthRow {
   id: string; client_id: string; redirect_uri: string; code_challenge: string; state: string | null; scope: string;
   resource: string | null; status: 'pending' | 'approved' | 'denied' | 'used'; expires_at: Date; user_id: string | null;
   client_name?: string; duur?: string | null; ruimte?: string | null;
+  /** SEC-002 (ai-mcp-14, migratie 0262): binding aan de browser; NULL = verzoek van vóór de binding. */
+  binding_hash?: string | null;
   /** Connector v2 (0045): agent uit de resource, en de keuze van de mens (kanten + sleutels) tot het token er is. */
   agent?: string | null; v2_keuze?: { kanten: string[]; sleutels: string[] } | null;
 }
@@ -42,27 +46,49 @@ export async function countClients(): Promise<number> {
 export async function insertClient(clientId: string, name: string, redirectUris: string[]): Promise<void> {
   await q('INSERT INTO app.mcp_oauth_clients (client_id, client_name, redirect_uris) VALUES ($1, $2, $3)', [clientId, name, redirectUris]);
 }
+/** MCP-001 R1 · CIMD: de klant bij een documentadres bijwerken of aanmaken (naam en terugkeeradressen volgen het document). */
+export async function upsertClient(clientId: string, name: string, redirectUris: string[]): Promise<void> {
+  await q(`INSERT INTO app.mcp_oauth_clients (client_id, client_name, redirect_uris) VALUES ($1, $2, $3)
+           ON CONFLICT (client_id) DO UPDATE SET client_name = EXCLUDED.client_name, redirect_uris = EXCLUDED.redirect_uris`, [clientId, name, redirectUris]);
+}
 export async function getClient(clientId: string): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | null> {
   const { rows } = await q('SELECT client_id, client_name, redirect_uris FROM app.mcp_oauth_clients WHERE client_id = $1', [clientId]);
   return rows[0] ?? null;
 }
 /** Oude clients zonder tokens opruimen: DCR maakt bij elke nieuwe verbinding een client aan. */
-export async function purgeStale(): Promise<void> {
+export async function purgeStale(opties: { vol?: boolean } = {}): Promise<void> {
   await q(`DELETE FROM app.mcp_oauth_auth WHERE expires_at < now() - interval '1 hour'`);
   await q(`DELETE FROM app.mcp_oauth_clients c
             WHERE c.created_at < now() - interval '1 day'
               AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_tokens t WHERE t.client_id = c.client_id AND t.revoked_at IS NULL)`);
+  // SEC-002 (ai-mcp-10): een registratie die binnen een uur geen autorisatie begon, is geen verbinding — weg (niet pas na een dag).
+  await q(`DELETE FROM app.mcp_oauth_clients c
+            WHERE c.created_at < now() - interval '1 hour'
+              AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_tokens t WHERE t.client_id = c.client_id AND t.revoked_at IS NULL)
+              AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_auth a WHERE a.client_id = c.client_id)`);
+  if (!opties.vol) return;
+  // SEC-002 (ai-mcp-10): het plafond is vol. Vroeger dan 503 voor IEDEREEN tot de volgende dag (een aanvaller vulde de 500 plaatsen
+  // in ±25 minuten). Nu ruimen we de OUDSTE registraties zonder levend token en zonder lopend autorisatieverzoek, ouder dan
+  // 2 minuten (een echte klant registreert en begint meteen de autorisatie). Wie echt bezig is, wordt nooit verdrongen.
+  await q(`DELETE FROM app.mcp_oauth_clients WHERE client_id IN (
+             SELECT c.client_id FROM app.mcp_oauth_clients c
+              WHERE c.created_at < now() - interval '2 minutes'
+                AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_tokens t WHERE t.client_id = c.client_id AND t.revoked_at IS NULL)
+                AND NOT EXISTS (SELECT 1 FROM app.mcp_oauth_auth a WHERE a.client_id = c.client_id AND a.expires_at > now() AND a.status IN ('pending', 'approved'))
+              ORDER BY c.created_at ASC LIMIT $1)`, [Math.max(1, Math.ceil(LIMITS.maxClients / 10))]);
 }
 
 // ---- autorisatieverzoeken en codes ----
 
 export async function insertAuthRequest(a: {
   id: string; clientId: string; redirectUri: string; codeChallenge: string; state: string | null; scope: string; resource: string | null; agent?: string | null;
+  /** SEC-002 (ai-mcp-14): SHA-256 van het bindingscookie van de browser die de autorisatie begon (backend/mcp-oauth-binding.ts). */
+  bindingHash?: string | null;
 }): Promise<void> {
   await q(
-    `INSERT INTO app.mcp_oauth_auth (id, client_id, redirect_uri, code_challenge, state, scope, resource, expires_at, agent)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $8), $9)`,
-    [a.id, a.clientId, a.redirectUri, a.codeChallenge, a.state, a.scope, a.resource, LIMITS.authRequestTtlMin, a.agent ?? null]);
+    `INSERT INTO app.mcp_oauth_auth (id, client_id, redirect_uri, code_challenge, state, scope, resource, expires_at, agent, binding_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, now() + make_interval(mins => $8), $9, $10)`,
+    [a.id, a.clientId, a.redirectUri, a.codeChallenge, a.state, a.scope, a.resource, LIMITS.authRequestTtlMin, a.agent ?? null, a.bindingHash ?? null]);
 }
 
 export async function getPendingAuth(id: string): Promise<AuthRow | null> {
@@ -151,12 +177,17 @@ export async function rotateRefresh(clientId: string, oldHash: string, newRefres
   // De duur blijft die van de grant (keuze bij «Дозволити»); het UPDATE-criterium blijft de atomaire controle.
   const huidig = (await q('SELECT duur FROM app.mcp_oauth_tokens WHERE refresh_hash = $1 AND client_id = $2', [oldHash, clientId])).rows[0];
   const l = levensduur(huidig?.duur);
+  // SEC-002 (ai-mcp-11): de vernieuwtermijn is ABSOLUUT vanaf de toestemming (venster_vanaf, migratie 0262), niet glijdend:
+  // «1 година, поновлюється до 14 днів» eindigt na 14 dagen, ook als de AI elk uur vernieuwt — daarna een nieuwe toestemming.
+  // Het toegangstoken leeft nooit langer dan het vernieuwvenster.
   const { rows } = await q(
     `UPDATE app.mcp_oauth_tokens
         SET prev_refresh_hash = refresh_hash, refresh_hash = $3, access_hash = $4,
-            access_expires_at = now() + make_interval(secs => $5), refresh_expires_at = now() + make_interval(secs => $6),
+            refresh_expires_at = LEAST(now() + make_interval(secs => $6), venster_vanaf + make_interval(secs => $6)),
+            access_expires_at = LEAST(now() + make_interval(secs => $5), venster_vanaf + make_interval(secs => $6)),
             last_used_at = now()
       WHERE refresh_hash = $2 AND client_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now()
+        AND venster_vanaf + make_interval(secs => $6) > now()
       RETURNING id, user_id, scope, duur`,
     [clientId, oldHash, newRefreshHash, newAccessHash, l.accessSec, l.refreshSec]);
   return rows[0] as { id: string; user_id: string; scope: string; duur: string | null } | undefined ?? null;

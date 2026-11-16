@@ -135,7 +135,8 @@ export type Voorstel = { id: string; versie: string; status: string; bytes: numb
 export type GrantSoort = 'account' | 'agenttoken' | 'mcp-koppeling' | 'agent';
 export type Grant = { id: string; soort: GrantSoort; onderwerp: string; label: string; gegevenDoor: string; gegevenOp: string; verlooptOp: string; ingetrokkenOp: string; status: 'actief' | 'verlopen' | 'ingetrokken'; /** Zonder einddatum («до відкликання»). */ onbepaald?: boolean; /** Herkomst: handmatig gegeven of automatisch uit het AI-beleid. */ bron?: 'handmatig' | 'ai-beleid'; /** Het account waarvoor de toestemming geldt (naam, e-mail, foto) — alleen voor actieve grants. */ eigenaar?: { naam: string; email: string; foto: string } | null };
 export type AgentTegel = { slug: string; naam: string; modus: 'always' | 'ask' | 'off' | null; beleidCode: string; uitdrukkelijk: boolean;
-  recht: { id: string; onbepaald: boolean; verlooptOp: string; bron: 'handmatig' | 'ai-beleid' } | null; verbindingen: { technisch: number; prive: number; laatstGebruikt: string } };
+  recht: { id: string; onbepaald: boolean; verlooptOp: string; bron: 'handmatig' | 'ai-beleid' } | null; verbindingen: { technisch: number; prive: number; laatstGebruikt: string };
+  /** TOEGANG-001: de eigenaar zette het recht zelf uit; het beleid geeft het niet vanzelf terug (ISO-tijd). Ontbreekt bij oudere servers. */ uitgezetDoorEigenaar?: string | null };
 export type Passkey = { vingerafdruk: string; kort: string; label: string; toegevoegd?: string; door?: string };
 export type Wachtend = { vingerafdruk: string; kort: string; label: string; aangemaakt: string; sshOpdracht: string };
 export type Keuze = { id: string; label: string; naam?: string; foto?: string };

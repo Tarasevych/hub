@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "GEMINI-002",
+  "agent": "gemini",
+  "tak": "feature/meldingen-ecosysteem-20261115-010721",
+  "basisCommit": "949cf1787cf941e85f4433965269b38b24918f77",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T01:07:22.010Z",
+  "bijgewerkt": "2026-11-15T03:05:30Z",
+  "omschrijving": "Єдина екосистема споживчих сповіщень («застосунок у застосунку»): незалежний портал у document.body поверх усіх вікон із восьмисторонньою зміною розмірів, змахами й плавучою пігулкою, уніфікована шина 5 джерел (сайт, 5 смуг, ПК-агент, розширення Chrome, ШІ/пошта/хмара/дім), вбудований конфіденційний переглядач вкладень усіх форматів, локальний і очищений від таємниць зовнішній ШІ-розбір, міграція 0278 із FORCE ROW LEVEL SECURITY і правами mijnruimte_app, 6 маршрутів API та 13-та вкладка керування /melding. · Geïntegreerd meldingen-ecosysteem (app-in-app): zelfstandig portaalvenster in document.body boven alle lagen met achtzijdig schalen, veegkaarten en zwevende pil, uniforme signaalbus uit vijf bronnen, ingebouwde vertrouwelijke bijlageviewer voor alle formaten, lokale en geheimvrije externe AI-duiding, migratie 0278 met FORCE ROW LEVEL SECURITY, zes API-routes en het dertiende accounttabblad /melding.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

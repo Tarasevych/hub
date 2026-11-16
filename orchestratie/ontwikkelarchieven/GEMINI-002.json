@@ -1,0 +1,239 @@
+{
+  "schema": 1,
+  "taakId": "GEMINI-002",
+  "datum": "2026-11-15",
+  "taal": "uk",
+  "titel": "Єдина екосистема споживчих сповіщень («застосунок у застосунку»), вбудований конфіденційний переглядач вкладень, змахи, ШІ-розбір, міграція 0278 під RLS та 13-та вкладка керування /melding",
+  "opdracht": "Дослідити чинне вікно та всі канали сповіщень на сайті й піддоменах та створити цілісну, гнучку, адаптивну й конфіденційну екосистему споживчих сповіщень формату «застосунок у застосунку»: незалежне портальне вікно поверх усіх шарів зі зміною розмірів із 8 напрямків, згортанням у плавучу пігулку, контекстною прив’язкою до піддоменів і змахами із захисним гальмом, уніфікований перекладач-інтерпретатор сигналів з усіх піддоменів, 5 інформаційних смуг, ПК-агента та розширення оглядача, вбудований переглядач вкладень усіх форматів, локальний та очищений від таємниць зовнішній ШІ-розбір, таблиці PostgreSQL із FORCE ROW LEVEL SECURITY у міграції 0278, серверні маршрути API та 13-ту вкладку налаштувань /melding поверх встановленої основи 20261114-222613 і гілки GEMINI-001.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "model": "Gemini 4 Hydrogen Extra",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/meldingen-ecosysteem-20261115-010721",
+    "basisTak": "integratie",
+    "basisCommit": "949cf1787cf941e85f4433965269b38b24918f77",
+    "basisVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "geinstalleerdeVersie": "20261114-222613",
+    "geinstalleerdeBasis": "5c2cbb8966309557cc20421e9291ba7a3e40c762",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "bronnen": [
+    {
+      "soort": "звернення власника",
+      "omschrijving": "Постановка завдання GEMINI-002: дослідження наявної системи сповіщень на всіх піддоменах, побудова незалежної портальної екосистеми «застосунок у застосунку» поверх усіх вікон із підтримкою вкладень усіх форматів, змахів, змінення розміру, ШІ-інтерпретатора та роздільного зберігання в межах простору користувача поверх живої основи 20261114-222613.",
+      "bewijzen": [
+        "Постановка завдання GEMINI-002 (модель Gemini 4 Hydrogen Extra, 15.11.2026)",
+        "Жива основа сервера: 20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762"
+      ]
+    },
+    {
+      "soort": "правила координації",
+      "omschrijving": "Вимоги AGENTS.md, GEMINI.md, політики координації, доказовості TRACE-001, реєстру закріплених елементів розміщення, карти файлів та мовного закону.",
+      "bewijzen": [
+        "AGENTS.md",
+        "GEMINI.md",
+        "orchestratie/beleid.json",
+        "orchestratie/geinstalleerd.json",
+        "orchestratie/taken/GEMINI-002.json",
+        "shared/ontwikkelarchief.ts",
+        "shared/uitrol-manifest.ts",
+        "scripts/plaatsing-vaste-elementen.json",
+        "docs/kaart/bestandskaart.json"
+      ]
+    },
+    {
+      "soort": "досліджені модулі платформи",
+      "omschrijving": "Наявні механізми сповіщень, смуг стану, шлюзу з’єднань, облікового запису, макета та прав PostgreSQL.",
+      "bewijzen": [
+        "src/CanoniekMeldingencentrum.tsx",
+        "src/canoniek-meldingen.ts",
+        "src/CanoniekOmlijsting.tsx",
+        "src/CanoniekVerbindingBand.tsx",
+        "src/ExtensieUpdateBand.tsx",
+        "src/RuimteStrook.tsx",
+        "src/platform/NieuweVersieBand.tsx",
+        "src/platform/kluis-poort.tsx",
+        "backend/connectors-gateway.ts",
+        "deploy/agent/agent.mjs",
+        "extension/background.js",
+        "migrations/rechten.sql",
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/maquette/maquette-motor.ts"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T01:07:21Z",
+      "stap": "Створено гілку feature/meldingen-ecosysteem-20261115-010721 від фіксації GEMINI-001 (949cf1787cf941e85f4433965269b38b24918f77, що містить живу основу 20261114-222613 і базу інтеграції 3219123e) та зареєстровано завдання GEMINI-002."
+    },
+    {
+      "tijd": "2026-11-15T01:28:00Z",
+      "stap": "Проведено дослідження чинних сповіщень сайту, 5 локальних інформаційних смуг, шлюзу агентів і розширення та розроблено спільне ядро shared/meldingen-ecosysteem/ (модель, класифікатор форматів вкладень, інтерпретатор 12 каналів й 11 піддоменів, геометричні правила вікна і змахів, очищення таємниць і внутрішній ШІ-інспектор)."
+    },
+    {
+      "tijd": "2026-11-15T01:55:00Z",
+      "stap": "Створено міграцію migrations/0278_meldingen_ecosysteem.sql (3 таблиці з FORCE ROW LEVEL SECURITY і політиками за користувачем та простором prive/technisch), додано права ролі mijnruimte_app у migrations/rechten.sql та реалізовано серверну службу й 6 маршрутів /api/owner/meldingen/ecosysteem/* у backend/meldingen-ecosysteem.ts і backend/index.ts."
+    },
+    {
+      "tijd": "2026-11-15T02:20:00Z",
+      "stap": "Реалізовано клієнтську екосистему src/meldingen/ecosysteem/ (портал MeldingenPortaal у document.body зі значенням z-index: 105000, змінення розмірів із 8 напрямків, згортання у плавучу пігулку, картки зі змахами MeldingVeegKaart, вбудований переглядач вкладень усіх форматів MeldingBijlageSpeler, панель ШІ MeldingAiPaneel та реактивне сховище 5 джерел ecosysteem-opslag.ts)."
+    },
+    {
+      "tijd": "2026-11-15T02:42:00Z",
+      "stap": "Підключено єдину шину сигналів у src/canoniek-meldingen.ts, src/CanoniekMeldingencentrum.tsx, 5 інформаційних смугах (CanoniekVerbindingBand, ExtensieUpdateBand, RuimteStrook, NieuweVersieBand, kluis-poort), шлюзі backend/connectors-gateway.ts, ПК-агенті deploy/agent/agent.mjs та розширенні Chrome extension/background.js."
+    },
+    {
+      "tijd": "2026-11-15T02:58:00Z",
+      "stap": "Додано 13-ту вкладку налаштувань «Сповіщення» (/melding) у меню, пошуку, центрі облікового запису (класичний вигляд, студія та інтерактивний макет), оновлено docs/kaart/bestandskaart.json та scripts/plaatsing-vaste-elementen.json, створено 24 нових модульних випробування і погоджено тести ідентичності з 13 розділами."
+    },
+    {
+      "tijd": "2026-11-15T03:08:00Z",
+      "stap": "Пройдено перевірку типів клієнта та сервера, повне виробниче складання (vite build 6126 модулів, пошуковий каталог 1641 елемент, huis-maquette, розширення 0.9.3, серверне складання dist-server/), перевірено 68 безбазових і 16 без-Chrome БД-тестів у переліку, створено процес CI .github/workflows/gemini-002-uitgave.yml із PostgreSQL 16 та оформлено доказове досьє GEMINI-002."
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Винесення порталу MeldingenPortaal безпосередньо в document.body (z-index: 105000) із збереженням перемикання на класичну панель",
+      "reden": "Пряме монтування через createPortal у корінь тіла документа гарантує незалежну роботу «застосунку у застосунку» поверх усіх вікон, діалогів і бічних панелей будь-якого піддомену, не ламаючи зворотної сумісності зі старим режимом.",
+      "alternatief": "Розміщення всередині шару .canonical-chrome призводило б до ізольованих контекстів накладання й обмеження розмірів."
+    },
+    {
+      "keuze": "Чистий геометричний та жорстко типізований модуль правил shared/meldingen-ecosysteem/regels.ts і розв’язання 8 напрямків розміру",
+      "reden": "Винесення розрахунків затискання меж, док-відступів, 4 режимів вікна, 8 країв змінення розміру й захисного гальма змахів проти архівування нових критичних сповіщень безпеки у чистий спільний модуль дозволяє перевіряти їх без оглядача й однаково використовувати на всіх піддоменах.",
+      "alternatief": "Окремі розкидані розрахунки всередині React-ефектів без єдиної перевірки меж відхилено."
+    },
+    {
+      "keuze": "Вбудований конфіденційний переглядач MeldingBijlageSpeler із підтримкою 19 типів і безпечним HEX-оглядом",
+      "reden": "Перегляд зображень (SVG з обмеженим відображенням без виконання сценаріїв), відео, звуку, PDF, документів, таблиць CSV/XLS, баз даних SQLite, архівів, .ics, .vcf, .p7s, коду, відмінностей та двійкових файлів усередині захищеної поверхні усуває потребу виносити приватні файли на сторонні сервіси чи переривати поточний контекст.",
+      "alternatief": "Просте завантаження файлів без попереднього перегляду в порталі відхилено."
+    },
+    {
+      "keuze": "Гібридна архітектура ШІ-розбору: внутрішній локальний аналіз + обов’язковий фільтр zonderGeheimen для зовнішніх моделей",
+      "reden": "Події безпеки за замовчуванням аналізуються виключно локально через interneAiAnalyse без виходу до мережі, а зовнішні запити проходять примусове очищення приватних ключів, JWT, маркерів доступу, паролів та довгих шістнадцяткових відбитків.",
+      "alternatief": "Неочищене передавання сирих тіл сповіщень зовнішнім моделям відхилено з міркувань безпеки."
+    },
+    {
+      "keuze": "Ізоляція профілів, потоку подій та журналу дій у PostgreSQL за користувачем і простором (prive / technisch) із FORCE ROW LEVEL SECURITY",
+      "reden": "Особистий і технічний контури мають окремі налаштування, геометричні профілі, канали та чергу подій під гарантованим захистом рівня рядків у базі даних та явними правами для ролі mijnruimte_app у migrations/rechten.sql.",
+      "alternatief": "Зберігання всіх налаштувань і подій лише в локальному сховищі оглядача без серверної синхронізації та RLS відхилено."
+    },
+    {
+      "keuze": "Покрокова перевірка в .github/workflows/gemini-002-uitgave.yml через цикл по одному тесту й службу postgres:16 без автоматичного встановлення",
+      "reden": "Оскільки scripts/eenheidstests.mjs приймає лише один аргумент process.argv[2], послідовний цикл гарантує фактичне виконання кожного з 68 безбазових та 16 БД-тестів, подвійний прогін міграцій і перевірку прав таблиць 0278 у чистому PostgreSQL 16 перед оприлюдненням випуску без перетирання живої версії 20261114-222613.",
+      "alternatief": "Передача кількох тестів в один виклик eenheidstests.mjs або автовстановлення поверх живої основи відхилені."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "toegevoegd", "pad": ".github/workflows/gemini-002-uitgave.yml", "omschrijving": "Робочий процес GitHub Actions зі службою postgres:16, звіренням живої основи 20261114-222613, прогоном 85 тестів, подвійних міграцій, перевіркою RLS і прав 0278, маніфестом, TRACE-001 та оприлюдненням без автовстановлення." },
+    { "soort": "toegevoegd", "pad": "backend/meldingen-ecosysteem.ts", "omschrijving": "Серверна логіка й 6 захищених маршрутів /api/owner/meldingen/ecosysteem/* (профілі, події, створення, зміна стану, журнал дій, очищений ШІ-розбір) і приймач WS-сигналів." },
+    { "soort": "toegevoegd", "pad": "migrations/0278_meldingen_ecosysteem.sql", "omschrijving": "Міграція 0278 із таблицями melding_ecosysteem_profiel, melding_ecosysteem_gebeurtenissen, melding_ecosysteem_actie_log під FORCE ROW LEVEL SECURITY." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/GEMINI-002.json", "omschrijving": "Картка реєстрації та двомовного опису завдання GEMINI-002 у системі координації." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-002.json", "omschrijving": "Доказове досьє завдання GEMINI-002 із хронологією, рішеннями, повним переліком 71 файла та результатами перевірок." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/ai.ts", "omschrijving": "Фільтр очищення таємниць zonderGeheimen, внутрішній локальний аналізатор interneAiAnalyse та безпечне формування запиту для зовнішніх моделей ШІ." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/formaten.ts", "omschrijving": "Класифікатор 19 груп і форматів вкладень (зображення, відео, звук, PDF, документи, таблиці, бази SQLite, архіви, .ics, .vcf, .p7s, код, відмінності, HEX)." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/index.ts", "omschrijving": "Спільна точка експорту типів, правил, класифікатора форматів, інтерпретатора й модуля ШІ." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/model.ts", "omschrijving": "Спільна типізована модель профілів просторів, геометрії, змахів, подій, дій, вкладень і нормалізаторів для сервера й клієнта." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/regels.ts", "omschrijving": "Чисті правила геометрії вікна, змінення розміру з 8 боків, прив’язки до країв, оцінки змахів із захистом критичної безпеки, контексту піддоменів і тихих годин." },
+    { "soort": "toegevoegd", "pad": "shared/meldingen-ecosysteem/tolk.ts", "omschrijving": "Єдиний перекладач-інтерпретатор подій із 12 каналів та 11 піддоменів із двомовними мітками й типовими діями." },
+    { "soort": "toegevoegd", "pad": "src/identiteit/melding/MeldingEcosysteemPagina.tsx", "omschrijving": "13-тя вкладка налаштувань «Сповіщення» (/melding) із вибором простору, тренажером змахів, тихими годинами, ШІ-налаштуваннями й пісочницею тестових подій." },
+    { "soort": "toegevoegd", "pad": "src/identiteit/melding/melding-pagina.css", "omschrijving": "Стилі сторінки налаштувань екосистеми сповіщень /melding із повною адаптивністю до вузьких екранів." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/MeldingAiPaneel.tsx", "omschrijving": "Панель ШІ-розбору всередині картки сповіщення з перемикачем локального та безпечного зовнішнього аналізу й блокуванням зовнішнього виходу для безпеки." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/MeldingBijlageSpeler.tsx", "omschrijving": "Вбудований конфіденційний переглядач і програвач вкладень усіх підтримуваних форматів («застосунок у застосунку»)." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/MeldingVeegKaart.tsx", "omschrijving": "Інтерактивна картка сповіщення з підтримкою горизонтальних змахів, переглядом деталей, вкладеннями, ШІ та захистом критичних подій безпеки." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/MeldingenPortaal.tsx", "omschrijving": "Незалежне портальне вікно в document.body поверх усіх елементів із перетягуванням, 8 ручками розміру, 4 режимами, плавучою пігулкою та фільтрами піддоменів." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/ecosysteem-opslag.ts", "omschrijving": "Реактивне клієнтське сховище та об’єднання потоку з 5 джерел (bouwUniformeStroom) із синхронізацією серверного API та ізоляцією prive/technisch." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/index.ts", "omschrijving": "Публічний експорт компонентів і сховища клієнтської екосистеми сповіщень." },
+    { "soort": "toegevoegd", "pad": "src/meldingen/ecosysteem/meldingen-ecosysteem.css", "omschrijving": "Стилі порталу (.mel-ecosysteem-portaal), переглядача (.mel-bijlage-portaal), плавучої пігулки (.mel-minimale-pil), карток і панелі ШІ на змінних оформлення сайту." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/meldingen-ecosysteem-kern.test.ts", "omschrijving": "15 модульних перевірок ядра екосистеми: моделі, нормалізація, інтерпретатор, геометрія 8 боків, змахи, 19 форматів, очищення таємниць і зведення 5 джерел." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts", "omschrijving": "9 комплексних перевірок інтерфейсу: відмальовування переглядача, панелі ШІ, карток, порталу, стилів, інтеграції 5 смуг, /melding, маршрутів API, RLS, ПК-агента та розширення." },
+    { "soort": "gewijzigd", "pad": "backend/connectors-gateway.ts", "omschrijving": "Додавання обробника registreerMeldingHook для прийому WS-подій сповіщень від ПК-агента та розширення оглядача." },
+    { "soort": "gewijzigd", "pad": "backend/index.ts", "omschrijving": "Підключення маршрутів meldingEcosysteemRoutes та реєстрація обробника подій шлюзу агентів." },
+    { "soort": "gewijzigd", "pad": "deploy/agent/agent.mjs", "omschrijving": "Надсилання живих сповіщень стану ПК-агента (підключення, низька пам’ять, аварійна зупинка, відмова команди) через WebSocket." },
+    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Внесення всіх нових серверних, спільних, клієнтських, міграційних і тестових файлів екосистеми сповіщень." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/app.js", "omschrijving": "Додавання 13-го розділу сповіщень («Сповіщення») до початкового двигуна макета облікового запису." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/drawer.js", "omschrijving": "Оновлення кількості розділів на 13 у виїзній навігаційній панелі макета." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/index.html", "omschrijving": "Оновлення статичного заголовного лічильника на 13 у вихідному шаблоні макета облікового запису." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/locales.js", "omschrijving": "Двомовні підписи й описи розділу сповіщень у локалізації вихідного макета." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/styles.css", "omschrijving": "Стилі картки та значка розділу сповіщень у вихідному макеті." },
+    { "soort": "gewijzigd", "pad": "docs/ontwerp/identiteit-account/maquette-bron/реєстр.js", "omschrijving": "Реєстрація метаданих, групи й контрольних налаштувань розділу сповіщень у реєстрі макета." },
+    { "soort": "gewijzigd", "pad": "extension/background.js", "omschrijving": "Надсилання подій готовності приватного й технічного слотів розширення Chrome до шини сповіщень." },
+    { "soort": "gewijzigd", "pad": "migrations/rechten.sql", "omschrijving": "Видання прав SELECT, INSERT, UPDATE, DELETE ролі mijnruimte_app на 3 таблиці міграції 0278." },
+    { "soort": "gewijzigd", "pad": "public/canonical-service.js", "omschrijving": "Реєстрація маршруту та адреси /melding у канонічній навігації облікового запису." },
+    { "soort": "gewijzigd", "pad": "scripts/identiteit-maquette/motor-aanpassingen.mjs", "omschrijving": "Прив’язка демо-елемента розділу сповіщень у макеті до справжнього якоря #melding-modus на сторінці /melding." },
+    { "soort": "gewijzigd", "pad": "scripts/plaatsing-vaste-elementen.json", "omschrijving": "Реєстрація фіксованих шарів .mel-ecosysteem-portaal, .mel-bijlage-portaal і .mel-minimale-pil." },
+    { "soort": "gewijzigd", "pad": "scripts/zoek-ui-catalogus.mjs", "omschrijving": "Додавання джерел src/meldingen/ecosysteem/ і src/identiteit/melding/ до сканування пошукового каталогу UI." },
+    { "soort": "gewijzigd", "pad": "shared/menu-model.ts", "omschrijving": "Додавання вкладки melding до канонічного переліку розділів категорії identity." },
+    { "soort": "gewijzigd", "pad": "shared/werkblad-register.ts", "omschrijving": "Додавання піктограми дзвоника (melding) та прив’язки її до вкладки melding у реєстрі сторінок." },
+    { "soort": "gewijzigd", "pad": "shared/zoek-ui-knoppen.generated.ts", "omschrijving": "Автоматично перегенерований пошуковий каталог кнопок інтерфейсу (1641 елемент)." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekMeldingencentrum.tsx", "omschrijving": "Підключення незалежного порталу MeldingenPortaal, реактивного сховища 5 джерел і перемикача між новим і класичним режимом." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekOmlijsting.tsx", "omschrijving": "Захист порталів .mel-ecosysteem-portaal, .mel-bijlage-portaal і .mel-minimale-pil від випадкового закриття під час кліку." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekVerbindingBand.tsx", "omschrijving": "Публікація та зняття сигналів смуги стану підключення до єдиної шини сповіщень." },
+    { "soort": "gewijzigd", "pad": "src/ExtensieUpdateBand.tsx", "omschrijving": "Публікація та очищення сигналів потреби оновлення розширення оглядача в єдиній шині сповіщень." },
+    { "soort": "gewijzigd", "pad": "src/InstellingencentrumWeergave.tsx", "omschrijving": "Підключення реального компонента MeldingEcosysteemPagina до вкладки melding центру облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/RuimteStrook.tsx", "omschrijving": "Публікація сигналів активного або заблокованого простору до єдиної шини сповіщень." },
+    { "soort": "gewijzigd", "pad": "src/VerenigdDienstApp.tsx", "omschrijving": "Передавання контексту активного піддомену й служби у центр сповіщень екосистеми." },
+    { "soort": "gewijzigd", "pad": "src/canoniek-meldingen.ts", "omschrijving": "Розширення шини emitCanonicalNotice полями kanaal та subdomein, а також реєстр живих сигналів сторінки publiceerPaginaSignaal / verwijderPaginaSignaal." },
+    { "soort": "gewijzigd", "pad": "src/dienst-tab-labels.ts", "omschrijving": "Двомовна назва вкладки melding («Сповіщення» / «Meldingen») у навігаційному каталозі." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/IdentiteitAccountPagina.tsx", "omschrijving": "Узгодження коментарів і лічильників на 13 розділів налаштувань облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/IdentiteitAtelier.tsx", "omschrijving": "Додавання позначення та піктограми 13-го розділу melding у студії оформлення." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/IdentiteitKlassiekMaquette.tsx", "omschrijving": "Узгодження діапазонів груп і лічильника 13 розділів у класичному макеті облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/atelier-illustraties.css", "omschrijving": "Стилі мініатюрної картки порталу сповіщень для студії облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/atelier-inhoud.ts", "omschrijving": "Узгодження примітки про 13 розділів студії." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/atelier-v49-gegevens.json", "omschrijving": "Опис секції, груп і налаштувань розділу melding (доведено до 13 секцій, 47 груп та 173 пунктів)." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/identiteit-account.css", "omschrijving": "Уточнення заголовного коментаря про 13 розділів сторінки облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/identiteit-atelier.css", "omschrijving": "Оновлення коментаря про поступ за 13 розділами студії." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/identiteit-tabs.ts", "omschrijving": "Додавання вкладки melding до канонічного типу IdentiteitTab і масиву IDENTITEIT_TABS." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/identiteit-vormgeving.ts", "omschrijving": "Узгодження двомовного опису кількості з 13 розділів у класичному вигляді." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-motor.ts", "omschrijving": "Оновлення двигуна макета для 13-го розділу сповіщень та його інтерактивної навігації." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-sjabloon.ts", "omschrijving": "Оновлення шаблону макета під 13 розділів налаштувань." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-stijlen.css", "omschrijving": "Стилі ілюстрації порталу сповіщень (.art-melding), стрічки змахів і колірної мітки розділу." },
+    { "soort": "gewijzigd", "pad": "src/menu-voorkeuren.tsx", "omschrijving": "Додавання значка дзвоника для розділу melding у бічному меню." },
+    { "soort": "gewijzigd", "pad": "src/platform/NieuweVersieBand.tsx", "omschrijving": "Публікація сповіщення про доступність нової версії сайту до єдиної шини екосистеми." },
+    { "soort": "gewijzigd", "pad": "src/platform/kluis-poort.tsx", "omschrijving": "Передавання каналу безпеки й подій стану розшифрування сховища до єдиної шини сповіщень." },
+    { "soort": "gewijzigd", "pad": "src/zoek/ZoekGlobaal.tsx", "omschrijving": "Додавання ключових слів миттєвого глобального пошуку для 13-ї вкладки «Сповіщення»." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/identiteit-015-vormgeving-toegang.test.ts", "omschrijving": "Узгодження перевірки переліку з 13 вкладок облікового запису." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/identiteit-account-ui.test.ts", "omschrijving": "Оновлення перевірок кількості 13 розділів на сторінці облікового запису." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/identiteit-atelier.test.ts", "omschrijving": "Оновлення перевірок студії на 13 секцій, 47 груп і 173 пункти." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/identiteit-maquette.test.ts", "omschrijving": "Узгодження тесту карток макета на підтримку 13 розділів." }
+  ],
+  "controles": [
+    {
+      "opdracht": "git merge-base --is-ancestor 5c2cbb8966309557cc20421e9291ba7a3e40c762 HEAD && git merge-base --is-ancestor 3219123ea8b00f27460922ae075ee3c7f32cecda HEAD",
+      "uitkomst": "код 0: гілка побудована поверх живої встановленої основи 20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762 (після GEMINI-001 @ 949cf178) та актуальної інтеграційної основи 3219123ea8b00f27460922ae075ee3c7f32cecda."
+    },
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && NODE_OPTIONS=\"--max-old-space-size=2816\" npm run build",
+      "uitkomst": "код 0: перевірка типів клієнта та сервера без помилок; карта файлів і перевірка довідок (0 помилок), пошуковий каталог 1641 елемент, візуальний контраст і аудит без помилок; vite build зібрано (6126 модулів за 1 хв 15 с), huis-maquette (84 kB / 730 kB / 2972 kB), tech-bundels (6 технічних і 641 відкритий), розширення 0.9.3 (29 файлів, 165866 байтів) та серверне складання dist-server/ (901 мс)."
+    },
+    {
+      "opdracht": "node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/l002-audit.mjs && node scripts/hulp-vraagtekens-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && find deploy -name '*.sh' -exec bash -n {} +",
+      "uitkomst": "код 0: перевірено карту файлів, розміщення фіксованих шарів екосистеми, аудит l002, довідкові підказки, чинність пошукового каталогу (1641 елемент) та синтаксис сценаріїв розгортання."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs meldingen-ecosysteem-kern.test.ts && node scripts/eenheidstests.mjs meldingen-ecosysteem-ui.test.ts && node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts",
+      "uitkomst": "код 0: meldingen-ecosysteem-kern 15/15, meldingen-ecosysteem-ui 9/9, trace-001-ontwikkelarchief 16/16 успішно (після фінального мовного очищення повторно підтверджено)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak GEMINI-002 --fase overdracht",
+      "uitkomst": "код 0: правила координації, реєстр задач і свіжість гілки на чистому зафіксованому дереві підтверджені."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/gemini-002-uitgave.yml (PostgreSQL 16 + подвійні міграції + 85 модульних тестів + перевірка прав 0278)",
+      "uitkomst": "Автоматизований конвеєр складає застосунок, виконує 68 безбазових + TRACE-001 + 16 без-Chrome БД-тестів у поодинокому циклі, подвійний прогін міграцій (включно з 0278) у чистому PostgreSQL 16, перевіряє FORCE ROW LEVEL SECURITY, політики й права SELECT/INSERT/UPDATE/DELETE для mijnruimte_app, валідує маніфест, TRACE-001 і SHA-256 пакунка випуску без автовстановлення."
+    }
+  ],
+  "beperkingen": [
+    "У локальній віртуальній машині відсутній сервер PostgreSQL і змінна DATABASE_URL, через що подвійний прогін міграції 0278, перевірка FORCE ROW LEVEL SECURITY, права mijnruimte_app із migrations/rechten.sql та 16 без-Chrome БД-тестів винесені до робочого процесу GitHub Actions зі службою postgres:16.",
+    "Тести, що вимагають виконуваного файла Google Chrome (зокрема identiteit-015-vormgeving та identiteit-015-stille-uren), не запускаються на етапі складання без оглядача; логіку інтерфейсу, стилів, порталу, сторінки /melding, макета та шини сигналів перевірено через статичний вивід React і модульні тести.",
+    "Пряме візуальне випробування в живому оглядачі на робочих піддоменах (hub, id, mail, cloud, ai, github, huis, mcp, api, admin) не виконувалося з ізольованого контейнера.",
+    "Автоматичне встановлення на робочий сервер вимкнене за вимогами власника й політики платформи: випуск оприлюднюється без перетирання живої лінії 20261114-222613 і встановлюється лише власником із підтвердженням ключем доступу."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Усі таємні дані, паролі, маркери доступу, ключі підписів, вміст пошти чи приховані міркування моделі виключені; очищення таємниць для зовнішніх запитів ШІ примусово перевірено модульним випробуванням."
+  }
+}

@@ -151,7 +151,11 @@ export async function main(): Promise<number> {
     check('B «Зв\'язки» zonder ШІ: zoeken op de afzenders (zonder mij) en op de onderscheidende woorden van het onderwerp',
       vr.length === 2 && vr[0] === 'from:lotte.vermeulen@immo-voorbeeld.example' && /^subject:\(huurcontract voorbeeldstraat\)$/.test(vr[1]), JSON.stringify(vr));
     check('B zoekopdracht veilig: geen aanhalingstekens/haakjes uit een adres in de zoektaal van Gmail',
-      verwantVragen([{ from: 'X <a"b(c)@d.example>', subject: 'kort' }], [])[0] === 'from:abc@d.example');
+      // SEC-002 (aanv-ronde1-02): normalizeMailAddress neemt het adres uit de LAATSTE <…> en weigert een ongeldig adres (aanhalingsteken,
+      // haakjes) helemaal — vroeger werden die tekens weggeknipt en werd er toch op «abc@d.example» gezocht. Veilig is: nooit zulke tekens
+      // in de zoektaal; een gewoon adres geeft nog steeds from:.
+      !verwantVragen([{ from: 'X <a"b(c)@d.example>', subject: 'kort' }], []).some((q) => /["()]/.test(q))
+      && verwantVragen([{ from: 'X <ab.c@d.example>', subject: 'kort' }], [])[0] === 'from:ab.c@d.example');
 
     const { default: LeesVenster } = await import('../../src/mail/LeesVenster');
     const { default: ContextPaneel } = await import('../../src/mail/ContextPaneel');
@@ -214,8 +218,8 @@ export async function main(): Promise<number> {
   check('D brieftekst: background="…" via de server (zoals <img>), <source>/<video>/<audio>/<track> zonder bron, SVG-href alleen #…, image-set weg',
     bt.includes("const bg=node.getAttribute('background');") && bt.includes("node.dataset.mailBackgroundSrc=v;node.removeAttribute('background')") && bt.includes("if(/^(SOURCE|VIDEO|AUDIO|TRACK|PICTURE)$/i.test(node.tagName))for(const a of['src','srcset','poster'])node.removeAttribute(a)")
     && bt.includes("if(node.namespaceURI==='http://www.w3.org/2000/svg')for(const a of['href','xlink:href'])") && bt.includes(".replace(/(?:-webkit-)?image-set\\([^)]*\\)/gi,'none')"));
-  check('D brieftekst: externe beelden pas na «Показати» (geen verzoek, ook niet via de server), inline (cid:) altijd; buiten het leesvenster zoals vroeger (altijd)',
-    bt.includes("if(!externToestaan&&/^https:/i.test(source)&&!inlineVan(source)){node.dataset.mailResourceState='verborgen';verborgen+=1;continue}") && bt.includes("instelling=lv?lv.weergave.beelden:'altijd'")
+  check('D brieftekst: externe beelden pas na «Показати» (geen verzoek, ook niet via de server), inline (cid:) altijd; buiten het leesvenster: bewaarde instelling, anders vragen (SEC-002 post-05)',
+    bt.includes("if(!externToestaan&&/^https:/i.test(source)&&!inlineVan(source)){node.dataset.mailResourceState='verborgen';verborgen+=1;continue}") && bt.includes('instelling=beeldenInstelling(lv?.weergave)')
     && bt.includes("toestaan=instelling==='altijd'||altijdAfzender||eenmaal") && bt.includes('<BeeldenStrook lang={lang} aantal={verborgen}') && bt.includes("t('Показати один раз','Eén keer tonen')") && bt.includes('zetBeeldenAltijd(afzender,true)')
     && gi.includes('messageId={message.id} afzender={message.from}'));
   check('D brieftekst: sneltoetsen en Escape ook met de focus in de tekst (toets op het iframe, preventDefault terug), tekstgrootte uit het kader',

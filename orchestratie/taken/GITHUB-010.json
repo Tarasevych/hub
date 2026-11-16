@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "GITHUB-010",
+  "agent": "gemini",
+  "tak": "feature/github-010-volledige-omgeving-20261111-210000",
+  "basisCommit": "7734fc3b779b78cac79fc7bb3d55e03a4b183937",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-11T20:54:08.635Z",
+  "bijgewerkt": "2026-11-11T20:54:08.635Z",
+  "omschrijving": "Повноцінне двостороннє робоче середовище GitHub (github.tarasevych.com): сучасний дизайн усіх сторінок і спливних вікон, дерево файлів і вебредактор коду, задачі, запити на злиття, конвеєри дій, випуски, одноклікове підключення без додаткових ключів, двостороннє дзеркало та повна інтеграція з пристроями й екосистемою ШІ.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

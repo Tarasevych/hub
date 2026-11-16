@@ -22,17 +22,17 @@
 //   • elk logo komt uit het ENE merkregister (src/merk/merk-register.ts). Merken zonder vorm met echte herkomst krijgen de
 //     neutrale plaat (geen nagetekend logo); de beheerder kan het officiële bestand zelf neerleggen (deploy/LEESMIJ.md);
 //   • klikken opent een VENSTER uit de gezamenlijke laag (src/platform/VensterHerstel.tsx → MailKoppelVenster).
+import { meldMailAccountsGewijzigd } from './mail/mail-wisselaar-model';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { focusVerloren } from './platform/toegankelijk';
-import { Mail, Settings2, ShieldCheck, Zap } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import Logo from './merk/MerkLogo';
 import MailOrbitIntro from './mail/MailOrbitIntro';
 import { api } from './platform/client';
 import { mailKoppelenOpenen } from './platform/VensterHerstel';
-import { MAIL_AANBIEDERS, mailAanbieder, mailAanbiederHeeftKnop, mailImapFoutTekst, type MailAanbieder, type MailImapKoppelingPubliek } from '../shared/mail-aanbieders';
+import { mailAanbieder, mailAanbiederHeeftKnop, mailImapFoutTekst, type MailAanbieder, type MailImapKoppelingPubliek } from '../shared/mail-aanbieders';
 import { isMailMeldingNiveau, type MailMeldingNiveau } from '../shared/mail-melding-niveau';
 import MailMeldingBel from './mail/MailMeldingBel';
-import MailAchtergrond from './mail/MailAchtergrond';
 // Raster, tegels, uitlegkolom, accountbeheer en meldingsvenster van deze pagina (mobiel 21.10.2026). De import ontbrak sinds de
 // momentopname van 30.10: het bestand werd nergens geladen (oude fout, 05.11.2026; mobiel-geometrie-20261021 check 1).
 import './mail-accounts-hub.css';
@@ -44,6 +44,7 @@ import {
 // hoofdkolom van 0 px (390 − 2×24 padding − 24 gap < 320): de begroeting stond letter voor letter onder elkaar en de rechter
 // kolom («Вікна, які не губляться») lag over de tegels heen — Playwright: «<div>…</div> intercepts pointer events».
 import { laatsteRegel, zojuist, type LaatsteBrief } from './mail/laatste-brief';
+import { useIsMaquette } from './thema/useThema';
 
 type Lang = 'uk' | 'nl';
 type GoogleRij = { id: string; email: string; accountRole?: string; status: string; displayName?: string };
@@ -57,6 +58,9 @@ type Props = {
   onConnect?: (provider: string) => void;
   /** Na loskoppelen: de aanroeper ververst zijn eigen stand (bv. de mailbootstrap). */
   onVeranderd?: () => void;
+  /** Сигнал для студійної оболонки «Макет»: чи активний зараз порожній вступний екран орбіти та скільки підключень. */
+  onLeegVeranderd?: (leeg: boolean) => void;
+  onAantalVeranderd?: (aantal: number) => void;
   /** Vanaf welk subdomein dit venster geopend wordt (het dok toont het daarna overal). */
   dienst?: string;
   tabContext?: string;
@@ -71,8 +75,9 @@ type Koppeling = {
 
 const kaart: React.CSSProperties = { background: 'var(--panel,#fff)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,.08)' };
 
-export default function MailAccountsHub({ lang, userName = '', accounts = [], onConnect, onVeranderd, dienst = 'mail', tabContext, sourceOrigin }: Props) {
+export default function MailAccountsHub({ lang, userName = '', accounts = [], onConnect, onVeranderd, onLeegVeranderd, onAantalVeranderd, dienst = 'mail', tabContext, sourceOrigin }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  const isMaquette = useIsMaquette();
   const [imap, setImap] = useState<MailImapKoppelingPubliek[]>([]);
   const [google, setGoogle] = useState<GoogleRij[]>(() => accounts.map((a) => ({ id: a.id, email: a.email, accountRole: a.accountRole, status: a.status })));
   const [microsoft, setMicrosoft] = useState<MicrosoftRij[]>([]);
@@ -83,6 +88,8 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
   const [erfenis, setErfenis] = useState<MailMeldingNiveau>('action');
   const [bel, setBel] = useState('');
   const [laatste, setLaatste] = useState<Record<string, LaatsteBrief>>({});
+  // MAILACC-002: pas na de eerste lading weten we of er echt geen accounts zijn (anders flitst de lege orbit).
+  const [geladen, setGeladen] = useState(dienst !== 'mail' || accounts.length > 0);
   // Toegankelijkheid 21.10 (WCAG 2.4.3, 4.1.2): de vraag «Відключити …?» is een (niet-modale) alertdialog; openen = focus op de VEILIGE
   // keuze («Скасувати»), Esc/«Скасувати» = dicht en de focus terug op «Відключити» van die rij; is de rij weg (losgekoppeld), dan op de melding.
   const hubRef = useRef<HTMLDivElement | null>(null);
@@ -126,6 +133,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
         if (isMailMeldingNiveau(data.legacy?.minimum)) setErfenis(data.legacy.minimum);
       }).catch(() => undefined),
     ]);
+    setGeladen(true);
   }, [context]);
 
   // De eigen koppelingen erbij (alleen op de maildienst: daar is de sessie die deze routes vragen).
@@ -157,44 +165,6 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
     mailKoppelenOpenen(a.id, `${t('Підключення', 'Koppelen')}: ${a.naam}`, dienst);
   };
 
-  const wijzeLabel = (a: MailAanbieder) => {
-    if (a.wijze === 'oauth-google') return t('1 клік через Google', '1 klik via Google');
-    if (a.wijze === 'oauth-microsoft') return t('1 клік через Microsoft', '1 klik via Microsoft');
-    if (a.wijze === 'imap-app-wachtwoord') return t('IMAP + пароль застосунку', 'IMAP + app-wachtwoord');
-    return t('Ще не реалізовано', 'Nog niet gebouwd');
-  };
-
-  const tegel = (a: MailAanbieder) => {
-    const kop = (
-      <>
-        <span className='mail-provider-logo'><Logo id={a.id} naam={a.naam} logo={a.merk} maat={36} /></span>
-        <span className='mail-provider-tekst'>
-          <span className='mail-provider-naam'>{a.naam}</span>
-          <span className='mail-provider-onder'>{t(a.onder[0], a.onder[1])}</span>
-          <span className={`mail-provider-wijze${a.wijze === 'nog-niet' ? ' is-nog-niet' : ''}`}>{wijzeLabel(a)}</span>
-        </span>
-      </>
-    );
-    // GEEN knop zonder echte handeling: dan een gewoon vak; de lijst van wat ontbreekt staat ingeklapt («Чому недоступно?»).
-    if (!mailAanbiederHeeftKnop(a)) {
-      return (
-        <div key={a.id} className='mail-provider-tegel is-nog-niet' data-mail-provider={a.id} data-mail-provider-knop='nee'>
-          {kop}
-          <details className='mail-provider-waarom'>
-            <summary>{t('Чому недоступно?', 'Waarom niet beschikbaar?')}</summary>
-            <ul>{(a.ontbreekt || []).map((rij, i) => <li key={i}>{t(rij[0], rij[1])}</li>)}</ul>
-          </details>
-        </div>
-      );
-    }
-    return (
-      <button key={a.id} type='button' className='mail-provider-tegel' data-mail-provider={a.id} data-mail-provider-knop='ja'
-        onClick={() => openen(a)}>
-        {kop}
-      </button>
-    );
-  };
-
   // ------------------------------------------------------------------------------------------------ gekoppelde accounts
   const gmail = mailAanbieder('gmail')!, outlook = mailAanbieder('outlook')!;
   const alleKoppelingen: Koppeling[] = [
@@ -216,6 +186,12 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
     }),
   ];
   const groepen = [...new Set(alleKoppelingen.map((k) => k.aanbieder))].map((id) => ({ dienst: mailAanbieder(id), rijen: alleKoppelingen.filter((k) => k.aanbieder === id) }));
+  const aantalKoppelingen = alleKoppelingen.length;
+  useEffect(() => {
+    if (!geladen) return; // nog niet bekend: de oproeper niet laten wisselen naar het lege scherm
+    onLeegVeranderd?.(aantalKoppelingen === 0);
+    onAantalVeranderd?.(aantalKoppelingen);
+  }, [geladen, aantalKoppelingen, onLeegVeranderd, onAantalVeranderd]);
 
   const fout = (gevangen: unknown) => {
     const lichaam = (gevangen as { response?: { data?: { fout?: string; error?: string } } })?.response?.data;
@@ -267,6 +243,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
       setMelding({ fout: false, tekst: `${k.email}: ${t('відключено.', 'losgekoppeld.')} ${wissen ? t('Локальні дані видалено.', 'De lokale gegevens zijn gewist.') : k.soort === 'imap' ? '' : t('Локальні дані збережено.', 'De lokale gegevens zijn bewaard.')}`.trim() });
       await laden();
       onVeranderd?.();
+      meldMailAccountsGewijzigd(); // 15.11.2026: перемикач скриньок у списку листів (інша вкладка) оновлюється одразу
     } catch (gevangen) {
       setMelding({ fout: true, tekst: `${t('Не відключено. Код сервера:', 'Niet losgekoppeld. Servercode:')} ${fout(gevangen)}` });
     } finally { setBezig(''); }
@@ -360,10 +337,24 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
     );
   };
 
-  // MAILORBIT-001: alleen het lege scherm vervangen; beheer en ontkoppeling bij bestaande accounts blijven onaangeroerd.
+  // MAILACC-002 (15.11.2026, oude fout): vóór het laden waren alle lijsten leeg, dus toonde de hub eerst de lege orbit
+  // («Підключіть першу скриньку») en sprong hij na ~1 с naar de lange beheerpagina. Nu: eerst een rustige laadkaart,
+  // daarna ÉÉN ontwerp — de orbit — met of zonder gekoppelde accounts. Без «блимання» між двома різними сторінками.
+  if (!geladen && alleKoppelingen.length === 0) {
+    return (
+      <div className='mail-accounts-hub mail-accounts-orbit-mode mail-accounts-laden' data-mail-accounts-laden='ja' aria-busy='true'>
+        <div className='mail-accounts-laadkaart' role='status'>
+          <span className='mail-accounts-laadkaart-puls' aria-hidden='true' />
+          <span>{t('Завантажуємо ваші поштові скриньки…', 'Uw mailboxen worden geladen…')}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // MAILORBIT-001: het lege scherm is de orbit; beheer en ontkoppeling bij bestaande accounts blijven onaangeroerd.
   if (alleKoppelingen.length === 0) {
     return (
-      <div className='mail-accounts-hub mail-accounts-orbit-mode' data-mail-accounts-empty='true'>
+      <div className='mail-accounts-hub mail-accounts-orbit-mode' data-mail-accounts-empty='true' data-mail-accounts-orbit='ja'>
         <MailOrbitIntro lang={lang} onSelect={openen} />
         <div ref={hubRef} className='mail-orbit-lege-status' data-mail-gekoppeld>
           {melding ? <p role={melding.fout ? 'alert' : 'status'} className={'mail-koppeling-melding' + (melding.fout ? ' is-fout' : '')}>{melding.tekst}</p> : null}
@@ -372,50 +363,32 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
     );
   }
 
+  // MAILACC-002: met accounts dezelfde orbit bovenaan (variant «extra») in plaats van de oude kop + tegelcatalogus.
+  // Één catalogus per pagina: de orbit heeft alle koppelbare diensten, «Увесь каталог» en «Чому недоступно?».
+  const naarBeheer = () => {
+    const doel = typeof document !== 'undefined' ? document.getElementById('mail-sectie-gekoppeld') : null;
+    doel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    doel?.focus({ preventScroll: true });
+  };
+
   return (
-    <div className='mail-accounts-hub'>
-      <MailAchtergrond lang={lang} plaats='accounts' />
+    <div className='mail-accounts-hub mail-accounts-met-orbit' data-mail-accounts-empty='false' data-mail-accounts-orbit='ja'>
+      <div className='mail-accounts-orbit-rij'>
+        <MailOrbitIntro lang={lang} onSelect={openen} variant='extra' aantal={alleKoppelingen.length} onManage={naarBeheer}
+          groet={userName ? `${t('Вітаємо, ', 'Welkom, ')}${userName}!` : ''} />
+      </div>
       <div className='mail-accounts-hoofd'>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ color: 'var(--muted,#64748b)', fontSize: 14 }}>{userName ? `${t('Вітаємо, ', 'Welkom, ')}${userName}!` : t('Вітаємо', 'Welkom')}</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: '4px 0 8px' }}>{t('Підключіть свої поштові акаунти', 'Koppel uw e-mailaccounts')}</h1>
-          <p style={{ color: 'var(--muted,#64748b)', margin: 0 }}>{t(
-            'Кожна плитка нижче веде до справжньої дії: або вхід у постачальника, або IMAP/SMTP з паролем застосунку. Де підключення ще немає — там немає й кнопки, зате написано, чого бракує.',
-            'Elke tegel hieronder leidt tot een echte handeling: aanmelden bij de aanbieder, of IMAP/SMTP met een app-wachtwoord. Waar de koppeling nog niet bestaat, staat geen knop maar wel wat er ontbreekt.')}</p>
-        </div>
 
-        <div style={{ ...kaart, marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, flex: 'none', borderRadius: 12, background: 'var(--surface,#f1f5f9)', display: 'grid', placeItems: 'center' }}><Mail size={20} aria-hidden='true' /></div>
-              <div>
-                <div style={{ fontWeight: 600 }}>{t('Додати новий акаунт', 'Nieuw account toevoegen')}</div>
-                <div style={{ fontSize: 13, color: 'var(--muted,#64748b)' }}>{t('Оберіть сервіс — відкриється вікно, яке можна згорнути й повернутися до нього пізніше, навіть на іншому піддомені.', 'Kies een dienst — er opent een venster dat u kunt minimaliseren en later weer oppakken, ook op een ander subdomein.')}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className='mail-provider-rooster'>
-            {MAIL_AANBIEDERS.map(tegel)}
-          </div>
-
-          <div style={{ display: 'flex', gap: 16, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line,#f1f5f9)', fontSize: 13, color: 'var(--muted,#64748b)', flexWrap: 'wrap' }}>
-            <span><Zap size={14} aria-hidden='true' style={{ verticalAlign: 'middle' }} /> {t('Google і Microsoft — вхід на їхньому боці, пароль тут не вводиться', 'Google en Microsoft — aanmelden bij hen, hier geen wachtwoord')}</span>
-            <span><Settings2 size={14} aria-hidden='true' style={{ verticalAlign: 'middle' }} /> {t('Решта — IMAP/SMTP з паролем застосунку', 'De rest — IMAP/SMTP met app-wachtwoord')}</span>
-            <span><ShieldCheck size={14} aria-hidden='true' style={{ verticalAlign: 'middle' }} /> {t('Пароль застосунку зберігається лише зашифрованим', 'Het app-wachtwoord staat alleen versleuteld opgeslagen')}</span>
-          </div>
-        </div>
-
-        <div style={kaart} data-mail-gekoppeld ref={hubRef}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ fontWeight: 600 }}>{t('Підключені акаунти', 'Gekoppelde accounts')} <span style={{ background: 'var(--surface,#f1f5f9)', borderRadius: 999, padding: '2px 8px', fontSize: 12 }}>{alleKoppelingen.length}</span></div>
+        <div id='mail-sectie-gekoppeld' tabIndex={-1} className='mail-accounts-kaart mail-accounts-gekoppeld-kaart' style={isMaquette ? undefined : kaart} data-mail-gekoppeld ref={hubRef}>
+          <div className='mail-accounts-kaart-kop' style={isMaquette ? undefined : { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div className='mail-accounts-kaart-titel' style={isMaquette ? undefined : { fontWeight: 600 }}>{t('Підключені акаунти', 'Gekoppelde accounts')} <span className='mail-accounts-teller' style={isMaquette ? undefined : { background: 'var(--surface,#f1f5f9)', borderRadius: 999, padding: '2px 8px', fontSize: 12 }}>{alleKoppelingen.length}</span></div>
           </div>
           {/* Altijd aanwezige live-regio's (een regio die pas mét tekst verschijnt, wordt vaak niet voorgelezen — WCAG 4.1.3). */}
           <div role='status' tabIndex={-1} data-mail-melding-focus>{melding && !melding.fout ? <p className='mail-koppeling-melding'>{melding.tekst}</p> : null}</div>
           <div role='alert'>{melding?.fout ? <p className='mail-koppeling-melding is-fout'>{melding.tekst}</p> : null}</div>
           {alleKoppelingen.length === 0 ? (
             // Punt 5 van de opdracht: een leeg vak legt uit wat een koppeling GEEFT, in plaats van een nul te tonen.
-            <div style={{ display: 'grid', gap: 8, padding: '8px 0', color: 'var(--muted,#475569)', fontSize: 14 }} data-mail-leeg='uitleg'>
+            <div className='mail-accounts-leeg-uitleg' style={isMaquette ? undefined : { display: 'grid', gap: 8, padding: '8px 0', color: 'var(--muted,#475569)', fontSize: 14 }} data-mail-leeg='uitleg'>
               <strong style={{ color: 'inherit' }}>{t('Ще жодної скриньки не підключено. Що дає підключення:', 'Er is nog geen mailbox gekoppeld. Wat een koppeling u geeft:')}</strong>
               <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
                 <li>{t('усі листи читаються в одному вікні, без перемикання між сервісами;', 'alle berichten leest u in één venster, zonder tussen diensten te wisselen;')}</li>
@@ -440,16 +413,16 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
       </div>
 
       <aside className='mail-accounts-kant'>
-        <div style={{ ...kaart, background: 'var(--info-zacht)', color: 'var(--text)' }}>
-          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{t('Вікна, які не губляться', 'Vensters die niet verdwijnen')}</div>
-          <p style={{ fontSize: 13, margin: 0 }}>{t(
+        <div id='mail-sectie-uitleg' className='mail-accounts-kaart mail-accounts-kant-info' style={isMaquette ? undefined : { ...kaart, background: 'var(--info-zacht)', color: 'var(--text)' }}>
+          <div className='mail-accounts-kant-titel' style={isMaquette ? undefined : { fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{t('Вікна, які не губляться', 'Vensters die niet verdwijnen')}</div>
+          <p style={isMaquette ? undefined : { fontSize: 13, margin: 0 }}>{t(
             'Згорнуте вікно підключення лишається в доку праворуч знизу — і залишається там, коли ви переходите на хаб, пошту чи хмару та після перезавантаження сторінки. Пароль при згортанні стирається навмисно.',
             'Een geminimaliseerd koppelvenster blijft in het dok rechtsonder staan — ook als u naar de hub, post of cloud gaat, en na het herladen van de pagina. Het wachtwoord wordt bij minimaliseren bewust gewist.')}</p>
         </div>
 
-        <div style={kaart}>
-          <div style={{ fontWeight: 600, marginBottom: 12 }}>{t('Як саме це працює', 'Hoe het precies werkt')}</div>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--muted,#475569)', lineHeight: 1.6 }}>
+        <div className='mail-accounts-kaart mail-accounts-kant-uitleg' style={isMaquette ? undefined : kaart}>
+          <div className='mail-accounts-kaart-titel' style={isMaquette ? undefined : { fontWeight: 600, marginBottom: 12 }}>{t('Як саме це працює', 'Hoe het precies werkt')}</div>
+          <ul style={isMaquette ? undefined : { margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--muted,#475569)', lineHeight: 1.6 }}>
             <li>{t('Gmail — OAuth Google. Другий і наступні акаунти Google: Google покаже вибір акаунта.', 'Gmail — OAuth van Google. Een tweede en volgend Google-account: Google toont een accountkeuze.')}</li>
             <li>{t('Outlook — OAuth Microsoft; адресу вводите у вікні. Якщо адміністратор ще не завершив налаштування, вікно покаже, чого бракує.', 'Outlook — OAuth van Microsoft; het adres vult u in het venster in. Heeft de beheerder de configuratie nog niet af, dan toont het venster wat ontbreekt.')}</li>
             <li>{t('iCloud, Ukr.net, Yahoo, I.ua — сервер справді входить у скриньку по IMAP і перевіряє SMTP, перш ніж щось зберегти.', 'iCloud, Ukr.net, Yahoo, I.ua — de server meldt zich echt via IMAP aan en controleert SMTP voordat er iets bewaard wordt.')}</li>

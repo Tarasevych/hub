@@ -6,6 +6,7 @@
 html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b1220);--ut-line:var(--line,#263041);--ut-text:var(--text,#e5e7eb);--ut-muted:var(--muted,#94a3b8);
   --ut-ok:var(--ok);--ut-ok-bg:var(--ok-zacht);--ut-warn:var(--warn);--ut-warn-bg:var(--warn-zacht);--ut-err:var(--fout);--ut-err-bg:var(--fout-zacht);--ut-info:var(--info);--ut-info-bg:var(--info-zacht);--ut-term-bg:#060a13}
 .ut-root *{box-sizing:border-box}
+.ut-portaal{display:contents}
 .ut-root h1,.ut-root h2,.ut-root h3,.ut-root p{margin:0}
 .ut-mono,.ut-root code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
 .ut-root code{overflow-wrap:anywhere}
@@ -366,8 +367,10 @@ html.theme-dark .ut-root{--ut-bg:var(--panel,#111827);--ut-bg2:var(--surface,#0b
 .ut-conv-stand{position:absolute;right:-5px;bottom:-5px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--ut-bg);border:1px solid var(--ut-line)}
 .ut-conv-stand svg{width:13px;height:13px}
 .ut-conv-tekst{display:grid;gap:1px;min-width:0;width:100%}
-.ut-conv-tekst b{font-size:.78rem;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ut-conv-sub{font-size:.7rem;color:var(--ut-muted);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* 15.11.2026: у вужчій колонці підписи етапів переносяться на другий рядок, а не обрізаються трикрапкою («Перевірка са…»).
+   NL: in de smallere kolom lopen de labels door naar een tweede regel in plaats van af te kappen. */
+.ut-conv-tekst b{font-size:.78rem;font-weight:700;line-height:1.2;white-space:normal;text-wrap:balance;overflow-wrap:break-word;hyphens:auto}
+.ut-conv-sub{font-size:.7rem;color:var(--ut-muted);line-height:1.25;white-space:normal;text-wrap:balance;overflow-wrap:break-word;font-variant-numeric:tabular-nums}
 .ut-conv-pijl{width:14px;height:14px;opacity:.55;transition:transform .25s}
 .admin-uitrol .ut-conv-knoop[aria-expanded="true"] .ut-conv-pijl{transform:rotate(180deg)}
 .ut-conv-rij li[data-stand="ok"] .ut-conv-bol{border-color:var(--ut-ok);background:var(--ut-ok-bg);color:var(--ut-ok)}

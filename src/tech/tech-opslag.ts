@@ -29,6 +29,15 @@ const zet = (t: Partial<TechStatus>) => { toestand = { ...toestand, ...t }; prof
 export type TabProfiel = 'gebruiker' | 'technisch';
 export const PROFIEL_META = 'mjn-profiel';
 export const profielVan = (t: TechStatus = toestand, nu = Date.now()): TabProfiel => (!!t.activatie && t.activatie.eind > nu + t.scheef ? 'technisch' : 'gebruiker');
+/**
+ * SEC-002 extensie-04 (12.11.2026): WEET de site al of dit tabblad technisch is? Nee zolang het eerste antwoord van /tech/status er
+ * niet is (de pagina laadt, of dit tabblad vraagt nog geen status) en na een netwerk-/serverfout zonder bekende activering. De meta
+ * draagt dat als data-zeker="0"; de extensie behandelt zo'n tabblad als «onbekend» en GEEN slot leest of bedient het. Vroeger stond
+ * er in die tijd gewoon «gebruiker», waardoor de AI van de privéruimte een technisch tabblad kon lezen tijdens het laden — en na
+ * één mislukte statusvraag tot het tabblad opnieuw zichtbaar werd.
+ */
+export const profielZeker = (t: TechStatus = toestand): boolean => t.geladen && !(t.fout === 'netwerk' && !t.activatie);
+export const PROFIEL_ZEKER_ATTR = 'data-zeker';
 let profielTimer: ReturnType<typeof setTimeout> | null = null;
 export function profielMetaBijwerken(nu = Date.now()): TabProfiel {
   const waarde = profielVan(toestand, nu);
@@ -36,6 +45,9 @@ export function profielMetaBijwerken(nu = Date.now()): TabProfiel {
     if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return waarde;
     let m = document.querySelector(`meta[name="${PROFIEL_META}"]`);
     if (!m && document.head) { m = document.createElement('meta'); m.setAttribute('name', PROFIEL_META); document.head.appendChild(m); }
+    // Eerst het voorbehoud, dan de waarde: de brug van de extensie leest beide in één keer (MutationObserver na deze taak).
+    const zeker = profielZeker(toestand) ? '1' : '0';
+    if (m && m.getAttribute(PROFIEL_ZEKER_ATTR) !== zeker) m.setAttribute(PROFIEL_ZEKER_ATTR, zeker);
     if (m && m.getAttribute('content') !== waarde) m.setAttribute('content', waarde);
     if (profielTimer !== null) clearTimeout(profielTimer);
     profielTimer = null;
@@ -48,17 +60,67 @@ profielMetaBijwerken();
 export const techToestand = () => toestand;
 export const useTech = () => useSyncExternalStore((f) => { luisteraars.add(f); return () => luisteraars.delete(f); }, () => toestand, () => toestand);
 
+export const TECH_BAND_HINT = 'tsv-tech-band-hint-v1';
+function bewaarBandHint(activatie: TechActivatie | null, scheef: number): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const nu = Date.now() + scheef;
+    if (activatie && activatie.eind > nu) {
+      const eind = Math.min(activatie.eind - scheef, Date.now() + 8 * 3600_000);
+      sessionStorage.setItem(TECH_BAND_HINT, JSON.stringify({ eind }));
+    } else {
+      sessionStorage.removeItem(TECH_BAND_HINT);
+    }
+  } catch { /* opslag geblokkeerd: geen fout */ }
+}
+function wisBandHint(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(TECH_BAND_HINT);
+  } catch { /* opslag geblokkeerd: geen fout */ }
+}
+export function leesBandHintActief(nu = Date.now()): boolean {
+  try {
+    if (typeof sessionStorage === 'undefined') return false;
+    const ruw = sessionStorage.getItem(TECH_BAND_HINT);
+    if (!ruw) return false;
+    const g = JSON.parse(ruw) as { eind?: unknown } | null;
+    if (g && Number(g.eind) > nu) return true;
+    sessionStorage.removeItem(TECH_BAND_HINT);
+    return false;
+  } catch {
+    return false;
+  }
+}
+export const techBandGereserveerd = (t: TechStatus = toestand, nu = Date.now()): boolean =>
+  techActief(t) || (!t.geladen && leesBandHintActief(nu));
+
 export const techBody = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 let statussen = 0;
-const neem = (data: any) => (statussen += 1, zet({ geladen: true, profiel: data?.profiel ?? null, activatie: data?.activatie ?? null, catalogus: data?.catalogus ?? toestand.catalogus, scheef: data?.nu ? Number(data.nu) - Date.now() : 0, fout: null }));
+const neem = (data: any) => {
+  const scheef = data?.nu ? Number(data.nu) - Date.now() : 0;
+  const activatie = (data?.activatie ?? null) as TechActivatie | null;
+  bewaarBandHint(activatie, scheef);
+  statussen += 1;
+  return zet({ geladen: true, profiel: data?.profiel ?? null, activatie, catalogus: data?.catalogus ?? toestand.catalogus, scheef, fout: null });
+};
 
 /** HUB-01: alleen een DUIDELIJK antwoord van de server (401/403/404: geen sessie of geen recht) wist het profiel; netwerk/5xx houdt de vorige staat. */
 export const techFoutReset = (e: unknown): boolean => { const st = Number((e as { status?: number } | null)?.status || 0); return st === 401 || st === 403 || st === 404; };
+// SEC-002 extensie-04: na een netwerk-/serverfout de status zelf opnieuw vragen (4 s, 8 s … hoogstens 60 s), ook ZONDER bekende
+// activering. Vroeger kwam er pas een nieuwe vraag als het tabblad verborgen en weer getoond werd; tot dan bleef het profiel fout.
+let herkansTimer: ReturnType<typeof setTimeout> | null = null;
+let herkansMs = 0;
+function herkansPlannen(): void {
+  if (herkansTimer !== null) return;
+  herkansMs = Math.min(60_000, Math.max(4_000, herkansMs * 2));
+  herkansTimer = setTimeout(() => { herkansTimer = null; if (sleutel && toestand.fout === 'netwerk') void techVernieuwen(); }, herkansMs);
+  (herkansTimer as unknown as { unref?: () => void }).unref?.(); // Node (tests): een wachtende herkansing houdt het proces niet open
+}
 export async function techVernieuwen(): Promise<void> {
-  try { neem((await api.post('/api/owner/tech/status', techBody())).data); }
+  try { neem((await api.post('/api/owner/tech/status', techBody())).data); herkansMs = 0; }
   catch (e) {
-    if (techFoutReset(e)) zet({ geladen: true, profiel: null, activatie: null, fout: null });
-    else zet({ geladen: true, fout: 'netwerk' });
+    if (techFoutReset(e)) { wisBandHint(); zet({ geladen: true, profiel: null, activatie: null, fout: null }); herkansMs = 0; }
+    else { zet({ geladen: true, fout: 'netwerk' }); herkansPlannen(); }
   }
 }
 export async function techActiveren(minuten: number, reden: string) {
@@ -67,7 +129,7 @@ export async function techActiveren(minuten: number, reden: string) {
   meld({ t: 'aan' });
 }
 /** «Вийти з технічного профілю»: de server sluit het in ELK tabblad van deze sessie; de andere tabbladen horen het meteen. */
-export async function techBeeindigen() { neem((await api.post('/api/owner/tech/beeindigen', techBody())).data); meld({ t: 'uit' }); }
+export async function techBeeindigen() { neem((await api.post('/api/owner/tech/beeindigen', techBody())).data); wisBandHint(); meld({ t: 'uit' }); }
 export async function techBand(kleur: BandKleur, patroon: BandPatroon) { neem((await api.post('/api/owner/tech/band', { ...techBody(), kleur, patroon })).data); }
 /**
  * «Нові вкладки: технічні / користувацькі» (migratie 0080). Standaard GEBRUIKER: anders is elk nieuw tabblad technisch en mag de
@@ -103,7 +165,7 @@ function herbeoordeel(): void {
   const k = gebruiker && dienst ? `${gebruiker}|${dienst}` : '';
   if (k === sleutel) return;
   sleutel = k;
-  if (k) void techVernieuwen(); else zet({ geladen: true, profiel: null, activatie: null, fout: null });
+  if (k) void techVernieuwen(); else { wisBandHint(); zet({ geladen: true, profiel: null, activatie: null, fout: null }); }
 }
 export function techGebruiker(userId: string | null | undefined): void { gebruiker = String(userId || ''); herbeoordeel(); }
 

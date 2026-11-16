@@ -12,7 +12,7 @@ import {
   standaardRuimtes, standaardZijbalk,
 } from '../../shared/menu-model';
 import {
-  itemIcoonZetten, itemKleurZetten, menuWeergave, nieuweKopieId, snelKandidaten, snelStap, snelToevoegen, snelWeg,
+  itemIcoonZetten, itemKleurZetten, menuWeergave, nieuweKopieId, snelFocusNaStap, snelKandidaten, snelStap, snelToevoegen, snelWeg,
   snelbalkTerugzetten, type Basis,
 } from '../../shared/menu-indeling';
 
@@ -114,6 +114,12 @@ export async function main(): Promise<number> {
   check('bewerker: toevoegen, weghalen, omhoog, omlaag, icoon, kleur en terugzetten zijn echte knoppen/keuzelijsten',
     ['data-snel-toevoegen', 'data-snel-weg', 'data-snel-omhoog', 'data-snel-omlaag', 'data-snel-icoon', 'data-snel-kleur', 'data-snel-standaard', 'data-snel-nieuw'].every((h) => ed.includes(h)));
   check('bewerker: werkt met het toetsenbord (Alt+pijltjes) en alles heeft een aria-label', /e\.altKey/.test(ed) && /ArrowUp/.test(ed) && /ArrowLeft/.test(ed) && (ed.match(/aria-label=/g) || []).length >= 6);
+  // IDENTITEIT-015 (приймання menu): після Alt+↑ на першу позицію натиснута кнопка вимикається — фокус має лишитися на рядку.
+  check('na verplaatsen naar de rand: focus naar de knop die nog actief is (nooit een uitgeschakelde)',
+    snelFocusNaStap(0, 2, -1) === 'omlaag' && snelFocusNaStap(1, 3, -1) === 'omhoog' && snelFocusNaStap(1, 2, 1) === 'omhoog' && snelFocusNaStap(1, 3, 1) === 'omlaag'
+    && snelFocusNaStap(0, 1, 1) === null && snelFocusNaStap(5, 3, 1) === null);
+  check('bewerker: na Alt+pijl of klik blijft de focus op dezelfde rij (snelFocusNaStap + focus in useEffect)',
+    /snelFocusNaStap\(i \+ d, rijen\.length, d\)/.test(ed) && /onKeyDown=\{toetsen\(r, i\)\}/.test(ed) && /\.focus\(\)/.test(ed));
   check('bewerker: elke wijziging gaat via menuWijzigen (dus «Ongedaan маken» + opslag per account en profiel)', /menuWijzigen\(/.test(ed) && !/zetZijbalk\(/.test(ed));
   check('bewerker zegt uitdrukkelijk dat het alleen dit account en alleen dit profiel betreft',
     /Лише цей обліковий запис і лише технічний профіль/.test(ed) && /Лише цей обліковий запис і лише користувацький профіль/.test(ed) && /Alleen dit account en alleen het technisch profiel/.test(ed));

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLASSIEK-008",
+  "agent": "antigravity",
+  "tak": "feature/klassiek-008-20261114-091248",
+  "basisCommit": "1394fa5631884d155a822bcd9ddc694fdace5b03",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T09:12:48.920Z",
+  "bijgewerkt": "2026-11-14T09:12:48.920Z",
+  "omschrijving": "Хвиля 7 прагматичних тем Біла класика та Чорна класика: інженерний міст і осередок агентів mcp.tarasevych.com (13 вкладок та 12 розділів AgentenPagina).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
