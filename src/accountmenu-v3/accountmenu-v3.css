@@ -1733,6 +1733,215 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 /* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок
    проти глобального правила min-height: 44px у src/ontwerp/mobiel.css (0,3,1), а зручну площу
    дотику для пальця забезпечують прозорі зони ::after. */
+/* RUIMTE-WEERGAVE-001: дії технічного сеансу («Пауза / Продовжити», «Завершити») — дві компактні піктограми ВСЕРЕДИНІ пігулки
+   «Технічний», відділені тонкою рискою; видно лише коли вкладка в технічному просторі. Підпис — спливна підказка в темі меню
+   (миша: наведення; палець: довге натискання). Специфічність (0,5,0)+ тримає круглу форму проти min-height:44px у mobiel.css.
+   NL: twee pictogramknoppen in de pil «Technisch»; uitleg in een zwevende tip (hover of lang indrukken). */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech > .am3-seg-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech.heeft-acties {
+  flex: 1.45 1 0;
+  background: var(--am3-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech.heeft-acties > .am3-seg-btn.active {
+  background: transparent;
+  box-shadow: none;
+  padding-right: 4px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-acties {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 3px 0 0;
+  padding-left: 5px;
+  border-left: 1px solid var(--am3-line);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--am3-muted);
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+/* Зона дотику для пальця: більша за видиме коло, але не перекриває сусідню піктограму */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie::after {
+  content: '';
+  position: absolute;
+  inset: -9px -1px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:hover,
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:focus-visible {
+  background: var(--am3-surface-2);
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:focus-visible {
+  outline: 2px solid var(--am3-accent, currentColor);
+  outline-offset: 1px;
+}
+
+/* Зауваження власника 16.11: контурний знак паузи (дві порожні смужки) погано читався — смужки й трикутник «продовжити» суцільні,
+   кольором основного тексту. NL: pauze- en hervat-teken gevuld in plaats van omlijnd. */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:not(.is-gevaar) {
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:not(.is-gevaar) > svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  stroke-width: 1.5;
+}
+
+/* Небезпечна дія: натяк кольором, не крик; підтвердження трохи помітніше */
+/* Зауваження власника 16.11: сама червона піктограма губилася на тлі пігулки — тепер має власне м'яке червоне коло й товщу лінію */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar {
+  background: color-mix(in srgb, var(--am3-danger-icon) 16%, var(--am3-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--am3-danger-icon) 42%, transparent);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar > svg {
+  color: var(--am3-danger-icon);
+  stroke-width: 2.6;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar:hover,
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar:focus-visible {
+  background: color-mix(in srgb, var(--am3-danger-icon) 26%, var(--am3-bg));
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar.is-bevestig {
+  background: var(--am3-danger-icon);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--am3-danger-icon) 35%, transparent);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar.is-bevestig > svg {
+  color: var(--am3-bg);
+}
+
+/* Пауза: на кнопці «Технічний» — маленька кругла позначка ⏸ кольором технічної смуги, щит теж підсвічено (стан видно без читання підпису) */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-btn.is-tech-btn.is-pauze > svg {
+  color: var(--am3-shield-color, #d97706);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: 50%;
+  /* Зауваження власника 16.11: напівпрозора позначка зливалася з тлом — тепер суцільне коло кольором смуги з контрастним знаком */
+  background: var(--am3-shield-color, #d97706);
+  color: var(--am3-shield-fg, #1a1a1a);
+  box-shadow: 0 0 0 1.5px var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-pauze > svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+  stroke-width: 1.5;
+}
+
+[data-account-menu-v3] .am3-tech-tip {
+  position: absolute;
+  right: -4px;
+  bottom: calc(100% + 9px);
+  width: max-content;
+  max-width: 236px;
+  padding: 8px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+[data-account-menu-v3] .am3-tech-actie:focus-visible > .am3-tech-tip,
+[data-account-menu-v3] .am3-tech-tip.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@media (hover: hover) {
+  [data-account-menu-v3] .am3-tech-actie:hover > .am3-tech-tip {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+[data-account-menu-v3] .am3-tip-dot.is-gevaar {
+  background: var(--am3-danger-icon);
+}
+
+[data-account-menu-v3] .am3-ruimte-melding {
+  display: block;
+  margin-top: 6px;
+  color: var(--am3-muted, var(--am3-text));
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-account-menu-v3] .am3-tech-tip,
+  [data-account-menu-v3] .am3-tech-actie,
+  [data-account-menu-v3] .am3-seg-tech {
+    transition: none !important;
+  }
+}
+
 @media (max-width: 700px) {
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-hero {
     padding: 16px 12px 12px;
@@ -1892,8 +2101,14 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
     display: flex;
   }
 
+  /* Зауваження власника 16.11: три піктограми тулилися ліворуч, а «За добою» розтягувалася на решту — рядок виглядав
+     «роз'їханим». Тепер усі чотири кнопки ділять ширину рівномірно; текстова отримує трохи більше місця. */
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn:last-child {
-    flex: 1 1 auto;
+    flex: 2.1 1 0;
   }
 
   [data-account-menu-v3] .am3-shell.am3-shell .am3-tints-row {

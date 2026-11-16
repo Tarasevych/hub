@@ -143,8 +143,8 @@ export const WEIGER_UITLEG: Readonly<Record<ToegangWeigerCode, Tweetalig>> = Obj
     nl: 'De technische sessie van de eigenaar draait nu niet — alle _beheer-hulpmiddelen zijn tijdelijk verborgen.',
   },
   PAUZE: {
-    uk: 'Технічний простір власника зараз на паузі (активний особистий режим).',
-    nl: 'De technische ruimte van de eigenaar staat nu op pauze (persoonlijke stand actief).',
+    uk: 'Технічний доступ власника зараз на паузі (кнопка «Пауза»).',
+    nl: 'De technische toegang van de eigenaar staat nu op pauze (knop «Pauze»).',
   },
   VERLOPEN: {
     uk: 'Час попереднього технічного сеансу минув — запустіть новий технічний сеанс.',
@@ -320,7 +320,7 @@ const EXTERNE_SAMENVATTING: Readonly<Record<ToegangWeigerCode, string>> = Object
   GEEN_EIGENAAR: 'Technical (_beheer) tools require the server owner account.',
   GEEN_TECH_PROFIEL: 'No active technical profile exists on this account.',
   GEEN_TECH_SESSIE: 'The owner technical session is currently not started.',
-  PAUZE: 'The owner technical space is currently paused (switched to personal mode).',
+  PAUZE: 'The owner technical access is currently paused (Pause button).',
   VERLOPEN: 'The owner timed technical session has expired.',
   GRENS_VOORBIJ: 'The owner technical session boundary has expired.',
   SITE_SESSIE_WEG: 'The owner website login session ended; sign in again on the website.',

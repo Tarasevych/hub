@@ -31,6 +31,16 @@
 /* Elke regel onder de tumbler op een eigen regel, ook waar .rw een blok is (accountmenu v2). */
 .rw-stand,.rw-reden,.rw-uitkomst{display:block}
 .rw-uitkomst.is-fout{color:var(--fout)}
+/* RUIMTE-WEERGAVE-001: bewuste «Пауза / Продовжити» en «Завершити» onder de schakelaar (wisselen pauzeert niet meer). */
+.rw-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rw-actie{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 12px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:var(--rw-tekst);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.rw-actie svg{width:14px;height:14px;flex:none}
+.rw-actie:hover:not(:disabled){background:color-mix(in srgb,var(--rw-tech) 12%,transparent)}
+.rw-actie:focus-visible{outline:2px solid var(--rw-tech);outline-offset:2px}
+.rw-actie:disabled{opacity:.6;cursor:progress}
+.rw-actie.is-gevaar{border-color:color-mix(in srgb,var(--fout,#c0392b) 45%,var(--rw-rand));color:color-mix(in srgb,var(--fout,#c0392b) 80%,var(--rw-tekst))}
+.rw-actie.is-gevaar:hover:not(:disabled),.rw-actie.is-bevestig{background:color-mix(in srgb,var(--fout,#c0392b) 12%,transparent)}
+.rw-compact .rw-actie{min-height:28px;padding:3px 10px;font-size:12px}
 .rw-compact .rw-schakel{min-height:34px;gap:8px;padding:3px 12px 3px 3px;font-size:13px}
 .rw-compact .rw-spoor{width:46px;height:26px}
 .rw-compact .rw-bol{width:20px;height:20px}

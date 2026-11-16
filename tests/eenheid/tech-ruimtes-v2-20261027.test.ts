@@ -1,5 +1,5 @@
 // Technische ruimtes v2 (0115, vlag tech-ruimtes-v2): pure beslisfunctie + echte router + wegwerp-PG.
-// Modi, pauze/wissel zonder stap-op, uitloggen van de site sluit technisch, beëindigen logt niet uit, één tabblad uitloggen laat lange
+// Modi, wissel (alleen weergave van het tabblad, 0286) en bewuste pauze zonder stap-op, uitloggen van de site sluit technisch, beëindigen logt niet uit, één tabblad uitloggen laat lange
 // extensie-ontgrendelingen staan, AI/MCP via dezelfde beslissing, twee gebruikers gescheiden, vlag uit = oud gedrag, rolplafond-fout weg,
 // eigenaar nooit buitengesloten, schaduwmodus logt alleen.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
@@ -122,10 +122,26 @@ export async function main(): Promise<number> {
     // pauze / wissel zonder stap-op
     await pool.query(`UPDATE app.records SET data = data - 'x' WHERE id = $1`, [sA.id]);
     await pool.query(`DELETE FROM app.records WHERE tbl='owner_step_up_v1' AND data->>'userId' = $1`, [uid]).catch(() => undefined);
+    // RUIMTE-WEERGAVE-001 (0286): wisselen = alleen de weergave van DIT tabblad; geen pauze van de sessie.
+    const pauzeVoor = Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.ruimte.pauze'`, [uid])).rows[0].n), weergaveVoor = Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.ruimte.weergave'`, [uid])).rows[0].n);
     const p1 = await roep(R('wisselen'), sA, tA1, { naar: 'prive' });
-    check('wisselen naar privé: pauze, sessie loopt door', p1.status === 200 && p1.data.pauze === true && p1.data.actief === 'prive' && !!p1.data.sessie && (await tp.actieveActivatie(uid, tA1)) === null, JSON.stringify(p1.data).slice(0, 200));
+    check('wisselen naar privé: dit tabblad privé, GEEN pauze, sessie loopt door', p1.status === 200 && p1.data.pauze === false && p1.data.actief === 'prive' && !!p1.data.sessie && (await tp.actieveActivatie(uid, tA1)) === null, JSON.stringify(p1.data).slice(0, 200));
+    check('wisselen naar privé: ander tabblad van dezelfde aanmelding blijft technisch', !!(await tp.actieveActivatie(uid, tA2)) && (await roep(R('status'), sA, tA2)).data.actief === 'technisch');
+    check('wisselen naar privé: rij staat NIET op pauze (actief = technisch, pauze_op leeg)', (await pool.query(`SELECT actief, pauze_op FROM app.tech_ruimte_sessies WHERE sessie_id = $1 AND beeindigd_op IS NULL`, [sA.id])).rows.every((x: any) => x.actief === 'technisch' && x.pauze_op === null));
+    check('wisselen naar privé: journaal owner.tech.ruimte.weergave, geen owner.tech.ruimte.pauze', Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.ruimte.weergave'`, [uid])).rows[0].n) === weergaveVoor + 1 && Number((await pool.query(`SELECT count(*)::int AS n FROM app.audit WHERE owner_id = $1 AND action = 'owner.tech.ruimte.pauze'`, [uid])).rows[0].n) === pauzeVoor);
     const p2 = await roep(R('wisselen'), sA, tA1, { naar: 'technisch' });
-    check('wisselen terug naar technisch ZONDER stap-op', p2.status === 200 && p2.data.actief === 'technisch' && p2.data.pauze === false, `${p2.status} ${p2.data.error || ''}`);
+    check('wisselen terug naar technisch ZONDER stap-op', p2.status === 200 && p2.data.actief === 'technisch' && p2.data.pauze === false && !!(await tp.actieveActivatie(uid, tA1)), `${p2.status} ${p2.data.error || ''}`);
+    // Bewuste pauze: de hele sessie (alle tabbladen), daarna «Продовжити» zonder stap-op.
+    check('pauzeren: ongeldige waarde → 400 PAUZE_ONGELDIG', (await roep(R('pauzeren'), sA, tA1, { aan: 'ja' })).data.error === 'PAUZE_ONGELDIG');
+    const pz = await roep(R('pauzeren'), sA, tA1, { aan: true });
+    check('pauzeren: pauze true, beide tabbladen privé, sessie blijft', pz.status === 200 && pz.data.pauze === true && pz.data.actief === 'prive' && !!pz.data.sessie && (await tp.actieveActivatie(uid, tA1)) === null && (await tp.actieveActivatie(uid, tA2)) === null, JSON.stringify(pz.data).slice(0, 160));
+    check('pauzeren: ander tabblad ziet ook de pauze', (await roep(R('status'), sA, tA2)).data.pauze === true);
+    const hv = await roep(R('pauzeren'), sA, tA1, { aan: false });
+    check('doorgaan (pauze uit) ZONDER stap-op: beide tabbladen weer technisch', hv.status === 200 && hv.data.pauze === false && hv.data.actief === 'technisch' && !!(await tp.actieveActivatie(uid, tA2)), `${hv.status} ${hv.data.error || ''}`);
+    await roep(R('pauzeren'), sA, tA1, { aan: true });
+    const p3 = await roep(R('wisselen'), sA, tA1, { naar: 'technisch' });
+    check('op pauze + wisselen naar technisch = hervatten', p3.status === 200 && p3.data.pauze === false && p3.data.actief === 'technisch');
+    check('privé-weergave kan nooit méér: een tabblad in privé krijgt geen technische lade', await (async () => { await roep(R('wisselen'), sA, tA2, { naar: 'prive' }); const { gegevensRuimteVeilig } = await import('../../backend/ruimte-scheiding'); const x = await gegevensRuimteVeilig(uid, { tabContext: tA2 }); await roep(R('wisselen'), sA, tA2, { naar: 'technisch' }); return x === 'prive'; })());
     check('wisselen: ongeldige waarde → 400 NAAR_ONGELDIG', (await roep(R('wisselen'), sA, tA1, { naar: 'x' })).data.error === 'NAAR_ONGELDIG');
 
     // verlengen bijtellen/vervangen
@@ -195,7 +211,11 @@ export async function main(): Promise<number> {
     check('ai-zetten: 200 en zichtbaar in toegang.ai', az.status === 200 && az.data.ai.some((x: any) => x.verbindingId === '*' && x.ruimtes.includes('technisch')), `${az.status} ${az.data.error || ''}`);
     check('MCP met instelling: technisch, zelfde rechten als de site', (await tp.lopendeActivatie(uid))?.mogelijkheden.includes('users.manage') === true && (await effectieveRuimte(uid)) === 'technisch');
     await roep(R('wisselen'), sE, tE, { naar: 'prive' });
-    check('MCP: pauze op de site → AI ook privé', (await tp.lopendeActivatie(uid)) === null);
+    check('MCP: alleen van ruimte wisselen op de site → AI werkt door (technisch)', (await tp.lopendeActivatie(uid))?.mogelijkheden.includes('users.manage') === true && (await effectieveRuimte(uid)) === 'technisch');
+    await roep(R('pauzeren'), sE, tE, { aan: true });
+    check('MCP: bewuste «Пауза» op de site → AI ook privé', (await tp.lopendeActivatie(uid)) === null);
+    await roep(R('pauzeren'), sE, tE, { aan: false });
+    check('MCP: «Продовжити» → AI weer technisch', (await tp.lopendeActivatie(uid))?.mogelijkheden.includes('users.manage') === true);
     await roep(R('wisselen'), sE, tE, { naar: 'technisch' });
     await roep(R('beeindigen'), sE, tE);
     check('MCP: technische sessie beëindigd → AI privé', (await tp.lopendeActivatie(uid)) === null);

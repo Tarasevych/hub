@@ -5,7 +5,7 @@
 //   3. Technische sessie v2 AAN, maar AI-sessiedelegatie UIT → AI_NIET_TOEGESTAAN;
 //   4. Per-verbinding (verbinding_id) isolatie in app.tech_ruimte_ai tussen /cursor en /gpt tegelijk + specifieke 'prive' overschrijft '*';
 //   5. Dienst «ai» in ruimte-scheiding: DIENST_UIT, BEVROREN, KEUZE_ONTBREEKT en herstel naar eigen/gedeeld;
-//   6. Technische sessie op PAUZE en hervatting (wisselen zonder stap-op);
+//   6. Technische sessie op PAUZE en hervatting (knop «Пауза», zonder stap-op; wisselen pauzeert niet meer — 0286);
 //   7. Verlopen tijd-sessie (VERLOPEN);
 //   8. Eigenaar uitgelogd van de site (SITE_SESSIE_WEG);
 //   9. Live intrekking midden in een sessie + SSE notifications/tools/list_changed;
@@ -520,13 +520,13 @@ export async function main(): Promise<number> {
       (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose.effectiveVisibleToolsCount === volledigMetTechAantal);
 
     // ================================================================== SCENARIO 6: Technische sessie op PAUZE en HERVATTEN
-    const pauzeRes = await apiPost('mcp.tarasevych.com', 'mcp', '/api/owner/hub/tech/ruimtes/wisselen', { naar: 'prive' });
+    const pauzeRes = await apiPost('mcp.tarasevych.com', 'mcp', '/api/owner/hub/tech/ruimtes/pauzeren', { aan: true });
     check('Scenario 6a: gewisseld naar persoonlijke ruimte (pauze)', pauzeRes.status === 200 && pauzeRes.data.pauze === true);
     const d6Pauze = (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose;
     check('Scenario 6b (PAUZE): profileSessionPaused === true, denialCode === PAUZE, _beheer direct verborgen',
       d6Pauze.profileSessionPaused === true && !d6Pauze.profileSessionActive && d6Pauze.denialCode === 'PAUZE' && d6Pauze.effectiveVisibleToolsCount === alleGebruikerAantal);
 
-    const hervatRes = await apiPost('mcp.tarasevych.com', 'mcp', '/api/owner/hub/tech/ruimtes/wisselen', { naar: 'technisch' });
+    const hervatRes = await apiPost('mcp.tarasevych.com', 'mcp', '/api/owner/hub/tech/ruimtes/pauzeren', { aan: false });
     check('Scenario 6c (HERVAT): terug in technische ruimte zonder stap-op → direct weer alle technische tools',
       hervatRes.status === 200 && (await v2.overzicht(uid)).agenten.find((a) => a.slug === 'cursor')!.diagnose.effectiveVisibleToolsCount === volledigMetTechAantal);
 

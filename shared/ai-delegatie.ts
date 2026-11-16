@@ -18,7 +18,7 @@ export type AiTermijn = 'tijd' | 'tot-technisch-einde' | 'tot-site-uitloggen' | 
 export const AI_TERMIJNEN_ALLE: readonly AiTermijn[] = Object.freeze(['tijd', 'tot-technisch-einde', 'tot-site-uitloggen', 'tot-account-uitloggen', 'onbepaald']);
 export const isAiTermijn = (v: unknown): v is AiTermijn => typeof v === 'string' && (AI_TERMIJNEN_ALLE as readonly string[]).includes(v);
 
-/** Wat er gebeurt als de eigenaar zelf naar de gewone ruimte overschakelt (alle passende technische sessies op pauze). */
+/** Wat er gebeurt als de eigenaar de technische sessie bewust op «Пауза» zet (RUIMTE-WEERGAVE-001: wisselen van ruimte pauzeert niet meer). */
 export type BijPauze = 'pauzeren' | 'intrekken' | 'doorwerken';
 export const isBijPauze = (v: unknown): v is BijPauze => v === 'pauzeren' || v === 'intrekken' || v === 'doorwerken';
 /** Wat er gebeurt als de eigenaar zich overal afmeldt (geen levende aanmelding meer). Alleen zinvol bij 'tijd' en 'onbepaald'.
@@ -188,9 +188,9 @@ export const PAUZE_NAAM: Record<BijPauze, Tweetalig> = {
   doorwerken: t2('Працювати далі', 'Doorwerken'),
 };
 export const PAUZE_UITLEG: Record<BijPauze, Tweetalig> = {
-  pauzeren: t2('Коли ви перемикаєтеся у звичайний профіль, ШІ теж чекає. Повернулися в технічний — ШІ продовжує сам, без нового дозволу.', 'Schakelt u naar de gewone ruimte, dan wacht de AI ook. Terug in technisch — de AI gaat vanzelf verder, zonder nieuwe toestemming.'),
-  intrekken: t2('Перемикання у звичайний профіль знімає дозвіл. Щоб ШІ знову працював у технічному, дайте дозвіл заново.', 'Overschakelen naar de gewone ruimte trekt de toestemming in. Daarna moet u ze opnieuw geven.'),
-  doorwerken: t2('Ви працюєте у звичайному профілі, а ШІ одночасно в технічному. Ви не бачите технічних дій ШІ на екрані в момент, коли вони відбуваються.', 'U werkt in de gewone ruimte, de AI tegelijk in de technische. U ziet technische acties van de AI niet op het scherm terwijl ze gebeuren.'),
+  pauzeren: t2('Коли ви натискаєте «Пауза» технічного доступу, ШІ теж чекає. Натиснули «Продовжити» — ШІ працює далі сам, без нового дозволу. Просте перемикання простору у вкладці ШІ не зупиняє.', 'Zet u de technische toegang op «Pauze», dan wacht de AI ook. Na «Doorgaan» werkt de AI vanzelf verder, zonder nieuwe toestemming. Alleen van ruimte wisselen in een tabblad stopt de AI niet.'),
+  intrekken: t2('«Пауза» технічного доступу знімає дозвіл. Щоб ШІ знову працював у технічному, дайте дозвіл заново. Просте перемикання простору у вкладці дозвіл не знімає.', '«Pauze» van de technische toegang trekt de toestemming in. Daarna moet u ze opnieuw geven. Alleen van ruimte wisselen in een tabblad trekt niets in.'),
+  doorwerken: t2('Навіть на «Паузі» технічного доступу ШІ працює далі в технічному просторі. Ви не бачите технічних дій ШІ на екрані в момент, коли вони відбуваються.', 'Ook als de technische toegang op «Pauze» staat, werkt de AI door in de technische ruimte. U ziet technische acties van de AI niet op het scherm terwijl ze gebeuren.'),
 };
 export const AFMELDEN_NAAM: Record<BijAfmelden, Tweetalig> = {
   intrekken: t2('Скинути дозвіл', 'Toestemming intrekken'),

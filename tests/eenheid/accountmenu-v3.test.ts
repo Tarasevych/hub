@@ -242,5 +242,24 @@ export async function main(): Promise<number> {
     delete g.__TSV_CANONICAL_SERVICE__;
   }
 
+  // RUIMTE-WEERGAVE-001 (16.11.2026): у меню «Макет» перемикач простору ≠ пауза; «Пауза/Продовжити» і «Завершити» — окремі кнопки.
+  {
+    const v3 = readFileSync('src/accountmenu-v3/AccountMenuV3.tsx', 'utf8');
+    const v3css = readFileSync('src/accountmenu-v3/accountmenu-v3.css', 'utf8');
+    check('RUIMTE-WEERGAVE-001: кнопки «Пауза/Продовжити» і «Завершити» є в меню «Макет» і викликають pauzeer/beeindigen',
+      v3.includes("data-ruimte-pauze-knop") && v3.includes("data-ruimte-einde-knop") && /pauzeer\(/.test(v3) && /beeindigen\(/.test(v3));
+    check('RUIMTE-WEERGAVE-001: «Завершити» питає підтвердження другим натиском', /eindeBevestig/.test(v3) && v3.includes('Так, завершити'));
+    check('RUIMTE-WEERGAVE-001: дії — піктограми всередині пігулки «Технічний», видно лише в технічному просторі',
+      /const toonTechActies = !!v2Sessie && isTechActief;/.test(v3) && /data-am3-tech-blok='1'>[\s\S]*?\{toonTechActies \? \([\s\S]*?className='am3-tech-acties'/.test(v3) && !v3.includes('am3-ruimte-acties'));
+    check('RUIMTE-WEERGAVE-001: піктограми мають aria-label і спливну підказку з наслідками; довге натискання не виконує дію',
+      (v3.match(/className=\{`am3-tech-tip/g) || []).length === 2 && /aria-label=\{sessiePauze \?/.test(v3) && /if \(techWasLang\(\)\) return;/.test(v3));
+    check('RUIMTE-WEERGAVE-001: круглі піктограми 24 px у межах [data-account-menu-v3], підказка не лише для миші',
+      /\.am3-tech-actie\{[^}]*width:\s*24px[^}]*border-radius:\s*50%/.test(v3css.replace(/\s*\{\s*/g, '{').replace(/;\s+/g, ';')) && /\.am3-tech-tip\.is-open/.test(v3css));
+    const zr = readFileSync('src/tech/ruimtes/ZijbalkRuimte.tsx', 'utf8');
+    check('RUIMTE-WEERGAVE-001: на паузі кнопка «Технічний» показує позначку ⏸ у меню й у бічному перемикачі, з поясненням для читача екрана',
+      /const techOpPauze = sessiePauze && !isTechActief;/.test(v3) && v3.includes("data-am3-tech-pauze='1'") && /aria-label=\{techOpPauze \?/.test(v3)
+      && zr.includes("data-zijbalk-pauze='1'") && /const pauze = id === 'technisch' && !actief && !!s\.sessie && s\.pauze;/.test(zr));
+  }
+
   return einde();
 }

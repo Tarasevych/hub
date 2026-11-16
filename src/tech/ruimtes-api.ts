@@ -19,6 +19,8 @@ export const ruimtesApi = {
   status: () => post<unknown>('status').then(normaliseerStatus),
   starten: (modus: TermijnModus, reden: string, minuten?: number) => post<unknown>('starten', { modus, reden, ...(modus === 'tijd' ? { minuten } : {}) }).then(normaliseerStatus),
   wisselen: (naar: Ruimte) => post<unknown>('wisselen', { naar }).then(normaliseerStatus),
+  /** RUIMTE-WEERGAVE-001: bewuste pauze (true) of doorgaan (false) van de hele technische sessie. Wisselen pauzeert niet meer. */
+  pauzeren: (aan: boolean) => post<unknown>('pauzeren', { aan }).then(normaliseerStatus),
   verlengen: (minuten: number, soort: 'bijtellen' | 'vervangen') => post<unknown>('verlengen', { minuten, soort }).then(normaliseerStatus),
   beeindigen: () => post<unknown>('beeindigen').then(normaliseerStatus),
   /** Werker 1 (28.10): 200 {ruimte, eindTijd} | 401 | 403 {error, uitleg:{uk,nl}} — mag de technische ruimte nu gebruikt worden? */

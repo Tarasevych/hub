@@ -10,7 +10,8 @@ const TECH_WEG: Tweetalig = { uk: 'Технічний простір зараз 
 const UITLEG: Record<string, Tweetalig> = {
   ACCOUNT_NIET_ACTIEF: { uk: 'Акаунт не активний. Розширення від\'єднано.', nl: 'Het account is niet actief. De extensie is ontkoppeld.' },
   SITE_SESSIE_WEG: NIET_ACTIEF,
-  PAUZE: { uk: 'Технічний простір на паузі. Перемкніться на нього на сайті.', nl: 'De technische ruimte staat op pauze. Schakel erheen op de site.' },
+  PAUZE: { uk: 'Технічний доступ на паузі. Натисніть «Продовжити» на сайті.', nl: 'De technische toegang staat op pauze. Klik op de site op «Doorgaan».' },
+  WEERGAVE_PRIVE: { uk: 'Ця вкладка показує звичайний простір. Перемкніть її на технічний — сеанс уже відкритий, новий вхід не потрібен.', nl: 'Dit tabblad toont de gewone ruimte. Schakel het naar technisch — de sessie loopt al, opnieuw aanmelden is niet nodig.' },
   VERLOPEN: { uk: 'Термін технічного простору минув.', nl: 'De termijn van de technische ruimte is voorbij.' },
   GRENS_VOORBIJ: { uk: 'Термін технічного простору минув.', nl: 'De termijn van de technische ruimte is voorbij.' },
 };

@@ -154,13 +154,20 @@ export async function main(): Promise<number> {
     check('gegeven: 200, toegang toont termijn + regels + levende stand «actief»', g1.status === 200 && regel?.delegatie?.termijn === 'tot-account-uitloggen' && regel.delegatie.stand === 'actief' && regel.delegatie.regels.bijPauze === 'pauzeren' && regel.delegatie.regels.inactiefMinuten === 60, JSON.stringify(regel?.delegatie));
     check('gegeven: melding «Надано доступ ШІ» + journaal', meldingen.some((m) => m.titel.startsWith('Надано доступ ШІ')) && (await journaal('owner.tech.ruimte.ai')) > 0);
     check('MCP: technisch', (await mcp(vid)).ruimte === 'technisch');
+    // RUIMTE-WEERGAVE-001 (0286): beide tabbladen naar de gewone ruimte WISSELEN is geen pauze — Claude werkt door, niets ingetrokken.
     await roep(R('wisselen'), sMcp, tMcp, { naar: 'prive' });
+    await roep(R('wisselen'), sAdm, tAdm, { naar: 'prive' });
+    const naWissel = await mcp(vid);
+    check('DE KLACHT 16.11: alleen van ruimte wisselen (beide tabbladen privé) → Claude BLIJFT technisch, toestemming staat', naWissel.ruimte === 'technisch' && !(await pool.query('SELECT ingetrokken_op FROM app.tech_ruimte_ai WHERE user_id = $1 AND verbinding_id = $2', [uid, vid])).rows[0]?.ingetrokken_op, naWissel.code);
+    await roep(R('wisselen'), sMcp, tMcp, { naar: 'technisch' });
+    await roep(R('wisselen'), sAdm, tAdm, { naar: 'technisch' });
+    await roep(R('pauzeren'), sMcp, tMcp, { aan: true });
     const naPauzeMcp = await mcp(vid);
     check('DE KLACHT: mcp op pauze, admin technisch → Claude BLIJFT technisch (via admin)', naPauzeMcp.ruimte === 'technisch' && String(naPauzeMcp.rij?.sessie_id) === sAdm.id, naPauzeMcp.code);
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'prive' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: true });
     const allesPauze = await mcp(vid);
     check('alles op pauze (regel pauze) → AI privé (PAUZE), toestemming NIET ingetrokken', allesPauze.ruimte === 'prive' && ['PAUZE', 'AI_PAUZE'].includes(allesPauze.code) && !(await rij(vid)).ingetrokken_op, allesPauze.code);
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'technisch' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: false });
     check('terug naar technisch → AI meteen weer technisch, zonder nieuwe toestemming', (await mcp(vid)).ruimte === 'technisch');
     const sessiesToegang = (await roep(R('toegang'), sAdm, tAdm)).data.sessies;
     check('toegang: sessies dragen dienst + apparaat (geen «Інший браузер» meer nodig)', sessiesToegang.some((x: any) => x.dienst === 'mcp' && x.apparaat === 'Windows-ПК' && x.browser === 'Chrome'), JSON.stringify(sessiesToegang).slice(0, 200));
@@ -169,11 +176,11 @@ export async function main(): Promise<number> {
     meldingen.length = 0;
     await roep(R('ai-zetten'), sAdm, tAdm, { verbindingId: vid, naam: 'Claude', ruimtes: ['prive', 'technisch'], termijn: 'tot-account-uitloggen', regels: { bijPauze: 'intrekken' } });
     check('wijzigen: melding «Змінено доступ ШІ»', meldingen.some((m) => m.titel.startsWith('Змінено доступ ШІ')));
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'prive' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: true });
     const r2 = await rij(vid);
     check('intrekken bij pauze: ingetrokken_reden profiel-gewisseld + melding + journaal', !!r2.ingetrokken_op && r2.ingetrokken_reden === 'profiel-gewisseld'
       && meldingen.some((m) => m.titel.startsWith('Доступ ШІ до технічного простору знято')) && (await journaal('owner.tech.ruimte.ai.ingetrokken')) > 0, JSON.stringify(r2));
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'technisch' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: false });
     check('na intrekken komt de toestemming NIET vanzelf terug (les PR #111)', (await mcp(vid)).ruimte === 'prive' && !!(await rij(vid)).ingetrokken_op);
     const n1 = meldingen.length; await dk.veeg(uid);
     check('één melding per intrekking (veger herhaalt niet)', meldingen.length === n1);
@@ -181,12 +188,12 @@ export async function main(): Promise<number> {
     // 3) doorwerken (!): eigenaar overal op pauze → AI technisch; gevaren in de rij
     await roep(R('ai-zetten'), sAdm, tAdm, { verbindingId: vid, naam: 'Claude', ruimtes: ['prive', 'technisch'], termijn: 'onbepaald', regels: { bijPauze: 'doorwerken', inactiefMinuten: null } });
     check('doorwerken: gevaren in de rij (onbepaald, doorwerken, nooit-inactief)', (await rij(vid)).gevaren.join() === 'onbepaald,doorwerken,nooit-inactief');
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'prive' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: true });
     const dwB = await mcp(vid);
     check('doorwerken: eigenaar overal op pauze → AI toch technisch', dwB.ruimte === 'technisch', dwB.code);
     const dg = (await roep(R('toegang'), sAdm, tAdm)).data.ai.find((x: any) => x.verbindingId === vid);
     check('toegang: stand «doorwerken» zichtbaar', dg?.delegatie?.stand === 'doorwerken', JSON.stringify(dg?.delegatie));
-    await roep(R('wisselen'), sAdm, tAdm, { naar: 'technisch' });
+    await roep(R('pauzeren'), sAdm, tAdm, { aan: false });
 
     // 4) inactief → veger trekt in
     await roep(R('ai-zetten'), sAdm, tAdm, { verbindingId: vid, ruimtes: ['prive', 'technisch'], termijn: 'tot-account-uitloggen', regels: { inactiefMinuten: 15 } });

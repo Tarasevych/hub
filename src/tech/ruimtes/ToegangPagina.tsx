@@ -128,7 +128,7 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
                   </span>
                 ) : <span className='rt-wie'><b>{x.naam}</b>{x.detail ? <small>{x.detail}</small> : null}</span>}
                 <span className='rt-termijn'>{termijnRegel(x, taal)}{x.termijn?.eindTijd && x.termijn.modus !== 'tijd' ? ` · ${uurMinuut(x.termijn.eindTijd, taal)}` : ''}</span>
-                {x.soort === 'sessie' ? <span className={`rt-sessie-stand${x.actief ? ' is-tech' : ''}`}>{x.actief ? (uk ? 'технічний' : 'technisch') : (uk ? 'звичайний (пауза)' : 'gewoon (pauze)')}</span> : null}
+                {x.soort === 'sessie' ? <span className={`rt-sessie-stand${x.actief ? ' is-tech' : ''}`}>{x.actief ? (uk ? 'працює' : 'actief') : (uk ? 'на паузі' : 'gepauzeerd')}</span> : null}
                 {x.ruimtes && x.soort !== 'sessie' ? <span className='rt-ruimtes'>{x.ruimtes.map((q) => RUIMTE_NAAM[q][taal]).join(' + ')}</span> : null}
               </li>
             ))}</ul>

@@ -74,10 +74,10 @@ export async function main(): Promise<number> {
     const a1 = await mcp('beheer_journaal_lezen');
     check('MCP: beheerhulpmiddel draait in scope technisch (200)', a1.status === 200 && a1.scope === 'technisch', JSON.stringify(a1));
     check('MCP: mailhulpmiddel draait in scope prive (200)', (await mcp('mail_lezen')).scope === 'prive');
-    await roep(R('wisselen'), s, t, { naar: 'prive' });
+    await roep(R('pauzeren'), s, t, { aan: true });
     const p = await mcp('beheer_journaal_lezen');
     check('MCP: pauze op de site → beheerhulpmiddel 403', p.status === 403, JSON.stringify(p));
-    await roep(R('wisselen'), s, t, { naar: 'technisch' });
+    await roep(R('pauzeren'), s, t, { aan: false });
     check('MCP: terug naar technisch zonder nieuwe aanmelding → 200', (await mcp('beheer_journaal_lezen')).status === 200);
 
     // extensie: lange ontgrendelingen in beide ruimtes
