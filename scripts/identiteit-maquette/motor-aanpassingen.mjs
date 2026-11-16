@@ -1004,7 +1004,9 @@ v(`export type MaquetteWeergave = {
   icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';`,
 `export type MaquetteWeergave = {
   dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
-  icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';`);
+  icoonStijl: 'klassiek' | 'kleur' | 'tint'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';`);
+// UPD-003: ICONEN-001 (#125) додав стиль «tint» вручну в згенерований двигун; тепер це в генераторі, щоб перегенерація його не стирала.
+// ICONEN-001 voegde «tint» met de hand toe aan de gegenereerde motor; nu staat het in de generator.
 v(`        accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
         dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",`,

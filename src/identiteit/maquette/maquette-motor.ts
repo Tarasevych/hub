@@ -30,7 +30,7 @@ export type MaquetteOpties = {
 };
 export type MaquetteWeergave = {
   dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
-  icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
+  icoonStijl: 'klassiek' | 'kleur' | 'tint'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
 };
 export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
 
