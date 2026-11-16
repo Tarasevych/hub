@@ -85,7 +85,9 @@ function AgentToegangGereedheid({
   const [bezig, setBezig] = useState('');
   const [bericht, setBericht] = useState<{ ok: boolean; tekst: string } | null>(null);
   const nu = Date.now();
-  const doelGrantId = diag.connectionGranted.grantId || '*';
+  // AGENTSCHEIDING-001: zonder actieve koppeling GEEN '*' meer (dat gaf stil toestemming aan ALLE AI's); de server neemt dan
+  // de regel van deze agent ('agent:<slug>'). Без активного підключення — правило саме цього агента, не «усі ШІ».
+  const doelGrantId: string | undefined = diag.connectionGranted.grantId || undefined;
   const wilBeheer = kanten.includes('beheer') || diag.connectionGranted.kanten.includes('beheer');
 
   const voerActieUit = async (sleutel: string, fn: () => Promise<string>) => {
@@ -264,6 +266,10 @@ function AgentToegangGereedheid({
             <div className='ag-diagnose-info'>
               <div className='ag-diagnose-titel'>
                 <b>{tr('3. Служба «Підключення ШІ» у технічному просторі даних', '3. Dienst «AI-koppelingen» in technische gegevensruimte')}</b>
+                <span className='ag-badge ag-warn' data-spil='alle-ai'
+                  title={tr(`Ця служба одна на всі ШІ. Увімкнення чи від’єднання тут змінює технічний простір не лише для ${naam}, а й для всіх інших підключених ШІ. Доступ саме ${naam} — у рядку 2.`, `Deze dienst is er één voor alle AI's. Aanzetten of losmaken hier verandert de technische ruimte niet alleen voor ${naam}, maar ook voor alle andere gekoppelde AI's. De toegang van ${naam} zelf staat in rij 2.`)}>
+                  <AlertTriangle size={12} aria-hidden='true' />{tr('! Спільна для всіх ШІ', '! Gedeeld door alle AI\'s')}
+                </span>
                 {dienstActief ? (
                   <span className='ag-badge ag-ok'><Check size={12} aria-hidden='true' />{STAND_NAAM[diag.aiServiceState][taal]}</span>
                 ) : diag.aiServiceState === 'bevroren' ? (
@@ -285,9 +291,10 @@ function AgentToegangGereedheid({
             <div className='ag-diagnose-acties'>
               {dienstActief ? (
                 <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_uit'
+                  title={tr(`Від’єднує службу для ВСІХ ШІ, не лише для ${naam}: жоден ШІ не отримає технічних інструментів, доки службу не ввімкнуть знову. Щоб прибрати доступ лише ${naam}, натисніть «Залишити лише звичайний простір» у рядку 2.`, `Maakt de dienst los voor ALLE AI's, niet alleen voor ${naam}: geen enkele AI krijgt technische hulpmiddelen tot de dienst weer aanstaat. Alleen ${naam} uitzetten: «Alleen gewone ruimte laten» in rij 2.`)}
                   onClick={() => void voerActieUit('dienst-uit', async () => {
                     await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-uit' });
-                    return tr('Службу «Підключення ШІ» від’єднано від технічного простору.', 'Dienst «AI-koppelingen» losgemaakt uit de technische ruimte.');
+                    return tr('Службу «Підключення ШІ» від’єднано від технічного простору для всіх ШІ.', 'Dienst «AI-koppelingen» losgemaakt uit de technische ruimte voor alle AI\'s.');
                   })}>
                   {tr("Від'єднати службу", 'Dienst losmaken')}
                 </button>
@@ -300,14 +307,14 @@ function AgentToegangGereedheid({
                   <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_eigen'
                     onClick={() => void voerActieUit('dienst-eigen', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-eigen' });
-                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (окремі дані).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (eigen gegevens).');
+                      return tr(`Службу «Підключення ШІ» увімкнено у технічному просторі (окремі дані). Технічні інструменти отримує лише ШІ, якому ви це дозволили в рядку 2.`, `Dienst «AI-koppelingen» aangezet in de technische ruimte (eigen gegevens). Technische hulpmiddelen krijgt alleen de AI die u dat in rij 2 toestond.`);
                     })}>
                     <KeyRound size={14} aria-hidden='true' />{tr('Увімкнути (окремі дані)', 'Aanzetten (eigen gegevens)')}
                   </button>
                   <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_gedeeld'
                     onClick={() => void voerActieUit('dienst-gedeeld', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-gedeeld' });
-                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (спільно з особистим).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (gedeeld met persoonlijk).');
+                      return tr(`Службу «Підключення ШІ» увімкнено у технічному просторі (спільно з особистим). Технічні інструменти отримує лише ШІ, якому ви це дозволили в рядку 2.`, `Dienst «AI-koppelingen» aangezet in de technische ruimte (gedeeld met persoonlijk). Technische hulpmiddelen krijgt alleen de AI die u dat in rij 2 toestond.`);
                     })}>
                     {tr('Увімкнути (спільно)', 'Aanzetten (gedeeld)')}
                   </button>

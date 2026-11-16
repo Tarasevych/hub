@@ -25,7 +25,9 @@ export { verzoekKern, type VerzoekKern } from './stap-op-acties';
 type Tekst = readonly [string, string, string, string, boolean?];
 type Regel = readonly [RegExp, string, string, string, string, boolean?] | readonly [RegExp, (v: VerzoekKern) => Tekst];
 
-export type StapOpBeschrijving = { uk: string; nl: string; gevolgUk: string; gevolgNl: string; bekend: boolean; gevaar: boolean; technisch?: string };
+/** `algemeen`: de tekst komt uit het register per GEBIED (geen eigen regel voor deze knop) — nog steeds een echte beschrijving,
+ *  maar de bouw (scripts/stap-op-register-controle.mjs) eist voor elke route met bevestiging een eigen regel. */
+export type StapOpBeschrijving = { uk: string; nl: string; gevolgUk: string; gevolgNl: string; bekend: boolean; gevaar: boolean; technisch?: string; algemeen?: boolean };
 const agentNaam = (slug?: string) => V2_AGENTEN.find((a) => a.slug === slug)?.naam ?? '';
 const duur = (min: number): readonly [string, string] => min % 60 === 0
   ? [`${min / 60} год`, `${min / 60} uur`]
@@ -50,16 +52,16 @@ function activeerTech(v: VerzoekKern): Tekst {
       true,
     ];
   }
-  // alles-aan (standaard van de server) en delegatie-aan
-  const [ukStrok, nlStrok] = v.termijn === 'tijd' && v.minuten
-    ? [`на ${duur(v.minuten)[0]}`, `voor ${duur(v.minuten)[1]}`]
-    : v.termijn === 'tot-site-uitloggen' ? ['до виходу з сайту', 'tot u zich afmeldt op de site'] : ['до кінця технічного сеансу', 'tot het einde van de technische sessie'];
-  // Zonder genoemde koppeling neemt de server de actieve koppeling van deze AI, en als die er niet is «*» = alle AI-koppelingen van
-  // het account (backend/connector-v2-routes.ts). Dat zeggen we eerlijk, niet «alleen deze AI».
-  const [ukBereik, nlBereik] = v.verbinding
-    ? ['Лише це підключення: інші ШІ цього доступу не отримують.', 'Alleen deze koppeling: andere AI’s krijgen deze toegang niet.']
-    : [`Доступ отримає активне підключення ${naam || 'цього ШІ'}; якщо його ще немає, дозвіл діятиме для всіх ваших підключень ШІ до кінця строку.`,
-      `De actieve koppeling van ${naam || 'deze AI'} krijgt de toegang; is die er nog niet, dan geldt de toestemming tot het einde van de termijn voor al uw AI-koppelingen.`];
+  // alles-aan (standaard van de server) en delegatie-aan. Termijn zoals de server hem neemt (standaard 'tot-account-uitloggen',
+  // backend/connector-v2-routes.ts), alle vijf termijnen van AI-TERMIJN-001 (shared/ai-delegatie.ts TERMIJN_NAAM).
+  const [ukStrok, nlStrok] = termijnTekst(v);
+  // AGENTSCHEIDING-001: zonder genoemde koppeling neemt de server de regel van DEZE agent ('agent:<slug>'), nooit stil «alle AI's».
+  const wie = naam || 'цей ШІ', wieNl = naam || 'deze AI';
+  const [ukBereik, nlBereik] = v.alleVerbindingen
+    ? ['Увага: дозвіл діятиме для ВСІХ ваших підключень ШІ, не лише для цього.', 'Let op: de toestemming geldt voor AL uw AI-koppelingen, niet alleen voor deze.']
+    : v.verbinding
+      ? [`Лише це підключення ${wie}: інші ШІ цього доступу не отримують.`, `Alleen deze koppeling van ${wieNl}: andere AI’s krijgen deze toegang niet.`]
+      : [`Діє лише для ${wie}, також після «Підключити знову»; інші ШІ цього доступу не отримують.`, `Geldt alleen voor ${wieNl}, ook na «Opnieuw koppelen»; andere AI’s krijgen deze toegang niet.`];
   return [
     `Дозволити ${ukWie} працювати в технічному просторі ${ukStrok}`,
     `${nlWie.charAt(0).toUpperCase()}${nlWie.slice(1)} laten werken in de technische ruimte ${nlStrok}`,
@@ -67,6 +69,17 @@ function activeerTech(v: VerzoekKern): Tekst {
     `${sessie[1]} ${naam || 'De AI'} kan namens u de technische hulpmiddelen van site en server aanroepen die deze koppeling mag gebruiken (bestanden en commando’s op de server, containers en apps, uitrollen, gebruikers, technische tabbladen van de browser); hulpmiddelen in de modus «Altijd» werken zonder uw klik. ${nlBereik} Eerder uitzetten: «Alleen gewone ruimte laten» op de pagina van de AI, de technische sessie beëindigen of afmelden.`,
     true,
   ];
+}
+
+/** Termijn als woordgroep achter «працювати в технічному просторі …» (uk, nl). Onbekend → de standaard van de server. */
+function termijnTekst(v: VerzoekKern): [string, string] {
+  switch (v.termijn) {
+    case 'tijd': return v.minuten ? [`на ${duur(v.minuten)[0]}`, `voor ${duur(v.minuten)[1]}`] : ['до вибраної дати', 'tot de gekozen datum'];
+    case 'tot-technisch-einde': return ['до кінця технічного сеансу', 'tot het einde van de technische sessie'];
+    case 'tot-site-uitloggen': return ['до виходу з цього входу на сайт', 'tot u zich afmeldt van deze aanmelding'];
+    case 'onbepaald': return ['безстроково, доки ви не знімете дозвіл', 'zonder einddatum, tot u de toestemming intrekt'];
+    default: return ['до виходу з акаунта', 'tot u zich afmeldt van het account'];
+  }
 }
 
 /** Specifieke paden (vóór de algemene code): de knoppen die een AI of een apparaat rechten of uitvoering geven. */
@@ -237,6 +250,44 @@ const pad = (url: string) => { const p = String(url || '').split('?')[0].split('
  * Beschrijving voor het venster. `verzoek` = verzoekKern(body) van het verzoek dat om bevestiging vroeg (optioneel).
  * Onbekend → een begrijpelijke waarschuwing; het technische adres alleen in `technisch` (klein, in de details van het venster).
  */
+/**
+ * AGENTSCHEIDING-001 / «опис завжди» (16.11.2026, Павло: «треба щоб якийсь був реєстр, який автоматично би звідти зчитував»).
+ * Tweede laag van het register: per GEBIED van de site (eerste deel van het pad). Een nieuwe knop zonder eigen regel krijgt zo toch
+ * een echte zin — wat er verandert en waar u het terugdraait — in plaats van «сайт не має опису». Het werkwoord komt uit het laatste
+ * deel van het pad (verwijderen → «Видалити», inschakelen → «Увімкнути», …).
+ * Друга ланка реєстру: опис за розділом сайту. Нова кнопка без власного рядка однаково отримує зрозумілий опис.
+ */
+const PER_GEBIED: ReadonlyArray<readonly [RegExp, string, string, string, string]> = [
+  [/^\/api\/owner\/connector-v2\/|^\/api\/owner\/mcp-connector\/|^\/api\/mcp(\/|-)/, 'підключень ШІ', 'AI-koppelingen', 'Змінюється, що може робити підключений ШІ. Переглянути й змінити: сторінка цього ШІ в «Агенти».', 'Wat een gekoppelde AI mag, verandert. Bekijken en wijzigen: de pagina van die AI onder «Agenten».'],
+  [/^\/api\/owner\/(ai|ai-[a-z-]+|agent-namens)\//, 'доступу ШІ', 'AI-toegang', 'Змінюється, до чого мають доступ ШІ. Переглянути: «Доступ ШІ» та сторінки агентів.', 'Waartoe AI’s toegang hebben, verandert. Bekijken: «AI-toegang» en de pagina’s van de agenten.'],
+  [/^\/api\/owner\/agents\//, 'пристроїв і браузерів', 'apparaten en browsers', 'Змінюється, що можуть робити ваші пристрої й розширення браузера. Переглянути: «Пристрої».', 'Wat uw apparaten en de browserextensie mogen, verandert. Bekijken: «Apparaten».'],
+  [/^\/api\/owner\/(access|aanmeld|identity|passkeys|beveiliging|privacy)\//, 'входу й безпеки облікового запису', 'aanmelding en beveiliging van het account', 'Змінюється спосіб входу або захист облікового запису. Переглянути: центр облікового запису → «Безпека».', 'De manier van aanmelden of de beveiliging van het account verandert. Bekijken: accountcentrum → «Beveiliging».'],
+  [/^\/api\/owner\/(sleutelkluis|vault|apps\/geheimen)/, 'сховища ключів і секретів', 'sleutelkluis en geheimen', 'Змінюється, хто й коли може прочитати ваші ключі чи секрети. Переглянути: «Сховище ключів».', 'Wie uw sleutels of geheimen wanneer kan lezen, verandert. Bekijken: «Sleutelkluis».'],
+  [/^\/api\/owner\/(uitrol|admin|journaal|audit|hub)\//, 'адміністрування сайту', 'beheer van de site', 'Змінюється робота сайту для всіх користувачів (оновлення, налаштування, журнали). Переглянути: «Адміністрування».', 'De werking van de site voor alle gebruikers verandert (updates, instellingen, logboeken). Bekijken: «Beheer».'],
+  [/^\/api\/owner\/(tech|ruimte|remote)\/|^\/api\/(terminal|ssh-ca)\//, 'технічного простору й сервера', 'technische ruimte en server', 'Змінюється доступ до сервера чи технічного простору. Переглянути: «Технічне».', 'De toegang tot de server of de technische ruimte verandert. Bekijken: «Technisch».'],
+  [/^\/api\/(impersonatie|ondersteuning)\//, 'підтримки та входу від імені', 'ondersteuning en aanmelden namens', 'Хтось інший може побачити або діяти у вашому обліковому записі. Переглянути: «Підтримка».', 'Iemand anders kan uw account zien of erin handelen. Bekijken: «Ondersteuning».'],
+  [/^\/api\/(share|huis)\//, 'спільного доступу', 'delen', 'Змінюється, що бачать інші люди. Переглянути: розділ, звідки ви поділилися.', 'Wat andere mensen zien, verandert. Bekijken: het onderdeel van waaruit u deelde.'],
+  [/^\/api\/owner\/(mail|cloud|calendar|github|telegram)\//, 'підключених служб', 'gekoppelde diensten', 'Змінюється робота з вашою поштою, файлами чи іншою службою. Переглянути: сторінка цієї служби.', 'Het werken met uw e-mail, bestanden of een andere dienst verandert. Bekijken: de pagina van die dienst.'],
+  [/^\/api\/owner\//, 'налаштувань вашого облікового запису', 'instellingen van uw account', 'Змінюється налаштування вашого облікового запису. Переглянути: розділ, де ви щойно натиснули кнопку.', 'Een instelling van uw account verandert. Bekijken: het onderdeel waar u net op de knop klikte.'],
+];
+const WERKWOORD: ReadonlyArray<readonly [RegExp, string, string]> = [
+  [/(verwijder|wissen|delete|remove|vergeet)/, 'Видалити', 'Verwijderen'],
+  [/(intrek|revoke|ontkoppel|losmaken|blokkeer|block)/, 'Відкликати', 'Intrekken'],
+  [/(uitschakel|disable|^uit$|-uit$|stop|pauze)/, 'Вимкнути', 'Uitzetten'],
+  [/(inschakel|enable|activeer|^aan$|-aan$|start|toestaan|approve|goedkeur)/, 'Увімкнути або дозволити', 'Aanzetten of toestaan'],
+  [/(toevoeg|add|create|nieuw|registreer|uitgifte|koppel)/, 'Додати', 'Toevoegen'],
+  [/(exporteer|export|download|lees|toon|bekijk|reveal)/, 'Показати або вивантажити', 'Tonen of exporteren'],
+];
+function perGebied(p: string): StapOpBeschrijving | null {
+  const g = PER_GEBIED.find(([re]) => re.test(p));
+  if (!g) return null;
+  const laatste = (p.split('/').filter(Boolean).pop() ?? '').toLowerCase();
+  const w = WERKWOORD.find(([re]) => re.test(laatste));
+  const [wUk, wNl] = w ? [w[1], w[2]] : ['Змінити', 'Wijzigen'];
+  return { uk: `${wUk}: налаштування ${g[1]}`, nl: `${wNl}: instelling van ${g[2]}`, gevolgUk: `${g[3]} Якщо ви щойно не натискали таку кнопку — скасуйте.`,
+    gevolgNl: `${g[4]} Klikte u niet net op zo’n knop, annuleer dan.`, bekend: true, gevaar: true, algemeen: true, technisch: p.slice(0, 120) };
+}
+
 export function beschrijfStapOp(actie: string | undefined, url = '', verzoek: VerzoekKern = {}): StapOpBeschrijving {
   const p = pad(url);
   for (const r of PER_PAD) {
@@ -246,6 +297,8 @@ export function beschrijfStapOp(actie: string | undefined, url = '', verzoek: Ve
   }
   const a = actie ? PER_ACTIE[actie] : undefined;
   if (a) return { uk: a[0], nl: a[1], gevolgUk: a[2], gevolgNl: a[3], bekend: true, gevaar: !!a[4] };
+  const g = p ? perGebied(p) : null;
+  if (g) return g;
   return {
     uk: 'Важлива дія, для якої сайт не має опису', nl: 'Een belangrijke actie waarvan de site geen beschrijving heeft',
     gevolgUk: 'Сайт не може сказати, що саме зміниться. Якщо ви щойно не натискали кнопку, яка мала б цього вимагати, — скасуйте.',

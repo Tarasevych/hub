@@ -178,11 +178,12 @@ export async function uiBlok(check: Check): Promise<void> {
     const { beschrijfStapOp } = await import('../../../shared/stap-op-beschrijving');
     const a = beschrijfStapOp('onbekend', '/api/owner/agents/commands/1234/approve');
     const p = beschrijfStapOp('passkey-verwijderen', '/api/owner/access/passkeys/verwijderen');
-    const o = beschrijfStapOp('onbekend', '/api/owner/iets/nieuws?x=1');
+    // AGENTSCHEIDING-001: /api/owner/… valt nu onder het register per gebied; een pad buiten elk gebied blijft «onbekend».
+    const o = beschrijfStapOp('onbekend', '/api/iets/nieuws?x=1');
     check('interface-07: het venster weet WAT er bevestigd wordt (goedkeuren van een opdracht, passkey verwijderen) met het gevolg',
       a.bekend && /Дозволити дію на вашому пристрої/.test(a.uk) && a.gevaar && p.bekend && p.uk === 'Видалити passkey' && /не можна буде увійти/.test(p.gevolgUk));
     // STAPOP-OMSCHR-001 (15.11.2026): het adres staat niet meer als hoofdtekst, maar klein in de details (o.technisch).
-    check('interface-07: een onbekende actie zegt eerlijk dat er geen beschrijving is (met waarschuwing); het adres staat in de details', !o.bekend && o.gevaar && o.uk === 'Важлива дія, для якої сайт не має опису' && o.technisch === '/api/owner/iets/nieuws' && /geen beschrijving/.test(o.nl));
+    check('interface-07: een onbekende actie zegt eerlijk dat er geen beschrijving is (met waarschuwing); het adres staat in de details', !o.bekend && o.gevaar && o.uk === 'Важлива дія, для якої сайт не має опису' && o.technisch === '/api/iets/nieuws' && /geen beschrijving/.test(o.nl));
     const venster = lees('src/platform/bevestig-toegang.tsx'), stap = lees('src/platform/stap-op.ts');
     check('interface-07: «Що ви підтверджуєте» en «Наслідок» staan in het venster; het pad gaat mee vanuit stapOpVragen',
       venster.includes("data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'}") && venster.includes('beschrijfStapOp(opties.actie, opties.pad, opties.verzoek)') && stap.includes('pad: url, verzoek: verzoekKern(b), onthoudAanbieden: directGebaar()'));

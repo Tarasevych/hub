@@ -41,7 +41,7 @@ export function actieVoorPad(pad: string): string {
 // STAPOP-OMSCHR-001 (15.11.2026): voor de tekst van het venster «Підтвердіть доступ» (shared/stap-op-beschrijving.ts). Hier, en niet
 // daar, zodat src/platform/stap-op.ts (hoofdbundel) het register met alle teksten niet hoeft mee te laden.
 /** Відомі поля запиту, з яких складається опис (не весь запит: у ньому можуть бути секрети, напр. значення ключа). */
-export type VerzoekKern = { actie?: string; agent?: string; termijn?: string; minuten?: number; unblock?: boolean; aan?: boolean; verbinding?: boolean };
+export type VerzoekKern = { actie?: string; agent?: string; termijn?: string; minuten?: number; unblock?: boolean; aan?: boolean; verbinding?: boolean; alleVerbindingen?: boolean; eindOp?: boolean };
 
 /** Vist uit het verzoek alleen de velden die het venster nodig heeft; vrije tekst wordt niet doorgegeven. */
 export function verzoekKern(body: unknown): VerzoekKern {
@@ -54,8 +54,11 @@ export function verzoekKern(body: unknown): VerzoekKern {
   if (b.minuten !== undefined && b.minuten !== null && Number.isFinite(m) && m > 0 && m <= 100_000) uit.minuten = Math.round(m);
   if (b.unblock === true) uit.unblock = true;
   if (typeof b.aan === 'boolean') uit.aan = b.aan;
-  // Alleen OF er een bepaalde koppeling genoemd is (activeer-tech: zonder koppeling kan de server «alle koppelingen» kiezen).
-  if (typeof b.verbindingId === 'string' && b.verbindingId.trim()) uit.verbinding = true;
+  // Alleen OF er een bepaalde koppeling (token) genoemd is. '*' en 'agent:<slug>' zijn geen koppeling: de server neemt dan de regel
+  // van de agent (AGENTSCHEIDING-001); «alle AI's» alleen via het expliciete alleVerbindingen === true.
+  if (typeof b.verbindingId === 'string' && b.verbindingId.trim() && b.verbindingId.trim() !== '*' && !b.verbindingId.trim().startsWith('agent:')) uit.verbinding = true;
+  if (b.alleVerbindingen === true) uit.alleVerbindingen = true;
+  if (b.eindOp !== undefined && b.eindOp !== null && b.eindOp !== '') uit.eindOp = true;
   return uit;
 }
 

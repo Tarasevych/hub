@@ -12,7 +12,12 @@ import { SERVICE_HOSTS } from './deployment-identiteit';
 import { meld } from './melder';
 import { agentSlugUitNaam } from '../shared/markering-agenten';
 
-const wieTekst = (vid: string) => vid === '*' ? 'Усі підключення ШІ / Alle AI-verbindingen' : vid.startsWith('agent:') ? vid.slice(6) : vid.slice(0, 8);
+import { V2_AGENTEN } from '../shared/connector-v2/agenten';
+
+// AGENTSCHEIDING-001: 'agent:gpt' → «ChatGPT» (naam van de agent), niet de kale slug; een token-id → «ШІ-підключення 1a2b3c4d».
+const wieTekst = (vid: string) => vid === '*' ? 'Усі підключення ШІ / Alle AI-verbindingen'
+  : vid.startsWith('agent:') ? (V2_AGENTEN.find((a) => a.slug === vid.slice(6))?.naam ?? vid.slice(6))
+  : `ШІ-підключення / AI-koppeling ${vid.slice(0, 8)}`;
 const agentenLink = () => `https://${SERVICE_HOSTS.mcp}/agenten`;
 
 const sys = () => getPool('systeem');

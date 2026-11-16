@@ -1,6 +1,9 @@
 // Alles wat de gebruiker op de site doet, als meldingen: het auditlogboek (app.audit) omgezet naar gebeurtenissen met een sectie en dienst.
 // "source" heeft de vorm "sectie[:dienst]" (mail:google, github, agent, mcp, identity, ...), zodat het meldingencentrum het juiste gekleurde
 // pictogram en het logo van de dienst kan tonen. Ruis (elke leesactie, sessierotatie, menuvoorkeuren) komt er bewust niet in.
+import { V2_AGENTEN } from '../shared/connector-v2/agenten';
+import { klantVan } from '../shared/ai-verbinding';
+
 export type SiteEvent = { id: string; source: string; platform: string; kind: 'site'; type: string; subject: string; status: 'succeeded' | 'failed' | 'rejected'; createdAt: number; finishedAt: number;
   /** Alleen bij AI-acties (owner.mcp.tool): wat, waarop, en bij mislukking WAAROM — zodat de melding de kern noemt, niet alleen «помилка». */
   tool?: string; doel?: string; client?: string; geweigerd?: boolean; code?: string; reden?: string; /** UI-014: einde van een toegang (ISO), bv. extensie. */ eind?: string;
@@ -24,6 +27,13 @@ const RULES: Array<[RegExp, string]> = [
   // een wachtwoord erbij, TOTP uit, passkey weg, sleutelkluis, een AI-token of een namens-sessie — de eigenaar zag niets in de stroom.
   [/^access\.|^aanmeld\.|^sleutelkluis\.|^(toegangscode|gast)_/, 'identity'], [/^agent\.|^ai_/, 'agent'], [/^mcp_console_/, 'agent'],
 ];
+/** «claude:<klant>» voor een gebeurtenis van een AI-koppeling: agent-slug of klantnaam uit de details; onbekend → «claude» zonder logo. */
+export function aiBron(details?: Record<string, unknown>): string {
+  const d = details ?? {};
+  const agent = typeof d.agent === 'string' ? V2_AGENTEN.find((a) => a.slug === d.agent) : undefined;
+  const k = agent ? agent.klant : klantVan(String(d.client ?? d.clientName ?? d.klant ?? ''));
+  return k === 'overig' ? 'claude' : `claude:${k}`;
+}
 /** Sectie (en dienst) voor een auditactie, of null als de actie geen melding verdient. */
 export function sourceOfAudit(action: string): string | null {
   if (SKIP.test(action)) return null;
@@ -43,8 +53,10 @@ export function reasonOfAudit(details?: Record<string, unknown>): string {
 export function siteEventsFromAudit(rows: Array<{ id: string; action: string; result: string; createdAt: number; details?: Record<string, unknown>; context?: { profiel?: string; activatie?: string } }>): SiteEvent[] {
   const out: SiteEvent[] = [];
   for (const r of rows) {
-    const source = sourceOfAudit(r.action);
-    if (!source) continue;
+    const basis = sourceOfAudit(r.action);
+    if (!basis) continue;
+    // AGENTSCHEIDING-001: AI-koppelingen tonen het logo en de naam van DE AI die het deed (agent/klant uit het journaal), niet altijd «Claude».
+    const source = basis === 'claude' ? aiBron(r.details) : basis;
     const subject = typeof r.details?.provider === 'string' ? r.details.provider.slice(0, 40) : '';
     const failed = FAIL.test(r.result);
     const ev: SiteEvent = { id: `audit:${r.id}`, source, platform: '', kind: 'site', type: r.action, subject, status: GEWEIGERD.test(String(r.result || '')) ? 'rejected' : failed ? 'failed' : 'succeeded', createdAt: r.createdAt, finishedAt: r.createdAt };
