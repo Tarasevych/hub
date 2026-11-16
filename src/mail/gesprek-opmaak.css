@@ -98,6 +98,8 @@ html body .google-mail-reader>header .mail-reader-context-knop[aria-expanded='tr
 .mail-reader-weergave>summary{list-style:none;cursor:pointer}
 .mail-reader-weergave>summary::-webkit-details-marker{display:none}
 .mail-reader-weergave[open]>summary{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--accent-soft)}
+/* MAILBEELD-002: is het paneel open, dan geen knopinfo «Вигляд» meer — die lag anders onder/naast het open paneel (donkere vlek rechtsboven) */
+.mail-reader-weergave[open]>summary[data-tooltip]::after,.mail-reader-weergave[open]>summary[data-tooltip]::before{display:none}
 .lz-weergave-paneel{position:absolute;z-index:690;top:calc(100% + 6px);right:0;width:max-content;max-width:min(340px,calc(100vw - 24px));padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-l,16px);background:var(--panel);color:var(--text);box-shadow:var(--schaduw-2);cursor:default}
 .lz-weergave-keuzes{display:grid;gap:10px}
 .lz-weergave-keuzes fieldset{min-width:0;margin:0;padding:0;border:0}
@@ -138,8 +140,14 @@ html body .google-mail-reader .mail-reader-onderbalk-knop{display:grid;justify-i
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-toolbar .mail-reader-primair-antwoord,
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-toolbar>.mail-reader-minimize,
 html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .mail-reader-toolbar>.google-mail-reader-more>summary{display:none!important}
-/* «Ще» (onderaan) opent het ⋮-paneel als blad boven de balk */
-html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader-more[open]>.mail-reader-overflow-panel{top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:min(72dvh,calc(100dvh - 150px))!important;border-radius:var(--straal-l,16px)}
+/* «Ще» (onderaan) opent het ⋮-paneel als blad boven de balk.
+   MAILBEELD-002: het blad staat óp de balk — geen kier meer. Was: vast 72 px vanaf de onderrand, terwijl de balk 58 px hoog is (in
+   «Класичний» 60 px + 1 px vensterrand — die zet --lz-blad-onder in mail-lezer-opstel-maquette.css); door die kier van ±15 px (later 8 px) en onder de
+   afgeronde onderhoeken was de brief te zien: stukjes foto en afgesneden tekst. Nu sluit de onderrand aan op de balk: onderhoeken
+   recht, geen eigen onderrand (de lijn van de balk is de scheiding). scroll-padding onderaan ruim, zodat een onderdeel dat naar het
+   midden schuift (toetsenbord, scrollIntoView) zijn voetnoot meeneemt. Uk: аркуш «Ще» стоїть упритул до нижньої панелі в усіх
+   палітрах — у проміжку більше не видно вмісту листа; останній рядок не обрізається. */
+html body .google-mail-reader-backdrop[data-lees-modus='telefoon'] .google-mail-reader-more[open]>.mail-reader-overflow-panel{top:auto!important;bottom:calc(var(--lz-blad-onder,58px) + env(safe-area-inset-bottom,0px))!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;max-height:min(72dvh,calc(100dvh - 142px))!important;padding-bottom:10px;scroll-padding-block:10px 56px;border-bottom-width:0;border-radius:var(--straal-l,16px) var(--straal-l,16px) 0 0}
 
 /* veiligheidsstrook boven de brieftekst: externe beelden verborgen tot «Показати один раз» of «Завжди від цього відправника» */
 .mail-beelden-strook{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface);color:var(--text);font-size:13px}

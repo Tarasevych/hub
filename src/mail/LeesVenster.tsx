@@ -103,8 +103,14 @@ function stappenTerug(n: number) { if (n <= 0) return; teNegeren += 1; try { if 
 function haalStapWeg() { if (!eigenStapBoven()) return; stappenTerug(stapBoven(BLAD_SLEUTEL) ? 2 : 1); }
 
 /** Lagen boven de brief die Escape zelf afhandelen en waarin sneltoetsen niets mogen doen (menu's, vensters, de werkbank; pakket 3:
- *  «Звідки це?» en «Порівняти версії»). */
-const ANDERE_LAGEN = '.google-mail-reader-backdrop details[open],.mail-thread-message-details-popover,.mail-new-message-backdrop,.google-mail-attachment-preview,.mail-reader-organize-backdrop,.mail-reader-n09-backdrop,.mail-reader-n10-backdrop,.canonical-notification-panel,.mail-navigation-editor,.mail-label-editor,.mail-doc-editor-backdrop,.mail-snooze-popover,.mail-save-dialog,[data-lezer-hulp],[data-bron-blad],[data-versie-vergelijk]';
+ *  «Звідки це?» en «Порівняти версії»).
+ *  MAILBEELD-002: de inklapbare zones van «Вигляд» (.lz-zone) en de uitklapblokjes daarin («Докладніше», uitleg ШІ) zijn <details>
+ *  ín het paneel, geen menu's: er staat er altijd één open, ook als «Вигляд»/«Ще» dicht is. Ze tellen hier niet mee — anders deed
+ *  geen enkele sneltoets het meer en at de eerste Escape de open zone op. Dezelfde uitzondering staat in src/MailLezerWerkbalk.tsx.
+ *  De klassen staan uitgeschreven (.lz-beelden-meer, .lz-ai-uitleg): «:not(.lz-zone details)» — een selector met een combinator in
+ *  :not() — kennen oudere WebViews niet; querySelector gooit daar een fout en dan werkt Escape en geen enkele sneltoets meer.
+ *  Komt er een <details> bij in een zone, dan hoort zijn klasse hier én in de werkbalk. */
+const ANDERE_LAGEN = '.google-mail-reader-backdrop details[open]:not(.lz-zone):not(.lz-beelden-meer):not(.lz-ai-uitleg),.mail-thread-message-details-popover,.mail-new-message-backdrop,.google-mail-attachment-preview,.mail-reader-organize-backdrop,.mail-reader-n09-backdrop,.mail-reader-n10-backdrop,.canonical-notification-panel,.mail-navigation-editor,.mail-label-editor,.mail-doc-editor-backdrop,.mail-snooze-popover,.mail-save-dialog,[data-lezer-hulp],[data-bron-blad],[data-versie-vergelijk]';
 const typt = (t: Element | null) => Boolean(t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('[contenteditable="true"],[contenteditable=""],[role="textbox"]')));
 const lees = (sleutel: string) => { try { return localStorage.getItem(sleutel); } catch { return null; } };
 const bewaar = (sleutel: string, waarde: string) => { try { localStorage.setItem(sleutel, waarde); } catch { /* privévenster: alleen voor deze sessie */ } };

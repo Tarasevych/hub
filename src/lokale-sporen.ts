@@ -33,7 +33,14 @@ export const STROOK_REGELS_VOORVOEGSEL = 'mail-strook-regels-v1:';
  */
 export const NOTITIE_KLAD_VOORVOEGSEL = 'mr-notitie-klad:';
 
-const VOORVOEGSELS = [MELDINGEN_VOORVOEGSEL, MELDINGEN_OUD_VOORVOEGSEL, ZOEK_BEWAARD_VOORVOEGSEL, ZOEK_RECENT_VOORVOEGSEL, ZOEK_LAATST_VOORVOEGSEL, BEELDEN_VOORVOEGSEL, STROOK_REGELS_VOORVOEGSEL, NOTITIE_KLAD_VOORVOEGSEL] as const;
+/**
+ * Post: de laatst geopende zone van het paneel «Вигляд» in het leesvenster (MAILBEELD-002, src/mail/WeergaveKeuze.tsx). Eén sleutel
+ * per apparaat met alleen de naam van een zone ('beelden' | 'lezen' | 'taal' | 'stroken') — geen account erin, dus het afmelden van
+ * één account laat hem staan; «overal afmelden» wist hem mee.
+ */
+export const WEERGAVE_ZONE_SLEUTEL = 'mail-lezer-weergave-zone-v1';
+
+const VOORVOEGSELS = [MELDINGEN_VOORVOEGSEL, MELDINGEN_OUD_VOORVOEGSEL, ZOEK_BEWAARD_VOORVOEGSEL, ZOEK_RECENT_VOORVOEGSEL, ZOEK_LAATST_VOORVOEGSEL, BEELDEN_VOORVOEGSEL, WEERGAVE_ZONE_SLEUTEL, STROOK_REGELS_VOORVOEGSEL, NOTITIE_KLAD_VOORVOEGSEL] as const;
 const SCHEIDING = '\u001f';
 
 /** Modules met een kopie in het geheugen (de lijst met afzenders) melden zich hier aan: na het wissen vergeten zij hun kopie. */

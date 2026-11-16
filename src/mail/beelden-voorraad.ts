@@ -48,10 +48,11 @@ export function useVoorraad(ctx?: Record<string, string>): VoorraadStaat {
 /** Mag het leesvenster in de voorraad kijken? Alleen als er iets kan staan: aan, of er staat nog iets van vroeger. */
 export const voorraadBruikbaar = (s: VoorraadStaat): boolean => s.bijOntvangst || s.aantal > 0;
 
+/** «37 МБ» / «1,4 MB» / «12 kB» — met een vaste spatie (U+00A0): het getal en de eenheid breken nooit over twee regels. */
 export const formaatGrootte = (lang: 'uk' | 'nl', bytes: number): string => {
   const mb = bytes / (1024 * 1024);
-  if (mb >= 1) return `${mb >= 10 ? Math.round(mb) : mb.toFixed(1).replace('.', ',')} ${lang === 'uk' ? 'МБ' : 'MB'}`;
-  return `${Math.max(1, Math.round(bytes / 1024))} ${lang === 'uk' ? 'КБ' : 'kB'}`;
+  if (mb >= 1) return `${mb >= 10 ? Math.round(mb) : mb.toFixed(1).replace('.', ',')}\u00a0${lang === 'uk' ? 'МБ' : 'MB'}`;
+  return `${Math.max(1, Math.round(bytes / 1024))}\u00a0${lang === 'uk' ? 'КБ' : 'kB'}`;
 };
 
 /**

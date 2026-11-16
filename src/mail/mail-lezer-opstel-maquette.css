@@ -539,13 +539,36 @@ html.palet-maquette body .google-mail-reader {
   box-shadow: var(--mq-schaduw);
 }
 
+/* MAILBEELD-002 (16.11.2026): het glas (backdrop-filter) maakt van de kop een eigen stapelcontext. Zonder eigen laag telt die als
+   z-index 0 en schilderen latere gepositioneerde delen van de brief (kop van het bericht, stroken met z-index 0) óver de panelen
+   die uit de kop openklappen («Вигляд», ⋮) — de z-index 700 van de werkbalk gold dan alleen bínnen de kop. Daarom krijgt de kop
+   zelf de laag van de werkbalk (mail-lezer-werkbalk.css): zo ligt alles wat uit de kop opent boven de brief, net als zonder palet.
+   Скло робить шапку окремим шаром; без власного z-index панелі «Вигляд» і ⋮ ховалися під листом. */
 html.palet-maquette body .google-mail-reader > header {
+  position: relative;
+  z-index: 700;
   border-bottom: 1px solid var(--mq-rand);
   background: var(--mq-bovenbalk-glas);
   color: var(--mq-tekst);
   backdrop-filter: blur(20px) saturate(135%);
   -webkit-backdrop-filter: blur(20px) saturate(135%);
   box-shadow: 0 10px 28px rgba(var(--mq-accent-rgb), 0.05);
+}
+
+/* MAILBEELD-002 (16.11.2026) — oude fout, gevonden bij de afwerking: in een SMAL venster met muis (telefoonvorm van de lezer, geen
+   aanraakscherm) was het blad «Ще» onzichtbaar. Het blad staat vast aan het venster («fixed») en hangt in de kop; het glas van de kop
+   (backdrop-filter) maakt de kop het ankervlak van alles wat «fixed» is, dus «58 px van onderen» telde vanaf de onderrand van de
+   KOP (65 px hoog) en het blad stond boven het scherm — en daarmee waren «Вигляд» en alle acties van «Ще» onbereikbaar. Op een
+   aanraakscherm speelt dit niet (daar staat elke vervaging in «Макет» al uit: src/thema/wissel-rust.css), in «Класичний» ook niet
+   (kop zonder glas). Daarom: in de telefoonvorm zonder aanraakscherm geen vervaging op de kop; hetzelfde glas ligt dan op het
+   dekkende oppervlak van het thema (zelfde kleur, er schuift toch niets onder de kop door).
+   У вузькому вікні з мишею аркуш «Ще» опинявся над екраном (скло шапки ставало опорою для закріпленого аркуша); тепер шапка там без розмиття. */
+@media not all and (pointer: coarse) {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) body .google-mail-reader-backdrop[data-lees-modus="telefoon"] .google-mail-reader > header {
+    background: linear-gradient(var(--mq-bovenbalk-glas), var(--mq-bovenbalk-glas)), var(--mq-oppervlak);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 html.palet-maquette body .google-mail-reader > header :is(h2, h3, strong) {
@@ -619,12 +642,26 @@ html.palet-maquette body :is(
   box-shadow: var(--mq-schaduw);
 }
 
+/* MAILBEELD-002 (16.11.2026): «Вигляд» en ⋮ openen uit de kop, en de kop heeft zelf al glas (backdrop-filter): de vervaging van
+   het paneel reikt daardoor niet tot de brief eronder, en het glas (2–4 % doorzichtig) liet de tekst van de brief er scherp
+   doorheen schemeren — ook op de pc. Daarom ligt het glas van deze twee panelen op het dekkende oppervlak van het thema: dezelfde
+   kleur, maar er komt niets meer doorheen. (.lz-hulp hangt niet in de kop en houdt op de pc zijn vervaging; op aanraakschermen
+   staat de regel onderaan dit bestand.)
+   Крізь відкриту панель «Вигляд» у «Макеті» просвічував текст листа; тепер під склом — суцільна поверхня теми. */
+html.palet-maquette body :is(
+  .mail-reader-overflow-panel,
+  .lz-weergave-paneel
+) {
+  background: linear-gradient(var(--mq-popover-glas), var(--mq-popover-glas)), var(--mq-oppervlak);
+}
+
 html.palet-maquette body .mail-reader-overflow-groep {
   border-color: var(--mq-rand);
 }
 
+/* MAILBEELD-002: --mq-gedempt in plaats van --mq-stil — in het donkere thema haalde het kopje 4,2:1 (onder 4,5:1) */
 html.palet-maquette body .mail-reader-overflow-groep-kop {
-  color: var(--mq-stil);
+  color: var(--mq-gedempt);
   font-size: 12px;
 }
 
@@ -1628,6 +1665,19 @@ html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
   box-shadow: var(--mq-schaduw);
 }
 
+/* MAILBEELD-002: de onderbalk van «Класичний» is 60 px hoog (2 px meer dan elders) en het venster heeft er een onderrand van
+   1 px; het blad «Ще» op de telefoon sluit ook hier aan op de balk — de regel zelf staat in src/mail/gesprek-opmaak.css en leest
+   deze maat. Twee maten, omdat het blad (vast op het scherm geplaatst) niet overal vanaf dezelfde rand meet:
+   - muis (smal venster): het venster van de brief heeft een achtergrondvervaging en is daardoor zelf het vak waarin het blad
+     staat — de maat telt vanaf de BINNENKANT van de vensterrand: precies de hoogte van de balk, 60 px;
+   - aanraakscherm: daar staat in dit palet elke vervaging uit (src/thema/wissel-rust.css, dezelfde mediavraag), het blad meet
+     dan vanaf de onderrand van het scherm: balk + vensterrand = 61 px (de regel staat in de aanraaklaag onderaan dit bestand).
+   Was: overal 61 px — met de muis bleef er 1 px kier waarin de brief te zien was.
+   Uk: аркуш «Ще» у «Класичному» стоїть упритул до нижньої панелі і з мишею (60 px), і на дотику (61 px). */
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-reader-overflow-panel {
+  --lz-blad-onder: 60px;
+}
+
 html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-reader-overflow-panel > .mail-reader-action-button {
   border: 1px solid transparent;
   border-radius: 11px;
@@ -2381,5 +2431,28 @@ html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
   html.palet-maquette body .google-mail-attachment-preview,
   html.palet-maquette[data-maquette-stijl="klassiek"] body .google-mail-reader-backdrop[data-lees-modus='telefoon'] > .google-mail-reader {
     border-radius: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  /* ---- aanraakscherm (mobiele laag: laatst in dit bestand) ----
+     MAILBEELD-002 (16.11.2026): op aanraakschermen staat in «Макет» elke achtergrondvervaging uit (src/thema/wissel-rust.css, GPU-last).
+     Het glas van de panelen uit de kop («Ще», «Вигляд», sneltoetsen) is voor 2–4 % doorzichtig en rekent op die vervaging: zonder
+     schemerde de tekst van de brief er scherp doorheen. Hier ligt hetzelfde glas op het dekkende oppervlak van het thema — de kleur
+     blijft die van het thema, er komt alleen niets meer doorheen. «Класичний» is al dekkend (eigen regel hierboven, hogere specificiteit).
+     На сенсорних екранах розмиття вимкнено, тож напівпрозоре скло аркуша «Ще» пропускало текст листа; тепер під склом — суцільна
+     поверхня теми. */
+  html.palet-maquette body :is(
+    .mail-reader-overflow-panel,
+    .lz-weergave-paneel,
+    .lz-hulp
+  ) {
+    background: linear-gradient(var(--mq-popover-glas), var(--mq-popover-glas)), var(--mq-oppervlak);
+  }
+
+  /* «Класичний»: zonder vervaging meet het blad «Ще» vanaf de onderrand van het scherm — balk (60 px) + vensterrand (1 px);
+     de uitleg staat bij de regel voor de muis hierboven */
+  html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-reader-overflow-panel {
+    --lz-blad-onder: 61px;
   }
 }

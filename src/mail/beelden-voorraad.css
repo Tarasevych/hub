@@ -1,37 +1,673 @@
-/* MAILBEELD-001 (16.11.2026): regel «Збережено: N · X МБ» met een compacte wisknop onder «Зовнішні зображення» in «Вигляд».
-   Rustig: geen pil, een rond pictogram dat pas bij hover/focus een zachte waarschuwingstint krijgt (wissen is niet terug te draaien).
-   Specificiteit bewust hoog: de «Макет»-regels voor knoppen in het weergavepaneel zouden er anders een pil met rand van maken. */
-html body .lz-beelden-voorraad {
+/* MAILBEELD-002 (16.11.2026): «Вигляд» van de open brief als inklapbare zones, en daarin «Зовнішні зображення» als drie tegels.
+   Was: één lange muur (±900 px) van pillen en alinea's. Nu: per zone een rij met pictogram, titel en de huidige waarde (alleen als
+   de zone dicht is); alleen de open zone toont haar inhoud op een zachte kaart. In de zone «Зображення»: drie even brede tegels
+   (pictogram, korte naam, een merk van één woord — «типово» · «приватно» · «! ризик» — en een vinkje op de gekozen tegel), één zin
+   «wat gebeurt er nu», «Докладніше» (dicht; de legenda voor aanraakschermen, waar geen knopinfo is) en altijd de regel van de
+   voorraad met een compacte wisknop (MAILBEELD-001).
+   Rustig: alleen de achtergrond beweegt (en niets bij prefers-reduced-motion). Alleen variabelen van het thema — werkt in «Макет»,
+   «Класичний» en zonder palet, licht en donker.
+   Specificiteit bewust hoog (html body …): de «Макет»-regels voor knoppen en panelen in de kop zouden anders winnen.
+   Uk: панель «Вигляд» — згортані зони; у зоні «Зображення» три рівні плитки, один рядок «що відбувається зараз», «Докладніше» і
+   рядок сховища. */
+
+/* ---- het paneel in de kop: vaste breedte (geen sprong bij het wisselen van zone of stand); past het niet in een laag venster,
+   dan schuift het paneel zelf. 376 px: «При отриманні» past dan op één regel in zijn tegel, met lucht links en rechts ---- */
+html body .lz-weergave-paneel {
+  width: min(376px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 104px);
+  padding: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+html body .lz-weergave-keuzes.lz-zones {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+html body .lz-weergave-keuzes.lz-zones > small {
+  display: block;
+  padding: 6px 10px 4px;
+  line-height: 1.4;
+}
+
+/* blad «Ще»: het kopje «Вигляд» boven de zones is een gewoon groepskopje van het blad — dezelfde maten als zijn buren
+   («Дії», «Упорядкувати» …: src/ui-golf-11.css; het palet zet er alleen kleur en lettergrootte overheen). Bewust een LAGE
+   specificiteit en dezelfde waarden: zo wint het palet hier net als bij de buren en staan alle kopjes op één lijn, even groot
+   (was: eigen inspringing van 8 px en 11,5 px — 4 px naar links en een andere letter dan de rest). */
+.lz-weergave-blok > .mail-reader-overflow-groep-kop {
+  padding: 4px 12px 2px;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ---- een zone: dicht = een rij, open = een zachte kaart ---- */
+html body .lz-zone {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--straal-m, 14px);
+  background: transparent;
+}
+
+html body .lz-zone[open] {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+/* de tint onder de aanwijzer of de vinger heeft de afronding van de kaart en blijft erbinnen; de vierkante tikgloed van de
+   browser (over de volle breedte) gaat uit */
+html body .lz-zone > summary {
   display: flex;
   align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 10px 6px 7px;
+  border-radius: calc(var(--straal-m, 14px) - 1px);
+  list-style: none;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s ease;
+}
+
+html body .lz-zone > summary::-webkit-details-marker {
+  display: none;
+}
+
+html body .lz-zone > summary:active {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+html body .lz-zone > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+html body .lz-zone-icoon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+html body .lz-zone-icoon > svg {
+  width: 16px;
+  height: 16px;
+}
+
+html body .lz-zone-titel {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+html body .lz-zone-waarde {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
   gap: 6px;
   min-width: 0;
-  margin-top: 4px;
   color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* open zone: de inhoud zegt het zelf — geen dubbele waarde (en geen «!») in de kop; de plaats blijft, de pijl verspringt niet */
+html body .lz-zone[open] > summary > .lz-zone-waarde {
+  visibility: hidden;
+}
+
+html body .lz-zone-waarde > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* riskante stand: in de dichte zone zichtbaar aan «!» en de waarschuwingstint */
+html body .lz-zone-waarde[data-let] {
+  color: var(--warn);
+  font-weight: 650;
+}
+
+html body :is(.lz-zone-waarde, .lz-beelden-keuze) i {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--warn);
+  color: var(--panel);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+html body .lz-zone > summary > svg.lz-zone-pijl {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+html body .lz-zone[open] > summary > svg.lz-zone-pijl {
+  transform: rotate(180deg);
+}
+
+html body .lz-zone-inhoud {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 10px 12px;
+}
+
+html body .lz-zone-inhoud .lz-weergave-noot {
+  max-width: none;
+}
+
+/* de kop van de zone zegt het al: de <legend> blijft voor de schermlezer */
+html body .lz-zone :is(.lz-beelden, [data-weergave-stroken]) > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- «Зовнішні зображення»: drie even brede tegels in één spoor ---- */
+html body .lz-beelden {
+  display: grid;
+  gap: 10px;
+}
+
+html body .lz-beelden-keuze {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 3px;
+  padding: 3px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+html body .lz-beelden-keuze > label {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+html body .lz-beelden-keuze input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* de tegel: pictogram, naam, merk. De naam staat op één regel waar dat past; waar niet (telefoon, «При отриманні») breekt hij in
+   tweeën en blijven de drie tegels even breed en even hoog */
+html body .lz-beelden-keuze input + span {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  min-height: 74px;
+  padding: 9px 1px 8px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: none;
+  transition: background-color .16s ease;
+}
+
+html body .lz-beelden-keuze input + span > svg:not(.lz-beelden-vink) {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+}
+
+/* de naam raakt de rand van de tegel niet: 5 px lucht aan elke kant (met de rand en de binnenmarge van de tegel 7 px) */
+html body .lz-beelden-naam {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0 5px;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+
+/* drie rijen die door alle tegels lopen (subgrid): de pictogrammen staan op één lijn, de namen ook (een naam van één regel staat
+   midden naast een naam van twee), de merken ook. Zonder subgrid blijft de kolom hierboven: elke tegel centreert dan voor zich. */
+@supports (grid-template-rows: subgrid) {
+  html body .lz-beelden-keuze > label {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+  }
+
+  html body .lz-beelden-keuze input + span {
+    display: grid;
+    grid-row: 1 / -1;
+    grid-template-rows: subgrid;
+    justify-items: center;
+    align-items: center;
+    gap: 4px 0;
+    min-height: 0;
+  }
+}
+
+/* het merk onder de naam: één woord. «типово» stil; «приватно» zachtgroen; «! ризик» in de waarschuwingstint */
+html body .lz-beelden-merk {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: .01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+html body .lz-beelden-keuze > label[data-keuze='ontvangst'] .lz-beelden-merk {
+  background: color-mix(in srgb, var(--ok) 15%, transparent);
+  color: color-mix(in srgb, var(--ok) 72%, var(--text));
+}
+
+html body .lz-beelden-keuze > label[data-keuze='altijd'] .lz-beelden-merk {
+  padding-left: 2px;
+  background: color-mix(in srgb, var(--warn) 16%, transparent);
+  color: color-mix(in srgb, var(--warn) 72%, var(--text));
+}
+
+html body .lz-beelden-keuze i.lz-beelden-let {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  font-size: 9px;
+}
+
+/* gekozen: accent én een vinkje (niet alleen kleur) */
+html body .lz-beelden-keuze input:checked + span {
+  background: var(--accent);
+  color: var(--accentText);
+  box-shadow: var(--schaduw-1);
+}
+
+html body .lz-beelden-keuze input:checked + span > svg:not(.lz-beelden-vink) {
+  color: inherit;
+}
+
+/* op het accent: geen eigen vlak (dat kostte contrast), een dunne rand in de tekstkleur */
+html body .lz-beelden-keuze input:checked + span .lz-beelden-merk {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 42%, transparent);
+  color: inherit;
+}
+
+html body .lz-beelden-keuze svg.lz-beelden-vink {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 13px;
+  height: 13px;
+  color: inherit;
+  stroke-width: 3;
+}
+
+/* de riskante stand, gekozen: geen accent maar een zachte waarschuwingstint met een rand van 2 px en het vinkje */
+html body .lz-beelden-keuze > label[data-keuze='altijd'] input:checked + span {
+  padding: 8px 0 7px;
+  border: 2px solid color-mix(in srgb, var(--warn) 70%, var(--panel));
+  background: color-mix(in srgb, var(--warn) 16%, var(--panel));
+  color: var(--text);
+}
+
+html body .lz-beelden-keuze > label[data-keuze='altijd'] input:checked + span > svg:not(.lz-beelden-vink) {
+  color: var(--warn);
+}
+
+html body .lz-beelden-keuze > label[data-keuze='altijd'] input:checked + span .lz-beelden-merk {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+  box-shadow: none;
+  color: color-mix(in srgb, var(--warn) 62%, var(--text));
+}
+
+html body .lz-beelden-keuze > label[data-keuze='altijd'] input:checked + span > svg.lz-beelden-vink {
+  top: 4px;
+  right: 4px;
+}
+
+html body .lz-beelden-keuze input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* de server antwoordt niet: «При отриманні» kan nu niet — gestippelde rand, gedempte inhoud, de aanwijzer «niet toegestaan»
+   (de reden staat in de regel eronder en in de knopinfo). De invoer zelf vangt geen aanwijzer meer: zo krijgt de tegel (het label)
+   de aanwijzer en ziet de knopinfo-laag hem ook in browsers die op een uitgeschakeld veld geen gebeurtenissen geven. */
+html body .lz-beelden-keuze input:disabled {
+  pointer-events: none;
+}
+
+html body .lz-beelden-keuze > label:has(input:disabled) {
+  cursor: not-allowed;
+}
+
+html body .lz-beelden-keuze input:disabled + span {
+  border: 1px dashed color-mix(in srgb, var(--text) 38%, transparent);
+  color: var(--muted);
+}
+
+html body .lz-beelden-keuze > label input:disabled + span .lz-beelden-merk {
+  background: transparent;
+  color: var(--muted);
+}
+
+/* ---- één zin: wat gebeurt er nu. De zinnen van de andere standen liggen onzichtbaar in hetzelfde vak, dus de regel is
+   altijd zo hoog als de langste: geen sprong bij het wisselen, geen lege regel. De tekst in de gewone kleur; alleen het
+   pictogram draagt de toon (groen = privé, waarschuwing = de afzender ziet het) ---- */
+html body .lz-beelden-nu {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 8px;
+  margin: 0;
+  padding: 0 2px;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+/* twee regels van ongeveer gelijke lengte (de breuk valt dan bij het streepje) in plaats van één los woord op de tweede regel;
+   het aantal regels verandert er niet door, en zonder ondersteuning blijft de gewone afbreking */
+html body .lz-beelden-nu > span {
+  grid-area: 1 / 2;
+  min-width: 0;
+  text-wrap: balance;
+}
+
+html body .lz-beelden-nu > .lz-beelden-nu-maat {
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+html body .lz-beelden-nu > svg {
+  grid-area: 1 / 1;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+html body .lz-beelden-nu[data-stand='ontvangst'] > svg {
+  color: var(--ok);
+}
+
+html body .lz-beelden-nu[data-stand='altijd'] > svg {
+  color: var(--warn);
+}
+
+/* ---- «Докладніше»: een stille regel die een korte legenda uitklapt (aanraakschermen hebben geen knopinfo) ---- */
+html body .lz-beelden-meer {
+  min-width: 0;
+  margin: -6px 0 -2px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+html body .lz-beelden-meer > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 28px;
+  margin: 0 0 0 19px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s ease;
+}
+
+html body .lz-beelden-meer > summary::-webkit-details-marker {
+  display: none;
+}
+
+html body .lz-beelden-meer > summary > span {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+html body .lz-beelden-meer > summary > svg {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+}
+
+html body .lz-beelden-meer[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+html body .lz-beelden-meer > summary:active {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+html body .lz-beelden-meer > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+html body .lz-beelden-meer > ul {
+  display: grid;
+  gap: 9px;
+  margin: 4px 0 4px;
+  padding: 10px 11px 11px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  list-style: none;
+}
+
+html body .lz-beelden-meer li {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.38;
+}
+
+html body .lz-beelden-meer li > svg {
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+html body .lz-beelden-meer li[data-keuze='ontvangst'] > svg {
+  color: var(--ok);
+}
+
+html body .lz-beelden-meer li[data-keuze='altijd'] > svg {
+  color: var(--warn);
+}
+
+html body .lz-beelden-meer li > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 8px;
+  min-width: 0;
+}
+
+html body .lz-beelden-meer li b {
+  font-weight: 650;
+}
+
+/* stil merk: geldt de stand alleen hier of op alle apparaten */
+html body .lz-beelden-meer li em {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+html body .lz-beelden-meer li > span > span {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+/* ---- de regel van de voorraad: staat er altijd (geen sprong in hoogte), onder een haarlijn. «Збережено …» of «Ще нічого не
+   збережено», de wachtrij als kort merk, rechts de compacte wisknop — midden op de eerste regel, ook als de tekst breekt ---- */
+html body .lz-beelden-voorraad {
+  --lz-regel: 18px;
+  --lz-knop: 32px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 9px 0 1px 2px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+html body .lz-beelden-voorraad > svg {
+  width: 15px;
+  height: 15px;
+  margin-top: 1.5px;
 }
 
 html body .lz-beelden-voorraad > small {
-  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
   min-width: 0;
-  overflow-wrap: anywhere;
+  font-size: 12.5px;
+  line-height: var(--lz-regel);
 }
 
+html body .lz-beelden-voorraad > small > span {
+  min-width: 0;
+}
+
+/* er is een wachtrij: «Збережено 214 (37 МБ)» zonder het woord «зображень» — zo past het merk «У черзі: 3» ernaast op dezelfde
+   regel en groeit het blok niet zodra de server een wachtrij meldt (was: 23 px hoger, ook in het paneel op de pc). De zone heet
+   «Зображення» en het pictogram is de voorraad, dus het getal blijft duidelijk */
+html body .lz-beelden-voorraad[data-rij] .lz-beelden-woord {
+  display: none;
+}
+
+/* de server antwoordde niet: de reden in gewone tekst, alleen het pictogram in de fouttoon */
+html body .lz-beelden-voorraad[data-staat='fout'] > svg {
+  color: var(--danger, #d64545);
+}
+
+html body .lz-beelden-voorraad[data-staat='fout'] > small {
+  color: var(--text);
+}
+
+/* «У черзі: 3»: brieven die op de sleutelkluis wachten (de uitleg staat in de knopinfo en in «Докладніше») */
+html body .lz-beelden-voorraad .lz-beelden-rij {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--lz-regel);
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: help;
+}
+
+html body .lz-beelden-voorraad .lz-beelden-rij > svg {
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+
+html body .lz-beelden-voorraad .lz-beelden-rij:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* wissen is niet terug te draaien: een zachte waarschuwingstint, sterker bij hover/focus. De knop is hoger dan de regel; de
+   negatieve marge zet hem midden op de eerste regel zonder de rij hoger te maken */
 html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
-  min-height: 30px;
-  margin: 0;
+  place-content: center;
+  align-self: start;
+  gap: 0;
+  width: var(--lz-knop);
+  min-width: var(--lz-knop);
+  height: var(--lz-knop);
+  min-height: var(--lz-knop);
+  margin: calc((var(--lz-regel) - var(--lz-knop)) / 2) 0;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: transparent;
-  color: var(--muted);
+  background-color: color-mix(in srgb, var(--danger, #d64545) 8%, transparent);
+  color: var(--danger, #d64545);
   box-shadow: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s ease;
 }
 
 html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) svg {
@@ -39,8 +675,8 @@ html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) svg {
   height: 15px;
 }
 
-html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):is(:hover, :focus-visible) {
-  background: color-mix(in srgb, var(--danger, #d64545) 12%, transparent);
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):is(:active, :focus-visible) {
+  background-color: color-mix(in srgb, var(--danger, #d64545) 18%, transparent);
   color: var(--danger, #d64545);
   outline: none;
 }
@@ -49,17 +685,133 @@ html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):focus-visib
   box-shadow: 0 0 0 2px var(--focus);
 }
 
-html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):disabled {
+html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x)[aria-disabled='true'] {
   opacity: .5;
   cursor: progress;
 }
 
-/* ---- telefoon / smal venster (mobiele laag: laatst in dit bestand) ---- */
-@media (pointer: coarse) {
+/* ---- muis: zachte achtergrond onder de aanwijzer (niet op aanraakschermen: daar blijft «hover» na een tik hangen) ---- */
+@media (hover: hover) and (pointer: fine) {
+  html body .lz-zone > summary:hover {
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+
+  html body .lz-beelden-keuze input:hover:not(:checked, :disabled) + span {
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+  }
+
+  html body .lz-beelden-meer > summary:hover {
+    color: var(--text);
+  }
+
+  html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x):hover {
+    background-color: color-mix(in srgb, var(--danger, #d64545) 18%, transparent);
+    color: var(--danger, #d64545);
+  }
+}
+
+/* ---- rust: niets beweegt ---- */
+@media (prefers-reduced-motion: reduce) {
+  html body .lz-zone > summary,
+  html body .lz-beelden-keuze input + span,
+  html body .lz-beelden-meer > summary,
+  html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) {
+    transition: none;
+  }
+}
+
+/* ---- telefoon / aanraakscherm / smal venster (mobiele laag: laatst in dit bestand) ---- */
+@media (pointer: coarse), (max-width: 720px) {
+  /* in het blad «Ще»: de zones lijnen uit met de knoppen erboven */
+  html body .lz-weergave-blok .lz-weergave-keuzes.lz-zones {
+    padding: 4px 0 8px;
+  }
+
+  html body .lz-zone > summary {
+    font-size: 14.5px;
+  }
+
+  html body .lz-zone-waarde {
+    font-size: 13.5px;
+  }
+
+  html body .lz-beelden-keuze input + span {
+    min-height: 80px;
+    gap: 5px 0;
+    font-size: 13.5px;
+  }
+
+  @supports (grid-template-rows: subgrid) {
+    html body .lz-beelden-keuze input + span {
+      min-height: 0;
+    }
+  }
+
+  html body .lz-beelden-merk {
+    height: 18px;
+    font-size: 11.5px;
+  }
+
+  html body .lz-beelden-nu {
+    font-size: 13.5px;
+  }
+
+  html body .lz-beelden-meer > summary {
+    min-height: 44px;
+    margin-top: -6px;
+    margin-bottom: -6px;
+    font-size: 13.5px;
+  }
+
+  html body .lz-beelden-meer li {
+    font-size: 13.5px;
+  }
+
+  html body .lz-beelden-meer li em {
+    font-size: 12.5px;
+  }
+
+  html body .lz-beelden-voorraad {
+    --lz-regel: 20px;
+    --lz-knop: 44px;
+  }
+
+  html body .lz-beelden-voorraad > small {
+    font-size: 13.5px;
+  }
+
+  html body .lz-beelden-voorraad .lz-beelden-rij {
+    font-size: 12.5px;
+  }
+
+  /* raakvlak 44 px, de zichtbare tint blijft een kleine cirkel (achtergrond alleen in het binnenvlak) */
   html body .lz-beelden-voorraad > button.lz-beelden-wis[type]:not(.x) {
     width: 44px;
     min-width: 44px;
     height: 44px;
     min-height: 44px;
+    margin-right: -5px;
+    padding: 5px;
+    background-clip: content-box;
+  }
+
+  /* het smalste scherm (320 px): de waarde in de kop van een zone mag op twee regels («Оригінал ·» / «ШІ вимк.») in plaats
+     van afgekapt te worden */
+  @media (max-width: 359px) {
+    html body .lz-zone-waarde > span {
+      overflow: visible;
+      text-align: end;
+      white-space: normal;
+    }
+
+    html body .lz-beelden-keuze input + span {
+      font-size: 12.5px;
+    }
+
+    /* «Збережено 214 (37 МБ)»: zonder het woord «зображень» blijft de regel van de voorraad één regel hoog — het blok groeit niet
+       meer zodra er iets bewaard is (de zone heet «Зображення», het pictogram is de voorraad) */
+    html body .lz-beelden-voorraad .lz-beelden-woord {
+      display: none;
+    }
   }
 }
