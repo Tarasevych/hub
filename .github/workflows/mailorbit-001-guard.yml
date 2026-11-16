@@ -32,7 +32,7 @@ jobs:
           test -f orchestratie/taken/MAILORBIT-001.json
           node scripts/orch.mjs versheid --taak MAILORBIT-001 --fase start
       - name: Dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Regenerate and commit canonical UI button catalogue (generated file only)
         shell: bash
         run: |

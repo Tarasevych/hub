@@ -54,7 +54,7 @@ jobs:
           JS
 
       - name: Install build dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Register task and regenerate UI catalogue (own branch only)
         shell: bash
