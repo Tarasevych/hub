@@ -206,7 +206,8 @@ export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean
 /**
  * APPARAAT-001: step-up vastleggen voor een sessie die NIET het huidige verzoek doet — het vragende apparaat A, nadat op een ander
  * apparaat B (methode 'apparaat') of in Telegram (methode 'telegram') is bevestigd. Daarom op sessie-id, niet op auth.
- *  - 'telegram' telt nooit als «sterk» en nooit als passkey-step-up (punt D van TELEGRAM-001: gevoelig blijft lokale toegangssleutel);
+ *  - 'telegram' telt als «sterk» alleen als de mens dat zelf koos (voorkeur telegramSterk, standaard uit; 16.11.2026) en nooit als
+ *    passkey-step-up (punt D van TELEGRAM-001: wat een lokale toegangssleutel eist, blijft dat eisen);
  *  - 'apparaat' telt als «sterk» alleen als B met zijn toegangssleutel bekrachtigde én de beheerder dat toestaat (sterkBijPasskey);
  *  - passkeySessies wordt hier NOOIT gezet: de poort van TELEGRAM-001 leest passkeyStapOpGeldig als «lokale toegangssleutel».
  */
@@ -215,7 +216,7 @@ export async function stapOpVoorSessieVastleggen(userId: string, sessieId: strin
   if (!sessieId || sessieId.length < 8 || sessieId.length > 80) return false;
   if (isGedelegeerdeSessieId(sessieId)) return false; // SEC-002 (aanmelden-06): nooit voor een gedelegeerde pseudo-sessie
   const nu = Date.now();
-  const sterk = methode === 'apparaat' && opties.sterk === true;
+  const sterk = opties.sterk === true; // apparaat: B met sleutel + beheerder; telegram: keuze van de mens (beide door de aanroeper bepaald)
   await schrijf(userId, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [sessieId]: nu }, methodes: { ...(r.methodes || {}), [sessieId]: methode },
     ...(sterk ? { sterkSessies: { ...(r.sterkSessies || {}), [sessieId]: nu } } : {}) }));
   return true;

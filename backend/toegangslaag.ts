@@ -15,7 +15,7 @@ import {apparaat} from '../server/platform/audit';
 import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
 import {kritiekeActie} from '../shared/kritieke-acties';
-import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
+import {stapOpKanalen,telegramSterkGekozen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
 import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
@@ -572,8 +572,10 @@ export function createAccessPlaneRoutes(deps:{
       const onthoudMag=body.sterk!==true&&onthoudMagVoorActie(actieVan(body.actie));
       const onthoudTot=Number(onthouden[onthoudSessieId(auth as unknown as StapOpAuth)]||0);
       // APPARAAT-001: kanalen zonder sleutel op dit apparaat (Telegram, ander apparaat) volgens de bevestigingstabel; nooit voor «sterk».
-      const kanalen=body.sterk===true?null:await stapOpKanalen(auth as never).catch(()=>null);
-      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,
+      // 16.11.2026: Telegram ook bij «sterk», maar alleen als de mens dat zelf koos (voorkeur telegramSterk); «ander apparaat» blijft weg.
+      const sterkTg=body.sterk===true&&await telegramSterkGekozen(auth.user.id).catch(()=>false);
+      const kanalen=body.sterk===true&&!sterkTg?null:await stapOpKanalen(auth as never).then(k=>body.sterk===true?{...k,apparaat:false,apparaten:0}:k).catch(()=>null);
+      return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,telegramSterk:sterkTg,
         methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true,codewoord:heeftCodewoord,telegram:!!kanalen?.telegram,apparaat:!!kanalen?.apparaat},
         kanalen:kanalen?{apparaten:kanalen.apparaten,reden:kanalen.reden,eis:kanalen.eis,eisTekst:kanalen.eisTekst}:null,
         geldigTot,maxAgeSeconds:STAP_OP_MS/1000,onthoudMag,onthoudTot,onthoudUren:Math.round(STAP_OP_ONTHOUD_MS/3600000)});

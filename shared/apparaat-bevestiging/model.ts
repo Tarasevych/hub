@@ -124,8 +124,14 @@ export type ApparaatVoorkeuren = {
   toonAls: 'venster' | 'melding';
   /** Kort geluid bij een nieuw verzoek op het andere apparaat. */
   geluid: boolean;
+  /**
+   * Keuze van de mens (16.11.2026, Павло: «вибір завжди за користувачем»): een bevestiging in Telegram (symbool + geheime code)
+   * telt ook als «sterk» — voor de gevoeligste handelingen. Standaard UIT, met «!» en uitleg van het risico in de instellingen.
+   * Вибір людини: підтвердження в Telegram рахується «сильним». Типово вимкнено.
+   */
+  telegramSterk: boolean;
 };
-export const STANDAARD_VOORKEUREN: ApparaatVoorkeuren = { aan: true, symbolen: 'standaard', totpOpApparaat: false, toonAls: 'venster', geluid: false };
+export const STANDAARD_VOORKEUREN: ApparaatVoorkeuren = { aan: true, symbolen: 'standaard', totpOpApparaat: false, toonAls: 'venster', geluid: false, telegramSterk: false };
 export function voorkeurenNormaliseren(v: unknown): ApparaatVoorkeuren {
   const i = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const s = STANDAARD_VOORKEUREN;
@@ -135,6 +141,7 @@ export function voorkeurenNormaliseren(v: unknown): ApparaatVoorkeuren {
     totpOpApparaat: vlag(i.totpOpApparaat, s.totpOpApparaat),
     toonAls: i.toonAls === 'melding' ? 'melding' : 'venster',
     geluid: vlag(i.geluid, s.geluid),
+    telegramSterk: vlag(i.telegramSterk, s.telegramSterk),
   };
 }
 

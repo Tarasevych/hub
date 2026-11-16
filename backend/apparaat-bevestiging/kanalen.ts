@@ -5,7 +5,7 @@
 import type { StapOpAuth } from '../stap-op';
 import { beschikbaarVoor, eisVoor } from '../telegram-aanmelden/beleid-poort';
 import { vlagVoor as telegramVlag } from '../telegram-aanmelden/opslag';
-import { vlagVoor as apparaatVlag } from './opslag';
+import { vlagVoor as apparaatVlag, voorkeuren } from './opslag';
 import { beschikbaarheid } from './kern';
 import { eisTekst, type Eis } from '../../shared/telegram-aanmelden/beleid';
 
@@ -30,4 +30,9 @@ export async function stapOpKanalen(auth: StapOpAuth & { user: { id: string; rol
       eisTekst: { uk: eisTekst(e.eis, 'uk'), nl: eisTekst(e.eis, 'nl') },
     };
   } catch { return leeg; }
+}
+
+/** Koos de mens zelf dat Telegram ook «sterk» bevestigt? (voorkeur telegramSterk, standaard uit) */
+export async function telegramSterkGekozen(userId: string): Promise<boolean> {
+  return (await voorkeuren(userId)).waarde.telegramSterk === true;
 }

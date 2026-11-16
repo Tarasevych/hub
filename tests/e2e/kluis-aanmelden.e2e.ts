@@ -27,7 +27,7 @@ const POORT = Number(process.env.E2E_POORT || 8443);
 const CHROME = process.env.CHROME || '/usr/bin/google-chrome';
 const ZNIMKY = process.env.E2E_ZNIMKY_KLUIS_AANMELDEN || 'tests/e2e/знімки-kluis-aanmelden';
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-const VLAGGEN = ['aanmelden-passkey', 'aanmelden-wachtwoord'];
+const VLAGGEN = ['aanmelden-passkey', 'aanmelden-wachtwoord', 'apparaat-bevestiging-v1'];
 // Очікувані відмови: 403 STEP_UP перед захищеною дією (відкривається вікно); activity (не власник).
 const VERWACHT = [
   /\/api\/owner\/agents\/activity$/,
@@ -350,6 +350,19 @@ export async function main(): Promise<number> {
     const p4 = await leesProef(A);
     await openMethods(d4.page);
     check('після «Вимкнути» вхід паролем лише впускає: сеанс є, ключ закритий, запис не читається, з\'являється картка розшифрування', (await ik(d4.page)) === aId && (await stand(d4.page)) === 'gesloten' && !p4.leesbaar && kaart4, `kaart=${kaart4} ${JSON.stringify(p4)}`);
+
+    // ================================================================ 6. Telegram для найважливіших дій — вибір людини (типово вимкнено)
+    await d4.page.goto(`${ID}/methods?lang=uk`, { waitUntil: 'networkidle' });
+    const tgSterk = d4.page.locator('[data-telegram-sterk]');
+    await tgSterk.waitFor({ timeout: 20000 }).catch(() => undefined);
+    await tgSterk.scrollIntoViewIfNeeded().catch(() => undefined);
+    const tgTekst = await tgSterk.innerText().catch(() => '');
+    check('«Telegram підтверджує й найважливіші дії»: типово вимкнено, з «!» і поясненням ризику, вибір у людини',
+      (await tgSterk.getAttribute('data-telegram-sterk')) === 'uit' && !(await tgSterk.locator('input[type="checkbox"]').isChecked()) && (await tgSterk.locator('[aria-label="Увага"]').count()) === 1 && /Типово вимкнено/.test(tgTekst) && /чужий сервіс/.test(tgTekst), tgTekst.slice(0, 200));
+    await tgSterk.locator('input[type="checkbox"]').check();
+    await verberg(d4.page);
+    await tgSterk.screenshot({ path: `${ZNIMKY}/5-telegram-silne-pidtverdzhennia.png` }).catch(() => undefined);
+    check('після позначки — кнопка «Зберегти (ключ доступу)» (увімкнення вимагає ключа доступу)', await d4.page.getByRole('button', { name: 'Зберегти (ключ доступу)' }).isVisible().catch(() => false));
 
     const fz = fouten.filter((f) => !/\/api\/owner\/sleutelkluis\/stand/.test(f));
     check('без помилок консолі, JS і неочікуваних HTTP ≥ 400', fz.length === 0, fz.slice(0, 8).join(' | '));

@@ -101,7 +101,8 @@ export async function main(): Promise<number> {
   const poort = lees('backend/telegram-aanmelden/beleid-poort.ts');
   check('de poort van TELEGRAM-001 kent «apparaat» (beschikbaar, voldaan, verbruik) — geen tweede poort', poort.includes("uit.add('apparaat')") && poort.includes('apparaatVoldaan(') && poort.includes('apparaatVerbruik('));
   const stapOpSrc = lees('backend/stap-op.ts');
-  check('stapOpVoorSessieVastleggen: telegram nooit sterk, apparaat alleen sterk op verzoek, passkeySessies nooit', /methode === 'apparaat' && opties\.sterk === true/.test(stapOpSrc) && !/passkeySessies: \{ \.\.\.\(r\.passkeySessies \|\| \{\}\), \[sessieId\]/.test(stapOpSrc));
+  // 16.11.2026: «sterk» bepaalt de aanroeper (apparaat: B met sleutel + beheerder; telegram: keuze van de mens, standaard uit).
+  check('stapOpVoorSessieVastleggen: sterk alleen op verzoek van de aanroeper, passkeySessies nooit', /const sterk = opties\.sterk === true;/.test(stapOpSrc) && !/passkeySessies: \{ \.\.\.\(r\.passkeySessies \|\| \{\}\), \[sessieId\]/.test(stapOpSrc));
   const kern = lees('backend/apparaat-bevestiging/kern.ts');
   check('kern: het juiste symbool gaat alleen naar A (publiek(r, false) naar B en de stroom)', kern.includes("publiceer(auth.user.id, { soort: 'apparaat.verzoek', verzoek: publiek(rij, false) }") && kern.includes('return publiek(rij, true,'));
   check('kern: één atomische update wacht → bevestigd/geweigerd; aftelling en zelfde-anker op de server', kern.includes("WHERE id = $1 AND stand = 'wacht' RETURNING id`") && kern.includes("throw new Error('TE_SNEL')") && kern.includes("throw new Error('ZELFDE_APPARAAT')"));
