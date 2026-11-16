@@ -20,7 +20,7 @@
 // op één regel — het blok groeit niet meer zodra de server een wachtrij meldt); «Докладніше» schuift in het blad «Ще» de legenda en de
 // regel van de voorraad in beeld (niet de kop van de zone); in een smal venster met muis staat de knopinfo van de wisknop en van
 // «У черзі» ónder het anker, niet meer over de zin «wat gebeurt er nu».
-import { ALargeSmall, Check, ChevronDown, CloudOff, Database, Eye, EyeOff, Hourglass, Image, ImageOff, Languages, ShieldCheck, SlidersHorizontal, Trash2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { ALargeSmall, Check, ChevronDown, CloudOff, Database, Eye, EyeOff, Hourglass, Image, ImageOff, Languages, ShieldCheck, Trash2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { TEKST_STAPPEN, type LezerBeelden, type LezerDichtheid, type LezerTaal } from './lees-modus';
 import { useLeesVenster } from './LeesVenster';
@@ -446,13 +446,30 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
   if (!useLeesVenster()) return null;
   return (
     <details ref={ref} className='mail-reader-weergave' onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary className='mail-reader-icon-action' aria-expanded={open} aria-label={t('Вигляд: ШІ-аналіз над листом, щільність і розмір тексту', 'Weergave: AI-analyse boven het bericht, dichtheid en tekstgrootte')} data-tooltip={t('Вигляд', 'Weergave')}>
-        <SlidersHorizontal aria-hidden='true' />
+      <summary className='mail-reader-icon-action' aria-expanded={open} aria-label={t('Вигляд листа: зображення, читання, мова й ШІ, сховані смуги', 'Weergave van het bericht: afbeeldingen, lezen, taal en AI, verborgen stroken')}
+        data-tooltip={t('Вигляд листа: чи показувати зображення, розмір тексту, мова й переклад, сховані смуги. Змінює лише показ, сам лист не змінюється.', 'Weergave van het bericht: afbeeldingen tonen of niet, tekstgrootte, taal en vertaling, verborgen stroken. Verandert alleen de weergave, niet het bericht zelf.')}>
+        <BeeldTekstIcoon />
       </summary>
       <div className='lz-weergave-paneel' role='group' aria-label={t('Вигляд листа', 'Weergave van het bericht')}>
         <Keuzes lang={lang} />
       </div>
     </details>
+  );
+}
+
+/** MAILBEELD-004 (16.11.2026). Павло: «піктограму … щоб вона відповідала своєму вмісту меню, а не загальні налаштування». De knop had het
+ *  pictogram «schuifregelaars» (instellingen in het algemeen). Nu: een afbeelding met een letter A — de twee dingen die dit paneel regelt: de
+ *  beelden en de tekst (grootte, taal). Zelfde lijnstijl als lucide (24-raster, lijn 2, ronde einden), dus kleurt en schaalt mee met
+ *  de andere knoppen. Uk: піктограма «зображення + літера» — зображення й текст листа. */
+function BeeldTekstIcoon() {
+  return (
+    <svg className='lz-weergave-icoon' xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
+      <rect x='2' y='3' width='12' height='11' rx='2' />
+      <path d='m2.5 12.5 3.5-3.5 4 4' />
+      <circle cx='9.5' cy='7' r='1' />
+      <path d='m13 21 4-10 4 10' />
+      <path d='M14.6 17h4.8' />
+    </svg>
   );
 }
 
