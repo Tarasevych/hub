@@ -7,8 +7,8 @@
 import { getPool } from '../server/platform/pg';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import {
-  BROWSER_CAPS, isBrowserCap, MAX_MINUTEN, PRIVE_MAX_DAGEN, STANDAARD_BELEID,
-  type BrowserCap, type ExtensieBeleid, type ExtensieBeleidInvoer,
+  BROWSER_CAPS, isBrowserCap, LOKALE_AI_REDEN_MAX, LOKALE_AI_REDEN_MIN, lokaleAiBeleidVan, MAX_MINUTEN, PRIVE_MAX_DAGEN, STANDAARD_BELEID,
+  type BrowserCap, type ExtensieBeleid, type ExtensieBeleidInvoer, type LokaleAiBeleid,
 } from '../shared/extensie-ontgrendeling';
 
 const sys = () => getPool('systeem');
@@ -23,7 +23,18 @@ export function beleidUitRij(r: Record<string, any> | undefined | null): Extensi
     technischMaxMinuten: Math.min(MAX_MINUTEN, Math.max(5, Number(r.technisch_max_minuten) || MAX_MINUTEN)),
     lokaalAan: r.lokaal_aan !== false, notitie: String(r.notitie || ''),
     gewijzigdDoor: r.gewijzigd_door ? String(r.gewijzigd_door) : null, gewijzigdOp: r.gewijzigd_op ? new Date(r.gewijzigd_op).getTime() : null,
+    // 0287: vóór de migratie ontbreken de kolommen → standaard aan (rekenen gebeurt toch op het apparaat van de gebruiker).
+    lokaleAiAan: r.lokale_ai_aan !== false, lokaleAiReden: String(r.lokale_ai_reden || '').slice(0, LOKALE_AI_REDEN_MAX),
+    lokaleAiDoor: r.lokale_ai_door ? String(r.lokale_ai_door) : null, lokaleAiOp: r.lokale_ai_op ? new Date(r.lokale_ai_op).getTime() : null,
   };
+}
+
+/**
+ * 0287 (LAI-CON-001): beleid voor de lokale AI zoals de extensie het krijgt (settings-bericht). Bij een DB-fout null: dan stuurt de
+ * server het veld niet mee en houdt de extensie haar laatste stand (nooit stil «uit» door een storing, nooit stil «aan» na «uit»).
+ */
+export async function lokaleAiVoorExtensie(userId: string): Promise<LokaleAiBeleid | null> {
+  try { return lokaleAiBeleidVan(await leesBeleid(userId)); } catch { return null; }
 }
 
 /** Beleid van één gebruiker (standaard als er geen rij is). Gooit bij een DB-fout: wie afdwingt, weigert dan. */
@@ -49,16 +60,21 @@ export const maxDuurMs = (b: ExtensieBeleid, ruimte: AiRuimte) => (ruimte === 'p
 
 export class BeleidFout extends Error { constructor(public veld: string) { super(`BELEID_ONGELDIG:${veld}`); } }
 
-const VELDEN = new Set(['priveAan', 'technischAan', 'priveCaps', 'technischCaps', 'priveMaxDagen', 'technischMaxMinuten', 'lokaalAan', 'notitie']);
+const VELDEN = new Set(['priveAan', 'technischAan', 'priveCaps', 'technischCaps', 'priveMaxDagen', 'technischMaxMinuten', 'lokaalAan', 'notitie', 'lokaleAiAan', 'lokaleAiReden']);
 /** Lijkt op een beleidsveld (tikfout als «priveCap»): weigeren in plaats van stil negeren — anders denkt de beheerder dat hij beperkte. */
-const LIJKT_BELEID = /^(prive|technisch|lokaal|max|caps|beleid|notitie)/i;
+const LIJKT_BELEID = /^(prive|technisch|lokaal|lokale|max|caps|beleid|notitie)/i;
 
 /** Invoer controleren. Geeft alleen de meegegeven velden terug; andere sleutels (sessievelden van de route) blijven buiten beschouwing. */
 export function valideerBeleidInvoer(input: Record<string, unknown>): ExtensieBeleidInvoer {
   for (const k of Object.keys(input)) if (!VELDEN.has(k) && LIJKT_BELEID.test(k)) throw new BeleidFout(k);
   const uit: ExtensieBeleidInvoer = {};
-  const bool = (k: 'priveAan' | 'technischAan' | 'lokaalAan') => { if (input[k] === undefined) return; if (typeof input[k] !== 'boolean') throw new BeleidFout(k); uit[k] = input[k] as boolean; };
-  bool('priveAan'); bool('technischAan'); bool('lokaalAan');
+  const bool = (k: 'priveAan' | 'technischAan' | 'lokaalAan' | 'lokaleAiAan') => { if (input[k] === undefined) return; if (typeof input[k] !== 'boolean') throw new BeleidFout(k); uit[k] = input[k] as boolean; };
+  bool('priveAan'); bool('technischAan'); bool('lokaalAan'); bool('lokaleAiAan');
+  // 0287: reden voor «lokale AI uit» — platte tekst, geen stuurtekens; of hij nodig is, beslist schrijfBeleid (na samenvoegen).
+  if (input.lokaleAiReden !== undefined) {
+    if (typeof input.lokaleAiReden !== 'string' || input.lokaleAiReden.length > LOKALE_AI_REDEN_MAX || /[\u0000-\u001f\u007f]/.test(input.lokaleAiReden)) throw new BeleidFout('lokaleAiReden');
+    uit.lokaleAiReden = input.lokaleAiReden.trim();
+  }
   const caps = (k: 'priveCaps' | 'technischCaps') => {
     if (input[k] === undefined) return;
     if (input[k] === null) { uit[k] = null; return; }
@@ -84,12 +100,28 @@ export function valideerBeleidInvoer(input: Record<string, unknown>): ExtensieBe
 export async function schrijfBeleid(userId: string, invoer: ExtensieBeleidInvoer, door: string): Promise<{ voor: ExtensieBeleid; na: ExtensieBeleid }> {
   const voor = await leesBeleid(userId);
   const na: ExtensieBeleid = { ...voor, ...invoer };
-  const r = (await sys().query(`INSERT INTO app.extensie_beleid (user_id, prive_aan, technisch_aan, prive_caps, technisch_caps, prive_max_dagen, technisch_max_minuten, lokaal_aan, notitie, gewijzigd_door, gewijzigd_op)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+  const ai = lokaleAiNa(voor, na, door);
+  const r = (await sys().query(`INSERT INTO app.extensie_beleid (user_id, prive_aan, technisch_aan, prive_caps, technisch_caps, prive_max_dagen, technisch_max_minuten, lokaal_aan, notitie, gewijzigd_door, gewijzigd_op,
+       lokale_ai_aan, lokale_ai_reden, lokale_ai_door, lokale_ai_op)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), $11, $12, $13, $14)
      ON CONFLICT (user_id) DO UPDATE SET prive_aan = EXCLUDED.prive_aan, technisch_aan = EXCLUDED.technisch_aan, prive_caps = EXCLUDED.prive_caps,
        technisch_caps = EXCLUDED.technisch_caps, prive_max_dagen = EXCLUDED.prive_max_dagen, technisch_max_minuten = EXCLUDED.technisch_max_minuten,
-       lokaal_aan = EXCLUDED.lokaal_aan, notitie = EXCLUDED.notitie, gewijzigd_door = EXCLUDED.gewijzigd_door, gewijzigd_op = now()
+       lokaal_aan = EXCLUDED.lokaal_aan, notitie = EXCLUDED.notitie, gewijzigd_door = EXCLUDED.gewijzigd_door, gewijzigd_op = now(),
+       lokale_ai_aan = EXCLUDED.lokale_ai_aan, lokale_ai_reden = EXCLUDED.lokale_ai_reden, lokale_ai_door = EXCLUDED.lokale_ai_door, lokale_ai_op = EXCLUDED.lokale_ai_op
      RETURNING *`,
-    [userId, na.priveAan, na.technischAan, na.priveCaps, na.technischCaps, na.priveMaxDagen, na.technischMaxMinuten, na.lokaalAan, na.notitie.slice(0, 300), door.slice(0, 200)])).rows[0];
+    [userId, na.priveAan, na.technischAan, na.priveCaps, na.technischCaps, na.priveMaxDagen, na.technischMaxMinuten, na.lokaalAan, na.notitie.slice(0, 300), door.slice(0, 200),
+      ai.aan, ai.reden, ai.door, ai.op === null ? null : new Date(ai.op)])).rows[0];
   return { voor, na: beleidUitRij(r) };
+}
+
+/**
+ * 0287 (zuiver): lokale-AI-velden na een wijziging. Uit zonder reden van ≥ 10 tekens → BeleidFout('lokaleAiReden'). Wie/wanneer
+ * verandert alleen als de beheerder uitzet of de reden wijzigt; een andere wijziging van het beleid laat ze staan. Weer aan = alles leeg.
+ */
+export function lokaleAiNa(voor: ExtensieBeleid, na: ExtensieBeleid, door: string, nu = Date.now()): { aan: boolean; reden: string; door: string | null; op: number | null } {
+  if (na.lokaleAiAan) return { aan: true, reden: '', door: null, op: null };
+  const reden = String(na.lokaleAiReden || '').trim();
+  if (reden.length < LOKALE_AI_REDEN_MIN || reden.length > LOKALE_AI_REDEN_MAX) throw new BeleidFout('lokaleAiReden');
+  const nieuw = voor.lokaleAiAan || reden !== voor.lokaleAiReden;
+  return nieuw ? { aan: false, reden, door: door.slice(0, 200), op: nu } : { aan: false, reden, door: voor.lokaleAiDoor, op: voor.lokaleAiOp };
 }

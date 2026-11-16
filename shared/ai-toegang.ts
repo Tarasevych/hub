@@ -163,6 +163,8 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
       'app_list', 'app_deploy_status', 'app_logs', 'app_versions', 'app_secret_list',
       'browser_snapshot', 'browser_list_tabs', 'browser_console', 'browser_network',
       'browser_get_diagnostics', 'browser_audit', 'browser_wait_for_text', 'browser_scroll',
+      // LAI-CON-001: ingebouwde AI van Chrome op het apparaat van de gebruiker (leest geen pagina).
+      'browser_local_ai',
     ],
   },
   {

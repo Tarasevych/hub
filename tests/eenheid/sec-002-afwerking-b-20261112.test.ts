@@ -226,7 +226,7 @@ export async function main(): Promise<number> {
   // ------------------------------------------------------------------ 6. версія розширення
   {
     const m = JSON.parse(lees('extension/manifest.json') || '{}') as { version?: string };
-    check('extensie: versie 0.9.5 of later (bridge/shared/background veranderd door SEC-002)', m.version === '0.9.5', String(m.version));
+    check('extensie: versie 0.9.6 of later (bridge/shared/background veranderd door SEC-002)', m.version === '0.9.6', String(m.version));
   }
 
   check('мовний закон: усі нові тексти — українська без латиниці та нідерландська без англійських слів', !taal.length, taal.slice(0, 6).join(' | '));

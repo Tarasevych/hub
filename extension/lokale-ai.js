@@ -394,7 +394,8 @@
         let uit;
         if (typeof sessie.promptStreaming === 'function' && typeof o.opStuk === 'function') uit = await leesStroom(sessie.promptStreaming(bericht, opties), o.opStuk);
         else uit = await sessie.prompt(bericht, opties);
-        if (!opties.responseConstraint) uit = await naarUiTaal(cfg, uit, c.taal, { ...io, opStuk: o.opStuk }, notities);
+        // 0.9.6 (PR #117): o.rauw = antwoord precies zoals het model het gaf (geen vertaling naar de interfacetaal).
+        if (!opties.responseConstraint && o.rauw !== true) uit = await naarUiTaal(cfg, uit, c.taal, { ...io, opStuk: o.opStuk }, notities);
         return { tekst: uit, notities, extra: { sessie, gebruik: gebruikVan(sessie) } };
       }
       default: throw new LokaleFout('ONBEKEND', modus);

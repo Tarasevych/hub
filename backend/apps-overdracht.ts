@@ -7,7 +7,9 @@
 // - Alles leeft alleen in het geheugen van dit proces (na een herstart opnieuw vragen); niets wordt gelogd.
 import { randomBytes } from 'node:crypto';
 
-export type OverdrachtSoort = 'bundel' | 'geheim';
+// LAI-CON-001 (16.11.2026): 'lokale-ai' = tekst voor de ingebouwde AI van Chrome (browser_local_ai). Zo staat de tekst van de
+// gebruiker nooit in app.agent_commands.params; alleen de browserextensie van dezelfde gebruiker haalt hem één keer op.
+export type OverdrachtSoort = 'bundel' | 'geheim' | 'lokale-ai';
 type Ticket = { agentId: string; userId: string; soort: OverdrachtSoort; payload: unknown; bytes: number; verloopt: number };
 export type GeheimVerzoek = {
   id: string; userId: string; agentId: string; agentNaam: string; app: string; sleutel: string; uitleg: string;
@@ -45,17 +47,51 @@ export function maakTicket(agentId: string, userId: string, soort: OverdrachtSoo
 }
 
 /** Eén keer ophalen, alleen door de agent waarvoor het ticket gemaakt is. Fout ticket of andere agent → null (en het ticket blijft niet bestaan). */
-export function haalTicket(agentId: string, id: string): { soort: OverdrachtSoort; payload: unknown } | null {
+export function haalTicket(agentId: string, id: string, soorten?: readonly OverdrachtSoort[]): { soort: OverdrachtSoort; payload: unknown } | null {
   opruimen();
   if (!TICKET_RE.test(id)) return null;
   const t = tickets.get(id);
   if (!t) return null;
   tickets.delete(id); // eenmalig, ook bij een verkeerde agent (een gelekt ticket is daarna waardeloos)
   if (t.agentId !== agentId) return null;
+  // LAI-CON-001: de route geeft per soort agent aan welke soorten mogen (een browser alleen 'lokale-ai', nooit bundels of geheimen).
+  if (soorten && !soorten.includes(t.soort)) return null;
   return { soort: t.soort, payload: t.payload };
 }
 
 export function vergeetTicket(id: string) { tickets.delete(id); }
+
+// LAI-CON-001 (review PR #137): ook het RESULTAAT van browser_local_ai (vertaling, samenvatting) komt niet in app.agent_commands.result.
+// De connector meldt vóór het versturen welk ticket hij verwacht; de gateway legt het resultaat van die agent alleen hier in het geheugen
+// (en in de database alleen metadata); de connector haalt het één keer op. Na 15 minuten of na een herstart is het weg.
+const VLUCHTIG_TTL_MS = 15 * 60_000;
+const vluchtig = new Map<string, { agentId: string; verloopt: number; data?: unknown }>();
+function vluchtigOpruimen(nu = Date.now()) { for (const [k, v] of vluchtig) if (v.verloopt <= nu) vluchtig.delete(k); }
+/** Connector: dit ticket hoort bij deze agent; zijn resultaat mag alleen in het geheugen. */
+export function verwachtVluchtig(ticket: string, agentId: string): void {
+  vluchtigOpruimen();
+  if (TICKET_RE.test(ticket) && vluchtig.size < 2000) vluchtig.set(ticket, { agentId, verloopt: Date.now() + VLUCHTIG_TTL_MS });
+}
+/** Gateway: resultaat bewaren als het ticket verwacht werd voor precies deze agent (en nog niet gevuld is). true = niet in de database zetten. */
+export function bewaarVluchtig(ticket: unknown, agentId: string, data: unknown): boolean {
+  vluchtigOpruimen();
+  if (typeof ticket !== 'string') return false;
+  const v = vluchtig.get(ticket);
+  // Niet (meer) verwacht, andere agent of al gevuld: niet bewaren. De gateway zet een lokale-AI-resultaat dan óók niet in de database.
+  if (!v || v.agentId !== agentId || v.data !== undefined) return false;
+  v.data = data;
+  return true;
+}
+/** Connector: verwachting en eventueel resultaat meteen weggooien (opdracht niet geslaagd): een later resultaat gaat dan nergens heen. */
+export function vergeetVluchtig(ticket: string): void { vluchtig.delete(ticket); }
+/** Connector: resultaat één keer ophalen (daarna weg). */
+export function haalVluchtig(ticket: string): unknown {
+  vluchtigOpruimen();
+  const v = vluchtig.get(ticket);
+  if (!v || v.data === undefined) return undefined;
+  vluchtig.delete(ticket);
+  return v.data;
+}
 
 export function maakGeheimVerzoek(v: Omit<GeheimVerzoek, 'id' | 'verloopt' | 'status' | 'aangemaakt'>): GeheimVerzoek {
   opruimen();

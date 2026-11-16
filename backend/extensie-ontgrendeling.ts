@@ -34,7 +34,7 @@ import { stapOpGeldig, stapOpMethode, type StapOpAuth } from './stap-op';
 import * as tp from './tech-profiel';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import {
-  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveOfAiHost, isAiSiteHost, AI_SITE_TYPES, AI_SITE_HOSTS, isToegestaneHost,
+  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, EXTENSIE_VERSIE_LOKALE_AI, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveOfAiHost, isAiSiteHost, AI_SITE_TYPES, AI_SITE_HOSTS, isToegestaneHost,
   KLOK_SPELING_MS, MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
   type BrowserCap, type DiagRechtStand, type EindeSoort, type ExtensieAgentStatus, type ExtensieBeleid, type ExtensieBrowser, type ExtensieStaat, type ExtensieStatusAntwoord, type Ontgrendeling,
   type OntgrendelingWeergave, type RechtPrive, type RechtTechnisch, type VergrendelReden, type Weigercode,
@@ -535,6 +535,11 @@ export async function controleerBrowserOpdracht(agentId: string, userId: string,
   // Scripts (evaluate_script) nooit in het privéslot en nooit zonder een extensie die ze kent.
   if (cap === 'browser.script' && (ruimte !== 'technisch' || !versieMinstens(liveVersie(agentId), EXTENSIE_VERSIE_MATRIX))) {
     return { ok: false, fout: `EXTENSIE_SCRIPT: evaluate_script runs only in the TECHNICAL slot, with extension ${EXTENSIE_VERSIE_MATRIX} or newer in the «diagnose» package and the row «Скрипти» ticked at ${BROWSER_BEHEER_PAD_EN}. Tell the user; do not retry.` };
+  }
+  // LAI-CON-001: de ingebouwde AI van Chrome via de connector kent pas extensie 0.9.6; beleid van de beheerder (0287) gaat vóór.
+  if (type === 'browser.lokale_ai') {
+    if (!beleid.lokaleAiAan) return { ok: false, fout: `EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.lokaleAiDoor ? ` (${beleid.lokaleAiDoor})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.lokaleAiReden}". Tell the user; do not retry.` };
+    if (!versieMinstens(liveVersie(agentId), EXTENSIE_VERSIE_LOKALE_AI)) return { ok: false, fout: `EXTENSIE_VERSIE: Chrome's built-in AI through the connector needs extension ${EXTENSIE_VERSIE_LOKALE_AI} or newer. Tell the user to update it (mcp.tarasevych.com → AI connections → Browser extension); do not retry.` };
   }
   const domeinen = ruimte === 'prive' ? r.domeinen.filter(isPriveOfAiHost) : r.domeinen;
   const urls = grants.commandUrls(params);

@@ -65,6 +65,8 @@ export type BrowserCap = typeof BROWSER_CAPS[number];
 export const BROWSER_CAPS_OUD: readonly BrowserCap[] = Object.freeze(['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.debug']);
 /** Vanaf deze versie kent de extensie de zeven mogelijkheden én termijnen tot een jaar (shared/extensie-matrix.ts). */
 export const EXTENSIE_VERSIE_MATRIX = '0.7.0';
+/** LAI-CON-001: eerste extensieversie met browser.lokale_ai (connector → ingebouwde AI van Chrome) en het beleid lokaleAi (0287). */
+export const EXTENSIE_VERSIE_LOKALE_AI = '0.9.6';
 export const isBrowserCap = (v: unknown): v is BrowserCap => typeof v === 'string' && (BROWSER_CAPS as readonly string[]).includes(v);
 
 /** Mogelijkheden per technische rol (shared/tech-rollen.ts). Unie over alle rollen van de activering. */
@@ -263,13 +265,29 @@ export type ExtensieBeleid = {
   priveCaps: BrowserCap[] | null; technischCaps: BrowserCap[] | null;
   priveMaxDagen: number; technischMaxMinuten: number; lokaalAan: boolean;
   notitie: string; gewijzigdDoor: string | null; gewijzigdOp: number | null;
+  /** 0287 (LAI-CON-001): ingebouwde AI van Chrome voor site- en connectoraanvragen; standaard aan. Uit alleen met een reden (≥ 10 tekens). */
+  lokaleAiAan: boolean; lokaleAiReden: string;
+  /** Wie de lokale AI uitzette en wanneer (apart van gewijzigdDoor: een latere andere wijziging mag de naam niet overschrijven). */
+  lokaleAiDoor: string | null; lokaleAiOp: number | null;
 };
 export const STANDAARD_BELEID: Readonly<ExtensieBeleid> = Object.freeze({
   priveAan: true, technischAan: true, priveCaps: null, technischCaps: null, priveMaxDagen: PRIVE_MAX_DAGEN, technischMaxMinuten: MAX_MINUTEN,
-  lokaalAan: true, notitie: '', gewijzigdDoor: null, gewijzigdOp: null,
+  lokaalAan: true, notitie: '', gewijzigdDoor: null, gewijzigdOp: null, lokaleAiAan: true, lokaleAiReden: '',
+  lokaleAiDoor: null, lokaleAiOp: null,
 });
+/** 0287: minimale lengte van de reden waarmee een beheerder de lokale AI uitzet (de gebruiker ziet die reden). */
+export const LOKALE_AI_REDEN_MIN = 10;
+export const LOKALE_AI_REDEN_MAX = 300;
 /** Velden die POST …/extensie-beheer/beleid accepteert (alle optioneel; ontbrekend = ongewijzigd). */
-export type ExtensieBeleidInvoer = Partial<Pick<ExtensieBeleid, 'priveAan' | 'technischAan' | 'priveCaps' | 'technischCaps' | 'priveMaxDagen' | 'technischMaxMinuten' | 'lokaalAan' | 'notitie'>>;
+export type ExtensieBeleidInvoer = Partial<Pick<ExtensieBeleid, 'priveAan' | 'technischAan' | 'priveCaps' | 'technischCaps' | 'priveMaxDagen' | 'technischMaxMinuten' | 'lokaalAan' | 'notitie' | 'lokaleAiAan' | 'lokaleAiReden'>>;
+/**
+ * 0287: wat de extensie (en via haar PING de site) over het beheerdersbeleid voor de lokale AI te weten krijgt. Nooit meer dan dit:
+ * aan/uit, de reden en wie het uitzette (e-mail van de beheerder, zoals in app.audit).
+ */
+export type LokaleAiBeleid = { aan: boolean; reden: string; door: string | null; op: number | null };
+export function lokaleAiBeleidVan(b: ExtensieBeleid): LokaleAiBeleid {
+  return b.lokaleAiAan ? { aan: true, reden: '', door: null, op: null } : { aan: false, reden: b.lokaleAiReden, door: b.lokaleAiDoor, op: b.lokaleAiOp };
+}
 
 // ---------------------------------------------------------------- status (site)
 /** Ontgrendeling zoals de site hem ziet (niet ondertekend). */

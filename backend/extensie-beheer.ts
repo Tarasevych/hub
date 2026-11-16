@@ -12,6 +12,7 @@
 import { getPool } from '../server/platform/pg';
 import { BeleidFout, capsBinnenBeleid, leesBeleid, leesBeleidVoor, maxDuurMs, ruimteAan, schrijfBeleid, valideerBeleidInvoer } from './extensie-beleid';
 import * as eo from './extensie-ontgrendeling';
+import { pushSettings } from './ai-toestemmingen';
 import { meld } from './melder';
 import { kijkerAlleenEigen } from './kijker-alleen-lezen';
 import * as tp from './tech-profiel';
@@ -187,7 +188,13 @@ export async function beleidZetten(a: eo.Aanroep, input: Record<string, unknown>
   const nu = await leesBeleid(doel.id);
   const wijder = ruimer(nu, { ...nu, ...invoer! });
   if (wijder.prive || wijder.technisch) await bevestigd(a, poort, { sterk: wijder.technisch, sinds: 0 }, 'beleid');
-  const { voor, na } = await schrijfBeleid(doel.id, invoer!, a.user.email || a.user.id);
+  let geschreven;
+  // 0287: «lokale AI uit» zonder reden (≥ 10 tekens) wordt pas na samenvoegen herkend → hier als ONGELDIG weigeren, niet als 500.
+  try { geschreven = await schrijfBeleid(doel.id, invoer!, a.user.email || a.user.id); }
+  catch (err) { if (err instanceof BeleidFout) weiger('ONGELDIG', err.veld); throw err; }
+  const { voor, na } = geschreven!;
+  // 0287 (LAI-CON-001): de extensies van de gebruiker krijgen het nieuwe beleid voor de lokale AI meteen (settings-bericht).
+  if (voor.lokaleAiAan !== na.lokaleAiAan || voor.lokaleAiReden !== na.lokaleAiReden) await pushSettings(doel.id).catch(() => undefined);
   const buiten = (await eo.lopendeRijen([doel.id])).filter((r) => buitenBeleid(r, na));
   let ingetrokken = 0;
   for (const r of buiten) ingetrokken += (await eo.intrekkenRijen(doel.id, { gid: String(r.id) }, 'beleid', 'beheer', a.user.id)).length;
@@ -200,13 +207,22 @@ export async function beleidZetten(a: eo.Aanroep, input: Record<string, unknown>
         `${wieTekst(a, door)}: правила доступу ШІ через розширення змінено${ingetrokken ? `, відкликано відкритих доступів: ${ingetrokken}` : ''}. / De regels voor AI-toegang via de extensie zijn gewijzigd${ingetrokken ? `, ingetrokken: ${ingetrokken}` : ''}.`,
         'https://mcp.tarasevych.com/agents#dostupy');
     }
+    // 0287: lokale AI uitgezet (of reden gewijzigd) → de gebruiker hoort wie, waarom en waar hij het ziet; weer aan → ook een melding.
+    if (!na.lokaleAiAan && (voor.lokaleAiAan || voor.lokaleAiReden !== na.lokaleAiReden)) {
+      await meld(doel.id, 'security', 'Локальний ШІ Chrome вимкнено адміністратором / Lokale AI van Chrome uitgezet door de beheerder',
+        `${a.user.email || wieTekst(a, door)}: «${na.lokaleAiReden}». Сайт і ШІ-агенти не можуть використовувати локальний ШІ вашого браузера; у власній бічній панелі він працює далі. / Site en AI-agenten kunnen de lokale AI van uw browser niet gebruiken; in uw eigen zijpaneel werkt hij verder.`,
+        'https://mcp.tarasevych.com/agents#extensie');
+    } else if (na.lokaleAiAan && !voor.lokaleAiAan) {
+      await meld(doel.id, 'security', 'Локальний ШІ Chrome знову дозволено / Lokale AI van Chrome weer toegestaan',
+        `${a.user.email || wieTekst(a, door)}: обмеження знято. / De beperking is opgeheven.`, 'https://mcp.tarasevych.com/agents#extensie');
+    }
   }
   return { ok: true as const, beleid: na, ingetrokken };
 }); }
 function strenger(voor: ExtensieBeleid, na: ExtensieBeleid): boolean {
   const minder = (v: string[] | null, n: string[] | null) => (n !== null && (v === null || v.some((c) => !n.includes(c))));
   return (voor.priveAan && !na.priveAan) || (voor.technischAan && !na.technischAan) || (voor.lokaalAan && !na.lokaalAan)
-    || minder(voor.priveCaps, na.priveCaps) || minder(voor.technischCaps, na.technischCaps)
+    || (voor.lokaleAiAan && !na.lokaleAiAan) || minder(voor.priveCaps, na.priveCaps) || minder(voor.technischCaps, na.technischCaps)
     || na.priveMaxDagen < voor.priveMaxDagen || na.technischMaxMinuten < voor.technischMaxMinuten;
 }
 /** Het spiegelbeeld van `strenger`, per slot: laat `na` iets toe wat `voor` niet toeliet? (caps null = alle; de lokale agent geldt voor beide sloten.) */

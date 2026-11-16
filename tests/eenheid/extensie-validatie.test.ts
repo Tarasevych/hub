@@ -41,12 +41,12 @@ export async function main(): Promise<number> {
     // 0.7.0 (zone E): uid zoals chrome-devtools-mcp, pageIdx, en browser.script (evaluate_script)
     ['browser.click', { uid: '12_k3x9a' }], ['browser.hover', { uid: '0_a' }], ['browser.type', { uid: '3_b', text: 'x' }], ['browser.select', { uid: '4_c', option: 'Ja' }],
     ['browser.fill_form', { elements: [{ uid: '1_a', value: 'x' }] }], ['browser.pages', { action: 'select', pageIdx: 0 }],
-    ['browser.script', { expression: 'document.title' }], ['browser.script', { expression: '(() => 1)()' }],
+    ['browser.script', { expression: 'document.title' }], ['browser.lokale_ai', { modus: 'summarizer', ticket: 'a'.repeat(43), tekens: 12, doel: 'uk' }], ['browser.script', { expression: '(() => 1)()' }],
   ];
   const goedFout = goed.filter(([t, p]) => !v(t, p).ok);
   check(`goede invoer: alle ${goed.length} geldige oproepen worden aanvaard`, goedFout.length === 0, goedFout.map(([t, p]) => `${t} ${JSON.stringify(p)} → ${JSON.stringify(v(t, p))}`).join(' | ').slice(0, 400));
   check('elk type uit ALLOWED_COMMANDS heeft een schema en minstens één geldige oproep in de tabel',
-    ALLOWED_COMMANDS.every((t: string) => goed.some(([g]) => g === t)) && ALLOWED_COMMANDS.length === 22, ALLOWED_COMMANDS.filter((t: string) => !goed.some(([g]) => g === t)).join(','));
+    ALLOWED_COMMANDS.every((t: string) => goed.some(([g]) => g === t)) && ALLOWED_COMMANDS.length === 23, ALLOWED_COMMANDS.filter((t: string) => !goed.some(([g]) => g === t)).join(','));
 
   // Oproepen zoals de MCP-client ze doet (aliasnamen van chrome-devtools-mcp), omgezet zoals de server dat doet.
   const TOOL: Record<string, string> = { browser_list_tabs: 'browser.tabs', browser_pages: 'browser.pages', browser_open: 'browser.navigate', browser_history: 'browser.history',

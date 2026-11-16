@@ -13,6 +13,7 @@
 // Alle queries lopen via de app-rol (mijnruimte_app, strikte RLS) met app.user_id = de betrokken gebruiker.
 import { appRolActief, getPool } from '../server/platform/pg';
 import { huidigeContext } from '../server/platform/context';
+import { lokaleAiVoorExtensie } from './extensie-beleid';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
@@ -37,6 +38,8 @@ export const TYPE_CAPABILITY: Readonly<Record<string, Capability>> = Object.free
   'browser.wait': 'browser.read', 'browser.console': 'browser.read', 'browser.network': 'browser.read', 'browser.self_test': 'browser.read',
   // 0.5 (0072): prestaties/beveiliging/DOM-structuur van de open pagina, zonder waarden van velden, cookies of querystrings.
   'browser.audit': 'browser.read',
+  // LAI-CON-001: ingebouwde AI van Chrome op het apparaat van de gebruiker; leest geen pagina, rekent alleen (cap browser.read).
+  'browser.lokale_ai': 'browser.read',
   'browser.navigate': 'browser.navigate', 'browser.history': 'browser.navigate', 'browser.pages': 'browser.navigate',
   'browser.invoke': 'browser.interact', 'browser.click': 'browser.interact', 'browser.type': 'browser.interact', 'browser.select': 'browser.interact',
   'browser.key': 'browser.interact', 'browser.hover': 'browser.interact', 'browser.fill_form': 'browser.interact',
@@ -273,9 +276,11 @@ async function bumpEpoch(q: Q, userId: string): Promise<number> {
 /** Duw de actuele toestemmingen naar de verbonden agents van de gebruiker (na elke wijziging). */
 export async function pushSettings(userId: string, agentIds?: string[]): Promise<void> {
   const ids = agentIds ?? (await alsGebruiker(userId, async (q) => (await q('SELECT id FROM app.agents WHERE user_id = $1 AND revoked_at IS NULL', [userId])).rows.map((r) => r.id as string)));
+  // 0287 (LAI-CON-001): beleid van de beheerder voor de lokale AI gaat mee (extensie ≥ 0.9.6 leest het; andere agents negeren het veld).
+  const lokaleAi = await lokaleAiVoorExtensie(userId);
   for (const id of ids) {
     const eff = await effectiveCaps(userId, id);
-    pusher.push(userId, id, { t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked });
+    pusher.push(userId, id, { t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked, ...(lokaleAi ? { lokaleAi } : {}) });
   }
 }
 

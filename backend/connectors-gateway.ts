@@ -10,7 +10,8 @@
 //                     {t:'status', staat, gid, exp, lokaal, lokaalVerbonden, version}           extensie ≥ 0.5, bij elke wijziging
 //                     {t:'vergrendel-verzoek', gid, reden}                                      gebruiker trok in de extensie in (geen passkey nodig)
 //   server -> agent:  {t:'ready', agentId, epoch}
-//                     {t:'settings', epoch, caps, blocked}         na verbinden en na elke wijziging van toestemmingen
+//                     {t:'settings', epoch, caps, blocked, lokaleAi?}  na verbinden en na elke wijziging van toestemmingen
+//                                                                  (lokaleAi = beleid van de beheerder voor de lokale AI, 0287; alleen naar de extensie)
 //                     {t:'cmd', id, type, params, scope, exp, sig}  sig = HMAC (zie connectors-crypto) als de agent een opdrachtsleutel heeft
 //                     {t:'stop', detach:true}                      noodstop: alles loslaten, debugger los, buffers leeg
 //                     {t:'ping'}
@@ -30,6 +31,8 @@ import * as store from './connectors-opslag';
 import { huidigeNamens } from './mcp-namens';
 import * as grants from './ai-toestemmingen';
 import * as ext from './extensie-ontgrendeling';
+import { lokaleAiVoorExtensie } from './extensie-beleid';
+import { bewaarVluchtig } from './apps-overdracht';
 import { VOORAUTH, voorAuthToelaten, zetBerichtGrens } from './ws-voorauth';
 import { jsonbVeilig, knipTekst, tekstVeilig } from '../server/platform/json-veilig';
 /** SEC-002 (toets-g10i №1): resultaat van een agent zó dat jsonb het altijd aanneemt (eenzame surrogaten/U+0000 → U+FFFD). */
@@ -40,6 +43,7 @@ export const COMMAND_TYPES = ['fs.read', 'fs.list', 'fs.stat', 'fs.search', 'fs.
   'browser.screenshot', 'browser.tabs', 'browser.history', 'browser.scroll', 'browser.wait', 'browser.select', 'browser.key', 'browser.deep_diagnostics',
   'browser.console', 'browser.network', 'browser.hover', 'browser.fill_form', 'browser.pages', 'browser.self_test', 'browser.audit',
   'browser.script', // 0110 (zone E): evaluate_script via de debugger, alleen technisch slot
+  'browser.lokale_ai', // LAI-CON-001: ingebouwde AI van Chrome; tekst via een eenmalig ticket (apps-overdracht), nooit in params
   'apps.deploy', 'apps.status', 'apps.list', 'apps.logs', 'apps.versions', 'apps.rollback', 'apps.control',
   'apps.route', 'apps.secret.list', 'apps.secret.set', 'apps.secret.delete'] as const;
 export type CommandType = typeof COMMAND_TYPES[number];
@@ -295,7 +299,9 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
       await store.setAgentStatus(agentId, 'connected', caps, typeof msg.version === 'string' ? msg.version : undefined);
       const eff = await grants.effectiveCaps(agent.user_id, agent.id).catch(() => ({ epoch: 0, blocked: false, caps: [] }));
       ws.send(JSON.stringify({ t: 'ready', agentId, epoch: eff.epoch }));
-      ws.send(JSON.stringify({ t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked }));
+      // 0287 (LAI-CON-001): beleid voor de lokale AI alleen naar de browserextensie; bij een DB-fout weggelaten (extensie houdt haar laatste stand).
+      const lokaleAi = agent.platform === 'browser' ? await lokaleAiVoorExtensie(agent.user_id) : null;
+      ws.send(JSON.stringify({ t: 'settings', type: 'settings', epoch: eff.epoch, caps: eff.caps, blocked: eff.blocked, ...(lokaleAi ? { lokaleAi } : {}) }));
       // 0111: `sessie` = browsersessie-id van de extensie ≥ 0.7.0 (alleen om korte termijnen na een herstart van de browser te BEËINDIGEN).
       ext.bijVerbonden(agentId, agent.user_id, agent.platform ?? null, nieuweVersie || agent.agent_version || '', msg.sessie);
       // Een lopende ontgrendeling opnieuw duwen (de extensie verliest haar bij een herstart van de browser niet, wel bij een nieuwe verbinding).
@@ -327,6 +333,14 @@ export function onConnection(ws: WebSocket, voorAuthVrij: () => void = () => und
     if ((msg?.t === 'term.out' || msg?.t === 'term.exit' || msg?.t === 'result') && terminalHooks?.vanAgent(agentId, msg)) return;
     // SEC-002 http-rand-03: alleen een echt opdracht-id (uuid) gaat naar de database; iets anders gaf 22P02 en liet het proces vallen.
     if (msg?.t === 'result' && store.isOpdrachtId(msg.id)) {
+      // LAI-CON-001: een resultaat met data.vluchtig (alleen browser_local_ai) komt NOOIT met inhoud in de database. Verwachtte de
+      // connector dit ticket van DEZE agent, dan in het geheugen (bewaarVluchtig); anders (te laat, verlopen, andere agent) weg.
+      // In de database blijft alleen metadata (op het apparaat, aantal tekens, of het bewaard werd).
+      const vl = msg.ok && msg.data && typeof msg.data === 'object' ? (msg.data as { vluchtig?: unknown; tekst?: unknown }) : null;
+      if (vl && 'vluchtig' in vl) {
+        const bewaard = typeof vl.vluchtig === 'string' && bewaarVluchtig(vl.vluchtig, agentId, msg.data);
+        msg.data = { opApparaat: true, vluchtig: true, bewaard, tekens: typeof vl.tekst === 'string' ? vl.tekst.length : 0 };
+      }
       // Alleen een opdracht van DEZE gebruiker, naar DEZE agent en in stand 'sent' wordt afgesloten (audit M3).
       await store.transitionCommand(
         msg.id, ['sent'], msg.ok ? 'succeeded' : 'failed',

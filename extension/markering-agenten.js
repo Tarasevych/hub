@@ -78,6 +78,7 @@ export const AGENT_NAAM = Object.freeze({
 export const MARKERING_ACTIES = Object.freeze({
   'browser.snapshot': ['читає сторінку', 'leest de pagina'],
   'browser.audit': ['читає сторінку', 'leest de pagina'],
+  'browser.lokale_ai': ['рахує локальним ШІ', 'rekent met lokale AI'],
   'browser.diagnostics': ['читає діагностику', 'leest de diagnose'],
   'browser.console': ['читає діагностику', 'leest de diagnose'],
   'browser.network': ['читає запити', 'leest de verzoeken'],

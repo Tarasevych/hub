@@ -18,11 +18,18 @@
     const c = { ...cfg, multimodaal: false, tabTekst: false, autoDownload: false };
     // Let op: `doel` is in deze berichten het ADRES ('offscreen'); talen heten vanTaal/naarTaal.
     if (m.modus === 'translator' && m.naarTaal) c.translator = { bron: m.vanTaal || 'auto', doel: m.naarTaal };
+    // 0.9.6 (PR #117): modus 'prompt' — systeeminstructie en JSON-schema van DEZE aanvraag in plaats van die uit de instellingen.
+    // De achtergrond controleerde al (lengte, geldig JSON); hier alleen nog het type.
+    if (m.modus === 'prompt' && (typeof m.systeem === 'string' || typeof m.schema === 'string')) {
+      c.prompt = { ...cfg.prompt, ...(typeof m.systeem === 'string' ? { systeem: m.systeem.slice(0, 2000) } : {}), ...(typeof m.schema === 'string' ? { schema: m.schema.slice(0, 8000) } : {}) };
+    }
     const ab = new AbortController();
     if (m.id) lopend.set(m.id, ab);
     const tm = setTimeout(() => ab.abort(), Math.min(Number(m.limietMs) || 120000, 300000));
     try {
-      const r = await L.voer(m.modus, String(m.tekst || '').slice(0, 20000), c, { signal: ab.signal, magDownloaden: false });
+      const r = await L.voer(m.modus, String(m.tekst || '').slice(0, 20000), c, { signal: ab.signal, magDownloaden: false, rauw: m.modus === 'prompt' && m.rauw === true });
+      // Elke aanvraag krijgt een eigen Prompt-sessie; hier loopt geen gesprek door → meteen vrijgeven (anders blijft het geheugen bezet).
+      if (r.extra && r.extra.sessie && typeof r.extra.sessie.destroy === 'function') { try { r.extra.sessie.destroy(); } catch { /* al weg */ } }
       return { ok: true, tekst: String(r.tekst || ''), notities: r.notities || [], ...(r.extra && r.extra.correcties ? { correcties: r.extra.correcties } : {}) };
     } catch (e) {
       return { ok: false, reason: (e && (e.code || e.name)) || 'FOUT', detail: L.foutTekst(e) };

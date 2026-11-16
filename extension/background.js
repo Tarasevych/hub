@@ -443,7 +443,10 @@ async function lokaleAiKeuze() {
   // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
   if (aan) laiMeetAls();
   // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
-  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+  // 0.9.6 (LAI-CON-001): beleid van de beheerder alleen als het UIT staat (reden + wie + wanneer); aan = geen veld (status ongewijzigd).
+  const b = laiBeleid();
+  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}),
+    ...(b && !b.aan ? { beleid: { aan: false, reden: b.reden, door: b.door, op: b.op } } : {}) };
 }
 // ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
 // Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
@@ -467,8 +470,10 @@ const LAI_REDEN_RANG = ['klaar', 'model-ontbreekt', 'niet-hier'];
  * Zuiver. k = lokaleAiKeuze() ({aan, apis[], stand?}), siteToegang = «!»-schakelaar. → {reden?, redenen?}; zonder meting geen reden
  * (de site meet dan zelf of toont «перевіряємо»). Volgorde: uit gaat voor site-uit, site-uit voor de stand van het model.
  */
-function laiRedenen(k, siteToegang) {
+function laiRedenen(k, siteToegang, beleid = null) {
   if (!k || typeof k !== 'object') return {};
+  // 0.9.6 (LAI-CON-001): de beheerder zette het uit — gaat vóór alles; de site toont reden, wie en wanneer (nooit meer dan dat).
+  if (beleid && beleid.aan === false) return { reden: 'beleid-uit', beleid: { reden: beleid.reden, door: beleid.door, op: beleid.op } };
   if (k.aan === false) return { reden: 'uit' };
   const apis = Array.isArray(k.apis) ? k.apis : [];
   const stand = k.stand && typeof k.stand === 'object' ? k.stand : null;
@@ -481,6 +486,25 @@ function laiRedenen(k, siteToegang) {
   if (!stand) return {};
   const beste = LAI_REDEN_RANG.find((r) => Object.values(redenen).includes(r));
   return { ...(beste ? { reden: beste } : { reden: 'uit' }), redenen };
+}
+/**
+ * 0.9.6 (LAI-CON-001): beleid van de beheerder voor de lokale AI, uit het settings-bericht van de server (migratie 0287). Zuiver filter:
+ * alleen {aan, reden ≤ 300, door ≤ 200, op}; iets anders → null (= geen bericht van de server, dus niets beperkt).
+ */
+function laiBeleidFilter(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v) || typeof v.aan !== 'boolean') return null;
+  if (v.aan) return { aan: true, reden: '', door: null, op: null };
+  return { aan: false, reden: String(v.reden || '').slice(0, 300), door: typeof v.door === 'string' && v.door ? v.door.slice(0, 200) : null, op: Number.isFinite(v.op) ? v.op : null };
+}
+/** Geldend beleid: één gebruiker per extensie; zegt één slot «uit», dan is het uit (strengste wint). */
+function laiBeleid() {
+  let aan = null;
+  for (const r of RUIMTES) {
+    const b = sloten[r] && sloten[r].settings ? laiBeleidFilter(sloten[r].settings.lokaleAi) : null;
+    if (b && !b.aan) return b;
+    if (b) aan = b;
+  }
+  return aan;
 }
 async function meetLokaleAi() {
   // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
@@ -794,7 +818,11 @@ async function handle(r, socket, raw) {
   if (msg.t === 'ping') { socket.send(pong(r)); return; }
   if (msg.t === 'settings') {
     if (typeof msg.epoch === 'number' && msg.epoch >= s.settings.epoch) {
-      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true };
+      // 0.9.6: lokaleAi = beleid van de beheerder (0287); ontbreekt het veld (oude server, DB-fout), dan blijft de vorige stand staan.
+      const lai = laiBeleidFilter(msg.lokaleAi);
+      const vorigeLai = s.settings && s.settings.lokaleAi ? s.settings.lokaleAi : null;
+      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true, ...(lai || vorigeLai ? { lokaleAi: lai || vorigeLai } : {}) };
+      if (JSON.stringify(lai) !== JSON.stringify(vorigeLai) && lai) void statusWijziging();
       await sessie.set({ [K.settings(r)]: s.settings });
     }
     return;
@@ -916,6 +944,11 @@ async function guarded(r, msg, bron) {
   // 0.9.5 (EXTUI-001): адресу сайту ШІ можна лише читати — не відкривати, не переходити туди (дзеркало перевірки на сервері).
   if (typeof params.url === 'string' && isAiSiteUrl(params.url) && !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.');
   if (type === 'browser.self_test') return selfTest(r);
+  // 0.9.6 (LAI-CON-001): ingebouwde AI van Chrome — geen tabblad nodig; alleen van de server (ondertekend), nooit van de lokale agent.
+  if (type === 'browser.lokale_ai') {
+    if (bron !== 'ws') throw new Error('EXTENSIE_LOKAAL: the local agent cannot use the built-in AI through the extension');
+    return lokaleAiVoorAgent(r, st, params);
+  }
   // Profiel en account van de kandidaten VERS bij de brug ophalen: altijd voor lijstopdrachten, anders alleen voor wie onbekend is.
   await verversProfielen(inBereik, lijstOpdracht);
   if (type === 'browser.tabs' || (type === 'browser.pages' && params.action === 'new') || type === 'browser.navigate') return run(r, type, params, null, inBereik, tabOk, msg);
@@ -1656,8 +1689,91 @@ async function naarOffscreen(bericht) {
   return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
 }
 const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+/**
+ * 0.9.6 (LAI-CON-001): browser_local_ai van een AI-agent via de connector (ondertekende opdracht van DIT slot). De tekst staat niet
+ * in de opdracht: de extensie haalt hem één keer op met het eigen token (POST /api/owner/agents/overdracht, soort 'lokale-ai').
+ * Volgorde: beleid van de beheerder → hoofdschakelaar → functie aan → limieten → ticket → offscreen.html. Nooit een modeldownload.
+ */
+/** Vaste uitleg per foutcode van offscreen.html voor de AI (Engels: de AI leest het), zonder tekst van de gebruiker. */
+const LAI_AGENT_UITLEG = Object.freeze({
+  MODEL_NIET_GELADEN: 'the model is not downloaded yet; the user downloads it with a click in the extension settings, this tool never does',
+  NIET_BESCHIKBAAR: 'this function is not available in this Chrome or on this computer',
+  NotSupportedError: 'this language or combination of options is not supported by the model',
+  QuotaExceededError: 'the text is too long for the model; send a shorter text',
+  AbortError: 'stopped after 120 seconds',
+  ONTBREEKT: 'this Chrome does not have this function (flag or newer Chrome needed)',
+  API_UIT: 'the user switched this function off in the extension settings',
+  UIT: 'the user switched the built-in AI off in the extension settings',
+  LEEG: 'empty text', MODUS: 'unknown function',
+});
+async function lokaleAiVoorAgent(r, st, params) {
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) throw new Error(`EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.door ? ` (${beleid.door})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.reden}". Tell the user; do not retry.`);
+  const inst = await lokaleAiInstellingen();
+  if (inst.aan === false) throw new Error('EXTENSIE_LOKALE_AI_UIT: the user switched the built-in AI off in the extension settings («Вбудований ШІ Chrome»). Tell the user; do not retry.');
+  if (inst.apis && typeof inst.apis === 'object' && inst.apis[params.modus] === false) throw new Error(`EXTENSIE_LOKALE_AI_UIT: the user switched the function "${params.modus}" off in the extension settings. Tell the user; do not retry.`);
+  const sleutel = `agent:${r}`;
+  const nu = Date.now();
+  const lijst = (lokaleAiTeller.get(sleutel) || []).filter((x) => nu - x < 60_000);
+  if (lijst.length >= 20) throw new Error('EXTENSIE_LOKALE_AI_TE_VEEL: at most 20 requests per minute. Wait a minute.');
+  if (lokaleAiLopend.size >= 2) throw new Error('EXTENSIE_LOKALE_AI_BEZIG: two requests are already running on this computer. Try again in a moment.');
+  lijst.push(nu); lokaleAiTeller.set(sleutel, lijst);
+  const id = `${nu}-${Math.random().toString(36).slice(2)}`;
+  lokaleAiLopend.add(id);
+  try {
+    let tekst = '';
+    try {
+      const res = await fetch(`${st.server}/api/owner/agents/overdracht`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.agentToken}` }, credentials: 'omit', cache: 'no-store',
+        body: JSON.stringify({ ticket: params.ticket }),
+      });
+      const j = res.ok ? await res.json() : null;
+      tekst = j && j.soort === 'lokale-ai' && j.payload && typeof j.payload.tekst === 'string' ? j.payload.tekst.slice(0, 20000) : '';
+    } catch { tekst = ''; }
+    if (!tekst) throw new Error('EXTENSIE_LOKALE_AI_TICKET: the text could not be fetched (the one-time ticket expired or was already used). Call the tool again.');
+    const uit = await naarOffscreen({ op: 'lokale-ai-voer', id, modus: params.modus, tekst, vanTaal: params.bron, naarTaal: params.doel, limietMs: 120000 });
+    if (!uit || uit.ok !== true) {
+      const reden = uit && typeof uit.reason === 'string' ? uit.reason.slice(0, 60) : 'FOUT';
+      // Review PR #137: nooit uit.detail doorgeven (een foutmelding van het model kan stukken tekst bevatten, en de fout komt in de
+      // database); alleen de code plus een vaste uitleg.
+      throw new Error(`EXTENSIE_LOKALE_AI: ${/^[A-Za-z_]{1,40}$/.test(reden) ? reden : 'FOUT'}${LAI_AGENT_UITLEG[reden] ? ` (${LAI_AGENT_UITLEG[reden]})` : ''}`);
+    }
+    // vluchtig = het ticket: de server bewaart dit resultaat dan alleen in het geheugen (nooit in de opdrachtgeschiedenis).
+    return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true, vluchtig: params.ticket };
+  } finally { lokaleAiLopend.delete(id); }
+}
+
+/**
+ * 0.9.6 (PR #117, zuiver): extra velden van LOKALE_AI voor modus 'prompt'. rauw = true/false; schema = JSON Schema als tekst of object
+ * (≤ 8000 tekens, moet een JSON-object zijn); systeem = platte tekst ≤ 2000 tekens zonder stuurtekens. Bij een andere modus genegeerd.
+ */
+function laiPromptExtra(modus, message) {
+  if (modus !== 'prompt') return { ok: true, velden: {} };
+  const velden = {};
+  if (message.rauw !== undefined) { if (typeof message.rauw !== 'boolean') return { ok: false, veld: 'rauw' }; if (message.rauw) velden.rauw = true; }
+  if (message.schema !== undefined && message.schema !== null) {
+    let s = '';
+    try { s = typeof message.schema === 'string' ? message.schema : JSON.stringify(message.schema); } catch { return { ok: false, veld: 'schema' }; }
+    if (typeof s !== 'string' || !s || s.length > 8000) return { ok: false, veld: 'schema' };
+    let o = null; try { o = JSON.parse(s); } catch { return { ok: false, veld: 'schema' }; }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, veld: 'schema' };
+    velden.schema = s;
+  }
+  if (message.systeem !== undefined && message.systeem !== null) {
+    if (typeof message.systeem !== 'string' || message.systeem.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(message.systeem)) return { ok: false, veld: 'systeem' };
+    if (message.systeem.trim()) velden.systeem = message.systeem;
+  }
+  // rauw = de aanvraag staat op zichzelf: het schema en de systeeminstructie uit de INSTELLINGEN van de gebruiker (bedoeld voor zijn
+  // eigen zijpaneel) gelden dan niet; ontbreken ze in de aanvraag, dan gaat er een lege waarde mee die ze uitzet.
+  if (velden.rauw) { if (velden.schema === undefined) velden.schema = ''; if (velden.systeem === undefined) velden.systeem = ''; }
+  return { ok: true, velden };
+}
+
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
+  // 0.9.6 (LAI-CON-001): beheerder zette het uit → weigeren MET reden en wie (de site toont dat; nooit stil weigeren).
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) return { ok: false, reason: 'BELEID_UIT', detail: beleid.reden, door: beleid.door, op: beleid.op };
   if (inst.aan === false) return { ok: false, reason: 'UIT' };
   if (inst.siteToegang !== true) return { ok: false, reason: 'SITE_TOEGANG_UIT' };
   if (message.type === 'LOKALE_AI_STAND') return naarOffscreen({ op: 'lokale-ai-stand' });
@@ -1666,6 +1782,9 @@ async function lokaleAiVoorSite(message, origin) {
   const tekst = typeof message.tekst === 'string' ? message.tekst : '';
   if (!tekst.trim()) return { ok: false, reason: 'LEEG' };
   if (tekst.length > 20000) return { ok: false, reason: 'TE_LANG', max: 20000 };
+  // 0.9.6 (PR #117): alleen bij modus 'prompt' — rauw (geen terugvertaling), schema (JSON Schema) en systeem (systeeminstructie).
+  const promptExtra = laiPromptExtra(modus, message);
+  if (!promptExtra.ok) return { ok: false, reason: 'PARAMS', detail: promptExtra.veld };
   const nu = Date.now();
   const lijst = (lokaleAiTeller.get(origin) || []).filter((x) => nu - x < 60_000);
   if (lijst.length >= 20) return { ok: false, reason: 'TE_VEEL' };
@@ -1675,7 +1794,7 @@ async function lokaleAiVoorSite(message, origin) {
   lokaleAiLopend.add(id);
   try {
     const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
-    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000, ...promptExtra.velden });
   } catch (e) {
     return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
   } finally { lokaleAiLopend.delete(id); }
@@ -1700,7 +1819,8 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
         diagOptIn: s.diagOptIn, ...vt, lokaleAi: await (async () => {
           const site = (await lokaleAiInstellingen()).siteToegang === true;
-          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, ...laiRedenen(vt.lokaleAi, site) };
+          // promptRauw (0.9.6): LOKALE_AI modus 'prompt' kent rauw / schema / systeem per aanvraag (de site maakt het daarvan afhankelijk).
+          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, promptRauw: true, ...laiRedenen(vt.lokaleAi, site, laiBeleid()) };
         })() });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }

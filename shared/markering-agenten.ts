@@ -93,6 +93,7 @@ export type Tweetalig = readonly [string, string];
 export const MARKERING_ACTIES: Readonly<Record<string, Tweetalig>> = Object.freeze({
   'browser.snapshot': ['читає сторінку', 'leest de pagina'],
   'browser.audit': ['читає сторінку', 'leest de pagina'],
+  'browser.lokale_ai': ['рахує локальним ШІ', 'rekent met lokale AI'],
   'browser.diagnostics': ['читає діагностику', 'leest de diagnose'],
   'browser.console': ['читає діагностику', 'leest de diagnose'],
   'browser.network': ['читає запити', 'leest de verzoeken'],

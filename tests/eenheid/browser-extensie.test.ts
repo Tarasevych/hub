@@ -20,8 +20,8 @@ export async function main(): Promise<number> {
     'https://eviltarasevych.com/', 'https://u:p@mail.tarasevych.com/', 'javascript:alert(1)', 'data:text/html,x', '', 'niet-een-url', 'https://mail.tarasevych.com/' + 'a'.repeat(600)];
   check('extensie en server hanteren dezelfde adresregel (alle voorbeelden gelijk)', urls.every((u) => isOwnSiteUrl(u) === serverRegel(u)), urls.filter((u) => isOwnSiteUrl(u) !== serverRegel(u)).join(' | '));
   check('adresregel: alleen https op tarasevych.com en subdomeinen', isOwnSiteUrl(urls[0]) && isOwnSiteUrl(urls[1]) && !isOwnSiteUrl(urls[2]) && !isOwnSiteUrl(urls[3]) && !isOwnSiteUrl(urls[4]) && !isOwnSiteUrl(urls[5]) && !isOwnSiteUrl(urls[6]));
-  check('mogelijkheden: de lijst van de server = de browseropdrachten in COMMAND_TYPES = wat de extensie kent (22, sinds 0.7 met browser.script)',
-    JSON.stringify([...BROWSER_TYPES].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()) && BROWSER_TYPES.length === 22
+  check('mogelijkheden: de lijst van de server = de browseropdrachten in COMMAND_TYPES = wat de extensie kent (23, sinds 0.7 met browser.script, sinds 0.9.6 met browser.lokale_ai)',
+    JSON.stringify([...BROWSER_TYPES].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()) && BROWSER_TYPES.length === 23
     && JSON.stringify([...ALLOWED_COMMANDS].sort()) === JSON.stringify([...BROWSER_TYPES].sort()));
   check('standaarden: alleen lezen/kijken aan en automatisch; automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
     BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t) && BROWSER_AUTO_APPROVABLE.includes(t))
@@ -113,7 +113,7 @@ export async function main(): Promise<number> {
   check('manifest 0.9.2: Manifest V3, alleen tarasevych.com, exact storage/alarms/scripting/activeTab/sidePanel/webRequest/offscreen (offscreen sinds 0.9.1/0.9.2: ingebouwde AI; geen debugger, tabs/cookies/history/<all_urls>), CSP en vaste sleutel (extensie-id)',
     JSON.stringify(manifest.permissions) === '["storage","alarms","scripting","activeTab","sidePanel","webRequest","offscreen"]'
     && manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'none'; base-uri 'none'"
-    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.5'
+    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.6'
     && manifest.description.length <= 132 &&
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))

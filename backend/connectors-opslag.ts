@@ -8,7 +8,7 @@
 // Elke query filtert daarnaast zelf op user_id; RLS is de tweede laag, niet de enige.
 import { appRolActief, getPool } from '../server/platform/pg';
 import { jsonbVeilig, tekstVeilig } from '../shared/tekst-veilig';
-import { enabledTypes } from './browser-mogelijkheden';
+import { BROWSER_TYPES, enabledTypes } from './browser-mogelijkheden';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { gereserveerdeKlantNaam } from '../shared/ai-verbinding';
@@ -292,9 +292,11 @@ export async function getCommandKeyEnc(agentId: string): Promise<{ sealed: strin
 export async function setAgentPolicy(userId: string, id: string, autoApprove: string[], enabled?: string[]): Promise<boolean> {
   // `enabled` weglaten = de keuze van de gebruiker ongemoeid laten (alleen voor browseragents van belang).
   const { rowCount } = await systeem(
-    `UPDATE app.agents SET policy = COALESCE(policy, '{}'::jsonb) || jsonb_build_object('autoApprove', $3::jsonb) || CASE WHEN $4::jsonb IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('enabled', $4::jsonb) END
+    // LAI-CON-001 (review PR #137): `kent` = de typen die de gebruiker bij DEZE keuze kon zien. Een type dat hij kende en wegliet, blijft
+    // uit (ook browser.lokale_ai); alleen typen die nieuwer zijn dan de opgeslagen keuze krijgen hun standaard (BROWSER_ALTIJD_AAN).
+    `UPDATE app.agents SET policy = COALESCE(policy, '{}'::jsonb) || jsonb_build_object('autoApprove', $3::jsonb) || CASE WHEN $4::jsonb IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('enabled', $4::jsonb, 'kent', $5::jsonb) END
       WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL`,
-    [id, userId, JSON.stringify(autoApprove), enabled ? JSON.stringify(enabled) : null]);
+    [id, userId, JSON.stringify(autoApprove), enabled ? JSON.stringify(enabled) : null, JSON.stringify([...BROWSER_TYPES])]);
   return (rowCount ?? 0) > 0;
 }
 

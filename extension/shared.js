@@ -9,6 +9,7 @@ export const ALLOWED_COMMANDS = [
   'browser.console', 'browser.network', 'browser.self_test', 'browser.pages', 'browser.hover', 'browser.fill_form',
   'browser.audit', // 0.5.0
   'browser.script', // 0.7.0: evaluate_script via chrome.debugger (alleen technisch slot, pakket «diagnose», cap browser.script)
+  'browser.lokale_ai', // 0.9.6 (LAI-CON-001): ingebouwde AI van Chrome via offscreen.html; tekst via een eenmalig ticket, nooit in params
 ];
 
 /** Toetsen die de extensie mag indrukken (alleen navigatie, geen letters of sneltoetsen). */
@@ -136,6 +137,8 @@ export const TYPE_CAPABILITY = {
   // console/netwerk blijven browser.read (zoals 0.6); de rij «Консоль і мережа» van de matrix dwingt de server af.
   'browser.wait': 'browser.read', 'browser.console': 'browser.read', 'browser.network': 'browser.read', 'browser.self_test': 'browser.read',
   'browser.audit': 'browser.read', 'browser.script': 'browser.script',
+  // 0.9.6: rekent alleen op dit apparaat, leest geen pagina (zelfde cap als de server: browser.read).
+  'browser.lokale_ai': 'browser.read',
   'browser.navigate': 'browser.navigate', 'browser.history': 'browser.navigate', 'browser.pages': 'browser.navigate',
   'browser.invoke': 'browser.interact', 'browser.click': 'browser.interact', 'browser.type': 'browser.interact', 'browser.select': 'browser.interact',
   'browser.key': 'browser.interact', 'browser.hover': 'browser.interact', 'browser.fill_form': 'browser.interact',
@@ -491,6 +494,9 @@ function controleerObject(velden, v) {
 const NAAM = tekst(1, 200);
 const UID = patroon(UID_RE, 'uid uit take_snapshot (<index>_<hash>)');
 const LEEG = {};
+/** 0.9.6: functies van browser.lokale_ai (= LOKALE_AI van de site en LOKALE_AI_MODI van de server). */
+export const LOKALE_AI_MODI = Object.freeze(['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt']);
+const TAALCODE = /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/;
 /** 0.7.0: een element op naam óf uid (chrome-devtools-mcp); precies één van de twee is genoeg, minstens één verplicht. */
 const naamOfUid = (p) => (p.name === undefined && p.uid === undefined ? mis('VERPLICHT', 'name of uid ontbreekt') : null);
 const formVeld = () => (v) => {
@@ -527,6 +533,9 @@ const SCHEMA = Object.freeze({
   'browser.audit': { velden: { soort: [keuze(AUDIT_SOORTEN), false] } },
   // 0.7.0: evaluate_script — alleen de expressie; de server begrensde al (≤ 4000 tekens), hier opnieuw.
   'browser.script': { velden: { expression: [typtekst(4000), true] } },
+  // 0.9.6 (LAI-CON-001): functie + eenmalig ticket (de tekst haalt de extensie zelf op bij de server) + talen; nooit de tekst zelf.
+  'browser.lokale_ai': { velden: { modus: [keuze(LOKALE_AI_MODI), true], ticket: [patroon(/^[A-Za-z0-9_-]{40,64}$/, 'eenmalig ticket van de server'), true],
+    tekens: [getal(1, 20000, true), false], bron: [patroon(TAALCODE, 'taalcode zoals en, uk of nl'), false], doel: [patroon(TAALCODE, 'taalcode zoals en, uk of nl'), false] } },
 });
 
 /**
