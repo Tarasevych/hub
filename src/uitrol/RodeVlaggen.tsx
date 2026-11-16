@@ -5,8 +5,8 @@
 // «було → стане» як дві картки зі стрілкою, однакові безпечніші зміни згорнуто в одну групу, пояснення автора — як цитата.
 // Rode vlaggen vóór het goedkeuren: ringdiagram, tegels per soort (filter), verschilbalk per punt, voor → na als kaartjes met pijl,
 // gelijke veiligere wijzigingen samengevoegd, uitleg van de maker als citaat.
-import { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef, type KeyboardEvent } from 'react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Code2, Database, Flag, Github, HelpCircle, Info, Layers, Lightbulb, Link2, Lock, MessageSquareQuote, Package, Server, ShieldAlert, ShieldCheck, Upload, Workflow, type LucideIcon, Tag, Plus, Minus, Repeat, FileCode2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tr, type Lang, type RisicoItemUit, type VoorcontroleUit } from './types';
 
 /** Прапорці з поясненнями; для старих записів перевірки (лише рядки) — прапорці без пояснень. */
@@ -92,6 +92,16 @@ type Paar = NonNullable<RisicoItemUit['leesbaar']>['voorNa'][number];
  */
 /** 1 модуль · 2 модулі · 5 модулів. */
 const modWoord = (n: number) => { const d = n % 10, h = n % 100; return d === 1 && h !== 11 ? "модуль" : d >= 2 && d <= 4 && (h < 12 || h > 14) ? "модулі" : "модулів"; };
+/** Чому зміна модуля важлива — звичайними словами. Waarom de modulewijziging telt, in gewone woorden. */
+function modWaarom(m: { naam: string; van?: string; naar?: string; vast?: boolean }, lang: Lang): string {
+  if (m.naar && m.vast) return tr(lang,
+    `Мітка${m.van ? ` «${m.van}»` : ''} — як ярлик: автор модуля «${m.naam}» може будь-коли перевісити її на інший код, і наступне збирання тихо візьме його. Версію ${m.naar} закріплено відбитком (хешем): під нею завжди той самий код. Тому це безпечніше.`,
+    `Een label${m.van ? ` «${m.van}»` : ''} is als een etiket: de maker van «${m.naam}» kan het op andere code hangen en de volgende build neemt die stil mee. Versie ${m.naar} is vastgezet met een vingerafdruk (hash): altijd dezelfde code. Daarom veiliger.`);
+  if (m.naar) return tr(lang,
+    `Модуль «${m.naam}» підключено за міткою «${m.naar}»: її автор може непомітно змінити код. Безпечніше закріпити точну версію.`,
+    `Module «${m.naam}» hangt aan label «${m.naar}»: de maker kan de code ongemerkt wijzigen. Veiliger is een vastgezette versie.`);
+  return tr(lang, `Модуль «${m.naam}» більше не використовується в цьому процесі.`, `Module «${m.naam}» wordt in deze werkstroom niet meer gebruikt.`);
+}
 function Wissels({ lang, paren }: { lang: Lang; paren: Paar[] }) {
   const t = (x: { uk: string; nl: string } | null) => (x ? (lang === 'uk' ? x.uk : x.nl) : '');
   const modules = paren.filter((p) => p.module); const rest = paren.filter((p) => !p.module);
@@ -101,13 +111,26 @@ function Wissels({ lang, paren }: { lang: Lang; paren: Paar[] }) {
       <div className='ut-rv-mods-kop'><Lock aria-hidden='true' /><span>{allesVast
         ? tr(lang, `${modules.length} ${modWoord(modules.length)} GitHub закріплено — тихо підмінити не можна`, `${modules.length} GitHub-${modules.length === 1 ? "module" : "modules"} vastgezet — niet ongemerkt te vervangen`)
         : tr(lang, 'Готові модулі GitHub', 'Kant-en-klare GitHub-modules')}</span></div>
-      <ul>{modules.map((p, i) => { const m = p.module!; return <li key={i} title={[t(p.voor), t(p.na)].filter(Boolean).join(' → ')} data-toon={p.toon}>
-        <span className='ut-rv-mod-naam'><Github aria-hidden='true' /><code>{m.naam}</code>{p.keer && p.keer > 1 ? <em>×{p.keer}</em> : null}</span>
-        <span className='ut-rv-mod-versies'>
-          {m.van ? <span className='ut-rv-ver' data-k='van' title={tr(lang, 'Мітка: автор модуля може змінити вміст за нею', 'Label: de maker van de module kan de inhoud erachter wijzigen')}><Tag aria-hidden='true' />{m.van}</span> : <span className='ut-rv-ver' data-k='nieuw'>{tr(lang, 'новий', 'nieuw')}</span>}
-          <ArrowRight aria-hidden='true' className='ut-rv-ver-pijl' />
-          {m.naar ? <span className='ut-rv-ver' data-k={m.vast ? 'vast' : 'label'} title={m.vast ? tr(lang, 'Закріплено за точною версією: вміст не зміниться', 'Vastgezet op een exacte versie: de inhoud verandert niet') : tr(lang, 'Мітка: вміст може змінитися', 'Label: inhoud kan veranderen')}>{m.vast ? <Lock aria-hidden='true' /> : <Tag aria-hidden='true' />}{m.naar}</span> : <span className='ut-rv-ver' data-k='weg'>{tr(lang, 'прибрано', 'verwijderd')}</span>}
-        </span></li>; })}</ul>
+      <ul>{modules.map((p, i) => { const m = p.module!; return <li key={i} data-toon={p.toon}>
+        {/* Натиск розгортає рядок: що було, що стало й чому так (власник 16.11.2026). Klik klapt de regel open. */}
+        <details className='ut-rv-mod'>
+          <summary>
+            <span className='ut-rv-mod-naam'><Github aria-hidden='true' /><code>{m.naam}</code>{p.keer && p.keer > 1 ? <em title={tr(lang, `Трапляється ${p.keer} рази у файлі`, `Komt ${p.keer} keer voor in het bestand`)}>×{p.keer}</em> : null}</span>
+            <span className='ut-rv-mod-versies'>
+              {m.van ? <span className='ut-rv-ver' data-k='van'><Tag aria-hidden='true' />{m.van}</span> : <span className='ut-rv-ver' data-k='nieuw'>{tr(lang, 'новий', 'nieuw')}</span>}
+              <ArrowRight aria-hidden='true' className='ut-rv-ver-pijl' />
+              {m.naar ? <span className='ut-rv-ver' data-k={m.vast ? 'vast' : 'label'}>{m.vast ? <Lock aria-hidden='true' /> : <Tag aria-hidden='true' />}{m.naar}</span> : <span className='ut-rv-ver' data-k='weg'>{tr(lang, 'прибрано', 'verwijderd')}</span>}
+              <ChevronDown aria-hidden='true' className='ut-rv-mod-pijl' />
+            </span>
+          </summary>
+          <div className='ut-rv-mod-meer'>
+            <dl>
+              <dt>{tr(lang, 'Було', 'Was')}</dt><dd data-k='voor'>{p.voor ? t(p.voor) : tr(lang, 'модуля не було', 'module bestond niet')}</dd>
+              <dt>{tr(lang, 'Стане', 'Wordt')}</dt><dd data-k='na'>{p.na ? t(p.na) : tr(lang, 'модуль більше не використовується', 'module wordt niet meer gebruikt')}</dd>
+            </dl>
+            <p className='ut-rv-mod-waarom'><Info aria-hidden='true' /><span>{modWaarom(m, lang)}</span></p>
+          </div>
+        </details></li>; })}</ul>
     </div>}
     {rest.length > 0 && <ul className='ut-rv-rest'>{rest.map((p, i) => { const soort = !p.voor ? 'plus' : !p.na ? 'min' : 'wissel';
       const I = soort === 'plus' ? Plus : soort === 'min' ? Minus : Repeat;
@@ -147,6 +170,41 @@ function Uitleg({ it, lang }: { it: RisicoItemUit; lang: Lang }) {
   </div>;
 }
 
+/**
+ * Перемикач файлів групи (власник 16.11.2026: стовпчик назв «треба зробити краще»). Угорі — поточний файл великим шрифтом, тека й
+ * «1 з 9», стрілки вперед/назад; нижче — одна стрічка коротких назв, яку можна гортати (на телефоні пальцем), вибрана — залита.
+ * Bestandenwisselaar: huidig bestand groot met map en «1 van 9», pijlen; daaronder één scrollbare strook met korte namen.
+ */
+function Bestanden({ lang, paden, gekozen, kies }: { lang: Lang; paden: string[]; gekozen: number; kies: (i: number) => void }) {
+  const strook = useRef<HTMLDivElement>(null);
+  const n = paden.length; const pad = paden[gekozen] || '';
+  const naam = pad.split('/').pop() || pad; const map = pad.includes('/') ? pad.slice(0, pad.lastIndexOf('/')) : '';
+  const kort = (p: string) => (p.split('/').pop() || p).replace(/\.(ya?ml|json|sh|service|timer|sql)$/i, '');
+  const ext = /\.([a-z]+)$/i.exec(naam)?.[1]?.toUpperCase() || '';
+  useEffect(() => { // вибраний пункт — у видиму частину стрічки, без прокручування сторінки · gekozen tab in beeld, zonder de pagina te scrollen
+    const s = strook.current; const b = s?.children[gekozen] as HTMLElement | undefined;
+    if (s && b && typeof s.scrollTo === 'function') s.scrollTo({ left: b.offsetLeft - s.clientWidth / 2 + b.clientWidth / 2, behavior: 'smooth' });
+  }, [gekozen]);
+  const toets = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); kies((gekozen + 1) % n); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); kies((gekozen - 1 + n) % n); }
+  };
+  return <div className='ut-rv-bestanden'>
+    <div className='ut-rv-best-kop'>
+      <span className='ut-rv-best-icoon' aria-hidden='true'><FileCode2 />{ext && <em>{ext}</em>}</span>
+      <span className='ut-rv-best-naam'><b title={pad}>{naam}</b><small>{map && <><code>{map}</code><span className='ut-rv-best-scheid'> · </span></>}{tr(lang, `файл ${gekozen + 1} з ${n}`, `bestand ${gekozen + 1} van ${n}`)}</small></span>
+      <span className='ut-rv-best-nav'>
+        <button type='button' onClick={() => kies((gekozen - 1 + n) % n)} aria-label={tr(lang, 'Попередній файл', 'Vorig bestand')} title={tr(lang, 'Попередній файл групи: пояснення нижче зміниться під нього', 'Vorig bestand van de groep: de uitleg hieronder volgt mee')}><ChevronLeft aria-hidden='true' /></button>
+        <button type='button' onClick={() => kies((gekozen + 1) % n)} aria-label={tr(lang, 'Наступний файл', 'Volgend bestand')} title={tr(lang, 'Наступний файл групи: пояснення нижче зміниться під нього', 'Volgend bestand van de groep: de uitleg hieronder volgt mee')}><ChevronRight aria-hidden='true' /></button>
+      </span>
+    </div>
+    <div className='ut-rv-best-strook' role='tablist' aria-label={tr(lang, 'Файли групи', 'Bestanden van de groep')} ref={strook} onKeyDown={toets}>
+      {paden.map((p, i) => <button key={i} type='button' role='tab' aria-selected={i === gekozen} tabIndex={i === gekozen ? 0 : -1} title={p} onClick={() => kies(i)}>
+        <span className='ut-rv-best-nr'>{i + 1}</span>{kort(p)}</button>)}
+    </div>
+  </div>;
+}
+
 /** Одна картка: піктограма виду, коротке речення, шлях, шкала змін, висновок. Група = кілька однакових змін в одній картці. */
 function Kaart({ groep, lang }: { groep: RisicoItemUit[]; lang: Lang }) {
   const [open, setOpen] = useState(false); const [gekozen, setGekozen] = useState(0);
@@ -170,9 +228,7 @@ function Kaart({ groep, lang }: { groep: RisicoItemUit[]; lang: Lang }) {
       </span>
     </button>
     {open && <>
-      {groep.length > 1 && <div className='ut-rv-keuze' role='tablist' aria-label={tr(lang, 'Файли групи', 'Bestanden van de groep')}>
-        {groep.map((g, i) => <button key={i} type='button' role='tab' aria-selected={i === gekozen} onClick={() => setGekozen(i)}>{padVan(g).replace(/^[+~−]\s+/, '').split('/').pop()}</button>)}
-      </div>}
+      {groep.length > 1 && <Bestanden lang={lang} paden={groep.map((g) => padVan(g).replace(/^[+~−]\s+/, ''))} gekozen={gekozen} kies={setGekozen} />}
       <Uitleg it={it} lang={lang} />
     </>}
   </li>;
