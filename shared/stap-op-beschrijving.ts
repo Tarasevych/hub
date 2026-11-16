@@ -100,6 +100,14 @@ const PER_PAD: readonly Regel[] = [
     'З режимом «Завжди» ШІ викликає інструмент без вашого кліку.', 'In de modus «Altijd» roept de AI het hulpmiddel aan zonder uw klik.', true],
   [/\/extensie-ontgrendeling\b|\/ontgrendeling\b|\/extensie-matrix\b/, 'Відкрити або змінити доступ розширення браузера', 'Toegang van de browserextensie openen of wijzigen',
     'ШІ отримає доступ до вибраних сторінок у цьому браузері на обраний строк.', 'De AI krijgt toegang tot de gekozen pagina’s in deze browser voor de gekozen termijn.', true],
+  // ---------------------------------------------------------------- UPD-003: спільні рушії ШІ «для всіх» (MAILAI-003, #117)
+  [/\/ai-dienst-motoren\/bewaar$/, 'Зберегти спільний рушій ШІ для пошти (постачальник, адреса, модель, ключ)', 'Een gedeelde AI-motor voor mail opslaan (aanbieder, adres, model, sleutel)',
+    'Новий або змінений рушій зберігається вимкненим: якщо змінилося, куди йде текст листів, або замінено ключ, згоди користувачів скидаються.', 'Een nieuwe of gewijzigde motor wordt uitgeschakeld opgeslagen; verandert waar de tekst van berichten heen gaat of wordt de sleutel vervangen, dan vervallen de akkoorden van gebruikers.', true],
+  [/\/ai-dienst-motoren\/zet$/, (v) => v.aan === false
+    ? ['Вимкнути спільний рушій ШІ для всіх', 'Een gedeelde AI-motor voor iedereen uitzetten', 'Ніхто більше не зможе надсилати через нього текст листів; налаштування рушія лишаються.', 'Niemand kan er nog tekst van berichten via sturen; de instellingen van de motor blijven bewaard.']
+    : ['Увімкнути спільний рушій ШІ для всіх користувачів', 'Een gedeelde AI-motor voor alle gebruikers aanzetten', 'Кожен, хто погодиться, зможе надсилати через цей рушій текст своїх листів обраному постачальнику, у межах лімітів.', 'Iedereen die akkoord gaat, kan via deze motor de tekst van eigen berichten naar de gekozen aanbieder sturen, binnen de limieten.', true]],
+  [/\/ai-dienst-motoren\/verwijder$/, 'Видалити спільний рушій ШІ', 'Een gedeelde AI-motor verwijderen',
+    'Рушій і його ключ зникнуть зі сховища; користувачі, що ним користувалися, повернуться до власного вибору рушія.', 'De motor en zijn sleutel verdwijnen uit de opslag; gebruikers die hem gebruikten, vallen terug op hun eigen motorkeuze.'],
   // ---------------------------------------------------------------- STAPOP-OMSCHR-001 (15.11.2026)
   // Підключення ШІ (mcp.*\/agenten): connector-v2, старі ШІ-права, дошка.
   [/\/connector-v2\/activeer-tech$/, activeerTech],
