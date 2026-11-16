@@ -7,7 +7,7 @@ import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGeslo
 import { canonicalNavigationUrl } from "./canoniek-navigatie";
 import { techActief, useTech } from "./tech/tech-opslag";
 import { mcpIngang } from "../shared/ai-agent-bord";
-import { MCP_BASIS, OUD_GEDEELD_URL, V2_AGENTEN, agentUrl } from "../shared/connector-v2/agenten";
+import { MCP_BASIS, OUD_GEDEELD_URL, V2_AGENTEN, agentPad, agentUrl } from "../shared/connector-v2/agenten";
 import { ecosystemTabContext } from "./tab-context";
 import { DOOR_TOOLS, ESTATE, LAYERS, TOOL_HELP } from "./mcp-catalogus";
 import { ExpertMelding, RichtingBand } from "./weergave/Weergave";
@@ -857,7 +857,7 @@ export default function McpServiceView({ lang, tab }: Props) {
           </Block>
           <Block id="mcp-blok-adres" icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
             <p className="mcp-url">{MCP_BASIS}</p>
-            <p>{t(`Адреса конектора — у кожного ШІ своя: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`, `Het connectoradres is per AI: ${V2_AGENTEN.map((a) => `/${a.slug}`).join(", ")}.`)}</p>
+            <p>{t(`Адреса конектора — у кожного ШІ своя: ${V2_AGENTEN.map((a) => agentPad(a.slug)).join(", ")}.`, `Het connectoradres is per AI: ${V2_AGENTEN.map((a) => agentPad(a.slug)).join(", ")}.`)}</p>
           </Block>
           <Block
             id="mcp-blok-hosts"

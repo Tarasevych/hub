@@ -70,7 +70,7 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
   },
   {
     id: 'copilot', naam: 'Copilot',
-    kan: 'Працює з вашим простором через MCP у VS Code.',
+    kan: 'GitHub Copilot: працює з вашим простором через MCP у VS Code (власна адреса /githubcopilot).',
     toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: null,
     mcpUk: 'VS Code → команда «MCP: Add Server» → HTTP → вставте адресу конектора.',
     tokenUk: 'Токен консолі можна передати як Bearer, якщо сервер MCP у VS Code це приймає.',
@@ -133,9 +133,9 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
   },
   {
     id: 'mscopilot', naam: 'Microsoft Copilot',
-    kan: 'Працює з вашим простором через власну MCP-адресу /mscopilot як інструмент агента в Microsoft Copilot Studio (потрібен робочий обліковий запис Microsoft).',
+    kan: 'Працює з вашим простором через власну MCP-адресу /copilot як інструмент агента в Microsoft Copilot Studio (потрібен робочий обліковий запис Microsoft).',
     toegang: TOEGANG, methoden: ['mcp'], vendorUrl: 'https://copilotstudio.microsoft.com',
-    mcpUk: 'Copilot Studio → агент → Tools → Add a tool → New tool → Model Context Protocol → вставте адресу /mscopilot, автентифікація OAuth 2.0 → Dynamic discovery.',
+    mcpUk: 'Copilot Studio → агент → Tools → Add a tool → New tool → Model Context Protocol → вставте адресу /copilot, автентифікація OAuth 2.0 → Dynamic discovery.',
     tokenUk: '',
   },
 ]);

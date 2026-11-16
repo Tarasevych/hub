@@ -160,6 +160,11 @@ export function recept(slug: AgentSlug): Recept {
         ['Copilot у github.com (coding agent): Repository → Settings → Copilot → Coding agent → MCP configuration — той самий JSON з полем "url".', 'Copilot op github.com (coding agent): Repository → Settings → Copilot → Coding agent → MCP configuration — dezelfde JSON met het veld "url".'],
         KLAAR,
       ],
+      // 16.11.2026: het adres /copilot is nu van Microsoft Copilot; GitHub Copilot heeft /githubcopilot. Wie VS Code eerder koppelde, moet opnieuw.
+      grens: [
+        `Адреса GitHub Copilot тепер ${url} (раніше закінчувалась на /copilot — та адреса відтепер належить Microsoft Copilot). Якщо ви підключали VS Code раніше, додайте сервер заново кнопкою вище: старе підключення за старою адресою більше не працює.`,
+        `Het adres van GitHub Copilot is nu ${url} (vroeger eindigde het op /copilot — dat adres is voortaan van Microsoft Copilot). Koppelde u VS Code eerder, voeg de server dan opnieuw toe met de knop hierboven: de oude koppeling op het oude adres werkt niet meer.`,
+      ],
     };
     case 'gemini': return {
       slug, serverNaam: SERVER_NAAM,

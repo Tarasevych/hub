@@ -182,7 +182,10 @@ function bepaalAgentUitUrl(url, opgegeven) {
   if (opgegeven && /^[a-z0-9_-]+$/.test(opgegeven)) return opgegeven;
   try {
     const pad = new URL(url).pathname.replace(/^\/+|\/+$/g, '');
-    if (['autoclaw', 'antigravity', 'claude', 'gpt', 'codex', 'grok', 'gemini', 'copilot', 'cursor', 'windsurf', 'cline', 'devin', 'opencode', 'mscopilot'].includes(pad)) {
+    // Publiek adres ≠ interne code: /copilot is Microsoft Copilot (mscopilot), /githubcopilot is GitHub Copilot (copilot).
+    if (pad === 'copilot') return 'mscopilot';
+    if (pad === 'githubcopilot') return 'copilot';
+    if (['autoclaw', 'antigravity', 'claude', 'gpt', 'codex', 'grok', 'gemini', 'cursor', 'windsurf', 'cline', 'devin', 'opencode'].includes(pad)) {
       return pad;
     }
   } catch { /* negeer */ }

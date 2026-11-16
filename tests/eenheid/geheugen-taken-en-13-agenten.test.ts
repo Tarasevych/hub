@@ -35,7 +35,7 @@ import { maakGeheugenInGeheugenOpslag } from '../../backend/geheugen-stroom';
 import { maakBotsInGeheugenOpslag } from '../../backend/geheugen-agent-bots';
 import { maakTakenInGeheugenOpslag, pgTakenOpslag } from '../../backend/geheugen-taken';
 import { getPool } from '../../server/platform/pg';
-import { redirectPastBijAgent } from '../../shared/connector-v2/agenten';
+import { redirectPastBijAgent, agentUrl, agentUitPadNaam, slugUitPad, slugUitResource } from '../../shared/connector-v2/agenten';
 import { redirectSoort } from '../../shared/ai-verbinding';
 
 const VERWACHTE_13: readonly AgentSlug[] = [
@@ -111,7 +111,7 @@ export async function main(): Promise<number> {
   check('1e: recept() повертає індивідуальний рецепт і власну MCP-адресу для кожного з 13 агентів',
     V2_AGENTEN.every((a) => {
       const r = recept(a.slug);
-      return r.slug === a.slug && r.stappen.length >= 3 && decodeURIComponent(JSON.stringify(r)).includes(`/${a.slug}`);
+      return r.slug === a.slug && r.stappen.length >= 3 && decodeURIComponent(JSON.stringify(r)).includes(agentUrl(a.slug));
     }));
 
   check('1f: каталог ботів має 17+ профілів включно з windsurf, cline, autoclaw, devin та opencode',
@@ -128,6 +128,16 @@ export async function main(): Promise<number> {
     && !redirectPastBijAgent('mscopilot', 'https://claude.ai/api/mcp/auth_callback') && !redirectPastBijAgent('mscopilot', 'https://vscode.dev/redirect')
     && !redirectPastBijAgent('mscopilot', 'http://127.0.0.1:33418/callback') && !redirectPastBijAgent('mscopilot', 'https://consent.azure-apim.net.kwaad.example/redirect/x')
     && !redirectPastBijAgent('mscopilot', 'https://kwaad.example/?global.consent.azure-apim.net'));
+
+  // Адреса ≠ внутрішній код (рішення власника 16.11.2026): /copilot — Microsoft Copilot, /githubcopilot — GitHub Copilot.
+  check('1c5: адреса /copilot належить Microsoft Copilot (код mscopilot), /githubcopilot — GitHub Copilot (код copilot); код mscopilot сам не є адресою; старе /ai/copilot лишається за GitHub Copilot',
+    agentUrl('mscopilot') === 'https://mcp.tarasevych.com/copilot' && agentUrl('copilot') === 'https://mcp.tarasevych.com/githubcopilot'
+    && agentUitPadNaam('copilot') === 'mscopilot' && agentUitPadNaam('githubcopilot') === 'copilot' && agentUitPadNaam('mscopilot') === null && agentUitPadNaam('claude') === 'claude'
+    && slugUitPad('/copilot') === 'mscopilot' && slugUitPad('/githubcopilot/') === 'copilot' && slugUitPad('/mscopilot') === null
+    && slugUitPad('/ai/copilot') === 'copilot' && slugUitPad('/ai/mscopilot') === null && slugUitPad('/ai/githubcopilot') === null
+    && slugUitResource('https://mcp.tarasevych.com/copilot') === 'mscopilot' && slugUitResource('https://mcp.tarasevych.com/githubcopilot') === 'copilot'
+    && V2_AGENTEN.every((a) => slugUitResource(agentUrl(a.slug)) === a.slug)
+    && recept('copilot').stappen.length >= 3 && JSON.stringify(recept('mscopilot')).includes('https://mcp.tarasevych.com/copilot.'));
 
   const sql0284 = readFileSync('migrations/0284_geheugen_taken_en_13_agenten.sql', 'utf8');
   const rechtenSql = readFileSync('migrations/rechten.sql', 'utf8');

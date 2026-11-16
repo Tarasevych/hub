@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
 import { closePool, getPool } from '../../server/platform/pg';
-import { AGENT_PAD_PREFIX, agentPrmUrl, agentUrl, isOudAgentPad, oudAgentUrl, slugUitPad, slugUitResource } from '../../shared/connector-v2/agenten';
+import { AGENT_PAD_PREFIX, AGENT_PADNAMEN, V2_AGENTEN, agentPrmUrl, agentUrl, isOudAgentPad, oudAgentUrl, slugUitPad, slugUitResource } from '../../shared/connector-v2/agenten';
 import { TECH_PROFIEL_UIT, toolRuimte, toolInRuimte } from '../../shared/ai-ruimte';
 import { externSleutel, externeToolNaam } from '../../shared/mcp-klant-model';
 import { effectieveRuimte } from '../../backend/ai-ruimte-poort';
@@ -88,9 +88,12 @@ export async function main(): Promise<number> {
     /isEigenaar/.test(v2Routes) && !/technischeRuimte/.test(v2Routes));
   const start = readFileSync('server/start.ts', 'utf8');
   check('server/start.ts: de korte paden horen bij de app en het oude pad krijgt 308 (nooit 301/302)',
-    /V2_KORT = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|mscopilot\|antigravity\|autoclaw\)/.test(start)
+    /V2_KORT = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|githubcopilot\|cursor\|windsurf\|cline\|devin\|opencode\|antigravity\|autoclaw\)/.test(start)
     // De stroom (GET + text/event-stream) kent dezelfde agenten als de korte paden (vóór 16.11.2026 maar acht van de dertien).
-    && /V2_STROOM = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|cursor\|windsurf\|cline\|devin\|opencode\|mscopilot\|antigravity\|autoclaw\)/.test(start)
+    && /V2_STROOM = \/\^\\\/\(claude\|gpt\|codex\|grok\|gemini\|copilot\|githubcopilot\|cursor\|windsurf\|cline\|devin\|opencode\|antigravity\|autoclaw\)/.test(start)
+    // De routering kent PUBLIEKE padstukken: precies AGENT_PADNAMEN, en de interne code «mscopilot» is zelf geen adres.
+    && AGENT_PADNAMEN.length === V2_AGENTEN.length && new Set(AGENT_PADNAMEN).size === AGENT_PADNAMEN.length
+    && [...AGENT_PADNAMEN].sort().join('|') === 'claude|gpt|codex|grok|gemini|copilot|githubcopilot|cursor|windsurf|cline|devin|opencode|antigravity|autoclaw'.split('|').sort().join('|') && !AGENT_PADNAMEN.includes('mscopilot')
     && !/\(claude\|gpt\|grok\|gemini\|copilot\|cursor\|antigravity\|autoclaw\)/.test(start)
     && /send\(res, 308, \{ Location: naar/.test(start)
     && !/send\(res, 30[12], \{ Location: naar/.test(start));
@@ -123,10 +126,10 @@ export async function main(): Promise<number> {
   const init = async (slug: string, token: string) => json(await rpc(slug, token, { jsonrpc: '2.0', id: 3, method: 'initialize', params: { protocolVersion: '2025-06-18' } }))?.result;
 
   /** Volledige koppeling via de echte OAuth-route (autorisatie → toestemming → token), met de keuze uit het venster. */
-  async function koppel(userId: string, slug: 'claude' | 'gpt' | 'mscopilot', keuze: v2st.V2Keuze) {
+  async function koppel(userId: string, slug: 'claude' | 'gpt' | 'mscopilot' | 'copilot', keuze: v2st.V2Keuze) {
     // mscopilot (16.11.2026): het terugkeeradres van Copilot Studio is dat van Power Platform (Microsoft Learn, custom connectors).
     const redirect = slug === 'claude' ? 'https://claude.ai/api/mcp/auth_callback' : slug === 'mscopilot' ? 'https://global.consent.azure-apim.net/redirect/mijn-2druimte-5f1a2b3c' : 'http://127.0.0.1/cb';
-    const reg = json(await c.registerClient(JSON.stringify({ client_name: slug === 'gpt' ? 'ChatGPT' : slug === 'mscopilot' ? 'Microsoft Copilot Studio' : 'Claude', redirect_uris: [redirect] })));
+    const reg = json(await c.registerClient(JSON.stringify({ client_name: slug === 'gpt' ? 'ChatGPT' : slug === 'mscopilot' ? 'Microsoft Copilot Studio' : slug === 'copilot' ? 'Visual Studio Code' : 'Claude', redirect_uris: [redirect] })));
     clients.push(reg.client_id);
     const p = pkce();
     const a = await c.authorize({ response_type: 'code', client_id: reg.client_id, redirect_uri: redirect, code_challenge: p.challenge, code_challenge_method: 'S256', state: 's', resource: agentUrl(slug) });
@@ -256,9 +259,42 @@ export async function main(): Promise<number> {
     await sys.query("UPDATE app.connector_v2_rechten SET kanten = ARRAY['beheer','gebruiker'], sleutels = $2::text[] WHERE grant_id = $1",
       [lidGrant, ['v2_whoami:gebruiker', 'machine_list:gebruiker', 'machine_list:beheer', 'get_live_release:beheer']]);
     // ============================================================== veertiende agent: Microsoft Copilot (Copilot Studio), echte OAuth-weg
-    const msKort = await verzoek(poort, 'POST', '/mscopilot', JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' }));
-    const msPrm = await verzoek(poort, 'GET', '/mscopilot/.well-known/oauth-protected-resource');
-    check('POST /mscopilot is een eigen agentadres: 401 met de metadata van DEZE agent, en de metadata noemt het eigen adres',
+    // ADRESRUIL (16.11.2026, keuze van de eigenaar): /copilot = Microsoft Copilot (interne code mscopilot), /githubcopilot = GitHub
+    // Copilot (interne code copilot). De realm in het 401-antwoord toont welke agent achter een adres zit.
+    const initBericht = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' });
+    const ghKort = await verzoek(poort, 'POST', '/githubcopilot', initBericht);
+    const ghPrm = await verzoek(poort, 'GET', '/githubcopilot/.well-known/oauth-protected-resource');
+    const ghPrmStd = await verzoek(poort, 'GET', '/.well-known/oauth-protected-resource/githubcopilot');
+    const codeAlsPad = await verzoek(poort, 'POST', '/mscopilot', initBericht);
+    const oudGh = await verzoek(poort, 'POST', '/ai/copilot', initBericht);
+    const oudGhPrm = await verzoek(poort, 'GET', '/.well-known/oauth-protected-resource/ai/copilot');
+    check('adresruil: /githubcopilot is GitHub Copilot (realm mcp-copilot, resource = het nieuwe adres), de interne code /mscopilot is geen adres, en het oude /ai/copilot leidt 308 naar /githubcopilot — nooit naar Microsoft',
+      agentUrl('copilot') === 'https://mcp.tarasevych.com/githubcopilot' && agentUrl('mscopilot') === 'https://mcp.tarasevych.com/copilot'
+      && ghKort.status === 401 && ghKort.kop('www-authenticate').includes('realm="mcp-copilot"') && ghKort.kop('www-authenticate').includes(`resource_metadata="${agentPrmUrl('copilot')}"`)
+      && ghPrm.status === 200 && json(ghPrm).resource === agentUrl('copilot') && ghPrmStd.status === 200 && json(ghPrmStd).resource === agentUrl('copilot')
+      && codeAlsPad.status !== 401 && codeAlsPad.status !== 200
+      && oudGh.status === 308 && oudGh.kop('location') === '/githubcopilot'
+      && oudGhPrm.status === 308 && oudGhPrm.kop('location') === '/.well-known/oauth-protected-resource/githubcopilot',
+      `${ghKort.status} ${ghKort.kop('www-authenticate').slice(0, 90)} | ${ghPrm.status}/${ghPrmStd.status} | code als pad ${codeAlsPad.status} | ${oudGh.status} ${oudGh.kop('location')} | ${oudGhPrm.kop('location')}`);
+    // Een bestaande koppeling van GitHub Copilot (VS Code) blijft van GitHub Copilot: ze werkt op het nieuwe adres en NIET als
+    // Microsoft Copilot. VS Code dat zich opnieuw op het oude adres /copilot wil aanmelden, wordt geweigerd (terugkeeradres hoort niet bij die agent).
+    const kg = await koppel(M, 'copilot', { kanten: ['gebruiker'], sleutels: ['v2_whoami:gebruiker', 'machine_list:gebruiker'] });
+    const ghRij = (await sys.query('SELECT agent FROM app.mcp_oauth_tokens WHERE access_hash = $1', [sha256(kg.token)])).rows[0];
+    const ghLijst = (await lijst('copilot', kg.token)).map((t) => t.name);
+    const ghAlsMs = json(await rpc('mscopilot', kg.token, { jsonrpc: '2.0', id: 8, method: 'tools/list' }));
+    const vsReg = json(await c.registerClient(JSON.stringify({ client_name: 'Visual Studio Code', redirect_uris: ['https://vscode.dev/redirect'] })));
+    clients.push(vsReg.client_id);
+    const vsPk = pkce();
+    const vsOud = await c.authorize({ response_type: 'code', client_id: vsReg.client_id, redirect_uri: 'https://vscode.dev/redirect', code_challenge: vsPk.challenge, code_challenge_method: 'S256', state: 's', resource: 'https://mcp.tarasevych.com/copilot' });
+    const vsNieuw = await c.authorize({ response_type: 'code', client_id: vsReg.client_id, redirect_uri: 'https://vscode.dev/redirect', code_challenge: vsPk.challenge, code_challenge_method: 'S256', state: 's', resource: agentUrl('copilot') });
+    check('adresruil: een koppeling van GitHub Copilot staat als agent «copilot» in de database, werkt met eigen hulpmiddelen en geeft NIETS als Microsoft Copilot; VS Code op het oude adres /copilot wordt geweigerd, op /githubcopilot komt het toestemmingsvenster',
+      ghRij?.agent === 'copilot' && ghLijst.length > 0 && ghLijst.every((n) => n.includes('_copilot_')) && !(ghAlsMs?.result?.tools?.length > 0)
+      && !/consent=/.test(kopVan(vsOud as never, 'location')) && /consent=/.test(kopVan(vsNieuw as never, 'location')),
+      `${JSON.stringify(ghRij)} | ${ghLijst.slice(0, 2).join(',')} | als MS: ${JSON.stringify(ghAlsMs).slice(0, 80)} | oud: ${JSON.stringify(vsOud).slice(0, 160)}`);
+
+    const msKort = await verzoek(poort, 'POST', '/copilot', initBericht);
+    const msPrm = await verzoek(poort, 'GET', '/copilot/.well-known/oauth-protected-resource');
+    check('POST /copilot (Microsoft Copilot) is een eigen agentadres: 401 met de metadata van DEZE agent, en de metadata noemt het eigen adres',
       msKort.status === 401 && msKort.kop('www-authenticate').includes(`resource_metadata="${agentPrmUrl('mscopilot')}"`) && msKort.kop('www-authenticate').includes('realm="mcp-mscopilot"')
       && msPrm.status === 200 && json(msPrm).resource === agentUrl('mscopilot'), `${msKort.status} ${msKort.kop('www-authenticate').slice(0, 120)} | ${msPrm.status}`);
     const km = await koppel(M, 'mscopilot', { kanten: ['gebruiker'], sleutels: ['v2_whoami:gebruiker', 'machine_list:gebruiker'] });
@@ -269,7 +305,7 @@ export async function main(): Promise<number> {
       km.token.length > 20 && msRij?.agent === 'mscopilot' && msRij?.ruimte === 'prive'
       && msLijst.includes('tonen_apparaten_mscopilot_mcp_tarasevych_com_gebruiker') && msLijst.every((n) => n.includes('_mscopilot_')) && !msLijst.some((n) => n.endsWith('_beheer')),
       `${JSON.stringify(msRij)} | ${msLijst.slice(0, 4).join(',')}`);
-    check('het token van Microsoft Copilot werkt NIET op het adres van GitHub Copilot (/copilot): andere agent, geen hulpmiddelen',
+    check('het token van Microsoft Copilot werkt NIET als GitHub Copilot (/githubcopilot): andere agent, geen hulpmiddelen',
       !(msOpCopilot?.result?.tools?.length > 0), JSON.stringify(msOpCopilot).slice(0, 160));
 
     const lidLijst = (await lijst('gpt', kl.token)).map((t) => t.name);

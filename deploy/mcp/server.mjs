@@ -54,7 +54,9 @@ const DEUREN = new Map([["grok", "Grok"], ["claude", "claude"], ["chatgpt", "cha
  * deur uitkomt voor een agentadres. Alleen MCP_AGENTPADEN=deur (tests, noodgeval) laat de deur ze zelf bedienen.
  */
 const AGENTPADEN_NAAR_APP = (process.env.MCP_AGENTPADEN || "app") !== "deur";
-const AGENT_SLUGS = /^(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode|mscopilot)$/i;
+// Publieke padstukken (zelfde lijst als AGENT_PADNAMEN in shared/connector-v2/agenten.ts): /copilot is Microsoft Copilot,
+// /githubcopilot is GitHub Copilot. De deur stuurt alleen door; de app vertaalt het padstuk naar de interne agentcode.
+const AGENT_SLUGS = /^(claude|gpt|codex|grok|gemini|copilot|githubcopilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode)$/i;
 /** Het pad dat de app moet krijgen (agentslug in kleine letters), of null als dit pad van de deur zelf is. */
 function appPad(pathName) {
   if (!AGENTPADEN_NAAR_APP) return null;
