@@ -1733,58 +1733,157 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 /* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок
    проти глобального правила min-height: 44px у src/ontwerp/mobiel.css (0,3,1), а зручну площу
    дотику для пальця забезпечують прозорі зони ::after. */
-/* RUIMTE-WEERGAVE-001: «Пауза / Продовжити» і «Завершити» під перемикачем простору (той самий вигляд, що й решта меню) */
-[data-account-menu-v3] .am3-ruimte-acties {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 8px;
+/* RUIMTE-WEERGAVE-001: дії технічного сеансу («Пауза / Продовжити», «Завершити») — дві компактні піктограми ВСЕРЕДИНІ пігулки
+   «Технічний», відділені тонкою рискою; видно лише коли вкладка в технічному просторі. Підпис — спливна підказка в темі меню
+   (миша: наведення; палець: довге натискання). Специфічність (0,5,0)+ тримає круглу форму проти min-height:44px у mobiel.css.
+   NL: twee pictogramknoppen in de pil «Technisch»; uitleg in een zwevende tip (hover of lang indrukken). */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background 0.14s ease;
 }
 
-[data-account-menu-v3] .am3-ruimte-actie {
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech > .am3-seg-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech.heeft-acties {
+  flex: 1.45 1 0;
+  background: var(--am3-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-tech.heeft-acties > .am3-seg-btn.active {
+  background: transparent;
+  box-shadow: none;
+  padding-right: 4px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-acties {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 3px 0 0;
+  padding-left: 5px;
+  border-left: 1px solid var(--am3-line);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie {
+  position: relative;
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 0 12px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--am3-muted);
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+/* Зона дотику для пальця: більша за видиме коло, але не перекриває сусідню піктограму */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie::after {
+  content: '';
+  position: absolute;
+  inset: -9px -1px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:hover,
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:focus-visible {
+  background: var(--am3-surface-2);
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie:focus-visible {
+  outline: 2px solid var(--am3-accent, currentColor);
+  outline-offset: 1px;
+}
+
+/* Небезпечна дія: натяк кольором, не крик; підтвердження трохи помітніше */
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar > svg {
+  color: var(--am3-danger-icon);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tech-actie.is-gevaar.is-bevestig {
+  background: color-mix(in srgb, var(--am3-danger-icon) 20%, var(--am3-bg));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--am3-danger-icon) 55%, var(--am3-line));
+}
+
+[data-account-menu-v3] .am3-tech-tip {
+  position: absolute;
+  right: -4px;
+  bottom: calc(100% + 9px);
+  width: max-content;
+  max-width: 236px;
+  padding: 8px 11px;
   border-radius: 12px;
   border: 1px solid var(--am3-line);
   background: var(--am3-bg);
   color: var(--am3-text);
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color .18s ease, border-color .18s ease;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
 }
 
-[data-account-menu-v3] .am3-ruimte-actie svg {
-  width: 15px;
-  height: 15px;
-  flex: none;
+[data-account-menu-v3] .am3-tech-actie:focus-visible > .am3-tech-tip,
+[data-account-menu-v3] .am3-tech-tip.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
-[data-account-menu-v3] .am3-ruimte-actie:hover {
-  background: var(--am3-surface-2);
+@media (hover: hover) {
+  [data-account-menu-v3] .am3-tech-actie:hover > .am3-tech-tip {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-[data-account-menu-v3] .am3-ruimte-actie:focus-visible {
-  outline: 2px solid var(--am3-accent, currentColor);
-  outline-offset: 2px;
-}
-
-/* Небезпечна дія: натяк кольором, не крик; підтвердження трохи помітніше */
-[data-account-menu-v3] .am3-ruimte-actie.is-bevestig {
-  border-color: color-mix(in srgb, var(--am3-danger-icon) 55%, var(--am3-line));
-  background: color-mix(in srgb, var(--am3-danger-icon) 12%, var(--am3-bg));
+[data-account-menu-v3] .am3-tip-dot.is-gevaar {
+  background: var(--am3-danger-icon);
 }
 
 [data-account-menu-v3] .am3-ruimte-melding {
-  grid-column: 1 / -1;
+  display: block;
+  margin-top: 6px;
   color: var(--am3-muted, var(--am3-text));
   font-size: 0.72rem;
   line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-account-menu-v3] .am3-tech-tip,
+  [data-account-menu-v3] .am3-tech-actie,
+  [data-account-menu-v3] .am3-seg-tech {
+    transition: none !important;
+  }
 }
 
 @media (max-width: 700px) {
