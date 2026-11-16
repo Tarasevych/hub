@@ -462,13 +462,27 @@ export function WeergaveKnop({ lang }: { lang: 'uk' | 'nl' }) {
  *  beelden en de tekst (grootte, taal). Zelfde lijnstijl als lucide (24-raster, lijn 2, ronde einden), dus kleurt en schaalt mee met
  *  de andere knoppen. Uk: піктограма «зображення + літера» — зображення й текст листа. */
 function BeeldTekstIcoon() {
+  // Павло (20:28): «коли піктограма маленька, погано видно — можливо зробити кольоровою». Dus: een gekleurd fotootje (lucht, berg,
+  // zon — leest ook op 20 px als «afbeelding») en de letter A in de tekstkleur; rond de A een masker, zodat de twee niet in elkaar
+  // overlopen. Vaste kleuren voor de foto (lucht/berg/zon lezen in licht én donker), lijnen in currentColor. 20 px i.p.v. 17
+  // (.lz-weergave-icoon in beelden-voorraad.css). Masker-id per knop uniek (useId).
+  const masker = `lz-weergave-a${useId().replace(/[^\w-]/g, '')}`;
   return (
     <svg className='lz-weergave-icoon' xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
-      <rect x='2' y='3' width='12' height='11' rx='2' />
-      <path d='m2.5 12.5 3.5-3.5 4 4' />
-      <circle cx='9.5' cy='7' r='1' />
-      <path d='m13 21 4-10 4 10' />
-      <path d='M14.6 17h4.8' />
+      <defs>
+        <mask id={masker}>
+          <rect width='24' height='24' fill='white' stroke='none' />
+          <path d='M13.5 22 18 10.5 22.5 22' stroke='black' strokeWidth='5.5' />
+        </mask>
+      </defs>
+      <g mask={`url(#${masker})`}>
+        <rect x='1.5' y='2' width='15' height='13' rx='2.5' fill='#7cc4f2' stroke='none' />
+        <path d='M1.5 13 7 8l4 4 2-2 3.5 3.5V15H1.5z' fill='#34a26b' stroke='none' />
+        <circle cx='12' cy='6.2' r='1.8' fill='#f7b500' stroke='none' />
+        <rect x='1.5' y='2' width='15' height='13' rx='2.5' strokeWidth='1.6' />
+      </g>
+      <path d='M13.5 22 18 10.5 22.5 22' />
+      <path d='M15.3 17.8h5.4' />
     </svg>
   );
 }

@@ -230,8 +230,9 @@ export async function main(): Promise<number> {
     check('D nl: мітки «standaard» · «privé» · «risico», «Meer uitleg» з «dit apparaat» / «alle apparaten»',
       ['<span class="lz-beelden-merk">standaard</span>', '<span class="lz-beelden-merk">privé</span>', '!</i>risico</span>', '<summary><span>Meer uitleg</span></summary>', '<em>dit apparaat</em><span>Verborgen tot u ze zelf toont</span>', '<b>Vooraf ophalen</b><em>alle apparaten</em><span>De server haalt ze op zodra de brief binnenkomt, nog vóór het openen — de afzender ziet niet wanneer u leest</span>', '<em>dit apparaat</em><span>De afzender ziet wanneer u leest</span>'].every((x) => nlBlok.includes(x)), nlBlok);
     const wkBron = lees('src/mail/WeergaveKeuze.tsx');
-    check('D MAILBEELD-004: кнопка «Вигляд» має піктограму вмісту (зображення + літера A), а не загальні повзунки; опис і підказка називають чотири зони меню й наслідок',
-      !wkBron.includes('SlidersHorizontal') && wkBron.includes('<BeeldTekstIcoon />') && /function BeeldTekstIcoon\(\)[\s\S]*?<rect x='2' y='3' width='12' height='11' rx='2' \/>[\s\S]*?<path d='m13 21 4-10 4 10' \/>/.test(wkBron)
+    check('D MAILBEELD-004: кнопка «Вигляд» має піктограму вмісту (кольорове фото + літера A, 20 px), а не загальні повзунки; опис і підказка називають чотири зони меню й наслідок',
+      !wkBron.includes('SlidersHorizontal') && wkBron.includes('<BeeldTekstIcoon />') && /function BeeldTekstIcoon\(\)[\s\S]*?useId\(\)[\s\S]*?<mask id=\{masker\}>[\s\S]*?fill='#7cc4f2'[\s\S]*?fill='#34a26b'[\s\S]*?fill='#f7b500'[\s\S]*?<path d='M13\.5 22 18 10\.5 22\.5 22' \/>/.test(wkBron)
+      && /html body \.mail-reader-weergave > summary > svg\.lz-weergave-icoon \{\s*width: 20px;\s*height: 20px;/.test(lees('src/mail/beelden-voorraad.css'))
       && wkBron.includes("aria-label={t('Вигляд листа: зображення, читання, мова й ШІ, сховані смуги',") && wkBron.includes('Змінює лише показ, сам лист не змінюється.') && !wkBron.includes('Вигляд: ШІ-аналіз над листом'));
     check('D MAILBEELD-004: режим називається «Завантажити наперед» / «Vooraf ophalen» — старої двозначної назви «При отриманні» / «Bij ontvangst» немає ні в інтерфейсі, ні в сповіщеннях',
       !/'[^'\n]*(?:При отриманні|Bij ontvangst|при отриманні|bij ontvangst)[^'\n]*'/.test(wkBron + lees('src/mail/beelden-voorraad.ts'))
