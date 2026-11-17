@@ -41,9 +41,13 @@ export async function main(): Promise<number> {
   const rij = lees('src/ontwerp/TabsRij.tsx'), rijCss = zc(lees('src/ontwerp/tabs-rij.css')), ag = zc(lees('src/agenten/agenten.css'));
   check('3 TabsRij staat in het openbare ontwerpfundament (src/uitrol/ is technisch en wordt zonder technisch profiel niet geserveerd)', !isTechModule('src/ontwerp/TabsRij.tsx') && !isTechModule('src/ontwerp/tabs-rij.css') && isTechModule('src/uitrol/TabsRij.tsx') && lees('src/uitrol/TabsRij.tsx').includes("export { default, tabInBeeld } from '../ontwerp/TabsRij';"));
   check('3 TabsRij: eigen nav-/wrapklasse, rol (tablist|group), data-scroll-ok standaard aan, CSS meegeladen', rij.includes("navKlasse = 'ut-tabs', wrapKlasse = '', scrollOk = true, rol = 'tablist'") && rij.includes("data-scroll-ok={scrollOk ? '1' : undefined}") && rij.includes("import './tabs-rij.css';"));
-  for (const p of ['src/agenten/AgentenPagina.tsx', 'src/agenten/VerbindingenHub.tsx']) {
-    const s = lees(p);
-    check(`3 ${p}: tabrij via TabsRij (navKlasse='ag-tabs'), geen kale <nav className='ag-tabs'> meer`, s.includes("<TabsRij navKlasse='ag-tabs' wrapKlasse='ag-tabs-wrap'") && !s.includes("<nav className='ag-tabs'") && s.includes("import TabsRij from '../ontwerp/TabsRij';"));
+  {
+    const s = lees('src/agenten/VerbindingenHub.tsx');
+    check(`3 src/agenten/VerbindingenHub.tsx: tabrij via TabsRij (navKlasse='ag-tabs'), geen kale <nav className='ag-tabs'> meer`, s.includes("<TabsRij navKlasse='ag-tabs' wrapKlasse='ag-tabs-wrap'") && !s.includes("<nav className='ag-tabs'") && s.includes("import TabsRij from '../ontwerp/TabsRij';"));
+  }
+  {
+    const s = lees('src/agenten/AgentenPagina.tsx');
+    check('3 src/agenten/AgentenPagina.tsx: без горизонтальної смуги вкладок, розділи передаються до спільного MaquetteAnkerRail', !s.includes("<nav className='ag-tabs'") && !s.includes('<TabsRij') && s.includes('zetAgentAnkers({'));
   }
   check('3 agenten.css: > 700 px lopen de tabbladen om (geen scroll); --ut-* op tokens', ag.includes('@media (min-width:701px){.ag-tabs{flex-wrap:wrap;overflow-x:visible}}') && ag.includes('.ag-tabs-wrap{--ut-bg:var(--bg);--ut-line:var(--line);--ut-text:var(--text);'));
   check('3 tabs-rij.css: pijlen 44×44 op de telefoon; geen hex', rijCss.includes('@media (max-width:700px){.ut-tabs-wrap .ut-tabs-pijl{width:var(--tik-hoogte);height:var(--tik-hoogte)}}') && !HEX.test(rijCss.replace(/var\([^)]*\)/g, '')));

@@ -4,6 +4,18 @@
    Let op: deze bestanden zijn globaal; nieuwe namen krijgen het voorvoegsel mcp- en geen namen die agents-panel.css al gebruikt. */
 .mcp-estate{--mcp-warn:var(--warn);--mcp-warn-soft:color-mix(in srgb,var(--warn) 16%,transparent);--mcp-ok-soft:color-mix(in srgb,var(--good) 14%,transparent);--mcp-bad-soft:color-mix(in srgb,var(--danger) 12%,transparent);display:grid;gap:18px;width:100%;max-width:1180px;margin:0 auto;padding:22px 24px 40px;box-sizing:border-box;min-width:0;color:var(--text);background:transparent}
 .theme-dark .mcp-estate,.theme-plum-dark .mcp-estate{--mcp-ok-soft:color-mix(in srgb,var(--good) 20%,transparent);--mcp-bad-soft:color-mix(in srgb,var(--danger) 18%,transparent)}
+html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"] .ag-pagina{width:100%;max-width:none;margin-inline:0}
+html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"] .ag-pagina .ag-sectie{scroll-margin-top:24px}
+@media (min-width:961px){
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"]{--mcp-kolom:1180px;--mcp-rail:0px;max-width:none;margin:0;padding-left:max(24px,calc((100% - var(--mcp-kolom)) / 2));padding-right:max(24px,calc((100% - var(--mcp-kolom)) / 2))}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"]:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]){--mcp-rail:300px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"]:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]{--mcp-rail:104px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"][data-mq-rail-zijde="rechts"]{padding-right:max(var(--mcp-rail),calc((100% - var(--mcp-kolom)) / 2));padding-left:max(24px,min(calc((100% - var(--mcp-kolom)) / 2),calc(100% - var(--mcp-kolom) - var(--mcp-rail))))}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"][data-mq-rail-zijde="links"]{padding-left:max(var(--mcp-rail),calc((100% - var(--mcp-kolom)) / 2));padding-right:max(24px,min(calc((100% - var(--mcp-kolom)) / 2),calc(100% - var(--mcp-kolom) - var(--mcp-rail))))}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"][data-mq-rail-zijde="boven"]{padding-top:92px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"][data-mq-rail-zijde="onder"]{padding-bottom:104px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"][data-mq-rail-zijde="boven"] .ag-pagina .ag-sectie{scroll-margin-top:104px}
+}
 .mcp-estate h1,.mcp-estate h2,.mcp-estate h3,.mcp-estate p{margin:0}
 .mcp-estate h1{font-size:clamp(1.5rem,3vw,2rem);line-height:1.15;letter-spacing:-.02em;font-weight:750;color:var(--text)}
 .mcp-estate h2{font-size:1.02rem;line-height:1.3;font-weight:700;color:var(--text)}
@@ -201,4 +213,5 @@ textarea.mcp-input{min-height:96px;resize:vertical;line-height:1.45}
 }
 /* MOBIEL 21.10.2026: «Оновити» (icoon) in de kop van kaartblokken was 16×16 */
 @media (max-width:700px){.mbk-head .mcp-ghost{display:inline-grid;place-items:center;min-width:var(--tik-hoogte);min-height:var(--tik-hoogte)}}
+@media (max-width:960px){html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"] .ag-pagina .ag-sectie{scroll-margin-top:76px}html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .mcp-estate.mq-schil[data-mcp-tab="agents"]>.mq-anker-onderbalk{margin-bottom:0}}
 @media(prefers-reduced-motion:reduce){.mcp-estate *{transition:none!important}}
