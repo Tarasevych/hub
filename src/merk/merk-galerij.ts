@@ -46,7 +46,7 @@ export async function galerijBronnen(): Promise<GalerijBron[]> {
     import('../../shared/cloud-vnext-model'), import('../../shared/agenda-catalogus'), import('../../shared/notities-model'),
     import('../../shared/notities-vnext-model'),
   ]);
-  const { PROVIDERS } = await import('../../shared/provider-teken');
+  const { PROVIDERS } = await import('../../shared/aanbieder-teken');
   const paar = <T,>(lijst: readonly T[], k: (x: T) => string | undefined, n: (x: T) => string) =>
     lijst.flatMap((x) => { const s = k(x); return s ? [[s, n(x)] as const] : []; });
   return [
@@ -60,7 +60,7 @@ export async function galerijBronnen(): Promise<GalerijBron[]> {
     { bron: 'джерела нотаток', merken: paar(vnext.NOTITIE_BRONNEN, (x) => x.merk, (x) => x.naam) },
     { bron: 'способи входу', merken: [['github', 'GitHub'], ['apple', 'Apple'], ['microsoft', 'Microsoft'], ['google', 'Google'], ['telegram', 'Telegram'], ['discord', 'Discord']] },
     { bron: 'сеанси', merken: SESSIE_MERKEN.map((k) => [k, ''] as const) },
-    // PLAATS-TEKENS-001: провайдери в сповіщеннях про вхід (shared/provider-teken.ts).
+    // PLAATS-TEKENS-001: провайдери в сповіщеннях про вхід (shared/aanbieder-teken.ts).
     { bron: 'провайдери', merken: PROVIDERS.filter((p) => !p.zonderLogo).map((p) => [p.sleutel, p.naam] as const) },
   ];
 }

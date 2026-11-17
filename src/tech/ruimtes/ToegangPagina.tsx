@@ -2,11 +2,12 @@
 // de oude plekken (band «Профілі», Безпека → Сесії, згода ШІ) linken hierheen. Het gekozen tabblad blijft bewaard (localStorage).
 // AI-toegang heeft ÉÉN termijnenset (AI_TERMIJNEN).
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { Venster } from '../../platform/vensters';
 import { ruimtesApi, type Ruimte, type RuimtesToegang, type ToegangRegel } from '../ruimtes-api';
 import { AI_TERMIJNEN, RUIMTE_NAAM, TABBLADEN, WOORDEN, tabVanRegel, termijnNaam, uurMinuut, type TabId, type Taal } from './teksten';
 import { useRuimtes } from './ruimtes-opslag';
-import { openTechVenster } from '../tech-opslag';
+import { openTechVenster, techSnelkoppelingenZetten } from '../tech-opslag';
 import RuimteWissel from './RuimteWissel';
 import { foutTekst } from './StartVenster';
 import AiToegangKaart, { groepeerAi, type AiOpslaan } from './AiToegangKaart';
@@ -73,6 +74,18 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
     catch (e) { setMelding({ ok: false, tekst: `${uk ? 'Не знято' : 'Niet ingetrokken'}: ${foutTekst(String((e as Error)?.message || 'FOUT'), uk)}` }); }
     finally { setBezig(''); }
   };
+  const zetYarlykToegang = async (x: ToegangRegel) => {
+    if (!x.userId) return;
+    const nieuw = !x.snelkoppelingenToegestaan;
+    setBezig(x.id); setMelding(null);
+    try {
+      await techSnelkoppelingenZetten(x.userId, nieuw);
+      await laad();
+      setMelding({ ok: true, tekst: uk ? `Ярлики в обох частинах меню для ${x.naam} ${nieuw ? 'дозволено' : 'заборонено'}.` : `Snelkoppelingen in beide delen voor ${x.naam} ${nieuw ? 'toegestaan' : 'uitgeschakeld'}.` });
+    } catch (e) {
+      setMelding({ ok: false, tekst: `${uk ? 'Не збережено' : 'Niet opgeslagen'}: ${foutTekst(String((e as Error)?.message || 'FOUT'), uk)}` });
+    } finally { setBezig(''); }
+  };
   void AI_TERMIJNEN; void actieveAiKeuzeId;
   const s = r.status;
   const aiMag = !!s && s.actief === 'technisch' && !!s.sessie;
@@ -130,6 +143,12 @@ export default function ToegangPagina({ taal, sluit, start }: { taal: Taal; slui
                 <span className='rt-termijn'>{termijnRegel(x, taal)}{x.termijn?.eindTijd && x.termijn.modus !== 'tijd' ? ` · ${uurMinuut(x.termijn.eindTijd, taal)}` : ''}</span>
                 {x.soort === 'sessie' ? <span className={`rt-sessie-stand${x.actief ? ' is-tech' : ''}`}>{x.actief ? (uk ? 'працює' : 'actief') : (uk ? 'на паузі' : 'gepauzeerd')}</span> : null}
                 {x.ruimtes && x.soort !== 'sessie' ? <span className='rt-ruimtes'>{x.ruimtes.map((q) => RUIMTE_NAAM[q][taal]).join(' + ')}</span> : null}
+                {tab === 'mensen' && x.soort === 'persoon' && x.actief && x.userId && data.magBeheren ? (
+                  <button type='button' className={x.snelkoppelingenToegestaan ? 'is-hoofd' : ''} aria-pressed={!!x.snelkoppelingenToegestaan} disabled={bezig === x.id} data-rt-yarlyk={x.userId} onClick={() => void zetYarlykToegang(x)}>
+                    <ShieldCheck aria-hidden='true' />{' '}
+                    {x.snelkoppelingenToegestaan ? (uk ? 'Ярлики в обох частинах: дозволено' : 'Snelkoppelingen: aan') : (uk ? 'Ярлики в обох частинах: вимкнено' : 'Snelkoppelingen: uit')}
+                  </button>
+                ) : null}
               </li>
             ))}</ul>
           ) : tab !== 'eigen' ? <p className='tech-meta' data-rt-leeg='1'>{uk ? 'Тут поки нічого немає.' : 'Hier staat nog niets.'}</p> : null) : null}

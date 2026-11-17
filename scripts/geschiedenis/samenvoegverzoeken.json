@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "bron": "GitHub-lijst van samenvoegverzoeken (momentopname)",
- "momentopname": "2026-11-13",
+ "momentopname": "2026-11-17",
  "verzoeken": [
   {
    "nummer": 1,
@@ -617,7 +617,7 @@
   },
   {
    "nummer": 69,
-   "staat": "open",
+   "staat": "closed",
    "samengevoegd": "",
    "aangemaakt": "2026-11-12",
    "kop": "dependabot/npm_and_yarn/npm_and_yarn-78234950ac",
@@ -686,6 +686,699 @@
    "kop": "claude/optimistic-mayer-exvf2p",
    "basis": "voornaamst",
    "titel": "IDENTITEIT-011: план доопрацювання вигляду «Макет» центру облікового запису"
+  },
+  {
+   "nummer": 77,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-13",
+   "kop": "feature/historie-001-kroniek-20261113-191947",
+   "basis": "integratie",
+   "titel": "HISTORIE-001 · хронологія гілок із попередником і наступником, етап VII історії"
+  },
+  {
+   "nummer": 78,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-13",
+   "kop": "feature/identiteit-011-maquette-kaart-20261113-193722",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-011 · «Макет»: жива карта розвитку, межі розділів, переходи до справжніх налаштувань"
+  },
+  {
+   "nummer": 79,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-13",
+   "kop": "fix/identiteit-012-server-veiligheid-20261113-200208",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-012 · безпека сервера: 11 виправлень, знайдених під час звірки «Макета»"
+  },
+  {
+   "nummer": 80,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "feature/identiteit-013-bevestigen-teksten-20261114-031200",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-013: діалоги підтвердження й правдиві тексти (фаза 2 «Макета»)"
+  },
+  {
+   "nummer": 81,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "feature/identiteit-014-aansluiten-20261114-042516",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-014: під'єднати те, що вже працює деінде (фаза 3 «Макета»)"
+  },
+  {
+   "nummer": 82,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "feature/identiteit-015-uitrol-20261114-162503",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-015: центр облікового запису в погодженому оформленні v49 — випуск 20261114-180411 поверх 20261114-111234"
+  },
+  {
+   "nummer": 83,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "claude/dazzling-goodall-kbhb44",
+   "basis": "feature/identiteit-015-lijn-e2-20261114-164500",
+   "titel": "IDENTITEIT-015: «Код доступу … використано вперше» знову видно в дзвіночку"
+  },
+  {
+   "nummer": 84,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "claude/project-thread-gygoi0",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "KLUIS-AANMELDEN · Вхід паролем або passkey одразу розшифровує дані (міграція 0289)"
+  },
+  {
+   "nummer": 85,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "claude/project-thread-zfgzy0",
+   "basis": "integratie",
+   "titel": "TELEGRAM-002 етап 1 · захищене вікно Telegram з однаковими піктограмами"
+  },
+  {
+   "nummer": 86,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-14",
+   "kop": "feature/telegram-002-20261114-225433",
+   "basis": "feature/identiteit-015-uitrol-20261114-162503",
+   "titel": "TELEGRAM-002 · етап 1 поверх встановленої лінії: піктограма в захищеному вікні, фото в запитах; разом із KLUIS-001"
+  },
+  {
+   "nummer": 87,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "fix/ui-paneel-gebruikers-audit-20261114-184932",
+   "basis": "feature/telegram-002-20261114-225433",
+   "titel": "GEMINI-001 · Права панель якорів, портал меню облікових записів, групування користувачів, аудит та адаптивність — випуск 20261115-001744 поверх 20261114-222613"
+  },
+  {
+   "nummer": 88,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/meldingen-ecosysteem-20261115-010721",
+   "basis": "integratie",
+   "titel": "GEMINI-002 · Єдина екосистема споживчих сповіщень («застосунок у застосунку»), вбудований переглядач вкладень, змахи, ШІ-розбір та /melding"
+  },
+  {
+   "nummer": 89,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "fix/maquette-mobiel-prestatie-20261115-055004",
+   "basis": "integratie",
+   "titel": "GEMINI-003: швидкодія режиму «Макет» на смартфонах, усунення падіння пошти та миттєві переходи"
+  },
+  {
+   "nummer": 90,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-kb1y69",
+   "basis": "fix/maquette-mobiel-prestatie-20261115-055004",
+   "titel": "ZAVYSANNIA-001: зависання сайту на смартфоні під час зміни теми («Макет»)"
+  },
+  {
+   "nummer": 91,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-z43v3a",
+   "basis": "fix/maquette-mobiel-prestatie-20261115-055004",
+   "titel": "ZIJMENU-001: праве бокове меню розділів «Макета» на телефоні"
+  },
+  {
+   "nummer": 92,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-v1uhlc",
+   "basis": "fix/maquette-mobiel-prestatie-20261115-055004",
+   "titel": "ДУБЛІ-001: прибрати дублі й блоки-переходи в центрі облікового запису"
+  },
+  {
+   "nummer": 93,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-sjvsir",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "MAIL-TEKST-001: під час завантаження пошти не писати «Gmail» для всіх скриньок"
+  },
+  {
+   "nummer": 94,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-l7xga6",
+   "basis": "feature/postvak-001-uitgave-20261115-103157",
+   "titel": "MAILHOEK-001: «Поштові акаунти» — заокруглені кути без підміни після завантаження"
+  },
+  {
+   "nummer": 95,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-d8h8v1",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "PRIJ-002/003: швидкі дії рядка розгортаються з «⋮», підказка «⋮» — лише за правим кліком"
+  },
+  {
+   "nummer": 97,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/postvak-001-uitgave-20261115-103157",
+   "basis": "feature/dubli-001-uitgave-20261115-093055",
+   "titel": "POSTVAK-001: спільний випуск пошти 20261115-104817 (PR #94 + #93 + #95)"
+  },
+  {
+   "nummer": 99,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/vaard-001-vaardigheden-20261115-112700",
+   "basis": "integratie",
+   "titel": "VAARD-001: чотири навички та початковий автоматичний добір"
+  },
+  {
+   "nummer": 100,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "fix/telegram-venster-verlopen-20261115-115500",
+   "basis": "feature/postvak-001-uitgave-20261115-103157",
+   "titel": "TELEGRAM-002: виправлення «Запит застарів» у захищеному вікні Telegram"
+  },
+  {
+   "nummer": 101,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/telegram-pictogrammen-20261115-115800",
+   "basis": "fix/telegram-venster-verlopen-20261115-115500",
+   "titel": "TELEGRAM-002: піктограми — кольори за змістом, 96 у наборі, без повторів, три в ряд"
+  },
+  {
+   "nummer": 103,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/postvak-002-uitgave-20261115-115913",
+   "basis": "feature/postvak-001-uitgave-20261115-103157",
+   "titel": "POSTVAK-002 · Спільний випуск: кути «Поштових акаунтів», листи IMAP-скриньок, Telegram «Запит застарів»"
+  },
+  {
+   "nummer": 104,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/telegram-003-uitgave-20261115-121500",
+   "basis": "feature/postvak-002-uitgave-20261115-115913",
+   "titel": "TELEGRAM-003: випуск із піктограмами (кольори за змістом, 96 у наборі, без повторів, три в ряд)"
+  },
+  {
+   "nummer": 105,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/geheugen-001-20261115-125700",
+   "basis": "feature/vaard-001-vaardigheden-20261115-112700",
+   "titel": "GEHEUGEN-001: навичка пам’яті розвитку та передавання роботи"
+  },
+  {
+   "nummer": 107,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-dszkum",
+   "basis": "feature/telegram-003-uitgave-20261115-121500",
+   "titel": "ANKERS-001: окремі положення й поведінка навігації якорів «Макета» і меню сайту"
+  },
+  {
+   "nummer": 108,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-deqwzv",
+   "basis": "feature/telegram-003-uitgave-20261115-121500",
+   "titel": "CENTR-001: центр облікового запису по центру на широкому ПК"
+  },
+  {
+   "nummer": 109,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/centr-001-uitgave-20261115-132146",
+   "basis": "feature/telegram-003-uitgave-20261115-121500",
+   "titel": "CENTR-001 · випуск: центрування центру облікового запису + окрема навігація якорів (PR #108 + #107)"
+  },
+  {
+   "nummer": 110,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-deqwzv",
+   "basis": "feature/centr-001-uitgave-20261115-132146",
+   "titel": "Сторінка оновлень: колонка по центру, заокруглені картки, компактне завантаження, правильне фото автора"
+  },
+  {
+   "nummer": 111,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-2t0l91",
+   "basis": "claude/project-thread-deqwzv",
+   "titel": "TOEGANG-001: «Хто має доступ до підготовки» — вимкнення й термін справді зберігаються"
+  },
+  {
+   "nummer": 112,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-bkalrx",
+   "basis": "claude/project-thread-deqwzv",
+   "titel": "✅ Виконано (у UPD-002 20261116-031827) · ACHTERGROND-001: «Живий фон» сторінок із налаштуваннями"
+  },
+  {
+   "nummer": 113,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/upd-001-uitgave-20261115-151204",
+   "basis": "feature/centr-001-uitgave-20261115-132146",
+   "titel": "UPD-001: спільний випуск — сторінка оновлень, блок доступу до підготовки, «Макет» без зайвих підкладок, живий фон"
+  },
+  {
+   "nummer": 114,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-quj6fs",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "ANKERS-002: заокруглені блоки й одне меню якорів на сторінці «Підключення ШІ»"
+  },
+  {
+   "nummer": 115,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-2qjaa4",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "MAILDOK-001 + WB-HOEK-001: без широких смуг — пігулки гортання в пошті, піктограма налаштування столу в куті"
+  },
+  {
+   "nummer": 116,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-isvc3j",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "Пошта: правила смуг (STROOK-002), зображення «Завантажити наперед (приватно)» з новим виглядом і збереженням структури листа (MAILBEELD-001…004), миттєві сигнали Gmail (MAILPUSH-001)"
+  },
+  {
+   "nummer": 117,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-1yz0cx",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "MAILAI-002/003: рушії ШІ в пошті — вибір, локальний ШІ Chrome, спільні рушії власника, ліміти й ціни"
+  },
+  {
+   "nummer": 118,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-lv5ybj",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "MAILANKER-001: розділи пошти в меню якорів, вигляд списку — у згорнутій групі"
+  },
+  {
+   "nummer": 119,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-4dxwbj",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "RUIMTE-WEERGAVE-001: простір у вкладці ≠ пауза технічного сеансу (+ BIB-002, вже у випуску 20261116-031827)"
+  },
+  {
+   "nummer": 120,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-3g2end",
+   "basis": "claude/project-thread-quj6fs",
+   "titel": "BREEDTE-001: одна колонка 1180 px для блоків сторінок служб і блок «Підключити» піктограмами"
+  },
+  {
+   "nummer": 121,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-2varcv",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "VELD-001 + ZWEVEND-001: розмір робочого стола й спливні меню поверх вмісту"
+  },
+  {
+   "nummer": 122,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-muiwm0",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "✅ Виконано (у UPD-002 20261116-031827) · MENU-STROOK-001 + MENU-KRUISJE-001: меню облікових записів без смуги тла, простий хрестик"
+  },
+  {
+   "nummer": 123,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-0u9ig1",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "MELDINGEN-UX-001: плаваюче вікно сповіщень без стиснутих карток і однаковий перемикач «Вікно ↔ Компактно»"
+  },
+  {
+   "nummer": 124,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-zx78g5",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "ZOEK-002: поле пошуку в панелі розгортається на місці"
+  },
+  {
+   "nummer": 125,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-3ly2gu",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "ICONEN-001: третій стиль піктограм меню «У відтінку» (продовження ACCENT-001)"
+  },
+  {
+   "nummer": 126,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-5hlhx6",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "STAPOP-OMSCHR-001: вікно «Підтвердіть доступ» описує кожну дію"
+  },
+  {
+   "nummer": 127,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-9qqk48",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "EXT094-001: розширення 0.9.4 — активна вкладка більше не умова"
+  },
+  {
+   "nummer": 128,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-m17skh",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "KLEUREN-001: єдина зона «Вигляд і кольори» · één zone «Weergave en kleuren»"
+  },
+  {
+   "nummer": 129,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-qle9m8",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "AI-TERMIJN-001: термін і правила скидання доступу ШІ задає власник"
+  },
+  {
+   "nummer": 130,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-jg2pom",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "HINT-001: одна підказка в навігації якорів «Макета», лише коли видно саму піктограму"
+  },
+  {
+   "nummer": 131,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-rqzpjn",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "BLOKKEN-001: браковані блоки центру облікового запису"
+  },
+  {
+   "nummer": 132,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "claude/project-thread-nypzti",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "WOORDBREUK-001: слова не розриваються у вузьких блоках робочого столу"
+  },
+  {
+   "nummer": 133,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-15",
+   "kop": "feature/ankers-002-uitgave-20261115-193802",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "ANKERS-002 · остаточний випуск 15.11: усі сьогоднішні виправлення й новинки"
+  },
+  {
+   "nummer": 134,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "feature/upd-002-uitgave-20261115-181000",
+   "basis": "feature/upd-001-uitgave-20261115-151204",
+   "titel": "UPD-002 · Спільне оновлення: навички агентів, приймання випусків із GitHub і бот оновлень, Стрім пам’яті, 13 агентів, захист і поліпшення вигляду (20261116-031827)"
+  },
+  {
+   "nummer": 135,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-mfmj77",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "EXTUI-001: новий вигляд розділу «Розширення браузера», розширення 0.9.5 і сайти ШІ (лише читання, типово вимкнено)"
+  },
+  {
+   "nummer": 136,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-4pq3u6",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "UITROL-002: продовження встановлення з місця обриву, термінал мовою сайту, один запуск за раз"
+  },
+  {
+   "nummer": 137,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "feature/lai-con-001-20261116",
+   "basis": "claude/project-thread-mfmj77",
+   "titel": "LAI-CON-001: «Локальний ШІ» — вимкнення адміністратором лише з причиною (розширення 0.9.6, міграція 0287)"
+  },
+  {
+   "nummer": 138,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-nrb8kd",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "MELDLINK-001: посилання в сповіщеннях ведуть на дійсні сторінки"
+  },
+  {
+   "nummer": 139,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "fix/telegram-venster-adres-plaats-20261116-105000",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "TELEGRAM-004: повна адреса, місце пристрою у вікні Telegram, «Вимагати місце пристрою» для кожного способу входу"
+  },
+  {
+   "nummer": 140,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-bkalrx",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "ACHTERGROND-002: компактна панель «Живого фону» і кнопка в меню на телефоні в пошті"
+  },
+  {
+   "nummer": 141,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-5hlhx6",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "AGENTSCHEIDING-001: «Керувати Claude» змінює лише Claude, правильні назви ШІ, опис підтвердження завжди"
+  },
+  {
+   "nummer": 142,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-0u9ig1",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "MELDINGEN-UX-001: одне число на дзвіночку — те саме, що «Нові» у вибраному вигляді"
+  },
+  {
+   "nummer": 143,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-3g2end",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "BREEDTE-003: справжні знаки агентів каталогу і чотирнадцятий агент «Microsoft Copilot» (Copilot Studio, міграція 0297)"
+  },
+  {
+   "nummer": 144,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-li5kzj",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "IDENTITEIT-015 (перенесено з #83): безпекове сповіщення сервера лишається «новим» після спливного вікна"
+  },
+  {
+   "nummer": 145,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-93ylli",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "SEC-PAKKET-001: прибрати хибне «у пакеті є секрети» й посилити перевірку ключів"
+  },
+  {
+   "nummer": 146,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-a02niu",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "UNIF-ANKER-001: класичний центр облікового запису — спільне меню якорів"
+  },
+  {
+   "nummer": 147,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "feature/nat-001-20261116-184600",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "Feature/nat 001 20261116 184600 NAT-001: автовідновлення мосту Windows для VM після перезавантаження (помилка 1033)"
+  },
+  {
+   "nummer": 148,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "feature/elders-001-20261116-192500",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "Feature/elders 001 20261116 192500 ELDERS-001: дзвіночок показує запити ШІ, що чекають в іншому просторі"
+  },
+  {
+   "nummer": 149,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "claude/project-thread-oeq72b",
+   "basis": "fix/telegram-venster-adres-plaats-20261116-105000",
+   "titel": "REESTR-LOGO-001: єдиний реєстр логотипів і власний логотип користувача"
+  },
+  {
+   "nummer": 150,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-16",
+   "kop": "feature/upd-003-uitgave-20261116-211659",
+   "basis": "feature/upd-002-uitgave-20261115-181000",
+   "titel": "UPD-003: спільний випуск 23 PR поверх встановленої версії 20261116-031827"
+  },
+  {
+   "nummer": 151,
+   "staat": "closed",
+   "samengevoegd": "2026-11-17T09:45:06",
+   "aangemaakt": "2026-11-16",
+   "kop": "fix/sec-003-20261116-222239",
+   "basis": "voornaamst",
+   "titel": "SEC-003: усунення помилок сканування безпеки, політика SECURITY.md, заміна xlsx та оновлення fast-xml-parser, розбиття тестових таємниць і хроніка 2013 попереджень"
+  },
+  {
+   "nummer": 152,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "feature/lokai-001-20261117-154844",
+   "basis": "voornaamst",
+   "titel": "LOKAI-001: розширення 0.9.3 та підтримка вбудованого ШІ Chrome 157 на сайті"
+  },
+  {
+   "nummer": 153,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "feature/agenten-ankers-20261117-195520",
+   "basis": "voornaamst",
+   "titel": "GEMINI-004: спільне групове меню якорів MaquetteAnkerRail для сторінки /agenten"
+  },
+  {
+   "nummer": 154,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "claude/project-thread-t922sp",
+   "basis": "feature/upd-003-uitgave-20261116-211659",
+   "titel": "PLAATS-TEKENS-001: база знаків місць, провайдерів і мереж (герби, прапори, провайдери, VPN/Tor, виробники, passkey)"
+  },
+  {
+   "nummer": 155,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "claude/project-thread-0fs1z2",
+   "basis": "voornaamst",
+   "titel": "MELDCAT-001: єдиний реєстр усіх сповіщень сайту"
+  },
+  {
+   "nummer": 156,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "fix/ruimtes-account-meldingen-20261117-195554",
+   "basis": "voornaamst",
+   "titel": "FIX-001: перемикання акаунтів, сповіщення меню та ярлики техпрофілю"
+  },
+  {
+   "nummer": 157,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "claude/project-thread-3rc4d3",
+   "basis": "feature/lokai-001-uitgave-20261117-181000",
+   "titel": "UPD-004: об'єднання всіх незібраних розробок поверх встановленої 20261117-190154 (LOKAI-001)"
   }
  ]
 }

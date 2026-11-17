@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { landCode, plaatsTekens, type PlaatsAntwoord, type PlaatsIndex } from '../../shared/plaats-teken';
-import { providerNaamUitAsNaam, providerTeken } from '../../shared/provider-teken';
+import { providerNaamUitAsNaam, providerTeken } from '../../shared/aanbieder-teken';
 import { asnVanIp } from './asn';
 
 export type VerzoekPlaats = PlaatsAntwoord & {

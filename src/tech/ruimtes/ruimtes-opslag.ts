@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
 import { techVernieuwen } from '../tech-opslag';
-import { huidigeRuimte, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
+import { huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
 
 export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; bezig: '' | 'wisselen' | 'starten' | 'beeindigen' | 'verlengen' | 'pauzeren'; fout: string; nu: number; uitleg: string };
 let toestand: RuimtesToestand = { geladen: false, status: null, bezig: '', fout: '', nu: Date.now(), uitleg: '' };
@@ -36,7 +36,14 @@ export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const oud = toestand.status;
   // RUIMTE-WEERGAVE-001: wisselen = alleen wat dit tabblad toont; de pauze verandert niet (behalve: terug naar technisch heft ze op).
   if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } });
-  try { return await actie('wisselen', () => ruimtesApi.wisselen(naar)); } catch (e) { if (oud) zet({ status: oud }); throw e; }
+  try {
+    const s = await actie('wisselen', () => ruimtesApi.wisselen(naar));
+    meldGebruikerWissel(naar);
+    return s;
+  } catch (e) {
+    if (oud) zet({ status: oud });
+    throw e;
+  }
 }
 /** «Пауза» / «Продовжити»: de hele technische sessie van deze aanmelding (alle tabbladen, AI volgens zijn regel «bij pauze»). */
 export const pauzeer = (aan: boolean) => actie('pauzeren', () => ruimtesApi.pauzeren(aan));

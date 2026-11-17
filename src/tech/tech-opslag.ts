@@ -11,7 +11,9 @@ import type { BandKleur, BandPatroon, TechMogelijkheid, TechRol, Tekst } from '.
 
 export type TechProfiel = { userId: string; profielId: string; rollen: TechRol[]; maxMinuten: number; maxNu: number; band: { kleur: BandKleur; patroon: BandPatroon }; laatstActief: number | null;
   /** Migratie 0080: openen nieuwe tabbladen in het technische profiel? Standaard false = nieuwe tabbladen zijn gebruikerstabbladen. */
-  ervenNieuweTabbladen: boolean };
+  ervenNieuweTabbladen: boolean;
+  /** Міграція 0301: дозвіл адміністратора на розміщення технічних ярликів в обох частинах меню. */
+  snelkoppelingenToegestaan?: boolean };
 export type TechActivatie = { id: string; profielId: string; rollen: TechRol[]; mogelijkheden: TechMogelijkheid[]; reden: string; begin: number; eind: number; modus?: 'tijd' | 'tot-uitloggen' | 'tot-verlaten'; herkomst?: 'eigen' | 'geerfd' | 'gedeeld' };
 export type TechCatalogus = { rollen: Array<{ id: TechRol; naam: Tekst; kort: Tekst; plafondMinuten: number }>; kleuren: Record<BandKleur, { bg: string; fg: string; naam: Tekst }>; patronen: Record<BandPatroon, Tekst>; duren: number[] };
 /** fout: laatste statusaanvraag mislukte door netwerk/5xx — de vorige profiel/activatie blijven staan (HUB-01); null = laatste antwoord was geldig. */
@@ -136,6 +138,12 @@ export async function techBand(kleur: BandKleur, patroon: BandPatroon) { neem((a
  * AI in de privéruimte van de gebruiker er niets lezen of doen (het technische slot is het enige dat een technisch tabblad raakt).
  */
 export async function techErven(aan: boolean) { neem((await api.post('/api/owner/tech/erven', { ...techBody(), aan })).data); }
+export async function techSnelkoppelingenZetten(userId: string, toegestaan: boolean) {
+  const resp = await api.post('/api/owner/tech/snelkoppelingen', { ...techBody(), userId, toegestaan });
+  await techVernieuwen();
+  return resp.data as { profiel?: TechProfiel; profielen?: unknown[] };
+}
+export const techYarlykyToegestaan = (t: TechStatus = toestand) => !!t.profiel && t.profiel.snelkoppelingenToegestaan === true;
 export const techErfNieuweTabbladen = (t: TechStatus = toestand) => t.profiel?.ervenNieuweTabbladen === true;
 export const techActief = (t: TechStatus = toestand) => !!t.activatie && t.activatie.eind > Date.now() + t.scheef;
 /** Technische ruimte van dit tabblad, ook net na F5 (ORCH-001, 05.11.2026, oude fout). Zolang de EERSTE status nog laadt, blijft het
