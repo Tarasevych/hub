@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpCircle, ChevronDown, ChevronUp, Clock, Download, RefreshCw, X } from 'lucide-react';
 import { EXTENSION_ID_RE, sendToExtension } from './extensie-toestand';
-import { LATER_MS, updateAdvies, EXT_MIN_VERSIE } from '../shared/extensie-update';
+import { LATER_MS, updateAdvies, EXT_MIN_VERSIE } from '../shared/extensie-bijwerken';
 import { routeLang } from './canoniek-navigatie';
 import './extensie-update-band.css';
 

@@ -10,7 +10,7 @@ import { ALLOWED_COMMANDS, isOwnSiteUrl, isSensitiveField, pickByName, pushDiag,
 import { COMMAND_TYPES } from '../../backend/connectors-gateway';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES } from '../../backend/browser-mogelijkheden';
 import { createHash } from 'node:crypto';
-import { EXT_MIN_VERSIE, vergelijkVersie } from '../../shared/extensie-update';
+import { EXT_MIN_VERSIE, vergelijkVersie } from '../../shared/extensie-bijwerken';
 // @ts-expect-error gewone JavaScript-module zonder typen (bouwscripts)
 import { contentHash, extensionEntries, parseCrx3, readZipEntries } from '../../scripts/extensie-lib.mjs';
 

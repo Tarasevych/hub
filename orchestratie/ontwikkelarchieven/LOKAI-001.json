@@ -77,9 +77,22 @@
     },
     {
       "volgorde": 8,
-      "stap": "Під час тестування актуального підписаного CRX виявлено та виправлено стару помилку в shared/extensie-update.ts (versieBestandKlopt зчитував version='1.0' із XML-заголовка замість атрибута version в <updatecheck>).",
+      "stap": "Під час тестування актуального підписаного CRX виявлено та виправлено стару помилку в shared/extensie-bijwerken.ts (колишня назва shared/extensie-update.ts; versieBestandKlopt зчитував version='1.0' із XML-заголовка замість атрибута version в <updatecheck>).",
       "bewijzen": [
-        "shared/extensie-update.ts"
+        "shared/extensie-bijwerken.ts"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "За дорученням власника перейменовано shared/extensie-update.ts на питоме нідерландське shared/extensie-bijwerken.ts і оновлено всі посилання в коді, тестах, сценаріях та документації.",
+      "bewijzen": [
+        "shared/extensie-bijwerken.ts",
+        "scripts/bouw-extensie.mjs",
+        "src/ExtensieUpdateBand.tsx",
+        "src/BrowserExtensiePaneel.tsx",
+        "src/extensie/LokaleAiPaneel.tsx",
+        "src/extensie/extensie-live.ts",
+        "extension/shared.js"
       ]
     }
   ],
@@ -112,9 +125,9 @@
       "omschrijving": "9 API Chrome 157, перелік прапорців, діагностика можливостей браузера, фільтр патчів, рекомендації під задачу й генератор flags.json."
     },
     {
-      "bestand": "shared/extensie-update.ts",
+      "bestand": "shared/extensie-bijwerken.ts",
       "soort": "gewijzigd",
-      "omschrijving": "Виправлено розбір версії <updatecheck> у versieBestandKlopt (щоб ігнорувати <?xml version='1.0'?>)."
+      "omschrijving": "Перейменовано з shared/extensie-update.ts на питоме нідерландське ім'я та виправлено розбір версії <updatecheck> у versieBestandKlopt (щоб ігнорувати <?xml version='1.0'?>)."
     },
     {
       "bestand": "extension/manifest.json",

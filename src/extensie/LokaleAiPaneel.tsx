@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Copy, Cpu, Download, Mic, Play, Settings, ShieldAlert, Sparkles, Wand2, XCircle } from 'lucide-react';
 import type { Tr } from '../mcp-ui';
-import { vergelijkVersie } from '../../shared/extensie-update';
+import { vergelijkVersie } from '../../shared/extensie-bijwerken';
 import { sendToExtension } from '../extensie-toestand';
 import { vernieuwExtensieStatus } from './extensie-live';
 import {
