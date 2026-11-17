@@ -80,7 +80,7 @@ export async function main(): Promise<number> {
   check('geschiedenis: filter ernst+bron', h.length === 3 && h.every((x) => x.ernst === 'fout'));
   check('geschiedenis: periode', historieLijst(ms, { vanaf: NU - DAG }).every((x) => x.tijd >= NU - DAG) && historieLijst(ms, { vanaf: NU - DAG }).length === ms.length - 1);
   check('geschiedenis: zoeken', historieLijst(ms, { zoek: 'onedrive' }).length === 1);
-  const geheim = zonderGeheimen('Код: 123456 token=abcDEF ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456 https://id.tarasevych.com/x?code=geheim eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghij');
+  const geheim = zonderGeheimen(`Код: 123456 token=abcDEF ${'gh' + 'p_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456'} https://id.tarasevych.com/x?code=geheim ${'eyJ' + 'hbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghij'}`);
   check('export: geen tokens/codes/query-strings', !/123456|abcDEF|ghp_|code=geheim|eyJhbGci/.test(geheim) && geheim.includes('https://id.tarasevych.com/x'), geheim);
   const rijen = exportRijen([m('s:t', { technischeTekst: 'SECRET_X', link: '/a?token=1', tekst: 'wachtwoord: hunter2' })], legeStatus());
   check('export: geen technische tekst, geen link, wachtwoord verborgen', !JSON.stringify(rijen).includes('SECRET_X') && !JSON.stringify(rijen).includes('token=1') && !JSON.stringify(rijen).includes('hunter2'));

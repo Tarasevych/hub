@@ -75,16 +75,33 @@ export async function main(): Promise<number> {
     }, naar);
     const licht = () => thema('light');
     const donker = () => thema('dark');
-    const tabSel = (p: Page) => p.locator('[role=tab][aria-selected=true]').getAttribute('data-tab');
+    const ankerNaam = (p: Page) => p.locator('.mq-anker-rail .mq-anker-knop[aria-current="true"] .mq-anker-naam').first().innerText().catch(() => '');
+    const klikAnker = async (p: Page, labelUk: string) => {
+      const doel = p.locator('.mq-anker-rail .mq-anker-knop').filter({ has: p.locator('.mq-anker-naam', { hasText: new RegExp(`^${labelUk}$`) }) }).first();
+      if ((await doel.count()) === 0) {
+        const dichte = p.locator('.mq-anker-rail .mq-anker-groep:not(.is-open) > .mq-anker-groep-toggle');
+        const n = await dichte.count();
+        for (let i = 0; i < n; i++) {
+          await dichte.first().click();
+          if ((await doel.count()) > 0) break;
+        }
+      }
+      await doel.click();
+    };
 
     // ---------------------------------------------------------------- 1. oude deep link #claude → #ai
     await page.goto(`${MCP}/agents#claude`, { waitUntil: 'networkidle' });
-    await page.locator('.ag-tabs').waitFor({ timeout: 20000 });
+    await page.locator('.mq-anker-rail').waitFor({ timeout: 20000 });
     await page.locator('[data-lijst="ai"] [data-rij]').first().waitFor({ timeout: 15000 }).catch(() => undefined);
     await page.evaluate(() => { (window as unknown as { __zelfde: number }).__zelfde = 42; });
-    check('oude link #claude → tab «Підключені ШІ», hash #ai', await tabSel(page) === 'ai' && new URL(page.url()).hash === '#ai', `${await tabSel(page)} ${page.url()}`);
-    const tabs = await page.locator('[role=tab]').allInnerTexts();
-    check('tabbladen: Огляд | Підключені ШІ | Доступ ШІ за підписом | Пристрої й браузери | Токени й двері | Журнал', ['Огляд', 'Підключені ШІ', 'Доступ ШІ за підписом', 'Пристрої й браузери', 'Токени й двері', 'Журнал'].every((n, i) => (tabs[i] || '').includes(n)), tabs.join(' | '));
+    check('oude link #claude → якір «Підключені ШІ», hash #ai', await ankerNaam(page) === 'Підключені ШІ' && new URL(page.url()).hash === '#ai', `${await ankerNaam(page)} ${page.url()}`);
+    const groepTitels = await page.locator('.mq-anker-rail .mq-anker-groep-toggle .mq-anker-naam').allInnerTexts();
+    check('групи меню якорів: 4 змістові групи та Швидкі дії', ['Огляд і підключення', 'Середовища та пристрої', 'Координація й безпека', 'Система та журнал', 'Швидкі дії'].every((g) => groepTitels.includes(g)), groepTitels.join(' | '));
+    const dichteGroepen = page.locator('.mq-anker-rail .mq-anker-groep:not(.is-open) > .mq-anker-groep-toggle');
+    const dichtN = await dichteGroepen.count();
+    for (let i = 0; i < dichtN; i++) await dichteGroepen.first().click();
+    const tabs = await page.locator('.mq-anker-rail .mq-anker-knop .mq-anker-naam').allInnerTexts();
+    check('пункти меню якорів: Огляд, Конектори, Підключені ШІ, Пристрої, Токени, Журнал', ['Огляд', 'Конектори', 'Підключені ШІ', 'Пристрої', 'Токени', 'Журнал'].every((n) => tabs.includes(n)), tabs.join(' | '));
     const aiRijen = page.locator('[data-lijst="ai"] > [data-rij]');
     check('«Підключені ШІ»: Claude (OAuth) en grok (MCP-токен), kop «Ви надали доступ 2 …»', await aiRijen.count() === 2 && /Claude/.test(await aiRijen.allInnerTexts().then((x) => x.join(' '))) && /grok/.test(await aiRijen.allInnerTexts().then((x) => x.join(' '))) && /2/.test(await page.locator('.ag-lijstkop-tekst').first().innerText()), await page.locator('[data-tab-inhoud="ai"]').innerText().catch(() => ''));
     check('rijen standaard dicht (geen details, aria-expanded=false)', await page.locator('.ag-rij-details').count() === 0 && (await page.locator('[data-lijst="ai"] .ag-rij-toggle').evaluateAll((els) => els.map((e) => e.getAttribute('aria-expanded')))).every((x) => x === 'false'));
@@ -126,7 +143,8 @@ export async function main(): Promise<number> {
     await page.goto(`${MCP}/agents#dev:${pc.id}`, { waitUntil: 'networkidle' });
     const pcRij = page.locator(`[data-rij="dev:${pc.id}"]`);
     await pcRij.locator('.ag-rij-details').waitFor({ timeout: 15000 }).catch(() => undefined);
-    check('oude link #dev:<id> → tab «Пристрої й браузери», rij open, hash #apparaten/dev:<id>', await tabSel(page) === 'apparaten' && decodeURIComponent(new URL(page.url()).hash) === `#apparaten/dev:${pc.id}` && await pcRij.locator('.ag-rij-details').count() === 1, page.url());
+    await page.locator('.mq-anker-rail .mq-anker-knop[aria-current="true"]').waitFor({ timeout: 5000 }).catch(() => undefined);
+    check('oude link #dev:<id> → якір «Пристрої», rij open, hash #apparaten/dev:<id>', await ankerNaam(page) === 'Пристрої' && decodeURIComponent(new URL(page.url()).hash) === `#apparaten/dev:${pc.id}` && await pcRij.locator('.ag-rij-details').count() === 1, page.url());
     const pcTech = await pcRij.locator('.ag-tech').first().innerText().catch(() => '');
     check('pc-rij open: id, versie 1.4.0, platform, pairing, token geldig tot', pcTech.includes(pc.id) && pcTech.includes('1.4.0') && pcTech.includes('win32-x64') && /Токен діє до/.test(pcTech), pcTech.slice(0, 400));
     await pcRij.locator('.ai-presets').waitFor({ timeout: 10000 }).catch(() => undefined);
@@ -165,9 +183,9 @@ export async function main(): Promise<number> {
     await geenRate('apparaten');
 
     // ---------------------------------------------------------------- 5. tokens: intrekken
-    await page.locator('[role=tab][data-tab="tokens"]').click();
+    await klikAnker(page, 'Токени');
     await page.locator(`[data-rij="tok:${tok}"]`).waitFor({ timeout: 10000 }).catch(() => undefined);
-    check('tab «Токени й двері» via klik, hash #tokens', new URL(page.url()).hash === '#tokens' && await page.locator(`[data-rij="tok:${tok}"]`).count() === 1);
+    check('якір «Токени» via klik, hash #tokens', new URL(page.url()).hash === '#tokens' && await page.locator(`[data-rij="tok:${tok}"]`).count() === 1);
     await page.locator(`[data-knop="tok:${tok}"]`).click();
     await page.locator(`[data-knop="tok:${tok}:ja"]`).click();
     await page.locator('[data-ag-melding="ok"]').waitFor({ timeout: 10000 }).catch(() => undefined);
@@ -175,7 +193,7 @@ export async function main(): Promise<number> {
     await page.screenshot({ path: `${UIT}/agenten-09-tokens.png`, fullPage: true });
 
     // ---------------------------------------------------------------- 6. journaal
-    await page.locator('[role=tab][data-tab="journaal"]').click();
+    await klikAnker(page, 'Журнал');
     const jl = page.locator('[data-tab-inhoud="journaal"] .ag-journaal');
     await jl.locator('[data-rij]').first().waitFor({ timeout: 10000 }).catch(() => undefined);
     const jt = await jl.innerText().catch(() => '');
@@ -243,12 +261,12 @@ export async function main(): Promise<number> {
     await page.screenshot({ path: `${UIT}/agenten-14-overzicht-licht.png`, fullPage: true });
     await geenRate('overzicht');
 
-    // ---------------------------------------------------------------- 8. terug-knop volgt de tabbladen
-    await page.locator('[role=tab][data-tab="apparaten"]').click();
-    await page.locator('[role=tab][data-tab="journaal"]').click();
+    // ---------------------------------------------------------------- 8. terug-knop volgt de ankers
+    await klikAnker(page, 'Пристрої');
+    await klikAnker(page, 'Журнал');
     await page.goBack();
     await page.waitForTimeout(300);
-    check('terug in de browser → vorig tabblad', await tabSel(page) === 'apparaten', String(await tabSel(page)));
+    check('terug in de browser → vorig anker «Пристрої»', await ankerNaam(page) === 'Пристрої' && new URL(page.url()).hash === '#apparaten', `${await ankerNaam(page)} ${page.url()}`);
 
     check('nergens een kale «RATE_LIMITED» op de pagina', !ratelimitTekst, ratelimitTekst);
     check('geen consolefouten of onverwachte HTTP-fouten', fouten.length === 0, fouten.join(' | '));

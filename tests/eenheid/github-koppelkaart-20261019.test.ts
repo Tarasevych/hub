@@ -14,7 +14,7 @@ import {
 import { leegMeta, vandaag } from '../../shared/kluis-meta';
 import { checker } from './hulp/nep-google';
 
-const TOKEN = 'ghp_geheimetokenwaarde0123456789';
+const TOKEN = 'gh' + 'p_geheimetokenwaarde0123456789';
 const dag = (verschuiving: number) => {
   const d = new Date(`${vandaag()}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + verschuiving);

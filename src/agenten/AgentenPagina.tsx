@@ -55,8 +55,6 @@ import './agenten.css';
 // INTEG-001: рамка сторінки й контракт класів — ПІСЛЯ agenten.css, щоб її правила (у межах .ag-pagina) мали останнє слово.
 import './agenten-pagina.css';
 import './agenten-kern-maquette.css';
-import TabsRij from '../ontwerp/TabsRij';
-import { useIsMaquette } from '../thema/useThema';
 import { wisAgentAnkers, zetAgentAnkers } from './anker-bron';
 import { TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
 export { ALLEEN_TECHNISCH, OUDE_HASH, PLEKKEN, TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs } from './agenten-hash';
@@ -392,27 +390,40 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     return lijst;
   }, [techAan, plek.tab, plek.anker]);
   const huidig: TabId = inBeeld ?? plek.tab;
-  // ANKERS-002: у «Макеті» розділи живуть лише в меню якорів праворуч (одне джерело — anker-bron.ts); липкої смуги вкладок немає,
-  // бо вона дублювала меню й перекривала вміст під час прокручування. In «Макет» alleen het ankermenu, geen kleverige strook.
-  const isMaquette = useIsMaquette();
+  // Audit 19.10 (U-03/MCP-01): geldige sessie zonder het recht «API-платформа» → één vriendelijke muur, geen tabbladen, geen «Стоп»,
+  // geen pollers (gegevens.ts / agenten-gegevens.ts stoppen zelf bij API_RECHT_VEREIST). #extensie krijgt dezelfde uitleg i.p.v. «код підключення».
+  const geenRecht = isRechtFout(ov.fout) || isRechtFout(tok.fout) || isRechtFout(agentsFout);
+  // UNIF-ANKER-001 / GEMINI-004: у всіх палітрах розділи живуть лише в спільному меню якорів (MaquetteAnkerRail via anker-bron.ts).
+  // На стіні відсутності прав (geenRecht) передаємо порожній перелік, щоб не показувати розділи навігації.
+  // In alle paletten staan de onderdelen uitsluitend in het gedeelde ankermenu (geen dubbele balk bovenaan).
   useEffect(() => {
     zetAgentAnkers({
-      onderdelen: rij.map((t) => ({ tab: t, uk: tabInfo[t].uk, nl: tabInfo[t].nl, icoon: tabInfo[t].icoon, teller: tabInfo[t].teller || undefined, waarschuwing: t === 'overzicht' && !!tabInfo[t].teller })),
+      onderdelen: geenRecht
+        ? []
+        : rij.map((t) => ({ tab: t, uk: tabInfo[t].uk, nl: tabInfo[t].nl, icoon: tabInfo[t].icoon, teller: tabInfo[t].teller || undefined, waarschuwing: t === 'overzicht' && !!tabInfo[t].teller })),
       actief: huidig,
       ga: gaAnker,
     });
   });
   useEffect(() => () => wisAgentAnkers(), []);
-  // Липка смуга підсвічує секцію в полі зору. Під час переходу за хешем лишається обрана секція (e2e: aria-selected).
+  // Спільне меню якорів підсвічує секцію в полі зору. Під час переходу за хешем лишається обрана секція.
   useEffect(() => {
     if (plek.tab === 'agent') return;
     const paneel = document.getElementById('ag-paneel');
     if (!paneel || typeof IntersectionObserver === 'undefined') return;
     const kies = () => {
       if (Date.now() < vastTot.current) return;
-      // Лінія «у полі зору» — під липкою смугою (якщо вона є) або під відступом прокрутки розділу (scroll-margin-top),
-      // щоб розділ, до якого щойно перейшли, і вважався поточним. Onder de strook of onder de scroll-marge van de sectie.
-      const balk = document.querySelector('.ag-tabs-wrap')?.getBoundingClientRect().bottom ?? 0;
+      // Лінія «у полі зору» — під липкою підсмугою на телефоні чи верхньою рейкою (якщо вони є) або під відступом прокрутки розділу (scroll-margin-top),
+      // щоб розділ, до якого щойно перейшли, і вважався поточним. Onder de mobiele balk / bovenrail of onder de scroll-marge van de sectie.
+      const onderbalk = document.querySelector<HTMLElement>('.mq-anker-onderbalk');
+      const onderRect = onderbalk?.getBoundingClientRect();
+      const topRail = document.querySelector<HTMLElement>('.mq-anker-rail[data-zijde="boven"]:not([data-ingeklapt="ja"])');
+      const topRect = topRail?.getBoundingClientRect();
+      const balk = onderRect && onderRect.height > 0
+        ? onderRect.bottom
+        : topRect && topRect.height > 0 && topRect.top < window.innerHeight / 2
+          ? topRect.bottom
+          : 0;
       const eerste = paneel.querySelector<HTMLElement>('[data-ag-sectie]');
       const lijn = Math.max(balk, eerste ? doelBoven(eerste) : 0) + 24;
       let gezien = '';
@@ -437,9 +448,6 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     return () => { io.disconnect(); window.removeEventListener('scroll', kies, true); window.clearTimeout(later); };
   }, [plek.tab, plek.anker, techAan]);
   const laadFout = ov.fout || tok.fout;
-  // Audit 19.10 (U-03/MCP-01): geldige sessie zonder het recht «API-платформа» → één vriendelijke muur, geen tabbladen, geen «Стоп»,
-  // geen pollers (gegevens.ts / agenten-gegevens.ts stoppen zelf bij API_RECHT_VEREIST). #extensie krijgt dezelfde uitleg i.p.v. «код підключення».
-  const geenRecht = isRechtFout(ov.fout) || isRechtFout(tok.fout) || isRechtFout(agentsFout);
   if (geenRecht) {
     return (
       <div className='ag' data-ag-tab={plek.tab} data-ag-recht='ontbreekt'>
@@ -468,17 +476,6 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
         </div>
         <AiStopKnop tr={tr} onDone={() => void naActie()} />
       </header>
-
-      {isMaquette ? null : <div className='ag-ankers' data-ag-ankers='1'>
-      <TabsRij navKlasse='ag-tabs' wrapKlasse='ag-tabs-wrap' label={tr('Розділи', 'Onderdelen')} lang={tr('uk', 'nl') as 'uk' | 'nl'}>
-        {rij.map((t) => (
-          <a key={t} role='tab' href={`#${t}`} id={`ag-tab-${t}`} aria-selected={huidig === t} aria-controls={`ag-sectie-${t}`} data-tab={t} className='ag-tab-knop'
-            onClick={(e) => { e.preventDefault(); ga(t); }}>
-            {tabInfo[t].icoon}<span>{tr(tabInfo[t].uk, tabInfo[t].nl)}</span>{tabInfo[t].teller ? <span className={`ag-teller${t === 'overzicht' ? ' is-warn' : ''}`}>{tabInfo[t].teller}</span> : null}
-          </a>
-        ))}
-      </TabsRij>
-      </div>}
 
       <section id='ag-paneel' className='ag-paneel' aria-label={tr('Розділи підключення ШІ', 'Onderdelen van AI-koppelingen')}>
         {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}

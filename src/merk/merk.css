@@ -62,3 +62,17 @@ span.merk-gliefje.merk-beeld.merk-plaat > img { width: 86%; height: 86%; }
    in een logo verspringt. Місце для справжнього логотипа, поки він довантажується: без «стрибка» з літер у знак. */
 span.merk-wacht { display: block; background: color-mix(in srgb, var(--line, #ccc) 35%, transparent); border-radius: 28%; }
 span.merk-gliefje.merk-wacht { background: none; }
+
+/* PLAATS-TEKENS-001 (17.11.2026): plaatstekens — vlag van het land (vult het vlak, zo is het 1x1-bestand ontworpen) en wapen van
+   stad/provincie (op een plaat, nooit vervormd). Lichte wapens (vooral wit/zilver) krijgen een DONKERE plaat (plaats-gegenereerd.ts).
+   Знак місця: прапор заповнює кружечок, герб — на підкладці; світлі герби — на темній. */
+span.merk-plaats { display: grid; place-items: center; overflow: hidden; border-radius: 28%; }
+span.merk-plaats > img { display: block; min-width: 0; min-height: 0; }
+span.merk-plaats-vlag { position: relative; background: var(--surface, #e5e7eb); }
+span.merk-plaats-vlag > img { width: 100%; height: 100%; object-fit: cover; }
+span.merk-plaats-vlag::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text, #0f172a) 16%, transparent); pointer-events: none; }
+span.merk-plaats-wapen.merk-plaat { background: var(--merk-plaat, #ffffff); box-shadow: inset 0 0 0 1px var(--line, #e2e8f0); }
+span.merk-plaats-wapen.merk-plaat-donker { background: #1f2937; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+span.merk-plaats-wapen > img { width: 80%; height: 80%; object-fit: contain; }
+span.merk-gliefje.merk-plaats-wapen { background: none; box-shadow: none; }
+span.merk-gliefje.merk-plaats-wapen > img { width: 100%; height: 100%; }

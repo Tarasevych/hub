@@ -1,0 +1,44 @@
+# Статичний аналіз коду Node.js/JavaScript за допомогою njsscan із передаванням SARIF до GitHub Security.
+
+name: njsscan sarif
+
+on:
+  push:
+    branches: [ "voornaamst" ]
+  pull_request:
+    branches: [ "voornaamst" ]
+  schedule:
+    - cron: '31 18 * * 4'
+
+permissions:
+  contents: read
+
+jobs:
+  njsscan:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    runs-on: ubuntu-latest
+    name: njsscan code scanning
+    steps:
+      - name: Отримати код сховища
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Запустити сканер njsscan
+        id: njsscan
+        continue-on-error: true
+        uses: ajinabraham/njsscan-action@231750a435d85095d33be7d192d52ec650625146 # v9
+        with:
+          args: '. --sarif --output results.sarif'
+
+      - name: Перевірити наявність сформованого звіту SARIF
+        shell: bash
+        run: test -s results.sarif
+
+      - name: Передати звіт njsscan до GitHub Security
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: results.sarif

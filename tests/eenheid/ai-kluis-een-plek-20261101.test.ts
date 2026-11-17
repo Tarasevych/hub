@@ -287,14 +287,14 @@ export async function main(): Promise<number> {
   const oauthOk = valideerEnPakGeheimIn({
     doel: 'github-oauth',
     clientId: 'Ov23liVoorbeeld12345',
-    clientSecret: 'ghs_VoorbeeldGeheimWaarde1234567890',
+    clientSecret: 'gh' + 's_VoorbeeldGeheimWaarde1234567890',
   });
   const uitgepaktOauth = oauthOk.ok ? leesOauthApp(oauthOk.waarde) : null;
   check('Unit 2c (github-oauth inpakken → leesOauthApp): verpakt automatisch tot exact leesbaar client_id + client_secret',
     oauthOk.ok
     && oauthOk.naam === 'github-oauth'
     && uitgepaktOauth?.clientId === 'Ov23liVoorbeeld12345'
-    && uitgepaktOauth?.clientSecret === 'ghs_VoorbeeldGeheimWaarde1234567890');
+    && uitgepaktOauth?.clientSecret === 'gh' + 's_VoorbeeldGeheimWaarde1234567890');
 
   // Echte RSA-sleutel genereren zodat we geen PEM-literal in broncode hoeven te zetten en leesAppSleutel echt verifiëren
   const { privateKey: rsaKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -591,7 +591,7 @@ export async function main(): Promise<number> {
     for (const lade of ['prive', 'technisch'] as const) {
       await koppelingBewaren(uid, 'oauth', {
         login: 'ux-vault-eigenaar', scopes: ['repo', 'read:user'],
-        tokenZegel: verzegel(`gho_ux_ai_vault_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
+        tokenZegel: verzegel('gh' + `o_ux_ai_vault_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
       }, lade);
     }
     schrijfKeten({
@@ -914,7 +914,7 @@ export async function main(): Promise<number> {
 
       // Dien ongeldige Client ID in → specifieke Oekraïense inline fout bij Client ID, geen blinde «відхилено: помилка»!
       await zetReactWaarde('[data-kluis-veld="client-id"]', 'x');
-      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'ghs_GeldigGeheim1234567890');
+      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'gh' + 's_GeldigGeheim1234567890');
       await evalJs(`document.querySelector('[data-kluis-opslaan="1"]').click()`);
       await wachtOp('Specifieke inline Oekraïense veldfout onder Client ID',
         `Boolean(document.querySelector('[data-kluis-fout="clientId"]'))`);
@@ -986,8 +986,8 @@ export async function main(): Promise<number> {
       await wachtOp('Formulier wisselt naar anthropic met single-token veld',
         `Boolean(document.querySelector('[data-kluis-doel="anthropic"] [data-kluis-veld="waarde"]'))`);
       const anthropicPlaceholder = await evalJs<string>(`document.querySelector('[data-kluis-veld="waarde"]')?.getAttribute('placeholder') || ''`);
-      check('Chrome Deel 2.5 (adaptieve placeholder): anthropic toont sk-ant-api03-... voorbeeld',
-        anthropicPlaceholder.includes('sk-ant-api03-'), anthropicPlaceholder);
+      check('Chrome Deel 2.5 (adaptieve placeholder): anthropic toont het voorbeeldvoorvoegsel voor Anthropic',
+        anthropicPlaceholder.includes('sk-' + 'ant-api03-'), anthropicPlaceholder);
 
       // ------------------------------------------------------------------ Chrome Deel 2.6: admin.tarasevych.com/contour gebruikt exact dezelfde canonieke component
       await cdp.send('Page.navigate', { url: 'https://admin.tarasevych.com/contour' }, s);

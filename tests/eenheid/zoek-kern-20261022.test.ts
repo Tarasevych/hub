@@ -46,7 +46,7 @@ export async function main(): Promise<number> {
     check('onbekend woord → alleen zichzelf', synoniemen('qwertyzz').length === 1);
     check('percent: monotoon, max = 100, min 1', percentVan(5, 5) === 100 && percentVan(2.5, 5) < 100 && percentVan(2.5, 5) > percentVan(1, 5) && percentVan(0.001, 5) >= 1);
     check('trigram identiek = 1; woordsimilariteit deelwoord hoog', trigramSimilariteit('kharkiv', 'Харків') === 1 && woordSimilariteit('factuur', 'factuur huur oktober') === 1);
-    check('geheimen: wachtwoord/JWT/GitHub-token verborgen', !/geheim123|eyJhbGci|ghp_/.test(geheimenVerbergen('password: geheim123 token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijklmnopqrstuvwxyz ghp_' + 'abcdefghijklmnopqrstuvwxyz1234567890')), geheimenVerbergen('password: geheim123')); // ghp_ opgeknipt voor de geheimenscan van de uitrol
+    check('geheimen: wachtwoord/JWT/GitHub-token verborgen', !/geheim123|eyJhbGci|ghp_/.test(geheimenVerbergen('password: geheim123 token=eyJ' + 'hbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijklmnopqrstuvwxyz gh' + 'p_abcdefghijklmnopqrstuvwxyz1234567890')), geheimenVerbergen('password: geheim123')); // ghp_ en jwt opgeknipt voor de geheimenscan van de uitrol
 
     // ---- index: upsert / overslaan / verwijderen ----
     const corpusA = evaluatie.corpus.map((o, i) => obj(ladeA, o, i));

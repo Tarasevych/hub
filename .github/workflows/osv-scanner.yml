@@ -1,0 +1,45 @@
+# Перевірка залежностей через OSV-Scanner із передаванням результатів до GitHub Code Scanning.
+# Для планових запусків та оновлень гілки voornaamst сканер не перериває збірку (fail-on-vuln: false),
+# щоб не псувати стан налаштування інструмента; у запитах на злиття нові вразливості блокуються.
+
+name: OSV-Scanner
+
+on:
+  pull_request:
+    branches: [ "voornaamst" ]
+  merge_group:
+    branches: [ "voornaamst" ]
+  schedule:
+    - cron: '34 5 * * 2'
+  push:
+    branches: [ "voornaamst" ]
+
+permissions:
+  contents: read
+
+jobs:
+  scan-scheduled:
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932" # v2.7.1
+    with:
+      fail-on-vuln: false
+      scan-args: |-
+        -r
+        ./
+
+  scan-pr:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932" # v2.7.1
+    with:
+      fail-on-vuln: true
+      scan-args: |-
+        -r
+        ./

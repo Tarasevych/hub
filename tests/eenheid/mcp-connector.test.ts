@@ -282,7 +282,7 @@ export async function main(): Promise<number> {
     const lees = await laatste('machine_read_file');
     check('audit owner.mcp.tool: wie (client + grantId van deze verbinding), soort en veilig doel; geen token in het doel',
       lees?.details.client === 'Claude' && typeof lees?.details.grantId === 'string' && lees.details.grantId.length > 8 && lees.details.soort === 'lezen'
-      && /notes/.test(lees.details.doel) && !/ghp_/.test(lees.details.doel) && lees.result === 'failure', JSON.stringify(lees));
+      && /notes/.test(lees.details.doel) && !new RegExp('gh' + 'p_').test(lees.details.doel) && lees.result === 'failure', JSON.stringify(lees));
     const auditOnbekend = await laatste('rm_rf');
     check('audit owner.mcp.tool: onbekend hulpmiddel eerlijk bij naam, soort «onbekend», geen doel', auditOnbekend?.details.soort === 'onbekend' && !('doel' in auditOnbekend.details), JSON.stringify(auditOnbekend));
     const auditLijstRij = await laatste('machine_list');

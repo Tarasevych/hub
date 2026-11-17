@@ -1934,6 +1934,17 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   line-height: 1.35;
 }
 
+[data-account-menu-v3] .am3-wissel-fout {
+  margin: 0 14px 10px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--am3-danger-icon, #c62828) 38%, transparent);
+  background: color-mix(in srgb, var(--am3-danger-icon, #c62828) 10%, var(--am3-surface, transparent));
+  color: var(--am3-danger-icon, #c62828);
+  font-size: 0.76rem;
+  line-height: 1.38;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-account-menu-v3] .am3-tech-tip,
   [data-account-menu-v3] .am3-tech-actie,

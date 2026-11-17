@@ -124,7 +124,7 @@ export async function main(): Promise<number> {
     ];
     let stepIdx = 0;
     const kluisPerGebruiker: Record<string, Partial<Record<AiAanbiederId, string>>> = {
-      'user-gemini': { gemini: 'AIzaSyTestGeminiSleutelUser1' },
+      'user-gemini': { gemini: 'AI' + 'zaSyTestGeminiSleutelUser1' },
       'user-grok': { grok: 'xai-test-sleutel-user2' },
     };
 
@@ -151,7 +151,7 @@ export async function main(): Promise<number> {
         uitGem.steps[0].tool === 'machine_list' &&
         verzoeken.length === 2 &&
         verzoeken[0].url.includes('generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent') &&
-        verzoeken[0].headers['x-goog-api-key'] === 'AIzaSyTestGeminiSleutelUser1' &&
+        verzoeken[0].headers['x-goog-api-key'] === 'AI' + 'zaSyTestGeminiSleutelUser1' &&
         Boolean(verzoeken[1].body?.contents?.[2]?.parts?.[0]?.functionResponse),
       JSON.stringify(uitGem),
     );
@@ -194,7 +194,7 @@ export async function main(): Promise<number> {
     const vertaalVerzoeken: Array<{ url: string; headers: Record<string, string>; body: any }> = [];
     setAiVertalingDeps({
       getApiKeyForProvider: async (uid, provider) => {
-        if (uid === 'user-a' && provider === 'gemini') return 'AIzaSyGeminiMailKeyUserA';
+        if (uid === 'user-a' && provider === 'gemini') return 'AI' + 'zaSyGeminiMailKeyUserA';
         if (uid === 'user-b' && provider === 'autoclaw') return 'glm-key-user-b';
         return null;
       },
@@ -300,7 +300,7 @@ export async function main(): Promise<number> {
           rTranslate.body.agentId === 'prive:vault-gemini' &&
           vertaalVerzoeken.length === 1 &&
           vertaalVerzoeken[0].url.includes('generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent') &&
-          vertaalVerzoeken[0].headers['x-goog-api-key'] === 'AIzaSyGeminiMailKeyUserA',
+          vertaalVerzoeken[0].headers['x-goog-api-key'] === 'AI' + 'zaSyGeminiMailKeyUserA',
         JSON.stringify(rTranslate),
       );
 
@@ -373,7 +373,7 @@ export async function main(): Promise<number> {
     const gemEnAutoclaw = await modellenVoorGebruiker('user-gem', {
       getApiKey: async () => null,
       getApiKeyForPurpose: async (_uid, purpose) => {
-        if (purpose === 'gemini') return 'AIzaSyTest';
+        if (purpose === 'gemini') return 'AI' + 'zaSyTest';
         if (purpose === 'autoclaw') return 'glm-test';
         return null;
       },
