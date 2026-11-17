@@ -211,7 +211,6 @@ jobs:
             extensie-090-site-20261106 \
             extensie-093-stel-in-20261117 \
             extensie-brug-zonder-f5-20261106 \
-            extensie-debugger-markering-20261019 \
             extensie-offscreen-20261106 \
             extensie-opties \
             extensie-profielen \
@@ -321,12 +320,13 @@ jobs:
             import { readFileSync } from "node:fs";
             const ev = JSON.parse(readFileSync("dist/downloads/extension-version.json", "utf8"));
             if (ev.version !== "0.9.7") throw Error("Очікувалася версія розширення 0.9.7, отримано: " + ev.version);
-            if (!ev.crx || !ev.crx.sha256) throw Error("Відсутній підписаний CRX3 у dist/downloads/extension-version.json");
-            console.log("extension-version.json:", ev.version, "CRX:", ev.crx.id, ev.crx.sha256.slice(0, 12));'
+            if (!ev.crx || !ev.crx.sha256 || ev.crxStatus !== "actueel") throw Error("Відсутній або неактуальний підписаний CRX3 у dist/downloads/extension-version.json");
+            console.log("extension-version.json:", ev.version, "CRX:", ev.crx.extensionId, ev.crx.sha256.slice(0, 12));'
           export DIST_DIR="$PWD/dist"
           for t in \
             bestandskaart-20261024 \
             browser-extensie \
+            extensie-debugger-markering-20261019 \
             huis-001-maquette-20261112 \
             orch-pakket-20261031 \
             stroom-veilig-20261115 \
