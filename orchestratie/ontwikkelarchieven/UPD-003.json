@@ -156,6 +156,14 @@
     {
       "tijd": "2026-11-16T21:38:02Z",
       "stap": "Повна збірка й перевірка типів зелені; міграції 0286–0300 на чистій PostgreSQL 16 двічі і на заповненій базі; усі модульні тести прогнано, збої після об’єднання PR виправлено."
+    },
+    {
+      "tijd": "2026-11-17T05:44:00Z",
+      "stap": "Перша спроба встановлення (випуск 20261116-221401) зупинилась: перевірка сайту знайшла видалення стовпця в міграції 0299, а збірка vite вичерпала пам'ять (heap 2560 МБ інсталятора). Попередній випуск лишився активним."
+    },
+    {
+      "tijd": "2026-11-17T06:40:00Z",
+      "stap": "Міграцію 0299 зроблено лише додавальною; mermaid винесено з Rollup у /assets/vendor/; процес випуску збирає з тією ж межею пам'яті, що й сервер. Повторено збірку, типи, міграції й усі модульні тести."
     }
   ],
   "keuzes": [
@@ -163,7 +171,9 @@
     "Кожен PR влито на вершині, погодженій у реєстрі, а не на голові гілки; #84 влито окремо перед #139, хоча #139 його містить, щоб злиття було явним.",
     "Згенеровані файли (логотипи, «Макет», каталог пошуку) перегенеровано після злиття, а не склеєно вручну; ручна правка #125 у згенерованому двигуні перенесена в motor-aanpassingen.mjs.",
     "Тести, які шукають точний рядок коду, оновлено лише там, де код змінився свідомо (#84, #137, #143, #146, #149); межу розміру таблиці знаків піднято до 42 000, бо додалися лише метадані.",
-    "Ідентифікатор моделі не записано в репозиторій: його передають параметром запуску процесу."
+    "Ідентифікатор моделі не записано в репозиторій: його передають параметром запуску процесу.",
+    "Межі пам'яті інсталятора (BOUW_HEAP_MB 2560, MemoryMax 3000M) не підвищено й обхідного вимкнення збірки не запропоновано: зменшено потребу самої збірки.",
+    "Стовпця geo_verplicht не було в жодному випуску, тож блок його видалення прибрано зовсім, а не замінено перейменуванням: міграція лише додає, і стара версія коду працює з новою схемою."
   ],
   "wijzigingen": [
     {
@@ -213,6 +223,10 @@
     {
       "soort": "gewijzigd",
       "bestand": ".github/workflows/uitgave-001-release.yml"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": ".github/workflows/upd-003-uitgave.yml"
     },
     {
       "soort": "gewijzigd",
@@ -612,6 +626,14 @@
     },
     {
       "soort": "gewijzigd",
+      "bestand": "orchestratie/geinstalleerd.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/ontwikkelarchieven/UPD-003.json"
+    },
+    {
+      "soort": "gewijzigd",
       "bestand": "orchestratie/regels.lock.json"
     },
     {
@@ -625,6 +647,10 @@
     {
       "soort": "toegevoegd",
       "bestand": "orchestratie/taken/TELEGRAM-004.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/taken/UPD-003.json"
     },
     {
       "soort": "toegevoegd",
@@ -665,6 +691,10 @@
     {
       "soort": "gewijzigd",
       "bestand": "scripts/vaardigheden/catalogus.json"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/vendor-ongebundeld.mjs"
     },
     {
       "soort": "gewijzigd",
@@ -1872,11 +1902,19 @@
     },
     {
       "soort": "gewijzigd",
+      "bestand": "tests/eenheid/beheer-overzicht.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
       "bestand": "tests/eenheid/browser-extensie.test.ts"
     },
     {
       "soort": "gewijzigd",
       "bestand": "tests/eenheid/browser-keten.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/cloud-vnext-catalogus-20261029.test.ts"
     },
     {
       "soort": "gewijzigd",
@@ -2140,6 +2178,10 @@
     },
     {
       "soort": "toegevoegd",
+      "bestand": "tests/eenheid/migraties-terugdraaibaar-20261117.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
       "bestand": "tests/eenheid/opstelpil-001-20261116.test.ts"
     },
     {
@@ -2156,7 +2198,15 @@
     },
     {
       "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-afwerking-a-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
       "bestand": "tests/eenheid/sec-002-afwerking-b-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-g08-20261112.test.ts"
     },
     {
       "soort": "gewijzigd",
@@ -2236,6 +2286,10 @@
     },
     {
       "soort": "gewijzigd",
+      "bestand": "tests/eenheid/vendor-ongebundeld-20261023.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
       "bestand": "tests/eenheid/vertaalpaneel-20261019.test.ts"
     },
     {
@@ -2249,22 +2303,6 @@
     {
       "soort": "gewijzigd",
       "bestand": "tests/eenheid/zoek-isolatie-20261022.test.ts"
-    },
-    {
-      "soort": "toegevoegd",
-      "bestand": ".github/workflows/upd-003-uitgave.yml"
-    },
-    {
-      "soort": "toegevoegd",
-      "bestand": "orchestratie/taken/UPD-003.json"
-    },
-    {
-      "soort": "toegevoegd",
-      "bestand": "orchestratie/ontwikkelarchieven/UPD-003.json"
-    },
-    {
-      "soort": "gewijzigd",
-      "bestand": "orchestratie/geinstalleerd.json"
     }
   ],
   "controles": [
@@ -2272,7 +2310,10 @@
     "Статичні перевірки (карта файлів, розміщення, l002, довідки, контраст, розумна пошта, ланцюг, каталог пошуку, сценарії розгортання) і самоперевірка ПК-агента: 0 помилок.",
     "Міграції 0286–0300 на чистій PostgreSQL 16 двічі (другий прогін — «нічого робити») і на базі з даними UPD-002: дані цілі.",
     "Усі 553 модульні тести репозиторію прогнано з базою даних і Хроміумом; збої після об’єднання PR (account-wissen, contrast-knoppen-logos, hulp-register, identiteit-atelier, maquette-*, mcp-*, meldlink-001, merk-register, mail-accounts-beheer, telegram-aanmelden, ui-audit-g) виправлено й перевірено повторно.",
-    "Перевірка ризикованих змін тим самим кодом, що й сайт (backend/uitrol-risico.ts): кожен прапорець, що потребує пояснення, має його в risicoUitleg."
+    "Перевірка ризикованих змін тим самим кодом, що й сайт (backend/uitrol-risico.ts): кожен прапорець, що потребує пояснення, має його в risicoUitleg.",
+    "17.11: повна збірка (npm run build) проходить із heap 2048 МБ; пікова пам'ять vite при 2560 МБ — 2,47 ГБ (було понад 3,7 ГБ); mermaid перевірено в Хроміумі (блок-схема й діаграма послідовності намальовані).",
+    "17.11: міграції 0286–0300 двічі на свіжій PostgreSQL 16 і поверх бази UPD-002 з даними (дані цілі); жодна нова міграція не дає прапорця руйнівної SQL (новий тест migraties-terugdraaibaar-20261117).",
+    "17.11: усі 553 модульні тести на свіжій базі з ролями: зелені, крім sec-002-g11 (потрібен суперкористувач) і ssh-ca-beheer (немає systemd, падає й на основі); tech-sessies у повному прогоні впав один раз і пройшов повторно 20/20."
   ],
   "bronnen": [
     {
@@ -2297,6 +2338,11 @@
     "Живий сайт із хмари недоступний: вигляд і вхід після встановлення власникові варто переглянути наживо (пошта, «Агенти», вхід, логотипи)."
   ],
   "commits": [
+    "b00f4bd3603852ec141466d9dbf33bd2dce92db3",
+    "e057d7cde648713439be7b24e7dc93b8f217e89f",
+    "0f230b1ed04d1d2691a9e067ef5eed6f7673fbc0",
+    "b5d28771368d0d5f8900ea8afe09ce3b7864649f",
+    "9f5eaab7fc7b99c1fd370a964e04a342f86f7e9a",
     "a90839aac4d3ab380b6c5bc72159455aeda7475c",
     "0e4892a4fde4f72486f53161c8b651716f674f4d",
     "3e08018f9da8d972dd2186866745426e6eeb0a8e",
