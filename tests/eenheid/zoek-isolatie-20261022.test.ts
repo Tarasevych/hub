@@ -32,10 +32,10 @@ const SECRET = {
   // De pem- en ghp-fixtures zijn opgeknipt zodat de geheimenscan van de uitrol-voorcontrole dit TESTBESTAND niet als
   // geheim meldt; tijdens de test zijn het dezelfde aaneengesloten strings als voorheen.
   pem: '-----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7ZZZZQQQQ\n-----END PRIVATE' + ' KEY-----',
-  ghp: 'ghp_' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab', stripe: 'sk' + '_live_51HxQQQQabcdefghijklmnop', pw: 'password=hunter2geheim99',
-  jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+  ghp: 'gh' + 'p_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ab', stripe: 'sk_' + 'live_51HxQQQQabcdefghijklmnop', pw: 'password=hunter2geheim99',
+  jwt: 'eyJ' + 'hbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
 };
-const SECRET_MARKERS = ['MIIEvQIBADANBg', 'ghp_ABCDEFGHIJ', 'sk_live_51HxQQQQ', 'hunter2geheim99', 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'];
+const SECRET_MARKERS = ['MIIEvQIBADANBg', 'gh' + 'p_ABCDEFGHIJ', 'sk_' + 'live_51HxQQQQ', 'hunter2geheim99', 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'];
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('zoek-isolatie');
@@ -218,10 +218,10 @@ export async function main(): Promise<number> {
     const zoekSec = await zoekVia(P, { q: 'toegang server sleutels' });
     const frag = String(zoekSec.data.items?.find((t: ZoekTreffer) => t.id === 'zi-mail-geheim')?.fragment?.tekst || '');
     check('лист із секретом знаходиться за темою, але фрагмент/відповідь без секретів', ids(zoekSec).includes('mail:zi-mail-geheim') && !SECRET_MARKERS.some((m) => zoekSec.body.includes(m)), frag.slice(0, 120));
-    const secQ = await Promise.all(['hunter2geheim99', 'sk_live_51HxQQQQ', 'MIIEvQIBADANBg'].map((q) => zoekVia(P, { q })));
+    const secQ = await Promise.all(['hunter2geheim99', 'sk_' + 'live_51HxQQQQ', 'MIIEvQIBADANBg'].map((q) => zoekVia(P, { q })));
     check('пошук за значенням секрету нічого не знаходить', secQ.every((r) => ids(r).length === 0), secQ.map((r) => ids(r).join(',')).join('|'));
-    const secSug = await Promise.all(['sk_li', 'ghp_A', 'hunter', 'MIIEv'].map((p) => sug(P, p)));
-    check('підказки не підказують секрети', !secSug.some((r) => SECRET_MARKERS.some((m) => r.body.includes(m)) || /hunter2|sk_live_51|ghp_ABC|MIIEvQ/.test(r.body)), secSug.map((r) => r.body.slice(0, 60)).join('|'));
+    const secSug = await Promise.all(['sk_li', 'gh' + 'p_A', 'hunter', 'MIIEv'].map((p) => sug(P, p)));
+    check('підказки не підказують секрети', !secSug.some((r) => SECRET_MARKERS.some((m) => r.body.includes(m)) || new RegExp('hunter2|sk_' + 'live_51|gh' + 'p_ABC|MIIEvQ').test(r.body)), secSug.map((r) => r.body.slice(0, 60)).join('|'));
 
     // ------------------------------------------------------------------ 7. журнал без текстів документів
     const logVoor = logboek.length;

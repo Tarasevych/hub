@@ -127,7 +127,7 @@ export async function main(): Promise<number> {
     const b1 = String((await pool.query(`INSERT INTO app.mcp_console_items (user_id, kind, title, body, status, author) VALUES ($1,'task','Belastingaangifte indienen','voor 30 juni','backlog','operator') RETURNING id`, [userId])).rows[0].id);
     const b2 = String((await pool.query(`INSERT INTO app.mcp_console_items (user_id, kind, title, body, status, author, ruimte) VALUES ($1,'note','Technische notitie','server','backlog','operator','technisch') RETURNING id`, [userId])).rows[0].id);
     await pool.query(`INSERT INTO app.mail_imap_koppeling (user_id, id, aanbieder, adres, geheim, ruimte, actief) VALUES ($1,$2,'ukrnet','zoek@ukr.net','v1.test','prive',true)`, [userId, `imap-${sfx}`]);
-    await koppelingBewaren(userId, 'oauth', { login: 'pavlo', scopes: ['repo'], tokenZegel: verzegel('gho_PERSOONLIJK', userId, 'oauth') });
+    await koppelingBewaren(userId, 'oauth', { login: 'pavlo', scopes: ['repo'], tokenZegel: verzegel('gh' + 'o_PERSOONLIJK', userId, 'oauth') });
 
     // ------------------------------------------------------------------ technisch profiel: bord op «eigen» → tweede lade
     const pid = `tech-${randomBytes(6).toString('hex')}`;

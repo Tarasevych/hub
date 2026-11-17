@@ -51,8 +51,7 @@
         "react-dom": "^19.0.0",
         "sql.js": "1.14.1",
         "tesseract.js": "7.0.0",
-        "ws": "^8.22.0",
-        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+        "ws": "^8.22.0"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "^4.0.0"
@@ -84,6 +83,7 @@
     "overrides": {
         "pptxgenjs": {
             "image-size": "2.0.4"
-        }
+        },
+        "fast-xml-parser": "^5.12.1"
     }
 }

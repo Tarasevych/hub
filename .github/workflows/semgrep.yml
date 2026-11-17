@@ -1,0 +1,39 @@
+# Локальний статичний аналіз через Semgrep без потреби у зовнішніх токенах платформи.
+
+name: Semgrep
+
+on:
+  push:
+    branches: [ "voornaamst" ]
+  pull_request:
+    branches: [ "voornaamst" ]
+  schedule:
+    - cron: '26 5 * * 2'
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    name: Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Отримати код сховища
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Запустити аналіз Semgrep
+        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735 # v1
+        with:
+          generateSarif: "1"
+
+      - name: Передати звіт SARIF до GitHub Security
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: semgrep.sarif
+        if: ${{ !cancelled() }}

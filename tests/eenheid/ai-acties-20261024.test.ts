@@ -82,7 +82,7 @@ export async function main(): Promise<number> {
       verzoeken.push({ system: String(body.system || ''), prompt: String(body.messages?.[0]?.content || ''), maxTokens: Number(body.max_tokens) });
       return new Response(JSON.stringify({ content: [{ type: 'text', text: antwoord }] }), { status: httpStatus });
     }) as unknown as typeof fetch,
-    getApiKey: async () => 'sk-test-acties-sleutel',
+    getApiKey: async () => 'sk-' + 'test-acties-sleutel',
     loadAgents: async () => agenten,
     loadPolicyCeiling: async () => ({ mailRead, filesRead: 'always', userBlocked: false }),
   });

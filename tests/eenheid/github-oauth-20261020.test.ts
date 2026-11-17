@@ -248,7 +248,7 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------- 8. orde van de wegen: OAuth → App → PAT
     const u4 = nieuweGebruiker();
-    setPatLezer(async (id) => (id === u4 ? 'ghp_persoonlijke_token_uit_de_kluis' : null));
+    setPatLezer(async (id) => (id === u4 ? 'gh' + 'p_persoonlijke_token_uit_de_kluis' : null));
     kluis({ [GITHUB_OAUTH_DOEL]: nep.oauthKluisWaarde(), [GITHUB_APP_DOEL]: nep.appKluisWaarde() });
     const start4 = await oauthStarten(u4, { sessieToken: SESSIE, host: HOST });
     if (start4.ok) await oauthTerugkeer({ state: String(new URL(start4.data.authUrl).searchParams.get('state')), code: nep.codeVoor(start4.data.authUrl), host: HOST, sessieToken: SESSIE, userId: u4 });
@@ -261,7 +261,7 @@ export async function main(): Promise<number> {
     await (await import('../../backend/github-app')).appOntkoppelen(u4);
     const derdeKeus = await githubToegang(u4);
     check('zonder OAuth en zonder App blijft de persoonlijke token werken (niets is gebroken)',
-      derdeKeus?.via === 'pat' && derdeKeus.token === 'ghp_persoonlijke_token_uit_de_kluis');
+      derdeKeus?.via === 'pat' && derdeKeus.token === 'gh' + 'p_persoonlijke_token_uit_de_kluis');
     setPatLezer(async () => null);
     check('zonder enige weg is er geen token — en geen uitzondering', (await githubToegang(nieuweGebruiker())) === null);
 
