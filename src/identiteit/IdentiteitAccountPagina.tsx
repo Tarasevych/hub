@@ -3,8 +3,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
-import { useVlag } from '../functievlag-lezen';
-import { IdentiteitAtelierPagina } from './IdentiteitAtelierPagina';
+import { useVlag, vlaggenBekend } from '../functievlag-lezen';
+import { IdentiteitAtelier } from './IdentiteitAtelier';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -64,7 +64,10 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
     }
   };
 
-  if (atelier) return <IdentiteitAtelierPagina lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
+  // Поки прапорці не відомі, не показуємо жоден із двох виглядів: інакше старий вигляд на мить монтує всі 12 розділів,
+  // їхні запити й прокрутки, а потім його змінює новий (сторінка «стрибала» вниз). Totdat de vlaggen bekend zijn: rustige plaatshouder.
+  if (!vlaggenBekend()) return <div className='ia-account ia-wacht' aria-busy='true' aria-label={lang === 'uk' ? 'Завантаження налаштувань' : 'Instellingen laden'} />;
+  if (atelier) return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   return (
     <div className='ia-account'>

@@ -41,7 +41,9 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
   const [detail, setDetail] = useState<MethodeUi | null>(null);
   const [wijziging] = useState(wijzigingUitUrl);
   const kaarten = useMemo(() => snapshotNaarKaarten(data), [data]);
-  const zichtbaar = useMemo(() => zoekFilter(kaarten, lang, zoek, groep), [kaarten, lang, zoek, groep]);
+  const zichtbaar = useMemo(() => zoekFilter(kaarten, lang, zoek, groep).filter(k =>
+    !p.alleen || ['google', 'password', 'passkey', 'guest-code'].includes(k.id)
+  ), [kaarten, lang, zoek, groep, p.alleen]);
   const open = useCallback((k: MethodeUi) => setDetail(k), []);
   const geladen = data.factors.some((f) => f.status !== 'loading');
 
@@ -88,15 +90,15 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
       {wijziging ? <ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={() => void p.load()} /> : null}
       {p.tempPassword ? <p className='amv-melding is-info'><strong>{tr(lang, 'Тимчасовий пароль', 'Tijdelijk wachtwoord')}</strong><code className='amv-geheim'>{p.tempPassword}</code></p> : null}
 
-      <Hero lang={lang} onCta={ctaDoel} />
-      <MethodeFilter lang={lang} groep={groep} onGroep={setGroep} onZoek={setZoek} />
+      {!p.alleen&&<Hero lang={lang} onCta={ctaDoel} />}
+      <MethodeFilter lang={lang} groep={groep} groepen={p.alleen ? ['alles', 'inloggen', 'passkey', 'delegatie'] : undefined} onGroep={setGroep} onZoek={setZoek} />
 
       {sectie('Основні способи', 'Hoofdmethoden', van(['google', 'password', 'passkey', 'totp']))}
       {sectie('Додатковий захист', 'Extra bescherming', van(['recovery', 'vault']))}
       {sectie('Доступ іншим', 'Toegang voor anderen', van(['guest-code']))}
       {!zichtbaar.length ? <p className='amv-leeg' data-amv-leeg=''>{tr(lang, 'Нічого не знайдено за цим запитом чи фільтром.', 'Niets gevonden met deze zoekterm of dit filter.')}</p> : null}
 
-      <section className='amv-sectie'>
+      {!p.alleen&&<section className='amv-sectie'>
         <div className='amv-verwijzingen'>
           <a className='amv-verwijzing' data-amv-sessies='' href={`/sessies?lang=${lang}`}>
             <MonitorSmartphone aria-hidden='true' />
@@ -109,7 +111,7 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
               <small>{tr(lang, 'Passkey, код автентифікатора, код відновлення або повторний вхід у Google — як і раніше.', 'Passkey, authenticatorcode, herstelcode of opnieuw aanmelden bij Google — zoals altijd.')}</small></span>
           </div>
         </div>
-      </section>
+      </section>}
 
       <AanbiederCatalogus lang={lang} context={p.context} />
 

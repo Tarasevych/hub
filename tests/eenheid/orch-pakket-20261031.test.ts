@@ -44,6 +44,13 @@ export async function main(): Promise<number> {
     const manifest = join(uit, 'manifest.json'); writeFileSync(manifest, manifestVoor('20261102-120000'));
     const tests = join(uit, 'tests.json'); writeFileSync(tests, JSON.stringify({ geslaagd: 12, mislukt: 0, falend: [], uitleg: { uk: 'усе зелене', nl: 'alles groen' } }));
 
+    // TRACE-002: een pakket vanaf integratie of een willekeurige tak haalt de rootvoorcontrole nooit.
+    git(R, 'checkout', '-q', '-b', 'zonder-taaktak');
+    let ongeldigeTak = orch(R, 'pakket', '--taak', 'REL-001', '--auteur', 'Test Eigenaar', '--versie', '20261108-120000', '--uit', uit);
+    check('TRACE-002: недозволена гілка зупиняє випуск до складання', ongeldigeTak.code === 1 && ongeldigeTak.uit.includes('ONTWIKKELARCHIEF_TAK_ONGELDIG'), ongeldigeTak.uit);
+    git(R, 'checkout', '-q', 'feature/rel-001-20261031-140000');
+    git(R, 'branch', '-D', 'zonder-taaktak');
+
     let r = orch(R, 'pakket', '--taak', 'REL-001', '--auteur', 'Test Eigenaar', '--versie', '20261101-000000', '--uit', uit);
     check('pakket з версією ≤ встановленої? ні — 20261101 > 20261031 → але без manifest (≥20261101) збирання падає зрозуміло', r.code === 1 && /MANIFEST|PAKKET_BOUW_MISLUKT/.test(r.uit), r.uit);
     r = orch(R, 'pakket', '--taak', 'REL-001', '--auteur', 'Test Eigenaar', '--versie', '20261102-120000', '--uit', uit, '--manifest', manifest, '--testresultaten', tests, '--niet-gedaan', 'мобільну версію не перевірено');

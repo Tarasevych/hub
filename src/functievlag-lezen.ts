@@ -26,6 +26,9 @@ export function laadVlaggen(opnieuw = false): Promise<Map<string, Uitkomst>> {
 /** Na een wijziging in het venster: nieuwe waarden ophalen, alle pagina's bijwerken. */
 export const vlaggenVernieuwen = () => laadVlaggen(true);
 
+/** Чи вже відомі прапорці (навіть після помилки — тоді всі «вимкнені»). Is de vlaggenlijst al opgehaald (ook na een fout)? */
+export const vlaggenBekend = () => cache !== null;
+
 /** Voor een ontbrekende of nog niet opgehaalde vlag gebruiken we veilig «uit». */
 export function useVlag(sleutel: string, standaard = false): boolean {
   const [, setTik] = useState(0);

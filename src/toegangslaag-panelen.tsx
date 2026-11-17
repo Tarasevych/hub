@@ -37,6 +37,7 @@ type Snapshot={
 
 type Props={
   tab:string;
+  alleen?:'methods'|'security'|'recovery';
   lang:Lang;
   data:Snapshot;
   busy:boolean;
@@ -71,7 +72,7 @@ const statusLabel=(lang:Lang,status:string)=>({
 // ID-02: één pagina voor Способи входу / Безпека / Відновлення — elk tabblad scrolt naar ZIJN onderdeel en licht het even op (ook als het
 // adres direct wordt geopend, en opnieuw zodra de gegevens binnen zijn, want dan verschuift de pagina).
 const SECTIE:Record<string,string>={methods:'aanmeldmethoden-google',security:'aanmeldmethoden-2fa',recovery:'aanmeldmethoden-herstel'};
-export const naarSectie=(tab:string,doc:Pick<Document,'getElementById'|'querySelectorAll'>=document):string=>{const id=SECTIE[tab];if(!id)return '';const el=doc.getElementById(id);if(!el)return '';for(const x of Array.from(doc.querySelectorAll('[data-access-actief]')))x.removeAttribute('data-access-actief');el.setAttribute('data-access-actief','1');try{el.scrollIntoView({behavior:'smooth',block:'start'})}catch{/* geen scroll */}try{(el as HTMLElement).focus?.({preventScroll:true})}catch{/* geen focus */}return id};
+export const naarSectie=(tab:string,doc:Pick<Document,'getElementById'|'querySelectorAll'>=document):string=>{const id=SECTIE[tab];if(!id)return '';const el=doc.getElementById(id);if(!el)return '';for(const x of Array.from(doc.querySelectorAll('[data-access-actief]')))x.removeAttribute('data-access-actief');el.setAttribute('data-access-actief','1');/* Ingebed in de accountpagina (.ia-inline): de pagina kiest zelf het onderdeel; anders sprongen alle drie panelen tegelijk naar hun sectie en eindigde de pagina onderaan. */if(!(el as Element).closest?.('.ia-inline'))try{el.scrollIntoView({behavior:'smooth',block:'start'})}catch{/* geen scroll */}try{(el as HTMLElement).focus?.({preventScroll:true})}catch{/* geen focus */}return id};
 
 export function AccessPlanePanels(p:Props){
   const {tab,lang,data,busy,notice,password,setPassword,code,setCode,recovery,write}=p;
@@ -84,6 +85,9 @@ export function AccessPlanePanels(p:Props){
   // Link uit de melding «Це були ви?»: ?wijziging=<id> → paneel bovenaan (§13.10). Na terugdraaien de passkeys opnieuw laden.
   const[wijziging]=useState(wijzigingUitUrl);
   const[vernieuw,setVernieuw]=useState(0);
+  const toonMethoden=!p.alleen||p.alleen==='methods';
+  const toonBeveiliging=!p.alleen||p.alleen==='security';
+  const toonHerstel=!p.alleen||p.alleen==='recovery';
 
   const geladen=!!(data as {loaded?:boolean}).loaded||data.factors.some(f=>f.status!=='loading');
   useEffect(()=>{const t1=window.setTimeout(()=>naarSectie(tab),60),t2=window.setTimeout(()=>naarSectie(tab),450);return()=>{window.clearTimeout(t1);window.clearTimeout(t2)};},[tab,geladen]);
@@ -94,7 +98,7 @@ export function AccessPlanePanels(p:Props){
     {notice&&<p className='access-plane-notice'>{notice}</p>}
     {wijziging&&<ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={()=>{setVernieuw(v=>v+1);void p.load();}}/>}
 
-    <section className='access-plane-section' id='aanmeldmethoden-google' data-access-section='google' tabIndex={-1}>
+    {toonMethoden&&<section className='access-plane-section' id='aanmeldmethoden-google' data-access-section='google' tabIndex={-1}>
       <header className='access-plane-section-head'><h2>{tr(lang,'Вхід','Aanmelden')}</h2>
         <InfoTip label={tr(lang,'Про способи входу','Over aanmeldmethoden')}><p>{tr(lang,'Способи, якими ви входите в Mijn Ruimte, і ключі для підтвердження важливих дій.','Manieren waarop je je aanmeldt bij Mijn Ruimte, en sleutels om belangrijke acties te bevestigen.')}</p>
           {data.lockout.protected&&<p data-google-enige>{tr(lang,'Google — зараз ваш єдиний спосіб входу, тому його не можна вимкнути. Passkey поки що лише підтверджує важливі дії.','Google is nu je enige aanmeldmethode en kan daarom niet worden uitgeschakeld. Een passkey bevestigt voorlopig alleen belangrijke acties.')}</p>}
@@ -128,9 +132,9 @@ export function AccessPlanePanels(p:Props){
         </div>}
         <PasskeysSection key={vernieuw} lang={lang} context={p.context} onChange={()=>void p.load()}/>
       </div>
-    </section>
+    </section>}
 
-    <section className='access-plane-section' id='aanmeldmethoden-2fa' data-access-section='2fa' tabIndex={-1}>
+    {toonBeveiliging&&<section className='access-plane-section' id='aanmeldmethoden-2fa' data-access-section='2fa' tabIndex={-1}>
       <header className='access-plane-section-head'><h2>{tr(lang,'Двофакторна автентифікація','Tweefactorauthenticatie')}</h2>
         <InfoTip label={tr(lang,'Про двофакторну автентифікацію','Over tweefactorauthenticatie')}><p>{tr(lang,'Для важливих дій ми просимо підтвердження: passkey, код із застосунку-автентифікатора, код відновлення або повторний вхід у Google. SMS не використовуємо.','Voor belangrijke acties vragen we een bevestiging: passkey, code uit de authenticator-app, herstelcode of opnieuw inloggen bij Google. Sms gebruiken we niet.')}</p>
           <p><b>{tr(lang,'Застосунок-автентифікатор.','Authenticator-app.')}</b> {tr(lang,'6-значні коди із застосунку на кшталт Google Authenticator, Microsoft Authenticator або 1Password.','6-cijferige codes uit een app zoals Google Authenticator, Microsoft Authenticator of 1Password.')}</p></InfoTip></header>
@@ -157,11 +161,11 @@ export function AccessPlanePanels(p:Props){
           </div>
         </div>}
       </div>
-    </section>
+    </section>}
 
-    <HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>
-    <SleutelkluisSectie lang={lang} context={p.context}/>
-    <Toegangscodes lang={lang} context={p.context}/>
-    {p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
+    {toonHerstel&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
+    {toonBeveiliging&&<SleutelkluisSectie lang={lang} context={p.context}/>}
+    {toonMethoden&&<Toegangscodes lang={lang} context={p.context}/>}
+    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }

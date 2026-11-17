@@ -1,0 +1,193 @@
+/* Ілюстрації дванадцяти розділів (розмітка: atelier-v49-gegevens.json → secties[].art.uk/.nl).
+   Правила перенесено без змін значень із погодженого прототипу версії 49; змінено лише область дії (.mr-kunst)
+   і назви анімацій, щоб вони не зачіпали решту сайту. Полотно має сталий розмір 440×337 і масштабується цілим
+   (IdentiteitAtelier.tsx → Kunst), тому на телефоні нічого не обрізається й не роздувається.
+   Illustraties van de twaalf onderdelen: waarden ongewijzigd uit prototype 49, alleen het bereik (.mr-kunst) is nieuw. */
+.mr-kunst.accent-violet,.mr-kunst-raam.accent-violet{--a:#b3a3ff;--a2:#6e68bf;--art-bg:#242748;--glow:rgba(138,112,234,.24)}
+.mr-kunst.accent-cyan,.mr-kunst-raam.accent-cyan{--a:#6ed8e5;--a2:#297c9c;--art-bg:#173647;--glow:rgba(71,204,225,.2)}
+.mr-kunst.accent-pink,.mr-kunst-raam.accent-pink{--a:#ffabc4;--a2:#b66eaa;--art-bg:#452d4e;--glow:rgba(230,130,190,.19)}
+.mr-kunst.accent-mint,.mr-kunst-raam.accent-mint{--a:#80e3c6;--a2:#2b877f;--art-bg:#20443e;--glow:rgba(105,221,187,.18)}
+.mr-kunst.accent-amber,.mr-kunst-raam.accent-amber{--a:#ffd19b;--a2:#b78b57;--art-bg:#483829;--glow:rgba(244,185,99,.2)}
+.mr-kunst.accent-blue,.mr-kunst-raam.accent-blue{--a:#9bbfff;--a2:#4771b9;--art-bg:#253856;--glow:rgba(104,162,249,.16)}
+.mr-kunst{position:absolute;left:0;top:0;width:440px;height:337px;transform-origin:0 0;color:#eff4ff;font-family:inherit;line-height:1.2;pointer-events:none;user-select:none}
+.mr-kunst *{box-sizing:border-box}
+.mr-kunst svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.mr-kunst .art{width:100%;height:100%}
+.mr-kunst .art{height:100%;min-height:337px;position:relative;overflow:hidden;background:radial-gradient(circle at 49% 47%,var(--glow),transparent 66%),linear-gradient(145deg,var(--art-bg),#131c2e);display:flex;align-items:center;justify-content:center;isolation:isolate}
+.mr-kunst .art:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.2) .65px,transparent .65px);background-size:18px 18px;opacity:.16;mask-image:linear-gradient(to top,black,transparent);pointer-events:none}
+.mr-kunst .art:after{content:"";position:absolute;inset:-60px;border:1px solid rgba(255,255,255,.09);border-radius:50%;width:340px;height:340px;left:50%;top:50%;transform:translate(-50%,-50%)}
+.mr-kunst .art-personalization .art-halo{position:absolute;width:245px;height:245px;border-radius:50%;background:radial-gradient(circle,rgba(170,146,248,.3),transparent 64%)}
+.mr-kunst .floating-window{position:absolute;border:1px solid rgba(255,255,255,.21);background:linear-gradient(145deg,rgba(243,244,255,.16),rgba(157,153,221,.06));box-shadow:0 27px 60px rgba(3,5,23,.26);backdrop-filter:blur(12px);border-radius:15px;transform:rotate(-9deg)}
+.mr-kunst .main-window{width:225px;height:158px;left:16%;top:21%;padding:16px}
+.mr-kunst .window-top{display:flex;gap:5px;margin-bottom:20px}
+.mr-kunst .window-top i{width:5px;height:5px;background:rgba(255,255,255,.52);border-radius:50%}
+.mr-kunst .window-row{display:flex;align-items:center;gap:13px;margin:14px 0}
+.mr-kunst .window-row span{width:21px;height:21px;border-radius:7px;background:rgba(198,182,255,.7)}
+.mr-kunst .window-row b{height:6px;width:98px;border-radius:10px;background:rgba(255,255,255,.27)}
+.mr-kunst .window-row.second b{width:74px}
+.mr-kunst .window-row.third b{width:115px}
+.mr-kunst .smaller-window{height:105px;width:151px;right:10%;bottom:17%;transform:rotate(11deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:linear-gradient(140deg,#8978ce,#524b87)}
+.mr-kunst .smaller-window span{font-size:21px;color:#fff}
+.mr-kunst .smaller-window strong{font:italic 16px Georgia,serif;color:#fff}
+.mr-kunst .smaller-window small{font-size:6px;letter-spacing:.19em;color:#e5def6}
+.mr-kunst .art-spark{position:absolute;color:#e8d8fc}
+.mr-kunst .spark-a{top:16%;right:17%;font-size:22px}
+.mr-kunst .spark-b{bottom:16%;left:13%;font-size:15px}
+.mr-kunst .art-menu .art-orbit{width:220px;height:220px;border-radius:50%;border:1px dashed rgba(139,222,236,.45);position:relative;animation:mrKunstSlowRotate 35s linear infinite}
+.mr-kunst .art-orbit:before{content:"";position:absolute;inset:32px;border-radius:50%;border:1px solid rgba(130,221,232,.17)}
+.mr-kunst .art-orbit>span{position:absolute;width:43px;height:43px;display:grid;place-items:center;border:1px solid rgba(160,230,245,.35);background:#22475a;color:#aff1f8;border-radius:14px;font-size:19px;box-shadow:0 0 30px rgba(81,184,207,.13);animation:mrKunstCounterRotate 35s linear infinite}
+.mr-kunst .art-orbit>span:nth-child(1){top:-18px;left:90px}
+.mr-kunst .art-orbit>span:nth-child(2){top:23px;right:-21px}
+.mr-kunst .art-orbit>span:nth-child(3){right:-20px;bottom:18px}
+.mr-kunst .art-orbit>span:nth-child(4){bottom:-20px;left:88px}
+.mr-kunst .art-orbit>span:nth-child(5){left:-19px;bottom:22px}
+.mr-kunst .art-orbit>span:nth-child(6){left:-21px;top:23px}
+.mr-kunst .art-middle{position:absolute;font-size:10px;letter-spacing:.26em;color:#7daeb8;text-align:center;line-height:1.6}
+.mr-kunst .art-middle b{font-size:32px;letter-spacing:-.06em;color:#c8f8ff;font-weight:400}
+.mr-kunst .art-menu-label{position:absolute;bottom:20px;font-size:8px;letter-spacing:.28em;color:#8bbbc5}
+.mr-kunst .theme-sample{position:absolute;border:1px solid rgba(255,255,255,.2);border-radius:20px;box-shadow:0 26px 65px rgba(4,5,17,.28)}
+.mr-kunst .theme-sample-back{width:190px;height:185px;background:#fbf3ea;transform:rotate(12deg) translate(65px,-13px);padding:25px}
+.mr-kunst .theme-sample-dot{height:29px;width:29px;background:#b7adcc;border-radius:50%;display:block;margin-bottom:24px}
+.mr-kunst .theme-sample-back i{height:9px;border-radius:10px;background:#c8c1cf;width:100%;display:block;margin-top:13px}
+.mr-kunst .theme-sample-back i:last-child{width:70%}
+.mr-kunst .theme-sample-front{width:202px;height:213px;background:linear-gradient(145deg,#54446f,#2a294e);transform:rotate(-10deg) translate(-36px,20px);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;gap:15px}
+.mr-kunst .sample-moon{position:absolute;top:20px;font-size:39px;color:#e8cdeb}
+.mr-kunst .theme-sample-front strong{font:italic 22px Georgia,serif;color:#ffebf6;line-height:1.2;font-weight:400}
+.mr-kunst .sample-pills{display:flex;gap:6px}
+.mr-kunst .sample-pills span{height:13px;width:35px;border-radius:15px;background:#caa4cc}
+.mr-kunst .sample-pills span:nth-child(2){background:#f7dfcc}
+.mr-kunst .sample-pills span:nth-child(3){background:#8da5dc}
+.mr-kunst .language-card{position:absolute;width:198px;height:200px;border-radius:20px;box-shadow:0 25px 70px rgba(5,20,25,.28);padding:24px}
+.mr-kunst .language-back{transform:rotate(11deg) translate(52px,-20px);background:#acd4b9;color:#294b41;font:italic 28px Georgia,serif;display:flex;flex-direction:column;justify-content:space-between}
+.mr-kunst .language-back span{font-size:19px}
+.mr-kunst .language-front{transform:rotate(-9deg) translate(-32px,18px);background:linear-gradient(140deg,#375f55,#213d41);border:1px solid rgba(192,246,219,.3);display:flex;flex-direction:column;justify-content:space-between;color:#e6fff1}
+.mr-kunst .language-front small{font-size:8px;letter-spacing:.2em}
+.mr-kunst .language-front strong{font:italic 30px Georgia,serif;line-height:1.1;font-weight:400}
+.mr-kunst .language-front span{font-size:11px;letter-spacing:.18em}
+.mr-kunst .language-ring{position:absolute;height:290px;width:290px;border:1px solid rgba(169,248,217,.14);border-radius:50%}
+.mr-kunst .widget-art-grid{display:grid;width:230px;height:221px;grid-template-columns:1.15fr .85fr;grid-template-rows:1fr 1fr;gap:12px;transform:rotate(-8deg)}
+.mr-kunst .widget-art-grid>div{border-radius:19px;border:1px solid rgba(255,240,207,.2);background:linear-gradient(145deg,rgba(255,219,174,.24),rgba(255,236,201,.06));padding:17px;display:flex;flex-direction:column;justify-content:space-between;color:#ffdda8}
+.mr-kunst .widget-art-grid>div:first-child{grid-row:span 2;background:linear-gradient(145deg,#8d674c,#524232)}
+.mr-kunst .widget-art-grid small{font-size:8px;letter-spacing:.13em}
+.mr-kunst .widget-art-grid span{font-size:47px}
+.mr-kunst .widget-art-grid>div:nth-child(2) span{font-size:27px}
+.mr-kunst .widget-art-grid>div:nth-child(3) span{font-size:34px}
+.mr-kunst .identity-card{position:absolute;width:178px;height:217px;border-radius:19px;padding:20px;box-shadow:0 27px 60px rgba(5,8,28,.32);display:flex;flex-direction:column;justify-content:space-between}
+.mr-kunst .identity-card small{font-size:8px;letter-spacing:.15em}
+.mr-kunst .identity-back{transform:rotate(12deg) translate(55px,-4px);background:repeating-linear-gradient(135deg,#7c6331 0,#7c6331 8px,#f0bd56 8px,#f0bd56 13px);color:#281e18}
+.mr-kunst .identity-back strong{font-size:44px}
+.mr-kunst .identity-back span{font-size:9px;letter-spacing:.2em}
+.mr-kunst .identity-front{transform:rotate(-10deg) translate(-42px,20px);background:linear-gradient(140deg,#928bd6,#4e4b8e);border:1px solid rgba(255,255,255,.35);color:#fff}
+.mr-kunst .identity-avatar{width:69px;height:69px;border-radius:50%;background:rgba(255,255,255,.23);display:grid;place-items:center;font-size:34px}
+.mr-kunst .identity-front strong{font-size:18px}
+.mr-kunst .identity-front span{font-size:7px;letter-spacing:.14em}
+.mr-kunst .account-outer-ring{height:275px;width:275px;border:1px solid rgba(114,231,247,.21);border-radius:50%;position:absolute;box-shadow:0 0 0 31px rgba(114,231,247,.045)}
+.mr-kunst .account-folder{width:202px;height:169px;background:linear-gradient(145deg,#4294a8,#1c4c63);border:1px solid rgba(179,240,247,.41);border-radius:20px;position:relative;box-shadow:0 28px 55px rgba(0,15,27,.32);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transform:rotate(-8deg);color:#d9fcff}
+.mr-kunst .folder-tab{position:absolute;top:-12px;left:19px;height:20px;width:78px;border-radius:9px 9px 0 0;background:#4d9cab}
+.mr-kunst .account-folder>span{font-size:54px}
+.mr-kunst .account-folder strong{font-size:13px;letter-spacing:.12em}
+.mr-kunst .account-folder small{font-size:7px;letter-spacing:.2em}
+.mr-kunst .account-stamp{position:absolute;bottom:20px;color:#8bd6e3;font-size:8px;letter-spacing:.15em}
+.mr-kunst .device-screen{width:214px;height:152px;border:8px solid #7abcae;border-bottom-width:14px;border-radius:14px;background:linear-gradient(130deg,#385f60,#193b41);position:absolute;left:13%;top:24%;transform:rotate(-7deg);box-shadow:0 24px 45px rgba(0,10,10,.3);display:grid;place-items:center}
+.mr-kunst .device-screen:after{content:"";position:absolute;bottom:-23px;left:-18px;width:235px;height:8px;border-radius:0 0 30px 30px;background:#a0cfc1}
+.mr-kunst .device-screen span{font-size:35px;color:#a8efdb}
+.mr-kunst .device-notch{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:27px;height:4px;border-radius:8px;background:rgba(201,247,232,.7)}
+.mr-kunst .device-wave{position:absolute;width:99px;height:99px;border-radius:50%;border:1px solid rgba(157,245,215,.3)}
+.mr-kunst .device-phone{width:81px;height:156px;position:absolute;right:16%;bottom:19%;border:6px solid #8bd5c4;background:linear-gradient(145deg,#417d74,#20494b);border-radius:18px;transform:rotate(10deg);box-shadow:0 19px 40px rgba(0,12,17,.4);display:grid;place-items:center}
+.mr-kunst .device-phone span{color:#c5ffe9;font-size:28px}
+.mr-kunst .device-label{position:absolute;bottom:13px;font-size:8px;letter-spacing:.2em;color:#9ce2d4}
+.mr-kunst .security-ring{position:absolute;border-radius:50%;border:1px solid rgba(150,197,255,.22)}
+.mr-kunst .ring-outer{height:280px;width:280px}
+.mr-kunst .ring-inner{height:220px;width:220px;border-style:dashed;animation:mrKunstSlowRotate 44s linear infinite}
+.mr-kunst .shield-shape{width:164px;height:188px;clip-path:polygon(50% 0,95% 18%,91% 63%,77% 84%,50% 100%,23% 84%,9% 63%,5% 18%);background:linear-gradient(130deg,#8eade0,#416c9f 55%,#274366);display:grid;place-items:center;box-shadow:inset 0 0 30px #fff;filter:drop-shadow(0 15px 18px #0c1633)}
+.mr-kunst .shield-shape:before{content:"";position:absolute;inset:7px;clip-path:inherit;border:1px solid #cbdcff;background:rgba(6,22,49,.19)}
+.mr-kunst .shield-shape span{z-index:1;font-size:56px;color:#d7e9ff}
+.mr-kunst .recovery-sun{width:248px;height:248px;position:absolute;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(255,220,155,.27),rgba(255,188,93,.04) 58%,transparent 70%);box-shadow:0 0 0 17px rgba(242,195,126,.04),0 0 0 56px rgba(242,195,126,.025)}
+.mr-kunst .recovery-ticket{width:220px;height:164px;border:1px solid rgba(255,230,188,.51);border-radius:17px;background:linear-gradient(135deg,#d6b78f,#936e51);box-shadow:0 27px 60px rgba(20,11,5,.34);transform:rotate(-10deg);padding:24px;color:#493322;display:flex;flex-direction:column;justify-content:space-between}
+.mr-kunst .recovery-ticket span{font-size:10px;font-weight:750;letter-spacing:.2em}
+.mr-kunst .recovery-ticket strong{font-size:21px;letter-spacing:.24em;color:#553721}
+.mr-kunst .recovery-ticket small{font-size:7px;letter-spacing:.22em}
+.mr-kunst .recovery-star{position:absolute;top:14%;right:12%;color:#f9d5a0;font-size:25px}
+.mr-kunst .identity-mode-badge{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;max-width:90%;border-radius:100px;padding:8px 12px;background:rgba(18,26,46,.86);border:1px solid rgba(255,255,255,.25);color:#f5f5ff;font-size:10px;letter-spacing:.05em;font-weight:700;text-align:center;white-space:nowrap}
+.mr-kunst .art{background:radial-gradient(circle at 49% 47%,var(--glow),transparent 66%),
+             radial-gradient(circle at 79% 14%,rgba(var(--global-rgb),.12),transparent 57%),
+             linear-gradient(145deg,var(--art-bg),#131c2e);}
+.mr-kunst .art-personalization .art-halo{background:radial-gradient(circle,rgba(var(--global-rgb),.25),transparent 64%)}
+.mr-kunst .window-row span{background:rgba(var(--global-rgb),.66)}
+.mr-kunst .smaller-window{background:linear-gradient(140deg,var(--mood-window-start),var(--mood-window-end))}
+.mr-kunst .theme-sample-dot{background:color-mix(in srgb,var(--global) 40%,#abb5c2)}
+.mr-kunst .theme-sample-front{background:linear-gradient(145deg,var(--mood-sample-start),var(--mood-sample-end))}
+.mr-kunst .sample-moon{color:color-mix(in srgb,var(--global) 45%,#fff)}
+.mr-kunst .sample-pills span:first-child{background:color-mix(in srgb,var(--global) 60%,#c5b6d7)}
+.mr-kunst .profile-avatar{overflow:hidden;position:relative;isolation:isolate}
+.mr-kunst .profile-avatar>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:inherit}
+.mr-kunst .identity-avatar.profile-avatar{border-radius:50%;font-size:inherit}
+.mr-kunst .identity-front [data-profile-name]{font-size:16px;line-height:1.12;overflow-wrap:anywhere;max-height:54px;overflow:hidden}
+.mr-kunst .art-identities .identity-card{width:clamp(139px,42%,178px);height:217px;box-sizing:border-box;padding:19px 17px;top:50%;display:flex;gap:8px;justify-content:space-between;transition:transform .35s ease,box-shadow .35s ease,filter .35s ease,opacity .35s ease}
+.mr-kunst .art-identities .identity-back{left:55%;z-index:1;transform:translate(0,-50%) rotate(3deg);background:linear-gradient(145deg,#61446b,#382d53 65%,#262842);color:#fff0d5;border:1px solid rgba(250,208,123,.57);box-shadow:0 20px 54px rgba(15,11,36,.33)}
+.mr-kunst .art-identities .identity-back:before{content:"";position:absolute;top:0;left:0;right:0;height:14px;background:repeating-linear-gradient(130deg,#e9b857 0 7px,#473954 7px 13px);border-radius:19px 19px 0 0}
+.mr-kunst .art-identities .identity-front{left:47%;z-index:2;transform:translate(-100%,-50%) rotate(-3deg);background:linear-gradient(145deg,#847cc6,#4b528c 80%);border:1px solid rgba(233,230,255,.65);color:#fff}
+.mr-kunst .art-identities .identity-card small,.mr-kunst .art-identities .identity-card span{position:relative;z-index:1;font-size:9px;letter-spacing:.065em;line-height:1.35;font-weight:750;overflow-wrap:anywhere;text-shadow:0 1px 5px rgba(0,0,0,.2)}
+.mr-kunst .art-identities .identity-card small{padding-top:4px}
+.mr-kunst .art-identities .identity-back strong.identity-tech-mark{position:relative;display:grid;place-items:center;align-self:flex-start;width:69px;height:69px;background:rgba(253,205,106,.12);border:1px solid rgba(255,217,140,.44);border-radius:17px;color:#f5d79e;z-index:1}
+.mr-kunst .art-identities .identity-tech-mark svg{width:44px;height:44px}
+.mr-kunst .art-identities .identity-front [data-profile-name]{position:relative;z-index:1;font-size:16px;color:#fff;line-height:1.25;max-height:none;max-width:100%;overflow-wrap:anywhere}
+.mr-kunst .art-identities .identity-avatar{position:relative;z-index:1;flex:0 0 62px;width:62px;height:62px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.17)}
+.mr-kunst .art-identities .identity-mode-badge{background:rgba(19,29,55,.94);border-color:rgba(227,230,255,.46);box-shadow:0 5px 15px rgba(9,15,32,.26);font-size:10px;letter-spacing:.025em}
+@media(prefers-reduced-motion:reduce){.mr-kunst .art-identities .identity-card{transition:none!important}}
+.mr-kunst .brand-symbol{width:24px;height:24px;display:block;flex:0 0 auto}
+.mr-kunst .art-orbit>span .meaningful-icon{width:24px;height:24px}
+.mr-kunst .sharing-permissions-card{position:relative;z-index:2;width:min(86%,348px);max-width:348px;padding:16px;border:1px solid rgba(192,219,255,.42);border-radius:18px;background:linear-gradient(145deg,rgba(58,91,137,.98),rgba(28,48,80,.96));box-shadow:0 24px 70px rgba(3,12,30,.38);display:flex;flex-direction:column;gap:9px;color:#e9f5ff}
+.mr-kunst .sharing-card-head{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.06em;line-height:1.4}
+.mr-kunst .sharing-card-head>span{width:31px;height:31px;display:grid;place-items:center;border-radius:9px;background:rgba(174,207,255,.16);color:#c6e4ff;flex:0 0 31px}
+.mr-kunst .sharing-card-head svg{width:19px;height:19px}
+.mr-kunst .sharing-card-head strong{font-weight:780}
+.mr-kunst .sharing-person-row{display:flex;align-items:center;gap:11px;min-height:52px;padding:8px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(212,235,255,.14);border-radius:12px}
+.mr-kunst .sharing-person-row>span{font-size:10px;line-height:1.35;letter-spacing:.02em;flex:1;min-width:0;font-weight:700}
+.mr-kunst .sharing-person-avatar{height:33px;width:33px;flex:0 0 33px;display:grid;place-items:center;border:1px solid rgba(225,239,255,.45);border-radius:50%;background:rgba(184,219,255,.19)}
+.mr-kunst .sharing-person-avatar svg{width:21px;height:21px;color:#e1f4ff}
+.mr-kunst .sharing-person-row b{display:grid;place-items:center;color:#8ae0bb}
+.mr-kunst .sharing-person-row b svg{width:19px;height:19px}
+.mr-kunst .sharing-person-row em{font-style:normal;font-size:9px;white-space:nowrap;padding:5px 7px;background:rgba(133,204,247,.17);color:#c9edff;border-radius:7px;font-weight:720}
+.mr-kunst .sharing-link-row{display:flex;align-items:center;gap:9px;min-height:45px;padding:8px 10px;border-radius:11px;background:rgba(11,28,53,.44);border:1px dashed rgba(172,200,241,.32)}
+.mr-kunst .sharing-link-row>span{display:grid;place-items:center;color:#9fc5f6}
+.mr-kunst .sharing-link-row svg{width:18px;height:18px}
+.mr-kunst .sharing-link-row strong{font-size:10px;flex:1;min-width:0;line-height:1.3;font-weight:680}
+.mr-kunst .sharing-link-row small{color:#b3bed5;font-size:9px;white-space:nowrap}
+.mr-kunst .sharing-card-foot{display:flex;align-items:center;gap:8px;font-size:9px;line-height:1.3;color:#b8d5f7;font-weight:750;letter-spacing:.05em}
+.mr-kunst .sharing-card-foot svg{width:16px;height:16px}
+.mr-kunst .sharing-art-footer{position:absolute;bottom:9px;z-index:3;font-size:8px;letter-spacing:.13em;color:#b6c9e9;font-weight:700}
+.mr-kunst .art-sharing:after{border-color:rgba(160,203,255,.13)}
+.mr-kunst .methods-art-card{z-index:2;position:relative;width:min(85%,345px);padding:17px;display:flex;flex-direction:column;gap:12px;border-radius:20px;background:linear-gradient(140deg,#583e65,#2e2d54 77%);border:1px solid rgba(255,206,230,.31);box-shadow:0 24px 60px rgba(22,9,37,.34)}
+.mr-kunst .methods-art-row{display:flex;align-items:center;gap:13px;padding:13px;border-radius:13px;background:rgba(255,243,252,.11);border:1px solid rgba(255,227,250,.15);color:#fff1fa}
+.mr-kunst .methods-art-row>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.mr-kunst .methods-art-row strong{font-size:12px;font-weight:780;line-height:1.25}
+.mr-kunst .methods-art-row small{font-size:9px;line-height:1.5;letter-spacing:.04em;color:#ecd0e8}
+.mr-kunst .methods-art-row>.meaningful-icon{width:21px;height:21px;color:#bcefcf}
+.mr-kunst .methods-art-brand,.mr-kunst .methods-art-key{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:12px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.13)}
+.mr-kunst .methods-art-brand .brand-symbol{width:27px;height:27px}
+.mr-kunst .methods-art-key{color:#ffe7f2;background:rgba(255,188,211,.17);border:1px solid rgba(255,203,227,.36)}
+.mr-kunst .methods-art-key svg{width:25px;height:25px}
+.mr-kunst .methods-art-divider{display:flex;align-items:center;gap:8px;justify-content:center;color:#fad4e8}
+.mr-kunst .methods-art-divider span{height:1px;flex:1;background:rgba(248,206,232,.22)}
+.mr-kunst .methods-art-divider small{font-size:8px;letter-spacing:.09em;font-weight:700;text-align:center}
+.mr-kunst .widget-art-grid svg{width:35px;height:35px;color:#ffdeab}
+.mr-kunst .widget-art-grid>div:nth-child(2) svg,.mr-kunst .widget-art-grid>div:nth-child(3) svg,.mr-kunst .widget-art-grid>div:nth-child(4) svg{width:27px;height:27px}
+.mr-kunst .widget-art-grid>div{gap:5px}
+.mr-kunst .widget-art-grid>div small{font-weight:780;line-height:1.35}
+.mr-kunst .device-screen span svg{width:55px;height:55px;color:#adf4da}
+.mr-kunst .device-phone span svg{width:30px;height:30px;color:#b8ffdc}
+.mr-kunst .account-folder>span svg{width:53px;height:53px;color:#d9fcff}
+.mr-kunst .shield-shape span svg{height:78px;width:78px;stroke:#ebf4ff;stroke-width:1.55}
+.mr-kunst .security-art-label{position:absolute;z-index:3;display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid rgba(192,217,255,.36);border-radius:999px;background:rgba(27,50,84,.88);color:#d9e9ff;font-size:9px;font-weight:800;letter-spacing:.065em;white-space:nowrap}
+.mr-kunst .security-art-label svg{width:17px;height:17px}
+.mr-kunst .security-label-one{left:3%;top:12%}
+.mr-kunst .security-label-two{right:3%;bottom:11%}
+.mr-kunst .recovery-art-code{display:flex;align-items:center;gap:13px}
+.mr-kunst .recovery-art-code svg{height:30px;width:30px;color:#62432e}
+.mr-kunst .recovery-ticket .recovery-art-code strong{font-size:18px;white-space:nowrap;letter-spacing:.1em;color:#513723}
+.mr-kunst .recovery-star svg{width:25px;height:25px;color:#ffe0a8}
+.mr-kunst .art svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.65}
+@keyframes mrKunstOrbFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-16px) rotate(8deg)}}
+@keyframes mrKunstSlowRotate{to{transform:rotate(360deg)}}
+@keyframes mrKunstCounterRotate{to{transform:rotate(-360deg)}}

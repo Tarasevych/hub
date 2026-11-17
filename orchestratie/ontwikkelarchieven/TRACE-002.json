@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "taakId": "TRACE-002",
+  "datum": "2026-11-08",
+  "taal": "uk",
+  "opdracht": "Виправити відхилення випуску облікового запису версії 49 під час серверної перевірки ONTWIKKELARCHIEF_ONGELDIG, зберегти погоджений вигляд і запобігти створенню наступних випусків із недозволеною гілкою походження.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "codex",
+    "model": "gpt-6",
+    "repo": "Tarasevych/hub",
+    "basisTak": "integratie",
+    "basisCommit": "2b665a8bc427a1c28e9b8f4003393cbc255c8628",
+    "geinstalleerdeVersie": "20261107-195618",
+    "geinstalleerdeCommit": "70d2d2175aa402445b41d2f98beef4b4fdbd1b9c",
+    "voorgaandeVersie": "20261108-083831",
+    "voorgaandeFout": "ONTWIKKELARCHIEF_ONGELDIG"
+  },
+  "bronnen": [
+    {
+      "soort": "звіт встановлювача",
+      "omschrijving": "Власник надав повний результат серверної перевірки відхиленого пакета; структуру, опис, версію та решту перевірок прийнято, але історію походження відхилено.",
+      "bewijzen": ["Відповідь перевірника на admin.tarasevych.com від 08.11.2026, 10:00"]
+    },
+    {
+      "soort": "попередній випуск",
+      "omschrijving": "Незмінний архів попереднього випуску та його посилання на історію з неправильною назвою гілки.",
+      "bewijzen": ["https://github.com/Tarasevych/hub/releases/tag/20261108-083831", "orchestratie/ontwikkelarchieven/IDENTITEIT-005.json"]
+    },
+    {
+      "soort": "незалежні перевірники",
+      "omschrijving": "Серверний і кореневий перевірники вимагають саме гілку завдання; інтеграційна гілка не відповідає дозволеному зразку.",
+      "bewijzen": ["shared/ontwikkelarchief.ts", "backend/uitrol-ontwikkelarchief.ts", "deploy/uitrol/mijn-ruimte-uitrol.sh"]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Зіставлено повідомлення власника з полями ONTWIKKELARCHIEF.json у відхиленому архіві; виявлено значення tak=integratie.",
+      "bewijzen": ["https://github.com/Tarasevych/hub/releases/tag/20261108-083831"]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Підтверджено, що спільний і кореневий перевірники відхиляють гілку integratie ще до перевірки запису GitHub.",
+      "bewijzen": ["shared/ontwikkelarchief.ts", "deploy/uitrol/mijn-ruimte-uitrol.sh"]
+    },
+    {
+      "volgorde": 3,
+      "stap": "У підготовнику додано перевірку допустимої назви гілки до складання архіву і доповнено перевірку обов'язкових полів журналу історії.",
+      "bewijzen": ["scripts/orch/pakket.mjs"]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Додано перевірку попереднього відхилення підготовника для недозволеної назви гілки.",
+      "bewijzen": ["tests/eenheid/orch-pakket-20261031.test.ts"]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Зберегти незмінним відхилений оприлюднений архів",
+      "reden": "Заміна вмісту під уже оприлюдненою версією зруйнувала б відтворюваність і перевірну суму.",
+      "alternatief": "Перезаписування файлу попереднього випуску відхилено."
+    },
+    {
+      "keuze": "Підготувати наступну версію з перевірюваною гілкою завдання",
+      "reden": "Вона міститиме попередню роботу над виглядом та коректну історію походження, прив'язану до незмінної фіксації змін.",
+      "alternatief": "Послаблення вимог TRACE-001 або обхід перевірок відхилено."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "scripts/orch/pakket.mjs",
+      "omschrijving": "Перевірка назви гілки до пакування та перевірка обов'язкових полів журналу."
+    },
+    {
+      "pad": "tests/eenheid/orch-pakket-20261031.test.ts",
+      "omschrijving": "Перевірка, яка відтворює помилку гілки походження і очікує відмови підготовника."
+    },
+    {
+      "pad": "orchestratie/taken/TRACE-002.json",
+      "omschrijving": "Реєстрація окремого завдання виправлення пакета."
+    },
+    {
+      "pad": "orchestratie/ontwikkelarchieven/TRACE-002.json",
+      "omschrijving": "Доказовий опис відмови та її усунення."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/eenheidstests.mjs orch-pakket",
+      "uitkomst": "24 із 24 перевірок успішно, включно з відтвореною відмовою для недозволеної гілки"
+    },
+    {
+      "opdracht": "git diff --check",
+      "uitkomst": "без зауважень"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs trace-001",
+      "uitkomst": "16 із 16 перевірок успішно"
+    },
+    {
+      "opdracht": "npm run typecheck:server",
+      "uitkomst": "успішно"
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer",
+      "uitkomst": "узгодженість правил і стану підтверджена; зауваження про непідтверджену власником автоматичну політику"
+    }
+  ],
+  "beperkingen": [
+    "У попередньому випуску 20261108-083831 залишено його незмінний помилковий архів; новий матиме іншу версію та контрольну суму.",
+    "Оприлюднення нового архіву не встановлює його на сервер і не замінює підтвердження власника ключем доступу.",
+    "Вміст старого оформлення облікового запису не змінюється; заплановані можливості залишаються запланованими."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, ключів, приватних листів, прихованих внутрішніх міркувань чи ідентифікаторів сеансів до історії не внесено."
+  }
+}
