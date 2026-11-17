@@ -297,7 +297,10 @@ export async function main(): Promise<number> {
   const zwak = NEUTRAAL.filter((k) => reg.merkContrast(MERKEN[k].kleur, MERKEN[k].vlak!) < 4.5);
   check('neutrale plaat: letters ≥ 4,5:1 op de merktoon (wit of zwart, het hoogste contrast)', zwak.length === 0, zwak.join());
   const mailMerken = MAIL_AANBIEDERS.map((a) => a.merk);
-  const echteHerkomst = mailMerken.filter((m) => !!LOGOS[m]);
+  // UPD-004 (PLAATS-TEKENS-001, #154): icloud та інші дублі прибрано з merk-logos.ts — їхня форма тепер лише офіційний файл з simple-icons
+  // (src/merk/officieel/, OFFICIEEL_SLEUTELS). Справжня форма = LOGOS або офіційний файл без нейтральної плати.
+  const { OFFICIEEL_SLEUTELS } = await import("../../src/merk/officieel-sleutels");
+  const echteHerkomst = mailMerken.filter((m) => !!LOGOS[m] || (OFFICIEEL_SLEUTELS.has(m) && !MERKEN[m]?.neutraal));
   const neutraalMail = mailMerken.filter((m) => MERKEN[m]?.neutraal);
   check(`elke mailtegel: óf een vorm uit simple-icons (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
     echteHerkomst.length + neutraalMail.length === mailMerken.length && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail'));
