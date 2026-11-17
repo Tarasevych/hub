@@ -3,9 +3,10 @@
 // worden en bij een bericht van een ander tabblad (BroadcastChannel, zelfde origin). Na elke wijziging ook de oude tech-status
 // vernieuwen, zodat de band en html[data-tech] meteen (zonder herladen) meegaan.
 import { useSyncExternalStore } from 'react';
+import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
 import { techVernieuwen } from '../tech-opslag';
-import { huidigeRuimte, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
+import { huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
 
 export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; bezig: '' | 'wisselen' | 'starten' | 'beeindigen' | 'verlengen'; fout: string; nu: number; uitleg: string };
 let toestand: RuimtesToestand = { geladen: false, status: null, bezig: '', fout: '', nu: Date.now(), uitleg: '' };
@@ -34,7 +35,14 @@ async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesSt
 export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const oud = toestand.status;
   if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'prive' && !!oud.sessie } });
-  try { return await actie('wisselen', () => ruimtesApi.wisselen(naar)); } catch (e) { if (oud) zet({ status: oud }); throw e; }
+  try {
+    const s = await actie('wisselen', () => ruimtesApi.wisselen(naar));
+    meldGebruikerWissel(naar);
+    return s;
+  } catch (e) {
+    if (oud) zet({ status: oud });
+    throw e;
+  }
 }
 export const starten = (modus: TermijnModus, reden: string, minuten?: number) => actie('starten', () => ruimtesApi.starten(modus, reden, minuten));
 export const verlengen = (minuten: number, soort: 'bijtellen' | 'vervangen') => actie('verlengen', () => ruimtesApi.verlengen(minuten, soort));
@@ -66,6 +74,8 @@ export function startRuimtes(): void {
   try { kanaal = typeof BroadcastChannel === 'function' ? new BroadcastChannel('mr-ruimtes') : null; if (kanaal) kanaal.onmessage = () => { void ruimtesVernieuwen(); void techVernieuwen(); }; } catch { kanaal = null; }
   void ruimtesVernieuwen();
   const zichtbaar = () => { if (!document.hidden) { void ruimtesVernieuwen(); void ruimteControle(); } };
+  // Синхронізація після перемикання акаунта в меню або виходу в іншій вкладці.
+  window.addEventListener(CANONICAL_AUTH_CHANGE, () => { void ruimtesVernieuwen(); });
   // Een 401/403 van een ruimte-API of een kop X-Ruimte die niet past bij wat de pagina denkt: meteen controleren.
   window.addEventListener('mr-ruimte-antwoord', (ev) => {
     const d = (ev as CustomEvent<{ status: number; ruimte: string | null; pad: string; code?: string }>).detail;
@@ -83,3 +93,4 @@ export function startRuimtes(): void {
   window.setInterval(() => { if (!document.hidden && (toestand.status?.aan || huidigeRuimte() === 'technisch')) void ruimtesVernieuwen(); }, POLL_MS);
   window.setInterval(() => { if (toestand.status?.aan) zet({}); }, 15_000); // resterende tijd bijwerken (alleen tijdens een actieve ruimte)
 }
+

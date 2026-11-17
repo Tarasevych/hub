@@ -31,6 +31,7 @@ import '../extensie/ExtensieOntgrendeling.css';
 // Twee ruimtes van één account (vlag tech-ruimtes-v2, standaard UIT = precies de oude weergave hieronder).
 import { laadRuimtesVlag, ruimtesV2Nu, useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { startRuimtes } from './ruimtes/ruimtes-opslag';
+import { opGebruikerWissel } from './ruimtes/ruimte-signaal';
 import { WOORDEN } from './ruimtes/teksten';
 // 03.11.2026: via lazyTech (zoals terminal/vlaggen/ssh) in plaats van kaal React.lazy — tech-bundels.test.ts eist «nooit kaal lazy» in
 // TechLaag; bij een mislukte lading eerst de status vernieuwen en één keer opnieuw proberen. Alle vijf staan al binnen TechBundelGrens.
@@ -130,10 +131,19 @@ export default function TechLaag() {
   // Eén mechanisme voor in- en uitschuiven (band-inschuiven.ts): muis aan de bovenrand, focus, klik, Esc, klik ernaast, scrollen —
   // met de lusbescherming van headroom. Raakt alleen de band zelf, nooit #root.
   const inschuif = useRef<ReturnType<typeof koppelInschuiven> | null>(null);
+  const openBijBandAan = useRef(false);
+  useEffect(() => {
+    return opGebruikerWissel((naar) => {
+      if (naar !== 'technisch') { openBijBandAan.current = false; return; }
+      if (inschuif.current) { openBijBandAan.current = false; inschuif.current.open(); }
+      else openBijBandAan.current = true;
+    });
+  }, []);
   useEffect(() => {
     if (!bandAan) return undefined;
     const k = koppelInschuiven({ band: () => bandRef.current, modus: () => modusRef.current, vast: () => vastRef.current || focusZichtbaar(bandRef.current), zet: setPiek });
     inschuif.current = k;
+    if (openBijBandAan.current) { openBijBandAan.current = false; k.open(); }
     return () => { k.stop(); inschuif.current = null; setPiek(false); };
   }, [bandAan]);
   const vorigeModus = useRef(modus);

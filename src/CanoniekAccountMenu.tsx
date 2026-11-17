@@ -110,7 +110,7 @@ type Props = {
    * en biedt het de activering voor het NIEUWE account in één stap aan. Geeft zij (zoals vroeger) niets terug, dan blijft
    * alles werken: het menu meldt dan alleen in welk profiel de mens nu staat.
    */
-  onSelectAccount?: (grantId: string) => void | Promise<void | { techBeeindigd?: number } | undefined>;
+  onSelectAccount?: (grantId: string) => void | Promise<void | { techBeeindigd?: number; redirected?: boolean; fout?: string; reauth?: boolean } | undefined>;
   onForgetAccount?: (grantId: string) => Promise<AccountMenuSnapshot>;
   onProfilePhotoChange?: (file: File) => Promise<AccountMenuUser | void>;
 };
@@ -495,11 +495,29 @@ export default function CanonicalAccountMenu({
   const select = async (item: RememberedAccount) => {
     if (!item.grantId || !onSelectAccount) return;
     setSelecting(item.grantId);
+    setWisselFout(null);
     try {
       const uit = await onSelectAccount(item.grantId);
-      const beeindigd = Number((uit as { techBeeindigd?: unknown } | void | undefined)?.techBeeindigd || 0) > 0;
+      const res = uit as { techBeeindigd?: unknown; redirected?: boolean; fout?: string; reauth?: boolean } | void | undefined;
+      if (res?.redirected) return;
+      if (res?.fout) {
+        setGewisseld(null);
+        setWisselFout({ tekst: res.fout, reauth: res.reauth });
+        void load();
+        return;
+      }
+      const beeindigd = Number(res?.techBeeindigd || 0) > 0;
       setGewisseld({ naam: item.user.name || item.user.email, email: item.user.email, techBeeindigd: beeindigd });
       setExpanded(false);
+      void load();
+    } catch {
+      setGewisseld(null);
+      setWisselFout({
+        tekst: lang === 'uk'
+          ? 'Не вдалося перемкнутися на цей акаунт. Спробуйте ще раз або увійдіть через Google.'
+          : 'Wisselen naar dit account is mislukt. Probeer opnieuw of meld u aan via Google.',
+        reauth: true,
+      });
     } finally {
       setSelecting('');
     }
@@ -803,6 +821,17 @@ export default function CanonicalAccountMenu({
                 );
               })()}
 
+              {wisselFout && (
+                <section className='canonical-account-wissel-fout' role='alert' data-account-wissel-fout='true'>
+                  <p>{wisselFout.tekst}</p>
+                  {wisselFout.reauth && (
+                    <button type='button' className='canonical-menu-action primary' onClick={add} disabled={busy}>
+                      <KeyRound /><span>{lang === 'uk' ? 'Увійти через Google' : 'Aanmelden via Google'}</span>
+                    </button>
+                  )}
+                </section>
+              )}
+
               {model.shouldShowOtherAccountsToggle && (
                 <div className='canonical-other-accounts-bar'>
                   {/* Eén hit-vlak: tekst, voorbeeldfoto's en pijl zitten in dezelfde knop (geen los pijltje-vakje ernaast). */}
@@ -811,7 +840,7 @@ export default function CanonicalAccountMenu({
                       type='button'
                       className='canonical-other-toggle-main'
                       aria-expanded={expanded}
-                      onClick={() => setExpanded((value) => !value)}
+                      onClick={() => { setWisselFout(null); setExpanded((value) => !value); }}
                     >
                       <Users />
                       <span>{expanded ? t.hide : t.show}</span>
@@ -967,6 +996,16 @@ export default function CanonicalAccountMenu({
               </header>
               {loading && <p className='canonical-account-state'>{t.loading}</p>}
               {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
+              {wisselFout && (
+                <section className='canonical-account-wissel-fout' role='alert' data-account-wissel-fout='true'>
+                  <p>{wisselFout.tekst}</p>
+                  {wisselFout.reauth && (
+                    <button type='button' className='canonical-menu-action primary' onClick={add} disabled={busy}>
+                      <KeyRound /><span>{lang === 'uk' ? 'Увійти через Google' : 'Aanmelden via Google'}</span>
+                    </button>
+                  )}
+                </section>
+              )}
               {!model.isFirstLogin && list}
               <div className='canonical-add-account-control' data-add-account-control='composite'>
                 <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
