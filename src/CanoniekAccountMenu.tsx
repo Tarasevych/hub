@@ -87,6 +87,8 @@ export {
 
 export type AccountTheme = 'light' | 'dark' | 'device' | 'auto' | 'plum-light' | 'plum-dark';
 
+export type AccountSelectResult = void | { techBeeindigd?: number } | { ok: false; redirected?: boolean; fout?: string };
+
 type Props = {
   lang: 'uk' | 'nl';
   theme: AccountTheme;
@@ -95,6 +97,7 @@ type Props = {
   user: AccountMenuUser | null;
   busy?: boolean;
   openRequest?: number;
+  closeRequest?: number;
   sessionStartedAt?: number;
   onManage?: () => void;
   onSettings?: () => void;
@@ -115,7 +118,7 @@ type Props = {
    * en biedt het de activering voor het NIEUWE account in één stap aan. Geeft zij (zoals vroeger) niets terug, dan blijft
    * alles werken: het menu meldt dan alleen in welk profiel de mens nu staat.
    */
-  onSelectAccount?: (grantId: string) => void | Promise<void | { techBeeindigd?: number } | undefined>;
+  onSelectAccount?: (grantId: string) => void | Promise<AccountSelectResult>;
   onForgetAccount?: (grantId: string) => Promise<AccountMenuSnapshot>;
   onProfilePhotoChange?: (file: File) => Promise<AccountMenuUser | void>;
 };
@@ -408,6 +411,7 @@ export default function CanonicalAccountMenu({
   user,
   busy = false,
   openRequest = 0,
+  closeRequest = 0,
   sessionStartedAt = 0,
   onManage,
   onSettings,
@@ -462,11 +466,13 @@ export default function CanonicalAccountMenu({
    * profielen: een technische activering is aan EEN MENS EN EEN TABBLAD gebonden en gaat nooit mee naar een ander account.
    */
   const [gewisseld, setGewisseld] = useState<{ naam: string; email: string; techBeeindigd: boolean } | null>(null);
+  const [wisselFout, setWisselFout] = useState('');
 
   const close = () => {
     setOpen(false);
     setExpanded(false);
     setGewisseld(null);
+    setWisselFout('');
   };
 
   const sluitMetLade = () => {
@@ -504,16 +510,21 @@ export default function CanonicalAccountMenu({
 
   useEffect(() => {
     if (open) void load();
-  }, [open]);
+  }, [open, user?.id]);
 
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
 
   useEffect(() => {
+    if (closeRequest > 0) close();
+  }, [closeRequest]);
+
+  useEffect(() => {
     setProfileOverride(null);
     setPhotoError(false);
     setLoadFailed(false);
+    setWisselFout('');
   }, [user?.id, user?.accountId, user?.email, user?.picture, user?.customPicture, user?.customPhoto, user?.providerPicture]);
 
   const displayUser = profileOverride && user && isSameAccount(profileOverride, user) ? profileOverride : user;
@@ -592,11 +603,21 @@ export default function CanonicalAccountMenu({
   const select = async (item: RememberedAccount) => {
     if (!item.grantId || !onSelectAccount) return;
     setSelecting(item.grantId);
+    setWisselFout('');
     try {
       const uit = await onSelectAccount(item.grantId);
-      const beeindigd = Number((uit as { techBeeindigd?: unknown } | void | undefined)?.techBeeindigd || 0) > 0;
+      const res = uit as { techBeeindigd?: unknown; ok?: boolean; redirected?: boolean; fout?: string } | undefined;
+      if (res && res.ok === false) {
+        if (res.redirected) { sluitMetLade(); return; }
+        setWisselFout(res.fout || (lang === 'uk' ? 'Не вдалося перемкнути обліковий запис.' : 'Kan niet naar dit account wisselen.'));
+        return;
+      }
+      const beeindigd = Number(res?.techBeeindigd || 0) > 0;
       setGewisseld({ naam: item.user.name || item.user.email, email: item.user.email, techBeeindigd: beeindigd });
       setExpanded(false);
+      void load();
+    } catch {
+      setWisselFout(lang === 'uk' ? 'Не вдалося перемкнути обліковий запис. Спробуйте ще раз.' : 'Het wisselen van account is mislukt. Probeer het opnieuw.');
     } finally {
       setSelecting('');
     }
@@ -1086,6 +1107,7 @@ export default function CanonicalAccountMenu({
                   termsLabel={t.terms}
                   showLogoutAll={showLogoutAll}
                   wisselMelding={wisselMeldingData}
+                  wisselFout={wisselFout}
                   v2Ruimtes={v2}
                   onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
                   onSelectAccount={select}
@@ -1137,6 +1159,7 @@ export default function CanonicalAccountMenu({
               termsLabel={t.terms}
               showLogoutAll={showLogoutAll}
               wisselMelding={wisselMeldingData}
+              wisselFout={wisselFout}
               v2Ruimtes={v2}
               onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
               onSelectAccount={select}
@@ -1197,6 +1220,12 @@ export default function CanonicalAccountMenu({
                   onClick={() => { close(); onManage(); }}
                   className='canonical-menu-action primary'
                 />
+              )}
+
+              {wisselFout && (
+                <p className='canonical-account-state error' role='alert' data-account-wissel-fout='true'>
+                  {wisselFout}
+                </p>
               )}
 
               {/* Klacht 2: wat er net gebeurde, in gewone woorden — en de enige volgende stap die er is. */}
@@ -1388,6 +1417,7 @@ export default function CanonicalAccountMenu({
               </header>
               {loading && <p className='canonical-account-state'>{t.loading}</p>}
               {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
+              {wisselFout && <p className='canonical-account-state error' role='alert' data-account-wissel-fout='true'>{wisselFout}</p>}
               {!model.isFirstLogin && list}
               <div className='canonical-add-account-control' data-add-account-control='composite'>
                 <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>

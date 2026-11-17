@@ -3,6 +3,7 @@
 // worden en bij een bericht van een ander tabblad (BroadcastChannel, zelfde origin). Na elke wijziging ook de oude tech-status
 // vernieuwen, zodat de band en html[data-tech] meteen (zonder herladen) meegaan.
 import { useSyncExternalStore } from 'react';
+import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
 import { techVernieuwen } from '../tech-opslag';
 import { huidigeRuimte, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
@@ -26,7 +27,7 @@ export async function ruimtesVernieuwen(): Promise<void> {
 }
 async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesStatus>): Promise<RuimtesStatus> {
   zet({ bezig: soort, fout: '', uitleg: '' }); laatsteActie = Date.now();
-  try { const s = await f(); zet({ status: s, bezig: '' }); meld(); void techVernieuwen(); return s; }
+  try { const s = await f(); zet({ status: s, bezig: '' }); meld(); await techVernieuwen(); return s; }
   catch (e) { zet({ bezig: '', fout: code(e) }); throw e; }
   finally { laatsteActie = Date.now(); }
 }
@@ -81,6 +82,7 @@ export function startRuimtes(): void {
   });
   document.addEventListener('visibilitychange', zichtbaar);
   window.addEventListener('focus', zichtbaar);
+  window.addEventListener(CANONICAL_AUTH_CHANGE, () => { void ruimtesVernieuwen(); });
   // Alleen pollen waar het nodig is: een technische ruimte die loopt, of de pagina staat er nu in. Anders dekken de
   // zichtbaarheids-, focus- en kanaalmeldingen hierboven het af; op de telefoon scheelt dat elke 15 s een verzoek en een herrender.
   window.setInterval(() => { if (!document.hidden && (toestand.status?.aan || huidigeRuimte() === 'technisch')) void ruimtesVernieuwen(); }, POLL_MS);

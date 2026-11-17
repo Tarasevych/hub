@@ -245,8 +245,9 @@ export function startTech(): void {
   }
   // Uitloggen / account wisselen in DIT tabblad: de server sloot de activeringen van de sessie; de andere tabbladen meteen laten kijken.
   window.addEventListener(CANONICAL_AUTH_CHANGE, () => {
-    if (!toestand.activatie) return;
-    void techVernieuwen().then(() => { if (!toestand.activatie) meld({ t: 'uit' }); });
+    if (!sleutel) return;
+    const wasActief = Boolean(toestand.activatie);
+    void techVernieuwen().then(() => { if (wasActief && !toestand.activatie) meld({ t: 'uit' }); });
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && sleutel) void techVernieuwen(); });
   window.setInterval(() => { if (!document.hidden && sleutel && toestand.activatie) void techVernieuwen(); }, 60_000);
