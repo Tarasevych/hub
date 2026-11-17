@@ -21,9 +21,25 @@
     short: ['короткий', 'kort'], medium: ['середній', 'middel'], long: ['довгий', 'lang'], shorter: ['коротше', 'korter'], longer: ['довше', 'langer'],
     formal: ['офіційний', 'formeel'], neutral: ['нейтральний', 'neutraal'], casual: ['невимушений', 'informeel'],
     'more-formal': ['офіційніше', 'formeler'], 'more-casual': ['невимушеніше', 'informeler'],
+    default: ['типовий', 'standaard'], 'most-predictable': ['найпередбачуваніший', 'meest voorspelbaar'], balanced: ['збалансований', 'gebalanceerd'], 'most-creative': ['найтворчіший', 'meest creatief'],
+    auto: ['автоматично', 'automatisch'], speed: ['швидкість', 'snelheid'], capability: ['найвища якість', 'beste kwaliteit'],
   };
   const naam = (v) => (NAAM[v] ? t(NAAM[v][0], NAAM[v][1]) : v);
   const taalOptie = (c) => [c, `${L.taalNaam(c)} (${c})`];
+
+  const EXTRA_VLAGGEN = [
+    ['gemma4-for-built-in-ai', 'Модель Gemma 4 (пряма підтримка uk/nl)', 'Model Gemma 4 (directe ondersteuning uk/nl)'],
+    ['prompt-api-multimodal-input', 'Зображення та аудіо у Prompt API', 'Beeld en audio in Prompt API'],
+    ['prompt-api-sampling-mode', 'Режим вибірки (samplingMode)', 'Samplingmodus (samplingMode)'],
+    ['prompt-api-tool-use', 'Виклик інструментів (Tool Use)', 'Hulpmiddelaanroep (Tool Use)'],
+    ['summarizer-api-performance-preference', 'Пріоритет швидкості чи якості (Summarizer)', 'Prestatievoorkeur (Summarizer)'],
+    ['on-device-category-classifier', 'Локальний класифікатор категорій', 'Lokale categorie-indeler'],
+    ['on-device-model-speculative-decoding', 'Прискорення виведення (Speculative Decoding)', 'Versnelde verwerking (Speculative Decoding)'],
+    ['web-speech-on-device-small-expert-model', 'Локальне розпізнавання мовлення (Web Speech)', 'Lokale spraakherkenning (Web Speech)'],
+    ['enable-webmcp-testing', 'WebMCP (navigator.modelContext)', 'WebMCP (navigator.modelContext)'],
+    ['web-app-installation-api', 'Встановлення вебзастосунку (navigator.install)', 'Webapp installeren (navigator.install)'],
+    ['optimization-guide-on-device-model', 'Системна реєстрація локальної моделі', 'Systeemregistratie van het lokale model'],
+  ];
 
   async function bewaar(wijzig) {
     wijzig(cfg);
@@ -126,16 +142,28 @@
       knopEl[id].addEventListener('click', () => download(id));
       voortEl[id] = maak('progress', { max: 1, value: 0, hidden: true, id: `ai-voortgang-${id}`, 'aria-label': t('Завантаження моделі', 'Model downloaden') });
       apiLijst.append(maak('li', { 'data-api': id },
-        maak('label', { class: 'schakel slank' }, sw, maak('span', { class: 'ai-naam' }, t(a.naam[0], a.naam[1]), a.proef ? maak('span', { class: 'zacht' }, ` · ${t('пробний період (origin trial)', 'proefperiode (origin trial)')}`) : null)),
+        maak('label', { class: 'schakel slank' }, sw, maak('span', { class: 'ai-naam' }, t(a.naam[0], a.naam[1]),
+          a.proef ? maak('span', { class: 'zacht' }, ` · ${t('пробний період', 'proefperiode')}`) : null,
+          id === 'decisions' ? maak('span', { class: 'zacht' }, ` · ${t('працює на CPU', 'draait op CPU')}`) : null)),
         standEl[id], knopEl[id], voortEl[id]));
     }
 
-    const vlaggen = maak('ul', { class: 'ai-vlaggen' }, ...L.API_IDS.map((id) => {
-      const url = `chrome://flags/#${L.API[id].vlag}`;
-      const a = maak('a', { href: '#', 'data-url': url }, url);
-      a.addEventListener('click', (e) => { e.preventDefault(); UI.openTab(url); });
-      return maak('li', null, a);
-    }), (() => { const u = 'chrome://flags/#optimization-guide-on-device-model'; const a = maak('a', { href: '#' }, u); a.addEventListener('click', (e) => { e.preventDefault(); UI.openTab(u); }); return maak('li', null, a); })());
+    const vlagRijen = [
+      ...L.API_IDS.map((id) => {
+        const a = L.API[id];
+        const url = `chrome://flags/#${a.vlag}`;
+        const link = maak('a', { href: '#', 'data-url': url }, url);
+        link.addEventListener('click', (e) => { e.preventDefault(); UI.openTab(url); });
+        return maak('li', null, link, ' — ', t(a.naam[0], a.naam[1]), id === 'decisions' ? ` (${t('переводить моделі на CPU', 'zet modellen op CPU')})` : '');
+      }),
+      ...EXTRA_VLAGGEN.map(([vlag, uk, nl]) => {
+        const url = `chrome://flags/#${vlag}`;
+        const link = maak('a', { href: '#', 'data-url': url }, url);
+        link.addEventListener('click', (e) => { e.preventDefault(); UI.openTab(url); });
+        return maak('li', null, link, ' — ', t(uk, nl));
+      }),
+    ];
+    const vlaggen = maak('ul', { class: 'ai-vlaggen' }, ...vlagRijen);
     const intern = maak('a', { href: '#', id: 'lokale-ai-intern' }, 'chrome://on-device-internals');
     intern.addEventListener('click', (e) => { e.preventDefault(); UI.openTab('chrome://on-device-internals'); });
 
@@ -152,15 +180,15 @@
         { gevaar: true, uitlegUk: 'Модель займає кілька ГБ (потрібно ≥22 ГБ вільного місця на диску профілю Chrome) і завантажується з серверів Google. Без цього перемикача завантаження починається лише кнопкою «Завантажити модель».', uitlegNl: 'Het model is enkele GB groot (≥22 GB vrij nodig op de schijf van het Chrome-profiel) en komt van de servers van Google. Zonder deze schakelaar start de download alleen met de knop «Model downloaden».' }),
       schakel('ai-tab-tekst', 'Дозволити локальному ШІ читати текст активної вкладки tarasevych.com (виділення або вся сторінка)', 'De lokale AI de tekst van het actieve tarasevych.com-tabblad laten lezen (selectie of hele pagina)', c.tabTekst, zet('tabTekst'),
         { gevaar: true, uitlegUk: 'Текст сторінки (зокрема особисті дані на ній) передається моделі на цьому пристрої. На сервер нічого не йде, але все, що видно на сторінці, потрапляє у вхід моделі. Інші сайти ніколи не читаються.', uitlegNl: 'De tekst van de pagina (ook persoonlijke gegevens erop) gaat naar het model op dit apparaat. Er gaat niets naar een server, maar alles op de pagina komt in de invoer van het model. Andere sites worden nooit gelezen.' }),
-      schakel('ai-multimodaal', 'Зображення як вхід для діалогу (Prompt API, експериментально)', 'Afbeeldingen als invoer voor het gesprek (Prompt API, experimenteel)', c.multimodaal, zet('multimodaal'),
-        { gevaar: true, uitlegUk: 'Експериментальна можливість: потребує GPU, може бути недоступна або працювати нестабільно.', uitlegNl: 'Experimentele mogelijkheid: vraagt een GPU, kan ontbreken of onstabiel werken.' }),
+      schakel('ai-multimodaal', 'Зображення та аудіо як вхід для діалогу (Prompt API, експериментально)', 'Beeld en audio als invoer voor het gesprek (Prompt API, experimenteel)', c.multimodaal, zet('multimodaal'),
+        { gevaar: true, uitlegUk: 'Експериментальна можливість: дає змогу прикріплювати зображення й звукозаписи; потребує відповідного прапорця (#prompt-api-multimodal-input) та потужного GPU.', uitlegNl: 'Experimentele mogelijkheid: maakt beeld- en audio-invoer mogelijk; vraagt de bijbehorende vlag (#prompt-api-multimodal-input) en een geschikte GPU.' }),
 
       schakel('ai-site-toegang', 'Дозволити сторінкам Mijn Ruimte (*.tarasevych.com) використовувати локальний ШІ через розширення', 'Pagina’s van Mijn Ruimte (*.tarasevych.com) de lokale AI via de extensie laten gebruiken', c.siteToegang, zet('siteToegang'),
         { gevaar: true, uitlegUk: 'Сторінка сайту зможе надсилати текст локальній моделі (через невидимий документ offscreen.html) і отримувати результат. Текст обробляється лише на цьому пристрої, але сторінка використовує ресурси вашого комп’ютера (GPU/RAM). Модель ніколи не завантажується без вашого натискання; не більше 20 запитів за хвилину.', uitlegNl: 'Een pagina van de site kan tekst naar het lokale model sturen (via het onzichtbare document offscreen.html) en het resultaat terugkrijgen. De tekst wordt alleen op dit apparaat verwerkt, maar de pagina gebruikt de middelen van uw computer (GPU/RAM). Het model wordt nooit zonder uw klik gedownload; hoogstens 20 verzoeken per minuut.' }),
 
       maak('h3', null, t('Мова й інтеграція', 'Taal en integratie')),
-      schakel('ai-vertaal-in', 'Перекладати вхід мовою моделі, якщо модель не знає мови тексту (українська, нідерландська…)', 'Invoer naar de modeltaal vertalen als het model de taal niet kent (Oekraïens, Nederlands…)', c.vertaalInvoer, zet('vertaalInvoer')),
-      schakel('ai-vertaal-uit', 'Перекладати відповідь мовою інтерфейсу', 'Antwoord naar de taal van de interface vertalen', c.vertaalUitvoer, zet('vertaalUitvoer')),
+      schakel('ai-vertaal-in', 'Перекладати вхід мовою моделі, якщо модель не знає мови тексту (і автоматично пропускати з Gemma 4)', 'Invoer naar de modeltaal vertalen als het model de taal niet direct kent (wordt met Gemma 4 overgeslagen)', c.vertaalInvoer, zet('vertaalInvoer')),
+      schakel('ai-vertaal-uit', 'Перекладати відповідь мовою інтерфейсу (якщо модель відповіла іншою мовою)', 'Antwoord naar de taal van de interface vertalen (als het model in een andere taal antwoordde)', c.vertaalUitvoer, zet('vertaalUitvoer')),
       keuzeVeld('ai-doeltaal', 'Мова відповіді після перекладу', 'Taal van het antwoord na vertaling', vertaalTalen, c.doelTaal, zet('doelTaal')),
       schakel('ai-chat-hulp', 'Кнопки локального ШІ в чаті бічної панелі (перевірити/переписати запит, перекласти відповідь)', 'Knoppen van de lokale AI in de chat van het zijpaneel (vraag nakijken/herschrijven, antwoord vertalen)', c.chatHulp, zet('chatHulp')),
 
@@ -168,6 +196,8 @@
       groep('Діалог (Prompt API)', 'Gesprek (Prompt API)',
         tekstVeld('ai-prompt-systeem', 'Системна інструкція (роль, стиль)', 'Systeeminstructie (rol, stijl)', c.prompt.systeem, zet('prompt.systeem'), { regels: 3, plaats: t('Напр.: Ти помічник Mijn Ruimte. Відповідай коротко.', 'Bijv.: Je bent de assistent van Mijn Ruimte. Antwoord kort.') }),
         keuzeVeld('ai-prompt-taal', 'Мова моделі', 'Taal van het model', modelTalen, c.prompt.taal, zet('prompt.taal')),
+        keuzeVeld('ai-prompt-sampling', 'Режим вибірки', 'Samplingmodus', L.KEUZES['prompt.samplingMode'], c.prompt.samplingMode, zet('prompt.samplingMode')),
+        schakel('ai-prompt-tooluse', 'Виклик інструментів моделлю (Tool Use)', 'Hulpmiddelaanroep door het model (Tool Use)', c.prompt.toolUse, zet('prompt.toolUse')),
         getalVeld('ai-prompt-temp', 'Температура', 'Temperatuur', c.prompt.temperatuur, zet('prompt.temperatuur'), { min: 0, max: 2, stap: 0.1 }),
         getalVeld('ai-prompt-topk', 'topK', 'topK', c.prompt.topK, zet('prompt.topK'), { min: 1, max: 128, stap: 1 }),
         maak('p', { id: 'lokale-ai-params', class: 'zacht breed' }),
@@ -176,6 +206,7 @@
         keuzeVeld('ai-sum-type', 'Тип', 'Soort', L.KEUZES['summarizer.type'], c.summarizer.type, zet('summarizer.type')),
         keuzeVeld('ai-sum-format', 'Формат', 'Opmaak', L.KEUZES['summarizer.format'], c.summarizer.format, zet('summarizer.format')),
         keuzeVeld('ai-sum-length', 'Довжина', 'Lengte', L.KEUZES['summarizer.length'], c.summarizer.length, zet('summarizer.length')),
+        keuzeVeld('ai-sum-pref', 'Пріоритет швидкості / якості', 'Prestatievoorkeur', L.KEUZES['summarizer.preference'], c.summarizer.preference, zet('summarizer.preference')),
         keuzeVeld('ai-sum-taal', 'Мова моделі', 'Taal van het model', modelTalen, c.summarizer.taal, zet('summarizer.taal')),
         tekstVeld('ai-sum-context', 'Спільний контекст (для кого/навіщо)', 'Gedeelde context (voor wie/waarvoor)', c.summarizer.context, zet('summarizer.context'), { max: 1000 })),
       groep('Написання тексту (Writer)', 'Tekst schrijven (Writer)',
@@ -190,13 +221,15 @@
         keuzeVeld('ai-rew-length', 'Довжина', 'Lengte', L.KEUZES['rewriter.length'], c.rewriter.length, zet('rewriter.length')),
         keuzeVeld('ai-rew-taal', 'Мова моделі', 'Taal van het model', modelTalen, c.rewriter.taal, zet('rewriter.taal')),
         tekstVeld('ai-rew-context', 'Спільний контекст', 'Gedeelde context', c.rewriter.context, zet('rewriter.context'), { max: 1000 })),
-      groep('Переклад і мова', 'Vertalen en taal',
+      groep('Переклад, мова та рішення', 'Vertalen, taal en beslissingen',
         keuzeVeld('ai-tr-bron', 'З мови', 'Van taal', [['auto', t('визначити автоматично', 'automatisch herkennen')], ...L.VERTAAL_TALEN.map(taalOptie)], c.translator.bron, zet('translator.bron')),
         keuzeVeld('ai-tr-doel', 'На мову', 'Naar taal', vertaalTalen, c.translator.doel, zet('translator.doel')),
-        keuzeVeld('ai-proef-taal', 'Мова коректури (Proofreader)', 'Taal voor proeflezen (Proofreader)', modelTalen, c.proofreader.taal, zet('proofreader.taal'))),
+        keuzeVeld('ai-proef-taal', 'Мова коректури (Proofreader)', 'Taal voor proeflezen (Proofreader)', modelTalen, c.proofreader.taal, zet('proofreader.taal')),
+        tekstVeld('ai-dec-schema', 'JSON-схема класифікації (DecisionModel)', 'JSON-schema voor indeling (DecisionModel)', c.decisions.schema, zet('decisions.schema'), { regels: 3, max: 8000, plaats: '{"type":"object","properties":{"categorie":{"type":"string"}}}' }),
+        maak('p', { class: 'let-op breed' }, t('Увага: прапорець #decisions-api у Chrome 157 перемикає локальні моделі на CPU замість GPU, що сповільнює роботу.', 'Let op: de vlag #decisions-api zet in Chrome 157 lokale modellen op CPU in plaats van GPU, wat trager werkt.'))),
 
-      maak('h3', null, t('Для розробника: пробні токени й прапорці', 'Voor ontwikkelaars: proeftokens en vlaggen')),
-      maak('p', { class: 'zacht' }, t('Writer, Rewriter і Proofreader можуть ще бути в пробному періоді. Зареєструйте розширення на сайті Chrome Origin Trials (адреса chrome-extension://', 'Writer, Rewriter en Proofreader kunnen nog in een proefperiode zitten. Registreer de extensie op de Chrome Origin Trials-site (adres chrome-extension://'), chrome.runtime.id, t(') і вставте токени нижче — по одному в рядку. Або ввімкніть прапорці.', ') en plak de tokens hieronder — één per regel. Of zet de vlaggen aan.')),
+      maak('h3', null, t('Для розробника: пробні токени й прапорці Chrome 157', 'Voor ontwikkelaars: proeftokens en vlaggen Chrome 157')),
+      maak('p', { class: 'zacht' }, t('Деякі API (Writer, Rewriter, Proofreader, Embedder, Decisions) можуть бути в пробному періоді або вимагати прапорців Chrome. Адреса розширення: chrome-extension://', 'Sommige API’s (Writer, Rewriter, Proofreader, Embedder, Decisions) kunnen in een proefperiode zitten of Chrome-vlaggen vereisen. Extensie-adres: chrome-extension://'), chrome.runtime.id, t('. Прапорець #data-sharing не вмикайте для приватної роботи.', '. Zet #data-sharing niet aan voor privégebruik.')),
       tekstVeld('ai-proef-tokens', 'Токени origin trial', 'Origin-trial-tokens', c.proefTokens, zet('proefTokens'), { regels: 3, max: 20000 }),
       vlaggen,
       maak('p', { class: 'zacht' }, t('Розмір і стан моделі: ', 'Grootte en staat van het model: '), intern),

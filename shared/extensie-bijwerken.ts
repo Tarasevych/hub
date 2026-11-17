@@ -59,7 +59,7 @@ export function versieBestandKlopt(manifestVersie: string, versieJson: { version
   if (versieJson.crx && versieJson.crx.version !== manifestVersie) fouten.push(`crx ${versieJson.crx.version} ≠ manifest ${manifestVersie}`);
   if (versieJson.crx && !updatesXml) fouten.push('crx gepubliceerd zonder updates.xml');
   if (updatesXml) {
-    const m = /version='([0-9.]+)'/.exec(updatesXml);
+    const m = /<updatecheck\b[^>]*\bversion='([0-9.]+)'/.exec(updatesXml);
     if (!m || m[1] !== manifestVersie) fouten.push(`updates.xml ${m?.[1] ?? '?'} ≠ manifest ${manifestVersie}`);
     if (!versieJson.crx) fouten.push('updates.xml zonder gepubliceerde crx');
   }

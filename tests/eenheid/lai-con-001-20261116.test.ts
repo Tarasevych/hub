@@ -174,7 +174,7 @@ export async function main(): Promise<number> {
     check('LOKALE_AI van de site → BELEID_UIT met reden en wie; niets naar offscreen', r?.ok === false && r.reason === 'BELEID_UIT' && r.detail === REDEN && r.door === 'admin@x.test' && !offVragen.some((m) => m.op === 'lokale-ai-voer'), JSON.stringify(r));
     const st = await vraag(f, { op: 'status' }, opties);
     check('status (eigen pagina\'s): lokaleAi.beleid = uit met reden (het zijpaneel kan het tonen)', st?.lokaleAi?.beleid?.aan === false && st.lokaleAi.beleid.reden === REDEN, JSON.stringify(st?.lokaleAi));
-    check('manifest 0.9.6', JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8')).version === '0.9.6');
+    check('manifest 0.9.7', JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8')).version === '0.9.7');
   }
   return einde();
 }

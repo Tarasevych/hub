@@ -176,7 +176,7 @@ export const KLOK_SPELING_MS = 60_000;
 // ---- 0.6.1: debuggerrecht + zichtbare markering (punten 7 en 8 van de eigenaar, 19.10.2026) ----
 // Dezelfde waarden als shared/extensie-ontgrendeling.ts; tests/eenheid/extensie-debugger-markering-20261019.test.ts vergelijkt ze.
 
-/** Onder deze versie weigert de server een ontgrendeling (de site vraagt dan om bijwerken, zie shared/extensie-update.ts). */
+/** Onder deze versie weigert de server een ontgrendeling (de site vraagt dan om bijwerken, zie shared/extensie-bijwerken.ts). */
 export const MIN_EXTENSIE_VERSIE = '0.6.2';
 
 /** Standen van het Chrome-recht `debugger`. Zie DIAG_RECHT_STANDEN in shared/extensie-ontgrendeling.ts. */

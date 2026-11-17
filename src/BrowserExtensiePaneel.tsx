@@ -10,7 +10,7 @@ import { agentLogo, Help, IconButton, Logo, StatusDot } from './mcp-ui';
 import { foutTekst, isRechtFout } from './agenten/fouten';
 import { HEARTBEAT_EVENT, heartbeatToestand } from './browser-agent-hartslag';
 import ExtensionWizard from './ExtensieWizard';
-import { EXT_MIN_VERSIE } from '../shared/extensie-update';
+import { EXT_MIN_VERSIE } from '../shared/extensie-bijwerken';
 // HUB-07: oordeel en teksten van de zelftest komen van de site (verplichte controles, uk/nl, huidig tabblad).
 import { zelftestWeergave, type Zelftest } from './extensie/zelftest';
 // 0.5: standaard vergrendeld; ontgrendelen met passkey en de live status van de extensie (zonder herladen).
@@ -34,7 +34,7 @@ type Presence = 'checking' | 'present' | 'absent';
 type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const MIN_VERSION = EXT_MIN_VERSIE; // één bron: shared/extensie-update.ts
+const MIN_VERSION = EXT_MIN_VERSIE; // één bron: shared/extensie-bijwerken.ts
 /** Keuzes voor «Як довго»: waarde (minuten, 'tot' of 'sessie'), uk, nl. Standaard: tot de eigenaar het zelf uitzet. */
 const DUREN: Array<[string, string, string]> = [
   ['tot', 'доки я не вимкну', 'tot ik het uitzet'], ['60', '1 годину', '1 uur'], ['480', '8 годин', '8 uur'], ['1440', '1 день', '1 dag'],

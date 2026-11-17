@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "LOKAI-001",
+  "agent": "gemini",
+  "tak": "feature/lokai-001-uitgave-20261117-181000",
+  "basisCommit": "454b75bff03b8f222998e343ccc58ffb989fd281",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.15",
+  "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4",
+  "staat": "in_progress",
+  "gestart": "2026-11-17T18:07:39.551Z",
+  "bijgewerkt": "2026-11-17T18:07:39.552Z",
+  "omschrijving": "LOKAI-001 поверх UPD-003 (0.9.7): підтримка Chrome 157, Gemma 4, 9 API, WebMCP, PWA, помічник налаштування, flags.json, extensie-bijwerken.ts та автопідпис CRX3",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

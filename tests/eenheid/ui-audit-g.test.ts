@@ -11,7 +11,7 @@ import { checker } from './hulp/nep-google';
 import { overlapt } from '../../src/mail-opstel-plaats';
 import { STAPEL_GAT, indeling, stapelRechthoek, standaardPlaatsing, verplaats, type PaginaContext } from '../../shared/plaatsing';
 import { tijdInZone, tijdMetZone, zoneAfkorting } from '../../src/uitrol/tijdzone';
-import { EXT_MIN_VERSIE, LATER_MS, updateAdvies, vergelijkVersie, versieBestandKlopt } from '../../shared/extensie-update';
+import { EXT_MIN_VERSIE, LATER_MS, updateAdvies, vergelijkVersie, versieBestandKlopt } from '../../shared/extensie-bijwerken';
 
 const W = process.cwd();
 const lees = (p: string) => readFileSync(join(W, p), 'utf8');
