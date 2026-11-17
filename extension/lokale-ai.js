@@ -1,57 +1,63 @@
-// 0.9.0: ingebouwde AI van Chrome (Gemini Nano op DIT apparaat) — Prompt, Summarizer, Writer, Rewriter, Translator, LanguageDetector,
-// Proofreader. Klassiek script (CSP script-src 'self'), gedeeld door opties en zijpaneel: globalThis.MR_LOKALE_AI.
+// 0.9.0–0.9.3: ingebouwde AI van Chrome (Gemini Nano / Gemma 4 op DIT apparaat) — Prompt, Summarizer, Writer, Rewriter, Translator,
+// LanguageDetector, Proofreader, SemanticEmbedder, DecisionModel. Klassiek script (CSP script-src 'self'): globalThis.MR_LOKALE_AI.
 // Regels:
 //  - Alles draait lokaal: er gaat GEEN tekst naar een server (ook niet naar mcp.tarasevych.com). Past bij BYOS.
-//  - Niets wordt hard geblokkeerd. Riskante functies (groot model downloaden zonder klik, tabbladtekst lezen, afbeeldingen) staan
-//    standaard UIT en worden in de UI met «!» gemarkeerd.
-//  - De API's bestaan alleen in vensters (extensiepagina's), niet in de service worker: daarom draait dit in opties/zijpaneel.
-//  - Tabbladtekst alleen van https://*.tarasevych.com (zelfde grens als de rest van de extensie) en alleen als de gebruiker het aanzette.
+//  - Riskante functies (autoDownload, tabTekst, multimodaal, siteToegang) staan standaard UIT en dragen «!».
+//  - Ze kunnen NOOIT stil zonder uitdrukkelijke bevestiging van de gebruiker (bevestigGevaar: true) aangezet worden.
 (() => {
   'use strict';
   const SLEUTEL = 'lokaleAi';
 
-  // Officiële namen van de globale API's + vlag in chrome://flags (alleen nodig als de API in deze Chrome-versie nog niet standaard aan is).
+  // Officiële namen van de globale API's + actuele Chrome 157 vlaggen (moeten gelijk blijven aan shared/lokale-ai-model.ts).
   const API = Object.freeze({
-    prompt: { glob: 'LanguageModel', naam: ['Діалог (Prompt API)', 'Gesprek (Prompt API)'], vlag: 'prompt-api-for-gemini-nano', proef: false },
-    summarizer: { glob: 'Summarizer', naam: ['Стислий виклад (Summarizer)', 'Samenvatten (Summarizer)'], vlag: 'summarization-api-for-gemini-nano', proef: false },
-    writer: { glob: 'Writer', naam: ['Написання тексту (Writer)', 'Tekst schrijven (Writer)'], vlag: 'writer-api-for-gemini-nano', proef: true },
-    rewriter: { glob: 'Rewriter', naam: ['Переписування (Rewriter)', 'Herschrijven (Rewriter)'], vlag: 'rewriter-api-for-gemini-nano', proef: true },
+    prompt: { glob: 'LanguageModel', naam: ['Діалог (Prompt API)', 'Gesprek (Prompt API)'], vlag: 'prompt-api', oudVlag: 'prompt-api-for-gemini-nano', proef: false },
+    summarizer: { glob: 'Summarizer', naam: ['Стислий виклад (Summarizer)', 'Samenvatten (Summarizer)'], vlag: 'summarizer-api', oudVlag: 'summarization-api-for-gemini-nano', proef: false },
+    writer: { glob: 'Writer', naam: ['Написання тексту (Writer)', 'Tekst schrijven (Writer)'], vlag: 'writer-api', oudVlag: 'writer-api-for-gemini-nano', proef: true },
+    rewriter: { glob: 'Rewriter', naam: ['Переписування (Rewriter)', 'Herschrijven (Rewriter)'], vlag: 'rewriter-api', oudVlag: 'rewriter-api-for-gemini-nano', proef: true },
     translator: { glob: 'Translator', naam: ['Переклад (Translator)', 'Vertalen (Translator)'], vlag: 'translation-api', proef: false },
     detector: { glob: 'LanguageDetector', naam: ['Визначення мови (Language Detector)', 'Taal herkennen (Language Detector)'], vlag: 'language-detection-api', proef: false },
-    proofreader: { glob: 'Proofreader', naam: ['Коректура (Proofreader)', 'Proeflezen (Proofreader)'], vlag: 'proofreader-api-for-gemini-nano', proef: true },
+    proofreader: { glob: 'Proofreader', naam: ['Коректура (Proofreader)', 'Proeflezen (Proofreader)'], vlag: 'proofreader-api', oudVlag: 'proofreader-api-for-gemini-nano', proef: true },
+    embedder: { glob: 'SemanticEmbedder', naam: ['Значеннєві вектори (Embedder)', 'Betekenisvectoren (Embedder)'], vlag: 'semantic-embedder-api', proef: true },
+    decisions: { glob: 'DecisionModel', naam: ['Модель рішень і класифікація (Decisions)', 'Beslismodel en indeling (Decisions)'], vlag: 'decisions-api', proef: true },
   });
   const API_IDS = Object.freeze(Object.keys(API));
 
-  // Talen die Gemini Nano volgens de documentatie als in-/uitvoer aanvaardt (Oekraïens en Nederlands NIET → via Translator).
-  const MODEL_TALEN = Object.freeze(['en', 'es', 'ja', 'de', 'fr']);
-  // Translator kan wel uk/nl; dit is de lijst die de UI aanbiedt (de echte beschikbaarheid zegt Translator.availability()).
-  const VERTAAL_TALEN = Object.freeze(['uk', 'nl', 'en', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'ja', 'zh', 'ko', 'ru', 'tr', 'ar', 'hi']);
+  const BASIS_MODEL_TALEN = Object.freeze(['en', 'es', 'ja', 'de', 'fr']);
+  const MODEL_TALEN = Object.freeze(['en', 'es', 'ja', 'de', 'fr', 'uk', 'nl']);
+  const VERTAAL_TALEN = Object.freeze(['uk', 'nl', 'en', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'ja', 'zh', 'ko', 'tr', 'ar', 'hi']);
+  const GEVAAR_VELDEN = Object.freeze(['siteToegang', 'tabTekst', 'multimodaal', 'autoDownload']);
 
   const STANDAARD = Object.freeze({
-    aan: true,                       // hoofdschakelaar: alleen op klik wordt iets uitgevoerd
-    apis: Object.freeze({ prompt: true, summarizer: true, writer: true, rewriter: true, translator: true, detector: true, proofreader: true }),
-    autoDownload: false,             // «!» model (≈ GB's) automatisch downloaden zonder aparte klik
-    tabTekst: false,                 // «!» tekst van het actieve tarasevych.com-tabblad aan de lokale AI geven
-    multimodaal: false,              // «!» afbeeldingen als invoer voor de Prompt API (experimenteel)
-    siteToegang: false,              // «!» pagina's van *.tarasevych.com mogen de lokale AI gebruiken (via offscreen.html)
-    chatHulp: true,                  // knoppen in de zijpaneelchat (proeflezen/herschrijven invoer, antwoord vertalen)
-    vertaalInvoer: true,             // invoer in een taal die het model niet kent eerst naar het Engels vertalen
-    vertaalUitvoer: true,            // uitvoer terugvertalen naar de taal van de interface (uk/nl)
-    doelTaal: 'auto',                // 'auto' = taal van de interface
-    prompt: Object.freeze({ systeem: '', temperatuur: '', topK: '', taal: 'en', schema: '' }),
-    summarizer: Object.freeze({ type: 'key-points', format: 'plain-text', length: 'medium', context: '', taal: 'en' }),
+    aan: true,
+    apis: Object.freeze({
+      prompt: true, summarizer: true, writer: true, rewriter: true, translator: true, detector: true, proofreader: true,
+      embedder: true, decisions: true,
+    }),
+    autoDownload: false,
+    tabTekst: false,
+    multimodaal: false,
+    siteToegang: false,
+    chatHulp: true,
+    vertaalInvoer: true,
+    vertaalUitvoer: true,
+    doelTaal: 'auto',
+    prompt: Object.freeze({ systeem: '', temperatuur: '', topK: '', taal: 'en', schema: '', samplingMode: 'default', toolUse: false }),
+    summarizer: Object.freeze({ type: 'key-points', format: 'plain-text', length: 'medium', preference: 'auto', context: '', taal: 'en' }),
     writer: Object.freeze({ tone: 'neutral', format: 'plain-text', length: 'medium', context: '', taal: 'en' }),
     rewriter: Object.freeze({ tone: 'as-is', format: 'as-is', length: 'as-is', context: '', taal: 'en' }),
     translator: Object.freeze({ bron: 'auto', doel: 'auto' }),
     proofreader: Object.freeze({ taal: 'en' }),
-    proefTokens: '',                 // origin-trial-tokens (één per regel) voor Writer/Rewriter/Proofreader
+    embedder: Object.freeze({}),
+    decisions: Object.freeze({ schema: '' }),
+    proefTokens: '',
   });
 
-  // Toegestane waarden (alles wat uit de opslag komt wordt hiertegen gecontroleerd — niets blind overnemen).
   const KEUZES = Object.freeze({
+    'prompt.samplingMode': ['default', 'most-predictable', 'balanced', 'most-creative'],
     'summarizer.type': ['key-points', 'tldr', 'teaser', 'headline'],
     'summarizer.format': ['plain-text', 'markdown'],
     'summarizer.length': ['short', 'medium', 'long'],
+    'summarizer.preference': ['auto', 'speed', 'capability'],
     'writer.tone': ['formal', 'neutral', 'casual'],
     'writer.format': ['plain-text', 'markdown'],
     'writer.length': ['short', 'medium', 'long'],
@@ -74,22 +80,81 @@
     const sub = (k) => (r[k] && typeof r[k] === 'object' ? r[k] : {});
     const apis = {};
     for (const id of API_IDS) apis[id] = bool(sub('apis')[id], STANDAARD.apis[id]);
-    const p = sub('prompt'), s = sub('summarizer'), w = sub('writer'), rw = sub('rewriter'), tr = sub('translator'), pr = sub('proofreader');
+    const p = sub('prompt'), s = sub('summarizer'), w = sub('writer'), rw = sub('rewriter'), tr = sub('translator'), pr = sub('proofreader'), dc = sub('decisions');
     return {
       aan: bool(r.aan, STANDAARD.aan), apis,
       autoDownload: bool(r.autoDownload, false), tabTekst: bool(r.tabTekst, false), multimodaal: bool(r.multimodaal, false), siteToegang: bool(r.siteToegang, false),
       chatHulp: bool(r.chatHulp, true), vertaalInvoer: bool(r.vertaalInvoer, true), vertaalUitvoer: bool(r.vertaalUitvoer, true),
       doelTaal: r.doelTaal === 'auto' ? 'auto' : taal(r.doelTaal, 'auto', VERTAAL_TALEN),
-      prompt: { systeem: str(p.systeem, ''), temperatuur: getalTekst(p.temperatuur), topK: getalTekst(p.topK), taal: taal(p.taal, 'en', MODEL_TALEN), schema: str(p.schema, '', 8000) },
-      summarizer: { type: keuze('summarizer.type', s.type), format: keuze('summarizer.format', s.format), length: keuze('summarizer.length', s.length), context: str(s.context, '', 1000), taal: taal(s.taal, 'en', MODEL_TALEN) },
+      prompt: {
+        systeem: str(p.systeem, ''),
+        temperatuur: getalTekst(p.temperatuur),
+        topK: getalTekst(p.topK),
+        taal: taal(p.taal, 'en', MODEL_TALEN),
+        schema: str(p.schema, '', 8000),
+        samplingMode: keuze('prompt.samplingMode', p.samplingMode),
+        toolUse: bool(p.toolUse, false),
+      },
+      summarizer: {
+        type: keuze('summarizer.type', s.type),
+        format: keuze('summarizer.format', s.format),
+        length: keuze('summarizer.length', s.length),
+        preference: keuze('summarizer.preference', s.preference),
+        context: str(s.context, '', 1000),
+        taal: taal(s.taal, 'en', MODEL_TALEN),
+      },
       writer: { tone: keuze('writer.tone', w.tone), format: keuze('writer.format', w.format), length: keuze('writer.length', w.length), context: str(w.context, '', 1000), taal: taal(w.taal, 'en', MODEL_TALEN) },
       rewriter: { tone: keuze('rewriter.tone', rw.tone), format: keuze('rewriter.format', rw.format), length: keuze('rewriter.length', rw.length), context: str(rw.context, '', 1000), taal: taal(rw.taal, 'en', MODEL_TALEN) },
       translator: { bron: tr.bron === 'auto' ? 'auto' : taal(tr.bron, 'auto', VERTAAL_TALEN), doel: tr.doel === 'auto' ? 'auto' : taal(tr.doel, 'auto', VERTAAL_TALEN) },
       proofreader: { taal: taal(pr.taal, 'en', MODEL_TALEN) },
+      embedder: {},
+      decisions: { schema: str(dc.schema, '', 8000) },
       proefTokens: str(r.proefTokens, '', 20000),
     };
   }
-  /** '' of een eindig getal als tekst (lege velden = standaard van het model). */
+
+  /** Past een gedeeltelijke wijziging toe met strikte scheiding tussen veilige velden en «!»-velden. */
+  function pasPatchToe(huidig, ruwPatch, { bevestigGevaar = false } = {}) {
+    const basis = opschonen(huidig);
+    const p = ruwPatch && typeof ruwPatch === 'object' && !Array.isArray(ruwPatch) ? ruwPatch : {};
+    const kopie = JSON.parse(JSON.stringify(basis));
+    const toegepast = [];
+    const geweigerdeGevaarVelden = [];
+
+    if (typeof p.aan === 'boolean') { kopie.aan = p.aan; toegepast.push('aan'); }
+    if (Array.isArray(p.apis)) {
+      const set = new Set(p.apis.filter((x) => API_IDS.includes(x)));
+      for (const id of API_IDS) kopie.apis[id] = set.has(id);
+      toegepast.push('apis');
+    } else if (p.apis && typeof p.apis === 'object') {
+      let geraakt = false;
+      for (const id of API_IDS) {
+        if (typeof p.apis[id] === 'boolean') { kopie.apis[id] = p.apis[id]; geraakt = true; }
+      }
+      if (geraakt) toegepast.push('apis');
+    }
+    for (const k of ['chatHulp', 'vertaalInvoer', 'vertaalUitvoer']) {
+      if (typeof p[k] === 'boolean') { kopie[k] = p[k]; toegepast.push(k); }
+    }
+    if (p.doelTaal === 'auto' || (typeof p.doelTaal === 'string' && VERTAAL_TALEN.includes(p.doelTaal))) {
+      kopie.doelTaal = p.doelTaal; toegepast.push('doelTaal');
+    }
+    for (const grp of ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'proofreader', 'decisions']) {
+      if (p[grp] && typeof p[grp] === 'object' && !Array.isArray(p[grp])) {
+        kopie[grp] = { ...kopie[grp], ...p[grp] };
+        toegepast.push(grp);
+      }
+    }
+    if (typeof p.proefTokens === 'string') { kopie.proefTokens = p.proefTokens; toegepast.push('proefTokens'); }
+
+    for (const k of GEVAAR_VELDEN) {
+      if (typeof p[k] !== 'boolean') continue;
+      if (bevestigGevaar === true) { kopie[k] = p[k]; toegepast.push(k); }
+      else geweigerdeGevaarVelden.push(k);
+    }
+    return { nieuwCfg: opschonen(kopie), toegepast, geweigerdeGevaarVelden };
+  }
+
   function getalTekst(v) {
     if (v === '' || v == null) return '';
     const n = Number(v);
@@ -103,16 +168,13 @@
     await chrome.storage.local.set({ [SLEUTEL]: schoon });
     return schoon;
   }
-  /** Luister naar wijzigingen (andere pagina zette iets om) → callback met de schone instellingen. */
   function bijWijziging(cb) {
     try {
       chrome.storage.onChanged.addListener((wijz, gebied) => { if (gebied === 'local' && wijz[SLEUTEL]) cb(opschonen(wijz[SLEUTEL].newValue)); });
     } catch { /* geen opslag-API */ }
   }
 
-  // ---------------------------------------------------------------- origin-trial-tokens (Writer/Rewriter/Proofreader)
-  // Een <meta http-equiv="origin-trial"> die via script wordt toegevoegd, telt voor de pagina zelf. Ook mogelijk: tokens in het
-  // manifest onder "trial_tokens". Lege regels en commentaar (#) worden genegeerd. Tokens zijn geen geheimen (ze staan in elke pagina).
+  // ---------------------------------------------------------------- origin-trial-tokens
   function plaatsProefTokens(cfg) {
     if (typeof document === 'undefined' || !document.head) return 0;
     for (const m of document.head.querySelectorAll('meta[data-mr-proef]')) m.remove();
@@ -127,7 +189,6 @@
 
   // ---------------------------------------------------------------- beschikbaarheid
   const glob = (id) => (API[id] && typeof globalThis[API[id].glob] === 'function' ? globalThis[API[id].glob] : (API[id] && globalThis[API[id].glob] && typeof globalThis[API[id].glob] === 'object' ? globalThis[API[id].glob] : null));
-  /** Oude Chrome-waarden ('readily', 'after-download', 'no') naar de huidige. */
   function normaal(v) {
     const m = { readily: 'available', 'after-download': 'downloadable', no: 'unavailable' };
     const s = String(v || '');
@@ -146,15 +207,10 @@
   const standTekst = (s) => (STAND_TEKST[s] ? t(STAND_TEKST[s][0], STAND_TEKST[s][1]) : String(s));
 
   const BESCHIKBAAR_MS = 15000;
-  /** Belofte met tijdslimiet: na `ms` komt `waarde` terug (de oorspronkelijke belofte loopt gewoon door). */
   function binnen(belofte, ms, waarde) {
     let tm;
     return Promise.race([Promise.resolve(belofte), new Promise((r) => { tm = setTimeout(() => r(waarde), ms); })]).finally(() => clearTimeout(tm));
   }
-  /**
-   * Afbreekbaar wachten: sommige Chrome-versies negeren `signal` in create() (getest: Translator.create bleef hangen zonder
-   * voortgang). «Стоп» moet dan toch meteen werken — de UI wacht niet langer, ook al loopt de download in Chrome door.
-   */
   function afbreekbaar(belofte, signal) {
     if (!signal) return Promise.resolve(belofte);
     if (signal.aborted) return Promise.reject(new DOMException('Afgebroken', 'AbortError'));
@@ -164,10 +220,9 @@
       Promise.resolve(belofte).then((x) => { signal.removeEventListener('abort', stop); ok(x); }, (e) => { signal.removeEventListener('abort', stop); nee(e); });
     });
   }
-  /** Opties zonder monitor/signal/initialPrompts (availability() wil dezelfde opties als create(), maar niet die drie). */
   function voorBeschikbaarheid(opts) {
     const o = { ...(opts || {}) };
-    delete o.monitor; delete o.signal; delete o.initialPrompts;
+    delete o.monitor; delete o.signal; delete o.initialPrompts; delete o.tools;
     return o;
   }
   async function beschikbaarheid(id, cfg, extra) {
@@ -177,14 +232,26 @@
     try {
       const opts = voorBeschikbaarheid(optiesVoor(id, cfg || opschonen(null), extra));
       const vraag = typeof G.availability === 'function' ? G.availability(opts) : (typeof G.capabilities === 'function' ? Promise.resolve(G.capabilities()).then((c) => c.available) : 'unavailable');
-      // Getest in echte Chrome 157: zonder geregistreerde modelcomponent (nieuw profiel, componentupdates uit) blijft availability()
-      // eeuwig hangen. Dan niet eindeloos «…» tonen maar «geen antwoord» met een verwijzing naar chrome://on-device-internals.
       const v = await binnen(vraag, BESCHIKBAAR_MS, 'GEEN_ANTWOORD');
       if (v === 'GEEN_ANTWOORD') return { stand: 'stil' };
       return { stand: normaal(v) };
     } catch (e) { return { stand: 'fout', fout: foutTekst(e) }; }
   }
-  /** Prompt API: grenzen van temperatuur/topK (alleen voor extensies). */
+  /** Перевіряє, чи приймає модель мову напряму (актуально для Gemma 4 з uk/nl без посередника Translator). */
+  async function isTaalDirectOndersteund(id, cfg, taal) {
+    if (!taal || BASIS_MODEL_TALEN.includes(taal)) return true;
+    const G = glob(id);
+    if (!G || typeof G.availability !== 'function') return false;
+    try {
+      const probe = id === 'prompt'
+        ? { expectedInputs: [{ type: 'text', languages: [taal] }], expectedOutputs: [{ type: 'text', languages: [taal] }] }
+        : { expectedInputLanguages: [taal], outputLanguage: taal };
+      const v = await binnen(G.availability(probe), 3000, 'unavailable');
+      const n = normaal(v);
+      return n === 'available' || n === 'downloadable' || n === 'downloading';
+    } catch { return false; }
+  }
+
   async function promptParams() {
     const G = glob('prompt');
     if (!G || typeof G.params !== 'function') return null;
@@ -197,27 +264,44 @@
     switch (id) {
       case 'prompt': {
         const p = cfg.prompt;
-        const invoer = [{ type: 'text', languages: [p.taal] }];
+        const modelTaal = extra.directTaal || p.taal;
+        const invoer = [{ type: 'text', languages: [modelTaal] }];
         if (cfg.multimodaal && extra.afbeelding) invoer.push({ type: 'image' });
-        const o = { expectedInputs: invoer, expectedOutputs: [{ type: 'text', languages: [p.taal] }] };
+        if (cfg.multimodaal && extra.audio) invoer.push({ type: 'audio' });
+        const o = { expectedInputs: invoer, expectedOutputs: [{ type: 'text', languages: [modelTaal] }] };
         if (p.systeem) o.initialPrompts = [{ role: 'system', content: p.systeem }];
-        // Extensies: temperatuur en topK samen of geen van beide (anders gooit create() een fout).
         if (p.temperatuur !== '' && p.topK !== '') { o.temperature = Number(p.temperatuur); o.topK = Math.max(1, Math.round(Number(p.topK))); }
+        if (p.samplingMode && p.samplingMode !== 'default') o.samplingMode = p.samplingMode;
+        if (p.toolUse && Array.isArray(extra.tools) && extra.tools.length) o.tools = extra.tools;
         return o;
       }
-      case 'summarizer': { const s = cfg.summarizer; return { type: s.type, format: s.format, length: s.length, expectedInputLanguages: [extra.invoerTaal || s.taal], outputLanguage: s.taal, ...ctx(s.context) }; }
-      case 'writer': { const w = cfg.writer; return { tone: w.tone, format: w.format, length: w.length, expectedInputLanguages: [extra.invoerTaal || w.taal], outputLanguage: w.taal, ...ctx(w.context) }; }
-      case 'rewriter': { const w = cfg.rewriter; return { tone: w.tone, format: w.format, length: w.length, expectedInputLanguages: [extra.invoerTaal || w.taal], outputLanguage: w.taal, ...ctx(w.context) }; }
+      case 'summarizer': {
+        const s = cfg.summarizer;
+        const modelTaal = extra.directTaal || s.taal;
+        const o = { type: s.type, format: s.format, length: s.length, expectedInputLanguages: [extra.invoerTaal || modelTaal], outputLanguage: modelTaal, ...ctx(s.context) };
+        if (s.preference && s.preference !== 'auto') o.preference = s.preference;
+        return o;
+      }
+      case 'writer': { const w = cfg.writer; const m = extra.directTaal || w.taal; return { tone: w.tone, format: w.format, length: w.length, expectedInputLanguages: [extra.invoerTaal || m], outputLanguage: m, ...ctx(w.context) }; }
+      case 'rewriter': { const w = cfg.rewriter; const m = extra.directTaal || w.taal; return { tone: w.tone, format: w.format, length: w.length, expectedInputLanguages: [extra.invoerTaal || m], outputLanguage: m, ...ctx(w.context) }; }
       case 'translator': return { sourceLanguage: extra.bron || 'en', targetLanguage: extra.doel || doelTaalVan(cfg) };
       case 'detector': return {};
-      case 'proofreader': return { expectedInputLanguages: [cfg.proofreader.taal] };
+      case 'proofreader': return { expectedInputLanguages: [extra.directTaal || cfg.proofreader.taal] };
+      case 'embedder': return {};
+      case 'decisions': {
+        const schema = extra.schema || (cfg.decisions && cfg.decisions.schema);
+        if (schema && typeof schema === 'string') {
+          try { return { schema: JSON.parse(schema) }; } catch { return {}; }
+        }
+        return {};
+      }
       default: return {};
     }
   }
   const doelTaalVan = (cfg) => (cfg.doelTaal && cfg.doelTaal !== 'auto' ? cfg.doelTaal : uiTaal());
 
-  // ---------------------------------------------------------------- instanties (hergebruik zolang de opties gelijk zijn)
-  const cache = new Map(); // sleutel → Promise<instantie>
+  // ---------------------------------------------------------------- instanties
+  const cache = new Map();
   function sleutelVan(id, opts) { return `${id}:${JSON.stringify(opts)}`; }
   function vergeetAlles() {
     for (const p of cache.values()) Promise.resolve(p).then((x) => { try { x && typeof x.destroy === 'function' && x.destroy(); } catch { /* al weg */ } }, () => undefined);
@@ -225,10 +309,6 @@
   }
   class LokaleFout extends Error { constructor(code, detail) { super(code); this.code = code; this.detail = detail || ''; } }
 
-  /**
-   * Maak (of hergebruik) een instantie. Downloaden van het model gebeurt alleen als `magDownloaden` (expliciete klik) of
-   * cfg.autoDownload («!»). create() vraagt voor een download een gebruikersgebaar: roep dit dus direct vanuit een klik aan.
-   */
   async function instantie(id, cfg, { extra, magDownloaden = false, opVoortgang, signal, nieuw = false } = {}) {
     if (!cfg.aan) throw new LokaleFout('UIT');
     if (!cfg.apis[id]) throw new LokaleFout('API_UIT', id);
@@ -239,8 +319,6 @@
     if (!nieuw && cache.has(k)) return afbreekbaar(cache.get(k), signal);
     const stand = (await beschikbaarheid(id, cfg, extra)).stand;
     if (stand === 'unavailable' || stand === 'fout' || stand === 'ontbreekt') throw new LokaleFout('NIET_BESCHIKBAAR', `${id}: ${standTekst(stand)}`);
-    // Alleen het grote taalmodel (Gemini Nano, enkele GB) wacht op een aparte klik; taalpakketten voor vertalen/herkennen zijn klein.
-    // 'stil' (Chrome antwoordt niet) behandelen we als «misschien te downloaden»: proberen mag, met «Стоп» als uitweg.
     const groot = id !== 'translator' && id !== 'detector';
     if (groot && (stand === 'downloadable' || stand === 'downloading' || stand === 'stil') && !magDownloaden && !cfg.autoDownload) throw new LokaleFout('MODEL_NIET_GELADEN', id);
     const p = Promise.resolve(G.create({
@@ -254,7 +332,6 @@
     p.catch(() => cache.delete(k));
     return afbreekbaar(p, signal);
   }
-  /** downloadprogress: e.loaded is in huidige Chrome een fractie 0..1; oudere versies gaven bytes + total. */
   function voortgang(e) {
     const l = Number(e && e.loaded), tot = Number(e && e.total);
     if (Number.isFinite(l) && Number.isFinite(tot) && tot > 1) return Math.max(0, Math.min(1, l / tot));
@@ -262,10 +339,6 @@
   }
 
   // ---------------------------------------------------------------- streams
-  /**
-   * Lees een ReadableStream van tekst. Chrome gaf vroeger cumulatieve stukken (elk stuk = alles tot nu), nu losse stukken:
-   * we herkennen beide, zodat de tekst nooit dubbel verschijnt.
-   */
   async function leesStroom(stroom, opStuk) {
     let tekst = '';
     const verwerk = (stuk) => {
@@ -279,7 +352,6 @@
     return tekst;
   }
 
-  /** Past de invoer in het quotum van de instantie (inputQuota/measureInputUsage), anders inkorten met melding. */
   async function pasIn(inst, tekst) {
     try {
       if (!inst || typeof inst.measureInputUsage !== 'function' || !Number.isFinite(inst.inputQuota)) return { tekst, ingekort: false };
@@ -306,22 +378,29 @@
     if (typeof inst.translateStreaming === 'function' && typeof o.opStuk === 'function') return leesStroom(inst.translateStreaming(String(tekst), o.signal ? { signal: o.signal } : undefined), o.opStuk);
     return inst.translate(String(tekst), o.signal ? { signal: o.signal } : undefined);
   }
-  /** Bepaal de brontaal: gekozen, of herkend (alleen als detector aan staat), anders 'en'. */
   async function bronTaal(cfg, tekst, gekozen, o) {
     if (gekozen && gekozen !== 'auto') return gekozen;
     if (!cfg.apis.detector || !glob('detector')) return 'en';
     try { const r = await herken(cfg, tekst, o); return r.length && r[0].zeker >= 0.5 ? r[0].taal.split('-')[0] : 'en'; } catch { return 'en'; }
   }
-  /**
-   * Invoer voorbereiden voor een model dat geen uk/nl kent: herkennen → (optioneel) naar de modeltaal vertalen.
-   * Lukt vertalen niet, dan gaat de originele tekst door (niet blokkeren) met een notitie.
-   */
-  async function voorbereidInvoer(cfg, tekst, modelTaal, o, notities) {
-    if (!cfg.vertaalInvoer || !cfg.apis.translator) return tekst;
+
+  /** Підготовка входу: якщо Gemma 4 підтримує мову напряму (availability() підтверджено) — переклад не потрібен. */
+  async function voorbereidInvoer(id, cfg, tekst, modelTaal, o, notities) {
     const bron = await bronTaal(cfg, tekst, 'auto', o);
-    if (MODEL_TALEN.includes(bron)) return tekst;
-    try { const v = await vertaal(cfg, tekst, bron, modelTaal, o); notities.push(t(`вхід перекладено ${bron}→${modelTaal}`, `invoer vertaald ${bron}→${modelTaal}`)); return v; }
-    catch (e) { notities.push(t(`вхід не перекладено (${foutTekst(e)})`, `invoer niet vertaald (${foutTekst(e)})`)); return tekst; }
+    if (BASIS_MODEL_TALEN.includes(bron)) return { tekst, taal: bron };
+    if (await isTaalDirectOndersteund(id, cfg, bron)) {
+      notities.push(t(`пряма мова моделі: ${bron} (без перекладу)`, `directe modeltaal: ${bron} (zonder vertaling)`));
+      return { tekst, taal: bron };
+    }
+    if (!cfg.vertaalInvoer || !cfg.apis.translator) return { tekst, taal: modelTaal };
+    try {
+      const v = await vertaal(cfg, tekst, bron, modelTaal, o);
+      notities.push(t(`вхід перекладено ${bron}→${modelTaal}`, `invoer vertaald ${bron}→${modelTaal}`));
+      return { tekst: v, taal: modelTaal };
+    } catch (e) {
+      notities.push(t(`вхід не перекладено (${foutTekst(e)})`, `invoer niet vertaald (${foutTekst(e)})`));
+      return { tekst, taal: modelTaal };
+    }
   }
   async function naarUiTaal(cfg, tekst, vanTaal, o, notities) {
     const doel = doelTaalVan(cfg);
@@ -330,31 +409,42 @@
     catch (e) { notities.push(t(`переклад відповіді не вдався (${foutTekst(e)})`, `vertalen van het antwoord mislukt (${foutTekst(e)})`)); return tekst; }
   }
 
+  // ---------------------------------------------------------------- vectoren en beslissingen
+  function cosinus(a, b) {
+    let dot = 0, na = 0, nb = 0;
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+    return na > 0 && nb > 0 ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
+  }
+  function pakVector(res) {
+    if (!res) return [];
+    if (ArrayBuffer.isView(res)) return Array.from(res);
+    if (Array.isArray(res)) return Array.isArray(res[0]) || ArrayBuffer.isView(res[0]) ? Array.from(res[0]) : res;
+    if (Array.isArray(res.embedding) || ArrayBuffer.isView(res.embedding)) return Array.from(res.embedding);
+    if (Array.isArray(res.embeddings) && res.embeddings[0]) return Array.from(res.embeddings[0]);
+    return [];
+  }
+
   // ---------------------------------------------------------------- bewerkingen (één ingang voor de UI)
-  /**
-   * voer(modus, invoer, cfg, o) → { tekst, notities[], extra }
-   *  modus: 'prompt' | 'summarizer' | 'writer' | 'rewriter' | 'translator' | 'detector' | 'proofreader'
-   *  o: { signal, opStuk(tekst), opVoortgang(fractie), magDownloaden, afbeelding (Blob), sessie (Prompt-sessie hergebruiken) }
-   */
   async function voer(modus, invoer, cfg, o = {}) {
     const tekst = String(invoer || '').trim();
     if (!tekst && modus !== 'prompt') throw new LokaleFout('LEEG');
-    if (modus === 'prompt' && !tekst && !o.afbeelding) throw new LokaleFout('LEEG');
+    if (modus === 'prompt' && !tekst && !o.afbeelding && !o.audio) throw new LokaleFout('LEEG');
     const notities = [];
     const io = { signal: o.signal, opVoortgang: o.opVoortgang, magDownloaden: o.magDownloaden };
     const sig = o.signal ? { signal: o.signal } : {};
     switch (modus) {
       case 'summarizer': case 'writer': case 'rewriter': {
         const c = cfg[modus];
-        const inTekst = await voorbereidInvoer(cfg, tekst, c.taal, io, notities);
-        const inst = await instantie(modus, cfg, io);
-        const pas = await pasIn(inst, inTekst);
+        const prep = await voorbereidInvoer(modus, cfg, tekst, c.taal, io, notities);
+        const inst = await instantie(modus, cfg, { ...io, extra: { directTaal: prep.taal } });
+        const pas = await pasIn(inst, prep.tekst);
         if (pas.ingekort) notities.push(t('текст скорочено до ліміту моделі', 'tekst ingekort tot de limiet van het model'));
         const methode = { summarizer: 'summarize', writer: 'write', rewriter: 'rewrite' }[modus];
         let uit;
         if (typeof inst[`${methode}Streaming`] === 'function' && typeof o.opStuk === 'function') uit = await leesStroom(inst[`${methode}Streaming`](pas.tekst, sig), o.opStuk);
         else uit = await inst[methode](pas.tekst, sig);
-        uit = await naarUiTaal(cfg, uit, c.taal, { ...io, opStuk: o.opStuk }, notities);
+        uit = await naarUiTaal(cfg, uit, prep.taal, { ...io, opStuk: o.opStuk }, notities);
         return { tekst: uit, notities };
       }
       case 'translator': {
@@ -380,12 +470,45 @@
         });
         return { tekst: String((r && r.correctedInput) || tekst), notities, extra: { correcties: lijst } };
       }
+      case 'embedder': {
+        const inst = await instantie('embedder', cfg, io);
+        const embedFn = typeof inst.embed === 'function' ? (s) => inst.embed(s, sig)
+          : (typeof inst.getEmbeddings === 'function' ? (s) => inst.getEmbeddings(s, sig) : null);
+        if (!embedFn) throw new LokaleFout('NIET_BESCHIKBAAR', 'SemanticEmbedder');
+        const delen = tekst.split(/\n---\n/).map((x) => x.trim()).filter(Boolean);
+        if (delen.length >= 2) {
+          const v1 = pakVector(await embedFn(delen[0]));
+          const v2 = pakVector(await embedFn(delen[1]));
+          const sim = cosinus(v1, v2);
+          notities.push(t(`вимірів: ${v1.length}`, `dimensies: ${v1.length}`));
+          return { tekst: t(`Схожість за змістом: ${(sim * 100).toFixed(1)}% (cos = ${sim.toFixed(4)}, вимірність ${v1.length})`, `Betekenisovereenkomst: ${(sim * 100).toFixed(1)}% (cos = ${sim.toFixed(4)}, dimensie ${v1.length})`), notities };
+        }
+        const vec = pakVector(await embedFn(tekst));
+        const norm = Math.sqrt(vec.reduce((a, b) => a + b * b, 0));
+        const preview = vec.slice(0, 6).map((x) => Number(x).toFixed(4)).join(', ');
+        notities.push(t(`вимірів: ${vec.length}`, `dimensies: ${vec.length}`));
+        return { tekst: t(`Отримано значеннєвий вектор: ${vec.length} вимірів (норма ${norm.toFixed(4)}).\nПочаток: [${preview}${vec.length > 6 ? ', …' : ''}]`, `Betekenisvector berekend: ${vec.length} dimensies (norm ${norm.toFixed(4)}).\nBegin: [${preview}${vec.length > 6 ? ', …' : ''}]`), notities };
+      }
+      case 'decisions': {
+        const inst = await instantie('decisions', cfg, { ...io, extra: { schema: o.schema } });
+        notities.push(t('Decisions API у Chrome 157 працює на CPU', 'Decisions API draait in Chrome 157 op de CPU'));
+        const fn = typeof inst.decide === 'function' ? 'decide' : typeof inst.classify === 'function' ? 'classify' : typeof inst.evaluate === 'function' ? 'evaluate' : null;
+        if (!fn) throw new LokaleFout('NIET_BESCHIKBAAR', 'DecisionModel');
+        const r = await inst[fn](tekst, sig);
+        return { tekst: typeof r === 'string' ? r : JSON.stringify(r, null, 2), notities };
+      }
       case 'prompt': {
         const c = cfg.prompt;
-        const inTekst = tekst ? await voorbereidInvoer(cfg, tekst, c.taal, io, notities) : '';
-        const sessie = o.sessie || await instantie('prompt', cfg, { ...io, extra: { afbeelding: !!o.afbeelding }, nieuw: true });
-        let bericht = inTekst;
-        if (o.afbeelding && cfg.multimodaal) bericht = [{ role: 'user', content: [...(inTekst ? [{ type: 'text', value: inTekst }] : []), { type: 'image', value: o.afbeelding }] }];
+        const prep = tekst ? await voorbereidInvoer('prompt', cfg, tekst, c.taal, io, notities) : { tekst: '', taal: c.taal };
+        const sessie = o.sessie || await instantie('prompt', cfg, { ...io, extra: { afbeelding: !!o.afbeelding, audio: !!o.audio, directTaal: prep.taal, tools: o.tools }, nieuw: true });
+        let bericht = prep.tekst;
+        if ((o.afbeelding || o.audio) && cfg.multimodaal) {
+          const inhoud = [];
+          if (prep.tekst) inhoud.push({ type: 'text', value: prep.tekst });
+          if (o.afbeelding) inhoud.push({ type: 'image', value: o.afbeelding });
+          if (o.audio) inhoud.push({ type: 'audio', value: o.audio });
+          bericht = [{ role: 'user', content: inhoud }];
+        }
         const opties = { ...sig };
         if (c.schema) {
           try { opties.responseConstraint = JSON.parse(c.schema); notities.push(t('відповідь за JSON-схемою', 'antwoord volgens JSON-schema')); }
@@ -394,13 +517,13 @@
         let uit;
         if (typeof sessie.promptStreaming === 'function' && typeof o.opStuk === 'function') uit = await leesStroom(sessie.promptStreaming(bericht, opties), o.opStuk);
         else uit = await sessie.prompt(bericht, opties);
-        if (!opties.responseConstraint) uit = await naarUiTaal(cfg, uit, c.taal, { ...io, opStuk: o.opStuk }, notities);
+        if (!opties.responseConstraint) uit = await naarUiTaal(cfg, uit, prep.taal, { ...io, opStuk: o.opStuk }, notities);
         return { tekst: uit, notities, extra: { sessie, gebruik: gebruikVan(sessie) } };
       }
       default: throw new LokaleFout('ONBEKEND', modus);
     }
   }
-  /** Contextgebruik van een Prompt-sessie (nieuwe namen contextUsage/contextWindow, oude inputUsage/inputQuota). */
+
   function gebruikVan(s) {
     if (!s) return null;
     const g = Number.isFinite(s.contextUsage) ? s.contextUsage : Number.isFinite(s.inputUsage) ? s.inputUsage : null;
@@ -408,7 +531,7 @@
     return g != null && m ? { gebruikt: g, max: m } : null;
   }
 
-  // ---------------------------------------------------------------- tabbladtekst (alleen tarasevych.com, alleen met «!»-schakelaar)
+  // ---------------------------------------------------------------- tabbladtekst
   const SITE_RE = /^https:\/\/([a-z0-9-]+\.)*tarasevych\.com\//i;
   async function tabbladTekst(cfg, { selectie = false } = {}) {
     if (!cfg.tabTekst) throw new LokaleFout('TAB_UIT');
@@ -458,9 +581,9 @@
   }
 
   globalThis.MR_LOKALE_AI = Object.freeze({
-    SLEUTEL, API, API_IDS, MODEL_TALEN, VERTAAL_TALEN, STANDAARD, KEUZES,
-    laad, bewaar, opschonen, bijWijziging, plaatsProefTokens,
-    beschikbaarheid, promptParams, standTekst, instantie, vergeetAlles, voer, vertaal, herken, tabbladTekst,
+    SLEUTEL, API, API_IDS, MODEL_TALEN, VERTAAL_TALEN, GEVAAR_VELDEN, STANDAARD, KEUZES,
+    laad, bewaar, opschonen, pasPatchToe, bijWijziging, plaatsProefTokens,
+    beschikbaarheid, isTaalDirectOndersteund, promptParams, standTekst, instantie, vergeetAlles, voer, vertaal, herken, tabbladTekst,
     leesStroom, voortgang, normaal, gebruikVan, foutTekst, taalNaam, doelTaalVan, optiesVoor, LokaleFout,
   });
 })();

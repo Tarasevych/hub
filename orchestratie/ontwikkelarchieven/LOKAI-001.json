@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "taakId": "LOKAI-001",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "opdracht": "Власник надіслав перелік експериментальних прапорців із chrome://flags/#prompt-api (Chrome 157) і файл flags.json та доручив випустити оновлення сайту й браузерного розширення, щоб підтримувати нові локальні моделі й API та давати користувачеві змогу вмикати й налаштовувати потрібні опції під задачу через сайт і ШІ-помічника без ручного пошуку в параметрах.",
+  "herkomst": {
+    "eigenaar": "Тарасевич Павло",
+    "agent": "gemini",
+    "tak": "feature/lokai-001-20261117-154844",
+    "basis": "30edd5e3081ed53d6490a37d2270f4ac6b33cd46",
+    "basisVersie": "20261105-061659"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "У журналі, коді та метаданих немає паролів, ключів доступу, маркерів сеансів, реп'яшків, вмісту листів чи бесід, приватних адрес та внутрішніх міркувань моделі. Тести працюють виключно на штучних заглушках. Небезпечні діагностичні прапорці Chrome (зокрема data-sharing) виключено з генератора flags.json."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Створено окрему гілку feature/lokai-001-20261117-154844 від бази 30edd5e3081ed53d6490a37d2270f4ac6b33cd46 та зареєстровано задачу LOKAI-001 через scripts/orch.mjs.",
+      "bewijzen": [
+        "orchestratie/taken/LOKAI-001.json"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Оновлено спільну модель shared/lokale-ai-model.ts під 9 локальних API Chrome 157 (Prompt, Summarizer, Writer, Rewriter, Translator, LanguageDetector, Proofreader, SemanticEmbedder, DecisionModel), перелік прапорців Chrome 157, діагностику можливостей оглядача (WebMCP, navigator.install(), Web Speech, прямі uk/nl у Gemma 4), фільтр патчу filterLokaleAiPatch, рекомендації під задачу stelVoorNaarTaak та генератор безпечного flags.json (bouwAanbevolenFlagsJson).",
+      "bewijzen": [
+        "shared/lokale-ai-model.ts"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Оновлено розширення до версії 0.9.3: розширено manifest.json, lokale-ai.js, offscreen.js, bridge.js, background.js (команда LOKALE_AI_STEL_IN зі строгим блокуванням «!»-дозволів без bevestigGevaar: true), а також двомовний інтерфейс налаштувань (options.html, options-lokale-ai.js) і бічної панелі (sidepanel.html, sidepanel-lokale-ai.js з аудіо та диктуванням).",
+      "bewijzen": [
+        "extension/manifest.json",
+        "extension/lokale-ai.js",
+        "extension/background.js",
+        "extension/options-lokale-ai.js",
+        "extension/sidepanel-lokale-ai.js"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Оновлено панель сайту LokaleAiPaneel.tsx та стилі agenten.css: додано помічника налаштування під задачу з готовими профілями, вільним описом і окремою кнопкою явного підтвердження «!»-дозволів, перевірку можливостей Chrome 157, кнопку встановлення PWA, генератор flags.json і безпечні дії registerSiteActions('lokale_ai', ...). Під час перевірки виявлено й усунено помилку серверного відмальовування «window is not defined» шляхом динамічного завантаження src/ai-site-acties.ts усередині useEffect.",
+      "bewijzen": [
+        "src/extensie/LokaleAiPaneel.tsx",
+        "src/agenten/agenten.css"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Оновлено 5 наявних модульних тестів під версію 0.9.3 та 9 API і додано новий тест tests/eenheid/extensie-093-stel-in-20261117.test.ts; оновлено каталог UI через scripts/zoek-ui-catalogus.mjs (1327 елементів).",
+      "bewijzen": [
+        "shared/zoek-ui-knoppen.generated.ts",
+        "tests/eenheid/extensie-093-stel-in-20261117.test.ts",
+        "tests/eenheid/extensie-offscreen-20261106.test.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Виконано перевірки: усі 15 безбазових наборів розширення (649/649), 9 із 10 наборів orch-* (367/367), typecheck:server, повне складання npm run build з аудитами UI та пакуванням розширення 0.9.3, а також перевірку на відповідність Мовному Закону.",
+      "bewijzen": [
+        "dist/downloads/mijn-ruimte-extension.zip"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Чітке розділення безпечних опцій та чутливих «!»-дозволів у LOKALE_AI_STEL_IN",
+      "reden": "Запобігає потайному ввімкненню доступу до сторінок, тексту вкладки, мультимодальності чи автозавантаження. Безпечні параметри застосовуються одразу (зокрема через дії ШІ-помічника), а «!»-дозволи — лише після окремого натискання кнопки підтвердження людиною (bevestigGevaar: true)."
+    },
+    {
+      "keuze": "Вилучення data-sharing і явне попередження про #decisions-api на CPU",
+      "reden": "У Chrome 157 прапорець #decisions-api тимчасово перемикає локальні моделі на CPU замість GPU, що сповільнює роботу, а #data-sharing розширює телеметрію. Тому у flags.json за замовчуванням потрапляють лише перевірені рекомендовані прапорці, а decisions-api додається тільки за свідомої позначки користувача."
+    },
+    {
+      "keuze": "Динамічний імпорт src/ai-site-acties.ts усередині useEffect",
+      "reden": "Статичний імпорт тягнув src/canoniek-dienst.ts, який звертається до window на верхньому рівні та ламав серверне відмальовування в Node-тестах."
+    },
+    {
+      "keuze": "Складання безпечного JSON для chrome://flags/#import-export-flags замість спроби автоматичної зміни системних прапорців",
+      "reden": "З міркувань безпеки Chrome забороняє сайтам і розширенням напряму змінювати chrome://flags. Генератор надає користувачеві очищений готовий файл в один дотик."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "shared/lokale-ai-model.ts",
+      "soort": "gewijzigd",
+      "omschrijving": "9 API Chrome 157, перелік прапорців, діагностика можливостей браузера, фільтр патчів, рекомендації під задачу й генератор flags.json."
+    },
+    {
+      "bestand": "extension/manifest.json",
+      "soort": "gewijzigd",
+      "omschrijving": "Підвищення версії розширення до 0.9.3 без розширення системних дозволів."
+    },
+    {
+      "bestand": "extension/lokale-ai.js",
+      "soort": "gewijzigd",
+      "omschrijving": "Підтримка SemanticEmbedder, DecisionModel, прямих мов uk/nl у Gemma 4, samplingMode, toolUse, preference, аудіовходу та pasPatchToe."
+    },
+    {
+      "bestand": "extension/offscreen.js, extension/bridge.js, extension/background.js",
+      "soort": "gewijzigd",
+      "omschrijving": "Обмін розширеним станом і безпечний зовнішній обробник LOKALE_AI_STEL_IN із захистом «!»-полів."
+    },
+    {
+      "bestand": "extension/options.html, extension/options-lokale-ai.js, extension/sidepanel.html, extension/sidepanel-lokale-ai.js",
+      "soort": "gewijzigd",
+      "omschrijving": "Двомовний інтерфейс Chrome 157 (samplingMode, toolUse, preference, schema рішень, перелік прапорців) і голосове диктування + аудіо в бічній панелі."
+    },
+    {
+      "bestand": "src/extensie/LokaleAiPaneel.tsx, src/agenten/agenten.css, shared/zoek-ui-knoppen.generated.ts",
+      "soort": "gewijzigd",
+      "omschrijving": "Помічник налаштування під задачу, діагностика Chrome 157, кнопка PWA, генератор flags.json, безпечні дії сайту та оновлений каталог UI."
+    },
+    {
+      "bestand": "tests/eenheid/extensie-093-stel-in-20261117.test.ts та 5 оновлених тестів розширення",
+      "soort": "nieuw",
+      "omschrijving": "Покриття 0.9.3, LOKALE_AI_STEL_IN, Gemma 4 uk/nl, SemanticEmbedder, DecisionModel та панелі сайту."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "node scripts/eenheidstests.mjs (15 безбазових наборів розширення: browser-extensie, extensie-opties, extensie-profielen, extensie-vergrendeling, extensie-offscreen-20261106, extensie-090-site-20261106, extensie-093-stel-in-20261117, extensie-site, extensie-toestand, extensie-ui, extensie-validatie, extensie-verzamelaar, extensie-native, extensie-ontgrendeling-crypto, extensie-debugger-markering-20261019)",
+      "resultaat": "649/649 пройдено (22+17+42+114+31+21+16+98+22+91+11+40+56+19+49)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "npm run orch:test (10 наборів координації)",
+      "resultaat": "9 із 10 наборів пройдено повністю (367/367); у orch-inleveren 40/41 (стара розбіжність K3 на AGENTS.md, не пов'язана зі змінами)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "npm run typecheck:server",
+      "resultaat": "пройдено без помилок (код 0)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build",
+      "resultaat": "пройдено повністю: kaart-controle, plaatsing-controle, hulp-vraagtekens (0 помилок), zoek-ui-catalogus (1327 елементів), l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build (5910 модулів), tech-bundels-controle, bouw-extensie (0.9.3 zip 161689 байт), build:server",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "node scripts/orch.mjs controleer та перевірка Мовного Закону (2086 доданих рядків)",
+      "resultaat": "ORCH гаразд (regelsVersie 1.4.14), заборонених символів/дієприкметників/сленгу: 0",
+      "staat": "uitgevoerd"
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "shared/lokale-ai-model.ts",
+    "shared/ontwikkelarchief.ts",
+    "chrome://flags/#prompt-api (Chrome 157.0.8103.79)"
+  ],
+  "beperkingen": [
+    "У хмарному середовищі відсутня локальна база PostgreSQL (DATABASE_URL), тому extensie-ontgrendeling, extensie-zijpaneel-20261022 та zoek-bronnen-20261022 зупинилися на DATABASE_URL_ONTBREEKT.",
+    "Збірка підписаного .crx (0.3.4 → 0.9.3) не виконувалася, оскільки приватний ключ підпису розширення зберігається лише на ПК власника (потрібно виконати node scripts/onderteken-extensie.mjs після злиття).",
+    "Жива поведінка експериментальних прапорців Chrome 157 (Gemma 4, SemanticEmbedder, DecisionModel, WebMCP, navigator.install()) перевірена модульними тестами на заглушках; приймання в живому браузері Chrome 157 виконує власник."
+  ]
+}

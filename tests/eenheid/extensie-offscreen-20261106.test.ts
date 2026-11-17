@@ -35,8 +35,8 @@ export async function main(): Promise<number> {
   {
     const m = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
     const html = readFileSync(join(EXT, 'offscreen.html'), 'utf8');
-    check('manifest 0.9.2: recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
-      m.version === '0.9.2' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
+    check('manifest 0.9.3: recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
+      m.version === '0.9.3' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
     const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
     check('offscreen.html: lokale-ai.js vóór offscreen.js, geen inline code (CSP)', scripts.length === 2 && /src="lokale-ai\.js"/.test(scripts[0][1]) && /src="offscreen\.js"/.test(scripts[1][1]) && scripts.every((x) => x[2].trim() === ''));
   }
@@ -66,9 +66,9 @@ export async function main(): Promise<number> {
     check('alleen de eigen service worker: andere extensie of een tabblad krijgt geen antwoord, niets gemeten', vreemd === 'GEEN_ANTWOORD' && vanTab === 'GEEN_ANTWOORD' && aangeroepen.length === 0);
     check('berichten voor background.js (geen doel «offscreen») laat het document liggen', (await vraag(f, { op: 'status' }, { id: ID })) === 'GEEN_ANTWOORD');
     const r = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-stand' }, { id: ID });
-    check('lokale-ai-stand: stand per API (oude «readily» → available, onbekend → unavailable, gooit → fout, ontbreekt → ontbreekt)',
-      r?.ok === true && r.aan === true && JSON.stringify(Object.keys(r.apis).sort()) === JSON.stringify(['detector', 'prompt', 'proofreader', 'rewriter', 'summarizer', 'translator', 'writer'])
-      && r.apis.prompt === 'available' && r.apis.summarizer === 'downloadable' && r.apis.writer === 'ontbreekt' && r.apis.rewriter === 'unavailable' && r.apis.translator === 'available' && r.apis.detector === 'fout' && r.apis.proofreader === 'downloading', JSON.stringify(r));
+    check('lokale-ai-stand: stand per API (9 APIs: readily → available, onbekend → unavailable, gooit → fout, ontbreekt → ontbreekt)',
+      r?.ok === true && r.aan === true && JSON.stringify(Object.keys(r.apis).sort()) === JSON.stringify(['decisions', 'detector', 'embedder', 'prompt', 'proofreader', 'rewriter', 'summarizer', 'translator', 'writer'])
+      && r.apis.prompt === 'available' && r.apis.summarizer === 'downloadable' && r.apis.writer === 'ontbreekt' && r.apis.rewriter === 'unavailable' && r.apis.translator === 'available' && r.apis.detector === 'fout' && r.apis.proofreader === 'downloading' && r.apis.embedder === 'ontbreekt' && r.apis.decisions === 'ontbreekt', JSON.stringify(r));
     check('lokale-ai-stand: NOOIT create()', !aangeroepen.some((x) => x.endsWith('.create')), aangeroepen.join(' | '));
     const v = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'a1', modus: 'summarizer', tekst: 'Een korte tekst om samen te vatten.', limietMs: 5000 }, { id: ID });
     check('oude fout hersteld: site-aanvraag met «!» autoDownload aan start toch GEEN download (MODEL_NIET_GELADEN, geen create())',
@@ -119,7 +119,9 @@ export async function main(): Promise<number> {
     check('offscreen.html geopend met de juiste url, reden WORKERS en een Nederlandse uitleg (geen Engelse tekst)',
       off.gemaakt.length === 1 && off.gemaakt[0].url === 'offscreen.html' && JSON.stringify(off.gemaakt[0].reasons) === '["WORKERS"]' && /Ingebouwde AI van Chrome/.test(off.gemaakt[0].justification), JSON.stringify(off.gemaakt));
     check('status: lokaleAi.stand = gefilterde meting (onbekende API, onbekende stand en «uit» weg; geen fouttekst); siteToegang standaard uit',
-      JSON.stringify(st?.lokaleAi) === '{"aan":true,"apis":["prompt","summarizer","rewriter","translator","detector","proofreader"],"siteToegang":false,"stand":{"prompt":"available","translator":"downloadable","detector":"stil"}}' && !JSON.stringify(st).includes('GEHEIME'), JSON.stringify(st?.lokaleAi));
+      st?.lokaleAi?.aan === true && !st.lokaleAi.apis.includes('writer') && st.lokaleAi.siteToegang === false
+      && JSON.stringify(st?.lokaleAi?.stand) === '{"prompt":"available","translator":"downloadable","detector":"stil"}'
+      && st.lokaleAi?.gevaar?.siteToegang === false && !JSON.stringify(st).includes('GEHEIME'), JSON.stringify(st?.lokaleAi));
     await vraag(f, { op: 'status' }, opties); await rust(60);
     check('binnen 5 minuten geen nieuwe meting (geen offscreen-vraag per statusvraag)', off.gemaakt.length === 1 && off.gevraagd.length === 1);
 
@@ -165,14 +167,14 @@ export async function main(): Promise<number> {
     const k = filterLokaleAiKeuze({ aan: true, apis: ['prompt', 'writer'], stand: { prompt: 'available', writer: 'stil', summarizer: 'rm -rf', vreemd: 'available' } });
     check('site-filter: stand alleen met bekende API\'s en standen', JSON.stringify(k) === '{"aan":true,"apis":["prompt","writer"],"stand":{"prompt":"available","writer":"stil"}}', JSON.stringify(k));
     check('filterPubliek neemt lokaleAi.stand over', JSON.stringify(filterPubliek({ versie: '0.9.1', lokaleAi: { aan: true, apis: [], stand: { detector: 'fout' } } })?.lokaleAi) === '{"aan":true,"apis":[],"stand":{"detector":"fout"}}');
-    const pagina = { prompt: 'ontbreekt', summarizer: 'available', writer: 'ontbreekt', rewriter: 'ontbreekt', translator: 'ontbreekt', detector: 'ontbreekt', proofreader: 'ontbreekt' } as const;
+    const pagina = { prompt: 'ontbreekt', summarizer: 'available', writer: 'ontbreekt', rewriter: 'ontbreekt', translator: 'ontbreekt', detector: 'ontbreekt', proofreader: 'ontbreekt', embedder: 'ontbreekt', decisions: 'ontbreekt' } as const;
     check('kiesStand: extensie gaat voor de pagina (Prompt API bestaat in Chrome soms alleen voor extensies); anders de pagina; anders null',
       JSON.stringify(kiesStand('prompt', pagina, k)) === '{"stand":"available","bron":"extensie"}' && JSON.stringify(kiesStand('summarizer', pagina, k)) === '{"stand":"available","bron":"pagina"}' && kiesStand('summarizer', null, k) === null);
     const rStil = laiRegel('writer', 'stil', k, '0.9.1', () => false, 'extensie');
     check('stand «stil» → let op, met verwijzing naar chrome://on-device-internals en «у розширенні»', rStil.stand === 'let-op' && rStil.uk.includes('chrome://on-device-internals') && rStil.uk.startsWith('Chrome (у розширенні)') && rStil.nl.startsWith('Chrome (in de extensie)'));
-    const html = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'], stand: { prompt: 'available', summarizer: 'available', writer: 'downloadable', rewriter: 'unavailable', translator: 'available', detector: 'available', proofreader: 'ontbreekt' } }, extVersie: '0.9.1' }));
-    check('blok rendert meteen met de meting van de extensie (geen «Перевіряємо…»), bron per regel, telling 4 van 7',
-      !html.includes('Перевіряємо') && (html.match(/data-lai-bron="extensie"/g) ?? []).length === 7 && html.includes('Готово до роботи: 4 з 7') && html.includes('Chrome (у розширенні): модель готова'), html.slice(0, 400));
+    const html = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions'], stand: { prompt: 'available', summarizer: 'available', writer: 'downloadable', rewriter: 'unavailable', translator: 'available', detector: 'available', proofreader: 'ontbreekt', embedder: 'ontbreekt', decisions: 'ontbreekt' } }, extVersie: '0.9.1' }));
+    check('blok rendert meteen met de meting van de extensie (geen «Перевіряємо…»), bron per regel, telling 4 van 9',
+      !html.includes('Перевіряємо') && (html.match(/data-lai-bron="extensie"/g) ?? []).length === 9 && html.includes('Готово до роботи: 4 з 9') && html.includes('Chrome (у розширенні): модель готова'), html.slice(0, 400));
   }
 
   // ---------------------------------------------------------------- 5. site: gebruik door pagina's van de site («!» siteToegang)
@@ -185,8 +187,9 @@ export async function main(): Promise<number> {
     check('siteToegang uit: «!»-waarschuwing met gevolgen (GPU/RAM, 20/min, geen download) en knop naar de instellingen van de extensie met uitleg',
       uit.includes('data-lai-site="uit"') && uit.includes('! Використання сторінками сайту: вимкнено') && uit.includes('GPU/RAM') && uit.includes('data-lai-actie="opties"') && /title="[^"]*сайт сам його змінити не може/.test(uit) && !uit.includes('data-lai-veld'));
     const aan = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['summarizer', 'translator'], siteToegang: true }, extVersie: '0.9.2', extId: ext }));
+    const modusSelect = aan.match(/<select data-lai-veld="modus">([\s\S]*?)<\/select>/)?.[1] ?? '';
     check('siteToegang aan: formulier (functie met alleen ingeschakelde API\'s, tekst ≤ 20000, knop «Виконати на цьому пристрої» met uitleg) en een aria-live uitkomst',
-      aan.includes('data-lai-site="aan"') && aan.includes('data-lai-veld="modus"') && (aan.match(/<option /g) ?? []).length === 2 && /maxLength="20000"|maxlength="20000"/.test(aan)
+      aan.includes('data-lai-site="aan"') && aan.includes('data-lai-veld="modus"') && (modusSelect.match(/<option /g) ?? []).length === 2 && /maxLength="20000"|maxlength="20000"/.test(aan)
       && aan.includes('Виконати на цьому пристрої') && /data-lai-actie="uitvoeren"[^>]*disabled=""|disabled=""[^>]*data-lai-actie="uitvoeren"/.test(aan) && /role="status" aria-live="polite" data-lai-uitkomst/.test(aan), aan.slice(-1500));
     const goed = filterLokaleAiAntwoord({ ok: true, tekst: 'Samenvatting', notities: ['en → uk', 5], correcties: [], geheim: 'X' });
     check('antwoord ok: alleen tekst, notities (tekst) en correcties', JSON.stringify(goed) === '{"ok":true,"tekst":"Samenvatting","notities":["en → uk"],"correcties":[]}');

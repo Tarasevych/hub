@@ -447,7 +447,24 @@ a.ag-knop{text-decoration:none}
 .ag-ext-regel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;padding:12px;border:1px dashed var(--line);border-radius:var(--ag-r,10px)}
 .ag-ext-regel span{flex:1 1 240px;min-width:0;line-height:1.5}
 .ag-ext-regel .ag-knop{min-height:44px}
-/* EXT090-001 (0.9.2): «Вбудований ШІ Chrome» → gebruik door pagina's van de site (siteToegang) en proefformulier. */
+/* EXT090-001 (0.9.2–0.9.3): «Вбудований ШІ Chrome» → розумне налаштування під задачу, форма проби та flags.json. */
+.ag-ext-lai-assistent{display:grid;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:var(--ag-r,10px);background:var(--panel);min-width:0}
+.ag-ext-lai-kop{display:flex;align-items:center;gap:8px;font-size:.98rem;margin:0}
+.ag-ext-lai-kop svg{width:17px;height:17px;flex:0 0 auto;color:var(--accent)}
+.ag-ext-lai-presets{display:flex;flex-wrap:wrap;gap:8px}
+.ag-ext-lai-preset{min-height:44px;white-space:normal;text-align:left}
+.ag-ext-lai-preset.is-actief{border-color:var(--accent);background:var(--accent-soft,var(--surface));color:var(--text);font-weight:700}
+.ag-ext-lai-assistent .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.ag-ext-lai-assistent :is(input[type=text],select,textarea){width:100%;max-width:100%;box-sizing:border-box;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-weight:400}
+.ag-ext-lai-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ag-ext-lai-acties .ag-knop{min-height:44px;white-space:normal;text-align:left}
+.ag-ext-lai-gevaar-blok{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--ag-warn);border-left:4px solid var(--ag-warn);border-radius:8px;background:var(--surface)}
+.ag-ext-lai-gevaar-blok .ag-knop{min-height:44px;justify-self:start;white-space:normal;text-align:left}
+.ag-ext-lai-vlaggen{display:grid;gap:8px;padding-top:6px;border-top:1px solid var(--line)}
+.ag-ext-lai-vlaggen>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.ag-ext-lai-vinkje{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.88rem;cursor:pointer}
+.ag-ext-lai-vinkje input{width:20px;height:20px;flex:0 0 auto}
+.ag-ext-lai-letop{color:var(--muted)}
 .ag-ext-lai-site{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .ag-ext-lai-site .ag-knop{min-height:44px;justify-self:start;white-space:normal}
 .ag-ext-lai-site .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
