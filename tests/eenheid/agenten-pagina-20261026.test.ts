@@ -10,13 +10,16 @@ const lees = (p: string) => readFileSync(p, 'utf8');
 export async function main(): Promise<number> {
   const { check, einde } = checker('agenten-pagina-20261026');
   const pagina = lees('src/agenten/AgentenPagina.tsx');
+  const mcp = lees('src/McpDienstWeergave.tsx');
   const css = lees('src/agenten/agenten.css');
   const hash = lees('src/agenten/agenten-hash.ts');
   const browser = lees('src/extensie/BrowserEnAgenten.tsx');
 
   check('ледачі секції: не всі важкі панелі змонтовані одразу', pagina.includes('function LuieSectie') && pagina.includes("data-ag-lui={open ? 'open' : 'dicht'}") && pagina.includes('data-ag-sectie={tab}') && pagina.includes('IntersectionObserver') && pagina.includes("data-ag-lang='1'"));
-  check('липка смуга якорів', pagina.includes("data-ag-ankers='1'") && pagina.includes("navKlasse='ag-tabs'") && pagina.includes("wrapKlasse='ag-tabs-wrap'") && css.includes('position:sticky') && css.includes('.ag-tabs-wrap{') && css.includes('.ag-sectie,#extension-lokaal,#ruimte{scroll-margin-top:'));
-  check('aria-selected лишається на поточному якорі, клік пише хеш', /aria-selected=\{huidig === t\}/.test(pagina) && pagina.includes("role='tab'") && pagina.includes('schrijf(tab, item, true)') && pagina.includes("data-tab={t}"));
+  check('спільне меню якорів замість липкої смуги вкладок: жодної .ag-ankers / TabsRij на AgentenPagina, CSS-основа збережена',
+    !pagina.includes("data-ag-ankers") && !pagina.includes("<TabsRij") && pagina.includes('zetAgentAnkers({') && mcp.includes('<MaquetteAnkerRail') && css.includes('.ag-sectie,#extension-lokaal,#ruimte{scroll-margin-top:'));
+  check('активний якір передається у спільне меню якорів, клік пише хеш',
+    pagina.includes('actief: huidig') && pagina.includes('ga: gaAnker') && lees('src/maquette-kern/MaquetteAnkerRail.tsx').includes("aria-current={isExactActief ? 'true' : undefined}") && pagina.includes('schrijf(tab, item, true)'));
   const lok = leesHash('#extension-lokaal');
   const ruim = leesHash('#ruimte');
   check('#extension-lokaal і #ruimte — секція, не «Огляд»', lok.tab === 'extensie' && lok.anker === 'extension-lokaal' && ruim.tab === 'technisch' && ruim.anker === 'ruimte' && hash.includes("'extension-lokaal': 'extensie'") && hash.includes("ruimte: 'technisch'"));

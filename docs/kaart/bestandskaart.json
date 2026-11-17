@@ -3498,6 +3498,11 @@
    "pad": "tests/eenheid/woordbreuk-001-20261115.test.ts",
    "wat": "Eenheidstest tegen afbreken van woorden middenin smalle tegelkoppen en statuslabels op het werkblad en in widgets.",
    "sinds": "WOORDBREUK-001 (PR #132)"
+  },
+  {
+   "pad": "tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts",
+   "wat": "Eenheidstest voor de gegroepeerde ankernavigatie (MaquetteAnkerRail) op mcp.tarasevych.com/agenten in alle paletten en zonder horizontale tabstrook.",
+   "sinds": "GEMINI-004"
   }
  ]
 }

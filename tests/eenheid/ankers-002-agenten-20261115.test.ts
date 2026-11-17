@@ -34,12 +34,12 @@ export async function main(): Promise<number> {
   // 2. Одне меню якорів.
   check('сторінка публікує свої розділи в спільне джерело (назви, піктограми, лічильники, поточний розділ, перехід)',
     pagina.includes('zetAgentAnkers({') && pagina.includes('actief: huidig') && pagina.includes('ga: gaAnker') && bron.includes('export function useAgentAnkers'));
-  check('у «Макеті» липкої смуги вкладок немає — розділи лише в меню якорів',
-    pagina.includes("{isMaquette ? null : <div className='ag-ankers' data-ag-ankers='1'>"));
+  check('у всіх палітрах липкої смуги вкладок немає — розділи лише в спільному меню якорів',
+    !pagina.includes('data-ag-ankers') && !pagina.includes('<TabsRij'));
   check('меню якорів бере розділи /agents лише зі спільного джерела (жодного власного списку з «Огляд підключень»)',
     mcp.includes('agentAnkers.onderdelen.map(') && !mcp.includes('Огляд підключень') && !mcp.includes('"ag-tab-journaal"'));
-  check('меню якорів показується й на сторінці окремого ШІ (#agent/…)',
-    !mcp.includes('isAgentDetail') && /isMaquette && !verborgen && !consent && !laagOpen \? \(/.test(mcp));
+  check('меню якорів показується на /agents в усіх палітрах і на сторінці окремого ШІ (#agent/…)',
+    !mcp.includes('isAgentDetail') && mcp.includes('const toonAnkerRail = isMaquette || section === "agents";') && /toonAnkerRail && !verborgen && !consent && !laagOpen \? \(/.test(mcp));
   check('вибір у меню веде туди ж, куди й сторінка (функція сторінки), а підсвічення стежить за розділом у полі зору',
     mcp.includes('agentAnkers.ga(ankerId.slice("ag-tab-".length))') && mcp.includes('actief={railActief}'));
 
