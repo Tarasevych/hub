@@ -11,7 +11,7 @@ export const PROVIDERS: readonly ProviderDef[] = [
   // België
   { sleutel: 'proximus', naam: 'Proximus', land: 'BE', asn: [5432], patroon: /\bproximus\b|\bbelgacom\b/i },
   { sleutel: 'telenet', naam: 'Telenet', land: 'BE', asn: [6848], patroon: /\btelenet\b/i },
-  { sleutel: 'orange', naam: 'Orange', land: 'BE', asn: [47377, 3215, 5511], patroon: /\borange\b/i, zonderLogo: true },
+  { sleutel: 'orange', naam: 'Orange', land: 'BE', asn: [47377, 3215, 5511], patroon: /\borange\b/i },
   { sleutel: 'voo', naam: 'VOO', land: 'BE', asn: [12392], patroon: /\bvoo\b|\bbrutele\b|\bnethys\b/i },
   // Nederland
   { sleutel: 'kpn', naam: 'KPN', land: 'NL', asn: [1136, 286], patroon: /\bkpn\b/i },
@@ -23,7 +23,7 @@ export const PROVIDERS: readonly ProviderDef[] = [
   { sleutel: 'ukrtelecom', naam: 'Укртелеком', land: 'UA', asn: [6849], patroon: /ukrtelecom|ukrtelnet/i },
   // Groot en grensoverschrijdend
   { sleutel: 'deutschetelekom', naam: 'Telekom', land: 'DE', asn: [3320], patroon: /deutsche telekom|\bdtag\b/i },
-  { sleutel: 'starlink', naam: 'Starlink', land: 'US', asn: [14593], patroon: /starlink/i, zonderLogo: true },
+  { sleutel: 'starlink', naam: 'Starlink', land: 'US', asn: [14593], patroon: /starlink/i },
   { sleutel: 'google', naam: 'Google', land: 'US', asn: [15169, 396982], patroon: /^google\b/i },
   { sleutel: 'cloudflare', naam: 'Cloudflare', land: 'US', asn: [13335], patroon: /cloudflare/i },
 ];

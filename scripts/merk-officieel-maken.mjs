@@ -96,6 +96,25 @@ const KEUZE = [
   { sleutel: 'vodafone', pakket: 'simple-icons', icoon: 'siVodafone' },
   { sleutel: 'ziggo', pakket: 'simple-icons', icoon: 'siZiggo' },
   { sleutel: 'deutschetelekom', pakket: 'simple-icons', icoon: 'siDeutschetelekom' },
+  // Мережі (17.11.2026, емблема «Мережа» у сповіщенні): VPN-сервіси, Tor, iCloud Private Relay, хостинги. Netwerken: VPN, Tor, hosting.
+  { sleutel: 'mullvad', pakket: 'simple-icons', icoon: 'siMullvad' },
+  { sleutel: 'nordvpn', pakket: 'simple-icons', icoon: 'siNordvpn' },
+  { sleutel: 'protonvpn', pakket: 'simple-icons', icoon: 'siProtonvpn' },
+  { sleutel: 'expressvpn', pakket: 'simple-icons', icoon: 'siExpressvpn' },
+  { sleutel: 'surfshark', pakket: 'simple-icons', icoon: 'siSurfshark' },
+  { sleutel: 'tor', pakket: 'simple-icons', icoon: 'siTorproject' },
+  { sleutel: 'icloud', pakket: 'simple-icons', icoon: 'siIcloud' },
+  { sleutel: 'hetzner', pakket: 'simple-icons', icoon: 'siHetzner' },
+  { sleutel: 'ovh', pakket: 'simple-icons', icoon: 'siOvh' },
+  { sleutel: 'vultr', pakket: 'simple-icons', icoon: 'siVultr' },
+  { sleutel: 'scaleway', pakket: 'simple-icons', icoon: 'siScaleway' },
+  { sleutel: 'akamai', pakket: 'simple-icons', icoon: 'siAkamai' }, // Linode hoort sinds 2022 bij Akamai
+  { sleutel: 'contabo', pakket: 'simple-icons', icoon: 'siContabo' },
+  { sleutel: 'gcore', pakket: 'simple-icons', icoon: 'siGcore' },
+  { sleutel: 'orange', pakket: 'simple-icons', icoon: 'siOrange' },
+  { sleutel: 'cloudflare', pakket: '@iconify-json/logos', icoon: 'cloudflare-icon' },
+  { sleutel: 'digitalocean', pakket: '@iconify-json/logos', icoon: 'digital-ocean-icon' },
+  { sleutel: 'aws', pakket: '@iconify-json/logos', icoon: 'aws', opmerking: 'woordmerk met de «smile» van Amazon Web Services' },
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:

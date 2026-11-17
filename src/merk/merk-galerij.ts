@@ -14,6 +14,9 @@ export const OFFICIEEL_NAMEN: Readonly<Record<string, string>> = {
   telegram: 'Telegram', discord: 'Discord', whatsapp: 'WhatsApp', dropbox: 'Dropbox', googledrive: 'Google Drive', googlekeep: 'Google Keep',
   // PLAATS-TEKENS-001 (17.11.2026): виробники пристроїв і знак passkey у сповіщеннях про вхід.
   lenovo: 'Lenovo', dell: 'Dell', hp: 'HP', asus: 'ASUS', acer: 'Acer', xiaomi: 'Xiaomi', passkey: 'Passkey',
+  // Емблема «Мережа» (17.11.2026): VPN, хостинги й датацентри.
+  mullvad: 'Mullvad VPN', nordvpn: 'NordVPN', protonvpn: 'Proton VPN', expressvpn: 'ExpressVPN', surfshark: 'Surfshark',
+  akamai: 'Akamai (Linode)', contabo: 'Contabo', gcore: 'G-Core Labs', scaleway: 'Scaleway', vultr: 'Vultr',
 };
 
 /** Browsers en besturingssystemen die «Сеанси» en «Пристрої» tonen (src/sessies/SessieIconen.tsx → browserMerk / osMerk). */

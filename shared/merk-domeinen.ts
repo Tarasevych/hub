@@ -19,6 +19,6 @@ export const MERK_SITE_DOMEIN: Readonly<Record<string, string>> = Object.freeze(
   honor: 'honor.com', huawei: 'huawei.com', pcloud: 'pcloud.com', colornote: 'colornote.com', freshdesk: 'freshworks.com', microsoftentra: 'microsoft.com',
   // PLAATS-TEKENS-001 (17.11.2026): providers, Xiaomi en het passkey-teken van de FIDO Alliance, elk van de eigen website.
   proximus: 'proximus.com', telenet: 'telenet.be', voo: 'voo.be', kpn: 'kpn.com', odido: 'odido.nl', ukrtelecom: 'ukrtelecom.ua', xiaomi: 'mi.com',
-  passkey: 'fidoalliance.org',
+  passkey: 'fidoalliance.org', starlink: 'starlink.com',
 });
 export const MERK_DOMEINEN: ReadonlySet<string> = new Set(Object.values(MERK_DOMEIN));
