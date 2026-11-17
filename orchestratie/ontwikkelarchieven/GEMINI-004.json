@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "taakId": "GEMINI-004",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "titel": "GEMINI-004 · Спільне групове меню якорів (MaquetteAnkerRail) для /agenten",
+  "opdracht": "Перевести розділи сторінки mcp.tarasevych.com/agenten (#overzicht…#journaal) на спільне групове меню якорів MaquetteAnkerRail за будовою, принципом і виглядом меню на id.tarasevych.com/account (UNIF-ANKER-001) у всіх палітрах (звичайних, класичних і «Макет») із 4 змістовими розкривними групами («Огляд і підключення», «Середовища та пристрої», «Координація й безпека», «Система та журнал») та «Швидкими діями», прибиранням верхньої горизонтальної смуги вкладок і публікацією пакунка оновлення поверх живої встановленої версії сервера 20261117-190154 (LOKAI-001 @ 14dbcb3aeceb205ac6f69238f6397816bd293146) без автоматичного встановлення.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 4 Hydrogen Extra",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/agenten-ankers-20261117-195520",
+    "basisCommit": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "basisVersie": "20261117-190154",
+    "geinstalleerdeBasis": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "geinstalleerdeVersie": "20261117-190154",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.15",
+    "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4"
+  },
+  "tijdlijn": [
+    {
+      "stap": "Звірено поточну живу встановлену версію на сервері hub.tarasevych.com/api/version (20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146, LOKAI-001) та відкрито чисту робочу гілку feature/agenten-ankers-20261117-195520 від цієї основи.",
+      "resultaat": "Оновлено orchestratie/geinstalleerd.json і зареєстровано картку завдання orchestratie/taken/GEMINI-004.json."
+    },
+    {
+      "stap": "У src/McpDienstWeergave.tsx увімкнено показ спільного меню якорів MaquetteAnkerRail і класової обгортки .mq-schil на section === \"agents\" в усіх палітрах, а 12 розділів зі спільного джерела (src/agenten/anker-bron.ts) розкладено на 4 змістові розкривні групи (soort: \"groep\", kiesbaar: false) з діапазонами та групу «Швидкі дії».",
+      "resultaat": "Розділи /agenten автоматично групуються як на сторінці облікового запису id.tarasevych.com/account, зі збереженням живих лічильників, назв і автоматичного приховування меню при порожньому переліку якорів."
+    },
+    {
+      "stap": "У src/agenten/AgentenPagina.tsx прибрано верхню горизонтальну смугу вкладок (.ag-ankers / <TabsRij>), забезпечено очищення джерела якорів при geenRecht і wisAgentAnkers() при демонтуванні, а також збережено банер блокування (.ag-blokkade-banner), перехід до окремого ШІ (ga('agent', a.slug)) і розрахунок висоти липкої смуги через .mq-anker-onderbalk та верхню рейку.",
+      "resultaat": "Жодної дубльованої горизонтальної смуги вкладок на /agenten; на стіні обмеження прав навігаційна рейка приховується."
+    },
+    {
+      "stap": "У src/mcp-domein.css додано центрування .ag-pagina та захисні відступи робочого простору для всіх чотирьох країв закріплення рейки поза режимом «Макет», а також мобільне правило @media (max-width:960px) із scroll-margin-top:76px.",
+      "resultaat": "Меню якорів коректно поводиться праворуч, ліворуч, зверху, знизу та на мобільних екранах у всіх палітрах."
+    },
+    {
+      "stap": "Оновлено tests/e2e/agenten.e2e.ts та модульні випробування (agenten-pagina-20261026, ankers-002-agenten-20261115, mobiel-geometrie-20261021), додано tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts із записом у docs/kaart/bestandskaart.json і сценарієм випуску .github/workflows/gemini-004-uitgave.yml.",
+      "resultaat": "Виконано локальну перевірку типів клієнта та сервера, статичних аудитів, перевірку мовної чистоти й безбазових модульних тестів, після чого зафіксовано зміни у a54dc89c506e001ee9c4ec90652b2d8bf1dc4add."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Повторно використано спільний компонент MaquetteAnkerRail у всіх палітрах на section === \"agents\" замість створення нового окремого меню.",
+      "reden": "Забезпечує єдину будову, розкривні групи, налаштування країв і згортання, мобільну підсмугу, підсвічення активного якоря та поведінку як на сторінці id.tarasevych.com/account (UNIF-ANKER-001) без подвоєння коду."
+    },
+    {
+      "besluit": "Збережено єдине живе джерело розділів (src/agenten/anker-bron.ts) із динамічним групуванням у McpDienstWeergave.tsx та порожнім масивом при geenRecht.",
+      "reden": "Назви, піктограми й лічильники беруться безпосередньо зі стану AgentenPagina, а за відсутності прав доступу («API-платформа») рейка автоматично не показується на стіні обмеження."
+    },
+    {
+      "besluit": "Окрема область стилів .mcp-estate.mq-schil[data-mcp-tab=\"agents\"] у src/mcp-domein.css поза режимом «Макет».",
+      "reden": "Додає безпечні відступи для всіх чотирьох положень рейки на комп’ютерах і мобільних пристроях без втручання в інші піддомени та сусідню сторінку /apps."
+    },
+    {
+      "besluit": "Складання й публікація випуску через виділений процес .github/workflows/gemini-004-uitgave.yml без автоматичного встановлення на живий сервер.",
+      "reden": "Перевіряє код у чистому середовищі на PostgreSQL 16 і Хроміумі, генерує UITROL-MANIFEST.json із моделлю Gemini 4 Hydrogen Extra та гарантує проходження TRACE-001 перед передачею власнику для схвалення ключем доступу."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "gewijzigd", "pad": "src/McpDienstWeergave.tsx", "omschrijving": "Увімкнено MaquetteAnkerRail і .mq-schil для section === \"agents\" в усіх палітрах; 12 розділів організовано у 4 розкривні групи з діапазонами та «Швидкі дії», з автоматичним приховуванням при порожньому списку." },
+    { "soort": "gewijzigd", "pad": "src/agenten/AgentenPagina.tsx", "omschrijving": "Вилучено .ag-ankers і <TabsRij>; при geenRecht передається порожній масив розділів і викликається wisAgentAnkers() на виході; оновлено обчислення липкої висоти під .mq-anker-onderbalk; збережено .ag-blokkade-banner і ga('agent', a.slug)." },
+    { "soort": "gewijzigd", "pad": "src/mcp-domein.css", "omschrijving": "Додано центрування .ag-pagina, захисні поля для правого, лівого, верхнього й нижнього країв рейки поза «Макетом» та мобільний відступ прокрутки scroll-margin-top:76px." },
+    { "soort": "gewijzigd", "pad": "tests/e2e/agenten.e2e.ts", "omschrijving": "Переведено наскрізну перевірку з верхніх вкладок [role=tab] на групове меню .mq-anker-rail із перевіркою 4 змістових груп, «Швидких дій» та переходів між якорями." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/agenten-pagina-20261026.test.ts", "omschrijving": "Оновлено очікування спільної навігації якорів через MaquetteAnkerRail замість горизонтальної смуги .ag-ankers." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/ankers-002-agenten-20261115.test.ts", "omschrijving": "Оновлено перевірки під показ MaquetteAnkerRail на /agents в усіх палітрах без верхньої смуги вкладок." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/mobiel-geometrie-20261021.test.ts", "omschrijving": "Оновлено перевірку AgentenPagina.tsx на відсутність горизонтальної смуги вкладок і передавання розділів до MaquetteAnkerRail зі збереженням перевірки TabsRij для VerbindingenHub." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts", "omschrijving": "Новий модульний набір випробувань (9 перевірок) для групового меню якорів /agenten, відсутності прав, сусідніх панелей, стилів 4 країв і мовної чистоти." },
+    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Зареєстровано новий файл tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts із позначкою GEMINI-004." },
+    { "soort": "gewijzigd", "pad": "orchestratie/geinstalleerd.json", "omschrijving": "Синхронізовано живу встановлену основу 20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/GEMINI-004.json", "omschrijving": "Реєстраційна картка завдання GEMINI-004 у черзі координації." },
+    { "soort": "toegevoegd", "pad": ".github/workflows/gemini-004-uitgave.yml", "omschrijving": "Повний сценарій перевірок, складання, підготовки маніфесту й публікації випуску GEMINI-004 у GitHub Release." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-004.json", "omschrijving": "Незмінний журнал походження випуску GEMINI-004 (TRACE-001) із поясненням процесу випуску." }
+  ],
+  "controles": [
+    {
+      "opdracht": "curl https://hub.tarasevych.com/api/version",
+      "resultaat": "Підтверджено живу встановлену версію 20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146 (LOKAI-001)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && find deploy -name '*.sh' -exec bash -n {} + && node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/l002-audit.mjs && node scripts/hulp-vraagtekens-controle.mjs --stil && node scripts/zoek-ui-catalogus.mjs --controle",
+      "resultaat": "Усі перевірки пройшли чисто з кодом 0 (regelsVersie 1.4.15, карта 2903 файлів / 543 перейменувань, 1808 елементів пошукового каталогу, сценарії розгортання без синтаксичних помилок)."
+    },
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server",
+      "resultaat": "0 помилок типізації клієнта й сервера."
+    },
+    {
+      "opdracht": "Локальний прогін безбазових модульних випробувань через node scripts/eenheidstests.mjs",
+      "resultaat": "Успішно пройдено всі запущені набори: gemini-004-agenten-ankers-20261117 (9/9), bestandskaart-20261024 (28/28), werkstromen-veilig-20261116 (9/9), agenten-pagina-20261026 (8/8), ankers-002-agenten-20261115 (15/15), mobiel-geometrie-20261021 (56/56), agenten-pagina-blokken-20261103 (37/37), klassiek-008b-agenten-kern-inspectie (14/14), klassiek-008a-mcp-kern-uitrol, centrering-pc-20261115, klap-alles-20261115 (6/6), breedte-001-kolom-20261115 (14/14), hint-001-ankertip (12/12), maquette-generator-gelijk (2/2), maquette-mobiel-prestatie (19/19), woordbreuk-001-20261115 (26/26), uitrol-manifest, uitrol-voorcontrole, orch-kern-20261031, maquette-001-kern, identiteit-maquette (56/56)."
+    },
+    {
+      "opdracht": "Автоматизований прогін у GitHub Actions .github/workflows/gemini-004-uitgave.yml",
+      "resultaat": "Повний перелік 20 хмарних, 124 безбазових і 13 післяскладальних тестів, перевірки TRACE-001 і ризиків, виробниче складання, подвійні міграції на PostgreSQL 16 із трьома ролями та 116 випробувань із БД і Хроміумом (включно з tests/e2e/agenten.e2e.ts) перед публікацією GitHub Release."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється на живий сервер автоматично — встановлення здійснює виключно власник через Admin → Оновлення після зеленої попередньої перевірки та схвалення ключем доступу.",
+    "У локальному контейнері агента відсутній запущений PostgreSQL 16 та тестове середовище Хроміуму, тому повне виробниче складання, подвійний прогін міграцій і 116 випробувань із базою даних та браузером виконуються на чистому середовищі GitHub Actions."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true
+  },
+  "commits": [
+    "a54dc89c506e001ee9c4ec90652b2d8bf1dc4add"
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/gemini-004-uitgave.yml",
+      "uk": "Виділений сценарій перевірки, складання й оприлюднення випуску GEMINI-004 у GitHub Release поверх живої основи 20261117-190154 (LOKAI-001). Він не має доступу до живого сервера по SSH і нічого не встановлює: лише звіряє живу версію через /api/version, проганяє всі статичні перевірки, модульні та БД-випробування проти ізольованої PostgreSQL 16, складає застосунок, перевіряє маніфест, SHA-256 і TRACE-001 та завантажує архів до GitHub Release.",
+      "nl": "Toegewijde uitgavewerkstroom voor GEMINI-004 boven op de live basis 20261117-190154 (LOKAI-001). Maakt geen SSH-verbinding met de server en installeert niets: controleert alleen /api/version, draait alle statische controles, eenheids- en databasetests tegen een geïsoleerde PostgreSQL 16, bouwt de app, toetst manifest, SHA-256 en TRACE-001 en publiceert het archief op GitHub."
+    }
+  ]
+}
