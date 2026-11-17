@@ -46,7 +46,9 @@ mkdirSync(UIT_SRC, { recursive: true });
 export const LANDEN = {
   BE: { qid: 'Q31', klasse: 'Q493522' },
   NL: { qid: 'Q55', klasse: 'Q2039348' },
-  UA: { qid: 'Q212', klasse: 'Q12131624' },
+  // Обласні центри після реформи 2020 у Вікіданих часто мають «місто обласного значення» з датою завершення: їх додаємо як
+  // «місто ≥ 50 000» (Q515). Oblastcentra verliezen na 2020 vaak de klasse (met einddatum): daarom ook steden ≥ 50 000 inwoners.
+  UA: { qid: 'Q212', klasse: 'Q12131624', ookVanaf: 50000 },
   LU: { qid: 'Q32', klasse: 'Q2919801' },
   DE: { qid: 'Q183', minInwoners: 100000 },
   FR: { qid: 'Q142', minInwoners: 100000 },
@@ -94,19 +96,23 @@ async function regiosVan(land) {
 async function stedenVan(land) {
   const c = LANDEN[land];
   return inCache(`stad-${land}.json`, async () => {
-    const wie = c.klasse
-      ? `?it p:P31 ?st . ?st ps:P31 wd:${c.klasse} . FILTER NOT EXISTS { ?st pq:P582 ?eind }`
-      : `?it wdt:P31/wdt:P279* wd:Q515 ; wdt:P17 wd:${c.qid} ; wdt:P1082 ?pop . FILTER(?pop >= ${c.minInwoners})`;
+    const wie = stadFilter(c, true);
     const q = `SELECT ?it ?coa ?gn ?iso ${labelVars} WHERE { ${wie} FILTER NOT EXISTS { ?it wdt:P576 ?e }
       OPTIONAL{?it wdt:P94 ?coa} OPTIONAL{?it wdt:P1566 ?gn}
       OPTIONAL{?it wdt:P131+ ?adm . ?adm wdt:P300 ?iso . FILTER NOT EXISTS { ?adm wdt:P576 ?e2 } } ${labelDeel} }`;
     return (await sparql(q)).results.bindings;
   });
 }
+function stadFilter(c, zonderEinde) {
+  const groot = (min) => `?it wdt:P31/wdt:P279* wd:Q515 ; wdt:P17 wd:${c.qid} ; wdt:P1082 ?pop . FILTER(?pop >= ${min})`;
+  if (!c.klasse) return groot(c.minInwoners);
+  const klasse = `?it p:P31 ?st . ?st ps:P31 wd:${c.klasse} .${zonderEinde ? ' FILTER NOT EXISTS { ?st pq:P582 ?eind }' : ''}`;
+  return c.ookVanaf ? `{ ${klasse} } UNION { ${groot(c.ookVanaf)} }` : klasse;
+}
 const alt = async (land) => inCache(`alias-${land}.json`, async () => {
   // Andere namen (en/nl/uk) van de steden: Cloudflare noemt «Ghent», de gebruiker «Гент», Wikidata «Gent».
   const c = LANDEN[land];
-  const wie = c.klasse ? `?it p:P31 ?st . ?st ps:P31 wd:${c.klasse} .` : `?it wdt:P31/wdt:P279* wd:Q515 ; wdt:P17 wd:${c.qid} ; wdt:P1082 ?pop . FILTER(?pop >= ${c.minInwoners})`;
+  const wie = stadFilter(c, false);
   const q = `SELECT ?it ?a WHERE { ${wie} ?it skos:altLabel ?a . FILTER(lang(?a) IN ("en","nl","uk","fr","de")) }`;
   return (await sparql(q)).results.bindings;
 });
