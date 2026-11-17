@@ -96,6 +96,11 @@
       "omschrijving": "Новий модульний набір випробувань WISSEL-001 (8 перевірок обох першопричин)."
     },
     {
+      "soort": "gewijzigd",
+      "pad": "tests/eenheid/gebruiker-audit-2026-10-19.test.ts",
+      "omschrijving": "Оновлено очікування R-01 для menuVoorOppervlak у src/App.tsx відповідно до підтримки технічної поверхні techRuimte."
+    },
+    {
       "soort": "toegevoegd",
       "pad": "orchestratie/taken/WISSEL-001.json",
       "omschrijving": "Картка реєстрації завдання WISSEL-001 у черзі координації."
