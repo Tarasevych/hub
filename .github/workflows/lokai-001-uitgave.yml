@@ -1,0 +1,841 @@
+name: 'LOKAI-001 · Розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA, помічник налаштування), extensie-bijwerken.ts та автопідпис CRX3'
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері (20261117-063330 @ 454b75bf),
+# правила координації, типи, статичні контракти, TRACE-001, 20 хмарних тестів, 120 безбазових і 12 післяскладальних випробувань,
+# подвійний прогін усіх міграцій на PostgreSQL 16 із трьома ролями та 116 випробувань із базою даних і Хроміумом, повне складання,
+# автоматично підписаний CRX3 0.9.7, маніфест встановлювача та контрольну суму SHA-256.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, typen, statische contracten, TRACE-001,
+# cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
+# volledige bouw, ondertekende CRX3 0.9.7, manifest en SHA-256.
+on:
+  push:
+    branches:
+      - feature/lokai-001-uitgave-20261117-181000
+    paths:
+      - .github/workflows/lokai-001-uitgave.yml
+      - orchestratie/ontwikkelarchieven/LOKAI-001.json
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: 'Ідентифікатор моделі ШІ (необов’язково)'
+        required: false
+        type: string
+      model_versie:
+        description: 'Версія моделі (необов’язково)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lokai-001-uitgave
+  cancel-in-progress: false
+
+env:
+  TAAK: LOKAI-001
+  # Жива встановлена основа на сервері — UPD-003 (20261117-063330 @ 454b75bff03b8f222998e343ccc58ffb989fd281).
+  BEKENDE_BASISSEN: '20261117-063330=454b75bff03b8f222998e343ccc58ffb989fd281'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: ${{ inputs.model_id || vars.LOKAI_001_MODEL_ID || 'google-antigravity-gemini' }}
+  MODEL_VERSIE: ${{ inputs.model_versie || '' }}
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie -d mijnruimte_schoon" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
+        run: |
+          if [ "$GITHUB_REF_NAME" != "feature/lokai-001-uitgave-20261117-181000" ]; then
+            echo "Випуск LOKAI-001 можна запускати лише з гілки feature/lokai-001-uitgave-20261117-181000." >&2
+            exit 1
+          fi
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js і перевірити системні інструменти
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Перевірити наявність обов’язкових інструментів середовища та встановити залежності
+        run: |
+          set -euo pipefail
+          for cmd in python3 ssh-keygen zip unzip flock psql openssl; do
+            command -v "$cmd" >/dev/null || { echo "Відсутній обов’язковий інструмент: $cmd" >&2; exit 1; }
+          done
+          npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = '';
+          let levend = '';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            versie = v.versie;
+            levend = v.bronCommit || v.commit;
+            if (bekend.get(versie) !== levend) {
+              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+            }
+            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+            [versie, levend] = bekendLijst[bekendLijst.length - 1];
+            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
+          }
+          const gi = JSON.parse(readFileSync('orchestratie/geinstalleerd.json', 'utf8'));
+          if (gi.versie !== versie || gi.bronCommit !== levend) {
+            writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie, bronCommit: levend, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+            appendFileSync(process.env.GITHUB_ENV, 'GI_AANGEPAST=1\n');
+            console.log(`orchestratie/geinstalleerd.json узгоджено з живою основою ${versie} @ ${levend}`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
+          JS
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+          if grep -q '^GI_AANGEPAST=1' "$GITHUB_ENV"; then git update-index --skip-worktree orchestratie/geinstalleerd.json; fi
+      - name: Перевірити правила координації та журнал походження TRACE-001
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+            const d = JSON.parse(fs.readFileSync('orchestratie/ontwikkelarchieven/LOKAI-001.json', 'utf8'));
+            const f = valideerOntwikkelDossier(d, 'LOKAI-001');
+            if (f.length) throw Error(f.join(', '));
+            if (d.privacy?.geheimenUitgesloten !== true) throw Error('privacy.geheimenUitgesloten ≠ true');
+            console.log('Журнал LOKAI-001 валідний');"
+          printf '=== FILE: trace-001-ontwikkelarchief.test.ts ===\n' >> "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Перевірити статичні правила, самоперевірку ПК-агента, 20 хмарних тестів і 120 безбазових модульних випробувань
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          find deploy -name '*.sh' -exec bash -n {} +
+          node scripts/kaart-controle.mjs --stil
+          node scripts/plaatsing-controle.mjs --stil
+          node scripts/l002-audit.mjs
+          node scripts/hulp-vraagtekens-controle.mjs --stil
+          node scripts/kleur-contrast-controle.mjs --stil
+          node scripts/mail-slimme-inbox-audit.mjs
+          node scripts/keten-controle.mjs --zonder-audit
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node deploy/agent/agent.mjs selftest --root /tmp
+          for f in \
+            tests/eenheid/cloud-delen-m3.test.mjs \
+            tests/eenheid/cloud-m10-integration-safety.test.mjs \
+            tests/eenheid/cloud-m11-voorbeeld.test.mjs \
+            tests/eenheid/cloud-m3-gate.test.mjs \
+            tests/eenheid/cloud-m5-aanbieder-golf.test.mjs \
+            tests/eenheid/cloud-m6-beleid-bewaker.test.mjs \
+            tests/eenheid/cloud-m6-bestuur.test.mjs \
+            tests/eenheid/cloud-m7-beleid.test.mjs \
+            tests/eenheid/cloud-m7-crypto.test.mjs \
+            tests/eenheid/cloud-m7-transfer.test.mjs \
+            tests/eenheid/cloud-m8-verenigd.test.mjs \
+            tests/eenheid/cloud-m9-checkpoints.test.mjs \
+            tests/eenheid/cloud-m9-composition.test.mjs \
+            tests/eenheid/cloud-m9-directory.test.mjs \
+            tests/eenheid/cloud-m9-upload.test.mjs \
+            tests/eenheid/cloud-migratie-volgorde.test.mjs \
+            tests/eenheid/cloud-overdracht-m2.test.mjs \
+            tests/eenheid/cloud-overdracht-m3.test.mjs \
+            tests/eenheid/cloud-verbinding-m4.test.mjs \
+            tests/eenheid/cloud-versies-m3.test.mjs; do
+            printf '=== FILE: %s ===\n' "$f" >> "$RUNNER_TEMP/eenheidstests.log"
+            node --test "$f" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+          for t in \
+            aanmeld-ui-20261030 \
+            aanmelden-integ-20261103 \
+            accent-001-tint-transparantie \
+            account-wissen-20261026 \
+            accountmenu-strook-20261115 \
+            accountmenu-v2-20261029 \
+            accountmenu-v3 \
+            afstemming-ui-20261030 \
+            afstemming-zvirka-ui-20261030 \
+            agent-verbinden-20261020 \
+            ai-doorverwijzing-ui004 \
+            ai-ecosysteem-en-google-herstel \
+            ai-hub \
+            ai-werkruimte-20261019 \
+            ankers-002-agenten-20261115 \
+            apparaat-bevestiging-20261109 \
+            audit-filters \
+            blokken-001-account \
+            breedte-001-kolom-20261115 \
+            browser-gedeeld-20261022 \
+            centrering-pc-20261115 \
+            cloud-001-ui-contract \
+            cloud-vnext-ui-20261029 \
+            contrast-knoppen-logos-20261021 \
+            dock-snelmenu-20261029 \
+            extensie-090-site-20261106 \
+            extensie-093-stel-in-20261117 \
+            extensie-brug-zonder-f5-20261106 \
+            extensie-debugger-markering-20261019 \
+            extensie-offscreen-20261106 \
+            extensie-opties \
+            extensie-profielen \
+            extensie-tabblad-hint-20261115 \
+            extensie-ui \
+            extensie-vergrendeling \
+            github-012-mobiele-weergave \
+            github-volledige-werkruimte \
+            hint-001-ankertip \
+            huis-001-oude-fouten-20261110 \
+            hulp-vraagtekens \
+            identiteit-009-mobiel-veiligheid \
+            identiteit-015-vormgeving-toegang \
+            identiteit-account-ui \
+            identiteit-atelier \
+            identiteit-maquette \
+            integraties-catalogus-v2-20261029 \
+            klap-alles-20261115 \
+            klassiek-001-kern \
+            klassiek-002a-werkruimte \
+            klassiek-002c-panelen \
+            klassiek-004b-github-brontekst \
+            klassiek-005a-werkblad \
+            klassiek-007a-huis-kern \
+            klassiek-008a-mcp-kern-uitrol \
+            klassiek-009a-sleutelpoort \
+            klassiek-010a-beheer-kern \
+            kleuren-001-een-bron \
+            lees-venster-20261024 \
+            levende-achtergrond-20261115 \
+            mail-dok-pil-20261115 \
+            mail-geminimaliseerd-20261025 \
+            mail-ux-beoordeling-20261021 \
+            mailai-001-20261115 \
+            mailanker-001-model \
+            mailfix-001 \
+            mailmob-001 \
+            mailpolish-001 \
+            maquette-001-kern \
+            maquette-generator-gelijk \
+            maquette-mobiel-prestatie \
+            mcp-2026-07-28-studio \
+            mededeling-ontdubbelen \
+            melding-positie \
+            meldingen-ecosysteem-kern \
+            meldingen-ecosysteem-ui \
+            meldingen-integ-20261103 \
+            meldingen-mobiel-20261021 \
+            meldingen-status-20261030 \
+            meldingen-uitleg-20261030 \
+            meldingen-ux-001-20261115 \
+            meldingen-v2-20261029 \
+            menu-per-account-20261019 \
+            menu-per-profiel-20261019 \
+            menu-snelheid \
+            merk-officieel-20261021 \
+            migraties-terugdraaibaar-20261117 \
+            mobiel-cascade-20261105 \
+            mobiel-geometrie-20261021 \
+            orch-kern-20261031 \
+            orch-uitrol-basis-20261031 \
+            perf-001-20261109 \
+            plaatsing-20261025 \
+            sec-002-afwerking-b-20261112 \
+            ssh-ca \
+            stap-op-omschrijving-20261115 \
+            stroken-sluiten-20261115 \
+            strook-menu \
+            telegram-aanmelden-20261109 \
+            thema \
+            toegankelijk-mail-20261021 \
+            ui-paneel-gebruikers-audit-gemini-001 \
+            uitrol-centrering-20261115 \
+            uitrol-codes \
+            uitrol-manifest \
+            uitrol-tijden \
+            uitrol-voorcontrole \
+            uitrol-weergave-v2 \
+            vaardigheden-20261115 \
+            vaardigheden-ecosysteem \
+            vast-kader \
+            veilig-002-uitbreiding \
+            verbindingen-centrum-20261029 \
+            werkblad-hoek-20261115 \
+            werkblad-indeling-20261022 \
+            werkblad-register-20261027 \
+            werkblad-veld-zwevend-20261115 \
+            woordbreuk-001-20261115 \
+            zoek-in-menu-20261024 \
+            zoek-menu-20261103 \
+            zoek-route-tabblad-20261105 \
+            zoek-veld-op-plek-20261115; do
+            printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Перевірити типи, скласти застосунок і перевірити 12 післяскладальних випробувань
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=2560 npm run build
+          test -s dist/index.html
+          test -s dist/huis-maquette/index.html
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const ev = JSON.parse(readFileSync("dist/downloads/extension-version.json", "utf8"));
+            if (ev.version !== "0.9.7") throw Error("Очікувалася версія розширення 0.9.7, отримано: " + ev.version);
+            if (!ev.crx || !ev.crx.sha256) throw Error("Відсутній підписаний CRX3 у dist/downloads/extension-version.json");
+            console.log("extension-version.json:", ev.version, "CRX:", ev.crx.id, ev.crx.sha256.slice(0, 12));'
+          export DIST_DIR="$PWD/dist"
+          for t in \
+            bestandskaart-20261024 \
+            browser-extensie \
+            huis-001-maquette-20261112 \
+            orch-pakket-20261031 \
+            stroom-veilig-20261115 \
+            ui-audit-g \
+            uitrol-pakket-maken \
+            vendor-ongebundeld-20261023 \
+            zoek-diepe-link-20261105 \
+            zoek-ui-bereik-20261105 \
+            zoek-ui-sectie-20261105 \
+            zoek-ui-tabblad-20261105; do
+            printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Підготувати ролі й міграції PostgreSQL 16 (двічі), Хроміум і запустити 116 випробувань із БД
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset BASIS_VERSIE BASIS_COMMIT
+          export DATABASE_URL=postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export RECOVERY_CODE_PEPPER="$(openssl rand -base64 32)"
+          export AUDIT_IP_PEPPER="$(openssl rand -base64 40)"
+          export SESSION_SECRET="$(openssl rand -base64 32)"
+          export OWNER_VAULT_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export MAIL_APP_WACHTWOORD_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export SLEUTELKLUIS_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export MAIL_TOKEN_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export AGENDA_ABONNEMENT_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export GITHUB_KOPPELING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export CLOUD_OAUTH_TOKEN_ENCRYPTION_KEY_V1="$(openssl rand -hex 32)"
+          export CLOUD_M8_CURSOR_KEY_V1="$(openssl rand -hex 32)"
+          export CLOUD_M6_CI_ATTESTATION_HMAC_KEY="$(openssl rand -hex 32)"
+          export RUIMTE_BINDING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export AI_BEVESTIGING_SLEUTEL_V1="$(openssl rand -hex 32)"
+          export SESSION_PEPPER="$(openssl rand -hex 24)"
+          export UITROL_TELEGRAM_WEBHOOK_GEHEIM="$(openssl rand -hex 24)"
+          export UITROL_GITHUB_WEBHOOK_GEHEIM="$(openssl rand -hex 24)"
+          export UITROL_TELEGRAM_ARCHIEF_SLEUTEL="$(openssl rand -hex 32)"
+          export TELEGRAM_AANMELD_PEPER="$(openssl rand -hex 24)"
+          export AFZENDER_BEELD_PEPPER="$(openssl rand -hex 24)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          export UPLOADS_DIR="$RUNNER_TEMP/uploads"
+          export DIST_DIR="$PWD/dist"
+          mkdir -p "$UPLOADS_DIR"
+
+          node dist-server/migrate.mjs | tail -3
+          W_MIG="$(openssl rand -hex 24)"
+          W_APP="$(openssl rand -hex 24)"
+          W_SYS="$(openssl rand -hex 24)"
+          S_MIG="$(printf '%s\n' "$W_MIG" | node deploy/scram-verifier.mjs)"
+          S_APP="$(printf '%s\n' "$W_APP" | node deploy/scram-verifier.mjs)"
+          S_SYS="$(printf '%s\n' "$W_SYS" | node deploy/scram-verifier.mjs)"
+          psql "$DATABASE_URL" -v legacy_rol=migratie -v migrator_scram="$S_MIG" -v app_scram="$S_APP" -v systeem_scram="$S_SYS" -f deploy/db-rollen.sql
+          export DATABASE_URL_APP="postgres://mijnruimte_app:${W_APP}@127.0.0.1:5432/mijnruimte_schoon"
+          export DATABASE_URL_MIGRATIE="postgres://mijnruimte_migrator:${W_MIG}@127.0.0.1:5432/mijnruimte_schoon"
+          export DATABASE_URL_SYSTEM="postgres://mijnruimte_system:${W_SYS}@127.0.0.1:5432/mijnruimte_schoon"
+          node dist-server/migrate.mjs | tail -3
+
+          npm install --no-save --package-lock=false --ignore-scripts playwright-core@1.56.1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            npx playwright-core@1.56.1 install chromium
+            CHROME="$(node --input-type=module -e "import { chromium } from 'playwright-core'; console.log(chromium.executablePath())")"
+          fi
+          export PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core"
+          export CHROME
+          export CHROME_PAD="$CHROME"
+
+          for t in \
+            aanmeld-koppel-20261030 \
+            afstemming-kern-20261030 \
+            agent-namens \
+            agenten \
+            ai-beleid \
+            ai-delegatie-20261115 \
+            ai-kluis-een-plek-20261101 \
+            ankers-001-paginanav \
+            apparaat-bevestiging-stroom-20261109 \
+            beheer-integraties \
+            beheer-journaal \
+            connector-browser-gelijk-20261022 \
+            connector-levende-rechten-20261020 \
+            extensie-beheer \
+            gebruiker-audit-2026-10-19 \
+            geheugen-agent-bots \
+            geheugen-stroom \
+            geheugen-taken-en-13-agenten \
+            identiteit-010-aanmelden-ecosysteem \
+            identiteit-014-herstel \
+            identiteit-014-kaart \
+            identiteit-014-uitvoer \
+            identiteit-015-profiel-blokken \
+            identiteit-015-vormgeving \
+            kluis-apparaat-20261114 \
+            mail-accounts-beheer-20261021 \
+            mcp-connector \
+            mcp-orch-integratie-20261031 \
+            mcp-toegang-diagnose-20261101 \
+            melding-soorten \
+            meldingen-sferen-20261022 \
+            menu-meldingen \
+            menu-taal-prapor-20261103 \
+            migraties-pg16-20261021 \
+            orch-beoordeling-20261031 \
+            ruimte-meldingen-20261020 \
+            ruimtes-compatibiliteit-db \
+            sec-002-g01-20261112 \
+            sec-002-g10e-20261112 \
+            sec-002-g10i-20261112 \
+            sec-002-slot-s-20261112 \
+            site-hulpmiddelen \
+            sleutelkluis-20261020 \
+            tech-bundels-ruimtes-v2 \
+            tech-bundels \
+            tech-ruimtes-v2-20261027 \
+            tech-sessies \
+            telegram-aanmelden-stroom-20261109 \
+            telegram-inlog-apparaat-20261112 \
+            telegram-venster-20261114 \
+            uitrol-goedkeuring \
+            uitrol-stroom \
+            uitrol-telegram-en-github-ontvangen-20261115 \
+            uitrol-vereisten-001 \
+            veilig-002-noodstop-uiterlijk \
+            werkblad-v3-routes \
+            aanmeld-plaats-eis-20261116 \
+            afwijs-venster-20261116 \
+            agent-een-plek-20261020 \
+            agentscheiding-20261116 \
+            apps-overdracht \
+            beheer-overzicht \
+            browser-keten \
+            cloud-vnext-catalogus-20261029 \
+            connector-beide-kanten-20261020 \
+            connector-instructies-20261025 \
+            extensie-ontgrendeling \
+            extensie-site \
+            extensie-validatie \
+            extui-001-20261116 \
+            gmail-push-instelling-20261116 \
+            hub-agenda-notities-20261019 \
+            hulp-register \
+            iconen-001-tint-stijl \
+            identiteit-015-aanmelden \
+            kleuren-001-zone \
+            kluis-aanmelden-20261116 \
+            lai-con-001-20261116 \
+            lai-con-001-db-20261116 \
+            lezer-ai-20261024 \
+            lezer-context-20261024 \
+            mail-beeld-maten-20261116 \
+            mail-beeld-tegel-20261116 \
+            mail-beeld-voorraad-20261116 \
+            mail-wisselaar-20261115 \
+            mailai-002-20261116 \
+            mailai-003-20261116 \
+            mailai-003-db-20261116 \
+            markering-agenten-20261020 \
+            mcp-acties \
+            melding-elders-20261116 \
+            meldingen-bel-teller-20261116 \
+            meldingen-beveiliging-bel-20261114 \
+            meldlink-001-20261116 \
+            merk-een-register-20261116 \
+            merk-galerij-volledig-20261116 \
+            merk-gebruiker-20261116 \
+            merk-register \
+            notities-vnext-20261028 \
+            ontwerp-fundament-20261020 \
+            opstelpil-001-20261116 \
+            pakket-geheimen-20261116 \
+            prij-001-rijknop-menu \
+            prij-002-uitklap \
+            sec-002-afwerking-a-20261112 \
+            sec-002-g08-20261112 \
+            sec-002-g10c-20261112 \
+            strook-regels-20261116 \
+            tech-ruimtes-ui \
+            uitrol-hervatten \
+            uitrol-risico-20261116 \
+            unif-anker-001-20261116 \
+            vertaalpaneel-20261019 \
+            werkstromen-veilig-20261116 \
+            zoek-evaluatie-20261022 \
+            zoek-isolatie-20261022; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM app.records WHERE tbl IN ('provider_endpoint_verifications_v1', 'mail_endpoint_verifications_v1');" >/dev/null
+            printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Перевірити відсутність несподіваних пропусків і незмінність робочого дерева
+        shell: bash
+        run: |
+          set -euo pipefail
+          ONVERWACHT="$(grep -nE '^OVERGESLAGEN\b|\bOVERGESLAGEN\b.*:|overgeslagen:' "$RUNNER_TEMP/eenheidstests.log" | grep -vE 'OVERGESLAGEN afstemming-kern:|root-script-proef overgeslagen: PROEF_PG_URL niet gezet|werkblad-v3-routes|9 build-controle' || true)"
+          if [ -n "$ONVERWACHT" ]; then
+            echo "Виявлено несподівані пропуски у тестах:" >&2
+            printf '%s\n' "$ONVERWACHT" >&2
+            exit 1
+          fi
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            "titel": "LOKAI-001 · Розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA, помічник налаштування), extensie-bijwerken.ts та автопідпис CRX3",
+            "samenvatting": "Поверх чинної встановленої версії 20261117-063330 (UPD-003 @ 454b75bf): оновлення локального ШІ оглядача та розширення до версії 0.9.7 із підтримкою Chrome 157 і Gemma 4, розширеним набором до 9 API (додано embedder і decisions), режимом WebMCP, PWA-оболонкою діалогу, інтерактивним помічником налаштування та flags.json, перейменуванням модуля shared/extensie-update.ts на shared/extensie-bijwerken.ts і автоматичним підписом CRX3 через GitHub Actions.",
+            "wijzigingen": [
+              "Розширення 0.9.7 (Chrome 157 і Gemma 4, 9 API): окрім prompt, summarizer, writer, rewriter, translator, detector і proofreader додано embedder та decisions, а також тонкі налаштування температури, вибірки й мови.",
+              "Інтерактивний помічник налаштування (LOKALE_AI_STEL_IN): дозволяє зі сторінки «Підключення ШІ» → «Вбудований ШІ Chrome» обрати готовий режим або набір налаштувань, увімкнути потрібні API та експортувати підказки flags.json після підтвердження.",
+              "Режими WebMCP та PWA: розширення підтримує виклик інструментів на сторінках через WebMCP і відкриття діалогу локального ШІ у вигляді окремого застосунку PWA.",
+              "Автоматичний підпис CRX3: новий сценарій .github/workflows/onderteken-crx.yml підписує розширення у робочих гілках за допомогою таємниці EXTENSIE_ONDERTEKENSLEUTEL без зберігання ключа в коді.",
+              "Нідерландська уніфікація коду: модуль shared/extensie-update.ts перейменовано на shared/extensie-bijwerken.ts із оновленням карти файлів, імпортів і документації."
+            ],
+            "fixes": [
+              "Пройдено перевірку правил координації, TRACE-001, типів клієнта та сервера, повного складання з автоматично підписаним CRX3 0.9.7, подвійних міграцій PostgreSQL 16 із трьома ролями та всіх безбазових, хмарних, післяскладальних і БД-випробувань з Хроміумом."
+            ],
+            "beperkingen": [
+              "Автоматичного встановлення немає: пакунок встановлює лише власник через Admin → Оновлення після зеленої попередньої перевірки та підтвердження ключем доступу.",
+              "Вбудований ШІ Chrome і Gemma 4 потребують сумісної версії Chrome та відповідних апаратних ресурсів пристрою."
+            ],
+            "instructies": "Перед встановленням зробіть резервну копію; завантажте mijn-ruimte-<versie>.tar.gz (не zip) у Admin → Оновлення, дочекайтеся зеленої перевірки й схваліть ключем доступу. Закрийте застарілий запит на злиття № 152."
+          };
+          const nl = {
+            "titel": "LOKAI-001 · Extensie 0.9.7 (Chrome 157, Gemma 4, 9 API's, WebMCP, PWA, instelhulp), extensie-bijwerken.ts en automatische CRX3-ondertekening",
+            "samenvatting": "Boven op de geïnstalleerde versie 20261117-063330 (UPD-003 @ 454b75bf): bijwerking van de lokale Chrome-AI en extensie naar versie 0.9.7 met ondersteuning voor Chrome 157 en Gemma 4, uitbreiding naar 9 API's (inclusief embedder en decisions), WebMCP, PWA-weergave, interactieve instelhulp en flags.json, hernoeming van shared/extensie-update.ts naar shared/extensie-bijwerken.ts en automatische CRX3-ondertekening via GitHub Actions.",
+            "wijzigingen": [
+              "Extensie 0.9.7 (Chrome 157 en Gemma 4, 9 API's): naast prompt, summarizer, writer, rewriter, translator, detector en proofreader nu ook embedder en decisions plus uitgebreide instellingen.",
+              "Interactieve instelhulp (LOKALE_AI_STEL_IN): kies op de site onder «AI-koppelingen» → «Ingebouwde AI van Chrome» een profiel, schakel API's in en exporteer flags.json na bevestiging.",
+              "WebMCP en PWA: ondersteuning voor WebMCP-gereedschappen op pagina's en gebruik van het lokale AI-gesprek als PWA-venster.",
+              "Automatische CRX3-ondertekening: .github/workflows/onderteken-crx.yml ondertekent wijzigingen in de extensiemap met het geheim EXTENSIE_ONDERTEKENSLEUTEL zonder de privésleutel in de code op te slaan.",
+              "Nederlandse naamgeving: shared/extensie-update.ts hernoemd naar shared/extensie-bijwerken.ts met bijgewerkte bestandskaart en documentatie."
+            ],
+            "fixes": [
+              "Geslaagd: coördinatieregels, TRACE-001, typecontrole van client en server, volledige bouw inclusief ondertekende CRX3 0.9.7, dubbele migraties op PostgreSQL 16 met drie rollen en alle eenheids-, cloud-, bouw- en databasetests met Chromium."
+            ],
+            "beperkingen": [
+              "Geen automatische installatie: alleen de eigenaar installeert via Beheer → Updates na een groene voorcontrole en bevestiging met toegangssleutel.",
+              "Ingebouwde AI van Chrome en Gemma 4 vereisen een geschikte Chrome-versie en voldoende apparaatcapaciteit."
+            ],
+            "instructies": "Maak vóór installatie een reservekopie; upload precies mijn-ruimte-<versie>.tar.gz (geen zip) bij Beheer → Updates, wacht op een groene voorcontrole en keur goed met een toegangssleutel. Sluit het oude samenvoegingsverzoek #152."
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Google Antigravity',
+                model: { id: e.MODEL_ID, versie: e.MODEL_VERSIE || null, bron: 'auteur' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map();
+          const blokken = readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').split(/^=== FILE: ([^\n]+) ===$/gm);
+          const paren = blokken.length > 1 ? Array.from({ length: Math.floor((blokken.length - 1) / 2) }, (_, k) => [blokken[k * 2 + 1], blokken[k * 2 + 2]]) : [['', blokken[0]]];
+          for (const [fNaam, inhoud] of paren) {
+            for (const r of inhoud.matchAll(/^(\d+)\/(\d+) geslaagd \(([^\n]+)\)$/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+)\/(\d+) geslaagd/gm)) perTest.set(r[1], [Number(r[2]), Number(r[3])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+)\/(\d+) OK/gm)) perTest.set(r[1], [Number(r[2]), Number(r[3])]);
+            for (const r of inhoud.matchAll(/^([a-zA-Z0-9_-]+):\s+(\d+) controles goed,\s+(\d+) fout/gm)) { const g = Number(r[2]); const ms = Number(r[3]); perTest.set(r[1], [g, g + ms]); }
+            const gh12 = /^Усі перевірки (GITHUB-\d+) пройдено успішно \((\d+)\)\./m.exec(inhoud);
+            if (gh12) { const n = Number(gh12[2]); perTest.set(gh12[1], [n, n]); }
+            const pMatch = /^ℹ pass (\d+)$/m.exec(inhoud);
+            const fMatch = /^ℹ fail (\d+)$/m.exec(inhoud);
+            if (pMatch) { const g = Number(pMatch[1]); const f = fMatch ? Number(fMatch[1]) : 0; const key = (fNaam || 'cloud').replace(/^.*\//, '').replace(/\.test\.(ts|mjs)$/, ''); perTest.set(key, [g, g + f]); }
+            else { const nodeOk = (inhoud.match(/^✔ /gm) || []).length; if (nodeOk > 0) perTest.set('verbindingen-centrum-20261029', [nodeOk, nodeOk]); }
+          }
+          for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; }
+          const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) {
+            throw Error(`Немає виміряних результатів випробувань або є невдалі перевірки (${gemeten.geslaagd}/${gemeten.mislukt}) — випуск зупинено.`);
+          }
+          const tests = {
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження TRACE-001, статичні перевірки карти файлів, розміщення, довідок, контрастності кольорів, розумної пошти, ланцюга залежностей, пошукового каталогу, сценаріїв розгортання та самоперевірку ПК-агента, перевірку типів клієнта та сервера, повне виробниче складання з підписаним CRX3 0.9.7, подвійний прогін усіх міграцій PostgreSQL 16 із трьома ролями та сукупність модульних, хмарних, базових і браузерних випробувань у Хроміумі. Виміряно в цьому запуску: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole TRACE-001, statische controles van bestandskaart, plaatsing, hulpteksten, kleurcontrast, slim postvak, toeleveringsketen, zoekcatalogus, uitrolscripts en pc-agent zelftest, typecontrole van client en server, volledige productiebouw met ondertekende CRX3 0.9.7, dubbele uitvoering van alle migraties op PostgreSQL 16 met drie rollen en alle eenheids-, cloud-, database- en Chromium-tests. Gemeten in deze uitvoering: ' + gemetenLijst + '.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          const opis = [
+            `LOKAI-001 · Розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA, помічник налаштування), extensie-bijwerken.ts та автопідпис CRX3 · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Перевірки:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            'Обмеження:',
+            ...uk.beperkingen.map((x) => `- ${x}`),
+            '',
+            uk.instructies,
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies,
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Google Antigravity' \
+            --model-id "$MODEL_ID" --model-bron auteur \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Випуск LOKAI-001 поверх основи 20261117-063330 (UPD-003): розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA, помічник налаштування), extensie-bijwerken.ts та автопідпис CRX3." \
+            --samenvatting-nl "Uitgave LOKAI-001 boven op basis 20261117-063330 (UPD-003): extensie 0.9.7 (Chrome 157, Gemma 4, 9 API's, WebMCP, PWA, instelhulp), extensie-bijwerken.ts en automatische CRX3-ondertekening." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json і попередню перевірку перед публікацією
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest-in-archief.json"
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/ONTWIKKELARCHIEF.json" > "$RUNNER_TEMP/archief-in-archief.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerManifest } from './shared/uitrol-manifest.ts';
+          import { leesOntwikkelArchief } from './shared/ontwikkelarchief.ts';
+          const e = process.env;
+          const ruw = readFileSync(e.RUNNER_TEMP + '/manifest-in-archief.json', 'utf8');
+          const { manifest, fouten } = valideerManifest(ruw, e.VERSIE);
+          if (fouten.length || !manifest) {
+            for (const f of fouten) console.error('::error::UITROL-MANIFEST.json · ' + (f.veld || '') + ': ' + (f.uk || JSON.stringify(f)));
+            throw Error('Маніфест в архіві не проходить перевірку встановлювача — випуск зупинено.');
+          }
+          const ai = manifest.deelnemers.filter((d) => d.soort === 'ai');
+          if (!ai.length || ai.some((d) => !d.model || !d.model.id)) throw Error('У маніфесті немає моделі ШІ.');
+          const ar = leesOntwikkelArchief(readFileSync(e.RUNNER_TEMP + '/archief-in-archief.json', 'utf8'), e.VERSIE, e.GITHUB_SHA);
+          if (ar.fouten.length || !ar.ref) {
+            throw Error('ONTWIKKELARCHIEF.json в архіві не пройшов перевірку: ' + ar.fouten.join(', '));
+          }
+          console.log('UITROL-MANIFEST.json і ONTWIKKELARCHIEF.json в архіві: 0 помилок · модель ' + ai[0].model.id);
+          JS
+          npx esbuild backend/uitrol-voorcontrole.ts --bundle --platform=node --format=esm --packages=external --outfile="$RUNNER_TEMP/voorcontrole.mjs" --log-level=warning
+          cat > "$RUNNER_TEMP/voorcontrole-draai.mjs" <<'JS'
+          const [mod, pakket, versie, actief, online] = process.argv.slice(2);
+          const { pakketVoorcontrole } = await import(mod);
+          const opties = { versie, actieveVersie: actief };
+          if (online !== 'online') opties.archiefControle = async () => ({ ok: true, code: 'OK', reden: 'offline vooraf · онлайн-перевірка після публікації' });
+          const { resultaat, meta } = await pakketVoorcontrole(pakket, opties);
+          for (const c of resultaat.controles) console.log(`${c.niveau.padEnd(12)} ${c.id}: ${c.uk}${c.details?.length ? ' — ' + c.details.slice(0, 5).join('; ') : ''}`);
+          console.log(`fouten=${resultaat.fouten} waarschuwingen=${resultaat.waarschuwingen} commit=${meta.commit} agent=${meta.agent}`);
+          if (!resultaat.ok || resultaat.fouten) process.exit(1);
+          JS
+          node "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/voorcontrole.mjs" "$PWD/uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "$VERSIE" "$BASIS_VERSIE" offline
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          cp "$RUNNER_TEMP/archief-in-archief.json" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json"
+          cp "$RUNNER_TEMP/voorcontrole.mjs" "$RUNNER_TEMP/overdracht/voorcontrole.mjs"
+          cp "$RUNNER_TEMP/voorcontrole-draai.mjs" "$RUNNER_TEMP/overdracht/voorcontrole-draai.mjs"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lokai-001-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+  uitgave:
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: lokai-001-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          VERTROUWD=" ${BEKENDE_BASISSEN:-} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту складання не входить до довірених значень цього процесу — оприлюднення зупинено.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск із таким позначенням уже існує.' >&2
+            exit 1
+          fi
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            }
+          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "LOKAI-001 · Розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA) · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Перевірка TRACE-001 самим root-скриптом після публікації
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/download"
+          gh release download "$VERSIE" --repo "$GITHUB_REPOSITORY" --pattern "mijn-ruimte-${VERSIE}.tar.gz" --dir "$RUNNER_TEMP/download"
+          cmp "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz" "uitvoer/mijn-ruimte-${VERSIE}.tar.gz"
+          awk 'f && /^PY$/ {exit} f {print} /^  ARCHIEF_UITKOMST=.*<<.PY./ {f=1}' deploy/uitrol/mijn-ruimte-uitrol.sh > "$RUNNER_TEMP/root-trace.py"
+          grep -q "releases/tags/{versie}" "$RUNNER_TEMP/root-trace.py"
+          UITKOMST="$(timeout 55 python3 "$RUNNER_TEMP/root-trace.py" "$RUNNER_TEMP/overdracht/ONTWIKKELARCHIEF.json" "$GITHUB_SHA" "$VERSIE" "$RUNNER_TEMP/download/mijn-ruimte-${VERSIE}.tar.gz")"
+          echo "root TRACE-001: $UITKOMST"
+          test "$UITKOMST" = "OK"
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
