@@ -2,6 +2,25 @@
   "gemaakt": "scripts/merk-officieel-maken.mjs",
   "regels": [
     {
+      "sleutel": "acer",
+      "bestand": "acer.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "acer",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://www.acer.com",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#83B81A",
+      "mime": "image/svg+xml",
+      "bytes": 1824,
+      "sha256": "3e678830b5c20654ef5df57d2810b35177603a04eefdcc7ad6c97ca1f637eecd",
+      "ondergrond": "vrij"
+    },
+    {
       "sleutel": "antigravity",
       "bestand": "antigravity.svg",
       "soort": "pakket",
@@ -18,6 +37,25 @@
       "bytes": 6860,
       "sha256": "17a7801fd020b9ceb5e066bc08b2483f8643500f0ad94440f4208866e68762c5",
       "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "asus",
+      "bestand": "asus.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "asus",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://www.asus.com",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#000000",
+      "mime": "image/svg+xml",
+      "bytes": 922,
+      "sha256": "71420de613f76b81b08bd2b2abd30c9e42e7e241985716125df4a54e9a254a14",
+      "ondergrond": "licht"
     },
     {
       "sleutel": "autoclaw",
@@ -90,9 +128,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 6658,
-      "sha256": "35462754f450fa7ff33bc91db95bbbec7adbc74a07d38b0f8d976dcdab0e8a4c",
-      "ondergrond": "licht"
+      "bytes": 888,
+      "sha256": "0547b5f7c025087b683da20424b6608acefb296e64f057d65b6805a92f92ebca",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "copilot",
@@ -124,6 +163,46 @@
       "bytes": 555,
       "sha256": "1708f642afc11b3bcd10dbdef266c2126c0e9fa0afe9c1fbea4a440e13ec5658",
       "ondergrond": "licht"
+    },
+    {
+      "sleutel": "dell",
+      "bestand": "dell.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "dell",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://www.dell.com",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#007DB8",
+      "mime": "image/svg+xml",
+      "bytes": 1458,
+      "sha256": "39efa5bfe6518a1d6186f7a78a9886d4a011abc9d2b21860aadf934f6531e808",
+      "ondergrond": "vrij",
+      "richtlijnen": "https://brand.delltechnologies.com/logos/"
+    },
+    {
+      "sleutel": "deutschetelekom",
+      "bestand": "deutschetelekom.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "deutschetelekom",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://tmap.t-mobile.com/portals/pro74u7a/EXTBrandPortal",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#E20074",
+      "mime": "image/svg+xml",
+      "bytes": 389,
+      "sha256": "67b7c6b0319021ed1a5a91a98ad32d5abe6636d474faf74607bf753a70522626",
+      "ondergrond": "vrij",
+      "richtlijnen": "https://tmap.t-mobile.com/portals/pro74u7a/EXTBrandPortal"
     },
     {
       "sleutel": "devin",
@@ -206,9 +285,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/svg+xml",
-      "bytes": 1091,
-      "sha256": "e08438ceae760a3d712a202da67db79ee7f1450de28a9d9b85fd59927ada079a",
-      "ondergrond": "licht"
+      "bytes": 1053,
+      "sha256": "86d67510271d3099627aaca46a5b47bb19bb45978fd222792d606e3f4cc2b548",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "freshdesk",
@@ -220,9 +300,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/svg+xml",
-      "bytes": 1935,
-      "sha256": "51b269f38f65faf6aae45b0322a90e1b1b368f570721764a82f7cad3b7da46d7",
-      "ondergrond": "vrij"
+      "bytes": 1897,
+      "sha256": "08fcf9f873e8d9c4de2b2a458c9ca532d16fb604ed2b2b3171805c1626bdce88",
+      "ondergrond": "vrij",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "gemini",
@@ -344,9 +425,30 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 9608,
-      "sha256": "30cedb7430b55e813ef49a48dd32e69ca87bb05f0c62f004e06217d6b120268f",
-      "ondergrond": "licht"
+      "bytes": 3838,
+      "sha256": "ce458fe8b073a5093116b212b0553b7b8b3547366264bbd97217b55c79e37d88",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
+    },
+    {
+      "sleutel": "hp",
+      "bestand": "hp.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "hp",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://brandcentral.hp.com/us/en/elements/hp-logo.html",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#0096D6",
+      "mime": "image/svg+xml",
+      "bytes": 651,
+      "sha256": "712a79d8aeeaa68b68f30a6499eb8fc014aeae710c1a6ff43095d4a34de5a0a1",
+      "ondergrond": "vrij",
+      "richtlijnen": "https://brandcentral.hp.com/us/en/elements/hp-logo.html"
     },
     {
       "sleutel": "huawei",
@@ -357,9 +459,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 10597,
-      "sha256": "fd49545a22729d1a8fada49915bdf592a094ffcda235e8278d2a48ef3cfa1eed",
-      "ondergrond": "licht"
+      "bytes": 4827,
+      "sha256": "0cd39fe6844ae1dd1db39b5463ce77939863b29102f7c91e82eec49c01c35306",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "iua",
@@ -370,9 +473,43 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 10299,
-      "sha256": "ddc36a9440a8fcbf1031841f79ac179cdf48587560da75eebbfb80a84259a0f7",
+      "bytes": 4529,
+      "sha256": "38b70b139bc628cbcad9a4341ad86179ab9cd63f3bc029b2ded1747c8bd0dd8f",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
+    },
+    {
+      "sleutel": "kpn",
+      "bestand": "kpn.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.kpn.com/_nuxt_public/assets/images/favicons/favicon.svg",
+      "bronPagina": "https://www.kpn.com/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 2061,
+      "sha256": "3a944ad620a8f203cfa8acb85e24fb5d709e268c691a8c57d9e407384c463275",
       "ondergrond": "licht"
+    },
+    {
+      "sleutel": "lenovo",
+      "bestand": "lenovo.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "lenovo",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://news.lenovo.com/press-kits/",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#E2231A",
+      "mime": "image/svg+xml",
+      "bytes": 1215,
+      "sha256": "39472b5f03c02cf93fcf0ab27ca9a1c1acae64528b028fff082784c74cba8413",
+      "ondergrond": "vrij"
     },
     {
       "sleutel": "microsoft",
@@ -419,9 +556,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/svg+xml",
-      "bytes": 1300,
-      "sha256": "87af8123718a71375f75319f2e1145cd7015fa32e24fae45303679419480e9cf",
-      "ondergrond": "licht"
+      "bytes": 1262,
+      "sha256": "dd7d92cc92538b85a19a774955e3adde6140864ffb5c1e821dfafc4ba2496206",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "microsoftonedrive",
@@ -507,9 +645,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 6936,
-      "sha256": "ed34d6afdf070202fc65134ffaa2d698a518027313db040a4b79ad2fb159d2f8",
-      "ondergrond": "licht"
+      "bytes": 1166,
+      "sha256": "7c93e6642dcef4b5cded73bc00421cb5ccbe6521b9f0b5884e37a0b69a88261a",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "mondaydotcom",
@@ -579,6 +718,20 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "odido",
+      "bestand": "odido.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.odido.nl/Assets/Lfwd/Favicons/apple-touch-icon-1024x1024.png",
+      "bronPagina": "https://www.odido.nl/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1425,
+      "sha256": "055e582ec6726e33363c7ce0455f4e8ba15c53e38b771f3957221775dc2a3d16",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "onlineua",
       "bestand": "onlineua.png",
       "soort": "officiele-site",
@@ -587,9 +740,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 11213,
-      "sha256": "bb0c0d1bc931e0450025a66135304a8a7c3e2dad8516de1b34a77313995f8c7f",
-      "ondergrond": "licht"
+      "bytes": 5443,
+      "sha256": "80bebf7f0b539513e01cd926f7c1f69881dcab7b8555b08e7626a964821bb14b",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "opencode",
@@ -605,6 +759,21 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "passkey",
+      "bestand": "passkey.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://fidoalliance.org/wp-content/uploads/2023/12/cropped-FIDO_Passkey_mark_B-1-192x192.png",
+      "bronPagina": "https://fidoalliance.org/passkeys/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1954,
+      "sha256": "1ce95e25bbf60ca39ff6210a84464b16c64f555832e254da3a1f4d67ea561b70",
+      "ondergrond": "licht",
+      "bewerking": "het passkey-teken van de FIDO Alliance (vrij te gebruiken om passkeys aan te duiden, zie fidoalliance.org/design-guidelines)"
+    },
+    {
       "sleutel": "pcloud",
       "bestand": "pcloud.png",
       "soort": "officiele-site",
@@ -613,9 +782,10 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 10141,
-      "sha256": "a33c7620adcb1852d113e42290ba6b41f5997b8d1271617b3d7606d6b14400ef",
-      "ondergrond": "licht"
+      "bytes": 4371,
+      "sha256": "cd2c5ec145cf0f85133bc3dff5737ba32e8f0703c5fa100883d7bf96cef8e358",
+      "ondergrond": "licht",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "pipedrive",
@@ -637,6 +807,22 @@
       "opmerking": "woordmerk"
     },
     {
+      "sleutel": "proximus",
+      "bestand": "proximus.svg",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.proximus.com/dam/jcr:e466a577-8e43-4a26-aa53-809b293efa24/proximus-logo-header.svg",
+      "bronPagina": "https://www.proximus.com/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/svg+xml",
+      "bytes": 13222,
+      "sha256": "24c2401e6cae8ed5809de64e235c2078731b8210ec141c3cb3d5c12361857612",
+      "ondergrond": "licht",
+      "plaat": "#5c2d91",
+      "bewerking": "alleen het beeldmerk: viewBox ingeperkt tot het teken links, geen vorm veranderd; de witte tekening staat op de merkkleur #5c2d91 uit de stylesheet van proximus.com"
+    },
+    {
       "sleutel": "telegram",
       "bestand": "telegram.svg",
       "soort": "pakket",
@@ -655,6 +841,20 @@
       "ondergrond": "vrij"
     },
     {
+      "sleutel": "telenet",
+      "bestand": "telenet.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.telenet.be/etc/designs/aff-telenet-touch/media/icons/favicon/android-chrome-384x384.png",
+      "bronPagina": "https://www.telenet.be/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1994,
+      "sha256": "c2d50a07621b30a1be0179da22f7bdc28405de26d43a89b2364debb4d4272bca",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "tuya",
       "bestand": "tuya.svg",
       "soort": "officiele-site",
@@ -663,22 +863,72 @@
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/svg+xml",
-      "bytes": 1885,
-      "sha256": "b17e2458b83b1c2b4f14b95fadc2e4daf0986953ebf029ffc7421d6042e61a50",
-      "ondergrond": "vrij"
+      "bytes": 1847,
+      "sha256": "a313017833e4cb8ea2ef5a3ded657c332d3ddbb71f69ea876dc6e98a1773a8ac",
+      "ondergrond": "vrij",
+      "opgeschoond": "c2pa-manifest van de projectmap verwijderd (17.11.2026)"
     },
     {
       "sleutel": "ukrnet",
       "bestand": "ukrnet.png",
       "soort": "officiele-site",
-      "bronUrl": "https://upst.fwdcdn.com/ukrnet-icon-144x144.png",
-      "bronPagina": "https://www.ukr.net/",
-      "opgehaald": "2026-11-16",
+      "bronUrl": "https://cdn-1.webcatalog.io/catalog/ukr-net/ukr-net-icon.png",
+      "bronPagina": "https://webcatalog.io/ru/apps/ukr-net",
+      "opgehaald": "2026-11-17",
       "licentie": "handelsmerk-van-de-eigenaar",
       "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
       "mime": "image/png",
-      "bytes": 19698,
-      "sha256": "7c55b611c21c5a072c634e0a5518826c93c1f59a4f02166d6ee249523052c7be",
+      "bytes": 1891,
+      "sha256": "240864841c5a1ae2073d48e5286bcb4bfbd0d490f544a934a2a4631205b911e6",
+      "ondergrond": "licht",
+      "bewerking": "applicatie-icoon van Ukr.net zoals de eigenaar het als voorbeeld aanwees (Павло, 17.11.2026); alleen de doorzichtige rand weggesneden",
+      "keuzeEigenaar": "Павло, 17.11.2026: еталон https://webcatalog.io/ru/apps/ukr-net (той самий знак застосунку, що й https://upst.fwdcdn.com/ukrnet-icon-144x144.png на ukr.net, але на білій плитці)"
+    },
+    {
+      "sleutel": "ukrtelecom",
+      "bestand": "ukrtelecom.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://ukrtelecom.ua/img/favicons/android-chrome-512x512.png",
+      "bronPagina": "https://ukrtelecom.ua/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1555,
+      "sha256": "7c24da34c6c3cc02ca23dda4d502bd75de810236e0bb5c6322fe59bac644ee49",
+      "ondergrond": "licht"
+    },
+    {
+      "sleutel": "vodafone",
+      "bestand": "vodafone.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "vodafone",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://web.vodafone.com.eg",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#E60000",
+      "mime": "image/svg+xml",
+      "bytes": 458,
+      "sha256": "4b407f4bd7fdaad5900d082a0415079d7f7926d41ffa840741fd33329dc2cef5",
+      "ondergrond": "vrij"
+    },
+    {
+      "sleutel": "voo",
+      "bestand": "voo.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://www.voo.be/assets/favicon/android-chrome-256x256.png",
+      "bronPagina": "https://www.voo.be/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1662,
+      "sha256": "6c0b7c691a55a0070e88abb8eba3f1aa51a444c1ecac3376e94f8d587b6adb7f",
       "ondergrond": "licht"
     },
     {
@@ -749,6 +999,20 @@
       "ondergrond": "licht"
     },
     {
+      "sleutel": "xiaomi",
+      "bestand": "xiaomi.png",
+      "soort": "officiele-site",
+      "bronUrl": "https://i02.appmifile.com/i18n/scm/favicon.png",
+      "bronPagina": "https://www.mi.com/global/",
+      "opgehaald": "2026-11-17",
+      "licentie": "handelsmerk-van-de-eigenaar",
+      "licentieUitleg": "officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst",
+      "mime": "image/png",
+      "bytes": 1362,
+      "sha256": "51a854eef32e1b4fe9caa1d6378acfd7a5d66e8c27c2ca491dd7393cb6e82668",
+      "ondergrond": "licht"
+    },
+    {
       "sleutel": "yahoo",
       "bestand": "yahoo.svg",
       "soort": "pakket",
@@ -766,6 +1030,25 @@
       "sha256": "de69e4f5b18291b9035563e31639f55dfab8c74ad9023d6a906ee89aa0fd1ec1",
       "ondergrond": "licht",
       "opmerking": "woordmerk (Yahoo heeft geen los beeldmerk in een open pakket)"
+    },
+    {
+      "sleutel": "ziggo",
+      "bestand": "ziggo.svg",
+      "soort": "pakket",
+      "pakket": "simple-icons",
+      "versie": "15.22.0",
+      "integriteit": "sha512-i/w5Ie4tENfGYbdCo2iJ+oies0vOFd8QXWHopKOUzudfLCvnmeheF2PpHp89Z2azpc+c2su3lMiWO/SpP+429A==",
+      "icoon": "ziggo",
+      "verzameling": "Simple Icons",
+      "auteur": "Simple Icons Collaborators",
+      "bronUrl": "https://www.ziggosport.nl",
+      "licentie": "CC0-1.0",
+      "licentieUrl": "https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md",
+      "merkkleur": "#F48C00",
+      "mime": "image/svg+xml",
+      "bytes": 728,
+      "sha256": "cef600f41bbd7a7a2be6d422a2f6cfbc8200c476287ac13c9bd4581bfb5c8fd3",
+      "ondergrond": "vrij"
     }
   ],
   "afwezig": []
