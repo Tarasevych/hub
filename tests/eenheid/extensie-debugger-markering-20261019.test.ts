@@ -28,7 +28,7 @@ import {
   ADMIN_HOSTS_TOEGESTAAN, DIAG_CAP, DIAG_PAKKET, DIAG_RECHT_STANDEN, DIAG_RUIMTE, MARKERING_BADGE, MARKERING_KLEUREN,
   MIN_EXTENSIE_VERSIE, WEIGER_UITLEG, isDiagRechtStand,
 } from '../../shared/extensie-ontgrendeling';
-import { EXT_MIN_VERSIE, updateAdvies, vergelijkVersie } from '../../shared/extensie-update';
+import { EXT_MIN_VERSIE, updateAdvies, vergelijkVersie } from '../../shared/extensie-bijwerken';
 import { filterPubliek } from '../../src/extensie/extensie-live';
 
 const W = process.cwd();

@@ -12,7 +12,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
 import { filterPubliek, lokaalBericht, maakExtensieLive } from '../../src/extensie/extensie-live';
 import { LOKALE_AI_APIS, LOKALE_AI_INFO, filterLokaleAiKeuze, laiRegel, meetPagina } from '../../shared/lokale-ai-model';
-import { vergelijkVersie } from '../../shared/extensie-update';
+import { vergelijkVersie } from '../../shared/extensie-bijwerken';
 import LokaleAiPaneel from '../../src/extensie/LokaleAiPaneel';
 
 const ORIGIN = 'https://mcp.tarasevych.com';

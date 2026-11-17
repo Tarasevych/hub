@@ -137,8 +137,8 @@ if (existsSync(lokaalDir)) {
   writeFileSync(join(outDir, 'mijn-ruimte-extensie-native.zip'), bytes);
   lokaal = { file: 'mijn-ruimte-extensie-native.zip', files: lokaalEntries.length, sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length };
 }
-// Minimale versie: één bron (shared/extensie-update.ts), hier met een regex gelezen omdat dit script geen TypeScript laadt.
-const minVersion = /EXT_MIN_VERSIE = '([0-9.]+)'/.exec(readFileSync(join(root, 'shared', 'extensie-update.ts'), 'utf8'))?.[1] ?? manifest.version;
+// Minimale versie: één bron (shared/extensie-bijwerken.ts), hier met een regex gelezen omdat dit script geen TypeScript laadt.
+const minVersion = /EXT_MIN_VERSIE = '([0-9.]+)'/.exec(readFileSync(join(root, 'shared', 'extensie-bijwerken.ts'), 'utf8'))?.[1] ?? manifest.version;
 const ondertekend = existsSync(infoPath) ? JSON.parse(readFileSync(infoPath, 'utf8')).version ?? null : null;
 writeFileSync(join(outDir, 'extension-version.json'), JSON.stringify({ version: manifest.version, minVersion, file: 'mijn-ruimte-extension.zip', sha256, files: entries.length, storeUrl, installers, crx, crxStatus, ondertekendeVersie: ondertekend, agent, lokaal, debug, diagnose }));
 console.log(`Extensie ${manifest.version}: ${entries.length} bestanden -> ${relative(root, target)} (${statSync(target).size} bytes, sha256 ${sha256.slice(0, 12)}…, helpers: ${installers.join(', ') || 'geen'}), CRX: ${crxNote}`);

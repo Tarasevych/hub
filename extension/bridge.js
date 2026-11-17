@@ -59,21 +59,46 @@
   const HOST_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
   const PUBLIEK_VELDEN = Object.freeze(['versie', 'profielTab', 'account', 'prive', 'technisch', 'lokaalVerbonden', 'diagnostiek',
     'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId', 'lokaleAi']);
-  /** 0.9.1: ingebouwde AI van Chrome — alleen de KEUZES van de gebruiker (hoofdschakelaar + welke API's aan), nooit tekst of uitvoer. */
-  const LAI_APIS = Object.freeze(['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader']);
-  // 0.9.1: plus de stand per API die de extensie zelf mat (offscreen.html, alleen availability()); alleen namen uit deze lijst.
+  /** 0.9.1–0.9.3: ingebouwde AI van Chrome — alleen keuzes en veilige instellingen (nooit tekst, geheimen of uitvoer). */
+  const LAI_APIS = Object.freeze(['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions']);
   const LAI_STANDEN = Object.freeze(['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout']);
+  const LAI_PREFS = Object.freeze(['auto', 'speed', 'capability']);
+  const LAI_SAMPLING = Object.freeze(['default', 'most-predictable', 'balanced', 'most-creative']);
+  const LAI_MODEL_TALEN = Object.freeze(['en', 'es', 'ja', 'de', 'fr', 'uk', 'nl']);
+  const LAI_VERTAAL_TALEN = Object.freeze(['auto', 'uk', 'nl', 'en', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'ja', 'zh', 'ko', 'tr', 'ar', 'hi']);
+  const LAI_GEVAAR = Object.freeze(['siteToegang', 'tabTekst', 'multimodaal', 'autoDownload']);
   function laiPubliek(bron) {
     const d = bron && typeof bron === 'object' ? bron : null;
     if (!d) return null;
     const uit = { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter((x) => LAI_APIS.includes(x)))] : [] };
-    if (typeof d.siteToegang === 'boolean') uit.siteToegang = d.siteToegang; // 0.9.2: «!» toegang voor pagina's van de site
+    if (typeof d.siteToegang === 'boolean') uit.siteToegang = d.siteToegang;
     const st = d.stand && typeof d.stand === 'object' && !Array.isArray(d.stand) ? d.stand : null;
     if (st) {
       const s = {};
       for (const id of LAI_APIS) if (LAI_STANDEN.includes(st[id])) s[id] = st[id];
       if (Object.keys(s).length) uit.stand = s;
     }
+    const inst = d.instellingen && typeof d.instellingen === 'object' && !Array.isArray(d.instellingen) ? d.instellingen : null;
+    if (inst) {
+      const ci = {};
+      if (LAI_PREFS.includes(inst.summarizerPreference)) ci.summarizerPreference = inst.summarizerPreference;
+      if (LAI_SAMPLING.includes(inst.promptSamplingMode)) ci.promptSamplingMode = inst.promptSamplingMode;
+      if (LAI_MODEL_TALEN.includes(inst.promptTaal)) ci.promptTaal = inst.promptTaal;
+      if (typeof inst.promptToolUse === 'boolean') ci.promptToolUse = inst.promptToolUse;
+      if (typeof inst.chatHulp === 'boolean') ci.chatHulp = inst.chatHulp;
+      if (typeof inst.vertaalInvoer === 'boolean') ci.vertaalInvoer = inst.vertaalInvoer;
+      if (typeof inst.vertaalUitvoer === 'boolean') ci.vertaalUitvoer = inst.vertaalUitvoer;
+      if (LAI_VERTAAL_TALEN.includes(inst.doelTaal)) ci.doelTaal = inst.doelTaal;
+      if (Object.keys(ci).length) uit.instellingen = ci;
+    }
+    const gev = d.gevaar && typeof d.gevaar === 'object' && !Array.isArray(d.gevaar) ? d.gevaar : null;
+    if (gev) {
+      const cg = {};
+      for (const k of LAI_GEVAAR) if (typeof gev[k] === 'boolean') cg[k] = gev[k];
+      if (Object.keys(cg).length) uit.gevaar = cg;
+    }
+    if (typeof d.ukDirect === 'boolean') uit.ukDirect = d.ukDirect;
+    if (typeof d.nlDirect === 'boolean') uit.nlDirect = d.nlDirect;
     return uit;
   }
   /** 0.6.1 (punt 7): alleen deze vier velden over het debuggerrecht gaan naar de pagina; nooit paden, opslag of foutteksten. */

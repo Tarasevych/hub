@@ -423,27 +423,55 @@ async function slotStatus(r) {
     vergrendeldDoor: s.laatsteVergrendeling ? { ...s.laatsteVergrendeling } : null,
   };
 }
-// 0.9.1: ingebouwde AI van Chrome (lokale-ai.js, opties/zijpaneel). De service worker zelf heeft die API's niet; hij meldt alleen
-// de KEUZES (hoofdschakelaar + welke API's aan staan) zodat de site kan tonen wat in deze browser lokaal mag. Nooit tekst of uitvoer.
-const LAI_APIS = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'];
+// 0.9.1–0.9.3: ingebouwde AI van Chrome (lokale-ai.js, opties/zijpaneel). De service worker zelf heeft die API's niet; hij meldt
+// KEUZES en veilige instellingen zodat de site kan tonen wat in deze browser lokaal mag. Nooit tekst, geheimen of uitvoer.
+const LAI_APIS = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions'];
+const LAI_PREFS = ['auto', 'speed', 'capability'];
+const LAI_SAMPLING = ['default', 'most-predictable', 'balanced', 'most-creative'];
+const LAI_MODEL_TALEN = ['en', 'es', 'ja', 'de', 'fr', 'uk', 'nl'];
+const LAI_VERTAAL_TALEN = ['auto', 'uk', 'nl', 'en', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'ja', 'zh', 'ko', 'tr', 'ar', 'hi'];
+const LAI_GEVAAR = ['siteToegang', 'tabTekst', 'multimodaal', 'autoDownload'];
+
 async function lokaleAiKeuze() {
   const o = (await stil(() => chrome.storage.local.get('lokaleAi'))) || {};
   const v = o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {};
   const apis = v.apis && typeof v.apis === 'object' ? v.apis : {};
-  // Standaard (nog nooit opgeslagen): alles aan, net als STANDAARD in lokale-ai.js.
   const aan = v.aan !== false;
-  // 0.9.1: stand per API zoals Chrome die IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()). Nooit wachten:
-  // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
   if (aan) laiMeetAls();
-  // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
-  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+  const p = v.prompt && typeof v.prompt === 'object' ? v.prompt : {};
+  const s = v.summarizer && typeof v.summarizer === 'object' ? v.summarizer : {};
+  const instellingen = {
+    summarizerPreference: LAI_PREFS.includes(s.preference) ? s.preference : 'auto',
+    promptSamplingMode: LAI_SAMPLING.includes(p.samplingMode) ? p.samplingMode : 'default',
+    promptTaal: LAI_MODEL_TALEN.includes(p.taal) ? p.taal : 'en',
+    promptToolUse: p.toolUse === true,
+    chatHulp: v.chatHulp !== false,
+    vertaalInvoer: v.vertaalInvoer !== false,
+    vertaalUitvoer: v.vertaalUitvoer !== false,
+    doelTaal: LAI_VERTAAL_TALEN.includes(v.doelTaal) ? v.doelTaal : 'auto',
+  };
+  const gevaar = {
+    siteToegang: v.siteToegang === true,
+    tabTekst: v.tabTekst === true,
+    multimodaal: v.multimodaal === true,
+    autoDownload: v.autoDownload === true,
+  };
+  return {
+    aan,
+    apis: LAI_APIS.filter((id) => apis[id] !== false),
+    siteToegang: v.siteToegang === true,
+    instellingen,
+    gevaar,
+    ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}),
+    ...(aan && typeof laiMeting.ukDirect === 'boolean' ? { ukDirect: laiMeting.ukDirect } : {}),
+    ...(aan && typeof laiMeting.nlDirect === 'boolean' ? { nlDirect: laiMeting.nlDirect } : {}),
+  };
 }
-// ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
-// Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
+// ---- 0.9.2–0.9.3: stand per API voor de status via offscreen.html ----
 const LAI_STANDEN = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout'];
 const LAI_GELDIG_MS = 5 * 60_000;
-const laiMeting = { data: null, t: 0, bezig: null };
-/** Zuiver: alleen bekende API's en stand-namen uit het offscreen-antwoord ({apis}); 'uit' zegt de keuze al. Anders null. */
+const laiMeting = { data: null, ukDirect: undefined, nlDirect: undefined, t: 0, bezig: null };
+/** Zuiver: alleen bekende API's en stand-namen uit het offscreen-antwoord ({apis}). */
 function laiStandFilter(d) {
   const a = d && typeof d === 'object' && d.apis && typeof d.apis === 'object' && !Array.isArray(d.apis) ? d.apis : null;
   if (!a) return null;
@@ -452,17 +480,24 @@ function laiStandFilter(d) {
   return Object.keys(uit).length ? uit : null;
 }
 async function meetLokaleAi() {
-  // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
   const r = await Promise.race([naarOffscreen({ op: 'lokale-ai-stand' }).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), 20_000))]);
-  return r && r.ok ? laiStandFilter(r) : null;
+  if (!r || !r.ok) return null;
+  const stand = laiStandFilter(r);
+  if (!stand) return null;
+  return { stand, ukDirect: typeof r.ukDirect === 'boolean' ? r.ukDirect : undefined, nlDirect: typeof r.nlDirect === 'boolean' ? r.nlDirect : undefined };
 }
 /** Start een meting als de vorige ouder is dan LAI_GELDIG_MS; nooit twee tegelijk. Na afloop: statusWijziging(). */
 function laiMeetAls(forceer = false) {
   if (laiMeting.bezig || (!forceer && Date.now() - laiMeting.t < LAI_GELDIG_MS)) return laiMeting.bezig;
   laiMeting.t = Date.now();
-  laiMeting.bezig = meetLokaleAi().then((d) => {
-    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data);
+  laiMeting.bezig = meetLokaleAi().then((res) => {
+    const d = res ? res.stand : null;
+    const ukDirect = res ? res.ukDirect : undefined;
+    const nlDirect = res ? res.nlDirect : undefined;
+    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data) || ukDirect !== laiMeting.ukDirect || nlDirect !== laiMeting.nlDirect;
     laiMeting.data = d;
+    laiMeting.ukDirect = ukDirect;
+    laiMeting.nlDirect = nlDirect;
     if (anders) void statusWijziging();
   }, () => undefined).finally(() => { laiMeting.bezig = null; });
   return laiMeting.bezig;
@@ -1449,7 +1484,117 @@ async function naarOffscreen(bericht) {
   offscreenLaterSluiten();
   return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
 }
-const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt', 'embedder', 'decisions'];
+const LAI_RE_SUM_TYPES = ['key-points', 'tldr', 'teaser', 'headline'];
+const LAI_RE_FORMATS = ['plain-text', 'markdown'];
+const LAI_RE_LENGTHS = ['short', 'medium', 'long'];
+
+async function lokaleAiStelIn(message) {
+  const patch = message && message.patch && typeof message.patch === 'object' && !Array.isArray(message.patch) ? message.patch : null;
+  if (!patch) return { ok: false, reason: 'ONGELDIGE_INSTELLING' };
+  const bevestigGevaar = message.bevestigGevaar === true;
+  const huidig = await lokaleAiInstellingen();
+  const nieuw = {
+    ...huidig,
+    apis: { ...(huidig.apis && typeof huidig.apis === 'object' ? huidig.apis : {}) },
+    prompt: { ...(huidig.prompt && typeof huidig.prompt === 'object' ? huidig.prompt : {}) },
+    summarizer: { ...(huidig.summarizer && typeof huidig.summarizer === 'object' ? huidig.summarizer : {}) },
+    writer: { ...(huidig.writer && typeof huidig.writer === 'object' ? huidig.writer : {}) },
+    rewriter: { ...(huidig.rewriter && typeof huidig.rewriter === 'object' ? huidig.rewriter : {}) },
+    translator: { ...(huidig.translator && typeof huidig.translator === 'object' ? huidig.translator : {}) },
+    proofreader: { ...(huidig.proofreader && typeof huidig.proofreader === 'object' ? huidig.proofreader : {}) },
+    decisions: { ...(huidig.decisions && typeof huidig.decisions === 'object' ? huidig.decisions : {}) },
+  };
+  const toegepast = [];
+  const geweigerdeGevaarVelden = [];
+
+  if (typeof patch.aan === 'boolean') { nieuw.aan = patch.aan; toegepast.push('aan'); }
+  if (Array.isArray(patch.apis)) {
+    const set = new Set(patch.apis.filter((x) => LAI_APIS.includes(x)));
+    for (const id of LAI_APIS) nieuw.apis[id] = set.has(id);
+    toegepast.push('apis');
+  } else if (patch.apis && typeof patch.apis === 'object' && !Array.isArray(patch.apis)) {
+    let geraakt = false;
+    for (const id of LAI_APIS) {
+      if (typeof patch.apis[id] === 'boolean') { nieuw.apis[id] = patch.apis[id]; geraakt = true; }
+    }
+    if (geraakt) toegepast.push('apis');
+  }
+  for (const k of ['chatHulp', 'vertaalInvoer', 'vertaalUitvoer']) {
+    if (typeof patch[k] === 'boolean') { nieuw[k] = patch[k]; toegepast.push(k); }
+  }
+  if (LAI_VERTAAL_TALEN.includes(patch.doelTaal)) { nieuw.doelTaal = patch.doelTaal; toegepast.push('doelTaal'); }
+  if (patch.prompt && typeof patch.prompt === 'object' && !Array.isArray(patch.prompt)) {
+    let g = false;
+    if (typeof patch.prompt.systeem === 'string') { nieuw.prompt.systeem = patch.prompt.systeem.slice(0, 4000); g = true; }
+    if (typeof patch.prompt.schema === 'string') { nieuw.prompt.schema = patch.prompt.schema.slice(0, 8000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.prompt.taal)) { nieuw.prompt.taal = patch.prompt.taal; g = true; }
+    if (LAI_SAMPLING.includes(patch.prompt.samplingMode)) { nieuw.prompt.samplingMode = patch.prompt.samplingMode; g = true; }
+    if (typeof patch.prompt.toolUse === 'boolean') { nieuw.prompt.toolUse = patch.prompt.toolUse; g = true; }
+    if (patch.prompt.temperatuur === '' || (typeof patch.prompt.temperatuur === 'string' && Number.isFinite(Number(patch.prompt.temperatuur)) && Number(patch.prompt.temperatuur) >= 0)) {
+      nieuw.prompt.temperatuur = patch.prompt.temperatuur; g = true;
+    }
+    if (patch.prompt.topK === '' || (typeof patch.prompt.topK === 'string' && Number.isFinite(Number(patch.prompt.topK)) && Number(patch.prompt.topK) >= 0)) {
+      nieuw.prompt.topK = patch.prompt.topK; g = true;
+    }
+    if (g) toegepast.push('prompt');
+  }
+  if (patch.summarizer && typeof patch.summarizer === 'object' && !Array.isArray(patch.summarizer)) {
+    let g = false;
+    if (LAI_RE_SUM_TYPES.includes(patch.summarizer.type)) { nieuw.summarizer.type = patch.summarizer.type; g = true; }
+    if (LAI_RE_FORMATS.includes(patch.summarizer.format)) { nieuw.summarizer.format = patch.summarizer.format; g = true; }
+    if (LAI_RE_LENGTHS.includes(patch.summarizer.length)) { nieuw.summarizer.length = patch.summarizer.length; g = true; }
+    if (LAI_PREFS.includes(patch.summarizer.preference)) { nieuw.summarizer.preference = patch.summarizer.preference; g = true; }
+    if (typeof patch.summarizer.context === 'string') { nieuw.summarizer.context = patch.summarizer.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.summarizer.taal)) { nieuw.summarizer.taal = patch.summarizer.taal; g = true; }
+    if (g) toegepast.push('summarizer');
+  }
+  if (patch.writer && typeof patch.writer === 'object' && !Array.isArray(patch.writer)) {
+    let g = false;
+    if (['formal', 'neutral', 'casual'].includes(patch.writer.tone)) { nieuw.writer.tone = patch.writer.tone; g = true; }
+    if (LAI_RE_FORMATS.includes(patch.writer.format)) { nieuw.writer.format = patch.writer.format; g = true; }
+    if (LAI_RE_LENGTHS.includes(patch.writer.length)) { nieuw.writer.length = patch.writer.length; g = true; }
+    if (typeof patch.writer.context === 'string') { nieuw.writer.context = patch.writer.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.writer.taal)) { nieuw.writer.taal = patch.writer.taal; g = true; }
+    if (g) toegepast.push('writer');
+  }
+  if (patch.rewriter && typeof patch.rewriter === 'object' && !Array.isArray(patch.rewriter)) {
+    let g = false;
+    if (['as-is', 'more-formal', 'more-casual'].includes(patch.rewriter.tone)) { nieuw.rewriter.tone = patch.rewriter.tone; g = true; }
+    if (['as-is', ...LAI_RE_FORMATS].includes(patch.rewriter.format)) { nieuw.rewriter.format = patch.rewriter.format; g = true; }
+    if (['as-is', 'shorter', 'longer'].includes(patch.rewriter.length)) { nieuw.rewriter.length = patch.rewriter.length; g = true; }
+    if (typeof patch.rewriter.context === 'string') { nieuw.rewriter.context = patch.rewriter.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.rewriter.taal)) { nieuw.rewriter.taal = patch.rewriter.taal; g = true; }
+    if (g) toegepast.push('rewriter');
+  }
+  if (patch.translator && typeof patch.translator === 'object' && !Array.isArray(patch.translator)) {
+    let g = false;
+    if (LAI_VERTAAL_TALEN.includes(patch.translator.bron)) { nieuw.translator.bron = patch.translator.bron; g = true; }
+    if (LAI_VERTAAL_TALEN.includes(patch.translator.doel)) { nieuw.translator.doel = patch.translator.doel; g = true; }
+    if (g) toegepast.push('translator');
+  }
+  if (patch.proofreader && typeof patch.proofreader === 'object' && !Array.isArray(patch.proofreader)) {
+    if (LAI_MODEL_TALEN.includes(patch.proofreader.taal)) { nieuw.proofreader.taal = patch.proofreader.taal; toegepast.push('proofreader'); }
+  }
+  if (patch.decisions && typeof patch.decisions === 'object' && !Array.isArray(patch.decisions)) {
+    if (typeof patch.decisions.schema === 'string') { nieuw.decisions.schema = patch.decisions.schema.slice(0, 8000); toegepast.push('decisions'); }
+  }
+  for (const k of LAI_GEVAAR) {
+    if (typeof patch[k] !== 'boolean') continue;
+    if (bevestigGevaar) { nieuw[k] = patch[k]; toegepast.push(k); }
+    else geweigerdeGevaarVelden.push(k);
+  }
+  if (!toegepast.length) {
+    return geweigerdeGevaarVelden.length
+      ? { ok: false, reason: 'BEVESTIGING_NODIG', geweigerdeGevaarVelden }
+      : { ok: false, reason: 'ONGELDIGE_INSTELLING' };
+  }
+  await chrome.storage.local.set({ lokaleAi: nieuw });
+  laiMeting.t = 0;
+  await statusWijziging();
+  return { ok: true, lokaleAi: await lokaleAiKeuze(), toegepast, geweigerdeGevaarVelden };
+}
+
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
   if (inst.aan === false) return { ok: false, reason: 'UIT' };
@@ -1469,7 +1614,10 @@ async function lokaleAiVoorSite(message, origin) {
   lokaleAiLopend.add(id);
   try {
     const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
-    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+    const preference = LAI_PREFS.includes(message.preference) ? message.preference : undefined;
+    const samplingMode = LAI_SAMPLING.includes(message.samplingMode) ? message.samplingMode : undefined;
+    const schema = typeof message.schema === 'string' ? message.schema.slice(0, 8000) : undefined;
+    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), preference, samplingMode, schema, limietMs: 120000 });
   } catch (e) {
     return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
   } finally { lokaleAiLopend.delete(id); }
@@ -1490,13 +1638,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       await geladen;
       const s = await selfStatus();
       const vt = await voorTab(s);
-      // lokaleAi: publieke keuzes (aan/apis/stand) PLUS het PING-contract {ondersteund, siteToegang}; na de spread, anders overschreven.
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
         diagOptIn: s.diagOptIn, ...vt, lokaleAi: { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: (await lokaleAiInstellingen()).siteToegang === true } });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
-    // 0.9.1: lokale AI voor pagina's van de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
+    // 0.9.1–0.9.3: lokale AI en veilige instelling vanaf de eigen site
     if (type === 'LOKALE_AI' || type === 'LOKALE_AI_STAND') return sendResponse(await lokaleAiVoorSite(message, origin));
+    if (type === 'LOKALE_AI_STEL_IN') return sendResponse(await lokaleAiStelIn(message));
     const beheerOrigin = ['mcp.tarasevych.com', 'admin.tarasevych.com'].includes(new URL(origin).hostname);
     if ((type === 'SELF_TEST' || type === 'UPDATE_CHECK') && !beheerOrigin) return sendResponse({ ok: false, reason: 'WRONG_HOST' });
     if (type === 'SELF_TEST') return sendResponse({ ok: true, ...(await selfTest()) });
