@@ -36,6 +36,8 @@ export type Profiel = {
   toegekendDoor: string; toegekendOp: number; laatstActief: number | null; ingetrokkenOp: number | null; notitie: string;
   /** Migratie 0080: mag een NIEUW tabblad een open activering erven (0071)? Standaard false = nieuwe tabbladen zijn gebruikerstabbladen. */
   ervenNieuweTabbladen: boolean;
+  /** Migratie 0200: дозвіл адміністратора на розміщення ярликів технічного профілю в обох частинах меню. */
+  snelkoppelingenToegestaan: boolean;
 };
 export type ActivatieModus = 'tijd' | 'tot-uitloggen' | 'tot-verlaten';
 /** Herkomst (migratie 0071): 'eigen' = in dit tabblad geactiveerd; 'geerfd' = kopie van een open activering van dezelfde sessie;
@@ -53,6 +55,7 @@ const profielUit = (r: any): Profiel => ({
   toegekendDoor: r.toegekend_door, toegekendOp: new Date(r.toegekend_op).getTime(), laatstActief: r.laatst_actief ? new Date(r.laatst_actief).getTime() : null,
   ingetrokkenOp: r.ingetrokken_op ? new Date(r.ingetrokken_op).getTime() : null, notitie: String(r.notitie || ''),
   ervenNieuweTabbladen: r.erven_nieuwe_tabbladen === true,
+  snelkoppelingenToegestaan: r.snelkoppelingen_toegestaan === true,
 });
 const activatieUit = (r: any): Activatie => ({
   id: String(r.id), profielId: r.profiel_id, rollen: (r.rollen as string[]).filter(isTechRol), mogelijkheden: mogelijkhedenVan(r.rollen),
@@ -420,7 +423,7 @@ async function doelGebruiker(email: string): Promise<Gebruiker> {
   return { id: String(r[0].id), email: r[0].email, role: r[0].role, status: r[0].status };
 }
 
-export async function toekennen(actor: Gebruiker, tabContext: string, input: { email: string; rollen: unknown; maxMinuten: unknown; notitie?: unknown }): Promise<Profiel> {
+export async function toekennen(actor: Gebruiker, tabContext: string, input: { email: string; rollen: unknown; maxMinuten: unknown; notitie?: unknown; snelkoppelingenToegestaan?: unknown }): Promise<Profiel> {
   const a = await gever(actor, tabContext);
   const rollen = Array.isArray(input.rollen) ? [...new Set(input.rollen)].filter(isTechRol) : [];
   if (!rollen.length || rollen.length !== (input.rollen as unknown[]).length) fout('ROLLEN_ONGELDIG');
@@ -434,17 +437,50 @@ export async function toekennen(actor: Gebruiker, tabContext: string, input: { e
   if (doel.id === actor.id) fout('NIET_AAN_JEZELF', 403);
   if (isEigenaar(doel)) fout('EIGENAAR_ONAANTASTBAAR', 403);
   const notitie = String(input.notitie ?? '').trim().slice(0, 300);
-  const r = (await sys().query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door, notitie) VALUES ($1, $2, $3, $4, $5, $6)
+  const heeftYarlykKeuze = typeof input.snelkoppelingenToegestaan === 'boolean';
+  const yarlykAan = input.snelkoppelingenToegestaan === true;
+  const r = (await sys().query(`INSERT INTO app.tech_profielen (user_id, profiel_id, rollen, max_minuten, toegekend_door, notitie, snelkoppelingen_toegestaan) VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (user_id) DO UPDATE SET rollen = EXCLUDED.rollen, max_minuten = EXCLUDED.max_minuten, toegekend_door = EXCLUDED.toegekend_door, notitie = EXCLUDED.notitie,
+       snelkoppelingen_toegestaan = CASE WHEN $8::boolean THEN EXCLUDED.snelkoppelingen_toegestaan ELSE app.tech_profielen.snelkoppelingen_toegestaan END,
        toegekend_op = CASE WHEN app.tech_profielen.ingetrokken_op IS NULL THEN app.tech_profielen.toegekend_op ELSE now() END, gewijzigd_op = now(),
        ingetrokken_op = NULL, ingetrokken_door = NULL, ingetrokken_reden = NULL
-     RETURNING *`, [doel.id, nieuwProfielId(), rollen, max, actor.id, notitie])).rows[0];
+     RETURNING *`, [doel.id, nieuwProfielId(), rollen, max, actor.id, notitie, yarlykAan, heeftYarlykKeuze])).rows[0];
   // Rollen gewijzigd: lopende activeringen van de ontvanger houden hun OUDE rollen niet — afsluiten, hij activeert opnieuw.
   await sys().query(`UPDATE app.tech_activaties SET beeindigd_op = now(), beeindigd_reden = 'ingetrokken' WHERE user_id = $1 AND beeindigd_op IS NULL`, [doel.id]);
   await kern().then((k) => k.profielWeg(doel.id)).catch(() => 0);
   meldTechEinde(doel.id);
-  await audit(doel.id, actor.id, 'owner.tech.toegekend', { profielId: r.profiel_id, rollen, maxMinuten: max, door: actor.email || actor.id, viaActivatie: a.id });
-  if (doel.id !== actor.id) await audit(actor.id, actor.id, 'owner.tech.toegekend', { aan: doel.email, profielId: r.profiel_id, rollen, maxMinuten: max, viaActivatie: a.id });
+  await audit(doel.id, actor.id, 'owner.tech.toegekend', { profielId: r.profiel_id, rollen, maxMinuten: max, snelkoppelingenToegestaan: r.snelkoppelingen_toegestaan === true, door: actor.email || actor.id, viaActivatie: a.id });
+  if (doel.id !== actor.id) await audit(actor.id, actor.id, 'owner.tech.toegekend', { aan: doel.email, profielId: r.profiel_id, rollen, maxMinuten: max, snelkoppelingenToegestaan: r.snelkoppelingen_toegestaan === true, viaActivatie: a.id });
+  return profielUit(r);
+}
+
+/**
+ * Дозвіл адміністратора для повноважної особи з технічним доступом розміщувати ярлики технічного профілю в обох частинах меню.
+ * Вимагає активного технічного сеансу з правом roles.delegate. Профіль власника може змінювати лише сам власник.
+ */
+export async function snelkoppelingenZetten(actor: Gebruiker, tabContext: string, userId: string, toegestaan: unknown): Promise<Profiel> {
+  if (typeof toegestaan !== 'boolean') fout('SNELKOPPELINGEN_ONGELDIG');
+  const a = await gever(actor, tabContext);
+  const doelId = String(userId || '').trim();
+  if (!doelId) fout('PROFIEL_NIET_GEVONDEN', 404);
+  if (doelId === actor.id && isEigenaar(actor)) await profielVan(actor);
+  const t = (await sys().query(`SELECT r.id, r.data->>'email' AS email, r.data->>'role' AS role, p.rollen
+     FROM app.tech_profielen p LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = p.user_id
+     WHERE p.user_id = $1 AND p.ingetrokken_op IS NULL`, [doelId])).rows[0];
+  if (!t) fout('PROFIEL_NIET_GEVONDEN', 404);
+  const doelIsEigenaar = isEigenaar({ id: doelId, email: t.email, role: t.role }) || (t.rollen as string[]).includes('eigenaar');
+  if (doelIsEigenaar && !isEigenaar(actor)) fout('EIGENAAR_ONAANTASTBAAR', 403);
+  if (!doelIsEigenaar && doelId !== actor.id) {
+    const eigen = new Set(a.rollen.includes('eigenaar') ? ['ondersteuning', 'tester', 'ontwikkelaar', 'beheerder', 'auditor'] : a.rollen);
+    if (!(t.rollen as string[]).every((rol) => eigen.has(rol))) fout('ROLLEN_BOVEN_EIGEN', 403);
+  }
+  const r = (await sys().query(
+    'UPDATE app.tech_profielen SET snelkoppelingen_toegestaan = $2, gewijzigd_op = now() WHERE user_id = $1 AND ingetrokken_op IS NULL RETURNING *',
+    [doelId, toegestaan],
+  )).rows[0];
+  if (!r) fout('PROFIEL_NIET_GEVONDEN', 404);
+  await audit(doelId, actor.id, 'owner.tech.snelkoppelingen', { profielId: r.profiel_id, toegestaan, door: actor.email || actor.id, viaActivatie: a.id });
+  if (doelId !== actor.id) await audit(actor.id, actor.id, 'owner.tech.snelkoppelingen', { voor: t.email || doelId, profielId: r.profiel_id, toegestaan, viaActivatie: a.id });
   return profielUit(r);
 }
 

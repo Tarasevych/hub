@@ -9,6 +9,7 @@
 // RuimteSchakelaar is de pure weergave (eenheidstest met react-dom/server); RuimteWissel koppelt hem aan de opslag.
 import { useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { Home, Lock, ShieldCheck } from 'lucide-react';
+import { canonicalNavigationUrl, sessieDienst } from '../../canoniek-navigatie';
 import { openTechVenster } from '../tech-opslag';
 import type { RuimtesStatus } from '../ruimtes-contract';
 import { RUIMTE_NAAM, standTekst, wisselFoutTekst, type Taal } from './teksten';
@@ -93,5 +94,16 @@ export default function RuimteWissel({ taal, compact = false }: { taal: Taal; co
     const u = await kiesRuimte(naar, taal);
     if (u) { setUitkomst(u); if (u.ok) knop.current?.focus(); }
   };
-  return <RuimteSchakelaar status={s} nu={r.nu} taal={taal} compact={compact} bezig={r.bezig === 'wisselen'} uitkomst={uitkomst} onKies={(naar) => void kies(naar)} knopRef={knop} />;
+  const nietOpBeheer = typeof location !== 'undefined' && !['admin', 'api'].includes(sessieDienst());
+  return (
+    <>
+      <RuimteSchakelaar status={s} nu={r.nu} taal={taal} compact={compact} bezig={r.bezig === 'wisselen'} uitkomst={uitkomst} onKies={(naar) => void kies(naar)} knopRef={knop} />
+      {uitkomst?.ok && s.actief === 'technisch' && nietOpBeheer ? (
+        <a className='rw-admin-link' href={canonicalNavigationUrl('admin', 'overview', taal)}>
+          {taal === 'uk' ? 'Відкрити адмін-панель →' : 'Beheer openen →'}
+        </a>
+      ) : null}
+    </>
+  );
 }
+

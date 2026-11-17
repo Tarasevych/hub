@@ -15,11 +15,12 @@ export type ToegangSoort = 'persoon' | 'sessie' | 'ai' | 'extensie' | 'code' | '
 export type ToegangRegel = {
   id: string; soort: ToegangSoort; naam: string; detail?: string; ruimtes?: Ruimte[];
   termijn?: { modus: TermijnModus | 'tot-intrekken'; eindTijd: number | null } | null; actief?: boolean; deze?: boolean; tabblad?: 'eigen' | 'invoer' | 'ai' | 'mensen' | 'codes' | 'vlaggen';
+  userId?: string; snelkoppelingenToegestaan?: boolean;
 };
 /** Ruw antwoord van POST …/ruimtes/toegang (docs/ontwerp/TECH-RUIMTES-API.md). */
 export type ToegangRuw = {
   magBeheren?: boolean;
-  mensen?: Array<{ userId: string; email: string; naam: string; rollen: string[]; maxMinuten: number; eigenaar: boolean; actiefTot: string | null; ingetrokken: boolean }>;
+  mensen?: Array<{ userId: string; email: string; naam: string; rollen: string[]; maxMinuten: number; eigenaar: boolean; actiefTot: string | null; ingetrokken: boolean; snelkoppelingenToegestaan?: boolean }>;
   sessies?: Array<{ id: string; modus: TermijnModus; eindTijd: string | null; grensTijd?: string | null; gestartOp: string; actief: Ruimte | boolean; dezeSessie: boolean }>;
   ai?: Array<{ verbindingId: string; naam: string; agent: string | null; ruimtes: string[]; termijn: string | null; eindTijd: string | null; tokenTot: string | null; bron: string }>;
   extensie?: Array<{ id: string; agentId: string; ruimte: string; eindeSoort: string; eindTijd: string | null; overleeftTabUitloggen: boolean }>;
@@ -42,7 +43,7 @@ export function normaliseerStatus(raw: any): RuimtesStatus {
 export function naarRegels(raw: ToegangRuw & { regels?: ToegangRegel[] }): RuimtesToegang {
   const regels: ToegangRegel[] = [...(raw.regels ?? [])];
   for (const s of raw.sessies ?? []) regels.push({ id: `sessie:${s.id}`, soort: 'sessie', tabblad: 'eigen', naam: '', deze: s.dezeSessie === true, termijn: { modus: s.modus, eindTijd: ms(s.eindTijd) }, actief: s.actief === true || s.actief === 'technisch' });
-  for (const p of raw.mensen ?? []) regels.push({ id: `persoon:${p.userId}`, soort: 'persoon', naam: p.naam || p.email, detail: `${p.email} · ${p.rollen.join(', ')}${p.ingetrokken ? ' · ✕' : ''}`, termijn: p.actiefTot ? { modus: 'tijd', eindTijd: ms(p.actiefTot) } : null, actief: !p.ingetrokken });
+  for (const p of raw.mensen ?? []) regels.push({ id: `persoon:${p.userId}`, userId: p.userId, snelkoppelingenToegestaan: p.snelkoppelingenToegestaan === true, soort: 'persoon', naam: p.naam || p.email, detail: `${p.email} · ${p.rollen.join(', ')}${p.ingetrokken ? ' · ✕' : ''}`, termijn: p.actiefTot ? { modus: 'tijd', eindTijd: ms(p.actiefTot) } : null, actief: !p.ingetrokken });
   for (const a of raw.ai ?? []) regels.push({ id: a.verbindingId, soort: 'ai', naam: a.naam, detail: [a.agent, a.bron].filter(Boolean).join(' · '), ruimtes: ruimtesVan(a.ruimtes), termijn: a.termijn ? { modus: modusVan(a.termijn), eindTijd: ms(a.eindTijd) } : null });
   for (const e of raw.extensie ?? []) regels.push({ id: `ext:${e.id}`, soort: 'extensie', naam: e.agentId || 'extensie', ruimtes: ruimtesVan(e.ruimte), termijn: { modus: modusVan(e.eindeSoort), eindTijd: ms(e.eindTijd) } });
   for (const c of raw.codes ?? []) regels.push({ id: `code:${c.id}`, soort: 'code', naam: c.naam, detail: c.scopes.join(', '), termijn: c.verlooptOp ? { modus: 'tijd', eindTijd: ms(c.verlooptOp) } : { modus: 'tot-intrekken', eindTijd: null } });

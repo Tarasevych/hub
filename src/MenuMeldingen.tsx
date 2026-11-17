@@ -37,16 +37,35 @@ const tijd=(lang:Lang,op:number)=>{if(!op)return'';const s=Math.max(0,Math.round
 
 type BellenProps={lang:Lang;label:string;badge:Badge;anker:DOMRect;onSluit:(m:MenuMelding)=>void;onOpen:(m:MenuMelding)=>void;onAllesWeg:()=>void;onBinnen:(binnen:boolean)=>void;onEsc:()=>void;paneelRef:(el:HTMLDivElement|null)=>void;
   /** Het menu-item waaraan het venster hangt: een tik daarop sluit het niet (dat doet het item zelf). */
-  ankerEl?:HTMLElement|null};
-export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,onBinnen,onEsc,paneelRef,ankerEl}:BellenProps){
+  ankerEl?:HTMLElement|null;
+  kant?:'left'|'right'};
+export function MeldingBellen({lang,label,badge,anker,onSluit,onOpen,onAllesWeg,onBinnen,onEsc,paneelRef,ankerEl,kant}:BellenProps){
   const ref=useRef<HTMLDivElement|null>(null);
-  const[pos,setPos]=useState({left:anker.right+10,top:anker.top-6});
-  useLayoutEffect(()=>{const el=ref.current;if(!el)return;const h=el.offsetHeight,w=el.offsetWidth;const top=Math.max(8,Math.min(anker.top-6,window.innerHeight-h-8)),left=Math.max(8,Math.min(anker.right+10,window.innerWidth-w-8));setPos({left,top})},[anker,badge.meldingen.length]);
+  const[pos,setPos]=useState({left:kant==='left'?Math.max(8,anker.left-330):anker.right+10,top:anker.top-6});
+  useLayoutEffect(()=>{
+    const plaats=()=>{
+      const el=ref.current;if(!el)return;
+      const rect=ankerEl?.isConnected?ankerEl.getBoundingClientRect():anker;
+      const h=el.offsetHeight,w=el.offsetWidth;
+      const top=Math.max(8,Math.min(rect.top-6,window.innerHeight-h-8));
+      const voorkeur=kant==='left'?rect.left-w-10:rect.right+10;
+      const alternatief=kant==='left'?rect.right+10:rect.left-w-10;
+      const past=(x:number)=>x>=8&&x+w<=window.innerWidth-8;
+      const rawLeft=past(voorkeur)?voorkeur:past(alternatief)?alternatief:voorkeur;
+      const left=Math.max(8,Math.min(rawLeft,window.innerWidth-w-8));
+      setPos(p=>p.left===left&&p.top===top?p:{left,top});
+    };
+    plaats();
+    const raf=requestAnimationFrame(plaats);
+    window.addEventListener('resize',plaats);
+    window.addEventListener('scroll',plaats,true);
+    return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',plaats);window.removeEventListener('scroll',plaats,true)};
+  },[anker,ankerEl,kant,badge.meldingen.length]);
   useEffect(()=>{paneelRef(ref.current);return()=>paneelRef(null)},[paneelRef]);
   // Tik/klik naast het venster (en naast het menu-item): dicht — ook op een aanraakscherm, waar geen «muis weg» bestaat.
   useEffect(()=>{const weg=(e:PointerEvent)=>{const doel=e.target as Node|null;if(!doel||ref.current?.contains(doel)||ankerEl?.contains(doel))return;onBinnen(false)};document.addEventListener('pointerdown',weg,true);return()=>document.removeEventListener('pointerdown',weg,true)},[ankerEl,onBinnen]);
   const toets=(e:RKeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();onEsc()}};
-  return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} data-menu-bellen={badge.item} style={{left:pos.left,top:pos.top}} onPointerEnter={()=>onBinnen(true)} onPointerLeave={()=>onBinnen(false)} onFocus={()=>onBinnen(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
+  return <div ref={ref} className='menu-bellen' role='region' aria-label={`${label}: ${badgeLabel(lang,badge.aantal)}`} data-menu-bellen={badge.item} data-kant={kant} style={{left:pos.left,top:pos.top}} onPointerEnter={()=>onBinnen(true)} onPointerLeave={e=>{if(e.relatedTarget instanceof Node&&e.currentTarget.contains(e.relatedTarget))return;onBinnen(false)}} onFocus={()=>onBinnen(true)} onBlur={e=>{if(e.relatedTarget&&!e.currentTarget.contains(e.relatedTarget as Node))onBinnen(false)}} onKeyDown={toets}>
     <div className='menu-bellen-kop'><strong>{label}</strong><span>{badgeLabel(lang,badge.aantal)}</span></div>
     <p className='menu-bellen-uitleg' data-menu-bellen-uitleg='1'>{stipUitleg(lang,label,badge)}</p>
     {/* Legenda: de kleur van de stip is de soort melding (zelfde kleur als in de lijst hieronder). */}

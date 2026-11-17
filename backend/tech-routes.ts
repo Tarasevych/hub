@@ -85,7 +85,15 @@ export function techRoutes(requireSession: RequireSession, deps: TechRouteDeps =
     'POST /api/owner/tech/profielen': [gate({}, async (_ctx, auth, tab) => json({ profielen: await tp.profielenLijst(auth.user, tab) }))],
     'POST /api/owner/tech/toekennen': [gate({ stepUp: true }, async (ctx, auth, tab) => {
       const b = bodyOf(ctx.body);
-      const p = await tp.toekennen(auth.user, tab, { email: String(b.email ?? ''), rollen: b.rollen, maxMinuten: b.maxMinuten, notitie: b.notitie });
+      const p = await tp.toekennen(auth.user, tab, {
+        email: String(b.email ?? ''), rollen: b.rollen, maxMinuten: b.maxMinuten, notitie: b.notitie,
+        ...(typeof b.snelkoppelingenToegestaan === 'boolean' ? { snelkoppelingenToegestaan: b.snelkoppelingenToegestaan } : {}),
+      });
+      return json({ profiel: p, profielen: await tp.profielenLijst(auth.user, tab) });
+    })],
+    'POST /api/owner/tech/snelkoppelingen': [gate({}, async (ctx, auth, tab) => {
+      const b = bodyOf(ctx.body);
+      const p = await tp.snelkoppelingenZetten(auth.user, tab, String(b.userId ?? ''), b.toegestaan);
       return json({ profiel: p, profielen: await tp.profielenLijst(auth.user, tab) });
     })],
     'POST /api/owner/tech/intrekken': [gate({}, async (ctx, auth, tab) => {

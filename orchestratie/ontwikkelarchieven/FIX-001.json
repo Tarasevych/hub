@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "taakId": "FIX-001",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "opdracht": "Виправити перемикання на технічний простір і перехід між обліковими записами з меню, усунути передчасне приховування спливаючих сповіщень меню при наведенні й взаємодії, реалізувати ярлики кнопок технічного профілю (з логотипом-щитом та контуром обраного кольору профілю без білого обода) з можливістю розміщення в обох частинах меню за дозволом адміністратора для повноважних осіб із технічним доступом, і підготувати гілку та пакет випуску.",
+  "herkomst": {
+    "agent": "gemini",
+    "basis": "30edd5e3081ed53d6490a37d2270f4ac6b33cd46",
+    "basisVersie": "20261105-061659",
+    "tak": "fix/ruimtes-account-meldingen-20261117-195554"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Усі зміни, тести й супровідні документи очищено від таємниць: відсутні паролі, маркери доступу, ключі сеансів, приватні ключі чи особистий вміст листів або бесід; використано виключно умовні тестові зразки."
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Виправлено перемикання акаунтів і технічного простору: оновлено узгодження просторів при зміні сеансу (App.tsx, VerenigdDienstApp.tsx, ruimtes-opslag.ts, ruimte-signaal.ts, useCanoniekHubAuth.ts, useStabielWeergaveModel.ts), додано видиму помилку й кнопку повторного входу в CanoniekAccountMenu та зворотний зв'язок і перехід до адміністрування в ZijbalkRuimte і RuimteWissel.",
+      "bewijzen": [
+        "src/CanoniekAccountMenu.tsx",
+        "src/tech/ruimtes/ZijbalkRuimte.tsx",
+        "src/tech/ruimtes/ruimte-signaal.ts",
+        "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Усунуто зникнення сповіщень меню (MenuMeldingen.tsx, CanoniekOmlijsting.tsx, menu-v2.css): додано невидимий місток ::before між кнопкою та бульбашкою сповіщень, захист від закриття при blur після видалення елемента, підтримку kant та прокручування виключно всередині списку.",
+      "bewijzen": [
+        "src/MenuMeldingen.tsx",
+        "src/CanoniekOmlijsting.tsx",
+        "src/menu-v2.css",
+        "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Реалізовано ярлики кнопок технічного профілю в обох частинах меню: додано міграцію 0200_tech_snelkoppelingen.sql (snelkoppelingen_toegestaan у app.tech_profielen), серверну підтримку й маршрут POST /api/owner/tech/snelkoppelingen, спільний модуль shared/tech-yarlyky.ts, перемикачі в TechLaag.tsx і ToegangPagina.tsx, крос-просторове розміщення в zijbalk-voorkeuren.ts, SnelleToegangBewerker.tsx, MenuItemActies.tsx і CanoniekOmlijsting.tsx.",
+      "bewijzen": [
+        "migrations/0200_tech_snelkoppelingen.sql",
+        "shared/tech-yarlyky.ts",
+        "backend/tech-profiel.ts",
+        "backend/tech-routes.ts",
+        "src/SnelleToegangBewerker.tsx",
+        "tests/eenheid/tech-yarlyky-20261117.test.ts"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Доопрацьовано візуальну читабельність ярликів за зауваженням власника: прибрано проміжний білий обід навколо .tech-yarlyk-schild, збільшено значок-щит до 16x16 пікселів (іконка 11x11 пікселів) та розширено простір слотів меню без обрізання країв.",
+      "bewijzen": [
+        "src/menu-v2.css"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Керування правом розміщення технічних ярликів на рівні профілю через snelkoppelingen_toegestaan (типово false)",
+      "reden": "Запобігає автоматичній появі адмін-кнопок у звичайній частині меню та гарантує, що ярлики доступні в обох частинах виключно з дозволу адміністратора для повноважних осіб із технічним доступом.",
+      "альтернатива": "Глобальний дозвіл без прив'язки до конкретного профілю — відхилено через принцип найменших повноважень."
+    },
+    {
+      "keuze": "Синхронізоване позначення ярликів суцільним значком-щитом (.tech-yarlyk-schild) і контуром обраного кольору технічної смуги без білого обода",
+      "reden": "Білий проміжний обід створював візуальне злиття зі світлим тлом карток і затіняв дрібний щит; суцільний значок 16x16 пікселів у кольорі профілю забезпечує чітку видимість у швидкому доступі, бічному меню та на стартових плитках.",
+      "альтернатива": "Залишення подвійного біло-кольорового кільця 14x14 пікселів — відхилено після візуальної перевірки власником."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "migrations/0200_tech_snelkoppelingen.sql",
+      "soort": "додано",
+      "опис": "Стовпець snelkoppelingen_toegestaan у таблиці app.tech_profielen."
+    },
+    {
+      "bestand": "shared/tech-yarlyky.ts",
+      "soort": "додано",
+      "опис": "Правила визначення технічних ярликів, видимості у звичайній частині та прив'язки кольору смуги профілю."
+    },
+    {
+      "bestand": "backend/tech-profiel.ts",
+      "soort": "змінено",
+      "опис": "Читання й оновлення snelkoppelingen_toegestaan через snelkoppelingenZetten."
+    },
+    {
+      "bestand": "backend/tech-routes.ts",
+      "soort": "змінено",
+      "опис": "Маршрут POST /api/owner/tech/snelkoppelingen для вмикання й вимикання дозволу адміністратора."
+    },
+    {
+      "bestand": "backend/tech-ruimtes-kern.ts",
+      "soort": "змінено",
+      "опис": "Повернення стану дозволу на ярлики в контракті технічних просторів."
+    },
+    {
+      "bestand": "src/CanoniekAccountMenu.tsx",
+      "soort": "змінено",
+      "опис": "Чесне перемикання акаунтів із показом помилок та кнопки повторного входу."
+    },
+    {
+      "bestand": "src/MenuMeldingen.tsx",
+      "soort": "змінено",
+      "опис": "Утримання панелі сповіщень при наведенні, переході курсора та кліках усередині."
+    },
+    {
+      "bestand": "src/CanoniekOmlijsting.tsx",
+      "soort": "змінено",
+      "опис": "Інтеграція ярликів у бічне меню й стартову сторінку, передавання кольору технічного профілю та виправлення сповіщень."
+    },
+    {
+      "bestand": "src/SnelleToegangBewerker.tsx",
+      "soort": "змінено",
+      "опис": "Додавання й розміщення технічних ярликів між частинами меню в редакторі швидкого доступу."
+    },
+    {
+      "bestand": "src/MenuItemActies.tsx",
+      "soort": "змінено",
+      "опис": "Дія «Розмістити в іншій частині…» у контекстному меню редагування."
+    },
+    {
+      "bestand": "src/zijbalk-voorkeuren.ts",
+      "soort": "змінено",
+      "опис": "Крос-просторове розміщення ярликів через zetZijbalkInRuimte і zijbalkKopieInRuimte."
+    },
+    {
+      "bestand": "src/tech/TechLaag.tsx",
+      "soort": "змінено",
+      "опис": "Керування дозволом ярликів і стабільне відкриття технічної панелі при перемиканні."
+    },
+    {
+      "bestand": "src/tech/ruimtes/ToegangPagina.tsx",
+      "soort": "змінено",
+      "опис": "Перемикач дозволу на ярлики на сторінці доступів технічного простору."
+    },
+    {
+      "bestand": "src/menu-v2.css",
+      "soort": "змінено",
+      "опис": "Місток сповіщень і оформлення .tech-yarlyk-schild та слотів ярликів без білого обода."
+    },
+    {
+      "bestand": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts",
+      "soort": "додано",
+      "опис": "15 модульних перевірок перемикання акаунтів, технічного простору та сповіщень."
+    },
+    {
+      "bestand": "tests/eenheid/tech-yarlyky-20261117.test.ts",
+      "soort": "додано",
+      "опис": "14 модульних перевірок ярликів, прав, кольорів, міграції, маршрутів і стилів."
+    }
+  ],
+  "controles": [
+    {
+      "controle": "Модульний тест tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts",
+      "результат": "15/15 перевірок пройдено успішно.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Модульний тест tests/eenheid/tech-yarlyky-20261117.test.ts",
+      "результат": "14/14 перевірок пройдено успішно.",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "Суміжні модульні тести меню та техпросторів (menu-indeling, menu-oppervlak, menu-per-profiel-20261019, tech-ruimtes-ui)",
+      "результат": "122/122 перевірок пройдено (32/32 + 14/14 + 40/40 + 36/36).",
+      "стан": "пройдено"
+    },
+    {
+      "controle": "node scripts/kaart-controle.mjs && node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak FIX-001 --fase overdracht",
+      "результат": "Карта файлів (2245 файлів), координація (regelsVersie 1.4.14) та свіжість бази пройдені без помилок.",
+      "стан": "пройдено"
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "shared/tech-rollen.ts",
+    "shared/ontwikkelarchief.ts",
+    "shared/uitrol-manifest.ts",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md"
+  ],
+  "beperkingen": [
+    "У поточному контейнерному середовищі відсутні встановлені залежності node_modules (pg, react-dom, vite, tsc) та сервер PostgreSQL, тому інтеграційні тести бази даних, перевірка типів TypeScript і повна клієнтська збірка потребують виконання у середовищі з встановленими залежностями або в CI перед об'єднанням у спільний випуск."
+  ]
+}
