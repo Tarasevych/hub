@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "taakId": "UPD-004",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "titel": "UPD-004 · Спільний випуск: технічний простір, меню якорів /agenten, герби й мережі, реєстр сповіщень, SEC-003",
+  "opdracht": "Зібрати один спільний випуск поверх встановленої версії 20261117-190154 (LOKAI-001 @ 14dbcb3a) з усією роботою, що ще не стоїть на сайті, щоб жодна розробка не загубилася (доручення власника 17.11.2026): WISSEL-001, GEMINI-004 (#153), PLAATS-TEKENS-001 (#154), MELDCAT-001 (#155), SEC-003 (#151) і залишки старих PR.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "claude",
+    "model": "задається під час запуску процесу (не записується у файли)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-004-uitgave-20261117-225233",
+    "basisCommit": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "basisVersie": "20261117-190154",
+    "geinstalleerdeBasis": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "geinstalleerdeVersie": "20261117-190154",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.15",
+    "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4"
+  },
+  "tijdlijn": [
+    {
+      "stap": "Звірено всі 60 відкритих PR і гілки з UPD-003 (454b75bf) за вмістом: пробне злиття кожного PR і перевірка кожного коміту, чи його зміна вже є в коді.",
+      "resultaat": "Перелік /mnt/project-files/vypusk-kandydaty/UPD-004-KANDYDATY.md; #139 уже в UPD-003; #1–#10 увійшли ще в знімок 30.10."
+    },
+    {
+      "stap": "Власник назвав встановлену версію 20261117-190154 (LOKAI-001 @ 14dbcb3a); від неї створено робочу гілку.",
+      "resultaat": "Злито WISSEL-001, #153, #154, гілку тесту AI-TERMIJN-001 і #155 без конфліктів у коді (один конфлікт у тесті розв'язано на користь правильного рядка)."
+    },
+    {
+      "stap": "SEC-003 (#151) злито лише у voornaamst (окрема історія), тому перенесено чисту різницю 9347c809..047a3bbb.",
+      "resultaat": "Узято нові файли й зміни коду; 11 старих workflow і deploy/archief-herstellen.sh лишилися у вигляді цієї лінії (вона вже посилена SEC-002/#145)."
+    },
+    {
+      "stap": "Перенесено залишки #77, #56, #23; перевірено, що #99, #105, #133, #26, #27, #152 уже всередині.",
+      "resultaat": "Старий тест vaardigheden .mjs і повторний стенд mailfix-preview скасовано через revert з поясненням."
+    },
+    {
+      "stap": "Прогнано типи, карту файлів, правила orch, безбазові, післяскладальні й базові набори з PostgreSQL 16 і повне складання.",
+      "resultaat": "Підсумок — у TESTRESULTATEN.json процесу випуску."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Основа — 14dbcb3a (LOKAI-001), а не 454b75bf.",
+      "reden": "Власник підтвердив, що на сайті стоїть 20261117-190154; пакет має накладатися на встановлену версію."
+    },
+    {
+      "besluit": "SEC-003 перенесено як різницю, а не злиттям гілки voornaamst.",
+      "reden": "voornaamst не має спільного предка з лінією встановленої версії; злиття повернуло б тисячі старих файлів."
+    },
+    {
+      "besluit": "Залишено сценарій deploy/archief-herstellen.sh цієї лінії; тест archief-herstellen-20261116 не перенесено.",
+      "reden": "Тест перевіряє інший варіант сценарію з voornaamst; чинний сценарій перевіряє sec-002-afwerking-c (39/39). Перенесення трьох посилень SEC-003 — окреме завдання."
+    },
+    {
+      "besluit": "#1–#10, #26, #27, #37, #55, #76, #83, #108 не переносити.",
+      "reden": "Їхній вміст уже є на цій лінії (усі 46 міграцій #1–#10, стенд під назвою mailfix-voorbeeld тощо)."
+    },
+    {
+      "besluit": "Без нових міграцій і без зміни версії розширення (0.9.7).",
+      "reden": "Жоден злитий PR не додає міграцій чи змін у extension/."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/",
+      "omschrijving": "WISSEL-001: перемикання на технічний простір і перехід між обліковими записами; GEMINI-004: меню якорів /agenten."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/plaats-teken.ts",
+      "omschrijving": "PLAATS-TEKENS-001: ланцюжок знаків місця (місто → область → країна)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "backend/geo/",
+      "omschrijving": "PLAATS-TEKENS-001: місце, тип мережі й таблиця ASN, усе локально."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/meldingen-catalogus.ts",
+      "omschrijving": "MELDCAT-001: єдиний реєстр сповіщень і сторож meldingen-catalogus-20261117."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/mail-rekenblad-lezer.ts",
+      "omschrijving": "SEC-003: власний читач таблиць на fflate замість xlsx."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "SECURITY.md",
+      "omschrijving": "SEC-003: двомовна політика безпеки."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "package.json",
+      "omschrijving": "SEC-003: прибрано xlsx, override fast-xml-parser ^5.12.1."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "scripts/geschiedenis/kroniek.mjs",
+      "omschrijving": "HISTORIE-001 (#77): генератор хронології гілок."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": ".github/workflows/upd-004-uitgave.yml",
+      "omschrijving": "Процес спільного випуску UPD-004."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc -p tsconfig.json --noEmit && npx tsc -p tsconfig.server.json --noEmit",
+      "resultaat": "0 помилок."
+    },
+    {
+      "opdracht": "node scripts/kaart-controle.mjs && node scripts/orch.mjs controleer",
+      "resultaat": "Карта файлів чиста; правила координації гаразд."
+    },
+    {
+      "opdracht": "безбазові набори процесу випуску (блок 1)",
+      "resultaat": "Усі зелені, крім ssh-ca у хмарному контейнері без ssh-keygen (середовище); у GitHub Actions ssh-keygen є."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs meldingen-catalogus-20261117.test.ts plaats-tekens-20261117 netwerk-soort-20261117 gemini-004-agenten-ankers-20261117 menu-ruimte-wissel-20261117 mail-rekenblad-lezer-20261116",
+      "resultaat": "17/17, 37/37, 38/38, 9/9, 8/8, 12/12."
+    },
+    {
+      "opdracht": "процес .github/workflows/upd-004-uitgave.yml",
+      "resultaat": "Повний прогін у GitHub Actions перед публікацією."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "orchestratie/beleid.json",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "/mnt/project-files/vypusk-kandydaty/UPD-004-KANDYDATY.md"
+  ],
+  "beperkingen": [
+    "Пакет ніколи не встановлюється на сервер автоматично — встановлює лише власник через Admin → Оновлення після перевірки й схвалення ключем доступу.",
+    "Живий сайт із хмарного контейнера недоступний: основу назвав власник (20261117-190154), процес випуску звіряє її з /api/version.",
+    "Посилення deploy/archief-herstellen.sh із SEC-003 (mktemp+trap, SHASUMS256 для Node, без bash -c) ще не перенесені в сценарій цієї лінії."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true
+  },
+  "commits": [
+    "0189d7d29548f4b8054267061c88b6668294d5f0",
+    "236af456b2a87a783cf3f1edeed26c442971d829",
+    "50742ebb15d78d859c6a1c1db872ecfff7d4f23f",
+    "89b5143eb32d6978266bf2447915038397d87a43",
+    "43ba48e9112e23dd46fcdb65de36dcb8004b1235",
+    "1cb4068eac252dc52575f5d4bffc04e3c001ed62",
+    "e07180144a3d0ee124e00d53015f446e561af6db",
+    "7aa136aadd8b3f82b9f0acd2b30a9d10b6001094",
+    "8f64636983cea7b7e4a3b312de6a085166974280",
+    "9d65eb5c2cd3e2ad861e837530b63cb0e3a7241c",
+    "921fe654a100d89ea037f8f809d8bc2b8d7c05c8",
+    "bdb229c40c198e180ef6e4312e89f722db5f8cd0",
+    "fc8251be6bfef53b3968f78eccb392cefc408b2b",
+    "bf6c7a7dd5bae9599561e73c7c53c6215848721a",
+    "681f5fdd69d0a97d31e67247d56ec484f385a261",
+    "735c4bbf6133b7510e56578887fcf53a22b5892a",
+    "c9de74dc9b9d97850309d8e410fbd872edc340d0",
+    "ec4477b217bdfda7409168e45e45101a3910aef4",
+    "f27d9b2be8a39db094d9b561b1c4565ba4975b10",
+    "6a3d9d88d87b03ccd683d5335883b3249df92762",
+    "a61d58d3b1ba6addbff36d7faf8a08880a42166a",
+    "6696043b6a2c7e74a8ebe4b1900a68ea1e75c384",
+    "e1fe12dfd1865f0ba14eff820673715715f3fcbb"
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-004-uitgave.yml",
+      "uk": "Процес цього спільного випуску. Запускається лише з гілки завдання, на сервер нічого не встановлює: перевіряє, збирає архів і публікує Release. Права contents: read, публікація окремою задачею.",
+      "nl": "Werkstroom van deze gezamenlijke uitgave. Draait alleen vanaf de taaktak, installeert niets: controleert, bouwt en publiceert een Release."
+    },
+    {
+      "pad": ".github/workflows/wissel-001-uitgave.yml",
+      "uk": "Процес окремого випуску WISSEL-001, що прийшов разом із його гілкою. Запускається лише з гілки fix/wissel-001-…, для цього випуску не використовується; на сервер нічого не встановлює.",
+      "nl": "Werkstroom van de losse uitgave WISSEL-001, meegekomen met die tak. Draait alleen vanaf fix/wissel-001-…, niet gebruikt voor deze uitgave."
+    },
+    {
+      "pad": ".github/workflows/gemini-004-uitgave.yml",
+      "uk": "Процес окремого випуску GEMINI-004 (#153), що прийшов разом із PR. Запускається лише з гілки feature/agenten-ankers-…, для цього випуску не використовується.",
+      "nl": "Werkstroom van de losse uitgave GEMINI-004 (#153). Draait alleen vanaf feature/agenten-ankers-…, niet gebruikt voor deze uitgave."
+    },
+    {
+      "pad": ".github/workflows/bandit.yml",
+      "uk": "Новий сканер безпеки Bandit (Python) з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner Bandit (Python) uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/bearer.yml",
+      "uk": "Новий сканер безпеки Bearer з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner Bearer uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/devskim.yml",
+      "uk": "Новий сканер безпеки DevSkim з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner DevSkim uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/njsscan.yml",
+      "uk": "Новий сканер безпеки njsscan (Node.js) з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner njsscan (Node.js) uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/ossar.yml",
+      "uk": "Новий сканер безпеки OSSAR з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner OSSAR uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/osv-scanner.yml",
+      "uk": "Новий сканер безпеки OSV-Scanner (залежності) з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner OSV-Scanner (залежності) uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/powershell.yml",
+      "uk": "Новий сканер безпеки PSScriptAnalyzer (PowerShell) з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner PSScriptAnalyzer (PowerShell) uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/scorecard.yml",
+      "uk": "Новий сканер безпеки OpenSSF Scorecard з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner OpenSSF Scorecard uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/semgrep.yml",
+      "uk": "Новий сканер безпеки Semgrep з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner Semgrep uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/trivy.yml",
+      "uk": "Новий сканер безпеки Trivy з SEC-003 (#151). Лише читає код і звітує в розділ Security GitHub: права contents: read, дії закріплені за повним SHA, persist-credentials: false. На сервер не потрапляє й нічого не встановлює.",
+      "nl": "Nieuwe beveiligingsscanner Trivy uit SEC-003 (#151). Leest alleen code en meldt aan GitHub Security: contents: read, acties vastgezet op volledige SHA, persist-credentials: false. Komt niet op de server."
+    },
+    {
+      "pad": ".github/workflows/agplugin-001-release.yml",
+      "uk": "Старий процес випуску (не запускається для цього випуску). SEC-003 лише закріпив дії за повним SHA й передає дані з подій через env:, а не вставкою в скрипт (захист від ін'єкції команд). Логіку не змінено.",
+      "nl": "Oud uitgaveproces (niet gebruikt voor deze uitgave). SEC-003 zette acties vast op volledige SHA en geeft gebeurtenisgegevens via env: door in plaats van in het script (bescherming tegen opdrachtinjectie). Logica ongewijzigd."
+    },
+    {
+      "pad": ".github/workflows/design-002-controle.yml",
+      "uk": "Старий процес випуску (не запускається для цього випуску). SEC-003 лише закріпив дії за повним SHA й передає дані з подій через env:, а не вставкою в скрипт (захист від ін'єкції команд). Логіку не змінено.",
+      "nl": "Oud uitgaveproces (niet gebruikt voor deze uitgave). SEC-003 zette acties vast op volledige SHA en geeft gebeurtenisgegevens via env: door in plaats van in het script (bescherming tegen opdrachtinjectie). Logica ongewijzigd."
+    },
+    {
+      "pad": ".github/workflows/design-003-release.yml",
+      "uk": "Старий процес випуску (не запускається для цього випуску). SEC-003 лише закріпив дії за повним SHA й передає дані з подій через env:, а не вставкою в скрипт (захист від ін'єкції команд). Логіку не змінено.",
+      "nl": "Oud uitgaveproces (niet gebruikt voor deze uitgave). SEC-003 zette acties vast op volledige SHA en geeft gebeurtenisgegevens via env: door in plaats van in het script (bescherming tegen opdrachtinjectie). Logica ongewijzigd."
+    },
+    {
+      "pad": ".github/workflows/ext090-001-release.yml",
+      "uk": "Старий процес випуску (не запускається для цього випуску). SEC-003 лише закріпив дії за повним SHA й передає дані з подій через env:, а не вставкою в скрипт (захист від ін'єкції команд). Логіку не змінено.",
+      "nl": "Oud uitgaveproces (niet gebruikt voor deze uitgave). SEC-003 zette acties vast op volledige SHA en geeft gebeurtenisgegevens via env: door in plaats van in het script (bescherming tegen opdrachtinjectie). Logica ongewijzigd."
+    },
+    {
+      "pad": ".github/workflows/uitgave-001-release.yml",
+      "uk": "Старий процес випуску (не запускається для цього випуску). SEC-003 лише закріпив дії за повним SHA й передає дані з подій через env:, а не вставкою в скрипт (захист від ін'єкції команд). Логіку не змінено.",
+      "nl": "Oud uitgaveproces (niet gebruikt voor deze uitgave). SEC-003 zette acties vast op volledige SHA en geeft gebeurtenisgegevens via env: door in plaats van in het script (bescherming tegen opdrachtinjectie). Logica ongewijzigd."
+    },
+    {
+      "pad": "deploy/pakketgegevens.py",
+      "uk": "SEC-003: замість мовчазного пропуску будь-якої помилки скрипт перехоплює лише помилки розбору JSON і пише попередження в stderr; результат для інсталятора той самий. Перевірено тестом (bool у pakket_bytes не приймається як число).",
+      "nl": "SEC-003: alleen JSON-fouten worden opgevangen, met een waarschuwing op stderr; uitkomst voor de installer gelijk."
+    },
+    {
+      "pad": "npm:overrides",
+      "uk": "SEC-003: примусово fast-xml-parser ^5.12.1, що закриває вразливість CVE-2026-126066 (GHSA-474x-hrwr-fgx4) у транзитивній залежності. Нових пакетів не додано.",
+      "nl": "SEC-003: fast-xml-parser ^5.12.1 afgedwongen tegen CVE-2026-126066; geen nieuwe pakketten."
+    },
+    {
+      "pad": "package-lock.json",
+      "uk": "Наслідок SEC-003: прибрано xlsx (дві відомі вразливості, завантажувався з CDN), оновлено fast-xml-parser 5.12.0 → 5.12.1 і fast-xml-builder 1.3.1 → 1.3.2. Інших змін у залежностях немає.",
+      "nl": "Gevolg van SEC-003: xlsx verwijderd, fast-xml-parser 5.12.1 en fast-xml-builder 1.3.2. Verder geen wijzigingen."
+    }
+  ]
+}
