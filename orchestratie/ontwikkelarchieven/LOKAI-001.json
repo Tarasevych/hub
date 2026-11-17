@@ -64,11 +64,28 @@
       "bewijzen": [
         "dist/downloads/mijn-ruimte-extension.zip"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Автоматизовано підпис CRX3 через таємницю сховища EXTENSIE_ONDERTEKENSLEUTEL: додано підтримку змінної середовища у scripts/onderteken-extensie.mjs і робочий процес .github/workflows/onderteken-crx.yml; успішно підписано CRX3 версії 0.9.3 (extensionId ofpffonakgjioahgfejmiblfmbkobmmi) без передавання приватного ключа в Git чи контейнер.",
+      "bewijzen": [
+        "scripts/onderteken-extensie.mjs",
+        ".github/workflows/onderteken-crx.yml",
+        "extension/signed/mijn-ruimte-extension.crx",
+        "extension/signed/crx-info.json"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Під час тестування актуального підписаного CRX виявлено та виправлено стару помилку в shared/extensie-update.ts (versieBestandKlopt зчитував version='1.0' із XML-заголовка замість атрибута version в <updatecheck>).",
+      "bewijzen": [
+        "shared/extensie-update.ts"
+      ]
     }
   ],
   "keuzes": [
     {
-      "keuze": "Чітке розділення безпечних опцій та чутливих «!»-дозволів у LOKALE_AI_STEL_IN",
+      "keuze": "Чітке розділення безпечних опцій та чутливих «!»-дозволів у LOKAI-001 / LOKAI_AI_STEL_IN",
       "reden": "Запобігає потайному ввімкненню доступу до сторінок, тексту вкладки, мультимодальності чи автозавантаження. Безпечні параметри застосовуються одразу (зокрема через дії ШІ-помічника), а «!»-дозволи — лише після окремого натискання кнопки підтвердження людиною (bevestigGevaar: true)."
     },
     {
@@ -82,6 +99,10 @@
     {
       "keuze": "Складання безпечного JSON для chrome://flags/#import-export-flags замість спроби автоматичної зміни системних прапорців",
       "reden": "З міркувань безпеки Chrome забороняє сайтам і розширенням напряму змінювати chrome://flags. Генератор надає користувачеві очищений готовий файл в один дотик."
+    },
+    {
+      "keuze": "Автоматичний підпис CRX3 через захищену таємницю GitHub Actions EXTENSIE_ONDERTEKENSLEUTEL без запису ключа на диск",
+      "reden": "Замінює ручний запуск підпису на ПК власника при кожному оновленні розширення, зберігаючи повну ізоляцію закритого ключа від Git-історії та робочих контейнерів."
     }
   ],
   "wijzigingen": [
@@ -89,6 +110,11 @@
       "bestand": "shared/lokale-ai-model.ts",
       "soort": "gewijzigd",
       "omschrijving": "9 API Chrome 157, перелік прапорців, діагностика можливостей браузера, фільтр патчів, рекомендації під задачу й генератор flags.json."
+    },
+    {
+      "bestand": "shared/extensie-update.ts",
+      "soort": "gewijzigd",
+      "omschrijving": "Виправлено розбір версії <updatecheck> у versieBestandKlopt (щоб ігнорувати <?xml version='1.0'?>)."
     },
     {
       "bestand": "extension/manifest.json",
@@ -111,6 +137,16 @@
       "omschrijving": "Двомовний інтерфейс Chrome 157 (samplingMode, toolUse, preference, schema рішень, перелік прапорців) і голосове диктування + аудіо в бічній панелі."
     },
     {
+      "bestand": "extension/signed/mijn-ruimte-extension.crx, extension/signed/crx-info.json",
+      "soort": "gewijzigd",
+      "omschrijving": "Підписаний пакет CRX3 для версії 0.9.3 (extensionId ofpffonakgjioahgfejmiblfmbkobmmi) через GitHub Actions."
+    },
+    {
+      "bestand": "scripts/onderteken-extensie.mjs, .github/workflows/onderteken-crx.yml",
+      "soort": "gewijzigd",
+      "omschrijving": "Підтримка змінної середовища EXTENSIE_ONDERTEKENSLEUTEL та автоматичний робочий процес підпису CRX3 у гілках."
+    },
+    {
       "bestand": "src/extensie/LokaleAiPaneel.tsx, src/agenten/agenten.css, shared/zoek-ui-knoppen.generated.ts",
       "soort": "gewijzigd",
       "omschrijving": "Помічник налаштування під задачу, діагностика Chrome 157, кнопка PWA, генератор flags.json, безпечні дії сайту та оновлений каталог UI."
@@ -124,7 +160,12 @@
   "controles": [
     {
       "controle": "node scripts/eenheidstests.mjs (15 безбазових наборів розширення: browser-extensie, extensie-opties, extensie-profielen, extensie-vergrendeling, extensie-offscreen-20261106, extensie-090-site-20261106, extensie-093-stel-in-20261117, extensie-site, extensie-toestand, extensie-ui, extensie-validatie, extensie-verzamelaar, extensie-native, extensie-ontgrendeling-crypto, extensie-debugger-markering-20261019)",
-      "resultaat": "649/649 пройдено (22+17+42+114+31+21+16+98+22+91+11+40+56+19+49)",
+      "resultaat": "651/651 пройдено (включно з 24/24 browser-extensie після підпису CRX3 0.9.3)",
+      "staat": "uitgevoerd"
+    },
+    {
+      "controle": "node scripts/eenheidstests.mjs ui-audit-g",
+      "resultaat": "59/59 пройдено з актуальним підписаним CRX3 та виправленим updates.xml",
       "staat": "uitgevoerd"
     },
     {
@@ -139,11 +180,11 @@
     },
     {
       "controle": "NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build",
-      "resultaat": "пройдено повністю: kaart-controle, plaatsing-controle, hulp-vraagtekens (0 помилок), zoek-ui-catalogus (1327 елементів), l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build (5910 модулів), tech-bundels-controle, bouw-extensie (0.9.3 zip 161689 байт), build:server",
+      "resultaat": "пройдено повністю: kaart-controle, plaatsing-controle, hulp-vraagtekens (0 помилок), zoek-ui-catalogus (1327 елементів), l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, tech-bundels-controle, bouw-extensie (0.9.3 zip + підписаний CRX + updates.xml), build:server",
       "staat": "uitgevoerd"
     },
     {
-      "controle": "node scripts/orch.mjs controleer та перевірка Мовного Закону (2086 доданих рядків)",
+      "controle": "node scripts/orch.mjs controleer та перевірка Мовного Закону",
       "resultaat": "ORCH гаразд (regelsVersie 1.4.14), заборонених символів/дієприкметників/сленгу: 0",
       "staat": "uitgevoerd"
     }
@@ -158,7 +199,6 @@
   ],
   "beperkingen": [
     "У хмарному середовищі відсутня локальна база PostgreSQL (DATABASE_URL), тому extensie-ontgrendeling, extensie-zijpaneel-20261022 та zoek-bronnen-20261022 зупинилися на DATABASE_URL_ONTBREEKT.",
-    "Збірка підписаного .crx (0.3.4 → 0.9.3) не виконувалася, оскільки приватний ключ підпису розширення зберігається лише на ПК власника (потрібно виконати node scripts/onderteken-extensie.mjs після злиття).",
     "Жива поведінка експериментальних прапорців Chrome 157 (Gemma 4, SemanticEmbedder, DecisionModel, WebMCP, navigator.install()) перевірена модульними тестами на заглушках; приймання в живому браузері Chrome 157 виконує власник."
   ]
 }
