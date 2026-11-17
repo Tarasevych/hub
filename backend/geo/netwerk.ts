@@ -10,7 +10,7 @@ import { isIP } from 'node:net';
 import path from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { asnVanIp, geoMap, priveAdres, type AsnAntwoord } from './asn';
-import { providerTeken } from '../../shared/provider-teken';
+import { providerTeken } from '../../shared/aanbieder-teken';
 
 export type NetwerkSoort = 'thuis' | 'mobiel' | 'satelliet' | 'vpn' | 'tor' | 'relay' | 'datacenter' | 'werk' | 'onbekend';
 export type Zekerheid = 'zeker' | 'bijna' | 'waarschijnlijk' | 'vermoeden';

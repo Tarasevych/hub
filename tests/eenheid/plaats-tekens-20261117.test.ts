@@ -14,7 +14,7 @@ import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
 import { plaatsTekens, normPlaatsNaam, isPlaatsSleutel, type PlaatsIndex } from '../../shared/plaats-teken';
-import { PROVIDERS, providerTeken, providerNaamUitAsNaam } from '../../shared/provider-teken';
+import { PROVIDERS, providerTeken, providerNaamUitAsNaam } from '../../shared/aanbieder-teken';
 import { asnVanIp, leesAsnTabel, zoekInTabel } from '../../backend/geo/asn';
 import { plaatsVanVerzoek } from '../../backend/geo/plaats';
 import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels';
@@ -135,7 +135,7 @@ export async function main() {
   check('5: Lenovo uit het officiële register (geen monogram)', lenovo.includes('data-merk-officieel="lenovo"'));
 
   // ------------------------------------------------------------ 6. BYOS
-  const bronnen = ['shared/plaats-teken.ts', 'shared/provider-teken.ts', 'backend/geo/asn.ts', 'backend/geo/plaats.ts', 'src/merk/MerkPlaats.tsx', 'src/merk/merk-plaats.ts'].map((f) => readFileSync(f, 'utf8'));
+  const bronnen = ['shared/plaats-teken.ts', 'shared/aanbieder-teken.ts', 'backend/geo/asn.ts', 'backend/geo/plaats.ts', 'src/merk/MerkPlaats.tsx', 'src/merk/merk-plaats.ts'].map((f) => readFileSync(f, 'utf8'));
   const naarBuiten = bronnen.some((s) => /https?:\/\/(?!commons\.wikimedia|iptoasn)/.test(s.replace(/\/\/.*$/gm, '')) || /fetch\(\s*['"`]https?:/.test(s));
   check('6: tijdens het draaien geen verzoek naar buiten (alleen eigen /merk/plaats en lokale bestanden)', !naarBuiten);
 

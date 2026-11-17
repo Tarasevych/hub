@@ -2314,6 +2314,10 @@
   {
    "pad": "tests/e2e/знімки-015/schermen-sessions-uk-licht-380.jpg",
    "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "src/merk/officieel/passkey.png",
+   "reden": "merknaam: officieel passkey-teken (FIDO Alliance); de naam is de sleutel «passkey» in het merkregister (scripts/merk-officieel-maken.mjs)"
   }
  ],
  "woorden": {
