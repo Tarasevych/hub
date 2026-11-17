@@ -492,13 +492,16 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-bellen-legenda-item[data-categorie='delen']>i{background:var(--mb-delen)}
 .menu-bellen-legenda-item[data-categorie='ai']>i{background:var(--mb-ai)}
 
-/* Ярлики кнопок технічного профілю (логотип профілю ShieldCheck + обведений значок і контур обраного кольору технічної смуги). */
+/* Ярлики кнопок технічного профілю (логотип профілю ShieldCheck + суцільний значок і контур обраного кольору технічної смуги без білого обода). */
 .canonical-chrome :is(.canonical-menu-icon-slot,.menu-start-icoon),.menu-snel-voorbeeld{position:relative}
+.canonical-chrome [data-tech-yarlyk='ja']>.canonical-service-main-row .canonical-menu-icon-slot{width:30px;height:30px}
+.canonical-chrome .canonical-local-page-button[data-tech-yarlyk='ja'] .canonical-menu-icon-slot{width:26px;height:26px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button[data-tech-yarlyk='ja']{overflow:visible}
 .canonical-chrome [data-tech-yarlyk='ja'] :is(.canonical-menu-icon-slot,.menu-start-icoon),
-.menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 14%,transparent)}
+.menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 12%,transparent)}
 .canonical-chrome .menu-start-tegel[data-tech-yarlyk='ja']{border-color:var(--tech-profiel-kleur,#f2b705);box-shadow:inset 0 0 0 1px var(--tech-profiel-kleur,#f2b705)}
 .canonical-chrome.sidebar-expanded [data-tech-yarlyk='ja']>.canonical-service-main-row>.canonical-service-button,
 .canonical-chrome.sidebar-expanded .canonical-local-page-button[data-tech-yarlyk='ja']{box-shadow:inset 3px 0 0 var(--tech-profiel-kleur,#f2b705)}
 .menu-snel-lijst>li[data-tech-yarlyk='ja']{border-color:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 55%,var(--line));background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 6%,var(--panel))}
-.tech-yarlyk-schild{position:absolute;left:-4px;bottom:-4px;width:14px;height:14px;border-radius:50%;display:grid;place-items:center;background:var(--tech-profiel-kleur,#f2b705);color:var(--tech-profiel-tekst,#1d1300);box-shadow:0 0 0 1.5px var(--panel,#fff),0 0 0 2.5px var(--tech-profiel-kleur,#f2b705);pointer-events:none;z-index:2}
-:is(.canonical-chrome .canonical-menu-icon-slot,.canonical-chrome .menu-start-icoon,.menu-snel-voorbeeld) .tech-yarlyk-schild>svg,.tech-yarlyk-schild>svg{width:9px;height:9px;stroke-width:2.5;color:inherit}
+.tech-yarlyk-schild{position:absolute;left:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:var(--tech-profiel-kleur,#f2b705);color:var(--tech-profiel-tekst,#1d1300);box-shadow:0 1px 3px rgba(0,0,0,.24);pointer-events:none;z-index:2}
+:is(.canonical-chrome .canonical-menu-icon-slot,.canonical-chrome .menu-start-icoon,.menu-snel-voorbeeld) .tech-yarlyk-schild>svg,.tech-yarlyk-schild>svg{width:11px;height:11px;stroke-width:2.3;color:inherit}
