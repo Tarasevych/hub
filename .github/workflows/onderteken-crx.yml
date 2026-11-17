@@ -1,0 +1,73 @@
+name: Підпис розширення CRX3 · CRX3 ondertekenen
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+      - 'release/**'
+    paths:
+      - 'extension/**'
+      - '!extension/signed/**'
+      - '.github/workflows/onderteken-crx.yml'
+      - 'scripts/onderteken-extensie.mjs'
+      - 'scripts/extensie-lib.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onderteken-crx-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  onderteken:
+    name: Підпис CRX3 · CRX3 ondertekenen
+    if: ${{ github.repository == 'Tarasevych/hub' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати код сховища · bron ophalen
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Налаштувати Node.js · Node.js instellen
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Підписати CRX3 і перевірити складання · CRX3 ondertekenen en bouw controleren
+        shell: bash
+        env:
+          EXTENSIE_ONDERTEKENSLEUTEL: ${{ secrets.EXTENSIE_ONDERTEKENSLEUTEL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EXTENSIE_ONDERTEKENSLEUTEL:-}" ]; then
+            echo "FOUT: таємниця EXTENSIE_ONDERTEKENSLEUTEL порожня або не налаштована." >&2
+            exit 1
+          fi
+          node scripts/onderteken-extensie.mjs
+          node scripts/bouw-extensie.mjs | tee "$RUNNER_TEMP/bouw.log"
+          grep -q 'CRX: gepubliceerd' "$RUNNER_TEMP/bouw.log"
+          rm -rf dist
+
+      - name: Зафіксувати оновлений CRX у гілці · ondertekende CRX vastleggen
+        shell: bash
+        env:
+          TAKNAAM: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add extension/signed/mijn-ruimte-extension.crx extension/signed/crx-info.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'CRX3: автоматичний підпис розширення [skip ci]'
+            git push origin "HEAD:refs/heads/${TAKNAAM}"
+          else
+            echo "CRX уже актуальний, нових змін немає."
+          fi
