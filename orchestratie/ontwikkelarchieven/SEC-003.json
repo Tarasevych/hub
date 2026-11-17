@@ -80,6 +80,15 @@
         "BEVEILIGINGSNOTITIES.nl.md",
         "docs/kaart/bestandskaart.json"
       ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Усунуто всі зауваження першого запуску перевірок у запиті на злиття #151: у .github/workflows/osv-scanner.yml видалено застарілий для v2.7.1 прапор --skip-git; у src/mail-rekenblad-lezer.ts функцію escXml переведено на посимвольний обхід без ланцюжка .replace() (усунено помилку Bearer) та винесено фіксований базовий URI просторів імен OOXML із директивою DevSkim ignore DS137138; у .github/workflows/devskim.yml додано ignore-globs для метаданих оркестрації (orchestratie/taken/** і orchestratie/ontwikkelarchieven/**).",
+      "bewijzen": [
+        ".github/workflows/osv-scanner.yml",
+        ".github/workflows/devskim.yml",
+        "src/mail-rekenblad-lezer.ts"
+      ]
     }
   ],
   "keuzes": [

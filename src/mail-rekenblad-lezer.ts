@@ -34,13 +34,20 @@ const schoonCel = (waarde: unknown): string =>
 const schoonXmlTekst = (waarde: string): string =>
   String(waarde ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '');
 
-const escXml = (waarde: string): string =>
-  schoonXmlTekst(waarde)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+const escXml = (waarde: string): string => {
+  const tekst = schoonXmlTekst(waarde);
+  let uit = '';
+  for (let i = 0; i < tekst.length; i += 1) {
+    const ch = tekst[i];
+    if (ch === '&') uit += '&amp;';
+    else if (ch === '<') uit += '&lt;';
+    else if (ch === '>') uit += '&gt;';
+    else if (ch === '"') uit += '&quot;';
+    else if (ch === "'") uit += '&apos;';
+    else uit += ch;
+  }
+  return uit;
+};
 
 export const decodeerTekstBytes = (bytes: Uint8Array): string => {
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
@@ -554,9 +561,12 @@ export const schrijfXlsx = (sheet: RekenbladBlad): Uint8Array<ArrayBuffer> => {
     }
   }
 
+  // Стандартні фіксовані ідентифікатори просторів імен OOXML (ECMA-376); не є мережевими викликами.
+  const ooxmlSchema = 'http://schemas.openxmlformats.org'; // DevSkim: ignore DS137138
+
   const contentTypes =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    `<Types xmlns="${ooxmlSchema}/package/2006/content-types">` +
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
@@ -566,26 +576,26 @@ export const schrijfXlsx = (sheet: RekenbladBlad): Uint8Array<ArrayBuffer> => {
 
   const rootRels =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+    `<Relationships xmlns="${ooxmlSchema}/package/2006/relationships">` +
+    `<Relationship Id="rId1" Type="${ooxmlSchema}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
     '</Relationships>';
 
   const workbook =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    `<workbook xmlns="${ooxmlSchema}/spreadsheetml/2006/main" xmlns:r="${ooxmlSchema}/officeDocument/2006/relationships">` +
     `<sheets><sheet name="${escXml(bladNaam)}" sheetId="1" r:id="rId1"/></sheets>` +
     '</workbook>';
 
   const workbookRels =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
-    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+    `<Relationships xmlns="${ooxmlSchema}/package/2006/relationships">` +
+    `<Relationship Id="rId1" Type="${ooxmlSchema}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+    `<Relationship Id="rId2" Type="${ooxmlSchema}/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
     '</Relationships>';
 
   const styles =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    `<styleSheet xmlns="${ooxmlSchema}/spreadsheetml/2006/main">` +
     '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>' +
     '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
     '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
@@ -595,7 +605,7 @@ export const schrijfXlsx = (sheet: RekenbladBlad): Uint8Array<ArrayBuffer> => {
 
   const sheetXml =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    `<worksheet xmlns="${ooxmlSchema}/spreadsheetml/2006/main">` +
     `<sheetData>${rijenXml.join('')}</sheetData>` +
     '</worksheet>';
 

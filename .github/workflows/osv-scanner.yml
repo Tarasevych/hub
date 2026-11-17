@@ -29,7 +29,6 @@ jobs:
       fail-on-vuln: false
       scan-args: |-
         -r
-        --skip-git
         ./
 
   scan-pr:
@@ -43,5 +42,4 @@ jobs:
       fail-on-vuln: true
       scan-args: |-
         -r
-        --skip-git
         ./
