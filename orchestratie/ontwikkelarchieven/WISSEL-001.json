@@ -103,7 +103,19 @@
     {
       "soort": "toegevoegd",
       "pad": "orchestratie/ontwikkelarchieven/WISSEL-001.json",
-      "omschrijving": "Незмінний журнал походження випуску WISSEL-001 (TRACE-001)."
+      "omschrijving": "Незмінний журнал походження випуску WISSEL-001 (TRACE-001) із поясненням risicoUitleg для процесу випуску."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": ".github/workflows/wissel-001-uitgave.yml",
+      "omschrijving": "Ізольований сценарій GitHub Actions для повної перевірки типів (із xlsx), клієнтського й серверного складання, подвійних міграцій PostgreSQL 16, безбазових і БД-тестів, TRACE-001 та оприлюднення випуску без авто-встановлення."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/wissel-001-uitgave.yml",
+      "uk": "Сценарій випуску WISSEL-001 на основі LOKAI-001: без тригерів на чужий код, без secrets.*, усі дії закріплені за повними хешами комітів, npm із --ignore-scripts, persist-credentials: false, права на запис лише у кроці публікації та ніколи не встановлює пакет на сервер.",
+      "nl": "Uitgavewerkstroom voor WISSEL-001 op basis van LOKAI-001: zonder pull_request_target, zonder secrets.*, alle acties vastgepind op volledige SHA, npm met --ignore-scripts, persist-credentials: false, schrijfrechten alleen bij publicatie en zonder automatische installatie."
     }
   ],
   "controles": [
@@ -117,11 +129,15 @@
     },
     {
       "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit",
-      "resultaat": "Жодної помилки типів у жодному зі змінених файлів завдання WISSEL-001 (9 помилок стосувалися лише відсутнього в цьому контейнері пакунка xlsx у сторонніх модулях src/mail-database-inhoud.ts та src/mail-rekenblad-inhoud.ts)."
+      "resultaat": "Жодної помилки типів у жодному зі змінених файлів завдання WISSEL-001 (9 помилок стосувалися лише відсутнього в цьому контейнері пакунка xlsx у сторонніх модулях src/mail-database-inhoud.ts та src/mail-rekenblad-inhoud.ts); повна перевірка з xlsx виконується у .github/workflows/wissel-001-uitgave.yml."
     },
     {
       "opdracht": "Запуск 26 безбазових модульних наборів випробувань через node scripts/eenheidstests.mjs",
       "resultaat": "Усі 764 перевірки у 26 безбазових наборах пройшли на 100% (0 провалів), зокрема: menu-ruimte-wissel-20261117 (8/8), tech-ruimte-f5-20261105 (8/8), accountmenu-v3 (36/36), accountmenu-strook-20261115 (12/12), menu-per-profiel-20261019 (42/42), tech-ruimtes-ui (37/37), menu-oppervlak (14/14), accountmenu-v2-20261029 (13/13), ruimte-wissel-20261028 (21/21), menu-per-account-20261019 (19/19), menu-indeling (32/32), menu-v2 (35/35), strook-menu (26/26), identiteit-account-ui (6/6), uitrol-risico-20261116 (67/67), uitrol-voorcontrole (51/51), orch-kern (78/78), orch-pakket (24/24), trace-001-ontwikkelarchief (20/20), werkstromen-veilig-20261116 (9/9), ui-audit-g (59/59), menu-snelheid (29/29), prij-001-rijknop-menu (11/11), zoek-in-menu-20261024 (23/23), zoek-menu-20261103 (72/72), merk-een-register-20261116 (12/12), а також 16 безбазових перевірок у account-wisselen-tech-20261020."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/wissel-001-uitgave.yml",
+      "resultaat": "Виконує повну перевірку типів клієнта та сервера, статичних контрактів, PostgreSQL 16 (подвійні міграції + усі БД-тести з Хроміумом), безбазових і післяскладальних випробувань, повну виробничу збірку, перевірку TRACE-001 і публікацію GitHub Release."
     }
   ],
   "bronnen": [
@@ -134,7 +150,7 @@
   ],
   "beperkingen": [
     "Пакет випуску ніколи не встановлюється автоматично — встановлення здійснює виключно власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки та схвалення ключем доступу.",
-    "У поточному робочому контейнері агента відсутній пакунок xlsx (cdn.sheetjs.com) і не запущена база PostgreSQL 16, тому тести з базою даних (DATABASE_URL_ONTBREEKT) та клієнтське складання Rollup/Vite через імпорт xlsx у сторонніх модулях не виконувались у цьому середовищі."
+    "У поточному робочому контейнері агента відсутній пакунок xlsx (cdn.sheetjs.com) і не запущена база PostgreSQL 16, тому повний npx tsc --noEmit, npm run build та тести з базою даних і Хроміумом виконуються на чистому середовищі GitHub Actions."
   ],
   "privacy": {
     "geheimenUitgesloten": true

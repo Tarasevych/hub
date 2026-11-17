@@ -12,9 +12,5 @@
   "bijgewerkt": "2026-11-17T20:43:05.364Z",
   "omschrijving": "Виправлення перемикання на технічний простір в оболонці та чесного перемикання облікових записів у меню",
   "kanaal": "github_pr",
-  "overdrachten": [],
-  "releaseVersie": "20261117-204305",
-  "releaseSha256": "2c64434cb263c5c9a3d55ba211b44d8d47bdb824f4587d6dd18bf543a1ef1bae",
-  "releaseCommit": "d3f94206edbbffcb1286569ea97558c773ca32a3",
-  "releaseZip": "mijn-ruimte-20261117-204305-gemini-overdracht.zip"
+  "overdrachten": []
 }
