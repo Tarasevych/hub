@@ -9,8 +9,12 @@
   "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
   "staat": "in_progress",
   "gestart": "2026-11-17T19:55:54.855Z",
-  "bijgewerkt": "2026-11-17T19:55:54.856Z",
+  "bijgewerkt": "2026-11-17T22:44:19.598Z",
   "omschrijving": "Виправлення перемикання акаунтів, технічного простору та сповіщень меню",
   "kanaal": "github_pr",
-  "overdrachten": []
+  "overdrachten": [],
+  "releaseVersie": "20261117-224419",
+  "releaseSha256": "c4430449e584a0467ddf7350f1083bc2351aa31fbd9e1f4df9748399fc4dc41f",
+  "releaseCommit": "76f27794d095c40d7eae44fb95e8f8bb1c2e5070",
+  "releaseZip": "mijn-ruimte-20261117-224419-gemini-overdracht.zip"
 }
