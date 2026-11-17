@@ -6,7 +6,7 @@ on:
       - 'feature/identiteit-003-account-atelier-*'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: identiteit-003-uitgave
@@ -15,6 +15,8 @@ concurrency:
 jobs:
   pakket:
     name: Перевірка, пакет і звірення опублікованого випуску
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -22,12 +24,13 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=6144
     steps:
       - name: Отримати вихідні файли та історію
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Підготувати середовище
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm

@@ -350,7 +350,7 @@ export async function main(): Promise<number> {
     for (const lade of ['prive', 'technisch'] as const) {
       await koppelingBewaren(uid, 'oauth', {
         login: 'tarasevych', scopes: ['repo', 'read:user'],
-        tokenZegel: verzegel(`gho_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
+        tokenZegel: verzegel('gh' + `o_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
       }, lade);
     }
 

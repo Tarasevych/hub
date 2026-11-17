@@ -18,7 +18,7 @@ on:
       - '.github/workflows/identiteit-account-uitgave.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: identiteit-account-uitgave
@@ -26,12 +26,15 @@ concurrency:
 
 jobs:
   uitgave:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Отримати теку сховища
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Пропустити, якщо для цієї фіксації вже є випуск
         id: bestaatal

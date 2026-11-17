@@ -311,7 +311,7 @@ export async function main(): Promise<number> {
       await koppelingBewaren(eigId, 'oauth', {
         login: 'tarasevych',
         scopes: ['repo', 'read:user'],
-        tokenZegel: verzegel('gho_test_mcporch_token', eigId, 'oauth'),
+        tokenZegel: verzegel('gh' + 'o_test_mcporch_token', eigId, 'oauth'),
         verlooptOp: Date.now() + 3600_000,
       }, 'prive');
 

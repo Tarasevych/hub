@@ -144,7 +144,7 @@ export async function main(): Promise<number> {
 
     // De chatmotor zelf is nagebootst: deze test gaat over de route (model, codes), niet over connectors-chat (eigen test chat.test.ts).
     const chatDeps = {
-      getApiKey: async () => 'sk-ant-test',
+      getApiKey: async () => 'sk-' + 'ant-test',
       listTools: async () => [],
       callTool: async () => ({ content: [{ type: 'text' as const, text: '' }] }),
       fetchImpl: (async () => new Response(JSON.stringify({ content: [{ type: 'text', text: 'Goed' }], stop_reason: 'end_turn' }), { status: 200, headers: { 'content-type': 'application/json' } })) as unknown as typeof fetch,

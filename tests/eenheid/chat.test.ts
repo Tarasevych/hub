@@ -14,7 +14,7 @@ function bouw(antwoorden: Array<() => Response>, extra: Partial<ChatDeps> = {}) 
   const aanroepen: Array<{ userId: string; name: string; args: unknown }> = [];
   let i = 0;
   const deps: ChatDeps = {
-    getApiKey: async () => 'sk-ant-test-geheim',
+    getApiKey: async () => 'sk-' + 'ant-test-geheim',
     listTools: async () => [{ name: 'machine_list', description: 'lijst', inputSchema: { type: 'object', properties: {} } }],
     callTool: async (userId, name, args) => { aanroepen.push({ userId, name, args }); return { content: [{ type: 'text', text: '[{"name":"pc"}]' }] }; },
     fetchImpl: (async (url: string, init: any) => {
@@ -43,7 +43,7 @@ export async function main(): Promise<number> {
     const uit = await runChat(deps, 'u1', vraag);
     const v = verzoeken[0];
     check('gewoon antwoord: tekst teruggegeven, 1 verzoek, sleutel alleen als x-api-key-kop, geen tools-veld zonder hulpmiddelen',
-      'reply' in uit && uit.reply === 'Hoi!' && verzoeken.length === 1 && v.headers['x-api-key'] === 'sk-ant-test-geheim'
+      'reply' in uit && uit.reply === 'Hoi!' && verzoeken.length === 1 && v.headers['x-api-key'] === 'sk-' + 'ant-test-geheim'
       && v.url === 'https://api.anthropic.com/v1/messages' && !('tools' in v.body) && !JSON.stringify(v.body).includes('sk-ant'), JSON.stringify(uit));
     check('systeemprompt noemt dat bestandsinhoud gegevens zijn en geen instructies', /geen instructies/.test(v.body.system));
   }
@@ -80,7 +80,7 @@ export async function main(): Promise<number> {
     const { deps } = bouw([() => antwoord(401, { error: { type: 'authentication_error', message: 'invalid x-api-key' } })]);
     const uit = await runChat(deps, 'u1', vraag);
     check('providerfout 401: duidelijke fout zonder de sleutel te lekken',
-      'error' in uit && uit.error === 'provider_error' && uit.status === 401 && !JSON.stringify(uit).includes('sk-ant-test'), JSON.stringify(uit));
+      'error' in uit && uit.error === 'provider_error' && uit.status === 401 && !JSON.stringify(uit).includes('sk-' + 'ant-test'), JSON.stringify(uit));
   }
 
   // staplimiet

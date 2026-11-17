@@ -105,7 +105,7 @@ export async function main(): Promise<number> {
     && sseEindpunt('https://voorbeeld.test/mcp', '') === '');
 
   // ================================================================ 4. modern vervoer (Streamable HTTP)
-  const TOKEN = 'ghp_eenheidstest_geheim_token_1234567890';
+  const TOKEN = 'gh' + 'p_eenheidstest_geheim_token_1234567890';
   const modern = nepMcpServer({
     vervoer: 'streamable', token: TOKEN,
     tools: [

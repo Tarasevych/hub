@@ -155,3 +155,8 @@ Bewust gebleven: de index bewaart platte tekst onder RLS, zoals de bestaande pro
   privéruimte, `usr:` alleen op een bestaande snelkoppeling, iconen alleen uit de set, titels zonder `<>`; optimistic locking per laag (409).
 - Snelkoppelingen openen alleen via de canonieke router met een verse rechtencontrole; opdrachten (`cmd:`) openen de sectie
   (`?actie=<id>`) en voeren niets uit — verzenden/verwijderen gebeurt alleen op de oorspronkelijke plek met de eigen bevestiging.
+
+## Beveiligingsbeleid en analyse van GitHub Security-scans (`SEC-003`) — 16-11-2026
+- Het tweetalige meldingsbeleid voor kwetsbaarheden is toegevoegd in [`SECURITY.md`](SECURITY.md) met ondersteunde versies en privacyregels volgens `PRIVACY-001` (`B-010`).
+- De volledige analyse van configuratiefouten op `/security`, de opschoning van `.github/workflows/`, de vervanging van `xlsx` / bijwerking van `fast-xml-parser` (`Dependabot #1`), de 2013 meldingen van `Code scanning`, de chronologie van historisch herstelde bevindingen (`SEC-001`, `SEC-002` / PR `#75`, `UPD-002`, `ANKERS-002`) en de controle van `Secret scanning` staan in [`docs/beveiliging/BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md`](docs/beveiliging/BEVEILIGINGSRAPPORT-SCANS-20261116.nl.md).
+

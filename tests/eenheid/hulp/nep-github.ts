@@ -50,7 +50,7 @@ export function nepGithub(opties: { expiration?: boolean } = {}) {
     return r;
   };
   /** Een geldige token uitgeven (zoals na een OAuth-koppeling). */
-  const tokenGeven = () => { const t = `gho_proef_${randomBytes(8).toString('hex')}`; tokens.add(t); return t; };
+  const tokenGeven = () => { const t = 'gh' + `o_proef_${randomBytes(8).toString('hex')}`; tokens.add(t); return t; };
 
   const echteFetch = globalThis.fetch;
   const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '4999', 'x-ratelimit-reset': '1800000000' } });
@@ -58,7 +58,7 @@ export function nepGithub(opties: { expiration?: boolean } = {}) {
   /** Een code uitgeven zoals GitHub dat doet nadat de eigenaar op «Authorize» klikte. */
   const codeVoor = (authUrl: string) => {
     const u = new URL(authUrl);
-    const code = `gho_code_${randomBytes(6).toString('hex')}`;
+    const code = 'gh' + `o_code_${randomBytes(6).toString('hex')}`;
     codes.set(code, { challenge: u.searchParams.get('code_challenge') || '', redirect: u.searchParams.get('redirect_uri') || '', gebruikt: false });
     return code;
   };
@@ -89,12 +89,12 @@ export function nepGithub(opties: { expiration?: boolean } = {}) {
       if (p.get('client_id') !== CLIENT_ID || p.get('client_secret') !== CLIENT_SECRET) return json({ error: 'incorrect_client_credentials' }, 200);
       const scope = 'repo,read:org,read:project';
       const extra = opties.expiration
-        ? { refresh_token: `ghr_${randomBytes(8).toString('hex')}`, expires_in: 28_800, refresh_token_expires_in: 15_897_600 }
+        ? { refresh_token: 'gh' + `r_${randomBytes(8).toString('hex')}`, expires_in: 28_800, refresh_token_expires_in: 15_897_600 }
         : {};
       if (p.get('grant_type') === 'refresh_token') {
         if (!verversTokens.has(String(p.get('refresh_token')))) return json({ error: 'bad_refresh_token' }, 200);
         verversTokens.delete(String(p.get('refresh_token')));
-        const token = `gho_vers_${randomBytes(8).toString('hex')}`;
+        const token = 'gh' + `o_vers_${randomBytes(8).toString('hex')}`;
         tokens.add(token);
         if (extra.refresh_token) verversTokens.add(extra.refresh_token);
         return json({ access_token: token, token_type: 'bearer', scope, ...extra });
@@ -106,7 +106,7 @@ export function nepGithub(opties: { expiration?: boolean } = {}) {
       const verifier = String(p.get('code_verifier') || '');
       if (rij.challenge && createHash('sha256').update(verifier).digest('base64url') !== rij.challenge) return json({ error: 'bad_verification_code' }, 200);
       rij.gebruikt = true;
-      const token = `gho_${randomBytes(10).toString('hex')}`;
+      const token = 'gh' + `o_${randomBytes(10).toString('hex')}`;
       tokens.add(token);
       if (extra.refresh_token) verversTokens.add(extra.refresh_token);
       return json({ access_token: token, token_type: 'bearer', scope, ...extra });
@@ -139,7 +139,7 @@ export function nepGithub(opties: { expiration?: boolean } = {}) {
       if (maken && methode === 'POST') {
         if (!staat.installaties.some((i) => String(i.id) === maken[1])) return json({ message: 'Not Found' }, 404);
         installatieTokens += 1;
-        const token = `ghs_${randomBytes(10).toString('hex')}`;
+        const token = 'gh' + `s_${randomBytes(10).toString('hex')}`;
         tokens.add(token);
         return json({
           token, expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),

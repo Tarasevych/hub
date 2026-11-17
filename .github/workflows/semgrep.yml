@@ -1,12 +1,4 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# This workflow file requires a free account on Semgrep.dev to
-# manage rules, file ignores, notifications, and more.
-#
-# See https://semgrep.dev/docs
+# Локальний статичний аналіз через Semgrep без потреби у зовнішніх токенах платформи.
 
 name: Semgrep
 
@@ -14,7 +6,6 @@ on:
   push:
     branches: [ "voornaamst" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "voornaamst" ]
   schedule:
     - cron: '26 5 * * 2'
@@ -25,25 +16,24 @@ permissions:
 jobs:
   semgrep:
     permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      actions: read
+      contents: read
+      security-events: write
     name: Scan
     runs-on: ubuntu-latest
     steps:
-      # Checkout project source
-      - uses: actions/checkout@v4
-
-      # Scan code using project's configuration on https://semgrep.dev/manage
-      - uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735
+      - name: Отримати код сховища
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-          publishDeployment: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
+          persist-credentials: false
+
+      - name: Запустити аналіз Semgrep
+        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735 # v1
+        with:
           generateSarif: "1"
 
-      # Upload SARIF file generated in previous step
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Передати звіт SARIF до GitHub Security
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: semgrep.sarif
-        if: always()
+        if: ${{ !cancelled() }}

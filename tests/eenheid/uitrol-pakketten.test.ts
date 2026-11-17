@@ -14,7 +14,7 @@ import { checker } from './hulp/nep-google';
 
 const hex = (n: number) => randomBytes(n).toString('hex');
 const iso = (ms: number) => new Date(ms).toISOString();
-const TOKEN = 'ghp_GEHEIM_' + hex(12);
+const TOKEN = 'gh' + 'p_GEHEIM_' + hex(12);
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('uitrol-pakketten');

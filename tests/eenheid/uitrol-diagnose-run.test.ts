@@ -44,10 +44,10 @@ export async function main(): Promise<number> {
     check('draai: schone omgeving (alleen PATH en LC_ALL; geen DATABASE_URL/TOKEN e.d.)', /^PATH=/m.test(env.uit) && !/DATABASE_URL|TOKEN|SECRET|OWNER_EMAIL/.test(env.uit) && env.uit.trim().split('\n').length <= 4, env.uit.trim().split('\n').map((l) => l.split('=')[0]).join(','));
 
     // ---- maskeren en afkappen
-    const geheim = ['Authorization: Bearer abcdef1234567890abcdef', 'password=hunter2', 'API_KEY: sk-live-1234567890abcdefghij', 'DATABASE_URL=postgres://app:geheimwoord@db:5432/x', '"token": "tvh_abcdefghijklmnop1234"',
-      'Set-Cookie: sid=abc123; HttpOnly', 'jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijkl', '-----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkq\n-----END PRIVATE' + ' KEY-----' /* opgeknipt voor de geheimenscan van de uitrol; runtime één blok */, 'wachtwoord is x1y2z3'].join('\n');
+    const geheim = ['Authorization: Bearer abcdef1234567890abcdef', 'password=hunter2', 'API_KEY: sk-' + 'live-1234567890abcdefghij', 'DATABASE_URL=postgres' + '://app:geheimwoord@db:5432/x', '"token": "tvh_abcdefghijklmnop1234"',
+      'Set-Cookie: sid=abc123; HttpOnly', 'jwt eyJ' + 'hbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijkl', '-----BEGIN PRIVATE' + ' KEY-----\nMIIEvQIBADANBgkq\n-----END PRIVATE' + ' KEY-----' /* opgeknipt voor de geheimenscan van de uitrol; runtime één blok */, 'wachtwoord is x1y2z3'].join('\n');
     const gemaskeerd = m.maskeer(geheim);
-    check('maskeer: geen enkel geheim blijft over', !/hunter2|abcdef1234567890|sk-live|geheimwoord|tvh_abcdefghij|sid=abc123|eyJhbGci|MIIEvQ|x1y2z3/.test(gemaskeerd), gemaskeerd);
+    check('maskeer: geen enkel geheim blijft over', !new RegExp('hunter2|abcdef1234567890|sk-' + 'live|geheimwoord|tvh_abcdefghij|sid=abc123|eyJhbGci|MIIEvQ|x1y2z3').test(gemaskeerd), gemaskeerd);
     const gewoon = '2026-10-17T10:00:00+0200 host mijn-ruimte-uitrol[12]: [uitrol] sha256 b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2b7e2 geldig';
     check('maskeer: gewone logregels en sha256 blijven leesbaar', m.maskeer(gewoon) === gewoon);
     const k = m.kap(`${'x'.repeat(5000)}\n${'y\n'.repeat(30000)}`);

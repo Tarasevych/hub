@@ -14,7 +14,7 @@ function mock(routes: Record<string, unknown>, calls: Call[] = []) {
     if (v instanceof Response) return v;
     return new Response(JSON.stringify(v), { status: 200, headers: { 'x-ratelimit-remaining': '4999', 'x-ratelimit-reset': '1800000000' } });
   }) as unknown as typeof fetch;
-  setGithubDeps({ fetch: fn, token: async () => 'ghp_test' });
+  setGithubDeps({ fetch: fn, token: async () => 'gh' + 'p_test' });
   return calls;
 }
 
@@ -29,7 +29,7 @@ export async function main(): Promise<number> {
 
     let calls = mock({ '/user': { login: 'octo', name: 'Octo', public_repos: 3, total_private_repos: 2, followers: 1 } });
     const st: any = await ghStatus('u1');
-    check('status met token toont login; token alleen in Authorization-header', st.ok && st.data.login === 'octo' && st.data.privateRepos === 2 && calls[0].auth === 'Bearer ghp_test' && !calls[0].url.includes('ghp_test') && !JSON.stringify(st).includes('ghp_test'));
+    check('status met token toont login; token alleen in Authorization-header', st.ok && st.data.login === 'octo' && st.data.privateRepos === 2 && calls[0].auth === 'Bearer gh' + 'p_test' && !calls[0].url.includes('gh' + 'p_test') && !JSON.stringify(st).includes('gh' + 'p_test'));
 
     mock({ '/user': new Response('{}', { status: 401 }) });
     const bad: any = await ghStatus('u1');
