@@ -408,7 +408,7 @@ function SlimmeAssistent({ tr, keuze, extId }: { tr: Tr; keuze: LokaleAiKeuze; e
           ))}
         </ul>
         <label className='ag-ext-lai-vinkje'>
-          <input type='checkbox' checked={metDecisionsVlag} onChange={(e) => setMetDecisionsVlag(e.target.checked)} data-lai-veld='met-decisions' />
+          <input type='checkbox' checked={metDecisionsVlag} onChange={(e) => setMetDecisionsVlag(e.target.checked)} data-lai-veld='met-decisions' data-hulp-vrij='keuze' />
           <span>{tr('Додати у файл #decisions-api (переводить моделі на CPU)', 'Ook #decisions-api opnemen (zet modellen op CPU)')}</span>
         </label>
         <div className='ag-ext-lai-acties'>

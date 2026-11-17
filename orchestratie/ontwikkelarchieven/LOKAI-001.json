@@ -51,8 +51,12 @@
       "reden": "Узгодження назви модуля з вимогами використання питомої нідерландської термінології у шляхах і назвах файлів."
     },
     {
-      "besluit": "Автоматичний підпис CRX3 на GitHub Actions через .github/workflows/onderteken-crx.yml і таємницю EXTENSIE_ONDERTEKENSLEUTEL.",
-      "reden": "Приватний ключ підпису розширення ніколи не потрапляє до репозиторію чи робочих контейнерів; водночас будь-яке оновлення розширення в гілці автоматично отримує чинний підпис CRX3."
+      "besluit": "Автоматичний підпис CRX3 на GitHub Actions через .github/workflows/onderteken-crx.yml і таємницю EXTENSIE_ONDERTEKENSLEUTEL із persist-credentials: false та обмеженим винятком у werkstromen-veilig-20261116.test.ts.",
+      "reden": "Приватний ключ підпису розширення ніколи не потрапляє до сховища чи робочих контейнерів; водночас у самому сценарії вимкнено збереження токена в .git/config, заборонено npm-скрипти встановлення, а тест безпеки дозволяє читати лише EXTENSIE_ONDERTEKENSLEUTEL."
+    },
+    {
+      "besluit": "Позначення прапорця #decisions-api для експорту flags.json через data-hulp-vrij='keuze' у src/extensie/LokaleAiPaneel.tsx.",
+      "reden": "Прапорець впливає лише на вміст текстового файла flags.json, а використання HulpVraag підтягувало б браузерну залежність window у серверні тести Node.js."
     },
     {
       "besluit": "Без автоматичного встановлення на сервер; випуск лише публікується як архів у GitHub Release.",
@@ -60,7 +64,7 @@
     }
   ],
   "wijzigingen": [
-    { "soort": "toegevoegd", "pad": ".github/workflows/onderteken-crx.yml", "omschrijving": "Автоматичний сценарій підпису розширення CRX3 на GitHub Actions за таємницею EXTENSIE_ONDERTEKENSLEUTEL." },
+    { "soort": "toegevoegd", "pad": ".github/workflows/onderteken-crx.yml", "omschrijving": "Автоматичний сценарій підпису розширення CRX3 на GitHub Actions за таємницею EXTENSIE_ONDERTEKENSLEUTEL (із persist-credentials: false)." },
     { "soort": "toegevoegd", "pad": ".github/workflows/lokai-001-uitgave.yml", "omschrijving": "Повний сценарій перевірок, складання, підготовки маніфесту й публікації випуску LOKAI-001." },
     { "soort": "toegevoegd", "pad": "orchestratie/taken/LOKAI-001.json", "omschrijving": "Реєстраційна картка завдання LOKAI-001 у черзі координації." },
     { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/LOKAI-001.json", "omschrijving": "Незмінний журнал походження випуску LOKAI-001 (TRACE-001) із поясненнями ризикованих файлів." },
@@ -100,7 +104,8 @@
     { "soort": "gewijzigd", "pad": "tests/eenheid/sec-002-afwerking-b-20261112.test.ts", "omschrijving": "Оновлена перевірка версії 0.9.7." },
     { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-090-site-20261106.test.ts", "omschrijving": "Оновлено під 0.9.7 і 9 API." },
     { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-debugger-markering-20261019.test.ts", "omschrijving": "Оновлено імпорт / перевірки під 0.9.7." },
-    { "soort": "gewijzigd", "pad": "tests/eenheid/ui-audit-g.test.ts", "omschrijving": "Узгоджено перевірки інтерфейсу з новими елементами панелі локального ШІ." }
+    { "soort": "gewijzigd", "pad": "tests/eenheid/ui-audit-g.test.ts", "omschrijving": "Узгоджено перевірки інтерфейсу з новими елементами панелі локального ШІ." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/werkstromen-veilig-20261116.test.ts", "omschrijving": "Додано суворо обмежений виняток виключно для таємниці EXTENSIE_ONDERTEKENSLEUTEL у onderteken-crx.yml із забороною npm-команд." }
   ],
   "controles": [
     {
@@ -112,8 +117,8 @@
       "resultaat": "Успішно після автопідпису CRX3: Extensie 0.9.7, CRX: gepubliceerd (id ofpffonakgjioahgfejmiblfmbkobmmi), browser-extensie 24/24 geslaagd."
     },
     {
-      "opdracht": "Локальний прогін модульних випробувань через node scripts/eenheidstests.mjs (28 безбазових наборів)",
-      "resultaat": "Усі 28 перевірених наборів пройшли повністю без збоїв, зокрема extensie-093-stel-in-20261117 (16/16), extensie-brug-zonder-f5-20261106 (12/12), extensie-offscreen-20261106 (45/45), lai-con-001-20261116 (41/41), extensie-ui (93/93), ui-audit-g (59/59), orch-kern (78/78), trace-001-ontwikkelarchief (20/20), uitrol-risico-20261116 (67/67), uitrol-voorcontrole (51/51)."
+      "opdracht": "Локальний прогін модульних випробувань через node scripts/eenheidstests.mjs (безбазові набори, включно з hulp-register та werkstromen-veilig-20261116)",
+      "resultaat": "Усі перевірені набори пройшли повністю без збоїв, зокрема extensie-093-stel-in-20261117 (16/16), extensie-brug-zonder-f5-20261106 (12/12), extensie-offscreen-20261106 (45/45), lai-con-001-20261116 (41/41), hulp-register (17/17), werkstromen-veilig-20261116 (9/9), extensie-ui (93/93), ui-audit-g (59/59), orch-kern (78/78), trace-001-ontwikkelarchief (20/20), uitrol-risico-20261116 (67/67), uitrol-voorcontrole (51/51)."
     },
     {
       "opdracht": "GitHub Actions .github/workflows/onderteken-crx.yml (запуск 44148133679)",
@@ -140,14 +145,16 @@
     "geheimenUitgesloten": true
   },
   "commits": [
-    "663f47e933b497d31e5f5f597d70415c9e037e47",
-    "7311ee07604259150126f648e95048a287990d00"
+    "663f47e9c74fdf88a309fd9e0611952309869430",
+    "7311ee07090e72f0728528969f2e20b15621ff59",
+    "49254ab46ae8442f920aa926948f633a09c8835b",
+    "a3c57045c7f22c90df77a51734641cfc94644982"
   ],
   "risicoUitleg": [
     {
       "pad": ".github/workflows/onderteken-crx.yml",
-      "uk": "Новий сценарій автоматичного підпису розширення CRX3 на GitHub Actions. Він запускається лише у робочих гілках після змін у каталозі розширення, бере таємницю EXTENSIE_ONDERTEKENSLEUTEL виключно з налаштувань репозиторію GitHub, формує підписаний архів CRX3 та фіксує лише два файли у теці extension/signed/. Жодних змін на сервер він не вносить і до інсталяційного процесу сервера не потрапляє.",
-      "nl": "Nieuwe workflow voor het automatisch ondertekenen van de CRX3-extensie in GitHub Actions. Draait alleen op werkvertakkingen bij wijzigingen in de extensiemap, gebruikt het geheime veld EXTENSIE_ONDERTEKENSLEUTEL uit de GitHub-instellingen en legt alleen de twee bestanden in extension/signed/ vast. Voert niets uit op de server."
+      "uk": "Новий сценарій автоматичного підпису розширення CRX3 на GitHub Actions. Він запускається лише у робочих гілках після змін у каталозі розширення, вимикає збереження токена у налаштуваннях Git (persist-credentials: false), бере таємницю EXTENSIE_ONDERTEKENSLEUTEL виключно з налаштувань репозиторію GitHub (без npm-скриптів встановлення), формує підписаний архів CRX3 та передає тимчасовий заголовок авторизації лише для фіксації двох файлів у теці extension/signed/. Жодних змін на сервер він не вносить і до інсталяційного процесу сервера не потрапляє.",
+      "nl": "Nieuwe workflow voor het automatisch ondertekenen van de CRX3-extensie in GitHub Actions. Draait alleen op werkvertakkingen bij wijzigingen in de extensiemap, gebruikt persist-credentials: false, leest het geheime veld EXTENSIE_ONDERTEKENSLEUTEL zonder npm-installatiescripts uit de GitHub-instellingen en gebruikt tijdelijke autorisatie alleen om de twee bestanden in extension/signed/ vast te leggen. Voert niets uit op de server."
     },
     {
       "pad": ".github/workflows/lokai-001-uitgave.yml",

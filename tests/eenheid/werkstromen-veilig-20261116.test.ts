@@ -25,6 +25,14 @@ const SCHRIJVEN_OP_WERKSTROOMNIVEAU: Record<string, string> = {
   'mcp-001-uitgave.yml': 'одна задача з публікацією; npm без скриптів, checkout без збереженого токена; гілка завершена 12.11.2026',
 };
 
+// Процеси, де єдину таємницю явно схвалив власник (без npm install/ci та без тригерів на чужий код).
+const GEHEIME_WERKSTROMEN: Record<string, { geheim: string; reden: string }> = {
+  'onderteken-crx.yml': {
+    geheim: 'EXTENSIE_ONDERTEKENSLEUTEL',
+    reden: 'автоматичний підпис CRX3 за прямим дорученням власника (LOKAI-001); без npm-скриптів і лише в гілках сховища',
+  },
+};
+
 export async function main(): Promise<number> {
   const { check, einde } = checker('werkstromen-veilig-20261116');
   const map = '.github/workflows';
@@ -36,7 +44,10 @@ export async function main(): Promise<number> {
     const tekst = readFileSync(join(map, naam), 'utf8');
     const L = tekst.split('\n');
     if (/^\s{0,4}(pull_request_target|workflow_run|issue_comment)\s*:/m.test(tekst)) fout.trigger.push(naam);
-    if (/\$\{\{\s*secrets\./.test(tekst)) fout.secrets.push(naam);
+    const geheimMatches = [...tekst.matchAll(/\$\{\{\s*secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
+    const toegestaanGeheim = GEHEIME_WERKSTROMEN[naam]?.geheim;
+    if (geheimMatches.some((g) => g !== toegestaanGeheim)) fout.secrets.push(naam);
+    if (toegestaanGeheim && /\bnpm\s+(ci|install|i)\b/.test(tekst)) fout.secrets.push(`${naam}: npm заборонено разом із таємницею`);
     L.forEach((r, i) => {
       const u = /^\s*-?\s*uses:\s*([^\s#]+)/.exec(r);
       if (u && !u[1].startsWith('./') && !/@[0-9a-f]{40}$/.test(u[1])) fout.pin.push(`${naam}:${i + 1} ${u[1]}`);
@@ -56,12 +67,14 @@ export async function main(): Promise<number> {
 
   const toon = (x: string[]) => (x.length ? x.slice(0, 15).join('; ') : '');
   check('1. немає pull_request_target / workflow_run / issue_comment', !fout.trigger.length, toon(fout.trigger));
-  check('2. жоден процес не читає секретів репозиторію (secrets.*)', !fout.secrets.length, toon(fout.secrets));
+  check('2. процеси не читають несанкціонованих секретів (secrets.*)', !fout.secrets.length, toon(fout.secrets));
   check('3. кожна дія закріплена за повним хешем коміту', !fout.pin.length, toon(fout.pin));
   check('4. npm ci / install лише з --ignore-scripts', !fout.npm.length, toon(fout.npm));
   check('5. кожен checkout має persist-credentials: false', !fout.persist.length, toon(fout.persist));
   check('6. права верхнього рівня оголошено; запис на весь процес лише з переліку', !fout.rechten.length, toon(fout.rechten));
   check('7. текст PR/issue не підставляється в команди', !fout.injectie.length, toon(fout.injectie));
-  check('перелік винятків не містить процесів, яких уже немає', Object.keys(SCHRIJVEN_OP_WERKSTROOMNIVEAU).every((n) => bestanden.includes(n)));
+  check('перелік винятків не містить процесів, яких уже немає',
+    Object.keys(SCHRIJVEN_OP_WERKSTROOMNIVEAU).every((n) => bestanden.includes(n))
+    && Object.keys(GEHEIME_WERKSTROMEN).every((n) => bestanden.includes(n)));
   return einde();
 }
