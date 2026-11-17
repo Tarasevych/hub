@@ -263,6 +263,7 @@ jobs:
             menu-per-profiel-20261019 \
             menu-snelheid \
             merk-officieel-20261021 \
+            migraties-terugdraaibaar-20261117 \
             mobiel-cascade-20261105 \
             mobiel-geometrie-20261021 \
             orch-kern-20261031 \
@@ -308,7 +309,9 @@ jobs:
           unset BASIS_VERSIE BASIS_COMMIT
           npx tsc --noEmit
           npm run typecheck:server
-          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          # Dezelfde heap als de installer op de server (deploy/installeer-app.sh, BOUW_HEAP_MB=2560): een build die hier past, past daar ook.
+          # Та сама межа пам'яті, що й в інсталятора на сервері: якщо збірка вміщується тут, вміститься й там.
+          NODE_OPTIONS=--max-old-space-size=2560 npm run build
           test -s dist/index.html
           test -s dist/huis-maquette/index.html
           node --input-type=module -e 'import { readFileSync } from "node:fs"; const ev = JSON.parse(readFileSync("dist/downloads/extension-version.json", "utf8")); if (ev.version !== "0.9.6") throw Error("Очікувалася версія розширення 0.9.6, отримано: " + ev.version); console.log("extension-version.json:", ev.version);'
@@ -321,6 +324,7 @@ jobs:
             stroom-veilig-20261115 \
             ui-audit-g \
             uitrol-pakket-maken \
+            vendor-ongebundeld-20261023 \
             zoek-diepe-link-20261105 \
             zoek-ui-bereik-20261105 \
             zoek-ui-sectie-20261105 \

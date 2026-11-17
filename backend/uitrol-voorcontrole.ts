@@ -177,7 +177,7 @@ async function alleBestanden(dir: string, basis = dir, uit: string[] = []): Prom
   return uit;
 }
 
-const SQL_RISICO: Array<[RegExp, string, string]> = [
+export const SQL_RISICO: Array<[RegExp, string, string]> = [
   [/\bDROP\s+(?:TABLE|COLUMN|SCHEMA|DATABASE|TYPE)\b/i, 'DROP TABLE/COLUMN/SCHEMA', 'DROP TABLE/COLUMN/SCHEMA'],
   [/\bALTER\s+TABLE\b[^;]*\bDROP\s+COLUMN\b/i, 'DROP COLUMN', 'DROP COLUMN'],
   [/\bTRUNCATE\b/i, 'TRUNCATE', 'TRUNCATE'],

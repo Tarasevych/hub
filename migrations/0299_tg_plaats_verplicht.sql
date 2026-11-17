@@ -3,19 +3,17 @@
 -- aanmelden bij zijn account alleen lukt als de vragende browser de plaats van het toestel deelde (geolocatie, 0298).
 -- Standaard staat de eis bij ELKE methode UIT; aanzetten en uitzetten gebeurt in dezelfde instellingen. Niets wordt hard
 -- verboden: wie de eis bij alle methoden aanzet, kan zich alleen nog aanmelden vanaf een toestel dat de plaats geeft —
--- dat staat met «!» in de uitleg. Herhaalbaar (IF NOT EXISTS / DROP ... IF EXISTS).
+-- dat staat met «!» in de uitleg. Herhaalbaar (IF NOT EXISTS; een CHECK wordt vervangen door dezelfde of een ruimere).
 
 ALTER TABLE app.tg_matrix ADD COLUMN IF NOT EXISTS plaats_eis text[] NOT NULL DEFAULT '{}';
 ALTER TABLE app.tg_matrix DROP CONSTRAINT IF EXISTS tg_matrix_plaats_eis_check;
 ALTER TABLE app.tg_matrix ADD CONSTRAINT tg_matrix_plaats_eis_check
   CHECK (plaats_eis <@ ARRAY['telegram','passkey','password','google','microsoft','discord','apple']::text[]);
--- Eerste vorm van deze (nog niet uitgebrachte) migratie had één schakelaar alleen voor Telegram: overnemen en opruimen.
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'app' AND table_name = 'tg_matrix' AND column_name = 'geo_verplicht') THEN
-    UPDATE app.tg_matrix SET plaats_eis = ARRAY['telegram'] WHERE geo_verplicht AND plaats_eis = '{}';
-    ALTER TABLE app.tg_matrix DROP COLUMN geo_verplicht;
-  END IF;
-END $$;
+-- UPD-003 (17.11.2026): hier stond een blok dat een kolom geo_verplicht uit een nooit uitgebrachte eerste vorm overnam en verwijderde.
+-- Die kolom bestond in geen enkele uitgave (ook niet in 20261116-031827), dus het blok deed op elke server niets — maar het was een
+-- verwijdering van een kolom, en een migratie wordt bij terugdraaien niet teruggedraaid. Weg: deze migratie voegt nu alleen toe (kolommen met
+-- standaardwaarde, ruimere CHECK), zodat de vorige versie van de code met het nieuwe schema blijft werken.
+-- Міграція лише додає: стовпці зі значенням за замовчуванням і ширша перевірка — стара версія коду працює з новою схемою.
 -- true = het gekozen account eist de plaats en de browser gaf die nog niet → de site vraagt er nu nadrukkelijk om.
 ALTER TABLE app.tg_inlog_verzoeken ADD COLUMN IF NOT EXISTS geo_vereist boolean NOT NULL DEFAULT false;
 -- Nieuwe reden voor de oude knop-weg (zonder venster): de plaats ontbrak.
