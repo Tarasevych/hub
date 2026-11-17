@@ -123,6 +123,7 @@ export type AccountMenuV3Props = {
   termsLabel: string;
   showLogoutAll: boolean;
   wisselMelding: AccountWisselMeldingData | null;
+  wisselFout?: string;
   v2Ruimtes: boolean;
   onChangePhoto?: (event: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
   onSelectAccount: (item: RememberedAccount) => Promise<void> | void;
@@ -186,6 +187,7 @@ export function AccountMenuV3({
   termsLabel,
   showLogoutAll,
   wisselMelding,
+  wisselFout = '',
   v2Ruimtes,
   onChangePhoto,
   onSelectAccount,
@@ -402,11 +404,15 @@ export function AccountMenuV3({
     if (naar === 'prive' && !isTechActief) return;
     if (naar === 'technisch' && isTechActief) return;
     if (v2Ruimtes && ruimtes.status?.aan) {
-      await kiesRuimte(naar, lang);
+      if (naar === 'technisch' && ruimtes.status.technischToegestaan && !ruimtes.status.sessie) {
+        sluitVoorNavigatie();
+      }
+      const uit = await kiesRuimte(naar, lang);
+      if (uit?.tekst) setRuimteMelding(uit.tekst);
       return;
     }
     if (naar === 'technisch') {
-      onClose();
+      sluitVoorNavigatie();
       openTechVenster('activeren');
     } else {
       try {
@@ -733,6 +739,13 @@ export function AccountMenuV3({
           </button>
         )}
       </header>
+
+      {/* Повідомлення про помилку перемикання облікового запису */}
+      {wisselFout ? (
+        <p className='am3-wissel-fout' role='alert' data-account-wissel-fout='true'>
+          {wisselFout}
+        </p>
+      ) : null}
 
       {/* Повідомлення після швидкого перемикання облікового запису */}
       {displayUser && wisselMelding ? (
@@ -1253,6 +1266,8 @@ export function AccountMenuV3({
                     type='button'
                     className={`am3-seg-btn${!isTechActief ? ' active' : ''}`}
                     aria-pressed={!isTechActief}
+                    disabled={ruimtes.bezig === 'wisselen'}
+                    aria-busy={ruimtes.bezig === 'wisselen' || undefined}
                     onClick={() => void schakelRuimte('prive')}
                   >
                     <UserRound />
@@ -1264,6 +1279,8 @@ export function AccountMenuV3({
                       type='button'
                       className={`am3-seg-btn is-tech-btn${isTechActief ? ' active' : ''}${techOpPauze ? ' is-pauze' : ''}`}
                       aria-pressed={isTechActief}
+                      disabled={ruimtes.bezig === 'wisselen'}
+                      aria-busy={ruimtes.bezig === 'wisselen' || undefined}
                       data-am3-tech-knop={isTechActief ? 'actief' : techOpPauze ? 'pauze' : 'inactief'}
                       aria-label={techOpPauze ? (uk ? 'Технічний простір на паузі. Натисніть, щоб продовжити без нового входу' : 'Technische ruimte gepauzeerd. Klik om door te gaan zonder opnieuw aan te melden') : undefined}
                       title={techOpPauze ? (uk ? 'Технічний доступ на паузі в усіх вкладках. Натисніть, щоб продовжити: новий вхід не потрібен, доки діє термін.' : 'Technische toegang gepauzeerd in alle tabbladen. Klik om door te gaan: opnieuw aanmelden is niet nodig zolang de termijn loopt.') : undefined}

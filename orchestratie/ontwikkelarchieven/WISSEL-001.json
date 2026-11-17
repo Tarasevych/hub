@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "taakId": "WISSEL-001",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "titel": "WISSEL-001 · Перемикання на технічний простір в оболонці та чесний перехід між обліковими записами в меню",
+  "opdracht": "Усунути дві вади перемикання в меню облікового запису поверх живої версії 20261117-190154 (14dbcb3aeceb205ac6f69238f6397816bd293146): відновити перемикання на технічний простір у всіх оболонках без застрягання стану та забезпечити чесний і видимий перехід між обліковими записами в меню без тихого ігнорування відмов, переспрямувань або відкритих списків.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "repo": "Tarasevych/hub",
+    "tak": "fix/wissel-001-20261117-202647",
+    "basisCommit": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "basisVersie": "20261117-190154",
+    "geinstalleerdeBasis": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "geinstalleerdeVersie": "20261117-190154",
+    "regelsVersie": "1.4.15",
+    "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4"
+  },
+  "tijdlijn": [
+    {
+      "stap": "Звірено живу версію сервера через https://hub.tarasevych.com/api/version (20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146) та відкрито гілку завдання fix/wissel-001-20261117-202647.",
+      "resultaat": "Зареєстровано паспорт завдання orchestratie/taken/WISSEL-001.json."
+    },
+    {
+      "stap": "Досліджено першопричини збою переходу на технічний простір та перемикання облікових записів у меню.",
+      "resultaat": "Виявлено, що: (1) у src/tech/tech-opslag.ts слухач CANONICAL_AUTH_CHANGE виходив завчасно за !toestand.activatie й не оновлював права доступу; (2) у src/tech/ruimtes/ruimtes-opslag.ts метод actie() не очікував завершення techVernieuwen(), а startRuimtes() не слухав CANONICAL_AUTH_CHANGE; (3) в оболонках src/App.tsx та src/VerenigdDienstApp.tsx перемикач простору або не відстежував стан технічного простору, або обмежував його лише адміністративними сторінками; (4) у src/accountmenu-v3/AccountMenuV3.tsx, src/CanoniekAccountMenu.tsx та src/useCanoniekHubAuth.ts вибір іншого облікового запису губив переспрямування, помилки сервера і тримав меню відкритим без сповіщення чи закриття при відкритті вікна входу."
+    },
+    {
+      "stap": "Внесено виправлення в сховища стану технічного простору, обидві оболонки, спільне меню облікового запису та стильовий файл.",
+      "resultaat": "Забезпечено синхронне оновлення стану просторів і технічного доступу, коректне відображення технічного поверхневого режиму в App.tsx і VerenigdDienstApp.tsx, блокування повторного натискання під час перемикання, закриття меню перед вікном підтвердження або входу, збереження контракту залишку меню відкритим після перемикання та виведення зрозумілих двомовних повідомлень про помилки."
+    },
+    {
+      "stap": "Створено модульний набір випробувань tests/eenheid/menu-ruimte-wissel-20261117.test.ts та проведено локальні перевірки.",
+      "resultaat": "Усі 8 перевірок нового набору, 20+ супутніх безбазових наборів випробувань, статичні перевірки карти, контрасту, розміщення, каталогу пошуку, складання сервера та перевірка правил координації пройшли без жодного зауваження."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Прибрано обмеження isSiteBeheer(service) || isBeheerPagina(service, tab) у src/VerenigdDienstApp.tsx та додано відстеження techRuimte й oppervlak у src/App.tsx.",
+      "reden": "Після переходу на модель окремого технічного простору його поверхня має діяти в обох оболонках і на всіх сторінках користувача, а не лише в адмінпанелі."
+    },
+    {
+      "besluit": "Узгоджено сховища src/tech/tech-opslag.ts і src/tech/ruimtes/ruimtes-opslag.ts через await techVernieuwen() у actie() та прослуховування CANONICAL_AUTH_CHANGE.",
+      "reden": "Після входу чи перемикання облікового запису стан прав технічного доступу та активний простір мають оновлюватися без необхідності перезавантаження сторінки."
+    },
+    {
+      "besluit": "Додано типобезпечні результати ConnectResult і AccountSelectResult, прапорець closeRequest та відображення помилок wisselFout у меню облікового запису без порушення контракту account-wisselen-tech-20261020.test.ts.",
+      "reden": "Меню лишається відкритим після перемикання для показу стану технічного профілю, але негайно закривається при redirected або відкритті вікна входу та явно повідомляє про будь-яку відмову."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/tech/tech-opslag.ts",
+      "omschrijving": "Оновлення технічного стану при CANONICAL_AUTH_CHANGE за наявності ключа без завчасного виходу та сповіщення про вимкнення при втраті активації."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/tech/ruimtes/ruimtes-opslag.ts",
+      "omschrijving": "Очікування await techVernieuwen() під час перемикання простору в actie() та оновлення списку просторів при CANONICAL_AUTH_CHANGE."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/useCanoniekHubAuth.ts",
+      "omschrijving": "Додано тип ConnectResult із двомовним описом помилки та повернення результату з connect()."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/accountmenu-v3/accountmenu-v3.css",
+      "omschrijving": "Додано стиль .am3-wissel-fout для виведення повідомлень про відмову перемикання в меню."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/accountmenu-v3/AccountMenuV3.tsx",
+      "omschrijving": "Виведення wisselFout, закриття меню перед вікном підтвердження технічного профілю, блокування повторного натискання під час ruimtes.bezig === 'wisselen' та показ відповіді перемикання."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/CanoniekAccountMenu.tsx",
+      "omschrijving": "Додано AccountSelectResult, closeRequest, стан wisselFout, перезавантаження списку за [open, user?.id], закриття при redirected та виведення помилок в обох варіантах меню."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/VerenigdDienstApp.tsx",
+      "omschrijving": "Знято обмеження адміністративними сторінками для techRuimte, передано closeRequest у меню та оновлено connect() і selectKnownAccount() для повернення результату і миттєвої синхронізації."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/App.tsx",
+      "omschrijving": "Додано відстеження tech і techRuimte, передано oppervlak і технічне меню в CanonicalChrome, передано closeRequest і оновлено selectKnownAccount()."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/menu-ruimte-wissel-20261117.test.ts",
+      "omschrijving": "Новий модульний набір випробувань WISSEL-001 (8 перевірок обох першопричин)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "orchestratie/taken/WISSEL-001.json",
+      "omschrijving": "Картка реєстрації завдання WISSEL-001 у черзі координації."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "orchestratie/ontwikkelarchieven/WISSEL-001.json",
+      "omschrijving": "Незмінний журнал походження випуску WISSEL-001 (TRACE-001)."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/kaart-controle.mjs --stil && node scripts/plaatsing-controle.mjs --stil && node scripts/l002-audit.mjs && node scripts/hulp-vraagtekens-controle.mjs --stil && node scripts/kleur-contrast-controle.mjs --stil && node scripts/mail-slimme-inbox-audit.mjs && node scripts/keten-controle.mjs --zonder-audit && node scripts/zoek-ui-catalogus.mjs --controle",
+      "resultaat": "Усі статичні перевірки пройшли чисто з кодом 0 (каталог пошуку 1808 елементів актуальний)."
+    },
+    {
+      "opdracht": "npm run build:server",
+      "resultaat": "Серверне складання у dist-server/ виконано чисто за 990 мс з кодом 0."
+    },
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit",
+      "resultaat": "Жодної помилки типів у жодному зі змінених файлів завдання WISSEL-001 (9 помилок стосувалися лише відсутнього в цьому контейнері пакунка xlsx у сторонніх модулях src/mail-database-inhoud.ts та src/mail-rekenblad-inhoud.ts)."
+    },
+    {
+      "opdracht": "Запуск 26 безбазових модульних наборів випробувань через node scripts/eenheidstests.mjs",
+      "resultaat": "Усі 764 перевірки у 26 безбазових наборах пройшли на 100% (0 провалів), зокрема: menu-ruimte-wissel-20261117 (8/8), tech-ruimte-f5-20261105 (8/8), accountmenu-v3 (36/36), accountmenu-strook-20261115 (12/12), menu-per-profiel-20261019 (42/42), tech-ruimtes-ui (37/37), menu-oppervlak (14/14), accountmenu-v2-20261029 (13/13), ruimte-wissel-20261028 (21/21), menu-per-account-20261019 (19/19), menu-indeling (32/32), menu-v2 (35/35), strook-menu (26/26), identiteit-account-ui (6/6), uitrol-risico-20261116 (67/67), uitrol-voorcontrole (51/51), orch-kern (78/78), orch-pakket (24/24), trace-001-ontwikkelarchief (20/20), werkstromen-veilig-20261116 (9/9), ui-audit-g (59/59), menu-snelheid (29/29), prij-001-rijknop-menu (11/11), zoek-in-menu-20261024 (23/23), zoek-menu-20261103 (72/72), merk-een-register-20261116 (12/12), а також 16 безбазових перевірок у account-wisselen-tech-20261020."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "shared/uitrol-manifest.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично — встановлення здійснює виключно власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки та схвалення ключем доступу.",
+    "У поточному робочому контейнері агента відсутній пакунок xlsx (cdn.sheetjs.com) і не запущена база PostgreSQL 16, тому тести з базою даних (DATABASE_URL_ONTBREEKT) та клієнтське складання Rollup/Vite через імпорт xlsx у сторонніх модулях не виконувались у цьому середовищі."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true
+  }
+}

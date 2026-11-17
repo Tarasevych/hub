@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "WISSEL-001",
+  "agent": "gemini",
+  "tak": "fix/wissel-001-20261117-202647",
+  "basisCommit": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.15",
+  "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4",
+  "staat": "in_progress",
+  "gestart": "2026-11-17T20:26:47.648Z",
+  "bijgewerkt": "2026-11-17T20:26:47.649Z",
+  "omschrijving": "Виправлення перемикання на технічний простір в оболонці та чесного перемикання облікових записів у меню",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

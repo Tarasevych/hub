@@ -7,6 +7,7 @@ import {aanmeldPauzeBericht,aanmeldStartFoutTekst,leesAanmeldPauze,leesActieveAa
 
 type Lang='uk'|'nl';
 type Intent='login'|'replace-tab';
+export type ConnectResult={ok:boolean;foutUk?:string;foutNl?:string};
 type Options={lang:Lang;onAuthorized:(data:Record<string,unknown>)=>void;onMessage:(uk:string,nl:string)=>void;onChooserClose:()=>void};
 export const hubTabContext=ecosystemTabContext;
 export const hubAuthBody=(extra:Record<string,unknown>={})=>({...extra,service:'hub',tabContext:hubTabContext(),sourceOrigin:location.origin});
@@ -16,18 +17,15 @@ export default function useCanonicalHubAuth(options:Options){
   const clear=()=>{loginStartInFlight.current=false};
   useEffect(()=>{const restore=()=>{loginStartInFlight.current=false};window.addEventListener('pageshow',restore);return()=>window.removeEventListener('pageshow',restore)},[]);
   const bootstrap=async()=>{const response=await api.post('/api/owner/session/bootstrap',hubAuthBody());return response.data as Record<string,unknown>};
-  const connect=async(intent:Intent='replace-tab',hintGrantId?:string)=>{
-    if(loginStartInFlight.current)return;
+  const connect=async(intent:Intent='replace-tab',hintGrantId?:string):Promise<ConnectResult>=>{
+    if(loginStartInFlight.current)return{ok:false,foutUk:'Вхід уже виконується…',foutNl:'Aanmelden is al bezig…'};
     const wacht=leesActieveAanmeldPauze();
     if(wacht.actief){
+      const foutUk=aanmeldPauzeBericht(wacht.resterend,'uk','google',wacht.limiet).melding;
+      const foutNl=aanmeldPauzeBericht(wacht.resterend,'nl','google',wacht.limiet).melding;
       callbacks.current.onChooserClose();
-      if(intent!=='login'){
-        callbacks.current.onMessage(
-          aanmeldPauzeBericht(wacht.resterend,'uk','google',wacht.limiet).melding,
-          aanmeldPauzeBericht(wacht.resterend,'nl','google',wacht.limiet).melding,
-        );
-      }
-      return;
+      if(intent!=='login')callbacks.current.onMessage(foutUk,foutNl);
+      return{ok:false,foutUk,foutNl};
     }
     loginStartInFlight.current=true;
     callbacks.current.onChooserClose();
@@ -44,17 +42,22 @@ export default function useCanonicalHubAuth(options:Options){
       });
       wisAanmeldPauze();
       void result;
+      return{ok:true};
     }catch(caught){
       clear();
       const pauze=leesAanmeldPauze(caught);
       if(pauze.isPauze){
         const limiet={maxAttempts:pauze.maxAttempts,windowSec:pauze.windowSec};
+        const foutUk=aanmeldPauzeBericht(pauze.seconden,'uk','google',limiet).melding;
+        const foutNl=aanmeldPauzeBericht(pauze.seconden,'nl','google',limiet).melding;
         zetAanmeldPauze(pauze.seconden,'google',pauze.code,limiet);
         if(intent==='login')callbacks.current.onMessage('','');
-        else callbacks.current.onMessage(aanmeldPauzeBericht(pauze.seconden,'uk','google',limiet).melding,aanmeldPauzeBericht(pauze.seconden,'nl','google',limiet).melding);
-        return;
+        else callbacks.current.onMessage(foutUk,foutNl);
+        return{ok:false,foutUk,foutNl};
       }
-      callbacks.current.onMessage(aanmeldStartFoutTekst(caught,'uk'),aanmeldStartFoutTekst(caught,'nl'));
+      const foutUk=aanmeldStartFoutTekst(caught,'uk'),foutNl=aanmeldStartFoutTekst(caught,'nl');
+      callbacks.current.onMessage(foutUk,foutNl);
+      return{ok:false,foutUk,foutNl};
     }
   };
   const cancel=async()=>{clear()};
