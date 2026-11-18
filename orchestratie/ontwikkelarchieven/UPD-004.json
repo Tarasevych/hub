@@ -59,7 +59,9 @@
   },
   "commits": [
     "08172f9e6d9e190dccb22e69097b033875417e72",
-    "531b80c44393fb0d9b30edf5cd2ca23ec1edcecf"
+    "531b80c44393fb0d9b30edf5cd2ca23ec1edcecf",
+    "d16a966ba0f7ff1294ab20d3de03c0c4e7fa4b02",
+    "9f8bfcb653ce9b4699919048510c872ef2591e79"
   ],
   "tijdlijn": [
     {
@@ -83,8 +85,12 @@
       "resultaat": "Усі 5373 виміряні перевірки пройшли без жодного провалу та без пропусків; розширення 0.9.7 і підписаний CRX3 (ofpffonakgjioahgfejmiblfmbkobmmi) актуальні."
     },
     {
-      "stap": "Створено ізольований сценарій випуску .github/workflows/upd-004-uitgave.yml, зафіксовано код у C1 (531b80c44393fb0d9b30edf5cd2ca23ec1edcecf), підготовлено журнал походження UPD-004.json із вичерпними поясненнями risicoUitleg до всіх 22 прапорців ризику й перевірено пакування через TRACE-001.",
-      "resultaat": "Контролер pasUitlegToe підтвердив 0 пропущених пояснень і 0 помилок формату досьє."
+      "stap": "Створено ізольований сценарій випуску .github/workflows/upd-004-uitgave.yml, зафіксовано код у 531b80c44393fb0d9b30edf5cd2ca23ec1edcecf та журнал походження у d16a966ba0f7ff1294ab20d3de03c0c4e7fa4b02.",
+      "resultaat": "Перший запуск GitHub Actions (44203408235) пройшов усі безбазові випробування, повне складання, післяскладальні перевірки та міграції PostgreSQL 16 (до 0301) трьома ролями, але виявив збій на двох БД-тестах: mail-accounts-beheer-20261021 (офіційний знак icloud перейшов до OFFICIEEL_SLEUTELS) та hulp-register (для перемикача ярликів FIX-001 у TechLaag бракувало ключа довідки tech.snelkoppelingen)."
+    },
+    {
+      "stap": "Усунуто першопричини у фіксації 9f8bfcb653ce9b4699919048510c872ef2591e79: додано довідковий запис tech.snelkoppelingen і знак питання <HulpVraag k='tech.snelkoppelingen' /> у src/tech/TechLaag.tsx, а також узгоджено перевірку офіційних логотипів з OFFICIEEL_SLEUTELS у mail-accounts-beheer-20261021, mail-koppelen-20261020 та integraties-catalogus (із точним поділом 3 справжніх знаків + 5 нейтральних плиток за !MERKEN[m]?.neutraal).",
+      "resultaat": "Повторні перевірки типів, повного складання (CRX3 0.9.7), статичних контролерів, модульних, післяскладальних і пошукових тестів, а також оцінки 22 прапорців ризику поверх основи 14dbcb3a пройшли з кодом 0 без жодного провалу."
     }
   ],
   "keuzes": [
@@ -101,8 +107,12 @@
       "reden": "Усуває спрацювання перевірки werkstromen-veilig-20261116 щодо звернення до secrets.* і підтримує суворе дотримання принципів найменших повноважень."
     },
     {
+      "besluit": "Для перемикача yarlykyAan у src/tech/TechLaag.tsx додано чотиришаровий опис tech.snelkoppelingen у shared/hulp-register.ts і кнопку довідки <HulpVraag>, а тести поштових логотипів узгоджено з реєстром OFFICIEEL_SLEUTELS за умовою !MERKEN[m]?.neutraal.",
+      "reden": "Зберігає сувору вимогу 100% покриття кожного технічного перемикача довідкою та враховує перенесення логотипів на власні файли у src/merk/officieel/ без втрати контролю поділу на справжні й нейтральні марки."
+    },
+    {
       "besluit": "У процесі .github/workflows/upd-004-uitgave.yml поєднано перевірені 144 безбазові, 20 хмарних, 13 післяскладальних і 120 БД-тестів із Хроміумом та подвійним накатом міграцій PostgreSQL 16 (до 0301) трьома ролями.",
-      "reden": "11 тестів поза цим переліком (зокрема для місцевих перевірок переглядача або із потребою в особливих тестових сесіях) не включалися наосліп до циклу автоматичної перевірки, оскільки в середовищі підготовки перевірено весь повний набір стабільних модулів, а 120 БД-тестів перевіряються у чистому PostgreSQL 16 на GitHub Actions."
+      "reden": "Повний набір стабільних модулів, післяскладальних контролів і БД-тестів виконується в чистому PostgreSQL 16 на GitHub Actions; виправлені поверх цього тести mail-koppelen-20261020 (25/25) та integraties-catalogus (22/22) додатково підтверджені локально."
     }
   ],
   "wijzigingen": [
@@ -115,6 +125,11 @@
       "soort": "toegevoegd",
       "pad": "shared/tech-yarlyky.ts",
       "omschrijving": "Спільна предметна модель правил делегування й видимості технічних ярликів в обох частинах меню."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/hulp-register.ts, src/tech/TechLaag.tsx",
+      "omschrijving": "Додано повний чотиришаровий запис довідки tech.snelkoppelingen та пов’язано перемикач ярликів технічного профілю з data-hulp і кнопкою <HulpVraag>."
     },
     {
       "soort": "gewijzigd",
@@ -158,8 +173,8 @@
     },
     {
       "soort": "toegevoegd",
-      "pad": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts, tests/eenheid/tech-yarlyky-20261117.test.ts, tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts, tests/eenheid/menu-ruimte-wissel-20261117.test.ts, tests/eenheid/plaats-tekens-20261117.test.ts, tests/eenheid/meldingen-catalogus-20261117.test.ts",
-      "omschrijving": "Нові й узгоджені модульні набори випробувань для всіх об’єднаних змін випуску UPD-004."
+      "pad": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts, tests/eenheid/tech-yarlyky-20261117.test.ts, tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts, tests/eenheid/menu-ruimte-wissel-20261117.test.ts, tests/eenheid/plaats-tekens-20261117.test.ts, tests/eenheid/meldingen-catalogus-20261117.test.ts, tests/eenheid/mail-accounts-beheer-20261021.test.ts, tests/eenheid/mail-koppelen-20261020.test.ts, tests/eenheid/integraties-catalogus.test.ts",
+      "omschrijving": "Нові й узгоджені з OFFICIEEL_SLEUTELS модульні набори випробувань для всіх об’єднаних змін випуску UPD-004."
     }
   ],
   "risicoUitleg": [
@@ -298,6 +313,10 @@
     {
       "opdracht": "Додаткові безпекові контролі й досьє: trace-001-ontwikkelarchief (20/20), werkstromen-veilig-20261116 (9/9), uitrol-risico-20261116 (67/67) і pasUitlegToe поверх основи 14dbcb3a",
       "resultaat": "Пройдено на 100%; усі 22 прапорці ризику (включно з 17 обов’язковими) мають повне авторське пояснення uk+nl у risicoUitleg (0 пропущених пояснень)."
+    },
+    {
+      "opdracht": "Повторні перевірки після фіксації 9f8bfcb653ce9b4699919048510c872ef2591e79: tsc, build, CRX3, mail-koppelen-20261020, integraties-catalogus, hulp-register, merk-*, ui-audit-g, bestandskaart-20261024, zoek-* та оцінка ризиків",
+      "resultaat": "Усі перевірки пройшли чисто з кодом 0: mail-koppelen-20261020 (25/25), integraties-catalogus (22/22), hulp-register (17/17: 155 записів, 137 опцій), hulp-vraagtekens (30/30), merk-register (38/38), merk-een-register-20261116 (12/12), merk-galerij-volledig-20261116 (9/9), vendor-ongebundeld (453/453), ui-audit-g (59/59), bestandskaart (28/28), пошукові тести (135/135), uitrol-risico (67/67), логіка секції 5 поштових логотипів (3+5=8) та звірка 22 прапорців ризику."
     },
     {
       "opdracht": "GitHub Actions .github/workflows/upd-004-uitgave.yml",
