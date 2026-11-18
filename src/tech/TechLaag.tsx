@@ -658,7 +658,10 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
             <select data-hulp='tech.max' value={max} onChange={(e) => setMax(Number(e.target.value))}>{[15, 30, 60, 120, 240, 480].map((d) => <option key={d} value={d}>{d >= 60 ? `${d / 60} ${uk ? 'год' : 'u'}` : `${d} ${uk ? 'хв' : 'min'}`}</option>)}</select>
             <small>{uk ? 'Найсильніша роль усе одно обмежує (адмін ≤ 1 год).' : 'De sterkste rol beperkt toch (beheerder ≤ 1 u).'}</small></label>
           <label className='tech-veld'><span>{uk ? 'Нотатка (навіщо)' : 'Notitie (waarom)'}</span><input value={notitie} onChange={(e) => setNotitie(e.target.value)} maxLength={300} /></label>
-          <label className='tech-aanvink'><input type='checkbox' checked={yarlykyAan} onChange={(e) => setYarlykyAan(e.target.checked)} data-tech-yarlyk-toestaan='1' /><span>{uk ? 'Дозволити розміщувати ярлики кнопок технічного профілю в обох частинах меню' : 'Snelkoppelingen van het technisch profiel in beide delen van het menu toestaan'}</span></label>
+          <div className='tech-veld tech-veld-aanvink'>
+            <span>{uk ? 'Ярлики в меню' : 'Snelkoppelingen in menu'} <HulpVraag k='tech.snelkoppelingen' uk={uk} label={uk ? 'Ярлики в обох частинах меню' : 'Snelkoppelingen in beide delen'} /></span>
+            <label className='tech-aanvink'><input data-hulp='tech.snelkoppelingen' type='checkbox' checked={yarlykyAan} onChange={(e) => setYarlykyAan(e.target.checked)} data-tech-yarlyk-toestaan='1' /><span>{uk ? 'Дозволити розміщувати ярлики кнопок технічного профілю в обох частинах меню' : 'Snelkoppelingen van het technisch profiel in beide delen van het menu toestaan'}</span></label>
+          </div>
           <div className='tech-knoppen'><button type='submit' className='is-hoofd' disabled={!!bezig || !email || !rollen.length} aria-busy={bezig === 'geven' || undefined} data-tech-knop='geven'>{bezig === 'geven' ? (uk ? 'Зачекайте…' : 'Even geduld…') : (uk ? 'Видати' : 'Geven')}</button></div>
         </form>
         {melding ? <p className={`tech-melding${melding.ok ? ' is-ok' : ''}`} role={melding.ok ? 'status' : 'alert'}>{melding.tekst}</p> : null}
