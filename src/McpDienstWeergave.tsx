@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Monitor, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
@@ -41,6 +41,9 @@ type McpSectie = typeof MCP_SECTIES[number];
 
 const MCP_MODAAL_SELECTOR =
   ".mcp-consent-backdrop, .venster-achter, .venster:not([hidden]), [data-mq-laag-open='1'], dialog[open], [role='dialog'][aria-modal='true']";
+const AGENT_GROEP_OVERZICHT = new Set(["overzicht", "connectors", "ai", "extern"]);
+const AGENT_GROEP_OMGEVING = new Set(["extensie", "browser", "apparaten"]);
+const AGENT_GROEP_BEHEER = new Set(["orch", "tokens", "toegang"]);
 
 const MCP_HELD_TEKSTEN: Record<McpSectie, {
   boven: readonly [string, string];
@@ -524,6 +527,8 @@ export default function McpServiceView({ lang, tab }: Props) {
   }, [archive.state]);
 
   const isMaquette = useIsMaquette();
+  // UNIF-ANKER-001 / GEMINI-004: на /agents спільне меню якорів діє у всіх палітрах (у звичайних — у стриманому вигляді теми).
+  const toonAnkerRail = isMaquette || section === "agents";
   const [laagOpen, setLaagOpen] = useState(false);
 
   const [actiefBlok, setActiefBlok] = useState("mcp-boven");
@@ -593,7 +598,7 @@ export default function McpServiceView({ lang, tab }: Props) {
   };
 
   useEffect(() => {
-    if (!isMaquette || typeof document === "undefined") {
+    if (!toonAnkerRail || typeof document === "undefined") {
       setLaagOpen(false);
       return;
     }
@@ -601,7 +606,7 @@ export default function McpServiceView({ lang, tab }: Props) {
       wortel: "documentElement",
       attributeFilter: ["open", "hidden", "class", "aria-modal", "data-mq-laag-open"],
     });
-  }, [isMaquette, section]);
+  }, [toonAnkerRail, section]);
 
   const bevestigd = probes.filter((p) => p.ok).length;
   const techAan = techActief(tech);
@@ -628,6 +633,65 @@ export default function McpServiceView({ lang, tab }: Props) {
   const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
     const tr = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
     const bovenItem: MaquetteAnkerItem = { id: "mcp-boven", label: tr("На початок", "Naar boven"), icoon: <ArrowUp /> };
+
+    if (section === "agents") {
+      // UNIF-ANKER-001 / GEMINI-004: чотири змістові групи з підпунктами зі спільного джерела (agenten/anker-bron.ts) та група швидких дій.
+      // При відсутності права (geenRecht) джерело порожнє — повертаємо [], щоб рейка не показувалась на стіні обмеження.
+      if (agentAnkers.onderdelen.length === 0) return [];
+      const num = (i: number) => String(i + 1).padStart(2, "0");
+      const maakBereik = (indices: number[]) =>
+        indices.length > 1 ? `${num(indices[0])}—${num(indices[indices.length - 1])}` : indices.length === 1 ? num(indices[0]) : undefined;
+      const gekoppeld = agentAnkers.onderdelen.map((o, idx) => ({
+        tab: o.tab,
+        idx,
+        item: {
+          id: `ag-tab-${o.tab}`,
+          label: tr(o.uk, o.nl),
+          icoon: o.icoon,
+          badge: o.teller || undefined,
+        } satisfies MaquetteAnkerItem,
+      }));
+      const maakGroep = (id: string, uk: string, nl: string, icoon: ReactNode, kies: (tab: string) => boolean): MaquetteAnkerItem | null => {
+        const deel = gekoppeld.filter((x) => kies(x.tab));
+        if (deel.length === 0) return null;
+        return {
+          id,
+          label: tr(uk, nl),
+          icoon,
+          soort: "groep" as const,
+          kiesbaar: false,
+          badge: maakBereik(deel.map((x) => x.idx)),
+          kinderen: deel.map((x) => x.item),
+        };
+      };
+      const groepen = [
+        maakGroep("ag-groep-overzicht", "Огляд і підключення", "Overzicht en AI", <LayoutDashboard />, (tab) => AGENT_GROEP_OVERZICHT.has(tab)),
+        maakGroep("ag-groep-omgeving", "Середовища та пристрої", "Omgeving en apparaten", <Monitor />, (tab) => AGENT_GROEP_OMGEVING.has(tab)),
+        maakGroep("ag-groep-beheer", "Координація й безпека", "Coördinatie en rechten", <ShieldCheck />, (tab) => AGENT_GROEP_BEHEER.has(tab)),
+        maakGroep(
+          "ag-groep-systeem",
+          "Система та журнал",
+          "Systeem en logboek",
+          <Activity />,
+          (tab) => !AGENT_GROEP_OVERZICHT.has(tab) && !AGENT_GROEP_OMGEVING.has(tab) && !AGENT_GROEP_BEHEER.has(tab),
+        ),
+      ].filter((x): x is MaquetteAnkerItem => x !== null);
+      return [
+        ...groepen,
+        {
+          id: "mcp-groep-acties",
+          label: tr("Швидкі дії", "Snelle acties"),
+          icoon: <Settings2 />,
+          soort: "groep" as const,
+          kiesbaar: false,
+          kinderen: [
+            bovenItem,
+            { id: "tab:playground", label: tr("Пісочниця викликів", "Testzandbak"), icoon: <Terminal /> },
+            { id: "actie:board", label: tr("Спільна дошка", "Gedeeld werkbord"), icoon: <ListChecks /> },
+          ],
+        },
+      ];
+    }
 
     const inhoudKinderen: MaquetteAnkerItem[] = (() => {
       switch (section) {
@@ -664,12 +728,6 @@ export default function McpServiceView({ lang, tab }: Props) {
             { id: "mcp-blok-nieuw", label: tr("Нова задача / нотатка", "Nieuwe taak / notitie"), icoon: <Plus /> },
             { id: "mcp-blok-bord", label: tr("Колонки дошки", "Kolommen van het bord"), icoon: <ListChecks />, badge: tasks.length || undefined },
             { id: "mcp-blok-notities", label: tr("Нотатки", "Notities"), icoon: <StickyNote />, badge: notes.length || undefined },
-          ];
-        case "agents":
-          // ANKERS-002: dezelfde onderdelen, namen, iconen en tellers als de pagina zelf (agenten/anker-bron.ts), ook op de pagina van één AI.
-          return [
-            bovenItem,
-            ...agentAnkers.onderdelen.map((o) => ({ id: `ag-tab-${o.tab}`, label: tr(o.uk, o.nl), icoon: o.icoon, badge: o.teller || undefined })),
           ];
         case "apps":
           return [
@@ -729,9 +787,7 @@ export default function McpServiceView({ lang, tab }: Props) {
     if (section === "download") {
       actiesKinderen.push({ id: "actie:archive", label: tr("Зібрати повний архів", "Volledig archief maken"), icoon: <Archive /> });
     }
-    if (section !== "agents") {
-      actiesKinderen.push({ id: "tab:agents", label: tr("Осередок агентів", "Agentencentrum"), icoon: <Plug /> });
-    }
+    actiesKinderen.push({ id: "tab:agents", label: tr("Осередок агентів", "Agentencentrum"), icoon: <Plug /> });
     if (section !== "playground") {
       actiesKinderen.push({ id: "tab:playground", label: tr("Пісочниця викликів", "Testzandbak"), icoon: <Terminal /> });
     }
@@ -792,7 +848,7 @@ export default function McpServiceView({ lang, tab }: Props) {
   return (
     <div
       id="mcp-boven"
-      className={isMaquette ? "mcp-estate mq-schil mcp-maquette-wikkel" : "mcp-estate"}
+      className={isMaquette ? "mcp-estate mq-schil mcp-maquette-wikkel" : section === "agents" ? "mcp-estate mq-schil" : "mcp-estate"}
       data-mcp-tab={section}
       data-weergave-modus={weergave.modus ?? "onbekend"}
       data-mq-dienst={isMaquette ? "mcp" : undefined}
@@ -825,6 +881,17 @@ export default function McpServiceView({ lang, tab }: Props) {
         />
       ) : null}
       {section === "overview" || verborgen ? <RichtingBand richting="mcp" uk={lang === "uk"} metModus /> : null}
+      {toonAnkerRail && !verborgen && !consent && !laagOpen ? (
+        <MaquetteAnkerRail
+          lang={lang}
+          opslagSleutel="mcp-anker"
+          titel={t("На цій сторінці", "Op deze pagina")}
+          ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
+          items={ankerItems}
+          actief={railActief}
+          onKies={springNaarMcpBlok}
+        />
+      ) : null}
       {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-error" role="alert">{error}</p> : null}
       {busy && busy !== "archive" && section !== "agents" && section !== "apps" ? <p className="mcp-meta" role="status">{busy}</p> : null}
@@ -1187,17 +1254,6 @@ export default function McpServiceView({ lang, tab }: Props) {
         </>
       )}
       </>}
-      {isMaquette && !verborgen && !consent && !laagOpen ? (
-        <MaquetteAnkerRail
-          lang={lang}
-          opslagSleutel="mcp-anker"
-          titel={t("На цій сторінці", "Op deze pagina")}
-          ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
-          items={ankerItems}
-          actief={railActief}
-          onKies={springNaarMcpBlok}
-        />
-      ) : null}
     </div>
   );
 }

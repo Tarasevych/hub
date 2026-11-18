@@ -40,3 +40,5 @@
 /* MOBIEL 21.10.2026: in het actieve account bovenaan (smal paneel, 268 px) stond het e-mailadres op één regel (nowrap) en
    scrolde het paneel zijwaarts (284 > 268). Daar mag het adres afbreken; in de compacte accountlijst blijft de ellips. */
 .canonical-current-account .canonical-current-copy :is(strong,small){white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+.canonical-account-wissel-fout{margin:6px 0 8px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--fout,#dc2626) 40%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--fout,#dc2626) 10%,var(--canonical-panel,var(--panel)));display:grid;gap:8px;font-size:.84rem;line-height:1.4}
+.canonical-account-wissel-fout p{margin:0;color:var(--text)}

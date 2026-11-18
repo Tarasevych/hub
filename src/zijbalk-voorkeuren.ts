@@ -15,7 +15,8 @@
 // De hint per TABBLAD (sessionStorage) zegt welk account dit tabblad als laatste had, zodat de eerste weergave na F5 meteen de
 // juiste indeling toont zonder ooit de cache van een ander account te gebruiken (sessionStorage is per tabblad, niet per browser).
 import { useSyncExternalStore } from 'react';
-import { normaliseerRuimtes, normaliseerZijbalk, standaardRuimtes, standaardZijbalk, type MenuRuimte, type ZijbalkRuimtes, type ZijbalkVoorkeuren } from '../shared/menu-model';
+import { MAX_KOPIEEN, normaliseerRuimtes, normaliseerZijbalk, standaardRuimtes, standaardZijbalk, type Accent, type ItemKopie, type MenuPlaats, type MenuRuimte, type ZijbalkRuimtes, type ZijbalkVoorkeuren } from '../shared/menu-model';
+import { ontleed } from '../shared/menu-indeling';
 import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 
@@ -125,14 +126,49 @@ function naarServer(ctx: NonNullable<Server>, s: string, r: MenuRuimte) {
   }, 350));
 }
 
+/** Оновити налаштування конкретної частини меню (`gebruiker` або `technisch`). */
+export function zetZijbalkInRuimte(doel: MenuRuimte, patch: Partial<ZijbalkVoorkeuren> | ((v: ZijbalkVoorkeuren) => ZijbalkVoorkeuren)): boolean {
+  const huidig = alles[doel];
+  const volgende = normaliseerZijbalk(typeof patch === 'function' ? patch(huidig) : { ...huidig, ...patch });
+  if (JSON.stringify(volgende) === JSON.stringify(huidig)) return false;
+  alles = { ...alles, [doel]: volgende };
+  schrijfLokaal();
+  if (doel === ruimte) melden();
+  if (server) naarServer(server, scope, doel);
+  return true;
+}
+
+/** Розмістити копію (ярлик) пункту в цільовій частині меню (`gebruiker` або `technisch`). */
+export function zijbalkKopieInRuimte(
+  doel: MenuRuimte,
+  item: string,
+  plaats: MenuPlaats,
+  id: string,
+  bron?: { icoon?: string; kleur?: Accent },
+): 'toegevoegd' | 'bestaat' | 'ongeldig' | 'te-veel' {
+  if (!ontleed(item) || !/^k-[a-z0-9]{4,16}$/.test(id)) return 'ongeldig';
+  const huidig = alles[doel];
+  const alKopie = huidig.kopieen.some((k) => k.item === item && k.plaats === plaats && !k.ouder);
+  const ov = huidig.items[item];
+  const alOverride = !!ov && ov.zichtbaar !== false && ov.plaats === plaats && !ov.ouder;
+  const alStandaard = doel === 'technisch' && plaats === 'zijbalk' && item.startsWith('svc:') && (!ov || (ov.zichtbaar !== false && !ov.plaats && !ov.ouder));
+  if (alKopie || alOverride || alStandaard) return 'bestaat';
+  if (huidig.kopieen.length >= MAX_KOPIEEN) return 'te-veel';
+  const kopie: ItemKopie = {
+    id,
+    item,
+    plaats,
+    volgorde: huidig.kopieen.length,
+    ...(bron?.icoon ? { icoon: bron.icoon } : {}),
+    ...(bron?.kleur ? { kleur: bron.kleur } : {}),
+  };
+  zetZijbalkInRuimte(doel, (v) => ({ ...v, kopieen: [...v.kopieen, kopie] }));
+  return 'toegevoegd';
+}
+
 /** Wijzigen van de HUIDIGE ruimte: meteen lokaal (en in alle componenten), daarna — gebundeld — naar de server. */
 export function zetZijbalk(patch: Partial<ZijbalkVoorkeuren> | ((v: ZijbalkVoorkeuren) => ZijbalkVoorkeuren)) {
-  const huidig = alles[ruimte];
-  const volgende = normaliseerZijbalk(typeof patch === 'function' ? patch(huidig) : { ...huidig, ...patch });
-  if (JSON.stringify(volgende) === JSON.stringify(huidig)) return;
-  alles = { ...alles, [ruimte]: volgende };
-  schrijfLokaal(); melden();
-  if (server) naarServer(server, scope, ruimte);
+  zetZijbalkInRuimte(ruimte, patch);
 }
 
 /** Alleen voor tests. */

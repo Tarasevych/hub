@@ -14,7 +14,10 @@ def lees(doel, naam, maximum):
         with open(os.path.join(doel, naam), encoding="utf-8", errors="replace") as f:
             r = f.read(maximum).splitlines()
             return r[0].strip() if r else ""
-    except Exception:
+    except FileNotFoundError:
+        return ""
+    except OSError as fout:
+        print(f"[pakketgegevens] bestand {naam} niet gelezen: {fout}", file=sys.stderr)
         return ""
 
 
@@ -27,14 +30,18 @@ def gegevens(doel, extra=""):
         bc = ""
     d = {"auteur": auteur, "agent": agent, "bron_commit": bc,
          "geinstalleerd_op": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")}
-    try:
-        e = json.loads(extra or "{}")
-        if re.fullmatch(r"[0-9a-f]{64}", str(e.get("pakket_sha256", ""))):
-            d["sha256"] = e["pakket_sha256"]
-        if isinstance(e.get("pakket_bytes"), int) and e["pakket_bytes"] > 0:
-            d["bytes"] = e["pakket_bytes"]
-    except Exception:
-        pass
+    if extra:
+        try:
+            e = json.loads(extra)
+            if not isinstance(e, dict):
+                raise ValueError("UITROL_GEB_EXTRA moet een JSON-object zijn")
+            if re.fullmatch(r"[0-9a-f]{64}", str(e.get("pakket_sha256", ""))):
+                d["sha256"] = e["pakket_sha256"]
+            bytes_waarde = e.get("pakket_bytes")
+            if isinstance(bytes_waarde, int) and not isinstance(bytes_waarde, bool) and bytes_waarde > 0:
+                d["bytes"] = bytes_waarde
+        except (json.JSONDecodeError, TypeError, ValueError) as fout:
+            print(f"[pakketgegevens] ongeldige UITROL_GEB_EXTRA-json overgeslagen: {fout}", file=sys.stderr)
     return d
 
 

@@ -3,9 +3,10 @@
 // worden en bij een bericht van een ander tabblad (BroadcastChannel, zelfde origin). Na elke wijziging ook de oude tech-status
 // vernieuwen, zodat de band en html[data-tech] meteen (zonder herladen) meegaan.
 import { useSyncExternalStore } from 'react';
+import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
 import { techVernieuwen } from '../tech-opslag';
-import { huidigeRuimte, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
+import { huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
 
 export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; bezig: '' | 'wisselen' | 'starten' | 'beeindigen' | 'verlengen' | 'pauzeren'; fout: string; nu: number; uitleg: string };
 let toestand: RuimtesToestand = { geladen: false, status: null, bezig: '', fout: '', nu: Date.now(), uitleg: '' };
@@ -26,7 +27,7 @@ export async function ruimtesVernieuwen(): Promise<void> {
 }
 async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesStatus>): Promise<RuimtesStatus> {
   zet({ bezig: soort, fout: '', uitleg: '' }); laatsteActie = Date.now();
-  try { const s = await f(); zet({ status: s, bezig: '' }); meld(); void techVernieuwen(); return s; }
+  try { const s = await f(); zet({ status: s, bezig: '' }); meld(); await techVernieuwen(); return s; }
   catch (e) { zet({ bezig: '', fout: code(e) }); throw e; }
   finally { laatsteActie = Date.now(); }
 }
@@ -35,7 +36,14 @@ export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const oud = toestand.status;
   // RUIMTE-WEERGAVE-001: wisselen = alleen wat dit tabblad toont; de pauze verandert niet (behalve: terug naar technisch heft ze op).
   if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } });
-  try { return await actie('wisselen', () => ruimtesApi.wisselen(naar)); } catch (e) { if (oud) zet({ status: oud }); throw e; }
+  try {
+    const s = await actie('wisselen', () => ruimtesApi.wisselen(naar));
+    meldGebruikerWissel(naar);
+    return s;
+  } catch (e) {
+    if (oud) zet({ status: oud });
+    throw e;
+  }
 }
 /** «Пауза» / «Продовжити»: de hele technische sessie van deze aanmelding (alle tabbladen, AI volgens zijn regel «bij pauze»). */
 export const pauzeer = (aan: boolean) => actie('pauzeren', () => ruimtesApi.pauzeren(aan));
@@ -81,6 +89,7 @@ export function startRuimtes(): void {
   });
   document.addEventListener('visibilitychange', zichtbaar);
   window.addEventListener('focus', zichtbaar);
+  window.addEventListener(CANONICAL_AUTH_CHANGE, () => { void ruimtesVernieuwen(); });
   // Alleen pollen waar het nodig is: een technische ruimte die loopt, of de pagina staat er nu in. Anders dekken de
   // zichtbaarheids-, focus- en kanaalmeldingen hierboven het af; op de telefoon scheelt dat elke 15 s een verzoek en een herrender.
   window.setInterval(() => { if (!document.hidden && (toestand.status?.aan || huidigeRuimte() === 'technisch')) void ruimtesVernieuwen(); }, POLL_MS);

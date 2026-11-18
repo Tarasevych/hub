@@ -8,6 +8,6 @@ Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orc
 
 1. Прочитай AGENTS.md повністю (без доступу до репозиторію — `orchestratie/CONTEXT-COMPACT.md`).
 2. Ідентифікатор агента для Task ID, пакетів і `AGENT`: `antigravity`.
-3. Перед початком: `node scripts/orch.mjs controleer` і `versheid --taak <ID> --fase start`. Перед передаванням: `versheid --fase overdracht` + `ORCH-OVERDRACHT.json`.
+3. Перший крок сеансу: `node scripts/orch.mjs begin --agent <ідентифікатор з п. 2>` — правила, навички, досьє функції, хто працював і хто паралельно (AGENTS.md §9). Перед початком: `controleer` і `versheid --taak <ID> --fase start`. Перед передаванням: запис `orch bijdrage` (людина, агент, модель, що й чому), `versheid --fase overdracht` + `ORCH-OVERDRACHT.json`.
 4. Мова відповідей і звітів — українська; коментарі в коді — українська/нідерландська; UI — українська/нідерландська.
 5. Жодних змін у production, `voornaamst`, `integratie`, `release/*`, чужих гілках чи резервних копіях без явного погодження власника.

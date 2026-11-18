@@ -26,6 +26,7 @@ const VERWACHTE_VAARDIGHEDEN = [
   'prestatie-meten',
   'mijn-ruimte',
   'reyestr-lohotypiv', // REESTR-LOGO-001 (16.11.2026): логотипи лише з єдиного реєстру src/merk
+  'bijdragen-vastleggen', // BIJDRAGE-001 (18.11.2026): облік авторства, досьє функцій, злиття без утрат
 ] as const;
 
 const MET_VOORBEELD = [

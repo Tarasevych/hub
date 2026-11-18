@@ -2314,6 +2314,10 @@
   {
    "pad": "tests/e2e/знімки-015/schermen-sessions-uk-licht-380.jpg",
    "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "src/merk/officieel/passkey.png",
+   "reden": "officieel merkteken voor sleutel 'passkey' (vereist door merk-officieel en plaats-tekens tests)"
   }
  ],
  "woorden": {
@@ -3498,6 +3502,36 @@
    "pad": "tests/eenheid/woordbreuk-001-20261115.test.ts",
    "wat": "Eenheidstest tegen afbreken van woorden middenin smalle tegelkoppen en statuslabels op het werkblad en in widgets.",
    "sinds": "WOORDBREUK-001 (PR #132)"
+  },
+  {
+   "pad": "tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts",
+   "wat": "Eenheidstest voor de gegroepeerde ankernavigatie (MaquetteAnkerRail) op mcp.tarasevych.com/agenten in alle paletten en zonder horizontale tabstrook.",
+   "sinds": "GEMINI-004"
+  },
+  {
+   "pad": "shared/aanbieder-teken.ts",
+   "wat": "Netwerkaanbieders en ASN-herkenning voor aanmeldingsmeldingen en merkregister (hernoemd vanuit Engelse naam).",
+   "sinds": "PLAATS-TEKENS-001 (UPD-004)"
+  },
+  {
+   "pad": "shared/tech-yarlyky.ts",
+   "wat": "Gedeeld domeinmodel voor goedgekeurde snelkoppelingen van het technisch profiel in het hoofdmenu.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "migrations/0301_tech_snelkoppelingen.sql",
+   "wat": "Migratie die per technisch profiel bijhoudt of snelkoppelingen in het normale menu zijn toegestaan.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts",
+   "wat": "Eenheidstest voor ruimtewisseling vanuit het accountmenu en het schillen van meldingsstappen.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "tests/eenheid/tech-yarlyky-20261117.test.ts",
+   "wat": "Eenheidstest voor delegatierechten en weergaveregels van technische snelkoppelingen in beide menuhelften.",
+   "sinds": "FIX-001 (PR #156)"
   }
  ]
 }

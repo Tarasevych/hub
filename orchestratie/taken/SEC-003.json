@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "SEC-003",
+  "agent": "antigravity",
+  "tak": "fix/sec-003-20261116-222239",
+  "basisCommit": "9347c8095c417bfe72ac4537dcfd5549ad47057b",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "ter_integratie",
+  "gestart": "2026-11-16T22:22:39.396Z",
+  "bijgewerkt": "2026-11-16T22:46:30.000Z",
+  "omschrijving": "SEC-003: усунення помилки osv-scanner, додавання SECURITY.md, упорядкування сканерів і робочих процесів, усунення вразливостей залежностей і скриптів, перевірка таємниць і хроніка 2013 попереджень",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -10,6 +10,7 @@ import {
 } from '../../shared/mail-aanbieders';
 import { LOGOS } from '../../src/merk/merk-logos';
 import { MERKEN } from '../../src/merk/merk-tabel';
+import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels';
 import { merkDef } from '../../src/merk/merk-register';
 import { openWithEnvKey, sealWithEnvKey } from '../../server/platform/beveiliging';
 import { mailImapAad } from '../../backend/mail-imap';
@@ -61,7 +62,7 @@ export async function main(): Promise<number> {
     && venster.includes('/connect/start') && venster.includes('/api/owner/mail/imap/koppelen'));
 
   // ------------------------------------------------------------------ 3. elk merk bestaat in het ENE register
-  const zonderMerk = MAIL_AANBIEDERS.filter((a) => !merkDef(a.merk) && !LOGOS[a.merk]);
+  const zonderMerk = MAIL_AANBIEDERS.filter((a) => !merkDef(a.merk) && !LOGOS[a.merk] && !OFFICIEEL_SLEUTELS.has(a.merk));
   check(`elke maildienst heeft een echt embleem (${MAIL_AANBIEDERS.length} diensten)`, zonderMerk.length === 0,
     zonderMerk.map((a) => `${a.id}(${a.merk})`).join());
   check('de drie nieuwe Oekraïense merken staan in de ene merkentabel en nergens anders',

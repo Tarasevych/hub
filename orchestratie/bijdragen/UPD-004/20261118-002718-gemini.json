@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "UPD-004/20261118-002718-gemini",
+  "taakId": "UPD-004",
+  "tijd": "2026-11-18T00:27:18.000Z",
+  "vastgelegd": "2026-11-18T08:34:17.806Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "gemini",
+    "platform": "не вказано (Павло назвав лише модель)",
+    "model": {
+      "id": "Gemini 4 Hydrogen (high)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "samenvoeging",
+  "wat": {
+    "uk": "Спільний випуск UPD-004 (20261118-002718) поверх живої версії 14dbcb3a: узгоджено PR №157 і №156 (FIX-001), процеси безпеки, сповіщення, хронологію й сценарій випуску; вершина 697c7374."
+  },
+  "waarom": {
+    "uk": "Власник доручив зібрати одне оновлення замість чотирьох окремих."
+  },
+  "bouwtVoortOp": [
+    {
+      "beschrijving": "PR №157 і №156, гілки WISSEL-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001, IDENTITEIT-007"
+    }
+  ],
+  "tak": "feature/upd-004-uitgave-20261117-225600",
+  "pr": 158,
+  "onderwerpen": [
+    "meldingen"
+  ]
+}

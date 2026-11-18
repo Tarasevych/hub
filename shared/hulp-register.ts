@@ -92,6 +92,11 @@ hulpRegistreren({
     T('У виборі «Термін» він побачить лише значення до цієї межі. Найсильніша роль обмежує додатково (адмін ≤ 1 год).', 'In de keuze «Duur» ziet hij alleen waarden tot deze grens. De sterkste rol beperkt nog extra (beheerder ≤ 1 u).'),
     T('Довша межа — довше відкрите вікно для помилки чи викраденої вкладки. Для разових задач досить 15–60 хв.', 'Een langere grens is een langer venster voor een fout of een gestolen tabblad. Voor losse taken volstaat 15–60 min.'),
     T('Поле max_minuten у app.tech_profielen; сервер бере min(max_minuten, плафон ролі) при активації (backend/tech-profiel.ts).', 'Veld max_minuten in app.tech_profielen; de server neemt min(max_minuten, plafond van de rol) bij activeren (backend/tech-profiel.ts).')),
+  'tech.snelkoppelingen': item(TECH,
+    T('Дозвіл власнику цього технічного профілю розміщувати ярлики технічних кнопок в обох частинах меню.', 'Toestemming voor de houder van dit technische profiel om snelkoppelingen van technische knoppen in beide delen van het menu te plaatsen.'),
+    T('Коли ввімкнено, користувач може перенести потрібні кнопки керування на панель швидкого доступу звичайного простору. Без натискання права не активуються.', 'Ingeschakeld kan de gebruiker beheerknoppen op de snelbalk van de gewone ruimte zetten. Zonder klikken op de snelkoppeling worden geen rechten geactiveerd.'),
+    T('Дозволяє виносити на видиме місце посилання на адміністративні сторінки; типово вимкнено, щоб не показувати зайвих технічних кнопок.', 'Maakt verwijzingen naar beheerpagina’s zichtbaar in de gewone ruimte; standaard uitgeschakeld zodat er geen overbodige technische knoppen staan.'),
+    T('Прапорець snelkoppelingen_toegestaan у app.tech_profielen (міграція 0301); логіка у shared/tech-yarlyky.ts і маршруті POST /api/owner/tech/snelkoppelingen.', 'Vlag snelkoppelingen_toegestaan in app.tech_profielen (migratie 0301); logica in shared/tech-yarlyky.ts en route POST /api/owner/tech/snelkoppelingen.')),
 });
 const ROL_RISICO: Record<string, Tekst> = {
   ondersteuning: T('Бачить метадані журналу й діагностику клієнтів — це теж особисті дані; видавайте лише тим, хто розбирає звернення.', 'Ziet metadata van het logboek en diagnose van klanten — ook dat zijn persoonsgegevens; geef het alleen aan wie meldingen behandelt.'),

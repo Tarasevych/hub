@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react';
 import type { SleutelRuimte as RuimteScope } from './ruimte-sleutel';
 
 export const RUIMTE_WISSEL_GEBEURTENIS = 'mr-ruimte-gewisseld';
+export const RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS = 'mr-ruimte-gebruiker-wissel';
 export type RuimteWisselDetail = { van: RuimteScope; naar: RuimteScope };
 
 /** Pure afleiding (getest): technisch alleen als de vlag-status aan is én de server 'technisch' als actief meldt. */
@@ -28,6 +29,15 @@ export function meldRuimte(naar: RuimteScope): boolean {
   luisteraars.forEach((f) => f());
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<RuimteWisselDetail>(RUIMTE_WISSEL_GEBEURTENIS, { detail: { van, naar } }));
   return true;
+}
+/** Явне перемикання простору дією користувача, щоб інтерфейс міг одразу показати смугу чи підказку. */
+export function meldGebruikerWissel(naar: RuimteScope): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<{ naar: RuimteScope }>(RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS, { detail: { naar } }));
+}
+export function opGebruikerWissel(f: (naar: RuimteScope) => void): () => void {
+  const h = (e: Event) => f((e as CustomEvent<{ naar: RuimteScope }>).detail.naar);
+  window.addEventListener(RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS, h);
+  return () => window.removeEventListener(RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS, h);
 }
 export function opRuimteWissel(f: (d: RuimteWisselDetail) => void): () => void {
   const h = (e: Event) => f((e as CustomEvent<RuimteWisselDetail>).detail);

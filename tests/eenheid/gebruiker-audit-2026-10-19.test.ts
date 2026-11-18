@@ -160,7 +160,7 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- R-01 / R-02: wachtend account
   {
     const app = bron('src/App.tsx');
-    check('R-01 wachtend/nieuw/geblokkeerd: alleen het modaal — geen menu, tabbladen of zijbalkacties', app.includes("const alleenModaal=state==='new'||state==='pending'||state==='blocked'||state==='recoverable';") && app.includes("items={alleenModaal?[]:menuVoorOppervlak(menuPreferences,'account')} tabs={alleenModaal?[]:tabItems}") && app.includes('sidebarActions={alleenModaal?null:sidebarActions}'));
+    check('R-01 wachtend/nieuw/geblokkeerd: alleen het modaal — geen menu, tabbladen of zijbalkacties', app.includes("const alleenModaal=state==='new'||state==='pending'||state==='blocked'||state==='recoverable';") && app.includes("items={alleenModaal?[]:menuVoorOppervlak(menuPreferences,techRuimte?'technisch':'account')} tabs={alleenModaal?[]:tabItems}") && app.includes('sidebarActions={alleenModaal?null:sidebarActions}'));
     const usa = bron('src/VerenigdDienstApp.tsx');
     check('R-01 ook op de diensten: wachtend account → geen menu-items', usa.includes("items={!['new','pending','blocked','recoverable'].includes(state)?menuVoorOppervlak("));
     const lader = bron('src/hub-blok-gegevens.ts'), widget = bron('src/HubBlokWidget.tsx');

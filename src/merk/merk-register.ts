@@ -211,6 +211,8 @@ export type OfficieelMerk = {
   sha256: string;
   /** 'licht' = het logo heeft donkere delen; als los gliefje staat het daarom op een lichte plaat (de vorm blijft onaangeroerd). */
   ondergrond: 'licht' | 'vrij';
+  /** PLAATS-TEKENS-001: merkkleur als plaat voor een WIT teken dat de eigenaar zelf zo toont (Proximus op #5c2d91). */
+  plaat?: string;
   /** Pakket@versie · icoon · licentie, of de URL van de eigen website. */
   bron: string;
 };

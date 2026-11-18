@@ -205,6 +205,21 @@ export function valideerVaardigheden(wortel = WORTEL) {
         }
       }
     }
+    // BIJDRAGE-001: можливості навички — незмінні id, опис українською, підтримка агентами (агент без підтримки не видаляє опцію).
+    if (v.mogelijkheden !== undefined) {
+      if (!Array.isArray(v.mogelijkheden)) fouten.push(`${naam}: mogelijkheden moet een lijst zijn`);
+      else {
+        const gezien = new Set();
+        for (const m of v.mogelijkheden) {
+          if (!m || !NAAM_RE.test(m.id ?? '')) { fouten.push(`${naam}: mogelijkheid zonder geldige id`); continue; }
+          if (gezien.has(m.id)) fouten.push(`${naam}: mogelijkheid "${m.id}" dubbel`);
+          gezien.add(m.id);
+          if (typeof m.uk !== 'string' || !CYRILLISCH.test(m.uk) || m.uk.trim().length < 10) fouten.push(`${naam}: mogelijkheid "${m.id}" mist een Oekraïense omschrijving`);
+          if (m.agenten !== undefined && (!Array.isArray(m.agenten) || !m.agenten.every((x) => typeof x === 'string' && /^[a-z][a-z0-9-]{1,30}$/.test(x)))) fouten.push(`${naam}: mogelijkheid "${m.id}": agenten moet een lijst agent-id's zijn`);
+        }
+      }
+    }
+    if (v.ookBekendAls !== undefined && (!Array.isArray(v.ookBekendAls) || !v.ookBekendAls.every((x) => x && typeof x.naam === 'string' && x.naam && typeof x.bron === 'string'))) fouten.push(`${naam}: ookBekendAls moet een lijst { bron, naam } zijn`);
   }
 
   // Wederzijdse 1-op-1-afdekking tussen .agents/skills/* en catalogus.json

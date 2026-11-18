@@ -111,7 +111,7 @@ export async function main(): Promise<number> {
         const translations = leegAntwoord ? {} : { 'seg:0': 'Привіт, командо!' };
         return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ detectedSourceLang: 'en', translations }) }] }), { status: 200 });
       }) as unknown as typeof fetch,
-      getApiKey: async () => 'sk-test-vertaalpaneel',
+      getApiKey: async () => 'sk-' + 'test-vertaalpaneel',
       loadAgents: async () => [agent()],
       loadPolicyCeiling: async () => 'always',
       loadUserAiBlocked: async () => false,

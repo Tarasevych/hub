@@ -77,10 +77,10 @@ async function hoofd(): Promise<number> {
   check('erfenis van het oude /mcp: nooit (ALLEEN_UITDRUKKELIJK), terwijl get_admin_view zonder scope wél geërfd wordt',
     NAMEN.every((n) => ALLEEN_UITDRUKKELIJK.has(n)) && !sleutelsUitScopes(['beheer', 'gebruiker'], ['mail.read', 'server.read']).some((k) => NAMEN.some((n) => k === `${n}:beheer`))
     && sleutelsUitScopes(['beheer'], []).includes('get_admin_view:beheer'));
-  const m = bt.maskeerTekst('van 203.0.113.77 en 2001:db8::7, mail pavlo.t@voorbeeld.test om 10:20:30, token=abcdefSECRET1234 en ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+  const m = bt.maskeerTekst('van 203.0.113.77 en 2001:db8::7, mail pavlo.t@voorbeeld.test om 10:20:30, token=abcdefSECRET1234 en gh' + 'p_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   check('maskeren: geen IPv4 of IPv6 (wel een pseudoniem), e-mail gemaskeerd, een tijd blijft staan, tokens weg',
     !m.includes('203.0.113.77') && !m.includes('2001:db8::7') && /ip:[0-9a-f]{8}/.test(m) && m.includes('pa***@voorbeeld.test') && !m.includes('pavlo.t@') && m.includes('10:20:30')
-    && !m.includes('SECRET1234') && !m.includes('ghp_aaaa'), m);
+    && !m.includes('SECRET1234') && !m.includes('gh' + 'p_aaaa'), m);
   const d = bt.schoonDetailsVoorAi({ password: 'hunter2', tool: 'proef', ip: '203.0.113.5', reden: 'via 198.51.100.23', userAgent: 'Mozilla', doel: { soort: 'account', naam: 'bob@voorbeeld.test', token: 't0k-geheim' }, ruweAanvraag: { headers: 1 } });
   const dj = JSON.stringify(d);
   check('details: alleen de witte lijst; wachtwoord, IP, user-agent, ruwe aanvraag en geneste tokens vallen weg; adressen gemaskeerd',

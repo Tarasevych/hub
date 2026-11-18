@@ -205,3 +205,62 @@ Volgens de standaard **TRACE-001** (`B-007` / `B-008`) wordt elke release gepubl
 | 17 | [`login-001-candidate-20261102-053006`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-053006) | `LOGIN-001 · Непідписаний кандидат 20261102-053006` | 2026-11-02 05:30 | `LOGIN-001` (CI-vooruitgave) |
 | 18 | [`login-001-candidate-20261102-010425`](https://github.com/Tarasevych/hub/releases/tag/login-001-candidate-20261102-010425) | `LOGIN-001 · Непідписаний кандидат 20261102-010425` | 2026-11-02 01:04 | `LOGIN-001` (CI-vooruitgave) |
 | 19 | [`20261010-ux`](https://github.com/Tarasevych/hub/releases/tag/20261010-ux) | `mijn-ruimte-20261010-ux` | 2026-10-10 19:30 | Eerste basisrelease na de overstap naar self-hosting (`Latest`) |
+
+---
+
+<!-- HISTORIE-001:aanvulling-20261113 -->
+## Aanvulling 13-11-2026: 122 takken, PR #28–#76, releases tot 20261113-121403
+
+> Aanvulling HISTORIE-001; de tabellen hierboven tonen de stand van 04-11-2026 en zijn ongewijzigd. Voorganger en opvolger per tak staan in [KRONIEK-TAKKEN](./KRONIEK-TAKKEN.nl.md), die voortaan alleen wordt aangevuld door `scripts/geschiedenis/kroniek.mjs`.
+
+| PR | Aangemaakt | Tak → basis | Status | Titel |
+|---|---|---|---|---|
+| [#28](https://github.com/Tarasevych/hub/pull/28) | 2026-11-05 | `feature/design-001-20261105-140000` → `feature/identity-account-ui-20261104-180000` | gesloten | DESIGN-001: оновити спільний дизайн і робочий стіл |
+| [#29](https://github.com/Tarasevych/hub/pull/29) | 2026-11-05 | `feature/design-002-20261105-134500` → `integratie` | samengevoegd 2026-11-05 | DESIGN-002: продовження адаптивного оновлення інтерфейсу |
+| [#30](https://github.com/Tarasevych/hub/pull/30) | 2026-11-05 | `claude/project-thread-99x4j9` → `integratie` | samengevoegd 2026-11-06 | ORCH-001: закриття задачі після PR #16/#17 і старі помилки пошуку, контрасту, мобільної верстки й тестів |
+| [#31](https://github.com/Tarasevych/hub/pull/31) | 2026-11-05 | `integratie` → `voornaamst` | samengevoegd 2026-11-06 | DESIGN-002: Адаптивні поверхні й узгоджені порожні стани |
+| [#32](https://github.com/Tarasevych/hub/pull/32) | 2026-11-05 | `claude/project-thread-ocqmeu` → `integratie` | samengevoegd 2026-11-06 | ZOEKDIEP-001: глибокі посилання пошуку, підрозділи хабу й доступ у каталозі |
+| [#33](https://github.com/Tarasevych/hub/pull/33) | 2026-11-06 | `claude/project-thread-99x4j9` → `integratie` | samengevoegd 2026-11-06 | ORCH-001: старі помилки з перевірки перед злиттям PR #30 (тести, права тек, CSS-токени) |
+| [#34](https://github.com/Tarasevych/hub/pull/34) | 2026-11-06 | `claude/project-thread-ocqmeu` → `integratie` | samengevoegd 2026-11-06 | ZOEKDIEP-001: стара хмара відкриває елемент з пошуку й поза bootstrap |
+| [#35](https://github.com/Tarasevych/hub/pull/35) | 2026-11-06 | `claude/project-thread-ocqmeu` → `integratie` | samengevoegd 2026-11-06 | ZOEKDIEP-001: стара хмара більше не затирає resume після діплінка поза bootstrap |
+| [#36](https://github.com/Tarasevych/hub/pull/36) | 2026-11-06 | `claude/project-thread-99x4j9` → `integratie` | samengevoegd 2026-11-06 | ORCH-001: Chrome-перевірка «Координація агентів» бере версію правил із beleid.json |
+| [#37](https://github.com/Tarasevych/hub/pull/37) | 2026-11-06 | `feature/uitgave-001-20261106-081134` → `integratie` | open | UITGAVE-001: випуск 20261106-081134 з integratie (задача, журнал TRACE-001, workflow) |
+| [#38](https://github.com/Tarasevych/hub/pull/38) | 2026-11-06 | `claude/project-thread-99x4j9` → `integratie` | samengevoegd 2026-11-06 | UITGAVE-001: пакувальник більше не ріже кириличний список змін посеред символу |
+| [#39](https://github.com/Tarasevych/hub/pull/39) | 2026-11-06 | `feature/uitgave-001-20261106-092612` → `integratie` | samengevoegd 2026-11-06 | UITGAVE-001: випуск 20261106-092612 з integratie (друга спроба: задача, журнал TRACE-001, workflow) |
+| [#40](https://github.com/Tarasevych/hub/pull/40) | 2026-11-06 | `claude/project-thread-3fl2lm` → `integratie` | samengevoegd 2026-11-06 | UITROL-UTF8-001: інсталятор обрізає AUTEUR/SAMENVATTING по цілому символу UTF-8 |
+| [#41](https://github.com/Tarasevych/hub/pull/41) | 2026-11-06 | `feature/design-003-20261106-103743` → `integratie` | samengevoegd 2026-11-06 | DESIGN-003 · адаптивна дошка підключень ШІ та чотири канали Antigravity |
+| [#42](https://github.com/Tarasevych/hub/pull/42) | 2026-11-06 | `feature/ext090-001-20261106-142448` → `integratie` | gesloten | EXT090-001 (замінено #43): розширення 0.9.2 і підтримка на сайті |
+| [#43](https://github.com/Tarasevych/hub/pull/43) | 2026-11-06 | `feature/ext090-001-20261106-163840` → `integratie` | samengevoegd 2026-11-06 | EXT090-001: розширення 0.9.2 і підтримка на сайті (перезбірка на встановленій 20261106-142434) |
+| [#44](https://github.com/Tarasevych/hub/pull/44) | 2026-11-07 | `feature/identiteit-003-account-atelier-20261107-190805` → `integratie` | samengevoegd 2026-11-07 | IDENTITEIT-003 · Оформлення облікового запису з безпечним поверненням |
+| [#45](https://github.com/Tarasevych/hub/pull/45) | 2026-11-08 | `feature/identiteit-atelier-v49-nieuwste-20261108` → `integratie` | gesloten | Замінено запитом №46 · перенесення оформлення версії 49 |
+| [#46](https://github.com/Tarasevych/hub/pull/46) | 2026-11-08 | `feature/identiteit-atelier-v49-20261108-071906` → `integratie` | samengevoegd 2026-11-08 | ІДЕНТИЧНІСТЬ-004 · точне оформлення версії 49 без повторення засобів доступу |
+| [#47](https://github.com/Tarasevych/hub/pull/47) | 2026-11-08 | `fix/identiteit-005-20261108-083100` → `integratie` | samengevoegd 2026-11-08 | ІДЕНТИЧНІСТЬ-005 · завершити оформлення версії 49 для випуску |
+| [#48](https://github.com/Tarasevych/hub/pull/48) | 2026-11-08 | `fix/trace-002-20261108-090548` → `integratie` | samengevoegd 2026-11-08 | TRACE-002 · усунути помилку перевірки походження випуску |
+| [#49](https://github.com/Tarasevych/hub/pull/49) | 2026-11-08 | `fix/mobiel-001-20261108-100838` → `integratie` | samengevoegd 2026-11-08 | MOBIEL-001 · відновити охайне оформлення центру налаштувань на смартфонах |
+| [#50](https://github.com/Tarasevych/hub/pull/50) | 2026-11-08 | `claude/project-thread-3y80yu` → `integratie` | samengevoegd 2026-11-09 | IDENTITEIT-006/007 · «Студія» та вигляд «Макет» за дизайном власника для центру облікового запису |
+| [#51](https://github.com/Tarasevych/hub/pull/51) | 2026-11-08 | `feature/identiteit-006-20261108-162906` → `voornaamst` | open | ІДЕНТИЧНІСТЬ-004: відтворено оформлення версії 49 з чинними діями та перемикачем |
+| [#52](https://github.com/Tarasevych/hub/pull/52) | 2026-11-09 | `feature/identiteit-007-20261109-051209` → `integratie` | samengevoegd 2026-11-09 | IDENTITEIT-007 · гілка випуску вигляду «Макет» центру облікового запису |
+| [#53](https://github.com/Tarasevych/hub/pull/53) | 2026-11-09 | `feature/identiteit-007-20261109-055709` → `integratie` | samengevoegd 2026-11-09 | IDENTITEIT-007 · друга гілка випуску: перемикач вигляду видно з класичної сторінки |
+| [#54](https://github.com/Tarasevych/hub/pull/54) | 2026-11-09 | `feature/identiteit-007-20261109-065225` → `integratie` | samengevoegd 2026-11-09 | IDENTITEIT-007 · третій випуск: «Макет» завжди в списку виглядів, перемикач функції з міграції |
+| [#55](https://github.com/Tarasevych/hub/pull/55) | 2026-11-09 | `claude/project-thread-qtn620` → `integratie` | open | PERF-001 · швидший старт сторінок: менший бандл, менше запитів, стиснення |
+| [#56](https://github.com/Tarasevych/hub/pull/56) | 2026-11-09 | `claude/project-thread-3y80yu` → `integratie` | open | IDENTITEIT-007 · міграція 0200: опис перемикача вкладається в межу CHECK (≤ 300 знаків) |
+| [#57](https://github.com/Tarasevych/hub/pull/57) | 2026-11-09 | `claude/project-thread-4pq3u6` → `integratie` | gesloten | UITROL-001 · Модернізація оновлення: перевірка вимог, проба міграцій, конвеєр, термінал-вікно, зупинка власником |
+| [#58](https://github.com/Tarasevych/hub/pull/58) | 2026-11-09 | `feature/uitrol-001-20261109-102608` → `integratie` | samengevoegd 2026-11-09 | UITROL-001 · гілка випуску: модернізоване оновлення + PERF-001 |
+| [#59](https://github.com/Tarasevych/hub/pull/59) | 2026-11-09 | `feature/mailbg-001-20261109-161500` → `integratie` | samengevoegd 2026-11-09 | MAILBG-001 · живе тло пошти з лінзою та налаштуваннями |
+| [#60](https://github.com/Tarasevych/hub/pull/60) | 2026-11-09 | `release/mailbg-001-samenvoegen-20261109-215500` → `integratie` | samengevoegd 2026-11-09 | MAILBG-001 · узгодити встановлену версію та випустити тло пошти |
+| [#61](https://github.com/Tarasevych/hub/pull/61) | 2026-11-10 | `feature/huis-001-20261110-072933` → `integratie` | open | HUIS-001 · Розумний будинок «Живий дім»: клікабельний макет на сайті, специфікація дизайну, виправлення розділу «Дім» (етап 0) |
+| [#62](https://github.com/Tarasevych/hub/pull/62) | 2026-11-10 | `fix/mailscan-002-20261110-082557` → `integratie` | samengevoegd 2026-11-10 | MAILSCAN-002 · добровільна перевірка адрес і живе рідинне тло пошти |
+| [#63](https://github.com/Tarasevych/hub/pull/63) | 2026-11-10 | `feature/mailbg-001-aanraking-20261110` → `integratie` | samengevoegd 2026-11-10 | MAILBG-001 · зберегти лінзу після дотику та узгодити перевірки |
+| [#64](https://github.com/Tarasevych/hub/pull/64) | 2026-11-10 | `integratie` → `feature/mailscan-002-uitgave-20261110-120000` | samengevoegd 2026-11-10 | MAILSCAN-002 · додати найновіші інтегровані зміни до випуску |
+| [#65](https://github.com/Tarasevych/hub/pull/65) | 2026-11-11 | `feature/identiteit-008-accountmenu-v3-20261111-142500` → `integratie` | open | IDENTITEIT-008: меню облікового запису v3, виправлення пошти Google та відкрита агентна екосистема ШІ |
+| [#66](https://github.com/Tarasevych/hub/pull/66) | 2026-11-11 | `feature/github-010-volledige-omgeving-20261111-210000` → `integratie` | open | GITHUB-010: повноцінне двостороннє робоче середовище GitHub та екосистемні мости · volledige tweerichtings-GitHub-werkruimte |
+| [#67](https://github.com/Tarasevych/hub/pull/67) | 2026-11-12 | `fix/github-011-oauth-sleutelkluis-20261112-032000` → `integratie` | open | GITHUB-011: виправити зворотний виклик OAuth та однонатискове підключення GitHub при закритому сховищі ключів |
+| [#68](https://github.com/Tarasevych/hub/pull/68) | 2026-11-12 | `fix/github-012-mobiele-weergave-20261112-041500` → `integratie` | open | GITHUB-012: повна адаптація мобільної, планшетної та настільної версій розділу GitHub у всіх 13 підрозділах і просторах |
+| [#69](https://github.com/Tarasevych/hub/pull/69) | 2026-11-12 | `dependabot/npm_and_yarn/npm_and_yarn-78234950ac` → `voornaamst` | open | Bump fast-xml-parser from 5.11.2 to 5.12.0 in the npm_and_yarn group across 1 directory |
+| [#70](https://github.com/Tarasevych/hub/pull/70) | 2026-11-12 | `fix/identiteit-009-mobiel-veiligheid-20261112-080000` → `integratie` | open | IDENTITEIT-009 · повна мобільна адаптація всіх трьох режимів id.tarasevych.com та зміцнення безпеки й швидкодії |
+| [#71](https://github.com/Tarasevych/hub/pull/71) | 2026-11-12 | `fix/identiteit-010-aanmelden-ecosysteem-20261112-103500` → `integratie` | open | IDENTITEIT-010 · цілісний вхід на всіх піддоменах, єдиний сеанс простору, Telegram і сповіщення |
+| [#72](https://github.com/Tarasevych/hub/pull/72) | 2026-11-12 | `feature/cloud-001-delen-mappen-20261112-174242` → `integratie` | open | CLOUD-001: завантаження тек і архівів у хмару, спільний доступ до папок і частин файлів та статистика посилань |
+| [#73](https://github.com/Tarasevych/hub/pull/73) | 2026-11-12 | `claude/admiring-wozniak-gahlxr` → `integratie` | open | MCP-001 · R0+R1: схеми браузерних інструментів, Origin, CIMD, iss, план до MCP 2026-07-28 |
+| [#74](https://github.com/Tarasevych/hub/pull/74) | 2026-11-12 | `feature/mcp-001-platform-20261112-210500` → `integratie` | open | MCP-001 · Повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, безпека OAuth 2.1 та вбудована Студія-Інспектор (mcp.tarasevych.com) |
+| [#75](https://github.com/Tarasevych/hub/pull/75) | 2026-11-13 | `fix/sec-002-20261112-121623` → `integratie` | open | SEC-002 · виправлення вразливостей за глибоким аудитом безпеки поверх версії 20261112-192752 |
+| [#76](https://github.com/Tarasevych/hub/pull/76) | 2026-11-13 | `claude/optimistic-mayer-exvf2p` → `voornaamst` | open | IDENTITEIT-011: план доопрацювання вигляду «Макет» центру облікового запису |

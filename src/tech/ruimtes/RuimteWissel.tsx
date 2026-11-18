@@ -12,6 +12,7 @@
 // RuimteSchakelaar is de pure weergave (eenheidstest met react-dom/server); RuimteWissel koppelt hem aan de opslag.
 import { useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { Home, Lock, Pause, Play, Power, ShieldCheck } from 'lucide-react';
+import { canonicalNavigationUrl, sessieDienst } from '../../canoniek-navigatie';
 import { openTechVenster } from '../tech-opslag';
 import type { RuimtesStatus } from '../ruimtes-contract';
 import { RUIMTE_NAAM, standTekst, wisselFoutTekst, type Taal } from './teksten';
@@ -136,6 +137,16 @@ export default function RuimteWissel({ taal, compact = false, acties = !compact 
     try { await beeindigen(); setUitkomst({ ok: true, tekst: uk ? 'Технічний доступ завершено. Ви у звичайному просторі; щоб повернутися, потрібен новий вхід.' : 'Technische toegang beëindigd. U bent in de gewone ruimte; terugkomen vraagt een nieuwe aanmelding.' }); }
     catch (e) { setUitkomst({ ok: false, tekst: wisselFoutTekst(e, taal) }); }
   };
-  return <RuimteSchakelaar status={s} nu={r.nu} taal={taal} compact={compact} bezig={r.bezig === 'wisselen' || r.bezig === 'pauzeren' || r.bezig === 'beeindigen'} uitkomst={uitkomst}
-    onKies={(naar) => void kies(naar)} knopRef={knop} onPauze={acties ? (aan) => void pauze(aan) : undefined} onEinde={acties ? () => void einde() : undefined} bevestigEinde={bevestig} />;
+  const nietOpBeheer = typeof location !== 'undefined' && !['admin', 'api'].includes(sessieDienst());
+  return (
+    <>
+      <RuimteSchakelaar status={s} nu={r.nu} taal={taal} compact={compact} bezig={r.bezig === 'wisselen' || r.bezig === 'pauzeren' || r.bezig === 'beeindigen'} uitkomst={uitkomst}
+        onKies={(naar) => void kies(naar)} knopRef={knop} onPauze={acties ? (aan) => void pauze(aan) : undefined} onEinde={acties ? () => void einde() : undefined} bevestigEinde={bevestig} />
+      {uitkomst?.ok && s.actief === 'technisch' && nietOpBeheer ? (
+        <a className='rw-admin-link' href={canonicalNavigationUrl('admin', 'overview', taal)}>
+          {taal === 'uk' ? 'Відкрити адмін-панель →' : 'Beheer openen →'}
+        </a>
+      ) : null}
+    </>
+  );
 }

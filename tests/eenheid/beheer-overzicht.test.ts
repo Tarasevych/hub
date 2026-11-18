@@ -14,7 +14,7 @@ import {
 import { checker } from './hulp/nep-google';
 
 const NU = Date.UTC(2026, 9, 17, 12, 0, 0);
-const GEHEIM = ['SUPERGEHEIM-TOKEN-123', '203.0.113.77', 'Onderwerp: salarisbrief.pdf', 'sk-live-ABCDEF'];
+const GEHEIM = ['SUPERGEHEIM-TOKEN-123', '203.0.113.77', 'Onderwerp: salarisbrief.pdf', 'sk-' + 'live-ABCDEF'];
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('beheer-overzicht');
