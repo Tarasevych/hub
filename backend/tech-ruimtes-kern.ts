@@ -357,12 +357,12 @@ export async function toegang(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   const magBeheren = b.toegestaan && (b.mogelijkheden.includes('users.manage') || b.mogelijkheden.includes('roles.delegate'));
   const fouten: string[] = [];
   const deel = async <T>(naam: string, f: () => Promise<T[]>): Promise<T[]> => { try { return await f(); } catch (e) { fouten.push(naam); console.error(`[tech-ruimtes] toegang ${naam}:`, (e as Error).message); return []; } };
-  const mensen = magBeheren ? await deel('mensen', async () => (await sys().query(`SELECT p.user_id, p.rollen, p.max_minuten, p.ingetrokken_op, r.data->>'email' AS email, COALESCE(r.data->>'name','') AS naam, r.data->>'role' AS role,
+  const mensen = magBeheren ? await deel('mensen', async () => (await sys().query(`SELECT p.user_id, p.rollen, p.max_minuten, p.ingetrokken_op, COALESCE(p.snelkoppelingen_toegestaan, false) AS snelkoppelingen_toegestaan, r.data->>'email' AS email, COALESCE(r.data->>'name','') AS naam, r.data->>'role' AS role,
       GREATEST((SELECT max(COALESCE(x.eind_op, x.grens_op)) FROM app.tech_ruimte_sessies x WHERE x.user_id = p.user_id AND x.beeindigd_op IS NULL),
                (SELECT max(a.eind_op) FROM app.tech_activaties a WHERE a.user_id = p.user_id AND a.beeindigd_op IS NULL AND a.eind_op > now())) AS actief_tot
     FROM app.tech_profielen p LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = p.user_id ORDER BY p.ingetrokken_op NULLS FIRST, p.toegekend_op DESC LIMIT 200`)).rows.map((r: any) => ({
       userId: String(r.user_id), email: String(r.email || ''), naam: String(r.naam || ''), rollen: r.rollen, maxMinuten: Number(r.max_minuten),
-      eigenaar: isEigenaarDefinitie(r.role, isOwnerEmail(r.email)), actiefTot: iso(r.actief_tot), ingetrokken: !!r.ingetrokken_op }))) : [];
+      eigenaar: isEigenaarDefinitie(r.role, isOwnerEmail(r.email)), actiefTot: iso(r.actief_tot), ingetrokken: !!r.ingetrokken_op, snelkoppelingenToegestaan: r.snelkoppelingen_toegestaan === true }))) : [];
   const sessies = await deel('sessies', async () => (await sys().query(`SELECT r.*, s.data->>'service' AS dienst, s.data->>'deviceLabel' AS apparaat, s.data->>'browser' AS browser
       FROM app.tech_ruimte_sessies r LEFT JOIN app.records s ON s.tbl = 'owner_service_sessions_v1' AND s.id = r.sessie_id
      WHERE r.user_id = $1 AND ${LIVE} ORDER BY begin_op DESC`, [u.id])).rows.map((r: any) => ({

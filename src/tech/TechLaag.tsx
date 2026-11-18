@@ -9,7 +9,7 @@ import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import { HELP_TECH, contrast, maxMinutenVoor, openEindeToegestaan, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { SSH_CA_VLAG } from '../../shared/ssh-ca';
 import { koppelInschuiven } from './band-inschuiven';
-import { leesBandHintActief, neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
+import { leesBandHintActief, neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, techVernieuwen, useTech, type TechStatus, type TechVenster } from './tech-opslag';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
@@ -33,6 +33,7 @@ import '../extensie/ExtensieOntgrendeling.css';
 // Twee ruimtes van één account (vlag tech-ruimtes-v2, standaard UIT = precies de oude weergave hieronder).
 import { laadRuimtesVlag, ruimtesV2Nu, useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { startRuimtes } from './ruimtes/ruimtes-opslag';
+import { opGebruikerWissel } from './ruimtes/ruimte-signaal';
 import { WOORDEN } from './ruimtes/teksten';
 // 03.11.2026: via lazyTech (zoals terminal/vlaggen/ssh) in plaats van kaal React.lazy — tech-bundels.test.ts eist «nooit kaal lazy» in
 // TechLaag; bij een mislukte lading eerst de status vernieuwen en één keer opnieuw proberen. Alle vijf staan al binnen TechBundelGrens.
@@ -65,6 +66,7 @@ const FOUTEN: Record<string, [string, string]> = {
   GEBRUIKER_NIET_GOEDGEKEURD: ['Цей обліковий запис ще не схвалено.', 'Dit account is nog niet goedgekeurd.'],
   EMAIL_ONGELDIG: ['Перевірте адресу пошти.', 'Controleer het e-mailadres.'],
   ROLLEN_ONGELDIG: ['Оберіть хоча б одну роль.', 'Kies minstens één rol.'],
+  SNELKOPPELINGEN_ONGELDIG: ['Неправильне значення дозволу на ярлики.', 'Ongeldige waarde voor snelkoppelingen.'],
 };
 const foutTekst = (e: unknown, uk: boolean) => { const c = fout(e); const f = FOUTEN[c]; if (f) return uk ? f[0] : f[1]; if (/STEP_UP|STAP_OP/.test(c)) return uk ? 'Вхід не підтверджено — нічого не змінено.' : 'Aanmelding niet bevestigd — niets gewijzigd.'; return `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
 
@@ -133,10 +135,19 @@ export default function TechLaag() {
   // Eén mechanisme voor in- en uitschuiven (band-inschuiven.ts): muis aan de bovenrand, focus, klik, Esc, klik ernaast, scrollen —
   // met de lusbescherming van headroom. Raakt alleen de band zelf, nooit #root.
   const inschuif = useRef<ReturnType<typeof koppelInschuiven> | null>(null);
+  const openBijBandAan = useRef(false);
+  useEffect(() => {
+    return opGebruikerWissel((naar) => {
+      if (naar !== 'technisch') { openBijBandAan.current = false; return; }
+      if (inschuif.current) { openBijBandAan.current = false; inschuif.current.open(); }
+      else openBijBandAan.current = true;
+    });
+  }, []);
   useEffect(() => {
     if (!bandAan) return undefined;
     const k = koppelInschuiven({ band: () => bandRef.current, modus: () => modusRef.current, vast: () => vastRef.current || focusZichtbaar(bandRef.current), zet: setPiek });
     inschuif.current = k;
+    if (openBijBandAan.current) { openBijBandAan.current = false; k.open(); }
     return () => { k.stop(); inschuif.current = null; setPiek(false); };
   }, [bandAan]);
   const vorigeModus = useRef(modus);
@@ -591,7 +602,7 @@ function BandKeuze({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   );
 }
 
-type Rij = { userId: string; profielId: string; rollen: TechRol[]; maxMinuten: number; email: string; naam: string; actiefTot: number | null; ingetrokkenOp: number | null; toegekendOp: number; notitie: string };
+type Rij = { userId: string; profielId: string; rollen: TechRol[]; maxMinuten: number; email: string; naam: string; actiefTot: number | null; ingetrokkenOp: number | null; toegekendOp: number; notitie: string; snelkoppelingenToegestaan?: boolean };
 function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => void }) {
   const [lijst, setLijst] = useState<Rij[] | null>(null);
   const [melding, setMelding] = useState<{ ok: boolean; tekst: string } | null>(null);
@@ -599,6 +610,7 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   const [rollen, setRollen] = useState<TechRol[]>(['ondersteuning']);
   const [max, setMax] = useState(60);
   const [notitie, setNotitie] = useState('');
+  const [yarlykyAan, setYarlykyAan] = useState(false);
   const [bezig, setBezig] = useState('');
   const [bevestig, setBevestig] = useState('');
   const eigen = useMemo(() => (t.activatie?.rollen.includes('eigenaar') ? ['ondersteuning', 'tester', 'ontwikkelaar', 'beheerder', 'auditor'] : (t.activatie?.rollen ?? []).filter((r) => r !== 'eigenaar')) as TechRol[], [t.activatie]);
@@ -607,8 +619,8 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   const geven = async () => {
     setBezig('geven'); setMelding(null);
     try {
-      const r = await api.post('/api/owner/tech/toekennen', { ...techBody(), email, rollen, maxMinuten: max, notitie });
-      setLijst(r.data?.profielen ?? lijst); setEmail(''); setNotitie('');
+      const r = await api.post('/api/owner/tech/toekennen', { ...techBody(), email, rollen, maxMinuten: max, notitie, snelkoppelingenToegestaan: yarlykyAan });
+      setLijst(r.data?.profielen ?? lijst); setEmail(''); setNotitie(''); setYarlykyAan(false);
       setMelding({ ok: true, tekst: uk ? `Профіль видано: ${email}. Права з'являться лише після його активації.` : `Profiel gegeven: ${email}. Rechten pas na zijn activering.` });
     } catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
   };
@@ -616,6 +628,22 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
     setBezig(r.userId); setMelding(null); setBevestig('');
     try { const x = await api.post('/api/owner/tech/intrekken', { ...techBody(), userId: r.userId, reden: 'via de site' }); setLijst(x.data?.profielen ?? lijst); setMelding({ ok: true, tekst: uk ? `Профіль ${r.email} відкликано; активні вкладки втратили права.` : `Profiel van ${r.email} ingetrokken; actieve tabbladen verloren hun rechten.` }); }
     catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
+  };
+  const zetYarlyky = async (r: Rij) => {
+    const nieuw = !r.snelkoppelingenToegestaan;
+    setBezig(`yarlyk:${r.userId}`); setMelding(null);
+    try {
+      const x = await api.post('/api/owner/tech/snelkoppelingen', { ...techBody(), userId: r.userId, toegestaan: nieuw });
+      setLijst((x.data?.profielen as Rij[] | undefined) ?? lijst);
+      if (r.userId === t.profiel?.userId) void techVernieuwen();
+      setMelding({ ok: true, tekst: uk ? `Ярлики в обох частинах меню для ${r.email || r.naam} ${nieuw ? 'дозволено' : 'заборонено'}.` : `Snelkoppelingen in beide delen voor ${r.email || r.naam} ${nieuw ? 'toegestaan' : 'uitgeschakeld'}.` });
+    } catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
+  };
+  const kanYarlykWijzigen = (r: Rij) => {
+    if (r.ingetrokkenOp) return false;
+    if (r.rollen.includes('eigenaar')) return !!t.activatie?.rollen.includes('eigenaar');
+    if (r.userId === t.profiel?.userId) return techMag('roles.delegate', t);
+    return techMag('roles.delegate', t) && r.rollen.every((rol) => eigen.includes(rol));
   };
   return (
     <Venster id='tech-profielen' titel={uk ? 'Технічні профілі' : 'Technische profielen'} breedte={720} onSluit={sluit}>
@@ -630,6 +658,10 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
             <select data-hulp='tech.max' value={max} onChange={(e) => setMax(Number(e.target.value))}>{[15, 30, 60, 120, 240, 480].map((d) => <option key={d} value={d}>{d >= 60 ? `${d / 60} ${uk ? 'год' : 'u'}` : `${d} ${uk ? 'хв' : 'min'}`}</option>)}</select>
             <small>{uk ? 'Найсильніша роль усе одно обмежує (адмін ≤ 1 год).' : 'De sterkste rol beperkt toch (beheerder ≤ 1 u).'}</small></label>
           <label className='tech-veld'><span>{uk ? 'Нотатка (навіщо)' : 'Notitie (waarom)'}</span><input value={notitie} onChange={(e) => setNotitie(e.target.value)} maxLength={300} /></label>
+          <div className='tech-veld tech-veld-aanvink'>
+            <span>{uk ? 'Ярлики в меню' : 'Snelkoppelingen in menu'} <HulpVraag k='tech.snelkoppelingen' uk={uk} label={uk ? 'Ярлики в обох частинах меню' : 'Snelkoppelingen in beide delen'} /></span>
+            <label className='tech-aanvink'><input data-hulp='tech.snelkoppelingen' type='checkbox' checked={yarlykyAan} onChange={(e) => setYarlykyAan(e.target.checked)} data-tech-yarlyk-toestaan='1' /><span>{uk ? 'Дозволити розміщувати ярлики кнопок технічного профілю в обох частинах меню' : 'Snelkoppelingen van het technisch profiel in beide delen van het menu toestaan'}</span></label>
+          </div>
           <div className='tech-knoppen'><button type='submit' className='is-hoofd' disabled={!!bezig || !email || !rollen.length} aria-busy={bezig === 'geven' || undefined} data-tech-knop='geven'>{bezig === 'geven' ? (uk ? 'Зачекайте…' : 'Even geduld…') : (uk ? 'Видати' : 'Geven')}</button></div>
         </form>
         {melding ? <p className={`tech-melding${melding.ok ? ' is-ok' : ''}`} role={melding.ok ? 'status' : 'alert'}>{melding.tekst}</p> : null}
@@ -640,6 +672,18 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
               <span className='tech-lijst-wie'><b>{r.naam || r.email}</b><small>{r.email} · <code>{r.profielId}</code></small></span>
               <span className='tech-lijst-rollen'>{r.rollen.map((x) => rolNaam(x, uk)).join(' · ')}</span>
               <span className='tech-lijst-stand'>{r.ingetrokkenOp ? (uk ? 'відкликано' : 'ingetrokken') : r.actiefTot ? (uk ? `активний до ${new Date(r.actiefTot).toLocaleTimeString()}` : `actief tot ${new Date(r.actiefTot).toLocaleTimeString()}`) : (uk ? 'неактивний' : 'inactief')}</span>
+              {!r.ingetrokkenOp && (
+                <div className='tech-knoppen'>
+                  {kanYarlykWijzigen(r) ? (
+                    <button type='button' className={r.snelkoppelingenToegestaan ? 'is-hoofd' : ''} aria-pressed={!!r.snelkoppelingenToegestaan} disabled={bezig === `yarlyk:${r.userId}`} onClick={() => void zetYarlyky(r)} data-tech-knop={`yarlyk:${r.email}`}>
+                      <ShieldCheck aria-hidden='true' />{' '}
+                      {r.snelkoppelingenToegestaan ? (uk ? 'Ярлики в обох частинах: дозволено' : 'Snelkoppelingen in beide delen: aan') : (uk ? 'Ярлики в обох частинах: вимкнено' : 'Snelkoppelingen in beide delen: uit')}
+                    </button>
+                  ) : (
+                    <span className='tech-meta'>{r.snelkoppelingenToegestaan ? (uk ? 'Ярлики в обох частинах: дозволено' : 'Snelkoppelingen in beide delen: aan') : (uk ? 'Ярлики в обох частинах: вимкнено' : 'Snelkoppelingen in beide delen: uit')}</span>
+                  )}
+                </div>
+              )}
               {!r.ingetrokkenOp && !r.rollen.includes('eigenaar') && r.userId !== t.profiel?.userId ? (bevestig === r.userId
                 ? <span className='tech-knoppen'><button type='button' className='is-gevaar' onClick={() => void nemen(r)} data-tech-knop={`intrekken-ja:${r.email}`}>{uk ? 'Так, відкликати' : 'Ja, intrekken'}</button><button type='button' onClick={() => setBevestig('')}>{uk ? 'Ні' : 'Nee'}</button></span>
                 : <span className='tech-knoppen'><button type='button' className='is-gevaar' disabled={bezig === r.userId} onClick={() => setBevestig(r.userId)} data-tech-knop={`intrekken:${r.email}`}>{uk ? 'Відкликати' : 'Intrekken'}</button><Vraag help={HELP_TECH.intrekken} uk={uk} label={uk ? 'Відкликати' : 'Intrekken'} /></span>) : null}

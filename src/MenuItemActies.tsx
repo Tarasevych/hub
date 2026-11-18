@@ -2,10 +2,11 @@
 // Openen: klik/Enter/spatie op het item in de bewerkmodus. Pijltjes ↑/↓ (en Home/End) bewegen, Enter kiest, Esc/← terug of dicht;
 // de focus gaat daarna terug naar het item. Twee niveaus: acties → doelen («Перемістити до…» / «Дублювати до…»).
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as RKeyboardEvent, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Copy, FolderInput, LayoutList, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Copy, FolderInput, LayoutList, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import type { MenuPlaats } from '../shared/menu-model';
 
 export type ActieDoel = { plaats: MenuPlaats; ouder: string | null; label: string };
+export type ExtraMenuActie = { sleutel: string; label: string; doe: () => void };
 type Props = {
   lang: 'uk' | 'nl';
   titel: string;
@@ -17,6 +18,7 @@ type Props = {
   aangepast: boolean;
   verplaatsDoelen: ActieDoel[];
   kopieDoelen: ActieDoel[];
+  extraActies?: ExtraMenuActie[];
   sectieTonen?: () => void;
   onStap: (d: -1 | 1) => void;
   onVerplaats: (d: ActieDoel) => void;
@@ -26,7 +28,7 @@ type Props = {
   onSluit: () => void;
 };
 export default function MenuItemActies(p: Props) {
-  const [niveau, setNiveau] = useState<'acties' | 'verplaats' | 'kopie'>('acties');
+  const [niveau, setNiveau] = useState<'acties' | 'verplaats' | 'kopie' | 'deel'>('acties');
   const paneel = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ left: -9999, top: -9999 });
   const tr = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
@@ -68,9 +70,13 @@ export default function MenuItemActies(p: Props) {
         {knop('omlaag', p.horizontaal ? tr('Правіше', 'Naar rechts') : tr('Нижче', 'Omlaag'), <ArrowDown aria-hidden='true' />, () => { p.onStap(1); sluit(false); }, !p.kanOmlaag)}
         {knop('verplaats', tr('Перемістити до…', 'Verplaatsen naar…'), <FolderInput aria-hidden='true' />, () => setNiveau('verplaats'), p.verplaatsDoelen.length === 0, true)}
         {knop('kopie', tr('Дублювати до…', 'Dupliceren naar…'), <Copy aria-hidden='true' />, () => setNiveau('kopie'), p.kopieDoelen.length === 0, true)}
+        {p.extraActies && p.extraActies.length > 0 && knop('ander-deel', tr('Розмістити в іншій частині…', 'In ander deel plaatsen…'), <ShieldCheck aria-hidden='true' />, () => setNiveau('deel'), false, true)}
         {p.sectieTonen && knop('sectie', tr('Показати сторінки розділу', 'Pagina\'s van de sectie tonen'), <LayoutList aria-hidden='true' />, () => { p.sectieTonen?.(); sluit(false); })}
         {p.isKopie && knop('kopie-weg', tr('Видалити цю копію', 'Deze kopie verwijderen'), <Trash2 aria-hidden='true' />, () => { p.onKopieWeg(); sluit(false); })}
         {knop('terug', p.isKopie ? tr('Скинути оригінал (і всі копії)', 'Origineel terugzetten (en alle kopieën)') : tr('Скинути цей пункт', 'Dit item terugzetten'), <RotateCcw aria-hidden='true' />, () => { p.onTerugzetten(); sluit(false); }, !p.aangepast)}
+      </> : niveau === 'deel' ? <>
+        {knop('terug-niveau', tr('Назад', 'Terug'), <ChevronLeft aria-hidden='true' />, () => setNiveau('acties'))}
+        {(p.extraActies || []).map((a) => knop(a.sleutel, a.label, <ShieldCheck aria-hidden='true' />, () => { a.doe(); sluit(false); }))}
       </> : <>
         {knop('terug-niveau', tr('Назад', 'Terug'), <ChevronLeft aria-hidden='true' />, () => setNiveau('acties'))}
         {doelen.map((d) => knop(`${d.plaats}|${d.ouder || ''}`, d.label, niveau === 'verplaats' ? <FolderInput aria-hidden='true' /> : <Copy aria-hidden='true' />, () => { (niveau === 'verplaats' ? p.onVerplaats : p.onKopie)(d); sluit(false); }))}

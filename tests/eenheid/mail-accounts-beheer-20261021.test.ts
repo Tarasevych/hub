@@ -289,6 +289,7 @@ export async function main(): Promise<number> {
   // ================================================================ 5. logo's: geen nagetekende merken, neutrale plaat, ontsmetting
   const { MERKEN } = await import('../../src/merk/merk-tabel');
   const { LOGOS } = await import('../../src/merk/merk-logos');
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
   const reg = await import('../../src/merk/merk-register');
   const Merk = (await import('../../src/merk/Merk')).default;
   const NEUTRAAL = ['microsoftoutlook', 'ukrnet', 'iua', 'onlineua', 'yahoo', 'microsoftonedrive', 'microsoftonenote', 'microsoftteams', 'microsoftazure', 'microsoftentra', 'fastmail', 'freshdesk', 'mollie', 'mondaydotcom', 'pipedrive', 'tuya', 'webhook', 'windows', 'edge', 'microsoft', 'node'];
@@ -297,13 +298,12 @@ export async function main(): Promise<number> {
   const zwak = NEUTRAAL.filter((k) => reg.merkContrast(MERKEN[k].kleur, MERKEN[k].vlak!) < 4.5);
   check('neutrale plaat: letters ≥ 4,5:1 op de merktoon (wit of zwart, het hoogste contrast)', zwak.length === 0, zwak.join());
   const mailMerken = MAIL_AANBIEDERS.map((a) => a.merk);
-  // UPD-004 (PLAATS-TEKENS-001, #154): icloud та інші дублі прибрано з merk-logos.ts — їхня форма тепер лише офіційний файл з simple-icons
-  // (src/merk/officieel/, OFFICIEEL_SLEUTELS). Справжня форма = LOGOS або офіційний файл без нейтральної плати.
-  const { OFFICIEEL_SLEUTELS } = await import("../../src/merk/officieel-sleutels");
+  // Merken met een officieel bestand (bv. icloud na PLAATS-TEKENS-001) staan niet meer dubbel in LOGOS.
   const echteHerkomst = mailMerken.filter((m) => !!LOGOS[m] || (OFFICIEEL_SLEUTELS.has(m) && !MERKEN[m]?.neutraal));
   const neutraalMail = mailMerken.filter((m) => MERKEN[m]?.neutraal);
-  check(`elke mailtegel: óf een vorm uit simple-icons (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
-    echteHerkomst.length + neutraalMail.length === mailMerken.length && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail'));
+  check(`elke mailtegel: óf een vorm uit simple-icons / officieel bestand (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
+    echteHerkomst.length + neutraalMail.length === mailMerken.length
+    && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail') && OFFICIEEL_SLEUTELS.has('icloud'));
   // UPD-003 (REESTR-LOGO-001, #149): ukr.net heeft nu een officieel bestand (src/merk/officieel/ukrnet.png) — dat wint van de neutrale plaat.
   // Офіційний файл перемагає нейтральну плитку; саму плитку перевіряємо на тимчасовому нейтральному записі без офіційного файла.
   await reg.laadOfficieel();

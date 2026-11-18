@@ -123,7 +123,7 @@ export type AccountMenuV3Props = {
   termsLabel: string;
   showLogoutAll: boolean;
   wisselMelding: AccountWisselMeldingData | null;
-  wisselFout?: string;
+  wisselFout?: { tekst: string; reauth?: boolean } | string | null;
   v2Ruimtes: boolean;
   onChangePhoto?: (event: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
   onSelectAccount: (item: RememberedAccount) => Promise<void> | void;
@@ -187,7 +187,7 @@ export function AccountMenuV3({
   termsLabel,
   showLogoutAll,
   wisselMelding,
-  wisselFout = '',
+  wisselFout = null,
   v2Ruimtes,
   onChangePhoto,
   onSelectAccount,
@@ -741,11 +741,26 @@ export function AccountMenuV3({
       </header>
 
       {/* Повідомлення про помилку перемикання облікового запису */}
-      {wisselFout ? (
-        <p className='am3-wissel-fout' role='alert' data-account-wissel-fout='true'>
-          {wisselFout}
-        </p>
-      ) : null}
+      {wisselFout ? (() => {
+        const tekst = typeof wisselFout === 'string' ? wisselFout : wisselFout.tekst;
+        const reauth = typeof wisselFout === 'object' && Boolean(wisselFout.reauth);
+        return (
+          <section className='am3-wissel-fout' role='alert' data-account-wissel-fout='true'>
+            <p>{tekst}</p>
+            {reauth ? (
+              <button
+                type='button'
+                className='am3-manage-pill canonical-menu-action primary'
+                onClick={onAddAccount}
+                disabled={busy}
+              >
+                <KeyRound aria-hidden='true' />
+                <span>{uk ? 'Увійти через Google' : 'Aanmelden via Google'}</span>
+              </button>
+            ) : null}
+          </section>
+        );
+      })() : null}
 
       {/* Повідомлення після швидкого перемикання облікового запису */}
       {displayUser && wisselMelding ? (

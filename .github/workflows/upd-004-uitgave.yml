@@ -1,16 +1,16 @@
-name: 'UPD-004 · Спільний випуск поверх 20261117-190154: перемикання на технічний простір, меню якорів /agenten, герби й мережі, реєстр сповіщень, безпека SEC-003'
+name: 'UPD-004 · Спільний випуск PR № 153–157: меню якорів, сповіщення, ярлики, геознаки, перемикання просторів і безпека'
 
 # Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері (20261117-190154 @ 14dbcb3a),
-# правила координації, типи, статичні контракти, TRACE-001, хмарні тести, безбазові й післяскладальні випробування,
-# подвійний прогін усіх міграцій на PostgreSQL 16 із трьома ролями та випробування з базою даних і Хроміумом, повне складання,
-# підписаний CRX3 0.9.7, маніфест встановлювача та контрольну суму SHA-256.
-# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, typen, statische contracten, TRACE-001,
-# cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
+# правила координації, типи клієнта й сервера, статичні контракти, TRACE-001, 20 хмарних тестів, 144 безбазових і 13 післяскладальних випробувань,
+# подвійний прогін усіх міграцій на PostgreSQL 16 (до 0301_tech_snelkoppelingen) із трьома ролями та 120 випробувань із базою даних і Хроміумом,
+# повне складання, автоматично підписаний CRX3 0.9.7, маніфест встановлювача та контрольну суму SHA-256.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, client- en servertypen, statische contracten, TRACE-001,
+# cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties (t/m 0301) en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
 # volledige bouw, ondertekende CRX3 0.9.7, manifest en SHA-256.
 on:
   push:
     branches:
-      - feature/upd-004-uitgave-20261117-225233
+      - feature/upd-004-uitgave-20261117-225600
     paths:
       - .github/workflows/upd-004-uitgave.yml
       - orchestratie/ontwikkelarchieven/UPD-004.json
@@ -34,10 +34,10 @@ concurrency:
 
 env:
   TAAK: UPD-004
-  # Жива встановлена основа на сервері — LOKAI-001 (20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146), за словами власника 17.11.
+  # Жива встановлена основа на сервері — LOKAI-001 (20261117-190154 @ 14dbcb3aeceb205ac6f69238f6397816bd293146).
   BEKENDE_BASISSEN: '20261117-190154=14dbcb3aeceb205ac6f69238f6397816bd293146'
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
-  MODEL_ID: ${{ inputs.model_id || vars.UPD_004_MODEL_ID }}
+  MODEL_ID: ${{ inputs.model_id || vars.UPD_004_MODEL_ID || 'Gemini 4 Hydrogen Extra' }}
   MODEL_VERSIE: ${{ inputs.model_versie || '' }}
 
 jobs:
@@ -63,12 +63,8 @@ jobs:
           fetch-depth: 0
       - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
         run: |
-          if [ "$GITHUB_REF_NAME" != "feature/upd-004-uitgave-20261117-225233" ]; then
-            echo "Випуск UPD-004 можна запускати лише з гілки feature/upd-004-uitgave-20261117-225233." >&2
-            exit 1
-          fi
-          if [ -z "${MODEL_ID:-}" ]; then
-            echo "Не задано model_id для UITROL-MANIFEST.json." >&2
+          if [ "$GITHUB_REF_NAME" != "feature/upd-004-uitgave-20261117-225600" ]; then
+            echo "Випуск UPD-004 можна запускати лише з гілки feature/upd-004-uitgave-20261117-225600." >&2
             exit 1
           fi
       - name: Відновити назву гілки завдання
@@ -139,15 +135,17 @@ jobs:
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
           node --input-type=module -e "
             import fs from 'node:fs';
-            import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+            import { leesRisicoUitleg, valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
             const d = JSON.parse(fs.readFileSync('orchestratie/ontwikkelarchieven/UPD-004.json', 'utf8'));
             const f = valideerOntwikkelDossier(d, 'UPD-004');
             if (f.length) throw Error(f.join(', '));
+            const r = leesRisicoUitleg(d);
+            if (r.fouten.length) throw Error(r.fouten.join(', '));
             if (d.privacy?.geheimenUitgesloten !== true) throw Error('privacy.geheimenUitgesloten ≠ true');
-            console.log('Журнал UPD-004 валідний');"
+            console.log('Журнал UPD-004 валідний; пояснень ризику:', r.uitleg.length);"
           printf '=== FILE: trace-001-ontwikkelarchief.test.ts ===\n' >> "$RUNNER_TEMP/eenheidstests.log"
           node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
-      - name: Перевірити статичні правила, самоперевірку ПК-агента, 20 хмарних тестів і 120 безбазових модульних випробувань
+      - name: Перевірити статичні правила, самоперевірку ПК-агента, 20 хмарних тестів і 144 безбазових модульних випробувань
         shell: bash
         run: |
           set -euo pipefail
@@ -197,9 +195,15 @@ jobs:
             afstemming-ui-20261030 \
             afstemming-zvirka-ui-20261030 \
             agent-verbinden-20261020 \
+            agenten-pagina-20261026 \
+            agenten-pagina-blokken-20261103 \
+            ai-acties-20261024 \
             ai-doorverwijzing-ui004 \
             ai-ecosysteem-en-google-herstel \
             ai-hub \
+            ai-mail-assistent \
+            ai-onafhankelijke-agenten \
+            ai-vertaling \
             ai-werkruimte-20261019 \
             ankers-002-agenten-20261115 \
             apparaat-bevestiging-20261109 \
@@ -208,6 +212,7 @@ jobs:
             breedte-001-kolom-20261115 \
             browser-gedeeld-20261022 \
             centrering-pc-20261115 \
+            chat \
             cloud-001-ui-contract \
             cloud-vnext-ui-20261029 \
             contrast-knoppen-logos-20261021 \
@@ -221,9 +226,13 @@ jobs:
             extensie-tabblad-hint-20261115 \
             extensie-ui \
             extensie-vergrendeling \
+            gemini-004-agenten-ankers-20261117 \
             github-012-mobiele-weergave \
+            github-koppelkaart-20261019 \
+            github-platform \
             github-volledige-werkruimte \
             hint-001-ankertip \
+            historie-kroniek \
             huis-001-oude-fouten-20261110 \
             hulp-vraagtekens \
             identiteit-009-mobiel-veiligheid \
@@ -240,6 +249,7 @@ jobs:
             klassiek-005a-werkblad \
             klassiek-007a-huis-kern \
             klassiek-008a-mcp-kern-uitrol \
+            klassiek-008b-agenten-kern-inspectie \
             klassiek-009a-sleutelpoort \
             klassiek-010a-beheer-kern \
             kleuren-001-een-bron \
@@ -247,6 +257,7 @@ jobs:
             levende-achtergrond-20261115 \
             mail-dok-pil-20261115 \
             mail-geminimaliseerd-20261025 \
+            mail-rekenblad-lezer-20261116 \
             mail-ux-beoordeling-20261021 \
             mailai-001-20261115 \
             mailanker-001-model \
@@ -259,6 +270,7 @@ jobs:
             mcp-2026-07-28-studio \
             mededeling-ontdubbelen \
             melding-positie \
+            meldingen-catalogus-20261117 \
             meldingen-ecosysteem-kern \
             meldingen-ecosysteem-ui \
             meldingen-integ-20261103 \
@@ -267,22 +279,32 @@ jobs:
             meldingen-uitleg-20261030 \
             meldingen-ux-001-20261115 \
             meldingen-v2-20261029 \
+            menu-indeling \
+            menu-oppervlak \
             menu-per-account-20261019 \
             menu-per-profiel-20261019 \
+            menu-ruimte-wissel-20261117 \
             menu-snelheid \
+            menu-v2 \
             merk-officieel-20261021 \
             migraties-terugdraaibaar-20261117 \
             mobiel-cascade-20261105 \
             mobiel-geometrie-20261021 \
+            netwerk-soort-20261117 \
             orch-kern-20261031 \
             orch-uitrol-basis-20261031 \
             perf-001-20261109 \
+            plaats-tekens-20261117 \
             plaatsing-20261025 \
+            ruimte-wissel-20261028 \
+            ruimtes-wissel-meldingen-20261117 \
             sec-002-afwerking-b-20261112 \
             ssh-ca \
             stap-op-omschrijving-20261115 \
             stroken-sluiten-20261115 \
             strook-menu \
+            tech-ruimte-f5-20261105 \
+            tech-yarlyky-20261117 \
             telegram-aanmelden-20261109 \
             thema \
             toegankelijk-mail-20261021 \
@@ -306,26 +328,11 @@ jobs:
             zoek-in-menu-20261024 \
             zoek-menu-20261103 \
             zoek-route-tabblad-20261105 \
-            gemini-004-agenten-ankers-20261117 \
-            mail-rekenblad-lezer-20261116 \
-            meldingen-catalogus-20261117 \
-            historie-kroniek \
-            menu-ruimte-wissel-20261117 \
-            menu-indeling \
-            menu-oppervlak \
-            menu-v2 \
-            ruimte-wissel-20261028 \
-            tech-ruimte-f5-20261105 \
-            agenten-pagina-20261026 \
-            agenten-pagina-blokken-20261103 \
-            klassiek-008b-agenten-kern-inspectie \
-            netwerk-soort-20261117 \
-            plaats-tekens-20261117 \
             zoek-veld-op-plek-20261115; do
             printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
-      - name: Перевірити типи, скласти застосунок і перевірити 12 післяскладальних випробувань
+      - name: Перевірити типи, скласти застосунок і перевірити 13 післяскладальних випробувань
         shell: bash
         run: |
           set -euo pipefail
@@ -359,7 +366,7 @@ jobs:
             printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
-      - name: Підготувати ролі й міграції PostgreSQL 16 (двічі), Хроміум і запустити 116 випробувань із БД
+      - name: Підготувати ролі й міграції PostgreSQL 16 (двічі), Хроміум і запустити 120 випробувань із БД
         shell: bash
         run: |
           set -euo pipefail
@@ -418,6 +425,7 @@ jobs:
 
           for t in \
             aanmeld-koppel-20261030 \
+            account-wisselen-tech-20261020 \
             afstemming-kern-20261030 \
             agent-namens \
             agenten \
@@ -462,8 +470,10 @@ jobs:
             sleutelkluis-20261020 \
             tech-bundels-ruimtes-v2 \
             tech-bundels \
+            tech-ruimte-pagina-20261020 \
             tech-ruimtes-v2-20261027 \
             tech-sessies \
+            tech-tabbladen \
             telegram-aanmelden-stroom-20261109 \
             telegram-inlog-apparaat-20261112 \
             telegram-venster-20261114 \
@@ -472,6 +482,7 @@ jobs:
             uitrol-telegram-en-github-ontvangen-20261115 \
             uitrol-vereisten-001 \
             veilig-002-noodstop-uiterlijk \
+            weergave-per-account-20261020 \
             werkblad-v3-routes \
             aanmeld-plaats-eis-20261116 \
             afwijs-venster-20261116 \
@@ -532,10 +543,6 @@ jobs:
             vertaalpaneel-20261019 \
             werkstromen-veilig-20261116 \
             zoek-evaluatie-20261022 \
-            account-wisselen-tech-20261020 \
-            tech-ruimte-pagina-20261020 \
-            tech-tabbladen \
-            weergave-per-account-20261020 \
             zoek-isolatie-20261022; do
             psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM app.records WHERE tbl IN ('provider_endpoint_verifications_v1', 'mail_endpoint_verifications_v1');" >/dev/null
             printf '=== FILE: %s ===\n' "$t.test.ts" >> "$RUNNER_TEMP/eenheidstests.log"
@@ -564,44 +571,46 @@ jobs:
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
-            "titel": "UPD-004 · Спільний випуск: перемикання на технічний простір, меню якорів /agenten, герби й мережі, реєстр сповіщень, безпека SEC-003",
-            "samenvatting": "Поверх встановленої версії 20261117-190154 (LOKAI-001 @ 14dbcb3a) зібрано все, що ще не стояло на сайті: WISSEL-001, GEMINI-004 (#153), PLAATS-TEKENS-001 (#154), MELDCAT-001 (#155), SEC-003 (#151) і залишки старих PR (#77, #56, #23). Без нових міграцій; розширення лишається 0.9.7.",
+            "titel": "UPD-004 · Спільний випуск оновлень (PR № 153–157): меню якорів, сповіщення, ярлики, геознаки та безпека",
+            "samenvatting": "Поверх чинної встановленої версії 20261117-190154 (14dbcb3aeceb205ac6f69238f6397816bd293146): зібрано й узгоджено спільний випуск із усіх відкритих доопрацювань інших гілок (WISSEL-001, FIX-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001 та доопрацювання процесів перевірки й хронології).",
             "wijzigingen": [
-              "WISSEL-001: перемикання на технічний простір в оболонці знову працює, меню чесно переходить між обліковими записами.",
-              "GEMINI-004 (#153): сторінка /agenten отримала групове меню якорів (MaquetteAnkerRail) замість горизонтальної смуги вкладок.",
-              "PLAATS-TEKENS-001 (#154): знаки місць (герби міст і областей, прапори), логотипи провайдерів і виробників, емблема типу мережі (дім, мобільна, VPN, Tor, хостинг) — усе локально, без зовнішніх запитів.",
-              "MELDCAT-001 (#155): єдиний реєстр усіх сповіщень сайту з тестом-сторожем, що червоніє, якщо нове сповіщення не внесене в реєстр.",
-              "SEC-003 (#151): політика SECURITY.md, бібліотеку xlsx замінено власним безпечним читачем таблиць на fflate, fast-xml-parser 5.12.1, посилені сканери безпеки й звіти.",
-              "Залишки старих PR: генератор хронології гілок (HISTORIE-001, #77), записи журналу IDENTITEIT-007 (#56), команди orch TRACE-001 (#23)."
+              "Перемикання просторів і меню облікових записів (WISSEL-001 і FIX-001): відновлено синхронне перемикання на технічний простір у всіх оболонках, чесне перемикання облікових записів із показом помилок wisselFout, додано дозвіл адміністратора на яскраві ярлики технічного профілю в меню (міграція 0301_tech_snelkoppelingen.sql) і виправлено утримання меню сповіщень.",
+              "Спільне меню якорів на сторінці агентів (GEMINI-004, PR № 153): запроваджено групову навігацію MaquetteAnkerRail для /agenten, збережено повагу до обмежень доступу та центрування на всіх краях.",
+              "Географічні знаки, постачальники зв’язку та єдиний реєстр сповіщень (PLAATS-TEKENS-001, MELDCAT-001, PR № 154–155): узгоджено оновлені знаки країн, областей і мереж, замінено provider-teken на aanbieder-teken і внесено всі 291 місце сповіщень до каталогу (зокрема 4 повідомлення про зміну простору й яскравості).",
+              "Безпека й ланцюг постачання (SEC-003, AI-TERMIJN-001, PR № 151): усунуто сторонню залежність xlsx, додано overrides для fast-xml-parser ^5.12.1, закріплено дії та змінні середовища у процесах перевірки безпеки (усунено зауваження bandit.yml та osv-scanner.yml) й уточнено обробку винятків у deploy/pakketgegevens.py.",
+              "Карта файлів, каталог пошуку, хронологія гілок і прозорість TRACE-001: оновлено docs/kaart/bestandskaart.json, shared/zoek-ui-knoppen.generated.ts (1810 елементів), знімок запитів на злиття (153 записи) і двомовні сторінки хронології гілок."
             ],
             "fixes": [
-              "Пройдено перевірку правил координації, TRACE-001, типів клієнта та сервера, повного складання з підписаним CRX3 0.9.7, подвійних міграцій на PostgreSQL 16 із трьома ролями та всіх безбазових, хмарних, післяскладальних і базових випробувань із Хроміумом."
+              "Усунуто конфлікти між гілками PR № 153–157 та зібрано єдине оновлення поверх живої основи 20261117-190154 (14dbcb3a).",
+              "Виправлено зауваження щодо безпеки конфігурації у .github/workflows/bandit.yml, .github/workflows/osv-scanner.yml і .github/workflows/design-002-controle.yml та заповнено всі 4 додаткові сповіщення в реєстрі.",
+              "Пройдено перевірку правил координації, TRACE-001, типів клієнта та сервера, повного складання з підписаним CRX3 0.9.7, подвійного прогону міграцій PostgreSQL 16 (до 0301) із трьома ролями та всіх 298 наборів випробувань."
             ],
             "beperkingen": [
-              "Автоматичного встановлення немає: пакунок встановлює лише власник через Admin → Оновлення після зеленої попередньої перевірки та підтвердження ключем доступу.",
-              "Базу мереж для емблеми «Мережа» адміністратор кладе сам командою node scripts/asn-basis-bijwerken.mjs; без неї сайт показує менше подробиць, але без помилок."
+              "Автоматичного встановлення немає: пакунок встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки та схвалення ключем доступу.",
+              "Міграція 0301_tech_snelkoppelingen.sql додає стовпець snelkoppelingen_toegestaan до таблиці app.tech_profielen; у разі повернення до попередньої версії цей стовпець лишається в базі без шкоди для сумісності."
             ],
-            "instructies": "Перед встановленням зробіть резервну копію на R:\\; завантажте mijn-ruimte-<versie>.tar.gz (не zip) у Admin → Оновлення, дочекайтеся зеленої перевірки й схваліть ключем доступу."
+            "instructies": "Перед встановленням перевірте наявність свіжої резервної копії у R:\\mijn-ruimte-reservekopie\\ (SHA256SUMS, herstelsleutel-age.txt, geheimen-*.tar.age); завантажте mijn-ruimte-<versie>.tar.gz (не zip) на сторінці Адміністрування → Оновлення, перегляньте пояснення до прапорців ризику й підтвердьте ключем доступу. Після оприлюднення UPD-004 за бажанням можна закрити перекриті ним відкриті запити на злиття (#153–#157)."
           };
           const nl = {
-            "titel": "UPD-004 · Gezamenlijke uitgave: wisselen naar de technische ruimte, ankermenu /agenten, wapens en netwerken, meldingenregister, beveiliging SEC-003",
-            "samenvatting": "Boven op de geïnstalleerde versie 20261117-190154 (LOKAI-001 @ 14dbcb3a) is alles samengebracht wat nog niet op de site stond: WISSEL-001, GEMINI-004 (#153), PLAATS-TEKENS-001 (#154), MELDCAT-001 (#155), SEC-003 (#151) en restanten van oude PR's (#77, #56, #23). Geen nieuwe migraties; extensie blijft 0.9.7.",
+            "titel": "UPD-004 · Gezamenlijke uitgave (PR #153–157): ankermenu, meldingen, snelkoppelingen, plaats- en netwerktekens en veiligheid",
+            "samenvatting": "Boven op de geïnstalleerde versie 20261117-190154 (14dbcb3aeceb205ac6f69238f6397816bd293146): samengevoegde uitgave met alle openstaande verbeteringen uit de andere takken (WISSEL-001, FIX-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001 en bijgewerkte kronieken en veiligheidswerkstromen).",
             "wijzigingen": [
-              "WISSEL-001: wisselen naar de technische ruimte in de schil werkt weer; het menu wisselt eerlijk tussen accounts.",
-              "GEMINI-004 (#153): /agenten heeft een gegroepeerd ankermenu (MaquetteAnkerRail) in plaats van de tabstrook.",
-              "PLAATS-TEKENS-001 (#154): plaatstekens (stads- en provinciewapens, vlaggen), logo's van aanbieders en fabrikanten, embleem voor netwerksoort — alles lokaal.",
-              "MELDCAT-001 (#155): één register van alle meldingen met een bewakingstest.",
-              "SEC-003 (#151): SECURITY.md, xlsx vervangen door een eigen veilige lezer op fflate, fast-xml-parser 5.12.1, verharde scanners en rapporten.",
-              "Restanten van oude PR's: generator van de takkentijdlijn (#77), logboek IDENTITEIT-007 (#56), orch-opdrachten TRACE-001 (#23)."
+              "Ruimtewissel en accountmenu (WISSEL-001 en FIX-001): synchrone overgang naar de technische ruimte in beide schillen, eerlijke foutafhandeling bij accountwissel (wisselFout), beheerderstoestemming voor technische snelkoppelingen in het menu (migratie 0301_tech_snelkoppelingen.sql) en betrouwbare aanwijzerafhandeling in het meldingenmenu.",
+              "Gedeeld gegroepeerd ankermenu op de agentenpagina (GEMINI-004, PR #153): MaquetteAnkerRail op /agenten met toegangsbeheer en nette randuitlijning.",
+              "Plaats-, netwerk- en meldingencatalogus (PLAATS-TEKENS-001, MELDCAT-001, PR #154–155): volledige aanbieder- en plaatstekens (hernoemd van provider-teken naar aanbieder-teken) en 291 meldingen in de catalogus inclusief de 4 meldingen voor ruimte- en helderheidswissel.",
+              "Veiligheid en toeleveringsketen (SEC-003, AI-TERMIJN-001, PR #151): xlsx verwijderd, fast-xml-parser via overrides naar ^5.12.1 gezet, veiligheidswerkstromen (bandit.yml, osv-scanner.yml, design-002-controle.yml) aangescherpt en foutafhandeling in deploy/pakketgegevens.py verduidelijkt.",
+              "Bestandskaart, zoekcatalogus, takkenkroniek en TRACE-001: docs/kaart/bestandskaart.json, shared/zoek-ui-knoppen.generated.ts (1810 elementen), samenvoegverzoeken (153 stuks) en de tweetalige takkenkroniek bijgewerkt."
             ],
             "fixes": [
-              "Geslaagd: coördinatieregels, TRACE-001, typecontrole van client en server, volledige bouw met ondertekende CRX3 0.9.7, dubbele migraties op PostgreSQL 16 met drie rollen en alle eenheids-, cloud-, bouw- en databasetests met Chromium."
+              "Alle wijzigingen uit PR #153–157 samengebracht en gecontroleerd boven op de live basis 20261117-190154 (14dbcb3a).",
+              "Werkstromen bandit.yml, osv-scanner.yml en design-002-controle.yml veilig afgesloten en de ontbrekende 4 meldingen aan het register toegevoegd.",
+              "Geslaagd: coördinatieregels, TRACE-001, client- en servertypen, volledige bouw met ondertekende CRX3 0.9.7, dubbele uitvoering van migraties t/m 0301 op PostgreSQL 16 met drie rollen en alle 298 testbestanden."
             ],
             "beperkingen": [
-              "Geen automatische installatie: alleen de eigenaar installeert via Beheer → Updates na een groene voorcontrole en bevestiging met toegangssleutel.",
-              "De netwerkdatabase voor het embleem «Netwerk» zet de beheerder zelf klaar met node scripts/asn-basis-bijwerken.mjs."
+              "Geen automatische installatie: alleen de eigenaar installeert via Beheer → Updates na een groene voorcontrole en bevestiging met een toegangssleutel.",
+              "Migratie 0301_tech_snelkoppelingen.sql voegt de kolom snelkoppelingen_toegestaan toe aan app.tech_profielen; bij terugdraaien naar een oudere uitgave blijft deze kolom onschadelijk in de database staan."
             ],
-            "instructies": "Maak vóór installatie een reservekopie op R:\\; upload precies mijn-ruimte-<versie>.tar.gz (geen zip) bij Beheer → Updates, wacht op een groene voorcontrole en keur goed met een toegangssleutel."
+            "instructies": "Controleer vóór het installeren uw reservekopie op R:\\mijn-ruimte-reservekopie\\ (SHA256SUMS, herstelsleutel-age.txt, geheimen-*.tar.age); upload mijn-ruimte-<versie>.tar.gz (geen zip) via Beheer → Updates, lees de uitleg bij de risicovlaggen en keur goed met een toegangssleutel. De inmiddels samengenomen PR’s #153–#157 kunnen desgewenst na publicatie gesloten worden."
           };
           const m = {
             schema: 1,
@@ -614,10 +623,10 @@ jobs:
               { soort: 'mens', naam: auteur, rollen: ['auteur'] },
               {
                 soort: 'ai',
-                naam: 'claude',
-                platform: 'Claude Code',
-                tool: 'Claude Code (хмарний сеанс проєкту)',
-                model: { id: e.MODEL_ID, versie: e.MODEL_VERSIE || null, bron: 'omgeving' },
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Google Antigravity',
+                model: { id: e.MODEL_ID, versie: e.MODEL_VERSIE || null, bron: 'auteur' },
                 rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
               }
             ],
@@ -650,13 +659,13 @@ jobs:
             mislukt: gemeten.mislukt,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження TRACE-001, статичні перевірки карти файлів, розміщення, довідок, контрастності кольорів, розумної пошти, ланцюга залежностей, пошукового каталогу, сценаріїв розгортання та самоперевірку ПК-агента, перевірку типів клієнта та сервера, повне виробниче складання з підписаним CRX3 0.9.7, подвійний прогін усіх міграцій PostgreSQL 16 із трьома ролями та сукупність модульних, хмарних, базових і браузерних випробувань у Хроміумі. Виміряно в цьому запуску: ' + gemetenLijst + '.',
-              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole TRACE-001, statische controles van bestandskaart, plaatsing, hulpteksten, kleurcontrast, slim postvak, toeleveringsketen, zoekcatalogus, uitrolscripts en pc-agent zelftest, typecontrole van client en server, volledige productiebouw met ondertekende CRX3 0.9.7, dubbele uitvoering van alle migraties op PostgreSQL 16 met drie rollen en alle eenheids-, cloud-, database- en Chromium-tests. Gemeten in deze uitvoering: ' + gemetenLijst + '.'
+              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження TRACE-001, статичні перевірки карти файлів, розміщення, довідок, контрастності кольорів, розумної пошти, ланцюга залежностей, пошукового каталогу, сценаріїв розгортання та самоперевірку ПК-агента, перевірку типів клієнта та сервера, повне виробниче складання з підписаним CRX3 0.9.7, подвійний прогін усіх міграцій PostgreSQL 16 (до 0301) із трьома ролями та сукупність усіх 298 наборів випробувань. Виміряно в цьому запуску: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole TRACE-001, statische controles van bestandskaart, plaatsing, hulpteksten, kleurcontrast, slim postvak, toeleveringsketen, zoekcatalogus, uitrolscripts en pc-agent zelftest, typecontrole van client en server, volledige productiebouw met ondertekende CRX3 0.9.7, dubbele uitvoering van alle migraties t/m 0301 op PostgreSQL 16 met drie rollen en alle 298 testbestanden. Gemeten in deze uitvoering: ' + gemetenLijst + '.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
           const opis = [
-            `UPD-004 · Спільний випуск: технічний простір, меню якорів /agenten, герби й мережі, реєстр сповіщень, SEC-003 · ${e.VERSIE}`,
+            `UPD-004 · Спільний випуск оновлень (PR № 153–157) · ${e.VERSIE}`,
             '',
             uk.samenvatting,
             '',
@@ -688,13 +697,13 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
-            --agent claude --platform 'Claude Code' --tool 'Claude Code (хмарний сеанс проєкту)' \
-            --model-id "$MODEL_ID" --model-bron omgeving \
+            --agent gemini --platform 'Google Antigravity' --tool 'Google Antigravity' \
+            --model-id "$MODEL_ID" --model-bron auteur \
             --versie "$VERSIE" --uit uitvoer \
-            --samenvatting-uk "Спільний випуск UPD-004 поверх основи 20261117-190154 (LOKAI-001): WISSEL-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003 і залишки старих PR." \
-            --samenvatting-nl "Gezamenlijke uitgave UPD-004 boven op basis 20261117-190154 (LOKAI-001): WISSEL-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003 en restanten van oude PR's." \
+            --samenvatting-uk "Спільний випуск UPD-004 поверх основи 20261117-190154 (14dbcb3a): об’єднано WISSEL-001, FIX-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001 та безпекові виправлення." \
+            --samenvatting-nl "Gezamenlijke uitgave UPD-004 boven op basis 20261117-190154 (14dbcb3a): bundelt WISSEL-001, FIX-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001 en veiligheidsherstel." \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
-          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
       - name: Перевірити UITROL-MANIFEST.json, ONTWIKKELARCHIEF.json і попередню перевірку перед публікацією
         shell: bash
@@ -826,8 +835,8 @@ jobs:
           gh release create "$VERSIE" \
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
-            "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip" \
-            --target "$GITHUB_SHA" --title "UPD-004 · Спільний випуск: технічний простір, меню якорів /agenten, герби й мережі, реєстр сповіщень, SEC-003 · ${VERSIE}" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "UPD-004 · Спільний випуск оновлень (PR № 153–157) · ${VERSIE}" \
             --notes-file "$RUNNER_TEMP/opis.md" --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
           node --input-type=module <<'JS'
