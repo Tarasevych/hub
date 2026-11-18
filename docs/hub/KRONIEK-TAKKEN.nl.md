@@ -1951,3 +1951,46 @@ Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie
 | [`claude/project-thread-zfgzy0`](https://github.com/Tarasevych/hub/tree/claude/project-thread-zfgzy0) <!-- b:claude/project-thread-zfgzy0@4ff503a1937650fda5e933b7e5b5b6a4002452d9 --> | [`4ff503a`](https://github.com/Tarasevych/hub/commit/4ff503a1937650fda5e933b7e5b5b6a4002452d9) 2026-11-14 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | ja | [#85](https://github.com/Tarasevych/hub/pull/85) → `integratie` (open) |
 
 > Aanvullingslogboek: 2026-11-17 — +48 / +49 / Δ
+
+## Momentopname 2026-11-18 · live versie `20261117-190154` · commit [`14dbcb3`](https://github.com/Tarasevych/hub/commit/14dbcb3aeceb205ac6f69238f6397816bd293146) · takken op GitHub: 227
+
+### Taken op startdatum
+
+#### UPD-004 · 2026-11-17 · agent gemini <!-- k:UPD-004@697c73743723c472be25ad2cf4923b29c36864bc -->
+
+Спільний випуск UPD-004 поверх живої версії 20261117-190154 (14dbcb3a): узгодження PR #157 (WISSEL-001, GEMINI-004, PLAATS-TEKENS-001, MELDCAT-001, SEC-003, AI-TERMIJN-001, HISTORIE-001, VAARD-001, IDENTITEIT-007), повна інтеграція PR #156 (FIX-001) з перенесенням міграції на 0301, виправлення bandit.yml та osv-scanner.yml і перевірки TRACE-001.
+
+- **Tak:** [`feature/upd-004-uitgave-20261117-225600`](https://github.com/Tarasevych/hub/tree/feature/upd-004-uitgave-20261117-225600) · top [`697c737`](https://github.com/Tarasevych/hub/commit/697c73743723c472be25ad2cf4923b29c36864bc) (2026-11-18) · status in record: `in_progress`
+- **← Voorganger:** basis [`14dbcb3`](https://github.com/Tarasevych/hub/commit/14dbcb3aeceb205ac6f69238f6397816bd293146) · versie `20261105-061659` · [`20261117-190154`](https://github.com/Tarasevych/hub/releases/tag/20261117-190154) · vorige taak: [UPD-003](#t-upd-003) (bevat haar top)
+- **→ Opvolger:** nog niet in `integratie` · eerste release die haar bevat: [`20261118-002718`](https://github.com/Tarasevych/hub/releases/tag/20261118-002718) · volgende taken: [BIJDRAGE-001](#t-bijdrage-001)
+
+#### <a id="t-bijdrage-001"></a>BIJDRAGE-001 · 2026-11-18 · agent claude <!-- k:BIJDRAGE-001@geen -->
+
+Облік авторства (людина, агент, модель, що й чому) у кожній гілці й випуску, досьє функцій з усією історією, старт сеансу orch begin з автоматичним завантаженням навичок, злиття навичок і функцій без утрати можливостей.
+
+- **Tak:** [`feature/bijdrage-001-20261118-082100`](https://github.com/Tarasevych/hub/tree/feature/bijdrage-001-20261118-082100) · tak niet op GitHub (verwijderd of niet gepubliceerd) · status in record: `in_progress`
+- **← Voorganger:** basis [`697c737`](https://github.com/Tarasevych/hub/commit/697c73743723c472be25ad2cf4923b29c36864bc) · versie `20261105-061659` · [`20261118-002718`](https://github.com/Tarasevych/hub/releases/tag/20261118-002718) · vorige taak: [UPD-004](#t-upd-004) (precies op haar top)
+- **→ Opvolger:** volgende taken: geen
+
+### Opvolgingsschema
+
+```mermaid
+flowchart LR
+  INT[(integratie)]
+  LIVE((live))
+  UPD_004["UPD-004"]
+  UPD_003 --> UPD_004
+  BIJDRAGE_001["BIJDRAGE-001"]
+  UPD_004 --> BIJDRAGE_001
+  INT --> LIVE
+```
+
+### Takken zonder taakrecord
+
+Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie/taken/<ID>.json`. Alleen feiten uit git.
+
+| Tak | Top | Basis in `integratie` | In `integratie` | In live versie | PR |
+|---|---|---|---|---|---|
+| [`claude/project-thread-3rc4d3`](https://github.com/Tarasevych/hub/tree/claude/project-thread-3rc4d3) <!-- b:claude/project-thread-3rc4d3@097aae517dee9018e924d1ab7297dc7a59bf00f7 --> | [`097aae5`](https://github.com/Tarasevych/hub/commit/097aae517dee9018e924d1ab7297dc7a59bf00f7) 2026-11-17 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | nee | [#157](https://github.com/Tarasevych/hub/pull/157) → `feature/lokai-001-uitgave-20261117-181000` (open) |
+
+> Aanvullingslogboek: 2026-11-18 — +2 / +1

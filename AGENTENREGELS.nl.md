@@ -28,6 +28,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 
 ## 2. Vóór je begint (verplicht)
 
+0. **Eerste stap van elke sessie (BIJDRAGE-001):** `node scripts/orch.mjs begin --agent <id> [--taak <ID>] [--onderwerp <naam>] [--tekst "<opdracht>"]` — regels gecontroleerd, vaardigheden (worden zelf in de map van de agent gezet), dossier van de functie met de hele geschiedenis, wie eraan werkte en wie er tegelijk aan werkt. Claude doet dit automatisch (`.claude/settings.json`). Details in §9.
 1. Lees [`AGENTS.md`](./AGENTS.md) (of `orchestratie/CONTEXT-COMPACT.md` als er geen toegang tot de repository is) en [`orchestratie/beleid.json`](./orchestratie/beleid.json).
 2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261105-061659`, status `geverifieerd_productie` — geverifieerd met de server, zie `B-014`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
 3. Registreer de taak: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
@@ -43,6 +44,13 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Geheimen, tokens, privésleutels en e-mailinhoud horen nooit in de chat, logs, commits of pakketten. Privésleutels van de eigenaar worden nooit aan agenten gegeven.
 - Productie, de standaardtak, back-ups en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
 - Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `<VM-IP>` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details hieronder bij `B-009`.
+
+## 3a. Auteurschap, dossiers, vaardigheden (BIJDRAGE-001, details in §9)
+
+- Elke bijdrage is een bestand `orchestratie/bijdragen/<ID>/…json` (`orch bijdrage`): de persoon die het werk gaf; agent, platform en concreet model; wat, waarom, op wiens werk het voortbouwt. Alleen aanvullen.
+- Lees vóór een wijziging aan een functie haar dossier `orchestratie/onderwerpen/<naam>.json` en vul het aan. Mogelijkheden niet verwijderen: verloren werk krijgt `verloren` en wordt hersteld.
+- Vaardigheden alleen in `.agents/skills/` + catalogus; samenvoegen zonder verlies (een optie die een agent niet ondersteunt markeer je in `agenten`).
+- Een opmerking van de eigenaar gaat over één concreet onderdeel: verbeter dat, behoud de rest. Samenvoegen alleen `--no-ff`, zonder geschiedenis te pletten.
 
 ## 4. Vóór overdracht van het resultaat
 
@@ -145,3 +153,14 @@ node scripts/eenheidstests.mjs orch                  # coördinatietests (kern, 
 
 Oude runbooks en wijzigingsdocumenten blijven naslagwerk over hoe de code werkt. Ze voegen geen regels toe bovenop [`AGENTS.md`](./AGENTS.md) en heffen dit bestand niet op.
 Wordt er een tegenstrijdigheid in gevonden, corrigeer dan het document of voeg een besluit toe in [`orchestratie/BESLUITEN.md`](./orchestratie/BESLUITEN.md), in plaats van stilzwijgend één van beide te kiezen.
+
+## 9. Auteurschap, functiegeschiedenis en vaardigheden (BIJDRAGE-001, vanaf 18.11.2026)
+
+**Waarom.** Verschillende agenten en modellen werken aan dezelfde functie, vaak los van elkaar. Zonder registratie lijkt ander werk een fout, wordt het opnieuw gedaan en gaat eerder werk verloren. Nu ziet iedereen **wie, met welk model, wat, waarom en op wiens werk** deed, en wie tegelijk werkt.
+
+1. **Start:** `node scripts/orch.mjs begin` (verandert niets in git): regels, lijst vaardigheden en kopie in de map van de agent (`beleid.json → vaardigheden.spiegels`, Claude: `.claude/skills/`), dossiers die bij de opdracht passen, bijdragen van de taak, lopend parallel werk. Claude Code start dit zelf via SessionStart.
+2. **Auteurschap:** `node scripts/orch.mjs bijdrage --taak <ID> --agent <id> --platform "…" --model <concreet model> --opdrachtgever "<persoon>" --soort <soort> --wat "…" [--waarom "…"] [--bouwt-voort-op <id>] [--voorganger "…"]`. Soorten: `begin`, `nieuw`, `herwerkt`, `afgerond`, `overname`, `samenvoeging`, `herstel`, `controle`, `correctie`; bij omwerken, afmaken, overnemen, herstellen, samenvoegen en corrigeren zijn «waarom» en «bouwt voort op» verplicht. Minstens één registratie per taak (`versheid --fase overdracht`). Registraties worden niet bewerkt of verwijderd (`orch behoud`). Het releasepakket neemt alle nieuwe registraties op in `BIJDRAGEN.json` en `UITROL-MANIFEST.json → bijdragen`; de site toont «Wie deed wat».
+3. **Dossier:** `orchestratie/onderwerpen/<naam>.json` met taken, takken, PR's, mogelijkheden met vaste `id` en staat (`actief`, `in-ontwikkeling`, `verloren`, `vervangen`, `ingetrokken` alleen op besluit van de eigenaar), opmerkingen van de eigenaar en open vragen. Wie bestanden uit `paden` wijzigt, vult het dossier aan; niets verwijderen.
+4. **Opmerkingen van de eigenaar** gaan over één concreet onderdeel (`betreft`) en noemen wat blijft (`behouden`). Verbeter alleen dat onderdeel; vervang geen hele component tenzij de eigenaar dat zegt.
+5. **Vaardigheden:** één bron `.agents/skills/` + `scripts/vaardigheden/catalogus.json` (SemVer, `mogelijkheden` met vaste `id` en `agenten`). Nieuwe vaardigheid op tak `feature/vaardigheid-<naam>-<tijd>` of in de eigen taaktak. Versie gaat niet omlaag, vaardigheden en mogelijkheden verdwijnen niet; wat een agent niet ondersteunt, wordt in `agenten` beperkt, niet verwijderd.
+6. **Geschiedenis:** samenvoegen alleen `--no-ff`, niets pletten of herschrijven; oude releases, takken en PR's blijven, sluiten gebeurt met uitleg waar het werk naartoe ging.

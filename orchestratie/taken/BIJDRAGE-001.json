@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "BIJDRAGE-001",
+  "agent": "claude",
+  "tak": "feature/bijdrage-001-20261118-082100",
+  "basisCommit": "697c73743723c472be25ad2cf4923b29c36864bc",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.16",
+  "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4",
+  "staat": "in_progress",
+  "gestart": "2026-11-18T08:33:53.193Z",
+  "bijgewerkt": "2026-11-18T08:33:53.194Z",
+  "omschrijving": "Облік авторства (людина, агент, модель, що й чому) у кожній гілці й випуску, досьє функцій з усією історією, старт сеансу orch begin з автоматичним завантаженням навичок, злиття навичок і функцій без утрати можливостей.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

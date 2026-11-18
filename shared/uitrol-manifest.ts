@@ -27,6 +27,20 @@ export type Deelnemer = {
   platform?: string; tool?: string;
   model?: { id: string | null; versie: string | null; bron: ModelBron };
 };
+/**
+ * BIJDRAGE-001: хто що зробив у цьому випуску (з обліку orchestratie/bijdragen/). Необов'язкове поле: старі пакети без нього лишаються дійсними.
+ * Wie deed wat in deze release; optioneel, oudere pakketten blijven geldig.
+ */
+export type BijdrageSoort = 'begin' | 'nieuw' | 'herwerkt' | 'afgerond' | 'overname' | 'samenvoeging' | 'herstel' | 'controle' | 'correctie';
+export const BIJDRAGE_SOORTEN: readonly BijdrageSoort[] = ['begin', 'nieuw', 'herwerkt', 'afgerond', 'overname', 'samenvoeging', 'herstel', 'controle', 'correctie'];
+export type ManifestBijdrage = {
+  taakId: string; tijd: string; soort: BijdrageSoort;
+  wie: { soort: 'ai' | 'mens'; naam: string; model?: string | null; platform?: string | null };
+  opdrachtgever?: { naam: string };
+  wat: { uk: string; nl?: string }; waarom?: { uk: string; nl?: string };
+  tak?: string | null; pr?: number | null;
+};
+export const MANIFEST_BIJDRAGEN_MAX = 200;
 export type Manifest = {
   schema: 1;
   versie: string;
@@ -36,6 +50,7 @@ export type Manifest = {
   zonderAi: boolean;
   deelnemers: Deelnemer[];
   beschrijving: Record<Taal, Beschrijving>;
+  bijdragen?: ManifestBijdrage[];
 };
 export type ManifestFout = { veld: string; uk: string; nl: string };
 
@@ -111,8 +126,37 @@ export function valideerManifest(ruw: string | null | undefined, versie: string)
   }
   const lengtes = (t: Taal) => [beschrijving[t].wijzigingen.length, beschrijving[t].fixes.length, beschrijving[t].beperkingen.length].join('/');
   if (lengtes('uk') !== lengtes('nl')) f('beschrijving', `переліки uk і nl мають містити однакову кількість пунктів (uk ${lengtes('uk')}, nl ${lengtes('nl')})`, `de lijsten uk en nl moeten evenveel punten hebben (uk ${lengtes('uk')}, nl ${lengtes('nl')})`);
+  const bijdragen = leesManifestBijdragen(j.bijdragen, f);
   if (fouten.length) return { manifest: null, fouten };
-  return { manifest: { schema: 1, versie, aangemaakt, herkomst, auteur, zonderAi, deelnemers, beschrijving }, fouten };
+  return { manifest: { schema: 1, versie, aangemaakt, herkomst, auteur, zonderAi, deelnemers, beschrijving, ...(bijdragen ? { bijdragen } : {}) }, fouten };
+}
+
+/** BIJDRAGE-001: перевірка поля bijdragen (необов'язкове). Повертає null, якщо поля немає. */
+function leesManifestBijdragen(ruw: unknown, f: (veld: string, uk: string, nl: string) => void): ManifestBijdrage[] | null {
+  if (ruw === undefined) return null;
+  if (!Array.isArray(ruw) || ruw.length > MANIFEST_BIJDRAGEN_MAX) { f('bijdragen', `список до ${MANIFEST_BIJDRAGEN_MAX} записів «хто що зробив»`, `lijst van max. ${MANIFEST_BIJDRAGEN_MAX} bijdragen`); return null; }
+  const uit: ManifestBijdrage[] = [];
+  ruw.forEach((b: any, i: number) => {
+    const p = `bijdragen[${i}]`;
+    const taakId = str(b?.taakId, 20); const soort = b?.soort as BijdrageSoort; const wieSoort = b?.wie?.soort === 'ai' ? 'ai' : b?.wie?.soort === 'mens' ? 'mens' : null;
+    const wieNaam = str(b?.wie?.naam, 80); const watUk = str(b?.wat?.uk, 1000); const tijd = str(b?.tijd, 40);
+    if (!/^[A-Z][A-Z0-9]{1,9}-\d{3,5}$/.test(taakId)) { f(`${p}.taakId`, 'ідентифікатор задачі ABC-001', 'taak-id ABC-001'); return; }
+    if (!BIJDRAGE_SOORTEN.includes(soort)) { f(`${p}.soort`, `одне з ${BIJDRAGE_SOORTEN.join(', ')}`, `een van ${BIJDRAGE_SOORTEN.join(', ')}`); return; }
+    if (!wieSoort || !wieNaam) { f(`${p}.wie`, 'хто виконав: soort ai|mens і назва', 'wie: soort ai|mens en naam'); return; }
+    if (wieSoort === 'ai' && (!str(b?.wie?.model, 120) || ALLEEN_FAMILIE.test(str(b?.wie?.model, 120)))) { f(`${p}.wie.model`, 'конкретна модель ШІ, не лише назва родини', 'concreet AI-model'); return; }
+    if (watUk.length < 10 || !/[\u0400-\u04FF]/.test(watUk)) { f(`${p}.wat.uk`, 'що зроблено, українською (≥ 10 символів)', 'wat er gedaan is, in het Oekraïens'); return; }
+    if (!tijd || Number.isNaN(Date.parse(tijd))) { f(`${p}.tijd`, 'дата й час ISO 8601', 'ISO 8601'); return; }
+    const prRuw = b?.pr; const pr = Number.isInteger(prRuw) && prRuw > 0 ? prRuw : null;
+    uit.push({
+      taakId, tijd, soort,
+      wie: { soort: wieSoort, naam: wieNaam, ...(wieSoort === 'ai' ? { model: str(b?.wie?.model, 120), platform: str(b?.wie?.platform, 80) || null } : {}) },
+      ...(str(b?.opdrachtgever?.naam, 120) ? { opdrachtgever: { naam: str(b?.opdrachtgever?.naam, 120) } } : {}),
+      wat: { uk: watUk, ...(str(b?.wat?.nl, 1000) ? { nl: str(b?.wat?.nl, 1000) } : {}) },
+      ...(str(b?.waarom?.uk, 1000) ? { waarom: { uk: str(b?.waarom?.uk, 1000), ...(str(b?.waarom?.nl, 1000) ? { nl: str(b?.waarom?.nl, 1000) } : {}) } } : {}),
+      tak: str(b?.tak, 200) || null, pr,
+    });
+  });
+  return uit;
 }
 
 export const manifestVerplicht = (versie: string) => /^[0-9]{8}-[0-9]{6}$/.test(versie) && versie >= MANIFEST_VERPLICHT_VANAF;

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/orch.mjs begin --agent claude --kort 2>&1 | head -c 20000 || true",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

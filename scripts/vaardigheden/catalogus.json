@@ -191,6 +191,12 @@
       },
       "vereisteHulpmiddelen": [
         "uitrol_voorstel_begin:beheer"
+      ],
+      "ookBekendAls": [
+        {
+          "bron": "claude.ai (обліковий запис власника)",
+          "naam": "mijn-ruimte-vypusk"
+        }
       ]
     },
     {
@@ -312,7 +318,13 @@
           "randgevallen"
         ]
       },
-      "vereisteHulpmiddelen": []
+      "vereisteHulpmiddelen": [],
+      "ookBekendAls": [
+        {
+          "bron": "claude.ai (обліковий запис власника)",
+          "naam": "perevirka-intehratsii-spravzhnimy-danymy"
+        }
+      ]
     },
     {
       "naam": "uiterlijk-van-schermafdruk-herstellen",
@@ -378,7 +390,13 @@
           "browser"
         ]
       },
-      "vereisteHulpmiddelen": []
+      "vereisteHulpmiddelen": [],
+      "ookBekendAls": [
+        {
+          "bron": "claude.ai (обліковий запис власника)",
+          "naam": "ui-defekt-zi-znimka"
+        }
+      ]
     },
     {
       "naam": "prestatie-meten",
@@ -513,7 +531,130 @@
           "eigen logo"
         ]
       },
-      "vereisteHulpmiddelen": []
+      "vereisteHulpmiddelen": [],
+      "ookBekendAls": [
+        {
+          "bron": "claude.ai (обліковий запис власника)",
+          "naam": "reyestr-lohotypiv"
+        }
+      ]
+    },
+    {
+      "naam": "bijdragen-vastleggen",
+      "pad": ".agents/skills/bijdragen-vastleggen/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [
+        "ontwikkelgeheugen-bewaken"
+      ],
+      "samenvatting": {
+        "uk": "Облік авторства (людина, агент, модель, що й чому), досьє функції з усією історією та злиття гілок і навичок без утрати можливостей.",
+        "nl": "Auteurschap per bijdrage (mens, agent, model, wat en waarom), functiedossier met de hele geschiedenis en samenvoegen zonder verlies van mogelijkheden."
+      },
+      "termen": {
+        "uk": [
+          "хто це зробив",
+          "хто що зробив",
+          "авторство",
+          "автор агента",
+          "яка модель",
+          "облік внесків",
+          "досьє функції",
+          "історія функції",
+          "зібрати в одному місці",
+          "зникла можливість",
+          "втратилася функція",
+          "злиття без втрат",
+          "об’єднати панелі",
+          "об'єднати панелі",
+          "переробив інший агент",
+          "чому знову інакше",
+          "паралельні агенти",
+          "продовжити чужу роботу"
+        ],
+        "nl": [
+          "auteurschap",
+          "wie deed wat",
+          "bijdrage vastleggen",
+          "functiedossier",
+          "functiegeschiedenis",
+          "mogelijkheid verdwenen",
+          "samenvoegen zonder verlies",
+          "parallelle agenten",
+          "werk overnemen"
+        ]
+      },
+      "vereisteHulpmiddelen": [],
+      "mogelijkheden": [
+        {
+          "id": "start-overzicht",
+          "uk": "Старт сеансу командою orch begin: правила, навички, досьє, внески, паралельна робота",
+          "nl": "Sessiestart met orch begin",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw"
+          ]
+        },
+        {
+          "id": "bijdrage-vastleggen",
+          "uk": "Запис внеску з людиною, агентом, платформою, конкретною моделлю, видом, причиною й попередником",
+          "nl": "Bijdrage vastleggen met mens, agent, model, soort, reden en voorganger",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw"
+          ]
+        },
+        {
+          "id": "dossier-bijwerken",
+          "uk": "Доповнення досьє функції: робота, можливості зі станом, зауваження власника",
+          "nl": "Functiedossier aanvullen",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw"
+          ]
+        },
+        {
+          "id": "samenvoegen-zonder-verlies",
+          "uk": "Злиття гілок і навичок без утрати можливостей і перевірка orch behoud",
+          "nl": "Samenvoegen zonder verlies met orch behoud",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw"
+          ]
+        }
+      ]
     }
-  ]
+  ],
+  "regels": {
+    "uk": "Навички й можливості не видаляють; версія не зменшується; непідтримувану агентом можливість позначають у agenten. Вивести з ужитку — лише рішенням власника (ingetrokken).",
+    "nl": "Vaardigheden en mogelijkheden worden niet verwijderd; de versie daalt niet; beperk via agenten. Intrekken alleen op besluit van de eigenaar."
+  },
+  "ingetrokken": []
 }

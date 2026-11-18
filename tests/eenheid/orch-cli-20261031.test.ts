@@ -64,6 +64,12 @@ export async function main(): Promise<number> {
       r = run(g, 'taak-start', '--id', 'TST-001', '--agent', 'codex', '--basis', basis, '--tak', 'feature/tst-001-20261031-120000');
       check('git: задача від реальної бази зареєстрована', r.code === 0, r.uit);
       writeFileSync(join(g, 'a.ts'), '2\n'); git(g, 'add', '.'); git(g, 'commit', '-q', '-m', 'werk');
+      // BIJDRAGE-001: перед передаванням потрібен запис обліку авторства (людина, агент, модель, що зроблено).
+      r = run(g, 'versheid', '--taak', 'TST-001', '--fase', 'overdracht');
+      check('git: без запису обліку авторства передавання заборонене (BIJDRAGE_ONTBREEKT)', r.code === 1 && r.uit.includes('BIJDRAGE_ONTBREEKT'), r.uit);
+      r = run(g, 'bijdrage', '--taak', 'TST-001', '--agent', 'codex', '--platform', 'Codex', '--model', 'gpt-5-codex', '--opdrachtgever', 'Павло Тарасевич', '--soort', 'nieuw', '--wat', 'Змінено файл a.ts для перевірки свіжості бази.');
+      check('git: запис обліку авторства створено', r.code === 0, r.uit);
+      git(g, 'add', '.'); git(g, 'commit', '-q', '-m', 'bijdrage');
       r = run(g, 'versheid', '--taak', 'TST-001', '--fase', 'overdracht');
       check('git: інтеграція не пішла вперед → свіжо', r.code === 0 && r.uit.includes('vers'), r.uit);
       // інший агент змінив той самий файл в integratie
