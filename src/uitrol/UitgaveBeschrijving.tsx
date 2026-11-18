@@ -2,7 +2,7 @@
 // Gebruikt in de wizard (voorbeeld vóór upload) en in «Про цей випуск» (Zijkant). De taal volgt `lang` zonder herladen.
 import { useEffect, useState } from 'react';
 import AgentLogo from '../agenten/AgentLogo';
-import { isEigenAccount, kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type DeelnemerAccount, type Manifest, type Rol } from '../../shared/uitrol-manifest';
+import { isEigenAccount, kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type BijdrageSoort, type DeelnemerAccount, type Manifest, type ManifestBijdrage, type Rol } from '../../shared/uitrol-manifest';
 import { actieveAccountFoto } from './Persoon';
 import { tr, type Lang } from './types';
 
@@ -25,8 +25,45 @@ function MensDeelnemerFoto({ naam, account, accounts }: { naam: string; account?
   </span>;
 }
 
+// BIJDRAGE-001: wie deed wat (uit orchestratie/bijdragen/, via UITROL-MANIFEST.json → bijdragen).
+const SOORT: Record<BijdrageSoort, [string, string]> = {
+  begin: ['розпочав', 'begon'], nieuw: ['створив', 'maakte'], herwerkt: ['переробив', 'werkte om'], afgerond: ['доробив', 'maakte af'],
+  overname: ['перейняв', 'nam over'], samenvoeging: ['об’єднав', 'voegde samen'], herstel: ['повернув утрачене', 'herstelde'], controle: ['перевірив', 'controleerde'], correctie: ['виправив облік', 'corrigeerde'],
+};
+const PR_ADRES = 'https://github.com/Tarasevych/hub/pull/';
+
+/** Згорнутий перелік «Хто що зробив»: за задачами, з причиною переробки й посиланням на гілку чи запит на злиття. */
+export function Bijdragen({ lang, lijst }: { lang: Lang; lijst: readonly ManifestBijdrage[] }) {
+  if (!lijst.length) return null;
+  const perTaak = new Map<string, ManifestBijdrage[]>();
+  for (const b of lijst) perTaak.set(b.taakId, [...(perTaak.get(b.taakId) || []), b]);
+  return <details className='ut-bijdragen' data-ut-bijdragen>
+    <summary title={tr(lang, 'Хто з людей і яких ШІ-агентів (з моделлю) що зробив у цьому випуску, хто що переробив і чому. Допомагає знайти, де чия робота, якщо щось зникло чи змінилося.', 'Wie (mens of AI-agent met model) wat deed in deze release, wat werd omgewerkt en waarom. Helpt terugvinden wiens werk het is als iets verdween of veranderde.')}>
+      {tr(lang, 'Хто що зробив', 'Wie deed wat')} <small className='ut-hint'>({lijst.length})</small>
+    </summary>
+    {[...perTaak].map(([taak, rijen]) => <div key={taak} className='ut-bijdragen-taak'>
+      <small><b>{taak}</b></small>
+      <ul>{rijen.map((b, i) => {
+        const wat = lang === 'nl' ? b.wat.nl || b.wat.uk : b.wat.uk;
+        const waarom = b.waarom ? (lang === 'nl' ? b.waarom.nl || b.waarom.uk : b.waarom.uk) : '';
+        return <li key={i} className='ut-bijdrage'>
+          {b.wie.soort === 'ai' ? <AgentLogo agent={[slug(b.wie.naam), b.wie.naam, b.wie.platform, b.wie.model].filter(Boolean).join(' ')} naam={b.wie.naam} size={18} /> : <span className='ut-deelnemer-mens' aria-hidden='true'>{b.wie.naam.slice(0, 1)}</span>}
+          <span>
+            <b>{b.wie.naam}</b>{b.wie.model ? <small className='ut-hint'> · {b.wie.model}</small> : null}
+            {' '}<span className='ut-bijdrage-soort'>{tr(lang, SOORT[b.soort][0], SOORT[b.soort][1])}</span>
+            {b.opdrachtgever?.naam ? <small className='ut-hint'> · {tr(lang, 'доручив', 'opdracht van')} {b.opdrachtgever.naam}</small> : null}
+            <br /><span>{wat}</span>
+            {waarom ? <><br /><small className='ut-hint'>{tr(lang, 'Чому: ', 'Waarom: ')}{waarom}</small></> : null}
+            {b.pr ? <><br /><small><a href={`${PR_ADRES}${b.pr}`} target='_blank' rel='noreferrer noopener' title={tr(lang, 'Відкрити запит на злиття на GitHub: там повна історія змін і обговорення', 'Pull request op GitHub openen: volledige geschiedenis en bespreking')}>#{b.pr}</a>{b.tak ? ` · ${b.tak}` : ''}</small></> : b.tak ? <><br /><small className='ut-hint'>{b.tak}</small></> : null}
+          </span>
+        </li>;
+      })}</ul>
+    </div>)}
+  </details>;
+}
+
 export function Deelnemers({ lang, m, account, accounts }: { lang: Lang; m: Manifest; account?: DeelnemerAccount | null; accounts?: readonly DeelnemerAccount[] }) {
-  return <ul className='ut-deelnemers' data-ut-deelnemers>
+  return <><ul className='ut-deelnemers' data-ut-deelnemers>
     {m.zonderAi && <li className='ut-hint'>{tr(lang, 'Випуск зроблено без ШІ (людське авторство).', 'Release gemaakt zonder AI (menselijk auteurschap).')}</li>}
     {m.deelnemers.map((d, i) => {
       const weergaveNaam = d.soort === 'mens' ? mensWeergaveNaam(d.naam, account) : d.naam;
@@ -39,7 +76,7 @@ export function Deelnemers({ lang, m, account, accounts }: { lang: Lang; m: Mani
           <small className='ut-hint'> · {d.rollen.map((r) => tr(lang, ROL[r][0], ROL[r][1])).join(', ')}</small></span>
       </li>;
     })}
-  </ul>;
+  </ul>{m.bijdragen?.length ? <Bijdragen lang={lang} lijst={m.bijdragen} /> : null}</>;
 }
 
 export default function UitgaveBeschrijving({ lang, manifest, samenvatting, kort = false }: { lang: Lang; manifest: Manifest | null | undefined; samenvatting: string | null | undefined; kort?: boolean }) {

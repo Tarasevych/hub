@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "BIJDRAGE-001/20261118-083417-claude",
+  "taakId": "BIJDRAGE-001",
+  "tijd": "2026-11-18T08:34:17.862Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "claude",
+    "platform": "Claude Code (хмарний сеанс claude.ai)",
+    "model": {
+      "id": "claude-opus-5-5",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Облік авторства orch bijdrage (людина, агент, модель, вид, причина, попередник), досьє функцій orchestratie/onderwerpen/ із досьє «Сповіщення», старт сеансу orch begin з автозапуском і завантаженням навичок для Claude, перевірка orch behoud, нова навичка bijdragen-vastleggen, блок «Хто що зробив» на сторінці оновлень."
+  },
+  "waarom": {
+    "uk": "Агенти й моделі працюють ізольовано, губили авторство й чужі напрацювання та переробляли роботу заново."
+  },
+  "bouwtVoortOp": [
+    {
+      "beschrijving": "TRACE-001 (журнал розробки), HISTORIE-001 (хронологія гілок), VAARD-001/VAARD-002 (каталог навичок), GEHEUGEN-001 — на них побудовано, нічого не замінено"
+    }
+  ],
+  "tak": "claude/project-thread-svlfqt",
+  "pr": null,
+  "onderwerpen": [
+    "auteurschap-en-vaardigheden",
+    "meldingen"
+  ]
+}

@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { deelnemersUitBijdragen, manifestBijdragen } from './bijdragen.mjs';
 import { OVERDRACHT_ZIP, SHA40, TAR_NAAM, VERSIE, basisBestandTekst, controleerBasis, leesBasisBestand, maakRapport, overdrachtZipNaam, valideerOverdracht } from './kern.mjs';
 
 const fout = (code, uk, nl, extra = {}) => ({ code, ernst: 'fout', uk, nl, ...extra });
@@ -120,7 +121,29 @@ export function maakOverdrachtPakket(o) {
       writeFileSync(refPad,JSON.stringify(ref,null,2)+'\n');
       env.ONTWIKKELARCHIEF_BESTAND=refPad;
     }
-    if (o.manifestPad) env.MANIFEST = resolve(o.manifestPad);
+    // BIJDRAGE-001: облік авторства з усіх задач випуску (записи, додані від установленої бази) → BIJDRAGEN.json у пакеті передачі
+    // і поле bijdragen + доповнені deelnemers у UITROL-MANIFEST.json, щоб сторінка оновлень показувала, хто що зробив.
+    const bijdrageBasis = basisBekend ? basis.commit : takBasis;
+    const bijdragePaden = (git('diff', '--name-only', '--diff-filter=A', `${bijdrageBasis}..${head}`, '--', 'orchestratie/bijdragen') || '').split('\n').filter((x) => x.endsWith('.json'));
+    const bijdragen = bijdragePaden.map((pp) => { try { return JSON.parse(execFileSync('git', ['show', `HEAD:${pp}`], { cwd: o.wortel, encoding: 'utf8' })); } catch { return null; } }).filter(Boolean);
+    let manifestBron = o.manifestPad ? resolve(o.manifestPad) : null;
+    if (manifestBron && bijdragen.length) {
+      try {
+        const m = JSON.parse(readFileSync(manifestBron, 'utf8'));
+        if (!Array.isArray(m.bijdragen)) {
+          let lijst = manifestBijdragen(bijdragen);
+          // UITROL-MANIFEST.json ≤ 64 000 байтів: спершу без nl-перекладів, потім лише найновіші записи. Повний облік — у BIJDRAGEN.json.
+          const past = (l) => Buffer.byteLength(JSON.stringify({ ...m, bijdragen: l })) <= 56_000;
+          if (!past(lijst)) lijst = lijst.map(({ wat, waarom, ...r }) => ({ ...r, wat: { uk: wat.uk }, ...(waarom ? { waarom: { uk: waarom.uk } } : {}) }));
+          while (lijst.length && !past(lijst)) lijst = lijst.slice(1);
+          m.bijdragen = lijst;
+        }
+        const bekend = new Set((m.deelnemers ?? []).map((d) => `${d.soort}|${d.naam}|${d.model?.id ?? ''}`));
+        for (const d of deelnemersUitBijdragen(bijdragen)) if (!bekend.has(`${d.soort}|${d.naam}|${d.model?.id ?? ''}`) && (m.deelnemers ?? []).length < 30) (m.deelnemers ??= []).push(d);
+        manifestBron = join(werk, 'UITROL-MANIFEST.json'); writeFileSync(manifestBron, `${JSON.stringify(m, null, 2)}\n`);
+      } catch { z.push(waarsch('BIJDRAGEN_MANIFEST', 'облік авторства не вдалося додати до UITROL-MANIFEST.json — маніфест лишився як був', 'auteurschap niet aan het manifest toegevoegd')); }
+    }
+    if (manifestBron) env.MANIFEST = manifestBron;
     if (o.testresultatenPad) env.TESTRESULTATEN_BESTAND = resolve(o.testresultatenPad);
     const r = spawnSync('bash', [join(o.wortel, 'deploy/uitrol/maak-voorstelpakket.sh'), werk, basisBekend ? basis.commit : 'HEAD'], { cwd: o.wortel, env, encoding: 'utf8' });
     if (r.status !== 0) return { zaken: [fout('PAKKET_BOUW_MISLUKT', `maak-voorstelpakket.sh: ${(r.stderr || r.stdout).trim().split('\n').slice(-3).join(' | ')}`, 'maak-voorstelpakket.sh mislukt')] };
@@ -137,7 +160,9 @@ export function maakOverdrachtPakket(o) {
     copyFileSync(tarPad, join(map, basename(tarPad)));
     writeFileSync(join(map, `${basename(tarPad)}.sha256`), `${sha}  ${basename(tarPad)}\n`);
     copyFileSync(join(werk, `mijn-ruimte-${versie}.voorstel.json`), join(map, `mijn-ruimte-${versie}.voorstel.json`));
-    if (o.manifestPad) copyFileSync(resolve(o.manifestPad), join(map, 'UITROL-MANIFEST.json'));
+    if (manifestBron) copyFileSync(manifestBron, join(map, 'UITROL-MANIFEST.json'));
+    writeFileSync(join(map, 'BIJDRAGEN.json'), `${JSON.stringify({ schema: 1, sinds: bijdrageBasis, tot: head, bijdragen }, null, 2)}\n`);
+    if (!bijdragen.length) z.push(waarsch('BIJDRAGEN_LEEG', `у випуску немає жодного запису обліку авторства (orchestratie/bijdragen/) від ${bijdrageBasis.slice(0, 12)} — сторінка оновлень не покаже, хто що зробив`, 'geen registraties van auteurschap in deze release'));
     if (env.ONTWIKKELARCHIEF_BESTAND) {
       copyFileSync(env.ONTWIKKELARCHIEF_BESTAND, join(map, 'ONTWIKKELARCHIEF.json'));
       copyFileSync(join(o.wortel, `orchestratie/ontwikkelarchieven/${o.taakId}.json`), join(map, 'ONTWIKKEL-DOSSIER.json'));
@@ -151,7 +176,7 @@ export function maakOverdrachtPakket(o) {
     // git bundle потребує ref у діапазоні (голий SHA → «Refusing to create empty bundle»): HEAD == head, бо дерево чисте й нічого не комітилось.
     if (commits.length) { const b = spawnSync('git', ['bundle', 'create', join(map, 'commits.bundle'), `${takBasis}..HEAD`], { cwd: o.wortel, encoding: 'utf8' }); if (b.status !== 0) z.push(waarsch('BUNDLE_MISLUKT', `commits.bundle не створено: ${(b.stderr || '').trim().split('\n').pop()}`, 'commits.bundle niet gemaakt')); }
     let manifestObj = null;
-    if (o.manifestPad) { try { manifestObj = JSON.parse(readFileSync(resolve(o.manifestPad), 'utf8')); } catch { manifestObj = null; } }
+    if (manifestBron) { try { manifestObj = JSON.parse(readFileSync(manifestBron, 'utf8')); } catch { manifestObj = null; } }
     let deelnemers = manifestObj?.deelnemers ?? [];
     const aiUitManifest = deelnemers.find((d) => d?.soort === 'ai' && d?.naam === agent) ?? deelnemers.find((d) => d?.soort === 'ai');
     const ag = (o.beleid.agenten ?? []).find((a) => a.id === agent);

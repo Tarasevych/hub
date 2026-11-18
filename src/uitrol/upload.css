@@ -170,8 +170,18 @@ li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
 .ut-release-tekst p{margin:0}.ut-release-tekst ul{margin:2px 0 4px;padding-left:18px}
 .ut-deelnemers{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
 .ut-deelnemer{display:flex;align-items:center;gap:8px;font-size:.85rem;min-height:28px}
-.ut-deelnemer-mens{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ut-vlak,#eef);font-size:.75rem;font-weight:600;flex:none;overflow:hidden}
+/* BIJDRAGE-001 (стара вада): --ut-vlak ніде не визначено, тож у темній темі світле коло з білою літерою було нечитабельне — тло від кольору тексту. */
+.ut-deelnemer-mens{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ut-vlak,color-mix(in srgb,currentColor 14%,transparent));font-size:.75rem;font-weight:600;flex:none;overflow:hidden}
 .ut-deelnemer-mens img{width:100%;height:100%;object-fit:cover;display:block}
+/* BIJDRAGE-001: «Хто що зробив» — згорнуто, без зайвої підкладки, переноситься на вузькому екрані */
+.ut-bijdragen{margin-top:8px;border-radius:10px}
+.ut-bijdragen>summary{cursor:pointer;font-size:.85rem;font-weight:600;list-style-position:inside}
+.ut-bijdragen-taak{margin:6px 0 0}
+.ut-bijdragen-taak ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:6px}
+.ut-bijdrage{display:flex;align-items:flex-start;gap:8px;font-size:.82rem;line-height:1.35;overflow-wrap:anywhere}
+.ut-bijdrage .ut-deelnemer-mens{width:18px;height:18px;font-size:.7rem}
+.ut-bijdrage-soort{display:inline-block;padding:0 6px;border-radius:999px;background:var(--ut-vlak,color-mix(in srgb,currentColor 14%,transparent));font-size:.75rem}
+.ut-bijdrage a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .ut-manifest-fouten{margin:6px 0 0;padding-left:18px;font-size:.85rem;overflow-wrap:anywhere}
 /* UITROL-002: archief al op de server (hervatten zonder upload) + lijst van bewaarde archieven · архів уже на сервері */
 .ut-hervat{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-ok);background:var(--ut-ok-bg)}
