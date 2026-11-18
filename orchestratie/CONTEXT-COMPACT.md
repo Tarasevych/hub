@@ -1,8 +1,8 @@
 <!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
 # Mijn Ruimte — компактний контекст агента · compacte agentcontext
 
-- regelsVersie: `1.4.16`
-- regelsHash: `9fd0d6c20eab3224cc6f5e059bb4d1260e52f497ad9d99262d9f2ecd04995f7d`
+- regelsVersie: `1.4.17`
+- regelsHash: `ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56`
 - kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
 - база · basis: `20261105-061659` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
 - інтеграційна гілка · integratietak: `integratie`
@@ -55,6 +55,7 @@
 - Перед зміною функції — її досьє `orchestratie/onderwerpen/<назва>.json`; доповни його. Можливості не видаляй: утрачене — `verloren` і поверни.
 - Навички — лише `.agents/skills/` + каталог; злиття без втрати можливостей (непідтримувану кимось опцію позначай у `agenten`).
 - Зауваження власника стосується конкретної речі: покращуй її, решту зберігай. Злиття лише `--no-ff`, без стискання історії.
+- Перед видаленням гілки чи закриттям запиту без злиття — `orch verwijzing` (хто, чому, останній коміт, куди ввійшло), щоб посилання не вело в «404» (§9.7).
 
 ## 4. Перед передаванням результату · Vóór overdracht
 

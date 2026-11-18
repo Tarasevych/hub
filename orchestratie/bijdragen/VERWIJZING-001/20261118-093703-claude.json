@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "VERWIJZING-001/20261118-093703-claude",
+  "taakId": "VERWIJZING-001",
+  "tijd": "2026-11-18T09:37:03.149Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "claude",
+    "platform": "Claude Code (хмарний сеанс claude.ai)",
+    "model": {
+      "id": "claude-opus-5-5",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Посилання з людською назвою, підсумком і станом для гілок, запитів на злиття, міграцій і задач у блоці «Хто що зробив»: стан «злито», «закрито», «гілку видалено» з тим, хто, коли й чому, кнопки на запит, коміт злиття й останню версію гілки; реєстр подій orchestratie/verwijzingen/, команди orch verwijzing і orch verwijzingen, дані зберігаються у випуску."
+  },
+  "waarom": {
+    "uk": "Власник бачив лише номери гілок і запитів, які неможливо запам'ятати, перейти за ними не міг, а злиті чи видалені гілки вели на «404» без пояснення."
+  },
+  "bouwtVoortOp": [
+    "BIJDRAGE-001/20261118-083417-claude"
+  ],
+  "tak": "claude/project-thread-svlfqt",
+  "pr": null,
+  "onderwerpen": [
+    "auteurschap-en-vaardigheden"
+  ]
+}

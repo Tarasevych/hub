@@ -9,6 +9,7 @@ import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSy
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { deelnemersUitBijdragen, manifestBijdragen } from './bijdragen.mjs';
+import { bouwVerwijzingen, manifestVerwijzingen, VERWIJZINGEN_MAP } from './verwijzingen.mjs';
 import { OVERDRACHT_ZIP, SHA40, TAR_NAAM, VERSIE, basisBestandTekst, controleerBasis, leesBasisBestand, maakRapport, overdrachtZipNaam, valideerOverdracht } from './kern.mjs';
 
 const fout = (code, uk, nl, extra = {}) => ({ code, ernst: 'fout', uk, nl, ...extra });
@@ -126,17 +127,32 @@ export function maakOverdrachtPakket(o) {
     const bijdrageBasis = basisBekend ? basis.commit : takBasis;
     const bijdragePaden = (git('diff', '--name-only', '--diff-filter=A', `${bijdrageBasis}..${head}`, '--', 'orchestratie/bijdragen') || '').split('\n').filter((x) => x.endsWith('.json'));
     const bijdragen = bijdragePaden.map((pp) => { try { return JSON.parse(execFileSync('git', ['show', `HEAD:${pp}`], { cwd: o.wortel, encoding: 'utf8' })); } catch { return null; } }).filter(Boolean);
+    // VERWIJZING-001: назва, підсумок і стан кожної гілки, запиту на злиття, міграції й задачі — щоб на сторінці оновлень не було голих номерів і «404».
+    const leesJson = (pp) => { try { return JSON.parse(execFileSync('git', ['show', `HEAD:${pp}`], { cwd: o.wortel, encoding: 'utf8' })); } catch { return null; } };
+    const register = (git('ls-tree', '-r', '--name-only', 'HEAD', '--', VERWIJZINGEN_MAP) || '').split('\n').filter((x) => x.endsWith('.json')).map(leesJson).filter(Boolean);
+    const takenMap = new Map((git('ls-tree', '-r', '--name-only', 'HEAD', '--', 'orchestratie/taken') || '').split('\n').filter((x) => x.endsWith('.json')).map(leesJson).filter((t) => t?.id).map((t) => [t.id, t]));
+    const vw = bouwVerwijzingen({ git, head, basis: bijdrageBasis, bijdragen, taken: takenMap, register, doelTak: tak });
+    z.push(...vw.zaken);
     let manifestBron = o.manifestPad ? resolve(o.manifestPad) : null;
     if (manifestBron && bijdragen.length) {
       try {
         const m = JSON.parse(readFileSync(manifestBron, 'utf8'));
         if (!Array.isArray(m.bijdragen)) {
           let lijst = manifestBijdragen(bijdragen);
-          // UITROL-MANIFEST.json ≤ 64 000 байтів: спершу без nl-перекладів, потім лише найновіші записи. Повний облік — у BIJDRAGEN.json.
-          const past = (l) => Buffer.byteLength(JSON.stringify({ ...m, bijdragen: l })) <= 56_000;
+          // UITROL-MANIFEST.json ≤ 64 000 байтів у тому вигляді, як його записано (з відступами) — раніше рахувалося без відступів і файл міг вийти завеликим.
+          // Спершу без nl-перекладів, потім лише найновіші записи. Місце лишається й для посилань. Повний облік — у BIJDRAGEN.json.
+          const past = (l) => Buffer.byteLength(JSON.stringify({ ...m, bijdragen: l }, null, 2)) <= 42_000;
           if (!past(lijst)) lijst = lijst.map(({ wat, waarom, ...r }) => ({ ...r, wat: { uk: wat.uk }, ...(waarom ? { waarom: { uk: waarom.uk } } : {}) }));
           while (lijst.length && !past(lijst)) lijst = lijst.slice(1);
           m.bijdragen = lijst;
+        }
+        if (!Array.isArray(m.verwijzingen) && vw.verwijzingen.length) {
+          // Спершу з підсумками; якщо не вміщається — без них; повний перелік — у BIJDRAGEN.json.
+          const past = (l) => Buffer.byteLength(JSON.stringify({ ...m, verwijzingen: l }, null, 2)) <= 61_000;
+          let l = manifestVerwijzingen(vw.verwijzingen);
+          if (!past(l)) l = manifestVerwijzingen(vw.verwijzingen, { zonderSamenvatting: true });
+          while (l.length && !past(l)) l = l.slice(0, -1);
+          if (l.length) m.verwijzingen = l;
         }
         const bekend = new Set((m.deelnemers ?? []).map((d) => `${d.soort}|${d.naam}|${d.model?.id ?? ''}`));
         for (const d of deelnemersUitBijdragen(bijdragen)) if (!bekend.has(`${d.soort}|${d.naam}|${d.model?.id ?? ''}`) && (m.deelnemers ?? []).length < 30) (m.deelnemers ??= []).push(d);
@@ -161,7 +177,7 @@ export function maakOverdrachtPakket(o) {
     writeFileSync(join(map, `${basename(tarPad)}.sha256`), `${sha}  ${basename(tarPad)}\n`);
     copyFileSync(join(werk, `mijn-ruimte-${versie}.voorstel.json`), join(map, `mijn-ruimte-${versie}.voorstel.json`));
     if (manifestBron) copyFileSync(manifestBron, join(map, 'UITROL-MANIFEST.json'));
-    writeFileSync(join(map, 'BIJDRAGEN.json'), `${JSON.stringify({ schema: 1, sinds: bijdrageBasis, tot: head, bijdragen }, null, 2)}\n`);
+    writeFileSync(join(map, 'BIJDRAGEN.json'), `${JSON.stringify({ schema: 1, sinds: bijdrageBasis, tot: head, bijdragen, verwijzingen: vw.verwijzingen }, null, 2)}\n`);
     if (!bijdragen.length) z.push(waarsch('BIJDRAGEN_LEEG', `у випуску немає жодного запису обліку авторства (orchestratie/bijdragen/) від ${bijdrageBasis.slice(0, 12)} — сторінка оновлень не покаже, хто що зробив`, 'geen registraties van auteurschap in deze release'));
     if (env.ONTWIKKELARCHIEF_BESTAND) {
       copyFileSync(env.ONTWIKKELARCHIEF_BESTAND, join(map, 'ONTWIKKELARCHIEF.json'));

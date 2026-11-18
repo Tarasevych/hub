@@ -1,5 +1,5 @@
 // BIJDRAGE-001 · Команди CLI для обліку авторства, досьє функцій, навичок і старту агента.
-// Opdrachten: begin, bijdrage, bijdragen, onderwerp, behoud, vaardigheden-spiegel. Logica in ./bijdragen.mjs (pure functies).
+// Opdrachten: begin, bijdrage, bijdragen, onderwerp, behoud, vaardigheden-spiegel, verwijzing, verwijzingen (VERWIJZING-001). Logica in ./bijdragen.mjs (pure functies).
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import {
   BIJDRAGEN_MAP, ONDERWERPEN_MAP, SOORTEN, behoudVergelijk, bijdragenTijdlijn, kiesOnderwerpen, maakBijdrage, valideerBijdrage, valideerOnderwerp,
 } from './bijdragen.mjs';
+import { VERWIJZINGEN_MAP, bouwVerwijzingen, maakGebeurtenis, valideerGebeurtenis } from './verwijzingen.mjs';
 
 const CATALOGUS = 'scripts/vaardigheden/catalogus.json';
 export const SPIEGEL_MERK = '.gespiegeld.json';
@@ -41,6 +42,21 @@ export function leesOnderwerpen(wortel) {
   return uit;
 }
 
+/** VERWIJZING-001: усі записи реєстру подій гілок і запитів: Map<pad, {tekst, obj|null}>. */
+export function leesVerwijzingRegister(wortel) {
+  const uit = new Map(); const map = join(wortel, VERWIJZINGEN_MAP);
+  if (!existsSync(map)) return uit;
+  for (const sub of readdirSync(map).sort()) {
+    const sm = join(map, sub); if (!statSync(sm).isDirectory()) continue;
+    for (const f of readdirSync(sm).sort()) if (f.endsWith('.json')) {
+      const pad = `${VERWIJZINGEN_MAP}/${sub}/${f}`; const tekst = readFileSync(join(wortel, pad), 'utf8');
+      let obj = null; try { obj = JSON.parse(tekst); } catch { obj = null; }
+      uit.set(pad, { tekst, obj });
+    }
+  }
+  return uit;
+}
+
 /** Перевірка всіх записів і досьє (частина `orch controleer`). */
 export function controleerBijdragenEnOnderwerpen(wortel) {
   const z = []; const b = leesBijdragen(wortel);
@@ -48,6 +64,10 @@ export function controleerBijdragenEnOnderwerpen(wortel) {
   for (const [pad, { obj }] of b) {
     if (!obj) { z.push({ code: 'BIJDRAGE_JSON', ernst: 'fout', uk: `${pad}: недійсний JSON`, nl: `${pad}: ongeldige JSON` }); continue; }
     z.push(...valideerBijdrage(obj, { pad, bekendeIds: ids }));
+  }
+  for (const [pad, { obj }] of leesVerwijzingRegister(wortel)) {
+    if (!obj) { z.push({ code: 'VERWIJZING_JSON', ernst: 'fout', uk: `${pad}: недійсний JSON`, nl: `${pad}: ongeldige JSON` }); continue; }
+    z.push(...valideerGebeurtenis(obj, { pad }));
   }
   for (const [, { pad, obj }] of leesOnderwerpen(wortel)) {
     if (!obj) { z.push({ code: 'ONDERWERP_JSON', ernst: 'fout', uk: `${pad}: недійсний JSON`, nl: `${pad}: ongeldige JSON` }); continue; }
@@ -139,6 +159,47 @@ export function cliBijdrage({ wortel, args }) {
   mkdirSync(join(wortel, BIJDRAGEN_MAP, taakId), { recursive: true });
   writeFileSync(vol, `${JSON.stringify(r.bijdrage, null, 2)}\n`);
   console.log(`ORCH bijdrage: записано · vastgelegd ${r.pad}\n  id ${r.bijdrage.id} — додайте файл до фіксації змін разом із роботою`);
+  return 0;
+}
+
+/**
+ * VERWIJZING-001 · `orch verwijzing --soort tak|pr --id <назва|номер> --gebeurtenis verwijderd|gesloten|samengevoegd|hersteld|beschrijving
+ *   --wie "<людина чи агент>" --waarom "<чому>" [--laatste-commit sha] [--opgenomen-in "№139"] [--titel "…"] [--samenvatting "…"] [--taak X]…`
+ * Записує подію (лише доповнюється), щоб посилання не вело в нікуди: хто, коли й чому видалив гілку чи закрив запит і куди ввійшла робота.
+ */
+export function cliVerwijzing({ wortel, args }) {
+  const o = optieVan(args); const alle = alleVan(args); const git = maakGit(wortel);
+  const soort = o('soort', ''); const id = o('id', '');
+  let laatsteCommit = o('laatste-commit', null);
+  if (!laatsteCommit && soort === 'tak' && id) laatsteCommit = git('rev-parse', '--verify', '-q', `refs/remotes/origin/${id}^{commit}`) || git('rev-parse', '--verify', '-q', `refs/heads/${id}^{commit}`) || null;
+  const tijd = o('tijd', null);
+  if (tijd && Number.isNaN(Date.parse(tijd))) { console.log('FOUT VERWIJZING_TIJD: --tijd — дата й час ISO 8601'); return 1; }
+  const r = maakGebeurtenis({
+    soort, id, gebeurtenis: o('gebeurtenis', ''), tijd, wie: o('wie', ''), agent: o('agent', null), model: o('model', null),
+    waaromUk: o('waarom', null), waaromNl: o('waarom-nl', null), titelUk: o('titel', null), titelNl: o('titel-nl', null),
+    samenvattingUk: o('samenvatting', null), samenvattingNl: o('samenvatting-nl', null), laatsteCommit, opgenomenIn: o('opgenomen-in', null), taken: alle('taak'),
+  });
+  if (toon(r.zaken)) { console.log('ORCH verwijzing: НЕ записано · niet vastgelegd'); return 1; }
+  const vol = join(wortel, r.pad);
+  if (existsSync(vol)) { console.log(`FOUT VERWIJZING_BESTAAT: ${r.pad} уже є — записи не перезаписують`); return 1; }
+  mkdirSync(join(vol, '..'), { recursive: true });
+  writeFileSync(vol, `${JSON.stringify(r.gebeurtenis, null, 2)}\n`);
+  console.log(`ORCH verwijzing: записано · vastgelegd ${r.pad}${r.gebeurtenis.laatsteCommit ? `\n  останній коміт ${r.gebeurtenis.laatsteCommit.slice(0, 12)} — за ним гілку можна відновити: git switch -c ${soort === 'tak' ? id : '<гілка>'} ${r.gebeurtenis.laatsteCommit.slice(0, 12)}` : ''}\n  додайте файл до фіксації змін`);
+  return 0;
+}
+
+/** `orch verwijzingen [--sinds <ref>] [--taak X] [--json]` — що покаже сторінка оновлень: назва, стан і посилання для кожної гілки, запиту, міграції й задачі. */
+export function cliVerwijzingen({ wortel, args }) {
+  const o = optieVan(args); const git = maakGit(wortel); const head = git('rev-parse', 'HEAD');
+  const bijdragen = [...leesBijdragen(wortel).values()].map((x) => x.obj).filter(Boolean);
+  const takenMap = new Map(); const tm = join(wortel, 'orchestratie/taken');
+  if (existsSync(tm)) for (const f of readdirSync(tm)) if (f.endsWith('.json')) { try { const t = JSON.parse(readFileSync(join(tm, f), 'utf8')); if (t?.id) takenMap.set(t.id, t); } catch { /* пропустити */ } }
+  const r = bouwVerwijzingen({ git, head, basis: o('sinds', null), bijdragen, taken: takenMap, register: [...leesVerwijzingRegister(wortel).values()].map((x) => x.obj), doelTak: git('branch', '--show-current') || null });
+  const taak = o('taak', null); const lijst = r.verwijzingen.filter((v) => !taak || v.taken.includes(taak));
+  if (args.includes('--json')) { console.log(JSON.stringify(lijst, null, 2)); return 0; }
+  const STAAT = { open: 'відкрито', samengevoegd: 'злито', gesloten: 'закрито', verwijderd: 'гілку видалено', onbekend: 'стан невідомий' };
+  for (const v of lijst) console.log(`${v.label}  ${v.titel?.uk ?? ''}${v.staat ? `  [${STAAT[v.staat]}]` : ''}${v.taken.length ? `  · ${v.taken.join(', ')}` : ''}${v.wie ? `\n    хто: ${v.wie}${v.waarom?.uk ? ` · чому: ${v.waarom.uk}` : ''}` : ''}${v.commit ? `\n    коміт: ${v.commit.slice(0, 12)}` : ''}${v.laatsteCommit ? `  · останній коміт гілки: ${v.laatsteCommit.slice(0, 12)}` : ''}`);
+  toon(r.zaken);
   return 0;
 }
 

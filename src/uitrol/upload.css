@@ -203,3 +203,26 @@ li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
 .ut-hint[data-ut-samenloop-hint] svg{width:14px;height:14px;vertical-align:-2px}
 /* Мобільний шар лишається в кінці файла · mobiele laag blijft onderaan */
 @media (max-width:640px){.ut-wiz-balk .ut-wiz-lang{display:none}.ut-wiz-balk .ut-wiz-kort{display:block}}
+/* VERWIJZING-001: посилання з назвою, підсумком і станом у «Хто що зробив». */
+.ut-vw-rij{display:flex;flex-direction:column;gap:4px;margin:6px 0 2px 26px;min-width:0;contain:inline-size}
+.ut-vw>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;padding:4px 8px;border:1px solid var(--ut-line,color-mix(in srgb,currentColor 18%,transparent));border-radius:999px;min-width:0}
+.ut-vw>summary::-webkit-details-marker{display:none}
+.ut-vw>summary:hover,.ut-vw>summary:focus-visible{border-color:var(--ut-info,currentColor)}
+.ut-vw[open]>summary{border-radius:10px 10px 0 0;border-bottom-color:transparent}
+.ut-vw-ic{display:inline-grid;color:var(--ut-muted,inherit);flex:none}
+.ut-vw{min-width:0;max-width:100%}
+.ut-vw>summary>b{flex:0 1 auto;min-width:3ch;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-vw-titel{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-vw-staat{flex:none;font-size:.7rem;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent)}
+.ut-vw-open{background:var(--ut-info-bg,color-mix(in srgb,#2563eb 16%,transparent));color:var(--ut-info,inherit)}
+.ut-vw-samengevoegd{background:var(--ut-ok-bg,color-mix(in srgb,#16a34a 16%,transparent));color:var(--ut-ok,inherit)}
+.ut-vw-gesloten{color:var(--ut-muted,inherit)}
+.ut-vw-verwijderd,.ut-vw-onbekend{background:var(--ut-warn-bg,color-mix(in srgb,#d97706 18%,transparent));color:var(--ut-warn,inherit)}
+.ut-vw-kaart{border:1px solid var(--ut-line,color-mix(in srgb,currentColor 18%,transparent));border-top:0;border-radius:0 0 10px 10px;padding:6px 10px 8px;font-size:.8rem;display:grid;gap:6px;overflow-wrap:anywhere}
+.ut-vw-kaart p{margin:0;line-height:1.4}
+.ut-vw-stand{color:var(--ut-muted,inherit)}
+.ut-vw-knoppen{display:flex;flex-wrap:wrap;gap:6px}
+.ut-vw-knoppen a{font-size:.75rem;padding:3px 9px;border-radius:8px;background:var(--ut-info-bg,color-mix(in srgb,currentColor 10%,transparent));color:var(--ut-info,inherit);text-decoration:none}
+.ut-vw-knoppen a:hover{text-decoration:underline}
+.ut-vw-tech>summary{cursor:pointer;font-size:.72rem;color:var(--ut-muted,inherit)}
+.ut-vw-tech code{display:block;font-size:.72rem;overflow-wrap:anywhere;margin-top:4px}

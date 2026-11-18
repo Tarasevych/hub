@@ -51,6 +51,7 @@ Wijziging van de regels = een nieuw besluit in [`orchestratie/BESLUITEN.md`](./o
 - Lees vóór een wijziging aan een functie haar dossier `orchestratie/onderwerpen/<naam>.json` en vul het aan. Mogelijkheden niet verwijderen: verloren werk krijgt `verloren` en wordt hersteld.
 - Vaardigheden alleen in `.agents/skills/` + catalogus; samenvoegen zonder verlies (een optie die een agent niet ondersteunt markeer je in `agenten`).
 - Een opmerking van de eigenaar gaat over één concreet onderdeel: verbeter dat, behoud de rest. Samenvoegen alleen `--no-ff`, zonder geschiedenis te pletten.
+- Vóór het verwijderen van een tak of het sluiten van een PR zonder merge: `orch verwijzing` (wie, waarom, laatste commit, waar het werk zit), zodat een link nooit op «404» uitkomt (§9.7).
 
 ## 4. Vóór overdracht van het resultaat
 
@@ -164,3 +165,4 @@ Wordt er een tegenstrijdigheid in gevonden, corrigeer dan het document of voeg e
 4. **Opmerkingen van de eigenaar** gaan over één concreet onderdeel (`betreft`) en noemen wat blijft (`behouden`). Verbeter alleen dat onderdeel; vervang geen hele component tenzij de eigenaar dat zegt.
 5. **Vaardigheden:** één bron `.agents/skills/` + `scripts/vaardigheden/catalogus.json` (SemVer, `mogelijkheden` met vaste `id` en `agenten`). Nieuwe vaardigheid op tak `feature/vaardigheid-<naam>-<tijd>` of in de eigen taaktak. Versie gaat niet omlaag, vaardigheden en mogelijkheden verdwijnen niet; wat een agent niet ondersteunt, wordt in `agenten` beperkt, niet verwijderd.
 6. **Geschiedenis:** samenvoegen alleen `--no-ff`, niets pletten of herschrijven; oude releases, takken en PR's blijven, sluiten gebeurt met uitleg waar het werk naartoe ging.
+7. **Verwijzingen zonder «404» (VERWIJZING-001):** elke tak, PR, migratie en taak staat op de updatepagina met mensentitel, samenvatting en staat. `orch pakket` haalt dit uit git en uit `orchestratie/verwijzingen/` (`UITROL-MANIFEST.json → verwijzingen`, `BIJDRAGEN.json`), dus ook zichtbaar zonder GitHub. Vóór het verwijderen van een tak: `orch verwijzing --soort tak --id <tak> --gebeurtenis verwijderd --wie … --waarom …`; bij sluiten van een PR zonder merge: `--soort pr --gebeurtenis gesloten --opgenomen-in …`. Alleen aanvullen.

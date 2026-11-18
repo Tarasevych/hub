@@ -27,6 +27,9 @@
 //   onderwerp [naam] [--zoek "…"]   досьє функції (orchestratie/onderwerpen/): уся історія, можливості, утрачене, зауваження власника
 //   behoud [--tegen <ref>]      нічого не зникло відносно бази: облік, досьє, навички та їхні можливості
 //   vaardigheden-spiegel --agent a  завантажити навички з .agents/skills/ у теку агента (beleid.vaardigheden.spiegels)
+//   verwijzing --soort tak|pr --id x --gebeurtenis verwijderd|gesloten|samengevoegd|hersteld|beschrijving --wie "…" --waarom "…" [--laatste-commit sha] [--opgenomen-in №N]
+//                               записати, хто, коли й чому видалив гілку чи закрив запит і куди ввійшла робота (orchestratie/verwijzingen/)
+//   verwijzingen [--sinds ref] [--taak X] [--json]  назва, стан і посилання кожної гілки, запиту, міграції й задачі для сторінки оновлень
 // Усі тексти uk+nl, усі перевірки — чисті функції в scripts/orch/kern.mjs (тести: tests/eenheid/orch-*.test.ts).
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -38,7 +41,7 @@ import {
 } from './orch/kern.mjs';
 import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
 import { basisVoorPakket, controleerOverdrachtPakket, maakOverdrachtPakket } from './orch/pakket.mjs';
-import { behoudTegen, cliBegin, cliBehoud, cliBijdrage, cliBijdragen, cliOnderwerp, cliSpiegel, controleerBijdragenEnOnderwerpen } from './orch/begin.mjs';
+import { behoudTegen, cliBegin, cliBehoud, cliBijdrage, cliBijdragen, cliOnderwerp, cliSpiegel, cliVerwijzing, cliVerwijzingen, controleerBijdragenEnOnderwerpen } from './orch/begin.mjs';
 
 const args = process.argv.slice(2);
 const opdracht = args[0];
@@ -320,6 +323,6 @@ function doePakketControleer() {
 }
 
 const ctxCli = () => ({ wortel, args, beleid: laadBeleid() });
-const tabel = { begin: () => cliBegin({ ...ctxCli(), controleer }), bijdrage: () => cliBijdrage(ctxCli()), bijdragen: () => cliBijdragen(ctxCli()), onderwerp: () => cliOnderwerp(ctxCli()), behoud: () => cliBehoud(ctxCli()), 'vaardigheden-spiegel': () => cliSpiegel(ctxCli()), inleveren: doeInleveren, 'staat-commit': staatCommit, pakket: doePakket, 'pakket-controleer': doePakketControleer, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
+const tabel = { begin: () => cliBegin({ ...ctxCli(), controleer }), bijdrage: () => cliBijdrage(ctxCli()), bijdragen: () => cliBijdragen(ctxCli()), onderwerp: () => cliOnderwerp(ctxCli()), behoud: () => cliBehoud(ctxCli()), 'vaardigheden-spiegel': () => cliSpiegel(ctxCli()), verwijzing: () => cliVerwijzing(ctxCli()), verwijzingen: () => cliVerwijzingen(ctxCli()), inleveren: doeInleveren, 'staat-commit': staatCommit, pakket: doePakket, 'pakket-controleer': doePakketControleer, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
 if (!tabel[opdracht]) { console.log(`gebruik: node scripts/orch.mjs <${Object.keys(tabel).join('|')}>`); process.exit(2); }
 try { process.exit(tabel[opdracht]()); } catch (e) { console.log(`FOUT: ${e.message}`); process.exit(1); }

@@ -2,7 +2,7 @@
 // Gebruikt in de wizard (voorbeeld vóór upload) en in «Про цей випуск» (Zijkant). De taal volgt `lang` zonder herladen.
 import { useEffect, useState } from 'react';
 import AgentLogo from '../agenten/AgentLogo';
-import { isEigenAccount, kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type BijdrageSoort, type DeelnemerAccount, type Manifest, type ManifestBijdrage, type Rol } from '../../shared/uitrol-manifest';
+import { isEigenAccount, kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type BijdrageSoort, type DeelnemerAccount, type Manifest, type ManifestBijdrage, type ManifestVerwijzing, type Rol } from '../../shared/uitrol-manifest';
 import { actieveAccountFoto } from './Persoon';
 import { tr, type Lang } from './types';
 
@@ -30,10 +30,11 @@ const SOORT: Record<BijdrageSoort, [string, string]> = {
   begin: ['розпочав', 'begon'], nieuw: ['створив', 'maakte'], herwerkt: ['переробив', 'werkte om'], afgerond: ['доробив', 'maakte af'],
   overname: ['перейняв', 'nam over'], samenvoeging: ['об’єднав', 'voegde samen'], herstel: ['повернув утрачене', 'herstelde'], controle: ['перевірив', 'controleerde'], correctie: ['виправив облік', 'corrigeerde'],
 };
-const PR_ADRES = 'https://github.com/Tarasevych/hub/pull/';
+import { PR_ADRES, VerwijzingRij } from './Verwijzingen';
+export { staatTekst, verwijzingKnoppen, VerwijzingRij } from './Verwijzingen';
 
 /** Згорнутий перелік «Хто що зробив»: за задачами, з причиною переробки й посиланням на гілку чи запит на злиття. */
-export function Bijdragen({ lang, lijst }: { lang: Lang; lijst: readonly ManifestBijdrage[] }) {
+export function Bijdragen({ lang, lijst, verwijzingen = [] }: { lang: Lang; lijst: readonly ManifestBijdrage[]; verwijzingen?: readonly ManifestVerwijzing[] }) {
   if (!lijst.length) return null;
   const perTaak = new Map<string, ManifestBijdrage[]>();
   for (const b of lijst) perTaak.set(b.taakId, [...(perTaak.get(b.taakId) || []), b]);
@@ -54,11 +55,13 @@ export function Bijdragen({ lang, lijst }: { lang: Lang; lijst: readonly Manifes
             {b.opdrachtgever?.naam ? <small className='ut-hint'> · {tr(lang, 'доручив', 'opdracht van')} {b.opdrachtgever.naam}</small> : null}
             <br /><span>{wat}</span>
             {waarom ? <><br /><small className='ut-hint'>{tr(lang, 'Чому: ', 'Waarom: ')}{waarom}</small></> : null}
-            {b.pr ? <><br /><small><a href={`${PR_ADRES}${b.pr}`} target='_blank' rel='noreferrer noopener' title={tr(lang, 'Відкрити запит на злиття на GitHub: там повна історія змін і обговорення', 'Pull request op GitHub openen: volledige geschiedenis en bespreking')}>#{b.pr}</a>{b.tak ? ` · ${b.tak}` : ''}</small></> : b.tak ? <><br /><small className='ut-hint'>{b.tak}</small></> : null}
+            {verwijzingen.length ? null : b.pr ? <><br /><small><a href={`${PR_ADRES}${b.pr}`} target='_blank' rel='noreferrer noopener' title={tr(lang, 'Відкрити запит на злиття на GitHub: там повна історія змін і обговорення', 'Pull request op GitHub openen: volledige geschiedenis en bespreking')}>#{b.pr}</a>{b.tak ? ` · ${b.tak}` : ''}</small></> : b.tak ? <><br /><small className='ut-hint'>{b.tak}</small></> : null}
           </span>
         </li>;
       })}</ul>
+      {verwijzingen.some((v) => v.taken.includes(taak)) ? <div className='ut-vw-rij'>{verwijzingen.filter((v) => v.taken.includes(taak)).map((v) => <VerwijzingRij key={`${v.soort}:${v.id}`} lang={lang} v={v} />)}</div> : null}
     </div>)}
+    {verwijzingen.some((v) => !v.taken.length) ? <div className='ut-bijdragen-taak'><small><b>{tr(lang, 'Інше в цьому випуску', 'Overig in deze release')}</b></small><div className='ut-vw-rij'>{verwijzingen.filter((v) => !v.taken.length).map((v) => <VerwijzingRij key={`${v.soort}:${v.id}`} lang={lang} v={v} />)}</div></div> : null}
   </details>;
 }
 
@@ -76,7 +79,7 @@ export function Deelnemers({ lang, m, account, accounts }: { lang: Lang; m: Mani
           <small className='ut-hint'> · {d.rollen.map((r) => tr(lang, ROL[r][0], ROL[r][1])).join(', ')}</small></span>
       </li>;
     })}
-  </ul>{m.bijdragen?.length ? <Bijdragen lang={lang} lijst={m.bijdragen} /> : null}</>;
+  </ul>{m.bijdragen?.length ? <Bijdragen lang={lang} lijst={m.bijdragen} verwijzingen={m.verwijzingen ?? []} /> : null}</>;
 }
 
 export default function UitgaveBeschrijving({ lang, manifest, samenvatting, kort = false }: { lang: Lang; manifest: Manifest | null | undefined; samenvatting: string | null | undefined; kort?: boolean }) {

@@ -31,7 +31,10 @@
     "orchestratie/onderwerpen/",
     "scripts/vaardigheden/",
     ".agents/skills/",
-    ".claude/settings.json"
+    ".claude/settings.json",
+    "scripts/orch/verwijzingen.mjs",
+    "src/uitrol/Verwijzingen.tsx",
+    "orchestratie/verwijzingen/"
   ],
   "werk": [
     {
@@ -67,6 +70,14 @@
       "model": "claude-opus-5-5",
       "datum": "2026-11-18",
       "uk": "Облік авторства orch bijdrage, досьє функцій, orch begin з автозапуском для Claude, злиття навичок і досьє без утрат (orch behoud), «Хто що зробив» на сторінці оновлень."
+    },
+    {
+      "taakId": "VERWIJZING-001",
+      "tak": "claude/project-thread-svlfqt",
+      "agent": "claude",
+      "model": "claude-opus-5-5",
+      "datum": "2026-11-18",
+      "uk": "Посилання з людською назвою, підсумком і станом (злито, закрито, видалено: хто, коли, чому) для гілок, запитів, міграцій і задач у «Хто що зробив»; реєстр подій orchestratie/verwijzingen/, команди orch verwijzing і orch verwijzingen; макет погоджено власником."
     }
   ],
   "mogelijkheden": [
@@ -117,6 +128,18 @@
       "uk": "Блок «Хто що зробив» на сторінці оновлень сайту",
       "sinds": "BIJDRAGE-001",
       "staat": "in-ontwikkeling"
+    },
+    {
+      "id": "verwijzingen-met-staat",
+      "uk": "Посилання на гілки, запити, міграції й задачі з людською назвою, підсумком і станом, без «404», збережені у випуску",
+      "sinds": "VERWIJZING-001",
+      "staat": "in-ontwikkeling"
+    },
+    {
+      "id": "verwijdering-registreren",
+      "uk": "Запис, хто, коли й чому видалив гілку чи закрив запит, з останнім комітом для відновлення",
+      "sinds": "VERWIJZING-001",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [

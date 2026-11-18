@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.16",
+  "regelsVersie": "1.4.17",
   "bijgewerkt": "2026-11-18",
   "regelBestanden": [
     "AGENTS.md",
@@ -354,5 +354,23 @@
   "geinstalleerd": {
     "bestand": "orchestratie/geinstalleerd.json",
     "toelichting": "Факт установки (versie, bronCommit, bron: installer|eigenaar). Пише інсталятор/власник, не агент; з нього виводиться статус installed."
+  },
+  "verwijzingen": {
+    "map": "orchestratie/verwijzingen",
+    "bestand": "orchestratie/verwijzingen/<pr|tak>-<id>/<РРРРММДД-ГГХХСС>-<подія>.json",
+    "alleenAanvullen": true,
+    "gebeurtenissen": [
+      "verwijderd",
+      "gesloten",
+      "samengevoegd",
+      "hersteld",
+      "beschrijving"
+    ],
+    "verplichtVoor": [
+      "tak verwijderen",
+      "запит закрити без злиття"
+    ],
+    "manifestVeld": "verwijzingen",
+    "toelichting": "VERWIJZING-001: на сторінці оновлень кожна гілка, запит, міграція й задача мають людську назву, підсумок і стан замість голого номера. Перед видаленням гілки чи закриттям запиту без злиття агент записує подію (хто, чому, останній коміт, куди ввійшло): node scripts/orch.mjs verwijzing. Збирання випуску попереджає про гілку, що зникла без запису (VERWIJZING_ONVERKLAARD)."
   }
 }
