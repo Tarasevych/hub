@@ -23,6 +23,7 @@ import { merkDef } from '../../src/merk/merk-register';
 import { LOGOS } from '../../src/merk/merk-logos';
 import { MERKEN } from '../../src/merk/merk-tabel';
 import Merk from '../../src/merk/Merk';
+import PlaatsKeten from '../../src/merk/PlaatsKeten';
 
 const MAP = 'public/merk/plaats';
 
@@ -71,9 +72,11 @@ export async function main() {
     // VP8X: breedte-1 en hoogte-1 als 24-bits little endian op 24 en 27.
     const vp8x = b.toString('ascii', 12, 16) === 'VP8X';
     const w = vp8x ? b.readUIntLE(24, 3) + 1 : 0, h = vp8x ? b.readUIntLE(27, 3) + 1 : 0;
-    if (!isWebp || (vp8x && (w !== 96 || h !== 96)) || b.length > 16 * 1024 || r?.bytes !== b.length) { fout = `${f}: webp=${isWebp} ${w}×${h} ${b.length} B`; break; }
+    // Vlag (.vlag.webp): eigen verhouding, langste zijde 96; wapen: 96×96.
+    const maatGoed = f.endsWith('.vlag.webp') ? Math.max(w, h) === 96 && Math.min(w, h) >= 24 : w === 96 && h === 96;
+    if (!isWebp || (vp8x && !maatGoed) || b.length > 16 * 1024 || r?.bytes !== b.length) { fout = `${f}: webp=${isWebp} ${w}×${h} ${b.length} B`; break; }
   }
-  check('2: elk bestand is een echte WebP 96×96, ≤ 16 KB, grootte gelijk aan HERKOMST', !fout, fout);
+  check('2: elk bestand is een echte WebP (wapen 96×96, vlag langste zijde 96), ≤ 16 KB, grootte gelijk aan HERKOMST', !fout, fout);
   const totaal = bestanden.reduce((n, f) => n + statSync(join(MAP, f)).size, 0) + readdirSync(MAP).filter((f) => f.endsWith('.json')).reduce((n, f) => n + statSync(join(MAP, f)).size, 0);
   check(`2: hele basis ≤ 16 MB (nu ${(totaal / 1048576).toFixed(1)} MB) — buiten de bundel, per teken geladen`, totaal < 16 * 1048576);
   check('2: donkere ondergrond alleen voor bestaande tekens', [...PLAATS_DONKER].every((s) => perSleutel.has(s)) && herkomst.donker.length === PLAATS_DONKER.size);
@@ -133,6 +136,26 @@ export async function main() {
   check('5: Proximus (wit teken) staat ook als gliefje op zijn eigen paarse plaat', prox.includes('data-merk-plaatkleur="#5c2d91"') && prox.includes('background:#5c2d91'));
   const lenovo = renderToString(createElement(Merk, { merk: 'lenovo', vorm: 'rond', maat: 22 }));
   check('5: Lenovo uit het officiële register (geen monogram)', lenovo.includes('data-merk-officieel="lenovo"'));
+
+  // ------------------------------------------------------------ 5b. «Ланцюжок» (Павло 18.11.2026): vlag én wapen per niveau
+  const ix: PlaatsIndex = { land: 'UA', landWapen: 1, regios: { 'UA-46': { sleutel: 'regio-ua-46', wapen: 1, vlag: 1, namen: ['lviv oblast'], naam: { uk: 'Львівська область', nl: 'Oblast Lviv' } } },
+    steden: [{ sleutel: 'stad-ua-lviv', vlag: 1, qid: 'Q36036', regio: ['UA-46'], namen: ['lviv', 'львів'], naam: { uk: 'Львів', nl: 'Lviv' } }] };
+  const nv = plaatsTekens({ land: 'UA', regioCode: '46', stad: 'Lviv' }, ix).niveaus;
+  check('5b: niveaus van grof naar fijn: land › regio › stad', nv.map((n) => n.soort).join(' ') === 'land regio stad', JSON.stringify(nv.map((n) => n.soort)));
+  check('5b: land: vlag uit country-flag-icons, wapen land-ua.wapen', nv[0].vlag === 'land-ua' && nv[0].wapen === 'land-ua.wapen');
+  check('5b: regio met vlag én wapen', nv[1].vlag === 'regio-ua-46.vlag' && nv[1].wapen === 'regio-ua-46' && nv[1].naam?.uk === 'Львівська область');
+  check('5b: stad met alleen een vlag → wapen null (lege plek, niets nagetekend)', nv[2].vlag === 'stad-ua-lviv.vlag' && nv[2].wapen === null);
+  check('5b: sleutels .vlag/.wapen zijn geldige plaatssleutels', ['regio-ua-46.vlag', 'stad-ua-lviv.vlag', 'land-ua.wapen'].every(isPlaatsSleutel) && !isPlaatsSleutel('land-ua.vlag'));
+  const zonderIndex = plaatsTekens({ land: 'JP', stad: 'Tokyo' }, null).niveaus;
+  check('5b: zonder index alleen het land, zonder wapen', zonderIndex.length === 1 && zonderIndex[0].vlag === 'land-jp' && zonderIndex[0].wapen === null);
+  const html = renderToString(createElement(PlaatsKeten, { antwoord: plaatsTekens({ land: 'UA', regioCode: '46', stad: 'Lviv' }, ix), bron: 'ip', open: true }));
+  check('5b: <PlaatsKeten>: vlag en wapen als aparte <img>, lege plek voor het ontbrekende wapen, IP-label, uitgeklapte lijst',
+    html.includes('src="/merk/plaats/regio-ua-46.vlag.webp"') && html.includes('src="/merk/plaats/regio-ua-46.webp"') && html.includes('Львів: герба немає')
+    && html.includes('>IP<') && html.includes('plaats-keten-lijst') && html.includes('aria-expanded="true"'));
+  const nl = renderToString(createElement(PlaatsKeten, { antwoord: plaatsTekens({ land: 'UA', stad: 'Lviv' }, ix), bron: 'gps', taal: 'nl' }));
+  check('5b: Nederlands + GPS, ingeklapt', nl.includes('>GPS<') && nl.includes('nauwkeurig tot op de straat') && nl.includes('aria-expanded="false"') && !nl.includes('plaats-keten-lijst'));
+  const vlagBestanden = readdirSync(MAP).filter((f) => f.endsWith('.vlag.webp'));
+  check('5b: vlagbestanden (indien gemaakt) staan in HERKOMST', vlagBestanden.every((f) => perSleutel.has(f.slice(0, -5))), vlagBestanden.filter((f) => !perSleutel.has(f.slice(0, -5))).slice(0, 5).join(', '));
 
   // ------------------------------------------------------------ 6. BYOS
   const bronnen = ['shared/plaats-teken.ts', 'shared/provider-teken.ts', 'backend/geo/asn.ts', 'backend/geo/plaats.ts', 'src/merk/MerkPlaats.tsx', 'src/merk/merk-plaats.ts'].map((f) => readFileSync(f, 'utf8'));

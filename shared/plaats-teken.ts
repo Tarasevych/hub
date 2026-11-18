@@ -7,13 +7,31 @@
 //   land-<iso2>              vlag van het land (country-flag-icons, 1x1, MIT)
 //   regio-<iso 3166-2>       wapen (of vlag) van provincie/oblast/regio, bv. regio-be-vov, regio-ua-46
 //   stad-<iso2>-<naam>       wapen van de stad/gemeente, bv. stad-be-gent, stad-ua-lviv
+//   <sleutel>.vlag           de vlag van die regio/stad in eigen verhouding (bv. 96×64), naast het wapen (weergave «Ланцюжок»)
+//   land-<iso2>.wapen        het wapen van het land (de vlag blijft uit country-flag-icons)
 
 export type PlaatsSoort = 'stad' | 'regio' | 'land';
 
 export type PlaatsIndex = {
   land: string;
-  regios: Record<string, { sleutel?: string; namen: string[]; naam: { uk: string; nl: string }; gn?: string }>;
-  steden: Array<{ sleutel?: string; qid: string; gn?: string; regio: string[]; namen: string[]; naam: { uk: string; nl: string } }>;
+  regios: Record<string, { sleutel?: string; wapen?: 1; vlag?: 1; namen: string[]; naam: { uk: string; nl: string }; gn?: string }>;
+  steden: Array<{ sleutel?: string; wapen?: 1; vlag?: 1; qid: string; gn?: string; regio: string[]; namen: string[]; naam: { uk: string; nl: string } }>;
+  /** Er is een wapen van het land zelf: land-<iso2>.wapen.webp. */
+  landWapen?: 1;
+};
+
+/**
+ * Eén niveau van de plaats voor de weergave «Ланцюжок» (Павло, 18.11.2026): land › regio › stad, elk met vlag én wapen
+ * naast elkaar (nooit op elkaar). null = dat teken bestaat niet (de weergave toont dan een lege, gestippelde plek).
+ */
+export type PlaatsNiveau = {
+  soort: PlaatsSoort;
+  code?: string;
+  naam: { uk: string; nl: string } | null;
+  /** Sleutel van de vlag: 'land-ua' (country-flag-icons) of '<sleutel>.vlag' (public/merk/plaats). */
+  vlag: string | null;
+  /** Sleutel van het wapen: '<sleutel>' of 'land-ua.wapen' (public/merk/plaats). */
+  wapen: string | null;
 };
 
 export type PlaatsVraag = {
@@ -39,6 +57,8 @@ export type PlaatsAntwoord = {
   /** Wat er herkend is (ook zonder teken): handig voor de tekst naast het teken. */
   stad?: { naam: { uk: string; nl: string }; qid: string } | null;
   regios: Array<{ code: string; naam: { uk: string; nl: string } }>;
+  /** Van grof naar fijn: land › regio('s) › stad — ook niveaus zonder teken (naam is dan genoeg). */
+  niveaus: PlaatsNiveau[];
 };
 
 /** Zelfde normalisatie als scripts/plaats-tekens-maken.mjs (normNaam): zonder accenten, kleine letters, alleen letters/cijfers. */
@@ -71,6 +91,7 @@ export function plaatsTekens(vraag: PlaatsVraag, index?: PlaatsIndex | null): Pl
   const keten: PlaatsTeken[] = [];
   const regios: PlaatsAntwoord['regios'] = [];
   let stad: PlaatsAntwoord['stad'] = null;
+  const fijn: PlaatsNiveau[] = [];
   if (land && index && index.land === land) {
     const gn = String(vraag.geonamesId ?? '').trim();
     const iso = regioIso(land, vraag.regioCode);
@@ -90,6 +111,7 @@ export function plaatsTekens(vraag: PlaatsVraag, index?: PlaatsIndex | null): Pl
     if (s) {
       stad = { naam: s.naam, qid: s.qid };
       if (s.sleutel) keten.push({ sleutel: s.sleutel, soort: 'stad', naam: s.naam });
+      fijn.push(niveau('stad', s, s.naam));
       // De regio's van de stad zelf (bv. Gent → BE-VOV én BE-VLG): de fijnste (langste code, provincie) eerst.
       for (const r of s.regio) if (!regioCodes.includes(r)) regioCodes.push(r);
     }
@@ -98,10 +120,20 @@ export function plaatsTekens(vraag: PlaatsVraag, index?: PlaatsIndex | null): Pl
       const r = index.regios[c];
       regios.push({ code: c, naam: r.naam });
       if (r.sleutel) keten.push({ sleutel: r.sleutel, soort: 'regio', naam: r.naam, code: c });
+      fijn.push({ ...niveau('regio', r, r.naam), code: c });
     }
   }
-  if (land) keten.push({ sleutel: landTekenSleutel(land), soort: 'land', code: land });
-  return { teken: keten[0] ?? null, keten, stad, regios };
+  if (land) {
+    keten.push({ sleutel: landTekenSleutel(land), soort: 'land', code: land });
+    fijn.push({ soort: 'land', code: land, naam: null, vlag: landTekenSleutel(land), wapen: index?.land === land && index.landWapen ? `${landTekenSleutel(land)}.wapen` : null });
+  }
+  return { teken: keten[0] ?? null, keten, stad, regios, niveaus: fijn.reverse() };
+}
+
+/** Vlag en wapen van een regio/stad uit de index. Oudere indexen zonder «wapen»/«vlag»: het hoofdteken telt als wapen. */
+function niveau(soort: PlaatsSoort, x: { sleutel?: string; wapen?: 1; vlag?: 1 }, naam: { uk: string; nl: string }): PlaatsNiveau {
+  const oud = x.wapen === undefined && x.vlag === undefined;
+  return { soort, naam, vlag: x.sleutel && x.vlag ? `${x.sleutel}.vlag` : null, wapen: x.sleutel && (x.wapen || oud) ? x.sleutel : null };
 }
 
 /** Provincie vóór gewest: een code die bij de stad hoort en geen «gewest» (BE-VLG/WAL/BRU) of FR-regio met letters is. */
@@ -113,4 +145,4 @@ function fijnheid(code: string, vanStad?: string[]): number {
   return p;
 }
 
-export const isPlaatsSleutel = (s: unknown): boolean => /^(land-[a-z]{2}|regio-[a-z]{2}-[a-z0-9]{1,3}|stad-[a-z]{2}-[a-z0-9-]{1,60})$/.test(String(s ?? ''));
+export const isPlaatsSleutel = (s: unknown): boolean => /^(land-[a-z]{2}(\.wapen)?|(regio-[a-z]{2}-[a-z0-9]{1,3}|stad-[a-z]{2}-[a-z0-9-]{1,60})(\.vlag)?)$/.test(String(s ?? ''));

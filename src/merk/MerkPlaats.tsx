@@ -48,7 +48,7 @@ export default function MerkPlaats({ keten, maat, vorm = 'rond', titel, naam, cl
   const [stap, setStap] = useState(0);
   const [vlag, setVlag] = useState('');
   const sleutel = sleutels[stap] || '';
-  const isLand = sleutel.startsWith('land-');
+  const isLand = /^land-[a-z]{2}$/.test(sleutel);
   useEffect(() => { setStap(0); }, [sleutels.join('|')]);
   useEffect(() => {
     if (!isLand) { setVlag(''); return; }

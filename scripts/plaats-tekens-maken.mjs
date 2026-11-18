@@ -19,7 +19,10 @@
 //   src/merk/plaats/HERKOMST.json          per bestand: Commons-bestand, auteur, licentie, sha256
 //   src/merk/plaats/plaats-gegenereerd.ts  welke landen een index hebben en welke tekens een DONKERE ondergrond nodig hebben
 //
-// Gebruik:  node scripts/plaats-tekens-maken.mjs [--cache <map>] [--landen BE,NL,UA] [--alleen <sleutel,...>]
+// Gebruik:  node scripts/plaats-tekens-maken.mjs [--cache <map>] [--landen BE,NL,UA | ALLE] [--alleen <sleutel,...>]
+//   --landen ALLE (Павло, 18.11.2026: «база всього світу»): усі країни з кодом ISO 3166-1 у Вікіданих. Для кожної — усі
+//   адміністративні одиниці з кодом ISO 3166-2, міста від 100 000 мешканців, столиця країни й центри всіх одиниць ISO 3166-2.
+//   Alle landen: alle ISO 3166-2-eenheden, steden ≥ 100 000 inwoners, de hoofdstad en de hoofdplaats van elke eenheid.
 //   De cache (standaard rapporten/plaats-tekens-cache) houdt de antwoorden van Wikidata/Commons en de beelden vast: Commons beperkt
 //   het aantal verzoeken streng (429). Een onderbroken run gaat de volgende keer verder waar hij stopte.
 import { createHash } from 'node:crypto';
@@ -50,11 +53,11 @@ export const LANDEN = {
   // «місто ≥ 50 000» (Q515). Oblastcentra verliezen na 2020 vaak de klasse (met einddatum): daarom ook steden ≥ 50 000 inwoners.
   UA: { qid: 'Q212', klasse: 'Q12131624', ookVanaf: 50000 },
   LU: { qid: 'Q32', klasse: 'Q2919801' },
-  DE: { qid: 'Q183', minInwoners: 100000 },
-  FR: { qid: 'Q142', minInwoners: 100000 },
-  PL: { qid: 'Q36', minInwoners: 100000 },
+  DE: { qid: 'Q183', minInwoners: 100000, hoofdplaatsen: true },
+  FR: { qid: 'Q142', minInwoners: 100000, hoofdplaatsen: true },
+  PL: { qid: 'Q36', minInwoners: 100000, hoofdplaatsen: true },
 };
-const gekozen = arg('--landen', Object.keys(LANDEN).join(',')).split(',').map((s) => s.trim().toUpperCase()).filter((l) => LANDEN[l]);
+const STANDAARD = { minInwoners: 100000, hoofdplaatsen: true };
 const alleen = new Set(arg('--alleen').split(',').filter(Boolean));
 const TALEN = ['uk', 'nl', 'en', 'fr', 'de', 'pl', 'ru'];
 
@@ -81,6 +84,21 @@ function inCache(naam, maak) {
 }
 const sparql = (q) => haal(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(q)}`, { init: { headers: { Accept: 'application/sparql-results+json' } } });
 
+// ------------------------------------------------------------------------------------------------ 0. alle landen
+// Één item per ISO 3166-1-code: bij dubbelen (historische staten, vroegere namen) het item met de meeste sitelinks.
+const alleLanden = () => inCache('landen.json', async () => {
+  const q = `SELECT ?c ?iso ?sl WHERE { ?c wdt:P297 ?iso ; wikibase:sitelinks ?sl . FILTER NOT EXISTS { ?c wdt:P576 ?e } }`;
+  const beste = {};
+  for (const b of (await sparql(q)).results.bindings) {
+    const iso = b.iso.value.toUpperCase(); const sl = Number(b.sl.value);
+    if (/^[A-Z]{2}$/.test(iso) && (!beste[iso] || sl > beste[iso].sl)) beste[iso] = { qid: b.c.value.split('/').pop(), sl };
+  }
+  return Object.fromEntries(Object.entries(beste).map(([k, v]) => [k, v.qid]));
+});
+const landArg = arg('--landen', Object.keys(LANDEN).join(',')).toUpperCase();
+if (landArg === 'ALLE' || landArg.split(',').some((l) => !LANDEN[l.trim()])) for (const [iso, qid] of Object.entries(await alleLanden())) LANDEN[iso] ||= { qid, ...STANDAARD };
+const gekozen = (landArg === 'ALLE' ? Object.keys(LANDEN).sort() : landArg.split(',')).map((s) => s.trim()).filter((l) => LANDEN[l]);
+
 // ------------------------------------------------------------------------------------------------ 1. Wikidata
 const labelDeel = TALEN.map((t) => `OPTIONAL{?it rdfs:label ?l_${t} FILTER(lang(?l_${t})="${t}")}`).join(' ');
 const labelVars = TALEN.map((t) => `?l_${t}`).join(' ');
@@ -105,10 +123,22 @@ async function stedenVan(land) {
 }
 function stadFilter(c, zonderEinde) {
   const groot = (min) => `?it wdt:P31/wdt:P279* wd:Q515 ; wdt:P17 wd:${c.qid} ; wdt:P1082 ?pop . FILTER(?pop >= ${min})`;
-  if (!c.klasse) return groot(c.minInwoners);
+  // Hoofdstad van het land en hoofdplaats (P36) van elke ISO 3166-2-eenheid, ook als ze klein zijn (Vaduz, Ajaccio, Schwerin).
+  const iso = Object.keys(LANDEN).find((k) => LANDEN[k] === c);
+  const hoofd = `{ wd:${c.qid} wdt:P36 ?it } UNION { ?bestuur wdt:P300 ?bi ; wdt:P36 ?it . FILTER(STRSTARTS(?bi, "${iso}-")) }`;
+  if (!c.klasse) return c.hoofdplaatsen ? `{ ${groot(c.minInwoners)} } UNION ${hoofd}` : groot(c.minInwoners);
   const klasse = `?it p:P31 ?st . ?st ps:P31 wd:${c.klasse} .${zonderEinde ? ' FILTER NOT EXISTS { ?st pq:P582 ?eind }' : ''}`;
   return c.ookVanaf ? `{ ${klasse} } UNION { ${groot(c.ookVanaf)} }` : klasse;
 }
+// Павло 18.11.2026: «і прапор міста, і герб міста» — вигляд «Ланцюжок». Vlag én wapen per niveau.
+const stadVlaggen = (land) => inCache(`stadvlag-${land}.json`, async () => {
+  const q = `SELECT ?it ?flag WHERE { ${stadFilter(LANDEN[land], true)} ?it wdt:P41 ?flag . FILTER NOT EXISTS { ?it wdt:P576 ?e } }`;
+  return (await sparql(q)).results.bindings;
+});
+const landWapen = (land) => inCache(`landwapen-${land}.json`, async () => {
+  const q = `SELECT ?coa WHERE { wd:${LANDEN[land].qid} wdt:P94 ?coa }`;
+  return (await sparql(q)).results.bindings.map((b) => bestandNaam(b.coa.value));
+});
 const alt = async (land) => inCache(`alias-${land}.json`, async () => {
   // Andere namen (en/nl/uk) van de steden: Cloudflare noemt «Ghent», de gebruiker «Гент», Wikidata «Gent».
   const c = LANDEN[land];
@@ -167,8 +197,8 @@ async function verkleiner() {
   const page = await browser.newPage();
   await page.setContent('<canvas id=c></canvas>');
   return {
-    async maak(buf, mime) {
-      return page.evaluate(async ({ b64, mime, MAAT }) => {
+    async maak(buf, mime, vorm = 'vierkant') {
+      return page.evaluate(async ({ b64, mime, MAAT, vorm }) => {
         const img = new Image(); img.src = `data:${mime};base64,${b64}`; await img.decode();
         const w = img.naturalWidth, h = img.naturalHeight;
         const a = new OffscreenCanvas(w, h).getContext('2d'); a.drawImage(img, 0, 0);
@@ -178,17 +208,19 @@ async function verkleiner() {
         if (x1 < 0) return null;
         const bw = x1 - x0 + 1, bh = y1 - y0 + 1, s = MAAT / Math.max(bw, bh);
         const tw = Math.max(1, Math.round(bw * s)), th = Math.max(1, Math.round(bh * s));
-        const c = new OffscreenCanvas(MAAT, MAAT); const g = c.getContext('2d');
+        // Vlag: eigen verhouding (bv. 96×64), zodat hij als vlag te zien is; wapen: gecentreerd in 96×96.
+        const vlag = vorm === 'vlag'; const cw = vlag ? tw : MAAT, ch = vlag ? th : MAAT;
+        const c = new OffscreenCanvas(cw, ch); const g = c.getContext('2d');
         g.imageSmoothingQuality = 'high';
-        g.drawImage(img, x0, y0, bw, bh, Math.round((MAAT - tw) / 2), Math.round((MAAT - th) / 2), tw, th);
+        g.drawImage(img, x0, y0, bw, bh, Math.round((cw - tw) / 2), Math.round((ch - th) / 2), tw, th);
         // Helderheid van de dekkende pixels: ≥ 0,8 gemiddeld en weinig donkere delen = teken valt weg op wit → donkere ondergrond.
-        const p = g.getImageData(0, 0, MAAT, MAAT).data; let som = 0, n = 0, donker = 0;
+        const p = g.getImageData(0, 0, cw, ch).data; let som = 0, n = 0, donker = 0;
         const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
         for (let i = 0; i < p.length; i += 4) if (p[i + 3] > 128) { const L = 0.2126 * lin(p[i]) + 0.7152 * lin(p[i + 1]) + 0.0722 * lin(p[i + 2]); som += L; n++; if (L < 0.35) donker++; }
         const blob = await c.convertToBlob({ type: 'image/webp', quality: 0.9 });
         const bytes = new Uint8Array(await blob.arrayBuffer()); let bin = ''; for (const x of bytes) bin += String.fromCharCode(x);
         return { webp: btoa(bin), helder: n ? som / n : 0, donkerDeel: n ? donker / n : 0 };
-      }, { b64: buf.toString('base64'), mime, MAAT });
+      }, { b64: buf.toString('base64'), mime, MAAT, vorm });
     },
     sluit: () => browser.close(),
   };
@@ -228,12 +260,15 @@ try {
     console.log(`== ${land}`);
     const regios = verzamel(await regiosVan(land));
     const steden = verzamel(await stedenVan(land), await alt(land));
-    const nodig = [...regios.flatMap((r) => [...r.coa, ...r.flag]), ...steden.flatMap((s) => [...s.coa])];
+    const perQid = new Map(steden.map((x) => [x.qid, x]));
+    for (const b of await stadVlaggen(land)) perQid.get(qid(b.it.value))?.flag.add(bestandNaam(b.flag.value));
+    const lw = await landWapen(land);
+    const nodig = [...regios.flatMap((r) => [...r.coa, ...r.flag]), ...steden.flatMap((s) => [...s.coa, ...s.flag]), ...lw];
     const lic = await licenties(nodig);
     const index = { land, regios: {}, steden: [] };
     const gebruikt = new Set();
 
-    const maak = async (sleutel, kandidaten) => {
+    const maak = async (sleutel, kandidaten, vorm = 'vierkant') => {
       if (alleen.size && !alleen.has(sleutel)) return herkomst.has(sleutel) ? sleutel : '';
       for (const naam of kandidaten) {
         const l = lic[naam];
@@ -245,7 +280,7 @@ try {
         try { buf = await beeld(naam); } catch (e) { overgeslagen.push(`${sleutel}: ${naam} (${e.message})`); continue; }
         v ||= await verkleiner();
         const mime = buf[0] === 0x89 ? 'image/png' : buf[0] === 0xff ? 'image/jpeg' : 'image/png';
-        const r = await v.maak(buf, mime).catch(() => null);
+        const r = await v.maak(buf, mime, vorm).catch(() => null);
         if (!r) { overgeslagen.push(`${sleutel}: ${naam} (leeg beeld)`); continue; }
         const webp = Buffer.from(r.webp, 'base64');
         writeFileSync(join(UIT_BEELD, `${sleutel}.webp`), webp);
@@ -261,22 +296,28 @@ try {
       const sleutel = `regio-${iso.toLowerCase()}`;
       // Een wapen eerst (Павло: «герб»), anders de vlag van de provincie.
       const s = await maak(sleutel, [...r.coa, ...r.flag]);
-      index.regios[iso] = { ...(s ? { sleutel: s } : {}), namen: [...new Set(Object.values(r.namen).map(normNaam))].filter(Boolean), naam: { uk: r.namen.uk || r.namen.en || '', nl: r.namen.nl || r.namen.en || '' }, ...(r.gn ? { gn: r.gn } : {}) };
+      const vl = r.flag.size ? await maak(`${sleutel}.vlag`, [...r.flag], 'vlag') : '';
+      const heeftWapen = !!s && r.coa.size > 0 && herkomst.get(s)?.bestand !== herkomst.get(vl)?.bestand;
+      index.regios[iso] = { ...(s ? { sleutel: s } : {}), ...(heeftWapen ? { wapen: 1 } : {}), ...(vl ? { vlag: 1 } : {}), namen: [...new Set(Object.values(r.namen).map(normNaam))].filter(Boolean), naam: { uk: r.namen.uk || r.namen.en || '', nl: r.namen.nl || r.namen.en || '' }, ...(r.gn ? { gn: r.gn } : {}) };
     }
     for (const s of steden) {
       const naam = s.namen.en || s.namen.nl || s.namen[Object.keys(s.namen)[0]] || s.qid;
       let sleutel = `stad-${land.toLowerCase()}-${slug(s.namen.nl && land !== 'UA' ? s.namen.nl : naam) || s.qid.toLowerCase()}`;
       if (gebruikt.has(sleutel)) sleutel = `${sleutel}-${s.qid.toLowerCase()}`;
       gebruikt.add(sleutel);
-      const t = s.coa.size ? await maak(sleutel, [...s.coa]) : '';
+      const t = s.coa.size || s.flag.size ? await maak(sleutel, [...s.coa, ...s.flag]) : '';
+      const vl = s.flag.size ? await maak(`${sleutel}.vlag`, [...s.flag], 'vlag') : '';
+      const heeftWapen = !!t && s.coa.size > 0 && herkomst.get(t)?.bestand !== herkomst.get(vl)?.bestand;
       index.steden.push({
-        ...(t ? { sleutel: t } : {}), qid: s.qid, ...(s.gn ? { gn: s.gn } : {}),
+        ...(t ? { sleutel: t } : {}), ...(heeftWapen ? { wapen: 1 } : {}), ...(vl ? { vlag: 1 } : {}), qid: s.qid, ...(s.gn ? { gn: s.gn } : {}),
         regio: [...s.iso].filter((i) => i.startsWith(`${land}-`)).sort(),
         namen: [...new Set([...Object.values(s.namen), ...s.alias].map(normNaam))].filter(Boolean),
         naam: { uk: s.namen.uk || naam, nl: s.namen.nl || naam },
       });
     }
     index.steden.sort((a, b) => a.naam.nl.localeCompare(b.naam.nl));
+    // Wapen van het land zelf (de vlag komt uit country-flag-icons): land-xx.wapen.webp. Japan e.d. hebben er geen.
+    if (lw.length && await maak(`land-${land.toLowerCase()}.wapen`, lw)) index.landWapen = 1;
     writeFileSync(join(UIT_BEELD, `${land.toLowerCase()}.json`), JSON.stringify(index));
     indexen[land] = { regios: Object.keys(index.regios).length, steden: index.steden.length, metTeken: index.steden.filter((x) => x.sleutel).length };
     console.log(`   ${land}: ${indexen[land].regios} regio's, ${indexen[land].steden} steden (${indexen[land].metTeken} met teken)`);

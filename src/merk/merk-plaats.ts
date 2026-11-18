@@ -27,7 +27,7 @@ export async function zoekPlaatsTekens(vraag: PlaatsVraag): Promise<PlaatsAntwoo
 export function usePlaatsTekens(vraag: PlaatsVraag): PlaatsAntwoord {
   const sleutel = JSON.stringify([vraag.land, vraag.regioCode, vraag.regio, vraag.stad, vraag.geonamesId]);
   const vlag = landTekenSleutel(vraag.land);
-  const leeg: PlaatsAntwoord = { teken: vlag ? { sleutel: vlag, soort: 'land' } : null, keten: vlag ? [{ sleutel: vlag, soort: 'land' }] : [], stad: null, regios: [] };
+  const leeg: PlaatsAntwoord = { teken: vlag ? { sleutel: vlag, soort: 'land' } : null, keten: vlag ? [{ sleutel: vlag, soort: 'land' }] : [], stad: null, regios: [], niveaus: vlag ? [{ soort: 'land', code: landCode(vraag.land), naam: null, vlag, wapen: null }] : [] };
   const [antwoord, setAntwoord] = useState<PlaatsAntwoord>(leeg);
   useEffect(() => {
     let weg = false;
