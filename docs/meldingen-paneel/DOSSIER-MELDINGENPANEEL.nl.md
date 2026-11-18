@@ -20,7 +20,7 @@ Basis: `feature/upd-004-uitgave-20261117-225600` (697c7374). Werktak: `feature/m
 - 15–16.11 MELDINGEN-UX-001 schakelaar «Venster ↔ Compact», één getal op de bel · claude · Claude Opus 5.5 en Claude Fable 5.2.
 - 16.11 MELDLINK-001, ELDERS-001; 17.11 MELDCAT-001 register, X4-ontwerp · claude · Claude Opus 5.5.
 
-Alle 227 takken zijn vergeleken: er staat **geen paneelcode alleen in een zijtak**. Er ging functionaliteit verloren doordat elk nieuw paneel naast het oude werd gebouwd: duur, begin en einde van een actie en «Wijziging bekijken» bestaan alleen in het klassieke paneel.
+Alle 227 takken zijn vergeleken, ook de 37 takken met de oude geschiedenis van vóór 30.10 (oude bestandsnamen `NotificationPanelBody.tsx`, 07.10 · Claude Sonnet 5.5). Echt verloren: in `wip/hub-voor-integratie-20261103` (0ca4cad3) «als ongelezen markeren», eerste/laatste keer en aantal bij samengevoegde meldingen, «opnieuw openen», «standaard herstellen»; en uit het klassieke paneel duur, begin en einde van een actie en «Wijziging bekijken».
 
 ## Tegenstrijdigheden
 
