@@ -76,3 +76,33 @@ span.merk-plaats-wapen.merk-plaat-donker { background: #1f2937; box-shadow: inse
 span.merk-plaats-wapen > img { width: 80%; height: 80%; object-fit: contain; }
 span.merk-gliefje.merk-plaats-wapen { background: none; box-shadow: none; }
 span.merk-gliefje.merk-plaats-wapen > img { width: 100%; height: 100%; }
+
+/* Місце входу «Ланцюжок» (PLAATS-TEKENS-001, вибір Павла 18.11.2026): країна › область › місто, прапор і герб поруч.
+   Plaatsketen: land › regio › stad; vlag en wapen naast elkaar, nooit op elkaar. */
+.plaats-keten { min-width: 0; }
+.plaats-keten-rij { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.plaats-keten-stap { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-size: 12.5px; color: var(--muted, #6b7280); }
+.plaats-keten-stap.hoofd { color: var(--text, #1f2937); font-size: 14px; }
+.plaats-keten-stap.hoofd b { font-weight: 600; }
+.plaats-keten-sep { color: var(--muted, #6b7280); }
+.plaats-keten-paar { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+img.plaats-keten-vlag { height: 18px; width: auto; max-width: 30px; border-radius: 3px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text, #0f172a) 16%, transparent); }
+img.plaats-keten-vlag.klein { height: 13px; max-width: 22px; border-radius: 2px; }
+img.plaats-keten-wapen { height: 22px; width: auto; max-width: 22px; object-fit: contain; }
+img.plaats-keten-wapen.klein { height: 17px; max-width: 17px; }
+span.plaats-keten-leeg { display: inline-block; flex: none; border: 1px dashed color-mix(in srgb, var(--muted, #6b7280) 60%, transparent); }
+span.plaats-keten-vlag.plaats-keten-leeg { width: 26px; height: 18px; border-radius: 3px; }
+span.plaats-keten-vlag.plaats-keten-leeg.klein { width: 19px; height: 13px; }
+span.plaats-keten-wapen.plaats-keten-leeg { width: 16px; height: 20px; border-radius: 3px 3px 8px 8px; }
+span.plaats-keten-wapen.plaats-keten-leeg.klein { width: 13px; height: 16px; }
+.plaats-keten-bron { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex: none; font-size: 11px; color: var(--muted, #6b7280);
+  border: 1px solid var(--line, #e5e7eb); border-radius: 999px; padding: 1px 6px 1px 3px; cursor: help; }
+.plaats-keten-bron svg { width: 13px; height: 13px; fill: var(--accent, #2563eb); }
+.plaats-keten-pijl { flex: none; border: 0; background: none; color: var(--muted, #6b7280); font-size: 12px; padding: 2px 4px; border-radius: 6px; cursor: pointer; }
+.plaats-keten-pijl:hover, .plaats-keten-pijl:focus-visible { background: var(--accent-soft, rgba(37, 99, 235, .1)); color: var(--text, #1f2937); }
+.plaats-keten-lijst { margin: 8px 0 0 4px; border-left: 2px solid var(--line, #e5e7eb); padding-left: 10px; display: grid; gap: 5px; }
+.plaats-keten-niveau { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 8px; padding-left: calc(var(--diepte, 0) * 8px); font-size: 13px; }
+.plaats-keten-soort { font-size: 11px; color: var(--muted, #6b7280); }
+html:is(.theme-dark, .theme-plum-dark) img.plaats-keten-wapen { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .5)); }
+/* Телефон: середні назви ховаються, знаки лишаються (останній шар файла). Telefoon: tussennamen weg, tekens blijven. */
+@media (max-width: 600px) { .plaats-keten-stap.midden .plaats-keten-naam { display: none; } }
