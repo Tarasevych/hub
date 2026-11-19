@@ -14,7 +14,8 @@
 @media (max-width:700px) {
   :where(html, body) { overflow-x:hidden; }
   /* жоден блок усередині робочої області не ширший за viewport */
-  :where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) :where(div, section, article, header, footer, main, nav, aside, form, fieldset, ul, ol, dl, table, pre, figure) { max-width:100%; }
+  /* MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): met de vlag aan geldt deze regel niet (zie de vervanging onderaan); specificiteit blijft 0 */
+  :where(html:not([data-mobiel-breedte-veilig])) :where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) :where(div, section, article, header, footer, main, nav, aside, form, fieldset, ul, ol, dl, table, pre, figure) { max-width:100%; }
   /* фіксовані ширини в px у сторінках стають «не більше за екран» */
   :where(.canonical-content, .venster-inhoud, .modal) :where([style*="width"]) { max-width:100%; }
   /* таблиці: прокрутка всередині контейнера, не сторінки */
@@ -42,4 +43,11 @@
   :where(small, .hint, .klein, .pil, .badge, .status-pill) { font-size:max(var(--tekst-mini), .75em); }
   /* довгі ідентифікатори/адреси переносяться, а не розтягують блок */
   :where(code, kbd, pre, a[href^="http"], .id, .mono, [data-code], [data-id]) { overflow-wrap:anywhere; word-break:normal; }
+  /* MOBIEL-BREEDTE-VEILIG v1 (vlag 0302) — smalle vervanging van de brede regel hierboven (regel 17). Die zette max-width:100% op
+     ELKE geneste div/section/…; Chrome rekent dan bij elke lay-out de hele boom opnieuw door (5–10 s, gigabytes op /agenten).
+     Schermvergelijking op 412 px (alle hoofdpagina's, met en zonder de regel, 10.11.2026): geen enkel element verandert van plaats of
+     breedte. Wat blijft als vangnet: de directe kinderen van het werkvlak en blokken met eigen inhoudsbreedte (pre, figure, fieldset);
+     tabellen, media, knoppen, velden en vaste px-breedtes houden hun eigen regels hierboven. Specificiteit blijft 0. */
+  :where(html[data-mobiel-breedte-veilig]) :where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) > :where(div, section, article, header, footer, main, nav, aside, form) { max-width:100%; }
+  :where(html[data-mobiel-breedte-veilig]) :where(.canonical-content, .venster-inhoud, .modal, .page, .auth-card, .mcp-consent-dialog) :where(pre, figure, fieldset) { max-width:100%; }
 }

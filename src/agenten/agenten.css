@@ -219,6 +219,9 @@ small.ag-melding{display:block}
 .ag-tech-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r,12px);background:var(--surface);font-size:13px;line-height:1.45}
 .ag-tech-regels li svg{flex:none;margin-top:2px}
 @media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
+/* MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): dezelfde ene kolom, maar als raster. De flexkolom met stretch kostte in Chrome op ≤560 px
+   1,2–3,7 s lay-out per keer op /agenten#tokens en #toegang (gemeten 10.11.2026; als raster 0,16 s). Zonder vlag: de regel hierboven. */
+@media(max-width:560px){html[data-mobiel-breedte-veilig] .ag-verbind-rij{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}}
 /* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
 .ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
 @media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}

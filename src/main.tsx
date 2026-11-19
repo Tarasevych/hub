@@ -8,6 +8,7 @@ import App from './App';
 import { installeerUitklapGeheugen } from './platform/uitklap'; // punt 4: uitklapblokken onthouden + #anker opent het juiste blok
 import { installeerEenMenu } from './platform/een-menu';
 import { startImpersonatieModus } from './impersonatie/modus'; // «Подивитися як користувач»: vóór de app, anders gaan de eerste aanroepen als de beheerder zelf
+import { installeerMobielVeilig } from './mobiel-veilig/vlag'; // MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): <html data-mobiel-breedte-veilig> vóór de eerste lay-out
 import './index.css';
 import './ontwerp/fundament.css'; // фундамент дизайну 20.10.2026: токени → примітиви → мобільна верстка (після preflight)
 import './mobiel-ux.css';
@@ -41,6 +42,7 @@ naActivering(() => {
     void import('./GastToegang').then(({ default: GastToegang }) => createRoot(document.getElementById('root')!).render(<GastToegang />));
   } else {
     startImpersonatieModus();
+    installeerMobielVeilig();
     createRoot(document.getElementById('root')!).render(<App />); installeerUitklapGeheugen(); installeerEenMenu();
     // Technisch profiel: eigen root naast de app (band + vensters), los van de dienst eronder; laadt pas na de app.
     void import('./tech/TechLaag').then(({ default: TechLaag }) => {
