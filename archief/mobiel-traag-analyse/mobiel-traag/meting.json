@@ -1,0 +1,754 @@
+{
+  "A-gewoon-4x": {
+    "naam": "A-gewoon-4x",
+    "opties": {
+      "throttle": true,
+      "trace": true,
+      "idle": 60000
+    },
+    "laadTijd": 3677,
+    "zichtbaarNa": 17762,
+    "rustNa": 59625,
+    "nav": {
+      "ttfb": 28,
+      "dcl": 3124,
+      "load": 3674,
+      "fcp": 1268
+    },
+    "laadM": {
+      "lcp": 7576,
+      "cls": 0.43,
+      "longtasks": 20,
+      "langsteTaak": 9683,
+      "tbt": 42354,
+      "commits": 48,
+      "intervals": {
+        "50": 1,
+        "500": 1,
+        "800": 2,
+        "10000": 4,
+        "15000": 1,
+        "30000": 16,
+        "60000": 6,
+        "300000": 1
+      },
+      "replaceState": 1
+    },
+    "verzoekenTotaal": 93,
+    "perType": {
+      "document": 1,
+      "other": 1,
+      "script": 42,
+      "stylesheet": 10,
+      "fetch": 96
+    },
+    "apiLaad": {
+      "/api/owner/vensters/laden": 1,
+      "/api/owner/meldingen/gelezen": 2,
+      "/api/aanmelden/telegram/config": 1,
+      "/api/owner/session/bootstrap": 1,
+      "/api/flags": 1,
+      "/api/ondersteuning/voor-mij": 1,
+      "/api/impersonatie/voor-mij": 2,
+      "/api/owner/meldingen/status": 1,
+      "/api/owner/agents/activity": 3,
+      "/api/owner/menu/tellers": 1,
+      "/api/owner/tech/status": 1,
+      "/api/owner/weergave": 1,
+      "/api/owner/ui/weergave/save": 1,
+      "/api/owner/connector-v2/overzicht": 1,
+      "/api/owner/agents/journaal": 4,
+      "/api/owner/agents/list": 3,
+      "/api/owner/mcp-connector/approvals": 3,
+      "/api/owner/agents/overzicht": 1,
+      "/api/mcp/permissions": 1,
+      "/api/mcp/tokens/list": 1,
+      "/api/owner/agents/extensie-status?service=mcp&tabContext=6e05de22297c3033d859003978b42cb309cbc424f677a820&sourceOrigin=https%3A%2F%2Fmcp.tarasevych.com": 2,
+      "/api/owner/ai-bevestiging/lijst": 2,
+      "/api/owner/ai-bord": 1,
+      "/api/owner/ai-beleid/overzicht": 1,
+      "/api/owner/merk-eigen/lijst": 1
+    },
+    "js": {
+      "totaalKB": 2722,
+      "gebruiktPct": 100,
+      "grootste": [
+        {
+          "url": "index-Cj7Ai3Z8.js",
+          "kb": 1345,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "McpDienstWeergave-DM3hAyEO.js",
+          "kb": 719,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "HulpVraag-B7A6Y328.js",
+          "kb": 172,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "tar-lezen-6lwJGKp2.js",
+          "kb": 163,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "TechLaag-BkXjH4y6.js",
+          "kb": 131,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-tabel-QsTr59QH.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-officieel-DPFc68OT.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ExtensieOntgrendeling-3HdRUlKm.js",
+          "kb": 17,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "canonical-service.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "browser-DPL35kHe.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ai-bronnen-CX8Jv4Ih.js",
+          "kb": 14,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "AgentLogo-H_2PXhvO.js",
+          "kb": 11,
+          "gebruiktPct": 100
+        }
+      ]
+    },
+    "dom": {
+      "knopen": 2331,
+      "cssRegels": 6037,
+      "stylesheets": 10,
+      "backdrop": 0,
+      "anim": 24,
+      "animNamen": [
+        "ag-skelet"
+      ],
+      "schaduw": 17,
+      "filt": 0,
+      "vastOfKleverig": 6,
+      "willChange": 0,
+      "scrollHouder": "section.canonical-workspace",
+      "hoogte": 844,
+      "secties": 11,
+      "open": 3
+    },
+    "scrollDuur": 19275,
+    "scrollM": {
+      "frames": 1169,
+      "mediaan": 17,
+      "p95": 17,
+      "max": 2183,
+      "traag33": 5,
+      "traag100": 1,
+      "longtasks": 3,
+      "tbt": 53,
+      "langsteTaak": 98,
+      "scrollEvents": 0,
+      "replaceState": 0,
+      "commits": 21,
+      "hash": "#connectors"
+    },
+    "verschil": {
+      "LayoutCount": 0,
+      "RecalcStyleCount": 1170,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0.555,
+      "ScriptDuration": 0.671,
+      "TaskDuration": 8.472
+    },
+    "heapMB": 11.5,
+    "knopenCdp": 3143,
+    "listeners": 1009,
+    "rust": {
+      "seconden": 60,
+      "apiVerzoeken": 36,
+      "perUrl": {
+        "/api/impersonatie/voor-mij": 2,
+        "/api/owner/agents/activity": 6,
+        "/api/owner/agents/extensie-status?service=mcp&tabContext=6e05de22297c3033d859003978b42cb309cbc424f677a820&sourceOrigin=https%3A%2F%2Fmcp.tarasevych.com": 5,
+        "/api/owner/agents/journaal": 4,
+        "/api/owner/agents/list": 6,
+        "/api/owner/mcp-connector/approvals": 6,
+        "/api/owner/ai-bevestiging/lijst": 2,
+        "/api/ondersteuning/voor-mij": 1,
+        "/api/owner/agents/overzicht": 1,
+        "/api/owner/connector-v2/overzicht": 1,
+        "/api/mcp/permissions": 1,
+        "/api/mcp/tokens/list": 1
+      },
+      "commits": 50,
+      "longtasks": 0,
+      "tbt": 0,
+      "scriptSec": 1.09,
+      "taakSec": 19.2,
+      "heapMB": 12.2
+    },
+    "fouten": []
+  },
+  "B-zonder-scrollluisteraar-4x": {
+    "naam": "B-zonder-scrollluisteraar-4x",
+    "opties": {
+      "throttle": true,
+      "zonderKies": true
+    },
+    "laadTijd": 3559,
+    "zichtbaarNa": 14736,
+    "rustNa": 50842,
+    "nav": {
+      "ttfb": 6,
+      "dcl": 3024,
+      "load": 3555,
+      "fcp": 1136
+    },
+    "laadM": {
+      "lcp": 7236,
+      "cls": 0.43,
+      "longtasks": 18,
+      "langsteTaak": 10721,
+      "tbt": 40159,
+      "commits": 49,
+      "intervals": {
+        "50": 1,
+        "500": 1,
+        "800": 2,
+        "10000": 4,
+        "15000": 1,
+        "30000": 16,
+        "60000": 6,
+        "300000": 1
+      },
+      "replaceState": 1
+    },
+    "verzoekenTotaal": 90,
+    "perType": {
+      "document": 1,
+      "other": 1,
+      "script": 42,
+      "stylesheet": 10,
+      "fetch": 57
+    },
+    "apiLaad": {
+      "/api/owner/vensters/laden": 1,
+      "/api/owner/meldingen/gelezen": 2,
+      "/api/aanmelden/telegram/config": 1,
+      "/api/owner/session/bootstrap": 1,
+      "/api/flags": 1,
+      "/api/ondersteuning/voor-mij": 1,
+      "/api/impersonatie/voor-mij": 2,
+      "/api/owner/meldingen/status": 1,
+      "/api/owner/agents/activity": 3,
+      "/api/owner/menu/tellers": 1,
+      "/api/owner/tech/status": 1,
+      "/api/owner/weergave": 1,
+      "/api/owner/connector-v2/overzicht": 1,
+      "/api/owner/agents/journaal": 4,
+      "/api/owner/agents/list": 2,
+      "/api/owner/mcp-connector/approvals": 2,
+      "/api/owner/agents/overzicht": 1,
+      "/api/mcp/permissions": 1,
+      "/api/mcp/tokens/list": 1,
+      "/api/owner/agents/extensie-status?service=mcp&tabContext=6e05de22297c3033d859003978b42cb309cbc424f677a820&sourceOrigin=https%3A%2F%2Fmcp.tarasevych.com": 2,
+      "/api/owner/ai-bevestiging/lijst": 2,
+      "/api/owner/ai-bord": 1,
+      "/api/owner/ai-beleid/overzicht": 1,
+      "/api/owner/merk-eigen/lijst": 1
+    },
+    "js": {
+      "totaalKB": 2722,
+      "gebruiktPct": 100,
+      "grootste": [
+        {
+          "url": "index-Cj7Ai3Z8.js",
+          "kb": 1345,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "McpDienstWeergave-DM3hAyEO.js",
+          "kb": 719,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "HulpVraag-B7A6Y328.js",
+          "kb": 172,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "tar-lezen-6lwJGKp2.js",
+          "kb": 163,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "TechLaag-BkXjH4y6.js",
+          "kb": 131,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-tabel-QsTr59QH.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-officieel-DPFc68OT.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ExtensieOntgrendeling-3HdRUlKm.js",
+          "kb": 17,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "canonical-service.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "browser-DPL35kHe.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ai-bronnen-CX8Jv4Ih.js",
+          "kb": 14,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "AgentLogo-H_2PXhvO.js",
+          "kb": 11,
+          "gebruiktPct": 100
+        }
+      ]
+    },
+    "dom": {
+      "knopen": 2331,
+      "cssRegels": 6037,
+      "stylesheets": 10,
+      "backdrop": 0,
+      "anim": 24,
+      "animNamen": [
+        "ag-skelet"
+      ],
+      "schaduw": 17,
+      "filt": 0,
+      "vastOfKleverig": 6,
+      "willChange": 0,
+      "scrollHouder": "section.canonical-workspace",
+      "hoogte": 844,
+      "secties": 11,
+      "open": 3
+    },
+    "scrollDuur": 28386,
+    "scrollM": {
+      "frames": 1037,
+      "mediaan": 17,
+      "p95": 17,
+      "max": 8283,
+      "traag33": 5,
+      "traag100": 3,
+      "longtasks": 3,
+      "tbt": 8303,
+      "langsteTaak": 8254,
+      "scrollEvents": 0,
+      "replaceState": 0,
+      "commits": 21,
+      "hash": "#connectors"
+    },
+    "verschil": {
+      "LayoutCount": 1,
+      "RecalcStyleCount": 1039,
+      "LayoutDuration": 8.243,
+      "RecalcStyleDuration": 0.372,
+      "ScriptDuration": 0.726,
+      "TaskDuration": 18.792
+    },
+    "heapMB": 11.5,
+    "knopenCdp": 3143,
+    "listeners": 1008,
+    "rust": null,
+    "fouten": []
+  },
+  "C-zonder-css-effecten-4x": {
+    "naam": "C-zonder-css-effecten-4x",
+    "opties": {
+      "throttle": true,
+      "zonderEffecten": true
+    },
+    "laadTijd": 3561,
+    "zichtbaarNa": 9084,
+    "rustNa": 44623,
+    "nav": {
+      "ttfb": 6,
+      "dcl": 3004,
+      "load": 3559,
+      "fcp": 1152
+    },
+    "laadM": {
+      "lcp": 16212,
+      "cls": 1.262,
+      "longtasks": 18,
+      "langsteTaak": 10029,
+      "tbt": 34046,
+      "commits": 46,
+      "intervals": {
+        "50": 1,
+        "500": 1,
+        "800": 2,
+        "10000": 4,
+        "15000": 1,
+        "30000": 16,
+        "60000": 6,
+        "300000": 1
+      },
+      "replaceState": 3
+    },
+    "verzoekenTotaal": 90,
+    "perType": {
+      "document": 1,
+      "other": 1,
+      "script": 42,
+      "stylesheet": 10,
+      "fetch": 56
+    },
+    "apiLaad": {
+      "/api/owner/vensters/laden": 1,
+      "/api/owner/meldingen/gelezen": 2,
+      "/api/aanmelden/telegram/config": 1,
+      "/api/owner/session/bootstrap": 1,
+      "/api/flags": 1,
+      "/api/ondersteuning/voor-mij": 1,
+      "/api/impersonatie/voor-mij": 2,
+      "/api/owner/meldingen/status": 1,
+      "/api/owner/agents/activity": 3,
+      "/api/owner/menu/tellers": 1,
+      "/api/owner/tech/status": 1,
+      "/api/owner/weergave": 1,
+      "/api/owner/connector-v2/overzicht": 1,
+      "/api/owner/agents/journaal": 4,
+      "/api/owner/agents/list": 2,
+      "/api/owner/mcp-connector/approvals": 2,
+      "/api/owner/agents/overzicht": 1,
+      "/api/mcp/permissions": 1,
+      "/api/mcp/tokens/list": 1,
+      "/api/owner/agents/extensie-status?service=mcp&tabContext=6e05de22297c3033d859003978b42cb309cbc424f677a820&sourceOrigin=https%3A%2F%2Fmcp.tarasevych.com": 2,
+      "/api/owner/ai-bord": 1,
+      "/api/owner/ai-beleid/overzicht": 1,
+      "/api/owner/merk-eigen/lijst": 1,
+      "/api/owner/ai-bevestiging/lijst": 2
+    },
+    "js": {
+      "totaalKB": 2722,
+      "gebruiktPct": 100,
+      "grootste": [
+        {
+          "url": "index-Cj7Ai3Z8.js",
+          "kb": 1345,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "McpDienstWeergave-DM3hAyEO.js",
+          "kb": 719,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "HulpVraag-B7A6Y328.js",
+          "kb": 172,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "tar-lezen-6lwJGKp2.js",
+          "kb": 163,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "TechLaag-BkXjH4y6.js",
+          "kb": 131,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-tabel-QsTr59QH.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-officieel-DPFc68OT.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ExtensieOntgrendeling-3HdRUlKm.js",
+          "kb": 17,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "canonical-service.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "browser-DPL35kHe.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ai-bronnen-CX8Jv4Ih.js",
+          "kb": 14,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "AgentLogo-H_2PXhvO.js",
+          "kb": 11,
+          "gebruiktPct": 100
+        }
+      ]
+    },
+    "dom": {
+      "knopen": 2332,
+      "cssRegels": 6037,
+      "stylesheets": 10,
+      "backdrop": 0,
+      "anim": 24,
+      "animNamen": [
+        "ag-skelet"
+      ],
+      "schaduw": 17,
+      "filt": 0,
+      "vastOfKleverig": 6,
+      "willChange": 0,
+      "scrollHouder": "section.canonical-workspace",
+      "hoogte": 844,
+      "secties": 11,
+      "open": 3
+    },
+    "scrollDuur": 20465,
+    "scrollM": {
+      "frames": 1066,
+      "mediaan": 17,
+      "p95": 17,
+      "max": 3700,
+      "traag33": 6,
+      "traag100": 3,
+      "longtasks": 5,
+      "tbt": 12,
+      "langsteTaak": 59,
+      "scrollEvents": 0,
+      "replaceState": 0,
+      "commits": 24,
+      "hash": "#overzicht"
+    },
+    "verschil": {
+      "LayoutCount": 0,
+      "RecalcStyleCount": 1068,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0.433,
+      "ScriptDuration": 0.744,
+      "TaskDuration": 10.521
+    },
+    "heapMB": 11.9,
+    "knopenCdp": 3145,
+    "listeners": 1025,
+    "rust": null,
+    "fouten": []
+  },
+  "D-gewoon-zonder-vertraging": {
+    "naam": "D-gewoon-zonder-vertraging",
+    "opties": {
+      "throttle": false
+    },
+    "laadTijd": 228,
+    "zichtbaarNa": 1117,
+    "rustNa": 9818,
+    "nav": {
+      "ttfb": 7,
+      "dcl": 143,
+      "load": 225,
+      "fcp": 52
+    },
+    "laadM": {
+      "lcp": 2820,
+      "cls": 1.158,
+      "longtasks": 9,
+      "langsteTaak": 1795,
+      "tbt": 8468,
+      "commits": 27,
+      "intervals": {
+        "50": 1,
+        "500": 1,
+        "800": 2,
+        "10000": 4,
+        "15000": 1,
+        "30000": 16,
+        "60000": 6,
+        "300000": 1
+      },
+      "replaceState": 3
+    },
+    "verzoekenTotaal": 81,
+    "perType": {
+      "document": 1,
+      "other": 1,
+      "script": 42,
+      "stylesheet": 10,
+      "fetch": 42
+    },
+    "apiLaad": {
+      "/api/owner/vensters/laden": 1,
+      "/api/owner/meldingen/gelezen": 2,
+      "/api/aanmelden/telegram/config": 1,
+      "/api/owner/session/bootstrap": 1,
+      "/api/flags": 1,
+      "/api/owner/meldingen/status": 1,
+      "/api/owner/agents/activity": 1,
+      "/api/owner/menu/tellers": 1,
+      "/api/owner/tech/status": 1,
+      "/api/owner/weergave": 1,
+      "/api/ondersteuning/voor-mij": 1,
+      "/api/impersonatie/voor-mij": 1,
+      "/api/owner/connector-v2/overzicht": 1,
+      "/api/owner/agents/journaal": 2,
+      "/api/owner/agents/list": 1,
+      "/api/owner/mcp-connector/approvals": 1,
+      "/api/owner/agents/overzicht": 1,
+      "/api/mcp/permissions": 1,
+      "/api/mcp/tokens/list": 1,
+      "/api/owner/ai-bord": 1,
+      "/api/owner/ai-beleid/overzicht": 1,
+      "/api/owner/merk-eigen/lijst": 1,
+      "/api/owner/agents/extensie-status?service=mcp&tabContext=6e05de22297c3033d859003978b42cb309cbc424f677a820&sourceOrigin=https%3A%2F%2Fmcp.tarasevych.com": 1,
+      "/api/owner/ai-bevestiging/lijst": 1
+    },
+    "js": {
+      "totaalKB": 2722,
+      "gebruiktPct": 100,
+      "grootste": [
+        {
+          "url": "index-Cj7Ai3Z8.js",
+          "kb": 1345,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "McpDienstWeergave-DM3hAyEO.js",
+          "kb": 719,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "HulpVraag-B7A6Y328.js",
+          "kb": 172,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "tar-lezen-6lwJGKp2.js",
+          "kb": 163,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "TechLaag-BkXjH4y6.js",
+          "kb": 131,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-tabel-QsTr59QH.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "merk-officieel-DPFc68OT.js",
+          "kb": 32,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ExtensieOntgrendeling-3HdRUlKm.js",
+          "kb": 17,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "canonical-service.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "browser-DPL35kHe.js",
+          "kb": 16,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "ai-bronnen-CX8Jv4Ih.js",
+          "kb": 14,
+          "gebruiktPct": 100
+        },
+        {
+          "url": "AgentLogo-H_2PXhvO.js",
+          "kb": 11,
+          "gebruiktPct": 100
+        }
+      ]
+    },
+    "dom": {
+      "knopen": 2331,
+      "cssRegels": 6037,
+      "stylesheets": 10,
+      "backdrop": 0,
+      "anim": 24,
+      "animNamen": [
+        "ag-skelet"
+      ],
+      "schaduw": 17,
+      "filt": 0,
+      "vastOfKleverig": 6,
+      "willChange": 0,
+      "scrollHouder": "section.canonical-workspace",
+      "hoogte": 844,
+      "secties": 11,
+      "open": 3
+    },
+    "scrollDuur": 18480,
+    "scrollM": {
+      "frames": 1088,
+      "mediaan": 17,
+      "p95": 17,
+      "max": 1417,
+      "traag33": 2,
+      "traag100": 2,
+      "longtasks": 1,
+      "tbt": 1371,
+      "langsteTaak": 1421,
+      "scrollEvents": 0,
+      "replaceState": 0,
+      "commits": 16,
+      "hash": "#overzicht"
+    },
+    "verschil": {
+      "LayoutCount": 1,
+      "RecalcStyleCount": 1089,
+      "LayoutDuration": 1.419,
+      "RecalcStyleDuration": 0.119,
+      "ScriptDuration": 0.137,
+      "TaskDuration": 3.202
+    },
+    "heapMB": 12.5,
+    "knopenCdp": 3143,
+    "listeners": 1297,
+    "rust": null,
+    "fouten": []
+  }
+}
