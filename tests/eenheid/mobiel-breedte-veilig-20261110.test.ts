@@ -21,13 +21,14 @@ export async function main(): Promise<number> {
   const u = VLAG_UITLEG['mobiel-breedte-veilig-v1'];
   check('uitleg in twee talen in VLAG_UITLEG', Boolean(u) && [u.naam, u.wat, u.wanneer, u.gevolg].every((p) => p[0].length > 5 && p[1].length > 5));
   const ukr = [u.naam[0], u.wat[0], u.wanneer[0], u.gevolg[0], oms.split(' | ')[0]].join(' ');
-  check('Oekraïense tekst zonder ЁёЪъЫыЭэ en zonder Latijnse woorden (behalve #connectors)', !/[ЁёЪъЫыЭэ]/.test(ukr) && !/[A-Za-z]{2,}/.test(ukr.replace('#connectors', '')));
+  check('Oekraïense tekst zonder letters buiten het Oekraïense alfabet en zonder Latijnse woorden (behalve #connectors)', !/[\u0401\u0451\u042A\u044A\u042B\u044B\u042D\u044D]/.test(ukr) && !/[A-Za-z]{2,}/.test(ukr.replace('#connectors', '')));
   const main_ = readFileSync('src/main.tsx', 'utf8');
   check('main.tsx: installeerMobielVeilig vóór de eerste weergave', main_.indexOf('installeerMobielVeilig();') > 0 && main_.indexOf('installeerMobielVeilig();') < main_.indexOf('createRoot(document.getElementById(\'root\')!).render(<App />)'));
   const plek = readFileSync('src/plaatsing/Plek.tsx', 'utf8');
   check('Plek.tsx: oude waarnemer blijft voor vlag uit, gefilterde voor vlag aan', plek.includes("} else mo?.observe(document.body, { childList: true, subtree: true });") && plek.includes('raaktOnderbalk(rec, gevolgd)'));
   const ag = readFileSync('src/agenten/AgentenPagina.tsx', 'utf8');
-  check('AgentenPagina: oude scroll-luisteraar en 50-ms-zoektocht blijven voor vlag uit', ag.includes("window.addEventListener('scroll', kies, { capture: true, passive: true });") && ag.includes("}, 50);\n    return () => window.clearInterval(t);"));
+  // Sinds 20261119-072255 houdt ANKERS-002 het doel zelf vast (60 ms, tot 4 s, stopt bij eigen invoer); MOBIEL-002 vervangt dat niet.
+  check('AgentenPagina: oude scroll-luisteraar blijft voor vlag uit; doel vasthouden blijft van ANKERS-002', ag.includes("window.addEventListener('scroll', kies, { capture: true, passive: true });") && ag.includes('ANKERS-002') && ag.includes('}, 60);') && ag.includes('if (zuinig) { gebruikerScrolt.current = false; laatstGezien.current = \'\'; }'));
   check('AgentenPagina: met vlag aan rAF en alleen bij echte wissel', ag.includes('requestAnimationFrame(() => { raf = 0; kies(); })') && ag.includes('if (gezien === laatstGezien.current) return;'));
   // de vlag-module mag in Node geladen worden zonder window (Plek.tsx-tests importeren hem)
   const m = await import('../../src/mobiel-veilig/vlag');
