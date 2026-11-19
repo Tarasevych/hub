@@ -56,6 +56,7 @@ import './agenten.css';
 import './agenten-pagina.css';
 import './agenten-kern-maquette.css';
 import { wisAgentAnkers, zetAgentAnkers } from './anker-bron';
+import { useMobielVeilig } from '../mobiel-veilig/vlag';
 import { TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
 export { ALLEEN_TECHNISCH, OUDE_HASH, PLEKKEN, TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs } from './agenten-hash';
 export type { HashPlek, TabId } from './agenten-hash';
@@ -74,6 +75,8 @@ const schrijf = (tab: TabId, item: string, push: boolean, vraag?: URLSearchParam
 
 /** #extension-lokaal en #ruimte zijn ankers ín een sectie, geen tabbladnaam. Andere oude hashes (#claude) wel herschrijven. */
 const ANKER_ID = new Set(['extension-lokaal', 'ruimte']);
+/** MOBIEL-BREEDTE-VEILIG v1: invoer waaraan we zien dat de GEBRUIKER scrolt (niet de pagina zelf). */
+const INVOER = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
 
 /** Eén zin per sectie: wat dit is en waarvoor het dient (uk, nl). Staat in de kop van elk blok (zie blokKop). */
 const SECTIE_HINT: Partial<Record<TabId, [string, string]>> = {
@@ -196,6 +199,11 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const [inBeeld, setInBeeld] = useState<TabId | null>(null);
   const [dicht, setDicht] = useState<Set<TabId>>(leesDicht);
   const vastTot = useRef(0);
+  // MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): de sectie in beeld volgt alleen ECHT scrollen door de gebruiker (wiel, aanraking, toets,
+  // muisknop), niet het eigen scrollIntoView of het mounten van luie secties erboven. Zo blijft het adres wat de gebruiker opende.
+  const zuinig = useMobielVeilig();
+  const gebruikerScrolt = useRef(false);
+  const laatstGezien = useRef('');
   const [plek, setPlek] = useState(() => {
     const p = leesHash(location.hash);
     const doel = ontgrendelDoel(typeof location !== 'undefined' ? location.search : '', p.vraag);
@@ -242,6 +250,9 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     // ANKERS-002 (стара вада): розділи вище ціль вантажаться ліниво й міняють висоту вже після прокрутки, тож сторінка зупинялась
     // за кілька екранів від мети, а підсвічення стрибало на сусідній розділ. Тепер ціль «тримаємо» до 4 с, поки висоти не
     // устаткуються, і зупиняємось одразу, щойно людина сама гортає. Doel vasthouden tot de luie blokken erboven stil staan.
+    // MOBIEL-002 (vlag mobiel-breedte-veilig-v1): het vasthouden van het doel doet ANKERS-002 hierboven al (en stopt bij eigen
+    // invoer van de gebruiker); met de vlag aan beginnen we alleen de telling «heeft de gebruiker zelf gescrold» opnieuw.
+    if (zuinig) { gebruikerScrolt.current = false; laatstGezien.current = ''; }
     const tot = Date.now() + 4000;
     vastTot.current = Math.max(vastTot.current, tot + 300);
     let gevonden = false, n = 0;
@@ -288,7 +299,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     window.addEventListener('mousedown', door, { capture: true, passive: true });
     window.addEventListener('keydown', door, true);
     return stop;
-  }, [plek.tab, plek.anker]);
+  }, [plek.tab, plek.anker, zuinig]);
   const kies = useCallback((item: string) => { setPlek((p) => { schrijf(p.tab, item, false); return { ...p, item }; }); }, []);
 
   /** Na elke actie: lijsten bijwerken zonder de pagina te herladen, en het journaal laten verversen. */
@@ -438,15 +449,34 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
         const zicht = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, balk);
         if (zicht > 80) return;
       }
+      if (zuinig) {
+        // alleen bij een echte wissel, en het adres alleen als het nog iets anders zegt
+        if (gezien === laatstGezien.current) return;
+        laatstGezien.current = gezien;
+        setInBeeld(gezien as TabId);
+        if (gezien !== plek.tab && !plek.anker && plek.tab !== 'agent' && leesHash(location.hash).tab !== gezien) schrijf(gezien as TabId, '', false);
+        return;
+      }
       setInBeeld(gezien as TabId);
       if (gezien !== plek.tab && !plek.anker && plek.tab !== 'agent') schrijf(gezien as TabId, '', false);
     };
+    if (zuinig) {
+      // één meting per beeld (requestAnimationFrame) en pas nadat de gebruiker zelf iets deed
+      let raf = 0;
+      const plan = () => { if (!gebruikerScrolt.current || raf) return; raf = window.requestAnimationFrame(() => { raf = 0; kies(); }); };
+      const invoer = () => { gebruikerScrolt.current = true; };
+      const io = new IntersectionObserver(plan, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 1] });
+      paneel.querySelectorAll('[data-ag-sectie]').forEach((n) => io.observe(n));
+      window.addEventListener('scroll', plan, { capture: true, passive: true });
+      for (const e of INVOER) window.addEventListener(e, invoer, { capture: true, passive: true });
+      return () => { io.disconnect(); window.cancelAnimationFrame(raf); window.removeEventListener('scroll', plan, true); for (const e of INVOER) window.removeEventListener(e, invoer, true); };
+    }
     const io = new IntersectionObserver(() => kies(), { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 1] });
     paneel.querySelectorAll('[data-ag-sectie]').forEach((n) => io.observe(n));
     window.addEventListener('scroll', kies, { capture: true, passive: true });
     const later = window.setTimeout(kies, Math.max(0, vastTot.current - Date.now() + 40));
     return () => { io.disconnect(); window.removeEventListener('scroll', kies, true); window.clearTimeout(later); };
-  }, [plek.tab, plek.anker, techAan]);
+  }, [plek.tab, plek.anker, techAan, zuinig]);
   const laadFout = ov.fout || tok.fout;
   if (geenRecht) {
     return (
