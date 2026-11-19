@@ -1,0 +1,153 @@
+/* UPD-009 · Єдине симетричне центрування та стабільність макета всіх сторінок Mijn Ruimte (19.11.2026).
+   Усуває системний перекіс робочої області (-39 px), прилипання сторінок до лівого меню або правої рейки якорів
+   та горизонтальне «совгання» під час завантаження, перемикання вкладок і наведення на бічну панель.
+   Повноекранна робоча область пошти (mail.tarasevych.com) та власний макет id (.mr-mq) зберігають свої правила.
+   NL: uniforme symmetrische centrering en stabiele lay-out van alle pagina's zonder verschuiving of overlap. */
+
+/* 1. Стабільність без горизонтального совгання й плаваючої анімації полів */
+.canonical-chrome .canonical-workspace {
+  overscroll-behavior-x: none;
+}
+
+.canonical-chrome:not(:has(.mail-functional.google-workspace-active)) .canonical-content {
+  overflow-x: clip;
+}
+
+.canonical-chrome .mq-schil {
+  transition: none !important;
+}
+
+/* 2. Симетричні бічні поля робочої області на ПК (від 701 px):
+      ліворуч від бічної панелі рівно 24 px, праворуч до смуги прокручування рівно 24 px.
+      Повноекранна пошта (google-workspace-active) і режим фокусу пошти не зачіпаються. */
+@media (min-width: 701px) {
+  .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']):not([data-focus-mode='mail']):not(:has(.mail-functional.google-workspace-active)) .canonical-workspace {
+    padding-left: calc(var(--zijbalk-rail, 60px) + 24px);
+    padding-right: 24px;
+  }
+
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']):not([data-focus-mode='mail']):not(:has(.mail-functional.google-workspace-active)) .canonical-workspace {
+    padding-left: calc(min(316px, calc(100vw - var(--zijbalk-rail, 60px))) + 24px);
+    padding-right: 24px;
+  }
+
+  .canonical-chrome[data-dock='rechts']:not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not(:has(.mail-functional.google-workspace-active)) .canonical-workspace {
+    padding-left: 24px;
+    padding-right: calc(var(--zijbalk-rail, 60px) + 24px);
+  }
+
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not(:has(.mail-functional.google-workspace-active)) .canonical-workspace {
+    padding-left: 24px;
+    padding-right: calc(min(316px, calc(100vw - var(--zijbalk-rail, 60px))) + 24px);
+  }
+
+  .canonical-chrome:is([data-dock='boven'], [data-dock='onder']):not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not(:has(.mail-functional.google-workspace-active)) .canonical-workspace {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* 3. Єдина центрована колонка для всіх сторінок служб на ПК (від 961 px) в усіх палітрах.
+      Пошта (mail-functional.google-workspace-active), власний макет id (.mr-mq) та вкладка «Оновлення» (940 px)
+      зберігають свої точні ширини. */
+@media (min-width: 961px) {
+  /* 3а. Сторінки без бічної рейки якорів: єдина охайна центрована колонка 1180 px (у т.ч. hub, cloud, github, huis, ai, mcp, api, admin). */
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(:has(.mail-functional.google-workspace-active)) .canonical-content > :where(
+    .werkblad,
+    .blocks,
+    .hub-notes,
+    .hub-agenda-page,
+    .hub-photos-page,
+    .hub-recent-page,
+    .zoek-pagina,
+    .niet-gevonden,
+    .tech-poort,
+    .cloud-overview,
+    .cloud-page,
+    .gh-page,
+    .smart-home,
+    .aie-container,
+    .ag-pagina,
+    .page,
+    .service-workbench,
+    .mq-overzicht-wikkel,
+    .admin-console:not(.mq-schil):not(:has([data-admin-uitrol]))
+  ) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+  }
+
+  /* Внутрішні сторінки в обгортці без рейки (напр. GitHub / Cloud / Huis у класичних і студійних темах) */
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(:has(.mail-functional.google-workspace-active)) .canonical-content > div:not(.mq-schil):not(.mr-mq):not([role='dialog']) > :where(
+    .werkblad,
+    .blocks,
+    .hub-notes,
+    .cloud-overview,
+    .gh-card,
+    .smart-home,
+    .aie-container,
+    .ag-pagina,
+    .afv
+  ) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+  }
+
+  /* 3б. Сторінки з єдиною рейкою якорів MaquetteAnkerRail (.mq-schil):
+         чесне симетричне центрування у вільному просторі між лівим меню та рейкою якорів (0 px перекосу на 1280/1440/1920/2560 px).
+         Вкладка admin/updates зберігає свої 940 px із src/beheer-uitrol.css. */
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])) {
+    --cg-kolom: 1180px;
+    --cg-rail: 0px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .ia-account.mq-schil {
+    --cg-kolom: 1040px;
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])):not([data-mq-rail-zijde='rechts']):not([data-mq-rail-zijde='links']) {
+    --cg-zij: max(0px, calc((100% - var(--cg-kolom)) / 2));
+    padding-left: var(--cg-zij);
+    padding-right: var(--cg-zij);
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde='rechts'], [data-mq-rail-zijde='links']) {
+    --cg-rail: 276px;
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde='rechts'], [data-mq-rail-zijde='links'])[data-mq-rail-compact='ja'] {
+    --cg-rail: 76px;
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde='rechts'], [data-mq-rail-zijde='links'])[data-mq-rail-ingeklapt='ja'] {
+    --cg-rail: 0px;
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde='rechts'] {
+    --cg-zij: max(0px, calc((100% - var(--cg-rail) - var(--cg-kolom)) / 2));
+    padding-left: var(--cg-zij);
+    padding-right: calc(var(--cg-rail) + var(--cg-zij));
+  }
+
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde='links'] {
+    --cg-zij: max(0px, calc((100% - var(--cg-rail) - var(--cg-kolom)) / 2));
+    padding-right: var(--cg-zij);
+    padding-left: calc(var(--cg-rail) + var(--cg-zij));
+  }
+
+  /* Усередині .mq-schil внутрішні сторінки займають рівно ширину центрованої колонки без подвійного звуження */
+  html:not([data-identiteit-maquette='aan']) .canonical-chrome:not(#_cg1):not(#_cg2):not(#_cg3) .mq-schil:not(:has([data-admin-uitrol])) > :where(.ag-pagina, .aie-container, .ai-maquette-inhoud, .afv, .admin-section, .gh-card, .cloud-overview, .smart-home) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+}
