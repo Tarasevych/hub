@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "taakId": "UPD-009",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-009 · Єдине симетричне центрування та стабільність усіх сторінок без совгання",
+  "opdracht": "Поверх UPD-008 (20261119-170438 @ 5ad4afb1e7f4a286333d7283539220be141f5704) та UPD-007 (20261119-143136) провести аудит якості й клієнтського досвіду та відцентрувати всі сторінки Mijn Ruimte по центру без горизонтального зсуву й совгання.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-009-centrering-en-stabiliteit-20261119-182000",
+    "basisCommit": "5ad4afb1e7f4a286333d7283539220be141f5704",
+    "basisVersie": "20261119-170438",
+    "geinstalleerdeBasis": "5ad4afb1e7f4a286333d7283539220be141f5704",
+    "geinstalleerdeVersie": "20261119-170438",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "5ad4afb1e7f4a286333d7283539220be141f5704",
+    "8827ef99a74c6e7f804d6632cfa9d681b05d0d42"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "Проведено живий аудит якості, геометрії та клієнтського досвіду в Chromium по всіх 10 піддоменах (17 сторінок на 1440×900, 1920×1080 і 390×844).",
+      "resultaat": "Виявлено системний перекіс робочої області (-39 px на всіх не-поштових сторінках), розтягування сторінок hub до 1821 px, прилипання id до лівого меню на 1440 px та перекіс +252 px вправо на 1920 px, плаваючу анімацію padding на .mq-schil та перелік пріоритетних UX-покращень."
+    },
+    {
+      "stap": "Створено єдиний шар глобального центрування та стабільності макета src/centrering-globaal.css і підключено його в src/main.tsx перед afdruk.css.",
+      "resultaat": "Усі не-поштові сторінки отримали симетричні 24 px поля в .canonical-workspace, єдину центровану колонку 1180 px (id 1040 px, admin/updates 940 px), чесне центрування між лівим меню та рейкою якорів і повну відсутність горизонтального совгання."
+    },
+    {
+      "stap": "Додано регресійне випробування tests/eenheid/upd-009-centrering-globaal-20261119.test.ts (6/6), проведено повторний живий аудит у Chromium на зібраному dist/, оновлено облік авторства, хронологію та сценарій випуску .github/workflows/upd-009-uitgave.yml.",
+      "resultaat": "У Chromium підтверджено 0 px асиметрії на 1440 і 1920 px для hub, ai, cloud, github, huis, 0 px зсуву при наведенні на меню, 0 px горизонтального переповнення на ПК і телефоні та повне збереження повноекранної верстки пошти (UPD-008)."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Винести глобальні правила симетричного центрування в окремий канонічний файл src/centrering-globaal.css замість переписування десятків розрізнених файлів.",
+      "reden": "Забезпечує єдину точку істини для всіх 10 піддоменів і обох палітр, не порушує жодного з попередніх тестів макета й легко підтримується."
+    },
+    {
+      "besluit": "Зберегти повноекранну верстку пошти (mail.tarasevych.com) і ширину 940 px для вкладки «Оновлення».",
+      "reden": "Пошта потребує максимального простору для списку й переглядача листів, а 940 px на «Оновленнях» уже схвалено власником у UPD-006."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "src/centrering-globaal.css",
+      "omschrijving": "Єдиний шар симетричного центрування робочої області (.canonical-workspace 24 px / 24 px), єдиної колонки 1180 px для сторінок служб, чесного центрування сторінок із рейкою якорів (.mq-schil) і усунення горизонтального совгання."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/main.tsx",
+      "omschrijving": "Підключено src/centrering-globaal.css перед afdruk.css."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-009-centrering-globaal-20261119.test.ts, .github/workflows/upd-009-uitgave.yml, orchestratie/taken/UPD-009.json, orchestratie/bijdragen/UPD-009/*, orchestratie/ontwikkelarchieven/UPD-009.json",
+      "omschrijving": "Регресійний тест UPD-009 (6/6), облік авторства, хронологія, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-009."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-009-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-009: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує 308 наборів випробувань, orch behoud, подвійний прогін міграцій PostgreSQL 16 трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-009: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 308 testbestanden, orch behoud, dubbele migraties op PostgreSQL 16 met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=4096 npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "node scripts/kaart-controle.mjs --stil && 11 тестів макета + upd-009-centrering-globaal-20261119 (6/6) + historie-kroniek (18/18) + 13 післяскладальних випробувань",
+      "resultaat": "Усі перевірки пройшли без жодної помилки (код 0)."
+    },
+    {
+      "opdracht": "Живий аудит у Chromium на 1440×900, 1920×1080 і 390×844 (ДО vs ПІСЛЯ UPD-009)",
+      "resultaat": "Підтверджено 0 px асиметрії на hub, ai, cloud, github, huis, 0 px горизонтального переповнення та 0 px зсуву при наведенні на меню зі збереженням пошти."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-009-uitgave.yml",
+      "resultaat": "Звіряє живу основу (UPD-008 20261119-170438 або UPD-007 20261119-143136), виконує всі 308 наборів випробувань, подвійний прогін міграцій PostgreSQL 16 трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Зміни стосуються виключно клієнтської частини та стилів (нових міграцій бази даних і змін серверного коду немає).",
+    "Проєкт об’єднаної панелі сповіщень MELDPANEEL-001 (№ 159) свідомо збережено в окремій гілці поза цим випуском."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}
