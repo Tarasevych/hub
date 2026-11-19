@@ -342,6 +342,23 @@ html.palet-maquette .ag-skelet-regel {
   background-size: 200% 100%;
 }
 
+/* UPD-006 / MOBIEL-002: у «Макеті» при увімкненому mobiel-breedte-veilig-v1 зберігаємо ощадливу анімацію шару без перемальовування тла.
+   In Maquette behoudt mobiel-breedte-veilig-v1 de zuinige transform-animatie zonder het achtergrondverloop opnieuw te schilderen. */
+html.palet-maquette[data-mobiel-breedte-veilig] .ag-skelet-regel {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, transparent);
+  background-size: auto;
+  animation: none;
+}
+
+html.palet-maquette[data-mobiel-breedte-veilig] .ag-skelet-regel::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--mq-ag-accent) 22%, var(--mq-oppervlak-2)) 50%,
+    transparent 100%
+  );
+}
+
 html.palet-maquette .ag-blok-skelet small {
   color: var(--mq-stil);
   font-size: 0.8rem;

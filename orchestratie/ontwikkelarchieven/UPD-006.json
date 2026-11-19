@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "taakId": "UPD-006",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-006 · Центрування панелі оновлення, 96/96 кольорових піктограм підтвердження пристрою (Варіант А) та підлаштування Grok MOBIEL-002",
+  "opdracht": "Поверх живої встановленої версії 20261119-080944 (UPD-005 @ cab0acb9e23ceef5d17515bac5eba2f065101750) усунути дві вади вигляду зі знімків власника (відцентрувати панель оновлення до ширини 940 px із симетричним зазором від 24 px без прилипання до лівого меню; перевести вікно підтвердження з іншого пристрою на всі 96/96 векторних піктограм у кольорових плитках Варіанта А, як у Telegram) та за прямим погодженням власника безпечно об’єднати й підлаштувати гілку Grok MOBIEL-002 (#174) зі збереженням виправлення HTTP 409 і узгодженням анімації каркаса завантаження для «Макета», без автоматичного встановлення на сервер.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-006-uitgave-20261119-114700",
+    "basisCommit": "cab0acb9e23ceef5d17515bac5eba2f065101750",
+    "basisVersie": "20261119-080944",
+    "geinstalleerdeBasis": "cab0acb9e23ceef5d17515bac5eba2f065101750",
+    "geinstalleerdeVersie": "20261119-080944",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [
+      {
+        "taak": "MOBIEL-002 (запит на злиття № 174, Grok Bot — безпечна вузька верстка на телефоні)",
+        "commit": "d48c3904f726f6022f2eafbb0ab7d98f25811c36",
+        "reden": "Злито --no-ff поверх 20261119-080944 (cab0acb9) із 0 конфліктів, збережено виправлення HTTP 409 RISICO_NIET_BEVESTIGD та підлаштовано правило .ag-skelet-regel у src/agenten/agenten-kern-maquette.css; прапорець mobiel-breedte-veilig-v1 (міграція 0302) типово вимкнено."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "archief/ui015a-aanmeldmethoden-v2 (завдання #167)",
+        "tak": "archief/ui015a-aanmeldmethoden-v2",
+        "commit": "5ece2d39",
+        "reden": "Архівна чернетка від 30.10 (не змінює дерево сайту); розділ src/identiteit/ уже значно новіший (IDENTITEIT-008…015). Збережена в архіві на GitHub без змін."
+      },
+      {
+        "taak": "archief/ui015b-extern-aanmelden (завдання #168)",
+        "tak": "archief/ui015b-extern-aanmelden",
+        "commit": "0d0e4b8c",
+        "reden": "Архівна чернетка зовнішніх входів (не змінює дерево сайту); Telegram уже реалізовано новіше (TELEGRAM-001…003), інші постачальники незавершені. Збережена в архіві без змін."
+      },
+      {
+        "taak": "archief/telegram-aanmelding-maket (завдання #169) та archief/mobiel-traag-analyse (завдання #170)",
+        "tak": "archief/mobiel-traag-analyse",
+        "commit": "a47b55f3",
+        "reden": "Довідкові макети й заміри швидкодії без змін коду сайту; результати аналізу швидкодії вже реалізовані у злитій гілці MOBIEL-002."
+      },
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "cab0acb9e23ceef5d17515bac5eba2f065101750",
+    "d48c3904f726f6022f2eafbb0ab7d98f25811c36"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "Звірено живу встановлену версію на сервері (https://hub.tarasevych.com/api/version): 20261119-080944 (UPD-005 @ cab0acb9e23ceef5d17515bac5eba2f065101750) та проведено аудит усіх 5 гілок Grok на GitHub.",
+      "resultaat": "Підтверджено, що 4 архівні гілки Grok не змінюють сайт і лишаються в архіві, а гілка MOBIEL-002 (№ 174) зливається поверх cab0acb9 із 0 конфліктів після підлаштування правила каркаса завантаження для «Макета»."
+    },
+    {
+      "stap": "Підготовлено й показано власнику наочне порівняння «ЗАРАЗ проти ПІСЛЯ» у реальному оглядачі (4 парні знімки: панель оновлення на 980 px і 1440 px, вікно підтвердження з іншого пристрою у Варіантах А і Б, та Grok MOBIEL-002 на 412 px).",
+      "resultaat": "Власник погодив усі три зміни, зокрема Варіант А (кольорові плитки 96/96) та включення підлаштованого Grok MOBIEL-002."
+    },
+    {
+      "stap": "Створено гілку feature/upd-006-uitgave-20261119-114700 від cab0acb9, виконано чисте злиття --no-ff гілки origin/herstel/mobiel-breedte-veilig-20261119-084347 та додано правило html.palet-maquette[data-mobiel-breedte-veilig] .ag-skelet-regel у src/agenten/agenten-kern-maquette.css.",
+      "resultaat": "Ощадлива анімація каркаса завантаження Grok працює і в оформленні «Макет», виправлення HTTP 409 з UPD-005 збережено, прапорець mobiel-breedte-veilig-v1 (міграція 0302) типово вимкнено."
+    },
+    {
+      "stap": "У src/beheer-uitrol.css зменшено робочу колонку панелі оновлення з 1180 px до 940 px і замінено формулу полів на симетричне центрування між лівим меню та бічною рейкою з мінімальним зазором 24 px та підтримкою згорнутої рейки; оновлено випробування tests/eenheid/uitrol-centrering-20261115.test.ts.",
+      "resultaat": "Панель оновлення більше ніколи не прилипає до лівого меню (ні на 980 px, ні на 1280–1920 px), очі не бігають екраном; випробування uitrol-centrering-20261115 пройшло 11/11."
+    },
+    {
+      "stap": "У src/apparaat-bevestiging/Symbool.tsx замінено обрізаний словник із 24 піктограм Lucide на відмальовування усіх 96/96 векторних форм через pictogramTegel; у StapOpKanaal.tsx, Luisteraar.tsx, InstellingenSectie.tsx і apparaat.css увімкнено кольорові плитки Варіанта А, захист вузьких плиток repeat(3,minmax(0,1fr)) і дотримано WCAG 1.4.3; додано випробування tests/eenheid/apparaat-symbool-96-20261119.test.ts.",
+      "resultaat": "Усі 96 із 96 піктограм (зокрема «Футболка», «Барабан», «Пазл») мають векторний значок, контрастну кольорову плитку (>= 4.5) і не налазять одне на одне; випробування apparaat-symbool-96-20261119 (8/8) і apparaat-bevestiging-20261109 (52/52) зелені."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Обрати Варіант А (кольорові плитки за змістом символу, узгоджені з Telegram) для вікна підтвердження з іншого пристрою.",
+      "reden": "Прямий вибір власника після перегляду порівняльних знімків; забезпечує миттєве візуальне впізнавання всіх 96 піктограм між обома пристроями й Telegram."
+    },
+    {
+      "besluit": "Центрувати колонку 940 px симетрично у вільному просторі між лівим меню та правою рейкою з мінімальним зазором 24 px.",
+      "reden": "Усуває прилипання до лівого меню на екранах 980–1280 px і робить читання спокійним на широких моніторах 1440–1920 px."
+    },
+    {
+      "besluit": "Включити Grok MOBIEL-002 (№ 174) через --no-ff поверх 20261119-080944 із типово вимкненим прапорцем mobiel-breedte-veilig-v1 та лишити 4 архівні гілки archief/* без змін.",
+      "reden": "Додає перевірене прискорення на телефоні без ризику для стабільності (власник сам вмикає перемикач для проби) і без утрати жодного оновлення UPD-005."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/beheer-uitrol.css, tests/eenheid/uitrol-centrering-20261115.test.ts",
+      "omschrijving": "Відцентровано сторінку панелі оновлення (ширина 940 px, симетричні поля від 24 px між лівим меню та бічною рейкою в усіх режимах рейки)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/apparaat-bevestiging/Symbool.tsx, StapOpKanaal.tsx, Luisteraar.tsx, InstellingenSectie.tsx, apparaat.css",
+      "omschrijving": "Усунуто злипання тексту замість 72 відсутніх піктограм: підключено всі 96/96 векторних форм із pictogramTegel у кольорових плитках Варіанта А, додано repeat(3,minmax(0,1fr)) і дотримано WCAG 1.4.3."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/apparaat-symbool-96-20261119.test.ts",
+      "omschrijving": "Регресійне випробування для всіх 96/96 векторних піктограм, контрасту >= 4.5, кольорових плиток Варіанта А та підлаштування Grok MOBIEL-002 у «Макеті»."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0302_mobiel_breedte_veilig_vlag.sql, src/mobiel-veilig/vlag.ts, shared/vlaggen.ts, src/ontwerp/mobiel.css, src/plaatsing/Plek.tsx, src/agenten/*",
+      "omschrijving": "Злито --no-ff і підлаштовано Grok MOBIEL-002 (№ 174): безпечна вузька верстка на телефоні за типово вимкненим прапорцем mobiel-breedte-veilig-v1, узгоджена з анімацією «Макета» у src/agenten/agenten-kern-maquette.css."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": ".github/workflows/upd-006-uitgave.yml, orchestratie/taken/UPD-006.json, orchestratie/bijdragen/UPD-006/*, orchestratie/verwijzingen/*, orchestratie/ontwikkelarchieven/UPD-006.json",
+      "omschrijving": "Облік авторства, реєстр посилань для злитої гілки Grok № 174, хронологія гілок, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-006."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "migrations/0302_mobiel_breedte_veilig_vlag.sql",
+      "uk": "Адитивна повторостійка міграція з MOBIEL-002: додає лише один рядок прапорця mobiel-breedte-veilig-v1 до app.feature_flags із типовим станом ВИМКНЕНО (aan=false, standaard=false) і ON CONFLICT DO NOTHING; не змінює структури таблиць, прав чи наявних даних.",
+      "nl": "Additieve, herhaalbare migratie uit MOBIEL-002: voegt uitsluitend één vlagrij mobiel-breedte-veilig-v1 toe aan app.feature_flags met standaardwaarde UIT (aan=false, standaard=false) en ON CONFLICT DO NOTHING; wijzigt geen tabellen, rechten of bestaande gegevens."
+    },
+    {
+      "pad": ".github/workflows/upd-006-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-006: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує 302 набори випробувань, orch behoud, міграції до 0302 на PostgreSQL 16 трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-006: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 302 testbestanden, orch behoud, migraties t/m 0302 op PostgreSQL 16 met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server",
+      "resultaat": "Обидві перевірки типів клієнта та сервера пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && scripts/zoek-ui-catalogus.mjs --controle && scripts/kleur-contrast-controle.mjs && scripts/kaart-controle.mjs --stil && scripts/plaatsing-controle.mjs --stil && scripts/hulp-vraagtekens-controle.mjs --stil",
+      "resultaat": "Усі статичні контракти, правила координації 1.4.17, каталог пошуку, контрастність і карта файлів пройшли з кодом 0."
+    },
+    {
+      "opdracht": "Модульні випробування: uitrol-centrering-20261115 (11/11), apparaat-symbool-96-20261119 (8/8), apparaat-bevestiging-20261109 (52/52), mobiel-breedte-veilig-20261110 (13/13), uitrol-risico-20261116 (69/69), ut-tabs-pijlen-20261019 (9/9), migraties-terugdraaibaar-20261117 (18/18), historie-kroniek (18/18)",
+      "resultaat": "Усі профільні регресійні випробування пройшли на 100%."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-006-uitgave.yml",
+      "resultaat": "Звіряє живу основу 20261119-080944 (cab0acb9), виконує всі 302 набори випробувань, подвійний прогін міграцій до 0302 на PostgreSQL 16 трьома ролями, повне складання, CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "shared/apparaat-bevestiging/symbolen.ts",
+    "shared/apparaat-bevestiging/pictogram-vormen.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Міграція 0302_mobiel_breedte_veilig_vlag.sql додає лише один рядок прапорця mobiel-breedte-veilig-v1 (типово вимкнено); для вимкнення достатньо перемкнути прапорець без повернення стану бази даних.",
+    "4 архівні гілки Grok (archief/*) і MELDPANEEL-001 (№ 159) свідомо збережені відкритими на GitHub без змін."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}

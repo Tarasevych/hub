@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "soort": "tak",
+  "id": "herstel/mobiel-breedte-veilig-20261119-084347",
+  "gebeurtenis": "samengevoegd",
+  "tijd": "2026-11-19T11:55:25.625Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "laatsteCommit": "d48c3904f726f6022f2eafbb0ab7d98f25811c36",
+  "taken": [
+    "MOBIEL-002",
+    "UPD-006"
+  ]
+}

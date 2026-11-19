@@ -1,19 +1,20 @@
 /* Admin → «Оновлення» / «Updates» (passkey-goedkeuring) */
 .admin-uitrol{display:grid;gap:16px;min-width:0;max-width:100%}
-/* 15.11.2026, побажання власника: головне — у центрі, блоки не на всю ширину, щоб очі не бігали екраном. Уся консоль на вкладці
-   «Оновлення» вужча (1180 px замість 1320) і по центру; заголовок консолі вирівняний із картками. Картки не сплющує flat-content
-   (див. :not(.ut-root *) у canoniek-omlijsting.css), тож мають власні заокруглення й рамки. Термінал і таблиці прокручуються всередині.
-   NL: op het tabblad «Updates» is de console smaller (1180 px) en gecentreerd; de kaarten houden hun afgeronde hoeken. */
+/* 19.11.2026 (UPD-006), побажання власника: головне — строго по центру з адекватною шириною (940 px), щоб очі не бігали екраном і
+   вміст ніколи не прилипав до лівого меню (раніше при 1180 px на 980–1280 px лівий відступ обнулявся до 0 px). Колонка центрується
+   симетрично у просторі між лівим меню та бічною рейкою з гарантованим зазором 24 px. Картки зберігають власні заокруглення й рамки.
+   NL: op het tabblad «Updates» is de console gecentreerd (940 px) met gelijke marges tussen het linkermenu en de zijbalk (minimaal 24 px). */
 /* :not(#_uitrol) — сильніше за «Макет» (html.palet-maquette .admin-console.mq-schil, 1460 px). · Sterker dan de maquette-regel. */
-html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:1180px}
-/* «Макет» з меню розділів збоку: консоль займає всю робочу область, а поля рахуються так, щоб колонка 1180 px стояла по центру екрана,
-   коли місця досить; запас під меню (284 px, згорнуте — 96 px) лишається нижньою межею, тож вміст ніколи не заходить під меню (як CENTR-001).
-   До 960 px макет сам прибирає запаси — тому лише від 961 px. · Maquette met zijmenu: kolom gecentreerd, de ruimte voor het menu blijft de ondergrens. */
+html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:940px}
+/* «Макет» із бічною рейкою: колонка 940 px стоїть строго по центру вільного простору між лівим меню й рейкою (284 px, компактна 96 px,
+   згорнута 0 px), із мінімальним симетричним зазором 24 px з обох боків — ніколи не притискається впритул до меню. Від 961 px.
+   NL: Maquette met zijbalk: 940 px kolom gecentreerd in de vrije ruimte tussen linkermenu en zijbalk, met minimaal 24 px marge aan beide zijden. */
 @media (min-width:961px){
-html.palet-maquette:not(#_uitrol) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-rail:284px;max-width:none}
-html.palet-maquette:not(#_uitrol) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
-html.palet-maquette:not(#_uitrol) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){padding-right:max(var(--ut-rail),calc((100% - 1180px) / 2));padding-left:max(0px,min(calc((100% - 1180px) / 2),calc(100% - 1180px - var(--ut-rail))))}
-html.palet-maquette:not(#_uitrol) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){padding-left:max(var(--ut-rail),calc((100% - 1180px) / 2));padding-right:max(0px,min(calc((100% - 1180px) / 2),calc(100% - 1180px - var(--ut-rail))))}
+html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-kolom:940px;--ut-marge:24px;--ut-rail:284px;max-width:none}
+html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
+html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-ingeklapt="ja"]:has([data-admin-uitrol]){--ut-rail:0px}
+html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-left:var(--ut-zij);padding-right:calc(var(--ut-rail) + var(--ut-zij))}
+html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-right:var(--ut-zij);padding-left:calc(var(--ut-rail) + var(--ut-zij))}
 }
 .admin-uitrol .admin-section>header{position:relative}
 .admin-uitrol-ververs{position:absolute;right:0;top:0;background:none;border:0;cursor:pointer;color:inherit;opacity:.7}

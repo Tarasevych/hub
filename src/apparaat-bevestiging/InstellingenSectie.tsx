@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronDown, MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { ecosystemTabContext } from '../tab-context';
-import Symbool from './Symbool';
+import Symbool, { tegelKleurStijl } from './Symbool';
 import { foutCode, herstellen, metSleutel, overzicht, voorkeurenOpslaan, type Ctx, type Overzicht } from './api';
 import { useApparaatVlag } from './vlag';
 import { foutTekst, REDEN_NAMEN, STAND_NAMEN, tijd, tr, type Lang } from './teksten';
@@ -95,7 +95,10 @@ export default function ApparaatInstellingenSectie({ lang, service = 'identity' 
           </div>
           <div className='apb-subkaart'>
             <span className='apb-subkaart-titel'>{tr(lang, 'Так виглядають символи', 'Zo zien de symbolen eruit')}</span>
-            <div className='apb-voorbeeld' aria-hidden='true'>{voorbeeld.kandidaten.map((k, pos) => <div key={k} className={`apb-tegel${pos === voorbeeld.juist ? ' is-uitgelicht' : ''}`}><Symbool soort={voorbeeld.soort} index={k} lang={lang} klein /></div>)}</div>
+            <div className='apb-voorbeeld' aria-hidden='true'>{voorbeeld.kandidaten.map((k, pos) => {
+              const kleurStijl = tegelKleurStijl(voorbeeld.soort, k, lang);
+              return <div key={k} className={`apb-tegel${kleurStijl ? ' is-kleur' : ''}${pos === voorbeeld.juist ? ' is-uitgelicht' : ''}`} style={kleurStijl}><Symbool soort={voorbeeld.soort} index={k} lang={lang} klein /></div>;
+            })}</div>
             <span className='apb-klein'>{tr(lang, 'Виділений — це той, що треба натиснути на іншому пристрої.', 'Het uitgelichte is het symbool dat u op het andere apparaat tikt.')}</span>
           </div>
         </div>

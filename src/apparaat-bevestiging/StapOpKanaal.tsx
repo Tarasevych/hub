@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import TelegramWie, { geldigePersonen, type TelegramPersoon } from '../telegram-aanmelden/TelegramWie';
 import { Send, Smartphone } from 'lucide-react';
-import Symbool from './Symbool';
+import Symbool, { tegelKleurStijl } from './Symbool';
 import PictogramTegel from './PictogramTegel';
 import { abonneer } from './stroom';
 import { aanvragen, foutCode, foutData, intrekken, poort, stand, telegramAanvragen, telegramCode, telegramStatus, type Ctx } from './api';
@@ -169,10 +169,13 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
     {(fase === 'wacht' || fase === 'code') && symbolen && venster && <div className='tg2-held'><PictogramTegel index={symbolen.kandidaten[symbolen.juist]} lang={lang} groot /></div>}
     {(fase === 'wacht' || fase === 'code') && kanaal === 'telegram' && <TelegramWie lang={lang} personen={ontvangers} soort='verstuurd' />}
     {(fase === 'wacht' || fase === 'code') && symbolen && !venster && <div className='apb-symbolen' role='group' aria-label={tr(lang, 'Символи; виділений треба натиснути на іншому пристрої', 'Symbolen; het uitgelichte tikt u op het andere apparaat')}>
-      {symbolen.kandidaten.map((k, pos) => <div key={`${symbolen.soort}-${k}`} className={`apb-tegel${pos === symbolen.juist ? ' is-uitgelicht' : ''}`} aria-current={pos === symbolen.juist ? 'true' : undefined}>
-        <Symbool soort={symbolen.soort} index={k} lang={lang} uitgelicht={pos === symbolen.juist} />
-        {pos === symbolen.juist && <span className='apb-tegel-label'>{tr(lang, 'цей', 'deze')}</span>}
-      </div>)}
+      {symbolen.kandidaten.map((k, pos) => {
+        const kleurStijl = tegelKleurStijl(symbolen.soort, k, lang);
+        return <div key={`${symbolen.soort}-${k}`} className={`apb-tegel${kleurStijl ? ' is-kleur' : ''}${pos === symbolen.juist ? ' is-uitgelicht' : ''}`} style={kleurStijl} aria-current={pos === symbolen.juist ? 'true' : undefined}>
+          <Symbool soort={symbolen.soort} index={k} lang={lang} uitgelicht={pos === symbolen.juist} />
+          {pos === symbolen.juist && <span className='apb-tegel-label'>{tr(lang, 'цей', 'deze')}</span>}
+        </div>;
+      })}
     </div>}
     {fase === 'wacht' && <>
       <p className='apb-wacht'><span className='apb-draai' aria-hidden='true' /> {symbolen
