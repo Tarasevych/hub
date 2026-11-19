@@ -65,7 +65,8 @@
     "697c73743723c472be25ad2cf4923b29c36864bc",
     "fdd466c7259192095b812f37eb09d1415c12748e",
     "558681dc8b508e9cbde76dba3967306f30721995",
-    "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35"
+    "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35",
+    "97ffca42c2accaf688e9e85574c1c020c5181dc9"
   ],
   "tijdlijn": [
     {
@@ -82,7 +83,11 @@
     },
     {
       "stap": "Створено ізольований сценарій випуску .github/workflows/upd-005-uitgave.yml (300 наборів випробувань, orch behoud, перевірка навичок, міграції до 0301 на PostgreSQL 16 трьома ролями, Хроміум, CRX3 0.9.7, TRACE-001 без авто-встановлення) і підготовлено журнал походження UPD-005.json із поясненнями до всіх 23 прапорців ризику.",
-      "resultaat": "Локальні перевірки типів, складання, статичних контрактів, безпеки процесів (werkstromen-veilig), оцінки ризиків (23/23 пояснено, 0 пропущених) та модульних тестів пройшли без провалів."
+      "resultaat": "Під час першого запуску GitHub Actions (№ 44476590955) усі 20 хмарних і 146 безбазових тестів пройшли чисто, а післяскладальний тест ui-audit-g виявив регресію з VERWIJZING-001 у src/uitrol/upload.css: стилі .ut-vw-* були дописані після фінального мобільного шару @media (max-width:640px)."
+    },
+    {
+      "stap": "Перенесено стилі .ut-vw-* у src/uitrol/upload.css перед фінальним мобільним шаром @media (max-width:640px) і повторно перевірено всі 13 післяскладальних випробувань (включно з ui-audit-g 59/59).",
+      "resultaat": "Регресію усунуто без зміни самих правил стилю й без послаблення тестів; усі 13 післяскладальних випробувань зелені."
     }
   ],
   "keuzes": [
@@ -163,8 +168,13 @@
     },
     {
       "soort": "toegevoegd",
-      "pad": "src/merk/PlaatsKeten.tsx, shared/plaats-teken.ts, scripts/plaats-tekens-maken.mjs",
-      "omschrijving": "Новий вигляд «Ланцюжок» для знаків місць (країна › область › місто одним рядком із прапором і гербом поруч та міткою IP/GPS) і світовий генератор --landen ALLE (PLAATS-TEKENS-001 #154 @ dcfe31a4)."
+      "pad": "src/merk/PlaatsKeten.tsx, src/merk/Merk.tsx, shared/plaats-teken.ts, scripts/plaats-tekens-maken.mjs",
+      "omschrijving": "Новий вигляд «Ланцюжок» для знаків місць (країна › область › місто одним рядком із прапором і гербом поруч та міткою IP/GPS), його публічний реекспорт із єдиної вхідної точки реєстру src/merk/Merk.tsx та світовий генератор --landen ALLE (PLAATS-TEKENS-001 #154 @ dcfe31a4)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/uitrol/upload.css, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Виправлено регресію VERWIJZING-001 у src/uitrol/upload.css (мобільний шар @media (max-width:640px) повернено в кінець файла, ui-audit-g 59/59) та оновлено каталог пошуку (UI_ONBEREIKBAAR = 15, zoek-ui-bereik-20261105 24/24)."
     },
     {
       "soort": "toegevoegd",

@@ -212,3 +212,6 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
     </svg>
   );
 }
+
+// PLAATS-TEKENS-001: єдина точка входу реєстру знаків відкриває і вигляд «Ланцюжок» (країна › область › місто).
+export { default as PlaatsKeten, type PlaatsKetenProps } from './PlaatsKeten';

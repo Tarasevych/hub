@@ -201,8 +201,6 @@ li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
 .ut-samenloop>div{display:grid;gap:8px;min-width:0}
 .ut-samenloop p{font-size:.88rem;line-height:1.45}
 .ut-hint[data-ut-samenloop-hint] svg{width:14px;height:14px;vertical-align:-2px}
-/* Мобільний шар лишається в кінці файла · mobiele laag blijft onderaan */
-@media (max-width:640px){.ut-wiz-balk .ut-wiz-lang{display:none}.ut-wiz-balk .ut-wiz-kort{display:block}}
 /* VERWIJZING-001: посилання з назвою, підсумком і станом у «Хто що зробив». */
 .ut-vw-rij{display:flex;flex-direction:column;gap:4px;margin:6px 0 2px 26px;min-width:0;contain:inline-size}
 .ut-vw>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;padding:4px 8px;border:1px solid var(--ut-line,color-mix(in srgb,currentColor 18%,transparent));border-radius:999px;min-width:0}
@@ -226,3 +224,5 @@ li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
 .ut-vw-knoppen a:hover{text-decoration:underline}
 .ut-vw-tech>summary{cursor:pointer;font-size:.72rem;color:var(--ut-muted,inherit)}
 .ut-vw-tech code{display:block;font-size:.72rem;overflow-wrap:anywhere;margin-top:4px}
+/* Мобільний шар лишається в кінці файла · mobiele laag blijft onderaan */
+@media (max-width:640px){.ut-wiz-balk .ut-wiz-lang{display:none}.ut-wiz-balk .ut-wiz-kort{display:block}}
