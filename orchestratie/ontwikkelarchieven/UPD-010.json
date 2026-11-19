@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "taakId": "UPD-010",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-010 · Компактний переглядач листа, фонове завантаження оновлень, кумулятивна черга та гнучкі права агентів",
+  "opdracht": "Поверх UPD-009 (20261119-184102 @ 68c90588203d792cf25431d6849a57c2732dfecc) виконати три вимоги власника: 1) прибрати порожню білу смугу та дублювання у переглядачі листа, перенести смугу перекладу в центр верхньої панелі, а решту опцій («Що від вас потрібно?», зовнішні зображення) згорнути у компактні розгортувані пілюлі; 2) забезпечити безперервне фонове завантаження й відстеження встановлення оновлень при зміні вкладки або піддомену; 3) запровадити розумну кумулятивну чергу оновлень (до 15 відкритих із поглинанням старіших) та гнучкі права агентів на завантаження або делеговане встановлення без обходу ключа доступу власника.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-010-lezer-uitrol-rechten-20261119-200000",
+    "basisCommit": "68c90588203d792cf25431d6849a57c2732dfecc",
+    "basisVersie": "20261119-184102",
+    "geinstalleerdeBasis": "68c90588203d792cf25431d6849a57c2732dfecc",
+    "geinstalleerdeVersie": "20261119-184102",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "68c90588203d792cf25431d6849a57c2732dfecc",
+    "7692f5eeac6b43206ba61e308dafbf8ea4e33d55"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Переглядач листа: створено src/mail/lezer-kop-host.ts та src/mail/mail-lezer-compact-kop.css, оновлено MailLezerWerkbalk.tsx, VertaalStrook.tsx, WatNodigBlok.tsx, MailBerichtTekst.tsx і MailGesprekInhoud.tsx.",
+      "resultaat": "Усунено порожню білу смугу між темою та карткою відправника (у Chromium на 1440×900, 1024×768 і 390×844: gapSubjectToCard = 10 px, hostHeight = 44 px, translateDupHidden = true, overflowX = false), перенесено однорядкову смугу перекладу в центр верхньої панелі, «Що від вас потрібно?» та зовнішні зображення перетворено на розгортувані пілюлі."
+    },
+    {
+      "stap": "2) Фонове завантаження й встановлення оновлень: створено src/platform/uitrol-achtergrond-beheer.ts, src/platform/UitrolAchtergrondBand.tsx та src/platform/uitrol-achtergrond-band.css (підключено в src/main.tsx), оновлено Upload.tsx, BeheerUitrolWeergave.tsx, backend/uitrol-goedkeuring.ts і backend/uitrol-github-ontvangen.ts.",
+      "resultaat": "Вкладка «Огляд» не розмонтовується при перемиканні вкладок адмінки, додано серверне фонове завантаження з GitHub (achtergrond: true), маршрут POST /api/owner/uitrol/achtergrond та глобальну плаваючу смужку перебігу на всіх піддоменах без порушення ізоляції технічних збірок."
+    },
+    {
+      "stap": "3) Кумулятивна черга та гнучкі права агентів: створено зворотно сумісну міграцію migrations/0303_uitrol_wachtrij_en_rechten.sql, спільний модуль shared/uitrol-wachtrij.ts, оновлено shared/uitrol-codes.ts, backend/agent-audit.ts, backend/uitrol-goedkeuring.ts, backend/uitrol-github-ontvangen.ts, компоненти src/uitrol/* і двомовну документацію docs/ПОРЯДОК-ЧЕРГИ-ОНОВЛЕНЬ.uk.md + docs/WACHTRIJ-UPDATES.nl.md.",
+      "resultaat": "Агенти можуть формувати чергу до 15 відкритих оновлень, кожне наступне охоплює попередні, після встановлення старіші автоматично закриваються як поглинуті (ingehaald); власник гнучко керує рівнем доступу (uploaden/installeren) і лімітами (periode/eenmalig/aantal/bevestiging_per_keer) із посиленим підтвердженням без обходу ключа доступу власника."
+    },
+    {
+      "stap": "4) Додано регресійне випробування tests/eenheid/upd-010-lezer-uitrol-rechten-20261119.test.ts (16/16), оновлено пошуковий каталог, реєстр фіксованих панелей, облік авторства, хронологію гілок і сценарій випуску .github/workflows/upd-010-uitgave.yml.",
+      "resultaat": "Пройдено npx tsc --noEmit, npm run typecheck:server, повне складання npm run build, усі статичні перевірки, werkstromen-veilig-20261116 (9/9), trace-001-ontwikkelarchief (20/20), historie-kroniek (18/18), migraties-terugdraaibaar (19/19), upd-010 (16/16) та живу перевірку в Chromium."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Розмістити глобальну фонову смужку перебігу оновлень у src/platform/ (поруч із NieuweVersieBand.tsx), а не в src/uitrol/.",
+      "reden": "Дотримання жорсткої ізоляції технічних збірок (shared/tech-bundels.ts): відкритий код src/main.tsx не імпортує технічний каталог src/uitrol/."
+    },
+    {
+      "besluit": "Оформити міграцію 0303_uitrol_wachtrij_en_rechten.sql виключно як зворотно сумісне додавання колонок із типовими значеннями та розширення CHECK-обмеження статусу ('ingehaald').",
+      "reden": "У разі відкату попередня версія сервера безперебійно працює з оновленою схемою бази даних без втрати даних і без ручного втручання."
+    },
+    {
+      "besluit": "Оформити правило порядку черги оновлень як парні документи docs/ПОРЯДОК-ЧЕРГИ-ОНОВЛЕНЬ.uk.md і docs/WACHTRIJ-UPDATES.nl.md без зміни захищених файлів AGENTS.md та orchestratie/beleid.json.",
+      "reden": "AGENTS.md та orchestratie/beleid.json закріплені контрольним відбитком orchestratie/regels.lock.json і змінюються лише окремою процедурою затвердження правил власником."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "src/mail/lezer-kop-host.ts, src/mail/mail-lezer-compact-kop.css",
+      "omschrijving": "Контекст і компактне оформлення верхньої панелі переглядача листа без білого провалу та дублювань."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/MailLezerWerkbalk.tsx, src/mail/VertaalStrook.tsx, src/mail/WatNodigBlok.tsx, src/MailBerichtTekst.tsx, src/MailGesprekInhoud.tsx",
+      "omschrijving": "Перенесено смугу перекладу в центр верхньої панелі, «Що від вас потрібно?» та зовнішні зображення перетворено на компактні розгортувані пілюлі, сховано дублікат кнопки перекладу."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/platform/uitrol-achtergrond-beheer.ts, src/platform/UitrolAchtergrondBand.tsx, src/platform/uitrol-achtergrond-band.css",
+      "omschrijving": "Міжвкладковий і міжпіддоменний координатор фонових завантажень і встановлень оновлень із плаваючою смужкою перебігу."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0303_uitrol_wachtrij_en_rechten.sql, shared/uitrol-wachtrij.ts, docs/ПОРЯДОК-ЧЕРГИ-ОНОВЛЕНЬ.uk.md, docs/WACHTRIJ-UPDATES.nl.md",
+      "omschrijving": "Зворотно сумісна міграція, спільна логіка кумулятивної черги та гнучких прав агентів і двомовне правило порядку черги оновлень."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/uitrol-goedkeuring.ts, backend/uitrol-github-ontvangen.ts, backend/agent-audit.ts, shared/uitrol-codes.ts, src/BeheerUitrolWeergave.tsx, src/uitrol/*, src/main.tsx, scripts/plaatsing-vaste-elementen.json, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Серверні маршрути фонового стану й прав агентів, автоматичне поглинання старіших очікуючих оновлень (ingehaald), ліміт черги 15, оновлений інтерфейс черги й гнучких прав, реєстр фіксованих панелей і пошуковий каталог."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-010-lezer-uitrol-rechten-20261119.test.ts, .github/workflows/upd-010-uitgave.yml, orchestratie/taken/UPD-010.json, orchestratie/bijdragen/UPD-010/*, orchestratie/ontwikkelarchieven/UPD-010.json",
+      "omschrijving": "Регресійний тест UPD-010 (16/16), облік авторства, хронологія гілок, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-010."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-010-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-010: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує 309 наборів випробувань, orch behoud, подвійний прогін міграцій PostgreSQL 16 (включно зі зворотно сумісною 0303_uitrol_wachtrij_en_rechten.sql) трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-010: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 309 testbestanden, orch behoud, dubbele migraties op PostgreSQL 16 (incl. 0303_uitrol_wachtrij_en_rechten.sql) met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання з перевіркою ізоляції технічних збірок і підписаним CRX3 0.9.7 пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "Модульні та статичні перевірки: orch controleer/behoud, vaardigheden, kaart, plaatsing, l002, hulp, kleur-contrast, mail-slimme-inbox, zoek-ui-catalogus, werkstromen-veilig (9/9), trace-001 (20/20), historie-kroniek (18/18), migraties-terugdraaibaar (19/19), upd-010 (16/16), lezer-ai (90/90), uitrol-risico (69/69), ui-audit-g (59/59)",
+      "resultaat": "Усі перевірки пройшли на 100% без жодної помилки (код 0)."
+    },
+    {
+      "opdracht": "Жива перевірка переглядача листа у Chromium на 1440×900, 1024×768 і 390×844",
+      "resultaat": "Підтверджено gapSubjectToCard = 10 px, hostHeight = 44 px, translateDupHidden = true, overflowX = false, bandOk = true на всіх трьох розмірах екрана."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-010-uitgave.yml",
+      "resultaat": "Звіряє живу основу (UPD-009 20261119-184102, UPD-008 20261119-170438 або UPD-007 20261119-143136), виконує всі 309 наборів випробувань, подвійний прогін міграцій PostgreSQL 16 (включно з 0303) трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Делеговане встановлення агентом (рівень 'installeren') не обходить перевірки root-встановлювача й може працювати лише в межах окремо затвердженої й підписаної власником політики automatische/beperkte installatie.",
+    "Проєкт об’єднаної панелі сповіщень MELDPANEEL-001 (№ 159) свідомо збережено в окремій гілці поза цим випуском."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}
