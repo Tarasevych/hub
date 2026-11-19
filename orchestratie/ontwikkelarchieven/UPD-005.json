@@ -66,7 +66,8 @@
     "fdd466c7259192095b812f37eb09d1415c12748e",
     "558681dc8b508e9cbde76dba3967306f30721995",
     "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35",
-    "97ffca42c2accaf688e9e85574c1c020c5181dc9"
+    "97ffca42c2accaf688e9e85574c1c020c5181dc9",
+    "34f83796addd64f9edbd9705a7cd27ea144f0c43"
   ],
   "tijdlijn": [
     {
@@ -88,6 +89,10 @@
     {
       "stap": "Перенесено стилі .ut-vw-* у src/uitrol/upload.css перед фінальним мобільним шаром @media (max-width:640px) і повторно перевірено всі 13 післяскладальних випробувань (включно з ui-audit-g 59/59).",
       "resultaat": "Регресію усунуто без зміни самих правил стилю й без послаблення тестів; усі 13 післяскладальних випробувань зелені."
+    },
+    {
+      "stap": "Під час спроби схвалення випуску 20261119-072255 із картки «Чекають схвалення» власник виявив помилку HTTP 409 RISICO_NIET_BEVESTIGD попри встановлену позначку. У src/BeheerUitrolWeergave.tsx знайдено обгортку goedkeuren={(v) => void goedkeuren(v)}, яка губила другий аргумент risicoBevestigd; виправлено на goedkeuren={(v, risicoBevestigd) => void goedkeuren(v, risicoBevestigd)} і додано регресійний тест у tests/eenheid/uitrol-risico-20261116.test.ts.",
+      "resultaat": "Обидва способи схвалення («Нове оновлення» та «Чекають схвалення») гарантовано передають risicoBevestigd; випущено оновлений пакунок UPD-005 із цим виправленням на майбутнє."
     }
   ],
   "keuzes": [
@@ -173,8 +178,8 @@
     },
     {
       "soort": "gewijzigd",
-      "pad": "src/uitrol/upload.css, shared/zoek-ui-knoppen.generated.ts",
-      "omschrijving": "Виправлено регресію VERWIJZING-001 у src/uitrol/upload.css (мобільний шар @media (max-width:640px) повернено в кінець файла, ui-audit-g 59/59) та оновлено каталог пошуку (UI_ONBEREIKBAAR = 15, zoek-ui-bereik-20261105 24/24)."
+      "pad": "src/uitrol/upload.css, src/BeheerUitrolWeergave.tsx, tests/eenheid/uitrol-risico-20261116.test.ts, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Виправлено регресію VERWIJZING-001 у src/uitrol/upload.css (мобільний шар @media (max-width:640px) повернено в кінець файла, ui-audit-g 59/59), виправлено передавання risicoBevestigd із картки «Чекають схвалення» (<Goedkeuring>) у src/BeheerUitrolWeergave.tsx із регресійною перевіркою в uitrol-risico-20261116.test.ts (усунуто HTTP 409 RISICO_NIET_BEVESTIGD) та оновлено каталог пошуку (UI_ONBEREIKBAAR = 15, zoek-ui-bereik-20261105 24/24)."
     },
     {
       "soort": "toegevoegd",

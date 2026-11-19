@@ -4,7 +4,7 @@
 // Перевіряємо справжню поведінку на справжніх теках і справжньому tar.gz: що прапорець з’являється саме на небезпечних змінах
 // (root, npm, джерела пакетів, процеси GitHub, права в базі) і НЕ з’являється на звичайних (код сайту, документація, коментарі SQL).
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { checker } from './hulp/nep-google';
@@ -160,6 +160,17 @@ export async function main(): Promise<number> {
     check('compact: toegevoegde beveiliging → toon veiliger, geen module', !!pc && pc.toon === 'veiliger' && !pc.module);
     const w = lv.voorNa.find((p) => p.na?.uk.includes('ЗМІНЮВАТИ'));
     check('compact: schrijfrecht → toon risico', !!w && w.toon === 'risico');
+  }
+  // Регресія 19.11.2026 (UPD-005): у картці «Чекають схвалення» (<Goedkeuring>) обгортка не має губити другий аргумент risicoBevestigd.
+  {
+    const beheer = readFileSync(join(process.cwd(), 'src/BeheerUitrolWeergave.tsx'), 'utf8');
+    const goedk = readFileSync(join(process.cwd(), 'src/uitrol/Goedkeuring.tsx'), 'utf8');
+    const upload = readFileSync(join(process.cwd(), 'src/uitrol/Upload.tsx'), 'utf8');
+    check('інтерфейс: <Goedkeuring> у BeheerUitrolWeergave передає risicoBevestigd у goedkeuren (не губить другий аргумент)',
+      /<Goedkeuring[^>]*goedkeuren=\{\(\s*v\s*,\s*risicoBevestigd\s*\)\s*=>\s*void\s+goedkeuren\(\s*v\s*,\s*risicoBevestigd\s*\)\}/.test(beheer)
+      || /<Goedkeuring[^>]*goedkeuren=\{goedkeuren\}/.test(beheer));
+    check('інтерфейс: і Goedkeuring, і Upload передають підтвердження прапорців під час натискання схвалення',
+      goedk.includes('goedkeuren(v, vlaggen ? true : undefined)') && upload.includes('goedkeurenId(nieuw.id, vlaggenNieuw ? true : undefined)'));
   }
   return einde();
 }

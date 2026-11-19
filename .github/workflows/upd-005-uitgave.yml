@@ -585,6 +585,7 @@ jobs:
               "Єдиний реєстр сповіщень, безпека та хронологія (MELDCAT-001 № 155, SEC-003 № 151, AI-TERMIJN-001, HISTORIE-001): 291 місце сповіщень у каталозі, вилучено вразливий пакунок xlsx на користь локального читача на fflate, закріплено fast-xml-parser ^5.12.1, додано 10 сканерів безпеки, оновлено карту файлів, каталог пошуку й хронологію гілок."
             ],
             "fixes": [
+              "Виправлено помилку HTTP 409 RISICO_NIET_BEVESTIGD у картці «Чекають схвалення» (BeheerUitrolWeergave.tsx): обгортка <Goedkeuring> тепер передає другий аргумент risicoBevestigd на сервер і закрита регресійним тестом.",
               "Усі готові розробки після живої версії 20261117-190154 (14dbcb3a) об’єднано чесними злиттями --no-ff в один узгоджений випуск із прозорою фіксацією в BIJDRAGEN.json, verwijzingen і TRACE-001.",
               "У реєстрі orchestratie/verwijzingen/ і досьє orchestratie/onderwerpen/ зафіксовано гілки, які свідомо не ввійшли в UPD-005 (MELDPANEEL-001 № 159 та подальший збір світових знаків у № 154), щоб жодна запланована робота не загубилася.",
               "Пройдено правила координації (1.4.17), orch behoud, перевірку навичок, TRACE-001, типи клієнта й сервера, повне складання з підписаним CRX3 0.9.7, подвійний прогін міграцій PostgreSQL 16 (до 0301) трьома ролями та всі 300 наборів випробувань."
@@ -607,6 +608,7 @@ jobs:
               "Meldingenregister, veiligheid en kroniek (MELDCAT-001 #155, SEC-003 #151, AI-TERMIJN-001, HISTORIE-001): 291 meldingen geregistreerd, kwetsbare xlsx vervangen door eigen fflate-lezer, fast-xml-parser ^5.12.1 vastgezet, 10 beveiligingsscanners toegevoegd en bestandskaart, zoekcatalogus en takkenkroniek bijgewerkt."
             ],
             "fixes": [
+              "Fout HTTP 409 RISICO_NIET_BEVESTIGD in de kaart «Wachten op goedkeuring» (BeheerUitrolWeergave.tsx) opgelost: <Goedkeuring> geeft het tweede argument risicoBevestigd voortaan correct door aan de server, geborgd met een regressietest.",
               "Alle gereedgekomen wijzigingen na de live versie 20261117-190154 (14dbcb3a) zijn met --no-ff samengebracht in één uitgave met volledige herleidbaarheid in BIJDRAGEN.json, verwijzingen en TRACE-001.",
               "Takken die bewust buiten UPD-005 blijven (MELDPANEEL-001 #159 en de wereldtekens in #154) zijn vastgelegd in orchestratie/verwijzingen/ en orchestratie/onderwerpen/ zodat niets verloren gaat.",
               "Geslaagd: coördinatieregels (1.4.17), orch behoud, vaardigheidscontrole, TRACE-001, client- en servertypen, volledige bouw met ondertekende CRX3 0.9.7, dubbele migraties t/m 0301 op PostgreSQL 16 met drie rollen en alle 300 testbestanden."
