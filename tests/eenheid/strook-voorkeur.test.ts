@@ -32,10 +32,10 @@ export async function main(): Promise<number> {
   {
     const op = geheugen();
     check('zonder opslag: standaard (automatisch)', leesVoorkeur(op).modus === 'auto');
-    const v = { modus: 'uitgeklapt', grootte: 'groot', label: 'iconen', knoppen: ['uit', 'terminal', 'meldingen'], laatsteInklap: 'ingeklapt' } as const;
+    const v = { modus: 'uitgeklapt', grootte: 'groot', label: 'iconen', tooltips: false, knoppen: ['uit', 'terminal', 'meldingen'], laatsteInklap: 'ingeklapt' } as const;
     bewaarVoorkeur({ ...v, knoppen: [...v.knoppen] }, op);
     const terug = leesVoorkeur(op);
-    check('bewaren en lezen geeft dezelfde keuze', terug.modus === 'uitgeklapt' && terug.grootte === 'groot' && terug.label === 'iconen' && terug.knoppen.join(',') === 'uit,terminal,meldingen' && terug.laatsteInklap === 'ingeklapt');
+    check('bewaren en lezen geeft dezelfde keuze (grootte blijft vast middel, tooltips bewaard)', terug.modus === 'uitgeklapt' && terug.grootte === 'middel' && terug.label === 'iconen' && terug.tooltips === false && terug.knoppen.join(',') === 'uit,terminal,meldingen' && terug.laatsteInklap === 'ingeklapt');
     check('bewaard onder de vaste sleutel', op.kaart.has(STROOK_SLEUTEL));
     const oudeLijst = normaliseer({ modus: 'uitgeklapt', knoppen: ['meldingen', 'wissel', 'inklap', 'uit'] });
     check('bewaarde lijst van 02.11 met «inklap»: die valt stil weg (vaste knop), de rest blijft in volgorde', oudeLijst.knoppen.join(',') === 'meldingen,wissel,uit');
@@ -117,7 +117,7 @@ export async function main(): Promise<number> {
     check('dropPlek: knop van buiten de strook op een knop van de strook → erbij op die plek', zetOp(v, 'api', dropPlek(k, 'api', 'wissel', false)!).knoppen.join(',') === 'meldingen,api,wissel,terminal,uit');
   }
 
-  check('vorm van de knoppen in de woorden van de eigenaar (uk) en in het Nederlands', LABEL_NAMEN.iconen.uk === 'Лише піктограми' && LABEL_NAMEN.beide.uk === 'Піктограми з написами' && LABEL_NAMEN.tekst.uk === 'Лише написи' && LABEL_NAMEN.tekst.nl === 'Alleen tekst');
+  check('vorm van de knoppen (UPD-007: піктограми або піктограми з назвами)', LABEL_NAMEN.iconen.uk === 'Піктограми' && LABEL_NAMEN.beide.uk === 'Піктограми з назвами' && LABEL_NAMEN.iconen.nl === 'Pictogrammen' && LABEL_NAMEN.beide.nl === 'Pictogrammen met namen');
 
   {
     const lijst = paneelLijst(normaliseer({ knoppen: ['uit', 'meldingen'] }));

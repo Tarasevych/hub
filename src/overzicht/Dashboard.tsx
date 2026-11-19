@@ -20,7 +20,7 @@ const RIJ_PX = 118; const GAP_PX = 14;
 
 type Opslag = 'rust' | 'bezig' | 'ok' | 'fout';
 
-export default function Dashboard({ lang, context, bron, codes }: { lang: Lang; context: Context; bron: Bron; codes: boolean }) {
+export default function Dashboard({ lang, context, bron, codes = false }: { lang: Lang; context: Context; bron: Bron; codes?: boolean }) {
   const [o, setO] = useState<Overzicht | null>(null);
   const [fout, setFout] = useState('');
   const [bezigLaden, setBezigLaden] = useState(true);

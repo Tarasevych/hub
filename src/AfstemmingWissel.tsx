@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import CanonicalImplementationTruthMatrix from './CanoniekImplementatieWaarheidMatrix';
 import { useAfstemmingVnext } from './afstemming-vnext/afstemming-vlag';
-import { useSmal } from './afstemming-vnext/tekst';
 import type { AfstemmingSectie } from '../shared/afstemming-model';
 import { canonicalNavigationUrl } from './canoniek-navigatie';
 import {
@@ -54,7 +53,7 @@ const HELD_TEKSTEN = {
       'Єдиний простір звірки між ідеями власника, канонічним кодом та перевіреними свідченнями роботи продукту без припущень і самовільних схвалень.',
     primair: 'До доступу',
     secundair: 'Сховище таємниць',
-    railTitelVnext: 'Картотека звірки',
+    railTitelVnext: 'Розділи звірки',
     railTitelMatrix: 'Матриця реалізації',
     statOnderdelen: 'розділів картотеки',
     statAssen: 'незалежні осі стану',
@@ -68,7 +67,7 @@ const HELD_TEKSTEN = {
       'Eén afstemmingsruimte voor ideeën van de eigenaar, canonieke broncode en getoetste bewijzen van werking zonder aannames of eigenmachtige goedkeuring.',
     primair: 'Naar toegang',
     secundair: 'Geheimenkluis',
-    railTitelVnext: 'Afstemmingskartotheek',
+    railTitelVnext: 'Onderdelen afstemming',
     railTitelMatrix: 'Realisatiematrix',
     statOnderdelen: 'onderdelen',
     statAssen: 'onafhankelijke assen',
@@ -80,7 +79,6 @@ type Props = { lang: 'uk' | 'nl'; sourceOrigin: string; tabContext: string };
 export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Props) {
   const vnext = useAfstemmingVnext();
   const isMaquette = useIsMaquette();
-  const smal = useSmal();
   const [laagOpen, setLaagOpen] = useState(false);
   const [stand, setStand] = useState<AfvStand>({ sectie: 'overzicht' });
   const [matrixAnker, setMatrixAnker] = useState('matrix-filters');
@@ -90,7 +88,7 @@ export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Pro
   const teksten = HELD_TEKSTEN[taal];
 
   useEffect(() => {
-    if (!isMaquette || typeof document === 'undefined') {
+    if (typeof document === 'undefined') {
       setLaagOpen(false);
       return;
     }
@@ -99,7 +97,7 @@ export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Pro
       attributeFilter: ['class', 'open', 'hidden', 'aria-modal', 'data-mq-laag-open'],
       htmlAttributeFilter: ['data-mq-laag-open'],
     });
-  }, [isMaquette, vnext]);
+  }, [vnext]);
 
   useEffect(() => {
     const bijStand = (ev: Event) => {
@@ -160,74 +158,54 @@ export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Pro
     const aandachtTeller = (stand.aandacht || 0) + (stand.conflicten || 0);
     return [
       {
-        id: 'groep-afv-kartotheek',
-        label: uk ? 'Картотека й зв’язки' : 'Kartotheek en relaties',
-        icoon: Library,
-        soort: 'groep',
-        openStandaard: ['overzicht', 'kartotheek', 'kaart-grafiek', 'mogelijkheden'].includes(stand.sectie),
-        kiesbaar: false,
-        kinderen: [
-          {
-            id: 'overzicht',
-            label: uk ? 'Огляд' : 'Overzicht',
-            icoon: LayoutDashboard,
-            badge: aandachtTeller > 0 ? aandachtTeller : undefined,
-          },
-          {
-            id: 'kartotheek',
-            label: uk ? 'Картотека' : 'Kartotheek',
-            icoon: Library,
-            badge: stand.kaarten || undefined,
-          },
-          {
-            id: 'kaart-grafiek',
-            label: uk ? 'Мапа зв’язків' : 'Relatiekaart',
-            icoon: GitCompareArrows,
-          },
-          {
-            id: 'mogelijkheden',
-            label: uk ? 'Можливості' : 'Mogelijkheden',
-            icoon: Sparkles,
-          },
-        ],
+        id: 'overzicht',
+        label: uk ? 'Огляд' : 'Overzicht',
+        icoon: LayoutDashboard,
+        badge: aandachtTeller > 0 ? aandachtTeller : undefined,
       },
       {
-        id: 'groep-afv-bewijs',
-        label: uk ? 'Перевірки й докази' : 'Controles en bewijs',
+        id: 'kartotheek',
+        label: uk ? 'Картотека' : 'Kartotheek',
+        icoon: Library,
+        badge: stand.kaarten || undefined,
+      },
+      {
+        id: 'kaart-grafiek',
+        label: uk ? 'Мапа зв’язків' : 'Relatiekaart',
+        icoon: GitCompareArrows,
+      },
+      {
+        id: 'controles',
+        label: uk ? 'Перевірки' : 'Controles',
         icoon: CircleCheckBig,
-        soort: 'groep',
-        openStandaard: ['controles', 'releases', 'geschiedenis', 'bronnen'].includes(stand.sectie),
-        kiesbaar: false,
-        kinderen: [
-          {
-            id: 'controles',
-            label: uk ? 'Перевірки' : 'Controles',
-            icoon: CircleCheckBig,
-          },
-          {
-            id: 'releases',
-            label: uk ? 'Випуски' : 'Releases',
-            icoon: Rocket,
-          },
-          {
-            id: 'geschiedenis',
-            label: uk ? 'Історія змін' : 'Geschiedenis',
-            icoon: History,
-          },
-          {
-            id: 'bronnen',
-            label: uk ? 'Джерела й кандидати' : 'Bronnen',
-            icoon: Plug2,
-            badge: stand.kandidaten || undefined,
-          },
-        ],
+      },
+      {
+        id: 'releases',
+        label: uk ? 'Випуски' : 'Releases',
+        icoon: Rocket,
+      },
+      {
+        id: 'mogelijkheden',
+        label: uk ? 'Можливості' : 'Mogelijkheden',
+        icoon: Sparkles,
+      },
+      {
+        id: 'geschiedenis',
+        label: uk ? 'Історія' : 'Geschiedenis',
+        icoon: History,
+      },
+      {
+        id: 'bronnen',
+        label: uk ? 'Джерела' : 'Bronnen',
+        icoon: Plug2,
+        badge: stand.kandidaten || undefined,
       },
       {
         id: 'groep-afv-acties',
         label: uk ? 'Швидкі дії' : 'Snelle acties',
         icoon: Plus,
         soort: 'groep',
-        openStandaard: true,
+        openStandaard: false,
         kiesbaar: false,
         kinderen: [
           {
@@ -265,38 +243,31 @@ export default function AfstemmingWissel({ lang, sourceOrigin, tabContext }: Pro
     [stand.kaarten, teksten],
   );
 
-  if (!isMaquette) {
-    if (!vnext) return <CanonicalImplementationTruthMatrix lang={lang} />;
-    return (
-      <Suspense fallback={<p role='status' aria-busy='true' style={{ margin: 16 }}>…</p>}>
-        <Nieuw lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} />
-      </Suspense>
-    );
-  }
-
-  const toonAnkerRail = !(vnext && smal) && !laagOpen;
+  const toonAnkerRail = !laagOpen;
 
   return (
-    <div className='mq-schil afv-mq-schil' data-mq-dienst='api'>
-      <MaquetteHeld
-        dienst='api'
-        lang={taal}
-        modus='compact'
-        opslagSleutel='api-reconciliation'
-        bovenregel={teksten.bovenregel}
-        titelVoor={teksten.titelVoor}
-        titelCursief={teksten.titelCursief}
-        beschrijving={teksten.beschrijving}
-        statistieken={statistieken}
-        primair={{
-          label: teksten.primair,
-          onClick: () => location.assign(canonicalNavigationUrl('api', 'access', taal)),
-        }}
-        secundair={{
-          label: teksten.secundair,
-          onClick: () => location.assign(canonicalNavigationUrl('api', 'vault', taal)),
-        }}
-      />
+    <div className='mq-schil afv-mq-schil' data-mq-dienst={isMaquette ? 'api' : undefined}>
+      {isMaquette ? (
+        <MaquetteHeld
+          dienst='api'
+          lang={taal}
+          modus='compact'
+          opslagSleutel='api-reconciliation'
+          bovenregel={teksten.bovenregel}
+          titelVoor={teksten.titelVoor}
+          titelCursief={teksten.titelCursief}
+          beschrijving={teksten.beschrijving}
+          statistieken={statistieken}
+          primair={{
+            label: teksten.primair,
+            onClick: () => location.assign(canonicalNavigationUrl('api', 'access', taal)),
+          }}
+          secundair={{
+            label: teksten.secundair,
+            onClick: () => location.assign(canonicalNavigationUrl('api', 'vault', taal)),
+          }}
+        />
+      ) : null}
       {toonAnkerRail ? (
         <MaquetteAnkerRail
           lang={taal}

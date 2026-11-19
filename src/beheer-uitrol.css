@@ -10,11 +10,13 @@ html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:940px}
    згорнута 0 px), із мінімальним симетричним зазором 24 px з обох боків — ніколи не притискається впритул до меню. Від 961 px.
    NL: Maquette met zijbalk: 940 px kolom gecentreerd in de vrije ruimte tussen linkermenu en zijbalk, met minimaal 24 px marge aan beide zijden. */
 @media (min-width:961px){
-html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-kolom:940px;--ut-marge:24px;--ut-rail:284px;max-width:none}
-html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
-html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-ingeklapt="ja"]:has([data-admin-uitrol]){--ut-rail:0px}
-html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-left:var(--ut-zij);padding-right:calc(var(--ut-rail) + var(--ut-zij))}
-html.palet-maquette:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-right:var(--ut-zij);padding-left:calc(var(--ut-rail) + var(--ut-zij))}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-kolom:940px;--ut-marge:24px;--ut-rail:284px;max-width:none}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-ingeklapt="ja"]:has([data-admin-uitrol]){--ut-rail:0px}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-left:var(--ut-zij);padding-right:calc(var(--ut-rail) + var(--ut-zij))}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-right:var(--ut-zij);padding-left:calc(var(--ut-rail) + var(--ut-zij))}
+html:not(.palet-maquette) .admin-console.mq-schil[data-mq-rail-zijde="boven"]:has([data-admin-uitrol]){padding-top:92px}
+html:not(.palet-maquette) .admin-console.mq-schil[data-mq-rail-zijde="onder"]:has([data-admin-uitrol]){padding-bottom:104px}
 }
 .admin-uitrol .admin-section>header{position:relative}
 .admin-uitrol-ververs{position:absolute;right:0;top:0;background:none;border:0;cursor:pointer;color:inherit;opacity:.7}

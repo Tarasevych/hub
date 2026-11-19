@@ -31,6 +31,7 @@ export type KnopMenuContext = {
   kiesbaar: boolean;
   modus: StrookModus;
   label: StrookLabel;
+  tooltips?: boolean;
   /** Hoofdactie van de knop («Відкрити»). */
   open?: () => void;
   /** Navigatieknop: het adres (voor «нова вкладка» en «копіювати посилання»). */
@@ -43,6 +44,7 @@ export type KnopMenuContext = {
     opStrook: () => void;
     zetModus: (m: StrookModus) => void;
     zetLabel: (l: StrookLabel) => void;
+    zetTooltips?: (aan: boolean) => void;
     instellingen: () => void;
     nieuwTabblad: (url: string) => void;
     kopieer: (url: string) => void;
@@ -83,6 +85,10 @@ export function knopMenu(c: KnopMenuContext): KnopMenuItem[] {
   {
     const kop = t('Вигляд кнопок', 'Vorm van de knoppen');
     for (const l of STROOK_LABELS) uit.push({ groep: kop, label: c.uk ? LABEL_NAMEN[l].uk : LABEL_NAMEN[l].nl, gekozen: c.label === l, onKies: () => c.acties.zetLabel(l) });
+    if (c.acties.zetTooltips) {
+      const aan = c.tooltips !== false;
+      uit.push({ groep: kop, label: t('Спливаючі підказки', 'Hulpteksten'), gekozen: aan, onKies: () => c.acties.zetTooltips!(!aan) });
+    }
   }
   // 4. instellingen
   const kop = t('Смуга', 'Strook');

@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { CANONICAL_AUTH_CHANGE } from '../../canoniek-gebeurtenissen';
 import { ruimtesApi, type Ruimte, type RuimtesStatus, type TermijnModus } from '../ruimtes-api';
 import { techVernieuwen } from '../tech-opslag';
-import { huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus } from './ruimte-signaal';
+import { gebruikerKoosPrive, huidigeRuimte, meldGebruikerWissel, meldRuimte, ruimteVanStatus, zetGebruikerPrive } from './ruimte-signaal';
 
 export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; bezig: '' | 'wisselen' | 'starten' | 'beeindigen' | 'verlengen' | 'pauzeren'; fout: string; nu: number; uitleg: string };
 let toestand: RuimtesToestand = { geladen: false, status: null, bezig: '', fout: '', nu: Date.now(), uitleg: '' };
@@ -34,6 +34,9 @@ async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesSt
 /** Wisselen zonder herladen: optimistisch tonen, server bevestigt (of zet terug). */
 export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const oud = toestand.status;
+  const wasPrive = gebruikerKoosPrive();
+  // UPD-007: фіксуємо вибір користувача ще до techVernieuwen() усередині actie(), інакше TechPoort одразу поверне вкладку в технічний простір.
+  zetGebruikerPrive(naar === 'prive');
   // RUIMTE-WEERGAVE-001: wisselen = alleen wat dit tabblad toont; de pauze verandert niet (behalve: terug naar technisch heft ze op).
   if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } });
   try {
@@ -41,13 +44,14 @@ export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
     meldGebruikerWissel(naar);
     return s;
   } catch (e) {
+    zetGebruikerPrive(wasPrive);
     if (oud) zet({ status: oud });
     throw e;
   }
 }
 /** «Пауза» / «Продовжити»: de hele technische sessie van deze aanmelding (alle tabbladen, AI volgens zijn regel «bij pauze»). */
-export const pauzeer = (aan: boolean) => actie('pauzeren', () => ruimtesApi.pauzeren(aan));
-export const starten = (modus: TermijnModus, reden: string, minuten?: number) => actie('starten', () => ruimtesApi.starten(modus, reden, minuten));
+export const pauzeer = (aan: boolean) => { if (!aan) zetGebruikerPrive(false); return actie('pauzeren', () => ruimtesApi.pauzeren(aan)); };
+export const starten = (modus: TermijnModus, reden: string, minuten?: number) => { zetGebruikerPrive(false); return actie('starten', () => ruimtesApi.starten(modus, reden, minuten)); };
 export const verlengen = (minuten: number, soort: 'bijtellen' | 'vervangen') => actie('verlengen', () => ruimtesApi.verlengen(minuten, soort));
 export const beeindigen = () => actie('beeindigen', () => ruimtesApi.beeindigen());
 

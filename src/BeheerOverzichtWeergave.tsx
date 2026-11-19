@@ -3,6 +3,6 @@
 import Dashboard from './overzicht/Dashboard';
 import type { Bron, Context, Lang } from './overzicht/types';
 
-export default function AdminOverviewView({ lang, context, bron, codes }: { lang: Lang; context: Context; bron: Bron; codes: boolean }) {
+export default function AdminOverviewView({ lang, context, bron, codes = false }: { lang: Lang; context: Context; bron: Bron; codes?: boolean }) {
   return <Dashboard lang={lang} context={context} bron={bron} codes={codes} />;
 }

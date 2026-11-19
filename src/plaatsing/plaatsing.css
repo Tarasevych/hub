@@ -66,7 +66,7 @@
 /* menu rechts: de stapel blijft in het inhoudsvlak, links van het menu */
 @media (min-width:701px){
   .canonical-chrome[data-dock='rechts'] .plaats-actiestapel{--plaats-rechts:var(--zijbalk-rail,60px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .plaats-actiestapel{--plaats-rechts:340px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .plaats-actiestapel{--plaats-rechts:340px}
 }
 /* technische band verborgen: #root schuift omhoog (translate); de stapel blijft aan de onderrand — regel in src/tech/tech.css */
 /* ruimte onder de inhoud: elke regel kan boven de stapel worden gescrold */

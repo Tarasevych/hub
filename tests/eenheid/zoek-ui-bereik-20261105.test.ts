@@ -57,10 +57,11 @@ export async function main(): Promise<number> {
   const DOOD = ['src/AgentenPaneel.tsx', 'src/McpConnectorPaneel.tsx', 'src/agenten/ExtensieTechAanbod.tsx', 'src/BeheerSleutelsWeergave.tsx', 'src/bureau/Bureau.tsx', 'src/agenten/VerbindingenHub.tsx'];
   check('3b dode bestanden (geen enkele import) zijn niet bereikbaar', DOOD.every((f) => !is(f)), DOOD.filter(is).join(','));
   const dood3 = gen.onbereikbaar(wortel, geladen) as string[];
-  // SEC-002 (server-uitrol-06): src/ssh/SshCertificaat.tsx is nu bereikbaar (SshBeheer laadt het venster voor het certificaat) —
-  // dus 15 i.p.v. 16, en het bestand mag niet meer in de lijst staan. / SshCertificaat.tsx тепер досяжний: 15 замість 16.
-  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 15 stuks (SshCertificaat.tsx is sinds SEC-002 bereikbaar)',
-    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 15 && !dood3.includes('src/ssh/SshCertificaat.tsx') && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
+  // SEC-002 (server-uitrol-06): src/ssh/SshCertificaat.tsx став досяжним (16 → 15).
+  // UPD-007 (19.11.2026): сторінка admin/updates перейшла з перехідника src/uitrol/TabsRij.tsx на єдине меню якорів MaquetteAnkerRail,
+  // тож сам перехідник src/uitrol/TabsRij.tsx став недосяжним (15 → 16); основний src/ontwerp/TabsRij.tsx лишається досяжним.
+  check('3d UI_ONBEREIKBAAR (gegenereerd) = de onbereikbare .tsx-bestanden; 16 stuks (src/uitrol/TabsRij.tsx onbereikbaar sinds UPD-007; SshCertificaat.tsx bereikbaar sinds SEC-002)',
+    JSON.stringify(UI_ONBEREIKBAAR) === JSON.stringify(dood3) && dood3.length === 16 && !dood3.includes('src/ssh/SshCertificaat.tsx') && dood3.includes('src/uitrol/TabsRij.tsx') && DOOD.every((f) => dood3.includes(f)) && dood3.includes('src/MailSectieKeuze.tsx') && dood3.includes('src/MailSysteemAandachtGroepen.tsx'),
     `${dood3.length}: ${dood3.join(', ')}`);
   check('3c en ze leveren geen enkel element aan de catalogus', !UI_ELEMENTEN.some((e) => DOOD.includes(e.bestand)), UI_ELEMENTEN.filter((e) => DOOD.includes(e.bestand)).map((e) => `${e.bestand}:${e.uk}`).join(', '));
 

@@ -10,11 +10,10 @@ import { Deelnemers } from './uitrol/UitgaveBeschrijving';
 import { useUitrolV2 } from './uitrol/uitrol-vlag';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './platform/client';
-import { Activity, Bot, ClipboardCheck, History, PackageCheck, RefreshCw, ScrollText, Settings2, Stethoscope, Fingerprint, UserCheck, UserRound, X } from 'lucide-react';
+import { Bot, PackageCheck, RefreshCw, Fingerprint, UserCheck, UserRound, X } from 'lucide-react';
 import { foutCode, kanPasskey as passkeyMogelijk, passkeyBevestigen } from './platform/webauthn';
 import UitrolMeester from './UitrolMeester';
 import Upload from './uitrol/Upload';
-import TabsRij from './uitrol/TabsRij';
 import ZoneKiezer, { useZone } from './uitrol/ZoneKiezer';
 import LiveKaart from './uitrol/LiveKaart';
 import Geschiedenis from './uitrol/Geschiedenis';
@@ -174,16 +173,18 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     ...pogingen.filter((p) => !recent.some((r) => r.voorstelId && r.voorstelId === p.voorstelId && Math.abs(Date.parse(r.gestart) - Date.parse(p.tijd)) < 15 * 60_000)).map((p) => ({ soort: 'poging' as const, tijd: Date.parse(p.tijd) || 0, poging: p })),
   ].sort((a, b) => b.tijd - a.tijd).slice(0, 6), [recent, pogingen]);
 
-  // Контекстна навігація з правої панелі якорями всередині сторінки оновлень.
+  // Контекстна навігація з меню якорів усередині сторінки оновлень (UPD-007).
   const broadcastUitrolStand = useCallback(() => {
+    const isKlaar = Boolean(data?.schakelaar && (data?.passkeys?.length ?? 0) > 0 && kanPasskey);
     window.dispatchEvent(new CustomEvent('tsv:uitrol-tab', {
       detail: {
         tab,
         wachtend: data?.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring').length ?? 0,
         recentAantal: recent.length,
+        instellenAandacht: Boolean(data) && !isKlaar,
       },
     }));
-  }, [tab, data, recent.length]);
+  }, [tab, data, recent.length, kanPasskey]);
 
   useEffect(() => {
     broadcastUitrolStand();
@@ -225,28 +226,15 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const goedgekeurd = data.voorstellen.filter((v) => v.status === 'goedgekeurd').map((v) => ({ id: v.id, versie: v.versie, beslistOp: v.beslistOp }));
   const klaar = data.schakelaar && data.passkeys.length > 0 && kanPasskey;
   const goedkeurenId = (id: string, risicoBevestigd?: boolean) => { const v = data.voorstellen.find((x) => x.id === id); if (v) void goedkeuren(v, risicoBevestigd); };
-  const TABS: Array<{ id: Tab; Icoon: typeof Activity; uk: string; nl: string; badge?: number }> = [
-    { id: 'overzicht', Icoon: Activity, uk: 'Огляд', nl: 'Overzicht', badge: wachtend },
-    { id: 'stroom', Icoon: ClipboardCheck, uk: 'Потік і докази', nl: 'Stroom en bewijs' },
-    { id: 'historie', Icoon: History, uk: 'Історія', nl: 'Geschiedenis' },
-    { id: 'log', Icoon: ScrollText, uk: 'Журнал', nl: 'Logboek' },
-    { id: 'diagnose', Icoon: Stethoscope, uk: 'Діагностика', nl: 'Diagnose' },
-    { id: 'instellen', Icoon: Settings2, uk: 'Налаштування', nl: 'Instellingen', badge: klaar ? 0 : 1 },
-  ];
   const lopend = recent.find((r) => r.staat === 'bezig')?.id || '';
   const logId = logRun || lopend || lopendeRun.current || recent[0]?.id || '';
 
-  return <div className='admin-uitrol ut-root' data-admin-uitrol>
+  return <div className='admin-uitrol ut-root' data-admin-uitrol data-ut-tab={tab}>
     <header className='ut-hoofd'>
       <div><h1><PackageCheck aria-hidden='true' /> {tr(lang, 'Оновлення сервера', 'Serverupdates')}</h1>
         <p>{tr(lang, 'Завантажте архів випуску (.tar.gz) — навіть з телефона, схваліть passkey і дивіться установку крок за кроком у реальному часі. Кожен запуск зберігається в історії з повним журналом.', 'Upload een release-archief (.tar.gz) — ook vanaf uw telefoon, keur goed met uw passkey en volg de installatie stap voor stap in real time. Elke run blijft met volledig logboek in de geschiedenis.')}</p></div>
       <button type='button' className='ut-knop' onClick={() => { void laden(); void recenteLaden(tab === 'log' ? 50 : 5); }}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Vernieuwen')}</button>
     </header>
-
-    <TabsRij lang={lang} label={tr(lang, 'Розділи', 'Onderdelen')}>
-      {TABS.map(({ id, Icoon, uk, nl, badge }) => <button key={id} type='button' role='tab' id={`ut-tab-${id}`} aria-selected={tab === id} aria-controls={`ut-paneel-${id}`} className='ut-tab' onClick={() => { if (id === 'log' && lopend) setLogRun(''); setTab(id); }}>
-        <Icoon aria-hidden='true' /><span>{tr(lang, uk, nl)}</span>{badge ? <b className='ut-badge-tel'>{id === 'instellen' ? '!' : badge}</b> : null}</button>)}
-    </TabsRij>
 
     {(notice || herhaal) && <div className='ut-melding' role='status'>
       {notice && <p className='ut-notice' data-ok={notice.ok} data-herstart={notice.herstart || undefined}><span>{notice.text}</span><button type='button' className='ut-notice-x' aria-label={tr(lang, 'Закрити повідомлення', 'Melding sluiten')} onClick={() => setNotice(null)}><X aria-hidden='true' /></button></p>}

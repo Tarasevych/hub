@@ -61,7 +61,7 @@ export async function main(): Promise<number> {
     check('8c op smalle schermen alleen de korte naam, labels breken af binnen hun kolom', /@media \(max-width:640px\)\{\.ut-wiz-balk \.ut-wiz-lang\{display:none\}\.ut-wiz-balk \.ut-wiz-kort\{display:block\}\}\s*$/.test(css) && /overflow-wrap:anywhere/.test(css) && /\.ut-wiz-balk li\{min-width:0\}/.test(css));
     const langste = Math.max(...[...up.matchAll(/kortUk: '([^']+)', kortNl: '([^']+)'/g)].flatMap((m) => [m[1].length, m[2].length]));
     check('8c korte namen ≤ 8 tekens (past in 1/5 van 358 px bij 11 px)', langste <= 8, String(langste));
-    check('8c tabbladen: vervaagde randen + pijlen als er meer is (TabsRij)', lees('src/ontwerp/TabsRij.tsx').includes('meerRechts') /* 21.10: verhuisd uit src/uitrol (technisch) */ && lees('src/BeheerUitrolWeergave.tsx').includes('<TabsRij'));
+    check('8c tabbladen: TabsRij blijft actief voor brede tabrijen (o.a. Diagnostiek); BeheerUitrol gebruikt het gedeelde ankerrail-menu (UPD-007)', lees('src/ontwerp/TabsRij.tsx').includes('meerRechts') && lees('src/diagnostiek/Diagnostiek.tsx').includes('<TabsRij') && !lees('src/BeheerUitrolWeergave.tsx').includes('<TabsRij') && lees('src/BeheerConsoleWeergave.tsx').includes("id:'upd-tab:stroom'"));
   }
 
   // ---------------------------------------------------------------- 8d tijdzone

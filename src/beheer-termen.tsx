@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Code2 } from 'lucide-react';
 
 export type Lang = 'uk' | 'nl';
 
@@ -106,6 +107,23 @@ const TERMS: Record<string, Pair> = {
   grant_only_photos_picker_runtime_not_active: { uk: 'Лише дозвіл Google Photos; вибір фото не активний', nl: 'Alleen Google Photos-toestemming; fotokiezer niet actief' }
 };
 
+/** Коротке пояснення технічного коду для локальної спливаючої підказки (UPD-007). */
+export function termUitleg(lang: Lang, code: string): string {
+  const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+  if (/\.manage$|\.read$/.test(code)) return t('Технічний код повноваження, який сервер перевіряє перед виконанням адміністративної дії.', 'Technische bevoegdheidscode die de server controleert vóór een beheeractie.');
+  if (code.startsWith('owner.')) return t('Внутрішній код події журналу аудиту для звірки з незмінним записом на сервері.', 'Interne gebeurteniscode van het auditlogboek voor controle met de serverregistratie.');
+  if (['owner', 'admin', 'member', 'viewer'].includes(code)) return t('Код рівня участі облікового запису в просторі, за яким діють правила доступу.', 'Code van het deelnameniveau in de ruimte waarop toegangsregels gelden.');
+  if (['approved', 'pending', 'blocked', 'new', 'deleted', 'denied'].includes(code)) return t('Службовий стан облікового запису або звернення у базі даних.', 'Systeemstatus van het account of verzoek in de gegevensbank.');
+  if (['google', 'microsoft', 'internal'].includes(code)) return t('Технічний ідентифікатор постачальника посвідчення або зовнішнього входу.', 'Technische aanduiding van de aanbieder voor aanmelding of identiteit.');
+  if (['none', 'required', 'granted', 'not_granted'].includes(code)) return t('Стан дозволу на доступ до поштової скриньки, повернутий сервером.', 'Status van de postvaktoestemming zoals door de server teruggestuurd.');
+  if (['connected', 'disconnected', 'not_configured', 'configured', 'missing', 'unverified', 'not_connected', 'reauth_required'].includes(code)) return t('Стан підключення зовнішньої служби або каталогу за даними перевірки.', 'Verbindingsstatus van de externe dienst of map volgens de controle.');
+  if (['compliant', 'non_compliant', 'enforced', 'not_enforced', 'none_detected', 'detected', 'not_supported', 'unknown', 'mdm_not_connected', 'edr_not_connected'].includes(code) || /session_|tab_|browser_grant_|remembered_profile_|revoked|expired/.test(code)) {
+    return t('Технічний стан сеансу, пристрою або перевірки відповідності політиці безпеки.', 'Technische status van de sessie, het apparaat of de beleidscontrole.');
+  }
+  if (/sync_token|grant_|calendar_|drive_/.test(code)) return t('Технічний стан синхронізації та дозволів підключеної служби.', 'Technische status van de synchronisatie en machtigingen van de gekoppelde dienst.');
+  return t('Оригінальний технічний код, який повертає сервер для цього поля.', 'Oorspronkelijke technische code die de server voor dit veld teruggeeft.');
+}
+
 /** Підпис мовою сайту для технічного коду. Невідомий код повертається без змін. */
 export const termLabel = (lang: Lang, raw: unknown): string => {
   const code = String(raw ?? '').trim();
@@ -118,9 +136,9 @@ export const termLabel = (lang: Lang, raw: unknown): string => {
 export const termKnown = (raw: unknown) => Boolean(TERMS[String(raw ?? '').trim()]);
 
 /**
- * Показує технічний код мовою сайту.
- * Оригінал завжди доступний у підказці (title), а коли увімкнено «технічні коди» —
- * ще й поруч, щоб адміністратор бачив рівно те, що повертає система.
+ * Показує технічний код мовою сайту (UPD-007):
+ * замість однієї спільної кнопки «Показати технічні коди» біля кожного значення є компактна піктограма,
+ * при наведенні чи фокусі на яку відкривається спливаюче вікно з назвою, технічним кодом і поясненням.
  */
 export function Term({ lang, raw, codes = false }: { lang: Lang; raw: unknown; codes?: boolean }): ReactNode {
   const code = String(raw ?? '').trim();
@@ -128,12 +146,20 @@ export function Term({ lang, raw, codes = false }: { lang: Lang; raw: unknown; c
   const label = termLabel(lang, code);
   const known = termKnown(code);
   if (!known) return <code className='admin-term-code' title={code}>{code}</code>;
-  // Audit 19.10.2026 (A14): de code staat altijd in de DOM; zichtbaar via de prop `codes` OF via de schakelaar van de console
-  // (<main data-codes="ja">, zie beheer-console.css) — zo werkt «Показати технічні коди» ook op plekken die de prop niet doorgeven.
+  const uitleg = termUitleg(lang, code);
+  const infoLabel = lang === 'uk' ? `Технічний код: ${code}` : `Technische code: ${code}`;
   return (
-    <span className='admin-term' title={code} data-codes={codes ? 'ja' : undefined}>
-      {label}
-      <code className='admin-term-code admin-term-code-schakel'>{code}</code>
+    <span className='admin-term' data-tech-code={code} data-codes={codes ? 'ja' : undefined}>
+      <span className='admin-term-tekst'>{label}</span>
+      <span className='admin-term-info' tabIndex={0} role='note' aria-label={`${label} — ${infoLabel}. ${uitleg}`}>
+        <Code2 aria-hidden='true' />
+        <span className='admin-term-popover' role='tooltip'>
+          <strong className='admin-term-popover-titel'>{label}</strong>
+          <code className='admin-term-code'>{code}</code>
+          <span className='admin-term-popover-uitleg'>{uitleg}</span>
+        </span>
+      </span>
+      {codes ? <code className='admin-term-code'>{code}</code> : null}
     </span>
   );
 }

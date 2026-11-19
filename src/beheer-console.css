@@ -98,3 +98,27 @@
   .admin-table article{grid-template-columns:minmax(0,1fr);gap:8px;padding:11px 12px}
   .admin-table article>code{justify-self:start}
 }
+/* Локальна піктограма технічного коду біля кожного значення (UPD-007): при наведенні чи фокусі показує назву, код і пояснення. */
+.admin-term{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}
+.admin-term-info{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;flex:none;border-radius:50%;border:1px solid color-mix(in srgb,var(--text) 18%,var(--line));background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--muted);cursor:help;vertical-align:middle;transition:border-color .14s ease,background-color .14s ease,color .14s ease}
+.admin-term-info>svg{width:11px;height:11px;stroke-width:2.2}
+.admin-term-info:hover,.admin-term-info:focus-visible,.admin-term-info:focus-within{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);outline:none;z-index:40}
+.admin-term-popover{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);z-index:120;display:none;min-width:210px;max-width:min(300px,78vw);padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);box-shadow:0 14px 34px rgba(15,23,42,.22);text-align:left;white-space:normal;font-weight:500;line-height:1.38;pointer-events:none}
+.admin-term-info:hover>.admin-term-popover,.admin-term-info:focus-visible>.admin-term-popover,.admin-term-info:focus-within>.admin-term-popover{display:grid;gap:5px}
+.admin-term-popover-titel{font-size:.8rem;font-weight:700;color:var(--text)}
+.admin-term-popover .admin-term-code{justify-self:start;font-size:.74rem;padding:2px 6px;border-radius:6px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--text)}
+.admin-term-popover-uitleg{font-size:.76rem;color:var(--muted);line-height:1.4}
+@media(max-width:600px){.admin-term-popover{left:0;transform:none}}
+/* Відступи під єдине меню якорів (MaquetteAnkerRail) у звичайних палітрах адмін-консолі (UPD-007). */
+@media(min-width:961px){
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]){--ad-rail:292px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]{--ad-rail:100px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol])):is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-ingeklapt="ja"]{--ad-rail:20px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde="rechts"]{padding-right:var(--ad-rail)}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde="links"]{padding-left:var(--ad-rail)}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde="boven"]{padding-top:92px}
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .admin-console.mq-schil:not(:has([data-admin-uitrol]))[data-mq-rail-zijde="onder"]{padding-bottom:104px}
+}
+@media(max-width:960px){
+  html:not(.palet-maquette) .admin-console.mq-schil{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}

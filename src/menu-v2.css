@@ -40,7 +40,8 @@
 @media(min-width:701px){
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar{width:var(--zijbalk-rail);padding:8px 0 10px}
   .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(316px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
-  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar{background:color-mix(in srgb,var(--panel) 100%,var(--bg));box-shadow:14px 0 38px color-mix(in srgb,#000 18%,transparent)}
+  .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar-edge-zone{width:calc(var(--zijbalk-rail) - 36px)}
   .canonical-chrome:not(.sidebar-expanded):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
 }
@@ -120,8 +121,9 @@
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-main-row{justify-items:center;width:100%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-button{grid-template-columns:1fr;justify-items:center;width:44px;height:44px;min-height:44px;margin-inline:auto;padding:0;border-radius:50%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages small{display:none}
-.canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center}
+.canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center;justify-self:center}
 /* het submenu: een verticale strook (de «verbindingslijn») in een heel lichte tint van het onderdeel */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages:empty{display:none}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages{justify-items:center;box-sizing:border-box;width:44px;min-width:0;margin:2px auto 6px;padding:4px 0;border-radius:22px;background:color-mix(in srgb,var(--a,var(--accent)) 7%,color-mix(in srgb,var(--surface) 70%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button{display:grid;grid-template-columns:1fr;place-items:center;box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;margin:1px auto;padding:0;border-radius:50%;overflow:hidden}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.canonical-local-page-button>svg){width:17px;height:17px;min-width:17px}
@@ -143,8 +145,9 @@
 /* breed: ook het eigen submenu van E-mail krijgt de getinte verbindingslijn (zoals de andere submenu's) */
 .canonical-chrome.sidebar-expanded .canonical-local-navigation-slot{margin:0 0 6px 22px;padding-left:6px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 .canonical-chrome.sidebar-expanded .canonical-service-button{justify-self:start;width:fit-content;max-width:100%;padding-right:16px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-service-button:has(.menu-herkomst){padding-block:5px;line-height:1.18}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot){margin:0 0 6px 22px;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
-.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:32px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:34px;padding:0 12px 0 2px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:34px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:36px;padding:0 12px 0 4px;border-radius:999px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) .canonical-local-label{padding-right:2px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) small{margin-right:0;margin-left:6px}
 .canonical-chrome .canonical-service-button:focus-visible,.canonical-chrome .canonical-local-page-button:focus-visible{outline:2px solid color-mix(in srgb,var(--a,var(--accent)) 70%,transparent);outline-offset:1px}
@@ -366,12 +369,12 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome[data-dock='rechts']:is(.sidebar-hover,[data-menu-bewerken='ja']:not(.sidebar-pinned)) .canonical-sidebar{box-shadow:-18px 0 46px var(--shadow)}
   .canonical-chrome[data-dock='rechts'] .canonical-sidebar-edge-zone{inset:0 0 0 auto}
   .canonical-chrome[data-dock='rechts'] .canonical-workspace{padding-left:24px!important;padding-right:var(--zijbalk-rail)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-workspace{padding-right:340px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding-right:340px}
   .canonical-chrome[data-dock='rechts'][data-focus-mode='mail'] .canonical-workspace{padding-right:24px}
   .canonical-chrome[data-dock='rechts'] .canonical-account-anchor{right:calc(var(--zijbalk-rail) + 12px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-account-anchor{right:330px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-account-anchor{right:330px}
   .canonical-chrome[data-dock='rechts'] .canonical-notification-toast{right:calc(var(--zijbalk-rail) + 18px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-notification-toast{right:358px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-notification-toast{right:358px}
   .canonical-chrome[data-dock='rechts'] .zijbalk-werkbalk-paneel{left:auto;right:calc(var(--zijbalk-rail) + 6px)}
   .canonical-chrome[data-dock='rechts'] .google-mail-reader-backdrop{left:0;right:var(--zijbalk-rail)}
   .canonical-chrome[data-dock='rechts'].sidebar-expanded :is(.canonical-local-pages:not(.canonical-local-navigation-slot),.canonical-local-navigation-slot){margin:0 22px 6px 0;padding-left:0;padding-right:8px;border-left:0;border-right:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
@@ -513,16 +516,12 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-bellen-legenda-item[data-categorie='delen']>i{background:var(--mb-delen)}
 .menu-bellen-legenda-item[data-categorie='ai']>i{background:var(--mb-ai)}
 
-/* Ярлики кнопок технічного профілю (логотип профілю ShieldCheck + суцільний значок і контур обраного кольору технічної смуги без білого обода). */
+/* Ярлики кнопок технічного профілю (UPD-007: охайне кругле обведення піктограми обраним кольором технічної смуги, без півмісяця зліва та без дубльованого маленького щитка). */
 .canonical-chrome :is(.canonical-menu-icon-slot,.menu-start-icoon),.menu-snel-voorbeeld{position:relative}
-.canonical-chrome [data-tech-yarlyk='ja']>.canonical-service-main-row .canonical-menu-icon-slot{width:30px;height:30px}
+.canonical-chrome [data-tech-yarlyk='ja']>.canonical-service-main-row .canonical-menu-icon-slot{width:32px;height:32px}
 .canonical-chrome .canonical-local-page-button[data-tech-yarlyk='ja'] .canonical-menu-icon-slot{width:26px;height:26px}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button[data-tech-yarlyk='ja']{overflow:visible}
 .canonical-chrome [data-tech-yarlyk='ja'] :is(.canonical-menu-icon-slot,.menu-start-icoon),
 .menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 12%,transparent)}
 .canonical-chrome .menu-start-tegel[data-tech-yarlyk='ja']{border-color:var(--tech-profiel-kleur,#f2b705);box-shadow:inset 0 0 0 1px var(--tech-profiel-kleur,#f2b705)}
-.canonical-chrome.sidebar-expanded [data-tech-yarlyk='ja']>.canonical-service-main-row>.canonical-service-button,
-.canonical-chrome.sidebar-expanded .canonical-local-page-button[data-tech-yarlyk='ja']{box-shadow:inset 3px 0 0 var(--tech-profiel-kleur,#f2b705)}
 .menu-snel-lijst>li[data-tech-yarlyk='ja']{border-color:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 55%,var(--line));background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 6%,var(--panel))}
-.tech-yarlyk-schild{position:absolute;left:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:var(--tech-profiel-kleur,#f2b705);color:var(--tech-profiel-tekst,#1d1300);box-shadow:0 1px 3px rgba(0,0,0,.24);pointer-events:none;z-index:2}
-:is(.canonical-chrome .canonical-menu-icon-slot,.canonical-chrome .menu-start-icoon,.menu-snel-voorbeeld) .tech-yarlyk-schild>svg,.tech-yarlyk-schild>svg{width:11px;height:11px;stroke-width:2.3;color:inherit}

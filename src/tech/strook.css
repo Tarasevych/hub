@@ -8,96 +8,153 @@
    • bij aanwijzen wordt een knop iets groter en verschijnt zijn naam (als die niet al zichtbaar is).
    Specificiteit is zo gekozen dat de volgorde van de imports (tech.css, ruimtes.css) niet uitmaakt. */
 
-/* ---------------------------------------------------------------- hoogtes */
-html[data-tech=aan]{--tech-strook-h:24px;--tech-band-vol:40px}
-html[data-tech=aan][data-tech-grootte=klein]{--tech-band-vol:36px}
-html[data-tech=aan][data-tech-grootte=groot]{--tech-band-vol:50px}
+/* ---------------------------------------------------------------- hoogtes (UPD-007: єдиний стабільний розмір) */
+html[data-tech=aan]{--tech-strook-h:6px;--tech-band-vol:38px}
 @media (max-width:768px){
-  html[data-tech=aan]{--tech-band-vol:44px}
-  html[data-tech=aan][data-tech-grootte=klein]{--tech-band-vol:40px}
-  html[data-tech=aan][data-tech-grootte=groot]{--tech-band-vol:48px}
+  html[data-tech=aan]{--tech-strook-h:28px;--tech-band-vol:44px}
 }
 /* Gereserveerd (= top van #root): volle hoogte bij «Розгорнуто», de dunne strook bij «Згорнуто»/«Автоматично». Nooit afhankelijk van
    het uitschuiven (is-piek): dat ligt over de pagina heen. */
 html[data-tech=aan]:not([data-tech-ingeklapt='1']){--tech-band-h:var(--tech-band-vol)}
 html[data-tech=aan][data-tech-ingeklapt='1']{--tech-band-h:var(--tech-strook-h)}
-html[data-tech=aan] .tech-band.is-piek{height:var(--tech-band-vol);box-shadow:0 14px 36px rgba(0,0,0,.24)}
+html[data-tech=aan] .tech-band{transition:height .16s ease,box-shadow .16s ease}
+html[data-tech=aan] .tech-band.is-piek{height:var(--tech-band-vol);box-shadow:0 12px 32px rgba(0,0,0,.26)}
 
-/* ---------------------------------------------------------------- volle band: stijl van de vensters */
-html[data-tech=aan] .tech-band:not(.is-ingeklapt){background-color:var(--panel,#fff);background-image:none;color:var(--text,#0f172a);border-bottom:1px solid var(--line,#d7dee8);overflow:visible;gap:10px}
-/* Bandkleur als lijn bovenaan (met het gekozen patroon), zodat in- en uitschuiven één doorlopende strook blijft. */
-html[data-tech=aan] .tech-band:not(.is-ingeklapt)::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background-color:var(--tech-band-bg);pointer-events:none}
-html[data-tech-patroon=strepen] .tech-band:not(.is-ingeklapt)::before{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(0,0,0,.2) 6px 12px)}
-html[data-tech-patroon=stippen] .tech-band:not(.is-ingeklapt)::before{background-image:radial-gradient(rgba(0,0,0,.22) 1px,transparent 1.2px);background-size:6px 4px}
-html[data-tech=aan] .tech-band .tech-band-merk{background:var(--tech-band-bg);color:var(--tech-band-fg);border:1px solid color-mix(in srgb,var(--tech-band-fg) 28%,transparent)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-id,html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-tijd{color:var(--text,#0f172a)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-reden{color:var(--muted,#475569);opacity:1}
+/* ---------------------------------------------------------------- volle band (UPD-007: у кольорі технічного профілю, компактна й цілісна) */
+html[data-tech=aan] .tech-band:not(.is-ingeklapt){
+  background-color:var(--tech-band-bg);
+  background-image:linear-gradient(180deg,color-mix(in srgb,#fff 12%,transparent) 0%,transparent 58%,color-mix(in srgb,#000 10%,transparent) 100%);
+  color:var(--tech-band-fg);
+  border-bottom:1px solid color-mix(in srgb,var(--tech-band-fg) 22%,transparent);
+  overflow:visible;
+  gap:8px;
+  padding:0 10px 0 12px;
+  font-size:13px;
+}
+html[data-tech=aan][data-tech-patroon=strepen] .tech-band:not(.is-ingeklapt){
+  background-image:repeating-linear-gradient(135deg,transparent 0 14px,color-mix(in srgb,var(--tech-band-fg) 9%,transparent) 14px 28px),linear-gradient(180deg,color-mix(in srgb,#fff 10%,transparent) 0%,transparent 100%);
+}
+html[data-tech=aan][data-tech-patroon=stippen] .tech-band:not(.is-ingeklapt){
+  background-image:radial-gradient(color-mix(in srgb,var(--tech-band-fg) 14%,transparent) 1.4px,transparent 1.6px),linear-gradient(180deg,color-mix(in srgb,#fff 10%,transparent) 0%,transparent 100%);
+  background-size:10px 10px,100% 100%;
+}
+html[data-tech=aan] .tech-band .tech-band-merk{
+  padding:2px 8px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--tech-band-fg) 14%,transparent);
+  color:var(--tech-band-fg);
+  border:1px solid color-mix(in srgb,var(--tech-band-fg) 24%,transparent);
+  font-size:11.5px;
+  letter-spacing:.05em;
+}
+html[data-tech=aan] .tech-band .tech-band-merk svg{width:14px;height:14px}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-id,
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-tijd{color:var(--tech-band-fg);font-size:12.5px}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-reden{color:var(--tech-band-fg);opacity:.86;font-size:12.5px}
 
-/* Knoppen: elk een eigen vlak met rand en ruimte ertussen (zoals de knoppen in de vensters). */
-.tech-band .tech-band-knoppen{gap:6px;align-items:center}
+/* Кнопки на смузі: компактні, гармонійні, сучасні пігулки в тон обраного кольору смуги */
+.tech-band .tech-band-knoppen{gap:5px;align-items:center}
 .tech-band .tech-band-knoppen>.tech-strook-item{position:relative;display:inline-flex;align-items:center;flex:none;margin:0;transition:transform .14s ease}
 html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button,
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;min-width:32px;padding:0 10px;border:1px solid var(--line,#d7dee8);border-radius:9px;background:var(--surface,#f8fafc);color:var(--text,#0f172a);font:600 13.5px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;box-shadow:none;cursor:pointer}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button svg{width:16px;height:16px}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button:hover{background:color-mix(in srgb,var(--accent,#2563eb) 10%,var(--surface,#f8fafc));border-color:color-mix(in srgb,var(--accent,#2563eb) 45%,var(--line,#d7dee8))}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-uit{background:var(--panel,#fff);color:var(--fout,#b91c1c);border-color:color-mix(in srgb,var(--fout,#b91c1c) 50%,var(--line,#d7dee8))}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-uit:hover{background:color-mix(in srgb,var(--fout,#b91c1c) 9%,var(--panel,#fff))}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-hier{background:var(--info-vlak,#dbeafe);border-color:var(--info,#2563eb);color:var(--text-on-vlak,#0f172a);box-shadow:none}
-html[data-tech=aan] .tech-band .tech-band-knoppen>.tech-strook-item>button:focus-visible{outline:3px solid var(--venster-actief,var(--focus,#2563eb));outline-offset:2px}
-/* Vaste knoppen (modus, «⋯», instellingen): alleen een pictogram, de naam verschijnt bij aanwijzen. */
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item.is-vast>button{width:34px;min-width:34px;padding:0}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  height:28px;min-height:28px;min-width:28px;padding:0 10px;
+  border:1px solid color-mix(in srgb,var(--tech-band-fg) 24%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--tech-band-fg) 10%,transparent);
+  color:var(--tech-band-fg);
+  font:600 12.5px/1.15 Inter,ui-sans-serif,system-ui,sans-serif;
+  box-shadow:none;cursor:pointer;
+  transition:background-color .14s ease,border-color .14s ease,color .14s ease;
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button svg,
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop svg{width:15px;height:15px}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button:hover,
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop:hover{
+  background:color-mix(in srgb,var(--tech-band-fg) 20%,transparent);
+  border-color:color-mix(in srgb,var(--tech-band-fg) 42%,transparent);
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-uit{
+  background:var(--tech-band-fg);
+  color:var(--tech-band-bg);
+  border-color:var(--tech-band-fg);
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-uit:hover{
+  opacity:.9;
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button.is-hier{
+  background:var(--tech-band-fg);
+  border-color:var(--tech-band-fg);
+  color:var(--tech-band-bg);
+  box-shadow:none;
+}
+html[data-tech=aan] .tech-band .tech-band-knoppen>.tech-strook-item>button:focus-visible,
+html[data-tech=aan] .tech-band .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop:focus-visible{outline:2px solid var(--tech-band-fg);outline-offset:2px}
+/* Vaste knoppen (modus, «⋯», instellingen): alleen een pictogram, compact 28×28. */
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item.is-vast>button{width:28px;min-width:28px;padding:0}
 html[data-tech=aan] .tech-band .tech-band-knoppen>.tech-strook-item.is-vast>button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .tech-band .tech-band-knoppen>.tech-strook-item[data-overvol]{display:none!important}
-/* Ruimtewissel op het vlak van de band: de gewone kleuren van de wissel (thema-bewust), niet die van de gekleurde band. */
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg{background:var(--rw-spoor);box-shadow:inset 0 0 0 1px var(--rw-rand)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-knop{color:var(--rw-tekst)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg .rw-schuif{background:var(--rw-prive)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg[data-stand=technisch] .rw-schuif{background:var(--rw-tech)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-prive[aria-checked=true]{color:var(--rw-prive-fg)}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-tech[aria-checked=true]{color:var(--rw-tech-fg)}
+/* Ruimtewissel op de gekleurde band: compact, één regel en in toon van de band. */
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-schakel{
+  min-height:28px;height:28px;gap:7px;padding:0 10px 0 3px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--tech-band-fg) 24%,transparent);
+  background:color-mix(in srgb,var(--tech-band-fg) 10%,transparent);
+  color:var(--tech-band-fg);
+  font-size:12px;line-height:1.1;
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-schakel:hover{
+  background:color-mix(in srgb,var(--tech-band-fg) 20%,transparent);
+  border-color:color-mix(in srgb,var(--tech-band-fg) 42%,transparent);
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-spoor{
+  width:36px;height:20px;padding:3px;
+  background:color-mix(in srgb,var(--tech-band-fg) 24%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tech-band-fg) 32%,transparent);
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-bol{
+  width:14px;height:14px;
+  background:var(--tech-band-fg);
+  color:var(--tech-band-bg);
+}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-bol svg{width:10px;height:10px}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked=true] .rw-bol{transform:translateX(16px)}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-label{flex-direction:row;align-items:baseline;gap:5px}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-aanuit{font-size:11px;opacity:.82}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg{background:color-mix(in srgb,var(--tech-band-fg) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tech-band-fg) 26%,transparent)}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-knop{color:var(--tech-band-fg)}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg .rw-schuif,
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-seg[data-stand=technisch] .rw-schuif{background:var(--tech-band-fg)}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-prive[aria-checked=true],
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .rw-tech[aria-checked=true]{color:var(--tech-band-bg)}
 @media (max-width:768px){
   /* telefoon: tikvlak 44 px (de band is daar 44 px hoog), ook voor de vaste menuknop */
-  html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button{min-height:var(--tik-hoogte,44px);min-width:var(--tik-hoogte,44px)}
+  html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button{height:auto;min-height:var(--tik-hoogte,44px);min-width:var(--tik-hoogte,44px)}
   html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item.is-vast>button{width:auto;min-width:var(--tik-hoogte,44px);border:0;background:transparent}
 }
 
-/* Grootte: klein / middel (standaard) / groot. */
-html[data-tech=aan][data-tech-grootte=klein] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button{min-height:26px;padding:0 8px;font-size:12.5px;gap:4px}
-html[data-tech=aan][data-tech-grootte=klein] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button svg{width:14px;height:14px}
-html[data-tech=aan][data-tech-grootte=klein] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item.is-vast>button{width:28px;min-width:28px;padding:0}
-html[data-tech=aan][data-tech-grootte=groot] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button{min-height:38px;padding:0 13px;font-size:15px;gap:7px}
-html[data-tech=aan][data-tech-grootte=groot] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item>button svg{width:20px;height:20px}
-html[data-tech=aan][data-tech-grootte=groot] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item.is-vast>button{width:40px;min-width:40px;padding:0}
-
-/* Vorm: «лише піктограми» (de naam blijft voor schermlezers), «піктограми з написами», «лише написи». */
+/* Режими кнопок: «Піктограми» (iconen) та «Піктограми з назвами» (beide). */
 .tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item>button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item>button{padding:0 8px}
-.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item:not(.is-vast)>button svg{display:none}
-.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item:not(.is-vast)>button{gap:0}
-/* De belknop (TechMeldingen.tsx) heeft geen eigen tekst: bij «лише написи» een naam via CSS, anders bleef er een leeg vlak. */
-.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop{gap:6px}
-.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop::before{content:'Сповіщення'}
-html[lang=nl] .tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item>.tech-meldingen-knop::before{content:'Meldingen'}
-/* «Лише написи» blijft tekst, ook als de band moet versmallen (tech.css zou bij data-pas 1/2 de tekst verbergen → lege knoppen). */
-.tech-band[data-tech-label=tekst] .tech-band-knoppen>.tech-strook-item:not(.is-vast)>button span{position:static!important;width:auto!important;height:auto!important;overflow:visible!important;clip:auto!important;white-space:nowrap}
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item>button{width:28px;min-width:28px;padding:0}
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item .rw-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tech-band[data-tech-label=iconen] .tech-band-knoppen>.tech-strook-item .rw-schakel{padding:0 4px;gap:0}
 /* Stand 2 (smal): ook geen rollen en geen reden meer (die staan in de titel en in «Доступ і терміни»). */
 .tech-band[data-pas="2"] .tech-band-id,.tech-band[data-pas="2"] .tech-band-reden{display:none}
 
-/* Aanwijzen: de knop wordt iets groter en zijn naam verschijnt als tekstwolkje eronder (eigenaar 03.11.2026). Geen title-attribuut:
-   dat zou een tweede, trage wolk geven. Het wolkje is display:none tot het aanwijzen, zodat het de meting van de breedte niet raakt. */
+/* Спливаючі підказки: показуються при наведенні в режимі піктограм (і для фіксованих кнопок), але повністю вимикаються, якщо data-tech-tooltips="0". */
 html[data-tech=aan] .tech-band:not(.is-ingeklapt):not(.is-slepen) .tech-band-knoppen>.tech-strook-item:hover,
-html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item:has(:focus-visible){transform:scale(1.1);z-index:3}
-.tech-band .tech-strook-item::after{content:attr(data-label);position:absolute;top:calc(100% + 7px);left:50%;translate:-50% 0;z-index:99010;display:none;padding:4px 8px;border-radius:7px;background:var(--text,#0f172a);color:var(--panel,#fff);font:600 12px/1.25 Inter,system-ui,sans-serif;white-space:nowrap;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.22)}
+html[data-tech=aan] .tech-band:not(.is-ingeklapt) .tech-band-knoppen>.tech-strook-item:has(:focus-visible){transform:translateY(-1px);z-index:3}
+.tech-band .tech-strook-item::after{content:attr(data-label);position:absolute;top:calc(100% + 7px);left:50%;translate:-50% 0;z-index:99010;display:none;padding:4px 9px;border-radius:8px;background:var(--panel,#0f172a);color:var(--text,#f8fafc);border:1px solid var(--line,rgba(148,163,184,.28));font:600 12px/1.25 Inter,system-ui,sans-serif;white-space:nowrap;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.24)}
 .tech-band .tech-strook-vast-instel::after,.tech-band .tech-strook-vast-meer::after{left:auto;right:0;translate:none}
-html[data-tech=aan] .tech-band:not(.is-ingeklapt):not(.is-slepen) .tech-strook-item.is-vast:is(:hover,:has(:focus-visible))::after,
-html[data-tech=aan] .tech-band[data-tech-label=iconen]:not(.is-ingeklapt):not(.is-slepen) .tech-strook-item:is(:hover,:has(:focus-visible))::after,
-html[data-tech=aan] .tech-band:is([data-pas="1"],[data-pas="2"]):not([data-tech-label=tekst]):not(.is-ingeklapt):not(.is-slepen) .tech-strook-item:is(:hover,:has(:focus-visible))::after{display:block}
+html[data-tech=aan] .tech-band[data-tech-tooltips="1"]:not(.is-ingeklapt):not(.is-slepen) .tech-strook-item.is-vast:is(:hover,:has(:focus-visible))::after,
+html[data-tech=aan] .tech-band[data-tech-tooltips="1"][data-tech-label=iconen]:not(.is-ingeklapt):not(.is-slepen) .tech-strook-item:is(:hover,:has(:focus-visible))::after,
+html[data-tech=aan] .tech-band[data-tech-tooltips="1"]:is([data-pas="1"],[data-pas="2"]):not(.is-ingeklapt):not(.is-slepen) .tech-strook-item:is(:hover,:has(:focus-visible))::after{display:block}
+html[data-tech=aan] .tech-band[data-tech-tooltips="0"] .tech-strook-item::after{display:none!important}
 
 /* Slepen op de strook: de gesleepte knop half doorzichtig, een streep waar hij terechtkomt. */
 .tech-band .tech-strook-item[draggable=true]{cursor:grab}
 .tech-band .tech-strook-item.is-sleept{opacity:.45}
-.tech-band .tech-strook-item.is-doel-voor{box-shadow:-4px 0 0 -1px var(--accent,#2563eb);border-radius:9px}
-.tech-band .tech-strook-item.is-doel-na{box-shadow:4px 0 0 -1px var(--accent,#2563eb);border-radius:9px}
+.tech-band .tech-strook-item.is-doel-voor{box-shadow:-3px 0 0 0 var(--tech-band-fg);border-radius:999px}
+.tech-band .tech-strook-item.is-doel-na{box-shadow:3px 0 0 0 var(--tech-band-fg);border-radius:999px}
 
 /* Snelle knoppen die de gebruiker zelf op de strook zette: alleen op een breed scherm (op de telefoon blijven ze in de lijst ⋯). */
 @media (max-width:768px){
@@ -108,20 +165,33 @@ html[data-tech=aan] .tech-band:is([data-pas="1"],[data-pas="2"]):not([data-tech-
 }
 
 /* ---------------------------------------------------------------- dunne strook («Згорнуто», «Автоматично») */
-html[data-tech=aan] .tech-band.is-ingeklapt{height:var(--tech-strook-h);padding:0 6px 0 8px;gap:8px;border-bottom-width:0;font-size:12px;cursor:pointer;overflow:hidden}
-.tech-band.is-ingeklapt .tech-band-merk{padding:1px 7px;font-size:12px;letter-spacing:.04em;background:var(--tech-band-fg);color:var(--tech-band-bg);border:0}
-.tech-band.is-ingeklapt .tech-band-merk svg{width:12px;height:12px}
-.tech-band.is-ingeklapt .tech-band-tijd{font-size:12px;font-weight:600}
-.tech-band.is-ingeklapt .tech-band-tijd svg{width:13px;height:13px}
-.tech-band.is-ingeklapt .tech-band-id,.tech-band.is-ingeklapt .tech-band-reden{display:none!important}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item{display:none}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus{display:inline-flex}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus>button{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:18px;height:18px;padding:0 6px;border:1px solid currentColor;border-radius:6px;background:transparent;color:var(--tech-band-fg);font:600 12px/1 Inter,system-ui,sans-serif;cursor:pointer}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus>button svg{width:14px;height:14px}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus>button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus>button:focus-visible{outline:3px solid var(--venster-actief,var(--focus,#2563eb));outline-offset:1px}
+/* На ПК: чиста тонка смужка завтовшки 6px у кольорі технічного профілю (без другого проміжного розміру). */
+@media (min-width:769px){
+  html[data-tech=aan] .tech-band.is-ingeklapt{
+    height:var(--tech-strook-h);
+    padding:0;
+    gap:0;
+    border-bottom:0;
+    cursor:pointer;
+    overflow:hidden;
+    box-shadow:0 1px 6px color-mix(in srgb,var(--tech-band-bg) 35%,transparent);
+  }
+  html[data-tech=aan] .tech-band.is-ingeklapt > *{
+    opacity:0;
+    pointer-events:none;
+    height:0;
+    overflow:hidden;
+  }
+}
 @media (max-width:768px){
   /* telefoon: in de strook alleen label, tijd en de menuknop (tikvlak via ::after ≥ 44 px, tech.css) */
+  html[data-tech=aan] .tech-band.is-ingeklapt{height:var(--tech-strook-h);padding:0 6px 0 8px;gap:8px;border-bottom-width:0;font-size:12px;cursor:pointer;overflow:hidden}
+  .tech-band.is-ingeklapt .tech-band-merk{padding:1px 7px;font-size:11.5px;letter-spacing:.04em;background:var(--tech-band-fg);color:var(--tech-band-bg);border:0}
+  .tech-band.is-ingeklapt .tech-band-merk svg{width:12px;height:12px}
+  .tech-band.is-ingeklapt .tech-band-tijd{font-size:12px;font-weight:600}
+  .tech-band.is-ingeklapt .tech-band-tijd svg{width:13px;height:13px}
+  .tech-band.is-ingeklapt .tech-band-id,.tech-band.is-ingeklapt .tech-band-reden{display:none!important}
+  .tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-item{display:none}
   .tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-meer{display:inline-flex}
   .tech-band.is-ingeklapt .tech-band-knoppen>.tech-strook-vast-modus{display:none}
   .tech-band.is-ingeklapt .tech-band-knoppen .tech-band-meer{min-height:22px;height:22px;color:var(--tech-band-fg)}

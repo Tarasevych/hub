@@ -383,13 +383,14 @@ export default function TechLaag() {
     if (id === 'instel') open = () => setInstelOpen(true);
     const kiesbaar = STROOK_KNOP_IDS.includes(id) && (!!m || id === 'meldingen' || id === 'uit' || (id === 'wissel' && v2));
     return knopMenu({
-      uk, id, naam: labelVan(id), plek: voorkeur.knoppen.indexOf(id), aantal: voorkeur.knoppen.length, kiesbaar, modus, label: voorkeur.label, open, url: m?.url, extra,
+      uk, id, naam: labelVan(id), plek: voorkeur.knoppen.indexOf(id), aantal: voorkeur.knoppen.length, kiesbaar, modus, label: voorkeur.label, tooltips: voorkeur.tooltips, open, url: m?.url, extra,
       acties: {
         naarPlek: (p) => zetVoorkeur(zetOp(voorkeur, id, p)),
         wegVanStrook: () => zetVoorkeur(zetAan(voorkeur, id, false)),
         opStrook: () => zetVoorkeur(zetAan(voorkeur, id, true)),
         zetModus: (mm) => zetVoorkeur(metModus(voorkeur, mm)),
         zetLabel: (l) => zetVoorkeur({ ...voorkeur, label: l }),
+        zetTooltips: (aan) => zetVoorkeur({ ...voorkeur, tooltips: aan }),
         instellingen: () => setInstelOpen(true),
         nieuwTabblad: (u) => { window.open(u, '_blank', 'noopener'); },
         kopieer: (u) => { void navigator.clipboard?.writeText(u).catch(() => undefined); },
@@ -424,7 +425,7 @@ export default function TechLaag() {
   return (
     <>
       {actief && t.activatie ? (
-        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${bandIngeklapt && volledig ? ' is-piek' : ''}${sleep ? ' is-slepen' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-open={volledig ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-grootte={voorkeur.grootte} data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
+        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${bandIngeklapt && volledig ? ' is-piek' : ''}${sleep ? ' is-slepen' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-open={volledig ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-tooltips={voorkeur.tooltips ? '1' : '0'} data-tech-grootte='middel' data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
           onClick={bandIngeklapt && !volledig ? klikStrook : undefined}>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}{remoteN > 0 ? <i className='tech-remote-actief' data-tech-remote={remoteN} role='status' title={uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}>●<span className='tech-remote-tekst'>{uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}</span></i> : null}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>

@@ -251,15 +251,18 @@ export async function main(): Promise<number> {
   const verborgenKnopRegel = alleKlassiekRegels.some((r) =>
     r.decls.some((d) => d.eig === 'display' && d.waarde === 'none'),
   );
+  const termenTsx = readFileSync('src/beheer-termen.tsx', 'utf8');
   check(
-    'смуга .admin-title ущільнена в однорядкову ділову панель (min-height: 46px, border-radius: 16px), а всі робочі кнопки (.admin-codes-toggle, Оновити та дії вкладок) повністю збережені',
+    'смуга .admin-title ущільнена в однорядкову ділову панель (min-height: 46px, border-radius: 16px), спільної кнопки .admin-codes-toggle немає (локальні піктограми .admin-term-info), а всі робочі дії вкладок збережені',
     titleKaart.get('min-height') === '46px' &&
       titleKaart.get('padding') === '8px 14px' &&
       titleKaart.get('border-radius') === '16px' &&
       titleKaart.get('background') === 'var(--mq-oppervlak)' &&
       titleKaart.get('background-image') === 'none' &&
       !verborgenKnopRegel &&
-      consoleTsx.includes("className='admin-codes-toggle'") &&
+      !consoleTsx.includes("className='admin-codes-toggle'") &&
+      termenTsx.includes("className='admin-term-info'") &&
+      termenTsx.includes("className='admin-term-popover'") &&
       consoleTsx.includes("tr(lang,'Оновити','Vernieuwen')") &&
       consoleTsx.includes("tr(lang,'Зберегти політику','Beleid opslaan')") &&
       consoleTsx.includes("tr(lang,'Зберегти політику єдиного входу','Beleid voor eenmalige aanmelding opslaan')") &&

@@ -134,17 +134,19 @@ export async function main(): Promise<number> {
     && /techSnelkoppelingenZetten/.test(toegang)
     && /ShieldCheck/.test(toegang));
 
-  check('меню, редактор швидкого доступу та стилі позначають ярлики щитом і кольором профілю',
+  check('меню, редактор швидкого доступу та стилі позначають ярлики чистим круглим обведенням кольором профілю без півмісяця й дубльованого щитка (UPD-007)',
     /data-tech-yarlyk/.test(bewerker)
-    && /tech-yarlyk-schild/.test(bewerker)
+    && !/tech-yarlyk-schild/.test(bewerker)
     && /data-snel-deel/.test(bewerker)
     && /data-tech-yarlyk/.test(omlijsting)
-    && /tech-yarlyk-schild/.test(omlijsting)
+    && !/tech-yarlyk-schild/.test(omlijsting)
     && /--tech-profiel-kleur/.test(omlijsting)
     && /zijbalkKopieInRuimte/.test(omlijsting)
     && /extraActies/.test(acties)
     && /ander-deel/.test(acties)
-    && /\.tech-yarlyk-schild\{/.test(css)
+    && !/\.tech-yarlyk-schild\{/.test(css)
+    && !/inset 3px 0 0 var\(--tech-profiel-kleur/.test(css)
+    && /box-shadow:0 0 0 2px var\(--tech-profiel-kleur/.test(css)
     && /--tech-profiel-kleur/.test(css));
 
   return einde();

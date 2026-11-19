@@ -3,8 +3,8 @@
 // een eigen onderbalk (Огляд / Картотека / + / Мапа / Ще), geregistreerd in scripts/plaatsing-vaste-elementen.json.
 // De onderdelen zelf zijn eigendom van de uitvoerders C3/D3; dit bestand regelt navigatie, kop, meldingen en gedeelde props.
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { CircleCheckBig, GitCompareArrows, History, LayoutDashboard, Library, MoreHorizontal, Plug2, Plus, Rocket, Search, Sparkles } from 'lucide-react';
-import { AFSTEMMING_SECTIES, SECTIE_LABEL, afstemmingTekst, type AfstemmingSectie } from '../../shared/afstemming-model';
+import { Plus, Search } from 'lucide-react';
+import { AFSTEMMING_SECTIES, type AfstemmingSectie } from '../../shared/afstemming-model';
 import { afstemmingClient, AfstemmingFout, type Overzicht as OverzichtUit } from './afstemming-client';
 import { foutTekst, tr, useSmal, type Lang } from './tekst';
 import './afstemming.css';
@@ -21,10 +21,6 @@ const Geschiedenis = lazy(() => import('./onderdelen/Geschiedenis'));
 const Bronnen = lazy(() => import('./onderdelen/Bronnen'));
 const Toevoegen = lazy(() => import('./onderdelen/Toevoegen'));
 
-const ICOON: Record<AfstemmingSectie, typeof Library> = {
-  overzicht: LayoutDashboard, kartotheek: Library, 'kaart-grafiek': GitCompareArrows, controles: CircleCheckBig,
-  releases: Rocket, mogelijkheden: Sparkles, geschiedenis: History, bronnen: Plug2,
-};
 export type OnderdeelProps = {
   lang: Lang; smal: boolean; sourceOrigin: string; tabContext: string;
   ov: OverzichtUit | null; vernieuw: () => Promise<void>; toon: (t: string) => void;
@@ -108,10 +104,6 @@ export default function AfstemmingPagina({ lang, sourceOrigin, tabContext }: { l
       default: return <Overzicht {...props} />;
     }
   };
-  const navKnop = (s: AfstemmingSectie) => { const I = ICOON[s]; return (
-    <button key={s} type='button' className={sectie === s ? 'is-actief' : ''} aria-current={sectie === s ? 'page' : undefined} onClick={() => naarSectie(s)} data-afv-nav={s}>
-      <I aria-hidden='true' /><span>{afstemmingTekst(SECTIE_LABEL[s], lang)}</span>
-    </button>); };
 
   return (
     <section className={`afv${smal ? ' is-smal' : ''}`} data-afv-sectie={sectie} aria-labelledby='afv-kop'>
@@ -134,26 +126,12 @@ export default function AfstemmingPagina({ lang, sourceOrigin, tabContext }: { l
       {fout ? <p className='afv-melding is-fout' role='alert'>{fout}</p> : null}
       {melding ? <p className='afv-toost' role='status' aria-live='polite'>{melding}</p> : null}
       <div className='afv-romp'>
-        {!smal ? <nav className='afv-zijnav' aria-label={tr(lang, 'Розділи звірки', 'Onderdelen van de afstemming')}>{AFSTEMMING_SECTIES.map(navKnop)}</nav> : null}
         <div className='afv-inhoud'>
           <Suspense fallback={<p className='afv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>{onderdeel()}</Suspense>
         </div>
       </div>
       {toevoegen ? (
         <Suspense fallback={null}><Toevoegen {...props} onSluit={() => setToevoegen(false)} /></Suspense>
-      ) : null}
-      {smal ? (
-        <nav className='afv-onderbalk' aria-label={tr(lang, 'Розділи', 'Onderdelen')}>
-          {(['overzicht', 'kartotheek'] as AfstemmingSectie[]).map((s) => { const I = ICOON[s]; return <button key={s} type='button' className={sectie === s ? 'is-actief' : ''} aria-current={sectie === s ? 'page' : undefined} onClick={() => naarSectie(s)} data-afv-onderbalk={s}><I aria-hidden='true' /><span>{afstemmingTekst(SECTIE_LABEL[s], lang)}</span></button>; })}
-          <button type='button' className='afv-plus' onClick={() => setToevoegen(true)} aria-label={tr(lang, 'Додати ідею', 'Idee toevoegen')} data-afv-onderbalk='toevoegen'><Plus aria-hidden='true' /></button>
-          {(['kaart-grafiek'] as AfstemmingSectie[]).map((s) => { const I = ICOON[s]; return <button key={s} type='button' className={sectie === s ? 'is-actief' : ''} onClick={() => naarSectie(s)} data-afv-onderbalk={s}><I aria-hidden='true' /><span>{tr(lang, 'Мапа', 'Kaart')}</span></button>; })}
-          <details className='afv-onderbalk-meer'>
-            <summary aria-label={tr(lang, 'Інші розділи', 'Meer onderdelen')}><MoreHorizontal aria-hidden='true' /><span>{tr(lang, 'Ще', 'Meer')}</span></summary>
-            <div className='afv-onderbalk-menu'>
-              {(['controles', 'releases', 'mogelijkheden', 'geschiedenis', 'bronnen'] as AfstemmingSectie[]).map((s) => { const I = ICOON[s]; return <button key={s} type='button' onClick={(e) => { naarSectie(s); (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; }}><I aria-hidden='true' />{afstemmingTekst(SECTIE_LABEL[s], lang)}</button>; })}
-            </div>
-          </details>
-        </nav>
       ) : null}
     </section>
   );

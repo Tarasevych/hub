@@ -324,7 +324,7 @@ html.palet-maquette .afv .afv-toost {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.palet-maquette .afv .afv-romp {
-  grid-template-columns: 224px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 

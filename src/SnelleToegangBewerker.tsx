@@ -7,7 +7,7 @@
 // account én per ruimte op de server (zie src/zijbalk-voorkeuren.ts en shared/menu-model.ts). Elke wijziging gaat via `menuWijzigen`,
 // dus met «Ongedaan maken» en meteen op alle subdomeinen.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react';
-import { ArrowDown, ArrowUp, FolderInput, Palette, Plus, RotateCcw, ShieldCheck, Trash2, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, FolderInput, Palette, Plus, RotateCcw, Trash2, Zap } from 'lucide-react';
 import { ACCENTEN, DIENST_ACCENT, type Accent } from '../shared/menu-model';
 import { isBeheerPagina } from '../shared/beheer-paginas';
 import { itemIcoonZetten, itemKleurZetten, menuWeergave, nieuweKopieId, ontleed, snelFocusNaStap, snelKandidaten, snelStap, snelToevoegen, snelWeg, snelbalkTerugzetten, type Basis, type Rij } from '../shared/menu-indeling';
@@ -123,7 +123,7 @@ export default function SnelleToegangEditor({ tr, rechten }: { tr: Tr; rechten?:
         const yarlyk = isYarlyk(r.item);
         const kanDeel = yarlyk && yarlykMag && (ruimte === 'technisch' || techProfiel);
         return <li key={r.sleutel} data-snel-rij={r.sleutel} data-accent={r.accent} data-tech-yarlyk={yarlyk ? 'ja' : undefined} style={yarlyk ? { ['--tech-profiel-kleur' as string]: band.bg, ['--tech-profiel-tekst' as string]: band.fg } : undefined}>
-          <span className='menu-snel-voorbeeld' data-tech-yarlyk={yarlyk ? 'ja' : undefined} aria-hidden='true'><MenuGlyph icon={r.icoon || standaardIcoon(r)} />{yarlyk && <span className='tech-yarlyk-schild'><ShieldCheck /></span>}</span>
+          <span className='menu-snel-voorbeeld' data-tech-yarlyk={yarlyk ? 'ja' : undefined} aria-hidden='true'><MenuGlyph icon={r.icoon || standaardIcoon(r)} /></span>
           <span className='menu-snel-naam'><strong>{naam(r.item)}</strong><small>{tr(`позиція ${i + 1} з ${rijen.length}`, `positie ${i + 1} van ${rijen.length}`)}{yarlyk ? ` · ${tr('Технічний профіль', 'Technisch profiel')}` : ''}</small></span>
           <span className='menu-snel-knoppen'>
             <button type='button' data-snel-omhoog={r.sleutel} disabled={i === 0} aria-label={tr(`Перемістити «${naam(r.item)}» раніше`, `«${naam(r.item)}» eerder zetten`)} onKeyDown={toetsen(r, i)} onClick={() => verplaats(r, i, -1, tr(`«${naam(r.item)}» переміщено раніше`, `«${naam(r.item)}» eerder gezet`))}><ArrowUp aria-hidden='true' /></button>

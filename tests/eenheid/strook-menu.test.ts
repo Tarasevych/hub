@@ -39,7 +39,7 @@ export async function main(): Promise<number> {
     vind(items, 'Ліворуч')!.onKies(); vind(items, 'Праворуч')!.onKies(); vind(items, 'На початок смуги')!.onKies(); vind(items, 'У кінець смуги')!.onKies(); vind(items, 'Прибрати зі смуги')!.onKies();
     check('plaats: ліворуч/праворуч/на початок/у кінець/прибрати', log.join(';') === 'plek 0;plek 2;plek 0;plek 3;weg', log.join(';'));
     const vorm = items.filter((x) => x.groep === 'Вигляд кнопок');
-    check('vorm van de knoppen: drie keuzes in de woorden van de eigenaar, de huidige aangevinkt', vorm.map((x) => x.label).join('|') === 'Лише піктограми|Піктограми з написами|Лише написи' && vorm.filter((x) => x.gekozen).map((x) => x.label).join() === 'Піктограми з написами');
+    check('vorm van de knoppen (UPD-007): піктограми або піктограми з назвами, обране позначено', vorm.map((x) => x.label).join('|') === 'Піктограми|Піктограми з назвами' && vorm.filter((x) => x.gekozen).map((x) => x.label).join() === 'Піктограми з назвами');
     log.length = 0; vorm[0].onKies();
     check('… kiezen zet de vorm voor de hele strook', log.join() === 'label iconen');
   }
@@ -58,7 +58,7 @@ export async function main(): Promise<number> {
     const instel = knopMenu(ctx({ id: 'instel', naam: 'Налаштування смуги', kiesbaar: false, plek: -1, open: () => log.push('instel-open') }));
     check('instellingenknop: ook «Типові налаштування»', !!vind(instel, 'Типові налаштування') && !!vind(instel, 'Налаштування смуги…'));
     const nl = knopMenu(ctx({ uk: false, naam: 'Beheer', url: 'https://x.test', open: () => undefined }));
-    check('Nederlands: eigen woorden, geen Oekraïens', nl.map((x) => x.label).join('|').includes('Openen in een nieuw tabblad') && nl.some((x) => x.label === 'Alleen pictogrammen') && !/[А-Яа-яІіЇїЄєҐґ]/.test(nl.map((x) => `${x.label}${x.groep}`).join('')));
+    check('Nederlands: eigen woorden, geen Oekraïens', nl.map((x) => x.label).join('|').includes('Openen in een nieuw tabblad') && nl.some((x) => x.label === 'Pictogrammen') && !/[А-Яа-яІіЇїЄєҐґ]/.test(nl.map((x) => `${x.label}${x.groep}`).join('')));
   }
   check('groepeer: opeenvolgende koppen samen, volgorde blijft', JSON.stringify(groepeer([{ label: 'a', groep: 'x', onKies: () => undefined }, { label: 'b', groep: 'x', onKies: () => undefined }, { label: 'c', groep: 'y', onKies: () => undefined }]).map((g) => [g.kop, g.items.map((i) => i.label).join('')])) === '[["x","ab"],["y","c"]]');
 
@@ -73,10 +73,10 @@ export async function main(): Promise<number> {
     const v = normaliseer({ modus: 'auto', knoppen: ['meldingen', 'uit'] });
     const uk = renderToStaticMarkup(createElement(StrookInstelInhoud, { uk: true, voorkeur: v, onWijzig: () => undefined, onSluit: () => undefined }));
     const nl = renderToStaticMarkup(createElement(StrookInstelInhoud, { uk: false, voorkeur: v, onWijzig: () => undefined, onSluit: () => undefined }));
-    check('paneel uk: modi, grootte en vorm (woorden van de eigenaar), uitleg bij de modus', ['Розгорнуто', 'Згорнуто', 'Автоматично', 'Малі', 'Лише піктограми', 'Піктограми з написами', 'Лише написи', 'розгортається, коли наводите'].every((w) => uk.includes(w)));
-    check('paneel: kop zoals een venster (titel + sluitknop), radiogroepen met aria-checked', uk.includes('class="tech-strook-kop"') && uk.includes('tech-strook-titel') && uk.includes('aria-label="Закрити"') && (uk.match(/role="radiogroup"/g) || []).length === 3 && /role="radio"[^>]*aria-checked="true"[^>]*>Автоматично/.test(uk));
+    check('paneel uk (UPD-007): modi, 2 vormen (піктограми / з назвами), schakelaar voor hulpteksten en uitleg bij de modus', ['Розгорнуто', 'Згорнуто', 'Автоматично', 'Піктограми', 'Піктограми з назвами', 'Спливаючі підказки для піктограм', 'розгортається, коли наводите'].every((w) => uk.includes(w)) && uk.includes('data-strook-tooltips="1"'));
+    check('paneel: kop zoals een venster (titel + sluitknop), 2 radiogroepen met aria-checked (modus + knoppen)', uk.includes('class="tech-strook-kop"') && uk.includes('tech-strook-titel') && uk.includes('aria-label="Закрити"') && (uk.match(/role="radiogroup"/g) || []).length === 2 && /role="radio"[^>]*aria-checked="true"[^>]*>Автоматично/.test(uk));
     check('paneel: elke rij sleepbaar met een greep, ↑/↓ en een vinkje; zichtbare knoppen eerst', (uk.match(/draggable="true"/g) || []).length >= 10 && uk.includes('tech-strook-greep') && /data-strook-rij="meldingen"[\s\S]*data-strook-rij="uit"[\s\S]*data-strook-rij="wissel"/.test(uk));
-    check('paneel nl: geen Oekraïense of Engelse woorden in de tekst', !/[А-Яа-яІіЇїЄєҐґ]/.test(nl.replace(/<[^>]+>/g, '')) && !/\b(Settings|Close|Mode|Size|Reset|Buttons)\b/.test(nl.replace(/<[^>]+>/g, ' ')) && nl.includes('Alleen pictogrammen') && nl.includes('Standaard herstellen'));
+    check('paneel nl: geen Oekraïense of Engelse woorden in de tekst', !/[А-Яа-яІіЇїЄєҐґ]/.test(nl.replace(/<[^>]+>/g, '')) && !/\b(Settings|Close|Mode|Size|Reset|Buttons|Tooltips)\b/.test(nl.replace(/<[^>]+>/g, ' ')) && nl.includes('Pictogrammen') && nl.includes('Pictogrammen met namen') && nl.includes('Hulpteksten bij pictogrammen') && nl.includes('Standaard herstellen'));
   }
 
   // ---------------------------------------------------------------- 3. bron: CSP en stijl van de vensters
@@ -84,8 +84,8 @@ export async function main(): Promise<number> {
     const paneel = readFileSync('src/tech/StrookPaneel.tsx', 'utf8'), laag = readFileSync('src/tech/TechLaag.tsx', 'utf8'), css = readFileSync('src/tech/strook.css', 'utf8');
     check('CSP style-src self: geen <style> in de strook (alleen .css en inline style={…})', !/<style[\s>]/.test(paneel + laag));
     check('stijl van de vensters: paneel 16 px rond met kop var(--surface) en sluitknop 40×40, focusring var(--venster-actief)', /\.tech-strook-paneel\{[^}]*border-radius:16px/.test(css) && /\.tech-strook-kop\{[^}]*background:var\(--surface/.test(css) && /\.tech-strook-sluit\{[^}]*width:40px;height:40px/.test(css) && css.includes('var(--venster-actief'));
-    check('knoppen op de volle band: eigen vlak (var(--surface)) en rand (var(--line)) met tussenruimte — niet meer in de bandkleur', /\.tech-band-knoppen>\.tech-strook-item>button,[\s\S]*?border:1px solid var\(--line[^;]*;border-radius:9px;background:var\(--surface/.test(css) && /\.tech-band \.tech-band-knoppen\{gap:6px/.test(css));
-    check('aanwijzen: knop vergroot en naam als tekstwolkje (display:none tot aanwijzen — raakt de meting niet)', /\.tech-strook-item:hover,[\s\S]*?\{transform:scale\(1\.1\)/.test(css) && /\.tech-band \.tech-strook-item::after\{content:attr\(data-label\)[^}]*display:none/.test(css));
+    check('knoppen op de volle band (UPD-007): compacte 28px-pillen in de gekozen bandkleur (--tech-band-bg / --tech-band-fg) met tussenruimte', /background-color:var\(--tech-band-bg\)/.test(css) && /\.tech-band-knoppen>\.tech-strook-item>button[\s\S]*?height:28px;min-height:28px;min-width:28px[\s\S]*?border-radius:999px/.test(css) && /\.tech-band \.tech-band-knoppen\{gap:5px/.test(css));
+    check('aanwijzen en uitschakelbare hulpteksten: zwevende hulptekst uit bij data-tech-tooltips="0"', /\.tech-strook-item:hover,[\s\S]*?\{transform:translateY\(-1px\)/.test(css) && /\.tech-band \.tech-strook-item::after\{content:attr\(data-label\)[^}]*display:none/.test(css) && /\[data-tech-tooltips="0"\] \.tech-strook-item::after\{display:none!important\}/.test(css));
     check('te smal: knoppen verhuizen één voor één naar «⋯» (data-overvol), «Вийти» als laatste', /\[data-overvol\]\{display:none!important\}/.test(css) && /OVERLOOP_PRIO[^\n]*uit: 3/.test(laag) && /it\.dataset\.overvol = '1'/.test(laag));
     check('rechtsklik op elke knop van de strook, ook de vaste en die in «⋯»', (laag.match(/onContextMenu=\{/g) || []).length >= 3 && /menuVoor\(strookMenu\.id\)/.test(laag));
     check('slepen op de strook zelf (draggable + dropPlek + zetOp)', /draggable=\{volledig\}/.test(laag) && /dropPlek\(voorkeur\.knoppen, sleep, id, doel\.na\)/.test(laag));

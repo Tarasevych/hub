@@ -7,6 +7,7 @@ import { useIsMaquette } from '../thema/useThema';
 import { openTechVenster } from './tech-opslag';
 import { useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { useRuimtes } from './ruimtes/ruimtes-opslag';
+import { gebruikerKoosPrive, wisGebruikerPrive } from './ruimtes/ruimte-signaal';
 import './tech.css';
 import './tech-maquette.css';
 
@@ -21,16 +22,16 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
   const [fout, setFout] = useState('');
   const naarTech = async () => {
     setBezig(true); setFout('');
+    wisGebruikerPrive();
     try { const m = await import('./ruimtes/RuimteWissel'); const u = await m.kiesRuimte('technisch', lang); if (u && !u.ok) setFout(u.tekst); }
     catch { setFout(uk ? 'Не вдалося перемкнути. Спробуйте ще раз.' : 'Wisselen lukte niet. Probeer het opnieuw.'); }
     finally { setBezig(false); }
   };
-  // RUIMTE-WEERGAVE-001: een technische pagina openen (ярлик-«двері» op het privé-bureau, link, bladwijzer) terwijl de technische
-  // sessie al loopt en NIET op pauze staat = dit tabblad meteen naar de technische weergave, zonder knop en zonder nieuwe aanmelding.
-  // Op pauze of zonder sessie blijft de knop: hervatten of starten is een bewuste keuze. Eén poging per poort.
+  // RUIMTE-WEERGAVE-001 + UPD-007: автоматичний перехід у технічний простір при відкритті технічної сторінки працює,
+  // лише якщо користувач у цій вкладці щойно НЕ перемикнувся вручну на «Звичайний» (!gebruikerKoosPrive()).
   const r = useRuimtes();
   const auto = useRef(false);
-  const kanMeteen = v2 && heeftProfiel && !!r.status?.aan && !!r.status.sessie && !r.status.pauze && r.status.actief === 'prive' && !r.bezig;
+  const kanMeteen = v2 && heeftProfiel && !!r.status?.aan && !!r.status.sessie && !r.status.pauze && r.status.actief === 'prive' && !r.bezig && !gebruikerKoosPrive();
   const knopTekst = r.status?.pauze ? (uk ? 'Продовжити технічний доступ і відкрити' : 'Technische toegang hervatten en openen') : (uk ? 'Перейти в технічний простір' : 'Naar de technische ruimte');
   useEffect(() => { if (kanMeteen && !auto.current) { auto.current = true; void naarTech(); } }, [kanMeteen]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,9 +52,14 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
               <p>{uk ? 'Ця сторінка відкривається в технічному просторі.' : 'Deze pagina opent in de technische ruimte.'}</p>
               {fout ? <small role='alert' className='tech-poort-fout'>{fout}</small> : null}
             </div>
-            <button type='button' className='tech-poort-naar' onClick={() => void naarTech()} disabled={bezig} aria-busy={bezig || undefined} data-tech-poort='naar-technisch'>
-              <ShieldCheck aria-hidden='true' />{bezig ? (uk ? 'Перемикаю…' : 'Wisselen…') : knopTekst}
-            </button>
+            <div className='tech-poort-stil-acties'>
+              <button type='button' className='tech-poort-naar' onClick={() => void naarTech()} disabled={bezig} aria-busy={bezig || undefined} data-tech-poort='naar-technisch'>
+                <ShieldCheck aria-hidden='true' />{bezig ? (uk ? 'Перемикаю…' : 'Wisselen…') : knopTekst}
+              </button>
+              <button type='button' className='tech-poort-account' onClick={onAccount} data-tech-poort='account'>
+                {uk ? 'До облікового запису' : 'Naar het account'}
+              </button>
+            </div>
           </div>
         </section>
       );
@@ -90,9 +96,14 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
     return (
       <section className='tech-poort tech-poort-stil' data-tech-poort='1' data-tech-poort-soort='stil'>
         <p>{uk ? 'Ця сторінка відкривається в технічному просторі.' : 'Deze pagina opent in de technische ruimte.'}</p>
-        <button type='button' className='tech-poort-naar' onClick={() => void naarTech()} disabled={bezig} aria-busy={bezig || undefined} data-tech-poort='naar-technisch'>
-          <ShieldCheck aria-hidden='true' />{bezig ? (uk ? 'Перемикаю…' : 'Wisselen…') : knopTekst}
-        </button>
+        <div className='tech-poort-stil-acties'>
+          <button type='button' className='tech-poort-naar' onClick={() => void naarTech()} disabled={bezig} aria-busy={bezig || undefined} data-tech-poort='naar-technisch'>
+            <ShieldCheck aria-hidden='true' />{bezig ? (uk ? 'Перемикаю…' : 'Wisselen…') : knopTekst}
+          </button>
+          <button type='button' className='tech-poort-account' onClick={onAccount} data-tech-poort='account'>
+            {uk ? 'До облікового запису' : 'Naar het account'}
+          </button>
+        </div>
         {fout ? <small role='alert' className='tech-poort-fout'>{fout}</small> : null}
       </section>
     );

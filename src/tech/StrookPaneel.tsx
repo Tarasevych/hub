@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent as RKE } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowDown, ArrowUp, Check, GripVertical, RotateCcw, X } from 'lucide-react';
-import { GROOTTE_NAMEN, LABEL_NAMEN, MODUS_NAMEN, MODUS_UITLEG, STROOK_GROOTTES, STROOK_LABELS, STROOK_MODI, STROOK_NAMEN, STROOK_STANDAARD, dropPlek, metModus, paneelLijst, verplaats, zetAan, zetOp, type StrookGrootte, type StrookLabel, type StrookModus, type StrookVoorkeur } from './strook-voorkeur';
+import { LABEL_NAMEN, MODUS_NAMEN, MODUS_UITLEG, STROOK_LABELS, STROOK_MODI, STROOK_NAMEN, STROOK_STANDAARD, dropPlek, metModus, paneelLijst, verplaats, zetAan, zetOp, type StrookLabel, type StrookModus, type StrookVoorkeur } from './strook-voorkeur';
 import { groepeer, type KnopMenuItem } from './strook-menu';
 import HulpVraag from '../hulp/HulpVraag';
 
@@ -64,10 +64,15 @@ export function StrookInstelInhoud({ uk, voorkeur, onWijzig, onSluit }: InhoudPr
           <div className='tech-strook-rij'><span className='tech-strook-rij-kop'>{t('Режим', 'Modus')}</span>
             <Keuze uk={uk} label={t('Режим', 'Modus')} opties={STROOK_MODI} waarde={voorkeur.modus} naam={(m: StrookModus) => MODUS_NAMEN[m]} onKies={m => onWijzig(metModus(voorkeur, m))} />
             <small className='tech-strook-uitleg' data-strook-modus-uitleg=''>{L(uk, MODUS_UITLEG[voorkeur.modus])}</small></div>
-          <div className='tech-strook-rij'><span className='tech-strook-rij-kop'>{t('Розмір', 'Grootte')}</span>
-            <Keuze uk={uk} label={t('Розмір', 'Grootte')} opties={STROOK_GROOTTES} waarde={voorkeur.grootte} naam={(g: StrookGrootte) => GROOTTE_NAMEN[g]} onKies={g => onWijzig({ ...voorkeur, grootte: g })} /></div>
           <div className='tech-strook-rij'><span className='tech-strook-rij-kop'>{t('Кнопки', 'Knoppen')}</span>
             <Keuze uk={uk} label={t('Вигляд кнопок', 'Vorm van de knoppen')} opties={STROOK_LABELS} waarde={voorkeur.label} naam={(l: StrookLabel) => LABEL_NAMEN[l]} onKies={l => onWijzig({ ...voorkeur, label: l })} /></div>
+          <div className='tech-strook-rij'>
+            <label className='tech-strook-vink tech-strook-tooltips-vink'>
+              <input type='checkbox' data-strook-tooltips='1' data-hulp='tech.band' checked={voorkeur.tooltips} onChange={e => onWijzig({ ...voorkeur, tooltips: e.target.checked })} />
+              <span>{t('Спливаючі підказки для піктограм', 'Hulpteksten bij pictogrammen')}</span>
+            </label>
+            <small className='tech-strook-uitleg'>{t('Показувати назву кнопки при наведенні в режимі піктограм.', 'Knopnaam tonen bij aanwijzen in de pictogrammodus.')}</small>
+          </div>
         </fieldset>
         <fieldset className='tech-strook-groep'>
           <legend>{t('Кнопки на смузі та їх порядок', 'Knoppen op de strook en hun volgorde')}</legend>

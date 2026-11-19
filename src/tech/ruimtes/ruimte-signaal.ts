@@ -30,8 +30,31 @@ export function meldRuimte(naar: RuimteScope): boolean {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<RuimteWisselDetail>(RUIMTE_WISSEL_GEBEURTENIS, { detail: { van, naar } }));
   return true;
 }
-/** Явне перемикання простору дією користувача, щоб інтерфейс міг одразу показати смугу чи підказку. */
+export const GEBRUIKER_PRIVE_SLEUTEL = 'mr-gebruiker-prive-pad-v1';
+let gebruikerPrivePad: string | null = null;
+const huidigePaginaSleutel = (): string => (typeof location !== 'undefined' ? `${location.origin}${location.pathname}${location.search}` : '1');
+/** Позначає, що користувач у цій вкладці свідомо перемкнувся на звичайний інтерфейс на поточній сторінці (щоб TechPoort не відкочував вкладку назад у технічний простір). */
+export function zetGebruikerPrive(aan: boolean): void {
+  const waarde = aan ? huidigePaginaSleutel() : null;
+  gebruikerPrivePad = waarde;
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    if (waarde) sessionStorage.setItem(GEBRUIKER_PRIVE_SLEUTEL, waarde);
+    else sessionStorage.removeItem(GEBRUIKER_PRIVE_SLEUTEL);
+  } catch { /* приватний режим без сховища */ }
+}
+export const wisGebruikerPrive = (): void => zetGebruikerPrive(false);
+export function gebruikerKoosPrive(): boolean {
+  const nu = huidigePaginaSleutel();
+  if (gebruikerPrivePad !== null) return gebruikerPrivePad === nu;
+  try {
+    if (typeof sessionStorage === 'undefined') return false;
+    return sessionStorage.getItem(GEBRUIKER_PRIVE_SLEUTEL) === nu;
+  } catch { return false; }
+}
+/** Явне перемикання простору дією користувача, щоб інтерфейс міг одразу показати смугу чи підказку і не відкочувати вибір назад. */
 export function meldGebruikerWissel(naar: RuimteScope): void {
+  zetGebruikerPrive(naar === 'prive');
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<{ naar: RuimteScope }>(RUIMTE_GEBRUIKER_WISSEL_GEBEURTENIS, { detail: { naar } }));
 }
 export function opGebruikerWissel(f: (naar: RuimteScope) => void): () => void {

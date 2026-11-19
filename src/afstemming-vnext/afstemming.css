@@ -26,8 +26,8 @@
 .afv-melding.is-ok { background: var(--ok-zacht); color: var(--ok); }
 .afv-toost { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); font-size: var(--tekst-klein); justify-self: start; }
 
-/* ---- romp: linkernavigatie + inhoud ---- */
-.afv-romp { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--ruimte-4); align-items: start; }
+/* ---- romp: одноколонковий вміст (навігація розділами — у єдиному меню якорів MaquetteAnkerRail, UPD-007) ---- */
+.afv-romp { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-4); align-items: start; }
 .afv.is-smal .afv-romp { grid-template-columns: minmax(0, 1fr); }
 .afv-zijnav { position: sticky; top: 8px; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: var(--straal-l); background: var(--panel); }
 .afv-zijnav button { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 10px; border: 0; border-radius: var(--straal-m); background: transparent; color: var(--muted); text-align: left; font-weight: 600; }
@@ -168,3 +168,18 @@ button.afv-lijst-rij:hover { border-color: var(--accent); }
   .afv-dtabs button { white-space: nowrap; }
   .afv-pijplijn { overflow-x: auto; flex-wrap: nowrap; }
 }
+
+/* Відступи під єдине меню якорів (MaquetteAnkerRail) у звичайних палітрах (UPD-007). */
+@media (min-width: 961px) {
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil:is([data-mq-rail-zijde='rechts'],[data-mq-rail-zijde='links']) { --afv-rail: 292px; }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil:is([data-mq-rail-zijde='rechts'],[data-mq-rail-zijde='links'])[data-mq-rail-compact='ja'] { --afv-rail: 100px; }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil:is([data-mq-rail-zijde='rechts'],[data-mq-rail-zijde='links'])[data-mq-rail-ingeklapt='ja'] { --afv-rail: 20px; }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil[data-mq-rail-zijde='rechts'] { padding-right: var(--afv-rail); }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil[data-mq-rail-zijde='links'] { padding-left: var(--afv-rail); }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil[data-mq-rail-zijde='boven'] { padding-top: 92px; }
+  html:not(.palet-maquette) .canonical-chrome:not(#_mq):not(#_kolom) .afv-mq-schil.mq-schil[data-mq-rail-zijde='onder'] { padding-bottom: 104px; }
+}
+@media (max-width: 960px) {
+  html:not(.palet-maquette) .afv-mq-schil.mq-schil { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+

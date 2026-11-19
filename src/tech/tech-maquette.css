@@ -94,195 +94,158 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   2. РОЗГОРНУТА ІНЖЕНЕРНА СМУГА .tech-band:not(.is-ingeklapt)
-   Геометрія висоти та відступів збережена незмінною для точного вимірювання data-pas.
+   2. РОЗГОРНУТА ІНЖЕНЕРНА СМУГА .tech-band:not(.is-ingeklapt) (UPD-007)
+   Єдиний стабільний розмір, суцільний обраний колір технічного профілю та компактні кнопки.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) {
-  background-color: var(--mq-bovenbalk-glas);
+  background-color: var(--tech-band-bg);
   background-image: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--tech-band-bg) 8%, transparent) 0%,
-    transparent 100%
+    color-mix(in srgb, var(--mq-wit) 14%, transparent) 0%,
+    transparent 58%,
+    color-mix(in srgb, #000 10%, transparent) 100%
   );
-  backdrop-filter: blur(18px) saturate(145%);
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
-  color: var(--mq-tekst);
-  border-bottom: 1px solid color-mix(in srgb, var(--tech-band-bg) 38%, var(--mq-rand-sterk));
-  box-shadow:
-    0 10px 28px color-mix(in srgb, var(--mq-bg) 22%, transparent),
-    inset 0 -1px 0 var(--mq-tech-glans);
+  color: var(--tech-band-fg);
+  border-bottom: 1px solid color-mix(in srgb, var(--tech-band-fg) 22%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--mq-bg) 22%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="strepen"] .tech-band:not(.is-ingeklapt) {
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 14px,
+      color-mix(in srgb, var(--tech-band-fg) 9%, transparent) 14px 28px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-wit) 12%, transparent) 0%,
+      transparent 100%
+    );
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="stippen"] .tech-band:not(.is-ingeklapt) {
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--tech-band-fg) 14%, transparent) 1.4px, transparent 1.6px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-wit) 12%, transparent) 0%,
+      transparent 100%
+    );
+  background-size: 10px 10px, 100% 100%;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band.is-piek:not(.is-ingeklapt) {
-  box-shadow:
-    var(--mq-schaduw-zacht),
-    inset 0 -1px 0 var(--mq-tech-glans);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--mq-bg) 32%, transparent);
 }
 
-/* Яскрава верхня лінія кольору технічного профілю з підтримкою візерунків */
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt)::before {
-  height: 3.5px;
-  background-color: var(--tech-band-bg);
-  box-shadow: 0 1px 10px color-mix(in srgb, var(--tech-band-bg) 42%, transparent);
-}
-
-html.palet-maquette[data-tech="aan"][data-tech-patroon="strepen"] .tech-band:not(.is-ingeklapt)::before {
-  background-image: repeating-linear-gradient(
-    135deg,
-    transparent 0 6px,
-    color-mix(in srgb, var(--tech-band-fg) 22%, transparent) 6px 12px
-  );
-}
-
-html.palet-maquette[data-tech="aan"][data-tech-patroon="stippen"] .tech-band:not(.is-ingeklapt)::before {
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--tech-band-fg) 24%, transparent) 1px,
-    transparent 1.2px
-  );
-  background-size: 6px 4px;
-}
-
-/* Висококонтрастна інженерна позначка профілю */
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-merk {
-  background: var(--tech-band-bg);
+  background: color-mix(in srgb, var(--tech-band-fg) 14%, transparent);
   color: var(--tech-band-fg);
-  border: 1px solid color-mix(in srgb, var(--tech-band-fg) 28%, transparent);
-  border-radius: 8px;
-  box-shadow:
-    0 4px 12px color-mix(in srgb, var(--tech-band-bg) 28%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tech-band-fg) 24%, transparent);
+  border-radius: 999px;
 }
 
-/* Ролі, лічильник часу, причина активації та позначка віддаленого сеансу */
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-id {
-  color: var(--mq-tekst);
-  font-weight: 600;
-}
-
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-id,
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd {
-  color: var(--mq-tekst);
-  font-weight: 700;
+  color: var(--tech-band-fg);
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd svg {
-  color: color-mix(in srgb, var(--tech-band-bg) 72%, var(--mq-tekst));
+  color: var(--tech-band-fg);
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd.is-bijna {
-  color: var(--mq-tech-markering);
-  text-decoration-color: var(--tech-band-bg);
+  text-decoration-color: var(--tech-band-fg);
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden {
-  color: var(--mq-gedempt);
-  opacity: 1;
+  color: var(--tech-band-fg);
+  opacity: 0.86;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden-label {
-  color: var(--mq-stil);
-  font-weight: 650;
-  opacity: 1;
+  color: var(--tech-band-fg);
+  font-weight: 700;
+  opacity: 0.92;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden-tekst {
-  color: var(--mq-tekst);
+  color: var(--tech-band-fg);
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band .tech-remote-actief {
-  background: color-mix(in srgb, var(--fout) 18%, var(--mq-oppervlak-2));
-  color: var(--fout);
-  border: 1px solid color-mix(in srgb, var(--fout) 46%, var(--mq-rand-sterk));
+  background: var(--tech-band-fg);
+  color: var(--tech-band-bg);
+  border: 0;
   font-size: 0.75rem;
 }
 
-/* Студійні скляні кнопки на розгорнутій смузі (без зміни ширини й горизонтальних полів) */
+/* Компактні гармонійні кнопки в тон кольорової технічної смуги */
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button,
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop {
-  border: 1px solid var(--mq-rand);
-  border-radius: 10px;
-  background: var(--mq-tech-knop-glas);
-  color: var(--mq-tekst);
-  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
+  border: 1px solid color-mix(in srgb, var(--tech-band-fg) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tech-band-fg) 10%, transparent);
+  color: var(--tech-band-fg);
+  box-shadow: none;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button:hover,
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop:hover {
-  background: var(--mq-oppervlak-hover);
-  border-color: color-mix(in srgb, var(--mq-accent) 46%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--tech-band-fg) 20%, transparent);
+  border-color: color-mix(in srgb, var(--tech-band-fg) 42%, transparent);
 }
 
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-hier {
-  background: linear-gradient(
-    155deg,
-    color-mix(in srgb, var(--mq-accent) 22%, var(--mq-oppervlak-2)) 0%,
-    color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak)) 100%
-  );
-  border-color: color-mix(in srgb, var(--mq-accent) 56%, var(--mq-rand-sterk));
-  color: var(--mq-tekst);
-  box-shadow:
-    inset 0 -2px 0 var(--mq-accent),
-    inset 0 1px 0 var(--mq-tech-glans);
-}
-
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-hier,
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit {
-  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak));
-  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand-sterk));
-  color: var(--fout);
+  background: var(--tech-band-fg);
+  border-color: var(--tech-band-fg);
+  color: var(--tech-band-bg);
+  box-shadow: none;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit:hover {
-  background: color-mix(in srgb, var(--fout) 18%, var(--mq-oppervlak-2));
-  border-color: color-mix(in srgb, var(--fout) 62%, var(--mq-rand-sterk));
+  opacity: 0.9;
 }
 
 html.palet-maquette[data-tech="aan"] .tech-band .tech-band-knoppen > .tech-strook-item > button:focus-visible,
 html.palet-maquette[data-tech="aan"] .tech-band .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop:focus-visible {
-  outline: 2px solid var(--mq-accent);
+  outline: 2px solid var(--tech-band-fg);
   outline-offset: 2px;
 }
 
-/* Перемикач просторів на площині розгорнутої смуги */
+/* Перемикач просторів на кольоровій смузі */
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel {
-  border-color: var(--mq-rand);
-  background: var(--mq-tech-knop-glas);
-  color: var(--mq-tekst);
-}
-
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel:hover {
-  background: var(--mq-oppervlak-hover);
-  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
-}
-
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-spoor {
-  background: var(--rw-spoor);
-  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
-}
-
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-bol {
-  background: var(--mq-accent);
-  color: var(--mq-accent-op);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--mq-bg) 30%, transparent);
-}
-
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-spoor {
-  background: color-mix(in srgb, var(--tech-band-bg) 28%, var(--rw-spoor));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tech-band-bg) 62%, var(--mq-rand-sterk));
-}
-
-html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-bol {
-  background: var(--tech-band-bg);
+  border-color: color-mix(in srgb, var(--tech-band-fg) 24%, transparent);
+  background: color-mix(in srgb, var(--tech-band-fg) 10%, transparent);
   color: var(--tech-band-fg);
 }
 
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel:hover {
+  background: color-mix(in srgb, var(--tech-band-fg) 20%, transparent);
+  border-color: color-mix(in srgb, var(--tech-band-fg) 42%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-spoor,
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-spoor {
+  background: color-mix(in srgb, var(--tech-band-fg) 24%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tech-band-fg) 32%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-bol,
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-bol {
+  background: var(--tech-band-fg);
+  color: var(--tech-band-bg);
+  box-shadow: none;
+}
+
 html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-compact .rw-aanuit {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
 }
 
 /* Хмаринка назви кнопки при наведенні */
@@ -296,11 +259,11 @@ html.palet-maquette .tech-band .tech-strook-item::after {
 }
 
 html.palet-maquette .tech-band .tech-strook-item.is-doel-voor {
-  box-shadow: -4px 0 0 -1px var(--mq-accent);
+  box-shadow: -3px 0 0 0 var(--tech-band-fg);
 }
 
 html.palet-maquette .tech-band .tech-strook-item.is-doel-na {
-  box-shadow: 4px 0 0 -1px var(--mq-accent);
+  box-shadow: 3px 0 0 0 var(--tech-band-fg);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
