@@ -165,10 +165,11 @@ export async function main(): Promise<number> {
   const ui = readFileSync('src/overzicht/Dashboard.tsx', 'utf8'); const css = readFileSync('src/overzicht/overzicht.css', 'utf8');
   check('A13: Esc-handler in bewerkmodus roept klaar() aan (lade/bevestiging eerst)', /e\.key !== 'Escape'\) return;[^\n]*klaarRef\.current\(\)/.test(ui) && /\[bewerken, lade, bevestigReset\]\)/.test(ui));
   check('A13: .ov-w-kop h3 heeft geen nowrap/ellipsis meer maar line-clamp 2', !/\.ov-w-kop h3\{[^}]*(white-space:nowrap|text-overflow:ellipsis)/.test(css) && /\.ov-w-kop h3\{[^}]*-webkit-line-clamp:2/.test(css));
-  // Audit 19.10.2026 (A14): «Показати технічні коди» toont de code naast elk label in de hele console (data-codes op <main> + CSS), niet alleen waar de prop doorgegeven wordt.
+  // Audit 19.10.2026 (A14) + UPD-007: замість спільної кнопки «Показати технічні коди» кожен <Term> показує локальну піктограму .admin-term-info зі спливаючим поясненням .admin-term-popover і кодом.
   const term = readFileSync('src/beheer-termen.tsx', 'utf8'); const console_ = readFileSync('src/BeheerConsoleWeergave.tsx', 'utf8'); const acss = readFileSync('src/beheer-console.css', 'utf8');
-  check('A14: Term rendert de code altijd (admin-term-code-schakel) en de console zet data-codes op <main>', /<code className='admin-term-code admin-term-code-schakel'>\{code\}<\/code>/.test(term) && /data-codes=\{codes\?'ja':'nee'\}/.test(console_)
-    && /\[data-codes="ja"\] \.admin-term-code-schakel/.test(acss) && /\.admin-term-code-schakel\{display:none\}/.test(acss));
+  check('A14: Term завжди показує локальну піктограму .admin-term-info зі спливаючим поясненням .admin-term-popover, а спільної кнопки admin-codes-toggle немає', /className='admin-term-info'/.test(term) && /className='admin-term-popover'/.test(term)
+    && /<code className='admin-term-code'>\{code\}<\/code>/.test(term) && !/admin-codes-toggle/.test(console_)
+    && /\.admin-term-info\{/.test(acss) && /\.admin-term-popover\{/.test(acss));
   // Audit 19.10.2026: «Межа повноважень» komt tweetalig van de server (geen Engelse zinnen meer) en de widget kiest per taal.
   const be = readFileSync('backend/index.ts', 'utf8');
   check('limitations: ADMIN_LIMITATIONS uk+nl, geen Engelse tekst; widget kiest per taal', /const ADMIN_LIMITATIONS:Array<\{uk:string;nl:string\}>=\[/.test(be) && !/MDM compliance telemetry is not connected/.test(be) && /limitations:ADMIN_LIMITATIONS/.test(be)

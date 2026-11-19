@@ -29,7 +29,8 @@
     ]
   },
   "commits": [
-    "210519f707830bc07b804813d8ed3548245d02c8"
+    "210519f707830bc07b804813d8ed3548245d02c8",
+    "53c36501fbb35fc40df5a9027308a568a7b9739a"
   ],
   "tijdlijn": [
     {
@@ -45,7 +46,7 @@
       "resultaat": "Усунено подвійну висоту й стрибки смуги; підказки в режимі піктограм можна вимикати у налаштуваннях смуги."
     },
     {
-      "stap": "Пункт 3: прибрано спільну кнопку «Показати технічні коди» у src/BeheerConsoleWeergave.tsx, BeheerOverzichtWeergave.tsx та src/overzicht/Dashboard.tsx; оновлено <Term> і <TermList> у src/beheer-termen.tsx та стилі у src/beheer-console.css на компактну локальну піктограму .admin-term-info зі спливаючим вікном .admin-term-popover.",
+      "stap": "Пункт 3: прибрано спільну кнопку «Показати технічні коди» у src/BeheerConsoleWeergave.tsx, BeheerOverzichtWeergave.tsx та src/overzicht/Dashboard.tsx; оновлено <Term> і <TermList> у src/beheer-termen.tsx та стилі у src/beheer-console.css на компактну локальну піктограму .admin-term-info зі спливаючим вікном .admin-term-popover; узгоджено перевірку A14 у tests/eenheid/beheer-overzicht.test.ts.",
       "resultaat": "Біля кожного технічного терміна відображається локальна піктограма, при наведенні чи фокусі відкривається назва, технічний код і пояснення."
     },
     {
