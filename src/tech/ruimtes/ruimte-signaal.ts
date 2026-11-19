@@ -12,8 +12,23 @@ export type RuimteWisselDetail = { van: RuimteScope; naar: RuimteScope };
 /** Pure afleiding (getest): technisch alleen als de vlag-status aan is én de server 'technisch' als actief meldt. */
 export const ruimteVanStatus = (s: { aan?: boolean; actief?: string } | null | undefined): RuimteScope => (s && s.aan && s.actief === 'technisch' ? 'technisch' : 'prive');
 
-let laatste: RuimteScope = 'prive';
-let ooitTechnisch = false;
+export const TAB_RUIMTE_SLEUTEL = 'mr-ruimte-tab-v1';
+const leesTabRuimte = (): RuimteScope => {
+  try {
+    if (typeof sessionStorage === 'undefined') return 'prive';
+    return sessionStorage.getItem(TAB_RUIMTE_SLEUTEL) === 'technisch' ? 'technisch' : 'prive';
+  } catch { return 'prive'; }
+};
+const bewaarTabRuimte = (r: RuimteScope): void => {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    if (r === 'technisch') sessionStorage.setItem(TAB_RUIMTE_SLEUTEL, 'technisch');
+    else sessionStorage.removeItem(TAB_RUIMTE_SLEUTEL);
+  } catch { /* приватний режим без сховища */ }
+};
+
+let laatste: RuimteScope = leesTabRuimte();
+let ooitTechnisch = laatste === 'technisch';
 /** True zodra dit tabblad ooit de technische ruimte (v2) zag: dan filteren tellers zelf op ruimte (oude gegevens van vóór de wissel tellen niet). */
 export const ruimteFilterActief = (): boolean => ooitTechnisch;
 const luisteraars = new Set<() => void>();
@@ -21,11 +36,12 @@ export const huidigeRuimte = (): RuimteScope => laatste;
 
 /** Door ruimtes-opslag aangeroepen na elke statuswijziging. Geeft true als er echt gewisseld is. */
 export function meldRuimte(naar: RuimteScope): boolean {
+  bewaarTabRuimte(naar);
+  if (typeof document !== 'undefined') document.documentElement.dataset.ruimte = naar;
   if (naar === laatste) return false;
   const van = laatste;
   laatste = naar;
   if (naar === 'technisch') ooitTechnisch = true;
-  if (typeof document !== 'undefined') document.documentElement.dataset.ruimte = naar;
   luisteraars.forEach((f) => f());
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<RuimteWisselDetail>(RUIMTE_WISSEL_GEBEURTENIS, { detail: { van, naar } }));
   return true;

@@ -7,6 +7,7 @@ import {MaquetteHeld,MaquetteAnkerRail,useIsKlassiekMaquette,type MaquetteAnkerI
 import {useIsMaquette} from './thema/useThema';
 import {useVensters} from './platform/vensters';
 import {useOnthoudenVensters} from './platform/vensters-onthouden';
+import {opRuimteWissel} from './tech/ruimtes/ruimte-signaal';
 
 import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';import './mailfix-001-accounts.css';
 import './mail/mail-panelen-maquette.css';
@@ -206,7 +207,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   }finally{setLoading(false)}
  };
  useEffect(()=>{try{const url=new URL(location.href);if(url.searchParams.get('google_suite_callback')==='success'&&url.searchParams.get('google_suite_connected')==='mail'){notify(text(lang,'Gmail підключено. Останній лист — у картці акаунта, без теми.','Gmail is gekoppeld. Het laatste bericht staat op de accountkaart, zonder onderwerp.'),'success');url.searchParams.delete('google_suite_callback');url.searchParams.delete('google_suite_connected');history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)}}catch{}},[lang]);
- useEffect(()=>{if(sessionReady)void load()},[userId,sessionReady]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
+ useEffect(()=>{if(sessionReady)void load()},[userId,sessionReady]);useEffect(()=>{if(!sessionReady)return;return opRuimteWissel(()=>{setData(current=>({...current,googleMail:undefined}));void load()})},[sessionReady]);useEffect(()=>()=>{onFocusChange(false)},[onFocusChange]);
  useEffect(()=>{onFocusChange(focus)},[focus,onFocusChange]);
 
  const current=useMemo(()=>data.items.find(item=>item.id===selectedId)||null,[data.items,selectedId]);

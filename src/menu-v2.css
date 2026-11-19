@@ -1,5 +1,6 @@
 /* Menu v2 (stage 1): smalle rail zonder overlap, cirkel/pil-markering, scrollpijlen, werkbalk, hiërarchie, icoonstijlen. */
 .canonical-chrome{--zijbalk-rail:60px;--canonical-command-inline-start:var(--zijbalk-rail);--zijbalk-bg:var(--bg);--zb-hover:var(--nav-hover,color-mix(in srgb,var(--surface) 78%,transparent));--zb-actief:var(--nav-active,color-mix(in srgb,var(--surface2) 88%,transparent))}
+.canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']){--canonical-command-inline-start:calc(min(316px,calc(100vw - var(--zijbalk-rail))) + 14px)}
 .canonical-chrome.sidebar-expanded{--zijbalk-bg:var(--panel)}
 
 /* accentpalet — GELIJK aan ACCENT_KLEUREN in shared/menu-model.ts (eenheidstest). --a = hoofditem, --a2 = subitem (zelfde tint).
@@ -40,10 +41,11 @@
 @media(min-width:701px){
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar{width:var(--zijbalk-rail);padding:8px 0 10px}
   .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(316px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
-  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar{background:color-mix(in srgb,var(--panel) 100%,var(--bg));box-shadow:14px 0 38px color-mix(in srgb,#000 18%,transparent)}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar{background:color-mix(in srgb,var(--panel) 100%,var(--bg));box-shadow:14px 0 38px color-mix(in srgb,#000 18%,transparent);z-index:260}
   .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar-edge-zone{width:calc(var(--zijbalk-rail) - 36px)}
-  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
+  .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']) :is(.google-mail-reader-backdrop,.google-mail-attachment-backdrop){left:min(316px,calc(100vw - var(--zijbalk-rail)))}
 }
 .zijbalk-scrollvak{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
 .zijbalk-scrollvak>.canonical-service-list{flex:1;min-height:0}
@@ -370,6 +372,8 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome[data-dock='rechts'] .canonical-sidebar-edge-zone{inset:0 0 0 auto}
   .canonical-chrome[data-dock='rechts'] .canonical-workspace{padding-left:24px!important;padding-right:var(--zijbalk-rail)}
   .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding-right:340px}
+  .canonical-chrome[data-dock='rechts']:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:min(316px,calc(100vw - var(--zijbalk-rail)))}
   .canonical-chrome[data-dock='rechts'][data-focus-mode='mail'] .canonical-workspace{padding-right:24px}
   .canonical-chrome[data-dock='rechts'] .canonical-account-anchor{right:calc(var(--zijbalk-rail) + 12px)}
   .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-account-anchor{right:330px}
@@ -377,6 +381,7 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-notification-toast{right:358px}
   .canonical-chrome[data-dock='rechts'] .zijbalk-werkbalk-paneel{left:auto;right:calc(var(--zijbalk-rail) + 6px)}
   .canonical-chrome[data-dock='rechts'] .google-mail-reader-backdrop{left:0;right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned :is(.google-mail-reader-backdrop,.google-mail-attachment-backdrop){left:0;right:min(316px,calc(100vw - var(--zijbalk-rail)))}
   .canonical-chrome[data-dock='rechts'].sidebar-expanded :is(.canonical-local-pages:not(.canonical-local-navigation-slot),.canonical-local-navigation-slot){margin:0 22px 6px 0;padding-left:0;padding-right:8px;border-left:0;border-right:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 
   /* ---- dock boven/onder (Mac/tablet): iconen in een zwevende balk, transparantie via --dock-dekking */

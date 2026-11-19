@@ -12,7 +12,8 @@ export type RuimtesToestand = { geladen: boolean; status: RuimtesStatus | null; 
 let toestand: RuimtesToestand = { geladen: false, status: null, bezig: '', fout: '', nu: Date.now(), uitleg: '' };
 const luisteraars = new Set<() => void>();
 // Na elke wijziging: welke ruimte is actief? Bij een wissel maakt ruimte-signaal alle ruimte-afhankelijke toestand leeg.
-const zet = (x: Partial<RuimtesToestand>) => { toestand = { ...toestand, ...x, nu: Date.now() }; luisteraars.forEach((f) => f()); if ('status' in x) meldRuimte(ruimteVanStatus(toestand.status)); };
+// UPD-008: meldSignaal = false tijdens optimistische updates vóórdat de server de wissel bevestigt, zodat e-mail/cloud nooit in de oude ruimte herladen.
+const zet = (x: Partial<RuimtesToestand>, meldSignaal = true) => { toestand = { ...toestand, ...x, nu: Date.now() }; luisteraars.forEach((f) => f()); if (meldSignaal && 'status' in x) meldRuimte(ruimteVanStatus(toestand.status)); };
 export const ruimtesToestand = () => toestand;
 export const useRuimtes = () => useSyncExternalStore((f) => { luisteraars.add(f); return () => { luisteraars.delete(f); }; }, () => toestand, () => toestand);
 
@@ -26,9 +27,17 @@ export async function ruimtesVernieuwen(): Promise<void> {
   catch (e) { const st = Number((e as { status?: number })?.status || 0); zet({ geladen: true, ...(st === 401 || st === 403 || st === 404 ? { status: null } : {}), fout: st >= 500 || !st ? 'NETWERK' : String((e as { code?: string })?.code || (e as Error)?.message || `HTTP ${st}`) }); }
 }
 async function actie(soort: RuimtesToestand['bezig'], f: () => Promise<RuimtesStatus>): Promise<RuimtesStatus> {
-  zet({ bezig: soort, fout: '', uitleg: '' }); laatsteActie = Date.now();
-  try { const s = await f(); zet({ status: s, bezig: '' }); meld(); await techVernieuwen(); return s; }
-  catch (e) { zet({ bezig: '', fout: code(e) }); throw e; }
+  zet({ bezig: soort, fout: '', uitleg: '' }, false); laatsteActie = Date.now();
+  try {
+    const s = await f();
+    zet({ status: s, bezig: '' }, false);
+    meld();
+    await techVernieuwen();
+    // UPD-008: сигнал зміни простору для пошти, хмари й лічильників іде ТІЛЬКИ після того, як сервер зафіксував новий простір і techVernieuwen() узгодив оболонку.
+    meldRuimte(ruimteVanStatus(s));
+    return s;
+  }
+  catch (e) { zet({ bezig: '', fout: code(e) }, false); throw e; }
   finally { laatsteActie = Date.now(); }
 }
 /** Wisselen zonder herladen: optimistisch tonen, server bevestigt (of zet terug). */
@@ -37,15 +46,15 @@ export async function wissel(naar: Ruimte): Promise<RuimtesStatus> {
   const wasPrive = gebruikerKoosPrive();
   // UPD-007: фіксуємо вибір користувача ще до techVernieuwen() усередині actie(), інакше TechPoort одразу поверне вкладку в технічний простір.
   zetGebruikerPrive(naar === 'prive');
-  // RUIMTE-WEERGAVE-001: wisselen = alleen wat dit tabblad toont; de pauze verandert niet (behalve: terug naar technisch heft ze op).
-  if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } });
+  // RUIMTE-WEERGAVE-001 + UPD-008: wisselen = alleen wat dit tabblad toont; optimistisch zonder meldRuimte zodat de post pas ná serverbevestiging herlaadt.
+  if (oud) zet({ status: { ...oud, actief: naar, pauze: naar === 'technisch' ? false : oud.pauze } }, false);
   try {
     const s = await actie('wisselen', () => ruimtesApi.wisselen(naar));
     meldGebruikerWissel(naar);
     return s;
   } catch (e) {
     zetGebruikerPrive(wasPrive);
-    if (oud) zet({ status: oud });
+    if (oud) zet({ status: oud }, false);
     throw e;
   }
 }
@@ -86,7 +95,10 @@ export function startRuimtes(): void {
     const d = (ev as CustomEvent<{ status: number; ruimte: string | null; pad: string; code?: string }>).detail;
     // Niet tijdens een eigen actie (wisselen/starten: de status is dan even optimistisch) en niet kort daarna.
     if (!d || d.pad.includes('/ruimtes/') || toestand.bezig || Date.now() - laatsteActie < 4000) return;
-    if (huidigeRuimte() !== 'technisch') return;
+    if (huidigeRuimte() === 'prive') {
+      if (d.ruimte === 'technisch') void ruimtesVernieuwen();
+      return;
+    }
     const mis = d.ruimte === 'prive';
     const weigering = d.status === 401 || (d.status === 403 && RUIMTE_CODES.test(String(d.code || '')));
     if (mis || weigering) void ruimteControle();
