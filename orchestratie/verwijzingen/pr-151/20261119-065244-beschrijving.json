@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 151,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:52:44.124Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "SEC-003: зміцнення безпеки, заміна xlsx, fast-xml-parser і 10 сканерів",
+    "nl": "SEC-003: beveiligingsversterking, vervanging van xlsx, fast-xml-parser en 10 scanners"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до спільного випуску UPD-005 (через UPD-004): вилучено вразливий пакунок xlsx на користь локального читача на fflate, закріплено fast-xml-parser ^5.12.1, додано SECURITY.md і 10 перевірок безпеки.",
+    "nl": "Opgenomen in UPD-005 (via UPD-004): kwetsbaar pakket xlsx vervangen door eigen fflate-lezer, fast-xml-parser ^5.12.1 vastgezet, SECURITY.md en 10 beveiligingscontroles toegevoegd."
+  },
+  "taken": [
+    "SEC-003",
+    "UPD-005"
+  ]
+}

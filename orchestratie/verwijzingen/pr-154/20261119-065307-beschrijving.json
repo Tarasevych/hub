@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 154,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:07.525Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "PLAATS-TEKENS-001: 1744 знаки місць, логотипи мереж і вигляд «Ланцюжок»",
+    "nl": "PLAATS-TEKENS-001: 1744 plaatstekens, netwerklogo’s en ketenweergave"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до UPD-005 до фіксації dcfe31a4 включно (база 1744 гербів і прапорів, постачальники, тип мережі, компонент PlaatsKeten.tsx і світовий генератор). Гілка лишається відкритою для наступного дозавантаження світових знаків.",
+    "nl": "Opgenomen in UPD-005 t/m vastlegging dcfe31a4 (1744 wapens en vlaggen, aanbieders, netwerktype, PlaatsKeten.tsx en wereldgenerator). De tak blijft open voor de latere lading wereldtekens."
+  },
+  "taken": [
+    "UPD-005"
+  ]
+}

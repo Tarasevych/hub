@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 157,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:07.757Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "Робоча гілка спільного випуску (UPD-004 + BIJDRAGE-001 + VERWIJZING-001)",
+    "nl": "Werktak van de gezamenlijke uitgave (UPD-004 + BIJDRAGE-001 + VERWIJZING-001)"
+  },
+  "samenvatting": {
+    "uk": "Повністю увійшла в основу гілки спільного випуску UPD-005 до фіксації 558681dc включно.",
+    "nl": "Volledig opgenomen als basis van de uitgavetak UPD-005 t/m vastlegging 558681dc."
+  },
+  "taken": [
+    "UPD-004",
+    "UPD-005"
+  ]
+}

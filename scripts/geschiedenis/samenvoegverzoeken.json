@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "bron": "GitHub-lijst van samenvoegverzoeken (momentopname)",
- "momentopname": "2026-11-17",
+ "momentopname": "2026-11-19",
  "verzoeken": [
   {
    "nummer": 1,
@@ -105,7 +105,7 @@
   {
    "nummer": 12,
    "staat": "closed",
-   "samengevoegd": "2026-11-04T11:42:45",
+   "samengevoegd": "2026-11-04",
    "aangemaakt": "2026-10-31",
    "kop": "release/sec-001-20261031-084138",
    "basis": "voornaamst",
@@ -141,7 +141,7 @@
   {
    "nummer": 16,
    "staat": "closed",
-   "samengevoegd": "2026-11-01T06:35:56",
+   "samengevoegd": "2026-11-01",
    "aangemaakt": "2026-10-31",
    "kop": "release/orch-001-mcp-20261031",
    "basis": "release/sec-001-20261031-084138",
@@ -150,7 +150,7 @@
   {
    "nummer": 17,
    "staat": "closed",
-   "samengevoegd": "2026-11-01T17:54:07",
+   "samengevoegd": "2026-11-01",
    "aangemaakt": "2026-11-01",
    "kop": "claude/project-thread-99x4j9",
    "basis": "release/sec-001-20261031-084138",
@@ -159,7 +159,7 @@
   {
    "nummer": 18,
    "staat": "closed",
-   "samengevoegd": "2026-11-01T17:54:06",
+   "samengevoegd": "2026-11-01",
    "aangemaakt": "2026-11-01",
    "kop": "fix/mcp-access-001-20261101-125530",
    "basis": "release/sec-001-20261031-084138",
@@ -168,7 +168,7 @@
   {
    "nummer": 19,
    "staat": "closed",
-   "samengevoegd": "2026-11-01T17:54:06",
+   "samengevoegd": "2026-11-01",
    "aangemaakt": "2026-11-01",
    "kop": "release/ux-ai-vault-001-20261101-160600",
    "basis": "release/sec-001-20261031-084138",
@@ -177,7 +177,7 @@
   {
    "nummer": 20,
    "staat": "closed",
-   "samengevoegd": "2026-11-04T11:42:40",
+   "samengevoegd": "2026-11-04",
    "aangemaakt": "2026-11-01",
    "kop": "feature/login-001-20261101-184800-chatgpt",
    "basis": "integratie",
@@ -213,7 +213,7 @@
   {
    "nummer": 24,
    "staat": "closed",
-   "samengevoegd": "2026-11-07T08:22:36",
+   "samengevoegd": "2026-11-07",
    "aangemaakt": "2026-11-04",
    "kop": "feature/mailmob-001-20261104-073200",
    "basis": "feature/trace-001-20261103-214810",
@@ -222,7 +222,7 @@
   {
    "nummer": 25,
    "staat": "closed",
-   "samengevoegd": "2026-11-07T08:22:36",
+   "samengevoegd": "2026-11-07",
    "aangemaakt": "2026-11-04",
    "kop": "feature/mailpolish-001-20261104-084133",
    "basis": "feature/mailmob-001-20261104-073200",
@@ -258,7 +258,7 @@
   {
    "nummer": 29,
    "staat": "closed",
-   "samengevoegd": "2026-11-05T15:38:00",
+   "samengevoegd": "2026-11-05",
    "aangemaakt": "2026-11-05",
    "kop": "feature/design-002-20261105-134500",
    "basis": "integratie",
@@ -267,7 +267,7 @@
   {
    "nummer": 30,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T06:45:52",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-05",
    "kop": "claude/project-thread-99x4j9",
    "basis": "integratie",
@@ -276,7 +276,7 @@
   {
    "nummer": 31,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T14:05:08",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-05",
    "kop": "integratie",
    "basis": "voornaamst",
@@ -285,7 +285,7 @@
   {
    "nummer": 32,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T07:20:23",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-05",
    "kop": "claude/project-thread-ocqmeu",
    "basis": "integratie",
@@ -294,7 +294,7 @@
   {
    "nummer": 33,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T07:37:57",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-99x4j9",
    "basis": "integratie",
@@ -303,7 +303,7 @@
   {
    "nummer": 34,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T07:38:06",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-ocqmeu",
    "basis": "integratie",
@@ -312,7 +312,7 @@
   {
    "nummer": 35,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T08:09:31",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-ocqmeu",
    "basis": "integratie",
@@ -321,7 +321,7 @@
   {
    "nummer": 36,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T08:10:56",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-99x4j9",
    "basis": "integratie",
@@ -339,7 +339,7 @@
   {
    "nummer": 38,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T09:25:31",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-99x4j9",
    "basis": "integratie",
@@ -348,7 +348,7 @@
   {
    "nummer": 39,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T14:04:47",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "feature/uitgave-001-20261106-092612",
    "basis": "integratie",
@@ -357,7 +357,7 @@
   {
    "nummer": 40,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T09:46:22",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "claude/project-thread-3fl2lm",
    "basis": "integratie",
@@ -366,7 +366,7 @@
   {
    "nummer": 41,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T19:07:08",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "feature/design-003-20261106-103743",
    "basis": "integratie",
@@ -384,7 +384,7 @@
   {
    "nummer": 43,
    "staat": "closed",
-   "samengevoegd": "2026-11-06T19:07:07",
+   "samengevoegd": "2026-11-06",
    "aangemaakt": "2026-11-06",
    "kop": "feature/ext090-001-20261106-163840",
    "basis": "integratie",
@@ -393,7 +393,7 @@
   {
    "nummer": 44,
    "staat": "closed",
-   "samengevoegd": "2026-11-07T20:27:28",
+   "samengevoegd": "2026-11-07",
    "aangemaakt": "2026-11-07",
    "kop": "feature/identiteit-003-account-atelier-20261107-190805",
    "basis": "integratie",
@@ -411,7 +411,7 @@
   {
    "nummer": 46,
    "staat": "closed",
-   "samengevoegd": "2026-11-08T08:12:48",
+   "samengevoegd": "2026-11-08",
    "aangemaakt": "2026-11-08",
    "kop": "feature/identiteit-atelier-v49-20261108-071906",
    "basis": "integratie",
@@ -420,7 +420,7 @@
   {
    "nummer": 47,
    "staat": "closed",
-   "samengevoegd": "2026-11-08T08:37:52",
+   "samengevoegd": "2026-11-08",
    "aangemaakt": "2026-11-08",
    "kop": "fix/identiteit-005-20261108-083100",
    "basis": "integratie",
@@ -429,7 +429,7 @@
   {
    "nummer": 48,
    "staat": "closed",
-   "samengevoegd": "2026-11-08T09:10:50",
+   "samengevoegd": "2026-11-08",
    "aangemaakt": "2026-11-08",
    "kop": "fix/trace-002-20261108-090548",
    "basis": "integratie",
@@ -438,7 +438,7 @@
   {
    "nummer": 49,
    "staat": "closed",
-   "samengevoegd": "2026-11-08T11:20:11",
+   "samengevoegd": "2026-11-08",
    "aangemaakt": "2026-11-08",
    "kop": "fix/mobiel-001-20261108-100838",
    "basis": "integratie",
@@ -447,7 +447,7 @@
   {
    "nummer": 50,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T07:03:49",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-08",
    "kop": "claude/project-thread-3y80yu",
    "basis": "integratie",
@@ -465,7 +465,7 @@
   {
    "nummer": 52,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T07:03:14",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "feature/identiteit-007-20261109-051209",
    "basis": "integratie",
@@ -474,7 +474,7 @@
   {
    "nummer": 53,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T07:03:25",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "feature/identiteit-007-20261109-055709",
    "basis": "integratie",
@@ -483,7 +483,7 @@
   {
    "nummer": 54,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T07:03:37",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "feature/identiteit-007-20261109-065225",
    "basis": "integratie",
@@ -519,7 +519,7 @@
   {
    "nummer": 58,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T21:08:30",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "feature/uitrol-001-20261109-102608",
    "basis": "integratie",
@@ -528,7 +528,7 @@
   {
    "nummer": 59,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T20:36:18",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "feature/mailbg-001-20261109-161500",
    "basis": "integratie",
@@ -537,7 +537,7 @@
   {
    "nummer": 60,
    "staat": "closed",
-   "samengevoegd": "2026-11-09T21:08:28",
+   "samengevoegd": "2026-11-09",
    "aangemaakt": "2026-11-09",
    "kop": "release/mailbg-001-samenvoegen-20261109-215500",
    "basis": "integratie",
@@ -555,7 +555,7 @@
   {
    "nummer": 62,
    "staat": "closed",
-   "samengevoegd": "2026-11-10T11:03:08",
+   "samengevoegd": "2026-11-10",
    "aangemaakt": "2026-11-10",
    "kop": "fix/mailscan-002-20261110-082557",
    "basis": "integratie",
@@ -564,7 +564,7 @@
   {
    "nummer": 63,
    "staat": "closed",
-   "samengevoegd": "2026-11-10T11:23:11",
+   "samengevoegd": "2026-11-10",
    "aangemaakt": "2026-11-10",
    "kop": "feature/mailbg-001-aanraking-20261110",
    "basis": "integratie",
@@ -573,7 +573,7 @@
   {
    "nummer": 64,
    "staat": "closed",
-   "samengevoegd": "2026-11-10T14:12:16",
+   "samengevoegd": "2026-11-10",
    "aangemaakt": "2026-11-10",
    "kop": "integratie",
    "basis": "feature/mailscan-002-uitgave-20261110-120000",
@@ -1320,7 +1320,7 @@
   {
    "nummer": 151,
    "staat": "closed",
-   "samengevoegd": "2026-11-17T09:45:06",
+   "samengevoegd": "2026-11-17",
    "aangemaakt": "2026-11-16",
    "kop": "fix/sec-003-20261116-222239",
    "basis": "voornaamst",
@@ -1379,6 +1379,42 @@
    "kop": "claude/project-thread-3rc4d3",
    "basis": "feature/lokai-001-uitgave-20261117-181000",
    "titel": "UPD-004: об'єднання всіх незібраних розробок поверх встановленої 20261117-190154 (LOKAI-001)"
+  },
+  {
+   "nummer": 158,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-17",
+   "kop": "feature/upd-004-uitgave-20261117-225600",
+   "basis": "voornaamst",
+   "titel": "UPD-004 · Спільний випуск оновлень (запити № 153–157): меню якорів, сповіщення, ярлики, геознаки та безпека"
+  },
+  {
+   "nummer": 159,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-18",
+   "kop": "feature/meldpaneel-001-20261118-082300",
+   "basis": "feature/upd-004-uitgave-20261117-225600",
+   "titel": "MELDPANEEL-001: одна панель сповіщень замість двох — досьє й проєкт"
+  },
+  {
+   "nummer": 160,
+   "staat": "closed",
+   "samengevoegd": "2026-11-18",
+   "aangemaakt": "2026-11-18",
+   "kop": "claude/project-thread-svlfqt",
+   "basis": "claude/project-thread-3rc4d3",
+   "titel": "BIJDRAGE-001: облік авторства, досьє функцій, старт сеансу агента й злиття без утрат"
+  },
+  {
+   "nummer": 161,
+   "staat": "closed",
+   "samengevoegd": "2026-11-18",
+   "aangemaakt": "2026-11-18",
+   "kop": "claude/project-thread-svlfqt",
+   "basis": "claude/project-thread-3rc4d3",
+   "titel": "VERWIJZING-001: посилання з назвою й станом у «Хто що зробив»"
   }
  ]
 }

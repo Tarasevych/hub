@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 161,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:07.997Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "VERWIJZING-001: посилання з назвою, підсумком і станом у «Хто що зробив»",
+    "nl": "VERWIJZING-001: verwijzingen met titel, samenvatting en status in «Wie wat heeft gedaan»"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до спільного випуску UPD-005: реєстр orchestratie/verwijzingen/, компонент Verwijzingen.tsx, правила 1.4.17 та усунення помилок 404 для гілок.",
+    "nl": "Opgenomen in UPD-005: register orchestratie/verwijzingen/, component Verwijzingen.tsx, regels 1.4.17 en bescherming tegen 404-verwijzingen."
+  },
+  "taken": [
+    "VERWIJZING-001",
+    "UPD-005"
+  ]
+}

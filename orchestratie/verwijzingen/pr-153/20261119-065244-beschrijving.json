@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 153,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:52:44.250Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "GEMINI-004: групове меню якорів MaquetteAnkerRail для /agenten",
+    "nl": "GEMINI-004: gegroepeerd ankermenu MaquetteAnkerRail voor /agenten"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до спільного випуску UPD-005 (через UPD-004): спільна навігація якорів на сторінці підключень ШІ з дотриманням прав доступу.",
+    "nl": "Opgenomen in UPD-005 (via UPD-004): gedeelde ankernavigatie op de agentenpagina met respect voor toegangsrechten."
+  },
+  "taken": [
+    "GEMINI-004",
+    "UPD-005"
+  ]
+}

@@ -1994,3 +1994,59 @@ Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie
 | [`claude/project-thread-3rc4d3`](https://github.com/Tarasevych/hub/tree/claude/project-thread-3rc4d3) <!-- b:claude/project-thread-3rc4d3@097aae517dee9018e924d1ab7297dc7a59bf00f7 --> | [`097aae5`](https://github.com/Tarasevych/hub/commit/097aae517dee9018e924d1ab7297dc7a59bf00f7) 2026-11-17 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | nee | [#157](https://github.com/Tarasevych/hub/pull/157) → `feature/lokai-001-uitgave-20261117-181000` (open) |
 
 > Aanvullingslogboek: 2026-11-18 — +2 / +1
+
+## Momentopname 2026-11-19 · live versie `20261117-190154` · commit [`14dbcb3`](https://github.com/Tarasevych/hub/commit/14dbcb3aeceb205ac6f69238f6397816bd293146) · takken op GitHub: 229
+
+### Taken op startdatum
+
+#### <a id="t-meldpaneel-001"></a>MELDPANEEL-001 · 2026-11-18 · agent claude <!-- k:MELDPANEEL-001@d3bfeca5f77482617db427e4669cd3ff143e8230 -->
+
+Одна панель сповіщень замість компактної панелі біля дзвіночка й великого вікна: досьє всієї історії панелі (хто, коли, якою моделлю), перелік можливостей, що є лише в одній панелі, суперечності, проєкт однієї панелі з X4. · Eén meldingenpaneel in plaats van het compacte paneel en het grote venster: dossier met de hele geschiedenis, wat maar in één paneel zit, tegenstrijdigheden en ontwerp met X4.
+
+- **Tak:** [`feature/meldpaneel-001-20261118-082300`](https://github.com/Tarasevych/hub/tree/feature/meldpaneel-001-20261118-082300) · top [`d3bfeca`](https://github.com/Tarasevych/hub/commit/d3bfeca5f77482617db427e4669cd3ff143e8230) (2026-11-18) · status in record: `in_progress`
+- **← Voorganger:** basis [`697c737`](https://github.com/Tarasevych/hub/commit/697c73743723c472be25ad2cf4923b29c36864bc) · versie `20261118-002718` · [`20261118-002718`](https://github.com/Tarasevych/hub/releases/tag/20261118-002718) · vorige taak: [UPD-004](#t-upd-004) (precies op haar top)
+- **→ Opvolger:** nog niet in `integratie` · volgende taken: geen
+- **PR:** [#159](https://github.com/Tarasevych/hub/pull/159) → `feature/upd-004-uitgave-20261117-225600` (open)
+
+#### <a id="t-verwijzing-001"></a>VERWIJZING-001 · 2026-11-18 · agent claude <!-- k:VERWIJZING-001@geen -->
+
+Посилання з людською назвою, підсумком і станом (злито, закрито, видалено: хто, коли, чому) для гілок, запитів на злиття, комітів, міграцій і задач у блоці «Хто що зробив»; підсумок зберігається у випуску, без 404.
+
+- **Tak:** [`feature/verwijzing-001-20261118-092000`](https://github.com/Tarasevych/hub/tree/feature/verwijzing-001-20261118-092000) · tak niet op GitHub (verwijderd of niet gepubliceerd) · status in record: `in_progress`
+- **← Voorganger:** basis [`e570455`](https://github.com/Tarasevych/hub/commit/e570455cf05d1dd66bccd66daf02754c82a6be6f) · versie `20261105-061659` · vorige taak: [UPD-004](#t-upd-004) (bevat haar top)
+- **→ Opvolger:** volgende taken: geen
+
+#### <a id="t-upd-005"></a>UPD-005 · 2026-11-19 · agent gemini <!-- k:UPD-005@geen -->
+
+Спільний випуск UPD-005 поверх живої версії 20261117-190154 (14dbcb3a): об’єднано UPD-004 (WISSEL-001, FIX-001 №156 із міграцією 0301, GEMINI-004 №153, PLAATS-TEKENS-001 базовий №154, MELDCAT-001 №155, SEC-003 №151, AI-TERMIJN-001, HISTORIE-001 №77), BIJDRAGE-001 (№160), VERWIJZING-001 (№161) і новий вигляд «Ланцюжок» із PLAATS-TEKENS-001 (№154, dcfe31a4); зафіксовано всі гілки, що ввійшли та що свідомо лишилися д…
+
+- **Tak:** [`feature/upd-005-uitgave-20261119-065100`](https://github.com/Tarasevych/hub/tree/feature/upd-005-uitgave-20261119-065100) · tak niet op GitHub (verwijderd of niet gepubliceerd) · status in record: `in_progress`
+- **← Voorganger:** basis [`14dbcb3`](https://github.com/Tarasevych/hub/commit/14dbcb3aeceb205ac6f69238f6397816bd293146) · versie `20261105-061659` · [`20261117-190154`](https://github.com/Tarasevych/hub/releases/tag/20261117-190154) · vorige taak: [UPD-003](#t-upd-003) (bevat haar top)
+- **→ Opvolger:** volgende taken: geen
+
+### Opvolgingsschema
+
+```mermaid
+flowchart LR
+  INT[(integratie)]
+  LIVE((live))
+  MELDPANEEL_001["MELDPANEEL-001"]
+  UPD_004 --> MELDPANEEL_001
+  VERWIJZING_001["VERWIJZING-001"]
+  UPD_004 --> VERWIJZING_001
+  UPD_005["UPD-005"]
+  UPD_003 --> UPD_005
+  INT --> LIVE
+```
+
+### Takken zonder taakrecord
+
+Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie/taken/<ID>.json`. Alleen feiten uit git.
+
+| Tak | Top | Basis in `integratie` | In `integratie` | In live versie | PR |
+|---|---|---|---|---|---|
+| [`claude/project-thread-3rc4d3`](https://github.com/Tarasevych/hub/tree/claude/project-thread-3rc4d3) <!-- b:claude/project-thread-3rc4d3@558681dc8b508e9cbde76dba3967306f30721995 --> | [`558681d`](https://github.com/Tarasevych/hub/commit/558681dc8b508e9cbde76dba3967306f30721995) 2026-11-18 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | nee | [#157](https://github.com/Tarasevych/hub/pull/157) → `feature/lokai-001-uitgave-20261117-181000` (open) |
+| [`claude/project-thread-svlfqt`](https://github.com/Tarasevych/hub/tree/claude/project-thread-svlfqt) <!-- b:claude/project-thread-svlfqt@558681dc8b508e9cbde76dba3967306f30721995 --> | [`558681d`](https://github.com/Tarasevych/hub/commit/558681dc8b508e9cbde76dba3967306f30721995) 2026-11-18 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | nee | [#160](https://github.com/Tarasevych/hub/pull/160) → `claude/project-thread-3rc4d3` (samengevoegd 2026-11-18)<br>[#161](https://github.com/Tarasevych/hub/pull/161) → `claude/project-thread-3rc4d3` (samengevoegd 2026-11-18) |
+| [`claude/project-thread-t922sp`](https://github.com/Tarasevych/hub/tree/claude/project-thread-t922sp) <!-- b:claude/project-thread-t922sp@dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35 --> | [`dcfe31a`](https://github.com/Tarasevych/hub/commit/dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35) 2026-11-18 | [`3219123`](https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda) | nee | nee | [#154](https://github.com/Tarasevych/hub/pull/154) → `feature/upd-003-uitgave-20261116-211659` (open) |
+
+> Aanvullingslogboek: 2026-11-19 — +3 / +3
