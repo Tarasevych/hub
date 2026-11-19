@@ -129,11 +129,24 @@ export function bestandOpslaan(naam: string, tekst: string) {
 export const regelsNaarTekst = (regels: Regel[]) => regels.map((r) => `${String(r.nr).padStart(5, '0')} ${r.tijd ? r.tijd.slice(11, 19) : '--:--:--'} ${r.niveau.toUpperCase().padEnd(5)} ${r.tekst}`).join('\n');
 
 // ---- Overzicht van het bestaande goedkeur-/grantsysteem (POST /api/owner/uitrol/overzicht)
-export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string; door?: { id?: string; email?: string; naam?: string }; tijd?: string; github?: { stand?: string; url?: string; code?: string } } | null; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null;
+export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string; ingehaaldDoor?: string; door?: { id?: string; email?: string; naam?: string }; tijd?: string; github?: { stand?: string; url?: string; code?: string } } | null; ingehaaldDoor?: string; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null;
   /** UITROL-002: het archief van deze (mislukte/verlopen/afgebroken) poging ligt nog op de server — hervatten zonder upload kan. */
   pakketAanwezig?: boolean };
 export type GrantSoort = 'account' | 'agenttoken' | 'mcp-koppeling' | 'agent';
-export type Grant = { id: string; soort: GrantSoort; onderwerp: string; label: string; gegevenDoor: string; gegevenOp: string; verlooptOp: string; ingetrokkenOp: string; status: 'actief' | 'verlopen' | 'ingetrokken'; /** Zonder einddatum («до відкликання»). */ onbepaald?: boolean; /** Herkomst: handmatig gegeven of automatisch uit het AI-beleid. */ bron?: 'handmatig' | 'ai-beleid'; /** Het account waarvoor de toestemming geldt (naam, e-mail, foto) — alleen voor actieve grants. */ eigenaar?: { naam: string; email: string; foto: string } | null };
+export type Grant = {
+  id: string; soort: GrantSoort; onderwerp: string; label: string; gegevenDoor: string; gegevenOp: string; verlooptOp: string; ingetrokkenOp: string;
+  status: 'actief' | 'verlopen' | 'ingetrokken' | 'uitgeput';
+  /** Zonder einddatum («до відкликання»). */ onbepaald?: boolean;
+  /** Herkomst: handmatig gegeven of automatisch uit het AI-beleid. */ bron?: 'handmatig' | 'ai-beleid';
+  /** UPD-010: рівень доступу (лише завантаження в чергу або також делеговане встановлення). */
+  toegangNiveau?: import('../../shared/uitrol-wachtrij').ToegangNiveau;
+  /** UPD-010: режим обмеження прав (період / один раз / визначена кількість / підтвердження щоразу). */
+  limietModus?: import('../../shared/uitrol-wachtrij').LimietModus;
+  maxAantal?: number | null;
+  gebruiktAantal?: number;
+  bevestigingPerKeer?: boolean;
+  /** Het account waarvoor de toestemming geldt (naam, e-mail, foto) — alleen voor actieve grants. */ eigenaar?: { naam: string; email: string; foto: string } | null;
+};
 export type AgentTegel = { slug: string; naam: string; modus: 'always' | 'ask' | 'off' | null; beleidCode: string; uitdrukkelijk: boolean;
   recht: { id: string; onbepaald: boolean; verlooptOp: string; bron: 'handmatig' | 'ai-beleid' } | null; verbindingen: { technisch: number; prive: number; laatstGebruikt: string };
   /** TOEGANG-001: de eigenaar zette het recht zelf uit; het beleid geeft het niet vanzelf terug (ISO-tijd). Ontbreekt bij oudere servers. */ uitgezetDoorEigenaar?: string | null };
@@ -177,7 +190,7 @@ export type Stand = StandKort & { intervalSec: number; bronnen: BronStand[]; kaa
 export const SOORT: Record<GrantSoort, [string, string]> = { account: ['Акаунт', 'Account'], agenttoken: ['Токен агента', 'Agenttoken'], 'mcp-koppeling': ['MCP-підключення', 'MCP-koppeling'], agent: ['Агент (усі його підключення)', 'Agent (al zijn koppelingen)'] };
 export const VOORSTEL_STATUS: Record<string, [string, string]> = {
   uploaden: ['Завантажується', 'Wordt geüpload'], 'wacht-op-goedkeuring': ['Чекає схвалення', 'Wacht op goedkeuring'], goedgekeurd: ['Схвалено, чекає на сервер', 'Goedgekeurd, wacht op de server'],
-  geinstalleerd: ['Встановлено', 'Geïnstalleerd'], mislukt: ['Не вдалося', 'Mislukt'], geweigerd: ['Сервер відмовив', 'Geweigerd door de server'],
+  geinstalleerd: ['Встановлено', 'Geïnstalleerd'], ingehaald: ['Включено в новіше', 'Opgenomen in nieuwere'], mislukt: ['Не вдалося', 'Mislukt'], geweigerd: ['Сервер відмовив', 'Geweigerd door de server'],
   afgewezen: ['Відхилено вами', 'Door u afgewezen'], verlopen: ['Минув термін', 'Verlopen'], afgebroken: ['Скасовано', 'Afgebroken'],
 };
 

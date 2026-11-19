@@ -7,9 +7,20 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Bot, CalendarClock, Check, Clock, ExternalLink, Info, KeyRound, Link2, Plug, ShieldAlert, ShieldCheck, UserRound, X } from 'lucide-react';
 import AgentLogo from '../agenten/AgentLogo';
 import { SOORT, tr, type AgentTegel, type Grant, type GrantSoort, type Keuze, type Lang, type Overzicht } from './types';
+import type { LimietModus, ToegangNiveau } from '../../shared/uitrol-wachtrij';
 import './agent-toevoegen.css';
 
-export type GevenInvoer = { soort: GrantSoort; onderwerp: string; dagen: number; onbepaald?: boolean; label: string };
+export type GevenInvoer = {
+  soort: GrantSoort;
+  onderwerp: string;
+  dagen: number;
+  onbepaald?: boolean;
+  label: string;
+  toegangNiveau?: ToegangNiveau;
+  limietModus?: LimietModus;
+  maxAantal?: number | null;
+  bevestigingPerKeer?: boolean;
+};
 type Props = { lang: Lang; data: Overzicht; busy: string; geven: (g: GevenInvoer) => void; termijn?: (g: Grant, t: { dagen: number; onbepaald: boolean }) => void; onSluit: () => void; zoekAccounts?: (zoek: string) => Promise<{ accounts?: Keuze[]; accountsTotaal?: number }> };
 type Weergave = { v: 'agents' } | { v: 'duur'; soort: GrantSoort; onderwerp: string; naam: string; logo: string | null } | { v: 'ander' };
 
@@ -29,6 +40,9 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
   const [w, setW] = useState<Weergave>({ v: 'agents' });
   const [dagen, setDagen] = useState(30);
   const [onbepaald, setOnbepaald] = useState(false);
+  const [toegangNiveau, setToegangNiveau] = useState<ToegangNiveau>('uploaden');
+  const [limietModus, setLimietModus] = useState<LimietModus>('periode');
+  const [maxAantal, setMaxAantal] = useState(3);
   const [naam, setNaam] = useState('');
   const [wijzig, setWijzig] = useState<string | null>(null); // grant-id waarvan de termijn wordt gewijzigd
   const [wDagen, setWDagen] = useState(30);
@@ -56,7 +70,20 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
   useEffect(() => { sluitKnop.current?.focus(); }, [portaalDoel]);
 
   const bevestig = () => {
-    if (w.v === 'duur') { geven({ soort: w.soort, onderwerp: w.onderwerp, dagen: onbepaald ? 1 : Math.min(dagen, max), onbepaald, label: naam.trim() }); onSluit(); }
+    if (w.v === 'duur') {
+      geven({
+        soort: w.soort,
+        onderwerp: w.onderwerp,
+        dagen: onbepaald ? 1 : Math.min(dagen, max),
+        onbepaald,
+        label: naam.trim(),
+        toegangNiveau,
+        limietModus,
+        maxAantal: limietModus === 'aantal' ? Math.max(1, Math.min(1000, Math.round(maxAantal) || 1)) : limietModus === 'eenmalig' ? 1 : null,
+        bevestigingPerKeer: limietModus === 'bevestiging_per_keer',
+      });
+      onSluit();
+    }
   };
   const duurKeuze = (d: number, on: boolean, zetD: (n: number) => void, zetOn: (b: boolean) => void) => <div className='ut-chips-keuze' role='group' aria-label={tr(lang, 'На скільки', 'Hoe lang')}>
     {DAGEN.filter((x) => x <= max).map((x) => <button key={x} type='button' aria-pressed={!on && d === x} onClick={() => { zetOn(false); zetD(x); }}>{x} {tr(lang, x === 1 ? 'день' : 'днів', x === 1 ? 'dag' : 'dagen')}</button>)}
@@ -127,7 +154,23 @@ export default function AgentToevoegen({ lang, data, busy, geven, termijn, onSlu
       </>}
 
       {w.v === 'duur' && <>
-        <p className='ut-sub'>{tr(lang, 'На скільки дати дозвіл готувати й завантажувати пакети? Схвалювати оновлення агент усе одно не може — це робите ви passkey.', 'Voor hoe lang mag deze agent pakketten voorbereiden en uploaden? Goedkeuren kan hij nooit — dat doet u met een passkey.')}</p>
+        <p className='ut-sub'>{tr(lang, 'Оберіть рівень прав, обмеження та термін дії. Будь-які зміни повноважень потребують вашого підтвердження й записуються в журнал.', 'Kies het toegangsniveau, de beperking en de termijn. Elke wijziging van rechten vraagt uw bevestiging en komt in het logboek.')}</p>
+        <fieldset className='ut-veld' data-ut-toegang-niveau><legend>{tr(lang, 'Рівень доступу', 'Toegangsniveau')}</legend>
+          <div className='ut-chips-keuze' role='group' aria-label={tr(lang, 'Рівень доступу', 'Toegangsniveau')}>
+            <button type='button' aria-pressed={toegangNiveau === 'uploaden'} onClick={() => setToegangNiveau('uploaden')}>{tr(lang, 'Лише завантаження в чергу', 'Alleen uploaden naar wachtrij')}</button>
+            <button type='button' aria-pressed={toegangNiveau === 'installeren'} onClick={() => setToegangNiveau('installeren')}>{tr(lang, 'Завантаження + встановлення', 'Uploaden + installeren')}</button>
+          </div>
+        </fieldset>
+        {toegangNiveau === 'installeren' && <p className='ut-agenttegel-nb' data-toon='warn'><Info aria-hidden='true' />{tr(lang, 'Делеговане встановлення вимагає посиленого підтвердження власника. На рівні root встановлення без вашого ключа доступу щоразу дозволене лише за підписаною вами політикою automatisch_beperkt; доти кожне встановлення лишається за вами.', 'Gedelegeerd installeren vraagt sterke bevestiging van de eigenaar. Op root-niveau is installeren zonder uw passkey per keer alleen toegestaan onder een door u ondertekend automatisch_beperkt-beleid; tot die tijd keurt u elke installatie zelf goed.')}</p>}
+        <fieldset className='ut-veld' data-ut-limiet-modus><legend>{tr(lang, 'Обмеження дії', 'Beperking')}</legend>
+          <div className='ut-chips-keuze' role='group' aria-label={tr(lang, 'Обмеження дії', 'Beperking')}>
+            <button type='button' aria-pressed={limietModus === 'periode'} onClick={() => setLimietModus('periode')}>{tr(lang, 'За періодом', 'Voor periode')}</button>
+            <button type='button' aria-pressed={limietModus === 'eenmalig'} onClick={() => setLimietModus('eenmalig')}>{tr(lang, 'Один раз', 'Eenmalig')}</button>
+            <button type='button' aria-pressed={limietModus === 'aantal'} onClick={() => setLimietModus('aantal')}>{tr(lang, 'Визначена кількість', 'Vast aantal keren')}</button>
+            <button type='button' aria-pressed={limietModus === 'bevestiging_per_keer'} onClick={() => setLimietModus('bevestiging_per_keer')}>{tr(lang, 'Підтвердження щоразу', 'Bevestiging per keer')}</button>
+          </div>
+          {limietModus === 'aantal' && <label className='ut-veld ut-aantal-veld'><span>{tr(lang, 'Скільки разів дозволено (1–1000)', 'Hoeveel keren toegestaan (1–1000)')}</span><input type='number' min={1} max={1000} value={maxAantal} onChange={(e) => setMaxAantal(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))} /></label>}
+        </fieldset>
         <fieldset className='ut-veld'><legend>{tr(lang, 'На скільки', 'Hoe lang')}</legend>{duurKeuze(dagen, onbepaald, setDagen, setOnbepaald)}</fieldset>
         {onbepaald && <p className='ut-agenttegel-nb' data-toon='warn'><Info aria-hidden='true' />{tr(lang, 'Без терміну: дозвіл діє, доки ви його не вимкнете (кнопка «Вимкнути доступ»). Усе записується в журнал.', 'Zonder termijn: de toestemming blijft tot u haar uitzet (knop «Toegang uitzetten»). Alles komt in het logboek.')}</p>}
         <label className='ut-veld'><span>{tr(lang, 'Назва (необов’язково)', 'Naam (optioneel)')}</span><input value={naam} maxLength={80} onChange={(e) => setNaam(e.target.value)} /></label>

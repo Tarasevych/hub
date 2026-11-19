@@ -21,7 +21,7 @@ import { meld } from './melder';
 import { gedelegeerdeSessie } from './site-aanroep';
 import { releaseInfo } from './uitgave-info';
 import { REPO, uitrolArchiefToken } from './uitrol-github';
-import { UITROL_LIMIETEN } from './uitrol-goedkeuring';
+import { UITROL_LIMIETEN, actieveGrant, verbruiktGrantEenheid } from './uitrol-goedkeuring';
 import { proefVoorArchief } from './uitrol-vereisten';
 import { geinstalleerdeRelease } from './uitrol-risico';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
@@ -424,6 +424,8 @@ export async function haalGithubReleaseOp(invoer: {
   tag?: string;
   expectedSha256?: string;
   releasePayload?: Record<string, any> | null;
+  agentSlug?: string;
+  bestaandeOntvangstId?: string;
 }) {
   const inst = await githubOntvangstInstellingenVan(invoer.eigenaarId);
   const explicieteRepo = String(invoer.repo || '').trim();
@@ -437,6 +439,12 @@ export async function haalGithubReleaseOp(invoer: {
     if (invoer.bron === 'mcp' && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
       throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
     }
+  }
+
+  let agentGrant: { id: string; label: string } | null = null;
+  if (invoer.bron === 'mcp' && invoer.agentSlug) {
+    const g = await actieveGrant([{ soort: 'agent', id: invoer.agentSlug, accountId: invoer.eigenaarId }]).catch(() => null);
+    if (g) agentGrant = { id: g.id, label: g.label };
   }
 
   const token = await leesGhToken(invoer.eigenaarId);
@@ -470,22 +478,42 @@ export async function haalGithubReleaseOp(invoer: {
   const asset = assets.find((a) => /^mijn-ruimte-\d{8}-\d{6}\.tar\.gz$/.test(String(a.name || '')))
     || assets.find((a) => /\.tar\.gz$/i.test(String(a.name || '')));
 
-  const ontvangstId = (await sys().query(
-    `INSERT INTO app.uitrol_github_ontvangen (user_id, ruimte, bron, repo, tag, release_id, asset_id, asset_naam, status, samenvatting_uk, samenvatting_nl)
-     VALUES ($1, 'technisch', $2, $3, $4, $5, $6, $7, 'ontvangen', $8, $9)
-     RETURNING id`,
-    [
-      invoer.eigenaarId,
-      invoer.bron,
-      repo,
-      tag,
-      Number.isSafeInteger(releaseId) ? releaseId : 0,
-      Number(asset?.id || 0),
-      tekst(asset?.name || '', 200),
-      `Отримано випуск ${tag} із ${repo}.`,
-      `Release ${tag} uit ${repo} ontvangen.`,
-    ],
-  )).rows[0].id as string;
+  let ontvangstId = String(invoer.bestaandeOntvangstId || '');
+  if (ontvangstId) {
+    await sys().query(
+      `UPDATE app.uitrol_github_ontvangen
+          SET repo = $2, tag = $3, release_id = $4, asset_id = $5, asset_naam = $6,
+              samenvatting_uk = $7, samenvatting_nl = $8, bijgewerkt_op = now()
+        WHERE id = $1`,
+      [
+        ontvangstId,
+        repo,
+        tag,
+        Number.isSafeInteger(releaseId) ? releaseId : 0,
+        Number(asset?.id || 0),
+        tekst(asset?.name || '', 200),
+        `Завантаження випуску ${tag} із ${repo}…`,
+        `Release ${tag} uit ${repo} wordt opgehaald…`,
+      ],
+    );
+  } else {
+    ontvangstId = (await sys().query(
+      `INSERT INTO app.uitrol_github_ontvangen (user_id, ruimte, bron, repo, tag, release_id, asset_id, asset_naam, status, samenvatting_uk, samenvatting_nl)
+       VALUES ($1, 'technisch', $2, $3, $4, $5, $6, $7, 'ontvangen', $8, $9)
+       RETURNING id`,
+      [
+        invoer.eigenaarId,
+        invoer.bron,
+        repo,
+        tag,
+        Number.isSafeInteger(releaseId) ? releaseId : 0,
+        Number(asset?.id || 0),
+        tekst(asset?.name || '', 200),
+        `Отримано випуск ${tag} із ${repo}.`,
+        `Release ${tag} uit ${repo} ontvangen.`,
+      ],
+    )).rows[0].id as string;
+  }
 
   const bijwerk = async (velden: {
     versie?: string;
@@ -632,7 +660,7 @@ export async function haalGithubReleaseOp(invoer: {
     }
 
     // Попередня перевірка успішна -> створюємо пропозицію «wacht-op-goedkeuring» (установлення без passkey ніколи не запускається).
-    const grant = await eigenaarVoorbereiderGrant(invoer.eigenaarId);
+    const grant = agentGrant || await eigenaarVoorbereiderGrant(invoer.eigenaarId);
     const voorbereiderLabel = tekst(`GitHub (${invoer.bron}): ${repo}@${tag}`, 80);
     const beschrijving = (vc.meta.samenvatting || String(release.body || '')).slice(0, 8000);
     const commit = vc.meta.commit && /^[0-9a-f]{7,64}$/i.test(vc.meta.commit) ? vc.meta.commit.toLowerCase() : null;
@@ -675,6 +703,7 @@ export async function haalGithubReleaseOp(invoer: {
     }
 
     await rename(tmpPad, pakketPad(voorstelId));
+    if (agentGrant) await verbruiktGrantEenheid(agentGrant.id);
     await bijwerk({
       versie,
       bytes: dl.bytes,
@@ -731,6 +760,68 @@ export async function haalGithubReleaseOp(invoer: {
   } finally {
     await rm(tmpPad, { force: true }).catch(() => undefined);
   }
+}
+
+/**
+ * UPD-010: фоновий запуск отримання випуску з GitHub на сервері.
+ * Одразу створює запис 'ontvangen' і повертає керування браузеру, тож перехід на іншу вкладку або піддомен
+ * ніколи не обриває завантаження й перевірку випуску.
+ */
+export async function startGithubReleaseAchtergrond(invoer: {
+  eigenaarId: string;
+  actor?: { id: string; email?: string } | null;
+  bron: 'webhook' | 'handmatig' | 'mcp';
+  repo?: string;
+  tag?: string;
+  expectedSha256?: string;
+  agentSlug?: string;
+}) {
+  const inst = await githubOntvangstInstellingenVan(invoer.eigenaarId);
+  const explicieteRepo = String(invoer.repo || '').trim();
+  const ingesteldeRepo = String(inst.repo || '').trim();
+  const repo = String(explicieteRepo || ingesteldeRepo).trim();
+  if (!repo || !REPO.test(repo)) throw new GithubOntvangstFout('REPO_ONGELDIG', 400);
+  if (explicieteRepo) {
+    if (ingesteldeRepo && explicieteRepo.toLowerCase() !== ingesteldeRepo.toLowerCase()) {
+      throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
+    }
+    if (invoer.bron === 'mcp' && !ingesteldeRepo && explicieteRepo.toLowerCase() !== 'tarasevych/hub') {
+      throw new GithubOntvangstFout('GITHUB_ONJUISTE_BRON', 403);
+    }
+  }
+  const tag = String(invoer.tag || '').trim();
+  if (tag && !TAG_RE.test(tag)) throw new GithubOntvangstFout('TAG_ONGELDIG', 400);
+
+  const ontvangstId = (await sys().query(
+    `INSERT INTO app.uitrol_github_ontvangen (user_id, ruimte, bron, repo, tag, release_id, asset_id, asset_naam, status, samenvatting_uk, samenvatting_nl)
+     VALUES ($1, 'technisch', $2, $3, $4, 0, 0, '', 'ontvangen', $5, $6)
+     RETURNING id`,
+    [
+      invoer.eigenaarId,
+      invoer.bron,
+      repo,
+      tag || 'latest',
+      `Запущено фонове завантаження ${tag || 'останнього випуску'} із ${repo}…`,
+      `Ophalen op de achtergrond gestart voor ${tag || 'nieuwste release'} uit ${repo}…`,
+    ],
+  )).rows[0].id as string;
+
+  void haalGithubReleaseOp({ ...invoer, repo, tag: tag || undefined, bestaandeOntvangstId: ontvangstId }).catch(async (e) => {
+    const code = e instanceof GithubOntvangstFout ? e.code : 'UITROL_GITHUB_FOUT';
+    await sys().query(
+      `UPDATE app.uitrol_github_ontvangen
+          SET status = 'fout', fout_code = $2, samenvatting_uk = $3, samenvatting_nl = $4, bijgewerkt_op = now()
+        WHERE id = $1 AND status = 'ontvangen'`,
+      [
+        ontvangstId,
+        tekst(code, 80),
+        `Фонове завантаження з GitHub завершилося помилкою (${code}).`,
+        `Ophalen uit GitHub op de achtergrond is mislukt (${code}).`,
+      ],
+    ).catch(() => undefined);
+  });
+
+  return { ok: true, achtergrond: true, gestart: true, ontvangstId, repo, tag: tag || 'latest' };
 }
 
 // ------------------------------------------------------------------------------------------------ обробка вхідного приймача подій GitHub
@@ -905,14 +996,19 @@ export function uitrolGithubOntvangenRoutes(deps: GithubOntvangstRouteDeps): Rec
       if (!limiet.ok) return error('RATE_LIMITED', 429);
       const b = lichaam(c.body);
       const bron = viaMcp || b.bron === 'mcp' ? 'mcp' : 'handmatig';
-      return haalGithubReleaseOp({
+      const del = gedelegeerdeSessie(c.event);
+      const agentSlug = del?.agent || (typeof b.agent === 'string' ? b.agent.trim() : undefined);
+      const params = {
         eigenaarId: a.user.id,
         actor: wie(a),
-        bron,
+        bron: bron as 'handmatig' | 'mcp',
         repo: b.repo ? String(b.repo) : undefined,
         tag: b.tag ? String(b.tag) : undefined,
         expectedSha256: b.sha256 ? String(b.sha256) : undefined,
-      });
+        agentSlug,
+      };
+      if (b.achtergrond === true) return startGithubReleaseAchtergrond(params);
+      return haalGithubReleaseOp(params);
     })],
     // Публічний вхідний приймач сповіщень GitHub (без сеансу реп'яшків; перевірка підпису виключно через HMAC-SHA256 у X-Hub-Signature-256).
     'POST /api/uitrol/github/webhook': [async (raw) => {

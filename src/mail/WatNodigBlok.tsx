@@ -12,6 +12,7 @@
 //   - «Пункт хибний — прибрати» (in «Звідки це?») onthoudt dit apparaat per gesprek; «Повернути» haalt ze terug.
 import { CalendarPlus, ChevronDown, CircleHelp, Clock3, ListChecks, ListTodo, LoaderCircle, PenLine, ShieldAlert, ShieldCheck, Sparkles, Undo2 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   antwoordNodig, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas, normaliseer, telGevonden,
   type GecontroleerdPunt, type Opbouw,
@@ -54,6 +55,8 @@ type Props = {
   onTaak: (v: AfspraakOfTaak) => void;
   onAgenda: (v: AfspraakOfTaak) => void;
   onUitkomst?: (u: WatNodigUitkomst) => void;
+  /** UPD-010: слот верхньої панелі переглядача — компактне поле з піктограмою та розгортуваною панеллю. */
+  kopHost?: HTMLElement | null;
 };
 
 const WEG_SLEUTEL = 'mail-ai-weg-v1';
@@ -273,10 +276,41 @@ export default function WatNodigBlok(p: Props) {
     ? `${zichtbaar.length} ${p.lang === 'uk' ? (zichtbaar.length === 1 ? 'пункт' : zichtbaar.length < 5 ? 'пункти' : 'пунктів') : zichtbaar.length === 1 ? 'punt' : 'punten'}${eerste?.termijn ? ` · ${termijnTekst(p.lang, eerste.termijn, ref)}` : ''}`
     : vanMij ? t('останній лист — ваш', 'het laatste bericht is van u') : t('питань і термінів не знайдено', 'geen vragen of termijnen gevonden');
 
-  return (
-    <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={zichtbaarOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
+  const [kopOpen, setKopOpen] = useState(false);
+  const kopWrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { setKopOpen(false); }, [p.threadId]);
+  useEffect(() => {
+    if (!kopOpen) return;
+    const buiten = (e: PointerEvent) => {
+      if (kopWrapRef.current && e.target instanceof Node && !kopWrapRef.current.contains(e.target)) setKopOpen(false);
+    };
+    const toets = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setKopOpen(false);
+      }
+    };
+    const inBrief = () => window.setTimeout(() => {
+      if (document.activeElement instanceof HTMLIFrameElement) setKopOpen(false);
+    }, 0);
+    document.addEventListener('pointerdown', buiten);
+    document.addEventListener('keydown', toets, true);
+    window.addEventListener('blur', inBrief);
+    return () => {
+      document.removeEventListener('pointerdown', buiten);
+      document.removeEventListener('keydown', toets, true);
+      window.removeEventListener('blur', inBrief);
+    };
+  }, [kopOpen]);
+
+  const inKop = Boolean(p.kopHost);
+  const paneelOpen = inKop ? true : zichtbaarOpen;
+
+  const blokSectie = (
+    <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={paneelOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
       <header className='ai-blok-kop'>
-        <button type='button' className='ai-blok-wissel' aria-expanded={zichtbaarOpen} aria-controls={`${id}-inhoud`} onClick={wissel}>
+        <button type='button' className='ai-blok-wissel' aria-expanded={paneelOpen} aria-controls={`${id}-inhoud`} onClick={inKop ? () => setKopOpen(false) : wissel}>
           <span className='ai-blok-merk' data-opbouw={opbouw}>{opbouw === 'model' ? <><Sparkles aria-hidden='true' />{t('ШІ', 'AI')}</> : <><ListChecks aria-hidden='true' />{t('Авто', 'Auto')}</>}</span>
           <strong id={`${id}-kop`}>{t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')}</strong>
           <small className='ai-blok-samenvatting'>{samenvatting}</small>
@@ -288,10 +322,10 @@ export default function WatNodigBlok(p: Props) {
             : t('простий розбір у браузері, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}
         </small>
       </header>
-      {zichtbaarOpen && (
+      {paneelOpen && (
         <div className='ai-blok-inhoud' id={`${id}-inhoud`}>
           {zichtbaar.length
-            ? <ol className='ai-blok-punten'>{zichtbaar.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ol>
+            ? <ol className='ai-blok-punten'>{zichtbaar.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ol>
             : <p className='ai-blok-leeg'>{vanMij
               ? t('Останній лист у гілці — ваш. Поки ніхто не відповів, від вас нічого не чекають.', 'Het laatste bericht in het gesprek is van u. Zolang niemand antwoordt, wordt er niets van u verwacht.')
               : opbouw === 'model'
@@ -300,19 +334,19 @@ export default function WatNodigBlok(p: Props) {
           {kort.length > 0 && (
             <div className='ai-blok-kort'>
               <h4>{t('Коротко', 'Kort')}</h4>
-              <ul>{kort.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ul>
+              <ul>{kort.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ul>
             </div>
           )}
           {toonNiet && nietGevonden.length > 0 && (
             <div className='ai-blok-niet' data-niet-gevonden-lijst>
               <h4>{t('Не знайдено в листі — не покладайтеся на це', 'Niet in het bericht gevonden — vertrouw hier niet op')}</h4>
-              <ul>{nietGevonden.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ul>
+              <ul>{nietGevonden.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ul>
             </div>
           )}
           <div className='ai-blok-acties'>
-            <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => p.onConcept(uitkomst)}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
-            <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => p.onTaak(voorstel('taak'))}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
-            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => p.onAgenda(voorstel('agenda'))}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onConcept(uitkomst); }}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onTaak(voorstel('taak')); }}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => { if (inKop) setKopOpen(false); p.onAgenda(voorstel('agenda')); }}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
             {motor && !model && (
               <button type='button' className='ai-blok-knop ai-blok-knop-ai' data-actie='model' data-motor={motor.id} disabled={bezig || !genummerd.length} onClick={() => void vraagModel()}
                 title={motor.soort === 'lokaal'
@@ -347,4 +381,35 @@ export default function WatNodigBlok(p: Props) {
       )}
     </section>
   );
+
+  if (p.kopHost) {
+    const knopTip = `${t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')} · ${samenvatting}`;
+    return createPortal(
+      <div ref={kopWrapRef} className='mail-kop-dropdown' data-kop-soort='wat-nodig'>
+        <button
+          type='button'
+          className='mail-kop-pil'
+          data-kop-soort='wat-nodig'
+          data-opbouw={opbouw}
+          aria-expanded={kopOpen}
+          aria-controls={`${id}-kop-paneel`}
+          aria-label={knopTip}
+          data-tooltip={knopTip}
+          onClick={() => setKopOpen((v) => !v)}
+        >
+          {opbouw === 'model' ? <Sparkles aria-hidden='true' /> : <ListChecks aria-hidden='true' />}
+          {zichtbaar.length > 0 && <span className='mail-kop-pil-teller'>{zichtbaar.length}</span>}
+          <ChevronDown aria-hidden='true' className='mail-kop-pil-pijl' />
+        </button>
+        {kopOpen && (
+          <div id={`${id}-kop-paneel`} className='mail-kop-paneel' data-kop-soort='wat-nodig' role='region' aria-label={t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')}>
+            {blokSectie}
+          </div>
+        )}
+      </div>,
+      p.kopHost,
+    );
+  }
+
+  return blokSectie;
 }

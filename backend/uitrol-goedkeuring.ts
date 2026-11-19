@@ -44,6 +44,15 @@ import { POGING_LIMIETEN } from '../shared/uitrol-pogingen';
 import { HERVAT_LIMIETEN, HERVAT_STATUSSEN, pakketBewarenNaUitkomst } from '../shared/uitrol-hervatten';
 import { p } from '../shared/hulpmiddel-teksten';
 import { ToegangFout, gebruikVastleggen, redenVan, viaAppIngetrokken, wijzigingVastleggen } from './toegang-context';
+import {
+  bouwCumulatieveWachtrij,
+  isGrantUitgeput,
+  normaliseerGrantRechten,
+  rechtenSamenvatting,
+  resterendAantal,
+  type LimietModus,
+  type ToegangNiveau,
+} from '../shared/uitrol-wachtrij';
 
 export const UITROL_LIMIETEN = Object.freeze({
   maxBytes: 300 * 1024 * 1024,
@@ -53,7 +62,7 @@ export const UITROL_LIMIETEN = Object.freeze({
   onbepaaldToegestaan: true,
   voorstelWachtDagen: 7,
   uploadUren: 24,
-  openPerVoorbereider: 3,
+  openPerVoorbereider: 15,
   uitdagingMs: 5 * 60 * 1000,
   wachtendeAanmeldingen: 5,
 });
@@ -98,12 +107,23 @@ export async function schakelaarAan(): Promise<boolean> {
 }
 
 // ------------------------------------------------------------------------------------------------ voorbereiders (grants)
-const grantUit = (r: any) => ({
-  id: String(r.id), soort: r.soort as Soort, onderwerp: String(r.onderwerp), accountId: String(r.account_id), label: String(r.label),
-  gegevenDoor: String(r.gegeven_door), gegevenOp: iso(r.gegeven_op), verlooptOp: iso(r.verloopt_op), ingetrokkenOp: iso(r.ingetrokken_op),
-  onbepaald: r.onbepaald === true, bron: (r.bron === 'ai-beleid' ? 'ai-beleid' : 'handmatig') as 'ai-beleid' | 'handmatig',
-  status: r.ingetrokken_op ? 'ingetrokken' : new Date(r.verloopt_op).getTime() <= Date.now() ? 'verlopen' : 'actief',
-});
+const grantUit = (r: any) => {
+  const toegangNiveau: ToegangNiveau = r.toegang_niveau === 'installeren' ? 'installeren' : 'uploaden';
+  const limietModus: LimietModus = (['periode', 'eenmalig', 'aantal', 'bevestiging_per_keer'].includes(String(r.limiet_modus || ''))
+    ? String(r.limiet_modus)
+    : 'periode') as LimietModus;
+  const maxAantal = r.max_aantal === null || r.max_aantal === undefined ? null : Number(r.max_aantal);
+  const gebruiktAantal = Number(r.gebruikt_aantal || 0);
+  const bevestigingPerKeer = r.bevestiging_per_keer === true || limietModus === 'bevestiging_per_keer';
+  const uitgeput = isGrantUitgeput({ limietModus, maxAantal, gebruiktAantal });
+  return {
+    id: String(r.id), soort: r.soort as Soort, onderwerp: String(r.onderwerp), accountId: String(r.account_id), label: String(r.label),
+    gegevenDoor: String(r.gegeven_door), gegevenOp: iso(r.gegeven_op), verlooptOp: iso(r.verloopt_op), ingetrokkenOp: iso(r.ingetrokken_op),
+    onbepaald: r.onbepaald === true, bron: (r.bron === 'ai-beleid' ? 'ai-beleid' : 'handmatig') as 'ai-beleid' | 'handmatig',
+    toegangNiveau, limietModus, maxAantal, gebruiktAantal, bevestigingPerKeer,
+    status: r.ingetrokken_op ? 'ingetrokken' : new Date(r.verloopt_op).getTime() <= Date.now() ? 'verlopen' : uitgeput ? 'uitgeput' : 'actief',
+  };
+};
 
 /** Geldige grant voor een van de onderwerpen (in volgorde: specifiek eerst), en het account is nog in orde (niet geblokkeerd). */
 export async function actieveGrant(onderwerpen: Onderwerp[]) {
@@ -113,6 +133,7 @@ export async function actieveGrant(onderwerpen: Onderwerp[]) {
       `SELECT g.* FROM app.uitrol_voorbereiders g
          LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = g.account_id
         WHERE g.soort = $1 AND g.onderwerp = $2 AND g.account_id = $3 AND g.ingetrokken_op IS NULL AND g.verloopt_op > now()
+          AND (g.max_aantal IS NULL OR g.gebruikt_aantal < g.max_aantal)
           AND r.id IS NOT NULL AND COALESCE(r.data->>'status', '') NOT IN ('blocked', 'rejected', 'deleted')
           AND COALESCE((r.data->>'retiredAt')::numeric, 0) = 0
           AND NOT EXISTS (SELECT 1 FROM app.user_ai_settings s WHERE s.user_id = g.account_id AND s.blocked_at IS NOT NULL)
@@ -120,6 +141,27 @@ export async function actieveGrant(onderwerpen: Onderwerp[]) {
     if (rows[0]) return grantUit(rows[0]);
   }
   return null;
+}
+
+/** Атомарне зарахування однієї використаної спроби дозволу (для режимів «один раз» та «кількість разів»). */
+export async function verbruiktGrantEenheid(grantId: string): Promise<{ gebruiktAantal: number; maxAantal: number | null; uitgeput: boolean } | null> {
+  if (!UUID.test(String(grantId || ''))) return null;
+  try {
+    const { rows } = await sys().query(
+      `UPDATE app.uitrol_voorbereiders
+          SET gebruikt_aantal = COALESCE(gebruikt_aantal, 0) + 1
+        WHERE id = $1 AND ingetrokken_op IS NULL
+        RETURNING gebruikt_aantal, max_aantal, limiet_modus`,
+      [grantId],
+    );
+    if (!rows[0]) return null;
+    const gebruiktAantal = Number(rows[0].gebruikt_aantal || 0);
+    const maxAantal = rows[0].max_aantal === null || rows[0].max_aantal === undefined ? null : Number(rows[0].max_aantal);
+    const limietModus = (rows[0].limiet_modus || 'periode') as LimietModus;
+    return { gebruiktAantal, maxAantal, uitgeput: isGrantUitgeput({ limietModus, maxAantal, gebruiktAantal }) };
+  } catch {
+    return null;
+  }
 }
 
 async function onderwerpControleren(soort: Soort, onderwerp: string, eigenaarId = ''): Promise<{ id: string; accountId: string; label: string }> {
@@ -154,30 +196,146 @@ const SOORT_TEKST: Record<Soort, string> = { account: 'account', agenttoken: 'ag
 /** Termijn als korte tekst voor het journaal («30 dagen», «tot intrekking»). */
 const termijnTekst = (dagen: number | null) => (dagen === null ? 'tot intrekking (zonder einddatum)' : `${dagen} dagen`);
 
-export async function grantGeven(door: { id: string; email?: string }, input: { soort?: unknown; onderwerp?: unknown; dagen?: unknown; label?: unknown; onbepaald?: unknown }, opties: { bron?: 'handmatig' | 'ai-beleid' } = {}) {
+export async function grantGeven(
+  door: { id: string; email?: string },
+  input: {
+    soort?: unknown;
+    onderwerp?: unknown;
+    dagen?: unknown;
+    label?: unknown;
+    onbepaald?: unknown;
+    toegangNiveau?: unknown;
+    limietModus?: unknown;
+    maxAantal?: unknown;
+    bevestigingPerKeer?: unknown;
+  },
+  opties: { bron?: 'handmatig' | 'ai-beleid' } = {},
+) {
   const soort = String(input.soort || '') as Soort;
   if (!SOORTEN.includes(soort)) fout('SOORT_ONGELDIG');
   // «Tot intrekking»: expliciet true (geen "1"/"ja" raden). Dan telt `dagen` niet.
   const onbepaald = input.onbepaald === true;
   const dagen = onbepaald ? null : Number(input.dagen ?? 7);
   if (!onbepaald && (!Number.isInteger(dagen) || (dagen as number) < 1 || (dagen as number) > UITROL_LIMIETEN.voorbereiderMaxDagen)) fout('DUUR_ONGELDIG');
+  const rechtenNorm = normaliseerGrantRechten({
+    toegangNiveau: input.toegangNiveau,
+    limietModus: input.limietModus,
+    maxAantal: input.maxAantal,
+    bevestigingPerKeer: input.bevestigingPerKeer,
+  });
+  if (!rechtenNorm.ok) fout(rechtenNorm.code);
+  const rechten = rechtenNorm.waarde;
   const o = await onderwerpControleren(soort, tekst(input.onderwerp, 200).trim(), door.id);
   const label = tekst(input.label, 80).trim() || o.label;
   const bron = opties.bron === 'ai-beleid' ? 'ai-beleid' : 'handmatig';
-  const { rows } = await sys().query(`INSERT INTO app.uitrol_voorbereiders (soort, onderwerp, account_id, label, gegeven_door, verloopt_op, onbepaald, bron)
-    VALUES ($1, $2, $3, $4, $5, CASE WHEN $7::boolean THEN timestamptz '9999-12-31 00:00:00+00' ELSE now() + make_interval(days => $6::int) END, $7::boolean, $8) RETURNING *`,
-    [soort, o.id, o.accountId, label, door.email || door.id, dagen ?? 0, onbepaald, bron]);
-  await auditeer(door.id, door.id, 'uitrol_voorbereider_gegeven', 'success', { soort, onderwerp: o.id, account: o.accountId, label, dagen, onbepaald });
+  const { rows } = await sys().query(
+    `INSERT INTO app.uitrol_voorbereiders (soort, onderwerp, account_id, label, gegeven_door, verloopt_op, onbepaald, bron, toegang_niveau, limiet_modus, max_aantal, gebruikt_aantal, bevestiging_per_keer)
+     VALUES ($1, $2, $3, $4, $5, CASE WHEN $7::boolean THEN timestamptz '9999-12-31 00:00:00+00' ELSE now() + make_interval(days => $6::int) END, $7::boolean, $8, $9, $10, $11, 0, $12::boolean) RETURNING *`,
+    [soort, o.id, o.accountId, label, door.email || door.id, dagen ?? 0, onbepaald, bron, rechten.toegangNiveau, rechten.limietModus, rechten.maxAantal, rechten.bevestigingPerKeer],
+  );
+  const samNl = rechtenSamenvatting('nl', rechten);
+  const samUk = rechtenSamenvatting('uk', rechten);
+  await auditeer(door.id, door.id, 'uitrol_voorbereider_gegeven', 'success', { soort, onderwerp: o.id, account: o.accountId, label, dagen, onbepaald, ...rechten });
   // Vaste vorm voor «wie gaf wie wat»: ook in het journaal van het getroffen account, als dat een ander account is.
+  const naTekst = `${samNl.niveau} (${samNl.beperking}) — ${termijnTekst(dagen)}`;
   await agentAudit({ ownerId: door.id, actor: { id: door.id, email: door.email }, action: 'agent.grant.gegeven', target: { type: SOORT_TEKST[soort], id: o.id, label }, agent: soort === 'agent' ? o.id : null,
-    before: 'geen recht', after: `mag updates voorbereiden — ${termijnTekst(dagen)}`, reason: '', extra: { grantId: String(rows[0].id), onbepaald, dagen, account: o.accountId } });
+    before: 'geen recht', after: naTekst, reason: '', extra: { grantId: String(rows[0].id), onbepaald, dagen, account: o.accountId, ...rechten } });
   if (o.accountId !== door.id) await agentAudit({ ownerId: o.accountId, actor: { id: door.id, email: door.email }, action: 'agent.grant.gegeven', target: { type: SOORT_TEKST[soort], id: o.id, label }, agent: null,
-    before: 'geen recht', after: `mag updates voorbereiden — ${termijnTekst(dagen)}`, reason: '', extra: { grantId: String(rows[0].id), onbepaald, dagen } });
+    before: 'geen recht', after: naTekst, reason: '', extra: { grantId: String(rows[0].id), onbepaald, dagen, ...rechten } });
   // UI-014: «rechten verleend» kwam nooit in het meldingencentrum (alleen intrekken). Nu wel: wie, wat, hoe lang, waar intrekken.
   const termijnUk = onbepaald ? 'до відкликання' : `на ${dagen} дн.`, termijnNl = onbepaald ? 'tot intrekking' : `voor ${dagen} d`;
   await meld(o.accountId, 'security', 'Право готувати оновлення надано / Recht om updates voor te bereiden gegeven',
-    `${door.email || 'Власник'} надав право «${label}» ${termijnUk}. Воно дозволяє завантажувати пакети оновлень на схвалення; встановити без вашого підтвердження не можна. / ${door.email || 'De eigenaar'} gaf het recht «${label}» ${termijnNl}. Daarmee kunnen updatepakketten ter goedkeuring worden geüpload; installeren zonder uw bevestiging kan niet.`,
+    `${door.email || 'Власник'} надав право «${label}» (${samUk.niveau}; ${samUk.beperking}) ${termijnUk}. / ${door.email || 'De eigenaar'} gaf het recht «${label}» (${samNl.niveau}; ${samNl.beperking}) ${termijnNl}.`,
     'https://admin.tarasevych.com/updates');
+  return grantUit(rows[0]);
+}
+
+/**
+ * Гнучка зміна прав агента (UPD-010): рівень доступу (завантаження чи делеговане встановлення),
+ * режим обмеження (період / одноразово / визначена кількість / підтвердження щоразу), лічильник і термін.
+ * Вимагає посиленого підтвердження власника на рівні маршруту (sterk: true).
+ */
+export async function grantRechtenWijzigen(
+  door: { id: string; email?: string },
+  id: unknown,
+  input: {
+    toegangNiveau?: unknown;
+    limietModus?: unknown;
+    maxAantal?: unknown;
+    bevestigingPerKeer?: unknown;
+    resetTeller?: unknown;
+    dagen?: unknown;
+    onbepaald?: unknown;
+    reden?: unknown;
+  },
+) {
+  if (!UUID.test(String(id || ''))) fout('NIET_GEVONDEN', 404);
+  const vorige = (await sys().query('SELECT * FROM app.uitrol_voorbereiders WHERE id = $1', [String(id)])).rows[0];
+  if (!vorige || vorige.ingetrokken_op) fout('NIET_GEVONDEN', 404);
+  const rechtenNorm = normaliseerGrantRechten({
+    toegangNiveau: input.toegangNiveau !== undefined ? input.toegangNiveau : vorige.toegang_niveau,
+    limietModus: input.limietModus !== undefined ? input.limietModus : vorige.limiet_modus,
+    maxAantal: input.maxAantal !== undefined ? input.maxAantal : (input.limietModus === 'periode' || input.limietModus === 'bevestiging_per_keer' ? null : vorige.max_aantal),
+    gebruiktAantal: input.resetTeller === true ? 0 : Number(vorige.gebruikt_aantal || 0),
+    bevestigingPerKeer: input.bevestigingPerKeer !== undefined ? input.bevestigingPerKeer : vorige.bevestiging_per_keer,
+  });
+  if (!rechtenNorm.ok) fout(rechtenNorm.code);
+  const nieuw = rechtenNorm.waarde;
+
+  const wijzigTermijn = input.dagen !== undefined || input.onbepaald !== undefined;
+  let onbepaald = vorige.onbepaald === true;
+  let dagen: number | null = null;
+  if (wijzigTermijn) {
+    onbepaald = input.onbepaald === true;
+    dagen = onbepaald ? null : Number(input.dagen ?? 7);
+    if (!onbepaald && (!Number.isInteger(dagen) || (dagen as number) < 1 || (dagen as number) > UITROL_LIMIETEN.voorbereiderMaxDagen)) fout('DUUR_ONGELDIG');
+  }
+
+  const { rows } = await sys().query(
+    `UPDATE app.uitrol_voorbereiders
+        SET toegang_niveau = $2,
+            limiet_modus = $3,
+            max_aantal = $4,
+            gebruikt_aantal = $5,
+            bevestiging_per_keer = $6::boolean,
+            onbepaald = CASE WHEN $7::boolean THEN $8::boolean ELSE onbepaald END,
+            gegeven_op = CASE WHEN $7::boolean AND NOT $8::boolean THEN now() ELSE gegeven_op END,
+            verloopt_op = CASE
+              WHEN NOT $7::boolean THEN verloopt_op
+              WHEN $8::boolean THEN timestamptz '9999-12-31 00:00:00+00'
+              ELSE now() + make_interval(days => $9::int)
+            END
+      WHERE id = $1 AND ingetrokken_op IS NULL
+      RETURNING *`,
+    [String(id), nieuw.toegangNiveau, nieuw.limietModus, nieuw.maxAantal, nieuw.gebruiktAantal, nieuw.bevestigingPerKeer, wijzigTermijn, onbepaald, dagen ?? 0],
+  );
+  if (!rows[0]) fout('NIET_GEVONDEN', 404);
+
+  const voorSam = rechtenSamenvatting('nl', grantUit(vorige));
+  const naSam = rechtenSamenvatting('nl', grantUit(rows[0]));
+  const naSamUk = rechtenSamenvatting('uk', grantUit(rows[0]));
+  const label = String(rows[0].label || '');
+  await auditeer(door.id, door.id, 'uitrol_voorbereider_rechten_gewijzigd', 'success', {
+    id: String(id), label, voor: voorSam, na: naSam, ...nieuw,
+  });
+  await agentAudit({
+    ownerId: door.id,
+    actor: { id: door.id, email: door.email },
+    action: 'agent.grant.rechten',
+    target: { type: SOORT_TEKST[rows[0].soort as Soort], id: String(rows[0].onderwerp), label },
+    agent: rows[0].soort === 'agent' ? String(rows[0].onderwerp) : null,
+    before: `${voorSam.niveau} (${voorSam.beperking})`,
+    after: `${naSam.niveau} (${naSam.beperking})`,
+    reason: tekst(input.reden, 300),
+    extra: { grantId: String(id), ...nieuw },
+  });
+  await meld(
+    String(rows[0].account_id),
+    'security',
+    'Права агента на оновлення змінено / Updaterechten van agent gewijzigd',
+    `${door.email || 'Власник'} оновив права для «${label}»: ${naSamUk.niveau} (${naSamUk.beperking}). / ${door.email || 'De eigenaar'} wijzigde de rechten van «${label}»: ${naSam.niveau} (${naSam.beperking}).`,
+    'https://admin.tarasevych.com/updates',
+  ).catch(() => undefined);
   return grantUit(rows[0]);
 }
 /**
@@ -314,6 +472,7 @@ const voorstelUit = (r: any) => ({
   wijzigingen: String(r.wijzigingen || ''), tests: r.tests || {}, diffSamenvatting: String(r.diff_samenvatting || ''),
   aangemaaktOp: iso(r.aangemaakt_op), bijgewerktOp: iso(r.bijgewerkt_op), beslistOp: iso(r.beslist_op), beslistDoor: r.beslist_door ? String(r.beslist_door) : '',
   uitkomstCode: r.uitkomst_code ? String(r.uitkomst_code) : '', uitkomst: r.uitkomst || null,
+  ingehaaldDoor: r.ingehaald_door ? String(r.ingehaald_door) : '',
   voorcontrole: r.voorcontrole || null, pakketMeta: r.pakket_meta || null,
 });
 function testsSchoon(v: unknown) {
@@ -433,6 +592,7 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'wacht-op-goedkeuring', bijgewerkt_op = now(), voorcontrole = $2::jsonb, pakket_meta = $3::jsonb,
     wijzigingen = CASE WHEN length($4) >= 20 THEN $4 ELSE wijzigingen END, bron_commit = COALESCE(NULLIF($5, ''), bron_commit)
     WHERE id = $1 AND status = 'uploaden'`, [row.id, JSON.stringify(vc.resultaat), JSON.stringify(vc.meta), beschrijving, vc.meta.commit]);
+  await verbruiktGrantEenheid(grant.id);
   await auditeer(grant.accountId, grant.accountId, hervatVan ? 'uitrol_voorstel_hervat' : 'uitrol_voorstel_klaar', 'success', { voorstel: row.id, versie: row.versie, sha256: row.sha256, voorbereider: grant.label, ...(hervatVan ? { hervatVan: hervatVan.id, vorigeCode: hervatVan.code } : {}) });
   // UI-014: nieuw pakket wacht op goedkeuring → melding (vroeger alleen zichtbaar als men zelf /updates opende).
   await meld(grant.accountId, 'uitrol', `Оновлення ${tekst(row.versie, 40)} чекає схвалення / Update ${tekst(row.versie, 40)} wacht op goedkeuring`,
@@ -519,7 +679,61 @@ export async function voorstelStatus(onderwerpen: Onderwerp[], a: Record<string,
   if (!grant) fout('GEEN_VOORBEREIDER_GRANT', 403);
   const { rows } = await sys().query(`SELECT * FROM app.uitrol_voorstellen WHERE voorbereider_id IN (SELECT id FROM app.uitrol_voorbereiders WHERE soort = $1 AND onderwerp = $2)
     ${a.id ? 'AND id::text = $3' : ''} ORDER BY aangemaakt_op DESC LIMIT 20`, a.id ? [grant!.soort, grant!.onderwerp, String(a.id)] : [grant!.soort, grant!.onderwerp]);
-  return { grantVerloopt: grant!.verlooptOp, voorstellen: rows.map(voorstelUit).map(({ uitkomst: _u, ...v }) => v) };
+  let wachtrij: Array<{ id: string; versie: string; rang: number; isLaatste: boolean; omvatVersies: string[] }> = [];
+  try {
+    const wachtRows = (await sys().query(`SELECT id, versie, status, aangemaakt_op, voorbereider_label FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring' ORDER BY versie DESC LIMIT 30`)).rows;
+    wachtrij = bouwCumulatieveWachtrij(wachtRows.map((r) => ({
+      id: String(r.id), versie: String(r.versie), status: String(r.status), aangemaaktOp: iso(r.aangemaakt_op), voorbereider: String(r.voorbereider_label || ''),
+    }))).map((item) => ({
+      id: item.voorstel.id, versie: item.voorstel.versie, rang: item.rang, isLaatste: item.isLaatste, omvatVersies: item.omvatVersies,
+    }));
+  } catch { /* кумулятивна черга необов'язкова при старому макеті БД */ }
+  return {
+    grantVerloopt: grant!.verlooptOp,
+    rechten: {
+      toegangNiveau: grant!.toegangNiveau,
+      limietModus: grant!.limietModus,
+      maxAantal: grant!.maxAantal,
+      gebruiktAantal: grant!.gebruiktAantal,
+      resterend: resterendAantal(grant!),
+      bevestigingPerKeer: grant!.bevestigingPerKeer,
+    },
+    wachtrij,
+    voorstellen: rows.map(voorstelUit).map(({ uitkomst: _u, ...v }) => v),
+  };
+}
+
+/**
+ * UPD-010: після успішного встановлення новішої версії автоматично закриває всі старіші очікуючі пропозиції
+ * у кумулятивній черзі як поглинуті (`ingehaald`), прибирає їхні тимчасові архіви та закриває сповіщення.
+ */
+export async function sluitIngehaaldeVoorstellen(geinstalleerdeVersie: string): Promise<string[]> {
+  if (!VERSIE.test(String(geinstalleerdeVersie || ''))) return [];
+  const tijd = new Date().toISOString();
+  const uk = `Включено у встановлену новішу версію ${geinstalleerdeVersie} і закрито автоматично.`;
+  const nl = `Opgenomen in de geïnstalleerde nieuwere versie ${geinstalleerdeVersie} en automatisch afgesloten.`;
+  try {
+    const { rows } = await sys().query(
+      `UPDATE app.uitrol_voorstellen
+          SET status = 'ingehaald',
+              ingehaald_door = $1,
+              uitkomst_code = 'INGEHAALD_DOOR_NIEUWERE',
+              uitkomst = $2::jsonb,
+              bijgewerkt_op = now()
+        WHERE status = 'wacht-op-goedkeuring'
+          AND versie < $1
+        RETURNING id, versie`,
+      [geinstalleerdeVersie, JSON.stringify({ uk, nl, ingehaaldDoor: geinstalleerdeVersie, tijd })],
+    );
+    for (const r of rows) {
+      await rm(pakketPad(String(r.id)), { force: true });
+      await rm(`${pakketPad(String(r.id))}.deel`, { force: true });
+      await wachtMeldingSluiten(r.versie);
+    }
+    return rows.map((r) => String(r.versie));
+  } catch {
+    return [];
+  }
 }
 
 /** Stand van root (status.json van de passkey-uitrol) overnemen; verlopen en onvoltooide voorstellen opruimen. */
@@ -532,7 +746,11 @@ export async function synchroniseer() {
         const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now()
           WHERE versie = $1 AND status = 'goedgekeurd' RETURNING id, versie`, [st.versie, nieuw, tekst(st.code, 40), JSON.stringify({ uk: tekst(st.uk, 300), nl: tekst(st.nl, 300), tijd: tekst(st.tijd, 40) })]);
         // UITROL-002: na een technische fout blijft het archief liggen (hervatten zonder upload); na een weigering om de inhoud niet.
-        for (const r of rows) { if (!pakketBewarenNaUitkomst(nieuw, String(st.code || ''))) await rm(pakketPad(r.id), { force: true }); await wachtMeldingSluiten(r.versie); }
+        for (const r of rows) {
+          if (!pakketBewarenNaUitkomst(nieuw, String(st.code || ''))) await rm(pakketPad(r.id), { force: true });
+          await wachtMeldingSluiten(r.versie);
+          if (nieuw === 'geinstalleerd') await sluitIngehaaldeVoorstellen(String(r.versie));
+        }
       }
     }
   } catch { /* nog geen status */ }
@@ -590,7 +808,7 @@ export async function rootUitkomstenOpnemen() {
         [v.id, nieuwRun, tekst(run.code || (run.staat === 'klaar' ? 'OK' : 'INSTALLATIE_MISLUKT'), 40), JSON.stringify({ uk: tekst(run.uk, 300), nl: tekst(run.nl, 300), tijd: tekst(iso(run.geeindigd_op), 40) })]);
       if (upd.rows[0]) { if (!pakketBewarenNaUitkomst(nieuwRun, String(run.code || 'INSTALLATIE_MISLUKT'))) await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
       if (upd.rows[0] && nieuwRun === 'mislukt') await meldMislukt(v, String(run.uk || ''), String(run.nl || ''));
-      if (upd.rows[0] && nieuwRun === 'geinstalleerd') await meldGeinstalleerd(v);
+      if (upd.rows[0] && nieuwRun === 'geinstalleerd') { await sluitIngehaaldeVoorstellen(String(v.versie)); await meldGeinstalleerd(v); }
       continue;
     }
     // 2. Zonder run (root-script van vóór deze versie): de uitkomstregels in gebeurtenissen.jsonl.
@@ -609,7 +827,7 @@ export async function rootUitkomstenOpnemen() {
       [v.id, nieuw, tekst(code, 40), JSON.stringify({ uk: tekst(uk, 300), nl: tekst(nl, 300), tijd: tekst(tijd, 40) })]);
     if (upd.rows[0]) { if (!pakketBewarenNaUitkomst(nieuw, code)) await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
     if (upd.rows[0] && (nieuw === 'mislukt' || nieuw === 'verlopen')) await meldMislukt(v, uk, nl);
-    if (upd.rows[0] && nieuw === 'geinstalleerd') await meldGeinstalleerd(v);
+    if (upd.rows[0] && nieuw === 'geinstalleerd') { await sluitIngehaaldeVoorstellen(String(v.versie)); await meldGeinstalleerd(v); }
   }
 }
 /**
@@ -733,11 +951,16 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   }) + '\n', { mode: 0o640 });
   await rename(tmp, path.join(inbox, naam));
   await writeFile(path.join(inbox, 'aanvraag'), `${new Date().toISOString()} ${v.versie}\n`, { mode: 0o640 });
+  const omvatRows = await sys().query(
+    `SELECT versie FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring' AND id <> $1 AND versie < $2 ORDER BY versie ASC`,
+    [String(v.id), String(v.versie)],
+  ).catch(() => ({ rows: [] as Array<{ versie: string }> }));
+  const omvatVersies = omvatRows.rows.map((x) => String(x.versie));
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'goedgekeurd', beslist_op = now(), beslist_door = $2, bijgewerkt_op = now() WHERE id = $1`, [String(v.id), eigenaar.email || eigenaar.id]);
-  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label), ...(risicoVraag ? { rodeVlaggenBevestigd: (v.voorcontrole?.controles?.find((c: { id: string }) => c.id === 'risico')?.details?.length ?? 0) } : {}) });
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label), ...(omvatVersies.length ? { omvatVersies } : {}), ...(risicoVraag ? { rodeVlaggenBevestigd: (v.voorcontrole?.controles?.find((c: { id: string }) => c.id === 'risico')?.details?.length ?? 0) } : {}) });
   await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(v.id), 'goedgekeurd', eigenaar.id)).catch(() => undefined);
-  return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd' };
+  return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd', ...(omvatVersies.length ? { omvatVersies } : {}) };
 }
 
 /**
@@ -1022,6 +1245,84 @@ export type UitrolRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: u
 const body = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 export const isEigenaar = (u: SessionOk['user']) => u.role === 'owner' && isOwnerEmail(u.email);
 
+/**
+ * UPD-010: легкий зріз стану фонових процесів оновлення для відображення на всіх піддоменах
+ * (hub, mail, admin, ai тощо). Лише читання, лише для підтвердженого власника.
+ */
+export async function achtergrondStand(eigenaarId: string) {
+  await runsSynchroniseren().catch(() => undefined);
+  await rootUitkomstenOpnemen().catch(() => undefined);
+  const live = await liveStand(undefined, undefined).catch(() => ({ run: null, regels: [], nu: new Date().toISOString() }));
+  const goedgekeurdRows = (await sys().query(
+    `SELECT id, versie, beslist_op, beslist_door FROM app.uitrol_voorstellen WHERE status = 'goedgekeurd' ORDER BY beslist_op DESC LIMIT 3`,
+  ).catch(() => ({ rows: [] as any[] }))).rows;
+  const uploadRows = (await sys().query(
+    `SELECT id, versie, bytes, ontvangen, voorbereider_label, bijgewerkt_op
+       FROM app.uitrol_voorstellen
+      WHERE status = 'uploaden' AND bijgewerkt_op > now() - interval '30 minutes'
+      ORDER BY bijgewerkt_op DESC LIMIT 5`,
+  ).catch(() => ({ rows: [] as any[] }))).rows;
+  const wachtRows = (await sys().query(
+    `SELECT versie FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring' ORDER BY versie DESC LIMIT 20`,
+  ).catch(() => ({ rows: [] as any[] }))).rows;
+  const githubRows = (await sys().query(
+    `SELECT id, repo, tag, versie, status, samenvatting_uk, samenvatting_nl, bijgewerkt_op
+       FROM app.uitrol_github_ontvangen
+      WHERE user_id = $1 AND status = 'ontvangen' AND bijgewerkt_op > now() - interval '30 minutes'
+      ORDER BY bijgewerkt_op DESC LIMIT 3`,
+    [eigenaarId],
+  ).catch(() => ({ rows: [] as any[] }))).rows;
+
+  const run = live.run ? {
+    id: live.run.id,
+    versie: live.run.versie || live.run.release || '',
+    staat: live.run.staat,
+    stap: live.run.stap || '',
+    sub: live.run.sub || '',
+    pct: Number(live.run.pct || 0),
+    uk: live.run.uk || '',
+    nl: live.run.nl || '',
+    gestart: live.run.gestart || '',
+    bijgewerkt: live.run.bijgewerkt || '',
+  } : null;
+
+  return {
+    nu: new Date().toISOString(),
+    actieveVersie: releaseInfo().versie || '',
+    run,
+    goedgekeurd: goedgekeurdRows.map((r) => ({
+      id: String(r.id),
+      versie: String(r.versie || ''),
+      beslistOp: iso(r.beslist_op),
+      beslistDoor: String(r.beslist_door || ''),
+    })),
+    lopendeUploads: uploadRows.map((r) => {
+      const bytes = Number(r.bytes || 0);
+      const ontvangen = Number(r.ontvangen || 0);
+      return {
+        id: String(r.id),
+        versie: String(r.versie || ''),
+        bytes,
+        ontvangen,
+        pct: bytes > 0 ? Math.min(100, Math.round((ontvangen / bytes) * 100)) : 0,
+        voorbereider: String(r.voorbereider_label || ''),
+        bijgewerktOp: iso(r.bijgewerkt_op),
+      };
+    }),
+    githubBezig: githubRows.map((r) => ({
+      id: String(r.id),
+      repo: String(r.repo || ''),
+      tag: String(r.tag || ''),
+      versie: String(r.versie || ''),
+      uk: String(r.samenvatting_uk || ''),
+      nl: String(r.samenvatting_nl || ''),
+      bijgewerktOp: iso(r.bijgewerkt_op),
+    })),
+    wachtend: wachtRows.length,
+    laatsteWachtendVersie: wachtRows[0] ? String(wachtRows[0].versie || '') : '',
+  };
+}
+
 export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, RouterMiddleware[]> {
   const metFouten = async (run: () => Promise<unknown>): Promise<Resp> => {
     try { return json(await run()); }
@@ -1051,6 +1352,14 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     }
     return metFouten(() => run(ctx, auth));
   }) as RouterMiddleware;
+  /** Лише читання фонового стану оновлень для власника з будь-якого піддомену (hub, mail, admin, ai…). */
+  const eigenaarOveral = (run: (ctx: Ctx, auth: SessionOk) => Promise<unknown>) => (async (raw) => {
+    const ctx = raw as unknown as Ctx;
+    const auth = await deps.requireSession(ctx.event, ctx.body);
+    if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
+    if (!isEigenaar(auth.user)) return error('OWNER_REQUIRED', 403);
+    return metFouten(() => run(ctx, auth));
+  }) as RouterMiddleware;
   /** Voorbereider via een gewone sessie (onderwerp = het account). */
   const voorbereider = (run: (o: Onderwerp[], a: Record<string, unknown>) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
@@ -1062,6 +1371,8 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   const wie = (auth: SessionOk): Eigenaar => ({ id: auth.user.id, email: auth.user.email });
 
   return {
+    // UPD-010: фоновий стан завантаження/встановлення на всіх піддоменах (лише читання, лише власник).
+    'POST /api/owner/uitrol/achtergrond': [eigenaarOveral(async (_ctx, auth) => achtergrondStand(auth.user.id))],
     // `ik`: wie de pagina bekijkt (voor «Розгорнути з цього пристрою»: de eigenaar als voorbereider van zijn eigen pakket).
     'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => {
       const ov = await overzicht({ id: auth.user.id, email: auth.user.email });
@@ -1110,7 +1421,15 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
       return proefAanvragen(auth.user.id, body(ctx.body));
     })],
     'POST /api/owner/uitrol/vereisten/stand': [eigenaar({}, async (ctx, auth) => vereistenStand(auth.user.id, body(ctx.body)))],
-    'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
+    'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => {
+      const invoer = body(ctx.body);
+      if (invoer.toegangNiveau === 'installeren' && deps.sterkeStapOp) {
+        const su = await deps.sterkeStapOp(ctx, auth);
+        if (su) return su;
+      }
+      return { voorbereider: await grantGeven(wie(auth), invoer) };
+    })],
+    'POST /api/owner/uitrol/voorbereiders/rechten': [eigenaar({ sterk: true }, async (ctx, auth) => ({ voorbereider: await grantRechtenWijzigen(wie(auth), body(ctx.body).id, body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/termijn': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantTermijn(wie(auth), body(ctx.body).id, body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],
     'POST /api/owner/uitrol/voorstel/uitdaging': [eigenaar({}, async (ctx, auth) => goedkeurUitdaging(wie(auth), body(ctx.body).id, body(ctx.body).risicoBevestigd))],

@@ -746,6 +746,25 @@ button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
 .ut-tag[data-tag="fout"]{--ut-tag:#f87171}
 .ut-regel[data-tag="stop"]{background:rgba(245,158,11,.1)}
 
+/* UPD-010: приховування огляду без розмонтування, кумулятивна черга, фонове завантаження з GitHub та гнучкі права агентів */
+.ut-raster[hidden]{display:none}
+.ut-wachtrij-samenvatting{display:grid;gap:10px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--ut-accent) 45%,var(--ut-line));border-radius:14px;background:color-mix(in srgb,var(--ut-accent) 7%,var(--ut-bg));margin-bottom:12px}
+.ut-wachtrij-kop{display:flex;align-items:flex-start;gap:10px}
+.ut-wachtrij-kop svg{width:20px;height:20px;flex:none;color:var(--ut-accent);margin-top:2px}
+.ut-wachtrij-kop b{display:block;font-size:.94rem;margin-bottom:3px}
+.ut-wachtrij-kop p{margin:0;font-size:.84rem;color:var(--ut-muted);line-height:1.45}
+.ut-pakket-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ut-pakket-kop h3{margin:0}
+.ut-gh-achtergrond{display:grid;gap:10px;margin-top:12px;padding:12px 14px;border:1px dashed var(--ut-line);border-radius:14px;background:var(--ut-bg2)}
+.ut-gh-achtergrond-kop{display:flex;align-items:flex-start;gap:10px}
+.ut-gh-achtergrond-kop svg{width:19px;height:19px;flex:none;color:var(--ut-accent);margin-top:2px}
+.ut-gh-achtergrond-kop b{display:block;font-size:.9rem}
+.ut-gh-achtergrond-kop small{display:block;font-size:.8rem;color:var(--ut-muted);line-height:1.4}
+.ut-gh-achtergrond-rij{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ut-gh-achtergrond-rij input{flex:1 1 200px;min-width:0;min-height:38px;padding:6px 10px;border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg);color:var(--ut-text);font:inherit;font-size:.88rem}
+.ut-aantal-veld{margin-top:6px;max-width:260px}
+.ut-check-rij{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;cursor:pointer}
+
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){
   .admin-uitrol .ut-knop,.ut-root a.ut-knop{min-height:var(--tik-hoogte)}

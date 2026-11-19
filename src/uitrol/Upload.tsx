@@ -8,7 +8,7 @@ import Persoon from './Persoon';
 import KopieerBlokKnop from './KopieerBlokKnop';
 import { nietNieuwerUitleg } from './versie-uitleg';
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, Copy, File as FileIcoon, FileArchive, FileCode, FileImage, FileText, Files, Fingerprint, FolderArchive, GitCommitHorizontal, HardDrive, Loader2, Music, Package, PackageCheck, Rocket, RotateCcw, ShieldCheck, Tag, UploadCloud, UserRound, Video, X, XCircle, FileSpreadsheet, Cpu, DatabaseBackup, Activity, Undo2, LifeBuoy, PlayCircle, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, CloudDownload, Copy, File as FileIcoon, FileArchive, FileCode, FileImage, FileText, Files, Fingerprint, FolderArchive, GitCommitHorizontal, HardDrive, Loader2, Music, Package, PackageCheck, Rocket, RotateCcw, ShieldCheck, Tag, UploadCloud, UserRound, Video, X, XCircle, FileSpreadsheet, Cpu, DatabaseBackup, Activity, Undo2, LifeBuoy, PlayCircle, type LucideIcon } from 'lucide-react';
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
 import { leesPakket, naarBase64, type PakketInfo } from '../platform/tar-lezen';
@@ -23,6 +23,7 @@ import Vereisten from './Vereisten';
 import { commitWeergave } from '../../shared/bron-commit';
 import { herkenBestand, type Pictogram, type Soort } from './bestandssoort';
 import { hervatKandidaat, hervatUitleg, hervatbareVoorstellen, stapUitUitkomst } from '../../shared/uitrol-hervatten';
+import { meldLokaleUploadVoortgang, startGithubAchtergrondUpload, useUitrolAchtergrond, verversServerAchtergrondStand, wisLokaleUpload, zetLokaalDeel } from '../platform/uitrol-achtergrond-beheer';
 import { datum, lopendTekst, mb, tr, VOORSTEL_STATUS, type Flow, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel, type VoorcontroleUit } from './types';
 import './upload.css';
 
@@ -85,21 +86,26 @@ type Props = {
 };
 
 export default function Upload({ lang, context, data, busy, klaar, kanPasskey, doe, laden, goedkeurenId, onFlow, onNieuwId, naarLive, hervatVerzoek, andereInstallatie }: Props) {
-  const [bestand, setBestand] = useState<File | null>(null);
-  const [soort, setSoort] = useState<Soort | null>(null);
-  const [analyse, setAnalyse] = useState<{ info: PakketInfo; sha256: string } | null>(null);
-  const [bezigLezen, setBezigLezen] = useState(false);
-  const [voortgang, setVoortgang] = useState<number | null>(null);
-  const [verzonden, setVerzonden] = useState(0);
-  const [nieuwId, setNieuwId] = useState('');
-  const [serverCheck, setServerCheck] = useState<VoorcontroleUit | null>(null);
+  // UPD-010: стан завантаження живе поза деревом React (achtergrond-beheer.ts), щоб зміна вкладок не обривала процес.
+  const achtergrond = useUitrolAchtergrond();
+  const { bestand, analyse, bezigLezen, voortgang, verzonden, nieuwId, leesfout, hervatMeta } = achtergrond.lokaal;
+  const soort = achtergrond.lokaal.soort as Soort | null;
+  const serverCheck = achtergrond.lokaal.serverCheck as VoorcontroleUit | null;
+  const setBestand = useCallback((v: File | null) => zetLokaalDeel({ bestand: v, bestandNaam: v?.name || '', grootte: v?.size || 0 }), []);
+  const setSoort = useCallback((v: Soort | null) => zetLokaalDeel({ soort: v }), []);
+  const setAnalyse = useCallback((v: { info: PakketInfo; sha256: string } | null) => zetLokaalDeel({ analyse: v, versie: v?.info.versie || '' }), []);
+  const setBezigLezen = useCallback((v: boolean) => zetLokaalDeel({ bezigLezen: v }), []);
+  const setVoortgang = useCallback((v: number | null) => zetLokaalDeel({ voortgang: v }), []);
+  const setVerzonden = useCallback((v: number) => zetLokaalDeel({ verzonden: v }), []);
+  const setNieuwId = useCallback((v: string) => zetLokaalDeel({ nieuwId: v }), []);
+  const setServerCheck = useCallback((v: VoorcontroleUit | null) => zetLokaalDeel({ serverCheck: v }), []);
+  const setLeesfout = useCallback((v: { code: string; procent: number | null; verstuurd: number } | null) => zetLokaalDeel({ leesfout: v }), []);
+  const setHervatMeta = useCallback((v: { bytes: number; naam: string } | null) => zetLokaalDeel({ hervatMeta: v }), []);
   const [sleep, setSleep] = useState(false);
+  const [ghTag, setGhTag] = useState('');
   // Leesfout van de schijf (File API): code `BESTAND_LEZEN|<naam>`, hoeveel procent er al verstuurd was, en of de gebruiker
   // «Обрати файл ще раз» koos (dan gaat de upload na de nieuwe keuze zelf verder waar hij stopte).
-  const [leesfout, setLeesfout] = useState<{ code: string; procent: number | null; verstuurd: number } | null>(null);
   const [hervatWens, setHervatWens] = useState(false);
-  // UITROL-002: hervat zonder bestand (vanuit de lijst of de geschiedenis): de wizard toont de gegevens van het bewaarde archief.
-  const [hervatMeta, setHervatMeta] = useState<{ bytes: number; naam: string } | null>(null);
   const [puls, setPuls] = useState<StapId | ''>('');
   // UITROL-001: vereisten vóór de upload. `vereistenRun` telt op bij elke nieuwe keuze, zodat een oud antwoord nooit een nieuw bestand overschrijft.
   const [vereisten, setVereisten] = useState<VereistenAntwoord | null>(null);
@@ -160,7 +166,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const eindStand = !!nieuw && EINDE.includes(nieuw.status);
 
   const wis = useCallback(() => {
-    setBestand(null); setSoort(null); setAnalyse(null); setNieuwId(''); onNieuwId(''); setVoortgang(null); setServerCheck(null); setBezigLezen(false); setLeesfout(null); setHervatMeta(null);
+    wisLokaleUpload(); onNieuwId('');
     vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     if (invoer.current) invoer.current.value = '';
   }, [onNieuwId]);
@@ -256,7 +262,10 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       id = begin.id; offset = 0; maxStuk = begin.maxStuk || 512 * 1024;
     }
     const stuk = Math.min(maxStuk, data.limieten.maxStuk || 512 * 1024);
-    setVoortgang(Math.round((offset / f.size) * 100)); setVerzonden(offset);
+    const startPct = Math.round((offset / f.size) * 100);
+    zetLokaalDeel({ bezigUpload: true, voorstelId: id, versie: a.info.versie, bestandNaam: f.name, grootte: f.size });
+    setVoortgang(startPct); setVerzonden(offset);
+    meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct: startPct, verzonden: offset, bytes: f.size });
     lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     try {
     while (offset < f.size) {
@@ -287,7 +296,9 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         lopend.current = null;
         await laden(); throw new Error(`UPLOAD_ONDERBROKEN|${foutCode(e) || 'ONBEKEND'}|${Math.round((offset / f.size) * 100)}`);
       }
-      setVoortgang(Math.round((offset / f.size) * 100)); setVerzonden(offset);
+      const pct = Math.round((offset / f.size) * 100);
+      setVoortgang(pct); setVerzonden(offset);
+      meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct, verzonden: offset, bytes: f.size });
       lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     }
     let kl: { status: string; voorcontrole?: VoorcontroleUit };
@@ -301,9 +312,15 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     }
     setNieuwId(id); onNieuwId(id);
     await laden();
+    void verversServerAchtergrondStand();
     return tr(lang, `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його passkey.`, `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`);
-    } finally { lopend.current = null; }
+    } finally { lopend.current = null; zetLokaalDeel({ bezigUpload: false }); meldLokaleUploadVoortgang(null); }
   }).finally(() => setVoortgang(null)); };
+  const githubAchtergrondOphalen = () => { void doe('gh-achtergrond', async () => {
+    const r = await startGithubAchtergrondUpload(context, { tag: ghTag.trim() || undefined });
+    setGhTag('');
+    return tr(lang, `Фонове завантаження випуску ${r.tag || 'останнього'} із GitHub запущено на сервері. Ви можете вільно переходити на інші вкладки чи піддомени — прогрес залишиться у смужці внизу.`, `Ophalen op de achtergrond van release ${r.tag || 'nieuwste'} uit GitHub is op de server gestart. U kunt vrij wisselen van tabblad of subdomein — de voortgang blijft onderaan zichtbaar.`);
+  }); };
   const annuleren = (id: string) => void doe(`annuleer-${id}`, async () => { await api.post('/api/uitrol/voorstel/annuleren', { ...context, id }); if (id === nieuwId) wis(); return tr(lang, 'Пакет скасовано.', 'Pakket geannuleerd.'); });
 
   // ---- UITROL-002: hervatten zonder upload. De server rekent de sha256 van het bewaarde archief opnieuw uit, herhaalt de voorcontrole
@@ -435,6 +452,13 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         <input ref={invoer} type='file' hidden data-meester-bestand onChange={(e) => void kies(e.target.files?.[0] || null)} disabled={!!busy} />
         <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!!busy} onClick={() => invoer.current?.click()}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати файл', 'Bestand kiezen')}</button>
         <ul className='ut-chips' aria-label={tr(lang, 'Підтримується', 'Ondersteund')}><li><FileArchive aria-hidden='true' />.tar.gz / .tgz</li><li><HardDrive aria-hidden='true' />{tr(lang, 'до', 'tot')} {mb(maxBytes)}</li><li><ShieldCheck aria-hidden='true' />{tr(lang, 'нічого не запускається без вашого passkey', 'niets draait zonder uw passkey')}</li></ul>
+      </div>}
+      {!bestand && <div className='ut-gh-achtergrond' data-ut-gh-achtergrond>
+        <div className='ut-gh-achtergrond-kop'><CloudDownload aria-hidden='true' /><div><b>{tr(lang, 'Або завантажити з GitHub у фоні на сервер', 'Of op de achtergrond uit GitHub op de server ophalen')}</b><small>{tr(lang, 'Триває на сервері навіть після переходу на іншу вкладку, інший піддомен чи закриття браузера.', 'Loopt op de server door, ook als u naar een ander tabblad of subdomein gaat of de browser sluit.')}</small></div></div>
+        <div className='ut-gh-achtergrond-rij'>
+          <input type='text' value={ghTag} onChange={(e) => setGhTag(e.target.value)} placeholder={tr(lang, 'Мітка випуску (порожньо = останній)', 'Releasetag (leeg = nieuwste)')} aria-label={tr(lang, 'Мітка випуску GitHub', 'GitHub-releasetag')} maxLength={120} disabled={!!busy} />
+          <button type='button' className='ut-knop' disabled={!!busy} data-ut-gh-achtergrond-knop onClick={githubAchtergrondOphalen}><CloudDownload aria-hidden='true' />{busy === 'gh-achtergrond' ? tr(lang, 'Запускаю…', 'Bezig met starten…') : tr(lang, 'Завантажити у фоні', 'Op achtergrond ophalen')}</button>
+        </div>
       </div>}
       {bestand && <div className='ut-bestand' data-ok={soort ? (soort.ok ? 'ja' : 'nee') : 'wacht'}>
         <span className='ut-bestand-pict'><Pict aria-hidden='true' /></span>

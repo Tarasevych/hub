@@ -25,14 +25,15 @@ import Bronnen from './uitrol/Bronnen';
 import Goedkeuring from './uitrol/Goedkeuring';
 import UitrolStroom from './uitrol/UitrolStroom';
 import UitrolStroomKaart from './uitrol/UitrolStroomKaart';
-import Voorbereiders from './uitrol/Voorbereiders';
+import Voorbereiders, { type RechtenWijzigInvoer } from './uitrol/Voorbereiders';
+import type { GevenInvoer } from './uitrol/AgentToevoegen';
 import GithubInstellingen from './uitrol/GithubInstellingen';
 import TelegramArchief from './uitrol/TelegramArchief';
 import './uitrol/pakket.css';
 import Zijkant from './uitrol/Zijkant';
 import { foutTekst, isHerstart } from './uitrol/fouten';
 import { telPoging, wisPoging } from '../shared/foutuitleg';
-import { datum, methodeTekst, runDuur, staatTekst, tr, type Flow, type Grant, type GrantSoort, type Keuze, type Lang, type LopendeInstallatie, type Overzicht, type Run, type RunsAntwoord, type Voorstel } from './uitrol/types';
+import { datum, methodeTekst, runDuur, staatTekst, tr, type Flow, type Grant, type Keuze, type Lang, type LopendeInstallatie, type Overzicht, type Run, type RunsAntwoord, type Voorstel } from './uitrol/types';
 import { etappeTekst, pogingActie, pogingOorzaak } from '../shared/uitrol-pogingen';
 import { AlertTriangle, PlayCircle, RotateCcw } from 'lucide-react';
 import './beheer-uitrol.css';
@@ -125,7 +126,8 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     return tr(lang, `Запит на зупинку передано серверу (${r.pct} %). За кілька секунд встановлення перерветься; попередній випуск лишиться активним.`, `Het stopverzoek is aan de server doorgegeven (${r.pct} %). Binnen enkele seconden breekt de installatie af; de vorige release blijft actief.`);
   }); }, [context, doe, lang]);
   const afwijzen = useCallback((v: Voorstel, reden: string) => { void doe(`nee-${v.id}`, async () => { await api.post('/api/owner/uitrol/voorstel/afwijzen', { ...context, id: v.id, reden }); return tr(lang, 'Відхилено.', 'Afgewezen.'); }); }, [context, doe, lang]);
-  const grantGeven = useCallback((g: { soort: GrantSoort; onderwerp: string; dagen: number; onbepaald?: boolean; label: string }) => { void doe('grant', async () => { await api.post('/api/owner/uitrol/voorbereiders/toevoegen', { ...context, ...g }); return tr(lang, 'Дозвіл надано.', 'Toestemming gegeven.'); }); }, [context, doe, lang]);
+  const grantGeven = useCallback((g: GevenInvoer) => { void doe('grant', async () => { await api.post('/api/owner/uitrol/voorbereiders/toevoegen', { ...context, ...g }); return tr(lang, 'Дозвіл надано.', 'Toestemming gegeven.'); }); }, [context, doe, lang]);
+  const grantRechten = useCallback((g: Grant, r: RechtenWijzigInvoer) => { void doe(`rc-${g.id}`, async () => { await api.post('/api/owner/uitrol/voorbereiders/rechten', { ...context, id: g.id, ...r }); return tr(lang, 'Права агента оновлено й записано в журнал.', 'Rechten van de agent gewijzigd en in het logboek vastgelegd.'); }); }, [context, doe, lang]);
   const grantTermijn = useCallback((g: Grant, t: { dagen: number; onbepaald: boolean }) => { void doe(`tm-${g.id}`, async () => { await api.post('/api/owner/uitrol/voorbereiders/termijn', { ...context, id: g.id, ...t }); return tr(lang, 'Термін змінено й записано в журнал.', 'Termijn gewijzigd en in het logboek vastgelegd.'); }); }, [context, doe, lang]);
   const grantIntrekken = useCallback((g: Grant, reden: string) => { void doe(`in-${g.id}`, async () => { await api.post('/api/owner/uitrol/voorbereiders/intrekken', { ...context, id: g.id, reden }); return tr(lang, 'Дозвіл відкликано. Користувач отримав сповіщення з причиною.', 'Toestemming ingetrokken. De gebruiker kreeg een melding met de reden.'); }); }, [context, doe, lang]);
 
@@ -242,7 +244,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
     </div>}
 
     <div role='tabpanel' id={`ut-paneel-${tab}`} aria-labelledby={`ut-tab-${tab}`} className='ut-paneel'>
-      {tab === 'overzicht' && <div className='ut-raster'>
+      <div className='ut-raster' hidden={tab !== 'overzicht'}>
         <div className='ut-hoofdkolom'>
           {wachtend > 0 && tgBlokkade?.geblokkeerd && (
             <section className='ut-kaart' role='alert' data-ut-tg-blok-banner>
@@ -309,7 +311,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
           </section>
         </div>
         <Zijkant lang={lang} context={context} data={data} kanPasskey={kanPasskey} naarUpload={naarUpload} naarLog={() => openLog(lopendeRun.current || recent[0]?.id || '')} naarDiagnose={() => setTab('diagnose')} naarInstellen={() => setTab('instellen')} naarToegang={naarToegang} />
-      </div>}
+      </div>
 
       {tab === 'stroom' && <UitrolStroom lang={lang} context={context} versie={stroomVersie} onVersie={setStroomVersie} />}
 
@@ -334,7 +336,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
 
       {tab === 'instellen' && <>
         <UitrolMeester lang={lang} context={context} sourceOrigin={sourceOrigin} tabContext={tabContext} data={data} laden={laden} naarOverzicht={naarUpload} teGoedkeuren={wachtend} />
-        <Voorbereiders lang={lang} data={data} busy={busy} geven={grantGeven} intrekken={grantIntrekken} termijn={grantTermijn} zoekAccounts={zoekAccounts} />
+        <Voorbereiders lang={lang} data={data} busy={busy} geven={grantGeven} intrekken={grantIntrekken} termijn={grantTermijn} rechten={grantRechten} zoekAccounts={zoekAccounts} />
         <GithubInstellingen lang={lang} context={context} onVoorstelOntvangen={() => { void laden(); setTab('overzicht'); }} />
         <TelegramArchief lang={lang} context={context} runs={recent} onGewijzigd={() => void laden()} />
         <ZoneKiezer lang={lang} />

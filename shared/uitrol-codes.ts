@@ -37,6 +37,10 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   // UITROL-001: de eigenaar drukte op «Зупинити» (step-up passkey). Root honoreert dat alleen vóór het overschakelen (< 90 %).
   GESTOPT: { uk: 'Зупинено власником', nl: 'Gestopt door de eigenaar', doenUk: 'Попередній випуск лишився активним; нічого не змінено. Щоб установити цей випуск пізніше, завантажте пакет ще раз.', doenNl: 'De vorige release blijft actief; er is niets gewijzigd. Upload het pakket opnieuw om deze release later alsnog te installeren.' },
   STOP_TE_LAAT: { uk: 'Запит на зупинку надійшов запізно', nl: 'Stopverzoek kwam te laat', doenUk: 'Перемикання вже тривало, тому запит проігноровано: сайт не можна лишати напівперемкненим. Результат вирішать перевірка здоров’я та автоматичний відкат.', doenNl: 'Het overschakelen liep al, daarom is het verzoek genegeerd: de site mag niet half omgeschakeld achterblijven. Gezondheidscontrole en automatische terugdraai beslissen.' },
+  INGEHAALD_DOOR_NIEUWERE: { uk: 'Включено в новіше встановлене оновлення', nl: 'Opgenomen in een nieuwere geïnstalleerde update' },
+  TOEGANG_NIVEAU_ONGELDIG: { uk: 'Неприпустимий рівень доступу агента', nl: 'Ongeldig toegangsniveau voor de agent' },
+  LIMIET_MODUS_ONGELDIG: { uk: 'Неприпустимий режим обмеження прав', nl: 'Ongeldige beperkingsmodus voor rechten' },
+  MAX_AANTAL_ONGELDIG: { uk: 'Кількість дозволених спроб має бути цілим числом від 1 до 1000', nl: 'Het aantal toegestane keren moet een geheel getal tussen 1 en 1000 zijn' },
 
   // ---- pogingen die niet tot een installatie kwamen (migratie 0081, eigenaar 20.10.2026)
   // Eerlijk onbekend: de browser meldde niets meer. Dit mag nooit op een bekende oorzaak lijken.

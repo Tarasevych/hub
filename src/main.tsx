@@ -60,6 +60,11 @@ naActivering(() => {
       const el = document.createElement('div'); el.id = 'nieuwe-versie-band'; document.body.appendChild(el);
       createRoot(el).render(<NieuweVersieBand />);
     });
+    // UPD-010: фоновий індикатор завантаження та встановлення оновлень на всіх піддоменах (hub, mail, admin, ai тощо).
+    void import('./platform/UitrolAchtergrondBand').then(({ default: UitrolAchtergrondBand }) => {
+      const el = document.createElement('div'); el.id = 'uitrol-achtergrond-band'; document.body.appendChild(el);
+      createRoot(el).render(<UitrolAchtergrondBand />);
+    });
   }
 });
 

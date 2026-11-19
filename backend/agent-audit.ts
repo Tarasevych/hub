@@ -12,7 +12,7 @@
 import { auditToevoegen } from '../server/platform/audit';
 
 export type AgentAuditActie =
-  | 'agent.grant.gegeven' | 'agent.grant.ingetrokken' | 'agent.grant.termijn' | 'agent.grant.auto_gegeven' | 'agent.grant.auto_ingetrokken'
+  | 'agent.grant.gegeven' | 'agent.grant.ingetrokken' | 'agent.grant.termijn' | 'agent.grant.rechten' | 'agent.grant.auto_gegeven' | 'agent.grant.auto_ingetrokken'
   | 'agent.policy.gewijzigd' | 'agent.policy.geweigerd' | 'agent.policy.aangeboden';
 export type AgentAuditActor = { id: string; email?: string; type?: 'eigenaar' | 'systeem' };
 export type AgentAuditInvoer = {
