@@ -114,6 +114,11 @@
 .ag-skelet-regel.is-kort{width:60%}
 .ag-blok-skelet small{color:var(--muted)}
 @keyframes ag-skelet{from{background-position:100% 0}to{background-position:-100% 0}}
+/* MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): dezelfde glans, maar als transform op een eigen laag (compositor) in plaats van
+   background-position (die elk beeld opnieuw schildert). Zonder vlag: precies de regel hierboven. */
+html[data-mobiel-breedte-veilig] .ag-skelet-regel{position:relative;overflow:hidden;background:var(--surface);animation:none}
+html[data-mobiel-breedte-veilig] .ag-skelet-regel::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,var(--surface2) 50%,transparent 100%);transform:translateX(-100%);animation:ag-skelet-glans 1.4s ease-in-out infinite;will-change:transform}
+@keyframes ag-skelet-glans{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
 
 /* ---------------------------------------------------------------- кнопки · knoppen: één maat op de hele pagina */
 .ag-pagina :is(.ag-knop,.v2-knop){min-height:var(--tik-hoogte);padding:6px 14px;gap:6px;border-radius:var(--straal-s);font-size:var(--tekst-klein);font-weight:600;line-height:1.2}
@@ -208,5 +213,7 @@ details.ag-blok>summary:focus-visible,.ag-uitklap>summary:focus-visible{outline:
 }
 @media (prefers-reduced-motion:reduce){
   .ag-skelet-regel{animation:none}
+  html[data-mobiel-breedte-veilig] .ag-skelet-regel{background:linear-gradient(90deg,var(--surface) 0%,var(--surface2) 50%,var(--surface) 100%);background-size:200% 100%}
+  html[data-mobiel-breedte-veilig] .ag-skelet-regel::after{content:none}
   .ag-blok-klap .ag-chevron,details.ag-blok>summary .ag-chevron,.ag-pagina .ag-stat{transition:none}
 }

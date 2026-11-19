@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "taakId": "MOBIEL-002",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "opdracht": "З'ясувати й усунути причину, через яку сторінка /agenten#connectors на телефоні гальмує, займає гігабайти пам'яті й сама змінює адресу; виправлення сховати за прапорцем (типово вимкнено). 19.11.2026 (повідомлення власника t448u): опублікувати всю неопубліковану роботу на GitHub, щоб вона не загубилася, — тому виправлення перенесено з пакета 20261112-090000 на найновіший випуск 20261119-072255 без жодної втрати.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "grok",
+    "model": "grok-bot",
+    "repo": "Tarasevych/hub",
+    "basisTak": "herstel/mobiel-breedte-veilig-20261119-084347",
+    "basisCommit": "34f83796addd64f9edbd9705a7cd27ea144f0c43",
+    "integratieBasis": "34f83796addd64f9edbd9705a7cd27ea144f0c43",
+    "geinstalleerdeVersie": "20261117-190154 @ 14dbcb3a",
+    "tak": "herstel/mobiel-breedte-veilig-20261119-084347",
+    "werkTak": "herstel/mobiel-breedte-veilig-20261119-084347",
+    "opmerking": "Перша версія (10–12.11.2026, пакет 20261112-090000, sha256 bfa38b9a6a96e796cec4d2baf02e7ce4a6d8b82f99f6005c4e3eecc8082c0a05) мала локальні фіксації e3efac68, 56e89a67, 0f27919; їхні записи історії втрачено разом із тимчасовим сховищем. Ідентифікатор MOBIEL-001 зайнятий давнішим завданням, тому MOBIEL-002."
+  },
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Сторінка /agenten#connectors на телефоні гальмує і не працює нормально; живі вимірювання власника: пам'ять 350 МБ → 7 ГБ за 30 с, адреса стрибає на #overzicht.",
+      "bewijzen": [
+        "Повідомлення власника 10.11.2026"
+      ]
+    },
+    {
+      "soort": "вимірювання",
+      "omschrijving": "Локальне відтворення в Chrome (412 px, телефон): правило src/ontwerp/mobiel.css:17 (max-width:100% на кожен div/section у робочій області при ≤700 px) спричиняє 4–8 с розкладки і понад 3 ГБ пам'яті.",
+      "bewijzen": [
+        "/workspace/mobiel-traag/ANALIZE-GEHEUGEN.md",
+        "/workspace/mobiel-herstel/meten/eind/resultaat.json"
+      ]
+    },
+    {
+      "soort": "запит власника",
+      "omschrijving": "19.11.2026: опублікувати на GitHub усю неопубліковану роботу й відомості для інших агентів.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/issues/171"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "10.11.2026: розбір причини (mobiel.css:17, спостерігач Plek.tsx, стрибки адреси) і вимірювання 412 пікселів.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/tree/archief/mobiel-traag-analyse"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "10–12.11.2026: прапорець, вузька заміна, ощадливі спостерігачі; пакет 20261112-090000 на основі 20261110-141448 (не опубліковано).",
+      "bewijzen": [
+        "docs/mobiel-breedte-veilig/HERKOMST.md"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "19.11.2026: латку MOBIEL знято з локального дерева проти пробного злиття HUIS-001 і накладено на 20261119-072255; конфлікт у AgentenPagina.tsx розв'язано на користь ANKERS-002; міграцію перенумеровано 0225 → 0302.",
+      "bewijzen": [
+        "docs/mobiel-breedte-veilig/HERKOMST.md",
+        "migrations/0302_mobiel_breedte_veilig_vlag.sql"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "19.11.2026: складання, міграції двічі, перевірки одиниць проти основи, наскрізні перевірки, вимірювання, контроль втрат.",
+      "bewijzen": [
+        "docs/mobiel-breedte-veilig/UITGAVENOTITIES.nl.md",
+        "docs/mobiel-breedte-veilig/METING-412.md",
+        "docs/mobiel-breedte-veilig/VERLIESCONTROLE.md"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Не видаляти правило mobiel.css:17, а вимикати його атрибутом data-mobiel-breedte-veilig на <html>",
+      "reden": "З вимкненим прапорцем сайт точно як 20261110-141448; повернення — один перемикач.",
+      "alternatief": "Пряме видалення правила (без шляху назад)."
+    },
+    {
+      "keuze": "Атрибут ставиться до першої розкладки з останньої відомої відповіді в localStorage",
+      "reden": "Пізній прапорець дозволив би дорогій розкладці вже початися.",
+      "alternatief": "Лише відповідь сервера (запізно)."
+    },
+    {
+      "keuze": "TabsRij не змінювано",
+      "reden": "Вплив малий після усунення головної причини; менше ризику.",
+      "alternatief": "Переписати вимірювання вкладок."
+    },
+    {
+      "keuze": "Утримання цілі на «Агентах» лишити за ANKERS-002 з основи",
+      "reden": "Основа вже має утримання до 4 с і зупинку від власного гортання людини; друге утримання дублювало б його й могло б сперечатися з ним.",
+      "alternatief": "Перенести власне утримання MOBIEL (ResizeObserver, 2,5 с) поруч."
+    },
+    {
+      "keuze": "Задачу не фіксувати в orchestratie/taken",
+      "reden": "takPatroon приймає лише feature|fix|audit|release, а мовний закон власника вимагає herstel/; запис зламав би orch controleer у інших.",
+      "alternatief": "Назвати гілку fix/… (порушення мовного закону)."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "migrations/0302_mobiel_breedte_veilig_vlag.sql, shared/vlaggen.ts, src/mobiel-veilig/vlag.ts, src/main.tsx",
+      "omschrijving": "Прапорець і його стан до першої розкладки."
+    },
+    {
+      "pad": "src/ontwerp/mobiel.css, src/agenten/agenten.css, src/agenten/agenten-pagina.css",
+      "omschrijving": "Вузька заміна широкого правила ширини; сітка; скелет через transform."
+    },
+    {
+      "pad": "src/plaatsing/Plek.tsx, src/agenten/AgentenPagina.tsx",
+      "omschrijving": "Ощадливіші спостерігачі; адреса розділу не змінюється сама."
+    },
+    {
+      "pad": "tests/eenheid/mobiel-breedte-veilig-20261110.test.ts, tests/e2e/mobiel-breedte-veilig.e2e.ts",
+      "omschrijving": "Статичні й наскрізні перевірки."
+    },
+    {
+      "pad": "docs/mobiel-breedte-veilig/*",
+      "omschrijving": "Перевірка втрат, походження, примітки до випуску (nl), перелік перевірки (uk), неперевірене."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npm run build",
+      "uitkomst": "Без помилок."
+    },
+    {
+      "opdracht": "node dist-server/migrate.mjs двічі на порожній базі",
+      "uitkomst": "Перший раз до 0302 включно; другий: «niets te doen». Прапорець aan=false, standaard=false."
+    },
+    {
+      "opdracht": "Усі tests/eenheid, кожен файл в окремому процесі, основа й нове дерево",
+      "uitkomst": "Нове: 567 файлів, 19342 OK / 47 FOUT; основа 20261119-072255: 566 файлів, 19284 OK / 48 FOUT. Нових падінь немає; mobiel-breedte-veilig-20261110 13/13."
+    },
+    {
+      "opdracht": "node scripts/e2e-lokaal.mjs mobiel-breedte-veilig",
+      "uitkomst": "261/261, 64 знімки (прапорець вимк./увімк., світла/темна, uk/nl, 412/1280)."
+    },
+    {
+      "opdracht": "node scripts/e2e-lokaal.mjs huis-start",
+      "uitkomst": "27/27; meldingen/gelezen і /status відповідають 200 (401 не відтворюється)."
+    },
+    {
+      "opdracht": "Вимірювання 412 пікселів, 11 розділів «Агентів», прапорець вимк./увімк.",
+      "uitkomst": "Вимк.: 244–818 МБ, розкладка до 1,83 с, адреса стрибає у 3 з 11. Увімк.: 239–280 МБ, 0,10–0,16 с, адреса стоїть в усіх 11."
+    },
+    {
+      "opdracht": "Контроль втрат проти основи",
+      "uitkomst": "4267 файлів, 849590 рядків: бракує лише 7 свідомо змінених рядків; міграції основи не змінено."
+    }
+  ],
+  "beperkingen": [
+    "Справжній телефон, робочий сервер і встановлення не перевірялися; лише Chrome без вікна з імітацією телефона.",
+    "Справжній Home Assistant не підключався.",
+    "Задачу не зареєстровано в orchestratie/taken (суперечність takPatroon і мовного закону, завдання #172)."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних справжніх ключів, паролів чи файлів сеансу; лише локальні тестові значення."
+  }
+}
