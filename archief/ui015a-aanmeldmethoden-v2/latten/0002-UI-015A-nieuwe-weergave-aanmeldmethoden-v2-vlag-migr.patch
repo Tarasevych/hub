@@ -1,0 +1,966 @@
+From e544932fadd136f13de201c147b6aefa9074172b Mon Sep 17 00:00:00 2001
+From: "grok (UI-015A)" <grok@localhost>
+Date: Fri, 30 Oct 2026 10:46:56 +0100
+Subject: [PATCH 2/2] UI-015A: nieuwe weergave aanmeldmethoden-v2 (vlag,
+ migratie 0200), kaarten, paneel, logo's, eenheidstest
+
+---
+ migrations/0200_aanmeldmethoden_v2_vlag.sql   |   5 +
+ public/aanmeldmethoden/apple.svg              |   1 +
+ public/aanmeldmethoden/discord.svg            |   1 +
+ public/aanmeldmethoden/google.svg             |   1 +
+ public/aanmeldmethoden/microsoft.svg          |   1 +
+ public/aanmeldmethoden/security-hero.svg      |  14 ++
+ public/aanmeldmethoden/telegram.svg           |   1 +
+ shared/aanmeldmethoden-model.ts               |   6 +-
+ shared/vlaggen.ts                             |   6 +
+ src/InstellingencentrumWeergave.tsx           |   2 +-
+ src/ToegangslaagWeergave.tsx                  |  14 +-
+ src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx  | 111 +++++++++++
+ src/aanmeldmethoden-v2/IdentityMethodCard.tsx |  47 +++++
+ .../IdentityMethodDetails.tsx                 | 157 +++++++++++++++
+ .../IdentityMethodsFilter.tsx                 |  20 ++
+ .../IdentityMethodsHero.tsx                   |  16 ++
+ .../IdentitySecurityExtras.tsx                |  18 ++
+ src/aanmeldmethoden-v2/aanmeldmethoden-v2.css | 182 ++++++++++++++++++
+ src/aanmeldmethoden-v2/iconen.tsx             |  21 ++
+ src/aanmeldmethoden-v2/vlag.ts                |  26 +++
+ .../aanmeldmethoden-v2-20261030.test.ts       |  94 +++++++++
+ 21 files changed, 740 insertions(+), 4 deletions(-)
+ create mode 100644 migrations/0200_aanmeldmethoden_v2_vlag.sql
+ create mode 100644 public/aanmeldmethoden/apple.svg
+ create mode 100644 public/aanmeldmethoden/discord.svg
+ create mode 100644 public/aanmeldmethoden/google.svg
+ create mode 100644 public/aanmeldmethoden/microsoft.svg
+ create mode 100644 public/aanmeldmethoden/security-hero.svg
+ create mode 100644 public/aanmeldmethoden/telegram.svg
+ create mode 100644 src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx
+ create mode 100644 src/aanmeldmethoden-v2/IdentityMethodCard.tsx
+ create mode 100644 src/aanmeldmethoden-v2/IdentityMethodDetails.tsx
+ create mode 100644 src/aanmeldmethoden-v2/IdentityMethodsFilter.tsx
+ create mode 100644 src/aanmeldmethoden-v2/IdentityMethodsHero.tsx
+ create mode 100644 src/aanmeldmethoden-v2/IdentitySecurityExtras.tsx
+ create mode 100644 src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
+ create mode 100644 src/aanmeldmethoden-v2/iconen.tsx
+ create mode 100644 src/aanmeldmethoden-v2/vlag.ts
+ create mode 100644 tests/eenheid/aanmeldmethoden-v2-20261030.test.ts
+
+diff --git a/migrations/0200_aanmeldmethoden_v2_vlag.sql b/migrations/0200_aanmeldmethoden_v2_vlag.sql
+new file mode 100644
+index 0000000..c13957c
+--- /dev/null
++++ b/migrations/0200_aanmeldmethoden_v2_vlag.sql
+@@ -0,0 +1,5 @@
++-- 0200 — UI-015 (30.10.2026): vlag voor de nieuwe pagina «Способи входу» / «Aanmeldmethoden» (kop met beeld, filters, zoeken,
++-- kaarten met logo's, details in een zijpaneel). Alleen een vlag, geen schema. UIT = de huidige pagina, ongewijzigd.
++INSERT INTO app.feature_flags (sleutel, omschrijving, aan, standaard)
++VALUES ('aanmeldmethoden-v2', 'Aanmeldmethoden: nieuwe weergave met kaarten, logo''s, filters en details in een zijpaneel. Dezelfde functies en bevestigingen. UIT = de huidige pagina.', false, false)
++ON CONFLICT (sleutel) DO NOTHING;
+diff --git a/public/aanmeldmethoden/apple.svg b/public/aanmeldmethoden/apple.svg
+new file mode 100644
+index 0000000..a831424
+--- /dev/null
++++ b/public/aanmeldmethoden/apple.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M16.37 1.43c0 1.14-.42 2.2-1.13 2.99-.85.95-2.06 1.5-3.17 1.42-.14-1.1.42-2.27 1.11-3.03.77-.86 2.1-1.5 3.19-1.38zM20.5 17.1c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.52-4.12 3.53-1.54.02-1.94-1-4.03-.99-2.09.01-2.53 1.01-4.07.99-1.73-.02-3.05-1.78-4.04-3.35C-.06 15.86-.35 10.75 1.4 8.06c1.24-1.91 3.2-3.03 5.05-3.03 1.88 0 3.06 1.03 4.61 1.03 1.51 0 2.43-1.03 4.6-1.03 1.64 0 3.38.9 4.62 2.44-4.06 2.23-3.4 8.03.22 9.63z"/></svg>
+diff --git a/public/aanmeldmethoden/discord.svg b/public/aanmeldmethoden/discord.svg
+new file mode 100644
+index 0000000..362ce56
+--- /dev/null
++++ b/public/aanmeldmethoden/discord.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#5865F2"/><path fill="#fff" d="M34.9 14.6a23 23 0 0 0-5.7-1.8l-.7 1.5a21 21 0 0 0-6.4 0l-.7-1.5c-2 .3-3.9.9-5.7 1.8-3.6 5.4-4.6 10.6-4.1 15.8a23 23 0 0 0 7 3.5l1.5-2.4c-.8-.3-1.6-.7-2.3-1.2l.6-.4a16.4 16.4 0 0 0 14 0l.6.4c-.7.5-1.5.9-2.3 1.2l1.5 2.4a23 23 0 0 0 7-3.5c.6-6-1-11.2-4.3-15.8zM19.6 27.2c-1.4 0-2.5-1.3-2.5-2.8s1.1-2.8 2.5-2.8 2.5 1.3 2.5 2.8-1.1 2.8-2.5 2.8zm8.8 0c-1.4 0-2.5-1.3-2.5-2.8s1.1-2.8 2.5-2.8 2.5 1.3 2.5 2.8-1.1 2.8-2.5 2.8z"/></svg>
+diff --git a/public/aanmeldmethoden/google.svg b/public/aanmeldmethoden/google.svg
+new file mode 100644
+index 0000000..6441407
+--- /dev/null
++++ b/public/aanmeldmethoden/google.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+diff --git a/public/aanmeldmethoden/microsoft.svg b/public/aanmeldmethoden/microsoft.svg
+new file mode 100644
+index 0000000..dabb4f8
+--- /dev/null
++++ b/public/aanmeldmethoden/microsoft.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg>
+diff --git a/public/aanmeldmethoden/security-hero.svg b/public/aanmeldmethoden/security-hero.svg
+new file mode 100644
+index 0000000..4b19756
+--- /dev/null
++++ b/public/aanmeldmethoden/security-hero.svg
+@@ -0,0 +1,14 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 405" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">
++<defs><linearGradient id="bg" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#143b70"/><stop offset=".45" stop-color="#3565a0"/><stop offset=".78" stop-color="#bac3e5"/><stop offset="1" stop-color="#f4b5ac"/></linearGradient><linearGradient id="cloud" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d1dff8" stop-opacity=".1"/><stop offset="1" stop-color="#f9dbec" stop-opacity=".85"/></linearGradient><linearGradient id="shield" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff" stop-opacity=".32"/><stop offset=".6" stop-color="#d4e3ff" stop-opacity=".15"/><stop offset="1" stop-color="#fff" stop-opacity=".28"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="32"/></filter></defs>
++<rect width="1200" height="405" fill="url(#bg)"/>
++<circle cx="1060" cy="45" r="210" fill="#f6d4d6" opacity=".34" filter="url(#blur)"/>
++<path d="M290 398 510 106 602 219 688 84 818 280 947 136 1120 400Z" fill="#b7c9e7" opacity=".94"/>
++<path d="M380 398 510 106 540 168 513 148 489 184 473 179 450 231 422 221 395 282 570 402Z" fill="#f3f2f9" opacity=".92"/>
++<path d="m540 403 148-319 63 112-38-28-30 57-18-22-43 81 68 117z" fill="#fff7ef" opacity=".9"/>
++<path d="M640 401 818 280 879 341 947 136 997 244 1066 253 1160 401Z" fill="#c4cee8"/>
++<path d="m885 402 62-266 50 108-36-29-20 40-15-17-31 87 52 79z" fill="#fef4ee" opacity=".8"/>
++<path d="M240 405 515 208 600 326 711 232 862 404Z" fill="#2a568b" opacity=".83"/>
++<path d="M0 408 345 260 481 401Z" fill="#183e71" opacity=".72"/>
++<path d="M0 384 C135 337 227 376 350 351s207-20 301 4 263-20 549-15v110H0Z" fill="url(#cloud)" filter="url(#blur)" opacity=".8"/>
++<g transform="translate(890 92)"><path d="M100 2 205 49v87c0 81-56 121-105 139C52 257 0 215 0 136V49Z" fill="url(#shield)" stroke="#fff" stroke-opacity=".65" stroke-width="3"/><rect x="60" y="116" width="80" height="72" rx="16" fill="#fff" opacity=".85"/><path d="M80 118V91a20 20 0 0 1 40 0v27" fill="none" stroke="#fff" stroke-width="13"/><circle cx="100" cy="148" r="7" fill="#7290bc"/><path d="M100 151v12" stroke="#7290bc" stroke-width="6" stroke-linecap="round"/></g>
++</svg>
+diff --git a/public/aanmeldmethoden/telegram.svg b/public/aanmeldmethoden/telegram.svg
+new file mode 100644
+index 0000000..290cc1d
+--- /dev/null
++++ b/public/aanmeldmethoden/telegram.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#26A5E4"/><path fill="#fff" d="M10.9 23.4c7-3 11.6-5 14-6 6.6-2.8 8-3.3 8.9-3.3.2 0 .6 0 .9.3.2.2.3.5.3.7v1c-.4 3.9-2 13.3-2.8 17.6-.3 1.8-1 2.5-1.6 2.5-1.4.1-2.4-.9-3.8-1.8l-5.3-3.6c-2.3-1.6-.8-2.4.5-3.8.3-.4 6.4-5.9 6.5-6.4 0-.1 0-.3-.1-.4-.2-.1-.4 0-.5 0-.2 0-3.6 2.3-10.1 6.7-1 .7-1.8 1-2.6 1-.9 0-2.5-.5-3.7-.9-1.5-.5-2.7-.7-2.6-1.5 0-.4.7-.9 1.9-1.3z"/></svg>
+diff --git a/shared/aanmeldmethoden-model.ts b/shared/aanmeldmethoden-model.ts
+index 09b7519..176324f 100644
+--- a/shared/aanmeldmethoden-model.ts
++++ b/shared/aanmeldmethoden-model.ts
+@@ -73,6 +73,10 @@ export interface MethodeKaart {
+   koppelUrl?: string;
+   /** Laatste werkende aanmeldmethode: niet uit te schakelen. */
+   beschermd?: boolean;
++  /** Alleen externe aanbieder, 'active': ISO-datum van de koppeling (server). */
++  gekoppeldOp?: string;
++  /** Alleen externe aanbieder, 'active' en kanLosmaken: same-origin POST-route. */
++  losmaakUrl?: string;
+ }
+ 
+ export type Fase = 'laden' | 'klaar' | 'fout' | 'geen-toegang';
+@@ -137,7 +141,7 @@ function aanbiederKaart(id: string, a: Aanbieder | undefined, fase: Fase, veldAa
+   if (!a) return { ...basis, staat: 'unknown', reden: REDEN.nietGecontroleerd, actie: 'none' };
+   const reden = a.reden ? (typeof a.reden === 'string' ? tw(a.reden, a.reden) : a.reden) : undefined;
+   switch (a.status) {
+-    case 'actief': return { ...basis, groep: 'hoofd', staat: 'active', accountLabel: a.accountLabel, actie: 'manage', beschermd: !a.kanLosmaken };
++    case 'actief': return { ...basis, groep: 'hoofd', staat: 'active', accountLabel: typeof a.accountLabel === 'string' ? a.accountLabel.slice(0, 120) : undefined, gekoppeldOp: typeof a.gekoppeldOp === 'string' ? a.gekoppeldOp : undefined, losmaakUrl: a.kanLosmaken && isVeiligPad(a.losmaakUrl) ? a.losmaakUrl : undefined, actie: 'manage', beschermd: !a.kanLosmaken };
+     case 'gereed-om-te-koppelen': return isVeiligPad(a.actieKoppelUrl)
+       ? { ...basis, staat: 'ready', reden, actie: 'connect', koppelUrl: a.actieKoppelUrl }
+       : { ...basis, staat: 'unknown', reden: REDEN.nietGecontroleerd, actie: 'none' };
+diff --git a/shared/vlaggen.ts b/shared/vlaggen.ts
+index 5140011..c907fd8 100644
+--- a/shared/vlaggen.ts
++++ b/shared/vlaggen.ts
+@@ -158,6 +158,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
+     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий центр сповіщень.', 'Zet eerst alleen voor uzelf aan om het nieuwe meldingencentrum te proberen.'],
+     gevolg: ['Сповіщення ті самі, нічого не видаляється. Важливі сповіщення безпеки не можна приглушити. Вимкнено — старий центр.', 'Dezelfde meldingen, niets wordt gewist. Belangrijke beveiligingsmeldingen kunnen niet gedempt worden. Uit = het oude centrum.'],
+   },
++  'aanmeldmethoden-v2': {
++    naam: ['Нова сторінка «Способи входу»', 'Nieuwe pagina «Aanmeldmethoden»'],
++    wat: ['Банер, фільтри, пошук і картки з логотипами. Деталі кожного способу відкриваються збоку (на телефоні — знизу).', 'Kop met beeld, filters, zoeken en kaarten met logo’s. De details van elke methode openen opzij (op de telefoon onderaan).'],
++    wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд.', 'Zet eerst alleen voor uzelf aan om de nieuwe weergave te proberen.'],
++    gevolg: ['Функції й підтвердження ті самі; змінюється лише вигляд. Вимкнено — стара сторінка.', 'Dezelfde functies en bevestigingen; alleen het uiterlijk verandert. Uit = de oude pagina.'],
++  },
+   'meldingen-uitleg-v3': {
+     naam: ['Зрозумілі сповіщення й розмір панелі', 'Begrijpelijke meldingen en paneelgrootte'],
+     wat: ['У кожному сповіщенні: хто, що саме, коли, чому, чим загрожує й що робити, плюс кнопки швидких дій (відкрити, переглянути зміну, відкликати, вимкнути цей тип). Розмір тексту й панелі можна обрати.', 'In elke melding: wie, wat precies, wanneer, waarom, wat het gevolg is en wat te doen, plus snelle acties (openen, wijziging bekijken, intrekken, dit soort uitzetten). Tekst- en paneelgrootte instelbaar.'],
+diff --git a/src/InstellingencentrumWeergave.tsx b/src/InstellingencentrumWeergave.tsx
+index 00f8075..c7edc5f 100644
+--- a/src/InstellingencentrumWeergave.tsx
++++ b/src/InstellingencentrumWeergave.tsx
+@@ -21,4 +21,4 @@ export type SettingsWidgetInput={sourceType:'internal'|'external';target:string;
+ export type SettingsShareInput={workspaceId:string;email:string;permission:'viewer'|'editor';scopeBlockIds:string[]};
+ type Props={tab:string;lang:Lang;theme:Theme;plumEnabled:boolean;user:SettingsUser;activeWorkspaces:SettingsWorkspace[];archivedWorkspaces:SettingsWorkspace[];menuPreferences:MenuPreferenceItem[];securitySessions:SecuritySession[];securityLoading:boolean;busy:boolean;onNavigate:(tab:string)=>void;onSaveMenuPreferences:(items:MenuPreferenceItem[])=>Promise<void>;onLanguage:(lang:Lang)=>void;onTheme:(theme:Theme)=>void;onAddWidget:(workspaceId:string,input:SettingsWidgetInput)=>Promise<void>;onShareEmail:(input:SettingsShareInput)=>Promise<void>;onCreateShareLink:(input:Omit<SettingsShareInput,'email'>)=>Promise<string>;onDeleteSelf:(email:string, codewoord?:string)=>void;onRestoreWorkspace:(id:string)=>void;onRefreshSessions:()=>void;onRevokeSession:(item:SecuritySession)=>void|Promise<void>;onRevokeAll:()=>void};
+ const Card=({icon,title,body,onClick,disabled=false}:{icon:ReactNode;title:string;body:string;onClick?:()=>void;disabled?:boolean})=><button type='button' className='settings-card' onClick={onClick} disabled={disabled}>{icon}<span><strong>{title}</strong><small>{body}</small></span></button>;
+-export default function SettingsCenterView(p:Props){const tr=(uk:string,nl:string)=>p.lang==='uk'?uk:nl;const[draft,setDraft]=useState(()=>normalizeMenuPreferences(p.menuPreferences));const[workspaceId,setWorkspaceId]=useState(p.activeWorkspaces[0]?.id||'');const[widget,setWidget]=useState<SettingsWidgetInput>({sourceType:'internal',target:'hub:tasks',title:'',description:'',url:'',size:'medium'});const[shareEmail,setShareEmail]=useState('');const[sharePermission,setSharePermission]=useState<'viewer'|'editor'>('viewer');const[shareLink,setShareLink]=useState('');const[confirm,setConfirm]=useState('');const[codewoord,setCodewoord]=useState('');const[saving,setSaving]=useState(false);useEffect(()=>setDraft(normalizeMenuPreferences(p.menuPreferences)),[p.menuPreferences]);useEffect(()=>{if(!workspaceId&&p.activeWorkspaces[0])setWorkspaceId(p.activeWorkspaces[0].id)},[workspaceId,p.activeWorkspaces]);const title=useMemo(()=>{const labels:Record<string,string>={personalization:tr('Персоналізація облікового запису','Accountpersonalisatie'),menu:tr('Налаштувати меню','Menu instellen'),themes:tr('Налаштування тем','Thema-instellingen'),languages:tr('Налаштування мов','Taalinstellingen'),widgets:tr('Додавання блоків','Blokken toevoegen'),sharing:tr('Доступ до простору','Toegang tot werkruimte'),identity:tr('Ідентичність','Identiteit'),account:tr('Керування обліковим записом','Accountbeheer'),sessions:tr('Сесії та пристрої','Sessies en apparaten'),methods:tr('Способи входу','Aanmeldmethoden'),security:tr('Безпека','Beveiliging'),recovery:tr('Відновлення','Herstel')};return labels[p.tab]||tr('Налаштування','Instellingen')},[p.tab,p.lang]);const subtitle=useMemo(()=>{const subs:Record<string,string>={personalization:tr('Меню, теми, мови, блоки й доступ до вашого простору.','Menu, thema’s, talen, blokken en toegang tot uw werkruimte.'),menu:tr('Вигляд і поведінка бічної панелі, порядок і видимість пунктів меню.','Uiterlijk en gedrag van de zijbalk, volgorde en zichtbaarheid van menu-items.'),themes:tr('Кольори сайту й режим: світлий, темний, як на пристрої або автоматично, коли надворі темно.','Kleuren van de site en de modus: licht, donker, zoals het apparaat of automatisch wanneer het buiten donker is.'),languages:tr('Мова інтерфейсу: українська або нідерландська.','Taal van de interface: Oekraïens of Nederlands.'),widgets:tr('Додайте внутрішній сервіс або зовнішнє посилання як блок.','Voeg een interne dienst of externe link als blok toe.'),sharing:tr('Хто ще бачить ваш робочий простір і з якими правами.','Wie uw werkruimte nog ziet en met welke rechten.'),identity:tr('Входи, пристрої, безпека та відновлення доступу.','Aanmeldingen, apparaten, beveiliging en herstel van toegang.'),account:tr('Профіль, робочі простори та видалення акаунта.','Profiel, werkruimtes en het account verwijderen.'),sessions:tr('Де й коли виконано вхід у ваш акаунт. Завершуйте входи, яких ви не впізнаєте.','Waar en wanneer er op uw account is aangemeld. Beëindig aanmeldingen die u niet herkent.'),methods:tr('Google, passkeys, застосунок-автентифікатор і коди відновлення.','Google, passkeys, authenticator-app en herstelcodes.'),security:tr('Двофакторна автентифікація та підтвердження важливих дій.','Tweefactorauthenticatie en bevestiging van belangrijke acties.'),recovery:tr('Як повернути доступ, якщо пристрій або пароль утрачено.','Hoe u weer toegang krijgt als een apparaat of wachtwoord kwijt is.')};return subs[p.tab]||tr('Налаштування поточного облікового запису та його особистого простору.','Instellingen van het huidige account en de persoonlijke werkruimte.')},[p.tab,p.lang]);const patch=(id:string,value:Partial<MenuPreferenceItem>)=>setDraft(current=>current.map(item=>item.id===id?{...item,...value}:item));const saveMenu=async()=>{setSaving(true);try{await p.onSaveMenuPreferences(draft)}finally{setSaving(false)}};const submitWidget=async(event:FormEvent)=>{event.preventDefault();if(!workspaceId)return;await p.onAddWidget(workspaceId,widget);setWidget(current=>({...current,title:'',description:'',url:''}))};const submitShare=async(event:FormEvent)=>{event.preventDefault();if(!workspaceId||!shareEmail)return;await p.onShareEmail({workspaceId,email:shareEmail,permission:sharePermission,scopeBlockIds:[]});setShareEmail('')};const createLink=async()=>{if(!workspaceId)return;setShareLink(await p.onCreateShareLink({workspaceId,permission:sharePermission,scopeBlockIds:[]}))};const workspaceSelect=<label>{tr('Робочий простір','Werkruimte')}<select value={workspaceId} onChange={event=>setWorkspaceId(event.target.value)} disabled={!p.activeWorkspaces.length}>{p.activeWorkspaces.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>;let body:ReactNode;if(p.tab==='personalization')body=<><div className='settings-card-grid'><Card icon={<Menu/>} title={tr('Налаштувати меню','Menu instellen')} body={tr('Порядок, видимість і піктограми.','Volgorde, zichtbaarheid en pictogrammen.')} onClick={()=>p.onNavigate('menu')}/><Card icon={<Palette/>} title={tr('Налаштування тем','Thema-instellingen')} body={tr('Світла, темна та дозволені палітри.','Lichte, donkere en toegestane paletten.')} onClick={()=>p.onNavigate('themes')}/><Card icon={<Languages/>} title={tr('Налаштування мов','Taalinstellingen')} body={tr('Українська або Nederlands.','Oekraïens of Nederlands.')} onClick={()=>p.onNavigate('languages')}/><Card icon={<LayoutGrid/>} title={tr('Додавання блоків','Blokken toevoegen')} body={tr('Додайте внутрішній або зовнішній сервіс.','Voeg een interne of externe dienst toe.')} onClick={()=>p.onNavigate('widgets')}/><Card icon={<Share2/>} title={tr('Доступ до простору','Toegang tot werkruimte')} body={tr('Надайте доступ за акаунтом або посиланням.','Geef toegang via account of link.')} onClick={()=>p.onNavigate('sharing')}/><Card icon={<KeyRound/>} title={tr('Ідентичність','Identiteit')} body={tr('Входи, безпека та відновлення.','Aanmeldingen, beveiliging en herstel.')} onClick={()=>p.onNavigate('identity')}/><Card icon={<Clock/>} title={tr('Майбутні налаштування','Toekomstige instellingen')} body={tr('Тут з’являться нові розділи персоналізації.','Nieuwe personalisatiesecties verschijnen hier.')} disabled/></div></>;else if(p.tab==='menu')body=<ZijbalkInstellingen tr={tr} rechten={accountRechten(p.user)} zichtbaarheid={<div className='settings-menu-editor'><p className='settings-honest-note'>{tr('Порядок пунктів змінюється перетягуванням у режимі редагування («Налаштувати меню» → «Редагування»). Тут — лише видимість та іконки.','De volgorde wijzigt u door te slepen in de bewerkmodus («Menu instellen» → «Bewerken»). Hier alleen zichtbaarheid en iconen.')}</p><p className='settings-honest-note'>{tr('Управління сайтом (адміністрування, API, розгортання, додатки на сервері, архів) не в меню облікового запису: воно відкривається зі смуги технічного профілю.','Sitebeheer (beheer, API, uitrol, apps op de server, archief) staat niet in het accountmenu: het opent vanuit de band van het technisch profiel.')}</p>{draft.filter(item=>!isSiteBeheer(item.id)).map(item=>{const catalog=MENU_CATALOG.find(entry=>entry.id===item.id);return <article key={item.id}><MenuGlyph icon={item.icon}/><div><strong>{catalog?.[p.lang]||item.id}</strong><small>{p.user.role==='owner'&&ownerLockedMenuItem(item.id)?tr('Завжди видимий для власника','Altijd zichtbaar voor eigenaar'):item.visible?tr('Видимий','Zichtbaar'):tr('Прихований','Verborgen')}</small></div><button type='button' onClick={()=>patch(item.id,{visible:!item.visible})} disabled={p.user.role==='owner'&&ownerLockedMenuItem(item.id)} aria-label={p.user.role==='owner'&&ownerLockedMenuItem(item.id)?tr(`${catalog?.uk||item.id} завжди видимий для власника`,`${catalog?.nl||item.id} is altijd zichtbaar voor de eigenaar`):item.visible?tr('Приховати пункт','Item verbergen'):tr('Показати пункт','Item tonen')}>{item.visible?<Eye/>:<EyeOff/>}</button><select value={item.icon} aria-label={tr(`Іконка пункту «${catalog?.uk||item.id}»`,`Icoon van «${catalog?.nl||item.id}»`)} onChange={event=>patch(item.id,{icon:event.target.value as MenuIconId})}>{MENU_ICON_OPTIONS.map(icon=><option key={icon.id} value={icon.id}>{icon[p.lang]}</option>)}</select></article>})}<button className='settings-primary' type='button' onClick={()=>void saveMenu()} disabled={saving||p.busy}><Check/>{tr('Зберегти меню','Menu opslaan')}</button></div>}/>;else if(p.tab==='themes')body=<ThemaInstellingen tr={tr} lang={p.lang} theme={p.theme} onTheme={p.onTheme} violetToegestaan={p.plumEnabled}/>;else if(p.tab==='languages')body=<div className='settings-choice-grid language'><button className={p.lang==='uk'?'active':''} onClick={()=>p.onLanguage('uk')}><LanguageFlag lang='uk'/><strong>Українська</strong></button><button className={p.lang==='nl'?'active':''} onClick={()=>p.onLanguage('nl')}><LanguageFlag lang='nl'/><strong>Nederlands</strong></button></div>;else if(p.tab==='widgets')body=<form className='settings-form' onSubmit={submitWidget}>{workspaceSelect}{!p.activeWorkspaces.length&&<p className='settings-honest-note'>{tr('Активного робочого простору немає. Спочатку створіть або відновіть простір.','Er is geen actieve werkruimte. Maak of herstel eerst een werkruimte.')}</p>}<label>{tr('Джерело','Bron')}<select value={widget.sourceType} onChange={event=>setWidget({...widget,sourceType:event.target.value as 'internal'|'external'})}><option value='internal'>{tr('Внутрішній сервіс','Interne dienst')}</option><option value='external'>{tr('Зовнішнє посилання','Externe link')}</option></select></label>{widget.sourceType==='internal'&&<label>{tr('Сервіс або сторінка','Dienst of pagina')}<select value={widget.target} onChange={event=>setWidget({...widget,target:event.target.value})}><option value='hub:tasks'>{tr('Завдання','Taken')}</option><option value='hub:calendar'>{tr('Календар','Agenda')}</option><option value='hub:notes'>{tr('Нотатки','Notities')}</option><option value='ai'>AI</option><option value='mail'>{tr('Пошта','E-mail')}</option><option value='cloud'>{tr('Хмарне сховище','Cloudopslag')}</option><option value='github'>GitHub</option></select></label>}<label>{tr('Назва','Naam')}<input value={widget.title} onChange={event=>setWidget({...widget,title:event.target.value})} placeholder={widget.sourceType==='internal'?tr('Можна залишити порожнім для стандартної назви','Mag leeg blijven voor de standaardnaam'):tr('Назва сервісу','Naam van dienst')}/></label><label>{tr('Опис','Beschrijving')}<textarea value={widget.description} onChange={event=>setWidget({...widget,description:event.target.value})}/></label><label>{tr('Посилання','Link')}<input type='url' value={widget.url} onChange={event=>setWidget({...widget,url:event.target.value})}/></label><label>{tr('Розмір','Grootte')}<select value={widget.size} onChange={event=>setWidget({...widget,size:event.target.value as SettingsWidgetInput['size']})}><option value='small'>{tr('Малий','Klein')}</option><option value='medium'>{tr('Звичайний','Normaal')}</option><option value='wide'>{tr('Широкий','Breed')}</option><option value='custom'>{tr('Власний','Aangepast')}</option></select></label><button className='settings-primary' disabled={!workspaceId||p.busy}><Plus/>{tr('Додати свій сервіс','Eigen dienst toevoegen')}</button></form>;else if(p.tab==='sharing'){/* U-05 (audit 19.10): delen is voor eigenaar/beheerder van de site; een Учасник ziet de knoppen uit, met uitleg (de server weigert het toch: magDelen). */const magDelen=p.user.role==='owner'||p.user.role==='admin';body=<div className='settings-sharing' data-delen={magDelen?'ja':'nee'}>{!magDelen&&<p className='settings-muted' data-delen-uitleg='1'>{tr('Надавати доступ до простору та створювати приватні посилання можуть лише власник і адміністратори сайту. Якщо вам потрібно поділитися простором, попросіть власника.','Toegang geven en privélinks maken kan alleen de eigenaar of een beheerder van de site. Wilt u een ruimte delen, vraag het dan aan de eigenaar.')}</p>}<form className='settings-form' onSubmit={submitShare}>{workspaceSelect}<label>{tr('Google-адреса','Google-adres')}<input type='email' value={shareEmail} onChange={event=>setShareEmail(event.target.value)} required disabled={!magDelen}/></label><label>{tr('Рівень доступу','Toegangsniveau')}<select value={sharePermission} disabled={!magDelen} onChange={event=>setSharePermission(event.target.value as 'viewer'|'editor')}><option value='viewer'>{tr('Перегляд','Lezen')}</option><option value='editor'>{tr('Редагування','Bewerken')}</option></select></label><button className='settings-primary' disabled={!magDelen||!workspaceId||p.busy}><Share2/>{tr('Надати доступ','Toegang geven')}</button></form><section className='settings-link-box'><Link2/><div><strong>{tr('Приватне посилання','Privélink')}</strong><p>{tr('Посилання діє 7 днів і не містить сесійних секретів.','De link is 7 dagen geldig en bevat geen sessiegeheimen.')}</p></div><button onClick={()=>void createLink()} disabled={!magDelen||!workspaceId||p.busy}>{tr('Створити','Maken')}</button>{shareLink&&<><input readOnly value={shareLink}/><button onClick={()=>void navigator.clipboard.writeText(shareLink)}><Copy/>{tr('Копіювати','Kopiëren')}</button></>}</section></div>}else if(p.tab==='identity')body=<div className='settings-card-grid'><Card icon={<ShieldCheck/>} title={tr('Сесії та пристрої','Sessies en apparaten')} body={tr('Перегляд і відкликання активних входів.','Actieve aanmeldingen bekijken en intrekken.')} onClick={()=>p.onNavigate('sessions')}/><Card icon={<KeyRound/>} title={tr('Способи входу','Aanmeldmethoden')} body={tr('Google, passkeys, код автентифікатора й коди відновлення.','Google, passkeys, authenticatorcode en herstelcodes.')} onClick={()=>p.onNavigate('methods')}/><Card icon={<ShieldCheck/>} title={tr('Безпека','Beveiliging')} body={tr('Двофакторна автентифікація (застосунок-автентифікатор).','Tweefactorauthenticatie (authenticator-app).')} onClick={()=>p.onNavigate('security')}/><Card icon={<ArchiveRestore/>} title={tr('Відновлення','Herstel')} body={tr('Відновлення доступу й простору.','Toegang en werkruimte herstellen.')} onClick={()=>p.onNavigate('recovery')}/></div>;else if(p.tab==='account')body=<div className='settings-account'><article className='settings-profile-card'>{p.user.picture?<img src={p.user.picture} alt=''/>:<UserRound/>}<div><strong>{p.user.name}</strong><span>{p.user.email}</span><small data-rol={p.user.role}>{/* U-06 (audit 19.10): de rolnaam, niet «Повний доступ» voor iedereen */p.user.role==='owner'?tr('Власник','Eigenaar'):p.user.role==='admin'?tr('Адміністратор','Beheerder'):p.user.role==='viewer'?tr('Глядач','Kijker'):tr('Учасник','Deelnemer')}{p.user.accessLevel==='limited'?` · ${tr('обмежений доступ','beperkte toegang')}`:''}</small></div></article><MijnDiensten lang={p.lang}/><section><h3>{tr('Ваші робочі простори','Uw werkruimtes')}</h3>{p.activeWorkspaces.map(item=><article key={item.id}><strong>{item.name}</strong><span>{tr('Активний','Actief')}</span></article>)}{p.archivedWorkspaces.map(item=><article key={item.id}><strong>{item.name}</strong><button onClick={()=>p.onRestoreWorkspace(item.id)}><ArchiveRestore/>{tr('Відновити','Herstellen')}</button></article>)}</section><section className='settings-danger'><h3><Trash2/>{tr('Видалити поточний акаунт','Huidig account verwijderen')}</h3><p>{tr('Видалення остаточне й одразу. Відновити не можна. Якщо кодове слово задано, введіть його теж.','Verwijderen is definitief en meteen. Herstellen kan niet. Als een codewoord is ingesteld, vult u dat ook in.')}</p><input value={confirm} onChange={event=>setConfirm(event.target.value)} placeholder={p.user.email} autoComplete='off'/><GeheimInvoer lang={p.lang} value={codewoord} onChange={setCodewoord} placeholder={tr('Кодове слово, якщо є','Codewoord, indien ingesteld')}/><button className='settings-danger-button' disabled={confirm.toLowerCase()!==p.user.email.toLowerCase()} onClick={()=>p.onDeleteSelf(confirm, codewoord)}><Trash2/>{tr('Підтвердити видалення','Verwijdering bevestigen')}</button></section></div>;else if(p.tab==='sessions')body=<SessiesOverzicht tr={tr} lang={p.lang} sessions={p.securitySessions} loading={p.securityLoading} busy={p.busy} onRefresh={p.onRefreshSessions} onRevoke={p.onRevokeSession} onRevokeAll={p.onRevokeAll}/>;else if(p.tab==='methods'||p.tab==='security'||p.tab==='recovery')body=<AccessPlaneView tab={p.tab} lang={p.lang} mode='identity'/>;else body=<section className='settings-future'><Clock/><h2>{title}</h2><p>{tr('Каркас розділу створено. Реальні дії з’являться лише після наявності відповідного API.','Het sectiekader is klaar. Echte acties verschijnen pas wanneer de bijbehorende API beschikbaar is.')}</p></section>;return <div className='settings-center'><header><span><Settings/></span><div><h1>{title}</h1><p data-settings-subtitle>{subtitle}</p></div></header>{body}</div>}
++export default function SettingsCenterView(p:Props){const tr=(uk:string,nl:string)=>p.lang==='uk'?uk:nl;const[draft,setDraft]=useState(()=>normalizeMenuPreferences(p.menuPreferences));const[workspaceId,setWorkspaceId]=useState(p.activeWorkspaces[0]?.id||'');const[widget,setWidget]=useState<SettingsWidgetInput>({sourceType:'internal',target:'hub:tasks',title:'',description:'',url:'',size:'medium'});const[shareEmail,setShareEmail]=useState('');const[sharePermission,setSharePermission]=useState<'viewer'|'editor'>('viewer');const[shareLink,setShareLink]=useState('');const[confirm,setConfirm]=useState('');const[codewoord,setCodewoord]=useState('');const[saving,setSaving]=useState(false);useEffect(()=>setDraft(normalizeMenuPreferences(p.menuPreferences)),[p.menuPreferences]);useEffect(()=>{if(!workspaceId&&p.activeWorkspaces[0])setWorkspaceId(p.activeWorkspaces[0].id)},[workspaceId,p.activeWorkspaces]);const title=useMemo(()=>{const labels:Record<string,string>={personalization:tr('Персоналізація облікового запису','Accountpersonalisatie'),menu:tr('Налаштувати меню','Menu instellen'),themes:tr('Налаштування тем','Thema-instellingen'),languages:tr('Налаштування мов','Taalinstellingen'),widgets:tr('Додавання блоків','Blokken toevoegen'),sharing:tr('Доступ до простору','Toegang tot werkruimte'),identity:tr('Ідентичність','Identiteit'),account:tr('Керування обліковим записом','Accountbeheer'),sessions:tr('Сесії та пристрої','Sessies en apparaten'),methods:tr('Способи входу','Aanmeldmethoden'),security:tr('Безпека','Beveiliging'),recovery:tr('Відновлення','Herstel')};return labels[p.tab]||tr('Налаштування','Instellingen')},[p.tab,p.lang]);const subtitle=useMemo(()=>{const subs:Record<string,string>={personalization:tr('Меню, теми, мови, блоки й доступ до вашого простору.','Menu, thema’s, talen, blokken en toegang tot uw werkruimte.'),menu:tr('Вигляд і поведінка бічної панелі, порядок і видимість пунктів меню.','Uiterlijk en gedrag van de zijbalk, volgorde en zichtbaarheid van menu-items.'),themes:tr('Кольори сайту й режим: світлий, темний, як на пристрої або автоматично, коли надворі темно.','Kleuren van de site en de modus: licht, donker, zoals het apparaat of automatisch wanneer het buiten donker is.'),languages:tr('Мова інтерфейсу: українська або нідерландська.','Taal van de interface: Oekraïens of Nederlands.'),widgets:tr('Додайте внутрішній сервіс або зовнішнє посилання як блок.','Voeg een interne dienst of externe link als blok toe.'),sharing:tr('Хто ще бачить ваш робочий простір і з якими правами.','Wie uw werkruimte nog ziet en met welke rechten.'),identity:tr('Входи, пристрої, безпека та відновлення доступу.','Aanmeldingen, apparaten, beveiliging en herstel van toegang.'),account:tr('Профіль, робочі простори та видалення акаунта.','Profiel, werkruimtes en het account verwijderen.'),sessions:tr('Де й коли виконано вхід у ваш акаунт. Завершуйте входи, яких ви не впізнаєте.','Waar en wanneer er op uw account is aangemeld. Beëindig aanmeldingen die u niet herkent.'),methods:tr('Google, passkeys, застосунок-автентифікатор і коди відновлення.','Google, passkeys, authenticator-app en herstelcodes.'),security:tr('Двофакторна автентифікація та підтвердження важливих дій.','Tweefactorauthenticatie en bevestiging van belangrijke acties.'),recovery:tr('Як повернути доступ, якщо пристрій або пароль утрачено.','Hoe u weer toegang krijgt als een apparaat of wachtwoord kwijt is.')};return subs[p.tab]||tr('Налаштування поточного облікового запису та його особистого простору.','Instellingen van het huidige account en de persoonlijke werkruimte.')},[p.tab,p.lang]);const patch=(id:string,value:Partial<MenuPreferenceItem>)=>setDraft(current=>current.map(item=>item.id===id?{...item,...value}:item));const saveMenu=async()=>{setSaving(true);try{await p.onSaveMenuPreferences(draft)}finally{setSaving(false)}};const submitWidget=async(event:FormEvent)=>{event.preventDefault();if(!workspaceId)return;await p.onAddWidget(workspaceId,widget);setWidget(current=>({...current,title:'',description:'',url:''}))};const submitShare=async(event:FormEvent)=>{event.preventDefault();if(!workspaceId||!shareEmail)return;await p.onShareEmail({workspaceId,email:shareEmail,permission:sharePermission,scopeBlockIds:[]});setShareEmail('')};const createLink=async()=>{if(!workspaceId)return;setShareLink(await p.onCreateShareLink({workspaceId,permission:sharePermission,scopeBlockIds:[]}))};const workspaceSelect=<label>{tr('Робочий простір','Werkruimte')}<select value={workspaceId} onChange={event=>setWorkspaceId(event.target.value)} disabled={!p.activeWorkspaces.length}>{p.activeWorkspaces.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>;let body:ReactNode;if(p.tab==='personalization')body=<><div className='settings-card-grid'><Card icon={<Menu/>} title={tr('Налаштувати меню','Menu instellen')} body={tr('Порядок, видимість і піктограми.','Volgorde, zichtbaarheid en pictogrammen.')} onClick={()=>p.onNavigate('menu')}/><Card icon={<Palette/>} title={tr('Налаштування тем','Thema-instellingen')} body={tr('Світла, темна та дозволені палітри.','Lichte, donkere en toegestane paletten.')} onClick={()=>p.onNavigate('themes')}/><Card icon={<Languages/>} title={tr('Налаштування мов','Taalinstellingen')} body={tr('Українська або Nederlands.','Oekraïens of Nederlands.')} onClick={()=>p.onNavigate('languages')}/><Card icon={<LayoutGrid/>} title={tr('Додавання блоків','Blokken toevoegen')} body={tr('Додайте внутрішній або зовнішній сервіс.','Voeg een interne of externe dienst toe.')} onClick={()=>p.onNavigate('widgets')}/><Card icon={<Share2/>} title={tr('Доступ до простору','Toegang tot werkruimte')} body={tr('Надайте доступ за акаунтом або посиланням.','Geef toegang via account of link.')} onClick={()=>p.onNavigate('sharing')}/><Card icon={<KeyRound/>} title={tr('Ідентичність','Identiteit')} body={tr('Входи, безпека та відновлення.','Aanmeldingen, beveiliging en herstel.')} onClick={()=>p.onNavigate('identity')}/><Card icon={<Clock/>} title={tr('Майбутні налаштування','Toekomstige instellingen')} body={tr('Тут з’являться нові розділи персоналізації.','Nieuwe personalisatiesecties verschijnen hier.')} disabled/></div></>;else if(p.tab==='menu')body=<ZijbalkInstellingen tr={tr} rechten={accountRechten(p.user)} zichtbaarheid={<div className='settings-menu-editor'><p className='settings-honest-note'>{tr('Порядок пунктів змінюється перетягуванням у режимі редагування («Налаштувати меню» → «Редагування»). Тут — лише видимість та іконки.','De volgorde wijzigt u door te slepen in de bewerkmodus («Menu instellen» → «Bewerken»). Hier alleen zichtbaarheid en iconen.')}</p><p className='settings-honest-note'>{tr('Управління сайтом (адміністрування, API, розгортання, додатки на сервері, архів) не в меню облікового запису: воно відкривається зі смуги технічного профілю.','Sitebeheer (beheer, API, uitrol, apps op de server, archief) staat niet in het accountmenu: het opent vanuit de band van het technisch profiel.')}</p>{draft.filter(item=>!isSiteBeheer(item.id)).map(item=>{const catalog=MENU_CATALOG.find(entry=>entry.id===item.id);return <article key={item.id}><MenuGlyph icon={item.icon}/><div><strong>{catalog?.[p.lang]||item.id}</strong><small>{p.user.role==='owner'&&ownerLockedMenuItem(item.id)?tr('Завжди видимий для власника','Altijd zichtbaar voor eigenaar'):item.visible?tr('Видимий','Zichtbaar'):tr('Прихований','Verborgen')}</small></div><button type='button' onClick={()=>patch(item.id,{visible:!item.visible})} disabled={p.user.role==='owner'&&ownerLockedMenuItem(item.id)} aria-label={p.user.role==='owner'&&ownerLockedMenuItem(item.id)?tr(`${catalog?.uk||item.id} завжди видимий для власника`,`${catalog?.nl||item.id} is altijd zichtbaar voor de eigenaar`):item.visible?tr('Приховати пункт','Item verbergen'):tr('Показати пункт','Item tonen')}>{item.visible?<Eye/>:<EyeOff/>}</button><select value={item.icon} aria-label={tr(`Іконка пункту «${catalog?.uk||item.id}»`,`Icoon van «${catalog?.nl||item.id}»`)} onChange={event=>patch(item.id,{icon:event.target.value as MenuIconId})}>{MENU_ICON_OPTIONS.map(icon=><option key={icon.id} value={icon.id}>{icon[p.lang]}</option>)}</select></article>})}<button className='settings-primary' type='button' onClick={()=>void saveMenu()} disabled={saving||p.busy}><Check/>{tr('Зберегти меню','Menu opslaan')}</button></div>}/>;else if(p.tab==='themes')body=<ThemaInstellingen tr={tr} lang={p.lang} theme={p.theme} onTheme={p.onTheme} violetToegestaan={p.plumEnabled}/>;else if(p.tab==='languages')body=<div className='settings-choice-grid language'><button className={p.lang==='uk'?'active':''} onClick={()=>p.onLanguage('uk')}><LanguageFlag lang='uk'/><strong>Українська</strong></button><button className={p.lang==='nl'?'active':''} onClick={()=>p.onLanguage('nl')}><LanguageFlag lang='nl'/><strong>Nederlands</strong></button></div>;else if(p.tab==='widgets')body=<form className='settings-form' onSubmit={submitWidget}>{workspaceSelect}{!p.activeWorkspaces.length&&<p className='settings-honest-note'>{tr('Активного робочого простору немає. Спочатку створіть або відновіть простір.','Er is geen actieve werkruimte. Maak of herstel eerst een werkruimte.')}</p>}<label>{tr('Джерело','Bron')}<select value={widget.sourceType} onChange={event=>setWidget({...widget,sourceType:event.target.value as 'internal'|'external'})}><option value='internal'>{tr('Внутрішній сервіс','Interne dienst')}</option><option value='external'>{tr('Зовнішнє посилання','Externe link')}</option></select></label>{widget.sourceType==='internal'&&<label>{tr('Сервіс або сторінка','Dienst of pagina')}<select value={widget.target} onChange={event=>setWidget({...widget,target:event.target.value})}><option value='hub:tasks'>{tr('Завдання','Taken')}</option><option value='hub:calendar'>{tr('Календар','Agenda')}</option><option value='hub:notes'>{tr('Нотатки','Notities')}</option><option value='ai'>AI</option><option value='mail'>{tr('Пошта','E-mail')}</option><option value='cloud'>{tr('Хмарне сховище','Cloudopslag')}</option><option value='github'>GitHub</option></select></label>}<label>{tr('Назва','Naam')}<input value={widget.title} onChange={event=>setWidget({...widget,title:event.target.value})} placeholder={widget.sourceType==='internal'?tr('Можна залишити порожнім для стандартної назви','Mag leeg blijven voor de standaardnaam'):tr('Назва сервісу','Naam van dienst')}/></label><label>{tr('Опис','Beschrijving')}<textarea value={widget.description} onChange={event=>setWidget({...widget,description:event.target.value})}/></label><label>{tr('Посилання','Link')}<input type='url' value={widget.url} onChange={event=>setWidget({...widget,url:event.target.value})}/></label><label>{tr('Розмір','Grootte')}<select value={widget.size} onChange={event=>setWidget({...widget,size:event.target.value as SettingsWidgetInput['size']})}><option value='small'>{tr('Малий','Klein')}</option><option value='medium'>{tr('Звичайний','Normaal')}</option><option value='wide'>{tr('Широкий','Breed')}</option><option value='custom'>{tr('Власний','Aangepast')}</option></select></label><button className='settings-primary' disabled={!workspaceId||p.busy}><Plus/>{tr('Додати свій сервіс','Eigen dienst toevoegen')}</button></form>;else if(p.tab==='sharing'){/* U-05 (audit 19.10): delen is voor eigenaar/beheerder van de site; een Учасник ziet de knoppen uit, met uitleg (de server weigert het toch: magDelen). */const magDelen=p.user.role==='owner'||p.user.role==='admin';body=<div className='settings-sharing' data-delen={magDelen?'ja':'nee'}>{!magDelen&&<p className='settings-muted' data-delen-uitleg='1'>{tr('Надавати доступ до простору та створювати приватні посилання можуть лише власник і адміністратори сайту. Якщо вам потрібно поділитися простором, попросіть власника.','Toegang geven en privélinks maken kan alleen de eigenaar of een beheerder van de site. Wilt u een ruimte delen, vraag het dan aan de eigenaar.')}</p>}<form className='settings-form' onSubmit={submitShare}>{workspaceSelect}<label>{tr('Google-адреса','Google-adres')}<input type='email' value={shareEmail} onChange={event=>setShareEmail(event.target.value)} required disabled={!magDelen}/></label><label>{tr('Рівень доступу','Toegangsniveau')}<select value={sharePermission} disabled={!magDelen} onChange={event=>setSharePermission(event.target.value as 'viewer'|'editor')}><option value='viewer'>{tr('Перегляд','Lezen')}</option><option value='editor'>{tr('Редагування','Bewerken')}</option></select></label><button className='settings-primary' disabled={!magDelen||!workspaceId||p.busy}><Share2/>{tr('Надати доступ','Toegang geven')}</button></form><section className='settings-link-box'><Link2/><div><strong>{tr('Приватне посилання','Privélink')}</strong><p>{tr('Посилання діє 7 днів і не містить сесійних секретів.','De link is 7 dagen geldig en bevat geen sessiegeheimen.')}</p></div><button onClick={()=>void createLink()} disabled={!magDelen||!workspaceId||p.busy}>{tr('Створити','Maken')}</button>{shareLink&&<><input readOnly value={shareLink}/><button onClick={()=>void navigator.clipboard.writeText(shareLink)}><Copy/>{tr('Копіювати','Kopiëren')}</button></>}</section></div>}else if(p.tab==='identity')body=<div className='settings-card-grid'><Card icon={<ShieldCheck/>} title={tr('Сесії та пристрої','Sessies en apparaten')} body={tr('Перегляд і відкликання активних входів.','Actieve aanmeldingen bekijken en intrekken.')} onClick={()=>p.onNavigate('sessions')}/><Card icon={<KeyRound/>} title={tr('Способи входу','Aanmeldmethoden')} body={tr('Google, passkeys, код автентифікатора й коди відновлення.','Google, passkeys, authenticatorcode en herstelcodes.')} onClick={()=>p.onNavigate('methods')}/><Card icon={<ShieldCheck/>} title={tr('Безпека','Beveiliging')} body={tr('Двофакторна автентифікація (застосунок-автентифікатор).','Tweefactorauthenticatie (authenticator-app).')} onClick={()=>p.onNavigate('security')}/><Card icon={<ArchiveRestore/>} title={tr('Відновлення','Herstel')} body={tr('Відновлення доступу й простору.','Toegang en werkruimte herstellen.')} onClick={()=>p.onNavigate('recovery')}/></div>;else if(p.tab==='account')body=<div className='settings-account'><article className='settings-profile-card'>{p.user.picture?<img src={p.user.picture} alt=''/>:<UserRound/>}<div><strong>{p.user.name}</strong><span>{p.user.email}</span><small data-rol={p.user.role}>{/* U-06 (audit 19.10): de rolnaam, niet «Повний доступ» voor iedereen */p.user.role==='owner'?tr('Власник','Eigenaar'):p.user.role==='admin'?tr('Адміністратор','Beheerder'):p.user.role==='viewer'?tr('Глядач','Kijker'):tr('Учасник','Deelnemer')}{p.user.accessLevel==='limited'?` · ${tr('обмежений доступ','beperkte toegang')}`:''}</small></div></article><MijnDiensten lang={p.lang}/><section><h3>{tr('Ваші робочі простори','Uw werkruimtes')}</h3>{p.activeWorkspaces.map(item=><article key={item.id}><strong>{item.name}</strong><span>{tr('Активний','Actief')}</span></article>)}{p.archivedWorkspaces.map(item=><article key={item.id}><strong>{item.name}</strong><button onClick={()=>p.onRestoreWorkspace(item.id)}><ArchiveRestore/>{tr('Відновити','Herstellen')}</button></article>)}</section><section className='settings-danger'><h3><Trash2/>{tr('Видалити поточний акаунт','Huidig account verwijderen')}</h3><p>{tr('Видалення остаточне й одразу. Відновити не можна. Якщо кодове слово задано, введіть його теж.','Verwijderen is definitief en meteen. Herstellen kan niet. Als een codewoord is ingesteld, vult u dat ook in.')}</p><input value={confirm} onChange={event=>setConfirm(event.target.value)} placeholder={p.user.email} autoComplete='off'/><GeheimInvoer lang={p.lang} value={codewoord} onChange={setCodewoord} placeholder={tr('Кодове слово, якщо є','Codewoord, indien ingesteld')}/><button className='settings-danger-button' disabled={confirm.toLowerCase()!==p.user.email.toLowerCase()} onClick={()=>p.onDeleteSelf(confirm, codewoord)}><Trash2/>{tr('Підтвердити видалення','Verwijdering bevestigen')}</button></section></div>;else if(p.tab==='sessions')body=<SessiesOverzicht tr={tr} lang={p.lang} sessions={p.securitySessions} loading={p.securityLoading} busy={p.busy} onRefresh={p.onRefreshSessions} onRevoke={p.onRevokeSession} onRevokeAll={p.onRevokeAll}/>;else if(p.tab==='methods'||p.tab==='security'||p.tab==='recovery')body=<AccessPlaneView tab={p.tab} lang={p.lang} mode='identity' onSessies={()=>p.onNavigate('sessions')}/>;else body=<section className='settings-future'><Clock/><h2>{title}</h2><p>{tr('Каркас розділу створено. Реальні дії з’являться лише після наявності відповідного API.','Het sectiekader is klaar. Echte acties verschijnen pas wanneer de bijbehorende API beschikbaar is.')}</p></section>;return <div className='settings-center'><header><span><Settings/></span><div><h1>{title}</h1><p data-settings-subtitle>{subtitle}</p></div></header>{body}</div>}
+diff --git a/src/ToegangslaagWeergave.tsx b/src/ToegangslaagWeergave.tsx
+index 824a777..09bbf30 100644
+--- a/src/ToegangslaagWeergave.tsx
++++ b/src/ToegangslaagWeergave.tsx
+@@ -6,6 +6,9 @@ import './toegangslaag.css';
+ import {t,type Lang} from './toegangslaag-teksten';
+ import {AccessPlanePanels} from './toegangslaag-panelen';
+ import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
++import {useAanmeldmethodenV2} from './aanmeldmethoden-v2/vlag';
++import AanmeldmethodenV2 from './aanmeldmethoden-v2/AanmeldmethodenV2';
++import type {Fase} from '../shared/aanmeldmethoden-model';
+ type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
+ type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
+ type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
+@@ -60,8 +63,11 @@ const pending=():Snapshot=>{
+ };
+ 
+ const sessionBody=()=>({service:new URLSearchParams(location.search).get('service')||'identity',tabContext:ecosystemTabContext(),sourceOrigin:location.origin});
+-export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;lang:Lang;mode?:'identity'|'admin'}){
++export default function AccessPlaneView({tab,lang,mode='identity',onSessies}:{tab:string;lang:Lang;mode?:'identity'|'admin';onSessies?:()=>void}){
+   const[data,setData]=useState<Snapshot>(pending());
++  // UI-015: eerlijke laadfase voor de nieuwe weergave (vlag aanmeldmethoden-v2); de oude weergave gebruikt hem niet.
++  const[fase,setFase]=useState<Fase>('laden');
++  const v2=useAanmeldmethodenV2()&&mode==='identity';
+   const[notice,setNotice]=useState('');
+   const[busy,setBusy]=useState(false);
+   const[password,setPassword]=useState('');
+@@ -78,8 +84,11 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
+         mode==='admin'?api.post('/api/owner/google-contour',sessionBody()).catch(()=>null):Promise.resolve(null)
+       ]);
+       if(snap?.data)setData({...blank(),...snap.data,contour:contour?.data?.contour||snap.data.contour});
++      setFase(snap?.data?'klaar':'fout');
+       setNotice('');
+-    }catch{
++    }catch(caught){
++      const st=Number((caught as{status?:number})?.status||0);
++      setFase(st===401||st===403?'geen-toegang':'fout');
+       setData(current=>current.methods.some(item=>item.status==='loading')?blank():current);
+       setNotice(t(lang,'t13'));
+     }
+@@ -141,5 +150,6 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
+     if(neemHervat('herstelcodes-maken'))void nieuweHerstelcodes();
+   },[data]);// eslint-disable-line react-hooks/exhaustive-deps
+   const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
++  if(v2)return <AanmeldmethodenV2 tab={tab} lang={lang} fase={fase} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved} onSessies={onSessies}/>;
+   return <AccessPlanePanels tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/>;
+ }
+diff --git a/src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx b/src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx
+new file mode 100644
+index 0000000..30552c0
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx
+@@ -0,0 +1,111 @@
++// UI-015 (vlag `aanmeldmethoden-v2`, standaard UIT): de nieuwe pagina «Способи входу» / «Aanmeldmethoden».
++// ALLEEN weergave: de controller blijft src/ToegangslaagWeergave.tsx (één snapshot-call, dezelfde write/step-up/hervat-logica).
++// Kaarten komen uit de pure mapper snapshotToMethodCards() (shared/aanmeldmethoden-model.ts); nooit «Підключено» zonder server.
++// Deep-links: tab security/recovery en #aanmeldmethoden-google/-2fa/-herstel/-passkeys/-sleutelkluis → kaart oplichten (één keer
++// scrollen, na het laden; geen dubbele 60/450 ms-sprong) en bij een #anker meteen de details openen.
++import { useEffect, useMemo, useRef, useState } from 'react';
++import { ChevronDown, RefreshCw, ShieldAlert } from 'lucide-react';
++import { InfoTip } from '../InfoTip';
++import { ToegangWijziging, wijzigingUitUrl } from '../ToegangWijziging';
++import { ANKER_NAAR_KAART, TAB_NAAR_KAART, filterKaarten, snapshotToMethodCards, weergaveGroep, type Categorie, type Fase, type KaartId, type MethodeKaart, type SnapshotInvoer, type Taal } from '../../shared/aanmeldmethoden-model';
++import { IdentityMethodsHero } from './IdentityMethodsHero';
++import { IdentityMethodsFilter } from './IdentityMethodsFilter';
++import { IdentityMethodCard } from './IdentityMethodCard';
++import { IdentityMethodDetails, type DetailsProps } from './IdentityMethodDetails';
++import { IdentitySecurityExtras } from './IdentitySecurityExtras';
++import './aanmeldmethoden-v2.css';
++
++export type V2Props = Omit<DetailsProps, 'lockout' | 'mustChange' | 'totpEnrolled'> & {
++  tab: string; fase: Fase; data: SnapshotInvoer; tempPassword: string;
++};
++type GroepId = 'verbonden' | 'beschikbaar' | 'extra' | 'anderen';
++const INKLAP = 'amv2-ingeklapt';// alleen een UI-voorkeur (welke groepen dicht zijn), nooit iets over aanmelding
++const leesInklap = (): GroepId[] => { try { const v = JSON.parse(localStorage.getItem(INKLAP) || '[]'); return Array.isArray(v) ? v.filter((x) => ['verbonden', 'beschikbaar', 'extra', 'anderen'].includes(x)) : []; } catch { return []; } };
++
++export default function AanmeldmethodenV2(p: V2Props) {
++  const lang = p.lang as Taal;
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  const [categorie, setCategorie] = useState<'alle' | Categorie>('alle');
++  const [zoek, setZoek] = useState('');
++  const [open, setOpen] = useState<KaartId | null>(null);
++  const [dicht, setDicht] = useState<GroepId[]>(leesInklap);
++  const [wijziging] = useState(wijzigingUitUrl);
++  const kaarten = useMemo(() => snapshotToMethodCards(p.fase, p.data), [p.fase, p.data]);
++  const zichtbaar = useMemo(() => filterKaarten(kaarten, categorie, zoek), [kaarten, categorie, zoek]);
++  const openKaart = open ? kaarten.find((k) => k.id === open) : undefined;
++  const lockout = !!p.data.lockout?.protected;
++
++  // Eén keer per tab: na het laden naar de juiste kaart (geen dubbele scroll).
++  const gedaan = useRef('');
++  useEffect(() => {
++    if (p.fase === 'laden') return;
++    const anker = (() => { try { return decodeURIComponent(location.hash.replace(/^#/, '')); } catch { return ''; } })();
++    const sleutel = `${p.tab}|${anker}`;
++    if (gedaan.current === sleutel) return;
++    gedaan.current = sleutel;
++    const doel = ANKER_NAAR_KAART[anker] || (p.tab !== 'methods' ? TAB_NAAR_KAART[p.tab] : undefined);
++    if (!doel) return;
++    const el = document.querySelector<HTMLElement>(`[data-kaart="${doel}"]`);
++    if (!el) return;
++    document.querySelectorAll('[data-access-actief]').forEach((x) => x.removeAttribute('data-access-actief'));
++    el.setAttribute('data-access-actief', '1');
++    try { el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); } catch { /* geen scroll */ }
++    if (ANKER_NAAR_KAART[anker] && p.fase === 'klaar') setOpen(doel);
++  }, [p.fase, p.tab]);
++
++  // Lopende eenmalige stromen horen in hun paneel: TOTP-sleutel net gemaakt, herstelcodes net gemaakt (ook na hervat via Google).
++  useEffect(() => { if (p.otpauth) setOpen('totp'); }, [p.otpauth]);
++  useEffect(() => { if (p.recovery.length) setOpen('recovery'); }, [p.recovery.length]);
++
++  const wissel = (g: GroepId) => setDicht((oud) => { const n = oud.includes(g) ? oud.filter((x) => x !== g) : [...oud, g]; try { localStorage.setItem(INKLAP, JSON.stringify(n)); } catch { /* geen opslag */ } return n; });
++  const start = () => {
++    const doel = kaarten.find((k) => k.staat === 'ready' && (k.actie === 'setup' || k.actie === 'connect')) || kaarten.find((k) => k.actie === 'manage');
++    setCategorie('alle');
++    if (doel) setOpen(doel.id);
++  };
++
++  const groepen: Array<{ id: GroepId; titel: string; tip?: string; kaarten: MethodeKaart[] }> = [
++    { id: 'verbonden', titel: p.fase === 'klaar' ? tr('Підключені', 'Gekoppeld') : tr('Основні способи', 'Hoofdmethoden'), kaarten: [] },
++    { id: 'beschikbaar', titel: tr('Доступні', 'Beschikbaar'), tip: tr('Тут лише способи, які знає сервер. «Підключити» з’являється тільки тоді, коли сервер готовий; інакше видно причину.', 'Hier staan alleen methoden die de server kent. «Koppelen» verschijnt pas als de server klaar is; anders zie je de reden.'), kaarten: [] },
++    { id: 'extra', titel: tr('Додатковий захист', 'Extra beveiliging'), kaarten: [] },
++    { id: 'anderen', titel: tr('Доступ іншим', 'Toegang voor anderen'), kaarten: [] },
++  ];
++  for (const k of zichtbaar) {
++    const g = p.fase === 'klaar' ? weergaveGroep(k) : (k.groep === 'hoofd' ? 'verbonden' : k.groep === 'beschikbaar' ? 'beschikbaar' : k.groep);
++    groepen.find((x) => x.id === g)!.kaarten.push(k);
++  }
++
++  const details: DetailsProps = { ...p, lang, lockout, mustChange: !!p.data.password?.mustChange, totpEnrolled: !!p.data.totp?.enrolled || !!p.data.factors?.find((f) => f.id === 'totp')?.enrolled };
++
++  return <div className='amv2' data-fase={p.fase} lang={lang}>
++    {wijziging && <ToegangWijziging lang={lang} context={p.context} id={wijziging} onChange={() => void p.load()} />}
++    <IdentityMethodsHero lang={lang} onStart={start} startUit={p.fase !== 'klaar'} />
++    {p.fase === 'fout' && <div className='amv2-banner fout' role='alert'><ShieldAlert aria-hidden='true' /><span><strong>{tr('Стан не вдалося перевірити', 'Status kon niet worden gecontroleerd')}</strong><small>{tr('Сервер не відповів. Ми нічого не показуємо як «підключено», доки не перевіримо.', 'De server antwoordde niet. We tonen niets als «gekoppeld» tot het gecontroleerd is.')}</small></span><button type='button' className='amv2-knop' onClick={() => void p.load()}><RefreshCw aria-hidden='true' />{tr('Повторити', 'Opnieuw')}</button></div>}
++    {p.fase === 'geen-toegang' && <div className='amv2-banner fout' role='alert'><ShieldAlert aria-hidden='true' /><span><strong>{tr('Немає доступу', 'Geen toegang')}</strong><small>{tr('Ця сторінка доступна лише власнику акаунта після входу.', 'Deze pagina is alleen voor de eigenaar van het account na aanmelden.')}</small></span></div>}
++    {p.notice && !open && p.fase === 'klaar' && <p className='amv2-melding' role='status'>{p.notice}</p>}
++    {p.fase !== 'geen-toegang' && <>
++      <IdentityMethodsFilter lang={lang} categorie={categorie} onCategorie={setCategorie} onZoek={setZoek} />
++      {!zichtbaar.length && <p className='amv2-leeg' role='status'>{tr('Нічого не знайдено. Змініть пошук або категорію.', 'Niets gevonden. Pas de zoekopdracht of categorie aan.')}</p>}
++      {groepen.filter((g) => g.kaarten.length).map((g) => {
++        const isDicht = dicht.includes(g.id);
++        return <section key={g.id} className={`amv2-groep groep-${g.id}`} aria-labelledby={`amv2-g-${g.id}`}>
++          <header className='amv2-groep-kop'>
++            <h3 id={`amv2-g-${g.id}`}>{g.titel}<span className='amv2-teller' aria-label={tr(`кількість: ${g.kaarten.length}`, `aantal: ${g.kaarten.length}`)}>{g.kaarten.length}</span></h3>
++            {g.tip && <InfoTip label={tr('Про доступні способи', 'Over beschikbare methoden')}><p>{g.tip}</p></InfoTip>}
++            <button type='button' className='amv2-inklap' aria-expanded={!isDicht} aria-controls={`amv2-r-${g.id}`} onClick={() => wissel(g.id)} aria-label={isDicht ? tr(`Розгорнути «${g.titel}»`, `«${g.titel}» uitklappen`) : tr(`Згорнути «${g.titel}»`, `«${g.titel}» inklappen`)}><ChevronDown aria-hidden='true' /></button>
++          </header>
++          {/* Waarschuwingen (aandacht) blijven zichtbaar, ook als de groep dicht is. */}
++          <div id={`amv2-r-${g.id}`} className={`amv2-raster${g.id === 'beschikbaar' ? ' tegels' : ''}`}>
++            {g.kaarten.filter((k) => !isDicht || k.staat === 'attention').map((k) => <IdentityMethodCard key={k.id} k={k} lang={lang} compact={g.id === 'beschikbaar'} onOpen={(x) => setOpen(x.id)} onRetry={() => void p.load()} />)}
++          </div>
++        </section>;
++      })}
++      {(categorie === 'alle' || categorie === 'zakhyst') && !zoek && <section className='amv2-groep groep-extras' aria-labelledby='amv2-g-extras'>
++        <header className='amv2-groep-kop'><h3 id='amv2-g-extras'>{tr('Сеанси та підтвердження', 'Sessies en bevestiging')}</h3></header>
++        <IdentitySecurityExtras lang={lang} onSessies={p.onSessies} />
++      </section>}
++      {p.tempPassword && <div className='amv2-banner'><span><strong>{tr('Тимчасовий пароль', 'Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></span></div>}
++    </>}
++    {openKaart && <IdentityMethodDetails k={openKaart} p={details} onClose={() => setOpen(null)} />}
++  </div>;
++}
+diff --git a/src/aanmeldmethoden-v2/IdentityMethodCard.tsx b/src/aanmeldmethoden-v2/IdentityMethodCard.tsx
+new file mode 100644
+index 0000000..d9b7e05
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/IdentityMethodCard.tsx
+@@ -0,0 +1,47 @@
++// UI-015: één kaart = groot icoon/logo, naam, één regel uitleg of account, eerlijke status en ÉÉN hoofdactie.
++// De hele kaart opent de details (zelfde uitkomst als «Керувати/Налаштувати/Переглянути»); «Повторити» laadt opnieuw;
++// «Підключити» (alleen server-status gereed-om-te-koppelen) gaat naar de echte koppelflow (same-origin pad van de server).
++import { ChevronRight, Lock, Plus, RefreshCw } from 'lucide-react';
++import { tekstVan, type MethodeKaart, type Taal } from '../../shared/aanmeldmethoden-model';
++import { MethodeIcoon } from './iconen';
++
++const isAanbieder = (k: MethodeKaart) => k.id.startsWith('aanbieder:') || k.id === 'google';
++export function staatLabel(k: MethodeKaart, lang: Taal): string {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  switch (k.staat) {
++    case 'active': return isAanbieder(k) ? tr('Підключено', 'Gekoppeld') : tr('Увімкнено', 'Aan');
++    case 'ready': return k.actie === 'connect' ? tr('Можна підключити', 'Kan gekoppeld worden') : tr('Не налаштовано', 'Niet ingesteld');
++    case 'attention': return tekstVan(k.reden, lang) || tr('Потребує уваги', 'Vraagt aandacht');
++    case 'not-configured': case 'unavailable': case 'unknown': return tekstVan(k.reden, lang) || tr('Стан не вдалося перевірити', 'Status kon niet worden gecontroleerd');
++    default: return '';
++  }
++}
++export function actieLabel(k: MethodeKaart, lang: Taal): string {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  return ({ manage: tr('Керувати', 'Beheren'), setup: tr('Налаштувати', 'Instellen'), connect: tr('Підключити', 'Koppelen'), view: tr('Переглянути', 'Bekijken'), retry: tr('Повторити', 'Opnieuw'), none: '' } as const)[k.actie];
++}
++const TOON: Record<string, string> = { active: 'goed', ready: 'info', attention: 'let', 'not-configured': 'stil', unavailable: 'stil', unknown: 'let', neutral: 'stil', loading: 'stil' };
++
++export function IdentityMethodCard({ k, lang, compact, onOpen, onRetry }: { k: MethodeKaart; lang: Taal; compact?: boolean; onOpen: (k: MethodeKaart) => void; onRetry: () => void }) {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  const titel = k.titel[lang];
++  if (k.staat === 'loading') return <article className='amv2-kaart laden' aria-busy='true' aria-label={`${titel}: ${tr('завантаження', 'laden')}`} data-kaart={k.id}>
++    <MethodeIcoon icoon={k.icoon} /><div className='amv2-kaart-tekst'><strong>{titel}</strong><span className='amv2-skelet' /><span className='amv2-skelet kort' /></div></article>;
++  const label = staatLabel(k, lang);
++  const regel = k.accountLabel || (k.feit ? k.feit[lang] : '') || k.ondertitel[lang];
++  const kanOpenen = k.staat !== 'unknown' || k.actie !== 'retry';
++  const actie = actieLabel(k, lang);
++  return <article className={`amv2-kaart staat-${k.staat}${compact ? ' compact' : ''}`} data-kaart={k.id} data-staat={k.staat} data-anker={k.anker || undefined}>
++    {kanOpenen && <button type='button' className='amv2-kaart-open' onClick={() => onOpen(k)} aria-label={tr(`Деталі: ${titel}`, `Details: ${titel}`)} aria-haspopup='dialog' />}
++    <MethodeIcoon icoon={k.icoon} groot={!compact} />
++    <div className='amv2-kaart-tekst'>
++      <strong className='amv2-kaart-titel'>{titel}</strong>
++      <span className='amv2-kaart-regel' title={regel}>{regel}</span>
++      {label && <span className={`amv2-status toon-${TOON[k.staat]}`} data-status={k.staat}>{k.beschermd && k.staat === 'active' ? <Lock aria-hidden='true' /> : <i aria-hidden='true' />}{label}</span>}
++    </div>
++    {k.actie === 'retry' ? <button type='button' className='amv2-actie' onClick={onRetry}><RefreshCw aria-hidden='true' /><span>{actie}</span></button>
++      : k.actie === 'connect' && k.koppelUrl ? <a className='amv2-actie hoofd' href={k.koppelUrl}><Plus aria-hidden='true' /><span>{actie}</span></a>
++      : k.actie !== 'none' ? <button type='button' className={`amv2-actie${k.actie === 'setup' ? ' hoofd' : ''}`} onClick={() => onOpen(k)} aria-haspopup='dialog'>{k.actie === 'setup' ? <Plus aria-hidden='true' /> : <ChevronRight aria-hidden='true' />}<span>{actie}</span></button>
++      : null}
++  </article>;
++}
+diff --git a/src/aanmeldmethoden-v2/IdentityMethodDetails.tsx b/src/aanmeldmethoden-v2/IdentityMethodDetails.tsx
+new file mode 100644
+index 0000000..bb6d924
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/IdentityMethodDetails.tsx
+@@ -0,0 +1,157 @@
++// UI-015: details van één methode in een zijpaneel (≥860 px) of onderblad (telefoon), in plaats van lange formulieren op de pagina.
++// Binnenin draaien de BESTAANDE onderdelen ongewijzigd (PasskeysSection, HerstelcodesSectie, SleutelkluisSectie, Toegangscodes)
++// en dezelfde API-routes/step-up als de oude weergave (wachtwoord, TOTP). Toegankelijk: role=dialog, aria-modal, focus-val,
++// Esc sluit, focus terug naar de kaart. Het venster «Підтвердіть доступ» (z-index 1000) ligt erboven; de focus-val laat het met rust.
++import { useEffect, useRef, useState, type ReactNode } from 'react';
++import { Check, ExternalLink, Monitor, Trash2, X, Plus } from 'lucide-react';
++import { tekstVan, type MethodeKaart, type Taal } from '../../shared/aanmeldmethoden-model';
++import { MethodeIcoon } from './iconen';
++import { staatLabel } from './IdentityMethodCard';
++import { PasskeysSection } from '../ToegangssleutelsSectie';
++import { HerstelcodesSectie } from '../HerstelcodesSectie';
++import { SleutelkluisSectie } from '../SleutelkluisSectie';
++import { Toegangscodes } from '../Toegangscodes';
++import GeheimInvoer from '../geheim/GeheimInvoer';
++import { api } from '../platform/client';
++import { bevestigToegang } from '../platform/stap-op';
++
++export type DetailsProps = {
++  lang: Taal; busy: boolean; notice: string; context: Record<string, unknown>;
++  password: string; setPassword: (v: string) => void; otpauth: string; secret: string; code: string; setCode: (v: string) => void;
++  recovery: string[]; lockout: boolean; mustChange: boolean; totpEnrolled: boolean;
++  write: (route: string, payload?: Record<string, unknown>) => Promise<void>; load: () => Promise<void>;
++  nieuweHerstelcodes: () => Promise<void>; totpUitschakelen: () => Promise<void>; recoverySaved: () => Promise<void>;
++  onSessies?: () => void;
++};
++
++const FOCUSBAAR = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
++
++export function IdentityMethodDetails({ k, onClose, p }: { k: MethodeKaart; onClose: () => void; p: DetailsProps }) {
++  const { lang } = p;
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  const paneel = useRef<HTMLDivElement>(null);
++  useEffect(() => {
++    const terug = document.activeElement as HTMLElement | null;
++    const eerste = paneel.current?.querySelector<HTMLElement>('.amv2-paneel-sluit');
++    eerste?.focus({ preventScroll: true });
++    const opToets = (e: KeyboardEvent) => {
++      const el = paneel.current; if (!el) return;
++      // Alleen als de focus in ONS paneel staat (niet in «Підтвердіть доступ» of een InfoTip-popover erboven).
++      if (!el.contains(document.activeElement) && document.activeElement !== document.body) return;
++      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
++      if (e.key !== 'Tab') return;
++      const lijst = Array.from(el.querySelectorAll<HTMLElement>(FOCUSBAAR)).filter((x) => x.offsetParent !== null);
++      if (!lijst.length) return;
++      const a = lijst[0], z = lijst[lijst.length - 1];
++      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
++    };
++    document.addEventListener('keydown', opToets);
++    const html = document.documentElement; const oud = html.style.overflow; html.style.overflow = 'hidden';
++    return () => { document.removeEventListener('keydown', opToets); html.style.overflow = oud; try { terug?.focus({ preventScroll: true }); } catch { /* weg */ } };
++  }, []); // eslint-disable-line react-hooks/exhaustive-deps
++
++  const label = staatLabel(k, lang);
++  let inhoud: ReactNode = null;
++  if (k.id === 'google') inhoud = <>
++    <Feiten lang={lang} rijen={[[tr('Акаунт', 'Account'), k.accountLabel || tr('Google-акаунт', 'Google-account')], [tr('Стан', 'Status'), label]]} />
++    {k.beschermd && <p className='amv2-let' data-google-enige>{tr('Google — зараз ваш єдиний спосіб входу, тому його не можна вимкнути. Passkey поки що лише підтверджує важливі дії.', 'Google is nu je enige aanmeldmethode en kan daarom niet worden uitgeschakeld. Een passkey bevestigt voorlopig alleen belangrijke acties.')}</p>}
++    <p className='amv2-uitleg'>{tr('Адресу й пароль Google змінюють лише в самому Google.', 'Adres en wachtwoord van Google wijzig je alleen bij Google zelf.')}</p>
++    <div className='amv2-knoppen'><a className='amv2-knop hoofd' href='https://myaccount.google.com/security' target='_blank' rel='noopener noreferrer'><ExternalLink aria-hidden='true' />{tr('Керувати в Google', 'Beheren bij Google')}</a>
++      {p.onSessies && <button type='button' className='amv2-knop' onClick={() => { onClose(); p.onSessies?.(); }}><Monitor aria-hidden='true' />{tr('Ваші пристрої', 'Je apparaten')}</button>}</div>
++  </>;
++  else if (k.id === 'password') inhoud = <WachtwoordDetails p={p} />;
++  else if (k.id === 'passkey') inhoud = <PasskeysSection lang={lang} context={p.context} onChange={() => void p.load()} />;
++  else if (k.id === 'totp') inhoud = <TotpDetails p={p} />;
++  else if (k.id === 'recovery') inhoud = <HerstelcodesSectie lang={lang} context={p.context} codes={p.recovery} busy={p.busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={() => void p.load()} />;
++  else if (k.id === 'vault') inhoud = <SleutelkluisSectie lang={lang} context={p.context} />;
++  else if (k.id === 'guest-code') inhoud = <Toegangscodes lang={lang} context={p.context} />;
++  else inhoud = <AanbiederDetails k={k} p={p} onClose={onClose} />;
++
++  return <div className='amv2-laag' onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
++    <div ref={paneel} className='amv2-paneel' role='dialog' aria-modal='true' aria-labelledby='amv2-paneel-titel' data-paneel={k.id}>
++      <header className='amv2-paneel-kop'>
++        <MethodeIcoon icoon={k.icoon} />
++        <div><h3 id='amv2-paneel-titel'>{k.titel[lang]}</h3><small>{k.ondertitel[lang]}</small></div>
++        <button type='button' className='amv2-paneel-sluit' onClick={onClose} aria-label={tr('Закрити', 'Sluiten')}><X aria-hidden='true' /></button>
++      </header>
++      {p.notice && <p className='amv2-melding' role='alert'>{p.notice}</p>}
++      <div className='amv2-paneel-inhoud access-plane'>{inhoud}</div>
++    </div>
++  </div>;
++}
++
++function Feiten({ lang, rijen }: { lang: Taal; rijen: Array<[string, string]> }) {
++  void lang;
++  return <dl className='amv2-feiten'>{rijen.filter((r) => r[1]).map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>;
++}
++
++function WachtwoordDetails({ p }: { p: DetailsProps }) {
++  const tr = (uk: string, nl: string) => (p.lang === 'nl' ? nl : uk);
++  return <>
++    {p.mustChange && <p className='amv2-let'>{tr('Тимчасовий пароль — потрібно змінити', 'Tijdelijk wachtwoord — wijzigen vereist')}</p>}
++    <div className='amv2-formulier'>
++      <GeheimInvoer lang={p.lang} value={p.password} onChange={p.setPassword} autoComplete='new-password' placeholder={tr('Новий пароль, мін. 10 символів', 'Nieuw wachtwoord, min. 10 tekens')} minLength={10} max={1024} soort='wachtwoord' />
++      <div className='amv2-knoppen'>
++        <button type='button' className='amv2-knop hoofd' disabled={p.busy || p.password.length < 10} onClick={() => void p.write('/api/owner/access/password/set', { password: p.password })}><Check aria-hidden='true' />{tr('Зберегти', 'Opslaan')}</button>
++        <button type='button' className='amv2-knop gevaar' disabled={p.busy || p.lockout} onClick={() => void p.write('/api/owner/access/password/remove')}><Trash2 aria-hidden='true' />{tr('Прибрати пароль', 'Wachtwoord verwijderen')}</button>
++      </div>
++      {p.lockout && <small className='amv2-uitleg'>{tr('Прибрати не можна: це останній спосіб входу.', 'Verwijderen kan niet: dit is de laatste aanmeldmethode.')}</small>}
++    </div>
++  </>;
++}
++
++function TotpDetails({ p }: { p: DetailsProps }) {
++  const tr = (uk: string, nl: string) => (p.lang === 'nl' ? nl : uk);
++  if (p.totpEnrolled) return <>
++    <p className='amv2-uitleg'>{tr('Коди з вашого застосунку підтверджують важливі дії. SMS не використовуємо.', 'Codes uit je app bevestigen belangrijke acties. Sms gebruiken we niet.')}</p>
++    <div className='amv2-knoppen'><button type='button' className='amv2-knop gevaar' disabled={p.busy} onClick={() => void p.totpUitschakelen()}><Trash2 aria-hidden='true' />{tr('Вимкнути', 'Uitschakelen')}</button></div>
++    <small className='amv2-uitleg'>{tr('Для вимкнення потрібен поточний код або код відновлення.', 'Uitschakelen vraagt de huidige code of een herstelcode.')}</small>
++  </>;
++  if (!p.otpauth) return <>
++    <ol className='amv2-stappen'><li>{tr('Відкрийте застосунок-автентифікатор (Google Authenticator, Microsoft Authenticator, 1Password).', 'Open een authenticator-app (Google Authenticator, Microsoft Authenticator, 1Password).')}</li><li>{tr('Додайте ключ, який ми покажемо.', 'Voeg de sleutel toe die we tonen.')}</li><li>{tr('Введіть 6-значний код.', 'Voer de 6-cijferige code in.')}</li></ol>
++    <div className='amv2-knoppen'><button type='button' className='amv2-knop hoofd' disabled={p.busy} onClick={() => void p.write('/api/owner/access/totp/start')}><Plus aria-hidden='true' />{tr('Налаштувати', 'Instellen')}</button></div>
++  </>;
++  return <div className='amv2-formulier access-plane-totp-setup'>
++    <strong>{tr('Додайте ключ у застосунок-автентифікатор і введіть код', 'Voeg de sleutel toe in de authenticator-app en voer de code in')}</strong>
++    <code className='access-plane-mono access-plane-secret'>{p.secret}</code>
++    <small>{tr('Ключ показано один раз.', 'De sleutel wordt eenmalig getoond.')}</small>
++    <input className='amv2-code' inputMode='numeric' autoComplete='one-time-code' value={p.code} onChange={(e) => p.setCode(e.target.value.replace(/\D+/g, ''))} placeholder={tr('6-значний код', '6-cijferige code')} aria-label={tr('6-значний код', '6-cijferige code')} maxLength={6} />
++    <div className='amv2-knoppen'><button type='button' className='amv2-knop hoofd' disabled={p.busy || p.code.length !== 6} onClick={() => void p.write('/api/owner/access/totp/confirm', { code: p.code })}><Check aria-hidden='true' />{tr('Підтвердити', 'Bevestigen')}</button></div>
++  </div>;
++}
++
++function AanbiederDetails({ k, p, onClose }: { k: MethodeKaart; p: DetailsProps; onClose: () => void }) {
++  const { lang } = p;
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  const [bezig, setBezig] = useState(false);
++  const [fout, setFout] = useState('');
++  const naam = k.titel[lang];
++  const datum = k.gekoppeldOp && !Number.isNaN(Date.parse(k.gekoppeldOp)) ? new Date(k.gekoppeldOp).toLocaleString(lang === 'nl' ? 'nl-BE' : 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' }) : '';
++  const losmaken = async () => {
++    if (!k.losmaakUrl || bezig) return;
++    setBezig(true); setFout('');
++    try {
++      const ctx = p.context as { service?: string; tabContext?: string };
++      const uit = await bevestigToegang({ service: String(ctx.service || 'identity'), tabContext: String(ctx.tabContext || ''), post: (url, body) => api.post(url, body), toegestaan: ['passkey', 'totp', 'herstelcode', 'google'], actie: `aanbieder-losmaken-${k.id.slice(10)}` });
++      if (!uit.ok) { setBezig(false); return; }
++      await api.post(k.losmaakUrl, { ...p.context, aanbieder: k.id.slice(10) });
++      await p.load(); onClose();
++    } catch (e) {
++      const code = String((e as { message?: string })?.message || '');
++      setFout(code === 'LAST_LOGIN_METHOD_PROTECTED' ? tr('Не можна: це останній спосіб входу.', 'Kan niet: dit is de laatste aanmeldmethode.') : tr(`Не вдалося від'єднати (${code || 'помилка'}).`, `Loskoppelen mislukt (${code || 'fout'}).`));
++    }
++    setBezig(false);
++  };
++  return <>
++    <Feiten lang={lang} rijen={[[tr('Стан', 'Status'), staatLabel(k, lang)], [tr('Акаунт', 'Account'), k.accountLabel || ''], [tr('Підключено', 'Gekoppeld op'), datum]]} />
++    {k.staat === 'ready' && k.koppelUrl && <>
++      <p className='amv2-uitleg'>{tr(`Вас буде перенаправлено до ${naam}. Після входу там сервер прив'яже цей акаунт і попросить підтвердження.`, `Je gaat naar ${naam}. Na het aanmelden daar koppelt de server dit account en vraagt om bevestiging.`)}</p>
++      <div className='amv2-knoppen'><a className='amv2-knop hoofd' href={k.koppelUrl}><Plus aria-hidden='true' />{tr('Підключити', 'Koppelen')}</a></div></>}
++    {k.staat === 'not-configured' && <p className='amv2-uitleg'>{tr(`Щоб увімкнути ${naam}, адміністратор має додати ключі провайдера на сервері. До того цей спосіб не працює.`, `Om ${naam} aan te zetten moet de beheerder de sleutels van de aanbieder op de server zetten. Tot dan werkt deze methode niet.`)}</p>}
++    {(k.staat === 'unavailable' || k.staat === 'unknown') && <p className='amv2-uitleg'>{tekstVan(k.reden, lang)}</p>}
++    {k.staat === 'active' && (k.beschermd
++      ? <p className='amv2-let'>{tr("Від'єднати не можна: це останній спосіб входу або так вимагають правила.", 'Loskoppelen kan niet: dit is de laatste aanmeldmethode of het beleid verbiedt het.')}</p>
++      : k.losmaakUrl ? <div className='amv2-knoppen'><button type='button' className='amv2-knop gevaar' disabled={bezig} onClick={() => void losmaken()}><Trash2 aria-hidden='true' />{tr("Від'єднати", 'Loskoppelen')}</button></div> : null)}
++    {fout && <p className='amv2-melding' role='alert'>{fout}</p>}
++  </>;
++}
+diff --git a/src/aanmeldmethoden-v2/IdentityMethodsFilter.tsx b/src/aanmeldmethoden-v2/IdentityMethodsFilter.tsx
+new file mode 100644
+index 0000000..67a45f3
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/IdentityMethodsFilter.tsx
+@@ -0,0 +1,20 @@
++// UI-015: filterchips (Усі • Вхід • Passkey • Захист • Доступ іншим) + zoekveld met debounce. Filter = vinden, nooit iets wijzigen.
++import { useEffect, useState } from 'react';
++import { Search, X } from 'lucide-react';
++import { CATEGORIEEN, type Categorie, type Taal } from '../../shared/aanmeldmethoden-model';
++
++export function IdentityMethodsFilter({ lang, categorie, onCategorie, onZoek }: { lang: Taal; categorie: 'alle' | Categorie; onCategorie: (c: 'alle' | Categorie) => void; onZoek: (q: string) => void }) {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  const [q, setQ] = useState('');
++  useEffect(() => { const t = window.setTimeout(() => onZoek(q), 200); return () => window.clearTimeout(t); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
++  return <div className='amv2-filter'>
++    <div className='amv2-chips' role='toolbar' aria-label={tr('Категорії', 'Categorieën')}>
++      {CATEGORIEEN.map((c) => <button key={c.id} type='button' className={`amv2-chip${categorie === c.id ? ' actief' : ''}`} aria-pressed={categorie === c.id} onClick={() => onCategorie(c.id)}>{c.titel[lang]}</button>)}
++    </div>
++    <label className='amv2-zoek'>
++      <Search aria-hidden='true' />
++      <input type='search' value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('Пошук способу', 'Methode zoeken')} aria-label={tr('Пошук способу входу', 'Aanmeldmethode zoeken')} maxLength={60} />
++      {q && <button type='button' className='amv2-zoek-wis' onClick={() => setQ('')} aria-label={tr('Очистити пошук', 'Zoekopdracht wissen')}><X aria-hidden='true' /></button>}
++    </label>
++  </div>;
++}
+diff --git a/src/aanmeldmethoden-v2/IdentityMethodsHero.tsx b/src/aanmeldmethoden-v2/IdentityMethodsHero.tsx
+new file mode 100644
+index 0000000..2134a53
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/IdentityMethodsHero.tsx
+@@ -0,0 +1,16 @@
++// UI-015: thematische kop (schild + slot, berglandschap: public/aanmeldmethoden/security-hero.svg). Geen verzonnen «score» of
++// «3 підключено»: alleen titel, één zin en de knop naar de eerstvolgende ECHTE instelling.
++import { Plus } from 'lucide-react';
++import type { Taal } from '../../shared/aanmeldmethoden-model';
++
++export function IdentityMethodsHero({ lang, onStart, startUit }: { lang: Taal; onStart: () => void; startUit: boolean }) {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  return <section className='amv2-hero' aria-labelledby='amv2-hero-titel'>
++    <img className='amv2-hero-beeld' src='/aanmeldmethoden/security-hero.svg' alt='' aria-hidden='true' draggable={false} />
++    <div className='amv2-hero-tekst'>
++      <h2 id='amv2-hero-titel'>{tr('Способи входу', 'Aanmeldmethoden')}</h2>
++      <p>{tr('Як ви входите і як підтверджуєте важливі дії.', 'Hoe je je aanmeldt en belangrijke acties bevestigt.')}</p>
++      <button type='button' className='amv2-hero-knop' onClick={onStart} disabled={startUit}><Plus aria-hidden='true' />{tr('Налаштувати спосіб', 'Methode instellen')}</button>
++    </div>
++  </section>;
++}
+diff --git a/src/aanmeldmethoden-v2/IdentitySecurityExtras.tsx b/src/aanmeldmethoden-v2/IdentitySecurityExtras.tsx
+new file mode 100644
+index 0000000..a598185
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/IdentitySecurityExtras.tsx
+@@ -0,0 +1,18 @@
++// UI-015: «Сеанси та пристрої» (verwijst naar de bestaande pagina, geen kopie van het sessiebeheer) en wat als bevestiging telt.
++import { ChevronRight, Monitor, ShieldCheck } from 'lucide-react';
++import type { Taal } from '../../shared/aanmeldmethoden-model';
++
++export function IdentitySecurityExtras({ lang, onSessies }: { lang: Taal; onSessies?: () => void }) {
++  const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
++  return <div className='amv2-extras'>
++    {onSessies && <button type='button' className='amv2-extra' onClick={onSessies}>
++      <span className='amv2-icoon tint-blauw' aria-hidden='true'><Monitor /></span>
++      <span className='amv2-kaart-tekst'><strong>{tr('Пристрої та сеанси', 'Apparaten en sessies')}</strong><span className='amv2-kaart-regel'>{tr('Де ви зараз увійшли', 'Waar je nu bent aangemeld')}</span></span>
++      <ChevronRight aria-hidden='true' className='amv2-pijl' />
++    </button>}
++    <div className='amv2-extra info'>
++      <span className='amv2-icoon tint-groen' aria-hidden='true'><ShieldCheck /></span>
++      <span className='amv2-kaart-tekst'><strong>{tr('Підтвердження важливих дій', 'Belangrijke acties bevestigen')}</strong><span className='amv2-kaart-regel'>{tr('Passkey, код із застосунку, код відновлення або Google. Без SMS.', 'Passkey, app-code, herstelcode of Google. Zonder sms.')}</span></span>
++    </div>
++  </div>;
++}
+diff --git a/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css b/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
+new file mode 100644
+index 0000000..a04ad18
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
+@@ -0,0 +1,182 @@
++/* UI-015 (vlag aanmeldmethoden-v2): nieuwe pagina «Способи входу». Alles onder .amv2; thema via de echte klassen op <html>
++   (theme-light/theme-dark/theme-plum-*, gezet door de globale thema-store; «авто» kiest de store zelf). Merklogo's staan op een
++   witte tegel en worden NIET getint. Indeling volgt de BREEDTE VAN DE CONTAINER (container queries), niet die van het scherm. */
++.amv2{--a-bg:#EDF2FA;--a-vl:#FFFFFF;--a-tk:#18243D;--a-zw:#71809D;--a-ac:#2458C8;--a-ac-tk:#fff;--a-lijn:#E5EBF5;--a-goed:#16866D;--a-goed-bg:#E3F4EE;--a-let:#AA7219;--a-let-bg:#FBF1DE;--a-info:#2458C8;--a-info-bg:#E6EEFC;--a-stil-bg:#EEF1F6;--a-schaduw:0 1px 2px rgba(24,36,61,.05),0 8px 24px rgba(24,36,61,.06);--a-r:20px;
++  container-type:inline-size;container-name:amv2;display:flex;flex-direction:column;gap:18px;color:var(--a-tk);min-width:0;max-width:1220px;margin:0 auto;width:100%}
++html.theme-dark .amv2,html.theme-plum-dark .amv2{--a-bg:#0E1625;--a-vl:#1C2638;--a-tk:#ECF2FF;--a-zw:#A1AFC8;--a-ac:#93B9FF;--a-ac-tk:#0E1625;--a-lijn:#34425A;--a-goed:#91D9BD;--a-goed-bg:rgba(145,217,189,.13);--a-let:#FFCF76;--a-let-bg:rgba(255,207,118,.13);--a-info:#93B9FF;--a-info-bg:rgba(147,185,255,.14);--a-stil-bg:rgba(161,175,200,.12);--a-schaduw:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.28)}
++.amv2 *{box-sizing:border-box}
++.amv2 svg{flex:none}
++
++/* Hero */
++.amv2-hero{position:relative;overflow:hidden;border-radius:24px;min-height:220px;display:flex;align-items:center;isolation:isolate;background:#143b70}
++.amv2-hero-beeld{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:70% 50%;z-index:-1;user-select:none}
++.amv2-hero::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(10,26,56,.72) 0%,rgba(10,26,56,.35) 55%,rgba(10,26,56,0) 80%)}
++.amv2-hero-tekst{padding:28px clamp(18px,4cqw,44px);max-width:560px;color:#fff}
++.amv2-hero h2{margin:0 0 6px;font-size:clamp(22px,3.4cqw,32px);line-height:1.15;font-weight:700;letter-spacing:-.01em;color:#fff}
++.amv2-hero p{margin:0 0 18px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.88)}
++.amv2-hero-knop{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:#fff;color:#18243D;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18)}
++.amv2-hero-knop svg{width:18px;height:18px}
++.amv2-hero-knop:disabled{opacity:.6;cursor:default}
++
++/* Filter */
++.amv2-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--a-vl);border:1px solid var(--a-lijn);border-radius:var(--a-r);padding:8px;box-shadow:var(--a-schaduw)}
++.amv2-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0;padding:2px}
++.amv2-chips::-webkit-scrollbar{display:none}
++.amv2-chip{flex:none;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--a-zw);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
++.amv2-chip:hover{background:var(--a-stil-bg);color:var(--a-tk)}
++.amv2-chip.actief{background:var(--a-ac);color:var(--a-ac-tk)}
++.amv2-zoek{display:flex;align-items:center;gap:6px;flex:0 1 240px;min-width:160px;min-height:40px;padding:0 6px 0 12px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw)}
++.amv2-zoek svg{width:16px;height:16px}
++.amv2-zoek input{flex:1;min-width:0;border:0;background:transparent;color:var(--a-tk);font:inherit;font-size:14px;outline:none;min-height:40px}
++.amv2-zoek input::-webkit-search-cancel-button{display:none}
++.amv2-zoek-wis{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer}
++
++/* Groepen */
++.amv2-groep{display:flex;flex-direction:column;gap:12px}
++.amv2-groep-kop{display:flex;align-items:center;gap:8px;min-height:44px}
++.amv2-groep-kop h3{margin:0;font-size:18px;font-weight:650;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
++.amv2-teller{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw);font-size:12px;font-weight:600}
++.groep-verbonden .amv2-teller{background:var(--a-goed-bg);color:var(--a-goed)}
++.amv2-inklap{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer;margin-left:auto}
++.amv2-inklap:hover{background:var(--a-stil-bg)}
++.amv2-inklap svg{width:20px;height:20px;transition:transform .2s}
++.amv2-inklap[aria-expanded='false'] svg{transform:rotate(-90deg)}
++.amv2-groep-kop .hulp-knop,.amv2-groep-kop [class*='info-tip']{flex:none}
++.amv2-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
++.amv2-raster.tegels{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
++
++/* Kaart */
++.amv2-kaart{position:relative;display:flex;align-items:center;gap:14px;min-height:96px;padding:18px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);box-shadow:var(--a-schaduw);transition:transform .18s ease,box-shadow .18s ease,border-color .18s;min-width:0}
++.amv2-kaart:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(24,36,61,.06),0 14px 32px rgba(24,36,61,.1)}
++.amv2-kaart[data-access-actief]{border-color:var(--a-ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--a-ac) 25%,transparent),var(--a-schaduw)}
++.amv2-kaart-open{position:absolute;inset:0;border:0;background:transparent;border-radius:inherit;cursor:pointer;z-index:0}
++.amv2-kaart-open:focus-visible,.amv2 button:focus-visible,.amv2 a:focus-visible,.amv2-paneel button:focus-visible,.amv2-paneel a:focus-visible{outline:2px solid var(--a-ac);outline-offset:2px}
++.amv2-kaart>*:not(.amv2-kaart-open){position:relative;z-index:1;pointer-events:none}
++.amv2-kaart .amv2-actie{pointer-events:auto}
++.amv2-kaart-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
++.amv2-kaart-titel{font-size:16px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
++.amv2-kaart-regel{font-size:13px;line-height:1.35;color:var(--a-zw);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
++.amv2-status{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:550;line-height:1.3;max-width:100%}
++.amv2-status i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
++.amv2-status svg{width:12px;height:12px}
++.amv2-status.toon-goed{background:var(--a-goed-bg);color:var(--a-goed)}
++.amv2-status.toon-info{background:var(--a-info-bg);color:var(--a-info)}
++.amv2-status.toon-let{background:var(--a-let-bg);color:var(--a-let)}
++.amv2-status.toon-stil{background:var(--a-stil-bg);color:var(--a-zw)}
++.amv2-actie{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;border:1px solid var(--a-lijn);background:var(--a-vl);color:var(--a-ac);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
++.amv2-actie svg{width:18px;height:18px}
++.amv2-actie:hover{background:var(--a-info-bg)}
++.amv2-actie.hoofd{background:var(--a-ac);color:var(--a-ac-tk);border-color:transparent}
++
++/* Iconen: logo op witte tegel (geen thema-tint) of semantisch icoon met zachte kleur */
++.amv2-icoon{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px}
++.amv2-icoon.groot{width:56px;height:56px;border-radius:16px}
++.amv2-icoon svg{width:26px;height:26px}
++.amv2-icoon.logo{background:#fff;box-shadow:inset 0 0 0 1px rgba(24,36,61,.08)}
++.amv2-icoon.logo img{width:60%;height:60%;object-fit:contain;filter:none}
++.amv2-icoon.tint-blauw{background:#E6EEFC;color:#2458C8}.amv2-icoon.tint-violet{background:#EFE8FD;color:#6A3FD0}.amv2-icoon.tint-groen{background:#E3F4EE;color:#16866D}.amv2-icoon.tint-amber{background:#FBF1DE;color:#AA7219}.amv2-icoon.tint-indigo{background:#E7E9FB;color:#3F48B8}.amv2-icoon.tint-roze{background:#FBE7EF;color:#B83C6D}
++html.theme-dark .amv2-icoon:not(.logo),html.theme-plum-dark .amv2-icoon:not(.logo),html.theme-dark .amv2-paneel .amv2-icoon:not(.logo){filter:none;background:rgba(255,255,255,.08)}
++html.theme-dark .amv2-icoon.tint-blauw{color:#93B9FF}html.theme-dark .amv2-icoon.tint-violet{color:#C3A8FF}html.theme-dark .amv2-icoon.tint-groen{color:#91D9BD}html.theme-dark .amv2-icoon.tint-amber{color:#FFCF76}html.theme-dark .amv2-icoon.tint-indigo{color:#A9B1FF}html.theme-dark .amv2-icoon.tint-roze{color:#FFA8C8}
++
++/* Tegels «Доступні»: icoon boven, compacter */
++.amv2-raster.tegels .amv2-kaart{flex-direction:column;align-items:flex-start;gap:10px;min-height:150px}
++.amv2-raster.tegels .amv2-actie{position:absolute;right:14px;bottom:14px}
++.amv2-raster.tegels .amv2-kaart-tekst{padding-right:52px}
++.amv2-raster.tegels .amv2-actie:not(.hoofd) span,.amv2-raster.tegels .amv2-actie.hoofd span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
++.amv2-raster.tegels .amv2-actie{padding:0;width:44px}
++.amv2-kaart.staat-not-configured,.amv2-kaart.staat-unavailable{background:color-mix(in srgb,var(--a-vl) 70%,var(--a-bg))}
++.amv2-kaart.staat-not-configured .amv2-icoon.logo,.amv2-kaart.staat-unavailable .amv2-icoon.logo{opacity:.75}
++
++/* Laden */
++.amv2-kaart.laden{pointer-events:none}
++.amv2-skelet{display:block;height:10px;width:70%;border-radius:6px;background:linear-gradient(90deg,var(--a-stil-bg),color-mix(in srgb,var(--a-stil-bg) 40%,var(--a-vl)),var(--a-stil-bg));background-size:200% 100%;animation:amv2-glans 1.4s linear infinite}
++.amv2-skelet.kort{width:40%}
++@keyframes amv2-glans{to{background-position:-200% 0}}
++
++/* Banners en meldingen */
++.amv2-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);flex-wrap:wrap}
++.amv2-banner>svg{width:22px;height:22px;color:var(--a-let)}
++.amv2-banner span{display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px}
++.amv2-banner small{color:var(--a-zw);font-size:13px}
++.amv2-banner.fout{background:var(--a-let-bg);border-color:transparent}
++.amv2-melding{margin:0;padding:10px 14px;border-radius:12px;background:var(--a-let-bg);color:var(--a-tk);font-size:14px}
++.amv2-leeg{margin:8px 0;color:var(--a-zw);text-align:center}
++
++/* Extra's */
++.amv2-extras{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
++.amv2-extra{display:flex;align-items:center;gap:14px;min-height:72px;padding:14px 16px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);color:var(--a-tk);text-align:left;font:inherit;cursor:pointer}
++.amv2-extra.info{cursor:default}
++.amv2-pijl{width:20px;height:20px;color:var(--a-zw);margin-left:auto}
++
++/* Knoppen (paneel) */
++.amv2-knoppen{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
++.amv2-knop{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--a-lijn);background:var(--a-vl);color:var(--a-tk);font:inherit;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
++.amv2-knop svg{width:18px;height:18px}
++.amv2-knop.hoofd{background:var(--a-ac);color:var(--a-ac-tk);border-color:transparent}
++.amv2-knop.gevaar{color:#B3261E}
++html.theme-dark .amv2-knop.gevaar{color:#FFB4AB}
++.amv2-knop:disabled{opacity:.55;cursor:default}
++
++/* Paneel: zijpaneel, op smalle schermen onderblad. z-index onder «Підтвердіть доступ» (1000). */
++.amv2-laag{position:fixed;inset:0;z-index:900;background:rgba(10,18,34,.42);backdrop-filter:blur(2px);display:flex;justify-content:flex-end;animation:amv2-in .18s ease}
++.amv2-paneel{--a-bg:#EDF2FA;--a-vl:#FFFFFF;--a-tk:#18243D;--a-zw:#71809D;--a-ac:#2458C8;--a-ac-tk:#fff;--a-lijn:#E5EBF5;--a-let-bg:#FBF1DE;--a-stil-bg:#EEF1F6;--a-info-bg:#E6EEFC;
++  width:min(480px,100%);height:100%;background:var(--a-vl);color:var(--a-tk);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.18);animation:amv2-rechts .22s ease;overflow:hidden}
++html.theme-dark .amv2-paneel,html.theme-plum-dark .amv2-paneel{--a-bg:#0E1625;--a-vl:#1C2638;--a-tk:#ECF2FF;--a-zw:#A1AFC8;--a-ac:#93B9FF;--a-ac-tk:#0E1625;--a-lijn:#34425A;--a-let-bg:rgba(255,207,118,.13);--a-stil-bg:rgba(161,175,200,.12);--a-info-bg:rgba(147,185,255,.14)}
++.amv2-paneel-kop{display:flex;align-items:center;gap:12px;padding:16px 16px 14px 20px;border-bottom:1px solid var(--a-lijn)}
++.amv2-paneel-kop>div{flex:1;min-width:0}
++.amv2-paneel-kop h3{margin:0;font-size:18px;line-height:1.25}
++.amv2-paneel-kop small{color:var(--a-zw);font-size:13px}
++.amv2-paneel-sluit{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--a-stil-bg);color:var(--a-tk);cursor:pointer;flex:none}
++.amv2-paneel-sluit svg{width:20px;height:20px}
++.amv2-paneel>.amv2-melding{margin:12px 20px 0}
++.amv2-paneel-inhoud{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px calc(24px + var(--veilig-onder,0px));display:flex;flex-direction:column;gap:10px}
++.amv2-paneel-inhoud.access-plane{max-width:none}
++.amv2-feiten{margin:0;display:grid;gap:8px}
++.amv2-feiten div{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--a-stil-bg)}
++.amv2-feiten dt{color:var(--a-zw);font-size:13px}
++.amv2-feiten dd{margin:0;font-size:14px;font-weight:550;text-align:right;overflow-wrap:anywhere;min-width:0}
++.amv2-uitleg{margin:4px 0;color:var(--a-zw);font-size:14px;line-height:1.45}
++.amv2-let{margin:4px 0;padding:10px 12px;border-radius:12px;background:var(--a-let-bg);font-size:14px;line-height:1.45}
++.amv2-stappen{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.45}
++.amv2-formulier{display:flex;flex-direction:column;gap:10px}
++.amv2-code{min-height:44px;border-radius:12px;border:1px solid var(--a-lijn);background:var(--a-bg);color:var(--a-tk);padding:0 14px;font-size:18px;letter-spacing:.2em;max-width:220px}
++@keyframes amv2-in{from{opacity:0}}
++@keyframes amv2-rechts{from{transform:translateX(24px);opacity:.4}}
++@keyframes amv2-op{from{transform:translateY(40px);opacity:.4}}
++@media (max-width:859px){
++  .amv2-laag{align-items:flex-end;justify-content:stretch}
++  .amv2-paneel{width:100%;height:auto;max-height:min(88dvh,100%);border-radius:22px 22px 0 0;animation-name:amv2-op}
++}
++
++/* Telefoon (container < 600): hoofdkaarten als compacte rijen, tegels in twee kolommen */
++@container amv2 (max-width:599px){
++  .amv2{gap:14px}
++  .amv2-hero{min-height:168px;border-radius:20px}
++  .amv2-hero-tekst{padding:20px 18px;max-width:78%}
++  .amv2-hero p{font-size:13.5px;margin-bottom:14px}
++  .amv2-filter{padding:6px;flex-direction:column;align-items:stretch}
++  .amv2-zoek{flex:1 1 auto;width:100%}
++  .amv2-raster{grid-template-columns:1fr;gap:10px}
++  .amv2-kaart{min-height:76px;padding:12px 12px 12px 14px;gap:12px}
++  .amv2-icoon.groot{width:46px;height:46px;border-radius:14px}
++  .amv2-kaart-titel{font-size:15px}
++  .amv2-kaart:not(.compact) .amv2-actie span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
++  .amv2-kaart:not(.compact) .amv2-actie{padding:0;width:44px}
++  .amv2-raster.tegels{grid-template-columns:repeat(2,minmax(0,1fr))}
++  .amv2-raster.tegels .amv2-kaart{min-height:136px;padding:12px}
++  .amv2-raster.tegels .amv2-kaart-tekst{padding-right:0}
++  .amv2-raster.tegels .amv2-kaart-regel{display:none}
++  .amv2-raster.tegels .amv2-status{margin-right:46px}
++  .amv2-raster.tegels .amv2-actie{right:10px;bottom:10px}
++  .amv2-groep-kop h3{font-size:17px}
++  .amv2-extras{grid-template-columns:1fr}
++}
++@container amv2 (max-width:359px){
++  .amv2-raster.tegels{grid-template-columns:1fr}
++  .amv2-hero-tekst{max-width:100%}
++  .amv2-chip{padding:0 12px}
++}
++@media (prefers-reduced-motion:reduce){
++  .amv2 *,.amv2-laag,.amv2-paneel{animation:none!important;transition:none!important}
++  .amv2-kaart:hover{transform:none}
++}
+diff --git a/src/aanmeldmethoden-v2/iconen.tsx b/src/aanmeldmethoden-v2/iconen.tsx
+new file mode 100644
+index 0000000..77b3a91
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/iconen.tsx
+@@ -0,0 +1,21 @@
++// UI-015: logo's van aanbieders (eigen SVG-bestanden in public/aanmeldmethoden/, officiële merkkleuren, NIET getint door het thema:
++// ze staan altijd op een witte tegel) en semantische iconen voor passkey/TOTP/herstel/kluis/toegangscodes.
++import { Fingerprint, KeyRound, LifeBuoy, LockKeyhole, Smartphone, Ticket, ShieldCheck } from 'lucide-react';
++
++const LOGO: Record<string, string> = {
++  google: '/aanmeldmethoden/google.svg', microsoft: '/aanmeldmethoden/microsoft.svg', apple: '/aanmeldmethoden/apple.svg',
++  discord: '/aanmeldmethoden/discord.svg', telegram: '/aanmeldmethoden/telegram.svg',
++};
++const SEMANTISCH: Record<string, { el: typeof KeyRound; tint: string }> = {
++  wachtwoord: { el: KeyRound, tint: 'amber' }, passkey: { el: Fingerprint, tint: 'violet' }, totp: { el: Smartphone, tint: 'blauw' },
++  herstel: { el: LifeBuoy, tint: 'groen' }, kluis: { el: LockKeyhole, tint: 'indigo' }, toegangscode: { el: Ticket, tint: 'roze' },
++};
++
++export function MethodeIcoon({ icoon, groot = false }: { icoon: string; groot?: boolean }) {
++  const logo = LOGO[icoon];
++  const cls = `amv2-icoon${groot ? ' groot' : ''}`;
++  if (logo) return <span className={`${cls} logo`} aria-hidden='true'><img src={logo} alt='' width={28} height={28} draggable={false} /></span>;
++  const s = SEMANTISCH[icoon] || { el: ShieldCheck, tint: 'blauw' };
++  const El = s.el;
++  return <span className={`${cls} tint-${s.tint}`} aria-hidden='true'><El /></span>;
++}
+diff --git a/src/aanmeldmethoden-v2/vlag.ts b/src/aanmeldmethoden-v2/vlag.ts
+new file mode 100644
+index 0000000..fe96b71
+--- /dev/null
++++ b/src/aanmeldmethoden-v2/vlag.ts
+@@ -0,0 +1,26 @@
++// Vlag `aanmeldmethoden-v2` (UI-015, standaard UIT): zelfde patroon als src/meldingen/v2/vlag-uitleg.ts. Fout of geen antwoord = UIT
++// = de oude pagina «Способи входу» ongewijzigd.
++import { useEffect, useState } from 'react';
++import { api } from '../platform/client';
++import { vlagBody } from '../tech/ruimtes/ruimtes-vlag';
++
++export const AANMELDMETHODEN_V2_VLAG = 'aanmeldmethoden-v2';
++const OPSLAG = `mr-vlag:${AANMELDMETHODEN_V2_VLAG}`;
++let waarde: boolean | null = (() => { try { const v = sessionStorage.getItem(OPSLAG); return v === '1' ? true : v === '0' ? false : null; } catch { return null; } })();
++let bezig: Promise<boolean> | null = null;
++const luisteraars = new Set<(v: boolean) => void>();
++export function laadAanmeldmethodenV2Vlag(): Promise<boolean> {
++  if (bezig) return bezig;
++  bezig = api.post(`/api/ofrep/v1/evaluate/flags/${AANMELDMETHODEN_V2_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
++    const v = x === true;
++    if (x === null) bezig = null; else { try { sessionStorage.setItem(OPSLAG, v ? '1' : '0'); } catch { /* geen opslag */ } }
++    waarde = v; luisteraars.forEach((f) => f(v)); return v;
++  });
++  return bezig;
++}
++/** null = nog onbekend (dan de oude weergave, niets springt). */
++export function useAanmeldmethodenV2(): boolean {
++  const [v, setV] = useState(waarde === true);
++  useEffect(() => { luisteraars.add(setV); void laadAanmeldmethodenV2Vlag(); return () => { luisteraars.delete(setV); }; }, []);
++  return v;
++}
+diff --git a/tests/eenheid/aanmeldmethoden-v2-20261030.test.ts b/tests/eenheid/aanmeldmethoden-v2-20261030.test.ts
+new file mode 100644
+index 0000000..2894eeb
+--- /dev/null
++++ b/tests/eenheid/aanmeldmethoden-v2-20261030.test.ts
+@@ -0,0 +1,94 @@
++// UI-015 (vlag aanmeldmethoden-v2): pure mapper snapshotToMethodCards() voor alle staten (loading, active, ready, not_configured,
++// disabled, unknown), contract `aanbieders` (UI-015A ↔ UI-015B), filter/zoeken, vlag + migratie, en dat de oude weergave blijft.
++import { readFileSync } from 'node:fs';
++import { VLAG_UITLEG } from '../../shared/vlaggen';
++import { AANBIEDER_IDS, filterKaarten, isAanbieder, isVeiligPad, snapshotToMethodCards, weergaveGroep, type MethodeKaart, type SnapshotInvoer } from '../../shared/aanmeldmethoden-model';
++import { checker } from './hulp/nep-google';
++
++const snap = (o: Partial<SnapshotInvoer> = {}): SnapshotInvoer => ({
++  methods: [{ id: 'google', enabled: true, configured: true, bound: true, status: 'active' }, { id: 'password', enabled: true, configured: false, bound: false, status: 'not_configured' }],
++  factors: [{ id: 'totp', enabled: true, enrolled: false, status: 'not_enrolled' }, { id: 'recovery', enabled: true, enrolled: true, status: 'active', remaining: 7 }, { id: 'passkey', enabled: true, enrolled: true, status: 'active', count: 2 }],
++  bindings: [{ method: 'google', email: 'p@x.org', status: 'active' }],
++  lockout: { protected: true }, password: { configured: false, mustChange: false }, totp: { enrolled: false }, ...o,
++});
++const vind = (l: MethodeKaart[], id: string) => l.find((k) => k.id === id)!;
++
++export async function main(): Promise<number> {
++  const { check, einde } = checker('aanmeldmethoden-v2-20261030');
++  // loading
++  const laden = snapshotToMethodCards('laden');
++  check('loading: elke kaart skelet, geen actie', laden.every((k) => k.staat === 'loading' && k.actie === 'none'));
++  check('loading: geen wachtwoordkaart (niet bewezen)', !laden.some((k) => k.id === 'password'));
++  // fout / 403
++  const fout = snapshotToMethodCards('fout');
++  check('fout: nergens active/«Підключено»', fout.every((k) => k.staat !== 'active'));
++  check('fout: «Стан не вдалося перевірити» + Повторити', vind(fout, 'google').staat === 'unknown' && vind(fout, 'google').reden?.uk === 'Стан не вдалося перевірити' && vind(fout, 'google').actie === 'retry');
++  const geen = snapshotToMethodCards('geen-toegang');
++  check('403: «Немає доступу», geen actie', geen.every((k) => k.staat === 'unavailable' && k.reden?.uk === 'Немає доступу' && k.actie === 'none'));
++  check('klaar zonder snapshot = fout', snapshotToMethodCards('klaar').every((k) => k.staat !== 'active'));
++  // active
++  const s = snapshotToMethodCards('klaar', snap());
++  const g = vind(s, 'google');
++  check('active: Google gekoppeld met e-mail van de server', g.staat === 'active' && g.accountLabel === 'p@x.org' && g.actie === 'manage');
++  check('active: lockout → beschermd + reden', g.beschermd === true && g.reden?.nl.includes('Enige'));
++  check('active: passkey met aantal', vind(s, 'passkey').staat === 'active' && vind(s, 'passkey').feit?.uk === 'Ключів: 2');
++  check('active: herstelcodes met echt aantal', vind(s, 'recovery').staat === 'active' && vind(s, 'recovery').feit?.nl === 'Codes over: 7');
++  // ready
++  check('ready: TOTP niet ingesteld → Налаштувати', vind(s, 'totp').staat === 'ready' && vind(s, 'totp').actie === 'setup');
++  const s0 = snapshotToMethodCards('klaar', snap({ factors: [{ id: 'totp', enabled: true, enrolled: false, status: 'not_enrolled' }, { id: 'recovery', enabled: true, enrolled: false, status: 'not_enrolled', remaining: 0 }, { id: 'passkey', enabled: true, enrolled: false, status: 'not_enrolled', count: 0 }] }));
++  check('ready: passkey 0 → setup', vind(s0, 'passkey').staat === 'ready' && vind(s0, 'passkey').actie === 'setup');
++  check('ready: geen herstelcodes → setup (geen verzonnen 10)', vind(s0, 'recovery').staat === 'ready' && !vind(s0, 'recovery').feit);
++  const weinig = snapshotToMethodCards('klaar', snap({ factors: [{ id: 'recovery', enabled: true, enrolled: true, status: 'active', remaining: 1 }] }));
++  check('attention: 1 herstelcode over', vind(weinig, 'recovery').staat === 'attention');
++  check('unknown: recovery zonder aantal → «Не вдалося визначити»', vind(snapshotToMethodCards('klaar', snap({ factors: [{ id: 'recovery', enabled: true, enrolled: true, status: 'active' }] })), 'recovery').reden?.uk === 'Не вдалося визначити');
++  check('unknown: factor ontbreekt → niet gecontroleerd', vind(snapshotToMethodCards('klaar', snap({ factors: [] })), 'totp').staat === 'unknown');
++  // not_configured / disabled
++  const nc = snapshotToMethodCards('klaar', snap({ methods: [{ id: 'google', enabled: true, configured: false, bound: false, status: 'not_configured' }], bindings: [] }));
++  check('not_configured: Google zonder sleutels', vind(nc, 'google').staat === 'not-configured' && vind(nc, 'google').actie !== 'connect');
++  const dis = snapshotToMethodCards('klaar', snap({ methods: [{ id: 'google', enabled: false, configured: true, bound: false, status: 'disabled' }], factors: [{ id: 'totp', enabled: false, enrolled: false, status: 'not_enrolled' }] }));
++  check('disabled: Google uit → unavailable', vind(dis, 'google').staat === 'unavailable');
++  check('disabled: TOTP uit → unavailable', vind(dis, 'totp').staat === 'unavailable');
++  // wachtwoord alleen als het bestaat
++  check('wachtwoord: geen kaart als niet ingesteld', !s.some((k) => k.id === 'password'));
++  const pw = snapshotToMethodCards('klaar', snap({ methods: [{ id: 'google', enabled: true, bound: true, status: 'active' }, { id: 'password', enabled: true, bound: true, status: 'active' }], password: { configured: true, mustChange: true } }));
++  check('wachtwoord: tijdelijk → aandacht', vind(pw, 'password').staat === 'attention');
++  // kluis/toegangscodes: geen bewering
++  check('kluis/codes: neutraal + Переглянути', ['vault', 'guest-code'].every((id) => vind(s, id).staat === 'neutral' && vind(s, id).actie === 'view'));
++  // aanbieders: veld ontbreekt
++  check('aanbieders: veld ontbreekt → 4 kaarten «server ondersteunt nog niet», geen knop', AANBIEDER_IDS.every((id) => { const k = vind(s, `aanbieder:${id}`); return k.staat === 'unavailable' && k.actie === 'none' && k.reden?.uk.includes('ще не підтримує'); }));
++  const a = snapshotToMethodCards('klaar', snap({ aanbieders: [
++    { id: 'microsoft', status: 'gereed-om-te-koppelen', actieKoppelUrl: '/api/owner/access/aanbieder/microsoft/start', kanLosmaken: true },
++    { id: 'apple', status: 'niet-geconfigureerd', kanLosmaken: true },
++    { id: 'discord', status: 'actief', accountLabel: 'pavlo#1', gekoppeldOp: '2026-10-30T09:00:00Z', kanLosmaken: false, losmaakUrl: '/x' },
++    { id: 'whatsapp', status: 'actief', kanLosmaken: true },
++    { id: 'telegram', status: 'gereed-om-te-koppelen', actieKoppelUrl: 'https://evil.example/', kanLosmaken: true },
++    { id: 'kapot' },
++  ] }));
++  check('aanbieder gereed → Підключити met same-origin pad', vind(a, 'aanbieder:microsoft').actie === 'connect' && vind(a, 'aanbieder:microsoft').koppelUrl === '/api/owner/access/aanbieder/microsoft/start');
++  check('aanbieder niet-geconfigureerd → «Потрібні ключі провайдера», geen knop', vind(a, 'aanbieder:apple').staat === 'not-configured' && vind(a, 'aanbieder:apple').actie === 'none' && vind(a, 'aanbieder:apple').reden?.uk === 'Потрібні ключі провайдера');
++  check('aanbieder actief → gekoppeld, beschermd, geen losmaak-url', vind(a, 'aanbieder:discord').staat === 'active' && vind(a, 'aanbieder:discord').beschermd === true && !vind(a, 'aanbieder:discord').losmaakUrl);
++  check('aanbieder met extern adres → nooit een knop', vind(a, 'aanbieder:telegram').actie === 'none' && vind(a, 'aanbieder:telegram').staat === 'unknown');
++  check('onbekende aanbieder (whatsapp) genegeerd', !a.some((k) => k.id === 'aanbieder:whatsapp'));
++  check('actieve aanbieder → groep «Підключені»', weergaveGroep(vind(a, 'aanbieder:discord')) === 'verbonden' && weergaveGroep(vind(a, 'aanbieder:apple')) === 'beschikbaar');
++  check('ontbrekende bekende id in lijst → onbekend', snapshotToMethodCards('klaar', snap({ aanbieders: [] })).filter((k) => k.id.startsWith('aanbieder:')).every((k) => k.staat === 'unknown'));
++  check('isAanbieder/isVeiligPad', isAanbieder({ id: 'x', status: 'actief', kanLosmaken: true }) && !isAanbieder({ id: 'x', status: 'ja', kanLosmaken: true }) && isVeiligPad('/a/b') && !isVeiligPad('//evil') && !isVeiligPad('https://x') && !isVeiligPad('/\\evil'));
++  // nooit geheimen
++  check('geen geheimen in kaarten', !JSON.stringify(a).match(/secret|token|otpauth/i));
++  // filter + zoeken
++  check('filter Passkey', filterKaarten(s, 'passkey', '').map((k) => k.id).join() === 'passkey');
++  check('filter Доступ іншим', filterKaarten(s, 'dostup', '').map((k) => k.id).join() === 'guest-code');
++  check('zoeken uk + nl + hoofdletters', filterKaarten(s, 'alle', 'АВТЕНТИФІКАТОР').some((k) => k.id === 'totp') && filterKaarten(s, 'alle', 'herstel').some((k) => k.id === 'recovery'));
++  check('zoeken met categorie behouden', filterKaarten(s, 'vhod', 'herstel').length === 0);
++  // vlag + migratie + poort
++  const u = VLAG_UITLEG['aanmeldmethoden-v2'];
++  check('vlag: uitleg uk + nl', !!u && u.naam.length === 2 && u.wat.every(Boolean) && u.gevolg.every(Boolean));
++  const mig = readFileSync('migrations/0200_aanmeldmethoden_v2_vlag.sql', 'utf8');
++  check('migratie 0200: standaard UIT, idempotent', /'aanmeldmethoden-v2'/.test(mig) && /false,\s*false\)/.test(mig) && /ON CONFLICT \(sleutel\) DO NOTHING/.test(mig));
++  const w = readFileSync('src/ToegangslaagWeergave.tsx', 'utf8');
++  check('poort: v2 alleen met vlag, oude weergave blijft', /if\(v2\)return <AanmeldmethodenV2/.test(w) && /return <AccessPlanePanels tab/.test(w));
++  check('één snapshot-call (v2 roept zelf geen snapshot aan)', !/access\/snapshot/.test(readFileSync('src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx', 'utf8')) && !/access\/snapshot/.test(readFileSync('src/aanmeldmethoden-v2/IdentityMethodDetails.tsx', 'utf8')));
++  const v2 = readFileSync('src/aanmeldmethoden-v2/AanmeldmethodenV2.tsx', 'utf8');
++  check('geen dubbele 60/450 ms-scroll in v2', !/setTimeout/.test(v2) && /gedaan\.current===sleutel|gedaan\.current === sleutel/.test(v2));
++  check('localStorage alleen voor ingeklapte groepen', (v2.match(/localStorage/g) || []).length === 2 && /amv2-ingeklapt/.test(v2));
++  return einde();
++}
+-- 
+2.47.3
+

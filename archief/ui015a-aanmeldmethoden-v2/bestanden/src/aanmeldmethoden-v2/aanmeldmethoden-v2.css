@@ -1,0 +1,182 @@
+/* UI-015 (vlag aanmeldmethoden-v2): nieuwe pagina «Способи входу». Alles onder .amv2; thema via de echte klassen op <html>
+   (theme-light/theme-dark/theme-plum-*, gezet door de globale thema-store; «авто» kiest de store zelf). Merklogo's staan op een
+   witte tegel en worden NIET getint. Indeling volgt de BREEDTE VAN DE CONTAINER (container queries), niet die van het scherm. */
+.amv2{--a-bg:#EDF2FA;--a-vl:#FFFFFF;--a-tk:#18243D;--a-zw:#71809D;--a-ac:#2458C8;--a-ac-tk:#fff;--a-lijn:#E5EBF5;--a-goed:#16866D;--a-goed-bg:#E3F4EE;--a-let:#AA7219;--a-let-bg:#FBF1DE;--a-info:#2458C8;--a-info-bg:#E6EEFC;--a-stil-bg:#EEF1F6;--a-schaduw:0 1px 2px rgba(24,36,61,.05),0 8px 24px rgba(24,36,61,.06);--a-r:20px;
+  container-type:inline-size;container-name:amv2;display:flex;flex-direction:column;gap:18px;color:var(--a-tk);min-width:0;max-width:1220px;margin:0 auto;width:100%}
+html.theme-dark .amv2,html.theme-plum-dark .amv2{--a-bg:#0E1625;--a-vl:#1C2638;--a-tk:#ECF2FF;--a-zw:#A1AFC8;--a-ac:#93B9FF;--a-ac-tk:#0E1625;--a-lijn:#34425A;--a-goed:#91D9BD;--a-goed-bg:rgba(145,217,189,.13);--a-let:#FFCF76;--a-let-bg:rgba(255,207,118,.13);--a-info:#93B9FF;--a-info-bg:rgba(147,185,255,.14);--a-stil-bg:rgba(161,175,200,.12);--a-schaduw:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.28)}
+.amv2 *{box-sizing:border-box}
+.amv2 svg{flex:none}
+
+/* Hero */
+.amv2-hero{position:relative;overflow:hidden;border-radius:24px;min-height:220px;display:flex;align-items:center;isolation:isolate;background:#143b70}
+.amv2-hero-beeld{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:70% 50%;z-index:-1;user-select:none}
+.amv2-hero::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(10,26,56,.72) 0%,rgba(10,26,56,.35) 55%,rgba(10,26,56,0) 80%)}
+.amv2-hero-tekst{padding:28px clamp(18px,4cqw,44px);max-width:560px;color:#fff}
+.amv2-hero h2{margin:0 0 6px;font-size:clamp(22px,3.4cqw,32px);line-height:1.15;font-weight:700;letter-spacing:-.01em;color:#fff}
+.amv2-hero p{margin:0 0 18px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.88)}
+.amv2-hero-knop{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:0;background:#fff;color:#18243D;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.amv2-hero-knop svg{width:18px;height:18px}
+.amv2-hero-knop:disabled{opacity:.6;cursor:default}
+
+/* Filter */
+.amv2-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--a-vl);border:1px solid var(--a-lijn);border-radius:var(--a-r);padding:8px;box-shadow:var(--a-schaduw)}
+.amv2-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0;padding:2px}
+.amv2-chips::-webkit-scrollbar{display:none}
+.amv2-chip{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--a-zw);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.amv2-chip:hover{background:var(--a-stil-bg);color:var(--a-tk)}
+.amv2-chip.actief{background:var(--a-ac);color:var(--a-ac-tk)}
+.amv2-zoek{display:flex;align-items:center;gap:6px;flex:0 1 240px;min-width:160px;min-height:44px;padding:0 6px 0 12px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw)}
+.amv2-zoek svg{width:16px;height:16px}
+.amv2-zoek input{flex:1;min-width:0;border:0;background:transparent;color:var(--a-tk);font:inherit;font-size:14px;outline:none;min-height:40px}
+.amv2-zoek input::-webkit-search-cancel-button{display:none}
+.amv2-zoek-wis{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer}
+
+/* Groepen */
+.amv2-groep{display:flex;flex-direction:column;gap:12px}
+.amv2-groep-kop{display:flex;align-items:center;gap:8px;min-height:44px}
+.amv2-groep-kop h3{margin:0;font-size:18px;font-weight:650;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.amv2-teller{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw);font-size:12px;font-weight:600}
+.groep-verbonden .amv2-teller{background:var(--a-goed-bg);color:var(--a-goed)}
+.amv2-inklap{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer;margin-left:auto}
+.amv2-inklap:hover{background:var(--a-stil-bg)}
+.amv2-inklap svg{width:20px;height:20px;transition:transform .2s}
+.amv2-inklap[aria-expanded='false'] svg{transform:rotate(-90deg)}
+.amv2-groep-kop .hulp-knop,.amv2-groep-kop [class*='info-tip']{flex:none}
+.amv2-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.amv2-raster.tegels{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+
+/* Kaart */
+.amv2-kaart{position:relative;display:flex;align-items:center;gap:14px;min-height:96px;padding:18px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);box-shadow:var(--a-schaduw);transition:transform .18s ease,box-shadow .18s ease,border-color .18s;min-width:0}
+.amv2-kaart:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(24,36,61,.06),0 14px 32px rgba(24,36,61,.1)}
+.amv2-kaart[data-access-actief]{border-color:var(--a-ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--a-ac) 25%,transparent),var(--a-schaduw)}
+.amv2-kaart-open{position:absolute;inset:0;border:0;background:transparent;border-radius:inherit;cursor:pointer;z-index:0}
+.amv2-kaart-open:focus-visible,.amv2 button:focus-visible,.amv2 a:focus-visible,.amv2-paneel button:focus-visible,.amv2-paneel a:focus-visible{outline:2px solid var(--a-ac);outline-offset:2px}
+.amv2-kaart>*:not(.amv2-kaart-open){position:relative;z-index:1;pointer-events:none}
+.amv2-kaart .amv2-actie{pointer-events:auto}
+.amv2-kaart-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.amv2-kaart-titel{font-size:16px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+.amv2-kaart-regel{font-size:13px;line-height:1.35;color:var(--a-zw);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.amv2-status{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:4px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:550;line-height:1.3;max-width:100%}
+.amv2-status i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.amv2-status svg{width:12px;height:12px}
+.amv2-status.toon-goed{background:var(--a-goed-bg);color:var(--a-goed)}
+.amv2-status.toon-info{background:var(--a-info-bg);color:var(--a-info)}
+.amv2-status.toon-let{background:var(--a-let-bg);color:var(--a-let)}
+.amv2-status.toon-stil{background:var(--a-stil-bg);color:var(--a-zw)}
+.amv2-actie{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;border:1px solid var(--a-lijn);background:var(--a-vl);color:var(--a-ac);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
+.amv2-actie svg{width:18px;height:18px}
+.amv2-actie:hover{background:var(--a-info-bg)}
+.amv2-actie.hoofd{background:var(--a-ac);color:var(--a-ac-tk);border-color:transparent}
+
+/* Iconen: logo op witte tegel (geen thema-tint) of semantisch icoon met zachte kleur */
+.amv2-icoon{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px}
+.amv2-icoon.groot{width:56px;height:56px;border-radius:16px}
+.amv2-icoon svg{width:26px;height:26px}
+.amv2-icoon.logo{background:#fff;box-shadow:inset 0 0 0 1px rgba(24,36,61,.08)}
+.amv2-icoon.logo img{width:60%;height:60%;object-fit:contain;filter:none}
+.amv2-icoon.tint-blauw{background:#E6EEFC;color:#2458C8}.amv2-icoon.tint-violet{background:#EFE8FD;color:#6A3FD0}.amv2-icoon.tint-groen{background:#E3F4EE;color:#16866D}.amv2-icoon.tint-amber{background:#FBF1DE;color:#AA7219}.amv2-icoon.tint-indigo{background:#E7E9FB;color:#3F48B8}.amv2-icoon.tint-roze{background:#FBE7EF;color:#B83C6D}
+html.theme-dark .amv2-icoon:not(.logo),html.theme-plum-dark .amv2-icoon:not(.logo),html.theme-dark .amv2-paneel .amv2-icoon:not(.logo){filter:none;background:rgba(255,255,255,.08)}
+html.theme-dark .amv2-icoon.tint-blauw{color:#93B9FF}html.theme-dark .amv2-icoon.tint-violet{color:#C3A8FF}html.theme-dark .amv2-icoon.tint-groen{color:#91D9BD}html.theme-dark .amv2-icoon.tint-amber{color:#FFCF76}html.theme-dark .amv2-icoon.tint-indigo{color:#A9B1FF}html.theme-dark .amv2-icoon.tint-roze{color:#FFA8C8}
+
+/* Tegels «Доступні»: icoon boven, compacter */
+.amv2-raster.tegels .amv2-kaart{flex-direction:column;align-items:flex-start;gap:10px;min-height:150px}
+.amv2-raster.tegels .amv2-actie{position:absolute;right:14px;bottom:14px}
+.amv2-raster.tegels .amv2-kaart-tekst{padding-right:52px}
+.amv2-raster.tegels .amv2-actie:not(.hoofd) span,.amv2-raster.tegels .amv2-actie.hoofd span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.amv2-raster.tegels .amv2-actie{padding:0;width:44px}
+.amv2-kaart.staat-not-configured,.amv2-kaart.staat-unavailable{background:color-mix(in srgb,var(--a-vl) 70%,var(--a-bg))}
+.amv2-kaart.staat-not-configured .amv2-icoon.logo,.amv2-kaart.staat-unavailable .amv2-icoon.logo{opacity:.75}
+
+/* Laden */
+.amv2-kaart.laden{pointer-events:none}
+.amv2-skelet{display:block;height:10px;width:70%;border-radius:6px;background:linear-gradient(90deg,var(--a-stil-bg),color-mix(in srgb,var(--a-stil-bg) 40%,var(--a-vl)),var(--a-stil-bg));background-size:200% 100%;animation:amv2-glans 1.4s linear infinite}
+.amv2-skelet.kort{width:40%}
+@keyframes amv2-glans{to{background-position:-200% 0}}
+
+/* Banners en meldingen */
+.amv2-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);flex-wrap:wrap}
+.amv2-banner>svg{width:22px;height:22px;color:var(--a-let)}
+.amv2-banner span{display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px}
+.amv2-banner small{color:var(--a-zw);font-size:13px}
+.amv2-banner.fout{background:var(--a-let-bg);border-color:transparent}
+.amv2-melding{margin:0;padding:10px 14px;border-radius:12px;background:var(--a-let-bg);color:var(--a-tk);font-size:14px}
+.amv2-leeg{margin:8px 0;color:var(--a-zw);text-align:center}
+
+/* Extra's */
+.amv2-extras{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.amv2-extra{display:flex;align-items:center;gap:14px;min-height:72px;padding:14px 16px;border-radius:var(--a-r);background:var(--a-vl);border:1px solid var(--a-lijn);color:var(--a-tk);text-align:left;font:inherit;cursor:pointer}
+.amv2-extra.info{cursor:default}
+.amv2-pijl{width:20px;height:20px;color:var(--a-zw);margin-left:auto}
+
+/* Knoppen (paneel) */
+.amv2-knoppen{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.amv2-knop{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--a-lijn);background:var(--a-vl);color:var(--a-tk);font:inherit;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.amv2-knop svg{width:18px;height:18px}
+.amv2-knop.hoofd{background:var(--a-ac);color:var(--a-ac-tk);border-color:transparent}
+.amv2-knop.gevaar{color:#B3261E}
+html.theme-dark .amv2-knop.gevaar{color:#FFB4AB}
+.amv2-knop:disabled{opacity:.55;cursor:default}
+
+/* Paneel: zijpaneel, op smalle schermen onderblad. z-index onder «Підтвердіть доступ» (1000). */
+.amv2-laag{position:fixed;inset:0;z-index:900;background:rgba(10,18,34,.42);backdrop-filter:blur(2px);display:flex;justify-content:flex-end;animation:amv2-in .18s ease}
+.amv2-paneel{--a-bg:#EDF2FA;--a-vl:#FFFFFF;--a-tk:#18243D;--a-zw:#71809D;--a-ac:#2458C8;--a-ac-tk:#fff;--a-lijn:#E5EBF5;--a-let-bg:#FBF1DE;--a-stil-bg:#EEF1F6;--a-info-bg:#E6EEFC;
+  width:min(480px,100%);height:100%;background:var(--a-vl);color:var(--a-tk);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.18);animation:amv2-rechts .22s ease;overflow:hidden}
+html.theme-dark .amv2-paneel,html.theme-plum-dark .amv2-paneel{--a-bg:#0E1625;--a-vl:#1C2638;--a-tk:#ECF2FF;--a-zw:#A1AFC8;--a-ac:#93B9FF;--a-ac-tk:#0E1625;--a-lijn:#34425A;--a-let-bg:rgba(255,207,118,.13);--a-stil-bg:rgba(161,175,200,.12);--a-info-bg:rgba(147,185,255,.14)}
+.amv2-paneel-kop{display:flex;align-items:center;gap:12px;padding:16px 16px 14px 20px;border-bottom:1px solid var(--a-lijn)}
+.amv2-paneel-kop>div{flex:1;min-width:0}
+.amv2-paneel-kop h3{margin:0;font-size:18px;line-height:1.25}
+.amv2-paneel-kop small{color:var(--a-zw);font-size:13px}
+.amv2-paneel-sluit{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--a-stil-bg);color:var(--a-tk);cursor:pointer;flex:none}
+.amv2-paneel-sluit svg{width:20px;height:20px}
+.amv2-paneel>.amv2-melding{margin:12px 20px 0}
+.amv2-paneel-inhoud{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:18px 20px calc(24px + var(--veilig-onder,0px));display:flex;flex-direction:column;gap:10px}
+.amv2-paneel-inhoud.access-plane{max-width:none}
+.amv2-feiten{margin:0;display:grid;gap:8px}
+.amv2-feiten div{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--a-stil-bg)}
+.amv2-feiten dt{color:var(--a-zw);font-size:13px}
+.amv2-feiten dd{margin:0;font-size:14px;font-weight:550;text-align:right;overflow-wrap:anywhere;min-width:0}
+.amv2-uitleg{margin:4px 0;color:var(--a-zw);font-size:14px;line-height:1.45}
+.amv2-let{margin:4px 0;padding:10px 12px;border-radius:12px;background:var(--a-let-bg);font-size:14px;line-height:1.45}
+.amv2-stappen{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.45}
+.amv2-formulier{display:flex;flex-direction:column;gap:10px}
+.amv2-code{min-height:44px;border-radius:12px;border:1px solid var(--a-lijn);background:var(--a-bg);color:var(--a-tk);padding:0 14px;font-size:18px;letter-spacing:.2em;max-width:220px}
+@keyframes amv2-in{from{opacity:0}}
+@keyframes amv2-rechts{from{transform:translateX(24px);opacity:.4}}
+@keyframes amv2-op{from{transform:translateY(40px);opacity:.4}}
+@media (max-width:859px){
+  .amv2-laag{align-items:flex-end;justify-content:stretch}
+  .amv2-paneel{width:100%;height:auto;max-height:min(88dvh,100%);border-radius:22px 22px 0 0;animation-name:amv2-op}
+}
+
+/* Telefoon (container < 600): hoofdkaarten als compacte rijen, tegels in twee kolommen */
+@container amv2 (max-width:599px){
+  .amv2{gap:14px}
+  .amv2-hero{min-height:168px;border-radius:20px}
+  .amv2-hero-tekst{padding:20px 18px;max-width:78%}
+  .amv2-hero p{font-size:13.5px;margin-bottom:14px}
+  .amv2-filter{padding:6px;flex-direction:column;align-items:stretch}
+  .amv2-zoek{flex:1 1 auto;width:100%}
+  .amv2-raster{grid-template-columns:1fr;gap:10px}
+  .amv2-kaart{min-height:76px;padding:12px 12px 12px 14px;gap:12px}
+  .amv2-icoon.groot{width:46px;height:46px;border-radius:14px}
+  .amv2-kaart-titel{font-size:15px}
+  .amv2-kaart:not(.compact) .amv2-actie span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .amv2-kaart:not(.compact) .amv2-actie{padding:0;width:44px}
+  .amv2-raster.tegels{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .amv2-raster.tegels .amv2-kaart{min-height:136px;padding:12px}
+  .amv2-raster.tegels .amv2-kaart-tekst{padding-right:0}
+  .amv2-raster.tegels .amv2-kaart-regel{display:none}
+  .amv2-raster.tegels .amv2-status{margin-right:46px}
+  .amv2-raster.tegels .amv2-actie{right:10px;bottom:10px}
+  .amv2-groep-kop h3{font-size:17px}
+  .amv2-extras{grid-template-columns:1fr}
+}
+@container amv2 (max-width:359px){
+  .amv2-raster.tegels{grid-template-columns:1fr}
+  .amv2-hero-tekst{max-width:100%}
+  .amv2-chip{padding:0 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .amv2 *,.amv2-laag,.amv2-paneel{animation:none!important;transition:none!important}
+  .amv2-kaart:hover{transform:none}
+}

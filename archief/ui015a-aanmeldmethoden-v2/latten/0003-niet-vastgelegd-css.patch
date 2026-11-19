@@ -1,0 +1,22 @@
+diff --git a/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css b/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
+index a04ad18..b031004 100644
+--- a/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
++++ b/src/aanmeldmethoden-v2/aanmeldmethoden-v2.css
+@@ -22,14 +22,14 @@ html.theme-dark .amv2,html.theme-plum-dark .amv2{--a-bg:#0E1625;--a-vl:#1C2638;-
+ .amv2-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--a-vl);border:1px solid var(--a-lijn);border-radius:var(--a-r);padding:8px;box-shadow:var(--a-schaduw)}
+ .amv2-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0;padding:2px}
+ .amv2-chips::-webkit-scrollbar{display:none}
+-.amv2-chip{flex:none;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--a-zw);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
++.amv2-chip{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--a-zw);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+ .amv2-chip:hover{background:var(--a-stil-bg);color:var(--a-tk)}
+ .amv2-chip.actief{background:var(--a-ac);color:var(--a-ac-tk)}
+-.amv2-zoek{display:flex;align-items:center;gap:6px;flex:0 1 240px;min-width:160px;min-height:40px;padding:0 6px 0 12px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw)}
++.amv2-zoek{display:flex;align-items:center;gap:6px;flex:0 1 240px;min-width:160px;min-height:44px;padding:0 6px 0 12px;border-radius:999px;background:var(--a-stil-bg);color:var(--a-zw)}
+ .amv2-zoek svg{width:16px;height:16px}
+ .amv2-zoek input{flex:1;min-width:0;border:0;background:transparent;color:var(--a-tk);font:inherit;font-size:14px;outline:none;min-height:40px}
+ .amv2-zoek input::-webkit-search-cancel-button{display:none}
+-.amv2-zoek-wis{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer}
++.amv2-zoek-wis{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--a-zw);cursor:pointer}
+ 
+ /* Groepen */
+ .amv2-groep{display:flex;flex-direction:column;gap:12px}
