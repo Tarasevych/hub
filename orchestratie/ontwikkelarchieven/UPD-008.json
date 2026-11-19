@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "taakId": "UPD-008",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-008 · Зсув пошти при фіксованому меню та ізоляція просторів «Звичайний / Технічний»",
+  "opdracht": "Поверх живої встановленої версії 20261119-143136 (UPD-007 @ 4a279ae445d5f7f7d77627854b833c1c7fde5c68) усунути дві регресії на домені пошти (mail.tarasevych.com): 1) при фіксованому розгорнутому меню пошта, верхня панель команд і відкритий переглядач мають зсуватися на ширину меню (316 px) без перекриття, тоді як автонаведення лишається накладним поверх пошти без зсуву вмісту; 2) усунути змішування просторів «Звичайний / Технічний» та миттєве закриття відкритих листів у пошті.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-008-mail-menu-ruimtes-20261119-160000",
+    "basisCommit": "4a279ae445d5f7f7d77627854b833c1c7fde5c68",
+    "basisVersie": "20261119-143136",
+    "geinstalleerdeBasis": "4a279ae445d5f7f7d77627854b833c1c7fde5c68",
+    "geinstalleerdeVersie": "20261119-143136",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "4a279ae445d5f7f7d77627854b833c1c7fde5c68",
+    "f097f08d575d787c4437e7274f5e215eff82b5c6"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "Створено гілку feature/upd-008-mail-menu-ruimtes-20261119-160000 від живої фіксації змін UPD-007 (4a279ae445d5f7f7d77627854b833c1c7fde5c68) та зареєстровано завдання UPD-008.",
+      "resultaat": "Ізольована робоча гілка поверх актуальної встановленої основи 20261119-143136 без втручання у voornaamst, integratie чи попередні гілки."
+    },
+    {
+      "stap": "Пункт 1 (верстка меню на домені пошти): у src/menu-v2.css, src/mail-gelaagde-inbox.css, src/mail-lezer-verbeteringen.css, src/google-mail-werkruimte.css та src/GoogleMailWerkruimte.tsx вирівняно відступи при .sidebar-pinned до 316 px (у т.ч. --canonical-command-inline-start і переглядач), прибрано залишковий .sidebar-expanded і задано z-index:260 для накладної панелі .sidebar-hover поверх пошти та переглядача (z-index:230).",
+      "resultaat": "У живому аудиті Chromium на 1440×900 та 1024×768 при .sidebar-pinned верхня панель (left=330), список листів (left=316) і переглядач (left=316) не мають жодного перекриття, а при .sidebar-hover панель наповзає поверх із z-index=260 без зсуву вмісту (0 px)."
+    },
+    {
+      "stap": "Пункт 2 (ізоляція просторів і стабільне відкриття листів): у src/tech/ruimtes/ruimte-signaal.ts збережено активний простір вкладки у sessionStorage; у src/tech/ruimtes/ruimtes-opslag.ts відкладено meldRuimte суворо до підтвердження сервера та await techVernieuwen(); у src/MailFunctioneelWeergave.tsx, src/MailZijbalkNavigatie.tsx та src/GoogleMailWerkruimte.tsx ізольовано ключі sessionStorage, IndexedDB, запитів списку й фонового завантаження за простором, додано скидання й перезавантаження на opRuimteWissel і відкидання застарілих відповідей та помилок старого простору.",
+      "resultaat": "У живому круговому аудиті Chromium prive → technisch → prive зафіксовано 0 міжпросторових запитів, 0 поштових запитів до завершення wisselen, чисте перемикання листів кожного простору та стабільне відкриття листів без самовільного закриття."
+    },
+    {
+      "stap": "Додано регресійний тест tests/eenheid/upd-008-mail-menu-ruimtes-20261119.test.ts (8 перевірок), оновлено облік авторства, хронологію та ізольований сценарій випуску .github/workflows/upd-008-uitgave.yml.",
+      "resultaat": "Пройдено перевірку типів клієнта та сервера, повне складання, правила координації 1.4.17, orch behoud, 13 післяскладальних і всі 174 безбазові та хмарні тести, а також живий аудит у Chromium."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Розділити класи .sidebar-pinned (зсув на 316 px для пошти, верхньої панелі команд і переглядача) та .sidebar-hover (накладання поверх вмісту з z-index:260 без зсуву).",
+      "reden": "При фіксованому розгорнутому меню пошта не перекривається, а при автонаведенні екран і відкритий лист не смикаються."
+    },
+    {
+      "besluit": "Відкласти сигнал meldRuimte до завершення POST /api/owner/hub/tech/ruimtes/wisselen та await techVernieuwen(), ізолювавши всі клієнтські сховища пошти за поточним простором.",
+      "reden": "Виключає перегони запитів під час перемикання просторів, змішування скриньок із IndexedDB/sessionStorage і хибне закриття щойно відкритого листа."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/menu-v2.css, src/mail-gelaagde-inbox.css, src/mail-lezer-verbeteringen.css, src/google-mail-werkruimte.css",
+      "omschrijving": "Узгоджено зсув на 316 px при .sidebar-pinned для пошти, верхньої панелі команд і переглядача листів; збережено накладне розгортання .sidebar-hover із z-index:260 без зсуву вмісту."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts",
+      "omschrijving": "Збереження активного простору вкладки у sessionStorage; сигнал meldRuimte надсилається лише після підтвердження сервера та techVernieuwen(); додано зворотну синхронізацію mr-ruimte-antwoord у напрямку prive → technisch."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/MailFunctioneelWeergave.tsx, src/MailZijbalkNavigatie.tsx, src/GoogleMailWerkruimte.tsx",
+      "omschrijving": "Повна ізоляція поштових сховищ (sessionStorage, IndexedDB), ключів запитів, фонового завантаження й відкриття листів за простором; перезавантаження на opRuimteWissel і ігнорування застарілих відповідей та помилок попереднього простору; узгоджено readerRanden для .sidebar-hover."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-008-mail-menu-ruimtes-20261119.test.ts, .github/workflows/upd-008-uitgave.yml, orchestratie/taken/UPD-008.json, orchestratie/bijdragen/UPD-008/*, orchestratie/ontwikkelarchieven/UPD-008.json",
+      "omschrijving": "Регресійне випробування UPD-008 (8/8), облік авторства, хронологія, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-008."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-008-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-008: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує 307 наборів випробувань, orch behoud, подвійний прогін міграцій PostgreSQL 16 трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-008: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 307 testbestanden, orch behoud, dubbele migraties op PostgreSQL 16 met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=4096 npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && scripts/orch.mjs versheid --taak UPD-008 --fase overdracht && scripts/orch.mjs behoud --tegen 4a279ae445d5f7f7d77627854b833c1c7fde5c68 && scripts/zoek-ui-catalogus.mjs --controle && статичні аудити",
+      "resultaat": "Усі правила координації 1.4.17, збереження надбань, пошуковий каталог і статичні контракти пройшли з кодом 0."
+    },
+    {
+      "opdracht": "Локальний прогін 20 хмарних тестів, 154 безбазових модульних випробувань (включно з upd-008-mail-menu-ruimtes-20261119 8/8), 13 післяскладальних випробувань та живий аудит у Chromium на 1440×900 і 1024×768",
+      "resultaat": "Усі 187 локальних наборів випробувань та живий аудит геометрії (pinned left=316, hover 0 px зсуву, z-index=260) і кругового перемикання prive↔technisch у Chromium пройшли без жодної помилки."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-008-uitgave.yml",
+      "resultaat": "Звіряє живу основу 20261119-143136 (4a279ae4), виконує всі 307 наборів випробувань, подвійний прогін міграцій PostgreSQL 16 трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Зміни стосуються виключно клієнтської частини та стилів (нових міграцій бази даних і змін серверного коду немає).",
+    "Проєкт об’єднаної панелі сповіщень MELDPANEEL-001 (№ 159) свідомо збережено в окремій гілці поза цим випуском."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}
