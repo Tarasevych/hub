@@ -131,7 +131,7 @@ export async function main(): Promise<number> {
     && mig0303.includes('ADD COLUMN IF NOT EXISTS limiet_modus')
     && mig0303.includes('ADD COLUMN IF NOT EXISTS max_aantal')
     && mig0303.includes('ADD COLUMN IF NOT EXISTS gebruikt_aantal')
-    && mig0303.includes('ADD COLUMN IF NOT EXISTS ingehaald_door')
+    && mig0303.includes('ADD COLUMN IF NOT EXISTS ingehaald_door_versie')
     && mig0303.includes("'ingehaald'"));
 
   check('3.7: інтерфейс кумулятивної черги та гнучких прав підключений у всіх 4 компонентах і є двомовна документація',

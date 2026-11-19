@@ -472,7 +472,7 @@ const voorstelUit = (r: any) => ({
   wijzigingen: String(r.wijzigingen || ''), tests: r.tests || {}, diffSamenvatting: String(r.diff_samenvatting || ''),
   aangemaaktOp: iso(r.aangemaakt_op), bijgewerktOp: iso(r.bijgewerkt_op), beslistOp: iso(r.beslist_op), beslistDoor: r.beslist_door ? String(r.beslist_door) : '',
   uitkomstCode: r.uitkomst_code ? String(r.uitkomst_code) : '', uitkomst: r.uitkomst || null,
-  ingehaaldDoor: r.ingehaald_door ? String(r.ingehaald_door) : '',
+  ingehaaldDoor: r.ingehaald_door_versie ? String(r.ingehaald_door_versie) : '',
   voorcontrole: r.voorcontrole || null, pakketMeta: r.pakket_meta || null,
 });
 function testsSchoon(v: unknown) {
@@ -716,7 +716,7 @@ export async function sluitIngehaaldeVoorstellen(geinstalleerdeVersie: string): 
     const { rows } = await sys().query(
       `UPDATE app.uitrol_voorstellen
           SET status = 'ingehaald',
-              ingehaald_door = $1,
+              ingehaald_door_versie = $1,
               uitkomst_code = 'INGEHAALD_DOOR_NIEUWERE',
               uitkomst = $2::jsonb,
               bijgewerkt_op = now()

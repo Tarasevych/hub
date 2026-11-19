@@ -41,7 +41,7 @@ BEGIN
 END $$;
 
 ALTER TABLE app.uitrol_voorstellen
-  ADD COLUMN IF NOT EXISTS ingehaald_door text;
+  ADD COLUMN IF NOT EXISTS ingehaald_door_versie text;
 
 ALTER TABLE app.uitrol_voorstellen
   DROP CONSTRAINT IF EXISTS uitrol_voorstellen_status_check;
