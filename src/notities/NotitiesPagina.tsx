@@ -264,7 +264,7 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
           : !notities.length ? (
             <LegeStaatKaart
               className='vn-leeg'
-              dataAttrs={{ 'data-vn-leeg': '1' }}
+              data-vn-leeg='1'
               icoon={<NotebookPen />}
               uitleg={filterActief
                 ? tr(lang, 'За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')

@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "UPD-013/20261120-135649-gemini",
+  "taakId": "UPD-013",
+  "tijd": "2026-11-20T13:56:49.253Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "gemini",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "herstel",
+  "wat": {
+    "uk": "Узгодження контрактів розмітки у McpDienstWeergave.tsx, CanoniekOmlijsting.tsx, App.tsx, HubNotities.tsx, NotitiesPagina.tsx і LegeStaatKaart.tsx та підключення модульних випробувань upd-011..013 у сценарії випуску upd-013-uitgave.yml"
+  },
+  "waarom": {
+    "uk": "Доручення власника від 20.11.2026 довести кумулятивний випуск UPD-013 (запит № 182) до 100% зеленого проходження всіх наборів випробувань і публікації пакунка випуску"
+  },
+  "bouwtVoortOp": [
+    "UPD-013/20261120-102343-gemini"
+  ],
+  "tak": "feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000",
+  "pr": 182,
+  "commits": [
+    "126138983797791c7420d41c4a4cc6794a5f35db",
+    "1f8dea684863084c88e46747770681a37290eefb",
+    "57eef3334d869629e3764eac7ed5c6c36917f671",
+    "8187231f4faedd9479cfcc373909834fe5f9cfdb",
+    "cb15d68f7ad01a3fb5970466c757521644b53763"
+  ]
+}

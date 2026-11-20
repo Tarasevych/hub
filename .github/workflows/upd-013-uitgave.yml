@@ -1,12 +1,12 @@
 name: 'UPD-013 · Розподілене зберігання Шаміра (0306), аудит досвіду (2–9), MELDPANEEL-001 і ліниве розбиття пошти'
 
 # Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу на сервері
-# (20261119-184102 @ 68c90588, 20261119-170438 @ 5ad4afb1 або 20261119-143136 @ 4a279ae4),
-# правила координації, типи клієнта й сервера, статичні контракти, TRACE-001, 20 хмарних тестів, 155 безбазових і 13 післяскладальних випробувань,
+# (20261120-093715 @ 318ad5613600, 20261120-084148 @ ee7949266649 або 20261120-003537 @ 9e610a43fab5),
+# правила координації, типи клієнта й сервера, статичні контракти, TRACE-001, 20 хмарних тестів, 158 безбазових і 13 післяскладальних випробувань,
 # подвійний прогін усіх міграцій (включно з 0306_verdeelde_opslag_knopen.sql) на PostgreSQL 16 із трьома ролями та 120 випробувань із базою даних і Хроміумом,
 # повне складання, автоматично підписаний CRX3 0.9.7, маніфест встановлювача та контрольну суму SHA-256.
 # Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, client- en servertypen, statische contracten, TRACE-001,
-# cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties (incl. 0304 en 0305) en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
+# cloud-tests, eenheidstests vóór en na de bouw, dubbele migraties (incl. 0305 en 0306) en databasetests met drie rollen en Chromium tegen PostgreSQL 16,
 # volledige bouw, ondertekende CRX3 0.9.7, manifest en SHA-256.
 on:
   push:
@@ -35,8 +35,8 @@ concurrency:
 
 env:
   TAAK: UPD-013
-  # Жива встановлена основа на сервері — UPD-009 (20261119-184102 @ 68c90588203d792cf25431d6849a57c2732dfecc);
-  # також підтримуються предки UPD-008 (20261119-170438 @ 5ad4afb1e7f4a286333d7283539220be141f5704) та UPD-007 (20261119-143136 @ 4a279ae445d5f7f7d77627854b833c1c7fde5c68).
+  # Жива встановлена основа на сервері — UPD-012 (20261120-093715 @ 318ad56136008cafdde193e11c5bfe638d5a6ce6);
+  # також підтримуються предки UPD-011 (20261120-084148 @ ee79492666491af3c82ce9127c8a03f37420fdef) та UPD-010 (20261120-003537 @ 9e610a43fab5e10bbf4ff0b379d325896b7487dd).
   BEKENDE_BASISSEN: '20261120-003537=9e610a43fab5e10bbf4ff0b379d325896b7487dd 20261120-084148=ee79492666491af3c82ce9127c8a03f37420fdef 20261120-093715=318ad56136008cafdde193e11c5bfe638d5a6ce6'
   INTEGRATIE_BASIS: 'e3c5ab3df29724bb7fab0558899bccb71417a82c'
   MODEL_ID: ${{ inputs.model_id || vars.UPD_013_MODEL_ID || 'Gemini 3.1 Pro (Google Antigravity)' }}
@@ -329,6 +329,9 @@ jobs:
             upd-008-mail-menu-ruimtes-20261119 \
             upd-009-centrering-globaal-20261119 \
             upd-010-lezer-uitrol-rechten-20261119 \
+            upd-011-telegram-3f-terugdraai-20261120 \
+            upd-012-prestatie-ux-tg-vertaal-20261120 \
+            upd-013-verdeelde-opslag-ux-meldpaneel-20261120 \
             vaardigheden-20261115 \
             vaardigheden-ecosysteem \
             vast-kader \
@@ -766,7 +769,7 @@ jobs:
       - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: upd-012-overdracht
+          name: upd-013-overdracht
           path: ${{ runner.temp }}/overdracht/
           if-no-files-found: error
           retention-days: 7
@@ -788,7 +791,7 @@ jobs:
       - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: upd-012-overdracht
+          name: upd-013-overdracht
           path: ${{ runner.temp }}/overdracht
       - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
         shell: bash

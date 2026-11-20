@@ -318,7 +318,7 @@ function HubNotesOud({ lang }: { lang: 'uk' | 'nl' }) {
         : !notes.length && open !== 'nieuw' ? (
           <LegeStaatKaart
             className='hub-notes-leeg'
-            dataAttrs={{ 'data-hub-notes-leeg': '1' }}
+            data-hub-notes-leeg='1'
             icoon={<NotebookPen />}
             uitleg={t('Нотаток ще немає. Додайте першу — або попросіть ШІ занотувати щось для вас.', 'Nog geen notities. Voeg de eerste toe — of vraag de AI iets voor u te noteren.')}
             actie={{ label: t('Нова нотатка', 'Nieuwe notitie'), icoon: <Plus />, onClick: () => start() }}
@@ -327,7 +327,7 @@ function HubNotesOud({ lang }: { lang: 'uk' | 'nl' }) {
           : !gevonden.length ? (
             <LegeStaatKaart
               className='hub-notes-leeg'
-              dataAttrs={{ 'data-hub-notes-geen-treffer': '1' }}
+              data-hub-notes-geen-treffer='1'
               icoon={<Search />}
               uitleg={t('За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')}
               actie={{ label: t('Скинути фільтр', 'Filter wissen'), icoon: <X />, onClick: () => { setVraag(''); setEtiket(''); setSoortFilter(''); } }}

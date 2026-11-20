@@ -23,6 +23,7 @@ export type LegeStaatKaartProps = {
   className?: string;
   /** Додаткові data-атрибути для збереження наявних позначок у тестах. */
   dataAttrs?: Record<string, string | undefined>;
+  [sleutel: `data-${string}`]: string | undefined;
 };
 
 export function LegeStaatKaart({
@@ -32,6 +33,7 @@ export function LegeStaatKaart({
   actie,
   className = '',
   dataAttrs,
+  ...rest
 }: LegeStaatKaartProps) {
   return (
     <section
@@ -39,6 +41,7 @@ export function LegeStaatKaart({
       role='status'
       aria-live='polite'
       {...dataAttrs}
+      {...rest}
     >
       {icoon ? <span className='tsv-lege-staat-icoon' aria-hidden='true'>{icoon}</span> : null}
       {titel ? <h3 className='tsv-lege-staat-titel'>{titel}</h3> : null}

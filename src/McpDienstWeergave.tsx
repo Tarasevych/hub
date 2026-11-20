@@ -901,12 +901,8 @@ export default function McpServiceView({ lang, tab }: Props) {
           onKies={springNaarMcpBlok}
         />
       ) : null}
-      {verborgen ? (
-        <>
-          <PageHead icon={<Plug />} title={t("Міст ШІ → сайт", "Brug AI → site")} />
-          <ExpertMelding uk={lang === "uk"} />
-        </>
-      ) : <>
+      {verborgen ? <PageHead icon={<Plug />} title={t("Міст ШІ → сайт", "Brug AI → site")} /> : null}
+      {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-error" role="alert">{error}</p> : null}
       {busy && busy !== "archive" && section !== "agents" && section !== "apps" ? <p className="mcp-meta" role="status">{busy}</p> : null}
 
