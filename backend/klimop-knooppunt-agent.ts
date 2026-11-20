@@ -46,6 +46,13 @@ import {
   type ProactieveNulBijdrage,
   type VoorbereideEpocheStaat,
 } from '../shared/klimop/drempelsleutels';
+import {
+  verifieerApparaatIntrekking,
+  verifieerPersoonsStaat,
+  type KlimopApparaatIntrekking,
+  type KlimopHerstelAanvraag,
+  type KlimopPersoonsStaat,
+} from '../shared/klimop/identiteit';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -98,7 +105,25 @@ export type KnooppuntOpdracht =
       setId: string;
       besluit: 'bevestig' | 'afbreken';
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'publiceer_identiteit_staat';
+      staat: KlimopPersoonsStaat;
+      intrekkingen: readonly KlimopApparaatIntrekking[];
+      herstelAanvraag: KlimopHerstelAanvraag | null;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_identiteit_staat';
+      persoonsId: string;
+      mandaat: KlimopOndertekendMandaat;
     };
+
+export interface KlimopIdentiteitRegisterInvoer {
+  staat: KlimopPersoonsStaat;
+  intrekkingen: readonly KlimopApparaatIntrekking[];
+  herstelAanvraag: KlimopHerstelAanvraag | null;
+}
 
 export type KnooppuntOpdrachtAntwoord =
   | { ok: true; actie: 'pong'; knooppuntId: string; echo: string }
@@ -121,6 +146,18 @@ export type KnooppuntOpdrachtAntwoord =
   | { ok: true; actie: 'ververs_nulbijdrage'; bijdrage: ProactieveNulBijdrage }
   | { ok: true; actie: 'ververs_voorbereid'; vanEpoche: number; naarEpoche: number }
   | { ok: true; actie: 'ververs_afgerond'; actieveEpoche: number }
+  | {
+      ok: true;
+      actie: 'identiteit_gepubliceerd';
+      persoonsId: string;
+      actieveEpoche: number;
+      aantalIntrekkingen: number;
+    }
+  | {
+      ok: true;
+      actie: 'identiteit_geraadpleegd';
+      invoer: KlimopIdentiteitRegisterInvoer;
+    }
   | { ok: false; fout: string; details?: string[] };
 
 export interface EstafetteVerzoek {
@@ -187,6 +224,7 @@ export interface KlimopProefKnooppunt {
   aantalOpgeslagenBlokken(): number;
   leesRuwOpgeslagenBlok(blokSha256: string): Buffer | undefined;
   actieveDrempelEpoche(setId: string): number | null;
+  aantalGeregistreerdeIdentiteiten(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -204,6 +242,7 @@ export async function startKlimopProefKnooppunt(config: {
   const drempelDelen = new Map<string, FeldmanVssDeel>();
   const voorbereideVerversingen = new Map<string, VoorbereideEpocheStaat>();
   const frostNonces = new Map<string, FrostGeheimeNonceStaat>();
+  const identiteitRegister = new Map<string, KlimopIdentiteitRegisterInvoer>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -380,6 +419,71 @@ export async function startKlimopProefKnooppunt(config: {
       return { ok: true, actie: 'ververs_afgerond', actieveEpoche: gekozen.epoche };
     }
 
+    if (opdracht.actie === 'publiceer_identiteit_staat' || opdracht.actie === 'raadpleeg_identiteit_staat') {
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'raadpleeg_identiteit_staat') {
+        const gevonden = identiteitRegister.get(opdracht.persoonsId);
+        if (!gevonden) return { ok: false, fout: 'IDENTITEIT_NIET_GEVONDEN' };
+        return { ok: true, actie: 'identiteit_geraadpleegd', invoer: gevonden };
+      }
+
+      const sv = verifieerPersoonsStaat(opdracht.staat);
+      if (!sv.ok) return sv;
+      const persoonsId = opdracht.staat.oprichting.persoonsId;
+      const bestaand = identiteitRegister.get(persoonsId);
+
+      if (bestaand) {
+        if (bestaand.staat.oprichting.handtekeningB64u !== opdracht.staat.oprichting.handtekeningB64u) {
+          return { ok: false, fout: 'IDENTITEIT_OPRICHTING_VERSCHILT' };
+        }
+        if (
+          opdracht.staat.actieveEpoche < bestaand.staat.actieveEpoche
+          || (opdracht.staat.actieveEpoche === bestaand.staat.actieveEpoche
+            && opdracht.staat.actieveWortelPubDerB64u !== bestaand.staat.actieveWortelPubDerB64u)
+        ) {
+          return { ok: false, fout: 'IDENTITEIT_EPOCHE_TERUGDRAAI_GEWEIGERD' };
+        }
+        if (
+          bestaand.herstelAanvraag?.staat === 'geblokkeerd_door_eigenaar'
+          && opdracht.herstelAanvraag?.aanvraagId === bestaand.herstelAanvraag.aanvraagId
+          && opdracht.herstelAanvraag.staat !== 'geblokkeerd_door_eigenaar'
+        ) {
+          return { ok: false, fout: 'HERSTEL_BLOKKADE_KAN_NIET_WORDEN_GEWIST' };
+        }
+      }
+
+      const samengevoegdeIntrekkingen = new Map<string, KlimopApparaatIntrekking>();
+      for (const oud of bestaand?.intrekkingen ?? []) {
+        samengevoegdeIntrekkingen.set(oud.ingetrokkenApparaatId, oud);
+      }
+      for (const intr of opdracht.intrekkingen ?? []) {
+        const iv = verifieerApparaatIntrekking(intr, opdracht.staat);
+        if (!iv.ok) return iv;
+        samengevoegdeIntrekkingen.set(intr.ingetrokkenApparaatId, intr);
+      }
+
+      if (opdracht.herstelAanvraag && opdracht.herstelAanvraag.persoonsId !== persoonsId) {
+        return { ok: false, fout: 'HERSTELAANVRAAG_PERSOON_KOMT_NIET_OVEREEN' };
+      }
+
+      const intrekkingenLijst = [...samengevoegdeIntrekkingen.values()];
+      identiteitRegister.set(persoonsId, {
+        staat: opdracht.staat,
+        intrekkingen: intrekkingenLijst,
+        herstelAanvraag: opdracht.herstelAanvraag ?? bestaand?.herstelAanvraag ?? null,
+      });
+
+      return {
+        ok: true,
+        actie: 'identiteit_gepubliceerd',
+        persoonsId,
+        actieveEpoche: opdracht.staat.actieveEpoche,
+        aantalIntrekkingen: intrekkingenLijst.length,
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -397,6 +501,7 @@ export async function startKlimopProefKnooppunt(config: {
           aanbieder: knooppunt.identiteit.aanbieder,
           actieveStengels: sessies.size,
           opgeslagenBlokken: blokOpslag.size,
+          geregistreerdeIdentiteiten: identiteitRegister.size,
         });
         return;
       }
@@ -504,6 +609,9 @@ export async function startKlimopProefKnooppunt(config: {
     actieveDrempelEpoche(setId: string) {
       return drempelDelen.get(setId)?.epoche ?? null;
     },
+    aantalGeregistreerdeIdentiteiten() {
+      return identiteitRegister.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -517,6 +625,7 @@ export async function startKlimopProefKnooppunt(config: {
       frostNonces.clear();
       drempelDelen.clear();
       voorbereideVerversingen.clear();
+      identiteitRegister.clear();
       await new Promise<void>((r) => server.close(() => r()));
     },
   };
