@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-003",
+  "agent": "antigravity",
+  "tak": "feature/klimop-003-etappe2-proefnetwerk-20261120-182000",
+  "basisCommit": "d80e91e9be45a30ff7782ce33c14d6e147fe1650",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T18:20:22.084Z",
+  "bijgewerkt": "2026-11-20T18:20:22.085Z",
+  "omschrijving": "Етап 2 маніфесту Плющ: криптографічний протокол захищених зв’язків Стебла (shared/klimop/stengels.ts), ізольований мережевий вузол (backend/klimop-knooppunt-agent.ts), відтворюваний багатоконтейнерний і багатопроцесний полігон з 3 незалежних вузлів без втручання в бойовий сервер та двомовна документація Етапу 2",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
