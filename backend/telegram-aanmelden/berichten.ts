@@ -73,7 +73,7 @@ export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties
     try {
       const png = await bouwActieKaartMetFoto(opties.actieKaart);
       const r = await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) },
-        { bestand: { veld: 'photo', naam: `actie-${opties.actieKaart.categorie}.png`, type: 'image/png', inhoud: png } });
+        { bestand: { veld: 'photo', naam: 'account.png', type: 'image/png', inhoud: png } });
       v = { chatId, berichtId: r.message_id, isFoto: true };
     } catch { v = null; }
   }

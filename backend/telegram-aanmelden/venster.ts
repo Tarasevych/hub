@@ -223,7 +223,7 @@ ${w.soort === 'i' && vg.oordeel === 'afwijkend' ? geoWaarschuwing : ''}
 ${wieDetail}
 <div class="rij"><span class="label">${t('Що', 'Wat')}</span><span>${esc(w.titel)}: ${esc(w.wat)}</span></div>
 <div class="rij"><span class="label">${t('Пристрій', 'Apparaat')}</span>${logo(merkLogo(b), b)}${logo(merkLogo(s, true), s)}<span>${esc(toestel)}</span></div>
-<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span>${logo(vlag(w.land), w.land, 'vlag')}<span>${esc(plaats)}${w.plaats || w.land ? `<small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : ''}</span></div>
+<div class="rij"><span class="label">${t('Звідки', 'Vanwaar')}</span><span>${w.plaats || w.land ? `<small class="bron">${t('Визначено за IP-адресою — приблизно', 'Bepaald via het IP-adres — bij benadering')}</small>` : '—'}</span></div>
 ${geoRij}<div class="rij"><span class="label">${t('Коли', 'Wanneer')}</span><span>${esc(tijd)}</span></div>
 </div></details></section>`;
   const kiezen = `<section class="kaart" id="stap-kiezen"${w.stap === 'kiezen' ? '' : ' hidden'}><h2>${t('Яку піктограму показує сайт?', 'Welk pictogram toont de site?')}</h2>
