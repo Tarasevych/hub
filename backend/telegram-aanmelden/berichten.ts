@@ -7,6 +7,7 @@ import { botSleutel, webhookGeheim } from './sleutels';
 import { instellingen, sql } from './opslag';
 import { knopLezen, knopSleutel, knopTekenen, nieuweId, type KnopLetter } from './cryptografie';
 import { kaartPng, succesAnimatie } from './kaarten';
+import { bouwActieKaartMetFoto, type ActieKaartInvoer } from './actie-kaart';
 import { metVoet, t, TEKST, type BotTekst } from '../../shared/telegram-aanmelden/teksten';
 import { STROOK_KLEUREN, type KaartSoort, type Taal } from '../../shared/telegram-aanmelden/model';
 
@@ -47,10 +48,12 @@ export async function knoppenMaken(telegramId: string, groep: string, knoppen: K
 
 export type Verzonden = { chatId: string; berichtId: number; isFoto: boolean };
 
-/** Verstuurt een bericht; met `kaart` en afbeeldingen aan als foto met onderschrift. Voetregel komt er altijd bij. */
+/** Verstuurt een bericht; met `actieKaart` (UPD-011) of `kaart` en afbeeldingen aan als foto met onderschrift. Voetregel komt er altijd bij. */
 export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties: { kaart?: KaartSoort; knoppen?: Array<Array<Record<string, unknown>>>; antwoordToetsenbord?: Record<string, unknown>;
   /** TELEGRAM-002: foto van het site-account dat vraagt (visueel kenmerk); mislukt het versturen ervan, dan de gewone kaart. */
-  accountFoto?: string } = {}): Promise<Verzonden> {
+  accountFoto?: string;
+  /** UPD-011: фірмова PNG-картка конкретної дії з круглим фото облікового запису прямо на зображенні. */
+  actieKaart?: ActieKaartInvoer } = {}): Promise<Verzonden> {
   const sleutel = await botSleutel();
   const inst = await instellingen();
   const inhoud = metVoet(tekst, taal);
@@ -65,7 +68,16 @@ export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties
     : opties.knoppen;
   const reply_markup = opties.antwoordToetsenbord ?? (metZandloper ? { inline_keyboard: metZandloper } : undefined);
   let v: Verzonden | null = null;
-  const eigen = opties.accountFoto && inst.afbeeldingen && inhoud.length <= 1000 ? fotoVoorBot(opties.accountFoto) : null;
+  // UPD-011: фірмова картка дії з піктограмою категорії та круглим фото конкретного користувача замість великої голої фотографії.
+  if (opties.actieKaart && inst.afbeeldingen && inhoud.length <= 1000) {
+    try {
+      const png = await bouwActieKaartMetFoto(opties.actieKaart);
+      const r = await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) },
+        { bestand: { veld: 'photo', naam: 'account.png', type: 'image/png', inhoud: png } });
+      v = { chatId, berichtId: r.message_id, isFoto: true };
+    } catch { v = null; }
+  }
+  const eigen = !v && opties.accountFoto && inst.afbeeldingen && inhoud.length <= 1000 ? fotoVoorBot(opties.accountFoto) : null;
   if (eigen) {
     try {
       const r = 'url' in eigen
@@ -75,7 +87,7 @@ export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties
       v = { chatId, berichtId: r.message_id, isFoto: true };
     } catch { v = null; } // Telegram weigert de foto (formaat, onbereikbaar adres) → de gewone kaart hieronder
   }
-  if (v) { /* al verstuurd met de foto van het account */ } else if (opties.kaart && inst.afbeeldingen && inhoud.length <= 1000) {
+  if (v) { /* al verstuurd met de kaart of foto van het account */ } else if (opties.kaart && inst.afbeeldingen && inhoud.length <= 1000) {
     const r = await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) },
       { bestand: { veld: 'photo', naam: `kaart-${opties.kaart}.png`, type: 'image/png', inhoud: kaartPng(opties.kaart) } });
     v = { chatId, berichtId: r.message_id, isFoto: true };

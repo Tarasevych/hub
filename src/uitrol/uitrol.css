@@ -837,3 +837,52 @@ button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
   .admin-uitrol .ut-afwijs-tegel[data-voorstel] .ut-afwijs-tegel-keuze{position:static}
   .ut-afwijs-waar li{font-size:.74rem;padding:2px 8px 2px 6px}
 }
+
+/* UPD-011: персональні ключі адміністраторів, 3-чинникова довіра та реєстр вибіркового відкликання випусків */
+.ut-3f-kaart,.ut-sel-kaart{display:grid;gap:12px}
+.ut-3f-lock{display:inline-flex;align-items:center;gap:8px;margin:0;padding:8px 12px;border-radius:10px;background:var(--ut-bg2);border:1px solid var(--ut-line);font-size:.86rem;color:var(--ut-text)}
+.ut-3f-lock svg{width:16px;height:16px;color:var(--ut-ok);flex:none}
+.ut-ok-tekst{margin:0;padding:8px 12px;border-radius:10px;border:1px solid var(--ut-ok);background:color-mix(in srgb,var(--ut-ok) 10%,var(--ut-bg));color:var(--ut-text);font-size:.88rem}
+.ut-3f-eenmalig{display:grid;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--ut-accent);background:color-mix(in srgb,var(--ut-accent) 8%,var(--ut-bg))}
+.ut-3f-eenmalig-kop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ut-3f-code-rij{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr) auto;gap:8px;align-items:center}
+.ut-3f-code-rij code{padding:6px 9px;border-radius:8px;background:var(--ut-bg2);border:1px solid var(--ut-line);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;overflow-wrap:anywhere}
+.ut-3f-form{display:grid;gap:10px;padding:12px;border-radius:12px;border:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-3f-form h3{margin:0;font-size:.95rem}
+.ut-3f-grid{display:grid;gap:8px 12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.ut-3f-grid label{display:grid;gap:4px;font-size:.84rem;color:var(--ut-muted)}
+.ut-3f-grid input,.ut-3f-grid select{min-height:38px;padding:6px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit}
+.ut-3f-checks{display:flex;gap:14px;flex-wrap:wrap}
+.ut-3f-checks label{display:inline-flex;align-items:center;gap:6px;font-size:.86rem;cursor:pointer}
+.ut-3f-lijst,.ut-sel-lijst{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ut-3f-item,.ut-sel-item{display:grid;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-3f-item[data-status="ingetrokken"]{opacity:.68}
+.ut-sel-item[data-gekozen]{border-color:var(--ut-accent);background:color-mix(in srgb,var(--ut-accent) 6%,var(--ut-bg2))}
+.ut-3f-item-kop,.ut-sel-kop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ut-3f-item-kop>div,.ut-sel-kop>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ut-3f-prefix{font-size:.82rem;color:var(--ut-muted)}
+.ut-3f-factoren{display:flex;gap:6px;flex-wrap:wrap}
+.ut-3f-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:.8rem;border:1px solid var(--ut-line);background:var(--ut-bg)}
+.ut-3f-pill svg{width:14px;height:14px;flex:none}
+.ut-3f-pill[data-ok="true"]{border-color:var(--ut-ok);color:var(--ut-text)}
+.ut-3f-pill[data-ok="true"] svg{color:var(--ut-ok)}
+.ut-3f-pill[data-ok="false"]{border-color:var(--ut-warn);color:var(--ut-muted)}
+.ut-3f-pill[data-ok="false"] svg{color:var(--ut-warn)}
+.ut-3f-intrek-rij{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%}
+.ut-3f-intrek-rij input{flex:1 1 220px;min-height:38px;padding:6px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit}
+.ut-sel-bron{background:color-mix(in srgb,var(--ut-accent) 14%,var(--ut-bg));color:var(--ut-text);border:1px solid color-mix(in srgb,var(--ut-accent) 35%,var(--ut-line))}
+.ut-sel-plan{display:grid;gap:10px;padding:12px;border-radius:12px;border:1px solid var(--ut-accent);background:var(--ut-bg)}
+.ut-sel-plan h3{margin:0;display:flex;align-items:center;gap:8px;font-size:.98rem}
+.ut-sel-stat-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.ut-sel-stat{display:grid;gap:2px;padding:10px;border-radius:10px;border:1px solid var(--ut-line);background:var(--ut-bg2);justify-items:start}
+.ut-sel-stat strong{font-size:1.15rem}
+.ut-sel-stat span{font-size:.8rem;color:var(--ut-muted)}
+.ut-sel-details{border:1px solid var(--ut-line);border-radius:10px;padding:8px 10px;background:var(--ut-bg2)}
+.ut-sel-details summary{cursor:pointer;font-weight:600;font-size:.86rem}
+.ut-sel-details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px;font-size:.82rem}
+.ut-sel-opdracht{display:grid;gap:6px}
+.ut-sel-opdracht pre{margin:0;padding:10px;border-radius:10px;background:var(--ut-bg2);border:1px solid var(--ut-line);white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;font-family:ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:640px){
+  .ut-3f-code-rij{grid-template-columns:1fr}
+}
+

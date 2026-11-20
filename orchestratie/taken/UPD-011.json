@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "UPD-011",
+  "agent": "gemini",
+  "tak": "feature/upd-011-telegram-3f-terugdraai-20261120-074000",
+  "basisCommit": "b6b963646a27946288036c246f06c953697dcfed",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.18",
+  "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T07:41:22.415Z",
+  "bijgewerkt": "2026-11-20T08:05:59.271Z",
+  "omschrijving": "UPD-011: фірмові картки Telegram із круглим фото акаунта, 1-екранні візуалізовані підтвердження, персональні ключі й 3-чинникова довіра оновлень (GitHub+MCP+Сайт), вибіркове відкликання випусків та оновлення правил 1.4.18",
+  "kanaal": "github_pr",
+  "overdrachten": [],
+  "regelsHerlezen": [
+    {
+      "van": "1.4.17",
+      "naar": "1.4.18",
+      "op": "2026-11-20T08:05:59.271Z"
+    }
+  ]
+}

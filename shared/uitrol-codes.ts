@@ -272,6 +272,27 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
     doenUk: 'Використовуйте налаштоване сховище власника або оновіть його в налаштуваннях із підтвердженням ключем доступу.',
     doenNl: 'Gebruik de ingestelde opslagplaats van de eigenaar of werk deze bij met passkey-bevestiging in de instellingen.',
   },
+  // UPD-011: персональні ключі адміністраторів, 3-чинникова довіра (GitHub ↔ MCP ШІ ↔ Сайт) і вибіркове відкликання
+  DRIE_FACTOREN_ONVOLLEDIG: {
+    uk: 'Не виконано 3-чинникову перевірку довіри (GitHub ↔ MCP ШІ ↔ Сайт)',
+    nl: 'Driefactorvertrouwen is onvolledig (GitHub ↔ MCP AI ↔ Site)',
+    doenUk: 'Прив’яжіть і синхронізуйте всі 3 чинники в розділі «Налаштування» → «Ключі та 3-чинникова довіра».',
+    doenNl: 'Koppel en synchroniseer alle 3 factoren onder «Instellingen» → «Sleutels en driefactorvertrouwen».',
+  },
+  SLEUTEL_INGETROKKEN: {
+    uk: 'Персональний ключ адміністратора або агента відкликано',
+    nl: 'De persoonlijke beheersleutel of agentsleutel is ingetrokken',
+    doenUk: 'Створіть новий персональний ключ і виконайте повторний обмін із GitHub та MCP.',
+    doenNl: 'Maak een nieuwe persoonlijke sleutel aan en wissel deze opnieuw uit met GitHub en MCP.',
+  },
+  BEHEERSLEUTEL_ONGELDIG: {
+    uk: 'Персональний ключ або параметри прив’язки недійсні',
+    nl: 'De persoonlijke sleutel of koppelingsgegevens zijn ongeldig',
+  },
+  SELECTIEF_PLAN_NIET_GEVONDEN: {
+    uk: 'Випуск для вибіркового відкликання не знайдено в реєстрі змін',
+    nl: 'Release voor selectief intrekken niet gevonden in het wijzigingsregister',
+  },
 });
 
 const kies = (lang: 'uk' | 'nl', uk: string, nl: string) => (lang === 'uk' ? uk : nl);

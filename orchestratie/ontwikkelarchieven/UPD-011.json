@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "taakId": "UPD-011",
+  "datum": "2026-11-20",
+  "taal": "uk",
+  "titel": "UPD-011 · Картки Telegram із фото ініціатора, 1-екранні вікна, персональні ключі 3F, вибіркове відкликання та правила 1.4.18",
+  "opdracht": "Поверх UPD-010 (20261120-003537 @ 9e610a43fab5e10bbf4ff0b379d325896b7487dd, злито в integratie b6b963646a27946288036c246f06c953697dcfed) виконати чотири вимоги власника: 1) динамічно генерувати в Telegram фірмову картку конкретної категорії дії (800×400) із накладеним круглим фото саме того користувача чи адміністратора, хто діє, та вмістити вікна підтвердження в один екран смартфона (390×844); 2) додати персональні відкличні ключі адміністраторів і 3-чинникову довіру оновлень (GitHub ↔ MCP-з’єднувач ШІ ↔ Сайт і чинні правила) з одноразовим обміном ключами; 3) додати реєстр змін кожного випуску з видимим джерелом, пофайловим порівнянням і вибірковим відкликанням конкретного оновлення без втрати пізніших випусків (доступним на сайті та ШІ через MCP); 4) оновити правила оркестрації для всіх ШІ-агентів до версії 1.4.18 (B-023).",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-011-telegram-3f-terugdraai-20261120-074000",
+    "basisCommit": "b6b963646a27946288036c246f06c953697dcfed",
+    "basisVersie": "20261120-003537",
+    "geinstalleerdeBasis": "9e610a43fab5e10bbf4ff0b379d325896b7487dd",
+    "geinstalleerdeVersie": "20261120-003537",
+    "integratieBasis": "b6b963646a27946288036c246f06c953697dcfed",
+    "regelsVersie": "1.4.18",
+    "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
+    "samengevoegd": [
+      {
+        "taak": "UPD-010 (запит на злиття № 179)",
+        "commit": "b6b963646a27946288036c246f06c953697dcfed",
+        "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після встановлення 20261120-003537 на сервері."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "b6b963646a27946288036c246f06c953697dcfed",
+    "b6da895315dc10091fe252ea1d1f31e64ffcdfdb",
+    "a7f61b3db9a8b8c04d013d2e848d7e90cc48c014",
+    "91c6d1824f85e395ec1276e72d217f6271253bff"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Злиття UPD-010 (PR № 179) в integratie (--no-ff) та реєстрація задачі UPD-011 від b6b963646a27946288036c246f06c953697dcfed.",
+      "resultaat": "Гілку feature/upd-010-lezer-uitrol-rechten-20261119-200000 збережено для TRACE-001; створено робочу гілку feature/upd-011-telegram-3f-terugdraai-20261120-074000."
+    },
+    {
+      "stap": "2) Динамічні фірмові PNG-картки Telegram і 1-екранні вікна підтвердження: створено shared/bevestig-categorie.ts, backend/telegram-aanmelden/beeld-decode.ts, backend/telegram-aanmelden/actie-kaart.ts; оновлено berichten.ts, bevestigen.ts, inloggen.ts, venster.ts, src/platform/bevestig-toegang.tsx і bevestig-toegang.css.",
+      "resultaat": "Генерується PNG-картка 800×400 (10 категорій дій, кругле фото саме того користувача/адміністратора, хто діє, без сторонніх пакетів npm); у Chromium на 390×844 вікно venster.ts уміщується в один екран із запасом; telegram-aanmelden (65/65) та bevestig-toegang-opmaak (19/19) пройшли без помилок."
+    },
+    {
+      "stap": "3) Персональні відкличні ключі адміністраторів, 3-чинникова довіра (GitHub ↔ MCP ШІ ↔ Сайт) та реєстр змін випусків із вибірковим відкликанням: створено migrations/0304_uitrol_3f_sleutels_en_terugdraai.sql, shared/uitrol-drie-factoren.ts, shared/uitrol-selectief-terugdraaien.ts, backend/uitrol-sleutels.ts, backend/uitrol-selectief-terugdraaien.ts, src/uitrol/SleutelsDrieFactoren.tsx, src/uitrol/SelectiefTerugdraaien.tsx; інтегровано в backend/uitrol-goedkeuring.ts, backend/agent-audit.ts, shared/uitrol-codes.ts, shared/stap-op-beschrijving.ts, src/BeheerUitrolWeergave.tsx і src/uitrol/uitrol.css.",
+      "resultaat": "Сирі ключі не зберігаються в БД (лише префікс і SHA-256), реалізовано одноразовий обмін ключами, сувору 3-чинникову перевірку для права «Завантаження + встановлення», пофайлове порівняння й план вибіркового відкликання без втрати пізніших випусків (доступно також ШІ через uitrol_voorstel_status)."
+    },
+    {
+      "stap": "4) Оновлення правил оркестрації до версії 1.4.18 (B-023): оновлено orchestratie/BESLUITEN.md, AGENTS.md, AGENTENREGELS.nl.md, orchestratie/beleid.json (без зміни секції kritiek), .agents/skills/uitgave-voorbereiden/SKILL.md; виконано orch vergrendel, context, taak-herlees --id UPD-011, bijdrage, kroniek.mjs та оновлено каталог пошуку.",
+      "resultaat": "Пройдено orch controleer (regelsVersie 1.4.18), vaardigheden/valideer.mjs, npx tsc --noEmit, npm run typecheck:server, повне складання npm run build (із CRX3 0.9.7), усі статичні аудити, upd-011 (5/5), account-wissen, migraties-terugdraaibaar, stap-op-omschrijving, hulp-register, ontwerp-fundament, orch-kern, orch-uitrol-basis (15/15), trace-001 (20/20), historie-kroniek (18/18), bijdragen-001 (54/54), uitrol-codes (17/17), uitrol-risico (69/69), maquette-mobiel-prestatie (19/19) та werkstromen-veilig (9/9)."
+    },
+    {
+      "stap": "5) За результатами першого запуску GitHub Actions (telegram-venster-20261114: 97/99) узгоджено ім’я файла картки у sendPhoto (account.png у berichten.ts) та усунено дублювання назви міста у згорнутому блоці venster.ts (місто показано один раз у верхній стрічці, спосіб визначення за IP — у деталях).",
+      "resultaat": "Підтверджено контракт venster.ts (uk/nl, 1 згадка міста), upd-011 (5/5) та npm run typecheck:server; повторний запуск GitHub Actions."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Реалізувати декодер PNG/JPEG (beeld-decode.ts) і TrueColor PNG-композитор (actie-kaart.ts) чистим TypeScript без додавання зовнішніх залежностей у package.json.",
+      "reden": "Відсутність нових npm-пакетів зберігає нульовий ризик ланцюга постачання, не потребує нативних бінарників на ВМ і забезпечує стабільну генерацію карток за ~100 мс."
+    },
+    {
+      "besluit": "Зберігати в таблиці app.uitrol_beheer_sleutels лише префікс і SHA-256 геш ключа та передавати стан 3-чинникової довіри й реєстр змін випусків через наявний MCP-інструмент uitrol_voorstel_status.",
+      "reden": "Нульовий ризик витоку секретів із бази даних і збереження сумісності контракту кількості інструментів SITE_TOOLS."
+    },
+    {
+      "besluit": "Оновити правила оркестрації до 1.4.18 (B-023) у некритичних розділах beleid.json без зміни секції kritiek.",
+      "reden": "Пряме доручення власника оновити інструкції для всіх ШІ-агентів зі збереженням незмінного захисту kritiek.installatieModi (встановлення завжди схвалює власник ключем доступу)."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/bevestig-categorie.ts, backend/telegram-aanmelden/beeld-decode.ts, backend/telegram-aanmelden/actie-kaart.ts",
+      "omschrijving": "10 візуальних категорій дій, автономний декодер фото користувачів і генератор динамічних фірмових PNG-карток Telegram 800×400."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/telegram-aanmelden/berichten.ts, backend/telegram-aanmelden/bevestigen.ts, backend/telegram-aanmelden/inloggen.ts, backend/telegram-aanmelden/venster.ts, src/platform/bevestig-toegang.tsx, src/platform/bevestig-toegang.css",
+      "omschrijving": "Надсилання динамічної картки дії в Telegram для кожного користувача/адміністратора, візуальні плашки категорій і 1-екранна мобільна верстка (390×844)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0304_uitrol_3f_sleutels_en_terugdraai.sql, shared/uitrol-drie-factoren.ts, shared/uitrol-selectief-terugdraaien.ts, backend/uitrol-sleutels.ts, backend/uitrol-selectief-terugdraaien.ts, src/uitrol/SleutelsDrieFactoren.tsx, src/uitrol/SelectiefTerugdraaien.tsx",
+      "omschrijving": "Персональні відкличні ключі адміністраторів, 3-чинникова довіра (GitHub ↔ MCP ШІ ↔ Сайт), одноразовий обмін ключами, реєстр змін випусків і вибіркове відкликання без втрати пізніших оновлень."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/uitrol-goedkeuring.ts, backend/agent-audit.ts, shared/uitrol-codes.ts, shared/stap-op-beschrijving.ts, src/BeheerUitrolWeergave.tsx, src/uitrol/uitrol.css, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Маршрути й інтерфейс 3-чинникових ключів і вибіркового відкликання, двомовні описи підтверджень stap-op, коди помилок, аудит і пошуковий каталог."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "AGENTS.md, AGENTENREGELS.nl.md, orchestratie/BESLUITEN.md, orchestratie/beleid.json, orchestratie/regels.lock.json, orchestratie/CONTEXT-COMPACT.md, .agents/skills/uitgave-voorbereiden/SKILL.md, docs/hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md, docs/hub/KRONIEK-TAKKEN.nl.md",
+      "omschrijving": "Оновлення правил оркестрації до версії 1.4.18 (B-023), оновлення навички випусків та хронології гілок."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-011-telegram-3f-terugdraai-20261120.test.ts, .github/workflows/upd-011-uitgave.yml, orchestratie/taken/UPD-011.json, orchestratie/bijdragen/UPD-011/*, orchestratie/ontwikkelarchieven/UPD-011.json",
+      "omschrijving": "Регресійний тест UPD-011 (5/5), облік авторства, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-011."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-011-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-011: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує всі набори випробувань, orch behoud, подвійний прогін міграцій PostgreSQL 16 (включно зі зворотно сумісною 0304_uitrol_3f_sleutels_en_terugdraai.sql) трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-011: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait alle testbestanden, orch behoud, dubbele migraties op PostgreSQL 16 (incl. 0304_uitrol_3f_sleutels_en_terugdraai.sql) met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання (включно з ізоляцією технічних збірок і підписаним CRX3 0.9.7) пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "Модульні та статичні перевірки: orch controleer/behoud (1.4.18), vaardigheden, kaart, plaatsing, l002, hulp, kleur-contrast, mail-slimme-inbox, zoek-ui-catalogus, upd-011 (5/5), account-wissen, migraties-terugdraaibaar, stap-op-omschrijving, hulp-register, ontwerp-fundament, orch-kern, orch-uitrol-basis (15/15), bevestig-toegang-opmaak (19/19), telegram-aanmelden (65/65), werkstromen-veilig (9/9), trace-001 (20/20), historie-kroniek (18/18), bijdragen-001 (54/54), uitrol-codes (17/17), uitrol-risico (69/69), maquette-mobiel-prestatie (19/19)",
+      "resultaat": "Усі перевірки пройшли на 100% без жодної помилки (код 0)."
+    },
+    {
+      "opdracht": "Візуальна перевірка згенерованої PNG-картки (800×400) і вікна venster.ts у Chromium на 390×844",
+      "resultaat": "Підтверджено чітке накладання круглого фото/ініціала поверх медальйона категорії та повне вміщення захищеного вікна Telegram в один екран 390×844 без вертикальної прокрутки."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-011-uitgave.yml",
+      "resultaat": "Звіряє живу основу (UPD-010 20261120-003537), виконує повний набір випробувань, подвійний прогін міграцій PostgreSQL 16 (включно з 0304) трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Критичні політики в розділі kritiek не змінювалися; за потреби окремого затвердження власник підписує правила ключем доступу або SSH."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}

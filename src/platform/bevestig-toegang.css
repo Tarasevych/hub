@@ -58,23 +58,37 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
 .bevestig-toegang-uitleg[data-onthoud-uitleg]{font-size:.78rem;color:var(--muted,var(--boot-muted,#5a6672))}
 .bevestig-toegang-uitleg[data-onthoud='nooit']{margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(180,120,30,.1);border:1px solid rgba(180,120,30,.28);font-size:.8rem;line-height:1.4}
 
-/* MAILMOB-001: het kritieke Passkey-venster neemt niet meer onnodig het hele scherm in.
-   De gedeelde vensterlaag blijft prioriteit/focus/dok beheren; de inhoud kan scrollen. */
+/* MAILMOB-001 + UPD-011: компактний 1-екранний вигляд підтвердження на смартфоні без зайвого прокручування. */
+.bevestig-toegang-cat-kop{display:flex;align-items:flex-start;gap:10px}
+.bevestig-toegang-cat-icoon{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--text-on-accent,#fff);background:var(--cat-kleur,var(--accent,#1d77b5))}
+.bevestig-toegang-cat-icoon svg{width:20px;height:20px}
+.bevestig-toegang-cat-body{min-width:0;flex:1;display:grid;gap:3px}
+.bevestig-toegang-cat-badge{display:inline-block;width:max-content;padding:2px 7px;border-radius:999px;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-on-accent,#fff);background:var(--cat-kleur,var(--accent,#1d77b5))}
+.bevestig-toegang-extra{border-radius:9px;border:1px solid var(--boot-line,var(--line,#dce1e6));padding:6px 10px;font-size:.8rem}
+.bevestig-toegang-extra summary{cursor:pointer;font-weight:600;color:var(--muted,var(--boot-muted,#6a7580))}
+.bevestig-toegang-extra[open] summary{margin-bottom:6px}
 @media(max-width:559px){
   html .venster.bevestig-toegang-venster.is-max{
     inset:auto calc(8px + var(--veilig-rechts,0px) + var(--venster-dok-rechts,0px))
       calc(8px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px))
       calc(8px + var(--veilig-links,0px) + var(--venster-dok-links,0px))!important;
     width:auto!important;height:auto!important;min-height:0!important;
-    max-height:calc(100dvh - 32px - var(--veilig-boven,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))!important;
-    border-radius:22px 22px 16px 16px!important;
+    max-height:calc(100dvh - 24px - var(--veilig-boven,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))!important;
+    border-radius:20px 20px 14px 14px!important;
   }
-  .venster.bevestig-toegang-venster .venster-kop{min-height:48px;cursor:default}
+  .venster.bevestig-toegang-venster .venster-kop{min-height:42px;cursor:default}
   .venster.bevestig-toegang-venster .venster-inhoud{overflow-y:auto;overscroll-behavior:contain}
-  .bevestig-toegang-venster .bevestig-toegang{padding:17px 12px 14px;gap:10px}
-  .bevestig-toegang-venster .bevestig-toegang-kaart{padding:12px;gap:9px}
+  .bevestig-toegang-venster .bevestig-toegang{padding:10px 12px 10px;gap:8px}
+  .bevestig-toegang-venster .bevestig-toegang-kop{flex-direction:row;justify-content:space-between;text-align:left;gap:8px}
+  .bevestig-toegang-venster .bevestig-toegang-logo{width:24px;height:24px}
+  .bevestig-toegang-venster .bevestig-toegang-kop h2{font-size:1rem}
+  .bevestig-toegang-venster .bevestig-toegang-wie{flex-direction:row;gap:6px;font-size:.78rem}
+  .bevestig-toegang-venster .bevestig-toegang-kaart{padding:10px;gap:7px}
   .bevestig-toegang-venster .bevestig-toegang-account strong{white-space:normal;overflow-wrap:anywhere}
-  .bevestig-toegang-venster .bevestig-toegang-primair{min-height:47px}
+  .bevestig-toegang-venster .bevestig-toegang-primair{min-height:44px}
+  .bevestig-toegang-venster .bevestig-toegang-alt ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:4px}
+  .bevestig-toegang-venster .bevestig-toegang-alt button{padding:6px 8px;border:1px solid var(--boot-line,var(--line,#dce1e6));font-size:.78rem}
+  .bevestig-toegang-venster .bevestig-toegang-tip{padding:6px 9px;font-size:.74rem}
 }
 /* STAPOP-OMSCHR-001: технічна адреса дії без опису — дрібно, у згорнутих «Подробицях», не головним текстом. */
 .bevestig-toegang-details{margin:4px 0 0;font-size:.76rem;color:var(--muted,var(--boot-muted,#6a7580))}

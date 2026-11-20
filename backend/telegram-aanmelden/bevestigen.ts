@@ -20,6 +20,7 @@ import { randomInt } from 'node:crypto';
 import { recenteJuiste, vensterAan, vensterTrekking, vensterUrl } from './venster-sleutel';
 import { codeActief } from './inloggen';
 import { accountBeeld, telegramBeeld, type TelegramBeeld } from './account-foto';
+import { categorieVoorActie } from '../../shared/bevestig-categorie';
 
 export type Aangevraagd = { id: string; verlooptOp: string; verstuurd: number; soort?: VasteSoort; kandidaten?: number[]; juist?: number; venster?: boolean; codeNodig?: boolean;
   /** TELEGRAM-002: naar welke Telegram(s) het verzoek ging (naam, @naam, foto) — de site toont ze naast het pictogram. */
@@ -58,7 +59,7 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
   const naam = await accountNaam(userId);
   const apparaat = (x: 'uk' | 'nl') => [opties.herkenning?.toestel || String(opties.apparaat || '').slice(0, 80) || (x === 'uk' ? 'невідомий пристрій' : 'onbekend apparaat'), plaatsTekst(h.plaats, h.land, x)].filter(Boolean).join(' · ');
   const netwerk = [String(opties.ip || '').trim(), String(opties.locatie || '').trim()].filter(Boolean).join(' · ') || '—';
-  const beeld = venster ? await accountBeeld(userId).catch(() => null) : null;
+  const beeld = await accountBeeld(userId).catch(() => null);
   const ontvangers: TelegramBeeld[] = [];
   let verstuurd = 0;
   for (const k of await koppelingenVanGebruiker(userId)) {
@@ -66,6 +67,8 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
     try {
       const { taal } = await taalVoor(k.telegram_id);
       const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
+      const actieTitel = tekstIn(soort.naam, tl);
+      const cat = categorieVoorActie(actie, '', actieTitel);
       const een = (x: 'uk' | 'nl') => invullen((venster ? TEKST.bevestigVraagVenster : trekking ? TEKST.bevestigVraagSymbool : TEKST.bevestigVraag)[x], { account: naam, actie: tekstIn(soort.naam, x), tijd: tijdTekst(x), apparaat: apparaat(x), netwerk });
       const url = venster ? await vensterUrl('b', id, k.telegram_id, verloopt, tl) : '';
       const knoppen = venster
@@ -73,8 +76,27 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
         : trekking
         ? [trekking.kandidaten.map((_, pos) => ({ letter: 's' as const, doel: `${id}:${k.id}:${pos}`, tekst: telegramKnopTekst(trekking!.soort, trekking!.kandidaten[pos], tl) })), [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]]
         : [[{ letter: 'b' as const, doel: `${id}:${k.id}`, tekst: t(TEKST.knopBevestigen, tl) }], [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]];
-      await stuur(k.chat_id, `${strook(naam, k.kleur, taal)}\n\n${taal === 'beide' ? `${een('uk')}\n\n${een('nl')}` : een(taal)}`, taal, {
+      const compactKop = `${strook(naam, k.kleur, taal)} · ${tl === 'nl' ? cat.badgeNl : cat.badgeUk}`;
+      const compactTekst = venster
+        ? (tl === 'nl'
+          ? `${actieTitel}\n${apparaat('nl')} · ${tijdTekst('nl')}\nTik «Controleren en bevestigen» om het pictogram te kiezen.`
+          : `${actieTitel}\n${apparaat('uk')} · ${tijdTekst('uk')}\nНатисніть «Перевірити й підтвердити», щоб обрати піктограму.`)
+        : (taal === 'beide' ? `${een('uk')}\n\n${een('nl')}` : een(taal));
+      await stuur(k.chat_id, `${compactKop}\n${compactTekst}`, taal, {
         accountFoto: venster ? beeld?.foto || undefined : undefined,
+        actieKaart: {
+          categorie: cat.id,
+          taal: tl,
+          titel: actieTitel,
+          accountNaam: beeld?.naam || naam,
+          accountEmail: beeld?.email || '',
+          accountFoto: beeld?.foto || '',
+          accountLetter: beeld?.letter,
+          toestel: opties.herkenning?.toestel || String(opties.apparaat || '').slice(0, 60),
+          plaats: plaatsTekst(h.plaats, h.land, tl),
+          tijd: tijdTekst(tl),
+          gevoelig: soort.gevoelig,
+        },
         kaart: soort.gevoelig ? 'nieuwApparaat' : 'gewoon',
         knoppen: await knoppenMaken(k.telegram_id, `bevestig-${id}`, knoppen),
       });
