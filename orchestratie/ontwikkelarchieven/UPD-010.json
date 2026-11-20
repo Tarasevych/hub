@@ -34,7 +34,9 @@
     "9de93f6058555a6f2853cf7f52eaa45a05d9aad3",
     "f9bcbc3cecd7efde1040be0aa98817bb5e987caf",
     "973ab6e7145d003adc5f867d56e1c5098f201432",
-    "a7e43b9dc3df60bcf628ae12bea405af0b6551fd"
+    "a7e43b9dc3df60bcf628ae12bea405af0b6551fd",
+    "e10861767512d2d8bf59da1f10cd760ab3175caa",
+    "e4d9319e3432e4c496e8a8b6a5c1ecbe9b0e8fb7"
   ],
   "tijdlijn": [
     {
@@ -60,6 +62,10 @@
     {
       "stap": "6) За результатами другого запуску (maquette-mobiel-prestatie) об’єднано монтування UitrolAchtergrondBand і NieuweVersieBand в один React root у src/main.tsx (збережено ліміт 5 createRoot).",
       "resultaat": "Пройдено maquette-mobiel-prestatie (19/19), усі решту 70 безбазових і всі 13 післяскладальних випробувань та повне складання без жодної помилки."
+    },
+    {
+      "stap": "7) За результатами третього запуску узгоджено hulp-register (data-hulp-vrij='keuze' на прапорці скидання лічильника в Voorbereiders.tsx), mail-beeld-maten-20261116 (винесено useKopPaneelSluit та коментар MAILBEELD-003 перед BeeldenStrook) та ontwerp-fundament-20261020 (замінено змінні у uitrol-achtergrond-band.css на канонічні --muted, --surface, --text-on-accent).",
+      "resultaat": "Пройдено hulp-register (17/17), mail-beeld-maten-20261116 (51/51), ontwerp-fundament-20261020 (40/40), усі 19 тестів хвоста списку, npx tsc --noEmit та upd-010 (16/16)."
     }
   ],
   "keuzes": [
