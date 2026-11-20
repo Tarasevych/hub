@@ -6,8 +6,8 @@
     "nl": "Verdeelde versleutelde opslag van databases en siteonderdelen (k-van-n drempelschema en Reed-Solomon-codes)"
   },
   "samenvatting": {
-    "uk": "Архітектура та криптографічний фундамент незалежного зберігання ключів, частин сайту, резервних копій і великих об’єктів на різних серверах, у різних країнах і в різних постачальників: порогова схема Шаміра k-з-n для коротких ключів та систематичне завадостійке кодування Ріда–Соломона (k+m) для великих зашифрованих файлів.",
-    "nl": "Architectuur en cryptografisch fundament voor onafhankelijke opslag van sleutels, siteonderdelen, reservekopieën en grote objecten over verschillende landen en aanbieders: k-van-n Shamir voor korte sleutels en systematische Reed-Solomon (k+m) wiscodes voor grote versleutelde bestanden."
+    "uk": "Архітектура та криптографічний фундамент незалежного зберігання ключів, частин сайту, резервних копій і великих об’єктів на різних серверах, у різних країнах і в різних постачальників: перевірювані схеми Шаміра/Фельдмана/Педерсена й порогові підписи ФРОСТ для ключів та систематичне завадостійке кодування Ріда–Соломона (k+m) для великих зашифрованих файлів.",
+    "nl": "Architectuur en cryptografisch fundament voor onafhankelijke opslag van sleutels, siteonderdelen, reservekopieën en grote objecten over verschillende landen en aanbieders: verifieerbare Shamir/Feldman/Pedersen-deling en FROST voor sleutels en systematische Reed-Solomon (k+m) wiscodes voor grote versleutelde bestanden."
   },
   "termen": {
     "uk": [
@@ -16,6 +16,8 @@
       "різні країни",
       "порогове шифрування",
       "шамір",
+      "фельдман педерсен",
+      "фрост",
       "рід соломон",
       "незалежність баз",
       "захист від викрадення"
@@ -26,6 +28,8 @@
       "verschillende landen",
       "drempelversleuteling",
       "shamir",
+      "feldman pedersen",
+      "frost",
       "reed solomon",
       "geografische spreiding"
     ]
@@ -33,8 +37,11 @@
   "paden": [
     "shared/verdeelde-opslag.ts",
     "shared/klimop/opslag.ts",
+    "shared/klimop/drempelsleutels.ts",
     "backend/klimop-opslag-client.ts",
+    "backend/klimop-drempel-client.ts",
     "scripts/klimop-etappe3-opslag-proef.mjs",
+    "scripts/klimop-etappe4-frost-proef.mjs",
     "migrations/0306_verdeelde_opslag_knopen.sql",
     "backend/verdeelde-opslag-beheer.ts",
     "backend/uitrol-goedkeuring.ts",
@@ -50,7 +57,9 @@
     "docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md",
     "docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md",
     "docs/hub/ПЛЮЩ-ЕТАП-3-ШИФРУВАННЯ-ТА-РОЗПОДІЛЕНЕ-ЗБЕРІГАННЯ.uk.md",
-    "docs/hub/KLIMOP-FASE-3-VERSLEUTELING-EN-VERDEELDE-OPSLAG.nl.md"
+    "docs/hub/KLIMOP-FASE-3-VERSLEUTELING-EN-VERDEELDE-OPSLAG.nl.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-4-РОЗПОДІЛЕНІ-КЛЮЧІ-ТА-ПОРОГОВІ-ПІДПИСИ.uk.md",
+    "docs/hub/KLIMOP-FASE-4-GEDISTRIBUEERDE-SLEUTELS-EN-DREMPELHANDTEKENINGEN.nl.md"
   ],
   "werk": [
     {
@@ -81,10 +90,19 @@
     {
       "taakId": "KLIMOP-004",
       "tak": "feature/klimop-004-etappe3-versleuteling-opslag-20261120-184500",
+      "pr": 186,
       "agent": "antigravity",
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
-      "uk": "Реалізовано Етап 3 маніфесту «Плющ»: клієнтське конвертне шифрування сегментів (ChaCha20-Poly1305 / AES-256-GCM), ієрархію ключів HKDF-SHA-256, систематичний код відновлення втрачених фрагментів Ріда–Соломона (k+m) над GF(2^8) для великих об’єктів (shared/klimop/opslag.ts), добудову втраченої смуги на новому вузлі без ключа розшифрування та законне видалення блоків поверх захищених зв’язків «Стебла» (backend/klimop-opslag-client.ts)."
+      "uk": "Реалізовано Етап 3 маніфесту «Плющ»: клієнтське конвертне шифрування сегментів (ChaCha20-Poly1305 / AES-256-GCM), ієрархію ключів HKDF-SHA-256, систематичний код відновлення втрачених фрагментів Ріда–Соломона (k+m) над GF(2^8) для великих об’єктів (shared/klimop/opslag.ts), добудову втраченої смуги на новому вузлі без ключа розшифрування та законне видалення блоків поверх захищених зв’язків «Стебла» (backend/klimop-opslag-client.ts). Злито в integratie у запиті №186."
+    },
+    {
+      "taakId": "KLIMOP-005",
+      "tak": "feature/klimop-005-etappe4-drempelsleutels-frost-20261120-190500",
+      "agent": "antigravity",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Реалізовано Етап 4 маніфесту «Плющ»: перевірювані схеми поділу секретів Фельдмана та Педерсена над простою підгрупою кривої Ed25519, двофазне проактивне епохальне оновлення часток із захистом від перерваної ротації, бездилерський DKG та двораундові порогові цифрові підписи FROST(Ed25519, SHA-512) за стандартом RFC 9591 (shared/klimop/drempelsleutels.ts, backend/klimop-drempel-client.ts)."
     }
   ],
   "mogelijkheden": [
@@ -128,6 +146,12 @@
       "id": "reed-solomon-envelop-opslag",
       "uk": "Клієнтське конвертне шифрування великих об’єктів та завадостійке кодування Ріда–Соломона (k+m) над GF(2^8) з добудовою втрачених фрагментів без розшифрування і законним видаленням блоків (shared/klimop/opslag.ts, backend/klimop-opslag-client.ts)",
       "sinds": "KLIMOP-004",
+      "staat": "actief"
+    },
+    {
+      "id": "feldman-pedersen-frost-drempelsleutels",
+      "uk": "Перевірюваний поділ секретів Фельдмана і Педерсена над Ed25519, двофазні проактивні епохи, бездилерський DKG та порогові підписи FROST (RFC 9591), сумісні з node:crypto.verify (shared/klimop/drempelsleutels.ts, backend/klimop-drempel-client.ts)",
+      "sinds": "KLIMOP-005",
       "staat": "actief"
     }
   ],
