@@ -16,8 +16,10 @@ description: Проєктуй і перевіряй кожну архітект�
 ## Канонічні першоджерела
 
 1. [`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](../../../docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md) та [`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](../../../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) — повний канон усіх XVI частин та 46 розділів.
-2. [`AGENTS.md`](../../../AGENTS.md) (§1, §3б, §10) та [`AGENTENREGELS.nl.md`](../../../AGENTENREGELS.nl.md) (§1, §3b, §10) — чинні правила координації (версія `1.5.0`, рішення `B-024`).
-3. [`orchestratie/onderwerpen/ecosysteem-klimop.json`](../../../orchestratie/onderwerpen/ecosysteem-klimop.json) — досьє пам’яті та поточного стану впровадження.
+2. [`docs/hub/ПЛЮЩ-ЕТАП-0-АУДИТ-ДІЙСНОГО-СТАНУ.uk.md`](../../../docs/hub/ПЛЮЩ-ЕТАП-0-АУДИТ-ДІЙСНОГО-СТАНУ.uk.md) (`KLIMOP-FASE-0-AUDIT-FEITELIJKE-STAAT.nl.md`) та інспектор [`scripts/klimop-etappe0-audit.mjs`](../../../scripts/klimop-etappe0-audit.mjs) — виконаний доказовий аудит Етапу 0.
+3. [`docs/hub/ПЛЮЩ-ЕТАП-1-АРХІТЕКТУРНЕ-ЯДРО-ТА-ПЛАН-ВИПУСКІВ.uk.md`](../../../docs/hub/ПЛЮЩ-ЕТАП-1-АРХІТЕКТУРНЕ-ЯДРО-ТА-ПЛАН-ВИПУСКІВ.uk.md) (`KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md`) та програмний модуль [`shared/klimop/kern.ts`](../../../shared/klimop/kern.ts) — специфікація Етапу 1, вибір технологій, поетапний план випусків і машинний перевіряльник 15 питань та мандатів `Ed25519`.
+4. [`AGENTS.md`](../../../AGENTS.md) (§1, §3б, §10) та [`AGENTENREGELS.nl.md`](../../../AGENTENREGELS.nl.md) (§1, §3b, §10) — чинні правила координації (версія `1.5.0`, рішення `B-024`).
+5. [`orchestratie/onderwerpen/ecosysteem-klimop.json`](../../../orchestratie/onderwerpen/ecosysteem-klimop.json) — досьє пам’яті та поточного стану впровадження.
 
 ## Межа повноважень (обов’язково)
 

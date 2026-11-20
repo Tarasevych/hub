@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-002",
+  "agent": "antigravity",
+  "tak": "audit/klimop-002-etappe0-1-fundament-20261120-175500",
+  "basisCommit": "92f2c35d3ab272b43bf154524f702dd992128159",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T17:53:50.718Z",
+  "bijgewerkt": "2026-11-20T17:53:50.719Z",
+  "omschrijving": "Етап 0 (повний доказовий аудит дійсного стану платформи «Мій простір») та Етап 1 (специфікація архітектурного ядра «Плющ», порівняння перевірених технологій, поетапний план випусків 2–12 та ізольований контракт ядра shared/klimop/kern.ts без зміни живої інфраструктури)",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
