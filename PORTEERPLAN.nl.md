@@ -550,5 +550,33 @@ nieuwste back-up op naar R:\; `deploy/HERSTEL.nl.md` is het noodplan. Uitleg per
 - Offline kopie van de herstelsleutel (USB/papier); geplande taak voor het ophalen; Cloudflare: Altijd Use HTTPS aanzetten.
 - Oude onversleutelde test-back-ups 20261003-115845/-115908 op de VM (verdwijnen na 7 dagen vanzelf).
 - Nieuwe Google OAuth-client (redirect `https://id.tarasevych.com/`).
-- Echte WebAuthn-implementatie; AI-provider; dashboardintegratie.
+- Echte WebAuthn-implementatie; AI-provider; dashboardintegratie *(afgerond in oktober–november 2026; zie [`docs/hub/GESCHIEDENIS.nl.md`](./docs/hub/GESCHIEDENIS.nl.md))*.
 - l002-audit: `b4-important-free` in twee AppDeploy-CSS-bestanden (v56), cosmetisch.
+
+---
+
+## 11. Volgende strategische fase: gefaseerde omvorming naar het levende digitale ecosysteem «Klimop» (`KLIMOP-001` / `B-024`, vanaf 20 november 2026)
+
+Na de geslaagde overstap van «Mijn Ruimte» naar eigen serverbeheer (oktober–november 2026) is als langetermijnrichting het **Hoofdarchitectuurmanifest «Mijn Ruimte» — Levend Digitaal Ecosysteem «Klimop»** vastgesteld:
+- Nederlandse canon: [`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](./docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)
+- Oekraïense canon: [`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](./docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md)
+- Regels voor alle 14 AI-agenten: [`AGENTENREGELS.nl.md`](./AGENTENREGELS.nl.md) (§1, §3b, §10), vaardigheid [`.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md`](./.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md), dossier [`orchestratie/onderwerpen/ecosysteem-klimop.json`](./orchestratie/onderwerpen/ecosysteem-klimop.json).
+
+### 11.1. Strikte bevoegdheidsgrens en behoud van het huidige platform (§3, §35)
+- Het manifest geldt als **doelarchitectuur** en is **GEEN toestemming voor onmiddellijke wijziging van de productie-infrastructuur**.
+- Gelijktijdige volledige vervanging van het draaiende platform is verboden: PostgreSQL 18.6, `mijn-ruimte.service`, de 11 subdomeinen, geïsoleerde gebruikersruimtes, versleutelde `age`-reservekopieën en de vastgestelde uitgavepijplijn blijven volledig operationeel zonder gegevens- of functieverlies.
+
+### 11.2. Gefaseerde invoeringsvolgorde (§36)
+1. **Fase 0 — Volledige audit:** feitelijke inventarisatie van afhankelijkheden, sleutels, migraties, bestandsopslag en beheerdersrechten (aanwezigheid in de opslagplaats ≠ actief in productie).
+2. **Fase 1 — Architectuurkern:** specificatie van de 7 elementen van de digitale klimop (**Wortels, Stengels, Bladeren, Hechtranken, Voeding, Immuunsysteem, Zaden**), de 4 knooppunttypen en de 25 verplichte tweetalige documenten (§44).
+3. **Fase 2 — Beproevingsnetwerk:** geïsoleerde toetsing van meerdere onafhankelijke knooppunten buiten productiegegevens.
+4. **Fase 3 — Versleuteling en gedistribueerde opslag:** eind-tot-eindversleuteling (`AES-256-GCM` / `ChaCha20-Poly1305`) en uitwiscode-herstel voor bestanden.
+5. **Fase 4 — Gedistribueerde sleutels:** drempeldeling volgens Shamir, controleerbare verdeling volgens Feldman/Pedersen, cryptografische tijdvakken en drempelhandtekeningen FROST.
+6. **Fase 5 — Onafhankelijke identiteit:** cryptografische identiteitsbewijzen voor deelnemers en apparaten zonder één onvervangbare aanmeldserver.
+7. **Fase 6 — Gedistribueerd bestuur:** scheiding van de 7 bevoegdheidscategorieën en tijdsvertragingen voor risicovolle besluiten.
+8. **Fase 7 — Zelfherstel:** integriteitscontrole zonder inzage in inhoud, quarantaine van aangetaste knooppunten en gecontroleerd herstel van kopieën.
+9. **Fase 8 — Geleidelijke dienstoverdracht:** stapsgewijze overzetting van e-mail, wolkopslag, agenda, AI, verbinders en slimme woning met achterwaartse verenigbaarheid.
+10. **Fase 9 — Bescherming van de mens en dwangbestendigheid:** procedures bij apparaatverlies, ziekte, langdurige afwezigheid, overdracht bij overlijden en dwang zonder automatische gegevensvernietiging.
+11. **Fase 10 — Bredere uitrol:** aansluiting van extra vrijwillige onafhankelijke knooppunten met eerlijke uitwisseling van middelen.
+12. **Fase 11 — Onafhankelijke beveiligingsaudit:** externe toetsing van cryptografie, isolatie en foutbestendigheid (§37).
+13. **Fase 12 — Duurzame doorontwikkeling («Zaden»):** zelfstandig voortbestaan en herstel zonder permanente afhankelijkheid van de oorspronkelijke auteur.

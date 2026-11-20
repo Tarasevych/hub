@@ -29,8 +29,8 @@ const slaap = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Репозиторій-«integratie» з правилами, lock, контекстом, maak-voorstelpakket.sh і фактом установки (geinstalleerd = перший commit). */
 function maakRepo() {
   const R = mkdtempSync(join(tmpdir(), 'orch-acc-'));
-  for (const p of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CHATGPT.md', 'CODEX.md', 'GROK.md', '.cursorrules', 'scripts/orch.mjs', 'scripts/orch', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md', 'orchestratie/eigenaar-ondertekenaars', 'orchestratie/sjablonen', 'deploy/uitrol/maak-voorstelpakket.sh']) cpSync(p, join(R, p), { recursive: true });
-  cpSync('.github/copilot-instructions.md', join(R, '.github/copilot-instructions.md'));
+  const adapters: string[] = json('orchestratie/beleid.json').adapters.bestanden;
+  for (const p of ['AGENTS.md', ...adapters, 'scripts/orch.mjs', 'scripts/orch', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md', 'orchestratie/eigenaar-ondertekenaars', 'orchestratie/sjablonen', 'deploy/uitrol/maak-voorstelpakket.sh']) cpSync(p, join(R, p), { recursive: true });
   writeFileSync(join(R, 'deploy/installeer-app.sh'), '#!/bin/bash\necho stub\n');
   mkdirSync(join(R, 'src')); writeFileSync(join(R, 'src/a.ts'), 'export const a = 1;\n'); writeFileSync(join(R, 'src/b.ts'), 'export const b = 2;\n');
   writeFileSync(join(R, 'orchestratie/wachtrij.json'), JSON.stringify({ schema: 1, integratieTak: 'integratie', integratieHoofd: null, bezig: null, wachtrij: [] }, null, 2));

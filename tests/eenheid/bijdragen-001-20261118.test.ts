@@ -96,7 +96,8 @@ export async function main(): Promise<number> {
   try {
     const repo = join(tmp, 'repo');
     mkdirSync(repo);
-    for (const p of ['scripts', 'orchestratie', '.agents', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.github', '.cursorrules', 'CODEX.md', 'GROK.md', 'ANTIGRAVITY.md', 'AUTOCLAW.md', 'CHATGPT.md', 'shared', '.gitignore']) {
+    const adapters: string[] = JSON.parse(readFileSync(join(WORTEL, 'orchestratie/beleid.json'), 'utf8')).adapters.bestanden;
+    for (const p of ['scripts', 'orchestratie', '.agents', 'AGENTS.md', ...adapters, '.github', 'shared', '.gitignore']) {
       if (existsSync(join(WORTEL, p))) cpSync(join(WORTEL, p), join(repo, p), { recursive: true });
     }
     git(repo, 'init', '-q', '-b', 'werk'); git(repo, 'config', 'user.email', 't@t'); git(repo, 'config', 'user.name', 'Тест');
@@ -147,7 +148,8 @@ export async function main(): Promise<number> {
   check('усі записи обліку в репозиторії дійсні', echte.length >= 2 && echte.every((p) => valideerBijdrage(JSON.parse(readFileSync(join(WORTEL, p), 'utf8')), { pad: p, bekendeIds: ids }).length === 0));
   const agents = readFileSync(join(WORTEL, 'AGENTS.md'), 'utf8');
   check('AGENTS.md: перший крок — orch begin, розділ §9 і правило про зауваження власника', agents.includes('node scripts/orch.mjs begin --agent') && agents.includes('## 9. Авторство') && agents.includes('### 9.4 Зауваження власника'));
-  for (const a of ['CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CODEX.md', '.cursorrules', '.github/copilot-instructions.md']) {
+  const alleAdapters: string[] = JSON.parse(readFileSync(join(WORTEL, 'orchestratie/beleid.json'), 'utf8')).adapters.bestanden;
+  for (const a of alleAdapters) {
     check(`перехідник ${a} вказує на orch begin і запис обліку`, /orch\.mjs begin/.test(readFileSync(join(WORTEL, a), 'utf8')) && /orch bijdrage/.test(readFileSync(join(WORTEL, a), 'utf8')));
   }
   const inst = JSON.parse(readFileSync(join(WORTEL, '.claude/settings.json'), 'utf8'));

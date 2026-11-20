@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import {
   Archive,
   Bell,
+  BellDot,
   Bot,
   Check,
   CheckCheck,
@@ -67,6 +68,24 @@ function relatieveTijd(ts: number, lang: 'uk' | 'nl'): string {
   if (uren < 24) return lang === 'nl' ? `${uren} u` : `${uren} год`;
   const dagen = Math.floor(uren / 24);
   return lang === 'nl' ? `${dagen} d` : `${dagen} дн`;
+}
+
+function tijdVolledig(ts: number, lang: 'uk' | 'nl'): string {
+  return new Date(ts).toLocaleString(lang === 'nl' ? 'nl-BE' : 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function duurTekst(ms: number, lang: 'uk' | 'nl'): string {
+  const sec = Math.max(1, Math.round(ms / 1000));
+  if (sec < 60) return lang === 'nl' ? `${sec} s` : `${sec} с`;
+  const min = Math.floor(sec / 60);
+  const restSec = sec % 60;
+  if (min < 60) return lang === 'nl' ? `${min} min${restSec ? ` ${restSec} s` : ''}` : `${min} хв${restSec ? ` ${restSec} с` : ''}`;
+  const uren = Math.floor(min / 60);
+  const restMin = min % 60;
+  if (uren < 24) return lang === 'nl' ? `${uren} u${restMin ? ` ${restMin} min` : ''}` : `${uren} год${restMin ? ` ${restMin} хв` : ''}`;
+  const dagen = Math.floor(uren / 24);
+  const restUren = uren % 24;
+  return lang === 'nl' ? `${dagen} d${restUren ? ` ${restUren} u` : ''}` : `${dagen} дн${restUren ? ` ${restUren} год` : ''}`;
 }
 
 function veegLabel(actie: VeegActie, lang: 'uk' | 'nl'): string {
@@ -455,6 +474,19 @@ export default function MeldingVeegKaart({
                 <Archive aria-hidden='true' />
               </button>
             </>
+          ) : gebeurtenis.status === 'opgelost' ? (
+            <button
+              type='button'
+              className='mel-knop mel-knop-zacht'
+              data-mel-heropenen='1'
+              onClick={(e) => {
+                e.stopPropagation();
+                void onStatus('nieuw');
+              }}
+            >
+              <RotateCcw aria-hidden='true' />
+              {t('Знову відкрити', 'Opnieuw openen')}
+            </button>
           ) : (
             <button
               type='button'
@@ -465,7 +497,7 @@ export default function MeldingVeegKaart({
               }}
             >
               <RotateCcw aria-hidden='true' />
-              {t('Повернути', 'Terugzetten')}
+              {t('Повернути з архіву', 'Uit archief terugzetten')}
             </button>
           )}
 
@@ -483,10 +515,38 @@ export default function MeldingVeegKaart({
               <Check aria-hidden='true' />
             </button>
           )}
+
+          {gebeurtenis.status === 'gelezen' && (
+            <button
+              type='button'
+              className='mel-ikoon-knop'
+              data-mel-ongelezen='1'
+              onClick={(e) => {
+                e.stopPropagation();
+                void onStatus('nieuw');
+              }}
+              aria-label={t('Позначити як непрочитане', 'Als ongelezen markeren')}
+              title={t('Позначити як непрочитане', 'Als ongelezen markeren')}
+            >
+              <BellDot aria-hidden='true' />
+            </button>
+          )}
         </div>
 
         {open && (
           <div className='mel-kaart-details' data-geen-veeg='1'>
+            {(gebeurtenis.herhalingen > 1 || gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000) && (
+              <p className='mel-tijden-samenvatting' data-mel-verloop-tijden='1'>
+                <Clock3 aria-hidden='true' />
+                {t('Перша поява', 'Eerste keer')}: {tijdVolledig(gebeurtenis.aangemaaktOp, lang)}
+                {' · '}
+                {t('Остання поява', 'Laatste keer')}: {tijdVolledig(gebeurtenis.bijgewerktOp, lang)}
+                {gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp >= 1000
+                  ? ` · ${t('Тривалість', 'Duur')}: ${duurTekst(gebeurtenis.bijgewerktOp - gebeurtenis.aangemaaktOp, lang)}`
+                  : ''}
+                {gebeurtenis.herhalingen > 1 ? ` · ×${gebeurtenis.herhalingen}` : ''}
+              </p>
+            )}
             {gebeurtenis.uitleg && gebeurtenis.uitleg !== gebeurtenis.bericht && (
               <pre className='mel-uitleg-blok'>{gebeurtenis.uitleg}</pre>
             )}

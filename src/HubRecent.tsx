@@ -11,6 +11,7 @@ import { canonicalServiceUrl, type CanonicalService } from './canoniek-dienst';
 import { lastPathForService, rememberedTabForPath } from './gedeelde-voorkeuren';
 import { activityLink, activityTitle, durationText, statusInfo, type ActivityEvent } from './connector-activiteit';
 import { useIsMaquette } from './thema/useThema';
+import { SkeletBlok } from './platform/SkeletBlok';
 import './hub-recent.css';
 
 type Lang = CanonicalLang;
@@ -50,7 +51,7 @@ export default function HubRecent({ lang }: { lang: Lang }) {
       </section>
       <section className='hub-recent-kaart' data-hub-recent-sectie='events' aria-labelledby='hub-recent-events'>
         <h2 id='hub-recent-events'><Activity aria-hidden='true' /> {uk ? 'Останні події' : 'Recente gebeurtenissen'}</h2>
-        {events === null ? <p className='hub-recent-leeg'>{uk ? 'Завантаження…' : 'Laden…'}</p>
+        {events === null ? <SkeletBlok lang={lang} variant='lijst' aantal={3} hoogte={52} />
           : events === 'geen' ? <p className='hub-recent-leeg'>{uk ? 'Події недоступні (немає входу або прав).' : 'Gebeurtenissen niet beschikbaar (geen aanmelding of recht).'}</p>
           : !events.length ? <p className='hub-recent-leeg'>{uk ? 'Поки що подій немає. Коли ШІ чи ваші пристрої щось зроблять, це з’явиться тут.' : 'Nog geen gebeurtenissen. Zodra de AI of uw apparaten iets doen, verschijnt het hier.'}</p>
           : (

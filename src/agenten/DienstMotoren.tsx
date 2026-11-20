@@ -7,6 +7,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Activity, ChevronDown, Loader2, Pencil, Plus, Trash2, TriangleAlert, Users } from 'lucide-react';
 import { api } from '../platform/client';
+import { SkeletBlok } from '../platform/SkeletBlok';
+import { LegeStaatKaart } from '../platform/LegeStaatKaart';
+import { KopieerKnop } from '../platform/KopieerKnop';
+import { opgeslagenLabel, useOpslaanBevestiging } from '../platform/opslaan-bevestiging';
 import { sessionBody } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { InfoTip } from '../InfoTip';
@@ -95,6 +99,7 @@ function PictoKnop({ naam, gevolg, onClick, bezig, disabled, gevaar, testid, ico
 
 export default function DienstMotoren({ tr }: { tr: Tr }) {
   const nl = tr('uk', 'nl') === 'nl';
+  const taal: 'uk' | 'nl' = nl ? 'nl' : 'uk';
   const [data, setData] = useState<Overzicht | null>(null);
   const [melding, setMelding] = useState<Melding>(null);
   const [bezig, setBezig] = useState('');
@@ -103,6 +108,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
   const [tests, setTests] = useState<Record<string, TestUitkomst>>({});
   const [formulier, setFormulier] = useState<Formulier | null>(null);
   const [formFout, setFormFout] = useState('');
+  const opslaan = useOpslaanBevestiging();
   // Ключ НЕ лежить у стані React: некероване поле, значення читається лише в момент надсилання й одразу стирається.
   const sleutelVeld = useRef<HTMLInputElement>(null);
   const veld = useId();
@@ -183,7 +189,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
   const wijzig = (deel: Partial<Formulier>) => setFormulier((f) => (f ? { ...f, ...deel } : f));
 
   const bewaar = () => {
-    if (!formulier) return;
+    if (!formulier || opslaan.bezig) return;
     const f = formulier;
     // Та сама перевірка, що й на сервері (shared/ai-dienst-motor.ts) — помилку видно ще до запиту й до вікна підтвердження.
     const n = normaliseerDienstInvoer({
@@ -202,8 +208,9 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
     const sleutel = dienstMagSleutel(n.waarde.soort) ? (sleutelVeld.current?.value ?? '').trim() : '';
     if (sleutelVeld.current) sleutelVeld.current.value = '';   // значення ключа живе далі лише в тілі цього одного запиту
     setBezig('bewaar'); setFormFout(''); setMelding(null);
-    api.post('/api/owner/ai-dienst-motoren/bewaar', { ...sessionBody('mcp'), ...n.waarde, ...(sleutel ? { sleutel } : {}) })
-      .then((r) => {
+    void opslaan.voerUit(
+      async () => {
+        const r = await api.post('/api/owner/ai-dienst-motoren/bewaar', { ...sessionBody('mcp'), ...n.waarde, ...(sleutel ? { sleutel } : {}) });
         neem(r);
         setFormulier(null);
         const nieuw = ((r.data as Partial<Overzicht> | undefined)?.motoren || []).find((m) => m.id === n.waarde.id);
@@ -213,9 +220,12 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
           : nieuw?.aan
             ? tr(`«${n.waarde.naam}» збережено; рушій лишився увімкненим.`, `«${n.waarde.naam}» is bewaard; de motor blijft aan.`)
             : tr(`«${n.waarde.naam}» збережено. Рушій вимкнений, доки ви самі не ввімкнете його для всіх.`, `«${n.waarde.naam}» is bewaard. De motor staat uit tot u hem zelf voor iedereen aanzet.`) });
-      })
-      .catch((e) => setFormFout(foutVan(e, ['Не вдалося зберегти рушій', 'Motor bewaren mislukt'])))
-      .finally(() => setBezig(''));
+        return r;
+      },
+      (e) => foutVan(e, ['Не вдалося зберегти рушій', 'Motor bewaren mislukt']),
+    ).then((res) => {
+      if (res && !res.ok) setFormFout(res.fout);
+    }).finally(() => setBezig(''));
   };
 
   const motoren = data?.motoren ?? [];
@@ -235,6 +245,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
       <header className='ag-blok-kop'>
         <h3 className='ag-blok-titel' id={`${veld}-kop`}><Users aria-hidden='true' /> {tr('Спільні рушії ШІ для всіх', 'Gedeelde AI-motoren voor iedereen')}
           <span className='ag-teller' data-dienst-teller='1'>{tr(`увімкнено ${aantalAan} з ${motoren.length}`, `${aantalAan} van ${motoren.length} aan`)}</span>
+          {opslaan.opgeslagen ? <span className='tsv-opgeslagen-badge' role='status' aria-live='polite'>{opgeslagenLabel(taal)}</span> : null}
         </h3>
         <div className='ag-knoppen'>
           <button type='button' className='ag-knop ag-blok-klap dm-knop' aria-expanded={open} aria-controls={`${veld}-inhoud`} data-testid='dienst-klap' onClick={() => setOpen((o) => !o)}>
@@ -247,8 +258,13 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
       <div className='dm-inhoud' id={`${veld}-inhoud`} hidden={!open}>
         {melding ? <p className={`ag-melding ag-melding-${melding.ok ? 'ok' : 'fout'}`} role={melding.ok ? 'status' : 'alert'} data-testid={melding.ok ? 'dienst-melding' : 'dienst-fout'}>{melding.tekst}</p> : null}
 
-        {data === null ? (melding ? null : <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p>) : motoren.length === 0 ? (
-          <p className='ag-leeg'>{tr('Спільних рушіїв ще немає. Користувачі працюють лише з власними ключами та локальним ШІ.', 'Er zijn nog geen gedeelde motoren. Gebruikers werken alleen met eigen sleutels en lokale AI.')}</p>
+        {data === null ? (melding ? null : <SkeletBlok lang={taal} variant='lijst' aantal={2} hoogte={64} />) : motoren.length === 0 ? (
+          <LegeStaatKaart
+            className='ag-leeg'
+            icoon={<Users />}
+            uitleg={tr('Спільних рушіїв ще немає. Користувачі працюють лише з власними ключами та локальним ШІ.', 'Er zijn nog geen gedeelde motoren. Gebruikers werken alleen met eigen sleutels en lokale AI.')}
+            actie={!formulier ? { label: tr('Додати рушій', 'Motor toevoegen'), icoon: <Plus />, onClick: openNieuw } : undefined}
+          />
         ) : (
           <ul className='dm-lijst'>
             {motoren.map((m) => {
@@ -289,11 +305,11 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                   <details className='dm-meer' data-testid='dienst-meer'>
                     <summary>{tr('Докладніше', 'Meer')}</summary>
                   <dl className='dm-feiten'>
-                    <div><dt>{extern ? tr('Постачальник', 'Aanbieder') : tr('Сервер', 'Server')}</dt><dd>{m.soort === 'aanbieder' ? (m.aanbieder ? naamVan(m.aanbieder) : '—') : m.soort === 'google-translate' ? 'Google Cloud Translation' : m.soort === 'deepl' ? 'DeepL API' : (hostVan(m.url) || '—')}</dd></div>
+                    <div><dt>{extern ? tr('Постачальник', 'Aanbieder') : tr('Сервер', 'Server')}</dt><dd>{m.soort === 'aanbieder' ? (m.aanbieder ? naamVan(m.aanbieder) : '—') : m.soort === 'google-translate' ? 'Google Cloud Translation' : m.soort === 'deepl' ? 'DeepL API' : (hostVan(m.url) || '—')}{m.url ? <>{' '}<KopieerKnop tekst={m.url} lang={taal} compact ariaLabel={tr(`Скопіювати адресу ${m.url}`, `Adres ${m.url} kopiëren`)} /></> : null}</dd></div>
                     <div><dt>{tr('Режим приватності', 'Privacymodus')}</dt><dd>{nl ? pmInfo.naamNl : pmInfo.naamUk}</dd></div>
                     <div><dt>{tr('Модель', 'Model')}</dt><dd>{m.model || (m.standaardModel ? tr(`типова: ${m.standaardModel}`, `standaard: ${m.standaardModel}`) : '—')}</dd></div>
                     <div><dt>{tr('Межа на людину', 'Limiet per persoon')}</dt><dd>{tr(`${m.limietPerDag} запитів на день`, `${m.limietPerDag} verzoeken per dag`)}</dd></div>
-                    <div><dt>{tr('Коротка назва', 'Korte naam')}</dt><dd><code>{m.id}</code></dd></div>
+                    <div><dt>{tr('Коротка назва', 'Korte naam')}</dt><dd><code>{m.id}</code>{' '}<KopieerKnop tekst={m.id} lang={taal} compact ariaLabel={tr(`Скопіювати ідентифікатор ${m.id}`, `ID ${m.id} kopiëren`)} /></dd></div>
                   </dl>
                   <p className='dm-waarheen'>{dienstWaarheen({ soort: m.soort, aanbieder: m.aanbieder, host: extern ? undefined : hostVan(m.url), beheerder: m.beheerder, privacyModus: pm }, nl)}</p>
 
@@ -497,10 +513,10 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
             {formFout ? <p className='ag-melding ag-melding-fout' role='alert' data-testid='dienst-fout'>{formFout}</p> : null}
 
             <div className='dm-rij-knoppen'>
-              <button type='submit' className='ag-knop ag-knop-primary dm-knop' disabled={bezig === 'bewaar'} aria-busy={bezig === 'bewaar' || undefined} data-testid='dienst-bewaar'>
-                {bezig === 'bewaar' ? <Loader2 className='ag-spin' aria-hidden='true' /> : null}{tr('Зберегти', 'Bewaren')}
+              <button type='submit' className='ag-knop ag-knop-primary dm-knop' disabled={bezig === 'bewaar' || opslaan.bezig} aria-busy={bezig === 'bewaar' || opslaan.bezig || undefined} data-testid='dienst-bewaar'>
+                {bezig === 'bewaar' || opslaan.bezig ? <Loader2 className='ag-spin' aria-hidden='true' /> : null}{tr('Зберегти', 'Bewaren')}
               </button>
-              <button type='button' className='ag-knop dm-knop' disabled={bezig === 'bewaar'} onClick={sluitFormulier}>{tr('Скасувати', 'Annuleren')}</button>
+              <button type='button' className='ag-knop dm-knop' disabled={bezig === 'bewaar' || opslaan.bezig} onClick={sluitFormulier}>{tr('Скасувати', 'Annuleren')}</button>
               <span className='dm-hint'>{tr('Збереження підтверджується вашим passkey.', 'Bewaren bevestigt u met uw passkey.')}</span>
             </div>
           </form>

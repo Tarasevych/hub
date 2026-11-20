@@ -2,7 +2,7 @@
 
 # Verdeelde versleutelde opslag van databases en siteonderdelen (`k-van-n`)
 
-**Status:** cryptografische kern en spreidingsbeleid geïmplementeerd (`UPD-012`, `shared/verdeelde-opslag.ts`); automatische spreiding over externe knopen volgt in de volgende fase (`orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json`).
+**Status:** cryptografische kern, spreidingsbeleid, proactieve deelrotatie en beheerpaneel zijn geïmplementeerd (`UPD-012` / `UPD-013`, `shared/verdeelde-opslag.ts`, `backend/verdeelde-opslag-beheer.ts`); de verdere evolutie is vastgelegd in delen III–VI van het Hoofdarchitectuurmanifest «Klimop» (`KLIMOP-001`, [`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](../hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)).
 
 ## 1. Doel en dreigingsmodel
 
@@ -14,7 +14,7 @@ Zelfs als een aanvaller of derde partij volledige fysieke of beheerderstoegang k
    - Gebruikersgegevens worden versleuteld met een eigen `DEK` per gebruiker en ruimte (`shared/sleutelkluis.ts`), en serverback-ups met `age` (`deploy/backup-maken.sh`) zonder privésleutel op de server.
    - Grote archieven worden opgedeeld in geauthenticeerde blokken (tot 4 MiB) met SHA-256-controlesommen en een monotoon revisienummer tegen terugdraaiaanvallen.
 2. **Sleutellaag (Shamir-drempelschema `k-van-n` over `GF(256)`):**
-   - Geïmplementeerd in `shared/verdeelde-opslag.ts` (`splitsGeheim`, `herstelGeheim`).
+   - Geïmplementeerd in `shared/verdeelde-opslag.ts` (`splitsGeheim`, `herstelGeheim`, `roteerDelen`, `oefenHerstelTest`).
    - Een sleutel wordt gesplitst in `n` delen (bijv. `3-van-5`): elke verzameling van `k-1` delen geeft **informatietheoretisch nul** kennis over de sleutel; elke `k` geldige delen herstellen de sleutel exact.
 
 ## 3. Beleid voor land- en aanbiederspreiding
@@ -23,4 +23,10 @@ Zelfs als een aanvaller of derde partij volledige fysieke of beheerderstoegang k
 
 ## 4. Continuïteit tussen agenten
 
-Alle besluiten, actieve en geplande mogelijkheden en eisen van de eigenaar liggen vast in `orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json`, zodat elke volgende agent via `node scripts/orch.mjs begin` zonder verlies kan voortbouwen.
+Alle besluiten, actieve en geplande mogelijkheden en eisen van de eigenaar liggen vast in `orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json`, zodat elk van de 14 AI-agenten via `node scripts/orch.mjs begin` zonder verlies kan voortbouwen.
+
+## 5. Afstemming met het ecosysteem «Klimop» (`KLIMOP-001` / `B-024`)
+
+Volgens delen III–VI van het manifest «Klimop» ([`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](../hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md), §6–§13, §21–§24, §43):
+- wordt **drempelgeheimdeling (Shamir §7 en controleerbare verdeling volgens Feldman/Pedersen §8)** uitsluitend toegepast op **sleutels, herstelgeheimen en kritieke bevoegdheden**, en nooit verward met de opdeling van grote bestanden (waarvoor eind-tot-eindversleuteling `AES-256-GCM` / `ChaCha20-Poly1305` met uitwiscode-herstel geldt);
+- worden **cryptografische tijdvakken (§9)**, evaluatie van **drempelhandtekeningen FROST (§10)** voor gezamenlijke besluiten zonder één samengestelde privésleutel en voorbereiding op **gestandaardiseerde postkwantumcryptografie (§13)** gefaseerd ingevoerd zonder de bestaande PostgreSQL-database voortijdig uit te schakelen (§35).

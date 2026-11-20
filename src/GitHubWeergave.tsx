@@ -23,6 +23,8 @@ import { GhDialoog, ghFoutTekst, ghPost } from './github/github-client';
 import EenklikKoppelPaneel from './github/EenklikKoppelPaneel';
 import CodeEnBewerkerPaneel from './github/CodeEnBewerkerPaneel';
 import ZakenEnSamenvoegingenPaneel from './github/ZakenEnSamenvoegingenPaneel';
+import { SkeletBlok } from './platform/SkeletBlok';
+import { LegeStaatKaart } from './platform/LegeStaatKaart';
 import ActiesEnUitgavenPaneel from './github/ActiesEnUitgavenPaneel';
 import SpiegelEnBrugPaneel from './github/SpiegelEnBrugPaneel';
 import './github-weergave.css';
@@ -102,8 +104,12 @@ function useCall<T>(name: string, body: Record<string, unknown> | null, tr: Tr, 
 }
 
 const Notice = ({ kind, children }: { kind: 'error' | 'info'; children: React.ReactNode }) => <div className={`gh-notice gh-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>{kind === 'error' ? <AlertTriangle size={16} /> : <Loader2 size={16} />}<span>{children}</span></div>;
-const Busy = ({ tr }: { tr: Tr }) => <div className="gh-busy"><Loader2 size={16} className="gh-spin" /> {tr('Завантаження…', 'Laden…')}</div>;
-const Empty = ({ children }: { children: React.ReactNode }) => <p className="gh-empty">{children}</p>;
+const Busy = ({ tr }: { tr: Tr }) => <div className="gh-busy"><SkeletBlok lang={tr('uk', 'nl') === 'nl' ? 'nl' : 'uk'} variant="lijst" aantal={3} hoogte={56} label={tr('Завантаження…', 'Laden…')} /></div>;
+const Empty = ({ children, action }: { children: React.ReactNode; action?: { label: string; onClick: () => void } }) => (
+  typeof children === 'string'
+    ? <LegeStaatKaart className="gh-empty" uitleg={children} actie={action} />
+    : <p className="gh-empty">{children}</p>
+);
 const Lang = ({ l }: { l: string }) => (l ? <span className="gh-chip">{l}</span> : null);
 
 function RepoRow({ r, active, onPick, tr }: { r: Repo; active: boolean; onPick: () => void; tr: Tr }) {

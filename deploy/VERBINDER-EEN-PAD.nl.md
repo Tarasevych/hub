@@ -6,22 +6,32 @@ Tot nu toe: `https://mcp.tarasevych.com/ai/<agent>` voor connector v2, `…/mcp`
 `/claude`, `/grok`, `/chatgpt`, `/gemini`, `/copilot` voor de MCP-**deur** (een apart proces, `deploy/mcp/server.mjs`, poort 8091).
 Drie «deuren» naar hetzelfde huis.
 
-Vanaf nu: **één adres per agent, bediend door de hoofdapp**:
+> **Bijgewerkt op 20.11.2026 (`KLIMOP-001`, `B-024`, regels `1.5.0`):** het ene connectorpad van versie 2 omvat voortaan **alle 14 AI-agentintegraties** (`claude`, `chatgpt` → `/gpt`, `codex`, `grok`, `gemini`, `copilot` → `/githubcopilot`, `mscopilot` → `/copilot`, `cursor`, `antigravity`, `autoclaw`, `windsurf`, `cline`, `devin`, `opencode`), elk met een eigen tweetalige adapter in de hoofdmap van de opslagplaats en een registratie in [`orchestratie/beleid.json`](../orchestratie/beleid.json). Volgens het [Hoofdarchitectuurmanifest «Klimop»](../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) (§1.4 «Hechtranken», §28–§34) werkt elke connector uitsluitend binnen door de gebruiker uitdrukkelijk verleende bevoegdheden met levende rolcontrole bij elke aanroep, bewaart geen geheimen buiten de geïsoleerde ruimte en **geeft geen toestemming voor eigenmachtige wijziging van de productie-infrastructuur**.
+
+Vanaf nu: **één adres per elk van de 14 agenten, bediend door de hoofdapp**:
 
 ```
 https://mcp.tarasevych.com/claude
 https://mcp.tarasevych.com/gpt
+https://mcp.tarasevych.com/codex
 https://mcp.tarasevych.com/grok
 https://mcp.tarasevych.com/gemini
+https://mcp.tarasevych.com/githubcopilot
 https://mcp.tarasevych.com/copilot
 https://mcp.tarasevych.com/cursor
+https://mcp.tarasevych.com/antigravity
+https://mcp.tarasevych.com/autoclaw
+https://mcp.tarasevych.com/windsurf
+https://mcp.tarasevych.com/cline
+https://mcp.tarasevych.com/devin
+https://mcp.tarasevych.com/opencode
 ```
 
 En de rechten zitten niet meer in het adres: de connector toont zowel de privé- als de technische hulpmiddelen, en bij **elke**
 `tools/list` en `tools/call` berekent de server opnieuw wat er op dat moment bestaat (eigenaar + actief technisch profiel →
 `backend/ai-ruimte-poort.ts`, `effectieveRuimte`). Technische toegang verdwijnt dus op het moment dat u het profiel verlaat.
 
-> `/gpt` is het adres van ChatGPT. De deur heette `/chatgpt`; dat pad is nooit een v2-adres geweest en wordt er ook geen.
+> `/gpt` is het adres van ChatGPT (de deur heette `/chatgpt`; dat pad is nooit een v2-adres geweest en wordt er ook geen). `/githubcopilot` hoort bij GitHub Copilot (interne code `copilot`) en `/copilot` bij Microsoft Copilot Studio (interne code `mscopilot`).
 
 ---
 

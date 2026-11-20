@@ -41,10 +41,10 @@ const DEBOUNCE_MS = 250;
 const UITKLAP_MAX_PX = 576; // 36rem: de breedte waarop het uitklapvenster niet verder groeit
 const VELD_MIN_PX = 440; // ZOEK-002: smaller is een geopend veld met resultaten niet meer goed te lezen
 const T = {
-  uk: { veld: 'Пошук у «Мій простір»…', open: 'Відкрити пошук (⌘K)', menu: 'Пошук у «Мій простір»', titel: 'Швидкий пошук', ph: 'Функція, сторінка, лист, файл…', zoekpagina: 'Перейти до пошуку', zoekpaginaTitel: 'Перейти до сторінки пошуку з поточним результатом: там фільтри, сортування й усі знайдені, а не лише перші (Ctrl+Enter)', wisRecent: 'Очистити нещодавні', geenRecent: 'Тут з’являться ваші останні пошуки на цьому пристрої.',
+  uk: { veld: 'Пошук у «Мій простір»…', open: (mac: boolean) => `Відкрити пошук (${mac ? '⌘K' : 'Ctrl+K'})`, menu: 'Пошук у «Мій простір»', titel: 'Швидкий пошук', ph: 'Функція, сторінка, лист, файл…', zoekpagina: 'Перейти до пошуку', zoekpaginaTitel: 'Перейти до сторінки пошуку з поточним результатом: там фільтри, сортування й усі знайдені, а не лише перші (Ctrl+Enter)', wisRecent: 'Очистити нещодавні', geenRecent: 'Тут з’являться ваші останні пошуки на цьому пристрої.',
     hint: (mac: boolean) => `Enter — шукати · ↑↓ — вибір · Esc — закрити · ${mac ? '⌘' : 'Ctrl'}+Enter — сторінка пошуку`,
     groepen: { recent: 'Нещодавні', suggesties: 'Підказки', resultaten: 'Результати' }, zoekt: 'Шукаємо…', gevonden: (n: number) => `Знайдено: ${n}`, geenResultaat: 'Нічого не знайдено', fout: 'Пошук не виконано' },
-  nl: { veld: 'Zoeken in «Mijn Ruimte»…', open: 'Zoeken openen (⌘K)', menu: 'Zoeken in «Mijn Ruimte»', titel: 'Snel zoeken', ph: 'Functie, pagina, e-mail, bestand…', zoekpagina: 'Naar zoeken', zoekpaginaTitel: 'Naar de zoekpagina met het huidige resultaat: daar staan filters, sortering en alles wat gevonden is, niet alleen de eerste (Ctrl+Enter)', wisRecent: 'Recent wissen', geenRecent: 'Hier verschijnen uw laatste zoekopdrachten op dit apparaat.',
+  nl: { veld: 'Zoeken in «Mijn Ruimte»…', open: (mac: boolean) => `Zoeken openen (${mac ? '⌘K' : 'Ctrl+K'})`, menu: 'Zoeken in «Mijn Ruimte»', titel: 'Snel zoeken', ph: 'Functie, pagina, e-mail, bestand…', zoekpagina: 'Naar zoeken', zoekpaginaTitel: 'Naar de zoekpagina met het huidige resultaat: daar staan filters, sortering en alles wat gevonden is, niet alleen de eerste (Ctrl+Enter)', wisRecent: 'Recent wissen', geenRecent: 'Hier verschijnen uw laatste zoekopdrachten op dit apparaat.',
     hint: (mac: boolean) => `Enter — zoeken · ↑↓ — kiezen · Esc — sluiten · ${mac ? '⌘' : 'Ctrl'}+Enter — zoekpagina`,
     groepen: { recent: 'Recent', suggesties: 'Suggesties', resultaten: 'Resultaten' }, zoekt: 'Zoeken…', gevonden: (n: number) => `Gevonden: ${n}`, geenResultaat: 'Niets gevonden', fout: 'Zoeken lukte niet' },
 };
@@ -309,9 +309,11 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
       <small id={`${uid}-hint`} className='zk-pop-hint'>{t.hint(isMac())}</small>
     </div>);
 
+  const mac = isMac();
+  const openLabel = t.open(mac);
   const trigger = mobiel
-    ? <button type='button' className={`zk-trigger-mobiel${open ? ' is-verborgen' : ''}`} aria-label={t.open} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} data-zoek-trigger='mobiel' onClick={doOpen}><Search aria-hidden='true' /></button>
-    : <button type='button' className={`zk-trigger${open ? ' is-verborgen' : ''}`} aria-label={t.open} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} aria-haspopup='listbox' data-zoek-trigger='veld' onClick={doOpen}><Search aria-hidden='true' /><span className='zk-trigger-tekst'>{t.veld}</span><kbd aria-hidden='true'>{isMac() ? '⌘' : 'Ctrl'} K</kbd></button>;
+    ? <button type='button' className={`zk-trigger-mobiel${open ? ' is-verborgen' : ''}`} aria-label={openLabel} title={openLabel} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} data-zoek-trigger='mobiel' onClick={doOpen}><Search aria-hidden='true' /></button>
+    : <button type='button' className={`zk-trigger${open ? ' is-verborgen' : ''}`} aria-label={openLabel} title={openLabel} aria-keyshortcuts='Control+K Meta+K' aria-expanded={open} aria-haspopup='listbox' data-zoek-trigger='veld' onClick={doOpen}><Search aria-hidden='true' /><span className='zk-trigger-tekst'>{t.veld}</span><kbd aria-hidden='true'>{mac ? '⌘K' : 'Ctrl+K'}</kbd></button>;
 
   const veld = (
     <ZoekVeld lang={lang} value={q} onChange={setQ} onSubmit={zoekNu} onKies={kies} suggesties={rijen} placeholder={t.ph} label={t.titel} inputRef={input} autoFocus vast beschrijvingId={`${uid}-hint`} voet={voet}

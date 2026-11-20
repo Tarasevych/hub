@@ -1,8 +1,9 @@
 // Пристрої: пошук, відбір за родом, кімнатою й актуальністю, картки зі справжніми значеннями та оглядова панель пристрою.
 // Apparaten: zoeken, selectie op soort, kamer en versheid, kaarten met gemeten waarden en het detailpaneel met bediening.
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Plug, Search, X } from 'lucide-react';
 import { MOGELIJKHEID_LABEL, VERSHEID_LABEL, versheid } from '../../../shared/huis-model';
+import { LegeStaatKaart } from '../../platform/LegeStaatKaart';
 import type { OnderdeelProps } from '../HuisPagina';
 import ApparaatBediening from '../ApparaatBediening';
 import HuisLaag from '../HuisLaag';
@@ -26,7 +27,17 @@ export default function Apparaten({ lang, smal, woningId, ov, vernieuw, toon, na
   }, [ov.apparaten, vraag, soort, kamer, vers]);
   const open = openId ? ov.apparaten.find((a) => a.id === openId) ?? null : null;
   const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); if (ok) toon(ok); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(false); } };
-  if (!ov.apparaten.length) return <section className='hv-leeg'><h3>{tr(lang, 'Пристроїв ще немає', 'Nog geen apparaten')}</h3><p>{tr(lang, ov.integraties.length ? 'Інтеграцію підключено, але нічого не імпортовано. Відкрийте Інтеграції → Знайти пристрої.' : 'Підключіть Home Assistant — пристрої з’являться з реальними станами.', ov.integraties.length ? 'De integratie is gekoppeld, maar er is niets geïmporteerd. Open Integraties → Apparaten zoeken.' : 'Koppel Home Assistant — apparaten verschijnen met echte toestanden.')}</p><button type='button' className='hv-knop is-hoofd' onClick={() => naarTab('integrations')}>{tr(lang, 'До інтеграцій', 'Naar integraties')}</button></section>;
+  if (!ov.apparaten.length) {
+    return (
+      <LegeStaatKaart
+        className='hv-leeg'
+        icoon={<Plug />}
+        titel={tr(lang, 'Пристроїв ще немає', 'Nog geen apparaten')}
+        uitleg={tr(lang, ov.integraties.length ? 'Інтеграцію підключено, але нічого не імпортовано. Відкрийте Інтеграції → Знайти пристрої.' : 'Підключіть Home Assistant — пристрої з’являться з реальними станами.', ov.integraties.length ? 'De integratie is gekoppeld, maar er is niets geïmporteerd. Open Integraties → Apparaten zoeken.' : 'Koppel Home Assistant — apparaten verschijnen met echte toestanden.')}
+        actie={{ label: tr(lang, 'До інтеграцій', 'Naar integraties'), icoon: <Plug />, onClick: () => naarTab('integrations') }}
+      />
+    );
+  }
   return (
     <div className='hv-apparaten' data-mq-sectie='apparaten'>
       <div className='hv-werkbalk' role='search'>

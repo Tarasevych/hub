@@ -122,11 +122,12 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.ta
 # Виконати дослівну перевірку договору чи листа за абзацами (§1, §2…), знеособлення реквізитів і побудову реєстру доказів
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte JuridischControleer [--bestand <ШЛЯХ> | --tekst "<ТЕКСТ>"] [--taal uk|nl]
 
-# Вивести повний пакет матеріалів і перелік для участі в «Built with AutoClaw — Round 3»
+# Вивести повний пакет матеріалів і перелік для участі в «Built with AutoClaw — Раунд 3»
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte AutoClawPakket [--taal uk|nl]
 ```
 
-## Правила безпеки та врядування
+## Правила безпеки, врядування та екосистеми «Плющ» (`KLIMOP-001`)
 - **Очікування підтвердження**: коли інструмент запису або дії повертає `status: "pending"`, сайт очікує підтвердження користувача в `BevestigingenPaneel` на `https://mcp.tarasevych.com/agenten#agent/antigravity` (або `#agent/autoclaw`). Повідомте про це користувача й не повторюйте виклик у циклі.
 - **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічний сеанс на `https://mcp.tarasevych.com/agenten#agent/antigravity` (або `#agent/autoclaw`).
-- **Правила репозиторію**: завжди дотримуйтесь `AGENTS.md`, `ANTIGRAVITY.md` та `AUTOCLAW.md` під час внесення змін у `Tarasevych/hub`.
+- **Межі «Вусиків» і цільової концепції «Плющ» (`AGENTS.md` §3б, §10, `docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`, навичка `klimop-architectuur`)**: міст керування локальним комп’ютером та оглядачем діє виключно за явними, обмеженими й відкличними повноваженнями користувача без прихованого фонового розширення (§1.4, §5.2 маніфесту). Маніфест «Плющ» не дозволяє негайно змінювати робочу інфраструктуру без окремого затвердження власника; кожна програмна зміна перевіряється за 15 питаннями архітектурної перевірки (§10.4).
+- **Правила сховища**: завжди дотримуйтесь `AGENTS.md`, `ANTIGRAVITY.md` та `AUTOCLAW.md` під час внесення змін у `Tarasevych/hub`.

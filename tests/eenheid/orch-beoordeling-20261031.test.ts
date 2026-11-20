@@ -64,10 +64,10 @@ function sshSignEd25519(namespace: string, bericht: string) {
 
 function maakOrchRepo() {
   const R = mkdtempSync(join(tmpdir(), 'orch-rev-repo-'));
-  for (const p of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'ANTIGRAVITY.md', 'CHATGPT.md', 'CODEX.md', 'GROK.md', '.cursorrules', 'scripts/orch.mjs', 'scripts/orch', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md', 'orchestratie/eigenaar-ondertekenaars', 'orchestratie/sjablonen']) {
+  const adapters: string[] = JSON.parse(readFileSync('orchestratie/beleid.json', 'utf8')).adapters.bestanden;
+  for (const p of ['AGENTS.md', ...adapters, 'scripts/orch.mjs', 'scripts/orch', 'orchestratie/beleid.json', 'orchestratie/BESLUITEN.md', 'orchestratie/eigenaar-ondertekenaars', 'orchestratie/sjablonen']) {
     cpSync(p, join(R, p), { recursive: true });
   }
-  cpSync('.github/copilot-instructions.md', join(R, '.github/copilot-instructions.md'));
   mkdirSync(join(R, 'src'), { recursive: true });
   writeFileSync(join(R, 'src/a.ts'), 'export const a = 1;\n');
   writeFileSync(join(R, 'orchestratie/wachtrij.json'), JSON.stringify({ schema: 1, integratieTak: 'integratie', integratieHoofd: null, bezig: null, wachtrij: [] }, null, 2));

@@ -1,0 +1,178 @@
+/* Спільні стилі легких блоків взаємодії (UPD-013): скелетний заповнювач, порожній стан, кнопка копіювання, стан збереження.
+   Виключно змінні теми з src/ontwerp/tokens.css, без сирих шістнадцяткових кольорів і без position:fixed. */
+
+.tsv-skelet-blok {
+  display: grid;
+  gap: var(--ruimte-3);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.tsv-skelet-blok.is-kaarten {
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+}
+
+.tsv-skelet-blok.is-compact {
+  gap: var(--ruimte-2);
+}
+
+.tsv-skelet-kaart {
+  display: grid;
+  align-content: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3) var(--ruimte-4);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-m);
+  background: var(--panel);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.tsv-skelet-blok.is-compact .tsv-skelet-kaart {
+  padding: var(--ruimte-2) var(--ruimte-3);
+}
+
+.tsv-skelet-lijn {
+  height: 12px;
+  width: 100%;
+}
+
+.tsv-skelet-lijn.is-kop {
+  height: 15px;
+  width: 48%;
+}
+
+.tsv-skelet-lijn.is-kort {
+  width: 68%;
+}
+
+/* Спокійна картка порожнього стану: одне пояснення і одна головна дія. */
+.tsv-lege-staat {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-5) var(--ruimte-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--straal-l);
+  background: var(--panel);
+  color: var(--text);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.tsv-lege-staat-icoon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.tsv-lege-staat-icoon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tsv-lege-staat-titel {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.tsv-lege-staat-uitleg {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--tekst-klein);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.tsv-lege-staat-actie {
+  margin-top: var(--ruimte-1);
+}
+
+/* Кнопка копіювання в 1 клік з миттєвим підтвердженням «Скопійовано ✓». */
+.tsv-kopieer-wikkel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.tsv-kopieer-knop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ruimte-1);
+  min-height: 36px;
+  min-width: 36px;
+  padding: var(--ruimte-1) var(--ruimte-3);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-s);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--tekst-klein);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tsv-kopieer-knop.is-compact {
+  padding: var(--ruimte-1) var(--ruimte-2);
+  font-size: var(--tekst-mini);
+}
+
+.tsv-kopieer-knop:hover {
+  background: var(--surface2);
+}
+
+.tsv-kopieer-knop:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tsv-kopieer-knop.is-ok {
+  background: var(--ok-zacht);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  color: var(--ok);
+}
+
+.tsv-kopieer-knop.is-fout {
+  background: var(--fout-zacht);
+  border-color: color-mix(in srgb, var(--fout) 40%, transparent);
+  color: var(--fout);
+}
+
+.tsv-kopieer-knop svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.tsv-opgeslagen-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  padding: 2px var(--ruimte-2);
+  border-radius: 999px;
+  background: var(--ok-zacht);
+  color: var(--ok);
+  font-size: var(--tekst-mini);
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+@media (max-width: 700px) {
+  .tsv-kopieer-knop {
+    min-height: var(--tik-hoogte);
+    min-width: var(--tik-hoogte);
+  }
+}

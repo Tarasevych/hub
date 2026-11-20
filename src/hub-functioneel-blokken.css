@@ -4,7 +4,8 @@
    Ze zitten nu in het «⋯»-menu van de kop van het onderdeel: een gewone, onopvallende actie op de plek waar
    acties van dit onderdeel horen. De kop zelf had helemaal geen opmaak; die staat hier. */
 .hub-workspace-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line,#e5e7eb)}
-.hub-workspace-title{margin:0;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
+.hub-workspace-head.is-overview{margin:0 0 6px;padding-bottom:4px;border-bottom:0}
+.hub-workspace-title{margin:0;font-size:1.45rem;font-weight:700;letter-spacing:-.01em}
 .hub-sectie-menu{position:relative;flex:none}
 .hub-sectie-menu-knop{display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#4b5563);cursor:pointer}
 .hub-sectie-menu-knop:hover{background:rgba(127,127,127,.14);color:var(--text,#0f172a)}
@@ -15,7 +16,7 @@
 .hub-sectie-menu-lijst button:hover{background:rgba(127,127,127,.12)}
 .hub-sectie-menu-lijst button:focus-visible{outline:3px solid var(--accent,#2f6f73);outline-offset:-2px}
 .hub-sectie-menu-lijst svg{width:16px;height:16px;flex:none;color:var(--muted,#4b5563)}
-@media (max-width:560px){.hub-sectie-menu-lijst{min-width:13rem}.hub-workspace-title{font-size:1.1rem}}
+@media (max-width:560px){.hub-sectie-menu-lijst{min-width:13rem}.hub-workspace-title{font-size:1.35rem}}
 @media (forced-colors:active){.hub-sectie-menu-lijst{border:2px solid CanvasText}}
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){

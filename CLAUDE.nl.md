@@ -1,13 +1,13 @@
 > 🌐 **Taal / Мова:** [Українська](АДАПТЕР-КЛОД.uk.md) · **Nederlands** | [Hoofdpagina](LEESMIJ.md) · [Documentatie-index](docs/INDEX.nl.md)
 
 <!-- orch-adapter -->
-# Перехідник для Claude (Claude Code, claude.ai, MCP-з'єднувач mcp.tarasevych.com) · Adapter voor Claude (Claude Code, claude.ai, MCP-з'єднувач mcp.tarasevych.com)
+# Adapter voor Claude (Claude Code, claude.ai, MCP-verbinder mcp.tarasevych.com/claude) · Перехідник для Claude (Claude Code, claude.ai, з'єднувач MCP mcp.tarasevych.com/claude)
 
-Цей файл — лише вказівник. Усі правила — в **AGENTS.md** (канонічне джерело) і `orchestratie/beleid.json`. Тут нічого не додається й не скасовується.
-Dit bestand is alleen een verwijzing. Alle regels staan in **AGENTS.md** en `orchestratie/beleid.json`.
+Dit bestand is uitsluitend een verwijzing. Alle regels staan in **AGENTS.md** (Nederlandse weergave: `AGENTENREGELS.nl.md`) en `orchestratie/beleid.json`. Hier wordt niets toegevoegd of opgeheven.
 
-1. Прочитай AGENTS.md повністю (без доступу до репозиторію — `orchestratie/CONTEXT-COMPACT.md`).
-2. Ідентифікатор агента для Task ID, пакетів і `AGENT`: `claude`.
-3. Перший крок сеансу: `node scripts/orch.mjs begin --agent <ідентифікатор з п. 2>` — правила, навички, досьє функції, хто працював і хто паралельно (AGENTS.md §9). Перед початком: `controleer` і `versheid --taak <ID> --fase start`. Перед передаванням: запис `orch bijdrage` (людина, агент, модель, що й чому), `versheid --fase overdracht` + `ORCH-OVERDRACHT.json`.
-4. Мова відповідей і звітів — українська; коментарі в коді — українська/нідерландська; UI — українська/нідерландська.
-5. Жодних змін у production, `voornaamst`, `integratie`, `release/*`, чужих гілках чи резервних копіях без явного погодження власника.
+1. Lees **AGENTS.md** / `AGENTENREGELS.nl.md` volledig (zonder opslagplaatstoegang: `orchestratie/CONTEXT-COMPACT.md`); eigen MCP-verbinderadres: `https://mcp.tarasevych.com/claude`.
+2. Agent-identificatie voor taak-ID's, uitgavepakketten en het veld `AGENT`: `claude`.
+3. Eerste stap van elke sessie: `node scripts/orch.mjs begin --agent claude` — regels, vaardigheden (waaronder `klimop-architectuur`), functiedossier en parallel werk (`AGENTENREGELS.nl.md` §9). Vóór aanvang: `controleer` en `versheid --taak <ID> --fase start`. Vóór overdracht: auteurschapsregistratie `orch bijdrage`, `versheid --fase overdracht` + `ORCH-OVERDRACHT.json`.
+4. **Doelarchitectuur «Klimop» (`KLIMOP-001`, `AGENTENREGELS.nl.md` §3b, §10, `docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`):** het manifest is een doelarchitectuur en GEEN toestemming voor onmiddellijke wijziging van de productie-infrastructuur of uitschakeling van bestaande servers en PostgreSQL; toets elke wijziging aan de 15 architectuurcontrolevragen (§10.4) zonder verboden vereenvoudigingen (§10.5).
+5. Talen (Absolute Taalwet): communicatie en verslagen in zuiver Oekraïens (`uk`); codecommentaar, gebruikersinterface en documentatie uitsluitend in zuiver Oekraïens (`uk`) en zuiver Nederlands (`nl`).
+6. Geen wijzigingen in de productieomgeving, `voornaamst`, `integratie`, `release/*`, andermans takken of reservekopieën zonder uitdrukkelijke goedkeuring van de eigenaar.

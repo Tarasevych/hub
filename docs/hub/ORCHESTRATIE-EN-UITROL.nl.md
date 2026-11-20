@@ -1,23 +1,24 @@
 > 🌐 **Taal / Мова:** [Українська](КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
-> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🧭 **Hub-secties (`docs/hub/`):** [Hoofdmanifest «Klimop»](./ARCHITECTUURMANIFEST-KLIMOP.nl.md) · [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, samenvoegverzoeken & uitgaven](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · **6. Coördinatie & Uitrol**
 
-# Orchestratie van AI-Agenten (`ORCH-001`), Traceerbaarheid (`TRACE-001`), Serverstack (`B-009`) en Atomaire Uitrol
+# Coördinatie van 14 AI-Agenten (`ORCH-001` / `BIJDRAGE-001`), Traceerbaarheid (`TRACE-001`), Architectuur «Klimop» (`KLIMOP-001`) en Atomaire Uitrol
 
-Dit document beschrijft de volledige levenscyclus van ontwikkeling, verificatie, coördinatie van 8 AI-agenten en veilige uitrol van updates op de productie-VM van het platform "Mijn Ruimte / Мій простір".
+Dit document beschrijft de volledige levenscyclus van ontwikkeling, architectuurcontrole, auteurschapsregistratie, coördinatie van **alle 14 AI-agentintegraties** en veilige uitrol van bijwerkingen op de productie-VM van het platform «Mijn Ruimte / Мій простір».
 
 ---
 
-## 1. Multi-Agent Orchestratie `ORCH-001` (`B-001`–`B-006`)
+## 1. Multi-Agent Coördinatie `ORCH-001`, Auteurschap `BIJDRAGE-001` en Architectuurcontrole `KLIMOP-001` (`B-001`–`B-024`)
 
-Aan de repository `Tarasevych/hub` werken **8 AI-agenten** parallel samen: **Claude**, **Antigravity**, **ChatGPT**, **Codex**, **Grok**, **GitHub Copilot**, **Gemini** en **Cursor**. Om het overschrijven van andermans werk, het verliezen van commits of afwijkende instructies uit te sluiten, geldt het uniforme protocol **`ORCH-001`**:
+Aan de opslagplaats `Tarasevych/hub` werken **14 AI-agentintegraties** parallel samen: **Claude**, **Google Antigravity**, **AutoClaw (GLM)**, **ChatGPT**, **OpenAI Codex**, **Grok**, **GitHub Copilot**, **Microsoft Copilot Studio**, **Google Gemini**, **Cursor**, **Windsurf**, **Cline**, **Devin** en **OpenCode**. Om het overschrijven van andermans werk, het verliezen van auteurschap of afwijkende instructies uit te sluiten, geldt het uniforme kader **`ORCH-001` + `BIJDRAGE-001` + `VERWIJZING-001` + `KLIMOP-001`**:
 
-### 1.1. Enige Bron van Regels en Cryptografisch Slot
-1. **Canonieke regelbestanden:**
-   - [`AGENTS.md`](../../AGENTS.md) ([🇺🇦 UK](../../ПРАВИЛА-АГЕНТІВ.uk.md) ↔ [🇳🇱 NL](../../AGENTENREGELS.nl.md)) — mensleesbare regels voor alle agenten en ontwikkelaars.
-   - [`orchestratie/beleid.json`](../../orchestratie/beleid.json) — machineleesbaar beleid (lijst van agenten, overdrachtskanalen, beschermde takken en verplichte controles).
-   - [`orchestratie/BESLUITEN.md`](../../orchestratie/BESLUITEN.md) ([🇺🇦 UK](../../orchestratie/РІШЕННЯ.uk.md) ↔ [🇳🇱 NL](../../orchestratie/BESLUITEN.nl.md)) — append-only register van architecturale en organisatorische besluiten (`B-001`..`B-011`).
-2. **Dunne adapters (≤ 25 regels):** de bestanden `CLAUDE.md`, `ANTIGRAVITY.md`, `GEMINI.md`, `CODEX.md`, `CHATGPT.md`, `GROK.md`, `.cursorrules`, `.github/copilot-instructions.md` bevatten de marker `<!-- orch-adapter -->` en verwijzen uitsluitend naar `AGENTS.md`.
-3. **Cryptografische vingerafdruk [`orchestratie/regels.lock.json`](../../orchestratie/regels.lock.json):** legt de SHA-256 van alle drie de canonieke regelbestanden vast en wordt ondertekend met de persoonlijke sleutel van de eigenaar (`SSH ed25519` of `WebAuthn Passkey`). Het is agenten verboden om regelbestanden te wijzigen zonder expliciete opdracht van de eigenaar.
+### 1.1. Enige Bron van Regels, Gedeelde Vaardigheden en Cryptografisch Slot
+1. **Canonieke regelbestanden (versie `1.5.0`):**
+   - [`AGENTS.md`](../../AGENTS.md) ([🇺🇦 UK](../../ПРАВИЛА-АГЕНТІВ.uk.md) ↔ [🇳🇱 NL](../../AGENTENREGELS.nl.md)) — mensleesbare regels voor alle 14 agenten en ontwikkelaars (inclusief de verplichte architectuurcontrole van 15 vragen in §3b en §10).
+   - [`orchestratie/beleid.json`](../../orchestratie/beleid.json) — machineleesbaar beleid (alle 14 agenten, 14 adapters, overdrachtskanalen, auteurschap, driefactorvertrouwen en `architectuurRichting`).
+   - [`orchestratie/BESLUITEN.md`](../../orchestratie/BESLUITEN.md) ([🇺🇦 UK](../../orchestratie/РІШЕННЯ.uk.md) ↔ [🇳🇱 NL](../../orchestratie/BESLUITEN.nl.md)) — alleen-aanvullen register van architecturale en organisatorische besluiten (`B-001`..`B-024`).
+   - Catalogus van **12 gedeelde vaardigheden** [`.agents/skills/`](../../.agents/skills/) ([`scripts/vaardigheden/catalogus.json`](../../scripts/vaardigheden/catalogus.json)), waaronder [`klimop-architectuur`](../../.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md).
+2. **Dunne adapters voor alle 14 agenten (≤ 25 niet-lege regels):** de bestanden `CLAUDE.md`, `ANTIGRAVITY.md`, `AUTOCLAW.md`, `CHATGPT.md`, `CODEX.md`, `GROK.md`, `.github/copilot-instructions.md`, `MSCOPILOT.md`, `GEMINI.md`, `.cursorrules` (`CURSOR.md`), `WINDSURF.md` (`.windsurfrules`), `CLINE.md` (`.clinerules`), `DEVIN.md`, `OPENCODE.md` (en hun Nederlandstalige tegenhangers `*.nl.md`) bevatten de markering `<!-- orch-adapter -->` en verwijzen uitsluitend naar `AGENTS.md`.
+3. **Cryptografische vingerafdruk [`orchestratie/regels.lock.json`](../../orchestratie/regels.lock.json):** legt de SHA-256 van alle drie de canonieke regelbestanden vast en wordt bevestigd door de eigenaar (`SSH ed25519` of WebAuthn-toegangssleutel).
 
 ### 1.2. Taakisolatie en 8 Inleverkanalen
 - Elke taak krijgt een unieke identificatie (`ABC-001`), een eigen tak `feature|fix|audit|release/<onderwerp>-YYYYMMDD-HHMMSS` en een declaratiebestand `orchestratie/taken/<TASK-ID>.json`.
@@ -123,5 +124,6 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
 
 ## Gerelateerde Documentatie (🇺🇦 UK ↔ 🇳🇱 NL)
 
-- **Agentregels en besluitenregister:** [🇺🇦 `AGENTS.uk.md`](../../ПРАВИЛА-АГЕНТІВ.uk.md) ↔ [🇳🇱 `AGENTENREGELS.nl.md`](../../AGENTENREGELS.nl.md) ([origineel `AGENTS.md`](../../AGENTS.md)) · [🇺🇦 `orchestratie/BESLUITEN.uk.md`](../../orchestratie/РІШЕННЯ.uk.md) ↔ [🇳🇱 `orchestratie/BESLUITEN.nl.md`](../../orchestratie/BESLUITEN.nl.md)
-- **Uitrol, pakketten en herstel:** [🇺🇦 `deploy/LEESMIJ.uk.md`](../../deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md) ↔ [🇳🇱 `deploy/PROJECTOVERZICHT.nl.md`](../../deploy/LEESMIJ.nl.md) · [🇺🇦 `deploy/REGELS-UITROLPAKKET.uk.md`](../../deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md) ↔ [🇳🇱 `deploy/REGELS-UITROLPAKKET.nl.md`](../../deploy/REGELS-UITROLPAKKET.nl.md) · [🇺🇦 `deploy/HERSTEL.uk.md`](../../deploy/ВІДНОВЛЕННЯ.uk.md) ↔ [🇳🇱 `deploy/HERSTEL.nl.md`](../../deploy/HERSTEL.nl.md)
+- **Hoofdarchitectuurmanifest «Klimop» (`KLIMOP-001`):** [🇳🇱 `ARCHITECTUURMANIFEST-KLIMOP.nl.md`](./ARCHITECTUURMANIFEST-KLIMOP.nl.md) ↔ [🇺🇦 `АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](./АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md) · vaardigheid [`klimop-architectuur`](../../.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md)
+- **Regels voor 14 agenten (`1.5.0`) en besluitenregister (`B-024`):** [🇳🇱 `AGENTENREGELS.nl.md`](../../AGENTENREGELS.nl.md) ↔ [🇺🇦 `ПРАВИЛА-АГЕНТІВ.uk.md`](../../ПРАВИЛА-АГЕНТІВ.uk.md) ([origineel `AGENTS.md`](../../AGENTS.md)) · [🇳🇱 `orchestratie/BESLUITEN.nl.md`](../../orchestratie/BESLUITEN.nl.md) ↔ [🇺🇦 `orchestratie/РІШЕННЯ.uk.md`](../../orchestratie/РІШЕННЯ.uk.md)
+- **Uitrol, pakketten en herstel:** [🇳🇱 `deploy/LEESMIJ.nl.md`](../../deploy/LEESMIJ.nl.md) ↔ [🇺🇦 `deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md`](../../deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md) · [🇳🇱 `deploy/REGELS-UITROLPAKKET.nl.md`](../../deploy/REGELS-UITROLPAKKET.nl.md) ↔ [🇺🇦 `deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md`](../../deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md) · [🇳🇱 `deploy/HERSTEL.nl.md`](../../deploy/HERSTEL.nl.md) ↔ [🇺🇦 `deploy/ВІДНОВЛЕННЯ.uk.md`](../../deploy/ВІДНОВЛЕННЯ.uk.md)

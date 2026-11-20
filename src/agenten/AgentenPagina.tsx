@@ -18,6 +18,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { bijAfdrukVoorbereiding } from '../platform/afdruk';
+import { SkeletBlok } from '../platform/SkeletBlok';
+import { KopieerKnop } from '../platform/KopieerKnop';
 import { Activity, AlertTriangle, ArrowRight, ChevronDown, GitMerge, Globe, KeyRound, LayoutDashboard, ListChecks, Monitor, Network, Plug, Puzzle, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import { useAgentsData, useToolApprovals } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
@@ -127,10 +129,18 @@ function doelBoven(el: HTMLElement): number {
 
 /** Skelet zolang een blok nog niet gemount is: zichtbaar «bezig», nooit een lege vlakte. */
 function BlokSkelet({ tr }: { tr: Tr }) {
+  const taal: 'uk' | 'nl' = tr('uk', 'nl') === 'nl' ? 'nl' : 'uk';
+  const tekst = tr('Розділ завантажиться, щойно ви до нього дійдете…', 'Dit onderdeel laadt zodra u er bent…');
   return (
     <div className='ag-lui-plaats ag-blok-skelet'>
-      <span className='ag-skelet-regel' aria-hidden='true' /><span className='ag-skelet-regel is-kort' aria-hidden='true' /><span className='ag-skelet-regel' aria-hidden='true' />
-      <small>{tr('Розділ завантажиться, щойно ви до нього дійдете…', 'Dit onderdeel laadt zodra u er bent…')}</small>
+      <SkeletBlok
+        lang={taal}
+        variant='lijst'
+        aantal={2}
+        hoogte={52}
+        label={tekst}
+      />
+      <p className='ag-leeg'>{tekst}</p>
     </div>
   );
 }
@@ -525,7 +535,14 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
                     <div className='ag-blokkade-tekst'>
                       <b>{v2Agent(a.slug).naam}</b>{' '}
                       <small className='hub-meta'>({tr(`доступно зараз: ${d.effectiveVisibleToolsCount} із ${d.connectionGranted.totaal}`, `nu beschikbaar: ${d.effectiveVisibleToolsCount} van ${d.connectionGranted.totaal}`)})</small>
-                      <span> — {WEIGER_UITLEG[code][ukTaal ? 'uk' : 'nl']}</span>
+                      <span> — {WEIGER_UITLEG[code][ukTaal ? 'uk' : 'nl']}</span>{' '}
+                      <KopieerKnop
+                        tekst={`${a.slug}: ${code}`}
+                        lang={ukTaal ? 'uk' : 'nl'}
+                        compact
+                        label={tr('Код', 'Code')}
+                        ariaLabel={tr(`Скопіювати код діагностики ${code}`, `Diagnosecode ${code} kopiëren`)}
+                      />
                     </div>
                     <button type='button' className='ag-knop ag-knop-primary' data-ag-blokkade-open={a.slug} onClick={() => ga('agent', a.slug)}>
                       {tr(`Керувати ${v2Agent(a.slug).naam}`, `${v2Agent(a.slug).naam} openen`)} <ArrowRight size={14} aria-hidden='true' />
@@ -623,7 +640,7 @@ function Overzicht({ tr, ga, versie, cijfers, wacht, leeg, matrix }: { tr: Tr; g
             <p className='ag-blok-uitleg'>{tr('Десять останніх дій ШІ, пристроїв і ваших — нові зверху.', 'De tien laatste acties van AI, apparaten en uzelf — nieuwste bovenaan.')}</p>
           </header>
           {j.fout ? <p className='ag-melding ag-melding-fout' role='alert'>{foutTekst(j.fout, tr, ['Не вдалося завантажити події', 'Gebeurtenissen laden mislukt'])}</p> : null}
-          {j.items === null ? <p className='ag-leeg'>{tr('Завантаження…', 'Laden…')}</p> : <JournaalLijst tr={tr} items={j.items.slice(0, 10)} compact />}
+          {j.items === null ? <SkeletBlok lang={tr('uk', 'nl') === 'nl' ? 'nl' : 'uk'} variant='compact' aantal={3} hoogte={40} /> : <JournaalLijst tr={tr} items={j.items.slice(0, 10)} compact />}
         </section>
       </div>
       {matrix}

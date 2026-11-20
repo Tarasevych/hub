@@ -15,7 +15,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react
 import { useNotitiesVnext } from './notities/notities-vlag';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../shared/zoek-diepe-link';
 const NotitiesPagina = lazy(() => import('./notities/NotitiesPagina'));
-import { AlertCircle, Check, Code2, Link2, ListChecks, NotebookPen, Pencil, Pin, PinOff, Plus, Search, Store, Tag, Trash2, Type, X, type LucideIcon } from 'lucide-react';
+import { AlertCircle, Code2, Link2, ListChecks, NotebookPen, Pencil, Pin, PinOff, Plus, Search, Store, Tag, Trash2, Type, X, type LucideIcon } from 'lucide-react';
 import { api, ApiError } from './platform/client';
 import { RuimteGeslotenVlak, RuimteStrook } from './RuimteStrook';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
@@ -28,6 +28,8 @@ import {
   type NotitieKleur, type NotitieSoort, type NotitieVorm,
 } from '../shared/notities-model';
 import MerkLogo from './merk/MerkLogo';
+import { SkeletBlok } from './platform/SkeletBlok';
+import { LegeStaatKaart } from './platform/LegeStaatKaart';
 import './hub-notities.css';
 import './notities/notities-maquette.css';
 
@@ -42,7 +44,7 @@ const SOORT_ICOON: Record<NotitieSoort, LucideIcon> = { tekst: Type, lijst: List
 
 export default function HubNotes({ lang }: { lang: 'uk' | 'nl' }) {
   const vnext = useNotitiesVnext();
-  if (vnext) return <Suspense fallback={<section className='vn' data-vn-pagina='laden' aria-busy='true' />}><NotitiesPagina lang={lang} /></Suspense>;
+  if (vnext) return <Suspense fallback={<section className='vn' data-vn-pagina='laden' aria-busy='true'><SkeletBlok lang={lang} variant='kaarten' aantal={3} hoogte={104} /></section>}><NotitiesPagina lang={lang} /></Suspense>;
   return <HubNotesOud lang={lang} />;
 }
 
@@ -312,9 +314,25 @@ function HubNotesOud({ lang }: { lang: 'uk' | 'nl' }) {
         </div>
       ) : null}
 
-      {notes === null ? <p className='hub-notes-leeg'>{t('Завантаження…', 'Laden…')}</p>
-        : !notes.length && open !== 'nieuw' ? <p className='hub-notes-leeg' data-hub-notes-leeg='1'>{t('Нотаток ще немає. Додайте першу — або попросіть ШІ занотувати щось для вас.', 'Nog geen notities. Voeg de eerste toe — of vraag de AI iets voor u te noteren.')}</p>
-          : !gevonden.length ? <p className='hub-notes-leeg' data-hub-notes-geen-treffer='1'><Check aria-hidden='true' />{t('За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')}</p>
+      {notes === null ? <SkeletBlok lang={lang} variant='kaarten' aantal={3} hoogte={88} />
+        : !notes.length && open !== 'nieuw' ? (
+          <LegeStaatKaart
+            className='hub-notes-leeg'
+            data-hub-notes-leeg='1'
+            icoon={<NotebookPen />}
+            uitleg={t('Нотаток ще немає. Додайте першу — або попросіть ШІ занотувати щось для вас.', 'Nog geen notities. Voeg de eerste toe — of vraag de AI iets voor u te noteren.')}
+            actie={{ label: t('Нова нотатка', 'Nieuwe notitie'), icoon: <Plus />, onClick: () => start() }}
+          />
+        )
+          : !gevonden.length ? (
+            <LegeStaatKaart
+              className='hub-notes-leeg'
+              data-hub-notes-geen-treffer='1'
+              icoon={<Search />}
+              uitleg={t('За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')}
+              actie={{ label: t('Скинути фільтр', 'Filter wissen'), icoon: <X />, onClick: () => { setVraag(''); setEtiket(''); setSoortFilter(''); } }}
+            />
+          )
             : (
               <ul className='hub-notes-lijst'>
                 {gevonden.map((n) => {
