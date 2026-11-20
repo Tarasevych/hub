@@ -7,8 +7,9 @@ type Props = { onClick: () => void; label?: string; disabled?: boolean; klein?: 
 
 export function SluitKnop({ onClick, label, disabled, klein, rond, className = '', autoFocus }: Props) {
   const tekst = label || (routeLang() === 'nl' ? 'Sluiten' : 'Закрити');
+  const tipTekst = /\bEsc\b/i.test(tekst) ? tekst : `${tekst} (Esc)`;
   return (
-    <button type='button' className={`sluitknop${klein ? ' is-klein' : ''}${rond ? ' is-rond' : ''}${className ? ` ${className}` : ''}`} onClick={onClick} disabled={disabled} aria-label={tekst} title={tekst} autoFocus={autoFocus} data-sluitknop='1'>
+    <button type='button' className={`sluitknop${klein ? ' is-klein' : ''}${rond ? ' is-rond' : ''}${className ? ` ${className}` : ''}`} onClick={onClick} disabled={disabled} aria-label={tekst} title={tipTekst} autoFocus={autoFocus} data-sluitknop='1'>
       <X aria-hidden='true' />
     </button>
   );

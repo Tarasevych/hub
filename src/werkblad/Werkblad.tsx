@@ -377,8 +377,8 @@ function WerkbladV2({ lang, ownerUserId, naam, magBewerken, rechten, oudeBlokken
   return (
     <section className={`werkblad wb-achtergrond-${indeling.achtergrond}${instellen ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad={geladen ? 'klaar' : 'laden'} data-wb-ruimte={ruimte} data-wb-kolommen={kolommen} data-wb-aantal={items.length} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
-        {/* De paginakop (h1 «Робочий стіл» in App.tsx) staat er al; deze kop is er voor schermlezers en de regio-naam. */}
-        <h2 id='werkblad-kop' className='sr-only'>{tr(lang, 'Віджети робочого столу', 'Widgets van het werkblad')}</h2>
+        {/* Заголовок сторінки (h1 «Робочий стіл» в App.tsx) уже є; span.sr-only тримає назву секції для aria-labelledby без зайвого h2. */}
+        <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Віджети робочого столу', 'Widgets van het werkblad')}</span>
         {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span> : null}
         <div className='wb-balk-acties'>
           <button type='button' className='knop-stil is-klein' onClick={vernieuwen} aria-label={tr(lang, 'Оновити дані віджетів', 'Widgetgegevens vernieuwen')} title={tr(lang, 'Оновити', 'Vernieuwen')}><RefreshCw aria-hidden='true' /></button>

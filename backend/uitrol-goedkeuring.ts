@@ -70,6 +70,15 @@ import {
   SelectiefFout,
 } from './uitrol-selectief-terugdraaien';
 import { evalueerDrieFactoren, normaliseerHerkomst, type HerkomstKanaal } from '../shared/uitrol-drie-factoren';
+import {
+  VerdeeldeOpslagFout,
+  verdeeldeOpslagControleer,
+  verdeeldeOpslagKnoopOpslaan,
+  verdeeldeOpslagKnoopVerwijderen,
+  verdeeldeOpslagManifest,
+  verdeeldeOpslagOefenHerstel,
+  verdeeldeOpslagOverzicht,
+} from './verdeelde-opslag-beheer';
 
 export const UITROL_LIMIETEN = Object.freeze({
   maxBytes: 300 * 1024 * 1024,
@@ -1374,7 +1383,7 @@ export async function heeftVoorbereiderGrant(onderwerpen: Onderwerp[]) { try { r
 // ------------------------------------------------------------------------------------------------ routes
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
-type Ctx = { event: Record<string, unknown>; body: unknown };
+type Ctx = { event: Record<string, unknown>; body: unknown; query?: Record<string, string>; params?: Record<string, string> };
 type Resp = ReturnType<typeof json>;
 export type UitrolRouteDeps = { requireSession: RequireSession; stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
 const body = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
@@ -1462,6 +1471,9 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   const metFouten = async (run: () => Promise<unknown>): Promise<Resp> => {
     try { return json(await run()); }
     catch (err) {
+      if (err instanceof VerdeeldeOpslagFout) {
+        return err.details ? json({ error: err.code, ...err.details }, err.status) : error(err.code, err.status);
+      }
       if (err instanceof UitrolFout || err instanceof VereistenFout || err instanceof SleutelFout || err instanceof SelectiefFout) return error(err.code, err.status);
       console.error('[uitrol-goedkeuring]', (err as Error).message);
       return error('UITROL_FOUT', 500);
@@ -1470,7 +1482,8 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   /** Eigenaar op admin.tarasevych.com; stepUp: recente herbevestiging (registreren, grants geven). */
   const eigenaar = (opts: { stepUp?: boolean; sterk?: boolean; reden?: boolean }, run: (ctx: Ctx, auth: SessionOk) => Promise<unknown>) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
-    const auth = await deps.requireSession(ctx.event, ctx.body);
+    const sessieInvoer = ctx.query && Object.keys(ctx.query).length ? { ...ctx.query, ...body(ctx.body) } : ctx.body;
+    const auth = await deps.requireSession(ctx.event, sessieInvoer);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (auth.service !== 'admin') return error('ADMIN_SERVICE_REQUIRED', 403);
     if (!isEigenaar(auth.user)) return error('OWNER_REQUIRED', 403);
@@ -1598,6 +1611,13 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
       })).catch(() => undefined);
       return uit;
     })],
+    // UPD-013: розподілене зашифроване зберігання Шаміра (k-з-n): реєстр вузлів, перевірка без збирання ключа, навчальна ротація та очищений маніфест.
+    'GET /api/owner/verdeelde-opslag/overzicht': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagOverzicht(auth.user.id, ctx.query))],
+    'POST /api/owner/verdeelde-opslag/knoop': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagKnoopOpslaan(wie(auth), body(ctx.body)))],
+    'DELETE /api/owner/verdeelde-opslag/knoop/:id': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagKnoopVerwijderen(wie(auth), ctx.params?.id, { modus: ctx.query?.modus }))],
+    'POST /api/owner/verdeelde-opslag/controleer': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagControleer(wie(auth), body(ctx.body)))],
+    'POST /api/owner/verdeelde-opslag/oefen-herstel': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagOefenHerstel(wie(auth), body(ctx.body)))],
+    'GET /api/owner/verdeelde-opslag/manifest': [eigenaar({}, async (ctx, auth) => verdeeldeOpslagManifest(auth.user.id, ctx.query || {}))],
     // Passkeys (registreren, «Може схвалювати оновлення сервера», intrekken): backend/toegangssleutels.ts → Instellingen → «Способи входу».
     // Voorbereiden met een gewone sessie (account-grant). Agents gebruiken de MCP-hulpmiddelen hierboven.
     'POST /api/uitrol/voorstel/begin': [voorbereider(voorstelBegin)],

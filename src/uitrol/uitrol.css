@@ -886,3 +886,43 @@ button[aria-current] .ut-rv-best-oog{color:var(--ut-info)}
   .ut-3f-code-rij{grid-template-columns:1fr}
 }
 
+/* UPD-013: панель розподіленого зашифрованого зберігання Шаміра (k-з-n) — лише змінні теми CSS */
+.ut-vo-kaart{display:grid;gap:12px}
+.ut-vo-status{display:grid;gap:6px;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-vo-status[data-kleur="groen"]{border-color:var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-vo-status[data-kleur="geel"]{border-color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-vo-status[data-kleur="rood"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-vo-status-kop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ut-vo-status-kop svg{width:18px;height:18px;flex:none}
+.ut-vo-status[data-kleur="groen"] .ut-vo-status-kop svg{color:var(--ut-ok)}
+.ut-vo-status[data-kleur="geel"] .ut-vo-status-kop svg{color:var(--ut-warn)}
+.ut-vo-status[data-kleur="rood"] .ut-vo-status-kop svg{color:var(--ut-err)}
+.ut-vo-licht{width:11px;height:11px;border-radius:50%;flex:none;background:var(--ut-muted)}
+.ut-vo-licht[data-kleur="groen"]{background:var(--ok-vlak)}
+.ut-vo-licht[data-kleur="geel"]{background:var(--warn-vlak)}
+.ut-vo-licht[data-kleur="rood"]{background:var(--fout-vlak)}
+.ut-vo-drempel-badge{margin-left:auto;padding:2px 10px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font-size:.78rem;font-weight:700}
+.ut-vo-stat-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+.ut-vo-drempel-keuze{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;border-radius:10px;border:1px solid var(--ut-line);background:var(--ut-bg2);flex-wrap:wrap}
+.ut-vo-drempel-keuze label{display:grid;gap:3px;font-size:.76rem;color:var(--ut-muted)}
+.ut-vo-drempel-keuze input{width:64px;min-height:36px;padding:4px 8px;border-radius:8px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit}
+.ut-vo-dekking{display:grid;gap:6px}
+.ut-vo-dekking-rij{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ut-vo-dekking-rij .ut-sub{display:inline-flex;align-items:center;gap:4px}
+.ut-vo-dekking-rij .ut-sub svg{width:14px;height:14px}
+.ut-vo-waarschuwingen{margin:0;padding:10px 12px 10px 28px;border-radius:10px;border:1px solid var(--ut-warn);background:var(--ut-warn-bg);color:var(--ut-text);display:grid;gap:4px;font-size:.86rem}
+.ut-vo-oefen{display:grid;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-vo-oefen[data-geslaagd="false"]{border-color:var(--ut-err);background:var(--ut-err-bg)}
+.ut-vo-stappen{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ut-vo-stappen li{display:flex;align-items:flex-start;gap:8px;font-size:.85rem}
+.ut-vo-stappen li svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--ut-ok)}
+.ut-vo-stappen li[data-ok="false"] svg{color:var(--ut-err)}
+.ut-vo-meta{display:flex;gap:8px 14px;flex-wrap:wrap;font-size:.82rem;color:var(--ut-muted)}
+.ut-vo-meta b{color:var(--ut-text)}
+.ut-vo-rotaties{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.ut-vo-rotaties li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:9px;border:1px solid var(--ut-line);background:var(--ut-bg);font-size:.83rem}
+@media (max-width:640px){
+  .ut-vo-drempel-badge{margin-left:0}
+}
+
+

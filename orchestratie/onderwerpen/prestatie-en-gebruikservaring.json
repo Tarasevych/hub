@@ -43,6 +43,7 @@
     "src/uitrol/Upload.tsx",
     "src/platform/uitrol-achtergrond-beheer.ts",
     "src/GoogleMailWerkruimte.tsx",
+    "src/mail/MailWerkruimteExtra.ts",
     "src/google-mail-werkruimte.css",
     "src/mail-mobiel.css",
     "src/mail/mail-lezer-compact-kop.css",
@@ -57,6 +58,14 @@
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
       "uk": "Впроваджено базу профілів екранів (shared/scherm-profielen.ts), адаптивний планувальник мережі й пріоритету кліку (src/platform/adaptief-laden.ts), чесну верхню смугу реальних запитів, вимкнення важких фонів/прогріву на повільному інтернеті, TTL-кеш списку листів, усунення білої смуги й наїзду кнопок у пошті, правки аудиту UX та IndexedDB-відновлення обраного архіву після вивантаження вкладки браузером."
+    },
+    {
+      "taakId": "UPD-013",
+      "tak": "feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Виконано ліниве розбиття моноліту src/GoogleMailWerkruimte.tsx: 19 некритичних для першого екрана компонентів (читач листа, панель контексту, панель інструментів читача, пошук v2, розширений пошук, модальні діалоги, IMAP, підписки, налаштування, вікна вкладень) переведено на React.lazy із <Suspense fallback={null}>, а 30 модулів визначення можливостей редакторів вкладень (mail-*-mogelijkheden.ts) винесено в лінивий модуль src/mail/MailWerkruimteExtra.ts. Початкова збірка пошти MailFunctioneelWeergave зменшилася з 950,35 кБ до 534,14 кБ JS (−416,21 кБ, −43,8%) і з 616,29 кБ до 468,24 кБ CSS (−148,05 кБ, −24,0%)."
     }
   ],
   "mogelijkheden": [
@@ -101,6 +110,12 @@
       "uk": "Правки аудиту клієнтського досвіду: єдина шкала H1 > H2, сенсорні зони >= 44 px, скелетні заповнювачі, індикація aria-busy",
       "sinds": "UPD-012",
       "staat": "actief"
+    },
+    {
+      "id": "mail-lui-splitsen",
+      "uk": "Ліниве розбиття GoogleMailWerkruimte.tsx: 19 вторинних компонентів на React.lazy і 30 модулів можливостей вкладень у src/mail/MailWerkruimteExtra.ts (−43,8% JS і −24,0% CSS початкової збірки MailFunctioneelWeergave)",
+      "sinds": "UPD-013",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -116,7 +131,7 @@
     }
   ],
   "open": [
-    "Подальше розбиття моноліту src/GoogleMailWerkruimte.tsx (417 КБ) на ліниві підмодулі переглядача вкладень та редактора."
+    "Подальше винесення інтерфейсу швидких налаштувань (MailSnelleInstellingen) та локального перегляду вкладених файлів із основного ядра GoogleMailWerkruimte.tsx за потреби подальшого зменшення нижче 500 кБ."
   ],
   "bijgewerkt": "2026-11-20"
 }

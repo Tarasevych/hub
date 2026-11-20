@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UPD-013",
+  "agent": "gemini",
+  "tak": "feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000",
+  "basisCommit": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.18",
+  "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T09:54:23.404Z",
+  "bijgewerkt": "2026-11-20T09:54:23.404Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

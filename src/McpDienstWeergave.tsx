@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Activity, Archive, ArrowUp, Boxes, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Monitor, Play, Plug, Plus, RefreshCw, Server, Settings2, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
+import { SkeletBlok } from './platform/SkeletBlok';
+import { KopieerKnop } from './platform/KopieerKnop';
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from "../shared/ruimte-weergave";
@@ -814,7 +816,14 @@ export default function McpServiceView({ lang, tab }: Props) {
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
   const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
-  if (ingang) return <p className="mcp-lead">{t("Переходимо до підключень ШІ…", "Door naar de AI-koppelingen…")}</p>;
+  if (ingang) {
+    return (
+      <section className="mcp-estate">
+        <PageHead icon={<Plug />} title={t("Підключення ШІ", "AI-koppelingen")} lead={t("Переходимо до підключень ШІ…", "Door naar de AI-koppelingen…")} />
+        <SkeletBlok lang={lang} variant="compact" aantal={2} hoogte={44} label={t("Переходимо до підключень ШІ…", "Door naar de AI-koppelingen…")} />
+      </section>
+    );
+  }
 
   /**
    * Lijst met de hosts van het domein. `zonderProbe` bepaalt de badge zolang er nog niet gecontroleerd is; zodra er een
@@ -892,7 +901,12 @@ export default function McpServiceView({ lang, tab }: Props) {
           onKies={springNaarMcpBlok}
         />
       ) : null}
-      {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
+      {verborgen ? (
+        <>
+          <PageHead icon={<Plug />} title={t("Міст ШІ → сайт", "Brug AI → site")} />
+          <ExpertMelding uk={lang === "uk"} />
+        </>
+      ) : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-error" role="alert">{error}</p> : null}
       {busy && busy !== "archive" && section !== "agents" && section !== "apps" ? <p className="mcp-meta" role="status">{busy}</p> : null}
 
@@ -909,7 +923,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             <Stat value={DOOR_TOOLS.length} label={t("інструментів дверей", "hulpmiddelen van de deur")} />
             <Stat value="HTTP" label={t("JSON-RPC, без SSE", "JSON-RPC, geen SSE")} />
           </div>
-          <Block id="mcp-blok-lagen" icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається brug, van binnen naar buiten.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
+          <Block id="mcp-blok-lagen" icon={<Layers />} title={t("Шар мосту", "Laag van de brug")} hint={t("Із чого складається міст, зсередини назовні.", "Waaruit de brug bestaat, van binnen naar buiten.")}>
             <ul className="mcp-list">
               {LAYERS.map(([name, uk, nl]) => (
                 <li key={name} className="mcp-item">
@@ -922,7 +936,13 @@ export default function McpServiceView({ lang, tab }: Props) {
           <Block id="mcp-blok-poort" icon={<ShieldCheck />} title={t("Чому агенти не бачать сайт", "Waarom agenten de site niet zien")}>
             <p>{t("Кожен публічний хост відповідає, але id тримає браму. Браузерний логін — для людей. Агенту потрібен контракт: JSON-RPC, скоупи, аудит.", "Elke host antwoordt, maar id houdt de poort. Browserlogin is voor mensen. Een agent heeft een contract nodig.")}</p>
           </Block>
-          <Block id="mcp-blok-adres" icon={<Link2 />} title={t("Публічне ім’я", "Publieke naam")} hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}>
+          <Block
+            id="mcp-blok-adres"
+            icon={<Link2 />}
+            title={t("Публічне ім’я", "Publieke naam")}
+            hint={t("Адреса конектора: кожен ШІ має власну.", "Elke AI heeft een eigen connectoradres.")}
+            actions={<KopieerKnop tekst={MCP_BASIS} lang={lang} compact label={t("Копіювати адресу", "Adres kopiëren")} />}
+          >
             <p className="mcp-url">{MCP_BASIS}</p>
             <p>{t(`Адреса конектора — у кожного ШІ своя: ${V2_AGENTEN.map((a) => agentPad(a.slug)).join(", ")}.`, `Het connectoradres is per AI: ${V2_AGENTEN.map((a) => agentPad(a.slug)).join(", ")}.`)}</p>
           </Block>
@@ -1067,7 +1087,12 @@ export default function McpServiceView({ lang, tab }: Props) {
       {section === "apps" && <McpAppsView lang={lang} />}
 
       {/* mcp-verbindingen → hub #technisch (zie mcpIngang); tot de omleiding een korte verwijzing in plaats van een lege pagina. */}
-      {section === "verbindingen" && <p className="mcp-lead"><a href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, "")}${consent ? location.search : ""}#technisch`}>{t("Технічні підключення тепер у «Підключення ШІ» → «Технічне»", "Technische verbindingen staan nu in «AI-koppelingen» → «Technisch»")}</a></p>}
+      {section === "verbindingen" && (
+        <>
+          <PageHead icon={<Plug />} title={t("Технічні підключення", "Technische verbindingen")} lead={t("Усі технічні підключення перенесено до єдиного розділу «Підключення ШІ».", "Alle technische verbindingen zijn samengebracht in «AI-koppelingen».")} />
+          <p className="mcp-lead"><a href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, "")}${consent ? location.search : ""}#technisch`}>{t("Технічні підключення тепер у «Підключення ШІ» → «Технічне»", "Technische verbindingen staan nu in «AI-koppelingen» → «Technisch»")}</a></p>
+        </>
+      )}
 
       {section === "playground" && (
         <>
@@ -1109,7 +1134,9 @@ export default function McpServiceView({ lang, tab }: Props) {
             actions={<button type="button" className="mcp-btn ghost small" disabled={Boolean(busy)} onClick={() => void run("traffic", loadTraffic)}>{t("Оновити", "Verversen")}</button>}
           />
           <Block id="mcp-blok-verzoeken" icon={<Activity />} title={t("Запити", "Verzoeken")} hint={rows.length ? `${rows.length} ${t("рядків", "regels")}` : undefined}>
-            {rows.length === 0
+            {busy === "traffic" && rows.length === 0 ? (
+              <SkeletBlok lang={lang} variant="lijst" aantal={3} hoogte={54} />
+            ) : rows.length === 0
               ? <Empty icon={<Activity />}>{t("Ще немає запитів у цьому журналі. Щойно агент скористається мостом, вони з’являться тут.","Nog geen verzoeken in dit logboek. Zodra een agent de brug gebruikt, verschijnen ze hier.")}</Empty>
               : <ul className="mcp-list">{rows.map((row) => (
                 <li key={row.id} className="mcp-item">
@@ -1146,7 +1173,11 @@ export default function McpServiceView({ lang, tab }: Props) {
             ))}
           </div>
           <div id="mcp-blok-oud" data-oud-adres="1">
-            <Block icon={<History />} title={t("Стара спільна адреса", "Het oude gedeelde adres")}>
+            <Block
+              icon={<History />}
+              title={t("Стара спільна адреса", "Het oude gedeelde adres")}
+              actions={<KopieerKnop tekst={OUD_GEDEELD_URL} lang={lang} compact label={t("Копіювати адресу", "Adres kopiëren")} />}
+            >
               <p className="mcp-url">{OUD_GEDEELD_URL}</p>
               <p className="mcp-meta">{t("Вона ще відповідає для вже підключених клієнтів і перенаправляє (308) на адресу агента. Для нового підключення беріть адресу свого ШІ вище.", "Dit adres antwoordt nog voor al gekoppelde clients en leidt door (308) naar het adres van de agent. Gebruik voor een nieuwe koppeling het adres van uw AI hierboven.")}</p>
             </Block>

@@ -7050,3 +7050,29 @@ flowchart LR
 ```
 
 > Aanvullingslogboek: 2026-11-20 — +1 / +0
+
+## Momentopname 2026-11-20 · live versie `20261120-084148` · commit [`ee79492`](https://github.com/Tarasevych/hub/commit/ee79492666491af3c82ce9127c8a03f37420fdef) · takken 202
+
+### Taken op startdatum
+
+#### <a id="t-upd-013"></a>UPD-013 · 2026-11-20 · agent gemini <!-- k:UPD-013@geen -->
+
+UPD-013: verdeelde versleutelde opslag Shamir k-van-n (migratie 0306, proactieve deelrotatie, oefenherstel, 6 eigenaarsroutes, knoopstatuspaneel), afronding van gebruikservaring-audit 2–9, overname van dossier MELDPANEEL-001 met herstelde meldingsacties en luie splitsing van GoogleMailWerkruimte (−43,8% initiële bundel)
+
+- **Tak:** [`feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000`](https://github.com/Tarasevych/hub/tree/feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000) · tak niet op GitHub (verwijderd of niet gepubliceerd) · status in record: `in_progress`
+- **← Voorganger:** basis [`e3c5ab3`](https://github.com/Tarasevych/hub/commit/e3c5ab3df29724bb7fab0558899bccb71417a82c) · versie `20261120-093715` · vorige taak: [UPD-012](#t-upd-012) (bevat haar top via samenvoeging in `integratie`)
+- **→ Opvolger:** volgende taken: geen
+
+### Opvolgingsschema
+
+```mermaid
+flowchart LR
+  INT[(integratie)]
+  LIVE((live))
+  UPD_013["UPD-013"]
+  UPD_012 --> UPD_013
+  INT --> LIVE
+```
+
+> Aanvullingslogboek: 2026-11-20 — +1 / +0
+

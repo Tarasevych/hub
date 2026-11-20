@@ -85,6 +85,16 @@ function relatief(t: number, nu: number, lang: Lang) {
   const d = Math.round(h / 24); return lang === 'uk' ? `${d} дн` : `${d} d`;
 }
 const tijdLang = (t: number, lang: Lang) => new Date(t).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'medium', timeStyle: 'short' });
+function duurTekst(ms: number, lang: Lang): string {
+  const sec = Math.max(1, Math.round(ms / 1000));
+  if (sec < 60) return lang === 'uk' ? `${sec} с` : `${sec} s`;
+  const min = Math.floor(sec / 60), restSec = sec % 60;
+  if (min < 60) return lang === 'uk' ? `${min} хв${restSec ? ` ${restSec} с` : ''}` : `${min} min${restSec ? ` ${restSec} s` : ''}`;
+  const uren = Math.floor(min / 60), restMin = min % 60;
+  if (uren < 24) return lang === 'uk' ? `${uren} год${restMin ? ` ${restMin} хв` : ''}` : `${uren} u${restMin ? ` ${restMin} min` : ''}`;
+  const dagen = Math.floor(uren / 24), restUren = uren % 24;
+  return lang === 'uk' ? `${dagen} дн${restUren ? ` ${restUren} год` : ''}` : `${dagen} d${restUren ? ` ${restUren} u` : ''}`;
+}
 
 export default function MeldingenV2(p: MeldingenV2Props) {
   const lang = p.lang, t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -94,9 +104,14 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const v3 = p.uitlegV3 ?? v3Vlag;
   const weergaveGr: PaneelWeergave = p.regels.weergave || STANDAARD_WEERGAVE;
   const [later, setLater] = useState<Record<string, number>>(() => laterActief(nu));
+  const [handmatigOngelezen, setHandmatigOngelezen] = useState<Set<string>>(() => new Set());
   // Blijvende status per melding (server): archief, opgelost, uitgesteld. INTEG-001: altijd (vroeger alleen met de vlag v3).
   const statusStand = useStatusStand(true);
-  const model = useMemo(() => bouwModel(p, p.regels, nu, (ms) => pasStatusToe(ms, statusStand, nu)), [p.local, p.server, p.events, p.readEvents, p.lang, p.regels, nu, statusStand]);
+  const model = useMemo(() => bouwModel(p, p.regels, nu, (ms) => {
+    const metStatus = pasStatusToe(ms, statusStand, nu);
+    if (!handmatigOngelezen.size) return metStatus;
+    return metStatus.map((m) => (handmatigOngelezen.has(m.id) ? { ...m, gelezen: false } : m));
+  }), [p.local, p.server, p.events, p.readEvents, p.lang, p.regels, nu, statusStand, handmatigOngelezen]);
   const [sectie, setSectie] = useState<Sectie>(() => p.beginIn ?? beginSectie(model.groepen, nu));
   const [toonVerborgen, setToonVerborgen] = useState(false);
   const [kiezen, setKiezen] = useState(false);
@@ -160,6 +175,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   /** «Очистити»: gelezen + naar «Архів» (status op de server: ook op andere subdomeinen en apparaten); niets wordt gewist. */
   const ruimOp = (gs: V2Groep[]) => void zetGroepen(gs, 'archief', gs.length > 1 ? 'bulk' : 'kaart', undefined, gs.length > 1 ? t(`Очищено: ${gs.length} — у «Архіві».`, `Opgeruimd: ${gs.length} — in «Archief».`) : t('Очищено — у «Архіві». Можна повернути.', 'Opgeruimd — in «Archief». Terug te zetten.'));
   const zetTerug = (gs: V2Groep[]) => void zetGroepen(gs, 'nieuw', 'kaart', undefined, t('Повернуто з архіву.', 'Uit het archief teruggezet.'));
+  const heropenOpgelost = (gs: V2Groep[]) => void zetGroepen(gs, 'nieuw', 'kaart', undefined, t('Знову відкрито.', 'Opnieuw geopend.'));
   const perAanbieder = useMemo(() => accountsPerAanbieder(model.meldingen), [model.meldingen]);
   const nieuwAandacht = sectieLijsten.nieuw.filter(vraagtAandacht).length;
   const ongelezen = groepen.filter((g) => g.ongelezen && g.levering.centrum).length;
@@ -168,7 +184,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
 
   const markeer = (m: V2Melding) => { if (m.gelezen) return; const id = m.id.slice(2); if (m.id.startsWith('s:')) void p.onReadServer?.(id); else if (m.id.startsWith('l:')) p.onReadLocal(id); else p.onReadEvent(id); };
   // Wat in het open paneel te zien is, telt als gelezen (na een korte weergave). In «Нові» blijft het staan tot het paneel sluit (vastNieuw).
-  const zichtbaarOngelezen = geschiedenis ? [] : lijst.flatMap((g) => g.leden.filter((m) => !m.gelezen));
+  const zichtbaarOngelezen = geschiedenis ? [] : lijst.flatMap((g) => g.leden.filter((m) => !m.gelezen && !handmatigOngelezen.has(m.id)));
   const zichtbaarSleutel = zichtbaarOngelezen.map((m) => m.id).join('|');
   useEffect(() => {
     if (!zichtbaarSleutel) return;
@@ -176,12 +192,25 @@ export default function MeldingenV2(p: MeldingenV2Props) {
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zichtbaarSleutel]);
-  const markeerGroep = (g: V2Groep) => { g.leden.forEach(markeer); const terug = g.leden.filter((x) => x.terugOp).map((x) => x.id); if (terug.length) void wijzigStatus({ ids: terug, status: 'gelezen', hoe: 'kaart' }); };
+  const markeerGroep = (g: V2Groep) => {
+    if (g.leden.some((x) => handmatigOngelezen.has(x.id))) {
+      setHandmatigOngelezen((c) => { const n = new Set(c); g.leden.forEach((x) => n.delete(x.id)); return n; });
+    }
+    g.leden.forEach(markeer);
+    const terug = g.leden.filter((x) => x.terugOp).map((x) => x.id);
+    if (terug.length) void wijzigStatus({ ids: terug, status: 'gelezen', hoe: 'kaart' });
+  };
+  const markeerOngelezen = (g: V2Groep) => {
+    vastNieuw.current.add(g.sleutel);
+    setHandmatigOngelezen((c) => { const n = new Set(c); g.leden.forEach((x) => n.add(x.id)); return n; });
+    void zetGroepen([g], 'nieuw', 'kaart', undefined, t('Позначено як непрочитане.', 'Als ongelezen gemarkeerd.'));
+  };
   const regel = async (doel: { dienst?: string; account?: string; categorie?: string }, modus: LeverModus | null, uitleg: string) => {
     const ok = await bewaarRegels(zetRegel(p.regels, doel, modus));
     setMelding(ok ? uitleg : t('Не вдалося зберегти. Спробуйте ще раз.', 'Opslaan mislukt. Probeer opnieuw.'));
   };
   const isHerstelbaar = (g: V2Groep) => g.leden.some((x) => { const s = statusStand.items[x.id]?.s; return s === 'archief' || s === 'opgelost'; });
+  const isOpgelostHerstelbaar = (g: V2Groep) => g.leden.some((x) => statusStand.items[x.id]?.s === 'opgelost');
   const kiesSectie = (s: Sectie) => { setSectie(s); setGekozen(new Set()); setOpen(null); setMenu(null); };
 
   const dienstNaam = (d: string) => styleOf(SECTIE_VAN_DIENST[d] || 'site', lang).label;
@@ -200,6 +229,10 @@ export default function MeldingenV2(p: MeldingenV2Props) {
     const inArchief = sectieVanGroep(g, nu) === 'archief';
     // Terugzetten kan alleen wat u (of de bewaartermijn) opruimde/oploste — een fout die een latere gelukte stap oploste, blijft opgelost.
     const herstelbaar = isHerstelbaar(g);
+    const opgelostHerstelbaar = isOpgelostHerstelbaar(g);
+    const eersteTijd = g.leden[g.leden.length - 1]?.tijd ?? m.tijd;
+    const laatsteTijd = m.tijd;
+    const verloopDuur = Math.max(0, laatsteTijd - eersteTijd);
     const nr = nieuwNr.get(g.sleutel), merk = nr ? 'nieuw' : sectieVanGroep(g, nu) === 'gelezen' ? 'gelezen' : undefined;
     return (
       <li key={g.sleutel} data-merk={merk} className={`mv2-rij e-${g.ernst}${g.ongelezen ? ' is-nieuw' : ''}${isOpen ? ' is-open' : ''}${kiezen ? ' is-kiezen' : ''}`} data-modus={g.levering.modus} data-toestand={g.toestand} data-sectie={sectieVanGroep(g, nu)} data-verborgen={verborgenReden(g) || undefined} aria-labelledby={id}>
@@ -218,13 +251,15 @@ export default function MeldingenV2(p: MeldingenV2Props) {
             {g.hoofd.terugOp ? <span className='mv2-toestand t-terug'>{t('Повернулось після відкладення', 'Terug na uitstel')}</span> : null}
             {verborgenReden(g) ? <span className='mv2-toestand t-verborgen'><EyeOff aria-hidden='true' />{verborgenReden(g) === 'stil-standaard' ? t('Тихе типово', 'Standaard stil') : verborgenReden(g) === 'regel-uit' ? t('Вимкнено правилом', 'Uit door regel') : t('Тихе за правилом', 'Stil door regel')}</span> : null}
             <time dateTime={new Date(m.tijd).toISOString()} title={tijdLang(m.tijd, lang)}>{relatief(m.tijd, nu, lang)}</time>
-            {g.hoofd.herhaald && g.hoofd.herhaald > 1 ? <span className='mv2-aantal' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{g.hoofd.herhaald}</span> : null}{g.aantal > 1 ? <span className='mv2-aantal' title={t(`${g.aantal} подій цього процесу`, `${g.aantal} gebeurtenissen van dit proces`)}>×{g.aantal}</span> : null}
+            {g.hoofd.herhaald && g.hoofd.herhaald > 1 ? <span className='mv2-aantal' title={t('Та сама подія, об’єднано', 'Dezelfde gebeurtenis, samengevoegd')}>×{g.hoofd.herhaald}</span> : null}{g.aantal > 1 ? <span className='mv2-aantal' title={t(`${g.aantal} подій · Перша поява: ${tijdLang(eersteTijd, lang)} · Остання поява: ${tijdLang(laatsteTijd, lang)}${verloopDuur >= 1000 ? ` · Тривалість: ${duurTekst(verloopDuur, lang)}` : ''}`, `${g.aantal} gebeurtenissen · Eerste keer: ${tijdLang(eersteTijd, lang)} · Laatste keer: ${tijdLang(laatsteTijd, lang)}${verloopDuur >= 1000 ? ` · Duur: ${duurTekst(verloopDuur, lang)}` : ''}`)}>×{g.aantal}</span> : null}
           </span>
         </button>
         <div className='mv2-rij-acties'>
           {veiligeMeldingUrl(m.link) ? <a className='mv2-ikoon is-klein' href={veiligeMeldingUrl(m.link)} data-mv2-openen='1' aria-label={t(`Відкрити: ${m.titel}`, `Openen: ${m.titel}`)} data-tip={t('Відкрити, де це виправити', 'Openen waar u het oplost')} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' /></a> : null}
           {herstelbaar
-            ? <button type='button' className='mv2-ikoon is-klein' data-mv2-terug='1' aria-label={t(`Повернути з архіву: ${m.titel}`, `Uit het archief terugzetten: ${m.titel}`)} data-tip={t('Повернути з архіву', 'Uit het archief terugzetten')} onClick={() => zetTerug([g])}><ArchiveRestore aria-hidden='true' /></button>
+            ? (opgelostHerstelbaar
+              ? <button type='button' className='mv2-ikoon is-klein' data-mv2-heropenen='1' aria-label={t(`Знову відкрити: ${m.titel}`, `Opnieuw openen: ${m.titel}`)} data-tip={t('Знову відкрити', 'Opnieuw openen')} onClick={() => heropenOpgelost([g])}><RotateCcw aria-hidden='true' /></button>
+              : <button type='button' className='mv2-ikoon is-klein' data-mv2-terug='1' aria-label={t(`Повернути з архіву: ${m.titel}`, `Uit het archief terugzetten: ${m.titel}`)} data-tip={t('Повернути з архіву', 'Uit het archief terugzetten')} onClick={() => zetTerug([g])}><ArchiveRestore aria-hidden='true' /></button>)
             : !inArchief ? <button type='button' className='mv2-ikoon is-klein' data-mv2-opruimen='1' aria-label={t(`Очистити: ${m.titel}`, `Opruimen: ${m.titel}`)} data-tip={t('Очистити — у «Архів» (можна повернути)', 'Opruimen — naar «Archief» (terug te zetten)')} onClick={() => ruimOp([g])}><Archive aria-hidden='true' /></button> : null}
           <div className='mv2-menu-houder'>
             <button type='button' className='mv2-ikoon is-klein' aria-haspopup='menu' aria-expanded={menu === g.sleutel} aria-label={t('Інші дії з цим сповіщенням', 'Meer acties voor deze melding')} aria-describedby={id} data-tip={t('Ще: вирішено, відкласти, правила', 'Meer: opgelost, uitstellen, regels')} onClick={(e) => { if (menu === g.sleutel) { setMenu(null); return; } const w = wortel.current?.getBoundingClientRect(), r = e.currentTarget.getBoundingClientRect(); if (w) { const onder = w.bottom - r.bottom, boven = r.top - w.top; setMenuPlek(onder >= 300 || onder >= boven ? { top: r.bottom - w.top + 2, right: Math.max(6, w.right - r.right) } : { bottom: w.bottom - r.top + 2, right: Math.max(6, w.right - r.right) }); } setMenu(g.sleutel); }}><Ellipsis aria-hidden='true' /></button>
@@ -241,9 +276,18 @@ export default function MeldingenV2(p: MeldingenV2Props) {
               onTypeStil={() => void regel({ dienst: m.dienst, categorie: m.categorie || m.soort }, 'stil', t('Такі події тепер тихі.', 'Zulke gebeurtenissen zijn nu stil.'))} /> : null}
             {g.openFout && g.hoofd.ernst !== 'fout' ? <p className='mv2-let'><CircleAlert aria-hidden='true' />{t('Раніше в цьому процесі була помилка, яку ще не вирішено.', 'Eerder in dit proces trad een fout op die nog niet is opgelost.')}</p> : null}
             {g.aantal > 1 ? (
-              <details className='mv2-verloop'><summary>{t(`Історія запусків (${g.aantal})`, `Verloop (${g.aantal})`)}</summary>
-                <ol>{g.leden.slice(0, 50).map((x) => <li key={x.id} className={`e-${x.ernst}`}><time>{tijdLang(x.tijd, lang)}</time><span>{x.titel}{x.object ? ` · ${x.object}` : ''}</span></li>)}</ol>
-              </details>
+              <>
+                <p className='mv2-statusinfo' data-mv2-verloop-tijden='1'>
+                  <Clock aria-hidden='true' />
+                  {t('Перша поява', 'Eerste keer')}: {tijdLang(eersteTijd, lang)}
+                  {' · '}
+                  {t('Остання поява', 'Laatste keer')}: {tijdLang(laatsteTijd, lang)}
+                  {verloopDuur >= 1000 ? ` · ${t('Тривалість', 'Duur')}: ${duurTekst(verloopDuur, lang)}` : ''}
+                </p>
+                <details className='mv2-verloop'><summary>{t(`Історія запусків (${g.aantal})`, `Verloop (${g.aantal})`)}</summary>
+                  <ol>{g.leden.slice(0, 50).map((x) => <li key={x.id} className={`e-${x.ernst}`}><time>{tijdLang(x.tijd, lang)}</time><span>{x.titel}{x.object ? ` · ${x.object}` : ''}</span></li>)}</ol>
+                </details>
+              </>
             ) : null}
             {m.technischeTekst ? <details className='mv2-tech'><summary>{t('Технічні подробиці', 'Technische details')}</summary><code>{m.technischeTekst}</code></details> : null}
             {veiligeMeldingUrl(m.link) && !v3 ? <a className='mv2-knop-link' href={veiligeMeldingUrl(m.link)} onClick={() => markeerGroep(g)}>{t('Відкрити, де це виправити', 'Openen waar u het oplost')}<ExternalLink aria-hidden='true' /></a> : null}
@@ -256,9 +300,14 @@ export default function MeldingenV2(p: MeldingenV2Props) {
   const menuInhoud = (g: V2Groep) => {
     const m = g.hoofd;
     const veiligLink = veiligeMeldingUrl(m.link);
+    const opgelostHerstelbaar = isOpgelostHerstelbaar(g);
     return (
       <>
-        {g.ongelezen ? <button role='menuitem' type='button' onClick={() => { markeerGroep(g); setMenu(null); }}><Check aria-hidden='true' />{t('Позначити прочитаним', 'Als gelezen markeren')}</button> : null}
+        {g.ongelezen
+          ? <button role='menuitem' type='button' onClick={() => { markeerGroep(g); setMenu(null); }}><Check aria-hidden='true' />{t('Позначити прочитаним', 'Als gelezen markeren')}</button>
+          : g.toestand !== 'archief' && g.toestand !== 'opgelost'
+            ? <button role='menuitem' type='button' data-mv2-ongelezen='1' onClick={() => { markeerOngelezen(g); setMenu(null); }}><BellDot aria-hidden='true' />{t('Позначити як непрочитане', 'Als ongelezen markeren')}</button>
+            : null}
         {veiligLink ? <a role='menuitem' href={veiligLink} onClick={() => markeerGroep(g)}><ExternalLink aria-hidden='true' />{t('Відкрити джерело', 'Bron openen')}</a> : null}
         {g.toestand !== 'opgelost' ? <button role='menuitem' type='button' onClick={() => { void zetGroepen([g], 'opgelost', 'kaart', undefined, t('Позначено вирішеним — у «Архіві».', 'Als opgelost gemarkeerd — in «Archief».')); setMenu(null); }}><CircleCheck aria-hidden='true' />{t('Позначити вирішеним', 'Als opgelost markeren')}</button> : null}
         {g.toestand !== 'archief' ? <button role='menuitem' type='button' onClick={() => { ruimOp([g]); setMenu(null); }}><Archive aria-hidden='true' />{t('Очистити (в архів)', 'Opruimen (naar archief)')}</button> : null}
@@ -266,7 +315,11 @@ export default function MeldingenV2(p: MeldingenV2Props) {
           <button role='menuitem' type='button' onClick={() => { void zetGroepen([g], 'uitgesteld', 'kaart', nu + 3600_000, t('Відкладено на годину.', 'Een uur uitgesteld.')); setMenu(null); }}><Clock aria-hidden='true' />{t('Відкласти на годину', 'Een uur uitstellen')}</button>
           <button role='menuitem' type='button' onClick={() => { void zetGroepen([g], 'uitgesteld', 'kaart', morgen(nu), t('Відкладено до завтра, 9:00.', 'Uitgesteld tot morgen 9:00.')); setMenu(null); }}><Clock aria-hidden='true' />{t('Відкласти до завтра', 'Uitstellen tot morgen')}</button>
         </> : null}
-        {isHerstelbaar(g) ? <button role='menuitem' type='button' onClick={() => { zetTerug([g]); setMenu(null); }}><RotateCcw aria-hidden='true' />{t('Повернути з архіву', 'Uit het archief terugzetten')}</button> : null}
+        {opgelostHerstelbaar
+          ? <button role='menuitem' type='button' data-mv2-heropenen='1' onClick={() => { heropenOpgelost([g]); setMenu(null); }}><RotateCcw aria-hidden='true' />{t('Знову відкрити', 'Opnieuw openen')}</button>
+          : isHerstelbaar(g)
+            ? <button role='menuitem' type='button' onClick={() => { zetTerug([g]); setMenu(null); }}><RotateCcw aria-hidden='true' />{t('Повернути з архіву', 'Uit het archief terugzetten')}</button>
+            : null}
         <hr />
         {g.levering.beschermd
           ? <p className='mv2-menu-uitleg'><ShieldCheck aria-hidden='true' />{t('Важливе для безпеки — приглушити не можна.', 'Belangrijk voor de beveiliging — dempen kan niet.')}</p>
@@ -463,7 +516,7 @@ export default function MeldingenV2(p: MeldingenV2Props) {
         {!geschiedenis ? <button type='button' className='mv2-ikoon is-klein' data-mv2-historie-knop='1' aria-label={t(`Уся історія: ${model.tellers.totaal}`, `Volledige geschiedenis: ${model.tellers.totaal}`)} data-tip={t('Уся історія', 'Volledige geschiedenis')} onClick={() => setGeschiedenis(true)}><History aria-hidden='true' /><span className='mv2-sr'>{t('Уся історія', 'Volledige geschiedenis')}</span></button> : <span className='mv2-uitleg'>{t(`Записів: ${model.tellers.regels}, об’єднано в ${model.tellers.totaal}`, `Regels: ${model.tellers.regels}, samengevoegd tot ${model.tellers.totaal}`)}</span>}
         {p.tech ? <button type='button' className='mv2-ikoon is-klein is-tech' onClick={p.tech.open} aria-label={p.tech.tekst} data-tip={t('Технічні сповіщення', 'Technische meldingen')}><ShieldCheck aria-hidden='true' />{p.tech.aantal ? <span className='mv2-n is-zacht'>{p.tech.aantal}</span> : null}</button> : null}
         <span className='mv2-voet-ruimte' aria-hidden='true' />
-        <button type='button' className='mv2-ikoon is-klein' aria-label={t('Позначити все прочитаним', 'Alles als gelezen')} data-tip={t('Позначити все прочитаним', 'Alles als gelezen')} disabled={!ongelezen} onClick={() => void p.onMarkAll()}><CheckCheck aria-hidden='true' /></button>
+        <button type='button' className='mv2-ikoon is-klein' aria-label={t('Позначити все прочитаним', 'Alles als gelezen')} data-tip={t('Позначити все прочитаним', 'Alles als gelezen')} disabled={!ongelezen} onClick={() => { setHandmatigOngelezen(new Set()); void p.onMarkAll(); }}><CheckCheck aria-hidden='true' /></button>
         <button type='button' className='mv2-ikoon is-klein' aria-label={t('Правила сповіщень', 'Meldingsregels')} data-tip={t('Правила й типи сповіщень', 'Regels en soorten meldingen')} onClick={() => setPaneel('regels')}><Settings2 aria-hidden='true' /></button>
         <button type='button' className='mv2-ikoon is-klein' aria-label={p.geluid ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')} data-tip={p.geluid ? t('Звук увімкнено', 'Geluid aan') : t('Звук вимкнено', 'Geluid uit')} aria-pressed={p.geluid} onClick={p.onGeluid}>{p.geluid ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}</button>
       </footer>

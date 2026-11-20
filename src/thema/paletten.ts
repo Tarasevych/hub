@@ -18,12 +18,12 @@ const totContrast = (kleur: string, tegen: string, min: number, richting: '#0000
 
 export const PUUR: { licht: Waarden; donker: Waarden } = {
   licht: { bg: '#ffffff', panel: '#ffffff', surface: '#f5f5f5', surface2: '#ebebeb', line: '#d4d4d4', text: '#000000', muted: '#404040', faint: '#595959', accent: '#111111', accentText: '#ffffff', accentSoft: '#eeeeee' },
-  donker: { bg: '#000000', panel: '#000000', surface: '#0d0d0d', surface2: '#1a1a1a', line: '#333333', text: '#ffffff', muted: '#c2c2c2', faint: '#8f8f8f', accent: '#ffffff', accentText: '#000000', accentSoft: '#1f1f1f' },
+  donker: { bg: '#000000', panel: '#000000', surface: '#0d0d0d', surface2: '#1a1a1a', line: '#333333', text: '#ffffff', muted: '#c2c2c2', faint: '#9e9e9e', accent: '#ffffff', accentText: '#000000', accentSoft: '#1f1f1f' },
 };
 
 export const MAQUETTE: { licht: Waarden; donker: Waarden } = {
   licht: { bg: '#edf0f6', panel: '#ffffff', surface: '#f5f7fc', surface2: '#e9eef9', line: '#d3dce9', text: '#192640', muted: '#56657f', faint: '#6d7b94', accent: '#5c46a3', accentText: '#ffffff', accentSoft: '#efeafd' },
-  donker: { bg: '#090e1b', panel: '#101728', surface: '#141d30', surface2: '#1b263a', line: '#28354f', text: '#eff4ff', muted: '#98a7bf', faint: '#74849f', accent: '#b3a0ff', accentText: '#100d24', accentSoft: '#1a1f38' },
+  donker: { bg: '#090e1b', panel: '#101728', surface: '#141d30', surface2: '#1b263a', line: '#28354f', text: '#eff4ff', muted: '#98a7bf', faint: '#8696b0', accent: '#b3a0ff', accentText: '#100d24', accentSoft: '#1a1f38' },
 };
 
 export const KLASSIEK_WIT: Waarden = {
@@ -46,7 +46,7 @@ export function kleurWaarden(s: Sectie): { licht: Waarden; donker: Waarden } {
   const softD = meng(D, '#20262d', 0.2);
   return {
     licht: { bg: bgL, panel: panelL, surface: meng(L, '#f1f3f5', 0.06), surface2: meng(L, '#e7ebef', 0.1), line: meng(L, '#d5dbe1', 0.16), text: '#17212b', muted: '#4b5563', faint: '#5f6873', accent: totContrast(accentL, softL, 4.6, '#000000'), accentText: '#ffffff', accentSoft: softL },
-    donker: { bg: bgD, panel: panelD, surface: meng(D, '#29313a', 0.08), surface2: meng(D, '#35404b', 0.1), line: meng(D, '#46515c', 0.14), text: '#f3f6f8', muted: '#c3cbd5', faint: '#a3aeb9', accent: totContrast(D, softD, 4.6, '#ffffff'), accentText: '#10161c', accentSoft: softD },
+    donker: { bg: bgD, panel: panelD, surface: meng(D, '#29313a', 0.08), surface2: meng(D, '#35404b', 0.1), line: meng(D, '#46515c', 0.14), text: '#f3f6f8', muted: '#c3cbd5', faint: '#aeb9c4', accent: totContrast(D, softD, 4.6, '#ffffff'), accentText: '#10161c', accentSoft: softD },
   };
 }
 

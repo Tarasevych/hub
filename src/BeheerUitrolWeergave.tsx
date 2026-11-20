@@ -31,6 +31,7 @@ import GithubInstellingen from './uitrol/GithubInstellingen';
 import TelegramArchief from './uitrol/TelegramArchief';
 import SleutelsDrieFactoren from './uitrol/SleutelsDrieFactoren';
 import SelectiefTerugdraaien from './uitrol/SelectiefTerugdraaien';
+import VerdeeldeOpslagPaneel from './uitrol/VerdeeldeOpslagPaneel';
 import './uitrol/pakket.css';
 import Zijkant from './uitrol/Zijkant';
 import { foutTekst, isHerstart } from './uitrol/fouten';
@@ -345,6 +346,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
         <SleutelsDrieFactoren lang={lang} context={context} data={data} />
         <GithubInstellingen lang={lang} context={context} onVoorstelOntvangen={() => { void laden(); setTab('overzicht'); }} />
         <TelegramArchief lang={lang} context={context} runs={recent} onGewijzigd={() => void laden()} />
+        <VerdeeldeOpslagPaneel lang={lang} context={context} />
         <ZoneKiezer lang={lang} />
       </>}
     </div>

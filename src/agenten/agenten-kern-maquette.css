@@ -2101,6 +2101,10 @@ html.palet-maquette[data-maquette-stijl="klassiek"] :is(
   html.palet-maquette[data-maquette-stijl="klassiek"] .ag-pagina-kop {
     padding: 9px 12px;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ag-pagina-tekst h1 {
+    font-size: 1.3rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

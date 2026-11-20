@@ -49,9 +49,9 @@
    значення, що й у .canonical-chrome.theme-* (src/canoniek-omlijsting.css) — раніше тут були три різні набори
    (index.css, ecosysteem-productie.css, chrome), і вікно поза оболонкою мало інші кольори, ніж сторінка під ним. */
 :root, .theme-light { --bg:#f7f8fa; --panel:#fff; --surface:#f1f3f5; --surface2:#e7ebef; --line:#dce1e6; --text:#17212b; --muted:#5a6672; --faint:#636e79; --accent:#2f6f73; --accentText:#fff; --accent-soft:#e4f0ef; --good:#267653; --danger:#b42318; --shadow:rgba(22,31,41,.13); --nav-hover:color-mix(in srgb,var(--surface) 78%,transparent); --nav-active:color-mix(in srgb,var(--surface2) 88%,transparent); }
-.theme-dark { --bg:#14181d; --panel:#20262d; --surface:#29313a; --surface2:#35404b; --line:#46515c; --text:#f3f6f8; --muted:#b7c0c8; --faint:#8f9aa4; --accent:#8dbab7; --accentText:#102426; --accent-soft:#293f41; --good:#95c8a8; --danger:#ffaaa3; --shadow:rgba(0,0,0,.34); }
+.theme-dark { --bg:#14181d; --panel:#20262d; --surface:#29313a; --surface2:#35404b; --line:#46515c; --text:#f3f6f8; --muted:#b7c0c8; --faint:#a1acb6; --accent:#8dbab7; --accentText:#102426; --accent-soft:#293f41; --good:#95c8a8; --danger:#ffaaa3; --shadow:rgba(0,0,0,.34); }
 .theme-plum-light { --bg:#f8f3f8; --panel:#fffafd; --surface:#f1e7f0; --surface2:#e8d7e5; --line:#d7c4d4; --text:#35243a; --muted:#6a5770; --faint:#75627a; --accent:#6f355f; --accentText:#fff; --accent-soft:#ead7e5; --good:#4f775e; --danger:#a63f57; --shadow:rgba(71,35,63,.16); }
-.theme-plum-dark { --bg:#21161f; --panel:#2d1e2a; --surface:#382633; --surface2:#463141; --line:#64485c; --text:#faedf6; --muted:#d0b9c9; --faint:#a98fa2; --accent:#d8a4c7; --accentText:#2b1725; --accent-soft:#4b3043; --good:#9dc0a7; --danger:#ff9db3; --shadow:rgba(0,0,0,.38); }
+.theme-plum-dark { --bg:#21161f; --panel:#2d1e2a; --surface:#382633; --surface2:#463141; --line:#64485c; --text:#faedf6; --muted:#d0b9c9; --faint:#b89fb2; --accent:#d8a4c7; --accentText:#2b1725; --accent-soft:#4b3043; --good:#9dc0a7; --danger:#ff9db3; --shadow:rgba(0,0,0,.38); }
 
 /* Ритм — не залежить від теми. */
 :root {

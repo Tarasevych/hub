@@ -316,7 +316,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
     <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
       data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
-        <h2 id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</h2>
+        <span id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</span>
         {ruimte === 'technisch' ? <span className='pil pil-info wb-ruimte-pil'><LayoutGrid aria-hidden='true' />{tr(lang, 'Технічний простір: окрема розкладка', 'Technische ruimte: eigen indeling')}</span> : null}
         <div className='wb-balk-acties'>
           {magBewerken ? (bewerken ? (

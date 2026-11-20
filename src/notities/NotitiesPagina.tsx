@@ -13,6 +13,8 @@ import { NotitiesFout, notitiesClient, voorkeurenBewaren, voorkeurenLezen, type 
 import { SOORT_LABEL, foutTekst, inVeld, locale, tr, useSmal, type Lang } from './tekst';
 import './notities-vnext.css';
 import './notities-maquette.css';
+import { SkeletBlok } from '../platform/SkeletBlok';
+import { LegeStaatKaart } from '../platform/LegeStaatKaart';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 const NotitieBewerker = lazy(() => import('./NotitieBewerker'));
@@ -258,14 +260,25 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
           </div>
         </div>
         {weergave === 'prullenbak' ? <p className='vn-hint' data-vn-prullenbak-uitleg='1'>{tr(lang, 'Нотатки в кошику зникають назавжди через 30 днів. Відновити можна будь-коли до того.', 'Notities in de prullenbak verdwijnen na 30 dagen voorgoed. Herstellen kan tot die tijd altijd.')}</p> : null}
-        {data === null ? <p className='vn-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>
+        {data === null ? <SkeletBlok lang={lang} variant='kaarten' aantal={4} hoogte={104} />
           : !notities.length ? (
-            <div className='vn-leeg' data-vn-leeg='1'>
-              <NotebookPen aria-hidden='true' />
-              {filterActief ? <p>{tr(lang, 'За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')}</p>
-                : weergave === 'alle' ? <><p>{tr(lang, 'Ідея починається з одного рядка.', 'Een idee begint met één regel.')}</p><button type='button' className='vn-knop is-hoofd' onClick={() => setLaag({ soort: 'nieuw' })}><Plus aria-hidden='true' />{tr(lang, 'Нова нотатка', 'Nieuwe notitie')}</button></>
-                  : <p>{tr(lang, 'Тут поки порожньо.', 'Hier is het nog leeg.')}</p>}
-            </div>
+            <LegeStaatKaart
+              className='vn-leeg'
+              dataAttrs={{ 'data-vn-leeg': '1' }}
+              icoon={<NotebookPen />}
+              uitleg={filterActief
+                ? tr(lang, 'За цим фільтром нотаток немає.', 'Met dit filter zijn er geen notities.')
+                : weergave === 'alle'
+                  ? tr(lang, 'Ідея починається з одного рядка.', 'Een idee begint met één regel.')
+                  : weergave === 'prullenbak'
+                    ? tr(lang, 'Кошик порожній — видалені нотатки з’являться тут.', 'De prullenbak is leeg — verwijderde notities verschijnen hier.')
+                    : tr(lang, 'У цьому розділі ще немає нотаток.', 'In dit onderdeel staan nog geen notities.')}
+              actie={filterActief
+                ? { label: tr(lang, 'Скинути фільтри', 'Filters wissen'), icoon: <X />, onClick: () => { setVraag(''); setEtiket(''); setSoort(''); setMapId(null); } }
+                : weergave !== 'prullenbak' && weergave !== 'archief'
+                  ? { label: tr(lang, 'Нова нотатка', 'Nieuwe notitie'), icoon: <Plus />, onClick: () => setLaag({ soort: 'nieuw' }) }
+                  : undefined}
+            />
           ) : (
             <>
               <p className='vn-telling-regel'><span>{kop}</span><small>{data.totaal}</small></p>

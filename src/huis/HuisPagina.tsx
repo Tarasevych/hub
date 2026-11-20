@@ -14,6 +14,7 @@ import './huis.css';
 import './huis-kern-maquette.css';
 // SEC-002 (g02): wie zelf nog geen woning heeft, ziet de uitnodigingen al op het startscherm (anders pas onder «Налаштування»).
 import UitnodigingenVoorMij from './onderdelen/UitnodigingenVoorMij';
+import { SkeletBlok } from '../platform/SkeletBlok';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Kamers = lazy(() => import('./onderdelen/Kamers'));
@@ -502,7 +503,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
           <button type='button' className='hv-knop' onClick={() => { setLijstFout(''); void laadWoningen(); }} data-hv-opnieuw='1'><RefreshCw aria-hidden='true' />{tr(lang, 'Спробувати ще раз', 'Opnieuw proberen')}</button>
         </section>
       ) : null}
-      {!publiek && !lijstFout && woningen === null ? <p className='hv-hint' role='status' aria-busy='true' data-hv-laden='1'>{tr(lang, 'Завантаження…', 'Laden…')}</p> : null}
+      {!publiek && !lijstFout && woningen === null ? <SkeletBlok lang={lang} variant='kaarten' aantal={3} hoogte={96} dataAttrs={{ 'data-hv-laden': '1' }} /> : null}
 
       {!publiek && woningen && !woningen.length ? (
         <section id='hv-start' className='hv-start' data-hv-start='1' aria-labelledby='hv-start-kop'>
@@ -546,8 +547,8 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
       ) : null}
 
       <div id='hv-inhoud' className='hv-inhoud'>
-        <Suspense fallback={<p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
-          {publiek || (woningen && woningen.length && !ov) ? (publiek ? onderdeel() : <p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>) : onderdeel()}
+        <Suspense fallback={<SkeletBlok lang={lang} variant='kaarten' aantal={4} hoogte={104} />}>
+          {publiek || (woningen && woningen.length && !ov) ? (publiek ? onderdeel() : <SkeletBlok lang={lang} variant='kaarten' aantal={4} hoogte={104} />) : onderdeel()}
         </Suspense>
       </div>
 

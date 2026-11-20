@@ -627,6 +627,20 @@
   padding-top: 6px;
   border-top: 1px solid var(--line);
 }
+.mel-tijden-samenvatting {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.mel-tijden-samenvatting svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
 .mel-uitleg-blok {
   margin: 0;
   padding: 8px;

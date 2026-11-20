@@ -232,7 +232,7 @@ export function Venster({ id, titel, kop, prioriteit = 'normaal', modaal = true,
           <div className='venster-knoppen'>
             <button type='button' onClick={() => vensterBeheer.minimaliseer(id)} aria-label={t('minimaliseren')} title={t('minimaliseren')} data-venster-knop='min'><Minus aria-hidden='true' /></button>
             {!smal ? <button type='button' onClick={wisselMax} aria-label={geo?.max ? t('herstellen') : t('maximaliseren')} title={geo?.max ? t('herstellen') : t('maximaliseren')} data-venster-knop='max'>{geo?.max ? <Minimize2 aria-hidden='true' /> : <Maximize2 aria-hidden='true' />}</button> : null}
-            {onSluit ? <button type='button' onClick={onSluit} disabled={sluitenUit} aria-label={t('sluiten')} title={t('sluiten')} data-venster-knop='sluit'><X aria-hidden='true' /></button> : null}
+            {onSluit ? <button type='button' onClick={onSluit} disabled={sluitenUit} aria-label={t('sluiten')} title={`${t('sluiten')} (Esc)`} data-venster-knop='sluit'><X aria-hidden='true' /></button> : null}
           </div>
         </div>
         <div className='venster-inhoud'>{children}</div>
