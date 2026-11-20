@@ -34,12 +34,14 @@ import {
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
   | { actie: 'bewaar_blok'; blokSha256: string; cijfertekstB64u: string; mandaat: KlimopOndertekendMandaat }
-  | { actie: 'haal_blok'; blokSha256: string; mandaat: KlimopOndertekendMandaat };
+  | { actie: 'haal_blok'; blokSha256: string; mandaat: KlimopOndertekendMandaat }
+  | { actie: 'wis_blok'; blokSha256: string; mandaat: KlimopOndertekendMandaat };
 
 export type KnooppuntOpdrachtAntwoord =
   | { ok: true; actie: 'pong'; knooppuntId: string; echo: string }
   | { ok: true; actie: 'opgeslagen'; blokSha256: string; grootteBytes: number }
   | { ok: true; actie: 'opgehaald'; blokSha256: string; cijfertekstB64u: string }
+  | { ok: true; actie: 'gewist'; blokSha256: string; bestond: boolean }
   | { ok: false; fout: string; details?: string[] };
 
 export interface EstafetteVerzoek {
@@ -142,7 +144,7 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
-    if (opdracht.actie === 'bewaar_blok' || opdracht.actie === 'haal_blok') {
+    if (opdracht.actie === 'bewaar_blok' || opdracht.actie === 'haal_blok' || opdracht.actie === 'wis_blok') {
       if (!knooppunt.identiteit.rollen.includes('opslag')) {
         return { ok: false, fout: 'KNOOPPUNT_HEEFT_GEEN_OPSLAGROL' };
       }
@@ -166,6 +168,15 @@ export async function startKlimopProefKnooppunt(config: {
         }
         blokOpslag.set(berekendSha, ruw);
         return { ok: true, actie: 'opgeslagen', blokSha256: berekendSha, grootteBytes: ruw.length };
+      }
+
+      if (opdracht.actie === 'wis_blok') {
+        const bestaand = blokOpslag.get(opdracht.blokSha256);
+        if (bestaand) {
+          bestaand.fill(0);
+          blokOpslag.delete(opdracht.blokSha256);
+        }
+        return { ok: true, actie: 'gewist', blokSha256: opdracht.blokSha256, bestond: Boolean(bestaand) };
       }
 
       const gevonden = blokOpslag.get(opdracht.blokSha256);

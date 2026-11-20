@@ -26,7 +26,9 @@
       "етап 0 аудит",
       "етап 1 архітектурне ядро",
       "етап 2 випробувальна мережа",
-      "протокол стебла"
+      "протокол стебла",
+      "етап 3 шифрування зберігання",
+      "рід соломон"
     ],
     "nl": [
       "klimop",
@@ -43,7 +45,9 @@
       "fase 0 audit",
       "fase 1 architectuurkern",
       "fase 2 beproevingsnetwerk",
-      "stengels protocol"
+      "stengels protocol",
+      "fase 3 versleuteling opslag",
+      "reed solomon"
     ]
   },
   "paden": [
@@ -59,11 +63,17 @@
     "docs/hub/ПЛЮЩ-ЕТАП-2-ВИПРОБУВАЛЬНА-МЕРЕЖА-ТА-СТЕБЛА.uk.md",
     "docs/hub/ПЛЮЩ-ЕТАП-2-ВИПРОБУВАЛЬНА-МЕРЕЖА-ТА-СТЕБЛА.md",
     "docs/hub/KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-3-ШИФРУВАННЯ-ТА-РОЗПОДІЛЕНЕ-ЗБЕРІГАННЯ.uk.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-3-ШИФРУВАННЯ-ТА-РОЗПОДІЛЕНЕ-ЗБЕРІГАННЯ.md",
+    "docs/hub/KLIMOP-FASE-3-VERSLEUTELING-EN-VERDEELDE-OPSLAG.nl.md",
     "scripts/klimop-etappe0-audit.mjs",
     "scripts/klimop-proefnetwerk.mjs",
+    "scripts/klimop-etappe3-opslag-proef.mjs",
     "shared/klimop/kern.ts",
     "shared/klimop/stengels.ts",
+    "shared/klimop/opslag.ts",
     "backend/klimop-knooppunt-agent.ts",
+    "backend/klimop-opslag-client.ts",
     "deploy/klimop-proefnetwerk/docker-compose.proef.yml",
     "AGENTS.md",
     "ПРАВИЛА-АГЕНТІВ.uk.md",
@@ -102,10 +112,20 @@
     {
       "taakId": "KLIMOP-003",
       "tak": "feature/klimop-003-etappe2-proefnetwerk-20261120-182000",
+      "pr": 185,
+      "integratieCommit": "e4ad9dc3b303b32df1147a4deca0aea06437dfdd",
       "agent": "antigravity",
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
-      "uk": "Виконано Етап 2 (випробувальна мережа та захищені зв’язки «Стебла»): реалізовано криптографічний протокол взаємного рукостискання X25519 + Ed25519 + HKDF-SHA-256 і шифрування кадрів ChaCha20-Poly1305 / AES-256-GCM із вирівнюванням довжини до 256 байт і захистом від повторів (shared/klimop/stengels.ts), ізольований мережевий вузол та маршрутизувальний клієнт (backend/klimop-knooppunt-agent.ts), відтворюваний сценарій 3 вузлів NL/CH/UA з автоматичним обходом розриву через естафету й карантином (scripts/klimop-proefnetwerk.mjs, deploy/klimop-proefnetwerk/docker-compose.proef.yml) та двомовну документацію Етапу 2."
+      "uk": "Виконано Етап 2 (випробувальна мережа та захищені зв’язки «Стебла»): реалізовано криптографічний протокол взаємного рукостискання X25519 + Ed25519 + HKDF-SHA-256 і шифрування кадрів ChaCha20-Poly1305 / AES-256-GCM із вирівнюванням довжини до 256 байт і захистом від повторів (shared/klimop/stengels.ts), ізольований мережевий вузол та маршрутизувальний клієнт (backend/klimop-knooppunt-agent.ts), відтворюваний сценарій 3 вузлів NL/CH/UA з автоматичним обходом розриву через естафету й карантином (scripts/klimop-proefnetwerk.mjs, deploy/klimop-proefnetwerk/docker-compose.proef.yml) та двомовну документацію Етапу 2. Злито в integratie у запиті №185."
+    },
+    {
+      "taakId": "KLIMOP-004",
+      "tak": "feature/klimop-004-etappe3-versleuteling-opslag-20261120-184500",
+      "agent": "antigravity",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Виконано Етап 3 (клієнтське конвертне шифрування, розподілене зберігання Ріда–Соломона та криптографічна гнучкість): створено модуль shared/klimop/opslag.ts (ієрархія ключів HKDF-SHA-256 за рівнем, простором і епохою; узгодження профілів із забороною пониження захисту; потокове шифрування сегментів ChaCha20-Poly1305 / AES-256-GCM; коди відновлення Reed-Solomon (k+m) над GF(2^8); добудова фрагментів без ключа розшифрування та перехідні сліпі пошукові відбитки HMAC-SHA-256), мережевий розподільник backend/klimop-opslag-client.ts із перевіркою незалежності вузлів та законним видаленням блоків wis_blok, полігон 4 вузлів NL/CH/UA/SE scripts/klimop-etappe3-opslag-proef.mjs і двомовну документацію Етапу 3."
     }
   ],
   "mogelijkheden": [
@@ -156,6 +176,18 @@
       "uk": "Етап 2 (випробувальна мережа): ізольований мережевий вузол та маршрутизувальний клієнт (backend/klimop-knooppunt-agent.ts), автоматичний обхід обірваних стебел через наскрізну естафету без розкриття даних проміжному вузлу, миттєвий карантин скомпрометованих вузлів та відтворюваний стенд 3 вузлів NL/CH/UA (scripts/klimop-proefnetwerk.mjs, docker-compose.proef.yml)",
       "sinds": "KLIMOP-003",
       "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-3-envelop-reed-solomon",
+      "uk": "Етап 3 (конвертне шифрування та коди Ріда–Соломона): ієрархія ключів HKDF-SHA-256 за рівнем, простором і епохою, узгодження профілів із забороною пониження захисту, сегментоване шифрування ChaCha20-Poly1305 / AES-256-GCM, завадостійке кодування Reed-Solomon (k+m) над GF(2^8), підписані маніфести об’єктів та перехідні сліпі пошукові відбитки HMAC-SHA-256 (shared/klimop/opslag.ts)",
+      "sinds": "KLIMOP-004",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-3-sleutelloze-herbouw-en-wissen",
+      "uk": "Етап 3 (мережеве розподілене зберігання): клієнт KlimopVerdeeldeOpslagClient (backend/klimop-opslag-client.ts), перевірка незалежності вузлів перед розкладанням фрагментів, відновлення після відмови до m вузлів, добудова втрачених фрагментів на новому вузлі без ключа розшифрування та законне видалення блоків із затиранням пам’яті wis_blok (scripts/klimop-etappe3-opslag-proef.mjs)",
+      "sinds": "KLIMOP-004",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -172,7 +204,7 @@
     },
     {
       "datum": "2026-11-20",
-      "betreft": "Послідовне злиття в integratie та перехід через Етапи 0–2",
+      "betreft": "Послідовне злиття в integratie та перехід через Етапи 0–3",
       "uk": "Виконати відповідні злиття попередніх кроків у гілку integratie та послідовно продовжувати наступні етапи маніфесту «Плющ» без порушення роботи чинної платформи.",
       "behouden": [
         "Недоторканність живої робочої інфраструктури, служб systemd і бази PostgreSQL 18.6 під час ізольованої розробки нових рівнів",
@@ -183,7 +215,7 @@
   ],
   "open": [
     {
-      "uk": "Етап 3 (`KLIMOP-004`, §11–§14, §36 маніфесту): реалізувати шар потокового клієнтського конвертного шифрування великих об’єктів (`ChaCha20-Poly1305` / `AES-256-GCM`), адресацію блоків за відбитком `SHA-256`/`BLAKE3` та завадостійке кодування відновлення втрачених фрагментів `Reed-Solomon (k+m)` із розподілом фрагментів по вузлах випробувальної мережі Етапу 2 без розкриття ключа на вузлах зберігання."
+      "uk": "Етап 4 (`KLIMOP-005`, §7–§10, §36 маніфесту): реалізувати перевірюваний поділ секретів із криптографічними зобов’язаннями Фельдмана/Педерсена (`VSS`), епохальне проактивне оновлення часток із захистом від перерваної ротації та багатостороннє порогове підписування `FROST (RFC 9591)` $t$-з-$n$ без збирання приватного ключа в одному місці."
     }
   ],
   "bijgewerkt": "2026-11-20"

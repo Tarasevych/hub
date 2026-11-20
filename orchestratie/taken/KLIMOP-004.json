@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-004",
+  "agent": "antigravity",
+  "tak": "feature/klimop-004-etappe3-versleuteling-opslag-20261120-184500",
+  "basisCommit": "e4ad9dc3b303b32df1147a4deca0aea06437dfdd",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-20T18:44:40.617Z",
+  "bijgewerkt": "2026-11-20T18:44:40.617Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
