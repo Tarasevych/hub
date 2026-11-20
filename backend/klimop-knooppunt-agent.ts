@@ -66,6 +66,12 @@ import {
   berekenBlindeIntegriteitBewijs,
   type KlimopBlindeIntegriteitAntwoord,
 } from '../shared/klimop/immuunsysteem';
+import {
+  maakLegeDienstCrdtStaat,
+  voegCrdtStatenSamen,
+  type KlimopDienstCrdtStaat,
+  type KlimopDienstId,
+} from '../shared/klimop/diensten';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -157,6 +163,18 @@ export type KnooppuntOpdracht =
   | {
       actie: 'raadpleeg_uitgave_staat';
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'synchroniseer_dienst_crdt';
+      inkomendeStaat: KlimopDienstCrdtStaat;
+      toegestaneApparaatPubSleutels?: readonly string[];
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_dienst_crdt';
+      dienstId: KlimopDienstId;
+      dienstPsid: string;
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -219,6 +237,12 @@ export type KnooppuntOpdrachtAntwoord =
       versieLabel: string;
       minCompatibelVolgnummer: number;
       aantalTerugdraaiingen: number;
+    }
+  | {
+      ok: true;
+      actie: 'dienst_crdt_staat';
+      staat: KlimopDienstCrdtStaat;
+      aantalElementen: number;
     }
   | { ok: false; fout: string; details?: string[] };
 
@@ -290,6 +314,7 @@ export interface KlimopProefKnooppunt {
   aantalGeregistreerdeIdentiteiten(): number;
   actiefUitgaveVolgnummer(): number;
   aantalUitgaveTerugdraaiingen(): number;
+  aantalDienstCrdtRuimtes(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -308,6 +333,7 @@ export async function startKlimopProefKnooppunt(config: {
   const voorbereideVerversingen = new Map<string, VoorbereideEpocheStaat>();
   const frostNonces = new Map<string, FrostGeheimeNonceStaat>();
   const identiteitRegister = new Map<string, KlimopIdentiteitRegisterInvoer>();
+  const dienstCrdtRuimtes = new Map<string, KlimopDienstCrdtStaat>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -321,13 +347,18 @@ export async function startKlimopProefKnooppunt(config: {
   let aantalEstafettes = 0;
 
   function controleerRolEnMandaat(
-    vereisteRol: 'opslag' | 'verificatie',
+    vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie',
     mandaat: KlimopOndertekendMandaat,
   ): { ok: true } | { ok: false; fout: string; details?: string[] } {
     if (!knooppunt.identiteit.rollen.includes(vereisteRol)) {
       return {
         ok: false,
-        fout: vereisteRol === 'opslag' ? 'KNOOPPUNT_HEEFT_GEEN_OPSLAGROL' : 'KNOOPPUNT_HEEFT_GEEN_VERIFICATIEROL',
+        fout:
+          vereisteRol === 'opslag'
+            ? 'KNOOPPUNT_HEEFT_GEEN_OPSLAGROL'
+            : vereisteRol === 'verificatie'
+              ? 'KNOOPPUNT_HEEFT_GEEN_VERIFICATIEROL'
+              : 'KNOOPPUNT_HEEFT_GEEN_SYNCHRONISATIEROL',
       };
     }
     const v = verifieerKlimopMandaat(mandaat, {
@@ -341,7 +372,12 @@ export async function startKlimopProefKnooppunt(config: {
     ) {
       return {
         ok: false,
-        fout: vereisteRol === 'opslag' ? 'MANDAAT_NIET_VOOR_DEZE_OPSLAGKNOOP' : 'MANDAAT_NIET_VOOR_DEZE_VERIFICATIEKNOOP',
+        fout:
+          vereisteRol === 'opslag'
+            ? 'MANDAAT_NIET_VOOR_DEZE_OPSLAGKNOOP'
+            : vereisteRol === 'verificatie'
+              ? 'MANDAAT_NIET_VOOR_DEZE_VERIFICATIEKNOOP'
+              : 'MANDAAT_NIET_VOOR_DEZE_SYNCHRONISATIEKNOOP',
       };
     }
     return { ok: true };
@@ -668,6 +704,42 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (opdracht.actie === 'synchroniseer_dienst_crdt' || opdracht.actie === 'raadpleeg_dienst_crdt') {
+      const mOk = controleerRolEnMandaat('synchronisatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'raadpleeg_dienst_crdt') {
+        const sleutel = `${opdracht.dienstId}|${opdracht.dienstPsid}`;
+        const staat = dienstCrdtRuimtes.get(sleutel) ?? maakLegeDienstCrdtStaat(opdracht.dienstId, opdracht.dienstPsid);
+        return {
+          ok: true,
+          actie: 'dienst_crdt_staat',
+          staat,
+          aantalElementen: Object.keys(staat.elementen).length,
+        };
+      }
+
+      const inkomend = opdracht.inkomendeStaat;
+      if (!inkomend || !inkomend.dienstPsid.startsWith('psid1_')) {
+        return { ok: false, fout: 'DIENST_CRDT_VEREIST_PSEUDONIEME_PSID' };
+      }
+      const sleutel = `${inkomend.dienstId}|${inkomend.dienstPsid}`;
+      const bestaand = dienstCrdtRuimtes.get(sleutel) ?? maakLegeDienstCrdtStaat(inkomend.dienstId, inkomend.dienstPsid);
+      const toegestaanSet = opdracht.toegestaneApparaatPubSleutels
+        ? new Set(opdracht.toegestaneApparaatPubSleutels)
+        : undefined;
+      const samengevoegd = voegCrdtStatenSamen(bestaand, inkomend, toegestaanSet);
+      if (!samengevoegd.ok) return samengevoegd;
+
+      dienstCrdtRuimtes.set(sleutel, samengevoegd.samengevoegd);
+      return {
+        ok: true,
+        actie: 'dienst_crdt_staat',
+        staat: samengevoegd.samengevoegd,
+        aantalElementen: Object.keys(samengevoegd.samengevoegd.elementen).length,
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -811,6 +883,9 @@ export async function startKlimopProefKnooppunt(config: {
     aantalUitgaveTerugdraaiingen() {
       return aantalTerugdraaiingen;
     },
+    aantalDienstCrdtRuimtes() {
+      return dienstCrdtRuimtes.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -825,6 +900,7 @@ export async function startKlimopProefKnooppunt(config: {
       drempelDelen.clear();
       voorbereideVerversingen.clear();
       identiteitRegister.clear();
+      dienstCrdtRuimtes.clear();
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },
