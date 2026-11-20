@@ -130,15 +130,18 @@ function doelBoven(el: HTMLElement): number {
 /** Skelet zolang een blok nog niet gemount is: zichtbaar «bezig», nooit een lege vlakte. */
 function BlokSkelet({ tr }: { tr: Tr }) {
   const taal: 'uk' | 'nl' = tr('uk', 'nl') === 'nl' ? 'nl' : 'uk';
+  const tekst = tr('Розділ завантажиться, щойно ви до нього дійдете…', 'Dit onderdeel laadt zodra u er bent…');
   return (
-    <SkeletBlok
-      lang={taal}
-      variant='lijst'
-      aantal={2}
-      hoogte={52}
-      className='ag-lui-plaats ag-blok-skelet'
-      label={tr('Розділ завантажиться, щойно ви до нього дійдете…', 'Dit onderdeel laadt zodra u er bent…')}
-    />
+    <div className='ag-lui-plaats ag-blok-skelet'>
+      <SkeletBlok
+        lang={taal}
+        variant='lijst'
+        aantal={2}
+        hoogte={52}
+        label={tekst}
+      />
+      <p className='ag-leeg'>{tekst}</p>
+    </div>
   );
 }
 
