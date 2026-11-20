@@ -16,8 +16,10 @@ Deze vaardigheid geldt voor **alle 14 AI-agentintegraties** (`claude`, `antigrav
 ## Canonieke bronnen
 
 1. [`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](../../../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) en [`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](../../../docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md) — volledige canon van alle XVI delen en 46 hoofdstukken.
-2. [`AGENTENREGELS.nl.md`](../../../AGENTENREGELS.nl.md) (§1, §3b, §10) en [`AGENTS.md`](../../../AGENTS.md) (§1, §3б, §10) — geldende coördinatieregels (versie `1.5.0`, besluit `B-024`).
-3. [`orchestratie/onderwerpen/ecosysteem-klimop.json`](../../../orchestratie/onderwerpen/ecosysteem-klimop.json) — geheugendossier en actuele voortgang.
+2. [`docs/hub/KLIMOP-FASE-0-AUDIT-FEITELIJKE-STAAT.nl.md`](../../../docs/hub/KLIMOP-FASE-0-AUDIT-FEITELIJKE-STAAT.nl.md) (`ПЛЮЩ-ЕТАП-0-АУДИТ-ДІЙСНОГО-СТАНУ.uk.md`) en het controlescript [`scripts/klimop-etappe0-audit.mjs`](../../../scripts/klimop-etappe0-audit.mjs) — uitgevoerde bewijsaudit van Fase 0.
+3. [`docs/hub/KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md`](../../../docs/hub/KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md) (`ПЛЮЩ-ЕТАП-1-АРХІТЕКТУРНЕ-ЯДРО-ТА-ПЛАН-ВИПУСКІВ.uk.md`) en de kernmodule [`shared/klimop/kern.ts`](../../../shared/klimop/kern.ts) — specificatie van Fase 1, technologiekeuze, gefaseerd uitgaveplan en programmatische toetser voor de 15 vragen en `Ed25519`-mandaten.
+4. [`AGENTENREGELS.nl.md`](../../../AGENTENREGELS.nl.md) (§1, §3b, §10) en [`AGENTS.md`](../../../AGENTS.md) (§1, §3б, §10) — geldende coördinatieregels (versie `1.5.0`, besluit `B-024`).
+5. [`orchestratie/onderwerpen/ecosysteem-klimop.json`](../../../orchestratie/onderwerpen/ecosysteem-klimop.json) — geheugendossier en actuele voortgang.
 
 ## Bevoegdheidsgrens (verplicht)
 
