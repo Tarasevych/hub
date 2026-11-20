@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "naam": "ecosysteem-klimop",
+  "titel": {
+    "uk": "Жива цифрова екосистема «Плющ» (Головний архітектурний маніфест)",
+    "nl": "Levend digitaal ecosysteem «Klimop» (Hoofdarchitectuurmanifest)"
+  },
+  "samenvatting": {
+    "uk": "Цільова архітектурна концепція поступового перетворення централізованої платформи «Мій простір» на розподілену, самовідновлювану та криптографічно захищену екосистему з незалежними вузлами, розмежованими повноваженнями, захистом людини й можливістю продовження існування без постійної участі єдиного творця.",
+    "nl": "Doelarchitectuur voor de geleidelijke omvorming van het gecentraliseerde platform «Mijn Ruimte» naar een gedistribueerd, zelfherstellend en cryptografisch beveiligd ecosysteem met onafhankelijke knooppunten, gescheiden bevoegdheden, menselijke bescherming en voortbestaan zonder permanente afhankelijkheid van één maker."
+  },
+  "termen": {
+    "uk": [
+      "плющ",
+      "екосистема плющ",
+      "архітектурний маніфест",
+      "цифровий плющ",
+      "незалежні вузли",
+      "коріння стебла листя вусики",
+      "порогові підписи",
+      "фрост",
+      "захист від примусу",
+      "перевірюваний поділ",
+      "постквантова криптографія",
+      "архітектурна перевірка"
+    ],
+    "nl": [
+      "klimop",
+      "ecosysteem klimop",
+      "architectuurmanifest",
+      "digitale klimop",
+      "onafhankelijke knooppunten",
+      "wortels stengels bladeren hechtranken",
+      "drempelhandtekeningen",
+      "frost",
+      "dwangbestendigheid",
+      "postkwantumcryptografie",
+      "architectuurcontrole"
+    ]
+  },
+  "paden": [
+    "docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md",
+    "docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.md",
+    "docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md",
+    "AGENTS.md",
+    "ПРАВИЛА-АГЕНТІВ.uk.md",
+    "AGENTENREGELS.nl.md",
+    "orchestratie/beleid.json",
+    "orchestratie/BESLUITEN.md",
+    ".agents/skills/klimop-architectuur/SKILL.md",
+    ".agents/skills/klimop-architectuur/VAARDIGHEID.nl.md",
+    "scripts/vaardigheden/catalogus.json",
+    "README.md",
+    "LEESMIJ.md",
+    "ПЛАН-ПЕРЕНЕСЕННЯ.uk.md",
+    "PORTEERPLAN.nl.md"
+  ],
+  "werk": [
+    {
+      "taakId": "KLIMOP-001",
+      "tak": "audit/klimop-001-manifest-agenten-20261120-161500",
+      "agent": "antigravity",
+      "model": "Google Antigravity",
+      "datum": "2026-11-20",
+      "uk": "Опубліковано повний двомовний канон Головного архітектурного маніфесту «Мій простір» — жива цифрова екосистема «Плющ» (16 частин, 46 розділів), оновлено канонічні правила AGENTS.md / AGENTENREGELS.nl.md (версія 1.5.0, рішення B-024), політику координації beleid.json, перехідники всіх 14 інтеграцій ШІ-агентів, спільні навички (зокрема нову навичку klimop-architectuur) та всі головні файли загального опису й плану розвитку платформи без жодного втручання в живу робочу інфраструктуру."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "klimop-manifest-canon",
+      "uk": "Повний двомовний архітектурний канон «Плющ» / «Klimop» із 16 частин і 46 розділів (7 елементів цифрового плюща, відсутність одноосібної влади, 4 типи вузлів, 7 рівнів шифрування, захист людини, 7 категорій спільного керування, 16 напрямів агентів, Етапи 0–12, 25 обов’язкових документів)",
+      "sinds": "KLIMOP-001",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-15-vragen-controle",
+      "uk": "Обов’язкова 15-пунктова архітектурна перевірка кожної зміни та перелік 14 заборонених спрощень у правилах і навичках усіх 14 ШІ-агентів",
+      "sinds": "KLIMOP-001",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-14-agenten-pariteit",
+      "uk": "Повна реєстрація та двомовні перехідники для всіх 14 інтеграцій ШІ-агентів (claude, antigravity, autoclaw, chatgpt, codex, grok, copilot, gemini, cursor, windsurf, cline, devin, opencode, mscopilot)",
+      "sinds": "KLIMOP-001",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-0-audit",
+      "uk": "Етап 0: всебічний аудит фактичного стану серверних залежностей, ключів, міграцій PostgreSQL, служб та ізоляції перед будь-якою зміною архітектури",
+      "sinds": "KLIMOP-001",
+      "staat": "in-ontwikkeling"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-20",
+      "betreft": "Статус маніфесту «Плющ» та межі першого кроку",
+      "uk": "Статус документа — цільова архітектурна концепція. Не є дозволом на негайну зміну робочої інфраструктури. Першим кроком виконати зміну всіх головних файлів, які описують план та опис для всіх інтеграцій агентів.",
+      "behouden": [
+        "Усі особисті дані, чинні служби (11 піддоменів), налаштування користувачів, приватне сховище М7 та історія змін",
+        "Чинна база даних PostgreSQL, сервери, зашифровані резервні копії age та офлайн-копії на R:\\mijn-ruimte-reservekopie\\",
+        "Затверджений конвеєр випусків TRACE-001, тричинникова довіра B-023 та координація агентів ORCH-001 / BIJDRAGE-001 / VERWIJZING-001"
+      ],
+      "bron": "Головний архітектурний маніфест власника від 20.11.2026"
+    }
+  ],
+  "open": [
+    {
+      "uk": "Етап 0 (§3.3, §36, §45 маніфесту): виконати повний документальний аудит чинного коду й робочого середовища та підготувати решту документів із переліку 25 обов’язкових документів (§44) перед проєктуванням випробувальної мережі Етапів 1–2."
+    }
+  ],
+  "bijgewerkt": "2026-11-20"
+}

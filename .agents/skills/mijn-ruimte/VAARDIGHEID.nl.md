@@ -123,7 +123,8 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.ta
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte JuridischControleer [--bestand <PAD> | --tekst "<TEKST>"] [--taal uk|nl]
 ```
 
-## Veiligheids- en bestuursregels
+## Veiligheids-, bestuurs- en «Klimop»-regels (`KLIMOP-001`)
 - **Wachtende goedkeuringen**: wanneer een schrijf- of actiehulpmiddel `status: "pending"` teruggeeft, wacht de site op bevestiging van de gebruiker in `BevestigingenPaneel` op `https://mcp.tarasevych.com/agenten#agent/antigravity`. Meld dit aan de gebruiker en herhaal de aanroep niet in een lus.
 - **Technische ruimte (`_beheer`)**: als een `_beheer`-hulpmiddel `TECH_PROFILE_OFF` teruggeeft, vraag de eigenaar dan om de technische sessie in te schakelen of te delegeren op `https://mcp.tarasevych.com/agenten#agent/antigravity`.
-- **Opslagplaatsregels**: volg altijd `AGENTS.md` en `ANTIGRAVITY.md` bij het aanpassen van code in `Tarasevych/hub`.
+- **Grenzen van «Hechtranken» en doelarchitectuur «Klimop» (`AGENTENREGELS.nl.md` §3b, §10, `docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`, vaardigheid `klimop-architectuur`)**: de brug voor pc- en browserbeheer werkt uitsluitend met uitdrukkelijke, afgebakende en intrekbare machtigingen zonder verborgen achtergrondgedrag (§1.4, §5.2). Het manifest «Klimop» geeft geen toestemming voor onmiddellijke wijziging van de productie-infrastructuur zonder afzonderlijke goedkeuring van de eigenaar; toets elke wijziging aan de 15 architectuurcontrolevragen (§10.4).
+- **Opslagplaatsregels**: volg altijd `AGENTS.md` (`AGENTENREGELS.nl.md`), `ANTIGRAVITY.md` en `AUTOCLAW.md` bij het aanpassen van code in `Tarasevych/hub`.

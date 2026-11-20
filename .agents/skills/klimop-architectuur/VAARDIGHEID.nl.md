@@ -1,0 +1,83 @@
+---
+name: klimop-architectuur
+description: Ontwerp en toets elke architectonische of programmatische wijziging van «Mijn Ruimte» aan het Hoofdarchitectuurmanifest van het levende digitale ecosysteem «Klimop» (15 controlevragen, 14 verboden vereenvoudigingen, Fasen 0–12 zonder eigenmachtige wijziging van de productieomgeving). Проєктуй і перевіряй зміни за маніфестом «Плющ».
+---
+
+> 🌐 **Taal / Мова:** [Українська](НАВИЧКА-АРХІТЕКТУРА-ПЛЮЩ.uk.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../../docs/INDEX.nl.md)
+
+# Architectuurcontrole en ontwikkeling van het ecosysteem «Klimop» (`Плющ`)
+
+## Wanneer deze vaardigheid te gebruiken
+
+Kies deze vaardigheid vóór het ontwerpen van een nieuwe dienst, knooppunt, cryptografisch mechanisme, verdeelde opslag, herstelprocedure, toegangsregel, externe verbinder of AI-agentcoördinatie, en bij elke architectuuraudit (Fase 0) of uitgavecontrole.
+
+Deze vaardigheid geldt voor **alle 14 AI-agentintegraties** (`claude`, `antigravity`, `autoclaw`, `chatgpt`, `codex`, `grok`, `copilot`, `gemini`, `cursor`, `windsurf`, `cline`, `devin`, `opencode`, `mscopilot`) en wordt aangeboden via `.agents/skills/` en de MCP-server (`mr://skills/klimop-architectuur`).
+
+## Canonieke bronnen
+
+1. [`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](../../../docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) en [`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](../../../docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md) — volledige canon van alle XVI delen en 46 hoofdstukken.
+2. [`AGENTENREGELS.nl.md`](../../../AGENTENREGELS.nl.md) (§1, §3b, §10) en [`AGENTS.md`](../../../AGENTS.md) (§1, §3б, §10) — geldende coördinatieregels (versie `1.5.0`, besluit `B-024`).
+3. [`orchestratie/onderwerpen/ecosysteem-klimop.json`](../../../orchestratie/onderwerpen/ecosysteem-klimop.json) — geheugendossier en actuele voortgang.
+
+## Bevoegdheidsgrens (verplicht)
+
+- Het manifest «Klimop» is een **doelarchitectuur** en **GEEN toestemming voor onmiddellijke wijziging van de productie-infrastructuur**.
+- Schakel bestaande servers, de centrale PostgreSQL-database, versleutelde `age`-reservekopieën, de 11 subdomeinen of bestaande geïsoleerde gebruikersruimtes nooit uit vóórdat een onafhankelijk alternatief bewezen werkt en afzonderlijk door de eigenaar is goedgekeurd (§3.2, §35).
+- De aanwezigheid van een bestand in de opslagplaats geldt **nooit** als bewijs dat een voorziening in productie actief is (§3.3).
+
+## De zeven structuurelementen van de digitale klimop (§1)
+
+1. **Wortels** — onafhankelijke vertrouwensgrondslagen zonder dat één element onbeperkte macht geeft.
+2. **Stengels** — wederzijds geauthenticeerde, versleutelde verbindingen met alternatieve routes en directe isolatie van aangetaste trajecten.
+3. **Bladeren** — functionele onderdelen met een duidelijke rol; uitval van één blad stopt het netwerk niet.
+4. **Hechtranken** — beheerste, vrijwillige, transparante en intrekbare uitbreiding zonder verborgen installatie of wormgedrag.
+5. **Voeding** — eerlijke, spaarzame en transparante uitwisseling van rekenkracht, opslag en verbindingen.
+6. **Immuunsysteem** — controleerbare bewaking zonder inzage in privé-inhoud, quarantaine van defecte onderdelen, zelfherstel binnen regels en gefaseerde uitrol.
+7. **Zaden** — overdraagbaarheid en heropbouw vanuit onafhankelijk bewaarde, geverifieerde onderdelen zonder permanente afhankelijkheid van de oorspronkelijke maker.
+
+## Verplichte architectuurcontrole van 15 vragen (§42)
+
+Beantwoord vóór elke ontwerp- of codewijziging aantoonbaar deze 15 vragen:
+
+1. Ontstaat er een nieuw enkel punt van falen?
+2. Worden er verborgen bevoegdheden uitgebreid?
+3. Blijft rechtmatig herstel beschikbaar?
+4. Is informatie beschermd op het apparaat, tijdens overdracht en in opslag?
+5. Worden er geen onnodige metagegevens blootgegeven?
+6. Kunnen aangemaakte machtigingen worden ingetrokken?
+7. Wordt de onderlinge verenigbaarheid tussen knooppunten niet verbroken?
+8. Blijft het mogelijk om een defect onderdeel te isoleren?
+9. Verslechtert de bescherming van de mens (ook bij ziekte, apparaatverlies of dwang) niet?
+10. Blijft de wijziging controleerbaar?
+11. Bestaat er een veilige weg om terug te draaien?
+12. Neemt de afhankelijkheid van de oorspronkelijke auteur niet toe?
+13. Worden middelen van gebruikers niet zonder hun toestemming verbruikt?
+14. Worden de rechten van gegevenseigenaren niet geschonden?
+15. Ontstaat er geen nieuw gevaar voor het hele netwerk via één enkele verbinder?
+
+Bij schending van een kerngarantie moet het ontwerp vóór invoering worden herzien.
+
+## Veertien verboden vereenvoudigingen (§43)
+
+Verboden bij ontwerp, code en verslaglegging:
+1. Het systeem volledig onkwetsbaar noemen.
+2. Meerdere kopieën op één server of bij één aanbieder als onafhankelijke knooppunten beschouwen.
+3. Drempelgeheimdeling (Shamir / Feldman / Pedersen) verwarren met bestandsopdeling (waarvoor `AES-256-GCM` of `ChaCha20-Poly1305` + uitwiscode-herstel vereist is).
+4. Gewone serverversleuteling gelijkstellen aan volledige geheimhouding.
+5. Een drempelhandtekening (zoals FROST) als universele versleuteling beschouwen.
+6. Knooppunten louter op basis van deelname of netwerknabijheid vertrouwen.
+7. Kritieke rechten automatisch aan een toevallige meerderheid geven.
+8. Hardwarematige afscherming als absolute bescherming beschouwen.
+9. Toegang automatisch herstellen zonder geldige bevestigingen of persoonsgegevens automatisch vernietigen bij vermoeden van dwang (§17).
+10. Gebruikersapparaten of hun middelen heimelijk inzetten.
+11. Huidige servers en PostgreSQL uitschakelen vóór onafhankelijke vervanging bewezen gereed is.
+12. Beproefde cryptografische standaarden vervangen door eigen ongeteste algoritmen.
+13. Beproevingen als geslaagd aanmerken zonder feitelijk bewijs.
+14. Kritieke bijwerkingen installeren zonder geldige goedkeuring.
+
+## Werkvolgorde voor agenten (§36, §45)
+
+1. **Fase 0 — Volledige audit:** feitelijke staat van diensten, afhankelijkheden, sleutels, PostgreSQL-migraties, ruimte-isolatie en het huidige installatieproces vaststellen.
+2. **Fase 1 — Architectuurkern:** rollen van de 4 knooppunttypen, verbindingsprotocollen, bevoegdheidsmodellen en de 25 verplichte tweetalige documenten (§44) uitwerken.
+3. **Vergelijking van beproefde technologieën:** standaarden afwegen (inclusief groepsbeveiliging standaard 9420 en voorbereiding op postkwantumcryptografie).
+4. **Gefaseerd uitgaveplan (Fasen 2–12):** kleine achterwaarts verenigbare stappen met een geïsoleerd beproevingsnetwerk en bewezen terugdraaibaarheid.

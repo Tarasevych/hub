@@ -36,7 +36,7 @@ export async function main(): Promise<number> {
   check('невідомий режим встановлення → MODI_ONGELDIG', codes({ ...beleid, kritiek: { ...beleid.kritiek, installatieModi: { toegestaan: ['handmatig', 'root-direct'] } } }).includes('MODI_ONGELDIG'));
   check('адаптер може мати макс. 60 рядків (не окремий звід правил)', codes({ ...beleid, adapters: { ...beleid.adapters, maxRegels: 500 } }).includes('ADAPTER_MAX'));
   check('агент з великими літерами → AGENT_ID', codes({ ...beleid, agenten: [{ id: 'Claude', kanalen: ['zip'] }] }).includes('AGENT_ID'));
-  check('усі 8 агентів зареєстровані з каналами', ['claude', 'antigravity', 'chatgpt', 'codex', 'grok', 'copilot', 'gemini', 'cursor'].every((id) => beleid.agenten.some((a: { id: string; kanalen: string[] }) => a.id === id && a.kanalen.length)));
+  check('усі 14 агентів зареєстровані з каналами', ['claude', 'antigravity', 'autoclaw', 'chatgpt', 'codex', 'grok', 'copilot', 'gemini', 'cursor', 'windsurf', 'cline', 'devin', 'opencode', 'mscopilot'].every((id) => beleid.agenten.some((a: { id: string; kanalen: string[] }) => a.id === id && a.kanalen.length)));
   check('усі 8 каналів прийому з ТЗ присутні', ['github_pr', 'mcp', 'http_api', 'lokaal_bestand', 'zip', 'tar_gz', 'git_patch', 'web_upload'].every((c) => beleid.inlevering.kanalen.includes(c)));
   check('статуси installed/integrated/in_progress/released розрізняються', k.STATUSSEN.length === 4 && ['installed', 'integrated', 'in_progress', 'released'].every((s) => k.STATUSSEN.includes(s)));
   check('автоматичний режим зараз НЕ дозволений (потрібна окрема політика)', !beleid.kritiek.installatieModi.toegestaan.includes('automatisch_beperkt') && beleid.kritiek.installatieModi.automatischBeperkt === null);
@@ -72,7 +72,7 @@ export async function main(): Promise<number> {
 
   // — адаптери —
   const adapters = beleid.adapters.bestanden.filter((p: string) => existsSync(p));
-  check('усі зареєстровані адаптери існують (9)', adapters.length === 9, adapters.join(','));
+  check('усі зареєстровані адаптери існують (14)', adapters.length === 14, adapters.join(','));
   check('кожен адаптер: маркер, посилання на AGENTS.md, ≤ maxRegels', adapters.every((p: string) => k.controleerAdapter(p, lees(p), beleid.adapters.maxRegels).length === 0));
   check('CLAUDE.md згадує id «claude», GEMINI.md — «gemini»', /`claude`/.test(lees('CLAUDE.md')) && /`gemini`/.test(lees('GEMINI.md')));
   const lang = `<!-- orch-adapter -->\nAGENTS.md\n${'regel\n'.repeat(40)}`;
@@ -82,7 +82,7 @@ export async function main(): Promise<number> {
 
   // — компактний контекст —
   const ctx = k.compacteContext(lees('AGENTS.md'), beleid, lock);
-  check('компактний контекст містить версію правил, hash, базу і 7 compact-розділів (з BIJDRAGE-001 — §3а)', ctx.includes(lock.hash) && ctx.includes(beleid.basis.bronCommit) && (ctx.match(/^## /gm) || []).length === 7);
+  check('компактний контекст містить версію правил, hash, базу і 8 compact-розділів (з BIJDRAGE-001 — §3а, з KLIMOP-001 — §3б)', ctx.includes(lock.hash) && ctx.includes(beleid.basis.bronCommit) && (ctx.match(/^## /gm) || []).length === 8);
   check('компактний контекст ≤ maxBytes і збігається з закоміченим файлом', Buffer.byteLength(ctx) <= beleid.compactContext.maxBytes && lees(beleid.compactContext.bestand) === ctx);
   check('компактний контекст чесно каже, що власник ще не підтвердив', ctx.includes('НЕ підтверджено власником'));
   check('AGENTS.md не містить розділу «Правило N» поза compact-блоками, що суперечить адаптерам', !/^## Правило \d/m.test(lees('AGENTS.md')));

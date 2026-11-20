@@ -14,14 +14,15 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 |---|---|---|
 | **Hoofdpagina van de repository** | **[`LEESMIJ.md`](./LEESMIJ.md)** · [`PROJECTOVERZICHT.nl.md`](./PROJECTOVERZICHT.nl.md) | **[`README.md`](./README.md)** · [`README.uk.md`](ОГЛЯД-ПРОЄКТУ.uk.md) |
 | **Volledig register van alle artikelen en pagina's (140+ documenten)** | **[`docs/INDEX.nl.md`](./docs/INDEX.nl.md)** | **[`docs/INDEX.nl.md`](./docs/INDEX.nl.md)** · [`docs/INDEX.uk.md`](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md) |
-| **1. Architectuur en 11 subdomeinen (`*.tarasevych.com`)** | [`docs/hub/ARCHITECTUUR.nl.md`](./docs/hub/ARCHITECTUUR.nl.md) | [`docs/hub/ARCHITECTUUR.uk.md`](docs/hub/АРХІТЕКТУРА-ЦЕНТРУ.uk.md) |
-| **2. Ontwikkelingsgeschiedenis van het project (Fasen I–VI)** | [`docs/hub/GESCHIEDENIS.nl.md`](./docs/hub/GESCHIEDENIS.nl.md) | [`docs/hub/GESCHIEDENIS.uk.md`](docs/hub/ІСТОРІЯ-РОЗВИТКУ.uk.md) |
-| **3. Gids voor 71 takken, 27 PR's en 18 releases** | [`docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md`](./docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) | [`docs/hub/TAKKEN-EN-PRS.uk.md`](docs/hub/ГІЛКИ-ТА-ЗАПИТИ-НА-ЗЛИТТЯ.uk.md) |
-| **4. Repositorystructuur en codekaart** | [`docs/hub/MAP-STRUCTUUR.nl.md`](./docs/hub/MAP-STRUCTUUR.nl.md) | [`docs/hub/MAP-STRUCTUUR.uk.md`](docs/hub/СТРУКТУРА-ТЕК.uk.md) |
-| **5. Omgevingsvariabelen en versleutelingssleutels** | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`OMGEVINGSVARIABELEN.nl.md`](./OMGEVINGSVARIABELEN.nl.md) | [`docs/hub/OMGEVINGSVARIABELEN.uk.md`](docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md) · [`ENV-VARS.uk.md`](ЗМІННІ-СЕРЕДОВИЩА.uk.md) |
-| **6. Coördinatie `ORCH-001`, `TRACE-001`, stack `B-009` en uitrol** | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) | [`docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) |
-| **Canonieke agentregels en besluitenregister** | [`AGENTENREGELS.nl.md`](./AGENTENREGELS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) | [`AGENTS.uk.md`](ПРАВИЛА-АГЕНТІВ.uk.md) · [`orchestratie/BESLUITEN.uk.md`](orchestratie/РІШЕННЯ.uk.md) |
-| **Beveiliging en porteerplan (Self-Hosting)** | [`BEVEILIGINGSNOTITIES.nl.md`](./BEVEILIGINGSNOTITIES.nl.md) · [`PORTEERPLAN.nl.md`](./PORTEERPLAN.nl.md) | [`SECURITY-NOTES.uk.md`](НОТАТКИ-БЕЗПЕКИ.uk.md) · [`PORTEERPLAN.uk.md`](ПЛАН-ПЕРЕНЕСЕННЯ.uk.md) |
+| **Hoofdarchitectuurmanifest «Klimop» (`KLIMOP-001`, 16 delen, 46 hoofdstukken)** | **[`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](./docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)** | **[`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](./docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md)** |
+| **1. Architectuur en 11 subdomeinen (`*.tarasevych.com`)** | [`docs/hub/ARCHITECTUUR.nl.md`](./docs/hub/ARCHITECTUUR.nl.md) | [`docs/hub/АРХІТЕКТУРА-ЦЕНТРУ.uk.md`](docs/hub/АРХІТЕКТУРА-ЦЕНТРУ.uk.md) |
+| **2. Ontwikkelingsgeschiedenis van het project (Fasen I–VIII)** | [`docs/hub/GESCHIEDENIS.nl.md`](./docs/hub/GESCHIEDENIS.nl.md) | [`docs/hub/ІСТОРІЯ-РОЗВИТКУ.uk.md`](docs/hub/ІСТОРІЯ-РОЗВИТКУ.uk.md) |
+| **3. Gids voor takken, samenvoegverzoeken en uitgaven** | [`docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md`](./docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) | [`docs/hub/ГІЛКИ-ТА-ЗАПИТИ-НА-ЗЛИТТЯ.uk.md`](docs/hub/ГІЛКИ-ТА-ЗАПИТИ-НА-ЗЛИТТЯ.uk.md) |
+| **4. Repositorystructuur en codekaart** | [`docs/hub/MAP-STRUCTUUR.nl.md`](./docs/hub/MAP-STRUCTUUR.nl.md) | [`docs/hub/СТРУКТУРА-ТЕК.uk.md`](docs/hub/СТРУКТУРА-ТЕК.uk.md) |
+| **5. Omgevingsvariabelen en versleutelingssleutels** | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`OMGEVINGSVARIABELEN.nl.md`](./OMGEVINGSVARIABELEN.nl.md) | [`docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md`](docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md) · [`ЗМІННІ-СЕРЕДОВИЩА.uk.md`](ЗМІННІ-СЕРЕДОВИЩА.uk.md) |
+| **6. Coördinatie `ORCH-001`, `BIJDRAGE-001`, `TRACE-001`, stack `B-009` en uitrol** | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) | [`docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md`](docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) |
+| **Canonieke regels voor 14 agenten (`1.5.0`) en besluitenregister (`B-024`)** | [`AGENTENREGELS.nl.md`](./AGENTENREGELS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) | [`ПРАВИЛА-АГЕНТІВ.uk.md`](ПРАВИЛА-АГЕНТІВ.uk.md) · [`orchestratie/РІШЕННЯ.uk.md`](orchestratie/РІШЕННЯ.uk.md) |
+| **Beveiliging, verdeelde opslag en porteerplan** | [`BEVEILIGINGSNOTITIES.nl.md`](./BEVEILIGINGSNOTITIES.nl.md) · [`docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md`](./docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md) · [`PORTEERPLAN.nl.md`](./PORTEERPLAN.nl.md) | [`НОТАТКИ-БЕЗПЕКИ.uk.md`](НОТАТКИ-БЕЗПЕКИ.uk.md) · [`docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md`](docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md) · [`ПЛАН-ПЕРЕНЕСЕННЯ.uk.md`](ПЛАН-ПЕРЕНЕСЕННЯ.uk.md) |
 
 ---
 
@@ -30,11 +31,12 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 | Parameter | Waarde |
 |---|---|
 | **Repository** | [`Tarasevych/hub`](https://github.com/Tarasevych/hub) |
-| **Hoofdtak (Standaardtak)** | [`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst) *(gesynchroniseerd met de integratietak [`integratie`](https://github.com/Tarasevych/hub/tree/integratie))* |
+| **Hoofdtak (Standaardtak)** | [`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst) *(actieve integratietak: [`integratie`](https://github.com/Tarasevych/hub/tree/integratie))* |
 | **Publiek toegangspunt** | [https://hub.tarasevych.com](https://hub.tarasevych.com) *(hoofddomein: `tarasevych.com`)* |
-| **Architectuurmodel** | Self-hosted BYOS op eigen Ubuntu LTS VM achter uitgaande Cloudflare Tunnel (`127.0.0.1:8080`), zonder externe cloudhosting |
-| **Technologiestack** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18 (JSONB + relationele tabellen + FORCE RLS) · Systemd · Caddy · OPA · `age` |
-| **Canonieke regels (ORCH-001)** | [`AGENTS.md`](AGENTS.md) ([🇳🇱 NL](AGENTENREGELS.nl.md) · [🇺🇦 UK](ПРАВИЛА-АГЕНТІВ.uk.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇳🇱 NL](orchestratie/BESLUITEN.nl.md) · [🇺🇦 UK](orchestratie/РІШЕННЯ.uk.md)) |
+| **Huidig architectuurmodel** | Zelfgehost op eigen Ubuntu LTS VM achter uitgaande Cloudflare-tunnel (`127.0.0.1:8080`), zonder externe cloudhosting |
+| **Doelarchitectuur (`KLIMOP-001` / `B-024`)** | **Levend digitaal ecosysteem «Klimop»** ([`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)) — gedistribueerd, zelfherstellend, cryptografisch beveiligd ecosysteem met onafhankelijke knooppunten en gescheiden bevoegdheden *(doelarchitectuur; geen toestemming voor onmiddellijke wijziging van de productie-infrastructuur)* |
+| **Technologiestack** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18.6 (JSONB + relationele tabellen + FORCE RLS) · Systemd · Caddy · OPA · `age` |
+| **Canonieke regels (`ORCH-001`, versie `1.5.0`)** | [`AGENTS.md`](AGENTS.md) ([🇳🇱 NL](AGENTENREGELS.nl.md) · [🇺🇦 UK](ПРАВИЛА-АГЕНТІВ.uk.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇳🇱 NL](orchestratie/BESLUITEN.nl.md) · [🇺🇦 UK](orchestratie/РІШЕННЯ.uk.md)) · adapters voor **alle 14 AI-agenten** |
 | **Taalconventie** | Documentatie en rapporten — **tweetalig (`uk` / `nl`)**; URL/API-paden en modulenamen in de code — **Nederlands (`nl`)**; gebruikersinterface — **tweetalig (`uk` / `nl`)** |
 | **Bestandskaart van de codebase** | [`docs/kaart/KAART-BESTANDEN.nl.md`](docs/kaart/KAART-BESTANDEN.nl.md) ([🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md) · [🇺🇦 UK](docs/kaart/КАРТА-ФАЙЛІВ.uk.md)) en [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 hernoemde modules + nieuwe modules met automatische bouwcontrole)* |
 
@@ -53,7 +55,8 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 5. [Repositorystructuur: waar staat wat in de code](#5-repositorystructuur-waar-staat-wat-in-de-code)
 6. [Omgevingsvariabelen, versleutelingssleutels en configuratie (`OMGEVINGSVARIABELEN.nl.md`)](#6-omgevingsvariabelen-versleutelingssleutels-en-configuratie-env-varsmd)
 7. [Infrastructuur, serverstack (`B-009`), beveiliging en reservekopieën](#7-infrastructuur-serverstack-b-009-beveiliging-en-reservekopieën)
-8. [Coördinatie van AI-agenten (`ORCH-001` / `TRACE-001`) en ontwikkelopdrachten](#8-coördinatie-van-ai-agenten-orch-001--trace-001-en-ontwikkelopdrachten)
+8. [Coördinatie van alle 14 AI-agenten (`ORCH-001` / `BIJDRAGE-001` / `TRACE-001`) en ontwikkelopdrachten](#8-coördinatie-van-alle-14-ai-agenten-orch-001--bijdrage-001--trace-001-en-ontwikkelopdrachten)
+9. [Doelarchitectuur: levend digitaal ecosysteem «Klimop» (`KLIMOP-001` / `B-024`)](#9-doelarchitectuur-levend-digitaal-ecosysteem-klimop-klimop-001--b-024)
 
 ---
 
@@ -72,7 +75,7 @@ Alle subdomeinen (gedefinieerd in [`backend/deployment-identity.ts`](backend/dep
 | **[`id.tarasevych.com`](https://id.tarasevych.com)** | **Identiteit (`id`)** | Centraal aanmeld- en accountbeveiligingspunt: Google OIDC (PKCE + nonce + `__Secure-tsv_aanmeld_binding`), wachtwoord + TOTP (`AES-256-GCM`) + herstelcodes, **WebAuthn Passkeys**, gasttoegangscodes (`/toegang`), Step-Up bevestiging voor gevoelige acties, accountwisselaar en **12 profielonderdelen**. | [`src/ToegangslaagWeergave.tsx`](src/ToegangslaagWeergave.tsx), [`backend/toegangslaag.ts`](backend/toegangslaag.ts), [`backend/toegangssleutels.ts`](backend/toegangssleutels.ts), [`backend/stap-op.ts`](backend/stap-op.ts) |
 | **[`cloud.tarasevych.com`](https://cloud.tarasevych.com)** | **Cloud (`cloud`)** | **Cloud vNext (M1–M11)**: bestandswerkruimten, Google Drive-projectie, client-side zero-knowledge versleuteling (**M7 architectuur voor gegevensbescherming** op basis van WebAuthn PRF en herstelsleutel), universele bestandsviewer, fotodienst. | [`backend/cloud-platform.ts`](backend/cloud-platform.ts), [`backend/cloud-google-drive.ts`](backend/cloud-google-drive.ts), [`docs/WOLK-M7-PRIVACY-ARCHITECTUUR.nl.md`](docs/WOLK-M7-PRIVACY-ARCHITECTUUR.nl.md) |
 | **[`ai.tarasevych.com`](https://ai.tarasevych.com)** | **AI-ruimte (`ai`)** | Werken met privé- en technische AI-modellen, AI-agentenbord, fijnmazige **«AI-toegang»**-rechten (scopes per hulpmiddel en gevoelige gegevens), centraal verbindingspunt `/verbindingen`. | [`src/agenten/`](src/agenten/), [`backend/ai-beleid.ts`](backend/ai-beleid.ts), [`backend/connector-v2.ts`](backend/connector-v2.ts) |
-| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-poort (`mcp`)** | Aparte connectoradressen per agent (`/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`), OAuth 2.0-metadata, koppeling van externe MCP-servers (`backend/mcp-klant/`), webpaneel **«Coördinatie»** (`/agents` → `TabOrch.tsx`) en geïsoleerde deur op poort `8091`. | [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/VERBINDER-EEN-PAD.nl.md`](deploy/VERBINDER-EEN-PAD.nl.md) |
+| **[`mcp.tarasevych.com`](https://mcp.tarasevych.com)** | **MCP-poort (`mcp`)** | Afzonderlijke verbinderadressen voor elk van de **14 AI-agentintegraties** (`/claude`, `/gpt`, `/codex`, `/grok`, `/gemini`, `/githubcopilot`, `/copilot`, `/cursor`, `/antigravity`, `/autoclaw`, `/windsurf`, `/cline`, `/devin`, `/opencode`), OAuth 2.0-metagegevens (RFC 9728), koppeling van externe MCP-servers (`backend/mcp-klant/`), webpaneel **«Coördinatie»** (`/agenten` → `TabOrch.tsx`) en geïsoleerde deur op poort `8091`. | [`shared/connector-v2/agenten.ts`](shared/connector-v2/agenten.ts), [`src/agenten/TabOrch.tsx`](src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](backend/orch-routes.ts), [`deploy/VERBINDER-EEN-PAD.nl.md`](deploy/VERBINDER-EEN-PAD.nl.md) |
 | **[`github.tarasevych.com`](https://github.tarasevych.com)** | **GitHub (`github`)** | Koppeling met GitHub OAuth / GitHub App, overzicht van repositories, takken, Pull Requests, commits en releases, indexering van code en issues in globaal zoeken `/zoek`. | [`shared/github-koppeling.ts`](shared/github-koppeling.ts), [`backend/uitrol-github.ts`](backend/uitrol-github.ts) |
 | **[`huis.tarasevych.com`](https://huis.tarasevych.com)** | **Slim huis (`huis`)** | **Huis vNext**: integratie met Home Assistant en lokale gateways, beheer van kamers, apparaten en automatiseringen, versleuteling van adaptertokens (`HUIS_ADAPTER_SLEUTEL_V1`), beveiliging van het beheersubnet. | [`shared/huis-model.ts`](shared/huis-model.ts), [`deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md`](deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md) |
 | **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API & Kluis (`api`)** | Beheer van machinetokens (`tsv_`), API-koppelingen, webhooks en de beveiligde **Sleutelkluis (Vault)** van de eigenaar. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
@@ -543,19 +546,36 @@ Alle periodieke taken draaien als geïsoleerde `Type=oneshot`-units `mijn-ruimte
 
 ---
 
-## 8. Coördinatie van AI-Agenten (`ORCH-001` / `TRACE-001`) en ontwikkelopdrachten
+## 8. Coördinatie van alle 14 AI-agenten (`ORCH-001` / `BIJDRAGE-001` / `TRACE-001`) en ontwikkelopdrachten
 
-Er werken 8 AI-agenten parallel aan de repository (**Claude, Antigravity, ChatGPT, Codex, Grok, GitHub Copilot, Gemini, Cursor**). Om conflicten en het overschrijven van andermans werk te voorkomen, geldt het verplichte protocol **ORCH-001** ([`AGENTS.md`](AGENTS.md) / [`AGENTENREGELS.nl.md`](AGENTENREGELS.nl.md)):
+Aan de opslagplaats werken **14 AI-agentintegraties** parallel (allemaal vastgelegd in [`shared/connector-v2/agenten.ts`](shared/connector-v2/agenten.ts) en [`orchestratie/beleid.json`](orchestratie/beleid.json), regelversie `1.5.0`, besluit `B-024`). Om conflicten, verlies van auteurschap en overschrijven van andermans werk te voorkomen, geldt het verplichte kader **ORCH-001 + BIJDRAGE-001 + VERWIJZING-001 + KLIMOP-001** ([`AGENTS.md`](AGENTS.md) / [`AGENTENREGELS.nl.md`](AGENTENREGELS.nl.md)):
 
-1. **Één canonieke regelbron:** [`AGENTS.md`](AGENTS.md) + [`orchestratie/beleid.json`](orchestratie/beleid.json) + [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md). De bestanden `CLAUDE.md`, `ANTIGRAVITY.md`, `GEMINI.md`, `CODEX.md`, `CHATGPT.md`, `GROK.md`, `.cursorrules`, `.github/copilot-instructions.md` zijn uitsluitend korte verwijzingen (≤ 25 regels) met de markering `<!-- orch-adapter -->`.
-2. **Taakisolatie:** elke taak heeft een unieke ID (`ABC-001`), een eigen tak volgens het patroon `feature|fix|audit|release/<onderwerp>-YYYYMMDD-HHMMSS`, een declaratiebestand `orchestratie/taken/<TASK-ID>.json` en een gecommit ontwikkelarchief `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (**TRACE-001**).
-3. **Beschermde takken:** agenten mogen nooit rechtstreeks schrijven naar `voornaamst`, `integratie`, `release/*` of andermans takken zonder uitdrukkelijke opdracht van de eigenaar.
+| Nr. | ID (`beleid.json`) | Agent / Omgeving | Eigen MCP-verbinderadres | Canonieke adapter (`🇳🇱 NL` / `🇺🇦 UK`) |
+|---|---|---|---|---|
+| 1 | `claude` | **Claude** (Claude Code, claude.ai, Desktop) | `https://mcp.tarasevych.com/claude` | [`CLAUDE.nl.md`](CLAUDE.nl.md) · [`CLAUDE.md`](CLAUDE.md) |
+| 2 | `antigravity` | **Google Antigravity** | `https://mcp.tarasevych.com/antigravity` | [`ANTIGRAVITY.nl.md`](ANTIGRAVITY.nl.md) · [`ANTIGRAVITY.md`](ANTIGRAVITY.md) |
+| 3 | `autoclaw` | **AutoClaw** (Z.ai / GLM-5.3-flashX-Legal) | `https://mcp.tarasevych.com/autoclaw` | [`AUTOCLAW.nl.md`](AUTOCLAW.nl.md) · [`AUTOCLAW.md`](AUTOCLAW.md) |
+| 4 | `chatgpt` | **ChatGPT** (OpenAI Web Apps) | `https://mcp.tarasevych.com/gpt` | [`CHATGPT.nl.md`](CHATGPT.nl.md) · [`CHATGPT.md`](CHATGPT.md) |
+| 5 | `codex` | **OpenAI Codex** (CLI en IDE) | `https://mcp.tarasevych.com/codex` | [`CODEX.nl.md`](CODEX.nl.md) · [`CODEX.md`](CODEX.md) |
+| 6 | `grok` | **Grok** (xAI-clients) | `https://mcp.tarasevych.com/grok` | [`GROK.nl.md`](GROK.nl.md) · [`GROK.md`](GROK.md) |
+| 7 | `copilot` | **GitHub Copilot** (VS Code en GitHub) | `https://mcp.tarasevych.com/githubcopilot` | [`.github/COPILOT-INSTRUCTIES.nl.md`](.github/COPILOT-INSTRUCTIES.nl.md) · [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
+| 8 | `mscopilot` | **Microsoft Copilot Studio** | `https://mcp.tarasevych.com/copilot` | [`MSCOPILOT.nl.md`](MSCOPILOT.nl.md) · [`MSCOPILOT.md`](MSCOPILOT.md) |
+| 9 | `gemini` | **Google Gemini** (Gemini CLI) | `https://mcp.tarasevych.com/gemini` | [`GEMINI.nl.md`](GEMINI.nl.md) · [`GEMINI.md`](GEMINI.md) |
+| 10 | `cursor` | **Cursor** | `https://mcp.tarasevych.com/cursor` | [`.cursorrules`](.cursorrules) · [`CURSOR.nl.md`](CURSOR.nl.md) · [`CURSOR.md`](CURSOR.md) |
+| 11 | `windsurf` | **Windsurf** (Cascade) | `https://mcp.tarasevych.com/windsurf` | [`WINDSURF.nl.md`](WINDSURF.nl.md) · [`WINDSURF.md`](WINDSURF.md) · [`.windsurfrules`](.windsurfrules) |
+| 12 | `cline` | **Cline** (VS Code / Roo Code) | `https://mcp.tarasevych.com/cline` | [`CLINE.nl.md`](CLINE.nl.md) · [`CLINE.md`](CLINE.md) · [`.clinerules`](.clinerules) |
+| 13 | `devin` | **Devin** (Cognition) | `https://mcp.tarasevych.com/devin` | [`DEVIN.nl.md`](DEVIN.nl.md) · [`DEVIN.md`](DEVIN.md) |
+| 14 | `opencode` | **OpenCode** | `https://mcp.tarasevych.com/opencode` | [`OPENCODE.nl.md`](OPENCODE.nl.md) · [`OPENCODE.md`](OPENCODE.md) |
+
+1. **Één canonieke bron voor regels en vaardigheden:** [`AGENTS.md`](AGENTS.md) (`AGENTENREGELS.nl.md`) + [`orchestratie/beleid.json`](orchestratie/beleid.json) + [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) en de gedeelde vaardighedencatalogus [`.agents/skills/`](.agents/skills/) ([`scripts/vaardigheden/catalogus.json`](scripts/vaardigheden/catalogus.json), 12 vaardigheden waaronder [`klimop-architectuur`](.agents/skills/klimop-architectuur/SKILL.md)). Adapters zijn uitsluitend korte verwijzingen (≤ 25 niet-lege regels) met de markering `<!-- orch-adapter -->`.
+2. **Taakisolatie en auteurschap:** elke taak heeft een vaste ID (`ABC-001`), een eigen tak `feature|fix|audit|release/<onderwerp>-YYYYMMDD-HHMMSS`, declaratiebestand `orchestratie/taken/<TASK-ID>.json`, auteurschapsregistratie `orchestratie/bijdragen/<TASK-ID>/…json` (**BIJDRAGE-001**), bijwerking van het functiedossier `orchestratie/onderwerpen/*.json` en een vastgelegd ontwikkelarchief `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (**TRACE-001**).
+3. **Beschermde takken en productieomgeving:** geen enkele agent schrijft rechtstreeks naar `voornaamst`, `integratie`, `release/*` of andermans takken en wijzigt de productie-infrastructuur niet zonder uitdrukkelijke toestemming van de eigenaar.
 
 ### Belangrijkste opdrachten voor ontwikkeling, controle en coördinatie
 
 ```bash
 # 1. Lokaal starten en volledige bouwcontrole
-npm run dev                                          # Start de Vite dev-server voor de frontend
+npm run dev                                          # Start de ontwikkelserver voor de clientzijde
 npm run build                                        # Volledige bouwpijplijn:
                                                      #   kaart-controle → plaatsing-controle → hulp-vraagtekens-controle →
                                                      #   zoek-ui-catalogus → l002-audit → mail-slimme-inbox-audit →
@@ -563,17 +583,21 @@ npm run build                                        # Volledige bouwpijplijn:
                                                      #   bouw-extensie → build:server
 npm run typecheck:server                             # Typecontrole van de servercode (tsc -p tsconfig.server.json)
 
-# 2. Eenheids- en visuele tests uitvoeren
+# 2. Eenheidstests en vaardigheidsvalidatie
 node scripts/eenheidstests.mjs                       # Alle eenheidstests (of met filter, bv.: node scripts/eenheidstests.mjs orch)
+node scripts/vaardigheden/valideer.mjs               # Controle van de 12 gedeelde vaardigheden (.agents/skills/) en de taalwet
 node scripts/kaart-controle.mjs                      # Controle op de integriteit van de Nederlandse bestandskaart
 node scripts/plaatsing-controle.mjs                  # Controle op zones en plekken voor zwevende knoppen en verboden position:fixed
 node scripts/kleur-contrast-controle.mjs             # Controle op kleurcontrast van de paletten
 
-# 3. Opdrachten voor AI-agentcoördinatie (ORCH-001)
-node scripts/orch.mjs controleer                     # Gecombineerde controle van beleid.json, regels.lock.json, adapters, taken en wachtrij
+# 3. Opdrachten voor AI-agentcoördinatie (ORCH-001 / BIJDRAGE-001 / KLIMOP-001)
+node scripts/orch.mjs begin --agent <id> [--taak <ID>] [--onderwerp <naam>] [--tekst "<taak>"]
+node scripts/orch.mjs controleer                     # Gecombineerde controle van beleid.json, regels.lock.json, 14 adapters, taken en wachtrij
+node scripts/orch.mjs behoud --tegen <ref>           # Controle op behoud van auteurschap, functiedossiers en vaardigheidsmogelijkheden
 node scripts/orch.mjs status                         # Huidige status van alle geregistreerde taken (in_progress / integrated / released / installed)
 node scripts/orch.mjs context                        # Genereer compacte context orchestratie/CONTEXT-COMPACT.md
-node scripts/orch.mjs taak-start --id <TASK-ID> --agent <agent> --basis <sha40> --tak <branch>
+node scripts/orch.mjs taak-start --id <TASK-ID> --agent <agent> --basis <sha40> --tak <tak>
+node scripts/orch.mjs bijdrage --taak <TASK-ID> --agent <agent> --platform "<platform>" --model <model> --opdrachtgever "<naam>" --soort <soort> --wat "<wat>"
 node scripts/orch.mjs versheid --taak <TASK-ID> --fase start|overdracht
 node scripts/orch.mjs pakket --taak <TASK-ID> --auteur "<Naam>"   # Bouw mijn-ruimte-<versie>.tar.gz + <versie>-<agent>-overdracht.zip
 node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip
@@ -583,28 +607,44 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
 
 ---
 
+## 9. Doelarchitectuur: levend digitaal ecosysteem «Klimop» (`KLIMOP-001` / `B-024`)
+
+Volledige tweetalige architectuurcanon (16 delen, 46 hoofdstukken): **[`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)** ↔ **[`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md)** · Geheugendossier: [`orchestratie/onderwerpen/ecosysteem-klimop.json`](orchestratie/onderwerpen/ecosysteem-klimop.json) · Gedeelde vaardigheid voor alle 14 agenten: [`.agents/skills/klimop-architectuur/SKILL.md`](.agents/skills/klimop-architectuur/SKILL.md).
+
+> **Status en strikte bevoegdheidsgrens:** het manifest «Klimop» is een **doelarchitectuur** en **GEEN toestemming voor onmiddellijke wijziging van de productie-infrastructuur**. De overgang van het gecentraliseerde model («één hoofdserver → gedeelde serverkern → centrale database → alle diensten») naar **«onafhankelijke knooppunten ↔ beveiligd netwerk ↔ gedistribueerde opslag ↔ geïsoleerde diensten ↔ onafhankelijk bestuur»** verloopt uitsluitend gefaseerd (Fasen 0–12) zonder verlies van gegevens, bestaande functies, de 11 subdomeinen, PostgreSQL of reservekopieën (§3, §35–§36).
+
+- **De zeven structuurelementen van de digitale klimop (§1):** **Wortels** (onafhankelijke vertrouwensgrondslagen zonder alleenheerschappij), **Stengels** (geauthenticeerde versleutelde verbindingen met alternatieve routes), **Bladeren** (geïsoleerde functionele onderdelen), **Hechtranken** (vrijwillige, transparante en intrekbare uitbreiding zonder verborgen installatie), **Voeding** (eerlijke uitwisseling van middelen zonder dwang), **Immuunsysteem** (bewaking zonder inzage in privé-inhoud, quarantaine en zelfherstel), **Zaden** (overdraagbaarheid en heropbouw zonder permanente afhankelijkheid van één maker).
+- **Hoofdregel (§2):** geen enkele afzonderlijke deelnemer, apparaat, server, sleutel, beheerder, aanbieder of AI-agent heeft eenzijdige onbeperkte macht over het gehele ecosysteem; de rechten van de eigenaar van persoonsgegevens, de knooppuntbeheerder en het wijzigen van gedeelde regels zijn gescheiden.
+- **Vier knooppunttypen (§4) en zeven lagen cryptografische bescherming (§6–§13):** vaste onafhankelijke knooppunten, persoonlijke gebruikersapparaten, gespecialiseerde knooppunten met beperkte rechten en tijdelijke toetredingsknooppunten; eind-tot-eindversleuteling (`AES-256-GCM` / `ChaCha20-Poly1305`), geheimdeling volgens Shamir en controleerbare verdeling volgens Feldman/Pedersen voor sleutels, uitwiscode-herstel voor grote versleutelde objecten, cryptografische tijdvakken, drempelhandtekeningen FROST, evaluatie van standaard 9420 en voorbereiding op postkwantumcryptografie.
+- **Bescherming van de mens, dwangbestendigheid en gedeeld bestuur (§14–§20):** afzonderlijke procedures voor apparaatverlies, ziekte, langdurige afwezigheid, overdracht bij overlijden en dwang (zonder automatische vernietiging van persoonsgegevens bij vermoeden van dwang, §17); 7 gescheiden bevoegdheidscategorieën en tijdsvertragingen uitsluitend voor risicovolle besluiten zonder vertraging van dagelijkse e-mail, bestanden of agenda.
+- **Zestien agentverantwoordelijkheden en 15 architectuurcontrolevragen (§32–§34, §42–§45):** elk van de 14 integratie-agenten toetst iedere wijziging aan de 15 vragen (`AGENTENREGELS.nl.md` §10.4), weert de 14 verboden vereenvoudigingen (§10.5) en volgt de volgorde **Fase 0 (audit) → Fase 1 (architectuurkern) → Fasen 2–12**.
+
+---
+
 ## Belangrijkste documentatie in de repository (Tweetalige verwijzingen: 🇳🇱 NL ↔ 🇺🇦 UK)
 
-> 📚 **Volledige catalogus van alle 140+ artikelen in de repository:** [🇳🇱 **Nederlandse index (`docs/INDEX.nl.md`)**](docs/INDEX.nl.md) · [🇺🇦 **Український індекс (`docs/INDEX.nl.md`)**](docs/INDEX.nl.md)
+> 📚 **Volledige catalogus van alle 140+ artikelen in de repository:** [🇳🇱 **Nederlandse index (`docs/INDEX.nl.md`)**](docs/INDEX.nl.md) · [🇺🇦 **Український покажчик (`docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md`)**](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
 
+- **Hoofdarchitectuurmanifest «Klimop» (`KLIMOP-001`):**
+  - [🇳🇱 `docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) ↔ [🇺🇦 `docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md) · vaardigheid [`klimop-architectuur`](.agents/skills/klimop-architectuur/VAARDIGHEID.nl.md) · dossier [`ecosysteem-klimop.json`](orchestratie/onderwerpen/ecosysteem-klimop.json)
 - **Hoofd- en themapagina's van de Hub:**
-  - Hoofdpagina: [🇳🇱 `LEESMIJ.md`](LEESMIJ.md) ([`PROJECTOVERZICHT.nl.md`](PROJECTOVERZICHT.nl.md)) ↔ [🇺🇦 `README.md`](README.md) ([`README.uk.md`](ОГЛЯД-ПРОЄКТУ.uk.md))
+  - Hoofdpagina: [🇳🇱 `LEESMIJ.md`](LEESMIJ.md) ([`PROJECTOVERZICHT.nl.md`](PROJECTOVERZICHT.nl.md)) ↔ [🇺🇦 `README.md`](README.md) ([`ОГЛЯД-ПРОЄКТУ.uk.md`](ОГЛЯД-ПРОЄКТУ.uk.md))
   - Architectuur (11 subdomeinen): [🇳🇱 NL](docs/hub/ARCHITECTUUR.nl.md) ↔ [🇺🇦 UK](docs/hub/АРХІТЕКТУРА-ЦЕНТРУ.uk.md)
-  - Ontwikkelingsgeschiedenis (Fasen I–VI): [🇳🇱 NL](docs/hub/GESCHIEDENIS.nl.md) ↔ [🇺🇦 UK](docs/hub/ІСТОРІЯ-РОЗВИТКУ.uk.md)
-  - Takken (71), PR's (#1–#27) en Releases (18): [🇳🇱 NL](docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) ↔ [🇺🇦 UK](docs/hub/ГІЛКИ-ТА-ЗАПИТИ-НА-ЗЛИТТЯ.uk.md)
+  - Ontwikkelingsgeschiedenis (Fasen I–VIII): [🇳🇱 NL](docs/hub/GESCHIEDENIS.nl.md) ↔ [🇺🇦 UK](docs/hub/ІСТОРІЯ-РОЗВИТКУ.uk.md)
+  - Takken, samenvoegverzoeken en uitgaven: [🇳🇱 NL](docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) ↔ [🇺🇦 UK](docs/hub/ГІЛКИ-ТА-ЗАПИТИ-НА-ЗЛИТТЯ.uk.md)
   - Repositorystructuur en codekaart: [🇳🇱 NL](docs/hub/MAP-STRUCTUUR.nl.md) ↔ [🇺🇦 UK](docs/hub/СТРУКТУРА-ТЕК.uk.md)
   - Omgevingsvariabelen en sleutels: [🇳🇱 NL](docs/hub/OMGEVINGSVARIABELEN.nl.md) ↔ [🇺🇦 UK](docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md)
   - Coördinatie en uitrol: [🇳🇱 NL](docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) ↔ [🇺🇦 UK](docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md)
-- **Regels en bestuur (`ORCH-001`):**
+- **Regels en bestuur (`ORCH-001` / `B-024`):**
   - [`AGENTS.md`](AGENTS.md) ([🇳🇱 NL](AGENTENREGELS.nl.md) ↔ [🇺🇦 UK](ПРАВИЛА-АГЕНТІВ.uk.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇳🇱 NL](orchestratie/BESLUITEN.nl.md) ↔ [🇺🇦 UK](orchestratie/РІШЕННЯ.uk.md))
 - **Bestandskaart (EN → NL):**
   - [`docs/kaart/KAART-BESTANDEN.nl.md`](docs/kaart/KAART-BESTANDEN.nl.md) ([🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md) ↔ [🇺🇦 UK](docs/kaart/КАРТА-ФАЙЛІВ.uk.md))
 - **Omgevingsvariabelen en geheimen:**
   - [`OMGEVINGSVARIABELEN.nl.md`](OMGEVINGSVARIABELEN.nl.md) ([🇳🇱 NL](OMGEVINGSVARIABELEN.nl.md) ↔ [🇺🇦 UK](ЗМІННІ-СЕРЕДОВИЩА.uk.md)) · [`deploy/GEHEIMEN-REGISTER.nl.md`](deploy/GEHEIMEN-REGISTER.nl.md) ([🇳🇱 NL](deploy/GEHEIMEN-REGISTER.nl.md) ↔ [🇺🇦 UK](deploy/РЕЄСТР-ТАЄМНИЦЬ.uk.md)) · [`deploy/SLEUTELS-EN-VERSLEUTELING.nl.md`](deploy/SLEUTELS-EN-VERSLEUTELING.nl.md) ([🇳🇱 NL](deploy/SLEUTELS-EN-VERSLEUTELING.nl.md) ↔ [🇺🇦 UK](deploy/КЛЮЧІ-ТА-ШИФРУВАННЯ.uk.md))
-- **Beveiliging, porteerplan en audit:**
-  - [`BEVEILIGINGSNOTITIES.nl.md`](BEVEILIGINGSNOTITIES.nl.md) ([🇳🇱 NL](BEVEILIGINGSNOTITIES.nl.md) ↔ [🇺🇦 UK](НОТАТКИ-БЕЗПЕКИ.uk.md)) · [`PORTEERPLAN.nl.md`](PORTEERPLAN.nl.md) ([🇳🇱 NL](PORTEERPLAN.nl.md) ↔ [🇺🇦 UK](ПЛАН-ПЕРЕНЕСЕННЯ.uk.md)) · [`docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md`](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) ([🇳🇱 NL](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) ↔ [🇺🇦 UK](docs/ontwerp/ПРОЄКТ-ОБЛІКОВИХ-ЗАПИСІВ-І-БЕЗПЕКИ.uk.md)) · [`docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md`](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md) ([🇳🇱 NL](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md) ↔ [🇺🇦 UK](docs/beveiliging/ЗАХОДИ-БЕЗПЕКИ-ЗА-МАРШРУТАМИ-20261022.uk.md))
+- **Beveiliging, verdeelde opslag, porteerplan en audit:**
+  - [`BEVEILIGINGSNOTITIES.nl.md`](BEVEILIGINGSNOTITIES.nl.md) ([🇳🇱 NL](BEVEILIGINGSNOTITIES.nl.md) ↔ [🇺🇦 UK](НОТАТКИ-БЕЗПЕКИ.uk.md)) · [`docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md`](docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md) ↔ [🇺🇦 UK](docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md) · [`PORTEERPLAN.nl.md`](PORTEERPLAN.nl.md) ([🇳🇱 NL](PORTEERPLAN.nl.md) ↔ [🇺🇦 UK](ПЛАН-ПЕРЕНЕСЕННЯ.uk.md)) · [`docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md`](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) ([🇳🇱 NL](docs/ontwerp/ONTWERP-ACCOUNTS-EN-BEVEILIGING.nl.md) ↔ [🇺🇦 UK](docs/ontwerp/ПРОЄКТ-ОБЛІКОВИХ-ЗАПИСІВ-І-БЕЗПЕКИ.uk.md)) · [`docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md`](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md) ([🇳🇱 NL](docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md) ↔ [🇺🇦 UK](docs/beveiliging/ЗАХОДИ-БЕЗПЕКИ-ЗА-МАРШРУТАМИ-20261022.uk.md))
 - **Uitrol, updates en herstel:**
-  - [`deploy/PROJECTOVERZICHT.nl.md`](deploy/LEESMIJ.nl.md) ([🇳🇱 NL](deploy/LEESMIJ.nl.md) ↔ [🇺🇦 UK](deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md)) · [`deploy/REGELS-UITROLPAKKET.nl.md`](deploy/REGELS-UITROLPAKKET.nl.md) ([🇳🇱 NL](deploy/REGELS-UITROLPAKKET.nl.md) ↔ [🇺🇦 UK](deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md)) · [`deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md`](deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md) ([🇳🇱 NL](deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md) ↔ [🇺🇦 UK](deploy/ІНСТРУКЦІЯ-БЕЗПЕЧНОГО-РОЗГОРТАННЯ.uk.md)) · [`deploy/HERSTEL.nl.md`](deploy/HERSTEL.nl.md) ([🇳🇱 NL](deploy/HERSTEL.nl.md) ↔ [🇺🇦 UK](deploy/ВІДНОВЛЕННЯ.uk.md)) · [`deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md`](deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md) ([🇳🇱 NL](deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md) ↔ [🇺🇦 UK](deploy/ПОВНА-КОПІЯ-ВІДНОВЛЕННЯ.uk.md))
+  - [`deploy/LEESMIJ.nl.md`](deploy/LEESMIJ.nl.md) ([🇳🇱 NL](deploy/LEESMIJ.nl.md) ↔ [🇺🇦 UK](deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md)) · [`deploy/REGELS-UITROLPAKKET.nl.md`](deploy/REGELS-UITROLPAKKET.nl.md) ([🇳🇱 NL](deploy/REGELS-UITROLPAKKET.nl.md) ↔ [🇺🇦 UK](deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md)) · [`deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md`](deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md) ([🇳🇱 NL](deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md) ↔ [🇺🇦 UK](deploy/ІНСТРУКЦІЯ-БЕЗПЕЧНОГО-РОЗГОРТАННЯ.uk.md)) · [`deploy/HERSTEL.nl.md`](deploy/HERSTEL.nl.md) ([🇳🇱 NL](deploy/HERSTEL.nl.md) ↔ [🇺🇦 UK](deploy/ВІДНОВЛЕННЯ.uk.md)) · [`deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md`](deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md) ([🇳🇱 NL](deploy/VOLLEDIGE-KOPIE-HERSTEL.nl.md) ↔ [🇺🇦 UK](deploy/ПОВНА-КОПІЯ-ВІДНОВЛЕННЯ.uk.md))
 - **AI-agenten en MCP:**
   - [`deploy/DRAAIBOEK-AGENTEN-0.4.nl.md`](deploy/DRAAIBOEK-AGENTEN-0.4.nl.md) ([🇳🇱 NL](deploy/DRAAIBOEK-AGENTEN-0.4.nl.md) ↔ [🇺🇦 UK](deploy/ІНСТРУКЦІЯ-АГЕНТІВ-0.4.uk.md)) · [`deploy/MCP-VERBINDER.nl.md`](deploy/MCP-VERBINDER.nl.md) ([🇳🇱 NL](deploy/MCP-VERBINDER.nl.md) ↔ [🇺🇦 UK](deploy/ЗЄДНУВАЧ-ПРОТОКОЛУ-КОНТЕКСТУ.uk.md)) · [`deploy/VERBINDER-V2.nl.md`](deploy/VERBINDER-V2.nl.md) ([🇳🇱 NL](deploy/VERBINDER-V2.nl.md) ↔ [🇺🇦 UK](deploy/ЗЄДНУВАЧ-В2.uk.md)) · [`deploy/VERBINDER-EEN-PAD.nl.md`](deploy/VERBINDER-EEN-PAD.nl.md) ([🇳🇱 NL](deploy/VERBINDER-EEN-PAD.nl.md) ↔ [🇺🇦 UK](deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.uk.md))
 - **Globaal zoeken `/zoek`:**
@@ -617,10 +657,11 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
 ---
 
 <!-- HISTORIE-001:aanvulling-20261113 -->
-## Wat is er veranderd sinds 07-11-2026
+## Wat is er veranderd in november 2026
 
-> Aanvulling HISTORIE-001 van 13-11-2026. De tekst hierboven is ongewijzigd.
+> Aanvulling `HISTORIE-001` (13-11-2026) en `KLIMOP-001` / `B-024` (20-11-2026).
 
-- Live versie: `20261113-121403` (SEC-002). De standaardtak `voornaamst` loopt 132 commits achter; alleen de eigenaar werkt hem bij.
-- Nieuw werk: accountcentrum en weergave «Ontwerp» (IDENTITEIT-003…010), Telegram en bevestigen vanaf een ander apparaat, GitHub-omgeving, delen in de cloud, MCP-001, «Levend huis» (HUIS-001), diepe audit SEC-002.
-- Kroniek van alle takken met voorganger en opvolger: [KRONIEK-TAKKEN](docs/hub/KRONIEK-TAKKEN.nl.md) · [Fase VII](docs/hub/GESCHIEDENIS.nl.md) · [PR #28–#76](docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md).
+- Actuele geïnstalleerde uitgave op 20-11-2026 (`/api/version`): `20261120-141041` (`ba289fa919c66765b6fc5565d340976994261c05`, `UPD-013`).
+- Ingevoerde mijlpalen in november 2026: accountcentrum en weergave «Ontwerp» (`IDENTITEIT-003…010`), Telegram met dynamische actiekaarten en driefactorvertrouwen voor uitgaven (`UPD-011` / `B-023`), verdeelde versleutelde opslag met Shamir-drempeldelen `k`-van-`n` (`UPD-012` / `UPD-013`), auteurschapsregistratie, functiedossiers en 12 gedeelde vaardigheden (`BIJDRAGE-001` / `VERWIJZING-001`), «Levend huis» (`HUIS-001`), diepe audit `SEC-002`.
+- **20-11-2026 (`KLIMOP-001` / `B-024`):** vaststelling van het **Hoofdarchitectuurmanifest «Mijn Ruimte» — Levend Digitaal Ecosysteem «Klimop»** ([`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md) ↔ [`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`](docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md)) als doelarchitectuur, en bijwerking van de regels (`1.5.0`) en adapters voor alle 14 AI-agentintegraties zonder onmiddellijke wijziging van de productie-infrastructuur.
+- Kroniek van alle takken met voorganger en opvolger: [KRONIEK-TAKKEN](docs/hub/KRONIEK-TAKKEN.nl.md) · [Ontwikkelingsgeschiedenis](docs/hub/GESCHIEDENIS.nl.md) · [Takken en samenvoegverzoeken](docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md).

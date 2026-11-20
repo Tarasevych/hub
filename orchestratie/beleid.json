@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.18",
+  "regelsVersie": "1.5.0",
   "bijgewerkt": "2026-11-20",
   "regelBestanden": [
     "AGENTS.md",
@@ -134,12 +134,17 @@
       "GROK.md",
       "ANTIGRAVITY.md",
       "AUTOCLAW.md",
-      "CHATGPT.md"
+      "CHATGPT.md",
+      "WINDSURF.md",
+      "CLINE.md",
+      "DEVIN.md",
+      "OPENCODE.md",
+      "MSCOPILOT.md"
     ]
   },
   "compactContext": {
     "bestand": "orchestratie/CONTEXT-COMPACT.md",
-    "maxBytes": 14000,
+    "maxBytes": 20000,
     "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + латку від basisCommit; повертає латку/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
   },
   "site": {
@@ -183,6 +188,7 @@
       "weergave": "Antigravity",
       "kanalen": [
         "github_pr",
+        "mcp",
         "git_patch",
         "zip"
       ],
@@ -204,6 +210,7 @@
       "id": "chatgpt",
       "weergave": "ChatGPT",
       "kanalen": [
+        "mcp",
         "zip",
         "git_patch",
         "web_upload"
@@ -215,6 +222,7 @@
       "weergave": "Codex",
       "kanalen": [
         "github_pr",
+        "mcp",
         "git_patch"
       ],
       "adapter": "CODEX.md"
@@ -234,7 +242,8 @@
       "id": "copilot",
       "weergave": "GitHub Copilot",
       "kanalen": [
-        "github_pr"
+        "github_pr",
+        "mcp"
       ],
       "adapter": ".github/copilot-instructions.md"
     },
@@ -243,6 +252,7 @@
       "weergave": "Gemini",
       "kanalen": [
         "github_pr",
+        "mcp",
         "zip",
         "git_patch"
       ],
@@ -253,9 +263,60 @@
       "weergave": "Cursor",
       "kanalen": [
         "github_pr",
+        "mcp",
         "git_patch"
       ],
       "adapter": ".cursorrules"
+    },
+    {
+      "id": "windsurf",
+      "weergave": "Windsurf",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "git_patch"
+      ],
+      "adapter": "WINDSURF.md"
+    },
+    {
+      "id": "cline",
+      "weergave": "Cline",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "git_patch"
+      ],
+      "adapter": "CLINE.md"
+    },
+    {
+      "id": "devin",
+      "weergave": "Devin",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "zip",
+        "git_patch"
+      ],
+      "adapter": "DEVIN.md"
+    },
+    {
+      "id": "opencode",
+      "weergave": "OpenCode",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "git_patch"
+      ],
+      "adapter": "OPENCODE.md"
+    },
+    {
+      "id": "mscopilot",
+      "weergave": "Microsoft Copilot",
+      "kanalen": [
+        "mcp",
+        "web_upload"
+      ],
+      "adapter": "MSCOPILOT.md"
     }
   ],
   "start": {
@@ -268,7 +329,7 @@
         "opdracht": "node scripts/orch.mjs begin --agent claude --kort"
       }
     ],
-    "toelichting": "BIJDRAGE-001: єдина точка входу для кожного агента на старті сеансу. Сама перевіряє правила, показує навички й завантажує їх у теку агента, показує досьє функції (уся історія напрацювань), хто над нею працював і хто працює паралельно. Нічого в git не змінює. Агентам без автоматичного запуску (Gemini, Antigravity, Codex, Cursor, Copilot, ChatGPT, Grok, AutoClaw) це перший крок §2 AGENTS.md."
+    "toelichting": "BIJDRAGE-001: єдина точка входу для кожного з 14 агентів на старті сеансу. Сама перевіряє правила, показує навички й завантажує їх у теку агента, показує досьє функції (уся історія напрацювань), хто над нею працював і хто працює паралельно. Нічого в git не змінює. Агентам без автоматичного запуску (Gemini, Antigravity, AutoClaw, Codex, Cursor, Windsurf, Cline, Devin, OpenCode, GitHub Copilot, Microsoft Copilot, ChatGPT, Grok) це перший крок §2 AGENTS.md."
   },
   "bijdragen": {
     "map": "orchestratie/bijdragen",
@@ -371,7 +432,7 @@
       "запит закрити без злиття"
     ],
     "manifestVeld": "verwijzingen",
-    "toelichting": "VERWIJZING-001: на сторінці оновлень кожна гілка, запит, міграція й задача мають людську назву, підсумок і стан замість голого номера. Перед видаленням гілки чи закриттям запиту без злиття агент записує подію (хто, чому, останній коміт, куди ввійшло): node scripts/orch.mjs verwijzing. Збирання випуску попереджає про гілку, що зникла без запису (VERWIJZING_ONVERKLAARD)."
+    "toelichting": "VERWIJZING-001: на сторінці оновлень кожна гілка, запит, міграція й задача мають людську назву, підсумок і стан замість голого номера. Перед видаленням гілки чи закриттям запиту без злиття агент записує подію (хто, чому, остання фіксація змін, куди ввійшло): node scripts/orch.mjs verwijzing. Збирання випуску попереджає про гілку, що зникла без запису (VERWIJZING_ONVERKLAARD)."
   },
   "drieFactoren": {
     "factoren": [
@@ -389,5 +450,43 @@
     "behoudLatereReleases": true,
     "geenDestructieveMigratieVerwijdering": true,
     "toelichting": "B-023 (UPD-011): кожен випуск фіксується в реєстрі змін із джерелом (github|mcp|site|ssh), файлами, міграціями й 3-чинниковим статусом. Вибіркове відкликання одного випуску зберігає всі пізніші випуски, розділяючи файли на чистий відкат і перетинні правки."
+  },
+  "architectuurRichting": {
+    "code": "KLIMOP-001",
+    "besluit": "B-024",
+    "naam": {
+      "uk": "Жива цифрова екосистема «Плющ»",
+      "nl": "Levend digitaal ecosysteem «Klimop»"
+    },
+    "status": "doelarchitectuur_zonder_directe_productiewijziging",
+    "onmiddellijkeProductieWijzigingToegestaan": false,
+    "manifest": {
+      "uk": "docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md",
+      "nl": "docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md"
+    },
+    "dossier": "orchestratie/onderwerpen/ecosysteem-klimop.json",
+    "vaardigheid": ".agents/skills/klimop-architectuur/SKILL.md",
+    "structuurElementen": [
+      "wortels",
+      "stengels",
+      "bladeren",
+      "hechtranken",
+      "voeding",
+      "immuunsysteem",
+      "zaden"
+    ],
+    "knooppuntTypen": [
+      "vaste_onafhankelijke_knooppunten",
+      "persoonlijke_gebruikersapparaten",
+      "gespecialiseerde_knooppunten",
+      "tijdelijke_toetredingsknooppunten"
+    ],
+    "fasen": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "huidigeFase": 0,
+    "agentVerantwoordelijkhedenAantal": 16,
+    "architectuurControleVragenAantal": 15,
+    "verbodenVereenvoudigingenAantal": 14,
+    "verplichteDocumentenAantal": 25,
+    "toelichting": "B-024 (KLIMOP-001): цільова архітектурна концепція поступового перетворення платформи «Мій простір» на розподілену, самовідновлювану та криптографічно захищену екосистему з незалежними вузлами, розмежованими повноваженнями й здатністю працювати без постійної участі єдиного творця. Маніфест НЕ є дозволом на негайну зміну робочої інфраструктури чи вимкнення чинних серверів і бази PostgreSQL; кожна зміна будь-якого з 14 агентів проходить 15-пунктову перевірку (§3б, §10 AGENTS.md)."
   }
 }
