@@ -48,7 +48,9 @@
     "b07682d0c07f1104b514b101006ca4a3ff64ca5b",
     "e3c5ab3df29724bb7fab0558899bccb71417a82c",
     "cb15d68f7ad01a3fb5970466c757521644b53763",
-    "8187231f4faedd9479cfcc373909834fe5f9cfdb"
+    "8187231f4faedd9479cfcc373909834fe5f9cfdb",
+    "57eef3334d869629e3764eac7ed5c6c36917f671",
+    "1f8dea684863084c88e46747770681a37290eefb"
   ],
   "tijdlijn": [
     {
@@ -66,6 +68,10 @@
     {
       "stap": "4) Перенесення досьє MELDPANEEL-001 (PR № 159), повернення втрачених дій сповіщень та ліниве розбиття моноліту GoogleMailWerkruimte.tsx: перенесено 4 файли MELDPANEEL-001, повернено «Позначити як непрочитане», «Знову відкрити» та «Перша / Остання поява / Тривалість» у MeldingenV2.tsx і MeldingVeegKaart.tsx; переведено 19 вторинних компонентів на React.lazy і винесено 30 модулів редакторів вкладень у src/mail/MailWerkruimteExtra.ts.",
       "resultaat": "Початковий скрипт пошти MailFunctioneelWeergave зменшився з 950,35 кБ до 534,14 кБ (−43,8%), стилі — з 616,29 кБ до 468,24 кБ (−24,0%), загальна економія −564,26 кБ (−36,0%). Пройдено всі поштові й сповіщеннєві тести, kaart-controle (2976 файлів), upd-013 (6/6), historie-kroniek (18/18), bijdragen-001 (54/54), trace-001 (20/20), orch-uitrol-basis (15/15), werkstromen-veilig (9/9), повне складання npm run build (із CRX3 0.9.7) і перевірку мовного закону (0 порушень)."
+    },
+    {
+      "stap": "5) За результатами першого запуску GitHub Actions № 44719525116 збережено точну обгортку div.ag-lui-plaats.ag-blok-skelet у BlokSkelet (src/agenten/AgentenPagina.tsx).",
+      "resultaat": "Пройдено agenten-pagina-blokken-20261103 (37/37); повторний запуск випуску в GitHub Actions."
     }
   ],
   "keuzes": [
