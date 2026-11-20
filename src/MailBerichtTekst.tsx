@@ -1,6 +1,6 @@
 import{api}from'./platform/client';
 import{ChevronDown,Eye,ImageOff,Languages,UserCheck,X}from'lucide-react';import{isNazorg,meldBeeldenStrook,sluitStrook,strookStaat,useStroken,zetStrookNazorg}from'./mail/stroken-sluiten';import{useStrookRegels}from'./mail/strook-regels';import{RegelHint,StrookNazorg}from'./mail/StrookNazorg';import type{ReactNode}from'react';
-import{useEffect,useId,useLayoutEffect,useMemo,useRef,useState}from'react';
+import{useCallback,useEffect,useId,useLayoutEffect,useMemo,useRef,useState}from'react';
 import{createPortal}from'react-dom';
 import{useLeesVenster}from'./mail/LeesVenster';import{beeldenInstelling,beeldenVoor,useBeeldenAltijd}from'./mail/beelden-toestemming';import{useVoorraad,voorraadBruikbaar}from'./mail/beelden-voorraad';import{wisBeeldTegel,zetBeeldTegel,zetBeeldTegels,type TegelTekst}from'./mail/beeld-tegel';import{bewaardeMaat,maatTekst,onthoudMaat}from'./mail/beeld-maten';
 import{loadMailAttachmentBlob}from'./mail-bijlage-lader';
@@ -91,23 +91,27 @@ export default function MailMessageBody(outer:Props){
 
 /** Veiligheidsstrook boven de brief: hoeveel externe beelden verborgen bleven, en wat je kunt doen. Nooit vertaald (data-mail-translation-skip). */
 const ukBeelden=(n:number)=>{const m10=n%10,m100=n%100;return m10===1&&m100!==11?'зовнішнє зображення':m10>=2&&m10<=4&&(m100<12||m100>14)?'зовнішні зображення':'зовнішніх зображень'};
+function useKopPaneelSluit(open:boolean,sluit:()=>void,wrapRef:{current:HTMLDivElement|null}){
+  useEffect(()=>{if(!open)return;const buiten=(e:PointerEvent)=>{if(wrapRef.current&&e.target instanceof Node&&!wrapRef.current.contains(e.target))sluit()};const toets=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();sluit()}};const inBrief=()=>window.setTimeout(()=>{if(document.activeElement instanceof HTMLIFrameElement)sluit()},0);document.addEventListener('pointerdown',buiten);document.addEventListener('keydown',toets,true);window.addEventListener('blur',inBrief);return()=>{document.removeEventListener('pointerdown',buiten);document.removeEventListener('keydown',toets,true);window.removeEventListener('blur',inBrief)}},[open,sluit,wrapRef]);
+}
+/* MAILBEELD-003 (16.11.2026, Павло на знімку: «кнопки треба візуально відобразити гарно, типу піктограмами, щоб можна було візуально
+   зрозуміти значення кнопки»): піктограма + підпис. У вузькій смузі «Показати один раз» скорочується до «Показати»;
+   «Завжди показувати від цього відправника» не скорочується (дієслово й «від кого» — обидва потрібні, Павло 16.11), а переноситься.
+   Наслідок — у підказці й для читача екрана (aria-describedby). «Завжди від відправника» — ризикованіший вибір: знак «!» на піктограмі. */
 function BeeldenStrook({lang,aantal,afzender,bereik,kopHost,onEenmaal,onSluit,regelHint}:{lang:'uk'|'nl';aantal:number;afzender:string;bereik:string;kopHost?:HTMLElement|null;onEenmaal:()=>void;onSluit?:()=>void;regelHint?:ReactNode}){
   const t=(uk:string,nl:string)=>lang==='uk'?uk:nl;
   /* SEC-002 (interface-06): «altijd» geldt voor DIT account en DEZE mailbox, niet voor elk account in deze browser. */
   const{zet:zetBeeldenAltijd}=beeldenVoor(bereik);
   const[kopOpen,setKopOpen]=useState(false);
   const kopWrapRef=useRef<HTMLDivElement|null>(null);
-  useEffect(()=>{if(!kopOpen)return;const buiten=(e:PointerEvent)=>{if(kopWrapRef.current&&e.target instanceof Node&&!kopWrapRef.current.contains(e.target))setKopOpen(false)};const toets=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setKopOpen(false)}};const inBrief=()=>window.setTimeout(()=>{if(document.activeElement instanceof HTMLIFrameElement)setKopOpen(false)},0);document.addEventListener('pointerdown',buiten);document.addEventListener('keydown',toets,true);window.addEventListener('blur',inBrief);return()=>{document.removeEventListener('pointerdown',buiten);document.removeEventListener('keydown',toets,true);window.removeEventListener('blur',inBrief)}},[kopOpen]);
+  const sluitKop=useCallback(()=>setKopOpen(false),[]);
+  useKopPaneelSluit(kopOpen,sluitKop,kopWrapRef);
   /* MAILBEELD-003: wat elke knop tot gevolg heeft — als knopinfo (muis, toetsenbord) én als beschrijving voor de schermlezer (aria-describedby) */
   const uid=useId(),uitlegEenmaal=t('Показати зображення лише в цьому листі й лише зараз. Їх завантажить ваш сервер: відправник побачить хіба що час відкриття, але не вашу адресу чи пристрій. Наступного разу вони знову будуть приховані.','Toont de afbeeldingen alleen in dit bericht en alleen nu. Uw server haalt ze op: de afzender ziet hooguit het tijdstip, niet uw adres of apparaat. De volgende keer zijn ze weer verborgen.'),uitlegAfzender=t('! Зображення від цього відправника завантажуватимуться одразу (через ваш сервер): відправник зможе дізнатися, що лист відкрито й коли. Діє лише для цього облікового запису й цієї скриньки на цьому пристрої; вимкнути можна в панелі «Відправник».','! Afbeeldingen van deze afzender worden dan meteen geladen (via uw server): de afzender kan zien dat en wanneer het bericht geopend is. Geldt alleen voor dit account en deze mailbox op dit apparaat; uitzetten kan in het paneel «Afzender».');
   const kopLabel=t(`${aantal} ${ukBeelden(aantal)} приховано`,`${aantal} externe ${aantal===1?'afbeelding':'afbeeldingen'} verborgen`);
   const kaart=<div className='mail-beelden-strook' role='status' data-mail-translation-skip='true' data-mail-beelden-strook>
     <ImageOff aria-hidden='true'/>
     <span>{kopLabel}<small>{t('Так відправник не дізнається, що лист відкрито. Якщо покажете, їх завантажить ваш сервер, а не браузер.','Zo weet de afzender niet dat het bericht geopend is. Als u ze toont, haalt uw server ze op, niet uw browser.')}</small></span>
-    {/* MAILBEELD-003 (16.11.2026, Павло на знімку: «кнопки треба візуально відобразити гарно, типу піктограмами, щоб можна було візуально
-        зрозуміти значення кнопки»): піктограма + підпис. У вузькій смузі «Показати один раз» скорочується до «Показати»;
-        «Завжди показувати від цього відправника» не скорочується (дієслово й «від кого» — обидва потрібні, Павло 16.11), а переноситься.
-        Наслідок — у підказці й для читача екрана (aria-describedby). «Завжди від відправника» — ризикованіший вибір: знак «!» на піктограмі. */}
     <button type='button' className='mail-beelden-knop' data-beelden-knop='eenmaal' aria-label={t('Показати один раз','Eén keer tonen')} aria-describedby={`${uid}-eenmaal`} data-tooltip={uitlegEenmaal} onClick={()=>{setKopOpen(false);onEenmaal()}}><Eye aria-hidden='true'/><span className='mail-beelden-knop-lang'>{t('Показати один раз','Eén keer tonen')}</span><span className='mail-beelden-knop-kort' aria-hidden='true'>{t('Показати','Tonen')}</span><span className='mail-beelden-knop-uitleg' id={`${uid}-eenmaal`}>{uitlegEenmaal}</span></button>
     {afzender&&<button type='button' className='mail-beelden-knop' data-beelden-knop='afzender' aria-label={t('Завжди показувати від цього відправника','Altijd tonen van deze afzender')} aria-describedby={`${uid}-afzender`} data-tooltip={uitlegAfzender} onClick={()=>{setKopOpen(false);zetBeeldenAltijd(afzender,true)}}><span className='mail-beelden-knop-icoon' aria-hidden='true'><UserCheck/><b>!</b></span><span className='mail-beelden-knop-lang'>{t('Завжди показувати від цього відправника','Altijd tonen van deze afzender')}</span><span className='mail-beelden-knop-uitleg' id={`${uid}-afzender`}>{uitlegAfzender}</span></button>}
     {regelHint}

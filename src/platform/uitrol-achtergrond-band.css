@@ -68,7 +68,7 @@
 .ut-bg-sub {
   margin: 0;
   font-size: 12px;
-  color: var(--mq-tekst-2, var(--muted, var(--text-muted)));
+  color: var(--mq-tekst-2, var(--muted));
   word-break: break-word;
 }
 
@@ -76,7 +76,7 @@
   height: 6px;
   width: 100%;
   border-radius: 999px;
-  background: var(--mq-oppervlak-2, var(--surface-2, var(--surface-muted)));
+  background: var(--mq-oppervlak-2, var(--surface-2, var(--surface)));
   overflow: hidden;
 }
 
@@ -118,7 +118,7 @@
   padding: 4px 10px;
   border-radius: 9px;
   background: var(--mq-accent, var(--accent));
-  color: var(--mq-accent-op, var(--accent-contrast, var(--on-accent)));
+  color: var(--mq-accent-op, var(--text-on-accent));
   text-decoration: none;
   font-weight: 600;
   font-size: 12px;
@@ -144,7 +144,7 @@
 
 .ut-bg-knop:hover,
 .ut-bg-knop:focus-visible {
-  background: var(--mq-oppervlak-2, var(--surface-2, var(--surface-muted)));
+  background: var(--mq-oppervlak-2, var(--surface-2, var(--surface)));
 }
 
 .ut-bg-chip {

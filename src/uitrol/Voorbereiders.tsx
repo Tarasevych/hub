@@ -103,7 +103,7 @@ export default function Voorbereiders({ lang, data, busy, geven, intrekken, term
           <button type='button' aria-pressed={rechtenEdit.limietModus === 'bevestiging_per_keer'} onClick={() => setRechtenEdit({ ...rechtenEdit, limietModus: 'bevestiging_per_keer' })}>{tr(lang, 'Підтвердження щоразу', 'Bevestiging per keer')}</button>
         </div>
         {rechtenEdit.limietModus === 'aantal' && <label className='ut-veld ut-aantal-veld'><span>{tr(lang, 'Максимум разів (1–1000)', 'Maximum aantal keren (1–1000)')}</span><input type='number' min={1} max={1000} value={rechtenEdit.maxAantal} onChange={(e) => setRechtenEdit({ ...rechtenEdit, maxAantal: Math.max(1, Math.min(1000, Number(e.target.value) || 1)) })} /></label>}
-        {(g.gebruiktAantal ?? 0) > 0 && <label className='ut-check-rij'><input type='checkbox' checked={rechtenEdit.resetTeller} onChange={(e) => setRechtenEdit({ ...rechtenEdit, resetTeller: e.target.checked })} /><span>{tr(lang, `Скинути лічильник використань (зараз ${g.gebruiktAantal})`, `Gebruiksteller terugzetten (nu ${g.gebruiktAantal})`)}</span></label>}
+        {(g.gebruiktAantal ?? 0) > 0 && <label className='ut-check-rij'><input data-hulp-vrij='keuze' type='checkbox' checked={rechtenEdit.resetTeller} onChange={(e) => setRechtenEdit({ ...rechtenEdit, resetTeller: e.target.checked })} /><span>{tr(lang, `Скинути лічильник використань (зараз ${g.gebruiktAantal})`, `Gebruiksteller terugzetten (nu ${g.gebruiktAantal})`)}</span></label>}
         <div className='ut-acties'>
           <button type='button' className='ut-knop ut-knop-primair' disabled={!!busy} data-rechten-opslaan={g.id} onClick={() => {
             rechten?.(g, {
