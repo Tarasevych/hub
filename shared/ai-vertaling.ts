@@ -1,6 +1,7 @@
 import { ruimteOf, RUIMTE_GESCHEIDEN, type AiRuimte } from './ai-ruimte';
 import type { GecontroleerdPunt } from './ai-bronnen';
 import { adresVan } from './mail-afzenders';
+import type { DienstMotorPubliek, VertaalPrivacyModus } from './ai-dienst-motor';
 
 /** 'acties' (pakket 3 «Adaptive Mail Canvas»): «Що від вас потрібно?» — punten met een letterlijke bron, zie shared/ai-bronnen.ts. */
 export type AiVertalingMode = 'translate' | 'summary' | 'purpose' | 'context' | 'acties';
@@ -921,6 +922,7 @@ export type AiVertalingRunResponse = {
     redactedSecrets: number;
     scopeVerified: AiVertalingScope[];
     ruimte: 'prive';
+    privacyModus?: VertaalPrivacyModus;
   };
   translations?: Record<string, string>;
   /** Punt 16: welke motor de vertaling echt maakte, en hoeveel fragmenten onvertaald bleven (nooit een namaakmarkering). */
@@ -1062,10 +1064,25 @@ export const VERTAAL_MOTOREN: readonly VertaalMotor[] = [
  * De catalogus met de ECHTE stand: de eigen agent «werkt» zodra er minstens één gekoppelde privé-agent met mail.read is
  * (of files.read in een documentweergave). Alle andere motoren blijven staan zoals ze zijn — nooit «werkt» zonder koppeling.
  */
-export function motorenMetStand(agents: readonly AiVertalingAgentInfo[], voorDocument = false): VertaalMotor[] {
+export function motorenMetStand(
+  agents: readonly AiVertalingAgentInfo[],
+  voorDocument = false,
+  dienstMotoren?: readonly Pick<DienstMotorPubliek, 'soort' | 'akkoord'>[],
+): VertaalMotor[] {
   // MAILAI-001: «працює» лише агент, якого сервер справді може виконати (є ключ API), не просто будь-яке підключення.
   const bruikbaar = (agents || []).some(a => (voorDocument ? agentKanBestand({ ruimte: a.ruimte ?? 'prive', allowedFilesRead: a.allowedFilesRead, heeftSleutel: a.heeftSleutel }) : agentKanPost({ ruimte: a.ruimte ?? 'prive', allowedMailRead: a.allowedMailRead, heeftSleutel: a.heeftSleutel })));
-  return VERTAAL_MOTOREN.map(m => (m.id === 'eigen-agent' ? { ...m, staat: (bruikbaar ? 'werkt' : 'aansluiten') as VertaalMotorStaat } : { ...m }));
+  const dienstLijst = dienstMotoren || [];
+  const soortVoorMotor = (id: string) => (id === 'google-vertaling' ? 'google-translate' : id === 'deepl' ? 'deepl' : id === 'libretranslate' ? 'libretranslate' : null);
+  return VERTAAL_MOTOREN.map(m => {
+    if (m.id === 'eigen-agent') return { ...m, staat: (bruikbaar ? 'werkt' : 'aansluiten') as VertaalMotorStaat };
+    const doelSoort = soortVoorMotor(m.id);
+    if (doelSoort && dienstLijst.length > 0) {
+      const gevonden = dienstLijst.filter((d) => d.soort === doelSoort);
+      if (gevonden.some((d) => d.akkoord)) return { ...m, staat: 'werkt' as VertaalMotorStaat };
+      if (gevonden.length > 0) return { ...m, staat: 'aansluiten' as VertaalMotorStaat, aansluitenHref: AI_TOEGANG_HREF };
+    }
+    return { ...m };
+  });
 }
 
 /**

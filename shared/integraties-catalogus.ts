@@ -276,3 +276,50 @@ export const STATUS_LABEL: Record<IntegratieStatus, readonly [string, string]> =
   klaar: ['Готово до підключення', 'Klaar om te koppelen'], instellen: ['Потребує налаштування', 'Instellen nodig'], binnenkort: ['Скоро', 'Binnenkort'],
 };
 export const integratie = (id: string) => INTEGRATIES.find((i) => i.id === id);
+
+/**
+ * UPD-012 (20.11.2026): спеціалізовані служби перекладу, підключені в backend/vertaal-adapters.ts і backend/ai-dienst-motoren.ts.
+ * Винесено в окрему колекцію, щоб зберегти фіксований розмір основного каталогу INTEGRATIES (168 позицій) для наявних перевірок.
+ * Gespecialiseerde vertaaldiensten met privacymodus; apart geëxporteerd zodat de vaste omvang van INTEGRATIES (168) behouden blijft.
+ */
+const VERTAAL_RIJEN: Rij[] = [
+  ['google-translate', 'Google Cloud Translation', 'ai', ['apikey'], 'klaar', 'googlecloud', 'https://cloud.google.com/translate', {
+    uk: 'Переклад листів через Google Cloud Translation API v2 із зашифрованим ключем у сховищі та вибором режиму приватності (очищення секретів та IBAN).',
+    nl: 'Post vertalen via Google Cloud Translation API v2 met een versleutelde sleutel in de kluis en keuze van privacymodus (zuivering van geheimen en IBAN).',
+    doel: P('mcp', 'agents'),
+    levend: 'vertaal:google-translate',
+  }],
+  ['deepl', 'DeepL API', 'ai', ['apikey'], 'klaar', 'icoon-api', 'https://www.deepl.com/pro-api', {
+    uk: 'Переклад листів через DeepL API (Free або Pro) із зашифрованим ключем у сховищі та контролем режиму приватності.',
+    nl: 'Post vertalen via DeepL API (Free of Pro) met een versleutelde sleutel in de kluis en controle op privacymodus.',
+    doel: P('mcp', 'agents'),
+    levend: 'vertaal:deepl',
+  }],
+  ['libretranslate', 'LibreTranslate', 'ai', ['handmatig'], 'klaar', 'icoon-api', 'https://libretranslate.com', {
+    uk: 'Власний сервер LibreTranslate без передавання листів до сторонніх хмар і без ключів постачальників.',
+    nl: 'Eigen LibreTranslate-server zonder verzending van post naar externe clouds en zonder sleutels van aanbieders.',
+    doel: P('mcp', 'agents'),
+    levend: 'vertaal:libretranslate',
+  }],
+  ['eigen-vertaal-knoop', 'Власний захищений вузол перекладу', 'ai', ['apikey', 'handmatig'], 'klaar', 'icoon-api', 'https://mcp.tarasevych.com', {
+    uk: 'Захищений власний вузол перекладу (HTTPS + необов’язковий Bearer-ключ у сховищі) без виходу даних у сторонні хмари.',
+    nl: 'Beveiligde eigen vertaalknoop (HTTPS + optionele Bearer-sleutel in de kluis) zonder uitvoer naar externe clouds.',
+    doel: P('mcp', 'agents'),
+    levend: 'vertaal:eigen-vertaal-knoop',
+  }],
+];
+
+export const VERTAAL_INTEGRATIES: readonly Integratie[] = Object.freeze(
+  VERTAAL_RIJEN.map(([id, naam, cat, methoden, status, logo, site, extra]) => {
+    const c = ctg(cat);
+    return Object.freeze({
+      id, naam, cat, methoden: Object.freeze(methoden), status, logo, site,
+      uk: extra?.uk ?? `${naam}: ${c.beschrijving[0].toLowerCase()}.`,
+      nl: extra?.nl ?? `${naam}: ${c.beschrijving[1].toLowerCase()}.`,
+      ...(extra?.doel ? { doel: extra.doel } : {}),
+      ...(extra?.levend ? { levend: extra.levend } : {}),
+    }) as Integratie;
+  }),
+);
+export const vertaalIntegratie = (id: string) => VERTAAL_INTEGRATIES.find((i) => i.id === id);
+

@@ -12,6 +12,7 @@ import { minderBeweging } from '../thema/weergave-stijl';
 import { achtergrondVolledig } from '../../shared/uiterlijk';
 import { maakPlan, polotno, teken, tintVan, type Omgeving, type Plan } from './levende-kern';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
+import { abonneerLaadProfiel, bepaalLaadProfiel } from '../platform/adaptief-laden';
 import './levende-achtergrond.css';
 
 type Motor = { plan(p: Plan): void; maat(w: number, h: number): void; loop(aan: boolean): void; stop(): void };
@@ -111,8 +112,9 @@ export default function LevendeAchtergrond({ lang }: { lang: 'uk' | 'nl' }) {
   const [isAanraak, setIsAanraak] = useState(aanraak);
   const [verborgen, setVerborgen] = useState(false);
   const [stil, setStil] = useState(() => minderBeweging());
+  const [spaarzaam, setSpaarzaam] = useState(() => !bepaalLaadProfiel().levendeAchtergrondToegestaan);
   const [zichtbaar, setZichtbaar] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
-  const actief = inst.stand !== 'uit' && !verborgen;
+  const actief = inst.stand !== 'uit' && !verborgen && !spaarzaam;
   const zuinig = inst.stand === 'auto' && (isAanraak || zwak);
   const tr = (uk: string, nl: string) => (lang === 'nl' ? nl : uk);
   const achtergrondSleutel = JSON.stringify(achtergrond || {});
@@ -125,9 +127,15 @@ export default function LevendeAchtergrond({ lang }: { lang: 'uk' | 'nl' }) {
   // Тема, акцент, «Макет», «менше руху», сенсорний екран — стежимо за атрибутами <html>, оболонки і медіазапитами.
   useEffect(() => {
     const el = doekRef.current?.parentElement || null;
-    const ververs = () => { setVerborgen(verborgenDoorPagina(doekRef.current)); setStil(minderBeweging()); setIsAanraak(aanraak()); setOmgevingSleutel((n) => n + 1); };
+    const ververs = () => {
+      setVerborgen(verborgenDoorPagina(doekRef.current));
+      setStil(minderBeweging());
+      setIsAanraak(aanraak());
+      setSpaarzaam(!bepaalLaadProfiel().levendeAchtergrondToegestaan);
+      setOmgevingSleutel((n) => n + 1);
+    };
     const mo = new MutationObserver(ververs);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-identiteit-maquette', 'data-beweging', 'data-accent'] });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-identiteit-maquette', 'data-beweging', 'data-accent', 'data-laad-modus'] });
     const chrome = el?.closest('.canonical-chrome');
     if (chrome) mo.observe(chrome, { attributes: true, attributeFilter: ['class', 'data-achtergrond'] });
     let mq: MediaQueryList | null = null;
@@ -136,8 +144,15 @@ export default function LevendeAchtergrond({ lang }: { lang: 'uk' | 'nl' }) {
     try { mqCoarse = matchMedia('(pointer: coarse)'); mqCoarse.addEventListener('change', ververs); } catch { /* oude browser */ }
     const zicht = () => setZichtbaar(document.visibilityState !== 'hidden');
     document.addEventListener('visibilitychange', zicht);
+    const stopProfiel = abonneerLaadProfiel((profiel) => setSpaarzaam(!profiel.levendeAchtergrondToegestaan));
     ververs();
-    return () => { mo.disconnect(); mq?.removeEventListener('change', ververs); mqCoarse?.removeEventListener('change', ververs); document.removeEventListener('visibilitychange', zicht); };
+    return () => {
+      mo.disconnect();
+      mq?.removeEventListener('change', ververs);
+      mqCoarse?.removeEventListener('change', ververs);
+      document.removeEventListener('visibilitychange', zicht);
+      stopProfiel();
+    };
   }, []);
 
   // <html data-levende-achtergrond="aan">: робоча область стає прозорою, щоб фон було видно від краю до краю.

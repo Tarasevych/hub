@@ -12,8 +12,10 @@ import type { Tr } from '../mcp-ui';
 import { InfoTip } from '../InfoTip';
 import { AI_AANBIEDERS, AI_AANBIEDER_BIJ_ID, type AiAanbiederId } from '../../shared/ai-aanbieders';
 import {
-  DIENST_LIMIET, DIENST_SOORTEN, dienstRisicos, dienstSoortNaam, dienstWaarheen, gebruikSleutelDienst, hostVan, normaliseerDienstInvoer,
-  type DienstMotor, type DienstSoort,
+  DIENST_LIMIET, DIENST_SOORTEN, VERTAAL_PRIVACY_MODI, VERTAAL_PRIVACY_MODUS_VOLGORDE,
+  dienstIsExtern, dienstMagSleutel, dienstRisicos, dienstSoortNaam, dienstVereistSleutel, dienstVereistUrl,
+  dienstWaarheen, gebruikSleutelDienst, hostVan, normaliseerDienstInvoer, standaardPrivacyModus,
+  type DienstMotor, type DienstSoort, type VertaalPrivacyModus,
 } from '../../shared/ai-dienst-motor';
 import { foutTekst } from './fouten';
 import { Badge } from './ui';
@@ -28,17 +30,40 @@ type MotorRij = DienstMotor & {
 type Stat = { motor: string; dag: string; aantal: number; geweigerd: number; gebruikers: number };
 type Overzicht = { motoren: MotorRij[]; statistiek: Stat[]; vandaag: string; max: number };
 type TestUitkomst = { geslaagd: boolean; status: number; ms: number; voorbeeld: string };
-type Formulier = { modus: 'nieuw' | 'wijzig'; id: string; soort: DienstSoort; naam: string; aanbieder: AiAanbiederId; url: string; model: string; limiet: string };
+type Formulier = {
+  modus: 'nieuw' | 'wijzig';
+  id: string;
+  soort: DienstSoort;
+  naam: string;
+  aanbieder: AiAanbiederId;
+  url: string;
+  model: string;
+  limiet: string;
+  privacyModus: VertaalPrivacyModus;
+};
 type Melding = { ok: boolean; tekst: string } | null;
 type Klik = { preventDefault: () => void };
 
-const LEEG: Formulier = { modus: 'nieuw', id: '', soort: 'aanbieder', naam: '', aanbieder: 'anthropic', url: '', model: '', limiet: String(DIENST_LIMIET.standaard) };
+const LEEG: Formulier = {
+  modus: 'nieuw',
+  id: '',
+  soort: 'aanbieder',
+  naam: '',
+  aanbieder: 'anthropic',
+  url: '',
+  model: '',
+  limiet: String(DIENST_LIMIET.standaard),
+  privacyModus: 'extern-gezuiverd',
+};
 
 /** Пояснення кожного виду у формі: хто платить і що вміє. */
 const SOORT_UITLEG: Record<DienstSoort, [string, string]> = {
   aanbieder: ['Запити йдуть до постачальника ШІ вашим ключем — платите ви. Усі функції.', 'Verzoeken gaan met uw sleutel naar de AI-aanbieder — u betaalt. Alle functies.'],
   libretranslate: ['Ваш власний сервер LibreTranslate. Лише переклад, безкоштовно.', 'Uw eigen LibreTranslate-server. Alleen vertalen, gratis.'],
   ollama: ['Ваш власний сервер Ollama. Усі функції, безкоштовно.', 'Uw eigen Ollama-server. Alle functies, gratis.'],
+  'google-translate': ['Google Cloud Translation API v2 із вашим ключем у зашифрованому сховищі. Лише переклад.', 'Google Cloud Translation API v2 met uw sleutel in de versleutelde kluis. Alleen vertalen.'],
+  deepl: ['DeepL API (Free або Pro) із вашим ключем у зашифрованому сховищі. Лише переклад.', 'DeepL API (Free of Pro) met uw sleutel in de versleutelde kluis. Alleen vertalen.'],
+  'eigen-vertaal-knoop': ['Власний захищений вузол перекладу (HTTPS, необов’язковий ключ доступу). Лише переклад, без сторонніх хмар.', 'Eigen beveiligde vertaalknoop (HTTPS, optionele toegangssleutel). Alleen vertalen, zonder externe cloud.'],
 };
 
 /** Статистика одного рушія за 7 днів (рядки сервера: рушій × день). */
@@ -142,7 +167,17 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
   const openNieuw = () => { setFormFout(''); setFormulier({ ...LEEG }); };
   const openWijzig = (m: MotorRij) => {
     setFormFout('');
-    setFormulier({ modus: 'wijzig', id: m.id, soort: m.soort, naam: m.naam, aanbieder: m.aanbieder ?? 'anthropic', url: m.url ?? '', model: m.model ?? '', limiet: String(m.limietPerDag) });
+    setFormulier({
+      modus: 'wijzig',
+      id: m.id,
+      soort: m.soort,
+      naam: m.naam,
+      aanbieder: m.aanbieder ?? 'anthropic',
+      url: m.url ?? '',
+      model: m.model ?? '',
+      limiet: String(m.limietPerDag),
+      privacyModus: m.privacyModus ?? standaardPrivacyModus(m.soort),
+    });
   };
   const sluitFormulier = () => { if (sleutelVeld.current) sleutelVeld.current.value = ''; setFormulier(null); setFormFout(''); };
   const wijzig = (deel: Partial<Formulier>) => setFormulier((f) => (f ? { ...f, ...deel } : f));
@@ -151,11 +186,20 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
     if (!formulier) return;
     const f = formulier;
     // Та сама перевірка, що й на сервері (shared/ai-dienst-motor.ts) — помилку видно ще до запиту й до вікна підтвердження.
-    const n = normaliseerDienstInvoer({ id: f.id, soort: f.soort, naam: f.naam, aanbieder: f.aanbieder, url: f.url, model: f.model, limietPerDag: f.limiet === '' ? Number.NaN : Number(f.limiet) });
+    const n = normaliseerDienstInvoer({
+      id: f.id,
+      soort: f.soort,
+      naam: f.naam,
+      aanbieder: f.aanbieder,
+      url: f.url,
+      model: f.model,
+      limietPerDag: f.limiet === '' ? Number.NaN : Number(f.limiet),
+      privacyModus: f.privacyModus,
+    });
     if (!n.ok) { setFormFout(tr(n.uk, n.nl)); return; }
     const oud = data?.motoren.find((m) => m.id === n.waarde.id) || null;
     if (f.modus === 'nieuw' && oud) { setFormFout(tr('Рушій із такою короткою назвою вже є. Оберіть іншу або змініть наявний.', 'Er bestaat al een motor met deze korte naam. Kies een andere of wijzig de bestaande.')); return; }
-    const sleutel = n.waarde.soort === 'aanbieder' ? (sleutelVeld.current?.value ?? '').trim() : '';
+    const sleutel = dienstMagSleutel(n.waarde.soort) ? (sleutelVeld.current?.value ?? '').trim() : '';
     if (sleutelVeld.current) sleutelVeld.current.value = '';   // значення ключа живе далі лише в тілі цього одного запиту
     setBezig('bewaar'); setFormFout(''); setMelding(null);
     api.post('/api/owner/ai-dienst-motoren/bewaar', { ...sessionBody('mcp'), ...n.waarde, ...(sleutel ? { sleutel } : {}) })
@@ -165,7 +209,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
         const nieuw = ((r.data as Partial<Overzicht> | undefined)?.motoren || []).find((m) => m.id === n.waarde.id);
         const uitgezet = oud?.aan === true && nieuw?.aan !== true;
         setMelding({ ok: true, tekst: uitgezet
-          ? tr(`«${n.waarde.naam}» збережено й вимкнено: змінилося, куди йде текст, тож згоди користувачів скинуто. Перевірте рушій і ввімкніть його знову.`, `«${n.waarde.naam}» is bewaard en uitgezet: waar de tekst heen gaat is gewijzigd, dus de akkoorden zijn vervallen. Test de motor en zet hem weer aan.`)
+          ? tr(`«${n.waarde.naam}» збережено й вимкнено: змінилося, куди йде текст або режим приватності, тож згоди користувачів скинуто. Перевірте рушій і ввімкніть його знову.`, `«${n.waarde.naam}» is bewaard en uitgezet: waar de tekst heen gaat of de privacymodus is gewijzigd, dus de akkoorden zijn vervallen. Test de motor en zet hem weer aan.`)
           : nieuw?.aan
             ? tr(`«${n.waarde.naam}» збережено; рушій лишився увімкненим.`, `«${n.waarde.naam}» is bewaard; de motor blijft aan.`)
             : tr(`«${n.waarde.naam}» збережено. Рушій вимкнений, доки ви самі не ввімкнете його для всіх.`, `«${n.waarde.naam}» is bewaard. De motor staat uit tot u hem zelf voor iedereen aanzet.`) });
@@ -177,10 +221,12 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
   const motoren = data?.motoren ?? [];
   const aantalAan = motoren.filter((m) => m.klaar).length;
   const vol = data !== null && data.max > 0 && motoren.length >= data.max;
-  // Попередження саме цього постачальника (Gemini, Z.ai): те, чого немає серед загальних ризиків ключа постачальника.
+  // Попередження саме цього постачальника (Gemini, Z.ai, DeepL): те, чого немає серед загальних ризиків ключа постачальника.
   const eigenRisicos = formulier?.soort === 'aanbieder'
     ? dienstRisicos({ soort: 'aanbieder', aanbieder: formulier.aanbieder }, nl).filter((r) => !dienstRisicos({ soort: 'aanbieder', aanbieder: 'anthropic' }, nl).includes(r))
-    : [];
+    : formulier?.soort === 'deepl'
+      ? dienstRisicos({ soort: 'deepl' }, nl).slice(2)
+      : [];
   const naamVan = (a: AiAanbiederId) => (nl ? AI_AANBIEDER_BIJ_ID[a].naamNl : AI_AANBIEDER_BIJ_ID[a].naamUk);
 
   return (
@@ -207,20 +253,30 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
           <ul className='dm-lijst'>
             {motoren.map((m) => {
               const s = statVan(data, m.id);
-              const zonderSleutel = m.soort === 'aanbieder' && !m.heeftSleutel;
+              const zonderSleutel = dienstVereistSleutel(m.soort) && !m.heeftSleutel;
+              const extern = dienstIsExtern(m.soort);
+              const pm = m.privacyModus ?? standaardPrivacyModus(m.soort);
+              const pmInfo = VERTAAL_PRIVACY_MODI[pm];
               const t = tests[m.id];
               const risicos = nl ? m.risicosNl : m.risicosUk;
               const risicoId = `${veld}-risico-${m.id}`;
               const bezigHier = bezig.endsWith(`:${m.id}`);
+              const kaartSub = m.soort === 'aanbieder'
+                ? `${m.aanbieder ? naamVan(m.aanbieder) : '—'} · ${tr('ключ сайту', 'sleutel van de site')}`
+                : m.soort === 'google-translate'
+                  ? `Google Cloud Translation · ${tr('ключ сайту', 'sleutel van de site')}`
+                  : m.soort === 'deepl'
+                    ? `DeepL API · ${tr('ключ сайту', 'sleutel van de site')}`
+                    : `${hostVan(m.url) || '—'} · ${m.soort === 'eigen-vertaal-knoop' ? tr('власний вузол', 'eigen vertaalknoop') : tr('власний сервер', 'eigen server')}`;
               return (
                 <li key={m.id} className='dm-kaart' data-testid='dienst-kaart' data-dienst-id={m.id} data-aan={String(m.aan)}>
                   {/* MAILAI-004 (Павло: «як вікіпедія»): у картці лише назва, куди йде текст і один рядок цифр; подробиці — під «Докладніше». */}
                   {/* MAILAI-005 (затверджений макет): рядок — логотип, назва, цифри; праворуч дії піктограмами й перемикач. */}
                   <div className='dm-kaart-kop'>
-                    <MotorLogo k={{ soort: m.soort === 'aanbieder' ? 'dienst-eigenaar' : 'eigen-server', aanbieder: m.aanbieder, dienst: { soort: m.soort } }} maat={36} />
+                    <MotorLogo k={{ soort: extern ? 'dienst-eigenaar' : 'eigen-server', aanbieder: m.aanbieder, dienst: { soort: m.soort } }} maat={36} />
                     <div className='dm-kaart-naam'>
                       <b>{m.naam}</b>
-                      <small>{m.soort === 'aanbieder' ? `${m.aanbieder ? naamVan(m.aanbieder) : '—'} · ${tr('ключ сайту', 'sleutel van de site')}` : `${hostVan(m.url) || '—'} · ${tr('власний сервер', 'eigen server')}`}</small>
+                      <small>{kaartSub}</small>
                     </div>
                     {/* Стан показує сам перемикач нижче; позначка лише тоді, коли чогось бракує. */}
                     {zonderSleutel ? <Badge toon='warn' data='dienst-staat'>{tr('немає ключа', 'geen sleutel')}</Badge> : null}
@@ -233,12 +289,13 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                   <details className='dm-meer' data-testid='dienst-meer'>
                     <summary>{tr('Докладніше', 'Meer')}</summary>
                   <dl className='dm-feiten'>
-                    <div><dt>{m.soort === 'aanbieder' ? tr('Постачальник', 'Aanbieder') : tr('Сервер', 'Server')}</dt><dd>{m.soort === 'aanbieder' ? (m.aanbieder ? naamVan(m.aanbieder) : '—') : (hostVan(m.url) || '—')}</dd></div>
+                    <div><dt>{extern ? tr('Постачальник', 'Aanbieder') : tr('Сервер', 'Server')}</dt><dd>{m.soort === 'aanbieder' ? (m.aanbieder ? naamVan(m.aanbieder) : '—') : m.soort === 'google-translate' ? 'Google Cloud Translation' : m.soort === 'deepl' ? 'DeepL API' : (hostVan(m.url) || '—')}</dd></div>
+                    <div><dt>{tr('Режим приватності', 'Privacymodus')}</dt><dd>{nl ? pmInfo.naamNl : pmInfo.naamUk}</dd></div>
                     <div><dt>{tr('Модель', 'Model')}</dt><dd>{m.model || (m.standaardModel ? tr(`типова: ${m.standaardModel}`, `standaard: ${m.standaardModel}`) : '—')}</dd></div>
                     <div><dt>{tr('Межа на людину', 'Limiet per persoon')}</dt><dd>{tr(`${m.limietPerDag} запитів на день`, `${m.limietPerDag} verzoeken per dag`)}</dd></div>
                     <div><dt>{tr('Коротка назва', 'Korte naam')}</dt><dd><code>{m.id}</code></dd></div>
                   </dl>
-                  <p className='dm-waarheen'>{dienstWaarheen({ soort: m.soort, aanbieder: m.aanbieder, host: m.soort === 'aanbieder' ? undefined : hostVan(m.url), beheerder: m.beheerder }, nl)}</p>
+                  <p className='dm-waarheen'>{dienstWaarheen({ soort: m.soort, aanbieder: m.aanbieder, host: extern ? undefined : hostVan(m.url), beheerder: m.beheerder, privacyModus: pm }, nl)}</p>
 
                   <ul className='dm-stat' aria-label={tr('Використання за 7 днів', 'Gebruik in 7 dagen')}>
                     <li><b>{s.vandaag}</b><span>{tr('запитів сьогодні', 'verzoeken vandaag')}</span></li>
@@ -261,14 +318,14 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                         gevolg={tr('Рушієві піде лише одне фіксоване тестове речення — жодного тексту користувачів. Ви побачите, чи він відповів і за який час.', 'De motor krijgt alleen één vaste testzin — geen tekst van gebruikers. U ziet of hij antwoordde en hoe snel.')}
                         onClick={alleenMens<Klik>(() => test(m))} />
                       <PictoKnop testid='dienst-wijzig' naam={tr('Змінити', 'Wijzigen')} disabled={!!bezig} icoon={<Pencil aria-hidden='true' />}
-                        gevolg={tr('Відкриє форму. Якщо зміните постачальника, адресу, модель або ключ — рушій вимкнеться, а згоди користувачів скинуться.', 'Opent het formulier. Wijzigt u aanbieder, adres, model of sleutel, dan gaat de motor uit en vervallen de akkoorden.')}
+                        gevolg={tr('Відкриє форму. Якщо зміните постачальника, адресу, модель, режим приватності або ключ — рушій вимкнеться, а згоди користувачів скинуться.', 'Opent het formulier. Wijzigt u aanbieder, adres, model, privacymodus of sleutel, dan gaat de motor uit en vervallen de akkoorden.')}
                         onClick={alleenMens<Klik>(() => openWijzig(m))} />
                       <PictoKnop testid='dienst-verwijder' gevaar naam={tr('Прибрати', 'Verwijderen')} bezig={bezig === `weg:${m.id}`} disabled={!!bezig} icoon={<Trash2 aria-hidden='true' />} expanded={verwijderVoor === m.id}
                         gevolg={tr('Рушій зникне в усіх користувачів, а його ключ буде прибрано зі «Сховища ключів». Спершу запитаємо підтвердження.', 'De motor verdwijnt bij alle gebruikers en de sleutel wordt uit de «Sleutelkluis» gehaald. We vragen eerst om bevestiging.')}
                         onClick={alleenMens<Klik>(() => { setRisicoVoor(''); setVerwijderVoor(verwijderVoor === m.id ? '' : m.id); })} />
                     </span>
                   </div>
-                  {!m.aan && zonderSleutel ? <p className='dm-hint'>{tr('Щоб увімкнути, спершу додайте ключ постачальника кнопкою «Змінити».', 'Voeg eerst via «Wijzigen» de sleutel van de aanbieder toe om aan te zetten.')}</p> : null}
+                  {!m.aan && zonderSleutel ? <p className='dm-hint'>{tr('Щоб увімкнути, спершу додайте ключ служби кнопкою «Змінити».', 'Voeg eerst via «Wijzigen» de sleutel van de dienst toe om aan te zetten.')}</p> : null}
 
                   {risicoVoor === m.id && !m.aan ? (
                     <div className='dm-risico' id={risicoId} role='group' aria-label={tr('Ризики перед увімкненням', 'Risico’s vóór het aanzetten')} data-testid='dienst-risico'>
@@ -316,14 +373,15 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
             <h4 id={`${veld}-titel`}>{formulier.modus === 'nieuw' ? tr('Додати рушій', 'Motor toevoegen') : tr(`Змінити «${formulier.id}»`, `«${formulier.id}» wijzigen`)}</h4>
 
             {formulier.modus === 'wijzig' ? (
-              <p className='dm-let'><TriangleAlert aria-hidden='true' /><span>{tr('Зміна постачальника, адреси сервера, моделі або ключа вимикає рушій і скидає згоди користувачів: вони погоджувалися на те, куди йшов текст раніше. Назву й денну межу можна міняти без цього.', 'Wijzigt u aanbieder, serveradres, model of sleutel, dan gaat de motor uit en vervallen de akkoorden van gebruikers: zij stemden in met waar de tekst eerst heen ging. Naam en daglimiet wijzigt u zonder dat gevolg.')}</span></p>
+              <p className='dm-let'><TriangleAlert aria-hidden='true' /><span>{tr('Зміна постачальника, адреси сервера, моделі, режиму приватності або ключа вимикає рушій і скидає згоди користувачів: вони погоджувалися на попередні умови обробки тексту. Назву й денну межу можна міняти без цього.', 'Wijzigt u aanbieder, serveradres, model, privacymodus of sleutel, dan gaat de motor uit en vervallen de akkoorden van gebruikers: zij stemden in met de vorige voorwaarden. Naam en daglimiet wijzigt u zonder dat gevolg.')}</span></p>
             ) : null}
 
             <fieldset className='dm-soorten'>
               <legend>{tr('Вид рушія', 'Soort motor')}</legend>
               {DIENST_SOORTEN.map((soort) => (
                 <label key={soort} className='dm-soort' data-gekozen={String(formulier.soort === soort)}>
-                  <input type='radio' name={`${veld}-soort`} value={soort} checked={formulier.soort === soort} onChange={() => wijzig({ soort })} />
+                  <input type='radio' name={`${veld}-soort`} value={soort} checked={formulier.soort === soort} data-hulp-vrij='keuze'
+                    onChange={() => wijzig({ soort, privacyModus: standaardPrivacyModus(soort) })} />
                   <span><b>{dienstSoortNaam(soort, nl)}</b><small>{tr(SOORT_UITLEG[soort][0], SOORT_UITLEG[soort][1])}</small></span>
                 </label>
               ))}
@@ -336,7 +394,7 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                   <InfoTip label={tr('Про коротку назву', 'Over de korte naam')}>{tr('Латинські літери, цифри й дефіс, 2–31 знак, починається з літери. За нею рушій упізнає система; після створення її не змінити.', 'Latijnse letters, cijfers en koppelteken, 2–31 tekens, begint met een letter. Hiermee herkent het systeem de motor; na het aanmaken niet te wijzigen.')}</InfoTip>
                 </span>
                 <input id={`${veld}-id`} type='text' value={formulier.id} readOnly={formulier.modus === 'wijzig'} aria-readonly={formulier.modus === 'wijzig'} maxLength={31}
-                  autoCapitalize='none' autoCorrect='off' spellCheck={false} placeholder='claude-team' onChange={(e) => wijzig({ id: e.target.value.toLowerCase() })} />
+                  autoCapitalize='none' autoCorrect='off' spellCheck={false} placeholder='vertaal-team' onChange={(e) => wijzig({ id: e.target.value.toLowerCase() })} />
               </div>
               <div className='dm-veld'>
                 <span className='dm-veld-kop'><label htmlFor={`${veld}-naam`}>{tr('Назва для користувачів', 'Naam voor gebruikers')}</label></span>
@@ -346,22 +404,49 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
               {formulier.soort === 'aanbieder' ? (
                 <div className='dm-veld'>
                   <span className='dm-veld-kop'><label htmlFor={`${veld}-aanbieder`}>{tr('Постачальник', 'Aanbieder')}</label></span>
-                  <select id={`${veld}-aanbieder`} value={formulier.aanbieder} onChange={(e) => wijzig({ aanbieder: e.target.value as AiAanbiederId })}>
+                  <select id={`${veld}-aanbieder`} data-hulp-vrij='keuze' value={formulier.aanbieder} onChange={(e) => wijzig({ aanbieder: e.target.value as AiAanbiederId })}>
                     {AI_AANBIEDERS.map((a) => <option key={a.id} value={a.id}>{nl ? a.naamNl : a.naamUk}</option>)}
                   </select>
                 </div>
               ) : (
                 <div className='dm-veld'>
                   <span className='dm-veld-kop'>
-                    <label htmlFor={`${veld}-url`}>{tr('Адреса сервера', 'Serveradres')}</label>
-                    <InfoTip label={tr('Про адресу сервера', 'Over het serveradres')}>{tr('Повна адреса з http:// або https://, без логіна й параметрів. Користувачі бачать лише назву вузла.', 'Volledig adres met http:// of https://, zonder login en parameters. Gebruikers zien alleen de hostnaam.')}</InfoTip>
+                    <label htmlFor={`${veld}-url`}>
+                      {dienstVereistUrl(formulier.soort) ? tr('Адреса сервера', 'Serveradres') : tr('Адреса служби (необов’язково)', 'Dienstadres (optioneel)')}
+                    </label>
+                    <InfoTip label={tr('Про адресу сервера', 'Over het serveradres')}>{dienstVereistUrl(formulier.soort)
+                      ? tr('Повна адреса з http:// або https://, без логіна й параметрів. Користувачі бачать лише назву вузла.', 'Volledig adres met http:// of https://, zonder login en parameters. Gebruikers zien alleen de hostnaam.')
+                      : tr('Залиште порожнім для офіційної адреси API. Якщо вказуєте власну — лише https:// без логіна й параметрів.', 'Laat leeg voor het officiële API-adres. Een eigen adres moet met https:// beginnen, zonder login of parameters.')}</InfoTip>
                   </span>
                   <input id={`${veld}-url`} type='url' inputMode='url' value={formulier.url} maxLength={300} autoCapitalize='none' spellCheck={false}
-                    placeholder={formulier.soort === 'ollama' ? 'http://127.0.0.1:11434' : 'http://127.0.0.1:5000'} onChange={(e) => wijzig({ url: e.target.value })} />
+                    placeholder={formulier.soort === 'ollama'
+                      ? 'http://127.0.0.1:11434'
+                      : formulier.soort === 'google-translate'
+                        ? 'https://translation.googleapis.com/language/translate/v2'
+                        : formulier.soort === 'deepl'
+                          ? 'https://api-free.deepl.com/v2/translate'
+                          : formulier.soort === 'eigen-vertaal-knoop'
+                            ? 'https://vertaal.uw-domein.invalid'
+                            : 'http://127.0.0.1:5000'}
+                    onChange={(e) => wijzig({ url: e.target.value })} />
                 </div>
               )}
 
-              {formulier.soort !== 'libretranslate' ? (
+              <div className='dm-veld'>
+                <span className='dm-veld-kop'>
+                  <label htmlFor={`${veld}-privacy`}>{tr('Режим приватності даних', 'Privacymodus voor gegevens')}</label>
+                  <InfoTip label={tr('Про режим приватності', 'Over de privacymodus')}>{tr('Визначає, чи може текст виходити за межі пристрою або власного сервера та чи вирізаються токени, ключі й IBAN перед зовнішнім запитом. Зміна режиму скидає згоди користувачів.', 'Bepaalt of tekst het apparaat of de eigen server mag verlaten en of tokens, sleutels en IBAN vooraf worden verwijderd. Wijzigen doet akkoorden van gebruikers vervallen.')}</InfoTip>
+                </span>
+                <select id={`${veld}-privacy`} data-hulp-vrij='keuze' data-testid='dienst-privacy-modus' aria-describedby={`${veld}-privacy-hint`}
+                  value={formulier.privacyModus} onChange={(e) => wijzig({ privacyModus: e.target.value as VertaalPrivacyModus })}>
+                  {VERTAAL_PRIVACY_MODUS_VOLGORDE.map((pmId) => (
+                    <option key={pmId} value={pmId}>{nl ? VERTAAL_PRIVACY_MODI[pmId].naamNl : VERTAAL_PRIVACY_MODI[pmId].naamUk}</option>
+                  ))}
+                </select>
+                <small id={`${veld}-privacy-hint`}>{nl ? VERTAAL_PRIVACY_MODI[formulier.privacyModus].uitlegNl : VERTAAL_PRIVACY_MODI[formulier.privacyModus].uitlegUk}</small>
+              </div>
+
+              {(formulier.soort === 'aanbieder' || formulier.soort === 'ollama') ? (
                 <div className='dm-veld'>
                   <span className='dm-veld-kop'>
                     <label htmlFor={`${veld}-model`}>{formulier.soort === 'ollama' ? tr('Модель (обов’язково)', 'Model (verplicht)') : tr('Модель (необов’язково)', 'Model (optioneel)')}</label>
@@ -382,21 +467,29 @@ export default function DienstMotoren({ tr }: { tr: Tr }) {
                 <input id={`${veld}-limiet`} type='number' inputMode='numeric' min={DIENST_LIMIET.min} max={DIENST_LIMIET.max} step={1} value={formulier.limiet} onChange={(e) => wijzig({ limiet: e.target.value })} />
               </div>
 
-              {formulier.soort === 'aanbieder' ? (
+              {dienstMagSleutel(formulier.soort) ? (
                 <div className='dm-veld'>
-                  <span className='dm-veld-kop'><label htmlFor={`${veld}-sleutel`}>{tr('Ключ постачальника', 'Sleutel van de aanbieder')}</label></span>
+                  <span className='dm-veld-kop'>
+                    <label htmlFor={`${veld}-sleutel`}>
+                      {formulier.soort === 'eigen-vertaal-knoop'
+                        ? tr('Ключ доступу вузла (необов’язково)', 'Toegangssleutel van de knoop (optioneel)')
+                        : tr('Ключ API служби', 'API-sleutel van de dienst')}
+                    </label>
+                  </span>
                   {/* Некероване поле: значення не потрапляє у стан React і ніколи не показується назад. */}
                   <input id={`${veld}-sleutel`} ref={sleutelVeld} type='password' autoComplete='off' spellCheck={false} aria-describedby={`${veld}-sleutel-hint`} data-testid='dienst-sleutel' />
                   <small id={`${veld}-sleutel-hint`}>{formulier.modus === 'wijzig'
-                    ? tr('Порожньо — лишити наявний ключ. Збережений ключ тут ніколи не показується.', 'Leeg — de bestaande sleutel blijft. De bewaarde sleutel wordt hier nooit getoond.')
-                    : tr('Ключ зберігається у вашому «Сховищі ключів» окремо від особистих і більше ніде не показується. Без ключа рушій не можна ввімкнути.', 'De sleutel komt in uw «Sleutelkluis», los van persoonlijke sleutels, en wordt nergens meer getoond. Zonder sleutel kan de motor niet aan.')}</small>
+                    ? tr('Порожньо — лишити наявний зашифрований ключ. Ключ зберігається лише у «Сховищі ключів» (AES-GCM) і тут ніколи не показується.', 'Leeg — de bestaande versleutelde sleutel blijft. De sleutel wordt alleen in de «Sleutelkluis» (AES-GCM) bewaard en nooit opnieuw getoond.')
+                    : formulier.soort === 'eigen-vertaal-knoop'
+                      ? tr('Якщо ваш вузол вимагає заголовок Bearer, ключ буде зашифровано у «Сховищі ключів» окремо від особистих і ніколи не потрапить у журнали.', 'Als uw knoop een Bearer-sleutel vereist, wordt deze versleuteld bewaard in de «Sleutelkluis», los van persoonlijke sleutels en nooit gelogd.')
+                      : tr('Ключ шифрується у вашому «Сховищі ключів» окремо від особистих і ніколи не показується назад та не записується у журнали. Без ключа рушій не можна ввімкнути.', 'De sleutel wordt versleuteld bewaard in uw «Sleutelkluis», los van persoonlijke sleutels, en nooit teruggetoond of gelogd. Zonder sleutel kan de motor niet aan.')}</small>
                 </div>
               ) : null}
             </div>
 
             {eigenRisicos.length ? (
               <div className='dm-risico' role='note' data-testid='dienst-formulier-risico'>
-                <p className='dm-risico-kop'><span className='dm-uitroep' aria-hidden='true'>!</span>{tr(`Зважте для «${naamVan(formulier.aanbieder)}»`, `Let op bij «${naamVan(formulier.aanbieder)}»`)}</p>
+                <p className='dm-risico-kop'><span className='dm-uitroep' aria-hidden='true'>!</span>{formulier.soort === 'deepl' ? tr('Зважте для «DeepL»', 'Let op bij «DeepL»') : tr(`Зважте для «${naamVan(formulier.aanbieder)}»`, `Let op bij «${naamVan(formulier.aanbieder)}»`)}</p>
                 <ul>{eigenRisicos.map((r) => <li key={r}>{r}</li>)}</ul>
               </div>
             ) : null}

@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "naam": "prestatie-en-gebruikservaring",
+  "titel": {
+    "uk": "Швидкодія, адаптивна мережа, профілі екранів та аудит клієнтського досвіду",
+    "nl": "Prestaties, adaptief netwerk, schermprofielen en gebruikservaring"
+  },
+  "samenvatting": {
+    "uk": "Оптимізація швидкодії сайту на смартфоні та повільному інтернеті: база профілів екранів виробників без постійних перерахунків розмітки, адаптивні режими завантаження, пріоритет миттєвого кліку користувача, чесна верхня смуга прогресу, TTL-кеш пошти, виправлення аудиту UX і збереження обраного архіву в IndexedDB після обриву.",
+    "nl": "Prestatie-optimalisatie voor mobiel en traag netwerk: schermprofielendatabase zonder voortdurende lay-outberekeningen, adaptieve laadmodi, klikprioriteit, eerlijke voortgangsbalk, mail-TTL-cache, UX-auditfixes en IndexedDB-herstel van gekozen archieven."
+  },
+  "termen": {
+    "uk": [
+      "швидкодія",
+      "повільний інтернет",
+      "база екранів",
+      "смартфон",
+      "смуга завантаження",
+      "клієнтський досвід",
+      "біла смуга пошти",
+      "збереження архіву після обриву"
+    ],
+    "nl": [
+      "prestaties",
+      "traag netwerk",
+      "schermprofielen",
+      "mobiel",
+      "voortgangsbalk",
+      "gebruikservaring",
+      "mail-cache",
+      "upload-herstel"
+    ]
+  },
+  "paden": [
+    "shared/scherm-profielen.ts",
+    "src/platform/adaptief-laden.ts",
+    "src/navigatie-snel.ts",
+    "src/platform/client.ts",
+    "src/CanoniekOmlijsting.tsx",
+    "src/zichtbaar-voorladen.ts",
+    "src/achtergrond/LevendeAchtergrond.tsx",
+    "src/uitrol/upload-herstel-db.ts",
+    "src/uitrol/Upload.tsx",
+    "src/platform/uitrol-achtergrond-beheer.ts",
+    "src/GoogleMailWerkruimte.tsx",
+    "src/google-mail-werkruimte.css",
+    "src/mail-mobiel.css",
+    "src/mail/mail-lezer-compact-kop.css",
+    "src/mobiel-ux.css",
+    "src/canoniek-omlijsting.css"
+  ],
+  "werk": [
+    {
+      "taakId": "UPD-012",
+      "tak": "feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Впроваджено базу профілів екранів (shared/scherm-profielen.ts), адаптивний планувальник мережі й пріоритету кліку (src/platform/adaptief-laden.ts), чесну верхню смугу реальних запитів, вимкнення важких фонів/прогріву на повільному інтернеті, TTL-кеш списку листів, усунення білої смуги й наїзду кнопок у пошті, правки аудиту UX та IndexedDB-відновлення обраного архіву після вивантаження вкладки браузером."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "scherm-profielen-basis",
+      "uk": "База відомих профілів екранів виробників смартфонів, планшетів і ПК із миттєвим підлаштуванням та резервом для невідомих пристроїв",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "adaptieve-netwerk-modi",
+      "uk": "Автоматичні та ручні режими завантаження (spaarzaam / normaal / snel) за швидкістю мережі, Save-Data, ОЗП і ядрами процесора",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "klik-prioriteit-scheduler",
+      "uk": "Миттєвий пріоритет кліку користувача з призупиненням фонових завдань і їхнім подальшим продовженням",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "eerlijke-voortgangsbalk",
+      "uk": "Верхня смуга прогресу, прив’язана до реальних активних мережевих запитів без 120 мс сліпої паузи",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "upload-indexeddb-herstel",
+      "uk": "Збереження обраного архіву .tar.gz і стану майстра в IndexedDB для безболісного продовження після переходу в Telegram і вивантаження вкладки",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "mail-ttl-en-mobiel-herstel",
+      "uk": "TTL-кеш списку листів без зайвих повторних завантажень, усунення білої смуги та наїзду кнопок на смартфоні",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "ux-audit-verbeteringen",
+      "uk": "Правки аудиту клієнтського досвіду: єдина шкала H1 > H2, сенсорні зони >= 44 px, скелетні заповнювачі, індикація aria-busy",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-20",
+      "betreft": "Швидкодія на смартфоні, адаптивна мережа, пошта та збереження архіву після переходу в Telegram",
+      "uk": "Прибрати постійні перевимірювання блоків і гальмування на телефоні, запровадити базу розмірів екранів та адаптацію під повільний інтернет, зробити чесну смугу завантаження, пріоритет кліку, кеш без повторних запитів, прибрати білу смугу й наїзд кнопок у пошті, і зберігати обраний архів після переходу на підтвердження в Telegram.",
+      "behouden": [
+        "Симетричне центрування сторінок (UPD-009)",
+        "Ізоляція технічних збірок (shared/tech-bundels.ts)",
+        "Компактна верхня смуга перекладу листа (UPD-010)"
+      ]
+    }
+  ],
+  "open": [
+    "Подальше розбиття моноліту src/GoogleMailWerkruimte.tsx (417 КБ) на ліниві підмодулі переглядача вкладень та редактора."
+  ],
+  "bijgewerkt": "2026-11-20"
+}

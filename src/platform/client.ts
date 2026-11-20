@@ -4,6 +4,7 @@
 // - invitesClient: bouwt en leest uitnodigingslinks (parameter `invite`).
 import { neemAlgemeneHervat, neemStapOpFout, onthoudKeuzeVerzenden, stapOpVragen } from './stap-op';
 import { meldServerAntwoord } from './nieuwe-versie';
+import { registreerActiefVerzoek } from './adaptief-laden';
 import { leesBase64, metLeesfout } from '../../shared/bestand-lezen';
 
 // Terug van «Підтвердити повторним входом через Google» zonder bekende actie: korte melding «повторіть дію».
@@ -241,28 +242,33 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   const hasBody = method !== 'GET' && method !== 'DELETE';
   const target = hasBody ? url : withQuery(url, data);
   if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
-  let response: Response;
-  try {
-    response = await fetch(target, {
-      signal: opties.signal,
-      method,
-      credentials: 'same-origin',
-      cache: 'no-store',
-      headers: hasBody ? { 'Content-Type': 'application/json', Accept: 'application/json' } : { Accept: 'application/json' },
-      body: hasBody ? JSON.stringify(data ?? {}) : undefined,
-    });
-  } catch {
-    if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
-    throw new ApiError(0, 'NETWORK_ERROR', { error: 'NETWORK_ERROR' }, '');
-  }
-  // G4 + punt 3 (audit 19.10.2026): elke respons meldt de FEITEN aan nieuwe-versie.ts (route, code, rauw lichaam) zodat de plakkaat
-  // «Деталі» echte gegevens heeft; één melding per verzoek, dus het pogingnummer klopt. Elke niet-storing-respons haalt de plakkaat weg.
   const route = `${method} ${target.split('?')[0]}`;
+  const klaarVerzoek = registreerActiefVerzoek(route);
+  let response: Response;
   let text: string;
-  try { text = await response.text(); }
-  catch {
-    meldServerAntwoord(response.status, { route, code: `HTTP_${response.status}` });
-    throw new ApiError(0, opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR', { error: opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR' }, '');
+  try {
+    try {
+      response = await fetch(target, {
+        signal: opties.signal,
+        method,
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: hasBody ? { 'Content-Type': 'application/json', Accept: 'application/json' } : { Accept: 'application/json' },
+        body: hasBody ? JSON.stringify(data ?? {}) : undefined,
+      });
+    } catch {
+      if (opties.signal?.aborted) throw new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
+      throw new ApiError(0, 'NETWORK_ERROR', { error: 'NETWORK_ERROR' }, '');
+    }
+    // G4 + punt 3 (audit 19.10.2026): elke respons meldt de FEITEN aan nieuwe-versie.ts (route, code, rauw lichaam) zodat de plakkaat
+    // «Деталі» echte gegevens heeft; één melding per verzoek, dus het pogingnummer klopt. Elke niet-storing-respons haalt de plakkaat weg.
+    try { text = await response.text(); }
+    catch {
+      meldServerAntwoord(response.status, { route, code: `HTTP_${response.status}` });
+      throw new ApiError(0, opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR', { error: opties.signal?.aborted ? 'ABORTED' : 'NETWORK_ERROR' }, '');
+    }
+  } finally {
+    klaarVerzoek();
   }
   let parsed: any = text;
   if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } } else parsed = null;

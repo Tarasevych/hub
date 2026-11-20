@@ -132,6 +132,15 @@ async function synchroniseerEcht() {
   for (const r of parseStappen(stappenRaw)) { const l = perRun.get(r.run); if (l) l.push(r); else perRun.set(r.run, [r]); }
 
   const afgerondeRuns: string[] = [];
+  const afgerondeTelegram: Array<{
+    versie: string;
+    staat: RunStaat;
+    methode: Methode;
+    code: string;
+    reden: string;
+    diagnose: string[];
+    klaarTijd: string;
+  }> = [];
   for (const [id, regels] of perRun) {
     const s = samenvatRun(regels);
     const ev = eindEvent(events, s);
@@ -152,7 +161,8 @@ async function synchroniseerEcht() {
     const klaarTijd = staat === 'bezig' ? null : (ev?.tijd || s.laatsteTijd);
     // Oorzaak (punt 6): de echte foutregel + context uit de gebeurtenis van root; blijft bij de run, ook als het logboek wordt ingekort.
     const reden = ev?.reden ? tekst(ev.reden, 400) : '';
-    const context = JSON.stringify((ev?.context || []).slice(0, 8).map((r) => tekst(r, 300)));
+    const contextLijst = (ev?.context || []).slice(0, 8).map((r) => tekst(r, 300));
+    const context = JSON.stringify(contextLijst);
     const upd = await sys().query(`INSERT INTO app.uitrol_runs (id, methode, versie, staat, stap, pct, code, uk, nl, stappen, gestart_op, bijgewerkt_op, geeindigd_op, reden, context)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15::jsonb)
       ON CONFLICT (id) DO UPDATE SET methode = EXCLUDED.methode, versie = EXCLUDED.versie, staat = EXCLUDED.staat, stap = EXCLUDED.stap,
@@ -161,7 +171,20 @@ async function synchroniseerEcht() {
       WHERE app.uitrol_runs.staat IN ('bezig', 'afgebroken') OR app.uitrol_runs.stappen IS DISTINCT FROM EXCLUDED.stappen OR app.uitrol_runs.reden IS DISTINCT FROM EXCLUDED.reden
       RETURNING id`,
       [id, s.methode, s.versie, staat, s.stap, s.pct, tekst(code, 40), tekst(uk, 300), tekst(nl, 300), JSON.stringify(s.stappen), s.gestart, s.laatsteTijd, klaarTijd, reden, context]);
-    if (upd.rows[0] && staat !== 'bezig') afgerondeRuns.push(id);
+    if (upd.rows[0] && staat !== 'bezig') {
+      afgerondeRuns.push(id);
+      if (klaarTijd && Date.now() - Date.parse(klaarTijd) < 30 * 60_000) {
+        afgerondeTelegram.push({
+          versie: s.versie,
+          staat,
+          methode: s.methode,
+          code: tekst(code, 40),
+          reden: reden || tekst(uk || nl, 300),
+          diagnose: contextLijst.slice(0, 4),
+          klaarTijd,
+        });
+      }
+    }
   }
 
   await logregelsOpnemen();
@@ -170,6 +193,23 @@ async function synchroniseerEcht() {
   await pakketKoppelen(events);
   if (afgerondeRuns.length) {
     try { const s = await import('./uitrol-stroom'); for (const id of afgerondeRuns) await s.stroomVastleggenVanRun(id); } catch (err) { console.error('[uitrol-runs] stroom-bewijs:', (err as Error).message); }
+  }
+  if (afgerondeTelegram.length) {
+    for (const r of afgerondeTelegram) {
+      const soort = r.code === 'TERUG_OK' || r.code === 'SSH_TERUG'
+        ? 'teruggedraaid'
+        : r.staat === 'klaar'
+          ? 'geinstalleerd'
+          : 'mislukt';
+      void import('./uitrol-telegram').then((t) => t.stuurTelegramUitrolGebeurtenis({
+        soort,
+        versie: r.versie,
+        methode: r.methode,
+        code: r.code,
+        reden: r.reden,
+        diagnose: r.diagnose,
+      })).catch(() => undefined);
+    }
   }
 }
 
@@ -275,8 +315,8 @@ async function oudeUitkomstenOpnemen(events: RootGebeurtenis[], perRun: Map<stri
     // «besluit» (22.10.2026, §15): terugdraaien op een met passkey ondertekend besluit van de eigenaar — in de geschiedenis als methode 'opdracht', wie = 'passkey'.
     const terug = g.code === 'TERUG_OK' && (g.herkomst === 'opdracht' || g.herkomst === 'nazorg' || g.herkomst === 'besluit') ? (g.herkomst === 'besluit' ? 'opdracht' : g.herkomst) : '';
     if (g.code === 'SSH_OK' || g.code === 'SSH_TERUG' || terug) {
-      await sys().query(`INSERT INTO app.uitrol_runs (id, methode, versie, release, staat, stap, pct, code, uk, nl, stappen, bron_commit, wie, adres, gestart_op, bijgewerkt_op, geeindigd_op)
-        VALUES ($1, $12, $2, $3, 'klaar', 'klaar', 100, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $11, $11) ON CONFLICT (id) DO NOTHING`,
+      const insOud = await sys().query(`INSERT INTO app.uitrol_runs (id, methode, versie, release, staat, stap, pct, code, uk, nl, stappen, bron_commit, wie, adres, gestart_op, bijgewerkt_op, geeindigd_op)
+        VALUES ($1, $12, $2, $3, 'klaar', 'klaar', 100, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $11, $11) ON CONFLICT (id) DO NOTHING RETURNING id`,
       [`${terug || 'ssh'}-${g.id}`, g.pakket || '', g.release || g.tag || '', g.code, tekst(g.uk, 300), tekst(g.nl, 300),
         JSON.stringify([{ stap: 'klaar', staat: 'ok', pct: 100, tijd, uk: tekst(g.uk, 300), nl: tekst(g.nl, 300) }]), g.bronCommit || g.commit || '', g.wie || '', g.adres || '', tijd, terug || 'ssh']);
       // Pakketgegevens van een SSH-installatie (29.10.2026): wie voorbereidde, «SSH, root, zonder passkey», sha256 en grootte.
@@ -285,6 +325,18 @@ async function oudeUitkomstenOpnemen(events: RootGebeurtenis[], perRun: Map<stri
             goedgekeurd_door = CASE WHEN goedgekeurd_door = '' THEN $3 ELSE goedgekeurd_door END,
             sha256 = CASE WHEN sha256 = '' THEN $4 ELSE sha256 END, bytes = CASE WHEN bytes = 0 THEN $5 ELSE bytes END WHERE id = $1`,
         [`ssh-${g.id}`, [g.auteur, g.agent].filter(Boolean).join(' · '), g.goedkeuring === 'ssh-root' ? SSH_ROOT_GOEDKEURING : '', g.pakketSha256 || '', g.pakketBytes || 0]);
+      }
+      if (insOud.rows[0] && Date.now() - Date.parse(tijd) < 30 * 60_000) {
+        const isTerug = g.code === 'SSH_TERUG' || Boolean(terug);
+        void import('./uitrol-telegram').then((t) => t.stuurTelegramUitrolGebeurtenis({
+          soort: isTerug ? 'teruggedraaid' : 'geinstalleerd',
+          versie: g.pakket || g.release || g.tag || '',
+          methode: terug || 'ssh',
+          code: g.code,
+          commit: g.bronCommit || g.commit || '',
+          door: g.wie || '',
+          reden: tekst(g.uk || g.nl || '', 300),
+        })).catch(() => undefined);
       }
       continue;
     }

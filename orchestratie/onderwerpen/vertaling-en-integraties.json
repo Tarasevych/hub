@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "naam": "vertaling-en-integraties",
+  "titel": {
+    "uk": "Безпечні інтеграції служб перекладу та каталог підключень",
+    "nl": "Veilige integraties voor vertaaldiensten en koppelingscatalogus"
+  },
+  "samenvatting": {
+    "uk": "Підключення служб перекладу (Google Translate, DeepL, LibreTranslate, власний захищений вузол) через сторінку інтеграцій із шифруванням ключів у owner_vault_v1, вибором режиму приватності даних та автоматичним скиданням згоди при зміні адреси чи постачальника.",
+    "nl": "Koppeling van vertaaldiensten (Google Translate, DeepL, LibreTranslate, eigen vertaalknoop) via de integratiepagina met versleutelde sleutels in owner_vault_v1 en instelbare privacymodus."
+  },
+  "termen": {
+    "uk": [
+      "переклад",
+      "інтеграції перекладу",
+      "google переклад",
+      "deepl",
+      "libretranslate",
+      "приватність перекладу"
+    ],
+    "nl": [
+      "vertaling",
+      "vertaalintegraties",
+      "google translate",
+      "deepl",
+      "libretranslate",
+      "privacymodus"
+    ]
+  },
+  "paden": [
+    "shared/ai-dienst-motor.ts",
+    "shared/ai-vertaling.ts",
+    "shared/integraties-catalogus.ts",
+    "shared/integraties-register.ts",
+    "backend/ai-dienst-motoren.ts",
+    "backend/ai-vertaling-routes.ts",
+    "backend/beheer-integraties.ts",
+    "src/integraties/",
+    "src/mail/VertaalStrook.tsx",
+    "src/mail/AiVertalingBalk.tsx"
+  ],
+  "werk": [
+    {
+      "taakId": "UPD-012",
+      "tak": "feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Додано підтримку безпечних інтеграцій перекладу (Google Translate, DeepL, LibreTranslate, власний захищений вузол) із 4 режимами приватності, очищенням таємниць і трекерів перед зовнішнім викликом, шифруванням ключів у owner_vault_v1 та відображенням у каталозі інтеграцій."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "libretranslate-dienst",
+      "uk": "Спільний або локальний рушій LibreTranslate через ai-dienst-motoren (MAILAI-003)",
+      "sinds": "UPD-003",
+      "staat": "actief"
+    },
+    {
+      "id": "vertaal-privacy-modus",
+      "uk": "Чотири режими приватності перекладу (lokaal-alleen, eigen-server, extern-gezuiverd, extern-volledig) із прив’язкою до відбитка згоди akkoordSleutel",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "google-deepl-vertaal-adapters",
+      "uk": "Серверні захищені перехідники Google Translate, DeepL і власного вузла перекладу з шифрованим ключем у owner_vault_v1 та очищенням таємниць stripTrackingAndSecrets",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "integraties-vertaal-sectie",
+      "uk": "Реєстрація служб перекладу в каталозі інтеграцій (/mappen) із живим статусом, вибором режиму приватності та тестовим перекладом контрольного речення",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-20",
+      "betreft": "Сторінка інтеграцій для сервісів перекладу",
+      "uk": "Передбачити сторінку інтеграцій, де можна додати сервіси перекладу (Google Translate, DeepL, LibreTranslate тощо) із безпечною передачею даних і захищеним зберіганням ключів.",
+      "behouden": [
+        "Чинна смуга перекладу листа (src/mail/VertaalStrook.tsx) та локальний ШІ браузера",
+        "Автоматичне скидання згоди користувача при зміні адреси або постачальника рушія",
+        "Жодних ключів у відкритому вигляді в базі чи журналі"
+      ]
+    }
+  ],
+  "open": [],
+  "bijgewerkt": "2026-11-20"
+}

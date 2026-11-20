@@ -1,8 +1,8 @@
 // «Налаштування → Зашифрований архів випусків у Telegram» (AES-256-GCM, розрізання, обов’язкова перевірка, відновлення).
 // «Instellingen → Versleuteld release-archief in Telegram» (AES-256-GCM, opsplitsen, verplichte controle, herstel).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Archive, CheckCircle2, Copy, Download, KeyRound, Loader2, Lock, RefreshCw, Save, Send, ShieldAlert, TriangleAlert,
+  Archive, CheckCircle2, Copy, Download, EyeOff, KeyRound, Loader2, Lock, RefreshCw, Save, Send, ShieldAlert, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
@@ -10,6 +10,9 @@ import { leesSha256 } from '../../shared/bestand-lezen';
 import HulpVraag from '../hulp/HulpVraag';
 import { foutTekst } from './fouten';
 import { datum, mb, tr, type Lang, type Run } from './types';
+
+const SLEUTEL_VERBERG_SEC = 30;
+const KLEM_WIS_MS = 45_000;
 
 type TelegramDeel = {
   deelNr: number;
@@ -86,10 +89,12 @@ export default function TelegramArchief({
   const [botToken, setBotToken] = useState('');
   const [archiefSleutel, setArchiefSleutel] = useState('');
   const [eenmaligSleutel, setEenmaligSleutel] = useState('');
+  const [sleutelRestSec, setSleutelRestSec] = useState(0);
   const [gekozenRun, setGekozenRun] = useState('');
   const [bezig, setBezig] = useState('');
   const [melding, setMelding] = useState<{ soort: 'ok' | 'fout'; tekst: string } | null>(null);
   const [laadFout, setLaadFout] = useState('');
+  const klemTimerRef = useRef<number | null>(null);
 
   const laden = useCallback(async () => {
     try {
@@ -289,12 +294,83 @@ export default function TelegramArchief({
     }
   };
 
+  useEffect(() => {
+    if (!eenmaligSleutel) {
+      setSleutelRestSec(0);
+      return;
+    }
+    setSleutelRestSec(SLEUTEL_VERBERG_SEC);
+    const gestart = Date.now();
+    const t = window.setInterval(() => {
+      const rest = Math.max(0, SLEUTEL_VERBERG_SEC - Math.floor((Date.now() - gestart) / 1000));
+      setSleutelRestSec(rest);
+      if (rest === 0) {
+        window.clearInterval(t);
+        setEenmaligSleutel('');
+      }
+    }, 500);
+    return () => window.clearInterval(t);
+  }, [eenmaligSleutel]);
+
+  useEffect(() => () => {
+    if (klemTimerRef.current !== null) {
+      window.clearTimeout(klemTimerRef.current);
+      klemTimerRef.current = null;
+    }
+  }, []);
+
+  const verbergEnWisNu = async () => {
+    setEenmaligSleutel('');
+    setSleutelRestSec(0);
+    if (klemTimerRef.current !== null) {
+      window.clearTimeout(klemTimerRef.current);
+      klemTimerRef.current = null;
+    }
+    try {
+      await navigator.clipboard.writeText('');
+      setMelding({
+        soort: 'ok',
+        tekst: tr(lang, 'Ключ приховано з екрана, а буфер обміну очищено.', 'Sleutel verborgen en klembord gewist.'),
+      });
+    } catch {
+      setMelding({
+        soort: 'fout',
+        tekst: tr(
+          lang,
+          'Ключ приховано з екрана, але браузер не дозволив очистити буфер обміну — очистьте його вручну.',
+          'Sleutel verborgen, maar de browser weigerde het klembord te wissen — wis het handmatig.',
+        ),
+      });
+    }
+  };
+
   const kopieerSleutel = async () => {
     if (!eenmaligSleutel) return;
     try {
       await navigator.clipboard.writeText(eenmaligSleutel);
-      setMelding({ soort: 'ok', tekst: tr(lang, 'Ключ скопійовано. Збережіть його поза сервером.', 'Sleutel gekopieerd. Bewaar deze buiten de server.') });
-    } catch { /* ігнор */ }
+      if (klemTimerRef.current !== null) window.clearTimeout(klemTimerRef.current);
+      klemTimerRef.current = window.setTimeout(() => {
+        klemTimerRef.current = null;
+        void navigator.clipboard.writeText('').catch(() => undefined);
+      }, KLEM_WIS_MS);
+      setMelding({
+        soort: 'ok',
+        tekst: tr(
+          lang,
+          'Ключ скопійовано. Збережіть його поза сервером — буфер обміну автоматично очиститься через 45 секунд.',
+          'Sleutel gekopieerd. Bewaar deze buiten de server — het klembord wordt over 45 seconden automatisch gewist.',
+        ),
+      });
+    } catch {
+      setMelding({
+        soort: 'fout',
+        tekst: tr(
+          lang,
+          'Браузер заборонив доступ до буфера обміну — скопіюйте ключ вручну й збережіть його поза сервером.',
+          'De browser weigerde toegang tot het klembord — kopieer de sleutel handmatig en bewaar deze buiten de server.',
+        ),
+      });
+    }
   };
 
   return (
@@ -403,6 +479,7 @@ export default function TelegramArchief({
                   placeholder='123456789:AA...'
                   maxLength={140}
                   autoComplete='new-password'
+                  data-ai-geen-actie='1'
                 />
               </label>
             </div>
@@ -418,6 +495,7 @@ export default function TelegramArchief({
                   placeholder={stand.sleutelAanwezig ? '••••••••••••••••••••••••••••••••' : tr(lang, 'Введіть ключ або згенеруйте кнопкою нижче', 'Voer een sleutel in of genereer er een')}
                   maxLength={256}
                   autoComplete='new-password'
+                  data-ai-geen-actie='1'
                   data-ut-tg-sleutel-invoer
                 />
               </label>
@@ -457,6 +535,17 @@ export default function TelegramArchief({
             </div>
           </div>
 
+          <div className='ut-gh-blok' data-ut-tg-sleutel-uitleg='1'>
+            <h3><ShieldCheck aria-hidden='true' /> {tr(lang, 'Як і де зберігаються ключі', 'Hoe en waar sleutels worden bewaard')}</h3>
+            <p className='ut-hint'>
+              {tr(
+                lang,
+                'Ключ бота, ключ шифрування архіву й секрет приймача зберігаються лише на сервері в таблиці owner_vault_v1 у зашифрованому вигляді (AES-256-GCM з автентифікованим зв’язуванням AAD). Вони ніколи не зберігаються в браузері й ніколи не записуються у відкритому вигляді в базі даних. Одноразовий ключ приховується автоматично через 30 с, а буфер обміну очищується через 45 с після копіювання.',
+                'De botsleutel, archiefsleutel en het webhook-geheim worden uitsluitend op de server bewaard in owner_vault_v1, versleuteld met AES-256-GCM en AAD-binding. Ze worden nooit in de browser opgeslagen en nooit onversleuteld in de database gezet. De eenmalige sleutel wordt na 30 s automatisch verborgen en het klembord wordt 45 s na kopiëren automatisch gewist.',
+              )}
+            </p>
+          </div>
+
           <div className='ut-gh-blok' data-ut-tg-webhook>
             <div className='ut-pakket-knoppen'>
               <svg
@@ -474,12 +563,12 @@ export default function TelegramArchief({
                 <rect x='52' y='75' width='24' height='6' rx='3' fill='#bfdbfe' />
               </svg>
               <div>
-                <h3>{tr(lang, 'Вхідний приймач команд читання (/status, /help) та емблема бота', 'Webhook voor leesopdrachten (/status, /help) en bot-embleem')}</h3>
+                <h3>{tr(lang, 'Вхідний приймач команд читання (/status, /laatste, /help) та емблема бота', 'Webhook voor leesopdrachten (/status, /laatste, /help) en bot-embleem')}</h3>
                 <p className='ut-hint'>
                   {tr(
                     lang,
-                    'Бот відповідає виключно на /status і /help лише в погодженій групі та темі. Схвалення чи встановлення через Telegram неможливе.',
-                    'De bot reageert uitsluitend op /status en /help in de ingestelde groep en het topic. Goedkeuren of installeren via Telegram is onmogelijk.',
+                    'Бот надсилає повний перебіг подій випусків і відповідає виключно на команди й кнопки читання (/status, /laatste, /help) лише в погодженій групі та темі. Схвалення чи встановлення через Telegram неможливе.',
+                    'De bot meldt alle stappen van de uitgavecyclus en reageert uitsluitend op leesopdrachten en statusknoppen (/status, /laatste, /help) in de ingestelde groep en het topic. Goedkeuren of installeren via Telegram is onmogelijk.',
                   )}
                 </p>
               </div>
@@ -534,19 +623,22 @@ export default function TelegramArchief({
           </div>
 
           {eenmaligSleutel && (
-            <div className='ut-gh-blok' role='status' data-ut-tg-eenmalige-sleutel>
+            <div className='ut-gh-blok' role='status' data-ut-tg-eenmalige-sleutel data-ai-verborgen='1'>
               <strong>{tr(lang, 'Збережіть цей 256-бітний ключ шифрування поза сервером!', 'Bewaar deze 256-bits versleutelingssleutel buiten de server!')}</strong>
               <p className='ut-hint'>
                 {tr(
                   lang,
-                  'Він показаний лише один раз після генерації (також збережений зашифровано у Сховищі секретів під назвою UITROL_ARCHIEF_SLEUTEL). Без нього розшифрувати архіви з Telegram на іншому сервері неможливо.',
-                  'Deze wordt eenmalig na generatie getoond (ook versleuteld opgeslagen in het Geheimenkluis als UITROL_ARCHIEF_SLEUTEL). Zonder deze sleutel zijn archieven uit Telegram elders niet te ontsleutelen.',
+                  `Він показаний лише один раз після генерації (також збережений зашифровано в owner_vault_v1 під назвою UITROL_ARCHIEF_SLEUTEL). Автоприховування через ${sleutelRestSec} с.`,
+                  `Deze wordt eenmalig na generatie getoond (ook versleuteld opgeslagen in owner_vault_v1 als UITROL_ARCHIEF_SLEUTEL). Automatisch verbergen over ${sleutelRestSec} s.`,
                 )}
               </p>
               <div className='ut-pakket-knoppen'>
-                <code className='ut-mono'>{eenmaligSleutel}</code>
+                <code className='ut-mono' data-ai-verborgen='1'>{eenmaligSleutel}</code>
                 <button type='button' className='ut-knop' onClick={() => void kopieerSleutel()}>
                   <Copy size={14} aria-hidden='true' /> {tr(lang, 'Копіювати ключ', 'Sleutel kopiëren')}
+                </button>
+                <button type='button' className='ut-knop' onClick={() => void verbergEnWisNu()} data-ut-tg-sleutel-wis>
+                  <EyeOff size={14} aria-hidden='true' /> {tr(lang, 'Сховати й очистити буфер зараз', 'Nu verbergen en klembord wissen')}
                 </button>
               </div>
             </div>

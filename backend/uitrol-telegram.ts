@@ -1010,7 +1010,200 @@ export async function gebruikHerstelDownload(eigenaarId: string, archiefId: stri
   return item;
 }
 
-// ------------------------------------------------------------------------------------------------ приймач команд бота випусків (/status і /help)
+// ------------------------------------------------------------------------------------------------ повний цикл подій бота випусків (лише інформування та читання стану)
+export type TelegramUitrolGebeurtenisSoort =
+  | 'voorstel_klaar'
+  | 'voorcontrole_mislukt'
+  | 'goedgekeurd'
+  | 'afgewezen'
+  | 'gestopt'
+  | 'geinstalleerd'
+  | 'mislukt'
+  | 'teruggedraaid';
+
+export type TelegramUitrolGebeurtenis = {
+  soort: TelegramUitrolGebeurtenisSoort;
+  eigenaarId?: string;
+  versie: string;
+  auteur?: string;
+  agent?: string;
+  voorbereider?: string;
+  commit?: string;
+  wijzigingenUk?: string;
+  wijzigingenNl?: string;
+  migraties?: string[];
+  drieFactoren?: { volledig?: boolean; aantalOk?: number; totaal?: number } | null;
+  fouten?: string[];
+  code?: string;
+  reden?: string;
+  door?: string;
+  diagnose?: string[];
+  methode?: string;
+  omvatVersies?: string[];
+};
+
+const UPDATES_URL = () => `https://${SERVICE_HOSTS.admin || 'admin.tarasevych.com'}/updates`;
+const schoonRegel = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+
+function bouwUitrolToetsenbord(metLaatste = true) {
+  const acties: Array<{ text: string; callback_data: string }> = [
+    { text: '📊 Оновити стан / Status', callback_data: 'ut:status' },
+  ];
+  if (metLaatste) acties.push({ text: '📦 Останній випуск / Laatste', callback_data: 'ut:laatste' });
+  return {
+    inline_keyboard: [
+      [{ text: '🌐 Сторінка оновлень / Updates', url: UPDATES_URL() }],
+      acties,
+    ],
+  };
+}
+
+function bouwGebeurtenisTekst(g: TelegramUitrolGebeurtenis): string {
+  const versie = schoonRegel(g.versie, 40) || '—';
+  const commit = schoonRegel(g.commit, 12);
+  const auteur = schoonRegel(g.auteur, 80);
+  const agent = schoonRegel(g.agent, 40);
+  const voorbereider = schoonRegel(g.voorbereider, 80);
+  const door = schoonRegel(g.door, 80);
+  const reden = schoonRegel(g.reden, 360);
+  const code = schoonRegel(g.code, 60);
+  const methode = schoonRegel(g.methode, 40);
+  const migraties = (g.migraties || []).map((m) => schoonRegel(m, 80)).filter(Boolean).slice(0, 8);
+  const fouten = (g.fouten || []).map((f) => schoonRegel(f, 160)).filter(Boolean).slice(0, 8);
+  const diagnose = (g.diagnose || []).map((d) => schoonRegel(d, 180)).filter(Boolean).slice(0, 4);
+  const omvat = (g.omvatVersies || []).map((v) => schoonRegel(v, 30)).filter(Boolean).slice(0, 6);
+  const wijzUk = schoonRegel(g.wijzigingenUk, 450);
+  const wijzNl = schoonRegel(g.wijzigingenNl, 450);
+
+  const regels: string[] = [];
+  if (g.soort === 'voorstel_klaar') {
+    regels.push(`📦 Новий випуск готовий до схвалення: ${versie}`);
+    regels.push(`📦 Nieuwe uitgave klaar voor goedkeuring: ${versie}`);
+    if (auteur || voorbereider) regels.push(`• Автор / Auteur: ${auteur || voorbereider}${voorbereider && auteur && voorbereider !== auteur ? ` (${voorbereider})` : ''}`);
+    if (agent) regels.push(`• Агент / Agent: ${agent}`);
+    if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+    if (g.drieFactoren) {
+      const ok = Number(g.drieFactoren.aantalOk ?? 0);
+      const tot = Number(g.drieFactoren.totaal ?? 3);
+      regels.push(`• 3-чинникова довіра / Driefactorvertrouwen: ${ok}/${tot} (${g.drieFactoren.volledig ? 'синхронізовано / gesynchroniseerd' : 'потрібна звірка / controle nodig'})`);
+    }
+    if (migraties.length) regels.push(`• Міграції БД / DB-migraties (${migraties.length}): ${migraties.join(', ')}`);
+    if (wijzUk) regels.push(`📝 Зміни (UK): ${wijzUk}`);
+    if (wijzNl && wijzNl !== wijzUk) regels.push(`📝 Wijzigingen (NL): ${wijzNl}`);
+    regels.push('🔐 Схвалення лише на сайті ключем доступу власника / Goedkeuring alleen op de site met toegangssleutel van de eigenaar.');
+  } else if (g.soort === 'voorcontrole_mislukt') {
+    regels.push(`⛔ Передпускову перевірку не пройдено: ${versie}`);
+    regels.push(`⛔ Voorcontrole mislukt: ${versie}`);
+    if (voorbereider || auteur) regels.push(`• Джерело / Bron: ${voorbereider || auteur}${agent ? ` (${agent})` : ''}`);
+    if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+    if (fouten.length) {
+      regels.push('• Причини / Oorzaken:');
+      for (const f of fouten) regels.push(`  – ${f}`);
+    }
+  } else if (g.soort === 'goedgekeurd') {
+    regels.push(`✅ Схвалено власником для встановлення: ${versie}`);
+    regels.push(`✅ Goedgekeurd door eigenaar voor installatie: ${versie}`);
+    if (door) regels.push(`• Схвалив / Goedgekeurd door: ${door}`);
+    if (voorbereider) regels.push(`• Підготував / Voorbereid door: ${voorbereider}`);
+    if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+    if (omvat.length) regels.push(`• Охоплює попередні / Omvat eerdere: ${omvat.join(', ')}`);
+  } else if (g.soort === 'afgewezen') {
+    regels.push(`🚫 Випуск відхилено: ${versie}`);
+    regels.push(`🚫 Uitgave afgewezen: ${versie}`);
+    if (door) regels.push(`• Відхилив / Afgewezen door: ${door}`);
+    if (voorbereider) regels.push(`• Підготував / Voorbereid door: ${voorbereider}`);
+    if (reden) regels.push(`• Причина / Reden: ${reden}`);
+  } else if (g.soort === 'gestopt') {
+    regels.push(`🛑 Встановлення зупинено: ${versie}`);
+    regels.push(`🛑 Installatie gestopt: ${versie}`);
+    if (door) regels.push(`• Зупинив / Gestopt door: ${door}`);
+    if (code) regels.push(`• Етап / Fase: ${code}`);
+    if (reden) regels.push(`• Причина / Reden: ${reden}`);
+  } else if (g.soort === 'geinstalleerd') {
+    regels.push(`🎉 Випуск успішно встановлено: ${versie}`);
+    regels.push(`🎉 Uitgave succesvol geïnstalleerd: ${versie}`);
+    if (methode) regels.push(`• Спосіб / Methode: ${methode}`);
+    if (door) regels.push(`• Виконавець / Uitvoerder: ${door}`);
+    if (commit) regels.push(`• Фіксація змін / Vastlegging: ${commit}`);
+  } else if (g.soort === 'mislukt') {
+    regels.push(`❌ Збій або переривання встановлення: ${versie}`);
+    regels.push(`❌ Installatie mislukt of afgebroken: ${versie}`);
+    if (code) regels.push(`• Код / Code: ${code}`);
+    if (methode) regels.push(`• Спосіб / Methode: ${methode}`);
+    if (reden) regels.push(`• Причина / Reden: ${reden}`);
+    if (diagnose.length) {
+      regels.push('• Фрагмент діагностики / Diagnosefragment:');
+      for (const d of diagnose) regels.push(`  | ${d}`);
+    }
+  } else {
+    regels.push(`↩️ Виконано відкат або вибіркове відкликання: ${versie}`);
+    regels.push(`↩️ Terugdraaiing of selectieve intrekking uitgevoerd: ${versie}`);
+    if (methode) regels.push(`• Режим / Modus: ${methode}`);
+    if (door) regels.push(`• Ініціатор / Initiatiefnemer: ${door}`);
+    if (code) regels.push(`• Код / Code: ${code}`);
+    if (reden) regels.push(`• Причина / Reden: ${reden}`);
+  }
+  return regels.join('\n').slice(0, 3900);
+}
+
+/**
+ * Надсилає двомовне повідомлення про подію життєвого циклу випуску в налаштовану групу/тему Telegram.
+ * Працює лише коли бот налаштований і активний; ніколи не кидає помилку і не зупиняє основний потік.
+ */
+export async function stuurTelegramUitrolGebeurtenis(
+  gebeurtenis: TelegramUitrolGebeurtenis,
+): Promise<{ verzonden: boolean; reden?: string }> {
+  try {
+    let eigenaarId = String(gebeurtenis.eigenaarId || '').trim();
+    let inst: TelegramArchiefInstellingen | null = null;
+    if (eigenaarId) {
+      inst = await telegramInstellingenVan(eigenaarId);
+    }
+    if (!inst || !inst.actief || !inst.chatId) {
+      const r = await sys().query(
+        `SELECT user_id, chat_id, message_thread_id, actief, verplicht_voor_installatie,
+                laatst_getest_op, laatste_test_ok, laatste_test_fout, bijgewerkt_op
+           FROM app.uitrol_telegram_instellingen
+          WHERE actief = true AND chat_id <> ''
+          ORDER BY bijgewerkt_op DESC
+          LIMIT 1`,
+      ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }));
+      const row = r.rows[0];
+      if (!row) return { verzonden: false, reden: 'niet-actief' };
+      eigenaarId = String(row.user_id || '');
+      inst = {
+        chatId: String(row.chat_id || ''),
+        messageThreadId: row.message_thread_id != null ? Number(row.message_thread_id) : null,
+        actief: Boolean(row.actief),
+        verplichtVoorInstallatie: Boolean(row.verplicht_voor_installatie),
+        laatstGetestOp: '',
+        laatsteTestOk: Boolean(row.laatste_test_ok),
+        laatsteTestFout: '',
+        bijgewerktOp: '',
+      };
+    }
+    if (!eigenaarId || !inst.actief || !inst.chatId) return { verzonden: false, reden: 'niet-actief' };
+    const bot = await leesBotToken(eigenaarId);
+    if (!bot?.token) return { verzonden: false, reden: 'geen-bot' };
+
+    const metLaatste = ['voorstel_klaar', 'goedgekeurd', 'geinstalleerd', 'teruggedraaid'].includes(gebeurtenis.soort);
+    await tgApi(bot.token, 'sendMessage', {
+      chat_id: inst.chatId,
+      ...(inst.messageThreadId != null ? { message_thread_id: inst.messageThreadId } : {}),
+      disable_notification: gebeurtenis.soort === 'goedgekeurd' || gebeurtenis.soort === 'geinstalleerd',
+      text: bouwGebeurtenisTekst(gebeurtenis),
+      reply_markup: bouwUitrolToetsenbord(metLaatste),
+    });
+    return { verzonden: true };
+  } catch (err) {
+    if (!isOntbrekendeTabel(err)) {
+      console.error('[uitrol-telegram] gebeurtenis:', (err as Error).message);
+    }
+    return { verzonden: false, reden: 'fout' };
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ приймач команд бота випусків (/status, /laatste, /help і кнопки читання)
 export async function telegramWebhookInstellen(
   eigenaar: { id: string; email?: string },
   invoer?: { vernieuwGeheim?: boolean },
@@ -1034,7 +1227,7 @@ export async function telegramWebhookInstellen(
   await tgApi(bot.token, 'setWebhook', {
     url: webhookUrl,
     secret_token: secret,
-    allowed_updates: ['message'],
+    allowed_updates: ['message', 'callback_query'],
   });
 
   await schrijfBeheerAudit({
@@ -1050,6 +1243,89 @@ export async function telegramWebhookInstellen(
     webhookUrl,
     webhookGeheimAanwezig: true,
   };
+}
+
+function bouwHelpTekst(): string {
+  return [
+    'Mijn Ruimte — бот випусків та архіву (лише читання):',
+    '/status — активна версія сайту, черга схвалення та стан останнього архіву в Telegram',
+    '/laatste — подробиці останнього випуску й черги',
+    '/help — перелік безпечних команд',
+    'Усі схвалення й установлення виконуються виключно через сайт із ключем доступу власника.',
+    '',
+    'Mijn Ruimte — release- en archiefbot (alleen lezen):',
+    '/status — actieve siteversie, goedkeuringswachtrij en laatste Telegram-archief',
+    '/laatste — details van de laatste uitgave en wachtrij',
+    '/help — overzicht van veilige opdrachten',
+    'Goedkeuren en installeren gebeurt uitsluitend op de site met de passkey van de eigenaar.',
+  ].join('\n');
+}
+
+async function bouwStatusOverzicht(eigenaarId: string) {
+  const actieveVersie = releaseInfo().versie || '—';
+  const wachtQ = await sys().query(
+    `SELECT count(*)::int AS aantal FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring'`,
+  );
+  const wachtAantal = Number(wachtQ.rows[0]?.aantal || 0);
+  const archQ = await sys().query(
+    `SELECT versie, status, voltooid_op, aangemaakt_op, aantal_delen
+       FROM app.uitrol_telegram_archief
+      WHERE user_id = $1
+      ORDER BY aangemaakt_op DESC
+      LIMIT 1`,
+    [eigenaarId],
+  );
+  const laatst = archQ.rows[0];
+  const laatstTijd = laatst?.voltooid_op
+    ? new Date(laatst.voltooid_op).toISOString()
+    : laatst?.aangemaakt_op
+      ? new Date(laatst.aangemaakt_op).toISOString()
+      : '—';
+  const laatstInfoUk = laatst
+    ? `${String(laatst.versie)} (${String(laatst.status)}, ${Number(laatst.aantal_delen || 1)} част., ${laatstTijd})`
+    : 'ще не створено';
+  const laatstInfoNl = laatst
+    ? `${String(laatst.versie)} (${String(laatst.status)}, ${Number(laatst.aantal_delen || 1)} delen, ${laatstTijd})`
+    : 'nog geen';
+
+  const statusTekst = [
+    'Mijn Ruimte · Стан випусків / Releasestatus',
+    `• Активна версія / Actieve versie: ${actieveVersie}`,
+    `• Очікує схвалення / Wacht op goedkeuring: ${wachtAantal}`,
+    `• Останній архів Telegram / Laatste Telegram-archief: ${laatstInfoUk} | ${laatstInfoNl}`,
+  ].join('\n');
+
+  return { actieveVersie, wachtAantal, statusTekst };
+}
+
+async function bouwLaatsteTekst(): Promise<string> {
+  const runQ = await sys().query(
+    `SELECT versie, methode, staat, code, bron_commit, gestart_op, geeindigd_op
+       FROM app.uitrol_runs
+      ORDER BY gestart_op DESC
+      LIMIT 1`,
+  ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }));
+  const voorstelQ = await sys().query(
+    `SELECT versie, status, voorbereider_label, bron_commit, aangemaakt_op
+       FROM app.uitrol_voorstellen
+      ORDER BY aangemaakt_op DESC
+      LIMIT 1`,
+  ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }));
+  const r = runQ.rows[0];
+  const v = voorstelQ.rows[0];
+  const lijnen = ['Mijn Ruimte · Останній випуск / Laatste uitgave'];
+  if (r) {
+    const tijd = r.geeindigd_op ? new Date(String(r.geeindigd_op)).toISOString() : r.gestart_op ? new Date(String(r.gestart_op)).toISOString() : '—';
+    lijnen.push(`• Останній запуск / Laatste run: ${String(r.versie || '—')} · ${String(r.staat || '—')} (${String(r.methode || '—')}${r.code ? `, ${String(r.code)}` : ''}) · ${tijd}`);
+    if (r.bron_commit) lijnen.push(`• Фіксація змін / Vastlegging: ${String(r.bron_commit).slice(0, 12)}`);
+  } else {
+    lijnen.push('• Останній запуск / Laatste run: ще немає записів / nog geen gegevens');
+  }
+  if (v) {
+    lijnen.push(`• Остання пропозиція / Laatste voorstel: ${String(v.versie || '—')} · ${String(v.status || '—')} (${schoonRegel(v.voorbereider_label, 60) || '—'})`);
+  }
+  lijnen.push('🔐 Управління виключно на сайті з ключем доступу / Beheer uitsluitend op de site met toegangssleutel.');
+  return lijnen.join('\n');
 }
 
 export async function verwerkTelegramUitrolWebhook(invoer: {
@@ -1097,13 +1373,15 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     return { ok: false, fout: 'TELEGRAM_WEBHOOK_ONGELDIG', status: 400 };
   }
 
+  const bronChatId = String(payload?.message?.chat?.id ?? payload?.callback_query?.message?.chat?.id ?? '').slice(0, 80);
+
   // Атомарна повторостійкість за update_id: повторний виклик Telegram не виконує команду вдруге.
   const ins = await sys().query(
     `INSERT INTO app.uitrol_telegram_updates (update_id, user_id, ruimte, chat_id, uitkomst)
      VALUES ($1, $2, 'technisch', $3, 'ontvangen')
      ON CONFLICT (update_id) DO NOTHING
      RETURNING update_id`,
-    [updateIdRaw, eigenaarId, String(payload?.message?.chat?.id ?? '').slice(0, 80)],
+    [updateIdRaw, eigenaarId, bronChatId],
   );
   if (ins.rowCount === 0) {
     return { ok: true, resultaat: { ok: true, herhaling: true } };
@@ -1116,32 +1394,95 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     ).catch(() => undefined);
   };
 
+  const doelChat = String(matchedInst.chat_id || '').trim();
+  const threadOpt = matchedInst.message_thread_id != null ? { message_thread_id: Number(matchedInst.message_thread_id) } : {};
+
+  const controleerChatEnTopic = (chatObj: any, msgThreadId: unknown): 'ok' | 'ander-chat-genegeerd' | 'andere-topic-genegeerd' => {
+    const cid = String(chatObj?.id ?? '');
+    const uname = chatObj?.username ? `@${String(chatObj.username).toLowerCase()}` : '';
+    const zelfdeChat = cid === doelChat || (doelChat.startsWith('@') && uname === doelChat.toLowerCase());
+    if (!zelfdeChat) return 'ander-chat-genegeerd';
+    if (matchedInst.message_thread_id != null && Number(msgThreadId) !== Number(matchedInst.message_thread_id)) {
+      return 'andere-topic-genegeerd';
+    }
+    return 'ok';
+  };
+
+  // Обробка вбудованих кнопок читання стану (ut:status, ut:laatste, ut:help) — жодного обходу ключа доступу!
+  const cq = payload?.callback_query;
+  if (cq) {
+    const cqId = String(cq.id || '').trim();
+    const cqMsg = cq.message;
+    if (!cqId || cq?.from?.is_bot === true || cqMsg?.chat?.id === undefined) {
+      await markeer('genegeerd-zonder-bericht');
+      return { ok: true, resultaat: { ok: true, overgeslagen: true } };
+    }
+    const check = controleerChatEnTopic(cqMsg.chat, cqMsg.message_thread_id);
+    if (check !== 'ok') {
+      await markeer(check);
+      return { ok: true, resultaat: { ok: true, overgeslagen: true } };
+    }
+    const knop = String(cq.data || '').trim();
+    if (knop !== 'ut:status' && knop !== 'ut:laatste' && knop !== 'ut:help') {
+      await markeer('onbekende-knop');
+      return { ok: true, resultaat: { ok: true, overgeslagen: true } };
+    }
+    const bot = await leesBotToken(eigenaarId);
+    if (!bot) {
+      await markeer('geen-bottoken');
+      return { ok: true, resultaat: { ok: true, overgeslagen: true } };
+    }
+    await tgApi(bot.token, 'answerCallbackQuery', { callback_query_id: cqId }).catch(() => undefined);
+    if (knop === 'ut:help') {
+      await tgApi(bot.token, 'sendMessage', {
+        chat_id: doelChat,
+        ...threadOpt,
+        disable_notification: true,
+        text: bouwHelpTekst(),
+        reply_markup: bouwUitrolToetsenbord(true),
+      });
+      await markeer('callback-help');
+      return { ok: true, resultaat: { ok: true, callback: 'ut:help' } };
+    }
+    if (knop === 'ut:laatste') {
+      const tekstLaatste = await bouwLaatsteTekst();
+      await tgApi(bot.token, 'sendMessage', {
+        chat_id: doelChat,
+        ...threadOpt,
+        disable_notification: true,
+        text: tekstLaatste,
+        reply_markup: bouwUitrolToetsenbord(false),
+      });
+      await markeer('callback-laatste');
+      return { ok: true, resultaat: { ok: true, callback: 'ut:laatste' } };
+    }
+    const { actieveVersie, wachtAantal, statusTekst } = await bouwStatusOverzicht(eigenaarId);
+    await tgApi(bot.token, 'sendMessage', {
+      chat_id: doelChat,
+      ...threadOpt,
+      disable_notification: true,
+      text: statusTekst,
+      reply_markup: bouwUitrolToetsenbord(true),
+    });
+    await markeer('callback-status');
+    return { ok: true, resultaat: { ok: true, callback: 'ut:status', actieveVersie, wachtAantal } };
+  }
+
   const msg = payload?.message;
   if (!msg || msg?.from?.is_bot === true || msg?.chat?.id === undefined) {
     await markeer('genegeerd-zonder-bericht');
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
   }
 
-  const doelChat = String(matchedInst.chat_id || '').trim();
-  const msgChatId = String(msg.chat.id);
-  const msgChatUsername = msg.chat.username ? `@${String(msg.chat.username).toLowerCase()}` : '';
-  const zelfdeChat = msgChatId === doelChat || (doelChat.startsWith('@') && msgChatUsername === doelChat.toLowerCase());
-  if (!zelfdeChat) {
-    await markeer('ander-chat-genegeerd');
+  const checkMsg = controleerChatEnTopic(msg.chat, msg.message_thread_id);
+  if (checkMsg !== 'ok') {
+    await markeer(checkMsg);
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
-  }
-
-  if (matchedInst.message_thread_id != null) {
-    const doelThread = Number(matchedInst.message_thread_id);
-    if (Number(msg.message_thread_id) !== doelThread) {
-      await markeer('andere-topic-genegeerd');
-      return { ok: true, resultaat: { ok: true, overgeslagen: true } };
-    }
   }
 
   const tekst = String(msg.text || '').trim();
   const eerste = tekst.split(/\s+/)[0] || '';
-  const cmdMatch = /^\/(status|help)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
+  const cmdMatch = /^\/(status|laatste|help)(?:@[A-Za-z0-9_]{3,64})?$/i.exec(eerste);
   if (!cmdMatch) {
     await markeer('geen-commando');
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
@@ -1154,69 +1495,39 @@ export async function verwerkTelegramUitrolWebhook(invoer: {
     return { ok: true, resultaat: { ok: true, overgeslagen: true } };
   }
 
-  const threadOpt = matchedInst.message_thread_id != null ? { message_thread_id: Number(matchedInst.message_thread_id) } : {};
-
   if (commando === 'help') {
-    const antwoord = [
-      'Mijn Ruimte — бот архіву випусків (лише читання):',
-      '/status — активна версія сайту, черга схвалення та стан останнього архіву в Telegram',
-      '/help — перелік безпечних команд',
-      'Усі схвалення й установлення виконуються виключно через сайт із passkey власника.',
-      '',
-      'Mijn Ruimte — release-archiefbot (alleen lezen):',
-      '/status — actieve siteversie, goedkeuringswachtrij en laatste Telegram-archief',
-      '/help — overzicht van veilige opdrachten',
-      'Goedkeuren en installeren gebeurt uitsluitend op de site met de passkey van de eigenaar.',
-    ].join('\n');
     await tgApi(bot.token, 'sendMessage', {
       chat_id: doelChat,
       ...threadOpt,
       disable_notification: true,
-      text: antwoord,
+      text: bouwHelpTekst(),
+      reply_markup: bouwUitrolToetsenbord(true),
     });
     await markeer('help-beantwoord');
     return { ok: true, resultaat: { ok: true, commando: 'help' } };
   }
 
+  if (commando === 'laatste') {
+    const tekstLaatste = await bouwLaatsteTekst();
+    await tgApi(bot.token, 'sendMessage', {
+      chat_id: doelChat,
+      ...threadOpt,
+      disable_notification: true,
+      text: tekstLaatste,
+      reply_markup: bouwUitrolToetsenbord(false),
+    });
+    await markeer('laatste-beantwoord');
+    return { ok: true, resultaat: { ok: true, commando: 'laatste' } };
+  }
+
   // Команда /status: суто несекретний огляд стану.
-  const actieveVersie = releaseInfo().versie || '—';
-  const wachtQ = await sys().query(
-    `SELECT count(*)::int AS aantal FROM app.uitrol_voorstellen WHERE status = 'wacht-op-goedkeuring'`,
-  );
-  const wachtAantal = Number(wachtQ.rows[0]?.aantal || 0);
-  const archQ = await sys().query(
-    `SELECT versie, status, voltooid_op, aangemaakt_op, aantal_delen
-       FROM app.uitrol_telegram_archief
-      WHERE user_id = $1
-      ORDER BY aangemaakt_op DESC
-      LIMIT 1`,
-    [eigenaarId],
-  );
-  const laatst = archQ.rows[0];
-  const laatstTijd = laatst?.voltooid_op
-    ? new Date(laatst.voltooid_op).toISOString()
-    : laatst?.aangemaakt_op
-      ? new Date(laatst.aangemaakt_op).toISOString()
-      : '—';
-  const laatstInfoUk = laatst
-    ? `${String(laatst.versie)} (${String(laatst.status)}, ${Number(laatst.aantal_delen || 1)} част., ${laatstTijd})`
-    : 'ще не створено';
-  const laatstInfoNl = laatst
-    ? `${String(laatst.versie)} (${String(laatst.status)}, ${Number(laatst.aantal_delen || 1)} delen, ${laatstTijd})`
-    : 'nog geen';
-
-  const statusTekst = [
-    `Mijn Ruimte · Стан випусків / Releasestatus`,
-    `• Активна версія / Actieve versie: ${actieveVersie}`,
-    `• Очікує passkey / Wacht op passkey: ${wachtAantal}`,
-    `• Останній архів Telegram / Laatste Telegram-archief: ${laatstInfoUk} | ${laatstInfoNl}`,
-  ].join('\n');
-
+  const { actieveVersie, wachtAantal, statusTekst } = await bouwStatusOverzicht(eigenaarId);
   await tgApi(bot.token, 'sendMessage', {
     chat_id: doelChat,
     ...threadOpt,
     disable_notification: true,
     text: statusTekst,
+    reply_markup: bouwUitrolToetsenbord(true),
   });
   await markeer('status-beantwoord');
   return { ok: true, resultaat: { ok: true, commando: 'status', actieveVersie, wachtAantal } };

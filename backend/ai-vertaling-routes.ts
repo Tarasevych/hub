@@ -22,9 +22,12 @@ import { alineasVoorModel, controleerPunten, gespreksAlineas, type BronAlinea } 
 import { klantVan } from '../shared/ai-verbinding';
 import { actiesHints, actiesPunten, type ActiesModelAntwoord } from '../shared/ai-acties-model';
 import {
-  akkoordSleutel, dienstAgentId, dienstFuncties, dienstIdVan, dienstKlaar, dienstPubliek, dienstWaarheen, gebruikSleutelDienst,
-  gebruikSleutelEigen, isDienstAgentId, type DienstFunctie,
+  akkoordSleutel, dienstAgentId, dienstFuncties, dienstIdVan, dienstIsExtern, dienstKlaar, dienstPubliek, dienstWaarheen,
+  gebruikSleutelDienst, gebruikSleutelEigen, isDienstAgentId, standaardPrivacyModus, type DienstFunctie,
 } from '../shared/ai-dienst-motor';
+import {
+  VertaalAdapterFout, vertaalDeepLReeks, vertaalEigenKnoopReeks, vertaalGoogleTranslateReeks,
+} from './vertaal-adapters';
 import {
   AI_AANBIEDERS,
   AI_AANBIEDER_BIJ_ID,
@@ -564,6 +567,8 @@ export type AanbiederMelding = {
   dienst?: DienstRij;
   /** Денну межу спільного рушія на людину вичерпано — постачальника навіть не питали. */
   dienstLimiet?: boolean;
+  /** UPD-012: запит заблоковано режимом приватності рушія (напр. lokaal-alleen). */
+  privacyBlok?: 'PRIVACY_LOKAAL_ALLEEN' | 'PRIVACY_EIGEN_SERVER_ALLEEN';
   /** Ключ лічильника використання («dienst:<id>» або «sleutel:<постачальник>») — щоб відповідь показала «сьогодні N». */
   teller?: string;
 };
@@ -581,7 +586,8 @@ export async function sleutelEnAanbieder(userId: string, chosenAgent?: AiVertali
   if (chosenAgent && isDienstAgentId(chosenAgent.id)) {
     const rij = await dienstMotor(dienstIdVan(chosenAgent.id)).catch(() => null);
     if (!rij || !dienstKlaar(rij)) return { apiKey: null, aanbieder: eigen };
-    if (rij.soort !== 'aanbieder') return { apiKey: null, aanbieder: eigen, dienst: rij };
+    if (rij.soort === 'libretranslate' || rij.soort === 'ollama') return { apiKey: null, aanbieder: eigen, dienst: rij };
+    if (rij.soort !== 'aanbieder') return { apiKey: await dienstSleutel(rij), aanbieder: eigen, dienst: rij };
     return { apiKey: await dienstSleutel(rij), aanbieder: rij.aanbieder!, dienst: rij };
   }
   const assistent = !chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent';
@@ -625,7 +631,7 @@ async function callAnthropicJson<T>(
   const eigenServer = Boolean(dienst && dienst.soort !== 'aanbieder');
   if (melding) { melding.aanbieder = eigenServer ? undefined : aanbieder; melding.dienst = dienst; }
   if (!apiKey && !eigenServer) return null;
-  if (dienst?.soort === 'libretranslate') return null;   // LibreTranslate вміє лише переклад — його викликає гілка перекладу
+  if (dienst && (dienst.soort === 'libretranslate' || dienst.soort === 'google-translate' || dienst.soort === 'deepl' || dienst.soort === 'eigen-vertaal-knoop')) return null;   // лише переклад — викликає гілка перекладу
   // Лічильник: спільний рушій має денну межу на людину (атомарно, до виклику); особистий ключ лише рахується, без межі.
   const teller = dienst ? gebruikSleutelDienst(dienst.id) : gebruikSleutelEigen(aanbieder);
   if (melding) melding.teller = teller;
@@ -769,6 +775,11 @@ async function vertaalViaLibre(
   userId: string, rij: DienstRij, segmenten: AiVertalingSegment[], doel: string, melding: AanbiederMelding,
 ): Promise<{ detectedSourceLang?: string; translations?: Record<string, string> } | null> {
   melding.dienst = rij; melding.aanbieder = undefined;
+  if ((rij.privacyModus ?? standaardPrivacyModus(rij.soort)) === 'lokaal-alleen') {
+    melding.privacyBlok = 'PRIVACY_LOKAAL_ALLEEN';
+    melding.status = 403;
+    return null;
+  }
   const teller = gebruikSleutelDienst(rij.id);
   melding.teller = teller;
   if ((await reserveerGebruik(userId, teller, rij.limietPerDag)) === null) { melding.status = 429; melding.dienstLimiet = true; return null; }
@@ -777,6 +788,56 @@ async function vertaalViaLibre(
   const translations: Record<string, string> = {};
   segmenten.forEach((seg, i) => { if (r.waarde.vertaald[i]?.trim()) translations[seg.id] = r.waarde.vertaald[i]; });
   return { detectedSourceLang: r.waarde.brontaal, translations };
+}
+
+/** UPD-012: переклад через адаптери Google Cloud Translation v2, DeepL або власний захищений вузол із контролем VertaalPrivacyModus. */
+async function vertaalViaVertaalAdapter(
+  userId: string, rij: DienstRij, segmenten: AiVertalingSegment[], bronTaal: string, doel: string, melding: AanbiederMelding,
+): Promise<{ detectedSourceLang?: string; translations?: Record<string, string> } | null> {
+  melding.dienst = rij; melding.aanbieder = undefined;
+  const privacyModus = rij.privacyModus ?? standaardPrivacyModus(rij.soort);
+  if (privacyModus === 'lokaal-alleen') {
+    melding.privacyBlok = 'PRIVACY_LOKAAL_ALLEEN';
+    melding.status = 403;
+    return null;
+  }
+  if (dienstIsExtern(rij.soort) && privacyModus === 'eigen-server') {
+    melding.privacyBlok = 'PRIVACY_EIGEN_SERVER_ALLEEN';
+    melding.status = 403;
+    return null;
+  }
+  const teller = gebruikSleutelDienst(rij.id);
+  melding.teller = teller;
+  if ((await reserveerGebruik(userId, teller, rij.limietPerDag)) === null) { melding.status = 429; melding.dienstLimiet = true; return null; }
+  const fetchFn = customDeps?.fetch ?? fetch;
+  try {
+    const apiSleutel = await dienstSleutel(rij);
+    if ((rij.soort === 'google-translate' || rij.soort === 'deepl') && !apiSleutel) {
+      melding.status = 401;
+      await geefGebruikTerug(userId, teller);
+      return null;
+    }
+    const teksten = segmenten.map((x) => x.text);
+    const uit = rij.soort === 'google-translate'
+      ? await vertaalGoogleTranslateReeks({ teksten, bronTaal, doelTaal: doel, apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn })
+      : rij.soort === 'deepl'
+        ? await vertaalDeepLReeks({ teksten, bronTaal, doelTaal: doel, apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn })
+        : await vertaalEigenKnoopReeks({ teksten, bronTaal, doelTaal: doel, url: rij.url || '', apiSleutel: apiSleutel ?? undefined, privacyModus, fetchFn });
+    const translations: Record<string, string> = {};
+    segmenten.forEach((seg, i) => { if (uit.vertaald[i]?.trim()) translations[seg.id] = uit.vertaald[i]; });
+    return { detectedSourceLang: uit.bronTaal, translations };
+  } catch (err) {
+    await geefGebruikTerug(userId, teller);
+    if (err instanceof VertaalAdapterFout) {
+      if (err.code === 'PRIVACY_LOKAAL_ALLEEN' || err.code === 'PRIVACY_EIGEN_SERVER_ALLEEN') {
+        melding.privacyBlok = err.code;
+      }
+      melding.status = err.status;
+    } else {
+      melding.status = 0;
+    }
+    return null;
+  }
 }
 
 /** Власника сповіщаємо про збій спільного рушія не частіше ніж раз на годину на рушій і причину. */
@@ -973,6 +1034,16 @@ export async function executeAiVertalingRun(
     return r;
   }
   const d = melding.dienst;
+  if (melding.privacyBlok) {
+    const lokaal = melding.privacyBlok === 'PRIVACY_LOKAAL_ALLEEN';
+    return { status: 403, body: { ok: false, error: melding.privacyBlok, dienstId: d?.id, gebruik,
+      messageUk: lokaal
+        ? 'Режим приватності цього рушія забороняє зовнішні запити («Лише локально»). Текст листа нікуди не надіслано.'
+        : 'Режим приватності «Лише власний сервер» забороняє надсилання до стороннього хмарного сервісу. Текст листа нікуди не надіслано.',
+      messageNl: lokaal
+        ? 'De privacymodus van deze motor verbiedt externe verzoeken («Alleen lokaal»). De tekst is nergens heen gestuurd.'
+        : 'De privacymodus «Alleen eigen server» verbiedt verzending naar een externe clouddienst. De tekst is nergens heen gestuurd.' } };
+  }
   if (d && melding.dienstLimiet) {
     return { status: 429, body: { ok: false, error: 'DIENST_LIMIET', dienstId: d.id, gebruik,
       messageUk: `Денну межу спільного рушія «${d.naam}» вичерпано: ${d.limietPerDag} запитів на людину на день. Завтра лічильник почнеться знову. Або оберіть інший рушій — локальний ШІ Chrome чи власний ключ.`,
@@ -981,7 +1052,7 @@ export async function executeAiVertalingRun(
   if (d && r.status === 503) {
     // Спільний рушій не відповів: людина НЕ може полагодити ключ чи сервер сайту — кажемо це прямо й сповіщаємо власника.
     await meldDienstStoring(d, melding.status || 0);
-    const eigenServer = d.soort !== 'aanbieder';
+    const eigenServer = !dienstIsExtern(d.soort);
     return { status: melding.status === 429 ? 429 : 503, body: { ok: false, error: melding.status === 429 ? 'DIENST_AANBIEDER_LIMIET' : 'DIENST_ONBEREIKBAAR', dienstId: d.id, gebruik,
       wachtSec: melding.wachtSec || 0,
       messageUk: eigenServer
@@ -1238,7 +1309,10 @@ async function executeAiVertalingRunKern(
   };
 
   // MAILAI-003: спільний рушій сайту називається своїм іменем — не «ваш приватний агент».
-  if (dienstRij) baseResponse.motorNaam = `${dienstRij.naam} · спільний рушій сайту`;
+  if (dienstRij) {
+    baseResponse.motorNaam = `${dienstRij.naam} · спільний рушій сайту`;
+    baseResponse.privacy.privacyModus = dienstRij.privacyModus ?? standaardPrivacyModus(dienstRij.soort);
+  }
 
   if (mode === 'translate') {
     const toTranslate = sanitizedSegments.length
@@ -1248,18 +1322,22 @@ async function executeAiVertalingRunKern(
           ...(sanitizedBody.text ? [{ id: 'body:0', text: sanitizedBody.text }] : []),
         ];
 
-    const llmResult = dienstRij?.soort === 'libretranslate' ? await vertaalViaLibre(userId, dienstRij, toTranslate, targetLang, melding) : await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
-      userId,
-      UNTRUSTED_GUARD_SYSTEM,
-      [
-        `Translate each segment into language "${targetLang}" (${targetLangLabel}).`,
-        'Preserve formatting, tone, numbers, dates, and meaning. Do not merge or drop segment IDs.',
-        'Return JSON: { "detectedSourceLang": "<iso>", "translations": { "<id>": "<translated text>" } }',
-        wrapUntrusted(JSON.stringify(toTranslate), 22_000),
-      ].join('\n'),
-      2200,
-      chosenAgent,
-    );
+    const llmResult = dienstRij?.soort === 'libretranslate'
+      ? await vertaalViaLibre(userId, dienstRij, toTranslate, targetLang, melding)
+      : (dienstRij?.soort === 'google-translate' || dienstRij?.soort === 'deepl' || dienstRij?.soort === 'eigen-vertaal-knoop')
+        ? await vertaalViaVertaalAdapter(userId, dienstRij, toTranslate, detectedSourceLang, targetLang, melding)
+        : await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
+            userId,
+            UNTRUSTED_GUARD_SYSTEM,
+            [
+              `Translate each segment into language "${targetLang}" (${targetLangLabel}).`,
+              'Preserve formatting, tone, numbers, dates, and meaning. Do not merge or drop segment IDs.',
+              'Return JSON: { "detectedSourceLang": "<iso>", "translations": { "<id>": "<translated text>" } }',
+              wrapUntrusted(JSON.stringify(toTranslate), 22_000),
+            ].join('\n'),
+            2200,
+            chosenAgent,
+          );
 
     // Schone vertaling: alleen wat de motor echt teruggaf. Een fragment zonder antwoord blijft het ORIGINEEL — geen markering
     // in de brieftekst. Hoeveel er onvertaald bleef, zegt het antwoord erbij; de balk toont dat eerlijk.

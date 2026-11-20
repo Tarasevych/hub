@@ -40,6 +40,46 @@ export function useEenmalig() {
 }
 
 type Open = { nodig: Nodig; klaar: (ok: boolean) => void };
+type BekendeMethode = 'telegram' | 'apparaat' | 'code' | 'passkey';
+const BEKENDE_METHODEN = new Set<string>(['telegram', 'apparaat', 'code', 'passkey']);
+
+const setSleutel = (s: readonly string[]): string => [...new Set(s)].sort().join('+');
+
+/** Усі здійсненні унікальні альтернативні набори з nodig.eis (жоден елемент не в nodig.onbeschikbaar). */
+function uitvoerbareAlternatieven(nodig: Nodig): string[][] {
+  const uit = new Set(nodig.onbeschikbaar || []);
+  const bron = Array.isArray(nodig.eis) && nodig.eis.length > 0 ? nodig.eis : [nodig.ontbreekt];
+  const gezien = new Set<string>();
+  const lijst: string[][] = [];
+  for (const alt of bron) {
+    if (!Array.isArray(alt) || alt.length === 0) continue;
+    const schoon = [...new Set(alt.filter((m) => BEKENDE_METHODEN.has(m)))];
+    if (schoon.length !== alt.length) continue;
+    if (schoon.some((m) => uit.has(m))) continue;
+    const k = setSleutel(schoon);
+    if (gezien.has(k)) continue;
+    gezien.add(k);
+    lijst.push(schoon);
+  }
+  return lijst;
+}
+
+function beginSetVan(nodig: Nodig, alternatieven: string[][]): string[] {
+  const gezocht = setSleutel(nodig.ontbreekt);
+  const exact = alternatieven.find((a) => setSleutel(a) === gezocht);
+  if (exact) return exact;
+  const bevat = alternatieven.find((a) => nodig.ontbreekt.every((m) => a.includes(m)));
+  return bevat || alternatieven[0] || nodig.ontbreekt;
+}
+
+function volgendeStapVoor(set: readonly string[], gedaan: readonly string[]): 'telegram' | 'apparaat' | 'code' | 'passkey' | 'kies' {
+  const nog = set.filter((m) => !gedaan.includes(m));
+  if (nog.includes('telegram')) return 'telegram';
+  if (nog.includes('apparaat')) return 'apparaat';
+  if (nog.includes('code')) return 'code';
+  if (nog.includes('passkey')) return 'passkey';
+  return 'kies';
+}
 
 /**
  * useBevestiging(): `uitvoeren(fn)` voert fn uit; vraagt de server een extra bevestiging (Telegram, geheime code of toegangssleutel),
@@ -52,8 +92,11 @@ export function useBevestiging(ctx: Ctx, lang: Lang) {
       try { return await fn(); }
       catch (e) {
         if (!(e instanceof BevestigingNodig) || ronde >= 3) throw e;
-        // Alleen een toegangssleutel ontbreekt → meteen het bestaande passkey-venster (zelfde als elders op de site).
-        if (e.nodig.ontbreekt.length === 1 && e.nodig.ontbreekt[0] === 'passkey') {
+        // Якщо єдиний здійсненний варіант — ключ доступу, відкриваємо одразу стандартне вікно ключа доступу.
+        const alts = uitvoerbareAlternatieven(e.nodig);
+        const alleenPasskey = e.nodig.ontbreekt.length === 1 && e.nodig.ontbreekt[0] === 'passkey'
+          && alts.every((a) => a.length === 1 && a[0] === 'passkey');
+        if (alleenPasskey) {
           const uit = await bevestigToegang({ service: ctx.service, tabContext: ctx.tabContext, post: (u, d) => api.post(u, d), toegestaan: ['passkey'], sterk: true });
           if (!uit.ok) throw new Error('PASSKEY_GEANNULEERD');
           continue;
@@ -69,7 +112,9 @@ export function useBevestiging(ctx: Ctx, lang: Lang) {
 }
 
 function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; nodig: Nodig; klaar: (ok: boolean) => void }) {
-  const [stap, setStap] = useState<'kies' | 'telegram' | 'apparaat' | 'code'>(nodig.ontbreekt.includes('telegram') ? 'telegram' : nodig.ontbreekt.includes('apparaat') ? 'apparaat' : nodig.ontbreekt.includes('code') ? 'code' : 'kies');
+  const alternatieven = uitvoerbareAlternatieven(nodig);
+  const [gekozenSet, setGekozenSet] = useState<string[]>(() => beginSetVan(nodig, alternatieven));
+  const [stap, setStap] = useState<'kies' | 'telegram' | 'apparaat' | 'code' | 'passkey'>(() => volgendeStapVoor(beginSetVan(nodig, alternatieven), []));
   const [fout, setFout] = useState('');
   const [info, setInfo] = useState('');
   const [code, setCode] = useState('');
@@ -84,20 +129,38 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
     ? aanmeldPauzeBericht(Math.max(1, pauzeRest), lang, 'bevestig', pauzeLimiet)
     : null;
   const verzoek = useRef('');
-  const rest = nodig.ontbreekt.filter((m) => !gedaan.includes(m));
 
-  const volgende = (klaarMet: string) => {
-    const nog = rest.filter((m) => m !== klaarMet);
-    setGedaan((g) => [...g, klaarMet]);
+  const startPasskey = useCallback((doelSet: string[], huidigeGedaan: string[]) => doe(async () => {
+    setFout('');
+    const uit = await bevestigToegang({ service: ctx.service, tabContext: ctx.tabContext, post: (u, d) => api.post(u, d), toegestaan: ['passkey'], sterk: true });
+    if (!uit.ok) {
+      setFout(tr(lang, 'Підтвердження ключем доступу скасовано. Спробуйте ще раз або оберіть інший спосіб нижче.', 'Bevestiging met toegangssleutel geannuleerd. Probeer opnieuw of kies hieronder een andere methode.'));
+      return;
+    }
+    const nieuwGedaan = huidigeGedaan.includes('passkey') ? huidigeGedaan : [...huidigeGedaan, 'passkey'];
+    setGedaan(nieuwGedaan);
+    const nog = doelSet.filter((m) => !nieuwGedaan.includes(m));
     if (nog.length === 0) { klaar(true); return; }
-    if (nog.includes('telegram')) setStap('telegram');
-    else if (nog.includes('apparaat')) setStap('apparaat');
-    else if (nog.includes('code')) setStap('code');
-    else if (nog.includes('passkey')) void (async () => {
-      const uit = await bevestigToegang({ service: ctx.service, tabContext: ctx.tabContext, post: (u, d) => api.post(u, d), toegestaan: ['passkey'], sterk: true });
-      klaar(uit.ok);
-    })();
-    else klaar(true);
+    setStap(volgendeStapVoor(doelSet, nieuwGedaan));
+  }), [ctx.service, ctx.tabContext, doe, klaar, lang]);
+
+  const volgende = (klaarMet: string, bronSet: string[] = gekozenSet) => {
+    const nieuwGedaan = gedaan.includes(klaarMet) ? gedaan : [...gedaan, klaarMet];
+    setGedaan(nieuwGedaan);
+    const nog = bronSet.filter((m) => !nieuwGedaan.includes(m));
+    if (nog.length === 0) { klaar(true); return; }
+    const eerstvolgende = volgendeStapVoor(bronSet, nieuwGedaan);
+    setStap(eerstvolgende);
+    if (eerstvolgende === 'passkey') void startPasskey(bronSet, nieuwGedaan);
+  };
+
+  const kiesAlternatief = (doelSet: string[]) => {
+    setFout('');
+    setGekozenSet(doelSet);
+    const eerstvolgende = volgendeStapVoor(doelSet, gedaan);
+    if (eerstvolgende === 'kies') { klaar(true); return; }
+    setStap(eerstvolgende);
+    if (eerstvolgende === 'passkey') void startPasskey(doelSet, gedaan);
   };
 
   // Telegram: verzoek sturen en elke 2 s de stand lezen. «Ні» in Telegram wint altijd.
@@ -154,9 +217,13 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
     }
   });
 
-  const methoden = nodig.ontbreekt.map((m) => tekstIn(METHODE_NAMEN[m as keyof typeof METHODE_NAMEN] ?? [m, m], lang)).join(' + ');
-  // APPARAAT-001: een alternatief dat uit één andere methode bestaat (bv. [['telegram'],['apparaat']]) mag de gebruiker zelf kiezen.
-  const losAlternatief = (m: 'telegram' | 'apparaat') => m !== stap && !gedaan.includes(m) && !!nodig.eis?.some((a) => a.length === 1 && a[0] === m);
+  const labelVoorSet = (s: readonly string[]) => s.map((m) => tekstIn(METHODE_NAMEN[m as BekendeMethode] ?? [m, m], lang)).join(' + ');
+  const methoden = labelVoorSet(gekozenSet);
+  // UPD-012: усі здійсненні альтернативні набори з nodig.eis (включно з passkey, apparaat, telegram і складеними комбінаціями).
+  const actieveSleutel = setSleutel(gekozenSet);
+  const andereAlternatieven = alternatieven.filter((alt) => setSleutel(alt) !== actieveSleutel);
+  const nogCodeNodig = gekozenSet.includes('code') && !gedaan.includes('code');
+
   return <div className='tga-scherm' role='dialog' aria-modal='true' aria-labelledby='tga-bev-titel'>
     <div className='tga-venster'>
       <h2 id='tga-bev-titel'><TelegramLogo maat={28} /> {tr(lang, 'Підтвердіть, що це ви', 'Bevestig dat u het bent')}</h2>
@@ -168,23 +235,36 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
         <p>{info || tr(lang, 'Надсилаємо запит у Telegram…', 'Verzoek naar Telegram sturen…')}</p>
         {!fout && !pauzeActief && <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Чекаємо на вашу відповідь у Telegram…', 'Wachten op uw antwoord in Telegram…')}</p>}
         {(fout || pauzeActief || pauzeVrij) && !verzoek.current && <button type='button' className='tga-knop tga-knop-hoofd' disabled={pauzeActief} onClick={() => { if (!pauzeActief) { setFout(''); setTelegramPoging((n) => n + 1); } }}>{pauzeActief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Спробувати ще раз', 'Opnieuw proberen')}</button>}
-        {nodig.ontbreekt.includes('code') && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
+        {nogCodeNodig && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
       </div>}
       {stap === 'apparaat' && <div className='tga-blok'>
         <Suspense fallback={<p>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
           <StapOpKanaal kanaal='apparaat' ctx={{ service: ctx.service, tabContext: ctx.tabContext }} lang={lang} matrixActie={nodig.actie} naPoort={false} onKlaar={() => volgende('apparaat')} />
         </Suspense>
+        {nogCodeNodig && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
       </div>}
-      {(losAlternatief('apparaat') || losAlternatief('telegram')) && <p className='tga-klein'>
-        {losAlternatief('apparaat') && <button type='button' className='tga-link' onClick={() => { setFout(''); setStap('apparaat'); }}>{tr(lang, 'Або підтвердити з іншого пристрою', 'Of bevestigen vanaf een ander apparaat')}</button>}
-        {losAlternatief('telegram') && <button type='button' className='tga-link' onClick={() => { setFout(''); setStap('telegram'); }}>{tr(lang, 'Або підтвердити в Telegram', 'Of bevestigen in Telegram')}</button>}
-      </p>}
+      {stap === 'passkey' && <div className='tga-blok'>
+        <p>{tr(lang, 'Підтвердьте дію своїм ключем доступу (відбитком, обличчям, PIN-кодом або телефоном).', 'Bevestig de handeling met uw toegangssleutel (vingerafdruk, gezicht, pincode of telefoon).')}</p>
+        <button type='button' className='tga-knop tga-knop-hoofd' disabled={bezig || pauzeActief} onClick={() => void startPasskey(gekozenSet, gedaan)}>
+          {tr(lang, 'Підтвердити ключем доступу', 'Bevestigen met toegangssleutel')}{bezig && <span className='tga-draai' aria-hidden='true' />}
+        </button>
+        {nogCodeNodig && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
+      </div>}
       {stap === 'code' && <form className='tga-blok' onSubmit={(e) => { e.preventDefault(); void codeSturen(); }}>
         <label htmlFor='tga-bev-code'>{tr(lang, 'Ваш таємний код', 'Uw geheime code')}</label>
         <input id='tga-bev-code' type='password' inputMode='text' autoComplete='off' value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} autoFocus />
         <p className='tga-klein'>{tr(lang, 'Ніколи не надсилайте цей код у чат Telegram — бот його одразу видалить і вимкне код.', 'Stuur deze code nooit in de Telegram-chat — de bot verwijdert hem meteen en zet de code uit.')}</p>
         <button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || pauzeActief || code.length < 4}>{pauzeActief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Підтвердити', 'Bevestigen')}{bezig && <span className='tga-draai' aria-hidden='true' />}</button>
       </form>}
+      {andereAlternatieven.length > 0 && <div className='tga-klein' data-tga-alternatieven='1'>
+        {andereAlternatieven.map((alt) => (
+          <div key={setSleutel(alt)}>
+            <button type='button' className='tga-link' disabled={bezig} onClick={() => kiesAlternatief(alt)}>
+              {tr(lang, `Або підтвердити: ${labelVoorSet(alt)}`, `Of bevestigen met: ${labelVoorSet(alt)}`)}
+            </button>
+          </div>
+        ))}
+      </div>}
       {pauzeTekst && <p className={pauzeActief ? 'tga-fout' : 'tga-klein'} role='status' aria-live='polite'>{pauzeActief ? `${pauzeTekst.kop}. ${pauzeTekst.uitleg}` : pauzeTekst.vrij}</p>}
       {fout && !pauzeActief && <p className='tga-fout' role='alert'>{fout}</p>}
       <div className='tga-rij'><button type='button' className='tga-knop' onClick={() => klaar(false)}>{tr(lang, 'Скасувати — нічого не змінювати', 'Annuleren — niets wijzigen')}</button></div>

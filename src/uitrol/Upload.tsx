@@ -24,6 +24,7 @@ import { commitWeergave } from '../../shared/bron-commit';
 import { herkenBestand, type Pictogram, type Soort } from './bestandssoort';
 import { hervatKandidaat, hervatUitleg, hervatbareVoorstellen, stapUitUitkomst } from '../../shared/uitrol-hervatten';
 import { meldLokaleUploadVoortgang, startGithubAchtergrondUpload, useUitrolAchtergrond, verversServerAchtergrondStand, wisLokaleUpload, zetLokaalDeel } from '../platform/uitrol-achtergrond-beheer';
+import { bewaarUploadConcept, leesUploadConcept, wisUploadConcept } from './upload-herstel-db';
 import { datum, lopendTekst, mb, tr, VOORSTEL_STATUS, type Flow, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel, type VoorcontroleUit } from './types';
 import './upload.css';
 
@@ -103,6 +104,9 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const setHervatMeta = useCallback((v: { bytes: number; naam: string } | null) => zetLokaalDeel({ hervatMeta: v }), []);
   const [sleep, setSleep] = useState(false);
   const [ghTag, setGhTag] = useState('');
+  // UPD-012: плашка про відновлення обраного архіву з IndexedDB після вивантаження вкладки оглядачем.
+  const [hersteldBanner, setHersteldBanner] = useState<{ naam: string; heeftBestand: boolean; versie: string; voortgang: number } | null>(null);
+  const herstelPoging = useRef(false);
   // Leesfout van de schijf (File API): code `BESTAND_LEZEN|<naam>`, hoeveel procent er al verstuurd was, en of de gebruiker
   // «Обрати файл ще раз» koos (dan gaat de upload na de nieuwe keuze zelf verder waar hij stopte).
   const [hervatWens, setHervatWens] = useState(false);
@@ -167,6 +171,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
 
   const wis = useCallback(() => {
     wisLokaleUpload(); onNieuwId('');
+    setHersteldBanner(null);
+    void wisUploadConcept();
     vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     if (invoer.current) invoer.current.value = '';
   }, [onNieuwId]);
@@ -181,6 +187,69 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       .finally(() => { if (vereistenRun.current === run) setVereistenBezig(false); });
   }, [context]);
 
+  // UPD-012: при монтуванні відновлюємо обраний архів із IndexedDB, якщо смартфон вивантажив вкладку під час переходу в Telegram.
+  useEffect(() => {
+    if (herstelPoging.current || bestand) return;
+    herstelPoging.current = true;
+    let actiefEffect = true;
+    void (async () => {
+      const concept = await leesUploadConcept(data.ik?.id || undefined);
+      if (!actiefEffect || !concept) return;
+      const bestaand = concept.voorstelId ? data.voorstellen.find((v) => v.id === concept.voorstelId) : undefined;
+      if (bestaand && (bestaand.status === 'wacht-op-goedkeuring' || bestaand.status === 'goedgekeurd' || bestaand.status === 'geinstalleerd')) {
+        void wisUploadConcept();
+        if (bestaand.status === 'wacht-op-goedkeuring') {
+          setNieuwId(bestaand.id);
+          onNieuwId(bestaand.id);
+        }
+        return;
+      }
+      if (!concept.bestand) {
+        setHersteldBanner({ naam: concept.bestandNaam, heeftBestand: false, versie: concept.versie, voortgang: concept.voortgang });
+        return;
+      }
+      const f = concept.bestand;
+      setBestand(f);
+      zetLokaalDeel({
+        versie: concept.versie,
+        voorstelId: concept.voorstelId,
+        verzonden: concept.verzonden,
+        voortgang: concept.voortgang > 0 && concept.voortgang < 100 ? concept.voortgang : null,
+      });
+      setHersteldBanner({ naam: concept.bestandNaam, heeftBestand: true, versie: concept.versie, voortgang: concept.voortgang });
+      try {
+        const s = herkenBestand(f.name, await bestandKop(f));
+        if (!actiefEffect) return;
+        setSoort(s);
+        if (!s.ok || f.size > maxBytes) return;
+        setBezigLezen(true);
+        const t0 = performance.now();
+        let a: { info: PakketInfo; sha256: string };
+        try {
+          a = await leesPakket(f);
+          if (actiefEffect) setAnalyse(a);
+        } finally {
+          if (actiefEffect) setBezigLezen(false);
+        }
+        if (actiefEffect && !a.info.problemen.length) startVereisten(f, a, performance.now() - t0);
+      } catch {
+        if (actiefEffect) {
+          setBezigLezen(false);
+          void wisUploadConcept();
+        }
+      }
+    })();
+    return () => { actiefEffect = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.ik?.id, bestand]);
+
+  // UPD-012: коли пакет перейшов на етап схвалення, чернетка в IndexedDB більше не потрібна.
+  useEffect(() => {
+    if (nieuw?.status === 'wacht-op-goedkeuring') {
+      void wisUploadConcept();
+    }
+  }, [nieuw?.status]);
+
   // Tabblad gesloten of pagina verlaten tijdens het uploaden: de poging wordt nog gemeld, maar EERLIJK — zonder reden. De browser
   // weet op dat moment niets meer dan dat er is afgebroken; de geschiedenis mag daar geen oorzaak bij verzinnen (punt 6, eigenaar).
   useEffect(() => {
@@ -194,6 +263,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
 
   const kies = useCallback(async (f: File | null) => {
     if (!f) { wis(); return; }
+    setHersteldBanner(null);
     setBestand(f); setSoort(null); setAnalyse(null); setNieuwId(''); onNieuwId(''); setVoortgang(null); setServerCheck(null); setLeesfout(null);
     vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     try {
@@ -201,10 +271,12 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       setSoort(s);
       if (!s.ok) return;
       if (f.size > maxBytes) { setAnalyse({ info: { versie: '', commit: '', bovenmap: '', bestanden: 0, installer: false, auteur: '', agent: '', samenvatting: '', tests: null, manifest: null, manifestFouten: [], basis: null, ontwikkelArchief: null, migraties: [], migratieSql: new Map(), problemen: ['TE_GROOT'] }, sha256: '' }); return; }
+      void bewaarUploadConcept({ accountId: data.ik?.id || '', bestand: f, bestandNaam: f.name, grootte: f.size, lastModified: f.lastModified || 0, versie: '', sha256: '', soort: s.label || 'tar.gz', voorstelId: '', verzonden: 0, voortgang: 0, opgeslagenOp: Date.now() });
       setBezigLezen(true);
       const t0 = performance.now();
       let a: { info: PakketInfo; sha256: string };
       try { a = await leesPakket(f); setAnalyse(a); } finally { setBezigLezen(false); }
+      void bewaarUploadConcept({ accountId: data.ik?.id || '', bestand: f, bestandNaam: f.name, grootte: f.size, lastModified: f.lastModified || 0, versie: a.info.versie, sha256: a.sha256, soort: s.label || 'tar.gz', voorstelId: '', verzonden: 0, voortgang: 0, opgeslagenOp: Date.now() });
       // UITROL-001: de vereisten (incl. de proef van nieuwe migraties op een wegwerpkopie) lopen METEEN na het lokale lezen,
       // vóór er één byte van het archief over het netwerk gaat. Alleen als het pakket lokaal al in orde is.
       if (!a.info.problemen.length) startVereisten(f, a, performance.now() - t0);
@@ -218,7 +290,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       // in de geschiedenis staan. Versie en sha256 zijn hier meestal nog onbekend; de etappe en de reden zijn dat niet.
       meldAfbreking(context, { etappe: 'lezen', code: bestandLeesfoutCode(e), bestand: f.name, bytes: f.size });
     }
-  }, [maxBytes, onNieuwId, wis, context, startVereisten]);
+  }, [maxBytes, onNieuwId, wis, context, startVereisten, data.ik?.id]);
 
   // ---- upload (stukken met herhaling; hervatten waar de server bleef)
   const stuurStuk = async (id: string, offset: number, deel: Uint8Array): Promise<number> => {
@@ -263,8 +335,13 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     }
     const stuk = Math.min(maxStuk, data.limieten.maxStuk || 512 * 1024);
     const startPct = Math.round((offset / f.size) * 100);
+    const accountId = data.ik?.id || '';
+    const soortLabel = soort?.label || 'tar.gz';
     zetLokaalDeel({ bezigUpload: true, voorstelId: id, versie: a.info.versie, bestandNaam: f.name, grootte: f.size });
     setVoortgang(startPct); setVerzonden(offset);
+    void bewaarUploadConcept({ accountId, bestand: f, bestandNaam: f.name, grootte: f.size, lastModified: f.lastModified || 0, versie: a.info.versie, sha256: a.sha256, soort: soortLabel, voorstelId: id, verzonden: offset, voortgang: startPct, opgeslagenOp: Date.now() });
+    let laatstBewaardPct = startPct;
+    let laatstBewaardOp = Date.now();
     meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct: startPct, verzonden: offset, bytes: f.size });
     lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     try {
@@ -298,6 +375,12 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       }
       const pct = Math.round((offset / f.size) * 100);
       setVoortgang(pct); setVerzonden(offset);
+      const nu = Date.now();
+      if (pct >= 100 || pct - laatstBewaardPct >= 5 || nu - laatstBewaardOp >= 2000) {
+        laatstBewaardPct = pct;
+        laatstBewaardOp = nu;
+        void bewaarUploadConcept({ accountId, bestand: f, bestandNaam: f.name, grootte: f.size, lastModified: f.lastModified || 0, versie: a.info.versie, sha256: a.sha256, soort: soortLabel, voorstelId: id, verzonden: offset, voortgang: pct, opgeslagenOp: nu });
+      }
       meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct, verzonden: offset, bytes: f.size });
       lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     }
@@ -310,6 +393,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       meldAfbreking(context, { etappe: 'voorcontrole', code: 'VOORCONTROLE_MISLUKT', voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: f.size, bestand: f.name });
       await laden(); throw new Error('VOORCONTROLE_MISLUKT');
     }
+    void wisUploadConcept();
+    setHersteldBanner(null);
     setNieuwId(id); onNieuwId(id);
     await laden();
     void verversServerAchtergrondStand();
@@ -346,6 +431,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       meldAfbreking(context, { etappe: 'voorcontrole', code: 'VOORCONTROLE_MISLUKT', voorstelId: kl.id, versie: v.versie, sha256: v.sha256, bytes: v.bytes, verstuurd: v.bytes, bestand: bestand?.name || `mijn-ruimte-${v.versie}.tar.gz` });
       await laden(); throw new Error('VOORCONTROLE_MISLUKT');
     }
+    void wisUploadConcept();
+    setHersteldBanner(null);
     setNieuwId(kl.id); onNieuwId(kl.id);
     await laden();
     return tr(lang, `Архів ${v.versie} узято з сервера без повторного завантаження і перевірено. Схваліть його passkey — і встановлення продовжиться.`, `Archief ${v.versie} is van de server genomen zonder nieuwe upload en gecontroleerd. Keur het goed met uw passkey — dan gaat de installatie verder.`);
@@ -430,6 +517,20 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     <ol className='ut-wiz-balk' aria-label={tr(lang, 'Кроки', 'Stappen')}>
       {STAPPEN.map((s, i) => <li key={s.id} data-stand={stapStand(i)} aria-current={stapStand(i) === 'actief' ? 'step' : undefined}><span>{stapStand(i) === 'klaar' ? <CheckCircle2 aria-hidden='true' /> : i + 1}</span><em className='ut-wiz-lang'>{tr(lang, s.uk, s.nl)}</em><em className='ut-wiz-kort' aria-hidden='true' title={tr(lang, s.uk, s.nl)}>{tr(lang, s.kortUk, s.kortNl)}</em></li>)}
     </ol>
+
+    {/* UPD-012: плашка відновлення обраного архіву з IndexedDB після вивантаження вкладки оглядачем */}
+    {hersteldBanner && <div className='ut-hervat' role='status' data-ut-hersteld-archief={hersteldBanner.heeftBestand ? 'bestand' : 'meta'}><PackageCheck aria-hidden='true' /><div>
+      <b>{hersteldBanner.heeftBestand
+        ? tr(lang, `Відновлено раніше обраний архів «${hersteldBanner.naam}» — можна продовжити без повторного вибору файла.`, `Eerder gekozen archief «${hersteldBanner.naam}» is hersteld — u kunt verdergaan zonder het bestand opnieuw te kiezen.`)
+        : tr(lang, `Збережено дані раніше обраного архіву «${hersteldBanner.naam}» — оберіть цей самий файл ще раз, щоб продовжити з місця зупинки.`, `Gegevens van het eerder gekozen archief «${hersteldBanner.naam}» zijn bewaard — kies hetzelfde bestand opnieuw om verder te gaan waar u stopte.`)}</b>
+      {(hersteldBanner.versie || hersteldBanner.voortgang > 0) && <p>{tr(lang,
+        `${hersteldBanner.versie ? `Версія ${hersteldBanner.versie}` : ''}${hersteldBanner.versie && hersteldBanner.voortgang > 0 ? ' · ' : ''}${hersteldBanner.voortgang > 0 ? `попередній поступ: ${hersteldBanner.voortgang}%` : ''}.`,
+        `${hersteldBanner.versie ? `Versie ${hersteldBanner.versie}` : ''}${hersteldBanner.versie && hersteldBanner.voortgang > 0 ? ' · ' : ''}${hersteldBanner.voortgang > 0 ? `eerdere voortgang: ${hersteldBanner.voortgang}%` : ''}.`)}</p>}
+      <div className='ut-acties'>
+        {!hersteldBanner.heeftBestand && <button type='button' className='ut-knop ut-knop-primair' disabled={!!busy} onClick={() => invoer.current?.click()}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати цей файл', 'Dit bestand kiezen')}</button>}
+        <button type='button' className='ut-knop' onClick={() => setHersteldBanner(null)}><X aria-hidden='true' />{tr(lang, 'Сховати повідомлення', 'Melding verbergen')}</button>
+      </div>
+    </div></div>}
 
     {/* Leesfout van de schijf (File API van de browser). Geen servercode: oorzaak + handeling komen uit shared/foutuitleg.ts. */}
     {leesfout && <div className='ut-probleem' role='alert' data-ut-leesfout={bestandLeesUitleg(lang, leesfout.code).naam || 'DOMException'}><AlertTriangle aria-hidden='true' /><div>
