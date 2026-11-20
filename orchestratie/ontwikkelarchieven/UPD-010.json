@@ -32,7 +32,9 @@
     "68c90588203d792cf25431d6849a57c2732dfecc",
     "7692f5eeac6b43206ba61e308dafbf8ea4e33d55",
     "9de93f6058555a6f2853cf7f52eaa45a05d9aad3",
-    "f9bcbc3cecd7efde1040be0aa98817bb5e987caf"
+    "f9bcbc3cecd7efde1040be0aa98817bb5e987caf",
+    "973ab6e7145d003adc5f867d56e1c5098f201432",
+    "a7e43b9dc3df60bcf628ae12bea405af0b6551fd"
   ],
   "tijdlijn": [
     {
@@ -54,6 +56,10 @@
     {
       "stap": "5) За результатами першого запуску GitHub Actions (account-wissen-20261026) перейменовано колонку міграції 0303 ingehaald_door → ingehaald_door_versie, щоб однозначно відрізнити версію випуску від колонок облікових записів (*_door).",
       "resultaat": "account-wissen-20261026 пройдено 30/30, migraties-terugdraaibaar-20261117 19/19, upd-010 16/16 та npm run typecheck:server без помилок."
+    },
+    {
+      "stap": "6) За результатами другого запуску (maquette-mobiel-prestatie) об’єднано монтування UitrolAchtergrondBand і NieuweVersieBand в один React root у src/main.tsx (збережено ліміт 5 createRoot).",
+      "resultaat": "Пройдено maquette-mobiel-prestatie (19/19), усі решту 70 безбазових і всі 13 післяскладальних випробувань та повне складання без жодної помилки."
     }
   ],
   "keuzes": [
