@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-005/20261120-192148-antigravity",
+  "taakId": "KLIMOP-005",
+  "tijd": "2026-11-20T19:21:48.431Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Після злиття запиту №186 у integratie реалізовано Етап 4 маніфесту «Плющ»: криптографічний модуль shared/klimop/drempelsleutels.ts (перевірювані схеми Фельдмана та Педерсена над простою підгрупою кривої Ed25519 без розкриття секрету, двофазне проактивне епохальне оновлення часток із захистом від перерваної ротації та від накопичення старих часток, бездилерський DKG та двораундові порогові цифрові підписи Шнорра FROST(Ed25519, SHA-512) за стандартом RFC 9591 із поіменним виявленням підробки та прямою сумісністю з вбудованим node:crypto.verify), мережевий координатор backend/klimop-drempel-client.ts поверх «Стебел», полігон 3 вузлів NL/CH/UA scripts/klimop-etappe4-frost-proef.mjs, двомовну документацію Етапу 4 та випробування 18/18."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника від 20.11.2026: злити запит №186 (KLIMOP-004) у integratie та реалізувати Етап 4 маніфесту «Плющ» (розподілені ключі, перевірюваний поділ секретів та порогові підписи)."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-004/20261120-185929-antigravity"
+  ],
+  "tak": "feature/klimop-005-etappe4-drempelsleutels-frost-20261120-190500",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}
