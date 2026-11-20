@@ -53,6 +53,15 @@ import {
   type KlimopHerstelAanvraag,
   type KlimopPersoonsStaat,
 } from '../shared/klimop/identiteit';
+import {
+  beoordeelUitrolGezondheid,
+  verifieerBestuursBesluitLogboek,
+  verifieerUitgaveBundel,
+  type KlimopBekrachtigdBestuursBesluit,
+  type KlimopBestuursGrondwet,
+  type KlimopUitrolGezondheidsMeting,
+  type KlimopVolledigeUitgaveBundel,
+} from '../shared/klimop/bestuur';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -117,6 +126,27 @@ export type KnooppuntOpdracht =
       actie: 'raadpleeg_identiteit_staat';
       persoonsId: string;
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'stel_bestuursgrondwet_in';
+      grondwet: KlimopBestuursGrondwet;
+      erkendeDoelenRolPubDerB64u: string;
+      erkendeTijdstempelRolPubDerB64u: string;
+      bekrachtigdLogboek?: readonly KlimopBekrachtigdBestuursBesluit[];
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'pas_uitgave_toe';
+      bundel: KlimopVolledigeUitgaveBundel;
+      pakketInhoudB64u: string;
+      webClientInhoudB64u: string;
+      gesimuleerdeMeting?: Partial<KlimopUitrolGezondheidsMeting>;
+      nuIso?: string;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_uitgave_staat';
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -157,6 +187,27 @@ export type KnooppuntOpdrachtAntwoord =
       ok: true;
       actie: 'identiteit_geraadpleegd';
       invoer: KlimopIdentiteitRegisterInvoer;
+    }
+  | {
+      ok: true;
+      actie: 'bestuursgrondwet_ingesteld';
+      grondwetId: string;
+      versieVolgnummer: number;
+    }
+  | {
+      ok: true;
+      actie: 'uitgave_geactiveerd';
+      actiefVolgnummer: number;
+      versieLabel: string;
+      minCompatibelVolgnummer: number;
+    }
+  | {
+      ok: true;
+      actie: 'uitgave_staat';
+      actiefVolgnummer: number;
+      versieLabel: string;
+      minCompatibelVolgnummer: number;
+      aantalTerugdraaiingen: number;
     }
   | { ok: false; fout: string; details?: string[] };
 
@@ -225,6 +276,8 @@ export interface KlimopProefKnooppunt {
   leesRuwOpgeslagenBlok(blokSha256: string): Buffer | undefined;
   actieveDrempelEpoche(setId: string): number | null;
   aantalGeregistreerdeIdentiteiten(): number;
+  actiefUitgaveVolgnummer(): number;
+  aantalUitgaveTerugdraaiingen(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -246,6 +299,13 @@ export async function startKlimopProefKnooppunt(config: {
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
+  let actieveGrondwet: KlimopBestuursGrondwet | null = null;
+  let erkendeDoelenRolPub = '';
+  let erkendeTijdstempelRolPub = '';
+  let huidigUitgaveVolgnummer = 1;
+  let huidigeVersieLabel = 'klimop-basis-1.0.0';
+  let huidigMinCompatibelVolgnummer = 1;
+  let aantalTerugdraaiingen = 0;
   let aantalEstafettes = 0;
 
   function controleerRolEnMandaat(
@@ -484,6 +544,106 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (
+      opdracht.actie === 'stel_bestuursgrondwet_in'
+      || opdracht.actie === 'pas_uitgave_toe'
+      || opdracht.actie === 'raadpleeg_uitgave_staat'
+    ) {
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'raadpleeg_uitgave_staat') {
+        return {
+          ok: true,
+          actie: 'uitgave_staat',
+          actiefVolgnummer: huidigUitgaveVolgnummer,
+          versieLabel: huidigeVersieLabel,
+          minCompatibelVolgnummer: huidigMinCompatibelVolgnummer,
+          aantalTerugdraaiingen,
+        };
+      }
+
+      if (opdracht.actie === 'stel_bestuursgrondwet_in') {
+        if (opdracht.grondwet.drempel < 2 || opdracht.erkendeDoelenRolPubDerB64u === opdracht.erkendeTijdstempelRolPubDerB64u) {
+          return { ok: false, fout: 'GRONDWET_OF_ROLLENSCHEIDING_ONGELDIG' };
+        }
+        if (actieveGrondwet) {
+          if (opdracht.grondwet.versieVolgnummer <= actieveGrondwet.versieVolgnummer) {
+            return { ok: false, fout: 'GRONDWET_VERSIE_TERUGDRAAI_GEWEIGERD' };
+          }
+          const logboek = opdracht.bekrachtigdLogboek ?? [];
+          const laatste = logboek[logboek.length - 1];
+          if (
+            !laatste
+            || laatste.voorstel.categorie !== 'ecosysteem_regels_wijziging'
+            || !verifieerBestuursBesluitLogboek(actieveGrondwet, logboek).ok
+          ) {
+            return { ok: false, fout: 'GRONDWET_WIJZIGING_VEREIST_FROST_BESLUIT_72U' };
+          }
+        }
+        actieveGrondwet = opdracht.grondwet;
+        erkendeDoelenRolPub = opdracht.erkendeDoelenRolPubDerB64u;
+        erkendeTijdstempelRolPub = opdracht.erkendeTijdstempelRolPubDerB64u;
+        return {
+          ok: true,
+          actie: 'bestuursgrondwet_ingesteld',
+          grondwetId: actieveGrondwet.grondwetId,
+          versieVolgnummer: actieveGrondwet.versieVolgnummer,
+        };
+      }
+
+      if (!actieveGrondwet) {
+        return { ok: false, fout: 'GEEN_BESTUURSGRONDWET_OP_KNOOPPUNT' };
+      }
+
+      const vBundel = verifieerUitgaveBundel({
+        grondwet: actieveGrondwet,
+        bundel: opdracht.bundel,
+        huidigGeinstalleerdVolgnummer: huidigUitgaveVolgnummer,
+        ontvangenPakketInhoud: Buffer.from(opdracht.pakketInhoudB64u, 'base64url'),
+        ontvangenWebClientInhoud: Buffer.from(opdracht.webClientInhoudB64u, 'base64url'),
+        erkendeDoelenRolPubDerB64u: erkendeDoelenRolPub,
+        erkendeTijdstempelRolPubDerB64u: erkendeTijdstempelRolPub,
+        nuIso: opdracht.nuIso,
+      });
+      if (!vBundel.ok) return vBundel;
+
+      const meting: KlimopUitrolGezondheidsMeting = {
+        procesGestart: opdracht.gesimuleerdeMeting?.procesGestart ?? true,
+        gegevensIntegriteitOk: opdracht.gesimuleerdeMeting?.gegevensIntegriteitOk ?? true,
+        machtigingenGeldigOk: opdracht.gesimuleerdeMeting?.machtigingenGeldigOk ?? true,
+        geenGeheimLekGedetecteerd: opdracht.gesimuleerdeMeting?.geenGeheimLekGedetecteerd ?? true,
+      };
+      const oordeel = beoordeelUitrolGezondheid(meting);
+      if (!oordeel.gezond) {
+        if (opdracht.bundel.doelen.isOnomkeerbareMigratie) {
+          return {
+            ok: false,
+            fout: 'ONOMKEERBARE_UITGAVE_VEREIST_HERSTELPROCEDURE',
+            details: [opdracht.bundel.doelen.onomkeerbareHerstelProcedureId!, ...oordeel.gefaaldeControles],
+          };
+        }
+        // Автоматичне безпечне повернення попередньої версії при порушенні показників (§24 маніфесту)
+        aantalTerugdraaiingen++;
+        return {
+          ok: false,
+          fout: 'UITGAVE_GEZONDHEIDSCONTROLE_MISLUKT_TERUGGEDRAAID',
+          details: oordeel.gefaaldeControles,
+        };
+      }
+
+      huidigUitgaveVolgnummer = opdracht.bundel.doelen.uitgaveVolgnummer;
+      huidigeVersieLabel = opdracht.bundel.doelen.versieLabel;
+      huidigMinCompatibelVolgnummer = opdracht.bundel.doelen.minCompatibelVolgnummer;
+      return {
+        ok: true,
+        actie: 'uitgave_geactiveerd',
+        actiefVolgnummer: huidigUitgaveVolgnummer,
+        versieLabel: huidigeVersieLabel,
+        minCompatibelVolgnummer: huidigMinCompatibelVolgnummer,
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -502,6 +662,7 @@ export async function startKlimopProefKnooppunt(config: {
           actieveStengels: sessies.size,
           opgeslagenBlokken: blokOpslag.size,
           geregistreerdeIdentiteiten: identiteitRegister.size,
+          actiefUitgaveVolgnummer: huidigUitgaveVolgnummer,
         });
         return;
       }
@@ -612,6 +773,12 @@ export async function startKlimopProefKnooppunt(config: {
     aantalGeregistreerdeIdentiteiten() {
       return identiteitRegister.size;
     },
+    actiefUitgaveVolgnummer() {
+      return huidigUitgaveVolgnummer;
+    },
+    aantalUitgaveTerugdraaiingen() {
+      return aantalTerugdraaiingen;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -626,6 +793,7 @@ export async function startKlimopProefKnooppunt(config: {
       drempelDelen.clear();
       voorbereideVerversingen.clear();
       identiteitRegister.clear();
+      actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },
   };

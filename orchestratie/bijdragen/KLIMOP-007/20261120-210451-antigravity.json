@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-007/20261120-210451-antigravity",
+  "taakId": "KLIMOP-007",
+  "tijd": "2026-11-20T21:04:51.401Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Реалізовано Етап 6 архітектурного маніфесту «Плющ» (розподілене порогове керування та безпечні хвильові випуски, Документи №8 і №14): модуль shared/klimop/bestuur.ts із 7 розмежованими категоріями повноважень (0 год затримки для пошти/файлів/календаря та 24/48/72 год для ризикових рішень), забороною одноосібної влади, випадкової більшості тимчасових вузлів і самосхвалення ШІ-агентів, геш-пов'язаним журналом під пороговими підписами FROST (RFC 9591) та чотирирівневою перевіркою метаданих випуску з підписом вебклієнта; координатор backend/klimop-bestuur-client.ts, полігон 4 вузлів NL/CH/UA/SE scripts/klimop-etappe6-bestuur-proef.mjs, двомовну документацію та 18 випробувань klimop-007."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника продовжити реалізацію наступного етапу маніфесту «Плющ» після злиття запиту №188 (KLIMOP-006) у гілку integratie без втручання в робочу інфраструктуру."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-006/20261120-202721-antigravity"
+  ],
+  "tak": "feature/klimop-007-etappe6-drempelbestuur-uitrol-20261120-204000",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}
