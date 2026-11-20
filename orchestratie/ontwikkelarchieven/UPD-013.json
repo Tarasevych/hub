@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "taakId": "UPD-013",
+  "datum": "2026-11-20",
+  "taal": "uk",
+  "titel": "UPD-013 · Розподілене зберігання Шаміра (0306), аудит досвіду (2–9), MELDPANEEL-001 і ліниве розбиття пошти",
+  "opdracht": "За дорученням власника від 20.11.2026 виконати злиття UPD-011 (PR № 180) та UPD-012 (PR № 181) в integratie (--no-ff) і продовжити роботу над усім, що залишалося невключеним із попередніх сесій і запитів: 1) перевести розподілене зашифроване зберігання Шаміра k-з-n у повноцінну робочу підсистему (зворотно сумісна міграція 0306, проактивна ротація часток, навчальне відновлення, 6 маршрутів власника, експорт VERDEELDE-OPSLAG-MANIFEST.json, панель стану вузлів у розділі Адміністрування при витратах 0 євро); 2) завершити всі залишені пункти 2–9 аудиту клієнтського досвіду (спільні блоки SkeletBlok, LegeStaatKaart, KopieerKnop, useOpslaanBevestiging, єдина ієрархія заголовків H1 на mcp/hub, мобільний орієнтир «Служба / Розділ», клавіатурні підказки Ctrl+K і Esc із поверненням фокусу, пом’якшений контраст --faint у темному оформленні); 3) перенести досьє панелі сповіщень MELDPANEEL-001 (PR № 159) без затирання хроніки та повернути в обидві панелі втрачені дії («Позначити як непрочитане», «Знову відкрити», «Перша / Остання поява / Тривалість»); 4) виконати ліниве розбиття моноліту GoogleMailWerkruimte.tsx для суттєвого зменшення початкової збірки пошти.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000",
+    "basisCommit": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
+    "basisVersie": "20261120-093715",
+    "geinstalleerdeBasis": "ee79492666491af3c82ce9127c8a03f37420fdef",
+    "geinstalleerdeVersie": "20261120-084148",
+    "integratieBasis": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
+    "regelsVersie": "1.4.18",
+    "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
+    "samengevoegd": [
+      {
+        "taak": "UPD-011 (запит на злиття № 180, встановлена версія 20261120-084148)",
+        "commit": "b07682d0c07f1104b514b101006ca4a3ff64ca5b",
+        "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після підтвердження живої версії 20261120-084148 на сервері."
+      },
+      {
+        "taak": "UPD-012 (запит на злиття № 181, перевірений випуск 20261120-093715)",
+        "commit": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
+        "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після 100% зеленого прогону GitHub Actions № 44711013792 і перевірки TRACE-001."
+      },
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159 — досьє панелі сповіщень)",
+        "commit": "d3bfeca5",
+        "reden": "Перенесено двомовне досьє, запис завдання й архів походження без затирання свіжої хроніки гілок та повернено 3 втрачені дії сповіщень."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "Об’єднання двох панелей сповіщень в одну та вибір спливного оформлення X4 (TOAST-ONTWERP-001)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Потребує окремого вибору візуального макета власником; зафіксовано в orchestratie/onderwerpen/meldingen.json."
+      }
+    ]
+  },
+  "commits": [
+    "b07682d0c07f1104b514b101006ca4a3ff64ca5b",
+    "e3c5ab3df29724bb7fab0558899bccb71417a82c",
+    "cb15d68f7ad01a3fb5970466c757521644b53763",
+    "8187231f4faedd9479cfcc373909834fe5f9cfdb"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Звірка живої версії сервера (UPD-011 20261120-084148 @ ee7949266649), злиття PR № 180 (UPD-011) і PR № 181 (UPD-012) в origin/integratie (--no-ff) та реєстрація UPD-013 від e3c5ab3df297.",
+      "resultaat": "Історичні гілки випусків збережено для TRACE-001; створено робочу гілку feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000."
+    },
+    {
+      "stap": "2) Розподілене зашифроване зберігання Шаміра k-з-n (витрати 0 євро): створено migrations/0306_verdeelde_opslag_knopen.sql, backend/verdeelde-opslag-beheer.ts, src/uitrol/VerdeeldeOpslagPaneel.tsx; розширено shared/verdeelde-opslag.ts, backend/uitrol-goedkeuring.ts, src/BeheerUitrolWeergave.tsx, src/uitrol/uitrol.css та досьє orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json.",
+      "resultaat": "Реалізовано реєстр вузлів по країнах і платформах, блокування порушення політики k-з-n (409), проактивну ротацію часток без зміни секрету, навчальне відновлення, експорт очищеного VERDEELDE-OPSLAG-MANIFEST.json і панель стану (зелений/жовтий/червоний) в Адмініструванні. Пройдено migraties-terugdraaibaar (22/22), account-wissen (30/30), sqlRechtenVlaggen ([])."
+    },
+    {
+      "stap": "3) Завершення всіх пунктів 2–9 аудиту клієнтського досвіду: створено src/platform/SkeletBlok.tsx, LegeStaatKaart.tsx, KopieerKnop.tsx, opslaan-bevestiging.ts, ux-bouwstenen.css; оновлено заголовки H1 на mcp/hub, підключено скелети й порожні стани на hub/cloud/github/huis/mcp/notities, відгук «Збережено ✓» і копіювання в 1 клік, мобільний орієнтир, підказки Ctrl+K/Esc із поверненням фокусу та контраст --faint у темних палітрах.",
+      "resultaat": "Пройдено ontwerp-fundament (40/40), plaatsing (68/68), mobiel-geometrie (56/56), hulp-register (17/17), kleur-contrast (2044 пари у 28 палітрах, усі ≥ норми), woordbreuk-001 (26/26), zoek-menu (72/72)."
+    },
+    {
+      "stap": "4) Перенесення досьє MELDPANEEL-001 (PR № 159), повернення втрачених дій сповіщень та ліниве розбиття моноліту GoogleMailWerkruimte.tsx: перенесено 4 файли MELDPANEEL-001, повернено «Позначити як непрочитане», «Знову відкрити» та «Перша / Остання поява / Тривалість» у MeldingenV2.tsx і MeldingVeegKaart.tsx; переведено 19 вторинних компонентів на React.lazy і винесено 30 модулів редакторів вкладень у src/mail/MailWerkruimteExtra.ts.",
+      "resultaat": "Початковий скрипт пошти MailFunctioneelWeergave зменшився з 950,35 кБ до 534,14 кБ (−43,8%), стилі — з 616,29 кБ до 468,24 кБ (−24,0%), загальна економія −564,26 кБ (−36,0%). Пройдено всі поштові й сповіщеннєві тести, kaart-controle (2976 файлів), upd-013 (6/6), historie-kroniek (18/18), bijdragen-001 (54/54), trace-001 (20/20), orch-uitrol-basis (15/15), werkstromen-veilig (9/9), повне складання npm run build (із CRX3 0.9.7) і перевірку мовного закону (0 порушень)."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Підключити 6 маршрутів розподіленого зберігання у backend/uitrol-goedkeuring.ts поруч із маршрутами ключів адміністрування без змін у SITE_TOOLS і backend/index.ts.",
+      "reden": "Зберігає стабільність контракту кількості MCP-інструментів SITE_TOOLS та ізолює нову підсистему в модульному файлі backend/verdeelde-opslag-beheer.ts."
+    },
+    {
+      "besluit": "Зберігати в app.verdeelde_opslag_knopen і app.verdeelde_opslag_rotaties лише очищені метадані вузлів, контрольні суми SHA-256 і підсумки перевірок, без жодних сирих часток або секретів.",
+      "reden": "Навіть за компрометації бази даних зловмисник не отримує жодної частки секрету; перевірка цілісності й навчальне відновлення працюють без збирання справжнього ключа."
+    },
+    {
+      "besluit": "Винести 30 модулів визначення редакторів вкладень у лінивий файл src/mail/MailWerkruimteExtra.ts та перевести 19 вторинних діалогів на React.lazy без зміни зовнішніх контрактів пошти.",
+      "reden": "Забезпечує фактичне зменшення початкової збірки пошти на 43,8% (534,14 кБ замість 950,35 кБ) при збереженні 100% сумісності всіх поштових тестів."
+    },
+    {
+      "besluit": "Перенести досьє MELDPANEEL-001 і повернути 3 безспірні втрачені дії сповіщень, не об’єднуючи примусово дві панелі до вибору макета X4 власником.",
+      "reden": "Негайно повертає загублені функції користувачу, зберігає повну пам’ять панелі в основній лінії і поважає право власника обрати остаточний вигляд спливних сповіщень."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0306_verdeelde_opslag_knopen.sql, backend/verdeelde-opslag-beheer.ts, src/uitrol/VerdeeldeOpslagPaneel.tsx",
+      "omschrijving": "Зворотно сумісна міграція 0306, 6 серверних маршрутів власника та двомовна панель стану розподіленого зберігання Шаміра k-з-n у розділі Адміністрування."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/verdeelde-opslag.ts, backend/uitrol-goedkeuring.ts, src/BeheerUitrolWeergave.tsx, src/uitrol/uitrol.css, orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json",
+      "omschrijving": "Проактивна ротація часток, навчальне відновлення, формування VERDEELDE-OPSLAG-MANIFEST.json, інтеграція в інтерфейс і оновлення досьє пам’яті."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/platform/SkeletBlok.tsx, src/platform/LegeStaatKaart.tsx, src/platform/KopieerKnop.tsx, src/platform/opslaan-bevestiging.ts, src/platform/ux-bouwstenen.css",
+      "omschrijving": "Спільні будівельні блоки аудиту клієнтського досвіду (скелетні заповнювачі, порожні стани з дією, копіювання в 1 клік, захист від подвійного натискання і «Збережено ✓»)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/App.tsx, src/CanoniekOmlijsting.tsx, src/canoniek-omlijsting.css, src/McpDienstWeergave.tsx, src/agenten/AgentenPagina.tsx, src/agenten/DienstMotoren.tsx, src/agenten/agenten-kern-maquette.css, src/CloudFunctioneelWeergave.tsx, src/GitHubWeergave.tsx, src/HubNotities.tsx, src/HubRecent.tsx, src/notities/NotitiesPagina.tsx, src/huis/HuisPagina.tsx, src/huis/onderdelen/Apparaten.tsx, src/werkblad/Werkblad.tsx, src/werkblad/WerkbladV3.tsx, src/zoek/ZoekGlobaal.tsx, src/platform/SluitKnop.tsx, src/platform/vensters.tsx, src/ontwerp/tokens.css, src/thema/paletten.ts, src/thema/paletten.css, src/hub-functioneel-blokken.css",
+      "omschrijving": "Впровадження всіх пунктів 2–9 аудиту клієнтського досвіду по ключових сторінках і темних палітрах."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "docs/meldingen-paneel/ДОСЬЄ-ПАНЕЛІ-СПОВІЩЕНЬ.uk.md, docs/meldingen-paneel/DOSSIER-MELDINGENPANEEL.nl.md, orchestratie/taken/MELDPANEEL-001.json, orchestratie/ontwikkelarchieven/MELDPANEEL-001.json, src/mail/MailWerkruimteExtra.ts",
+      "omschrijving": "Перенесення досьє MELDPANEEL-001 та лінивий підмодуль 30 редакторів вкладень пошти."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/GoogleMailWerkruimte.tsx, src/meldingen/v2/MeldingenV2.tsx, src/meldingen/ecosysteem/MeldingVeegKaart.tsx, src/meldingen/ecosysteem/meldingen-ecosysteem.css, orchestratie/onderwerpen/meldingen.json, orchestratie/onderwerpen/prestatie-en-gebruikservaring.json, shared/zoek-ui-knoppen.generated.ts, docs/hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md, docs/hub/KRONIEK-TAKKEN.nl.md",
+      "omschrijving": "Ліниве розбиття 19 компонентів пошти (−43,8% початкового JS), повернення втрачених дій сповіщень, оновлення досьє, пошукового каталогу (1838) та хроніки гілок."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-013-verdeelde-opslag-ux-meldpaneel-20261120.test.ts, .github/workflows/upd-013-uitgave.yml, orchestratie/taken/UPD-013.json, orchestratie/bijdragen/UPD-013/*, orchestratie/ontwikkelarchieven/UPD-013.json",
+      "omschrijving": "Регресійний тест UPD-013 (6/6), облік авторства, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-013."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-012-uitgave.yml",
+      "uk": "Успадкований кумулятивний сценарій випуску UPD-012 (злито в integratie поверх живої версії UPD-011): без pull_request_target і secrets.*, усі дії закріплено 40-символьними відбитками, persist-credentials: false; не виконує автоматичного встановлення на сервер.",
+      "nl": "Overgenomen cumulatieve uitgavewerkstroom van UPD-012 (samengevoegd in integratie bovenop live UPD-011): zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; voert geen automatische installatie uit."
+    },
+    {
+      "pad": ".github/workflows/upd-013-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-013: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує повний набір випробувань (включно з upd-013), orch behoud, подвійний прогін міграцій PostgreSQL 16 (включно зі зворотно сумісними 0305 і 0306) трьома ролями, перевірку TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-013: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait alle testbestanden (incl. upd-013), orch behoud, dubbele migraties op PostgreSQL 16 (incl. 0305 en 0306) met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання (5 технічних збірок ізольовано від 928 відкритих, MailFunctioneelWeergave зменшено до 534,14 кБ, підписаний CRX3 0.9.7, серверна збірка за 942 мс) пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "Координація, статика й модульні випробування: orch controleer (1.4.18), kaart-controle (2976 файлів), kleur-contrast (2044 пари у 28 палітрах), zoek-ui-catalogus (1838), werkstromen-veilig (9/9), historie-kroniek (18/18), bijdragen-001 (54/54), trace-001 (20/20), orch-uitrol-basis (15/15), upd-013 (6/6), upd-012 (6/6), migraties-terugdraaibaar (22/22), account-wissen (30/30), uitrol-risico (69/69), ontwerp-fundament (40/40), plaatsing (68/68), mobiel-geometrie (56/56), hulp-register (17/17), усі тести пошти й сповіщень",
+      "resultaat": "Усі перевірки пройшли на 100% без жодної помилки (код 0). Перевірка мовного закону по 53 змінених і нових файлах: 0 порушень."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-013-uitgave.yml",
+      "resultaat": "Звіряє живу основу, виконує повний набір випробувань, подвійний прогін міграцій PostgreSQL 16 (включно з 0306) трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Об’єднання двох панелей сповіщень в одну та остаточний вибір спливного оформлення X4 чекають вибору макетів власником.",
+    "Критичні політики в розділі kritiek не змінювалися."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, частки Шаміра, ключі доступу чи вміст листів до журналу та БД не потрапляли."
+  }
+}
