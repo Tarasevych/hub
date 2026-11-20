@@ -117,6 +117,62 @@ const PER_ID = new Map(BEVINDINGEN.map((r) => [r.id, r]));
 export const REGISTER: readonly RegisterRij[] = Object.freeze(INTEGRATIES.map((i) => Object.freeze(PER_ID.get(i.id) ?? standaard(i))));
 export const registerVan = (id: string): RegisterRij | undefined => REGISTER.find((r) => r.id === id);
 
+const VERTAAL_BEWIJS = ['backend/vertaal-adapters.ts', 'backend/ai-dienst-motoren.ts', 'backend/ai-vertaling-routes.ts', 'shared/ai-dienst-motor.ts'] as const;
+
+/**
+ * UPD-012 (20.11.2026): реєстр спеціалізованих інтеграцій перекладу з реальними файлами-доказами та контролем режиму приватності.
+ * Register van de vertaalintegraties met echte bewijsbestanden en privacymodus.
+ */
+export const VERTAAL_REGISTER: readonly RegisterRij[] = Object.freeze([
+  Object.freeze(W({
+    id: 'google-translate',
+    bewijs: VERTAAL_BEWIJS,
+    officieel: 'Google Cloud Translation API v2 (API-sleutel)',
+    doelDienst: 'ai',
+    pagina: { dienst: 'mcp', tab: 'agents' },
+    vereist: ['Ключ API Google Cloud Translation (зберігається зашифровано у «Сховищі ключів» власника) та вибір режиму приватності.', 'API-sleutel van Google Cloud Translation (versleuteld in de «Sleutelkluis») en keuze van privacymodus.'],
+    operaties: ['Переклад фрагментів листів із попереднім очищенням токенів, секретів та IBAN у режимі extern-gezuiverd; тестовий запит фіксованим реченням.', 'Vertalen van berichtfragmenten met voorafgaande zuivering van tokens, geheimen en IBAN in extern-gezuiverd; proefverzoek met vaste testzin.'],
+    nogTeDoen: ['—', '—'],
+    beperking: ['Платний хмарний сервіс за квотою Google Cloud; у режимі lokaal-alleen блокується автоматично.', 'Betaalde clouddienst volgens Google Cloud-quotum; in modus lokaal-alleen automatisch geblokkeerd.'],
+    prioriteit: 1,
+  })),
+  Object.freeze(W({
+    id: 'deepl',
+    bewijs: VERTAAL_BEWIJS,
+    officieel: 'DeepL API v2 (DeepL-Auth-Key)',
+    doelDienst: 'ai',
+    pagina: { dienst: 'mcp', tab: 'agents' },
+    vereist: ['Ключ DeepL API Free (:fx) або Pro у зашифрованому «Сховищі ключів» та вибір режиму приватності.', 'DeepL API-sleutel Free (:fx) of Pro in de versleutelde «Sleutelkluis» en keuze van privacymodus.'],
+    operaties: ['Переклад листів через api-free.deepl.com або api.deepl.com із очищенням чутливих даних і денним лімітом на користувача.', 'Vertalen van post via api-free.deepl.com of api.deepl.com met gegevenszuivering en daglimiet per gebruiker.'],
+    nogTeDoen: ['—', '—'],
+    beperking: ['Для безкоштовного плану Free DeepL може використовувати тексти для навчання моделей; для конфіденційного листування рекомендовано Pro або власний вузол.', 'Bij DeepL Free kunnen teksten gebruikt worden voor modelverbetering; voor vertrouwelijke post verdient Pro of een eigen knoop de voorkeur.'],
+    prioriteit: 1,
+  })),
+  Object.freeze(W({
+    id: 'libretranslate',
+    bewijs: ['backend/ai-dienst-motoren.ts', 'backend/ai-vertaling-routes.ts', 'shared/ai-dienst-motor.ts'],
+    officieel: 'LibreTranslate HTTP API (/translate, eigen server)',
+    doelDienst: 'ai',
+    pagina: { dienst: 'mcp', tab: 'agents' },
+    vereist: ['Адреса власного сервера LibreTranslate (http/https без сторонніх перенаправлень).', 'Adres van een eigen LibreTranslate-server (http/https zonder omleidingen).'],
+    operaties: ['Переклад листів на власному сервері без передавання даних до зовнішніх хмар.', 'Vertalen van post op de eigen server zonder gegevens naar externe clouds te sturen.'],
+    nogTeDoen: ['—', '—'],
+    prioriteit: 1,
+  })),
+  Object.freeze(W({
+    id: 'eigen-vertaal-knoop',
+    bewijs: VERTAAL_BEWIJS,
+    officieel: 'Eigen beveiligde vertaalknoop (POST /translate + optionele Bearer-sleutel)',
+    doelDienst: 'ai',
+    pagina: { dienst: 'mcp', tab: 'agents' },
+    vereist: ['Адреса власного захищеного вузла перекладу та за потреби ключ доступу Bearer у «Сховищі ключів».', 'Adres van de eigen beveiligde vertaalknoop en optioneel een Bearer-sleutel in de «Sleutelkluis».'],
+    operaties: ['Захищений переклад через власний вузол із забороною перенаправлень, обмеженням часу очікування та контролем режиму приватності.', 'Beveiligde vertaling via eigen knoop met omleidingsverbod, time-out en controle op privacymodus.'],
+    nogTeDoen: ['—', '—'],
+    prioriteit: 1,
+  })),
+]);
+export const vertaalRegisterVan = (id: string): RegisterRij | undefined => VERTAAL_REGISTER.find((r) => r.id === id);
+
 // ——— Etappe B: groep van een kaart uit echte gegevens ———
 export type Groep = 'verbonden' | 'beschikbaar' | 'aandacht' | 'instellen' | 'ontwikkeling';
 export const GROEPEN: ReadonlyArray<{ id: Groep; uk: string; nl: string; standaardOpen: boolean }> = [
@@ -161,6 +217,10 @@ const OFFICIEEL_UK: Readonly<Record<string, string>> = {
   'Via de MQTT-broker van Zigbee2MQTT': 'Через MQTT-брокер Zigbee2MQTT',
   'REST + OAuth-clients van deze site': 'REST + OAuth-клієнти цього сайту',
   'Microsoft Graph (directory)': 'Microsoft Graph (каталог)',
+  'Google Cloud Translation API v2 (API-sleutel)': 'Google Cloud Translation API v2 (ключ API)',
+  'DeepL API v2 (DeepL-Auth-Key)': 'DeepL API v2 (ключ DeepL-Auth-Key)',
+  'LibreTranslate HTTP API (/translate, eigen server)': 'LibreTranslate HTTP API (/translate, власний сервер)',
+  'Eigen beveiligde vertaalknoop (POST /translate + optionele Bearer-sleutel)': 'Власний захищений вузол перекладу (POST /translate + необов’язковий ключ Bearer)',
   // delen van OFFICIEEL_STANDAARD (samengevoegd met « / »)
   'API-sleutel': 'API-ключ',
   'Handmatig': 'Вручну',

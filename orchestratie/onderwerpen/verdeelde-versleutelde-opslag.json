@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "naam": "verdeelde-versleutelde-opslag",
+  "titel": {
+    "uk": "Розподілене зашифроване зберігання баз і частин сайту (порогова схема k-з-n)",
+    "nl": "Verdeelde versleutelde opslag van databases en siteonderdelen (k-van-n drempelschema)"
+  },
+  "samenvatting": {
+    "uk": "Архітектура та криптографічний фундамент незалежного зберігання частин сайту, резервних копій і баз даних на різних серверах, країнах і платформах за пороговою схемою Шаміра k-з-n, щоб компрометація одного чи кількох вузлів не давала доступу до даних без фізичного доступу до решти частин.",
+    "nl": "Architectuur en cryptografisch fundament voor onafhankelijke opslag van siteonderdelen, reservekopieën en databases over verschillende landen en platformen met een k-van-n Shamir-drempelschema."
+  },
+  "termen": {
+    "uk": [
+      "розподілене зберігання",
+      "різні сервери",
+      "різні країни",
+      "порогове шифрування",
+      "шамір",
+      "незалежність баз",
+      "захист від викрадення"
+    ],
+    "nl": [
+      "verdeelde opslag",
+      "verschillende servers",
+      "verschillende landen",
+      "drempelversleuteling",
+      "shamir",
+      "geografische spreiding"
+    ]
+  },
+  "paden": [
+    "shared/verdeelde-opslag.ts",
+    "shared/sleutelkluis.ts",
+    "backend/sleutelkluis.ts",
+    "src/cloud/versleutelde-kluis-m7.mjs",
+    "deploy/backup-maken.sh",
+    "deploy/cloud/cloud-reservekopie.ps1",
+    "backend/verbinding-adapters/s3.ts",
+    "backend/verbinding-adapters/webdav.ts",
+    "docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md",
+    "docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md"
+  ],
+  "werk": [
+    {
+      "taakId": "UPD-012",
+      "tak": "feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Зафіксовано повний задум власника у досьє пам’яті та двомовній специфікації, реалізовано чистий криптографічний модуль порогового розщеплення Шаміра k-з-n над GF(256), перевірку географічного й платформного рознесення вузлів і валідатор маніфеста VERDEELDE-OPSLAG-MANIFEST.json."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "sleutelkluis-dek-omslag",
+      "uk": "Клієнтсько-кероване шифрування DEK по користувачах і просторах (shared/sleutelkluis.ts)",
+      "sinds": "SEC-001",
+      "staat": "actief"
+    },
+    {
+      "id": "age-pull-backup",
+      "uk": "Нічні зашифровані копії ВМ через age без закритого ключа на сервері (deploy/backup-maken.sh)",
+      "sinds": "SEC-001",
+      "staat": "actief"
+    },
+    {
+      "id": "shamir-k-van-n-kern",
+      "uk": "Порогове розщеплення та відновлення ключів/частин даних k-з-n над GF(256) із перевіркою контрольних сум (shared/verdeelde-opslag.ts)",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "jurisdictie-beleid-controle",
+      "uk": "Запобіжник політики розміщення: заборона зберігати k або більше часток в одній країні чи одному провайдері",
+      "sinds": "UPD-012",
+      "staat": "actief"
+    },
+    {
+      "id": "multi-regio-knoop-uitvoer",
+      "uk": "Повна серверна оркестрація розкладання шифрованих блоків по незалежних вузлах (R:\\, S3 EU, WebDAV/Nextcloud, хмара, офлайн-QR) із періодичною перевіркою без збирання",
+      "sinds": "UPD-012",
+      "staat": "in-ontwikkeling"
+    },
+    {
+      "id": "proactieve-deelrotatie",
+      "uk": "Перевипуск порогових часток (зміна полінома без перешифрування всього масиву даних) та навчальне відновлення в ізольованому середовищі",
+      "sinds": "UPD-012",
+      "staat": "in-ontwikkeling"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-20",
+      "betreft": "Незалежне розподілене зберігання баз і частин сайту",
+      "uk": "Розміщувати частини сайту і баз зашифрованими шляхами на різних країнах і платформах, щоб навіть за викрадення чи розшифрування одного сервісу або сервера зловмисник не зміг отримати дані без фізичного доступу до решти частин.",
+      "behouden": [
+        "Незалежність клієнтських ключів Sleutelkluis (власник сервера не має змоги розшифрувати особистий простір користувача)",
+        "Чинна схема нічних резервних копій age та офлайн-копії на R:\\mijn-ruimte-reservekopie\\",
+        "Нульові нові платні витрати без прямого погодження власника"
+      ]
+    }
+  ],
+  "open": [
+    "Підключити автоматичний планувальник розсилки часток через наявні перехідники S3 / WebDAV / rclone після того, як власник обере конкретні безкоштовні або власні майданчики у різних країнах.",
+    "Додати панель стану розподілених вузлів (зелений/жовтий/червоний стан перевірки цілісності без збирання ключа) в Адміністрування → Резервні копії."
+  ],
+  "bijgewerkt": "2026-11-20"
+}

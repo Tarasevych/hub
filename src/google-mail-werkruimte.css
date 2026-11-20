@@ -29,3 +29,8 @@ html body .google-mail-workspace[data-reading-pane='right'][data-reader-open='tr
    er als de gebruiker hem daar zette): onderaan zoveel lucht als de stapel hoog is (--plaats-stapel-ruimte, de laag), zodat elke knop in de
    brief boven de stapel te scrollen is (gemeten: «Завантажити» van een bijlage in de contextkolom lag op 1704 px onder de bel). */
 html body .google-mail-reader>section.mail-thread-content::after,html body .google-mail-reader .ctx-inhoud::after{content:'';display:block;flex:none;height:var(--plaats-stapel-ruimte,0px);pointer-events:none}
+/* UPD-012: усунення білої порожньої смуги зверху листа у компактному режимі та на вузьких/мобільних екранах і прибирання порожнього нижнього запасу для коротких листів */
+html body .google-mail-reader-backdrop:has(.mail-reader-kop-opties) .google-mail-reader>header{margin-top:0}
+@media(max-width:960px){html body .google-mail-reader-backdrop[data-lees-modus='volledig'] .google-mail-reader>header,html body .google-mail-reader-backdrop .google-mail-reader>header{margin-top:0}}
+@media(max-width:720px){html body .google-mail-reader-backdrop .google-mail-reader>header{margin-top:0}html body .google-mail-reader>section.mail-thread-content::after{height:0}}
+

@@ -16,3 +16,15 @@
 /* tellers in het submenu waren .63rem (10 px); bijschriften in de verbindingsbanner .72rem (11,5 px) */
 .canonical-local-pages small{font-size:max(var(--tekst-mini),.63rem)}
 .canonical-connection-banner small{font-size:max(var(--tekst-mini),.72rem)}
+/* UPD-012: єдина типографічна ієрархія на всіх піддоменах (h1 завжди більший за h2), зручніші кнопки прокручування бокового меню, скелетний заповнювач і стан зайнятості кнопок. */
+.canonical-chrome .canonical-content h1:not(.sr-only):not(.mail-workspace-heading){font-size:clamp(1.25rem,4.5vw,1.65rem);line-height:1.25}
+.canonical-chrome .canonical-content .canonical-signed-out h1{font-size:clamp(1rem,1.8vw,1.15rem)}
+.canonical-chrome .canonical-content h2{font-size:clamp(1.02rem,3.2vw,1.2rem);line-height:1.3}
+html body .canonical-chrome .zijbalk-pijl{height:34px}
+html body .canonical-chrome .zijbalk-pijl button{min-height:28px;height:auto}
+@media (max-width:700px){html body .canonical-chrome .zijbalk-pijl button{min-height:var(--tik-hoogte)}}
+.tsv-skelet{display:block;border-radius:8px;background:var(--surface2);opacity:.72;animation:tsv-skelet-puls 1.35s ease-in-out infinite}
+@keyframes tsv-skelet-puls{0%,100%{opacity:.45}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.tsv-skelet{animation:none;opacity:.65}}
+button[aria-busy="true"]{cursor:progress;opacity:.72;pointer-events:none}
+

@@ -595,14 +595,25 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
   // De beschrijving komt uit het pakket zelf (SAMENVATTING): wat de voorbereider bij het begin opgaf, is niet leidend.
   const beschrijving = vc.meta.samenvatting.slice(0, 8000);
   if (!vc.resultaat.ok) {
+    const foutLijst = vc.resultaat.controles.filter((c) => c.niveau === 'fout');
     await sys().query(`UPDATE app.uitrol_voorstellen SET voorcontrole = $2::jsonb, pakket_meta = $3::jsonb WHERE id = $1`, [row.id, JSON.stringify(vc.resultaat), JSON.stringify(vc.meta)]);
     await afbreken(row.id, 'VOORCONTROLE_MISLUKT');
-    await auditeer(grant.accountId, grant.accountId, 'uitrol_voorstel_voorcontrole_mislukt', 'denied', { voorstel: row.id, versie: row.versie, fouten: vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id), voorbereider: grant.label });
+    await auditeer(grant.accountId, grant.accountId, 'uitrol_voorstel_voorcontrole_mislukt', 'denied', { voorstel: row.id, versie: row.versie, fouten: foutLijst.map((c) => c.id), voorbereider: grant.label });
     // UI-014: een geweigerd pakket (o.a. «versie niet nieuwer») gaf geen melding; nu wel, met de controles die faalden.
     await meld(grant.accountId, 'uitrol.mislukt', `Пакет ${tekst(row.versie, 40)} відхилено перевіркою / Pakket ${tekst(row.versie, 40)} geweigerd door de controle`,
-      `Не пройшли перевірки: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Завантажив: «${grant.label}». / Niet geslaagd: ${vc.resultaat.controles.filter((c) => c.niveau === 'fout').map((c) => c.id).join(', ').slice(0, 300)}. Geüpload door: «${grant.label}».`,
+      `Не пройшли перевірки: ${foutLijst.map((c) => c.id).join(', ').slice(0, 300)}. Завантажив: «${grant.label}». / Niet geslaagd: ${foutLijst.map((c) => c.id).join(', ').slice(0, 300)}. Geüpload door: «${grant.label}».`,
       'https://admin.tarasevych.com/updates');
     await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'voorcontrole-mislukt', grant.accountId)).catch(() => undefined);
+    void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+      soort: 'voorcontrole_mislukt',
+      eigenaarId: grant.accountId,
+      versie: String(row.versie),
+      voorbereider: grant.label,
+      auteur: String(vc.meta.auteur || ''),
+      agent: String(vc.meta.agent || ''),
+      commit: String(vc.meta.commit || row.bron_commit || ''),
+      fouten: foutLijst.map((c) => `${c.id}${c.uk ? ` — ${c.uk}` : ''}`),
+    })).catch(() => undefined);
     return { id: String(row.id), versie: String(row.versie), status: 'afgebroken', code: 'VOORCONTROLE_MISLUKT', voorcontrole: vc.resultaat };
   }
   await rename(deel, pakketPad(row.id));
@@ -610,6 +621,11 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
     wijzigingen = CASE WHEN length($4) >= 20 THEN $4 ELSE wijzigingen END, bron_commit = COALESCE(NULLIF($5, ''), bron_commit)
     WHERE id = $1 AND status = 'uploaden'`, [row.id, JSON.stringify(vc.resultaat), JSON.stringify(vc.meta), beschrijving, vc.meta.commit]);
   await verbruiktGrantEenheid(grant.id);
+  const manifestObj = (vc.meta.manifest || null) as Record<string, any> | null;
+  let tgDrieFactoren: { volledig?: boolean; aantalOk?: number; totaal?: number } | null = null;
+  const tgMigraties = Array.isArray(manifestObj?.migraties) ? manifestObj.migraties.map(String) : [];
+  const tgWijzUk = String(manifestObj?.titel?.uk || manifestObj?.samenvatting?.uk || beschrijving || row.wijzigingen || '').slice(0, 500);
+  const tgWijzNl = String(manifestObj?.titel?.nl || manifestObj?.samenvatting?.nl || beschrijving || row.wijzigingen || '').slice(0, 500);
   // UPD-011: записуємо джерело оновлення, 3-чинникову оцінку та реєстр змін випуску для прозорого контролю й вибіркового відкликання.
   try {
     const sleutel = await actieveSleutelStand(grant.accountId, grant.soort === 'agent' ? grant.onderwerp : undefined);
@@ -630,7 +646,7 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
       siteSleutelActief: Boolean(sleutel),
       siteToegangNiveau: grant.toegangNiveau,
     });
-    const manifestObj = (vc.meta.manifest || null) as Record<string, any> | null;
+    tgDrieFactoren = { volledig: drieFactoren.volledig, aantalOk: drieFactoren.aantalOk, totaal: 3 };
     await sys().query(
       `UPDATE app.uitrol_voorstellen
           SET herkomst_kanaal = $2, herkomst_sleutel_id = $3, drie_factoren = $4::jsonb
@@ -646,11 +662,11 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
       auteur: String(vc.meta.auteur || manifestObj?.auteur || grant.label || ''),
       agent: String(vc.meta.agent || ''),
       taakId: String(manifestObj?.taakId || ''),
-      samenvattingUk: String(manifestObj?.titel?.uk || manifestObj?.samenvatting?.uk || beschrijving).slice(0, 500),
-      samenvattingNl: String(manifestObj?.titel?.nl || manifestObj?.samenvatting?.nl || beschrijving).slice(0, 500),
+      samenvattingUk: tgWijzUk,
+      samenvattingNl: tgWijzNl,
       drieFactoren,
       bestanden: Array.isArray(manifestObj?.bestanden) ? manifestObj.bestanden : [],
-      migraties: Array.isArray(manifestObj?.migraties) ? manifestObj.migraties : [],
+      migraties: tgMigraties,
       commits: vc.meta.commit ? [vc.meta.commit] : [],
       status: 'wacht',
     });
@@ -661,6 +677,19 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
     `Завантажив: «${grant.label}». Перевірку пройдено. Схвалити чи відхилити — на сторінці оновлень (з passkey). / Geüpload door: «${grant.label}». Controle geslaagd. Goedkeuren of afwijzen op de updatepagina (met passkey).`,
     'https://admin.tarasevych.com/updates');
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(row.id), 'klaar', grant.accountId)).catch(() => undefined);
+  void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+    soort: 'voorstel_klaar',
+    eigenaarId: grant.accountId,
+    versie: String(row.versie),
+    auteur: String(vc.meta.auteur || manifestObj?.auteur || ''),
+    agent: String(vc.meta.agent || ''),
+    voorbereider: grant.label,
+    commit: String(vc.meta.commit || row.bron_commit || ''),
+    wijzigingenUk: tgWijzUk,
+    wijzigingenNl: tgWijzNl,
+    migraties: tgMigraties,
+    drieFactoren: tgDrieFactoren,
+  })).catch(() => undefined);
   return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat, ...(hervatVan ? { hervat: true, hervatVan: hervatVan.id } : {}) };
 }
 /**
@@ -1040,6 +1069,15 @@ export async function goedkeuren(eigenaar: Eigenaar, input: { id?: unknown; uitd
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_goedgekeurd', 'success', { voorstel: String(v.id), versie: String(v.versie), sha256: String(v.sha256), passkey: r.vingerafdruk.slice(0, 16), voorbereider: String(v.voorbereider_label), ...(omvatVersies.length ? { omvatVersies } : {}), ...(risicoVraag ? { rodeVlaggenBevestigd: (v.voorcontrole?.controles?.find((c: { id: string }) => c.id === 'risico')?.details?.length ?? 0) } : {}) });
   await passkeyGebruikVoorVingerafdruk(eigenaar.id, r.vingerafdruk, 'uitrol-goedkeuren', 'admin');
   await import('./uitrol-stroom').then((m) => m.stroomVastleggenVanVoorstel(String(v.id), 'goedgekeurd', eigenaar.id)).catch(() => undefined);
+  void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+    soort: 'goedgekeurd',
+    eigenaarId: eigenaar.id,
+    versie: String(v.versie),
+    door: eigenaar.email || eigenaar.id,
+    voorbereider: String(v.voorbereider_label || ''),
+    commit: String(v.bron_commit || ''),
+    omvatVersies,
+  })).catch(() => undefined);
   return { id: String(v.id), versie: String(v.versie), status: 'goedgekeurd', ...(omvatVersies.length ? { omvatVersies } : {}) };
 }
 
@@ -1085,6 +1123,15 @@ export async function afwijzen(eigenaar: Eigenaar, id: unknown, redenRuw: unknow
     .catch(() => ({ stand: 'fout' as const, code: 'GITHUB_ONBEKEND' }));
   await sys().query(`UPDATE app.uitrol_voorstellen SET uitkomst = uitkomst || jsonb_build_object('github', $2::jsonb) WHERE id = $1`, [String(id), JSON.stringify(github)]).catch(() => undefined);
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_afwijzing_github', github.stand === 'ok' ? 'success' : 'failure', { voorstel: String(id), versie, ...github });
+  void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+    soort: 'afgewezen',
+    eigenaarId: eigenaar.id,
+    versie,
+    door: wieTekst,
+    voorbereider: tekst(v.voorbereider_label, 80),
+    commit: String(v.bron_commit || ''),
+    reden,
+  })).catch(() => undefined);
   return { id: String(id), status: 'afgewezen', reden, door, github };
 }
 
@@ -1132,6 +1179,14 @@ export async function stoppen(eigenaar: Eigenaar, input: { id?: unknown; versie?
   }
   await wachtMeldingSluiten(versie);
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_stop_aangevraagd', 'success', { voorstel: String(v.id), versie, modus, pct, reden: tekst(reden, 200), run: run?.id || '' });
+  void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+    soort: 'gestopt',
+    eigenaarId: eigenaar.id,
+    versie,
+    door: tekst(door, 120),
+    code: modus,
+    reden: tekst(reden, 300),
+  })).catch(() => undefined);
   return { id: String(v.id), versie, modus, pct, run: run?.id || '' };
 }
 /** stop.json dat niemand meer leest (root negeert na 1 u sowieso; de versie wacht niet meer) opruimen, zodat het nooit blijft slingeren. */
@@ -1530,7 +1585,19 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     // UPD-011: реєстр змін випусків, пофайлове порівняння й вибіркове відкликання конкретного оновлення без втрати пізніших змін.
     'POST /api/owner/uitrol/releases': [eigenaar({}, async (ctx) => releasesRegisterLijst(Number(body(ctx.body).limiet) || 50))],
     'POST /api/owner/uitrol/releases/vergelijk': [eigenaar({}, async (ctx) => releaseVergelijkEnPlan(String(body(ctx.body).versie || ''), String(body(ctx.body).huidigeVersie || '') || undefined))],
-    'POST /api/owner/uitrol/releases/selectief-aanvragen': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => releaseSelectiefAanvragen(wie(auth), body(ctx.body)))],
+    'POST /api/owner/uitrol/releases/selectief-aanvragen': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => {
+      const invoer = body(ctx.body);
+      const uit = await releaseSelectiefAanvragen(wie(auth), invoer);
+      void import('./uitrol-telegram').then((m) => m.stuurTelegramUitrolGebeurtenis({
+        soort: 'teruggedraaid',
+        eigenaarId: auth.user.id,
+        versie: String(invoer.versie || ''),
+        methode: 'selectief',
+        door: auth.user.email || auth.user.id,
+        reden: tekst(invoer.reden, 300),
+      })).catch(() => undefined);
+      return uit;
+    })],
     // Passkeys (registreren, «Може схвалювати оновлення сервера», intrekken): backend/toegangssleutels.ts → Instellingen → «Способи входу».
     // Voorbereiden met een gewone sessie (account-grant). Agents gebruiken de MCP-hulpmiddelen hierboven.
     'POST /api/uitrol/voorstel/begin': [voorbereider(voorstelBegin)],

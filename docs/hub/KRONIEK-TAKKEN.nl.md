@@ -7025,3 +7025,28 @@ Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie
 | [`integratie`](https://github.com/Tarasevych/hub/tree/integratie) <!-- b:integratie@b6b963646a27946288036c246f06c953697dcfed --> | [`b6b9636`](https://github.com/Tarasevych/hub/commit/b6b963646a27946288036c246f06c953697dcfed) 2026-11-20 | [`b6b9636`](https://github.com/Tarasevych/hub/commit/b6b963646a27946288036c246f06c953697dcfed) | ja | nee | [#31](https://github.com/Tarasevych/hub/pull/31) → `voornaamst` (samengevoegd 2026-11-06)<br>[#64](https://github.com/Tarasevych/hub/pull/64) → `feature/mailscan-002-uitgave-20261110-120000` (samengevoegd 2026-11-10) |
 
 > Aanvullingslogboek: 2026-11-20 — +1 / +1 / Δ
+
+## Momentopname 2026-11-20 · live versie `20261120-003537` · commit [`9e610a4`](https://github.com/Tarasevych/hub/commit/9e610a43fab5e10bbf4ff0b379d325896b7487dd) · takken 201
+
+### Taken op startdatum
+
+#### <a id="t-upd-012"></a>UPD-012 · 2026-11-20 · agent gemini <!-- k:UPD-012@geen -->
+
+UPD-012: prestatie-optimalisatie en gebruikservaring (UX-audit, adaptief netwerk, schermprofielen, eerlijke voortgangsbalk, klikprioriteit, mail-cache en IndexedDB-uploadherstel), bevestigingsalternatieven, volledige Telegram-uitrolcyclus, veilige vertaalintegraties en verdeelde versleutelde opslag
+
+- **Tak:** [`feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000`](https://github.com/Tarasevych/hub/tree/feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000) · tak niet op GitHub (verwijderd of niet gepubliceerd) · status in record: `in_progress`
+- **← Voorganger:** basis [`ee79492`](https://github.com/Tarasevych/hub/commit/ee7949266649) · versie `20261120-084148` · vorige taak: [UPD-011](#t-upd-011) (bevat haar top)
+- **→ Opvolger:** volgende taken: geen
+
+### Opvolgingsschema
+
+```mermaid
+flowchart LR
+  INT[(integratie)]
+  LIVE((live))
+  UPD_012["UPD-012"]
+  UPD_011 --> UPD_012
+  INT --> LIVE
+```
+
+> Aanvullingslogboek: 2026-11-20 — +1 / +0

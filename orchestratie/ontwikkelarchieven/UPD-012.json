@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "taakId": "UPD-012",
+  "datum": "2026-11-20",
+  "taal": "uk",
+  "titel": "UPD-012 · Швидкодія й адаптивна мережа, 60 профілів екранів, аудит пошти й інтерфейсу, відновлення архіву, альтернативи підтверджень, повний цикл Telegram, безпечний переклад (0305) і розподілене зберігання Шаміра",
+  "opdracht": "Кумулятивно поверх UPD-011 (20261120-084148 @ ee79492666494be152bb84c7b0e899935f1435cb) та чинної версії на сервері UPD-010 (20261120-003537 @ 9e610a43fab5e10bbf4ff0b379d325896b7487dd, злито в integratie b6b963646a27946288036c246f06c953697dcfed) виконати 6 напрямів доручення власника від 20.11.2026: 1) швидкодія, розумне адаптивне завантаження під можливості мережі клієнта, база 60 профілів екранів, пріоритет кліку над фоновим підвантаженням і чесна верхня смуга стану запитів; 2) усунення вад пошти й аудиту клієнтського досвіду (прибрано білу смугу вгорі листа й наїзд кнопок на вузьких екранах, 60-секундне проміжне збереження списку листів, сенсорні зони від 44 px, єдина шкала заголовків, скелетні заповнювачі, індикація зайнятості кнопок); 3) надійне відновлення обраного архіву .tar.gz у локальному сховищі оглядача IndexedDB після переходу в Telegram і вивантаження вкладки пам’яттю; 4) показ усіх здійсненних альтернативних способів підтвердження без послаблення вимог безпеки; 5) повний цикл повідомлень Telegram-бота випусків (публікація, перебіг, успіх, збій із причинами, відкат, вбудовані кнопки) і захищений обіг ключів із автоприховуванням і очищенням буфера обміну; 6) безпечні інтеграції служб перекладу (Google Cloud Translation, DeepL, LibreTranslate, власний захищений вузол, 4 режими приватності, міграція 0305) та криптографічне ядро розподіленого зашифрованого зберігання Шаміра k-з-n із двомовною документацією та трьома досьє в пам’яті проєкту.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-012-prestatie-ux-tg-vertaal-20261120-090000",
+    "basisCommit": "ee79492666494be152bb84c7b0e899935f1435cb",
+    "basisVersie": "20261120-084148",
+    "geinstalleerdeBasis": "9e610a43fab5e10bbf4ff0b379d325896b7487dd",
+    "geinstalleerdeVersie": "20261120-003537",
+    "integratieBasis": "b6b963646a27946288036c246f06c953697dcfed",
+    "regelsVersie": "1.4.18",
+    "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
+    "samengevoegd": [
+      {
+        "taak": "UPD-010 (запит на злиття № 179)",
+        "commit": "b6b963646a27946288036c246f06c953697dcfed",
+        "reden": "Встановлено на сервері як 20261120-003537 та злито в integratie (--no-ff)."
+      },
+      {
+        "taak": "UPD-011 (запит на злиття № 180, випуск 20261120-084148)",
+        "commit": "ee79492666494be152bb84c7b0e899935f1435cb",
+        "reden": "Кумулятивна основа гілки UPD-012: усі можливості UPD-011 (картки Telegram із фото ініціатора, 1-екранні вікна, персональні ключі 3F, вибіркове відкликання, правила 1.4.18) збережено повністю."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий напрям об’єднаної панелі сповіщень; очікує на продовження у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "b6b963646a27946288036c246f06c953697dcfed",
+    "b6da895315dc10091fe252ea1d1f31e64ffcdfdb",
+    "a7f61b3db9a8b8c04d013d2e848d7e90cc48c014",
+    "91c6d1824f85e395ec1276e72d217f6271253bff",
+    "ee79492666494be152bb84c7b0e899935f1435cb",
+    "6f7cc69ee65c836c9d447d695864117c4a6a561c"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "1) Реєстрація завдання UPD-012 від кумулятивної основи UPD-011 (ee79492666494be152bb84c7b0e899935f1435cb) та першопричинний аудит повільності на смартфоні, поштових стилів і втрати архіву .tar.gz.",
+      "resultaat": "Підтверджено причини: агресивне фонове прогрівання на сенсорних пристроях і важка анімація тла, від’ємний верхній відступ у стилях пошти й жорстке зміщення правої панелі на мобільному, зберігання обраного .tar.gz лише в оперативній пам’яті вкладки та стирання сигналу на pagehide."
+    },
+    {
+      "stap": "2) Швидкодія, адаптивне завантаження, 60 профілів екранів, фокус кліку й чесна верхня смуга стану: створено shared/scherm-profielen.ts та src/platform/adaptief-laden.ts; оновлено src/navigatie-snel.ts, src/platform/client.ts, src/CanoniekOmlijsting.tsx, src/zichtbaar-voorladen.ts, src/achtergrond/LevendeAchtergrond.tsx.",
+      "resultaat": "Додано 3 адаптивні режими (ощадний/звичайний/швидкий), 60 профілів пристроїв, паузу фонових завдань на час натискання користувача та чесний відлік верхньої смуги #tsv-voortgang за фактичною кількістю активних запитів. Пройдено maquette-mobiel-prestatie (19/19), perf-001 (41/41), levende-achtergrond (42/42), veilig-002 (14/14)."
+    },
+    {
+      "stap": "3) Надійне відновлення архіву .tar.gz та виправлення пошти й аудиту клієнтського досвіду: створено src/uitrol/upload-herstel-db.ts; оновлено src/uitrol/Upload.tsx, src/platform/uitrol-achtergrond-beheer.ts, src/google-mail-werkruimte.css, src/mail-mobiel.css, src/mail/mail-lezer-compact-kop.css, src/GoogleMailWerkruimte.tsx, src/canoniek-omlijsting.css, src/mobiel-ux.css.",
+      "resultaat": "Обраний .tar.gz зберігається в IndexedDB (до 300 МБ, до 6 годин) і відновлюється після повернення з Telegram; прибрано білу смугу вгорі листа й наїзд кнопок на смартфоні; додано 60-секундне проміжне збереження списку листів, сенсорні зони від 44 px, чітку шкалу H1 > H2, скелетні заповнювачі та стан aria-busy. Пройдено ontwerp-fundament (40/40), mailmob-001 (22/22), mail-beeld-maten (51/51), plaatsing (68/68), mobiel-geometrie (56/56)."
+    },
+    {
+      "stap": "4) Альтернативні методи підтвердження, повний цикл Telegram-бота випусків і захищений обіг ключів: оновлено backend/toegangslaag.ts, backend/apparaat-bevestiging/kern.ts, src/telegram-aanmelden/Bevestigen.tsx, src/platform/bevestig-toegang.tsx, backend/uitrol-telegram.ts, backend/uitrol-goedkeuring.ts, backend/uitrol-runs.ts, src/uitrol/TelegramArchief.tsx.",
+      "resultaat": "Усі здійсненні альтернативні набори підтвердження доступні без послаблення правил безпеки; Telegram-бот сповіщає про 8 етапів випуску (публікація, перебіг, успіх, збій із причиною, відкат) та підтримує вбудовані кнопки callback_query і команду /laatste; ключі в архіві Telegram автоприховуються через 30 с, буфер обміну очищається через 45 с, додано захист від читання агентами ШІ. Пройдено telegram-aanmelden (65/65), bevestig-toegang-opmaak (19/19), stap-op-omschrijving (20/20), apparaat-bevestiging (52/52)."
+    },
+    {
+      "stap": "5) Безпечні інтеграції перекладу (міграція 0305), криптографічне ядро Шаміра k-з-n, двомовна документація, досьє пам’яті, пошуковий каталог, хроніка та регресійний тест: створено backend/vertaal-adapters.ts, migrations/0305_vertaal_integraties_privacy.sql, shared/verdeelde-opslag.ts, docs/beveiliging/*, docs/integraties/*, orchestratie/onderwerpen/*.json, tests/eenheid/upd-012-prestatie-ux-tg-vertaal-20261120.test.ts, .github/workflows/upd-012-uitgave.yml.",
+      "resultaat": "Додано Google Cloud Translation, DeepL, LibreTranslate та власний захищений вузол із 4 режимами приватності й знеособленням перед зовнішнім перекладом; збережено контракт INTEGRATIES (168 записів); створено ядро поділу та відновлення секрету Шаміра k-з-n над GF(256) із перевіркою географічного й платформного рознесення; пройдено всі модульні тести, orch controleer, typecheck, повне складання npm run build (із CRX3 0.9.7), orch-kern (78/78), orch-uitrol-basis (15/15), upd-012 (6/6), перевірку мовного закону (0 порушень)."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Зберегти масив INTEGRATIES у shared/integraties-catalogus.ts на рівно 168 записах, а нові інтеграції перекладу оформити через VERTAAL_INTEGRATIES та VERTAAL_REGISTER.",
+      "reden": "Забезпечує повну зворотну сумісність наявного контракту каталогу інтеграцій (integraties-catalogus-v2) без руйнівних змін."
+    },
+    {
+      "besluit": "Зберігати обраний файл оновлення .tar.gz у локальному сховищі IndexedDB (до 300 МБ, строк 6 годин) із безпечною обробкою QuotaExceededError замість розширення localStorage.",
+      "reden": "localStorage обмежене ~5 МБ і не вміщує архів випуску, тоді як IndexedDB надійно зберігає двійковий файл під час вивантаження вкладки пам’яттю смартфона після переходу в Telegram."
+    },
+    {
+      "besluit": "Спроєктувати міграцію 0305_vertaal_integraties_privacy.sql суворо зворотно сумісною без жодних колонок аудиту *_door і з розширенням CHECK-обмеження для нових видів служб перекладу.",
+      "reden": "Гарантує безпроблемне застосування на PostgreSQL 18.6, проходження migraties-terugdraaibaar та безпечний відкат на попередній випуск."
+    },
+    {
+      "besluit": "Зафіксувати архітектуру розподіленого зашифрованого зберігання Шаміра k-з-n, інтеграції перекладу та принципи швидкодії в трьох постійних досьє пам’яті orchestratie/onderwerpen/*.json.",
+      "reden": "Кожен наступний ШІ-агент бачитиме повний задум і криптографічний фундамент через orch begin, що унеможливлює втрату функціональності чи знань між сеансами."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/scherm-profielen.ts, src/platform/adaptief-laden.ts",
+      "omschrijving": "База 60 профілів екранів пристроїв і модуль адаптивного завантаження (ощадний/звичайний/швидкий), пріоритету кліку та обліку активних мережевих запитів."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/navigatie-snel.ts, src/platform/client.ts, src/CanoniekOmlijsting.tsx, src/zichtbaar-voorladen.ts, src/achtergrond/LevendeAchtergrond.tsx",
+      "omschrijving": "Чесна верхня смуга завантаження #tsv-voortgang за реальними запитами, пауза фонового прогрівання на час кліку та в ощадному режимі, зупинка важкої анімації тла на слабких мережах."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/uitrol/upload-herstel-db.ts",
+      "omschrijving": "Сховище відновлення обраного архіву .tar.gz у IndexedDB (до 300 МБ, 6 годин) після повернення з Telegram."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/uitrol/Upload.tsx, src/platform/uitrol-achtergrond-beheer.ts, src/google-mail-werkruimte.css, src/mail-mobiel.css, src/mail/mail-lezer-compact-kop.css, src/GoogleMailWerkruimte.tsx, src/canoniek-omlijsting.css, src/mobiel-ux.css",
+      "omschrijving": "Відновлення архіву випуску, усунення білої смуги й наїзду кнопок у пошті, 60-секундне проміжне збереження списку листів, сенсорні зони від 44 px, шкала заголовків, скелетні заповнювачі та aria-busy."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "backend/toegangslaag.ts, backend/apparaat-bevestiging/kern.ts, src/telegram-aanmelden/Bevestigen.tsx, src/platform/bevestig-toegang.tsx, backend/uitrol-telegram.ts, backend/uitrol-goedkeuring.ts, backend/uitrol-runs.ts, src/uitrol/TelegramArchief.tsx",
+      "omschrijving": "Здійсненні альтернативні способи підтвердження, повний цикл повідомлень Telegram-бота випусків (8 подій і вбудовані кнопки) та захищене відображення ключів із автоприховуванням і очищенням буфера обміну."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "backend/vertaal-adapters.ts, migrations/0305_vertaal_integraties_privacy.sql, shared/verdeelde-opslag.ts",
+      "omschrijving": "Адаптери Google Cloud Translation, DeepL, LibreTranslate та власного захищеного вузла зі знеособленням, зворотно сумісна міграція 0305 і криптографічне ядро Шаміра k-з-n над GF(256)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/ai-dienst-motor.ts, backend/ai-dienst-motoren.ts, backend/ai-vertaling-routes.ts, shared/ai-vertaling.ts, src/agenten/DienstMotoren.tsx, shared/integraties-catalogus.ts, shared/integraties-register.ts, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Підтримка 4 режимів приватності перекладу, реєстр служб перекладу (зі збереженням 168 наявних інтеграцій) та оновлення пошукового каталогу (1832 елементи)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md, docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md, docs/integraties/ІНТЕГРАЦІЯ-ПЕРЕКЛАДУ.uk.md, docs/integraties/VERTAAL-INTEGRATIES.nl.md, orchestratie/onderwerpen/verdeelde-versleutelde-opslag.json, orchestratie/onderwerpen/vertaling-en-integraties.json, orchestratie/onderwerpen/prestatie-en-gebruikservaring.json, tests/eenheid/upd-012-prestatie-ux-tg-vertaal-20261120.test.ts, .github/workflows/upd-012-uitgave.yml, orchestratie/taken/UPD-012.json, orchestratie/bijdragen/UPD-012/*, orchestratie/ontwikkelarchieven/UPD-012.json",
+      "omschrijving": "Двомовна документація, 3 досьє пам’яті проєкту, регресійний тест UPD-012 (6/6), облік авторства, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-012."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-011-uitgave.yml",
+      "uk": "Успадкований кумулятивний сценарій випуску UPD-011 (включений у гілку поверх UPD-010): без pull_request_target і secrets.*, усі дії закріплено 40-символьними відбитками, persist-credentials: false; не виконує автоматичного встановлення на сервер.",
+      "nl": "Overgenomen cumulatieve uitgavewerkstroom van UPD-011 (opgenomen bovenop UPD-010): zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; voert geen automatische installatie uit."
+    },
+    {
+      "pad": ".github/workflows/upd-012-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-012: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує повний набір випробувань (включно з upd-012), orch behoud, подвійний прогін міграцій PostgreSQL 16 (включно зі зворотно сумісними 0304 і 0305) трьома ролями, перевірку TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-012: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait alle testbestanden (incl. upd-012), orch behoud, dubbele migraties op PostgreSQL 16 (incl. 0304 en 0305) met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання (включно з ізоляцією 5 технічних збірок проти 898 відкритих, макетом і підписаним CRX3 0.9.7) пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "Модульні та статичні перевірки: upd-012 (6/6), upd-011 (5/5), upd-010 (16/16), orch-kern (78/78), orch-uitrol-basis (15/15), orch controleer, vaardigheden/valideer.mjs, zoek-ui-catalogus --controle (1832), maquette-mobiel-prestatie (19/19), perf-001 (41/41), levende-achtergrond (42/42), veilig-002 (14/14), ontwerp-fundament (40/40), mailmob-001 (22/22), mail-beeld-maten (51/51), plaatsing (68/68), mobiel-geometrie (56/56), telegram-aanmelden (65/65), bevestig-toegang-opmaak (19/19), stap-op-omschrijving (20/20), apparaat-bevestiging (52/52), ai-vertaling, integraties-catalogus-v2 (168/168), account-wissen (30/30), migraties-terugdraaibaar (21/21), mailai-003 (58/58), vertaalpaneel (33/33), historie-kroniek (18/18), werkstromen-veilig (9/9), bijdragen-001 (54/54), uitrol-codes (17/17), uitrol-risico (69/69), trace-001 (20/20)",
+      "resultaat": "Усі перевірки пройшли на 100% без жодної помилки (код 0). Перевірка мовного закону по 48 змінених і нових файлах: 0 порушень."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-012-uitgave.yml",
+      "resultaat": "Звіряє кумулятивну основу поверх UPD-010 / UPD-011, виконує повний набір випробувань, подвійний прогін міграцій PostgreSQL 16 (включно з 0304 та 0305) трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Для розподіленого зашифрованого зберігання Шаміра k-з-n у цьому випуску додано криптографічне ядро, перевірку рознесення по країнах і платформах, двомовну документацію та постійне досьє пам’яті; зовнішні вузли зберігання підключатимуться окремим етапом після вибору сховищ власником.",
+    "Критичні політики в розділі kritiek не змінювалися."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі доступу чи вміст листів і повідомлень до журналу не потрапляли."
+  }
+}

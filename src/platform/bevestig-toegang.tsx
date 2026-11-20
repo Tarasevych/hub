@@ -34,7 +34,7 @@ const CAT_ICOON: Record<BevestigCategorieId, typeof ShieldCheck> = {
 type Lang = 'uk' | 'nl';
 type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean; apparaat?: boolean; telegram?: boolean };
 type Kanalen = { apparaten: number; reden: string; eis: string[][]; eisTekst: { uk: string; nl: string } } | null;
-type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number; kanalen?: Kanalen; telegramSterk?: boolean };
+type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number; kanalen?: Kanalen; telegramSterk?: boolean; apparaatSterk?: boolean };
 const ALLE: StapOpMethode[] = ['passkey', 'totp', 'apparaat', 'telegram', 'herstelcode', 'codewoord', 'google'];
 
 const T = {
@@ -57,6 +57,8 @@ const T = {
   googleUitlegHerhalen: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди — тоді повторіть дію: протягом 5 хвилин нового підтвердження вона не вимагатиме.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug — voer de actie dan opnieuw uit: binnen 5 minuten vraagt ze geen nieuwe bevestiging.'],
   alleenGoogle: ['У вас ще немає passkey чи застосунку-автентифікатора, тому підтвердьте доступ повторним входом у Google.', 'Je hebt nog geen passkey of authenticator-app. Bevestig daarom je toegang door opnieuw in te loggen bij Google.'],
   problemen: ['Виникли проблеми?', 'Problemen?'],
+  geenAltKop: ['Чому немає інших способів?', 'Waarom zijn er geen andere methoden?'],
+  naarMethoden: ['Налаштувати способи входу (/aanmeldmethoden)', 'Aanmeldmethoden instellen (/aanmeldmethoden)'],
   altPasskey: ['Використати passkey', 'Passkey gebruiken'],
   altTotp: ['Використати код із застосунку-автентифікатора', 'Code uit de authenticator-app gebruiken'],
   altHerstel: ['Використати код відновлення', 'Herstelcode gebruiken'],
@@ -77,10 +79,10 @@ const T = {
   details: ['Подробиці для перевірки', 'Details om te controleren'],
   technischAdres: ['Технічна адреса запиту', 'Technisch adres van het verzoek'],
   onthoudNietDirect: ['Запам’ятати тут не пропонуємо: запит виник не від вашого кліку в цій вкладці (фоновий запит, інша вкладка, повернення після Google або дія розширення браузера). Якщо ви щойно нічого не натискали — скасуйте.', 'Onthouden bieden we hier niet aan: het verzoek kwam niet uit uw klik in dit tabblad (achtergrondverzoek, ander tabblad, terugkeer van Google of een actie van de browserextensie). Klikte u net nergens op, annuleer dan.'],
-  geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або passkey на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of passkey in op de pagina «Aanmeldmethoden».'],
+  geenMethode: ['Для цієї дії немає доступного способу підтвердження. Налаштуйте застосунок-автентифікатор або ключ доступу на сторінці «Способи входу».', 'Voor deze actie is geen bevestigingsmethode beschikbaar. Stel een authenticator-app of toegangssleutel in op de pagina «Aanmeldmethoden».'],
   doorsturen: ['Перехід до Google…', 'Doorsturen naar Google…'],
-  sterk: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора або код відновлення. Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, code uit de authenticator-app of een herstelcode. Opnieuw inloggen bij Google is niet genoeg.'],
-  sterkTelegram: ['Для цієї дії потрібен надійніший спосіб: passkey, код із застосунку-автентифікатора, код відновлення або Telegram (ви самі дозволили Telegram для таких дій). Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: passkey, app-code, herstelcode of Telegram (u stond Telegram zelf toe voor zulke handelingen). Opnieuw inloggen bij Google is niet genoeg.'],
+  sterk: ['Для цієї дії потрібен надійніший спосіб: ключ доступу, код із застосунку-автентифікатора або код відновлення. Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: toegangssleutel, code uit de authenticator-app of een herstelcode. Opnieuw inloggen bij Google is niet genoeg.'],
+  sterkTelegram: ['Для цієї дії потрібен надійніший спосіб: ключ доступу, код із застосунку-автентифікатора, код відновлення або Telegram (ви самі дозволили Telegram для таких дій). Повторного входу через Google недостатньо.', 'Voor deze actie is een sterkere manier nodig: toegangssleutel, app-code, herstelcode of Telegram (u stond Telegram zelf toe voor zulke handelingen). Opnieuw inloggen bij Google is niet genoeg.'],
 } as const;
 const FOUT: Record<string, readonly [string, string]> = {
   NotAllowedError: ['Підтвердження passkey скасовано або час вийшов. Спробуйте ще раз або виберіть інший спосіб.', 'Passkey-bevestiging geannuleerd of de tijd is verstreken. Probeer opnieuw of kies een andere manier.'],
@@ -137,6 +139,47 @@ export function primaireMethode(beschikbaar: StapOpMethode[]): StapOpMethode | n
 }
 export function beschikbareMethoden(m: Methoden, toegestaan: StapOpMethode[], webauthn: boolean): StapOpMethode[] {
   return ALLE.filter((x) => toegestaan.includes(x) && !!m[x] && (x !== 'passkey' || webauthn));
+}
+
+/** Коротке чесне пояснення двома мовами, чому зараз немає альтернативних способів підтвердження. */
+function geenAlternatievenUitleg(lang: Lang, info: Info, opties: BevestigOpties, toegestaan: StapOpMethode[]): string {
+  const nl = lang === 'nl';
+  if (toegestaan.length === 1 && toegestaan[0] === 'passkey') {
+    return nl
+      ? 'Deze handeling vereist uitsluitend een toegangssleutel. Andere methoden zijn uitgeschakeld om de beveiliging niet te verzwakken.'
+      : 'Ця дія вимагає саме ключ доступу. Інші способи вимкнено, щоб не послаблювати захист.';
+  }
+  const redenen: string[] = [];
+  if (opties.sterk) {
+    redenen.push(nl ? 'opnieuw inloggen bij Google volstaat niet voor deze beveiligde actie' : 'повторний вхід через Google недостатній для цієї захищеної дії');
+  }
+  if (toegestaan.includes('totp') && !info.methoden.totp) {
+    redenen.push(nl ? 'geen authenticator-app ingesteld' : 'не налаштовано застосунок-автентифікатор');
+  }
+  if (toegestaan.includes('apparaat') && !info.methoden.apparaat) {
+    if (info.kanalen?.reden === 'GEEN_ANDER_APPARAAT') {
+      redenen.push(nl ? 'geen ander actief apparaat online' : 'немає іншого активного пристрою');
+    } else if (info.kanalen?.reden === 'METHODE_PAUZE') {
+      redenen.push(nl ? 'bevestigen vanaf een ander apparaat staat op pauze' : 'підтвердження з іншого пристрою тимчасово на паузі');
+    } else if (info.kanalen?.reden === 'METHODE_UIT' || info.kanalen?.reden === 'UITGESCHAKELD') {
+      redenen.push(nl ? 'ander apparaat staat uit' : 'підтвердження з іншого пристрою вимкнено');
+    } else {
+      redenen.push(nl ? 'geen ander actief apparaat beschikbaar' : 'немає іншого активного пристрою');
+    }
+  }
+  if (toegestaan.includes('passkey') && !info.methoden.passkey) {
+    redenen.push(nl ? 'geen toegangssleutel toegevoegd' : 'не додано ключ доступу');
+  }
+  if (toegestaan.includes('herstelcode') && !info.methoden.herstelcode) {
+    redenen.push(nl ? 'geen herstelcodes actief' : 'немає активних кодів відновлення');
+  }
+  if (redenen.length === 0) {
+    return nl
+      ? 'Er zijn op dit moment geen andere bevestigingsmethoden actief voor dit account.'
+      : 'Наразі для цього облікового запису немає інших активних способів підтвердження.';
+  }
+  const lijst = redenen.slice(0, 3).join('; ');
+  return nl ? `Andere methoden zijn nu niet beschikbaar: ${lijst}.` : `Інші способи зараз недоступні: ${lijst}.`;
 }
 
 function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpUitkomst) => void }) {
@@ -325,7 +368,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
         </>}
 
         {(weergave === 'apparaat' || weergave === 'telegram') && <Suspense fallback={<p className='bevestig-toegang-uitleg'>{t('laden')}</p>}>
-          <StapOpKanaal kanaal={weergave} ctx={{ service: opties.service, tabContext: opties.tabContext }} lang={lang} matrixActie='stap-op' label={opties.actie} naPoort apparaten={info?.kanalen?.apparaten} onKlaar={kanaalKlaar} />
+          <StapOpKanaal kanaal={weergave} ctx={{ service: opties.service, tabContext: opties.tabContext }} lang={lang} matrixActie='stap-op' label={opties.actie} gevoelig={!!opties.sterk} naPoort apparaten={info?.kanalen?.apparaten} onKlaar={kanaalKlaar} />
         </Suspense>}
 
         {weergave === 'codewoord' && <form onSubmit={(e) => { e.preventDefault(); void metCodewoord(); }}>
@@ -347,10 +390,18 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
           : <details className='bevestig-toegang-extra'><summary>{lang === 'nl' ? 'Waarom kan deze actie niet onthouden worden?' : 'Чому цю дію не можна запам’ятати?'}</summary><p className='bevestig-toegang-uitleg' data-onthoud='nooit'>{nietDirect && info.onthoudMag && !opties.sterk ? t('onthoudNietDirect') : weergave === 'codewoord' && info.onthoudMag ? t('onthoudCodewoord') : t('onthoudNooit')}</p></details>)}
       </div>
 
-      {alternatieven.length > 0 && <div className='bevestig-toegang-alt'>
-        <h3>{t('problemen')}</h3>
-        <ul>{alternatieven.map((m) => { const [k, Icoon] = ALT[m]; return <li key={m}><button type='button' disabled={!!bezig} onClick={() => setWeergave(m)}><Icoon />{t(k)}</button></li>; })}</ul>
-      </div>}
+      {info && (alternatieven.length > 0 ? (
+        <div className='bevestig-toegang-alt'>
+          <h3>{t('problemen')}</h3>
+          <ul>{alternatieven.map((m) => { const [k, Icoon] = ALT[m]; return <li key={m}><button type='button' disabled={!!bezig} onClick={() => setWeergave(m)}><Icoon />{t(k)}</button></li>; })}</ul>
+        </div>
+      ) : (
+        <div className='bevestig-toegang-alt' data-geen-alternatieven='1'>
+          <h3>{t('geenAltKop')}</h3>
+          <p className='bevestig-toegang-uitleg'>{geenAlternatievenUitleg(lang, info, opties, toegestaan)}</p>
+          <p className='bevestig-toegang-uitleg'><a href='/aanmeldmethoden'>{t('naarMethoden')}</a></p>
+        </div>
+      ))}
 
       <details className='bevestig-toegang-extra'><summary>{lang === 'nl' ? 'Tip over geldigheid (5 min)' : 'Порада про дію підтвердження (5 хв)'}</summary><p className='bevestig-toegang-tip'>{t('tip')}</p></details>
       <div className='bevestig-toegang-voet'><button type='button' className='bevestig-toegang-annuleer' disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}>{t('annuleren')}</button></div>

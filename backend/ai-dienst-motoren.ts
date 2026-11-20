@@ -13,10 +13,11 @@ import { ownerVaultBewarenIntern, ownerVaultVerwijderenIntern, readOwnerVaultPla
 import { meld } from './melder';
 import { AI_AANBIEDER_BIJ_ID, type AiAanbiederId } from '../shared/ai-aanbieders';
 import {
-  DIENST_ID_RE, DIENST_MAX_MOTOREN, akkoordSleutel, dienstKlaar, dienstRisicos, dienstSoortNaam, gebruikSleutelDienst,
-  gedeeldeSleutelNaam, normaliseerDienstInvoer,
+  DIENST_ID_RE, DIENST_MAX_MOTOREN, akkoordSleutel, dienstKlaar, dienstMagSleutel, dienstRisicos, dienstSoortNaam,
+  gebruikSleutelDienst, gedeeldeSleutelNaam, isVertaalPrivacyModus, normaliseerDienstInvoer, standaardPrivacyModus,
   type DienstGebruik, type DienstMotor, type DienstSoort,
 } from '../shared/ai-dienst-motor';
+import { VertaalAdapterFout, vertaalDeepL, vertaalEigenKnoop, vertaalGoogleTranslate } from './vertaal-adapters';
 
 /** Рядок бази: рушій разом із власником ключа (його сховище) — назовні власник ключа не віддається. */
 export type DienstRij = DienstMotor & { eigenaarUserId: string };
@@ -36,6 +37,8 @@ export type DienstOpslag = {
 const q = (sql: string, params: unknown[] = []) => getPool('systeem').query(sql, params);
 const isOntbrekend = (err: unknown): boolean => (err as { code?: string })?.code === '42P01'
   || (err instanceof Error && /relation "app\.ai_(?:dienst_motoren|motor_gebruik)" does not exist/.test(err.message));
+const isOntbrekendePrivacyKolom = (err: unknown): boolean => (err as { code?: string })?.code === '42703'
+  && err instanceof Error && /privacy_modus/.test(err.message);
 
 /** Лічильник у пам'яті: запасний шлях, доки міграцію не застосовано (і для тестів без бази). */
 export function geheugenOpslag(): DienstOpslag {
@@ -75,31 +78,62 @@ export function geheugenOpslag(): DienstOpslag {
 }
 
 const nood = geheugenOpslag();
-const rijUitDb = (r: Record<string, unknown>): DienstRij => ({
-  id: String(r.id), soort: String(r.soort) as DienstSoort, naam: String(r.naam),
-  aanbieder: r.aanbieder ? String(r.aanbieder) as AiAanbiederId : undefined,
-  url: r.url ? String(r.url) : undefined, model: r.model ? String(r.model) : undefined,
-  aan: r.aan === true, limietPerDag: Number(r.limiet_per_dag), heeftSleutel: r.heeft_sleutel === true,
-  beheerder: String(r.bijgewerkt_door || ''), bijgewerktOp: new Date(String(r.bijgewerkt_op)).getTime(), eigenaarUserId: String(r.eigenaar_user_id),
-});
+const rijUitDb = (r: Record<string, unknown>): DienstRij => {
+  const soort = String(r.soort) as DienstSoort;
+  return {
+    id: String(r.id),
+    soort,
+    naam: String(r.naam),
+    aanbieder: r.aanbieder ? String(r.aanbieder) as AiAanbiederId : undefined,
+    url: r.url ? String(r.url) : undefined,
+    model: r.model ? String(r.model) : undefined,
+    privacyModus: isVertaalPrivacyModus(r.privacy_modus) ? r.privacy_modus : standaardPrivacyModus(soort),
+    aan: r.aan === true,
+    limietPerDag: Number(r.limiet_per_dag),
+    heeftSleutel: r.heeft_sleutel === true,
+    beheerder: String(r.bijgewerkt_door || ''),
+    bijgewerktOp: new Date(String(r.bijgewerkt_op)).getTime(),
+    eigenaarUserId: String(r.eigenaar_user_id),
+  };
+};
 
 /** Сховище в PostgreSQL; експортовано лише для перевірки на справжній базі (tests/eenheid/mailai-003-db-20261116.test.ts). */
 export const pgOpslag: DienstOpslag = {
   async lijst() {
     try {
-      const { rows } = await q('SELECT id, soort, naam, aanbieder, url, model, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id FROM app.ai_dienst_motoren ORDER BY id');
+      const { rows } = await q('SELECT id, soort, naam, aanbieder, url, model, privacy_modus, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id FROM app.ai_dienst_motoren ORDER BY id');
       return (rows as Record<string, unknown>[]).map(rijUitDb);
-    } catch (err) { if (isOntbrekend(err)) return []; throw err; }
+    } catch (err) {
+      if (isOntbrekendePrivacyKolom(err)) {
+        const { rows } = await q('SELECT id, soort, naam, aanbieder, url, model, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id FROM app.ai_dienst_motoren ORDER BY id');
+        return (rows as Record<string, unknown>[]).map(rijUitDb);
+      }
+      if (isOntbrekend(err)) return [];
+      throw err;
+    }
   },
   async bewaar(rij) {
-    await q(
-      `INSERT INTO app.ai_dienst_motoren (id, soort, naam, aanbieder, url, model, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11)
-       ON CONFLICT (id) DO UPDATE SET soort=EXCLUDED.soort, naam=EXCLUDED.naam, aanbieder=EXCLUDED.aanbieder, url=EXCLUDED.url, model=EXCLUDED.model,
-         aan=EXCLUDED.aan, limiet_per_dag=EXCLUDED.limiet_per_dag, heeft_sleutel=EXCLUDED.heeft_sleutel, bijgewerkt_door=EXCLUDED.bijgewerkt_door,
-         bijgewerkt_op=now(), eigenaar_user_id=EXCLUDED.eigenaar_user_id`,
-      [rij.id, rij.soort, rij.naam, rij.aanbieder ?? null, rij.url ?? null, rij.model ?? null, rij.aan, rij.limietPerDag, rij.heeftSleutel, rij.beheerder.slice(0, 120), rij.eigenaarUserId],
-    );
+    const pm = rij.privacyModus ?? standaardPrivacyModus(rij.soort);
+    try {
+      await q(
+        `INSERT INTO app.ai_dienst_motoren (id, soort, naam, aanbieder, url, model, privacy_modus, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12)
+         ON CONFLICT (id) DO UPDATE SET soort=EXCLUDED.soort, naam=EXCLUDED.naam, aanbieder=EXCLUDED.aanbieder, url=EXCLUDED.url, model=EXCLUDED.model,
+           privacy_modus=EXCLUDED.privacy_modus, aan=EXCLUDED.aan, limiet_per_dag=EXCLUDED.limiet_per_dag, heeft_sleutel=EXCLUDED.heeft_sleutel,
+           bijgewerkt_door=EXCLUDED.bijgewerkt_door, bijgewerkt_op=now(), eigenaar_user_id=EXCLUDED.eigenaar_user_id`,
+        [rij.id, rij.soort, rij.naam, rij.aanbieder ?? null, rij.url ?? null, rij.model ?? null, pm, rij.aan, rij.limietPerDag, rij.heeftSleutel, rij.beheerder.slice(0, 120), rij.eigenaarUserId],
+      );
+    } catch (err) {
+      if (!isOntbrekendePrivacyKolom(err)) throw err;
+      await q(
+        `INSERT INTO app.ai_dienst_motoren (id, soort, naam, aanbieder, url, model, aan, limiet_per_dag, heeft_sleutel, bijgewerkt_door, bijgewerkt_op, eigenaar_user_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11)
+         ON CONFLICT (id) DO UPDATE SET soort=EXCLUDED.soort, naam=EXCLUDED.naam, aanbieder=EXCLUDED.aanbieder, url=EXCLUDED.url, model=EXCLUDED.model,
+           aan=EXCLUDED.aan, limiet_per_dag=EXCLUDED.limiet_per_dag, heeft_sleutel=EXCLUDED.heeft_sleutel, bijgewerkt_door=EXCLUDED.bijgewerkt_door,
+           bijgewerkt_op=now(), eigenaar_user_id=EXCLUDED.eigenaar_user_id`,
+        [rij.id, rij.soort, rij.naam, rij.aanbieder ?? null, rij.url ?? null, rij.model ?? null, rij.aan, rij.limietPerDag, rij.heeftSleutel, rij.beheerder.slice(0, 120), rij.eigenaarUserId],
+      );
+    }
   },
   async verwijder(id) {
     const r = await q('DELETE FROM app.ai_dienst_motoren WHERE id = $1', [id]);
@@ -173,7 +207,8 @@ export async function dienstMotor(id: string): Promise<DienstRij | null> {
 }
 /** Ключ спільного рушія: лише зі сховища власника, який його додав, і лише під назвою «gedeeld-<id>». */
 export async function dienstSleutel(rij: DienstRij): Promise<string | null> {
-  if (rij.soort !== 'aanbieder' || !rij.aanbieder || !rij.heeftSleutel) return null;
+  if (!rij.heeftSleutel || !dienstMagSleutel(rij.soort)) return null;
+  if (rij.soort === 'aanbieder' && !rij.aanbieder) return null;
   return sleutelLezer(rij.eigenaarUserId, gedeeldeSleutelNaam(rij.id));
 }
 
@@ -315,8 +350,8 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       return json(await overzicht());
     }],
 
-    // Зберегти рушій. Новий рушій завжди вимкнений; зміна того, куди йде текст (вид, постачальник, адреса, модель), вимикає його
-    // знову й скидає згоди користувачів — власник вмикає свідомо, люди погоджуються свідомо.
+    // Зберегти рушій. Новий рушій завжди вимкнений; зміна того, куди йде текст (вид, постачальник, адреса, модель, режим приватності),
+    // вимикає його знову й скидає згоди користувачів — власник вмикає свідомо, люди погоджуються свідомо.
     'POST /api/owner/ai-dienst-motoren/bewaar': [async (ctx: Ctx) => {
       const g = await eigenaar(ctx); if (g.fout) return g.fout;
       const auth = g.auth!;
@@ -328,8 +363,9 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       const oud = rijen.find((r) => r.id === n.waarde.id) || null;
       if (!oud && rijen.length >= DIENST_MAX_MOTOREN) return weiger('DIENST_TE_VEEL', `Не більше ${DIENST_MAX_MOTOREN} спільних рушіїв.`, `Niet meer dan ${DIENST_MAX_MOTOREN} gedeelde motoren.`);
       const sleutel = typeof b.sleutel === 'string' ? b.sleutel.trim() : '';
-      let heeftSleutel = oud?.heeftSleutel === true && oud.soort === n.waarde.soort && oud.aanbieder === n.waarde.aanbieder && oud.eigenaarUserId === auth.user.id;
-      if (n.waarde.soort === 'aanbieder' && sleutel) {
+      const magSleutel = dienstMagSleutel(n.waarde.soort);
+      let heeftSleutel = magSleutel && oud?.heeftSleutel === true && oud.soort === n.waarde.soort && oud.aanbieder === n.waarde.aanbieder && oud.eigenaarUserId === auth.user.id;
+      if (magSleutel && sleutel) {
         try {
           await sleutelSchrijver(auth.user.id, gedeeldeSleutelNaam(n.waarde.id), `Спільний ШІ для всіх: ${n.waarde.naam}`, sleutel);
           heeftSleutel = true;
@@ -338,18 +374,26 @@ export function aiDienstMotorenRoutes(deps: Deps) {
           return weiger('DIENST_SLEUTEL_NIET_BEWAARD', 'Ключ не вдалося зберегти у «Сховищі ключів». Рушій не змінено.', 'De sleutel kon niet in de «Sleutelkluis» worden bewaard. De motor is niet gewijzigd.', 503);
         }
       }
-      if (n.waarde.soort !== 'aanbieder') heeftSleutel = false;
+      if (!magSleutel) heeftSleutel = false;
       const nieuw: DienstRij = {
         ...n.waarde, aan: false, heeftSleutel, beheerder: beheerderNaam(auth), bijgewerktOp: Date.now(), eigenaarUserId: auth.user.id,
       };
-      // Увімкненим лишається лише рушій, у якого не змінилося, куди йде текст, і ключ не замінено.
+      // Увімкненим лишається лише рушій, у якого не змінилося, куди йде текст і режим приватності, та ключ не замінено.
       if (oud?.aan && akkoordSleutel(oud) === akkoordSleutel(nieuw) && !sleutel && dienstKlaar({ ...nieuw, aan: true })) nieuw.aan = true;
       await opslag.bewaar(nieuw);
       cache = null;
-      await deps.audit(auth.user.id, 'owner.ai.dienst_motor.bewaar', 'success', { id: nieuw.id, soort: nieuw.soort, aanbieder: nieuw.aanbieder, host: nieuw.url ? new URL(nieuw.url).hostname : undefined, sleutelVervangen: Boolean(sleutel), aan: nieuw.aan });
+      await deps.audit(auth.user.id, 'owner.ai.dienst_motor.bewaar', 'success', {
+        id: nieuw.id,
+        soort: nieuw.soort,
+        aanbieder: nieuw.aanbieder,
+        privacyModus: nieuw.privacyModus,
+        host: nieuw.url ? new URL(nieuw.url).hostname : undefined,
+        sleutelVervangen: Boolean(sleutel),
+        aan: nieuw.aan,
+      });
       if (oud?.aan && !nieuw.aan) {
         await meld(auth.user.id, 'beheer.ai_motor', `Спільний рушій «${nieuw.naam}» вимкнено після зміни / Gedeelde motor «${nieuw.naam}» uitgezet na wijziging`,
-          'Ви змінили, куди йде текст (постачальника, адресу, модель або ключ). Рушій вимкнено, а згоди користувачів скинуто: увімкніть його знову, коли перевірите. / U wijzigde waar de tekst heen gaat. De motor is uitgezet en de akkoorden zijn vervallen: zet hem weer aan na controle.',
+          'Ви змінили, куди йде текст (постачальника, адресу, модель, режим приватності або ключ). Рушій вимкнено, а згоди користувачів скинуто: увімкніть його знову, коли перевірите. / U wijzigde waar de tekst heen gaat of de privacymodus. De motor is uitgezet en de akkoorden zijn vervallen: zet hem weer aan na controle.',
           `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
       }
       return json(await overzicht());
@@ -390,6 +434,7 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       if (!rij) return weiger('DIENST_NIET_GEVONDEN', 'Такого рушія немає.', 'Deze motor bestaat niet.', 404);
       const fetchFn = deps.fetch ?? fetch;
       const begin = Date.now();
+      const privacyModus = rij.privacyModus ?? standaardPrivacyModus(rij.soort);
       let ok = false; let status = 0; let voorbeeld = '';
       if (rij.soort === 'libretranslate') {
         const r = await vertaalLibre(fetchFn, rij, [TEST_ZIN], 'uk');
@@ -397,6 +442,25 @@ export function aiDienstMotorenRoutes(deps: Deps) {
       } else if (rij.soort === 'ollama') {
         const r = await vraagOllama(fetchFn, rij, 'Respond with valid JSON only.', `Translate to Ukrainian and return JSON {"t":"..."}: ${TEST_ZIN}`, 120);
         ok = r.ok; status = r.ok ? 200 : r.status; if (r.ok) voorbeeld = r.waarde.slice(0, 200);
+      } else if (rij.soort === 'google-translate' || rij.soort === 'deepl' || rij.soort === 'eigen-vertaal-knoop') {
+        try {
+          const apiSleutel = await dienstSleutel(rij);
+          if ((rij.soort === 'google-translate' || rij.soort === 'deepl') && !apiSleutel) {
+            ok = false; status = 400;
+          } else if (rij.soort === 'google-translate') {
+            const r = await vertaalGoogleTranslate({ tekst: TEST_ZIN, bronTaal: 'nl', doelTaal: 'uk', apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn });
+            ok = Boolean(r.vertaald.trim()); status = r.status; voorbeeld = r.vertaald.slice(0, 200);
+          } else if (rij.soort === 'deepl') {
+            const r = await vertaalDeepL({ tekst: TEST_ZIN, bronTaal: 'nl', doelTaal: 'uk', apiSleutel: apiSleutel!, url: rij.url, privacyModus, fetchFn });
+            ok = Boolean(r.vertaald.trim()); status = r.status; voorbeeld = r.vertaald.slice(0, 200);
+          } else {
+            const r = await vertaalEigenKnoop({ tekst: TEST_ZIN, bronTaal: 'nl', doelTaal: 'uk', url: rij.url || '', apiSleutel: apiSleutel ?? undefined, privacyModus, fetchFn });
+            ok = Boolean(r.vertaald.trim()); status = r.status; voorbeeld = r.vertaald.slice(0, 200);
+          }
+        } catch (err) {
+          ok = false;
+          status = err instanceof VertaalAdapterFout ? err.status : 0;
+        }
       } else {
         const { testAanbiederSleutel } = await import('./ai-vertaling-routes');
         const r = await testAanbiederSleutel(rij, TEST_ZIN);

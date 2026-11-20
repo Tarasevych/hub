@@ -251,7 +251,9 @@ html body .mail-kop-pil[data-kop-soort='beelden'] svg {
 }
 
 @media (max-width: 960px) {
+  html body .google-mail-reader-backdrop .google-mail-reader > header,
   html body .google-mail-reader > header {
+    margin-top: 0;
     flex-wrap: wrap;
     row-gap: 6px;
   }
@@ -277,6 +279,55 @@ html body .mail-kop-pil[data-kop-soort='beelden'] svg {
     top: auto;
     width: auto;
     max-width: none;
+  }
+}
+
+/* UPD-012: прибрати порожній нижній запас у компактному режимі для коротких листів та білу смугу зверху */
+html body .google-mail-reader-backdrop:has(.mail-reader-kop-opties) .google-mail-reader > header {
+  margin-top: 0;
+}
+
+html body .google-mail-reader > section.mail-thread-content::after {
+  height: 0;
+}
+
+/* UPD-012: чисте перенесення смуги перекладу в шапці листа на вузьких екранах без наїзду на пілюлі зображень / «Що потрібно» */
+@media (max-width: 520px) {
+  html body .mail-reader-toolbar:not(.layout-editing) > .mail-reader-kop-opties {
+    gap: 6px;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    max-width: 100%;
+    padding: 6px 10px;
+    gap: 6px;
+    border-radius: var(--straal-m, 14px);
+    box-sizing: border-box;
+  }
+
+  html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-talen {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-keuze {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  html body .mail-kop-dropdown {
+    max-width: 100%;
+  }
+
+  html body .mail-kop-pil {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
   }
 }
 

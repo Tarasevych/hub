@@ -75,8 +75,43 @@ export type UitrolAchtergrondSnapshot = {
 const KANAAL_NAAM = 'tsv:uitrol-achtergrond';
 const OPSLAG_SLEUTEL = 'tsv:uitrol-achtergrond:v1';
 const INGEKLAPT_SLEUTEL = 'tsv:uitrol-band-ingeklapt';
+const HERSTEL_SESSIE_SLEUTEL = 'tsv:uitrol-herstel-sessie:v1';
 const GEEN_HERHALING = ['STATUS_ONGELDIG', 'NIET_GEVONDEN', 'DATA_ONGELDIG', 'TE_VEEL_DATA', 'GEEN_VOORBEREIDER_GRANT', 'STUK_TE_GROOT'];
 const WACHT = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+
+export type UitrolHerstelSessie = {
+  voorstelId: string;
+  versie: string;
+  bestandNaam: string;
+  grootte: number;
+  verzonden: number;
+  voortgang: number;
+  bezigUpload: boolean;
+  opgeslagenOp: number;
+};
+
+export function leesUitrolHerstelSessie(): UitrolHerstelSessie | null {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    const raw = sessionStorage.getItem(HERSTEL_SESSIE_SLEUTEL);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as UitrolHerstelSessie;
+    if (!parsed || typeof parsed.opgeslagenOp !== 'number') return null;
+    if (Date.now() - parsed.opgeslagenOp > 6 * 60 * 60 * 1000) {
+      sessionStorage.removeItem(HERSTEL_SESSIE_SLEUTEL);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function wisUitrolHerstelSessie(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(HERSTEL_SESSIE_SLEUTEL);
+  } catch { /* приватний режим */ }
+}
 
 function leegLokaal(): LokaleUploadStaat {
   return {
@@ -140,6 +175,7 @@ export function zetLokaalDeel(patch: Partial<LokaleUploadStaat>) {
 export function wisLokaleUpload() {
   uploadAfbreken = false;
   snapshot = { ...snapshot, lokaal: leegLokaal() };
+  wisUitrolHerstelSessie();
   publiceerLokaalSignaal(null);
   verwittig();
 }
@@ -227,6 +263,23 @@ function zorgVoorLuisteraars() {
 
   window.addEventListener('pagehide', () => {
     const l = snapshot.lokaal;
+    if (l.bestandNaam || l.voorstelId || l.bezigUpload) {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          const sessie: UitrolHerstelSessie = {
+            voorstelId: l.voorstelId,
+            versie: l.versie,
+            bestandNaam: l.bestandNaam,
+            grootte: l.grootte,
+            verzonden: l.verzonden,
+            voortgang: l.voortgang ?? 0,
+            bezigUpload: l.bezigUpload,
+            opgeslagenOp: Date.now(),
+          };
+          sessionStorage.setItem(HERSTEL_SESSIE_SLEUTEL, JSON.stringify(sessie));
+        }
+      } catch { /* приватний режим */ }
+    }
     if (!l.bezigUpload || !lopendContext) return;
     meldAfbreking(lopendContext, {
       etappe: 'uploaden',
@@ -238,7 +291,8 @@ function zorgVoorLuisteraars() {
       verstuurd: l.verzonden,
       bestand: l.bestandNaam,
     });
-    publiceerLokaalSignaal(null);
+    // UPD-012: не стираємо локальний сигнал при згортанні вкладки, щоб після повернення
+    // з Telegram чи іншої програми стан відновлення залишався доступним.
   });
 }
 
@@ -324,7 +378,7 @@ export function startUitrolAchtergrondPolling(): () => void {
   const plan = () => {
     if (pollStop || pollVerboden) return;
     const snel = heeftActiefUitrolProces(snapshot);
-    const ms = document.hidden ? 30_000 : snel ? 3_000 : 20_000;
+    const ms = snel ? 4_000 : (document.hidden ? 90_000 : 45_000);
     pollTimer = window.setTimeout(async () => {
       if (pollStop || pollVerboden) return;
       if (!document.hidden || heeftActiefUitrolProces(snapshot)) {

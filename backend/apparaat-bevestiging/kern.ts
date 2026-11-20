@@ -15,6 +15,7 @@ import { eigenaarUserId } from '../integraties-kluis';
 import { brusselsTijd } from '../nieuw-apparaat';
 import { passkeyStapOpGeldig, sterkeStapOpGeldig, stapOpVoorSessieVastleggen, stapOpSessieId, type StapOpAuth } from '../stap-op';
 import { ACTIES } from '../toegang-context';
+import { kritiekeActie } from '../../shared/kritieke-acties';
 import { INGEBOUWDE_ACTIES } from '../../shared/telegram-aanmelden/beleid';
 import { publiceer } from './stroom';
 import { herstellen, instellingen, levendeApparaten, misluktTellen, misluktWissen, sql, vlagVoor, voorkeuren, voorkeurenOpslaan } from './opslag';
@@ -111,7 +112,7 @@ export async function aanvragen(auth: Auth, a: Aanvraag): Promise<VerzoekPubliek
   for (const v of vorige) publiceer(auth.user.id, { soort: 'apparaat.afgerond', id: v.id, stand: 'ingetrokken' });
   const vk = await voorkeuren(auth.user.id);
   const trekking = trek(effectieveSoort(inst, vk.waarde), inst.aantalKandidaten, randomInt);
-  const gevoelig = a.gevoelig === true;
+  const gevoelig = a.gevoelig === true || (actie === 'stap-op' && Boolean(label) && kritiekeActie(label));
   const id = nieuweId();
   const verloopt = new Date(Date.now() + inst.wachtSeconden * 1000);
   const apparaatA = (apparaatLabel(a.ua) || 'onbekend/onbekend').slice(0, 40);
@@ -182,9 +183,12 @@ export async function bekrachtigen(auth: Auth, id: string, keuze: unknown, ua?: 
   if (!keuzeGeldig(keuze, r.kandidaten.length)) throw new Error('KEUZE_ONGELDIG');
   const inst = await instellingen();
   const vk = await voorkeuren(auth.user.id);
+  // UPD-012: якщо запит позначений як чутливий (gevoelig) або це сильний крок stap-op,
+  // на пристрої B для сильного підвищення приймається ВИКЛЮЧНО passkeyStapOpGeldig (без послаблення до TOTP).
+  const vereistPasskey = r.gevoelig === true || (r.actie === 'stap-op' && Boolean(r.label) && kritiekeActie(r.label));
   let methode: MethodeB | '' = '';
   if (await passkeyStapOpGeldig(auth)) methode = 'passkey';
-  else if (inst.totpToegestaan && vk.waarde.totpOpApparaat && (await sterkeStapOpGeldig(auth))) methode = 'totp';
+  else if (!vereistPasskey && inst.totpToegestaan && vk.waarde.totpOpApparaat && (await sterkeStapOpGeldig(auth))) methode = 'totp';
   if (!methode) throw new Error('STEP_UP_PASSKEY_REQUIRED');
   const apparaatB = (apparaatLabel(ua) || 'onbekend/onbekend').slice(0, 40);
   const sessieB = stapOpSessieId(auth).slice(0, 80);
