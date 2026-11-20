@@ -92,6 +92,11 @@ hulpRegistreren({
     T('У виборі «Термін» він побачить лише значення до цієї межі. Найсильніша роль обмежує додатково (адмін ≤ 1 год).', 'In de keuze «Duur» ziet hij alleen waarden tot deze grens. De sterkste rol beperkt nog extra (beheerder ≤ 1 u).'),
     T('Довша межа — довше відкрите вікно для помилки чи викраденої вкладки. Для разових задач досить 15–60 хв.', 'Een langere grens is een langer venster voor een fout of een gestolen tabblad. Voor losse taken volstaat 15–60 min.'),
     T('Поле max_minuten у app.tech_profielen; сервер бере min(max_minuten, плафон ролі) при активації (backend/tech-profiel.ts).', 'Veld max_minuten in app.tech_profielen; de server neemt min(max_minuten, plafond van de rol) bij activeren (backend/tech-profiel.ts).')),
+  'tech.snelkoppelingen': item(TECH,
+    T('Дозвіл власнику цього технічного профілю розміщувати ярлики технічних кнопок в обох частинах меню.', 'Toestemming voor de houder van dit technische profiel om snelkoppelingen van technische knoppen in beide delen van het menu te plaatsen.'),
+    T('Коли ввімкнено, користувач може перенести потрібні кнопки керування на панель швидкого доступу звичайного простору. Без натискання права не активуються.', 'Ingeschakeld kan de gebruiker beheerknoppen op de snelbalk van de gewone ruimte zetten. Zonder klikken op de snelkoppeling worden geen rechten geactiveerd.'),
+    T('Дозволяє виносити на видиме місце посилання на адміністративні сторінки; типово вимкнено, щоб не показувати зайвих технічних кнопок.', 'Maakt verwijzingen naar beheerpagina’s zichtbaar in de gewone ruimte; standaard uitgeschakeld zodat er geen overbodige technische knoppen staan.'),
+    T('Прапорець snelkoppelingen_toegestaan у app.tech_profielen (міграція 0301); логіка у shared/tech-yarlyky.ts і маршруті POST /api/owner/tech/snelkoppelingen.', 'Vlag snelkoppelingen_toegestaan in app.tech_profielen (migratie 0301); logica in shared/tech-yarlyky.ts en route POST /api/owner/tech/snelkoppelingen.')),
 });
 const ROL_RISICO: Record<string, Tekst> = {
   ondersteuning: T('Бачить метадані журналу й діагностику клієнтів — це теж особисті дані; видавайте лише тим, хто розбирає звернення.', 'Ziet metadata van het logboek en diagnose van klanten — ook dat zijn persoonsgegevens; geef het alleen aan wie meldingen behandelt.'),
@@ -272,6 +277,12 @@ hulpRegistreren({
     T('Після вдалого розгортання сервер сам створює коміт/тег у вказаному репозиторії.', 'Na een geslaagde uitrol maakt de server zelf een commit/tag in de opgegeven repository.'),
     T('Код піде в репозиторій без ручної перевірки; переконайтеся, що репозиторій приватний і в пакеті немає секретів.', 'De code gaat zonder handcontrole naar de repository; zorg dat die privé is en dat er geen geheimen in het pakket zitten.'),
     T('backend/uitrol-github.ts; токен у сховищі (GITHUB_TOKEN), не в браузері; вимкнено = лише кнопка «Опублікувати».', 'backend/uitrol-github.ts; token in de kluis (GITHUB_TOKEN), niet in de browser; uit = alleen de knop «Publiceren».')),
+  // UPD-003: позначка під червоними прапорцями SEC-PAKKET-001 (#145) · vinkje onder de rode vlaggen
+  'uitrol.risico-bevestig': item('src/uitrol/RodeVlaggen.tsx',
+    T('Ви підтверджуєте, що переглянули позначені зміни (файли root, процеси GitHub, пакети, права міграцій) і очікували їх.', 'U bevestigt dat u de gemarkeerde wijzigingen (root-bestanden, GitHub-processen, pakketten, rechten van migraties) hebt bekeken en verwachtte.'),
+    T('Без цієї позначки сервер не прийме схвалення встановлення; з нею кнопка схвалення стає доступною, але passkey усе одно потрібен.', 'Zonder dit vinkje neemt de server de goedkeuring niet aan; met het vinkje wordt goedkeuren mogelijk, maar de passkey blijft nodig.'),
+    T('Високий ризик, якщо змін ви не чекали: хтось міг змінити код через доступ до GitHub. Тоді краще відхилити пакет і змінити пароль GitHub.', 'Hoog risico als u de wijzigingen niet verwachtte: iemand kan via GitHub-toegang code hebben gewijzigd. Wijs het pakket dan af en wijzig uw GitHub-wachtwoord.'),
+    T('backend/uitrol-risico.ts (vraagtRisicoBevestiging); позначку перевіряє сервер під час схвалення, не лише браузер.', 'backend/uitrol-risico.ts (vraagtRisicoBevestiging); de server controleert het vinkje bij de goedkeuring, niet alleen de browser.')),
   'uitrol.zone': item('src/uitrol/ZoneKiezer.tsx',
     T('Часова зона для терміналу, кроків та історії розгортання.', 'Tijdzone voor de terminal, stappen en historie van de uitrol.'),
     T('Усі часи на сторінці перераховуються в обрану зону; сервер і далі пише UTC.', 'Alle tijden op de pagina worden in de gekozen zone omgerekend; de server schrijft nog steeds UTC.'),
@@ -505,6 +516,11 @@ hulpRegistreren({
     T('На інших сторінках розширення відмовляє в командах цього слота й нічого не збирає. Адміністрування сюди не входить ніколи.', 'Op andere pagina’s weigert de extensie opdrachten van dit slot en verzamelt ze niets. Beheer hoort hier nooit bij.'),
     T('Кожна обрана сторінка — ваші особисті дані, які ШІ зможе бачити. Залиште лише ті, що справді потрібні.', 'Elke gekozen pagina zijn persoonlijke gegevens die de AI kan zien. Laat alleen die staan die echt nodig zijn.'),
     T('PRIVE_HOSTS у shared/extensie-ontgrendeling.ts (без admin.* і api.*); точний збіг host у сервері (dispatch) і в розширенні.', 'PRIVE_HOSTS in shared/extensie-ontgrendeling.ts (zonder admin.* en api.*); exacte host in de server (dispatch) en in de extensie.')),
+  'extensie.prive.ai-sites': item(EXTP,
+    T('Чи може ваш ШІ читати відкриті вкладки сайтів ШІ (Claude, ChatGPT, Gemini, Grok, Microsoft Copilot) у цьому слоті.', 'Of uw AI in dit slot open tabbladen van AI-sites (Claude, ChatGPT, Gemini, Grok, Microsoft Copilot) mag lezen.'),
+    T('Лише читання: знімок сторінки, прокрутка, очікування, список вкладок. Натискати, вводити текст чи переходити там ШІ не може; кожне читання — у центрі сповіщень. Працює, лише якщо в налаштуваннях розширення «Сайти ШІ» стоїть «Завжди».', 'Alleen lezen: momentopname, scrollen, wachten, lijst van tabbladen. Klikken, typen of navigeren kan de AI daar niet; elke lezing staat in het meldingencentrum. Werkt alleen als in de extensie «AI-sites» op «Altijd» staat.'),
+    T('На цих сайтах — ваші розмови, у них можуть бути особисті дані. Вмикайте лише потрібні сайти й лише на потрібний строк.', 'Op deze sites staan uw gesprekken, met mogelijk persoonlijke gegevens. Zet alleen de nodige sites aan en alleen voor de nodige termijn.'),
+    T('AI_SITE_HOSTS / AI_SITE_TYPES у shared/extensie-ontgrendeling.ts; aiSiteOpdrachtFout у backend/extensie-ontgrendeling.ts; optional_host_permissions у extension/manifest.json.', 'AI_SITE_HOSTS / AI_SITE_TYPES in shared/extensie-ontgrendeling.ts; aiSiteOpdrachtFout in backend/extensie-ontgrendeling.ts; optional_host_permissions in extension/manifest.json.')),
   'extensie.prive.lokaal': item(EXTP,
     T('Дозволити локальному агенту на цьому комп’ютері читати ваші сторінки через розширення.', 'De lokale agent op deze computer toestaan uw pagina’s via de extensie te lezen.'),
     T('Локальний агент отримує лише читання (browser.read) і лише до кінця цього доступу.', 'De lokale agent krijgt alleen lezen (browser.read) en alleen tot het einde van deze toegang.'),
@@ -602,6 +618,11 @@ hulpRegistreren({
     T('Вимкнено — у нових розблокуваннях поле lokaal завжди вимкнене; чинні з lokaal відкликаються.', 'Uit — in nieuwe ontgrendelingen staat lokaal altijd uit; lopende met lokaal worden ingetrokken.'),
     T('Локальний агент — програма на комп’ютері людини, її сайт не контролює.', 'De lokale agent is een programma op de computer van de persoon; de site controleert het niet.'),
     T('app.extensie_beleid.lokaal_aan bool (типово true); LOKAAL_CAPS лише browser.read.', 'app.extensie_beleid.lokaal_aan bool (standaard true); LOKAAL_CAPS alleen browser.read.')),
+  'toegang.beleid.lokale-ai': item(TGB,
+    T('Чи можуть сторінки сайту й ШІ-агенти користуватися вбудованим ШІ Chrome у браузері цієї людини.', 'Of pagina’s van de site en AI-agenten de ingebouwde AI van Chrome in de browser van deze persoon mogen gebruiken.'),
+    T('Типово ввімкнено для всіх. Вимкнути можна лише з причиною (щонайменше 10 символів): людина побачить причину, хто вимкнув і що зробити. У власній бічній панелі розширення ШІ працює далі.', 'Standaard aan voor iedereen. Uitzetten kan alleen met een reden (minstens 10 tekens): de persoon ziet de reden, wie het deed en wat te doen. In het eigen zijpaneel van de extensie werkt de AI verder.'),
+    T('Модель рахує на пристрої людини, а не на сервері: вимкнення не економить ресурси сервера, а лише забороняє сайту й агентам ці запити.', 'Het model rekent op het apparaat van de persoon, niet op de server: uitzetten bespaart de server niets, het verbiedt alleen deze verzoeken van site en agenten.'),
+    T('app.extensie_beleid.lokale_ai_aan bool (типово true) + lokale_ai_reden/door/op (міграція 0287); у розширення — поле lokaleAi повідомлення settings.', 'app.extensie_beleid.lokale_ai_aan bool (standaard true) + lokale_ai_reden/door/op (migratie 0287); naar de extensie — veld lokaleAi van het settings-bericht.')),
   'toegang.beleid.notitie': item(TGB,
     T('Коротка нотатка, чому політика саме така (видно адміністраторам).', 'Een korte notitie waarom het beleid zo is (zichtbaar voor beheerders).'),
     T('Зберігається разом із тим, хто й коли змінив політику.', 'Wordt bewaard samen met wie en wanneer het beleid wijzigde.'),
@@ -617,6 +638,40 @@ hulpRegistreren(HELP_ORCH);
 hulpRegistreren(HELP_MATRIX);
 hulpRegistreren(HELP_WERKBLAD);
 hulpRegistreren(HELP_ZOEK_INDEX);   // zone D 22.10.2026: zoek.index.* (src/zoek/ZoekIndexVenster.tsx)
+
+// ================================================================== UITROL-002 (приймач GitHub, Telegram-архів, потік розгортання)
+hulpRegistreren({
+  'uitrol.github-webhook-aan': item('src/uitrol/GithubInstellingen.tsx',
+    T('Приймати сповіщення GitHub про нові випуски з перевіркою підпису.', 'Meldingen van GitHub over nieuwe releases accepteren met handtekeningcontrole.'),
+    T('Коли з’явиться випуск із дозволеною міткою, сервер отримає подію й запише її в журнал надходжень.', 'Zodra er een release met een toegestane tag verschijnt, ontvangt de server het event en legt dit vast.'),
+    T('За слабкого чи розкритого секрету сторонній міг би надсилати підроблені події; використовуйте довгий випадковий секрет.', 'Bij een zwak of gelekt geheim kan een derde nepevents sturen; gebruik een lang willekeurig geheim.'),
+    T('Стовпець webhook_aan у налаштуваннях отримання випусків (backend/uitrol-github-ontvangst.ts, заголовок X-Hub-Signature-256).', 'Veld webhook_aan in de instellingen voor release-ontvangst (backend/uitrol-github-ontvangst.ts, kop X-Hub-Signature-256).')),
+  'uitrol.github-webhook-auto': item('src/uitrol/GithubInstellingen.tsx',
+    T('Автоматично завантажувати й перевіряти архів випуску з GitHub після події.', 'Het release-archief automatisch uit GitHub ophalen en voorcontroleren na een melding.'),
+    T('Архів з’являється у вкладці «Огляд» у стані «Очікує ключ доступу», але ніколи не встановлюється без вашого схвалення.', 'Het archief verschijnt op het tabblad «Overzicht» als «Wacht op passkey», maar wordt nooit zonder uw goedkeuring geïnstalleerd.'),
+    T('Автоматичне завантаження займає місце під архіви на диску; саме встановлення все одно блокується без ключа доступу власника.', 'Automatisch ophalen gebruikt schijfruimte voor archieven; installeren zelf blijft altijd geblokkeerd zonder passkey van de eigenaar.'),
+    T('Стовпець webhook_auto (backend/uitrol-github-ontvangst.ts); завантаження та перевірка контрольної суми SHA-256 без просування.', 'Veld webhook_auto (backend/uitrol-github-ontvangst.ts); ophalen en SHA-256-voorcontrole zonder bevordering.')),
+  'uitrol.telegram-archief-actief': item('src/uitrol/TelegramArchief.tsx',
+    T('Автоматично шифрувати й надсилати кожен встановлений випуск у Telegram.', 'Elke geslaagde installatie automatisch versleutelen en naar Telegram sturen.'),
+    T('Після успішного встановлення архів розрізається, шифрується вашим ключем і надсилається в задану тему Telegram.', 'Na elke geslaagde installatie wordt het archief gesplitst, met uw sleutel versleuteld en naar het gekozen Telegram-topic gestuurd.'),
+    T('Без збереженого ключа шифрування розшифрувати архів із Telegram на іншому сервері неможливо; зберігайте ключ окремо.', 'Zonder de bewaarde versleutelsleutel is een archief uit Telegram op een andere server niet te ontsleutelen; bewaar de sleutel apart.'),
+    T('backend/uitrol-telegram-archief.ts: шифрування AES-256-GCM із наскрізною перевіркою частин і збереженням ключа у Сховищі секретів.', 'backend/uitrol-telegram-archief.ts: versleuteling met AES-256-GCM, controle per deel en sleutelopslag in de Geheimenkluis.')),
+  'uitrol.telegram-archief-verplicht': item('src/uitrol/TelegramArchief.tsx',
+    T('Вимагати наявності зашифрованої копії поточного випуску в Telegram перед новим оновленням.', 'Een versleutelde kopie van de huidige release in Telegram vereisen vóór een nieuwe update.'),
+    T('Доки активний випуск не збережено в Telegram, схвалення наступного оновлення ключем доступу буде заблоковане.', 'Zolang de actieve release niet in Telegram staat, wordt goedkeuring van een volgende update met passkey tegengehouden.'),
+    T('Якщо бот або чат тимчасово недоступні, оновлення доведеться розблокувати після відновлення зв’язку або вимкнення вимоги.', 'Als de bot of chat tijdelijk onbereikbaar is, moet u eerst het archief versturen of de eis uitzetten voordat u kunt updaten.'),
+    T('Поле verplicht_voor_installatie у налаштуваннях Telegram-архіву (backend/uitrol-telegram-archief.ts); перевірка перед підтвердженням.', 'Veld verplicht_voor_installatie in het Telegram-archiefbeleid (backend/uitrol-telegram-archief.ts); controle vóór goedkeuring.')),
+  'uitrol.stroom-verplicht': item('src/uitrol/UitrolStroom.tsx',
+    T('Позначити власну перевірку як обов’язкову перед запуском розгортання.', 'Een eigen controle als verplicht en blokkerend voor de uitrol markeren.'),
+    T('Поки цей пункт не підтверджено або не пропущено з обґрунтованою причиною, готовність потоку лишається заблокованою.', 'Zolang dit punt niet is bevestigd of met reden overgeslagen, blijft de gereedheid van de uitrolstroom geblokkeerd.'),
+    T('Надто багато обов’язкових ручних пунктів може затримати термінове виправлення, тож позначайте так лише критичні умови.', 'Te veel verplichte handmatige punten kunnen een spoedherstel vertragen; markeer alleen kritieke voorwaarden als verplicht.'),
+    T('Поле verplicht у таблиці контрольного списку потоку розгортання (src/uitrol/UitrolStroom.tsx та shared/uitrol-stroom.ts).', 'Veld verplicht in de controlelijst van de uitrolstroom (src/uitrol/UitrolStroom.tsx en shared/uitrol-stroom.ts).')),
+  'uitrol.stroom-vastpinnen': item('src/uitrol/UitrolStroom.tsx',
+    T('Закріпити інженерну нотатку вгорі списку випуску.', 'Een uitrolnotitie bovenaan de lijst van deze release vastpinnen.'),
+    T('Закріплена нотатка завжди показується першою, щоб зауваження не загубилися серед пізніших записів.', 'Een vastgepinde notitie blijft bovenaan zichtbaar zodat aandachtspunten niet wegzakken tussen latere berichten.'),
+    T('Низький ризик: закріплення змінює лише порядок показу нотаток у межах поточного випуску.', 'Laag risico: vastpinnen verandert alleen de volgorde van notities binnen de huidige release.'),
+    T('Поле vastgepind у нотатках потоку розгортання (src/uitrol/UitrolStroom.tsx та shared/uitrol-stroom.ts); очищення таємниць перед збереженням.', 'Veld vastgepind bij notities in de uitrolstroom (src/uitrol/UitrolStroom.tsx en shared/uitrol-stroom.ts); geheimen worden automatisch geschoond.')),
+});
 
 /** Alleen-lezen weergave van het hele register (voor de test en het «?»-onderdeel). */
 export const HULP_REGISTER: Readonly<Record<string, HulpItem>> = R;

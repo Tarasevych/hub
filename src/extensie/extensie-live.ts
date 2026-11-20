@@ -17,7 +17,7 @@ import {
   PRIVE_HOSTS, PRIVE_MAX_DAGEN, STAAT_TEKST, isBrowserCap, isDiagRechtStand, isPriveHost, isToegestaneHost,
   type BrowserCap, type DiagRechtStand, type ExtensieAgentStatus, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
-import { vergelijkVersie } from '../../shared/extensie-update';
+import { vergelijkVersie } from '../../shared/extensie-bijwerken';
 import { filterLokaleAiKeuze, type LokaleAiKeuze } from '../../shared/lokale-ai-model';
 
 export const POLL_MS = 10_000;

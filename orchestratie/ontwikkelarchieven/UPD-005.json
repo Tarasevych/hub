@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "taakId": "UPD-005",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-005 · Спільний випуск оновлень (UPD-004 + BIJDRAGE-001 + VERWIJZING-001 + вигляд «Ланцюжок» знаків місць)",
+  "opdracht": "Об’єднати в один спільний випуск поверх живої встановленої версії сайту 20261117-190154 (LOKAI-001 @ 14dbcb3aeceb205ac6f69238f6397816bd293146) увесь готовий склад UPD-004 (#158: WISSEL-001, FIX-001 #156 із міграцією 0301, GEMINI-004 #153, PLAATS-TEKENS-001 базовий #154, MELDCAT-001 #155, SEC-003 #151, AI-TERMIJN-001, HISTORIE-001 #77, VAARD-001), облік авторства та досьє функцій BIJDRAGE-001 (#160), посилання з назвою й станом VERWIJZING-001 (#161) і новий вигляд «Ланцюжок» із PLAATS-TEKENS-001 (#154, dcfe31a4); прозоро зафіксувати, що куди вийшло та які гілки свідомо лишилися поза випуском (MELDPANEEL-001 #159 і подальший збір світових знаків у #154), без автоматичного встановлення на сервер.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-005-uitgave-20261119-065100",
+    "basisCommit": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "basisVersie": "20261117-190154",
+    "geinstalleerdeBasis": "14dbcb3aeceb205ac6f69238f6397816bd293146",
+    "geinstalleerdeVersie": "20261117-190154",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [
+      {
+        "taak": "UPD-004 (PR #158: WISSEL-001, FIX-001 #156, GEMINI-004 #153, PLAATS-TEKENS-001 #154 базовий, MELDCAT-001 #155, SEC-003 #151, AI-TERMIJN-001, HISTORIE-001 #77, VAARD-001)",
+        "commit": "697c73743723",
+        "reden": "Проміжний спільний випуск 20261118-002718 поверх живої версії 20261117-190154 (14dbcb3a), повністю включений в єдине оновлення UPD-005."
+      },
+      {
+        "taak": "BIJDRAGE-001 (PR #160)",
+        "commit": "453954d32693",
+        "reden": "Облік авторства (orch bijdrage), досьє функцій (orchestratie/onderwerpen/), старт сеансу (orch begin), перевірка збереження (orch behoud), навичка bijdragen-vastleggen та блок «Хто що зробив» на сторінці оновлень."
+      },
+      {
+        "taak": "VERWIJZING-001 (PR #161)",
+        "commit": "558681dc8b50",
+        "reden": "Людські назви, підсумки й стани для гілок, запитів на злиття, міграцій і задач у «Хто що зробив», реєстр подій orchestratie/verwijzingen/, захист від «404» та правила 1.4.17."
+      },
+      {
+        "taak": "PLAATS-TEKENS-001 — вигляд «Ланцюжок» (PR #154, +1 фіксація)",
+        "commit": "dcfe31a4d8d7",
+        "reden": "Компонент PlaatsKeten.tsx (країна › область › місто одним рядком із прапором і гербом поруч, міткою IP/GPS та розгортанням), оновлення shared/plaats-teken.ts, світовий генератор --landen ALLE та тести."
+      }
+    ],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (PR #159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5f7",
+        "reden": "Чернетка досьє та проєкту єдиної панелі сповіщень; коду самої панелі ще немає, чекає на погодження знімків власником. Гілку збережено відкритою для продовження розробки."
+      },
+      {
+        "taak": "PLAATS-TEKENS-001 — майбутня хвиля світових знаків (PR #154 продовження)",
+        "tak": "claude/project-thread-t922sp",
+        "commit": "dcfe31a4d8",
+        "reden": "Увесь готовий код і 1744 базові знаки до dcfe31a4 увійшли в UPD-005; файли світових знаків ще дозбираються окремою роботою."
+      },
+      {
+        "taak": "LOKAI-001 (PR #152 — застаріла рання чернетка 0.9.3)",
+        "tak": "feature/lokai-001-20261117-154844",
+        "commit": "f79f14e72a",
+        "reden": "Повністю перекрита живою встановленою версією 20261117-190154 (розширення 0.9.7 @ 14dbcb3a)."
+      }
+    ]
+  },
+  "commits": [
+    "697c73743723c472be25ad2cf4923b29c36864bc",
+    "fdd466c7259192095b812f37eb09d1415c12748e",
+    "558681dc8b508e9cbde76dba3967306f30721995",
+    "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35",
+    "97ffca42c2accaf688e9e85574c1c020c5181dc9",
+    "34f83796addd64f9edbd9705a7cd27ea144f0c43"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "Звірено живу встановлену версію на піддоменах сайту (mcp/id/admin/hub.tarasevych.com/api/version): 20261117-190154 (LOKAI-001 @ 14dbcb3aeceb205ac6f69238f6397816bd293146), перевірено всі 229 віддалених гілок і відкриті запити на злиття.",
+      "resultaat": "Точно відокремлено все, що вже працює на сайті, від готових розробок (UPD-004 #158, BIJDRAGE-001 #160, VERWIJZING-001 #161, «Ланцюжок» із PLAATS-TEKENS-001 #154) та незавершених проєктів (MELDPANEEL-001 #159)."
+    },
+    {
+      "stap": "Створено гілку спільного випуску feature/upd-005-uitgave-20261119-065100 від об’єднаної вершини PR #157 (558681dc8b, що вже містить живу базу 14dbcb3a, UPD-004, BIJDRAGE-001 і VERWIJZING-001) та виконано чисте злиття --no-ff гілки PR #154 (origin/claude/project-thread-t922sp @ dcfe31a4d8).",
+      "resultaat": "Злиття пройшло без конфліктів; перевірка orch behoud відносно живої бази 14dbcb3a підтвердила відсутність будь-яких втрат."
+    },
+    {
+      "stap": "Зареєстровано задачу UPD-005, запис авторства orchestratie/bijdragen/UPD-005/, події реєстру посилань orchestratie/verwijzingen/ для всіх увійдених і свідомо відкладених гілок/запитів, доповнено досьє orchestratie/onderwerpen/ (auteurschap-en-vaardigheden, meldingen), каталог пошуку (1810 елементів) і хронологію гілок (HISTORIE-001).",
+      "resultaat": "У блоці «Хто що зробив» на сторінці оновлень прозоро видно всі влиті запити, міграцію 0301 та статус незавершених робіт."
+    },
+    {
+      "stap": "Створено ізольований сценарій випуску .github/workflows/upd-005-uitgave.yml (300 наборів випробувань, orch behoud, перевірка навичок, міграції до 0301 на PostgreSQL 16 трьома ролями, Хроміум, CRX3 0.9.7, TRACE-001 без авто-встановлення) і підготовлено журнал походження UPD-005.json із поясненнями до всіх 23 прапорців ризику.",
+      "resultaat": "Під час першого запуску GitHub Actions (№ 44476590955) усі 20 хмарних і 146 безбазових тестів пройшли чисто, а післяскладальний тест ui-audit-g виявив регресію з VERWIJZING-001 у src/uitrol/upload.css: стилі .ut-vw-* були дописані після фінального мобільного шару @media (max-width:640px)."
+    },
+    {
+      "stap": "Перенесено стилі .ut-vw-* у src/uitrol/upload.css перед фінальним мобільним шаром @media (max-width:640px) і повторно перевірено всі 13 післяскладальних випробувань (включно з ui-audit-g 59/59).",
+      "resultaat": "Регресію усунуто без зміни самих правил стилю й без послаблення тестів; усі 13 післяскладальних випробувань зелені."
+    },
+    {
+      "stap": "Під час спроби схвалення випуску 20261119-072255 із картки «Чекають схвалення» власник виявив помилку HTTP 409 RISICO_NIET_BEVESTIGD попри встановлену позначку. У src/BeheerUitrolWeergave.tsx знайдено обгортку goedkeuren={(v) => void goedkeuren(v)}, яка губила другий аргумент risicoBevestigd; виправлено на goedkeuren={(v, risicoBevestigd) => void goedkeuren(v, risicoBevestigd)} і додано регресійний тест у tests/eenheid/uitrol-risico-20261116.test.ts.",
+      "resultaat": "Обидва способи схвалення («Нове оновлення» та «Чекають схвалення») гарантовано передають risicoBevestigd; випущено оновлений пакунок UPD-005 із цим виправленням на майбутнє."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Об’єднати UPD-004 (#158), BIJDRAGE-001 (#160), VERWIJZING-001 (#161) і вигляд «Ланцюжок» із PLAATS-TEKENS-001 (#154) в один спільний випуск UPD-005 прямо поверх живої версії 20261117-190154 (14dbcb3a).",
+      "reden": "За прямим вибором власника — щоб встановити всі готові напрацювання одним чистим кроком із повною простежуваністю в BIJDRAGEN.json, verwijzingen і TRACE-001."
+    },
+    {
+      "besluit": "Залишити відкритими поза випуском гілку проєкту MELDPANEEL-001 (#159 @ d3bfeca5) та подальший збір світових знаків на гілці #154, зафіксувавши їх у orchestratie/verwijzingen/ і orchestratie/onderwerpen/meldingen.json.",
+      "reden": "MELDPANEEL-001 містить лише досьє без коду самої панелі й очікує на погодження знімків власником; фіксація в реєстрі гарантує, що жодне заплановане завдання не загубиться."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "pad": "migrations/0301_tech_snelkoppelingen.sql",
+      "omschrijving": "Адитивна міграція до таблиці app.tech_profielen зі стовпцем snelkoppelingen_toegestaan (логічне значення, типово false) із FIX-001."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "shared/tech-yarlyky.ts",
+      "omschrijving": "Спільна предметна модель правил делегування й видимості технічних ярликів в обох частинах меню."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/hulp-register.ts, src/tech/TechLaag.tsx",
+      "omschrijving": "Додано повний чотиришаровий запис довідки tech.snelkoppelingen та пов’язано перемикач ярликів технічного профілю з data-hulp і кнопкою <HulpVraag>."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/App.tsx, src/VerenigdDienstApp.tsx, src/CanoniekAccountMenu.tsx, src/accountmenu-v3/AccountMenuV3.tsx, src/tech/*",
+      "omschrijving": "Об’єднано синхронний перехід на технічний простір і чесне перемикання облікових записів (WISSEL-001) із дозволом яскравих ярликів технічного профілю в меню (FIX-001)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/CanoniekOmlijsting.tsx, src/MenuItemActies.tsx, src/MenuMeldingen.tsx, src/SnelleToegangBewerker.tsx, src/zijbalk-voorkeuren.ts",
+      "omschrijving": "Забезпечено стійку обробку натискань у меню сповіщень, коректне утримання панелі й узгоджене оновлення стану просторів та яскравості."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/agenten/Agenten.tsx, src/agenten/agenten.css, src/maquette/AnkerRail.tsx",
+      "omschrijving": "Включено групове меню якорів MaquetteAnkerRail для /agenten із дотриманням меж доступу та центрування (GEMINI-004)."
+    },
+    {
+      "soort": "hernoemd",
+      "pad": "shared/aanbieder-teken.ts",
+      "omschrijving": "Перейменовано з shared/provider-teken.ts та узгоджено з геознаками й постачальниками зв’язку із запиту № 154 (PLAATS-TEKENS-001)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "shared/meldingen-catalogus.ts",
+      "omschrijving": "Доповнено єдиний каталог сповіщень сайту (MELDCAT-001, 291 запис) новими сигналами перемикання простору й яскравості."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "package.json, package-lock.json, src/mail-rekenblad-lezer.ts, deploy/pakketgegevens.py",
+      "omschrijving": "Зміни безпеки із запиту № 151 (SEC-003): вилучення xlsx, власний модуль електронних таблиць на базі fflate, fast-xml-parser ^5.12.1 в overrides та уточнена обробка винятків у pakketgegevens.py."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": ".github/workflows/*",
+      "omschrijving": "Оновлення відбитків дій (v7/v8), виправлення bandit.yml, osv-scanner.yml і design-002-controle.yml, додавання 10 засобів перевірки безпеки (SEC-003) та ізольованого процесу .github/workflows/upd-004-uitgave.yml."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "docs/hub/*, docs/kaart/bestandskaart.json, shared/zoek-ui-knoppen.generated.ts, scripts/geschiedenis/samenvoegverzoeken.json, orchestratie/*",
+      "omschrijving": "Актуалізовано карту файлів (2936 файлів), каталог пошуку (1810 елементів), знімок запитів на злиття (157), двомовну хронологію гілок (99 робіт), картку UPD-005, реєстр verwijzingen і журнал походження TRACE-001."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts, tests/eenheid/tech-yarlyky-20261117.test.ts, tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts, tests/eenheid/menu-ruimte-wissel-20261117.test.ts, tests/eenheid/plaats-tekens-20261117.test.ts, tests/eenheid/meldingen-catalogus-20261117.test.ts, tests/eenheid/mail-accounts-beheer-20261021.test.ts, tests/eenheid/mail-koppelen-20261020.test.ts, tests/eenheid/integraties-catalogus.test.ts",
+      "omschrijving": "Нові й узгоджені з OFFICIEEL_SLEUTELS модульні набори випробувань для всіх об’єднаних змін випуску UPD-004."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "scripts/orch/begin.mjs, scripts/orch/bijdragen.mjs, scripts/orch/verwijzingen.mjs, src/uitrol/Verwijzingen.tsx, .agents/skills/bijdragen-vastleggen/SKILL.md",
+      "omschrijving": "Облік авторства, досьє функцій, єдиний старт сеансу, перевірка збереження orch behoud, блок «Хто що зробив» і посилання без «404» (BIJDRAGE-001 #160 і VERWIJZING-001 #161)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "src/merk/PlaatsKeten.tsx, src/merk/Merk.tsx, shared/plaats-teken.ts, scripts/plaats-tekens-maken.mjs",
+      "omschrijving": "Новий вигляд «Ланцюжок» для знаків місць (країна › область › місто одним рядком із прапором і гербом поруч та міткою IP/GPS), його публічний реекспорт із єдиної вхідної точки реєстру src/merk/Merk.tsx та світовий генератор --landen ALLE (PLAATS-TEKENS-001 #154 @ dcfe31a4)."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/uitrol/upload.css, src/BeheerUitrolWeergave.tsx, tests/eenheid/uitrol-risico-20261116.test.ts, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Виправлено регресію VERWIJZING-001 у src/uitrol/upload.css (мобільний шар @media (max-width:640px) повернено в кінець файла, ui-audit-g 59/59), виправлено передавання risicoBevestigd із картки «Чекають схвалення» (<Goedkeuring>) у src/BeheerUitrolWeergave.tsx із регресійною перевіркою в uitrol-risico-20261116.test.ts (усунуто HTTP 409 RISICO_NIET_BEVESTIGD) та оновлено каталог пошуку (UI_ONBEREIKBAAR = 15, zoek-ui-bereik-20261105 24/24)."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "orchestratie/taken/UPD-005.json, orchestratie/bijdragen/UPD-005/*, orchestratie/verwijzingen/*, orchestratie/ontwikkelarchieven/UPD-005.json, .github/workflows/upd-005-uitgave.yml",
+      "omschrijving": "Повна документація, реєстр увійдених і відкладених посилань, облік авторства, журнал походження TRACE-001 та ізольований процес випуску UPD-005."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": "deploy/pakketgegevens.py",
+      "uk": "Замінено надто широке перехоплення Exception на винятки FileNotFoundError, OSError, JSONDecodeError, TypeError і ValueError із записом попередження у stderr і перевіркою типу bool для розміру пакета.",
+      "nl": "Breed except Exception vervangen door specifieke afhandeling (FileNotFoundError, OSError, JSONDecodeError, TypeError en ValueError) met melding naar stderr en uitsluiting van booleans voor de pakketgrootte."
+    },
+    {
+      "pad": ".github/workflows/agplugin-001-release.yml",
+      "uk": "Оновлено закріплені 40-символьні відбитки стандартних дій GitHub (checkout, setup-node, upload-artifact, download-artifact) без розширення прав і зі збереженням заборони авто-встановлення.",
+      "nl": "Vastgepinde SHA-verwijzingen van de standaard GitHub-acties (checkout, setup-node, upload-artifact, download-artifact) bijgewerkt zonder extra rechten en zonder automatische installatie."
+    },
+    {
+      "pad": ".github/workflows/bandit.yml",
+      "uk": "Додано автоматичний статичний аналізатор Python (Bandit) з виправленням звернення на стандартний github.token замість secrets.GITHUB_TOKEN, лише з читанням коду і записом звітів SARIF.",
+      "nl": "Automatische statische Python-analysator (Bandit) toegevoegd met standaard github.token in plaats van secrets.GITHUB_TOKEN, alleen leesrecht op code en schrijfrecht voor SARIF-meldingen."
+    },
+    {
+      "pad": ".github/workflows/bearer.yml",
+      "uk": "Додано локальний аналізатор коду TypeScript і JavaScript (Bearer CLI) без зовнішніх ключів API; обмежується читанням коду, вимкненим збереженням облікових даних і записом SARIF.",
+      "nl": "Lokale statische code-analysator (Bearer CLI) zonder externe API-sleutels toegevoegd; beperkt tot alleen leesrecht op code, persist-credentials: false en het melden van SARIF-resultaten."
+    },
+    {
+      "pad": ".github/workflows/design-002-controle.yml",
+      "uk": "Оновлено відбитки стандартних дій і прибрано пряму підстановку виразу head.sha всередині команд bash: передається через змінні середовища з перевіркою формату 40 шістнадцяткових символів.",
+      "nl": "Actieverwijzingen bijgewerkt en directe expressie-injectie van head.sha in bash-stappen vervangen door omgevingsvariabelen met een strikte controle op 40 hexadecimale tekens."
+    },
+    {
+      "pad": ".github/workflows/design-003-release.yml",
+      "uk": "Оновлено закріплені 40-символьні відбитки стандартних дій GitHub (checkout, setup-node, upload-artifact, download-artifact) зі збереженням усіх наявних прав та перевірок перед випуском.",
+      "nl": "Vastgepinde SHA-verwijzingen van de standaard GitHub-acties (checkout, setup-node, upload-artifact, download-artifact) bijgewerkt met behoud van alle bestaande rechten en controles."
+    },
+    {
+      "pad": ".github/workflows/devskim.yml",
+      "uk": "Додано статичний аналізатор небезпечних шаблонів DevSkim із виключенням файлів стану координації та обмеженням прав лише на читання сховища й запис результатів безпеки SARIF.",
+      "nl": "Statische patroonscanner DevSkim toegevoegd met uitsluiting van coördinatiemetadata en rechten beperkt tot lezen van code en wegschrijven van SARIF-beveiligingsmeldingen."
+    },
+    {
+      "pad": ".github/workflows/ext090-001-release.yml",
+      "uk": "Оновлено закріплені 40-символьні відбитки дій GitHub (checkout, setup-node, upload-artifact, download-artifact) для стабільності збирання розширення без зміни повноважень процесу.",
+      "nl": "Vastgepinde SHA-verwijzingen van GitHub-acties bijgewerkt voor stabiel bouwen van de extensie zonder wijziging aan toegangsrechten of beveiligingsregels."
+    },
+    {
+      "pad": ".github/workflows/gemini-004-uitgave.yml",
+      "uk": "Збережений із влитого запиту № 153 сценарій випуску GEMINI-004: запускається виключно з гілки feature/agenten-ankers-20261117-195520 і ніколи не виконує авто-встановлення.",
+      "nl": "Meegenomen uit samengevoegd PR #153 als vastgelegde uitgavewerkstroom van GEMINI-004: draait uitsluitend op tak feature/agenten-ankers-20261117-195520 en installeert nooit automatisch."
+    },
+    {
+      "pad": ".github/workflows/njsscan.yml",
+      "uk": "Додано статичний аналізатор Node.js і JavaScript (njsscan) із вимкненим збереженням облікових даних на диску, обмеженим читанням коду та передаванням звіту SARIF до безпеки GitHub.",
+      "nl": "Statische Node.js- en JavaScript-analysator njsscan toegevoegd met persist-credentials: false, alleen leesrecht op broncode en doorgave van het SARIF-rapport aan GitHub Security."
+    },
+    {
+      "pad": ".github/workflows/ossar.yml",
+      "uk": "Додано запуск відкритих статичних перевірок через OSSAR (windows-latest) без сторонніх ключів доступу, з правами читання коду й запису SARIF і закріпленими відбитками дій.",
+      "nl": "Open statische controles via OSSAR (windows-latest) zonder externe sleutels toegevoegd, met rechten beperkt tot lezen en SARIF-meldingen en vastgepinde actieverwijzingen."
+    },
+    {
+      "pad": ".github/workflows/osv-scanner.yml",
+      "uk": "Оновлено багаторазові сценарії OSV-Scanner до v2.7.1 із правом actions: read і зняттям зайвих лапок; перевіряє вразливості залежностей та блокує нові вразливості в запитах на злиття.",
+      "nl": "Herbruikbare OSV-Scanner-werkstromen bijgewerkt naar v2.7.1 met actions: read en zonder overbodige aanhalingstekens; controleert kwetsbaarheden en blokkeert nieuwe lekken in PR’s."
+    },
+    {
+      "pad": ".github/workflows/powershell.yml",
+      "uk": "Додано статичну перевірку сценаріїв PowerShell через PSScriptAnalyzer для супроводжувальних інструментів, із читанням вмісту, записом звітів SARIF і закріпленими відбитками дій.",
+      "nl": "Statische controle voor PowerShell-scripts via PSScriptAnalyzer toegevoegd voor beheerhulpmiddelen, met alleen leesrecht, SARIF-meldingen en vastgepinde acties."
+    },
+    {
+      "pad": ".github/workflows/scorecard.yml",
+      "uk": "Додано перевірку безпеки ланцюга постачання OpenSSF Scorecard; дозвіл id-token: write потрібен виключно самій службі Scorecard для підпису звіту публічного сховища, права на код — читання.",
+      "nl": "OpenSSF Scorecard-controle op de toeleveringsketen toegevoegd; id-token: write is nodig voor publieke rapportondertekening door Scorecard zelf, coderechten blijven alleen lezen."
+    },
+    {
+      "pad": ".github/workflows/semgrep.yml",
+      "uk": "Додано локальний аналізатор Semgrep без сторонніх хмарних маркерів доступу, із мінімальними правами на читання коду й запис SARIF, вимкненим збереженням ключа та закріпленими відбитками дій.",
+      "nl": "Lokale statische scanner Semgrep zonder externe tokens toegevoegd, met alleen leesrecht en SARIF-melding, persist-credentials: false en vastgepinde SHA-verwijzingen."
+    },
+    {
+      "pad": ".github/workflows/trivy.yml",
+      "uk": "Додано засіб перевірки вразливостей, налаштувань і витоків Trivy у файловому режимі без Docker, із правами лише на читання вмісту й запис SARIF, закріпленими діями та без збереження ключа.",
+      "nl": "Trivy-scanner voor kwetsbaarheden, instellingen en geheimen in bestandsmodus zonder Docker toegevoegd, met leesrecht, SARIF-uitvoer, vastgepinde SHA’s en persist-credentials: false."
+    },
+    {
+      "pad": ".github/workflows/uitgave-001-release.yml",
+      "uk": "Оновлено закріплені 40-символьні відбитки стандартних дій GitHub (checkout, setup-node, upload-artifact, download-artifact) зі збереженням чинного контролю якості й відсутності авто-встановлення.",
+      "nl": "Vastgepinde SHA-verwijzingen van de standaard GitHub-acties bijgewerkt met behoud van alle kwaliteitscontroles en zonder automatische installatie."
+    },
+    {
+      "pad": ".github/workflows/upd-004-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-004: без pull_request_target і secrets.*, дії закріплено повними відбитками, без збереження ключа на диску; виконує 298 тестів, міграції 0301, TRACE-001 і не встановлює пакет сам.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-004: zonder pull_request_target of secrets.*, vastgepind op volledige SHA’s, persist-credentials: false; draait 298 tests, migraties t/m 0301 en TRACE-001 zonder zelf te installeren."
+    },
+    {
+      "pad": ".github/workflows/upd-005-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-005: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, без збереження ключа на диску; виконує 300 наборів випробувань, orch behoud, перевірку навичок, міграції до 0301, TRACE-001 і не встановлює пакет автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-005: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 300 testbestanden, orch behoud, vaardigheidscontrole, migraties t/m 0301 en TRACE-001 zonder automatische installatie."
+    },
+    {
+      "pad": ".github/workflows/wissel-001-uitgave.yml",
+      "uk": "Збережений із влитої гілки WISSEL-001 процес попереднього випуску: не містить секретів, не запускається на чужих запитах і працює винятково зі своєї гілки без авто-встановлення.",
+      "nl": "Meegenomen uit de samengevoegde WISSEL-001-tak: bevat geen geheimen, draait niet op vreemde PR’s en werkt uitsluitend vanaf zijn eigen tak zonder automatische installatie."
+    },
+    {
+      "pad": "npm:xlsx",
+      "uk": "Вилучено вразливу сторонню залежність xlsx (і зовнішнє посилання на cdn.sheetjs.com); читання й запис таблиць перенесено до безпечного локального модуля src/mail-rekenblad-lezer.ts на базі fflate.",
+      "nl": "Kwetsbare externe afhankelijkheid xlsx (en koppeling met cdn.sheetjs.com) verwijderd; werkbladen worden nu veilig verwerkt door de eigen lokale module src/mail-rekenblad-lezer.ts op basis van fflate."
+    },
+    {
+      "pad": "npm:simple-icons",
+      "uk": "Додано пакунок simple-icons@15.22.0 виключно до devDependencies для генерації офіційних локальних векторних піктограм у src/merk/ на етапі складання без зовнішніх запитів під час роботи сайту.",
+      "nl": "Pakket simple-icons@15.22.0 uitsluitend als ontwikkelafhankelijkheid (devDependencies) toegevoegd om officiële lokale pictogrammen in src/merk/ bij de bouw te genereren zonder externe oproepen tijdens gebruik."
+    },
+    {
+      "pad": "npm:overrides",
+      "uk": "Примусово закріплено версію fast-xml-parser@^5.12.1 у секції overrides для закриття вразливості CVE-2026-126066 (GHSA-474x-hrwr-fgx4) у транзитивній залежності пакунка mdb-reader.",
+      "nl": "Transitive afhankelijkheid fast-xml-parser via overrides vastgezet op ^5.12.1 om kwetsbaarheid CVE-2026-126066 (GHSA-474x-hrwr-fgx4) binnen mdb-reader op te lossen."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=2560 npm run build",
+      "resultaat": "Обидві перевірки типів і повне виробниче складання (разом із підписаним розширенням CRX3 0.9.7) пройшли з кодом 0."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && versheid --taak UPD-005 --fase overdracht && behoud --tegen 14dbcb3a && vaardigheden/valideer.mjs",
+      "resultaat": "Правила 1.4.17, свіжість, збереження всіх досьє/внесків/навичок і валідація 11 навичок пройшли з кодом 0."
+    },
+    {
+      "opdracht": "Статичні контракти, модульні й післяскладальні випробування (зокрема bijdragen-001-20261118, verwijzing-001-20261118, plaats-tekens-20261117, werkstromen-veilig-20261116, uitrol-risico-20261116, trace-001-ontwikkelarchief, historie-kroniek, bestandskaart-20261024)",
+      "resultaat": "Усі перевірки пройшли на 100%; усі 23 прапорці ризику мають повні двомовні пояснення uk+nl (0 пропущених)."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-005-uitgave.yml",
+      "resultaat": "Виконує звірку живої основи 20261117-190154, 300 наборів випробувань (уключно зі 120 БД-тестами з Хроміумом і подвійним прогоном міграцій до 0301 на PostgreSQL 16 трьома ролями), перевірку UITROL-MANIFEST.json, BIJDRAGEN.json, verwijzingen, TRACE-001 та оприлюднення випуску без авто-встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "shared/uitrol-manifest.ts",
+    "backend/uitrol-risico.ts",
+    "https://mcp.tarasevych.com/api/version",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює виключно власник на сторінці Адміністрування → Оновлення після перевірки прапорців ризику, резервної копії та схвалення ключем доступу.",
+    "Міграція 0301_tech_snelkoppelingen.sql додає стовпець snelkoppelingen_toegestaan до app.tech_profielen; у разі повернення до попередньої версії цей стовпець лишається в базі без порушення сумісності.",
+    "Свідомо поза випуском лишаються: MELDPANEEL-001 (запит № 159 — досьє й проєкт однієї панелі сповіщень, очікує на погодження знімків і написання коду) та майбутня хвиля файлів світових знаків у запиті № 154."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки й тимчасові тестові ключі; справжні секрети, облікові дані та приватні повідомлення не використовувалися і до журналу не потрапляли."
+  }
+}

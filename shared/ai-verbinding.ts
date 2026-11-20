@@ -25,18 +25,39 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
+export type KlantId =
+  | 'grok'
+  | 'claude'
+  | 'chatgpt'
+  | 'codex'
+  | 'gemini'
+  | 'copilot'
+  | 'cursor'
+  | 'antigravity'
+  | 'autoclaw'
+  | 'windsurf'
+  | 'cline'
+  | 'devin'
+  | 'opencode'
+  | 'mscopilot'
+  | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'grok', naam: 'Grok', deur: 'Grok' },
   { id: 'claude', naam: 'Claude', deur: 'claude' },
   { id: 'chatgpt', naam: 'ChatGPT', deur: 'chatgpt' },
+  { id: 'codex', naam: 'Codex', deur: null },
   { id: 'gemini', naam: 'Gemini', deur: 'gemini' },
   { id: 'copilot', naam: 'Copilot', deur: 'copilot' },
   { id: 'cursor', naam: 'Cursor', deur: null },
   { id: 'antigravity', naam: 'Antigravity', deur: null },
   { id: 'autoclaw', naam: 'AutoClaw', deur: null },
+  { id: 'windsurf', naam: 'Windsurf', deur: null },
+  { id: 'cline', naam: 'Cline', deur: null },
+  { id: 'devin', naam: 'Devin', deur: null },
+  { id: 'opencode', naam: 'OpenCode', deur: null },
+  { id: 'mscopilot', naam: 'Microsoft Copilot', deur: null },
   { id: 'overig', naam: 'Інший клієнт', deur: null },
 ]);
 const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -44,7 +65,10 @@ const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0
 export function klantVan(naam: string | null | undefined): KlantId {
   const n = normaal(String(naam || ''));
   if (!n) return 'overig';
+  // «Microsoft Copilot» (Copilot Studio) is een andere klant dan GitHub Copilot, maar bevat hetzelfde woord: daarom eerst.
+  if (/\b(mscopilot|microsoft copilot|microsoft 365 copilot|m365 copilot|copilot studio|power platform|powerplatform)\b/.test(n)) return 'mscopilot';
   for (const k of KLANTEN) if (k.id !== 'overig' && (n === k.id || n.split(' ').includes(k.id))) return k.id;
+  if (/\bcodex\b/.test(n)) return 'codex';
   if (/\b(openai|gpt)\b/.test(n)) return 'chatgpt';
   if (/\b(xai|x ai)\b/.test(n)) return 'grok';
   if (/\b(anthropic)\b/.test(n)) return 'claude';
@@ -52,6 +76,10 @@ export function klantVan(naam: string | null | undefined): KlantId {
   if (/\b(vscode|vs code|visual studio|github)\b/.test(n)) return 'copilot';
   if (/\b(antigravity|jetski)\b/.test(n)) return 'antigravity';
   if (/\b(autoclaw|openclaw|zhipu|zhipuai|chatglm|glm|zai|z ai)\b/.test(n)) return 'autoclaw';
+  if (/\b(windsurf|codeium|cascade)\b/.test(n)) return 'windsurf';
+  if (/\b(cline|roo|roo code|roocode)\b/.test(n)) return 'cline';
+  if (/\b(devin|cognition)\b/.test(n)) return 'devin';
+  if (/\b(opencode|open code)\b/.test(n)) return 'opencode';
   return 'overig';
 }
 export const klant = (id: unknown): Klant => KLANTEN.find((k) => k.id === id) ?? KLANTEN[KLANTEN.length - 1];
@@ -64,7 +92,13 @@ export function duurVoorKlant(instellingen: unknown, id: KlantId): DuurId {
 // ---------------------------------------------------------------- OAuth-terugkeeradressen (RFC 8252)
 export type RedirectSoort = 'web' | 'loopback' | 'app';
 /** https-hosts van bekende AI-klanten (exact of subdomein). */
-export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com', 'autoclaw.z.ai', 'chat.z.ai', 'z.ai']);
+export const WEB_HOSTS: readonly string[] = Object.freeze([
+  'claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com',
+  'autoclaw.z.ai', 'chat.z.ai', 'z.ai', 'windsurf.com', 'codeium.com', 'cline.bot', 'app.devin.ai', 'devin.ai', 'opencode.ai',
+  // Copilot Studio (Power Platform): het terugkeeradres van elke eigen koppeling is https://global.consent.azure-apim.net/redirect/<naam>
+  // (Microsoft Learn, «custom connectors»). Die host is gedeeld door alle Power Platform-tenants; de toestemming blijft dus het slot.
+  'global.consent.azure-apim.net',
+]);
 /** Eigen schema's van desktopapps (RFC 8252 §7.1): alleen deze, met een host (cursor://anysphere.cursor-mcp/oauth/callback). */
 export const APP_SCHEMAS: readonly string[] = Object.freeze(['cursor', 'vscode', 'vscode-insiders', 'windsurf']);
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
@@ -103,3 +137,33 @@ export function redirectPast(geregistreerd: readonly string[], gevraagd: string)
 
 /** Eigen terugkeeradres van de site voor «Підключити автоматично» in de browser (PKCE in de pagina zelf). */
 export const SITE_TERUG_PAD = '/oauth-terug';
+
+/**
+ * SEC-002 (g10a-4, afwerking A; slot m): gereserveerde namen van een AI-klant — «site:…» (zo heet de site zelf als aanvrager), «?»
+ * (onbekende klant) en namen die zich als de site of de gebruiker voordoen («Ви (з сайту)», «You (site)», «Jij (van de site)»), ook na
+ * NFKC-vereenvoudiging (volle breedte, ligaturen). Gedeeld door DCR, CIMD (backend/mcp-connector.ts) en aanvragerNu (connectors-opslag).
+ */
+export const GERESERVEERDE_NAAM = /^(?:\s*site\s*:|\s*\?+\s*$|\s*(?:ви|you|u|jij)\s*\(\s*(?:з сайту|сайт|site|van de site)\s*\))/iu;
+// SEC-002 (slot m2): vóór de controle onzichtbare opmaaktekens (\p{Cf}: nulbreedte, richtingstekens, woordverbinder) weghalen en
+// witruimte samenpersen — anders glippen «Ви<U+200B> (з сайту)» en «Ви (з  сайту)» erdoor. Geldt voor DCR, CIMD en aanvragerNu.
+export const naamVoorControle = (naam: string): string => String(naam ?? '').normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ');
+export const gereserveerdeKlantNaam = (naam: string): boolean => GERESERVEERDE_NAAM.test(naamVoorControle(naam));
+
+/**
+ * ANTISPOOF-001 (16.11.2026): een klantnaam die met letters uit een ander schrift (Cyrillisch «С», Grieks «Α» …) of met tekens
+ * tussen de letters een BEKENDE AI nabootst — «Сlaude», «Chat GPT✓», «C-l-a-u-d-e» — terwijl de naam zelf niet als die AI telt.
+ * Zo'n naam zou in lijsten en meldingen als «Claude» lezen zonder het te zijn. Gedeeld door DCR, CIMD en de tests.
+ * Назва, що лише «схожа» на відомий ШІ (кирилична «С» замість латинської тощо), відхиляється.
+ */
+const SCHIJNLETTER: Record<string, string> = {
+  а: 'a', в: 'b', е: 'e', ё: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p', с: 'c', т: 't', у: 'y', х: 'x', і: 'i', ї: 'i', ј: 'j', ӏ: 'l', ԁ: 'd', ɡ: 'g', ս: 'u', ո: 'n',
+  α: 'a', β: 'b', ε: 'e', η: 'n', ι: 'i', κ: 'k', ν: 'v', ο: 'o', ρ: 'p', τ: 't', υ: 'u', χ: 'x', '0': 'o', '1': 'l', '|': 'l',
+};
+export function bootsKlantNa(naam: string): KlantId | null {
+  const n = naamVoorControle(naam).toLowerCase();
+  const skelet = [...n].map((ch) => SCHIJNLETTER[ch] ?? ch).join('');
+  const aaneen = skelet.replace(/[^a-z]+/g, '');
+  const kandidaat = klantVan(skelet) !== 'overig' ? klantVan(skelet) : klantVan(aaneen);
+  if (kandidaat === 'overig') return null;
+  return klantVan(naam) === kandidaat ? null : kandidaat;
+}

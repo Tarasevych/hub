@@ -1,15 +1,15 @@
-/* Ілюстрації дванадцяти розділів (розмітка: atelier-v49-gegevens.json → secties[].art.uk/.nl).
+/* Ілюстрації тринадцяти розділів (розмітка: atelier-v49-gegevens.json → secties[].art.uk/.nl).
    Правила перенесено без змін значень із погодженого прототипу версії 49; змінено лише область дії (.mr-kunst)
    і назви анімацій, щоб вони не зачіпали решту сайту. Полотно має сталий розмір 440×337 і масштабується цілим
    (IdentiteitAtelier.tsx → Kunst), тому на телефоні нічого не обрізається й не роздувається.
-   Illustraties van de twaalf onderdelen: waarden ongewijzigd uit prototype 49, alleen het bereik (.mr-kunst) is nieuw. */
+   Illustraties van de dertien onderdelen: waarden ongewijzigd uit prototype 49 + meldingen, alleen het bereik (.mr-kunst) is voor deze weergave. */
 .mr-kunst.accent-violet,.mr-kunst-raam.accent-violet{--a:#b3a3ff;--a2:#6e68bf;--art-bg:#242748;--glow:rgba(138,112,234,.24)}
 .mr-kunst.accent-cyan,.mr-kunst-raam.accent-cyan{--a:#6ed8e5;--a2:#297c9c;--art-bg:#173647;--glow:rgba(71,204,225,.2)}
 .mr-kunst.accent-pink,.mr-kunst-raam.accent-pink{--a:#ffabc4;--a2:#b66eaa;--art-bg:#452d4e;--glow:rgba(230,130,190,.19)}
 .mr-kunst.accent-mint,.mr-kunst-raam.accent-mint{--a:#80e3c6;--a2:#2b877f;--art-bg:#20443e;--glow:rgba(105,221,187,.18)}
 .mr-kunst.accent-amber,.mr-kunst-raam.accent-amber{--a:#ffd19b;--a2:#b78b57;--art-bg:#483829;--glow:rgba(244,185,99,.2)}
 .mr-kunst.accent-blue,.mr-kunst-raam.accent-blue{--a:#9bbfff;--a2:#4771b9;--art-bg:#253856;--glow:rgba(104,162,249,.16)}
-.mr-kunst{position:absolute;left:0;top:0;width:440px;height:337px;transform-origin:0 0;color:#eff4ff;font-family:inherit;line-height:1.2;pointer-events:none;user-select:none}
+.mr-kunst{position:absolute;left:0;top:0;--mr-kunst-w:440px;width:var(--mr-kunst-w);height:337px;transform-origin:0 0;color:#eff4ff;font-family:inherit;line-height:1.2;pointer-events:none;user-select:none}
 .mr-kunst *{box-sizing:border-box}
 .mr-kunst svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
 .mr-kunst .art{width:100%;height:100%}
@@ -164,7 +164,7 @@
 .mr-kunst .methods-art-row strong{font-size:12px;font-weight:780;line-height:1.25}
 .mr-kunst .methods-art-row small{font-size:9px;line-height:1.5;letter-spacing:.04em;color:#ecd0e8}
 .mr-kunst .methods-art-row>.meaningful-icon{width:21px;height:21px;color:#bcefcf}
-.mr-kunst .methods-art-brand,.mr-kunst .methods-art-key{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:12px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.13)}
+.mr-kunst .methods-art-brand,.mr-kunst .methods-art-key{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:12px;background:var(--papier,#fff);box-shadow:0 4px 14px rgba(0,0,0,.13)}
 .mr-kunst .methods-art-brand .brand-symbol{width:27px;height:27px}
 .mr-kunst .methods-art-key{color:#ffe7f2;background:rgba(255,188,211,.17);border:1px solid rgba(255,203,227,.36)}
 .mr-kunst .methods-art-key svg{width:25px;height:25px}
@@ -187,6 +187,21 @@
 .mr-kunst .recovery-art-code svg{height:30px;width:30px;color:#62432e}
 .mr-kunst .recovery-ticket .recovery-art-code strong{font-size:18px;white-space:nowrap;letter-spacing:.1em;color:#513723}
 .mr-kunst .recovery-star svg{width:25px;height:25px;color:#ffe0a8}
+.mr-kunst .art-melding .melding-halo{position:absolute;width:255px;height:255px;border-radius:50%;background:radial-gradient(circle,rgba(110,216,229,.28),transparent 65%)}
+.mr-kunst .melding-portal{position:relative;z-index:2;width:min(86%,332px);padding:16px;border-radius:19px;border:1px solid rgba(169,240,250,.36);background:linear-gradient(145deg,rgba(24,62,80,.95),rgba(14,34,50,.96));box-shadow:0 26px 64px rgba(2,14,26,.4);display:flex;flex-direction:column;gap:10px;color:#e7fbff;transform:rotate(-4deg)}
+.mr-kunst .melding-head{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.08em}
+.mr-kunst .melding-bell{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:9px;background:rgba(110,216,229,.2);color:#9ef2ff}
+.mr-kunst .melding-bell svg{width:17px;height:17px}
+.mr-kunst .melding-head strong{flex:1;font-size:11px;font-weight:760}
+.mr-kunst .melding-head em{font-style:normal;font-size:8px;font-weight:800;padding:4px 8px;border-radius:999px;background:rgba(128,227,198,.2);color:#98f5d6;border:1px solid rgba(128,227,198,.38)}
+.mr-kunst .melding-kaart{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:12px;background:rgba(255,255,255,.085);border:1px solid rgba(190,242,250,.18)}
+.mr-kunst .melding-kaart>span{width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border-radius:8px;background:rgba(110,216,229,.16);color:#97f0fc}
+.mr-kunst .melding-kaart svg{width:16px;height:16px}
+.mr-kunst .melding-kaart>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mr-kunst .melding-kaart strong{font-size:10.5px;font-weight:730}
+.mr-kunst .melding-kaart small{font-size:8.5px;color:#a5d6df;letter-spacing:.04em}
+.mr-kunst .melding-veeg-spoor{display:flex;justify-content:space-between;align-items:center;padding:7px 11px;border-radius:10px;background:rgba(8,22,35,.48);border:1px dashed rgba(145,226,240,.3);font-size:8.5px;font-weight:720;letter-spacing:.08em;color:#93d7e4}
+.mr-kunst .melding-ai-label{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:3;padding:7px 12px;border-radius:999px;background:rgba(13,34,48,.92);border:1px solid rgba(154,235,247,.38);color:#c4f6ff;font-size:9px;font-weight:760;letter-spacing:.07em;white-space:nowrap}
 .mr-kunst .art svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.65}
 @keyframes mrKunstOrbFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-16px) rotate(8deg)}}
 @keyframes mrKunstSlowRotate{to{transform:rotate(360deg)}}

@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "taakId": "UPD-007",
+  "datum": "2026-11-19",
+  "taal": "uk",
+  "titel": "UPD-007 · Накладна бічна панель, компактна технічна смуга, локальні підказки кодів, виправлення просторів і меню якорів",
+  "opdracht": "Поверх живої встановленої версії 20261119-121206 (UPD-006 @ 210519f707830bc07b804813d8ed3548245d02c8) виконати 9 пунктів оновлення інтерфейсу та просторів: 1) бічна панель у режимі «Автоматично» наповзає поверх сторінки зі щільним фоном і не зсуває вміст; 2) технічна смуга в режимі «Автоматично» має один компактний стабільний розмір (6 px згорнута / 38 px розгорнута) у кольорі технічного профілю з однорядковим тумблером, режимами піктограм і вимиканими підказками; 3) прибрано спільну кнопку «Показати технічні коди» й додано локальну піктограму зі спливаючим поясненням біля кожного терміна; 4) виправлено відкочування перемикання «Звичайний / Технічний» у TechPoort без закриття технічного сеансу; 5) виправлено обрізання нижнього перемикача бічної панелі при розгорнутій технічній смузі; 6) виправлено ваду вигляду кнопки «Адміністрування»; 7) переведено 8 розділів api.tarasevych.com/afstemming у єдине меню якорів MaquetteAnkerRail; 8) переведено 6 розділів admin.tarasevych.com/updates у єдине меню якорів MaquetteAnkerRail; 9) прибрано ліве обведення-півмісяць та маленьку дубльовану піктограму щитка з технічних кнопок меню.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/upd-007-uitgave-20261119-130500",
+    "basisCommit": "210519f707830bc07b804813d8ed3548245d02c8",
+    "basisVersie": "20261119-121206",
+    "geinstalleerdeBasis": "210519f707830bc07b804813d8ed3548245d02c8",
+    "geinstalleerdeVersie": "20261119-121206",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.17",
+    "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+    "samengevoegd": [],
+    "bewustBuitenUitgave": [
+      {
+        "taak": "MELDPANEEL-001 (запит на злиття № 159)",
+        "tak": "feature/meldpaneel-001-20261118-082300",
+        "commit": "d3bfeca5",
+        "reden": "Окремий проєкт об’єднаної панелі сповіщень; очікує на подальшу розробку у власній гілці."
+      }
+    ]
+  },
+  "commits": [
+    "210519f707830bc07b804813d8ed3548245d02c8",
+    "53c36501fbb35fc40df5a9027308a568a7b9739a"
+  ],
+  "tijdlijn": [
+    {
+      "stap": "Створено гілку feature/upd-007-uitgave-20261119-130500 від фіксації змін UPD-006 (210519f707830bc07b804813d8ed3548245d02c8) та зареєстровано завдання UPD-007.",
+      "resultaat": "Ізольована робоча гілка поверх актуальної основи 20261119-121206 без втручання у voornaamst, integratie чи гілку UPD-006."
+    },
+    {
+      "stap": "Пункт 1: прибрано зсув .canonical-workspace під час .sidebar-hover у src/canoniek-omlijsting.css, src/index.css, src/plaatsing/plaatsing.css та src/menu-v2.css; задано 100% щільний фон і тінь для накладної бічної панелі.",
+      "resultaat": "У режимі «Автоматично» наведення на ліве меню розгортає панель поверх сторінки без посмикування вмісту й без просвічування тексту."
+    },
+    {
+      "stap": "Пункт 2: перероблено технічну смугу (src/tech/strook-voorkeur.ts, strook-menu.ts, StrookPaneel.tsx, TechLaag.tsx, strook.css, tech-maquette.css) на єдиний компактний розмір (6 px згорнута смужка / 38 px розгорнута панель у кольорі профілю), однорядковий 28 px тумблер, режими «Піктограми» та «Піктограми з назвами» і вимикані спливаючі підказки.",
+      "resultaat": "Усунено подвійну висоту й стрибки смуги; підказки в режимі піктограм можна вимикати у налаштуваннях смуги."
+    },
+    {
+      "stap": "Пункт 3: прибрано спільну кнопку «Показати технічні коди» у src/BeheerConsoleWeergave.tsx, BeheerOverzichtWeergave.tsx та src/overzicht/Dashboard.tsx; оновлено <Term> і <TermList> у src/beheer-termen.tsx та стилі у src/beheer-console.css на компактну локальну піктограму .admin-term-info зі спливаючим вікном .admin-term-popover; узгоджено перевірку A14 у tests/eenheid/beheer-overzicht.test.ts.",
+      "resultaat": "Біля кожного технічного терміна відображається локальна піктограма, при наведенні чи фокусі відкривається назва, технічний код і пояснення."
+    },
+    {
+      "stap": "Пункт 4 та Пункт 5: додано явний прапорець вибору звичайного перегляду (zetGebruikerPrive / gebruikerKoosPrive) у src/tech/ruimtes/ruimte-signaal.ts, ruimtes-opslag.ts та перевірку !gebruikerKoosPrive() у src/tech/TechPoort.tsx; у src/tech/tech.css обмежено висоту .canonical-sidebar до height:100%;max-height:100% усередині зсунутого #root.",
+      "resultaat": "Перемикання «Звичайний / Технічний» у лівому меню й меню профілю більше не відкочується назад у «Технічний», технічний сеанс працює далі; нижній перемикач .zr завжди лишається в межах екрана при розгорнутій технічній смузі."
+    },
+    {
+      "stap": "Пункти 6, 7, 8 і 9: прибрано ліве обведення-півмісяць та дубльовану піктограму щитка .tech-yarlyk-schild у src/CanoniekOmlijsting.tsx, SnelleToegangBewerker.tsx і src/menu-v2.css; приховано порожній .canonical-local-pages:empty і вирівняно відступи кнопки «Адміністрування»; переведено 8 розділів api/afstemming (src/AfstemmingWissel.tsx, AfstemmingPagina.tsx) і 6 розділів admin/updates (src/BeheerConsoleWeergave.tsx, BeheerUitrolWeergave.tsx) у єдине меню якорів MaquetteAnkerRail в усіх палітрах.",
+      "resultaat": "Усі 9 пунктів підтверджено модульним тестом upd-007-ui-en-ruimte-20261119 (8/8), живим візуальним аудитом у Chromium та прогоном усіх 186 безбазових/хмарних/післяскладальних тестів."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Розрізняти ручний перехід користувача у «Звичайний» простір (gebruikerKoosPrive у sessionStorage) і звичайний вхід за прямим посиланням у TechPoort.",
+      "reden": "Зберігає зручний автоперехід при відкритті технічного посилання, але повністю усуває примусове відкочування назад, коли власник сам натиснув «Звичайний», не закриваючи технічний сеанс."
+    },
+    {
+      "besluit": "Зберегти сумісність локальних налаштувань технічної смуги (нормалізація grootte до 'middel', нове поле tooltips із типовим значенням true).",
+      "reden": "Старі записи в localStorage безпечно переходять на єдиний компактний розмір без скидання обраних користувачем кнопок і режиму розгортання."
+    },
+    {
+      "besluit": "Показувати єдине меню якорів MaquetteAnkerRail на api/afstemming (8 розділів) та admin/updates (6 розділів) в усіх палітрах без дублювання бічної чи верхньої смуги вкладок.",
+      "reden": "Дає такий самий звичний, послідовний вигляд навігації, як на id.tarasevych.com/account, незалежно від обраної теми оформлення."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "soort": "gewijzigd",
+      "pad": "src/canoniek-omlijsting.css, src/index.css, src/plaatsing/plaatsing.css, src/menu-v2.css",
+      "omschrijving": "Бічна панель у режимі «Автоматично» наповзає поверх сторінки зі 100% непрозорим фоном і тінню без зсуву вмісту; прибрано півмісяць, дубльований щиток і порожню смужку під кнопкою «Адміністрування»."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/tech/strook-voorkeur.ts, src/tech/strook-menu.ts, src/tech/StrookPaneel.tsx, src/tech/TechLaag.tsx, src/tech/strook.css, src/tech/tech-maquette.css",
+      "omschrijving": "Єдиний компактний розмір технічної смуги (6 px / 38 px) у кольорі технічного профілю, однорядковий тумблер, режими «Піктограми» та «Піктограми з назвами» і вимикані підказки."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/beheer-termen.tsx, src/beheer-console.css, src/BeheerConsoleWeergave.tsx, src/BeheerOverzichtWeergave.tsx, src/overzicht/Dashboard.tsx",
+      "omschrijving": "Прибрано спільну кнопку «Показати технічні коди»; біля кожного терміна додано локальну піктограму зі спливаючим поясненням; 6 розділів admin/updates виведено в єдине меню якорів MaquetteAnkerRail."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/tech/ruimtes/ruimte-signaal.ts, src/tech/ruimtes/ruimtes-opslag.ts, src/tech/TechPoort.tsx, src/tech/tech.css",
+      "omschrijving": "Виправлено відкочування перемикання «Звичайний / Технічний» у TechPoort і обрізання нижнього перемикача бічної панелі при розгорнутій технічній смузі."
+    },
+    {
+      "soort": "gewijzigd",
+      "pad": "src/CanoniekOmlijsting.tsx, src/SnelleToegangBewerker.tsx, src/AfstemmingWissel.tsx, src/afstemming-vnext/AfstemmingPagina.tsx, src/afstemming-vnext/afstemming.css, src/afstemming-vnext/afstemming-maquette.css, src/BeheerUitrolWeergave.tsx, src/beheer-uitrol.css, shared/zoek-ui-knoppen.generated.ts",
+      "omschrijving": "Прибрано дубльований щиток технічних ярликів, переведено 8 розділів api/afstemming і 6 розділів admin/updates у меню якорів MaquetteAnkerRail, оновлено каталог пошуку."
+    },
+    {
+      "soort": "toegevoegd",
+      "pad": "tests/eenheid/upd-007-ui-en-ruimte-20261119.test.ts, .github/workflows/upd-007-uitgave.yml, orchestratie/taken/UPD-007.json, orchestratie/bijdragen/UPD-007/*, orchestratie/ontwikkelarchieven/UPD-007.json",
+      "omschrijving": "Регресійне випробування усіх 9 пунктів UPD-007, оновлення дотичних модульних тестів, облік авторства, хронологія, журнал походження TRACE-001 та ізольований процес складання й оприлюднення UPD-007."
+    }
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/upd-007-uitgave.yml",
+      "uk": "Ізольований сценарій випуску UPD-007: без pull_request_target і secrets.*, усі дії закріплено повними 40-символьними відбитками, persist-credentials: false; виконує 306 наборів випробувань, orch behoud, подвійний прогін міграцій PostgreSQL 16 трьома ролями, TRACE-001 і не встановлює пакунок автоматично.",
+      "nl": "Geïsoleerde uitgavewerkstroom voor UPD-007: zonder pull_request_target of secrets.*, alle acties vastgepind op volledige 40-tekens-SHA’s en persist-credentials: false; draait 306 testbestanden, orch behoud, dubbele migraties op PostgreSQL 16 met drie rollen en TRACE-001 zonder automatische installatie."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit && npm run typecheck:server && npm run build",
+      "resultaat": "Перевірка типів клієнта та сервера й повне складання пройшли без помилок (код 0)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && scripts/zoek-ui-catalogus.mjs --controle && scripts/kleur-contrast-controle.mjs --stil && scripts/kaart-controle.mjs --stil && scripts/plaatsing-controle.mjs --stil && scripts/hulp-vraagtekens-controle.mjs --stil && scripts/l002-audit.mjs && scripts/mail-slimme-inbox-audit.mjs && scripts/keten-controle.mjs --zonder-audit && deploy/agent/agent.mjs selftest --root /tmp",
+      "resultaat": "Усі статичні контракти, правила координації 1.4.17, пошуковий каталог (1809 елементів), контрастність, карта файлів і самоперевірка ПК-агента пройшли з кодом 0."
+    },
+    {
+      "opdracht": "Локальний прогін 20 хмарних тестів, 153 безбазових модульних випробувань (включно з upd-007-ui-en-ruimte-20261119 8/8), 13 післяскладальних випробувань та живий візуальний аудит у Chromium",
+      "resultaat": "Усі 186 наборів випробувань і перевірка знімків у Chromium підтвердили виконання усіх 9 пунктів."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/upd-007-uitgave.yml",
+      "resultaat": "Звіряє живу основу 20261119-121206 (210519f7), виконує всі 306 наборів випробувань, подвійний прогін міграцій PostgreSQL 16 трьома ролями, повне складання, підписаний CRX3 0.9.7, UITROL-MANIFEST.json, TRACE-001 та оприлюднення випуску без автоматичного встановлення."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "shared/ontwikkelarchief.ts",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет випуску ніколи не встановлюється автоматично: його встановлює лише власник на сторінці Адміністрування → Оновлення після зеленої попередньої перевірки, перевірки запасної копії на R:\\mijn-ruimte-reservekopie\\ та підтвердження ключем доступу.",
+    "Зміни стосуються виключно клієнтської частини та стилів (нових міграцій бази даних і змін серверного коду немає).",
+    "Проєкт об’єднаної панелі сповіщень MELDPANEEL-001 (№ 159) свідомо збережено в окремій гілці поза цим випуском."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Використано лише вигадані тестові зразки; справжні облікові дані, таємниці, ключі чи вміст повідомлень до журналу не потрапляли."
+  }
+}

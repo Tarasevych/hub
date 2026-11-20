@@ -11,9 +11,11 @@ export type Rij = {
   categorie: CategorieId; resultaatKlasse: ResultaatKlasse; ruis: boolean; doel: Doel | null; wijziging: Wijziging | null; reden: string; agent: string;
 };
 export type Lijst = { items: Rij[]; personen: Record<string, Persoon>; nextCursor: string | null };
+export type LaatsteControle = { tijd: number; geldig: boolean; totaal: number; ketens: number };
 export type Statistiek = {
   totaal: number; perCategorie: Array<{ id: string; n: number }>; perResultaat: Array<{ id: string; n: number }>; actoren: Array<{ id: string; n: number }>;
   acties: Array<{ id: string; n: number }>; perDienst?: Array<{ id: string; n: number }>; perDag: Array<{ dag: string; n: number; geweigerd: number }>; eerste: number; laatste: number; personen: Record<string, Persoon>;
+  laatsteControle?: LaatsteControle | null;
 };
 export type KetenUitslag = { ketens: number; gecontroleerd: number; afgekapt: boolean; totaal: number; hashFout: number; schakelFout: number; gaten: number; geldig: boolean; ongeldig: Array<{ eigenaar: string; hashFout: number; schakelFout: number; gaten: number }>; duurMs: number };
 
@@ -22,6 +24,14 @@ export type Staat = {
   q: string; categorieen: string[]; resultaten: string[]; actorId: string; doelId: string; doelNaam: string; actie: string; /** rijfilter op de dienst (kolom service); gaat als `dienst` naar de server — nooit als `service` (dat is het sessieveld) */ dienst: string; bron: 'nieuw' | 'oud'; periode: Periode; van: string; tot: string; verbergRuis: boolean; volgorde: 'nieuw' | 'oud';
 };
 export const LEEG: Staat = { q: '', categorieen: [], resultaten: [], actorId: '', doelId: '', doelNaam: '', actie: '', dienst: '', bron: 'nieuw', periode: '7d', van: '', tot: '', verbergRuis: true, volgorde: 'nieuw' };
+
+export const periodeLabel = (p: Periode, lang: Lang): string => ({
+  '24u': tr(lang, '24 год', '24 u'),
+  '7d': tr(lang, '7 днів', '7 dagen'),
+  '30d': tr(lang, '30 днів', '30 dagen'),
+  'alles': tr(lang, 'Усе', 'Alles'),
+  'eigen': tr(lang, 'Свій період', 'Eigen periode'),
+}[p]);
 
 /** Eigen datuminvoer (yyyy-mm-dd) → ms op lokale middernacht; leeg of ongeldig → 0. */
 export const dagMs = (v: string, einde = false): number => { if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return 0; const [j, m, d] = v.split('-').map(Number); const t = new Date(j, m - 1, d + (einde ? 1 : 0)).getTime(); return Number.isFinite(t) ? t : 0; };

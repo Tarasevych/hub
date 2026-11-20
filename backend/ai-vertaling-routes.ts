@@ -2,18 +2,29 @@ import { createHash } from 'node:crypto';
 import { db, error, json } from '../server/platform';
 import { postRecordsVanLade } from './mail-ruimte';
 import { rateLimit } from '../server/platform/beveiliging';
+import { meld } from './melder';
 import { getPool } from '../server/platform/pg';
 import { beslissing, leesStand } from './ai-beleid';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { leesBeheerUit, leesToegang } from './ai-toegang';
+import {
+  dienstMotor, dienstSleutel, gebruikEen, gebruikVan, geefGebruikTerug, leesDienstMotoren, leesLimietKoppen, onthoudResterend,
+  reserveerGebruik, vertaalLibre, vraagOllama, type DienstRij,
+} from './ai-dienst-motoren';
+import { leesPrijzen } from './ai-prijzen';
 import { defaultChatDeps, DEFAULT_MODEL } from './connectors-chat';
 import { getToolModes, listAgents } from './connectors-opslag';
 import { mailHtmlToPlainText, normalizeOutboundMailHtml } from './mail-opstel-html';
 import { listGrants } from './mcp-connector-opslag';
 import { CHAT_KLANT } from './mcp-namens';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { alineasVoorModel, controleerPunten, gespreksAlineas, type AiPunt, type BronAlinea, type PuntSoort } from '../shared/ai-bronnen';
+import { alineasVoorModel, controleerPunten, gespreksAlineas, type BronAlinea } from '../shared/ai-bronnen';
 import { klantVan } from '../shared/ai-verbinding';
+import { actiesHints, actiesPunten, type ActiesModelAntwoord } from '../shared/ai-acties-model';
+import {
+  akkoordSleutel, dienstAgentId, dienstFuncties, dienstIdVan, dienstKlaar, dienstPubliek, dienstWaarheen, gebruikSleutelDienst,
+  gebruikSleutelEigen, isDienstAgentId, type DienstFunctie,
+} from '../shared/ai-dienst-motor';
 import {
   AI_AANBIEDERS,
   AI_AANBIEDER_BIJ_ID,
@@ -35,6 +46,7 @@ import {
   normalizeAiVertalingTaal,
   STANDAARD_AI_VERTALING_INSTELLINGEN,
   stripTrackingAndSecrets,
+  zonderTagsLineair,
   taalLabelUk,
   motorenMetStand,
   vertaalMotorVan,
@@ -49,6 +61,7 @@ import {
   type RelatedMailCitation,
   type StoredMailContextItem,
 } from '../shared/ai-vertaling';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const AI_VERTALING_PREFS_TABLE = 'ai_vertaling_preferences_v1';
 const MAIL_ACCOUNTS_TABLE = 'mail_accounts_v1';
@@ -138,8 +151,9 @@ async function defaultLoadPolicyCeiling(userId: string, clientName: string): Pro
   try {
     const [beheerUit, staat, gebruikerCaps] = await Promise.all([
       leesBeheerUit().catch(() => [] as string[]),
-      leesStaat().catch(() => null),
-      leesGebruikerCaps(userId).catch(() => ({} as Record<string, Record<string, boolean>>)),
+      // SEC-002 (ai-mcp-13): onleesbare schakelaars (CAP_ONBEKEND) = lezen uit, niet «alles aan».
+      leesStaat().catch(() => { mailCapAllowed = false; filesCapAllowed = false; return null; }),
+      leesGebruikerCaps(userId).catch(() => { mailCapAllowed = false; filesCapAllowed = false; return {} as Record<string, Record<string, boolean>>; }),
     ]);
     if (beheerUit.includes('mail.read')) mailCapAllowed = false;
     if (beheerUit.includes('files.read')) filesCapAllowed = false;
@@ -334,6 +348,41 @@ async function defaultLoadAgents(userId: string): Promise<AiVertalingAgentInfo[]
     });
   }
 
+  // MAILAI-001: позначити, хто справді може працювати. Сервер перекладає/підсумовує лише через ключ API постачальника в Sleutelkluis
+  // (callAnthropicJson); MCP-конектор, токен консолі чи спарений агент без такого ключа кнопок не оживить. Чесно кажемо це в статусі.
+  const sleutels = new Map<string, Promise<boolean>>();
+  const heeftKey = (agent: AiVertalingAgentInfo): Promise<boolean> => {
+    const aanbieder = aanbiederUitAgent(agent);
+    const k = `${aanbieder}\u001f${agent.id === 'prive:mijn-ruimte-assistent' ? 'basis' : ''}`;
+    let p = sleutels.get(k);
+    if (!p) {
+      p = (async () => {
+        try {
+          if (customDeps?.getApiKeyForProvider) return Boolean(await customDeps.getApiKeyForProvider(userId, aanbieder));
+          if (customDeps?.getApiKey) return Boolean(await customDeps.getApiKey(userId));
+          if (defaultChatDeps.getApiKeyForPurpose) {
+            if (await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder)) return true;
+            return agent.id === 'prive:mijn-ruimte-assistent' ? Boolean(await defaultChatDeps.getApiKey(userId)) : false;
+          }
+          return Boolean(await defaultChatDeps.getApiKey(userId));
+        } catch {
+          return false;
+        }
+      })();
+      sleutels.set(k, p);
+    }
+    return p;
+  };
+  for (const agent of result) {
+    if (agent.ruimte !== 'prive') continue;
+    agent.heeftSleutel = await heeftKey(agent);
+    if (!agent.heeftSleutel) {
+      agent.statusUk = agent.id === 'prive:mijn-ruimte-assistent'
+        ? 'Не налаштовано: немає ключа ШІ — переклад і підсумок не працюватимуть'
+        : 'Підключено, але сайт не може запускати цього ШІ сам: потрібен ключ API в «Доступ ШІ»';
+    }
+  }
+
   return result;
 }
 
@@ -486,8 +535,9 @@ function extractDatesFromText(text: string): string[] {
 function extractSumsFromText(text: string): string[] {
   const matches = new Set<string>();
   const regexes = [
-    /(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн)\s?\d[\d\s.,]*(?:\b|$)/gi,
-    /\b\d[\d\s.,]*\s?(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн|євро|доларів)\b/gi,
+    // SEC-002 (aanv-gat-b-01): [\d\s.,]{0,40} in plaats van * — vroeger zocht elke cijferpositie in «1 1 1 …» tot het einde (kwadratisch).
+    /(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн)\s?\d[\d\s.,]{0,40}(?:\b|$)/gi,
+    /\b\d[\d\s.,]{0,40}\s?(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн|євро|доларів)\b/gi,
   ];
   for (const r of regexes) {
     for (const m of text.matchAll(r)) {
@@ -499,12 +549,66 @@ function extractSumsFromText(text: string): string[] {
 }
 
 function splitSentences(text: string): string[] {
-  return String(text || '')
-    .replace(/<[^>]*>/g, ' ')
+  // SEC-002 (aanv-ronde1-03): tags lineair weg (zonderTagsLineair), invoer begrensd.
+  return zonderTagsLineair(String(text || '').slice(0, 400_000))
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?।])\s+/)
     .map(s => s.trim())
     .filter(s => s.length >= 12);
+}
+
+/** MAILAI-002: що сталося з викликом постачальника — для чесної відповіді (ліміт, недійсний ключ) і для «хто обробив». */
+export type AanbiederMelding = {
+  aanbieder?: AiAanbiederId; status?: number; wachtSec?: number;
+  /** MAILAI-003: спільний рушій сайту, яким ішов запит (ключ сайту або власний сервер). */
+  dienst?: DienstRij;
+  /** Денну межу спільного рушія на людину вичерпано — постачальника навіть не питали. */
+  dienstLimiet?: boolean;
+  /** Ключ лічильника використання («dienst:<id>» або «sleutel:<постачальник>») — щоб відповідь показала «сьогодні N». */
+  teller?: string;
+};
+
+/**
+ * MAILAI-002: ключ і постачальник РАЗОМ. Ключ лише цього користувача (Sleutelkluis, призначення = постачальник) — ніколи ключ
+ * власника сервера чи іншого користувача. «Приватний асистент» не має власного постачальника: береться перший, для якого в людини є
+ * ключ, і запит іде САМЕ йому. Раніше тут брався будь-який ключ, а запит ішов на api.anthropic.com — ключ Gemini міг піти не туди.
+ * Sleutel en aanbieder samen: alleen de eigen sleutel van deze gebruiker, en het verzoek gaat naar de aanbieder van díe sleutel.
+ */
+export async function sleutelEnAanbieder(userId: string, chosenAgent?: AiVertalingAgentInfo | null): Promise<{ apiKey: string | null; aanbieder: AiAanbiederId; dienst?: DienstRij }> {
+  const eigen = aanbiederUitAgent(chosenAgent);
+  // MAILAI-003: спільний рушій сайту. Ключ береться ЛИШЕ зі сховища власника під назвою «gedeeld-<id>»; особисті ключі людини
+  // тут не читаються взагалі, а вимкнений чи неготовий рушій не дає нічого (без тихої заміни на інший ключ).
+  if (chosenAgent && isDienstAgentId(chosenAgent.id)) {
+    const rij = await dienstMotor(dienstIdVan(chosenAgent.id)).catch(() => null);
+    if (!rij || !dienstKlaar(rij)) return { apiKey: null, aanbieder: eigen };
+    if (rij.soort !== 'aanbieder') return { apiKey: null, aanbieder: eigen, dienst: rij };
+    return { apiKey: await dienstSleutel(rij), aanbieder: rij.aanbieder!, dienst: rij };
+  }
+  const assistent = !chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent';
+  try {
+    if (customDeps?.getApiKeyForProvider) {
+      const k = await customDeps.getApiKeyForProvider(userId, eigen);
+      if (k || !assistent) return { apiKey: k, aanbieder: eigen };
+      for (const a of AI_AANBIEDERS) {
+        const v = await customDeps.getApiKeyForProvider(userId, a.id);
+        if (v) return { apiKey: v, aanbieder: a.id };
+      }
+      return { apiKey: null, aanbieder: eigen };
+    }
+    if (customDeps?.getApiKey) return { apiKey: await customDeps.getApiKey(userId), aanbieder: eigen };
+    if (defaultChatDeps.getApiKeyForPurpose) {
+      const k = await defaultChatDeps.getApiKeyForPurpose(userId, eigen);
+      if (k || !assistent) return { apiKey: k, aanbieder: eigen };
+      for (const a of AI_AANBIEDERS) {
+        const v = await defaultChatDeps.getApiKeyForPurpose(userId, a.id);
+        if (v) return { apiKey: v, aanbieder: a.id };
+      }
+      return { apiKey: null, aanbieder: eigen };
+    }
+    return { apiKey: await defaultChatDeps.getApiKey(userId), aanbieder: eigen };
+  } catch {
+    return { apiKey: null, aanbieder: eigen };
+  }
 }
 
 async function callAnthropicJson<T>(
@@ -514,32 +618,37 @@ async function callAnthropicJson<T>(
   maxTokens = 1400,
   chosenAgent?: AiVertalingAgentInfo | null,
   responseSchema?: Record<string, unknown>,
+  melding?: AanbiederMelding,
 ): Promise<T | null> {
-  const aanbieder = aanbiederUitAgent(chosenAgent);
   const fetchFn = customDeps?.fetch ?? fetch;
-  let apiKey: string | null = null;
-  try {
-    if (customDeps?.getApiKeyForProvider) {
-      apiKey = await customDeps.getApiKeyForProvider(userId, aanbieder);
-    } else if (customDeps?.getApiKey) {
-      apiKey = await customDeps.getApiKey(userId);
-    } else if (defaultChatDeps.getApiKeyForPurpose) {
-      apiKey = await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder);
-      if (!apiKey && (!chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent')) {
-        apiKey = await defaultChatDeps.getApiKey(userId);
-      }
-    } else {
-      apiKey = await defaultChatDeps.getApiKey(userId);
-    }
-  } catch {
-    apiKey = null;
+  const { apiKey, aanbieder, dienst } = await sleutelEnAanbieder(userId, chosenAgent);
+  const eigenServer = Boolean(dienst && dienst.soort !== 'aanbieder');
+  if (melding) { melding.aanbieder = eigenServer ? undefined : aanbieder; melding.dienst = dienst; }
+  if (!apiKey && !eigenServer) return null;
+  if (dienst?.soort === 'libretranslate') return null;   // LibreTranslate вміє лише переклад — його викликає гілка перекладу
+  // Лічильник: спільний рушій має денну межу на людину (атомарно, до виклику); особистий ключ лише рахується, без межі.
+  const teller = dienst ? gebruikSleutelDienst(dienst.id) : gebruikSleutelEigen(aanbieder);
+  if (melding) melding.teller = teller;
+  if ((await reserveerGebruik(userId, teller, dienst ? dienst.limietPerDag : null)) === null) {
+    if (melding) { melding.status = 429; melding.dienstLimiet = true; }
+    return null;
   }
-  if (!apiKey) return null;
 
   try {
+    if (dienst && dienst.soort === 'ollama') {
+      const r = await vraagOllama(fetchFn, dienst, systemPrompt, userPrompt, maxTokens);
+      if (!r.ok) {
+        if (melding) melding.status = r.status;
+        await geefGebruikTerug(userId, teller);
+        return null;
+      }
+      const m = /\{[\s\S]*\}/.exec(r.waarde);
+      return m ? JSON.parse(m[0]) as T : null;
+    }
+    if (!apiKey) { await geefGebruikTerug(userId, teller); return null; }
     let res: Response;
     if (aanbieder === 'gemini') {
-      const geminiModel = process.env.MAIL_GEMINI_MODEL || AI_AANBIEDER_BIJ_ID.gemini.standaardVertaalModel;
+      const geminiModel = dienst?.model || process.env.MAIL_GEMINI_MODEL || AI_AANBIEDER_BIJ_ID.gemini.standaardVertaalModel;
       const geminiUrl = `${AI_AANBIEDER_BIJ_ID.gemini.eindpunt}/${encodeURIComponent(geminiModel)}:generateContent`;
       res = await fetchFn(geminiUrl, {
         method: 'POST',
@@ -567,7 +676,7 @@ async function callAnthropicJson<T>(
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: meta.standaardVertaalModel,
+          model: dienst?.model || meta.standaardVertaalModel,
           max_tokens: maxTokens,
           response_format: { type: 'json_object' },
           messages: [
@@ -586,7 +695,7 @@ async function callAnthropicJson<T>(
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: process.env.MAIL_AI_MODEL || process.env.CHAT_MODEL || DEFAULT_MODEL,
+          model: dienst?.model || process.env.MAIL_AI_MODEL || process.env.CHAT_MODEL || DEFAULT_MODEL,
           max_tokens: maxTokens,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }],
@@ -595,7 +704,18 @@ async function callAnthropicJson<T>(
       });
     }
 
-    if (!res.ok) return null;
+    // MAILAI-003: залишок запитів за заголовками постачальника (Anthropic, OpenAI-сумісні) — для «лишилося N» у панелі.
+    onthoudResterend(userId, teller, leesLimietKoppen(res.headers));
+    if (!res.ok) {
+      await geefGebruikTerug(userId, teller);   // невдалий запит не зменшує денну межу людини
+      // MAILAI-002: 429 = ліміт постачальника (безкоштовний рівень вичерпано тощо), 401/403 = ключ недійсний. Тексту листа тут немає.
+      if (melding) {
+        melding.status = res.status;
+        const wacht = Number(res.headers?.get?.('retry-after') || 0);
+        if (Number.isFinite(wacht) && wacht > 0) melding.wachtSec = Math.min(Math.round(wacht), 86_400);
+      }
+      return null;
+    }
     const data: any = await res.json().catch(() => null);
     let rawText = '';
     if (Array.isArray(data?.candidates) && data.candidates[0]?.content?.parts) {
@@ -617,9 +737,62 @@ async function callAnthropicJson<T>(
     const jsonMatch = /\{[\s\S]*\}/.exec(rawText);
     if (!jsonMatch) return null;
     return JSON.parse(jsonMatch[0]) as T;
-  } catch {
+  } catch (err) {
+    // Мережа чи тайм-аут: запит не відбувся — повертаємо одиницю лічильника. Зіпсований JSON у відповіді — запит відбувся, лишаємо.
+    if (!(err instanceof SyntaxError)) await geefGebruikTerug(userId, teller);
     return null;
   }
+}
+
+/**
+ * MAILAI-003: перевірка ключа спільного рушія власником — лише фіксоване тестове речення, ніколи текст користувача.
+ * Controle van de gedeelde sleutel door de eigenaar: alleen een vaste testzin.
+ */
+export async function testAanbiederSleutel(rij: DienstRij, zin: string): Promise<{ ok: boolean; status: number; voorbeeld: string }> {
+  const melding: AanbiederMelding = {};
+  const agent: AiVertalingAgentInfo = dienstAgent({ ...rij, aan: true });
+  const r = await callAnthropicJson<{ t?: string }>(`test:${rij.eigenaarUserId}`, 'Respond with valid JSON only.', `Translate to Ukrainian and return JSON {"t":"..."}: ${zin}`, 200, agent, undefined, melding);
+  return { ok: Boolean(r && typeof r.t === 'string'), status: r ? 200 : (melding.status || 0), voorbeeld: String(r?.t || '').slice(0, 200) };
+}
+
+/** Синтетичний «агент» спільного рушія: приватний простір, право читати пошту й файли дає ЗГОДА людини на цей рушій (перевіряється окремо). */
+function dienstAgent(rij: DienstRij): AiVertalingAgentInfo {
+  return {
+    id: dienstAgentId(rij.id), name: rij.naam, platform: rij.aanbieder || rij.soort, source: 'dienst', ruimte: 'prive',
+    scopes: ['mail.read', 'files.read'], allowedMailRead: true, allowedFilesRead: true,
+    statusUk: 'Спільний рушій сайту', heeftSleutel: true,
+  };
+}
+
+/** MAILAI-003: переклад через LibreTranslate на власному сервері сайту. Та сама денна межа на людину, що й для інших спільних рушіїв. */
+async function vertaalViaLibre(
+  userId: string, rij: DienstRij, segmenten: AiVertalingSegment[], doel: string, melding: AanbiederMelding,
+): Promise<{ detectedSourceLang?: string; translations?: Record<string, string> } | null> {
+  melding.dienst = rij; melding.aanbieder = undefined;
+  const teller = gebruikSleutelDienst(rij.id);
+  melding.teller = teller;
+  if ((await reserveerGebruik(userId, teller, rij.limietPerDag)) === null) { melding.status = 429; melding.dienstLimiet = true; return null; }
+  const r = await vertaalLibre(customDeps?.fetch ?? fetch, rij, segmenten.map((x) => x.text), doel);
+  if (!r.ok) { melding.status = r.status; await geefGebruikTerug(userId, teller); return null; }
+  const translations: Record<string, string> = {};
+  segmenten.forEach((seg, i) => { if (r.waarde.vertaald[i]?.trim()) translations[seg.id] = r.waarde.vertaald[i]; });
+  return { detectedSourceLang: r.waarde.brontaal, translations };
+}
+
+/** Власника сповіщаємо про збій спільного рушія не частіше ніж раз на годину на рушій і причину. */
+const dienstStoringGemeld = new Map<string, number>();
+async function meldDienstStoring(rij: DienstRij, status: number): Promise<void> {
+  const sleutel = `${rij.id}|${status}`;
+  if (Date.now() - (dienstStoringGemeld.get(sleutel) || 0) < 3600_000) return;
+  dienstStoringGemeld.set(sleutel, Date.now());
+  const wat = status === 401 || status === 403
+    ? ['постачальник не прийняв ключ сайту (недійсний, відкликаний або без доступу до моделі)', 'de aanbieder aanvaardde de sleutel van de site niet']
+    : status === 429
+      ? ['постачальник відмовив через ліміт або вичерпаний баланс ключа сайту', 'de aanbieder weigerde wegens limiet of opgebruikt tegoed']
+      : ['рушій не відповів (сервер недоступний або повернув помилку)', 'de motor antwoordde niet (server onbereikbaar of fout)'];
+  await meld(rij.eigenaarUserId, 'beheer.ai_motor', `Спільний рушій «${rij.naam}» не обробив запит / Gedeelde motor «${rij.naam}» verwerkte een verzoek niet`,
+    `Користувач отримав чесну відмову й пораду обрати інший рушій. Причина: ${wat[0]} (код ${status || 'мережа'}). Текст листа не збережено. Перевірте рушій кнопкою «Перевірити». / Reden: ${wat[1]} (code ${status || 'netwerk'}). De tekst is niet bewaard.`,
+    `https://${SERVICE_HOSTS.mcp}/agenten#tech`).catch(() => undefined);
 }
 
 const UNTRUSTED_GUARD_SYSTEM = [
@@ -631,7 +804,7 @@ const UNTRUSTED_GUARD_SYSTEM = [
 
 function wrapUntrusted(raw: string, maxLen = 18_000): string {
   const plain = mailHtmlToPlainText(normalizeOutboundMailHtml(raw, 300_000), 50_000)
-    .replace(/<\s*\/?\s*untrusted_data\s*>/gi, '[marker]')
+    .replace(/<\s*(?:\/\s*)?untrusted_data\s*>/gi, '[marker]')
     .slice(0, maxLen);
   return `<untrusted_data>\n${plain}\n</untrusted_data>`;
 }
@@ -713,44 +886,9 @@ function actiesBron(berichten: AiVertalingBronBericht[] | undefined, bodyText: s
  * letterlijk citaat meer. Alleen een <untrusted_data>-tag in de brief zelf (ook met attributen) wordt onschadelijk gemaakt.
  */
 function wrapAlineas(tekst: string, maxLen = ACTIES_MAX_TEKENS): string {
-  const veilig = tekst.replace(/<\s*\/?\s*untrusted_data\b[^>]*>/gi, '[marker]').slice(0, maxLen);
+  // SEC-002 (aanv-gat-b-01): eerst begrenzen, dan lineair (tot de laatste «>», geen twee aangrenzende \s*).
+  const veilig = (() => { const t = String(tekst ?? '').slice(0, maxLen * 2), g = t.lastIndexOf('>') + 1; return (t.slice(0, g).replace(/<\s*(?:\/\s*)?untrusted_data\b[^>]*>/gi, '[marker]') + t.slice(g)).slice(0, maxLen); })();
   return `<untrusted_data>\n${veilig}\n</untrusted_data>`;
-}
-
-type ActiesModelAntwoord = { items?: unknown; brief?: unknown; replySuggestions?: unknown; needsReply?: unknown };
-
-const ACTIES_SOORT = new Map<string, PuntSoort>([['question', 'vraag'], ['request', 'verzoek'], ['deadline', 'termijn'], ['fact', 'feit']]);
-
-/** Brief- of alineanummer van het model: een geheel getal ≥ 1, anders niets (dan zoekt de controle in het hele gesprek). */
-function volgnummer(v: unknown): number | undefined {
-  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() ? Number(v) : Number.NaN;
-  return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : undefined;
-}
-
-/** De punten van het model als AiPunt: alleen met tekst én citaat, hoogstens `max`. Of ze kloppen, beslist controleerPunten. */
-function actiesPunten(lijst: unknown, voorvoegsel: 'm' | 'k', max: number, standaard: PuntSoort): AiPunt[] {
-  const uit: AiPunt[] = [];
-  for (const item of Array.isArray(lijst) ? lijst : []) {
-    if (uit.length >= max) break;
-    if (!item || typeof item !== 'object') continue;
-    const p = item as Record<string, unknown>;
-    const tekst = typeof p.text === 'string' ? p.text.trim().slice(0, 400) : '';
-    // Het label «[3.2]» dat wij ervoor zetten, hoort niet bij het citaat.
-    const citaat = typeof p.quote === 'string' ? p.quote.replace(/^\s*\[\d{1,3}\.\d{1,3}\]\s*/, '').trim().slice(0, 600) : '';
-    if (!tekst || !citaat) continue;
-    const brief = volgnummer(p.message);
-    const alinea = volgnummer(p.paragraph);
-    uit.push({
-      id: `${voorvoegsel}:${uit.length}`,
-      tekst,
-      citaat,
-      ...(brief ? { brief } : {}),
-      ...(alinea ? { alinea } : {}),
-      termijn: typeof p.deadline === 'string' ? p.deadline.trim().slice(0, 120) : '',
-      soort: ACTIES_SOORT.get(typeof p.kind === 'string' ? p.kind.trim().toLowerCase() : '') ?? standaard,
-    });
-  }
-  return uit;
 }
 
 export type ExecuteAiVertalingInput = {
@@ -784,9 +922,104 @@ export type ExecuteAiVertalingInput = {
   bronBerichten?: AiVertalingBronBericht[];
 };
 
+/**
+ * SEC-002 (aanv-gat-b-01, aanv-ronde1-03, keten-config-04): alle tekstvelden begrensd VÓÓR elke bewerking. bodyText en subject
+ * kwamen onbeperkt (tot 12 MB) binnen en gingen door reguliere expressies in de hoofdthread (stripTrackingAndSecrets,
+ * splitSentences, extractSumsFromText …) — één verzoek legde de hele server minuten tot uren stil, en de onderwerpregel
+ * ging in de cachesleutel (geheugen). Geldt ook voor andere aanroepers dan de route.
+ */
+export const AI_VERTALING_MAX = { body: 200_000, subject: 1_000, adres: 320, adressen: 50, id: 200, threadTekst: 6_000, threadVeld: 300 } as const;
+export function begrensAiVertalingInvoer(input: ExecuteAiVertalingInput): ExecuteAiVertalingInput {
+  const M = AI_VERTALING_MAX;
+  const tekst = (v: unknown, max: number) => (v === undefined || v === null ? undefined : String(v).slice(0, max));
+  const lijst = (v: unknown) => (Array.isArray(v) ? v.slice(0, M.adressen).map((x) => String(x ?? '').slice(0, M.adres)) : undefined);
+  return {
+    ...input,
+    userId: String(input.userId ?? '').slice(0, M.id),
+    mode: String(input.mode ?? '').slice(0, 40) as AiVertalingMode,
+    targetLang: String(input.targetLang ?? '').slice(0, 20),
+    agentId: tekst(input.agentId, M.id),
+    accountId: tekst(input.accountId, M.id),
+    messageId: String(input.messageId ?? '').slice(0, M.id),
+    threadId: tekst(input.threadId, M.id),
+    subject: tekst(input.subject, M.subject),
+    from: tekst(input.from, M.adres),
+    to: lijst(input.to),
+    cc: lijst(input.cc),
+    bodyText: tekst(input.bodyText, M.body),
+    segments: Array.isArray(input.segments) ? input.segments.slice(0, 600).map((s) => ({ id: String(s?.id ?? '').slice(0, 80), text: String(s?.text ?? '').slice(0, 4000) })) : undefined,
+    attachments: Array.isArray(input.attachments) ? input.attachments.slice(0, 20).map((a) => ({ ...a, filename: String(a?.filename ?? 'file').slice(0, 200), contentType: tekst(a?.contentType, 120), textExcerpt: tekst(a?.textExcerpt, 4000) })) : undefined,
+    threadMessages: Array.isArray(input.threadMessages) ? input.threadMessages.slice(0, 30).map((m) => ({ id: String(m?.id ?? '').slice(0, M.threadVeld), from: String(m?.from ?? '').slice(0, M.threadVeld), subject: tekst(m?.subject, M.threadVeld), receivedAt: Number(m?.receivedAt || 0), plainText: String(m?.plainText ?? '').slice(0, M.threadTekst) })) : undefined,
+  };
+}
+
+/**
+ * MAILAI-002: обгортка. Рушій не відповів через ліміт постачальника (429) чи недійсний ключ (401/403) — кажемо саме це (з порадою
+ * взяти інший рушій), а не загальне «не повернув». Успішна відповідь називає постачальника, який справді обробив текст.
+ */
 export async function executeAiVertalingRun(
-  input: ExecuteAiVertalingInput,
+  invoer: ExecuteAiVertalingInput,
 ): Promise<{ status: 200; body: AiVertalingRunResponse } | { status: number; body: Record<string, unknown> }> {
+  const melding: AanbiederMelding = {};
+  const r = await executeAiVertalingRunKern(invoer, melding);
+  const userId = String(invoer.userId || '');
+  // MAILAI-003: «сьогодні N із M» і залишок за заголовками постачальника — у кожній відповіді, де рушій справді питали.
+  const gebruik = melding.teller ? await gebruikEen(userId, melding.teller, melding.dienst?.limietPerDag).catch(() => undefined) : undefined;
+  if (r.status === 200) {
+    const body = r.body as AiVertalingRunResponse;
+    if (melding.aanbieder) body.aanbiederId = melding.aanbieder;
+    if (melding.dienst && !body.cached) body.dienstId = melding.dienst.id;
+    if (gebruik && !body.cached) body.gebruik = gebruik;
+    return r;
+  }
+  const d = melding.dienst;
+  if (d && melding.dienstLimiet) {
+    return { status: 429, body: { ok: false, error: 'DIENST_LIMIET', dienstId: d.id, gebruik,
+      messageUk: `Денну межу спільного рушія «${d.naam}» вичерпано: ${d.limietPerDag} запитів на людину на день. Завтра лічильник почнеться знову. Або оберіть інший рушій — локальний ШІ Chrome чи власний ключ.`,
+      messageNl: `De daglimiet van de gedeelde motor «${d.naam}» is bereikt: ${d.limietPerDag} verzoeken per persoon per dag. Morgen begint de teller opnieuw. Of kies een andere motor — de lokale AI van Chrome of een eigen sleutel.` } };
+  }
+  if (d && r.status === 503) {
+    // Спільний рушій не відповів: людина НЕ може полагодити ключ чи сервер сайту — кажемо це прямо й сповіщаємо власника.
+    await meldDienstStoring(d, melding.status || 0);
+    const eigenServer = d.soort !== 'aanbieder';
+    return { status: melding.status === 429 ? 429 : 503, body: { ok: false, error: melding.status === 429 ? 'DIENST_AANBIEDER_LIMIET' : 'DIENST_ONBEREIKBAAR', dienstId: d.id, gebruik,
+      wachtSec: melding.wachtSec || 0,
+      messageUk: eigenServer
+        ? `Власний сервер сайту («${d.naam}») зараз не відповів. Оригінал листа не змінено. Адміністратора сповіщено; оберіть поки інший рушій.`
+        : melding.status === 429
+          ? `Ліміт постачальника для ключа сайту («${d.naam}») вичерпано. Адміністратора сповіщено; оберіть поки інший рушій — локальний ШІ Chrome чи власний ключ.`
+          : `Спільний рушій «${d.naam}» зараз не працює (постачальник не прийняв ключ сайту або не відповів). Адміністратора сповіщено; оберіть поки інший рушій.`,
+      messageNl: eigenServer
+        ? `De eigen server van de site («${d.naam}») antwoordde niet. De beheerder is verwittigd; kies voorlopig een andere motor.`
+        : `De gedeelde motor «${d.naam}» werkt nu niet. De beheerder is verwittigd; kies voorlopig een andere motor.` } };
+  }
+  if (r.status !== 200 && gebruik && r.body && typeof r.body === 'object') (r.body as Record<string, unknown>).gebruik = gebruik;
+  if (r.status === 503 && melding.status) {
+    const naam = melding.aanbieder ? AI_AANBIEDER_BIJ_ID[melding.aanbieder].naamUk : 'постачальник ШІ';
+    if (melding.status === 429) {
+      const wacht = melding.wachtSec ? ` Спробуйте через ${melding.wachtSec < 120 ? `${melding.wachtSec} с` : `${Math.ceil(melding.wachtSec / 60)} хв`}.` : '';
+      const wachtNl = melding.wachtSec ? ` Probeer het over ${melding.wachtSec < 120 ? `${melding.wachtSec} s` : `${Math.ceil(melding.wachtSec / 60)} min`}.` : '';
+      return { status: 429, body: { ok: false, error: 'AANBIEDER_LIMIET', aanbiederId: melding.aanbieder, wachtSec: melding.wachtSec || 0,
+        messageUk: `Ліміт ${naam} вичерпано (для безкоштовного рівня це звично).${wacht} Або оберіть інший рушій — наприклад, локальний ШІ Chrome.`,
+        messageNl: `De limiet van ${naam} is bereikt (gewoon bij het gratis niveau).${wachtNl} Of kies een andere motor — bijvoorbeeld de lokale AI van Chrome.` } };
+    }
+    if (melding.status === 401 || melding.status === 403) {
+      return { status: 503, body: { ok: false, error: 'AANBIEDER_SLEUTEL_ONGELDIG', aanbiederId: melding.aanbieder,
+        messageUk: `${naam} не прийняв ваш ключ API (недійсний, відкликаний або без доступу до моделі). Перевірте ключ у «Сховищі ключів».`,
+        messageNl: `${naam} aanvaardde uw API-sleutel niet (ongeldig, ingetrokken of zonder toegang tot het model). Controleer de sleutel in de «Sleutelkluis».`,
+        actionLabelUk: 'Відкрити «Сховище ключів»', actionHref: AI_TOEGANG_HREF } };
+    }
+  }
+  return r;
+}
+
+async function executeAiVertalingRunKern(
+  invoer: ExecuteAiVertalingInput,
+  melding: AanbiederMelding,
+): Promise<{ status: 200; body: AiVertalingRunResponse } | { status: number; body: Record<string, unknown> }> {
+  const input = begrensAiVertalingInvoer(invoer);
+  const vraagAanbieder = <T,>(u: string, sys: string, p: string, max?: number, a?: AiVertalingAgentInfo | null, schema?: Record<string, unknown>) =>
+    callAnthropicJson<T>(u, sys, p, max, a, schema, melding);
   const userId = String(input.userId || '').trim();
   if (!userId) {
     return { status: 401, body: { ok: false, error: 'OWNER_SESSION_REQUIRED' } };
@@ -825,12 +1058,42 @@ export async function executeAiVertalingRun(
     agents[0] ||
     null;
 
+  // MAILAI-003: спільний рушій сайту. Явний вибір людини ніколи не підмінюється іншим рушієм: вимкнено, не вміє цю функцію чи
+  // немає згоди — чесна відмова з поясненням, і текст листа нікуди не йде.
+  let dienstRij: DienstRij | null = null;
+  if (isDienstAgentId(requestedAgentId)) {
+    dienstRij = await dienstMotor(dienstIdVan(requestedAgentId)).catch(() => null);
+    if (!dienstRij || !dienstKlaar(dienstRij)) {
+      return { status: 409, body: { ok: false, error: 'DIENST_UIT',
+        messageUk: 'Цей спільний рушій зараз вимкнено адміністратором. Текст листа нікуди не надіслано. Оберіть інший рушій.',
+        messageNl: 'Deze gedeelde motor is nu uitgezet door de beheerder. De tekst is nergens heen gestuurd. Kies een andere motor.' } };
+    }
+    if (!dienstFuncties(dienstRij.soort).includes(mode as DienstFunctie)) {
+      return { status: 400, body: { ok: false, error: 'DIENST_FUNCTIE', dienstId: dienstRij.id,
+        messageUk: `Рушій «${dienstRij.naam}» уміє лише переклад. Для підсумку й аналізу оберіть інший рушій.`,
+        messageNl: `De motor «${dienstRij.naam}» kan alleen vertalen. Kies voor samenvatting en analyse een andere motor.` } };
+    }
+    if (!settings.dienstAkkoord.includes(akkoordSleutel(dienstRij))) {
+      const pub = dienstPubliek(dienstRij, 0, settings.dienstAkkoord);
+      return { status: 403, body: { ok: false, error: 'DIENST_AKKOORD_NODIG', dienstId: dienstRij.id, akkoordSleutel: pub.akkoordSleutel,
+        messageUk: `Спершу погодьтеся на рушій «${dienstRij.naam}». ${dienstWaarheen(pub)} Без вашої згоди текст листа нікуди не йде.`,
+        messageNl: `Ga eerst akkoord met de motor «${dienstRij.naam}». ${dienstWaarheen(pub, true)} Zonder uw akkoord gaat de tekst nergens heen.` } };
+    }
+    chosenAgent = dienstAgent(dienstRij);
+  } else if (input.agentId && requestedAgentId && agents.length > 0 && !agents.some(a => a.id === requestedAgentId)) {
+    // Людина явно обрала рушій, якого вже немає (ключ прибрано, підключення відкликано): не беремо мовчки інший.
+    return { status: 409, body: { ok: false, error: 'MOTOR_NIET_BESCHIKBAAR',
+      messageUk: 'Обраний рушій ШІ більше недоступний (ключ прибрано або підключення відкликано). Текст листа нікуди не надіслано. Оберіть інший рушій.',
+      messageNl: 'De gekozen AI-motor is niet meer beschikbaar (sleutel verwijderd of verbinding ingetrokken). De tekst is nergens heen gestuurd. Kies een andere motor.',
+      actionLabelUk: 'Відкрити «Доступ ШІ»', actionHref: AI_TOEGANG_HREF } };
+  }
+
   // Determine required scope: document view requires files.read; mail view requires mail.read
   const requiredScope: AiVertalingScope = input.isDocumentView ? 'files.read' : 'mail.read';
   const hasAttachmentsToAnalyze = Boolean(includeAttachments && (input.attachments?.length || 0) > 0);
 
   const loadCeiling = customDeps?.loadPolicyCeiling ?? defaultLoadPolicyCeiling;
-  const ceiling = await loadCeiling(userId, chosenAgent?.name || CHAT_KLANT);
+  const ceiling = await loadCeiling(userId, dienstRij ? CHAT_KLANT : chosenAgent?.name || CHAT_KLANT);
 
   const accessCheck = checkAiVertalingToegang({
     userId,
@@ -877,12 +1140,14 @@ export async function executeAiVertalingRun(
   const actiesInvoer = mode === 'acties' ? actiesBron(input.bronBerichten, rawBody) : null;
   const payloadSig = actiesInvoer
     ? `acties:${actiesInvoer.sleutel}`
-    : JSON.stringify({
+    : // SEC-002 (aanv-gat-b-01): vaste lengte (sha256) over het hele begrensde bericht — vroeger het volle onderwerp in de sleutel
+      // (geheugen) en alleen de eerste 500 tekens van de tekst (twee verschillende brieven met hetzelfde begin deelden een antwoord).
+      createHash('sha256').update(JSON.stringify({
         s: input.subject || '',
-        b: rawBody.slice(0, 500),
-        segLen: segments.length,
+        b: rawBody,
+        seg: segments.map(s => [s.id, s.text]),
         attLen: hasAttachmentsToAnalyze ? (input.attachments || []).map(a => a.filename).join(',') : '',
-      });
+      })).digest('hex');
 
   const cacheKey = buildAiVertalingCacheKey({
     userId,
@@ -972,6 +1237,9 @@ export async function executeAiVertalingRun(
     },
   };
 
+  // MAILAI-003: спільний рушій сайту називається своїм іменем — не «ваш приватний агент».
+  if (dienstRij) baseResponse.motorNaam = `${dienstRij.naam} · спільний рушій сайту`;
+
   if (mode === 'translate') {
     const toTranslate = sanitizedSegments.length
       ? sanitizedSegments
@@ -980,7 +1248,7 @@ export async function executeAiVertalingRun(
           ...(sanitizedBody.text ? [{ id: 'body:0', text: sanitizedBody.text }] : []),
         ];
 
-    const llmResult = await callAnthropicJson<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
+    const llmResult = dienstRij?.soort === 'libretranslate' ? await vertaalViaLibre(userId, dienstRij, toTranslate, targetLang, melding) : await vraagAanbieder<{ detectedSourceLang?: string; translations?: Record<string, string> }>(
       userId,
       UNTRUSTED_GUARD_SYSTEM,
       [
@@ -1036,7 +1304,7 @@ export async function executeAiVertalingRun(
       };
     }
 
-    const llmActies = await callAnthropicJson<ActiesModelAntwoord>(
+    const llmActies = await vraagAanbieder<ActiesModelAntwoord>(
       userId,
       UNTRUSTED_GUARD_SYSTEM,
       [
@@ -1078,11 +1346,7 @@ export async function executeAiVertalingRun(
       acties: {
         punten: controleerPunten(actiesPunten(llmActies.items, 'm', 8, 'verzoek'), alineas),
         kort: controleerPunten(actiesPunten(llmActies.brief, 'k', 3, 'feit'), alineas),
-        antwoordHints: (Array.isArray(llmActies.replySuggestions) ? llmActies.replySuggestions : [])
-          .filter((h): h is string => typeof h === 'string')
-          .map(h => h.trim().slice(0, 200).trim())
-          .filter(Boolean)
-          .slice(0, 3),
+        antwoordHints: actiesHints(llmActies.replySuggestions),
         antwoordNodig: typeof llmActies.needsReply === 'boolean' ? llmActies.needsReply : null,
         opbouw: 'model',
       },
@@ -1101,7 +1365,7 @@ export async function executeAiVertalingRun(
     .join('\n\n');
 
   if (mode === 'summary') {
-    const llmSummary = await callAnthropicJson<{
+    const llmSummary = await vraagAanbieder<{
       headline?: string;
       keyFacts?: string[];
       dates?: string[];
@@ -1170,7 +1434,7 @@ export async function executeAiVertalingRun(
   }
 
   if (mode === 'purpose') {
-    const llmPurpose = await callAnthropicJson<{
+    const llmPurpose = await vraagAanbieder<{
       documentType?: string;
       whatAbout?: string;
       whatFor?: string;
@@ -1302,7 +1566,7 @@ export async function executeAiVertalingRun(
     snippet: c.snippet,
   }));
 
-  const llmContext = await callAnthropicJson<{
+  const llmContext = await vraagAanbieder<{
     overview?: string;
     causeAndEffectLinks?: string[];
     nonObviousConnections?: string[];
@@ -1385,8 +1649,15 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
           loadCeiling(userId, CHAT_KLANT),
         ]);
         const priveAgents = agents.filter(a => a.ruimte === 'prive');
+        // MAILAI-003: спільні рушії сайту (лише ввімкнені й готові), лічильник на сьогодні й орієнтовні ціни.
+        const gebruik = await gebruikVan(userId).catch(() => ({}) as Awaited<ReturnType<typeof gebruikVan>>);
+        const dienstMotoren = (await leesDienstMotoren().catch(() => [] as DienstRij[])).filter(dienstKlaar)
+          .map((r) => dienstPubliek(r, gebruik[gebruikSleutelDienst(r.id)]?.vandaag || 0, settings.dienstAkkoord));
         return json({
           ok: true,
+          dienstMotoren,
+          gebruik,
+          prijzen: leesPrijzen(),
           agents: priveAgents,
           allConnectionsCount: agents.length,
           settings,
@@ -1415,14 +1686,50 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
         if (raw.summaryDepth !== undefined) patch.summaryDepth = raw.summaryDepth as AiVertalingSummaryDepth;
         if (typeof raw.crossMailboxContext === 'boolean') patch.crossMailboxContext = raw.crossMailboxContext;
         if (typeof raw.includeAttachments === 'boolean') patch.includeAttachments = raw.includeAttachments;
+        if (typeof raw.balkTonen === 'boolean') patch.balkTonen = raw.balkTonen;
+        // MAILAI-003: згода (або її відкликання) на спільний рушій сайту. Згода прив'язана до того, куди йде текст: сервер сам
+        // обчислює її ключ із поточної конфігурації рушія — клієнт не може «погодитися» на щось інше.
+        let akkoordMelding: { rij: DienstRij; aan: boolean } | null = null;
+        if (raw.dienstAkkoord && typeof raw.dienstAkkoord === 'object') {
+          const a = raw.dienstAkkoord as { id?: unknown; aan?: unknown };
+          const rij = await dienstMotor(String(a.id || '')).catch(() => null);
+          if (!rij || !dienstKlaar(rij) || typeof a.aan !== 'boolean') {
+            return json({ ok: false, error: 'DIENST_UIT', messageUk: 'Цей спільний рушій зараз вимкнено адміністратором.', messageNl: 'Deze gedeelde motor is nu uitgezet door de beheerder.' }, 409);
+          }
+          const rest = (await loadUserSettings(userId)).dienstAkkoord.filter((x) => !x.startsWith(`${rij.id}@`));
+          patch.dienstAkkoord = a.aan ? [...rest, akkoordSleutel(rij)] : rest;
+          akkoordMelding = { rij, aan: a.aan };
+        }
 
+        const voor = typeof patch.balkTonen === 'boolean' ? (await loadUserSettings(userId)).balkTonen : undefined;
         const settings = await saveUserSettings(userId, patch);
         await deps.audit(userId, 'owner.mail.ai_vertaling.settings', 'success', {
           defaultLang: settings.defaultLang,
           summaryDepth: settings.summaryDepth,
           crossMailboxContext: settings.crossMailboxContext,
           includeAttachments: settings.includeAttachments,
+          balkTonen: settings.balkTonen,
         });
+        // MAILAI-001: увімкнення/вимкнення панелі ШІ над листами — у центр сповіщень (лише коли стан справді змінився).
+        if (voor !== undefined && voor !== settings.balkTonen) {
+          await meld(userId, 'mail_ai_balk',
+            settings.balkTonen ? 'ШІ-аналіз листів увімкнено / AI-analyse van berichten aangezet' : 'ШІ-аналіз листів вимкнено / AI-analyse van berichten uitgezet',
+            settings.balkTonen
+              ? 'Над відкритим листом з\'явиться панель «ШІ-аналіз і переклад», якщо підключено приватного ШІ-агента з правом читати пошту. Текст листа надсилається агенту лише після вашого натискання. / Boven een geopend bericht staat het paneel «AI-analyse en vertaling» als er een privé-AI-agent met leesrecht op de post is. De tekst gaat pas naar de agent als u klikt.'
+              : 'Панель «ШІ-аналіз і переклад» над листами прихована. Увімкнути знову: «Вигляд» у відкритому листі. / Het paneel «AI-analyse en vertaling» boven berichten is verborgen. Weer aanzetten: «Weergave» in een geopend bericht.',
+            `https://${SERVICE_HOSTS.mail}/`);
+        }
+        if (akkoordMelding) {
+          const { rij, aan } = akkoordMelding;
+          const pub = dienstPubliek(rij, 0, settings.dienstAkkoord);
+          await deps.audit(userId, 'owner.mail.ai_vertaling.dienst_akkoord', 'success', { dienstId: rij.id, aan });
+          await meld(userId, 'mail_ai_motor',
+            aan ? `Ви дозволили спільний рушій «${rij.naam}» / U stond de gedeelde motor «${rij.naam}» toe` : `Згоду на рушій «${rij.naam}» відкликано / Akkoord voor de motor «${rij.naam}» ingetrokken`,
+            aan
+              ? `${dienstWaarheen(pub)} Текст іде туди лише після вашого натискання в листі, не більше ${rij.limietPerDag} запитів на день. Відкликати: «Рушії ШІ» у відкритому листі. / ${dienstWaarheen(pub, true)} Alleen na uw klik, hoogstens ${rij.limietPerDag} verzoeken per dag. Intrekken: «AI-motoren» in een geopend bericht.`
+              : 'Цей рушій більше не отримає тексту ваших листів, доки ви не погодитеся знову. / Deze motor krijgt de tekst van uw berichten niet meer tot u opnieuw akkoord gaat.',
+            `https://${SERVICE_HOSTS.mail}/`).catch(() => undefined);
+        }
         return json({ ok: true, settings });
       },
     ],
@@ -1497,3 +1804,6 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
     ],
   };
 }
+
+/** Alleen voor tests/eenheid (SEC-002 aanv-gat-b-01, aanv-ronde1-03): interne tekstbewerkingen met een tijdsbudget. */
+export const _vertalingIntern = { splitSentences, extractSumsFromText, extractDatesFromText, wrapUntrusted, wrapAlineas };

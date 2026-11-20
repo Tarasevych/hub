@@ -4,6 +4,7 @@
 import { AlertCircle, ExternalLink, FileText, Upload } from 'lucide-react';
 import { BRON_STAND_LABEL, NOTITIE_BRONNEN, vnTekst } from '../../shared/notities-vnext-model';
 import { tr, type Lang } from './tekst';
+import MerkLogo from '../merk/MerkLogo';
 
 export default function NotitiesBronnen({ lang, onImport }: { lang: Lang; onImport: () => void }) {
   return (
@@ -15,7 +16,8 @@ export default function NotitiesBronnen({ lang, onImport }: { lang: Lang; onImpo
       <ul className='vn-bronnen-lijst'>
         {NOTITIE_BRONNEN.map((b) => (
           <li key={b.id} data-vn-bron={b.id} data-vn-bron-stand={b.stand}>
-            <span className='vn-monogram' aria-hidden='true'>{b.naam.slice(0, 1)}</span>
+            {/* REESTR-LOGO-001: логотип із реєстру (і власний логотип людини); літера лише для файлів. */}
+            {b.merk ? <span className='vn-monogram is-merk' aria-hidden='true'><MerkLogo id={b.id} naam={b.naam} logo={b.merk} maat={36} /></span> : <span className='vn-monogram' aria-hidden='true'>{b.naam.slice(0, 1)}</span>}
             <div className='vn-bron-tekst'>
               <strong>{b.naam} <small>· {vnTekst(b.soort, lang)}</small></strong>
               <p>{vnTekst(b.uitleg, lang)}</p>

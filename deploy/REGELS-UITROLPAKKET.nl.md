@@ -142,7 +142,24 @@ Het document op GitHub bewaart al het **beschikbare en veilige** bewijsmateriaal
 4. Wijzigingen per bestand en commit-SHA, PR, links naar CI, controlesommen;
 5. Tests: opdrachten, uitvoerresultaten, omgevingsbeperkingen, niet-uitgevoerde controles;
 6. Bijlagen, concepten, tijdelijke bestanden — veilige links en hashes; als een bron tijdelijk niet beschikbaar is, wordt dit expliciet vermeld;
-7. Privacysectie: gegevens die **bewust niet zijn gepubliceerd** en de reden daarvoor.
+7. Privacysectie: gegevens die **bewust niet zijn gepubliceerd**, en de reden.
+8. **Uitleg van risicovolle wijzigingen (`risicoUitleg`, SEC-PAKKET-001).** De voorcontrole vergelijkt het pakket met de geïnstalleerde versie en toont rode vlaggen. Voor elke wijziging waarover de beheerder anders «de maker om uitleg zou vragen», moet het dossier een uitleg van één à twee zinnen in gewone taal bevatten. **Zonder die uitleg blokkeert de installatie automatisch** (stap `risico` = fout, «Zonder uitleg»).
+
+   | Wat veranderde | Sleutel `pad` |
+   |---|---|
+   | bestand in `deploy/` (root) of werkstroom in `.github/workflows/` | pad van het bestand, bv. `deploy/installeer-app.sh` |
+   | nieuw npm-pakket | `npm:<naam>`, bv. `npm:left-pad` |
+   | npm-installatiescript / `overrides` | `npm-script:<naam>` / `npm:overrides` |
+   | nieuwe pakketbron in het lockbestand | `package-lock.json` |
+   | rechten in een nieuwe migratie | naam van de migratie, bv. `0300_x` |
+
+   ```json
+   "risicoUitleg": [
+     { "pad": "deploy/installeer-app.sh", "uk": "Що і навіщо змінено (20–1200 знаків).", "nl": "Wat en waarom (20–1200 tekens)." }
+   ]
+   ```
+
+   Geen uitleg nodig voor wijzigingen die alleen de beveiliging versterken, voor een nieuwere pakketversie en voor verwijderde bestanden. Een archief dat met de hand in de release is gezet en een mislukte vergelijking vragen zoals voorheen alleen het aparte vinkje van de beheerder. De uitleg is het woord van de maker, geen bewijs: de beheerder vergelijkt hem met het getoonde verschil.
 
 Het is niet toegestaan om het besloten interne denkproces van de AI, wachtwoorden, tokens, sleutels, de inhoud van e-mails of niet-geschoonde privébestanden op te vragen of op te slaan. In plaats daarvan worden besluiten, verifieerbare stappen, feitelijke resultaten en toelichtingen vastgelegd.
 

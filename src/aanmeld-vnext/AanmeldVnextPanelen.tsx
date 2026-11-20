@@ -59,7 +59,7 @@ export default function AanmeldVnextPanelen(p: PaneelProps) {
       const k = kaarten.find((x) => x.id === doelId);
       if (k) { setDetail(k); return; }
     }
-    try { document.getElementById('aanmeldmethoden-google')?.scrollIntoView({ block: 'start' }); } catch { /* geen scroll */ }
+    try { const gEl = document.getElementById('aanmeldmethoden-google'); if (gEl && !gEl.closest?.('.ia-inline')) gEl.scrollIntoView({ block: 'start' }); } catch { /* geen scroll */ }
   }, [geladen, kaarten]);
   // Lopende stromen horen zichtbaar te blijven: een gestarte TOTP-setup of vers aangemaakte herstelcodes openen hun detail
   // vanzelf (de codes verschijnen uitsluitend in het geïsoleerde, bestaande één-keer-venster van HerstelcodesSectie).

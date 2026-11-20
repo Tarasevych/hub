@@ -14,7 +14,7 @@
 //   6. Журнал — alleen de gebeurtenissen van deze agent.
 // Er komt GEEN nieuwe pagina bij: dit is een plek in de bestaande hub (#agent/<slug>). De algemene tabbladen blijven voor wat
 // echt gedeeld is (apparaten, externe MCP-servers, de browserextensie, het hele journaal).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, ArrowLeft, Check, ExternalLink, Fingerprint, KeyRound, Link2, Palette, Pause, Play, Plug, ShieldCheck, SlidersHorizontal, Trash2, UserRound, Wrench, Zap } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
@@ -44,6 +44,20 @@ import { inRuimte, isoMs, useDeurTokens, useJournaal } from './gegevens';
 import { foutTekst } from './fouten';
 import { GevaarKnop, Melding, useActies } from './ui';
 import BevestigingenPaneel from '../ai-bevestiging/BevestigingenPaneel';
+import VaardighedenBeheer from './VaardighedenBeheer';
+
+// AI-TERMIJN-001: korte uitleg van de geldende regels en van de wacht-stand van de delegatie.
+const regelsTekst = (r: { bijPauze: string; inactiefMinuten: number | null; bijAfmelden: string }, tr: Tr) => {
+  const p = r.bijPauze === 'doorwerken' ? tr('працює і під час паузи', 'werkt ook tijdens pauze') : r.bijPauze === 'intrekken' ? tr('пауза знімає доступ', 'pauze trekt in') : tr('пауза призупиняє', 'pauze zet stil');
+  const i = r.inactiefMinuten == null ? tr('без ліміту бездіяльності', 'geen inactiviteitslimiet') : tr(`знімається після ${r.inactiefMinuten} хв без дій`, `vervalt na ${r.inactiefMinuten} min zonder activiteit`);
+  return `${p} · ${i}.`;
+};
+const WACHT_TEKST = (code: string, tr: Tr) => code === 'AI_PAUZE'
+  ? tr('Доступ дозволено, але технічний профіль на паузі — ШІ продовжить, щойно ви повернетеся в технічний профіль.', 'Toegang staat, maar het technische profiel is gepauzeerd — de AI gaat verder zodra u terug bent in het technische profiel.')
+  : code === 'AI_WACHT_OP_AANMELDING'
+    ? tr('Доступ дозволено, чекає вашого наступного входу на сайт (без вашого входу ШІ технічним не працює).', 'Toegang staat en wacht op uw volgende aanmelding (zonder aanmelding werkt de AI niet technisch).')
+    : tr('Доступ дозволено, чекає, поки ви ввімкнете технічний профіль.', 'Toegang staat en wacht tot u het technische profiel aanzet.');
+import './agenten-kern-maquette.css';
 
 const wanneer = (ms: number | null | undefined, uk: boolean) => (ms ? new Date(ms).toLocaleString(uk ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : (uk ? 'ще не було' : 'nog niet'));
 
@@ -71,7 +85,9 @@ function AgentToegangGereedheid({
   const [bezig, setBezig] = useState('');
   const [bericht, setBericht] = useState<{ ok: boolean; tekst: string } | null>(null);
   const nu = Date.now();
-  const doelGrantId = diag.connectionGranted.grantId || '*';
+  // AGENTSCHEIDING-001: zonder actieve koppeling GEEN '*' meer (dat gaf stil toestemming aan ALLE AI's); de server neemt dan
+  // de regel van deze agent ('agent:<slug>'). Без активного підключення — правило саме цього агента, не «усі ШІ».
+  const doelGrantId: string | undefined = diag.connectionGranted.grantId || undefined;
   const wilBeheer = kanten.includes('beheer') || diag.connectionGranted.kanten.includes('beheer');
 
   const voerActieUit = async (sleutel: string, fn: () => Promise<string>) => {
@@ -194,17 +210,26 @@ function AgentToegangGereedheid({
                     {diag.aiSessionDelegationScope === 'verbinding' ? tr('Дозволено цьому агенту', 'Toegestaan voor deze agent') : tr('Дозволено', 'Toegestaan')}
                     {delegatieRest ? ` · ${delegatieRest}` : ''}
                   </span>
+                ) : diag.aiSessionDelegationWacht ? (
+                  <span className='ag-badge ag-warn'><Pause size={12} aria-hidden='true' />{tr('Дозволено, чекає', 'Toegestaan, wacht')}</span>
                 ) : (
                   <span className='ag-badge ag-warn'>{tr('Не дозволено для сеансу', 'Niet toegestaan voor sessie')}</span>
                 )}
               </div>
               <small className='hub-meta'>
                 {diag.aiSessionDelegationActive
-                  ? tr(`Делегування активне лише на вказаний термін і не зачіпає інших ШІ-агентів.`, `Delegatie geldt alleen voor de gekozen termijn en lekt niet naar andere AI-agents.`)
-                  : WEIGER_UITLEG.AI_NIET_TOEGESTAAN[taal]}
+                  ? tr(`Діє лише для ${naam}, не для інших ШІ.`, `Geldt alleen voor ${naam}, niet voor andere AI's.`) + (diag.aiSessionDelegationRegels ? ' ' + regelsTekst(diag.aiSessionDelegationRegels, tr) : '')
+                  : diag.aiSessionDelegationWacht
+                    ? WACHT_TEKST(diag.aiSessionDelegationWacht, tr)
+                    : WEIGER_UITLEG.AI_NIET_TOEGESTAAN[taal]}
               </small>
             </div>
             <div className='ag-diagnose-acties'>
+              <button type='button' className='ag-knop' data-diagnose-actie='ai_termijn_venster'
+                title={tr('Відкриває «Доступ і терміни» → «Доступ ШІ»: точна дата чи швидкий термін, що робити при паузі, після скількох хвилин бездіяльності і при виході з акаунта.', 'Opent «Toegang en termijnen» → «AI-toegang»: exacte datum of snelle termijn, wat er bij pauze gebeurt, na hoeveel minuten zonder activiteit en bij afmelden.')}
+                onClick={() => { try { localStorage.setItem('mr-ruimtes-tab', 'ai'); } catch { /* geen opslag */ } window.dispatchEvent(new CustomEvent('mr-ruimtes-tab', { detail: 'ai' })); openTechVenster('toegang'); }}>
+                <SlidersHorizontal size={14} aria-hidden='true' />{tr('Терміни й правила…', 'Termijnen en regels…')}
+              </button>
               {diag.aiSessionDelegationActive ? (
                 <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='trek_ai_sessie_in'
                   onClick={() => void voerActieUit('delegatie-uit', async () => {
@@ -215,32 +240,19 @@ function AgentToegangGereedheid({
                 </button>
               ) : (
                 <>
-                  <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_einde'
-                    onClick={() => void voerActieUit('delegatie-einde', async () => {
+                  <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_standaard'
+                    title={tr(`Технічний простір для ${naam} до вашого виходу з акаунта. Пауза технічного профілю лише призупиняє доступ, після 60 хв без дій ШІ його знято. Змінити — «Терміни й правила…».`, `Technische ruimte voor ${naam} tot u zich afmeldt. Pauze van het technische profiel zet de toegang alleen stil; na 60 min zonder AI-activiteit vervalt hij. Wijzigen via «Termijnen en regels…».`)}
+                    onClick={() => void voerActieUit('delegatie-standaard', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', {
                         ...sessionBody(),
                         agent: slug,
                         actie: 'alles-aan',
                         verbindingId: doelGrantId,
-                        termijn: 'tot-technisch-einde',
+                        naam,
                       });
-                      return tr(`Технічний простір дозволено для ${naam} до завершення технічного сеансу.`, `Technische ruimte toegestaan voor ${naam} tot het einde van de technische sessie.`);
+                      return tr(`Технічний простір дозволено для ${naam} до виходу з акаунта (типові правила).`, `Technische ruimte toegestaan voor ${naam} tot afmelden (standaardregels).`);
                     })}>
-                    <Zap size={14} aria-hidden='true' />{tr('Дозволити до кінця сеансу', 'Toestaan tot einde sessie')}
-                  </button>
-                  <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_sessie_60'
-                    onClick={() => void voerActieUit('delegatie-60', async () => {
-                      await api.post('/api/owner/connector-v2/activeer-tech', {
-                        ...sessionBody(),
-                        agent: slug,
-                        actie: 'alles-aan',
-                        verbindingId: doelGrantId,
-                        termijn: 'tijd',
-                        minuten: 60,
-                      });
-                      return tr(`Технічний простір дозволено для ${naam} на 1 годину.`, `Technische ruimte toegestaan voor ${naam} voor 1 uur.`);
-                    })}>
-                    {tr('На 1 год', 'Voor 1 uur')}
+                    <Zap size={14} aria-hidden='true' />{tr('Дозволити', 'Toestaan')}
                   </button>
                 </>
               )}
@@ -254,6 +266,10 @@ function AgentToegangGereedheid({
             <div className='ag-diagnose-info'>
               <div className='ag-diagnose-titel'>
                 <b>{tr('3. Служба «Підключення ШІ» у технічному просторі даних', '3. Dienst «AI-koppelingen» in technische gegevensruimte')}</b>
+                <span className='ag-badge ag-warn' data-spil='alle-ai'
+                  title={tr(`Ця служба одна на всі ШІ. Увімкнення чи від’єднання тут змінює технічний простір не лише для ${naam}, а й для всіх інших підключених ШІ. Доступ саме ${naam} — у рядку 2.`, `Deze dienst is er één voor alle AI's. Aanzetten of losmaken hier verandert de technische ruimte niet alleen voor ${naam}, maar ook voor alle andere gekoppelde AI's. De toegang van ${naam} zelf staat in rij 2.`)}>
+                  <AlertTriangle size={12} aria-hidden='true' />{tr('! Спільна для всіх ШІ', '! Gedeeld door alle AI\'s')}
+                </span>
                 {dienstActief ? (
                   <span className='ag-badge ag-ok'><Check size={12} aria-hidden='true' />{STAND_NAAM[diag.aiServiceState][taal]}</span>
                 ) : diag.aiServiceState === 'bevroren' ? (
@@ -275,9 +291,10 @@ function AgentToegangGereedheid({
             <div className='ag-diagnose-acties'>
               {dienstActief ? (
                 <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_uit'
+                  title={tr(`Від’єднує службу для ВСІХ ШІ, не лише для ${naam}: жоден ШІ не отримає технічних інструментів, доки службу не ввімкнуть знову. Щоб прибрати доступ лише ${naam}, натисніть «Залишити лише звичайний простір» у рядку 2.`, `Maakt de dienst los voor ALLE AI's, niet alleen voor ${naam}: geen enkele AI krijgt technische hulpmiddelen tot de dienst weer aanstaat. Alleen ${naam} uitzetten: «Alleen gewone ruimte laten» in rij 2.`)}
                   onClick={() => void voerActieUit('dienst-uit', async () => {
                     await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-uit' });
-                    return tr('Службу «Підключення ШІ» від’єднано від технічного простору.', 'Dienst «AI-koppelingen» losgemaakt uit de technische ruimte.');
+                    return tr('Службу «Підключення ШІ» від’єднано від технічного простору для всіх ШІ.', 'Dienst «AI-koppelingen» losgemaakt uit de technische ruimte voor alle AI\'s.');
                   })}>
                   {tr("Від'єднати службу", 'Dienst losmaken')}
                 </button>
@@ -290,14 +307,14 @@ function AgentToegangGereedheid({
                   <button type='button' className='ag-knop ag-knop-primary' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_eigen'
                     onClick={() => void voerActieUit('dienst-eigen', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-eigen' });
-                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (окремі дані).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (eigen gegevens).');
+                      return tr(`Службу «Підключення ШІ» увімкнено у технічному просторі (окремі дані). Технічні інструменти отримує лише ШІ, якому ви це дозволили в рядку 2.`, `Dienst «AI-koppelingen» aangezet in de technische ruimte (eigen gegevens). Technische hulpmiddelen krijgt alleen de AI die u dat in rij 2 toestond.`);
                     })}>
                     <KeyRound size={14} aria-hidden='true' />{tr('Увімкнути (окремі дані)', 'Aanzetten (eigen gegevens)')}
                   </button>
                   <button type='button' className='ag-knop' disabled={!!bezig} data-diagnose-actie='zet_ai_dienst_gedeeld'
                     onClick={() => void voerActieUit('dienst-gedeeld', async () => {
                       await api.post('/api/owner/connector-v2/activeer-tech', { ...sessionBody(), agent: slug, actie: 'dienst-gedeeld' });
-                      return tr('Службу «Підключення ШІ» увімкнено у технічному просторі (спільно з особистим).', 'Dienst «AI-koppelingen» aangezet in de technische ruimte (gedeeld met persoonlijk).');
+                      return tr(`Службу «Підключення ШІ» увімкнено у технічному просторі (спільно з особистим). Технічні інструменти отримує лише ШІ, якому ви це дозволили в рядку 2.`, `Dienst «AI-koppelingen» aangezet in de technische ruimte (gedeeld met persoonlijk). Technische hulpmiddelen krijgt alleen de AI die u dat in rij 2 toestond.`);
                     })}>
                     {tr('Увімкнути (спільно)', 'Aanzetten (gedeeld)')}
                   </button>
@@ -362,7 +379,7 @@ function AgentToegangGereedheid({
                         agent: slug,
                         actie: 'alles-aan',
                         verbindingId: doelGrantId,
-                        termijn: 'tot-technisch-einde',
+                        naam,
                       });
                     }
                     return tr(
@@ -725,10 +742,23 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
     catch (e) { setFout(e); }
   }, []);
   useEffect(() => { void laad(); }, [laad]);
+  const vorigeTechSig = useRef<string | null>(null);
+  const vorigeRuimteSig = useRef<string | null>(null);
+  const techSig = tech.geladen ? `${tech.activatie?.id ?? ''}|${tech.activatie?.eind ?? ''}` : null;
+  const ruimteSig = ruimtes.geladen ? `${Boolean(ruimtes.status?.actief)}|${Boolean(ruimtes.status?.pauze)}|${ruimtes.status?.sessie?.eindTijd ?? ''}` : null;
   // Wanneer het technische startvenster of de ruimtewissel sluit/verandert, direct de serverdiagnose herladen zonder paginaherladen.
   useEffect(() => {
-    if (tech.geladen || ruimtes.geladen) void laad();
-  }, [tech.activatie?.id, tech.activatie?.eind, ruimtes.status?.actief, ruimtes.status?.pauze, ruimtes.status?.sessie?.eindTijd, laad]); // eslint-disable-line react-hooks/exhaustive-deps
+    let herladen = false;
+    if (techSig !== null) {
+      if (vorigeTechSig.current !== null && vorigeTechSig.current !== techSig) herladen = true;
+      vorigeTechSig.current = techSig;
+    }
+    if (ruimteSig !== null) {
+      if (vorigeRuimteSig.current !== null && vorigeRuimteSig.current !== ruimteSig) herladen = true;
+      vorigeRuimteSig.current = ruimteSig;
+    }
+    if (herladen) void laad();
+  }, [techSig, ruimteSig, laad]);
   const naWijziging = useCallback(async () => { await Promise.all([laad(), tok.laad()]); setVersie((v) => v + 1); }, [laad, tok.laad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stand = useMemo(() => (data?.agenten ?? []).find((a) => a.slug === slug) ?? null, [data, slug]);
@@ -895,6 +925,11 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
           <summary><Palette size={15} aria-hidden='true' /> {tr(`Колір агента (${info.naam} та інші)`, `Kleur per agent (${info.naam} en de andere)`)}</summary>
           <AgentKleuren tr={tr} />
         </details>
+      </section>
+
+      {/* 5б: модульні навички саме цього агента (з можливістю вмикати/вимикати та створювати власні) */}
+      <section className='ag-kaart' data-agent-sectie='vaardigheden'>
+        <VaardighedenBeheer tr={tr} vastAgent={slug} compact />
       </section>
 
       {/* 6: журнал саме цього агента. */}

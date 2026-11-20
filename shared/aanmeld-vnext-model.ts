@@ -75,11 +75,14 @@ export const AANMELD_AANBIEDERS: readonly AanmeldAanbieder[] = Object.freeze([
   { id: 'apple', naam: 'Apple', monogram: 'A', site: 'https://developer.apple.com/sign-in-with-apple/', stand: 'sleutels-nodig',
     uitleg: ['Sign in with Apple (form_post, клієнтський секрет = ES256-JWT з p8-ключа) у коді; потрібен платний Apple Developer-контур власника.', 'Sign in with Apple (form_post, clientgeheim = ES256-JWT uit de p8-sleutel) in de code; vraagt de betaalde Apple Developer-contour van de eigenaar.'],
     vereist: ['AANMELD_APPLE_CLIENT_ID', 'AANMELD_APPLE_TEAM_ID', 'AANMELD_APPLE_KEY_ID', 'AANMELD_APPLE_PRIVATE_KEY'] },
-  { id: 'whatsapp', naam: 'WhatsApp', monogram: 'W', site: 'https://www.whatsapp.com', stand: 'niet-mogelijk',
-    uitleg: ['WhatsApp не має публічного API «увійти через WhatsApp» для сайтів — чесно: такого входу не існує.', 'WhatsApp heeft geen publieke «log in met WhatsApp»-API voor websites — eerlijk: die aanmelding bestaat niet.'],
-    omweg: ['Користуйтесь Google, passkey або TOTP; Telegram-вхід — найближчий аналог месенджера.', 'Gebruik Google, een passkey of TOTP; Telegram-aanmelding is het dichtstbijzijnde messenger-alternatief.'] },
+  // TELEGRAM-002 (besluit eigenaar 14.11.2026): WhatsApp wordt later gekoppeld (bevestigen via de officiële WhatsApp Business-
+  // platform-API, zoals Telegram nu) — dus «Заплановано», niet «Неможливо». Tot dan geen contour en geen koppelknop.
+  { id: 'whatsapp', naam: 'WhatsApp', monogram: 'W', site: 'https://www.whatsapp.com', stand: 'gepland',
+    uitleg: ['Вхід і підтвердження через WhatsApp заплановано: їх буде під’єднано пізніше через офіційну платформу WhatsApp Business — так само, як зараз Telegram.', 'Aanmelden en bevestigen met WhatsApp is gepland: dat wordt later gekoppeld via het officiële WhatsApp Business-platform — zoals nu Telegram.'],
+    omweg: ['Поки що користуйтеся Google, ключем доступу, TOTP або Telegram — усе це вже працює.', 'Gebruik intussen Google, een toegangssleutel, TOTP of Telegram — die werken al.'] },
   { id: 'sms', naam: 'SMS', monogram: '✆', site: '', stand: 'gepland',
-    uitleg: ['Вхід за номером телефону потребує SMS-провайдера (платний контур власника) — коду розсилання в репозиторії ще немає.', 'Aanmelden met een telefoonnummer vraagt een sms-provider (betaalde contour van de eigenaar) — verzendcode staat nog niet in het repo.'],
+    // IDENTITEIT-015 (aanmelden): розсилання вже є (server/platform/sms.ts) — для ПІДТВЕРДЖЕННЯ номера; вхід за номером лишається запланованим.
+    uitleg: ['Підтвердження номера кодом із SMS уже працює, коли власник додасть ключ SMS-провайдера (SMS_AANBIEDER) і ввімкне прапорець; вхід за номером телефону — заплановано.', 'Het nummer bevestigen met een sms-code werkt zodra de eigenaar de sleutel van een sms-aanbieder (SMS_AANBIEDER) toevoegt en de vlag aanzet; aanmelden met een telefoonnummer is gepland.'],
     omweg: ['TOTP-застосунок дає той самий «код із телефона» без оператора.', 'Een TOTP-app geeft dezelfde «code van je telefoon» zonder operator.'] },
 ]);
 export const aanmeldAanbieder = (id: unknown) => AANMELD_AANBIEDERS.find((a) => a.id === id);

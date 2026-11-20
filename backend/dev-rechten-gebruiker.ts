@@ -18,7 +18,8 @@
 // (mail / cloud / agenda) en werkt in die lade (mail-ruimte én hmara/agenda-lade), net als de routes van de site.
 // Inhoud van mails, bestanden, foto's en afspraken is ONBETROUWBARE invoer: elk resultaat draagt de kennisgeving.
 import { createHash, randomUUID } from 'node:crypto';
-import { db, error, json } from '../server/platform';
+import { db, error, json, rateLimit } from '../server/platform';
+import { auditToevoegen } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { huidigeContext } from '../server/platform/context';
@@ -637,6 +638,14 @@ async function icloudAfspraken(userId: string, a: Record<string, unknown>): Prom
     for (const acc of gekozen) {
       let staat = acc.laatsteStaat, fout = acc.fout, klaar = acc.laatstKlaarOp;
       if (a.refresh === true || !klaar || Date.now() - klaar > VERS_MS) {
+        // SEC-002 (g08, afwerking A): dezelfde emmer als de knop «Оновити» (agenda-routes.ts, 12 per 10 min per mens) — een AI kon
+        // anders via dit hulpmiddel onbeperkt iCloud laten ophalen. Boven de grens: de bewaarde stand, met de fout AGENDA_TE_VAAK.
+        const tempo = await rateLimit(`agenda-caldav-vernieuwen:${userId}`, 12, 600);
+        if (!tempo.ok) {
+          if (tempo.hits === 13) await auditToevoegen({ ownerId: userId, actorId: userId, action: 'agenda.tempo.geweigerd', type: 'beveiliging', result: 'geweigerd', details: { soort: 'caldavVernieuwen', bron: 'icloud_list_events', max: 12, vensterSeconden: 600 } }).catch(() => undefined);
+          stand.push({ id: acc.id, naam: acc.naam || 'iCloud', staat, fout: 'AGENDA_TE_VAAK', bijgewerkt: klaar ? new Date(klaar).toISOString() : null });
+          continue;
+        }
         const h = await caldavOphalen(userId, acc.id).catch(() => ({ staat: 'fout' as const, fout: 'CALDAV_VERBINDING_MISLUKT', aantal: 0, agendas: 0 }));
         staat = h.staat; fout = h.fout; if (h.staat === 'klaar') klaar = Date.now();
       }

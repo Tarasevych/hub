@@ -82,7 +82,7 @@ export async function main(): Promise<number> {
 
   // — компактний контекст —
   const ctx = k.compacteContext(lees('AGENTS.md'), beleid, lock);
-  check('компактний контекст містить версію правил, hash, базу і 6 compact-розділів', ctx.includes(lock.hash) && ctx.includes(beleid.basis.bronCommit) && (ctx.match(/^## /gm) || []).length === 6);
+  check('компактний контекст містить версію правил, hash, базу і 7 compact-розділів (з BIJDRAGE-001 — §3а)', ctx.includes(lock.hash) && ctx.includes(beleid.basis.bronCommit) && (ctx.match(/^## /gm) || []).length === 7);
   check('компактний контекст ≤ maxBytes і збігається з закоміченим файлом', Buffer.byteLength(ctx) <= beleid.compactContext.maxBytes && lees(beleid.compactContext.bestand) === ctx);
   check('компактний контекст чесно каже, що власник ще не підтвердив', ctx.includes('НЕ підтверджено власником'));
   check('AGENTS.md не містить розділу «Правило N» поза compact-блоками, що суперечить адаптерам', !/^## Правило \d/m.test(lees('AGENTS.md')));

@@ -5,7 +5,7 @@
 // не буде) waarin je meteen kunt wijzigen. Gebruikt in het toestemmingsvenster en op de beheerpagina.
 import { useMemo, useState, type ReactElement } from 'react';
 import {
-  Ban, Boxes, CalendarDays, Check, ChevronDown, Construction, Copy, CreditCard, Eye, FolderOpen, Github, Globe, KanbanSquare, Mail, Monitor,
+  Ban, Boxes, CalendarDays, Check, ChevronDown, ChevronsDownUp, ChevronsUpDown, Construction, Copy, CreditCard, Eye, FolderOpen, Github, Globe, KanbanSquare, Mail, Monitor,
   Palette, PenLine, PencilLine, Rocket, Search, Server, ShieldAlert, ShieldCheck, Trash2, TriangleAlert, UserRound, Wrench, X,
 } from 'lucide-react';
 import { V2_GROEPEN, V2_OPTIES, RISICO_TEKST, SOORT_TEKST, KANT_TEKST, type GroepId, type Kant, type Soort, type V2Optie } from '../../shared/connector-v2/catalogus';
@@ -15,6 +15,7 @@ import { v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { BEVESTIGING_BADGE, MET_BEVESTIGING } from '../../shared/ai-bevestiging';
 import './connector-v2.css';
 import '../ai-bevestiging/bevestigingen.css';
+import '../agenten/agenten-kern-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 
@@ -193,6 +194,14 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
       {(['gebruiker', 'beheer'] as const).filter((k) => kanten.includes(k)).map((kant) => {
         const groepen = V2_GROEPEN.filter((g) => g.kant === kant || g.kant === 'beide');
         const kantNuUit = kant === 'beheer' && techNu === false;
+        // KLAP-001 (15.11.2026): één knop per blok klapt alle groepen en alle uitgeklapte hulpmiddelen van dit blok dicht of open.
+        // Alleen weergave: de rechten zelf veranderen niet. · Лише вигляд: самі дозволи не змінюються.
+        const zichtbareGroepen = groepen.filter((g) => V2_OPTIES.some((o) => o.kant === kant && o.groep === g.id && past(o)));
+        const ietsOpen = zichtbareGroepen.some((g) => !groepDicht[`${kant}:${g.id}`]);
+        const klapAlles = () => {
+          setGroepDicht((d) => { const n = { ...d }; for (const g of zichtbareGroepen) n[`${kant}:${g.id}`] = ietsOpen; return n; });
+          if (ietsOpen) setOpen((x) => { const n = { ...x }; for (const o of V2_OPTIES) if (o.kant === kant) delete n[o.key]; return n; });
+        };
         return (
           <section key={kant} className={`v2-kant kant-${kant}${kantNuUit ? ' is-nu-uit' : ''}`} data-v2-kant={kant} data-v2-nu-uit={kantNuUit ? '1' : undefined}>
             <header className='v2-kant-kop'>
@@ -208,6 +217,15 @@ export default function RechtenKiezer({ tr, agent, kanten, waarde, onChange, vor
                 ) : null}
               </div>
               <ModusKeuze tr={tr} uk={uk} label={tr('Режим для всього простору', 'Modus voor de hele ruimte')} huidig={modusVan(waarde, kanten, { kant })} onKies={(m) => onChange(pasModusToe(waarde, m, kanten, { kant }))} />
+              {zichtbareGroepen.length ? (
+                <button type='button' className='v2-klap-alles' data-v2-klap-alles={kant} aria-expanded={ietsOpen} onClick={klapAlles}
+                  title={ietsOpen
+                    ? tr(`Згорнути всі групи й розгорнуті пояснення в блоці «${KANT_TEKST[kant].uk}». Дозволи не змінюються — лише вигляд.`, `Alle groepen en geopende uitleg in het blok «${KANT_TEKST[kant].nl}» inklappen. De rechten veranderen niet — alleen de weergave.`)
+                    : tr(`Розгорнути всі групи в блоці «${KANT_TEKST[kant].uk}», щоб бачити кожен інструмент. Дозволи не змінюються.`, `Alle groepen in het blok «${KANT_TEKST[kant].nl}» openklappen om elk hulpmiddel te zien. De rechten veranderen niet.`)}>
+                  {ietsOpen ? <ChevronsDownUp size={15} aria-hidden='true' /> : <ChevronsUpDown size={15} aria-hidden='true' />}
+                  <span>{ietsOpen ? tr('Згорнути все', 'Alles inklappen') : tr('Розгорнути все', 'Alles openklappen')}</span>
+                </button>
+              ) : null}
             </header>
             {groepen.map((g) => {
               const opties = V2_OPTIES.filter((o) => o.kant === kant && o.groep === g.id);

@@ -1,0 +1,299 @@
+/* UPD-010: компактний переглядач листа — прибрано білий провал під шапкою теми,
+   повноцінна смуга перекладу та розгортувані піктограми («Що від вас потрібно?», зовнішні зображення)
+   перенесені у порожній простір верхньої панелі переглядача без дублювання.
+   Усі кольори — виключно через змінні оформлення (без сирих кодів). */
+
+/* 1. Усунення порожньої білої смуги: рядки сітки вмісту листа вирівняно до верху без розтягування */
+html body .google-mail-reader > section.mail-thread-content {
+  align-content: start;
+  grid-auto-rows: max-content;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+html body .google-mail-reader .mail-thread-toolbar {
+  padding: 0 0 10px;
+}
+
+html body .google-mail-reader .mail-thread-toolbar > div {
+  gap: 2px;
+}
+
+/* 2. Центральний слот у верхній панелі переглядача між «Відповісти» та правими кнопками дій */
+html body .mail-reader-toolbar:not(.layout-editing) > .mail-reader-kop-opties {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  margin-inline: 4px;
+}
+
+html body .mail-reader-toolbar:not(.layout-editing) > .mail-reader-kop-opties:empty {
+  display: none;
+}
+
+/* Коли в центрі є опції, права група дій займає лише свою природну ширину */
+html body .mail-reader-toolbar:not(.layout-editing):has(> .mail-reader-kop-opties:not(:empty)) > .mail-reader-action-surface.surface-header {
+  flex: 0 1 auto;
+}
+
+/* Прибрати дублювання кнопки перекладу в правій частині панелі, коли смуга перекладу вже у верхній панелі */
+html body .mail-reader-toolbar:not(.layout-editing):has(> .mail-reader-kop-opties [data-vertaal-strook]) .surface-header [data-reader-action-id='translate'] {
+  display: none;
+}
+
+/* 3. Повноцінна компактна смуга перекладу у верхній панелі */
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] {
+  order: 1;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  padding: 3px 8px 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface2) 52%, var(--panel));
+  color: var(--text);
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-talen {
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-talen > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-keuze {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .lz-segment input + span {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-info {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: help;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-info svg {
+  width: 15px;
+  height: 15px;
+}
+
+html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .mail-strook-sluit {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+}
+
+/* 4. Компактні неширокі поля з піктограмою та випадаючою панеллю («Що від вас потрібно?», «Зовнішні зображення») */
+.mail-kop-dropdown {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.mail-kop-dropdown[data-kop-soort='beelden'] {
+  order: 2;
+}
+
+.mail-kop-dropdown[data-kop-soort='wat-nodig'] {
+  order: 3;
+}
+
+html body .mail-kop-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface2) 52%, var(--panel));
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+html body .mail-kop-pil:hover,
+html body .mail-kop-pil:focus-visible,
+html body .mail-kop-pil[aria-expanded='true'] {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+  background: var(--accent-soft);
+  color: var(--text);
+  outline: none;
+}
+
+html body .mail-kop-pil:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+html body .mail-kop-pil svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+html body .mail-kop-pil[data-opbouw='model'] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--info) 58%, var(--line));
+}
+
+html body .mail-kop-pil[data-opbouw='model'] svg {
+  color: var(--info);
+}
+
+html body .mail-kop-pil[data-kop-soort='beelden'] svg {
+  color: var(--warn);
+}
+
+.mail-kop-pil-teller {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.mail-kop-pil[data-kop-soort='beelden'] .mail-kop-pil-teller {
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+.mail-kop-pil-pijl {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.mail-kop-pil[aria-expanded='true'] .mail-kop-pil-pijl {
+  transform: rotate(180deg);
+}
+
+/* Випадаюча панель із повним доступом до функцій опції */
+.mail-kop-paneel {
+  position: absolute;
+  z-index: 715;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(72dvh, 560px);
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--straal-l, 16px);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--schaduw-2, 0 18px 48px var(--shadow));
+}
+
+.mail-kop-paneel[data-kop-soort='beelden'] {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.mail-kop-paneel .ai-blok {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.mail-kop-paneel .mail-beelden-strook {
+  margin: 0;
+  border: 0;
+  padding: 4px 2px;
+  background: transparent;
+}
+
+/* 5. Адаптивність для середніх, вузьких екранів і дотику */
+@media (max-width: 1180px) {
+  html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .vertaal-strook-voorvoegsel {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  html body .google-mail-reader > header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  html body .mail-reader-toolbar:not(.layout-editing) {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  html body .mail-reader-toolbar:not(.layout-editing) > .mail-reader-kop-opties {
+    order: 20;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    margin-inline: 0;
+    padding-top: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  }
+
+  .mail-kop-paneel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (pointer: coarse) {
+  html body .mail-kop-pil {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  html body .mail-reader-kop-opties > .vertaal-strook[data-in-kop='ja'] .lz-segment input + span {
+    min-height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mail-kop-pil,
+  .mail-kop-pil-pijl {
+    transition: none;
+  }
+}

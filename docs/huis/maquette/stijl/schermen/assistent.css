@@ -1,0 +1,498 @@
+/* assistent.css — «Автоматика → Помічник» і «Автоматика → Агенти й погодження»: розмова (hv-ast-gesprek), картка наміру
+   hv-ast-voorstel «було → стане», ланцюжок «чому» (hv-ast-keten), джерела (hv-ast-bron), черга hv-ast-verzoek, картки hv-ast-agentkaart,
+   стрічка hv-ast-stappen, сторінка агента (інструменти з hv-stand, рамки, дії, «що бачить агент») і майстер підключення.
+   Усе з числами — на папері; тон — лише стан і рівень ризику, завжди разом зі словом. Кольори — лише токени;
+   адаптивність — контейнерні запити (ast — сторінка зони). */
+
+/* ───────────── Сітка ───────────── */
+.hv-ast { container: ast / inline-size; display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-ast .hv-blok { min-inline-size: 0; }
+.hv-ast-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-ast-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+@container ast (min-width: 980px) {
+  .hv-ast-rooster { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); }
+  .hv-ast-rooster--agenten { grid-template-columns: minmax(0, 1.2fr) minmax(340px, 1fr); }
+}
+.hv-ast-tussenkop { font-size: var(--tekst-klein); font-weight: 700; color: var(--text); margin-block: var(--ruimte-4) var(--ruimte-2); }
+
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя й власних форм лічильників зона не має. Тут лише ряд дій: у зони їх дві-три, тож вони стоять окремим
+   рядом під реченням і лічильниками, а не третьою колонкою (інакше на планшеті реченню не лишається місця). */
+.hv-ast-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; }
+@container zoneheld (min-width: 720px) {
+  .hv-ast-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
+  .hv-ast-zoneheld .hv-zoneheld__sub { max-inline-size: 72ch; text-wrap: pretty; }
+}
+/* телефон: дві дії з контуром ділять рядок навпіл, тиха дія — останнім рядком на всю ширину */
+@container zoneheld (max-width: 519px) {
+  .hv-ast-zoneheld .hv-zoneheld__acties .hv-knop { flex: 1 1 140px; justify-content: center; }
+  .hv-ast-zoneheld .hv-zoneheld__acties .hv-knop--stil { flex-basis: 100%; }
+}
+
+/* Пігулка стану (готовий · думає · призупинено…): тон — лише підкладка й іконка, слово — --text */
+.hv-ast-staat { display: inline-flex; align-items: center; gap: 6px; min-block-size: 28px; padding-inline: var(--ruimte-2) var(--ruimte-3); border-radius: 999px; background: var(--toon-zacht, var(--surface)); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); white-space: nowrap; }
+.hv-ast-staat > .hv-ic { color: var(--toon, var(--muted)); }
+
+/* ───────────── Знак агента: монограма на підкладці тону ───────────── */
+.hv-ast-teken {
+  flex: none; display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-s);
+  background: var(--toon-zacht, var(--surface2)); border: 1px solid var(--line);
+  color: var(--toon, var(--text)); font-size: var(--tekst-klein); font-weight: 700; letter-spacing: -0.02em;
+}
+.hv-ast-teken > span { color: var(--text); }
+.hv-ast-teken--groot { inline-size: 64px; block-size: 64px; border-radius: var(--straal-m); font-size: 22px; box-shadow: var(--schaduw-1); }
+
+/* ───────────── Розмова ───────────── */
+.hv-ast-gesprek { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; overflow: hidden; }
+.hv-ast-gesprek__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-2) var(--ruimte-4); border-block-end: 1px solid var(--line); background: var(--surface); }
+.hv-ast-gesprek__titel { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: 600; margin-inline-end: auto; }
+.hv-ast-context { display: inline-flex; align-items: center; }
+.hv-ast-gesprek__lijst { display: grid; gap: var(--ruimte-5); padding: var(--ruimte-4); min-inline-size: 0; }
+.hv-ast-bericht { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-ast-bericht--mens { justify-items: end; }
+.hv-ast-bericht--mens .hv-ast-bericht__bel { max-inline-size: min(86%, 560px); padding: var(--ruimte-2) var(--ruimte-4); border-radius: 18px 18px 6px 18px; background: var(--surface2); color: var(--text); font-size: var(--tekst-basis); line-height: var(--hv-regel-basis); overflow-wrap: anywhere; }
+.hv-ast-bericht--assistent { grid-template-columns: 40px minmax(0, 1fr); align-items: start; gap: var(--ruimte-3); }
+.hv-ast-bericht__lijf { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-ast-bericht__zin { font-size: var(--tekst-basis); line-height: var(--hv-regel-basis); color: var(--text); text-wrap: pretty; }
+.hv-ast-bericht__hulp { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-bericht__tijd { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-ast-denkt { display: inline-flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-radius: 999px; background: var(--surface); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-begrepen { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-begrepen > .hv-ic { flex: none; }
+.hv-ast-begrepen > span { flex: 1 1 200px; min-inline-size: 0; }
+.hv-ast-begrepen.is-nadruk { padding: var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-3); border-radius: var(--straal-s); background: var(--info-zacht); color: var(--text); }
+.hv-ast-begrepen.is-nadruk > .hv-ic { color: var(--info); }
+.hv-ast-keuze { display: flex; flex-wrap: wrap; gap: 0 var(--hv-doel-kier); }
+.hv-ast-keuzechip::before { border: 1.5px solid var(--hv-omtrek); }
+.hv-ast-keuzechip > .hv-ic { color: var(--text); }
+
+/* Поле запиту, приклади, примітка */
+.hv-ast-invoer { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); border-block-start: 1px solid var(--line); background: var(--surface); min-inline-size: 0; }
+.hv-ast-voorbeelden {
+  display: flex; gap: var(--hv-doel-kier); overflow-x: auto; scrollbar-width: none; min-inline-size: 0; margin-inline: calc(-1 * var(--ruimte-4)); padding-inline: var(--ruimte-4);
+  mask-image: linear-gradient(90deg, transparent 0, var(--text) var(--ruimte-4), var(--text) calc(100% - var(--ruimte-6)), transparent 100%);
+}
+.hv-ast-voorbeelden::-webkit-scrollbar { display: none; }
+.hv-ast-voorbeelden .hv-chip { flex: none; }
+.hv-ast-veldrij { display: flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-ast-veld {
+  flex: 1 1 auto; min-inline-size: 0; min-block-size: 48px; padding-inline: var(--ruimte-4); border-radius: 999px; border: 1.5px solid var(--hv-omtrek);
+  background: var(--panel); color: var(--text); font: inherit; font-size: var(--tekst-basis);
+}
+.hv-ast-veld::placeholder { color: var(--muted); }
+.hv-ast-veld:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); border-color: var(--text); }
+.hv-ast-stuur { flex: none; min-block-size: 48px; min-inline-size: 48px; border-radius: 999px; padding-inline: var(--ruimte-4); }
+.hv-ast-mic { border-radius: 999px; color: var(--muted); }
+.hv-ast-invoer__noot { display: flex; gap: 6px; align-items: flex-start; font-size: var(--tekst-mini); line-height: 1.45; color: var(--muted); }
+.hv-ast-invoer__noot > .hv-ic { flex: none; margin-block-start: 2px; }
+@container ast (max-width: 519px) {
+  .hv-ast-stuur span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hv-ast-stuur { inline-size: 48px; padding: 0; justify-content: center; }
+  .hv-ast-gesprek__lijst { padding: var(--ruimte-3); gap: var(--ruimte-4); }
+  .hv-ast-bericht--assistent { grid-template-columns: minmax(0, 1fr); }
+  .hv-ast-bericht--assistent > .hv-ast-teken { inline-size: 28px; block-size: 28px; border-radius: 8px; font-size: var(--tekst-mini); }
+  .hv-ast-bericht--assistent > .hv-ast-teken .hv-ic { inline-size: 16px; block-size: 16px; }
+  .hv-ast-invoer { padding-inline: var(--ruimte-3); }
+  .hv-ast-voorbeelden { margin-inline: calc(-1 * var(--ruimte-3)); padding-inline: var(--ruimte-3); }
+}
+
+/* ───────────── Картка наміру hv-ast-voorstel: «було → стане» ───────────── */
+.hv-ast-voorstel, .hv-ast-regel {
+  --rand: var(--hv-omtrek);
+  display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-m); background: var(--panel);
+  border: 1px solid var(--line); box-shadow: var(--schaduw-2), inset 3px 0 0 var(--rand); min-inline-size: 0;
+}
+.hv-ast-voorstel--gevoelig { --rand: var(--info); }
+.hv-ast-voorstel--gevaarlijk { --rand: var(--warn); }
+.hv-ast-voorstel--kritiek { --rand: var(--fout-vlak); }
+.hv-ast-voorstel__kop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: start; }
+.hv-ast-voorstel__teken { display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-s); background: var(--surface2); color: var(--text); }
+.hv-ast-voorstel__titels { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-ast-voorstel__soort { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-ast-voorstel__titel { font-size: var(--tekst-basis); font-weight: 700; line-height: 1.3; color: var(--text); text-wrap: balance; }
+.hv-ast-voorstel__rechts { display: grid; justify-items: end; gap: 4px; }
+.hv-ast-voorstel__staat { font-size: var(--tekst-mini); font-weight: 700; color: var(--text); padding: 2px var(--ruimte-2); border-radius: 999px; background: var(--surface2); white-space: nowrap; }
+.is-uitgevoerd .hv-ast-voorstel__staat { background: var(--ok-zacht); }
+.is-mislukt .hv-ast-voorstel__staat, .is-afgewezen .hv-ast-voorstel__staat { background: var(--fout-zacht); }
+.is-gevraagd .hv-ast-voorstel__staat { background: var(--warn-zacht); }
+.hv-ast-voorstel__kolomkop { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ruimte-3); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); padding-inline: var(--ruimte-1); }
+.hv-ast-voorstel__rijen { display: grid; border-radius: var(--straal-s); background: var(--surface); overflow: hidden; }
+.hv-ast-voorstel__rij { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ruimte-1) var(--ruimte-3); align-items: center; min-block-size: 48px; padding: var(--ruimte-2) var(--ruimte-3); }
+.hv-ast-voorstel__rij + .hv-ast-voorstel__rij { border-block-start: 1px solid var(--line); }
+.hv-ast-voorstel__naam { display: grid; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); min-inline-size: 0; }
+.hv-ast-voorstel__kamer { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-ast-voorstel__delta { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hv-ast-voorstel__was { color: var(--muted); }
+.hv-ast-voorstel__pijl { color: var(--muted); }
+.hv-ast-voorstel__wordt { font-weight: 700; color: var(--text); padding: 2px var(--ruimte-2); border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.hv-ast-voorstel__rij.is-overslaan { background: var(--panel); }
+.hv-ast-voorstel__over { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-ast-voorstel__toestemming { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-voorstel__toestemming > span { flex: 1 1 auto; min-inline-size: 0; }
+.hv-ast-voorstel__toestemming > .hv-ic { flex: none; color: var(--text); }
+.hv-ast-voorstel__knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); padding-block-start: var(--ruimte-1); }
+.hv-ast-voorstel.is-afgewezen .hv-ast-voorstel__titel, .hv-ast-voorstel.is-teruggedraaid .hv-ast-voorstel__titel { text-decoration: line-through; text-decoration-thickness: 1px; color: var(--muted); }
+.hv-ast-voorstel.is-afgewezen, .hv-ast-voorstel.is-leeg { box-shadow: var(--schaduw-1), inset 3px 0 0 var(--line); }
+@container ast (max-width: 519px) {
+  .hv-ast-voorstel, .hv-ast-regel { padding: var(--ruimte-3); }
+  .hv-ast-voorstel__kop { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-ast-voorstel__rechts { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--ruimte-2); }
+  .hv-ast-voorstel__rij { grid-template-columns: minmax(0, 1fr); }
+  .hv-ast-voorstel__kolomkop span:last-child { display: none; }
+}
+
+/* ───────────── Джерела hv-ast-bron ───────────── */
+.hv-ast-bronnen { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--hv-doel-kier); }
+.hv-ast-bronnen__kop { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 700; color: var(--muted); margin-inline-end: var(--ruimte-1); }
+.hv-ast-bron::before { background: var(--surface); }
+.hv-ast-bron .hv-chip__sub { font-variant-numeric: tabular-nums; }
+
+/* ───────────── Відповідь: факти, графік ───────────── */
+.hv-ast-feiten { display: grid; border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
+.hv-ast-feiten > li + li { border-block-start: 1px solid var(--line); }
+.hv-ast-feiten__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--ruimte-3); inline-size: 100%; min-block-size: 52px; padding: var(--ruimte-2) var(--ruimte-3); text-align: start; color: var(--text); }
+div.hv-ast-feiten__rij { grid-template-columns: auto minmax(0, 1fr) auto; }
+button.hv-ast-feiten__rij:active { background: var(--surface2); }
+.hv-ast-feiten__teken { display: inline-grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 10px; background: var(--toon-zacht, var(--surface)); color: var(--toon, var(--text)); }
+.hv-ast-feiten__naam { display: grid; font-size: var(--tekst-klein); font-weight: 600; min-inline-size: 0; }
+.hv-ast-feiten__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-ast-feiten__waarde { font-size: var(--tekst-klein); font-weight: 700; text-align: end; font-variant-numeric: tabular-nums; }
+.hv-ast-feiten__pijl { color: var(--muted); }
+.hv-ast-grafiek { padding: var(--ruimte-3); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); min-inline-size: 0; }
+
+/* ───────────── «Чому це сталося»: ланцюжок ───────────── */
+.hv-ast-waarom { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-ast-keten { display: grid; gap: 0; padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); }
+.hv-ast-keten > li { position: relative; display: grid; gap: 2px; padding: var(--ruimte-2) 0 var(--ruimte-3) var(--ruimte-5); }
+.hv-ast-keten > li::before { content: ""; position: absolute; inset-inline-start: 4px; inset-block-start: 13px; inline-size: 10px; block-size: 10px; border-radius: 50%; border: 2px solid var(--hv-omtrek); background: var(--panel); }
+.hv-ast-keten > li:last-child::before { background: var(--text); border-color: var(--text); }
+.hv-ast-keten > li + li::after { content: ""; position: absolute; inset-inline-start: 8px; inset-block-start: -10px; block-size: 22px; border-inline-start: 2px solid var(--hv-omtrek); }
+.hv-ast-keten__label { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.hv-ast-keten__wat { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--text); }
+.hv-ast-let { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--warn-zacht); }
+.hv-ast-let > .hv-ic { color: var(--warn); flex: none; }
+.hv-ast-let > p { flex: 1 1 220px; font-size: var(--tekst-klein); color: var(--text); }
+
+/* ───────────── Чернетка правила ───────────── */
+.hv-ast-regel { --rand: var(--info); }
+.hv-ast-regel__delen { display: grid; gap: 0; border-radius: var(--straal-s); background: var(--surface); overflow: hidden; }
+.hv-ast-regel__delen > li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; min-block-size: 48px; padding: var(--ruimte-2) var(--ruimte-3); }
+.hv-ast-regel__delen > li + li { border-block-start: 1px solid var(--line); }
+.hv-ast-regel__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-ast-regel__wat { font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-ast-regel__schatting { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; }
+.hv-ast-regel__pad { display: flex; gap: 6px; align-items: flex-start; font-size: var(--tekst-mini); line-height: 1.45; color: var(--muted); }
+.hv-ast-regel__pad > .hv-ic { flex: none; margin-block-start: 2px; }
+@container ast (max-width: 519px) {
+  .hv-ast-regel__delen > li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .hv-ast-regel__schatting { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ───────────── Підсумок дня ───────────── */
+.hv-ast-sam {
+  display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-m); border: 1px solid var(--line); min-inline-size: 0;
+  background: var(--panel); /* папір без градієнта: числа підсумку лежать на папері */
+}
+.hv-ast-sam__kop { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--ruimte-2); }
+.hv-ast-sam__soort { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-ast-sam__titel { font-size: var(--hv-tekst-kop); line-height: 1.25; font-weight: 700; color: var(--text); text-wrap: balance; }
+.hv-ast-sam__sjabloon { display: inline-flex; align-items: center; gap: 4px; padding: 2px var(--ruimte-2); border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-ast-sam__getallen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ruimte-2); }
+.hv-ast-sam__getallen .hv-getal { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--panel); border: 1px solid var(--line); }
+.hv-ast-sam__rijen { display: grid; }
+.hv-ast-sam__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: center; min-block-size: 48px; border-block-start: 1px solid var(--line); }
+.hv-ast-sam__teken { display: inline-grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 8px; background: var(--toon-zacht, var(--surface)); color: var(--toon, var(--text)); }
+.hv-ast-sam__tekst { font-size: var(--tekst-klein); color: var(--text); min-inline-size: 0; }
+@container ast (max-width: 599px) {
+  .hv-ast-sam__getallen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-ast-sam { padding: var(--ruimte-3); }
+  .hv-ast-sam__titel { font-size: 18px; }
+  .hv-ast-sam__rij { gap: var(--ruimte-2); }
+  .hv-ast-sam__rij > .hv-knop { padding-inline: var(--ruimte-1); }
+}
+
+/* ───────────── Пропозиції й незвичне ───────────── */
+.hv-ast-kaarten { display: grid; gap: var(--ruimte-2); }
+.hv-ast-suggestie, .hv-ast-ongewoon { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-ast-suggestie { grid-template-columns: auto minmax(0, 1fr); }
+.hv-ast-suggestie__teken { display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-s); background: var(--toon-zacht, var(--hv-aan-zacht)); color: var(--toon, var(--text)); flex: none; }
+.hv-ast-suggestie__tekst { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-ast-suggestie__tekst h3, .hv-ast-ongewoon h3 { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.35; color: var(--text); text-wrap: pretty; }
+.hv-ast-suggestie__tekst p, .hv-ast-ongewoon p { display: flex; gap: 6px; align-items: flex-start; font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-suggestie__knoppen { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+.hv-ast-suggestie.is-gemaakt { box-shadow: none; background: var(--surface); }
+.hv-ast-ongewoon__kop { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: start; }
+.hv-ast-ongewoon__kop > div { display: grid; gap: var(--ruimte-1); }
+
+/* ───────────── Налаштування помічника ───────────── */
+.hv-ast-instellingen { display: grid; gap: var(--hv-kier); }
+.hv-ast-instellingen > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+@container ast (min-width: 1240px) { .hv-ast-instellingen { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.hv-ast-budget { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-3); margin-block-start: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; }
+.hv-ast-budget > span { display: grid; }
+.hv-ast-budget__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-ast-balk { block-size: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; margin-block-start: var(--ruimte-2); }
+.hv-ast-balk > i { display: block; block-size: 100%; border-radius: inherit; background: var(--info); }
+.hv-ast-tabel { inline-size: 100%; border-collapse: collapse; font-size: var(--tekst-klein); margin-block: var(--ruimte-3); }
+.hv-ast-tabel th { text-align: start; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); padding: var(--ruimte-2) 0; border-block-end: 1px solid var(--line); }
+.hv-ast-tabel td { padding: var(--ruimte-2) 0; border-block-end: 1px solid var(--line); }
+.hv-ast-kaarten + .hv-knoppen, .hv-kaart .hv-tekst + .hv-ast-tabel { margin-block-start: var(--ruimte-3); }
+
+/* ───────────── Черга «Чекає на вас»: hv-ast-verzoek ───────────── */
+.hv-ast-verzoeken { display: grid; gap: var(--ruimte-3); }
+.hv-ast-verzoek {
+  --rand: var(--hv-omtrek);
+  display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line);
+  box-shadow: var(--schaduw-2), inset 4px 0 0 var(--rand); min-inline-size: 0;
+}
+.hv-ast-verzoek--gevoelig { --rand: var(--info); }
+.hv-ast-verzoek--gevaarlijk { --rand: var(--warn); }
+.hv-ast-verzoek--kritiek { --rand: var(--fout-vlak); }
+.hv-ast-verzoek:not(.is-wacht) { box-shadow: var(--schaduw-1), inset 4px 0 0 var(--line); }
+.hv-ast-verzoek__kop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: center; }
+.hv-ast-verzoek__wie { display: grid; min-inline-size: 0; }
+.hv-ast-verzoek__naam { font-size: var(--tekst-klein); font-weight: 700; color: var(--text); }
+.hv-ast-verzoek__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); overflow-wrap: anywhere; }
+.hv-ast-verzoek__sub code, .hv-ast-stappen code, .hv-ast-tool__code code, .hv-ast-geentool__code code, .hv-ast-adres code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--tekst-mini); overflow-wrap: anywhere; word-break: break-word;
+}
+.hv-ast-verzoek__stand { display: grid; justify-items: end; gap: 2px; }
+.hv-ast-verzoek__woord { font-size: var(--tekst-mini); font-weight: 700; color: var(--text); white-space: nowrap; }
+.hv-ast-verzoek__wat { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--text); text-wrap: balance; }
+.hv-ast-verzoek__wordt { display: flex; gap: var(--ruimte-2); align-items: center; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--surface); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.hv-ast-verzoek__wordt > .hv-ic { flex: none; color: var(--muted); }
+.hv-ast-verzoek__gevolg { font-size: var(--tekst-klein); color: var(--text); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--warn-zacht); }
+.hv-ast-verzoek--kritiek .hv-ast-verzoek__gevolg { background: var(--fout-zacht); }
+.hv-ast-verzoek__feiten { display: grid; gap: var(--ruimte-2); }
+.hv-ast-verzoek__feiten > div { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: var(--ruimte-3); align-items: baseline; }
+.hv-ast-verzoek__feiten dt { font-size: var(--tekst-mini); font-weight: 700; color: var(--muted); }
+.hv-ast-verzoek__feiten dd { font-size: var(--tekst-klein); color: var(--text); min-inline-size: 0; }
+.hv-ast-verzoek__feiten q { quotes: "«" "»"; font-style: italic; color: var(--text); }
+.hv-ast-verzoek__knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+.hv-ast-verzoek__slot { display: inline-flex; align-items: center; gap: 6px; min-block-size: var(--hv-tik); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-ast-wantrouw::before { background: var(--warn-zacht); border-color: transparent; }
+.hv-ast-wantrouw > .hv-ic { color: var(--warn); }
+@container ast (max-width: 519px) {
+  .hv-ast-verzoek { padding: var(--ruimte-3) var(--ruimte-3) var(--ruimte-3) var(--ruimte-4); }
+  .hv-ast-verzoek__kop { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-ast-verzoek__stand { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--ruimte-2); }
+  .hv-ast-verzoek__woord { white-space: normal; }
+  .hv-ast-verzoek__feiten > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+/* аркуш праворуч вужчий за сторінку: факти запиту — стовпчиком */
+.hv-laag .hv-ast-verzoek__feiten > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+/* там само стан запиту («схвалено · виконається о 02:00», «знято: дозвіл вимкнено») — власним рядком під іменем, а не поруч */
+.hv-laag .hv-ast-verzoek__kop { grid-template-columns: auto minmax(0, 1fr); }
+.hv-laag .hv-ast-verzoek__stand { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--ruimte-2); }
+.hv-laag .hv-ast-verzoek__woord { white-space: normal; }
+.hv-ast-rust { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.hv-ast-rust__titel { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
+.hv-ast-rust__tekst { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-beslist .hv-rijen { padding-inline: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); }
+
+/* ───────────── Картки агентів ───────────── */
+.hv-ast-agentkaarten { display: grid; gap: var(--ruimte-2); }
+.hv-ast-agentkaart { display: grid; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; min-inline-size: 0; }
+.hv-ast-agentkaart__lijf { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: var(--ruimte-1) var(--ruimte-3); align-items: center; padding: var(--ruimte-3) var(--ruimte-3) var(--ruimte-3) var(--ruimte-4); text-align: start; color: var(--text); min-block-size: 72px; }
+.hv-ast-agentkaart__lijf:active { background: var(--surface2); }
+.hv-ast-agentkaart__lijf > .hv-ast-teken { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.hv-ast-agentkaart__naam { grid-column: 2; grid-row: 1; display: grid; font-size: var(--tekst-basis); font-weight: 700; min-inline-size: 0; }
+.hv-ast-agentkaart__weg { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); overflow-wrap: anywhere; }
+.hv-ast-agentkaart__risico { grid-column: 3; grid-row: 1; display: inline-flex; align-items: center; gap: 2px; font-size: var(--tekst-mini); font-weight: 700; color: var(--text); }
+.hv-ast-agentkaart__risico .hv-ic { color: var(--warn-vlak); }
+.hv-ast-agentkaart__pijl { grid-column: 4; grid-row: 1; color: var(--muted); }
+.hv-ast-agentkaart__cijfers { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-3); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-ast-agentkaart__cijfers b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.hv-ast-agentkaart__cijfers .is-let b { color: var(--warn); }
+.hv-ast-agentkaart__status { display: inline-flex; align-items: center; gap: 6px; padding: 2px var(--ruimte-2); border-radius: 999px; background: var(--toon-zacht, var(--surface)); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); white-space: nowrap; }
+.hv-ast-agentkaart__status > .hv-ic { color: var(--toon, var(--muted)); }
+.hv-ast-agentkaart__voet { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-1) var(--ruimte-2); padding: var(--ruimte-1) var(--ruimte-3) var(--ruimte-1) var(--ruimte-4); border-block-start: 1px solid var(--line); background: var(--surface); }
+.hv-ast-agentkaart__slot { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-ast-agentkaart.is-los { background: var(--surface); box-shadow: none; }
+.hv-ast-agentkaart.is-los .hv-ast-teken { filter: grayscale(1); }
+.hv-ast-agentkaart.is-pauze { box-shadow: var(--schaduw-1), inset 4px 0 0 var(--warn); }
+.hv-ast-geenhulp { display: flex; gap: var(--ruimte-2); align-items: flex-start; margin-block-start: var(--ruimte-3); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-geenhulp > .hv-ic { flex: none; margin-block-start: 2px; color: var(--text); }
+
+/* ───────────── «Зараз працює»: мікростани кроків ───────────── */
+.hv-ast-stappen { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-ast-stappen.is-actief { box-shadow: var(--schaduw-2), inset 4px 0 0 var(--info); }
+.hv-ast-stappen__kop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: center; }
+.hv-ast-stappen__kop > div { display: grid; min-inline-size: 0; }
+.hv-ast-stappen__wie { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-ast-stappen__kop h3 { font-size: var(--tekst-basis); font-weight: 700; color: var(--text); }
+.hv-ast-stappen__woorden { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-ast-stappen__woorden q { quotes: "«" "»"; font-style: italic; color: var(--text); }
+.hv-ast-stappen__lijst { display: grid; border-radius: var(--straal-m); background: var(--surface); overflow: hidden; }
+.hv-ast-stappen__lijst > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-1) var(--ruimte-3); align-items: center; min-block-size: 52px; padding: var(--ruimte-2) var(--ruimte-3); }
+.hv-ast-stappen__lijst > li + li { border-block-start: 1px solid var(--line); }
+.hv-ast-stappen__teken { display: inline-grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: var(--panel); border: 1.5px solid var(--hv-omtrek); color: var(--muted); }
+.hv-ast-stappen__wat { display: grid; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); min-inline-size: 0; }
+.hv-ast-stappen__wat code { color: var(--muted); font-weight: 500; }
+.hv-ast-stappen__fase { display: grid; justify-items: end; font-size: var(--tekst-mini); font-weight: 700; color: var(--text); text-align: end; }
+.hv-ast-stappen__fase span { font-weight: 500; color: var(--muted); }
+.hv-ast-stappen li.is-verzonden .hv-ast-stappen__teken, .hv-ast-stappen li.is-aangenomen .hv-ast-stappen__teken { border-style: dashed; border-color: var(--info); color: var(--info); }
+.hv-ast-stappen li.is-bevestigd .hv-ast-stappen__teken { background: var(--ok-zacht); border-color: var(--ok); color: var(--ok); }
+.hv-ast-stappen li.is-geweigerd .hv-ast-stappen__teken, .hv-ast-stappen li.is-mislukt .hv-ast-stappen__teken { background: var(--fout-zacht); border: 2px solid var(--fout); color: var(--fout); }
+.hv-ast-stappen li.is-wacht .hv-ast-stappen__teken { background: var(--warn-zacht); border-color: var(--warn); color: var(--warn); }
+@container ast (max-width: 519px) {
+  .hv-ast-stappen__lijst > li { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-ast-stappen__fase { grid-column: 2; justify-items: start; text-align: start; }
+}
+
+/* ───────────── Сторінка агента ───────────── */
+.hv-ast-agentrooster { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-ast-agentlijf { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-ast-agentrail { display: flex; gap: var(--ruimte-2); overflow-x: auto; scrollbar-width: none; min-inline-size: 0; padding-block: 2px; }
+.hv-ast-agentrail::-webkit-scrollbar { display: none; }
+.hv-ast-agentrail__punt { flex: none; display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: 52px; padding: var(--ruimte-1) var(--ruimte-3) var(--ruimte-1) var(--ruimte-1); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); color: var(--text); text-align: start; }
+.hv-ast-agentrail__punt .hv-ast-teken { inline-size: 36px; block-size: 36px; }
+.hv-ast-agentrail__punt > span:last-child { display: grid; }
+.hv-ast-agentrail__naam { font-size: var(--tekst-klein); font-weight: 700; white-space: nowrap; }
+.hv-ast-agentrail__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); white-space: nowrap; }
+.hv-ast-agentrail__punt.is-actief { background: var(--surface2); border: 2px solid var(--text); }
+@container ast (min-width: 1100px) {
+  .hv-ast-agentrooster { grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
+  .hv-ast-agentrail { position: sticky; inset-block-start: var(--ruimte-3); flex-direction: column; overflow: visible; }
+  .hv-ast-agentrail__punt { inline-size: 100%; }
+}
+.hv-ast-agentkop {
+  display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4) var(--ruimte-5) var(--ruimte-5); border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0;
+  background: var(--panel);
+}
+.hv-ast-terug { justify-self: start; margin-inline-start: calc(-1 * var(--ruimte-2)); text-decoration: none; }
+.hv-ast-agentkop__hoofd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-4); align-items: center; }
+.hv-ast-agentkop__tekst { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-ast-agentkop__naam { font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); }
+.hv-ast-agentkop__sub { font-size: var(--tekst-klein); color: var(--muted); overflow-wrap: anywhere; }
+.hv-ast-agentkop__chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); }
+/* лічильники агента — тієї самої форми, що в героя зони (класи hv-zoneheld__teller); тут лише розкладка ряду:
+   вузько — чотири рівні колонки, від 600 px — щільний ряд зліва, а не розтягнутий на всю ширину */
+.hv-ast-agentkop .hv-ast-agentkop__getallen { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-block: var(--ruimte-1); }
+@container ast (min-width: 600px) {
+  .hv-ast-agentkop .hv-ast-agentkop__getallen { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(104px, max-content); justify-content: start; }
+  .hv-ast-agentkop .hv-ast-agentkop__getallen .hv-zoneheld__teller { padding-inline: var(--ruimte-3) var(--ruimte-4); }
+  .hv-ast-agentkop .hv-ast-agentkop__getallen .hv-zoneheld__teller:first-child { padding-inline-start: 0; }
+}
+.hv-ast-van { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-ast-agentkop__knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+@container ast (max-width: 599px) {
+  .hv-ast-agentkop { padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); }
+  .hv-ast-agentkop__knoppen .hv-knop:not(.hv-knop--stil) { flex: 1 1 150px; justify-content: center; }
+  .hv-ast-agentkop__hoofd { gap: var(--ruimte-3); }
+  .hv-ast-agentkop .hv-ast-teken--groot { inline-size: 52px; block-size: 52px; }
+}
+.hv-ast-agentwacht { margin-block: 0; }
+
+/* вкладки сторінки агента: сегмент на папері, гортається на вузькому екрані */
+.hv-ast-agenttabs { display: flex; gap: var(--ruimte-1); padding: var(--ruimte-1); border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; min-inline-size: 0; position: sticky; inset-block-start: 0; z-index: 2; }
+.hv-ast-agenttabs::-webkit-scrollbar { display: none; }
+.hv-ast-agenttab { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3); border-radius: var(--straal-s); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-ast-agenttab.is-actief { background: var(--panel); color: var(--text); box-shadow: var(--schaduw-1); outline: var(--hv-streep) solid var(--hv-omtrek); outline-offset: -1px; }
+.hv-ast-agentpaneel { min-inline-size: 0; }
+
+/* Інструменти */
+.hv-ast-gereedschap { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-ast-geentool { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: start; padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 2px solid var(--text); }
+.hv-ast-geentool > .hv-ic { color: var(--text); }
+.hv-ast-geentool h3 { font-size: var(--tekst-basis); font-weight: 700; color: var(--text); }
+.hv-ast-geentool p { font-size: var(--tekst-klein); color: var(--muted); margin-block-start: var(--ruimte-1); }
+.hv-ast-geentool__code { display: flex; flex-wrap: wrap; gap: 0 var(--ruimte-2); align-items: baseline; }
+.hv-ast-geentool__code code { color: var(--text); text-decoration: line-through; text-decoration-thickness: 1px; }
+.hv-ast-geentool__code span { font-weight: 700; color: var(--text); }
+.hv-ast-sets { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
+.hv-ast-sets__label { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); margin-inline-end: var(--ruimte-1); }
+.hv-ast-groepfilter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-inline-size: 0; }
+.hv-ast-groepfilter::-webkit-scrollbar { display: none; }
+.hv-ast-groepfilter .hv-chip { flex: none; }
+.hv-ast-groep .hv-blok__inhoud { display: grid; gap: 0; padding: var(--ruimte-1) var(--ruimte-4) var(--ruimte-2); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-ast-groepstand { display: grid; gap: var(--ruimte-2); padding-block: var(--ruimte-3); border-block-end: 2px solid var(--line); }
+.hv-ast-groepstand__label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-ast-groepstand__label .hv-chip { text-transform: none; letter-spacing: 0; }
+.hv-ast-groepstand__label em { font-style: normal; color: var(--text); text-transform: none; letter-spacing: 0; }
+.hv-ast-groepstand .hv-stand__segmenten { margin-inline-end: calc(var(--hv-tik) + var(--ruimte-2)); }
+.hv-ast-tools { display: grid; }
+/* рядок інструмента: опис і рівень · назва MCP · дозвіл із «!» чи «i» */
+.hv-ast-tool { display: grid; gap: var(--ruimte-2); padding-block: var(--ruimte-3); min-inline-size: 0; }
+.hv-ast-tools > .hv-ast-tool + .hv-ast-tool { border-block-start: 1px solid var(--line); }
+.hv-ast-tool__info { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-ast-tool__wat { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-ast-tool__code { color: var(--muted); line-height: 1.4; }
+.hv-ast-stand { display: flex; align-items: center; gap: var(--ruimte-2); border-block-start: 0; padding: 0; min-inline-size: 0; }
+.hv-ast-stand .hv-stand__segmenten { flex: 1 1 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hv-ast-stand .hv-stand__deel { padding-inline: var(--ruimte-2); white-space: nowrap; }
+.hv-ast-stand .hv-stand__lees { flex: 1 1 auto; }
+.hv-ast-stand .hv-uitleg { flex: none; }
+/* рядок «запитів, що чекають» — окремим рядком під сегментами; сегменти й «!» лишаються в одному ряду */
+.hv-ast-stand.heeft-wacht { flex-wrap: wrap; }
+.hv-ast-stand.heeft-wacht .hv-stand__segmenten { flex: 1 1 0; min-inline-size: 0; }
+.hv-ast-stand .hv-stand__wacht { flex: 1 0 100%; }
+.hv-ast-stand--kritiek.is-altijd-zwaar .hv-uitleg--vast { color: var(--fout-vlak); }
+.hv-ast-stand.is-altijd-zwaar .hv-stand__deel.is-gekozen { border-color: var(--warn); }
+.hv-ast-stand--kritiek.is-altijd-zwaar .hv-stand__deel.is-gekozen { border-color: var(--fout-vlak); }
+.hv-ast-tool--nooit { padding: var(--ruimte-3) 0; }
+.hv-ast-tool--nooit .hv-ast-tool__code code { text-decoration: line-through; text-decoration-thickness: 1px; }
+@container ast (min-width: 900px) {
+  .hv-ast-tool { grid-template-columns: minmax(0, 1fr) minmax(330px, 380px); column-gap: var(--ruimte-5); align-items: center; }
+  .hv-ast-groepstand { grid-template-columns: minmax(0, 1fr) minmax(330px, 380px); align-items: center; column-gap: var(--ruimte-5); }
+}
+
+/* Рамки */
+.hv-ast-kaders { display: grid; gap: var(--hv-kier); }
+.hv-ast-kaders__intro { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-1) var(--ruimte-2); align-items: start; padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--surface); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-kaders__intro > .hv-ic { margin-block-start: 2px; color: var(--text); }
+.hv-ast-kaders__intro strong { grid-column: 2; color: var(--text); font-weight: 700; }
+.hv-ast-kaders__rooster { display: grid; gap: var(--hv-kier); }
+.hv-ast-kaders__rooster > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+.hv-ast-kaders__rooster .hv-segment + .hv-segment { margin-block-start: var(--ruimte-3); }
+@container ast (min-width: 900px) { .hv-ast-kaders__rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.hv-ast-aftel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); margin-block-start: var(--ruimte-3); font-size: var(--tekst-klein); color: var(--muted); }
+
+/* Що бачить агент */
+.hv-ast-zichtrooster { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-ast-zichtrooster > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+@container ast (min-width: 1000px) { .hv-ast-zichtrooster { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .hv-ast-zichtrooster > .hv-ast-serverregel, .hv-ast-zichtrooster > [data-k="zicht-json"] { grid-column: 1 / -1; } }
+.hv-ast-zicht, .hv-ast-meesturen { display: grid; }
+.hv-ast-zicht__rij, .hv-ast-meesturen__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: center; min-block-size: 52px; padding-block: var(--ruimte-1); }
+.hv-ast-meesturen__rij { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.hv-ast-zicht__rij + .hv-ast-zicht__rij, .hv-ast-meesturen__rij + .hv-ast-meesturen__rij { border-block-start: 1px solid var(--line); }
+.hv-ast-zicht__teken { display: inline-grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 10px; background: var(--toon-zacht, var(--surface)); color: var(--toon, var(--text)); }
+.hv-ast-zicht__naam { display: grid; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); min-inline-size: 0; }
+.hv-ast-zicht__waarde { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); text-align: end; max-inline-size: 22ch; }
+.hv-ast-serverregel { display: flex; gap: var(--ruimte-2); align-items: flex-start; padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--info-zacht); font-size: var(--tekst-klein); color: var(--text); }
+.hv-ast-serverregel > .hv-ic { flex: none; margin-block-start: 2px; color: var(--info); }
+.hv-ast-json {
+  margin: 0; max-block-size: 340px; overflow: auto; padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--tekst-mini); line-height: 1.55; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+@container ast (max-width: 519px) {
+  .hv-ast-zicht__rij { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-ast-zicht__waarde { grid-column: 2; text-align: start; max-inline-size: none; }
+}
+
+/* ───────────── Майстер «Додати агента» (аркуш) ───────────── */
+.hv-ast-wizbalk { display: flex; gap: var(--ruimte-1); margin-block-end: var(--ruimte-3); overflow-x: auto; scrollbar-width: none; }
+.hv-ast-wizbalk::-webkit-scrollbar { display: none; }
+.hv-ast-wizbalk > li:not(.is-nu) .hv-ast-wizbalk__naam { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.hv-ast-wizbalk > li { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: var(--ruimte-1) var(--ruimte-2); border-radius: 999px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-ast-wizbalk > li > span:first-child { display: inline-grid; place-items: center; inline-size: 20px; block-size: 20px; border-radius: 50%; border: 1.5px solid var(--hv-omtrek); font-size: var(--tekst-mini); }
+.hv-ast-wizbalk > li.is-nu { background: var(--panel); color: var(--text); box-shadow: var(--schaduw-1); }
+.hv-ast-wizbalk > li.is-nu > span:first-child { border: 2px solid var(--text); }
+.hv-ast-wizbalk > li.is-klaar > span:first-child { background: var(--text); border-color: var(--text); color: var(--panel); }
+.hv-ast-wiz { display: grid; gap: var(--hv-kier); }
+.hv-ast-wiz > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+.hv-ast-wizkeuze { display: grid; gap: var(--ruimte-2); }
+.hv-ast-wizoptie { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-3); align-items: center; inline-size: 100%; min-block-size: 64px; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1.5px solid var(--line); text-align: start; color: var(--text); }
+.hv-ast-wizoptie > span:nth-child(2) { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-ast-wizoptie b { font-size: var(--tekst-basis); font-weight: 700; }
+.hv-ast-wizoptie span span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-ast-wizoptie.is-gekozen { background: var(--surface2); border: 2px solid var(--text); }
+.hv-ast-wizoptie.is-later { background: var(--surface); }
+.hv-ast-wiznav { display: flex; justify-content: space-between; gap: var(--hv-doel-kier); margin-block-start: var(--ruimte-4); }
+.hv-ast-adres { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--surface); }
+.hv-ast-scopes { display: grid; gap: var(--ruimte-1); }
+.hv-ast-scopes > li { display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: 32px; font-size: var(--tekst-klein); color: var(--muted); }
+.hv-ast-scopes > li.is-aan { color: var(--text); font-weight: 600; }
+.hv-ast-scopes > li.is-nooit { color: var(--text); font-weight: 700; border-block-start: 1px solid var(--line); padding-block-start: var(--ruimte-1); }
+.hv-ast-proef { display: flex; gap: var(--ruimte-2); align-items: center; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--ok-zacht); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-ast-proef > .hv-ic { color: var(--ok); }

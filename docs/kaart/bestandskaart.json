@@ -2298,6 +2298,26 @@
   {
    "pad": "src/main.tsx",
    "reden": "ingang (index.html)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-security-nl-donker-1280.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /security (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-security-uk-licht-380.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /security (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-sessions-nl-donker-1280.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "tests/e2e/знімки-015/schermen-sessions-uk-licht-380.jpg",
+   "reden": "e2e-schermafdruk uit identiteit-015-schermen.e2e.ts van routepagina /sessions (verantwoording aanvulling-d3.json)"
+  },
+  {
+   "pad": "src/merk/officieel/passkey.png",
+   "reden": "officieel merkteken voor sleutel 'passkey' (vereist door merk-officieel en plaats-tekens tests)"
   }
  ],
  "woorden": {
@@ -2852,6 +2872,666 @@
    "pad": "tests/e2e/hulp/stand-blok1-toegang.ts",
    "wat": "Stand blok1-toegang-*: venster «Підтвердіть доступ» (label binnen het venster, contrast), chips van de toestemming op 390 px, pagina ChatGPT met de nieuwe stappen en de waarschuwing over het plan.",
    "sinds": "blok 1 «швидкі виправлення» (25.10.2026)"
+  },
+  {
+   "pad": "backend/meldingen-ecosysteem.ts",
+   "wat": "Servermodule en API-eindpunten van het geïntegreerde meldingen-ecosysteem: ruimte-isolatie, gebeurtenisstroom, profiel, actielog en opgeschoonde AI-duiding.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "migrations/0278_meldingen_ecosysteem.sql",
+   "wat": "Migratie 0278: drie tabellen onder strikte rijbeveiliging (RLS) voor profielen, gebeurtenissen en het actielogboek van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/model.ts",
+   "wat": "Gedeelde typen en normalisatiefuncties van het meldingen-ecosysteem voor zowel server als browser.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/formaten.ts",
+   "wat": "Formaatclassificatie voor de ingebouwde bijlage-speler (afbeeldingen, audio, video, PDF, tabellen, databases, archieven, agenda, contacten, handtekeningen en binaire HEX-inspectie).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/tolk.ts",
+   "wat": "Gebeurtenistolk die signalen van subdomeinen, pc-agent, browserextensie, post, opslag, AI en paginabanners omzet naar één uniform formaat met acties.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/ai.ts",
+   "wat": "Opschoning van geheimen (zonderGeheimen), lokale AI-analyse zonder extern verkeer en veilige opbouw van vragen voor externe AI.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/regels.ts",
+   "wat": "Zuivere geometrische regels voor het achtzijdig schalen van het venster, klemmen binnen dokzones, veegregels met beveiligingsrem, subdomeincontext en stille uren.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "shared/meldingen-ecosysteem/index.ts",
+   "wat": "Publieke heruitvoer van de gedeelde kern van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/ecosysteem-opslag.ts",
+   "wat": "Reactieve browseropslag en synchronisatie van profielen per ruimte (prive/technisch), statusoverschrijvingen en de uniforme stroom uit vijf bronnen (bouwUniformeStroom).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingAiPaneel.tsx",
+   "wat": "Ingebouwde AI-paneelcomponent voor lokale en veilige externe duiding van gebeurtenissen met afscherming van beveiligingssignalen.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingBijlageSpeler.tsx",
+   "wat": "Universele vertrouwelijke bijlage-speler (app-in-app) voor rechtstreekse inzage en afspelen van alle ondersteunde bestandsformaten.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingVeegKaart.tsx",
+   "wat": "Meldingskaart met horizontale veeggebaren, snelle acties, bijlagenstrook en bescherming tegen onbedoeld archiveren van nieuwe kritieke beveiligingsmeldingen.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/MeldingenPortaal.tsx",
+   "wat": "Onafhankelijk portaalvenster van het meldingen-ecosysteem boven de volledige site (slepen, achtzijdig schalen, vier venstermodi, zwevende pil en contextfilters).",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/meldingen-ecosysteem.css",
+   "wat": "Stijlblad op canonieke tokens voor het portaalvenster, acht schaalranden, zwevende capsule, kaarten, bijlage-speler en AI-paneel.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/meldingen/ecosysteem/index.ts",
+   "wat": "Publieke export van componenten en opslagfuncties van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/identiteit/melding/MeldingEcosysteemPagina.tsx",
+   "wat": "Canonieke instellingenpagina (/melding) met ruimtekeuze, veegtrainer, kanaalregels, stille uren, AI-opties en proefzandbak.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/identiteit/melding/melding-pagina.css",
+   "wat": "Stijlblad van de instellingenpagina /melding voor het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-kern.test.ts",
+   "wat": "Eenheidstest voor de kernlogica van het meldingen-ecosysteem: profielen, venstergeometrie, vegen, formaten, geheimenfilter, tolk en uniforme stroom.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts",
+   "wat": "Eenheidstest voor de gebruikersinterface, stijlen, portaalintegratie, /melding-pagina, maquette en canonieke schil van het meldingen-ecosysteem.",
+   "sinds": "GEMINI-002 (meldingen-ecosysteem)"
+  },
+  {
+   "pad": "src/maquette-kern/laag-waarnemer.ts",
+   "wat": "Gedeelde MutationObserver-waarnemers (abonneerOpenLaag en abonneerElementAttributen) met requestAnimationFrame-groepering tegen herhaalde DOM-inspecties over alle subdomeinen.",
+   "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts",
+   "wat": "Eenheidstest voor mobiele prestatie-invarianten: herstelde postweergave, uitgestelde bundels, beide laag- en attribuutwaarnemers, rAF-bundeling en mobiele CSS zonder zware filters.",
+   "sinds": "GEMINI-003 (maquette-mobiel-prestatie)"
+  },
+  {
+   "pad": "scripts/vaardigheden/catalogus.json",
+   "wat": "Tweetalige vaardighedencatalogus (uk/nl) met SemVer-versies, afhankelijkheden, sleutels <id>:<kant> en zoektermen voor 9 modulaire agentvaardigheden (inclusief mijn-ruimte).",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/kies.mjs",
+   "wat": "Deterministische vaardighedenkiezer op basis van uk/nl-zoektermen, SemVer- en cycluscontrole, frontmatter-validatie en eerlijke <id>:<kant>-hulpmiddelstatus zonder rechtenverlening.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "scripts/vaardigheden/valideer.mjs",
+   "wat": "Bouwcontrole van modulaire vaardigheden: wederzijdse 1-op-1-afdekking van .agents/skills/* en catalogus.json, SemVer, cyclusvrije afhankelijkheden, V2-hulpmiddelen (<id>:<kant>), YAML-kop en taalzuiverheid.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/vaardigheden-20261115.test.ts",
+   "wat": "Eenheidstest voor de 9 vaardigheden (inclusief mijn-ruimte), SemVer, afhankelijkheidsgraaf, <id>:<kant>-controle, tweetalige selectie, voorbeelden, valideerVaardigheden, kaartcontrole en taalzuiverheid.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/uitrol-telegram.ts",
+   "wat": "Versleuteld (AES-256-GCM) opdelen en verzenden van geïnstalleerde uitrolpakketten naar Telegram, verplichte blokkade vóór nieuwe goedkeuring en integriteitsgecontroleerd herstel.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "backend/uitrol-github-ontvangen.ts",
+   "wat": "Veilige ontvangst van uitrolreleases uit GitHub via ondertekende HMAC-SHA256-webhook, handmatig of via MCP (uitrol_github_ophalen), met voorcontrole tot wacht-op-goedkeuring.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/TelegramArchief.tsx",
+   "wat": "Beheerpaneel voor versleutelde Telegram-release-reservekopieën (kanaal, eenmalige 256-bits sleutel, verplichte blokkade, handmatig archiveren en herstel met SHA-256-controle).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "tests/eenheid/uitrol-telegram-en-github-ontvangen-20261115.test.ts",
+   "wat": "Eenheidstest op PostgreSQL voor versleuteld Telegram-archief (AES-256-GCM, delen, blokkade, herstel) en veilige GitHub-release-ontvangst (HMAC, replay, 302 zonder tokenlek, voorcontrole).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/model.ts",
+   "wat": "Domeinmodel, tweetalige metadata (uk/nl) en geheimenfilter voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/rangschikking.ts",
+   "wat": "Deterministische tweetalige zoeker, tijdverval, tegenspraakdetectie, pakketbouwer en Markdown-export voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/uittreksel.ts",
+   "wat": "Deterministische tekstanalysator om feiten, besluiten, voorkeuren en waarschuwingen veilig voor te stellen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/index.ts",
+   "wat": "Publieke export van de Stroom van geheugen-bibliotheek.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-stroom.ts",
+   "wat": "Serveropslag met RLS-ruimte-isolatie, DEK-versleuteling, HTTP-routes en chatkoppeling voor de Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/GeheugenStroomPaneel.tsx",
+   "wat": "Tweetalige gebruikersinterface voor de Stroom van geheugen met kennisgraaf, tegenspraken, pakketbouwer en export.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/geheugen-stroom.css",
+   "wat": "Adaptieve stijlen voor het Stroom van geheugen-paneel en chatstrook zonder !important of vaste positionering.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-stroom.test.ts",
+   "wat": "Eenheidstest voor de volledige Stroom van geheugen (kern, geheimenfilter, tegenspraken, routes, ruimte-isolatie en chatintegratie).",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/bots.ts",
+   "wat": "Domeinmodel, 20 standaard agentprofielen, tweetalige metadata, geheimenfilter en opmaak van Telegram-berichten voor agentbots.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-agent-bots.ts",
+   "wat": "Serveropslag onder RLS voor afzonderlijke Telegram-bots per agent (DEK-sleutelkluis), Telegram-controle, idempotente bezorgwachtrij en handmatige gesprekssamenvattingen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/AgentTelegramBotsPaneel.tsx",
+   "wat": "Tweetalige tabbladcomponent in Stroom van geheugen voor het instellen, testen en beheren van per-agent Telegram-bots en bezorgketens.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-agent-bots.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor het register van agentbots, Telegram-rechtencontrole, idempotente bezorging, overdrachten en sleutelkluis.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "shared/geheugen-stroom/taken.ts",
+   "wat": "13 canonieke MCP-agentprofielen (Claude, Codex, Antigravity, Gemini, AutoClaw, ChatGPT, Grok, Copilot, Cursor, Local/OpenCode, OpenClaw/Claw, Ollama, Aider) en sessie-overstijgend takenmodel.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/geheugen-taken.ts",
+   "wat": "Serveropslag onder RLS voor sessie-overstijgende taken, handmatig overdrachtsstappenplan en koppeling met Stroom van geheugen en MCP-agenten.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/ai-ecosysteem/GeheugenTakenPaneel.tsx",
+   "wat": "Tweetalige tabbladcomponent voor sessie-overstijgende taken, 13 canonieke MCP-agenten en directe koppeling met Stroom van geheugen.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "tests/eenheid/geheugen-taken-en-13-agenten.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor sessie-overstijgende taken, 13 canonieke MCP-agenten, 8 geheugen_*-hulpmiddelen en geheimvrije overdracht.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "src/agenten/anker-bron.ts",
+   "wat": "Gedeelde ankerbron voor de AI-koppelingspagina (/agents), zodat de pagina en de zwevende ankernavigatie exact dezelfde secties, namen, iconen en tellers tonen.",
+   "sinds": "ANKERS-002 (PR #114)"
+  },
+  {
+   "pad": "tests/eenheid/ankers-002-agenten-20261115.test.ts",
+   "wat": "Eenheidstest voor afgeronde kaarten zonder flat-content-afplatting en één gedeeld ankermenu op /agents en #agent/….",
+   "sinds": "ANKERS-002 (PR #114)"
+  },
+  {
+   "pad": "tests/eenheid/mail-dok-pil-20261115.test.ts",
+   "wat": "Eenheidstest voor transparante pagineringsstrook met eigen afgeronde pillen voor paginering en selectie in de e-mailwerkruimte.",
+   "sinds": "MAILDOK-001 (PR #115)"
+  },
+  {
+   "pad": "shared/adres-controle.ts",
+   "wat": "Gedeelde strikte webadrescontrole (alleen http/https zonder inloggegevens, met optionele lokale http-ondersteuning) tegen javascript:/data:/vbscript:-koppelingen.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-kern.test.ts",
+   "wat": "Eenheidstest voor isolatie, SVG-/URL-opschoning, geheimenfilter en uniforme meldingenstroom van het meldingenecosysteem.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ecosysteem-ui.test.ts",
+   "wat": "Eenheidstest voor SSR, toegankelijkheid, RLS-migratie 0278 en beveiligde weergave van het meldingenportaal.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/veilig-002-uitbreiding.test.ts",
+   "wat": "Eenheidstest voor adresbeveiliging van beheer- en meldingsroutes, HTTP 429 en weigering van niet-goedgekeurde accounts.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/veilig-002-noodstop-uiterlijk.test.ts",
+   "wat": "Eenheidstest voor AI-noodstop (deur/namens/apparaatbevestiging), smalle Telegram-tegels, modalportalen en achtergrondprestaties.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "tests/eenheid/stroom-veilig-20261115.test.ts",
+   "wat": "Integratie-eenheidstest voor uitgebreide noodstop (SSE-stromen, pc-agent, eerlijke bronFouten), sleutelkluislimiet 120, FPS-plafond 45 en zoekcatalogus.",
+   "sinds": "VEILIG-002 (stroom-veilig)"
+  },
+  {
+   "pad": "migrations/0279_vaardigheden_ecosysteem.sql",
+   "wat": "Migratie voor opgeslagen modulaire agentvaardigheden en aanbevelingsgeschiedenis onder RLS.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "migrations/0280_geheugen_stroom.sql",
+   "wat": "Migratie voor tabellen van de Stroom van geheugen onder RLS en systeemrechten.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "migrations/0281_geheugen_agent_bots.sql",
+   "wat": "Migratie voor afzonderlijke agentbots in Telegram en het idempotente bezorglogboek onder RLS.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "migrations/0282_slimme_uitrol_stroom.sql",
+   "wat": "Migratie voor notities, controlelijsten en bewijsrapporten van de uitrolstroom onder RLS.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "migrations/0283_uitrol_github_telegram_archief.sql",
+   "wat": "Migratie voor GitHub-ontvangstspoor en versleutelde Telegram-release-reservekopieën onder RLS.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "migrations/0284_geheugen_taken_en_13_agenten.sql",
+   "wat": "Migratie voor sessie-overstijgende taken en 13 canonieke MCP-agentprofielen onder RLS.",
+   "sinds": "GEHEUGEN-002 (stroom-geheugen)"
+  },
+  {
+   "pad": "backend/uitrol-stroom.ts",
+   "wat": "Serveropslag en -routes voor het beheren van voorbereide uitrolnotities, controlelijsten en bewijsrapporten.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/uitrol-stroom.ts",
+   "wat": "Gedeeld domeinmodel voor voorbereide uitrolnotities, controlelijsten en bewijsrapporten.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/UitrolStroom.tsx",
+   "wat": "Overzichtspaneel van de voorbereide uitrolstroom op /updates.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/UitrolStroomKaart.tsx",
+   "wat": "Kaartcomponent met controlelijsten en bewijsstatus voor een voorbereide uitrol.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "src/uitrol/stroom.css",
+   "wat": "Adaptieve stijlen voor de uitrolstroom zonder !important of vaste positionering.",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "tests/eenheid/uitrol-stroom.test.ts",
+   "wat": "Eenheidstest en PG-RLS-test voor de uitrolstroom (notities, controlelijsten en bewijsrapporten).",
+   "sinds": "UITROL-002 (stroom-uitrol)"
+  },
+  {
+   "pad": "shared/vaardigheden-ecosysteem.ts",
+   "wat": "Gedeelde validatie, zoektermen, afhankelijkheden en modelcontract voor de vaardighedenbibliotheek.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/vaardigheden-opslag.ts",
+   "wat": "Serveropslag onder RLS voor vaardigheden en gebruiksregistratie per agent en eigenaar.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "backend/vaardigheden-routes.ts",
+   "wat": "HTTP-routes voor het bekijken, beheren en testen van agentvaardigheden.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "src/agenten/VaardighedenBeheer.tsx",
+   "wat": "Beheerpaneel voor de gedeelde bibliotheek met agentvaardigheden en aanbevolen pakketten.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "src/agenten/vaardigheden-maquette.css",
+   "wat": "Stijlen voor het vaardighedenpaneel in de Maquette- en klassieke paletten.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/vaardigheden-ecosysteem.test.ts",
+   "wat": "Eenheidstest en PG-test voor opslag, routes, validatie en taalzuiverheid van het vaardighedenecosysteem.",
+   "sinds": "VAARD-002 (vaardigheden)"
+  },
+  {
+   "pad": "tests/eenheid/werkblad-hoek-20261115.test.ts",
+   "wat": "Eenheidstest voor de ronde hoekknop «Налаштувати робочий стіл» in het werkblad.",
+   "sinds": "WB-HOEK-001 (PR #115)"
+  },
+  {
+   "pad": "src/mail/stroken-sluiten.ts",
+   "wat": "Gedeelde toestand en opslag voor het sluiten en terugzetten van bovenstroken in e-mail.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "src/mail/stroken-sluiten.css",
+   "wat": "Stijlen voor het sluiten van bovenstroken («Мова листа», «Зовнішні зображення приховано») en herstelknoppen.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "tests/eenheid/stroken-sluiten-20261115.test.ts",
+   "wat": "Eenheidstest voor het sluiten en herstellen van de e-mailstroken.",
+   "sinds": "STROOK-001 (PR #116)"
+  },
+  {
+   "pad": "src/mail/AiUitleg.tsx",
+   "wat": "Tweetalige uitlegcomponent «Як працює ШІ в пошті» met live-motorstatus en directe sleutelverwijzing.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "src/mail/ai-uitleg.css",
+   "wat": "Stijlen voor het tweetalige AI-uitlegpaneel in e-mail.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "tests/eenheid/mailai-001-20261115.test.ts",
+   "wat": "Eenheidstest voor optionele AI-analysebalk, API-sleutelcontrole, InfoTip-contrast en meldingstype mail_ai_balk.",
+   "sinds": "MAILAI-001 (PR #117)"
+  },
+  {
+   "pad": "src/mail/mail-navigatie-model.ts",
+   "wat": "Gedeeld navigatiemodel voor e-mailankers en ingeklapte weergavegroep in de ankernavigatie.",
+   "sinds": "MAILANKER-001 (PR #118)"
+  },
+  {
+   "pad": "tests/eenheid/mailanker-001-model.test.ts",
+   "wat": "Eenheidstest voor het e-mailankermodel, inklappen van groepen en stabiele selectiestatus.",
+   "sinds": "MAILANKER-001 (PR #118)"
+  },
+  {
+   "pad": "src/beheer-kern-maquette.css",
+   "wat": "Technisch beheerstijlblad voor de beheerconsole (BeheerConsoleWeergave) en AI-beleidspaneel (BeheerAiBeleidWeergave) in studio- en klassieke paletten.",
+   "sinds": "MAQUETTE-010 / KLASSIEK-010A"
+  },
+  {
+   "pad": "src/beheer-laden.css",
+   "wat": "Technisch beheerstijlblad voor de compacte laadtoestand van de beheerconsole en uitrolpagina.",
+   "sinds": "Beheerconsole 15.11.2026"
+  },
+  {
+   "pad": "src/github/CodeEnBewerkerPaneel.tsx",
+   "wat": "GitHub-tabbladpaneel voor bestandsboom, brontekstweergave, bewerker en vastleggingsgeschiedenis (hernoemd vanuit Engelse naam).",
+   "sinds": "GITHUB-010 / UPD-002"
+  },
+  {
+   "pad": "server/platform/tekst-aanmelding.ts",
+   "wat": "Controle vooraf of sessiecookie of Bearer-token echt is voor verhoogd verzoeklichaambudget (hernoemd vanuit Engelse naam).",
+   "sinds": "SEC-002 / UPD-002"
+  },
+  {
+   "pad": "server/platform/tekst-budget.ts",
+   "wat": "Begrensd inlezen van verzoeklichamen met IP-, aanmeldings- en geheugenbudgetten (hernoemd vanuit Engelse naam).",
+   "sinds": "SEC-002 / UPD-002"
+  },
+  {
+   "pad": "migrations/0285_ai_delegatie_termijnen.sql",
+   "wat": "Migratie voor termijnen, pauzeregels, inactiviteitstijd en intrekreden van technische AI-sessiedelegaties onder RLS.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "shared/ai-delegatie.ts",
+   "wat": "Puur beslissingsmodel, invoervalidatie en risicodetectie voor termijnen en intrekregels van AI-sessiedelegaties.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "backend/ai-delegatie-kern.ts",
+   "wat": "Databasekern voor het verzamelen van sessiefeiten, veilig intrekken met journaal en melding en het bijhouden van AI-activiteit.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "src/tech/ruimtes/AiToegangKaart.tsx",
+   "wat": "Tweetalige beheerkaart per AI-agent voor het kiezen van toegangstermijnen, pauzeregels, verloopregels en rechtstreeks intrekken.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "src/tech/ruimtes/ai-toegang.css",
+   "wat": "Stijlblad voor de kaarten van «Доступ ШІ» in lichte en donkere paletten met rustige gevaarstinten en mobiele tikhoogte.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "tests/eenheid/ai-delegatie-20261115.test.ts",
+   "wat": "Eenheidstest en PG-test voor termijnen, pauze, inactiviteit, per-agent delegaties en herstel van gedeelde teststaat bij opruimen.",
+   "sinds": "AI-TERMIJN-001 (PR #129)"
+  },
+  {
+   "pad": "scripts/accent-laag-css.mjs",
+   "wat": "Generator voor de CSS-laag die de gekozen accountaccentkleur consistent over alle paletten inclusief Maquette toepast.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "src/thema/accent-laag.css",
+   "wat": "Gegenereerd stijlblad voor de uniforme accentkleurlaag en het transparante blokprofiel in alle kleurpaletten.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "tests/eenheid/accent-001-tint-transparantie.test.ts",
+   "wat": "Eenheidstest voor de samenhang tussen de voorkeurstint, de accentlaag-CSS en de transparante blokstijlen.",
+   "sinds": "ACCENT-001 (PR #125)"
+  },
+  {
+   "pad": "src/agenten/AgentCatalogus.tsx",
+   "wat": "Catalogusweergave op /agents met één presentatiekaart per AI-agent, directe koppelknop en uitklapbare verbindingsstappen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/agenten/agent-catalogus.css",
+   "wat": "Adaptieve stijlen voor de afgeronde AI-cataloguskaarten op basis van Maquette- en klassieke kleurtokens.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/agenten/ai-ingangen-pictogrammen.css",
+   "wat": "Stijlblad voor de pictogramtegelrij «Підключити» met toetsenbordfocus, aanwijstips op pc en korte labels op aanraakschermen.",
+   "sinds": "BREEDTE-001 (PR #120)"
+  },
+  {
+   "pad": "tests/eenheid/breedte-001-kolom-20261115.test.ts",
+   "wat": "Eenheidstest voor de gelijke 1180px-kolombreedte van dienstpagina's, pictogrammenrij en de AI-cataloguskaarten.",
+   "sinds": "BREEDTE-001 / BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel-sleutels.ts",
+   "wat": "Gegenereerd overzicht van merksleutels waarvoor een officieel CC0-vectorlogo in de lokale merkmap aanwezig is.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/antigravity.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Antigravity in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/claude.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Claude in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/codex.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Codex in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/copilot.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Copilot in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/cursor.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Cursor in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/gemini.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Gemini in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/gpt.svg",
+   "wat": "Officieel vectorlogo voor OpenAI ChatGPT in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/merk/officieel/grok.svg",
+   "wat": "Officieel vectorlogo voor de AI-agent Grok in het merkregister voor de catalogus en meldingen.",
+   "sinds": "BREEDTE-002 (PR #120)"
+  },
+  {
+   "pad": "src/meldingen/toast-weergave.ts",
+   "wat": "Zuivere opmaakfuncties voor mensvriendelijke zwevende meldingstitels zonder interne foutcodes in de hoofdkop.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "src/meldingen/voorkeur-algemeen.ts",
+   "wat": "Zuivere berekening van het meest gekozen meldingsprofiel voor de gedeelde voorkeurkaart op de instellingenpagina.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "tests/eenheid/meldingen-ux-001-20261115.test.ts",
+   "wat": "Eenheidstest voor de meldingspanelen onder de bel, wisselknop tussen venster en paneel en voorkeursberekening.",
+   "sinds": "MELDINGEN-UX-001 (PR #123)"
+  },
+  {
+   "pad": "src/platform/zwevend-menu.tsx",
+   "wat": "Herbruikbaar zwevend vervolgmenu in een portaal op canoniek schilniveau zodat kaarten met overflow-hidden het menu nooit afsnijden.",
+   "sinds": "ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "src/platform/zwevend-menu.css",
+   "wat": "Stijlblad voor het zwevende vervolgmenu in het portaal met vaste laagvolgorde boven werkbladinhoud.",
+   "sinds": "ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "tests/eenheid/werkblad-veld-zwevend-20261115.test.ts",
+   "wat": "Eenheidstest voor de verstelbare hoogte van het werkbladveld en de zwevende menupop-overs boven alle kaarten.",
+   "sinds": "VELD-001 + ZWEVEND-001 (PR #121)"
+  },
+  {
+   "pad": "src/zoek/zoek-uitklap-veld.css",
+   "wat": "Stijlblad voor het globale zoekveld dat op de desktopbalk naadloos uit de knop uitvouwt tot één geheel met de resultatenlijst.",
+   "sinds": "ZOEK-002 (PR #124)"
+  },
+  {
+   "pad": "tests/eenheid/zoek-veld-op-plek-20261115.test.ts",
+   "wat": "Eenheidstest voor breedteberekening, groeirichting en verenigde kaartopmaak van het uitklapbare zoekveld.",
+   "sinds": "ZOEK-002 (PR #124)"
+  },
+  {
+   "pad": "tests/eenheid/accountmenu-strook-20261115.test.ts",
+   "wat": "Eenheidstest tegen achtergrondstroken onder het accountmenu en voor het lichte kruisje bij het verwijderen van een account.",
+   "sinds": "MENU-STROOK-001 + MENU-KRUISJE-001 (PR #122)"
+  },
+  {
+   "pad": "tests/eenheid/blokken-001-account.test.ts",
+   "wat": "Eenheidstest voor correcte blokafmetingen, marges en opmaak in het accountcentrum en /menu.",
+   "sinds": "BLOKKEN-001 (PR #131)"
+  },
+  {
+   "pad": "tests/eenheid/maquette-generator-gelijk.test.ts",
+   "wat": "Bewakingstest die verifieert dat de gegenereerde Maquette-bestanden exact overeenkomen met de uitvoer van de bronbouwer.",
+   "sinds": "BLOKKEN-001 (PR #131)"
+  },
+  {
+   "pad": "tests/eenheid/extensie-tabblad-hint-20261115.test.ts",
+   "wat": "Eenheidstest voor de diagnosecontrole van extensie 0.9.4 zonder vereiste van een actief Mijn Ruimte-tabblad.",
+   "sinds": "EXT094-001 (PR #127)"
+  },
+  {
+   "pad": "tests/eenheid/hint-001-ankertip.test.ts",
+   "wat": "Eenheidstest die dubbele zweeftips bij de Maquette-ankernavigatie voorkomt en ze alleen op pictogrammen toont.",
+   "sinds": "HINT-001 (PR #130)"
+  },
+  {
+   "pad": "tests/eenheid/hulp/stap-op-routes.ts",
+   "wat": "Testhulpfunctie die in backendmodules alle HTTP-routes met vereiste herbevestiging (STEP_UP_REQUIRED) opspoort.",
+   "sinds": "STAPOP-OMSCHR-001 (PR #126)"
+  },
+  {
+   "pad": "tests/eenheid/stap-op-omschrijving-20261115.test.ts",
+   "wat": "Bewakingstest die voor elke beveiligde stap-oproute een tweetalige gebruikersomschrijving en gevolguitleg afdwingt.",
+   "sinds": "STAPOP-OMSCHR-001 (PR #126)"
+  },
+  {
+   "pad": "tests/eenheid/klap-alles-20261115.test.ts",
+   "wat": "Eenheidstest voor de knoppen «Alles inklappen / openklappen» in rechtenblokken zonder de toegekende rechten te wijzigen.",
+   "sinds": "KLAP-001 (PR #120)"
+  },
+  {
+   "pad": "tests/eenheid/kleuren-001-een-bron.test.ts",
+   "wat": "Eenheidstest die één consistente bron voor accentkleuren en kleurnamen afdwingt in Thema's, accountmenu en Maquette.",
+   "sinds": "KLEUREN-001 (PR #128)"
+  },
+  {
+   "pad": "tests/eenheid/woordbreuk-001-20261115.test.ts",
+   "wat": "Eenheidstest tegen afbreken van woorden middenin smalle tegelkoppen en statuslabels op het werkblad en in widgets.",
+   "sinds": "WOORDBREUK-001 (PR #132)"
+  },
+  {
+   "pad": "tests/eenheid/gemini-004-agenten-ankers-20261117.test.ts",
+   "wat": "Eenheidstest voor de gegroepeerde ankernavigatie (MaquetteAnkerRail) op mcp.tarasevych.com/agenten in alle paletten en zonder horizontale tabstrook.",
+   "sinds": "GEMINI-004"
+  },
+  {
+   "pad": "shared/aanbieder-teken.ts",
+   "wat": "Netwerkaanbieders en ASN-herkenning voor aanmeldingsmeldingen en merkregister (hernoemd vanuit Engelse naam).",
+   "sinds": "PLAATS-TEKENS-001 (UPD-004)"
+  },
+  {
+   "pad": "shared/tech-yarlyky.ts",
+   "wat": "Gedeeld domeinmodel voor goedgekeurde snelkoppelingen van het technisch profiel in het hoofdmenu.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "migrations/0301_tech_snelkoppelingen.sql",
+   "wat": "Migratie die per technisch profiel bijhoudt of snelkoppelingen in het normale menu zijn toegestaan.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "tests/eenheid/ruimtes-wissel-meldingen-20261117.test.ts",
+   "wat": "Eenheidstest voor ruimtewisseling vanuit het accountmenu en het schillen van meldingsstappen.",
+   "sinds": "FIX-001 (PR #156)"
+  },
+  {
+   "pad": "tests/eenheid/tech-yarlyky-20261117.test.ts",
+   "wat": "Eenheidstest voor delegatierechten en weergaveregels van technische snelkoppelingen in beide menuhelften.",
+   "sinds": "FIX-001 (PR #156)"
   }
  ]
 }

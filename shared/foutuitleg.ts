@@ -16,6 +16,7 @@
 //
 // Zuiver (geen DOM, geen fetch, geen globals): getest in tests/eenheid/foutuitleg-20261019.test.ts.
 import { uitrolCodeDoen, uitrolCodeTitel, UITROL_CODES } from './uitrol-codes';
+import { WEIGERING_CODES, weigeringRegel } from './weigering-tekst';
 
 export type Lang = 'uk' | 'nl';
 export const kiesTaal = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -256,6 +257,11 @@ for (const s of [520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530]) BASIS_R
   doenUk: 'Натисніть «Повторити». Якщо триває — перевірте, чи сервер увімкнений і доступний (журнал, діагностика).',
   doenNl: 'Klik op «Повторити». Blijft het, controleer dan of de server aan en bereikbaar is (logboek, diagnose).',
 };
+// SEC-002 (slot «u»): de nieuwe weigeringen van de server (rol «лише перегляд», grenzen van de lichamen, JSON_VEREIST,
+// JOURNAAL_NIET_BESCHIKBAAR …) uit de ene tabel shared/weigering-tekst.ts. Een code die hier al een eigen regel heeft, wint.
+for (const c of WEIGERING_CODES) { const r = weigeringRegel(c); if (r && !BASIS_REGELS[c]) BASIS_REGELS[c] = r; }
+// 415 zonder eigen code (een proxy of een oudere server): dezelfde uitleg als JSON_VEREIST.
+BASIS_REGELS.HTTP_415 = BASIS_REGELS.HTTP_415 || weigeringRegel('JSON_VEREIST')!;
 /** Codes en statussen die de site ECHT kan uitleggen (bevroren na het vullen). */
 const REGELS: Readonly<Record<string, Regel>> = Object.freeze(BASIS_REGELS);
 

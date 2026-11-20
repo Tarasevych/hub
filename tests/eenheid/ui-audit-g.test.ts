@@ -11,7 +11,7 @@ import { checker } from './hulp/nep-google';
 import { overlapt } from '../../src/mail-opstel-plaats';
 import { STAPEL_GAT, indeling, stapelRechthoek, standaardPlaatsing, verplaats, type PaginaContext } from '../../shared/plaatsing';
 import { tijdInZone, tijdMetZone, zoneAfkorting } from '../../src/uitrol/tijdzone';
-import { EXT_MIN_VERSIE, LATER_MS, updateAdvies, vergelijkVersie, versieBestandKlopt } from '../../shared/extensie-update';
+import { EXT_MIN_VERSIE, LATER_MS, updateAdvies, vergelijkVersie, versieBestandKlopt } from '../../shared/extensie-bijwerken';
 
 const W = process.cwd();
 const lees = (p: string) => readFileSync(join(W, p), 'utf8');
@@ -61,7 +61,7 @@ export async function main(): Promise<number> {
     check('8c op smalle schermen alleen de korte naam, labels breken af binnen hun kolom', /@media \(max-width:640px\)\{\.ut-wiz-balk \.ut-wiz-lang\{display:none\}\.ut-wiz-balk \.ut-wiz-kort\{display:block\}\}\s*$/.test(css) && /overflow-wrap:anywhere/.test(css) && /\.ut-wiz-balk li\{min-width:0\}/.test(css));
     const langste = Math.max(...[...up.matchAll(/kortUk: '([^']+)', kortNl: '([^']+)'/g)].flatMap((m) => [m[1].length, m[2].length]));
     check('8c korte namen ≤ 8 tekens (past in 1/5 van 358 px bij 11 px)', langste <= 8, String(langste));
-    check('8c tabbladen: vervaagde randen + pijlen als er meer is (TabsRij)', lees('src/ontwerp/TabsRij.tsx').includes('meerRechts') /* 21.10: verhuisd uit src/uitrol (technisch) */ && lees('src/BeheerUitrolWeergave.tsx').includes('<TabsRij'));
+    check('8c tabbladen: TabsRij blijft actief voor brede tabrijen (o.a. Diagnostiek); BeheerUitrol gebruikt het gedeelde ankerrail-menu (UPD-007)', lees('src/ontwerp/TabsRij.tsx').includes('meerRechts') && lees('src/diagnostiek/Diagnostiek.tsx').includes('<TabsRij') && !lees('src/BeheerUitrolWeergave.tsx').includes('<TabsRij') && lees('src/BeheerConsoleWeergave.tsx').includes("id:'upd-tab:stroom'"));
   }
 
   // ---------------------------------------------------------------- 8d tijdzone
@@ -158,7 +158,7 @@ export async function main(): Promise<number> {
     check('HUB-08: «einde»/«tijd»/«gesloten» vertaald in het terminalvenster', /eindeTekst\(m\.reden, uk\)/.test(term) && /einde: \['оболонку завершено'/.test(term) && /tijd: \['час вийшов'/.test(term));
     check('HUB-02: hub-venster: Esc sluit, Tab blijft binnen (focus-trap), role=dialog; modal boven het avatarmenu (z-index 400 > 360)', /e\.key === 'Escape'\) \{ e\.preventDefault\(\); setModal\(null\)/.test(app) && /role='dialog' aria-modal='true'/.test(app) && /\.modal-backdrop \{ position:fixed; z-index:400/.test(lees('src/index.css')));
     check('HUB-04: «Зараз» zonder stap toont uitleg + knop naar «Завдання» in dezelfde pagina; hub-interne links openen geen nieuw tabblad naar de hub zelf', /data-hub-focus='leeg'/.test(app) && /hub\\.tarasevych\\.com\\\/\\\?tab=\(\[a-z\]\+\)\$\/\.test\(functionalUrl\)/.test(app));
-    check('HUB-03/notes: «Останні» en «Нотатки» hebben eigen inhoud (HubRecent, HubNotes); notities-tab toont geen Drive-blok meer', /hubTab==='recent'\?(<Suspense fallback=\{[^}]*\}>)?<HubRecent/.test(app) && /hubTab==='notes'&&(<Suspense fallback=\{[^}]*\}>)?<HubNotes/.test(app) && /hubTab === 'notes' && block\.kind === 'custom'/.test(app));
+    check('HUB-03/notes: «Останні» en «Нотатки» hebben eigen inhoud (HubRecent, HubNotes); notities-tab toont geen Drive-blok meer', /hubTab==='recent'\?(<Suspense fallback=\{[^}]*\}>)?<HubRecent/.test(app) && /hubTab==='notes'&&(<Suspense fallback=\{[^}]*\}>)?<HubNotes/.test(app) && /* IDENTITEIT-015 (blokken-profiel): правило «custom → нотатки» перенесено в src/open-in-ruimte.ts (blokOpTab) */ /hubTab === 'recent' \|\| blokOpTab\(block\.kind, hubTab\)/.test(app) && /custom: 'notes'/.test(lees('src/open-in-ruimte.ts')));
     // HubNotes → canonical-navigation leest het runtime-object bij het laden: tijdelijk een venster met dat object.
     const g = globalThis as Record<string, unknown>;
     const hadWin = 'window' in g, hadDoc = 'document' in g;

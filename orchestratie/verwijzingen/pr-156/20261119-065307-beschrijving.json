@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 156,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:07.679Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "FIX-001: перемикання акаунтів, сповіщення меню та ярлики техпрофілю (міграція 0301)",
+    "nl": "FIX-001: accountwissel, menumeldingen en snelkoppelingen van het techprofiel (migratie 0301)"
+  },
+  "samenvatting": {
+    "uk": "Повністю перенесено до спільного випуску UPD-005 (через UPD-004, фіксація 531b80c4) із перенесенням міграції на 0301_tech_snelkoppelingen.sql та додаванням довідки tech.snelkoppelingen.",
+    "nl": "Volledig overgenomen in UPD-005 (via UPD-004, vastlegging 531b80c4) met migratie 0301_tech_snelkoppelingen.sql en hulptekst tech.snelkoppelingen."
+  },
+  "taken": [
+    "FIX-001",
+    "UPD-005"
+  ]
+}

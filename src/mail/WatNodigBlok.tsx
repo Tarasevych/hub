@@ -12,12 +12,20 @@
 //   - «Пункт хибний — прибрати» (in «Звідки це?») onthoudt dit apparaat per gesprek; «Повернути» haalt ze terug.
 import { CalendarPlus, ChevronDown, CircleHelp, Clock3, ListChecks, ListTodo, LoaderCircle, PenLine, ShieldAlert, ShieldCheck, Sparkles, Undo2 } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   antwoordNodig, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas, normaliseer, telGevonden,
   type GecontroleerdPunt, type Opbouw,
 } from '../../shared/ai-bronnen';
-import { aiFoutVan, aiRun, useAiStaat, type AiFout } from './ai-staat';
+import { aiFoutVan, aiRun, herlaadAiStaat, useAiStaat, useMotorVoorkeur, zetMotorGebruik, type AiFout } from './ai-staat';
+import { kiesMotor, LOKAAL_MOTOR_ID, motorenVoorPost, verwerktDoor } from '../../shared/mail-ai-motor';
+import { actiesHints, actiesPunten } from '../../shared/ai-acties-model';
+import { gebruikSleutelDienst, gebruikSleutelEigen } from '../../shared/ai-dienst-motor';
+import type { AiAanbiederId } from '../../shared/ai-aanbieders';
+import { taalLabelUk } from '../../shared/ai-vertaling';
+import { actiesLokaal, lokaalExtra, LokaleFout, useLokaleStand } from './lokale-motor';
 import { useLeesVenster } from './LeesVenster';
+import { adresVan } from '../../shared/mail-afzenders';
 import './ai-blok.css';
 
 export type WatNodigBrief = { id: string; from: string; receivedAt: number; tekst: string };
@@ -47,6 +55,8 @@ type Props = {
   onTaak: (v: AfspraakOfTaak) => void;
   onAgenda: (v: AfspraakOfTaak) => void;
   onUitkomst?: (u: WatNodigUitkomst) => void;
+  /** UPD-010: слот верхньої панелі переглядача — компактне поле з піктограмою та розгортуваною панеллю. */
+  kopHost?: HTMLElement | null;
 };
 
 const WEG_SLEUTEL = 'mail-ai-weg-v1';
@@ -80,11 +90,12 @@ export function openBron(threadId: string, puntId: string) {
   window.dispatchEvent(new CustomEvent(BRON_GEBEURTENIS, { detail: { threadId, puntId } }));
 }
 
-const adres = (v: string) => (/<([^>]+)>/.exec(String(v || ''))?.[1] || String(v || '')).trim().toLocaleLowerCase();
+/* SEC-002 (g10c-toets-1): adres uit de LAATSTE hoekhaken (adresVan), niet de eerste «<…>» uit de weergavenaam */
+const adres = (v: string) => adresVan(v).adres || (String(v || '').includes('<') ? '' : String(v || '').trim().toLocaleLowerCase());
 
 /** Wat de agent voor een gesprek gaf, voor deze sessie (alleen in het geheugen van de pagina): de brief opnieuw openen toont het
  *  meteen weer, zonder nieuw verzoek. Sleutel = gesprek + laatste brief + aantal brieven; hoogstens 50 gesprekken. */
-type ModelUitkomst = { punten: GecontroleerdPunt[]; kort: GecontroleerdPunt[]; hints: string[]; nodig: boolean | null; agentNaam: string };
+type ModelUitkomst = { punten: GecontroleerdPunt[]; kort: GecontroleerdPunt[]; hints: string[]; nodig: boolean | null; agentNaam: string; aanbiederId?: string; lokaal?: boolean; dienstId?: string };
 const MODEL_GEHEUGEN = new Map<string, ModelUitkomst>();
 const onthoud = (k: string, m: ModelUitkomst | null) => {
   MODEL_GEHEUGEN.delete(k);
@@ -138,6 +149,18 @@ export default function WatNodigBlok(p: Props) {
   const id = useId();
   const lv = useLeesVenster();
   const ai = useAiStaat(p.context);
+  // MAILAI-003: «Уточнити з ШІ» бере той самий рушій, що обрано в панелі над листом (раніше — типового агента з налаштувань, хай би що
+  // людина обрала). Явний вибір не підмінюється: якщо обраний рушій цього не вміє, кнопки немає і лист нікуди не йде.
+  // Локальний ШІ Chrome уміє це з розширенням 0.9.6+ («сирий» запит зі схемою); старіше розширення — чесно «ще не вміє».
+  const voorkeur = useMotorVoorkeur();
+  const lokaal = useLokaleStand();
+  const lExtra = lokaalExtra();
+  const kaarten = useMemo(
+    () => motorenVoorPost(ai.agents, lokaal, { dienst: ai.dienst, gebruik: ai.gebruik, prijzen: ai.prijzen, lokaalPrompt: lExtra.lokaalPrompt, beleid: lExtra.beleid }),
+    [ai.agents, ai.dienst, ai.gebruik, ai.prijzen, lokaal, lExtra.lokaalPrompt],
+  );
+  const motor = kiesMotor(kaarten, voorkeur, 'acties');
+  const lokaalGekozen = voorkeur === LOKAAL_MOTOR_ID && !motor;
   // Open of dicht: wat u koos (dit apparaat); anders open in een hoog venster en ingeklapt in een laag (< 860 px: op 1280×800 begon de
   // brief zelf anders pas onder de rand — «Головне — лист»). Ingeklapt zegt de kop nog steeds hoeveel punten en welke termijn.
   const [open, setOpen] = useState<boolean>(() => {
@@ -182,23 +205,46 @@ export default function WatNodigBlok(p: Props) {
   }, [p.threadId]);
 
   const vraagModel = async () => {
-    if (!ai.agent || bezig) return;
+    if (!motor || bezig) return;
     const k = geheugenSleutel;
     setBezig(true); setFout(null);
     try {
+      if (motor.soort === 'lokaal') {
+        // На цьому комп'ютері: модель бачить лише абзаци гілки; кожну цитату звіряємо з оригіналом — вигадане не показується.
+        const r = await actiesLokaal(alineas, p.lang, taalLabelUk(p.lang));
+        const m: ModelUitkomst = {
+          punten: controleerPunten(actiesPunten(r.antwoord.items, 'm', 8, 'verzoek'), alineas), kort: controleerPunten(actiesPunten(r.antwoord.brief, 'k', 3, 'feit'), alineas),
+          hints: actiesHints(r.antwoord.replySuggestions), nodig: typeof r.antwoord.needsReply === 'boolean' ? r.antwoord.needsReply : null,
+          agentNaam: t(motor.naamUk, motor.naamNl), lokaal: true,
+        };
+        onthoud(k, m);
+        if (huidigeSleutel.current === k) setModelState(m);
+        return;
+      }
       const laatste = genummerd[genummerd.length - 1];
       const r = await aiRun(p.context, {
-        mode: 'acties', targetLang: p.lang, agentId: ai.agent.id, accountId: p.accountId, messageId: laatste?.id || p.threadId, threadId: p.threadId,
+        mode: 'acties', targetLang: p.lang, agentId: motor.agentId || motor.id, accountId: p.accountId, messageId: laatste?.id || p.threadId, threadId: p.threadId,
         subject: p.subject, from: laatste?.from || '', bodyText: laatste?.tekst || '',
         bronBerichten: genummerd.map((b) => ({ brief: b.brief, from: b.from, receivedAt: b.receivedAt, tekst: b.tekst.slice(0, 8000) })),
       });
       const a = r.acties;
       if (!a) throw { response: { data: { error: 'GEEN_ACTIES' } } };
       // Nog eens controleren, nu tegen de brief zoals hij hier getoond wordt (de server zag een opgeschoonde versie).
-      const m: ModelUitkomst = { punten: controleerPunten(a.punten, alineas), kort: controleerPunten(a.kort, alineas), hints: a.antwoordHints || [], nodig: a.antwoordNodig, agentNaam: r.agentName || ai.agent.name };
+      const m: ModelUitkomst = { punten: controleerPunten(a.punten, alineas), kort: controleerPunten(a.kort, alineas), hints: a.antwoordHints || [], nodig: a.antwoordNodig, agentNaam: r.agentName || t(motor.naamUk, motor.naamNl), aanbiederId: r.aanbiederId, dienstId: r.dienstId };
+      zetMotorGebruik(r.dienstId ? gebruikSleutelDienst(r.dienstId) : r.aanbiederId ? gebruikSleutelEigen(r.aanbiederId as AiAanbiederId) : '', r.gebruik);
       onthoud(k, m);
       if (huidigeSleutel.current === k) setModelState(m);
-    } catch (e) { if (huidigeSleutel.current === k) setFout(aiFoutVan(e)); } finally { setBezig(false); }
+    } catch (e) {
+      if (huidigeSleutel.current !== k) return;
+      if (e instanceof LokaleFout) {
+        setFout({ code: 'AI_FOUT', uk: `${e.tekst(false)} Показано простий розбір без моделі — нічого не вигадано.`, nl: `${e.tekst(true)} U ziet de eenvoudige ontleding zonder model — er is niets verzonnen.`, href: '' });
+        return;
+      }
+      const f = aiFoutVan(e);
+      setFout(f);
+      // Спільний рушій вимкнено або потрібна згода: картки мають показати правду.
+      if (/^DIENST_|^MOTOR_NIET/.test(f.code)) void herlaadAiStaat(p.context);
+    } finally { setBezig(false); }
   };
 
   const opbouw: Opbouw = model ? 'model' : 'eenvoudig';
@@ -214,7 +260,9 @@ export default function WatNodigBlok(p: Props) {
     if (model && model.nodig === false) return null;
     return regel;
   }, [genummerd, p.mijnAdressen, zichtbaar, model]);
-  const agentNaam = model?.agentNaam || ai.agent?.name || '';
+  const agentNaam = model?.agentNaam || (motor ? t(motor.naamUk, motor.naamNl) : '') || ai.agent?.name || '';
+  const dienstVan = (m: ModelUitkomst | null) => (m?.dienstId ? ai.dienst.find((d) => d.id === m.dienstId) || null : null);
+  const herkomst = (nl: boolean) => verwerktDoor({ lokaal: model?.lokaal, aanbiederId: model?.aanbiederId, agentName: agentNaam, dienst: dienstVan(model) }, nl);
   const uitkomst: WatNodigUitkomst = useMemo(() => ({ punten: zichtbaar, kort, hints: model?.hints || [], antwoordNodig: nodig, opbouw, agentNaam }), [zichtbaar, kort, model, nodig, opbouw, agentNaam]);
   const uitkomstSleutel = `${opbouw}|${zichtbaar.map((x) => x.id).join(',')}|${kort.map((x) => x.id).join(',')}|${nodig?.id || ''}|${(model?.hints || []).join('|')}`;
   useEffect(() => { p.onUitkomst?.(uitkomst); }, [uitkomstSleutel]);
@@ -228,10 +276,41 @@ export default function WatNodigBlok(p: Props) {
     ? `${zichtbaar.length} ${p.lang === 'uk' ? (zichtbaar.length === 1 ? 'пункт' : zichtbaar.length < 5 ? 'пункти' : 'пунктів') : zichtbaar.length === 1 ? 'punt' : 'punten'}${eerste?.termijn ? ` · ${termijnTekst(p.lang, eerste.termijn, ref)}` : ''}`
     : vanMij ? t('останній лист — ваш', 'het laatste bericht is van u') : t('питань і термінів не знайдено', 'geen vragen of termijnen gevonden');
 
-  return (
-    <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={zichtbaarOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
+  const [kopOpen, setKopOpen] = useState(false);
+  const kopWrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { setKopOpen(false); }, [p.threadId]);
+  useEffect(() => {
+    if (!kopOpen) return;
+    const buiten = (e: PointerEvent) => {
+      if (kopWrapRef.current && e.target instanceof Node && !kopWrapRef.current.contains(e.target)) setKopOpen(false);
+    };
+    const toets = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setKopOpen(false);
+      }
+    };
+    const inBrief = () => window.setTimeout(() => {
+      if (document.activeElement instanceof HTMLIFrameElement) setKopOpen(false);
+    }, 0);
+    document.addEventListener('pointerdown', buiten);
+    document.addEventListener('keydown', toets, true);
+    window.addEventListener('blur', inBrief);
+    return () => {
+      document.removeEventListener('pointerdown', buiten);
+      document.removeEventListener('keydown', toets, true);
+      window.removeEventListener('blur', inBrief);
+    };
+  }, [kopOpen]);
+
+  const inKop = Boolean(p.kopHost);
+  const paneelOpen = inKop ? true : zichtbaarOpen;
+
+  const blokSectie = (
+    <section className='ai-blok' data-ai-blok data-opbouw={opbouw} data-open={paneelOpen ? 'ja' : 'nee'} aria-labelledby={`${id}-kop`}>
       <header className='ai-blok-kop'>
-        <button type='button' className='ai-blok-wissel' aria-expanded={zichtbaarOpen} aria-controls={`${id}-inhoud`} onClick={wissel}>
+        <button type='button' className='ai-blok-wissel' aria-expanded={paneelOpen} aria-controls={`${id}-inhoud`} onClick={inKop ? () => setKopOpen(false) : wissel}>
           <span className='ai-blok-merk' data-opbouw={opbouw}>{opbouw === 'model' ? <><Sparkles aria-hidden='true' />{t('ШІ', 'AI')}</> : <><ListChecks aria-hidden='true' />{t('Авто', 'Auto')}</>}</span>
           <strong id={`${id}-kop`}>{t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')}</strong>
           <small className='ai-blok-samenvatting'>{samenvatting}</small>
@@ -239,14 +318,14 @@ export default function WatNodigBlok(p: Props) {
         </button>
         <small className='ai-blok-herkomst'>
           {t('не частина листа', 'geen deel van het bericht')} · {opbouw === 'model'
-            ? t(`склав ваш ШІ-агент «${agentNaam}»`, `opgesteld door uw AI-agent «${agentNaam}»`)
-            : t('простий розбір у браузері, без моделі', 'eenvoudige ontleding in de browser, zonder model')}
+            ? t(`склав ШІ «${agentNaam}» · ${herkomst(false)}`, `opgesteld door AI «${agentNaam}» · ${herkomst(true)}`)
+            : t('простий розбір у браузері, без моделі — нічого не надсилається', 'eenvoudige ontleding in de browser, zonder model — er gaat niets weg')}
         </small>
       </header>
-      {zichtbaarOpen && (
+      {paneelOpen && (
         <div className='ai-blok-inhoud' id={`${id}-inhoud`}>
           {zichtbaar.length
-            ? <ol className='ai-blok-punten'>{zichtbaar.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ol>
+            ? <ol className='ai-blok-punten'>{zichtbaar.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ol>
             : <p className='ai-blok-leeg'>{vanMij
               ? t('Останній лист у гілці — ваш. Поки ніхто не відповів, від вас нічого не чекають.', 'Het laatste bericht in het gesprek is van u. Zolang niemand antwoordt, wordt er niets van u verwacht.')
               : opbouw === 'model'
@@ -255,22 +334,24 @@ export default function WatNodigBlok(p: Props) {
           {kort.length > 0 && (
             <div className='ai-blok-kort'>
               <h4>{t('Коротко', 'Kort')}</h4>
-              <ul>{kort.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ul>
+              <ul>{kort.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ul>
             </div>
           )}
           {toonNiet && nietGevonden.length > 0 && (
             <div className='ai-blok-niet' data-niet-gevonden-lijst>
               <h4>{t('Не знайдено в листі — не покладайтеся на це', 'Niet in het bericht gevonden — vertrouw hier niet op')}</h4>
-              <ul>{nietGevonden.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => p.onBron(x, uitkomst)} />)}</ul>
+              <ul>{nietGevonden.map((x) => <PuntRegel key={x.id} x={x} lang={p.lang} ref0={ref} onBron={() => { if (inKop) setKopOpen(false); p.onBron(x, uitkomst); }} />)}</ul>
             </div>
           )}
           <div className='ai-blok-acties'>
-            <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => p.onConcept(uitkomst)}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
-            <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => p.onTaak(voorstel('taak'))}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
-            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => p.onAgenda(voorstel('agenda'))}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
-            {ai.agent && !model && (
-              <button type='button' className='ai-blok-knop ai-blok-knop-ai' data-actie='model' disabled={bezig || !genummerd.length} onClick={() => void vraagModel()}
-                title={t(`Надіслати гілку вашому ШІ-агенту «${ai.agent.name}» і перевірити кожен пункт за оригіналом`, `Het gesprek naar uw AI-agent «${ai.agent.name}» sturen en elk punt tegen het origineel controleren`)}>
+            <button type='button' className='ai-blok-knop' data-actie='concept' disabled={vanMij && !zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onConcept(uitkomst); }}><PenLine aria-hidden='true' />{t('Чернетка відповіді', 'Antwoordconcept')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='taak' disabled={!zichtbaar.length} onClick={() => { if (inKop) setKopOpen(false); p.onTaak(voorstel('taak')); }}><ListTodo aria-hidden='true' />{t('До завдань', 'Naar taken')}</button>
+            <button type='button' className='ai-blok-knop' data-actie='agenda' disabled={!heeftDatum} onClick={() => { if (inKop) setKopOpen(false); p.onAgenda(voorstel('agenda')); }}><CalendarPlus aria-hidden='true' />{t('В Агенду', 'Naar Agenda')}</button>
+            {motor && !model && (
+              <button type='button' className='ai-blok-knop ai-blok-knop-ai' data-actie='model' data-motor={motor.id} disabled={bezig || !genummerd.length} onClick={() => void vraagModel()}
+                title={motor.soort === 'lokaal'
+                  ? t('Розібрати гілку моделлю на цьому комп’ютері (локальний ШІ Chrome) і перевірити кожен пункт за оригіналом. Текст нікуди не надсилається.', 'Het gesprek ontleden met het model op deze computer (lokale AI van Chrome) en elk punt tegen het origineel controleren. De tekst gaat nergens heen.')
+                  : t(`Обробить: ${motor.naamUk}. ${motor.wegUk} Кожен пункт перевіряється за оригіналом. Без натискання нічого не надсилається.`, `Verwerkt door: ${motor.naamNl}. ${motor.wegNl} Elk punt wordt tegen het origineel gecontroleerd. Zonder klik gaat er niets weg.`)}>
                 {bezig ? <LoaderCircle className='spin' aria-hidden='true' /> : <Sparkles aria-hidden='true' />}{t('Уточнити з ШІ', 'Verfijnen met AI')}
               </button>
             )}
@@ -293,10 +374,42 @@ export default function WatNodigBlok(p: Props) {
             <span>{t('Склав', 'Opgesteld door')}: {opbouw === 'model' ? agentNaam : t('простий розбір без моделі', 'eenvoudige ontleding zonder model')}</span>
             {nietGevonden.length > 0 && <button type='button' className='ai-blok-link' aria-expanded={toonNiet} onClick={() => setToonNiet((v) => !v)}>{toonNiet ? t('Сховати не знайдене', 'Niet-gevonden verbergen') : t(`Показати не знайдене (${nietGevonden.length})`, `Niet-gevonden tonen (${nietGevonden.length})`)}</button>}
             {wegHier > 0 && <button type='button' className='ai-blok-link' onClick={() => { bewaarWeg(p.threadId, []); setWeg([]); }}><Undo2 aria-hidden='true' />{t(`Повернути прибрані (${wegHier})`, `Weggehaalde terugzetten (${wegHier})`)}</button>}
-            {!ai.agent && ai.geladen && <span className='ai-blok-zonder'>{t('ШІ-агента не підключено — лист нікуди не надсилається.', 'Geen AI-agent gekoppeld — het bericht gaat nergens heen.')}</span>}
+            {lokaalGekozen && !model && <span className='ai-blok-zonder' data-ai-lokaal-gekozen>{t('Обрано локальний ШІ Chrome: «Уточнити з ШІ» він уміє з розширенням 0.9.6 або новішим, тому тут простий розбір. Оновіть розширення або оберіть інший рушій у «Рушії ШІ» над листом.', 'Lokale AI van Chrome gekozen: «Verfijnen met AI» kan die vanaf extensie 0.9.6, dus hier de eenvoudige ontleding. Werk de extensie bij of kies een andere motor in «AI-motoren» boven het bericht.')}</span>}
+            {!motor && !lokaalGekozen && ai.geladen && <span className='ai-blok-zonder'>{kaarten.some((k) => k.staat === 'klaar') ? t('Обраний рушій ШІ цього не вміє — лист нікуди не надсилається.', 'De gekozen AI-motor kan dit niet — het bericht gaat nergens heen.') : t('Рушій ШІ не підключено — лист нікуди не надсилається.', 'Geen AI-motor gekoppeld — het bericht gaat nergens heen.')}</span>}
           </footer>
         </div>
       )}
     </section>
   );
+
+  if (p.kopHost) {
+    const knopTip = `${t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')} · ${samenvatting}`;
+    return createPortal(
+      <div ref={kopWrapRef} className='mail-kop-dropdown' data-kop-soort='wat-nodig'>
+        <button
+          type='button'
+          className='mail-kop-pil'
+          data-kop-soort='wat-nodig'
+          data-opbouw={opbouw}
+          aria-expanded={kopOpen}
+          aria-controls={`${id}-kop-paneel`}
+          aria-label={knopTip}
+          data-tooltip={knopTip}
+          onClick={() => setKopOpen((v) => !v)}
+        >
+          {opbouw === 'model' ? <Sparkles aria-hidden='true' /> : <ListChecks aria-hidden='true' />}
+          {zichtbaar.length > 0 && <span className='mail-kop-pil-teller'>{zichtbaar.length}</span>}
+          <ChevronDown aria-hidden='true' className='mail-kop-pil-pijl' />
+        </button>
+        {kopOpen && (
+          <div id={`${id}-kop-paneel`} className='mail-kop-paneel' data-kop-soort='wat-nodig' role='region' aria-label={t('Що від вас потрібно?', 'Wat wordt er van u verwacht?')}>
+            {blokSectie}
+          </div>
+        )}
+      </div>,
+      p.kopHost,
+    );
+  }
+
+  return blokSectie;
 }

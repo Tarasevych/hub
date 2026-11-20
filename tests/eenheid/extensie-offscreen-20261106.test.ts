@@ -35,8 +35,8 @@ export async function main(): Promise<number> {
   {
     const m = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
     const html = readFileSync(join(EXT, 'offscreen.html'), 'utf8');
-    check('manifest 0.9.2: recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
-      m.version === '0.9.2' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
+    check('manifest 0.9.7 (0.9.7 = LOKAI-001 Chrome 157 / Gemma 4 / 9 API / помічник; 0.9.6 = LAI-CON-001 beleid lokale AI; 0.9.5 = EXTUI-001; 0.9.3 = SEC-002; 0.9.4 = tabblad-hint; offscreen sinds 0.9.2): recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
+      m.version === '0.9.7' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
     const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
     check('offscreen.html: lokale-ai.js vóór offscreen.js, geen inline code (CSP)', scripts.length === 2 && /src="lokale-ai\.js"/.test(scripts[0][1]) && /src="offscreen\.js"/.test(scripts[1][1]) && scripts.every((x) => x[2].trim() === ''));
   }
@@ -66,13 +66,40 @@ export async function main(): Promise<number> {
     check('alleen de eigen service worker: andere extensie of een tabblad krijgt geen antwoord, niets gemeten', vreemd === 'GEEN_ANTWOORD' && vanTab === 'GEEN_ANTWOORD' && aangeroepen.length === 0);
     check('berichten voor background.js (geen doel «offscreen») laat het document liggen', (await vraag(f, { op: 'status' }, { id: ID })) === 'GEEN_ANTWOORD');
     const r = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-stand' }, { id: ID });
-    check('lokale-ai-stand: stand per API (oude «readily» → available, onbekend → unavailable, gooit → fout, ontbreekt → ontbreekt)',
-      r?.ok === true && r.aan === true && JSON.stringify(Object.keys(r.apis).sort()) === JSON.stringify(['detector', 'prompt', 'proofreader', 'rewriter', 'summarizer', 'translator', 'writer'])
-      && r.apis.prompt === 'available' && r.apis.summarizer === 'downloadable' && r.apis.writer === 'ontbreekt' && r.apis.rewriter === 'unavailable' && r.apis.translator === 'available' && r.apis.detector === 'fout' && r.apis.proofreader === 'downloading', JSON.stringify(r));
+    check('lokale-ai-stand: stand per API (9 APIs: oude «readily» → available, onbekend → unavailable, gooit → fout, ontbreekt → ontbreekt)',
+      r?.ok === true && r.aan === true && JSON.stringify(Object.keys(r.apis).sort()) === JSON.stringify(['decisions', 'detector', 'embedder', 'prompt', 'proofreader', 'rewriter', 'summarizer', 'translator', 'writer'])
+      && r.apis.prompt === 'available' && r.apis.summarizer === 'downloadable' && r.apis.writer === 'ontbreekt' && r.apis.rewriter === 'unavailable' && r.apis.translator === 'available' && r.apis.detector === 'fout' && r.apis.proofreader === 'downloading' && r.apis.embedder === 'ontbreekt' && r.apis.decisions === 'ontbreekt', JSON.stringify(r));
     check('lokale-ai-stand: NOOIT create()', !aangeroepen.some((x) => x.endsWith('.create')), aangeroepen.join(' | '));
     const v = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'a1', modus: 'summarizer', tekst: 'Een korte tekst om samen te vatten.', limietMs: 5000 }, { id: ID });
     check('oude fout hersteld: site-aanvraag met «!» autoDownload aan start toch GEEN download (MODEL_NIET_GELADEN, geen create())',
       v?.ok === false && v.reason === 'MODEL_NIET_GELADEN' && !aangeroepen.includes('Summarizer.create'), JSON.stringify(v));
+  }
+
+  // ---------------------------------------------------------------- 2b. 0.9.6 (PR #117): prompt met rauw / schema / systeem in offscreen.js
+  {
+    const gemaakt: any[] = []; const gevraagd: any[] = []; let vernietigd = 0;
+    const luisteraars: Luisteraar[] = [];
+    const opslag = { lokaleAi: { aan: true, siteToegang: true, prompt: { systeem: 'INSTELLING-SYSTEEM', schema: '{"type":"string"}' } } };
+    const ctx = createContext({
+      chrome: { runtime: { id: ID, onMessage: { addListener: (f: Luisteraar) => { luisteraars.push(f); } } }, storage: { local: { get: async () => opslag, set: async () => undefined }, onChanged: { addListener: () => undefined } } },
+      LanguageModel: { availability: async () => 'available', create: async (o: any) => { gemaakt.push(o); return { prompt: async (m: unknown, opt: any) => { gevraagd.push({ m, opt }); return 'ANTWOORD'; }, destroy: () => { vernietigd++; } }; } },
+      Translator: { availability: async () => 'available', create: async (o: any) => ({ translate: async (s: string) => `[${o.sourceLanguage}->${o.targetLanguage}]${s}` }) },
+      LanguageDetector: { availability: async () => 'available', create: async () => ({ detect: async () => [{ detectedLanguage: 'en', confidence: 0.9 }] }) },
+      setTimeout, clearTimeout, console, AbortController, DOMException, navigator: { language: 'uk-UA' },
+    });
+    runInContext(readFileSync(join(EXT, 'lokale-ai.js'), 'utf8'), ctx);
+    runInContext(readFileSync(join(EXT, 'offscreen.js'), 'utf8'), ctx);
+    const f = luisteraars[0];
+    const gewoon = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p0', modus: 'prompt', tekst: 'Hello there', limietMs: 5000 }, { id: ID });
+    check('prompt zonder extra velden: instellingen van de gebruiker (systeem + schema uit de opties)', gewoon?.ok === true && gemaakt[0]?.initialPrompts?.[0]?.content === 'INSTELLING-SYSTEEM' && JSON.stringify(gevraagd[0]?.opt?.responseConstraint) === '{"type":"string"}', JSON.stringify(gewoon));
+    const rauw = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p1', modus: 'prompt', tekst: 'Hello there', rauw: true, schema: '', systeem: 'AANVRAAG-SYSTEEM', limietMs: 5000 }, { id: ID });
+    check('prompt rauw: antwoord NIET vertaald, systeem van de aanvraag, leeg schema = geen responseConstraint',
+      rauw?.ok === true && rauw.tekst === 'ANTWOORD' && gemaakt[1]?.initialPrompts?.[0]?.content === 'AANVRAAG-SYSTEEM' && gevraagd[1]?.opt?.responseConstraint === undefined, JSON.stringify({ rauw, opt: gevraagd[1]?.opt }));
+    const vertaald = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p2', modus: 'prompt', tekst: 'Hello there', schema: '', limietMs: 5000 }, { id: ID });
+    check('prompt zonder rauw en zonder schema: wél terugvertaald naar de interfacetaal (zoals voorheen)', vertaald?.ok === true && vertaald.tekst === '[en->uk]ANTWOORD', JSON.stringify(vertaald));
+    const metSchema = await vraag(f, { doel: 'offscreen', op: 'lokale-ai-voer', id: 'p3', modus: 'prompt', tekst: 'Hello there', rauw: true, schema: '{"type":"object","properties":{"taken":{"type":"array"}}}', limietMs: 5000 }, { id: ID });
+    check('prompt met schema van de aanvraag: responseConstraint = dat schema (niet dat uit de instellingen)', metSchema?.ok === true && JSON.stringify(gevraagd[3]?.opt?.responseConstraint) === '{"type":"object","properties":{"taken":{"type":"array"}}}');
+    check('elke aanvraag geeft haar Prompt-sessie weer vrij (destroy)', vernietigd === 4, String(vernietigd));
   }
 
   // ---------------------------------------------------------------- 3. background.js met nep-chrome en nep-offscreen
@@ -119,7 +146,13 @@ export async function main(): Promise<number> {
     check('offscreen.html geopend met de juiste url, reden WORKERS en een Nederlandse uitleg (geen Engelse tekst)',
       off.gemaakt.length === 1 && off.gemaakt[0].url === 'offscreen.html' && JSON.stringify(off.gemaakt[0].reasons) === '["WORKERS"]' && /Ingebouwde AI van Chrome/.test(off.gemaakt[0].justification), JSON.stringify(off.gemaakt));
     check('status: lokaleAi.stand = gefilterde meting (onbekende API, onbekende stand en «uit» weg; geen fouttekst); siteToegang standaard uit',
-      JSON.stringify(st?.lokaleAi) === '{"aan":true,"apis":["prompt","summarizer","rewriter","translator","detector","proofreader"],"siteToegang":false,"stand":{"prompt":"available","translator":"downloadable","detector":"stil"}}' && !JSON.stringify(st).includes('GEHEIME'), JSON.stringify(st?.lokaleAi));
+      st?.lokaleAi?.aan === true
+      && JSON.stringify(st?.lokaleAi?.apis) === '["prompt","summarizer","rewriter","translator","detector","proofreader","embedder","decisions"]'
+      && st?.lokaleAi?.siteToegang === false
+      && JSON.stringify(st?.lokaleAi?.stand) === '{"prompt":"available","translator":"downloadable","detector":"stil"}'
+      && typeof st?.lokaleAi?.instellingen === 'object'
+      && typeof st?.lokaleAi?.gevaar === 'object'
+      && !JSON.stringify(st).includes('GEHEIME'), JSON.stringify(st?.lokaleAi));
     await vraag(f, { op: 'status' }, opties); await rust(60);
     check('binnen 5 minuten geen nieuwe meting (geen offscreen-vraag per statusvraag)', off.gemaakt.length === 1 && off.gevraagd.length === 1);
 
@@ -127,6 +160,9 @@ export async function main(): Promise<number> {
     const ping = await vraag(fx, { type: 'PING' }, site);
     check('PING: lokaleAi met het contract {ondersteund:true, siteToegang:false} én de publieke keuzes (niet overschreven)',
       ping?.lokaleAi?.ondersteund === true && ping.lokaleAi.siteToegang === false && ping.lokaleAi.aan === true && Array.isArray(ping.lokaleAi.apis), JSON.stringify(ping?.lokaleAi));
+    // LAI-REDEN (0.9.5): kant-en-klare reden voor de site; zonder «!» siteToegang = site-uit, per API uit de meting.
+    check('PING: lokaleAi.reden = site-uit en redenen per API (klaar / model-ontbreekt / uit), alleen bekende API\'s',
+      ping?.lokaleAi?.reden === 'site-uit' && JSON.stringify(ping.lokaleAi.redenen) === '{"prompt":"klaar","writer":"uit","translator":"model-ontbreekt","detector":"model-ontbreekt"}', JSON.stringify(ping?.lokaleAi));
     const geweigerd = await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'hallo' }, site);
     check('LOKALE_AI zonder «!» siteToegang → SITE_TOEGANG_UIT, niets naar offscreen', geweigerd?.ok === false && geweigerd.reason === 'SITE_TOEGANG_UIT' && off.gevraagd.length === 1);
     const vreemd = await vraag(fx, { type: 'LOKALE_AI_STAND' }, { origin: 'https://example.com', url: 'https://example.com/' });
@@ -137,10 +173,30 @@ export async function main(): Promise<number> {
     const vorm = off.gevraagd.find((m) => m.op === 'lokale-ai-voer');
     check('met «!» siteToegang: aanvraag via offscreen (doel = adres, talen apart), resultaat terug',
       ok?.ok === true && ok.tekst === 'LOKAAL-RESULTAAT' && vorm && vorm.doel === 'offscreen' && vorm.modus === 'summarizer' && vorm.tekst === 'hallo', JSON.stringify({ ok, vorm }));
+    // 0.9.6 (PR #117): modus 'prompt' met rauw / schema / systeem per aanvraag; bij een andere modus genegeerd; ongeldig → PARAMS.
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'Wat moet ik doen?', rauw: true, schema: { type: 'object', properties: { taken: { type: 'array' } } }, systeem: 'Antwoord alleen met JSON.' }, site);
+    const pv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('prompt: rauw, schema (als JSON-tekst) en systeem gaan mee naar offscreen', pv?.modus === 'prompt' && pv.rauw === true && pv.schema === '{"type":"object","properties":{"taken":{"type":"array"}}}' && pv.systeem === 'Antwoord alleen met JSON.', JSON.stringify(pv));
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'hallo', rauw: true, schema: '{"type":"object"}', systeem: 'x' }, site);
+    const sv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('andere modus: rauw / schema / systeem worden genegeerd', sv?.modus === 'summarizer' && !('rauw' in sv) && !('schema' in sv) && !('systeem' in sv), JSON.stringify(sv));
+    const voorP = off.gevraagd.length;
+    const fouten = await Promise.all([{ schema: '{kapot' }, { schema: '[1,2]' }, { schema: 'x'.repeat(8001) }, { systeem: 'y'.repeat(2001) }, { systeem: 'a\u0000b' }, { rauw: 'ja' }]
+      .map((extra) => vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'x', ...extra }, site)));
+    check('prompt: ongeldig schema (geen JSON, geen object, > 8000), systeem (> 2000, stuurteken) of rauw (geen boolean) → PARAMS, niets naar offscreen',
+      fouten.every((r) => r?.ok === false && r.reason === 'PARAMS') && off.gevraagd.length === voorP, JSON.stringify(fouten));
+    await vraag(fx, { type: 'LOKALE_AI', modus: 'prompt', tekst: 'x', rauw: true }, site);
+    const rv = off.gevraagd.filter((m) => m.op === 'lokale-ai-voer').pop();
+    check('prompt rauw zonder schema/systeem: lege waarden mee, zodat de instellingen van de gebruiker niet gelden', rv?.rauw === true && rv.schema === '' && rv.systeem === '', JSON.stringify(rv));
+    check('PING meldt promptRauw (de site maakt het gebruik ervan afhankelijk)', (await vraag(fx, { type: 'PING' }, site))?.lokaleAi?.promptRauw === true);
     const lang = await vraag(fx, { type: 'LOKALE_AI', modus: 'summarizer', tekst: 'x'.repeat(20001) }, site);
     check('te lange tekst → TE_LANG', lang?.ok === false && lang.reason === 'TE_LANG');
     const st2 = await vraag(f, { op: 'status' }, opties);
     check('status meldt siteToegang aan (de site toont dan het proefformulier)', st2?.lokaleAi?.siteToegang === true);
+    await tot(() => off.gevraagd.filter((m) => m.op === 'lokale-ai-stand').length >= 2, 3000); await rust(60);
+    const ping2 = await vraag(fx, { type: 'PING' }, site);
+    check('PING met «!» siteToegang en een klaar model: reden = klaar', ping2?.lokaleAi?.reden === 'klaar' && ping2.lokaleAi.redenen?.prompt === 'klaar', JSON.stringify(ping2?.lokaleAi));
+    check('status (eigen pagina\'s) blijft zonder reden-velden', !('reden' in (st2?.lokaleAi ?? {})));
 
     // Hoofdschakelaar uit → geen nieuwe meting en geen stand in de status.
     const voor = off.gevraagd.length;
@@ -148,6 +204,8 @@ export async function main(): Promise<number> {
     for (const l of opslagLuister) l({ lokaleAi: { newValue: opslag.lokaleAi } }, 'local');
     const uit = await vraag(f, { op: 'status' }, opties); await rust(60);
     check('hoofdschakelaar uit: geen meting en geen stand in de status', off.gevraagd.length === voor && uit?.lokaleAi?.aan === false && !('stand' in (uit?.lokaleAi ?? {})), JSON.stringify(uit?.lokaleAi));
+    const ping3 = await vraag(fx, { type: 'PING' }, site);
+    check('PING met hoofdschakelaar uit: reden = uit, geen redenen per API', ping3?.lokaleAi?.reden === 'uit' && !('redenen' in (ping3?.lokaleAi ?? {})), JSON.stringify(ping3?.lokaleAi));
 
     // Weer aan na een wijziging → meteen opnieuw meten; geen bruikbaar antwoord → geen stand (de site meet dan zelf).
     offAntwoord = undefined;
@@ -165,28 +223,29 @@ export async function main(): Promise<number> {
     const k = filterLokaleAiKeuze({ aan: true, apis: ['prompt', 'writer'], stand: { prompt: 'available', writer: 'stil', summarizer: 'rm -rf', vreemd: 'available' } });
     check('site-filter: stand alleen met bekende API\'s en standen', JSON.stringify(k) === '{"aan":true,"apis":["prompt","writer"],"stand":{"prompt":"available","writer":"stil"}}', JSON.stringify(k));
     check('filterPubliek neemt lokaleAi.stand over', JSON.stringify(filterPubliek({ versie: '0.9.1', lokaleAi: { aan: true, apis: [], stand: { detector: 'fout' } } })?.lokaleAi) === '{"aan":true,"apis":[],"stand":{"detector":"fout"}}');
-    const pagina = { prompt: 'ontbreekt', summarizer: 'available', writer: 'ontbreekt', rewriter: 'ontbreekt', translator: 'ontbreekt', detector: 'ontbreekt', proofreader: 'ontbreekt' } as const;
+    const pagina = { prompt: 'ontbreekt', summarizer: 'available', writer: 'ontbreekt', rewriter: 'ontbreekt', translator: 'ontbreekt', detector: 'ontbreekt', proofreader: 'ontbreekt', embedder: 'ontbreekt', decisions: 'ontbreekt' } as const;
     check('kiesStand: extensie gaat voor de pagina (Prompt API bestaat in Chrome soms alleen voor extensies); anders de pagina; anders null',
       JSON.stringify(kiesStand('prompt', pagina, k)) === '{"stand":"available","bron":"extensie"}' && JSON.stringify(kiesStand('summarizer', pagina, k)) === '{"stand":"available","bron":"pagina"}' && kiesStand('summarizer', null, k) === null);
     const rStil = laiRegel('writer', 'stil', k, '0.9.1', () => false, 'extensie');
     check('stand «stil» → let op, met verwijzing naar chrome://on-device-internals en «у розширенні»', rStil.stand === 'let-op' && rStil.uk.includes('chrome://on-device-internals') && rStil.uk.startsWith('Chrome (у розширенні)') && rStil.nl.startsWith('Chrome (in de extensie)'));
-    const html = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'], stand: { prompt: 'available', summarizer: 'available', writer: 'downloadable', rewriter: 'unavailable', translator: 'available', detector: 'available', proofreader: 'ontbreekt' } }, extVersie: '0.9.1' }));
-    check('blok rendert meteen met de meting van de extensie (geen «Перевіряємо…»), bron per regel, telling 4 van 7',
-      !html.includes('Перевіряємо') && (html.match(/data-lai-bron="extensie"/g) ?? []).length === 7 && html.includes('Готово до роботи: 4 з 7') && html.includes('Chrome (у розширенні): модель готова'), html.slice(0, 400));
+    const html = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions'], stand: { prompt: 'available', summarizer: 'available', writer: 'downloadable', rewriter: 'unavailable', translator: 'available', detector: 'available', proofreader: 'ontbreekt', embedder: 'ontbreekt', decisions: 'ontbreekt' } }, extVersie: '0.9.1' }));
+    check('blok rendert meteen met de meting van de extensie (geen «Перевіряємо…»), bron per regel, telling 4 van 9',
+      !html.includes('Перевіряємо') && (html.match(/data-lai-bron="extensie"/g) ?? []).length === 9 && html.includes('Готово до роботи: 4 з 9') && html.includes('Chrome (у розширенні): модель готова'), html.slice(0, 400));
   }
 
   // ---------------------------------------------------------------- 5. site: gebruik door pagina's van de site («!» siteToegang)
   {
     const ext = 'abcdefghijklmnopabcdefghijklmnop';
-    const alles = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'] as const;
+    const alles = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions'] as const;
     const oud = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: [...alles] }, extVersie: '0.9.1', extId: ext }));
     check('extensie zonder siteToegang-veld (ouder dan 0.9.2): geen sectie, geen knop', !oud.includes('data-lai-site') && !/<button/.test(oud));
     const uit = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: [...alles], siteToegang: false }, extVersie: '0.9.2', extId: ext }));
     check('siteToegang uit: «!»-waarschuwing met gevolgen (GPU/RAM, 20/min, geen download) en knop naar de instellingen van de extensie met uitleg',
       uit.includes('data-lai-site="uit"') && uit.includes('! Використання сторінками сайту: вимкнено') && uit.includes('GPU/RAM') && uit.includes('data-lai-actie="opties"') && /title="[^"]*сайт сам його змінити не може/.test(uit) && !uit.includes('data-lai-veld'));
     const aan = renderToStaticMarkup(createElement(LokaleAiPaneel, { tr: (uk: string) => uk, keuze: { aan: true, apis: ['summarizer', 'translator'], siteToegang: true }, extVersie: '0.9.2', extId: ext }));
+    const modusSelect = aan.match(/<select[^>]*data-lai-veld="modus"[^>]*>([\s\S]*?)<\/select>/);
     check('siteToegang aan: formulier (functie met alleen ingeschakelde API\'s, tekst ≤ 20000, knop «Виконати на цьому пристрої» met uitleg) en een aria-live uitkomst',
-      aan.includes('data-lai-site="aan"') && aan.includes('data-lai-veld="modus"') && (aan.match(/<option /g) ?? []).length === 2 && /maxLength="20000"|maxlength="20000"/.test(aan)
+      aan.includes('data-lai-site="aan"') && aan.includes('data-lai-veld="modus"') && (modusSelect?.[1].match(/<option /g) ?? []).length === 2 && /maxLength="20000"|maxlength="20000"/.test(aan)
       && aan.includes('Виконати на цьому пристрої') && /data-lai-actie="uitvoeren"[^>]*disabled=""|disabled=""[^>]*data-lai-actie="uitvoeren"/.test(aan) && /role="status" aria-live="polite" data-lai-uitkomst/.test(aan), aan.slice(-1500));
     const goed = filterLokaleAiAntwoord({ ok: true, tekst: 'Samenvatting', notities: ['en → uk', 5], correcties: [], geheim: 'X' });
     check('antwoord ok: alleen tekst, notities (tekst) en correcties', JSON.stringify(goed) === '{"ok":true,"tekst":"Samenvatting","notities":["en → uk"],"correcties":[]}');

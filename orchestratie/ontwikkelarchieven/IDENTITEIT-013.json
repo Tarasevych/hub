@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-013",
+  "titel": "Діалоги підтвердження й правдиві тексти (фаза 2 «Макета»)",
+  "opdracht": "Власник погодив фазу 2 плану (PR #76): спільний діалог підтвердження для небезпечних дій, правдиві тексти видалення облікового запису, зрозумілі відмови, автотема, «не зберігати браузер», автозбереження меню, форма віджета, безпечне копіювання.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/identiteit-013-bevestigen-teksten-20261114-031200",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": {
+      "taak": "IDENTITEIT-012",
+      "pr": "https://github.com/Tarasevych/hub/pull/79"
+    }
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Тести — лише з вигаданими даними, тестовим сертифікатом і одноразовою локальною базою. Без облікових даних, вмісту листів і прихованих міркувань моделі."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T03:12:00Z",
+      "stap": "Гілка від живої версії 5f2325d7; orch taak-start, versheid start — свіжо."
+    },
+    {
+      "tijd": "2026-11-14T04:00:00Z",
+      "stap": "Спільний src/platform/BevestigDialoog.tsx на Venster; діалог для світлини, пароля (2 панелі), чернеток, учасника, простору, видалення облікового запису."
+    },
+    {
+      "tijd": "2026-11-14T05:00:00Z",
+      "stap": "Правдиві тексти видалення (30 днів), foutNaarTekst, автотема й «Забути місце», «не зберігати браузер» відкликає грант, автозбереження меню, форма віджета, kopieerTekst."
+    },
+    {
+      "tijd": "2026-11-14T06:00:00Z",
+      "stap": "Модульний тест 61/61; e2e у Chromium 88/88; за знімками виправлено дубль заголовка, відступи й контраст небезпечної кнопки в темній темі."
+    },
+    {
+      "tijd": "2026-11-14T06:30:00Z",
+      "stap": "Давня вада: синхронізація стану сповіщень слала {} → 401 OWNER_SESSION_CONTEXT_REQUIRED; виправлено meldingLichaam(). Тест смужки прогресу справді сповільнює пошту."
+    }
+  ],
+  "keuzes": [
+    "Діалог — тонка обгортка над спільним Venster (той самий стек вікон, фокус-пастка й телефонний режим), а не нове модальне вікно.",
+    "Вимкнення чернеток питає підтвердження лише коли є що стерти (N > 0); без чернеток вимикається одразу.",
+    "«Не зберігати браузер»: локальне «вимкнено» має пріоритет, сервер може лише вимкнути; вимкнення відкликає лише грант цього браузера.",
+    "Стара кнопка «Зберегти меню» лишилася поруч з автозбереженням — для тих, хто звик.",
+    "Пункт «дата у файлі сховища ключів» виявився не вадою (уже залежить від мови) — не змінювався."
+  ],
+  "wijzigingen": {
+    "toegevoegd": [
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-013.json",
+      "orchestratie/taken/IDENTITEIT-013.json",
+      "src/meldingen/sessie-context.ts",
+      "src/platform/BevestigDialoog.tsx",
+      "src/platform/bevestig-dialoog.css",
+      "src/platform/klembord.ts",
+      "tests/e2e/bevestig-dialoog.e2e.ts",
+      "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    ],
+    "gewijzigd": [
+      "backend/index.ts",
+      "docs/ontwerp/identiteit-account/maquette-bron/locales.js",
+      "shared/zoek-ui-knoppen.generated.ts",
+      "src/App.tsx",
+      "src/CanoniekAccountMenu.tsx",
+      "src/IdentiteitBeheerWeergave.tsx",
+      "src/InstellingencentrumWeergave.tsx",
+      "src/McpDienstWeergave.tsx",
+      "src/SessiesOverzicht.tsx",
+      "src/VerenigdDienstApp.tsx",
+      "src/ZijbalkInstellingen.tsx",
+      "src/aanmeld-vnext/onderdelen/MethodeDetail.tsx",
+      "src/aanmelden-onthouden.ts",
+      "src/concepten.ts",
+      "src/identiteit/Profielfoto.tsx",
+      "src/identiteit/maquette/maquette-motor.ts",
+      "src/instellingencentrum.css",
+      "src/meldingen/gelezen-sync.ts",
+      "src/meldingen/v2/status-opslag.ts",
+      "src/thema/ThemaInstellingen.tsx",
+      "src/thema/kern.ts",
+      "src/toegangslaag-panelen.tsx",
+      "src/weigeringen.ts",
+      "tests/e2e/menu-v2-snelheid.e2e.ts",
+      "tests/e2e/thema.e2e.ts",
+      "tests/eenheid/aanmeld-ui-20261030.test.ts"
+    ],
+    "verwijderd": []
+  },
+  "controles": [
+    "identiteit-013-bevestigen 61/61 (новий модульний тест).",
+    "e2e bevestig-dialoog 88/88 у Chromium: 390/768/1280 × uk/nl × світла/темна; Esc нічого не змінює; справжнє підтвердження вимикає чернетки.",
+    "e2e menu-v2-snelheid 35/35 (на живій версії 31/33: дві давні вади виправлено).",
+    "aanmeld-ui 105/105, identiteit-* усі, zoek-ui-tabblad 46/46, sessies 18/18 і 20/20, menu-snelheid 29/29, thema 17/17, mailmob 22/22, sec-002-afwerking-b 43/43, zijbalk 9/9, meldingen-* усі.",
+    "npx tsc --noEmit, npm run typecheck:server — без помилок; npm run build — успішно (shared/zoek-ui-knoppen.generated.ts оновлено збіркою).",
+    "Повний набір модульних тестів: 380 груп зелені, 21 червоних — усі 21 мають той самий результат на живій версії 5f2325d7 (давні, поза межами фази 2), крім ruimte-cloud-agenda (нестабільний, при повторі 52/52) та uitrol-goedkeuring (умова середовища: тест очікує базу без застосованих міграцій; на основі падає ще раніше з ENOENT)."
+  ],
+  "bronnen": [
+    {
+      "soort": "встановлена версія",
+      "omschrijving": "https://id.tarasevych.com/api/version — 20261113-121403, 5f2325d788e2",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "план",
+      "omschrijving": "docs/ontwerp/identiteit-account/ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md, фаза 2",
+      "inhoudGepubliceerd": true
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сайт — лише з погодження власника, після резервної копії на R:\\ і перевірки накладання.",
+    "На телефоні діалог займає весь екран (так працює спільний Venster); короткий нижній аркуш — можливе окреме покращення."
+  ],
+  "commits": [
+    "70c8f5d74ada477a5d564237ff55c34866f7ddc5",
+    "8eff564da4a557c9f64a421b1a89018db2d8bb3b",
+    "8271418ee9decc2df68e90133091a4cdc4b8d53f",
+    "ae9d234872d32ac9ee92949f00c28c84068c848c",
+    "7c6f970f67db1f6c42b6f56365265ce062ff495e"
+  ]
+}

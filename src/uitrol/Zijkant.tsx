@@ -12,11 +12,11 @@ import { useUitrolV2 } from './uitrol-vlag';
 import UitgaveBeschrijving, { Deelnemers, mensWeergaveNaam } from './UitgaveBeschrijving';
 import { datum, duur, mb, tr, type DiagnoseAntwoord, type Lang, type Overzicht, type Versie } from './types';
 
-type Props = { lang: Lang; context: Record<string, unknown>; data: Overzicht; kanPasskey: boolean; naarUpload: () => void; naarLog: () => void; naarDiagnose: () => void; naarInstellen: () => void };
+type Props = { lang: Lang; context: Record<string, unknown>; data: Overzicht; kanPasskey: boolean; naarUpload: () => void; naarLog: () => void; naarDiagnose: () => void; naarInstellen: () => void; /** Naar «Налаштування» → «Хто готує оновлення» (scrollt naar de lijst). */ naarToegang?: () => void };
 
 const Rij = ({ ok, children }: { ok: boolean | null; children: React.ReactNode }) => <li data-ok={ok === null ? 'n' : ok}>{ok === null ? <i aria-hidden='true' /> : ok ? <CheckCircle2 aria-hidden='true' /> : <XCircle aria-hidden='true' />}<span>{children}</span></li>;
 
-export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, naarLog, naarDiagnose, naarInstellen }: Props) {
+export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, naarLog, naarDiagnose, naarInstellen, naarToegang }: Props) {
   const [versie, setVersie] = useState<Versie | null>(null);
   const v2 = useUitrolV2() === true;
   const [diag, setDiag] = useState<DiagnoseAntwoord | null>(null);
@@ -50,7 +50,7 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
         <Rij ok={data.passkeys.length > 0}>{tr(lang, `Passkey, що схвалюють: ${data.passkeys.length}`, `Passkeys die goedkeuren: ${data.passkeys.length}`)}{data.wachtend.length ? tr(lang, ` (+${data.wachtend.length} чекає)`, ` (+${data.wachtend.length} wacht)`) : ''}</Rij>
         {!kanPasskey && <Rij ok={false}>{tr(lang, 'Цей браузер без passkey', 'Deze browser zonder passkey')}</Rij>}
         <Rij ok={root ? pathOk : null}>{root ? (pathOk ? tr(lang, 'Спостерігач inbox активний', 'Inbox-bewaker actief') : tr(lang, 'Спостерігач inbox НЕ активний', 'Inbox-bewaker NIET actief')) : tr(lang, 'Діагностика root: ще немає даних', 'Root-diagnose: nog geen gegevens')}</Rij>
-        <Rij ok={vers}>{root ? tr(lang, `Дані root свіжі: ${duur(root.leeftijdSec * 1000)} тому`, `Root-gegevens vers: ${duur(root.leeftijdSec * 1000)} geleden`) : tr(lang, 'Встановіть цей випуск через SSH один раз', 'Installeer deze release één keer via SSH')}</Rij>
+        <Rij ok={vers}>{root ? tr(lang, `Дані root свіжі: ${duur(root.leeftijdSec * 1000, lang)} тому`, `Root-gegevens vers: ${duur(root.leeftijdSec * 1000, lang)} geleden`) : tr(lang, 'Встановіть цей випуск через SSH один раз', 'Installeer deze release één keer via SSH')}</Rij>
         {vrij !== null && <Rij ok={vrij >= 800}>{tr(lang, `Вільно на диску: ${mb(vrij * 1048576)}`, `Vrij op schijf: ${mb(vrij * 1048576)}`)}</Rij>}
         {root && root.problemen.length > 0 && <Rij ok={false}>{tr(lang, `Проблем у ланцюзі: ${root.problemen.length}`, `Problemen in de keten: ${root.problemen.length}`)}</Rij>}
       </ul>
@@ -67,11 +67,11 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
       </div>
     </section>
 
-    {v2 ? <ToegangBlok lang={lang} data={data} naarInstellen={naarInstellen} /> : <section className='ut-kaart'>
+    {v2 ? <ToegangBlok lang={lang} data={data} naarInstellen={naarToegang || naarInstellen} /> : <section className='ut-kaart'>
       <h2>{tr(lang, 'Хто готує оновлення', 'Wie bereidt updates voor')}</h2>
       {actieveGrants.length === 0 ? <p className='ut-hint'>{tr(lang, 'Ніхто окремо. Власний архів можна завантажити завжди.', 'Niemand apart. Uw eigen archief kunt u altijd uploaden.')}</p>
         : <ul className='ut-lijst ut-lijst-klein ut-zij-agents'>{actieveGrants.map((g) => <li key={g.id}>{g.soort === 'account' && g.eigenaar ? <Persoon naam={g.eigenaar.naam || g.label} id={g.onderwerp} foto={g.eigenaar.foto} klein /> : g.soort !== 'account' ? <AgentLogo agent={g.soort === 'agent' ? g.onderwerp : g.label} naam={g.label} size={30} /> : <Avatar naam={g.label} id={g.onderwerp} klein />}<span><b>{g.soort === 'account' && g.eigenaar?.naam ? g.eigenaar.naam : g.label}</b><small>{g.onbepaald ? tr(lang, 'до відкликання', 'tot intrekking') : <>{tr(lang, 'до ', 'tot ')}{datum(lang, g.verlooptOp)}</>}</small></span></li>)}</ul>}
-      <button type='button' className='ut-knop' onClick={naarInstellen}>{tr(lang, 'Керувати доступом', 'Toegang beheren')}</button>
+      <button type='button' className='ut-knop' onClick={naarToegang || naarInstellen}>{tr(lang, 'Керувати доступом', 'Toegang beheren')}</button>
     </section>}
   </aside>;
 }

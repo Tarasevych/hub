@@ -159,6 +159,23 @@ export async function main(): Promise<number> {
     const voldaanTg = await poortMod.voldaanVoor(authA as never, 'stap-op');
     check('poort ziet «telegram» voldaan; stapOpNaPoort → telegram, nooit sterk', voldaanTg.has('telegram') && (await kern.stapOpNaPoort(authA, voldaanTg)) === 'telegram' && (await stapOp.stapOpGeldig(authA as never, Date.now(), { onthoud: false })) && !(await stapOp.sterkeStapOpGeldig(authA as never)));
 
+    // ------------------------------------------------------------ 16.11.2026: Telegram als «sterk» — alleen als de mens dat zelf koos
+    check('voorkeur «Telegram підтверджує й найважливіші дії»: standaard uit', (await opslag.voorkeuren(eigenaar)).waarde.telegramSterk === false);
+    await kern.voorkeurenZetten(authA, { ...(await opslag.voorkeuren(eigenaar)).waarde, telegramSterk: true });
+    const tgAudit = await sql<{ d: string }>("SELECT details::text AS d FROM app.audit WHERE owner_id = $1 AND action = 'apparaat.telegram-sterk' ORDER BY seq DESC LIMIT 1", [eigenaar]);
+    check('aanzetten wordt bewaard en komt in het auditlogboek', (await opslag.voorkeuren(eigenaar)).waarde.telegramSterk === true && /"aan":\s*true/.test(tgAudit[0]?.d || ''), tgAudit[0]?.d);
+    await stapOp.stapOpVerbruiken(authA as never);
+    await sql("INSERT INTO app.tg_bevestigingen (id, user_id, sessie_id, actie, methode, verloopt_op, soort, kandidaten, juist) VALUES ($1,$2,$3,'stap-op','telegram', now() + interval '5 minutes', 'cijfers', '{0,1,2}', 1)", [tgId(3), eigenaar, tabA]);
+    check('Telegram (gekozen als sterk): juist symbool → bevestigd', await tg.bevestigingSymbool(`${tgId(3)}:${k.id}:1`, '424242') === 'bevestigd');
+    const voldaanTg2 = await poortMod.voldaanVoor(authA as never, 'stap-op');
+    check('met de keuze aan: stapOpNaPoort → telegram, nu ook sterk (maar nooit passkey-step-up)', voldaanTg2.has('telegram') && (await kern.stapOpNaPoort(authA, voldaanTg2)) === 'telegram' && (await stapOp.sterkeStapOpGeldig(authA as never)) && !(await stapOp.passkeyStapOpGeldig(authA as never)));
+    await kern.voorkeurenZetten(authA, { ...(await opslag.voorkeuren(eigenaar)).waarde, telegramSterk: false });
+    await stapOp.stapOpVerbruiken(authA as never);
+    await sql("INSERT INTO app.tg_bevestigingen (id, user_id, sessie_id, actie, methode, verloopt_op, soort, kandidaten, juist) VALUES ($1,$2,$3,'stap-op','telegram', now() + interval '5 minutes', 'cijfers', '{0,1,2}', 1)", [tgId(4), eigenaar, tabA]);
+    await tg.bevestigingSymbool(`${tgId(4)}:${k.id}:1`, '424242');
+    const voldaanTg3 = await poortMod.voldaanVoor(authA as never, 'stap-op');
+    check('weer uit: Telegram is opnieuw gewoon, niet sterk', (await kern.stapOpNaPoort(authA, voldaanTg3)) === 'telegram' && !(await stapOp.sterkeStapOpGeldig(authA as never)));
+
     // ------------------------------------------------------------ opruimen en stroom
     await sql("UPDATE app.bevestigingen_apparaat SET aangemaakt_op = now() - interval '31 days', verloopt_op = now() - interval '31 days' + interval '2 minutes' WHERE id = $1", [v7.id]);
     await kern.opruimen();

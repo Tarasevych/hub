@@ -18,7 +18,7 @@ import { poortAfdwingen, poortNaVerzoek } from '../../server/platform/auth-poort
 import '../../server/platform/rls-audit';
 import { metVerzoek } from '../../server/platform/context';
 import { _schakelaarsReset, schakelaarLokaal } from '../../server/platform/schakelaars';
-import { _tellerLeeg, som, tel, telAntwoord, telFout } from '../../server/platform/antwoord-teller';
+import { _tellerLeeg, som, tel, telAntwoord, telFout, telPoort401 } from '../../server/platform/antwoord-teller';
 import { _afdwingenCacheLeeg, afdwingenAan, afdwingenBron } from '../../backend/beleid';
 import { agentRouteVerboden } from '../../backend/agent-namens';
 import { registreerMelder } from '../../backend/melder';
@@ -68,14 +68,21 @@ export async function main(): Promise<number> {
   check('RLS: anoniem-2xx in de audit hoort bij de poort, niet bij RLS', bv.isKlaar(bv.rlsControles({ ...rlsBasis, audit: [anon('POST /x')] })));
 
   // ------------------------------------------------------------ zuiver: zekering en tellers
-  const nul = { totaal: 0, '5xx': 0, '403': 0, poort401: 0, opa: 0, rls: 0 };
+  const nul = { totaal: 0, '5xx': 0, '403': 0, poort401: 0, opa: 0, opa403: 0, rls: 0 };
   check('zekering: rustig verkeer → niets', bv.zekeringOordeel('auth-poort', { ...nul, totaal: 400, '5xx': 2, poort401: 1 }) === null);
-  check('zekering: poort — 5× 401 in 2 min → uit', bv.zekeringOordeel('auth-poort', { ...nul, totaal: 50, poort401: 5 }) === 'poort-401-piek');
+  // SEC-002 (eind-omzeiling 1): automatisch uit alleen bij 401 op minstens drie VERSCHILLENDE routes; één route × N = voorstel.
+  // Автоматично вимикається лише за 401 на ≥ 3 різних маршрутах; один маршрут × N — лише пропозиція власникові.
+  check('zekering: poort — 5× 401 in 2 min op 3 routes → uit', bv.zekeringOordeel('auth-poort', { ...nul, totaal: 50, poort401: 5, poort401routes: 3 }) === 'poort-401-piek');
+  check('zekering: poort — 5× 401 op ÉÉN route → niet uit, wel voorstel', bv.zekeringOordeel('auth-poort', { ...nul, totaal: 50, poort401: 5, poort401routes: 1 }) === null
+    && bv.zekeringVoorstel('auth-poort', { ...nul, totaal: 50, poort401: 5, poort401routes: 1 }) === 'poort-401-een-route');
   check('zekering: OPA — 3× onbereikbaar → uit', bv.zekeringOordeel('opa-afdwingen', { ...nul, totaal: 20, opa: 3 }) === 'opa-onbereikbaar');
-  check('zekering: OPA — 403-piek t.o.v. basis → uit', bv.zekeringOordeel('opa-afdwingen', { ...nul, totaal: 100, '403': 30 }, { totaal: 1000, '403': 10 }) === '403-piek');
+  // SEC-002 (afwerking A): alleen 403 van het afdwingen zelf (opa403) zet OPA uit; een algemene 403-piek is een voorstel.
+  check('zekering: OPA — 403-piek van het afdwingen t.o.v. basis → uit', bv.zekeringOordeel('opa-afdwingen', { ...nul, totaal: 100, '403': 30, opa403: 30 }, { totaal: 1000, '403': 10 }) === '403-piek');
+  check('zekering: OPA — algemene 403-piek → niet uit, wel voorstel', bv.zekeringOordeel('opa-afdwingen', { ...nul, totaal: 100, '403': 30 }, { totaal: 1000, '403': 10 }) === null && bv.zekeringVoorstel('opa-afdwingen', { ...nul, totaal: 100, '403': 30 }, { totaal: 1000, '403': 10 }) === '403-piek-algemeen');
   check('zekering: RLS — 3 RLS-fouten → uit', bv.zekeringOordeel('rls', { ...nul, totaal: 40, rls: 3 }) === 'rls-fouten');
-  check('zekering: 5xx-piek → uit (elke bescherming)', SCH.every((s) => bv.zekeringOordeel(s, { ...nul, totaal: 100, '5xx': 20 }) === '5xx-piek'));
-  check('zekering: hoge 5xx ook vóór het aanzetten (basis) → geen vals alarm', bv.zekeringOordeel('rls', { ...nul, totaal: 100, '5xx': 20 }, { totaal: 500, '5xx': 100 }) === null);
+  // SEC-002 (afwerking A, toetsen/g04.md №5): een 5xx-piek kan elke gebruiker met eigen invoer maken → nooit zelf uit, alleen een voorstel.
+  check('zekering: 5xx-piek → NIET uit, wel voorstel (elke bescherming)', SCH.every((s) => bv.zekeringOordeel(s, { ...nul, totaal: 100, '5xx': 20 }) === null && bv.zekeringVoorstel(s, { ...nul, totaal: 100, '5xx': 20 }) === '5xx-piek'));
+  check('zekering: hoge 5xx ook vóór het aanzetten (basis) → geen vals voorstel', bv.zekeringVoorstel('rls', { ...nul, totaal: 100, '5xx': 20 }, { totaal: 500, '5xx': 100 }) === null);
   check('zekering: poort-401 telt niet voor RLS', bv.zekeringOordeel('rls', { ...nul, totaal: 50, poort401: 9 }) === null);
   _tellerLeeg();
   const t0 = Date.now();
@@ -210,7 +217,8 @@ export async function main(): Promise<number> {
 
     // Zekering: piek in 401 van de poort → automatisch uit, journaal + melding aan de eigenaar.
     check('zekering: zonder piek blijft het aan', (await bv.zekeringControleren()).length === 0 && poortAfdwingen());
-    tel('poort401', 6);
+    // SEC-002 (eind-omzeiling 1): een echte poortfout raakt veel routes — 6× 401 over drie routepatronen.
+    for (const [i, pat] of ['POST /api/a', 'POST /api/b', 'POST /api/c', 'POST /api/a', 'POST /api/b', 'POST /api/c'].entries()) telPoort401(pat, Date.now() - i);
     const uit = await bv.zekeringControleren();
     check('zekering: piek → auth-poort automatisch uit (zonder herstart)', uit.length === 1 && uit[0].sleutel === 'auth-poort' && uit[0].reden === 'poort-401-piek' && poortAfdwingen() === false && (await anoniem()).statusCode === 200);
     const rij2 = (await sys.query(`SELECT stand, automatisch_uit_reden, automatisch_uit_op FROM app.beveiliging_schakelaars WHERE sleutel='auth-poort'`)).rows[0];

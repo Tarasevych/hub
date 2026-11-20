@@ -2,8 +2,8 @@
 import { api, ApiError } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import { sessieDienst } from '../canoniek-navigatie';
-import type { Apparaat, Automatisering, Droogloop, Gebeurtenis, Integratie, Lid, MogelijkheidSoort, Opdracht, Ruimte, Scene, Voorstel, Woning } from '../../shared/huis-model';
-export type { Lid } from '../../shared/huis-model';
+import type { Apparaat, Automatisering, Droogloop, Gebeurtenis, Integratie, Lid, MogelijkheidSoort, Opdracht, Ruimte, Scene, Uitnodiging, UitnodigingVoorMij, Voorstel, Woning } from '../../shared/huis-model';
+export type { Lid, Uitnodiging, UitnodigingVoorMij } from '../../shared/huis-model';
 
 const body = (extra: Record<string, unknown> = {}) => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin, ...extra });
 export class HuisFout extends Error { constructor(public code: string, public status: number, public data: any) { super(code); this.name = 'HuisFout'; } }
@@ -28,7 +28,7 @@ export const huisClient = {
   ruimteVerwijder: (woningId: string, id: string) => roep<{ verwijderd: boolean }>('/api/huis/ruimtes', { woningId, actie: 'verwijder', id }),
   apparaatWijzig: (woningId: string, id: string, v: { naam?: string; ruimteId?: string | null; verborgen?: boolean }) => roep<{ apparaat: Apparaat }>('/api/huis/apparaten/wijzig', { woningId, id, ...v }).then((d) => d.apparaat),
   integratieInstellen: (woningId: string, adres: string, token: string, naam?: string) => roep<{ integratie: Integratie }>('/api/huis/integraties/instellen', { woningId, adres, token, naam }).then((d) => d.integratie),
-  integratieOntdekken: (woningId: string, integratieId: string) => roep<{ apparaten: OntdektApparaatUit[]; overgeslagen: number }>('/api/huis/integraties/ontdekken', { woningId, integratieId }),
+  integratieOntdekken: (woningId: string, integratieId: string) => roep<{ apparaten: OntdektApparaatUit[]; overgeslagen: number; afgekapt?: number }>('/api/huis/integraties/ontdekken', { woningId, integratieId }),
   integratieImporteren: (woningId: string, integratieId: string, bronIds: string[] | null) => roep<{ nieuw: number; bijgewerkt: number; overgeslagen: number }>('/api/huis/integraties/importeren', { woningId, integratieId, bronIds }),
   integratieSynchroniseren: (woningId: string, integratieId: string) => roep<{ bijgewerkt: number; weg: number; nieuwBeschikbaar: number }>('/api/huis/integraties/synchroniseren', { woningId, integratieId }),
   integratieSchrijven: (woningId: string, integratieId: string, aan: boolean) => roep<{ integratie: Integratie }>('/api/huis/integraties/schrijven', { woningId, integratieId, aan }).then((d) => d.integratie),
@@ -50,8 +50,15 @@ export const huisClient = {
   voorstellen: (woningId: string) => roep<{ voorstellen: Voorstel[] }>('/api/huis/voorstellen', { woningId, actie: 'lijst' }).then((d) => d.voorstellen),
   voorstelNieuw: (woningId: string, v: { samenvatting: string; apparaatId: string; mogelijkheid: MogelijkheidSoort; waarde: Record<string, unknown> }) => roep<{ voorstel: Voorstel }>('/api/huis/voorstellen', { woningId, actie: 'nieuw', door: 'assistent-pagina', ...v }).then((d) => d.voorstel),
   voorstelBesluit: (woningId: string, id: string, goedkeuren: boolean) => roep<{ voorstel: Voorstel; opdracht?: Opdracht | null; error?: string }>('/api/huis/voorstellen', { woningId, actie: goedkeuren ? 'goedkeuren' : 'afwijzen', id }),
-  leden: (woningId: string) => roep<{ leden: LidUit[] }>('/api/huis/leden', { woningId, actie: 'lijst' }).then((d) => d.leden),
-  lidToevoegen: (woningId: string, email: string, rol: string, dagen?: number) => roep<{ ok: boolean }>('/api/huis/leden', { woningId, actie: 'toevoegen', email, rol, dagen }),
+  // SEC-002 (integraties-09): lid wordt men alleen door een uitnodiging zelf te aanvaarden. De eigenaar ziet leden + openstaande
+  // uitnodigingen (zonder te weten of er een account achter een adres zit); de genodigde ziet «uitnodigingen voor mij».
+  leden: (woningId: string) => roep<{ leden?: LidUit[]; uitnodigingen?: Uitnodiging[] }>('/api/huis/leden', { woningId, actie: 'lijst' }).then((d) => ({ leden: d.leden ?? [], uitnodigingen: d.uitnodigingen ?? [] })),
+  lidUitnodigen: (woningId: string, email: string, rol: string, dagen?: number) => roep<{ ok: boolean; stand: 'uitgenodigd' }>('/api/huis/leden', { woningId, actie: 'toevoegen', email, rol, dagen }),
+  uitnodigingIntrekken: (woningId: string, uitnodigingId: string) => roep<{ ingetrokken: boolean }>('/api/huis/leden', { woningId, actie: 'intrekken', uitnodigingId }),
+  uitnodigingenVoorMij: () => roep<{ uitnodigingen?: UitnodigingVoorMij[] }>('/api/huis/leden', { actie: 'uitnodigingen' }).then((d) => d.uitnodigingen ?? []),
+  uitnodigingAanvaarden: (uitnodigingId: string) => roep<{ aanvaard: true; woningId: string; rol: string }>('/api/huis/leden', { actie: 'aanvaarden', uitnodigingId }),
+  uitnodigingAfwijzen: (uitnodigingId: string) => roep<{ afgewezen: true }>('/api/huis/leden', { actie: 'afwijzen', uitnodigingId }),
+  lidVerlaten: (woningId: string) => roep<{ vertrokken: true }>('/api/huis/leden', { woningId, actie: 'verlaten' }),
   lidVerwijder: (woningId: string, userId: string) => roep<{ verwijderd: boolean }>('/api/huis/leden', { woningId, actie: 'verwijder', userId }),
 };
 export const idem = (prefix = 'site') => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;

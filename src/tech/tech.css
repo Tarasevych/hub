@@ -4,6 +4,9 @@
    kan geen enkel venster van de dienst de band bedekken. Vensters van het platform (portal naar body, z-index 100000+) blijven erboven. */
 :root{--tech-band-h:40px;--tech-band-bg:#f5b400;--tech-band-fg:#1a1200}
 html[data-tech=aan] #root{position:fixed;top:var(--tech-band-h);left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;transform:translateZ(0);overflow:hidden}
+/* UPD-007: усередині #root, зсунутого на var(--tech-band-h), бічна панель має займати 100% висоти #root (а не 100dvh), щоб нижній перемикач простору не обрізався. */
+html[data-tech=aan] #root .canonical-sidebar,
+html[data-tech=aan] #root .canonical-chrome.sidebar-drawer-mode.sidebar-drawer .canonical-sidebar{height:100%;max-height:100%}
 /* 03.11.2026: de zijbalk is weer gewoon even hoog als #root. De verlenging met één bandhoogte (18.10.2026) bestond alleen voor het
    verbergen bij scrollen (de app schoof dan omhoog); dat is vervangen door in- en uitschuiven van de band zelf (band-inschuiven.ts). */
 
@@ -53,8 +56,10 @@ html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba
 .tech-vraag-laag.is-dev b{color:#5b21b6;opacity:1}
 .tech-vraag-laag.is-dev > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
 .tech-vraag-laag.is-dev > summary::-webkit-details-marker{display:none}
-.tech-vraag-laag.is-dev > summary::before{content:'▸';font-size:12px;opacity:.7}
-.tech-vraag-laag.is-dev[open] > summary::before{content:'▾'}
+.tech-vraag-laag.is-dev > summary::after{display:none}
+.tech-vraag-laag.is-dev > summary::before{content:'';flex:0 0 14px;width:14px;height:14px;opacity:.75;background-color:currentColor;-webkit-mask:var(--icoon-pijl-omlaag) center/contain no-repeat;mask:var(--icoon-pijl-omlaag) center/contain no-repeat;transform:rotate(-90deg);transition:transform .18s ease}
+.tech-vraag-laag.is-dev[open] > summary::before{transform:rotate(0deg)}
+@media (prefers-reduced-motion:reduce){.tech-vraag-laag.is-dev > summary::before{transition:none}}
 .tech-vraag-laag.is-dev > summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .tech-vraag-bron{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tech-vraag-bron code{font:11.5px/1.4 ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,currentColor 10%,transparent);overflow-wrap:anywhere}
@@ -237,6 +242,9 @@ html[data-tech=aan] body>#root{overflow:visible}
 .tech-poort-naar{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
 .tech-poort-naar svg{width:18px;height:18px}
 .tech-poort-naar:disabled{opacity:.6;cursor:progress}
+.tech-poort-stil-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tech-poort-account{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.tech-poort-account:hover{background:var(--surface);color:var(--text)}
 .tech-poort-fout{color:var(--fout,#dc2626)}
 @media (max-width:768px){
   /* Ingeklapte band op de telefoon: de menuknop blijft (anders kan men niet terug uitklappen); tikvlak via ::after ≥ 44 px. */

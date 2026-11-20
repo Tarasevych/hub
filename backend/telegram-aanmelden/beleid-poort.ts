@@ -14,10 +14,32 @@ import { passkeyStapOpGeldig, stapOpSessieId, type StapOpAuth } from '../stap-op
 import { actieSoorten, instellingen, sql } from './opslag';
 // APPARAAT-001: vierde methode «apparaat» (bevestigen vanaf een ander apparaat) in dezelfde poort; geen tweede waarheid.
 import { apparaatBeschikbaar, voldaan as apparaatVoldaan, verbruik as apparaatVerbruik } from '../apparaat-bevestiging/kern';
+import { plaatsEisSchoon, type PlaatsEisMethode } from '../../shared/aanmeld-plaats-eis';
 import { beoordeel, werkelijkeEis, type ActieSoort, type Beoordeling, type KeuzeId, type Methode } from '../../shared/telegram-aanmelden/beleid';
 
 export const BEVESTIGING_GELDIG_MS = 5 * 60 * 1000;
 export type PoortAuth = StapOpAuth & { user: { id: string; role?: string; email?: string } };
+
+/** TELEGRAM-004 (0299): bij welke aanmeldmethoden eist dit account de plaats van het toestel? Standaard bij geen enkele. */
+export async function plaatsEisMethoden(userId: string): Promise<PlaatsEisMethode[]> {
+  const [r] = await sql<{ p: string[] }>('SELECT plaats_eis AS p FROM app.tg_matrix WHERE user_id = $1', [userId]);
+  return plaatsEisSchoon(r?.p);
+}
+export async function plaatsEisZetten(userId: string, methoden: readonly string[]): Promise<PlaatsEisMethode[]> {
+  const schoon = plaatsEisSchoon(methoden);
+  await sql("INSERT INTO app.tg_matrix (user_id, keuzes, plaats_eis) VALUES ($1,'{}'::jsonb,$2) ON CONFLICT (user_id) DO UPDATE SET plaats_eis = EXCLUDED.plaats_eis, gewijzigd_op = now()", [userId, schoon]);
+  return schoon;
+}
+/** Eist dit account de plaats bij DEZE methode? (zonder methode: Telegram — de eerste vorm van de eis) */
+export async function plaatsVerplicht(userId: string, methode: PlaatsEisMethode = 'telegram'): Promise<boolean> {
+  return (await plaatsEisMethoden(userId)).includes(methode);
+}
+/** Eén methode aan of uit, de andere blijven zoals ze waren. */
+export async function plaatsVerplichtZetten(userId: string, aan: boolean, methode: PlaatsEisMethode = 'telegram'): Promise<void> {
+  const nu = new Set<string>(await plaatsEisMethoden(userId));
+  if (aan) nu.add(methode); else nu.delete(methode);
+  await plaatsEisZetten(userId, [...nu]);
+}
 
 export async function keuzesVan(userId: string): Promise<Record<string, KeuzeId>> {
   const [r] = await sql<{ keuzes: Record<string, KeuzeId> }>('SELECT keuzes FROM app.tg_matrix WHERE user_id = $1', [userId]);

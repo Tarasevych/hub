@@ -1,0 +1,140 @@
+/* MAILAI-003 (16.11.2026): «Спільні рушії ШІ для всіх» (src/agenten/DienstMotoren.tsx). Лише токени теми — світла й темна
+   теми без власних кольорів. Блок вузький, картки не на всю ширину. Медіазапити — у кінці файла.
+   Gedeelde AI-motoren: alleen thematokens; smal blok; mediaregels onderaan. */
+.dm{max-width:56rem}
+.dm-inhoud{display:grid;gap:14px;min-width:0}
+.dm-inhoud[hidden]{display:none}
+.dm-inleiding{margin:0;max-width:70ch;color:var(--muted);font-size:.88rem;line-height:1.5}
+
+/* Картки рушіїв */
+.dm-lijst{list-style:none;margin:0;padding:0;display:grid;align-items:start;grid-template-columns:repeat(auto-fill,minmax(17.5rem,24rem));gap:12px}
+.dm-kaart{display:grid;gap:10px;align-content:start;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface,var(--panel));color:var(--text)}
+.dm-kaart[data-aan='true']{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.dm-kaart-kop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
+.dm-kaart-naam{display:grid;gap:2px;min-width:0}
+.dm-kaart-naam b{font-size:.98rem;overflow-wrap:anywhere}
+.dm-kaart-naam small{color:var(--muted);font-size:.8rem;line-height:1.35}
+.dm-kaart-kop .ag-badge{flex:none;margin-left:0}
+/* MAILAI-004: один рядок цифр у картці; таблиця фактів і повна статистика — під «Докладніше». */
+.dm-kort{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0;color:var(--muted);font-size:.82rem;line-height:1.4}
+.dm-kort b{color:var(--text);font-variant-numeric:tabular-nums}
+.dm-meer{display:block;margin:-4px 0}
+.dm-meer>summary{display:inline-flex;align-items:center;gap:4px;min-height:28px;color:var(--muted);font-size:.8rem;cursor:pointer;list-style:none;border-radius:8px}
+.dm-meer>summary::-webkit-details-marker{display:none}
+.dm-meer>summary::after{content:'▾';font-size:11px;line-height:1}
+.dm-meer[open]>summary::after{content:'▴'}
+.dm-meer>summary:hover{color:var(--text)}
+.dm-meer>summary:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:2px}
+.dm-meer>:not(summary){margin-top:8px}
+.dm-feiten{display:grid;gap:4px;margin:0;font-size:.85rem}
+.dm-feiten>div{display:flex;flex-wrap:wrap;gap:2px 8px;min-width:0}
+.dm-feiten dt{flex:0 0 8.5rem;color:var(--muted)}
+.dm-feiten dd{flex:1 1 8rem;min-width:0;margin:0;overflow-wrap:anywhere}
+.dm-feiten code{font-size:.82rem}
+.dm-waarheen{margin:0;color:var(--muted);font-size:.8rem;line-height:1.45}
+.dm-stat{list-style:none;margin:0;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;border-radius:var(--straal-s,8px);background:var(--surface2,var(--panel))}
+.dm-stat li{display:grid;gap:1px;min-width:0}
+.dm-stat b{font-size:1rem;font-variant-numeric:tabular-nums}
+.dm-stat span{color:var(--muted);font-size:.74rem;line-height:1.3}
+
+/* Перемикач і кнопки-піктограми */
+.dm-kaart-acties{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.dm-schakel{display:inline-flex;align-items:center;gap:8px;min-height:var(--tik-hoogte,36px);padding:4px 12px 4px 6px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.dm-schakel:hover:not(:disabled){border-color:var(--muted)}
+.dm-schakel:disabled{opacity:.55;cursor:not-allowed}
+.dm-schakel:focus-visible,.dm-picto-knop:focus-visible,.dm-knop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dm-schakel-spoor{flex:none;display:inline-flex;align-items:center;width:34px;height:20px;padding:2px;box-sizing:border-box;border-radius:999px;background:color-mix(in srgb,var(--muted) 40%,var(--panel));transition:background-color .15s}
+.dm-schakel-spoor>span{width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 0 0 1px var(--line);transition:transform .15s}
+.dm-schakel[aria-pressed='true']{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+.dm-schakel[aria-pressed='true'] .dm-schakel-spoor{background:var(--ok)}
+.dm-schakel[aria-pressed='true'] .dm-schakel-spoor>span{transform:translateX(14px)}
+.dm-pictos{display:inline-flex;gap:4px}
+.dm-picto{position:relative;display:inline-flex}
+.dm-picto-knop{display:inline-grid;place-items:center;width:var(--tik-hoogte,36px);height:var(--tik-hoogte,36px);padding:0;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel);color:var(--text);cursor:pointer}
+.dm-picto-knop svg{width:16px;height:16px}
+.dm-picto-knop:hover:not(:disabled){background:var(--surface2,var(--surface));border-color:var(--muted)}
+.dm-picto-knop:disabled{opacity:.55;cursor:not-allowed}
+/* М'який натяк небезпеки: лише відтінок рамки й піктограми, без яскравого тла. */
+.dm-picto-knop.is-gevaar{color:color-mix(in srgb,var(--fout) 70%,var(--text));border-color:color-mix(in srgb,var(--fout) 30%,var(--line))}
+.dm-picto-knop.is-gevaar:hover:not(:disabled){background:color-mix(in srgb,var(--fout) 9%,var(--panel));border-color:color-mix(in srgb,var(--fout) 55%,var(--line))}
+/* Як усі підказки сайту: обернені кольори (тло — колір тексту). Інакше спільне правило [role=tooltip] давало світле тло зі світлим текстом у темній темі. */
+.dm-tip{position:absolute;right:0;bottom:calc(100% + 6px);z-index:5;width:max-content;max-width:min(17rem,72vw);padding:7px 10px;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--text);color:var(--panel);box-shadow:var(--schaduw-2,0 4px 14px rgb(0 0 0 / .18));font-size:.78rem;font-weight:400;line-height:1.4;text-align:left;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s}
+.dm-picto:hover>.dm-tip,.dm-picto-knop:focus-visible+.dm-tip{visibility:visible;opacity:1}
+/* Дотик: «наведення» лишається після натискання й підказка закривала б перемикач — наслідки там пояснюють вікна підтвердження. */
+@media (hover:none){.dm-tip{display:none}}
+.dm-hint{margin:0;color:var(--muted);font-size:.8rem;line-height:1.4}
+
+/* Ризики зі знаком «!», підтвердження, результат перевірки */
+.dm-risico{display:grid;gap:8px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));border-radius:var(--straal-s,10px);background:color-mix(in srgb,var(--warn) 7%,var(--panel));font-size:.85rem;line-height:1.45}
+.dm-risico.is-gevaar{border-color:color-mix(in srgb,var(--fout) 40%,var(--line));background:color-mix(in srgb,var(--fout) 6%,var(--panel))}
+.dm-risico p{margin:0}
+.dm-risico ul{margin:0;padding-left:1.1rem;display:grid;gap:6px}
+.dm-risico-kop{display:flex;align-items:center;gap:8px;font-weight:700}
+.dm-uitroep{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;border:1.5px solid var(--warn);border-radius:50%;color:var(--warn);font-size:.82rem;font-weight:800;line-height:1}
+.dm-rij-knoppen{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dm-knop{min-height:var(--tik-hoogte,36px);border-radius:var(--straal-s,8px)}
+.dm-test{margin:0;padding:8px 10px;border:1px solid var(--line);border-left-width:3px;border-radius:var(--straal-s,8px);background:var(--panel);font-size:.82rem;line-height:1.45;overflow-wrap:anywhere}
+.dm-test.is-ok{border-left-color:var(--ok)}
+.dm-test.is-fout{border-left-color:var(--fout)}
+.dm-test-voorbeeld{display:block;margin-top:4px;color:var(--muted)}
+
+/* Форма «Додати» / «Змінити» */
+.dm-formulier{display:grid;gap:12px;max-width:36rem;min-width:0;padding:14px;border:1px solid var(--line);border-radius:var(--straal-m,12px);background:var(--surface,var(--panel))}
+.dm-formulier h4{margin:0;font-size:.98rem;overflow-wrap:anywhere}
+.dm-let{display:flex;align-items:flex-start;gap:8px;margin:0;padding:9px 11px;border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));border-radius:var(--straal-s,8px);background:color-mix(in srgb,var(--warn) 7%,var(--panel));font-size:.83rem;line-height:1.45}
+.dm-let>svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--warn)}
+.dm-soorten{display:grid;gap:6px;min-width:0;margin:0;padding:0;border:0}
+.dm-soorten legend{padding:0;margin-bottom:6px;font-size:.85rem;font-weight:600}
+.dm-soort{display:flex;align-items:flex-start;gap:10px;min-height:var(--tik-hoogte,36px);padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel);cursor:pointer}
+.dm-soort[data-gekozen='true']{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.dm-soort:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.dm-soort input{flex:none;margin:3px 0 0;accent-color:var(--accent)}
+.dm-soort>span{display:grid;gap:2px;min-width:0}
+.dm-soort b{font-size:.88rem}
+.dm-soort small{color:var(--muted);font-size:.8rem;line-height:1.4}
+.dm-velden{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dm-veld{display:grid;gap:4px;align-content:start;min-width:0}
+.dm-veld-kop{display:flex;align-items:center;gap:6px;min-width:0}
+.dm-veld-kop label{font-size:.85rem;font-weight:600}
+.dm-veld :is(input,select){box-sizing:border-box;width:100%;min-height:var(--tik-hoogte,36px);padding:6px 10px;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel);color:var(--text);font:inherit;font-size:.9rem}
+.dm-veld :is(input,select):focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.dm-veld input[readonly]{background:var(--surface2,var(--surface));color:var(--muted);cursor:not-allowed}
+.dm-veld small{color:var(--muted);font-size:.78rem;line-height:1.4}
+
+@media (prefers-reduced-motion:reduce){
+  .dm-schakel-spoor,.dm-schakel-spoor>span,.dm-tip{transition:none}
+}
+@media (max-width:640px){
+  .dm-lijst{grid-template-columns:1fr}
+  .dm-velden{grid-template-columns:1fr}
+  .dm-formulier{padding:12px}
+  .dm-feiten dt{flex-basis:100%}
+  .dm-kaart-acties{align-items:stretch}
+  /* Телефон: кнопки стоять ліворуч, тож підказка росте праворуч від кнопки — інакше вона виходить за лівий край екрана. */
+  .dm-tip{left:0;right:auto;max-width:min(15rem,60vw)}
+}
+
+/* MAILAI-005 (16.11.2026, затверджений макет): перелік — рядки в одній заокругленій рамці; у рядку логотип, назва, один рядок цифр,
+   праворуч дії піктограмами й перемикач. Головна кнопка «Додати рушій» — над переліком. Лише токени теми.
+   Rijen in één afgerond kader: logo, naam, één regel cijfers, rechts de pictogramacties en de schakelaar. */
+.dm-nieuw{order:-1}
+.dm-lijst{grid-template-columns:1fr;gap:0;max-width:46rem;border:1px solid var(--line);border-radius:var(--straal-l,14px);overflow:visible;background:var(--panel)}
+.dm-kaart{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:0;border-radius:0;background:none}
+.dm-kaart+.dm-kaart{border-top:1px solid var(--line)}
+.dm-kaart[data-aan='true']{border-color:var(--line)}
+.dm-kaart>*{grid-column:1/-1}
+.dm-kaart>.dm-kaart-kop{grid-column:1;grid-row:1;align-items:center;justify-content:flex-start;gap:12px}
+.dm-kaart>.dm-kaart-acties{grid-column:2;grid-row:1;flex-wrap:nowrap;flex-direction:row-reverse;gap:6px}
+.dm-kaart[data-aan='false'] .dm-kaart-naam{opacity:.62}
+.dm-kaart>.dm-kort{padding-inline-start:48px}
+.dm-kaart>.dm-meer{margin:0;padding-inline-start:48px}
+.dm-kaart .dm-picto-knop:not(:hover):not([aria-expanded='true']){border-color:transparent;background:none}
+.dm-kaart .dm-schakel{padding:4px;border:0;background:none;min-height:32px}
+.dm-kaart .dm-schakel>span:last-child{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.dm-kaart .dm-schakel-spoor{width:40px;height:24px;padding:3px}
+.dm-kaart .dm-schakel-spoor>span{width:18px;height:18px;box-shadow:none}
+.dm-kaart .dm-schakel[aria-pressed='true'] .dm-schakel-spoor>span{transform:translateX(16px)}
+@media (max-width:640px){
+  .dm-kaart>.dm-kort,.dm-kaart>.dm-meer{padding-inline-start:0}
+  .dm-kaart>.dm-kaart-acties{grid-column:1/-1;grid-row:auto;justify-content:space-between}
+}

@@ -173,7 +173,7 @@ de code zit, geeft de database geen rijen van anderen terug.
   step-up, en dat wordt zelf ook gelogd. IP alleen als hash. Lijsten nieuwste eerst, met filters en paginering.
 - **Step-up**: gevoelige acties (wachtwoord, ontkoppelen, telefoon, toegangsbeleid, kluis, beheerrollen
   en -beleid, audit verwijderen, gegevensexport, account verwijderen) vereisen een Google-aanmelding van
-  hooguit 5 min geleden of een TOTP-code; anders `403 STEP_UP_REQUIRED`. Noodschakelaar `STAP_OP_UIT=1`.
+  hooguit 5 min geleden of een TOTP-code; anders `403 STEP_UP_REQUIRED`. Noodschakelaar `STAP_OP_UIT_TOT=<ISO-tijdstip, ≤ 24 uur>` (SEC-002; de oude vorm `STAP_OP_UIT=1` zonder einde niet meer gebruiken).
 - **TOTP**: dezelfde code kan niet twee keer gebruikt worden; TOTP uitzetten vereist een code.
 - **Methode ontkoppelen** is 7 dagen terug te draaien, met melding. Telefoon telt pas na verificatie.
   Een geblokkeerde gebruiker krijgt geen sessie.

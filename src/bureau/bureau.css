@@ -68,7 +68,7 @@
 .bureau-catalogus-lijst>li>div{display:grid;gap:3px;min-width:0}
 .bureau-catalogus-lijst strong{font-size:.92rem}
 .bureau-catalogus-lijst small{color:var(--muted,#4b5563);font-size:.82rem}
-.bureau-bron{font-size:.75rem;color:var(--muted,#4b5563);word-break:break-all}
+.bureau-bron{font-size:.75rem;color:var(--muted,#4b5563);overflow-wrap:anywhere;word-break:normal}
 .bureau-ontbreekt{font-size:.8rem;font-style:normal;color:var(--fout,#b42318)}
 .bureau-al-op-stol{font-size:.76rem;color:var(--accent,#2f6f73);font-weight:650}
 .bureau-stand{align-self:start;padding:3px 9px;border-radius:999px;font-size:.75rem;font-weight:650;white-space:nowrap}

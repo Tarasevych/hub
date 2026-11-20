@@ -2,7 +2,7 @@
 // bevestiging van de aanmelding (stap-op). De tabcontext komt uit de body (zelfde als elke sessieroute) en bindt de activering aan dat tabblad.
 import { error, json } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
-import { BAND_KLEUREN, BAND_PATRONEN, DUUR_KEUZES, TECH_ROLLEN, maxMinutenVoor } from '../shared/tech-rollen';
+import { BAND_KLEUREN, BAND_PATRONEN, DUUR_KEUZES, TECH_ROLLEN, maxMinutenVoor, mogelijkhedenVan } from '../shared/tech-rollen';
 import * as tp from './tech-profiel';
 import { assetCookieVoor } from './tech-bundels';
 
@@ -12,7 +12,11 @@ const sessieVan = (auth: SessionOk): tp.Sessie | null => auth.session?.id ? { id
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
-export type TechRouteDeps = { stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+export type TechRouteDeps = {
+  stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+  /** SEC-002 (geheimen-03, afwerking A): STERKE bevestiging (passkey/TOTP/herstelcode) om een profiel met ssh.host te activeren. */
+  sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+};
 
 const bodyOf = (b: unknown) => (b && typeof b === 'object' ? b as Record<string, unknown> : {});
 
@@ -61,6 +65,12 @@ export function techRoutes(requireSession: RequireSession, deps: TechRouteDeps =
     'POST /api/owner/tech/status': [gate({}, async (ctx, auth, tab) => metAssetCookie(ctx, auth, tab))],
     'POST /api/owner/tech/activeren': [gate({ stepUp: true }, async (ctx, auth, tab) => {
       const b = bodyOf(ctx.body);
+      // SEC-002 (geheimen-03, afwerking A): een profiel met «ssh.host» (SSH-sertificaten voor de server) vraagt een STERKE bevestiging
+      // — opnieuw inloggen bij Google of een onthouden browser is daarvoor te zwak. Профіль із ssh.host — лише після сильного підтвердження.
+      if (deps.sterkeStapOp) {
+        const profiel = await tp.profielVan(auth.user);
+        if (profiel && mogelijkhedenVan(profiel.rollen).includes('ssh.host')) { const su = await deps.sterkeStapOp(ctx, auth); if (su) return su; }
+      }
       await tp.activeren(auth.user, tab, Number(b.minuten), String(b.reden ?? ''), sessieVan(auth));
       return metAssetCookie(ctx, auth, tab);
     })],
@@ -85,7 +95,15 @@ export function techRoutes(requireSession: RequireSession, deps: TechRouteDeps =
     'POST /api/owner/tech/profielen': [gate({}, async (_ctx, auth, tab) => json({ profielen: await tp.profielenLijst(auth.user, tab) }))],
     'POST /api/owner/tech/toekennen': [gate({ stepUp: true }, async (ctx, auth, tab) => {
       const b = bodyOf(ctx.body);
-      const p = await tp.toekennen(auth.user, tab, { email: String(b.email ?? ''), rollen: b.rollen, maxMinuten: b.maxMinuten, notitie: b.notitie });
+      const p = await tp.toekennen(auth.user, tab, {
+        email: String(b.email ?? ''), rollen: b.rollen, maxMinuten: b.maxMinuten, notitie: b.notitie,
+        ...(typeof b.snelkoppelingenToegestaan === 'boolean' ? { snelkoppelingenToegestaan: b.snelkoppelingenToegestaan } : {}),
+      });
+      return json({ profiel: p, profielen: await tp.profielenLijst(auth.user, tab) });
+    })],
+    'POST /api/owner/tech/snelkoppelingen': [gate({}, async (ctx, auth, tab) => {
+      const b = bodyOf(ctx.body);
+      const p = await tp.snelkoppelingenZetten(auth.user, tab, String(b.userId ?? ''), b.toegestaan);
       return json({ profiel: p, profielen: await tp.profielenLijst(auth.user, tab) });
     })],
     'POST /api/owner/tech/intrekken': [gate({}, async (ctx, auth, tab) => {

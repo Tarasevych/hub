@@ -2,8 +2,9 @@
 import { readFileSync } from 'node:fs';
 import { CATEGORIEEN, INTEGRATIES, METHODE_LABEL, STATUS_LABEL, integratie } from '../../shared/integraties-catalogus';
 import { LOGOS } from '../../src/merk/merk-logos';
-import { merkDef } from '../../src/merk/merk-register';
+import { merkDef, merkSleutel } from '../../src/merk/merk-register';
 import { MERKEN } from '../../src/merk/merk-tabel';
+import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels';
 import { V2_AGENTEN } from '../../shared/connector-v2/agenten';
 import { checker } from './hulp/nep-google';
 
@@ -37,9 +38,8 @@ export async function main(): Promise<number> {
 
   // Logo's: elke genoemde slug ontbreekt hoogstens als monogram; het merendeel heeft een echt logo, paden zijn klein en geldig.
   const metSlug = INTEGRATIES.filter((i) => i.logo);
-  // Een embleem komt uit deze (grote, luie) tabel OF uit het ene merkregister van de site (src/merk/merk-tabel.ts), waar de
-  // merken staan die de hele site gebruikt — en sinds 19.10.2026 ook de merken die hier eerder helemaal geen logo hadden.
-  const zonder = metSlug.filter((i) => !LOGOS[i.logo] && !merkDef(i.logo));
+  // Een embleem komt uit deze (grote, luie) tabel, uit het officiële register (OFFICIEEL_SLEUTELS) OF uit de merkentabel van de site.
+  const zonder = metSlug.filter((i) => !LOGOS[i.logo] && !MERKEN[merkSleutel(i.logo)] && !merkDef(i.logo) && !OFFICIEEL_SLEUTELS.has(merkSleutel(i.logo)));
   check('minstens 95% van de merken heeft een embleem', (metSlug.length - zonder.length) / INTEGRATIES.length >= 0.95);
   check('logo-paden geldig (begint met M/m, geen scripts) en kleur hex', Object.values(LOGOS).every(([p, h]) => /^[Mm][0-9. ,\-a-zA-Z]+$/.test(p) && /^[0-9A-Fa-f]{6}$/.test(h)));
   // Padstructuur: elk commando heeft een veelvoud van zijn argumenten (een eerdere afronding brak paden zonder dat de regex het zag),

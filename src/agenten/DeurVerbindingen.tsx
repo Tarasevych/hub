@@ -8,6 +8,7 @@ import { Logo, type Tr } from '../mcp-ui';
 import { aiLogo } from './gegevens';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Melding, Rij, Tech, useActies } from './ui';
 import { duur as duurVan } from '../../shared/ai-verbinding';
+import './agenten-toegang-maquette.css';
 
 export type DeurVerbinding = { id: string; klant: string; deur: string; duur: string; aangemaakt: number; laatst: number; accessTot: number; refreshTot: number; wie: { id: string; email: string } | null; via: string };
 

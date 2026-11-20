@@ -18,7 +18,7 @@ export type Run = {
 export type Regel = { nr: number; tijd: string; niveau: 'info' | 'ok' | 'warn' | 'error'; tekst: string };
 export type Gebeurtenis = { id: string; tijd: string; code: string; niveau: string; uk: string; nl: string };
 export type RunsAntwoord = { totaal: number; pagina: number; perPagina: number; paginas: number; runs: Run[]; tellers: Record<string, number> };
-export type LiveAntwoord = { run: Run | null; regels: Regel[]; nu: string };
+export type LiveAntwoord = { run: Run | null; regels: Regel[]; nu: string; /** UITROL-002: gebruikelijke duur per onderdeel/totaal uit eerdere geslaagde runs */ verwacht?: import('../../shared/uitrol-duur').VerwachtDuren | null };
 export type DiagnoseAntwoord = {
   root: null | { tijd: string; leeftijdSec: number; gezond: boolean; problemen: Array<{ code: string; uk: string; nl: string }>;
     eenheden: Record<string, { geladen: string; actief: string; sub: string; bestand: string; resultaat: string; exit: string; start: string; einde: string; volgende: string }>;
@@ -35,16 +35,18 @@ export const datum = (lang: Lang, v?: string) => datumInZone(v, lang, 'short');
 export const datumLang = (lang: Lang, v?: string) => datumInZone(v, lang, 'medium');
 export const tijdKort = (lang: Lang, v?: string) => tijdInZone(v, zoneKeuze(), lang);
 export const mb = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
-export const duur = (ms: number) => {
+/** Duur in de taal van de site: «1 хв 10 с» / «1 min 10 s», «2 год 05 хв» / «2 u 05 min» (UITROL-002: was Engels «1m 10s»). */
+export const duur = (ms: number, lang: Lang = 'uk') => {
   const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return `${s}s`;
+  const [S, M, U] = lang === 'uk' ? ['с', 'хв', 'год'] : ['s', 'min', 'u'];
+  if (s < 60) return `${s} ${S}`;
   const m = Math.floor(s / 60);
-  return m < 60 ? `${m}m ${String(s % 60).padStart(2, '0')}s` : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`;
+  return m < 60 ? `${m} ${M} ${String(s % 60).padStart(2, '0')} ${S}` : `${Math.floor(m / 60)} ${U} ${String(m % 60).padStart(2, '0')} ${M}`;
 };
-export const runDuur = (r: Run, nu = Date.now()) => {
+export const runDuur = (r: Run, lang: Lang = 'uk', nu = Date.now()) => {
   const van = Date.parse(r.gestart);
   const tot = r.staat === 'bezig' ? nu : Date.parse(r.geeindigd || r.bijgewerkt);
-  return Number.isFinite(van) && Number.isFinite(tot) ? duur(tot - van) : '—';
+  return Number.isFinite(van) && Number.isFinite(tot) ? duur(tot - van, lang) : '—';
 };
 
 export const STAAT: Record<RunStaat, [string, string]> = {
@@ -127,14 +129,39 @@ export function bestandOpslaan(naam: string, tekst: string) {
 export const regelsNaarTekst = (regels: Regel[]) => regels.map((r) => `${String(r.nr).padStart(5, '0')} ${r.tijd ? r.tijd.slice(11, 19) : '--:--:--'} ${r.niveau.toUpperCase().padEnd(5)} ${r.tekst}`).join('\n');
 
 // ---- Overzicht van het bestaande goedkeur-/grantsysteem (POST /api/owner/uitrol/overzicht)
-export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string } | null; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null };
+export type Voorstel = { id: string; versie: string; status: string; bytes: number; sha256: string; ontvangen: number; voorbereider: string; commit: string; wijzigingen: string; tests: { geslaagd?: number | null; mislukt?: number | null; samenvatting?: string }; diffSamenvatting: string; aangemaaktOp: string; bijgewerktOp?: string; beslistOp: string; beslistDoor: string; uitkomstCode: string; uitkomst: { uk?: string; nl?: string; reden?: string; ingehaaldDoor?: string; door?: { id?: string; email?: string; naam?: string }; tijd?: string; github?: { stand?: string; url?: string; code?: string } } | null; ingehaaldDoor?: string; voorcontrole?: VoorcontroleUit | null; pakketMeta?: PakketMetaUit | null;
+  /** UITROL-002: het archief van deze (mislukte/verlopen/afgebroken) poging ligt nog op de server — hervatten zonder upload kan. */
+  pakketAanwezig?: boolean };
 export type GrantSoort = 'account' | 'agenttoken' | 'mcp-koppeling' | 'agent';
-export type Grant = { id: string; soort: GrantSoort; onderwerp: string; label: string; gegevenDoor: string; gegevenOp: string; verlooptOp: string; ingetrokkenOp: string; status: 'actief' | 'verlopen' | 'ingetrokken'; /** Zonder einddatum («до відкликання»). */ onbepaald?: boolean; /** Herkomst: handmatig gegeven of automatisch uit het AI-beleid. */ bron?: 'handmatig' | 'ai-beleid'; /** Het account waarvoor de toestemming geldt (naam, e-mail, foto) — alleen voor actieve grants. */ eigenaar?: { naam: string; email: string; foto: string } | null };
+export type Grant = {
+  id: string; soort: GrantSoort; onderwerp: string; label: string; gegevenDoor: string; gegevenOp: string; verlooptOp: string; ingetrokkenOp: string;
+  status: 'actief' | 'verlopen' | 'ingetrokken' | 'uitgeput';
+  /** Zonder einddatum («до відкликання»). */ onbepaald?: boolean;
+  /** Herkomst: handmatig gegeven of automatisch uit het AI-beleid. */ bron?: 'handmatig' | 'ai-beleid';
+  /** UPD-010: рівень доступу (лише завантаження в чергу або також делеговане встановлення). */
+  toegangNiveau?: import('../../shared/uitrol-wachtrij').ToegangNiveau;
+  /** UPD-010: режим обмеження прав (період / один раз / визначена кількість / підтвердження щоразу). */
+  limietModus?: import('../../shared/uitrol-wachtrij').LimietModus;
+  maxAantal?: number | null;
+  gebruiktAantal?: number;
+  bevestigingPerKeer?: boolean;
+  /** Het account waarvoor de toestemming geldt (naam, e-mail, foto) — alleen voor actieve grants. */ eigenaar?: { naam: string; email: string; foto: string } | null;
+};
 export type AgentTegel = { slug: string; naam: string; modus: 'always' | 'ask' | 'off' | null; beleidCode: string; uitdrukkelijk: boolean;
-  recht: { id: string; onbepaald: boolean; verlooptOp: string; bron: 'handmatig' | 'ai-beleid' } | null; verbindingen: { technisch: number; prive: number; laatstGebruikt: string } };
+  recht: { id: string; onbepaald: boolean; verlooptOp: string; bron: 'handmatig' | 'ai-beleid' } | null; verbindingen: { technisch: number; prive: number; laatstGebruikt: string };
+  /** TOEGANG-001: de eigenaar zette het recht zelf uit; het beleid geeft het niet vanzelf terug (ISO-tijd). Ontbreekt bij oudere servers. */ uitgezetDoorEigenaar?: string | null };
 export type Passkey = { vingerafdruk: string; kort: string; label: string; toegevoegd?: string; door?: string };
 export type Wachtend = { vingerafdruk: string; kort: string; label: string; aangemaakt: string; sshOpdracht: string };
 export type Keuze = { id: string; label: string; naam?: string; foto?: string };
+/** UITROL-002: de installatie die nu loopt (run van root) of op root wacht (goedgekeurd pakket) — uit het overzicht. */
+export type LopendeInstallatie = { soort: 'run' | 'goedgekeurd'; id: string; versie: string; wie: string; adres: string; sinds: string };
+export const lopendTekst = (lang: Lang, l: LopendeInstallatie) => {
+  const wie = l.wie ? ` — ${lang === 'uk' ? 'схвалив(ла)' : 'goedgekeurd door'} ${l.wie}${l.adres ? ` (${l.adres})` : ''}` : '';
+  const sinds = datum(lang, l.sinds);
+  return l.soort === 'run'
+    ? tr(lang, `Зараз триває встановлення ${l.versie || '…'}${wie}, початок ${sinds}.`, `Er loopt nu een installatie van ${l.versie || '…'}${wie}, gestart ${sinds}.`)
+    : tr(lang, `Пакет ${l.versie || '…'} уже схвалено${wie} ${sinds} і сервер ось-ось почне його встановлювати.`, `Pakket ${l.versie || '…'} is al goedgekeurd${wie} ${sinds}; de server begint zo met installeren.`);
+};
 export type Installatie = { id: string; tijd: string; code: string; herkomst: string; wie: string; pakket: string; release: string; commit: string; adres: string; uk: string; nl: string };
 export type Overzicht = {
   schakelaar: boolean; rpId: string; origins: string[]; passkeys: Passkey[]; wachtend: Wachtend[]; voorstellen: Voorstel[]; installaties?: Installatie[]; voorbereiders: Grant[];
@@ -163,13 +190,17 @@ export type Stand = StandKort & { intervalSec: number; bronnen: BronStand[]; kaa
 export const SOORT: Record<GrantSoort, [string, string]> = { account: ['Акаунт', 'Account'], agenttoken: ['Токен агента', 'Agenttoken'], 'mcp-koppeling': ['MCP-підключення', 'MCP-koppeling'], agent: ['Агент (усі його підключення)', 'Agent (al zijn koppelingen)'] };
 export const VOORSTEL_STATUS: Record<string, [string, string]> = {
   uploaden: ['Завантажується', 'Wordt geüpload'], 'wacht-op-goedkeuring': ['Чекає схвалення', 'Wacht op goedkeuring'], goedgekeurd: ['Схвалено, чекає на сервер', 'Goedgekeurd, wacht op de server'],
-  geinstalleerd: ['Встановлено', 'Geïnstalleerd'], mislukt: ['Не вдалося', 'Mislukt'], geweigerd: ['Сервер відмовив', 'Geweigerd door de server'],
+  geinstalleerd: ['Встановлено', 'Geïnstalleerd'], ingehaald: ['Включено в новіше', 'Opgenomen in nieuwere'], mislukt: ['Не вдалося', 'Mislukt'], geweigerd: ['Сервер відмовив', 'Geweigerd door de server'],
   afgewezen: ['Відхилено вами', 'Door u afgewezen'], verlopen: ['Минув термін', 'Verlopen'], afgebroken: ['Скасовано', 'Afgebroken'],
 };
 
 // Voorcontrole van de site vóór de goedkeuring (backend/uitrol-voorcontrole.ts) en metadata uit het pakket zelf.
 export type ControleNiveau = 'ok' | 'waarschuwing' | 'fout';
-export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[] };
+/** SEC-PAKKET-001: червоний прапорець із поясненням людською мовою і справжньою різницею (backend/uitrol-risico.ts → RisicoItem). */
+export type TekstUit = { uk: string; nl: string };
+export type LeesbaarUit = { oordeel: 'veiliger' | 'gewoon' | 'aandacht'; kort: TekstUit; voorNa: Array<{ voor: TekstUit | null; na: TekstUit | null; keer?: number; toon?: 'veiliger' | 'risico'; module?: { naam: string; van?: string; naar?: string; vast?: boolean } }>; overig: number; doen: TekstUit; uitlegNodig?: boolean };
+export type RisicoItemUit = { leesbaar?: LeesbaarUit; vlag: string; wat: TekstUit; wijziging: TekstUit; let: TekstUit; opvallend?: TekstUit[]; betekenis?: TekstUit[]; verschil?: string; verschilAfgekapt?: boolean; sleutel?: string; auteur?: TekstUit };
+export type ControleUit = { id: string; niveau: ControleNiveau; uk: string; nl: string; details?: string[]; vlaggen?: RisicoItemUit[] };
 export type VoorcontroleUit = { versie: number; tijd: string; ok: boolean; fouten: number; waarschuwingen: number; controles: ControleUit[] };
 export type PakketMetaUit = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string; manifest?: import('../../shared/uitrol-manifest').Manifest | null };
 /** Stand van de «nieuwe update» (de wizard op het tabblad Огляд), zodat de vier fasen bovenaan bij een nieuw bestand opnieuw beginnen. */

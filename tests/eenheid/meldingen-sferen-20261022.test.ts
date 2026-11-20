@@ -28,7 +28,7 @@ import { MELDING_TYPES } from '../../shared/melding-typen';
 import { meldingRuimte, meldingenInLade, meldingenVoorRuimte, rijRuimte, rijenVanLade } from '../../shared/meldingen-ruimte';
 import {
   PRIVE_SOORTEN, PRIVE_VOORVOEGSEL_BRON, SFEER_PER_SOORT, TECHNISCHE_SOORTEN, TECHNISCH_VOORVOEGSEL_BRON, activiteitenVanSfeer, isGeregistreerdeSoort,
-  activiteitNaamUitJournaal, meldingenVanSfeer, ontbrekendeSoorten, sfeerBijAanmaak, sfeerVanActiviteit, sfeerVanAuditActie, sfeerVanRij, sfeerVanSoort, sqlLijst,
+  activiteitNaamUitJournaal, meldingenVanSfeer, NA_0107_VIA_VOORVOEGSEL, ontbrekendeSoorten, sfeerVolgensVoorvoegsel, sfeerBijAanmaak, sfeerVanActiviteit, sfeerVanAuditActie, sfeerVanRij, sfeerVanSoort, sqlLijst,
 } from '../../shared/meldingen-soorten';
 import { tabHash } from '../../backend/tech-profiel';
 import { meld } from '../../backend/melder';
@@ -127,6 +127,10 @@ export async function main(): Promise<number> {
     check('1. opgeslagen rij: veld wint; zonder veld → lade technisch ⇒ technisch, anders de soort',
       sfeerVanRij({ sfeer: 'prive', kind: 'siem' }) === 'prive' && sfeerVanRij({ ruimte: 'technisch', kind: 'security' }) === 'technisch' && sfeerVanRij({ kind: 'siem' }) === 'technisch' && sfeerVanRij({ kind: 'security' }) === 'prive' && sfeerVanRij(null) === 'technisch');
 
+    // SEC-002 (afwerking B): soorten die na 0107 bijkwamen staan niet in haar letterlijke lijsten; de voorvoegselregel van 0107 moet
+    // dan precies hun geregistreerde sfeer geven, anders is wel een nieuwe migratie nodig.
+    const naMis = [...NA_0107_VIA_VOORVOEGSEL].filter((k) => !(k in SFEER_PER_SOORT) || sfeerVolgensVoorvoegsel(k) !== SFEER_PER_SOORT[k]);
+    check('1. soorten na 0107 (mail_queue_*): staan in het register en de voorvoegselregel van 0107 geeft dezelfde sfeer — geen nieuwe migratie nodig', NA_0107_VIA_VOORVOEGSEL.size >= 2 && naMis.length === 0, naMis.join(','));
     // ------------------------------------------------------------------ 2. migratie 0107
     const mig = lees('migrations/0107_meldingen_sfeer.sql');
     check('2. 0107 bevat letterlijk de persoonlijke en technische lijst van het register', mig.includes(`IN (${sqlLijst(PRIVE_SOORTEN)}) THEN 'prive'`) && mig.includes(`IN (${sqlLijst(TECHNISCHE_SOORTEN)}) THEN 'technisch'`));

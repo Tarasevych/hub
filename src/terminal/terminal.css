@@ -34,7 +34,7 @@ mr-xterm-stijl{display:none}
 .term-regel:last-child{border-bottom:0;margin-bottom:0}
 .term-regel-kop{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .term-regel-prompt{color:var(--ok);font-weight:700}
-.term-regel-cmd{font-weight:600;word-break:break-all}
+.term-regel-cmd{font-weight:600;overflow-wrap:anywhere;word-break:normal}
 .term-regel-staat{margin-left:auto;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--surface2,var(--panel-2));color:var(--muted)}
 .term-regel-staat.is-klaar{background:var(--ok-zacht);color:var(--ok)}
 .term-regel-staat.is-code,.term-regel-staat.is-mislukt,.term-regel-staat.is-fout,.term-regel-staat.is-tijd{background:var(--fout-zacht);color:var(--fout)}
@@ -45,7 +45,7 @@ mr-xterm-stijl{display:none}
 .term-pre{margin:4px 0 0;white-space:pre-wrap;word-break:break-word;font:inherit;max-height:50vh;overflow:auto}
 .term-bevestig{display:grid;gap:8px;padding:10px 12px;border:2px solid var(--warn);border-radius:var(--straal-m,10px);background:var(--warn-zacht);color:var(--text)}
 .term-bevestig p{margin:0}
-.term-code{display:block;padding:8px 10px;border-radius:var(--straal-s,8px);background:var(--surface2,var(--panel-2));font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all;user-select:all}
+.term-code{display:block;padding:8px 10px;border-radius:var(--straal-s,8px);background:var(--surface2,var(--panel-2));font-family:ui-monospace,Consolas,monospace;font-size:13px;overflow-wrap:anywhere;word-break:normal;user-select:all}
 .term-invoer{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px;align-content:start}
 .term-prompt{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--ok);font-weight:700;max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .term-invoer input{min-height:var(--tik-hoogte,44px);padding:0 10px;border-radius:var(--straal-s,8px);border:1px solid var(--line);background:var(--panel);color:inherit;font:13px/1.4 ui-monospace,Consolas,monospace;min-width:0;width:100%;box-sizing:border-box}

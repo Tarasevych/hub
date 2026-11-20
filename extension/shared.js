@@ -9,6 +9,7 @@ export const ALLOWED_COMMANDS = [
   'browser.console', 'browser.network', 'browser.self_test', 'browser.pages', 'browser.hover', 'browser.fill_form',
   'browser.audit', // 0.5.0
   'browser.script', // 0.7.0: evaluate_script via chrome.debugger (alleen technisch slot, pakket «diagnose», cap browser.script)
+  'browser.lokale_ai', // 0.9.6 (LAI-CON-001): ingebouwde AI van Chrome via offscreen.html; tekst via een eenmalig ticket, nooit in params
 ];
 
 /** Toetsen die de extensie mag indrukken (alleen navigatie, geen letters of sneltoetsen). */
@@ -85,6 +86,8 @@ export function stripQuery(raw) {
 
 /** Valt een adres binnen de domeinen van een grant? Leeg = alle eigen subdomeinen. Zelfde regel als ai-toestemmingen.ts urlInScope. */
 export function urlInScope(raw, domains) {
+  // 0.9.5: сайт ШІ — у межах серверного дозволу, якщо список порожній (= без обмеження) або host у ньому явно.
+  if (isAiSiteUrl(raw)) return !Array.isArray(domains) || domains.length === 0 || domains.includes(new URL(raw).hostname);
   if (!isOwnSiteUrl(raw)) return false;
   if (!Array.isArray(domains) || domains.length === 0) return true;
   const host = new URL(raw).hostname;
@@ -134,6 +137,8 @@ export const TYPE_CAPABILITY = {
   // console/netwerk blijven browser.read (zoals 0.6); de rij «Консоль і мережа» van de matrix dwingt de server af.
   'browser.wait': 'browser.read', 'browser.console': 'browser.read', 'browser.network': 'browser.read', 'browser.self_test': 'browser.read',
   'browser.audit': 'browser.read', 'browser.script': 'browser.script',
+  // 0.9.6: rekent alleen op dit apparaat, leest geen pagina (zelfde cap als de server: browser.read).
+  'browser.lokale_ai': 'browser.read',
   'browser.navigate': 'browser.navigate', 'browser.history': 'browser.navigate', 'browser.pages': 'browser.navigate',
   'browser.invoke': 'browser.interact', 'browser.click': 'browser.interact', 'browser.type': 'browser.interact', 'browser.select': 'browser.interact',
   'browser.key': 'browser.interact', 'browser.hover': 'browser.interact', 'browser.fill_form': 'browser.interact',
@@ -171,7 +176,7 @@ export const KLOK_SPELING_MS = 60_000;
 // ---- 0.6.1: debuggerrecht + zichtbare markering (punten 7 en 8 van de eigenaar, 19.10.2026) ----
 // Dezelfde waarden als shared/extensie-ontgrendeling.ts; tests/eenheid/extensie-debugger-markering-20261019.test.ts vergelijkt ze.
 
-/** Onder deze versie weigert de server een ontgrendeling (de site vraagt dan om bijwerken, zie shared/extensie-update.ts). */
+/** Onder deze versie weigert de server een ontgrendeling (de site vraagt dan om bijwerken, zie shared/extensie-bijwerken.ts). */
 export const MIN_EXTENSIE_VERSIE = '0.6.2';
 
 /** Standen van het Chrome-recht `debugger`. Zie DIAG_RECHT_STANDEN in shared/extensie-ontgrendeling.ts. */
@@ -239,25 +244,95 @@ export const PRIVE_HOSTS = Object.freeze([
 ]);
 /** Hosts die een ontgrendeling van deze ruimte mag noemen. */
 export const hostsVoorRuimte = (ruimte) => (ruimte === 'technisch' ? ADMIN_HOSTS_TOEGESTAAN : PRIVE_HOSTS);
+/**
+ * 0.9.5 (EXTUI-001, рішення власника 16.11.2026): сайти ШІ. Лише слот 'prive', лише якщо (1) Chrome дав розширенню дозвіл
+ * (optional_host_permissions, перемикач «Сайти ШІ» в налаштуваннях), (2) користувач позначив цей сайт у підписаному відкритті
+ * доступу на сайті (domeinen) і (3) лише ЧИТАННЯ: AI_SITE_TYPES. Ніякого мосту, ніяких кліків чи введення тексту там.
+ * Zelfde lijst als shared/extensie-ontgrendeling.ts AI_SITE_HOSTS (tests/eenheid vergelijkt ze).
+ */
+export const AI_SITE_HOSTS = Object.freeze(['claude.ai', 'chatgpt.com', 'gemini.google.com', 'grok.com', 'copilot.microsoft.com']);
+export const AI_SITE_TYPES = Object.freeze(['browser.tabs', 'browser.snapshot', 'browser.scroll', 'browser.wait']);
+/** https, exacte host uit AI_SITE_HOSTS, zonder poort en inloggegevens. */
+export function isAiSiteUrl(raw) {
+  if (typeof raw !== 'string' || raw.length > 2000) return false;
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'https:' && !u.username && !u.password && u.port === '' && AI_SITE_HOSTS.includes(u.hostname);
+  } catch { return false; }
+}
+/** Hosts die een ontgrendeling van deze ruimte mag NOEMEN (prive: eigen diensten + sites van AI, die laatste alleen als gekozen). */
+export const ondertekendeHostsVoorRuimte = (ruimte) => (ruimte === 'technisch' ? ADMIN_HOSTS_TOEGESTAAN : [...PRIVE_HOSTS, ...AI_SITE_HOSTS]);
 /** Prive: hoogstens 30 dagen (keuze 1|7|30 op de site); technisch: hoogstens 480 minuten (lopende activering). */
 export const PRIVE_MAX_MINUTEN = 366 * 24 * 60;
 export const maxMinutenVoorRuimte = (ruimte) => (ruimte === 'technisch' ? MAX_MINUTEN : PRIVE_MAX_MINUTEN);
 
-/** Profiel van een tabblad uit <meta name="mjn-profiel" content="gebruiker|technisch">. Alles behalve exact 'technisch' = 'gebruiker'. */
+/**
+ * Profiel van een tabblad uit <meta name="mjn-profiel" content="gebruiker|technisch" data-zeker="1|0">.
+ * SEC-002 extensie-03/04 (12.11.2026): GESLOTEN bij twijfel. Vroeger was alles behalve exact 'technisch' meteen 'gebruiker' — een
+ * technisch tabblad dat nog laadde, waarvan de status niet opgehaald kon worden of waarvan het achtergrondproces de stand kwijt was,
+ * gold daardoor als gebruikerstabblad en de AI van de privéruimte mocht het lezen en bedienen. Nu zijn er drie uitkomsten:
+ *   'technisch'  exact die inhoud;
+ *   'gebruiker'  exact die inhoud, en de site zegt er NIET bij dat zij het nog niet weet: de site zet data-zeker="0" zolang het
+ *                eerste geldige antwoord van /tech/status er niet is (laden, netwerkfout) en data-zeker="1" daarna;
+ *   'onbekend'   al het andere (geen meta, andere inhoud, data-zeker="0") → geen enkel slot mag het tabblad raken.
+ * `zeker` = de ruwe waarde van data-zeker (of false). Weglaten = geen voorbehoud: de waarde is al door een brug beoordeeld (het
+ * achtergrondproces krijgt 'gebruiker' | 'technisch' | 'onbekend'), of de pagina komt van een site-versie zonder dit attribuut.
+ */
 export const PROFIELEN = Object.freeze(['gebruiker', 'technisch']);
-export function parseProfiel(content) {
-  return typeof content === 'string' && content.trim() === 'technisch' ? 'technisch' : 'gebruiker';
+export const PROFIEL_ONBEKEND = 'onbekend';
+export function parseProfiel(content, zeker) {
+  const c = typeof content === 'string' ? content.trim() : '';
+  if (c === 'technisch') return 'technisch';
+  if (c === 'gebruiker' && zeker !== false && zeker !== '0') return 'gebruiker';
+  return PROFIEL_ONBEKEND;
 }
 /**
  * Mag een opdracht van slot `ruimte` een tabblad met dit profiel raken?
  *  technisch → alleen een tabblad dat NU in de technische modus is (profiel 'technisch');
- *  prive     → nooit een technisch tabblad (de AI van de gebruiker ziet nooit wat het beheer in dat tabblad toont).
+ *  prive     → alleen een tabblad dat ZEKER een gebruikerstabblad is (profiel 'gebruiker'); nooit een technisch en nooit een
+ *              onbekend tabblad (de AI van de gebruiker ziet nooit wat het beheer in dat tabblad toont).
  */
 export function profielToegestaan(ruimte, profiel) {
-  return ruimte === 'technisch' ? profiel === 'technisch' : profiel !== 'technisch';
+  return ruimte === 'technisch' ? profiel === 'technisch' : profiel === 'gebruiker';
 }
+
+// ---- 12.11.2026 (SEC-002 extensie-02 / extensie-09): zones die de SITE zelf afschermt voor een AI ----
+/** Hier mag een AI niets bedienen: knoppen die een AI rechten of uitvoering geven (goedkeuren, toestemming, «Відкрити доступ», step-up). */
+export const AI_GEEN_ACTIE = 'data-ai-geen-actie';
+/** Dit mag een AI niet LEZEN: koppelcodes, zojuist gemaakte tokens, herstelcodes (tekst op de pagina, geen invoerveld). */
+export const AI_VERBORGEN = 'data-ai-verborgen';
+export const AI_GEEN_ACTIE_FOUT = 'Refused: this control decides what an AI may do; only the person at the screen can use it';
+/**
+ * Ook zonder attribuut afgeschermd: de beslisvensters zelf. Ze worden via een portal in <body> getekend (src/platform/vensters.tsx,
+ * data-venster=<id>), dus een attribuut op de omringende pagina bereikt ze niet: het OAuth-venster «Доступ для …» en de
+ * koppelwizard van connector v2 (beide 'mcp-toestemming') en «Підтвердіть доступ» (step-up).
+ * Na de toets (g10a-2): ook de andere plekken waar een AI zichzelf rechten of uitvoering zou kunnen geven, op hun vaste wortel-
+ * attributen (dus ook in schermen die zelf nog geen data-ai-geen-actie zetten): toestemmingen per apparaat en sets (data-ai-grants),
+ * de wachtrij «Запити ШІ на підтвердження» (bevestigen, weigeren, keuzes, Google-toegang), scopes van een verbinding (data-toegang),
+ * schakelaars van de site, AI verbinden/duur, het bord met rechten per klant en de schakelaar «browser voor AI».
+ */
+export const AI_GEEN_ACTIE_SELECTOR = [`[${AI_GEEN_ACTIE}]`, '[data-venster="mcp-toestemming"]', '[data-venster="bevestig-toegang"]', '#bevestig-toegang-wortel',
+  '[data-ai-grants]', '[data-ab-bevestig]', '[data-ab-weiger]', '.ab-keuzes', '[data-ab-google]', '[data-toegang]', '[data-site-schakelaars]',
+  '[data-ai-verbinden]', '[data-agent-bord]', '[data-browser-ai-schakelaar]'].join(', ');
+const binnen = (el, sel) => { try { return !!(el && typeof el.closest === 'function' && el.closest(sel)); } catch { return false; } };
+/** Staat dit element in (of is het zelf) een zone waar een AI niets mag bedienen? */
+export const inAiGeenActie = (el) => binnen(el, AI_GEEN_ACTIE_SELECTOR);
+/** Enter in een veld verstuurt het formulier: dat telt als bedienen van een afgeschermde knop als het formulier er een bevat. */
+export function formulierMetAiGeenActie(el) {
+  try { const f = el && el.form; return !!(f && (f.hasAttribute(AI_GEEN_ACTIE) || (typeof f.querySelector === 'function' && f.querySelector(AI_GEEN_ACTIE_SELECTOR)))); } catch { return false; }
+}
+/**
+ * Na de toets (g10a-3): niet alleen [data-ai-verborgen], ook de andere eenmalig getoonde geheimen op hun vaste attributen/klassen —
+ * token van een nieuwe MCP-verbinding (AiVerbinden), token van het bord (AgentBord), toegangscode (Toegangscodes), API-sleutel
+ * (ApiPlatformWeergave), TOTP-sleutel (toegangslaag, aanmeld-vnext), nieuwe herstelcodes en het tijdelijke wachtwoord.
+ */
+export const AI_VERBORGEN_SELECTOR = [`[${AI_VERBORGEN}]`, '[data-vers-token]', '[data-token-eenmaal]', '.toegangscode-code', '[data-api-plaintext-once]',
+  '.access-plane-secret', '.amv-geheim', '[data-herstel-nieuw]', '.herstel-raster', '.access-plane-recovery-codes'].join(', ');
+export const inAiVerborgen = (el) => binnen(el, AI_VERBORGEN_SELECTOR);
 /** Adres binnen een ontgrendeling van `ruimte`: exacte host ∈ domeinen én ∈ hosts van die ruimte (prive dus nooit admin.*). */
 export function adresInRuimte(ruimte, url, domeinen) {
+  // 0.9.5: сайт ШІ — лише слот prive і лише якщо його host у підписаних domeinen. AI-site: alleen prive en alleen als ondertekend.
+  if (isAiSiteUrl(url)) return ruimte === 'prive' && Array.isArray(domeinen) && domeinen.includes(new URL(url).hostname);
   if (!hostToegestaan(url, domeinen)) return false;
   return hostsVoorRuimte(ruimte).includes(new URL(url).hostname);
 }
@@ -323,7 +398,7 @@ export async function verifyOntgrendeling(keyB64url, grant, sig, eigen, now = Da
   if (g.exp <= now) return { ok: false, code: 'VERLOPEN' };
   if (g.exp <= g.iat || g.exp - g.iat > maxMinutenVoorRuimte(g.ruimte) * 60_000) return { ok: false, code: 'TE_LANG' };
   if (!g.caps.every((c) => BROWSER_CAPS.includes(c))) return { ok: false, code: 'CAPS' };
-  if (!g.domeinen.every((d) => hostsVoorRuimte(g.ruimte).includes(d))) return { ok: false, code: 'DOMEINEN' };
+  if (!g.domeinen.every((d) => ondertekendeHostsVoorRuimte(g.ruimte).includes(d))) return { ok: false, code: 'DOMEINEN' };
   return { ok: true, grant: g };
 }
 
@@ -419,6 +494,9 @@ function controleerObject(velden, v) {
 const NAAM = tekst(1, 200);
 const UID = patroon(UID_RE, 'uid uit take_snapshot (<index>_<hash>)');
 const LEEG = {};
+/** 0.9.6: functies van browser.lokale_ai (= LOKALE_AI van de site en LOKALE_AI_MODI van de server). */
+export const LOKALE_AI_MODI = Object.freeze(['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt']);
+const TAALCODE = /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/;
 /** 0.7.0: een element op naam óf uid (chrome-devtools-mcp); precies één van de twee is genoeg, minstens één verplicht. */
 const naamOfUid = (p) => (p.name === undefined && p.uid === undefined ? mis('VERPLICHT', 'name of uid ontbreekt') : null);
 const formVeld = () => (v) => {
@@ -455,6 +533,9 @@ const SCHEMA = Object.freeze({
   'browser.audit': { velden: { soort: [keuze(AUDIT_SOORTEN), false] } },
   // 0.7.0: evaluate_script — alleen de expressie; de server begrensde al (≤ 4000 tekens), hier opnieuw.
   'browser.script': { velden: { expression: [typtekst(4000), true] } },
+  // 0.9.6 (LAI-CON-001): functie + eenmalig ticket (de tekst haalt de extensie zelf op bij de server) + talen; nooit de tekst zelf.
+  'browser.lokale_ai': { velden: { modus: [keuze(LOKALE_AI_MODI), true], ticket: [patroon(/^[A-Za-z0-9_-]{40,64}$/, 'eenmalig ticket van de server'), true],
+    tekens: [getal(1, 20000, true), false], bron: [patroon(TAALCODE, 'taalcode zoals en, uk of nl'), false], doel: [patroon(TAALCODE, 'taalcode zoals en, uk of nl'), false] } },
 });
 
 /**

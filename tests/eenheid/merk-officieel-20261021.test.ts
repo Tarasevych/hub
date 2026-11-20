@@ -20,6 +20,7 @@ import { renderToString } from 'react-dom/server';
 import { checker } from './hulp/nep-google';
 import { ontsmetSvg } from '../../shared/merk-eigen';
 import { controleerBeeld } from '../../shared/merk-bron';
+import { MERK_SITE_DOMEIN } from '../../shared/merk-domeinen';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
 const sha = (b: Buffer | string) => createHash('sha256').update(b).digest('hex');
@@ -47,7 +48,8 @@ export async function main(): Promise<number> {
   });
   check(`uit een pakket (${pakketRegels.length}): licentie CC0/MIT/Apache, versie + integriteit zoals package-lock.json, exacte devDependency`, pakketRegels.length >= 14 && pakketFout.length === 0, pakketFout.map((r) => r.sleutel).join());
   const siteRegels = herkomst.regels.filter((r) => r.soort === 'officiele-site');
-  const siteFout = siteRegels.filter((r) => { const d = reg.MERK_DOMEIN[String(r.sleutel)]; let host = ''; try { host = new URL(String(r.bronUrl)).hostname; } catch { /* */ } return !d || !/^https:\/\//.test(String(r.bronUrl)) || !(host === d || host.endsWith(`.${d}`)) || r.licentie !== 'handelsmerk-van-de-eigenaar'; });
+  const siteFout = siteRegels.filter((r) => { const ds = [reg.MERK_DOMEIN[String(r.sleutel)], MERK_SITE_DOMEIN[String(r.sleutel)]].filter(Boolean); const op = (u: unknown) => { try { const h = new URL(String(u)).hostname; return ds.some((d) => h === d || h.endsWith(`.${d}`)); } catch { return false; } }; // PLAATS-TEKENS-001: een bestand buiten het eigen domein alleen met een uitdrukkelijke, gedateerde keuze van de eigenaar (keuzeEigenaar).
+    const keuze = /^Павло, \d{2}\.\d{2}\.\d{4}: .{20,}/.test(String(r.keuzeEigenaar || '')); return !ds.length || !/^https:\/\//.test(String(r.bronUrl)) || !(op(r.bronUrl) || (/^https:\/\//.test(String(r.bronPagina || '')) && op(r.bronPagina)) || keuze) || r.licentie !== 'handelsmerk-van-de-eigenaar'; });
   check(`van de eigen website (${siteRegels.length}): https-URL op het domein van de dienst zelf, gemarkeerd als handelsmerk van de eigenaar`, siteFout.length === 0, siteFout.map((r) => r.sleutel).join());
   check('elke regel is óf een open pakket óf de eigen website — geen derde soort', herkomst.regels.every((r) => r.soort === 'pakket' || r.soort === 'officiele-site'));
   check('licentieteksten met bron en auteur (gilbarbara/logos, vscode-icons)', pakketRegels.every((r) => /^https:\/\//.test(String(r.licentieUrl)) && String(r.auteur).length > 2));
@@ -85,11 +87,50 @@ export async function main(): Promise<number> {
   const afwezig = DE_21.filter((k) => !officieel.includes(k));
   check(`zonder bestand in een open pakket (${afwezig.join(', ')}): elk een domein voor de merkendatabase, tot dan de neutrale plaat`, afwezig.every((k) => !!reg.MERK_DOMEIN[k] && lagen[k] === 'neutraal') && JSON.stringify([...afwezig].sort()) === JSON.stringify([...herkomst.afwezig].sort()), afwezig.map((k) => `${k}:${lagen[k]}`).join());
   const png = 'data:image/png;base64,' + Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]), Buffer.from('IHDR'), Buffer.alloc(17)]).toString('base64');
-  reg.registreerDatabaseMerken(afwezig.map((k) => ({ domein: reg.MERK_DOMEIN[k], data: png, bron: 'favicon', mime: 'image/png' })));
-  check('na de eerste geslaagde ophaling door de server: laag «database» voor die merken', afwezig.every((k) => reg.merkLaag(k) === 'database'));
+  // REESTR-LOGO-001 (16.11.2026): alle merken met een domein hebben nu een officieel bestand. De databaselaag blijft bestaan (voor
+  // een merk dat later zonder bestand bijkomt); we toetsen hem met de officiële laag van drie merken tijdelijk weg.
+  const DB_PROEF = ['mollie', 'tuya', 'iua'];
+  check('de databaselaag ligt ONDER de officiële: met een officieel bestand wint dat, ook als de server een database-logo heeft',
+    DB_PROEF.every((k) => reg.merkLaag(k) === 'officieel'));
+  reg._officieelWeg(DB_PROEF);
+  const dbMerken = [...afwezig, ...DB_PROEF];
+  reg.registreerDatabaseMerken(dbMerken.map((k) => ({ domein: reg.MERK_DOMEIN[k], data: png, bron: 'favicon', mime: 'image/png' })));
+  check('na de eerste geslaagde ophaling door de server: laag «database» voor die merken', dbMerken.every((k) => reg.merkLaag(k) === 'database'));
   reg.registreerDatabaseMerken([{ domein: 'mollie.com', data: 'https://mollie.com/favicon.ico', bron: 'favicon', mime: 'image/png' }, { domein: 'tuya.com', data: 'javascript:alert(1)', bron: 'x', mime: 'x' }]);
   check('de database neemt alleen data-URI\'s van een beeldtype aan (geen extern adres, geen javascript:)', reg.databaseMerk('mollie')?.data === png && reg.databaseMerk('tuya')?.data === png);
-  check('een vorm met herkomst gaat vóór de database (Google, GitHub blijven hun simple-icons-vorm)', reg.merkLaag('google') === 'vorm' && reg.merkLaag('github') === 'vorm');
+  check('een vorm met herkomst gaat vóór de database (GitHub blijft zijn simple-icons-vorm)', reg.merkLaag('github') === 'vorm');
+  // GOOGLE-OFFICIEEL (2026-11-16, слово власника): знак Google — офіційний чотириколірний, не одноколірна фігура.
+  check('Google: het officiële vierkleurige teken (laag «officieel»), niet de eenkleurige vorm', reg.merkLaag('google') === 'officieel' && officieel.includes('google'));
+  {
+    const { createHash } = await import('node:crypto');
+    const { readFileSync, readdirSync, statSync } = await import('node:fs');
+    const svg = readFileSync('src/merk/officieel/google.svg', 'utf8');
+    const kleuren = ['#4285f4', '#34a853', '#fbbc05', '#eb4335'];
+    check('Google: het bestand is het vierkleurige «G» (vier merkkleuren, vier paden) en is hetzelfde als op de aanmeldknop',
+      kleuren.every((k) => svg.toLowerCase().includes(k)) && (svg.match(/<path/g) || []).length === 4
+      && createHash('sha256').update(svg).digest('hex') === '88bffb6a27a569159edbf47d5f8e54b25ce1bba6cda409ec50d2bf6f4911c666');
+    const g = renderToString(createElement((await import('../../src/merk/Merk')).default, { merk: 'google', vorm: 'gliefje', maat: 20 }));
+    check('<Merk merk="google"> tekent het officiële bestand als <img>, niet de eenkleurige vorm', g.includes('data-merk-officieel="google"') && !g.includes('<path'), g.slice(0, 200));
+    // Сторож: знак Google ніде не малюється літерою чи від руки поза реєстром марок.
+    const lopen = (map: string, uit: string[] = []): string[] => { for (const n of readdirSync(map)) { const p = map + '/' + n; if (statSync(p).isDirectory()) lopen(p, uit); else if (/\.(tsx?|css)$/.test(n)) uit.push(p); } return uit; };
+    const toegestaan = (p: string) => p.startsWith('src/merk/');
+    const fout: string[] = [];
+    for (const p of lopen('src')) {
+      if (toegestaan(p)) continue;
+      const s = readFileSync(p, 'utf8');
+      if (/icoon === 'google' \? <b>G<\/b>/.test(s) || /if \(icoon === 'google'\) return <span[^>]*>G<\/span>/.test(s) || /\.is-google\{background:conic-gradient/.test(s)) fout.push(p + ' (letter of kleurenwiel)');
+      // Намальований від руки чотириколірний знак: шлях із кольором Google поза офіційним файлом.
+      if (/brand-google"(?![^>]*data-merk-officieel)/.test(s.replace(/\\"/g, '"'))) fout.push(p + ' (nagetekend teken)');
+    }
+    check('nergens buiten het merkenregister wordt het Google-teken als letter, kleurenwiel of nagetekend pad getekend', fout.length === 0, fout.join('; '));
+    const motor = readFileSync('src/identiteit/maquette/maquette-motor.ts', 'utf8');
+    const binnen = svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+    check('weergave «Ontwerp»: het Google-teken heeft dezelfde paden als het officiële bestand', motor.includes(binnen) && motor.includes('data-merk-officieel="google"'));
+    const kaartBron = readFileSync('src/aanmeld-vnext/onderdelen/MethodeKaart.tsx', 'utf8');
+    const menuBron = readFileSync('src/menu-voorkeuren.tsx', 'utf8');
+    const diagBron = readFileSync('src/diagnostiek/Diagnostiek.tsx', 'utf8');
+    check('methodekaart, menupictogram en diagnostiek tekenen Google via <Merk merk="google">', /<Merk merk='google'/.test(kaartBron) && /google:'google'/.test(menuBron) && /<Merk merk=\{MENU_MERK\[icon\]\}/.test(menuBron) && /<Merk merk='google'/.test(diagBron));
+  }
   reg.registreerEigenMerken([{ sleutel: 'windows', soort: 'png', data: png, hash: 'x' }, { sleutel: 'ukrnet', soort: 'png', data: png, hash: 'y' }]);
   check('een eigen bestand van de beheerder gaat vóór het officiële logo en vóór de database', reg.merkLaag('windows') === 'eigen' && reg.merkLaag('ukrnet') === 'eigen');
   reg._eigenMerkenOpnieuw();
@@ -112,5 +153,40 @@ export async function main(): Promise<number> {
   check('merk.css: het officiële logo op een vaste lichte plaat met een rand in de lijnkleur, nooit vervormd (object-fit: contain)', /span\.merk-beeld\.merk-plaat\s*\{[^}]*background:\s*#ffffff/.test(css) && /span\.merk-beeld > img\s*\{[^}]*object-fit:\s*contain/.test(css));
 
   console.log(`  (${bestanden.length} officiële bestanden: ${pakketRegels.length} uit pakketten, ${siteRegels.length} van de eigen website; database-merken: ${afwezig.length}; vormen met herkomst: ${metVorm.length})`);
+
+  // ------------------------------------------------------------------ 7. AI-агенти: справжні логотипи, а не перемальовані фігури (15.11.2026)
+  // Скарга Павла на каталог ШІ: «чому логотип не береться з бази справжнього логотипа?» — у агентів була власна фігура (lobehub),
+  // тож <Merk> базу справжніх логотипів навіть не відкривав. Тепер вісім агентів мають справжній знак із пакета CC0.
+  const AGENTEN = ['claude', 'gpt', 'codex', 'grok', 'gemini', 'cursor', 'antigravity'];
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
+  check('сім ШІ-агентів мають справжній файл у вбудованій базі (пакет @iconify-json/logos, CC0)', AGENTEN.every((k) => existsSync(`${MAP}/${k}.svg`) && perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && OFFICIEEL_SLEUTELS.has(k)), AGENTEN.filter((k) => !existsSync(`${MAP}/${k}.svg`)).join());
+  check('список ключів у головній збірці = рівно файли бази', [...OFFICIEEL_SLEUTELS].sort().join() === bestanden.map((f) => f.replace(/\.(svg|png)$/, '')).sort().join());
+  check('справжній логотип має перевагу над фігурою: шар «officieel» для Copilot і Claude', reg.merkLaag('copilot') === 'officieel' && reg.merkLaag('claude') === 'officieel');
+  const copilot = renderToString(createElement(Merk, { merk: 'copilot', maat: 40 }));
+  check('<Merk merk="copilot"> малює справжній файл (<img data-merk-officieel="copilot">), а не фігуру <path>', copilot.includes('data-merk-officieel="copilot"') && !copilot.includes('<path'), copilot.slice(0, 160));
+// AutoClaw (16.11.2026, Павло: «треба спочатку його знайти і встановити»): у відкритих пакетах знака немає, тому файл узято з
+  // власного сайту виробника (autoclaw.z.ai) — як для українських служб: soort 'officiele-site' з адресою джерела.
+  const ac = perBestand.get('autoclaw.png');
+  check('AutoClaw має справжній знак із власного сайту виробника (officiele-site, https://autoclaw.z.ai/…), а не перемальовану фігуру',
+    existsSync(`${MAP}/autoclaw.png`) && ac?.soort === 'officiele-site' && /^https:\/\/autoclaw\.z\.ai\//.test(String(ac?.bronUrl)) && OFFICIEEL_SLEUTELS.has('autoclaw') && reg.merkLaag('autoclaw') === 'officieel');
+  // Microsoft Copilot (16.11.2026) — окремий від GitHub Copilot агент із власним кольоровим знаком (стрічка), файл із CDN,
+  // на який посилається сам copilot.com.
+  const msc = perBestand.get('mscopilot.png');
+  check('Microsoft Copilot має власний знак (officiele-site, res.cdn.office.net), окремий від знака GitHub Copilot',
+    existsSync(`${MAP}/mscopilot.png`) && msc?.soort === 'officiele-site' && /^https:\/\/res\.cdn\.office\.net\//.test(String(msc?.bronUrl))
+    && OFFICIEEL_SLEUTELS.has('mscopilot') && reg.merkLaag('mscopilot') === 'officieel' && msc?.sha256 !== perBestand.get('copilot.svg')?.sha256);
+  const NIEUW = ['devin'];
+  const ws = perBestand.get('windsurf.svg');
+  check('нові агенти каталогу теж мають справжні знаки: Devin з пакета CC0, Windsurf — з windsurf.com, Cline — з cline.bot', NIEUW.every((k) => perBestand.get(`${k}.svg`)?.licentie === 'CC0-1.0' && reg.merkLaag(k) === 'officieel') && ws?.soort === 'officiele-site' && String(ws?.bronUrl).startsWith('https://windsurf.com/') && reg.merkLaag('windsurf') === 'officieel' && perBestand.get('cline.svg')?.soort === 'officiele-site' && String(perBestand.get('cline.svg')?.bronUrl).startsWith('https://cline.bot/'));
+  // Павло (16.11.2026) побачив на знімку, що знаки Copilot і OpenCode «не такі»: пакет мав старіший малюнок Copilot (суцільний шолом)
+  // і світлий варіант OpenCode, який на білій плитці читався як порожній прямокутник. Тепер обидва — файли з власних сайтів.
+  const cp = perBestand.get('copilot.svg'); const oc = perBestand.get('opencode.png');
+  check('Copilot — чинний знак із файлів GitHub (githubassets.com), OpenCode — піктограма застосунку з opencode.ai; не з пакета',
+    cp?.soort === 'officiele-site' && String(cp?.bronUrl) === 'https://github.githubassets.com/favicons/favicon-copilot.svg' && oc?.soort === 'officiele-site' && String(oc?.bronUrl).startsWith('https://opencode.ai/')
+    && !existsSync(`${MAP}/opencode.svg`) && !/sleutel: '(copilot|opencode)', pakket:/.test(lees('scripts/merk-officieel-maken.mjs')) && reg.merkLaag('opencode') === 'officieel');
+  const acBeeld = renderToString(createElement(Merk, { merk: 'autoclaw', maat: 40 }));
+  check('<Merk merk="autoclaw"> малює файл як <img> з data-URI PNG — без зовнішньої адреси', acBeeld.includes('data-merk-officieel="autoclaw"') && acBeeld.includes('src="data:image/png;base64,') && !/src="https?:/.test(acBeeld));
+  check('генератор зберігає файли з власних сайтів і без --ua (перечитує їх із HERKOMST.json і звіряє sha256)', lees('scripts/merk-officieel-maken.mjs').includes("o.soort === 'officiele-site' && existsSync(join(UIT, o.bestand))") && lees('scripts/merk-officieel-maken.mjs').includes('sha(u.inhoud) !== o.sha256'));
+  check('<Merk> завантажує базу й для марки з власною фігурою, якщо для неї є справжній файл', lees('src/merk/Merk.tsx').includes('else if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel)) void laadOfficieel();'));
   return einde();
 }

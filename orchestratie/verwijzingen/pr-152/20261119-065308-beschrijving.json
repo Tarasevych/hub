@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 152,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:08.245Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "LOKAI-001 (застаріла версія 0.9.3 — перекрита встановленою 20261117-190154)",
+    "nl": "LOKAI-001 (verouderde versie 0.9.3 — vervangen door geïnstalleerde 20261117-190154)"
+  },
+  "samenvatting": {
+    "uk": "Не потребує злиття: усі можливості й новіше розширення 0.9.7 уже працюють на сайті з випуску 20261117-190154 (14dbcb3a).",
+    "nl": "Niet meer samen te voegen: alle functies en extensie 0.9.7 draaien al op de site sinds uitgave 20261117-190154 (14dbcb3a)."
+  },
+  "taken": [
+    "LOKAI-001",
+    "UPD-005"
+  ]
+}

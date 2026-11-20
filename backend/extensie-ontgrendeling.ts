@@ -34,8 +34,8 @@ import { stapOpGeldig, stapOpMethode, type StapOpAuth } from './stap-op';
 import * as tp from './tech-profiel';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import {
-  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveHost, isToegestaneHost,
-  MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
+  ADMIN_HOSTS_STANDAARD, AI_ACTIEF_MS, BROWSER_CAPS, BROWSER_CAPS_OUD, capsVoorRollen, EXTENSIE_VERSIE_MATRIX, EXTENSIE_VERSIE_LOKALE_AI, isBrowserCap, isDiagRechtStand, isEindeSoort, isPriveOfAiHost, isAiSiteHost, AI_SITE_TYPES, AI_SITE_HOSTS, isToegestaneHost,
+  KLOK_SPELING_MS, MAX_DUUR_MS, MAX_MINUTEN, MAX_MINUTEN_OUD, MIN_EXTENSIE_VERSIE, PRIVE_DAGEN_KEUZES, PRIVE_HOSTS, PRIVE_MAX_DAGEN_OUD, PRIVE_STANDAARD_DAGEN, weigerUitleg,
   type BrowserCap, type DiagRechtStand, type EindeSoort, type ExtensieAgentStatus, type ExtensieBeleid, type ExtensieBrowser, type ExtensieStaat, type ExtensieStatusAntwoord, type Ontgrendeling,
   type OntgrendelingWeergave, type RechtPrive, type RechtTechnisch, type VergrendelReden, type Weigercode,
 } from '../shared/extensie-ontgrendeling';
@@ -417,7 +417,7 @@ export async function veeg(): Promise<number> {
   } catch (err) { console.error('[extensie-ontgrendeling] vegen mislukt:', (err as Error).message); return 0; }
 }
 // Noodstop «Стоп» (ai-grants.stopAll): ook elke ontgrendeling van de gebruiker meteen intrekken.
-grants.bijNoodstop((userId, actorId) => { void intrekken(userId, { alles: true }, 'noodstop', 'site', actorId).catch(() => 0); });
+grants.bijNoodstop((userId, actorId) => intrekken(userId, { alles: true }, 'noodstop', 'site', actorId).catch(() => 0));
 
 /** De extensie trok zelf in (pop-up, zijpaneel, opties, noodstop van de extensie): via WS of HTTP met het agenttoken. Geen passkey. */
 export async function vergrendelVerzoek(agentId: string, userId: string, input: { gid?: unknown; reden?: unknown }): Promise<number> {
@@ -536,12 +536,30 @@ export async function controleerBrowserOpdracht(agentId: string, userId: string,
   if (cap === 'browser.script' && (ruimte !== 'technisch' || !versieMinstens(liveVersie(agentId), EXTENSIE_VERSIE_MATRIX))) {
     return { ok: false, fout: `EXTENSIE_SCRIPT: evaluate_script runs only in the TECHNICAL slot, with extension ${EXTENSIE_VERSIE_MATRIX} or newer in the «diagnose» package and the row «Скрипти» ticked at ${BROWSER_BEHEER_PAD_EN}. Tell the user; do not retry.` };
   }
-  const domeinen = ruimte === 'prive' ? r.domeinen.filter(isPriveHost) : r.domeinen;
-  const buiten = grants.commandUrls(params).filter((u) => !domeinen.includes(hostVan(u)));
+  // LAI-CON-001: de ingebouwde AI van Chrome via de connector kent pas extensie 0.9.6; beleid van de beheerder (0287) gaat vóór.
+  if (type === 'browser.lokale_ai') {
+    if (!beleid.lokaleAiAan) return { ok: false, fout: `EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.lokaleAiDoor ? ` (${beleid.lokaleAiDoor})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.lokaleAiReden}". Tell the user; do not retry.` };
+    if (!versieMinstens(liveVersie(agentId), EXTENSIE_VERSIE_LOKALE_AI)) return { ok: false, fout: `EXTENSIE_VERSIE: Chrome's built-in AI through the connector needs extension ${EXTENSIE_VERSIE_LOKALE_AI} or newer. Tell the user to update it (mcp.tarasevych.com → AI connections → Browser extension); do not retry.` };
+  }
+  const domeinen = ruimte === 'prive' ? r.domeinen.filter(isPriveOfAiHost) : r.domeinen;
+  const urls = grants.commandUrls(params);
+  const buiten = urls.filter((u) => !domeinen.includes(hostVan(u)));
+  // EXTUI-001: адреса на сайті ШІ — лише для команд читання (AI_SITE_TYPES). Navigeren/klikken op een AI-site: altijd weigeren.
+  const aiFout = aiSiteOpdrachtFout(type, urls);
+  if (aiFout) return { ok: false, fout: aiFout };
   if (buiten.length) {
     return { ok: false, fout: `EXTENSIE_HOST: the extension is unlocked only for ${domeinen.join(', ')}; this address is outside. The user adds the page when opening access at ${BROWSER_BEHEER_PAD_EN}. Tell the user, do not retry with another address.` };
   }
   return { ok: true, gid: String(r.id), ruimte };
+}
+
+/**
+ * EXTUI-001: команда з адресою на сайті ШІ дозволена лише для читання (AI_SITE_TYPES). Повертає текст відмови або null.
+ * Een opdracht met een adres op een AI-site mag alleen lezen; navigeren, klikken of typen daar wordt altijd geweigerd.
+ */
+export function aiSiteOpdrachtFout(type: string, urls: readonly string[]): string | null {
+  if (!urls.some((u) => isAiSiteHost(hostVan(u))) || AI_SITE_TYPES.includes(type)) return null;
+  return 'EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.';
 }
 
 /** Technische grant: moet een activatie_id hebben en de ankersessie van de site moet nog leven. Geeft een fouttekst of null. */
@@ -697,6 +715,17 @@ function termijnKiezen(input: Record<string, unknown>, ruimte: AiRuimte, o: { nu
   const t: Termijn | null = input.termijn === undefined || input.termijn === null ? null : termijnVan(input.termijn);
   if (input.termijn !== undefined && input.termijn !== null && !t) weiger('DUUR_ONGELDIG', 'termijn', ruimte);
   if (t?.alleenTechnisch && ruimte !== 'technisch') weiger('DUUR_ONGELDIG', 'termijn-technisch', ruimte);
+  if (!t && input.tot !== undefined && input.tot !== null) {
+    // EXTUI-001 (16.11, побажання Павла): «Закрити до дати» — власний момент закриття з календаря (мс від епохи).
+    // Ті самі межі, що й у плиток: не раніше ніж за MIN_MINUTEN, не довше за максимум простору; правила власника й кінець
+    // технічної активації скорочують мовчки (передпереглядання показує справжній кінець, passkey підписує саме його).
+    // «Sluiten op datum»: eigen sluitmoment uit de kalender; zelfde grenzen als de tegels, beleid en activering korten stil in.
+    const tot = Number(input.tot);
+    if (!Number.isFinite(tot) || tot < o.nu + MIN_MINUTEN * 60_000 - KLOK_SPELING_MS || tot > o.nu + MAX_DUUR_MS[ruimte] + KLOK_SPELING_MS) weiger('DUUR_ONGELDIG', 'tot', ruimte);
+    const eind = Math.min(Math.round(tot), o.activatieEind ?? Infinity, o.nu + o.plafondMs);
+    if (eind - o.nu > o.oudMs && !versieMinstens(o.versie, EXTENSIE_VERSIE_MATRIX)) weiger('TERMIJN_VEREIST_UPDATE', o.versie, ruimte);
+    return { eind, soort: ruimte === 'technisch' ? 'tech-einde' : 'duur', overleeft: false, termijn: null };
+  }
   if (!t) {
     // Oude vorm: minuten (technisch, binnen de activering) of dagen (privé).
     const m = ruimte === 'technisch' ? Math.round(Number(input.minuten)) : Number(input.dagen === undefined || input.dagen === null ? PRIVE_STANDAARD_DAGEN : input.dagen) * 24 * 60;
@@ -728,13 +757,14 @@ async function browserAgent(userId: string, agentId: unknown, ruimte: AiRuimte):
 
 function domeinenUit(v: unknown, ruimte: AiRuimte): string[] {
   const lijst = ruimte === 'prive' ? PRIVE_HOSTS : null;
+  // Standaard (niets gekozen): alleen eigen diensten — AI-sites komen er nooit vanzelf bij.
   if (v === undefined || v === null) return [...(lijst ?? ADMIN_HOSTS_STANDAARD)].sort();
-  const max = lijst ? lijst.length : 10;
+  const max = lijst ? lijst.length + AI_SITE_HOSTS.length : 10;
   if (!Array.isArray(v) || !v.length || v.length > max) weiger('DOMEIN_ONGELDIG', '', ruimte);
   const s = new Set<string>();
   for (const d of v as unknown[]) {
     const h = String(d ?? '').trim().toLowerCase();
-    if (!(ruimte === 'prive' ? isPriveHost(h) : isToegestaneHost(h))) weiger('DOMEIN_ONGELDIG', '', ruimte);
+    if (!(ruimte === 'prive' ? isPriveOfAiHost(h) : isToegestaneHost(h))) weiger('DOMEIN_ONGELDIG', '', ruimte);
     s.add(h);
   }
   return [...s].sort();

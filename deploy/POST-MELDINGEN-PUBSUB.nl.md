@@ -9,6 +9,12 @@ Status op 07-10-2026: de push-code **is aanwezig** (`backend/index.ts`: `mailGoo
 
 Alles in de Google Cloud Console wordt door de eigenaar uitgevoerd (uw Google-account is vereist; deel geen wachtwoord of tokens met mij).
 
+
+## Kortste weg (MAILPUSH-001, 16.11.2026)
+1. Open Google Cloud Shell (https://shell.cloud.google.com) met uw eigen Google-account, upload `deploy/gmail-push-google-cloud.sh` en voer `bash gmail-push-google-cloud.sh <PROJECT_ID>` uit. Het script maakt het onderwerp, geeft Gmail publicatierecht, maakt het serviceaccount en het push-abonnement met OIDC; het verwijdert niets.
+2. Zet de drie waarden die het afdrukt op de site: «Сховище ключів» → «Додати», doel «Google», namen `GOOGLE_GMAIL_PUBSUB_TOPIC`, `GOOGLE_GMAIL_PUBSUB_AUDIENCE`, `GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL`. Geen geheimen. De server leest ze uit de kluis als ze niet in `geheimen.env` staan (de omgeving gaat voor), controleert de vorm en neemt ze binnen een minuut over — **zonder herstart**.
+3. Cloudflare: een Skip-regel voor `/api/owner/mail/google/pubsub/push`.
+
 ## 1. API's inschakelen
 In het project waarin de OAuth-client `google_suite_web_oauth_client` is aangemaakt: **APIs & Services → Library**: schakel **Gmail API** en **Cloud Pub/Sub API** in.
 Controleer de OAuth-toestemming: bereik `https://www.googleapis.com/auth/gmail.modify` (dekt lezen, archiveren, concepten en watch), `gmail.send`, `gmail.labels`.

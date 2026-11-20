@@ -31,6 +31,9 @@ export type AuthResultaten = {
   dmarc: AuthUitslag; dmarcDomein: string;
   /** ARC (doorgestuurde mail: de keten van tussenliggende servers) volgens de eigen ontvangende server. Alleen informatief. */
   arc?: AuthUitslag;
+  /** SEC-002 (post-08): de regel had een vorm die de eigen server niet schrijft (aanhalingstekens, losse haakjes, twee
+   *  dmarc-/spf-uitslagen). Dan telt geen enkele «pass» meer; een «fail» blijft staan (nooit gunstiger, nooit ongunstiger verborgen). */
+  opmaakVerdacht?: boolean;
 };
 export const GEEN_AUTH: AuthResultaten = Object.freeze({ betrouwbaar: false, authserv: '', spf: '', spfDomein: '', dkim: [], dmarc: '', dmarcDomein: '', arc: '' }) as AuthResultaten;
 
@@ -178,19 +181,79 @@ export function parseAuthResults(kopregels: readonly string[] | undefined, vertr
   if (!eerste) return { ...GEEN_AUTH, dkim: [] };
   const authserv = (/^([A-Za-z0-9.-]+)/.exec(eerste)?.[1] || '').toLowerCase();
   if (!vertrouwd.includes(authserv)) return { ...GEEN_AUTH, dkim: [], authserv };
-  const delen = eerste.slice(authserv.length).split(';').map((s) => s.trim()).filter(Boolean);
+  // SEC-002 (post-08): eerst commentaar en aangehaalde tekst eruit (RFC 8601), dan pas op «;» splitsen. Het SPF-commentaar van
+  // Gmail bevat het MAIL FROM-adres, en dat kiest de afzender: «"a; dmarc=pass header.from=paypal.com; x"@evil.example» werd
+  // zonder deze stap een eigen fragment dat vóór de echte dmarc=fail stond en won.
+  const kaal = zonderCommentaar(eerste.slice(authserv.length));
+  const delen = kaal.tekst.split(';').map((s) => s.trim()).filter(Boolean);
   const uit: AuthResultaten = { betrouwbaar: true, authserv, spf: '', spfDomein: '', dkim: [], dmarc: '', dmarcDomein: '' };
+  const spfs: Array<{ r: AuthUitslag; domein: string }> = [], dmarcs: Array<{ r: AuthUitslag; domein: string }> = [];
+  let arc: AuthUitslag = '';
   for (const deel of delen) {
-    const m = /^(spf|dkim|dmarc)\s*=\s*([a-z]+)/i.exec(deel);
+    const m = /^(spf|dkim|dmarc|arc)\s*=\s*([a-z]+)/i.exec(deel);
     if (!m) continue;
     const soort = m[1].toLowerCase(), r = uitslag(m[2].toLowerCase());
-    if (soort === 'spf' && !uit.spf) { uit.spf = r; uit.spfDomein = ((/smtp\.mailfrom=(?:[^@\s;]*@)?([A-Za-z0-9.-]+)/i.exec(deel)?.[1]) || '').toLowerCase(); }
-    else if (soort === 'dkim') uit.dkim.push({ uitslag: r, domein: ((/header\.(?:i|d)=@?(?:[^@\s;]*@)?([A-Za-z0-9.-]+)/i.exec(deel)?.[1]) || '').toLowerCase() });
-    else if (soort === 'dmarc' && !uit.dmarc) { uit.dmarc = r; uit.dmarcDomein = ((/header\.from=([A-Za-z0-9.-]+)/i.exec(deel)?.[1]) || '').toLowerCase(); }
+    // Waarden tellen alleen als ze het HELE woord vullen (tot de volgende spatie): een kaal domein, of adres@domein.
+    if (soort === 'spf') spfs.push({ r, domein: domeinUit(eigenschap(deel, 'smtp\\.mailfrom'), true) });
+    else if (soort === 'dkim') uit.dkim.push({ uitslag: r, domein: domeinUit(eigenschap(deel, 'header\\.(?:i|d)'), true) });
+    else if (soort === 'dmarc') dmarcs.push({ r, domein: domeinUit(eigenschap(deel, 'header\\.from'), false) });
+    else if (!arc) arc = r;
   }
-  const arc = /(?:^|;)\s*arc\s*=\s*([a-z]+)/i.exec(eerste.slice(authserv.length));
-  uit.arc = arc ? uitslag(arc[1].toLowerCase()) : '';
+  if (spfs[0]) { uit.spf = spfs[0].r; uit.spfDomein = spfs[0].domein; }
+  if (dmarcs[0]) { uit.dmarc = dmarcs[0].r; uit.dmarcDomein = dmarcs[0].domein; }
+  uit.arc = arc;
+  // De eigen server schrijft één spf- en één dmarc-uitslag, zonder aanhalingstekens. Wijkt de regel daarvan af, dan heeft iemand
+  // eraan gezeten: geen enkele «pass» telt dan nog; wat TEGEN de afzender pleit (fail) blijft staan.
+  if (kaal.verdacht || spfs.length > 1 || dmarcs.length > 1) {
+    uit.opmaakVerdacht = true;
+    const dmarcMis = dmarcs.find((d) => d.r === 'fail');
+    uit.dmarc = dmarcMis ? 'fail' : ''; uit.dmarcDomein = dmarcMis ? dmarcMis.domein : '';
+    const spfMis = spfs.find((s) => s.r && s.r !== 'pass');
+    uit.spf = spfMis ? spfMis.r : ''; uit.spfDomein = spfMis ? spfMis.domein : '';
+    uit.dkim = uit.dkim.filter((k) => k.uitslag !== 'pass');
+    if (uit.arc === 'pass') uit.arc = '';
+  }
   return uit;
+}
+/** Commentaar «( … )» (genest) en aangehaalde tekst «" … "» weglaten. `verdacht` = er stond iets wat de eigen server nooit schrijft:
+ *  een aanhalingsteken of backslash (ook binnen commentaar), een haakje zonder partner, of een niet-afgesloten stuk. */
+function zonderCommentaar(s: string): { tekst: string; verdacht: boolean } {
+  let tekst = '', diepte = 0, aangehaald = false, verdacht = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '\\') { verdacht = true; i++; continue; }
+    if (aangehaald) { if (c === '"') aangehaald = false; continue; }
+    if (diepte > 0) { if (c === '(') diepte++; else if (c === ')') diepte--; else if (c === '"') verdacht = true; continue; }
+    if (c === '"') { aangehaald = true; verdacht = true; continue; }
+    if (c === '(') { diepte = 1; tekst += ' '; continue; }
+    if (c === ')') { verdacht = true; continue; }
+    tekst += c;
+  }
+  return { tekst, verdacht: verdacht || diepte > 0 || aangehaald };
+}
+/** De waarde van «naam=waarde» in een fragment zonder commentaar: het hele woord tot de volgende spatie. */
+const eigenschap = (deel: string, naam: string): string => new RegExp(`(?:^|\\s)${naam}=(\\S*)`, 'i').exec(deel)?.[1] || '';
+/** Domein uit «domein», «@domein» of (als `adres`) «lokaal@domein»; iets anders ('' bij rommel erachter of ervoor) telt niet. */
+const domeinUit = (waarde: string, adres: boolean): string =>
+  ((adres ? /^(?:[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]*@)?([A-Za-z0-9.-]+)$/ : /^([A-Za-z0-9.-]+)$/).exec(waarde)?.[1] || '').toLowerCase();
+
+/**
+ * SEC-002 (post-08): is BEWEZEN dat Gmail dit bericht NIET zelf via SMTP aannam? Dan is de bovenste Authentication-Results
+ * niet van Gmail maar van de afzender (of van een vreemde server) en mag ze nergens voor tellen.
+ *   • de POP3-verzamelaar («Перевіряти пошту з інших акаунтів») zet zelf bovenaan «Received: by … with POP3» en
+ *     «X-Gmail-Fetch-Info»; alles daaronder — ook een nagemaakte «mx.google.com»-regel — komt uit de andere postbus;
+ *   • een geïmporteerd of via de API ingevoegd bericht heeft geen enkele «Received: … by mx.google.com with (E)SMTP(S)».
+ * `koppen` = de kopregels van het bericht in volgorde (Gmail API, format=metadata), waarbij «Received» en
+ * «X-Gmail-Fetch-Info» zijn opgevraagd. Rest: wie een heel bericht met nagemaakte Google-regels laat IMPORTEREN is hiermee
+ * niet te onderscheiden — daarvoor bestaat geen kopregel die de afzender niet kan namaken.
+ */
+export function gmailOntvangstWeerlegd(koppen: ReadonlyArray<{ name?: string; value?: string }>): boolean {
+  const van = (naam: string) => (koppen || []).filter((k) => String(k?.name || '').toLowerCase() === naam).map((k) => String(k?.value || '').replace(/\s+/g, ' ').trim());
+  if (van('x-gmail-fetch-info').length) return true;
+  const ontvangen = van('received');
+  if (!ontvangen.length) return true;
+  if (/(?:^|\s)with POP3\s/i.test(ontvangen[0])) return true;
+  return !ontvangen.some((r) => /(?:^|\s)by mx\.google\.com with \S*SMTP\S*\s/i.test(`${r} `));
 }
 /** Geslaagd en «aligned» met het From-domein: dmarc=pass voor dat domein, of dkim=pass van hetzelfde organisatiedomein. */
 export function authGeslaagdVoor(auth: AuthResultaten, domein: string): boolean {

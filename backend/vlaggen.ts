@@ -10,6 +10,7 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { getPool } from '../server/platform/pg';
 import { auditToevoegen } from '../server/platform/audit';
 import { evalueer, MAX_GEBRUIKERS, SLEUTEL_RE, vlagFout, type Uitkomst, type Vlag } from '../shared/vlaggen';
+import { isEmailAdres } from '../shared/adres-controle';
 import { actieveActivatie, isEigenaar, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
 
 const sys = () => getPool('systeem');
@@ -94,7 +95,7 @@ export async function beheerLijst(u: Gebruiker, tab: string) {
 async function idsVanEmails(emails: unknown): Promise<string[]> {
   if (!Array.isArray(emails) || emails.length > MAX_GEBRUIKERS) fout('GEBRUIKERS_ONGELDIG');
   const schoon = [...new Set((emails as unknown[]).map((e) => String(e ?? '').trim().toLowerCase()).filter(Boolean))];
-  if (schoon.some((e) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 200)) fout('EMAIL_ONGELDIG');
+  if (schoon.some((e) => !isEmailAdres(e, 200)) /* SEC-002 (aanv-gat-c-02): lengte eerst, lineair */) fout('EMAIL_ONGELDIG');
   if (!schoon.length) return [];
   const rows = (await sys().query(`SELECT id, lower(data->>'email') AS email FROM app.records WHERE tbl = 'users' AND lower(data->>'email') = ANY($1::text[])
       AND COALESCE((data->>'deletedAt')::numeric, 0) = 0`, [schoon])).rows;

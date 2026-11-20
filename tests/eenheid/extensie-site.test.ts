@@ -273,7 +273,8 @@ export async function main(): Promise<number> {
       recht = { magOntgrendelen: true, rollen: ['ontwikkelaar'], caps: ['browser.read', 'browser.navigate'], activatieTot: o.nu() + 50 * 60000, passkeys: 1 };
       await store.vernieuw(); h = html();
       check('render: recht → knop aan, geen uitleg', !/ disabled=""/.test(knop(h)) && !h.includes('data-eo-weigering'));
-      check('render: duur nooit voorbij activatieTot (alleen 15 en 30 min)', h.includes('>15 хв<') && h.includes('>30 хв<') && !h.includes('>1 год<'));
+      // EXTUI-001: тривалість — плитки PeriodeKiezer (data-pk-waarde = хвилини), не випадний список.
+      check('render: duur nooit voorbij activatieTot (alleen 15 en 30 min)', h.includes('data-pk-waarde="15"') && h.includes('data-pk-waarde="30"') && !h.includes('data-pk-waarde="60"') && h.includes('<b>15</b><small>хв</small>'));
 
       const n0 = verzoeken.length;
       const r = await ontgrendelen({ agentId: AID, minuten: 30, domeinen: [...ADMIN_HOSTS_STANDAARD], lokaal: false });
@@ -314,7 +315,8 @@ export async function main(): Promise<number> {
   // ================================================================ 7. hulp «?» bij elke optie van het blok (zelfde regel als hulp-register.test)
   {
     const src = readFileSync('src/extensie/ExtensieOntgrendeling.tsx', 'utf8');
-    const bed = tags(src).filter(isBediening);
+    // EXTUI-001: pagina's zijn <HostSchakelaar hulp='…'> (schakelaar met logo); die tellen als bediening met hun hulp-sleutel.
+    const bed = [...tags(src).filter(isBediening), ...[...src.matchAll(/<(?:HostSchakelaar|PeriodeKiezer)\b[^]*?\/>/g)].map((m) => ({ tag: 'HostSchakelaar', tekst: m[0].replace(/\bhulp=/, 'data-hulp='), regel: src.slice(0, m.index).split('\n').length }))];
     const mis = bed.filter((t) => { const k = /data-hulp=['"]([a-z0-9.-]+)['"]/.exec(t.tekst)?.[1]; return !k || !hulpVan(k) || !new RegExp(`<HulpVraag k=['"]${k.replace(/\./g, '\\.')}['"]`).test(src); });
     check(`blok: alle ${bed.length} opties (select/checkbox) hebben data-hulp + «?»`, bed.length >= 3 && mis.length === 0, mis.map((t) => `r${t.regel}`).join(','));
     const gebreken = ['extensie.ontgrendeling', 'extensie.duur', 'extensie.domeinen', 'extensie.lokaal', 'extensie.intrekken'].flatMap((k) => hulpGebreken(k, hulpVan(k)));

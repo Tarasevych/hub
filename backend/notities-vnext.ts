@@ -15,14 +15,17 @@
 import { createHash } from 'node:crypto';
 import { error, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
+import { meld } from './melder';
+import { isAlleenLezen } from '../server/platform/context';
 import type { RouterMiddleware } from '../server/platform/router';
 import { denyMutation } from './rbac';
 import { alsGebruiker } from './ai-toestemmingen';
 import { bordLade } from './ruimte-bord-github';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   VN_IMPORT_MAX_BESTANDEN, VN_IMPORT_MAX_BYTES, VN_LIJST_LIMIET, VN_LIJST_MAX, VN_MAX_MAPNAAM, VN_MAX_MAPPEN, VN_PRULLENBAK_DAGEN,
-  VN_REVISIES_PER_NOTITIE, KLEUREN, WEERGAVEN, invoerUitBord, markeerDubbelen, parseerImport, platteTekst, schoneInvoer,
+  VN_MAX_NAAM_RUW, VN_REVISIES_PER_NOTITIE, KLEUREN, WEERGAVEN, alsTekst, invoerUitBord, markeerDubbelen, parseerImport, platteTekst, schoneInvoer,
   spiegelEtiketten, spiegelTekst, spiegelTitel, vingerafdruk, vnEtiketten, zoekWoorden,
   type ImportFout, type ImportItem, type Notitie, type NotitieInvoer, type NotitieKleur, type NotitieMap, type NotitieRevisie, type NotitieSoort, type Weergave,
 } from '../shared/notities-vnext-model';
@@ -80,12 +83,51 @@ export type LijstUit = { notities: Notitie[]; totaal: number; offset: number; li
  * De lijst van één weergave met filters, gepagineerd (offset/limiet, vastgezette bovenaan, dan nieuwste gewijzigd eerst), plus
  * de tellingen per weergave, de mappen met aantallen en de etiketwolk — alles uit dezelfde lade, in één transactie.
  */
+/**
+ * SEC-002 (na de toets, notitie 2): tijdslimiet van PostgreSQL voor een lijst MET zoekwoorden. Ook met korte woorden (≤ 64,
+ * zie zoekWoorden) kost ILIKE per «vijandige» notitie van 200 000 tekens tientallen milliseconden, en er is geen quotum op het
+ * aantal notities: zonder limiet bleef zo'n verzoek een verbinding uit de pool (10) vasthouden, ook na het verbreken van HTTP.
+ * Overschrijding → 57014 → de nette code ZOEKEN_TE_ZWAAR. Een object (geen vaste waarde) alleen zodat de eenheidstest hem kort zet.
+ */
+export const zoekGrens = { tijdslimietMs: 5000 };
+/** Hoogste offset in de lijst (geen account heeft zoveel notities; daarboven is de pagina toch leeg). */
+const VN_LIJST_OFFSET_MAX = 100_000;
+/** Alleen een eindig getal (of tekst die er een is) telt; al het andere (ook een diep genest array, NaN, Infinity) → 0. */
+const eindigGetal = (v: unknown): number => { const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : 0; return Number.isFinite(n) ? n : 0; };
+/**
+ * SEC-002 (ronde 2, notitie 7): ZOEKEN_TE_ZWAAR is een weigering door het systeem en vaak het teken van opzettelijke belasting.
+ * Daarom een auditregel (result «denied», alleen het aantal woorden en hun lengte — nooit de zoektekst zelf, privacy) bij ELKE
+ * weigering, en een melding in het meldingencentrum van de eigenaar van de notities, hoogstens één per uur per account.
+ */
+const zoekTeZwaarGemeld = new Map<string, number>();
+const ZOEK_MELDING_VENSTER_MS = 60 * 60_000;
+async function zoekTeZwaarSpoor(lade: Lade, woorden: string[]): Promise<void> {
+  await auditToevoegen({ ownerId: lade.userId, action: 'notitie.zoeken.te_zwaar', type: 'bord', result: 'denied', details: { woorden: woorden.length, lengte: woorden.reduce((s, w) => s + w.length, 0), ruimte: lade.ruimte } }).catch(() => undefined);
+  const nu = Date.now();
+  if (nu - (zoekTeZwaarGemeld.get(lade.userId) ?? 0) < ZOEK_MELDING_VENSTER_MS) return;
+  zoekTeZwaarGemeld.set(lade.userId, nu);
+  if (zoekTeZwaarGemeld.size > 5000) for (const [k, t] of zoekTeZwaarGemeld) if (nu - t >= ZOEK_MELDING_VENSTER_MS) zoekTeZwaarGemeld.delete(k);
+  await meld(lade.userId, 'security', 'Пошук у нотатках зупинено: надто важкий / Zoeken in notities gestopt: te zwaar',
+    'Пошук у ваших нотатках тривав понад межу часу й був зупинений. Якщо це були не ви, перевірте активні сеанси й доступи ШІ на сторінці безпеки. / Een zoekopdracht in uw notities duurde langer dan de tijdslimiet en is gestopt. Was u dit niet? Controleer de actieve sessies en de AI-toegang op de beveiligingspagina.');
+}
 export async function notitiesLijst(lade: Lade, vraag: LijstVraag): Promise<LijstUit> {
+  try { return await notitiesLijstIntern(lade, vraag); }
+  catch (err) {
+    if ((err as { code?: string } | null)?.code === '57014') { await zoekTeZwaarSpoor(lade, zoekWoorden(vraag.vraag)); throw new Error('ZOEKEN_TE_ZWAAR'); }
+    throw err;
+  }
+}
+async function notitiesLijstIntern(lade: Lade, vraag: LijstVraag): Promise<LijstUit> {
   const weergave: Weergave = WEERGAVEN.includes(vraag.weergave as Weergave) ? (vraag.weergave as Weergave) : 'alle';
-  const limiet = Math.min(VN_LIJST_MAX, Math.max(1, Number(vraag.limiet) || VN_LIJST_LIMIET));
-  const offset = Math.max(0, Math.floor(Number(vraag.offset) || 0));
+  // SEC-002 (ronde 2, notitie 5): beide komen als getal in de SQL-tekst. 1e300 gaf «bigint out of range», «Infinity» de kolom
+  // «infinity» — telkens 500. Nu altijd een eindig geheel getal binnen de grenzen.
+  const limiet = Math.min(VN_LIJST_MAX, Math.max(1, Math.floor(eindigGetal(vraag.limiet) || VN_LIJST_LIMIET)));
+  const offset = Math.min(VN_LIJST_OFFSET_MAX, Math.max(0, Math.floor(eindigGetal(vraag.offset))));
+  const woorden = zoekWoorden(vraag.vraag);
   return alsGebruiker(lade.userId, async (q) => {
-    await prullenbakOpruimen(q, lade);
+    // SEC-002 wolk-11: onder impersonatie «alleen lezen» is de transactie read-only (alsGebruiker); een DELETE daarin breekt de
+    // hele transactie af (25006 → 25P02) en de lijst gaf dan altijd 500. De kijker ruimt dus niets op; de eigenaar zelf wel.
+    if (!isAlleenLezen()) await prullenbakOpruimen(q, lade);
     const params: unknown[] = [lade.userId];
     const waar: string[] = [WAAR(lade)];
     const staat: Record<Weergave, string> = {
@@ -103,7 +145,12 @@ export async function notitiesLijst(lade: Lade, vraag: LijstVraag): Promise<Lijs
     if (etiket) { params.push(etiket); waar.push(`$${params.length} = ANY (etiketten)`); }
     if (vraag.soort && ['tekst', 'lijst', 'code', 'koppeling'].includes(vraag.soort)) { params.push(vraag.soort); waar.push(`soort = $${params.length}`); }
     if (vraag.kleur && (KLEUREN as readonly string[]).includes(vraag.kleur)) { params.push(vraag.kleur); waar.push(`kleur = $${params.length}`); }
-    for (const w of zoekWoorden(vraag.vraag)) {
+    if (woorden.length) {
+      // SET LOCAL mag ook in een alleen-lezen-transactie; het geldt alleen tot het einde van deze transactie.
+      const ms = Number.isFinite(zoekGrens.tijdslimietMs) && zoekGrens.tijdslimietMs >= 1 ? Math.floor(zoekGrens.tijdslimietMs) : 5000;
+      await q(`SET LOCAL statement_timeout = ${ms}`);
+    }
+    for (const w of woorden) {
       params.push(`%${w.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
       waar.push(`(titel ILIKE $${params.length} OR inhoud_plat ILIKE $${params.length} OR EXISTS (SELECT 1 FROM unnest(etiketten) e WHERE e ILIKE $${params.length}))`);
     }
@@ -130,9 +177,20 @@ export async function notitiesLijst(lade: Lade, vraag: LijstVraag): Promise<Lijs
     };
   });
 }
-/** De prullenbak leegt zichzelf na VN_PRULLENBAK_DAGEN: pas dan verdwijnt een notitie echt (met haar revisies). */
-async function prullenbakOpruimen(q: Q, lade: Lade) {
-  await q(`DELETE FROM app.notities WHERE ${WAAR(lade)} AND verwijderd_op IS NOT NULL AND verwijderd_op < now() - interval '${VN_PRULLENBAK_DAGEN} days'`, [lade.userId]).catch(() => undefined);
+/**
+ * De prullenbak leegt zichzelf na VN_PRULLENBAK_DAGEN: pas dan verdwijnt een notitie echt (met haar revisies).
+ * SEC-002 wolk-11: het opruimen is bijzaak en mag het lezen nooit breken. Een mislukte DELETE (alleen-lezen-transactie, slot,
+ * rechten) zet in PostgreSQL de HELE transactie op «afgebroken»; de fout inslikken hielp dus niet — elke volgende SELECT gaf
+ * 25P02. Daarom binnen een SAVEPOINT: mislukt het, dan gaat alleen dit stukje terug en leest de aanroeper gewoon verder.
+ */
+export async function prullenbakOpruimen(q: Q, lade: Lade): Promise<void> {
+  await q('SAVEPOINT vn_prullenbak');
+  try {
+    await q(`DELETE FROM app.notities WHERE ${WAAR(lade)} AND verwijderd_op IS NOT NULL AND verwijderd_op < now() - interval '${VN_PRULLENBAK_DAGEN} days'`, [lade.userId]);
+    await q('RELEASE SAVEPOINT vn_prullenbak');
+  } catch {
+    await q('ROLLBACK TO SAVEPOINT vn_prullenbak');
+  }
 }
 
 // ---------------------------------------------------------------- schrijven
@@ -152,7 +210,7 @@ export async function notitieMaken(lade: Lade, invoer: NotitieInvoer, opts: { au
     const { rows } = await q(
       `INSERT INTO app.notities (id, user_id, ruimte, titel, inhoud_md, inhoud_plat, soort, kleur, etiketten, map_id, vast_sinds, gearchiveerd_op, auteur, herkomst)
        VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8, $9, $10, CASE WHEN $11 THEN now() END, CASE WHEN $12 THEN now() END, $13, $14::jsonb) RETURNING *`,
-      [opts.id ?? null, lade.userId, lade.ruimte, invoer.titel, invoer.inhoud, platteTekst(invoer.inhoud), invoer.soort, invoer.kleur, invoer.etiketten, invoer.mapId, invoer.vast, opts.gearchiveerd === true, (opts.auteur || 'operator').slice(0, 80), JSON.stringify(opts.herkomst ?? {})]);
+      [opts.id ?? null, lade.userId, lade.ruimte, invoer.titel, invoer.inhoud, platteTekst(invoer.inhoud), invoer.soort, invoer.kleur, invoer.etiketten, invoer.mapId, invoer.vast, opts.gearchiveerd === true, (opts.auteur || 'operator').slice(0, 80), jsonbTekst(opts.herkomst ?? {})]);
     const n = notitieUit(rows[0]);
     await spiegelSchrijf(q, lade, n);
     return n;
@@ -237,6 +295,8 @@ export async function mappenLijst(lade: Lade): Promise<NotitieMap[]> {
        FROM app.notities_mappen m WHERE ${WAAR(lade)} ORDER BY volgorde, naam`, [lade.userId])).rows.map(mapUit));
 }
 export async function mapMaken(lade: Lade, naam: string, kleur: NotitieKleur = 'geen'): Promise<NotitieMap | { fout: 'NAAM_ONGELDIG' | 'TE_VEEL' | 'BESTAAT_AL' }> {
+  // SEC-002 (ronde 2, notitie 6): eerst de ruwe lengte, dan pas witruimte samenvoegen (12 MB «a » kostte 1 s vóór de weigering).
+  if (naam.length > VN_MAX_NAAM_RUW) return { fout: 'NAAM_ONGELDIG' };
   const schoon = naam.replace(/\s+/g, ' ').trim();
   if (!schoon || schoon.length > VN_MAX_MAPNAAM) return { fout: 'NAAM_ONGELDIG' };
   return alsGebruiker(lade.userId, async (q) => {
@@ -248,6 +308,7 @@ export async function mapMaken(lade: Lade, naam: string, kleur: NotitieKleur = '
   });
 }
 export async function mapWijzigen(lade: Lade, id: string, patch: { naam?: string; kleur?: NotitieKleur }): Promise<NotitieMap | { fout: 'NIET_GEVONDEN' | 'NAAM_ONGELDIG' | 'BESTAAT_AL' }> {
+  if (patch.naam !== undefined && patch.naam.length > VN_MAX_NAAM_RUW) return { fout: 'NAAM_ONGELDIG' }; // ronde 2, notitie 6
   return alsGebruiker(lade.userId, async (q) => {
     const cur = (await q(`SELECT * FROM app.notities_mappen WHERE id::text = $2 AND ${WAAR(lade)}`, [lade.userId, id])).rows[0];
     if (!cur) return { fout: 'NIET_GEVONDEN' as const };
@@ -271,7 +332,7 @@ function bestandenUit(raw: unknown): { naam: string; tekst: string }[] | null {
   const uit: { naam: string; tekst: string }[] = []; let bytes = 0;
   for (const b of raw) {
     const o = (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
-    const naam = String(o.naam ?? '').slice(0, 200), tekst = typeof o.tekst === 'string' ? o.tekst : '';
+    const naam = alsTekst(o.naam).slice(0, 200), tekst = typeof o.tekst === 'string' ? o.tekst : '';
     bytes += tekst.length; if (bytes > VN_IMPORT_MAX_BYTES) return null;
     uit.push({ naam, tekst });
   }
@@ -298,7 +359,7 @@ export async function importUitvoeren(lade: Lade, bestanden: { naam: string; tek
         `INSERT INTO app.notities (user_id, ruimte, titel, inhoud_md, inhoud_plat, soort, kleur, etiketten, map_id, auteur, herkomst)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb) RETURNING *`,
         [lade.userId, lade.ruimte, it.titel, it.inhoud, platteTekst(it.inhoud), it.soort, it.kleur, vnEtiketten([...it.etiketten, ...extra]), opts.mapId ?? null, (opts.auteur || 'import').slice(0, 80),
-          JSON.stringify({ bron: 'import', bestand: it.bestand, vingerafdruk: it.vingerafdruk, partij, op: new Date().toISOString() })]);
+          jsonbTekst({ bron: 'import', bestand: it.bestand, vingerafdruk: it.vingerafdruk, partij, op: new Date().toISOString() })]);
       const n = notitieUit(rows[0]);
       await spiegelSchrijf(q, lade, n);
       aangemaakt.push(n);
@@ -334,8 +395,8 @@ export async function bordNotitieWijzigen(lade: Lade, id: string, patch: { title
     const cur = await notitieLezen(lade, id);
     if (!cur || cur.verwijderdOp) return null;
     const p: Partial<NotitieInvoer> & { gearchiveerd?: boolean } = {};
-    if (patch.title !== undefined) p.titel = String(patch.title).slice(0, 300);
-    if (patch.body !== undefined && String(patch.body) !== spiegelTekst(cur.inhoud)) p.inhoud = String(patch.body);
+    if (patch.title !== undefined) p.titel = alsTekst(patch.title).slice(0, 300);
+    if (patch.body !== undefined && alsTekst(patch.body) !== spiegelTekst(cur.inhoud)) p.inhoud = alsTekst(patch.body);
     if (patch.tags !== undefined) {
       const i = invoerUitBord(cur.titel, '', patch.tags);
       p.soort = i.soort; p.kleur = i.kleur; p.vast = i.vast; p.gearchiveerd = i.gearchiveerd;
@@ -374,6 +435,9 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
     catch (err) {
       if (tabelOntbreekt(err)) return error('NOTITIES_MIGRATIE_ONTBREEKT', 503);
       if (err instanceof Error && /^[A-Z_]{4,40}$/.test(err.message)) return error(err.message, 400);
+      // SEC-002 (ronde 2, notitie 5), vangnet: een te diep genest verzoek dat ergens toch nog bij String()/Number() komt is een
+      // fout van de AANVRAGER (400), geen serverfout — elke 500 telt mee in de zekering van de beschermingen.
+      if (err instanceof RangeError && /call stack/i.test(err.message)) return error('VERZOEK_ONGELDIG', 400);
       throw err;
     }
   }) as RouterMiddleware];
@@ -383,7 +447,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
   return {
     'POST /api/notities/lijst': route(async (_c, _a, lade, kop, d) => json({ ...(await notitiesLijst(lade, {
       weergave: d.weergave as Weergave, mapId: typeof d.mapId === 'string' ? d.mapId : null, etiket: typeof d.etiket === 'string' ? d.etiket : '', vraag: typeof d.vraag === 'string' ? d.vraag : '',
-      soort: typeof d.soort === 'string' ? (d.soort as NotitieSoort) : '', kleur: typeof d.kleur === 'string' ? (d.kleur as NotitieKleur) : '', offset: Number(d.offset) || 0, limiet: Number(d.limiet) || VN_LIJST_LIMIET,
+      soort: typeof d.soort === 'string' ? (d.soort as NotitieSoort) : '', kleur: typeof d.kleur === 'string' ? (d.kleur as NotitieKleur) : '', offset: eindigGetal(d.offset), limiet: eindigGetal(d.limiet) || VN_LIJST_LIMIET,
     })), ruimte: kop })),
     'POST /api/notities/een': route(async (_c, _a, lade, kop, d) => {
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
@@ -402,7 +466,7 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
     'POST /api/notities/wijzig': route(async (_c, auth, lade, kop, d) => {
       const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
-      const versie = d.versie === undefined || d.versie === null ? null : Number(d.versie);
+      const versie = d.versie === undefined || d.versie === null ? null : typeof d.versie === 'number' || typeof d.versie === 'string' ? Number(d.versie) : Number.NaN;
       if (versie !== null && !Number.isInteger(versie)) return error('VERSIE_ONGELDIG', 400);
       const patch: Partial<NotitieInvoer> = {};
       if (d.titel !== undefined || d.inhoud !== undefined || d.soort !== undefined || d.kleur !== undefined || d.etiketten !== undefined || d.mapId !== undefined) {
@@ -433,15 +497,15 @@ export function notitiesRoutes(requireSession: RequireSession): Record<string, R
     }),
     'POST /api/notities/revisie-herstel': route(async (_c, auth, lade, kop, d) => {
       const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
-      if (!isUuid(d.id) || !/^\d{1,18}$/.test(String(d.revisieId ?? ''))) return error('ID_ONGELDIG', 400);
-      const uit = await revisieHerstellen(lade, d.id, String(d.revisieId), wie(auth));
+      if (!isUuid(d.id) || !/^\d{1,18}$/.test(alsTekst(d.revisieId))) return error('ID_ONGELDIG', 400);
+      const uit = await revisieHerstellen(lade, d.id, alsTekst(d.revisieId), wie(auth));
       return uit.ok ? json({ notitie: uit.notitie, ruimte: kop }) : error(uit.fout, 404);
     }),
     'POST /api/notities/mappen': route(async (_c, auth, lade, kop, d) => {
-      const actie = String(d.actie || 'lijst');
+      const actie = alsTekst(d.actie) || 'lijst';
       if (actie === 'lijst') return json({ mappen: await mappenLijst(lade), ruimte: kop });
       const denied = denyMutation(auth.user, 'workspace.write'); if (denied) return denied;
-      if (actie === 'nieuw') { const m = await mapMaken(lade, String(d.naam ?? ''), d.kleur as NotitieKleur); return 'fout' in m ? error(m.fout, 400) : json({ map: m, ruimte: kop }); }
+      if (actie === 'nieuw') { const m = await mapMaken(lade, alsTekst(d.naam), d.kleur as NotitieKleur); return 'fout' in m ? error(m.fout, 400) : json({ map: m, ruimte: kop }); }
       if (!isUuid(d.id)) return error('ID_ONGELDIG', 400);
       if (actie === 'wijzig') { const m = await mapWijzigen(lade, d.id, { naam: typeof d.naam === 'string' ? d.naam : undefined, kleur: d.kleur as NotitieKleur }); return 'fout' in m ? error(m.fout, m.fout === 'NIET_GEVONDEN' ? 404 : 400) : json({ map: m, ruimte: kop }); }
       if (actie === 'verwijder') return (await mapVerwijderen(lade, d.id)) ? json({ verwijderd: true, ruimte: kop }) : error('NIET_GEVONDEN', 404);

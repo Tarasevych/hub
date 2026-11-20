@@ -64,7 +64,9 @@ export async function main(): Promise<number> {
   check('niet-postroutes houden hun eigen keten (de poort raakt de rest van de site niet aan)',
     alleRoutes.filter((r) => !mr.isPostPad(r.replace(/^[A-Z]+\s+/, ''))).every((r) => gepoort[r] === nep[r as never]));
   check('de poort staat om de HELE routetabel van backend/index.ts, niet om losse fabrieken',
-    /router\(metMailRuimte\(\{/.test(readFileSync(join(process.cwd(), 'backend/index.ts'), 'utf8')));
+    // SEC-002 (autorisatie-08): tussen router en de poort staat nu kijkerWacht (ook een omhulling van de HELE tabel) — de poort omhult
+    // nog steeds de volledige tabel, niet losse fabrieken. / Між router і шлюзом тепер kijkerWacht — шлюз і далі обгортає всю таблицю.
+    /router\((?:kijkerWacht\()?metMailRuimte\(\{/.test(readFileSync(join(process.cwd(), 'backend/index.ts'), 'utf8')));
   // De hulpmiddelen van de AI (backend/site-hulpmiddelen.ts) roepen ECHTE routes aan; staan die routes onder de poort, dan volgt
   // een AI dus automatisch dezelfde stand. Dit is het bewijs dat er geen tweede, ongepoorte weg voor de AI bestaat.
   const aiPostRoutes = [...TOEGESTANE_ROUTES].filter((r) => mr.isPostPad(r.replace(/^[A-Z]+\s+/, '')));

@@ -127,7 +127,13 @@ export async function main(): Promise<number> {
   check('de standaardkleur is letterlijk de hoofdkleur van dat accent (niets verzonnen)',
     V2_AGENTEN.every((a) => TS.AGENT_KLEUR_STANDAARD[a.slug].licht === uitPalet(TS.AGENT_ACCENT[a.slug]).licht.hoofd
       && TS.AGENT_KLEUR_STANDAARD[a.slug].donker === uitPalet(TS.AGENT_ACCENT[a.slug]).donker.hoofd));
-  check('twee agents hebben nooit dezelfde standaardkleur', new Set(V2_AGENTEN.map((a) => TS.AGENT_KLEUR_STANDAARD[a.slug].licht)).size === V2_AGENTEN.length);
+  // Het palet heeft 13 kleuren naast «grijs» (onbekende AI). Sinds de veertiende agent (mscopilot, 16.11.2026) is er dus één
+  // bewuste uitzondering: Microsoft Copilot deelt «hemel» met Antigravity. Alle andere standaardkleuren blijven uniek, en de
+  // eigenaar kan per agent een andere kleur kiezen («Кольори агентів»).
+  const kleurenZonderMs = V2_AGENTEN.filter((a) => a.slug !== 'mscopilot').map((a) => TS.AGENT_KLEUR_STANDAARD[a.slug].licht);
+  check('twee agents hebben nooit dezelfde standaardkleur (enige uitzondering: mscopilot deelt «hemel» met Antigravity)',
+    new Set(kleurenZonderMs).size === kleurenZonderMs.length && TS.AGENT_ACCENT.mscopilot === TS.AGENT_ACCENT.antigravity
+    && V2_AGENTEN.every((a) => TS.AGENT_ACCENT[a.slug] !== TS.ONBEKEND_ACCENT));
   const gekozen = TS.markeringLezers([{ slug: 'claude', type: 'browser.snapshot', at: nu, accent: 'roze' }], nu);
   check('de keuze van de eigenaar bepaalt de kleur', gekozen!.lezers[0].kleur.licht === ACCENT_KLEUREN.roze.licht.hoofd);
   const onzin = TS.markeringLezers([{ slug: 'claude', type: 'browser.snapshot', at: nu, accent: 'neonpaars' }], nu);
@@ -235,7 +241,7 @@ export async function main(): Promise<number> {
     JS.markeringOpschrift(JS.markeringLezers(proef, nu), 'technisch', false) === TS.markeringOpschrift(TS.markeringLezers(proef, nu)!, 'technisch', false)
     && JS.markeringOpschrift(JS.markeringLezers(proef, nu), 'prive', true) === TS.markeringOpschrift(TS.markeringLezers(proef, nu)!, 'prive', true));
   check('agentSlugUitNaam() geeft in beide kopieën hetzelfde',
-    ['Claude Code', 'chatgpt', 'xai grok', 'bard', 'vscode', 'cursor', '', 'Copilot Workspace', 'onbekend'].every((n) => JS.agentSlugUitNaam(n) === TS.agentSlugUitNaam(n)));
+    ['Claude Code', 'chatgpt', 'xai grok', 'bard', 'vscode', 'cursor', '', 'Copilot Workspace', 'onbekend', 'Microsoft Copilot', 'Copilot Studio', 'GitHub Copilot', 'mscopilot'].every((n) => JS.agentSlugUitNaam(n) === TS.agentSlugUitNaam(n)));
 
   // extension/shared.js ≡ shared/extensie-ontgrendeling.ts (de bestaande spiegel moet mee blijven kloppen)
   check('extension/shared.js heeft dezelfde MIN_EXTENSIE_VERSIE als de site', (extShared as any).MIN_EXTENSIE_VERSIE === MIN_EXTENSIE_VERSIE);

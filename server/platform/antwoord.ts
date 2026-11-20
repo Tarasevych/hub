@@ -10,7 +10,14 @@ export function json(data: unknown, status = 200): RouterResponse {
   return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify(data ?? null) };
 }
 
-/** JSON-foutantwoord `{ error: message }` (zoals AppDeploy `error`). */
-export function error(message: string, status = 400): RouterResponse {
-  return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify({ error: message }) };
+export type ErrorExtra = { retryAfter?: number; maxAttempts?: number; windowSec?: number };
+
+/** JSON-foutantwoord `{ error: message }` (zoals AppDeploy `error`), met optionele `Retry-After` en limietfeiten voor HTTP 429. */
+export function error(message: string, status = 400, extra?: ErrorExtra): RouterResponse {
+  const sec = extra?.retryAfter && Number.isFinite(extra.retryAfter) && extra.retryAfter > 0 ? Math.max(1, Math.ceil(extra.retryAfter)) : 0;
+  if (!sec) return { statusCode: status, headers: { ...JSON_HEADERS }, body: JSON.stringify({ error: message }) };
+  const payload: Record<string, unknown> = { error: message, retryAfter: sec };
+  if (extra?.maxAttempts && Number.isFinite(extra.maxAttempts) && extra.maxAttempts > 0) payload.maxAttempts = Math.ceil(extra.maxAttempts);
+  if (extra?.windowSec && Number.isFinite(extra.windowSec) && extra.windowSec > 0) payload.windowSec = Math.ceil(extra.windowSec);
+  return { statusCode: status, headers: { ...JSON_HEADERS, 'Retry-After': String(sec) }, body: JSON.stringify(payload) };
 }

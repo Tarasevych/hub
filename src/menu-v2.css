@@ -1,5 +1,6 @@
 /* Menu v2 (stage 1): smalle rail zonder overlap, cirkel/pil-markering, scrollpijlen, werkbalk, hiërarchie, icoonstijlen. */
 .canonical-chrome{--zijbalk-rail:60px;--canonical-command-inline-start:var(--zijbalk-rail);--zijbalk-bg:var(--bg);--zb-hover:var(--nav-hover,color-mix(in srgb,var(--surface) 78%,transparent));--zb-actief:var(--nav-active,color-mix(in srgb,var(--surface2) 88%,transparent))}
+.canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']){--canonical-command-inline-start:calc(min(316px,calc(100vw - var(--zijbalk-rail))) + 14px)}
 .canonical-chrome.sidebar-expanded{--zijbalk-bg:var(--panel)}
 
 /* accentpalet — GELIJK aan ACCENT_KLEUREN in shared/menu-model.ts (eenheidstest). --a = hoofditem, --a2 = subitem (zelfde tint).
@@ -39,10 +40,12 @@
 /* --------------------------------------------------------------- rail: breed genoeg, geen scrollbalk over iconen */
 @media(min-width:701px){
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar{width:var(--zijbalk-rail);padding:8px 0 10px}
-  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(286px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
-  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(316px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar{background:color-mix(in srgb,var(--panel) 100%,var(--bg));box-shadow:14px 0 38px color-mix(in srgb,#000 18%,transparent);z-index:260}
+  .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar-edge-zone{width:calc(var(--zijbalk-rail) - 36px)}
-  .canonical-chrome:not(.sidebar-expanded):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
+  .canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='rechts']):not([data-dock='boven']):not([data-dock='onder']) :is(.google-mail-reader-backdrop,.google-mail-attachment-backdrop){left:min(316px,calc(100vw - var(--zijbalk-rail)))}
 }
 .zijbalk-scrollvak{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
 .zijbalk-scrollvak>.canonical-service-list{flex:1;min-height:0}
@@ -67,9 +70,10 @@
 .canonical-chrome:not(.sidebar-drawer-mode) .canonical-menu-toggle{display:none}
 .zijbalk-werkbalk{flex:none;margin:0 0 8px}
 .zijbalk-werkbalk.smal{display:grid;place-items:center}
-.zijbalk-werkbalk.breed{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 2px 8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.zijbalk-werkbalk-titel{color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.zijbalk-werkbalk-knoppen{display:flex;gap:2px;padding:2px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:999px;background:var(--surface)}
+.zijbalk-werkbalk.breed{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:6px;min-width:0;padding:2px 2px 8px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.zijbalk-werkbalk-titel{display:inline-flex;align-items:center;gap:5px;flex:none;white-space:nowrap;color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.zijbalk-werkbalk-knoppen{display:flex;flex:none;flex-wrap:nowrap;align-items:center;gap:2px;padding:2px;white-space:nowrap;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:999px;background:var(--surface)}
+.zijbalk-werkbalk-knoppen>*{flex:none}
 .zijbalk-modus-huidig,.zijbalk-werkbalk-knoppen button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:color .14s ease,background-color .14s ease}
 .zijbalk-werkbalk-knoppen button{width:30px;height:30px}
 .zijbalk-modus-huidig svg,.zijbalk-werkbalk-knoppen svg{width:18px;height:18px;stroke-width:1.9}
@@ -106,14 +110,22 @@
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button .menu-lucide-glyph{color:var(--a,var(--accent))}
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
 .canonical-chrome[data-icoon-stijl='kleur'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='kleur'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--a,var(--accent)) 12%,var(--zb-hover))}
+/* ICONEN-001 (16.11.2026): «У відтінку» — усі піктограми меню завжди в улюбленому відтінку (акцент облікового запису; без обраного відтінку — акцент палітри).
+   Кольори служб і власні кольори пунктів у меню не діють; :not(#_is1) перемагає правила [data-accent] вище.
+   «In tint»: alle menu-iconen altijd in de voorkeurstint (accountaccent; zonder tint het paletaccent). Dienstkleuren gelden dan niet in het menu. */
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-sidebar:not(#_is1),.canonical-chrome[data-icoon-stijl='tint'] .canonical-sidebar *:not(#_is1){--a:var(--accent);--a2:color-mix(in srgb,var(--accent) 78%,var(--muted));--a-item:var(--a2)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-service-button .menu-lucide-glyph{color:var(--accent)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-local-page-button :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.lucide){color:var(--a-item)}
+.canonical-chrome[data-icoon-stijl='tint'] .canonical-service-button:hover,.canonical-chrome[data-icoon-stijl='tint'] .canonical-local-page-button:hover{background:color-mix(in srgb,var(--accent) 12%,var(--zb-hover))}
 
 /* --------------------------------------------------------------- smal: ALLES een cirkel zonder tekst (ook actief, ook e-mail) */
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-group{justify-items:center}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-main-row{justify-items:center;width:100%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-button{grid-template-columns:1fr;justify-items:center;width:44px;height:44px;min-height:44px;margin-inline:auto;padding:0;border-radius:50%}
 .canonical-chrome:not(.sidebar-expanded) .canonical-service-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-label,.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages small{display:none}
-.canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center}
+.canonical-chrome .canonical-menu-icon-slot{display:grid;place-items:center;justify-self:center}
 /* het submenu: een verticale strook (de «verbindingslijn») in een heel lichte tint van het onderdeel */
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages:empty{display:none}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages{justify-items:center;box-sizing:border-box;width:44px;min-width:0;margin:2px auto 6px;padding:4px 0;border-radius:22px;background:color-mix(in srgb,var(--a,var(--accent)) 7%,color-mix(in srgb,var(--surface) 70%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a,var(--accent)) 14%,transparent)}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button{display:grid;grid-template-columns:1fr;place-items:center;box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:36px;min-height:36px;margin:1px auto;padding:0;border-radius:50%;overflow:hidden}
 .canonical-chrome:not(.sidebar-expanded) .canonical-local-pages :is(.menu-lucide-glyph,.mail-sidebar-icon-state svg,.canonical-local-page-button>svg){width:17px;height:17px;min-width:17px}
@@ -135,8 +147,9 @@
 /* breed: ook het eigen submenu van E-mail krijgt de getinte verbindingslijn (zoals de andere submenu's) */
 .canonical-chrome.sidebar-expanded .canonical-local-navigation-slot{margin:0 0 6px 22px;padding-left:6px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 .canonical-chrome.sidebar-expanded .canonical-service-button{justify-self:start;width:fit-content;max-width:100%;padding-right:16px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-service-button:has(.menu-herkomst){padding-block:5px;line-height:1.18}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot){margin:0 0 6px 22px;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
-.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:32px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:34px;padding:0 12px 0 2px;border-radius:999px}
+.canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot)>.canonical-local-page-button{grid-template-columns:34px minmax(0,1fr) auto;justify-self:start;width:fit-content;max-width:100%;min-height:36px;padding:0 12px 0 4px;border-radius:999px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) .canonical-local-label{padding-right:2px}
 .canonical-chrome.sidebar-expanded .canonical-local-pages:not(.canonical-local-navigation-slot) small{margin-right:0;margin-left:6px}
 .canonical-chrome .canonical-service-button:focus-visible,.canonical-chrome .canonical-local-page-button:focus-visible{outline:2px solid color-mix(in srgb,var(--a,var(--accent)) 70%,transparent);outline-offset:1px}
@@ -160,6 +173,8 @@
 .zijbalk-voorbeeld>span.actief{background:color-mix(in srgb,var(--a,var(--accent)) 14%,transparent);color:var(--a,var(--accent))}
 .zijbalk-voorbeeld[data-icoon-stijl='kleur']>span{color:var(--a)}
 .zijbalk-voorbeeld[data-icoon-stijl='kleur']>span.actief{background:color-mix(in srgb,var(--a) 16%,transparent);color:var(--a)}
+.zijbalk-voorbeeld[data-icoon-stijl='tint']>span{color:var(--accent)}
+.zijbalk-voorbeeld[data-icoon-stijl='tint']>span.actief{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .zijbalk-modus-icoon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--muted)}
 .zijbalk-modus-icoon svg{width:18px;height:18px}
 .zijbalk-keuze label.actief .zijbalk-modus-icoon{color:var(--accent)}
@@ -185,10 +200,13 @@
 /* ingeklapt: badge op de rand van de cirkel */
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.getal{top:-9px;right:-11px}
 .canonical-chrome:not(.sidebar-expanded) .menu-badge.punt{top:-6px;right:-6px}
-.menu-bellen{position:fixed;z-index:780;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:auto;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
-.menu-bellen-kop{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
+.menu-bellen{position:fixed;z-index:780;display:flex;flex-direction:column;box-sizing:border-box;width:min(320px,calc(100vw - 16px));max-height:min(420px,calc(100vh - 16px));overflow:visible;padding:8px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 12px 32px var(--shadow,rgba(0,0,0,.18));animation:menu-bellen-in .16s ease-out}
+.menu-bellen::before{content:'';position:absolute;top:0;bottom:0;left:-14px;width:14px}
+.menu-bellen[data-kant='left']::before{left:auto;right:-14px}
+.menu-bellen-kop{display:flex;flex-shrink:0;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 6px 8px;font-size:.82rem}
 .menu-bellen-kop span{color:var(--muted);font-size:.75rem}
-.menu-bellen ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.menu-bellen-uitleg,.menu-bellen-legenda,.menu-bellen-voet{flex-shrink:0}
+.menu-bellen ul{display:grid;flex:1 1 auto;min-height:0;overflow-y:auto;gap:6px;margin:0;padding:0;list-style:none}
 .menu-bel{--mb:var(--mb-systeem);position:relative;display:grid;grid-template-columns:8px 1fr 26px;gap:8px;align-items:start;padding:8px 6px 8px 10px;border-radius:14px 14px 14px 4px;background:color-mix(in srgb,var(--mb) 11%,var(--panel));border:1px solid color-mix(in srgb,var(--mb) 28%,transparent);animation:menu-bel-in .2s ease-out both}
 .menu-bel-stip{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--mb)}
 .menu-bel-tekst{min-width:0}
@@ -353,14 +371,17 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome[data-dock='rechts']:is(.sidebar-hover,[data-menu-bewerken='ja']:not(.sidebar-pinned)) .canonical-sidebar{box-shadow:-18px 0 46px var(--shadow)}
   .canonical-chrome[data-dock='rechts'] .canonical-sidebar-edge-zone{inset:0 0 0 auto}
   .canonical-chrome[data-dock='rechts'] .canonical-workspace{padding-left:24px!important;padding-right:var(--zijbalk-rail)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-workspace{padding-right:310px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding-right:340px}
+  .canonical-chrome[data-dock='rechts']:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned:has(.mail-functional.google-workspace-active) .canonical-workspace{padding-left:0!important;padding-right:min(316px,calc(100vw - var(--zijbalk-rail)))}
   .canonical-chrome[data-dock='rechts'][data-focus-mode='mail'] .canonical-workspace{padding-right:24px}
   .canonical-chrome[data-dock='rechts'] .canonical-account-anchor{right:calc(var(--zijbalk-rail) + 12px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-account-anchor{right:300px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-account-anchor{right:330px}
   .canonical-chrome[data-dock='rechts'] .canonical-notification-toast{right:calc(var(--zijbalk-rail) + 18px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-notification-toast{right:328px}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned .canonical-notification-toast{right:358px}
   .canonical-chrome[data-dock='rechts'] .zijbalk-werkbalk-paneel{left:auto;right:calc(var(--zijbalk-rail) + 6px)}
   .canonical-chrome[data-dock='rechts'] .google-mail-reader-backdrop{left:0;right:var(--zijbalk-rail)}
+  .canonical-chrome[data-dock='rechts'].sidebar-pinned :is(.google-mail-reader-backdrop,.google-mail-attachment-backdrop){left:0;right:min(316px,calc(100vw - var(--zijbalk-rail)))}
   .canonical-chrome[data-dock='rechts'].sidebar-expanded :is(.canonical-local-pages:not(.canonical-local-navigation-slot),.canonical-local-navigation-slot){margin:0 22px 6px 0;padding-left:0;padding-right:8px;border-left:0;border-right:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
 
   /* ---- dock boven/onder (Mac/tablet): iconen in een zwevende balk, transparantie via --dock-dekking */
@@ -382,8 +403,13 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock{order:3;display:flex;align-items:center;margin:0 0 0 2px;padding-left:6px;border-left:1px solid color-mix(in srgb,var(--line) 80%,transparent)}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock .zijbalk-werkbalk-knoppen{border:0;background:transparent}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-list .menu-leeg{width:36px;height:36px;margin:0;padding:0;border-radius:50%;font-size:0}
-  .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:70px 24px calc(var(--dock-hoogte) + 30px)!important}
-  .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte) + 30px) 24px 24px!important}
+  .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:max(76px,calc(var(--plaats-boven-onder,62px) + 14px)) 24px calc(var(--dock-hoogte) + 30px)!important}
+  .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:max(calc(var(--dock-hoogte) + 30px),calc(var(--plaats-boven-onder,62px) + 14px)) 24px 24px!important}
+  /* BLOKKEN-001 (15.11.2026): меню-док знизу (або вгорі) плаває над сторінкою. scroll-padding тримає запас на його висоту,
+     тож переходи до блоку («Справжнє налаштування», якорі) і Tab ставлять кнопку над доком, а не під ним.
+     NL: ruimte voor het zwevende dock bij scrollIntoView, ankers en Tab. */
+  html:has(.canonical-chrome[data-dock='onder']),.canonical-chrome[data-dock='onder'] .canonical-workspace{scroll-padding-bottom:calc(var(--dock-hoogte,62px) + 24px)}
+  html:has(.canonical-chrome[data-dock='boven']),.canonical-chrome[data-dock='boven'] .canonical-workspace{scroll-padding-top:calc(var(--dock-hoogte,62px) + 24px)}
   .canonical-chrome[data-dock='boven'] .mail-top-command-bar{top:calc(var(--dock-hoogte) + 16px)}
   .canonical-chrome[data-dock='boven'] :is(.mail-search-filter-surface,.mail-advanced-search){top:calc(var(--dock-hoogte) + 66px)}
   .canonical-chrome[data-dock='onder'] .canonical-connection-banner{bottom:calc(var(--dock-hoogte) + 26px)}
@@ -473,6 +499,12 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   /* «прокрутити меню» — 30×20 → 44×44 */
   .zijbalk-pijl{height:var(--tik-hoogte)}
   .zijbalk-pijl button{width:var(--tik-hoogte);min-height:var(--tik-hoogte)}
+  .menu-dock-transparantie{flex-wrap:wrap}
+  .menu-snel-knoppen button,.menu-snel-knoppen select,.menu-snel-toevoegen select,.menu-snel-toevoegen button,.menu-aangepast button{min-height:var(--tik-hoogte)}
+  .zijbalk-meldingen{padding:12px}
+  .zijbalk-meldingen-tijden{flex-wrap:wrap;max-width:100%}
+  .zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{flex:1 1 6.5rem;min-width:0;min-height:var(--tik-hoogte)}
+  .zijbalk-meldingen label.zijbalk-meldingen-rij select{width:100%;min-width:0;min-height:var(--tik-hoogte)}
 }
 
 /* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,
@@ -488,3 +520,13 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
 .menu-bellen-legenda-item[data-categorie='toegang']>i{background:var(--mb-toegang)}
 .menu-bellen-legenda-item[data-categorie='delen']>i{background:var(--mb-delen)}
 .menu-bellen-legenda-item[data-categorie='ai']>i{background:var(--mb-ai)}
+
+/* Ярлики кнопок технічного профілю (UPD-007: охайне кругле обведення піктограми обраним кольором технічної смуги, без півмісяця зліва та без дубльованого маленького щитка). */
+.canonical-chrome :is(.canonical-menu-icon-slot,.menu-start-icoon),.menu-snel-voorbeeld{position:relative}
+.canonical-chrome [data-tech-yarlyk='ja']>.canonical-service-main-row .canonical-menu-icon-slot{width:32px;height:32px}
+.canonical-chrome .canonical-local-page-button[data-tech-yarlyk='ja'] .canonical-menu-icon-slot{width:26px;height:26px}
+.canonical-chrome:not(.sidebar-expanded) .canonical-local-pages .canonical-local-page-button[data-tech-yarlyk='ja']{overflow:visible}
+.canonical-chrome [data-tech-yarlyk='ja'] :is(.canonical-menu-icon-slot,.menu-start-icoon),
+.menu-snel-voorbeeld[data-tech-yarlyk='ja']{box-shadow:0 0 0 2px var(--tech-profiel-kleur,#f2b705);border-radius:50%;background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 12%,transparent)}
+.canonical-chrome .menu-start-tegel[data-tech-yarlyk='ja']{border-color:var(--tech-profiel-kleur,#f2b705);box-shadow:inset 0 0 0 1px var(--tech-profiel-kleur,#f2b705)}
+.menu-snel-lijst>li[data-tech-yarlyk='ja']{border-color:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 55%,var(--line));background:color-mix(in srgb,var(--tech-profiel-kleur,#f2b705) 6%,var(--panel))}

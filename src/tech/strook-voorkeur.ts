@@ -12,9 +12,9 @@
 //  • `laatsteInklap`: welke ingeklapte modus «Згорнути» kiest (de laatst gebruikte; standaard automatisch).
 export type StrookModus = 'uitgeklapt' | 'ingeklapt' | 'auto';
 export type StrookGrootte = 'klein' | 'middel' | 'groot';
-export type StrookLabel = 'iconen' | 'beide' | 'tekst';
+export type StrookLabel = 'iconen' | 'beide';
 export type InklapModus = Exclude<StrookModus, 'uitgeklapt'>;
-export type StrookVoorkeur = { modus: StrookModus; grootte: StrookGrootte; label: StrookLabel; knoppen: string[]; laatsteInklap: InklapModus };
+export type StrookVoorkeur = { modus: StrookModus; grootte: StrookGrootte; label: StrookLabel; tooltips: boolean; knoppen: string[]; laatsteInklap: InklapModus };
 
 export const STROOK_SLEUTEL = 'mr-tech-strook';
 /** De oude losse schakelaar («ingeklapt» ja/nee): wordt eenmalig gelezen en daarna niet meer geschreven. */
@@ -30,7 +30,7 @@ export const STROOK_KNOP_IDS: readonly string[] = [
 /** Standaard: de knoppen die er vroeger al stonden (meldingen, ruimte wisselen, afmelden); in- en uitklappen is nu de vaste modusknop. */
 export const STROOK_STANDAARD_KNOPPEN: readonly string[] = ['meldingen', 'wissel', 'uit'];
 
-export const STROOK_STANDAARD: StrookVoorkeur = { modus: 'auto', grootte: 'middel', label: 'beide', knoppen: [...STROOK_STANDAARD_KNOPPEN], laatsteInklap: 'auto' };
+export const STROOK_STANDAARD: StrookVoorkeur = { modus: 'auto', grootte: 'middel', label: 'beide', tooltips: true, knoppen: [...STROOK_STANDAARD_KNOPPEN], laatsteInklap: 'auto' };
 
 /** Namen per knop (uk, nl). De namen van de ⋯-lijst zijn dezelfde als de knoppen zelf. */
 export const STROOK_NAMEN: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
@@ -61,36 +61,37 @@ export const MODUS_NAMEN: Readonly<Record<StrookModus, { uk: string; nl: string 
 /** Korte uitleg per modus (zelfde betekenis als de modi van het menu van de site). */
 export const MODUS_UITLEG: Readonly<Record<StrookModus, { uk: string; nl: string }>> = Object.freeze({
   uitgeklapt: { uk: 'Смуга завжди повна', nl: 'De strook is altijd volledig' },
-  ingeklapt: { uk: 'Тонка смужка; розгортається кнопкою ▾', nl: 'Dunne strook; uitklappen met de knop ▾' },
+  ingeklapt: { uk: 'Тонка смужка; розгортається натисканням', nl: 'Dunne strook; klapt open na klikken' },
   auto: { uk: 'Тонка смужка; розгортається, коли наводите на верх вікна', nl: 'Dunne strook; klapt open als u naar de bovenrand wijst' },
 });
 export const GROOTTE_NAMEN: Readonly<Record<StrookGrootte, { uk: string; nl: string }>> = Object.freeze({
-  klein: { uk: 'Малі', nl: 'Klein' },
-  middel: { uk: 'Середні', nl: 'Middel' },
-  groot: { uk: 'Великі', nl: 'Groot' },
+  klein: { uk: 'Стабільний', nl: 'Vast' },
+  middel: { uk: 'Стабільний', nl: 'Vast' },
+  groot: { uk: 'Стабільний', nl: 'Vast' },
 });
-/** Woorden van de eigenaar (03.11.2026): «лише піктограми / піктограми з написами / лише написи». */
+/** UPD-007 (19.11.2026): два гармонійні режими кнопок — піктограми або піктограми з назвами, плюс вимикані спливаючі підказки. */
 export const LABEL_NAMEN: Readonly<Record<StrookLabel, { uk: string; nl: string }>> = Object.freeze({
-  iconen: { uk: 'Лише піктограми', nl: 'Alleen pictogrammen' },
-  beide: { uk: 'Піктограми з написами', nl: 'Pictogrammen met tekst' },
-  tekst: { uk: 'Лише написи', nl: 'Alleen tekst' },
+  iconen: { uk: 'Піктограми', nl: 'Pictogrammen' },
+  beide: { uk: 'Піктограми з назвами', nl: 'Pictogrammen met namen' },
 });
 
 export const STROOK_MODI: readonly StrookModus[] = ['uitgeklapt', 'ingeklapt', 'auto'];
-export const STROOK_GROOTTES: readonly StrookGrootte[] = ['klein', 'middel', 'groot'];
-export const STROOK_LABELS: readonly StrookLabel[] = ['iconen', 'beide', 'tekst'];
+export const STROOK_GROOTTES: readonly StrookGrootte[] = ['middel'];
+export const STROOK_LABELS: readonly StrookLabel[] = ['iconen', 'beide'];
 
 /** Maakt van een willekeurige waarde (opslag, oude versie) een geldige voorkeur. Onbekende knoppen en waarden vallen weg. */
 export function normaliseer(ruw: unknown, oudIngeklapt = false): StrookVoorkeur {
   const r = ruw && typeof ruw === 'object' ? (ruw as Record<string, unknown>) : {};
   const modus = STROOK_MODI.includes(r.modus as StrookModus) ? (r.modus as StrookModus) : oudIngeklapt ? 'ingeklapt' : STROOK_STANDAARD.modus;
-  const grootte = STROOK_GROOTTES.includes(r.grootte as StrookGrootte) ? (r.grootte as StrookGrootte) : STROOK_STANDAARD.grootte;
+  // UPD-007: єдиний стабільний розмір технічної смуги незалежно від старих збережень.
+  const grootte: StrookGrootte = 'middel';
   const label = STROOK_LABELS.includes(r.label as StrookLabel) ? (r.label as StrookLabel) : STROOK_STANDAARD.label;
+  const tooltips = typeof r.tooltips === 'boolean' ? r.tooltips : STROOK_STANDAARD.tooltips;
   const knoppen = Array.isArray(r.knoppen)
     ? [...new Set(r.knoppen.filter((id): id is string => typeof id === 'string' && STROOK_KNOP_IDS.includes(id)))].slice(0, STROOK_MAX_KNOPPEN)
     : [...STROOK_STANDAARD_KNOPPEN];
   const laatsteInklap: InklapModus = r.laatsteInklap === 'ingeklapt' || r.laatsteInklap === 'auto' ? r.laatsteInklap : modus === 'ingeklapt' ? 'ingeklapt' : STROOK_STANDAARD.laatsteInklap;
-  return { modus, grootte, label, knoppen, laatsteInklap };
+  return { modus, grootte, label, tooltips, knoppen, laatsteInklap };
 }
 
 type Opslag = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;

@@ -15,8 +15,11 @@
 // zodat `import "./hdf5_util.js"` blijft kloppen). Altijd `.js`: onze server kent `.mjs` wel, maar niet elke proxy ervoor.
 // Alleen bij `vite build`; de ontwikkelserver blijft gewoon bundelen.
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+/** Wortel van de repository (deze map is scripts/), los van de werkmap. */
+const WORTEL = fileURLToPath(new URL('..', import.meta.url));
 
 /** Welke pakketten, welke bestanden (bron → naam in de vendor-map) en welk bestand de module is die de app importeert. */
 export const VENDOR_ONGEBUNDELD = Object.freeze([
@@ -24,7 +27,29 @@ export const VENDOR_ONGEBUNDELD = Object.freeze([
     bestanden: [['node_modules/officeparser/dist/officeparser.browser.slim.mjs', 'officeparser.browser.slim.js']] },
   { spec: 'h5wasm', map: 'h5wasm', hoofd: 'hdf5_hl.js',
     bestanden: [['node_modules/h5wasm/dist/esm/hdf5_hl.js', 'hdf5_hl.js'], ['node_modules/h5wasm/dist/esm/hdf5_util.js', 'hdf5_util.js']] },
+  // UPD-003 (17.11.2026): mermaid. `import('mermaid')` trok mermaid.core + d3, cytoscape, elk, katex… (honderden modules) door Rollup;
+  // daarmee haalde `vite build` de heaplimiet van de installer (BOUW_HEAP_MB=2560) niet meer — «heap out of memory» bij installatie
+  // van UPD-003. mermaid levert zelf een kant-en-klare ESM-bundel (mermaid.esm.min.mjs + chunks/mermaid.esm.min/*.mjs, alleen
+  // relatieve imports). Die gaat nu ongewijzigd mee; alleen de extensie .mjs → .js (ook in de relatieve importpaden, herschrijf).
+  // Mermaid: готовий ESM-пакет без перескладання — збірка вкладається в ліміт пам'яті інсталятора.
+  { spec: 'mermaid', map: 'mermaid', hoofd: 'mermaid.esm.min.js', herschrijf: true,
+    bestanden: [['node_modules/mermaid/dist/mermaid.esm.min.mjs', 'mermaid.esm.min.js'], ...mapBestanden('node_modules/mermaid/dist/chunks/mermaid.esm.min', 'chunks/mermaid.esm.min')] },
 ]);
+
+/** Alle .mjs-bestanden van een map (zonder .map) als [bron, naam-met-.js]; gesorteerd, zodat de hash vast is. */
+function mapBestanden(bronMap, doelMap) {
+  let namen = [];
+  // Eerst t.o.v. dit script, dan t.o.v. de werkmap (gebundelde tests draaien vanuit rapporten/).
+  for (const basis of [WORTEL, process.cwd()]) {
+    try { namen = readdirSync(resolve(basis, bronMap)).filter((n) => n.endsWith('.mjs')).sort(); break; } catch { /* volgende basis; ontbreekt het pakket, dan meldt de test het */ }
+  }
+  return namen.map((n) => [`${bronMap}/${n}`, `${doelMap}/${n.replace(/\.mjs$/, '.js')}`]);
+}
+
+/** Relatieve importpaden «./x.mjs» / «../x.mjs» → «.js» (alleen tekenreeksen die met ./ of ../ beginnen). */
+export function herschrijfMjs(code) {
+  return code.replace(/(["'])(\.\.?\/[^"'\n]+?)\.mjs\1/g, '$1$2.js$1');
+}
 
 export function vendorOngebundeldPlugin() {
   let root = process.cwd();
@@ -33,7 +58,10 @@ export function vendorOngebundeldPlugin() {
   const bereken = () => {
     tabel.clear();
     for (const lib of VENDOR_ONGEBUNDELD) {
-      const inhoud = lib.bestanden.map(([bron, naam]) => ({ naam, data: readFileSync(resolve(root, bron)) }));
+      const inhoud = lib.bestanden.map(([bron, naam]) => {
+        const data = readFileSync(resolve(root, bron));
+        return { naam, data: lib.herschrijf ? Buffer.from(herschrijfMjs(data.toString('utf8')), 'utf8') : data };
+      });
       const h = createHash('sha256');
       for (const b of inhoud) h.update(b.naam).update(b.data);
       const map = `assets/vendor/${lib.map}-${h.digest('hex').slice(0, 10)}`;

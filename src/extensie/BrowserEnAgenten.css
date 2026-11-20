@@ -55,7 +55,7 @@
 .bea-weig-code{font-family:ui-monospace,monospace;font-size:.78rem;color:var(--muted)}
 .bea-weig-lijst li>span:last-child{grid-column:1/-1}
 .bea-agenten-uitleg ol{margin:0;padding-left:1.2em;display:grid;gap:4px;line-height:1.45}
-.bea-agenten-uitleg code{word-break:break-all}
+.bea-agenten-uitleg code{overflow-wrap:anywhere;word-break:normal}
 /* src/ontwerp/mobiel.css maakt van elke tabel ≤ 700 px een blok met thead/tbody als LOSSE tabellen (min-width:max-content): dan lopen
    kop en vinkjes uit elkaar en rekt de uitleg de rij op. De matrix houdt haar echte tabelopbouw (eigen wrapper scrolt). */
 @media (max-width:700px){
@@ -78,7 +78,7 @@
 
 /* Verwijskaart op het tabblad «Розширення браузера» (src/agenten/TabExtensie.tsx) en de ingeklapte oude toestemmingen (BrowserExtensionPanel). */
 .ag-ext-naar-browser{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-left:5px solid var(--accent)}
-.ag-ext-naar-browser p{margin:0;flex:1;min-width:240px;line-height:1.45}
+.ag-ext-naar-browser p{margin:0;flex:1;min-width:min(100%,240px);line-height:1.45}
 .ext-toestemmingen-oud summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--muted);font-size:.9rem}
 .bea-keten h3{margin:0 0 8px;display:flex;align-items:center;gap:6px;font-size:1.05rem}
 .bea-keten h3 svg{width:18px;height:18px}

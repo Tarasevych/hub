@@ -1,5 +1,5 @@
-// ZOEKKERN v2 — DE INDEX IN POSTGRESQL (Z1, 22.10.2026; migraties 0093 + 0094 + 0100). Contract: scratchpad/zoek-API.md en
-// shared/zoek-model.ts. Dit is de ENIGE zoekroute: backend/globaal-zoek.ts (oude vorm + /api/owner/zoek), het AI-hulpmiddel
+// ZOEKKERN v2 — DE INDEX IN POSTGRESQL (Z1, 22.10.2026; migraties 0093 + 0094 + 0100). Contract: shared/zoek-model.ts
+// (uitleg: docs/zoek/ZOEKEN.nl.md §4). Dit is de ENIGE zoekroute: backend/globaal-zoek.ts (oude vorm + /api/owner/zoek), het AI-hulpmiddel
 // site_search en de bronnen van Z2 (indexeer/verwijder/stand) komen allemaal hier.
 //
 // ISOLATIE — NIET ONDERHANDELBAAR
@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import { alsGebruiker } from './ai-toestemmingen';
 import { verrijkDiepeRoutes } from './zoek/diepe-link';
 import type { Lade } from '../shared/ruimte-scheiding';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   BRON_NAAM, PG_STEMMER, SOORT_RANG, ZOEK_BRONNEN, ZOEK_VERSIE, isZoekBron, isZoekSoort, isZoekTaal,
   type BronStandNaam, type ZoekAntwoord, type ZoekBron, type ZoekBronStand, type ZoekFacets, type ZoekObject, type ZoekRoute, type ZoekSoort,
@@ -119,8 +120,8 @@ export async function indexeer(lade: Lade, objecten: readonly ZoekObject[]): Pro
              extra = EXCLUDED.extra, bijgewerkt_op = EXCLUDED.bijgewerkt_op, geindexeerd_op = now(), titel_norm = EXCLUDED.titel_norm,
              trefwoorden_norm = EXCLUDED.trefwoorden_norm, omschrijving_norm = EXCLUDED.omschrijving_norm, tekst_norm = EXCLUDED.tekst_norm, stam_norm = EXCLUDED.stam_norm
            RETURNING (xmax = 0) AS ingevoegd`,
-          [userId, ruimte, r.bron, r.bronId, r.soort, r.titel, JSON.stringify(r.titels), r.omschrijving, r.tekst, r.trefwoorden, r.pad, r.route ? JSON.stringify(r.route) : null,
-            r.taal, r.formaat, r.versie, r.integratie, r.fragmentBron, JSON.stringify(r.extra), r.aangemaaktOp, r.bijgewerktOp, r.titelNorm, r.trefwoordenNorm, r.omschrijvingNorm, r.tekstNorm, r.stamNorm],
+          [userId, ruimte, r.bron, r.bronId, r.soort, r.titel, jsonbTekst(r.titels), r.omschrijving, r.tekst, r.trefwoorden, r.pad, r.route ? jsonbTekst(r.route) : null,
+            r.taal, r.formaat, r.versie, r.integratie, r.fragmentBron, jsonbTekst(r.extra), r.aangemaaktOp, r.bijgewerktOp, r.titelNorm, r.trefwoordenNorm, r.omschrijvingNorm, r.tekstNorm, r.stamNorm],
         );
         if (res.rows[0]?.ingevoegd) uit.toegevoegd++; else uit.bijgewerkt++;
         if (waarnemers.size) { const t = perBron.get(r.bron) || { toegevoegd: 0, bijgewerkt: 0, overgeslagen: 0, ocr: 0 }; if (res.rows[0]?.ingevoegd) t.toegevoegd++; else t.bijgewerkt++; if (r.extra.ocr === true) t.ocr++; perBron.set(r.bron, t); }

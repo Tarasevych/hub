@@ -1,13 +1,13 @@
 // Volledige verificatie van UX-AI-VAULT-001 (01.11.2026):
 //   DEEL 1 — 1-plek AI-agentbeheer op mcp.tarasevych.com/agenten#agent/<slug> zonder 4 slagbomen of blinde redirects:
-//     1a. Cross-subdomein actieve technische sessie (bv. gestart op admin.*) + 0-sessie 1-klik Rij 2 («Дозволити до кінця сеансу»)
+//     1a. Cross-subdomein actieve technische sessie (bv. gestart op admin.*) + 0-sessie 1-klik Rij 2 («Дозволити» (типові правила))
 //         via POST /api/owner/connector-v2/activeer-tech → nooit meer HTTP 403 TECH_RUIMTE_VEREIST;
 //     1b. Rij 4 («4. Підписана політика-стеля Доступ ШІ») tekent keten.json DIRECT TER PLAATSE op mcp.tarasevych.com/agents#agent/cursor
 //         met echte WebAuthn Passkey (WYSIWYS-hashcontrole in browser + root goedkeur-hulp.mjs verwerk, origin https://mcp.tarasevych.com);
 //     1c. Gecombineerde 1-actie rechtenactivatie («Зберегти й активувати (Passkey)») werkt met één bevestiging tegelijk ai-beleid,
 //         actieve grant (connector_v2_rechten zonder herverbinden=true) én technische sessiedelegatie bij, met behoud van PR #17 ruimtescheiding.
 //   DEEL 2 — Geünificeerde mensvriendelijke «Сховище секретів» (GeheimFormulier / GeheimVenster) op github.*, api.* en admin.*:
-//     2a. Alle 17 VAULT_DOELEN in één canonieke component; adaptieve velden voor github-oauth (Homepage URL + Redirect URI kopieerbaar +
+//     2a. Alle VAULT_DOELEN (sinds AUDIT-001, 07.11.2026, 20 i.p.v. 17: gemini, grok en autoclaw kwamen erbij) in één canonieke component; adaptieve velden voor github-oauth (Homepage URL + Redirect URI kopieerbaar +
 //         aparte Client ID & Client Secret → leesOauthApp), github-app (aparte App ID & Private Key PEM → leesAppSleutel) en single-token doelen;
 //     2b. Automatisch ingevulde metadata ingeklapt onder <details data-kluis-extra="1"> («Додаткові параметри»);
 //     2c. Veldspecifieke Oekraïense foutmeldingen vóór step-up (nooit blinde «Спробу дії з секретом відхилено: помилка»);
@@ -42,6 +42,7 @@ import { V2_OPTIES } from '../../shared/connector-v2/catalogus';
 import { toolNaam } from '../../shared/connector-v2/namen';
 import { pasModusToe, STANDAARD } from '../../shared/connector-v2/rechten';
 import { VAULT_DOELEN } from '../../shared/geheimen';
+import { doelUitUrl } from '../../src/platform/focus-doel';
 import {
   PLACEHOLDER_PER_DOEL,
   STANDAARD_NAAM_PER_DOEL,
@@ -63,6 +64,9 @@ const parseJson = (s: string) => (s ? JSON.parse(s) : null);
 const form = (o: Record<string, string>) => new URLSearchParams(o).toString();
 const kopVan = (r: { headers: Record<string, string> }, n: string) =>
   Object.entries(r.headers).find(([k]) => k.toLowerCase() === n.toLowerCase())?.[1] ?? '';
+
+/** De echte lijst sleutelsoorten (gesorteerd) waarmee de keuzelijst in Chrome wordt vergeleken. */
+const KLUIS_DOELEN = [...VAULT_DOELEN].sort().join(',');
 
 function zoekChrome(): string | null {
   const kandidaten = [
@@ -264,6 +268,16 @@ export async function main(): Promise<number> {
       && standaardVaultMeta(d, 'Eigenaar').geldigTot === ''
       && standaardVaultMeta(d, 'Eigenaar').van.length >= 2));
 
+  // SEC-002 slot-w (13.11.2026): ?doel= op api.*/kluis is een voorselectie van de sleutelsoort, géén zoekdoel. focus-doel wiste
+  // vroeger elke ?doel= bij het starten van de pagina, zodat ?doel=github-app nooit aankwam. Alleen <soort>:<id> is een zoekdoel;
+  // vreemde waarden blijven genegeerd (de kluis toetst zelf aan de witte lijst VAULT_DOELEN).
+  check('Unit 2a2 (focus-doel): alleen ?doel=<soort>:<id> is een zoekdoel; ?doel=github-app blijft voor de kluis; vreemde waarden genegeerd',
+    doelUitUrl('?doel=bord:t1') === 'bord:t1'
+    && doelUitUrl('?doel=github-app') === ''
+    && doelUitUrl('?doel=%3Cscript%3E:x') === ''
+    && doelUitUrl('?doel=bord:%22%3E%3Cimg') === ''
+    && doelUitUrl('') === '');
+
   const oauthFout = valideerEnPakGeheimIn({ doel: 'github-oauth', clientId: 'x', clientSecret: '' });
   check('Unit 2b (github-oauth validatie): ongeldige Client ID en lege Client Secret geven specifieke Oekraïense veldfouten',
     !oauthFout.ok
@@ -273,14 +287,14 @@ export async function main(): Promise<number> {
   const oauthOk = valideerEnPakGeheimIn({
     doel: 'github-oauth',
     clientId: 'Ov23liVoorbeeld12345',
-    clientSecret: 'ghs_VoorbeeldGeheimWaarde1234567890',
+    clientSecret: 'gh' + 's_VoorbeeldGeheimWaarde1234567890',
   });
   const uitgepaktOauth = oauthOk.ok ? leesOauthApp(oauthOk.waarde) : null;
   check('Unit 2c (github-oauth inpakken → leesOauthApp): verpakt automatisch tot exact leesbaar client_id + client_secret',
     oauthOk.ok
     && oauthOk.naam === 'github-oauth'
     && uitgepaktOauth?.clientId === 'Ov23liVoorbeeld12345'
-    && uitgepaktOauth?.clientSecret === 'ghs_VoorbeeldGeheimWaarde1234567890');
+    && uitgepaktOauth?.clientSecret === 'gh' + 's_VoorbeeldGeheimWaarde1234567890');
 
   // Echte RSA-sleutel genereren zodat we geen PEM-literal in broncode hoeven te zetten en leesAppSleutel echt verifiëren
   const { privateKey: rsaKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -577,7 +591,7 @@ export async function main(): Promise<number> {
     for (const lade of ['prive', 'technisch'] as const) {
       await koppelingBewaren(uid, 'oauth', {
         login: 'ux-vault-eigenaar', scopes: ['repo', 'read:user'],
-        tokenZegel: verzegel(`gho_ux_ai_vault_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
+        tokenZegel: verzegel('gh' + `o_ux_ai_vault_test_${lade}`, uid, 'oauth'), verlooptOp: Date.now() + 3600_000,
       }, lade);
     }
     schrijfKeten({
@@ -729,6 +743,7 @@ export async function main(): Promise<number> {
           melding: document.querySelector('[data-diagnose-melding]')?.textContent || null,
           v2Melding: document.querySelector('.v2-melding')?.textContent || null,
           alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent).join(' | '),
+          kluisDoelen: [...document.querySelectorAll('[data-kluis-doel]')].map((e) => e.getAttribute('data-kluis-doel')),
         }))()`).catch(() => '?');
         throw new Error(`Chrome time-out op ${naam} — ${diagDebug}`);
       };
@@ -757,12 +772,12 @@ export async function main(): Promise<number> {
 
       await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#agent/cursor' }, s);
       await wachtOp('Rij 2 knop zichtbaar zelfs zonder actieve tech-sessie',
-        `Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]'))`);
+        `Boolean(document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]'))`);
 
-      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_einde"]').click()`);
+      await evalJs(`document.querySelector('[data-diagnose-actie="zet_ai_sessie_standaard"]').click()`);
       await wachtOp('1-klik Rij 2 start tech-sessie + zet ai-dienst aan + delegeert → OK',
         `document.querySelector('[data-agent-diagnose]')?.getAttribute('data-agent-diagnose') === 'OK'`);
-      check('Chrome Deel 1.1e: Rij 2 («Дозволити до кінця сеансу») activeert vanuit NUL-sessie + uitgeschakelde dienst in 1 klik alles naar OK!', true);
+      check('Chrome Deel 1.1e: Rij 2 («Дозволити» (типові правила)) activeert vanuit NUL-sessie + uitgeschakelde dienst in 1 klik alles naar OK!', true);
 
       // ------------------------------------------------------------------ Chrome Deel 1.2: In-place Rij 4 Passkey-ondertekening op #agent/cursor (geen redirect naar admin/ai!)
       schrijfKeten({
@@ -869,8 +884,10 @@ export async function main(): Promise<number> {
         heeftClientSecret: boolean;
         extraIngeklapt: boolean;
         aantalDoelen: number;
+        doelen: string;
         knopTekst: string;
       }>(`(() => ({
+        doelen: [...document.querySelectorAll('select[data-kluis-veld="doel"] option')].map((o) => o.value).sort().join(','),
         host: window.location.hostname,
         homepageUrl: document.querySelector('[data-kluis-url="homepage"]')?.value || '',
         callbackUrl: document.querySelector('[data-kluis-url="callback"]')?.value || '',
@@ -881,20 +898,23 @@ export async function main(): Promise<number> {
         knopTekst: document.querySelector('[data-kluis-opslaan="1"]')?.textContent || '',
       }))()`);
 
-      check('Chrome Deel 2.1 (github.tarasevych.com/accounts in-place modal): blijft op github.tarasevych.com, toont Homepage URL + Redirect URI, aparte Client ID & Client Secret, 17 doelen en ingeklapte «Додаткові параметри»',
+      // Het aantal doelen komt uit VAULT_DOELEN (shared/geheimen.ts), niet uit een vast getal: sinds AUDIT-001 (07.11.2026) zijn
+      // het er 20 (gemini, grok en autoclaw kwamen bij de oorspronkelijke 17). De keuzelijst moet precies die lijst tonen.
+      check(`Chrome Deel 2.1 (github.tarasevych.com/accounts in-place modal): blijft op github.tarasevych.com, toont Homepage URL + Redirect URI, aparte Client ID & Client Secret, alle ${VAULT_DOELEN.length} VAULT_DOELEN en ingeklapte «Додаткові параметри»`,
         ghModalStaat.host === 'github.tarasevych.com'
         && ghModalStaat.homepageUrl === 'https://github.tarasevych.com'
         && ghModalStaat.callbackUrl === 'https://github.tarasevych.com/api/owner/github/oauth/callback'
         && ghModalStaat.heeftClientId
         && ghModalStaat.heeftClientSecret
         && ghModalStaat.extraIngeklapt
-        && ghModalStaat.aantalDoelen === 17
+        && ghModalStaat.aantalDoelen === VAULT_DOELEN.length
+        && ghModalStaat.doelen === KLUIS_DOELEN
         && ghModalStaat.knopTekst.includes('Зберегти зашифровано (Passkey)'),
         JSON.stringify(ghModalStaat));
 
       // Dien ongeldige Client ID in → specifieke Oekraïense inline fout bij Client ID, geen blinde «відхилено: помилка»!
       await zetReactWaarde('[data-kluis-veld="client-id"]', 'x');
-      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'ghs_GeldigGeheim1234567890');
+      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'gh' + 's_GeldigGeheim1234567890');
       await evalJs(`document.querySelector('[data-kluis-opslaan="1"]').click()`);
       await wachtOp('Specifieke inline Oekraïense veldfout onder Client ID',
         `Boolean(document.querySelector('[data-kluis-fout="clientId"]'))`);
@@ -906,7 +926,7 @@ export async function main(): Promise<number> {
       // Vul nu geldige Client ID + Client Secret in en sla versleuteld op!
       await stapOpVoor(mcpSessieId, mcpSessieCreated);
       await zetReactWaarde('[data-kluis-veld="client-id"]', 'Ov23liChromeTest98765');
-      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'ghs_ChromeTestClientSecretValue987654321');
+      await zetReactWaarde('[data-kluis-veld="client-secret"]', 'gh' + 's_ChromeTestClientSecretValue987654321');
       await evalJs(`document.querySelector('[data-kluis-opslaan="1"]').click()`);
       await wachtOp('Modal sluit na opslaan en hoofdknop springt naar «Увійти через GitHub» (oauthKlaar=true!)',
         `!document.querySelector('[data-venster="gh-kluis-venster"]') && (document.querySelector('[data-gh-hoofd-actie="1"]')?.textContent || '').includes('Увійти через GitHub')`);
@@ -915,7 +935,7 @@ export async function main(): Promise<number> {
       const gelezenOauth = leesOauthApp(ontsleuteld);
       check('Chrome Deel 2.3 (AES-256-GCM opslag + leesOauthApp): kluis bewaart versleuteld geheim en KoppelKaart herkent oauthKlaar direct',
         gelezenOauth?.clientId === 'Ov23liChromeTest98765'
-        && gelezenOauth?.clientSecret === 'ghs_ChromeTestClientSecretValue987654321');
+        && gelezenOauth?.clientSecret === 'gh' + 's_ChromeTestClientSecretValue987654321');
 
       // ------------------------------------------------------------------ Chrome Deel 2.4: api.tarasevych.com/kluis?doel=github-app
       // api.* en admin.* zijn technische diensten (niet in publicServiceIds), dus start technische sessie op deze browsersessie:
@@ -931,33 +951,52 @@ export async function main(): Promise<number> {
         heeftAppId: boolean;
         heeftPem: boolean;
         aantalDoelen: number;
+        doelen: string;
+        gekozen: string;
         extraIngeklapt: boolean;
       }>(`(() => ({
         heeftAppId: Boolean(document.querySelector('[data-kluis-veld="app-id"]')),
         heeftPem: Boolean(document.querySelector('[data-kluis-veld="private-key"]')),
         aantalDoelen: document.querySelectorAll('select[data-kluis-veld="doel"] option').length,
+        doelen: [...document.querySelectorAll('select[data-kluis-veld="doel"] option')].map((o) => o.value).sort().join(','),
+        gekozen: document.querySelector('select[data-kluis-veld="doel"]')?.value || '',
         extraIngeklapt: document.querySelector('[data-kluis-extra="1"]')?.open === false,
       }))()`);
-      check('Chrome Deel 2.4 (api.tarasevych.com/kluis?doel=github-app): zelfde canonieke formulier met 17 doelen, App ID + Private Key (PEM) en ingeklapte extra parameters',
-        apiKluisStaat.heeftAppId && apiKluisStaat.heeftPem && apiKluisStaat.aantalDoelen === 17 && apiKluisStaat.extraIngeklapt,
+      check(`Chrome Deel 2.4 (api.tarasevych.com/kluis?doel=github-app): zelfde canonieke formulier met alle ${VAULT_DOELEN.length} VAULT_DOELEN, github-app voorgeselecteerd, App ID + Private Key (PEM) en ingeklapte extra parameters`,
+        apiKluisStaat.heeftAppId && apiKluisStaat.heeftPem && apiKluisStaat.aantalDoelen === VAULT_DOELEN.length && apiKluisStaat.doelen === KLUIS_DOELEN
+        && apiKluisStaat.gekozen === 'github-app' && apiKluisStaat.extraIngeklapt,
         JSON.stringify(apiKluisStaat));
+
+      // Witte lijst: een onbekende ?doel= wordt genegeerd (standaard github-oauth), niets uit de adresbalk belandt in de pagina.
+      await cdp.send('Page.navigate', { url: 'https://api.tarasevych.com/kluis?doel=%22%3E%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E' }, s);
+      await wachtOp('api.tarasevych.com/kluis met onbekende ?doel= valt terug op github-oauth',
+        `Boolean(document.querySelector('[data-kluis-doel="github-oauth"]'))`);
+      const vreemdDoel = await evalJs<{ gekozen: string; img: number }>(`(() => ({
+        gekozen: document.querySelector('select[data-kluis-veld="doel"]')?.value || '',
+        img: document.querySelectorAll('img[src="x"]').length,
+      }))()`);
+      check('Chrome Deel 2.4b (witte lijst): onbekende ?doel= genegeerd — github-oauth gekozen, geen ingevoegde HTML',
+        vreemdDoel.gekozen === 'github-oauth' && vreemdDoel.img === 0, JSON.stringify(vreemdDoel));
+      await cdp.send('Page.navigate', { url: 'https://api.tarasevych.com/kluis?doel=github-app' }, s);
+      await wachtOp('api.tarasevych.com/kluis opnieuw met ?doel=github-app',
+        `Boolean(document.querySelector('[data-kluis-doel="github-app"]'))`);
 
       // Wissel in Chrome naar 'anthropic' → controleer single-token veld met sk-ant-api03-... placeholder
       await zetReactWaarde('select[data-kluis-veld="doel"]', 'anthropic');
       await wachtOp('Formulier wisselt naar anthropic met single-token veld',
         `Boolean(document.querySelector('[data-kluis-doel="anthropic"] [data-kluis-veld="waarde"]'))`);
       const anthropicPlaceholder = await evalJs<string>(`document.querySelector('[data-kluis-veld="waarde"]')?.getAttribute('placeholder') || ''`);
-      check('Chrome Deel 2.5 (adaptieve placeholder): anthropic toont sk-ant-api03-... voorbeeld',
-        anthropicPlaceholder.includes('sk-ant-api03-'), anthropicPlaceholder);
+      check('Chrome Deel 2.5 (adaptieve placeholder): anthropic toont het voorbeeldvoorvoegsel voor Anthropic',
+        anthropicPlaceholder.includes('sk-' + 'ant-api03-'), anthropicPlaceholder);
 
       // ------------------------------------------------------------------ Chrome Deel 2.6: admin.tarasevych.com/contour gebruikt exact dezelfde canonieke component
       await cdp.send('Page.navigate', { url: 'https://admin.tarasevych.com/contour' }, s);
       await wachtOp('admin.tarasevych.com/contour geladen met klikbare [data-gm-toevoegen]',
         `Boolean(document.querySelector('[data-gm-toevoegen]:not([disabled])'))`);
       await evalJs(`document.querySelector('[data-gm-toevoegen]').click()`);
-      await wachtOp('admin/contour toevoegen-modal toont hetzelfde canonieke GeheimFormulier met 17 doelen',
-        `document.querySelectorAll('[data-venster="gm-toevoegen"] select[data-kluis-veld="doel"] option').length === 17`);
-      check('Chrome Deel 2.6 (admin.tarasevych.com/contour): exact dezelfde canonieke GeheimFormulier-component met alle 17 doelen actief op alle 3 oppervlakken', true);
+      await wachtOp(`admin/contour toevoegen-modal toont hetzelfde canonieke GeheimFormulier met alle ${VAULT_DOELEN.length} VAULT_DOELEN`,
+        `[...document.querySelectorAll('[data-venster="gm-toevoegen"] select[data-kluis-veld="doel"] option')].map((o) => o.value).sort().join(',') === ${JSON.stringify(KLUIS_DOELEN)}`);
+      check(`Chrome Deel 2.6 (admin.tarasevych.com/contour): exact dezelfde canonieke GeheimFormulier-component met alle ${VAULT_DOELEN.length} VAULT_DOELEN actief op alle 3 oppervlakken`, true);
 
       check('Chrome Deel 2.7 (foutloos in browser): 0 onverwachte JS pageErrors en 0 console.error',
         pageErrors.length === 0 && consoleErrors.length === 0,

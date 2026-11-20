@@ -34,7 +34,7 @@ export async function main(): Promise<number> {
   check('catalogus: elk browserhulpmiddel heeft een intern doel en een unieke naam per agent',
     browser.every((o) => !!o.intern) && V2_AGENTEN.every((a) => new Set(browser.map((o) => toolNaam(o, a.slug))).size === browser.length));
   const verwacht = ['browser_audit', 'browser_click', 'browser_console', 'browser_fill_form', 'browser_get_deep_diagnostics', 'browser_get_diagnostics', 'browser_history', 'browser_hover',
-    'browser_invoke_action', 'browser_list_tabs', 'browser_network', 'browser_open', 'browser_pages', 'browser_press_key', 'browser_screenshot', 'browser_scroll', 'browser_select_option',
+    'browser_invoke_action', 'browser_list_tabs', 'browser_local_ai', 'browser_network', 'browser_open', 'browser_pages', 'browser_press_key', 'browser_screenshot', 'browser_scroll', 'browser_select_option',
     'browser_snapshot', 'browser_type', 'browser_wait_for_text'];
   check('catalogus: de opdracht van E3 is gedekt (open, snapshot/read, click, type, select, press, screenshot, console, network, tabs, deep diagnostics, wait_for_text, site_action)',
     JSON.stringify(browserInternPerKant('gebruiker')) === JSON.stringify([...verwacht].sort()) && JSON.stringify(browserInternPerKant('beheer')) === JSON.stringify([...verwacht, 'browser_script'].sort()),
@@ -46,7 +46,7 @@ export async function main(): Promise<number> {
   const U = `cbg-u-${T}`;
   const verplaatst = (await sys.query("UPDATE app.records SET data = jsonb_set(data, '{role}', '\"owner-tijdelijk\"') WHERE tbl = 'users' AND data->>'role' = 'owner' RETURNING id")).rows.map((r: { id: string }) => r.id);
   try {
-    await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', U, { email: 'eigenaar@test.invalid', role: 'owner', status: 'approved', name: U }]);
+    await sys.query('INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3)', ['users', U, { email: process.env.OWNER_EMAIL || 'eigenaar@test.invalid', role: 'owner', status: 'approved', name: U }]);
     await aiDienstAan(U);
     // een browser in BEIDE sloten (de technische kant toont browserhulpmiddelen alleen met een technisch browserslot)
     for (const ruimte of ['prive', 'technisch'] as const) {

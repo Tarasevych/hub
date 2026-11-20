@@ -30,6 +30,7 @@ import {
   type MailAanbieder, type MailImapKoppelingPubliek, type MailServerAdres,
 } from '../shared/mail-aanbieders';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
+import { mailImapBericht, mailImapBerichten } from './mail-imap-lezen';
 import type { AiRuimte } from '../shared/ai-ruimte';
 
 const sys = () => getPool('systeem');
@@ -339,6 +340,27 @@ export const createMailImapRoutes = (authorize: Authorize) => {
       const weg = await mailImapVerwijderen(gebruiker.user.id, ruimte, String(body.id || '').slice(0, 120));
       return weg ? json({ ok: true }) : error('MAIL_IMAP_KOPPELING_ONBEKEND', 404);
     }],
+    // MAIL-IMAP-LEZEN-001 (15.11.2026): berichten van een IMAP-mailbox LEZEN (alleen eigen rij, eigen ruimte; niets opgeslagen).
+    'POST /api/owner/mail/imap/berichten': [async (ctx: Context) => {
+      const gebruiker = await auth(ctx);
+      if (!gebruiker) return error('OWNER_MAIL_SESSION_REQUIRED', 403);
+      const vreemd = rejectForeignOwnerUserId(gebruiker.user, ctx.body);
+      if (vreemd) return vreemd;
+      const body = lichaam(ctx.body);
+      const ruimte = await ruimteVan(gebruiker.user.id, body);
+      const uitslag = await mailImapBerichten(gebruiker.user.id, ruimte, String(body.id || '').slice(0, 120), Number(body.pagina) || 0, Number(body.aantal) || 25);
+      return uitslag.ok ? json({ ok: true, adres: uitslag.adres, totaal: uitslag.totaal, berichten: uitslag.berichten }) : json({ ok: false, fout: uitslag.fout }, 400);
+    }],
+    'POST /api/owner/mail/imap/bericht': [async (ctx: Context) => {
+      const gebruiker = await auth(ctx);
+      if (!gebruiker) return error('OWNER_MAIL_SESSION_REQUIRED', 403);
+      const vreemd = rejectForeignOwnerUserId(gebruiker.user, ctx.body);
+      if (vreemd) return vreemd;
+      const body = lichaam(ctx.body);
+      const ruimte = await ruimteVan(gebruiker.user.id, body);
+      const uitslag = await mailImapBericht(gebruiker.user.id, ruimte, String(body.id || '').slice(0, 120), Number(body.uid));
+      return uitslag.ok ? json({ ok: true, bericht: uitslag.bericht }) : json({ ok: false, fout: uitslag.fout }, 400);
+    }],
   };
 };
 
@@ -359,6 +381,6 @@ registreerHerversleutelaar('app.mail_imap_koppeling', async (lade, dek) => {
 });
 /** Welke koppelingen staan nog onder de serversleutel (voor de pagina)? */
 export async function mailImapNogServerSleutel(userId: string, ruimte: AiRuimte): Promise<string[]> {
-  const rijen = await sys().query(`SELECT id FROM app.mail_imap_koppeling WHERE user_id = $1 AND ruimte = $2 AND geheim LIKE 'v1.%'`, [userId, ruimte]);
+  const rijen = await sys().query(`SELECT id FROM app.mail_imap_koppeling WHERE user_id = $1 AND ruimte = $2 AND geheim ~ '^v[1-9]\\.'`, [userId, ruimte]); // SEC-002 (geheimen-07): ook v2…v9 (na rotatie) is de serversleutel
   return (rijen.rows as Array<{ id: string }>).map((r) => r.id);
 }

@@ -27,3 +27,10 @@
   .mail-account-badge .mail-account-badge-menu>footer{margin:0;padding:0;border-top:1px solid var(--line);font-size:var(--tekst-basis)}
   .mail-account-badge .mail-account-badge-menu>footer button{min-height:52px;padding:14px;color:var(--accent);font-size:var(--tekst-basis);font-weight:600}
 }
+
+/* 15.11.2026: логотип сервісу IMAP/Microsoft на краю кружка — з реєстру марок (src/merk), не лише Google */
+@media (max-width:720px){
+  .mail-account-badge-logo.is-merk{overflow:hidden}
+  .mail-account-badge-logo.is-merk svg,.mail-account-badge-logo.is-merk img,.mail-account-badge-logo.is-merk>*{max-width:16px;max-height:16px}
+  .mail-account-badge-menu button.aandacht small{color:var(--warn,var(--muted))}
+}

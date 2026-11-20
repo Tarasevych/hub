@@ -12,6 +12,7 @@ import { importeer, lijstInvoer, miniatuurEnHash, zipInvoer, type Voortgang } fr
 import { kiezerUrl } from './OudeFotos';
 import type { Lang } from '../cloud-vnext/tekst';
 import './foto.css';
+import './foto-maquette.css';
 
 type Deel = 'stream' | 'albums' | 'bronnen' | 'orde';
 const MAANDEN_UK = ['січень', 'лютий', 'березень', 'квітень', 'травень', 'червень', 'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень'];
@@ -24,6 +25,12 @@ function foutTekst(lang: Lang, e: unknown) {
   const m: Record<string, [string, string]> = {
     FOTO_DIENST_UIT: ['Розділ «Фото» вимкнено.', 'Het onderdeel «Foto’s» staat uit.'], BRON_NIET_BESCHIKBAAR: ['Оригінал зараз недоступний у джерелі.', 'Het origineel is nu niet beschikbaar in de bron.'],
     TE_GROOT_VOOR_WEERGAVE: ['Файл завеликий для перегляду тут.', 'Bestand te groot om hier te tonen.'], EIGEN_KOPIE_GEBRUIK_WISSEN: ['Це єдина копія. Щоб прибрати, видаліть копію.', 'Dit is de enige kopie. Gebruik «Kopie verwijderen».'],
+    // SEC-002 (g10d, g03): grenzen en weigeringen van de fotodienst — «Спробуйте ще раз» zou hier niets oplossen.
+    UPLOAD_TE_VEEL: ['Забагато одночасних завантажень. Дочекайтеся завершення інших (або скасуйте їх) і спробуйте знову.', 'Te veel gelijktijdige uploads. Wacht tot andere klaar zijn (of annuleer ze) en probeer het opnieuw.'],
+    SCHIJF_VOL: ['На сервері закінчується місце — фото не збережено. Спробуйте пізніше або повідомте власника сайту.', 'De server heeft bijna geen ruimte meer — de foto is niet bewaard. Probeer het later of meld het aan de eigenaar van de site.'],
+    BEZIG: ['Упорядкування вже триває. Зачекайте, доки воно завершиться.', 'Ordenen loopt al. Wacht tot het klaar is.'],
+    RBAC_FORBIDDEN: ['Ваша роль — лише перегляд: змінювати фото тут не можна. Нічого не змінено.', 'Uw rol is alleen-lezen: hier kunt u geen foto’s wijzigen. Er is niets gewijzigd.'],
+    RBAC_PENDING_CANNOT_MUTATE: ['Ваш обліковий запис ще чекає на схвалення: до того змінювати нічого не можна.', 'Uw account wacht nog op goedkeuring: tot dan kunt u niets wijzigen.'],
   };
   return (m[c] || ['Не вдалося. Спробуйте ще раз.', 'Mislukt. Probeer het opnieuw.'])[lang === 'uk' ? 0 : 1];
 }
@@ -114,7 +121,7 @@ export default function FotoPagina({ lang }: { lang: Lang }) {
       {deel === 'orde' ? <Ordenen lang={lang} verberg={(ids) => actie('verberg', ids, { waarde: true }, true)} openen={(item) => { setExtra([]); setBib((b) => (b ? { ...b, items: [item] } : b)); setOpen(0); }} /> : null}
 
       {kies.size ? <Selectiebalk lang={lang} ids={[...kies]} albums={albums} klaar={() => setKies(new Set())} actie={actie} toon={toon} /> : null}
-      {open !== null && items[open] ? <Viewer lang={lang} items={items} index={open} zet={setOpen} albums={albums} actie={actie} toon={toon} /> : null}
+      {open !== null && items[open] ? <><span style={{ display: 'contents' }} data-mq-laag-open='1' /><Viewer lang={lang} items={items} index={open} zet={setOpen} albums={albums} actie={actie} toon={toon} /></> : null}
     </section>
   );
 }
@@ -141,6 +148,7 @@ function Tijdlijn({ lang, items, kies, setKies, openen }: { lang: Lang; items: F
             {g.idx.map((k) => { const i = items[k]; const gekozen = kies.has(i.id); return (
               <div key={i.id} className={`foto-tegel${gekozen ? ' is-gekozen' : ''}`} data-foto-id={i.id}>
                 <button type='button' className='foto-tegel-open' onClick={() => (kiesModus ? wissel(i.id) : openen(k))} aria-label={`${i.titel}${i.genomenOp ? `, ${i.genomenOp.slice(0, 10)}` : ''}`}
+                  data-foto-bijschrift={i.genomenOp ? `${i.titel} · ${i.genomenOp.slice(0, 10)}` : i.titel}
                   onContextMenu={(e) => { e.preventDefault(); wissel(i.id); }}>
                   <Miniatuur item={i} />
                   {i.soort === 'video' ? <span className='foto-tegel-video'><Video aria-hidden='true' /></span> : null}
@@ -258,7 +266,7 @@ function Viewer({ lang, items, index, zet, albums, actie, toon }: { lang: Lang; 
   const herkomstNaam = (b: string) => bronDef(b)?.naam || b;
   const albumNaam = (id: string) => albums.find((a) => a.id === id)?.naam || id;
   return createPortal(
-    <div className='foto-viewer' role='dialog' aria-modal='true' aria-label={item.titel} onKeyDown={toets} data-foto-viewer='true'>
+    <div className='foto-viewer' role='dialog' aria-modal='true' aria-label={item.titel} onKeyDown={toets} data-foto-viewer='true' data-mq-laag-open='1'>
       <div className='foto-viewer-balk'>
         <button ref={sluitRef} type='button' className='foto-knop is-ikoon' onClick={() => zet(null)} aria-label={t('Закрити', 'Sluiten')}><X aria-hidden='true' /></button>
         <span className='foto-viewer-titel'>{item.titel}</span>

@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "taakId": "GEMINI-001",
+  "datum": "2026-11-14",
+  "taal": "uk",
+  "titel": "Усунення накладання правої панелі на меню облікових записів, перебудова локальної навігації, групування схожих облікових записів, журналу аудиту та вузької адаптивності інтерфейсу",
+  "opdracht": "Усунути перекриття відкритого меню облікових записів правою панеллю якорів, упорядкувати верхівку розгорнутого бічного меню, перевести праву панель якорів на впорядковану групову та локальну будову сторінок на піддоменах замість дублювання головного меню, забезпечити адаптивність рядка пошуку, додати групування схожих облікових записів і чітке блокування полів захищеного власника, виправити відображення перевірки цілісності й карток журналу аудиту, картковий перегляд таблиці пристроїв, перетягування способів входу, локальне розкриття майстра підключень та перенесення вузьких рядків на сторінках платформи поверх чинної встановленої версії.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "repo": "Tarasevych/hub",
+    "tak": "fix/ui-paneel-gebruikers-audit-20261114-184932",
+    "basisTak": "integratie",
+    "basisCommit": "987b81a578f120dfcf7af253a110a0d106883365",
+    "basisVersie": "20261105-061659",
+    "samengevoegd": "20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762 (TELEGRAM-002 + KLUIS-001 + IDENTITEIT-015)",
+    "geinstalleerdeVersie": "20261114-222613",
+    "geinstalleerdeBasis": "5c2cbb8966309557cc20421e9291ba7a3e40c762",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "bronnen": [
+    {
+      "soort": "звернення власника",
+      "omschrijving": "Детальний перелік вад оформлення, шарування, правої панелі якорів на піддоменах, пошукового рядка, керування користувачами, журналу аудиту, таблиці пристроїв, способів входу, підключень та вимога зібрати випуск поверх останньої встановленої версії.",
+      "bewijzen": [
+        "Внутрішній опис завдання GEMINI-001 та уточнення власника щодо основи 20261114-222613 і моделі Gemini 4 Hydrogen Extra (14.11.2026)"
+      ]
+    },
+    {
+      "soort": "правила координації",
+      "omschrijving": "Канонічні вимоги агента gemini, структура журналу розробки TRACE-001, вимоги маніфесту та реєстр поточної встановленої версії.",
+      "bewijzen": [
+        "AGENTS.md",
+        "GEMINI.md",
+        "orchestratie/beleid.json",
+        "orchestratie/geinstalleerd.json",
+        "shared/ontwikkelarchief.ts",
+        "shared/uitrol-manifest.ts"
+      ]
+    },
+    {
+      "soort": "модулі інтерфейсу й серверної частини",
+      "omschrijving": "Вихідні коди оболонки, меню облікових записів, правої панелі якорів, консолі керування, журналу аудиту, підключень і таблиць стилів.",
+      "bewijzen": [
+        "src/CanoniekAccountMenu.tsx",
+        "src/CanoniekOmlijsting.tsx",
+        "src/maquette-kern/MaquetteAnkerRail.tsx",
+        "src/BeheerConsoleWeergave.tsx",
+        "src/audit/AuditPagina.tsx",
+        "src/integraties/CatalogusV2.tsx",
+        "src/telegram-aanmelden/PlaatsingBeheer.tsx",
+        "src/ApiPlatformWeergave.tsx",
+        "backend/index.ts",
+        "backend/beheer-journaal.ts",
+        ".github/workflows/gemini-001-uitgave.yml"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T18:49:32Z",
+      "stap": "Створено робочу гілку fix/ui-paneel-gebruikers-audit-20261114-184932 від фіксації 987b81a578f120dfcf7af253a110a0d106883365 та зареєстровано завдання GEMINI-001."
+    },
+    {
+      "tijd": "2026-11-14T19:30:00Z",
+      "stap": "Винесено розгорнуту панель .canonical-account-panel через createPortal у document.body (.canonical-account-portal зі значенням z-index: 420), додано захист закриття в src/CanoniekOmlijsting.tsx, ураховано портал у src/plaatsing/plaatsing-staat.ts та впорядковано верхівку розгорнутого бічного меню в src/menu-v2.css без зсуву кнопки налаштувань і обрізання позначки «ТЕХ»."
+    },
+    {
+      "tijd": "2026-11-14T20:20:00Z",
+      "stap": "Уніфіковано MaquetteAnkerRail із підтримкою груп (kinderen, openStandaard), компактності й вибору краю, переведено праву панель на реальні локальні якорі та розділи сторінок на всіх піддоменах, і додано адаптивне згортання поля пошуку .zk-trigger у src/zoek/zoek.css."
+    },
+    {
+      "tijd": "2026-11-14T21:15:00Z",
+      "stap": "Створено shared/gebruikers-groepering.ts для виявлення й групування схожих облікових записів, розширено /api/owner/admin/users/pagina у backend/index.ts даними світлини, personRef і часу останнього входу, перебудовано картки користувачів, фільтри та блокування захищеного власника в src/BeheerConsoleWeergave.tsx, а також оновлено backend/beheer-journaal.ts і src/audit/AuditPagina.tsx для прозорого стану перевірки цілісності й карток аудиту."
+    },
+    {
+      "tijd": "2026-11-14T22:10:00Z",
+      "stap": "Виправлено картковий перегляд пристроїв на вузьких екранах, перетягування способів входу в PlaatsingBeheer.tsx і plaatsing.ts, локальне розкриття майстра в CatalogusV2.tsx, пропуск дубля telegram і канонічні переходи в IntegratieStrook.tsx та ApiPlatformWeergave.tsx, а також усунуто вихід довгих рядків за межі карток на сторінках платформи."
+    },
+    {
+      "tijd": "2026-11-14T22:45:00Z",
+      "stap": "Зафіксовано первинну реалізацію GEMINI-001 (5e79cb8b) та виконано початкову перевірку типів, складання й модульних тестів."
+    },
+    {
+      "tijd": "2026-11-14T23:50:00Z",
+      "stap": "Звірено живу версію на сервері через /api/version (20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762), влито її у гілку GEMINI-001 без втрати жодної зміни обох гілок, розв’язано єдиний конфлікт у shared/zoek-ui-knoppen.generated.ts перегенерацією до 1594 елементів та оновлено orchestratie/geinstalleerd.json."
+    },
+    {
+      "tijd": "2026-11-15T00:00:00Z",
+      "stap": "Пройдено повну перевірку статичних контрактів, типів клієнта й сервера, складання vite build і 55 безбазових модульних наборів після злиття; за погодженням із власником (модель Gemini 4 Hydrogen Extra) створено робочий процес .github/workflows/gemini-001-uitgave.yml із PostgreSQL 16 для подвійного прогону міграцій, тестів бази даних і оприлюднення випуску на GitHub."
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Виведення розгорнутої панелі облікового запису через createPortal безпосередньо в document.body",
+      "reden": "Усередині шару .canonical-chrome значення z-index: 360 було ізольованим власним контекстом накладання, через що розташована в body права панель .mq-anker-rail (z-index: 90) перекривала частину меню облікових записів.",
+      "alternatief": "Підвищувати z-index усієї зовнішньої оболонки відхилено через конфлікти з іншими шарами та модальними вікнами."
+    },
+    {
+      "keuze": "Уніфіковане групування MaquetteAnkerRail та заміна копії головного меню на локальні якорі сторінок",
+      "reden": "Права панель призначена для швидкого переходу між розділами та підрозділами самої активної сторінки, а не для повторення верхньої навігації піддомену.",
+      "alternatief": "Утримання окремих несумісних правих панелей для облікового запису та консолі керування відхилено."
+    },
+    {
+      "keuze": "Виявлення схожих облікових записів у чистому спільному модулі shared/gebruikers-groepering.ts",
+      "reden": "Зведення записів за personRef, нормалізованим іменем із транслітерацією кирилиці, основою електронної адреси та псевдонімами дозволяє виокремлювати пов’язані облікові записи однієї людини незалежно від середовища виконання.",
+      "alternatief": "Просте сортування за електронною адресою лише на клієнті без аналізу імен і транслітерації відхилено."
+    },
+    {
+      "keuze": "Відкриття майстра підключень локально під карткою замість перекидання гортання нагору та виправлення рядка IntegratieStrook у перевірці klassiek-009a",
+      "reden": "Локальне розкриття зберігає зорову позицію користувача в каталозі, а точне передавання lang={lang} і dienst='api' в ApiPlatformWeergave.tsx вимагало узгодження очікуваного фрагмента в klassiek-009a-sleutelpoort.test.ts.",
+      "alternatief": "Залишення дублювальної картки telegram або змушене гортання вгору сторінки відхилені."
+    },
+    {
+      "keuze": "Обов’язкове влиття живої основи 20261114-222613 (5c2cbb89) та оприлюднення через GitHub Actions із PostgreSQL 16",
+      "reden": "Запобігає перезапису щойно встановленого випуску TELEGRAM-002 та KLUIS-001, забезпечує коректний UITROL-BASIS (20261114-222613 @ 5c2cbb896630) і дає змогу перевірити міграції 0276–0277 та всі тести бази даних у чистому PostgreSQL 16.",
+      "alternatief": "Пакування без БД-перевірок із віртуальної машини або поверх застарілої основи відхилено."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "toegevoegd", "pad": ".github/workflows/gemini-001-uitgave.yml", "omschrijving": "Робочий процес GitHub Actions із PostgreSQL 16, подвійним прогоном міграцій, перевіркою TRACE-001, маніфестом та оприлюдненням випуску." },
+    { "soort": "gewijzigd", "pad": "orchestratie/geinstalleerd.json", "omschrijving": "Оновлено запис фактично встановленої на сервері основи до 20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/GEMINI-001.json", "omschrijving": "Реєстрація завдання GEMINI-001 у черзі координації." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-001.json", "omschrijving": "Доказове досьє завдання з переліком кроків, рішень, змін і перевірок." },
+    { "soort": "toegevoegd", "pad": "shared/gebruikers-groepering.ts", "omschrijving": "Спільна логіка виявлення та групування схожих облікових записів за іменем, транслітерацією, адресою й ідентифікатором особи." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/ui-paneel-gebruikers-audit-gemini-001.test.ts", "omschrijving": "Модульні перевірки порталу меню облікових записів, правої панелі, групування користувачів, аудиту, пошуку та вузької адаптивності." },
+    { "soort": "gewijzigd", "pad": "backend/beheer-journaal.ts", "omschrijving": "Повернення відомостей laatsteControle про останню перевірку цілісності ланцюжка журналу аудиту." },
+    { "soort": "gewijzigd", "pad": "backend/index.ts", "omschrijving": "Додавання avatarUrl, personRef, lastLoginAt і recoverableUntil до відповіді /api/owner/admin/users/pagina." },
+    { "soort": "gewijzigd", "pad": "scripts/plaatsing-vaste-elementen.json", "omschrijving": "Оновлення реєстру закріплених елементів розміщення після перенесення панелі в портал і злиття з 5c2cbb89." },
+    { "soort": "gewijzigd", "pad": "shared/aanmeld-plaatsing/plaatsing.ts", "omschrijving": "Функція verplaatsen для зміни порядку способів входу перетягуванням і кнопками." },
+    { "soort": "gewijzigd", "pad": "shared/zoek-ui-knoppen.generated.ts", "omschrijving": "Перегенерований після злиття з 5c2cbb89 автоматичний каталог кнопок інтерфейсу (1594 елементи)." },
+    { "soort": "gewijzigd", "pad": "src/AIDienstWeergave.tsx", "omschrijving": "Локальні якорі сторінки в MaquetteAnkerRail для піддомену ШІ замість повтору головного меню." },
+    { "soort": "gewijzigd", "pad": "src/AfstemmingWissel.tsx", "omschrijving": "Узгодження перемикача та заголовка з новою шириною на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/AiWerkruimte.tsx", "omschrijving": "Якорі робочої області ШІ та підпис групи «ШІ для вас: Робота, Усі інструменти» у правій панелі." },
+    { "soort": "gewijzigd", "pad": "src/ApiPlatformWeergave.tsx", "omschrijving": "Локальні якорі платформи інтерфейсів, безпечне перенесення рядків і пропуск дубля telegram у IntegratieStrook." },
+    { "soort": "gewijzigd", "pad": "src/App.tsx", "omschrijving": "Перехід до локальних якорів на головній сторінці простору." },
+    { "soort": "gewijzigd", "pad": "src/BeheerAiBeleidWeergave.tsx", "omschrijving": "Підтримка якорів розділу політик ШІ у консолі керування." },
+    { "soort": "gewijzigd", "pad": "src/BeheerConsoleWeergave.tsx", "omschrijving": "Групування схожих користувачів, фільтри, світлини, дати, захист полів власника, карткові пристрої й локальна навігація оновлень." },
+    { "soort": "gewijzigd", "pad": "src/BeheerUitrolWeergave.tsx", "omschrijving": "Адаптивні блоки вкладки оновлень та ідентифікатори секцій для правої панелі (Огляд, Історія, Журнал, Діагностика, Налаштування)." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekAccountMenu.tsx", "omschrijving": "Виведення розгорнутої панелі .canonical-account-panel через createPortal у .canonical-account-portal в document.body." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekOmlijsting.tsx", "omschrijving": "Захист бічного меню від закриття та перехоплення клавіші Escape під час роботи з відкритим порталом облікових записів." },
+    { "soort": "gewijzigd", "pad": "src/CloudFunctioneelWeergave.tsx", "omschrijving": "Перехід на локальні якорі сторінки у правій панелі хмарного сховища." },
+    { "soort": "gewijzigd", "pad": "src/DomoticaWeergave.tsx", "omschrijving": "Перехід на локальні якорі сторінки у правій панелі розумного дому." },
+    { "soort": "gewijzigd", "pad": "src/GitHubWeergave.tsx", "omschrijving": "Локальні якорі сторінки інтеграції з GitHub у правій панелі." },
+    { "soort": "gewijzigd", "pad": "src/GoogleMailWerkruimte.tsx", "omschrijving": "Локальні якорі робочого простору пошти у правій панелі." },
+    { "soort": "gewijzigd", "pad": "src/MailFunctioneelWeergave.tsx", "omschrijving": "Локальні якорі поштового піддомену у правій панелі." },
+    { "soort": "gewijzigd", "pad": "src/McpDienstWeergave.tsx", "omschrijving": "Локальні якорі служби MCP у правій панелі замість копіювання головного меню." },
+    { "soort": "gewijzigd", "pad": "src/aanmeld-herontwerp.css", "omschrijving": "Коригування переносів і відступів на екранах входу." },
+    { "soort": "gewijzigd", "pad": "src/accountmenu-v3/accountmenu-v3.css", "omschrijving": "Узгодження висоти й шарування з новим порталом меню облікових записів." },
+    { "soort": "gewijzigd", "pad": "src/afdruk.css", "omschrijving": "Приховування службових панелей і коректні поля під час друку." },
+    { "soort": "gewijzigd", "pad": "src/afstemming-vnext/AfstemmingPagina.tsx", "omschrijving": "Додавання локальних якорів для розділів узгодження та координації." },
+    { "soort": "gewijzigd", "pad": "src/agenda/agenda.css", "omschrijving": "Запобігання виходу тексту подій і заголовків за межі блоків на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/agenten/agenten.css", "omschrijving": "Адаптивне перенесення рядків і назв у картках агентів." },
+    { "soort": "gewijzigd", "pad": "src/api-platform-weergave.css", "omschrijving": "Перенесення довгих адрес, ключів і заголовків на вузьких екранах платформи інтерфейсів." },
+    { "soort": "gewijzigd", "pad": "src/api-sleutels-maquette.css", "omschrijving": "Стилі вузького відображення ключів та індикаторів без горизонтального виходу за край." },
+    { "soort": "gewijzigd", "pad": "src/audit/AuditPagina.tsx", "omschrijving": "Відображення стану цілісності без хибного «Не перевірено», груповані фільтри з підзаголовками та перебудова карток журналу." },
+    { "soort": "gewijzigd", "pad": "src/audit/audit-maquette.css", "omschrijving": "Стилі підзаголовків груп фільтрів, контрастного активного періоду та макетних карток аудиту." },
+    { "soort": "gewijzigd", "pad": "src/audit/audit.css", "omschrijving": "Контейнерні запити @container aj-lijst для карток журналу аудиту без виходу кнопок дій за правий край." },
+    { "soort": "gewijzigd", "pad": "src/audit/types.ts", "omschrijving": "Тип JournaalLaatsteControle у моделі статистики журналу аудиту." },
+    { "soort": "gewijzigd", "pad": "src/beheer-console.css", "omschrijving": "Оновлення карток користувачів, фільтрів, стану блокування [data-vergrendeld='true'] та адаптивного перегляду пристроїв." },
+    { "soort": "gewijzigd", "pad": "src/beheer-kern-maquette.css", "omschrijving": "Узгодження макетної сітки та контрастів у консолі керування." },
+    { "soort": "gewijzigd", "pad": "src/beheer-uitrol.css", "omschrijving": "Усунення обрізання вузьких рядків і переповнення у блоках оновлень." },
+    { "soort": "gewijzigd", "pad": "src/bureau/bureau.css", "omschrijving": "Безпечне перенесення довгих ідентифікаторів і адрес у розділі робочого стола." },
+    { "soort": "gewijzigd", "pad": "src/canoniek-account-menu.css", "omschrijving": "Стилі порталу .canonical-account-portal зі значенням z-index: 420." },
+    { "soort": "gewijzigd", "pad": "src/canoniek-omlijsting.css", "omschrijving": "Виправлення переповнення та адаптивності заголовків й шапки в канонічній оболонці." },
+    { "soort": "gewijzigd", "pad": "src/cloud-vnext/CloudPagina.tsx", "omschrijving": "Локальні якорі для розділів нової хмарної сторінки." },
+    { "soort": "gewijzigd", "pad": "src/cloud-vnext/cloud-vnext-delen.css", "omschrijving": "Коригування переносів у картках спільного доступу хмари." },
+    { "soort": "gewijzigd", "pad": "src/cloud-vnext/onderdelen/Overzicht.tsx", "omschrijving": "Прив’язка локальних ідентифікаторів секцій на огляді хмари." },
+    { "soort": "gewijzigd", "pad": "src/cloud/cloud-verbinding-centrum.css", "omschrijving": "Адаптивні переноси в центрі підключень хмарного сховища." },
+    { "soort": "gewijzigd", "pad": "src/connector-v2/connector-v2.css", "omschrijving": "Виправлення вузького відображення карток і рядків з’єднувача." },
+    { "soort": "gewijzigd", "pad": "src/diagnostiek/Diagnostiek.tsx", "omschrijving": "Додавання локальних ідентифікаторів для переходів із правої панелі діагностики." },
+    { "soort": "gewijzigd", "pad": "src/diagnostiek/diagnostiek-maquette.css", "omschrijving": "Адаптивне перенесення вузьких рядків у макеті діагностики." },
+    { "soort": "gewijzigd", "pad": "src/extensie/BrowserEnAgenten.css", "omschrijving": "Безпечні ширини й переноси на сторінці розширення та агентів." },
+    { "soort": "gewijzigd", "pad": "src/geheimen/Geheimen.tsx", "omschrijving": "Прив’язка якорів розділів сховища таємниць і захист від обрізання на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/geheimen/geheimen.css", "omschrijving": "Перенесення довгих назв і значень у рядках таємниць без виходу за межі карток." },
+    { "soort": "gewijzigd", "pad": "src/google-mail-werkruimte.css", "omschrijving": "Захист від переповнення рядків у поштовому просторі на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/hub-notities.css", "omschrijving": "Адаптивне перенесення заголовків і посилань у нотатках." },
+    { "soort": "gewijzigd", "pad": "src/huis/HuisPagina.tsx", "omschrijving": "Прив’язка локальних якорів на сторінці розумного дому." },
+    { "soort": "gewijzigd", "pad": "src/huis/onderdelen/Overzicht.tsx", "omschrijving": "Ідентифікатори секцій для правої панелі на огляді розумного дому." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/IdentiteitKlassiekMaquette.tsx", "omschrijving": "Використання групованої будови та уніфікованої правої панелі на сторінці облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-omlijsting.css", "omschrijving": "Адаптивність меж і ширини в макетній оболонці облікового запису." },
+    { "soort": "gewijzigd", "pad": "src/integraties/CatalogusV2.tsx", "omschrijving": "Локальне розкриття майстра налаштувань під вибраною карткою без стрибка гортання сторінки вгору." },
+    { "soort": "gewijzigd", "pad": "src/integraties/IntegratieStrook.tsx", "omschrijving": "Канонічні адреси переходів, підтримка параметра overslaan та усунення зайвих переходів." },
+    { "soort": "gewijzigd", "pad": "src/integraties/Integraties.tsx", "omschrijving": "Локальні якорі каталогу підключень та коректне розміщення майстра." },
+    { "soort": "gewijzigd", "pad": "src/integraties/integraties-maquette.css", "omschrijving": "Стилі вкладеного під картку майстра підключень та вузької адаптивності." },
+    { "soort": "gewijzigd", "pad": "src/integraties/integraties.css", "omschrijving": "Коректне обтікання, розгортання та межі карток каталогу підключень." },
+    { "soort": "gewijzigd", "pad": "src/mail-overlay-oppervlak.css", "omschrijving": "Запобігання горизонтальному виходу накладних поштових панелей." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/MaquetteAnkerRail.tsx", "omschrijving": "Підтримка розгортуваних груп (kinderen, openStandaard), перемикача компактності й вибору сторони закріплення." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/index.ts", "omschrijving": "Експорт оновлених типів правої панелі якорів." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-klassiek.css", "omschrijving": "Оформлення груп, рядків, покажчика перегляду та компактного режиму панелі якорів у класичних темах." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-oppervlakken.css", "omschrijving": "Стилі груп і перемикачів правої панелі якорів та перенесення тексту в картках." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-tokens.css", "omschrijving": "Узгоджені змінні кольорів і меж для груп правої панелі." },
+    { "soort": "gewijzigd", "pad": "src/mcp-backups-kaart.css", "omschrijving": "Усунення виходу довгих шляхів та адрес за край картки запасних копій." },
+    { "soort": "gewijzigd", "pad": "src/menu-v2.css", "omschrijving": "Однорядна верхівка розгорнутого бічного меню без зісковзування кнопки налаштувань та обрізання позначки «ТЕХ»." },
+    { "soort": "gewijzigd", "pad": "src/niet-gevonden.css", "omschrijving": "Безпечні відступи й перенос на сторінці відсутнього маршруту." },
+    { "soort": "gewijzigd", "pad": "src/overzicht/Dashboard.tsx", "omschrijving": "Прив’язка локальних якорів на огляді консолі." },
+    { "soort": "gewijzigd", "pad": "src/plaatsing/plaatsing-staat.ts", "omschrijving": "Урахування панелі облікового запису всередині .canonical-account-portal під час обчислення вільної області." },
+    { "soort": "gewijzigd", "pad": "src/plaatsing/plaatsing.css", "omschrijving": "Узгоджені відступи й поведінка на вузьких екранах для плаваючих кнопок." },
+    { "soort": "gewijzigd", "pad": "src/tech/ruimtes/ruimtes.css", "omschrijving": "Перенесення довгих назв у налаштуваннях технічного простору." },
+    { "soort": "gewijzigd", "pad": "src/telegram-aanmelden/PlaatsingBeheer.tsx", "omschrijving": "Перетягування способів входу впорядковуванням із фіксацією стану через verplaatsen." },
+    { "soort": "gewijzigd", "pad": "src/telegram-aanmelden/TelegramBeheer.tsx", "omschrijving": "Коригування відображення та адаптивності керування входами через Telegram." },
+    { "soort": "gewijzigd", "pad": "src/telegram-aanmelden/telegram.css", "omschrijving": "Стилі перетягування рядків способів входу й перенесення довгих значень (збережено спільно з TELEGRAM-002)." },
+    { "soort": "gewijzigd", "pad": "src/terminal/terminal.css", "omschrijving": "Коректне перенесення й гортання у вузьких контейнерах віддаленої консолі." },
+    { "soort": "gewijzigd", "pad": "src/toegangslaag.css", "omschrijving": "Адаптивність меж та перенос тексту на сторінці рівня доступу." },
+    { "soort": "gewijzigd", "pad": "src/ui-golf-11.css", "omschrijving": "Доповнення глобальних захистів перенесення слів і запобігання горизонтальному переповненню." },
+    { "soort": "gewijzigd", "pad": "src/uitrol/agent-toevoegen.css", "omschrijving": "Коректна ширина й відступи форми додавання агента на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/uitrol/diagnose.css", "omschrijving": "Безпечне перенесення технічних відомостей у блоках діагностики розгортання." },
+    { "soort": "gewijzigd", "pad": "src/uitrol/meester.css", "omschrijving": "Адаптивність карток майстра оновлень і вирівнювання елементів." },
+    { "soort": "gewijzigd", "pad": "src/uitrol/weergave-v2.css", "omschrijving": "Адаптивна сітка журналу й історії оновлень на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/verbindingen/VerbindingenCentrum.tsx", "omschrijving": "Локальні якорі центру підключень та уникнення переповнення рядків." },
+    { "soort": "gewijzigd", "pad": "src/verbindingen/verbindingen.css", "omschrijving": "Перенесення довгих адрес і кнопок дій на вузьких екранах." },
+    { "soort": "gewijzigd", "pad": "src/zoek/zoek.css", "omschrijving": "Адаптивна ширина та згортання рядка пошуку .zk-trigger із clamp() і медіазапитами проти накладання на заголовок." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/klassiek-009a-sleutelpoort.test.ts", "omschrijving": "Оновлення перевірюваного виклику IntegratieStrook до фактичного виклику lang={lang} dienst='api' з ApiPlatformWeergave.tsx." }
+  ],
+  "controles": [
+    {
+      "opdracht": "curl https://mcp.tarasevych.com/api/version",
+      "uitkomst": "HTTP 200: підтверджено живу основу 20261114-222613 @ 5c2cbb8966309557cc20421e9291ba7a3e40c762 (перед злиттям та повторно перед випуском)."
+    },
+    {
+      "opdracht": "NODE_OPTIONS=\"--max-old-space-size=2816\" npm run build (після злиття з 5c2cbb89)",
+      "uitkomst": "код 0: перевірки карти, розміщення, довідок (0 помилок), контрастів і пошукового каталогу (1594 елементи) пройшли; vite build 1m 11s, 6 технічних і 645 відкритих пакунків, huis-maquette, розширення 0.9.3 та серверне складання у dist-server/ готові."
+    },
+    {
+      "opdracht": "npm run typecheck:server && npx tsc --noEmit (після злиття з 5c2cbb89)",
+      "uitkomst": "код 0: перевірка типів клієнта та сервера без помилок."
+    },
+    {
+      "opdracht": "find deploy -name '*.sh' -exec bash -n {} + && node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak GEMINI-001 --fase overdracht",
+      "uitkomst": "код 0: синтаксис сценаріїв розгортання, правила координації, досьє й свіжість гілки підтверджені."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs ui-paneel-gebruikers-audit-gemini-001 (після злиття з 5c2cbb89)",
+      "uitkomst": "код 0: 20/20 перевірок успішно."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs <55 безбазових наборів інтерфейсу, панелі, пошуку, тем, підключень, Telegram, випуску й координації після злиття>",
+      "uitkomst": "код 0: hulp-vraagtekens 30/30, mobiel-cascade-20261105 22/22, mobiel-geometrie-20261021 56/56, klassiek-009a-sleutelpoort 14/14, plaatsing-20261025 68/68, trace-001-ontwikkelarchief 16/16, zoek-ui-tabblad-20261105 46/46, uitrol-manifest 21/21, uitrol-voorcontrole 46/46, uitrol-pakket-maken 16/16, uitrol-vereisten-001 60/60, uitrol-codes, uitrol-tijden, contrast-knoppen-logos-20261021 38/38, sec-002-afwerking-b-20261112 43/43, telegram-aanmelden-20261109 65/65, apparaat-bevestiging-20261109 52/52, identiteit-account-ui 6/6, aanmeld-ui-20261030 105/105, gebruiker-audit-2026-10-19 43/43, sec-002-g10i-20261112 12/12, telegram-venster-20261114 15/15, zoek-ui-bereik-20261105 24/24, zoek-ui-sectie-20261105 14/14, integraties-catalogus-v2-20261029 29/29, thema 27/27, maquette-001-kern 10/10, klassiek-001-kern 8/8, klassiek-002a-werkruimte 8/8, klassiek-002c-panelen 9/9, klassiek-007a-huis-kern 14/14, klassiek-008a-mcp-kern-uitrol 14/14, klassiek-010a-beheer-kern 14/14, accountmenu-v2-20261029 13/13, accountmenu-v3 30/30, zoek-diepe-link-20261105 51/51, zoek-route-tabblad-20261105 10/10, zoek-menu-20261103 72/72, zoek-in-menu-20261024 23/23, uitrol-weergave-v2 29/29, ai-hub 58/58, ai-werkruimte-20261019 43/43, ai-doorverwijzing-ui004 13/13, audit-filters 5/5, ui-audit-g 59/59, dock-snelmenu-20261029 12/12, strook-menu 26/26, menu-per-account-20261019 19/19, menu-per-profiel-20261019 42/42, menu-taal-prapor-20261103 56/56, aanmelden-integ-20261103 43/43, huis-001-oude-fouten-20261110 16/16, orch-kern-20261031 78/78, verbindingen-centrum-20261029 5/5, orch-pakket 24/24, orch-uitrol-basis 15/15, orch-beoordeling 55/55."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/gemini-001-uitgave.yml (PostgreSQL 16 + подвійні міграції + тести БД)",
+      "uitkomst": "Повністю перевіряє подвійне виконання міграцій 0276–0277 на чистій базі даних PostgreSQL 16 та 12 БД-залежних тестових наборів перед формуванням і оприлюдненням пакета випуску."
+    }
+  ],
+  "beperkingen": [
+    "У локальній віртуальній машині відсутній сервер PostgreSQL і змінна DATABASE_URL, через що тести kluis-apparaat-20261114 та aanmeld-koppel-20261030 викидали DATABASE_URL_ONTBREEKT, а БД-частини beheer-journaal, gebruiker-audit-2026-10-19, sec-002-g10i-20261112, telegram-venster-20261114 і telegram-aanmelden-stroom пропускалися; повна перевірка бази даних і подвійний прогін міграцій винесені в робочий процес GitHub Actions зі службою postgres:16.",
+    "Візуальна перевірка в живому оглядачі на робочих піддоменах (admin.tarasevych.com, id.tarasevych.com, ai.tarasevych.com, api.tarasevych.com) не виконувалася з ізольованого контейнера; поведінка перевірена через статичні контракти, модульні випробування та виробниче складання.",
+    "Автоматичне встановлення на робочий сервер вимкнене за правилами платформи: оновлення оприлюднюється на GitHub Release без перетирання 20261114-222613 і встановлюється лише власником через майстер «Нове оновлення» з ключем доступу."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних ключів доступу, маркерів сеансів, приватних листів, особистих даних чи прихованих міркувань моделі до історії розробки не додано."
+  }
+}

@@ -9,7 +9,7 @@ import { canonicalNavigationUrl, routeLang } from '../canoniek-navigatie';
 import { HELP_TECH, contrast, maxMinutenVoor, openEindeToegestaan, rolInfo, type BandKleur, type BandPatroon, type TechRol } from '../../shared/tech-rollen';
 import { SSH_CA_VLAG } from '../../shared/ssh-ca';
 import { koppelInschuiven } from './band-inschuiven';
-import { neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, useTech, type TechStatus, type TechVenster } from './tech-opslag';
+import { leesBandHintActief, neemOpgespaardVenster, openTechVenster, startTech, techActief, techActiveren, techBand, techBeeindigen, techBody, techErfNieuweTabbladen, techErven, techMag, techVernieuwen, useTech, type TechStatus, type TechVenster } from './tech-opslag';
 import Vraag from './Vraag';
 import DiagnoseLaag from '../diagnose/Diagnose';
 import { OndersteuningVenster, ToestemmingLaag } from '../ondersteuning/Ondersteuning';
@@ -22,6 +22,8 @@ import { useRemoteAantal } from '../extern/extern-opslag';
 const VlaggenVenster = lazyTech(() => import('../vlaggen/Vlaggen'));
 // Kaart «SSH-сертифікати» (18.10.2026): stand, voorbereiden/aan/uit, uitgeven 5–60 min, lijst en intrekken. Vervangt het losse venster.
 const SshCertificaat = lazyTech(() => import('../ssh/SshBeheer'));
+/** SEC-002 (g10f): alleen hier aanvaardt root de passkey voor een SSH-certificaat (zelfde lijst als SSH_PASSKEY_ADRESSEN in SshBeheer). */
+const SSH_HIER = (() => { try { return ['https://admin.tarasevych.com', 'https://id.tarasevych.com'].includes(location.origin); } catch { return true; } })();
 import './tech.css';
 import HulpVraag from '../hulp/HulpVraag';
 import { TechMeldingenKnop } from '../meldingen/TechMeldingen';
@@ -31,6 +33,7 @@ import '../extensie/ExtensieOntgrendeling.css';
 // Twee ruimtes van één account (vlag tech-ruimtes-v2, standaard UIT = precies de oude weergave hieronder).
 import { laadRuimtesVlag, ruimtesV2Nu, useRuimtesV2 } from './ruimtes/ruimtes-vlag';
 import { startRuimtes } from './ruimtes/ruimtes-opslag';
+import { opGebruikerWissel } from './ruimtes/ruimte-signaal';
 import { WOORDEN } from './ruimtes/teksten';
 // 03.11.2026: via lazyTech (zoals terminal/vlaggen/ssh) in plaats van kaal React.lazy — tech-bundels.test.ts eist «nooit kaal lazy» in
 // TechLaag; bij een mislukte lading eerst de status vernieuwen en één keer opnieuw proberen. Alle vijf staan al binnen TechBundelGrens.
@@ -45,6 +48,7 @@ import { bewaarVoorkeur, dropPlek, leesVoorkeur, metModus, STROOK_KNOP_IDS, STRO
 import { knopMenu, type KnopMenuItem } from './strook-menu';
 import { StrookInstelPaneel, StrookKnopMenu } from './StrookPaneel';
 import './strook.css';
+import './tech-maquette.css';
 import { zetTabbladMerk } from './ruimtes/tabblad-pictogram';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
@@ -62,6 +66,7 @@ const FOUTEN: Record<string, [string, string]> = {
   GEBRUIKER_NIET_GOEDGEKEURD: ['Цей обліковий запис ще не схвалено.', 'Dit account is nog niet goedgekeurd.'],
   EMAIL_ONGELDIG: ['Перевірте адресу пошти.', 'Controleer het e-mailadres.'],
   ROLLEN_ONGELDIG: ['Оберіть хоча б одну роль.', 'Kies minstens één rol.'],
+  SNELKOPPELINGEN_ONGELDIG: ['Неправильне значення дозволу на ярлики.', 'Ongeldige waarde voor snelkoppelingen.'],
 };
 const foutTekst = (e: unknown, uk: boolean) => { const c = fout(e); const f = FOUTEN[c]; if (f) return uk ? f[0] : f[1]; if (/STEP_UP|STAP_OP/.test(c)) return uk ? 'Вхід не підтверджено — нічого не змінено.' : 'Aanmelding niet bevestigd — niets gewijzigd.'; return `${uk ? 'Не вдалося' : 'Mislukt'} (${c}).`; };
 
@@ -130,10 +135,19 @@ export default function TechLaag() {
   // Eén mechanisme voor in- en uitschuiven (band-inschuiven.ts): muis aan de bovenrand, focus, klik, Esc, klik ernaast, scrollen —
   // met de lusbescherming van headroom. Raakt alleen de band zelf, nooit #root.
   const inschuif = useRef<ReturnType<typeof koppelInschuiven> | null>(null);
+  const openBijBandAan = useRef(false);
+  useEffect(() => {
+    return opGebruikerWissel((naar) => {
+      if (naar !== 'technisch') { openBijBandAan.current = false; return; }
+      if (inschuif.current) { openBijBandAan.current = false; inschuif.current.open(); }
+      else openBijBandAan.current = true;
+    });
+  }, []);
   useEffect(() => {
     if (!bandAan) return undefined;
     const k = koppelInschuiven({ band: () => bandRef.current, modus: () => modusRef.current, vast: () => vastRef.current || focusZichtbaar(bandRef.current), zet: setPiek });
     inschuif.current = k;
+    if (openBijBandAan.current) { openBijBandAan.current = false; k.open(); }
     return () => { k.stop(); inschuif.current = null; setPiek(false); };
   }, [bandAan]);
   const vorigeModus = useRef(modus);
@@ -156,9 +170,14 @@ export default function TechLaag() {
 
   // Band zichtbaar = kenmerk op <html> + kleuren als CSS-variabelen + [ТЕХ] in de titel van het tabblad (WCAG 1.4.1: niet alleen kleur).
   const kleur = t.profiel && t.catalogus ? t.catalogus.kleuren[t.profiel.band.kleur] : null;
+  const bandVoorbehoud = !t.geladen && leesBandHintActief();
+  const bandRuimteAan = actief || bandVoorbehoud;
   useEffect(() => {
     const html = document.documentElement;
-    if (!actief) { delete html.dataset.tech; if (v2) zetTabbladMerk(false); return; }
+    if (!actief) {
+      if (bandVoorbehoud) { html.dataset.tech = 'aan'; return undefined; }
+      delete html.dataset.tech; if (v2) zetTabbladMerk(false); return undefined;
+    }
     html.dataset.tech = 'aan';
     if (v2) zetTabbladMerk(true, kleur?.bg || '#f5b400');
     html.dataset.techPatroon = t.profiel?.band.patroon || 'strepen';
@@ -170,10 +189,10 @@ export default function TechLaag() {
     const mo = el ? new MutationObserver(titel) : null;
     if (el && mo) mo.observe(el, { childList: true, characterData: true, subtree: true });
     return () => { mo?.disconnect(); document.title = document.title.replace(/^\[(ТЕХ|TECH)\] /, ''); delete html.dataset.tech; if (v2) zetTabbladMerk(false); };
-  }, [actief, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
+  }, [actief, bandVoorbehoud, kleur?.bg, kleur?.fg, t.profiel?.band.patroon, uk, v2]);
   // Gereserveerde ruimte (--tech-band-h in strook.css) hangt ALLEEN af van de modus en de grootte — nooit van het uitschuiven.
-  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && actief) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, actief]);
-  useEffect(() => { const h = document.documentElement; if (actief) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [actief, voorkeur.grootte]);
+  useEffect(() => { const h = document.documentElement; if (bandIngeklapt && bandRuimteAan) h.dataset.techIngeklapt = '1'; else delete h.dataset.techIngeklapt; }, [bandIngeklapt, bandRuimteAan]);
+  useEffect(() => { const h = document.documentElement; if (bandRuimteAan) h.dataset.techGrootte = voorkeur.grootte; else delete h.dataset.techGrootte; }, [bandRuimteAan, voorkeur.grootte]);
 
   // Past de band niet? Stap voor stap: 0 = zoals gekozen, 1 = knoppen alleen met pictogram (vorm «tekst» blijft tekst), 2 = ook zonder
   // rollen, «ще …» en reden; past het dan nog niet, dan verhuizen knoppen één voor één naar «⋯» (data-overvol) — nooit over elkaar.
@@ -232,10 +251,21 @@ export default function TechLaag() {
     void document.fonts?.ready.then(meet);
     const laat = window.setTimeout(meet, 800);
     // Zijbalk open/dicht (of thema/taal) verandert klassen op <html>/<body>: opnieuw meten, ook als de band zelf even breed blijft.
-    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => window.requestAnimationFrame(meet)) : null;
+    // ZAVYSANNIA-001: один кадр на пачку змін і лише коли ширина смуги чи мова справді інші. Раніше кожна зміна класу <html>
+    // (тема: кілька змін за одне натискання) запускала окремий meet(), а кожен його запис data-pas/data-overvol із наступним
+    // читанням розмірів перераховував стилі ВСЬОГО документа (селектори :has на <html>) — 200–700 мс кожен на телефоні.
+    let moKader = 0;
+    let vorigeMaat = '';
+    const zonderThema = (k: DOMTokenList | undefined) => (k ? Array.from(k).filter((c) => !/^(theme-|palet-|thema-wissel)/.test(c)).sort().join(' ') : '');
+    const maat = () => `${Math.round(el.getBoundingClientRect().width)}|${document.documentElement.lang}|${zonderThema(document.documentElement.classList)}|${zonderThema(document.body?.classList)}`;
+    vorigeMaat = maat();
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => {
+      if (moKader) return;
+      moKader = window.requestAnimationFrame(() => { moKader = 0; const m = maat(); if (m === vorigeMaat) return; vorigeMaat = m; meet(); });
+    }) : null;
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang', 'data-theme'] });
     if (document.body) mo?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => { ro?.disconnect(); mo?.disconnect(); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
+    return () => { ro?.disconnect(); mo?.disconnect(); if (moKader) window.cancelAnimationFrame(moKader); window.removeEventListener('resize', meet); window.clearTimeout(laat); };
   }, [bandStatus, actief, knoppenSleutel]);
   useEffect(() => {
     if (!meer) return;
@@ -267,7 +297,9 @@ export default function TechLaag() {
     groep('hulpmiddelen', uk ? 'Інструменти' : 'Hulpmiddelen', [
       (techMag('terminal.test', t) || techMag('terminal.servers', t)) && { k: 'terminal', icoon: <SquareTerminal aria-hidden='true' />, naam: uk ? 'Термінал' : 'Terminal', uitleg: uk ? 'Командний рядок із записом' : 'Opdrachtregel met opname', doe: () => kies('terminal') },
       techMag('terminal.servers', t) && { k: 'remote', icoon: <MonitorUp aria-hidden='true' />, naam: uk ? 'Віддалений стіл' : 'Extern bureaublad', uitleg: uk ? 'Екран сервера в браузері' : 'Scherm van de server in de browser', doe: () => kies('remote') },
-      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten', uitleg: uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min', doe: () => kies('ssh') },
+      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten',
+        // SEC-002 (g10f): uitgeven met passkey kan alleen op admin.* en id.*; elders blijft de kaart (bekijken, intrekken) bereikbaar, met die uitleg.
+        uitleg: SSH_HIER ? (uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min') : (uk ? 'Перегляд і відкликання; видача — на admin.tarasevych.com' : 'Bekijken en intrekken; uitgeven op admin.tarasevych.com'), doe: () => kies('ssh') },
       (techMag('flags.test', t) || techMag('diensten.beheren', t)) && { k: 'vlaggen', icoon: <Flag aria-hidden='true' />, naam: uk ? 'Перемикачі функцій' : 'Functieschakelaars', uitleg: uk ? 'Нові можливості: спробувати для себе' : 'Nieuwe mogelijkheden voor uzelf proberen', doe: () => kies('vlaggen') },
     ]),
     groep('mensen', uk ? 'Люди й підтримка' : 'Mensen en ondersteuning', [
@@ -351,13 +383,14 @@ export default function TechLaag() {
     if (id === 'instel') open = () => setInstelOpen(true);
     const kiesbaar = STROOK_KNOP_IDS.includes(id) && (!!m || id === 'meldingen' || id === 'uit' || (id === 'wissel' && v2));
     return knopMenu({
-      uk, id, naam: labelVan(id), plek: voorkeur.knoppen.indexOf(id), aantal: voorkeur.knoppen.length, kiesbaar, modus, label: voorkeur.label, open, url: m?.url, extra,
+      uk, id, naam: labelVan(id), plek: voorkeur.knoppen.indexOf(id), aantal: voorkeur.knoppen.length, kiesbaar, modus, label: voorkeur.label, tooltips: voorkeur.tooltips, open, url: m?.url, extra,
       acties: {
         naarPlek: (p) => zetVoorkeur(zetOp(voorkeur, id, p)),
         wegVanStrook: () => zetVoorkeur(zetAan(voorkeur, id, false)),
         opStrook: () => zetVoorkeur(zetAan(voorkeur, id, true)),
         zetModus: (mm) => zetVoorkeur(metModus(voorkeur, mm)),
         zetLabel: (l) => zetVoorkeur({ ...voorkeur, label: l }),
+        zetTooltips: (aan) => zetVoorkeur({ ...voorkeur, tooltips: aan }),
         instellingen: () => setInstelOpen(true),
         nieuwTabblad: (u) => { window.open(u, '_blank', 'noopener'); },
         kopieer: (u) => { void navigator.clipboard?.writeText(u).catch(() => undefined); },
@@ -392,7 +425,7 @@ export default function TechLaag() {
   return (
     <>
       {actief && t.activatie ? (
-        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${bandIngeklapt && volledig ? ' is-piek' : ''}${sleep ? ' is-slepen' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-open={volledig ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-grootte={voorkeur.grootte} data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
+        <div ref={bandRef} className={`tech-band${bandIngeklapt && !volledig ? ' is-ingeklapt' : ''}${bandIngeklapt && volledig ? ' is-piek' : ''}${sleep ? ' is-slepen' : ''}`} data-tech-ingeklapt={bandIngeklapt ? '1' : '0'} data-tech-open={volledig ? '1' : '0'} data-tech-label={voorkeur.label} data-tech-tooltips={voorkeur.tooltips ? '1' : '0'} data-tech-grootte='middel' data-tech-modus={modus} role='region' aria-label={uk ? 'Технічний режим' : 'Technische modus'} data-tech-band='1'
           onClick={bandIngeklapt && !volledig ? klikStrook : undefined}>
           <span className='tech-band-merk'><ShieldCheck aria-hidden='true' />{uk ? 'ТЕХНІЧНИЙ' : 'TECHNISCH'}{remoteN > 0 ? <i className='tech-remote-actief' data-tech-remote={remoteN} role='status' title={uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}>●<span className='tech-remote-tekst'>{uk ? 'активний віддалений сеанс' : 'actieve externe sessie'}</span></i> : null}</span>
           <span className='tech-band-id' title={t.activatie.profielId}>{t.activatie.rollen.map((r) => rolNaam(r, uk)).join(' · ')}</span>
@@ -570,7 +603,7 @@ function BandKeuze({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   );
 }
 
-type Rij = { userId: string; profielId: string; rollen: TechRol[]; maxMinuten: number; email: string; naam: string; actiefTot: number | null; ingetrokkenOp: number | null; toegekendOp: number; notitie: string };
+type Rij = { userId: string; profielId: string; rollen: TechRol[]; maxMinuten: number; email: string; naam: string; actiefTot: number | null; ingetrokkenOp: number | null; toegekendOp: number; notitie: string; snelkoppelingenToegestaan?: boolean };
 function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => void }) {
   const [lijst, setLijst] = useState<Rij[] | null>(null);
   const [melding, setMelding] = useState<{ ok: boolean; tekst: string } | null>(null);
@@ -578,6 +611,7 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   const [rollen, setRollen] = useState<TechRol[]>(['ondersteuning']);
   const [max, setMax] = useState(60);
   const [notitie, setNotitie] = useState('');
+  const [yarlykyAan, setYarlykyAan] = useState(false);
   const [bezig, setBezig] = useState('');
   const [bevestig, setBevestig] = useState('');
   const eigen = useMemo(() => (t.activatie?.rollen.includes('eigenaar') ? ['ondersteuning', 'tester', 'ontwikkelaar', 'beheerder', 'auditor'] : (t.activatie?.rollen ?? []).filter((r) => r !== 'eigenaar')) as TechRol[], [t.activatie]);
@@ -586,8 +620,8 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
   const geven = async () => {
     setBezig('geven'); setMelding(null);
     try {
-      const r = await api.post('/api/owner/tech/toekennen', { ...techBody(), email, rollen, maxMinuten: max, notitie });
-      setLijst(r.data?.profielen ?? lijst); setEmail(''); setNotitie('');
+      const r = await api.post('/api/owner/tech/toekennen', { ...techBody(), email, rollen, maxMinuten: max, notitie, snelkoppelingenToegestaan: yarlykyAan });
+      setLijst(r.data?.profielen ?? lijst); setEmail(''); setNotitie(''); setYarlykyAan(false);
       setMelding({ ok: true, tekst: uk ? `Профіль видано: ${email}. Права з'являться лише після його активації.` : `Profiel gegeven: ${email}. Rechten pas na zijn activering.` });
     } catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
   };
@@ -595,6 +629,22 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
     setBezig(r.userId); setMelding(null); setBevestig('');
     try { const x = await api.post('/api/owner/tech/intrekken', { ...techBody(), userId: r.userId, reden: 'via de site' }); setLijst(x.data?.profielen ?? lijst); setMelding({ ok: true, tekst: uk ? `Профіль ${r.email} відкликано; активні вкладки втратили права.` : `Profiel van ${r.email} ingetrokken; actieve tabbladen verloren hun rechten.` }); }
     catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
+  };
+  const zetYarlyky = async (r: Rij) => {
+    const nieuw = !r.snelkoppelingenToegestaan;
+    setBezig(`yarlyk:${r.userId}`); setMelding(null);
+    try {
+      const x = await api.post('/api/owner/tech/snelkoppelingen', { ...techBody(), userId: r.userId, toegestaan: nieuw });
+      setLijst((x.data?.profielen as Rij[] | undefined) ?? lijst);
+      if (r.userId === t.profiel?.userId) void techVernieuwen();
+      setMelding({ ok: true, tekst: uk ? `Ярлики в обох частинах меню для ${r.email || r.naam} ${nieuw ? 'дозволено' : 'заборонено'}.` : `Snelkoppelingen in beide delen voor ${r.email || r.naam} ${nieuw ? 'toegestaan' : 'uitgeschakeld'}.` });
+    } catch (e) { setMelding({ ok: false, tekst: foutTekst(e, uk) }); } finally { setBezig(''); }
+  };
+  const kanYarlykWijzigen = (r: Rij) => {
+    if (r.ingetrokkenOp) return false;
+    if (r.rollen.includes('eigenaar')) return !!t.activatie?.rollen.includes('eigenaar');
+    if (r.userId === t.profiel?.userId) return techMag('roles.delegate', t);
+    return techMag('roles.delegate', t) && r.rollen.every((rol) => eigen.includes(rol));
   };
   return (
     <Venster id='tech-profielen' titel={uk ? 'Технічні профілі' : 'Technische profielen'} breedte={720} onSluit={sluit}>
@@ -609,6 +659,10 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
             <select data-hulp='tech.max' value={max} onChange={(e) => setMax(Number(e.target.value))}>{[15, 30, 60, 120, 240, 480].map((d) => <option key={d} value={d}>{d >= 60 ? `${d / 60} ${uk ? 'год' : 'u'}` : `${d} ${uk ? 'хв' : 'min'}`}</option>)}</select>
             <small>{uk ? 'Найсильніша роль усе одно обмежує (адмін ≤ 1 год).' : 'De sterkste rol beperkt toch (beheerder ≤ 1 u).'}</small></label>
           <label className='tech-veld'><span>{uk ? 'Нотатка (навіщо)' : 'Notitie (waarom)'}</span><input value={notitie} onChange={(e) => setNotitie(e.target.value)} maxLength={300} /></label>
+          <div className='tech-veld tech-veld-aanvink'>
+            <span>{uk ? 'Ярлики в меню' : 'Snelkoppelingen in menu'} <HulpVraag k='tech.snelkoppelingen' uk={uk} label={uk ? 'Ярлики в обох частинах меню' : 'Snelkoppelingen in beide delen'} /></span>
+            <label className='tech-aanvink'><input data-hulp='tech.snelkoppelingen' type='checkbox' checked={yarlykyAan} onChange={(e) => setYarlykyAan(e.target.checked)} data-tech-yarlyk-toestaan='1' /><span>{uk ? 'Дозволити розміщувати ярлики кнопок технічного профілю в обох частинах меню' : 'Snelkoppelingen van het technisch profiel in beide delen van het menu toestaan'}</span></label>
+          </div>
           <div className='tech-knoppen'><button type='submit' className='is-hoofd' disabled={!!bezig || !email || !rollen.length} aria-busy={bezig === 'geven' || undefined} data-tech-knop='geven'>{bezig === 'geven' ? (uk ? 'Зачекайте…' : 'Even geduld…') : (uk ? 'Видати' : 'Geven')}</button></div>
         </form>
         {melding ? <p className={`tech-melding${melding.ok ? ' is-ok' : ''}`} role={melding.ok ? 'status' : 'alert'}>{melding.tekst}</p> : null}
@@ -619,6 +673,18 @@ function Profielen({ uk, t, sluit }: { uk: boolean; t: TechStatus; sluit: () => 
               <span className='tech-lijst-wie'><b>{r.naam || r.email}</b><small>{r.email} · <code>{r.profielId}</code></small></span>
               <span className='tech-lijst-rollen'>{r.rollen.map((x) => rolNaam(x, uk)).join(' · ')}</span>
               <span className='tech-lijst-stand'>{r.ingetrokkenOp ? (uk ? 'відкликано' : 'ingetrokken') : r.actiefTot ? (uk ? `активний до ${new Date(r.actiefTot).toLocaleTimeString()}` : `actief tot ${new Date(r.actiefTot).toLocaleTimeString()}`) : (uk ? 'неактивний' : 'inactief')}</span>
+              {!r.ingetrokkenOp && (
+                <div className='tech-knoppen'>
+                  {kanYarlykWijzigen(r) ? (
+                    <button type='button' className={r.snelkoppelingenToegestaan ? 'is-hoofd' : ''} aria-pressed={!!r.snelkoppelingenToegestaan} disabled={bezig === `yarlyk:${r.userId}`} onClick={() => void zetYarlyky(r)} data-tech-knop={`yarlyk:${r.email}`}>
+                      <ShieldCheck aria-hidden='true' />{' '}
+                      {r.snelkoppelingenToegestaan ? (uk ? 'Ярлики в обох частинах: дозволено' : 'Snelkoppelingen in beide delen: aan') : (uk ? 'Ярлики в обох частинах: вимкнено' : 'Snelkoppelingen in beide delen: uit')}
+                    </button>
+                  ) : (
+                    <span className='tech-meta'>{r.snelkoppelingenToegestaan ? (uk ? 'Ярлики в обох частинах: дозволено' : 'Snelkoppelingen in beide delen: aan') : (uk ? 'Ярлики в обох частинах: вимкнено' : 'Snelkoppelingen in beide delen: uit')}</span>
+                  )}
+                </div>
+              )}
               {!r.ingetrokkenOp && !r.rollen.includes('eigenaar') && r.userId !== t.profiel?.userId ? (bevestig === r.userId
                 ? <span className='tech-knoppen'><button type='button' className='is-gevaar' onClick={() => void nemen(r)} data-tech-knop={`intrekken-ja:${r.email}`}>{uk ? 'Так, відкликати' : 'Ja, intrekken'}</button><button type='button' onClick={() => setBevestig('')}>{uk ? 'Ні' : 'Nee'}</button></span>
                 : <span className='tech-knoppen'><button type='button' className='is-gevaar' disabled={bezig === r.userId} onClick={() => setBevestig(r.userId)} data-tech-knop={`intrekken:${r.email}`}>{uk ? 'Відкликати' : 'Intrekken'}</button><Vraag help={HELP_TECH.intrekken} uk={uk} label={uk ? 'Відкликати' : 'Intrekken'} /></span>) : null}

@@ -2,23 +2,42 @@
    De aansluiting van het ontwerp op de omlijsting van de site: het ontwerp vult de hele werkruimte en brengt zijn eigen bovenbalk en dienstenbalk mee,
    de omlijsting van de site is verborgen zolang de weergave open is. Чотири класи, як і в згенерованих стилях (0,4,0). */
 
-/* Поки вигляд відкритий, оболонка сайту захована: бічне меню, його край і кнопка «нагору» — зовсім; верхня смуга — невидима, але
-   меню облікового запису (інші акаунти, вихід) і сповіщення сайту з неї лишаються видимими, бо з макета немає іншого шляху до них. */
-html[data-identiteit-maquette='aan'] body .canonical-chrome .canonical-workspace{padding:0!important;scrollbar-gutter:auto} /* сильніше за mobiel-ux (html body …) */
-/* Прокручує робоча область сайту, а не html: правило html макета (плавна прокрутка, відступ 110px під липкою планкою) переносимо сюди. */
+/* Головне меню всього сайту (.canonical-sidebar, гамбургер у шухляді та док на чотири сторони) лишається доступним і єдиним для платформи;
+   ховаємо лише дубльовану кнопку «нагору» сайту та демонстраційну смужку .app-rail макета. Верхня смуга сайту невидима (макет має власну .topbar),
+   проте панель облікового запису й сповіщення лишаються видимими. */
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:smooth;scroll-padding-top:110px}
-html[data-identiteit-maquette='aan'] .canonical-chrome :is(.canonical-sidebar,.canonical-sidebar-edge-zone,.canonical-scroll-top){display:none!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{max-width:none!important;scrollbar-gutter:auto;background:#090e1b}
+html[data-identiteit-maquette='aan'] .canonical-chrome:is(.theme-light,.theme-plum-light) .canonical-workspace{background:#edf0f6}
+html[data-identiteit-maquette='aan'] body .canonical-chrome.sidebar-drawer-mode .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome[data-focus-mode='mail'] .canonical-workspace{padding:0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]):not(.sidebar-pinned) .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links']:not(.sidebar-pinned) .canonical-workspace{padding:0 0 0 var(--zijbalk-rail,60px)!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]).sidebar-pinned .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links'].sidebar-pinned .canonical-workspace{padding:0 0 0 min(316px,calc(100vw - var(--zijbalk-rail,60px)))!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts']:not(.sidebar-pinned) .canonical-workspace{padding:0 var(--zijbalk-rail,60px) 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding:0 min(316px,calc(100vw - var(--zijbalk-rail,60px))) 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte,62px) + 16px) 0 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='onder'] .canonical-workspace{padding:0 0 calc(var(--dock-hoogte,62px) + 18px) 0!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-scroll-top{display:none!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
+html[data-identiteit-maquette='aan'] :is(.canonical-account-portal,.am3-mobiel-laag){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
-/* На телефоні меню облікового запису живе в шухляді бічного меню: поки шухляду відчинено на прохання з діалогу світлини, її видно. */
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer:has(.am3-mobiel-laag) :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
+html[data-identiteit-maquette='aan']:has(.am3-mobiel-laag) .canonical-chrome.sidebar-drawer :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
+/* Канонічний гамбургер головного меню сайту (☰) у верхньому лівому куті шапки .topbar у режимі шухляди */
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar{width:64px;height:77px;max-height:77px;padding:0 0 0 14px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border:0;background:transparent}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-menu-toggle{width:44px;height:44px;margin:0;color:#dce5f7}
+html[data-identiteit-maquette='aan'] .canonical-chrome:is(.theme-light,.theme-plum-light).sidebar-drawer-mode:not(.sidebar-drawer) .canonical-menu-toggle{color:#192640}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq .topbar{padding-left:68px!important}
 
-/* Корінь займає всю робочу область сайту (її відступи, якщо є, знімаємо від'ємними полями, виміряними двигуном: --mq-site/-site-links/-rechts/-onder);
-   смугу сервісів макета враховує сам макет (.main-content{margin-left:var(--mq-links)}). */
+/* Корінь займає робочу область сайту, а відступ від головного меню сайту враховує сама робоча область і змінні --mq-links/-rechts/-site/-onder. */
+.mr-mq.mr-mq.mr-mq.mr-mq .app-rail{display:none!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .main-content{margin-left:0!important}
 .mr-mq.mr-mq.mr-mq.mr-mq{
-  margin:calc(-1 * var(--mq-site,0px)) calc(-1 * var(--mq-rechts,0px)) calc(-1 * var(--mq-onder,0px)) calc(-1 * var(--mq-site-links,0px));
-  padding:var(--mq-site,0px) 0 0 var(--mq-site-links,0px);
+  margin:0;
+  padding:0;
   min-height:100vh;
   overflow-x:clip;
   isolation:isolate;
@@ -78,9 +97,11 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical
   font-family:'Trebuchet MS',Verdana,sans-serif;font-size:14px;line-height:1.35;color:var(--text);
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud :where(h1,h2,h3){font-family:Georgia,'Times New Roman',serif}
-.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud svg{width:1rem;height:1rem;stroke-width:1.9}
+:where(.mr-mq .mq-echt-inhoud svg){width:1rem;height:1rem;stroke-width:1.9}
 /* Панель сайту всередині блоку без власної рамки: рамка й тло — від картки або розгорнутої панелі макета. */
-.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0;border:0;background:transparent;box-shadow:none}
+/* Колонка справжньої панелі (до 1100 px) стоїть по центру блоку, а не притиснута вліво — на широкому ПК праворуч не лишається порожнеча.
+   De kolom van het echte paneel (max. 1100 px) staat in het midden van het blok, niet tegen de linkerrand. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0 auto;border:0;background:transparent;box-shadow:none}
 /* Блок «Чинні налаштування» у стилі «Можливостей для доопрацювання»; у вкладеній панелі він іде після робочої області. */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok .future-section-flower{font-size:21px}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok[open] .future-section-head{margin-bottom:0}
@@ -96,12 +117,223 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button:hover{border-color:rgba(var(--global-rgb),.55)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button.is-actief{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.6);color:var(--text)}
+/* IDENTITEIT-015: пояснення у вікні навігації (що діє на меню сайту) і справжній тумблер простору в картці «Активний профіль». */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-noot{margin:12px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-knop{display:inline-flex;align-items:center;min-height:30px;margin-top:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--card-border);background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-knop:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-ruimtewissel{min-height:44px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-noot{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
 
-/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів. */
+/* Зсуви внутрішнього якірного дороговказу макета відносно правого або нижнього дока головного меню сайту */
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-right:not(.rail-smart-condensed) .anchor-rail{right:calc(var(--mq-rechts,0px) + 19px)!important}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .anchor-rail{right:calc(var(--mq-rechts,0px) + 15px)!important}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730).rail-smart-condensed.rail-right .anchor-rail{right:12px!important}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-bottom .anchor-rail{bottom:calc(var(--mq-onder,0px) + 19px)!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq.rail-left .adaptive-nav-edge{display:none!important}
+/* Виправлення правого бокового меню розділів на телефоні (2026-11-15). Під час закриття висувного меню назви розділів зникали
+   одразу (display:none без .rail-smart-open), а сама картка ще 0,2 с згасала на повну ширину — на завантаженому телефоні цей кадр
+   зависав: широка порожня картка з піктограмами під правим краєм, обрізаний низ і кружечки краю поверх. Тепер закриття миттєве
+   (відкриття лишається анімованим), а список розділів показує, що його можна прокрутити.
+   Het zijmenu sluit nu in één beeld: geen brede lege kaart meer zonder namen; de lijst toont dat er meer onder staat. */
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:not(.rail-smart-open):is(.rail-left,.rail-right) .anchor-rail{transition:none!important}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open:is(.rail-left,.rail-right) .anchor-rail .rail-items{
+  min-height:0;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:14px!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);
+}
+/* IDENTITEIT-015 (приймання vormgeving): вікно «Налаштування навігації» на широкому екрані (fixed, від шапки) разом із перемикачем
+   вигляду й поясненням вище за вікно 1280×900 (≈1030 px) — нижні кнопки («Налаштування меню сайту», «Вигляд сторінки») були поза
+   екраном і недосяжні ні мишею, ні клавіатурою. Тепер вікно не вище за видиму частину й прокручується саме (як на телефоні нижче).
+   Het navigatievenster past nu altijd in beeld en scrolt zelf; de onderste knoppen waren op brede schermen onbereikbaar. */
+.mr-mq.mr-mq.mr-mq.mr-mq .popover-panel{max-height:calc(100dvh - var(--mq-boven,0px) - var(--mq-onder,0px) - 38px);overflow:auto;overscroll-behavior:contain}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:is(.rail-left,.rail-right) .anchor-rail{
+  height:auto!important;
+  max-height:calc(100dvh - var(--mq-boven) - var(--mq-onder,0px) - 20px)!important;
+  bottom:calc(var(--mq-onder,0px) + 12px)!important;
+}
+
+/* Липка підсмуга внутрішнього дороговказу розділів сторінки (.mq-sectie-balk): чітко відокремлена від шапки та головного гамбургера сайту */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk{display:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk{
+  position:sticky;top:var(--mq-topbar,64px);z-index:425;
+  display:flex;align-items:center;justify-content:flex-start;gap:8px;
+  padding:8px 20px;
+  background:rgba(9,14,27,.76);border-bottom:1px solid var(--card-border);
+  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.light.rail-smart-condensed .mq-sectie-balk{background:rgba(239,243,249,.86)}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-420).rail-smart-condensed .mq-sectie-balk{padding:7px 12px}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk[data-zijde='right']{justify-content:flex-end}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  flex:0 1 auto;width:auto;min-width:0;height:40px;min-height:40px;padding:0 14px;
+  border-radius:999px;border:1px solid rgba(var(--global-rgb),.32);
+  background:rgba(var(--global-rgb),.12);color:var(--text);
+  font-size:13px;font-weight:600;line-height:1;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle:hover,
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true']{
+  background:rgba(var(--global-rgb),.22);border-color:rgba(var(--global-rgb),.56);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-icoon{width:18px;height:18px;flex:none;color:var(--global)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-naam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-pijl{width:15px;height:15px;flex:none;color:var(--muted);transition:transform .18s ease!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true'] .mq-sectie-pijl{transform:rotate(180deg)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;
+  border-radius:50%;border:1px solid var(--card-border);background:var(--surface);color:var(--muted);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie:hover{color:var(--text);border-color:rgba(var(--global-rgb),.42)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie svg{width:17px;height:17px}
+
+/* Чіткі пропорції та вирівнювання всіх стрілок розгортання у вигляді «Макет» (без сплющення й обрізання). */
+.mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail .nav-chevron{flex:0 0 18px;width:18px;height:18px;display:inline-grid;place-items:center}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open .anchor-rail .nav-chevron{display:inline-grid!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .text-link>span{display:inline-grid;place-items:center;flex:0 0 auto;line-height:1}
+.mr-mq.mr-mq.mr-mq.mr-mq .text-link.open-detail:hover>span{transform:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;font-size:0;line-height:1;transform:rotate(180deg);transition:transform .2s ease!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button:hover .inline-close-chevron{transform:rotate(180deg) translateY(2px)}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron svg{display:block;width:18px;height:18px;flex:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .register-chevron{display:inline-grid;place-items:center;flex:0 0 20px;width:20px;height:20px;font-size:0;line-height:1}
+.mr-mq.mr-mq.mr-mq.mr-mq .register-chevron svg{display:block;width:18px;height:18px;flex:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-chevron{flex:0 0 20px;width:20px;height:20px}
+@media(prefers-reduced-motion:reduce){
+  .mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron,
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-pijl{transition:none!important}
+}
+
+/* Центрування сторінки на широкому ПК (понад 1280 px). У макеті .page-wrap мав max-width 1580 px, margin:auto і запас під меню
+   якорів лише з одного боку (168 px у режимі «авто» чи згорнутому, ~320 px у розгорнутому) проти 52 px з іншого. Запас рахувався від
+   краю .page-wrap, а не екрана, тож на 1920–2560 px сторінка стояла збоку від центру, хоча меню якорів було далеко.
+   Тепер .page-wrap займає всю робочу область, а поля однакові з обох боків, коли місця досить (колонка вмісту 910 px — ширина блоку «Ключі доступу»; до 15.11.2026 було 1476 px — як у макеті без меню
+   якорів, але власник просив вужчі блоки, щоб погляд не бігав по екрану); запас під меню лишається нижньою межею поля. Коли місця бракує (1366–1440 px), правий бік поступається першим — до 52 px,
+   тобто вузькі екрани виглядають так само, як раніше.
+   --mq-rand повторює запаси, що фактично перемагають у згенерованому maquette-stijlen.css (правила з !important наприкінці файла):
+   «авто» або згорнуте меню — 168 / 96 px, розгорнуте — 91/19 px + ширина меню + 17 px. Режим rail-smart-condensed не чіпаємо.
+   Gecentreerde pagina op een brede pc: gelijke marges links en rechts zodra er ruimte is; de ruimte voor het ankermenu blijft het minimum. */
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-left{--mq-rand:calc(91px + var(--side-nav-width,212px) + 17px)}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-right{--mq-rand:calc(19px + var(--side-nav-width,212px) + 17px)}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-left:is(.rail-mode-auto,.rail-compact){--mq-rand:168px}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-right:is(.rail-mode-auto,.rail-compact){--mq-rand:96px}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-left .page-wrap{
+  max-width:none!important;
+  padding-left:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-right:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:not(.bp-max-1280):not(.rail-smart-condensed).rail-right .page-wrap{
+  max-width:none!important;
+  padding-right:max(var(--mq-rand),calc((100% - 910px) / 2))!important;
+  padding-left:max(52px,min(calc((100% - 910px) / 2),calc(100% - 910px - var(--mq-rand))))!important;
+}
+
+/* Без зайвого заднього блоку (15.11.2026, побажання власника): під розгорнутими налаштуваннями розділу лежали ще дві суцільні
+   підкладки на всю ширину картки (.section-inline-settings — темно-синій градієнт surface2→surface, і «Чинні налаштування» —
+   .mq-echt-blok), хоча кожна група налаштувань уже має свій блок. Тепер підкладки прозорі (лишається тонка лінія-розділювач), блоки
+   груп стоять на тлі сторінки; заголовки лишаються на своїх місцях.
+   NL: geen extra achterpaneel meer onder de instellingen van een sectie; elke groep heeft al een eigen blok. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .section-inline-settings{background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .future-section.mq-echt-blok{background:none}
+/* Розгорнута справжня панель (безпека, способи входу, відновлення) на ПК: темна підкладка звужена до ширини її блоків, а не на всю
+   картку розділу (побажання власника 15.11.2026). Картка розділу закінчується заголовком «Чинні налаштування»; панель під ним —
+   окрема вужча картка по центру (до 910 px), далі — картка «Можливостей». Довкола видно чисте тло сторінки. Телефон і планшет без змін.
+   NL: bij een geopend echt paneel krimpt het donkere achterpaneel tot de breedte van de blokken; de sectiekaart eindigt bij de kop. */
+@media (min-width:961px){
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open]){background:transparent!important;border-color:transparent!important;box-shadow:none!important;overflow:visible}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-card{background:var(--surface);border:1px solid var(--card-border);border-bottom:0;border-radius:var(--radius) var(--radius) 0 0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings{padding:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-header,.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.inline-settings-workspace{padding-inline:29px;background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-head{padding:25px 54px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.section-inline-settings>.mq-echt-blok[open]~.future-section{margin-top:18px;padding-inline:54px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+/* Те саме, коли «Чинні налаштування» лежать прямо в картці розділу (головна: герой, блоки груп, панель). */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.direct-settings{background:var(--surface);border-inline:1px solid var(--card-border)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]{padding:0;border-top:0;background:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-head{padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]>.future-section-content{box-sizing:border-box;max-width:910px;margin:18px auto 0;padding:25px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .setting-section:has(.mq-echt-blok[open])>.mq-echt-blok[open]~.future-section{margin-top:18px;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+}
+
+/* Вужча колонка (910 px): у картках «Приклад вигляду» кнопка «Налаштування меню» переходить під текст, а не стискає його у вузький
+   стовпчик по 3–4 слова. NL: in de smallere kolom gaat de knop onder de tekst in plaats van de tekst samen te drukken. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open){flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top:has(>.mq-demo-open)>.drawer-control-copy{flex:1 1 calc(100% - 60px);min-width:0}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq .drawer-control-top>.mq-demo-open{margin-left:50px}
+
+/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
+  html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar{width:56px;height:64px;max-height:64px;padding:0 0 0 10px}
+  html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq .topbar{padding-left:60px!important}
+  .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle{min-height:44px;height:44px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{flex:0 0 44px;width:44px;height:44px}
   /* Вікно навігації на телефоні прив'язане знизу; з перемикачем вигляду воно вище за екран 844 px — тож прокручується всередині. */
   .mr-mq.mr-mq.mr-mq.mr-mq.bp-max-730 .popover-panel{max-height:calc(100dvh - var(--mq-site,0px) - 97px);overflow:auto;overscroll-behavior:contain}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok{padding-inline:12px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud{overflow-wrap:anywhere}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{padding:0 14px 110px}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{justify-content:center}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{min-height:var(--tik-hoogte,40px)}
 }
+
+/* IDENTITEIT-011: жива карта розвитку. Мітки станів мають власний колір і текст (не лише колір), рядок «Працює» — кнопка переходу.
+   De levende ontwikkelkaart: statuslabels met kleur én tekst; «Werkt» is een knop naar de echte instelling. */
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go:hover{border-color:rgba(var(--global-rgb),.45)}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-open{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--a,var(--global));padding:4px 9px;border-radius:50px;border:1px solid rgba(var(--global-rgb),.35)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-werkt{color:#1f7a4a;background:rgba(46,160,96,.12);border-color:rgba(46,160,96,.32)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-deels{color:#9a6512;background:rgba(243,166,61,.12);border-color:rgba(234,169,75,.3)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-gepland{color:#5b5bb5;background:rgba(110,110,220,.11);border-color:rgba(110,110,220,.3)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-nee{color:#7a7f8c;background:rgba(122,127,140,.12);border-color:rgba(122,127,140,.3)}
+/* IDENTITEIT-015: «Потребує налаштування власника» — код є, працює після кроку власника сайту (ключі, перемикач, право). */
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-eigenaar{color:#0e6a80;background:rgba(14,140,170,.11);border-color:rgba(14,140,170,.32)}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-status[class*=future-stand-]{border:1px solid;border-radius:50px;padding:3px 7px;font-weight:700}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-werkt{color:#6fd39b}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-deels{color:#f0bb6a}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-gepland{color:#a9a9f2}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-nee{color:#b4b8c2}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-eigenaar{color:#7fd3e6}
+/* Ціль переходу: коротке підсвічування, щоб людина бачила, куди її привело (без руху, якщо рух вимкнено). */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{outline:2px solid rgba(var(--global-rgb),.7);outline-offset:4px;border-radius:12px;transition:outline-color 1.6s ease}
+@media (prefers-reduced-motion:reduce){.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{transition:none}}
+/* Вузька робоча область: макет переносить мітку на другий рядок на всю ширину (100% + відступ виходив за картку).
+   Тут мітка займає лише свою ширину, а «Відкрити» стає праворуч у тому самому рядку. */
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option{flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-status[class*=future-stand-]{flex:0 1 auto;max-width:calc(100% - 51px - 88px);margin:0 0 0 51px;text-align:left}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-go .future-option-open{margin-left:auto}
+/* IDENTITEIT-011: макетний елемент у розділах облікового запису — позначка «Приклад вигляду» й кнопка до справжнього налаштування. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-label{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:50px;font-size:9.5px;font-weight:700;vertical-align:middle;color:var(--muted,#7a7f8c);border:1px dashed rgba(var(--global-rgb),.35)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{cursor:pointer;background:transparent;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+/* ACCENT-001 (15.11.2026): вісім «улюблених відтінків» меню облікового запису як --global «Макета» (темний — світліший тон, світлий —
+   насиченіший, контраст ≥ 3:1 до тла), кружечки вибору в шухляді «Теми» і прозорі картки за html[data-transparantie]. Давні чотири акценти
+   макета не змінено. De acht voorkeurstinten als --global van het ontwerp, de kleurstippen en doorschijnende kaarten. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=blauw]{--global:#7aa7ff;--global-rgb:122,167,255}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=blauw]{--global:#1a5fd6;--global-rgb:26,95,214}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=blauw]{--mq-stip:#1a5fd6;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=hemel]{--global:#67e8f9;--global-rgb:103,232,249}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=hemel]{--global:#0279b4;--global-rgb:2,121,180}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=hemel]{background:#0279b4}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=teal]{--global:#5eead4;--global-rgb:94,234,212}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=teal]{--global:#0f766e;--global-rgb:15,118,110}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=teal]{--mq-stip:#0f766e;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=groen]{--global:#4ade80;--global-rgb:74,222,128}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=groen]{--global:#15803d;--global-rgb:21,128,61}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=groen]{--mq-stip:#15803d;background:var(--mq-stip)}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=oranje]{--global:#fdba74;--global-rgb:253,186,116}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=oranje]{--global:#b8530b;--global-rgb:184,83,11}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=oranje]{background:#b8530b}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=roze]{--global:#f9a8d4;--global-rgb:249,168,212}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=roze]{--global:#be185d;--global-rgb:190,24,93}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=roze]{background:#be185d}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=indigo]{--global:#a5b4fc;--global-rgb:165,180,252}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=indigo]{--global:#4f46e5;--global-rgb:79,70,229}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=indigo]{background:#4f46e5}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq[data-accent=bruin]{--global:#d6b48f;--global-rgb:214,180,143}
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.light[data-accent=bruin]{--global:#8b5a2b;--global-rgb:139,90,43}
+.mr-mq.mr-mq.mr-mq.mr-mq .swatches button[data-accent=bruin]{background:#8b5a2b}
+.mr-mq.mr-mq.mr-mq.mr-mq .drawer-swatches{flex-wrap:wrap}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq{--surface-dicht:var(--surface);--surface2-dicht:var(--surface2);--bg2-dicht:var(--bg2)}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :where(.main-content){--surface:color-mix(in srgb,var(--surface-dicht) calc(var(--blok-dekking,1)*100%),transparent);--surface2:color-mix(in srgb,var(--surface2-dicht) calc(var(--blok-dekking,1)*100%),transparent);--bg2:color-mix(in srgb,var(--bg2-dicht) calc(var(--blok-dekking,1)*100%),transparent)}
+html[data-transparantie="aan"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :where(.topbar,.anchor-rail,.popover-panel,.command-dialog,.search-overlay,.profile-photo-dialog,.settings-drawer,[role=dialog]){--surface:var(--surface-dicht);--surface2:var(--surface2-dicht);--bg2:var(--bg2-dicht)}
+@media (max-width:520px){.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-eerlijk .drawer-control-top{flex-wrap:wrap}.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{margin-left:auto}}
+@media(max-width:730px){html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:auto}.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq :is(.topbar,.anchor-rail,.popover-panel,.search-overlay,.toast,.horizontal-nav-popup,.mq-sectie-balk){-webkit-backdrop-filter:none;backdrop-filter:none}}

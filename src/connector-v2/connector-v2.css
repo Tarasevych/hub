@@ -100,7 +100,7 @@
 .v2-optie-uitleg dd{margin:2px 0 0;line-height:1.45}
 .v2-uitleg-let{border-left:3px solid var(--v2-hoog);padding-left:8px}
 .v2-uitleg-let dt{color:var(--v2-hoog)}
-.v2-adres{display:inline-flex;flex-wrap:wrap;word-break:break-all;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line);max-width:100%}
+.v2-adres{display:inline-flex;flex-wrap:wrap;overflow-wrap:anywhere;word-break:normal;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line);max-width:100%}
 .v2-kopieer{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;display:grid;place-items:center}
 .v2-kopieer:hover{color:var(--text)}
 
@@ -148,6 +148,9 @@
 .v2-uitleg{margin:0;color:var(--muted);font-size:.88rem;line-height:1.45;display:flex;gap:6px;align-items:flex-start}
 .v2-let{margin:0;display:block;padding:8px 10px;border-radius:8px;border:1px solid var(--v2-hoog);background:var(--v2-b-zacht);font-size:.88rem;line-height:1.45}
 .v2-let>svg{vertical-align:-3px;margin-right:6px}
+/* ANTISPOOF-001: korte mark «не підтверджено» in de feitenlijst van de wizard */
+.v2-let-kort{color:var(--v2-hoog);font-weight:600}
+.v2-let-kort>svg,[data-v2-identiteit] svg{vertical-align:-2px}
 .v2-let a{display:inline-flex;align-items:center;gap:4px}
 .v2-let-klein{color:var(--v2-hoog);font-size:.78rem}
 .v2-ok{margin:0;display:inline-flex;gap:6px;align-items:center;color:var(--v2-laag);font-weight:600}
@@ -192,7 +195,13 @@
 .v2-agent-rechten{display:grid;gap:10px}
 .v2-melding{margin:0;font-size:.88rem;padding:6px 10px;border-radius:6px;background:var(--surface)}
 
+/* KLAP-001: «Згорнути все / Розгорнути все» у кожному блоці · alles in- of openklappen per blok */
+.v2-klap-alles{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
+.v2-klap-alles:hover{color:var(--text);background:var(--panel)}
+.v2-klap-alles:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 @media (max-width:560px){
+  .v2-klap-alles span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .v2-optie-uitleg{padding-left:12px}
   .v2-feiten div{grid-template-columns:1fr}
   .v2-modus:not(.is-compact) .v2-modus-knop span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

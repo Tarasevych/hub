@@ -12,10 +12,18 @@ export async function main(): Promise<number> {
   const callback = source('src/EigenaarIdentiteitTerug.tsx');
   const koppel = source('src/mail/MailKoppelVenster.tsx');
 
-  check('de tweede strook verdwijnt alleen wanneer de echte lege orbit zichtbaar is',
-    css.includes(":has([data-mail-accounts-empty='true']) > .is2")
-    && page.includes('<IntegratieStrook dienst=\'mail\'/>')
-    && css.includes('.mail-functional:has'));
+  // MAILACC-002 (15.11.2026): de strook «Що можна підключити тут» dubbelde ook bij gekoppelde accounts de orbit eronder —
+  // op het tabblad «accounts» staat ze nu helemaal niet meer; de orbit is de enige catalogus.
+  check('op «Поштові акаунти» staat geen tweede strook «Що можна підключити тут» naast de orbit',
+    !page.includes('<IntegratieStrook dienst=\'mail\'/>') && !page.includes('IntegratieStrook')
+    && page.includes("if(tab==='accounts')body=accountView;"));
+  // MAILHOEK-001: de afgeronde paginakaart mag na het laden niet meer platgemaakt worden (rechte hoeken op de telefoon).
+  check('MAILHOEK-001: met accounts één afgeronde kaart vóór én na het laden, de orbit erin zonder tweede kader',
+    !css.includes(".mail-provider-view:has([data-mail-accounts-orbit='ja']) {")
+    && css.includes(".mail-functional .mail-provider-view:has(.mail-accounts-met-orbit),")
+    && css.includes(".mail-functional .mail-provider-view:has([data-mail-accounts-laden='ja']) {")
+    && /has\(\[data-mail-accounts-laden='ja'\]\) \{\s*padding: 0;\s*border-radius: var\(--straal-l, 16px\);\s*overflow: hidden;/.test(css)
+    && css.includes('.mail-provider-view .mail-accounts-met-orbit .mail-orbit-intro {'));
   check('catalogus en dienstkeuze blijven aanwezig in de originele interactieve orbit',
     source('src/mail/MailOrbitIntro.tsx').includes('mail-orbit-catalogus')
     && source('src/mail/MailOrbitIntro.tsx').includes('mail-orbit-mobiel-snel'));

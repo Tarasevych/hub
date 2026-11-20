@@ -244,3 +244,13 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 - **Geraakt:** `orchestratie/BESLUITEN.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
 - **Reden:** Definitieve zuivering van verbogen technische termen in de begeleidende documentatie en het besluitenlogboek.
 - **Kern:** Alle verbogen leenwoorden zijn vervangen door zuivere Oekraïense equivalenten.
+
+## B-021 · 2026-11-18 · 1.4.16 · voorstel
+- **Geraakt:** `AGENTS.md` (§2.0, §3a, §6, §7, §9), `AGENTENREGELS.nl.md`, `orchestratie/beleid.json`, adapters, `.claude/settings.json`, `scripts/orch*`, `scripts/vaardigheden/`, `orchestratie/bijdragen/`, `orchestratie/onderwerpen/`, `shared/uitrol-manifest.ts`, `src/uitrol/UitgaveBeschrijving.tsx`.
+- **Reden:** Verzoek van de eigenaar (18.11.2026, `BIJDRAGE-001`): agenten en modellen werken los van elkaar; auteurschap en eerder werk gingen bij samenvoegen verloren.
+- **Kern:** registratie van auteurschap per bijdrage (alleen aanvullen, in het pakket en op de site), functiedossiers, `orch begin` als sessiestart (Claude automatisch), één bron voor vaardigheden en samenvoegen zonder verlies (`orch behoud`).
+
+## B-022 · 2026-11-18 · 1.4.17 · voorstel
+- **Geraakt:** `AGENTS.md` (§3а, §9.7), `AGENTENREGELS.nl.md`, `orchestratie/beleid.json` (`verwijzingen`), `scripts/orch*`, `shared/uitrol-manifest.ts`, `src/uitrol/Verwijzingen.tsx`, `src/uitrol/UitgaveBeschrijving.tsx`, `orchestratie/verwijzingen/`.
+- **Reden:** Verzoek van de eigenaar (18.11.2026, `VERWIJZING-001`): in «Wie deed wat» stonden alleen kale tak- en PR-nummers; doorklikken kon niet en een samengevoegde of verwijderde tak gaf een «404» zonder uitleg.
+- **Kern:** elke tak, PR, migratie en taak met mensentitel, samenvatting, staat en blijvende links; opgeslagen in de release (ook zonder GitHub zichtbaar); register `orchestratie/verwijzingen/` voor verwijderen en sluiten (wie, wanneer, waarom, laatste commit, waar het werk zit); `orch verwijzing` / `orch verwijzingen`; waarschuwing bij een tak die zonder registratie verdween. Ontwerp goedgekeurd door de eigenaar op 18.11.2026.

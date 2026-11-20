@@ -25,11 +25,12 @@ jobs:
           --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Джерельні файли та історія
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Підготувати середовище
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -78,7 +79,7 @@ jobs:
           node tests/visueel/mailscan-002-scherm.mjs
       - name: Зберегти знімки та результати
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: MAILSCAN-002-перевірка
           retention-days: 30

@@ -37,6 +37,7 @@ import { SLEUTEL_GESLOTEN_CODE, isServerEnvelop } from '../shared/sleutelkluis';
 import { meld } from './melder';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { huidigeNamens } from './mcp-namens';
+import { bijNoodstop } from './ai-toestemmingen';
 
 const sys = () => getPool('systeem');
 export const TABEL = 'app.ai_bevestiging';
@@ -200,6 +201,45 @@ export async function vraagBevestiging(inv: VraagInvoer): Promise<VraagUitslag> 
     taal === 'nl' ? `${wie} vraagt uw bevestiging` : `${wie} просить вашого підтвердження`,
     `${b.titel[taal]}: ${b.samenvatting[taal]} ${taal === 'nl' ? 'Geldig 30 minuten; zonder uw klik gebeurt er niets.' : 'Діє 30 хвилин; без вашого кліку нічого не станеться.'}`, link)).catch(() => undefined);
   return { ok: true, id, hash, verlooptOp: ms(rij.verloopt_op), risico, link };
+}
+
+// ------------------------------------------------------------------------------------------------ WACHT IN DE ANDERE RUIMTE (ELDERS-001)
+/**
+ * Het meldingencentrum toont alleen meldingen van de ruimte van het tabblad. Een AI-verzoek dat in de ANDERE ruimte van dezelfde mens
+ * wacht (bv. «Мій простір», terwijl de mens in de beheeromgeving zit), was daardoor onvindbaar. Hier: een LEVENDE regel zonder inhoud
+ * van het verzoek — alleen het aantal, de ruimte en een knop. Geen opgeslagen melding, verdwijnt vanzelf zodra niets meer wacht.
+ * Ізоляція просторів не порушується: лише кількість власних запитів цієї ж людини, без змісту, без параметрів.
+ */
+export type WachtEldersMelding = {
+  id: string; kind: 'ai_bevestiging'; title: string; message: string; createdAt: number; read: false;
+  ruimte: BevestigRuimte; sfeer: BevestigRuimte; link: string; elders: { ruimte: BevestigRuimte; aantal: number };
+};
+export async function wachtEldersMelding(userId: string, huidige: BevestigRuimte): Promise<WachtEldersMelding | null> {
+  if (!userId) return null;
+  const andere: BevestigRuimte = huidige === 'technisch' ? 'prive' : 'technisch';
+  const r = await sys().query(`SELECT id, agent, aangemaakt_op FROM ${TABEL}
+    WHERE user_id = $1 AND ruimte = $2 AND status = 'wacht' AND verloopt_op > now() ORDER BY aangemaakt_op DESC LIMIT ${BEVESTIG_MAX_OPEN}`, [userId, andere]);
+  const rijen = r.rows as Array<{ id: string; agent: string; aangemaakt_op: Date | string }>;
+  if (!rijen.length) return null;
+  const nieuwste = rijen[0];
+  const n = rijen.length;
+  const taal = await taalVan(userId);
+  const waar = andere === 'prive' ? (taal === 'nl' ? '«Mijn ruimte»' : '«Моєму просторі»') : (taal === 'nl' ? 'de technische ruimte' : 'технічному просторі');
+  const title = taal === 'nl'
+    ? `${n === 1 ? '1 AI-verzoek wacht' : `${n} AI-verzoeken wachten`} op uw bevestiging in ${waar}`
+    : `${n === 1 ? '1 запит ШІ чекає' : `${n} запити ШІ чекають`} вашого підтвердження у ${waar}`;
+  // Bevestigen kan alleen vanuit de ruimte van het verzoek (zie BEVESTIGEN hierboven): zeg dus HOE je daar komt.
+  const hoe = andere === 'prive'
+    ? (taal === 'nl' ? 'Open de knop in een tabblad zonder technisch profiel (of zet het technisch profiel in dit tabblad uit).' : 'Відкрийте кнопку у вкладці без технічного профілю (або вимкніть технічний профіль у цій вкладці).')
+    : (taal === 'nl' ? 'Zet in een tabblad het technisch profiel aan en open dan de knop.' : 'Увімкніть у вкладці технічний профіль і тоді відкрийте кнопку.');
+  const message = taal === 'nl'
+    ? `Het verzoek zelf staat in ${waar}; hier ziet u alleen dat er iets wacht. ${hoe} Zonder uw klik gebeurt er niets; het verloopt vanzelf.`
+    : `Сам запит лежить у ${waar}; тут видно лише, що щось чекає. ${hoe} Без вашого кліку нічого не станеться; запит сам спливе.`;
+  return {
+    // id verandert met het nieuwste verzoek: een nieuw verzoek verschijnt opnieuw als ongelezen.
+    id: `ai-wacht-elders:${andere}:${nieuwste.id}`, kind: 'ai_bevestiging', title, message, createdAt: ms(nieuwste.aangemaakt_op), read: false,
+    ruimte: huidige, sfeer: huidige, link: bevestigLink(SERVICE_HOSTS.mcp, nieuwste.id, kort(nieuwste.agent, 24)), elders: { ruimte: andere, aantal: n },
+  };
 }
 
 // ------------------------------------------------------------------------------------------------ STAND voor de agent
@@ -382,6 +422,10 @@ export async function trekAllesIn(userId: string): Promise<number> {
   for (const rij of r.rows as Rij[]) await journaal(rij, 'ingetrokken', 'revoked');
   return r.rowCount ?? 0;
 }
+// SEC-002 ai-mcp-12: trekAllesIn bestond «voor Стоп» maar werd nergens aangeroepen — een verzoek dat een AI vlak vóór de noodstop
+// had klaargezet (mail versturen, delen, agenda) bleef 30 minuten in «Підтвердження на сайті» staan en kon daarna nog worden
+// bevestigd. Nu meldt deze module zich aan bij de noodstop (en bij het blokkeren van een gebruiker, dat dezelfde haak afloopt).
+bijNoodstop((userId) => trekAllesIn(userId).catch((err) => { console.error('[ai-bevestiging] intrekken bij noodstop mislukt:', (err as Error).message); return 0; }));
 
 /** Een menselijke tekst bij een foutcode (voor routes en het scherm). */
 export const bevestigFoutTekst = (c: string): Tweetalig => ({ uk: foutUitleg(c, 'uk'), nl: foutUitleg(c, 'nl') });

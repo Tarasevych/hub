@@ -20,7 +20,7 @@ const CHROME = process.env.CHROME || '/usr/bin/google-chrome';
 const ID = 'https://id.tarasevych.com';
 // Verwachte 4xx: STEP_UP_REQUIRED (403) waarop het venster opent; agents/activity (403, niet-eigenaar); de bewuste poging
 // met een ingetrokken code (400).
-const VERWACHT = [/^403 .*\/api\/owner\/access\/(recovery\/rotate|passkeys\/registreren\/opties)$/, /^403 .*\/api\/owner\/agents\/activity$/, /^400 .*\/api\/owner\/access\/stap-op$/];
+const VERWACHT = [/^403 .*\/api\/owner\/access\/(recovery\/rotate|recovery\/intrekken|passkeys\/registreren\/opties)$/, /^403 .*\/api\/owner\/agents\/activity$/, /^400 .*\/api\/owner\/access\/stap-op$/];
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('e2e herstelcodes');
@@ -83,14 +83,14 @@ export async function main(): Promise<number> {
     const codes = (await paneel.locator('li').allInnerTexts().catch(() => [] as string[])).map((x) => x.trim());
     await paneel.scrollIntoViewIfNeeded().catch(() => undefined);
     await page.screenshot({ path: `${UIT}/codes-02-paneel.png`, fullPage: true });
-    check('Google met OUDE auth_time maar vers iat + nonce → step-up telt, actie hervat: 10 nieuwe codes (XXXX-XXXX-XXXX)', googleBezocht === 1 && codes.length === 10 && codes.every((c) => /^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/.test(c)) && await page.getByRole('dialog').count() === 0, `${googleBezocht} ${codes.join(',')} ${page.url()}`);
+    check('Google met OUDE auth_time maar vers iat + nonce → step-up telt, actie hervat: 10 nieuwe codes (XXXX-XXXX-XXXX)', googleBezocht === 1 && codes.length === 10 && codes.every((c) => /^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/.test(c)) && await page.getByRole('dialog').count() === 0, `google=${googleBezocht} codes=${codes.length} ${page.url()}`);
 
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 5000 }), paneel.getByRole('button', { name: 'Завантажити' }).click()]);
     const inhoud = readFileSync(await download.path(), 'utf8');
     check('Завантажити: .txt met alle 10 codes', download.suggestedFilename() === 'mijn-ruimte-herstelcodes.txt' && codes.every((c) => inhoud.includes(c)), download.suggestedFilename());
     await paneel.getByRole('button', { name: 'Копіювати' }).click();
     const klembord = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
-    check('Копіювати: klembord bevat alle codes', codes.every((c) => klembord.includes(c)), klembord.slice(0, 60));
+    check('Копіювати: klembord bevat alle codes', codes.every((c) => klembord.includes(c)), `${klembord.length} tekens`);
     await page.evaluate(() => { (window as unknown as { __print: number }).__print = 0; window.print = () => { (window as unknown as { __print: number }).__print++; }; });
     await paneel.getByRole('button', { name: 'Друкувати' }).click();
     check('Друкувати roept window.print aan', await page.evaluate(() => (window as unknown as { __print: number }).__print) === 1);
@@ -121,7 +121,7 @@ export async function main(): Promise<number> {
     await v2.waitFor({ timeout: 10000 });
     await v2.getByRole('button', { name: 'Використати код відновлення' }).click();
     await v2.locator('#bevestig-toegang-code').fill(codes[3].toLowerCase());
-    await v2.getByRole('button', { name: 'Підтвердити' }).click();
+    await v2.getByRole('button', { name: 'Підтвердити', exact: true }).click();
     await p2.locator('[data-access-section="passkeys"] [data-passkey]').first().waitFor({ timeout: 15000 }).catch(() => undefined);
     check('code in het venster («Використати код відновлення», kleine letters + streepjes) → bevestigd, passkey toegevoegd', await p2.locator('[data-access-section="passkeys"] [data-passkey]').count() === 1 && f2.length === 0, f2.join(' | '));
     await open(page);
@@ -135,10 +135,16 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- 3. «Відкликати всі»
     await sectie(page).getByRole('button', { name: 'Відкликати всі' }).click();
     await sectie(page).getByRole('button', { name: 'Відкликати', exact: true }).click();
+    // IDENTITEIT-015 (C2): sinds B een passkey heeft, telt Google niet meer als bevestiging (§13.10 «sterk») → venster; we bevestigen
+    // met een herstelcode (nr 7) — die telt daarna als «gebruikt».
+    const v1 = page.getByRole('dialog');
+    await v1.getByRole('button', { name: 'Використати код відновлення' }).click({ timeout: 10000 });
+    await v1.locator('#bevestig-toegang-code').fill(codes[6]);
+    await v1.getByRole('button', { name: 'Підтвердити', exact: true }).click();
     await sectie(page).getByText('Усі коди відкликано').waitFor({ timeout: 10000 }).catch(() => undefined);
     await lijst.locator('li[data-status="ingetrokken"]').first().waitFor({ timeout: 10000 }).catch(() => undefined);
     const statussen = await lijst.locator('li').evaluateAll((els) => els.map((e) => e.getAttribute('data-status')));
-    check('«Відкликати всі» (step-up nog geldig): 9 «ingetrokken», 1 «gebruikt», teller «Залишилося 0 з 10», badge «Відкликано»', statussen.filter((x) => x === 'ingetrokken').length === 9 && statussen.filter((x) => x === 'gebruikt').length === 1 && await teller() === 'Залишилося 0 з 10' && /Відкликано/.test(await sectie(page).innerText()), statussen.join(','));
+    check('«Відкликати всі» (sterk venster, bevestigd met code nr 7): 8 «ingetrokken», 2 «gebruikt», teller «Залишилося 0 з 10», badge «Відкликано»', statussen.filter((x) => x === 'ingetrokken').length === 8 && statussen.filter((x) => x === 'gebruikt').length === 2 && await teller() === 'Залишилося 0 з 10' && /Відкликано/.test(await sectie(page).innerText()), statussen.join(','));
     await sectie(page).scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${UIT}/codes-05-ingetrokken.png`, fullPage: true });
     const naIntrek = await p2.evaluate(async ([tab, code]) => { const r = await fetch('/api/owner/access/stap-op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ service: 'identity', tabContext: tab, methode: 'herstelcode', code }) }); return { s: r.status, b: await r.text() }; }, [B.tab, codes[5]] as const);
@@ -156,18 +162,18 @@ export async function main(): Promise<number> {
     stub = { sub: `sub-e2e-vreemd-${T}`, email: `e2e-vreemd-${T}@example.test`, authTime: Math.floor(Date.now() / 1000) };
     await sectie(p3).getByRole('button', { name: 'Створити коди' }).click();
     await p3.getByRole('dialog').getByRole('button', { name: 'Підтвердити повторним входом через Google' }).click();
-    await p3.waitForURL(/\/methods/, { timeout: 20000 }).catch(() => undefined);
+    await p3.waitForURL(/\/(methods|aanmeldmethoden)/, { timeout: 20000 }).catch(() => undefined);
     const v3 = p3.getByRole('dialog');
     await v3.getByText('Ви вибрали інший акаунт Google').waitFor({ timeout: 15000 }).catch(() => undefined);
     await p3.waitForTimeout(300);
     await p3.screenshot({ path: `${UIT}/codes-06-ander-account.png` });
-    const wie = await v3.innerText().catch(() => '');
+    const wie = (await p3.locator('[role=dialog]').allInnerTexts().catch(() => [] as string[])).join(' ');
     const vreemdeRij = await pool.query("select count(*)::int n from app.records where tbl='users' and data->>'sub'=$1", [stub.sub]);
     check('ander Google-account: terug op /methods, venster toont «Ви вибрали інший акаунт», nog steeds aangemeld als dezelfde gebruiker, geen nieuw account',
-      /\/methods/.test(p3.url()) && /Ви вибрали інший акаунт Google/.test(wie) && wie.includes(cMail) && vreemdeRij.rows[0].n === 0 && await p3.locator('[data-herstel-nieuw]').count() === 0, `${p3.url()} | ${wie.slice(0, 300)}`);
+      /\/(methods|aanmeldmethoden)/.test(p3.url()) && /Ви вибрали інший акаунт Google/.test(wie) && wie.includes(cMail) && vreemdeRij.rows[0].n === 0 && await p3.locator('[data-herstel-nieuw]').count() === 0, `${p3.url()} | ${wie.slice(0, 300)}`);
     stub = { sub: cSub, email: cMail, authTime: oud, iat: Math.floor(Date.now() / 1000) - 600 };
     await v3.getByRole('button', { name: 'Підтвердити повторним входом через Google' }).click();
-    await p3.waitForURL(/\/methods/, { timeout: 20000 }).catch(() => undefined);
+    await p3.waitForURL(/\/(methods|aanmeldmethoden)/, { timeout: 20000 }).catch(() => undefined);
     await p3.getByRole('dialog').getByText('Google не підтвердив новий вхід').waitFor({ timeout: 15000 }).catch(() => undefined);
     check('oud id_token (iat 10 min) én oude auth_time: venster meldt «Google не підтвердив новий вхід» (geen stille lus)', await p3.getByRole('dialog').getByText('Google не підтвердив новий вхід').isVisible().catch(() => false));
     check('scenario ander account: geen consolefouten', f3.length === 0, f3.join(' | '));

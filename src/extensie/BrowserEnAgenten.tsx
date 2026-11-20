@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Bot, Check, Eye, Hand, KeyRound, Lock, LockOpen, RefreshCw, Save, ShieldCheck, ShieldOff, User } from 'lucide-react';
 import HulpVraag from '../hulp/HulpVraag';
+import HostSchakelaar from './HostSchakelaar';
 import { api } from '../platform/client';
 import { foutTekst } from '../agenten/fouten';
 import { openTechVenster, techActief, techBody, useTech } from '../tech/tech-opslag';
@@ -28,7 +29,9 @@ import { intrekken, ontgrendelen, ontgrendelenPrive, type Weigering } from './Ex
 import { restLang } from './ExtensiePrive';
 import './ExtensieOntgrendeling.css';
 import './BrowserEnAgenten.css';
+import { alleenMens, geenAi } from '../menselijke-actie';
 import '../agenten/agenten-tabs-2.css';
+import '../agenten/agenten-toegang-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 const RUIMTES: AiRuimte[] = ['prive', 'technisch'];
@@ -139,7 +142,9 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
   // INTEG-001 (agpag2, 03.11.2026): vijf blokken (.ag-blok, contract van agenten-pagina.css) — elk met een naam, één zin waarvoor
   // het dient en de knoppen in de kop. De dubbele kop «Браузер і агенти» is weg: die staat al in de kop van de sectie op de hub.
   return (
-    <div className='bea ag2-blokken' data-tab-inhoud='browser' data-bea-ruimte={ruimte}>
+    // SEC-002 extensie-02: wat een AI in de browser mag, beslist alleen de mens — de extensie bedient deze hele zone niet en de
+    // beslisknoppen tellen alleen een echte klik (een AI met «Клік і введення» gaf zichzelf hier anders alles).
+    <div className='bea ag2-blokken' data-tab-inhoud='browser' data-bea-ruimte={ruimte} {...geenAi}>
       {laadFout ? <p className='ag-melding ag-melding-fout' role='alert'>{laadFout}</p> : null}
 
       {/* ---------------------------------------------------------------- 1. sloten */}
@@ -189,7 +194,7 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
               ? tr('Усі агенти зможуть читати, відкривати, натискати, робити знімки, читати консоль, запускати глибоку діагностику й виконувати скрипти в технічних вкладках. Це режим розробки: будь-яка помилка моделі — одразу дія на адмін-сторінках. Сервер попросить підтвердити вхід.', 'Alle agenten kunnen lezen, openen, klikken, schermafdrukken maken, de console lezen, diepe diagnose draaien en scripts uitvoeren in technische tabbladen. Dit is de ontwikkelmodus: elke fout van het model is meteen een actie op de beheerpagina’s. De server vraagt een bevestiging van de aanmelding.')
               : tr('Усі агенти зможуть читати, відкривати, натискати, робити знімки й читати консоль на ваших сторінках (пошта, файли, хаб). Сервер попросить підтвердити вхід.', 'Alle agenten kunnen lezen, openen, klikken, schermafdrukken maken en de console lezen op uw pagina’s (mail, bestanden, hub). De server vraagt een bevestiging van de aanmelding.')}</p>
             <div className='eo-knoppen'>
-              <button type='button' className='eo-knop is-hoofd' onClick={() => void snel('alles')} data-bea-snel-ok='1'><Check aria-hidden='true' />{tr('Так, дозволити все', 'Ja, alles toestaan')}</button>
+              <button type='button' className='eo-knop is-hoofd' onClick={alleenMens(() => void snel('alles'))} data-bea-snel-ok='1'><Check aria-hidden='true' />{tr('Так, дозволити все', 'Ja, alles toestaan')}</button>
               <button type='button' className='eo-knop' onClick={() => setBevestigAlles(false)}>{tr('Скасувати', 'Annuleren')}</button>
             </div>
           </div>
@@ -287,7 +292,7 @@ export default function BrowserEnAgenten({ tr, naarExtensie, openSlot = '' }: { 
           </div>
         ) : null}
         <div className='eo-knoppen bea-opslaan'>
-          <button type='submit' className='eo-knop is-hoofd' disabled={!dirty || !!bezig} aria-busy={bezig === 'opslaan' || undefined} data-bea-opslaan='1' onClick={() => void opslaan()}>
+          <button type='submit' className='eo-knop is-hoofd' disabled={!dirty || !!bezig} aria-busy={bezig === 'opslaan' || undefined} data-bea-opslaan='1' onClick={alleenMens(() => void opslaan())}>
             <Save aria-hidden='true' />{bezig === 'opslaan' ? tr('Зберігаю…', 'Opslaan…') : tr('Зберегти', 'Opslaan')}
           </button>
           {dirty ? <small className='hub-meta'>{tr('Є незбережені зміни. Розширення прав попросить підтвердити вхід; звуження — ні.', 'Er zijn niet-opgeslagen wijzigingen. Ruimer vraagt een bevestiging van de aanmelding; strenger niet.')}</small> : null}
@@ -452,7 +457,7 @@ function SlotKaart({ tr, uk, ruimte, live, nu, stand, techProfiel, techActief: a
         </p>
       ) : null}
       {kan ? (
-        <form className='eo-form' onSubmit={(e) => { e.preventDefault(); void doeOpen(); }} data-bea-form={ruimte}>
+        <form className='eo-form' onSubmit={(e) => { e.preventDefault(); alleenMens(() => void doeOpen())(e); }} data-bea-form={ruimte}>
           <label className='eo-veld'>
             <span>{tr('Строк', 'Termijn')} <HulpVraag k='browser.matrix.termijn' uk={uk} label={tr('Строк', 'Termijn')} /></span>
             <select data-hulp='browser.matrix.termijn' value={termijn} disabled={!!bezig} onChange={(e) => setTermijn(e.target.value as TermijnId)} data-bea-termijn={ruimte}>
@@ -464,15 +469,15 @@ function SlotKaart({ tr, uk, ruimte, live, nu, stand, techProfiel, techActief: a
             <summary>{tr('Сторінки', 'Pagina’s')} ({domeinen.length}) <HulpVraag k='browser.matrix.domeinen' uk={uk} label={tr('Сторінки', 'Pagina’s')} /></summary>
             <div className='eo-domeinen'>
               {toegestaan.map((h) => (
-                <label key={h} className='eo-vink'>
-                  <input data-hulp='browser.matrix.domeinen' type='checkbox' checked={domeinen.includes(h)} disabled={!!bezig} onChange={(e) => setDomeinen(e.target.checked ? [...domeinen, h] : domeinen.filter((x) => x !== h))} data-bea-domein={`${ruimte}:${h}`} />
-                  <code>{h}</code>
-                </label>
+                <HostSchakelaar key={h} host={h} uk={uk} aan={domeinen.includes(h)} disabled={!!bezig}
+                  onChange={(aan) => setDomeinen(aan ? [...domeinen, h] : domeinen.filter((x) => x !== h))}
+                  uitleg={tr('Увімкнено — ця сторінка входить у доступ цього слота на обраний строк. Вимкнено — розширення її не торкається.', 'Aan — deze pagina valt onder de toegang van dit slot voor de gekozen termijn. Uit — de extensie raakt ze niet aan.')}
+                  hulp='browser.matrix.domeinen' data={{ 'data-bea-domein': `${ruimte}:${h}` }} />
               ))}
             </div>
           </details>
           <div className='eo-knoppen'>
-            <button type='submit' className='eo-knop is-hoofd' disabled={!!bezig || !domeinen.length} aria-busy={bezig === 'open' || undefined} data-bea-open={ruimte}>
+            <button type='submit' className='eo-knop is-hoofd' disabled={!!bezig || !domeinen.length} aria-busy={bezig === 'open' || undefined} data-bea-open={ruimte} onClick={alleenMens(() => undefined)}>
               <KeyRound aria-hidden='true' />{bezig === 'open' ? (stap === 'passkey' ? tr('Підтвердіть passkey…', 'Bevestig de passkey…') : tr('Відкриваю…', 'Openen…')) : open ? tr('Відкрити заново на цей строк', 'Opnieuw openen voor deze termijn') : ruimte === 'technisch' ? tr('Розблокувати з passkey', 'Ontgrendelen met passkey') : tr('Відкрити доступ', 'Toegang openen')}
             </button>
             {open ? <button type='button' className='eo-knop is-gevaar' disabled={!!bezig} onClick={() => void doeDicht()} data-bea-dicht={ruimte}><Lock aria-hidden='true' />{tr('Заблокувати', 'Blokkeren')}</button> : null}

@@ -47,6 +47,15 @@ tester-rechten; 60 min → beide. `termijnen[].rollen` toont dat. `maxMinuten = 
 
 ### `/api/owner/hub/tech/ruimtes/wisselen` `{ naar: 'prive'|'technisch' }` — GEEN stap-op
 - 400 `NAAR_ONGELDIG`, 409 `GEEN_TECH_SESSIE` (naar technisch zonder lopende sessie → UI toont «Почати»). Antwoord: status.
+- RUIMTE-WEERGAVE-001 (0286, 16.11.2026): verandert ALLEEN de weergave van DIT tabblad (`tech_ruimte_tabs.weergave`), journaal
+  `owner.tech.ruimte.weergave`. De sessie, AI-verbindingen en andere tabbladen lopen door; een site-verzoek uit een tabblad met
+  weergave `prive` krijgt code `WEERGAVE_PRIVE` (nooit technische rechten of lade). Naar `technisch` terwijl de sessie op pauze staat
+  heft de pauze op. In de status: `actief` = weergave van dit tabblad, `pauze` = bewuste pauze van de sessie.
+
+### `/api/owner/hub/tech/ruimtes/pauzeren` `{ aan: boolean }` — GEEN stap-op
+- De knop «Пауза» (`aan: true`) / «Продовжити» (`aan: false`) voor de HELE technische sessie van deze aanmelding (alle tabbladen;
+  AI volgens zijn regel «bij pauze»). Journaal `owner.tech.ruimte.pauze` / `owner.tech.ruimte.hervat`; zonder wijziging geen regel.
+- 400 `PAUZE_ONGELDIG`, 409 `GEEN_TECH_SESSIE`. Antwoord: status.
 
 ### `/api/owner/hub/tech/ruimtes/verlengen` `{ minuten, soort: 'bijtellen'|'vervangen' }` — stap-op vereist
 - `bijtellen`: einde = huidig einde + minuten. `vervangen`: einde = nu + minuten. Resultaat ≤ hoogste plafond van de rollen van de sessie en ≤ 8 uur vanaf nu.

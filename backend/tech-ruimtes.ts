@@ -49,6 +49,9 @@ export function techRuimtesRoutes(requireSession: RequireSession, deps: TechRuim
     [`POST ${P}/status`]: [gate({}, async (_b, a, tab) => st(a, tab))],
     [`POST ${P}/starten`]: [gate({ schrijven: true, stepUp: true }, async (b, a, tab) => { await k.starten(a.user, sessie(a), tab, b.modus, b.minuten, b.reden); return st(a, tab); })],
     [`POST ${P}/wisselen`]: [gate({ schrijven: true }, async (b, a, tab) => { await k.wisselen(a.user, sessie(a), tab, b.naar); return st(a, tab); })],
+    // RUIMTE-WEERGAVE-001: «Пауза» / «Продовжити» — bewust, voor de hele sessie van deze aanmelding (wisselen pauzeert niet meer).
+    // Pauze is de veilige richting; hervatten vraagt evenmin stap-op, want de sessie is al met stap-op gestart (zoals wisselen).
+    [`POST ${P}/pauzeren`]: [gate({ schrijven: true }, async (b, a, tab) => { await k.pauzeren(a.user, sessie(a), b.aan); return st(a, tab); })],
     [`POST ${P}/verlengen`]: [gate({ schrijven: true, stepUp: true }, async (b, a, tab) => { await k.verlengen(a.user, sessie(a), b.minuten, b.soort); return st(a, tab); })],
     [`POST ${P}/beeindigen`]: [gate({ schrijven: true }, async (_b, a, tab) => { await k.beeindigen(a.user, sessie(a)); return st(a, tab); })],
     // Ruimtes-scheiding (0123): directe link/bladwijzer naar een technische pagina of API. 401 zonder sessie (gate),
@@ -61,5 +64,7 @@ export function techRuimtesRoutes(requireSession: RequireSession, deps: TechRuim
     })],
     [`POST ${P}/toegang`]: [gate({}, async (_b, a, tab) => json(await k.toegang(a.user, sessie(a), tab)))],
     [`POST ${P}/ai-zetten`]: [gate({ schrijven: true, stepUp: true }, async (b, a, tab) => { await k.aiZetten(a.user, sessie(a), b); return json(await k.toegang(a.user, sessie(a), tab)); })],
+    // AI-TERMIJN-001: intrekken is de veilige richting → geen stap-op nodig (zoals «Вийти»).
+    [`POST ${P}/ai-intrekken`]: [gate({ schrijven: true }, async (b, a, tab) => { await k.aiIntrekken(a.user, sessie(a), b); return json(await k.toegang(a.user, sessie(a), tab)); })],
   };
 }

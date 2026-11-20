@@ -92,7 +92,7 @@ export async function main(): Promise<number> {
       && !enabledTypes(null).includes('browser.click') && !enabledTypes(null).includes('browser.screenshot') && !enabledTypes(null).includes('browser.deep_diagnostics'));
     check('automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
       !BROWSER_AUTO_APPROVABLE.some((t) => ['browser.invoke', 'browser.click', 'browser.type', 'browser.select', 'browser.key', 'browser.screenshot', 'browser.deep_diagnostics'].includes(t))
-      && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 22);
+      && BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t)) && BROWSER_TYPES.length === 23); // 23 = + browser.lokale_ai (LAI-CON-001)
     // Riskante hulpmiddelen staan standaard uit; deze test wil de keten (mogelijkheid per browser + klik) testen, dus de gebruiker zet ze op "ask".
     await store.setToolModes(A, Object.fromEntries([...RISKY_TOOLS].map((n) => [n, 'ask' as const])));
     const uitKlik = await callTool(A, 'browser_click', { name: 'Opslaan' });

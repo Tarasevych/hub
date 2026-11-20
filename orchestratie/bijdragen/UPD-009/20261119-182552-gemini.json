@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "id": "UPD-009/20261119-182552-gemini",
+  "taakId": "UPD-009",
+  "tijd": "2026-11-19T18:25:52.413Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "gemini",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Оновлення UPD-009 поверх UPD-008 (20261119-170438 @ 5ad4afb1): створено єдиний шар глобального симетричного центрування та стабільності макета src/centrering-globaal.css (підключений у src/main.tsx). Усунено системний перекіс робочої області (-39 px), прилипання сторінок hub, ai, cloud, github, huis, id, api, admin і mcp до лівого меню або правої рейки якорів (+252 px на 1920 px на id), плаваючу анімацію полів .mq-schil та горизонтальне совгання (overscroll-behavior-x: none, overflow-x: clip), зі збереженням повноекранної верстки пошти та 940 px вкладки «Оновлення»."
+  },
+  "waarom": {
+    "uk": "Виконати вимогу власника відцентрувати всі сторінки по центру, щоб ніщо не совгало сторінку, на основі проведеного живого аудиту якості й клієнтського досвіду в Chromium по всіх 10 піддоменах."
+  },
+  "bouwtVoortOp": [
+    "UPD-008/20261119-164814-gemini"
+  ],
+  "tak": "feature/upd-009-centrering-en-stabiliteit-20261119-182000",
+  "pr": null
+}

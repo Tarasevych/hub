@@ -124,11 +124,15 @@ export async function main(): Promise<number> {
   // ---- 4. status voor eigen pagina's: geen oude e-mail zonder koppeling; keuzes van de lokale AI (geen tekst) ----
   const st = await vraag(intern, { op: 'status' }, optiesTab);
   check('status zonder koppeling: accountEmail leeg (de kop toont «Увійти», nooit een oude e-mail)', st && st.accountEmail === '' && st.sloten?.prive?.gekoppeld === false, JSON.stringify(st && { accountEmail: st.accountEmail }));
-  check('status: lokaleAi = alleen hoofdschakelaar + ingeschakelde API-namen uit de opties (summarizer en proofreader uit) + «!» siteToegang (standaard uit)',
-    JSON.stringify(st?.lokaleAi) === '{"aan":true,"apis":["prompt","writer","rewriter","translator","detector"],"siteToegang":false}', JSON.stringify(st?.lokaleAi));
+  check('status: lokaleAi = hoofdschakelaar + ingeschakelde API-namen uit de opties (summarizer en proofreader uit) + «!» siteToegang (standaard uit) + instellingen en gevaar (0.9.7)',
+    st?.lokaleAi?.aan === true
+    && JSON.stringify(st?.lokaleAi?.apis) === '["prompt","writer","rewriter","translator","detector","embedder","decisions"]'
+    && st?.lokaleAi?.siteToegang === false
+    && typeof st?.lokaleAi?.instellingen === 'object'
+    && typeof st?.lokaleAi?.gevaar === 'object', JSON.stringify(st?.lokaleAi));
   delete opslag.lokaleAi;
   const st2 = await vraag(intern, { op: 'status' }, optiesTab);
-  check('status: nog nooit opgeslagen → standaard van lokale-ai.js (alles aan)', st2?.lokaleAi?.aan === true && st2.lokaleAi.apis.length === 7, JSON.stringify(st2?.lokaleAi));
+  check('status: nog nooit opgeslagen → standaard van lokale-ai.js (alle 9 APIs aan)', st2?.lokaleAi?.aan === true && st2.lokaleAi.apis.length === 9, JSON.stringify(st2?.lokaleAi));
   check('wijziging van de lokale AI in de opslag → de status wordt meteen opnieuw geduwd (luisteraar op storage.onChanged)', nep.luister.opslag.length >= 1);
 
   // ---- 5. teksten: nergens meer de F5-eis in de diagnose ----

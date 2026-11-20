@@ -13,7 +13,9 @@ import type { OnderdeelProps } from '../CloudPagina';
 import { foutTekst, tr, type Lang } from '../tekst';
 
 import { registerGroep } from '../register-koppeling';
+import MerkLogo from '../../merk/MerkLogo';
 import { useCatalogusV2 } from '../../integraties/catalogus-vlag';
+import '../cloud-integraties-maquette.css';
 
 const POLL_MS = 3000, POLL_MAX_MS = 4 * 60_000;
 
@@ -61,8 +63,11 @@ export function SleutelsChecklist({ lang, aanbieder, m4 }: { lang: Lang; aanbied
   );
 }
 
-/** Monogram in plaats van merkafbeeldingen (geen logo’s in de bundel — zelfde regel als de agenda-catalogus). */
-export const Monogram = ({ tekst }: { tekst: string }) => <span className='cvi-monogram' aria-hidden='true'>{tekst}</span>;
+/** REESTR-LOGO-001: het merk uit het ENE merkregister (src/merk, de grote tabel lui); monogram alleen zonder merk met herkomst.
+ *  Логотип сервісу — з єдиного реєстру; літери лише там, де справжнього знака немає. */
+export const Monogram = ({ tekst, merk, naam }: { tekst: string; merk?: string; naam?: string }) => merk
+  ? <span className='cvi-monogram is-merk' aria-hidden='true'><MerkLogo id={merk} naam={naam || tekst} logo={merk} maat={28} /></span>
+  : <span className='cvi-monogram' aria-hidden='true'>{tekst}</span>;
 
 export default function Integraties({ lang, naarTab }: OnderdeelProps) {
   const [data, setData] = useState<IntegratiesUit | null>(null);
@@ -74,7 +79,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
 
   const laad = useCallback(async (): Promise<IntegratiesUit | null> => {
     try { const vers = await cloudClient.integraties(); setData(vers); setFout(''); return vers; }
-    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); return null; }
+    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); return null; }
     finally { setLaden(false); }
   }, [lang]);
   useEffect(() => { void laad(); }, [laad]);
@@ -104,7 +109,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
       const r = await cloudClient.googleStart(rol);
       if (r.authUrl) { if (venster) venster.location.href = r.authUrl; else location.assign(r.authUrl); startPoll(); }
       else { venster?.close(); await laad(); }
-    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setBezig(false); }
   };
 
@@ -150,7 +155,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
 
         <article className='cvi-kaart is-open' data-cvi-aanbieder='google-drive'>
           <div className='cvi-kaart-kop'>
-            <Monogram tekst={drive?.monogram || 'G'} />
+            <Monogram tekst={drive?.monogram || 'G'} merk='googledrive' naam='Google Drive' />
             <div className='cvi-kaart-naam'><strong>Google Drive</strong><span className='cvi-richting'>{cloudTekst(CLOUD_RICHTING_LABEL['lezen-en-schrijven'], lang)}</span></div>
             {drive ? standBadge(drive) : null}
           </div>
@@ -182,7 +187,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
 
         <article className='cvi-kaart is-open' data-cvi-aanbieder='google-photos'>
           <div className='cvi-kaart-kop'>
-            <Monogram tekst={fotos?.monogram || 'GP'} />
+            <Monogram tekst={fotos?.monogram || 'GP'} merk='googlephotos' naam='Google Photos' />
             <div className='cvi-kaart-naam'><strong>Google Photos</strong><span className='cvi-richting'>{cloudTekst(CLOUD_RICHTING_LABEL.importeren, lang)}</span></div>
             {fotos ? standBadge(fotos) : null}
           </div>
@@ -205,7 +210,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
             return (
               <details key={a.id} className='cvi-kaart' data-cvi-aanbieder={a.id} data-cvi-stand={a.stand}>
                 <summary>
-                  <Monogram tekst={a.monogram} />
+                  <Monogram tekst={a.monogram} merk={a.merk} naam={a.naam} />
                   <div className='cvi-kaart-naam'><strong>{a.naam}</strong><span className='cvi-richting'>{cloudTekst(CLOUD_RICHTING_LABEL[a.richting], lang)}</span></div>
                   {standBadge(a)}
                 </summary>

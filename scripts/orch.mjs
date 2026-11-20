@@ -20,6 +20,16 @@
 //   pakket --taak X --auteur "Імʼя" [--versie V] [--uit map] [--manifest m.json] [--testresultaten t.json] [--sig p.sig] [--samenvatting-uk …] [--samenvatting-nl …] [--niet-gedaan …]
 //                               зібрати mijn-ruimte-<V>.tar.gz (сумісний, через maak-voorstelpakket.sh, з UITROL-BASIS) + mijn-ruimte-<V>-<agent>-overdracht.zip
 //   pakket-controleer --bron <zip>  перевірити пакет передачі без встановлення (цілісність, метадані, база, правила)
+//   begin [--agent a] [--taak X] [--onderwerp naam]… [--tekst "…"] [--kort]   BIJDRAGE-001: єдиний старт — правила, навички (і їх завантаження), досьє функції, хто працював і хто паралельно
+//   bijdrage --taak X --agent a --platform p --model m --opdrachtgever "Імʼя" --soort s --wat "…" [--waarom "…"] [--bouwt-voort-op id]… [--onderwerp n]… [--pr N]
+//                               записати внесок (хто, яка модель, що, чому, на чому будує) у orchestratie/bijdragen/<X>/ — лише доповнюється
+//   bijdragen [--taak X] [--onderwerp n] [--json]   хронологія: хто що робив, переробляв, доробляв
+//   onderwerp [naam] [--zoek "…"]   досьє функції (orchestratie/onderwerpen/): уся історія, можливості, утрачене, зауваження власника
+//   behoud [--tegen <ref>]      нічого не зникло відносно бази: облік, досьє, навички та їхні можливості
+//   vaardigheden-spiegel --agent a  завантажити навички з .agents/skills/ у теку агента (beleid.vaardigheden.spiegels)
+//   verwijzing --soort tak|pr --id x --gebeurtenis verwijderd|gesloten|samengevoegd|hersteld|beschrijving --wie "…" --waarom "…" [--laatste-commit sha] [--opgenomen-in №N]
+//                               записати, хто, коли й чому видалив гілку чи закрив запит і куди ввійшла робота (orchestratie/verwijzingen/)
+//   verwijzingen [--sinds ref] [--taak X] [--json]  назва, стан і посилання кожної гілки, запиту, міграції й задачі для сторінки оновлень
 // Усі тексти uk+nl, усі перевірки — чисті функції в scripts/orch/kern.mjs (тести: tests/eenheid/orch-*.test.ts).
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -31,6 +41,7 @@ import {
 } from './orch/kern.mjs';
 import { inleveren, registreerInlevering } from './orch/inleveren.mjs';
 import { basisVoorPakket, controleerOverdrachtPakket, maakOverdrachtPakket } from './orch/pakket.mjs';
+import { behoudTegen, cliBegin, cliBehoud, cliBijdrage, cliBijdragen, cliOnderwerp, cliSpiegel, cliVerwijzing, cliVerwijzingen, controleerBijdragenEnOnderwerpen } from './orch/begin.mjs';
 
 const args = process.argv.slice(2);
 const opdracht = args[0];
@@ -78,6 +89,8 @@ function controleer() {
     if (!Array.isArray(w.wachtrij)) z.push({ code: 'WACHTRIJ_ONGELDIG', ernst: 'fout', uk: 'wachtrij.json: поле wachtrij має бути масивом', nl: 'wachtrij.json: veld wachtrij moet een lijst zijn' });
     else for (const r of w.wachtrij) if (!existsSync(P(`${TAKEN}/${r.taakId}.json`))) z.push({ code: 'WACHTRIJ_TAAK', ernst: 'fout', uk: `у черзі задача ${r.taakId} без запису в ${TAKEN}`, nl: `wachtrij verwijst naar taak ${r.taakId} zonder bestand in ${TAKEN}` });
   }
+  // BIJDRAGE-001: облік авторства й досьє функцій мають дійсний формат і посилання.
+  z = z.concat(controleerBijdragenEnOnderwerpen(wortel));
   const ctx = beleid.compactContext.bestand;
   if (existsSync(P(ctx))) {
     const verwacht = compacteContext(lees('AGENTS.md'), beleid, lock);
@@ -167,6 +180,12 @@ function doeVersheid() {
     console.log(`HEAD ${head.slice(0, 12)} · basis ${taak.basisCommit.slice(0, 12)} · integratie ${integratie ?? '— (niet gevonden)'} · eigen bestanden ${feiten.eigenBestanden.length}`);
   } else console.log('LET OP: geen git — alleen regels gecontroleerd, basis niet');
   const z = versheid(feiten);
+  // BIJDRAGE-001: перед передаванням — нічого з обліку, досьє й навичок не зникло відносно бази задачі; є хоча б один запис обліку.
+  if (fase === 'overdracht' && head) {
+    z.push(...behoudTegen(wortel, taak.basisCommit));
+    const mijn = P(`orchestratie/bijdragen/${taak.id}`);
+    if (!existsSync(mijn) || !readdirSync(mijn).some((f) => f.endsWith('.json'))) z.push({ code: 'BIJDRAGE_ONTBREEKT', ernst: 'fout', uk: `задача ${taak.id} без запису обліку авторства — node scripts/orch.mjs bijdrage --taak ${taak.id} … (хто, яка модель, що й чому)`, nl: `taak ${taak.id} zonder registratie van auteurschap — node scripts/orch.mjs bijdrage` });
+  }
   const code = toon(z);
   console.log(code ? `\nORCH versheid (${fase}): NIET vers` : `\nORCH versheid (${fase}): vers · свіжо`);
   return code;
@@ -303,6 +322,7 @@ function doePakketControleer() {
   return r.geslaagd ? 0 : 1;
 }
 
-const tabel = { inleveren: doeInleveren, 'staat-commit': staatCommit, pakket: doePakket, 'pakket-controleer': doePakketControleer, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
+const ctxCli = () => ({ wortel, args, beleid: laadBeleid() });
+const tabel = { begin: () => cliBegin({ ...ctxCli(), controleer }), bijdrage: () => cliBijdrage(ctxCli()), bijdragen: () => cliBijdragen(ctxCli()), onderwerp: () => cliOnderwerp(ctxCli()), behoud: () => cliBehoud(ctxCli()), 'vaardigheden-spiegel': () => cliSpiegel(ctxCli()), verwijzing: () => cliVerwijzing(ctxCli()), verwijzingen: () => cliVerwijzingen(ctxCli()), inleveren: doeInleveren, 'staat-commit': staatCommit, pakket: doePakket, 'pakket-controleer': doePakketControleer, wachtrij: doeWachtrij, status: doeStatus, werkruimte: doeWerkruimte, controleer, vergrendel: doeVergrendel, context: doeContext, 'taak-start': taakStart, 'taak-staat': taakStaat, 'taak-herlees': taakHerlees, versheid: doeVersheid, 'onderteken-bericht': ondertekenBericht, bevestig };
 if (!tabel[opdracht]) { console.log(`gebruik: node scripts/orch.mjs <${Object.keys(tabel).join('|')}>`); process.exit(2); }
 try { process.exit(tabel[opdracht]()); } catch (e) { console.log(`FOUT: ${e.message}`); process.exit(1); }

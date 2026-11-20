@@ -35,7 +35,8 @@ export type AgentKleur = { licht: string; donker: string };
  * onderscheiden blijven. Nooit een eigen hexwaarde: de kleuren zelf komen uit ACCENT_KLEUREN.
  */
 export const AGENT_ACCENT: Readonly<Record<AgentSlug, Accent>> = Object.freeze({
-  claude: 'oranje', gpt: 'teal', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo', antigravity: 'hemel', autoclaw: 'groen',
+  claude: 'oranje', gpt: 'teal', codex: 'limoen', grok: 'grafiet', gemini: 'blauw', copilot: 'violet', cursor: 'indigo', antigravity: 'hemel', autoclaw: 'groen',
+  windsurf: 'roze', cline: 'oker', devin: 'bruin', opencode: 'rood', mscopilot: 'hemel',
 });
 /** Accent voor een lezer waarvan de extensie de agent NIET kent (en voor een onbekend accent in de opslag). */
 export const ONBEKEND_ACCENT: Accent = 'grijs';
@@ -52,12 +53,18 @@ export const ONBEKENDE_KLEUR: AgentKleur = Object.freeze(kleurVanAccent(ONBEKEND
 export function agentSlugUitNaam(v: unknown): AgentSlug | null {
   const t = String(v ?? '').trim().toLowerCase();
   if (!t) return null;
-  if (t === 'claude' || t === 'gpt' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor' || t === 'antigravity' || t === 'autoclaw') return t;
+  if (t === 'claude' || t === 'gpt' || t === 'codex' || t === 'grok' || t === 'gemini' || t === 'copilot' || t === 'cursor' || t === 'antigravity' || t === 'autoclaw' || t === 'windsurf' || t === 'cline' || t === 'devin' || t === 'opencode' || t === 'mscopilot') return t;
+  if (/mscopilot|microsoft copilot|microsoft 365 copilot|m365 copilot|copilot studio|power platform|powerplatform/.test(t)) return 'mscopilot';
+  if (/\bcodex\b/.test(t)) return 'codex';
   if (/chatgpt|openai|\bgpt/.test(t)) return 'gpt';
   if (/claude|anthropic/.test(t)) return 'claude';
   if (/grok|\bxai\b|x\.ai/.test(t)) return 'grok';
   if (/antigravity|jetski/.test(t)) return 'antigravity';
   if (/autoclaw|openclaw|zhipu|chatglm|\bglm\b|z\.ai|\bzai\b/.test(t)) return 'autoclaw';
+  if (/windsurf|codeium|cascade/.test(t)) return 'windsurf';
+  if (/\bcline\b|roo code|roocode/.test(t)) return 'cline';
+  if (/devin|cognition/.test(t)) return 'devin';
+  if (/opencode|open code/.test(t)) return 'opencode';
   if (/gemini|google ai|bard/.test(t)) return 'gemini';
   if (/copilot|vscode|visual studio code/.test(t)) return 'copilot';
   if (/cursor/.test(t)) return 'cursor';
@@ -77,7 +84,8 @@ export function kleurVoorAgent(slug: AgentSlug | null, accent?: unknown): AgentK
 
 /** Naam van de agent zoals een mens die leest; leeg = de extensie weet het niet (het opschrift zegt dan alleen «ШІ»/«AI»). */
 export const AGENT_NAAM: Readonly<Record<AgentSlug, string>> = Object.freeze({
-  claude: 'Claude', gpt: 'ChatGPT', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity', autoclaw: 'AutoClaw',
+  claude: 'Claude', gpt: 'ChatGPT', codex: 'Codex', grok: 'Grok', gemini: 'Gemini', copilot: 'Copilot', cursor: 'Cursor', antigravity: 'Antigravity', autoclaw: 'AutoClaw',
+  windsurf: 'Windsurf', cline: 'Cline', devin: 'Devin', opencode: 'OpenCode', mscopilot: 'Microsoft Copilot',
 });
 
 // ---------------------------------------------------------------- wat doet die AI nu? (tweetalig, [uk, nl])
@@ -86,6 +94,7 @@ export type Tweetalig = readonly [string, string];
 export const MARKERING_ACTIES: Readonly<Record<string, Tweetalig>> = Object.freeze({
   'browser.snapshot': ['читає сторінку', 'leest de pagina'],
   'browser.audit': ['читає сторінку', 'leest de pagina'],
+  'browser.lokale_ai': ['рахує локальним ШІ', 'rekent met lokale AI'],
   'browser.diagnostics': ['читає діагностику', 'leest de diagnose'],
   'browser.console': ['читає діагностику', 'leest de diagnose'],
   'browser.network': ['читає запити', 'leest de verzoeken'],

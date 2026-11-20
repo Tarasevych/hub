@@ -474,3 +474,29 @@
     min-height:36px;padding:6px 10px;font-size:12px;
   }
 }
+/* MAILACC-002 · dezelfde orbit bij bestaande accounts (variant «extra») + een rustige laadkaart i.p.v. een flits van de lege orbit. */
+.mail-accounts-hub.mail-accounts-met-orbit>.mail-accounts-orbit-rij{grid-column:1/-1;min-width:0}
+.mail-accounts-met-orbit #mail-sectie-gekoppeld{scroll-margin-top:84px}
+.mail-accounts-met-orbit #mail-sectie-gekoppeld:focus{outline:none}
+.mail-accounts-met-orbit #mail-sectie-gekoppeld:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:3px}
+.mail-orbit-gekoppeld-chip{
+  display:inline-flex;align-items:center;gap:8px;margin:14px auto 0;min-height:40px;padding:6px 8px 6px 14px;
+  border:1px solid color-mix(in srgb,var(--orbit-accent) 35%,var(--line,#dce6e8));border-radius:999px;
+  background:color-mix(in srgb,var(--orbit-accent) 8%,var(--panel,#fff));color:var(--text,#14212c);
+  font:inherit;font-size:13px;cursor:pointer;max-width:100%;box-sizing:border-box;
+}
+.mail-orbit-gekoppeld-chip>svg{color:var(--orbit-accent);flex:none}
+.mail-orbit-gekoppeld-chip strong{font-weight:750}
+.mail-orbit-gekoppeld-chip-actie{display:inline-flex;align-items:center;gap:2px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--panel,#fff);color:var(--orbit-accent);font-weight:700}
+.mail-orbit-gekoppeld-chip:hover{border-color:var(--orbit-accent)}
+.mail-orbit-gekoppeld-chip:focus-visible{outline:3px solid color-mix(in srgb,var(--orbit-accent) 55%,transparent);outline-offset:2px}
+.mail-accounts-laden{min-height:min(60vh,520px);display:grid;place-items:center}
+.mail-accounts-laadkaart{display:inline-flex;align-items:center;gap:12px;padding:14px 18px;border:1px solid var(--line,#dce6e8);border-radius:16px;background:var(--panel,#fff);color:var(--muted,#64748b);font-size:14px}
+.mail-accounts-laadkaart-puls{width:12px;height:12px;border-radius:50%;background:var(--accent,#137778);animation:mail-accounts-puls 1s ease-in-out infinite alternate}
+@keyframes mail-accounts-puls{from{opacity:.35;transform:scale(.8)}to{opacity:1;transform:scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.mail-accounts-laadkaart-puls{animation:none}}
+@media(max-width:620px){
+  .mail-accounts-hub.mail-accounts-met-orbit{padding:8px clamp(6px,2vw,12px) 20px;max-width:100%;box-sizing:border-box}
+  .mail-orbit-gekoppeld-chip{font-size:12px;gap:6px;padding-left:10px}
+}
+.mail-orbit-groet{margin:0 0 8px;font-size:13px;color:var(--muted,#64748b);overflow-wrap:anywhere}

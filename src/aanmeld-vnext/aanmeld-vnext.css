@@ -131,6 +131,9 @@ a.amv-verwijzing:hover { border-color: var(--accent); box-shadow: var(--schaduw-
   .amv-icoonknop { width: var(--tik-hoogte-mobiel); height: var(--tik-hoogte-mobiel); }
   .amv-chip { min-height: var(--tik-hoogte-mobiel); }
 }
+@media (max-width: 420px) {
+  .amv-tegels { grid-template-columns: 1fr; }
+}
 @media (min-width: 600px) {
   .amv-rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .amv-kaart { flex-direction: column; }

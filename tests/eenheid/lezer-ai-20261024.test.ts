@@ -177,8 +177,162 @@ export async function main(): Promise<number> {
     const taalRadios = (/<fieldset data-weergave-taal="true">[\s\S]*?<\/fieldset>/.exec(vg) || [''])[0];
     check('D «Вигляд → Мова листа»: «Оригінал» (standaard, aangevinkt) en «Перекладати», noot «переклад — лише коли ви оберете його»',
       taalRadios.includes('<legend>Мова листа</legend>') && /<input type="radio"[^>]*checked=""[^>]*\/><span>Оригінал<\/span>/.test(taalRadios) && taalRadios.includes('Перекладати') && taalRadios.includes('переклад — лише коли ви оберете його в листі'));
+    // MAILBEELD-002 (16.11.2026): «Вигляд» у згортаних зонах — заголовок зони показує поточне значення; відкрита остання вжита (типово «Зображення»).
+    const zonesVan = (h: string) => [...h.matchAll(/<details class="lz-zone" data-zone="([a-z]+)"( open="")?>/g)].map((m) => `${m[1]}${m[2] ? '*' : ''}`).join(',');
+    const waardenVan = (h: string) => [...h.matchAll(/<span class="lz-zone-titel">([^<]+)<\/span><span class="lz-zone-waarde"[^>]*>(?:<i aria-hidden="true">!<\/i>)?<span>([^<]*)<\/span>/g)].map((m) => `${m[1]}=${m[2]}`).join('|');
+    check('D «Вигляд» у зонах: чотири зони, відкрита «Зображення»; у заголовках поточні значення', zonesVan(vg) === 'beelden*,lezen,taal,stroken' && waardenVan(vg) === 'Зображення=Питати|Читання=Звичайно · 100 %|Мова й ШІ=Оригінал|Сховані смуги=немає', `${zonesVan(vg)} / ${waardenVan(vg)}`);
+    const beeldBlok = (/<fieldset class="lz-beelden" data-weergave-beelden="vragen">[\s\S]*?<\/fieldset>/.exec(vg) || [''])[0];
+    check('D «Зовнішні зображення»: три справжні радіокнопки (vragen · ontvangst · altijd), обрано «Питати»; на ризикованій — «!» і ризик у назві для читача екрана; один рядок «що відбувається зараз»',
+      beeldBlok.includes('<legend>Зовнішні зображення</legend>') && ['vragen', 'ontvangst', 'altijd'].every((v) => new RegExp(`<input type="radio"[^>]*value="${v}"`).test(beeldBlok))
+      && (beeldBlok.match(/<input type="radio"[^>]*>/g) || []).filter((i) => i.includes('checked=""')).join('|').replace(/.*value="([a-z]+)".*/, '$1') === 'vragen'
+      && /aria-label="Завжди показувати — ризик: відправник бачить відкриття"/.test(beeldBlok) && beeldBlok.includes('<i class="lz-beelden-let" aria-hidden="true">!</i>')
+      && /<small class="lz-weergave-noot lz-beelden-nu" data-stand="vragen"[^>]*>[\s\S]*?<span>Приховані, доки не покажете\u00a0— відправник нічого не бачить\.<\/span><\/small>/.test(beeldBlok),
+      beeldBlok.replace(/ (?:title|data-tooltip)="[^"]*"|<svg[\s\S]*?<\/svg>/g, ''));
+    // Afwerking na de jury (16.11.2026): de regel van de voorraad staat er ALTIJD (geen sprong in hoogte) — vóór het antwoord van de server zonder tekst en zonder wisknop.
+    const kaal = beeldBlok.replace(/<svg[\s\S]*?<\/svg>/g, '');
+    check('D сховище: рядок є завжди (без стрибка висоти); до відповіді сервера — без тексту й без кнопки стирання',
+      /<span class="lz-beelden-voorraad" data-beelden-voorraad="true" data-staat="laden"><small><span aria-hidden="true">…<\/span><\/small><\/span>/.test(kaal) && !beeldBlok.includes('lz-beelden-wis'), kaal.slice(kaal.indexOf('lz-beelden-voorraad') - 20));
+    check('D плитки: під назвою мітка одним словом («типово» · «приватно» · «! ризик» — знак «!» у мітці, не в кутку); на обраній плитці галочка (не лише колір); підказка наслідку — data-tooltip (шар підказок сайту), не title: одна на весь ряд плиток, ліворуч від панелі (не поверх сусідніх плиток і рядка стану), з текстом обраного режиму; у «Завжди» вона починається з «!»',
+      /<label data-keuze="vragen"><input[^>]*checked=""[^>]*\/><span><span class="lz-beelden-naam">Питати<\/span><span class="lz-beelden-merk">типово<\/span>✓<\/span><\/label>/.test(beeldBlok.replace(/<svg[^>]*lz-beelden-vink[\s\S]*?<\/svg>/g, '✓').replace(/<svg[\s\S]*?<\/svg>/g, ''))
+      && kaal.includes('<span class="lz-beelden-naam">Завантажити наперед</span><span class="lz-beelden-merk">приватно</span></span></label>')
+      && kaal.includes('<span class="lz-beelden-naam">Завжди</span><span class="lz-beelden-merk"><i class="lz-beelden-let" aria-hidden="true">!</i>ризик</span></span></label>')
+      && (beeldBlok.match(/lz-beelden-vink/g) || []).length === 1 && !/<label[^>]* (?:title|data-tooltip)=/.test(beeldBlok)
+      && /<span class="lz-beelden-keuze" data-tooltip="Зображення приховані, доки не натиснете «Показати»: [^"]+" data-tooltip-placement="left"><label data-keuze="vragen">/.test(beeldBlok)
+      && lees('src/mail/WeergaveKeuze.tsx').includes("tipUk: '! Зображення завантажуються, щойно ви відкриваєте лист (через ваш сервер): відправник може дізнатися, що й коли ви його прочитали.")
+      && lees('src/mail/WeergaveKeuze.tsx').includes("<span className='lz-beelden-keuze' ref={rij} data-tooltip={tip(tipVan(huidig))} data-tooltip-placement='left'>"));
+    // Afwerking 1 (16.11.2026, na de controle): op een aanraakscherm gaf een tik focus en bleef de knopinfo van de site over de zin «wat
+    // gebeurt er nu», «Докладніше» en de regel van de voorraad liggen. Met een grove aanwijzer dus geen enkele data-tooltip in het blok
+    // (de uitleg staat in «Докладніше» en de aria-labels); met muis/toetsenbord staat de knopinfo links náást het paneel of nergens.
+    {
+      const g = globalThis as { matchMedia?: unknown };
+      const had = Object.prototype.hasOwnProperty.call(g, 'matchMedia'), oud = g.matchMedia;
+      g.matchMedia = (q: string) => ({ matches: q === '(pointer: coarse)', media: q, addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop });
+      let grof = '';
+      try { grof = (/<fieldset class="lz-beelden"[\s\S]*?<\/fieldset>/.exec(kader(createElement(WeergaveBlok, { lang: 'uk' }))) || [''])[0]; } finally { if (had) g.matchMedia = oud; else delete g.matchMedia; }
+      const wkTip = lees('src/mail/WeergaveKeuze.tsx');
+      check('D дотик (pointer: coarse): у блоці «Зовнішні зображення» немає жодної data-tooltip — тап не лишає підказку поверх рядка стану, «Докладніше» і сховища; пояснення дає «Докладніше» й aria-label',
+        grof.includes('<span class="lz-beelden-keuze" data-tooltip-placement="left"><label data-keuze="vragen">') && !/data-tooltip="/.test(grof) && !/ title="/.test(grof) && grof.includes('<details class="lz-beelden-meer">') && grof.includes('aria-label="Завжди показувати — ризик: відправник бачить відкриття"')
+        && wkTip.includes("const [grof, setGrof] = useState(() => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches);") && wkTip.includes("mq.addEventListener?.('change', volg);") && wkTip.includes('const tip = (tekst: string) => (aanraak ? undefined : tekst);')
+        && wkTip.includes("className='lz-beelden-rij' tabIndex={0}\n              data-tooltip={tip(t(`Листів у черзі: ") && wkTip.includes("data-tooltip={tip(t('Видаляє всі збережені зображення. "), grof.replace(/<svg[\s\S]*?<\/svg>/g, '').slice(0, 400));
+      check('D миша й клавіатура: текст підказки ряду — плитки під курсором або у фокусі (слухач на window у фазі перехоплення, раніше за шар підказок); немає місця ліворуч (вузьке вікно) → підказки немає; вимкнена плитка пояснює причину',
+        wkTip.includes('const TIP_RUIMTE_LINKS = 317;') && wkTip.includes("window.addEventListener('pointerover', zet, true);") && wkTip.includes("window.addEventListener('focusin', zet, true);") && wkTip.includes("window.removeEventListener('pointerover', zet, true); window.removeEventListener('focusin', zet, true);")
+        && wkTip.includes("if ((e as PointerEvent).pointerType === 'touch' || !(e.target instanceof Element) || !r.contains(e.target)) return;")
+        && wkTip.includes("if (r.getBoundingClientRect().left < TIP_RUIMTE_LINKS) r.removeAttribute('data-tooltip');") && wkTip.includes("else if (tip) r.setAttribute('data-tooltip', tip);")
+        && wkTip.includes("return b.id === 'ontvangst' && serverWeg\n      ? t('Зараз недоступно: сервер не відповів, тож увімкнути «Завантажити наперед» не можна. Поточний режим не змінено — спробуйте пізніше.', 'Nu niet beschikbaar: de server antwoordde niet, dus «Vooraf ophalen» kan niet aan. De huidige stand blijft — probeer het later opnieuw.')")
+        && !lees('src/ViewportKnopinfoLaag.tsx').includes('lz-beelden'));
+    }
+    check('D «Докладніше» (згорнуте; для сенсорних екранів без підказок): три режими по одному короткому рядку наслідку й тиха мітка «цей пристрій» / «усі пристрої»',
+      /<details class="lz-beelden-meer"><summary><span>Докладніше<\/span><\/summary><ul>/.test(kaal)
+      && kaal.includes('<li data-keuze="vragen"><span><b>Питати</b><em>цей пристрій</em><span>Приховані, доки самі не покажете</span></span></li>')
+      && kaal.includes('<li data-keuze="ontvangst"><span><b>Завантажити наперед</b><em>усі пристрої</em><span>Сервер завантажує їх, щойно лист надійшов, ще до відкриття — відправник не бачить, коли ви читаєте</span></span></li>')
+      && kaal.includes('<li data-keuze="altijd"><span><b>Завжди</b><em>цей пристрій</em><span>Відправник бачить, коли ви читаєте</span></span></li>'), kaal.slice(kaal.indexOf('lz-beelden-meer') - 20, kaal.indexOf('lz-beelden-voorraad')));
+    const nlBlok = (/<fieldset class="lz-beelden"[\s\S]*?<\/fieldset>/.exec(kader(createElement(WeergaveBlok, { lang: 'nl' }), 'nl')) || [''])[0].replace(/<svg[\s\S]*?<\/svg>/g, '');
+    check('D nl: мітки «standaard» · «privé» · «risico», «Meer uitleg» з «dit apparaat» / «alle apparaten»',
+      ['<span class="lz-beelden-merk">standaard</span>', '<span class="lz-beelden-merk">privé</span>', '!</i>risico</span>', '<summary><span>Meer uitleg</span></summary>', '<em>dit apparaat</em><span>Verborgen tot u ze zelf toont</span>', '<b>Vooraf ophalen</b><em>alle apparaten</em><span>De server haalt ze op zodra de brief binnenkomt, nog vóór het openen — de afzender ziet niet wanneer u leest</span>', '<em>dit apparaat</em><span>De afzender ziet wanneer u leest</span>'].every((x) => nlBlok.includes(x)), nlBlok);
+    const wkBron = lees('src/mail/WeergaveKeuze.tsx');
+    check('D MAILBEELD-004: кнопка «Вигляд» має піктограму вмісту (пейзаж у кольорі сайту: вершина — літера A, що трохи виступає за низ рамки, сонце — глобус мови; 22 px), а не загальні повзунки; опис і підказка називають чотири зони меню й наслідок',
+      !wkBron.includes('SlidersHorizontal') && wkBron.includes('<BeeldTekstIcoon />') && /function BeeldTekstIcoon\(\)[\s\S]*?const accent = \{ stroke: 'var\(--accent\)' \};[\s\S]*?<path d='M5\.4 20h\.1A3\.5 3\.5 0 0 1 2 16\.5V6[^']*h-\.9'[\s\S]*?<path d='M6\.6 22\.6 11\.5 8l4\.9 14\.6' strokeWidth='2\.3' \/>[\s\S]*?<circle cx='17\.6' cy='7\.5' r='2\.9'/.test(wkBron) && !/function BeeldTekstIcoon\(\)[\s\S]*?#[0-9a-f]{6}[\s\S]*?\n\}/.test(wkBron.slice(wkBron.indexOf('function BeeldTekstIcoon'), wkBron.indexOf('/** Hetzelfde als blok')))
+      && /html body \.mail-reader-weergave > summary > svg\.lz-weergave-icoon \{\s*width: 22px;\s*height: 22px;/.test(lees('src/mail/beelden-voorraad.css'))
+      && wkBron.includes("aria-label={t('Вигляд листа: зображення, читання, мова й ШІ, сховані смуги',") && wkBron.includes('Змінює лише показ, сам лист не змінюється.') && !wkBron.includes('Вигляд: ШІ-аналіз над листом'));
+    check('D MAILBEELD-004: режим називається «Завантажити наперед» / «Vooraf ophalen» — старої двозначної назви «При отриманні» / «Bij ontvangst» немає ні в інтерфейсі, ні в сповіщеннях',
+      !/'[^'\n]*(?:При отриманні|Bij ontvangst|при отриманні|bij ontvangst)[^'\n]*'/.test(wkBron + lees('src/mail/beelden-voorraad.ts'))
+      && wkBron.includes("uk: 'Завантажувати наперед (приватно)', nl: 'Vooraf ophalen (privé)', kortUk: 'Завантажити наперед', kortNl: 'Vooraf ophalen',")
+      && lees('src/mail/beelden-voorraad.ts').includes("t('Зображення нових листів тепер завантажуються наперед, щойно лист надходить',")
+      && lees('src/mail/beelden-voorraad.ts').includes("«Вигляд» → «Зображення»") && !lees('src/mail/beelden-voorraad.ts').includes('«Зовнішні зображення»'));
+    check('D сховище, тексти: порожній стан, черга коротким значком із поясненням про сховище ключів, помилка сервера — речення з іменником; нерозривний пробіл у «37 МБ»',
+      wkBron.includes("t('Ще нічого не збережено', 'Nog niets bewaard')") && wkBron.includes('t(`У черзі: ${vr.wachtrij}`, `In wachtrij: ${vr.wachtrij}`)') && /data-tooltip=\{tip\(t\(`Листів у черзі: \$\{vr\.wachtrij\}\. Вони чекають, доки відкриється сховище ключів/.test(wkBron)
+      && wkBron.includes("t('Режим «Завантажити наперед» зараз недоступний: сервер не відповів.', 'De stand «Vooraf ophalen» is nu niet beschikbaar: de server antwoordde niet.')")
+      && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('uk', 38_400_000) === '37\u00a0МБ' && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('nl', 1_500_000) === '1,4\u00a0MB' && (await import('../../src/mail/beelden-voorraad')).formaatGrootte('nl', 2048) === '2\u00a0kB');
+    check('D поведінка: відмова сервера на «При отриманні» повертає попередній локальний режим; кнопка стирання під час роботи — aria-disabled (фокус не падає на <body>); клік у тіло листа (iframe) закриває панель',
+      wkBron.includes("if (b === 'ontvangst') { const vorig = lokaal; zetLokaal('vragen'); void zetBijOntvangst(lang, true).then((ok) => { if (!ok) zetLokaal(vorig); }); return; }")
+      && wkBron.includes("aria-disabled={bezig || undefined}") && !/className='lz-beelden-wis' disabled=/.test(wkBron) && wkBron.includes("blok.current?.querySelector<HTMLInputElement>('input:checked')?.focus()")
+      && wkBron.includes("window.addEventListener('blur', inBrief);") && wkBron.includes("window.removeEventListener('blur', inBrief);"));
     (globalThis as { localStorage: Storage }).localStorage.setItem('mail-lezer-weergave-v1', JSON.stringify({ taal: 'vertaling' }));
+    (globalThis as { localStorage: Storage }).localStorage.setItem('mail-lezer-weergave-zone-v1', 'taal');
     const vg2 = kader(createElement(WeergaveBlok, { lang: 'uk' }));
+    // Блокер рев'ю (16.11.2026): типово відкрита зона — це <details open> усередині листа навіть при закритому «Вигляд»/«Ще». Меню вона не є:
+    // без винятку в обох селекторах жодна гаряча клавіша листа не працювала, а перший Escape «з'їдав» відкриту зону.
+    const lvBron = lees('src/mail/LeesVenster.tsx'), wbBron = lees('src/MailLezerWerkbalk.tsx');
+    check('D зони не є «відкритим меню»: ANDERE_LAGEN і Escape у werkbalk не рахують .lz-zone та розгортні блоки в ній («Докладніше», пояснення ШІ) — класи перелічено, без комбінатора в :not() (старі WebView на такому селекторі кидають SyntaxError)',
+      /const ANDERE_LAGEN = '\.google-mail-reader-backdrop details\[open\]:not\(\.lz-zone\):not\(\.lz-beelden-meer\):not\(\.lz-ai-uitleg\),/.test(lvBron)
+      && wbBron.includes("document.querySelector<HTMLDetailsElement>('.google-mail-reader-backdrop details[open]:not(.lz-zone):not(.lz-beelden-meer):not(.lz-ai-uitleg)')") && !wbBron.includes("'.google-mail-reader-backdrop details[open]'")
+      && !/:not\([^()]*\s[^()]*\)/.test(lvBron.slice(lvBron.indexOf('const ANDERE_LAGEN'), lvBron.indexOf('\n', lvBron.indexOf('const ANDERE_LAGEN')))) && !wbBron.includes(':not(.lz-zone details)')
+      // alle <details> die in een zone kunnen staan, zijn in de selector genoemd
+      && [...new Set([...lees('src/mail/WeergaveKeuze.tsx').matchAll(/<details className='([a-z-]+)'/g)].map((m) => m[1]))].filter((k) => k !== 'lz-zone').sort().join() === 'lz-ai-uitleg,lz-beelden-meer'
+      && !/<details/.test(lees('src/mail/AiUitleg.tsx')) && !/<details/.test(lees('src/mail/StrookNazorg.tsx'))
+      && /<details class="lz-zone" data-zone="beelden" open="">/.test(vg) && /class="lz-zone-inhoud">[\s\S]*<details class="lz-beelden-meer">/.test(vg));
+    check('D зони: ключ пишеться лише при справжній зміні зони (перше малювання відкритої зони — не вибір користувача)', wkBron.includes('const zetOpen = (z: Zone, aan: boolean) => { if (aan && open !== z) bewaarZone(z); setOpen((nu) => (aan ? z : nu === z ? \'\' : nu)); };'));
+    check('D ⋮: aria-expanded на кнопці йде за <details> — шар підказок прибирає підказку «Додаткові дії» з-над відкритого меню (як у «Вигляд»)',
+      wbBron.includes("<details ref={moreRef} onToggle={event=>{setMeerOpen(event.currentTarget.open);plaatsMeer()}} className=") && wbBron.includes("<summary data-reader-drop-surface='overflow' aria-expanded={meerOpen} aria-label={t('Додаткові дії','Meer acties')} data-tooltip={t('Додаткові дії','Meer acties')}"));
+    check('D зони: остання відкрита зона запам’ятовується на пристрої; значення в заголовку йде за вибором («Переклад»); невідоме значення → «Зображення»', zonesVan(vg2) === 'beelden,lezen,taal*,stroken' && waardenVan(vg2).includes('Мова й ШІ=Переклад|')
+      && ((globalThis as { localStorage: Storage }).localStorage.setItem('mail-lezer-weergave-zone-v1', 'iets'), zonesVan(kader(createElement(WeergaveBlok, { lang: 'nl' }), 'nl'))) === 'beelden*,lezen,taal,stroken', `${zonesVan(vg2)} / ${waardenVan(vg2)}`);
+    const sporen = await import('../../src/lokale-sporen');
+    const nepOpslag = (keys: string[]) => { const m = new Map(keys.map((k) => [k, 'x'])); return { m, o: { get length() { return m.size; }, key: (i: number) => [...m.keys()][i] ?? null, removeItem: (k: string) => { m.delete(k); }, getItem: (k: string) => m.get(k) ?? null } }; };
+    const eenAccount = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']), alles = nepOpslag([sporen.WEERGAVE_ZONE_SLEUTEL, 'mail-lezer-weergave-v1']);
+    sporen.wisLokaleSporen('user-a', eenAccount.o); sporen.wisAlleLokaleSporen(alles.o);
+    check('D зони: ключ один, з src/lokale-sporen.ts (назва зони, без облікового запису) — вихід одного акаунта його лишає, «вийти всюди» стирає',
+      sporen.WEERGAVE_ZONE_SLEUTEL === 'mail-lezer-weergave-zone-v1' && lees('src/mail/WeergaveKeuze.tsx').includes("import { WEERGAVE_ZONE_SLEUTEL } from '../lokale-sporen';") && !lees('src/mail/WeergaveKeuze.tsx').includes("'mail-lezer-weergave-zone")
+      && eenAccount.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && !alles.m.has(sporen.WEERGAVE_ZONE_SLEUTEL) && alles.m.has('mail-lezer-weergave-v1'));
+    const bv = lees('src/mail/beelden-voorraad.css'), bvMedia = bv.indexOf('\n@media');
+    check('D зони, CSS: мобільний шар останній і діє також на вузькому екрані (не лише pointer:coarse); дотик 44 px (плитки й кнопка стирання); рух вимикається за prefers-reduced-motion; видимий фокус на плитці й заголовку зони',
+      bvMedia > 0 && bv.indexOf('\nhtml body', bvMedia) < 0 && /\n@media \(pointer: coarse\), \(max-width: 720px\) \{[\s\S]*\}\s*$/.test(bv) && bv.lastIndexOf('\n@media') === bv.indexOf('\n@media (pointer: coarse), (max-width: 720px) {')
+      && /\.lz-beelden-keuze input \+ span \{\s*min-height: 80px;/.test(bv) && /button\.lz-beelden-wis\[type\]:not\(\.x\) \{\s*width: 44px;\s*min-width: 44px;\s*height: 44px;/.test(bv)
+      && /@media \(prefers-reduced-motion: reduce\) \{[^@]*transition: none;/.test(bv) && bv.includes('html body .lz-beelden-keuze input:focus-visible + span {\n  outline: 2px solid var(--focus);') && bv.includes('html body .lz-zone > summary:focus-visible {\n  outline: 2px solid var(--focus);'));
+    const zc = (x: string) => x.replace(/\/\*[\s\S]*?\*\//g, '');
+    const bvKaal = zc(bv);
+    check('D зони, CSS: тінь натиску/наведення — із заокругленням картки й без квадратного tap-highlight; hover лише в @media (hover: hover); значення (і «!») у заголовку ВІДКРИТОЇ зони сховано',
+      /html body \.lz-zone > summary \{[^}]*border-radius: calc\(var\(--straal-m, 14px\) - 1px\);[^}]*-webkit-tap-highlight-color: transparent;/.test(bvKaal) && /html body \.lz-zone > summary:active \{\s*background: /.test(bvKaal)
+      && !/\n(?:html body [^{\n]*):hover[^{\n]*\{/.test(bvKaal.slice(0, bvKaal.indexOf('\n@media'))) && /@media \(hover: hover\) and \(pointer: fine\) \{\s*html body \.lz-zone > summary:hover \{/.test(bvKaal)
+      && /html body \.lz-zone\[open\] > summary > \.lz-zone-waarde \{\s*visibility: hidden;\s*\}/.test(bvKaal));
+    check('D плитки, CSS: три РІВНІ колонки; обрана «Завжди» — рамка 2 px; недоступна плитка — пунктир; рядок «що зараз» для «Завжди» — лише значок у тоні попередження (текст звичайний)',
+      /html body \.lz-beelden-keuze \{\s*display: grid;\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/.test(bvKaal) && /label\[data-keuze='altijd'\] input:checked \+ span \{[^}]*border: 2px solid /.test(bvKaal)
+      && /html body \.lz-beelden-keuze input:disabled \+ span \{\s*border: 1px dashed /.test(bvKaal) && bvKaal.includes("html body .lz-beelden-nu[data-stand='altijd'] > svg {\n  color: var(--warn);\n}") && !/\.lz-beelden-nu\[data-stand='altijd'\],/.test(bvKaal) && !bvKaal.includes('lz-beelden-fout'));
+    check('D рядок «що зараз»: речення двох інших режимів лежать невидимо в тій самій клітинці (висота = найдовше; без стрибка й без порожнього рядка), приховані від читача екрана',
+      (beeldBlok.match(/<span class="lz-beelden-nu-maat" aria-hidden="true">/g) || []).length === 2 && !/<span class="lz-beelden-nu-maat" aria-hidden="true">Приховані, доки/.test(beeldBlok)
+      && /html body \.lz-beelden-nu > span \{\s*grid-area: 1 \/ 2;/.test(bvKaal) && /html body \.lz-beelden-nu > \.lz-beelden-nu-maat \{\s*visibility: hidden;/.test(bvKaal) && !/lz-beelden-nu \{[^}]*min-height/.test(bvKaal));
+    check('D сховище, CSS: кнопка стирання — по центру першого рядка (від’ємне поле), праворуч; hover не скидає background-clip (background-color) і лише в @media (hover: hover); у «Ще» підпис «Вигляд» — малий, приглушений, у будь-якій палітрі',
+      /margin: calc\(\(var\(--lz-regel\) - var\(--lz-knop\)\) \/ 2\) 0;/.test(bvKaal) && !/lz-beelden-wis[^{]*\{[^}]*\n\s*background: /.test(bvKaal) && /@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*button\.lz-beelden-wis\[type\]:not\(\.x\):hover \{\s*background-color: /.test(bvKaal)
+      // підпис «Вигляд» — звичайний підпис групи аркуша: ті самі значення, що в src/ui-golf-11.css, і НИЗЬКА специфічність (палітра
+      // перекриває його так само, як сусідні підписи) — без власного відступу 8 px і кегля 11,5 px
+      && /\n\.lz-weergave-blok > \.mail-reader-overflow-groep-kop \{\s*padding: 4px 12px 2px;\s*color: var\(--muted\);\s*font-size: \.7rem;\s*font-weight: 700;\s*letter-spacing: \.04em;\s*text-transform: uppercase;\s*\}/.test(bvKaal)
+      && !/html body [^{]*\.mail-reader-overflow-groep-kop/.test(bvKaal)
+      && lees('src/ui-golf-11.css').includes('.mail-reader-overflow-groep-kop{padding:4px 12px 2px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}'));
+    check('D плитки й сховище, CSS (доопрацювання 1): назва плитки не торкається країв (5 px з кожного боку); рядки значок / назва / мітка спільні для трьох плиток (subgrid); вимкнена плитка — курсор «заборонено»; на ≤ 359 px слово «зображень» у рядку сховища сховано (рядок не росте); панель 376 px',
+      /html body \.lz-beelden-naam \{\s*box-sizing: border-box;\s*max-width: 100%;\s*padding: 0 5px;/.test(bvKaal)
+      && /@supports \(grid-template-rows: subgrid\) \{\s*html body \.lz-beelden-keuze > label \{\s*display: grid;\s*grid-row: span 3;\s*grid-template-rows: subgrid;\s*\}\s*html body \.lz-beelden-keuze input \+ span \{\s*display: grid;\s*grid-row: 1 \/ -1;\s*grid-template-rows: subgrid;/.test(bvKaal)
+      && /html body \.lz-beelden-keuze input:disabled \{\s*pointer-events: none;\s*\}\s*html body \.lz-beelden-keuze > label:has\(input:disabled\) \{\s*cursor: not-allowed;\s*\}/.test(bvKaal)
+      && /@media \(max-width: 359px\) \{[\s\S]*html body \.lz-beelden-voorraad \.lz-beelden-woord \{\s*display: none;\s*\}/.test(bvKaal.slice(bvKaal.indexOf('\n@media (pointer: coarse), (max-width: 720px) {')))
+      && /html body \.lz-weergave-paneel \{\s*width: min\(376px, calc\(100vw - 24px\)\);/.test(bvKaal)
+      && lees('src/mail/WeergaveKeuze.tsx').includes("<span className='lz-beelden-woord'>{`\\u00a0${woordBeelden(lang, vr.aantal)}`}</span>"));
+    // Afwerking 2 (16.11.2026, na de tweede controle).
+    {
+      const wk2 = lees('src/mail/WeergaveKeuze.tsx'), laag = lees('src/ViewportKnopinfoLaag.tsx');
+      // MAILBEELD-004 (16.11.2026): grens 66 tekens, elk deel ≤ 34 — op de stand gemeten (320 px, uk): de nieuwe zin over «Завантажити наперед» staat in 2 regels
+      const nuUk = [...wk2.matchAll(/nuUk: '([^']+)'/g)].map((m) => m[1].replace(/\\u00a0/g, '\u00a0'));
+      check('D рядок «що зараз» (uk): три короткі речення — кожне вміщається у два рядки й на екрані 320 px (не лишається порожнього третього рядка під коротшими); наслідок для приватності названо в кожному',
+        nuUk.length === 3 && nuUk.every((z) => z.length <= 66 && z.includes('\u00a0— відправник ') && z.split('\u00a0— ').every((d) => d.length <= 34))
+        && nuUk[0] === 'Приховані, доки не покажете\u00a0— відправник нічого не бачить.' && nuUk[1] === 'Сервер завантажує їх до відкриття\u00a0— відправник не бачить читання.' && nuUk[2] === 'Завантажуються під час відкриття\u00a0— відправник це бачить.', nuUk.join(' | '));
+      check('D рядок «що зараз»: перед тире — нерозривний пробіл (рядок ніколи не починається з «—»), обидві мови; рядки врівноважені (text-wrap: balance — без самотнього слова в другому рядку)',
+        [...wk2.matchAll(/nu(?:Uk|Nl): '([^']+)'/g)].length === 6 && [...wk2.matchAll(/nu(?:Uk|Nl): '([^']+)'/g)].every((m) => m[1].includes('\\u00a0— ') && !m[1].includes(' — '))
+        && /html body \.lz-beelden-nu > span \{\s*grid-area: 1 \/ 2;\s*min-width: 0;\s*text-wrap: balance;\s*\}/.test(lees('src/mail/beelden-voorraad.css')));
+      check('D сховище з чергою: слово «зображень» ховається (data-rij), тож «Збережено 214 (37 МБ)» і «У черзі: 3» стоять в одному рядку — блок не росте, коли сервер повідомляє про чергу (також на ПК); без черги й за помилки сервера атрибута немає',
+        wk2.includes("data-rij={!serverWeg && vr.wachtrij > 0 ? '' : undefined}") && !/data-rij=/.test(beeldBlok)
+        && /\nhtml body \.lz-beelden-voorraad\[data-rij\] \.lz-beelden-woord \{\s*display: none;\s*\}/.test(lees('src/mail/beelden-voorraad.css').replace(/\/\*[\s\S]*?\*\//g, ''))
+        && lees('src/mail/beelden-voorraad.css').indexOf('.lz-beelden-voorraad[data-rij] .lz-beelden-woord') < lees('src/mail/beelden-voorraad.css').indexOf('\n@media'));
+      check('D вузьке вікно з мишею: підказки кошика й значка черги стають ПІД якорем (не поверх рядка «що зараз»); де ліворуч є місце — звичайне розміщення; шар підказок знає «below» (якщо вміщається) і нічого не знає про цей блок',
+        wk2.includes("const anker = e.target.closest<HTMLElement>('.lz-beelden-wis, .lz-beelden-rij');") && wk2.includes("if (!anker || !blok.current?.contains(anker)) return;")
+        && wk2.includes("if (r.getBoundingClientRect().left < TIP_RUIMTE_LINKS) anker.setAttribute('data-tooltip-placement', 'below'); else anker.removeAttribute('data-tooltip-placement');")
+        && wk2.includes("window.addEventListener('pointerover', onder, true);") && wk2.includes("window.addEventListener('focusin', onder, true);") && wk2.includes("window.removeEventListener('pointerover', onder, true); window.removeEventListener('focusin', onder, true);")
+        && laag.includes("if(target.dataset.tooltipPlacement==='below'&&belowFits){setPos({left,top:below,placement:'below'});setPlaced(true);return}") && !laag.includes('lz-beelden')
+        && !/class="lz-beelden-(?:wis|rij)"[^>]*data-tooltip-placement/.test(beeldBlok));
+      check('D аркуш «Ще», «Докладніше»: після розгортання у видиму частину потрапляють легенда й рядок сховища (до низу відкритої зони; саме «Докладніше» важливіше, якщо все не вміщається) — без прив’язки до заголовка зони й примітки',
+        wk2.includes('function schuifInBeeld(wortel: HTMLElement | null, ookOmhoog: boolean, meer = false) {') && wk2.includes("const uitleg = meer ? zone?.querySelector<HTMLElement>('details.lz-beelden-meer') : null;")
+        && wk2.includes('const onder = ((uitleg ? zone : voet) ?? zone ?? wortel).getBoundingClientRect().bottom, boven = (uitleg ?? zone ?? wortel).getBoundingClientRect().top;')
+        && wk2.includes('opMaat={() => requestAnimationFrame(() => schuifInBeeld(wortel.current, false, true))}') && wk2.includes("<details className='lz-beelden-meer' onToggle={() => opMaat?.()}>"));
+    }
+    check('D аркуш «Ще»: рядок сховища росте вже після відповіді сервера (щось збережено, черга, сервер недоступний) — тоді примітку знову вміщуємо у видиму частину (лише вниз)',
+      lees('src/mail/WeergaveKeuze.tsx').includes('useEffect(() => { if (gemonteerd.current) schuifInBeeld(wortel.current, false); }, [vr.geladen, vr.aantal, vr.wachtrij, vr.fout]);')
+      && lees('src/mail/WeergaveKeuze.tsx').indexOf('[vr.geladen, vr.aantal, vr.wachtrij, vr.fout]') < lees('src/mail/WeergaveKeuze.tsx').indexOf('gemonteerd.current = true; }, [beeldId]);'));
     check('D «Перекладати» gekozen: de noot zegt dat de tekst naar de ШІ-agent gaat en waar het origineel staat', vg2.includes('Лист іншою мовою перекладається під час відкриття: текст надсилається вашому ШІ-агенту') && vg2.includes('Оригінал — у смузі перекладу.'));
     check('D «Мова листа» bewaard per apparaat: standaard origineel, alleen «vertaling» telt', STANDAARD_WEERGAVE.taal === 'origineel' && normaliseerWeergave({ taal: 'vertaling' }).taal === 'vertaling' && normaliseerWeergave({ taal: 'en' }).taal === 'origineel' && normaliseerWeergave(null).taal === 'origineel');
   } finally {
@@ -219,7 +373,8 @@ export async function main(): Promise<number> {
   check('E «Пункт хибний — прибрати» onthoudt dit apparaat per gesprek (hoogstens 40 per gesprek, 200 gesprekken), «Повернути» zet terug',
     wn.includes("const WEG_SLEUTEL = 'mail-ai-weg-v1'") && wn.includes('lijst.slice(-40)') && wn.includes('sleutels.length - 200') && wn.includes('Повернути прибрані'));
   const { aiBalkStartIngeklapt } = await import('../../src/mail/AiVertalingBalk');
-  check('E ШІ-panel boven de brief begint ingeklapt (ook zonder window: SSR)', aiBalkStartIngeklapt() === true);
+  // MAILAI-005 (16.11.2026): het paneel is zelf één regel geworden (door de eigenaar goedgekeurd ontwerp «Рядок дій»); de hulpmiddelen staan standaard open.
+  check('E ШІ-panel boven de brief: één regel, hulpmiddelen standaard open (MAILAI-005; ook zonder window: SSR)', aiBalkStartIngeklapt() === false);
 
   // ------------------------------------------------------------------ F. CSS
   const blokCss = zc(lees('src/mail/ai-blok.css')), ctxCss = zc(lees('src/mail/context-paneel.css')), balkCss = zc(lees('src/mail/ai-vertaling-balk.css'));

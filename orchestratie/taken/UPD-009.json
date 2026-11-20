@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UPD-009",
+  "agent": "gemini",
+  "tak": "feature/upd-009-centrering-en-stabiliteit-20261119-182000",
+  "basisCommit": "5ad4afb1e7f4a286333d7283539220be141f5704",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.17",
+  "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+  "staat": "in_progress",
+  "gestart": "2026-11-19T18:20:58.536Z",
+  "bijgewerkt": "2026-11-19T18:20:58.537Z",
+  "omschrijving": "Випуск UPD-009 поверх UPD-008 (20261119-170438 @ 5ad4afb1): єдине симетричне центрування всіх сторінок Mijn Ruimte без горизонтального зсуву й совгання (усунення глобальної асиметрії -39 px у .canonical-workspace, центрування hub, ai, cloud, github, huis, id, api, admin та mcp в обох палітрах із чесним розрахунком між лівим меню й правою рейкою якорів, прибирання плаваючої анімації padding і захист від горизонтального совгання зі збереженням повноекранної верстки пошти).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

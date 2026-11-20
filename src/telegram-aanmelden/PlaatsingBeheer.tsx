@@ -2,10 +2,10 @@
 // voorbeeld van het aanmeldscherm. Opslaan gaat via de gewone poort 'beheer-instellingen' (verse toegangssleutel) en het journaal.
 // Розміщення способів входу: адміністратор визначає, що видно на головній сторінці входу, а що — під «Інші способи входу».
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, GripVertical } from 'lucide-react';
 import { tgPost, foutTekst, type Ctx } from './api';
 import { useEenmalig } from './Bevestigen';
-import { indelen, METHODE_NAMEN, PLEK_NAMEN, PLEKKEN, plaatsingControleren, verschuiven, type MethodeId, type Plaatsing, type Plek } from '../../shared/aanmeld-plaatsing/plaatsing';
+import { indelen, METHODE_NAMEN, PLEK_NAMEN, PLEKKEN, plaatsingControleren, verplaatsen, verschuiven, type MethodeId, type Plaatsing, type Plek } from '../../shared/aanmeld-plaatsing/plaatsing';
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
@@ -15,6 +15,8 @@ export default function PlaatsingBeheer({ ctx, lang, uitvoeren }: { ctx: Ctx; la
   const [opgeslagen, setOpgeslagen] = useState<Plaatsing | null>(null);
   const [p, setP] = useState<Plaatsing | null>(null);
   const [werkend, setWerkend] = useState<MethodeId[]>(['google']);
+  const [gesleept, setGesleept] = useState<MethodeId | null>(null);
+  const [doel, setDoel] = useState<MethodeId | null>(null);
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
   const { bezig, doe } = useEenmalig();
@@ -38,15 +40,33 @@ export default function PlaatsingBeheer({ ctx, lang, uitvoeren }: { ctx: Ctx; la
   const stand = (m: MethodeId) => werkend.includes(m)
     ? tr(lang, 'працює', 'werkt')
     : m === 'telegram' ? tr(lang, 'ще не працює (немає ключа бота) — не показується, доки не запрацює', 'werkt nog niet (geen botsleutel) — niet getoond tot hij werkt')
+      // IDENTITEIT-015 (aanmelden): точна передумова для нових способів входу.
+      : m === 'passkey' ? tr(lang, 'ще не працює — увімкніть прапорець «Вхід лише ключем доступу» у «Функціях» (хоча б для себе)', 'werkt nog niet — zet de vlag «Aanmelden met alleen een toegangssleutel» aan bij «Functies» (minstens voor uzelf)')
+      : m === 'wachtwoord' ? tr(lang, 'ще не працює — увімкніть прапорець «Вхід паролем» у «Функціях»; доти не показується', 'werkt nog niet — zet de vlag «Aanmelden met wachtwoord» aan bij «Functies»; tot dan niet getoond')
+      : m === 'microsoft' || m === 'apple' || m === 'discord' ? tr(lang, 'ще не працює — потрібні ключі AANMELD_* і пройдена самоперевірка (розділ «Інші способи — чесно») та прапорець «Вхід через Microsoft, Discord або Apple»', 'werkt nog niet — AANMELD_*-sleutels, een geslaagde zelftest («Andere methoden — eerlijk») en de vlag «Aanmelden met Microsoft, Discord of Apple» zijn nodig')
       : tr(lang, 'ще не працює — на головній не показується; в «Інші способи входу» видно як недоступний з причиною', 'werkt nog niet — nooit op het hoofdscherm; onder «Andere aanmeldmethoden» als niet beschikbaar met reden');
 
   return <div className='tga-blok tga-plaatsing' data-aanmeld-plaatsing>
     <h3>{tr(lang, 'Розміщення способів входу', 'Plaatsing van de aanmeldmethoden')}</h3>
     <p className='tga-klein'>{tr(lang,
-      'Для кожного способу виберіть, де він показується на сторінці входу, і порядок стрілками. На головній можна поставити скільки завгодно способів, навіть усі. Спосіб, який зараз не працює, на головній ніколи не з’являється. Хоча б один робочий спосіб мусить лишатися видимим — інакше ніхто не зможе увійти. Збереження підтверджується ключем доступу й записується в журнал.',
-      'Kies per methode waar hij op het aanmeldscherm staat, en de volgorde met de pijlen. Op het hoofdscherm mogen zoveel methoden als u wilt, ook alle. Een methode die nu niet werkt, verschijnt nooit op het hoofdscherm. Minstens één werkende methode moet zichtbaar blijven — anders kan niemand zich aanmelden. Opslaan bevestigt u met uw toegangssleutel en komt in het journaal.')}</p>
+      'Для кожного способу виберіть, де він показується на сторінці входу, і змініть порядок перетягуванням або стрілками. На головній можна поставити скільки завгодно способів, навіть усі. Спосіб, який зараз не працює, на головній ніколи не з’являється. Хоча б один робочий спосіб мусить лишатися видимим — інакше ніхто не зможе увійти. Збереження підтверджується ключем доступу й записується в журнал.',
+      'Kies per methode waar hij op het aanmeldscherm staat en wijzig de volgorde door te slepen of met de pijlen. Op het hoofdscherm mogen zoveel methoden als u wilt, ook alle. Een methode die nu niet werkt, verschijnt nooit op het hoofdscherm. Minstens één werkende methode moet zichtbaar blijven — anders kan niemand zich aanmelden. Opslaan bevestigt u met uw toegangssleutel en komt in het journaal.')}</p>
     <ol className='tga-plaatsing-lijst'>
-      {p.volgorde.map((m, i) => <li key={m} data-methode={m}>
+      {p.volgorde.map((m, i) => <li key={m} data-methode={m} draggable={!bezig}
+        data-sleep-actief={gesleept === m ? 'true' : undefined}
+        data-sleep-doel={doel === m && gesleept !== m ? 'true' : undefined}
+        onDragStart={(e) => { setGesleept(m); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', m); }}
+        onDragOver={(e) => { if (!gesleept) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (doel !== m) setDoel(m); }}
+        onDragLeave={() => { if (doel === m) setDoel(null); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          const bron = gesleept ?? (e.dataTransfer.getData('text/plain') as MethodeId);
+          if (bron && p.volgorde.includes(bron)) setP(verplaatsen(p, bron, m));
+          setGesleept(null);
+          setDoel(null);
+        }}
+        onDragEnd={() => { setGesleept(null); setDoel(null); }}>
+        <span className='tga-plaatsing-greep' aria-hidden='true' title={tr(lang, 'Перетягніть для зміни порядку', 'Sleep om te herschikken')}><GripVertical size={16} /></span>
         <span className='tga-plaatsing-naam'><strong>{kies(lang, METHODE_NAMEN[m])}</strong><small>{stand(m)}</small></span>
         <select value={p.plek[m]} onChange={(e) => zet(m, e.target.value as Plek)} aria-label={tr(lang, `Де показувати: ${kies(lang, METHODE_NAMEN[m])}`, `Waar tonen: ${kies(lang, METHODE_NAMEN[m])}`)}>
           {PLEKKEN.map((pl) => <option key={pl} value={pl}>{kies(lang, PLEK_NAMEN[pl])}</option>)}
@@ -61,7 +81,7 @@ export default function PlaatsingBeheer({ ctx, lang, uitvoeren }: { ctx: Ctx; la
       <strong>{tr(lang, 'Попередній перегляд', 'Voorbeeld')}</strong>
       <div className='tga-voorbeeld-hoofd'>{voorbeeld.hoofd.map((m) => <span key={m} className='tga-voorbeeld-knop'>{tr(lang, `Увійти через ${kies(lang, METHODE_NAMEN[m])}`, `Aanmelden met ${kies(lang, METHODE_NAMEN[m])}`)}</span>)}</div>
       {voorbeeld.andere.length > 0
-        ? <div className='tga-voorbeeld-andere'><span className='tga-voorbeeld-schakel'>{tr(lang, 'Інші способи входу ⌄', 'Andere aanmeldmethoden ⌄')}</span>
+        ? <div className='tga-voorbeeld-andere'><span className='tga-voorbeeld-schakel'>{tr(lang, 'Інші способи входу', 'Andere aanmeldmethoden')} <ChevronDown size={16} aria-hidden='true' /></span>
           <ul>{voorbeeld.andere.map((m) => <li key={m}>{kies(lang, METHODE_NAMEN[m])}{!werkend.includes(m) && <em> · {tr(lang, 'недоступно', 'niet beschikbaar')}</em>}</li>)}</ul></div>
         : <p className='tga-klein'>{tr(lang, 'Кнопку «Інші способи входу» не показано: там нічого немає.', 'De knop «Andere aanmeldmethoden» wordt niet getoond: er staat niets onder.')}</p>}
       {voorbeeld.noodGoogle && <p className='tga-fout'>{tr(lang, 'Жоден робочий спосіб не видно — сторінка входу все одно покаже Google, щоб ніхто не залишився без входу.', 'Geen werkende methode zichtbaar — het aanmeldscherm toont toch Google, zodat niemand buitengesloten wordt.')}</p>}

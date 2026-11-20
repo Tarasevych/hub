@@ -58,10 +58,12 @@ export async function main(): Promise<number> {
   const tb = readFileSync('shared/tech-bundels.ts', 'utf8');
   const beheerSrc = readdirSync('src').filter((f) => /^Beheer[A-Z]/.test(f) || /^beheer-/.test(f));
   check('E techregels op de nieuwe namen (Beheer*, beheer-*, src/vlaggen/, src/extern/)', tb.includes('/^src\\/Beheer[A-Z][A-Za-z]*\\.tsx$/') && tb.includes('/^src\\/beheer-[a-z0-9-]+\\.(tsx?|css)$/') && tb.includes("'src/vlaggen/'") && tb.includes("'src/extern/'") && !tb.includes("'src/flags/'"));
-  check('E alle Beheer*/beheer-* in src waren Admin*/admin-* (geen gewoon bestand wordt technisch)', beheerSrc.every((f) => h.some((x) => x.nieuw === `src/${f}` && /^src\/(Admin[A-Z]|admin-)/.test(x.oud))), beheerSrc.join(', '));
+  const toe = kaart.toegevoegd || [];
+  check('E alle Beheer*/beheer-* in src waren Admin*/admin-* of staan als beheermodule in toegevoegd (geen gewoon bestand wordt technisch)',
+    beheerSrc.every((f) => h.some((x) => x.nieuw === `src/${f}` && /^src\/(Admin[A-Z]|admin-)/.test(x.oud)) || toe.some((t) => t.pad === `src/${f}` && /beheer/i.test(t.wat))),
+    beheerSrc.join(', '));
 
   // ------------------------------------------------------------------ F. bijgekomen na de hernoeming (pakket 1 en later)
-  const toe = kaart.toegevoegd || [];
   check('F «toegevoegd»: elk bijgekomen bestand bestaat, zegt wat erin staat en sinds wanneer (het kader van het leesvenster staat erbij)',
     toe.length >= 5 && toe.every((t) => existsSync(t.pad) && t.wat.length > 20 && !!t.sinds) && ['src/mail/LeesVenster.tsx', 'src/mail/lees-modus.ts', 'src/mail/lees-venster.css'].every((p) => toe.some((t) => t.pad === p)), toe.filter((t) => !existsSync(t.pad)).map((t) => t.pad).join(', '));
   const nepToe = controleer('.', { extra: {} });

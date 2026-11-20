@@ -10,7 +10,6 @@ import { isAgentSlug, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/
 import { V2_GROEPEN, type GroepId } from '../shared/connector-v2/catalogus';
 import { isKant, isModus } from '../shared/connector-v2/rechten';
 import { vraagtSterkeBevestiging } from '../shared/connector-v2/massa';
-import type { RuimteModus } from '../shared/ruimte-toegang';
 import * as v2 from './connector-v2';
 import { actieveKoppelingen, leesInstellingen, zetInstellingen } from './connector-v2-opslag';
 import { meldLijstGewijzigd } from './connector-v2-stroom';
@@ -18,6 +17,9 @@ import * as rs from './ruimte-scheiding';
 import * as tp from './tech-profiel';
 import { isEigenaar } from './tech-profiel';
 import * as kern from './tech-ruimtes-kern';
+import { getPool } from '../server/platform/pg';
+
+const sys = () => getPool('systeem');
 import { sterkeMethoden } from './toegang-context';
 import { weigerCode, type RechtWeigering } from './api-recht';
 
@@ -35,6 +37,29 @@ type Deps = {
   gate: (event: Record<string, unknown>, body: unknown) => Promise<Auth | RechtWeigering | null>;
   stepUp: (ctx: unknown, auth: any) => Promise<any | null>;
 };
+
+/** Weergavenaam van een agent volgens de server (nooit de vrije «naam» uit het verzoek). */
+const agentNaam = (slug: AgentSlug) => V2_AGENTEN.find((a) => a.slug === slug)?.naam ?? slug;
+
+/**
+ * AGENTSCHEIDING-001 (16.11.2026): «Керувати Claude» mag alleen Claude raken. Een opgegeven verbindingId moet van DEZE agent zijn.
+ * Вказане підключення має належати САМЕ цьому агентові; інакше «Керувати Claude» змінив би доступ іншого ШІ.
+ * '' / '*' / 'agent:<deze slug>' → null (= de agentregel); '*' geldt alleen via het expliciete alleVerbindingen === true.
+ */
+export async function eigenVerbinding(userId: string, slug: AgentSlug, ruw: unknown): Promise<{ vid: string | null } | { fout: string; status: number }> {
+  const v = typeof ruw === 'string' ? ruw.trim() : '';
+  if (!v || v === '*' || v === `agent:${slug}`) return { vid: null };
+  if (v.startsWith('agent:')) return { fout: 'VERBINDING_ANDERE_AGENT', status: 409 };
+  if (!/^[0-9a-f-]{36}$/i.test(v)) return { fout: 'VERBINDING_ONGELDIG', status: 400 };
+  // ANTISPOOF-001: alleen de agent die bij de UITGIFTE vastlag (connectorpad /<agent>, kolom agent) telt — nooit een gok op de
+  // klantnaam: «Claude» noemen maakt een koppeling nog geen Claude-koppeling. Лише агент, записаний при видачі токена; не назва.
+  const rij = (await sys().query('SELECT agent FROM app.mcp_oauth_tokens WHERE id::text = $1 AND user_id = $2 AND revoked_at IS NULL', [v, userId])
+    .catch(() => ({ rows: [] as Array<{ agent: string | null }> }))).rows[0];
+  if (!rij) return { fout: 'VERBINDING_ONBEKEND', status: 404 };
+  const van = rij.agent ? String(rij.agent) : null;
+  if (van !== slug) return { fout: 'VERBINDING_ANDERE_AGENT', status: 409 };
+  return { vid: v };
+}
 
 export function v2Routes(deps: Deps) {
   const metAgent = async (ctx: any): Promise<{ auth: Auth; slug: AgentSlug; body: Record<string, unknown> } | { fout: any }> => {
@@ -156,6 +181,10 @@ export function v2Routes(deps: Deps) {
           }
         : null;
       const userId = r.auth.user.id;
+      // AGENTSCHEIDING-001: eerst controleren dat de verbinding van deze agent is — vóór elke wijziging (ook vóór de step-up).
+      const eigen = await eigenVerbinding(userId, r.slug, r.body.verbindingId);
+      if ('fout' in eigen) return deps.fail(eigen.fout, eigen.status);
+      const naam = agentNaam(r.slug);
       const v2Actief = await kern.v2Aan(userId);
       const isAan = actie === 'alles-aan' || actie === 'delegatie-aan' || actie === 'dienst-eigen' || actie === 'dienst-gedeeld';
 
@@ -187,44 +216,33 @@ export function v2Routes(deps: Deps) {
           }
 
           if ((actie === 'alles-aan' || actie === 'delegatie-aan') && v2Actief) {
-            const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
-            const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
-            const vid = rawVid || koppelingen[0]?.id || '*';
-            const termijn: RuimteModus = r.body.termijn === 'tijd'
-              ? 'tijd'
-              : r.body.termijn === 'tot-site-uitloggen'
-                ? 'tot-site-uitloggen'
-                : 'tot-technisch-einde';
+            // AI-TERMIJN-001: vroeger viel dit zonder actieve koppeling STIL terug op '*' = toestemming voor ALLE AI-verbindingen.
+            // Nu: een opgegeven verbinding, anders de AGENT zelf ('agent:<slug>', geldt ook na herverbinden); '*' alleen bewust.
+            // AGENTSCHEIDING-001: '*' uit het veld verbindingId telt niet meer (de pagina stuurde '*' zonder koppeling → stil alle AI's).
+            const vid = r.body.alleVerbindingen === true ? '*' : eigen.vid || `agent:${r.slug}`;
             await kern.aiZetten(r.auth.user, sessie, {
               tabContext: tab,
               verbindingId: vid,
+              naam: vid === '*' ? undefined : naam,
               ruimtes: ['prive', 'technisch'],
-              termijn,
+              termijn: r.body.termijn ?? 'tot-account-uitloggen',
               minuten: r.body.minuten,
+              eindOp: r.body.eindOp,
+              regels: r.body.regels,
+              alleVerbindingen: vid === '*',
               activeerSessie: true,
             });
           }
         } else if (actie === 'dienst-uit') {
           await rs.dienstZetten(userId, 'ai', 'ontkoppel', { actorId: userId, stapOpGedaan: false });
         } else if (actie === 'delegatie-uit' && v2Actief) {
-          const rawVid = typeof r.body.verbindingId === 'string' ? r.body.verbindingId.trim() : '';
-          const koppelingen = rawVid ? [] : await actieveKoppelingen(userId, r.slug);
-          const vid = rawVid || koppelingen[0]?.id || '*';
-          try {
-            await kern.aiZetten(r.auth.user, sessie, {
-              tabContext: tab,
-              verbindingId: vid,
-              ruimtes: ['prive'],
-              termijn: 'tot-site-uitloggen',
-              activeerSessie: false,
-            });
-          } catch (e) {
-            if (!(e instanceof tp.TechFout && e.code === 'TECH_RUIMTE_VEREIST')) throw e;
-          }
+          // Intrekken voor deze agent: de agentregel én (indien opgegeven) de eigen regel van het token — nooit '*' van anderen.
+          await kern.aiIntrekken(r.auth.user, sessie, { verbindingId: `agent:${r.slug}`, naam });
+          if (eigen.vid) await kern.aiIntrekken(r.auth.user, sessie, { verbindingId: eigen.vid, naam });
         }
 
         meldLijstGewijzigd(userId);
-        await deps.audit(userId, 'owner.connector.v2.tech_actief', 'success', { agent: r.slug, actie });
+        await deps.audit(userId, 'owner.connector.v2.tech_actief', 'success', { agent: r.slug, client: naam, actie, ...(r.body.alleVerbindingen === true ? { alleVerbindingen: true } : {}) });
         return deps.respond({ ok: true, actie });
       } catch (err) {
         if (err instanceof rs.RuimteFout || err instanceof tp.TechFout) {

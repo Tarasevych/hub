@@ -14,14 +14,28 @@
 // RECHTEN ZITTEN NIET IN HET PAD: één connector per agent toont zowel de privé- als de technische hulpmiddelen; wat er op dit
 // moment zichtbaar en aanroepbaar is, beslist de LEVENDE staat van de gebruiker (backend/ai-ruimte-poort.ts → effectieveRuimte).
 // Puur (geen React/DOM/Node): browser en server gebruiken dezelfde lijst.
-import type { KlantId } from '../ai-verbinding';
+import { klantVan, type KlantId } from '../ai-verbinding';
 
 export const AGENT_PAD_PREFIX = '';
 /** Het pad van vóór 20.10.2026. Alleen om oude adressen te blijven lezen (en om er 308 op te antwoorden); nooit om er een te bouwen. */
 export const OUD_AGENT_PAD_PREFIX = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
-export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw';
+export type AgentSlug =
+  | 'claude'
+  | 'gpt'
+  | 'codex'
+  | 'grok'
+  | 'gemini'
+  | 'copilot'
+  | 'cursor'
+  | 'antigravity'
+  | 'autoclaw'
+  | 'windsurf'
+  | 'cline'
+  | 'devin'
+  | 'opencode'
+  | 'mscopilot';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -38,7 +52,7 @@ export interface V2Agent {
 }
 
 export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
-  // uk/nl: één zin «waar zit het in deze client» (oktober 2026). De volledige stappen en de knoppen staan in
+  // uk/nl: één zin «waar zit het in deze client» (oktober–november 2026). De volledige stappen en de knoppen staan in
   // src/agenten/verbind-recepten.ts; hier nooit een oud pad (/mcp, /ai/<agent>) en nooit «plak een token» waar OAuth bestaat.
   { slug: 'claude', naam: 'Claude', klant: 'claude', webHosts: ['claude.ai', 'claude.com'], appSchemas: [], loopback: true,
     uk: 'claude.ai і Claude Desktop: Settings → Connectors → Add custom connector (адреса, без client id); Claude Code: claude mcp add --transport http.',
@@ -47,6 +61,9 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'gpt', naam: 'ChatGPT', klant: 'chatgpt', webHosts: ['chatgpt.com', 'openai.com'], appSchemas: [], loopback: true,
     uk: 'ChatGPT (лише в браузері): Settings → Apps → Advanced settings → Developer mode, далі «Create app» (адреса, OAuth); на Plus/Pro дії запису можуть не працювати.',
     nl: 'ChatGPT (alleen in de browser): Settings → Apps → Advanced settings → Developer mode, dan «Create app» (adres, OAuth); op Plus/Pro werken schrijfacties mogelijk niet.' },
+  { slug: 'codex', naam: 'Codex', klant: 'codex', webHosts: ['chatgpt.com', 'openai.com'], appSchemas: [], loopback: true,
+    uk: 'OpenAI Codex (термінал і середовище розробки): codex mcp add mijn-ruimte --url або ~/.codex/config.toml із власною адресою /codex.',
+    nl: 'OpenAI Codex (terminal en IDE): codex mcp add mijn-ruimte --url of ~/.codex/config.toml met het eigen adres /codex.' },
   { slug: 'grok', naam: 'Grok', klant: 'grok', webHosts: ['grok.com', 'x.ai'], appSchemas: [], loopback: true,
     uk: 'Споживчий Grok власного MCP-сервера не приймає; клієнти на моделях xAI з mcp.json — через адресу нижче.',
     nl: 'Consumenten-Grok neemt geen eigen MCP-server aan; clients op xAI-modellen met mcp.json via het adres hieronder.' },
@@ -54,8 +71,8 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
     uk: 'Gemini CLI: ~/.gemini/settings.json → mcpServers → httpUrl; споживчий застосунок Gemini власних MCP-серверів не приймає.',
     nl: 'Gemini CLI: ~/.gemini/settings.json → mcpServers → httpUrl; de consumenten-app Gemini neemt geen eigen MCP-servers aan.' },
   { slug: 'copilot', naam: 'Copilot', klant: 'copilot', webHosts: ['vscode.dev'], appSchemas: ['vscode', 'vscode-insiders'], loopback: true,
-    uk: 'VS Code (Copilot): кнопка «Install in VS Code» або MCP: Add Server → HTTP → адреса.',
-    nl: 'VS Code (Copilot): knop «Install in VS Code» of MCP: Add Server → HTTP → adres.' },
+    uk: 'VS Code (GitHub Copilot): кнопка «Install in VS Code» або MCP: Add Server → HTTP → власна адреса /githubcopilot.',
+    nl: 'VS Code (GitHub Copilot): knop «Install in VS Code» of MCP: Add Server → HTTP → eigen adres /githubcopilot.' },
   { slug: 'cursor', naam: 'Cursor', klant: 'cursor', webHosts: ['cursor.com'], appSchemas: ['cursor'], loopback: true,
     uk: 'Cursor: кнопка «Add to Cursor» або Settings → Tools & MCP → New MCP server → url.',
     nl: 'Cursor: knop «Add to Cursor» of Settings → Tools & MCP → New MCP server → url.' },
@@ -65,6 +82,25 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'autoclaw', naam: 'AutoClaw', klant: 'autoclaw', webHosts: ['autoclaw.z.ai', 'chat.z.ai', 'z.ai'], appSchemas: [], loopback: true,
     uk: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): команда мосту mijn-ruimte або mcp.json із власною адресою /autoclaw та правничою перевіркою джерел.',
     nl: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): opdracht van de mijn-ruimte-brug of mcp.json met het eigen adres /autoclaw en juridische broncontrole.' },
+  { slug: 'windsurf', naam: 'Windsurf', klant: 'windsurf', webHosts: ['windsurf.com', 'codeium.com'], appSchemas: ['windsurf'], loopback: true,
+    uk: 'Windsurf (Cascade): ~/.codeium/windsurf/mcp_config.json → mcpServers → serverUrl із власною адресою /windsurf.',
+    nl: 'Windsurf (Cascade): ~/.codeium/windsurf/mcp_config.json → mcpServers → serverUrl met het eigen adres /windsurf.' },
+  { slug: 'cline', naam: 'Cline', klant: 'cline', webHosts: ['cline.bot'], appSchemas: ['vscode', 'vscode-insiders', 'cursor'], loopback: true,
+    uk: 'Cline (VS Code / Roo Code): MCP Servers → Configure MCP Servers → cline_mcp_settings.json (type: streamableHttp) із адресою /cline.',
+    nl: 'Cline (VS Code / Roo Code): MCP Servers → Configure MCP Servers → cline_mcp_settings.json (type: streamableHttp) met het adres /cline.' },
+  { slug: 'devin', naam: 'Devin', klant: 'devin', webHosts: ['app.devin.ai', 'devin.ai'], appSchemas: [], loopback: true,
+    uk: 'Devin (Cognition): Settings → MCP Servers → Add MCP Server (HTTP + OAuth) із власною адресою /devin.',
+    nl: 'Devin (Cognition): Settings → MCP Servers → Add MCP Server (HTTP + OAuth) met het eigen adres /devin.' },
+  { slug: 'opencode', naam: 'OpenCode', klant: 'opencode', webHosts: ['opencode.ai'], appSchemas: [], loopback: true,
+    uk: 'OpenCode (термінал і середовище): opencode mcp add або ~/.config/opencode/opencode.json → mcp.mijn-ruimte із власною адресою /opencode.',
+    nl: 'OpenCode (terminal en IDE): opencode mcp add of ~/.config/opencode/opencode.json → mcp.mijn-ruimte met het eigen adres /opencode.' },
+  // 16.11.2026: Microsoft Copilot is een ANDER product dan GitHub Copilot (slug copilot). De consumentenversie (copilot.microsoft.com)
+  // neemt geen eigen MCP-server aan; het kan alleen via Copilot Studio (werk- of schoolaccount). Bron: learn.microsoft.com,
+  // «Connect your agent to an existing MCP server». Alleen Streamable HTTP; OAuth 2.0 «Dynamic discovery» = ontdekking + DCR.
+  // Terugkeeradres: https://global.consent.azure-apim.net/redirect/<naam> (Power Platform). Geen loopback: het draait in de cloud.
+  { slug: 'mscopilot', naam: 'Microsoft Copilot', klant: 'mscopilot', webHosts: ['global.consent.azure-apim.net'], appSchemas: [], loopback: false,
+    uk: 'Microsoft Copilot Studio (робочий обліковий запис): агент → Tools → Add a tool → New tool → Model Context Protocol, OAuth 2.0 → Dynamic discovery, власна адреса /copilot.',
+    nl: 'Microsoft Copilot Studio (werkaccount): agent → Tools → Add a tool → New tool → Model Context Protocol, OAuth 2.0 → Dynamic discovery, eigen adres /copilot.' },
 ]);
 
 const PER_SLUG = new Map(V2_AGENTEN.map((a) => [a.slug, a]));
@@ -78,7 +114,29 @@ export const agentVoorKlant = (klant: KlantId): V2Agent | undefined => V2_AGENTE
  * en voor de ene klant die géén bekende agent is («Інший клієнт»).
  */
 export const OUD_GEDEELD_URL = `${MCP_BASIS}/mcp`;
-export const agentPad = (slug: AgentSlug) => `${AGENT_PAD_PREFIX}/${slug}`;
+/**
+ * PUBLIEK ADRES ≠ INTERNE CODE (16.11.2026, keuze van de eigenaar: «на адресі має бути просто копілот»).
+ * Microsoft Copilot krijgt het adres /copilot; GitHub Copilot verhuist naar /githubcopilot. De interne codes blijven wat ze waren
+ * (copilot = GitHub Copilot, mscopilot = Microsoft Copilot): alles wat al in de database staat (koppelingen, rechten, termijnen,
+ * journaal, kleuren) én de agent «copilot» van de orkestratie blijft dus van GitHub Copilot en wordt nooit stilletjes Microsoft.
+ * Een token van GitHub Copilot dat nog op /copilot aanklopt, hoort bij een andere agent dan dat adres en wordt geweigerd.
+ * Overal waar een adres wordt gebouwd of gelezen: agentPad()/agentUrl()/slugUitPad(), nooit de kale code.
+ */
+const PAD_VAN_SLUG: Partial<Record<AgentSlug, string>> = Object.freeze({ copilot: 'githubcopilot', mscopilot: 'copilot' });
+const SLUG_VAN_PAD: Readonly<Record<string, AgentSlug>> = Object.freeze(Object.fromEntries(Object.entries(PAD_VAN_SLUG).map(([s, p]) => [p, s as AgentSlug])));
+/** Het padstuk van deze agent zonder schuine streep ('githubcopilot' voor copilot, 'copilot' voor mscopilot, anders de code zelf). */
+export const agentPadNaam = (slug: AgentSlug): string => PAD_VAN_SLUG[slug] ?? slug;
+/** Padstuk → agent. Een interne code die een ander adres kreeg ('mscopilot') is zelf GEEN adres. */
+export function agentUitPadNaam(naam: string): AgentSlug | null {
+  const n = String(naam || '').toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(SLUG_VAN_PAD, n)) return SLUG_VAN_PAD[n];
+  return isAgentSlug(n) && !Object.prototype.hasOwnProperty.call(PAD_VAN_SLUG, n) ? n : null;
+}
+/** Alle geldige padstukken, in de volgorde van V2_AGENTEN (voor de routering in server/start.ts en de tests). */
+export const AGENT_PADNAMEN: readonly string[] = Object.freeze(V2_AGENTEN.map((a) => agentPadNaam(a.slug)));
+/** Agenten die vóór 20.10.2026 een adres /ai/<code> hadden kunnen hebben: alle behalve de later toegevoegde met een eigen adres. */
+const isOudeCode = (v: string): v is AgentSlug => isAgentSlug(v) && v !== 'mscopilot';
+export const agentPad = (slug: AgentSlug) => `${AGENT_PAD_PREFIX}/${agentPadNaam(slug)}`;
 export const agentUrl = (slug: AgentSlug) => `${MCP_BASIS}${agentPad(slug)}`;
 /** Oud adres van deze agent (/ai/<agent>): voor de 308-omleiding en voor de uitleg in de UI. */
 export const oudAgentPad = (slug: AgentSlug) => `${OUD_AGENT_PAD_PREFIX}/${slug}`;
@@ -98,13 +156,16 @@ const PAD_RE = /^\/([a-z]+)\/?$/;
 const OUD_PAD_RE = new RegExp(`^${OUD_AGENT_PAD_PREFIX}\\/([a-z]+)\\/?$`);
 export function slugUitPad(pad: string): AgentSlug | null {
   const p = String(pad || '');
-  const m = OUD_PAD_RE.exec(p) ?? PAD_RE.exec(p);
-  return m && isAgentSlug(m[1]) ? m[1] : null;
+  // Het oude pad /ai/<code> draagt de interne code van toen (/ai/copilot = GitHub Copilot); het korte pad is het publieke adres.
+  const oud = OUD_PAD_RE.exec(p);
+  if (oud) return isOudeCode(oud[1]) ? oud[1] : null;
+  const m = PAD_RE.exec(p);
+  return m ? agentUitPadNaam(m[1]) : null;
 }
 /** Is dit het oude pad (/ai/<agent>)? server/start.ts antwoordt daarop 308 naar het korte pad. */
 export const isOudAgentPad = (pad: string): AgentSlug | null => {
   const m = OUD_PAD_RE.exec(String(pad || ''));
-  return m && isAgentSlug(m[1]) ? m[1] : null;
+  return m && isOudeCode(m[1]) ? m[1] : null;
 };
 /** RFC 8707 resource → agent (slash aan het eind telt niet). Zowel het korte als het oude pad; nooit een andere host. */
 export function slugUitResource(resource: string | null | undefined): AgentSlug | null {
@@ -129,3 +190,22 @@ export function redirectPastBijAgent(slug: AgentSlug, uri: string, altijd: reado
   if (schema === 'http') return a.loopback && ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname);
   return a.appSchemas.includes(schema);
 }
+
+/**
+ * AGENTSCHEIDING-001 (16.11.2026): de naam die mensen zien voor een koppeling. Is de koppeling uitgegeven voor een agent (connector-
+ * pad /gpt, /codex …), dan telt die agent: een klantnaam die bij een ANDERE aanbieder hoort (of een oude standaardnaam «Claude»
+ * van een klant die zich niet noemde) wordt vervangen door de naam van deze agent. «Claude Code» voor /claude blijft «Claude Code».
+ * Назва підключення для людей: якщо воно видане для агента, показуємо цього агента, а не чужу назву.
+ */
+export function weergaveNaam(clientNaam: string | null | undefined, agent: AgentSlug | null | undefined): string {
+  const naam = String(clientNaam ?? '').trim();
+  const a = agent ? V2_AGENTEN.find((x) => x.slug === agent) : undefined;
+  if (!a) return naam || 'MCP';
+  if (!naam) return a.naam;
+  // ANTISPOOF-001: een vrije naam wordt NOOIT naast een agentnaam getoond (geen «ChatGPT (Сlaude ✓ офіційний)» met lookalike-
+  // letters). Alleen een naam die al bij DEZE agent hoort én uit gewone Latijnse tekens bestaat («Claude Code») blijft staan.
+  // Вільна назва клієнта ніколи не показується поруч з ім'ям агента; лише «рідна» назва з простих латинських символів.
+  return klantVan(naam) === a.klant && VEILIGE_NAAM.test(naam) ? naam : a.naam;
+}
+/** Gewone Latijnse letters, cijfers, spatie en . _ ( ) -; geen lookalikes uit andere schriften, geen emoji of vinkjes. */
+const VEILIGE_NAAM = /^[A-Za-z0-9 ._()-]{1,40}$/;

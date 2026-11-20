@@ -159,6 +159,9 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.connector.v2.herverbinden': ['Перепідключено агента', 'Agent opnieuw verbonden'],
   'owner.connector.v2.instellingen': ['Змінено налаштування конектора', 'Connectorinstellingen gewijzigd'],
   'owner.mcp.grant.approved': ['Схвалено підключення ШІ', 'AI-verbinding goedgekeurd'],
+  'owner.mcp.cimd.denied': ['MCP: відхилено документ метаданих клієнта (CIMD)', 'MCP: metadatadocument van de klant (CIMD) geweigerd'],
+  'owner.mcp.cimd.verouderd': ['MCP: сервер зайнятий — для відомого клієнта взято попередню перевірену копію документа (CIMD)', 'MCP: server bezet — eerder gecontroleerde kopie van het document van een bekende klant gebruikt (CIMD)'],
+  'owner.mcp.origin.denied': ['MCP: відхилено запит з недозволеного походження (Origin)', 'MCP: verzoek van niet-toegestane herkomst (Origin) geweigerd'],
   'owner.mcp.grant.denied': ['Відхилено підключення ШІ', 'AI-verbinding afgewezen'],
   'owner.mcp.grant.revoked': ['Відкликано підключення ШІ', 'AI-verbinding ingetrokken'],
   'owner.mcp.grant.connected': ['Підключено ШІ', 'AI verbonden'],
@@ -314,17 +317,21 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'workspace_share_joined': ['Приєднано за посиланням', 'Via deellink toegetreden'],
   'workspace_member_revoked': ['Вилучено учасника простору', 'Lid uit werkruimte verwijderd'],
   'workspace_member_role_changed': ['Змінено роль учасника простору', 'Rol van lid gewijzigd'],
+  'workspace_invite_accepted': ['Прийнято запрошення до простору', 'Uitnodiging voor werkruimte aangenomen'],
+  'workspace_invite_inviter_not_allowed': ['Запрошення не активовано: той, хто запросив, уже не може ділитися простором', 'Uitnodiging niet geactiveerd: de uitnodiger mag de werkruimte niet meer delen'],
   'gast_actie': ['Дія гостя', 'Actie van gast'],
   'gast_geweigerd': ['Дію гостя відхилено', 'Actie van gast geweigerd'],
   'gast_sessie_ingetrokken': ['Відкликано гостьову сесію', 'Gastsessie ingetrokken'],
   'toegang_wijziging_ongedaan': ['Скасовано зміну доступу', 'Toegangswijziging ongedaan gemaakt'],
   'owner.step_up.google': ['Підтвердження входу через Google', 'Stap-op bevestigd via Google'],
   'owner.beleid.geweigerd': ['Дію відхилено політикою', 'Actie geweigerd door beleid'],
+  'rbac.geweigerd': ['Дію відхилено: недостатньо прав (наприклад, роль «лише перегляд»)', 'Actie geweigerd: onvoldoende rechten (bijv. de rol «alleen bekijken»)'],
   'owner.diagnose.gemeld': ['Надіслано діагностичне повідомлення', 'Diagnosemelding verstuurd'],
   'admin.diagnostiek.uitgevoerd': ['Виконано діагностичну перевірку', 'Diagnostische controle uitgevoerd'],
   'admin.beveiliging.aan': ['Увімкнено захист (passkey, тех. профіль)', 'Bescherming aangezet (passkey, technisch profiel)'],
   'admin.beveiliging.uit': ['Вимкнено захист', 'Bescherming uitgezet'],
-  'admin.beveiliging.zekering': ['Захист автоматично вимкнено запобіжником (сплеск помилок)', 'Bescherming automatisch uitgezet door de zekering (piek in fouten)'],
+  'admin.beveiliging.zekering': ['Захист автоматично вимкнено запобіжником (помилки самого захисту)', 'Bescherming automatisch uitgezet door de zekering (fouten van de bescherming zelf)'],
+  'admin.beveiliging.zekering-voorstel': ['Запобіжник пропонує перевірити захист (сплеск помилок, захист не вимкнено)', 'Zekering stelt voor de bescherming te controleren (piek in fouten, bescherming blijft aan)'],
   'admin.beveiliging.geweigerd': ['Спробу змінити захист відхилено', 'Poging om een bescherming te wijzigen geweigerd'],
   'admin.beveiliging.app_rol': ['Запущено створення ролі застосунку для RLS', 'Aanmaken van de app-rol voor RLS gestart'],
   'diag.uitgevoerd': ['Виконано діагностичні перевірки', 'Diagnosecontroles uitgevoerd'],
@@ -345,6 +352,8 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'integration.merk-eigen.gezet': ['Додано власний логотип сервісу (офіційний файл)', 'Eigen logo van een dienst toegevoegd (officieel bestand)'],
   'integration.merk-eigen.gewist': ['Власний логотип сервісу видалено', 'Eigen logo van een dienst gewist'],
   'integration.merk-eigen.geweigerd': ['Відхилено зміну власного логотипа', 'Wijziging van een eigen logo geweigerd'],
+  'owner.ui.merk.gezet': ['Користувач призначив свій логотип сервісу (діє лише для нього)', 'Gebruiker koos een eigen logo voor een dienst (alleen voor hem)'],
+  'owner.ui.merk.gewist': ['Користувач прибрав свій логотип — знову системний', 'Gebruiker wiste zijn eigen logo — weer het systeemlogo'],
   'integration.test': ['Перевірено стан інтеграції', 'Status van integratie gecontroleerd'],
   'integration.disconnect': ['Інтеграцію відключено', 'Integratie losgekoppeld'],
   'integration.wizard.test': ['Майстер підключень: перевірено облікові дані у зовнішнього сервісу', 'Koppelwizard: gegevens bij de externe dienst gecontroleerd'],
@@ -411,7 +420,7 @@ export function agentVan(details: unknown): string {
   const v = d.agent ?? d.klant ?? d.clientName ?? obj(d.doel).id;
   if (Array.isArray(v)) return str(v[0], 60);
   const t = str(v, 60);
-  return /^(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i.test(t) || /claude|chatgpt|openai|grok|gemini|copilot|cursor|antigravity|jetski|autoclaw|openclaw|zhipu|chatglm|\bglm\b/i.test(t) ? t : (typeof d.agent === 'string' ? t : '');
+  return /^(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw|windsurf|cline|devin|opencode|mscopilot)$/i.test(t) || /claude|chatgpt|openai|codex|grok|gemini|copilot|cursor|antigravity|jetski|autoclaw|openclaw|zhipu|chatglm|\bglm\b|windsurf|codeium|cline|roocode|devin|cognition|opencode/i.test(t) ? t : (typeof d.agent === 'string' ? t : '');
 }
 const kort = (v: unknown): string => { if (v === undefined || v === null || v === '') return '—'; if (typeof v === 'object') { try { return JSON.stringify(v).slice(0, 120); } catch { return '…'; } } return String(v).slice(0, 120); };
 export const wijzigingTekst = (w: Wijziging | null): string => !w ? '' : ('van' in w && w.van !== undefined ? `${kort(w.van)} → ${kort(w.naar)}` : `→ ${kort(w.naar)}`);

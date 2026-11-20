@@ -37,11 +37,75 @@ export const UITERLIJK_MODI = ['light', 'dark', 'device', 'auto'] as const;
 export const UITERLIJK_MODI_OUD = ['plum', 'plum-light', 'plum-dark'] as const;
 export type UiterlijkModus = typeof UITERLIJK_MODI[number] | typeof UITERLIJK_MODI_OUD[number];
 /** Paletten (zelfde lijst als src/thema/kern.ts en public/canonical-service.js; de eenheidstest vergelijkt ze). */
-export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur'] as const;
+export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart'] as const;
 export type UiterlijkPalet = typeof UITERLIJK_PALETTEN[number];
 /** Gecachte «leegte» van een route, zodat het eerste beeld geen skelet toont dat er toch niet komt. */
 export const UITERLIJK_ROUTEBEELDEN = ['signed-out', 'mail-empty', 'github-empty', 'api-empty'] as const;
 export type UiterlijkRouteBeeld = typeof UITERLIJK_ROUTEBEELDEN[number];
+
+/** IDENTITEIT-015 (крок «vormgeving»): вигляд центру облікового запису — раніше лише localStorage пристрою, тепер в обліковому записі.
+ *  De weergave van het accountcentrum: vroeger alleen localStorage van dit apparaat, nu in het account (localStorage blijft cache). */
+export const UITERLIJK_VORMGEVINGEN = ['maquette', 'studio', 'klassiek'] as const;
+export type UiterlijkVormgeving = typeof UITERLIJK_VORMGEVINGEN[number];
+/** Щільність інтерфейсу всього сайту: масштаб відступів (--ruimte-1…6). Без поля — «звичайна». Dichtheid: schaal van de witruimte. */
+export const UITERLIJK_DICHTHEDEN = ['compact', 'normaal', 'ruim'] as const;
+export type UiterlijkDichtheid = typeof UITERLIJK_DICHTHEDEN[number];
+/** Рух: «systeem» — як на пристрої (prefers-reduced-motion), «minder» — менше руху завжди, поверх пристрою. Beweging. */
+export const UITERLIJK_BEWEGINGEN = ['systeem', 'minder'] as const;
+export type UiterlijkBeweging = typeof UITERLIJK_BEWEGINGEN[number];
+/** Акцентний колір поверх палітри (кнопки, виділення, перемикачі, посилання, якорі, фокус, живий фон). Без поля — акцент самої палітри.
+ *  ACCENT-001 (15.11.2026): додано вісім «улюблених відтінків» меню облікового запису (раніше вони були окремою палітрою лише в цьому
+ *  браузері й губилися в будь-якій іншій палітрі). Старі чотири значення лишаються дійсними. Accentkleur boven elk palet. */
+export const UITERLIJK_ACCENTEN = ['violet', 'cyan', 'pink', 'amber', 'blauw', 'hemel', 'teal', 'groen', 'oranje', 'roze', 'indigo', 'bruin'] as const;
+export type UiterlijkAccent = typeof UITERLIJK_ACCENTEN[number];
+/** Виразність декоративних ефектів (сяйво ілюстрацій), 0–100 %. Без поля — 45 %, як у макеті. Sterkte van decoratieve effecten. */
+export const UITERLIJK_EFFECTEN_STANDAARD = 45;
+/** ACCENT-001: прозорий режим блоків, 0–100 % (0 або без поля — вимкнено, блоки суцільні). 100 % — найпрозоріше, але текст лишається
+ *  читабельним (непрозорість підкладки не нижча за 30 %). Doorschijnende blokken: 0 = uit; 100 = het meest doorschijnend. */
+export const UITERLIJK_TRANSPARANTIE_STANDAARD_AAN = 50;
+
+/** ACHTERGROND-001: «Живий фон» — повільні розмиті плями різних непропорційних форм, що переливаються від краю до краю сторінки.
+ *  Зберігаються лише відмінні від типових поля (старі записи без поля = типовий фон). Levende achtergrond: alleen afwijkingen worden bewaard.
+ *  stand: auto — повний на ПК, полегшений на телефоні/планшеті, нерухомий за «Зменшити рух»; aan — завжди повний; uit — статичний фон теми.
+ *  tempo — плавність/швидкість руху; sterkte — інтенсивність; aantal — кількість плям; vervorming — наскільки форми непропорційні;
+ *  grootte — розмір плям; kleuren — набір відтінків; kleurwissel — як швидко плями переливаються з відтінку у відтінок;
+ *  overgang — характер руху; kader — частота кадрів (впливає на батарею). */
+export const ACHTERGROND_STANDEN = ['auto', 'aan', 'uit'] as const;
+export type AchtergrondStand = typeof ACHTERGROND_STANDEN[number];
+export const ACHTERGROND_KLEUREN = ['thema', 'aurora', 'zee', 'zonsondergang', 'regenboog'] as const;
+export type AchtergrondKleuren = typeof ACHTERGROND_KLEUREN[number];
+export const ACHTERGROND_OVERGANGEN = ['golf', 'drift', 'adem'] as const;
+export type AchtergrondOvergang = typeof ACHTERGROND_OVERGANGEN[number];
+export const ACHTERGROND_KADERS = ['zuinig', 'normaal', 'vloeiend'] as const;
+export type AchtergrondKader = typeof ACHTERGROND_KADERS[number];
+export type UiterlijkAchtergrond = {
+  stand: AchtergrondStand; tempo: number; sterkte: number; aantal: number; vervorming: number; grootte: number;
+  kleuren: AchtergrondKleuren; kleurwissel: number; overgang: AchtergrondOvergang; kader: AchtergrondKader;
+};
+/** Межі числових полів [мін, макс]. Grenzen van de getallen. */
+export const ACHTERGROND_GRENZEN = { tempo: [0, 100], sterkte: [0, 100], aantal: [2, 12], vervorming: [0, 100], grootte: [40, 160], kleurwissel: [0, 100] } as const;
+export const ACHTERGROND_STANDAARD: UiterlijkAchtergrond = {
+  stand: 'auto', tempo: 25, sterkte: 40, aantal: 6, vervorming: 60, grootte: 115, kleuren: 'thema', kleurwissel: 30, overgang: 'golf', kader: 'normaal',
+};
+/** Готові рівні — від ледь помітного до вражаючого (кнопка фону вгорі й «Теми»). Решта полів лишається як є.
+ *  Voorinstellingen van nauwelijks zichtbaar tot opvallend; andere velden blijven zoals ze zijn. */
+export const ACHTERGROND_NIVEAUS = ['subtiel', 'rustig', 'levendig', 'opvallend'] as const;
+export type AchtergrondNiveau = typeof ACHTERGROND_NIVEAUS[number];
+export const ACHTERGROND_NIVEAU_WAARDEN: Record<AchtergrondNiveau, Pick<UiterlijkAchtergrond, 'tempo' | 'sterkte' | 'kleurwissel' | 'aantal' | 'vervorming' | 'grootte'>> = {
+  subtiel: { tempo: 12, sterkte: 18, kleurwissel: 15, aantal: 4, vervorming: 45, grootte: 130 },
+  rustig: { tempo: 25, sterkte: 40, kleurwissel: 30, aantal: 6, vervorming: 60, grootte: 115 },
+  levendig: { tempo: 50, sterkte: 65, kleurwissel: 55, aantal: 8, vervorming: 75, grootte: 105 },
+  opvallend: { tempo: 75, sterkte: 90, kleurwissel: 80, aantal: 10, vervorming: 90, grootte: 95 },
+};
+/** Який рівень відповідає поточним значенням (або null, якщо щось змінено вручну). Welk niveau past bij de huidige waarden. */
+export function achtergrondNiveau(a: UiterlijkAchtergrond): AchtergrondNiveau | null {
+  for (const n of ACHTERGROND_NIVEAUS) { const w = ACHTERGROND_NIVEAU_WAARDEN[n]; if ((Object.keys(w) as Array<keyof typeof w>).every((k) => a[k] === w[k])) return n; }
+  return null;
+}
+/** Повний набір налаштувань фону з частини (відсутнє — типове). Volledige instellingen uit een deel. */
+export function achtergrondVolledig(deel: Partial<UiterlijkAchtergrond> | undefined): UiterlijkAchtergrond {
+  return { ...ACHTERGROND_STANDAARD, ...(deel || {}) };
+}
 
 export const UITERLIJK_MAX_MENU = 16;
 /** Profielfoto in de cache: alleen een https-adres, nooit een data:-URI (die is tot 340 kB groot en past nooit in een cookie). */
@@ -61,6 +125,16 @@ export type UiterlijkRuimte = {
   belPositie?: { x: number; y: number };
   laatstePad?: Partial<Record<UiterlijkDienst, string>>;
   routeBeeld?: Record<string, UiterlijkRouteBeeld>;
+  /** IDENTITEIT-015: вигляд центру облікового запису, щільність, рух, акцент і виразність ефектів (старі записи без них — типові). */
+  vormgeving?: UiterlijkVormgeving;
+  dichtheid?: UiterlijkDichtheid;
+  beweging?: UiterlijkBeweging;
+  accent?: UiterlijkAccent;
+  effecten?: number;
+  /** ACCENT-001: прозорість блоків (1–100); без поля — суцільні блоки. Doorschijnendheid van blokken. */
+  transparantie?: number;
+  /** ACHTERGROND-001: лише поля, що відрізняються від ACHTERGROND_STANDAARD. Alleen afwijkingen van de standaard. */
+  achtergrond?: Partial<UiterlijkAchtergrond>;
   op?: number;
 };
 /** Wat alleen per account staat (gelijk in beide ruimtes van dat account, nooit van een ander account). */
@@ -144,9 +218,43 @@ export function normaliseerUiterlijkRuimte(raw: unknown): UiterlijkRuimte {
     if (beeld && (UITERLIJK_DIENSTEN as readonly string[]).includes(dienst) && (MENU_PAGINAS[dienst] || []).includes(pagina)) beelden[`${dienst}:${pagina}`] = beeld;
   }
   if (Object.keys(beelden).length) uit.routeBeeld = beelden;
+  // IDENTITEIT-015: невідомі значення відкидаються (старий клієнт або підробка), типові значення не зберігаються зайвий раз.
+  const vormgeving = een(UITERLIJK_VORMGEVINGEN, r.vormgeving), dichtheid = een(UITERLIJK_DICHTHEDEN, r.dichtheid);
+  const beweging = een(UITERLIJK_BEWEGINGEN, r.beweging), accent = een(UITERLIJK_ACCENTEN, r.accent);
+  if (vormgeving) uit.vormgeving = vormgeving;
+  if (dichtheid && dichtheid !== 'normaal') uit.dichtheid = dichtheid;
+  if (beweging && beweging !== 'systeem') uit.beweging = beweging;
+  if (accent) uit.accent = accent;
+  const effecten = r.effecten === null || r.effecten === undefined || r.effecten === '' ? NaN : Number(r.effecten);
+  if (Number.isFinite(effecten) && effecten >= 0 && effecten <= 100 && Math.round(effecten) !== UITERLIJK_EFFECTEN_STANDAARD) uit.effecten = Math.round(effecten);
+  const transparantie = typeof r.transparantie === 'number' || (typeof r.transparantie === 'string' && r.transparantie.trim() !== '') ? Number(r.transparantie) : NaN;
+  if (Number.isFinite(transparantie) && transparantie > 0 && transparantie <= 100) uit.transparantie = Math.round(transparantie);
+  const achtergrond = normaliseerAchtergrond(r.achtergrond);
+  if (achtergrond) uit.achtergrond = achtergrond;
   const op = Number(r.op);
   if (Number.isFinite(op) && op > 0) uit.op = Math.floor(op);
   return uit;
+}
+
+/** ACHTERGROND-001: невідомі значення відкидаються, числа обмежуються межами, типові значення не зберігаються. Nooit iets buiten de grenzen. */
+export function normaliseerAchtergrond(raw: unknown): Partial<UiterlijkAchtergrond> | undefined {
+  const r = obj(raw), uit: Partial<UiterlijkAchtergrond> = {};
+  const stand = een(ACHTERGROND_STANDEN, r.stand), kleuren = een(ACHTERGROND_KLEUREN, r.kleuren);
+  const overgang = een(ACHTERGROND_OVERGANGEN, r.overgang), kader = een(ACHTERGROND_KADERS, r.kader);
+  if (stand && stand !== ACHTERGROND_STANDAARD.stand) uit.stand = stand;
+  if (kleuren && kleuren !== ACHTERGROND_STANDAARD.kleuren) uit.kleuren = kleuren;
+  if (overgang && overgang !== ACHTERGROND_STANDAARD.overgang) uit.overgang = overgang;
+  if (kader && kader !== ACHTERGROND_STANDAARD.kader) uit.kader = kader;
+  for (const veld of Object.keys(ACHTERGROND_GRENZEN) as Array<keyof typeof ACHTERGROND_GRENZEN>) {
+    const v = r[veld];
+    if (v === null || v === undefined || v === '' || typeof v === 'boolean') continue;
+    const n = Number(v);
+    if (!Number.isFinite(n)) continue;
+    const [min, max] = ACHTERGROND_GRENZEN[veld];
+    const waarde = Math.max(min, Math.min(max, Math.round(n)));
+    if (waarde !== ACHTERGROND_STANDAARD[veld]) uit[veld] = waarde;
+  }
+  return Object.keys(uit).length ? uit : undefined;
 }
 
 export function normaliseerUiterlijkAccount(raw: unknown): UiterlijkAccount {

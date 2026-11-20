@@ -11,6 +11,9 @@ import { mogelijkhedenVan, rolInfo, isTechRol } from '../shared/tech-rollen';
 import * as tp from './tech-profiel';
 import { huidigeContext } from '../server/platform/context';
 import { bindingKlopt, bindingWaarde, scheidingAan } from './ruimte-sessie';
+import * as dk from './ai-delegatie-kern';
+import { agentSlugUitNaam } from '../shared/markering-agenten';
+import { AiInvoerFout, normaliseerInvoer, type AiInvoer } from '../shared/ai-delegatie';
 
 const sys = () => getPool('systeem');
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -67,14 +70,17 @@ async function profielFeit(userId: string, eigenaar: boolean, email: string, rol
   return r ? { rollen: (r.rollen as string[]).filter(isTechRol), ingetrokken: !!r.ingetrokken_op, max: Number(r.max_minuten), profielId: String(r.profiel_id) } : null;
 }
 
+/** Compatibiliteit (oude aanroepers/tests): geldt de AI-delegatie van deze verbinding NU voor precies deze sessierij? */
 export async function aiToegestaan(userId: string, rij: Rij, verbindingId?: string | null): Promise<boolean> {
-  const doelen = verbindingId ? ['*', verbindingId] : ['*'];
-  const r = (await sys().query(`SELECT a.ruimtes FROM app.tech_ruimte_ai a WHERE a.user_id = $1 AND a.verbinding_id = ANY($4::text[]) AND (
-      (a.termijn = 'tijd' AND a.eind_op > now() AND a.ruimte_sessie_id = $2)
-   OR (a.termijn = 'tot-technisch-einde' AND a.ruimte_sessie_id = $2)
-   OR (a.termijn = 'tot-site-uitloggen' AND EXISTS (SELECT 1 FROM app.tech_ruimte_sessies x WHERE x.id = a.ruimte_sessie_id AND x.sessie_id = $3)))
-    ORDER BY CASE WHEN a.verbinding_id = '*' THEN 1 ELSE 0 END, a.gezet_op DESC LIMIT 1`, [userId, rij.id, rij.sessie_id, doelen])).rows[0];
-  return Array.isArray(r?.ruimtes) && (r.ruimtes as string[]).includes('technisch');
+  const u = await aiUitkomst(userId, verbindingId);
+  return u.soort === 'toegestaan' && u.sessieId === String(rij.id);
+}
+/** AI-TERMIJN-001: één beoordeling van de delegatie voor deze verbinding (eigen rij, anders '*'), mét intrekken als ze vervallen is. */
+export async function aiUitkomst(userId: string, verbindingId?: string | null) {
+  dk.planVeger();
+  const d = dk.voorVerbinding(await dk.alle(userId), verbindingId, await dk.agentVanVerbinding(userId, verbindingId));
+  if (!d) return { soort: 'geen', code: 'AI_NIET_TOEGESTAAN' } as const;
+  return dk.beoordeelEnRuim(userId, d, await dk.feiten(userId));
 }
 
 /**
@@ -152,14 +158,29 @@ export async function besluit(userId: string, h: Herkomst, ruimte: Ruimte = 'tec
     const metCode = (b: RuimteBesluit, r: Rij | null) => ({ ...b, rij: r });
     const naGeen = async (b: RuimteBesluit, r: Rij | null) => (streng && b.code === 'GEEN_TECH_SESSIE' && await siteWegReden(userId, h.bron === 'mcp' ? null : (h.sessieId ?? null))) ? metCode({ ...b, code: 'SITE_SESSIE_WEG' }, r) : metCode(b, r);
     if (h.bron === 'mcp') {
-      for (const r of alle ?? []) {
-        const b = ruimteToegang({ ...basis, sessie: await feitVan(r, false, streng ? { verzoekSessie: r.sessie_id, magBinden: false } : undefined), aiToegestaan: await aiToegestaan(userId, r, h.verbindingId) }, ruimte);
+      // AI-TERMIJN-001: de delegatie kiest ZELF de sessie (pure regel shared/ai-delegatie.ts → beoordeel): eigen technische sessie,
+      // dezelfde aanmelding of elke aanmelding van de eigenaar; pauze = wachten, intrekken of (bewust) doorwerken.
+      const u = await aiUitkomst(userId, h.verbindingId);
+      if (u.soort === 'toegestaan') {
+        const r = (alle ?? []).find((x) => String(x.id) === u.sessieId) ?? null;
+        const feit = await feitVan(r, false, streng && r ? { verzoekSessie: r.sessie_id, magBinden: false } : undefined);
+        if (feit && u.negeerPauze) feit.actief = 'technisch';
+        const b = ruimteToegang({ ...basis, sessie: feit, aiToegestaan: true }, ruimte);
         if (b.toegestaan && b.ruimte === 'technisch') return { ...b, rij: r };
+        if (r) return naGeen(b, r);
       }
-      return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, false, streng && rij ? { verzoekSessie: rij.sessie_id, magBinden: false } : undefined), aiToegestaan: rij ? await aiToegestaan(userId, rij, h.verbindingId) : false }, ruimte), rij);
+      const b0 = ruimteToegang({ ...basis, sessie: await feitVan(rij, false, streng && rij ? { verzoekSessie: rij.sessie_id, magBinden: false } : undefined), aiToegestaan: false }, ruimte);
+      if (b0.code === 'AI_NIET_TOEGESTAAN' && u.soort === 'wacht') return metCode({ ...b0, code: u.code }, rij);
+      return naGeen(b0, rij);
     }
     if (streng && !h.sessieId) return metCode(ruimteToegang({ ...basis, sessie: null }, ruimte), null);
-    return naGeen(ruimteToegang({ ...basis, sessie: await feitVan(rij, gebonden, streng ? { verzoekSessie: h.sessieId ?? null, magBinden: true } : undefined) }, ruimte), rij);
+    const b = ruimteToegang({ ...basis, sessie: await feitVan(rij, gebonden, streng ? { verzoekSessie: h.sessieId ?? null, magBinden: true } : undefined) }, ruimte);
+    // RUIMTE-WEERGAVE-001 (0286): het tabblad toont de gewone ruimte → dit verzoek is privé, de sessie zelf loopt door (geen pauze).
+    // Alleen verkleinen: een tabblad kan zo nooit méér krijgen dan de sessie toelaat.
+    if (b.toegestaan && b.ruimte === 'technisch' && rij && h.tab && (await weergaveVan(String(rij.id), h.tab)) === 'prive') {
+      return metCode({ toegestaan: false, ruimte: 'prive', mogelijkheden: [], rollen: [], eind: null, code: 'WEERGAVE_PRIVE', sessieId: null }, rij);
+    }
+    return naGeen(b, rij);
   } catch (err) { console.error('[tech-ruimtes] besluit faalde, privé:', (err as Error).message); return leeg; }
 }
 
@@ -180,6 +201,18 @@ export async function registreerTab(userId: string, sessieId: string, tab: strin
     ON CONFLICT (ruimte_sessie_id, tab_hash) DO UPDATE SET gezien_op = now()`, [userId, sessieId, sha(`tech-ruimte-tab:${tab}`)]);
 }
 
+/** RUIMTE-WEERGAVE-001: welke ruimte toont dit tabblad bij deze sessie? Onbekend tabblad = 'technisch' (de sessie beslist). */
+export async function weergaveVan(rijId: string, tab: string): Promise<Ruimte> {
+  if (!tp.TAB_RE.test(tab)) return 'technisch';
+  const r = (await sys().query('SELECT weergave FROM app.tech_ruimte_tabs WHERE ruimte_sessie_id = $1 AND tab_hash = $2', [rijId, sha(`tech-ruimte-tab:${tab}`)])).rows[0];
+  return r?.weergave === 'prive' ? 'prive' : 'technisch';
+}
+async function zetWeergave(userId: string, rijId: string, tab: string, weergave: Ruimte): Promise<void> {
+  if (!tp.TAB_RE.test(tab)) return;
+  await sys().query(`INSERT INTO app.tech_ruimte_tabs (ruimte_sessie_id, user_id, tab_hash, weergave) VALUES ($1, $2, $3, $4)
+    ON CONFLICT (ruimte_sessie_id, tab_hash) DO UPDATE SET weergave = EXCLUDED.weergave, gezien_op = now()`, [rijId, userId, sha(`tech-ruimte-tab:${tab}`), weergave]);
+}
+
 // ---------------------------------------------------------------- acties
 export type SiteSessie = { id: string; createdAt: number } | null;
 const vereisSessie = (s: SiteSessie): string => s?.id ? String(s.id) : fout('SESSIE_VEREIST', 403);
@@ -189,7 +222,7 @@ const meldMcpLijst = (userId: string) => { void import('./connector-v2-stroom').
 async function beeindigRijen(userId: string, where: string, params: unknown[], reden: string): Promise<number> {
   const rows = (await sys().query(`UPDATE app.tech_ruimte_sessies r SET beeindigd_op = now(), beeindigd_reden = $2 WHERE r.user_id = $1 AND r.beeindigd_op IS NULL ${where} RETURNING id, modus, sessie_id`, [userId, reden, ...params])).rows;
   for (const r of rows) await audit(userId, 'owner.tech.ruimte.beeindigd', { ruimteSessie: r.id, modus: r.modus, reden, sessie: r.sessie_id });
-  if (rows.length) { tp.meldTechEindeExtern(userId); meldMcpLijst(userId); }
+  if (rows.length) { tp.meldTechEindeExtern(userId); meldMcpLijst(userId); await dk.veeg(userId); }
   return rows.length;
 }
 
@@ -225,12 +258,28 @@ export async function wisselen(u: tp.Gebruiker, s: SiteSessie, tab: string, naar
   if (naar !== 'prive' && naar !== 'technisch') fout('NAAR_ONGELDIG');
   const { rij } = await rijVoor(u.id, { bron: 'site', sessieId: sid });
   if (!rij) { if (naar === 'prive') return; fout('GEEN_TECH_SESSIE', 409); }
-  // Geen stap-op: de sessie is al met stap-op gestart en hangt aan DEZE aanmelding.
-  await sys().query(`UPDATE app.tech_ruimte_sessies SET actief = $2, pauze_op = CASE WHEN $2 = 'prive' THEN now() ELSE NULL END WHERE id = $1`, [rij!.id, naar]);
-  await registreerTab(u.id, sid, tab);
-  await audit(u.id, naar === 'prive' ? 'owner.tech.ruimte.pauze' : 'owner.tech.ruimte.hervat', { ruimteSessie: rij!.id, sessie: sid });
-  if (naar === 'prive') tp.meldTechEindeExtern(u.id);
+  // RUIMTE-WEERGAVE-001: wisselen verandert ALLEEN wat dit tabblad toont. De sessie, AI-verbindingen en andere tabbladen lopen door;
+  // pauzeren en beëindigen zijn eigen, bewuste acties (pauzeren/beeindigen). Geen stap-op: de sessie hangt al aan DEZE aanmelding.
+  await zetWeergave(u.id, String(rij!.id), tab, naar as Ruimte);
+  await audit(u.id, 'owner.tech.ruimte.weergave', { ruimteSessie: rij!.id, sessie: sid, weergave: naar });
+  // Terug naar technisch terwijl de sessie op pauze staat = de gebruiker wil verder werken: pauze opheffen.
+  if (naar === 'technisch' && rij!.actief === 'prive') await zetPauze(u, sid, rij!, false);
+}
+
+/** Pauze van de hele technische sessie van deze aanmelding (alle tabbladen; AI volgens «bij pauze»). Alleen via de knop «Пауза». */
+async function zetPauze(u: tp.Gebruiker, sid: string, rij: Rij, aan: boolean): Promise<void> {
+  await sys().query(`UPDATE app.tech_ruimte_sessies SET actief = $2, pauze_op = CASE WHEN $2 = 'prive' THEN now() ELSE NULL END WHERE id = $1`, [rij.id, aan ? 'prive' : 'technisch']);
+  await audit(u.id, aan ? 'owner.tech.ruimte.pauze' : 'owner.tech.ruimte.hervat', { ruimteSessie: rij.id, sessie: sid });
+  if (aan) { tp.meldTechEindeExtern(u.id); await dk.veeg(u.id); } // regel «bij pauze: intrekken» meteen toepassen
   meldMcpLijst(u.id);
+}
+export async function pauzeren(u: tp.Gebruiker, s: SiteSessie, aan: unknown) {
+  const sid = vereisSessie(s);
+  if (typeof aan !== 'boolean') fout('PAUZE_ONGELDIG');
+  const { rij } = await rijVoor(u.id, { bron: 'site', sessieId: sid });
+  if (!rij) fout('GEEN_TECH_SESSIE', 409);
+  if ((rij!.actief === 'prive') === aan) return; // al zo: niets te doen, geen dubbele journaalregel
+  await zetPauze(u, sid, rij!, aan as boolean);
 }
 
 export async function verlengen(u: tp.Gebruiker, s: SiteSessie, minutenIn: unknown, soort: unknown) {
@@ -275,7 +324,7 @@ export async function bijIntrekken(userId: string, reden: string, doel: { sessie
 export async function profielWeg(userId: string): Promise<number> { return bijIntrekken(userId, 'ingetrokken'); }
 
 // ---------------------------------------------------------------- status
-const iso = (d: Date | number | null | undefined) => d ? new Date(d).toISOString() : null;
+const iso = (d: Date | number | null | undefined) => d ? new Date(d).toISOString() : null; // ms of Date
 export async function status(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   const aan = await v2Aan(u.id);
   const acc = await account(u.id);
@@ -285,7 +334,8 @@ export async function status(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   let sessie = null as null | Record<string, unknown>, actief: Ruimte = 'prive', pauze = false;
   if (aan && s?.id) {
     await registreerTab(u.id, String(s.id), tab);
-    const b = await besluit(u.id, { bron: 'site', sessieId: String(s.id) });
+    // Mét tabblad: «actief» = wat DIT tabblad toont (weergave), «pauze» = de bewuste pauze van de sessie.
+    const b = await besluit(u.id, { bron: 'site', sessieId: String(s.id), tab });
     const r = b.rij;
     if (r) {
       sessie = { id: String(r.id), modus: r.modus, eindTijd: iso(r.eind_op), gestartOp: iso(r.begin_op), grensTijd: iso(r.grens_op), rollen: b.toegestaan ? b.rollen : r.rollen, mogelijkheden: b.mogelijkheden, reden: r.reden };
@@ -307,21 +357,47 @@ export async function toegang(u: tp.Gebruiker, s: SiteSessie, tab: string) {
   const magBeheren = b.toegestaan && (b.mogelijkheden.includes('users.manage') || b.mogelijkheden.includes('roles.delegate'));
   const fouten: string[] = [];
   const deel = async <T>(naam: string, f: () => Promise<T[]>): Promise<T[]> => { try { return await f(); } catch (e) { fouten.push(naam); console.error(`[tech-ruimtes] toegang ${naam}:`, (e as Error).message); return []; } };
-  const mensen = magBeheren ? await deel('mensen', async () => (await sys().query(`SELECT p.user_id, p.rollen, p.max_minuten, p.ingetrokken_op, r.data->>'email' AS email, COALESCE(r.data->>'name','') AS naam, r.data->>'role' AS role,
+  const mensen = magBeheren ? await deel('mensen', async () => (await sys().query(`SELECT p.user_id, p.rollen, p.max_minuten, p.ingetrokken_op, COALESCE(p.snelkoppelingen_toegestaan, false) AS snelkoppelingen_toegestaan, r.data->>'email' AS email, COALESCE(r.data->>'name','') AS naam, r.data->>'role' AS role,
       GREATEST((SELECT max(COALESCE(x.eind_op, x.grens_op)) FROM app.tech_ruimte_sessies x WHERE x.user_id = p.user_id AND x.beeindigd_op IS NULL),
                (SELECT max(a.eind_op) FROM app.tech_activaties a WHERE a.user_id = p.user_id AND a.beeindigd_op IS NULL AND a.eind_op > now())) AS actief_tot
     FROM app.tech_profielen p LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = p.user_id ORDER BY p.ingetrokken_op NULLS FIRST, p.toegekend_op DESC LIMIT 200`)).rows.map((r: any) => ({
       userId: String(r.user_id), email: String(r.email || ''), naam: String(r.naam || ''), rollen: r.rollen, maxMinuten: Number(r.max_minuten),
-      eigenaar: isEigenaarDefinitie(r.role, isOwnerEmail(r.email)), actiefTot: iso(r.actief_tot), ingetrokken: !!r.ingetrokken_op }))) : [];
-  const sessies = await deel('sessies', async () => (await sys().query(`SELECT * FROM app.tech_ruimte_sessies r WHERE r.user_id = $1 AND ${LIVE} ORDER BY begin_op DESC`, [u.id])).rows.map((r: any) => ({
-    id: String(r.id), modus: r.modus, eindTijd: iso(r.eind_op), grensTijd: iso(r.grens_op), gestartOp: iso(r.begin_op), actief: r.actief, dezeSessie: !!s?.id && r.sessie_id === String(s.id) })));
-  const instellingen = await deel('ai-instellingen', async () => (await sys().query('SELECT * FROM app.tech_ruimte_ai WHERE user_id = $1', [u.id])).rows);
-  const perId = new Map(instellingen.map((r: any) => [String(r.verbinding_id), r]));
+      eigenaar: isEigenaarDefinitie(r.role, isOwnerEmail(r.email)), actiefTot: iso(r.actief_tot), ingetrokken: !!r.ingetrokken_op, snelkoppelingenToegestaan: r.snelkoppelingen_toegestaan === true }))) : [];
+  const sessies = await deel('sessies', async () => (await sys().query(`SELECT r.*, s.data->>'service' AS dienst, s.data->>'deviceLabel' AS apparaat, s.data->>'browser' AS browser
+      FROM app.tech_ruimte_sessies r LEFT JOIN app.records s ON s.tbl = 'owner_service_sessions_v1' AND s.id = r.sessie_id
+     WHERE r.user_id = $1 AND ${LIVE} ORDER BY begin_op DESC`, [u.id])).rows.map((r: any) => ({
+    id: String(r.id), modus: r.modus, eindTijd: iso(r.eind_op), grensTijd: iso(r.grens_op), gestartOp: iso(r.begin_op), actief: r.actief, dezeSessie: !!s?.id && r.sessie_id === String(s.id),
+    dienst: r.dienst ? String(r.dienst).slice(0, 40) : null, apparaat: r.apparaat ? String(r.apparaat).slice(0, 80) : null, browser: r.browser ? String(r.browser).slice(0, 40) : null })));
+  // AI-TERMIJN-001: per verbinding de opgeslagen termijn + regels én de LEVENDE uitkomst (dezelfde beoordeling als tools/list).
+  dk.planVeger();
+  await dk.veeg(u.id).catch(() => 0);
+  const delegaties = await deel('ai-instellingen', async () => dk.alle(u.id));
+  const df = await dk.feiten(u.id).catch(() => ({ sessies: [], aanmeldingen: [] } as dk.DelegatieFeiten));
+  const { beoordeel } = await import('../shared/ai-delegatie');
+  const uitkomst = (d: ReturnType<typeof dk.voorVerbinding>) => {
+    if (!d) return { stand: 'geen' as const, code: 'AI_NIET_TOEGESTAAN' };
+    const x = beoordeel(d, df.sessies, df.aanmeldingen, Date.now());
+    return x.soort === 'toegestaan' ? { stand: x.negeerPauze ? 'doorwerken' as const : 'actief' as const, code: null }
+      : x.soort === 'wacht' ? { stand: 'wacht' as const, code: x.code }
+        : x.soort === 'intrekken' ? { stand: 'ingetrokken' as const, code: x.reden } : { stand: d.ingetrokkenOp ? 'ingetrokken' as const : 'geen' as const, code: d.ingetrokkenOp ? 'ingetrokken' : x.code };
+  };
+  const delegatieJson = (d: ReturnType<typeof dk.voorVerbinding>, eigen: boolean) => d ? ({
+    eigen, sleutel: d.verbindingId, technisch: d.technisch, termijn: d.termijn, eindTijd: iso(d.eindOp), regels: d.regels, gezetOp: iso(d.gezetOp), laatstGebruiktOp: iso(d.laatstGebruiktOp),
+    ingetrokkenOp: iso(d.ingetrokkenOp), ...uitkomst(d) }) : null;
   const ai = await deel('ai', async () => (await sys().query(`SELECT id, client_name, agent, refresh_expires_at FROM app.mcp_oauth_tokens WHERE user_id = $1 AND revoked_at IS NULL AND refresh_expires_at > now() ORDER BY created_at DESC LIMIT 100`, [u.id])).rows.map((r: any) => {
-    const i: any = perId.get(String(r.id)) ?? perId.get('*');
-    return { verbindingId: String(r.id), naam: String(r.client_name || ''), agent: r.agent ?? null, ruimtes: i ? i.ruimtes : [], termijn: i ? i.termijn : null, eindTijd: i ? iso(i.eind_op) : null, tokenTot: iso(r.refresh_expires_at), bron: 'mcp-oauth' as const };
+    const d = dk.voorVerbinding(delegaties, String(r.id), r.agent ? String(r.agent) : agentSlugUitNaam(r.client_name));
+    const ruimtes = d && d.technisch && !d.ingetrokkenOp ? ['prive', 'technisch'] : ['prive'];
+    return { verbindingId: String(r.id), naam: String(r.client_name || ''), agent: r.agent ?? agentSlugUitNaam(r.client_name), ruimtes, termijn: d && d.technisch && !d.ingetrokkenOp ? d.termijn : null, eindTijd: d ? iso(d.eindOp) : null,
+      tokenTot: iso(r.refresh_expires_at), bron: 'mcp-oauth' as const, delegatie: delegatieJson(d, !!d && d.verbindingId !== '*') };
   }));
-  if (perId.has('*')) { const i: any = perId.get('*'); ai.push({ verbindingId: '*', naam: '*', agent: null, ruimtes: i.ruimtes, termijn: i.termijn, eindTijd: iso(i.eind_op), tokenTot: null, bron: 'instelling' as never }); }
+  // Agent-regels zonder actieve verbinding (bv. Claude even ontkoppeld) blijven zichtbaar en beheerbaar.
+  for (const d of delegaties.filter((x) => x.verbindingId.startsWith('agent:') && !ai.some((a) => a.agent === x.verbindingId.slice(6)))) {
+    ai.push({ verbindingId: d.verbindingId, naam: d.verbindingId.slice(6), agent: d.verbindingId.slice(6), ruimtes: d.technisch && !d.ingetrokkenOp ? ['prive', 'technisch'] : ['prive'], termijn: d.technisch && !d.ingetrokkenOp ? d.termijn : null,
+      eindTijd: iso(d.eindOp), tokenTot: null, bron: 'agent' as never, delegatie: delegatieJson(d, true) });
+  }
+  const alg = delegaties.find((d) => d.verbindingId === '*');
+  if (alg) ai.push({ verbindingId: '*', naam: '*', agent: null, ruimtes: alg.technisch && !alg.ingetrokkenOp ? ['prive', 'technisch'] : ['prive'], termijn: alg.technisch && !alg.ingetrokkenOp ? alg.termijn : null,
+    eindTijd: iso(alg.eindOp), tokenTot: null, bron: 'instelling' as never, delegatie: delegatieJson(alg, true) });
   const extensie = await deel('extensie', async () => (await sys().query(`SELECT id, agent_id, ruimte, einde_soort, eind_op FROM app.extensie_ontgrendelingen WHERE user_id = $1 AND ingetrokken_op IS NULL AND eind_op > now() ORDER BY eind_op DESC LIMIT 100`, [u.id])).rows.map((r: any) => ({
     id: String(r.id), agentId: String(r.agent_id || ''), ruimte: r.ruimte, eindeSoort: r.einde_soort, eindTijd: iso(r.eind_op), overleeftTabUitloggen: true })));
   const codes = await deel('codes', async () => (await sys().query(`SELECT id, naam, scopes, verloopt_op FROM app.toegangscodes WHERE user_id = $1 AND ingetrokken_op IS NULL AND (verloopt_op IS NULL OR verloopt_op > now()) ORDER BY aangemaakt_op DESC LIMIT 100`, [u.id])).rows.map((r: any) => ({ id: String(r.id), naam: r.naam, scopes: r.scopes, verlooptOp: iso(r.verloopt_op) })));
@@ -386,17 +462,46 @@ export async function aiZetten(u: tp.Gebruiker, s: SiteSessie, input: Record<str
   if (!b.toegestaan || !b.rij) fout('TECH_RUIMTE_VEREIST', 403);
   const vid = String(input.verbindingId ?? '');
   if (!/^(\*|[A-Za-z0-9._:-]{1,100})$/.test(vid)) fout('VERBINDING_ONGELDIG');
+  // «Alle verbindingen» ('*') alleen als de eigenaar dat bewust koos (knop met waarschuwing), nooit als stille terugval.
+  if (vid === '*' && wilTech && input.alleVerbindingen !== true) fout('ALLE_VERBINDINGEN_NIET_BEVESTIGD');
+  if (vid.startsWith('agent:')) {
+    // Per agent (ook voor latere herverbindingen): alleen een echte agent-slug.
+    if (agentSlugUitNaam(vid.slice(6)) !== vid.slice(6)) fout('VERBINDING_ONGELDIG');
+  } else if (vid !== '*') {
+    const t = (await sys().query('SELECT 1 FROM app.mcp_oauth_tokens WHERE id::text = $1 AND user_id = $2 AND revoked_at IS NULL', [vid, u.id]).catch(() => ({ rows: [] as unknown[] }))).rows;
+    if (!t.length) fout('VERBINDING_ONBEKEND', 404);
+  }
   const ruimtes = Array.isArray(input.ruimtes) ? [...new Set(input.ruimtes)] : null;
   if (!ruimtes || !ruimtes.every((r) => r === 'prive' || r === 'technisch')) fout('RUIMTES_ONGELDIG');
-  if (!isRuimteModus(input.termijn)) fout('TERMIJN_ONGELDIG');
-  const termijn = input.termijn as RuimteModus;
-  let minuten = 0;
-  if (termijn === 'tijd') { minuten = Math.round(Number(input.minuten)); if (!Number.isFinite(minuten) || minuten < 15 || minuten > RUIMTE_MAX_MINUTEN) fout('DUUR_ONGELDIG'); }
-  await sys().query(`INSERT INTO app.tech_ruimte_ai (user_id, verbinding_id, ruimtes, termijn, eind_op, ruimte_sessie_id) VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'tijd' THEN now() + make_interval(mins => $5::int) END, $6)
-    ON CONFLICT (user_id, verbinding_id) DO UPDATE SET ruimtes = EXCLUDED.ruimtes, termijn = EXCLUDED.termijn, eind_op = EXCLUDED.eind_op, ruimte_sessie_id = EXCLUDED.ruimte_sessie_id, gezet_op = now()`,
-    [u.id, vid, ruimtes, termijn, minuten, b.rij!.id]);
-  await audit(u.id, 'owner.tech.ruimte.ai', { verbinding: vid, ruimtes, termijn, minuten: termijn === 'tijd' ? minuten : null, ruimteSessie: b.rij!.id });
+  let instelling;
+  try {
+    instelling = normaliseerInvoer({
+      termijn: (input.termijn ?? 'tot-account-uitloggen') as AiInvoer['termijn'],
+      minuten: input.minuten as number | undefined,
+      eindOp: typeof input.eindOp === 'string' ? Date.parse(input.eindOp) : (input.eindOp as number | undefined),
+      regels: (input.regels && typeof input.regels === 'object' ? input.regels : {}) as AiInvoer['regels'],
+    }, Date.now());
+  } catch (e) { if (e instanceof AiInvoerFout) fout(e.code); throw e; }
+  // Een agentregel vervangt de oude regels per token van diezelfde agent (anders gaat een vergeten tokenregel stil vóór).
+  if (vid.startsWith('agent:')) {
+    const slug = vid.slice(6);
+    const tokens = (await sys().query('SELECT id::text AS id, agent, client_name FROM app.mcp_oauth_tokens WHERE user_id = $1', [u.id])).rows
+      .filter((t: any) => (t.agent ? String(t.agent) : agentSlugUitNaam(t.client_name)) === slug).map((t: any) => String(t.id));
+    if (tokens.length) await sys().query('DELETE FROM app.tech_ruimte_ai WHERE user_id = $1 AND verbinding_id = ANY($2::text[])', [u.id, tokens]);
+  }
+  await dk.opslaan(u.id, { verbindingId: vid, naam: typeof input.naam === 'string' ? input.naam.slice(0, 80) : undefined, technisch: wilTech, instelling: instelling!,
+    ruimteSessieId: String(b.rij!.id), siteSessieId: String(b.rij!.sessie_id) });
   meldMcpLijst(u.id);
+}
+
+/** Toestemming intrekken (eigenaar, knop «Зняти»). Laat de rij staan met ingetrokken_op (journaal, en de UI toont «знято»). */
+export async function aiIntrekken(u: tp.Gebruiker, s: SiteSessie, input: Record<string, unknown>) {
+  vereisSessie(s);
+  const vid = String(input.verbindingId ?? '');
+  if (!/^(\*|[A-Za-z0-9._:-]{1,100})$/.test(vid)) fout('VERBINDING_ONGELDIG');
+  await dk.intrekken(u.id, vid, 'eigenaar', typeof input.naam === 'string' ? input.naam.slice(0, 80) : undefined);
+  // Agentregel: ook als er nog geen rij was (toestemming kwam van '*'), een expliciete «alleen privé»-rij zetten — die gaat vóór '*'.
+  if (vid.startsWith('agent:')) await dk.alleenPrive(u.id, vid);
 }
 
 // ---------------------------------------------------------------- schaduw (stap 0)

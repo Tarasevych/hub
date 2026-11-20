@@ -10,7 +10,7 @@
 <main>
   <!-- 0.8.0: compacte kop; de meeste ruimte gaat naar het werk (chat), status en geschiedenis klappen open -->
   <header class="kop">
-    <span class="logo" aria-hidden="true"></span>
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13c.4 0 .6.4.6.8V18a2 2 0 0 1-2 2h-4.2c-.4 0-.8-.2-.8-.6a2 2 0 1 0-4 0c0 .4-.4.6-.8.6H4a2 2 0 0 1-2-2v-4.2c0-.4.2-.8.6-.8a2 2 0 1 0 0-4C2.2 9 2 8.6 2 8.2V6a2 2 0 0 1 2-2h4.2c.4 0 .8-.2.8-.6a2 2 0 1 1 4 0c0 .4.4.6.8.6H18a2 2 0 0 1 2 2v2.2c0 .4.4.8.8.8a2 2 0 1 1 0 4z"/></svg></span>
     <div class="kop-tekst">
       <h1>Mijn Ruimte</h1>
       <p id="status-regel" class="status-regel" data-niveau="uit" role="status" aria-live="polite"></p>
@@ -30,6 +30,8 @@
   <p id="aankondiging" class="vh" role="status" aria-live="polite"></p>
 
   <div id="diagnostiek" class="diag" hidden></div>
+  <!-- 0.9.5 (EXTUI-001): waar de extensie werkt (waar.js) -->
+  <section id="waar" class="waar" aria-label="Де працює" data-nl-aria="Waar ze werkt" hidden></section>
 
   <section aria-labelledby="kop-chat" class="chat" data-chat-ruimte="prive">
     <h2 id="kop-chat" data-nl="AI voor u — bij dit tabblad">ШІ для вас — поруч із цією вкладкою</h2>
@@ -61,7 +63,8 @@
     <textarea id="lai-invoer" rows="5" maxlength="100000" placeholder="Текст або запит…" data-nl-placeholder="Tekst of vraag…"></textarea>
     <div class="rij">
       <button type="button" id="lai-tab" data-nl="Tekst van het tabblad">Текст вкладки</button>
-      <label id="lai-afbeelding-rij" class="bestand" hidden><span data-nl="Afbeelding">Зображення</span> <input type="file" id="lai-afbeelding" accept="image/*"></label>
+      <button type="button" id="lai-stem" hidden data-nl="Dicteren">Диктувати</button>
+      <label id="lai-afbeelding-rij" class="bestand" hidden><span data-nl="Beeld / audio">Зображення / аудіо</span> <input type="file" id="lai-afbeelding" accept="image/*,audio/*"></label>
     </div>
     <div class="rij">
       <button type="button" id="lai-start" class="primair" data-nl="Uitvoeren">Виконати</button>
@@ -106,6 +109,7 @@
 </main>
 <script src="ui.js"></script>
 <script src="sidepanel.js"></script>
+<script src="waar.js"></script>
 <script src="lokale-ai.js"></script>
 <script src="sidepanel-lokale-ai.js"></script>
 </body>

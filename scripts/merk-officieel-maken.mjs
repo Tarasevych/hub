@@ -51,6 +51,70 @@ const KEUZE = [
   { sleutel: 'oauth', pakket: '@iconify-json/logos', icoon: 'oauth' },
   { sleutel: 'microsoftoutlook', pakket: '@iconify-json/vscode-icons', icoon: 'file-type-outlook', opmerking: 'het Outlook-logo zoals vscode-icons het meelevert (ontwerp 2013–2018)' },
   { sleutel: 'microsoftonenote', pakket: '@iconify-json/vscode-icons', icoon: 'file-type-onenote', opmerking: 'het OneNote-logo zoals vscode-icons het meelevert (ontwerp 2013–2018)' },
+  // AI-агенти (15.11.2026, Павло: «чому логотип не береться з бази справжнього логотипа?») — справжні знаки з того самого пакета CC0.
+  // AI-agents: echte beeldmerken uit hetzelfde CC0-pakket in plaats van de nagetekende vormen op een gekleurde plaat.
+  { sleutel: 'claude', pakket: '@iconify-json/logos', icoon: 'claude-icon' },
+  { sleutel: 'gpt', pakket: '@iconify-json/logos', icoon: 'openai-icon', opmerking: 'ChatGPT draagt het beeldmerk van OpenAI' },
+  { sleutel: 'codex', pakket: '@iconify-json/logos', icoon: 'codex' },
+  { sleutel: 'grok', pakket: '@iconify-json/logos', icoon: 'grok-icon' },
+  { sleutel: 'gemini', pakket: '@iconify-json/logos', icoon: 'google-gemini-icon' },
+  // Google (16.11.2026, Павло: «логотип Google не офіційний … треба у всіх місцях виправити на офіційний») — чотириколірний знак «G»
+  // з того самого пакета CC0; до цього реєстр малював однокольорову форму simple-icons. Het vierkleurige «G» in plaats van de eenkleurige vorm.
+  { sleutel: 'google', pakket: '@iconify-json/logos', icoon: 'google-icon' },
+  // Піктограми меню «Google Drive» і «Dropbox» були літерами в рамці («G», «DB») — тепер справжні знаки з того самого пакета CC0.
+  // De menupictogrammen «Google Drive» en «Dropbox» waren letters in een kader; nu de echte beeldmerken.
+  { sleutel: 'googledrive', pakket: '@iconify-json/logos', icoon: 'google-drive-2020', opmerking: 'vlakke uitvoering (2020), in dezelfde stijl als het vierkleurige «G»' },
+  { sleutel: 'dropbox', pakket: '@iconify-json/logos', icoon: 'dropbox' },
+  // Павло (16.11): «перконайся, що в цю галерею входять всі логотипи, згадані на сайті» — Google Keep (джерело нотаток) був літерою.
+  { sleutel: 'googlekeep', pakket: '@iconify-json/logos', icoon: 'google-keep-2020', opmerking: 'vlakke uitvoering (2020), zoals Google Drive' },
+  // Copilot: НЕ з пакета — там старіший малюнок (суцільний шолом). Власник помітив різницю (16.11.2026); чинний знак GitHub узято з
+  // github.githubassets.com/favicons/favicon-copilot.svg (soort 'officiele-site'). NL: het pakket heeft een oudere tekening.
+  { sleutel: 'cursor', pakket: '@iconify-json/logos', icoon: 'cursor-icon' },
+  { sleutel: 'antigravity', pakket: '@iconify-json/logos', icoon: 'antigravity' },
+  // 16.11.2026: нові агенти каталогу (Cline, Devin, OpenCode) — теж справжні знаки з того самого пакета CC0, а не літери на плитці.
+  // Windsurf і AutoClaw немає в жодному відкритому пакеті: їхні файли взято з власних сайтів (soort 'officiele-site', --ua).
+  // Cline: НЕ з пакета — там старіший (округліший) малюнок; чинний знак узято з cline.bot/assets/branding/logos/cline-icon-dark.svg.
+  { sleutel: 'devin', pakket: '@iconify-json/logos', icoon: 'devin' },
+  // OpenCode: НЕ з пакета — світлий варіант знака на білій плитці читається як порожній прямокутник; узято піктограму застосунку
+  // з opencode.ai/apple-touch-icon-v3.png. NL: de lichte variant uit het pakket is op een witte plaat onleesbaar.
+  // REESTR-LOGO-001 (16.11.2026, Павло: «всі логотипи мають братися з того реєстру, а не розкидані по сайту»). Telegram, Discord і
+  // WhatsApp мали власні копії: TelegramLogo.tsx, сторінка Telegram-входу на сервері, «Макет» (намальовані від руки) і велика
+  // таблиця. Тепер один справжній файл із того самого пакета CC0 для всіх місць.
+  // Telegram, Discord en WhatsApp hadden eigen kopieën (twee keer nagetekend in «Макет»); nu één echt bestand voor elke plek.
+  { sleutel: 'telegram', pakket: '@iconify-json/logos', icoon: 'telegram' },
+  { sleutel: 'discord', pakket: '@iconify-json/logos', icoon: 'discord-icon' },
+  { sleutel: 'whatsapp', pakket: '@iconify-json/logos', icoon: 'whatsapp-icon' },
+  // PLAATS-TEKENS-001 (17.11.2026, Павло: «провайдерів також базу логотипів створити треба всіх»; виробники пристроїв у сповіщенні
+  // про вхід). Lenovo, Dell, HP, ASUS, Acer, Vodafone, Ziggo, Telekom: беззмінні контури й офіційний колір марки з пакета simple-icons
+  // (CC0; колір і джерело кожного знака — у самому пакеті). Xiaomi, KPN, Odido, Telenet, Proximus, VOO, Укртелеком, passkey —
+  // з власних сайтів (--ua /mnt/project-files/plaats-tekens-001/logo-bron). NL: vaste contouren + merkkleur uit simple-icons (CC0).
+  { sleutel: 'lenovo', pakket: 'simple-icons', icoon: 'siLenovo' },
+  { sleutel: 'dell', pakket: 'simple-icons', icoon: 'siDell' },
+  { sleutel: 'hp', pakket: 'simple-icons', icoon: 'siHp' },
+  { sleutel: 'asus', pakket: 'simple-icons', icoon: 'siAsus' },
+  { sleutel: 'acer', pakket: 'simple-icons', icoon: 'siAcer' },
+  { sleutel: 'vodafone', pakket: 'simple-icons', icoon: 'siVodafone' },
+  { sleutel: 'ziggo', pakket: 'simple-icons', icoon: 'siZiggo' },
+  { sleutel: 'deutschetelekom', pakket: 'simple-icons', icoon: 'siDeutschetelekom' },
+  // Мережі (17.11.2026, емблема «Мережа» у сповіщенні): VPN-сервіси, Tor, iCloud Private Relay, хостинги. Netwerken: VPN, Tor, hosting.
+  { sleutel: 'mullvad', pakket: 'simple-icons', icoon: 'siMullvad' },
+  { sleutel: 'nordvpn', pakket: 'simple-icons', icoon: 'siNordvpn' },
+  { sleutel: 'protonvpn', pakket: 'simple-icons', icoon: 'siProtonvpn' },
+  { sleutel: 'expressvpn', pakket: 'simple-icons', icoon: 'siExpressvpn' },
+  { sleutel: 'surfshark', pakket: 'simple-icons', icoon: 'siSurfshark' },
+  { sleutel: 'tor', pakket: 'simple-icons', icoon: 'siTorproject' },
+  { sleutel: 'icloud', pakket: 'simple-icons', icoon: 'siIcloud' },
+  { sleutel: 'hetzner', pakket: 'simple-icons', icoon: 'siHetzner' },
+  { sleutel: 'ovh', pakket: 'simple-icons', icoon: 'siOvh' },
+  { sleutel: 'vultr', pakket: 'simple-icons', icoon: 'siVultr' },
+  { sleutel: 'scaleway', pakket: 'simple-icons', icoon: 'siScaleway' },
+  { sleutel: 'akamai', pakket: 'simple-icons', icoon: 'siAkamai' }, // Linode hoort sinds 2022 bij Akamai
+  { sleutel: 'contabo', pakket: 'simple-icons', icoon: 'siContabo' },
+  { sleutel: 'gcore', pakket: 'simple-icons', icoon: 'siGcore' },
+  { sleutel: 'orange', pakket: 'simple-icons', icoon: 'siOrange' },
+  { sleutel: 'cloudflare', pakket: '@iconify-json/logos', icoon: 'cloudflare-icon' },
+  { sleutel: 'digitalocean', pakket: '@iconify-json/logos', icoon: 'digital-ocean-icon' },
+  { sleutel: 'aws', pakket: '@iconify-json/logos', icoon: 'aws', opmerking: 'woordmerk met de «smile» van Amazon Web Services' },
 ];
 /** Merken zonder bestand in een open pakket (gecontroleerd: @iconify-json/logos 1.2.17, vscode-icons 1.2.92, skill-icons 1.2.4,
  *  devicon 1.2.71, cib 1.2.3, simple-icons 6.23/9.21/13.21/16.35). Zij komen uit de database van de site (app.merk_beeld:
@@ -68,6 +132,24 @@ try {
 } finally { rmSync(tmp, { recursive: true, force: true }); }
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
+/** PLAATS-TEKENS-001 (17.11.2026): de gedeelde projectmap zet bij elk bestand een C2PA-herkomstmanifest (~5,7 KB: PNG-blok «caBX»,
+ *  SVG <metadata><c2pa:manifest>). Dat is geen deel van het logo en zat daardoor in de luie tabel (± 60 KB). Weg ermee — de
+ *  beeldgegevens zelf blijven byte voor byte gelijk. Спільна тека додає до файлів маніфест C2PA; він не є частиною логотипа. */
+function zonderC2pa(buf, soort) {
+  if (soort === 'svg') {
+    const t = buf.toString('utf8');
+    const u = t.replace(/\s*<metadata>\s*<c2pa:manifest>[\s\S]*?<\/c2pa:manifest>\s*<\/metadata>/g, '').replace(/\s+xmlns:c2pa="[^"]*"/g, '');
+    return u === t ? buf : Buffer.from(u, 'utf8');
+  }
+  if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504e47) return buf;
+  const delen = [buf.subarray(0, 8)]; let i = 8, weg = false;
+  while (i + 12 <= buf.length) {
+    const n = buf.readUInt32BE(i); const type = buf.toString('latin1', i + 4, i + 8);
+    if (type === 'caBX') weg = true; else delen.push(buf.subarray(i, i + 12 + n));
+    i += 12 + n;
+  }
+  return weg ? Buffer.concat(delen) : buf;
+}
 const lum = (hex) => { let v = hex.replace('#', ''); if (v.length === 3) v = [...v].map((c) => c + c).join(''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16) / 255).map((s) => (s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 /** Heeft het logo vormen die op een donker vlak wegvallen (zwart/donkergrijs/donkerpaars, of een vorm zonder vulling)?
  *  Dan tekent <Merk> het ook als los gliefje op een lichte plaat — de vorm zelf blijft onaangeroerd. */
@@ -84,9 +166,40 @@ const lock = JSON.parse(readFileSync(join(WORTEL, 'package-lock.json'), 'utf8'))
 const herkomst = [];
 const tabel = {};
 mkdirSync(UIT, { recursive: true });
+// Bestanden van de EIGEN website van een merk (soort 'officiele-site', bv. AutoClaw) blijven bewaard als het script zonder --ua
+// draait: ze worden vóór het opruimen ingelezen en hieronder opnieuw gecontroleerd en teruggezet. Zo verdwijnt een echt logo niet
+// bij een gewone hergeneratie. Файли з власного сайту марки зберігаються й при звичайній перегенерації (16.11.2026).
+const bewaard = [];
+if (existsSync(join(UIT, 'HERKOMST.json'))) {
+  for (const o of JSON.parse(readFileSync(join(UIT, 'HERKOMST.json'), 'utf8')).regels || []) {
+    if (o.soort === 'officiele-site' && existsSync(join(UIT, o.bestand))) bewaard.push({ regel: o, inhoud: readFileSync(join(UIT, o.bestand)) });
+  }
+}
 for (const f of readdirSync(UIT)) if (/\.(svg|png)$/.test(f)) rmSync(join(UIT, f));
 
+const simpleIcons = KEUZE.some((k) => k.pakket === 'simple-icons') ? await import('simple-icons') : null;
 for (const k of KEUZE) {
+  if (k.pakket === 'simple-icons') {
+    // simple-icons: één pad in de doos 0 0 24 24 + de officiële merkkleur (hex) en de bron van het merk zelf, uit het pakket.
+    const pkg = JSON.parse(readFileSync(join(WORTEL, 'node_modules/simple-icons/package.json'), 'utf8'));
+    const vastgelegd = lock.packages?.['node_modules/simple-icons'];
+    if (!vastgelegd || vastgelegd.version !== pkg.version) throw new Error(`simple-icons: versie ${pkg.version} staat niet zo in package-lock.json`);
+    if (!OPEN.has(pkg.license)) throw new Error(`simple-icons: licentie ${pkg.license}`);
+    const i = simpleIcons[k.icoon];
+    if (!i || !/^[0-9A-F]{6}$/i.test(i.hex)) throw new Error(`simple-icons: icoon ${k.icoon} bestaat niet`);
+    const u = ontsmetSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="#${i.hex}" d="${i.path}"/></svg>`);
+    if (!u.ok) throw new Error(`${k.sleutel}: de ontsmetting weigert het bestand (${u.reden})`);
+    writeFileSync(join(UIT, `${k.sleutel}.svg`), u.inhoud);
+    const regel = {
+      sleutel: k.sleutel, bestand: `${k.sleutel}.svg`, soort: 'pakket', pakket: 'simple-icons', versie: pkg.version, integriteit: vastgelegd.integrity,
+      icoon: i.slug, verzameling: 'Simple Icons', auteur: 'Simple Icons Collaborators', bronUrl: i.source || 'https://simpleicons.org', licentie: pkg.license,
+      licentieUrl: 'https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md', merkkleur: `#${i.hex}`, mime: 'image/svg+xml', bytes: u.inhoud.length,
+      sha256: sha(u.inhoud), ondergrond: ondergrondVan(u.inhoud.toString('utf8')), ...(i.guidelines ? { richtlijnen: i.guidelines } : {}),
+    };
+    herkomst.push(regel);
+    tabel[k.sleutel] = { soort: 'svg', inhoud: u.inhoud.toString('utf8'), sha256: regel.sha256, ondergrond: regel.ondergrond, bron: `simple-icons@${pkg.version} · ${i.slug} · ${pkg.license}` };
+    continue;
+  }
   const pkg = require(`${k.pakket}/package.json`);
   const info = require(`${k.pakket}/info.json`);
   const set = require(`${k.pakket}/icons.json`);
@@ -126,35 +239,82 @@ if (UA_MAP && existsSync(join(UA_MAP, 'bron.json'))) {
     const bestand = ['svg', 'png'].map((s) => `${sleutel}.${s}`).find((n) => existsSync(join(UA_MAP, n)));
     if (!bestand) { console.error(`overgeslagen ${sleutel}: geen bestand`); continue; }
     const soort = bestand.endsWith('.png') ? 'png' : 'svg';
-    const u = controleerMerkEigen(soort, readFileSync(join(UA_MAP, bestand)));
+    const u = controleerMerkEigen(soort, zonderC2pa(readFileSync(join(UA_MAP, bestand)), soort));
     if (!u.ok) { console.error(`overgeslagen ${sleutel}: ${u.reden}`); continue; }
     writeFileSync(join(UIT, bestand), u.inhoud);
     const regel = {
-      sleutel, bestand, soort: 'officiele-site', bronUrl: url, opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
+      sleutel, bestand, soort: 'officiele-site', bronUrl: url,
+      // Ligt het bestand op een CDN van de dienst (ander domein), dan de eigen pagina van de dienst die het toont.
+      ...(/^https:\/\/[a-z0-9.-]+\//i.test(String(r.pagina || '')) ? { bronPagina: String(r.pagina) } : {}),
+      opgehaald: String(r.opgehaald || r.datum || '').slice(0, 30),
       licentie: 'handelsmerk-van-de-eigenaar', licentieUitleg: 'officieel logo van de eigen website van de dienst; alleen ter herkenning van de dienst',
       mime: soort === 'png' ? 'image/png' : 'image/svg+xml', bytes: u.inhoud.length, sha256: sha(u.inhoud),
       ondergrond: soort === 'svg' ? ondergrondVan(u.inhoud.toString('utf8')) : 'licht',
+      // Wit teken dat de eigenaar zelf op zijn merkkleur zet (Proximus): die kleur als plaat, uit de eigen stylesheet van de dienst.
+      ...(/^#[0-9a-f]{6}$/i.test(String(r.plaat || '')) ? { plaat: String(r.plaat).toLowerCase() } : {}),
+      ...(r.bewerking ? { bewerking: String(r.bewerking).slice(0, 300) } : {}),
+      // Uitdrukkelijke keuze van de eigenaar voor een bestand dat NIET op het eigen domein van de dienst staat (Ukr.net: webcatalog).
+      ...(r.keuzeEigenaar ? { keuzeEigenaar: String(r.keuzeEigenaar).slice(0, 300) } : {}),
     };
     herkomst.push(regel);
-    tabel[sleutel] = { soort, inhoud: soort === 'svg' ? u.inhoud.toString('utf8') : u.inhoud.toString('base64'), sha256: regel.sha256, ondergrond: regel.ondergrond, bron: `${url} · handelsmerk van de eigenaar` };
+    tabel[sleutel] = { soort, inhoud: soort === 'svg' ? u.inhoud.toString('utf8') : u.inhoud.toString('base64'), sha256: regel.sha256, ondergrond: regel.ondergrond, ...(regel.plaat ? { plaat: regel.plaat } : {}), bron: `${url} · handelsmerk van de eigenaar` };
   }
+}
+
+for (const { regel: o, inhoud: oud } of bewaard) {
+  if (tabel[o.sleutel]) continue;
+  const soort = o.bestand.endsWith('.png') ? 'png' : 'svg';
+  const schoon = zonderC2pa(oud, soort);
+  const u = controleerMerkEigen(soort, schoon);
+  // Eerst tegen de vastgelegde sha256 van het bestand zoals het was; daarna (alleen als er een C2PA-manifest af ging) de nieuwe.
+  if (!u.ok || (sha(controleerMerkEigen(soort, oud).inhoud ?? oud) !== o.sha256 && sha(u.inhoud) !== o.sha256)) { console.error(`niet teruggezet ${o.sleutel}: ${u.ok ? 'sha256 wijkt af van HERKOMST.json' : u.reden}`); continue; }
+  if (sha(u.inhoud) !== o.sha256) { o.sha256 = sha(u.inhoud); o.bytes = u.inhoud.length; o.opgeschoond = 'c2pa-manifest van de projectmap verwijderd (17.11.2026)'; }
+  writeFileSync(join(UIT, o.bestand), u.inhoud);
+  herkomst.push(o);
+  tabel[o.sleutel] = { soort, inhoud: soort === 'svg' ? u.inhoud.toString('utf8') : u.inhoud.toString('base64'), sha256: o.sha256, ondergrond: o.ondergrond, ...(o.plaat ? { plaat: o.plaat } : {}), bron: `${o.bronUrl} · handelsmerk van de eigenaar` };
 }
 
 herkomst.sort((a, b) => a.sleutel.localeCompare(b.sleutel));
 writeFileSync(join(UIT, 'HERKOMST.json'), `${JSON.stringify({ gemaakt: 'scripts/merk-officieel-maken.mjs', regels: herkomst, afwezig: AFWEZIG.filter((s) => !tabel[s]) }, null, 2)}\n`);
 
 const sleutels = Object.keys(tabel).sort();
+// REESTR-LOGO-001: «DIRECT» = de paar logo's die al op het eerste scherm nodig zijn (aanmeldknop Google, Telegram-aanmelding,
+// de serverpagina van de Telegram-bevestiging). Zij staan in ÉÉN klein gedeeld bestand (shared/merk-direct.ts) dat de browser én
+// de server lezen; de luie tabel hieronder neemt ze daaruit over in plaats van ze een tweede keer mee te dragen. Zo staat elk logo
+// precies één keer in het installatiepakket. Логотипи першого екрана — в одному спільному файлі; лінива таблиця бере їх звідти.
+const DIRECT = ['google', 'telegram'].filter((s) => tabel[s]?.soort === 'svg');
+const directKop = `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen. Згенеровано — не редагувати вручну.
+// De officiële logo's die al op het EERSTE scherm nodig zijn (aanmelden) en op serverpagina's: browser en server lezen dit ene
+// bestand; src/merk/merk-officieel.ts neemt ze hieruit over. Bron, licentie en sha256: src/merk/officieel/HERKOMST.json.
+// Офіційні логотипи першого екрана (вхід) і сторінок сервера: браузер і сервер читають цей один файл.
+export type MerkDirect = { soort: 'svg'; inhoud: string; sha256: string; ondergrond: 'licht' | 'vrij'; bron: string };
+export const MERK_DIRECT: Readonly<Record<${DIRECT.map((s) => JSON.stringify(s)).join(' | ') || 'string'}, MerkDirect>> = Object.freeze({
+${DIRECT.map((s) => `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`).join('\n')}
+});
+/** data-URI voor een <img> (SVG als tekst; in een <img> voert een SVG nooit script uit). */
+export const merkDirectDataUri = (sleutel: keyof typeof MERK_DIRECT): string =>
+  \`data:image/svg+xml;charset=utf-8,\${encodeURIComponent(MERK_DIRECT[sleutel].inhoud)}\`;
+`;
+writeFileSync(join(WORTEL, 'shared/merk-direct.ts'), directKop);
 const kop = `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen (de test merk-officieel-20261021 vergelijkt elke
 // regel met src/merk/officieel/<sleutel>.* en HERKOMST.json). Officiële logo's uit open pakketten (CC0-1.0/MIT) of van de eigen
 // website van een dienst; geen enkele vorm is nagetekend. Lui geladen (eigen bundelstuk), registreert zich bij het merkregister.
 // Merknamen en logo's blijven eigendom van de rechthebbenden; ze dienen hier uitsluitend om een dienst te herkennen.
 import { registreerOfficieleMerken, type OfficieelMerk } from './merk-register';
+import { MERK_DIRECT } from '../../shared/merk-direct';
 
 export const OFFICIEEL: Readonly<Record<string, OfficieelMerk>> = Object.freeze({
-${sleutels.map((s) => `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`).join('\n')}
+${sleutels.map((s) => (DIRECT.includes(s) ? `  ${JSON.stringify(s)}: MERK_DIRECT[${JSON.stringify(s)}],` : `  ${JSON.stringify(s)}: ${JSON.stringify(tabel[s])},`)).join('\n')}
 });
 
 registreerOfficieleMerken(OFFICIEEL);
 `;
 writeFileSync(join(WORTEL, 'src/merk/merk-officieel.ts'), kop);
+// Kleine lijst (alleen de sleutels) in de hoofdbundel: zo weet <Merk> dat er voor een merk MET een eigen vorm toch een officieel
+// bestand is, en laadt het de luie tabel. Zonder deze lijst won de nagetekende vorm altijd (15.11.2026: Copilot, Claude …).
+// Невеликий список ключів у головній збірці: щоб <Merk> знав, що й для марки з власною фігурою є справжній логотип.
+writeFileSync(join(WORTEL, 'src/merk/officieel-sleutels.ts'), `// GEGENEREERD door scripts/merk-officieel-maken.mjs — niet met de hand wijzigen. Welke merken een officieel bestand hebben.
+// Згенеровано scripts/merk-officieel-maken.mjs — які марки мають справжній логотип у вбудованій базі.
+export const OFFICIEEL_SLEUTELS: ReadonlySet<string> = new Set(${JSON.stringify(sleutels)});
+`);
 console.log(`${sleutels.length} officiële logo's (${herkomst.filter((r) => r.soort === 'pakket').length} uit pakketten, ${herkomst.filter((r) => r.soort === 'officiele-site').length} van de eigen website); nog zonder: ${AFWEZIG.filter((s) => !tabel[s]).join(', ') || '—'}`);

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "POSTVAK-001",
+  "agent": "claude",
+  "tak": "feature/postvak-001-uitgave-20261115-103157",
+  "basisCommit": "468a2e8b5c5f4e1046436582d4a5855d943e9331",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-15T10:34:40.180Z",
+  "bijgewerkt": "2026-11-15T10:34:40.181Z",
+  "omschrijving": "Спільний випуск трьох тредів пошти поверх 20261115-094513 (DUBLI-001 @ 468a2e8b): MAILACC-002 — «Поштові акаунти» без блимання порожньої орбіти й без дубля переліку сервісів (PR #94); MAIL-WISSELAAR-001 — перемикач скриньок у списку листів показує всі підключені сервіси й оновлюється без перезавантаження (PR #93); PRIJ-001 — тонкі кнопки «⋮» у переліку листів, меню на всю доступну висоту (PR #95). · Gezamenlijke uitgave van drie e-mailherstellingen.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -1,0 +1,46 @@
+/* ACHTERGROND-001: «Налаштування → Теми → Живий фон». Заокруглені блоки, що згортаються; мобільний шар — у кінці файла. */
+.la-instellingen{display:grid;gap:.75rem}
+.la-instellingen>h3{margin:0;font-size:1.05rem}
+.la-blok{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.la-blok>summary{display:flex;align-items:center;gap:.55rem;min-height:2.9rem;padding:.55rem .95rem;font-weight:650;cursor:pointer;list-style:none}
+.la-blok>summary::-webkit-details-marker{display:none}
+.la-blok>summary::after{content:none}
+.la-blok>summary>svg.la-pijl{margin-left:auto;color:var(--muted);transition:transform .2s}
+.la-blok[open]>summary>svg.la-pijl{transform:rotate(180deg)}
+.la-blok>summary svg{width:1.1rem;height:1.1rem;color:var(--accent);flex:none}
+.la-blok>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:16px}
+.la-blok>:not(summary){margin:0 .95rem .95rem}
+.la-schuiven{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:.7rem}
+.la-schuif{display:grid!important;gap:.35rem;padding:.7rem .8rem;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.la-schuif-kop{display:flex;align-items:center;gap:.45rem;min-width:0}
+.la-schuif-kop svg{width:1rem;height:1rem;color:var(--accent);flex:none}
+.la-schuif-kop strong{flex:1;min-width:0;font-size:.9rem}
+.la-schuif-kop output{color:var(--muted);font-size:.84rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.la-schuif input[type=range]{width:100%;min-height:1.6rem;padding:0;border:0;background:none;box-shadow:none;accent-color:var(--accent)}
+.la-schuif small{color:var(--muted);font-size:.8rem;line-height:1.35;font-weight:400}
+.la-keuzes,.la-kleuren{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.55rem;margin-top:.7rem}
+.la-kleuren{margin-top:0}
+.la-keuzes button,.la-kleuren button{display:flex;align-items:flex-start;gap:.6rem;min-width:0;padding:.7rem .8rem;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.la-keuzes button>svg{width:1.15rem;height:1.15rem;flex:none;color:var(--accent);margin-top:.1rem}
+.la-keuzes button>svg.la-let-op{color:var(--warn,#d97706)}
+.la-keuzes button span,.la-kleuren button span{display:grid;gap:.15rem;min-width:0}
+.la-keuzes small,.la-kleuren small{color:var(--muted);font-size:.8rem;line-height:1.35}
+.la-kleuren button i{display:block;flex:none;width:2.6rem;height:2.6rem;border-radius:50%;background-color:var(--bg)!important;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.la-keuzes button.active,.la-kleuren button.active{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.la-keuzes button:hover:not(:disabled),.la-kleuren button:hover:not(:disabled){border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.la-keuzes button:focus-visible,.la-kleuren button:focus-visible,.la-schuif input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.la-keuzes button:disabled,.la-kleuren button:disabled,.la-schuif:has(input:disabled){opacity:.5;cursor:not-allowed}
+@media (max-width:560px){
+  .la-schuiven,.la-keuzes,.la-kleuren{grid-template-columns:1fr}
+  .la-blok>summary{min-height:var(--tik-hoogte,44px)}
+  .la-keuzes button,.la-kleuren button{min-height:var(--tik-hoogte,44px)}
+}
+/* Павло (16.11): «Типові значення» — піктограма в заголовку «Живий фон», щоб було видно, до чого вона належить. */
+.la-kop{display:flex;align-items:center;gap:.6rem}
+.la-kop>h3{margin:0}
+.la-standaard{margin-left:auto;display:inline-grid;place-items:center;width:2.25rem;height:2.25rem;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--muted);cursor:pointer;flex:none}
+.la-standaard svg{width:1rem;height:1rem}
+.la-standaard:hover,.la-standaard:focus-visible{color:var(--text);border-color:var(--accent)}
+.la-standaard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (pointer: coarse){.la-standaard{width:var(--tik-hoogte,44px);height:var(--tik-hoogte,44px)}}
+.la-kop>.wenk{margin-left:auto}

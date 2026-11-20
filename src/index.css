@@ -146,7 +146,7 @@ footer { position:relative; z-index:1; width:min(100%,80rem); margin:2rem auto 0
 @media (max-width:640px) { .auth-page { padding:1rem .8rem 0; }.auth-entry { padding:1.4rem .25rem; }.auth-card { padding:1.6rem 1.1rem; border-radius:1.5rem; }.auth-card h1 { font-size:2rem; }.method-grid { grid-template-columns:1fr; }.page { padding:.8rem .75rem 0; }.topbar { align-items:flex-start; }.brand p { display:none; }.top-actions .secondary { width:2.7rem; overflow:hidden; padding:0; font-size:0; }.hero { padding:1.2rem; }.hero-actions { width:100%; }.hero-actions > * { flex:1; }.blocks { gap:.7rem; }.block,.block.size-small,.block.size-medium,.block.size-wide { grid-column:span 12; min-height:12rem; }.hidden-list,.check-grid,.access-choices,.recovery-actions,.recovery-grid { grid-template-columns:1fr; }footer { align-items:flex-start; flex-direction:column; }.footer-controls { justify-content:flex-start; }.privacy { width:100%; }.user-card-head,.current-access,.archived-list article { align-items:flex-start; flex-direction:column; } }
 
 /* Collapsed canonical sidebar: its 52px boundary is also the mail content boundary. */
-.canonical-chrome:not(.sidebar-expanded):not(.sidebar-pinned):not(.sidebar-drawer) .canonical-workspace { padding-left:52px; }
+.canonical-chrome:not(.sidebar-pinned):not(.sidebar-drawer) .canonical-workspace { padding-left:52px; }
 /* HUB-04: «Зараз» zonder stap → uitleg + weg naar «Завдання» in dezelfde pagina (geen link naar de hub zelf in een nieuw tabblad). */
 .block-footer .block-open { display:inline-flex; align-items:center; gap:.45rem; padding:0; border:0; background:transparent; color:var(--accent); font:inherit; font-size:.83rem; cursor:pointer; }
 .hub-focus-leeg { display:grid; gap:.6rem; margin-top:.5rem; }

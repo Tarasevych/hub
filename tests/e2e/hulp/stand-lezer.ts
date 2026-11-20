@@ -619,7 +619,7 @@ export const lezerContextStap = (c: LezerCtx, vorm: LezerVorm) => async (page: P
     if (server0) slecht.push(`vóór «Показати» al ${server0} verzoek(en) voor beelden via de server`);
     if (!/3 зовнішні зображення приховано/.test(b0.strook)) slecht.push(`veiligheidsstrook ontbreekt (${b0.strook || '-'})`);
     const altijd = vorm === 'rechts';
-    await page.locator(`.google-mail-reader .mail-thread-message.latest [data-mail-beelden-strook] button:has-text("${altijd ? 'Завжди від цього відправника' : 'Показати один раз'}")`).first().click({ timeout: 4000 }).catch(() => undefined);
+    await page.locator(`.google-mail-reader .mail-thread-message.latest [data-mail-beelden-strook] button:has-text("${altijd ? 'Завжди показувати від цього відправника' : 'Показати один раз'}")`).first().click({ timeout: 4000 }).catch(() => undefined);
     await page.waitForTimeout(1500);
     const b1 = await beeldStaat();
     info.beeldNa = { ...b1, viaServer, altijd };

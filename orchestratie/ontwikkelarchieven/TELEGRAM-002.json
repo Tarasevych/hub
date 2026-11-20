@@ -1,0 +1,312 @@
+{
+ "schema": 1,
+ "taakId": "TELEGRAM-002",
+ "titel": "Telegram, етап 1: однакова піктограма в захищеному вікні, фото облікових записів у запитах; разом із розшифруванням на місці",
+ "opdracht": "Удосконалити інфраструктуру Telegram у «Мій простір» (погоджений 14.11.2026 план із 7 етапів). Етап 1: підтвердження входу й дій вибором однакової піктограми в захищеному вікні Telegram, таємний код лише у вікні, офіційні логотипи пристрою й браузера, місце мовою читача, історія фото й імен Telegram на сайті, WhatsApp «Заплановано». Додатково на прохання власника: більші піктограми, ширший випадковий набір (48), фото облікового запису сайту у вікні й картці бота та фото Telegram у запитах на сайті. Випуск спільний із KLUIS-001 (розшифрування даних на місці, пам'ять ключа на знайомому пристрої).",
+ "herkomst": {
+  "eigenaar": "Павло Тарасевич",
+  "agent": "claude",
+  "tak": "feature/telegram-002-20261114-225433",
+  "basis": "987b81a578f120dfcf7af253a110a0d106883365",
+  "geinstalleerdeBasis": "987b81a578f120dfcf7af253a110a0d106883365",
+  "geinstalleerdeVersie": "20261114-180411",
+  "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "samengevoegd": [
+   {
+    "taak": "KLUIS-001 (claude, інший тред)",
+    "commit": "558249d1",
+    "reden": "спільний випуск: розшифрування на місці, міграція 0277; влито звичайним злиттям гілки claude/project-thread-gygoi0"
+   },
+   {
+    "taak": "IDENTITEIT-015 / SEC-002",
+    "commit": "0b4db7b3",
+    "reden": "лінія встановленої версії 20261114-180411; етап 1 перенесено на неї, міграцію перенумеровано 0210 → 0276"
+   }
+  ]
+ },
+ "privacy": {
+  "geheimenUitgesloten": true,
+  "toelichting": "Тести — лише з вигаданими адресами, вигаданим ключем бота й одноразовими локальними базами; на знімках — вигадані портрети й імена. Ключів, кодів і справжніх адрес у сховищі немає."
+ },
+ "tijdlijn": [
+  {
+   "tijd": "2026-11-14T19:41:00Z",
+   "stap": "Власник погодив план із 7 етапів і макети; початок етапу 1."
+  },
+  {
+   "tijd": "2026-11-14T21:30:00Z",
+   "stap": "Етап 1 готовий на гілці claude/project-thread-zfgzy0 (PR #85 до integratie): вікно, піктограми, розпізнавання пристрою, історія фото."
+  },
+  {
+   "tijd": "2026-11-14T21:57:00Z",
+   "stap": "Власник попросив більші піктограми, ширший випадковий набір і фото облікових записів у запитах."
+  },
+  {
+   "tijd": "2026-11-14T22:00:00Z",
+   "stap": "Нова гілка від встановленої лінії 987b81a; злиття етапу 1, узгодження з SEC-002, міграція 0276."
+  },
+  {
+   "tijd": "2026-11-14T22:15:00Z",
+   "stap": "Влито KLUIS-001 (міграція 0277) для спільного випуску; міграції прогнано двічі на PostgreSQL 16."
+  }
+ ],
+ "keuzes": [
+  "Випуск збирається поверх фактично встановленої лінії (20261114-180411 @ 987b81a), а не integratie, яка відстає на 183 фіксації.",
+  "Нове вікно працює лише за прапорцем telegram-v2 (типово вимкнено); без нього поведінка SEC-002 незмінна.",
+  "Місто показується лише зі словника uk/nl; невідоме місто — тільки країна мовою читача, без англійських назв.",
+  "Якщо Telegram не приймає фото облікового запису, бот надсилає звичайну картку — запит не губиться.",
+  "Ідентифікатор моделі ШІ у файлах сховища не записується; його передає параметр запуску процесу випуску."
+ ],
+ "wijzigingen": [
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/index.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/sleutelkluis-routes.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/sleutelkluis.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/account-foto.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/berichten.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/bevestigen.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/fotos.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/herkenning.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/inloggen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/koppelen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/routes.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/venster-merk.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/venster-sleutel.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "backend/telegram-aanmelden/venster.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "backend/telegram-aanmelden/webhook.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "migrations/0276_telegram_venster.sql"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "migrations/0277_sleutelkluis_apparaat.sql"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/plaatsing-vaste-elementen.json"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "server/platform/auth-poort.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "server/start.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/aanmeld-vnext-model.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "shared/apparaat-bevestiging/pictogram-vormen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/apparaat-bevestiging/symbolen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/sleutelkluis.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/telegram-aanmelden/model.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "shared/telegram-aanmelden/plaatsnamen.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/telegram-aanmelden/teksten.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/zoek-ui-knoppen.generated.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/SleutelkluisSectie.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/VerenigdDienstApp.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/afzenders/ScanPaneel.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/agenda/abonnement-fouten.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/apparaat-bevestiging/PictogramTegel.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/apparaat-bevestiging/StapOpKanaal.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/apparaat-bevestiging/api.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/apparaat-bevestiging/pictogram-tegel.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-motor.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/mail/mail-koppel-model.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/platform/client.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/platform/kluis-apparaat.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/platform/kluis-poort.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/platform/kluis-poort.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/telegram-aanmelden/AanmeldTelegram.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/telegram-aanmelden/Bevestigen.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/telegram-aanmelden/TelegramSectie.tsx"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "src/telegram-aanmelden/TelegramWie.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/telegram-aanmelden/telegram.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/aanmeld-ui-20261030.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/apparaat-bevestiging-20261109.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/kluis-apparaat-20261114.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/telegram-venster-20261114.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/TELEGRAM-002.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/telegram-002-uitgave.yml"
+  }
+ ],
+ "controles": [
+  "Цільові набори: telegram-venster 72/72, telegram-aanmelden 65/65, stroom 34/34, telegram-inlog-apparaat 18/18, apparaat-bevestiging 52/52, aanmeld-koppel 69/69, aanmeld-ui 105/105, kluis-apparaat 33/33.",
+  "Перевірка типів клієнта й сервера — без помилок; каталог пошуку кнопок актуальний.",
+  "Міграції 0276 і 0277 прогнано двічі на чистій PostgreSQL 16.",
+  "Знімки вікна Telegram, набору піктограм і запиту на сайті у світлій і темній темах."
+ ],
+ "bronnen": [
+  {
+   "soort": "запит власника",
+   "omschrijving": "Повідомлення власника 14.11.2026 у треді проєкту: план, макети, випуск, піктограми й фото.",
+   "inhoudGepubliceerd": false
+  },
+  {
+   "soort": "встановлена версія",
+   "omschrijving": "GitHub Release 20261114-180411, BRON-COMMIT 987b81a578f1",
+   "inhoudGepubliceerd": true
+  }
+ ],
+ "beperkingen": [
+  "Встановлення — лише власником після резервної копії на R:\\ і перевірки накладання; прапорець telegram-v2 вмикає власник.",
+  "Етапи 2–7 плану ще не реалізовані."
+ ],
+ "commits": [
+  "4216dc0679ae7ef5523b54438c99e2d438e315bd",
+  "4ff503a1937650fda5e933b7e5b5b6a4002452d9",
+  "8ce7c925c4d8d8f1f3634c0ad50fd3cfdbc78c81",
+  "7dbcaacac408e5e64357795111398919f795935e"
+ ]
+}

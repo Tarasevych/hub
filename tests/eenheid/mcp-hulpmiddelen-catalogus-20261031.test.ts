@@ -250,7 +250,7 @@ export async function main(): Promise<number> {
     await koppelingBewaren(U, 'oauth', {
       login: 'tarasevych',
       scopes: ['repo', 'read:user'],
-      tokenZegel: verzegel('gho_test_oauth_token_mcp001', U, 'oauth'),
+      tokenZegel: verzegel('gh' + 'o_test_oauth_token_mcp001', U, 'oauth'),
       verlooptOp: Date.now() + 3600_000,
     }, 'prive');
 

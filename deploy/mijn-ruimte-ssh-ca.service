@@ -1,5 +1,6 @@
 # Eén SSH-certificaat tekenen (root). De app start dit hoogstens via polkit (alleen «start» van deze vaste naam)
 # of de path-unit doet het. Het script tekent pas als ssh-ca in mcp-rechten.json exact true is.
+# En alleen met een passkey-assertie van de eigenaar over precies dit certificaat (zie de kop van het script).
 # sshd_config staat niet in ReadWritePaths: deze dienst kan de SSH-daemon niet herschrijven.
 [Unit]
 Description=Mijn Ruimte: SSH-certificaat van 60 minuten tekenen
@@ -19,4 +20,7 @@ ReadWritePaths=-/var/lib/mijn-ruimte/ssh-ca
 ReadWritePaths=-/var/lib/mijn-ruimte/ssh-ca-uit
 ReadWritePaths=-/var/lib/mijn-ruimte-uitrol-status
 ReadWritePaths=-/srv/mijn-ruimte/ssh-ca-inbox
-TimeoutStartSec=30
+# SEC-002 (server-uitrol-06): vóór elke handtekening controleert root de passkey van de eigenaar (mijn-ruimte-passkey
+# verifieer-ssh-ca … teken). Die hulp bewaart verbruikte nonces en tellers in /var/lib/mijn-ruimte/goedkeuring.
+ReadWritePaths=-/var/lib/mijn-ruimte/goedkeuring
+TimeoutStartSec=120

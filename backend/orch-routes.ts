@@ -43,15 +43,19 @@ export function orchRoutes(deps: OrchRouteDeps): Record<string, RouterMiddleware
     }
   }) as RouterMiddleware;
   const door = (e: Eigenaar) => e.email || e.id;
+  // SEC-002 (ai-mcp-09): ook lezen is begrensd (per minuut, per eigenaar). De leesroutes zijn niet-blokkerend (opslag.*A) en controleer
+  // wordt kort onthouden; deze grens houdt daarnaast een pagina of script dat in een lus ververst uit de buurt van git op de server.
+  const LEZEN_PER_MINUUT = 120;
+  const limietLezen = async (e: Eigenaar) => { if (deps.rateLimit && !(await deps.rateLimit('orch-lezen:' + e.id, LEZEN_PER_MINUUT, 60)).ok) throw new OrchFout('RATE_LIMITED', 429); };
   return {
-    [`POST ${ORCH_ROUTES.overzicht}`]: [eigenaar(async () => opslag.overzicht())],
-    [`POST ${ORCH_ROUTES.context}`]: [eigenaar(async () => opslag.context())],
+    [`POST ${ORCH_ROUTES.overzicht}`]: [eigenaar(async (_ctx, e) => { await limietLezen(e); return opslag.overzichtA(); })],
+    [`POST ${ORCH_ROUTES.context}`]: [eigenaar(async (_ctx, e) => { await limietLezen(e); return opslag.contextA(); })],
     [`POST ${ORCH_ROUTES.taakStart}`]: [eigenaar(async (ctx, e) => { await limiet(e, 'taak', 60); const r = opslag.taakStart(lichaam(ctx.body), door(e)); await audit(e, 'orch_taak_gestart', 'success', { taak: r.taak.id, agent: r.taak.agent }); return r; })],
     [`POST ${ORCH_ROUTES.inleveringBegin}`]: [eigenaar(async (ctx, e) => { await limiet(e, 'upload', ORCH_LIMIETEN.uploadsPerUur); const u = opslag.uploadBegin(lichaam(ctx.body), door(e), 'web_upload'); await audit(e, 'orch_inlevering_begonnen', 'success', { upload: u.id, naam: u.naam, grootte: u.grootte, taak: u.taakId }); return u; })],
     [`POST ${ORCH_ROUTES.inleveringStuk}`]: [eigenaar(async (ctx, e) => opslag.uploadStuk(lichaam(ctx.body), door(e)))],
-    [`POST ${ORCH_ROUTES.inleveringKlaar}`]: [eigenaar(async (ctx, e) => { const r = opslag.uploadKlaar(lichaam(ctx.body), door(e)); await audit(e, 'orch_inlevering', r.record.uitkomst === 'aanvaard' ? 'success' : 'denied', { upload: r.upload.id, record: r.record.id, taak: r.record.taakId, uitkomst: r.record.uitkomst }); return r; })],
+    [`POST ${ORCH_ROUTES.inleveringKlaar}`]: [eigenaar(async (ctx, e) => { const r = await opslag.uploadKlaarA(lichaam(ctx.body), door(e)); await audit(e, 'orch_inlevering', r.record.uitkomst === 'aanvaard' ? 'success' : 'denied', { upload: r.upload.id, record: r.record.id, taak: r.record.taakId, uitkomst: r.record.uitkomst }); return r; })],
     [`POST ${ORCH_ROUTES.inleveringAnnuleren}`]: [eigenaar(async (ctx, e) => opslag.uploadAnnuleren(lichaam(ctx.body), door(e)))],
-    [`POST ${ORCH_ROUTES.regelsOverzicht}`]: [eigenaar(async () => opslag.regelsOverzicht())],
+    [`POST ${ORCH_ROUTES.regelsOverzicht}`]: [eigenaar(async (_ctx, e) => { await limietLezen(e); return opslag.regelsOverzichtA(); })],
     [`POST ${ORCH_ROUTES.regelsVoorstel}`]: [eigenaar(async (ctx, e) => { await limiet(e, 'voorstel', ORCH_LIMIETEN.voorstellenPerUur); const r = opslag.voorstelMaken(lichaam(ctx.body), door(e)); await audit(e, 'orch_regels_voorstel', 'success', { voorstel: r.voorstel.id, regelsVersie: r.voorstel.regelsVersie, hash: r.voorstel.hash.slice(0, 16), kritiekGewijzigd: r.voorstel.kritiekGewijzigd }); return r; })],
     [`POST ${ORCH_ROUTES.regelsIntrekken}`]: [eigenaar(async (ctx) => opslag.voorstelIntrekken(lichaam(ctx.body).id))],
     [`POST ${ORCH_ROUTES.regelsToepassen}`]: [eigenaar(async (ctx, e) => {
@@ -61,7 +65,7 @@ export function orchRoutes(deps: OrchRouteDeps): Record<string, RouterMiddleware
       const besluit = await deps.besluitZoeken(e, besluitId);
       if (!besluit) throw new OrchFout('GEEN_BESLUIT', 409);
       try {
-        const r = opslag.voorstelToepassen(b.id, besluit);
+        const r = await opslag.voorstelToepassen(b.id, besluit);
         await audit(e, 'orch_regels_toegepast', 'success', { voorstel: r.voorstel.id, regelsVersie: r.voorstel.regelsVersie, tak: r.tak, commit: r.commit, gepusht: r.gepusht, besluit: besluitId, passkey: besluit.passkey });
         return r;
       } catch (err) {

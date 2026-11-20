@@ -163,6 +163,8 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
       'app_list', 'app_deploy_status', 'app_logs', 'app_versions', 'app_secret_list',
       'browser_snapshot', 'browser_list_tabs', 'browser_console', 'browser_network',
       'browser_get_diagnostics', 'browser_audit', 'browser_wait_for_text', 'browser_scroll',
+      // LAI-CON-001: ingebouwde AI van Chrome op het apparaat van de gebruiker (leest geen pagina).
+      'browser_local_ai',
     ],
   },
   {
@@ -193,6 +195,7 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
       'get_github_projects',
       // 21.10.2026: «Журнали CI» (alleen via connector v2; de scope houdt de oude laag gelijk aan de rechten).
       'github_ci_logs',
+      'github_list_branches', 'github_list_tree', 'github_read_file', 'github_compare', 'github_list_releases',
     ],
   },
   {
@@ -201,7 +204,7 @@ export const AI_TOEGANG_SCOPES: readonly AiToegangScope[] = [
     nl: 'Naar GitHub schrijven', omschrijvingNl: 'Nieuwe issues en reacties namens u.',
     gevoelig: false, standaardAan: true, agents: ['*'],
     // 21.10.2026: github_pr (alleen via connector v2, en elk voorstel pas na bevestiging op de site).
-    tools: ['github_create_issue', 'github_comment_issue', 'github_pr'],
+    tools: ['github_create_issue', 'github_comment_issue', 'github_pr', 'github_save_file', 'github_sync_mirror'],
   },
   {
     id: 'site.read', groep: 'Сайт', uk: 'Пошук і стан',

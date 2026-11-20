@@ -1,12 +1,12 @@
-// Bediening van één apparaat per mogelijkheid, met de ECHTE levensloop van een opdracht: «verzonden…» tot de bron de gewenste
-// toestand teruggeeft (voltooid), of geweigerd/verlopen/offline. Nooit optimistisch «aan» zonder ACK: de knop toont «sending»
-// en valt terug op de waargenomen toestand als het misgaat. Schuifregelaars met debounce; kritieke mogelijkheden alleen na een
-// uitdrukkelijke bevestiging (step-up van de server) en nooit via deze pagina voor de AI.
+// Керування одним пристроєм за кожною можливістю зі справжнім життєвим циклом команди: від «надсилаю…» до підтвердження
+// бажаного стану джерелом або відмови/прострочення/втрати зв’язку. Критичні дії потребують явного підтвердження людини.
+// Bediening van één apparaat per mogelijkheid met de echte levensloop van een opdracht; kritieke mogelijkheden alleen na bevestiging.
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ArrowDownToLine, ArrowUpToLine, Check, Lock, LockOpen, Minus, Plus, Square, Unplug } from 'lucide-react';
 import { MOGELIJKHEID_LABEL, OPDRACHT_EIND, OPDRACHT_LABEL, VERSHEID_LABEL, versheid, type Apparaat, type Mogelijkheid, type MogelijkheidSoort, type Opdracht } from '../../shared/huis-model';
 import { HuisFout, huisClient, idem } from './huis-client';
 import { foutTekst, toestandVan, tr, type Lang } from './tekst';
+import './huis-ruimtes-maquette.css';
 
 type Props = { lang: Lang; woningId: string; apparaat: Apparaat; magSchrijven: boolean; compact?: boolean; onOpdracht?: (o: Opdracht) => void; onVernieuw?: () => void };
 type Lopend = { mogelijkheid: MogelijkheidSoort; opdracht: Opdracht | null; fout: string };
@@ -47,7 +47,7 @@ export default function ApparaatBediening({ lang, woningId, apparaat: a, magSchr
   const geslaagd = stand === 'voltooid';
 
   return (
-    <div className={`hv-bediening${compact ? ' is-compact' : ''}`} data-hv-bediening={a.id}>
+    <div className={`hv-bediening${compact ? ' is-compact' : ''}`} data-hv-bediening={a.id} data-mq-bediening={bezig ? 'wacht' : 'gereed'} data-mq-kritiek={a.kritiek ? 'ja' : undefined}>
       {a.mogelijkheden.filter((m) => m.schrijven).map((m) => {
         const t = toestandVan(a, m.soort === 'aan_uit' ? 'aan' : m.soort === 'open_dicht' ? 'open' : m.soort);
         const vers = versheid(t); const onbekend = !t || t.waarde === null || vers === 'onbekend' || vers === 'onbeschikbaar';
@@ -57,9 +57,9 @@ export default function ApparaatBediening({ lang, woningId, apparaat: a, magSchr
           const aan = m.soort === 'aan_uit' ? t?.waarde === true : m.soort === 'vergrendeld' ? t?.waarde === true : typeof t?.waarde === 'string' && String(t.waarde).startsWith('armed');
           const I = m.soort === 'vergrendeld' ? (aan ? Lock : LockOpen) : null;
           return (
-            <div key={m.soort} className='hv-regelaar'>
+            <div key={m.soort} className='hv-regelaar' data-mq-regelaar={m.soort} data-mq-kritiek={kritiek(m) ? 'ja' : undefined}>
               <span className='hv-regelaar-naam'>{I ? <I aria-hidden='true' /> : null}{label}{kritiek(m) ? <em className='hv-kritiek'>{tr(lang, 'критично', 'kritiek')}</em> : null}</span>
-              <button type='button' role='switch' aria-checked={onbekend ? 'mixed' : aan} aria-label={`${label}: ${onbekend ? tr(lang, 'невідомо', 'onbekend') : aan ? tr(lang, 'увімкнено', 'aan') : tr(lang, 'вимкнено', 'uit')}`} className={`hv-schakelaar${aan ? ' is-aan' : ''}${onbekend ? ' is-onbekend' : ''}`} disabled={uit} onClick={() => vraag(m, { aan: !aan })} data-hv-schakel={m.soort}>
+              <button type='button' role='switch' aria-checked={onbekend ? 'mixed' : aan} aria-label={`${label}: ${onbekend ? tr(lang, 'невідомо', 'onbekend') : aan ? tr(lang, 'увімкнено', 'aan') : tr(lang, 'вимкнено', 'uit')}`} className={`hv-schakelaar${aan ? ' is-aan' : ''}${onbekend ? ' is-onbekend' : ''}`} disabled={uit} onClick={() => vraag(m, { aan: !aan })} data-hv-schakel={m.soort} data-mq-schakelaar={onbekend ? 'onbekend' : aan ? 'aan' : 'uit'}>
                 <span className='hv-schakelaar-knop' />
               </button>
             </div>
@@ -69,7 +69,7 @@ export default function ApparaatBediening({ lang, woningId, apparaat: a, magSchr
           const [min, max] = m.bereik ?? [0, 100]; const stap = m.soort === 'doeltemperatuur' ? 0.5 : m.soort === 'kleurtemperatuur' ? 100 : 1;
           const huidig = typeof t?.waarde === 'number' ? t.waarde : null;
           return (
-            <div key={m.soort} className='hv-regelaar is-schuif'>
+            <div key={m.soort} className='hv-regelaar is-schuif' data-mq-regelaar={m.soort}>
               <span className='hv-regelaar-naam'>{label} <small>{huidig === null ? tr(lang, 'невідомо', 'onbekend') : `${huidig}${m.eenheid ? ' ' + m.eenheid : ''}`}</small></span>
               <div className='hv-schuif'>
                 <button type='button' className='hv-icoonknop' disabled={uit || huidig === null} onClick={() => vraag(m, { waarde: Math.max(min, (huidig ?? min) - stap * (m.soort === 'kleurtemperatuur' ? 5 : m.soort === 'doeltemperatuur' ? 1 : 10)) })} aria-label={tr(lang, `${label} менше`, `${label} lager`)}><Minus /></button>
@@ -81,7 +81,7 @@ export default function ApparaatBediening({ lang, woningId, apparaat: a, magSchr
         }
         if (m.soort === 'open_dicht') {
           return (
-            <div key={m.soort} className='hv-regelaar'>
+            <div key={m.soort} className='hv-regelaar' data-mq-regelaar='open_dicht'>
               <span className='hv-regelaar-naam'>{label} <small>{onbekend ? tr(lang, 'невідомо', 'onbekend') : t?.waarde ? tr(lang, 'відкрито', 'open') : tr(lang, 'закрито', 'dicht')}</small></span>
               <div className='hv-knoppen'>
                 <button type='button' className='hv-knop is-klein' disabled={uit} onClick={() => vraag(m, { actie: 'open' })} data-hv-cover='open'><ArrowUpToLine aria-hidden='true' />{tr(lang, 'Відкрити', 'Open')}</button>

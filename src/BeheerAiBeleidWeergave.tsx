@@ -181,7 +181,8 @@ const PRESET_AGENTEN: Array<{ id: string; naam: string; uk: string; nl: string }
   { id: 'gpt', naam: 'ChatGPT', uk: 'Адреса /gpt', nl: 'Adres /gpt' },
   { id: 'gemini', naam: 'Gemini', uk: 'Google', nl: 'Google' },
   { id: 'grok', naam: 'Grok', uk: 'xAI', nl: 'xAI' },
-  { id: 'copilot', naam: 'Copilot', uk: 'Microsoft / GitHub', nl: 'Microsoft / GitHub' },
+  { id: 'copilot', naam: 'Copilot', uk: 'GitHub Copilot у VS Code', nl: 'GitHub Copilot in VS Code' },
+  { id: 'mscopilot', naam: 'Microsoft Copilot', uk: 'Copilot Studio', nl: 'Copilot Studio' },
   { id: 'cursor', naam: 'Cursor', uk: 'Редактор коду', nl: 'Code-editor' },
   { id: 'mistral', naam: 'Mistral', uk: 'Le Chat', nl: 'Le Chat' },
   { id: 'perplexity', naam: 'Perplexity', uk: 'Пошук з ШІ', nl: 'Zoeken met AI' },
@@ -373,6 +374,49 @@ export default function AdminAiBeleidView({ lang, sourceOrigin, tabContext, alle
   };
 
   const kies = (id: string) => { setAgent(id); setOpen(''); setVerwijder(''); window.setTimeout(() => paneel.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); };
+
+  const ladenRef = useRef(laden);
+  ladenRef.current = laden;
+  const broadcastAiStand = useCallback(() => {
+    if (dienst !== 'admin') return;
+    let actieveTimers = 0;
+    for (const c of cijfers.values()) actieveTimers += c.timers;
+    window.dispatchEvent(new CustomEvent('tsv:ai-beleid-stand', {
+      detail: {
+        filter,
+        agentAantal: alleAgenten.length,
+        actiefAgent: agent,
+        timersTotaal: actieveTimers,
+        wachtrijAantal: wachtrij.length,
+      },
+    }));
+  }, [dienst, cijfers, filter, alleAgenten.length, agent, wachtrij.length]);
+
+  useEffect(() => {
+    broadcastAiStand();
+  }, [broadcastAiStand]);
+
+  useEffect(() => {
+    if (dienst !== 'admin') return;
+    const onNav = (ev: Event) => {
+      const d = (ev as CustomEvent<{ filter?: Filter; actie?: 'vernieuw' | 'nieuw'; selector?: string }>).detail;
+      if (!d) return;
+      if (d.actie === 'vernieuw') { void ladenRef.current(); return; }
+      if (d.actie === 'nieuw') { if (!alleenLezen) setNieuwOpen((v) => !v); return; }
+      if (d.filter) setFilter(d.filter);
+      if (d.selector) {
+        const sel = d.selector;
+        window.setTimeout(() => document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 70);
+      }
+    };
+    const onVraag = () => broadcastAiStand();
+    window.addEventListener('tsv:ai-beleid-nav', onNav);
+    window.addEventListener('tsv:ai-beleid-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:ai-beleid-nav', onNav);
+      window.removeEventListener('tsv:ai-beleid-vraag-stand', onVraag);
+    };
+  }, [alleenLezen, broadcastAiStand, dienst]);
 
   if (!data) return <section className='admin-section aib aiz'><p>{tr(lang, 'Завантаження…', 'Laden…')}</p>{melding ? <p className='aib-melding' data-ok='false' role='alert'>{melding.tekst}</p> : null}</section>;
 

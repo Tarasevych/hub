@@ -44,7 +44,7 @@ export async function main(): Promise<number> {
   const t1 = vertaalRegel('[installeer] migraties uitvoeren…', 'uk');
   check('eigen melding → Oekraïens', t1.vertaald && t1.tekst === '[installeer] виконання міграцій…');
   const t2 = vertaalRegel('[installeer] stap: migraties (80%) databasemigraties', 'uk');
-  check('voortgangsregel: id en % letterlijk, tekst vertaald', t2.tekst === '[installeer] крок: migraties (80%) міграції бази даних', t2.tekst);
+  check('voortgangsregel: id en % letterlijk, tekst vertaald', t2.tekst === '[installeer] крок: міграції бази [migraties] (80%) міграції бази даних', t2.tekst);
   const t3 = vertaalRegel('[uitrol] archief bewaard: /srv/a/x.tar.gz (123 bytes, sha256 abc)', 'uk');
   check('pad, bytes en sha letterlijk behouden', t3.tekst === '[uitrol] архів збережено: /srv/a/x.tar.gz (123 байт, sha256 abc)', t3.tekst);
   check('uitvoer van derden (npm) nooit vertaald', !vertaalRegel('npm WARN deprecated foo@1.0', 'uk').vertaald && vertaalRegel('npm WARN deprecated foo@1.0', 'uk').tekst === 'npm WARN deprecated foo@1.0');

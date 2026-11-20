@@ -56,6 +56,13 @@ function DiagnoseVenster({ sluit }: { sluit: () => void }) {
       setToon(false);
     } catch (e) {
       const c = String((e as Error)?.message || '');
+      // SEC-002 (toets-g10b #7): grens per mens (5 per 10 minuten, 30 per dag) — uitleg en wachttijd in plaats van een kale code.
+      const fout = e as { status?: number; retryAfter?: number };
+      if (fout?.status === 429) {
+        const min = Math.max(1, Math.ceil(Number(fout.retryAfter || 600) / 60));
+        setMelding({ ok: false, tekst: uk ? `Забагато звітів за короткий час. Спробуйте знову приблизно через ${min} хв. Текст звіту можна скопіювати й передати адміністратору іншим шляхом.` : `Te veel verslagen in korte tijd. Probeer het over ongeveer ${min} min opnieuw. U kunt de tekst ook kopiëren en op een andere manier doorgeven.` });
+        return;
+      }
       setMelding({ ok: false, tekst: /NIET_AANGEMELD|AUTH|SESSION|401/.test(c) ? (uk ? 'Щоб надіслати звіт, потрібно увійти. Скопіюйте текст і передайте адміністратору іншим шляхом.' : 'Om een verslag te sturen moet u aangemeld zijn. Kopieer de tekst en geef hem op een andere manier door.') : (uk ? `Не вдалося надіслати (${c}).` : `Versturen mislukt (${c}).`) });
     } finally { setBezig(false); }
   };

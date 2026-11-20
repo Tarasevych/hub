@@ -8,7 +8,7 @@ export type NoticeStyle = { section: Section; label: string; Icon: LucideIcon; p
 
 const SECTIONS: Record<Section, { uk: string; nl: string; Icon: LucideIcon }> = {
   mail: { uk: 'Пошта', nl: 'E-mail', Icon: Mail }, cloud: { uk: 'Хмара', nl: 'Cloud', Icon: Cloud }, calendar: { uk: 'Календар', nl: 'Agenda', Icon: Calendar },
-  ai: { uk: 'ШІ', nl: 'AI', Icon: Sparkles }, claude: { uk: 'Claude', nl: 'Claude', Icon: Bot }, agent: { uk: 'Пристрої', nl: 'Apparaten', Icon: Container },
+  ai: { uk: 'ШІ', nl: 'AI', Icon: Sparkles }, claude: { uk: 'Підключення ШІ', nl: 'AI-koppelingen', Icon: Bot }, agent: { uk: 'Пристрої', nl: 'Apparaten', Icon: Container },
   browser: { uk: 'Браузер', nl: 'Browser', Icon: Globe }, github: { uk: 'GitHub', nl: 'GitHub', Icon: Wrench }, mcp: { uk: 'Агенти', nl: 'Agenten', Icon: Plug },
   hub: { uk: 'Хаб', nl: 'Hub', Icon: LayoutDashboard }, huis: { uk: 'Дім', nl: 'Huis', Icon: Home }, identity: { uk: 'Обліковий запис', nl: 'Account', Icon: KeyRound },
   api: { uk: 'API', nl: 'API', Icon: KeyRound }, admin: { uk: 'Адміністрування', nl: 'Beheer', Icon: ShieldCheck }, site: { uk: 'Сайт', nl: 'Site', Icon: Bell },
@@ -18,6 +18,13 @@ const PROVIDERS: Record<string, { logo: LogoKind; label: string }> = {
   anthropic: { logo: 'claude', label: 'Anthropic' }, windows: { logo: 'windows', label: 'Windows' }, linux: { logo: 'linux', label: 'Linux' }, macos: { logo: 'macos', label: 'macOS' },
   chrome: { logo: 'chrome', label: 'Chrome' }, edge: { logo: 'edge', label: 'Edge' }, opera: { logo: 'opera', label: 'Opera' }, brave: { logo: 'brave', label: 'Brave' }, firefox: { logo: 'firefox', label: 'Firefox' },
   internal: { logo: 'internal', label: 'Mijn Ruimte' }, docker: { logo: 'docker', label: 'Docker' },
+  // AGENTSCHEIDING-001: elke AI-koppeling met haar eigen logo en naam (klant-id uit shared/ai-verbinding.ts), niet allemaal «Claude».
+  chatgpt: { logo: 'openai', label: 'ChatGPT' }, openai: { logo: 'openai', label: 'OpenAI' }, codex: { logo: 'codex', label: 'Codex' }, grok: { logo: 'grok', label: 'Grok' },
+  gemini: { logo: 'gemini', label: 'Gemini' }, copilot: { logo: 'copilot', label: 'GitHub Copilot' }, cursor: { logo: 'cursor', label: 'Cursor' },
+  antigravity: { logo: 'antigravity', label: 'Antigravity' }, autoclaw: { logo: 'autoclaw', label: 'AutoClaw' }, windsurf: { logo: 'windsurf', label: 'Windsurf' },
+  cline: { logo: 'cline', label: 'Cline' }, devin: { logo: 'devin', label: 'Devin' }, opencode: { logo: 'opencode', label: 'OpenCode' },
+  // UPD-003: 14-й агент із #143 (BREEDTE-003) — власний знак і назва, а не «Copilot» GitHub. Eigen logo en naam voor Microsoft Copilot.
+  mscopilot: { logo: 'mscopilot', label: 'Microsoft Copilot' },
 };
 
 /**
@@ -37,7 +44,7 @@ export function styleOf(source: string, lang: Lang, hint?: { provider?: string }
   else if (rawSection === 'browser') section = 'browser';
   else if (rawSection === 'mcp') section = 'mcp';
   else if ((Object.keys(SECTIONS) as Section[]).includes(rawSection as Section)) section = rawSection as Section;
-  const providerKey = hint?.provider || rawProvider || (section === 'mail' || section === 'cloud' || section === 'calendar' ? 'google' : section === 'github' ? 'github' : section === 'claude' ? 'claude' : section === 'ai' ? 'anthropic' : '');
+  const providerKey = hint?.provider || rawProvider || (section === 'mail' || section === 'cloud' || section === 'calendar' ? 'google' : section === 'github' ? 'github' : section === 'ai' ? 'anthropic' : '');
   const provider = PROVIDERS[providerKey] ?? null;
   const meta = SECTIONS[section];
   return { section, label: lang === 'uk' ? meta.uk : meta.nl, Icon: meta.Icon, provider: provider ? provider.logo : null, providerLabel: provider ? provider.label : '' };
@@ -74,7 +81,7 @@ export function statusWoord(groep: StatusGroep, lang: Lang): string {
 
 /** Bekende foutcodes van de site, in gewone taal. Een onbekende code blijft zichtbaar, achter een algemene zin. */
 const REDEN_TEKST: Record<string, [string, string]> = {
-  AI_NIET_TOEGESTAAN: ['Claude не має доступу до цієї служби', 'Claude heeft voor deze dienst geen toegang'],
+  AI_NIET_TOEGESTAAN: ['цей ШІ не має доступу до цієї служби', 'deze AI heeft voor deze dienst geen toegang'],
   OWNER_API_SESSION_REQUIRED: ['сеанс застарів, увійдіть знову', 'uw sessie is verlopen; meld u opnieuw aan'],
   STEP_UP_REQUIRED: ['потрібне додаткове підтвердження', 'er is een extra bevestiging nodig'],
   PROVIDER_NOT_CONNECTED: ['служба більше не підключена', 'de dienst is niet (meer) gekoppeld'],
@@ -119,7 +126,7 @@ export function meldingUitleg(args: { groep: StatusGroep; sectie: Section; lang:
 
 /** Een actie op de site zonder bekende naam: zet de auditnaam om naar een zin met het gebied voorop (nooit «Інша дія на сайті»). */
 const SITE_GEBIED: Record<string, [string, string]> = {
-  mail: ['Пошта', 'E-mail'], cloud: ['Хмара', 'Cloud'], calendar: ['Календар', 'Agenda'], github: ['GitHub', 'GitHub'], mcp: ['Claude', 'Claude'],
+  mail: ['Пошта', 'E-mail'], cloud: ['Хмара', 'Cloud'], calendar: ['Календар', 'Agenda'], github: ['GitHub', 'GitHub'], mcp: ['Підключення ШІ', 'AI-koppelingen'],
   agent: ['Пристрої', 'Apparaten'], browser: ['Браузер', 'Browser'], identity: ['Обліковий запис', 'Account'], privacy: ['Приватність', 'Privacy'],
   admin: ['Адміністрування', 'Beheer'], api: ['API', 'API'], vault: ['Секрети', 'Geheimen'], access: ['Доступ', 'Toegang'], ai: ['ШІ', 'AI'],
   chat: ['ШІ', 'AI'], auth: ['Вхід', 'Aanmelding'], session: ['Сеанс', 'Sessie'], profile: ['Профіль', 'Profiel'], step_up: ['Підтвердження', 'Bevestiging'],

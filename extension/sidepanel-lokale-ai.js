@@ -23,7 +23,12 @@
     ['translator', 'Перекласти', 'Vertalen'],
     ['detector', 'Визначити мову', 'Taal herkennen'],
     ['proofreader', 'Коректура (правопис і граматика)', 'Proeflezen (spelling en grammatica)'],
+    ['embedder', 'Значеннєві вектори / схожість (через ---)', 'Betekenisvectoren / overeenkomst (met ---)'],
+    ['decisions', 'Рішення та класифікація (CPU)', 'Beslissingen en indeling (CPU)'],
   ];
+
+  const SpeechRec = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition || null;
+  let spraakActief = null;
 
   function vulModi() {
     const sel = $('lai-modus');
@@ -43,6 +48,7 @@
     const m = $('lai-modus').value;
     $('lai-nieuw').hidden = m !== 'prompt';
     $('lai-afbeelding-rij').hidden = !(m === 'prompt' && cfg.multimodaal);
+    if ($('lai-stem')) $('lai-stem').hidden = !SpeechRec;
     $('lai-tab').disabled = !!afbreker;
     $('lai-tab').title = cfg.tabTekst ? '' : t('Увімкніть «!» читання вкладки в налаштуваннях', 'Zet «!» tabblad lezen aan in de instellingen');
   }
@@ -81,6 +87,7 @@
     const modus = $('lai-modus').value;
     const invoer = $('lai-invoer').value;
     const bestand = $('lai-afbeelding').files && $('lai-afbeelding').files[0] ? $('lai-afbeelding').files[0] : null;
+    const isAudio = bestand && String(bestand.type || '').startsWith('audio/');
     afbreker = new AbortController();
     zetBezig(true);
     toonUitvoer(''); $('lai-notities').textContent = t('Працюю…', 'Bezig…');
@@ -89,7 +96,8 @@
       const r = await L.voer(modus, invoer, cfg, {
         signal: afbreker.signal, magDownloaden,
         sessie: modus === 'prompt' ? sessie : null,
-        afbeelding: modus === 'prompt' && cfg.multimodaal ? bestand : null,
+        afbeelding: modus === 'prompt' && cfg.multimodaal && bestand && !isAudio ? bestand : null,
+        audio: modus === 'prompt' && cfg.multimodaal && bestand && isAudio ? bestand : null,
         opStuk: (s) => toonUitvoer(s),
         opVoortgang: (f) => { balk.hidden = f >= 1; balk.value = f; },
       });
@@ -121,6 +129,25 @@
       $('lai-notities').textContent = r.selectie ? t('Вставлено виділений текст вкладки.', 'Geselecteerde tekst van het tabblad ingevoegd.') : t(`Вставлено текст сторінки «${r.titel}» (${r.tekst.length} символів).`, `Tekst van de pagina «${r.titel}» ingevoegd (${r.tekst.length} tekens).`);
     } catch (e) { toonFout(e); }
   });
+  if ($('lai-stem')) {
+    $('lai-stem').addEventListener('click', () => {
+      const knop = $('lai-stem');
+      if (!SpeechRec) return;
+      if (spraakActief) { try { spraakActief.stop(); } catch { /* klaar */ } spraakActief = null; knop.textContent = t('Диктувати', 'Dicteren'); return; }
+      const rec = new SpeechRec();
+      rec.lang = t('uk-UA', 'nl-NL');
+      rec.interimResults = false;
+      rec.onresult = (ev) => {
+        const res = ev && ev.results && ev.results[0] && ev.results[0][0] ? String(ev.results[0][0].transcript || '').trim() : '';
+        if (res) $('lai-invoer').value = $('lai-invoer').value ? `${$('lai-invoer').value} ${res}` : res;
+      };
+      rec.onerror = () => { spraakActief = null; knop.textContent = t('Диктувати', 'Dicteren'); };
+      rec.onend = () => { spraakActief = null; knop.textContent = t('Диктувати', 'Dicteren'); };
+      spraakActief = rec;
+      knop.textContent = t('Зупинити запис', 'Opname stoppen');
+      try { rec.start(); } catch { spraakActief = null; knop.textContent = t('Диктувати', 'Dicteren'); }
+    });
+  }
   $('lai-kopieer').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(laatsteUitvoer); $('lai-notities').textContent = t('Скопійовано.', 'Gekopieerd.'); }
     catch { $('lai-notities').textContent = t('Не вдалося скопіювати.', 'Kopiëren mislukt.'); }

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UPD-010",
+  "agent": "gemini",
+  "tak": "feature/upd-010-lezer-uitrol-rechten-20261119-200000",
+  "basisCommit": "68c90588203d792cf25431d6849a57c2732dfecc",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.17",
+  "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+  "staat": "in_progress",
+  "gestart": "2026-11-19T23:06:04.906Z",
+  "bijgewerkt": "2026-11-19T23:06:04.906Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

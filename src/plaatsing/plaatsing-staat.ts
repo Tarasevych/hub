@@ -135,7 +135,7 @@ function volgBovenbalk(el: HTMLElement): () => void {
     raf = 0;
     if (!el.isConnected) return;
     const vw = document.documentElement.clientWidth || window.innerWidth;
-    const r = el.getBoundingClientRect(), paneel = el.querySelector('.canonical-account-panel');
+    const r = el.getBoundingClientRect(), paneel = el.querySelector('.canonical-account-panel') ?? document.querySelector('.canonical-account-portal .canonical-account-panel');
     const reserve = ruimteRechts(r, vw);
     zetBoven({ reserve, onder: reserve ? Math.max(0, Math.ceil(r.bottom)) : 0, paneel: paneel ? ruimteRechts(paneel.getBoundingClientRect(), vw) : 0 });
   };
@@ -148,6 +148,9 @@ function volgBovenbalk(el: HTMLElement): () => void {
   mo?.observe(el, { childList: true, subtree: true });
   const omlijsting = el.closest('.canonical-chrome');
   if (omlijsting) mo?.observe(omlijsting, { attributes: true, attributeFilter: ['class', 'data-dock', 'data-plaats-iframe'] });
+  const moPortaal = typeof MutationObserver !== 'undefined' ? new MutationObserver(plan) : null;
+  if (omlijsting) moPortaal?.observe(omlijsting, { attributes: true, attributeFilter: ['data-account-menu-open'] });
+  moPortaal?.observe(document.body, { childList: true });
   // zoom en schermmaat
   window.addEventListener('resize', plan);
   window.visualViewport?.addEventListener('resize', plan);
@@ -156,7 +159,7 @@ function volgBovenbalk(el: HTMLElement): () => void {
   const volger = {
     el,
     stop: () => {
-      cancelAnimationFrame(raf); ro?.disconnect(); mo?.disconnect();
+      cancelAnimationFrame(raf); ro?.disconnect(); mo?.disconnect(); moPortaal?.disconnect();
       window.removeEventListener('resize', plan); window.visualViewport?.removeEventListener('resize', plan);
       if (bovenVolger === volger) { bovenVolger = null; zetBoven(GEEN_BOVEN); }
     },

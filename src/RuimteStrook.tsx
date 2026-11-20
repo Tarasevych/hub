@@ -5,23 +5,15 @@
 //   <RuimteStrook feiten={…} />    bovenaan een pagina die WEL gegevens heeft (alleen in de technische ruimte zichtbaar);
 //   <RuimteGeslotenVlak gesloten={…} />  in plaats van de lijst, als de poort deze dienst niet opendeed.
 // Alle teksten komen uit shared/ruimte-weergave.ts en shared/ruimte-scheiding.ts; hier staat geen tweede waarheid.
+import { useEffect } from 'react';
 import { Lock, ShieldCheck, Snowflake, Users } from 'lucide-react';
 import { RUIMTE_NAAM, ruimteRegel, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
 import { canonicalNavigationUrl } from './canoniek-navigatie';
+import { publiceerPaginaSignaal, verwijderPaginaSignaal } from './canoniek-meldingen';
 
 export type Taal = 'uk' | 'nl';
 const tr = (lang: Taal, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
 
-/**
- * KLACHT 3 VAN DE EIGENAAR (20.10.2026): een dienst die in de technische ruimte dicht staat, liet een pagina achter zonder
- * werkruimte en zonder menu. Een weigering van de poort is GEEN fout van de pagina: de pagina blijft heel en zegt in de
- * werkruimte wat er aan de hand is — en noemt de VOLGENDE STAP. Die stap is altijd dezelfde plek: hub «Підключення ШІ» →
- * tab «Технічне» (src/agenten/TabTechnisch.tsx → RuimteScheiding), waar de eenmalige keuze staat en elke dienst los
- * verbonden of losgemaakt wordt. Bij een BEVROREN lade beslist de servereigenaar; de knop leidt naar diezelfde plek, want
- * daar staat ook het besluit.
- * Het adres wordt berekend door de canonieke navigatie; kan dat niet (geen browser, oude runtime), dan een relatief pad —
- * nooit een uitzondering die de pagina alsnog sloopt.
- */
 export const RUIMTE_VERBIND_TAB = 'verbindingen';
 export const ruimteVerbindAdres = (lang: Taal): string => {
   try { return canonicalNavigationUrl('ai', RUIMTE_VERBIND_TAB, lang); }
@@ -45,6 +37,28 @@ const stijl = {
 
 /** Alleen zichtbaar in de TECHNISCHE ruimte: in de persoonlijke verandert er voor niemand iets. */
 export function RuimteStrook({ feiten, lang }: { feiten: RuimteFeiten | null; lang: Taal }) {
+  useEffect(() => {
+    if (!feiten?.tonen) {
+      verwijderPaginaSignaal('band:ruimte-actief');
+      return;
+    }
+    publiceerPaginaSignaal({
+      id: 'band:ruimte-actief',
+      bron: 'ruimte-strook',
+      kanaal: 'pagina',
+      subdomein: 'admin',
+      soort: 'info',
+      ernst: 'info',
+      titelUk: `${ruimteRegel(feiten, 'uk')} · ${feiten.naam.uk}`,
+      titelNl: `${ruimteRegel(feiten, 'nl')} · ${feiten.naam.nl}`,
+      berichtUk: feiten.uitleg.uk,
+      berichtNl: feiten.uitleg.nl,
+      contextLabel: RUIMTE_NAAM[feiten.ruimte][lang],
+      link: ruimteVerbindAdres(lang),
+    });
+    return () => verwijderPaginaSignaal('band:ruimte-actief');
+  }, [feiten, lang]);
+
   if (!feiten?.tonen) return null;
   const Icoon = feiten.gedeeld ? Users : ShieldCheck;
   return (
@@ -63,6 +77,29 @@ export function RuimteStrook({ feiten, lang }: { feiten: RuimteFeiten | null; la
  * mag de mens zien zonder de uitleg te hoeven lezen.
  */
 export function RuimteGeslotenVlak({ gesloten, lang, actie = true }: { gesloten: RuimteGesloten; lang: Taal; actie?: boolean }) {
+  const href = ruimteVerbindAdres(lang);
+  useEffect(() => {
+    const id = `band:ruimte-gesloten:${gesloten.dienstNaam.nl}`;
+    const kUk = gesloten.code === 'BEVROREN' ? 'Заморожено' : gesloten.code === 'KEUZE_ONTBREEKT' ? 'Технічний простір ще порожній' : 'Служба вимкнена в технічному просторі';
+    const kNl = gesloten.code === 'BEVROREN' ? 'Bevroren' : gesloten.code === 'KEUZE_ONTBREEKT' ? 'De technische ruimte is nog leeg' : 'Deze dienst staat uit in de technische ruimte';
+    publiceerPaginaSignaal({
+      id,
+      bron: 'ruimte-gesloten',
+      kanaal: 'pagina',
+      subdomein: 'ai',
+      soort: 'waarschuwing',
+      ernst: 'hoog',
+      titelUk: `${kUk} — ${gesloten.dienstNaam.uk}`,
+      titelNl: `${kNl} — ${gesloten.dienstNaam.nl}`,
+      berichtUk: gesloten.uitleg.uk,
+      berichtNl: gesloten.uitleg.nl,
+      contextLabel: gesloten.code,
+      link: href,
+      acties: [{ id: 'verbind', labelUk: ruimteActieTekst(gesloten.code, 'uk'), labelNl: ruimteActieTekst(gesloten.code, 'nl'), primair: true, href }],
+    });
+    return () => verwijderPaginaSignaal(id);
+  }, [gesloten, href]);
+
   const Icoon = gesloten.code === 'BEVROREN' ? Snowflake : Lock;
   const kop = gesloten.code === 'BEVROREN'
     ? tr(lang, 'Заморожено', 'Bevroren')
@@ -76,7 +113,7 @@ export function RuimteGeslotenVlak({ gesloten, lang, actie = true }: { gesloten:
         <div style={stijl.kop}>{kop} — {gesloten.dienstNaam[lang]}</div>
         <div style={stijl.uitleg}>{gesloten.uitleg[lang]}</div>
         {actie ? (
-          <a style={stijl.actie} href={ruimteVerbindAdres(lang)} data-ruimte-actie={gesloten.code}>
+          <a style={stijl.actie} href={href} data-ruimte-actie={gesloten.code}>
             {ruimteActieTekst(gesloten.code, lang)}
           </a>
         ) : null}

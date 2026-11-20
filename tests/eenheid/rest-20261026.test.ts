@@ -110,7 +110,9 @@ export async function main() {
   check('ворота не чіпають вихід і bootstrap', codewoordRouteVrij('POST /api/owner/session/bootstrap') && codewoordRouteVrij('POST /api/owner/session/codewoord') && codewoordRouteVrij('POST /api/owner/session/logout-current') && !codewoordRouteVrij('POST /api/account/delete'));
   check('сесія воріт: свій якір, інакше вкладка', codewoordSessieId({ userId: 'a', anchorUserId: 'a', anchorId: 'anker', tabUserId: 'b', tabId: 'tab' }) === 'anker' && codewoordSessieId({ userId: 'b', anchorUserId: 'a', anchorId: 'anker', tabUserId: 'b', tabId: 'tab' }) === 'tab');
   const poortBron = lees('backend/index.ts') + lees('backend/codewoord.ts') + lees('src/App.tsx') + lees('src/platform/client.ts');
-  check('другий крок входу стоїть на сесії і у вікні', poortBron.includes('CODEWOORD_POORT') && poortBron.includes('if(codewoordPoort)return{user:publicUser(user)') && poortBron.includes("POST /api/owner/session/codewoord") && poortBron.includes('<CodewoordPoort') && poortBron.includes('zetCodewoordPoort'));
+  // IDENTITEIT-015: фрагмент законно змінився — той самий обмежений bootstrap тепер і для воріт «другий чинник обов'язковий»
+  // (if(codewoordPoort||tweedeFactorPoort)…); суть перевірки та сама: до слова — жодних даних.
+  check('другий крок входу стоїть на сесії і у вікні', poortBron.includes('CODEWOORD_POORT') && poortBron.includes('if(codewoordPoort||tweedeFactorPoort)return{user:publicUser(user)') && poortBron.includes("POST /api/owner/session/codewoord") && poortBron.includes('<CodewoordPoort') && poortBron.includes('zetCodewoordPoort'));
   check('PEM і ключ SSH йдуть через ту саму клавіатуру', lees('src/integraties/Wizard.tsx').includes("soort='pem'") && lees('src/extern/ExternBureaublad.tsx').includes("soort='pem'") && lees('src/geheim/GeheimInvoer.tsx').includes('<textarea'));
 
   const zip = maakZip(['brief.txt', '../etc/passwd', 'map/foto.png']);

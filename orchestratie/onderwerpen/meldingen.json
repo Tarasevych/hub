@@ -1,0 +1,400 @@
+{
+  "schema": 1,
+  "naam": "meldingen",
+  "titel": {
+    "uk": "Сповіщення: дзвіночок, панель, спливні сповіщення",
+    "nl": "Meldingen: bel, paneel, pop-ups"
+  },
+  "samenvatting": {
+    "uk": "Усе про сповіщення сайту: дзвіночок, панель (класична, компактна, «вікно»), спливні сповіщення, налаштування за типами, тихі години, технічний простір, реєстр усіх сповіщень. Тут зібрано всі задачі, гілки й запити на злиття, щоб наступний агент не шукав їх по всьому GitHub.",
+    "nl": "Alles over meldingen: bel, paneel (klassiek, compact, venster), pop-ups, instellingen per soort, stille uren, technische ruimte en het register van alle meldingen. Alle taken, takken en PR's op één plek."
+  },
+  "termen": {
+    "uk": [
+      "сповіщення",
+      "сповіщень",
+      "дзвіночок",
+      "дзвінок",
+      "панель сповіщень",
+      "спливне",
+      "спливаюче",
+      "центр сповіщень",
+      "тихі години",
+      "непрочитані",
+      "прочитані",
+      "архів сповіщень"
+    ],
+    "nl": [
+      "meldingen",
+      "melding",
+      "bel",
+      "meldingenpaneel",
+      "meldingencentrum",
+      "pop-up",
+      "stille uren",
+      "ongelezen"
+    ]
+  },
+  "paden": [
+    "src/CanoniekMeldingencentrum.tsx",
+    "src/canoniek-meldingencentrum.css",
+    "src/MeldingenpaneelInhoud.tsx",
+    "src/meldingenpaneel.css",
+    "src/canoniek-meldingen.ts",
+    "src/MenuMeldingen.tsx",
+    "src/menu-meldingen-opslag.ts",
+    "src/melding-positie.ts",
+    "src/melding-stijl.tsx",
+    "src/meldingen/",
+    "shared/meldingen-",
+    "shared/melding-",
+    "shared/menu-meldingen",
+    "backend/meldingen-",
+    "docs/meldingen-v2/"
+  ],
+  "kaart": {
+    "uk": "Зараз у коді два вигляди панелі, які перемикаються в одному компоненті src/CanoniekMeldingencentrum.tsx: (1) класична/компактна панель біля дзвіночка — MeldingenpaneelInhoud.tsx і meldingen/v2/MeldingenV2.tsx (UI-007, INTEG-001, MELDINGEN-UX-001); (2) «вікно» екосистеми — meldingen/ecosysteem/MeldingenPortaal.tsx (GEMINI-002), вмикається useEcosysteemModusActief. Обидві читають ті самі джерела (canoniek-meldingen.ts, серверні site_notifications, активності агентів).",
+    "nl": "Twee paneelweergaven in één component: klassiek/compact (UI-007, INTEG-001, MELDINGEN-UX-001) en het ecosysteemvenster (GEMINI-002)."
+  },
+  "staatToelichting": {
+    "uk": "Стан можливостей «actief» записано 18.11.2026 за історією коду й гілок; наживо на встановленій версії ще не перевірено (див. open).",
+    "nl": "Staat volgens de codegeschiedenis; nog niet live gecontroleerd."
+  },
+  "werk": [
+    {
+      "taakId": "UI-007",
+      "datum": "2026-10-29",
+      "uk": "Інвентар центру сповіщень і причини скарг (кожен рядок = непрочитане, шум, перевантажене керування); компактний вигляд за прапорцем meldingen-v2.",
+      "bron": "docs/meldingen-v2/РЕЄСТР-І-ПРИЧИНИ-СПОВІЩЕНЬ.uk.md"
+    },
+    {
+      "tak": "origin/aanmeldmethoden",
+      "datum": "2026-10-07",
+      "commit": "0d1fbcdc",
+      "uk": "Пошук, фільтри, сортування, групування, стан і тривалість; дії Claude й пристроїв у сповіщеннях."
+    },
+    {
+      "tak": "claude/connector-v2-2026-10-15",
+      "datum": "2026-10-14",
+      "commit": "53ef19e1",
+      "uk": "Панель сповіщень за простором: окремий дзвіночок технічного й приватного простору."
+    },
+    {
+      "tak": "notif-b (у гілках audit/*)",
+      "datum": "2026-11-02",
+      "commit": "1941f36d",
+      "uk": "Спливне сповіщення біля дзвіночка, зрозумілий текст, тривалість за типом, об’єднання однакових."
+    },
+    {
+      "taakId": "INTEG-001",
+      "tak": "feature/integ-001-20261103-083441",
+      "agent": "claude",
+      "datum": "2026-11-03",
+      "uk": "Панель у три частини «Нові», «Прочитані», «Архів» з «Очистити»; стрілка до дзвіночка на будь-якій ширині; налаштування за типом із прикладом; пауза таймера під мишею; тихі сповіщення з поясненням; без повторів і з «Не турбувати».",
+      "commits": [
+        "7d3e610a",
+        "dc577636",
+        "7cf9a593",
+        "6f420d24",
+        "46f93b61",
+        "1ac97ec3"
+      ]
+    },
+    {
+      "taakId": "IDENTITEIT-015",
+      "tak": "feature/identiteit-015-verantwoording-20261114-080023",
+      "agent": "claude",
+      "datum": "2026-11-14",
+      "uk": "Тихі години для всього центру сповіщень; безпекове сповіщення сервера не стає прочитаним від спливного вікна.",
+      "commits": [
+        "899c96ad",
+        "4b30bb05"
+      ],
+      "pr": 144
+    },
+    {
+      "taakId": "GEMINI-002",
+      "tak": "feature/meldingen-ecosysteem-20261115-010721",
+      "agent": "gemini",
+      "model": "Gemini 4 Hydrogen Extra",
+      "datum": "2026-11-15",
+      "pr": 88,
+      "uk": "Екосистема споживчих сповіщень «застосунок у застосунку»: окреме вікно-портал, вбудований переглядач вкладень, змахи карток, ШІ-розбір, адреса /melding.",
+      "commits": [
+        "3aec3063"
+      ]
+    },
+    {
+      "taakId": "MELDINGEN-UX-001",
+      "tak": "claude/project-thread-0u9ig1",
+      "agent": "claude",
+      "datum": "2026-11-15",
+      "pr": 123,
+      "uk": "Плаваюче вікно без стиснутих карток, однаковий перемикач «Вікно ↔ Компактно», правила сповіщень картками.",
+      "commits": [
+        "3765ae93",
+        "3154588f"
+      ]
+    },
+    {
+      "taakId": "MELDINGEN-UX-001",
+      "tak": "claude/project-thread-0u9ig1",
+      "agent": "claude",
+      "datum": "2026-11-16",
+      "pr": 142,
+      "uk": "Одне число на дзвіночку (те саме, що «Нові» у вибраному вигляді), мітки «Нове · 1 з N» і «Прочитане», цифра лише біля «Нові».",
+      "commits": [
+        "2e641122",
+        "6e3c1316"
+      ]
+    },
+    {
+      "taakId": "DUBLI-001",
+      "tak": "feature/dubli-001-uitgave-20261115-093055",
+      "agent": "claude",
+      "datum": "2026-11-15",
+      "uk": "Налаштування сповіщень лише в розділі «Сповіщення», без дублів в інших місцях.",
+      "commits": [
+        "d3461d75"
+      ]
+    },
+    {
+      "taakId": "VEILIG-002",
+      "datum": "2026-11-15",
+      "uk": "Захист адрес і SVG у сповіщеннях, ізоляція аудиту й сповіщень між просторами.",
+      "commits": [
+        "ee60f03e",
+        "d22abb5f"
+      ]
+    },
+    {
+      "taakId": "MELDLINK-001",
+      "tak": "claude/project-thread-nrb8kd",
+      "agent": "claude",
+      "datum": "2026-11-16",
+      "pr": 138,
+      "uk": "Посилання в сповіщеннях ведуть на дійсні сторінки.",
+      "commits": [
+        "aaf64eb4"
+      ]
+    },
+    {
+      "taakId": "ELDERS-001",
+      "tak": "feature/elders-001-20261116-192500",
+      "agent": "claude",
+      "datum": "2026-11-16",
+      "pr": 148,
+      "uk": "Дзвіночок показує запити ШІ, що чекають в іншому просторі.",
+      "commits": [
+        "70180182"
+      ]
+    },
+    {
+      "taakId": "MELDCAT-001",
+      "tak": "claude/project-thread-0fs1z2",
+      "agent": "claude",
+      "datum": "2026-11-17",
+      "pr": 155,
+      "uk": "Єдиний реєстр усіх сповіщень сайту (shared/meldingen-catalogus.ts) і ревізія коду.",
+      "commits": [
+        "bff39fde"
+      ]
+    },
+    {
+      "taakId": "FIX-001",
+      "tak": "fix/ruimtes-account-meldingen-20261117-195554",
+      "datum": "2026-11-17",
+      "pr": 156,
+      "uk": "Сповіщення меню під час перемикання акаунтів і технічного простору. Перенесено у UPD-004 вручну (коміти гілки не є предками UPD-004, вміст узгоджено в 531b80c4).",
+      "commits": [
+        "948ca208"
+      ]
+    },
+    {
+      "taakId": "UPD-004",
+      "tak": "feature/upd-004-uitgave-20261117-225600",
+      "agent": "gemini",
+      "model": "Gemini 4 Hydrogen (high)",
+      "datum": "2026-11-17",
+      "pr": 158,
+      "uk": "Спільний випуск: узгоджено сповіщення з PR #156 і #157 поверх живої основи 14dbcb3a.",
+      "commits": [
+        "531b80c4",
+        "08172f9e"
+      ]
+    },
+    {
+      "taakId": "MELDPANEEL-001",
+      "tak": "feature/meldpaneel-001-20261118-082300",
+      "agent": "claude",
+      "model": "claude-opus-5-5",
+      "datum": "2026-11-18",
+      "pr": 159,
+      "uk": "Досьє та проєкт однієї панелі сповіщень замість двох (docs/meldingen-paneel/). Свідомо НЕ ввійшло до UPD-005, бо коду самої панелі ще немає — очікує на погодження знімків власником і продовження розробки на цій відкритій гілці.",
+      "commits": [
+        "d3bfeca5"
+      ]
+    },
+    {
+      "taakId": "UPD-005",
+      "tak": "feature/upd-005-uitgave-20261119-065100",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-19",
+      "uk": "Спільний випуск поверх живої версії 20261117-190154 (14dbcb3a): увійшли MELDCAT-001 (#155), FIX-001 (#156) і UPD-004 (#158); незавершена гілка проєкту MELDPANEEL-001 (#159) збережена відкритою поза випуском."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "bel-een-getal",
+      "uk": "Одне число на дзвіночку — те саме, що «Нові» у вибраному вигляді",
+      "sinds": "MELDINGEN-UX-001",
+      "staat": "actief"
+    },
+    {
+      "id": "drie-delen",
+      "uk": "Панель у три частини «Нові», «Прочитані», «Архів» з «Очистити»",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "pijl-naar-bel",
+      "uk": "Панель прикріплена до дзвіночка зі стрілкою на будь-якій ширині",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "toast-pauze",
+      "uk": "Спливне сповіщення: тривалість за типом і змістом, пауза під мишею, смужка часу, саме не закріплюється",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "instellingen-per-soort",
+      "uk": "Налаштування для кожного типу: як показувати, поведінка, тривалість, з прикладом",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "stille-meldingen",
+      "uk": "Тихі сповіщення з поясненням у «Прочитані»",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "geen-dubbels",
+      "uk": "Без повторних і подвійних сповіщень, також між вкладками; «Не турбувати» без спливних",
+      "sinds": "INTEG-001",
+      "staat": "actief"
+    },
+    {
+      "id": "stille-uren",
+      "uk": "Тихі години для всього центру сповіщень",
+      "sinds": "IDENTITEIT-015",
+      "staat": "actief"
+    },
+    {
+      "id": "beveiliging-blijft-nieuw",
+      "uk": "Безпекове сповіщення сервера лишається «новим» після спливного вікна",
+      "sinds": "IDENTITEIT-015",
+      "staat": "actief"
+    },
+    {
+      "id": "venster-compact-wissel",
+      "uk": "Однаковий перемикач «Вікно ↔ Компактно»",
+      "sinds": "MELDINGEN-UX-001",
+      "staat": "actief"
+    },
+    {
+      "id": "labels-nieuw-n-van-m",
+      "uk": "Мітки «Нове · 1 з N» і «Прочитане», цифра лише біля «Нові»",
+      "sinds": "MELDINGEN-UX-001",
+      "staat": "actief"
+    },
+    {
+      "id": "ecosysteem-venster",
+      "uk": "Вікно-портал екосистеми сповіщень «застосунок у застосунку»",
+      "sinds": "GEMINI-002",
+      "staat": "actief"
+    },
+    {
+      "id": "bijlage-speler",
+      "uk": "Вбудований переглядач вкладень у сповіщенні",
+      "sinds": "GEMINI-002",
+      "staat": "actief"
+    },
+    {
+      "id": "veeg-kaarten",
+      "uk": "Змахи карток сповіщень (прочитати, архівувати)",
+      "sinds": "GEMINI-002",
+      "staat": "actief"
+    },
+    {
+      "id": "ai-analyse",
+      "uk": "ШІ-розбір сповіщення в окремій панелі",
+      "sinds": "GEMINI-002",
+      "staat": "actief"
+    },
+    {
+      "id": "zoek-filter-groep",
+      "uk": "Пошук, фільтри, сортування й групування сповіщень",
+      "sinds": "0d1fbcdc",
+      "staat": "actief"
+    },
+    {
+      "id": "per-ruimte",
+      "uk": "Окремі сповіщення приватного й технічного простору",
+      "sinds": "53ef19e1",
+      "staat": "actief"
+    },
+    {
+      "id": "elders-wachtend",
+      "uk": "Дзвіночок показує запити ШІ, що чекають в іншому просторі",
+      "sinds": "ELDERS-001",
+      "staat": "actief"
+    },
+    {
+      "id": "geldige-links",
+      "uk": "Посилання в сповіщеннях ведуть на дійсні сторінки",
+      "sinds": "MELDLINK-001",
+      "staat": "actief"
+    },
+    {
+      "id": "een-register",
+      "uk": "Єдиний реєстр усіх сповіщень сайту",
+      "sinds": "MELDCAT-001",
+      "staat": "actief"
+    },
+    {
+      "id": "url-svg-veilig",
+      "uk": "Захист адрес і SVG у сповіщеннях",
+      "sinds": "VEILIG-002",
+      "staat": "actief"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-18",
+      "betreft": "дві паралельні панелі сповіщень (класична/компактна і вікно екосистеми)",
+      "uk": "Зараз на сайті дві панелі, жодна не влаштовує; панель кілька разів переробляли, і робочі напрацювання та виправлений вигляд губилися. Потрібна одна панель, що об’єднує функції обох без дублів і конфліктів і повертає втрачене.",
+      "behouden": [
+        "усі можливості зі станом actief з обох панелей",
+        "джерела сповіщень і реєстр MELDCAT-001",
+        "налаштування за типами й тихі години"
+      ],
+      "bron": "повідомлення Павла в проєкті, 18.11.2026"
+    }
+  ],
+  "open": [
+    {
+      "uk": "Об’єднати дві панелі в одну без утрати можливостей — робить тред «Розробити дизайн спливаючих сповіщень». Перед зміною звірити перелік mogelijkheden і після злиття позначити, що куди перейшло (vervangen + vervangenDoor)."
+    },
+    {
+      "uk": "Перевірити наживо, які з можливостей actief справді працюють на встановленій версії; ті, що зникли після переробок, позначити verloren і повернути."
+    },
+    {
+      "uk": "Три варіанти спливного сповіщення (нотатка TOAST-ONTWERP-001) чекають вибору власника."
+    }
+  ],
+  "bijgewerkt": "2026-11-19"
+}

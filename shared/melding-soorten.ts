@@ -21,19 +21,39 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   security_warning: { type: 'beveiliging', ernst: 'kritiek' },             // nieuw apparaat, sessies ingetrokken, «Це були ви?»
   access_method_unlinked: { type: 'beveiliging', ernst: 'kritiek' },
   access_method_restored: { type: 'beveiliging', ernst: 'belangrijk' },
+  access_method_login: { type: 'beveiliging', ernst: 'belangrijk' },      // IDENTITEIT-015 (aanmelden): вхід без Google (ключ доступу, пароль, Microsoft/Discord/Apple)
+  access_method_telefoon: { type: 'beveiliging', ernst: 'belangrijk' },   // IDENTITEIT-015 (aanmelden): номер телефону підтверджено кодом із SMS
+  passkey_vertrouwd: { type: 'beveiliging', ernst: 'belangrijk' },        // IDENTITEIT-015 (sleutels-gasten): ключ доступу позначено «Довірений»
+  passkey_vertrouwen_ingetrokken: { type: 'beveiliging', ernst: 'info' }, // IDENTITEIT-015 (sleutels-gasten): довіру до ключа відкликано
   access_recovery_code_used: { type: 'beveiliging', ernst: 'kritiek' },
   access_recovery_rotated: { type: 'beveiliging', ernst: 'belangrijk' },
   access_recovery_revoked: { type: 'beveiliging', ernst: 'belangrijk' },
+  access_recovery_low: { type: 'beveiliging', ernst: 'belangrijk' },      // IDENTITEIT-014: ≤2 herstelcodes over (backend/reserve-herinnering.ts)
   access_totp_enrolled: { type: 'beveiliging', ernst: 'belangrijk' },
   access_totp_replaced: { type: 'beveiliging', ernst: 'kritiek' },
   account_email_conflict: { type: 'beveiliging', ernst: 'kritiek' },
   owner_identity_mismatch: { type: 'beveiliging', ernst: 'kritiek' },
   access_decision: { type: 'toegang', ernst: 'belangrijk' },               // mijn eigen toegangsverzoek is beslist
   workspace_share: { type: 'delen', ernst: 'info' },
+  workspace_ownership_transferred: { type: 'delen', ernst: 'belangrijk' }, // IDENTITEIT-015: een werkruimte is aan mij overgedragen, of ik droeg er een over
+  workspace_role_changed: { type: 'delen', ernst: 'belangrijk' },       // IDENTITEIT-014: mijn rol in een gedeelde ruimte is gewijzigd
+  workspace_access_revoked: { type: 'delen', ernst: 'belangrijk' },     // IDENTITEIT-014: mijn toegang tot een gedeelde ruimte is ingetrokken
+  workspace_invite_accepted: { type: 'delen', ernst: 'info' },          // IDENTITEIT-014: iemand nam mijn uitnodiging/koppeling aan
+  workspace_share_link_created: { type: 'delen', ernst: 'info' },       // IDENTITEIT-014: ik maakte een privélink (geheim dat een rol geeft)
+  workspace_share_link_revoked: { type: 'delen', ernst: 'info' },       // IDENTITEIT-015: mijn privélink is ingetrokken (door mij of een beheerder)
+  workspace_member_left: { type: 'delen', ernst: 'info' },              // IDENTITEIT-015: een lid verliet zelf mijn ruimte (zijn blokken zijn nu van mij)
+  cloud_alleen_lezen: { type: 'cloud', ernst: 'info' },                     // SEC-002 (g03, afwerking A): schrijven geweigerd — rol «лише перегляд»
+  toegang_alleen_lezen: { type: 'toegang', ernst: 'info' },               // SEC-002 (slot «u»): schrijven buiten de hmara geweigerd — rol «лише перегляд»
+  agenda: { type: 'agenda', ernst: 'info' },                             // agenda: grens bereikt, CalDAV afgekapt (backend/agenda-routes.ts, agenda-caldav.ts) — nu expliciet
   impersonatie: { type: 'inzage', ernst: 'kritiek' },                      // een beheerder vraagt mijn account in te zien
   ondersteuning: { type: 'inzage', ernst: 'belangrijk' },                  // ondersteuning vraagt een overzicht
   ai_bevestiging: { type: 'ai', ernst: 'belangrijk' },                    // een AI vraagt uw bevestiging op de site (backend/ai-bevestiging.ts)
+  mail_queue_refused: { type: 'post', ernst: 'belangrijk' },               // SEC-002 (g10c): gepland bericht niet verzonden (ruimte mocht niet meer verzenden)
+  mail_queue_cancelled: { type: 'post', ernst: 'info' },                   // SEC-002 (g10c): geplande berichten geannuleerd
+  mail_ai_balk: { type: 'post', ernst: 'info' },                           // MAILAI-001: paneel «ШІ-аналіз і переклад» boven brieven aan/uit gezet
+  mail_ai_motor: { type: 'post', ernst: 'info' },                          // MAILAI-003: akkoord voor een gedeelde AI-motor gegeven/ingetrokken
   // ------------------------------------------------------------ technisch: beheer van de site
+  'beheer.ai_motor': { type: 'tech.integraties', ernst: 'belangrijk', vereist: 'diensten.beheren' },   // MAILAI-003: gedeelde AI-motor aan/uit/gewijzigd/storing
   access_request: { type: 'tech.toegang', ernst: 'belangrijk', vereist: 'users.manage' },
   google_login_config: { type: 'tech.integraties', ernst: 'kritiek', vereist: 'diensten.beheren' },
   mcp_app_secret: { type: 'tech.geheimen', ernst: 'belangrijk', vereist: 'diensten.beheren' },

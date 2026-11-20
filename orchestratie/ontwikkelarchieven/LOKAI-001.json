@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "taakId": "LOKAI-001",
+  "datum": "2026-11-17",
+  "taal": "uk",
+  "titel": "LOKAI-001 · Розширення 0.9.7 (Chrome 157, Gemma 4, 9 API, WebMCP, PWA), помічник налаштування, extensie-bijwerken.ts та автопідпис CRX3",
+  "opdracht": "Об’єднати й оновити розширення оглядача до версії 0.9.7 та вебсайт Mijn Ruimte поверх чинної живої версії сервера UPD-003 (20261117-063330 @ 454b75bff03b8f222998e343ccc58ffb989fd281): додати підтримку Chrome 157 і Gemma 4, розширити набір до 9 API (включно з embedder і decisions), додати режим виклику інструментів WebMCP, обгортку PWA для діалогу локального ШІ, інтерактивний помічник налаштування, діагностику прапорців та файл flags.json, перейменувати shared/extensie-update.ts на shared/extensie-bijwerken.ts, впровадити автоматичний підпис CRX3 через таємницю GitHub EXTENSIE_ONDERTEKENSLEUTEL у .github/workflows/onderteken-crx.yml і випустити пакет GitHub Release без автоматичного встановлення на сервер.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич (tarasevych.pavlo@gmail.com)",
+    "agent": "gemini",
+    "model": "задається під час запуску процесу (не записується у файли)",
+    "repo": "Tarasevych/hub",
+    "tak": "feature/lokai-001-uitgave-20261117-181000",
+    "basisCommit": "454b75bff03b8f222998e343ccc58ffb989fd281",
+    "basisVersie": "20261117-063330",
+    "geinstalleerdeBasis": "454b75bff03b8f222998e343ccc58ffb989fd281",
+    "geinstalleerdeVersie": "20261117-063330",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.15",
+    "regelsHash": "df34d1202dd785c59ec63cd224c2b061b0d41866d961af1788d03d6a129005c4"
+  },
+  "tijdlijn": [
+    {
+      "stap": "Звірено живу версію на сервері hub.tarasevych.com/api/version (20261117-063330 @ 454b75bff03b8f222998e343ccc58ffb989fd281) та створено чисту робочу гілку feature/lokai-001-uitgave-20261117-181000 безпосередньо від цієї основи.",
+      "resultaat": "Зареєстровано завдання LOKAI-001 у orchestratie/taken/LOKAI-001.json; перевірка свіжості на початку роботи пройшла чисто."
+    },
+    {
+      "stap": "Перенесено та узгоджено поверх UPD-003 (0.9.6) усі зміни LOKAI-001 до версії розширення 0.9.7: підтримку Chrome 157 і Gemma 4, 9 вбудованих API (prompt, summarizer, writer, rewriter, translator, detector, proofreader, embedder, decisions), WebMCP, режим PWA, помічник налаштування (LOKALE_AI_STEL_IN), flags.json та перейменування shared/extensie-update.ts на shared/extensie-bijwerken.ts.",
+      "resultaat": "Усі зміни клієнта, спільних моделей, розширення, документації, карти файлів і каталогу пошуку зібрано без утрат жодної можливості UPD-003."
+    },
+    {
+      "stap": "Оновлено чинні модульні випробування під версію 0.9.7, 9 API, embedder/decisions та extensie-bijwerken.ts, а також додано tests/eenheid/extensie-093-stel-in-20261117.test.ts.",
+      "resultaat": "Зафіксовано й відправлено Етап 1 (663f47e9); згодом виявлено й оновлено також перевірку status.lokaleAi у tests/eenheid/extensie-brug-zonder-f5-20261106.test.ts (12/12)."
+    },
+    {
+      "stap": "Спрацював сценарій .github/workflows/onderteken-crx.yml із таємницею EXTENSIE_ONDERTEKENSLEUTEL.",
+      "resultaat": "Бот автоматично підписав extension/signed/mijn-ruimte-extension.crx та оновив extension/signed/crx-info.json до версії 0.9.7 (фіксація 7311ee07). Локальна перевірка scripts/bouw-extensie.mjs підтвердила CRX: gepubliceerd, а browser-extensie.test.ts пройшов 24/24."
+    },
+    {
+      "stap": "Оформлено журнал походження LOKAI-001.json (TRACE-001) із поясненнями risicoUitleg та запущено повний сценарій перевірок і публікації випуску .github/workflows/lokai-001-uitgave.yml.",
+      "resultaat": "Пакет випуску mijn-ruimte-<versie>.tar.gz публікується в GitHub Release без автоматичного встановлення на сервер."
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Нова робоча гілка feature/lokai-001-uitgave-20261117-181000 безпосередньо поверх живої основи 454b75bff03b8f222998e343ccc58ffb989fd281 замість застарілої гілки старого запиту на злиття № 152.",
+      "reden": "Пакет випуску за правилами має накладатися на поточну встановлену на сервері версію UPD-003 (20261117-063330) без конфліктів і без повернення старих файлів."
+    },
+    {
+      "besluit": "Перейменування shared/extensie-update.ts на shared/extensie-bijwerken.ts із оновленням усіх посилань і карти файлів.",
+      "reden": "Узгодження назви модуля з вимогами використання питомої нідерландської термінології у шляхах і назвах файлів."
+    },
+    {
+      "besluit": "Автоматичний підпис CRX3 на GitHub Actions через .github/workflows/onderteken-crx.yml і таємницю EXTENSIE_ONDERTEKENSLEUTEL із persist-credentials: false та обмеженим винятком у werkstromen-veilig-20261116.test.ts.",
+      "reden": "Приватний ключ підпису розширення ніколи не потрапляє до сховища чи робочих контейнерів; водночас у самому сценарії вимкнено збереження токена в .git/config, заборонено npm-скрипти встановлення, а тест безпеки дозволяє читати лише EXTENSIE_ONDERTEKENSLEUTEL."
+    },
+    {
+      "besluit": "Позначення прапорця #decisions-api для експорту flags.json через data-hulp-vrij='keuze' у src/extensie/LokaleAiPaneel.tsx.",
+      "reden": "Прапорець впливає лише на вміст текстового файла flags.json, а використання HulpVraag підтягувало б браузерну залежність window у серверні тести Node.js."
+    },
+    {
+      "besluit": "Без автоматичного встановлення на сервер; випуск лише публікується як архів у GitHub Release.",
+      "reden": "Встановлення на живий сервер відбувається виключно власником через Admin → Оновлення після зеленої попередньої перевірки та підтвердження ключем доступу."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "toegevoegd", "pad": ".github/workflows/onderteken-crx.yml", "omschrijving": "Автоматичний сценарій підпису розширення CRX3 на GitHub Actions за таємницею EXTENSIE_ONDERTEKENSLEUTEL (із persist-credentials: false)." },
+    { "soort": "toegevoegd", "pad": ".github/workflows/lokai-001-uitgave.yml", "omschrijving": "Повний сценарій перевірок, складання, підготовки маніфесту й публікації випуску LOKAI-001." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/LOKAI-001.json", "omschrijving": "Реєстраційна картка завдання LOKAI-001 у черзі координації." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/LOKAI-001.json", "omschrijving": "Незмінний журнал походження випуску LOKAI-001 (TRACE-001) із поясненнями ризикованих файлів." },
+    { "soort": "hernoemd", "pad": "shared/extensie-bijwerken.ts", "omschrijving": "Перейменовано з shared/extensie-update.ts на нідерландську назву без втрати сумісності." },
+    { "soort": "gewijzigd", "pad": "shared/lokale-ai-model.ts", "omschrijving": "Модель 9 API (додано embedder і decisions), параметри Chrome 157 / Gemma 4, пресети налаштування, небезпечні перемикачі gevaar та правила перевірки набору налаштувань." },
+    { "soort": "gewijzigd", "pad": "shared/zoek-ui-knoppen.generated.ts", "omschrijving": "Оновлений каталог кнопок пошуку інтерфейсу (1808 елементів)." },
+    { "soort": "gewijzigd", "pad": "extension/manifest.json", "omschrijving": "Піднято версію розширення до 0.9.7." },
+    { "soort": "gewijzigd", "pad": "extension/background.js", "omschrijving": "Оброблення LOKALE_AI_STEL_IN, безпекове підтвердження небезпечних перемикачів, стан 9 API, налаштувань і профілів." },
+    { "soort": "gewijzigd", "pad": "extension/bridge.js", "omschrijving": "Пересилання повідомлень помічника налаштування (LOKALE_AI_STEL_IN) між сторінкою та фоном розширення з перевіркою походження." },
+    { "soort": "gewijzigd", "pad": "extension/lokale-ai.js", "omschrijving": "Логіка роботи з 9 вбудованими API Chrome, розширеними параметрами моделі, WebMCP-інструментами та типовими значеннями." },
+    { "soort": "gewijzigd", "pad": "extension/offscreen.js", "omschrijving": "Перевірка стану та виконання всіх 9 API (включно з embedder і decisions) у прихованому документі offscreen.html." },
+    { "soort": "gewijzigd", "pad": "extension/options-lokale-ai.js", "omschrijving": "Оновлені налаштування локального ШІ, помічник налаштувань, перемикачі небезпечних можливостей та експорт flags.json." },
+    { "soort": "gewijzigd", "pad": "extension/sidepanel-lokale-ai.js", "omschrijving": "Панель діалогу та виконання 9 API у бічній панелі розширення." },
+    { "soort": "gewijzigd", "pad": "extension/options.html", "omschrijving": "Розмітка сторінки налаштувань під версію 0.9.7 і помічник налаштування." },
+    { "soort": "gewijzigd", "pad": "extension/sidepanel.html", "omschrijving": "Оновлена розмітка бічної панелі під версію 0.9.7 та режим PWA." },
+    { "soort": "gewijzigd", "pad": "extension/shared.js", "omschrijving": "Узгодження спільного опису модулів розширення для 0.9.7." },
+    { "soort": "gewijzigd", "pad": "extension/signed/mijn-ruimte-extension.crx", "omschrijving": "Автоматично підписаний архів CRX3 версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "extension/signed/crx-info.json", "omschrijving": "Оновлені метадані підписаного CRX3 для версії 0.9.7 (contentHash 06c3eae0...)." },
+    { "soort": "gewijzigd", "pad": "src/extensie/LokaleAiPaneel.tsx", "omschrijving": "Панель «Вбудований ШІ Chrome» на сайті: 9 API, пресети, інтерактивний помічник налаштувань, попередження про ризики та WebMCP/PWA-параметри." },
+    { "soort": "gewijzigd", "pad": "src/BrowserExtensiePaneel.tsx", "omschrijving": "Посилання на shared/extensie-bijwerken та підтримка повідомлень 0.9.7." },
+    { "soort": "gewijzigd", "pad": "src/ExtensieUpdateBand.tsx", "omschrijving": "Оновлений імпорт з shared/extensie-bijwerken." },
+    { "soort": "gewijzigd", "pad": "src/extensie/extensie-live.ts", "omschrijving": "Живий обмін повідомленнями із розширенням з урахуванням LOKALE_AI_STEL_IN та оновленого стану." },
+    { "soort": "gewijzigd", "pad": "src/agenten/agenten.css", "omschrijving": "Стилі для нових блоків помічника налаштувань та сітки 9 API." },
+    { "soort": "gewijzigd", "pad": "scripts/bouw-extensie.mjs", "omschrijving": "Оновлення перевірки та складання ZIP/CRX для версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "scripts/onderteken-extensie.mjs", "omschrijving": "Синхронізований сценарій підпису CRX3 (працює також через змінну середовища таємниці у GitHub Actions)." },
+    { "soort": "gewijzigd", "pad": "deploy/EXTENSIE-BIJWERKEN.nl.md", "omschrijving": "Оновлена нідерландська документація про автоматичний підпис та оновлення розширення." },
+    { "soort": "gewijzigd", "pad": "deploy/ОНОВЛЕННЯ-РОЗШИРЕННЯ.md", "omschrijving": "Оновлена спільна інструкція з підпису та розповсюдження розширення." },
+    { "soort": "gewijzigd", "pad": "deploy/ОНОВЛЕННЯ-РОЗШИРЕННЯ.uk.md", "omschrijving": "Оновлена українська документація щодо підпису та оновлення розширення." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/extensie-093-stel-in-20261117.test.ts", "omschrijving": "Новий модульний набір тестів для помічника налаштувань, 9 API та LokaleAiPaneel версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/browser-extensie.test.ts", "omschrijving": "Оновлені тести розширення під 0.9.7, LOKALE_AI_STEL_IN та extensie-bijwerken." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-brug-zonder-f5-20261106.test.ts", "omschrijving": "Оновлена перевірка lokaleAi під 9 API, instellingen і gevaar у версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-offscreen-20261106.test.ts", "omschrijving": "Оновлено очікування під 0.9.7 і 9 API у offscreen-документі." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-opties.test.ts", "omschrijving": "Оновлена перевірка версії маніфесту 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-profielen.test.ts", "omschrijving": "Оновлена перевірка версії маніфесту 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-vergrendeling.test.ts", "omschrijving": "Оновлені перевірки версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/lai-con-001-20261116.test.ts", "omschrijving": "Оновлена перевірка версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/sec-002-afwerking-b-20261112.test.ts", "omschrijving": "Оновлена перевірка версії 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-090-site-20261106.test.ts", "omschrijving": "Оновлено під 0.9.7 і 9 API." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/extensie-debugger-markering-20261019.test.ts", "omschrijving": "Оновлено імпорт / перевірки під 0.9.7." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/ui-audit-g.test.ts", "omschrijving": "Узгоджено перевірки інтерфейсу з новими елементами панелі локального ШІ." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/werkstromen-veilig-20261116.test.ts", "omschrijving": "Додано суворо обмежений виняток виключно для таємниці EXTENSIE_ONDERTEKENSLEUTEL у onderteken-crx.yml із забороною npm-команд." }
+  ],
+  "controles": [
+    {
+      "opdracht": "npm run typecheck:server && npm run build:server && node scripts/kaart-controle.mjs && node scripts/zoek-ui-catalogus.mjs --controle && node scripts/keten-controle.mjs --zonder-audit",
+      "resultaat": "Успішно: 0 помилок типів сервера, серверне складання готове, карта 2902 файлів і 543 перейменувань чиста, каталог пошуку 1808 елементів чистий."
+    },
+    {
+      "opdracht": "node scripts/bouw-extensie.mjs && node scripts/eenheidstests.mjs browser-extensie.test.ts",
+      "resultaat": "Успішно після автопідпису CRX3: Extensie 0.9.7, CRX: gepubliceerd (id ofpffonakgjioahgfejmiblfmbkobmmi), browser-extensie 24/24 geslaagd."
+    },
+    {
+      "opdracht": "Локальний прогін модульних випробувань через node scripts/eenheidstests.mjs (безбазові набори, включно з hulp-register та werkstromen-veilig-20261116)",
+      "resultaat": "Усі перевірені набори пройшли повністю без збоїв, зокрема extensie-093-stel-in-20261117 (16/16), extensie-brug-zonder-f5-20261106 (12/12), extensie-offscreen-20261106 (45/45), lai-con-001-20261116 (41/41), hulp-register (17/17), werkstromen-veilig-20261116 (9/9), extensie-ui (93/93), ui-audit-g (59/59), orch-kern (78/78), trace-001-ontwikkelarchief (20/20), uitrol-risico-20261116 (67/67), uitrol-voorcontrole (51/51)."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/onderteken-crx.yml (запуск 44148133679)",
+      "resultaat": "Успішно: підписано extension/signed/mijn-ruimte-extension.crx до 0.9.7 і зафіксовано 7311ee07."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/lokai-001-uitgave.yml",
+      "resultaat": "Виконує повну перевірку типів клієнта та сервера, статичних контрактів, PostgreSQL 16 (подвійні міграції + усі БД-тести з Хроміумом), 118+ безбазових і післяскладальних тестів, повну виробничу збірку, перевірку TRACE-001 і публікацію GitHub Release."
+    }
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "GEMINI.md",
+    "orchestratie/beleid.json",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "https://hub.tarasevych.com/api/version"
+  ],
+  "beperkingen": [
+    "Пакет ніколи не встановлюється на сервер автоматично — встановлення здійснює виключно власник через Admin → Оновлення після перевірки та схвалення ключем доступу.",
+    "У локальному хмарному контейнері агента відсутній пакунок xlsx та запущена база PostgreSQL 16, тому повний npx tsc --noEmit, npm run build та набори випробувань із БД і Хроміумом виконуються на чистому середовищі GitHub Actions.",
+    "Попередній відкритий запит на злиття № 152 (feature/lokai-001-20261117-154844) не використовується для цього випуску й підлягає закриттю власником."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true
+  },
+  "commits": [
+    "663f47e9c74fdf88a309fd9e0611952309869430",
+    "7311ee07090e72f0728528969f2e20b15621ff59",
+    "49254ab46ae8442f920aa926948f633a09c8835b",
+    "a3c57045c7f22c90df77a51734641cfc94644982"
+  ],
+  "risicoUitleg": [
+    {
+      "pad": ".github/workflows/onderteken-crx.yml",
+      "uk": "Новий сценарій автоматичного підпису розширення CRX3 на GitHub Actions. Він запускається лише у робочих гілках після змін у каталозі розширення, вимикає збереження токена у налаштуваннях Git (persist-credentials: false), бере таємницю EXTENSIE_ONDERTEKENSLEUTEL виключно з налаштувань репозиторію GitHub (без npm-скриптів встановлення), формує підписаний архів CRX3 та передає тимчасовий заголовок авторизації лише для фіксації двох файлів у теці extension/signed/. Жодних змін на сервер він не вносить і до інсталяційного процесу сервера не потрапляє.",
+      "nl": "Nieuwe workflow voor het automatisch ondertekenen van de CRX3-extensie in GitHub Actions. Draait alleen op werkvertakkingen bij wijzigingen in de extensiemap, gebruikt persist-credentials: false, leest het geheime veld EXTENSIE_ONDERTEKENSLEUTEL zonder npm-installatiescripts uit de GitHub-instellingen en gebruikt tijdelijke autorisatie alleen om de twee bestanden in extension/signed/ vast te leggen. Voert niets uit op de server."
+    },
+    {
+      "pad": ".github/workflows/lokai-001-uitgave.yml",
+      "uk": "Сценарій перевірки, складання й публікації випуску LOKAI-001 у GitHub Release поверх живої основи 20261117-063330 (UPD-003). Він не під’єднується до сервера по SSH і нічого не встановлює: лише звіряє живу версію через /api/version, проганяє всі статичні перевірки, модульні та БД-тести на ізольованій PostgreSQL 16, складає застосунок разом із підписаним розширенням 0.9.7, перевіряє маніфест, SHA-256 і TRACE-001 та оприлюднює пакет у GitHub Release.",
+      "nl": "Uitgaveworkflow voor LOKAI-001 boven op de live basis 20261117-063330 (UPD-003). Maakt geen SSH-verbinding met de server en installeert niets: controleert alleen /api/version, voert alle statische controles, eenheids- en databasetests uit tegen een geïsoleerde PostgreSQL 16, bouwt de app met extensie 0.9.7, toetst manifest, SHA-256 en TRACE-001 en publiceert de uitgave op GitHub."
+    }
+  ]
+}

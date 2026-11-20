@@ -9,9 +9,16 @@ import { knoppenMaken, SITE_BASIS, strook, stuur, taalVoor, type Knop } from './
 import type { KaartSoort } from '../../shared/telegram-aanmelden/model';
 import type { BotTekst } from '../../shared/telegram-aanmelden/teksten';
 import { TEKST, t } from '../../shared/telegram-aanmelden/teksten';
+import { SERVICE_HOSTS } from '../deployment-identiteit';
 
+/** Tijdzone van de getoonde tijd als verschil met UTC («UTC+1», zomer «UTC+2»). Bewust GEEN stadsnaam (eis van de eigenaar 16.11.2026):
+ *  «(Брюссель)» achter de tijd werd gelezen als de plaats van het verzoek, terwijl die op een eigen regel staat. */
+export const tijdzoneTekst = (ms = Date.now()): string => {
+  const deel = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', timeZoneName: 'shortOffset' }).formatToParts(new Date(ms)).find((p) => p.type === 'timeZoneName')?.value || 'GMT';
+  return deel.replace('GMT', 'UTC');
+};
 export const tijdTekst = (taal: 'uk' | 'nl' | 'beide', ms = Date.now()): string =>
-  taal === 'beide' ? `${brusselsTijd(ms, 'uk')} · ${brusselsTijd(ms, 'nl')}` : `${brusselsTijd(ms, taal)} (${taal === 'uk' ? 'Брюссель' : 'Brussel'})`;
+  taal === 'beide' ? `${brusselsTijd(ms, 'uk')} · ${brusselsTijd(ms, 'nl')}` : `${brusselsTijd(ms, taal)} (${tijdzoneTekst(ms)})`;
 
 /** Leesbare accountnaam voor de strook (naam of e-mail; nooit iets geheims). */
 export async function accountNaam(userId: string): Promise<string> {
@@ -27,7 +34,7 @@ export async function siteMelding(userId: string, titel: BotTekst, tekst: BotTek
 export async function beheerAlarm(soort: string, details: Record<string, unknown>, tekst: BotTekst): Promise<void> {
   const eigenaar = await eigenaarUserId().catch(() => '');
   await auditToevoegen({ ownerId: eigenaar || null, action: `telegram.alarm.${soort}`.slice(0, 120), type: 'identity', result: 'alarm', details }).catch(() => undefined);
-  if (eigenaar) await meld(eigenaar, 'security', '🚨 Telegram: тривога безпеки / beveiligingsalarm', `${tekst.uk} / ${tekst.nl}`, `${SITE_BASIS()}/aanmeldmethoden-beheer`).catch(() => undefined);
+  if (eigenaar) await meld(eigenaar, 'security', '🚨 Telegram: тривога безпеки / beveiligingsalarm', `${tekst.uk} / ${tekst.nl}`, `https://${SERVICE_HOSTS.admin}/sso#telegram-beheer`).catch(() => undefined);
 }
 
 /** Kaart naar alle gekoppelde Telegrams van een account met recht «meldingen». Fouten per chat stoppen de rest niet. */

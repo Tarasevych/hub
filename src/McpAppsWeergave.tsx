@@ -13,7 +13,9 @@ import { Venster } from './platform/vensters';
 import { sessionBody } from './agenten-gegevens';
 import { foutCode, foutTekst } from './agenten/fouten';
 import ServerKoppelen from './ServerKoppelen';
+import { veiligeWebUrl } from '../shared/adres-controle';
 import './mcp-apps.css';
+import './mcp-uitrol-maquette.css';
 import GeheimInvoer from './geheim/GeheimInvoer';
 
 type Lang = 'uk' | 'nl';
@@ -155,7 +157,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
       {geheimId && verzoeken.length && !huidig ? <p className='mapps-melding mapps-fout' role='alert'>{tr('Цей запит на секрет не знайдено або він уже недійсний (після перезапуску сервера запит треба повторити).', 'Dit verzoek om een geheim bestaat niet of is niet meer geldig (na een herstart van de server moet het opnieuw).')}</p> : null}
       {huidig ? (
         <Venster id='apps-geheim' titel={tr('Секрет для додатка', 'Geheim voor de app')} breedte={560} onSluit={sluitGeheim} sluitenUit={bezig === 'geheim'} lang={lang}>
-          <div className='mapps-geheim' data-geheim={huidig.id}>
+          <div className='mapps-geheim' data-geheim={huidig.id} data-mq-laag-open='1'>
             <p className='mapps-geheim-kop'><KeyRound aria-hidden='true' />{tr('Введіть секрет для додатка', 'Voer een geheim in voor de app')}</p>
             <dl className='mapps-feiten'>
               <div><dt>{tr('Додаток', 'App')}</dt><dd>{huidig.app}</dd></div>
@@ -206,6 +208,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
                 {a.lijst.map((app) => {
                   const loopt = app.status === 'running';
                   const gezond = loopt && app.listening;
+                  const veiligUrl = veiligeWebUrl(app.url, { max: 500, alleHttp: true });
                   return (
                     <li key={app.name} data-app={app.name}>
                       <div className='mapps-app-kop'>
@@ -219,7 +222,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
                         <div><dt>{tr('Версія', 'Versie')}</dt><dd>{app.version || '—'} <span className='mapps-dim'>({app.versions ?? 0} {tr('збережено', 'bewaard')})</span></dd></div>
                         <div><dt>{tr('Стан', 'Status')}</dt><dd>{app.uptime || '—'}</dd></div>
                         <div><dt>CPU · {tr('памʼять', 'geheugen')}</dt><dd>{app.cpu || '—'} · {app.memory || '—'}</dd></div>
-                        <div><dt>{tr('Адреса', 'Adres')}</dt><dd>{app.domain && app.url ? <a href={app.url} target='_blank' rel='noreferrer'>{app.domain}<ExternalLink aria-hidden='true' /></a> : <span className='mapps-dim'>{tr('лише на пристрої', 'alleen op het apparaat')}</span>}</dd></div>
+                        <div><dt>{tr('Адреса', 'Adres')}</dt><dd>{app.domain && veiligUrl ? <a href={veiligUrl} target='_blank' rel='noopener noreferrer'>{app.domain}<ExternalLink aria-hidden='true' /></a> : <span className='mapps-dim'>{tr('лише на пристрої', 'alleen op het apparaat')}</span>}</dd></div>
                       </dl>
                       <div className='mapps-knoppen'>
                         <button type='button' className='secondary' disabled={!!bezig} onClick={() => void actie(a, app, 'apps.logs', { lines: 100 }, ['Журнал', 'Logboek'])}><ScrollText aria-hidden='true' />{tr('Журнал', 'Logboek')}</button>

@@ -43,7 +43,8 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 | `DATABASE_URL_APP` | DB-rollen (`geheimen.env`) | — | Rol `mijnruimte_app` (`NOBYPASSRLS`, alleen DML onder RLS-beleid voor gebruikersverzoeken). |
 | `DATABASE_URL_SYSTEM` | DB-rollen (`geheimen.env`) | — | Rol `mijnruimte_system` (`BYPASSRLS` voor sessies, login, cron, back-ups, maar zonder wijzigingsrechten op `app.audit`). |
 | `AUTH_POORT_AFDWINGEN` | Beveiliging | `0` (log) | `1` = centrale poort `auth-poort.ts` blokkeert (`401`) elk anoniem 2xx-antwoord buiten `PUBLIEKE_ROUTES`. |
-| `STAP_OP_UIT` | Beveiliging | `0` | Nooduitschakeling van de Step-Up vereiste (`STEP_UP_REQUIRED`) voor gevoelige acties. |
+| `STAP_OP_UIT` | Beveiliging | `0` | Nooduitschakeling van de Step-Up vereiste (`STEP_UP_REQUIRED`) voor gevoelige acties. Oude vorm zonder einde — niet meer gebruiken, zie `STAP_OP_UIT_TOT`. |
+| `STAP_OP_UIT_TOT` | Beveiliging | (leeg) | Nooduitschakeling van de Step-Up-eis (`STEP_UP_REQUIRED`) **tot het opgegeven tijdstip** (ISO, hoogstens 24 uur vooruit); daarna vanzelf weer aan. De server meldt een actieve schakelaar (logboek, melding aan de eigenaar, «Захист»). |
 | `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | Beveiliging | `0` | `1` = sta Google Step-Up toe zonder `auth_time` in het token als de OAuth-flow binnen 5 min is voltooid. |
 | `ACCOUNT_DEFINITIEF_WISSEN` | Gegevensbescherming | `0` (dry-run) | `1` = achtergrondtaak `opruimen` verwijdert accounts definitief na afloop van de herstelperiode van 30 dagen. |
 
@@ -82,6 +83,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 | `ROOK_CHROMIUM` | auto-detectie `/srv/mijn-ruimte/browser/chrome-headless-shell` | Pad naar de headless-browser voor automatische rookcontrole na uitrol. |
 | `MR_EIGENAAR_NAAM` / `MR_CONTACT_EMAIL` | `власник / eigenaar` / `op aanvraag` | Naam van de verwerkingsverantwoordelijke en contact-e-mailadres voor publieke pagina's `/privacy` en `/terms` (`PRIVACY-001` / `B-010`). |
 | `MR_BEHEERSUBNET` / `MR_VM_SSH` | `10.0.0.0/8` / `mijn-ruimte-vm` | Beheersubnet voor bescherming van Huis vNext-gateways en SSH-doel voor beheerscripts (`B-010`). |
+| `HUIS_VERTROUWDE_TOESTELLEN` | leeg | Onderdeel «Huis» (Huis vNext): lijst met vertrouwde adressen van Home Assistant-gateways in het thuisnetwerk, gescheiden door een komma, puntkomma of nieuwe regel, bijvoorbeeld `http://192.168.1.20:8123,ha.thuis.example`. Alleen voor deze adressen zijn privéadressen en `http:` toegestaan; al het andere in het lokale netwerk weigert de server. Zonder pad, zoekdeel, gebruikersnaam of sterretjes. De eigenaar kan ook op de site adressen toevoegen (met bevestiging van de aanmelding); beide lijsten gelden samen. |
 
 ---
 

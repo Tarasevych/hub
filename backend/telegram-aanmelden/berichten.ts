@@ -2,6 +2,7 @@
 // voetregel «Я ніколи не прошу паролів чи кодів.». Alle tekst als platte tekst (geen parse_mode): niets uit een gebruikersnaam
 // of profiel kan opmaak of links injecteren.
 import { botAanroep, BotFout } from './bot-api';
+import { fotoVoorBot } from './account-foto';
 import { botSleutel, webhookGeheim } from './sleutels';
 import { instellingen, sql } from './opslag';
 import { knopLezen, knopSleutel, knopTekenen, nieuweId, type KnopLetter } from './cryptografie';
@@ -47,7 +48,9 @@ export async function knoppenMaken(telegramId: string, groep: string, knoppen: K
 export type Verzonden = { chatId: string; berichtId: number; isFoto: boolean };
 
 /** Verstuurt een bericht; met `kaart` en afbeeldingen aan als foto met onderschrift. Voetregel komt er altijd bij. */
-export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties: { kaart?: KaartSoort; knoppen?: Array<Array<Record<string, unknown>>>; antwoordToetsenbord?: Record<string, unknown> } = {}): Promise<Verzonden> {
+export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties: { kaart?: KaartSoort; knoppen?: Array<Array<Record<string, unknown>>>; antwoordToetsenbord?: Record<string, unknown>;
+  /** TELEGRAM-002: foto van het site-account dat vraagt (visueel kenmerk); mislukt het versturen ervan, dan de gewone kaart. */
+  accountFoto?: string } = {}): Promise<Verzonden> {
   const sleutel = await botSleutel();
   const inst = await instellingen();
   const inhoud = metVoet(tekst, taal);
@@ -61,8 +64,18 @@ export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties
     ? opties.knoppen.map((rij) => rij.map((b) => { const k = knopLezen(String(b.callback_data ?? '')); return k && JA_LETTERS.has(k.letter) ? { ...b, text: `⏳ ${aftel} ${eenheid} · ${String(b.text)}`.slice(0, 64) } : b; }))
     : opties.knoppen;
   const reply_markup = opties.antwoordToetsenbord ?? (metZandloper ? { inline_keyboard: metZandloper } : undefined);
-  let v: Verzonden;
-  if (opties.kaart && inst.afbeeldingen && inhoud.length <= 1000) {
+  let v: Verzonden | null = null;
+  const eigen = opties.accountFoto && inst.afbeeldingen && inhoud.length <= 1000 ? fotoVoorBot(opties.accountFoto) : null;
+  if (eigen) {
+    try {
+      const r = 'url' in eigen
+        ? await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, photo: eigen.url, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) })
+        : await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) },
+          { bestand: { veld: 'photo', naam: eigen.naam, type: eigen.type, inhoud: eigen.inhoud } });
+      v = { chatId, berichtId: r.message_id, isFoto: true };
+    } catch { v = null; } // Telegram weigert de foto (formaat, onbereikbaar adres) → de gewone kaart hieronder
+  }
+  if (v) { /* al verstuurd met de foto van het account */ } else if (opties.kaart && inst.afbeeldingen && inhoud.length <= 1000) {
     const r = await botAanroep<{ message_id: number }>(sleutel, 'sendPhoto', { chat_id: chatId, caption: inhoud, ...(reply_markup ? { reply_markup } : {}) },
       { bestand: { veld: 'photo', naam: `kaart-${opties.kaart}.png`, type: 'image/png', inhoud: kaartPng(opties.kaart) } });
     v = { chatId, berichtId: r.message_id, isFoto: true };
@@ -70,17 +83,18 @@ export async function stuur(chatId: string, tekst: string, taal: BotTaal, opties
     const r = await botAanroep<{ message_id: number }>(sleutel, 'sendMessage', { chat_id: chatId, text: inhoud, disable_web_page_preview: true, ...(reply_markup ? { reply_markup } : {}) });
     v = { chatId, berichtId: r.message_id, isFoto: false };
   }
+  const klaar: Verzonden = v;
   if (aftel > 0 && opties.knoppen) {
     const origineel = opties.knoppen;
     const t = setTimeout(() => {
       // Alleen als er nog niets getikt is (een «Ні» haalt de knoppen al weg).
       void sql("SELECT count(*)::int AS n FROM app.tg_knoppen WHERE id = ANY($1::text[]) AND stand = 'nieuw'", [jaIds])
-        .then(([r]) => (Number(r?.n) > 0 ? botAanroep(sleutel, 'editMessageReplyMarkup', { chat_id: chatId, message_id: v.berichtId, reply_markup: { inline_keyboard: origineel } }) : undefined))
+        .then(([r]) => (Number(r?.n) > 0 ? botAanroep(sleutel, 'editMessageReplyMarkup', { chat_id: chatId, message_id: klaar.berichtId, reply_markup: { inline_keyboard: origineel } }) : undefined))
         .catch(() => undefined);
     }, aftel * 1000);
     (t as { unref?: () => void }).unref?.();
   }
-  return v;
+  return klaar;
 }
 
 /** Hoeveel seconden een «Так»-knop nog moet wachten (0 = mag). Puur, getest. */

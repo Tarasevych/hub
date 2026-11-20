@@ -1,10 +1,11 @@
-/** Staging-only connection manager for cloud.tarasevych.com.
- * Requires the existing CanonicalChrome; no duplicate global shell.
- * Not mounted until full release gate and real provider acceptance pass.
+/** Передпусковий центр керування підключеннями для cloud.tarasevych.com (M4).
+ * Працює всередині спільного каркаса без дублювання зовнішньої оболонки.
+ * Не вмикається в робочому середовищі без повного приймального проходження та перевірки справжніх постачальників.
  */
 import {useEffect,useMemo,useState}from'react';
 import{beginCloudConsent,CloudAccountSync,type CloudAccountListItem}from'./cloud-account-sync';
 import './cloud-verbinding-centrum.css';
+import '../cloud-klassiek-maquette.css';
 const META=[
  {provider:'onedrive-personal',name:'OneDrive Personal',group:'Microsoft'},
  {provider:'onedrive-business',name:'OneDrive Work',group:'Microsoft'},

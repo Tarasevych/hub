@@ -10,7 +10,7 @@ import { agentLogo, Help, IconButton, Logo, StatusDot } from './mcp-ui';
 import { foutTekst, isRechtFout } from './agenten/fouten';
 import { HEARTBEAT_EVENT, heartbeatToestand } from './browser-agent-hartslag';
 import ExtensionWizard from './ExtensieWizard';
-import { EXT_MIN_VERSIE } from '../shared/extensie-update';
+import { EXT_MIN_VERSIE } from '../shared/extensie-bijwerken';
 // HUB-07: oordeel en teksten van de zelftest komen van de site (verplichte controles, uk/nl, huidig tabblad).
 import { zelftestWeergave, type Zelftest } from './extensie/zelftest';
 // 0.5: standaard vergrendeld; ontgrendelen met passkey en de live status van de extensie (zonder herladen).
@@ -19,6 +19,9 @@ import { combineer, slotVan, useExtensieLiveToestand, type Slot } from './extens
 // 0.6: slot «як користувач» (step-up, geen technisch profiel nodig).
 import ExtensiePrive, { toestemmingId } from './extensie/ExtensiePrive';
 import './agenten-paneel.css';
+import './extensie/extensie-ontwerp.css';
+import './agenten/agenten-toegang-maquette.css';
+import { alleenMens, geenAi } from './menselijke-actie'; // SEC-002 extensie-02 (g10a-2)
 
 type Tr = (uk: string, nl: string) => string;
 type BrowserAgent = {
@@ -31,7 +34,7 @@ type Presence = 'checking' | 'present' | 'absent';
 type Release = { version?: string; storeUrl?: string; installers?: string[]; crx?: { file: string; extensionId: string; version: string } | null };
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const MIN_VERSION = EXT_MIN_VERSIE; // één bron: shared/extensie-update.ts
+const MIN_VERSION = EXT_MIN_VERSIE; // één bron: shared/extensie-bijwerken.ts
 /** Keuzes voor «Як довго»: waarde (minuten, 'tot' of 'sessie'), uk, nl. Standaard: tot de eigenaar het zelf uitzet. */
 const DUREN: Array<[string, string, string]> = [
   ['tot', 'доки я не вимкну', 'tot ik het uitzet'], ['60', '1 годину', '1 uur'], ['480', '8 годин', '8 uur'], ['1440', '1 день', '1 dag'],
@@ -241,11 +244,24 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
   const installBlock = (
     <section ref={rootRef}>
       {mismatchKaart}
-      <ExtensionWizard
-        tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
-        busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
-        onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
-      />
+      {(() => {
+        const wizard = (
+          <ExtensionWizard
+            tr={tr} presence={presence} paired={slotGekoppeld} hasAgent={!!agent} agentEnabled={!!agent && agent.enabled} agentArmed={allDone} release={release}
+            busy={busy} notice={notice} welcome={welcome} onConnect={() => void connect()} onEnable={() => { if (agent) void setEnabled(agent, true); }}
+            onDownloaded={() => setDownloaded(true)} onClose={() => { clearWelcome(); setWelcome(false); }}
+          />
+        );
+        // EXTUI-001: розширення вже є й підключене → покрокове встановлення не займає пів сторінки, а згорнуте (для іншого браузера
+        // чи перевстановлення). Extensie aanwezig en gekoppeld → de installatiehulp staat ingeklapt.
+        if (!(presence === 'present' && slotGekoppeld && !welcome)) return wizard;
+        return (
+          <details className='ext-klap' data-ext-klap='installatie'>
+            <summary><span className='ext-klap-icoon' aria-hidden='true'><Globe /></span><span>{tr('Встановити в іншому браузері або перевстановити', 'In een andere browser installeren of opnieuw installeren')}<small>{tr('У цьому браузері розширення вже встановлене й підключене', 'In deze browser is de extensie al geïnstalleerd en gekoppeld')}</small></span></summary>
+            <div className='ext-klap-inhoud'>{wizard}</div>
+          </details>
+        );
+      })()}
       {ruimte ? null : <ExtensieOntgrendeling tr={tr} />}
     </section>
   );
@@ -271,15 +287,15 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
           <span className={`hub-pill ${state === 'on' ? 'ok' : state === 'wait' ? 'warn' : 'off'}`} data-browser-state={state}>{stateText}</span>
         </div>}
 
-        {ruimteBekend ? null : <div className='hub-switch'>
+        {ruimteBekend ? null : <div className='hub-switch' data-browser-ai-schakelaar='1' {...geenAi}>
           <span className='hub-switch-text'>
             <b>{tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')}
               <Help tr={tr} content={{ title: tr('Головний вимикач браузера', 'Hoofdschakelaar van de browser'), what: tr('Вмикає або вимикає весь доступ ШІ до цього браузера.', 'Zet alle toegang van de AI tot deze browser aan of uit.'), touches: tr(`Лише браузер «${a.name}», не інші браузери й не пристрої.`, `Alleen de browser «${a.name}», niet andere browsers of apparaten.`), on: tr('ШІ може лише те, що ви дозволили нижче, і стільки часу, скільки ви обрали в «Як довго».', 'De AI kan alleen wat u hieronder toestaat, en zo lang als u bij «Hoe lang» kiest.'), off: tr('Розширення нічого не виконує, навіть якщо окремі можливості нижче ввімкнені.', 'De extensie voert niets uit, ook niet als losse mogelijkheden hieronder aan staan.') }} /></b>
             <small>{tr('Діє стільки, скільки ви оберете нижче (типово — доки ви самі не вимкнете). Вимкнути можна будь-коли тут або кнопкою «Стоп».', 'Geldt zo lang als u hieronder kiest (standaard tot u het zelf uitzet). Uitzetten kan altijd hier of met de knop «Stop».')}</small>
           </span>
-          <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={() => void setEnabled(a, !a.enabled)} />
+          <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={alleenMens(() => void setEnabled(a, !a.enabled))} />
         </div>}
-        {ruimteBekend ? null : <label className='hub-row start' style={{ gap: 8, flexWrap: 'wrap' }} data-browser-duur=''>
+        {ruimteBekend ? null : <label className='hub-row start' style={{ gap: 8, flexWrap: 'wrap' }} data-browser-duur='' data-browser-ai-schakelaar='1' {...geenAi}>
           <span>{tr('Як довго:', 'Hoe lang:')}</span>
           <select value={duur} disabled={busy} onChange={(e) => { setDuur(e.target.value); if (a.enabled) void setEnabled(a, true, e.target.value); }}>
             {DUREN.map(([v, uk, nl]) => <option key={v} value={v}>{tr(uk, nl)}</option>)}
@@ -300,9 +316,9 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
           });
           const naarOntgrendelen = () => { const el = document.getElementById(`extensie-ontgrendeling-${a.id}`); el?.scrollIntoView({ block: 'start', behavior: 'smooth' }); el?.querySelector<HTMLElement>('h3')?.focus({ preventScroll: true }); };
           const btn: Partial<Record<ExtAction, ReactNode>> = {
-            test: <IconButton key='test' icon={<FlaskConical />} disabled={busy || !local} title={local ? '' : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
+            test: <IconButton key='test' kort icon={<FlaskConical />} disabled={busy || !local} title={local ? tr('Тест: перевіряє, чи розширення в цьому браузері справді відповідає. Нічого не змінює; результат з’явиться нижче', 'Test: controleert of de extensie in deze browser echt antwoordt. Verandert niets; het resultaat verschijnt hieronder') : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
             stop: <AiStopKnop key='stop' tr={tr} onDone={() => void load()} />,
-            enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => void setEnabled(a, true)}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
+            enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => { if ((navigator as unknown as { userActivation?: { isActive?: boolean } }).userActivation?.isActive === false) return; void setEnabled(a, true); }}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
             repair: <IconButton key='repair' icon={<RefreshCw />} disabled={busy} onClick={() => void connect()}>{tr('Підключити знову', 'Opnieuw koppelen')}</IconButton>,
             relogin: <IconButton key='relogin' icon={<RefreshCw />} onClick={() => location.reload()}>{tr('Оновити сторінку після входу', 'Pagina verversen na aanmelden')}</IconButton>,
             unlock: <IconButton key='unlock' icon={<KeyRound />} disabled={busy} onClick={naarOntgrendelen}>{slotVan(a.ruimte) === 'technisch' || !ruimteBekend ? tr('Розблокувати з Passkey', 'Ontgrendelen met passkey') : tr('Відкрити доступ', 'Toegang openen')}</IconButton>,

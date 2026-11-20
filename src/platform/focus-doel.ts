@@ -22,10 +22,16 @@ export function focusUitUrl(search: string): string {
 }
 
 export const DOEL_PARAM = 'doel';
-/** ?doel=<soort>:<id> uit een zoekreeks (zuiver). */
+// Een zoekdoel heeft ALTIJD de vorm <soort>:<id> (bijv. bord:<id>, shared/zoek-diepe-link.ts). Dezelfde parameternaam `doel`
+// draagt op api.*/kluis ook de voorselectie van een sleutelsoort (?doel=github-app, openVault in src/AIDienstWeergave.tsx; de
+// pagina toetst die zelf aan de witte lijst VAULT_DOELEN). Vroeger wiste deze module élke ?doel= bij het starten van de pagina,
+// nog vóór de kluis haar voorselectie las — de voorselectie werkte dus nooit. Nu: alleen <soort>:<id> is van ons; een waarde
+// zonder «:» blijft in de adresbalk voor de pagina zelf.
+const ZOEKDOEL_OK = /^[a-z][a-z0-9-]{0,30}:[a-zA-Z0-9_.:/-]{1,100}$/;
+/** ?doel=<soort>:<id> uit een zoekreeks (zuiver); iets anders (bijv. een kluis-voorselectie) → ''. */
 export function doelUitUrl(search: string): string {
   const v = new URLSearchParams(search).get(DOEL_PARAM) || '';
-  return SLEUTEL_OK.test(v) ? v : '';
+  return SLEUTEL_OK.test(v) && ZOEKDOEL_OK.test(v) ? v : '';
 }
 /** De CSS-selector voor een doel (data-zoek-doel), zuiver; ongeldig → null. */
 export function doelSelector(doel: string): string | null {

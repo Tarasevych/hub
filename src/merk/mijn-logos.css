@@ -1,0 +1,68 @@
+/* Налаштування → Теми → «Логотипи сервісів» (REESTR-LOGO-001). Вузький блок, рядки «логотип · назва · компактні кнопки»,
+   заокруглені кути, небезпечна дія з м'яким колірним натяком. Instellingen → Thema's → «Logo's van diensten». */
+/* Картка як у сусідів («Кадри й батарея»): на всю ширину колонки, згортається; вміст рівно по центру картки. */
+.mijn-logos { border: 1px solid var(--line); border-radius: 16px; background: var(--surface, var(--panel)); overflow: hidden; }
+.mijn-logos > summary { display: flex; align-items: center; gap: .55rem; min-height: 2.9rem; padding: .55rem .95rem; font-weight: 650; cursor: pointer; list-style: none; }
+.mijn-logos > summary::-webkit-details-marker { display: none; }
+.mijn-logos > summary::after { content: none; }
+.mijn-logos > summary > svg { width: 1.1rem; height: 1.1rem; color: var(--accent); flex: none; }
+.mijn-logos > summary > .mijn-logos-pijl { margin-left: auto; color: var(--muted); transition: transform .2s; }
+.mijn-logos[open] > summary > .mijn-logos-pijl { transform: rotate(180deg); }
+.mijn-logos > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 16px; }
+/* De kop staat IN de summary (h3 voor schermlezers en de zoekcatalogus), met de letter van de buren. */
+/* Sterker dan de serif-koppen van «Макет» (.mr-mq×4 .mq-echt-inhoud h3): in de summary dezelfde letter als «Кадри й батарея». */
+.mijn-logos.mijn-logos.mijn-logos.mijn-logos.mijn-logos > summary > h3.mijn-logos-kop { margin: 0; font: inherit; font-family: inherit; font-size: inherit; font-weight: 650; letter-spacing: normal; text-transform: none; }
+.mijn-logos-teller { min-width: 1.4rem; padding: 0 .4rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 12px; font-weight: 650; text-align: center; }
+.mijn-logos-binnen { display: grid; gap: 10px; padding: 0 .95rem .95rem; }
+/* Павло (16.11): рядки на всю ширину лишали задовгий проміжок між назвою й кнопкою. Тепер компактні картки в кілька колонок —
+   кнопка поруч із назвою; на телефоні одна колонка. Compacte kaarten in kolommen: de knop staat naast de naam. */
+.mijn-logos-lijst { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 6px; }
+.mijn-logos-lijst:has(.is-eigen) { grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
+.mijn-logos-rij { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px 6px 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.mijn-logos-rij.is-eigen { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.mijn-logos-naam { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.mijn-logos-naam strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mijn-logos-naam small { font-size: 12px; color: var(--muted); }
+.mijn-logos-systeem { display: inline-flex; align-items: center; gap: 4px; opacity: .8; }
+.mijn-logos-knop { flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface, var(--panel)); color: var(--text); cursor: pointer; }
+.mijn-logos-knop svg { width: 18px; height: 18px; }
+.mijn-logos-knop:hover:not(:disabled), .mijn-logos-knop:focus-visible { border-color: var(--accent); }
+.mijn-logos-knop.is-hoofd { color: var(--accent); }
+.mijn-logos-knop.is-zacht-gevaar { color: var(--fout); background: color-mix(in srgb, var(--fout) 7%, var(--panel)); border-color: color-mix(in srgb, var(--fout) 25%, var(--line)); }
+.mijn-logos-knop:disabled { opacity: .5; cursor: progress; }
+.mijn-logos-zoek { display: flex; align-items: center; gap: 8px; padding: 0 10px; min-height: 40px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.mijn-logos-zoek svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
+/* Het zoekveld staat in één regel met het vergrootglas; de algemene veldstijl van de instellingen (eigen rand, hoogte, opvulling) geldt hier niet. */
+.mijn-logos .mijn-logos-zoek input { flex: 1; width: auto; min-width: 0; height: 38px; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: none; color: var(--text); font: inherit; outline: none; }
+.mijn-logos-zoek:focus-within { border-color: var(--accent); }
+.mijn-logos-noot, .mijn-logos-melding { margin: 0; font-size: 13px; color: var(--muted); }
+.mijn-logos-melding { color: var(--text); }
+.mijn-logos-melding.is-fout { color: var(--fout); }
+.mijn-logos-uitleg { font-size: 13px; color: var(--muted); }
+.mijn-logos-uitleg summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; }
+.mijn-logos-uitleg summary::-webkit-details-marker { display: none; }
+.mijn-logos-uitleg summary svg { width: 15px; height: 15px; }
+.mijn-logos-uitleg ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+@media (max-width: 520px) {
+  .mijn-logos-systeem { display: none; }
+}
+/* Скинути всі — у заголовку блоку, праворуч перед стрілкою; після першого натискання червоніше (чекає підтвердження). */
+.mijn-logos > summary > .wenk { margin-left: auto; }
+.mijn-logos > summary > .wenk + .mijn-logos-pijl { margin-left: .5rem; }
+.mijn-logos-knop.mijn-logos-alles { width: 32px; height: 32px; }
+.mijn-logos-knop.mijn-logos-alles svg { width: 16px; height: 16px; color: currentColor; }
+.mijn-logos-knop.is-zacht-gevaar.is-klaar { color: var(--text-on-vlak); background: var(--fout); border-color: var(--fout); }
+/* Галерея всіх логотипів (Павло, 16.11): згорнуто — один ряд, «Показати всі» розгортає. Плитка = кнопка: логотип і назва під ним. */
+.mijn-logos-galerij { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.mijn-logos-galerij > li { display: contents; }
+.mijn-logos-galerij .wenk { display: flex; min-width: 0; }
+.mijn-logos-tegel { flex: 1; min-width: 0; display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 10px 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+.mijn-logos-tegel > span { max-width: 100%; font-size: 12px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mijn-logos-tegel:hover:not(:disabled), .mijn-logos-tegel:focus-visible { border-color: var(--accent); outline: none; }
+.mijn-logos-tegel.is-eigen { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
+.mijn-logos-tegel:disabled { opacity: .5; cursor: progress; }
+.mijn-logos-meer { justify-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.mijn-logos-meer svg { width: 16px; height: 16px; color: var(--muted); transition: transform .2s; }
+.mijn-logos-meer[aria-expanded='true'] svg { transform: rotate(180deg); }
+.mijn-logos-meer:hover, .mijn-logos-meer:focus-visible { border-color: var(--accent); }
+@media (max-width: 520px) { .mijn-logos-galerij { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); } .mijn-logos-tegel { min-height: 76px; } }

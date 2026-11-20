@@ -148,7 +148,8 @@ export async function main(): Promise<number> {
   check('kaart: hoofdactie retry → onRetry (herladen), nooit een nepactie', kaart.includes("actie === 'retry'") && kaart.includes('onRetry()'));
   check('kaart: beschermd-reden zichtbaar als tekst met data-amv-beschermd', kaart.includes('data-amv-beschermd') && kaart.includes('k.staatReden'));
   check('kaart: anker-id op de kaart zelf (deep-link landt op de kaart)', kaart.includes('id: anker') || kaart.includes('{ id: anker }'));
-  check('kaart: Google = merkmonogram, geen getekend vreemd logo of extern beeld', kaart.includes("amv-brand' aria-hidden='true'>G<") && !kaart.includes('img src'));
+  // GOOGLE-OFFICIEEL (2026-11-16): het officiële teken uit het merkenregister; de letter is alleen nog de terugval tijdens het laden.
+  check('kaart: Google = het officiële teken uit het merkenregister (<Merk merk="google">), geen extern beeld', kaart.includes("<Merk merk='google'") && kaart.includes("terugval={<span className='amv-brand'") && !kaart.includes('img src'));
 
   const filter = inhoud.get('src/aanmeld-vnext/onderdelen/MethodeFilter.tsx') || '';
   check('filter: zoeken debouncet ≥250 ms en is zuiver client-side (geen fetch/api)', /setTimeout\([\s\S]*?,\s*(2[5-9]\d|[3-9]\d\d)\)/.test(filter) && !filter.includes('api.') && !filter.includes('fetch('));
@@ -165,9 +166,10 @@ export async function main(): Promise<number> {
     && detail.includes("replace(/\\D+/g, '')") && detail.includes('maxLength={6}'));
   check('detail: TOTP-geheim alleen hier, in amv-geheim, met «показано один раз»; uitschakelen via p.totpUitschakelen',
     detail.includes('{p.secret}') && detail.includes('Ключ показано один раз') && detail.includes('p.totpUitschakelen()'));
-  check('detail: wachtwoord via dezelfde routes set/remove; verwijderen in twee stappen (is-gevaar) en geblokkeerd bij lockout.protected',
+  // IDENTITEIT-013: de tweede stap is nu de gedeelde bevestigingsdialoog (gevaarlijk), niet meer een inline knop is-gevaar.
+  check('detail: wachtwoord via dezelfde routes set/remove; verwijderen in twee stappen (BevestigDialoog gevaarlijk) en geblokkeerd bij lockout.protected',
     detail.includes("write('/api/owner/access/password/set', { password: p.password })") && detail.includes("write('/api/owner/access/password/remove')")
-    && detail.includes('is-gevaar') && detail.includes('busy || data.lockout.protected'));
+    && detail.includes('<BevestigDialoog open={wachtwoordWeg}') && detail.includes('gevaarlijk') && detail.includes('busy || data.lockout.protected'));
   check('detail: google — extern beheer bij Google + eerlijke enige-weg-melding (data-google-enige), geen verzonnen «laatste login»',
     detail.includes('https://myaccount.google.com/security') && detail.includes('data-google-enige') && !/laatste login|востаннє|last.login/i.test(detail));
   check('geheimen NOOIT buiten het detail: kaart/overzicht/filter/hero raken p.secret, otpauth, p.recovery of nieuweHerstelcodes niet aan',
@@ -187,8 +189,8 @@ export async function main(): Promise<number> {
   check('catalogus: fout → «Стан не вдалося перевірити» + Повторити (data-amv-catalogus-opnieuw)', cat.includes('Стан не вдалося перевірити') && cat.includes('data-amv-catalogus-opnieuw'));
   check('catalogus: zelftest eerlijk drieledig (пройдено/не пройдено/ще не виконувався)', cat.includes('пройдено') && cat.includes('не пройдено') && cat.includes('ще не виконувався'));
   check('catalogus: uitleg + omweg uit het gedeelde contract worden getoond', cat.includes('aanmeldTekst(a.uitleg, lang)') && cat.includes('aanmeldTekst(a.omweg, lang)'));
-  check('gedeeld contract eerlijk: whatsapp niet-mogelijk, sms gepland, 4 aanbieders met sleutellijsten',
-    AANMELD_AANBIEDERS.find((a) => a.id === 'whatsapp')?.stand === 'niet-mogelijk' && AANMELD_AANBIEDERS.find((a) => a.id === 'sms')?.stand === 'gepland'
+  check('gedeeld contract eerlijk: whatsapp gepland (TELEGRAM-002), sms gepland, 4 aanbieders met sleutellijsten',
+    AANMELD_AANBIEDERS.find((a) => a.id === 'whatsapp')?.stand === 'gepland' && AANMELD_AANBIEDERS.find((a) => a.id === 'sms')?.stand === 'gepland'
     && AANMELD_AANBIEDERS.filter((a) => a.stand === 'sleutels-nodig').every((a) => (a.vereist?.length || 0) >= 2));
 
   // ---- css-poorten

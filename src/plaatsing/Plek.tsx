@@ -20,6 +20,7 @@ import { focusbaar, menuToets } from '../platform/toegankelijk';
 import { registerZone } from '../zwevend-ontwijking';
 import { gniezdoRef, plaatsStaat, useGniezdo, usePlaatsStaat, zetOnder, zetPlaatsMenu, zetPlaatsStatus, zoneRef, type Sleep } from './plaatsing-staat';
 import { flipNa } from './plaats-flip';
+import { useMobielVeilig } from '../mobiel-veilig/vlag';
 import './plaatsing.css';
 
 type Lang = 'uk' | 'nl';
@@ -98,7 +99,23 @@ export function Plek({ knop, children }: { knop: KnopId; children: (vorm: 'rond'
 /** Balken onderaan die de stapel optillen (de stapel staat erboven, niet erop). Eén gemeten hoogte; verandert alleen als zo'n balk
  *  verschijnt, verdwijnt of van hoogte verandert — niet bij scrollen of zoomen. */
 const ONDERBALKEN = ['.canonical-connection-banner', '.mail-reader-onderbalk', '.mail-minimized-viewer', ".canonical-chrome[data-dock='onder'] .canonical-sidebar"];
+const ONDERBALKEN_SAMEN = ONDERBALKEN.join(',');
+/** MOBIEL-BREEDTE-VEILIG v1: raakt deze DOM-wijziging een onderbalk? Alleen dan meten (de oude weg mat na ELKE wijziging in body,
+ *  met een geforceerde lay-out per keer — 41 % van de processortijd bij het laden van /agenten op een telefoon). */
+export function raaktOnderbalk(records: readonly MutationRecord[], gevolgd: ReadonlySet<Element>): boolean {
+  const past = (n: Node) => n.nodeType === 1 && ((n as Element).matches(ONDERBALKEN_SAMEN) || (n as Element).querySelector(ONDERBALKEN_SAMEN) !== null);
+  let weg = false;
+  for (const r of records) {
+    if (r.type === 'attributes') { if (r.target.nodeType === 1 && ((r.target as Element).matches('.canonical-chrome') || past(r.target))) return true; continue; }
+    for (const n of r.addedNodes) if (past(n)) return true;
+    if (r.removedNodes.length) weg = true;
+  }
+  // verwijderd: een gevolgde balk (of een voorouder ervan) hangt niet meer in het document
+  if (weg) for (const el of gevolgd) if (!el.isConnected) return true;
+  return false;
+}
 function useOnderbalken(stapel: React.RefObject<HTMLElement | null>, klasse: Klasse) {
+  const zuinig = useMobielVeilig();
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let raf = 0;
@@ -109,10 +126,13 @@ function useOnderbalken(stapel: React.RefObject<HTMLElement | null>, klasse: Kla
       const vh = window.innerHeight, vw = window.innerWidth, s = stapel.current?.getBoundingClientRect();
       const kolomL = s && s.width ? s.left - 8 : vw - 96, kolomR = s && s.width ? s.right + 8 : vw;
       let hoogte = 0;
+      if (zuinig) for (const el of [...gevolgd]) if (!el.isConnected) { gevolgd.delete(el); ro?.unobserve(el); }
       for (const sel of ONDERBALKEN) for (const el of document.querySelectorAll(sel)) {
         if (!gevolgd.has(el)) { gevolgd.add(el); ro?.observe(el); }
         if (el.closest('.plaats-actiestapel')) continue;
-        const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        if (zuinig && (r.width < 1 || r.height < 1)) continue; // zelfde uitkomst als hieronder, zonder getComputedStyle
+        const cs = getComputedStyle(el);
         if (r.width < 1 || r.height < 1 || cs.visibility === 'hidden' || cs.display === 'none') continue;
         // alleen balken die tot (bijna) de onderrand reiken en onder de kolom van de stapel liggen
         if (r.bottom < vh - 24 || r.right < kolomL || r.left > kolomR) continue;
@@ -121,12 +141,17 @@ function useOnderbalken(stapel: React.RefObject<HTMLElement | null>, klasse: Kla
       zetOnder(hoogte ? hoogte + 4 : 0);
     };
     const plan = () => { if (!raf) raf = requestAnimationFrame(meet); };
-    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(plan) : null;
-    mo?.observe(document.body, { childList: true, subtree: true });
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(zuinig ? (rec) => { if (raaktOnderbalk(rec, gevolgd)) plan(); } : plan) : null;
+    if (zuinig) {
+      // Zelfde momenten als vroeger (een balk verschijnt, verdwijnt, het menu gaat naar onder, de stapel zelf verandert), maar
+      // gefilterd: gewone inhoudswijzigingen (lijsten, kaarten, skeletten) meten niets meer.
+      mo?.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-dock', 'hidden'] });
+      if (stapel.current) ro?.observe(stapel.current);
+    } else mo?.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('resize', plan);
     plan();
     return () => { cancelAnimationFrame(raf); mo?.disconnect(); ro?.disconnect(); window.removeEventListener('resize', plan); };
-  }, [stapel, klasse]);
+  }, [stapel, klasse, zuinig]);
 }
 
 /** De actiestapel: rechtsonder in het INHOUDSVLAK (rechts van het menu, links van een menu rechts), boven onderbalken. */

@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-006",
+  "titel": "Хвиля 5 теми оформлення «Макет»: повне студійне перевтілення простору штучного інтелекту ai.tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 5 канонічних вкладок простору штучного інтелекту ai.tarasevych.com (робоча бесіда та інструменти, агентні простори, процеси й запуски, власні сценарії й самостійне розгортання, підключення) та панелей дозволів і ручних підтверджень дій поруч з усіма чинними темами без видалення наявних можливостей та із повним збереженням захисних інваріантів SEC-002.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-006-20261113-221000",
+    "basis": "32d52aa10fe99b6ee727272084c2906c0d69aed2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі постачальників моделей, маркери сеансів, історії бесід користувачів, внутрішні мережеві адреси та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T22:10:21Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-006-20261113-221000 поверх перевіреної Хвилі 4 (32d52aa10fe99b6ee727272084c2906c0d69aed2) та зареєстровано завдання MAQUETTE-006."
+    },
+    {
+      "tijd": "2026-11-13T22:22:00Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil, аметистову вітрину MaquetteHeld (dienst='ai') та перетягувану якірну навігацію MaquetteAnkerRail у AIDienstWeergave та AiWerkruimte, створено таблицю стилів src/ai-werkruimte-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T22:26:00Z",
+      "stap": "Оформлено екосистему агентних просторів, процесів, передач та власних сценаріїв у AiEcosysteemPaneel із новою таблицею стилів src/ai-ecosysteem/ai-ecosysteem-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T22:29:00Z",
+      "stap": "Оформлено панелі ручних підтверджень і дозволів ШІ (GoedkeuringInhoud, AiToestemmingen, BevestigingenPaneel) через src/ai-bevestiging/ai-bevestigingen-maquette.css зі стовідсотковим збереженням захистів alleenMens, geenAi та verborgenVoorAi."
+    },
+    {
+      "tijd": "2026-11-13T22:38:00Z",
+      "stap": "Виконано повне виробниче складання, перевірку типів, модульні випробування простору ШІ та живу візуальну перевірку всіх вкладок ai.tarasevych.com у безголовому оглядачі Chromium у нічному й світлому режимах (0 винятків під час виконання)."
+    }
+  ],
+  "keuzes": [
+    "Вітрину MaquetteHeld застосовано в компактному режимі на робочій вкладці бесіди (workspace) для негайного доступу до поля введення та в повному режимі на оглядових вкладках агентних просторів, процесів, сценаріїв і підключень.",
+    "Компонент бесіди AiWerkruimteChat та захищені елементи керування в BevestigingenPaneel збережено без жодних втручань у розмітку чи захисні маркери SEC-002 — усе студійне перевтілення виконано через каскадні правила під html.palet-maquette.",
+    "Усі три нові таблиці стилів простору ШІ побудовано виключно на змінних var(--mq-*) з аметистовим акцентом --mq-accent-ai без сирих кольорів, !important чи нових position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-006-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-006.json",
+    "orchestratie/taken/MAQUETTE-006.json",
+    "src/AIDienstWeergave.tsx",
+    "src/AiToestemmingen.tsx",
+    "src/AiWerkruimte.tsx",
+    "src/GoedkeuringInhoud.tsx",
+    "src/ai-bevestiging/BevestigingenPaneel.tsx",
+    "src/ai-bevestiging/ai-bevestigingen-maquette.css",
+    "src/ai-ecosysteem/AiEcosysteemPaneel.tsx",
+    "src/ai-ecosysteem/ai-ecosysteem-maquette.css",
+    "src/ai-werkruimte-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, ai-werkruimte-20261019, ai-kluis-een-plek-20261101, ai-doorverwijzing-ui004, ai-ecosysteem-en-google-herstel, ai-onafhankelijke-agenten, bevestig-toegang-opmaak-20261025, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка ai.tarasevych.com (/werkgebied у темному й світлому режимах, /agenten, /processen, /werkstromen, мобільний вигляд 390x844 та контрольна палітра kleur) у безголовому оглядачі Chromium через локальний HTTPS — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/AIDienstWeergave.tsx",
+    "src/ai-ecosysteem/AiEcosysteemPaneel.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 5 (MAQUETTE-006) охоплює ядро теми, id.tarasevych.com, екрани входу, mail.tarasevych.com, cloud.tarasevych.com, github.tarasevych.com, hub.tarasevych.com та ai.tarasevych.com; піддомени huis, mcp, api та admin послідовно перевтілюються у Хвилях 6–9 (MAQUETTE-007 — MAQUETTE-010)."
+  ]
+}

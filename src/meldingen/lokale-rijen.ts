@@ -7,6 +7,8 @@
 // melding weer op «ongelezen» (en een verwijderde regel kwam terug). Nu is de opslag de bron van waarheid: elke wijziging begint bij wat
 // er NU staat (werkRijenBij), en andere tabbladen volgen via het `storage`-event (CanoniekMeldingencentrum).
 import { resolveCanonicalNoticeAction, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeKind, type CanonicalNoticeSection } from '../canoniek-meldingen';
+import { MELDINGEN_VOORVOEGSEL } from '../lokale-sporen';
+import { dienstVoorHost, padBestaat, routeerMeldingLink } from '../../shared/melding-link';
 
 export type BewaardeRij = {
   id: string;
@@ -40,7 +42,9 @@ export type BewaardeRij = {
 
 /** Hoeveel meldingen de lijst bewaart; ouder dan dit valt er vanzelf af. */
 export const MAX_RIJEN = 50;
-export const historyKey = (scope: string) => `tsv:canonical-notification-history-v2:${scope || 'anon'}`;
+// SEC-002 (interface-06): het voorvoegsel («tsv:canonical-notification-history-v2:») komt uit src/lokale-sporen.ts, dat deze lijst
+// bij afmelden zonder «Запам'ятати цей акаунт» wist — vroeger bleven de laatste 50 meldingen (tekst, details, koppelingen) staan.
+export const historyKey = (scope: string) => `${MELDINGEN_VOORVOEGSEL}${scope || 'anon'}`;
 const legacyKey = (scope: string) => `tsv:canonical-notification-retained-v1:${scope || 'anon'}`;
 const DETAIL_ICONS: CanonicalNoticeDetailIcon[] = ['scope', 'query', 'server', 'provider', 'results', 'durable', 'request', 'saved', 'cursor', 'duration', 'accounts', 'error'];
 
@@ -72,9 +76,16 @@ export const normalizeLink = (value: unknown): { href: string; label: string } |
   const href = String(raw.href || '').trim().slice(0, 300);
   const label = String(raw.label || '').trim().slice(0, 60);
   if (!label || !href) return undefined;
-  if (href.startsWith('/') && !href.startsWith('//')) return { href, label };
+  // MELDLINK-001: історія сповіщень спільна для всіх піддоменів, тож відносна адреса має отримати СВІЙ піддомен (інакше
+  // «/diagnostiek», відкрите на id.*, вело на сторінку 404). Поза нашими хостами (локальна розробка) лишається відносною.
+  const hier = typeof location !== 'undefined' ? dienstVoorHost(location.hostname) : undefined;
+  if (href.startsWith('/') && !href.startsWith('//')) {
+    if (!hier) return { href, label };
+    const doel = routeerMeldingLink(href, padBestaat(hier, href.split(/[?#]/)[0]) ? { dienst: hier } : {});
+    return doel ? { href: doel, label } : undefined;
+  }
   try {
-    const url = new URL(href);
+    const url = new URL(routeerMeldingLink(href) || href);
     return url.protocol === 'https:' && !url.username && !url.password && (url.hostname === 'tarasevych.com' || url.hostname.endsWith('.tarasevych.com'))
       ? { href: url.toString(), label }
       : undefined;

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 155,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:07.605Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "MELDCAT-001: єдиний реєстр усіх 291 сповіщення сайту",
+    "nl": "MELDCAT-001: één register voor alle 291 meldingen van de site"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до спільного випуску UPD-005 (через UPD-004): повний перелік сповіщень сайту з перевіркою-сторожем.",
+    "nl": "Opgenomen in UPD-005 (via UPD-004): volledig register van alle meldingen met bewakingstest."
+  },
+  "taken": [
+    "MELDCAT-001",
+    "UPD-005"
+  ]
+}

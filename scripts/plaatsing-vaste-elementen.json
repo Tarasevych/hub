@@ -105,7 +105,7 @@
   "src/tech/tech.css :: .tech-vraag-uitleg",
   "src/tech/tech.css :: @media (max-width:768px) .tech-band-extra",
   "src/tech/tech.css :: html[data-tech=aan] #root",
-  "src/toegangslaag.css :: .info-tip-tekst",
+  "src/hulp/hulp-knop.css :: .info-tip-tekst",
   "src/toegangslaag.css :: @media print body.herstel-afdruk .herstel-nieuw",
   "src/ui-golf-11.css :: .google-mail-reader-backdrop[data-reader-venster=\"zwevend\"] .google-mail-reader",
   "src/uitrol/uitrol.css :: .ut-lade-schaduw",
@@ -123,7 +123,7 @@
    "reden": "MAILSCAN-002: bericht van hoogstens twee seconden na een uitdrukkelijk gekozen adrescontrole. Geen knop: pointer-events:none, raakvlakken blijven vrij en de vaste plaats verhindert dat de melding met de inhoud meeschuift."
   },
   {
-   "sleutel": "src/mail/mail-achtergrond.css :: .mail-achtergrond-instellingen-portaal",
+   "sleutel": "src/mail/mail-achtergrond.css :: body .mail-achtergrond-instellingen.mail-achtergrond-instellingen-portaal",
    "reden": "MAILSCAN-002: instellingenpaneel van de bewegende achtergrond, via document.body getoond. Geen zwevende knop: de bestaande knop blijft in de kop van de mailsectie, het paneel zelf krijgt een vaste plaats binnen de zichtbare schermranden en wordt niet door het smalle mobiele inhoudsvak afgesneden."
   },
   {
@@ -345,6 +345,78 @@
   {
    "sleutel": "src/telegram-aanmelden/telegram.css :: .tga-scherm",
    "reden": "TELEGRAM-AANMELDEN v1: achtergrondlaag van het bevestigingsvenster «Підтвердіть, що це ви» (Telegram/geheime code), modaal over het hele scherm zoals .bevestig-toegang-achter. Geen zwevende knop."
+  },
+  {
+   "sleutel": "src/accountmenu-v3/accountmenu-v3.css :: [data-account-menu-v3].am3-mobiel-laag",
+   "reden": "IDENTITEIT-008: onafhankelijk mobiel bovenvenster van AccountMenuV3 (<= 700 px), geportaleerd naar .canonical-chrome zodat het menu niet in de smalle zijlade (270 px) wordt samengedrukt maar over de hele breedte van de telefoon verschijnt. De profielfotoknop blijft op haar vaste plek; dit is een vensterlaag met achtergrondsluier, geen zwevende knop."
+  },
+  {
+   "sleutel": "src/canoniek-account-menu.css :: .canonical-account-portal",
+   "reden": "Портальна обгортка панелі облікових записів безпосередньо в body (вище за якірну панель розділів .mq-anker-rail, але нижче за модальні шари), щоб ізольована оболонка не перекривала розкрите меню облікових записів; панель діалогу, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-anker-rail",
+   "reden": "MAQUETTE-001: спільна якірна панель розділів піддомену, яку користувач закріплює на будь-якому з чотирьох країв робочої області; враховує виміряні межі бічного меню та верхньої смуги; панель навігації, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-sleep-rand-wijzer",
+   "reden": "MAQUETTE-001: тимчасова пунктирна рамка цільового краю лише під час перетягування якірної панелі розділів; не перехоплює натискань і не є кнопкою."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-rail-popover",
+   "reden": "MAQUETTE-001: спливне діалогове вікно налаштування сторони та компактності якірної панелі розділів, прив'язане до виміряних меж робочої області; вікно налаштувань, не кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-anker-sluier",
+   "reden": "MAQUETTE-001: напівпрозора завіса під розкритим переліком розділів на вузькому екрані для закриття списку дотиком поза ним; тло списку, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-snel-naar-laag",
+   "reden": "MAQUETTE-001: повноекранний модальний шар діалогового вікна швидкого переходу за розділами піддомену (закривається клавішею Escape або дотиком до тла); модальне вікно, не кнопка."
+  },
+  {
+   "sleutel": "src/platform/kluis-poort.css :: .kluis-poort-host",
+   "reden": "KLUIS-APPARAAT-001: kaart «Ваші дані зараз зашифровані» bovenaan de pagina (ingeklapt: strook onderaan) — een meldingspaneel met uitleg en knoppen, zoals .canonical-connection-banner; pointer-events alleen op de kaart zelf. Geen losse zwevende knop."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-ecosysteem-portaal",
+   "reden": "GEMINI-002: незалежне вікно порталу споживчих сповіщень («застосунок у застосунку»), що переміщується, змінює розміри й плаває поверх усіх елементів сайту з власним закріпленням; портальне вікно, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-bijlage-portaal",
+   "reden": "GEMINI-002: повноекранний модальний шар розгорнутого переглядача та програвача вкладень у межах порталу сповіщень (закривається клавішею Escape або кнопкою закриття); модальний діалог, не кнопка."
+  },
+  {
+   "sleutel": "src/meldingen/ecosysteem/meldingen-ecosysteem.css :: .mel-minimale-pil",
+   "reden": "GEMINI-002: згорнута компактна капсула порталу сповіщень поверх сторінки для швидкого розгортання екосистеми з лічильником активних подій; закріплений компактний стан вікна, не дубльована кнопка навігації."
+  },
+  {
+   "sleutel": "src/achtergrond/levende-achtergrond.css :: .levende-achtergrond",
+   "reden": "ACHTERGROND-001: «Живий фон» — полотно-тло на весь екран під робочою областю (pointer-events:none), як фон оболонки schil-achtergrond; не кнопка й не панель."
+  },
+  {
+   "sleutel": "src/achtergrond/achtergrond-knop.css :: .la-snel-laag",
+   "reden": "ACHTERGROND-001: випадна панель швидкого налаштування «Живого фону» під кнопкою у верхній смузі (позиція — від кнопки, закривається Esc або клацанням поза нею); панель, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/platform/zwevend-menu.css :: .zwevend-popover",
+   "reden": "ZWEVEND-001 (15.11.2026): спливне меню (напр. «⋯» у вітрині «Живий робочий стіл») у порталі на рівні .canonical-chrome. Не кнопка, а тимчасовий список дій біля своєї кнопки; position:fixed потрібен, бо вітрина .mq-held обрізає вміст (overflow:hidden) і меню ховалося під смугою лічильників. Закривається кліком поза ним, Escape і вибором пункту."
+  },
+  {
+   "sleutel": "src/mail/ai-vertaling-balk.css :: @media (max-width:640px) .ai-vb-scherm",
+   "reden": "MAILAI-005 (16.11.2026): затемнення під аркушем вибору рушія ШІ на телефоні. Не кнопка: тло на весь екран, дотик по ньому закриває аркуш."
+  },
+  {
+   "sleutel": "src/mail/ai-vertaling-balk.css :: @media (max-width:640px) html body .ai-vertaling-balk.is-rij .ai-vb-motoren",
+   "reden": "MAILAI-005 (16.11.2026): вибір рушія ШІ на телефоні — аркуш знизу (role=\"dialog\"), відкривається чипом «хто обробляє» над листом; закривається хрестиком, дотиком поза аркушем або Esc. Вікно, не плаваюча кнопка; на комп’ютері воно в потоці сторінки."
+  },
+  {
+   "sleutel": "src/mail/mail-lezer-compact-kop.css :: @media (max-width: 960px) .mail-kop-paneel",
+   "reden": "UPD-010 (19.11.2026): розгортувана панель пілюлі переглядача листа («Що від вас потрібно?» / зовнішні зображення) як нижній аркуш на вузькому екрані; закривається натиском зовні або Escape. Панель, не плаваюча кнопка."
+  },
+  {
+   "sleutel": "src/platform/uitrol-achtergrond-band.css :: .ut-bg-band",
+   "reden": "UPD-010 (19.11.2026): глобальна неблокуюча смужка перебігу фонового завантаження та встановлення оновлень на всіх піддоменах (як NieuweVersieBand); згортається в компактний індикатор. Інформаційна смужка стану, не плаваюча кнопка."
   }
  ],
  "kopReserves": [

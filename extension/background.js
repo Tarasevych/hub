@@ -22,7 +22,7 @@
 //   een PAIR met de andere ruimte laat het andere slot staan. Nooit geheimen naar de site.
 import {
   ALLOWED_COMMANDS, DIAG_CAP, DIAG_PAKKET, DIAG_RUIMTE, LOKAAL_CAPS, MARKERING_BADGE, MARKERING_KLEUREN, RUIMTES, TYPE_CAPABILITY,
-  accountState, adresInRuimte, debuggerToegestaan, isOwnSiteUrl, isRuimte,
+  AI_SITE_TYPES, accountState, adresInRuimte, debuggerToegestaan, isAiSiteUrl, isOwnSiteUrl, isRuimte,
   parseAccountClaim, parseProfiel, profielToegestaan, ruimteOf, stripQuery, urlInScope, valideerOpdracht, verifyCommand, verifyOntgrendeling,
 } from './shared.js';
 // 0.6.2 (opdracht eigenaar 20.10.2026): WIE leest het tabblad nu, en welke kleur hoort bij die agent.
@@ -30,6 +30,8 @@ import { MARKERING_STAART_MS, agentSlugUitNaam, kleurVoorAgent } from './markeri
 // Statische import: import() is in een service worker niet toegestaan (HTML-spec), dus native.js moet in het pakket zitten.
 import * as nativeModule from './native.js';
 import { ruimteFout, sluitFout } from './ruimte-fouten.js';
+// SEC-002 extensie-06: de debugger blijft alleen aan een tabblad op een toegestane administratieve host (zie debugger-wacht.js).
+import { contextWacht, debugAdresMag } from './debugger-wacht.js';
 
 const VERSION = chrome.runtime.getManifest().version;
 const SITE = 'https://mcp.tarasevych.com';
@@ -262,7 +264,10 @@ async function eindeBereikt(r) {
   if (s.ontgrendeling && eindeLokaal(s.ontgrendeling) <= Date.now() + 1000) await vergrendel(r, 'verlopen');
 }
 
-async function bewaarIntrekking(r) { const s = sloten[r]; await sessie.set({ [K.intrek(r)]: { ingetrokken: s.ingetrokken, laatsteIat: s.laatsteIat, wachtrij: s.wachtrij } }); }
+// SEC-002 extensie-08: ook in chrome.storage.local (geen geheim: alleen gid's, tijdstempel en reden). chrome.storage.session is leeg
+// na het sluiten van de browser of het herladen van de extensie; zonder deze kopie aanvaardde de extensie daarna weer een toegang die
+// de mens had ingetrokken terwijl de verbinding verbroken was, en bleef de intrekking zelf nooit bij de server aankomen.
+async function bewaarIntrekking(r) { const s = sloten[r]; const w = { [K.intrek(r)]: { ingetrokken: s.ingetrokken, laatsteIat: s.laatsteIat, wachtrij: s.wachtrij } }; await sessie.set(w); await stil(() => chrome.storage.local.set(w)); }
 function markeerIngetrokken(r, gid) {
   const s = sloten[r];
   if (typeof gid !== 'string' || !gid || s.ingetrokken.includes(gid)) return;
@@ -374,7 +379,9 @@ async function bevestigIntrekking(r, gid) {
 }
 
 // ---------------------------------------------------------------- tabbladen: profiel en regels per slot
-const profielVan = (tabId) => { const i = tabInfo.get(tabId); return i ? i.profiel : 'gebruiker'; };
+// SEC-002 extensie-03/04: een tabblad ZONDER bekende stand (net genavigeerd, service worker gewekt, brug zwijgt) is 'onbekend' en
+// geldt voor GEEN slot — vroeger was dat stilzwijgend 'gebruiker', waardoor het privé-slot een technisch tabblad zag en bediende.
+const profielVan = (tabId) => { const i = tabInfo.get(tabId); return i ? i.profiel : 'onbekend'; };
 /** Mag slot r (met grant g) dit tabblad raken? Host exact ∈ domeinen ∩ hosts van de ruimte, en het profiel volgens de regel. */
 function tabMag(r, g, tab, profiel = profielVan(tab.id)) {
   return !!(g && tab && isOwnSiteUrl(tab.url || '') && adresInRuimte(r, tab.url || '', g.domeinen) && profielToegestaan(r, profiel));
@@ -423,9 +430,15 @@ async function slotStatus(r) {
     vergrendeldDoor: s.laatsteVergrendeling ? { ...s.laatsteVergrendeling } : null,
   };
 }
-// 0.9.1: ingebouwde AI van Chrome (lokale-ai.js, opties/zijpaneel). De service worker zelf heeft die API's niet; hij meldt alleen
-// de KEUZES (hoofdschakelaar + welke API's aan staan) zodat de site kan tonen wat in deze browser lokaal mag. Nooit tekst of uitvoer.
-const LAI_APIS = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'];
+// 0.9.1–0.9.7: ingebouwde AI van Chrome (lokale-ai.js, opties/zijpaneel). De service worker zelf heeft die API's niet; hij meldt
+// KEUZES en veilige instellingen zodat de site kan tonen wat in deze browser lokaal mag. Nooit tekst, geheimen of uitvoer.
+const LAI_APIS = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'embedder', 'decisions'];
+const LAI_PREFS = ['auto', 'speed', 'capability'];
+const LAI_SAMPLING = ['default', 'most-predictable', 'balanced', 'most-creative'];
+const LAI_MODEL_TALEN = ['en', 'es', 'ja', 'de', 'fr', 'uk', 'nl'];
+const LAI_VERTAAL_TALEN = ['auto', 'uk', 'nl', 'en', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'ja', 'zh', 'ko', 'tr', 'ar', 'hi'];
+const LAI_GEVAAR = ['siteToegang', 'tabTekst', 'multimodaal', 'autoDownload'];
+
 async function lokaleAiKeuze() {
   const o = (await stil(() => chrome.storage.local.get('lokaleAi'))) || {};
   const v = o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {};
@@ -435,14 +448,44 @@ async function lokaleAiKeuze() {
   // 0.9.1: stand per API zoals Chrome die IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()). Nooit wachten:
   // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
   if (aan) laiMeetAls();
+  const p = v.prompt && typeof v.prompt === 'object' ? v.prompt : {};
+  const s = v.summarizer && typeof v.summarizer === 'object' ? v.summarizer : {};
+  const instellingen = {
+    summarizerPreference: LAI_PREFS.includes(s.preference) ? s.preference : 'auto',
+    promptSamplingMode: LAI_SAMPLING.includes(p.samplingMode) ? p.samplingMode : 'default',
+    promptTaal: LAI_MODEL_TALEN.includes(p.taal) ? p.taal : 'en',
+    promptToolUse: p.toolUse === true,
+    chatHulp: v.chatHulp !== false,
+    vertaalInvoer: v.vertaalInvoer !== false,
+    vertaalUitvoer: v.vertaalUitvoer !== false,
+    doelTaal: LAI_VERTAAL_TALEN.includes(v.doelTaal) ? v.doelTaal : 'auto',
+  };
+  const gevaar = {
+    siteToegang: v.siteToegang === true,
+    tabTekst: v.tabTekst === true,
+    multimodaal: v.multimodaal === true,
+    autoDownload: v.autoDownload === true,
+  };
   // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
-  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+  // 0.9.6 (LAI-CON-001): beleid van de beheerder alleen als het UIT staat (reden + wie + wanneer); aan = geen veld (status ongewijzigd).
+  const b = laiBeleid();
+  return {
+    aan,
+    apis: LAI_APIS.filter((id) => apis[id] !== false),
+    siteToegang: v.siteToegang === true,
+    instellingen,
+    gevaar,
+    ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}),
+    ...(aan && typeof laiMeting.ukDirect === 'boolean' ? { ukDirect: laiMeting.ukDirect } : {}),
+    ...(aan && typeof laiMeting.nlDirect === 'boolean' ? { nlDirect: laiMeting.nlDirect } : {}),
+    ...(b && !b.aan ? { beleid: { aan: false, reden: b.reden, door: b.door, op: b.op } } : {}),
+  };
 }
-// ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
+// ---- 0.9.2–0.9.7: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
 // Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
 const LAI_STANDEN = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout'];
 const LAI_GELDIG_MS = 5 * 60_000;
-const laiMeting = { data: null, t: 0, bezig: null };
+const laiMeting = { data: null, ukDirect: undefined, nlDirect: undefined, t: 0, bezig: null };
 /** Zuiver: alleen bekende API's en stand-namen uit het offscreen-antwoord ({apis}); 'uit' zegt de keuze al. Anders null. */
 function laiStandFilter(d) {
   const a = d && typeof d === 'object' && d.apis && typeof d.apis === 'object' && !Array.isArray(d.apis) ? d.apis : null;
@@ -451,18 +494,71 @@ function laiStandFilter(d) {
   for (const id of LAI_APIS) if (LAI_STANDEN.includes(a[id])) uit[id] = a[id];
   return Object.keys(uit).length ? uit : null;
 }
+// 0.9.5 (LAI-REDEN): kant-en-klare reden voor de site (PING lokaleAi.reden + redenen per API), zodat de site niets zelf hoeft af te leiden.
+// Готова причина для сайту. Codes van de extensie: uit · site-uit · niet-hier · model-ontbreekt · klaar (beleid-uit = gereserveerd voor
+// het beleid van de beheerder; telefoon / geen-extensie / oud bepaalt de site zelf, want dan antwoordt er geen extensie).
+const LAI_REDEN_VAN_STAND = { available: 'klaar', downloadable: 'model-ontbreekt', downloading: 'model-ontbreekt', stil: 'model-ontbreekt', unavailable: 'niet-hier', ontbreekt: 'niet-hier', fout: 'niet-hier' };
+const LAI_REDEN_RANG = ['klaar', 'model-ontbreekt', 'niet-hier'];
+/**
+ * Zuiver. k = lokaleAiKeuze() ({aan, apis[], stand?}), siteToegang = «!»-schakelaar. → {reden?, redenen?}; zonder meting geen reden
+ * (de site meet dan zelf of toont «перевіряємо»). Volgorde: uit gaat voor site-uit, site-uit voor de stand van het model.
+ */
+function laiRedenen(k, siteToegang, beleid = null) {
+  if (!k || typeof k !== 'object') return {};
+  // 0.9.6 (LAI-CON-001): de beheerder zette het uit — gaat vóór alles; de site toont reden, wie en wanneer (nooit meer dan dat).
+  if (beleid && beleid.aan === false) return { reden: 'beleid-uit', beleid: { reden: beleid.reden, door: beleid.door, op: beleid.op } };
+  if (k.aan === false) return { reden: 'uit' };
+  const apis = Array.isArray(k.apis) ? k.apis : [];
+  const stand = k.stand && typeof k.stand === 'object' ? k.stand : null;
+  const redenen = {};
+  for (const id of LAI_APIS) {
+    if (!apis.includes(id)) redenen[id] = 'uit';
+    else if (stand && LAI_REDEN_VAN_STAND[stand[id]]) redenen[id] = LAI_REDEN_VAN_STAND[stand[id]];
+  }
+  if (siteToegang !== true) return { reden: 'site-uit', ...(stand ? { redenen } : {}) };
+  if (!stand) return {};
+  const beste = LAI_REDEN_RANG.find((r) => Object.values(redenen).includes(r));
+  return { ...(beste ? { reden: beste } : { reden: 'uit' }), redenen };
+}
+/**
+ * 0.9.6 (LAI-CON-001): beleid van de beheerder voor de lokale AI, uit het settings-bericht van de server (migratie 0287). Zuiver filter:
+ * alleen {aan, reden ≤ 300, door ≤ 200, op}; iets anders → null (= geen bericht van de server, dus niets beperkt).
+ */
+function laiBeleidFilter(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v) || typeof v.aan !== 'boolean') return null;
+  if (v.aan) return { aan: true, reden: '', door: null, op: null };
+  return { aan: false, reden: String(v.reden || '').slice(0, 300), door: typeof v.door === 'string' && v.door ? v.door.slice(0, 200) : null, op: Number.isFinite(v.op) ? v.op : null };
+}
+/** Geldend beleid: één gebruiker per extensie; zegt één slot «uit», dan is het uit (strengste wint). */
+function laiBeleid() {
+  let aan = null;
+  for (const r of RUIMTES) {
+    const b = sloten[r] && sloten[r].settings ? laiBeleidFilter(sloten[r].settings.lokaleAi) : null;
+    if (b && !b.aan) return b;
+    if (b) aan = b;
+  }
+  return aan;
+}
 async function meetLokaleAi() {
   // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
   const r = await Promise.race([naarOffscreen({ op: 'lokale-ai-stand' }).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), 20_000))]);
-  return r && r.ok ? laiStandFilter(r) : null;
+  if (!r || !r.ok) return null;
+  const stand = laiStandFilter(r);
+  if (!stand) return null;
+  return { stand, ukDirect: typeof r.ukDirect === 'boolean' ? r.ukDirect : undefined, nlDirect: typeof r.nlDirect === 'boolean' ? r.nlDirect : undefined };
 }
 /** Start een meting als de vorige ouder is dan LAI_GELDIG_MS; nooit twee tegelijk. Na afloop: statusWijziging(). */
 function laiMeetAls(forceer = false) {
   if (laiMeting.bezig || (!forceer && Date.now() - laiMeting.t < LAI_GELDIG_MS)) return laiMeting.bezig;
   laiMeting.t = Date.now();
-  laiMeting.bezig = meetLokaleAi().then((d) => {
-    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data);
+  laiMeting.bezig = meetLokaleAi().then((res) => {
+    const d = res ? res.stand : null;
+    const ukDirect = res ? res.ukDirect : undefined;
+    const nlDirect = res ? res.nlDirect : undefined;
+    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data) || ukDirect !== laiMeting.ukDirect || nlDirect !== laiMeting.nlDirect;
     laiMeting.data = d;
+    laiMeting.ukDirect = ukDirect;
+    laiMeting.nlDirect = nlDirect;
     if (anders) void statusWijziging();
   }, () => undefined).finally(() => { laiMeting.bezig = null; });
   return laiMeting.bezig;
@@ -474,13 +570,15 @@ async function statusKern() {
   const tech = await slotStatus('technisch');
   const tab = await actiefTabblad();
   const opSite = !!(tab && isOwnSiteUrl(tab.url || ''));
+  // 0.9.4: hoeveel tarasevych.com-tabbladen staan er open (alle vensters)? De kop zegt dan «у фоні» i.p.v. «активна вкладка не на сайті».
+  const siteTabs = ((await stil(() => ownTabs())) || []).length;
   const userId = await accountUserId();
   const nativeAan = gl.nativeOptIn === true;
   const nr = nativeRuimte();
   const techBestaat = tech.gekoppeld || accountInfo.techRecht === true;
   return {
     // 0.9.1: e-mail alleen zolang er een koppeling is (na ontkoppelen geen oude e-mail in de kop, maar de knop «Увійти»).
-    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
+    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, siteTabs, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
     account: opSite ? accountState(tabInfo.get(tab.id) ? tabInfo.get(tab.id).claim : null, userId) : 'unknown',
     sloten: { prive, technisch: techBestaat ? tech : null },
     lokaal: { toegestaan: nativeAan && !!nr, verbonden: lokaalInfo().verbonden, ruimte: nativeAan ? nr : null },
@@ -550,6 +648,37 @@ function stuurStatusNaarServer(r, extra = {}) {
   if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
   try { s.ws.send(JSON.stringify({ t: 'status', ...statusVelden(r), ...extra, version: VERSION })); } catch { /* dicht */ }
 }
+function stuurMeldingNaarServer(r, data = {}) {
+  const s = sloten[r];
+  if (!s.ws || !s.ready || s.ws.readyState !== WebSocket.OPEN) return;
+  try {
+    s.ws.send(JSON.stringify({
+      t: 'melding',
+      ruimte: r === 'technisch' ? 'technisch' : 'prive',
+      link: 'https://mcp.tarasevych.com/#extensie',
+      context: `Chrome ${VERSION} · ${r}`,
+      ...data,
+    }));
+  } catch { /* з'єднання закрито */ }
+}
+// 0.9.5 (EXTUI-001): «Сайти ШІ» — кожна зміна дозволу йде в центр сповіщень (обидва слоти, якщо на зв'язку).
+// Elke wijziging van het recht op AI-sites gaat naar het meldingencentrum.
+function meldAiSites(aan) {
+  for (const r of ['prive', 'technisch']) stuurMeldingNaarServer(r, {
+    sleutel: `ext:ai-sites:${aan ? 'aan' : 'uit'}:${Date.now()}`,
+    soort: 'extensie',
+    ernst: aan ? 'waarschuwing' : 'info',
+    titel: aan ? 'Розширення: сайти ШІ — «Завжди» / Extensie: AI-sites — «Altijd»' : 'Розширення: сайти ШІ вимкнено / Extensie: AI-sites uit',
+    bericht: aan
+      ? 'Chrome дав розширенню доступ до claude.ai, chatgpt.com, Gemini, Grok, Copilot. Вимкнути: налаштування розширення → Браузер і вкладки.'
+      : 'Розширення повернуло Chrome доступ до сайтів ШІ.',
+  });
+}
+try {
+  const isAi = (p) => (p.origins || []).some((o) => (chrome.runtime.getManifest().optional_host_permissions || []).includes(o));
+  chrome.permissions.onAdded.addListener((p) => { if (isAi(p)) meldAiSites(true); });
+  chrome.permissions.onRemoved.addListener((p) => { if (isAi(p)) meldAiSites(false); });
+} catch { /* geen permissions-API */ }
 const pong = (r) => JSON.stringify({ t: 'pong', version: VERSION, capabilities: capabilities(r), ...statusVelden(r) });
 
 // ---------------------------------------------------------------- badge + tooltip (samen voor beide sloten)
@@ -714,12 +843,27 @@ async function handle(r, socket, raw) {
     await wachtrijVersturen(r);
     void selfInfo(r, true).then(() => statusWijziging());
     await statusWijziging();
+    stuurMeldingNaarServer(r, {
+      sleutel: `ext:ready:${r}:${VERSION}`,
+      soort: 'extensie',
+      ernst: 'info',
+      titel: r === 'technisch'
+        ? `Розширення Chrome v${VERSION} (технічний контур) підключено / Chrome-extensie v${VERSION} (technisch) verbonden`
+        : `Розширення Chrome v${VERSION} готове до роботи / Chrome-extensie v${VERSION} gereed`,
+      bericht: r === 'technisch'
+        ? 'Слот технічного профілю активний. Доступ дозволяється лише після passkey.'
+        : 'Слот користувача на зв’язку з порталом.',
+    });
     return;
   }
   if (msg.t === 'ping') { socket.send(pong(r)); return; }
   if (msg.t === 'settings') {
     if (typeof msg.epoch === 'number' && msg.epoch >= s.settings.epoch) {
-      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true };
+      // 0.9.6: lokaleAi = beleid van de beheerder (0287); ontbreekt het veld (oude server, DB-fout), dan blijft de vorige stand staan.
+      const lai = laiBeleidFilter(msg.lokaleAi);
+      const vorigeLai = s.settings && s.settings.lokaleAi ? s.settings.lokaleAi : null;
+      s.settings = { epoch: msg.epoch, caps: Array.isArray(msg.caps) ? msg.caps : [], blocked: msg.blocked === true, ...(lai || vorigeLai ? { lokaleAi: lai || vorigeLai } : {}) };
+      if (JSON.stringify(lai) !== JSON.stringify(vorigeLai) && lai) void statusWijziging();
       await sessie.set({ [K.settings(r)]: s.settings });
     }
     return;
@@ -828,12 +972,30 @@ async function guarded(r, msg, bron) {
   // 6. host ∈ grant.domeinen ∩ hosts van de ruimte (prive nooit admin.*) en binnen de domeinen van de server-grant
   const scope = msg.scope && Array.isArray(msg.scope.domains) ? msg.scope.domains : (Array.isArray(serverGrant.domains) ? serverGrant.domains : []);
   const inBereik = (url) => adresInRuimte(r, url || '', g.domeinen) && urlInScope(url || '', scope);
-  const tabOk = (t) => !!t && inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id));
+  // SEC-002 extensie-03: opdrachten die een LIJST van tabbladen tonen of zelf een tabblad kiezen (tabs, pages, navigate) eisen voor
+  // elke kandidaat ook het juiste account — net als het doeltabblad van elke andere opdracht (stap 7).
+  const lijstOpdracht = type === 'browser.tabs' || type === 'browser.pages' || type === 'browser.navigate';
+  // 0.9.5 (EXTUI-001): вкладка сайту ШІ — лише слот prive, лише читання (AI_SITE_TYPES), лише підписаний host і дозвіл Chrome
+  // (перевіряється перед виконанням). Профілю й облікового запису там немає: моста на чужих сайтах ми не ставимо.
+  const tabOk = (t) => !!t && (isAiSiteUrl(t.url || '')
+    ? r === 'prive' && AI_SITE_TYPES.includes(type) && inBereik(t.url || '')
+    : inBereik(t.url || '') && profielToegestaan(r, profielVan(t.id))
+      && (!lijstOpdracht || accountState((tabInfo.get(t.id) || {}).claim, st.userId) === 'ok'));
   if (typeof params.url === 'string' && !inBereik(params.url)) throw new Error('EXTENSIE_DOMEIN: the address is outside the pages that were unlocked on the site');
+  // 0.9.5 (EXTUI-001): адресу сайту ШІ можна лише читати — не відкривати, не переходити туди (дзеркало перевірки на сервері).
+  if (typeof params.url === 'string' && isAiSiteUrl(params.url) && !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs); it never navigates, clicks or types there. Tell the user; do not retry.');
   if (type === 'browser.self_test') return selfTest(r);
+  // 0.9.6 (LAI-CON-001): ingebouwde AI van Chrome — geen tabblad nodig; alleen van de server (ondertekend), nooit van de lokale agent.
+  if (type === 'browser.lokale_ai') {
+    if (bron !== 'ws') throw new Error('EXTENSIE_LOKAAL: the local agent cannot use the built-in AI through the extension');
+    return lokaleAiVoorAgent(r, st, params);
+  }
+  // Profiel en account van de kandidaten VERS bij de brug ophalen: altijd voor lijstopdrachten, anders alleen voor wie onbekend is.
+  await verversProfielen(inBereik, lijstOpdracht);
   if (type === 'browser.tabs' || (type === 'browser.pages' && params.action === 'new') || type === 'browser.navigate') return run(r, type, params, null, inBereik, tabOk, msg);
   // 7. doeltabblad: host + profiel (vers gevraagd aan de brug), accountclaim = userId van DIT slot
   const tab = await needTab(tabOk);
+  if (isAiSiteUrl(tab.url || '')) return leesAiSite(r, type, params, tab, msg);
   const vers = await claimVan(tab.id, true);
   if (!profielToegestaan(r, vers.profiel)) throw new Error(PROFIEL_FOUT[r]);
   const acc = accountState(vers.claim, st.userId);
@@ -868,8 +1030,17 @@ async function zijpaneelChat(message) {
 
 // ---------------------------------------------------------------- tabbladen
 async function ownTabs() { return chrome.tabs.query({ url: 'https://*.tarasevych.com/*' }); }
+/** 0.9.5: вкладки сайтів ШІ — лише коли Chrome дав дозвіл («Сайти ШІ» → «Завжди»); інакше порожньо. */
+const AI_ORIGINS = () => (chrome.runtime.getManifest().optional_host_permissions || []);
+async function aiSitesToegestaan() { try { return await chrome.permissions.contains({ origins: AI_ORIGINS() }); } catch { return false; } }
+async function aiTabs() { return (await aiSitesToegestaan()) ? ((await stil(() => chrome.tabs.query({ url: AI_ORIGINS() }))) || []).filter((t) => isAiSiteUrl(t.url || '')) : []; }
+/** Kandidaten voor een opdracht: eigen tabbladen + (alleen als toegestaan) AI-sites; de grens zelf legt `mag` (tabOk) op. */
+async function kandidaatTabs() {
+  const gezien = new Set();
+  return [...(await ownTabs()), ...(await aiTabs())].filter((t) => t && !gezien.has(t.id) && gezien.add(t.id));
+}
 async function targetTab(mag) {
-  const tabs = (await ownTabs()).filter((t) => mag(t));
+  const tabs = (await kandidaatTabs()).filter((t) => mag(t));
   return tabs.find((t) => t.active && t.lastFocusedWindow) || tabs.find((t) => t.active) || tabs[0] || null;
 }
 async function needTab(mag) {
@@ -943,18 +1114,40 @@ async function zetTabInfo(tabId, claim, profiel) {
  */
 async function claimVan(tabId, vers = false) {
   if (!vers && tabInfo.has(tabId)) return tabInfo.get(tabId);
-  const a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  let a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
+  // 0.9.4: geen antwoord = meestal GEEN brug (tabblad open van vóór installeren/bijwerken van de extensie). Dan eerst zelf plaatsen
+  // (zorgVoorBrug, alleen eigen tabbladen) en één keer opnieuw vragen — anders bleef zo'n tabblad 'onbekend' en vond geen enkele
+  // opdracht of zelftest het, ook al stond het gewoon open. Немає відповіді → спершу під'єднати міст, потім спитати ще раз.
+  if (!(a && a.ok === true) && (await stil(() => zorgVoorBrug(tabId)))) a = await stil(() => chrome.tabs.sendMessage(tabId, { op: 'account?' }));
   if (a && a.ok === true && a.data && typeof a.data === 'object') {
     const claim = typeof a.data.claim === 'string' ? parseAccountClaim(a.data.claim) : null;
     const profiel = parseProfiel(a.data.profiel);
     if (await zetTabInfo(tabId, claim, profiel)) void statusWijziging();
+  } else if (vers && tabInfo.has(tabId)) {
+    // SEC-002 extensie-03: vers gevraagd en GEEN antwoord van de brug → de oude stand is niets meer waard (onbekend = geen slot).
+    tabInfo.delete(tabId);
+    void statusWijziging();
   }
-  return tabInfo.get(tabId) || { claim: null, profiel: 'gebruiker' };
+  return tabInfo.get(tabId) || { claim: null, profiel: 'onbekend' };
+}
+/** SEC-002 extensie-03: de stand van de kandidaat-tabbladen vers ophalen. `alles` = elke kandidaat; anders alleen wie onbekend is. */
+async function verversProfielen(inBereik, alles) {
+  const kandidaten = (await ownTabs()).filter((t) => inBereik(t.url || '') && (alles || !tabInfo.has(t.id)));
+  await Promise.all(kandidaten.map((t) => claimVan(t.id, true)));
 }
 chrome.tabs.onRemoved.addListener((tabId) => { tabInfo.delete(tabId); attached.delete(tabId); for (const r of RUIMTES) netwerk.delete(`${r}:${tabId}`); tabUrls.delete(tabId); });
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  // SEC-002 extensie-06: een tabblad met de debugger eraan gaat naar een adres buiten de toegestane hosts (klik op een extern adres,
+  // «terug» in de geschiedenis) → METEEN los: diagnose of script van de AI mag niets van de vreemde site zien of daar draaien.
+  if (info.url && attached.has(tabId) && !debugAdresMag(info.url, (huidigeGrant(DIAG_RUIMTE) || {}).domeinen)) {
+    attached.delete(tabId);
+    void stil(() => chrome.debugger.detach({ tabId })).then(() => statusWijziging());
+  }
   if (info.url) { // nieuwe pagina: claim en profiel opnieuw lezen; netwerkring alleen houden als het slot er nog mag verzamelen
     tabInfo.delete(tabId);
+    // SEC-002 extensie-03: niet stil wissen maar meteen opnieuw vragen. Bij een overgang binnen de pagina (pushState) verandert de
+    // meta niet en meldt de brug uit zichzelf niets; tot het antwoord er is, is het tabblad 'onbekend' (geen slot raakt het).
+    void claimVan(tabId, true);
     tabUrls.set(tabId, info.url);
     const r = verzamelRuimte(tabId, info.url);
     for (const x of RUIMTES) if (x !== r) netwerk.delete(`${x}:${tabId}`);
@@ -1120,6 +1313,8 @@ const DEBUG_WEIGER = {
   HOST: 'Refused: the Chrome debugger is only allowed on the administrative hosts of the own site',
   PROFIEL: 'Refused: the tab is not in technical mode (activate the technical profile in that tab)',
   ONGELDIG: 'Refused: deep diagnostics is not allowed here',
+  // SEC-002 extensie-06
+  VERLATEN: 'Refused: the tab left the administrative pages of the own site while the debugger was attached; the debugger was detached and nothing from the other page is returned',
 };
 async function detachAll() {
   for (const tabId of [...attached]) { try { await chrome.debugger.detach({ tabId }); } catch { /* al los */ } attached.delete(tabId); }
@@ -1129,8 +1324,12 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
   const secs = Math.min(10, Math.max(1, Number(seconds) || 5));
   const consoleLines = []; const exceptions = []; const failed = []; const slow = []; const pending = new Map();
   let total = 0;
+  // SEC-002 extensie-06: alleen gebeurtenissen uit contexten/documenten op toegestane hosts; na loskoppelen niets meer.
+  const domeinen = (huidigeGrant(r) || {}).domeinen || [];
+  const wacht = contextWacht(domeinen);
   const onEvent = (src, method, p) => {
     if (src.tabId !== tab.id) return;
+    if (!attached.has(tab.id) || !wacht.gebeurtenis(method, p)) return;
     if (method === 'Runtime.consoleAPICalled' && (p.type === 'error' || p.type === 'warning')) {
       consoleLines.push({ level: p.type, text: (p.args || []).map((a) => String(a.value ?? a.description ?? '')).join(' ').slice(0, 300) });
     } else if (method === 'Runtime.exceptionThrown') {
@@ -1153,6 +1352,9 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
     await cdp({ tabId: tab.id }, 'Runtime.enable'); await cdp({ tabId: tab.id }, 'Network.enable');
     if (reload) await chrome.tabs.reload(tab.id);
     await sleep(secs * 1000);
+    // Is het tabblad intussen weggegaan (of de debugger losgemaakt)? Dan geen (gedeeltelijk) resultaat.
+    const nu = await stil(() => chrome.tabs.get(tab.id));
+    if (!attached.has(tab.id) || !nu || !debugAdresMag(nu.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
   } finally {
     chrome.debugger.onEvent.removeListener(onEvent);
     await detach();
@@ -1167,10 +1369,26 @@ async function deepDiagnostics(r, tab, seconds, reload, tabOk) {
  * uitzondering in de pagina komt als fout terug. Nooit in het privéslot.
  */
 async function uitvoerScript(r, tab, expression, tabOk) {
+  // SEC-002 extensie-06: niet «in wat er nu toevallig geladen is» uitvoeren, maar in de standaardcontext van het hoofdframe, en alleen
+  // als die op een toegestane host draait (contextId). Navigeert het tabblad tussendoor, dan verdwijnt die context → fout, geen run.
+  const domeinen = (huidigeGrant(r) || {}).domeinen || [];
+  const wacht = contextWacht(domeinen);
+  const onEvent = (src, method, p) => { if (src.tabId === tab.id) wacht.gebeurtenis(method, p); };
   const detach = await humanAttach(r, tab, tabOk, 'browser.script');
+  chrome.debugger.onEvent.addListener(onEvent);
   try {
     await cdp({ tabId: tab.id }, 'Runtime.enable');
-    const uit = await cdp({ tabId: tab.id }, 'Runtime.evaluate', { expression: String(expression), returnByValue: true, awaitPromise: true, timeout: 10000, userGesture: false });
+    const boom = await cdp({ tabId: tab.id }, 'Page.getFrameTree');
+    const hoofd = boom && boom.frameTree && boom.frameTree.frame;
+    if (!hoofd || !debugAdresMag(hoofd.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
+    let contextId = wacht.hoofdContext(hoofd.id);
+    // De gebeurtenissen over bestaande contexten komen bij Runtime.enable; even wachten als ze nog onderweg zijn.
+    for (let i = 0; contextId === null && i < 10; i += 1) { await sleep(50); contextId = wacht.hoofdContext(hoofd.id); }
+    if (contextId === null || !attached.has(tab.id)) throw new Error(DEBUG_WEIGER.VERLATEN);
+    const uit = await cdp({ tabId: tab.id }, 'Runtime.evaluate', { expression: String(expression), contextId, returnByValue: true, awaitPromise: true, timeout: 10000, userGesture: false });
+    // Na het uitvoeren nog eens: staat het tabblad nog op een toegestane pagina? Anders het resultaat niet teruggeven.
+    const na = await stil(() => chrome.tabs.get(tab.id));
+    if (!attached.has(tab.id) || !na || !debugAdresMag(na.url, domeinen)) throw new Error(DEBUG_WEIGER.VERLATEN);
     if (uit && uit.exceptionDetails) {
       const d = uit.exceptionDetails;
       throw new Error('Script threw: ' + String((d.exception && d.exception.description) || d.text || 'exception').split('\n')[0].slice(0, 300));
@@ -1182,7 +1400,7 @@ async function uitvoerScript(r, tab, expression, tabOk) {
     try { tekst = JSON.stringify(waarde === undefined ? null : waarde); } catch { tekst = JSON.stringify(String(waarde)); }
     const afgekapt = tekst.length > 20000;
     return { url: stripQuery(tab.url), type: res.type || 'undefined', result: afgekapt ? tekst.slice(0, 20000) : tekst, truncated: afgekapt };
-  } finally { await detach(); }
+  } finally { chrome.debugger.onEvent.removeListener(onEvent); await detach(); }
 }
 
 async function screenshot(tab) {
@@ -1191,7 +1409,10 @@ async function screenshot(tab) {
   // De brug zet haar weg, wacht één frame, en zet haar daarna terug; blijft het antwoord weg, dan komt ze er zelf weer op
   // (markering.js heeft een eigen tijdslot in verberg()).
   const terug = await stil(() => chrome.tabs.sendMessage(tab.id, { op: 'markering-verberg', ms: 2000 }));
-  if (terug) await sleep(60);
+  // SEC-002 extensie-09: dezelfde brug verbergt ook [data-ai-verborgen] (koppelcodes, nieuwe tokens). Antwoordt zij niet, of meldt
+  // zij dat verbergen mislukte (geheim: -1), dan GEEN foto: anders stond zo'n code gewoon op de schermafbeelding voor de AI.
+  if (!terug || (terug.data && terug.data.geheim === -1)) { await stil(() => chrome.tabs.sendMessage(tab.id, { op: 'markering-toon' })); throw new Error('Refused: the page could not hide its secret fields for the screenshot; nothing was captured'); }
+  await sleep(60);
   try {
   const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 60 });
   const image = String(dataUrl).replace(/^data:image\/jpeg;base64,/, '');
@@ -1244,6 +1465,47 @@ function meldLezerIn(r, tab, type, opdracht) {
 }
 let badgeStaart = null;
 
+/**
+ * 0.9.5 (EXTUI-001): ЧИТАННЯ сторінки сайту ШІ (claude.ai, chatgpt.com, …) без моста — одна ізольована функція через
+ * chrome.scripting, лише з дозволом Chrome. Повертає заголовок, адресу без query і видимий текст (≤ 30 000 знаків); значення полів
+ * введення не читаються (innerText їх не містить, паролі й поля оплати пропускаються). Кожне читання — у центр сповіщень.
+ * Lezen van een AI-site zonder brug, alleen met het recht van Chrome; nooit klikken of typen.
+ */
+async function leesAiSite(r, type, params, tab, opdracht) {
+  if (r !== 'prive' || !AI_SITE_TYPES.includes(type)) throw new Error('EXTENSIE_AI_SITE: on AI sites the extension only reads (snapshot, scroll, wait, list tabs). Tell the user; do not retry.');
+  if (!(await aiSitesToegestaan())) throw new Error('EXTENSIE_AI_SITE: the user has not allowed AI sites in the extension settings (Браузер і вкладки → Сайти ШІ). Tell the user; do not retry.');
+  // Значок на піктограмі — так; повідомлення на чужу сторінку — ні (моста там немає). Badge wel, bericht naar de vreemde pagina niet.
+  meldLezerIn(r, null, type, opdracht);
+  const [res] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id }, world: 'ISOLATED',
+    args: [type, params || {}],
+    func: async (soort, p) => {
+      const MAX = 30000;
+      if (soort === 'browser.scroll') {
+        const h = innerHeight * (typeof p.pages === 'number' ? p.pages : 1);
+        if (p.direction === 'top') scrollTo(0, 0); else if (p.direction === 'bottom') scrollTo(0, document.documentElement.scrollHeight);
+        else scrollBy(0, p.direction === 'up' ? -h : h);
+        return { scrollY: Math.round(scrollY), hoogte: document.documentElement.scrollHeight };
+      }
+      if (soort === 'browser.wait') {
+        const tot = Date.now() + Math.min(15, Math.max(1, Number(p.timeout_seconds) || 5)) * 1000;
+        while (Date.now() < tot) { if ((document.body && document.body.innerText || '').includes(String(p.text || ''))) return { gevonden: true }; await new Promise((x) => setTimeout(x, 250)); }
+        return { gevonden: false };
+      }
+      const tekst = (document.body && document.body.innerText) || '';
+      const koppen = [...document.querySelectorAll('h1,h2,h3')].slice(0, 40).map((h) => (h.innerText || '').trim().slice(0, 160)).filter(Boolean);
+      return { title: document.title.slice(0, 200), koppen, tekst: tekst.slice(0, MAX), afgekapt: tekst.length > MAX };
+    },
+  });
+  const data = res && res.result ? res.result : {};
+  stuurMeldingNaarServer(r, {
+    sleutel: `ext:ai-site:${tab.id}:${Date.now()}`, soort: 'extensie', ernst: 'info',
+    titel: `ШІ прочитав сайт ШІ / De AI las een AI-site: ${new URL(tab.url).hostname}`,
+    bericht: `${type} · ${stripQuery(tab.url)} — лише читання / alleen lezen`,
+  });
+  return { ...data, url: stripQuery(tab.url), aiSite: true, alleenLezen: true };
+}
+
 async function run(r, type, params, tab, inBereik, tabOk, opdracht) {
   meldLezerIn(r, tab, type, opdracht);
   if (type === 'browser.navigate' || (type === 'browser.pages' && params.action === 'new')) {
@@ -1258,7 +1520,7 @@ async function run(r, type, params, tab, inBereik, tabOk, opdracht) {
   }
   if (type === 'browser.tabs') {
     // 0.7.0: `idx` = plaats in deze lijst (pageIdx van chrome-devtools-mcp: select_page / close_page).
-    return { tabs: (await ownTabs()).filter(tabOk).map((t, idx) => ({ idx, id: t.id, title: t.title, url: stripQuery(t.url), active: !!t.active })) };
+    return { tabs: (await kandidaatTabs()).filter(tabOk).map((t, idx) => ({ idx, id: t.id, title: t.title, url: stripQuery(t.url), active: !!t.active, ...(isAiSiteUrl(t.url || '') ? { aiSite: true, alleenLezen: true } : {}) })) };
   }
   if (type === 'browser.pages') {
     const lijst = (await ownTabs()).filter(tabOk);
@@ -1321,10 +1583,26 @@ async function selfTest(r) {
   const ds = await diagStand();
   add('debugger_permission', ds.recht, ds.stand === 'niet-aanvraagbaar' ? 'debugger ontbreekt: standaardpakket (diepe diagnose vereist pakket diagnose)' : ds.laatsteFout ? `${ds.stand}, laatste aanhaking: ${ds.laatsteFout.code}` : ds.stand);
   add('diag_opt_in', ds.optIn);
-  const doel = r || 'prive';
+  // 0.9.4: «Відкрита вкладка Mijn Ruimte» is een HINT, geen voorwaarde. De extensie zoekt eigen tabbladen in ALLE vensters op de
+  // achtergrond (ownTabs/targetTab) — welk tabblad actief is doet er niet toe; de AI opent zelf een pagina (navigate) als er geen is.
+  // Vroeger faalde deze regel ook mét open tabbladen: na het wekken van de service worker (of na bijwerken, zonder brug) was hun
+  // profiel 'onbekend' en paste geen enkel tabblad. Nu eerst de stand van de eigen tabbladen vers ophalen (brug zo nodig plaatsen),
+  // en zonder r beide sloten bekijken (een admin-tabblad hoort bij het technische slot, niet bij «Як користувач»).
+  // Підказка, а не умова: вкладки сайту шукаються у фоні в усіх вікнах; активна вкладка значення не має.
+  await stil(() => verversProfielen((u) => isOwnSiteUrl(u), false));
+  const doelen = r ? [r] : RUIMTES.filter((x) => huidigeGrant(x));
+  let tab = null;
+  let doel = r || 'prive';
+  for (const x of doelen) {
+    const gx = huidigeGrant(x);
+    tab = await stil(() => targetTab((t) => (gx ? tabMag(x, gx, t) : isOwnSiteUrl(t.url || ''))));
+    if (tab) { doel = x; break; }
+  }
+  if (!doelen.length) tab = await stil(() => targetTab((t) => isOwnSiteUrl(t.url || '')));
   const g = huidigeGrant(doel);
-  const tab = await stil(() => targetTab((t) => (g ? tabMag(doel, g, t) : isOwnSiteUrl(t.url || ''))));
+  const aantal = ((await stil(() => ownTabs())) || []).length;
   add('site_tab', !!tab, tab && g ? stripQuery(tab.url) : ''); // vergrendeld: geen adres of titel
+  checks[checks.length - 1].tabs = aantal; // alleen een getal: hoeveel tarasevych.com-tabbladen er open staan (de UI legt uit)
   if (tab) {
     // 0.9.1: ontbreekt de brug, dan eerst zelf plaatsen (geen F5); pas daarna de echte controle.
     await stil(() => zorgVoorBrug(tab.id, tab.url));
@@ -1337,6 +1615,8 @@ async function selfTest(r) {
     add('account', accountState(i.claim, await accountUserId()) === 'ok', accountState(i.claim, await accountUserId()));
     add('profiel', true, i.profiel);
   }
+  // 0.9.4: hint = puur ter informatie (geen ✗ in de UI, telt niet als «не виконано»). Alleen site_tab: zonder open tabblad werkt alles.
+  for (const c of checks) if (c.id === 'site_tab' && !c.ok) c.hint = true;
   return { version: VERSION, ok: checks.filter((c) => !info.includes(c.id)).every((c) => c.ok), checks };
 }
 
@@ -1450,16 +1730,212 @@ async function naarOffscreen(bericht) {
   return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
 }
 const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+const LOKALE_AI_SITE_MODI = [...LOKALE_AI_MODI, 'embedder', 'decisions'];
+const LAI_RE_SUM_TYPES = ['key-points', 'tldr', 'teaser', 'headline'];
+const LAI_RE_FORMATS = ['plain-text', 'markdown'];
+const LAI_RE_LENGTHS = ['short', 'medium', 'long'];
+/**
+ * 0.9.6 (LAI-CON-001): browser_local_ai van een AI-agent via de connector (ondertekende opdracht van DIT slot). De tekst staat niet
+ * in de opdracht: de extensie haalt hem één keer op met het eigen token (POST /api/owner/agents/overdracht, soort 'lokale-ai').
+ * Volgorde: beleid van de beheerder → hoofdschakelaar → functie aan → limieten → ticket → offscreen.html. Nooit een modeldownload.
+ */
+/** Vaste uitleg per foutcode van offscreen.html voor de AI (Engels: de AI leest het), zonder tekst van de gebruiker. */
+const LAI_AGENT_UITLEG = Object.freeze({
+  MODEL_NIET_GELADEN: 'the model is not downloaded yet; the user downloads it with a click in the extension settings, this tool never does',
+  NIET_BESCHIKBAAR: 'this function is not available in this Chrome or on this computer',
+  NotSupportedError: 'this language or combination of options is not supported by the model',
+  QuotaExceededError: 'the text is too long for the model; send a shorter text',
+  AbortError: 'stopped after 120 seconds',
+  ONTBREEKT: 'this Chrome does not have this function (flag or newer Chrome needed)',
+  API_UIT: 'the user switched this function off in the extension settings',
+  UIT: 'the user switched the built-in AI off in the extension settings',
+  LEEG: 'empty text', MODUS: 'unknown function',
+});
+async function lokaleAiVoorAgent(r, st, params) {
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) throw new Error(`EXTENSIE_BELEID_LOKALE_AI: the administrator${beleid.door ? ` (${beleid.door})` : ''} disabled Chrome's built-in AI for this account. Reason: "${beleid.reden}". Tell the user; do not retry.`);
+  const inst = await lokaleAiInstellingen();
+  if (inst.aan === false) throw new Error('EXTENSIE_LOKALE_AI_UIT: the user switched the built-in AI off in the extension settings («Вбудований ШІ Chrome»). Tell the user; do not retry.');
+  if (inst.apis && typeof inst.apis === 'object' && inst.apis[params.modus] === false) throw new Error(`EXTENSIE_LOKALE_AI_UIT: the user switched the function "${params.modus}" off in the extension settings. Tell the user; do not retry.`);
+  const sleutel = `agent:${r}`;
+  const nu = Date.now();
+  const lijst = (lokaleAiTeller.get(sleutel) || []).filter((x) => nu - x < 60_000);
+  if (lijst.length >= 20) throw new Error('EXTENSIE_LOKALE_AI_TE_VEEL: at most 20 requests per minute. Wait a minute.');
+  if (lokaleAiLopend.size >= 2) throw new Error('EXTENSIE_LOKALE_AI_BEZIG: two requests are already running on this computer. Try again in a moment.');
+  lijst.push(nu); lokaleAiTeller.set(sleutel, lijst);
+  const id = `${nu}-${Math.random().toString(36).slice(2)}`;
+  lokaleAiLopend.add(id);
+  try {
+    let tekst = '';
+    try {
+      const res = await fetch(`${st.server}/api/owner/agents/overdracht`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.agentToken}` }, credentials: 'omit', cache: 'no-store',
+        body: JSON.stringify({ ticket: params.ticket }),
+      });
+      const j = res.ok ? await res.json() : null;
+      tekst = j && j.soort === 'lokale-ai' && j.payload && typeof j.payload.tekst === 'string' ? j.payload.tekst.slice(0, 20000) : '';
+    } catch { tekst = ''; }
+    if (!tekst) throw new Error('EXTENSIE_LOKALE_AI_TICKET: the text could not be fetched (the one-time ticket expired or was already used). Call the tool again.');
+    const uit = await naarOffscreen({ op: 'lokale-ai-voer', id, modus: params.modus, tekst, vanTaal: params.bron, naarTaal: params.doel, limietMs: 120000 });
+    if (!uit || uit.ok !== true) {
+      const reden = uit && typeof uit.reason === 'string' ? uit.reason.slice(0, 60) : 'FOUT';
+      // Review PR #137: nooit uit.detail doorgeven (een foutmelding van het model kan stukken tekst bevatten, en de fout komt in de
+      // database); alleen de code plus een vaste uitleg.
+      throw new Error(`EXTENSIE_LOKALE_AI: ${/^[A-Za-z_]{1,40}$/.test(reden) ? reden : 'FOUT'}${LAI_AGENT_UITLEG[reden] ? ` (${LAI_AGENT_UITLEG[reden]})` : ''}`);
+    }
+    // vluchtig = het ticket: de server bewaart dit resultaat dan alleen in het geheugen (nooit in de opdrachtgeschiedenis).
+    return { tekst: String(uit.tekst || ''), notities: Array.isArray(uit.notities) ? uit.notities.slice(0, 10) : [], ...(Array.isArray(uit.correcties) ? { correcties: uit.correcties.slice(0, 50) } : {}), opApparaat: true, vluchtig: params.ticket };
+  } finally { lokaleAiLopend.delete(id); }
+}
+
+/**
+ * 0.9.6 (PR #117, zuiver): extra velden van LOKALE_AI voor modus 'prompt'. rauw = true/false; schema = JSON Schema als tekst of object
+ * (≤ 8000 tekens, moet een JSON-object zijn); systeem = platte tekst ≤ 2000 tekens zonder stuurtekens. Bij een andere modus genegeerd.
+ */
+function laiPromptExtra(modus, message) {
+  if (modus !== 'prompt') return { ok: true, velden: {} };
+  const velden = {};
+  if (message.rauw !== undefined) { if (typeof message.rauw !== 'boolean') return { ok: false, veld: 'rauw' }; if (message.rauw) velden.rauw = true; }
+  if (message.schema !== undefined && message.schema !== null) {
+    let s = '';
+    try { s = typeof message.schema === 'string' ? message.schema : JSON.stringify(message.schema); } catch { return { ok: false, veld: 'schema' }; }
+    if (typeof s !== 'string' || !s || s.length > 8000) return { ok: false, veld: 'schema' };
+    let o = null; try { o = JSON.parse(s); } catch { return { ok: false, veld: 'schema' }; }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, veld: 'schema' };
+    velden.schema = s;
+  }
+  if (message.systeem !== undefined && message.systeem !== null) {
+    if (typeof message.systeem !== 'string' || message.systeem.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(message.systeem)) return { ok: false, veld: 'systeem' };
+    if (message.systeem.trim()) velden.systeem = message.systeem;
+  }
+  // rauw = de aanvraag staat op zichzelf: het schema en de systeeminstructie uit de INSTELLINGEN van de gebruiker (bedoeld voor zijn
+  // eigen zijpaneel) gelden dan niet; ontbreken ze in de aanvraag, dan gaat er een lege waarde mee die ze uitzet.
+  if (velden.rauw) { if (velden.schema === undefined) velden.schema = ''; if (velden.systeem === undefined) velden.systeem = ''; }
+  return { ok: true, velden };
+}
+
+async function lokaleAiStelIn(message) {
+  const patch = message && message.patch && typeof message.patch === 'object' && !Array.isArray(message.patch) ? message.patch : null;
+  if (!patch) return { ok: false, reason: 'ONGELDIGE_INSTELLING' };
+  const bevestigGevaar = message.bevestigGevaar === true;
+  const huidig = await lokaleAiInstellingen();
+  const nieuw = {
+    ...huidig,
+    apis: { ...(huidig.apis && typeof huidig.apis === 'object' ? huidig.apis : {}) },
+    prompt: { ...(huidig.prompt && typeof huidig.prompt === 'object' ? huidig.prompt : {}) },
+    summarizer: { ...(huidig.summarizer && typeof huidig.summarizer === 'object' ? huidig.summarizer : {}) },
+    writer: { ...(huidig.writer && typeof huidig.writer === 'object' ? huidig.writer : {}) },
+    rewriter: { ...(huidig.rewriter && typeof huidig.rewriter === 'object' ? huidig.rewriter : {}) },
+    translator: { ...(huidig.translator && typeof huidig.translator === 'object' ? huidig.translator : {}) },
+    proofreader: { ...(huidig.proofreader && typeof huidig.proofreader === 'object' ? huidig.proofreader : {}) },
+    decisions: { ...(huidig.decisions && typeof huidig.decisions === 'object' ? huidig.decisions : {}) },
+  };
+  const toegepast = [];
+  const geweigerdeGevaarVelden = [];
+
+  if (typeof patch.aan === 'boolean') { nieuw.aan = patch.aan; toegepast.push('aan'); }
+  if (Array.isArray(patch.apis)) {
+    const set = new Set(patch.apis.filter((x) => LAI_APIS.includes(x)));
+    for (const id of LAI_APIS) nieuw.apis[id] = set.has(id);
+    toegepast.push('apis');
+  } else if (patch.apis && typeof patch.apis === 'object' && !Array.isArray(patch.apis)) {
+    let geraakt = false;
+    for (const id of LAI_APIS) {
+      if (typeof patch.apis[id] === 'boolean') { nieuw.apis[id] = patch.apis[id]; geraakt = true; }
+    }
+    if (geraakt) toegepast.push('apis');
+  }
+  for (const k of ['chatHulp', 'vertaalInvoer', 'vertaalUitvoer']) {
+    if (typeof patch[k] === 'boolean') { nieuw[k] = patch[k]; toegepast.push(k); }
+  }
+  if (LAI_VERTAAL_TALEN.includes(patch.doelTaal)) { nieuw.doelTaal = patch.doelTaal; toegepast.push('doelTaal'); }
+  if (patch.prompt && typeof patch.prompt === 'object' && !Array.isArray(patch.prompt)) {
+    let g = false;
+    if (typeof patch.prompt.systeem === 'string') { nieuw.prompt.systeem = patch.prompt.systeem.slice(0, 4000); g = true; }
+    if (typeof patch.prompt.schema === 'string') { nieuw.prompt.schema = patch.prompt.schema.slice(0, 8000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.prompt.taal)) { nieuw.prompt.taal = patch.prompt.taal; g = true; }
+    if (LAI_SAMPLING.includes(patch.prompt.samplingMode)) { nieuw.prompt.samplingMode = patch.prompt.samplingMode; g = true; }
+    if (typeof patch.prompt.toolUse === 'boolean') { nieuw.prompt.toolUse = patch.prompt.toolUse; g = true; }
+    if (patch.prompt.temperatuur === '' || (typeof patch.prompt.temperatuur === 'string' && Number.isFinite(Number(patch.prompt.temperatuur)) && Number(patch.prompt.temperatuur) >= 0)) {
+      nieuw.prompt.temperatuur = patch.prompt.temperatuur; g = true;
+    }
+    if (patch.prompt.topK === '' || (typeof patch.prompt.topK === 'string' && Number.isFinite(Number(patch.prompt.topK)) && Number(patch.prompt.topK) >= 0)) {
+      nieuw.prompt.topK = patch.prompt.topK; g = true;
+    }
+    if (g) toegepast.push('prompt');
+  }
+  if (patch.summarizer && typeof patch.summarizer === 'object' && !Array.isArray(patch.summarizer)) {
+    let g = false;
+    if (LAI_RE_SUM_TYPES.includes(patch.summarizer.type)) { nieuw.summarizer.type = patch.summarizer.type; g = true; }
+    if (LAI_RE_FORMATS.includes(patch.summarizer.format)) { nieuw.summarizer.format = patch.summarizer.format; g = true; }
+    if (LAI_RE_LENGTHS.includes(patch.summarizer.length)) { nieuw.summarizer.length = patch.summarizer.length; g = true; }
+    if (LAI_PREFS.includes(patch.summarizer.preference)) { nieuw.summarizer.preference = patch.summarizer.preference; g = true; }
+    if (typeof patch.summarizer.context === 'string') { nieuw.summarizer.context = patch.summarizer.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.summarizer.taal)) { nieuw.summarizer.taal = patch.summarizer.taal; g = true; }
+    if (g) toegepast.push('summarizer');
+  }
+  if (patch.writer && typeof patch.writer === 'object' && !Array.isArray(patch.writer)) {
+    let g = false;
+    if (['formal', 'neutral', 'casual'].includes(patch.writer.tone)) { nieuw.writer.tone = patch.writer.tone; g = true; }
+    if (LAI_RE_FORMATS.includes(patch.writer.format)) { nieuw.writer.format = patch.writer.format; g = true; }
+    if (LAI_RE_LENGTHS.includes(patch.writer.length)) { nieuw.writer.length = patch.writer.length; g = true; }
+    if (typeof patch.writer.context === 'string') { nieuw.writer.context = patch.writer.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.writer.taal)) { nieuw.writer.taal = patch.writer.taal; g = true; }
+    if (g) toegepast.push('writer');
+  }
+  if (patch.rewriter && typeof patch.rewriter === 'object' && !Array.isArray(patch.rewriter)) {
+    let g = false;
+    if (['as-is', 'more-formal', 'more-casual'].includes(patch.rewriter.tone)) { nieuw.rewriter.tone = patch.rewriter.tone; g = true; }
+    if (['as-is', ...LAI_RE_FORMATS].includes(patch.rewriter.format)) { nieuw.rewriter.format = patch.rewriter.format; g = true; }
+    if (['as-is', 'shorter', 'longer'].includes(patch.rewriter.length)) { nieuw.rewriter.length = patch.rewriter.length; g = true; }
+    if (typeof patch.rewriter.context === 'string') { nieuw.rewriter.context = patch.rewriter.context.slice(0, 1000); g = true; }
+    if (LAI_MODEL_TALEN.includes(patch.rewriter.taal)) { nieuw.rewriter.taal = patch.rewriter.taal; g = true; }
+    if (g) toegepast.push('rewriter');
+  }
+  if (patch.translator && typeof patch.translator === 'object' && !Array.isArray(patch.translator)) {
+    let g = false;
+    if (LAI_VERTAAL_TALEN.includes(patch.translator.bron)) { nieuw.translator.bron = patch.translator.bron; g = true; }
+    if (LAI_VERTAAL_TALEN.includes(patch.translator.doel)) { nieuw.translator.doel = patch.translator.doel; g = true; }
+    if (g) toegepast.push('translator');
+  }
+  if (patch.proofreader && typeof patch.proofreader === 'object' && !Array.isArray(patch.proofreader)) {
+    if (LAI_MODEL_TALEN.includes(patch.proofreader.taal)) { nieuw.proofreader.taal = patch.proofreader.taal; toegepast.push('proofreader'); }
+  }
+  if (patch.decisions && typeof patch.decisions === 'object' && !Array.isArray(patch.decisions)) {
+    if (typeof patch.decisions.schema === 'string') { nieuw.decisions.schema = patch.decisions.schema.slice(0, 8000); toegepast.push('decisions'); }
+  }
+  for (const k of LAI_GEVAAR) {
+    if (typeof patch[k] !== 'boolean') continue;
+    if (bevestigGevaar) { nieuw[k] = patch[k]; toegepast.push(k); }
+    else geweigerdeGevaarVelden.push(k);
+  }
+  if (!toegepast.length) {
+    return geweigerdeGevaarVelden.length
+      ? { ok: false, reason: 'BEVESTIGING_NODIG', geweigerdeGevaarVelden }
+      : { ok: false, reason: 'ONGELDIGE_INSTELLING' };
+  }
+  await chrome.storage.local.set({ lokaleAi: nieuw });
+  laiMeting.t = 0;
+  await statusWijziging();
+  return { ok: true, lokaleAi: await lokaleAiKeuze(), toegepast, geweigerdeGevaarVelden };
+}
+
 async function lokaleAiVoorSite(message, origin) {
   const inst = await lokaleAiInstellingen();
+  // 0.9.6 (LAI-CON-001): beheerder zette het uit → weigeren MET reden en wie (de site toont dat; nooit stil weigeren).
+  const beleid = laiBeleid();
+  if (beleid && beleid.aan === false) return { ok: false, reason: 'BELEID_UIT', detail: beleid.reden, door: beleid.door, op: beleid.op };
   if (inst.aan === false) return { ok: false, reason: 'UIT' };
   if (inst.siteToegang !== true) return { ok: false, reason: 'SITE_TOEGANG_UIT' };
   if (message.type === 'LOKALE_AI_STAND') return naarOffscreen({ op: 'lokale-ai-stand' });
   const modus = String(message.modus || '');
-  if (!LOKALE_AI_MODI.includes(modus)) return { ok: false, reason: 'MODUS' };
+  if (!LOKALE_AI_SITE_MODI.includes(modus)) return { ok: false, reason: 'MODUS' };
   const tekst = typeof message.tekst === 'string' ? message.tekst : '';
   if (!tekst.trim()) return { ok: false, reason: 'LEEG' };
   if (tekst.length > 20000) return { ok: false, reason: 'TE_LANG', max: 20000 };
+  // 0.9.6 (PR #117): alleen bij modus 'prompt' — rauw (geen terugvertaling), schema (JSON Schema) en systeem (systeeminstructie).
+  const promptExtra = laiPromptExtra(modus, message);
+  if (!promptExtra.ok) return { ok: false, reason: 'PARAMS', detail: promptExtra.veld };
   const nu = Date.now();
   const lijst = (lokaleAiTeller.get(origin) || []).filter((x) => nu - x < 60_000);
   if (lijst.length >= 20) return { ok: false, reason: 'TE_VEEL' };
@@ -1469,7 +1945,22 @@ async function lokaleAiVoorSite(message, origin) {
   lokaleAiLopend.add(id);
   try {
     const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
-    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+    const preference = LAI_PREFS.includes(message.preference) ? message.preference : undefined;
+    const samplingMode = LAI_SAMPLING.includes(message.samplingMode) ? message.samplingMode : undefined;
+    const decisionsSchema = modus === 'decisions' && typeof message.schema === 'string' ? message.schema.slice(0, 8000) : undefined;
+    return await naarOffscreen({
+      op: 'lokale-ai-voer',
+      id,
+      modus,
+      tekst,
+      vanTaal: taal(message.bron),
+      naarTaal: taal(message.doel),
+      preference,
+      samplingMode,
+      ...(decisionsSchema !== undefined ? { schema: decisionsSchema } : {}),
+      limietMs: 120000,
+      ...promptExtra.velden,
+    });
   } catch (e) {
     return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
   } finally { lokaleAiLopend.delete(id); }
@@ -1492,11 +1983,16 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       const vt = await voorTab(s);
       // lokaleAi: publieke keuzes (aan/apis/stand) PLUS het PING-contract {ondersteund, siteToegang}; na de spread, anders overschreven.
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
-        diagOptIn: s.diagOptIn, ...vt, lokaleAi: { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: (await lokaleAiInstellingen()).siteToegang === true } });
+        diagOptIn: s.diagOptIn, ...vt, lokaleAi: await (async () => {
+          const site = (await lokaleAiInstellingen()).siteToegang === true;
+          // promptRauw (0.9.6): LOKALE_AI modus 'prompt' kent rauw / schema / systeem per aanvraag (de site maakt het daarvan afhankelijk).
+          return { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: site, promptRauw: true, ...laiRedenen(vt.lokaleAi, site, laiBeleid()) };
+        })() });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
-    // 0.9.1: lokale AI voor pagina's van de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
+    // 0.9.1–0.9.7: lokale AI en veilige instelling vanaf de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
     if (type === 'LOKALE_AI' || type === 'LOKALE_AI_STAND') return sendResponse(await lokaleAiVoorSite(message, origin));
+    if (type === 'LOKALE_AI_STEL_IN') return sendResponse(await lokaleAiStelIn(message));
     const beheerOrigin = ['mcp.tarasevych.com', 'admin.tarasevych.com'].includes(new URL(origin).hostname);
     if ((type === 'SELF_TEST' || type === 'UPDATE_CHECK') && !beheerOrigin) return sendResponse({ ok: false, reason: 'WRONG_HOST' });
     if (type === 'SELF_TEST') return sendResponse({ ok: true, ...(await selfTest()) });
@@ -1527,6 +2023,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const claim = message.claim && typeof message.claim === 'object' && typeof message.claim.userId === 'string' ? parseAccountClaim(`${message.claim.userId}:${message.claim.sessionTag || ''}`) : null;
       const profiel = parseProfiel(message.profiel);
       await zetTabInfo(sender.tab.id, claim, profiel);
+      // SEC-002 extensie-04: het profiel is pas NU bekend (vroeger gold «onbekend» meteen als gebruiker): de verzamelmodus opnieuw zetten.
+      { const vr = verzamelRuimte(sender.tab.id, sender.tab.url); void stil(() => chrome.tabs.sendMessage(sender.tab.id, { op: 'diag-modus', aan: !!vr, ruimte: vr })); }
       const acc = accountState(claim, await accountUserId());
       if (acc === 'mismatch' && (await accountUserId())) await badge('warn');
       await statusWijziging();
@@ -1671,10 +2169,18 @@ const geladen = (async () => {
     const s = sloten[r];
     const v = await sessie.get([K.ontgr(r), K.settings(r), K.intrek(r)]);
     if (v[K.settings(r)] && typeof v[K.settings(r)] === 'object') s.settings = v[K.settings(r)];
-    const i = v[K.intrek(r)] && typeof v[K.intrek(r)] === 'object' ? v[K.intrek(r)] : {};
-    if (Array.isArray(i.ingetrokken)) s.ingetrokken = i.ingetrokken.filter((x) => typeof x === 'string').slice(-MAX_INGETROKKEN);
-    if (Number.isFinite(i.laatsteIat)) s.laatsteIat = i.laatsteIat;
-    if (Array.isArray(i.wachtrij)) s.wachtrij = i.wachtrij.filter((w) => w && typeof w.gid === 'string' && typeof w.reden === 'string').slice(-50);
+    // SEC-002 extensie-08: sessie én de blijvende kopie (local) samenvoegen — na een herstart van de browser is alleen de laatste er nog.
+    const iS = v[K.intrek(r)] && typeof v[K.intrek(r)] === 'object' ? v[K.intrek(r)] : {};
+    const lok = ((await stil(() => chrome.storage.local.get(K.intrek(r)))) || {})[K.intrek(r)];
+    const iL = lok && typeof lok === 'object' ? lok : {};
+    const i = {
+      ingetrokken: [...(Array.isArray(iL.ingetrokken) ? iL.ingetrokken : []), ...(Array.isArray(iS.ingetrokken) ? iS.ingetrokken : [])],
+      laatsteIat: Math.max(Number.isFinite(iL.laatsteIat) ? iL.laatsteIat : 0, Number.isFinite(iS.laatsteIat) ? iS.laatsteIat : 0),
+      wachtrij: [...(Array.isArray(iL.wachtrij) ? iL.wachtrij : []), ...(Array.isArray(iS.wachtrij) ? iS.wachtrij : [])].filter((w, n, a) => w && a.findIndex((x) => x && x.gid === w.gid) === n),
+    };
+    if (i.ingetrokken.length) s.ingetrokken = [...new Set(i.ingetrokken.filter((x) => typeof x === 'string'))].slice(-MAX_INGETROKKEN);
+    if (i.laatsteIat > 0) s.laatsteIat = i.laatsteIat;
+    if (i.wachtrij.length) s.wachtrij = i.wachtrij.filter((w) => w && typeof w.gid === 'string' && typeof w.reden === 'string').slice(-50);
     const o = v[K.ontgr(r)];
     if (o && typeof o === 'object') {
       const st = await stil(() => slotState(r)) || {};
@@ -1707,7 +2213,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // Een wekker (30 s) controleert de verbindingen van beide sloten. Tijdens een verbinding houdt het levensteken (20 s) hem wakker.
 chrome.alarms.create('keepalive', { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'keepalive') { connect(); for (const r of RUIMTES) void eindeBereikt(r); }
+  // SEC-002 extensie-08: openstaande intrekkingen elke 30 s opnieuw proberen (WS of de HTTP-terugval), tot de server bevestigt.
+  // Alleen als er voor dat slot géén WebSocket opent of open is: dan gaat het verzoek bij 'ready' toch over de WS (zie handle).
+  if (alarm.name === 'keepalive') {
+    const poging = connect();
+    for (const r of RUIMTES) void eindeBereikt(r);
+    void Promise.resolve(poging).then(() => geladen).then(() => { for (const r of RUIMTES) { const s = sloten[r]; if (s.wachtrij.length && !(s.ws && s.ws.readyState <= 1)) void wachtrijVersturen(r); } }).catch(() => undefined);
+  }
   if (alarm.name === 'versie') void versieOphalen();
   for (const r of RUIMTES) if (alarm.name === K.alarm(r)) void eindeBereikt(r);
 });

@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "naam": "auteurschap-en-vaardigheden",
+  "titel": {
+    "uk": "Авторство, досьє функцій і навички агентів",
+    "nl": "Auteurschap, functiedossiers en agentvaardigheden"
+  },
+  "samenvatting": {
+    "uk": "Як агенти бачать, хто, якою моделлю, що й чому зробив; досьє функцій; одне джерело навичок і злиття без утрат; старт сеансу orch begin.",
+    "nl": "Hoe agenten zien wie wat deed, functiedossiers, één bron voor vaardigheden en sessiestart."
+  },
+  "termen": {
+    "uk": [
+      "авторство",
+      "облік внесків",
+      "досьє функції",
+      "навички",
+      "хто що зробив"
+    ],
+    "nl": [
+      "auteurschap",
+      "bijdragen",
+      "functiedossier",
+      "vaardigheden"
+    ]
+  },
+  "paden": [
+    "scripts/orch/bijdragen.mjs",
+    "scripts/orch/begin.mjs",
+    "orchestratie/bijdragen/",
+    "orchestratie/onderwerpen/",
+    "scripts/vaardigheden/",
+    ".agents/skills/",
+    ".claude/settings.json",
+    "scripts/orch/verwijzingen.mjs",
+    "src/uitrol/Verwijzingen.tsx",
+    "orchestratie/verwijzingen/"
+  ],
+  "werk": [
+    {
+      "taakId": "TRACE-001",
+      "datum": "2026-11-03",
+      "uk": "Журнал розробки ONTWIKKELARCHIEF.json у кожному випуску, прив’язаний до фіксації змін і випуску на GitHub."
+    },
+    {
+      "taakId": "HISTORIE-001",
+      "datum": "2026-11-13",
+      "uk": "Хронологія гілок і робіт із посиланнями на попередника й наступника (scripts/geschiedenis/kroniek.mjs)."
+    },
+    {
+      "taakId": "VAARD-001",
+      "datum": "2026-11-15",
+      "uk": "Навички агентів у .agents/skills/ і каталог добору scripts/vaardigheden/."
+    },
+    {
+      "taakId": "VAARD-002",
+      "agent": "gemini",
+      "datum": "2026-11-15",
+      "uk": "Три спеціалізовані навички, перевірка каталогу valideer.mjs, версії й залежності."
+    },
+    {
+      "taakId": "GEHEUGEN-001",
+      "datum": "2026-11-17",
+      "uk": "Перевірки добору навички пам’яті розвитку."
+    },
+    {
+      "taakId": "BIJDRAGE-001",
+      "tak": "claude/project-thread-svlfqt",
+      "agent": "claude",
+      "model": "claude-opus-5-5",
+      "datum": "2026-11-18",
+      "uk": "Облік авторства orch bijdrage, досьє функцій, orch begin з автозапуском для Claude, злиття навичок і досьє без утрат (orch behoud), «Хто що зробив» на сторінці оновлень."
+    },
+    {
+      "taakId": "VERWIJZING-001",
+      "tak": "claude/project-thread-svlfqt",
+      "agent": "claude",
+      "model": "claude-opus-5-5",
+      "datum": "2026-11-18",
+      "uk": "Посилання з людською назвою, підсумком і станом (злито, закрито, видалено: хто, коли, чому) для гілок, запитів, міграцій і задач у «Хто що зробив»; реєстр подій orchestratie/verwijzingen/, команди orch verwijzing і orch verwijzingen; макет погоджено власником."
+    },
+    {
+      "taakId": "UPD-005",
+      "tak": "feature/upd-005-uitgave-20261119-065100",
+      "agent": "gemini",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-19",
+      "uk": "Спільний випуск поверх живої версії 20261117-190154 (14dbcb3a): об’єднано UPD-004 (#158), BIJDRAGE-001 (#160), VERWIJZING-001 (#161) і вигляд «Ланцюжок» із PLAATS-TEKENS-001 (#154, dcfe31a4); зафіксовано реєстр усіх гілок, що увійшли та що свідомо лишилися поза випуском."
+    }
+  ],
+  "mogelijkheden": [
+    {
+      "id": "ontwikkelarchief",
+      "uk": "Журнал розробки в кожному пакеті (TRACE-001)",
+      "sinds": "TRACE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "kroniek",
+      "uk": "Хронологія гілок із попередниками й наступниками",
+      "sinds": "HISTORIE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "vaardigheden-kiezen",
+      "uk": "Добір навички за словами завдання (kies.mjs)",
+      "sinds": "VAARD-001",
+      "staat": "actief"
+    },
+    {
+      "id": "bijdrage-register",
+      "uk": "Облік внесків: людина, агент, модель, вид, причина, попередник",
+      "sinds": "BIJDRAGE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "functiedossier",
+      "uk": "Досьє функції з усією історією в orchestratie/onderwerpen/",
+      "sinds": "BIJDRAGE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "sessiestart",
+      "uk": "Старт сеансу orch begin, для Claude автоматично",
+      "sinds": "BIJDRAGE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "behoud-controle",
+      "uk": "Перевірка, що облік, досьє й навички не зникли під час злиття",
+      "sinds": "BIJDRAGE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "wie-deed-wat-site",
+      "uk": "Блок «Хто що зробив» на сторінці оновлень сайту",
+      "sinds": "BIJDRAGE-001",
+      "staat": "actief"
+    },
+    {
+      "id": "verwijzingen-met-staat",
+      "uk": "Посилання на гілки, запити, міграції й задачі з людською назвою, підсумком і станом, без «404», збережені у випуску",
+      "sinds": "VERWIJZING-001",
+      "staat": "actief"
+    },
+    {
+      "id": "verwijdering-registreren",
+      "uk": "Запис, хто, коли й чому видалив гілку чи закрив запит, з останнім комітом для відновлення",
+      "sinds": "VERWIJZING-001",
+      "staat": "actief"
+    }
+  ],
+  "opmerkingenEigenaar": [
+    {
+      "datum": "2026-11-18",
+      "betreft": "облік авторства й автоматичне завантаження навичок",
+      "uk": "Агенти ізольовані, не бачать, хто й чому переробляв роботу, вважають чужі зміни помилкою й починають цикл заново; авторство губиться після злиття. Нагадувати правила вручну не годиться — має бути автоматично.",
+      "behouden": [
+        "TRACE-001",
+        "HISTORIE-001",
+        "каталог навичок VAARD-001/002"
+      ],
+      "bron": "повідомлення Павла в проєкті, 18.11.2026"
+    }
+  ],
+  "open": [
+    {
+      "uk": "Fable 5.2 також працював над поточним випуском до вичерпання ліміту: записати його внески (задача, гілка, що зроблено), коли тред збирання встановить, які саме."
+    }
+  ],
+  "bijgewerkt": "2026-11-19"
+}

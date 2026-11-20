@@ -1,5 +1,23 @@
 /* Admin → «Оновлення» / «Updates» (passkey-goedkeuring) */
-.admin-uitrol{display:grid;gap:16px}
+.admin-uitrol{display:grid;gap:16px;min-width:0;max-width:100%}
+/* 19.11.2026 (UPD-006), побажання власника: головне — строго по центру з адекватною шириною (940 px), щоб очі не бігали екраном і
+   вміст ніколи не прилипав до лівого меню (раніше при 1180 px на 980–1280 px лівий відступ обнулявся до 0 px). Колонка центрується
+   симетрично у просторі між лівим меню та бічною рейкою з гарантованим зазором 24 px. Картки зберігають власні заокруглення й рамки.
+   NL: op het tabblad «Updates» is de console gecentreerd (940 px) met gelijke marges tussen het linkermenu en de zijbalk (minimaal 24 px). */
+/* :not(#_uitrol) — сильніше за «Макет» (html.palet-maquette .admin-console.mq-schil, 1460 px). · Sterker dan de maquette-regel. */
+html:not(#_uitrol) .admin-console:has([data-admin-uitrol]){max-width:940px}
+/* «Макет» із бічною рейкою: колонка 940 px стоїть строго по центру вільного простору між лівим меню й рейкою (284 px, компактна 96 px,
+   згорнута 0 px), із мінімальним симетричним зазором 24 px з обох боків — ніколи не притискається впритул до меню. Від 961 px.
+   NL: Maquette met zijbalk: 940 px kolom gecentreerd in de vrije ruimte tussen linkermenu en zijbalk, met minimaal 24 px marge aan beide zijden. */
+@media (min-width:961px){
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"]):has([data-admin-uitrol]){--ut-kolom:940px;--ut-marge:24px;--ut-rail:284px;max-width:none}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-compact="ja"]:has([data-admin-uitrol]){--ut-rail:96px}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil:is([data-mq-rail-zijde="rechts"],[data-mq-rail-zijde="links"])[data-mq-rail-ingeklapt="ja"]:has([data-admin-uitrol]){--ut-rail:0px}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="rechts"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-left:var(--ut-zij);padding-right:calc(var(--ut-rail) + var(--ut-zij))}
+html:not(#_uitrol):not(#_uitrol_m) .admin-console.mq-schil[data-mq-rail-zijde="links"]:has([data-admin-uitrol]){--ut-zij:max(var(--ut-marge),calc((100% - var(--ut-rail) - var(--ut-kolom)) / 2));padding-right:var(--ut-zij);padding-left:calc(var(--ut-rail) + var(--ut-zij))}
+html:not(.palet-maquette) .admin-console.mq-schil[data-mq-rail-zijde="boven"]:has([data-admin-uitrol]){padding-top:92px}
+html:not(.palet-maquette) .admin-console.mq-schil[data-mq-rail-zijde="onder"]:has([data-admin-uitrol]){padding-bottom:104px}
+}
 .admin-uitrol .admin-section>header{position:relative}
 .admin-uitrol-ververs{position:absolute;right:0;top:0;background:none;border:0;cursor:pointer;color:inherit;opacity:.7}
 .admin-uitrol-ververs svg{width:18px;height:18px}
@@ -9,14 +27,14 @@
 .admin-uitrol-stand li[data-ok="true"] svg{color:#1f7a4a}
 .admin-uitrol-stand li[data-ok="false"] svg{color:var(--fout)}
 .admin-uitrol .admin-notice[data-ok="false"]{border-color:var(--fout)}
-.admin-uitrol-voorstel{border:1px solid rgba(127,127,127,.3);border-radius:10px;padding:12px 14px;margin:10px 0}
+.admin-uitrol-voorstel{border:1px solid rgba(127,127,127,.3);border-radius:10px;padding:12px 14px;margin:10px 0;min-width:0;max-width:100%}
 .admin-uitrol-voorstel h3{margin:0 0 8px}
 .admin-uitrol-voorstel dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:0 0 8px}
 .admin-uitrol-voorstel dt{opacity:.7}
 .admin-uitrol-voorstel dd{margin:0;overflow-wrap:anywhere}
 .admin-uitrol-voorstel dd[data-ok="false"]{color:var(--fout)}
 .admin-uitrol-voorstel pre{white-space:pre-wrap;max-height:320px;overflow:auto;font-size:.85em;background:rgba(127,127,127,.08);padding:8px;border-radius:6px}
-.admin-uitrol-sha{font-size:.8em;word-break:break-all}
+.admin-uitrol-sha{font-size:.8em;overflow-wrap:anywhere;word-break:normal}
 .admin-uitrol-knoppen{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 /* Punt 1 (хрестики): deze knopstijl is van de OUDE updatepagina. De nieuwe pagina staat in dezelfde <div class="admin-uitrol ut-root">,
    dus een kale `.admin-uitrol button` (0,1,1) won van `.ut-tabs-pijl{display:none}` (0,1,0): BEIDE schuifpijlen van de tabbalk werden
@@ -32,7 +50,7 @@
 .admin-uitrol-lijst li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:rgba(127,127,127,.06)}
 .admin-uitrol-lijst li[data-status="ingetrokken"],.admin-uitrol-lijst li[data-status="verlopen"]{opacity:.6}
 .admin-uitrol-leeg{opacity:.7}
-.admin-uitrol-ssh{user-select:all;word-break:break-all}
+.admin-uitrol-ssh{user-select:all;overflow-wrap:anywhere;word-break:normal}
 .admin-uitrol-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .admin-uitrol-form input,.admin-uitrol-form select{padding:7px 9px;border-radius:8px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;font:inherit;min-width:0}
 .admin-uitrol-form input[type=number]{width:70px}

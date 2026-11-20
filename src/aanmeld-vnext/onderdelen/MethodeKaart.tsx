@@ -4,12 +4,14 @@
 import { ChevronRight, Fingerprint, KeyRound, LifeBuoy, Lock, Smartphone, Users } from 'lucide-react';
 import { ACTIE_LABEL, STAAT_LABEL, aanmeldTekst, type MethodeUi } from '../../../shared/aanmeld-vnext-model';
 import type { Lang } from '../../toegangslaag-teksten';
+import Merk from '../../merk/Merk';
 
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
 export function MethodeIcoon({ icoon }: { icoon: string }) {
-  // Google: eigen merk-monogram (zelfde aanpak als MenuGlyph: een letter, geen getekend vreemd logo).
-  if (icoon === 'google') return <span className='amv-brand' aria-hidden='true'>G</span>;
+  // Google: het OFFICIËLE vierkleurige teken uit het merkenregister (src/merk/officieel/google.svg) — geen letter, niets nagetekend.
+  // Офіційний чотириколірний знак Google з реєстру марок; літера лишається тільки на мить, поки знак вантажиться.
+  if (icoon === 'google') return <Merk merk='google' vorm='gliefje' maat={24} className='amv-merk' terugval={<span className='amv-brand' aria-hidden='true'>G</span>} />;
   const I = icoon === 'password' ? KeyRound : icoon === 'passkey' ? Fingerprint : icoon === 'totp' ? Smartphone : icoon === 'recovery' ? LifeBuoy : icoon === 'vault' ? Lock : Users;
   return <I aria-hidden='true' />;
 }

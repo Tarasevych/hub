@@ -31,6 +31,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 
 ## 2. Перед початком роботи · Vóór je begint (обов'язково)
 
+0. **Перший крок кожного сеансу (BIJDRAGE-001):** `node scripts/orch.mjs begin --agent <id> [--taak <ID>] [--onderwerp <назва>] [--tekst "<завдання>"]` — перевірка правил, навички (завантажуються в теку агента самі), досьє функції з усією історією, хто працював і хто працює паралельно. Claude запускає це автоматично (`.claude/settings.json`). Деталі — §9.
 1. Прочитай цей файл (або `orchestratie/CONTEXT-COMPACT.md`, якщо нема доступу до репозиторію) і `orchestratie/beleid.json`.
 2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261105-061659`, статус `geverifieerd_productie` — звірено з сервером, див. B-014).
    Гілки `integratie` та `voornaamst` синхронізовані. Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у BESLUITEN.md.
@@ -46,7 +47,16 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 - Виявив стару помилку — виправ (окремим фіксацією змін), не ігноруй. Нічого не прибирай «щоб запрацювало»: кнопку, вкладку, тест, перевірку.
 - Секрети, маркери доступу, приватні ключі, вміст листів — ніколи в чат, журнал, фіксація змін чи пакет. Приватні ключі власника агентам не передаються.
 - Робоче середовище, основна гілка, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
+- Логотипи (REESTR-LOGO-001): лише з реєстру `src/merk/` (`<Merk>`, `MerkLogo`); новий знак — через `scripts/merk-officieel-maken.mjs`, без копій `<svg>`. Деталі — §6. · Elk logo uit het ene merkregister.
 - Діагностика й час власника (B-009): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `<VM-IP>` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо `structuur` пройдено). Деталі нижче, B-009.
+
+## 3а. Авторство, досьє, навички · Auteurschap, dossiers, vaardigheden (BIJDRAGE-001, деталі — §9)
+
+- Кожен внесок — запис `orchestratie/bijdragen/<ID>/…json` (`orch bijdrage`): людина, що доручила; агент, платформа, конкретна модель; що, чому, на чиїй роботі. Записи лише доповнюються.
+- Перед зміною функції — її досьє `orchestratie/onderwerpen/<назва>.json`; доповни його. Можливості не видаляй: утрачене — `verloren` і поверни.
+- Навички — лише `.agents/skills/` + каталог; злиття без втрати можливостей (непідтримувану кимось опцію позначай у `agenten`).
+- Зауваження власника стосується конкретної речі: покращуй її, решту зберігай. Злиття лише `--no-ff`, без стискання історії.
+- Перед видаленням гілки чи закриттям запиту без злиття — `orch verwijzing` (хто, чому, останній коміт, куди ввійшло), щоб посилання не вело в «404» (§9.7).
 
 ## 4. Перед передаванням результату · Vóór overdracht
 
@@ -124,6 +134,11 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
 | Доступи агентів, MCP | `deploy/ІНСТРУКЦІЯ-АГЕНТІВ-0.4.md`, `deploy/ЗЄДНУВАЧ-ПРОТОКОЛУ-КОНТЕКСТУ.md`, `deploy/ЗЄДНУВАЧ-В2.md` |
 | Afstemming (задачі/конфлікти/випуски на сайті) | `shared/afstemming-model.ts`, `backend/afstemming-*.ts`, `src/afstemming-vnext/` |
+| Логотипи (REESTR-LOGO-001): єдиний реєстр, власні логотипи користувачів | `src/merk/` — `<Merk>`, `MerkLogo`, `MethodeMerk`, `Logo` із `src/mcp-ui.tsx`; сервер і перший екран — `shared/merk-direct.ts`. Новий офіційний знак — рядок у `KEUZE` генератора `scripts/merk-officieel-maken.mjs` (лише вільні ліцензії, без зовнішніх CDN; походження в `src/merk/officieel/HERKOMST.json`), а не копія `<svg>`/`<path>` у компоненті, CSS чи «Макеті». Власний логотип користувача (`app.merk_gebruiker`, міграція 0300, `backend/merk-gebruiker.ts`) діє поверх системного лише для нього й у його просторі, доки не видалить або не замінить. Сторож: `tests/eenheid/merk-een-register-20261116.test.ts` |
+| Облік авторства (хто, модель, що, чому) — BIJDRAGE-001 | `orchestratie/bijdragen/<TAAK-ID>/<час>-<виконавець>.json` (`orch bijdrage`, `orch bijdragen`), логіка — `scripts/orch/bijdragen.mjs` |
+| Досьє функцій (уся історія напрацювань) | `orchestratie/onderwerpen/<назва>.json` (`orch onderwerp`) |
+| Старт сеансу агента | `node scripts/orch.mjs begin`; для Claude автоматично — `.claude/settings.json` |
+| Навички (одне джерело) | `.agents/skills/`, `scripts/vaardigheden/catalogus.json`; дзеркало для агента — `beleid.json → vaardigheden.spiegels` |
 | Спільна тека знань (поза репозиторієм) | проєктна тека `knowledge/claude/` — довідка, не джерело правил |
 
 ## 7. Команди · Opdrachten
@@ -145,6 +160,12 @@ node scripts/orch.mjs pakket --taak ORCH-001 --auteur "Імʼя" [--manifest m.j
 node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без встановлення
 node scripts/orch.mjs onderteken-bericht             # рядок, який власник підписує (ssh-keygen -Y sign -n mijn-ruimte-regels)
 node scripts/orch.mjs bevestig <bericht.sig>         # записати підпис власника в lock (альтернатива — passkey на сайті, §5)
+node scripts/orch.mjs begin --agent claude [--taak X] [--onderwerp meldingen]   # BIJDRAGE-001: старт сеансу — правила, навички, досьє, хто працював і хто паралельно
+node scripts/orch.mjs bijdrage --taak X --agent claude --platform "Claude Code" --model claude-opus-5-5 --opdrachtgever "Імʼя" --soort herwerkt --wat "…" --waarom "…" --bouwt-voort-op <id>
+node scripts/orch.mjs bijdragen [--taak X] [--onderwerp n]   # хто що робив, переробляв, доробляв
+node scripts/orch.mjs onderwerp meldingen            # досьє функції: уся історія, можливості, утрачене, зауваження власника
+node scripts/orch.mjs behoud --tegen <ref>           # нічого не зникло: облік, досьє, навички та їхні можливості
+node scripts/orch.mjs vaardigheden-spiegel --agent claude   # завантажити навички з .agents/skills/ у теку агента
 node scripts/eenheidstests.mjs orch                  # тести координації (kern, cli, inleveren, pakket, uitrol-basis, site, besluit-root)
 # Те саме з сайту/MCP (backend/orch-hulpmiddelen.ts): orch_overzicht, orch_context, orch_taak_start, orch_inleveren_begin|stuk|klaar
 ```
@@ -153,3 +174,53 @@ node scripts/eenheidstests.mjs orch                  # тести координ
 
 Старі операційні інструкції і документи змін лишаються довідкою про те, як працює код. Вони не додають правил понад цей файл і не скасовують його.
 Якщо в них знайдено суперечність — виправити документ або додати рішення в `BESLUITEN.md`, а не мовчки обрати одне з двох.
+
+## 9. Авторство, історія функцій і навички · Auteurschap, functiegeschiedenis en vaardigheden (BIJDRAGE-001, з 18.11.2026)
+
+**Навіщо.** Над однією функцією працюють різні агенти й моделі, часто ізольовано один від одного. Без обліку агент бачить чужі зміни, вважає їх помилкою, переробляє заново, витрачає ліміти й час і губить напрацювання попередників. Тепер кожен, хто бере роботу, бачить, **хто, якою моделлю, що, чому й на чиїй роботі** зробив, і хто працює паралельно.
+*Waarom:* verschillende agenten en modellen werken aan dezelfde functie. Zonder registratie lijkt ander werk een fout en gaat het verloren.
+
+### 9.1 Старт сеансу — сам, без нагадувань
+
+1. `node scripts/orch.mjs begin --agent <id> [--taak <ID>] [--onderwerp <назва>] [--tekst "<завдання>"]`. Команда нічого не змінює в git і показує: чинність правил; перелік навичок і завантажує їх у теку агента (`beleid.json → vaardigheden.spiegels`, для Claude — `.claude/skills/`); досьє функцій, що стосуються завдання (за словами задачі й зміненими файлами); внески за задачею; незавершені паралельні задачі тієї ж функції.
+2. Claude Code запускає `begin --kort` автоматично на старті сеансу (`.claude/settings.json`, подія SessionStart). Інші агенти виконують команду першим кроком (§2.0); їхні перехідники вказують сюди.
+3. Перш ніж створювати щось нове, добери навичку: `node scripts/vaardigheden/kies.mjs "<завдання>"`, і прочитай досьє: `node scripts/orch.mjs onderwerp <назва>`.
+
+### 9.2 Облік авторства в кожній гілці й запиті на злиття
+
+- Запис: `node scripts/orch.mjs bijdrage --taak <ID> --agent <id> --platform "<Claude Code | Google Antigravity | …>" --model <конкретна модель> --opdrachtgever "<людина>" --soort <вид> --wat "<що>" [--waarom "<чому>"] [--bouwt-voort-op <id запису>] [--voorganger "<опис роботи без запису: гілка, фіксація, PR>"] [--onderwerp <назва>] [--pr <N>]`.
+- Види: `begin`, `nieuw`, `herwerkt` (переробив), `afgerond` (доробив), `overname` (перейняв), `samenvoeging` (об'єднав), `herstel` (повернув утрачене), `controle`, `correctie` (виправив попередній запис). Для переробки, доробки, перейняття, повернення, об'єднання й виправлення обов'язкові «чому» і «на чому будує».
+- Модель — конкретна (`claude-opus-5-5`, `claude-fable-5-2`, «Gemini 4 Hydrogen (high)»), не лише «Claude» чи «Gemini». `model.bron`: `omgeving` (підтвердило середовище), `auteur` (заявив агент), `eigenaar` (сказав власник).
+- Мінімум один запис на задачу; `versheid --fase overdracht` без нього червоне. Записи **не редагують і не видаляють** (`orch behoud`): помилку виправляють новим записом `correctie`. Кожен запис — окремий файл, тож паралельні гілки не конфліктують, а злиття нічого не губить.
+- У тексті запиту на злиття — розділ «Хто що зробив» з тими самими відомостями (людина, агент, модель, вид, причина). Фіксації змін можуть мати рядки `Bijdrage-Agent:` / `Bijdrage-Model:`; джерелом правди лишається файл обліку.
+- Пакет випуску (`orch pakket`) бере всі нові записи від установленої версії у `BIJDRAGEN.json` і в `UITROL-MANIFEST.json → bijdragen` та доповнює `deelnemers`; сайт показує їх у згорнутому блоці «Хто що зробив» біля учасників випуску.
+
+### 9.3 Досьє функції — уся історія в одному місці
+
+- `orchestratie/onderwerpen/<назва>.json`: назва й опис, слова для пошуку, файли функції (`paden`), усі задачі/гілки/запити на злиття з агентом і моделлю (`werk`), можливості з незмінним `id`, походженням і станом (`actief`, `in-ontwikkeling`, `verloren`, `vervangen` + `vervangenDoor`, `ingetrokken` лише за рішенням власника), зауваження власника, відкриті питання.
+- Хто змінює файли з `paden`, той доповнює досьє в тій самій гілці. Записи роботи, можливості й зауваження **не видаляють** — лише змінюють стан із причиною (`orch behoud` стереже).
+- Переробляючи функцію, спершу звір перелік можливостей: нова версія має містити всі `actief`; що не вдалося перенести — `verloren` з причиною й наступним кроком.
+
+### 9.4 Зауваження власника — покращення конкретної речі
+
+«Мені не подобається X» означає: не подобається саме X (вигляд, поведінка, місце кнопки), а не вся функція. Запиши в досьє `opmerkingenEigenaar`: `betreft` (що саме), `uk` (суть словами власника), `behouden` (що лишається). Змінюй лише `betreft`; решту можливостей зберігай. Не заміняй цілий складник новим «з нуля», якщо власник цього прямо не сказав.
+
+### 9.5 Навички — одне джерело, злиття без утрат
+
+- Канонічне місце — `.agents/skills/<назва>/SKILL.md` + запис у `scripts/vaardigheden/catalogus.json` (версія SemVer, `mogelijkheden` з незмінними `id` і полем `agenten` — хто підтримує). Окремих копій навичок у теках агентів не ведуть: дзеркало генерує `begin`/`vaardigheden-spiegel`, воно позначене `.gespiegeld.json` і не потрапляє в git.
+- Створив навичку — збережи її там же на гілці `feature/vaardigheid-<назва>-<РРРРММДД-ГГХХСС>` (або у своїй гілці задачі), з записом обліку, і вона піде в спільний випуск. Навички з облікового запису власника (claude.ai тощо) переносять сюди з полем `ookBekendAls`.
+- Злиття навичок: версія не зменшується, навички й можливості не зникають. Якщо агент не підтримує опцію, її **не видаляють**, а позначають у `agenten`. Вивести з ужитку — лише рішенням власника (`ingetrokken`, `ingetrokkenMogelijkheden`).
+- Перевірка: `node scripts/vaardigheden/valideer.mjs`, `node scripts/orch.mjs behoud --tegen <база>`.
+
+### 9.6 Історія не губиться
+
+Злиття лише `--no-ff`, без стискання й переписування історії. Попередні випуски, гілки й запити на злиття лишаються; закривають їх із поясненням, куди увійшло. Якщо людина помітила втрату — знайди за досьє й обліком, хто і в якій гілці її мав, познач `verloren` і поверни (`herstel`).
+
+### 9.7 Посилання без «404» (VERWIJZING-001)
+
+На сторінці оновлень кожна гілка, запит на злиття, міграція й задача — рядок із людською назвою, підсумком і станом («відкрито», «злито», «закрито», «гілку видалено»), а не голий номер. `orch pakket` збирає це сам з історії git і реєстру `orchestratie/verwijzingen/` у `UITROL-MANIFEST.json → verwijzingen` та `BIJDRAGEN.json`, тому видно й без GitHub. Переглянути заздалегідь: `node scripts/orch.mjs verwijzingen --sinds <база>`.
+
+1. Перед видаленням гілки: `node scripts/orch.mjs verwijzing --soort tak --id <гілка> --gebeurtenis verwijderd --wie "<хто>" --waarom "<чому>" [--opgenomen-in "№N"]` — останній коміт підставиться сам, за ним гілку можна відновити.
+2. Закриваючи запит без злиття: `--soort pr --id <N> --gebeurtenis gesloten --opgenomen-in "<куди ввійшло>" --waarom "…"`.
+3. Людську назву й підсумок, якщо повідомлення злиття їх не дає: `--gebeurtenis beschrijving --titel "…" --samenvatting "…"`.
+4. Записи лише доповнюються. Гілка, якої немає ні в сховищі, ні в історії злиттів, ні в реєстрі, дає попередження `VERWIJZING_ONVERKLAARD` під час збирання випуску.

@@ -128,6 +128,8 @@ export async function main(): Promise<number> {
     fail: (message: string, status = 400) => ({ statusCode: status, body: JSON.stringify({ error: message }) }),
     audit: async () => undefined,
     body: (b: unknown) => (b && typeof b === 'object' ? b as Record<string, unknown> : {}),
+    // SEC-002 (afwerking A): scopes uitbreiden vraagt nu een step-up; deze test gaat over gescheiden ruimtes, niet over de bevestiging.
+    stepUp: async () => null,
   } as any) as Record<string, any[]>;
   const roep = async (route: string, body: Record<string, unknown>) => {
     const res = await routes[route][0]({ event: { headers: {} }, body, params: {} });

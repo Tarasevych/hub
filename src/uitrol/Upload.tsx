@@ -8,7 +8,7 @@ import Persoon from './Persoon';
 import KopieerBlokKnop from './KopieerBlokKnop';
 import { nietNieuwerUitleg } from './versie-uitleg';
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, Copy, File as FileIcoon, FileArchive, FileCode, FileImage, FileText, Files, Fingerprint, FolderArchive, GitCommitHorizontal, HardDrive, Loader2, Music, Package, PackageCheck, Rocket, RotateCcw, ShieldCheck, Tag, UploadCloud, UserRound, Video, X, XCircle, FileSpreadsheet, Cpu, DatabaseBackup, Activity, Undo2, LifeBuoy, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, CloudDownload, Copy, File as FileIcoon, FileArchive, FileCode, FileImage, FileText, Files, Fingerprint, FolderArchive, GitCommitHorizontal, HardDrive, Loader2, Music, Package, PackageCheck, Rocket, RotateCcw, ShieldCheck, Tag, UploadCloud, UserRound, Video, X, XCircle, FileSpreadsheet, Cpu, DatabaseBackup, Activity, Undo2, LifeBuoy, PlayCircle, type LucideIcon } from 'lucide-react';
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
 import { leesPakket, naarBase64, type PakketInfo } from '../platform/tar-lezen';
@@ -18,10 +18,13 @@ import { meldAfbreking } from './poging-melden';
 import { vereistenControleren } from './vereisten-client';
 import type { VereistenAntwoord } from '../../shared/uitrol-vereisten';
 import Voorcontrole from './Voorcontrole';
+import RodeVlaggen, { rodeVlaggen } from './RodeVlaggen';
 import Vereisten from './Vereisten';
 import { commitWeergave } from '../../shared/bron-commit';
 import { herkenBestand, type Pictogram, type Soort } from './bestandssoort';
-import { datum, mb, tr, type Flow, type Lang, type Overzicht, type VoorcontroleUit } from './types';
+import { hervatKandidaat, hervatUitleg, hervatbareVoorstellen, stapUitUitkomst } from '../../shared/uitrol-hervatten';
+import { meldLokaleUploadVoortgang, startGithubAchtergrondUpload, useUitrolAchtergrond, verversServerAchtergrondStand, wisLokaleUpload, zetLokaalDeel } from '../platform/uitrol-achtergrond-beheer';
+import { datum, lopendTekst, mb, tr, VOORSTEL_STATUS, type Flow, type Lang, type LopendeInstallatie, type Overzicht, type Voorstel, type VoorcontroleUit } from './types';
 import './upload.css';
 
 type StapId = 'bestand' | 'controle' | 'upload' | 'goedkeuren' | 'installeren';
@@ -74,23 +77,34 @@ function Tegel({ Icoon, pict, label, waarde, mono = false, kopieer }: { Icoon: L
 
 type Props = {
   lang: Lang; context: Record<string, unknown>; data: Overzicht; busy: string; klaar: boolean; kanPasskey: boolean;
-  doe: (sleutel: string, run: () => Promise<string | void>) => Promise<void>; laden: () => Promise<void>; goedkeurenId: (id: string) => void;
+  doe: (sleutel: string, run: () => Promise<string | void>) => Promise<void>; laden: () => Promise<void>; goedkeurenId: (id: string, risicoBevestigd?: boolean) => void;
   onFlow: (f: Flow) => void; onNieuwId: (id: string) => void; naarLive: () => void;
+  /** UITROL-002: «Продовжити з місця зупинки» uit de geschiedenis — het voorstel waarvan het archief nog op de server ligt. */
+  hervatVerzoek?: { id: string; n: number } | null;
+  /** UITROL-002: er loopt al een installatie (ander apparaat/beheerder): goedkeuren staat uit, de wizard zegt wie/wat/sinds wanneer. */
+  andereInstallatie?: LopendeInstallatie | null;
 };
 
-export default function Upload({ lang, context, data, busy, klaar, kanPasskey, doe, laden, goedkeurenId, onFlow, onNieuwId, naarLive }: Props) {
-  const [bestand, setBestand] = useState<File | null>(null);
-  const [soort, setSoort] = useState<Soort | null>(null);
-  const [analyse, setAnalyse] = useState<{ info: PakketInfo; sha256: string } | null>(null);
-  const [bezigLezen, setBezigLezen] = useState(false);
-  const [voortgang, setVoortgang] = useState<number | null>(null);
-  const [verzonden, setVerzonden] = useState(0);
-  const [nieuwId, setNieuwId] = useState('');
-  const [serverCheck, setServerCheck] = useState<VoorcontroleUit | null>(null);
+export default function Upload({ lang, context, data, busy, klaar, kanPasskey, doe, laden, goedkeurenId, onFlow, onNieuwId, naarLive, hervatVerzoek, andereInstallatie }: Props) {
+  // UPD-010: стан завантаження живе поза деревом React (achtergrond-beheer.ts), щоб зміна вкладок не обривала процес.
+  const achtergrond = useUitrolAchtergrond();
+  const { bestand, analyse, bezigLezen, voortgang, verzonden, nieuwId, leesfout, hervatMeta } = achtergrond.lokaal;
+  const soort = achtergrond.lokaal.soort as Soort | null;
+  const serverCheck = achtergrond.lokaal.serverCheck as VoorcontroleUit | null;
+  const setBestand = useCallback((v: File | null) => zetLokaalDeel({ bestand: v, bestandNaam: v?.name || '', grootte: v?.size || 0 }), []);
+  const setSoort = useCallback((v: Soort | null) => zetLokaalDeel({ soort: v }), []);
+  const setAnalyse = useCallback((v: { info: PakketInfo; sha256: string } | null) => zetLokaalDeel({ analyse: v, versie: v?.info.versie || '' }), []);
+  const setBezigLezen = useCallback((v: boolean) => zetLokaalDeel({ bezigLezen: v }), []);
+  const setVoortgang = useCallback((v: number | null) => zetLokaalDeel({ voortgang: v }), []);
+  const setVerzonden = useCallback((v: number) => zetLokaalDeel({ verzonden: v }), []);
+  const setNieuwId = useCallback((v: string) => zetLokaalDeel({ nieuwId: v }), []);
+  const setServerCheck = useCallback((v: VoorcontroleUit | null) => zetLokaalDeel({ serverCheck: v }), []);
+  const setLeesfout = useCallback((v: { code: string; procent: number | null; verstuurd: number } | null) => zetLokaalDeel({ leesfout: v }), []);
+  const setHervatMeta = useCallback((v: { bytes: number; naam: string } | null) => zetLokaalDeel({ hervatMeta: v }), []);
   const [sleep, setSleep] = useState(false);
+  const [ghTag, setGhTag] = useState('');
   // Leesfout van de schijf (File API): code `BESTAND_LEZEN|<naam>`, hoeveel procent er al verstuurd was, en of de gebruiker
   // «Обрати файл ще раз» koos (dan gaat de upload na de nieuwe keuze zelf verder waar hij stopte).
-  const [leesfout, setLeesfout] = useState<{ code: string; procent: number | null; verstuurd: number } | null>(null);
   const [hervatWens, setHervatWens] = useState(false);
   const [puls, setPuls] = useState<StapId | ''>('');
   // UITROL-001: vereisten vóór de upload. `vereistenRun` telt op bij elke nieuwe keuze, zodat een oud antwoord nooit een nieuw bestand overschrijft.
@@ -112,9 +126,17 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const mijnGrant = data.voorbereiders.find((g) => g.status === 'actief' && g.soort === 'account' && !!data.ik && g.onderwerp === data.ik.id);
 
   const nieuw = useMemo(() => data.voorstellen.find((v) => v.id === nieuwId), [data.voorstellen, nieuwId]);
+  // SEC-PAKKET-001: rode vlaggen vragen een eigen bevestiging vóór de passkey (червоні прапорці — окреме підтвердження).
+  const vlaggenNieuw = rodeVlaggen(nieuw?.voorcontrole);
+  const [rvBevestigd, setRvBevestigd] = useState('');
   const hervatbaar = useMemo(() => (analyse && bestand && !analyse.info.problemen.length
     ? data.voorstellen.find((v) => v.status === 'uploaden' && v.versie === analyse.info.versie && v.sha256 === analyse.sha256 && v.bytes === bestand.size) : undefined), [data.voorstellen, analyse, bestand]);
   const onvoltooid = data.voorstellen.filter((v) => v.status === 'uploaden' && v.id !== hervatbaar?.id);
+  // UITROL-002: hetzelfde archief (sha256 + grootte + versie) ligt nog op de server na een mislukte/verlopen/afgebroken poging → geen upload nodig.
+  const hervatArchief = useMemo(() => (analyse && bestand && !analyse.info.problemen.length && !hervatMeta
+    ? hervatKandidaat(data.voorstellen, { sha256: analyse.sha256, bytes: bestand.size, versie: analyse.info.versie }) : undefined), [data.voorstellen, analyse, bestand, hervatMeta]);
+  const hervatLijst = useMemo(() => hervatbareVoorstellen(data.voorstellen), [data.voorstellen]);
+  const grootte = hervatMeta?.bytes ?? bestand?.size ?? 0;
 
   // Problemen: wat tar-lezen vond + «niet nieuwer dan de actieve versie» vóórdat het pakket als voorstel op de server staat.
   // Zodra dit pakket zelf al als voorstel op de server staat (`nieuw`, of een zojuist geïnstalleerd voorstel met dezelfde sha256),
@@ -144,7 +166,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const eindStand = !!nieuw && EINDE.includes(nieuw.status);
 
   const wis = useCallback(() => {
-    setBestand(null); setSoort(null); setAnalyse(null); setNieuwId(''); onNieuwId(''); setVoortgang(null); setServerCheck(null); setBezigLezen(false); setLeesfout(null);
+    wisLokaleUpload(); onNieuwId('');
     vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     if (invoer.current) invoer.current.value = '';
   }, [onNieuwId]);
@@ -240,7 +262,10 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       id = begin.id; offset = 0; maxStuk = begin.maxStuk || 512 * 1024;
     }
     const stuk = Math.min(maxStuk, data.limieten.maxStuk || 512 * 1024);
-    setVoortgang(Math.round((offset / f.size) * 100)); setVerzonden(offset);
+    const startPct = Math.round((offset / f.size) * 100);
+    zetLokaalDeel({ bezigUpload: true, voorstelId: id, versie: a.info.versie, bestandNaam: f.name, grootte: f.size });
+    setVoortgang(startPct); setVerzonden(offset);
+    meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct: startPct, verzonden: offset, bytes: f.size });
     lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     try {
     while (offset < f.size) {
@@ -271,7 +296,9 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         lopend.current = null;
         await laden(); throw new Error(`UPLOAD_ONDERBROKEN|${foutCode(e) || 'ONBEKEND'}|${Math.round((offset / f.size) * 100)}`);
       }
-      setVoortgang(Math.round((offset / f.size) * 100)); setVerzonden(offset);
+      const pct = Math.round((offset / f.size) * 100);
+      setVoortgang(pct); setVerzonden(offset);
+      meldLokaleUploadVoortgang({ versie: a.info.versie, bestandNaam: f.name, pct, verzonden: offset, bytes: f.size });
       lopend.current = { voorstelId: id, versie: a.info.versie, sha256: a.sha256, bytes: f.size, verstuurd: offset, bestand: f.name };
     }
     let kl: { status: string; voorcontrole?: VoorcontroleUit };
@@ -285,10 +312,55 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     }
     setNieuwId(id); onNieuwId(id);
     await laden();
+    void verversServerAchtergrondStand();
     return tr(lang, `Пакет ${a.info.versie} завантажено й перевірено сайтом. Він нічого не встановлює, доки ви не схвалите його passkey.`, `Pakket ${a.info.versie} geüpload en door de site gecontroleerd. Het installeert niets tot u het met uw passkey goedkeurt.`);
-    } finally { lopend.current = null; }
+    } finally { lopend.current = null; zetLokaalDeel({ bezigUpload: false }); meldLokaleUploadVoortgang(null); }
   }).finally(() => setVoortgang(null)); };
+  const githubAchtergrondOphalen = () => { void doe('gh-achtergrond', async () => {
+    const r = await startGithubAchtergrondUpload(context, { tag: ghTag.trim() || undefined });
+    setGhTag('');
+    return tr(lang, `Фонове завантаження випуску ${r.tag || 'останнього'} із GitHub запущено на сервері. Ви можете вільно переходити на інші вкладки чи піддомени — прогрес залишиться у смужці внизу.`, `Ophalen op de achtergrond van release ${r.tag || 'nieuwste'} uit GitHub is op de server gestart. U kunt vrij wisselen van tabblad of subdomein — de voortgang blijft onderaan zichtbaar.`);
+  }); };
   const annuleren = (id: string) => void doe(`annuleer-${id}`, async () => { await api.post('/api/uitrol/voorstel/annuleren', { ...context, id }); if (id === nieuwId) wis(); return tr(lang, 'Пакет скасовано.', 'Pakket geannuleerd.'); });
+
+  // ---- UITROL-002: hervatten zonder upload. De server rekent de sha256 van het bewaarde archief opnieuw uit, herhaalt de voorcontrole
+  // en maakt een NIEUW voorstel (wacht-op-goedkeuring): de passkey is dus weer nodig — elke installatie wordt apart goedgekeurd.
+  const hervatten = (v: Voorstel) => { if (!data.ik) return; uploadAfbreken.current = false; void doe('pakket', async () => {
+    setServerCheck(null); setLeesfout(null);
+    if (!mijnGrant) await api.post('/api/owner/uitrol/voorbereiders/toevoegen', { ...context, soort: 'account', onderwerp: data.ik!.id, dagen: 1, label: tr(lang, 'Власник — з пристрою', 'Eigenaar — vanaf apparaat') });
+    let kl: { id: string; status: string; voorcontrole?: VoorcontroleUit };
+    try { kl = (await api.post('/api/uitrol/voorstel/hervat', { ...context, id: v.id, sha256: v.sha256 })).data as { id: string; status: string; voorcontrole?: VoorcontroleUit }; }
+    catch (e) {
+      // Archief weg of veranderd: de lijst wordt ververst (pakketAanwezig valt weg) en de gewone upload blijft over.
+      meldAfbreking(context, { etappe: 'begin', code: foutCode(e) || '', voorstelId: v.id, versie: v.versie, sha256: v.sha256, bytes: v.bytes, bestand: bestand?.name || `mijn-ruimte-${v.versie}.tar.gz` });
+      await laden(); throw e;
+    }
+    if (!bestand) {
+      // Zonder gekozen bestand toont de wizard de gegevens van het bewaarde archief (naam, grootte, versie, commit, beschrijving).
+      const naam = `mijn-ruimte-${v.versie}.tar.gz`;
+      setBestand(new File([], naam)); setSoort(herkenBestand(naam, new Uint8Array([0x1f, 0x8b]))); setHervatMeta({ bytes: v.bytes, naam });
+      setAnalyse({ info: { versie: v.versie, commit: v.commit || '', bovenmap: '', bestanden: v.pakketMeta?.bestanden || 0, installer: true, auteur: v.pakketMeta?.auteur || '', agent: v.pakketMeta?.agent || '', samenvatting: v.wijzigingen || v.pakketMeta?.samenvatting || '', tests: null, manifest: v.pakketMeta?.manifest || null, manifestFouten: [], basis: null, ontwikkelArchief: null, migraties: [], migratieSql: new Map(), problemen: [] }, sha256: v.sha256 });
+    }
+    if (kl.status === 'afgebroken') {
+      setServerCheck(kl.voorcontrole || null);
+      meldAfbreking(context, { etappe: 'voorcontrole', code: 'VOORCONTROLE_MISLUKT', voorstelId: kl.id, versie: v.versie, sha256: v.sha256, bytes: v.bytes, verstuurd: v.bytes, bestand: bestand?.name || `mijn-ruimte-${v.versie}.tar.gz` });
+      await laden(); throw new Error('VOORCONTROLE_MISLUKT');
+    }
+    setNieuwId(kl.id); onNieuwId(kl.id);
+    await laden();
+    return tr(lang, `Архів ${v.versie} узято з сервера без повторного завантаження і перевірено. Схваліть його passkey — і встановлення продовжиться.`, `Archief ${v.versie} is van de server genomen zonder nieuwe upload en gecontroleerd. Keur het goed met uw passkey — dan gaat de installatie verder.`);
+  }); };
+  const pakketVerwijderen = (id: string) => void doe(`pakket-weg-${id}`, async () => { await api.post('/api/uitrol/voorstel/pakket-verwijderen', { ...context, id }); return tr(lang, 'Збережений архів прибрано з сервера.', 'Het bewaarde archief is van de server verwijderd.'); });
+  // «Продовжити з місця зупинки» uit de geschiedenis/lijst: meteen hervatten als het archief er nog ligt.
+  const hervatGedaan = useRef(0);
+  useEffect(() => {
+    if (!hervatVerzoek || hervatVerzoek.n === hervatGedaan.current || busy) return;
+    hervatGedaan.current = hervatVerzoek.n;
+    const v = data.voorstellen.find((x) => x.id === hervatVerzoek.id && x.pakketAanwezig === true);
+    if (v) { if (bestand) wis(); hervatten(v); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hervatVerzoek?.n, busy, data.voorstellen]);
+  const hervatTekst = (v: Voorstel) => { const stap = stapUitUitkomst(v.uitkomst, lang); const st = VOORSTEL_STATUS[v.status]; return `${v.versie} · ${st ? tr(lang, st[0], st[1]) : v.status} · ${datum(lang, v.bijgewerktOp || v.beslistOp || v.aangemaaktOp)}${stap ? tr(lang, ` · обірвалося на кроці «${stap}»`, ` · stokte in stap «${stap}»`) : ''}`; };
 
   // ---- stand naar boven (de vier fasen bovenaan beginnen opnieuw voor dit bestand)
   useEffect(() => {
@@ -296,8 +368,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     if (!bestand || !soort?.ok) onFlow({ fase: 'leeg', versie: '', detail: '' });
     else if (actief === 'goedkeuren') onFlow({ fase: 'goedkeuring', versie: nieuw?.versie || versie, detail: '', stap: 'goedkeuring', stand: 'bezig' });
     else if (actief === 'installeren') onFlow({ fase: 'leeg', versie: nieuw?.versie || versie, detail: '' });
-    else onFlow({ fase: 'voorbereiding', versie, stap: actief === 'controle' ? 'vereisten' : voortgang === 100 ? 'controle' : 'upload', stand: problemen.length || (serverCheck && !serverCheck.ok) ? 'fout' : bezigLezen || vereistenBezig || voortgang !== null ? 'bezig' : 'wacht', detail: voortgang !== null ? `${tr(lang, 'завантаження', 'upload')} ${voortgang}%` : actief === 'controle' ? tr(lang, 'перевіряю вміст пакета', 'inhoud van het pakket controleren') : actief === 'upload' ? tr(lang, 'готово до завантаження', 'klaar om te uploaden') : '' });
-  }, [bestand, soort, analyse, actief, nieuw?.versie, voortgang, lang, onFlow, problemen.length, serverCheck, bezigLezen, vereistenBezig]);
+    else onFlow({ fase: 'voorbereiding', versie, stap: actief === 'controle' ? 'vereisten' : voortgang === 100 ? 'controle' : 'upload', stand: problemen.length || (serverCheck && !serverCheck.ok) ? 'fout' : bezigLezen || vereistenBezig || voortgang !== null ? 'bezig' : 'wacht', detail: voortgang !== null ? `${tr(lang, 'завантаження', 'upload')} ${voortgang}%` : actief === 'controle' ? tr(lang, 'перевіряю вміст пакета', 'inhoud van het pakket controleren') : actief === 'upload' ? (hervatArchief ? tr(lang, 'архів уже на сервері — завантажувати не треба', 'archief al op de server — geen upload nodig') : tr(lang, 'готово до завантаження', 'klaar om te uploaden')) : '' });
+  }, [bestand, soort, analyse, actief, nieuw?.versie, voortgang, lang, onFlow, problemen.length, serverCheck, bezigLezen, vereistenBezig, hervatArchief]);
 
   // ---- naar de volgende stap scrollen, de hoofdknop markeren en focus geven
   useEffect(() => {
@@ -349,6 +421,12 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       {bestand && <button type='button' className='ut-knop' disabled={busy === 'pakket'} onClick={wis}><RotateCcw aria-hidden='true' />{tr(lang, 'Почати спочатку', 'Opnieuw beginnen')}</button>}
     </header>
 
+    {/* UITROL-002: een andere installatie loopt (ander apparaat of andere beheerder): zichtbaar, en goedkeuren staat uit tot ze klaar is. */}
+    {andereInstallatie && andereInstallatie.id !== nieuw?.id && andereInstallatie.id !== nieuwId && <div className='ut-samenloop' role='status' data-ut-samenloop={andereInstallatie.soort}><Activity aria-hidden='true' /><div>
+      <b>{lopendTekst(lang, andereInstallatie)}</b>
+      <p>{tr(lang, 'Сервер виконує лише одне розгортання за раз. Ви можете обрати, перевірити й завантажити новий пакет, але схвалити його вдасться лише після завершення поточного — так два адміністратори з різних пристроїв не заважатимуть одне одному. Хід поточного встановлення — у блоці «Поточне розгортання» нижче.', 'De server voert één uitrol tegelijk uit. U kunt een nieuw pakket kiezen, controleren en uploaden, maar goedkeuren kan pas als de lopende klaar is — zo zitten twee beheerders op verschillende apparaten elkaar niet in de weg. De voortgang staat in het blok «Lopende uitrol» hieronder.')}</p>
+      <button type='button' className='ut-knop' onClick={naarLive}><ArrowRight aria-hidden='true' />{tr(lang, 'До поточного розгортання', 'Naar de lopende uitrol')}</button>
+    </div></div>}
     <ol className='ut-wiz-balk' aria-label={tr(lang, 'Кроки', 'Stappen')}>
       {STAPPEN.map((s, i) => <li key={s.id} data-stand={stapStand(i)} aria-current={stapStand(i) === 'actief' ? 'step' : undefined}><span>{stapStand(i) === 'klaar' ? <CheckCircle2 aria-hidden='true' /> : i + 1}</span><em className='ut-wiz-lang'>{tr(lang, s.uk, s.nl)}</em><em className='ut-wiz-kort' aria-hidden='true' title={tr(lang, s.uk, s.nl)}>{tr(lang, s.kortUk, s.kortNl)}</em></li>)}
     </ol>
@@ -375,9 +453,16 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!!busy} onClick={() => invoer.current?.click()}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати файл', 'Bestand kiezen')}</button>
         <ul className='ut-chips' aria-label={tr(lang, 'Підтримується', 'Ondersteund')}><li><FileArchive aria-hidden='true' />.tar.gz / .tgz</li><li><HardDrive aria-hidden='true' />{tr(lang, 'до', 'tot')} {mb(maxBytes)}</li><li><ShieldCheck aria-hidden='true' />{tr(lang, 'нічого не запускається без вашого passkey', 'niets draait zonder uw passkey')}</li></ul>
       </div>}
+      {!bestand && <div className='ut-gh-achtergrond' data-ut-gh-achtergrond>
+        <div className='ut-gh-achtergrond-kop'><CloudDownload aria-hidden='true' /><div><b>{tr(lang, 'Або завантажити з GitHub у фоні на сервер', 'Of op de achtergrond uit GitHub op de server ophalen')}</b><small>{tr(lang, 'Триває на сервері навіть після переходу на іншу вкладку, інший піддомен чи закриття браузера.', 'Loopt op de server door, ook als u naar een ander tabblad of subdomein gaat of de browser sluit.')}</small></div></div>
+        <div className='ut-gh-achtergrond-rij'>
+          <input type='text' value={ghTag} onChange={(e) => setGhTag(e.target.value)} placeholder={tr(lang, 'Мітка випуску (порожньо = останній)', 'Releasetag (leeg = nieuwste)')} aria-label={tr(lang, 'Мітка випуску GitHub', 'GitHub-releasetag')} maxLength={120} disabled={!!busy} />
+          <button type='button' className='ut-knop' disabled={!!busy} data-ut-gh-achtergrond-knop onClick={githubAchtergrondOphalen}><CloudDownload aria-hidden='true' />{busy === 'gh-achtergrond' ? tr(lang, 'Запускаю…', 'Bezig met starten…') : tr(lang, 'Завантажити у фоні', 'Op achtergrond ophalen')}</button>
+        </div>
+      </div>}
       {bestand && <div className='ut-bestand' data-ok={soort ? (soort.ok ? 'ja' : 'nee') : 'wacht'}>
         <span className='ut-bestand-pict'><Pict aria-hidden='true' /></span>
-        <span className='ut-bestand-tekst'><b title={bestand.name}>{bestand.name}</b><small>{mb(bestand.size)}{bestand.lastModified ? ` · ${datum(lang, new Date(bestand.lastModified).toISOString())}` : ''}</small></span>
+        <span className='ut-bestand-tekst'><b title={bestand.name}>{bestand.name}</b><small>{mb(grootte)}{hervatMeta ? tr(lang, ' · архів із сервера (без повторного завантаження)', ' · archief van de server (zonder nieuwe upload)') : bestand.lastModified ? ` · ${datum(lang, new Date(bestand.lastModified).toISOString())}` : ''}</small></span>
         {soort && <span className='ut-bestand-soort' data-ok={soort.ok}>{soort.ok ? <CheckCircle2 aria-hidden='true' /> : <XCircle aria-hidden='true' />}{soort.ok ? 'tar.gz' : soort.label}</span>}
         <button type='button' className='ut-bestand-x' aria-label={tr(lang, 'Скасувати вибір файлу', 'Keuze van het bestand wissen')} title={tr(lang, 'Скасувати вибір', 'Keuze wissen')} disabled={busy === 'pakket'} onClick={wis}><X aria-hidden='true' /></button>
       </div>}
@@ -385,6 +470,16 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         <button type='button' className='ut-knop' data-ut-hoofdactie onClick={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати інший файл', 'Ander bestand kiezen')}</button></div></div>}
       {!bestand && onvoltooid.length > 0 && <ul className='ut-lijst' data-meester-onvoltooid>{onvoltooid.map((v) => <li key={v.id}><span>{tr(lang, `Незавершене завантаження ${v.versie}: ${v.bytes ? Math.round(((v.ontvangen || 0) / v.bytes) * 100) : 0}%. Оберіть той самий файл — завантаження продовжиться з місця зупинки.`, `Onvoltooide upload ${v.versie}: ${v.bytes ? Math.round(((v.ontvangen || 0) / v.bytes) * 100) : 0}%. Kies hetzelfde bestand — de upload gaat verder waar hij stopte.`)}</span>
         <button type='button' className='ut-knop' disabled={!!busy} onClick={() => annuleren(v.id)}>{tr(lang, 'Скасувати', 'Annuleren')}</button></li>)}</ul>}
+      {/* UITROL-002: archieven van mislukte/verlopen/afgebroken pogingen die nog op de server liggen — hervatten zonder upload. */}
+      {!bestand && hervatLijst.length > 0 && <div className='ut-hervat-lijst' data-meester-hervatbaar={hervatLijst.length}>
+        <h4><PackageCheck aria-hidden='true' />{tr(lang, 'Невдалі спроби, чий архів ще на сервері', 'Mislukte pogingen waarvan het archief nog op de server ligt')}</h4>
+        <p className='ut-sub'>{tr(lang, 'Повторно завантажувати не треба: сервер ще раз звірить контрольну суму збереженого файлу, повторить перевірку й попросить ваш passkey. Root пропустить копіювання, npm ci і збірку, якщо вони вже були виконані для цього самого архіву.', 'Opnieuw uploaden is niet nodig: de server vergelijkt de controlesom van het bewaarde bestand opnieuw, herhaalt de controle en vraagt uw passkey. Root slaat kopie, npm ci en bouwen over als die voor ditzelfde archief al gedaan waren.')}</p>
+        <ul className='ut-lijst'>{hervatLijst.map((v) => <li key={v.id} data-ut-hervatbaar={v.id}><span><b className='ut-mono'>{hervatTekst(v)}</b><small className='ut-sub'> · {mb(v.bytes)}{(lang === 'uk' ? v.uitkomst?.uk : v.uitkomst?.nl) ? ` · ${lang === 'uk' ? v.uitkomst?.uk : v.uitkomst?.nl}` : ''}</small></span>
+          <span className='ut-acties'>
+            <button type='button' className='ut-knop ut-knop-primair' data-ut-hervat-knop disabled={!!busy || !data.ik} onClick={() => hervatten(v)} title={tr(lang, 'Узяти збережений архів із сервера, повторити перевірку й перейти до схвалення passkey — без повторного завантаження', 'Het bewaarde archief van de server nemen, de controle herhalen en naar de passkey-goedkeuring gaan — zonder nieuwe upload')}><PlayCircle aria-hidden='true' />{tr(lang, 'Продовжити встановлення', 'Installatie hervatten')}</button>
+            <button type='button' className='ut-knop' disabled={!!busy} onClick={() => pakketVerwijderen(v.id)} title={tr(lang, 'Видалити збережений архів із сервера (наступна спроба потребуватиме повного завантаження)', 'Het bewaarde archief van de server verwijderen (de volgende poging vraagt dan een volledige upload)')}><X aria-hidden='true' />{tr(lang, 'Прибрати архів', 'Archief verwijderen')}</button>
+          </span></li>)}</ul>
+      </div>}
     </section>
 
     {/* 2. Перевірка */}
@@ -394,7 +489,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       {(bezigLezen || vereistenBezig) && <div className='ut-acties'><button type='button' className='ut-knop' data-ut-annuleer-controle onClick={wis} title={tr(lang, 'Припинити читання й перевірку; на сервер нічого не пішло, файл можна обрати знову', 'Lezen en controle afbreken; er ging niets naar de server, u kunt opnieuw een bestand kiezen')}><X aria-hidden='true' />{tr(lang, 'Скасувати перевірку', 'Controle annuleren')}</button></div>}
       {analyse && info && <div data-meester-analyse>
         <div className='ut-tegels'>
-          <Tegel Icoon={FileArchive} label={tr(lang, 'Файл і розмір', 'Bestand en grootte')} waarde={`${bestand.name} · ${mb(bestand.size)}`} />
+          <Tegel Icoon={FileArchive} label={tr(lang, 'Файл і розмір', 'Bestand en grootte')} waarde={`${bestand.name} · ${mb(grootte)}`} />
           <Tegel Icoon={Tag} label={tr(lang, 'Версія', 'Versie')} waarde={info.versie} mono />
           <Tegel Icoon={CalendarClock} label={tr(lang, 'Зібрано', 'Samengesteld')} waarde={versieDatum(info.versie, lang)} />
           <Tegel Icoon={UserRound} pict={<Persoon naam={mensWeergaveNaam(info.auteur, data.ik)} id={data.ik?.id || data.ik?.email} foto={mensFoto(info.auteur, data.ik, data.kandidaten.accounts)} klein />} label={tr(lang, 'Автор', 'Auteur')} waarde={mensWeergaveNaam(info.auteur, data.ik)} />
@@ -415,8 +510,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
           {info.manifestFouten.length > 0 && <ul className='ut-manifest-fouten' data-ut-manifest-fouten>{info.manifestFouten.map((f, i) => <li key={i}><code>{f.veld}</code>: {lang === 'uk' ? f.uk : f.nl}</li>)}</ul>}
           <button type='button' className='ut-knop' data-ut-hoofdactie onClick={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати інший файл', 'Ander bestand kiezen')}</button></div></div>
           : !problemen.length && !vereistenWachten ? <p className='ut-goed'><CheckCircle2 aria-hidden='true' />{tr(lang, 'Пакет відповідає вимогам. Сайт ще раз перевірить його після завантаження, а root — під час установлення.', 'Het pakket voldoet aan de vereisten. De site controleert het na het uploaden nog eens, en root bij de installatie.')}</p> : null}
-        {!analyse.info.problemen.length && (vereisten || vereistenBezig || vereistenFout) && !alDitPakketOpServer && <Vereisten lang={lang} antwoord={vereisten} bezig={vereistenBezig} fout={vereistenFout} bytes={bestand.size}
-          rapport={{ archief: { bestand: bestand.name, bytes: bestand.size, versie: info.versie, commit: info.commit, sha256: analyse.sha256, agent: info.agent, auteur: info.auteur },
+        {!analyse.info.problemen.length && (vereisten || vereistenBezig || vereistenFout) && !alDitPakketOpServer && <Vereisten lang={lang} antwoord={vereisten} bezig={vereistenBezig} fout={vereistenFout} bytes={grootte}
+          rapport={{ archief: { bestand: bestand.name, bytes: grootte, versie: info.versie, commit: info.commit, sha256: analyse.sha256, agent: info.agent, auteur: info.auteur },
             omgeving: { actieveVersie, site: typeof location !== 'undefined' ? location.host : '', browser: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 160) : '', tijdzone: Intl.DateTimeFormat().resolvedOptions().timeZone || '' } }}
           onAnderArchief={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }} />}
       </div>}
@@ -425,19 +520,27 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     {/* 3. Завантаження */}
     {bestand && soort?.ok && analyse && !problemen.length && !vereistenWachten && <section className='ut-wiz-stap' ref={(el) => { refs.current.upload = el; }} data-stap='upload' data-stand={stapStand(2)} data-puls={puls === 'upload' || undefined}>
       {stapKop(2)}
-      {!nieuw && !(serverCheck && !serverCheck.ok) && <>
+      {hervatArchief && !nieuw && !(serverCheck && !serverCheck.ok) && (() => { const u = hervatUitleg(lang, hervatArchief, datum(lang, hervatArchief.bijgewerktOp || hervatArchief.beslistOp || hervatArchief.aangemaaktOp)); return <div className='ut-hervat' role='status' data-ut-hervat-archief={hervatArchief.id}><PackageCheck aria-hidden='true' /><div>
+        <b>{u.kop}</b><p>{u.uitleg}</p>
+        <div className='ut-acties'>
+          <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie data-ut-hervat-knop disabled={!!busy || !data.ik} onClick={() => hervatten(hervatArchief)}><PlayCircle aria-hidden='true' />{busy === 'pakket' ? tr(lang, 'Перевіряю збережений архів…', 'Bewaard archief controleren…') : tr(lang, 'Продовжити без завантаження', 'Verder zonder upload')}</button>
+          <button type='button' className='ut-knop' data-meester-uploaden disabled={!!busy || !data.ik} onClick={uploaden} title={tr(lang, 'Не використовувати збережений архів, а передати файл ще раз', 'Het bewaarde archief niet gebruiken en het bestand opnieuw uploaden')}><UploadCloud aria-hidden='true' />{tr(lang, 'Завантажити заново', 'Opnieuw uploaden')}</button>
+        </div>
+        {voortgang !== null && <div className='ut-voortgang' role='progressbar' aria-valuemin={0} aria-valuemax={100} aria-valuenow={voortgang} aria-label={tr(lang, 'Завантаження архіву', 'Archief uploaden')}><div className='ut-voortgang-balk'><i style={{ width: `${voortgang}%` }} /></div><b>{voortgang}%</b><small>{mb(verzonden)} / {mb(grootte)}</small></div>}
+      </div></div>; })()}
+      {!hervatArchief && !nieuw && !(serverCheck && !serverCheck.ok) && <>
         <p className='ut-sub'>{tr(lang, 'Файл передається на сервер частинами; обрив мережі не страшний — завантаження продовжиться. Після цього сайт розпакує пакет у тимчасову теку й перевірить його (нічого не запускаючи).', 'Het bestand gaat in stukken naar de server; een netwerkonderbreking is niet erg — de upload gaat verder. Daarna pakt de site het pakket tijdelijk uit en controleert het (zonder iets uit te voeren).')}</p>
         <div className='ut-acties'>
           <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie data-meester-uploaden disabled={!!busy || !data.ik} onClick={uploaden}><UploadCloud aria-hidden='true' />{busy === 'pakket' ? tr(lang, 'Завантажую…', 'Bezig met uploaden…') : hervatbaar ? tr(lang, 'Продовжити завантаження', 'Upload hervatten') : tr(lang, 'Завантажити на сервер', 'Uploaden naar de server')}</button>
         </div>
         {voortgang !== null && voortgang < 100 && busy === 'pakket' && <div className='ut-acties'><button type='button' className='ut-knop ut-knop-gevaar' data-ut-annuleer-upload disabled={uploadAfbreken.current} onClick={() => { uploadAfbreken.current = true; }} title={tr(lang, 'Зупинити передачу після поточного шматка; пропозицію на сервері буде скасовано, трафік далі не витрачається', 'De overdracht na het huidige stuk stoppen; het voorstel op de server wordt geannuleerd, er gaat geen verkeer meer')}><X aria-hidden='true' />{tr(lang, 'Скасувати завантаження', 'Upload annuleren')}</button></div>}
-        {voortgang !== null && <div className='ut-voortgang' role='progressbar' aria-valuemin={0} aria-valuemax={100} aria-valuenow={voortgang} aria-label={tr(lang, 'Завантаження архіву', 'Archief uploaden')}><div className='ut-voortgang-balk'><i style={{ width: `${voortgang}%` }} /></div><b>{voortgang}%</b><small>{mb(verzonden)} / {mb(bestand.size)}</small></div>}
+        {voortgang !== null && <div className='ut-voortgang' role='progressbar' aria-valuemin={0} aria-valuemax={100} aria-valuenow={voortgang} aria-label={tr(lang, 'Завантаження архіву', 'Archief uploaden')}><div className='ut-voortgang-balk'><i style={{ width: `${voortgang}%` }} /></div><b>{voortgang}%</b><small>{mb(verzonden)} / {mb(grootte)}</small></div>}
         {voortgang === 100 && busy === 'pakket' && <p className='ut-wacht' role='status'><Loader2 aria-hidden='true' className='ut-draai' />{tr(lang, 'Сайт перевіряє пакет…', 'De site controleert het pakket…')}</p>}
       </>}
       {serverCheck && !serverCheck.ok && <div className='ut-probleem' role='alert'><XCircle aria-hidden='true' /><div><b>{tr(lang, 'Сайт відхилив пакет після завантаження:', 'De site heeft het pakket na het uploaden afgekeurd:')}</b>
         <Voorcontrole lang={lang} v={serverCheck} />
         <button type='button' className='ut-knop' data-ut-hoofdactie onClick={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати інший файл', 'Ander bestand kiezen')}</button></div></div>}
-      {nieuw && <p className='ut-goed'><CheckCircle2 aria-hidden='true' />{tr(lang, `Пакет ${nieuw.versie} на сервері й перевірений.`, `Pakket ${nieuw.versie} staat op de server en is gecontroleerd.`)}</p>}
+      {nieuw && <p className='ut-goed'><CheckCircle2 aria-hidden='true' />{hervatMeta || (hervatArchief && nieuw.sha256 === hervatArchief.sha256) ? tr(lang, `Пакет ${nieuw.versie} узято зі збереженого архіву на сервері (без повторного завантаження) і перевірено.`, `Pakket ${nieuw.versie} is uit het bewaarde archief op de server genomen (zonder nieuwe upload) en gecontroleerd.`) : tr(lang, `Пакет ${nieuw.versie} на сервері й перевірений.`, `Pakket ${nieuw.versie} staat op de server en is gecontroleerd.`)}</p>}
     </section>}
 
     {/* 4. Схвалення */}
@@ -452,10 +555,12 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
           <li><Undo2 aria-hidden='true' />{tr(lang, 'Ще 30 хвилин працює окрема сторожова служба root: якщо сайт «ляже» пізніше — вона сама відкотить версію, навіть коли вас немає поруч.', 'Nog 30 minuten bewaakt een aparte root-dienst de site: valt hij later alsnog om, dan draait ze zelf terug — ook als u er niet bent.')}</li>
           <li><AlertTriangle aria-hidden='true' />{tr(lang, 'Міграції бази при відкаті не відкочуються — тому сайт показує попередження про руйнівні міграції.', 'Databasemigraties worden bij terugdraaien niet teruggedraaid — daarom waarschuwt de site voor ingrijpende migraties.')}</li>
         </ul></details>
+      {nieuw.status === 'wacht-op-goedkeuring' && vlaggenNieuw && <RodeVlaggen lang={lang} id={nieuw.id} vlaggen={vlaggenNieuw} bevestigd={rvBevestigd === nieuw.id} onBevestig={(b) => setRvBevestigd(b ? nieuw.id : '')} disabled={!!busy} />}
       {nieuw.status === 'wacht-op-goedkeuring' && <div className='ut-acties'>
-        <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!klaar || !kanPasskey || !!busy || (nieuw.voorcontrole ? !nieuw.voorcontrole.ok : false)} onClick={() => goedkeurenId(nieuw.id)}><Fingerprint aria-hidden='true' />{busy === `ok-${nieuw.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити (passkey)', 'Goedkeuren en installeren (passkey)')}</button>
+        <button type='button' className='ut-knop ut-knop-primair' data-ut-hoofdactie disabled={!klaar || !kanPasskey || !!busy || !!andereInstallatie || (nieuw.voorcontrole ? !nieuw.voorcontrole.ok : false) || (!!vlaggenNieuw && rvBevestigd !== nieuw.id)} title={andereInstallatie ? lopendTekst(lang, andereInstallatie) : undefined} onClick={() => goedkeurenId(nieuw.id, vlaggenNieuw ? true : undefined)}><Fingerprint aria-hidden='true' />{busy === `ok-${nieuw.id}` ? tr(lang, 'Підтвердіть на телефоні…', 'Bevestig op uw telefoon…') : tr(lang, 'Схвалити й встановити (passkey)', 'Goedkeuren en installeren (passkey)')}</button>
         <button type='button' className='ut-knop ut-knop-gevaar' disabled={!!busy} onClick={() => annuleren(nieuw.id)}><X aria-hidden='true' />{tr(lang, 'Скасувати пакет', 'Pakket annuleren')}</button>
       </div>}
+      {nieuw.status === 'wacht-op-goedkeuring' && andereInstallatie && <p className='ut-hint' data-ut-samenloop-hint><Activity aria-hidden='true' /> {lopendTekst(lang, andereInstallatie)} {tr(lang, 'Схвалення стане доступним, щойно воно завершиться.', 'Goedkeuren kan zodra die klaar is.')}</p>}
       {nieuw.status === 'wacht-op-goedkeuring' && !klaar && <p className='ut-hint'>{tr(lang, 'Щоб схвалити, налаштуйте passkey у вкладці «Налаштування». Пакет чекатиме до 7 днів.', 'Stel een passkey in via het tabblad «Instellingen» om goed te keuren. Het pakket wacht tot 7 dagen.')}</p>}
     </section>}
 

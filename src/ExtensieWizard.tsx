@@ -6,6 +6,7 @@ import { Logo, type LogoKind, type Tr } from './mcp-ui';
 import { extensionInstallCommands } from './installeer-opdrachten';
 import { folderPickerSupported, installExtensionToPickedFolder, PickerFailure, SUBFOLDER } from './extensie-map-installeer';
 import './extensie-wizard.css';
+import './agenten/agenten-toegang-maquette.css';
 
 type BrowserKey = 'chrome' | 'edge' | 'opera' | 'brave' | 'vivaldi' | 'firefox' | 'safari';
 type OsKey = 'windows' | 'macos' | 'linux';
@@ -331,7 +332,7 @@ export default function ExtensionWizard(p: WizardProps) {
       <div className='wiz-head'>
         <span className='wiz-badge'><Puzzle aria-hidden='true' />{tr('Розширення браузера', 'Browserextensie')}</span>
         <h3>{p.welcome ? tr('Вітаємо! Завершіть налаштування розширення', 'Welkom! Rond de installatie van de extensie af') : tr('Встановлення розширення крок за кроком', 'De extensie stap voor stap installeren')}</h3>
-        <p>{tr('Розширення дозволяє вашому ШІ-помічнику (Claude через наш конектор) читати сторінки цього сайту й виконувати в них дії. Воно працює лише на *.tarasevych.com, лише поки ви ввійшли на сайті й лише з тим, що ви дозволили.', 'Met de extensie kan uw AI-assistent (Claude via onze connector) pagina\'s van deze site lezen en er acties in uitvoeren. Hij werkt alleen op *.tarasevych.com, alleen zolang u bent aangemeld en alleen met wat u hebt toegestaan.')}</p>
+        <p>{tr('Розширення дозволяє вашому ШІ-помічнику (будь-який ШІ, підключений через наш конектор) читати сторінки цього сайту й виконувати в них дії. Воно працює лише на *.tarasevych.com, лише поки ви ввійшли на сайті й лише з тим, що ви дозволили.', 'Met de extensie kan uw AI-assistent (elke AI die via onze connector is gekoppeld) pagina\'s van deze site lezen en er acties in uitvoeren. Hij werkt alleen op *.tarasevych.com, alleen zolang u bent aangemeld en alleen met wat u hebt toegestaan.')}</p>
         <div className='wiz-progress' role='progressbar' aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={tr('Прогрес налаштування', 'Voortgang van de installatie')}>
           <span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /><b>{done}/{steps.length}</b>
         </div>

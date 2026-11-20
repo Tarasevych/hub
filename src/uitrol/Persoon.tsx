@@ -5,10 +5,14 @@ import { cachedAvatarUrl, normalizeAvatarUrl } from '../gedeelde-voorkeuren';
 
 const hue = (s: string) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 
-/** Повертає фото профілю учасника з особистого кабінету (серверні дані, кеш профілю або аватар шапки). */
-export function actieveAccountFoto(foto?: string | null): string {
+/**
+ * Повертає фото профілю учасника: серверні дані, а кеш профілю й аватар шапки — ЛИШЕ коли це сам глядач (ikZelf).
+ * Раніше кожен учасник без фото отримував фото того, хто дивиться сторінку (15.11.2026).
+ * Foto van een deelnemer; de cache en het avatar in de kop alleen voor de kijker zelf.
+ */
+export function actieveAccountFoto(foto?: string | null, ikZelf = false): string {
   const direct = normalizeAvatarUrl(foto);
-  if (direct) return direct;
+  if (direct || !ikZelf) return direct;
   const cached = cachedAvatarUrl();
   if (cached) return cached;
   if (typeof document !== 'undefined') {
@@ -19,8 +23,8 @@ export function actieveAccountFoto(foto?: string | null): string {
   return '';
 }
 
-export default function Persoon({ naam, id, foto, klein = false }: { naam: string; id?: string; foto?: string | null; klein?: boolean }) {
-  const bron = actieveAccountFoto(foto);
+export default function Persoon({ naam, id, foto, klein = false, ikZelf = false }: { naam: string; id?: string; foto?: string | null; klein?: boolean; ikZelf?: boolean }) {
+  const bron = actieveAccountFoto(foto, ikZelf);
   const [stuk, setStuk] = useState(false);
   useEffect(() => { setStuk(false); }, [bron]);
   const h = hue(id || naam || '?');

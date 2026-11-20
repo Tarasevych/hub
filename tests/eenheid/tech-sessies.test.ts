@@ -5,6 +5,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { getPool } from '../../server/platform/pg';
 import * as tp from '../../backend/tech-profiel';
 import { checker } from './hulp/nep-google';
+import { googleStapOpVastleggen } from '../../backend/stap-op'; // IDENTITEIT-012
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 const tab = () => randomBytes(24).toString('hex');
@@ -16,10 +17,15 @@ export async function main(): Promise<number> {
   const { handler } = await import('../../backend/index');
   const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
 
+  const vorigeOwnerEmail = process.env.OWNER_EMAIL;
   const bestaand = (await pool.query(`SELECT id, data->>'email' AS email FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1`)).rows[0];
   const uid = bestaand ? String(bestaand.id) : randomUUID();
   if (bestaand) process.env.OWNER_EMAIL = String(bestaand.email);
-  else await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', uid, { email: process.env.OWNER_EMAIL || 'eigenaar@eenheid.test', role: 'owner', status: 'approved', name: 'Eigenaar' }]);
+  else {
+    const email = process.env.OWNER_EMAIL || 'eigenaar@eenheid.test';
+    process.env.OWNER_EMAIL = email;
+    await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', uid, { email, role: 'owner', status: 'approved', name: 'Eigenaar' }]);
+  }
   const eig = { id: uid, email: String(process.env.OWNER_EMAIL), role: 'owner', status: 'approved' };
   const sessies: string[] = [];
   const tabs: string[] = [];
@@ -86,10 +92,16 @@ export async function main(): Promise<number> {
     // revoke-others → alles behalve de aanroepende sessie
     const aA2 = await actief(tA, sA);
     const aC2 = await tp.activeren(eig, tC, 30, 'opnieuw in C', { id: sC.id, createdAt: sC.createdAt });
+    // IDENTITEIT-012: «Завершити всі інші входи» та «Вийти всюди» вимагають підтвердження доступу (тут — свіжий вхід Google).
+    const zonderStap = await roep('/api/owner/identity/security/revoke-others', sA);
+    check('IDENTITEIT-012: revoke-others без підтвердження → 403 STEP_UP_*, нічого не завершено', zonderStap.status === 403 && /STEP_UP/.test(String(zonderStap.data.reasonCode || zonderStap.data.error)) && !!(await actief(tC, sC)), JSON.stringify(zonderStap.data));
+    await googleStapOpVastleggen(uid, [sA.id], Date.now());
     const ro = await roep('/api/owner/identity/security/revoke-others', sA);
     check('revoke-others beëindigt de technische profielen van de andere sessies, niet van deze', ro.status === 200 && ro.data.tech === 1 && (await actief(tC, sC)) === null && !!(await actief(tA, sA)) && (await redenVan(aC2.id)) === 'revoke-others' && aA2?.id === aA.id, JSON.stringify(ro.data));
 
     // revoke-all → alles, ook deze sessie; daarna opnieuw aanmelden in HETZELFDE tabblad → niets actief, activeren vraagt stap-op
+    const raZonder = await roep('/api/owner/identity/security/revoke-all', await sessie()); // свіжа сесія без підтвердження
+    check('IDENTITEIT-012: revoke-all без підтвердження → 403 STEP_UP_*, профіль лишається', raZonder.status === 403 && !!(await actief(tA)), JSON.stringify(raZonder.data));
     const ra = await roep('/api/owner/identity/security/revoke-all', sA);
     check('revoke-all beëindigt alle technische profielen (reden revoke-all)', ra.status === 200 && ra.data.tech === 1 && (await actief(tA)) === null && (await redenVan(aA.id)) === 'revoke-all', JSON.stringify(ra.data));
     const sNa = await sessie();
@@ -125,6 +137,8 @@ export async function main(): Promise<number> {
     if (sessies.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id = ANY($1)`, [sessies]).catch(() => undefined);
     if (tabs.length) await pool.query(`DELETE FROM app.records WHERE tbl='owner_tab_sessions_v1' AND id = ANY($1)`, [tabs]).catch(() => undefined);
     if (!bestaand) { await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [uid]).catch(() => undefined); await pool.query(`DELETE FROM app.records WHERE tbl='users' AND id=$1`, [uid]).catch(() => undefined); }
+    if (vorigeOwnerEmail === undefined) delete process.env.OWNER_EMAIL;
+    else process.env.OWNER_EMAIL = vorigeOwnerEmail;
   }
   return einde();
 }

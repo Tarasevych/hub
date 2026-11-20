@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "soort": "pr",
+  "id": 159,
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:08.168Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "MELDPANEEL-001: одна панель сповіщень замість двох (свідомо НЕ увійшло в UPD-005 — чекає на розробку)",
+    "nl": "MELDPANEEL-001: één meldingenpaneel in plaats van twee (bewust NIET in UPD-005 — wacht op uitwerking)"
+  },
+  "samenvatting": {
+    "uk": "Не ввійшло до UPD-005: містить лише досьє й проєкт (фіксація d3bfeca5), коду самої панелі ще немає — очікує на погодження знімків власником. Гілка feature/meldpaneel-001-20261118-082300 збережена відкритою для подальшої роботи.",
+    "nl": "Niet opgenomen in UPD-005: bevat uitsluitend dossier en ontwerp (vastlegging d3bfeca5), code wacht op goedkeuring van de schermafbeeldingen. Tak feature/meldpaneel-001-20261118-082300 blijft open."
+  },
+  "taken": [
+    "MELDPANEEL-001",
+    "UPD-005"
+  ]
+}

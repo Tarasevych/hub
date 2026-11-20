@@ -7,11 +7,11 @@
 // apparaat (zonder aanwijzing welk het juiste is); een aftelling vóór de symbolen aanklikbaar zijn (door de server afgedwongen);
 // «Ні, це не я» werkt altijd meteen. Een tik op een symbool vraagt eerst de toegangssleutel op DIT apparaat (of, als de beheerder
 // én de gebruiker dat toestaan, een authenticator-code) en stuurt dan de keuze. Eén poging.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { Venster } from '../platform/vensters';
 import { ecosystemTabContext } from '../tab-context';
-import Symbool from './Symbool';
+import Symbool, { tegelKleurStijl } from './Symbool';
 import { abonneer, stroomVerbonden } from './stroom';
 import { bekrachtigen, foutCode, metSleutel, open, weigeren, type Ctx } from './api';
 import { useApparaatVlag } from './vlag';
@@ -22,11 +22,11 @@ import './apparaat.css';
 const SNEL_MS = 5_000, TRAAG_MS = 30_000;
 
 /** Knop die pas na `tot` (ms-tijdstip) werkt; toont de resterende seconden in de knop zelf. */
-export function AftelKnop({ tot, onClick, children, className = 'apb-knop', uit = false, lang, label }: { tot: number; onClick: () => void; children: ReactNode; className?: string; uit?: boolean; lang: Lang; label?: string }) {
+export function AftelKnop({ tot, onClick, children, className = 'apb-knop', style, uit = false, lang, label }: { tot: number; onClick: () => void; children: ReactNode; className?: string; style?: CSSProperties; uit?: boolean; lang: Lang; label?: string }) {
   const [rest, setRest] = useState(() => Math.max(0, Math.ceil((tot - Date.now()) / 1000)));
   useEffect(() => { const t = window.setInterval(() => setRest(Math.max(0, Math.ceil((tot - Date.now()) / 1000))), 250); return () => window.clearInterval(t); }, [tot]);
   const dicht = rest > 0 || uit;
-  return <button type='button' className={className} disabled={dicht} aria-disabled={dicht} aria-label={label} onClick={() => { if (!dicht) onClick(); }}>
+  return <button type='button' className={className} style={style} disabled={dicht} aria-disabled={dicht} aria-label={label} onClick={() => { if (!dicht) onClick(); }}>
     {children}{rest > 0 && <span className='apb-aftel' aria-live='polite'>{tr(lang, `${rest} с`, `${rest} s`)}</span>}
   </button>;
 }
@@ -92,9 +92,12 @@ function VerzoekVenster({ v, ctx, lang, totp, onWeg }: { v: VerzoekPubliek; ctx:
       {!uitkomst && <>
         <p className='apb-uitleg'>{tr(lang, 'На тому екрані один символ виділено. Натисніть тут ТОЙ САМИЙ символ. Є лише одна спроба: інший символ скасує дію. Якщо це не ви — натисніть «Це не я».', 'Op dat scherm is één symbool uitgelicht. Tik hier HETZELFDE symbool. U hebt één poging: een ander symbool annuleert de handeling. Bent u het niet, tik «Dit ben ik niet».')}</p>
         <div className='apb-symbolen' role='group' aria-label={tr(lang, 'Виберіть символ', 'Kies een symbool')}>
-          {v.kandidaten.map((k, pos) => <AftelKnop key={`${v.soort}-${k}`} tot={aftelTot} uit={bezig} lang={lang} className='apb-tegel apb-tegel-knop' onClick={() => void kies(pos)}>
-            <Symbool soort={v.soort} index={k} lang={lang} />
-          </AftelKnop>)}
+          {v.kandidaten.map((k, pos) => {
+            const kleurStijl = tegelKleurStijl(v.soort, k, lang);
+            return <AftelKnop key={`${v.soort}-${k}`} tot={aftelTot} uit={bezig} lang={lang} className={`apb-tegel apb-tegel-knop${kleurStijl ? ' is-kleur' : ''}`} style={kleurStijl} onClick={() => void kies(pos)}>
+              <Symbool soort={v.soort} index={k} lang={lang} />
+            </AftelKnop>;
+          })}
         </div>
         <p className='apb-klein' aria-live='polite'>{rest > 0 ? tr(lang, `Запит дійсний ще ${rest} с.`, `Verzoek nog ${rest} s geldig.`) : ''}</p>
       </>}
@@ -125,11 +128,13 @@ export default function ApparaatLuisteraar({ lang, service }: { lang: Lang; serv
   const laad = useCallback(async () => {
     try {
       const r = await open(ctx);
-      setTotp(r.totp); setGeluid(r.geluid); setToonAls(r.toonAls);
+      if (!r || !Array.isArray(r.verzoeken)) return;
+      const lijst = r.verzoeken;
+      setTotp(Boolean(r.totp)); setGeluid(Boolean(r.geluid)); setToonAls(r.toonAls === 'melding' ? 'melding' : 'venster');
       setVerzoeken((oud) => {
         // Nieuwe verzoeken: geluid (als gewenst). Afgeronde die we nog tonen, houden we even met hun eindstand.
-        for (const v of r.verzoeken) if (!gezien.current.has(v.id)) { gezien.current.add(v.id); if (r.geluid) piep(); }
-        const nieuw = new Map(r.verzoeken.map((v) => [v.id, v] as const));
+        for (const v of lijst) if (!gezien.current.has(v.id)) { gezien.current.add(v.id); if (r.geluid) piep(); }
+        const nieuw = new Map(lijst.map((v) => [v.id, v] as const));
         for (const o of oud) if (!nieuw.has(o.id) && o.stand === 'wacht') nieuw.set(o.id, { ...o, stand: 'verlopen' });
         return [...nieuw.values()];
       });

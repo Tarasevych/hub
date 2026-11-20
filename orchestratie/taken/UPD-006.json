@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "UPD-006",
+  "agent": "gemini",
+  "tak": "feature/upd-006-uitgave-20261119-114700",
+  "basisCommit": "cab0acb9e23ceef5d17515bac5eba2f065101750",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.17",
+  "regelsHash": "ade45250606e8237c588c21f70e5b9b57665ca83347fed5089c2f037b01b5e56",
+  "staat": "in_progress",
+  "gestart": "2026-11-19T11:54:45.327Z",
+  "bijgewerkt": "2026-11-19T11:54:45.328Z",
+  "omschrijving": "Спільний випуск UPD-006 поверх живої версії 20261119-080944 (cab0acb9): центрування панелі оновлення (940 px із симетричним зазором від 24 px), 96/96 кольорових векторних піктограм підтвердження з іншого пристрою (Варіант А) та підлаштоване прискорення Grok MOBIEL-002 (№ 174, прапорець mobiel-breedte-veilig-v1 типово вимкнено, узгоджено з «Макетом»).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

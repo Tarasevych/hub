@@ -280,15 +280,16 @@ export async function main(): Promise<number> {
   const html = renderToString(createElement(MailAccountsHub, { lang: 'uk', userName: 'Власник', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
   check('«Підключені акаунти»: eigenaar@example.test met stand «Працює», «Основний», «Перепідключити», «Відключити», «Додати ще один Gmail»',
     html.includes('eigenaar@example.test') && html.includes('Працює') && html.includes('Основний') && html.includes('Перепідключити') && html.includes('data-mail-ontkoppel') && html.includes('Додати ще один<!-- --> <!-- -->Gmail'), html.slice(html.indexOf('data-mail-gekoppeld'), html.indexOf('data-mail-gekoppeld') + 400));
-  // Met een account (zoals hierboven): sinds MAILORBIT-001 toont een LEGE pagina de orbit in plaats van de tegels (05.11.2026).
+  // Met een account (zoals hierboven): sinds MAILORBIT-001/MAILACC-002 toont de orbit de nog niet beschikbare diensten onder data-mail-orbit-onbeschikbaar.
   const htmlNl = renderToString(createElement(MailAccountsHub, { lang: 'nl', accounts: [{ id: 'p1', email: 'eigenaar@example.test', provider: 'Google', status: 'connected', accountRole: 'primary' }] }));
-  check('tegels zonder weg: uitleg ingeklapt onder «Чому недоступно?» / «Waarom niet beschikbaar?»', html.includes('<summary>Чому недоступно?</summary>') && htmlNl.includes('<summary>Waarom niet beschikbaar?</summary>'));
+  check('tegels zonder weg: getoond in orbit-lijst onder «Поки не підключається» / «Nog niet te koppelen»', html.includes('data-mail-orbit-onbeschikbaar=') && html.includes('Поки не підключається') && htmlNl.includes('Nog niet te koppelen'));
   const css = bron('src/mail-accounts-hub.css');
   check('telefoon ≤ 480 px: één kolom met compacte tegels', /@media \(max-width:480px\)\{[^}]*\.mail-provider-rooster\{grid-template-columns:minmax\(0,1fr\)/.test(css.replace(/\s*\n\s*/g, '')));
 
   // ================================================================ 5. logo's: geen nagetekende merken, neutrale plaat, ontsmetting
   const { MERKEN } = await import('../../src/merk/merk-tabel');
   const { LOGOS } = await import('../../src/merk/merk-logos');
+  const { OFFICIEEL_SLEUTELS } = await import('../../src/merk/officieel-sleutels');
   const reg = await import('../../src/merk/merk-register');
   const Merk = (await import('../../src/merk/Merk')).default;
   const NEUTRAAL = ['microsoftoutlook', 'ukrnet', 'iua', 'onlineua', 'yahoo', 'microsoftonedrive', 'microsoftonenote', 'microsoftteams', 'microsoftazure', 'microsoftentra', 'fastmail', 'freshdesk', 'mollie', 'mondaydotcom', 'pipedrive', 'tuya', 'webhook', 'windows', 'edge', 'microsoft', 'node'];
@@ -297,12 +298,19 @@ export async function main(): Promise<number> {
   const zwak = NEUTRAAL.filter((k) => reg.merkContrast(MERKEN[k].kleur, MERKEN[k].vlak!) < 4.5);
   check('neutrale plaat: letters ≥ 4,5:1 op de merktoon (wit of zwart, het hoogste contrast)', zwak.length === 0, zwak.join());
   const mailMerken = MAIL_AANBIEDERS.map((a) => a.merk);
-  const echteHerkomst = mailMerken.filter((m) => !!LOGOS[m]);
+  // Merken met een officieel bestand (bv. icloud na PLAATS-TEKENS-001) staan niet meer dubbel in LOGOS.
+  const echteHerkomst = mailMerken.filter((m) => !!LOGOS[m] || (OFFICIEEL_SLEUTELS.has(m) && !MERKEN[m]?.neutraal));
   const neutraalMail = mailMerken.filter((m) => MERKEN[m]?.neutraal);
-  check(`elke mailtegel: óf een vorm uit simple-icons (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
-    echteHerkomst.length + neutraalMail.length === mailMerken.length && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail'));
-  const plaat = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
-  check('<Merk> tekent de neutrale plaat (data-merk="neutraal", tekst, geen pad) — geen monogram «onbekend»', plaat.includes('data-merk="neutraal"') && plaat.includes('>Uk</text>') && !plaat.includes('<path') && !plaat.includes('onbekend'), plaat.slice(0, 200));
+  check(`elke mailtegel: óf een vorm uit simple-icons / officieel bestand (${echteHerkomst.join(', ')}), óf de neutrale plaat (${neutraalMail.join(', ')})`,
+    echteHerkomst.length + neutraalMail.length === mailMerken.length
+    && echteHerkomst.includes('gmail') && echteHerkomst.includes('protonmail') && OFFICIEEL_SLEUTELS.has('icloud'));
+  // UPD-003 (REESTR-LOGO-001, #149): ukr.net heeft nu een officieel bestand (src/merk/officieel/ukrnet.png) — dat wint van de neutrale plaat.
+  // Офіційний файл перемагає нейтральну плитку; саму плитку перевіряємо на тимчасовому нейтральному записі без офіційного файла.
+  await reg.laadOfficieel();
+  const officieel = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
+  check('ukr.net: het officiële bestand wint van de neutrale plaat (data-merk-officieel)', officieel.includes('data-merk-officieel="ukrnet"') && !officieel.includes('data-merk="neutraal"'), officieel.slice(0, 200));
+  const plaat = renderToString(createElement(Merk, { def: { ...MERKEN.ukrnet, naam: 'Proefmerk', letter: 'Pr' }, maat: 36 }));
+  check('<Merk> tekent de neutrale plaat (data-merk="neutraal", tekst, geen pad) — geen monogram «onbekend»', plaat.includes('data-merk="neutraal"') && plaat.includes('>Pr</text>') && !plaat.includes('<path') && !plaat.includes('onbekend'), plaat.slice(0, 200));
   reg.registreerEigenMerken([{ sleutel: 'ukrnet', soort: 'svg', data: `data:image/svg+xml;base64,${Buffer.from('<svg viewBox="0 0 1 1"/>').toString('base64')}`, hash: 'x' }]);
   const eigen = renderToString(createElement(Merk, { merk: 'ukrnet', maat: 36 }));
   reg._eigenMerkenOpnieuw();
@@ -332,7 +340,7 @@ export async function main(): Promise<number> {
     && !controleerMerkEigen('png', Buffer.from('GIF89a........................................')).ok && !controleerMerkEigen('png', Buffer.alloc(210 * 1024)).ok);
   check('bestandsnamen: alleen <sleutel>.svg|png in kleine letters', merkEigenBestandsnaam('ukrnet.svg')?.sleutel === 'ukrnet' && !merkEigenBestandsnaam('../x.svg') && !merkEigenBestandsnaam('Ukr.SVG') && !merkEigenBestandsnaam('x.gif'));
   const leesmij = bron('deploy/ОГЛЯД-РОЗГОРТАННЯ.md');
-  check('deploy/ОГЛЯД-РОЗГОРТАННЯ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && leesmij.includes('200 KB'));
+  check('deploy/ОГЛЯД-РОЗГОРТАННЯ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && /200 (?:KB|КБ)/.test(leesmij));
 
   return einde();
 }

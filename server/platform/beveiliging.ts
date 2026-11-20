@@ -119,26 +119,72 @@ export function envKey32(name: string): Buffer | null {
   return decoded.length === 32 ? decoded : null;
 }
 
-/** AES-256-GCM-envelop `v1.<iv>.<ciphertext>.<tag>` (base64url), gebonden aan `aad`. */
+/**
+ * SEC-002 (geheimen-07): sleutelversies voor rotatie. Een sleutelnaam eindigt op `_V1`; `<BASIS>_V2` … `_V9` zijn opvolgers.
+ * De envelop draagt de versie (`v1.…`, `v2.…`), dus elke envelop opent met precies de sleutel waarmee hij gemaakt is.
+ * Zegelen gebeurt met de NIEUWSTE versie die in de omgeving staat: na het toevoegen van `<BASIS>_V2` (en herstarten) komen alle
+ * nieuwe en gewijzigde enveloppen onder V2, terwijl `v1.…` leesbaar blijft zolang V1 bestaat (deploy/GEHEIMEN-REGISTER.nl.md).
+ */
+const SLEUTEL_VERSIE = /^(.*_V)([1-9])$/;
+function sleutelVoorVersie(keyName: string, versie: number): string {
+  const m = SLEUTEL_VERSIE.exec(keyName);
+  return m ? `${m[1]}${versie}` : keyName;
+}
+function nieuwsteSleutelVersie(keyName: string): { naam: string; versie: number } {
+  const m = SLEUTEL_VERSIE.exec(keyName);
+  if (!m) return { naam: keyName, versie: 1 };
+  for (let v = 9; v > Number(m[2]); v -= 1) if (envKey32(`${m[1]}${v}`)) return { naam: `${m[1]}${v}`, versie: v };
+  return { naam: keyName, versie: Number(m[2]) };
+}
+
+/**
+ * Staat er een sleutel voor deze naam in de omgeving, in welke versie dan ook (`<BASIS>_V1` … `_V9`)? Voor modules die kiezen
+ * tussen een eigen sleutel en de terugval op TOTP_ENCRYPTION_KEY_V1 (toets-g10b #2): kijken zij alleen naar `_V1`, dan zou
+ * een installatie met alleen `_V2` stil terugvallen op TOTP. Alle vier modules gebruiken dit (afwerking A); V1 blijft toch nodig om
+ * bestaande `v1.…`-enveloppen te lezen, dus: V1 nooit verwijderen zolang er niet opnieuw is verzegeld.
+ */
+export function envSleutelBeschikbaar(keyName: string): boolean {
+  const m = SLEUTEL_VERSIE.exec(keyName);
+  if (!m) return !!envKey32(keyName);
+  for (let v = 1; v <= 9; v += 1) if (envKey32(`${m[1]}${v}`)) return true;
+  return false;
+}
+
+/** AES-256-GCM-envelop `v<N>.<iv>.<ciphertext>.<tag>` (base64url), gebonden aan `aad`; N = nieuwste sleutelversie (meestal 1). */
 export function sealWithEnvKey(keyName: string, plaintext: string, aad: string): string {
-  const key = envKey32(keyName);
-  if (!key) throw new Error(`SLEUTEL_ONTBREEKT:${keyName}`);
+  const { naam, versie } = nieuwsteSleutelVersie(keyName);
+  const key = envKey32(naam);
+  if (!key) throw new Error(`SLEUTEL_ONTBREEKT:${naam}`);
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   cipher.setAAD(Buffer.from(aad, 'utf8'));
   const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-  return ['v1', iv.toString('base64url'), ct.toString('base64url'), cipher.getAuthTag().toString('base64url')].join('.');
+  return [`v${versie}`, iv.toString('base64url'), ct.toString('base64url'), cipher.getAuthTag().toString('base64url')].join('.');
 }
 
 export function openWithEnvKey(keyName: string, envelope: string, aad: string): string {
-  const key = envKey32(keyName);
-  if (!key) throw new Error(`SLEUTEL_ONTBREEKT:${keyName}`);
   const [version, iv, ct, tag] = String(envelope || '').split('.');
-  if (version !== 'v1' || !iv || !ct || !tag) throw new Error('ENVELOP_ONGELDIG');
-  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'));
-  decipher.setAAD(Buffer.from(aad, 'utf8'));
-  decipher.setAuthTag(Buffer.from(tag, 'base64url'));
-  return Buffer.concat([decipher.update(Buffer.from(ct, 'base64url')), decipher.final()]).toString('utf8');
+  const vm = /^v([1-9])$/.exec(version || '');
+  // v1 opent alleen met keyName zelf; v2…v9 alleen met de bijbehorende opvolger (nooit stil terugvallen op een andere versie).
+  const versie = vm ? Number(vm[1]) : 0;
+  const naam = versie > 1 ? sleutelVoorVersie(keyName, versie) : keyName;
+  const key = envKey32(naam);
+  if (!key) throw new Error(`SLEUTEL_ONTBREEKT:${naam}`); // zelfde volgorde als vroeger: eerst de sleutel, dan de envelop
+  if (!versie || !iv || !ct || !tag || (versie > 1 && !SLEUTEL_VERSIE.test(keyName))) throw new Error('ENVELOP_ONGELDIG');
+  return gcmOpenStrikt(key, Buffer.from(iv, 'base64url'), Buffer.from(tag, 'base64url'), Buffer.from(ct, 'base64url'), Buffer.from(aad, 'utf8')).toString('utf8');
+}
+
+/**
+ * AES-256-GCM openen met VASTE lengtes: IV 12 bytes, authenticatietag 16 bytes (SEC-001-16, SEC-002 geheimen-06).
+ * Zonder `authTagLength` aanvaardt Node ook een afgekapte tag van 4 bytes: wie in de database kan schrijven, heeft dan
+ * ~2^32 pogingen nodig voor een vervalste envelop in plaats van 2^128. Alle plekken die een envelop openen gebruiken dit.
+ */
+export function gcmOpenStrikt(key: Buffer, iv: Buffer, tag: Buffer, ciphertext: Buffer, aad: Buffer): Buffer {
+  if (iv.length !== 12 || tag.length !== 16) throw new Error('ENVELOP_ONGELDIG');
+  const decipher = createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+  decipher.setAAD(aad);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
 /** HMAC-SHA256 met een geheime pepper uit env (minstens 32 tekens). Gooit als die ontbreekt. */

@@ -67,7 +67,7 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 .gm-root .gm-naam{padding:0;min-height:0;border:0;background:none;color:var(--gm-text);font-weight:750;font-size:.98rem;text-align:left;cursor:pointer;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .gm-naam:hover{color:var(--gm-accent);text-decoration:underline}
 .gm-kaart-sub{display:flex;flex-wrap:wrap;gap:4px 7px;color:var(--gm-muted);font-size:.8rem}
-.gm-waarde{display:block;max-width:100%;padding:6px 10px;border-radius:9px;background:color-mix(in srgb,var(--gm-text) 6%,var(--gm-bg));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;letter-spacing:.04em;color:var(--gm-muted);overflow-wrap:anywhere;word-break:break-all;white-space:pre-wrap;max-height:220px;overflow:auto}
+.gm-waarde{display:block;max-width:100%;padding:6px 10px;border-radius:9px;background:color-mix(in srgb,var(--gm-text) 6%,var(--gm-bg));font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;letter-spacing:.04em;color:var(--gm-muted);overflow-wrap:anywhere;word-break:normal;white-space:pre-wrap;max-height:220px;overflow:auto}
 .gm-waarde.is-zichtbaar{color:var(--gm-text);letter-spacing:0;border:1px dashed color-mix(in srgb,var(--gm-warn) 55%,var(--gm-line));background:color-mix(in srgb,var(--gm-warn) 8%,var(--gm-bg))}
 .gm-teller{position:relative;display:flex;align-items:center;gap:8px}
 .gm-teller>span{display:block;height:4px;border-radius:2px;background:var(--gm-warn);transition:width .25s linear;flex:none;max-width:60%}
@@ -83,7 +83,7 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 .gm-chip[data-toon=bad]{color:var(--gm-bad);border-color:transparent;background:color-mix(in srgb,var(--gm-bad) 12%,var(--gm-bg))}
 .gm-logo{display:inline-grid;place-items:center;flex:none;border-radius:11px;color:#fff;font-weight:800;letter-spacing:-.02em;user-select:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .gm-logo b{font-weight:800;line-height:1}
-.gm-logo.is-google{background:conic-gradient(from -45deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0)}
+/* .gm-logo.is-google (намальоване колесо кольорів Google) прибрано: знак Google малює лише <Merk> з офіційного файла. */
 /* Merklogo uit het register (src/merk): de tegel tekent <Merk> zelf — geen eigen vlak, geen witte letters. */
 .gm-logo.is-merk{background:none;box-shadow:none;color:inherit}
 .gm-avatar{display:inline-grid;place-items:center;flex:none;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--gm-accent) 22%,var(--gm-bg));color:var(--gm-text);font-weight:700}

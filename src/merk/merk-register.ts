@@ -64,10 +64,12 @@ export type MerkTabel = Readonly<Record<string, MerkDef>>;
  */
 export const MERK_ALIAS: Readonly<Record<string, string>> = Object.freeze({
   chatgpt: 'gpt', openai: 'gpt', 'gpt-4': 'gpt', 'gpt4': 'gpt',
+  'openai-codex': 'codex', 'codex-cli': 'codex',
   googlegemini: 'gemini', bard: 'gemini',
   googleantigravity: 'antigravity', 'google-antigravity': 'antigravity', jetski: 'antigravity',
   openclaw: 'autoclaw', glm: 'autoclaw', chatglm: 'autoclaw', zhipu: 'autoclaw', zhipuai: 'autoclaw', zai: 'autoclaw', 'z.ai': 'autoclaw', 'glm-5.3-flashx-legal': 'autoclaw',
   githubcopilot: 'copilot', 'github-copilot': 'copilot',
+  microsoftcopilot: 'mscopilot', 'microsoft-copilot': 'mscopilot', 'microsoft copilot': 'mscopilot', copilotstudio: 'mscopilot', 'copilot-studio': 'mscopilot', 'copilot studio': 'mscopilot',
   xai: 'grok', 'x-ai': 'grok',
   macos: 'apple', ios: 'apple', ipados: 'apple', iphone: 'apple', ipad: 'apple', mac: 'apple',
   googlechrome: 'chrome', chromium: 'chrome', chromeos: 'chrome',
@@ -155,9 +157,43 @@ export function laadEigenMerken(ophalen: () => Promise<{ merken?: EigenMerk[] } 
 /** Voor tests: de eigen lijst leegmaken en opnieuw laten ophalen. */
 export function _eigenMerkenOpnieuw(): void { EIGEN.clear(); eigenBelofte = null; }
 
+// ---------------------------------------------------------------- EIGEN logo's van de GEBRUIKER (REESTR-LOGO-001, 16.11.2026)
+// Павло: «щоб користувач міг там призначити свій логотип навіть якщо системний є … діє той, який встановив користувач, доки не
+// буде видалено користувацький або не замінено». Elke mens kan voor een merk ZIJN eigen bestand kiezen; dat gaat vóór alles
+// (ook vóór het bestand van de beheerder) — maar alleen voor hem, in zijn eigen ruimte. De server bewaart het onder zijn eigen
+// gegevenssleutel (app.merk_gebruiker, backend/merk-gebruiker.ts); niemand anders krijgt het ooit te zien. Wissen = de vorige laag
+// (beheerder → officieel → vorm …) staat meteen weer. Deze lijst hoort bij ÉÉN account: bij een ander account wordt zij geleegd.
+export type GebruikerMerk = { sleutel: string; soort: 'svg' | 'png'; data: string; hash: string };
+const GEBRUIKER = new Map<string, GebruikerMerk>();
+let gebruikerScope = '';
+let gebruikerBelofte: Promise<void> | null = null;
+/** Zet de eigen logo's van de gebruiker (vervangt de hele lijst). `scope` = het account waarbij ze horen. */
+export function registreerGebruikerMerken(lijst: readonly GebruikerMerk[], scope = gebruikerScope): void {
+  GEBRUIKER.clear();
+  gebruikerScope = scope;
+  for (const m of lijst || []) {
+    const s = merkSleutel(m?.sleutel);
+    if (!s || (m.soort !== 'svg' && m.soort !== 'png') || !/^data:image\/(svg\+xml|png);base64,[A-Za-z0-9+/=]+$/.test(String(m.data || ''))) continue;
+    GEBRUIKER.set(s, { sleutel: s, soort: m.soort, data: m.data, hash: String(m.hash || '') });
+  }
+  for (const fn of [...kijkers]) fn();
+}
+/** Het eigen logo van de gebruiker voor dit merk, of null. */
+export function gebruikerMerk(v: unknown): GebruikerMerk | null { const s = merkSleutel(v); return (s && GEBRUIKER.get(s)) || null; }
+export const gebruikerMerkSleutels = (): string[] => [...GEBRUIKER.keys()].sort();
+export const gebruikerMerkScope = (): string => gebruikerScope;
+/** Haalt de lijst één keer per account op; bij een ander account opnieuw (en de oude lijst is dan meteen weg). */
+export function laadGebruikerMerken(scope: string, ophalen: () => Promise<{ merken?: GebruikerMerk[] } | null | undefined>): Promise<void> {
+  if (scope !== gebruikerScope) { registreerGebruikerMerken([], scope); gebruikerBelofte = null; }
+  return (gebruikerBelofte ??= ophalen().then((r) => { if (gebruikerScope === scope) registreerGebruikerMerken(r?.merken || [], scope); }).catch(() => { gebruikerBelofte = null; }));
+}
+/** Na zetten/wissen: opnieuw laten ophalen. Voor tests ook: alles leeg. */
+export function _gebruikerMerkenOpnieuw(): void { gebruikerBelofte = null; }
+
 // ---------------------------------------------------------------- OFFICIËLE logo's en de MERKENDATABASE (21.10.2026)
 // Besluit van de eigenaar: «знайди в інтернеті публічні фото їх логотипів і збережи в базу … Без імітації, а справжні». Twee
 // lagen bovenop de vormen van hierboven, en de VOLGORDE is de hele regel (merkLaag):
+//   0. gebruiker   het bestand dat DEZE gebruiker voor zichzelf koos (registreerGebruikerMerken; REESTR-LOGO-001);
 //   1. eigen       het bestand dat de beheerder zelf neerlegde (registreerEigenMerken);
 //   2. officieel   het officiële logo uit de INGEBOUWDE basis: src/merk/officieel/*.svg|png, genomen uit npm-pakketten met een
 //                  open licentie (CC0/MIT) of van de eigen website van de dienst — zie HERKOMST.json en
@@ -175,6 +211,8 @@ export type OfficieelMerk = {
   sha256: string;
   /** 'licht' = het logo heeft donkere delen; als los gliefje staat het daarom op een lichte plaat (de vorm blijft onaangeroerd). */
   ondergrond: 'licht' | 'vrij';
+  /** PLAATS-TEKENS-001: merkkleur als plaat voor een WIT teken dat de eigenaar zelf zo toont (Proximus op #5c2d91). */
+  plaat?: string;
   /** Pakket@versie · icoon · licentie, of de URL van de eigen website. */
   bron: string;
 };
@@ -200,10 +238,20 @@ export function registreerOfficieleMerken(tabel: Readonly<Record<string, Officie
   officieelBinnen = true;
   if (nieuw) for (const fn of [...kijkers]) fn();
 }
+/** REESTR-LOGO-001: de logo's van het eerste scherm (shared/merk-direct.ts) meteen in het register — zonder de luie tabel als
+ *  «binnen» te markeren (die bevat de rest nog). Zo tekent <Merk merk='google'|'telegram'> al in het eerste beeld het echte logo,
+ *  en staat het bestand toch maar één keer in de bundel. */
+export function registreerDirecteMerken(tabel: Readonly<Record<string, OfficieelMerk>>): void {
+  const was = officieelBinnen;
+  registreerOfficieleMerken(tabel);
+  officieelBinnen = was;
+}
 /** Het ingebouwde officiële logo van dit merk, of null. */
 export function officieelMerk(v: unknown): OfficieelBeeld | null { const s = merkSleutel(v); return (s && OFFICIEEL.get(s)) || null; }
 export const officieelGeladen = (): boolean => officieelBinnen;
 export const officieleSleutels = (): string[] => [...OFFICIEEL.keys()].sort();
+/** Voor tests: haalt de officiële laag van deze merken weg (zo is de databaselaag eronder te toetsen). Alleen tests. */
+export function _officieelWeg(sleutels: readonly string[]): void { for (const k of sleutels) OFFICIEEL.delete(merkSleutel(k)); }
 /** Laadt de ingebouwde officiële logo's (eigen bundelstuk, één keer per sessie). */
 export function laadOfficieel(): Promise<void> {
   return (officieelBelofte ??= import('./merk-officieel').then(() => { officieelBinnen = true; for (const fn of [...kijkers]) fn(); }).catch(() => { officieelBelofte = null; }));
@@ -237,16 +285,25 @@ export function databaseMerk(v: unknown): DatabaseBeeld | null {
 /** Voor tests. */
 export function _databaseMerkenOpnieuw(): void { DATABASE.clear(); }
 
-export type MerkLaag = 'eigen' | 'officieel' | 'vorm' | 'database' | 'neutraal' | 'onbekend';
+export type MerkLaag = 'gebruiker' | 'eigen' | 'officieel' | 'vorm' | 'database' | 'neutraal' | 'onbekend';
 /** DE VOLGORDE (zie boven): welke laag tekent dit merk nu? `def` = een al opgezochte vorm (de grote tabel van de koppelingen). */
 export function merkLaag(v: unknown, def?: MerkDef | null): MerkLaag {
   const s = merkSleutel(v) || merkSleutel(def?.naam);
+  if (s && GEBRUIKER.has(s)) return 'gebruiker';
   if (s && EIGEN.has(s)) return 'eigen';
   if (s && OFFICIEEL.has(s)) return 'officieel';
   const d = def ?? (s ? REGISTER.get(s) ?? null : null);
   if (d && !d.neutraal) return 'vorm';
   if (s && databaseMerk(s)) return 'database';
   return d?.neutraal ? 'neutraal' : 'onbekend';
+}
+
+/** De laag die er zou staan ZONDER het eigen bestand van de gebruiker (vergelijking in «Мої логотипи»). */
+export function merkLaagZonderGebruiker(v: unknown, def?: MerkDef | null): MerkLaag {
+  const s = merkSleutel(v) || merkSleutel(def?.naam);
+  const eigen = s ? GEBRUIKER.get(s) : undefined;
+  if (s && eigen) GEBRUIKER.delete(s);
+  try { return merkLaag(v, def); } finally { if (s && eigen) GEBRUIKER.set(s, eigen); }
 }
 
 /** Eén of twee beginletters voor een merk zonder gliefje. */

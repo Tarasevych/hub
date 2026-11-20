@@ -31,6 +31,16 @@
 /* Elke regel onder de tumbler op een eigen regel, ook waar .rw een blok is (accountmenu v2). */
 .rw-stand,.rw-reden,.rw-uitkomst{display:block}
 .rw-uitkomst.is-fout{color:var(--fout)}
+/* RUIMTE-WEERGAVE-001: bewuste «Пауза / Продовжити» en «Завершити» onder de schakelaar (wisselen pauzeert niet meer). */
+.rw-acties{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rw-actie{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 12px;border:1px solid var(--rw-rand);border-radius:999px;background:transparent;color:var(--rw-tekst);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.rw-actie svg{width:14px;height:14px;flex:none}
+.rw-actie:hover:not(:disabled){background:color-mix(in srgb,var(--rw-tech) 12%,transparent)}
+.rw-actie:focus-visible{outline:2px solid var(--rw-tech);outline-offset:2px}
+.rw-actie:disabled{opacity:.6;cursor:progress}
+.rw-actie.is-gevaar{border-color:color-mix(in srgb,var(--fout,#c0392b) 45%,var(--rw-rand));color:color-mix(in srgb,var(--fout,#c0392b) 80%,var(--rw-tekst))}
+.rw-actie.is-gevaar:hover:not(:disabled),.rw-actie.is-bevestig{background:color-mix(in srgb,var(--fout,#c0392b) 12%,transparent)}
+.rw-compact .rw-actie{min-height:28px;padding:3px 10px;font-size:12px}
 .rw-compact .rw-schakel{min-height:34px;gap:8px;padding:3px 12px 3px 3px;font-size:13px}
 .rw-compact .rw-spoor{width:46px;height:26px}
 .rw-compact .rw-bol{width:20px;height:20px}
@@ -116,9 +126,11 @@ html[data-ruimte=technisch][data-tech=aan] body::after{content:'';position:fixed
 /* 28.10.2026: de paarse streep rechts van het menu (inset-schaduw) is weg — zag eruit als een defect. Nu een kleine stip op de menuknop. */
 html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle{position:relative}
 html[data-ruimte=technisch][data-tech=aan] #root .canonical-menu-toggle::before{content:'';position:absolute;left:4px;bottom:4px;width:7px;height:7px;border-radius:50%;background:var(--tech-band-bg);pointer-events:none}
-html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:' · ТЕХ';font-weight:800;color:inherit;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:4px;padding:0 4px;margin-left:4px}
-html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:' · TECH'}
+html[data-ruimte=technisch][data-tech=aan] .zijbalk-werkbalk-titel::after{content:'ТЕХ';display:inline-flex;align-items:center;flex:none;white-space:nowrap;font-size:.68rem;font-weight:800;line-height:1.25;letter-spacing:.05em;background:var(--tech-band-bg);color:var(--tech-band-fg);border-radius:5px;padding:2px 6px;margin-left:0}
+html[data-ruimte=technisch][data-tech=aan][lang=nl] .zijbalk-werkbalk-titel::after{content:'TECH'}
 @media (prefers-reduced-motion:reduce){.tech-band{transition:none!important}}
 /* Telefoon en tablet (≤1100 px): in de band alleen het spoor van de tumbler (naam en stand staan in title/aria), zodat «Згорнути» en «Вийти…» niet buiten beeld vallen. */
 @media (max-width:1100px){.tech-band .rw-stand,.tech-band .rw-label{display:none}.tech-band .rw-schakel{padding:3px;gap:0}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-label{display:flex}.tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel{padding:4px 14px 4px 4px;gap:10px}}
 .rw-dok-sluit{margin-left:8px;min-width:32px;min-height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.15);color:inherit;font-size:18px;cursor:pointer}
+.rw-admin-link{display:inline-block;margin-top:4px;font-size:12px;font-weight:600;color:var(--rw-tech);text-decoration:none}
+.rw-admin-link:hover{text-decoration:underline}

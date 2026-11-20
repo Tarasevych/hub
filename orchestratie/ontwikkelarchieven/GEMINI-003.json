@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "taakId": "GEMINI-003",
+  "datum": "2026-11-15",
+  "taal": "uk",
+  "titel": "Швидкодія режиму «Макет» на смартфонах, усунення падіння пошти та миттєві переходи між піддоменами",
+  "opdracht": "Дослідити й усунути причину падіння та завмирання сайту в режимі «Макет» (palet=maquette) на мобільних пристроях, пригальмування поштового застосунку та відчуття повторного завантаження під час переходів між піддоменами поверх живої встановленої основи 20261115-044530 (GEMINI-002) та інтеграційної бази 3219123e без автоматичного встановлення на сервер.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "model": "Gemini 4 Hydrogen Extra",
+    "repo": "Tarasevych/hub",
+    "tak": "fix/maquette-mobiel-prestatie-20261115-055004",
+    "basisTak": "integratie",
+    "basisCommit": "dfdb7356703e0ace554a07f76cd48a43ed8b1aab",
+    "basisVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "geinstalleerdeVersie": "20261115-044530",
+    "geinstalleerdeBasis": "dfdb7356703e0ace554a07f76cd48a43ed8b1aab",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "bronnen": [
+    {
+      "soort": "звернення власника",
+      "omschrijving": "Симптоми GEMINI-003: у режимі «Макет» сторінки завмирають і затримують реакцію на смартфоні, пошта падає з помилкою, а перехід між піддоменами відчувається як повне відкриття нового сайту.",
+      "bewijzen": [
+        "Вимірювання у безголовому Chromium 390×844 (DPR=3, palet=maquette) до виправлень: id.tarasevych.com/account recalcSec=16.887 с, taskSec=18.231 с, layoutCount=380, recalcCount=441, maxLongTask=8245 мс; mail.tarasevych.com TypeError (reading 'minimum'), hasChrome=false.",
+        "Жива встановлена основа сервера: 20261115-044530 @ dfdb7356703e0ace554a07f76cd48a43ed8b1aab"
+      ]
+    },
+    {
+      "soort": "правила координації",
+      "omschrijving": "Вимоги AGENTS.md, GEMINI.md, політики координації, доказовості TRACE-001, карти файлів і Абсолютного мовного закону.",
+      "bewijzen": [
+        "AGENTS.md",
+        "GEMINI.md",
+        "orchestratie/beleid.json",
+        "orchestratie/geinstalleerd.json",
+        "orchestratie/taken/GEMINI-003.json",
+        "shared/ontwikkelarchief.ts",
+        "shared/uitrol-manifest.ts",
+        "docs/kaart/bestandskaart.json"
+      ]
+    },
+    {
+      "soort": "досліджені модулі продукту",
+      "omschrijving": "Поштова функціональна обгортка й робочий простір, рушій макета й рейка якорів, спостерігачі перекриття в усіх піддоменах, центр сповіщень, спекулятивні переходи та мобільний CSS.",
+      "bewijzen": [
+        "src/MailFunctioneelWeergave.tsx",
+        "src/GoogleMailWerkruimte.tsx",
+        "src/identiteit/maquette/IdentiteitMaquette.tsx",
+        "src/identiteit/maquette/maquette-motor.ts",
+        "scripts/identiteit-maquette/motor-aanpassingen.mjs",
+        "src/maquette-kern/MaquetteAnkerRail.tsx",
+        "src/CanoniekMeldingencentrum.tsx",
+        "src/CanoniekOmlijsting.tsx",
+        "src/navigatie-snel.ts",
+        "src/main.tsx"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-15T05:50:04Z",
+      "stap": "Створено гілку fix/maquette-mobiel-prestatie-20261115-055004 від фіксації dfdb7356703e0ace554a07f76cd48a43ed8b1aab (основа 20261115-044530 та інтеграція 3219123e), оновлено orchestratie/geinstalleerd.json і зареєстровано GEMINI-003."
+    },
+    {
+      "tijd": "2026-11-15T06:02:00Z",
+      "stap": "Відтворено падіння пошти та гальмування режиму «Макет» у локальному безголовому Chromium (390×844, DPR=3, palet=maquette): зафіксовано падіння MailFunctioneelWeergave.tsx (TypeError на reading 'minimum') та 16.887 с перерахунку стилів / 8245 мс одиничного блокування на id.tarasevych.com/account через синхронні заміри getBoundingClientRect і каскад спостерігачів без rAF."
+    },
+    {
+      "tijd": "2026-11-15T06:25:00Z",
+      "stap": "Усунуто падіння пошти за допомогою INITIAL_BOOTSTRAP, захищено звертання до notificationPreference та metrics, впроваджено спільний rAF-спостерігач src/maquette-kern/laag-waarnemer.ts (abonneerOpenLaag і abonneerElementAttributen) у всіх 10 піддоменах і пошті, переведено IdentiteitMaquette, UnifiedServiceApp та панелі сповіщень на ліниве завантаження через Suspense."
+    },
+    {
+      "tijd": "2026-11-15T06:42:00Z",
+      "stap": "Замінено примусові заміри компонування в рушії макета на Canvas 2D вимір ширини текстів (meetTekstBreed), збереження меж у MaquetteAnkerRail і пакетування rAF у concepten.ts / zichtbaar-voorladen.ts; полегшено touchstart у CanoniekOmlijsting.tsx, прискорено navigatie-snel.ts (MAX_VOORUIT=10 + preconnect), відкладено registration.update() у requestIdleCallback і вимкнено backdrop-filter та smooth-прокрутку на смартфонах до 730 px."
+    },
+    {
+      "tijd": "2026-11-15T06:54:51Z",
+      "stap": "Пройдено повне виробниче складання (vite build 6127 модулів, huis-maquette, 6 технічних і 675 відкритих пакунків, розширення 0.9.3 та dist-server/), після чого повторно виконано замір ПІСЛЯ в безголовому Chromium 390×844: totaalFouten=0, пошта підіймається з hasChrome=true без помилок, recalcSec на /account знижено з 16.887 с до 2.302 с (−86.4%), taskSec з 18.231 с до 3.35 с (−81.6%), maxLongTask з 8245 мс до 308 мс (−96.3%), specLinks з 0 до 7 на всіх піддоменах."
+    },
+    {
+      "tijd": "2026-11-15T06:58:54Z",
+      "stap": "Виконано перевірку типів клієнта та сервера, усі статичні перевірки (kaart-controle, plaatsing-controle, l002-audit, hulp-vraagtekens-controle, zoek-ui-catalogus, bash -n), самоперевірку ПК-агента, повний поодинокий прогін 81 безбазового випробування та trace-001-ontwikkelarchief (16/16); уточнено .github/workflows/gemini-003-uitgave.yml для прогону 81 безбазового + 19 БД-тестів на PostgreSQL 16 та оформлено доказове досьє GEMINI-003."
+    },
+    {
+      "tijd": "2026-11-15T07:09:30Z",
+      "stap": "Після першого запуску GitHub Actions (43688111990) виявлено застарілу умову в tests/eenheid/tech-bundels.test.ts: регулярний вираз очікував суміжності vite build і tech-bundels-controle.mjs без урахування кроку huis-maquette.mjs із фіксації b9503ae1 (HUIS-001). Оновлено перевірку поля scripts.build у tech-bundels.test.ts (зберігши вимогу обов’язкового ланцюжка && після vite build) і повторно підтверджено перевірку типів та TRACE-001."
+    },
+    {
+      "tijd": "2026-11-15T07:17:00Z",
+      "stap": "Другий запуск GitHub Actions (43688779863) успішно пройшов 81 безбазове випробування, перевірку типів, повне складання, подвійні міграції на PostgreSQL 16, tech-bundels (34/34), tech-bundels-ruimtes-v2 (5/5) і afstemming-kern-20261030 (62/62), але виявив конфлікт порядку БД-тестів у telegram-venster-20261114 (70/72): запущений перед ним tech-bundels створював єдиного власника в app.records ('Eigenaar') через обмеження records_een_eigenaar і не видаляв його в finally. Додано прибирання створеного власника в tech-bundels.test.ts і відновлено послідовність 16 перевірених БД-тестів із gemini-002-uitgave.yml перед afstemming-kern-20261030, tech-bundels та tech-bundels-ruimtes-v2."
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Спільний модуль rAF-спостерігачів src/maquette-kern/laag-waarnemer.ts (abonneerOpenLaag і abonneerElementAttributen)",
+      "reden": "Пакетування мутацій DOM і атрибутів в один кадр requestAnimationFrame та виклик setState лише при фактичній зміні стану усуває лавину зайвих перемальовувань на всіх піддоменах і в пошті.",
+      "alternatief": "Окремі локальні MutationObserver у кожному з 11 модулів створювали повторні синхронні перевірки під час будь-якої зміни дерева документа."
+    },
+    {
+      "keuze": "Безпечний початковий стан INITIAL_BOOTSTRAP у MailFunctioneelWeergave.tsx та захищені звертання",
+      "reden": "Під час початкового завантаження пошти в режимі «Макет» дерево ще не містить відповіді bootstrap від сервера; передача INITIAL_BOOTSTRAP із чистими масивами, параметром notificationPreference={minimum:'action'} та нульовими лічильниками гарантує 0 падінь і повноцінну оболонку Chrome.",
+      "alternatief": "Умовний пропуск макета або приховування обгортки завантажувача ламало навігацію та рейку якорів."
+    },
+    {
+      "keuze": "Ліниве завантаження IdentiteitMaquette, UnifiedServiceApp і панелей Meldingen із паралельним Promise.all без dangerouslySetInnerHTML",
+      "reden": "Прибирає одночасне парсування сотень кілобайт HTML/рушія/панелей під час старту будь-якої сторінки та залишає критичний потік вільним для взаємодії на смартфоні.",
+      "alternatief": "Статичний імпорт усіх модулів і вбудований у початковий пакунок HTML-шаблон блокували початковий кадр на мобільних пристроях."
+    },
+    {
+      "keuze": "Повторно використовуваний Canvas 2D вимір тексту (meetTekstBreed), WeakMap-буфер меж у MaquetteAnkerRail та перенесення sideways() у touchend",
+      "reden": "Скасовує примусові цикли компонування під час підрахунку ширини бічного меню й оновлення меж, а перенесення пошуку прокручуваних контейнерів із touchstart у touchend звільняє початок дотику від обходу DOM.",
+      "alternatief": "Багаторазові виклики getBoundingClientRect() з тимчасовим зміненням inline-стилів у кожній реакції ResizeObserver спричиняли 380 компонувань на 390×844."
+    },
+    {
+      "keuze": "Прискорення міждоменних переходів (MAX_VOORUIT=10, одноразовий preconnect, прогрів 8 посилань) і скасування важких ефектів на екранах ≤730 px",
+      "reden": "Попереднє DNS/TLS-з’єднання та розширення ліміту Speculation Rules роблять переходи між піддоменами майже миттєвими, а вимкнення backdrop-filter і плавної прокрутки усуває тормозіння композитора на мобільних відеоприскорювачах.",
+      "alternatief": "Чотири спекулятивні посилання без preconnect та композитне розмиття поверхонь перевантажували мобільний оглядач і затримували перехід між піддоменами."
+    }
+  ],
+  "wijzigingen": [
+    { "soort": "toegevoegd", "pad": ".github/workflows/gemini-003-uitgave.yml", "omschrijving": "Процес випуску GEMINI-003 на GitHub Actions зі звіренням основи 20261115-044530, 81 безбазовим + 19 БД-тестами на PostgreSQL 16 (у сумісному порядку), подвійними міграціями, TRACE-001 і SHA-256." },
+    { "soort": "toegevoegd", "pad": "orchestratie/ontwikkelarchieven/GEMINI-003.json", "omschrijving": "Доказове досьє завдання GEMINI-003 із хронологією, вимірами ДО/ПІСЛЯ, рішеннями та повним переліком 35 файлів." },
+    { "soort": "toegevoegd", "pad": "orchestratie/taken/GEMINI-003.json", "omschrijving": "Картка реєстрації завдання GEMINI-003 у системі координації агентів." },
+    { "soort": "toegevoegd", "pad": "src/maquette-kern/laag-waarnemer.ts", "omschrijving": "Спільний rAF-спостерігач перекривних шарів abonneerOpenLaag та спостерігач атрибутів abonneerElementAttributen." },
+    { "soort": "toegevoegd", "pad": "tests/eenheid/maquette-mobiel-prestatie.test.ts", "omschrijving": "19 модульних перевірок мобільної швидкодії, безпеки пошти, rAF-спостерігачів, лінивого завантаження, спекулятивної навігації, CSS без backdrop-filter і чистоти мови." },
+    { "soort": "gewijzigd", "pad": "docs/kaart/bestandskaart.json", "omschrijving": "Додано нові файли src/maquette-kern/laag-waarnemer.ts і tests/eenheid/maquette-mobiel-prestatie.test.ts до карти файлів." },
+    { "soort": "gewijzigd", "pad": "orchestratie/geinstalleerd.json", "omschrijving": "Узгоджено актуальну живу встановлену основу 20261115-044530 @ dfdb7356703e0ace554a07f76cd48a43ed8b1aab." },
+    { "soort": "gewijzigd", "pad": "scripts/identiteit-maquette/motor-aanpassingen.mjs", "omschrijving": "Генерація збереженого Canvas-вимірювача ширини, запам’ятовування розмірів vorMaten та rAF-оновлення в рушії макета." },
+    { "soort": "gewijzigd", "pad": "src/AIDienstWeergave.tsx", "omschrijving": "Переведення спостерігача перекриття піддомену ШІ на спільний rAF-модуль abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/AfstemmingWissel.tsx", "omschrijving": "Переведення спостерігача шарів узгодження на спільний rAF-модуль abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/ApiPlatformWeergave.tsx", "omschrijving": "Переведення спостерігача шарів API-платформи на спільний rAF-модуль abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/App.tsx", "omschrijving": "Ліниве завантаження UnifiedServiceApp із Suspense fallback={null} та спільний rAF-спостерігач шарів." },
+    { "soort": "gewijzigd", "pad": "src/BeheerConsoleWeergave.tsx", "omschrijving": "Переведення спостерігача модальних вікон консолі адміністрування на abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekMeldingencentrum.tsx", "omschrijving": "Ліниве завантаження MeldingenV2, MeldingVoorkeurenPaneel і MeldingenPortaal через Suspense та rAF-пакетування ResizeObserver і visualViewport." },
+    { "soort": "gewijzigd", "pad": "src/CanoniekOmlijsting.tsx", "omschrijving": "Перенесення перевірки sideways() із touchstart у touchend, прогрівання 8 видимих посилань на сенсорах і rAF-групування підказок." },
+    { "soort": "gewijzigd", "pad": "src/CloudFunctioneelWeergave.tsx", "omschrijving": "Переведення спостерігача перекривних шарів класичної хмарної обгортки на abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/GitHubWeergave.tsx", "omschrijving": "Переведення спостерігача модальних шарів служби GitHub на abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/GoogleMailWerkruimte.tsx", "omschrijving": "Заміна локальних MutationObserver пошти та теми .canonical-chrome на спільні abonneerOpenLaag і abonneerElementAttributen." },
+    { "soort": "gewijzigd", "pad": "src/MailFunctioneelWeergave.tsx", "omschrijving": "Додано безпечний початковий стан INITIAL_BOOTSTRAP і захищені звертання до notificationPreference та metrics проти TypeError." },
+    { "soort": "gewijzigd", "pad": "src/McpDienstWeergave.tsx", "omschrijving": "Переведення спостерігача модальних вікон служби MCP на спільний rAF-модуль abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/cloud-vnext/CloudPagina.tsx", "omschrijving": "Переведення спостерігача перекриття нового хмарного простору на abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/concepten.ts", "omschrijving": "Пакетування MutationObserver чернеток через Set і requestAnimationFrame із чистим скасуванням." },
+    { "soort": "gewijzigd", "pad": "src/huis/HuisPagina.tsx", "omschrijving": "Переведення спостерігача шарів розумного будинку на спільний rAF-модуль abonneerOpenLaag." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/IdentiteitMaquette.tsx", "omschrijving": "Вилучено статичний dangerouslySetInnerHTML-шаблон; впроваджено паралельне ліниве завантаження шаблону, рушія й стилів макета." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-motor.ts", "omschrijving": "Впроваджено запам’ятовування Canvas-вимірів тексту, збереження vorMaten, rAF-пакетування оновлень і захист setPointerCapture." },
+    { "soort": "gewijzigd", "pad": "src/identiteit/maquette/maquette-omlijsting.css", "omschrijving": "Вимкнено scroll-behavior: smooth і важкий backdrop-filter у макеті облікового запису для екранів до 730 px." },
+    { "soort": "gewijzigd", "pad": "src/main.tsx", "omschrijving": "Відкладено registration.update() сервіс-робітника у requestIdleCallback після завантаження сторінки." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/MaquetteAnkerRail.tsx", "omschrijving": "WeakMap-зберігання меж, rAF-пакетування ResizeObserver/MutationObserver/scroll і захист setPointerCapture." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/index.ts", "omschrijving": "Реекспорт спільних спостерігачів abonneerOpenLaag, abonneerElementAttributen та OpenLaagOpties." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-aanmelden.css", "omschrijving": "Вимкнено композитне розмиття backdrop-filter на сторінці входу та гостьових картках до 730 px." },
+    { "soort": "gewijzigd", "pad": "src/maquette-kern/maquette-oppervlakken.css", "omschrijving": "Вимкнено плавну прокрутку та важкі backdrop-filter на панелях і спливних шарах макета до 730 px." },
+    { "soort": "gewijzigd", "pad": "src/navigatie-snel.ts", "omschrijving": "Збільшено ліміт Speculation Rules до 10 посилань та додано одноразовий preconnect у document.head." },
+    { "soort": "gewijzigd", "pad": "src/sessies/vite-glob.d.ts", "omschrijving": "Додано декларацію *.css для типізації динамічного імпорту таблиці стилів макета." },
+    { "soort": "gewijzigd", "pad": "src/zichtbaar-voorladen.ts", "omschrijving": "Згруповано обробку доданих вузлів у MutationObserver через requestAnimationFrame із чистим від’єднанням." },
+    { "soort": "gewijzigd", "pad": "tests/eenheid/tech-bundels.test.ts", "omschrijving": "Оновлено перевірку поля scripts.build у package.json із урахуванням huis-maquette.mjs та додано прибирання створеного власника й тех-профілю в finally." }
+  ],
+  "controles": [
+    {
+      "opdracht": "git merge-base --is-ancestor dfdb7356703e0ace554a07f76cd48a43ed8b1aab HEAD && git merge-base --is-ancestor 3219123ea8b00f27460922ae075ee3c7f32cecda HEAD",
+      "uitkomst": "код 0: гілка побудована поверх живої встановленої основи 20261115-044530 @ dfdb7356703e0ace554a07f76cd48a43ed8b1aab (після GEMINI-002) та інтеграційної основи 3219123ea8b00f27460922ae075ee3c7f32cecda."
+    },
+    {
+      "opdracht": "NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build && METING_LABEL=\"ПІСЛЯ ВИПРАВЛЕНЬ (390x844, DPR=3, palet=maquette)\" meting-chromium.mjs",
+      "uitkomst": "код 0: повне складання (vite build 6127 модулів за 1 хв 5 с, huis-maquette, 6 технічних і 675 відкритих пакунків, розширення 0.9.3, dist-server за 831 мс); повторний замір Chromium 390×844 DPR=3: 0 помилок на всіх 7 піддоменах, mail.tarasevych.com hasChrome=true, id.tarasevych.com/account recalcSec 16.887 с -> 2.302 с (−86.4%), taskSec 18.231 с -> 3.35 с (−81.6%), layoutCount 380 -> 68 (−82.1%), maxLongTask 8245 мс -> 308 мс (−96.3%), specLinks 0 -> 7."
+    },
+    {
+      "opdracht": "npx tsc --noEmit && npm run typecheck:server && статичні перевірки (kaart-controle, plaatsing-controle, l002-audit, hulp-vraagtekens-controle, zoek-ui-catalogus, bash -n, agent selftest)",
+      "uitkomst": "код 0: 0 помилок перевірки типів клієнта та сервера; 0 порушень карти файлів, розміщення, довідок, пошукового каталогу (1641 елемент), сценаріїв і ПК-агента."
+    },
+    {
+      "opdracht": "Поодинокий прогін 81 безбазового модульного випробування + trace-001-ontwikkelarchief.test.ts",
+      "uitkomst": "код 0: усі запущені модульні тести пройшли зелено без пропуску й помилок (включно з maquette-mobiel-prestatie 19/19, menu-snelheid 29/29, vast-kader 22/22, trace-001-ontwikkelarchief 16/16)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak GEMINI-003 --fase overdracht",
+      "uitkomst": "код 0: підтвердження правил координації та свіжості основи на чистому зафіксованому дереві перед надсиланням запиту на злиття."
+    },
+    {
+      "opdracht": "GitHub Actions .github/workflows/gemini-003-uitgave.yml (PostgreSQL 16 + подвійні міграції + 81 безбазове + TRACE-001 + 19 БД-тестів + SHA-256)",
+      "uitkomst": "Автоматизований конвеєр складає застосунок, перевіряє живу основу 20261115-044530, виконує подвійний прогін міграцій у чистому PostgreSQL 16, 81 безбазове + TRACE-001 + 19 БД-тестів, валідує маніфест, досьє й точну суму SHA-256 випуску без автоматичного встановлення."
+    }
+  ],
+  "beperkingen": [
+    "У локальній віртуальній машині відсутні сервер PostgreSQL і DATABASE_URL, через що подвійний прогін міграцій та 19 БД-тестів (включно з tech-bundels, tech-bundels-ruimtes-v2 і afstemming-kern-20261030) виконуються у робочому процесі GitHub Actions зі службою postgres:16.",
+    "Діагностичні заміри мобільної швидкодії в безголовому Chromium 390×844 виконано поза конвеєром GitHub Actions на щойно зібраному каталозі dist/; тимчасові профілі та файли очищено.",
+    "Автоматичне встановлення на робочий сервер вимкнене за вимогами власника й політики платформи: випуск оприлюднюється поверх 20261115-044530 без втручання в робочу службу та встановлюється лише власником із підтвердженням ключем доступу."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Усі таємні дані, паролі, маркери доступу, ключі підписів, вміст пошти чи приховані міркування моделі виключені; у вимірах використовувалися виключно синтетичні дані."
+  }
+}

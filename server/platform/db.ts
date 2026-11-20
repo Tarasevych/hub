@@ -12,6 +12,7 @@
 // (AppDeploy telde gelezen items en kon matches missen).
 import { randomUUID } from 'node:crypto';
 import { appRolActief, getPool } from './pg';
+import { jsonbVeilig } from './json-veilig';
 import { gebruikerVanContext, huidigeContext } from './context';
 import { controleerRijen, type GeraakteRij } from './rls-audit';
 
@@ -30,6 +31,22 @@ export const SYSTEEM_TABELLEN: ReadonlySet<string> = new Set([
   'owner_tab_sessions_v1',
   'owner_auth_transactions_v1',
   'owner_revocation_state_v1',
+]);
+
+/**
+ * SEC-002 (12.11.2026, autorisatie-01/-03) — EEN INTREKKING BLIJFT STAAN. Sessies, tabbladrijen, «onthouden browsers» en
+ * API-sleutels worden overal als VOLLEDIG record teruggeschreven vanuit een eerder gelezen momentopname (lastSeenAt bijwerken,
+ * token roteren …). Las een verzoek de rij vóór de intrekking en schreef het erna, dan stond `revokedAt` weer op 0: wie een
+ * gestolen cookie of sleutel bleef gebruiken, maakte «завершити сеанс» / «Це був не я» / «відкликати ключ» zelf ongedaan.
+ * Daarom bewaakt de opslaglaag het: in deze tabellen laat db.update een opgeslagen `revokedAt` > 0 (met de bijbehorende
+ * status 'signed_out' en `hintOnlyAt`) staan als het nieuwe record er geen heeft. Alleen een BEWUSTE heraanmelding in een
+ * afgemeld tabblad (ownerUpsertTabSession, na een nieuwe aanmelding) schrijft met `{ heractiveren: true }`.
+ */
+export const INTREKKING_BLIJFT: ReadonlySet<string> = new Set([
+  'owner_service_sessions_v1',
+  'owner_tab_sessions_v1',
+  'owner_browser_grants_v1',
+  'api_machine_tokens_v1',
 ]);
 
 /**
@@ -89,7 +106,10 @@ const DEFAULT_LIST_LIMIT = 100;
 const noNul = (_key: string, value: unknown) =>
   typeof value === 'string' && value.includes('\u0000') ? value.replaceAll('\u0000', '\uFFFD') : value;
 
-const serialize = (value: unknown) => JSON.stringify(value ?? {}, noNul);
+// SEC-002 (privacy-logboek-06): ook een eenzame surrogaat (halve emoji na `tekst.slice(0, n)`) wordt door jsonb geweigerd, en U+0000
+// kan ook in een SLEUTEL staan (noNul ziet alleen waarden). jsonbVeilig vervangt beide in de JSON-tekst door U+FFFD, zodat het
+// record wordt opgeslagen in plaats van stil te verdwijnen (db.add gaf dan null zonder fout).
+const serialize = (value: unknown) => jsonbVeilig(JSON.stringify(value ?? {}, noNul));
 
 function checkTable(table: string) {
   if (typeof table !== 'string' || !table || table.length > 200) throw new Error('DB_TABLE_INVALID');
@@ -143,7 +163,9 @@ export const db = {
           try {
             const result = await q(table, "INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) RETURNING owner_id, data->>'workspaceId' AS ws", [table, row.id, row.data]);
             audit(table, 'toevoegen', result.rows);
-          } catch {
+          } catch (fout) {
+            // SEC-002 (privacy-logboek-06): een geweigerd record verdween hier zonder spoor; nu met tabel en foutcode in het servicelogboek (nooit de inhoud).
+            console.error(`[db.add] record geweigerd (${table}):`, String((fout as { code?: unknown })?.code || (fout as Error)?.name || 'fout').slice(0, 60));
             row.ok = false;
           }
         }
@@ -191,8 +213,12 @@ export const db = {
     return nextToken ? { items, nextToken } : { items };
   },
 
-  /** Vervang records volledig. Geeft per item true/false terug. */
-  async update(table: string, items: Array<{ id: string; record: Record<string, unknown> }>): Promise<boolean[]> {
+  /**
+   * Vervang records volledig. Geeft per item true/false terug.
+   * SEC-002 (12.11.2026, autorisatie-01/-03): in de tabellen van INTREKKING_BLIJFT kan zo'n volledige vervanging een intrekking
+   * NIET ongedaan maken (zie daar); alleen een bewuste heraanmelding geeft `heractiveren: true` mee.
+   */
+  async update(table: string, items: Array<{ id: string; record: Record<string, unknown> }>, opties: { heractiveren?: boolean } = {}): Promise<boolean[]> {
     checkTable(table);
     if (!Array.isArray(items) || items.length === 0) return [];
     checkCount(items.length);
@@ -209,11 +235,17 @@ export const db = {
         result = await q(table,
           `WITH u AS (SELECT * FROM jsonb_to_recordset($2::jsonb) AS x(id text, data jsonb)),
                 oud AS (SELECT o.id, o.owner_id, o.data->>'workspaceId' AS ws FROM app.records o WHERE o.tbl = $1 AND o.id IN (SELECT id FROM u))
-           UPDATE app.records r SET data = u.data, updated_at = now()
+           UPDATE app.records r SET data = CASE
+               WHEN $3::boolean AND (jsonb_typeof(r.data->'revokedAt') = 'number' AND (r.data->>'revokedAt')::numeric > 0) IS TRUE
+                    AND (jsonb_typeof(u.data->'revokedAt') = 'number' AND (u.data->>'revokedAt')::numeric > 0) IS NOT TRUE
+               THEN u.data || jsonb_build_object('revokedAt', r.data->'revokedAt')
+                    || CASE WHEN r.data->>'status' = 'signed_out' THEN jsonb_build_object('status', 'signed_out') ELSE '{}'::jsonb END
+                    || CASE WHEN r.data->'hintOnlyAt' IS NOT NULL THEN jsonb_build_object('hintOnlyAt', r.data->'hintOnlyAt') ELSE '{}'::jsonb END
+               ELSE u.data END, updated_at = now()
            FROM u LEFT JOIN oud ON oud.id = u.id
            WHERE r.tbl = $1 AND r.id = u.id
            RETURNING r.id, r.owner_id, r.data->>'workspaceId' AS ws, oud.owner_id AS oud_owner, oud.ws AS oud_ws`,
-          [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) })))],
+          [table, JSON.stringify(valid.map((p) => ({ id: p.id, data: JSON.parse(p.data) }))), INTREKKING_BLIJFT.has(table) && opties.heractiveren !== true],
         );
       } catch (err) {
         // RLS (afdwingen): nieuwe inhoud hoort bij een ander account (WITH CHECK) → niets bijgewerkt.
@@ -225,6 +257,36 @@ export const db = {
       for (const row of result.rows) updated.add(row.id);
     }
     return prepared.map((p) => p.ok && updated.has(p.id));
+  },
+
+  /**
+   * SEC-002 (wolk-06, 12.11.2026): voeg ALLEEN de genoemde velden samen in één record (`data || patch`, atomisch, zelfde RLS
+   * als update). Voor bijwerkingen als «geopend op» die anders het hele record uit een oud beeld terugschreven en zo een
+   * gelijktijdige wijziging (prullenbak, hernoemen, nieuwe versie) ongedaan maakten. Eigenaarsvelden en de intrekkingsvelden
+   * van INTREKKING_BLIJFT gaan hier nooit door. true = bijgewerkt; onbekend id, lege of ongeldige patch → false.
+   */
+  async patch(table: string, id: string, velden: Record<string, unknown> | null): Promise<boolean> {
+    checkTable(table);
+    if (!validId(id) || !velden || typeof velden !== 'object' || Array.isArray(velden)) return false;
+    const sleutels = Object.keys(velden);
+    const verboden = ['ownerUserId', 'ownerId', 'owner_id', 'userId', 'workspaceId', 'ruimte', ...(INTREKKING_BLIJFT.has(table) ? ['revokedAt', 'status', 'hintOnlyAt'] : [])];
+    if (!sleutels.length || sleutels.length > 50 || sleutels.some((k) => verboden.includes(k))) return false;
+    const data = serialize(velden);
+    if (Buffer.byteLength(data) > MAX_RECORD_BYTES) return false;
+    let result: { rows: any[]; rowCount?: number | null };
+    try {
+      result = await q(table,
+        `UPDATE app.records SET data = data || $3::jsonb, updated_at = now()
+          WHERE tbl = $1 AND id = $2 AND octet_length((data || $3::jsonb)::text) <= $4
+          RETURNING id, owner_id, data->>'workspaceId' AS ws`,
+        [table, id, data, MAX_RECORD_BYTES]);
+    } catch (err) {
+      if ((err as { code?: string }).code !== '42501') throw err;
+      console.warn(`[db.patch] door RLS geweigerd: ${table}`);
+      return false;
+    }
+    audit(table, 'wijzigen', result.rows);
+    return (result.rowCount || 0) > 0;
   },
 
   /**

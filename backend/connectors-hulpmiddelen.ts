@@ -15,14 +15,15 @@
 import { beslissing, strengste, weigerTekst } from './ai-beleid';
 import { isOntbrekendeTabel, magTool, onderwerpVanGrantId } from './ai-toegang';
 import { TOEGANG_GESCHEIDEN, scopeVoorTool } from '../shared/ai-toegang';
-import { huidigeLade, huidigeNamens, huidigeRuimte } from './mcp-namens';
-import { apparaatInRuimte } from '../shared/ai-ruimte';
+import { huidigeLade, huidigeNamens, huidigeRuimte, metNamens } from './mcp-namens';
+import { apparaatInRuimte, ruimteOf } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { agentOnline } from './connectors-gateway';
-import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
+import { haalVluchtig, maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, verwachtVluchtig, vergeetTicket, vergeetVluchtig } from './apps-overdracht';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as store from './connectors-opslag';
 import { controleerBrowserOpdracht } from './extensie-ontgrendeling';
+import { leesBeleid } from './extensie-beleid';
 import * as techn from './browser-technisch';
 import { callSite } from './site-aanroep';
 import { explainSiteError, SITE_TOOL_BY_NAME, SITE_TOOLS, type SiteTool } from './site-hulpmiddelen';
@@ -38,9 +39,19 @@ import { externeBeschrijving, externeToolNaam, ontleedExterneToolNaam } from '..
 import { p, toolTaal, vertaalHulpmiddel, type ToolTaal } from '../shared/hulpmiddel-teksten';
 import type { Kant } from '../shared/connector-v2/catalogus';
 import { getPool } from '../server/platform/pg';
-import { DEV_MG_SET } from '../shared/dev-media-github';
-/** Alleen via connector v2 (/<agent>): de zeven van 21.10 én browser_script (0110, zone E — evaluate_script, alleen technisch met matrixvinkje). */
-export const V2_ALLEEN: ReadonlySet<string> = new Set<string>([...DEV_MG_SET, 'browser_script']);
+import { DEV_MG_ALLEEN_V2, DEV_MG_SET } from '../shared/dev-media-github';
+import { ECOSYSTEEM_TOOL_NAMEN } from '../shared/ai-ecosysteem';
+import { GITHUB_WERKRUIMTE_TOOL_NAMEN } from '../shared/github-werkruimte';
+import { VAARDIGHEDEN_TOOL_NAMEN } from '../shared/vaardigheden-ecosysteem';
+/** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), uitrol_github_ophalen, ecosysteem-, vaardigheden- en nieuwe GitHub-werkruimtehulpmiddelen. */
+export const V2_ALLEEN: ReadonlySet<string> = new Set<string>([
+  ...DEV_MG_SET,
+  'browser_script',
+  'uitrol_github_ophalen',
+  ...ECOSYSTEEM_TOOL_NAMEN,
+  ...GITHUB_WERKRUIMTE_TOOL_NAMEN,
+  ...VAARDIGHEDEN_TOOL_NAMEN,
+]);
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
 // 21.10.2026: de zes privé-rechten die «у розробці» stonden (backend/dev-gebruiker-hulpmiddeldefinities.ts; uitvoering in backend/dev-rechten-gebruiker.ts).
 import { DEV_GEBRUIKER_MODUS, DEV_GEBRUIKER_NAMEN, DEV_GEBRUIKER_TOOLS, DEV_GEBRUIKER_WACHT } from './dev-gebruiker-hulpmiddeldefinities';
@@ -314,6 +325,10 @@ const NAAM_OF_UID = 'Invalid "name": pass the visible "name" (1-200 characters) 
 const SCROLL_DIRECTIONS = ['up', 'down', 'top', 'bottom'];
 /** browser_audit (extensie 0.5): welk deel van de audit. */
 export const AUDIT_SOORTEN = ['alles', 'prestaties', 'beveiliging', 'dom'] as const;
+/** browser_local_ai (LAI-CON-001, extensie 0.9.6): functies van de ingebouwde AI van Chrome en de grens van de tekst (= LOKALE_AI van de site). */
+export const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'] as const;
+const LOKALE_AI_MAX = 20000;
+const TAALCODE = /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/;
 const HISTORY_ACTIONS = ['back', 'forward', 'reload'];
 const ALLOWED_KEYS = ['Enter', 'Escape', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'];
 const CONSOLE_TYPES = ['error', 'warn', 'log', 'info', 'debug'];
@@ -420,6 +435,23 @@ const BROWSER_TOOLS: ToolDef[] = [
         browser: browserProp,
         soort: { type: 'string', enum: [...AUDIT_SOORTEN], description: p('Що перевіряти: "alles" — усе (типово), "prestaties" — швидкодію, "beveiliging" — безпеку, "dom" — структуру сторінки.', 'Wat er gecontroleerd wordt: "alles" (standaard), "prestaties" (snelheid), "beveiliging" (veiligheid) of "dom" (paginastructuur).') },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    // LAI-CON-001 (16.11.2026): ingebouwde AI van Chrome (Gemini Nano) op het apparaat van de gebruiker, via de extensie (offscreen.html).
+    name: 'browser_local_ai',
+    description: 'Process a text with Chrome\'s built-in AI (Gemini Nano) on the USER\'S OWN computer, through the Mijn Ruimte browser extension: summarize, write, rewrite, translate, detect the language, proofread or prompt. Free and private: nothing runs on the server or in a cloud; the text reaches the extension once through a one-time ticket and is never stored in the command history. Reads no page. Works only while the user\'s browser is open and the extension is unlocked; the model is never downloaded by this tool. If the administrator disabled it, the error gives the reason and who did it: tell the user, do not retry. Writer, rewriter and proofreader may be missing in the user\'s Chrome.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        browser: browserProp,
+        modus: { type: 'string', enum: [...LOKALE_AI_MODI], description: p('Функція зі списку: стислий виклад, написання, переписування, переклад, визначення мови, коректура або діалог.', 'Functie uit de lijst: samenvatten, schrijven, herschrijven, vertalen, taal herkennen, proeflezen of gesprek.') },
+        tekst: { type: 'string', description: p(`Текст або завдання (1–${LOKALE_AI_MAX} символів).`, `Tekst of opdracht (1 tot ${LOKALE_AI_MAX} tekens).`) },
+        bron: { type: 'string', description: p('Мова тексту для перекладу (код мови, наприклад "en"); без неї — визначається автоматично.', 'Taal van de tekst bij vertalen (taalcode, bijvoorbeeld "en"); zonder: automatisch herkend.') },
+        doel: { type: 'string', description: p('Мова перекладу (код мови, наприклад "uk" або "nl").', 'Doeltaal bij vertalen (taalcode, bijvoorbeeld "uk" of "nl").') },
+      },
+      required: ['modus', 'tekst'],
       additionalProperties: false,
     },
   },
@@ -565,9 +597,14 @@ export const DEVTOOLS_ALIASES: Record<string, Alias> = {
 };
 /** Alias → intern hulpmiddel + omgezette argumenten. Onbekende naam: ongewijzigd. */
 export function resolveAlias(name: string, args: any): { name: string; args: any } {
-  const a = DEVTOOLS_ALIASES[name];
+  // SEC-002 (ai-mcp-01): alleen EIGEN sleutels van de tabel zijn een alias («constructor», «toString» … uit Object.prototype niet),
+  // en `__target` is uitsluitend een intern signaal van een `map` hierboven (navigate_page → browser_history). Uit de argumenten
+  // van de klant wordt het nooit gelezen: anders koos de AI zelf het echte hulpmiddel, voorbij alle poorten die de ruwe naam zien.
+  const a = Object.prototype.hasOwnProperty.call(DEVTOOLS_ALIASES, name) ? DEVTOOLS_ALIASES[name] : undefined;
   if (!a) return { name, args };
-  const mapped = a.map ? a.map(args ?? {}) : (args ?? {});
+  const vanKlant: Record<string, unknown> = args && typeof args === 'object' && !Array.isArray(args) ? { ...args } : {};
+  delete vanKlant.__target;
+  const mapped = a.map ? a.map(vanKlant) : vanKlant;
   const target = typeof mapped?.__target === 'string' ? mapped.__target : a.target;
   if (mapped && '__target' in mapped) delete mapped.__target;
   for (const k of Object.keys(mapped)) if (mapped[k] === undefined) delete mapped[k];
@@ -591,6 +628,7 @@ const ANNOTATIONS: Record<string, ToolAnnotations> = {
   browser_snapshot: { readOnlyHint: true, openWorldHint: false },
   browser_get_diagnostics: { readOnlyHint: true, openWorldHint: false },
   browser_audit: { readOnlyHint: true, openWorldHint: false },
+  browser_local_ai: { readOnlyHint: true, openWorldHint: false },
   browser_list_tabs: { readOnlyHint: true, openWorldHint: false },
   browser_scroll: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   browser_wait_for_text: { readOnlyHint: true, openWorldHint: false },
@@ -637,6 +675,7 @@ export const TOOL_TO_COMMAND: Record<string, string> = {
   browser_click: 'browser.click', browser_type: 'browser.type',
   browser_hover: 'browser.hover', browser_fill_form: 'browser.fill_form', browser_console: 'browser.console', browser_network: 'browser.network', browser_pages: 'browser.pages',
   browser_script: 'browser.script',
+  browser_local_ai: 'browser.lokale_ai',
   app_deploy: 'apps.deploy', app_deploy_status: 'apps.status', app_list: 'apps.list', app_logs: 'apps.logs', app_versions: 'apps.versions',
   app_rollback: 'apps.rollback', app_control: 'apps.control', app_route: 'apps.route', app_secret_list: 'apps.secret.list', app_secret_delete: 'apps.secret.delete',
 };
@@ -702,6 +741,11 @@ function validateParams(name: string, args: any): string | null {
   }
   if (name === 'docker_list_containers' && args.include_stopped !== undefined && typeof args.include_stopped !== 'boolean') return 'Invalid "include_stopped": use true or false.';
   if (name === 'browser_audit' && args.soort !== undefined && !(AUDIT_SOORTEN as readonly unknown[]).includes(args.soort)) return 'Invalid "soort": use "alles", "prestaties", "beveiliging" or "dom".';
+  if (name === 'browser_local_ai') {
+    if (!(LOKALE_AI_MODI as readonly unknown[]).includes(args.modus)) return `Invalid "modus": use one of ${LOKALE_AI_MODI.join(', ')}.`;
+    if (typeof args.tekst !== 'string' || !args.tekst.trim() || args.tekst.length > LOKALE_AI_MAX) return `Invalid "tekst": 1-${LOKALE_AI_MAX} characters.`;
+    for (const k of ['bron', 'doel'] as const) if (args[k] !== undefined && (typeof args[k] !== 'string' || !TAALCODE.test(args[k]))) return `Invalid "${k}": a language code such as "en", "uk" or "nl".`;
+  }
   if (name === 'browser_open' && !isOwnSiteUrl(args.url)) return 'Invalid "url": only https addresses on tarasevych.com or its subdomains are allowed (for example "https://mail.tarasevych.com/").';
   if (name === 'browser_invoke_action') {
     if (typeof args.action !== 'string' || !ACTION_ID.test(args.action)) return 'Invalid "action": use an action id from browser_snapshot (lowercase letters, digits and "_").';
@@ -1039,6 +1083,12 @@ export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...APP_TOO
  */
 export async function callTool(userId: string, rawName: string, rawArgs: any = {}, opties: { eigenaarZelf?: boolean } = {}): Promise<ToolResult> {
   const { name, args } = resolveAlias(rawName, rawArgs);
+  // SEC-002 (ai-mcp-01): een naam uit Object.prototype («constructor», «toString») is nooit een hulpmiddel; de gewone objecten
+  // hieronder (TOOL_TO_COMMAND[name], modes[name]) zouden er anders een «treffer» in zien en het opdrachtpad ingaan.
+  if (typeof name !== 'string' || Object.prototype.hasOwnProperty.call(Object.prototype, name)) return text(`Unknown tool: ${String(rawName).slice(0, 80)}`, true);
+  // SEC-002 (ai-mcp-01): alleen-v2-hulpmiddelen bestaan uitsluitend via connector v2 (mcp-connector.roepTool zet `v2` in mcp-namens).
+  // Tot nu toe verborg alleen tools/list ze; een aanroep met de interne naam (oude /mcp, chat, zijpaneel) ging gewoon door.
+  if (V2_ALLEEN.has(name) && !opties.eigenaarZelf && !huidigeNamens()?.v2) return text(DEV_MG_ALLEEN_V2(name.slice(0, 80)), true);
   if (BUITEN_BEREIK.has(name)) return text(BUITEN_TEKST, true);
   try {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.
@@ -1101,6 +1151,13 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       }
       const invalid = validateParams(name, args);
       if (invalid) return text(invalid, true);
+      // LAI-CON-001: beleid van de beheerder vóór alles — met reden en wie, zodat de AI het de gebruiker eerlijk kan zeggen.
+      if (name === 'browser_local_ai') {
+        const b = await leesBeleid(userId).catch(() => null);
+        if (b && !b.lokaleAiAan) {
+          return text(`The administrator${b.lokaleAiDoor ? ` (${b.lokaleAiDoor})` : ''} disabled Chrome's built-in AI for this account. Reason: "${b.lokaleAiReden}". Tell the user this reason and that they can contact that administrator; do not retry and do not try another way.`, true);
+        }
+      }
       // Alleen eigen apparaten van deze gebruiker; browsers en pc's blijven gescheiden (een browsertool kiest nooit een pc).
       const wantBrowser = isBrowserTool(name);
       // Extensie 0.6.1 (20.10.2026): in de TECHNISCHE ruimte lopen browseropdrachten via het slot 'technisch'. De zes voorwaarden
@@ -1113,7 +1170,9 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
         const sloten = await techn.technischeSloten(userId);
         const kiesKey = args.browser ? String(args.browser) : '';
         techSlot = kiesKey ? sloten.find((a) => a.id === kiesKey || a.name.toLowerCase() === kiesKey.toLowerCase()) ?? null : sloten[0] ?? null;
-        const { machine: _m0, browser: _b0, ...zonderDoel } = args;
+        const { machine: _m0, browser: _b0, ...zonderDoel0 } = args;
+        // LAI-CON-001: de tekst van browser_local_ai komt nooit in het beheerjournaal (alleen functie en aantal tekens).
+        const zonderDoel = name === 'browser_local_ai' ? { modus: zonderDoel0.modus, tekens: String(zonderDoel0.tekst ?? '').length } : zonderDoel0;
         const uitslag = await techn.poort(userId, techSlot?.id ?? null, TOOL_TO_COMMAND[name], zonderDoel);
         if (!uitslag.ok) {
           await techn.journaal({ userId, type: TOOL_TO_COMMAND[name], params: zonderDoel, agent: techSlot, resultaat: 'denied', code: uitslag.code, fout: uitslag.fout });
@@ -1150,6 +1209,15 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       // «Додатки»: bestanden en env van een uitrol gaan via een eenmalig ticket, nooit in de bewaarde opdracht (zie apps-overdracht.ts).
       let params: Record<string, unknown> = ruw;
       let ticket: string | null = null;
+      // LAI-CON-001: de tekst gaat via een eenmalig ticket (alleen deze extensie, standaard 10 minuten — dekt ook het wachten op een
+      // klik); in de bewaarde opdracht staan alleen functie, talen en het aantal tekens — nooit de tekst zelf. Het resultaat blijft
+      // ook buiten de database (review PR #137): de gateway legt het voor dit ticket alleen in het geheugen (bewaarVluchtig).
+      if (name === 'browser_local_ai') {
+        try { ticket = maakTicket(agent.id, userId, 'lokale-ai', { tekst: String(ruw.tekst) }); }
+        catch { return text('Too many texts are waiting for the browser. Wait a minute and try again.', true); }
+        verwachtVluchtig(ticket, agent.id);
+        params = { modus: ruw.modus, ticket, tekens: String(ruw.tekst).length, ...(ruw.bron ? { bron: ruw.bron } : {}), ...(ruw.doel ? { doel: ruw.doel } : {}) };
+      }
       if (name === 'app_deploy') {
         try { ticket = maakTicket(agent.id, userId, 'bundel', { files: ruw.files, env: ruw.env ?? {} }); }
         catch { return text('Too many or too large deployments are waiting to be picked up by the device. Wait a few minutes and try again.', true); }
@@ -1177,7 +1245,7 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
       if (technischeBrowser) {
         const mislukt = done.status !== 'succeeded' && done.status !== 'pending_approval' && done.status !== 'approved' && done.status !== 'sent';
         await techn.journaal({
-          userId, type: TOOL_TO_COMMAND[name], params: ruw, agent: techSlot ?? agent,
+          userId, type: TOOL_TO_COMMAND[name], params: name === 'browser_local_ai' ? params : ruw, agent: techSlot ?? agent,
           resultaat: done.status === 'succeeded' ? 'success' : mislukt ? 'failure' : 'denied',
           fout: done.status === 'succeeded' ? null : String(done.result?.error ?? done.status).slice(0, 200),
         });
@@ -1185,6 +1253,14 @@ export async function callTool(userId: string, rawName: string, rawArgs: any = {
           const uitleg = techn.verduidelijkExtensieFout(TOOL_TO_COMMAND[name], done.result?.error);
           if (uitleg) return text(uitleg.fout, true);
         }
+      }
+      // Review PR #137: niet geslaagd (fout, wachtend, verlopen) → ticket en eventueel resultaat meteen uit het geheugen.
+      if (done.status !== 'succeeded' && name === 'browser_local_ai' && ticket) { vergeetTicket(ticket); vergeetVluchtig(ticket); }
+      if (done.status === 'succeeded' && name === 'browser_local_ai' && ticket) {
+        const v = haalVluchtig(ticket) as Record<string, unknown> | undefined;
+        if (!v) return text('The result of the local AI is no longer available on the server (it is kept only in memory, once). Call the tool again.', true);
+        const { vluchtig: _v, ...uitkomst } = v;
+        return untrusted(uitkomst);
       }
       if (done.status === 'succeeded') {
         // Een screenshot komt als afbeelding terug (MCP "image"-inhoud) met een korte tekst erbij; al het andere als onbetrouwbare tekst.
@@ -1337,6 +1413,14 @@ async function askSite(userId: string, site: SiteTool, args: any): Promise<ToolR
 export async function approveToolCall(userId: string, id: string) {
   const claimed = await store.transitionToolCall(id, userId, ['pending_approval'], 'approved');
   if (!claimed) return null;
+  const aanvraagRuimte = ruimteOf((claimed as { ruimte?: unknown }).ruimte);
+  const namensHerstel = {
+    client: String((claimed as { aanvrager_client?: unknown }).aanvrager_client ?? '').trim() || '?',
+    grantId: String((claimed as { aanvrager_grant?: unknown }).aanvrager_grant ?? ''),
+    agent: String((claimed as { aanvrager_agent?: unknown }).aanvrager_agent ?? ''),
+    ruimte: aanvraagRuimte,
+    lade: aanvraagRuimte,
+  };
   const extern = ontleedExterneToolNaam(claimed.tool);
   if (extern) {
     // De ruimtepoort is al gepasseerd toen de aanroep ontstond; de eigenaar keurt nu in zijn eigen sessie goed.
@@ -1346,7 +1430,7 @@ export async function approveToolCall(userId: string, id: string) {
       ? text('This tool was switched off before it could run.', true)
       : !verbinding
         ? text('That external MCP server is no longer connected.', true)
-        : await runExtern(userId, verbinding.id, extern.tool, claimed.args);
+        : await metNamens(namensHerstel, () => runExtern(userId, verbinding.id, extern.tool, claimed.args));
     await store.transitionToolCall(id, userId, ['approved'], uitkomst.isError ? 'failed' : 'succeeded', uitkomst);
     return store.getToolCall(userId, id);
   }
@@ -1357,7 +1441,9 @@ export async function approveToolCall(userId: string, id: string) {
   else if (effectiveMode(claimed.tool, modes[claimed.tool]) === 'off') result = text('This tool was switched off before it could run.', true);
   else {
     const invalid = site.validate(claimed.args);
-    result = invalid ? text(invalid, true) : await runSite(userId, site, claimed.args);
+    result = invalid
+      ? text(invalid, true)
+      : await metNamens(namensHerstel, () => runSite(userId, site, claimed.args));
   }
   await store.transitionToolCall(id, userId, ['approved'], result.isError ? 'failed' : 'succeeded', result);
   return store.getToolCall(userId, id);

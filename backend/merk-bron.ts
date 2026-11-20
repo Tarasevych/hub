@@ -34,12 +34,12 @@ import { error, json } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { privateAddress } from './veilige-fetch';
-import { parseBimi } from '../shared/mail-afzenders';
+import { bekendeDienstVoor, parseBimi } from '../shared/mail-afzenders';
 import {
   AFZENDER_BEELDEN_MAX, MERK_BEELD_MAX_BYTES, MERK_BEELD_MAX_OMLEIDINGEN, MERK_BEELD_NEGATIEF_MS, MERK_BEELD_TIMEOUT_MS, MERK_BEELD_TTL_MS,
   MERK_DOMEIN_INTERVAL_MS, MERK_HTML_MAX_BYTES, beeldDataUri, controleerBeeld, domeinKandidaten, domeinVanAdres, fotosUitPeople,
   geldigAfzenderAdres, gravatarUrl, iconenUitHtml, iconenUitManifest, isGoogleFotoHost, isGratisDomein, kandidatenVolgorde, merkDomeinVan,
-  probeToegestaan, sha256Hex, vcardFoto, type BeeldUitslag, type IcoonKandidaat, type MerkBron, type MerkMime,
+  ophaalDomein, probeToegestaan, sha256Hex, vcardFoto, type BeeldUitslag, type IcoonKandidaat, type MerkBron, type MerkMime,
 } from '../shared/merk-bron';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { MERK_DOMEINEN } from '../shared/merk-domeinen';
@@ -429,20 +429,36 @@ export async function afzenderBeeldUitVcard(lade: Lade, adres: string, vcf: stri
 }
 
 // ------------------------------------------------------------------------------------------------ voorkeuren van de mens (per lade)
-export type Voorkeur = { gravatar: boolean; googleContacten: boolean; googleStand: string; googleOp: number };
+/**
+ * `onbekendeAfzenders` (SEC-002 / post-06, migratie 0272): mag de server ook voor een afzender die de mens NIET kent zelf naar
+ * het (organisatie)domein gaan voor een logo? true = voor elke afzender (zoals het was; de eigenaar van zo'n domein ziet dan dat
+ * en wanneer de lijst van de post het bericht toonde), false = alleen voor bekende diensten en voor afzenders die de mens
+ * bevestigde, in zijn contacten heeft of zelf schreef.
+ */
+export type Voorkeur = { gravatar: boolean; googleContacten: boolean; googleStand: string; googleOp: number; onbekendeAfzenders: boolean };
+/** Standaard voor wie nog niets koos: `false` (SEC-002 post-06, afwerking A — veilige stand: geen spoor naar het domein van een
+ *  onbekende afzender). De mens kan zelf «Завжди (!)» kiezen; zonder keuze laadt de server geen logo voor onbekende afzenders. */
+export const ONBEKENDE_AFZENDERS_STANDAARD = false;
 export async function voorkeurLezen(lade: Lade): Promise<Voorkeur> {
   try {
-    const r = (await sys().query('SELECT gravatar, google_contacten, google_stand, google_op FROM app.afzender_beeld_voorkeur WHERE user_id = $1 AND ruimte = $2', [lade.userId, ruimteVan(lade)])).rows[0];
-    return { gravatar: r?.gravatar === true, googleContacten: r?.google_contacten === true, googleStand: String(r?.google_stand || ''), googleOp: r?.google_op ? new Date(r.google_op).getTime() : 0 };
-  } catch { return { gravatar: false, googleContacten: false, googleStand: '', googleOp: 0 }; }
+    // `to_jsonb(v) ->> …`: werkt ook als migratie 0272 (de kolom) nog niet is uitgevoerd — dan geldt de standaard.
+    const r = (await sys().query(`SELECT gravatar, google_contacten, google_stand, google_op, to_jsonb(v) ->> 'onbekende_afzenders' AS onbekende_afzenders
+      FROM app.afzender_beeld_voorkeur v WHERE user_id = $1 AND ruimte = $2`, [lade.userId, ruimteVan(lade)])).rows[0];
+    const onbekend = r?.onbekende_afzenders === 'true' ? true : r?.onbekende_afzenders === 'false' ? false : ONBEKENDE_AFZENDERS_STANDAARD;
+    return { gravatar: r?.gravatar === true, googleContacten: r?.google_contacten === true, googleStand: String(r?.google_stand || ''), googleOp: r?.google_op ? new Date(r.google_op).getTime() : 0, onbekendeAfzenders: onbekend };
+  } catch { return { gravatar: false, googleContacten: false, googleStand: '', googleOp: 0, onbekendeAfzenders: false }; }
 }
 /** Aan/uit. UITzetten wist meteen de foto's van die bron in deze lade (gegevensminimalisatie: wat niet meer mag, blijft niet liggen). */
-export async function voorkeurZetten(lade: Lade, patch: { gravatar?: unknown; googleContacten?: unknown }): Promise<Voorkeur> {
+export async function voorkeurZetten(lade: Lade, patch: { gravatar?: unknown; googleContacten?: unknown; onbekendeAfzenders?: unknown }): Promise<Voorkeur> {
   const oud = await voorkeurLezen(lade);
   const nieuw = { gravatar: typeof patch.gravatar === 'boolean' ? patch.gravatar : oud.gravatar, googleContacten: typeof patch.googleContacten === 'boolean' ? patch.googleContacten : oud.googleContacten };
   await sys().query(`INSERT INTO app.afzender_beeld_voorkeur (user_id, ruimte, gravatar, google_contacten, gewijzigd_op) VALUES ($1, $2, $3, $4, now())
     ON CONFLICT (user_id, ruimte) DO UPDATE SET gravatar = EXCLUDED.gravatar, google_contacten = EXCLUDED.google_contacten, gewijzigd_op = now()`,
   [lade.userId, ruimteVan(lade), nieuw.gravatar, nieuw.googleContacten]);
+  // Eigen opdracht (de kolom bestaat pas na migratie 0272): de keuzes hierboven blijven ook zonder die kolom werken.
+  if (typeof patch.onbekendeAfzenders === 'boolean') {
+    await sys().query(`UPDATE app.afzender_beeld_voorkeur SET onbekende_afzenders = $3, gewijzigd_op = now() WHERE user_id = $1 AND ruimte = $2`, [lade.userId, ruimteVan(lade), patch.onbekendeAfzenders]);
+  }
   if (oud.gravatar && !nieuw.gravatar) await sys().query(`DELETE FROM app.afzender_beeld WHERE user_id = $1 AND ruimte = $2 AND bron = 'gravatar'`, [lade.userId, ruimteVan(lade)]);
   if (oud.googleContacten && !nieuw.googleContacten) {
     await sys().query(`DELETE FROM app.afzender_beeld WHERE user_id = $1 AND ruimte = $2 AND bron = 'google-contact'`, [lade.userId, ruimteVan(lade)]);
@@ -593,13 +609,31 @@ async function persoonTaak(t: PersoonTaak): Promise<void> {
 }
 
 // ------------------------------------------------------------------------------------------------ wat de routes teruggeven
+/** Een domein uit de eigen, samengestelde lijsten (merken van de site, bekende diensten): niet door een afzender te kiezen. */
+export const isBekendDomein = (d: string): boolean => !!d && (MERK_DOMEINEN.has(d) || !!bekendeDienstVoor(d));
+/** De adressen die de mens in DEZE lade kent: zelf bevestigd of een bekende dienst met geslaagde controle (status
+ *  'geverifieerd'), in zijn contacten, of iemand aan wie hij zelf schreef — en nooit een als verdacht gemerkt adres.
+ *  Een fout bij het lezen = niemand (dan gaat er niets naar buiten). */
+async function vertrouwdeAfzenders(lade: Lade, adressen: readonly string[]): Promise<Set<string>> {
+  if (!adressen.length) return new Set();
+  try {
+    const r = await sys().query(`SELECT adres FROM app.mail_afzenders WHERE user_id = $1 AND COALESCE(ruimte, 'prive') = $2 AND adres = ANY($3::text[])
+      AND status <> 'verdacht' AND (status = 'geverifieerd' OR verzonden > 0 OR in_contacten)`, [lade.userId, ruimteVan(lade), [...adressen]]);
+    return new Set(r.rows.map((x: { adres: string }) => String(x.adres)));
+  } catch { return new Set(); }
+}
 const MAX_ANTWOORD_BYTES = 3 * 1024 * 1024;
 export type AfzenderBeeldUit = { adres: string; soort: 'persoon' | 'merk' | 'geen'; data?: string; bron?: MerkBron; domein?: string; sleutel?: 'gesloten' };
 /** Voor één lade: per adres de foto van de mens, anders het logo van zijn (niet-gratis) domein, anders niets. Zet wat ontbreekt
  *  in de wachtrijen. Zonder pepper: alleen logo's van domeinen (geen persoonlijke laag). */
-export async function afzenderBeelden(lade: Lade, ruw: readonly unknown[]): Promise<{ beelden: AfzenderBeeldUit[]; wachtrij: number; voorkeur: Voorkeur }> {
+export async function afzenderBeelden(lade: Lade, ruw: readonly unknown[], opties: { toonLogoVoor?: readonly unknown[] } = {}): Promise<{ beelden: AfzenderBeeldUit[]; wachtrij: number; voorkeur: Voorkeur }> {
   const adressen = [...new Set(ruw.map(geldigAfzenderAdres).filter(Boolean))].slice(0, AFZENDER_BEELDEN_MAX);
   const voorkeur = await voorkeurLezen(lade);
+  // SEC-002 / post-06: staat «onbekende afzenders» uit, dan gaat de server alleen zelf op zoek voor een bekende dienst, voor een
+  // afzender die de mens kent (bevestigd, in contacten, zelf geschreven) of na een uitdrukkelijke vraag («toon het logo»).
+  const streng = !voorkeur.onbekendeAfzenders;
+  const gevraagdDoorMens = new Set((opties.toonLogoVoor || []).slice(0, AFZENDER_BEELDEN_MAX).map(geldigAfzenderAdres).filter(Boolean));
+  const vertrouwd = streng ? await vertrouwdeAfzenders(lade, adressen) : new Set<string>();
   let personen = new Map<string, PersoonBeeld>();
   let pepper = true;
   try { personen = await persoonBeelden(lade, adressen); } catch (e) { if (codeVan(e) === 'PEPPER_ONTBREEKT') pepper = false; else throw e; }
@@ -625,10 +659,14 @@ export async function afzenderBeelden(lade: Lade, ruw: readonly unknown[]): Prom
         bytes += r.data.length;
         beelden.push({ adres: a, soort: 'merk', data: beeldDataUri(r.mime, r.data), bron: r.bron || undefined, domein: r.sleutel, ...slot });
       } else beelden.push({ adres: a, soort: 'geen', ...slot });
-      if (!gevraagd.has(d)) {
-        gevraagd.add(d);
-        const eigen = rijen.get(d);
-        if ((!eigen || eigen.geldigTot <= Date.now()) && !(r && r.geldigTot > Date.now()) && await domeinInWachtrij(d, lade.userId)) wachtrij++;
+      // NOOIT het subdomein dat de afzender zelf koos (leesbevestiging per ontvanger): een domein uit de eigen lijsten letterlijk,
+      // van elk ander adres alleen het organisatiedomein (shared/merk-bron.ts → ophaalDomein).
+      const doel = ophaalDomein(d, isBekendDomein);
+      const mag = !streng || isBekendDomein(doel) || vertrouwd.has(a) || gevraagdDoorMens.has(a);
+      if (doel && mag && !gevraagd.has(doel)) {
+        gevraagd.add(doel);
+        const eigen = rijen.get(doel);
+        if ((!eigen || eigen.geldigTot <= Date.now()) && !(r && r.geldigTot > Date.now()) && await domeinInWachtrij(doel, lade.userId)) wachtrij++;
       }
     } else beelden.push({ adres: a, soort: 'geen', ...slot });
   }
@@ -692,10 +730,11 @@ export function merkBronRoutes(deps: Deps): Record<string, RouterMiddleware[]> {
       } catch (e) { console.error('[merk-bron] merk-beeld', codeVan(e)); return error('MERK_BEELD_FOUT', 500); }
     }) as RouterMiddleware],
     // Foto's/logo's van afzenders — onder /api/owner/mail/ en dus door de ruimtepoort (backend/mail-ruimte.ts → lade).
-    'POST /api/owner/mail/afzender-beelden': [mail(async (_a, b, lade) => afzenderBeelden(lade, Array.isArray(b.adressen) ? b.adressen : []))],
+    // `toonLogoVoor` (optioneel): adressen waarvoor de mens ZELF om het logo vroeg — telt ook als «onbekende afzenders» uitstaat.
+    'POST /api/owner/mail/afzender-beelden': [mail(async (_a, b, lade) => afzenderBeelden(lade, Array.isArray(b.adressen) ? b.adressen : [], { toonLogoVoor: Array.isArray(b.toonLogoVoor) ? b.toonLogoVoor : [] }))],
     'POST /api/owner/mail/afzender-beelden/voorkeur': [mail(async (a, b, lade) => {
-      const patch = { gravatar: b.gravatar, googleContacten: b.googleContacten };
-      const voorkeur = typeof patch.gravatar === 'boolean' || typeof patch.googleContacten === 'boolean' ? await voorkeurZetten(lade, patch) : await voorkeurLezen(lade);
+      const patch = { gravatar: b.gravatar, googleContacten: b.googleContacten, onbekendeAfzenders: b.onbekendeAfzenders };
+      const voorkeur = typeof patch.gravatar === 'boolean' || typeof patch.googleContacten === 'boolean' || typeof patch.onbekendeAfzenders === 'boolean' ? await voorkeurZetten(lade, patch) : await voorkeurLezen(lade);
       let googleScope: { gekoppeld: boolean; lezen: boolean; ontbreekt: string[] } = { gekoppeld: false, lezen: false, ontbreekt: [] };
       try { const { googleSuiteFotoScopeStatus } = await import('./google-suite-inrichting'); googleScope = await metLade(lade, 'cloud', () => googleSuiteFotoScopeStatus(a.user.id, a.user.email)); } catch { /* geen Google */ }
       // Toestemming intussen gegeven (terug van het venster van Google)? Dan niet wachten op de vorige weigering.

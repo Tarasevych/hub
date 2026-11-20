@@ -1,0 +1,149 @@
+{
+ "schema": 1,
+ "taakId": "CENTR-001",
+ "titel": "Центр облікового запису по центру на широкому ПК і окрема навігація якорів «Макета»",
+ "opdracht": "На прохання власника від 15.11.2026: на великому екрані блоки сторінки id.tarasevych.com/beveiliging стоять зліва, а головна центру облікового запису зміщена; зробити гарне центрування на широких екранах у всіх виглядах, не зламавши телефон і планшет. Спільний випуск із PR #107 (окреме положення навігації якорів) поверх 20261115-122058.",
+ "herkomst": {
+  "eigenaar": "Павло Тарасевич",
+  "agent": "claude",
+  "tak": "feature/centr-001-uitgave-20261115-132146",
+  "basis": "027324eb3980b8717437b725d416a2ae4130d50e",
+  "geinstalleerdeBasis": "027324eb3980b8717437b725d416a2ae4130d50e",
+  "geinstalleerdeVersie": "20261115-122058",
+  "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "samengevoegd": [
+   {
+    "taak": "ANKERS-001, окрема навігація якорів (claude, сусідній тред)",
+    "commit": "2156a240",
+    "reden": "PR #107, гілка claude/project-thread-dszkum, влита звичайним злиттям за вказівкою координатора"
+   },
+   {
+    "taak": "CENTR-001, центрування (claude, цей тред)",
+    "commit": "e075aca6",
+    "reden": "PR #108, гілка claude/project-thread-deqwzv, влита звичайним злиттям"
+   }
+  ]
+ },
+ "privacy": {
+  "geheimenUitgesloten": true,
+  "toelichting": "Перевірки — на локальній збірці з підробленим API та вигаданими даними; на знімках вигадані імена й пристрої."
+ },
+ "tijdlijn": [
+  {
+   "tijd": "2026-11-15T12:50:40Z",
+   "stap": "Власник попросив відцентрувати /beveiliging і головну центру облікового запису на великому екрані."
+  },
+  {
+   "tijd": "2026-11-15T13:05:00Z",
+   "stap": "Відтворено в Chromium на 1366/1920/2560 у трьох виглядах; знайдено чотири причини."
+  },
+  {
+   "tijd": "2026-11-15T13:20:00Z",
+   "stap": "Виправлення й тест на гілці claude/project-thread-deqwzv (PR #108), знімки до/після."
+  },
+  {
+   "tijd": "2026-11-15T13:25:00Z",
+   "stap": "Гілка випуску від 20261115-122058 (027324eb), злиття PR #107 і PR #108, файли задачі й процес випуску."
+  }
+ ],
+ "keuzes": [
+  "Поля «Макета» симетричні лише понад 1280 px і лише коли місця досить; запас під меню якорів лишається нижньою межею, тож вміст ніколи не заходить під меню, а 1366–1440 px виглядають як раніше.",
+  "Згенеровані maquette-stijlen.css і maquette-motor.ts не змінювались; запаси повторено в --mq-rand, тест нагадає оновити їх, якщо макет зміниться.",
+  "Картки «Студії» розтягуються на весь рядок (auto-fit), щоб краї збігалися з героєм і заголовками груп.",
+  ".access-plane отримала width:100% разом із margin:auto, бо container-type:inline-size інакше стискає її до нуля."
+ ],
+ "wijzigingen": [
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/identiteit-maquette/motor-aanpassingen.mjs"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "scripts/identiteit-maquette/sjabloon.mjs"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "shared/menu-model.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/identiteit-atelier.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/IdentiteitMaquette.tsx"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-motor.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/identiteit/maquette/maquette-sjabloon.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "src/toegangslaag.css"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/ankers-001-paginanav.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "tests/eenheid/centrering-pc-20261115.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-015-stille-uren.test.ts"
+  },
+  {
+   "soort": "gewijzigd",
+   "bestand": "tests/eenheid/identiteit-015-vormgeving.test.ts"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/ontwikkelarchieven/CENTR-001.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": "orchestratie/taken/CENTR-001.json"
+  },
+  {
+   "soort": "toegevoegd",
+   "bestand": ".github/workflows/centr-001-uitgave.yml"
+  }
+ ],
+ "controles": [
+  "centrering-pc-20261115 11/11 (без виправлення 5 червоні), mobiel-cascade-20261105 22/22, identiteit-maquette 56/56.",
+  "Chromium 1281–2560 px: меню якорів ліворуч/праворуч/згори, режими «авто», згорнутий, розгорнутий — поля симетричні там, де є місце, перекриттів немає.",
+  "Телефон 390 і планшет 768/1024 у трьох виглядах без горизонтальної прокрутки; детектор «притиснуто вліво» по 13 розділах чистий.",
+  "Знімки до/після в обох темах і мовах переглянуто."
+ ],
+ "bronnen": [
+  {
+   "soort": "запит власника",
+   "omschrijving": "Повідомлення власника 15.11.2026 у треді проєкту про центрування.",
+   "inhoudGepubliceerd": false
+  },
+  {
+   "soort": "основа",
+   "omschrijving": "GitHub Release 20261115-122058, коміт 027324eb3980",
+   "inhoudGepubliceerd": true
+  }
+ ],
+ "beperkingen": [
+  "Встановлення — лише власником після резервної копії на R:\\ і перевірки накладання.",
+  "На живому сайті й справжньому моніторі власника не перевірено."
+ ],
+ "commits": [
+  "e075aca69674e2b8c29efb52439b5adff6d00d26",
+  "2156a240ffb7d982ebec7d5b886c7b9f93979317"
+ ]
+}

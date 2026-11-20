@@ -1,0 +1,24 @@
+/* PRIJ-002 (16.11.2026): швидкі дії рядка на комп'ютері розгортаються з «⋮».
+   Наведення на лист показує лише «⋮»; наведення на «⋮» (або фокус клавіатурою, або відкрите меню) плавно розгортає ліворуч
+   «Перегляд», «Відкласти», «Архівувати», «До кошика», «Прочитано». Поки курсор на розгорнутій смужці — вона лишається відкритою.
+   Лише для пристроїв із мишею (hover + точний вказівник) і ширини > 720 px: на телефоні «⋮» відкриває меню з усіма діями (mail-mobiel.css).
+   Snelle acties op de computer klappen uit vanuit «⋮»: bij hover over de rij alleen «⋮», bij hover/focus op «⋮» schuiven de knoppen
+   naar links open. Alleen met muis en breder dan 720 px; op de telefoon opent «⋮» het menu met alle acties. */
+@media (hover:hover) and (pointer:fine) and (min-width:721px){
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{transition:max-width .18s ease,width .18s ease,opacity .14s ease,margin .18s ease,visibility 0s linear 0s;max-width:var(--mail-row-control,27px)}
+  /* згорнуто: ширина 0, не фокусується (visibility), не ловить курсор · ingeklapt: breedte 0, niet focusbaar, geen muisdoel */
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions:not(:hover):not(:focus-within):not(:has([aria-expanded=true]))>button{max-width:0;width:0!important;min-width:0;margin:0;opacity:0;visibility:hidden;pointer-events:none;overflow:hidden;transition:max-width .16s ease,width .16s ease,opacity .1s ease,margin .16s ease,visibility 0s linear .16s}
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions:not(:hover):not(:focus-within):not(:has([aria-expanded=true])){gap:0!important}
+  /* згорнута смужка — лише кружок «⋮» без зайвої підкладки по боках · ingeklapt: alleen het rondje «⋮» */
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions:not(:hover):not(:focus-within):not(:has([aria-expanded=true])) .mail-row-actions-more{box-shadow:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{transition:none!important}
+}
+/* PRIJ-003 (16.11.2026): підказка «⋮» не світиться при кожному наведенні — лише після правого кліку (data-hint-open ставить
+   MailRijSnelleActies), сама зникає за 4 с або коли курсор іде з кнопки; при відкритому меню схована (mail-rij-snelle-acties.css).
+   Tooltip van «⋮» alleen na rechtsklik. */
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more:not([data-hint-open])>span[role='tooltip']{opacity:0!important;visibility:hidden}
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more[data-hint-open]:not([aria-expanded=true])>span[role='tooltip']{opacity:1;visibility:visible}
+/* «⋮» стоїть біля правого краю: підказка вирівнюється по правому краю кнопки й переноситься, а не виходить за екран · rechts uitgelijnd, binnen beeld */
+html body .google-mail-workspace .mail-row-actions-overflow>.mail-row-actions-more>span[role='tooltip']{right:0;translate:0 0;width:max-content;max-width:min(260px,calc(100vw - 24px));white-space:normal;text-align:left;line-height:1.35}

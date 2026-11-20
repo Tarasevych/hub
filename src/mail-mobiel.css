@@ -34,11 +34,15 @@
   html body .google-mail-workspace .mail-row-block-stream .mail-row-date-block time{font-size:12px!important;white-space:nowrap}
 
   /* три крапки: єдина кнопка дій праворуч унизу; меню — «шторка» знизу екрана */
-  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions{position:absolute!important;right:4px!important;bottom:4px!important;top:auto!important;left:auto!important;display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto;background:transparent!important;box-shadow:none!important;padding:0!important;gap:0!important;transition:opacity .12s ease}
+  html body .google-mail-workspace .google-mail-row .mail-row-hover-actions{position:absolute!important;right:4px!important;bottom:4px!important;top:auto!important;left:auto!important;display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto;background:transparent!important;box-shadow:none!important;border:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;gap:0!important;transition:opacity .12s ease}
   html body .google-mail-workspace .google-mail-row .mail-row-hover-actions>button{display:none!important}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-overflow{display:grid}
-  html body .google-mail-workspace .google-mail-row .mail-row-actions-more{display:grid!important;place-items:center;width:44px!important;height:44px!important;border-radius:50%;color:var(--muted,#64748b)}
-  html body .google-mail-workspace .google-mail-row .mail-row-actions-more svg{width:22px;height:22px}
+  /* PRIJ-001 (15.11.2026): «⋮» без суцільного кола-плитки — лише тонка іконка; зона дотику лишається 44×44, а м'який круглий підклад (34 px) з'являється тільки під час дотику, наведення, фокусу чи відкритого меню · geen dikke schijf meer, wel een raakvlak van 44 px */
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more{display:grid!important;place-items:center;width:44px!important;height:44px!important;padding:0;border:0;border-radius:50%;background:transparent!important;box-shadow:none!important;color:var(--muted,#64748b);-webkit-tap-highlight-color:transparent}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more::before{content:'';position:absolute;inset:5px;border-radius:50%;background:transparent;transition:background-color .12s ease}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more:is(:hover,:active,:focus-visible,[aria-expanded=true])::before{background:color-mix(in srgb,var(--accent,#2563eb) 14%,transparent)}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more:is(:active,[aria-expanded=true]){color:var(--accent,#2563eb)}
+  html body .google-mail-workspace .google-mail-row .mail-row-actions-more svg{position:relative;width:18px;height:18px;stroke-width:2.25}
   html body .google-mail-workspace .google-mail-row .mail-row-actions-more [role='tooltip']{display:none}
   html body .google-mail-workspace .google-mail-row.mail-row-swiping .mail-row-hover-actions,html body .google-mail-workspace .google-mail-row.mail-row-swipe-open .mail-row-hover-actions{opacity:0!important;pointer-events:none!important}
   /* меню «⋮» — портал у <body> (src/mail-rij-snelle-acties.css), тут більше нічого */
@@ -71,7 +75,7 @@
   html body .google-mail-reader-backdrop{left:0!important;right:0!important;width:100%!important;max-width:100%!important}
   html body .google-mail-reader{width:100%!important;max-width:100%!important;margin:0!important;border-radius:0!important}
 
-  /* верхня панель: аватар акаунта впритул до правого краю, пошук займає весь вільний простір */
+  /* верхня панель: аватар акаунта впритул до правого краю, пошук займає весь вільний простір, шестерня швидких налаштувань завжди доступна */
   html body .mail-top-command-bar{right:6px!important;min-height:52px;top:4px}
   html body .mail-top-command-bar>:first-child{flex:1 1 0!important;min-width:0!important}
   html body .mail-top-search-shell{width:100%;min-width:0}
@@ -80,13 +84,19 @@
   html body .mail-top-search-shell input{font-size:16px}
   html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:44px;height:44px}
   html body .mail-top-interface-actions{gap:0}
-  /* zoekveld: op de telefoon staat «Швидкі налаштування» (⚙) uit de bovenbalk — de instellingen zijn bereikbaar via het zijmenu (Пошта → Налаштування); zo krijgt het zoekveld de ruimte (was 75 px breed, nu ruim 120 px) */
-  html body .mail-top-interface-actions .mail-top-settings{display:none!important}
+  html body .mail-quick-settings{max-width:100vw;box-sizing:border-box}
   html body .google-mail-workspace .mail-category-pager button{min-width:44px;min-height:40px}
   html body .google-mail-workspace>h1.mail-workspace-heading{font-size:20px;padding:14px 16px 8px}
   html body .mail-reader-icon-action{min-width:44px;min-height:44px}
   /* zwevende knoppen (Написати, Вгору; rechtsonder): de lijst krijgt onderaan zoveel lucht als de stapel hoog is, zodat de laatste rij erboven te zien is */
   html body .google-mail-workspace .mail-list-viewport>.google-mail-list::after{content:'';display:block;flex:none;height:var(--plaats-stapel-ruimte,0px);pointer-events:none}
+}
+
+@media (max-width:440px){
+  /* вузький екран 360–390px: кнопки 36×44 px вміщують пошук (≥ 100 px), фільтр, оновлення та шестерню налаштувань поруч без зникнення */
+  html body .mail-top-command-bar{gap:4px}
+  html body .mail-top-search-shell{grid-template-columns:36px minmax(0,1fr) auto auto}
+  html body .mail-search-submit,html body .mail-search-clear,html body .mail-top-search-tune,html body .mail-top-refresh,html body .mail-top-settings{width:36px;height:44px}
 }
 
 @media (prefers-reduced-motion:reduce){

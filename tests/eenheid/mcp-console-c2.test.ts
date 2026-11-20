@@ -79,11 +79,14 @@ export async function main(): Promise<number> {
     const techDeur = await call('POST /api/mcp/agent', '', { name: 'install_release', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     const techBord = await call('POST /api/mcp/agent', '', { name: 'list_tasks', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
     const agentUitrol = await call('POST /api/mcp/agent', '', { name: 'uitrol_voorstel_status', arguments: {} }, { headers: { authorization: `Bearer ${raw}` } });
-    check('agenttoken van U (technische ruimte): servertools nee (OWNER_ONLY), deur-hulpmiddelen bestaan niet meer, eigen bord onbereikbaar (SPACE_SEPARATED)',
-      techServer.status === 400 && techServer.data.error === 'OWNER_ONLY' && /TOOL_REMOVED/.test(techDeur.data.error) && techBord.status === 403 && techBord.data.error === 'SPACE_SEPARATED' && /technical/.test(techBord.data.message), JSON.stringify([techServer.data, techDeur.data, techBord.data]));
-    check('agenttoken: updates goedkeuren kan nooit (ALLEEN_EIGENAAR_MET_PASSKEY); voorbereiden alleen met grant én alleen in de technische ruimte',
+    // SEC-002 (ai-mcp-06, 12.11.2026): een TECHNISCH token werkt alleen met een LEVENDE technische ruimte (eigenaar, lopend profiel,
+    // dienst «ai» aan). U is geen eigenaar en heeft geen profiel: ELKE aanroep (servertools, deur, bord, uitrol) → TECH_PROFILE_OFF (403),
+    // nog vóór de vroegere weigeringen OWNER_ONLY / TOOL_REMOVED / SPACE_SEPARATED / GEEN_VOORBEREIDER_GRANT.
+    check('agenttoken van U (technische ruimte, geen levend technisch profiel): servertools, deur-hulpmiddelen en eigen bord → TECH_PROFILE_OFF (403)',
+      [techServer, techDeur, techBord].every((x) => x.status === 403 && x.data.error === 'TECH_PROFILE_OFF'), JSON.stringify([techServer.data, techDeur.data, techBord.data]));
+    check('agenttoken: updates goedkeuren kan nooit (ALLEEN_EIGENAAR_MET_PASSKEY); voorbereiden alleen in de technische ruimte — en die moet nu ook leven (TECH_PROFILE_OFF)',
       agentGoedkeur.status === 400 && /ALLEEN_EIGENAAR_MET_PASSKEY/.test(agentGoedkeur.data.error) && agentUitrolPrive.status === 403 && agentUitrolPrive.data.error === 'SPACE_SEPARATED'
-      && agentUitrol.status === 400 && agentUitrol.data.error === 'GEEN_VOORBEREIDER_GRANT', JSON.stringify([agentGoedkeur.data, agentUitrolPrive.data, agentUitrol.data]));
+      && agentUitrol.status === 403 && agentUitrol.data.error === 'TECH_PROFILE_OFF', JSON.stringify([agentGoedkeur.data, agentUitrolPrive.data, agentUitrol.data]));
     const lijstRuimte = (await call('POST /api/mcp/tokens/list', USER)).data.tokens as any[];
     check('tokenlijst toont de ruimte per token', lijstRuimte.length === 1 && lijstRuimte[0].ruimte === 'technisch');
     // SEC-001 (fd52dca): een token geldt alleen voor een bestaand, goedgekeurd account. U tijdelijk op «pending»: hetzelfde, nog

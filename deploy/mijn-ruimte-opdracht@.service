@@ -13,3 +13,15 @@ StandardInput=null
 PrivateTmp=yes
 ProtectHome=yes
 TimeoutStartSec=15min
+# SEC-002 (server-uitrol-11): de app zelf start deze unit (polkit). Vier van de vijf werkwoorden lezen alleen en schrijven een
+# uitslag in /var/lib; ze hoeven /usr, /boot en /etc (schakelaars in /etc/mijn-ruimte, sudoers, sshd) nooit te kunnen wijzigen.
+# ProtectSystem=full maakt die drie alleen-lezen; /var, /srv en /run blijven schrijfbaar (uitslag, stempel, symlink «current»,
+# slot van de installer). Eén uitzondering voor «terugdraaien»: de installer zet zo nodig de unit van de MCP-deur terug
+# (/etc/systemd/system/mijn-ruimte-mcp.service, mcp_deur_bijwerken in deploy/installeer-app.sh).
+# NoNewPrivileges: zoals mijn-ruimte-besluit.service, die hetzelfde terugdraaien uitvoert.
+NoNewPrivileges=yes
+ProtectSystem=full
+ReadWritePaths=-/etc/systemd/system
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes

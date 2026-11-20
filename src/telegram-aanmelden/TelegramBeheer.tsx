@@ -13,6 +13,7 @@ import PlaatsingBeheer from './PlaatsingBeheer';
 import './telegram.css';
 
 import { bronNaam, koppelStandNaam, redenNaam, resultaatNaam, statusNaam } from './namen';
+import { useAnkerScroll } from '../anker-scroll';
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 type Actie = { sleutel: string; naam: readonly [string, string]; minimum: KeuzeId; standaard: KeuzeId; gevoelig: boolean; ingebouwd: boolean };
@@ -44,9 +45,10 @@ export default function TelegramBeheer({ lang }: { lang: Lang }) {
     setMelding(''); setFout('');
     try { await uitvoeren(fn); setMelding(ok); await laden(); } catch (e) { if ((e as Error).message !== 'GEANNULEERD') setFout(foutTekst(lang, e)); }
   };
+  useAnkerScroll('telegram-beheer', !!o); // MELDLINK-001: тривога Telegram у сповіщенні веде сюди
   if (!o) return fout ? <section className='admin-section tga-sectie'><p className='tga-fout'>{fout}</p></section> : null;
   const tel = (soort: string, ok: boolean, k: 'd1' | 'd7' | 'd30') => o.cijfers.find((c) => c.soort === soort && c.ok === ok)?.[k] ?? 0;
-  return <section className='admin-section tga-sectie tga-beheer' data-telegram-beheer>
+  return <section className='admin-section tga-sectie tga-beheer' id='telegram-beheer' data-telegram-beheer>
     {venster}
     <header className='tga-sectie-kop'><TelegramLogo maat={36} /><div><h2>{tr(lang, 'Вхід через Telegram', 'Aanmelden met Telegram')}</h2>
       <p>{tr(lang, `Бот @${o.instellingen.botGebruikersnaam}. Прапорець telegram-aanmelden-v1: ${o.vlagAan ? 'увімкнено' : 'вимкнено'} (керується в меню «Перемикачі функцій»).`, `Bot @${o.instellingen.botGebruikersnaam}. Vlag telegram-aanmelden-v1: ${o.vlagAan ? 'aan' : 'uit'} (beheer via het menu «Functieschakelaars»).`)}</p></div>
@@ -173,9 +175,9 @@ function Instellingen({ lang, o, opslaan, ongedaan }: { lang: Lang; o: Overzicht
     <p className='tga-klein'>{tr(lang, 'Поділитися власним номером телефону — завжди обов’язково (не вимикається).', 'Het eigen telefoonnummer delen is altijd verplicht (niet uit te zetten).')}</p>
     <h4>{tr(lang, 'Назви й описи бота', 'Namen en omschrijvingen van de bot')}</h4>
     <table className='tga-talen'><thead><tr><th /><th>Українська</th><th>Nederlands</th></tr></thead><tbody>
-      <tr><td>{tr(lang, 'Назва', 'Naam')}</td><td>{tekst('naam', 'uk', 64)}</td><td>{tekst('naam', 'nl', 64)}</td></tr>
-      <tr><td>{tr(lang, 'Короткий опис', 'Korte omschrijving')}</td><td>{tekst('kort', 'uk', 120)}</td><td>{tekst('kort', 'nl', 120)}</td></tr>
-      <tr><td>{tr(lang, 'Опис', 'Omschrijving')}</td><td>{tekst('omschrijving', 'uk', 512)}</td><td>{tekst('omschrijving', 'nl', 512)}</td></tr>
+      <tr><td className='tga-talen-naam'>{tr(lang, 'Назва', 'Naam')}</td><td data-label='Українська'>{tekst('naam', 'uk', 64)}</td><td data-label='Nederlands'>{tekst('naam', 'nl', 64)}</td></tr>
+      <tr><td className='tga-talen-naam'>{tr(lang, 'Короткий опис', 'Korte omschrijving')}</td><td data-label='Українська'>{tekst('kort', 'uk', 120)}</td><td data-label='Nederlands'>{tekst('kort', 'nl', 120)}</td></tr>
+      <tr><td className='tga-talen-naam'>{tr(lang, 'Опис', 'Omschrijving')}</td><td data-label='Українська'>{tekst('omschrijving', 'uk', 512)}</td><td data-label='Nederlands'>{tekst('omschrijving', 'nl', 512)}</td></tr>
     </tbody></table>
     <p className='tga-klein'>{tr(lang, 'Після збереження натисніть «Налаштувати бота», щоб надіслати назви й описи в Telegram.', 'Tik na opslaan op «Bot instellen» om namen en omschrijvingen naar Telegram te sturen.')}</p>
     <div className='tga-rij'><button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || !naamOk}>{tr(lang, 'Зберегти', 'Opslaan')}</button>
@@ -188,11 +190,11 @@ function Acties({ lang, acties, opslaan }: { lang: Lang; acties: Actie[]; opslaa
   const { bezig, doe } = useEenmalig();
   return <div className='tga-blok'>
     <h3>{tr(lang, 'Дії та мінімальний захист', 'Handelingen en minimale bescherming')}</h3>
-    <table><thead><tr><th>{tr(lang, 'Дія', 'Handeling')}</th><th>{tr(lang, 'Мінімум', 'Minimum')}</th><th>{tr(lang, 'Типово', 'Standaard')}</th><th /></tr></thead><tbody>
-      {acties.map((a) => <tr key={a.sleutel}><td>{tekstIn(a.naam, lang)} <small className='tga-mono'>{a.sleutel}</small>{a.gevoelig && ' 🔑'}</td><td>{tekstIn(KEUZE_NAMEN[a.minimum], lang)}</td><td>{tekstIn(KEUZE_NAMEN[a.standaard], lang)}</td>
-        <td>{!a.ingebouwd && <button type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(() => opslaan({ sleutel: a.sleutel, verwijderen: true }))}>{tr(lang, 'Видалити', 'Verwijderen')}</button>}</td></tr>)}
+    <table className='tga-acties-tabel'><thead><tr><th>{tr(lang, 'Дія', 'Handeling')}</th><th>{tr(lang, 'Мінімум', 'Minimum')}</th><th>{tr(lang, 'Типово', 'Standaard')}</th><th /></tr></thead><tbody>
+      {acties.map((a) => <tr key={a.sleutel}><td data-label={tr(lang, 'Дія', 'Handeling')}>{tekstIn(a.naam, lang)} <small className='tga-mono'>{a.sleutel}</small>{a.gevoelig && ' 🔑'}</td><td data-label={tr(lang, 'Мінімум', 'Minimum')}>{tekstIn(KEUZE_NAMEN[a.minimum], lang)}</td><td data-label={tr(lang, 'Типово', 'Standaard')}>{tekstIn(KEUZE_NAMEN[a.standaard], lang)}</td>
+        <td className='tga-tabel-actie'>{!a.ingebouwd && <button type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(() => opslaan({ sleutel: a.sleutel, verwijderen: true }))}>{tr(lang, 'Видалити', 'Verwijderen')}</button>}</td></tr>)}
     </tbody></table>
-    <form className='tga-rij' onSubmit={(e) => { e.preventDefault(); void doe(() => opslaan(n)); }}>
+    <form className='tga-rij tga-actie-form' onSubmit={(e) => { e.preventDefault(); void doe(() => opslaan(n)); }}>
       <input placeholder='sleutel' value={n.sleutel} onChange={(e) => setN({ ...n, sleutel: e.target.value.toLowerCase() })} pattern='[a-z][a-z0-9-]{1,40}' required aria-label='sleutel' />
       <input placeholder='Назва' value={n.naam_uk} onChange={(e) => setN({ ...n, naam_uk: e.target.value })} required aria-label='uk' />
       <input placeholder='Naam' value={n.naam_nl} onChange={(e) => setN({ ...n, naam_nl: e.target.value })} required aria-label='nl' />
@@ -214,12 +216,12 @@ function Koppelingen({ ctx, lang, uit }: { ctx: Ctx; lang: Lang; uit: (id: strin
   return <div className='tga-blok'>
     <h3>{tr(lang, 'Усі прив’язки', 'Alle koppelingen')}</h3>
     <form className='tga-rij' onSubmit={(e) => { e.preventDefault(); void laden(); }}><input value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={tr(lang, 'Пошук: пошта, номер, @нік', 'Zoeken: e-mail, nummer, @naam')} /><button type='submit' className='tga-knop'>{tr(lang, 'Шукати', 'Zoeken')}</button></form>
-    <table><thead><tr><th>{tr(lang, 'Обліковий запис', 'Account')}</th><th>Telegram</th><th>{tr(lang, 'Стан', 'Stand')}</th><th /></tr></thead><tbody>
-      {items.map((k) => <tr key={k.id}><td>{k.email}<br /><small>{k.accountNaam} · {k.naam}</small></td>
-        <td className='tga-mono'>+{String(k.telefoon).replace(/^\+/, '')}<br />{k.gebruikersnaam ? `@${k.gebruikersnaam}` : '—'} · {[k.voornaam, k.achternaam].filter(Boolean).join(' ')}<br />ID {k.telegramId}</td>
-        <td>{koppelStandNaam(lang, k.stand)}{k.reden && <><br /><small>{redenNaam(lang, k.reden)}</small></>}<br /><small>{tijd(k.laatstGebruiktOp, lang)}</small></td>
-        <td>{k.stand !== 'uitgeschakeld' && <button type='button' className='tga-knop tga-knop-gevaar' disabled={bezig} onClick={() => void doe(async () => { await uit(k.id); await laden(); })}>{tr(lang, 'Вимкнути', 'Uitzetten')}</button>}</td></tr>)}
-      {items.length === 0 && <tr><td colSpan={4} className='tga-klein'>{tr(lang, 'Немає прив’язок.', 'Geen koppelingen.')}</td></tr>}
+    <table className='tga-koppelingen-tabel'><thead><tr><th>{tr(lang, 'Обліковий запис', 'Account')}</th><th>Telegram</th><th>{tr(lang, 'Стан', 'Stand')}</th><th /></tr></thead><tbody>
+      {items.map((k) => <tr key={k.id}><td data-label={tr(lang, 'Обліковий запис', 'Account')}>{k.email}<br /><small>{k.accountNaam} · {k.naam}</small></td>
+        <td className='tga-mono' data-label='Telegram'>+{String(k.telefoon).replace(/^\+/, '')}<br />{k.gebruikersnaam ? `@${k.gebruikersnaam}` : '—'} · {[k.voornaam, k.achternaam].filter(Boolean).join(' ')}<br />ID {k.telegramId}</td>
+        <td data-label={tr(lang, 'Стан', 'Stand')}>{koppelStandNaam(lang, k.stand)}{k.reden && <><br /><small>{redenNaam(lang, k.reden)}</small></>}<br /><small>{tijd(k.laatstGebruiktOp, lang)}</small></td>
+        <td className='tga-tabel-actie'>{k.stand !== 'uitgeschakeld' && <button type='button' className='tga-knop tga-knop-gevaar' disabled={bezig} onClick={() => void doe(async () => { await uit(k.id); await laden(); })}>{tr(lang, 'Вимкнути', 'Uitzetten')}</button>}</td></tr>)}
+      {items.length === 0 && <tr><td colSpan={4} className='tga-klein tga-tabel-leeg'>{tr(lang, 'Немає прив’язок.', 'Geen koppelingen.')}</td></tr>}
     </tbody></table>
   </div>;
 }
@@ -228,6 +230,6 @@ function Journaal({ ctx, lang }: { ctx: Ctx; lang: Lang }) {
   const [items, setItems] = useState<Array<{ id: string; actie: string; resultaat: string; op: number; actorId?: string; details?: Record<string, unknown> }>>([]);
   useEffect(() => { void tgPost<{ items: typeof items }>(ctx, '/api/owner/telegram/beheer/journaal', { limiet: 100 }).then((r) => setItems(r.items)).catch(() => undefined); }, [ctx]);
   return <details className='tga-blok'><summary><h3>{tr(lang, 'Журнал', 'Journaal')} ({items.length})</h3></summary>
-    <table><tbody>{items.map((j) => <tr key={j.id}><td>{tijd(j.op, lang)}</td><td className='tga-mono'>{j.actie}</td><td>{resultaatNaam(lang, j.resultaat)}</td><td className='tga-mono tga-klein'>{j.details ? JSON.stringify(j.details).slice(0, 160) : ''}</td></tr>)}</tbody></table>
+    <table className='tga-journaal-tabel'><thead><tr><th>{tr(lang, 'Час', 'Tijd')}</th><th>{tr(lang, 'Дія', 'Handeling')}</th><th>{tr(lang, 'Результат', 'Resultaat')}</th><th>{tr(lang, 'Деталі', 'Details')}</th></tr></thead><tbody>{items.map((j) => <tr key={j.id}><td data-label={tr(lang, 'Час', 'Tijd')}>{tijd(j.op, lang)}</td><td className='tga-mono' data-label={tr(lang, 'Дія', 'Handeling')}>{j.actie}</td><td data-label={tr(lang, 'Результат', 'Resultaat')}>{resultaatNaam(lang, j.resultaat)}</td><td className='tga-mono tga-klein' data-label={tr(lang, 'Деталі', 'Details')}>{j.details ? JSON.stringify(j.details).slice(0, 160) : ''}</td></tr>)}</tbody></table>
   </details>;
 }

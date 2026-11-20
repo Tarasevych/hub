@@ -10,7 +10,7 @@ import { ALLOWED_COMMANDS, isOwnSiteUrl, isSensitiveField, pickByName, pushDiag,
 import { COMMAND_TYPES } from '../../backend/connectors-gateway';
 import { BROWSER_AUTO_APPROVABLE, BROWSER_DEFAULT_AUTO, BROWSER_DEFAULT_ENABLED, BROWSER_TYPES } from '../../backend/browser-mogelijkheden';
 import { createHash } from 'node:crypto';
-import { EXT_MIN_VERSIE, vergelijkVersie } from '../../shared/extensie-update';
+import { EXT_MIN_VERSIE, vergelijkVersie } from '../../shared/extensie-bijwerken';
 // @ts-expect-error gewone JavaScript-module zonder typen (bouwscripts)
 import { contentHash, extensionEntries, parseCrx3, readZipEntries } from '../../scripts/extensie-lib.mjs';
 
@@ -20,8 +20,8 @@ export async function main(): Promise<number> {
     'https://eviltarasevych.com/', 'https://u:p@mail.tarasevych.com/', 'javascript:alert(1)', 'data:text/html,x', '', 'niet-een-url', 'https://mail.tarasevych.com/' + 'a'.repeat(600)];
   check('extensie en server hanteren dezelfde adresregel (alle voorbeelden gelijk)', urls.every((u) => isOwnSiteUrl(u) === serverRegel(u)), urls.filter((u) => isOwnSiteUrl(u) !== serverRegel(u)).join(' | '));
   check('adresregel: alleen https op tarasevych.com en subdomeinen', isOwnSiteUrl(urls[0]) && isOwnSiteUrl(urls[1]) && !isOwnSiteUrl(urls[2]) && !isOwnSiteUrl(urls[3]) && !isOwnSiteUrl(urls[4]) && !isOwnSiteUrl(urls[5]) && !isOwnSiteUrl(urls[6]));
-  check('mogelijkheden: de lijst van de server = de browseropdrachten in COMMAND_TYPES = wat de extensie kent (22, sinds 0.7 met browser.script)',
-    JSON.stringify([...BROWSER_TYPES].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()) && BROWSER_TYPES.length === 22
+  check('mogelijkheden: de lijst van de server = de browseropdrachten in COMMAND_TYPES = wat de extensie kent (23, sinds 0.7 met browser.script, sinds 0.9.6 met browser.lokale_ai)',
+    JSON.stringify([...BROWSER_TYPES].sort()) === JSON.stringify((COMMAND_TYPES as readonly string[]).filter((t) => t.startsWith('browser.')).sort()) && BROWSER_TYPES.length === 23
     && JSON.stringify([...ALLOWED_COMMANDS].sort()) === JSON.stringify([...BROWSER_TYPES].sort()));
   check('standaarden: alleen lezen/kijken aan en automatisch; automatisch goedkeuren kan nooit voor handelen, screenshot of diepe diagnose',
     BROWSER_DEFAULT_AUTO.every((t) => BROWSER_DEFAULT_ENABLED.includes(t) && BROWSER_AUTO_APPROVABLE.includes(t))
@@ -113,7 +113,7 @@ export async function main(): Promise<number> {
   check('manifest 0.9.2: Manifest V3, alleen tarasevych.com, exact storage/alarms/scripting/activeTab/sidePanel/webRequest/offscreen (offscreen sinds 0.9.1/0.9.2: ingebouwde AI; geen debugger, tabs/cookies/history/<all_urls>), CSP en vaste sleutel (extensie-id)',
     JSON.stringify(manifest.permissions) === '["storage","alarms","scripting","activeTab","sidePanel","webRequest","offscreen"]'
     && manifest.content_security_policy?.extension_pages === "script-src 'self'; object-src 'none'; base-uri 'none'"
-    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.2'
+    && manifest.key === JSON.parse(readFileSync(join(process.cwd(), 'extension', 'signed', 'crx-info.json'), 'utf8')).publicKeyBase64 && manifest.version === '0.9.7'
     && manifest.description.length <= 132 &&
     manifest.manifest_version === 3 && JSON.stringify(manifest.host_permissions) === '["https://*.tarasevych.com/*"]'
     && manifest.content_scripts.every((c: any) => c.matches.every((m: string) => m === 'https://*.tarasevych.com/*'))
@@ -126,9 +126,9 @@ export async function main(): Promise<number> {
     && /profielToegestaan\(/.test(bg) && /adresInRuimte\(/.test(bg)
     && /PING_MS = 20_000/.test(bg) && /verifyCommand\(/.test(bg) && /verifyOntgrendeling\(/.test(bg) && /valideerOpdracht\(/.test(bg) && /accountState\(/.test(bg) && /humanAttach/.test(bg)
     && /permissions\.contains\(\{ permissions: \['debugger'\] \}\)/.test(bg) && !/chrome\.permissions\.request/.test(bg) && typeof opts === 'string');
-  check('background 0.5: externe berichten alleen PING / STATUS (0.5: publieke status) / OPEN_OPTIONS / PAIR / SELF_TEST (knop Тест) / UPDATE_CHECK (0.4.1: «Оновити автоматично», installeert niets zelf) / LOKALE_AI(_STAND) (0.9.2, alleen met «!» siteToegang), met oorsprongscontrole; PAIR alleen vanaf mcp.tarasevych.com en eenmalig',
+  check('background 0.5: externe berichten alleen PING / STATUS (0.5: publieke status) / OPEN_OPTIONS / PAIR / SELF_TEST (knop Тест) / UPDATE_CHECK (0.4.1: «Оновити автоматично», installeert niets zelf) / LOKALE_AI(_STAND|_STEL_IN) (0.9.2–0.9.7), met oorsprongscontrole; PAIR alleen vanaf mcp.tarasevych.com en eenmalig',
     /onMessageExternal/.test(bg) && /isOwnSiteUrl\(`\$\{origin\}\/`\)/.test(bg) && /hostname !== PAIR_HOST/.test(bg) && /usedPairCodes/.test(bg)
-    && [...new Set((bg.match(/type === '([A-Z_]+)'/g) ?? []).map((x) => x.slice(10, -1)))].sort().join() === 'LOKALE_AI,LOKALE_AI_STAND,OPEN_OPTIONS,PAIR,PING,SELF_TEST,STATUS,UPDATE_CHECK'
+    && [...new Set((bg.match(/type === '([A-Z_]+)'/g) ?? []).map((x) => x.slice(10, -1)))].sort().join() === 'LOKALE_AI,LOKALE_AI_STAND,LOKALE_AI_STEL_IN,OPEN_OPTIONS,PAIR,PING,SELF_TEST,STATUS,UPDATE_CHECK'
     && /\(type === 'SELF_TEST' \|\| type === 'UPDATE_CHECK'\) && !beheerOrigin/.test(bg));
   const uiTekst = ['options.html', 'sidepanel.html', 'popup.html'].map((f) => readFileSync(join(process.cwd(), 'extension', f), 'utf8')).join('\n');
   check('teksten: alleen Oekraïens en Nederlands (geen Engelse UI-zinnen)', !/\b(Settings|Disconnect|Allow|Connected|Permissions|Open site)\b/.test(uiTekst.replace(/<[^>]+>/g, ' ')));

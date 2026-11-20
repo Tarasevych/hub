@@ -44,7 +44,7 @@ export type KernOpties = {
 export const sha256Hex = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');
 const MAX_DIEPTE = 4;
 
-const schoon = (t: string, max: number) => t.replace(/\u0000/g, '').replace(/\r\n?/g, '\n').replace(/[ \t\f\v]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+const schoon = (t: string, max: number) => t.replace(/\u0000/g, '').replace(/\r\n?/g, '\n').replace(/(?<![ \t\f\v])[ \t\f\v]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
 const tekensZonderSpatie = (t: string) => t.replace(/\s+/g, '').length;
 
 /** utf-8/utf-16 met BOM; anders utf-8 zonder exceptie. */
@@ -55,32 +55,162 @@ export function decodeerTekst(b: Uint8Array, maxBytes: number): string {
   return new TextDecoder('utf-8', { fatal: false }).decode(kop);
 }
 
-/** HTML → platte tekst: script/style/comments weg, blokelementen → regeleinde, entiteiten gedecodeerd. */
+// ---------- LINEAIRE ONTLEDING VAN HTML/XML (SEC-002 slot t, eindcontrole «omzeiling» punt 5) ----------
+// Vroeger deden reguliere expressies dit werk: `<[^>]+>`, `<(script|…)\b[^>]*>[\s\S]*?<\/\1\s*>`, `<!--[\s\S]*?-->`, de titel en
+// `[ \t\f\v]+\n`. Op een rij «<» zonder «>», «<svg » zonder sluittag of 200 kB «\f» probeert zo'n expressie vanaf ELKE positie opnieuw
+// tot het einde: kwadratisch (200 kB «<» → 42 s in de zoekwerker; zonder werker staat de server zo lang stil). Nu doorloopt elke stap de
+// tekst één keer, met dezelfde volgorde van stappen en EXACT dezelfde uitkomst (vergeleken met de oude pijplijn op het corpus en op
+// 20 000 willekeurige stukken, tests/eenheid/sec-002-slot-t-20261112.test.ts). Hoofdletterongevoelig zoals /i zonder u-vlag: alleen A–Z.
+// Раніше — регулярні вирази з квадратичним часом; тепер кожен крок — один лінійний прохід, результат той самий.
+const isWoordteken = (c: number) => (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95;
+/** `\s` van JavaScript. */
+const isWit = (c: number) => (c >= 9 && c <= 13) || c === 32 || c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+/** Staat `woord` (kleine letters) op positie i? A–Z tellen als a–z, zoals /i zonder u-vlag. */
+function begintMet(s: string, i: number, woord: string): boolean {
+  if (i < 0 || i + woord.length > s.length) return false;
+  for (let k = 0; k < woord.length; k++) {
+    let c = s.charCodeAt(i + k);
+    if (c >= 65 && c <= 90) c += 32;
+    if (c !== woord.charCodeAt(k)) return false;
+  }
+  return true;
+}
+/** Na `i`: witruimte overslaan; staat er dan «>», de positie erna, anders -1. */
+const witDanGt = (s: string, i: number): number => { while (i < s.length && isWit(s.charCodeAt(i))) i++; return s.charCodeAt(i) === 62 ? i + 1 : -1; };
+/** Eerste «>» op of na i, voor oplopende i (elk stuk tekst wordt hoogstens één keer doorzocht). */
+function gtZoeker(s: string): (i: number) => number {
+  let pos = s.indexOf('>');
+  return (i) => { if (pos !== -1 && pos < i) pos = s.indexOf('>', i); return pos; };
+}
+/**
+ * Eén regex-stap «vervang elke treffer door `door`», maar dan lineair: `treffer(i)` krijgt elke «<» (alle patronen beginnen met «<»)
+ * en geeft het einde van de treffer of -1. Na een treffer gaat het verder ná die treffer — precies zoals String.replace met /g.
+ */
+function vervangTags(s: string, door: string, treffer: (i: number) => number): string {
+  let uit = '', vanaf = 0, i = s.indexOf('<');
+  while (i >= 0) {
+    const e = treffer(i);
+    if (e > i) { uit += s.slice(vanaf, i) + door; vanaf = e; i = s.indexOf('<', e); } else i = s.indexOf('<', i + 1);
+  }
+  return vanaf === 0 ? s : uit + s.slice(vanaf);
+}
+/** `<!--[\s\S]*?-->` → door. Zonder afsluitende «-->» na een begin komt er ook later geen meer: stoppen. */
+function zonderCommentaar(s: string, door: string): string {
+  let uit = '', vanaf = 0, i = s.indexOf('<!--');
+  while (i >= 0) {
+    const e = s.indexOf('-->', i + 4);
+    if (e < 0) break;
+    uit += s.slice(vanaf, i) + door; vanaf = e + 3; i = s.indexOf('<!--', vanaf);
+  }
+  return vanaf === 0 ? s : uit + s.slice(vanaf);
+}
+/** Eerste `</naam\s*>` vanaf positie `van`: einde ervan, of -1. */
+function sluittag(s: string, van: number, naam: string): number {
+  for (let q = s.indexOf('</', van); q >= 0; q = s.indexOf('</', q + 2)) {
+    if (!begintMet(s, q + 2, naam)) continue;
+    const e = witDanGt(s, q + 2 + naam.length);
+    if (e > 0) return e;
+  }
+  return -1;
+}
+/** `<naam\b[^>]*>…</naam\s*>` (eerste naam uit de lijst die past; geen naam is een voorvoegsel van een andere). */
+function zonderBlokken(s: string, namen: readonly string[], door: string): string {
+  const gt = gtZoeker(s);
+  const geenSluittagVanaf = new Map<string, number>(); // naam → vanaf deze positie bestaat er zeker geen sluittag meer
+  return vervangTags(s, door, (i) => {
+    const naam = namen.find((n) => begintMet(s, i + 1, n));
+    if (!naam) return -1;
+    const na = i + 1 + naam.length;
+    if (na < s.length && isWoordteken(s.charCodeAt(na))) return -1; // \b
+    const j = gt(i);
+    if (j < 0) return -1;
+    const geen = geenSluittagVanaf.get(naam);
+    if (geen !== undefined && j + 1 >= geen) return -1;
+    const e = sluittag(s, j + 1, naam);
+    if (e < 0) { geenSluittagVanaf.set(naam, j + 1); return -1; }
+    return e;
+  });
+}
+/** `<(naam)\b[^>]*>` → door (open tag, inhoud blijft). */
+const openTags = (s: string, namen: readonly string[], door: string): string => {
+  const gt = gtZoeker(s);
+  return vervangTags(s, door, (i) => {
+    const naam = namen.find((n) => begintMet(s, i + 1, n));
+    if (!naam) return -1;
+    const na = i + 1 + naam.length;
+    if (na < s.length && isWoordteken(s.charCodeAt(na))) return -1;
+    const j = gt(i);
+    return j < 0 ? -1 : j + 1;
+  });
+};
+/** `<(naam)\b[^>]*\/>` → door (lege tag die op «/>» eindigt). */
+const legeTags = (s: string, namen: readonly string[], door: string): string => {
+  const gt = gtZoeker(s);
+  return vervangTags(s, door, (i) => {
+    const naam = namen.find((n) => begintMet(s, i + 1, n));
+    if (!naam) return -1;
+    const na = i + 1 + naam.length;
+    if (na < s.length && isWoordteken(s.charCodeAt(na))) return -1;
+    const j = gt(i);
+    return j > 0 && j - 1 >= na && s.charCodeAt(j - 1) === 47 ? j + 1 : -1;
+  });
+};
+/** `<\/(naam)\s*>` → door. */
+const sluitTags = (s: string, namen: readonly string[], door: string): string => vervangTags(s, door, (i) => {
+  if (s.charCodeAt(i + 1) !== 47) return -1;
+  for (const n of namen) { if (!begintMet(s, i + 2, n)) continue; const e = witDanGt(s, i + 2 + n.length); if (e > 0) return e; }
+  return -1;
+});
+/** `<[^>]+>` → door. */
+const alleTags = (s: string, door: string): string => {
+  const gt = gtZoeker(s);
+  return vervangTags(s, door, (i) => { if (i + 1 >= s.length || s.charCodeAt(i + 1) === 62) return -1; const j = gt(i); return j < 0 ? -1 : j + 1; });
+};
+/** De eerste treffer van `/<title[^>]*>([\s\S]*?)<\/title>/i`: alleen het EERSTE «<title» kan slagen (zie verslag slot t). */
+function titelRuw(s: string): string {
+  let i = s.indexOf('<');
+  while (i >= 0 && !begintMet(s, i, '<title')) i = s.indexOf('<', i + 1);
+  if (i < 0) return '';
+  const j = s.indexOf('>', i + 6);
+  if (j < 0) return '';
+  for (let k = s.indexOf('<', j + 1); k >= 0; k = s.indexOf('<', k + 1)) if (begintMet(s, k, '</title>')) return s.slice(j + 1, k);
+  return '';
+}
+const BLOK_WEG = ['script', 'style', 'noscript', 'template', 'svg', 'head'] as const;
+const BLOK_EINDE = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'tr', 'section', 'article', 'header', 'footer', 'blockquote', 'pre', 'table', 'ul', 'ol', 'dd', 'dt'] as const;
+/** `<br\s*\/?>` → regeleinde. */
+const brNaarRegel = (s: string): string => vervangTags(s, '\n', (i) => {
+  if (!begintMet(s, i + 1, 'br')) return -1;
+  let k = i + 3; while (k < s.length && isWit(s.charCodeAt(k))) k++;
+  if (s.charCodeAt(k) === 47) k++;
+  return s.charCodeAt(k) === 62 ? k + 1 : -1;
+});
+
+/** HTML → platte tekst: script/style/comments weg, blokelementen → regeleinde, entiteiten gedecodeerd. Lineair (zie hierboven). */
 export function htmlNaarTekst(html: string, max = MAX_TEKST_TEKENS): { tekst: string; titel: string } {
   const bron = html.slice(0, max * 8);
-  const titel = htmlDecode((bron.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-  let t = bron
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<(script|style|noscript|template|svg|head)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|h[1-6]|li|tr|section|article|header|footer|blockquote|pre|table|ul|ol|dd|dt)\s*>/gi, '\n')
-    .replace(/<(td|th)\b[^>]*>/gi, '\t')
-    .replace(/<[^>]+>/g, ' ');
+  const titel = htmlDecode(titelRuw(bron)).replace(/\s+/g, ' ').trim().slice(0, 300);
+  let t = zonderCommentaar(bron, ' ');
+  t = zonderBlokken(t, BLOK_WEG, ' ');
+  t = brNaarRegel(t);
+  t = sluitTags(t, BLOK_EINDE, '\n');
+  t = openTags(t, ['td', 'th'], '\t');
+  t = alleTags(t, ' ');
   t = htmlDecode(t).replace(/[ \t ]+/g, ' ').replace(/ *\n */g, '\n');
   return { tekst: schoon(t, max), titel };
 }
 
-function xmlNaarTekst(xml: string, max: number): string {
-  // Alleen tekstknopen; gebruikelijke alinea-/cel-/regelmarkeringen van OOXML en ODF worden witruimte.
-  let t = xml
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<w:tab\b[^>]*\/>|<text:tab\b[^>]*\/>/gi, '\t')
-    .replace(/<w:br\b[^>]*\/>|<text:line-break\b[^>]*\/>|<a:br\b[^>]*\/>/gi, '\n')
-    .replace(/<\/(w:p|text:p|text:h|a:p|table:table-row|row)\s*>/gi, '\n')
-    .replace(/<\/(w:tc|table:table-cell|c)\s*>/gi, '\t')
-    .replace(/<[^>]+>/g, '');
+/** OOXML/ODF-XML → tekst (alleen tekstknopen; alinea-/cel-/regelmarkeringen worden witruimte). Lineair, zoals htmlNaarTekst. */
+export function xmlNaarTekst(xml: string, max: number): string {
+  let t = zonderCommentaar(xml, ' ');
+  t = legeTags(t, ['w:tab', 'text:tab'], '\t');
+  t = legeTags(t, ['w:br', 'text:line-break', 'a:br'], '\n');
+  t = sluitTags(t, ['w:p', 'text:p', 'text:h', 'a:p', 'table:table-row', 'row'], '\n');
+  t = sluitTags(t, ['w:tc', 'table:table-cell', 'c'], '\t');
+  t = alleTags(t, '');
   t = t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Math.min(0x10ffff, Number(n)))).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(Math.min(0x10ffff, parseInt(n, 16)))).replace(/&amp;/g, '&');
-  return schoon(t.replace(/[ \t]+\n/g, '\n').replace(/\t{2,}/g, '\t'), max);
+  // `(?<![ \t])`: alleen vanaf het BEGIN van een reeks spaties/tabs proberen (lineair; zonder dit kwadratisch op een lange reeks).
+  return schoon(t.replace(/(?<![ \t])[ \t]+\n/g, '\n').replace(/\t{2,}/g, '\t'), max);
 }
 
 // ---------- CSV / JSON ----------
@@ -200,6 +330,154 @@ async function officeViaParser(bytes: Uint8Array, formaat: FormaatId, max: numbe
   const r = await ast.to('text', { includeImages: false });
   return schoon(typeof r?.value === 'string' ? r.value : '', max);
 }
+// ---------- XLSX (SEC-002 slot v, slot-toets 2) ----------
+// Vroeger met reguliere expressies: `<si>([\s\S]*?)<\/si>`, `<row\b[^>]*>([\s\S]*?)<\/row>`, `<c\b([^>]*)>([\s\S]*?)<\/c>` en
+// `<v>([\s\S]*?)<\/v>` lazen bij een ontbrekende sluittag vanaf ELKE open tag tot het einde (kwadratisch: 200 kB → ≈2 s, 2 MB →
+// ≈200 s), en `<sheet\b[^>]*\bname="…"[^>]*\br:id="…"` / `<Relationship\b…` waren nog erger (32 kB → 17 s): `[^>]*` probeert er elke
+// positie terug. Een xlsx van enkele kB (compressie tot 200×) hield zo de zoekwerker 60 s vast en de indexeerwachtrij stond stil.
+// Nu: elk patroon één lineaire doorloop met indexOf, met EXACT dezelfde treffers in dezelfde volgorde (bewijs: vergelijking met de
+// oude expressies op willekeurige en vijandige invoer in tests/eenheid/sec-002-slot-v-20261113.test.ts).
+// Розбір xlsx: замість регулярних виразів із квадратичним (і гіршим) часом — лінійні проходи з тим самим результатом.
+
+/** = `s.matchAll(/<si>([\s\S]*?)<\/si>/g)` → m[1]. Zonder «</si>» na een «<si>» komt er ook na een latere geen: stoppen. */
+export function* xlsxSi(s: string): Generator<string> {
+  for (let i = s.indexOf('<si>'); i >= 0;) {
+    const e = s.indexOf('</si>', i + 4);
+    if (e < 0) return;
+    yield s.slice(i + 4, e);
+    i = s.indexOf('<si>', e + 5);
+  }
+}
+/**
+ * = `s.matchAll(/<naam\b([^>]*)>([\s\S]*?)<\/naam>/g)` → [m[1], m[2]] (naam = 'row' of 'c'). De open tag eindigt bij de eerste «>»;
+ * de inhoud bij de eerste «</naam>» daarna. Ontbreekt een van beide, dan ontbreekt hij ook voor elke latere start (die «>» ligt
+ * nooit vroeger): stoppen in plaats van opnieuw tot het einde te zoeken.
+ */
+export function* xlsxBlokken(s: string, naam: string): Generator<[string, string]> {
+  const open = `<${naam}`, sluit = `</${naam}>`;
+  for (let i = s.indexOf(open); i >= 0;) {
+    const a0 = i + open.length;
+    if (a0 < s.length && isWoordteken(s.charCodeAt(a0))) { i = s.indexOf(open, i + 1); continue; } // \b
+    const j = s.indexOf('>', a0);
+    if (j < 0) return;
+    const e = s.indexOf(sluit, j + 1);
+    if (e < 0) return;
+    yield [s.slice(a0, j), s.slice(j + 1, e)];
+    i = s.indexOf(open, e + sluit.length);
+  }
+}
+/** = `(s.match(/<v>([\s\S]*?)<\/v>/) || [])[1]`: alleen de eerste «<v>» kan slagen (heeft die geen «</v>», een latere ook niet). */
+export function xlsxV(s: string): string | undefined {
+  const k = s.indexOf('<v>');
+  if (k < 0) return undefined;
+  const e = s.indexOf('</v>', k + 3);
+  return e < 0 ? undefined : s.slice(k + 3, e);
+}
+/** = `(s.match(/\bt="([^"]*)"/) || [])[1]`. Heeft de eerste geldige «t="» geen afsluitend «"», dan bestaat er geen latere «t="». */
+export function xlsxT(s: string): string | undefined {
+  for (let k = s.indexOf('t="'); k >= 0; k = s.indexOf('t="', k + 1)) {
+    if (k > 0 && isWoordteken(s.charCodeAt(k - 1))) continue; // \b vóór «t»
+    const q = s.indexOf('"', k + 3);
+    return q < 0 ? undefined : s.slice(k + 3, q);
+  }
+  return undefined;
+}
+/**
+ * = `s.matchAll(/<tag\b[^>]*\ba="([^"]*)"[^>]*\bb="([^"]*)"/g)` → [m[1], m[2]] (sheet/name/r:id en Relationship/Id/Target).
+ * Zo zoekt de expressie: `[^>]*` reikt tot de eerste «>» (of het einde) en geeft dan positie per positie terug, dus de LAATSTE «a="»
+ * in dat stuk eerst; de waarde loopt tot de eerste «"» (ook over «>» heen); daarna weer de LAATSTE «b="» tot de volgende «>» waarvan
+ * de waarde een afsluitend «"» heeft. Lineair gemaakt per «groep» (het stuk tekst tot een «>»), één keer opgebouwd en onthouden:
+ *  - alleen de laatste «a="» van een groep kan een waarde hebben die voorbij de «>» loopt; voor elke vroegere ligt de eerste «"» vóór
+ *    de «>» (het «"» van de volgende «a="»), dus zoekt die «b="» in dezelfde groep — en de beste is dan altijd de laatste geldige;
+ *  - de eerste «"» na een «a="» schuift mee op met de positie, dus «welke vroegere «a="» heeft zijn waarde vóór de laatste «b="»» is
+ *    één grens per groep.
+ * Elke start kost zo O(log n); elk stuk tekst wordt een vast aantal keren doorzocht.
+ */
+export function* xlsxTagMetTweeAttributen(s: string, tag: string, a: string, b: string): Generator<[string, string]> {
+  const open = `<${tag}`, A = `${a}="`, B = `${b}="`, n = s.length;
+  const laatsteQ = s.lastIndexOf('"');
+  type Groep = { p: number[]; q1: number[]; r: number[]; jSter: number; pmax?: number };
+  const groepen = new Map<number, Groep>();
+  const gtVan = new Map<number, number>();
+  const gtNa = (x: number): number => { let g = gtVan.get(x); if (g === undefined) { const k = s.indexOf('>', x); g = k < 0 ? n : k; gtVan.set(x, g); } return g; };
+  const geldigVoor = (k: number) => k === 0 || !isWoordteken(s.charCodeAt(k - 1)); // \b vóór een woordteken
+  const groep = (g: number): Groep => {
+    const oud = groepen.get(g); if (oud) return oud;
+    const begin = g === 0 ? 0 : s.lastIndexOf('>', g - 1) + 1;
+    const stuk = s.slice(begin, g);
+    const p: number[] = [], q1: number[] = [], r: number[] = [];
+    for (let k = stuk.indexOf(A); k >= 0; k = stuk.indexOf(A, k + 1)) if (geldigVoor(begin + k)) { p.push(begin + k); const q = s.indexOf('"', begin + k + A.length); q1.push(q); }
+    for (let k = stuk.indexOf(B); k >= 0; k = stuk.indexOf(B, k + 1)) if (geldigVoor(begin + k) && begin + k + B.length <= laatsteQ) r.push(begin + k);
+    const rMax = r.length ? r[r.length - 1] : -1;
+    let jSter = -1;
+    for (let j = p.length - 2; j >= 0; j--) if (q1[j] >= 0 && q1[j] < rMax) { jSter = j; break; }
+    const nieuw: Groep = { p, q1, r, jSter };
+    groepen.set(g, nieuw);
+    return nieuw;
+  };
+  /** De «b="» voor de laatste «a="» van groep g (of -1). */
+  const voorLaatste = (gr: Groep, g: number): number => {
+    if (gr.pmax !== undefined) return gr.pmax;
+    const q = gr.q1[gr.q1.length - 1];
+    let rr = -1;
+    if (q >= 0 && q < g) { const m = gr.r.length ? gr.r[gr.r.length - 1] : -1; rr = m > q ? m : -1; }
+    else if (q >= g) { const g2 = gtNa(q + 1); const gr2 = groep(g2); const m = gr2.r.length ? gr2.r[gr2.r.length - 1] : -1; rr = m >= q + 1 ? m : -1; }
+    gr.pmax = rr;
+    return rr;
+  };
+  const eersteVanaf = (lijst: number[], x: number) => { let lo = 0, hi = lijst.length; while (lo < hi) { const m = (lo + hi) >> 1; if (lijst[m] < x) lo = m + 1; else hi = m; } return lo; };
+  for (let i = s.indexOf(open); i >= 0;) {
+    const a0 = i + open.length;
+    let pi = -1, rr = -1;
+    if (!(a0 < n && isWoordteken(s.charCodeAt(a0)))) { // \b na de tagnaam
+      const g = gtNa(a0);
+      const gr = groep(g);
+      const k = eersteVanaf(gr.p, a0);
+      if (k < gr.p.length) {
+        const r1 = voorLaatste(gr, g);
+        if (r1 >= 0) { pi = gr.p.length - 1; rr = r1; }
+        else if (gr.jSter >= k) { pi = gr.jSter; rr = gr.r[gr.r.length - 1]; }
+      }
+      if (pi >= 0) {
+        const q2 = s.indexOf('"', rr + B.length);
+        yield [s.slice(gr.p[pi] + A.length, gr.q1[pi]), s.slice(rr + B.length, q2)];
+        i = s.indexOf(open, q2 + 1);
+        continue;
+      }
+    }
+    i = s.indexOf(open, i + 1);
+  }
+}
+/** xlsx → tekst per werkblad (gedeelde tekenreeksen, werkbladnamen via workbook.xml + relaties, anders sheetN.xml). */
+export function xlsxUitXml(xml: (pad: string) => string, paden: readonly string[], max: number): { tekst: string; paginas: Pagina[] } {
+  const bestaat = new Set(paden);
+  const sst: string[] = [];
+  for (const si of xlsxSi(xml('xl/sharedStrings.xml'))) sst.push(xmlNaarTekst(si, 10_000).replace(/\n/g, ' '));
+  const namen = [...xlsxTagMetTweeAttributen(xml('xl/workbook.xml'), 'sheet', 'name', 'r:id')].map(([naam, rid]) => ({ naam, rid }));
+  const relMap = new Map([...xlsxTagMetTweeAttributen(xml('xl/_rels/workbook.xml.rels'), 'Relationship', 'Id', 'Target')].map(([id, doel]) => [id, doel.replace(/^\/?(xl\/)?/, '')]));
+  const bladen = paden.filter((p) => /^xl\/worksheets\/sheet\d+\.xml$/.test(p)).sort();
+  const paginas: Pagina[] = []; let i = 0;
+  const lees = (pad: string, titel: string) => {
+    const rijen: string[] = [];
+    for (const [, rij] of xlsxBlokken(xml(pad), 'row')) {
+      const cellen: string[] = [];
+      for (const [attr, inhoud] of xlsxBlokken(rij, 'c')) {
+        const t = xlsxT(attr) || '';
+        const v = xlsxV(inhoud);
+        if (t === 's' && v !== undefined) cellen.push(sst[Number(v)] ?? '');
+        else if (t === 'inlineStr') cellen.push(xmlNaarTekst(inhoud, 10_000).replace(/\n/g, ' '));
+        else if (v !== undefined) cellen.push(xmlNaarTekst(v, 1000));
+      }
+      if (cellen.some((x) => x.trim())) rijen.push(cellen.join('\t'));
+      if (rijen.length >= 20_000) break;
+    }
+    paginas.push({ nr: ++i, tekst: schoon(`${titel}\n${rijen.join('\n')}`, max) });
+  };
+  if (namen.length) for (const n of namen) { const doel = relMap.get(n.rid); if (doel && bestaat.has(`xl/${doel}`)) lees(`xl/${doel}`, n.naam); }
+  else for (const b of bladen) lees(b, b.replace(/^xl\/worksheets\//, '').replace(/\.xml$/, ''));
+  return { tekst: schoon(paginas.map((p) => p.tekst).join('\n\n'), max), paginas };
+}
+
 /** Eigen minimale lezer (fflate + XML-strip), alleen tekst, zonder DTD-verwerking. Ook per werkblad voor xlsx. */
 function officeEigen(bytes: Uint8Array, formaat: FormaatId, max: number, naam: string): { tekst: string; paginas?: Pagina[] } {
   const a = archiefUitpakken(bytes, naam || 'office.zip', { ...ARCHIEF_GRENZEN_STANDAARD, maxDiepte: 1, maxTotaalBytes: 64 * 1024 * 1024, maxBestanden: 3000 });
@@ -212,33 +490,7 @@ function officeEigen(bytes: Uint8Array, formaat: FormaatId, max: number, naam: s
     const paginas = dia.map((p, i) => ({ nr: i + 1, tekst: xmlNaarTekst(xml(p), max) }));
     return { tekst: schoon(paginas.map((p) => p.tekst).join('\n\n'), max), paginas };
   }
-  if (formaat === 'xlsx') {
-    const sst: string[] = []; const sstXml = xml('xl/sharedStrings.xml');
-    for (const m of sstXml.matchAll(/<si>([\s\S]*?)<\/si>/g)) sst.push(xmlNaarTekst(m[1], 10_000).replace(/\n/g, ' '));
-    const wb = xml('xl/workbook.xml'); const namen = [...wb.matchAll(/<sheet\b[^>]*\bname="([^"]*)"[^>]*\br:id="([^"]*)"/g)].map((m) => ({ naam: m[1], rid: m[2] }));
-    const rels = xml('xl/_rels/workbook.xml.rels'); const relMap = new Map([...rels.matchAll(/<Relationship\b[^>]*\bId="([^"]*)"[^>]*\bTarget="([^"]*)"/g)].map((m) => [m[1], m[2].replace(/^\/?(xl\/)?/, '')]));
-    const bladen = [...map.keys()].filter((p) => /^xl\/worksheets\/sheet\d+\.xml$/.test(p)).sort();
-    const paginas: Pagina[] = []; let i = 0;
-    const lees = (pad: string, titel: string) => {
-      const s = xml(pad); const rijen: string[] = [];
-      for (const rij of s.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
-        const cellen: string[] = [];
-        for (const c of rij[1].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
-          const t = (c[1].match(/\bt="([^"]*)"/) || [])[1] || '';
-          const v = (c[2].match(/<v>([\s\S]*?)<\/v>/) || [])[1];
-          if (t === 's' && v !== undefined) cellen.push(sst[Number(v)] ?? '');
-          else if (t === 'inlineStr') cellen.push(xmlNaarTekst(c[2], 10_000).replace(/\n/g, ' '));
-          else if (v !== undefined) cellen.push(xmlNaarTekst(v, 1000));
-        }
-        if (cellen.some((x) => x.trim())) rijen.push(cellen.join('\t'));
-        if (rijen.length >= 20_000) break;
-      }
-      paginas.push({ nr: ++i, tekst: schoon(`${titel}\n${rijen.join('\n')}`, max) });
-    };
-    if (namen.length) for (const n of namen) { const doel = relMap.get(n.rid); if (doel && map.has(`xl/${doel}`)) lees(`xl/${doel}`, n.naam); }
-    else for (const b of bladen) lees(b, b.replace(/^xl\/worksheets\//, '').replace(/\.xml$/, ''));
-    return { tekst: schoon(paginas.map((p) => p.tekst).join('\n\n'), max), paginas };
-  }
+  if (formaat === 'xlsx') return xlsxUitXml(xml, [...map.keys()], max);
   // ODF: alles staat in content.xml
   return { tekst: xmlNaarTekst(xml('content.xml'), max) };
 }

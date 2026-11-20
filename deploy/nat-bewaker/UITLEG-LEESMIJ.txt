@@ -1,0 +1,77 @@
+UITLEG-LEESMIJ.txt - deploy\nat-bewaker\  (NAT-001)
+(Спочатку українською, далі нідерландською / Eerst Oekraïens, daarna Nederlands)
+У цьому файлі НЕМАЄ жодних секретів. / Dit bestand bevat GEEN geheimen.
+
+==============================================================================
+УКРАЇНСЬКА
+==============================================================================
+
+НАВІЩО
+- Сайт працює у віртуальній машині Hyper-V, яка виходить в інтернет через «міст»
+  Windows (NAT, стандартно 'mijn-ruimte-nat', 10.77.0.0/24).
+- Після аварійного вимкнення ПК (16.11.2026) міст запустився раніше, ніж Wi-Fi
+  отримав адресу, і лишився без зовнішньої адреси. У віртуальної машини зник
+  інтернет, cloudflared не міг з'єднатися з Cloudflare, сайт показував помилку 1033.
+- Ручне лікування (PowerShell від імені адміністратора):
+      net stop winnat
+      net start winnat
+  Увага: 'Restart-Service winnat' НЕ працює, бо winnat - це драйвер ядра.
+
+ЩО РОБИТЬ СТОРОЖ
+- nat-bewaker.ps1 через 1 хвилину після старту ПК і далі кожні 5 хвилин перевіряє,
+  чи має міст адресу основної мережі ПК (Wi-Fi або кабель). Це частки секунди.
+- Якщо все гаразд, нічого не робить і нічого не пише.
+- Якщо адреси немає, перезапускає winnat (не частіше ніж раз на 10 хвилин)
+  і записує це в журнал logboek\nat-bewaker.log поруч зі скриптом.
+- Налаштувань мосту, віртуальної машини чи тунелю не змінює.
+
+ВСТАНОВЛЕННЯ (один раз, на ПК з віртуальною машиною)
+1. Скопіюйте теку nat-bewaker на свій робочий диск.
+2. Відкрийте PowerShell через «Запуск від імені адміністратора».
+3. powershell -ExecutionPolicy Bypass -File <тека>\installeer-nat-bewaker.ps1
+   Інша назва мосту: додайте -NatNaam <назва>. Інша тека журналу: -LogMap <тека>.
+4. Має з'явитися «Taak ... is geregistreerd» і «resultaat 0».
+
+ПЕРЕВІРКА БЕЗ ЗМІН
+- powershell -ExecutionPolicy Bypass -File nat-bewaker.ps1 -AlleenControle
+  (лише записує в журнал стан OK або PROBLEEM, нічого не перезапускає).
+
+ВИДАЛЕННЯ
+- Unregister-ScheduledTask -TaskName 'Mijn Ruimte - NAT-bewaker' -Confirm:$false
+
+==============================================================================
+NEDERLANDS
+==============================================================================
+
+WAAROM
+- De site draait in een Hyper-V-VM die via de Windows-NAT internet krijgt
+  (standaard 'mijn-ruimte-nat', 10.77.0.0/24).
+- Na een onverwachte uitschakeling van de pc (16-11-2026) startte de NAT voordat
+  Wi-Fi een adres had en bleef zonder extern adres. De VM had geen internet,
+  cloudflared kon Cloudflare niet bereiken en de site gaf fout 1033.
+- Handmatig herstel (PowerShell als administrator):
+      net stop winnat
+      net start winnat
+  Let op: 'Restart-Service winnat' werkt NIET, winnat is een kernel-driver.
+
+WAT DE BEWAKER DOET
+- nat-bewaker.ps1 controleert 1 minuut na het opstarten en daarna elke 5 minuten
+  of de NAT het adres van het hoofdnetwerk (Wi-Fi of kabel) heeft. Kost een fractie
+  van een seconde.
+- Alles in orde: niets doen, niets loggen.
+- Adres ontbreekt: winnat herstarten (hoogstens eens per 10 minuten) en dat loggen
+  in logboek\nat-bewaker.log naast het script.
+- Wijzigt geen instellingen van NAT, VM of tunnel.
+
+INSTALLEREN (eenmalig, op de pc met de VM)
+1. Kopieer de map nat-bewaker naar je werkschijf.
+2. Open PowerShell met "Als administrator uitvoeren".
+3. powershell -ExecutionPolicy Bypass -File <map>\installeer-nat-bewaker.ps1
+   Andere NAT-naam: -NatNaam <naam>. Andere logmap: -LogMap <map>.
+4. Je ziet "Taak ... is geregistreerd" en "resultaat 0".
+
+CONTROLE ZONDER WIJZIGINGEN
+- powershell -ExecutionPolicy Bypass -File nat-bewaker.ps1 -AlleenControle
+
+VERWIJDEREN
+- Unregister-ScheduledTask -TaskName 'Mijn Ruimte - NAT-bewaker' -Confirm:$false

@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.14",
-  "bijgewerkt": "2026-11-07",
+  "regelsVersie": "1.4.17",
+  "bijgewerkt": "2026-11-18",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",
@@ -139,7 +139,7 @@
   },
   "compactContext": {
     "bestand": "orchestratie/CONTEXT-COMPACT.md",
-    "maxBytes": 12000,
+    "maxBytes": 14000,
     "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + латку від basisCommit; повертає латку/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
   },
   "site": {
@@ -258,6 +258,67 @@
       "adapter": ".cursorrules"
     }
   ],
+  "start": {
+    "opdracht": "node scripts/orch.mjs begin --agent <id> [--taak <ID>] [--onderwerp <naam>] [--tekst \"<завдання>\"]",
+    "automatisch": [
+      {
+        "agent": "claude",
+        "bestand": ".claude/settings.json",
+        "gebeurtenis": "SessionStart",
+        "opdracht": "node scripts/orch.mjs begin --agent claude --kort"
+      }
+    ],
+    "toelichting": "BIJDRAGE-001: єдина точка входу для кожного агента на старті сеансу. Сама перевіряє правила, показує навички й завантажує їх у теку агента, показує досьє функції (уся історія напрацювань), хто над нею працював і хто працює паралельно. Нічого в git не змінює. Агентам без автоматичного запуску (Gemini, Antigravity, Codex, Cursor, Copilot, ChatGPT, Grok, AutoClaw) це перший крок §2 AGENTS.md."
+  },
+  "bijdragen": {
+    "map": "orchestratie/bijdragen",
+    "bestand": "orchestratie/bijdragen/<TAAK-ID>/<РРРРММДД-ГГХХСС>-<виконавець>.json",
+    "verplichtBijOverdracht": true,
+    "alleenAanvullen": true,
+    "soorten": [
+      "begin",
+      "nieuw",
+      "herwerkt",
+      "afgerond",
+      "overname",
+      "samenvoeging",
+      "herstel",
+      "controle",
+      "correctie"
+    ],
+    "vereistVoorganger": [
+      "herwerkt",
+      "afgerond",
+      "overname",
+      "herstel",
+      "correctie",
+      "samenvoeging"
+    ],
+    "modelBronnen": [
+      "omgeving",
+      "auteur",
+      "eigenaar"
+    ],
+    "toelichting": "BIJDRAGE-001: облік авторства. Кожен внесок — окремий файл: людина, яка доручила чи вела роботу, агент, платформа й конкретна модель, вид внеску, що зроблено, чому (обов’язково для переробки, доробки й перейняття) і на чиїй роботі побудовано. Файли не редагують і не видаляють (перевірка behoud), тож злиття їх не губить. Пакет випуску бере всі нові записи у BIJDRAGEN.json і в UITROL-MANIFEST.json → bijdragen, а сторінка оновлень показує «Хто що зробив»."
+  },
+  "onderwerpen": {
+    "map": "orchestratie/onderwerpen",
+    "toelichting": "BIJDRAGE-001: досьє функції — одне місце, де зібрано всі задачі, гілки, запити на злиття, можливості з походженням і станом (actief, in-ontwikkeling, verloren, vervangen, ingetrokken), зауваження власника (що саме і що лишається) та відкриті питання. Можливості й записи роботи не видаляють; утрачене позначають «verloren» і повертають. Агент, що змінює файли з поля paden, доповнює досьє."
+  },
+  "vaardigheden": {
+    "bron": ".agents/skills",
+    "catalogus": "scripts/vaardigheden/catalogus.json",
+    "kiezen": "node scripts/vaardigheden/kies.mjs \"<завдання>\"",
+    "valideren": "node scripts/vaardigheden/valideer.mjs",
+    "takPatroon": "^(feature|fix)/vaardigheid-[a-z0-9]+(-[a-z0-9]+)*-[0-9]{8}-[0-9]{6}$",
+    "spiegels": [
+      {
+        "agent": "claude",
+        "map": ".claude/skills"
+      }
+    ],
+    "toelichting": "BIJDRAGE-001: одне джерело навичок для всіх агентів. Нова чи вдосконалена навичка — у .agents/skills/<назва>/ з записом у каталозі (версія, можливості з незмінними id, підтримка агентами) на окремій гілці feature/vaardigheid-<назва>-<час>, далі в спільний випуск. Навички й можливості не видаляють: якщо агент не підтримує опцію, це позначають у agenten. Агенти з власною текою навичок отримують дзеркало автоматично (orch begin / vaardigheden-spiegel); дзеркало не потрапляє в git."
+  },
   "kritiek": {
     "toelichting": "Зміна будь-якого поля в цьому розділі змінює kritiekHash і вимагає нового незалежного підтвердження власника: підпис SSH ed25519 (namespace mijn-ruimte-regels, orch bevestig) або passkey на сайті (рішення orch-regels, запис у root-журналі). Без підтвердження критичні політики діють лише як пропозиція.",
     "installatieModi": {
@@ -293,5 +354,23 @@
   "geinstalleerd": {
     "bestand": "orchestratie/geinstalleerd.json",
     "toelichting": "Факт установки (versie, bronCommit, bron: installer|eigenaar). Пише інсталятор/власник, не агент; з нього виводиться статус installed."
+  },
+  "verwijzingen": {
+    "map": "orchestratie/verwijzingen",
+    "bestand": "orchestratie/verwijzingen/<pr|tak>-<id>/<РРРРММДД-ГГХХСС>-<подія>.json",
+    "alleenAanvullen": true,
+    "gebeurtenissen": [
+      "verwijderd",
+      "gesloten",
+      "samengevoegd",
+      "hersteld",
+      "beschrijving"
+    ],
+    "verplichtVoor": [
+      "tak verwijderen",
+      "запит закрити без злиття"
+    ],
+    "manifestVeld": "verwijzingen",
+    "toelichting": "VERWIJZING-001: на сторінці оновлень кожна гілка, запит, міграція й задача мають людську назву, підсумок і стан замість голого номера. Перед видаленням гілки чи закриттям запиту без злиття агент записує подію (хто, чому, останній коміт, куди ввійшло): node scripts/orch.mjs verwijzing. Збирання випуску попереджає про гілку, що зникла без запису (VERWIJZING_ONVERKLAARD)."
   }
 }

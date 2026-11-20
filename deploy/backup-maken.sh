@@ -37,6 +37,75 @@ umask 027
 # Audit-fix 4: na env-splitsen staat DATABASE_URL niet meer in geheimen.env; de systeemrol volstaat.
 DUMP_URL="${DATABASE_URL_SYSTEM:-${DATABASE_URL:-}}"
 [ -n "$DUMP_URL" ] || { echo "[backup] DATABASE_URL_SYSTEM ontbreekt (EnvironmentFile /etc/mijn-ruimte/geheimen.env)" >&2; exit 1; }
+
+# SEC-002 (server-uitrol-07): de verbindings-URL bevat het wachtwoord van de systeemrol (BYPASSRLS). Als ARGUMENT van pg_dump/psql
+# stond ze minutenlang in de proceslijst: /proc/<pid>/cmdline is voor elke lokale gebruiker leesbaar (ook via `ps`, dat op de server
+# als toestel een toegestane leesopdracht is). Daarom wordt de URL hier ontleed en gaat ze als PG*-omgevingsvariabelen naar libpq:
+# de omgeving van een proces is alleen voor dezelfde gebruiker en root leesbaar. pg_dump en psql krijgen GEEN verbindingsreeks meer
+# als argument. De ontleding volgt libpq (conninfo_uri_parse_options): gebruikersdeel tot de eerste '@' vóór de eerste '/',
+# %XX-codering, host(s) met optionele poort (ook [IPv6]), databasenaam en bekende ?sleutel=waarde-parameters. Een onbekende
+# parameter of een ander formaat → weigeren (zoals libpq zelf deed), nooit de URL of het wachtwoord in een melding.
+pct_ontcijfer() {
+  local s="$1" fout_re='%([^0-9A-Fa-f]|[0-9A-Fa-f]([^0-9A-Fa-f]|$)|$)'
+  if [[ "$s" =~ $fout_re ]] || [[ "$s" == *%00* ]]; then return 1; fi
+  s="${s//\\/\\\\}"
+  printf '%b' "${s//%/\\x}"
+}
+zet_pg_omgeving() {
+  local rest voor_schuin wie="" gezag hosts="" poorten="" heeft_poort=0 g h p w paar sleutel waarde var
+  local -a lijst paren
+  local re_url='^postgres(ql)?://(.*)$' re_v6='^\[([0-9A-Fa-f:.%]+)\](:([0-9]*))?$' re_host='^([^:]*)(:([0-9]*))?$'
+  [[ "$1" =~ $re_url ]] || return 1
+  rest="${BASH_REMATCH[2]}"
+  voor_schuin="${rest%%/*}"
+  if [[ "$voor_schuin" == *@* ]]; then wie="${rest%%@*}"; rest="${rest#*@}"; fi
+  gezag="${rest%%[/?]*}"; rest="${rest:${#gezag}}"
+  if [ -n "$wie" ]; then
+    w="$(pct_ontcijfer "${wie%%:*}")" || return 1
+    [ -n "$w" ] && export PGUSER="$w"
+    if [[ "$wie" == *:* ]]; then w="$(pct_ontcijfer "${wie#*:}")" || return 1; export PGPASSWORD="$w"; fi
+  fi
+  if [ -n "$gezag" ]; then
+    IFS=',' read -r -a lijst <<< "$gezag"
+    for g in "${lijst[@]}"; do
+      if [[ "$g" =~ $re_v6 ]]; then h="${BASH_REMATCH[1]}"; p="${BASH_REMATCH[3]}"
+      elif [[ "$g" =~ $re_host ]]; then p="${BASH_REMATCH[3]}"; h="$(pct_ontcijfer "${BASH_REMATCH[1]}")" || return 1
+      else return 1; fi
+      [ -n "$p" ] && heeft_poort=1
+      hosts="${hosts:+$hosts,}$h"; poorten="${poorten:+$poorten,}$p"
+    done
+    [ -n "${hosts//,/}" ] && export PGHOST="$hosts"
+    [ "$heeft_poort" = 1 ] && export PGPORT="$poorten"
+  fi
+  if [[ "$rest" == /* ]]; then
+    w="${rest#/}"; w="${w%%\?*}"
+    if [ -n "$w" ]; then w="$(pct_ontcijfer "$w")" || return 1; export PGDATABASE="$w"; fi
+  fi
+  if [[ "$rest" == *\?* ]]; then
+    IFS='&' read -r -a paren <<< "${rest#*\?}"
+    for paar in "${paren[@]}"; do
+      [ -n "$paar" ] || continue
+      [[ "$paar" == *=* ]] || return 1
+      sleutel="$(pct_ontcijfer "${paar%%=*}")" || return 1
+      waarde="$(pct_ontcijfer "${paar#*=}")" || return 1
+      case "$sleutel" in
+        host) var=PGHOST ;; port) var=PGPORT ;; dbname) var=PGDATABASE ;; user) var=PGUSER ;; password) var=PGPASSWORD ;;
+        sslmode) var=PGSSLMODE ;; sslrootcert) var=PGSSLROOTCERT ;; sslcert) var=PGSSLCERT ;; sslkey) var=PGSSLKEY ;; sslcrl) var=PGSSLCRL ;;
+        sslnegotiation) var=PGSSLNEGOTIATION ;; channel_binding) var=PGCHANNELBINDING ;; gssencmode) var=PGGSSENCMODE ;; require_auth) var=PGREQUIREAUTH ;;
+        application_name) var=PGAPPNAME ;; connect_timeout) var=PGCONNECT_TIMEOUT ;; options) var=PGOPTIONS ;; client_encoding) var=PGCLIENTENCODING ;;
+        target_session_attrs) var=PGTARGETSESSIONATTRS ;; passfile) var=PGPASSFILE ;; service) var=PGSERVICE ;;
+        # libpq (JDBC-compatibel): ssl=true betekent sslmode=require.
+        ssl) [ "$waarde" = true ] || return 1; var=PGSSLMODE; waarde=require ;;
+        *) return 1 ;;
+      esac
+      export "$var=$waarde"
+    done
+  fi
+  return 0
+}
+zet_pg_omgeving "$DUMP_URL" || { echo "[backup] DATABASE_URL_SYSTEM heeft een onverwacht formaat (verwacht: postgres://gebruiker:wachtwoord@host:poort/database); de waarde wordt hier bewust niet getoond" >&2; exit 1; }
+unset DUMP_URL
+
 UPLOADS_DIR="${UPLOADS_DIR:-/srv/data/uploads}"
 BACKUP_DIR="${BACKUP_DIR:-/srv/backups/mijn-ruimte}"
 BEWAAR_DAGEN="${BACKUP_BEWAAR_DAGEN:-7}"
@@ -61,7 +130,8 @@ mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' ERR
 
 echo "[backup] database dumpen…"
-pg_dump --dbname="$DUMP_URL" --format=custom --compress=6 --no-owner --no-privileges | schrijf "$tmp/database.dump$ext"
+# Verbinding via de PG*-omgeving (zet_pg_omgeving hierboven): geen URL met wachtwoord in de argumenten.
+pg_dump --format=custom --compress=6 --no-owner --no-privileges | schrijf "$tmp/database.dump$ext"
 
 echo "[backup] uploads archiveren…"
 if [ -d "$UPLOADS_DIR" ]; then
@@ -107,7 +177,7 @@ else
   tar --create --gzip --file=- --files-from=/dev/null | schrijf "$tmp/systeem.tar.gz$ext"
 fi
 
-migraties="$(psql "$DUMP_URL" -Atc "select string_agg(version, ',' order by version) from app.schema_migrations" 2>/dev/null || echo onbekend)"
+migraties="$(psql -Atc "select string_agg(version, ',' order by version) from app.schema_migrations" 2>/dev/null || echo onbekend)"
 {
   echo "tijdstip=$(date --iso-8601=seconds)"
   echo "release=$release"

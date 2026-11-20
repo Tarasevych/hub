@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "GITHUB-012",
+  "agent": "gemini",
+  "tak": "fix/github-012-mobiele-weergave-20261112-041500",
+  "basisCommit": "f2626def3d793e9170f4a6b36a616072f95c829f",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-12T04:16:16.786Z",
+  "bijgewerkt": "2026-11-12T04:16:16.789Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

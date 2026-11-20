@@ -80,7 +80,7 @@ details[open]>summary .ut-vr-pijl{transform:rotate(180deg)}
 .ut-vr-ln[data-niveau="waarschuwing"] .ut-vr-tx{color:#f3d27a}
 
 /* вікно звіту */
-.ut-vr-scrim{position:fixed;inset:0;z-index:60;background:rgba(10,16,22,.5);display:grid;place-items:start center;padding:6vh 12px 12px;overflow:auto}
+.ut-vr-scrim{position:fixed;inset:0;z-index:950;background:rgba(10,16,22,.5);display:grid;place-items:start center;padding:6vh 12px 12px;overflow:auto}
 .ut-vr-modal{width:min(760px,100%);background:var(--ut-bg);color:var(--ut-text);border:1px solid var(--ut-line);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.3);overflow:hidden;display:grid}
 .ut-vr-modal svg{width:16px;height:16px;flex:none}
 .ut-vr-modal>header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--ut-line)}

@@ -11,13 +11,22 @@
 // ernaast.
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import {
-  databaseMerk, eigenMerk, laadMerken, laadOfficieel, merkDef, merkDomein, merkHelderheid, merkKleuren, merkKleurStijl, merkLaag, merkSleutel,
-  merkTint, merkVulling, monogram, officieelMerk, opMerken,
+  databaseMerk, eigenMerk, gebruikerMerk, laadMerken, laadOfficieel, merkDef, merkDomein, merkHelderheid, merkKleuren, merkKleurStijl, merkLaag, merkSleutel,
+  merkLaagZonderGebruiker, merkTint, merkVulling, monogram, officieelGeladen, officieelMerk, opMerken, registreerDirecteMerken,
   type MerkDef,
 } from './merk-register';
 import { eigenMerkenOphalen } from './merk-eigen-laden';
+import { gebruikerMerkenOphalen } from './merk-gebruiker-laden';
+import { MERK_DIRECT } from '../../shared/merk-direct';
 import { merkBeeldVragen } from './merk-beeld-laden';
+import { OFFICIEEL_SLEUTELS } from './officieel-sleutels';
+import MerkPlaats from './MerkPlaats';
+import { isPlaatsSleutel } from '../../shared/plaats-teken';
 import './merk.css';
+
+// REESTR-LOGO-001: de logo's van het eerste scherm (Google, Telegram) staan al in de hoofdbundel (shared/merk-direct.ts, ook door
+// de aanmeldknop gebruikt): meteen registreren, zodat er geen monogram «flitst» vóór de luie tabel binnen is.
+registreerDirecteMerken(MERK_DIRECT);
 
 /** tegel = afgerond vlak met het logo erin · rond = zelfde, maar rond · gliefje = alleen de vorm, zonder vlak. */
 export type MerkVormSoort = 'tegel' | 'rond' | 'gliefje';
@@ -37,32 +46,50 @@ export type MerkProps = {
   className?: string;
   /** Wat er staat zolang (of zolang als) het merk onbekend is; weg = een monogram. */
   terugval?: ReactNode;
+  /** REESTR-LOGO-001: het SYSTEEMlogo tonen, ook als de gebruiker een eigen logo koos (vergelijking «було / стало» in Мої логотипи). */
+  zonderGebruiker?: boolean;
+  /** PLAATS-TEKENS-001: keten van plaatstekens (stad → regio → land); het eerste dat bestaat wint. */
+  keten?: string[];
 };
 
 /** Hoeveel van het vlak het gliefje inneemt (de rest is lucht rond het logo). */
 const INZET = 0.64;
 
-export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, className, terugval }: MerkProps) {
+export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, className, terugval, zonderGebruiker, keten }: MerkProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const [, hertel] = useState(0);
   const gevonden = def ?? merkDef(merk);
   // Het OFFICIËLE bestand dat de beheerder zelf neerlegde (src/merk/merk-register.ts → eigenMerk) gaat vóór elke ingebouwde vorm.
   const sleutel = merkSleutel(merk) || merkSleutel(def?.naam);
-  const eigen = sleutel ? eigenMerk(sleutel) : null;
+  // REESTR-LOGO-001: het bestand dat DEZE gebruiker zelf koos gaat vóór alles (ook vóór dat van de beheerder), tot hij het wist.
+  const vanGebruiker = !!(sleutel && !zonderGebruiker && gebruikerMerk(sleutel));
+  const eigen = sleutel ? ((vanGebruiker ? gebruikerMerk(sleutel) : null) ?? eigenMerk(sleutel)) : null;
+  // PLAATS-TEKENS-001: land-/regio-/stad-sleutels zijn bestanden (vlag, wapen), geen merk uit de tabel — eigen weg, zonder de luie tabel.
+  const plaats = !eigen && (isPlaatsSleutel(sleutel) || (!!keten?.length && (!sleutel || keten.every(isPlaatsSleutel))));
 
   // Nog niet bekend? Haal de tabel op en teken opnieuw zodra ze binnen is. De eigen logo's: één keer per sessie, ook als het
   // merk al bekend is (een eigen bestand vervangt dan de ingebouwde vorm of de neutrale plaat).
   useEffect(() => {
+    if (plaats) return undefined;
     const af = opMerken(() => hertel((n) => n + 1));
     eigenMerkenOphalen();
+    gebruikerMerkenOphalen();
     if (!gevonden) void laadMerken();
     // Geen vorm met herkomst (neutrale plaat) of nog onbekend: eerst het OFFICIËLE logo uit de ingebouwde basis; is dat er niet,
     // dan vraagt de site het logo uit de merkendatabase van de eigen server (die het van de website/BIMI van het domein haalde).
     if (sleutel && (!gevonden || gevonden.neutraal)) {
       void laadOfficieel().then(() => { const d = merkDomein(sleutel); if (d && !officieelMerk(sleutel) && !eigenMerk(sleutel)) merkBeeldVragen(d); });
     }
+    // Merk MET een eigen vorm, maar ook met een officieel bestand (bv. de AI-agenten): het officiële bestand wint (merkLaag), dus
+    // de luie tabel moet ook dan geladen worden — anders bleef de nagetekende vorm staan. Справжній логотип має перевагу над фігурою.
+    else if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel)) void laadOfficieel();
     return af;
-  }, [gevonden, sleutel]);
+  }, [gevonden, sleutel, plaats]);
+
+  if (plaats) {
+    const k = [...(sleutel && isPlaatsSleutel(sleutel) ? [sleutel] : []), ...(keten || []).filter((x) => x !== sleutel)];
+    return <MerkPlaats keten={k} maat={maat} vorm={vorm} titel={titel} naam={naam} className={className} />;
+  }
 
   const label = titel || (gevonden?.naam ?? undefined);
   const a11y = titel ? { role: 'img' as const, 'aria-label': label } : { 'aria-hidden': true as const };
@@ -75,8 +102,8 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
     // Eigen bestand als <img> (een SVG in <img> voert nooit script uit; de server ontsmette het bovendien al).
     const r = maat ? Math.round(maat * (vorm === 'rond' ? 0.5 : 0.28)) : undefined;
     return (
-      <span {...a11y} className={`${klasse} merk-eigen`} data-merk={gevonden?.naam || naam || sleutel} data-merk-eigen={sleutel}
-        style={{ ...maatStijl, borderRadius: r }}>
+      <span {...a11y} className={`${klasse} merk-eigen${vanGebruiker ? ' merk-gebruiker' : ''}`} data-merk={gevonden?.naam || naam || sleutel} data-merk-eigen={sleutel}
+        data-merk-laag={vanGebruiker ? 'gebruiker' : 'eigen'} style={{ ...maatStijl, borderRadius: r }}>
         <img src={eigen.data} alt='' draggable={false} />
       </span>
     );
@@ -85,16 +112,21 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
   // Officieel logo (ingebouwd, src/merk/officieel) of logo uit de merkendatabase (app.merk_beeld): het BESTAND van het merk zelf,
   // als <img> (een SVG in <img> voert nooit script uit), nooit vervormd. Op een lichte plaat — zo zijn merklogo's ontworpen; als los
   // gliefje alleen als het logo donkere delen heeft (HERKOMST.json → ondergrond). Zelfde maat als de neutrale plaat: geen sprong.
-  const laag = merkLaag(sleutel, gevonden);
+  const laag0 = merkLaag(sleutel, gevonden);
+  // Met zonderGebruiker telt de laag van de gebruiker niet: dan geldt wat er zonder zijn bestand zou staan.
+  const laag = laag0 === 'gebruiker' && zonderGebruiker ? merkLaagZonderGebruiker(sleutel, gevonden) : laag0;
   if (laag === 'officieel' || laag === 'database') {
     const o = laag === 'officieel' ? officieelMerk(sleutel) : null;
     const db = laag === 'database' ? databaseMerk(sleutel) : null;
-    const plaat = vorm !== 'gliefje' || (o ? o.ondergrond === 'licht' : true);
+    // Een wit teken op de eigen merkkleur (o.plaat, bv. Proximus) staat ALTIJD op die plaat, ook als gliefje — anders is het onzichtbaar.
+    const merkPlaat = o?.plaat && /^#[0-9a-f]{6}$/i.test(o.plaat) ? o.plaat : '';
+    const plaat = !!merkPlaat || vorm !== 'gliefje' || (o ? o.ondergrond === 'licht' : true);
     const r = maat ? Math.round(maat * (vorm === 'rond' ? 0.5 : 0.28)) : undefined;
     return (
       <span {...a11y} className={`${klasse} merk-beeld merk-${laag}${plaat ? ' merk-plaat' : ''}`} data-merk={gevonden?.naam || naam || sleutel}
         data-merk-laag={laag} data-merk-officieel={o ? sleutel : undefined} data-merk-database={db ? db.domein : undefined} data-merk-bron={db ? db.bron : undefined}
-        style={{ ...maatStijl, borderRadius: r }}>
+        data-merk-plaatkleur={merkPlaat || undefined}
+        style={{ ...maatStijl, borderRadius: r, ...(merkPlaat ? { background: merkPlaat, boxShadow: 'none' } : null) }}>
         <img src={(o || db)!.data} alt='' draggable={false} decoding='async' />
       </span>
     );
@@ -117,6 +149,11 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
 
   if (!gevonden) {
     if (terugval !== undefined) return <>{terugval}</>;
+    // REESTR-LOGO-001: er IS een officieel bestand, alleen de luie tabel is nog onderweg — een lege plek van dezelfde maat in plaats
+    // van een monogram dat een tel later in een logo verandert (die «sprong» zag men op de koppelingen en bij Telegram/Discord).
+    if (sleutel && OFFICIEEL_SLEUTELS.has(sleutel) && !officieelGeladen()) {
+      return <span {...a11y} className={`${klasse} merk-wacht`} data-merk='wacht' data-merk-naam={sleutel} style={{ ...maatStijl, borderRadius: maat ? Math.round(maat * (vorm === 'rond' ? 0.5 : 0.28)) : undefined }} />;
+    }
     const n = String(naam || merk || '?').trim() || '?';
     const h = merkTint(n);
     return (
@@ -175,3 +212,6 @@ export default function Merk({ merk, def, naam, maat, vorm = 'tegel', titel, cla
     </svg>
   );
 }
+
+// PLAATS-TEKENS-001: єдина точка входу реєстру знаків відкриває і вигляд «Ланцюжок» (країна › область › місто).
+export { default as PlaatsKeten, type PlaatsKetenProps } from './PlaatsKeten';

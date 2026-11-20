@@ -11,6 +11,7 @@ import { LOGOS } from '../../src/merk/merk-logos';
 import { MERKEN } from '../../src/merk/merk-tabel';
 import { MERK_ALIAS, merkDef, merkSleutel, merkSleutels, monogram, registreerMerken } from '../../src/merk/merk-register';
 import Merk from '../../src/merk/Merk';
+import { OFFICIEEL_SLEUTELS } from '../../src/merk/officieel-sleutels';
 import { checker } from './hulp/nep-google';
 
 /** Padstructuur: elk commando heeft een veelvoud van zijn argumenten en de vlaggen van een boog zijn 0 of 1. */
@@ -92,7 +93,8 @@ export async function main(): Promise<number> {
   const sessie = uitBron('src/sessies/SessieIconen.tsx', /return '([a-z0-9]+)'/g);
   check(`elk browser-/OS-merk van de sessiepagina bestaat (${sessie.length})`, sessie.length >= 14 && ontbreekt(sessie).length === 0, ontbreekt(sessie).join());
   const metSlug = INTEGRATIES.filter((i) => i.logo);
-  const zonderEmbleem = metSlug.filter((i) => !LOGOS[i.logo] && !merkDef(i.logo));
+  // REESTR-LOGO-001: een officieel bestand (src/merk/officieel) is óók een embleem — het wint zelfs van elke vorm.
+  const zonderEmbleem = metSlug.filter((i) => !LOGOS[i.logo] && !merkDef(i.logo) && !OFFICIEEL_SLEUTELS.has(merkSleutel(i.logo)));
   check(`elke koppeling met een merk heeft een embleem (${metSlug.length} merken)`, zonderEmbleem.length === 0, zonderEmbleem.map((i) => `${i.naam}(${i.logo})`).join(', '));
 
   // 4. Aliassen wijzen altijd naar een merk dat bestaat (anders verdwijnt een logo stil).
@@ -139,7 +141,7 @@ export async function main(): Promise<number> {
   check('geen bron verwijst nog naar public/agent-logos', !['src/mcp-ui.tsx', 'src/merk/Merk.tsx', 'src/merk/merk-tabel.ts', 'src/agenten/AgentLogo.tsx', 'src/sessies/SessieIconen.tsx', 'src/merk/MerkLogo.tsx']
     .some((p) => readFileSync(p, 'utf8').includes('agent-logos')));
   check('de tabel blijft licht (< 40 kB) en geen merk groter dan 8 kB',
-    readFileSync('src/merk/merk-tabel.ts').length < 40_000 && slugs.every((s) => padenVan(s).join('').length < 8000));
+    readFileSync('src/merk/merk-tabel.ts').length < 42_000 /* UPD-003: +metagegevens van #143/#149 (agenten, registerlogo's) · лише метадані */ && slugs.every((s) => padenVan(s).join('').length < 8000));
   check('het register zelf heeft geen padgegevens (mag dus in de hoofdbundel)', !/ d: "M/.test(readFileSync('src/merk/merk-register.ts', 'utf8')));
   check('de grote tabel wordt lui geladen (dynamic import, niet statisch)', (() => {
     const s = readFileSync('src/merk/MerkLogo.tsx', 'utf8');

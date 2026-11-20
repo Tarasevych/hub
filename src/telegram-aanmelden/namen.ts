@@ -21,10 +21,20 @@ const REDEN: Record<string, Paar> = {
   beheer: ['вимкнув адміністратор', 'uitgezet door de beheerder'], nee: ['відповідь «Ні»', 'antwoord «Nee»'],
 };
 const BRON: Record<string, Paar> = {
-  kluis: ['у захищеному сховищі', 'in de beveiligde kluis'], omgeving: ['у змінній середовища сервера', 'in een omgevingsvariabele van de server'], geen: ['немає', 'geen'],
+  kluis: ['у захищеному сховищі', 'in de beveiligde kluis'],
+  'kluis-integratie': ['у захищеному сховищі (інтеграція Telegram)', 'in de beveiligde kluis (Telegram-integratie)'],
+  omgeving: ['у змінній середовища сервера', 'in een omgevingsvariabele van de server'],
+  geen: ['немає', 'geen'],
 };
 const RESULTAAT: Record<string, Paar> = {
   success: ['успішно', 'gelukt'], failed: ['помилка', 'mislukt'], denied: ['відмовлено', 'geweigerd'], partial: ['частково', 'gedeeltelijk'],
+};
+const INLOG_STAND: Record<string, Paar> = {
+  ingewisseld: ['Увійшли', 'Aangemeld'],
+  goedgekeurd: ['Підтверджено в Telegram', 'Bevestigd in Telegram'],
+  geweigerd: ['Відхилено', 'Geweigerd'],
+  verlopen: ['Час вийшов', 'Verlopen'],
+  wacht: ['Очікує підтвердження', 'Wacht op bevestiging'],
 };
 
 export const statusNaam = (lang: Lang, c: string) => kies(lang, STATUS[c], ['Стан невідомий', 'Stand onbekend']);
@@ -32,3 +42,4 @@ export const koppelStandNaam = (lang: Lang, c: string) => kies(lang, KOPPELING[c
 export const redenNaam = (lang: Lang, c: string) => (c ? kies(lang, REDEN[c], ['інша причина', 'andere reden']) : '');
 export const bronNaam = (lang: Lang, c: string) => kies(lang, BRON[c], ['невідоме джерело', 'onbekende bron']);
 export const resultaatNaam = (lang: Lang, c: string) => kies(lang, RESULTAAT[c], ['інший результат', 'ander resultaat']);
+export const inlogStandNaam = (lang: Lang, c: string) => kies(lang, INLOG_STAND[c], ['Невідомий стан', 'Onbekende stand']);

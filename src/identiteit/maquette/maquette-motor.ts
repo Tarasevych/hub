@@ -5,6 +5,8 @@
 // Відмінності від макета позначено коментарями «САЙТ:». Тип-перевірку вимкнено свідомо: код лишається максимально близьким до джерела.
 // De motor van de weergave «Ontwerp»: de eigen scripts van het ontwerp van de eigenaar, gebundeld en aan de component-wortel gebonden.
 
+import type { UiterlijkAccent } from '../../../shared/uiterlijk';
+import { ACCENT_KEUZES, ACCENT_NAMEN } from '../../thema/weergave-stijl';
 export type MaquetteOpties = {
   lang: 'uk' | 'nl';
   licht: boolean;
@@ -19,8 +21,18 @@ export type MaquetteOpties = {
   bijDienst: (id: string) => void;
   /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
   bijAccountMenu: () => void;
+  /** IDENTITEIT-015: справжні налаштування сайту для елементів макета (обліковий запис). Echte instellingen van de site. */
+  weergave?: MaquetteWeergave;
+  /** Зміна в макеті → справжнє налаштування сайту (зберігається в обліковому записі). Wijziging → echte instelling. */
+  bijWeergave?: (patch: Partial<MaquetteWeergave>) => void;
+  /** Мовні кнопки картки «Мови» → справжня зміна мови сайту (cookie + обліковий запис). Taalknoppen → echte taal van de site. */
+  bijTaal?: (lang: 'uk' | 'nl') => void;
 };
-export type Maquette = { stop: () => void; direct: string[]; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
+export type MaquetteWeergave = {
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: UiterlijkAccent; effecten: number;
+  icoonStijl: 'klassiek' | 'kleur' | 'tint'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
+};
+export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
 
 export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquette {
   const doc = root.ownerDocument;
@@ -40,33 +52,33 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const locales = {
     uk:{
       ui:{
-        workspace:"Мій простір",settings:"Налаштування",concept:"Дизайн-концепт",quickJump:"Швидкий перехід",
+        workspace:"Мій простір",settings:"Налаштування",concept:"Новий вигляд",quickJump:"Швидкий перехід",
         heroEyebrow:"ВАШ ЦИФРОВИЙ ПРОСТІР",heroTitle:["Ваш простір.","Ваші правила."],
         heroDesc:"Один витончений центр керування всім, що робить «Мій простір» по-справжньому вашим.",
         startSetup:"Налаштувати простір",navPlacement:"Розташування навігації",sectionCount:"розділів",
         controlCenter:"Єдиний центр керування",profiles:"Окремі режими та простори",
         groups:["ОБЛИЧЧЯ ВАШОГО ПРОСТОРУ","ЛЮДИ ТА ІДЕНТИЧНІСТЬ","ВАШ АКАУНТ","БЕЗПЕКА ТА ВІДНОВЛЕННЯ"],
         interludes:[["Дизайн стає по-справжньому вашим, коли кожен елемент","має своє місце."],["Справжній контроль — це коли складне","відчувається простим."]],
-        footer:"Дизайн-концепт 2026",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
+        footer:"Центр облікового запису",backTop:"Повернутися вгору ↑",navigation:"НАВІГАЦІЯ",dragToEdge:"Перетягніть до краю",
         scrollProgress:"Прогрес сторінки",collapse:"Згорнути панель",expand:"Розгорнути панель",
         anchorPlacement:"ПОЛОЖЕННЯ ЯКОРІВ",positionPrompt:"Розташуйте як зручно",
         positions:{left:"Ліворуч",right:"Праворуч",top:"Зверху",bottom:"Знизу"},
         compact:"Компактний режим",navStyle:"Стиль меню",navClassic:"Звичайна панель",navPills:"Окремі кнопки",navIconLabel:"Вміст кнопок",navNames:"Піктограми з назвами",navIcons:"Лише піктограми",navStyleHint:"Кнопки за розміром тексту, без спільного фону",dragHelp:"Можна також перетягнути заголовок панелі до потрібного краю екрана.",adaptiveNavHelp:"На вузькому екрані меню висувається збоку, не займаючи місця в робочій області.",adaptiveNavModeOnly:"Автоматично: наведіть мишку на край екрана або відкрийте меню натисканням чи свайпом. Постійні режими доступні лише на широкому екрані.",
-        navGroups:["Вигляд і меню","Доступ і ролі","Акаунт","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
+        navGroups:["Вигляд і меню","Доступ і ролі","Обліковий запис","Захист"],navModes:{expanded:"Завжди розгорнуте",collapsed:"Завжди згорнуте",auto:"Автоматично при наведенні"},navModeLabel:"Поведінка меню",
         findSection:"Знайти розділ налаштувань…",commandHeading:"РОЗДІЛИ ЦЕНТРУ КЕРУВАННЯ",
         choose:"↑ ↓ обрати",go:"↵ перейти",noResults:"Нічого не знайдено. Спробуйте іншу назву.",
         beginning:"Початок",manage:"КЕРУВАННЯ",openSettings:"Відкрити налаштування",
         collapseSection:"Згорнути налаштування",inlineEyebrow:"НАЛАШТУВАННЯ РОЗДІЛУ",inlineHeading:"Керуйте прямо на сторінці",
         profileName:"Відображуване ім’я",demoOnly:"Лише демонстраційне поле — дані акаунта не змінюються",prepareCopy:"Підготувати приклад",
-        dockInline:"Положення якорів",dockInlineHint:"Налаштування цієї демонстраційної панелі",
+        dockInline:"Положення якорів",dockInlineHint:"Лише навігація цієї сторінки; меню сайту не зміниться",
         themeInline:"Атмосфера прототипу",themeInlineHint:"Відразу побачите різницю",
         accentInline:"Акцентний колір",accentInlineHint:"Лише для цього макета",
-        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Бірюзовий",pink:"Рожевий",amber:"Бурштиновий"},
+        dark:"Темна",light:"Світла",colors:{violet:"Фіолетовий",cyan:"Ціан",pink:"Рожевий",amber:"Медовий",blauw:"Синій",hemel:"Небесний",teal:"Бірюзовий",groen:"Зелений",oranje:"Бурштиновий",roze:"Малиновий",indigo:"Індиго",bruin:"Теракотовий"},
         langInline:"Мова інтерфейсу",langInlineHint:"Написи на всіх ілюстраціях також перекладаються.",
-        moved:"Панель якорів переміщено:",demoToast:"Це демонстрація дизайну. Реальні параметри акаунта не змінено.",
+        moved:"Панель якорів переміщено:",demoToast:"Ця дія виконується в блоці «Чинні налаштування» цього розділу.",
         navDemoToast:"Це візуальний макет. Переходи до реальних сервісів тут не підключені.",
         drawerControls:"Налаштування",drawerPreview:"Вигляд у роботі",drawerDemo:"ДЕМО · Без змін акаунта",drawerDone:"Готово",
-        drawerHint:"Спробуйте елементи керування: цей прототип не зберігає змін на справжньому сайті.",
+        drawerHint:"Зміни тут діють одразу: це справжні налаштування вашого облікового запису.",
         drawerVisualTitle:"Ось як виглядає відкритий розділ",drawerVisualNote:"Простора панель, зрозумілі групи й миттєвий відгук на дії.",
         previewSample:"Попередній перегляд",previewEnabled:"Увімкнено",previewOptions:"Ваші параметри",
         savedLocally:"Показано лише в макеті",actionDemo:"Дія показана в демонстраційному режимі.",rangeValue:"Інтенсивність",
@@ -76,6 +88,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         makeYours:"Ваш стиль.",personalSpace:"ОСОБИСТИЙ ПРОСТІР",nav:"МЕНЮ",anyEdge:"БУДЬ-ЯКЕ РОЗТАШУВАННЯ",
         beautifully:"Тонка<br>гармонія.",hello1:"Вітаю",hello2:"Привіт",commonSpace:"ЄДИНИЙ ПРОСТІР",greeting:"Привіт,<br>Павле.",
         widgets:"ВІДЖЕТИ",create:"ДОДАТИ",widgetCalendar:"КАЛЕНДАР",widgetMail:"ПОШТА",widgetNotes:"НОТАТКИ",
+        meldingTitle:"ЕКОСИСТЕМА СПОВІЩЕНЬ",meldingLive:"НАЖИВО",meldingSecTitle:"Безпека та канали піддоменів",meldingSecSub:"ID · ПОШТА · ХМАРА · ДІМ · СЕРВЕР",meldingFileTitle:"Універсальний переглядач файлів",meldingFileSub:"ФОТО · ВІДЕО · АУДІО · PDF · АРХІВИ · HEX",meldingLeft:"← ВІДКЛАСТИ",meldingCenter:"ЗМАХИ",meldingRight:"ПРОЧИТАНО →",meldingAi:"КОНФІДЕНЦІЙНИЙ ЛОКАЛЬНИЙ АНАЛІЗ ШІ",
         sharing:"ВАШ ПРОСТІР · ВАШІ ПРАВИЛА",sharingOnly:"ЛИШЕ ОБРАНІ",sharingSecure:"ДОСТУП ПІД КОНТРОЛЕМ",
         sharingTitle:"ПРИКЛАД ПРАВ ДОСТУПУ",sharingOwner:"ВЛАСНИК",sharingInvite:"ЗАПРОШЕНА ОСОБА",sharingView:"ПЕРЕГЛЯД",sharingLink:"ПРИВАТНЕ ПОСИЛАННЯ",sharingOff:"ВИМКНЕНО",
         tech:"ТЕХНІЧНИЙ ПРОФІЛЬ",control:"КЕРУВАННЯ",personal:"ОСОБИСТИЙ ПРОСТІР",daily:"ЩОДЕННИЙ ПРОСТІР",
@@ -88,7 +101,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       panels:{
         personalization:[
           {type:"choice",label:"Стиль іконок",note:"Виберіть характер піктограм розділів",options:["Класичний","Кольоровий"]},
-          {type:"choice",label:"Щільність інтерфейсу",note:"Більше простору або більше інформації",options:["Комфортна","Компактна"]},
+          {type:"choice",label:"Щільність інтерфейсу",note:"Більше простору або більше інформації",options:["Звичайна","Компактна","Простора"]},
           {type:"toggle",label:"Плавна поява блоків",note:"Делікатна анімація під час прокручування",initial:true}
         ],
         menu:[
@@ -107,6 +120,11 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"toggle",label:"Показувати віджети",note:"Розміщуйте корисні блоки у просторі",initial:true},
           {type:"choice",label:"Розмір карток",note:"Адаптивне компонування",options:["Звичайні","Великі"]},
           {type:"action",label:"Додати новий віджет",note:"Відкрити приклад каталогу блоків"}
+        ],
+        melding:[
+          {type:"choice",label:"Режим центру сповіщень",note:"Єдине незалежне вікно або класичне меню",options:["Екосистема","Класичне"]},
+          {type:"toggle",label:"Контекстна адаптація до піддомену",note:"Підлаштовує колір і швидкі фільтри під поточний сервіс",initial:true},
+          {type:"action",label:"Відкрити портал зараз",note:"Перейти до єдиного вікна екосистеми сповіщень"}
         ],
         sharing:[
           {type:"choice",label:"Видимість простору",note:"Хто має право його переглядати",options:["Лише я","За запрошенням"]},
@@ -129,7 +147,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         methods:[
           {type:"info",label:"Вхід через Google",note:"Основний спосіб входу в поточній концепції."},
-          {type:"action",label:"Додати ключ доступу",note:"Приклад сценарію passkey без створення ключа"},
+          {type:"action",label:"Додати ключ доступу",note:"Створення ключа — у блоці «Чинні налаштування»"},
           {type:"toggle",label:"Пояснення перед підтвердженням",note:"Показувати, для чого потрібна перевірка",initial:true}
         ],
         security:[
@@ -139,21 +157,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-          {type:"toggle",label:"Нагадування про резервний доступ",note:"Попередження про ризик втрати всіх способів входу",initial:true},
-          {type:"warning",label:"Важливе застереження",note:"Втрата всіх ключів і кодів може означати втрату зашифрованих даних."}
+          {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у блоці «Чинні налаштування» цього розділу. Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
+          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх ключів доступу означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
     },
     nl:{
       ui:{
-        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Ontwerpconcept",quickJump:"Snel navigeren",
+        workspace:"Mijn Ruimte",settings:"Instellingen",concept:"Nieuwe weergave",quickJump:"Snel navigeren",
         heroEyebrow:"JOUW DIGITALE RUIMTE",heroTitle:["Jouw ruimte.","Jouw regels."],
         heroDesc:"Eén stijlvolle plek om alles te beheren wat Mijn Ruimte echt van jou maakt.",
         startSetup:"Ruimte aanpassen",navPlacement:"Navigatiepositie",sectionCount:"onderdelen",
         controlCenter:"Eén centrale plek",profiles:"Aparte profielen en ruimtes",
         groups:["DE SFEER VAN JOUW RUIMTE","MENSEN EN IDENTITEIT","JOUW ACCOUNT","BEVEILIGING EN HERSTEL"],
         interludes:[["Een ontwerp wordt persoonlijk wanneer elk element","zijn eigen plek krijgt."],["Echte controle voelt natuurlijk aan, ook als","de techniek complex is."]],
-        footer:"Ontwerpconcept 2026",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
+        footer:"Accountcentrum",backTop:"Terug naar boven ↑",navigation:"NAVIGATIE",dragToEdge:"Sleep naar een rand",
         scrollProgress:"Pagina-voortgang",collapse:"Paneel inklappen",expand:"Paneel uitklappen",
         anchorPlacement:"POSITIE VAN ANKERS",positionPrompt:"Zet het waar jij wilt",
         positions:{left:"Links",right:"Rechts",top:"Boven",bottom:"Onder"},
@@ -164,15 +182,15 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         beginning:"Begin",manage:"BEHEREN",openSettings:"Instellingen openen",
         collapseSection:"Instellingen inklappen",inlineEyebrow:"ONDERDEELINSTELLINGEN",inlineHeading:"Beheer direct op de pagina",
         profileName:"Weergavenaam",demoOnly:"Alleen een demoveld — geen wijziging van accountgegevens",prepareCopy:"Voorbeeld voorbereiden",
-        dockInline:"Positie van ankers",dockInlineHint:"Pas dit demonstratiepaneel aan",
+        dockInline:"Positie van ankers",dockInlineHint:"Alleen de navigatie van deze pagina; het sitemenu verandert niet",
         themeInline:"Sfeer van het prototype",themeInlineHint:"Bekijk direct het verschil",
         accentInline:"Accentkleur",accentInlineHint:"Alleen voor dit ontwerp",
-        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Turkoois",pink:"Roze",amber:"Amber"},
+        dark:"Donker",light:"Licht",colors:{violet:"Paars",cyan:"Cyaan",pink:"Roze",amber:"Honing",blauw:"Blauw",hemel:"Hemelsblauw",teal:"Teal",groen:"Groen",oranje:"Oranje",roze:"Framboos",indigo:"Indigo",bruin:"Terracotta"},
         langInline:"Taal van de interface",langInlineHint:"Ook de teksten in illustraties worden vertaald.",
-        moved:"Ankernavigatie verplaatst naar:",demoToast:"Dit is een ontwerpdemonstratie. Je echte accountinstellingen zijn niet gewijzigd.",
+        moved:"Ankernavigatie verplaatst naar:",demoToast:"Deze handeling voert u uit in het blok «Huidige instellingen» van dit onderdeel.",
         navDemoToast:"Dit is een visueel prototype. Echte diensten zijn hier niet verbonden.",
         drawerControls:"Instellingen",drawerPreview:"Live voorbeeld",drawerDemo:"DEMO · Account ongewijzigd",drawerDone:"Gereed",
-        drawerHint:"Probeer de bediening uit. Dit prototype wijzigt niets op de echte website.",
+        drawerHint:"Wijzigingen hier gelden meteen: dit zijn de echte instellingen van uw account.",
         drawerVisualTitle:"Zo ziet een geopend onderdeel eruit",drawerVisualNote:"Een ruim paneel met heldere groepen en directe visuele feedback.",
         previewSample:"Voorbeeld",previewEnabled:"Ingeschakeld",previewOptions:"Jouw voorkeuren",
         savedLocally:"Alleen zichtbaar in het prototype",actionDemo:"Actie getoond in demomodus.",rangeValue:"Intensiteit",
@@ -182,6 +200,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         makeYours:"Helemaal jij.",personalSpace:"PERSOONLIJKE RUIMTE",nav:"MENU",anyEdge:"OP ELKE SCHERMRAND",
         beautifully:"Mooi in<br>balans.",hello1:"Welkom",hello2:"Hallo",commonSpace:"ÉÉN RUIMTE",greeting:"Hallo,<br>Pavlo.",
         widgets:"WIDGETS",create:"TOEVOEGEN",widgetCalendar:"AGENDA",widgetMail:"MAIL",widgetNotes:"NOTITIES",
+        meldingTitle:"MELDINGS-ECOSYSTEEM",meldingLive:"ACTIEF",meldingSecTitle:"Beveiliging en kanalen per subdomein",meldingSecSub:"ID · MAIL · CLOUD · HUIS · SERVER",meldingFileTitle:"Universele bijlagespeler",meldingFileSub:"FOTO · VIDEO · AUDIO · PDF · ARCHIEVEN · HEX",meldingLeft:"← UITSTELLEN",meldingCenter:"VEGEN",meldingRight:"GELEZEN →",meldingAi:"LOKALE PRIVACYVEILIGE AI-ANALYSE",
         sharing:"JOUW RUIMTE · JOUW REGELS",sharingOnly:"ALLEEN GENODIGDEN",sharingSecure:"TOEGANG ONDER CONTROLE",
         sharingTitle:"VOORBEELD VAN RECHTEN",sharingOwner:"EIGENAAR",sharingInvite:"GENODIGDE",sharingView:"BEKIJKEN",sharingLink:"PRIVÉKOPPELING",sharingOff:"UITGESCHAKELD",
         tech:"TECHNISCH PROFIEL",control:"BEHEER",personal:"PERSOONLIJKE RUIMTE",daily:"JOUW DAGELIJKSE RUIMTE",
@@ -194,21 +213,22 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       sections:{
         personalization:{name:"Personalisatie",short:"Persoonlijk",kicker:"JOUW STIJL",title:"Een ruimte die helemaal van jou voelt.",description:"Het uiterlijk, het gedrag en jouw voorkeuren op één rustige en stijlvolle plek.",details:[["Menu en pictogrammen","Volgorde, kleuren en navigatiestijl"],["Thema's en sfeer","Licht, contrast en jouw kleuren"],["Widgets en blokken","Een rustige persoonlijke werkplek"]]},
         menu:{name:"Menu",short:"Menu",kicker:"ALLE VRIJHEID",title:"Navigatie die met je meebeweegt.",description:"Menupositie, snelle toegang, iconen en subtiele animaties. Precies instelbaar, toch eenvoudig.",details:[["Positie","Links · rechts · boven · onder"],["Snelle toegang","Je favoriete acties binnen handbereik"],["Paneelweergave","Uitgevouwen, compact of als dock"]]},
-        themes:{name:"Thema's",short:"Thema's",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
+        themes:{name:"Weergave en kleuren",short:"Weergave",kicker:"SPEL VAN LICHT",title:"Sfeer in iedere pixel.",description:"Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",details:[["Donker","Rust en een filmisch contrast"],["Licht","Ruimte, zachte schaduwen en helderheid"],["Accent","Jouw kleur voor actieve elementen"]]},
         languages:{name:"Talen",short:"Talen",kicker:"JOUW TAAL",title:"Meteen duidelijk.",description:"De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",details:[["Українська","Oekraïense interface"],["Nederlands","Voor je dagelijkse leven in België"]]},
-        widgets:{name:"Widgets",short:"Widgets",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+        widgets:{name:"Blokken",short:"Blokken",kicker:"MAAK HET EIGEN",title:"Kleine details. Groot verschil.",description:"Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",details:[["Blokken toevoegen","Diensten, hulpmiddelen en externe links"],["Indeling","Handige afmetingen en volgorde"]]},
+        melding:{name:"Meldingen",short:"Meldingen",kicker:"SYSTEEM IN SYSTEEM",title:"Eén geïntegreerd meldingen-ecosysteem.",description:"Een onafhankelijk venster boven alle pagina’s, kanalen voor elk subdomein, veeggebaren, universele bijlagespeler en privacyveilige AI-duiding.",details:[["Portaal boven de site","Schaalbaar venster, vastpinnen en compacte capsule"],["Vegen en bijlagen","Snelle acties en weergave voor elk bestandsformaat"],["Privacyveilige AI","Lokale analyse en opgeschoonde externe samenvatting"]]},
         sharing:{name:"Delen",short:"Delen",kicker:"JOUW GRENZEN",title:"Deel alleen wat jij wilt.",description:"Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",details:[["Toegang per account","Uitnodigingen en rollen"],["Toegang via link","Aparte opties en beperkingen"]]},
         identities:{name:"Identiteiten",short:"Identiteit",kicker:"TWEE MODI",title:"Elke rol op de juiste plek.",description:"Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",details:[["Normaal profiel","Dagelijkse tools en persoonlijke ruimte"],["Technisch profiel","Een eigen stijl voor beheer"]]},
         account:{name:"Account en gegevens",short:"Account",kicker:"JOUW GEGEVENS",title:"Alles wat belangrijk is, onder controle.",description:"Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",details:[["Profiel","Basisgegevens van je account"],["Gegevens en export","Je gegevens bekijken en beheren"],["Gevoelige acties","Een aparte zone met bevestiging"]]},
         sessions:{name:"Sessies en apparaten",short:"Apparaten",kicker:"JOUW VERBINDINGEN",title:"Elk apparaat in beeld.",description:"Actieve sessies, geschiedenis en gekoppelde apparaten meteen duidelijk.",details:[["Apparaten","Type, browser en recente activiteit"],["Sessies","Inlogmomenten bekijken en beheren"]]},
-        methods:{name:"Inlogmethoden",short:"Inloggen",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
+        methods:{name:"Aanmeldmethoden",short:"Aanmelden",kicker:"ZONDER GEDOE",title:"Veilig inloggen, zonder frictie.",description:"Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",details:[["Google","Primaire inlogmethode"],["Passkeys","Bevestiging van beveiligde acties"]]},
         security:{name:"Beveiliging",short:"Beveiliging",kicker:"RUST EN ZEKERHEID",title:"Beveiliging die je begrijpt.",description:"Tweestapsverificatie, versleuteling en rechten helder uitgelegd.",details:[["Inlogbevestiging","TOTP en toegangssleutels"],["Versleuteling","Sleutels en gegevensbescherming"],["Gasttoegang","Beperkte rechten en geschiedenis"]]},
         recovery:{name:"Toegang herstellen",short:"Herstel",kicker:"PLAN B",title:"Rust, ook als het tegenzit.",description:"Een duidelijk herstelproces met uitleg, risico's en vervolgstappen.",details:[["Herstelcodes","Een reserveoptie voor bevestiging"],["Aanbevelingen","Voorkom verlies van toegang"]]}
       },
       panels:{
         personalization:[
           {type:"choice",label:"Pictogramstijl",note:"Kies hoe onderdelen eruitzien",options:["Klassiek","Kleurrijk"]},
-          {type:"choice",label:"Informatiedichtheid",note:"Meer ruimte of meer informatie",options:["Comfortabel","Compact"]},
+          {type:"choice",label:"Informatiedichtheid",note:"Meer ruimte of meer informatie",options:["Normaal","Compact","Ruim"]},
           {type:"toggle",label:"Zachte animatie van blokken",note:"Subtiele beweging tijdens het scrollen",initial:true}
         ],
         menu:[
@@ -227,6 +247,11 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"toggle",label:"Widgets tonen",note:"Nuttige blokken op je werkplek",initial:true},
           {type:"choice",label:"Kaartgrootte",note:"Responsieve indeling",options:["Normaal","Groot"]},
           {type:"action",label:"Widget toevoegen",note:"Voorbeeld van de blokkencatalogus"}
+        ],
+        melding:[
+          {type:"choice",label:"Modus van het meldingencentrum",note:"Onafhankelijk ecosysteemvenster of klassiek belmenu",options:["Ecosysteem","Klassiek"]},
+          {type:"toggle",label:"Contextadaptatie per subdomein",note:"Past kleur en snelle filters aan op de huidige dienst",initial:true},
+          {type:"action",label:"Portaal nu openen",note:"Naar het centrale meldingenvenster gaan"}
         ],
         sharing:[
           {type:"choice",label:"Zichtbaarheid",note:"Wie je ruimte kan bekijken",options:["Alleen ik","Op uitnodiging"]},
@@ -248,7 +273,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
           {type:"action",label:"Sessiegeschiedenis",note:"Voorbeeld van recente logins"}
         ],
         methods:[
-          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode in dit concept."},
+          {type:"info",label:"Inloggen met Google",note:"Primaire inlogmethode."},
           {type:"action",label:"Passkey toevoegen",note:"Voorbeeld zonder een echte sleutel aan te maken"},
           {type:"toggle",label:"Uitleg vóór bevestiging",note:"Toon waarvoor je toestemming geeft",initial:true}
         ],
@@ -259,8 +284,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-          {type:"toggle",label:"Herinnering over herstel",note:"Waarschuw voor verlies van alle inlogmethoden",initial:true},
-          {type:"warning",label:"Belangrijk",note:"Als alle sleutels en codes verloren gaan, kunnen versleutelde gegevens onbereikbaar worden."}
+          {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat in het blok «Huidige instellingen» van dit onderdeel. Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
+          {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
     }
@@ -274,18 +299,22 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const даніВласника=opties.profiel;
   const дозволенаСвітлина=(значення)=>{
     if(typeof значення!=="string"||!значення.trim())return "";
+    const чисте=значення.trim();
     // У чинному застосунку власне фото може бути збережене як зображення всередині даних акаунта.
-    if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(значення)&&значення.length<=340000)return значення;
+    if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(чисте)&&чисте.length<=340000)return чисте;
+    if(чисте.length>1024)return "";
     try{
-      const адреса=new URL(значення,location.href);
-      const вузол=адреса.hostname.toLowerCase();
-      return адреса.protocol==="https:"&&(вузол==="lh3.googleusercontent.com"||вузол.endsWith(".googleusercontent.com"))?адреса.href:"";
+      const адреса=new URL(чисте);
+      if(адреса.protocol!=="https:"||адреса.username||адреса.password)return "";
+      адреса.hash="";
+      return адреса.href;
     }catch{return "";}
   };
+  const початковаАдреса=даніВласника?.bevestigd===true?дозволенаСвітлина(даніВласника.foto):"";
   const світлинаПрофілю={
     імʼя:даніВласника?.bevestigd===true&&typeof даніВласника.naam==="string"?даніВласника.naam.trim():"",
-    адреса:даніВласника?.bevestigd===true?дозволенаСвітлина(даніВласника.foto):"",
-    джерело:даніВласника?.bevestigd===true?"акаунт":"немає",
+    адреса:початковаАдреса,
+    джерело:даніВласника?.bevestigd===true?(початковаАдреса?"акаунт":"безФото"):"немає",
     місцеваАдреса:""
   };
 
@@ -295,8 +324,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(світлинаПрофілю.місцеваАдреса)URL.revokeObjectURL(світлинаПрофілю.місцеваАдреса);
     світлинаПрофілю.місцеваАдреса="";
     світлинаПрофілю.імʼя=новийПрофіль?.bevestigd===true&&typeof новийПрофіль.naam==="string"?новийПрофіль.naam.trim():"";
-    світлинаПрофілю.адреса=новийПрофіль?.bevestigd===true?дозволенаСвітлина(новийПрофіль.foto):"";
-    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?"акаунт":"немає";
+    const новаАдреса=новийПрофіль?.bevestigd===true?дозволенаСвітлина(новийПрофіль.foto):"";
+    світлинаПрофілю.адреса=новаАдреса;
+    світлинаПрофілю.джерело=новийПрофіль?.bevestigd===true?(новаАдреса?"акаунт":"безФото"):"немає";
     оновитиФотоПрофілю();
   }
   luister(window,"mijn-ruimte:profiel-bijgewerkt",подія=>прийнятиФотоПрофілю(подія.detail));
@@ -332,7 +362,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!рядок||!пояснення)return;
     const мова=моваПрофілю();
     const написи={
-      акаунт:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. У цьому макеті його можна лише переглядати.","De aangemelde toepassing heeft de foto aangeleverd. Dit ontwerp toont haar alleen."],
+      акаунт:["Світлина отримана з облікового запису","Foto ontvangen uit het account","Зображення надане авторизованим застосунком. Змінити або прибрати світлину можна в розділі «Акаунт».","De aangemelde toepassing heeft de foto aangeleverd. U kunt de foto wijzigen of verwijderen bij «Account»."],
+      безФото:["Світлину профілю ще не встановлено","Nog geen profielfoto ingesteld","Обліковий запис підключено, але власну чи сервісну світлину не передано. Додати її можна в розділі «Акаунт».","Het account is verbonden, maar er is nog geen profielfoto ingesteld. U kunt er een kiezen bij «Account»."],
       попередній:["Місцева світлина лише для перегляду","Lokale foto alleen als voorbeeld","Файл залишається у вашому браузері. Він не надсилається на сервер і не змінює фото облікового запису. Після оновлення сторінки місцевий перегляд зникне.","Het bestand blijft in je browser. Het wordt niet verstuurd en wijzigt je accountfoto niet. Na het vernieuwen verdwijnt dit voorbeeld."],
       немає:["Дані облікового запису ще не підключено","Accountgegevens zijn nog niet verbonden","Коли нове оформлення працюватиме всередині Mijn Ruimte, воно отримає справжню світлину з облікового запису. Зараз можна тимчасово обрати власний файл.","Binnen Mijn Ruimte krijgt dit ontwerp de echte accountfoto. Nu kun je tijdelijk een eigen bestand kiezen."],
       недоступне:["Світлину облікового запису не вдалося відобразити","De accountfoto kon niet worden getoond","Джерело світлини не відкривається. Замість вигаданого зображення показано нейтральну позначку.","De fotobron is niet bereikbaar. In plaats van een verzonnen foto zie je een neutraal symbool."]
@@ -473,12 +504,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
 
   // Впізнавані знаки постачальників збережені в самому сайті, без зовнішніх запитів.
   const фірмовіПіктограми={
-    гугл:'<svg class="brand-symbol brand-google" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.73-.06-1.42-.18-2.09H12v3.96h5.4a4.6 4.6 0 0 1-2 3.02v2.47h3.2c1.87-1.73 3-4.26 3-7.36Z"/><path fill="#34A853" d="M12 22c2.69 0 4.95-.89 6.6-2.41l-3.2-2.47c-.89.6-2.03.97-3.4.97-2.61 0-4.82-1.76-5.61-4.13H3.08v2.55A9.99 9.99 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.39 13.96A5.97 5.97 0 0 1 6.07 12c0-.68.12-1.34.32-1.96V7.49H3.08A9.96 9.96 0 0 0 2 12c0 1.63.39 3.16 1.08 4.51l3.31-2.55Z"/><path fill="#EA4335" d="M12 5.91c1.46 0 2.76.5 3.79 1.49l2.84-2.84A9.73 9.73 0 0 0 12 2a9.99 9.99 0 0 0-8.92 5.49l3.31 2.55c.79-2.37 3-4.13 5.61-4.13Z"/></svg>',
-    майкрософт:'<svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M2 2h9v9H2z"/><path fill="#81bc06" d="M13 2h9v9h-9z"/><path fill="#05a6f0" d="M2 13h9v9H2z"/><path fill="#ffba08" d="M13 13h9v9h-9z"/></svg>',
-    телеграм:'<svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#2da6db"/><path fill="#fff" d="m5.3 11.5 12.6-5c.7-.2 1 .1.8.8l-2.1 10.1c-.2.7-.7.9-1.3.5l-3-2.2-1.5 1.5c-.2.2-.4.4-.7.4l.3-4.2 7.4-6.7-9 5.6-3.5-1z"/></svg>',
-    діскорд:'<svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><path fill="#5865f2" d="M7 3.5c3.3-1 6.7-1 10 0 2.6 2.8 4.3 6.7 4.5 11-1.3 1.5-3.1 2.5-5.3 3.2l-1.1-1.8c.6-.2 1.2-.5 1.8-.9-3.3 1.5-7.3 1.5-10.6 0 .6.4 1.2.7 1.8.9l-1.1 1.8C5 19.7 3.2 18.7 2 17.2c.1-4.3 1.9-8.3 4.5-11 .2-.1.4-.2.5-.2Z"/><path fill="#fff" d="M7.8 8.4c2.7-1.4 5.7-1.4 8.4 0l1.5 6c-3.8 3-7.6 3-11.4 0l1.5-6Z"/><circle cx="9.4" cy="12" r="1.2" fill="#5865f2"/><circle cx="14.6" cy="12" r="1.2" fill="#5865f2"/></svg>',
-    епл:'<svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.1 7c.3-2.1 1.7-3.7 3.9-4-.3 2.2-1.5 3.6-3.9 4ZM12.3 8.6c-2.1-1.6-6.6-1.2-7.4 3.2-.8 4.4 2.6 9.5 5 9.1 1.1-.1 1.7-.8 3-1 1.4.2 2 .9 3.2 1 1.9.2 4.7-3.4 5-5.9-2.7-1.5-3.2-5.4-.4-7.2-2.1-2.3-5-2.6-7.5-.9Z" fill="currentColor"/></svg>',
-    ватсап:'<svg class="brand-symbol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#25d366"/><path d="M7 18 8 15.5a7 7 0 1 1 2 2Z" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M9 9c.4 2.7 3.3 5.3 6 5.8l1-1.4-2-1-1 1-2.2-2.3.9-1.1-1.4-1.9Z" fill="#fff"/></svg>'
+    гугл:'<svg class="brand-symbol brand-google" data-merk-officieel="google" viewBox="0 0 256 262" aria-hidden="true"><path fill="#4285f4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"/><path fill="#34a853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"/><path fill="#fbbc05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z"/><path fill="#eb4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"/></svg>',
+    майкрософт:'<svg class="brand-symbol brand-microsoft" data-merk-officieel="microsoft" viewBox="0 0 256 256" aria-hidden="true"><path fill="#f1511b" d="M121.666 121.666H0V0h121.666z"/><path fill="#80cc28" d="M256 121.666H134.335V0H256z"/><path fill="#00adef" d="M121.663 256.002H0V134.336h121.663z"/><path fill="#fbbc09" d="M256 256.002H134.335V134.336H256z"/></svg>',
+    телеграм:'<svg class="brand-symbol brand-telegram" data-merk-officieel="telegram" viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="SVG6DaOZcwt" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#2aabee"/><stop offset="100%" stop-color="#229ed9"/></linearGradient></defs><path fill="url(#SVG6DaOZcwt)" d="M128 0C94.06 0 61.48 13.494 37.5 37.49A128.04 128.04 0 0 0 0 128c0 33.934 13.5 66.514 37.5 90.51C61.48 242.506 94.06 256 128 256s66.52-13.494 90.5-37.49c24-23.996 37.5-56.576 37.5-90.51s-13.5-66.514-37.5-90.51C194.52 13.494 161.94 0 128 0"/><path fill="#fff" d="M57.94 126.648q55.98-24.384 74.64-32.152c35.56-14.786 42.94-17.354 47.76-17.441c1.06-.017 3.42.245 4.96 1.49c1.28 1.05 1.64 2.47 1.82 3.467c.16.996.38 3.266.2 5.038c-1.92 20.24-10.26 69.356-14.5 92.026c-1.78 9.592-5.32 12.808-8.74 13.122c-7.44.684-13.08-4.912-20.28-9.63c-11.26-7.386-17.62-11.982-28.56-19.188c-12.64-8.328-4.44-12.906 2.76-20.386c1.88-1.958 34.64-31.748 35.26-34.45c.08-.338.16-1.598-.6-2.262c-.74-.666-1.84-.438-2.64-.258c-1.14.256-19.12 12.152-54 35.686c-5.1 3.508-9.72 5.218-13.88 5.128c-4.56-.098-13.36-2.584-19.9-4.708c-8-2.606-14.38-3.984-13.82-8.41c.28-2.304 3.46-4.662 9.52-7.072"/></svg>',
+    діскорд:'<svg class="brand-symbol brand-discord" data-merk-officieel="discord" viewBox="0 0 256 199" aria-hidden="true"><path fill="#5865f2" d="M216.856 16.597A208.5 208.5 0 0 0 164.042 0c-2.275 4.113-4.933 9.645-6.766 14.046q-29.538-4.442-58.533 0c-1.832-4.4-4.55-9.933-6.846-14.046a207.8 207.8 0 0 0-52.855 16.638C5.618 67.147-3.443 116.4 1.087 164.956c22.169 16.555 43.653 26.612 64.775 33.193A161 161 0 0 0 79.735 175.3a136.4 136.4 0 0 1-21.846-10.632a109 109 0 0 0 5.356-4.237c42.122 19.702 87.89 19.702 129.51 0a132 132 0 0 0 5.355 4.237a136 136 0 0 1-21.886 10.653c4.006 8.02 8.638 15.67 13.873 22.848c21.142-6.58 42.646-16.637 64.815-33.213c5.316-56.288-9.08-105.09-38.056-148.36M85.474 135.095c-12.645 0-23.015-11.805-23.015-26.18s10.149-26.2 23.015-26.2s23.236 11.804 23.015 26.2c.02 14.375-10.148 26.18-23.015 26.18m85.051 0c-12.645 0-23.014-11.805-23.014-26.18s10.148-26.2 23.014-26.2c12.867 0 23.236 11.804 23.015 26.2c0 14.375-10.148 26.18-23.015 26.18"/></svg>',
+    епл:'<svg class="brand-symbol brand-apple" data-merk-vorm="apple" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.15 6.9c-.95 0-2.41-1.08-3.96-1.04a5.9 5.9 0 0 0-4.96 3.01c-2.12 3.68-.55 9.1 1.52 12.09 1.01 1.45 2.2 3.09 3.8 3.04 1.51-.07 2.08-.99 3.93-.99 1.83 0 2.35.99 3.96.95 1.63-.03 2.67-1.48 3.67-2.95a13 13 0 0 0 1.67-3.41 5.3 5.3 0 0 1-.63-9.42 5.6 5.6 0 0 0-4.39-2.37c-2-.16-3.67 1.09-4.6 1.09m3.38-3.07A5.3 5.3 0 0 0 16.78 0a5.4 5.4 0 0 0-3.54 1.82 5 5 0 0 0-1.27 3.71c1.34.1 2.71-.69 3.56-1.7"/></svg>',
+    ватсап:'<svg class="brand-symbol brand-whatsapp" data-merk-officieel="whatsapp" viewBox="0 0 256 258" aria-hidden="true"><defs><linearGradient id="SVGK3KZq49U" x1="50%" x2="50%" y1="100%" y2="0%"><stop offset="0%" stop-color="#1faf38"/><stop offset="100%" stop-color="#60d669"/></linearGradient><linearGradient id="SVGefMkoEOd" x1="50%" x2="50%" y1="100%" y2="0%"><stop offset="0%" stop-color="#f9f9f9"/><stop offset="100%" stop-color="#fff"/></linearGradient></defs><path fill="url(#SVGK3KZq49U)" d="M5.463 127.456c-.006 21.677 5.658 42.843 16.428 61.499L4.433 252.697l65.232-17.104a123 123 0 0 0 58.8 14.97h.054c67.815 0 123.018-55.183 123.047-123.01c.013-32.867-12.775-63.773-36.009-87.025c-23.23-23.25-54.125-36.061-87.043-36.076c-67.823 0-123.022 55.18-123.05 123.004"/><path fill="url(#SVGefMkoEOd)" d="M1.07 127.416c-.007 22.457 5.86 44.38 17.014 63.704L0 257.147l67.571-17.717c18.618 10.151 39.58 15.503 60.91 15.511h.055c70.248 0 127.434-57.168 127.464-127.423c.012-34.048-13.236-66.065-37.3-90.15C194.633 13.286 162.633.014 128.536 0C58.276 0 1.099 57.16 1.071 127.416m40.24 60.376l-2.523-4.005c-10.606-16.864-16.204-36.352-16.196-56.363C22.614 69.029 70.138 21.52 128.576 21.52c28.3.012 54.896 11.044 74.9 31.06c20.003 20.018 31.01 46.628 31.003 74.93c-.026 58.395-47.551 105.91-105.943 105.91h-.042c-19.013-.01-37.66-5.116-53.922-14.765l-3.87-2.295l-40.098 10.513z"/><path fill="#fff" d="M96.678 74.148c-2.386-5.303-4.897-5.41-7.166-5.503c-1.858-.08-3.982-.074-6.104-.074c-2.124 0-5.575.799-8.492 3.984c-2.92 3.188-11.148 10.892-11.148 26.561s11.413 30.813 13.004 32.94c1.593 2.123 22.033 35.307 54.405 48.073c26.904 10.609 32.379 8.499 38.218 7.967c5.84-.53 18.844-7.702 21.497-15.139c2.655-7.436 2.655-13.81 1.859-15.142c-.796-1.327-2.92-2.124-6.105-3.716s-18.844-9.298-21.763-10.361c-2.92-1.062-5.043-1.592-7.167 1.597c-2.124 3.184-8.223 10.356-10.082 12.48c-1.857 2.129-3.716 2.394-6.9.801c-3.187-1.598-13.444-4.957-25.613-15.806c-9.468-8.442-15.86-18.867-17.718-22.056c-1.858-3.184-.199-4.91 1.398-6.497c1.431-1.427 3.186-3.719 4.78-5.578c1.588-1.86 2.118-3.187 3.18-5.311c1.063-2.126.531-3.986-.264-5.579c-.798-1.593-6.987-17.343-9.819-23.64"/></svg>'
   };
 
   function піктограмаЗаСуттю(ключ){
@@ -498,9 +529,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     personalization:[
       група("переходи","Розділи персоналізації","Onderdelen van personalisatie","Кожний пункт відкриває відповідні параметри на цій сторінці.","Elk onderdeel opent zijn instellingen op deze pagina.","наявне",[
         рядок("Меню й піктограми","Menu en pictogrammen","перехід",[],null,"menu"),
-        рядок("Теми та кольори","Thema's en kleuren","перехід",[],null,"themes"),
+        рядок("Вигляд і кольори","Weergave en kleuren","перехід",[],null,"themes"),
         рядок("Мова інтерфейсу","Taal van de interface","перехід",[],null,"languages"),
         рядок("Віджети й блоки","Widgets en blokken","перехід",[],null,"widgets"),
+        рядок("Єдина екосистема сповіщень","Meldingen-ecosysteem","перехід",[],null,"melding"),
         рядок("Спільний доступ","Delen","перехід",[],null,"sharing"),
         рядок("Ідентичності й захист","Identiteiten en beveiliging","перехід",[],null,"identities")
       ]),
@@ -578,11 +610,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         рядок("Тимчасове скасування автоматичного режиму","Automatische modus tijdelijk onderbreken","дія")
       ]),
       група("палітра","Основне кольорове оформлення","Basiskleuren","Наявні оформлення з різними світлими та темними відтінками.","Bestaande paletten met een lichte en donkere variant.","наявне",[
-        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Грифельне","Leisteen"],["Чисте","Zuiver"],["Фіолетове","Paars"]])
+        // САЙТ (KLEUREN-001): усі сім палітр, як у «Темах» і меню облікового запису (було чотири). Alle zeven paletten.
+        рядок("Оформлення сторінки","Paginaweergave","вибір",[["Кольорове","Kleurrijk"],["Макет","Ontwerp"],["Біла класика","Witte klassiek"],["Чорна класика","Zwarte klassiek"],["Грифельне","Grafiet"],["Чисте","Puur"],["Фіолетове","Violet"]])
       ]),
-      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Допоміжний колір не замінює основного оформлення.","Accentkleur vervangt het basispalet niet.","макет",[
-        рядок("Акцентна палітра","Accentkleuren","вибір",[["Фіолетовий","Paars"],["Бірюзовий","Turkoois"],["Рожевий","Roze"],["Бурштиновий","Amber"]]),
-        рядок("Виразність декоративних ефектів","Intensiteit van decoratieve effecten","повзунок")
+      // САЙТ (KLEUREN-001): акцент уже справжнє налаштування облікового запису (не «лише макет»); набір і назви — з ACCENT_KEUZES/ACCENT_NAMEN.
+      група("акцент","Допоміжний колір і виразність","Accentkleur en intensiteit","Акцент фарбує кнопки, посилання, активні пункти, перемикачі, фокус і «Живий фон»; фон і текст палітри лишаються.","Het accent kleurt knoppen, links, actieve items, schakelaars, focus en de levende achtergrond; achtergrond en tekst van het palet blijven.","наявне",[
+        рядок("Акцентний відтінок","Accenttint","вибір",[["Як у палітрі","Zoals het palet"],...ACCENT_KEUZES.map(id=>[ACCENT_NAMEN[id].uk,ACCENT_NAMEN[id].nl])]),
+        рядок("Прозорість блоків","Doorschijnende blokken","повзунок"),
+        рядок("Сяйво ілюстрацій","Gloed van illustraties","повзунок")
       ])
     ],
     languages:[
@@ -604,6 +639,35 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       група("вигляд","Компонування віджетів","Indeling van widgets","Додатковий спосіб налаштувати робоче полотно.","Aanvullende manier om de werkruimte in te delen.","макет",[
         рядок("Показувати віджети","Widgets tonen","перемикач"),
         рядок("Попередній перегляд розташування","Voorbeeld van de indeling","відомості")
+      ])
+    ],
+    melding:[
+      група("портал","Режим порталу та загальна поведінка","Portaalmodus en algemeen gedrag","Повне перемикання між незалежним вікном «застосунок у застосунку», контекстом піддоменів і класичним меню.","Schakelen tussen het onafhankelijke ecosysteemvenster, context per subdomein en het klassieke belmenu.","наявне",[
+        рядок("Єдина екосистема сповіщень","Geïntegreerd meldingen-ecosysteem","вибір",[["Єдина екосистема сповіщень","Geïntegreerd meldingen-ecosysteem"],["Класичне меню біля дзвоника","Klassiek paneel aan de bel"]]),
+        рядок("Контекстна адаптація до піддомену","Contextadaptatie per subdomein","перемикач"),
+        рядок("Збирати інформаційні смуги й сигнали сторінок","Paginabanners en signalen bundelen","перемикач"),
+        рядок("Геометрія та незалежне вікно","Geometrie en onafhankelijk venster","вибір",[["Рухоме вікно","Standaard zwevend"],["Бічна панель","Zijpaneel"],["Компактна пігулка","Compacte capsule"],["На весь екран","Volledig scherm"]]),
+        рядок("Відкрити портал зараз","Portaal nu openen","дія")
+      ]),
+      група("змахи","Змахування й захист безпеки","Veeggebaren en beveiligingsrem","Налаштування дій змахом ліворуч та праворуч; нові критичні сповіщення безпеки не можна прибрати випадково.","Acties voor vegen naar links en rechts; nieuwe kritieke beveiligingsmeldingen zijn altijd beschermd.","наявне",[
+        рядок("Закріпити поверх інтерфейсу","Vastpinnen boven de interface","перемикач"),
+        рядок("Змах ліворуч","Veeg naar links","вибір",[["Відкласти на 15 хв","15 min uitstellen"],["Прочитано","Gelezen"],["Архівувати","Archiveren"],["Прибрати (окрім безпеки)","Verwijderen (behalve beveiliging)"]]),
+        рядок("Змах праворуч","Veeg naar rechts","вибір",[["Виконати головну дію","Hoofdactie uitvoeren"],["Закріпити вгорі","Bovenaan vastpinnen"],["Аналіз ШІ","AI-duiding"]]),
+        рядок("Живий тренажер картки","Interactieve oefenkaart","дія")
+      ]),
+      група("канали","Канали, піддомени та тихі години","Kanalen, subdomeinen en stille uren","Гнучкі правила для кожного сервісу, спливання, звуку, важливості та тихих годин.","Regels per kanaal en subdomein voor zichtbaarheid, pop-ups, geluid en stille uren.","наявне",[
+        рядок("Тихі години екосистеми","Stille uren van ecosysteem","перемикач"),
+        рядок("Критична безпека пробиває тишу","Kritieke beveiliging doorbreekt stilte","перемикач"),
+        рядок("Початок тиші","Start stille uren","поле"),
+        рядок("Канали та важливість піддоменів","Kanalen en prioriteit per subdomein","вибір",[["Безпека (завжди)","Beveiliging (altijd)"],["Пошта","Mail"],["ШІ","AI"],["Розумний дім","Slim wonen"]])
+      ]),
+      група("вкладення-і-ші","Вкладення, ШІ та пісочниця","Bijlagen, AI en zandbak","Вбудований переглядач 14 форматів, конфіденційний внутрішній та очищений зовнішній ШІ, відокремлення просторів і пісочниця.","Universele speler voor 14 formaten, privé interne of geanonimiseerde externe AI, ruimtescheiding en zandbak.","наявне",[
+        рядок("Вбудований програвач у картці","Inline speler in meldingskaart","перемикач"),
+        рядок("Автоматичне визначення форматів","Automatische formaatherkenning","перемикач"),
+        рядок("Режим аналізу ШІ","AI-analysemodus","вибір",[["Внутрішній конфіденційний","Interne privé-analyser"],["Зовнішній (після очищення)","Externe AI (na anonimisering)"],["Поєднаний","Gecombineerd"],["Вимкнено","Uitgeschakeld"]]),
+        рядок("Лише локальний ШІ для подій безпеки","Alleen lokale AI voor beveiliging","перемикач"),
+        рядок("Відокремлення просторів сповіщень","Ruimtescheiding van meldingen","вибір",[["Особистий простір","Persoonlijke ruimte"],["Технічний простір","Technische ruimte"]]),
+        рядок("Надіслати тестову подію","Proefmelding versturen","дія")
       ])
     ],
     sharing:[
@@ -636,9 +700,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ])
     ],
     account:[
-      група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису. Вилучення фото наразі потребує окремої серверної дії.","De echte foto komt uit het aangemelde account. Verwijderen vereist nog een afzonderlijke serverhandeling.","частково",[
+      група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису; її можна замінити файлом або посиланням, прибрати власну або вибрати «Без фото» (лише ініціали).","De echte foto komt uit het aangemelde account; u kunt ze vervangen door een bestand of een link, de eigen foto verwijderen of «Geen foto» kiezen (alleen initialen).","наявне",[
         рядок("Світлина з облікового запису","Foto uit het account","фото"),
-        рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія",[],"частково",null,{uk:"Виявлена кнопка не вилучає фото, а повторно його передає. Потрібні окрема серверна дія вилучення, підтвердження та оновлення усіх зображень профілю.",nl:"De huidige knop verwijdert de foto niet, maar verstuurt dezelfde foto opnieuw. Een afzonderlijke serverhandeling, bevestiging en verversing van alle profielafbeeldingen zijn nodig."})
+        рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія")
       ]),
       група("стан","Стан підключених служб","Status van verbonden diensten","Перевірка підключення без читання вмісту листів і файлів.","Controle van verbindingen zonder inhoud van berichten of bestanden te lezen.","наявне",[
         рядок("Пошта й календар","Mail en agenda","відомості"),
@@ -804,7 +868,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       '<div class="register-head"><div><span class="register-eyebrow">'+veiligeTekstРеєстру(t.title)+'</span><p>'+veiligeTekstРеєстру(t.notice)+'</p></div><button type="button" class="register-all" data-register-all="'+sectie+'">'+veiligeTekstРеєстру(усіВідкриті?t.hideAll:t.showAll)+'</button></div>'+
       '<div class="register-list">'+groeplijst.map((g,i)=>{
         const sleutel=sectie+':'+g.id,open=відкритіГрупиРеєстру.has(sleutel);
-        return '<details class="register-group" data-register-group="'+sleutel+'" '+(open?'open':'')+'><summary><span class="register-group-index">'+String(i+1).padStart(2,'0')+'</span><span class="register-group-text"><strong>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.nl:g.uk)+'</strong><small>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.поясненняNl:g.поясненняUk)+'</small></span>'+badgeРеєстру(g.стан)+'<span class="register-chevron" aria-hidden="true">⌄</span></summary><div class="register-group-body">'+g.рядки.map((rij,j)=>veldРеєстру(sectie,g,rij,j)).join('')+'</div></details>';
+        return '<details class="register-group" data-register-group="'+sleutel+'" '+(open?'open':'')+'><summary><span class="register-group-index">'+String(i+1).padStart(2,'0')+'</span><span class="register-group-text"><strong>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.nl:g.uk)+'</strong><small>'+veiligeTekstРеєстру(preferences.lang==="nl"?g.поясненняNl:g.поясненняUk)+'</small></span>'+badgeРеєстру(g.стан)+'<span class="register-chevron" aria-hidden="true"><svg class="expand-chevron" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m5 7.5 5 5 5-5"/></svg></span></summary><div class="register-group-body">'+g.рядки.map((rij,j)=>veldРеєстру(sectie,g,rij,j)).join('')+'</div></details>';
       }).join('')+'</div></div>';
   }
 
@@ -819,13 +883,113 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     identities:["зв'язки","профіль"]
   };
   const вжеОформленіРядки={account:["Світлина з облікового запису"]};
-  // Кожна з 43 груп і 153 дій має власне, перевірене за змістом призначення.
+  // САЙТ (IDENTITEIT-011): жива карта. Стан кожної групи й рядка звірено з кодом живої версії 20261113-121403.
+  // IDENTITEIT-014 (фаза 3): звірено ще раз після під'єднання спільного доступу, вивантаження, способів входу й відновлення;
+  // кожна ціль — справжній id/селектор у коді (перевіряє tests/eenheid/identiteit-014-kaart.test.ts).
+  // «в-чинних» — працює в блоці «Чинні налаштування» цього розділу; рядок стає кнопкою переходу до потрібного місця.
+  // «частково» — є на сайті, але бракує частини; «заплановано» — потребує розробки; «недоступно» — свідомо не передбачено.
+  // IDENTITEIT-015 (крок «kaart-stille-uren»): «власник» — код є й працює, але лише після кроку власника сайту (ключі, прапорець, право);
+  // точна передумова — у рядку відомості (reden). Перехід веде до місця, де людина бачить пояснення. Підписи звірено з відомістю.
+  // ціль: "розділ|селектор" усередині гнізда .mq-echt розділу (без розділу — той самий розділ). Група, усі рядки якої «в-чинних», зникає з карти.
+  // De levende kaart: status per groep en regel volgens de live code; «в-чинних» wordt een knop naar de echte instelling.
+  // IDENTITEIT-015 (крок «vormgeving»): групи, оформлені в самій картці, тепер під'єднано до справжніх налаштувань (обліковий запис):
+  // щільність і рух, акцент і ефекти, мова, положення й режим меню, тумблер простору. Що на сайті свідомо не налаштовується — «недоступно».
+  const станНаСайті={
+    personalization:{
+      "особисте":{стан:"в-чинних",ціль:"#weergave-dichtheid",цілі:{1:"#weergave-beweging"}}
+    },
+    languages:{"мова":{стан:"в-чинних",ціль:".settings-choice-grid"}},
+    identities:{"профіль":{стан:"в-чинних",рядки:{1:"недоступно"}}},
+    menu:{
+      "панель":{стан:"в-чинних",ціль:"#menu-modus"},
+      "розташування":{стан:"в-чинних",ціль:"#menu-indeling"},
+      "додаткове":{стан:"частково",ціль:"#menu-modus",рядки:{0:"частково",1:"частково",2:"частково",3:"недоступно"}},
+      "швидкий-доступ":{стан:"в-чинних",ціль:"#menu-snel"},
+      "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",цілі:{6:"melding|#melding-kanalen",7:"melding|#melding-kanalen",8:"melding|#melding-kanalen",9:"melding|#melding-kanalen"}}, // САЙТ (ДУБЛІ-001): тихі години й типи — лише в «Сповіщеннях»
+      "швидкодія":{стан:"в-чинних",ціль:"#menu-snelheid"},
+      "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid"}
+    },
+    themes:{
+      "розклад":{стан:"в-чинних",ціль:"#thema-auto-kop"},
+      // IDENTITEIT-015 (зведення): фіолетова палітра — лише з правом plum-theme від власника сайту.
+      "палітра":{стан:"в-чинних",ціль:"#thema-kleur-kop",рядки:{0:"власник"}},
+      "акцент":{стан:"в-чинних",ціль:"#thema-accent",цілі:{1:"#thema-effecten"}}
+    },
+    // IDENTITEIT-015 (крок «profiel-blokken»): форма блоку повна — «Скасувати», «Відкрити в просторі», пояснення адреси внутрішнього блоку,
+    // серверна перевірка посилання (крок «risico»). Передача простору перед видаленням — .settings-overdracht.
+    widgets:{"створення":{стан:"в-чинних",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
+    melding:{
+      "портал":{стан:"в-чинних",ціль:"#melding-modus",цілі:{3:"#melding-geometrie"}},
+      "змахи":{стан:"в-чинних",ціль:"#melding-veeg",цілі:{0:"#melding-geometrie"}},
+      "канали":{стан:"в-чинних",ціль:"#melding-kanalen"},
+      "вкладення-і-ші":{стан:"в-чинних",ціль:"#melding-bijlagen",цілі:{2:"#melding-ai",3:"#melding-ai",4:".mp-ruimte-balk",5:"#melding-zandbak"}}
+    },
+    sharing:{
+      "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
+      // IDENTITEIT-015 (крок «delen»): строк 1/7/30 днів з межею на сервері, дата спливу, прив'язка до адреси (.delen-link-opties);
+      // «Відкриті посилання» з відкликанням (#delen-links); «Вийти з простору» на власному рядку (#delen-leden).
+      "посилання":{стан:"в-чинних",ціль:"#delen-uitnodigen",цілі:{0:".delen-link-opties"}},
+      "чинні":{стан:"в-чинних",ціль:"#delen-leden"}
+    },
+    account:{
+      "особа":{стан:"в-чинних"},
+      "стан":{стан:"в-чинних"},
+      "простори":{стан:"в-чинних"},
+      "видалення":{стан:"в-чинних",ціль:".settings-danger",цілі:{0:".settings-overdracht"}},
+      // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір формату JSON / ZIP із CSV (.gegevensuitvoer-formaat), стан «готую → готово → файл».
+      "експорт":{стан:"в-чинних",ціль:"#gegevensuitvoer",цілі:{0:".gegevensuitvoer-formaat"}}
+    },
+    sessions:{
+      "цей-пристрій":{стан:"в-чинних",ціль:".sessies-onthouden"},
+      "активні":{стан:"в-чинних"},
+      // IDENTITEIT-015 (зведення): гостьові входи інших облікових записів — за прапорцем власника gastcodes-iedereen.
+      "гості":{стан:"в-чинних",ціль:".sessies-gasten",рядки:{0:"власник"}},
+      // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір «Завжди / Вимкнено», відомі пристрої, «Це був я», «Забути пристрій».
+      // IDENTITEIT-015 (зведення): вибір і відомі пристрої працюють; спливне сповіщення — після прапорців власника meldingen-v2 і meldingen-uitleg-v3.
+      "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat",рядки:{0:"власник"}}
+    },
+    methods:{
+      // IDENTITEIT-015 (крок «sleutels-gasten»): біля кожного ключа — «Вхід і підтвердження» / «Лише підтвердження» і окремо «Довірений».
+      // IDENTITEIT-015 (зведення): позиція 0 — Google працює, вхід посиланням на пошту потребує поштової служби сайту (налаштування власника).
+      "основні":{стан:"в-чинних",ціль:"#aanmeldmethoden-google",рядки:{0:"власник"},цілі:{1:"security|#aanmeldmethoden-passkeys",2:"security|#aanmeldmethoden-2fa"}},
+      // IDENTITEIT-015 (зведення): позиція 0 — тимчасовий пароль від власника не дає входу (форми заміни під час входу немає) — «частково».
+      "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord",рядки:{0:"частково"}},
+      // IDENTITEIT-015 (зведення): повторне шифрування — з перебігом і продовженням (працює); гостьові коди для інших — за прапорцем власника.
+      "захист":{стан:"в-чинних",рядки:{2:"власник"},цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
+      // IDENTITEIT-015 (крок «aanmelden»): Microsoft/Discord/Apple — прив'язка для схвалених не-власників і вхід за прив'язкою (потрібні ключі
+      // власника й самоперевірка — тому «частково»); SMS — номер і код pending → verified (#aanmeldmethoden-telefoon), потрібен провайдер власника.
+      // IDENTITEIT-015 (зведення): усі ці способи в коді є; працюють після ключів/прапорця власника (SMS — після провайдера SMS_AANBIEDER) — «власник».
+      "додаткові":{стан:"власник",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"власник",1:"власник",2:"власник",3:"власник",4:"недоступно",5:"власник"},цілі:{5:"#aanmeldmethoden-telefoon"},
+        назви:{5:{uk:"SMS — потрібне налаштування власника",nl:"Sms — configuratie van eigenaar nodig"}}}
+    },
+    security:{
+      // IDENTITEIT-015 (крок «sleutels-gasten»): довіра до ключа (міграція 0274, посилене підтвердження) — позначка «Довірений» у переліку ключів.
+      "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",цілі:{5:"#aanmeldmethoden-passkeys"}},
+      "другий-чинник":{стан:"в-чинних",ціль:"#aanmeldmethoden-2fa",додати:[
+        {uk:"QR-код для застосунку-автентифікатора",nl:"QR-code voor de authenticator-app",стан:"в-чинних",іконка:"зчитування"},
+        {uk:"Замінити автентифікатор",nl:"Authenticator vervangen",стан:"в-чинних",іконка:"повернути"}
+      ]},
+      "резервні-коди":{стан:"в-чинних",ціль:"recovery|#aanmeldmethoden-herstel"},
+      "шифрування":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutelkluis"},
+      // IDENTITEIT-015: для схвалених не-власників — за прапорцем gastcodes-iedereen; без нього в #toegangscodes пояснення й перехід до «Доступу».
+      "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes",рядки:{0:"власник"}}
+    },
+    recovery:{
+      "засоби":{стан:"в-чинних",ціль:"#aanmeldmethoden-herstel",цілі:{1:"#herstel-overzicht"}},
+      "сценарії":{стан:"в-чинних",ціль:"#herstel-scenarios",цілі:{0:"#herstel-scenarios [data-scenario=\"apparaat\"]",1:"#herstel-scenarios [data-scenario=\"passkey\"]",2:"#herstel-scenarios [data-scenario=\"authenticator\"]",3:"#herstel-scenarios [data-scenario=\"codes-op\"]"},
+        // IDENTITEIT-015 (крок «sleutels-gasten»): у кожному кроці — кнопка до точного місця; перемикач нагадування — прямо тут.
+        додати:[{uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-herstel-reserve=\"schakel\"]",іконка:"нагадування"}]},
+      "поради":{стан:"в-чинних",цілі:{0:"#herstel-overzicht",1:"#herstel-sleutelverlies"}}
+    }
+  };
+  // Кожна з 47 груп і 173 дій має власне, перевірене за змістом призначення.
   const піктограмиГруп={
     personalization:{"переходи":"блоки","особисте":"керування"},
     menu:{"піктограми":"піктограма","панель":"панель","швидкий-доступ":"зафіксувати","розташування":"розташування","сповіщення":"сповіщення","швидкодія":"завантаження","видимість":"видимість","додаткове":"керування"},
     themes:{"режим":"місяць","розклад":"сонце","палітра":"палітра","акцент":"палітра"},
     languages:{"мова":"мова"},
     widgets:{"створення":"додати","вигляд":"блоки"},
+    melding:{"портал":"панель","змахи":"дотик","канали":"сповіщення","вкладення-і-ші":"захист"},
     sharing:{"запрошення":"запрошення","посилання":"посилання","чинні":"користувачі"},
     identities:{"зв'язки":"посвідчення","профіль":"особа"},
     account:{"особа":"світлина","стан":"перевірка","простори":"простір","видалення":"смітник","експорт":"дані"},
@@ -835,7 +999,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     recovery:{"засоби":"відновлення","сценарії":"допомога","поради":"захист"}
   };
   const піктограмиДій={
-    personalization:{"переходи":["меню","палітра","мова","блоки","запрошення","посвідчення"],"особисте":["щільність","рух"]},
+    personalization:{"переходи":["меню","палітра","мова","блоки","сповіщення","запрошення","посвідчення"],"особисте":["щільність","рух"]},
     menu:{
       "піктограми":["піктограма","палітра"],
       "панель":["панель","наведення","дотик"],
@@ -849,6 +1013,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     themes:{"режим":["місяць"],"розклад":["сонце","місце","місце","час","час","скасувати"],"палітра":["палітра"],"акцент":["палітра","ефекти"]},
     languages:{"мова":["мова"]},
     widgets:{"створення":["простір","джерело","блоки","назва","опис","посилання","розмір","додати"],"вигляд":["видимість","блоки"]},
+    melding:{
+      "портал":["панель","підсвітка","сповіщення","розмір","переходи"],
+      "змахи":["зафіксувати","перемістити","перемістити","дотик"],
+      "канали":["місяць","захист","час","сповіщення"],
+      "вкладення-і-ші":["видимість","дослід","підсвітка","захист","простір","нагадування"]
+    },
     sharing:{"запрошення":["права","простір","лист","права","запрошення"],"посилання":["час","посилання"],"чинні":["користувачі","прибрати"]},
     identities:{"зв'язки":["сеанси","ключдоступу","захист","відновлення"],"профіль":["особа","посвідчення"]},
     account:{"особа":["світлина","смітник"],"стан":["пошта","сховище","пристрій","оновити"],"простори":["простір","архів"],"видалення":["попередження","смітник"],"експорт":["дані","завантаження"]},
@@ -865,31 +1035,57 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   };
   function знакМожливості(розділ,групаId,номер=null){
     const назва=номер===null?піктограмиГруп[розділ]?.[групаId]:піктограмиДій[розділ]?.[групаId]?.[номер];
-    if(!назва)throw new Error("Відсутня змістовна піктограма: "+розділ+" / "+групаId+" / "+номер);
+    // САЙТ: без змістовної піктограми — нейтральний знак, а не збій усієї картки (тест перевіряє повноту окремо).
+    if(!назва)return піктограмаЗаСуттю("інструмент");
     return піктограмаЗаСуттю(назва);
   }
   const відкритіМожливості=new Set();
   const відкритіПідгрупиМожливостей=new Set();
   function tekenМайбутніМожливості(розділ){
     const nl=preferences.lang==="nl";
-    const групи=(реєстрНалаштувань[розділ]||[]).filter(г=>!вжеОформленіГрупи[розділ]?.includes(г.id)).map(г=>({
-      ...г,рядки:г.рядки.map((р,первіснийНомер)=>({...р,первіснийНомер})).filter(р=>!вжеОформленіРядки[розділ]?.includes(р.uk))
-    })).filter(г=>г.рядки.length);
+    const групи=(реєстрНалаштувань[розділ]||[]).filter(г=>!вжеОформленіГрупи[розділ]?.includes(г.id)).map(г=>{
+      // САЙТ: стани й цілі з живої карти; додані рядки (нові можливості) мають власну піктограму.
+      const сайт=станНаСайті[розділ]?.[г.id]||{};
+      const рядки=[...г.рядки.map((р,первіснийНомер)=>({...р,первіснийНомер})),...(сайт.додати||[]).map(р=>({...р,первіснийНомер:null}))]
+        .map(р=>{
+          const рідний=р.первіснийНомер!==null;
+          // Пріоритет стану: окремий рядок живої карти → стан групи на сайті → власний стан рядка → стан групи з макета.
+          const стан=рідний?(сайт.рядки?.[р.первіснийНомер]||сайт.стан||р.стан||г.стан):(р.стан||сайт.стан||г.стан);
+          // IDENTITEIT-015: «назви» — чесна назва рядка на карті, коли текст дизайну v49 суперечить станові (дані дизайну не змінюємо).
+          const назва=рідний?сайт.назви?.[р.первіснийНомер]:null;
+          return {...р,...(назва?{uk:назва.uk,nl:назва.nl}:{}),стан,ціль:(рідний&&сайт.цілі?.[р.первіснийНомер])||сайт.ціль||null};
+        })
+        .filter(р=>!вжеОформленіРядки[розділ]?.includes(р.uk));
+      return {...г,стан:сайт.стан||г.стан,рядки};
+    }).filter(г=>г.рядки.length&&!г.рядки.every(р=>р.стан==="в-чинних"));
     if(!групи.length)return '';
-    const статус=стан=>стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):(nl?'Koppeling controleren':'Звірити підключення');
-    const рядок=(р,і,г)=>'<div class="future-option" title="'+veiligeTekstРеєстру(статус(р.стан||г.стан))+'"><span class="future-option-mark">'+знакМожливості(розділ,г.id,р.первіснийНомер)+'</span><span class="future-option-name">'+veiligeTekstРеєстру(nl?р.nl:р.uk)+'</span>'+(р.стан&&р.стан!==г.стан?'<small class="future-option-status">'+статус(р.стан)+'</small>':'')+'</div>';
+    // САЙТ: чесні мітки живої карти; мітки «звірити підключення» більше немає.
+    const статус=стан=>стан==='власник'?(nl?'Eigenaar moet dit instellen':'Потребує налаштування власника'):стан==='заплановано'?(nl?'Nog te ontwikkelen':'Потребує розробки'):стан==='макет'?(nl?'Alleen ontwerp':'Лише макет'):стан==='частково'?(nl?'Deels beschikbaar':'Частково реалізовано'):стан==='недоступно'?(nl?'Niet beschikbaar':'Недоступно'):(nl?'Werkt':'Працює');
+    const клас=стан=>стан==='в-чинних'||стан==='наявне'?'werkt':стан==='власник'?'eigenaar':стан==='частково'?'deels':стан==='недоступно'?'nee':стан==='макет'?'ontwerp':'gepland';
+    const рядок=(р,і,г)=>{
+      const знак=р.іконка?піктограмаЗаСуттю(р.іконка):знакМожливості(розділ,г.id,р.первіснийНомер);
+      const мітка='<small class="future-option-status future-stand-'+клас(р.стан)+'">'+статус(р.стан)+'</small>';
+      const назва='<span class="future-option-name">'+veiligeTekstРеєстру(nl?р.nl:р.uk)+'</span>';
+      // Робоче або частково робоче місце з відомою ціллю — кнопка переходу до справжнього налаштування.
+      if(р.ціль&&(р.стан==='в-чинних'||р.стан==='частково'||р.стан==='власник')){
+        const ціль=р.ціль.includes('|')?р.ціль:розділ+'|'+р.ціль;
+        const підказка=р.стан==='власник'?(nl?'Opent de echte instelling; daar staat wat de site-eigenaar eerst moet instellen (sleutels, schakelaar of recht).':'Відкриває справжнє налаштування; там пояснено, що спершу має налаштувати власник сайту (ключі, перемикач або право).'):nl?'Opent de echte instelling in «Huidige instellingen»; wijzigingen daar gelden meteen voor uw account.':'Відкриває справжнє налаштування в блоці «Чинні налаштування»; зміни там одразу діють для вашого облікового запису.';
+        return '<button type="button" class="future-option future-option-go" data-kaart-ga="'+veiligeTekstРеєстру(ціль)+'" title="'+veiligeTekstРеєстру(підказка)+'"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'<span class="future-option-open">'+(nl?'Openen':'Відкрити')+'</span></button>';
+      }
+      return '<div class="future-option"><span class="future-option-mark">'+знак+'</span>'+назва+мітка+'</div>';
+    };
     const перелік=групи.map((г,і)=>{
       const назва=veiligeTekstРеєстру(nl?г.nl:г.uk),пояснення=veiligeTekstРеєстру(nl?г.поясненняNl:г.поясненняUk);
       const значок='<span class="future-group-glyph">'+знакМожливості(розділ,г.id)+'</span>';
       const вміст='<div class="future-options">'+г.рядки.map((р,j)=>рядок(р,j,г)).join('')+'</div>';
-      if(г.рядки.length<=3)return '<div class="future-group future-group-short"><div class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status">'+статус(г.стан)+'</span></div>'+вміст+'</div>';
+      if(г.рядки.length<=3)return '<div class="future-group future-group-short"><div class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status future-stand-'+клас(г.стан)+'">'+статус(г.стан)+'</span></div>'+вміст+'</div>';
       const ід=розділ+':'+г.id;
-      return '<details class="future-group" data-future-group="'+ід+'"'+(відкритіПідгрупиМожливостей.has(ід)?' open':'')+'><summary class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status">'+статус(г.стан)+'</span><span class="future-chevron">'+(typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon)+'</span></summary>'+вміст+'</details>';
+      return '<details class="future-group" data-future-group="'+ід+'"'+(відкритіПідгрупиМожливостей.has(ід)?' open':'')+'><summary class="future-group-head">'+значок+'<span class="future-group-copy"><strong>'+назва+'</strong><small>'+пояснення+'</small></span><span class="future-status future-stand-'+клас(г.стан)+'">'+статус(г.стан)+'</span><span class="future-chevron">'+(typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon)+'</span></summary>'+вміст+'</details>';
     }).join('');
     const стрілка=typeof chevronIcon==='undefined'?'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m5 7.5 5 5 5-5"/></svg>':chevronIcon;
     return '<details class="future-section" data-future-section="'+розділ+'"'+(відкритіМожливості.has(розділ)?' open':'')+'>'+
       '<summary class="future-section-head"><span class="future-section-flower" aria-hidden="true">'+піктограмаЗаСуттю("інструмент")+'</span>'+
-        '<span class="future-section-copy"><strong>'+(nl?'Aanvullende mogelijkheden':'Можливості для доопрацювання')+'</strong><p>'+(nl?'De onderstaande functies staan op de ontwikkelkaart. Dit zijn geen werkende accountknoppen.':'Нижче — завдання з карти розробки. Ці елементи не змінюють справжній обліковий запис.')+'</p></span>'+
+        '<span class="future-section-copy"><strong>'+(nl?'Ontwikkelkaart':'Карта розвитку')+'</strong><p>'+(nl?'Wat al werkt, opent u met één klik in de echte instellingen; wat deels klaar is of nog ontwikkeld wordt, staat erbij. Deze kaart zelf wijzigt uw account niet.':'Що вже працює — відкривається одним натиском у справжніх налаштуваннях; поруч — що працює частково і що ще в розробці. Сама карта обліковий запис не змінює.')+'</p></span>'+
         '<span class="future-section-chevron" aria-hidden="true">'+стрілка+'</span></summary>'+
       '<div class="future-section-content"><div class="future-groups">'+перелік+'</div></div></details>';
   }
@@ -923,6 +1119,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       keuze.closest('.register-choices').querySelectorAll('[data-register-choice]').forEach(b=>{const gekozen=b===keuze;b.classList.toggle('selected',gekozen);b.setAttribute('aria-pressed',String(gekozen));});
       showToast(написиРеєстру[preferences.lang].toast);return;
     }
+    // САЙТ: перехід із живої карти до справжнього налаштування (функцію надає двигун сайту).
+    const карта=event.target.closest('[data-kaart-ga]');
+    if(карта){const [розділКарти,...решта]=карта.dataset.kaartGa.split('|');if(typeof відкритиНаСайті==='function')відкритиНаСайті(розділКарти,решта.join('|'));return;}
     const overgang=event.target.closest('[data-register-go]');
     if(overgang){const id=overgang.dataset.registerGo;openInlineSettings(id,{toggle:false});byId(id)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});return;}
     const knop=event.target.closest('[data-register-all]');
@@ -951,7 +1150,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const optionIconNames={
     personalization:["піктограма","щільність","рух"],menu:["підсвітка","підказка"],
     themes:["місяць","палітра","ефекти"],languages:["мова"],
-    widgets:["видимість","розмір","додати"],sharing:["видимість","посилання","запрошення"],
+    widgets:["видимість","розмір","додати"],melding:["сповіщення","підсвітка","переходи"],sharing:["видимість","посилання","запрошення"],
     identities:["особа","посвідчення"],account:["особа","дані","попередження"],
     sessions:["пристрій","сповіщення","історія"],methods:["гугл","ключдоступу","захист"],
     security:["захист","шифрування","гість"],recovery:["коди","нагадування","попередження"]
@@ -962,7 +1161,44 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     return піктограмаЗаСуттю(name);
   }
 
+  const демоДоСайту={melding:"#melding-modus",sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+  // BLOKKEN-001: точні справжні блоки для карток, де ціль розділу порожня. Ключ — «розділ-номер картки».
+  // NL: precieze echte blokken voor kaarten zonder doel in de sectie.
+  const ЦІЛЬ_КАРТКИ={"account-0":".ia-profiel","account-1":"#gegevensuitvoer","account-2":".settings-danger","sessions-0":".sessies-overzicht"};
+  const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
+  function чеснийЕлемент(control,i,sectionId,ціль,пояснення,кнопка){
+    const nl=preferences.lang==="nl";
+    if(пояснення)control={...control,note:escapeMarkup(nl?пояснення.nl:пояснення.uk)};
+    const підказка=nl?"Dit is een voorbeeld uit het ontwerp. De knop opent de echte instelling, waar wijzigingen meteen gelden.":"Це приклад із макета. Кнопка відкриває справжнє налаштування, де зміни діють одразу.";
+    return '<div class="drawer-control-card control-'+control.type+' mq-demo-eerlijk">'+
+      '<div class="drawer-control-top"><span class="drawer-control-glyph">'+optionSvg(sectionId,i)+'</span><div class="drawer-control-copy"><strong>'+control.label+' <span class="mq-demo-label">'+(nl?"Voorbeeld":"Приклад вигляду")+'</span></strong><p>'+control.note+'</p></div>'+
+      '<button type="button" class="future-option-open mq-demo-open" data-kaart-ga="'+escapeMarkup(sectionId+"|"+ціль)+'" title="'+escapeMarkup(підказка)+'">'+(кнопка?escapeMarkup(nl?кнопка.nl:кнопка.uk):(nl?"Echte instelling":"Справжнє налаштування"))+'</button></div></div>';
+  }
+  // САЙТ (IDENTITEIT-015): пояснення там, де справжнього вимикача на сайті свідомо немає.
+  const ЧЕСНО={
+    "menu-0":[{uk:"У меню сайту активний розділ підсвічується завжди: так видно, де ви зараз, і це потрібно програмам читання з екрана. Тому окремого вимикача немає. Вигляд і поведінку меню змінюють у «Налаштування меню».",nl:"In het menu van de site is het actieve onderdeel altijd gemarkeerd: zo ziet u waar u bent, en schermlezers hebben het nodig. Daarom is er geen aparte schakelaar. Het uiterlijk en gedrag van het menu stelt u in bij «Menu-instellingen»."},{uk:"Налаштування меню",nl:"Menu-instellingen"},"#menu-modus"],
+    "menu-1":[{uk:"У меню сайту назва пункту з'являється підказкою завжди, коли меню згорнуте до піктограм: без неї піктограма нічого не каже. Тому окремого вимикача немає. Згорнуте, розгорнуте чи автоматичне меню обирають у «Налаштування меню».",nl:"In het menu van de site verschijnt de naam altijd als hint wanneer het menu tot pictogrammen is ingeklapt: zonder hint zegt een pictogram niets. Daarom is er geen aparte schakelaar. Ingeklapt, uitgeklapt of automatisch kiest u bij «Menu-instellingen»."},{uk:"Налаштування меню",nl:"Menu-instellingen"},"#menu-modus"],
+    "widgets-0":[{uk:"Загального вимикача блоків немає, щоб випадково не сховати весь простір. Блоки ховають і показують по одному в самому просторі: «Мій простір» → кнопка «Налаштувати».",nl:"Er is geen algemene schakelaar voor blokken, zodat u niet per ongeluk de hele werkruimte verbergt. Blokken verbergt en toont u één voor één in de werkruimte zelf: «Mijn ruimte» → knop «Aanpassen»."},{uk:"Відкрити простір",nl:"Werkruimte openen"},"dienst:hub"],
+    "widgets-1":[{uk:"Тут лише зразок. Розмір і порядок ваших справжніх блоків змінюють у самому просторі: «Мій простір» → кнопка «Налаштувати»; там же видно справжні блоки.",nl:"Hier staat alleen een voorbeeld. Grootte en volgorde van uw echte blokken wijzigt u in de werkruimte zelf: «Mijn ruimte» → knop «Aanpassen»; daar ziet u ook uw echte blokken."},{uk:"Відкрити простір",nl:"Werkruimte openen"},"dienst:hub"],
+    // IDENTITEIT-015 (apparaten-uitvoer): демо-елементи «Дані й експорт» і «Сповіщення про новий вхід» ведуть до справжніх блоків.
+    "account-1":[{uk:"Тут лише зразок вибору. Справжнє вивантаження — у «Чинних налаштуваннях» → «Ваші дані»: формат JSON або ZIP із CSV на кожну таблицю, без секретів; перед вивантаженням сайт попросить підтвердити, що це ви.",nl:"Hier staat alleen een voorbeeld. De echte export staat in «Huidige instellingen» → «Uw gegevens»: JSON of ZIP met een CSV per tabel, zonder geheimen; vóór de export vraagt de site te bevestigen dat u het bent."},{uk:"Вивантажити дані",nl:"Gegevens exporteren"},"#gegevensuitvoer"],
+    "sessions-1":[{uk:"Тут лише зразок. Справжній вибір «Завжди / Вимкнено» і перелік відомих пристроїв — у «Чинних налаштуваннях» → «Попереджати про новий пристрій»; вибір діє на всіх ваших пристроях.",nl:"Hier staat alleen een voorbeeld. De echte keuze «Altijd / Uit» en de lijst van bekende apparaten staan in «Huidige instellingen» → «Waarschuwen bij een nieuw apparaat»; de keuze geldt op al uw apparaten."},{uk:"Справжнє налаштування",nl:"Echte instelling"},"#sessies-nieuw-apparaat"],
+    "identities-1":[{uk:"Позначку технічного режиму вимкнути не можна: вона не дає виконати дію керування сайтом, думаючи, що ви у звичайному просторі. Колір і згортання технічної смуги налаштовуються на самій смузі (значок налаштувань), коли технічний простір увімкнено — через меню облікового запису.",nl:"De markering van de technische modus kan niet uit: ze voorkomt dat u een beheeractie uitvoert terwijl u denkt in de gewone ruimte te zijn. Kleur en inklappen van de technische band stelt u op de band zelf in (instellingenpictogram) wanneer de technische ruimte aan staat — via het accountmenu."},{uk:"Меню облікового запису",nl:"Accountmenu"},"accountmenu:"],
+  };
+  function карткаПростору(control,i,sectionId){
+    const nl=preferences.lang==="nl";
+    const uitleg=nl?"Gewone of technische ruimte van dit account. De schakelaar is echt: de server controleert uw rechten; zonder toestemming ziet u waarom.":"Звичайний чи технічний простір цього облікового запису. Тумблер справжній: права перевіряє сервер; без дозволу ви побачите причину.";
+    return '<div class="drawer-control-card control-wide mq-echt-kaart" data-echt-kaart="'+sectionId+'-'+i+'">'+
+      '<div class="drawer-control-top"><span class="drawer-control-glyph">'+optionSvg(sectionId,i)+'</span><div class="drawer-control-copy"><strong>'+control.label+'</strong><p>'+escapeMarkup(uitleg)+'</p></div></div>'+
+      '<div class="drawer-control-widget"><div class="mq-echt mq-ruimtewissel" data-echt="ruimtewissel"></div></div></div>';
+  }
   function drawerControl(control,i,sectionId){
+    if(sectionId==="identities"&&i===0)return карткаПростору(control,i,sectionId); // САЙТ (IDENTITEIT-015)
+    const чесно=ЧЕСНО[sectionId+"-"+i];
+    if(чесно)return чеснийЕлемент(control,i,sectionId,чесно[2],чесно[0],чесно[1]);
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,ЦІЛЬ_КАРТКИ[sectionId+"-"+i]||демоДоСайту[sectionId]);
+    if(sectionId==="themes"&&control.type==="theme")return чеснийЕлемент({...control,type:"theme"},i,sectionId,"#thema-modus-kop");
+    if(sectionId==="widgets"&&control.type==="action")return чеснийЕлемент(control,i,sectionId,".settings-form");
     const key=sectionId+"-"+i,type=control.type,t=ui();
     const current=demoValues[key];
     let widget="";
@@ -981,7 +1217,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }else if(type==="theme"){
       widget='<div class="drawer-choice theme-illustrated"><button data-theme="dark" class="'+(preferences.theme==="dark"?"selected":"")+'"><span class="theme-miniature theme-miniature-dark"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 16a8.4 8.4 0 0 1-12-12 8.4 8.4 0 1 0 12 12Z"/></svg></span><span>'+t.dark+'</span></button><button data-theme="light" class="'+(preferences.theme==="light"?"selected":"")+'"><span class="theme-miniature theme-miniature-light"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span>'+t.light+'</span></button></div>';
     }else if(type==="accent"){
-      widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(preferences.accent===c?"selected":"")+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
+      // ACCENT-001: ті самі відтінки, що в меню облікового запису; давні «pink»/«amber» видно, лише поки обрані.
+      widget='<div class="swatches drawer-swatches">'+ACCENT_KEUZES.concat(ACCENT_KEUZES.includes(обранийАкцент())||!обранийАкцент()?[]:[обранийАкцент()]).map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';
     }else if(type==="language"){
       widget='<div class="drawer-choice language-illustrated"><button data-demo-lang="uk" class="'+(preferences.lang==="uk"?"selected":"")+'"><span class="language-flag language-flag-uk" aria-hidden="true"></span><span>Українська</span></button><button data-demo-lang="nl" class="'+(preferences.lang==="nl"?"selected":"")+'"><span class="language-flag language-flag-nl" aria-hidden="true"></span><span>Nederlands</span></button></div>';
     }else if(type==="range"){
@@ -1075,7 +1312,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!panel)return;
     const visualPreview=visualPreviewSections.has(id);
     panel.innerHTML=
-      '<div class="inline-settings-header"><div class="inline-settings-identity"><span class="inline-settings-section-icon'+(id==='identities'?' profile-avatar':'')+'"'+(id==='identities'?' data-profile-photo':'')+'>'+(id==='identities'?'':iconSvg(id))+'</span><div><span class="inline-settings-eyebrow">'+t.inlineEyebrow+'</span><h3>'+s.name+'</h3></div></div><button class="inline-close-button" data-close-inline="'+id+'" aria-label="'+t.collapseSection+'">'+t.collapseSection+' <span>⌃</span></button></div>'+
+      '<div class="inline-settings-header"><div class="inline-settings-identity"><span class="inline-settings-section-icon'+(id==='identities'?' profile-avatar':'')+'"'+(id==='identities'?' data-profile-photo':'')+'>'+(id==='identities'?'':iconSvg(id))+'</span><div><span class="inline-settings-eyebrow">'+t.inlineEyebrow+'</span><h3>'+s.name+'</h3></div></div><button class="inline-close-button" data-close-inline="'+id+'" aria-label="'+t.collapseSection+'">'+t.collapseSection+' <span class="inline-close-chevron" aria-hidden="true">'+chevronIcon+'</span></button></div>'+
       '<div class="inline-settings-workspace '+(visualPreview?'has-preview':'no-preview')+'">'+
         '<div class="inline-settings-controls"><div class="drawer-controls-list">'+locales[preferences.lang].panels[id].map((control,i)=>drawerControl(control,i,id)).join("")+'</div></div>'+
         (visualPreview?'<aside class="inline-live-panel" aria-label="'+t.previewSample+'"><div class="inline-preview-body">'+drawerPreview(s)+'</div></aside>':'')+
@@ -1138,14 +1375,20 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     }
   }
 
-  function isIconNav(){
-    return preferences.iconOnly || ["top","bottom"].includes(preferences.position) || preferences.compact ||
-      ((breed()<=730)&&["left","right"].includes(preferences.position));
+  // HINT-001: підказка потрібна лише тоді, коли пункт справді показує саму піктограму. Налаштування «компактно»/«авто»
+  // не годиться як ознака: в авто-режимі панель розгортається при наведенні й назву вже видно (була подвійна назва).
+  // HINT-001: alleen een hint als het item echt alleen een pictogram toont; «auto» klapt bij aanwijzen uit en toont de naam al.
+  function isIconNav(el){
+    const naam=el&&el.querySelector(".anchor-name,.nav-group-name");
+    if(!naam)return true;
+    if(!naam.getClientRects().length)return true;
+    const st=getComputedStyle(naam);
+    return st.visibility==="hidden"||Number(st.opacity)<0.05;
   }
   function showAnchorTooltip(el){
-    if(!el||!isIconNav()||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
+    if(!el||!isIconNav(el)||(demoValues["menu-1"]===false&&!["top","bottom"].includes(preferences.position)))return;
     const tooltip=byId("anchorTooltip"),rect=el.getBoundingClientRect();
-    tooltip.textContent=el.dataset.tooltip;
+    tooltip.textContent=el.dataset.ankerTip||el.getAttribute("aria-label")||"";
     tooltip.hidden=false;
     tooltip.dataset.side=preferences.position;
     const tw=tooltip.offsetWidth,th=tooltip.offsetHeight,pad=9;
@@ -1157,8 +1400,14 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     tooltip.style.left=Math.max(pad,Math.min(innerWidth-tw-pad,x))+"px";
     tooltip.style.top=Math.max(pad,Math.min(innerHeight-th-pad,y))+"px";
     tooltip.classList.add("show");
+    ankerTipDoel=el;
+    // Авто-панель розгортається під мишею вже після показу: щойно назву видно, бубка зникає · verdwijnt zodra de naam zichtbaar is
+    clearTimeout(ankerTipHerzien);ankerTipHerzien=setTimeout(herzieAnkerTip,120);setTimeout(herzieAnkerTip,420);
   }
+  let ankerTipDoel=null,ankerTipHerzien=0;
+  function herzieAnkerTip(){if(ankerTipDoel&&!isIconNav(ankerTipDoel))hideAnchorTooltip();}
   function hideAnchorTooltip(){
+    ankerTipDoel=null;
     const tooltip=byId("anchorTooltip");
     tooltip.classList.remove("show");
     tooltip.hidden=true;
@@ -1168,10 +1417,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const close=event.target.closest("[data-close-inline]");
     if(close){closeInlineSettings(close.dataset.closeInline);return;}
     const toggle=event.target.closest("[data-toggle-demo]");
-    if(toggle){const key=toggle.dataset.toggleDemo;demoValues[key]=toggle.getAttribute("aria-pressed")!=="true";toggle.setAttribute("aria-pressed",String(demoValues[key]));toggle.classList.toggle("on",demoValues[key]);refreshLivePreview();syncDirectVisuals();if(key==="menu-0")syncActive();if(key==="menu-1"&&!demoValues[key])hideAnchorTooltip();return;}
+    if(toggle){const key=toggle.dataset.toggleDemo;demoValues[key]=toggle.getAttribute("aria-pressed")!=="true";toggle.setAttribute("aria-pressed",String(demoValues[key]));toggle.classList.toggle("on",demoValues[key]);refreshLivePreview();syncDirectVisuals();if(key==="menu-0")syncActive();if(key==="menu-1"&&!demoValues[key])hideAnchorTooltip();if(key==="personalization-2")доСайту({beweging:demoValues[key]?"systeem":"minder"});return;}
     if(event.target.closest("[data-drawer-compact]")){setCompact(!preferences.compact);root.querySelectorAll("[data-drawer-compact]").forEach(b=>b.classList.toggle("on",preferences.compact));return;}
     const choice=event.target.closest("[data-choice-group]");
-    if(choice){demoValues[choice.dataset.choiceGroup]=Number(choice.dataset.choiceIndex);root.querySelectorAll('[data-choice-group="'+choice.dataset.choiceGroup+'"]').forEach(button=>button.classList.toggle("selected",button===choice));refreshLivePreview();syncDirectVisuals();return;}
+    if(choice){demoValues[choice.dataset.choiceGroup]=Number(choice.dataset.choiceIndex);root.querySelectorAll('[data-choice-group="'+choice.dataset.choiceGroup+'"]').forEach(button=>button.classList.toggle("selected",button===choice));refreshLivePreview();syncDirectVisuals();const ck=choice.dataset.choiceGroup;if(ck==="personalization-0")доСайту({icoonStijl:demoValues[ck]===1?"kleur":"klassiek"});if(ck==="personalization-1")доСайту({dichtheid:ЩІЛЬНІСТЬ[demoValues[ck]]||"normaal"});return;}
     if(event.target.closest("[data-demo-action]")){showToast(ui().actionDemo);return;}
   });
   luister(doc,"input",event=>{
@@ -1182,6 +1431,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       demoValues[range.dataset.rangeDemo]=Number(range.value);
       range.parentElement.querySelector("output").textContent=range.value+"%";
       root.style.setProperty("--effect-intensity",String(range.value/100));
+      if(range.dataset.rangeDemo==="themes-2")доСайту({effecten:Number(range.value)});
       refreshLivePreview();
     }
   });
@@ -1213,7 +1463,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       special:"dock"
     },
     {
-      id:"themes", group:"personal", number:"03", name:"Теми", short:"Теми", icon:"◑",
+      id:"themes", group:"personal", number:"03", name:"Вигляд і кольори", short:"Вигляд", icon:"◑",
       kicker:"ГРА СВІТЛА", title:"Настрій у кожному пікселі.",
       description:"Оберіть темний камерний простір або легку світлу атмосферу. Відтінки, які підтримують концентрацію.",
       accent:"pink", art:"themes",
@@ -1236,7 +1486,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       special:"language"
     },
     {
-      id:"widgets", group:"personal", number:"05", name:"Віджети", short:"Віджети", icon:"⊞",
+      id:"widgets", group:"personal", number:"05", name:"Блоки", short:"Блоки", icon:"⊞",
       kicker:"ЗБЕРІТЬ СВОЄ", title:"Маленькі деталі. Велика різниця.",
       description:"Побудуйте робочий простір із корисних блоків. Обирайте те, що важливе саме сьогодні.",
       accent:"amber", art:"widgets",
@@ -1246,7 +1496,18 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"sharing", group:"social", number:"06", name:"Спільний доступ", short:"Доступ", icon:"◎",
+      id:"melding", group:"personal", number:"06", name:"Сповіщення", short:"Сповіщення", icon:"◔",
+      kicker:"СИСТЕМА В СИСТЕМІ", title:"Єдина екосистема сповіщень.",
+      description:"Незалежне вікно поверх сайту, канали всіх піддоменів, жести змахування, вбудований переглядач вкладень та конфіденційний аналіз ШІ.",
+      accent:"cyan", art:"melding",
+      details:[
+        {icon:"◉",label:"Портал поверх сайту",note:"Зміна розмірів, закріплення й згортання в пігулку"},
+        {icon:"⇄",label:"Змахи та вкладення",note:"Швидкі дії та відтворення всіх форматів файлів"},
+        {icon:"✦",label:"Приватний ШІ",note:"Локальний розбір і очищене зовнішнє узагальнення"}
+      ]
+    },
+    {
+      id:"sharing", group:"social", number:"07", name:"Спільний доступ", short:"Доступ", icon:"◎",
       kicker:"ВАШІ КОРДОНИ", title:"Діліться лише тим, чим хочете.",
       description:"Прозорі права доступу, чіткі запрошення й повне розуміння того, хто що бачить.",
       accent:"blue", art:"sharing",
@@ -1256,7 +1517,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"identities", group:"social", number:"07", name:"Ідентичності", short:"Ідентичності", icon:"◇",
+      id:"identities", group:"social", number:"08", name:"Ідентичності", short:"Ідентичності", icon:"◇",
       kicker:"ДВА РЕЖИМИ", title:"Кожна роль на своєму місці.",
       description:"Особистий і технічний профілі залишаються виразно відокремленими — і в логіці, і у візуальному стилі.",
       accent:"violet", art:"identities",
@@ -1266,7 +1527,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"account", group:"account", number:"08", name:"Акаунт і дані", short:"Акаунт і дані", icon:"▣",
+      id:"account", group:"account", number:"09", name:"Обліковий запис і дані", short:"Обліковий запис", icon:"▣",
       kicker:"ВАШІ ДАНІ", title:"Усе важливе — під контролем.",
       description:"Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
       accent:"cyan", art:"account",
@@ -1277,7 +1538,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"sessions", group:"account", number:"09", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
+      id:"sessions", group:"account", number:"10", name:"Сесії та пристрої", short:"Пристрої", icon:"▤",
       kicker:"ВАШІ ПІДКЛЮЧЕННЯ", title:"Видно кожен пристрій.",
       description:"Активні сесії, історія та підключені пристрої — візуально зрозумілі з першого погляду.",
       accent:"mint", art:"sessions",
@@ -1287,7 +1548,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"methods", group:"account", number:"10", name:"Способи входу", short:"Способи входу", icon:"⌁",
+      id:"methods", group:"account", number:"11", name:"Способи входу", short:"Способи входу", icon:"⌁",
       kicker:"БЕЗ ЗАЙВИХ ПАРОЛІВ", title:"Безпечний вхід. Менше тертя.",
       description:"Google, ключі доступу та способи підтвердження важливих дій — кожен на своєму місці.",
       accent:"pink", art:"methods",
@@ -1297,7 +1558,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"security", group:"security", number:"11", name:"Безпека", short:"Безпека", icon:"⬡",
+      id:"security", group:"security", number:"12", name:"Безпека", short:"Безпека", icon:"⬡",
       kicker:"ТИХА ВПЕВНЕНІСТЬ", title:"Захист, який можна зрозуміти.",
       description:"Двофакторна автентифікація, шифрування, ключі та дозволи — без прихованих деталей і двозначності.",
       accent:"blue", art:"security",
@@ -1308,7 +1569,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ]
     },
     {
-      id:"recovery", group:"security", number:"12", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
+      id:"recovery", group:"security", number:"13", name:"Відновлення доступу", short:"Відновлення", icon:"✣",
       kicker:"ПЛАН Б", title:"Спокій навіть у непередбачуваному.",
       description:"Відновлення доступу повинно бути передбачуваним: із чіткими поясненнями, ризиками та шляхами дій.",
       accent:"amber", art:"recovery",
@@ -1341,6 +1602,33 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   preferences.railMode=preferences.railMode|| (preferences.compact?"collapsed":"expanded");
   if(!["expanded","collapsed","auto"].includes(preferences.railMode))preferences.railMode="expanded";
   preferences.compact=preferences.railMode!=="expanded";
+  // САЙТ (IDENTITEIT-015): елементи макета показують і змінюють справжні налаштування сайту (обліковий запис), не демо-значення.
+  const ПОЗ_САЙТ={left:"links",right:"rechts",top:"boven",bottom:"onder"},ПОЗ_МАКЕТ={links:"left",rechts:"right",boven:"top",onder:"bottom"};
+  const РЕЖИМ_САЙТ={expanded:"open",collapsed:"dicht",auto:"auto"},РЕЖИМ_МАКЕТ={open:"expanded",dicht:"collapsed",auto:"auto"};
+  const ЩІЛЬНІСТЬ=["normaal","compact","ruim"];
+  let сайтАкцент=opties.weergave?opties.weergave.accent:preferences.accent;
+  let сайтГотовий=false;
+  const обранийАкцент=()=>opties.weergave?сайтАкцент:preferences.accent;
+  function демоЗСайту(w){
+    if(!w)return;
+    demoValues["personalization-0"]=w.icoonStijl==="kleur"?1:0;
+    demoValues["personalization-1"]=Math.max(0,ЩІЛЬНІСТЬ.indexOf(w.dichtheid||"normaal"));
+    demoValues["personalization-2"]=w.beweging!=="minder";
+    demoValues["themes-2"]=typeof w.effecten==="number"?w.effecten:45;
+    сайтАкцент=w.accent;
+    if(w.accent)preferences.accent=w.accent;
+    if(ПОЗ_МАКЕТ[w.positie])preferences.position=ПОЗ_МАКЕТ[w.positie];
+    if(РЕЖИМ_МАКЕТ[w.modus]){preferences.railMode=РЕЖИМ_МАКЕТ[w.modus];preferences.compact=preferences.railMode!=="expanded";}
+  }
+  демоЗСайту(opties.weergave);
+  function доСайту(patch){if(сайтГотовий&&typeof opties.bijWeergave==="function")opties.bijWeergave(patch);}
+  // Вже намальовані елементи підлаштовуються без перемальовування карток (справжні панелі під ними не перемонтовуються).
+  function синхронізуватиДемо(){
+    root.querySelectorAll("[data-choice-group]").forEach(b=>{const k=b.dataset.choiceGroup;if(k in demoValues)b.classList.toggle("selected",Number(b.dataset.choiceIndex)===demoValues[k]);});
+    root.querySelectorAll("[data-toggle-demo]").forEach(b=>{const k=b.dataset.toggleDemo;if(k in demoValues){b.setAttribute("aria-pressed",String(demoValues[k]));b.classList.toggle("on",demoValues[k]);}});
+    root.querySelectorAll("[data-range-demo]").forEach(r=>{const k=r.dataset.rangeDemo;if(k in demoValues&&doc.activeElement!==r){r.value=String(demoValues[k]);const o=r.parentElement?.querySelector("output");if(o)o.textContent=demoValues[k]+"%";}});
+    syncDirectVisuals();syncControlStates();refreshLivePreview();
+  }
   const expandedNavGroups=new Set(["personal"]);
   let horizontalNavTrigger=null;
   const isHorizontalNav=()=>["top","bottom"].includes(preferences.position);
@@ -1350,14 +1638,23 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const adaptiveNavEdge=byId("adaptiveNavEdge");
   let drawerOpenedByControl=false;
   function placeAdaptiveNavToggle(){
-    // Keep the hamburger on the same edge as the temporary side drawer.
-    // Moving the existing node preserves its event listeners and focus state.
-    const onRight=preferences.position==="right";
-    const host=root.querySelector(onRight?".top-actions":".topbar-start");
-    if(adaptiveNavToggle.parentElement!==host){
-      if(onRight)host.append(adaptiveNavToggle);
-      else host.prepend(adaptiveNavToggle);
-    }
+    const balk=byId("mqSectieBalk");
+    if(balk)balk.dataset.zijde=preferences.position==="right"?"right":"left";
+  }
+  // САЙТ (IDENTITEIT-015, D2): смуга розділів на вузькому екрані показує активний розділ; назва — і в aria-label кнопки.
+  let actieveSectie="intro";
+  function zetSectieBalk(){
+    const nl=preferences.lang==="nl";
+    const s=actieveSectie==="intro"?null:localizedSections().find(x=>x.id===actieveSectie);
+    const naam=s?s.name:(nl?"Onderdelen":"Розділи");
+    const el=root.querySelector("#mqSectieNaam");
+    if(el&&el.textContent!==naam)el.textContent=naam;
+    const knop=root.querySelector("#adaptiveNavToggle");
+    if(!knop)return;
+    const open=knop.getAttribute("aria-expanded")==="true";
+    const basis=nl?(open?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(open?"Закрити розділи сторінки":"Відкрити розділи сторінки");
+    const label=s?basis+" — "+(nl?"nu: ":"зараз: ")+naam:basis;
+    if(knop.getAttribute("aria-label")!==label){knop.setAttribute("aria-label",label);knop.title=label;}
   }
   function setAdaptiveNavOpen(open,{explicit=false}={}){
     const visible=Boolean(open&&body.classList.contains("rail-smart-condensed"));
@@ -1367,56 +1664,72 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     adaptiveNavScrim.hidden=!visible;
     byId("anchorRail").setAttribute("aria-hidden",String(!visible&&body.classList.contains("rail-smart-condensed")));
     adaptiveNavToggle.setAttribute("aria-expanded",String(visible));
-    adaptiveNavToggle.setAttribute("aria-label",preferences.lang==="nl"?(visible?"Navigatie sluiten":"Navigatie openen"):(visible?"Закрити навігацію":"Відкрити навігацію"));
-    adaptiveNavToggle.title=adaptiveNavToggle.getAttribute("aria-label");
+    zetSectieBalk();
     const edgeLabel=preferences.lang==="nl"?"Zijmenu openen":"Відкрити бічне меню";
     adaptiveNavEdge.setAttribute("aria-label",edgeLabel);
     adaptiveNavEdge.title=edgeLabel;
     if(byId("railExpand"))syncRailCompactButton();
   }
   let stableSideNavWidth=212;
+  let basisFontFamily="";
+  let tekstCanvas=null;
+  let tekstCtx=null;
+  const tekstBreedCache=new Map();
+  function haalFontFamily(){
+    if(!basisFontFamily){
+      try{basisFontFamily=getComputedStyle(root).fontFamily||'Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif';}
+      catch{basisFontFamily='Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif';}
+    }
+    return basisFontFamily;
+  }
+  function meetTekstBreed(tekst,isGroup){
+    const k=(isGroup?"g:":"i:")+tekst;
+    const cached=tekstBreedCache.get(k);
+    if(cached!==undefined)return cached;
+    if(!tekstCtx&&typeof doc.createElement==="function"){
+      try{
+        tekstCanvas=doc.createElement("canvas");
+        tekstCtx=tekstCanvas&&typeof tekstCanvas.getContext==="function"?tekstCanvas.getContext("2d"):null;
+      }catch{tekstCtx=null;}
+    }
+    let w;
+    if(tekstCtx){
+      tekstCtx.font=(isGroup?"740 13.5px ":"650 13.5px ")+haalFontFamily();
+      w=tekstCtx.measureText(tekst).width;
+    }else{
+      w=tekst.length*7.8;
+    }
+    tekstBreedCache.set(k,w);
+    return w;
+  }
   function naturalDrawerWidth(){
     if(preferences.iconOnly)return 88;
-    // The compact drawer must fit the longest button, including closed groups.
-    // Measure text at its actual font size instead of the clipped panel width.
-    const meter=document.createElement("span");
-    meter.style.cssText="position:fixed;left:-9999px;top:0;visibility:hidden;white-space:nowrap;pointer-events:none";
-    root.append(meter);
     let widest=0;
     byId("railItems").querySelectorAll(".anchor-link,.nav-group-toggle").forEach(button=>{
       const label=button.querySelector(".anchor-name,.nav-group-name");
       if(!label)return;
-      const type=getComputedStyle(label);
-      meter.style.font=`${type.fontStyle} ${type.fontWeight} ${type.fontSize} ${type.fontFamily}`;
-      meter.textContent=label.textContent.trim();
-      const labelWidth=meter.getBoundingClientRect().width;
-      // Icon, spacing, button padding, optional chevron, panel padding/border.
-      widest=Math.max(widest,labelWidth+25+9+28+26+(button.classList.contains("nav-group-toggle")?21:0));
+      const isGroup=button.classList.contains("nav-group-toggle");
+      const labelWidth=meetTekstBreed((label.textContent||"").trim(),isGroup);
+      // Піктограма, інтервал, відступи кнопки, можлива стрілка групи, поля панелі та запас.
+      widest=Math.max(widest,labelWidth+25+10+28+26+(isGroup?23:0));
     });
-    meter.remove();
     return Math.ceil(Math.max(146,widest));
   }
   function naturalSideNavWidth(){
-    // Measure the actual, unclipped labels (including closed groups). The
-    // compact rail and temporary drawer must never influence this footprint.
+    // Вимірюємо ширину підписів без розкриття схованих груп і без примусових перекомпонувань DOM.
     if(!isHorizontalNav()&&!body.classList.contains("rail-compact")&&!body.classList.contains("rail-smart-condensed")){
       const rail=byId("anchorRail");
-      const hiddenGroups=[...rail.querySelectorAll(".nav-subitems")]
-        .filter(group=>getComputedStyle(group).display==="none");
-      hiddenGroups.forEach(group=>{group.style.display="flex";});
-      const widths=[...rail.querySelectorAll(".anchor-link,.nav-group-toggle")].map(button=>{
-        const oldWidth=button.style.width,oldMax=button.style.maxWidth;
-        button.style.width="max-content";
-        button.style.maxWidth="none";
-        const width=button.getBoundingClientRect().width;
-        button.style.width=oldWidth;
-        button.style.maxWidth=oldMax;
-        return width;
+      let maxKnop=0;
+      rail.querySelectorAll(".anchor-link,.nav-group-toggle").forEach(button=>{
+        const label=button.querySelector(".anchor-name,.nav-group-name");
+        if(!label)return;
+        const isGroup=button.classList.contains("nav-group-toggle");
+        const isSub=Boolean(button.closest(".nav-subitems"));
+        const lw=meetTekstBreed((label.textContent||"").trim(),isGroup);
+        const knopBreed=lw+25+10+28+(isGroup?23:0)+(isSub?11:0)+6;
+        if(knopBreed>maxKnop)maxKnop=knopBreed;
       });
-      hiddenGroups.forEach(group=>{group.style.removeProperty("display");});
-      // Preserve the same footprint while switching classic/pills, whose font
-      // metrics may differ by a pixel or two. A language change resets it.
-      if(widths.some(Boolean))stableSideNavWidth=Math.max(stableSideNavWidth,195,Math.ceil(Math.max(...widths)+24));
+      if(maxKnop>0)stableSideNavWidth=Math.max(stableSideNavWidth,195,Math.ceil(maxKnop+24));
     }
     return stableSideNavWidth;
   }
@@ -1477,13 +1790,19 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     themes:'<path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-2a2 2 0 0 1-2-2V6a3 3 0 0 0-3-3Z"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="7" r=".8"/><circle cx="7" cy="15" r=".8"/>',
     languages:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 6-5 12 0 18M12 3c5 6 5 12 0 18"/>',
     widgets:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    melding:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
     sharing:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 6a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/>',
     identities:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M18 3l2 2m0-2-2 2"/>',
     account:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M5.8 16a3.5 3.5 0 0 1 6.4 0M15 8h4M15 12h4M15 16h3"/>',
     sessions:'<rect x="2" y="4" width="15" height="12" rx="2"/><path d="M6 20h7M9.5 16v4"/><rect x="18" y="9" width="4" height="10" rx="1"/>',
     methods:'<circle cx="8" cy="15" r="4"/><path d="M11 12 21 2M16 7l3 3M18 5l3 3"/>',
     security:'<path d="M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z"/><path d="m8 12 3 3 5-6"/>',
-    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>'
+    recovery:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/>',
+    // САЙТ (ДУБЛІ-001): піктограми груп, відмінні від піктограм розділів.
+    "groep-personal":'<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+    "groep-social":'<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
+    "groep-account":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.6a7 7 0 0 1 11.6 0"/>',
+    "groep-security":'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/>'
   };
   function iconSvg(id){return '<svg class="semantic-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">'+(iconPaths[id]||iconPaths.intro)+'</svg>';}
 
@@ -1495,6 +1814,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       case "themes": return '<div class="art art-themes"><div class="theme-sample theme-sample-back"><span class="theme-sample-dot"></span><i></i><i></i></div><div class="theme-sample theme-sample-front"><div class="sample-moon">◑</div><strong>'+a.beautifully+'</strong><div class="sample-pills"><span></span><span></span><span></span></div></div></div>';
       case "languages": return '<div class="art art-languages"><div class="language-card language-back">'+a.hello1+' <span>'+a.hello2+'</span></div><div class="language-card language-front"><small>'+a.commonSpace+'</small><strong>'+a.greeting+'</strong><span>UA ↔ NL</span></div><span class="language-ring"></span></div>';
       case "widgets": return '<div class="art art-widgets"><div class="widget-art-grid"><div><small>'+a.widgets+'</small><span>'+піктограмаЗаСуттю("строк")+'</span><small>'+a.widgetCalendar+'</small></div><div><span>'+піктограмаЗаСуттю("пошта")+'</span><small>'+a.widgetMail+'</small></div><div><span>'+піктограмаЗаСуттю("нотатка")+'</span><small>'+a.widgetNotes+'</small></div><div><span>'+піктограмаЗаСуттю("додати")+'</span><small>'+a.create+'</small></div></div></div>';
+      case "melding": return '<div class="art art-melding"><div class="melding-halo"></div><div class="melding-portal"><div class="melding-head"><span class="melding-bell"><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span><strong>'+a.meldingTitle+'</strong><em>'+a.meldingLive+'</em></div><div class="melding-kaart"><span>'+піктограмаЗаСуттю("захист")+'</span><div><strong>'+a.meldingSecTitle+'</strong><small>'+a.meldingSecSub+'</small></div></div><div class="melding-kaart"><span><svg class="meaningful-icon option-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span><div><strong>'+a.meldingFileTitle+'</strong><small>'+a.meldingFileSub+'</small></div></div><div class="melding-veeg-spoor"><span>'+a.meldingLeft+'</span><span>'+a.meldingCenter+'</span><span>'+a.meldingRight+'</span></div></div><span class="melding-ai-label">'+a.meldingAi+'</span></div>';
       case "sharing": return '<div class="art art-sharing"><div class="sharing-permissions-card"><div class="sharing-card-head"><span>'+піктограмаЗаСуттю("захист")+'</span><strong>'+a.sharingTitle+'</strong></div><div class="sharing-person-row"><div class="sharing-person-avatar profile-avatar" data-profile-photo></div><span>'+a.sharingOwner+'</span><b>'+піктограмаЗаСуттю("перевірка")+'</b></div><div class="sharing-person-row"><div class="sharing-person-avatar sharing-invite-avatar">'+піктограмаЗаСуттю("запрошення")+'</div><span>'+a.sharingInvite+'</span><em>'+a.sharingView+'</em></div><div class="sharing-link-row"><span>'+піктограмаЗаСуттю("посилання")+'</span><strong>'+a.sharingLink+'</strong><small>'+a.sharingOff+'</small></div><div class="sharing-card-foot">'+піктограмаЗаСуттю("права")+'<span>'+a.sharingSecure+'</span></div></div><div class="sharing-art-footer">'+a.verified+'</div></div>';
       case "identities": return '<div class="art art-identities"><div class="identity-card identity-back"><small>'+a.tech+'</small><strong class="identity-tech-mark"><svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="5"/><path d="M18 5v8M30 5v8M18 35v8M30 35v8M5 18h8M5 30h8M35 18h8M35 30h8"/><path d="m20 24 3 3 6-7"/></svg></strong><span>'+a.control+'</span></div><div class="identity-card identity-front"><small>'+a.personal+'</small><div class="identity-avatar profile-avatar" data-profile-photo></div><strong data-profile-name>'+naamVoorProfiel()+'</strong><span>'+a.daily+'</span></div><span class="identity-mode-badge">'+a.personal+'</span></div>';
       case "account": return '<div class="art art-account"><div class="account-outer-ring"></div><div class="account-folder"><div class="folder-tab"></div><span>'+піктограмаЗаСуттю("дані")+'</span><strong>'+a.yourData+'</strong><small>'+a.inHands+'</small></div><div class="account-stamp">'+a.private+'</div></div>';
@@ -1514,6 +1834,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   // САЙТ: блок справжніх налаштувань у стилі «Можливостей для доопрацювання» макета; гніздо .mq-echt заповнює застосунок.
   const openeЧинні=new Set();
   function tekenЧинні(id){
+    if(id==="identities")return ""; // САЙТ (ДУБЛІ-001): вибір профілю вже в картці розділу
     const nl=preferences.lang==="nl";
     const kop=nl?"Huidige instellingen":"Чинні налаштування";
     const uitleg=nl?"De echte instellingen van uw account: wijzigingen hier gelden meteen en volgen uw rechten.":"Справжні налаштування вашого облікового запису: зміни тут діють одразу й за вашими правами.";
@@ -1533,7 +1854,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     return '<section class="setting-section accent-'+s.accent+'" id="'+s.id+'" data-section="'+s.id+'">' +
       '<div class="section-card">' +
         '<div class="setting-main">' +
-          '<div class="setting-topline"><span class="setting-index">'+s.number+' / 12</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
+          '<div class="setting-topline"><span class="setting-index">'+s.number+' / 13</span><span class="setting-divider"></span><span>'+s.kicker+'</span></div>' +
           '<div class="setting-symbol'+(s.id==="identities"?' profile-avatar':'')+'"'+(s.id==="identities"?' data-profile-photo':'')+'>'+(s.id==="identities"?'':iconSvg(s.id))+'</div>' +
           '<h2>'+s.title+'</h2><p>'+s.description+'</p>' +
           (expandable?'<button class="text-link open-detail" data-for="'+s.id+'" aria-controls="inline-'+s.id+'" aria-expanded="false">'+ui().openSettings+' <span>'+chevronIcon+'</span></button>':'') +
@@ -1557,19 +1878,26 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     write("#breadcrumbWorkspace",t.workspace);
     write(".breadcrumbs strong",t.settings);
     write(".concept-pill",'<span class="concept-dot"></span>'+t.concept,true);
-    write(".search-action span",t.quickJump);
+    write(".search-action span",preferences.lang==="nl"?"Zoeken in «Mijn Ruimte»…":"Пошук у «Мій простір»…");
+    zetSectieBalk();
+    // ANKERS-001: положення й поведінка — лише навігація цієї сторінки (окремо від меню сайту); підказка кнопки каже, що вона змінює.
+    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden alleen voor de navigatie van deze pagina en worden apart van het sitemenu in uw account bewaard: een wijziging hier verschuift het sitemenu niet, en omgekeerd. Stijl en inhoud van de knoppen gelden alleen op dit apparaat.":"Положення й поведінка діють лише на навігацію цієї сторінки й зберігаються в обліковому записі окремо від меню сайту: зміна тут не рухає меню сайту, а зміна меню сайту — цю навігацію. Стиль і вміст кнопок — лише на цьому пристрої.");
+    write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");
+    {const k=byId("mqPaginaNavKnop");if(k)k.title=preferences.lang==="nl"?"Opent de instellingen van het hoofdmenu van de site (positie, gedrag, pictogrammen). Wat u daar kiest, verandert de navigatie van deze pagina niet.":"Відкриває налаштування головного меню сайту (положення, поведінка, піктограми). Те, що ви там оберете, не змінює навігацію цієї сторінки.";}
+    const zoekKnop=byId("openSearch");if(zoekKnop){const zl=preferences.lang==="nl"?"Zoeken in «Mijn Ruimte» (Ctrl K)":"Пошук у «Мій простір» (Ctrl K)";zoekKnop.setAttribute("aria-label",zl);zoekKnop.title=zl;}
+    const posKnop=byId("mqSectiePositie");if(posKnop){const pl=preferences.lang==="nl"?"Positie van paginanavigatie":"Розташування навігації сторінки";posKnop.setAttribute("aria-label",pl);posKnop.title=pl;}
     write(".hero-eyebrow",'<span class="line"></span>'+t.heroEyebrow+'<span class="line"></span>',true);
     write(".hero h1",t.heroTitle[0]+'<br><em>'+t.heroTitle[1]+'</em>',true);
     write(".hero-copy p",t.heroDesc);
     write(".primary-button",t.startSetup+' <span>'+arrowIcon+'</span>',true);
     write(".ghost-button",t.navPlacement+' <span>⌘</span>',true);
-    write(".hero-foot span:first-child",'<b>12</b> '+t.sectionCount,true);
+    write(".hero-foot span:first-child",'<b>13</b> '+t.sectionCount,true);
     write(".hero-foot span:nth-of-type(2)",t.controlCenter);
     write(".hero-foot .hero-foot-last",t.profiles);
     root.querySelectorAll(".section-overline-text").forEach((el,i)=>el.textContent=t.groups[i]);
     root.querySelectorAll(".interlude p").forEach((el,i)=>el.innerHTML=t.interludes[i][0]+' <em>'+t.interludes[i][1]+'</em>');
     write(".site-footer strong",t.workspace);
-    write(".site-footer div span","Account Atelier / "+t.footer);
+    write(".site-footer div span",t.footer);
     write(".to-top",t.backTop);
     write(".rail-title strong",t.navigation);
     write(".rail-title small",t.dragToEdge);
@@ -1609,6 +1937,15 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       el.setAttribute("aria-label",titles[i]);
     });
   }
+  let ініціалізовано=false;
+  let pillRaf=null;
+  let vorigeSyncKey="";
+  let vorigeSyncPct=-1;
+  let vorSideNavW=-1,vorPillH=-1;
+  function schedulePillUpdate(){
+    if(!ініціалізовано||pillRaf!==null)return;
+    pillRaf=requestAnimationFrame(()=>{pillRaf=null;updatePillDimensions();});
+  }
   function renderAll(){
     closeHorizontalNavMenu();
     renderStatic();
@@ -1616,22 +1953,24 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     for(const g of ["personal","social","account","security"]){
       byId("group-"+g).innerHTML=localized.filter(s=>s.group===g).map(renderCard).join("");
     }
-    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-tooltip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
-    const groups=[{id:"personal",icon:"personalization"},{id:"social",icon:"sharing"},{id:"account",icon:"account"},{id:"security",icon:"security"}];
+    const navItem=(id,name)=>'<button class="anchor-link" data-jump="'+id+'" aria-label="'+name+'" data-anker-tip="'+name+'"><span class="anchor-icon">'+iconSvg(id)+'</span><span class="anchor-name">'+name+'</span><span class="anchor-active-marker"></span></button>';
+    const groups=[{id:"personal",icon:"groep-personal"},{id:"social",icon:"groep-social"},{id:"account",icon:"groep-account"},{id:"security",icon:"groep-security"}]; // САЙТ (ДУБЛІ-001): власні піктограми груп
     byId("railItems").innerHTML=navItem("intro",ui().beginning)+groups.map((group,index)=>{
       const label=ui().navGroups[index],opened=expandedNavGroups.has(group.id);
       return '<div class="nav-group '+(opened?'nav-group-open':'')+'" data-nav-group="'+group.id+'">'+
-        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-tooltip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
+        '<button class="nav-group-toggle" data-nav-group-toggle="'+group.id+'" aria-expanded="'+opened+'" aria-label="'+label+'" data-anker-tip="'+label+'"><span class="anchor-icon">'+iconSvg(group.icon)+'</span><span class="nav-group-name">'+label+'</span><span class="nav-chevron" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg></span></button>'+
         '<div class="nav-subitems" role="group" aria-label="'+label+'">'+localized.filter(s=>s.group===group.id).map(s=>navItem(s.id,s.short)).join("")+'</div></div>';
     }).join("");
     rehydrateInlineSettings();
     root.querySelectorAll(".setting-section,.section-overline,.interlude").forEach(el=>revealObserver?.observe(el));
     syncControlStates();
     syncDirectVisuals();
+    vorigeSyncKey="";
+    vorigeSyncPct=-1;
     syncActive();
     syncNavGroups();
     оновитиФотоПрофілю();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
     opties.bijRender(); // САЙТ: гнізда справжніх панелей створено заново — застосунок монтує їх знову
   }
 
@@ -1641,19 +1980,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     body.classList.remove("rail-left","rail-right","rail-top","rail-bottom");
     body.classList.add("rail-"+position);
     preferences.position=position;
+    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (ANKERS-001): положення навігації якорів (paginaNav), не меню сайту
     syncRailCompactButton();
     syncNavGroups();
     root.querySelectorAll("[data-pos]").forEach(b=>b.classList.toggle("selected",b.dataset.pos===position));
     persist();
     hideAnchorTooltip();
     refreshLivePreview();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   function applyRailCollapsed(collapsed){
     body.classList.toggle("rail-compact",collapsed);
+    if(!collapsed)herzieAnkerTip();
     root.querySelectorAll("[data-drawer-compact]").forEach(b=>{b.setAttribute("aria-pressed",String(collapsed));b.classList.toggle("on",collapsed);});
     syncRailCompactButton();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   let railPointerInside=false;
   let railCollapseTimer=null;
@@ -1667,8 +2008,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     railCollapseTimer=setTimeout(()=>{
       railCollapseTimer=null;
       if(isAutoRail()&&!railPointerInside&&!drawerOpenedByControl&&byId("navSettings").hidden){
-        if(body.classList.contains("rail-smart-condensed"))setAdaptiveNavOpen(false);
-        applyRailCollapsed(true);
+        if(body.classList.contains("rail-smart-condensed")&&body.classList.contains("rail-smart-open"))setAdaptiveNavOpen(false);
+        if(!body.classList.contains("rail-compact"))applyRailCollapsed(true);
       }
     },300);
   }
@@ -1678,6 +2019,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     cancelRailAutoCollapse();
     preferences.railMode=mode;
     preferences.compact=mode!=="expanded";
+    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (ANKERS-001): поведінка навігації якорів (paginaNav), не меню сайту
     body.classList.toggle("rail-mode-auto",isAutoRail());
     applyRailCollapsed(mode==="collapsed"||(mode==="auto"&&!railPointerInside&&byId("navSettings").hidden));
     root.querySelectorAll("[data-rail-mode]").forEach(button=>{
@@ -1688,7 +2030,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     persist();
     hideAnchorTooltip();
     refreshLivePreview();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   function setCompact(value){setRailMode(value?"collapsed":"expanded");}
   function setNavStyle(value){
@@ -1699,7 +2041,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     persist();
     hideAnchorTooltip();
     refreshLivePreview();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   function setIconOnly(iconOnly){
     preferences.iconOnly=Boolean(iconOnly);
@@ -1707,7 +2049,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     syncControlStates();
     persist();
     hideAnchorTooltip();
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   function setTheme(theme){
     preferences.theme=theme==="light"?"light":"dark";
@@ -1726,7 +2068,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   function syncControlStates(){
     root.querySelectorAll("[data-pos]").forEach(b=>b.classList.toggle("selected",b.dataset.pos===preferences.position));
     root.querySelectorAll("[data-theme]").forEach(b=>b.classList.toggle("selected",b.dataset.theme===preferences.theme));
-    root.querySelectorAll(".swatches [data-accent]").forEach(b=>b.classList.toggle("selected",b.dataset.accent===preferences.accent));
+    root.querySelectorAll(".swatches [data-accent]").forEach(b=>{const on=b.dataset.accent===обранийАкцент();b.classList.toggle("selected",on);b.setAttribute("aria-pressed",String(on));});
     root.querySelectorAll("[data-demo-lang]").forEach(b=>b.classList.toggle("selected",b.dataset.demoLang===preferences.lang));
     root.querySelectorAll("[data-drawer-compact]").forEach(b=>b.setAttribute("aria-pressed",String(preferences.compact)));
     root.querySelectorAll("[data-nav-style]").forEach(b=>{const on=b.dataset.navStyle===preferences.navStyle;b.classList.toggle("selected",on);b.setAttribute("aria-pressed",String(on));});
@@ -1737,6 +2079,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(!["uk","nl"].includes(lang))return;
     preferences.lang=lang;
     stableSideNavWidth=212;
+    vorSideNavW=-1;
+    vorPillH=-1;
+    basisFontFamily="";
+    tekstBreedCache.clear();
     persist();
     renderAll();
     applyRailCollapsed(preferences.railMode!=="expanded");
@@ -1748,6 +2094,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   setIconOnly(preferences.iconOnly);
   setTheme(preferences.theme);
   setAccent(preferences.accent);
+  сайтГотовий=true; // САЙТ: далі кожна зміна людини йде на сайт; початкове малювання — ні
 
   function showToast(message){
     const el=byId("toast");
@@ -1755,6 +2102,35 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     el.classList.add("show");
     clearTimeout(showToast.timer);
     showToast.timer=setTimeout(()=>el.classList.remove("show"),3600);
+  }
+  function відкритиНаСайті(розділ,ціль){
+    if(typeof ціль==="string"&&ціль.startsWith("dienst:")){opties.bijDienst(ціль.slice(7));return;} // САЙТ (IDENTITEIT-015)
+    if(ціль==="accountmenu:"){opties.bijAccountMenu();return;}
+    const id=розділ==="identity"?"identities":розділ;
+    if(!sections.some(s=>s.id===id))return;
+    gaNaar(id,true);
+    opties.bijOpenen(id);
+    // BLOKKEN-001: без точної цілі ведемо до самого гнізда справжніх налаштувань розділу (а не до верху розділу),
+    // а якщо селектор не знайшовся за ~3 с — теж до гнізда. NL: zonder doel naar het nest met echte instellingen.
+    const рух=matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
+    let спроби=0;
+    const шукати=()=>{
+      const гніздо=root.querySelector('.mq-echt[data-echt="'+id+'"]');
+      let доціль=null;
+      try{доціль=гніздо&&ціль?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
+      const гніздоГотове=гніздо&&гніздо.childElementCount>0&&гніздо.getBoundingClientRect().height>0;
+      if(!доціль&&!ціль&&гніздоГотове&&спроби>=3)доціль=гніздо;
+      if(!доціль){if(++спроби<50){setTimeout(шукати,60);return;}if(гніздоГотове)доціль=гніздо;else return;}
+      for(let d=доціль.closest("details");d;d=d.parentElement?d.parentElement.closest("details"):null)if(!d.open)d.open=true;
+      доціль.scrollIntoView({behavior:рух,block:"start"});
+      const фокус=доціль.matches("summary,button,a,input,select,textarea")?доціль:(доціль.querySelector(":scope > summary")||доціль);
+      if(фокус===доціль&&!доціль.hasAttribute("tabindex")&&!доціль.matches("summary,button,a,input,select,textarea"))доціль.setAttribute("tabindex","-1");
+      try{фокус.focus({preventScroll:true});}catch{}
+      доціль.classList.add("mq-kaart-doel");
+      setTimeout(()=>доціль.classList.remove("mq-kaart-doel"),1800);
+    };
+    setTimeout(шукати,80);
   }
   function gaNaar(id,open){
     if(!sections.some(s=>s.id===id)){jump(id,true);return;}
@@ -1780,37 +2156,55 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   }
   function syncActive(){
     const els=[byId("intro"),...sections.map(s=>byId(s.id))];
+    const vh=innerHeight*.48;
     let active="intro";
-    for(const el of els){if(el.getBoundingClientRect().top < innerHeight*.48) active=el.id;}
+    for(const el of els){if(el&&el.getBoundingClientRect().top<vh)active=el.id;}
+    const sc=scroller();
+    const scrollable=Math.max(1,sc.hoogte-sc.venster);
+    const pct=Math.max(0,Math.min(100,Math.round(sc.top/scrollable*100)));
     const highlight=demoValues["menu-0"]!==false;
-    root.querySelectorAll(".anchor-link").forEach(b=>{let on=b.dataset.jump===active;b.classList.toggle("active",on&&highlight); b.setAttribute("aria-current",on?"location":"false");});
-    const currentGroup=sections.find(s=>s.id===active)?.group;
-    root.querySelectorAll(".nav-group-toggle").forEach(b=>{
-      const on=b.dataset.navGroupToggle===currentGroup;
-      b.classList.toggle("current-group",Boolean(on&&highlight));
-      b.setAttribute("aria-current",on?"location":"false");
-    });
-    root.querySelectorAll("#horizontalNavPopup [data-jump]").forEach(b=>{
-      const on=b.dataset.jump===active;
-      b.classList.toggle("current-section",on&&highlight);
-      b.setAttribute("aria-current",on?"location":"false");
-    });
-    const scrollable=Math.max(1,scroller().hoogte-scroller().venster);
-    const pct=Math.max(0,Math.min(100,Math.round(scroller().top/scrollable*100)));
-    byId("scrollProgress").style.width=pct+"%";
-    byId("railProgressRing").style.strokeDashoffset=String(113.097*(1-pct/100));
-    byId("railProgressGauge").setAttribute("aria-valuenow",String(pct));
-    byId("railPercent").textContent=pct+"%";
-    const selected=isHorizontalNav()?(currentGroup?root.querySelector('.nav-group-toggle.current-group'):root.querySelector('.anchor-link[data-jump="intro"]')):null;
-    if(selected){
-      const row=byId("railItems"), box=selected.getBoundingClientRect(), visible=row.getBoundingClientRect();
+    const currentGroup=sections.find(s=>s.id===active)?.group||"";
+    const horiz=isHorizontalNav();
+    const syncKey=active+"|"+(highlight?1:0)+"|"+currentGroup+"|"+(horiz?1:0);
+    const changedKey=syncKey!==vorigeSyncKey;
+    const selected=changedKey&&horiz?(currentGroup?root.querySelector('.nav-group-toggle[data-nav-group-toggle="'+currentGroup+'"]'):root.querySelector('.anchor-link[data-jump="intro"]')):null;
+    const row=selected?byId("railItems"):null;
+    const box=selected?selected.getBoundingClientRect():null;
+    const visible=row?row.getBoundingClientRect():null;
+    if(changedKey){
+      vorigeSyncKey=syncKey;
+      if(actieveSectie!==active){actieveSectie=active;zetSectieBalk();}
+      root.querySelectorAll(".anchor-link").forEach(b=>{const on=b.dataset.jump===active;b.classList.toggle("active",on&&highlight);b.setAttribute("aria-current",on?"location":"false");});
+      root.querySelectorAll(".nav-group-toggle").forEach(b=>{
+        const on=b.dataset.navGroupToggle===currentGroup;
+        b.classList.toggle("current-group",Boolean(on&&highlight));
+        b.setAttribute("aria-current",on?"location":"false");
+      });
+      root.querySelectorAll("#horizontalNavPopup [data-jump]").forEach(b=>{
+        const on=b.dataset.jump===active;
+        b.classList.toggle("current-section",on&&highlight);
+        b.setAttribute("aria-current",on?"location":"false");
+      });
+    }
+    if(pct!==vorigeSyncPct){
+      vorigeSyncPct=pct;
+      byId("scrollProgress").style.width=pct+"%";
+      byId("railProgressRing").style.strokeDashoffset=String(113.097*(1-pct/100));
+      byId("railProgressGauge").setAttribute("aria-valuenow",String(pct));
+      byId("railPercent").textContent=pct+"%";
+    }
+    if(row&&box&&visible){
       if(box.left<visible.left+8)row.scrollLeft+=box.left-visible.left-12;
       else if(box.right>visible.right-8)row.scrollLeft+=box.right-visible.right+12;
     }
   }
-  let ticking=false;
-  luister(scrolDoel,"scroll",()=>{if(ticking)return; ticking=true;requestAnimationFrame(()=>{syncActive(); ticking=false;});},{passive:true});
-  luister(window,"resize",syncActive);
+  let scrollRaf=null;
+  function scheduleSyncActive(){
+    if(scrollRaf!==null)return;
+    scrollRaf=requestAnimationFrame(()=>{scrollRaf=null;syncActive();});
+  }
+  luister(scrolDoel,"scroll",scheduleSyncActive,{passive:true});
+  luister(window,"resize",scheduleSyncActive);
 
   // One consistent panel icon for the header and footer. CSS mirrors/rotates it
   // to match the dock edge; the chevron itself always describes the next action.
@@ -1836,14 +2230,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     button.querySelector(".rail-toggle-icon").innerHTML=isHorizontalNav()?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/><path d="M9 6h11M9 12h11M9 18h11"/></svg>':railToggleSvg(collapsed);
   }
   function updatePillDimensions(){
+    if(!ініціалізовано)return;
     if((breed()>=731)){
-      const rail=byId("anchorRail").getBoundingClientRect();
       if(["left","right"].includes(preferences.position)){
         const width=naturalSideNavWidth();
-        body.style.setProperty("--side-nav-width",width+"px");
-        body.style.setProperty("--pill-nav-width",width+"px");
+        if(width!==vorSideNavW){
+          vorSideNavW=width;
+          body.style.setProperty("--side-nav-width",width+"px");
+          body.style.setProperty("--pill-nav-width",width+"px");
+        }
       }else if(preferences.navStyle==="pills"){
-        body.style.setProperty("--pill-nav-height",Math.ceil(rail.height)+"px");
+        const h=Math.ceil(byId("anchorRail").offsetHeight);
+        if(h!==vorPillH){
+          vorPillH=h;
+          body.style.setProperty("--pill-nav-height",h+"px");
+        }
       }
     }
     syncAdaptiveNavigation();
@@ -1903,7 +2304,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const right=body.classList.contains("rail-right");
     const open=body.classList.contains("rail-smart-open");
     const edgeRect=adaptiveNavEdge.getBoundingClientRect();
-    const fromEdge=!open&&event.clientX>=edgeRect.left-5&&event.clientX<=edgeRect.right+5&&
+    const siteLade=Boolean(root.closest(".canonical-chrome")?.classList.contains("sidebar-drawer-mode"));
+    const fromEdge=!open&&(right||!siteLade)&&event.clientX>=edgeRect.left-5&&event.clientX<=edgeRect.right+5&&
       event.clientY>=edgeRect.top&&event.clientY<=edgeRect.bottom;
     const railRect=byId("anchorRail").getBoundingClientRect();
     const fromDrawer=open&&event.clientX>=railRect.left&&event.clientX<=railRect.right&&event.clientY>=railRect.top&&event.clientY<=railRect.bottom;
@@ -1923,31 +2325,57 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(swipe.open&& (swipe.right?dx>0:dx<0))setAdaptiveNavOpen(false);
   },{passive:true});
   luister(doc,"pointercancel",()=>{edgeSwipeStart=null;},{passive:true});
-  luister(window,"resize",()=>requestAnimationFrame(updatePillDimensions));
-  if(typeof ResizeObserver!=="undefined"){const ro=new ResizeObserver(()=>requestAnimationFrame(updatePillDimensions));ro.observe(byId("anchorRail"));luisteraars.push(()=>ro.disconnect());}
+  luister(window,"resize",schedulePillUpdate);
+  if(typeof ResizeObserver!=="undefined"){const ro=new ResizeObserver(schedulePillUpdate);ro.observe(byId("anchorRail"));luisteraars.push(()=>ro.disconnect());}
   // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області (не вікна).
-  // Зсуви закріплених елементів: смуга сервісів макета плюс відступ робочої області сайту (--mq-links), верхні відступи (--mq-site, --mq-boven).
+  // Зсуви закріплених елементів: відступ робочої області від справжнього головного меню сайту (--mq-links, --mq-rechts, --mq-onder, --mq-site) і висота підсмуги розділів (--mq-boven).
   const DREMPELS=[400,420,430,440,500,600,650,720,730,731,810,900,1000,1040,1120,1150,1250,1280];
+  const chrome=root.closest(".canonical-chrome");
+  let vorBreed=-1;
+  const vorMaten={links:-1,siteLinks:-1,rechts:-1,onder:-1,site:-1,topbar:-1,boven:-1};
   function zetMaten(){
     const b=breed();
-    for(const n of DREMPELS){root.classList.toggle("bp-max-"+n,b<=n);root.classList.toggle("bp-min-"+n,b>=n);}
+    if(b!==vorBreed){
+      vorBreed=b;
+      for(const n of DREMPELS){root.classList.toggle("bp-max-"+n,b<=n);root.classList.toggle("bp-min-"+n,b>=n);}
+    }
     const stijl=werkvlak?getComputedStyle(werkvlak):null;
     const maat=n=>stijl?parseFloat(stijl[n])||0:0;
     const rail=root.querySelector(".app-rail");
     const railBreed=rail&&getComputedStyle(rail).display!=="none"?rail.offsetWidth:0;
+    const siteLinks=maat("paddingLeft");
     const links=maat("paddingLeft")+railBreed, site=maat("paddingTop");
+    const rechts=maat("paddingRight"), onder=maat("paddingBottom");
     const planck=root.querySelector(".topbar")?.offsetHeight||0;
-    root.style.setProperty("--mq-links",links+"px");
-    root.style.setProperty("--mq-site-links",maat("paddingLeft")+"px");
-    root.style.setProperty("--mq-rechts",maat("paddingRight")+"px");
-    root.style.setProperty("--mq-onder",maat("paddingBottom")+"px");
-    root.style.setProperty("--mq-site",site+"px");
-    root.style.setProperty("--mq-boven",(site+planck)+"px");
-    if(rail)rail.style.left=maat("paddingLeft")+"px";
+    const sectieBalkEl=byId("mqSectieBalk");
+    const sectieBalk=sectieBalkEl&&getComputedStyle(sectieBalkEl).display!=="none"?sectieBalkEl.offsetHeight:0;
+    const boven=site+planck+sectieBalk;
+    if(vorMaten.links!==links){vorMaten.links=links;root.style.setProperty("--mq-links",links+"px");}
+    if(vorMaten.siteLinks!==siteLinks){vorMaten.siteLinks=siteLinks;root.style.setProperty("--mq-site-links",siteLinks+"px");}
+    if(vorMaten.rechts!==rechts){vorMaten.rechts=rechts;root.style.setProperty("--mq-rechts",rechts+"px");}
+    if(vorMaten.onder!==onder){vorMaten.onder=onder;root.style.setProperty("--mq-onder",onder+"px");}
+    if(vorMaten.site!==site){vorMaten.site=site;root.style.setProperty("--mq-site",site+"px");}
+    if(vorMaten.topbar!==planck){vorMaten.topbar=planck;root.style.setProperty("--mq-topbar",planck+"px");}
+    if(vorMaten.boven!==boven){vorMaten.boven=boven;root.style.setProperty("--mq-boven",boven+"px");}
+    if(rail){
+      const leftVal=siteLinks+"px";
+      if(rail.style.left!==leftVal)rail.style.left=leftVal;
+    }
+  }
+  let matenRaf=null;
+  function scheduleMaten(){
+    if(matenRaf!==null)return;
+    matenRaf=requestAnimationFrame(()=>{matenRaf=null;zetMaten();schedulePillUpdate();});
   }
   zetMaten();
-  if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});ro2.observe(root);luisteraars.push(()=>ro2.disconnect());}
-  luisteraars.push(()=>{cancelRailAutoCollapse();clearTimeout(showToast.timer);});
+  if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(scheduleMaten);ro2.observe(root);if(werkvlak)ro2.observe(werkvlak);luisteraars.push(()=>ro2.disconnect());}
+  if(chrome&&typeof MutationObserver!=="undefined"){const mo=new MutationObserver(scheduleMaten);mo.observe(chrome,{attributes:true,attributeFilter:["class","data-dock"]});luisteraars.push(()=>mo.disconnect());}
+  luisteraars.push(()=>{
+    cancelRailAutoCollapse();clearTimeout(showToast.timer);
+    if(pillRaf!==null){cancelAnimationFrame(pillRaf);pillRaf=null;}
+    if(scrollRaf!==null){cancelAnimationFrame(scrollRaf);scrollRaf=null;}
+    if(matenRaf!==null){cancelAnimationFrame(matenRaf);matenRaf=null;}
+  });
   // САЙТ: відкриті блоки «Чинні налаштування» пам'ятаємо між перемальовуваннями; відкриття монтує справжню панель.
   luister(root,"toggle",e=>{
     const blok=e.target;
@@ -1957,8 +2385,16 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   },true);
 
   const popover=byId("navSettings");
+  let navOpener=null; // САЙТ (IDENTITEIT-015): хто відкрив вікно навігації — туди повертається фокус
+  function focusNaarOpener(){
+    const actief=doc.activeElement;
+    if(navOpener&&navOpener.isConnected&&(!actief||actief===doc.body||popover.contains(actief)))navOpener.focus({preventScroll:true});
+    navOpener=null;
+  }
   function toggleNavSettings(){
+    if(popover.hidden){const a=doc.activeElement;navOpener=a&&a!==doc.body&&!popover.contains(a)?a:null;}
     popover.hidden=!popover.hidden;
+    if(popover.hidden)focusNaarOpener();
     if(isAutoRail()){
       if(popover.hidden)scheduleRailAutoCollapse();
       else{
@@ -1967,9 +2403,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       }
     }
   }
-  function closeNavSettings(){popover.hidden=true;scheduleRailAutoCollapse();}
+  function closeNavSettings(){const was=!popover.hidden;if(was)popover.hidden=true;if(was)focusNaarOpener();scheduleRailAutoCollapse();}
   byId("railConfig").addEventListener("click",e=>{e.stopPropagation(); toggleNavSettings();});
   byId("heroNavSettings").addEventListener("click",toggleNavSettings);
+  byId("mqSectiePositie")?.addEventListener("click",e=>{e.stopPropagation();toggleNavSettings();});
   byId("closeNavSettings").addEventListener("click",closeNavSettings);
   byId("railProgressHelp").addEventListener("click",()=>showToast(preferences.lang==="nl"?"De cirkel laat zien hoeveel van deze pagina je al hebt bekeken.":"Коло показує, яку частину цієї сторінки ви вже переглянули."));
   byId("anchorRail").addEventListener("pointerenter",e=>{
@@ -1997,7 +2434,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       if(isHorizontalNav()){button?.setAttribute("aria-haspopup","menu");button?.setAttribute("aria-controls","horizontalNavPopup");}
       else{button?.removeAttribute("aria-haspopup");button?.removeAttribute("aria-controls");}
     });
-    requestAnimationFrame(updatePillDimensions);
+    schedulePillUpdate();
   }
   function closeHorizontalNavMenu(returnFocus=false){
     const popup=byId("horizontalNavPopup");
@@ -2015,6 +2452,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const defs=[{id:"personal",label:ui().navGroups[0]},{id:"social",label:ui().navGroups[1]},{id:"account",label:ui().navGroups[2]},{id:"security",label:ui().navGroups[3]}].filter(g=>!groupId||g.id===groupId);
     popup.innerHTML=defs.map(g=>'<div class="horizontal-popup-group"><div class="horizontal-popup-heading">'+g.label+'</div>'+all.filter(s=>s.group===g.id).map(s=>'<button type="button" role="menuitem" data-jump="'+s.id+'"><span class="horizontal-popup-icon">'+iconSvg(s.id)+'</span><span>'+s.name+'</span></button>').join("")+'</div>').join("");
     popup.hidden=false;horizontalNavTrigger=trigger;
+    vorigeSyncKey="";
     syncActive();
     const rect=trigger.getBoundingClientRect(),width=popup.offsetWidth,height=popup.offsetHeight;
     const minLeft=(breed()<=730)?10:84;
@@ -2075,10 +2513,10 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const term=searchInput.value.trim().toLocaleLowerCase("uk");
     const matches=localizedSections().filter(s=>(s.name+" "+s.title+" "+s.description).toLocaleLowerCase().includes(term));
     searchIndex=Math.min(searchIndex,Math.max(0,matches.length-1));
-    byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 12</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
+    byId("commandResults").innerHTML=matches.length?matches.map((s,i)=>'<button data-jump="'+s.id+'" class="command-result '+(i===searchIndex?"chosen":"")+'"><span>'+iconSvg(s.id)+'</span><strong>'+s.name+'</strong><small>'+s.number+' / 13</small><b>→</b></button>').join(""):'<div class="no-results">Нічого не знайдено. Спробуйте іншу назву.</div>';
     if(!matches.length)byId("commandResults").innerHTML='<div class="no-results">'+ui().noResults+'</div>';
   }
-  byId("openSearch").addEventListener("click",openSearch);
+  byId("openSearch").addEventListener("click",()=>{window.dispatchEvent(new CustomEvent("tsv:zoek-palet"));});
   searchInput.addEventListener("input",()=>{searchIndex=0;renderSearch();});
   searchInput.addEventListener("keydown",e=>{
     const buttons=[...byId("commandResults").querySelectorAll("[data-jump]")];
@@ -2087,29 +2525,30 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(e.key==="Enter"&&buttons[searchIndex])jump(buttons[searchIndex].dataset.jump);
   });
   searchOverlay.addEventListener("click",e=>{if(e.target===searchOverlay)closeSearch();});
-  luister(window,"keydown",e=>{
-    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();e.stopImmediatePropagation();searchOverlay.hidden?openSearch():closeSearch();} // САЙТ: перехоплює комбінацію раніше за глобальний пошук сайту
+  luister(doc,"keydown",e=>{
     if(e.key==="Escape"){
       const closingAdaptiveNav=body.classList.contains("rail-smart-open");
       closeSearch();closeNavSettings();closeHorizontalNavMenu(true);setAdaptiveNavOpen(false);
       if(closingAdaptiveNav)adaptiveNavToggle.focus({preventScroll:true});
-      if(e.target.closest?.('.section-inline-settings'))closeInlineSettings(e.target.closest('.section-inline-settings').dataset.inlineSection);
+      if(e.target?.closest?.('.section-inline-settings'))closeInlineSettings(e.target.closest('.section-inline-settings').dataset.inlineSection);
     }
-  },true);
+  });
   luister(doc,"pointerdown",e=>{
     if(!e.target.closest('#horizontalNavPopup,#railExpand,#railItems .nav-group-toggle,#railItems .anchor-link[data-jump="intro"]'))closeHorizontalNavMenu();
   });
   luister(doc,"click",e=>{
-    const target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[data-icon-display],[data-rail-mode],[data-theme],[data-accent],[data-demo-lang],.open-detail,.demo-action");
-    if(!target){if(!e.target.closest("#navSettings,#railConfig,#heroNavSettings"))closeNavSettings();return;}
+    let target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[data-icon-display],[data-rail-mode],[data-theme],[data-accent],[data-demo-lang],.open-detail,.demo-action");
+    if(target===body)target=null; // САЙТ (IDENTITEIT-015): корінь із data-accent — не кнопка акценту
+    if(!target){if(!e.target.closest("#navSettings,#railConfig,#heroNavSettings,#mqSectiePositie"))closeNavSettings();return;}
     if(target.dataset.jump){hideAnchorTooltip();jump(target.dataset.jump);return;}
     if(target.dataset.pos){setPosition(target.dataset.pos);syncActive();closeNavSettings();syncControlStates();showToast(ui().moved+" "+ui().positions[target.dataset.pos]);return;}
     if(target.dataset.navStyle){setNavStyle(target.dataset.navStyle);return;}
     if(target.dataset.iconDisplay){setIconOnly(target.dataset.iconDisplay==="icons");return;}
     if(target.dataset.railMode){setRailMode(target.dataset.railMode);return;}
     if(target.dataset.theme){setTheme(target.dataset.theme);syncControlStates();return;}
-    if(target.dataset.accent){setAccent(target.dataset.accent);syncControlStates();return;}
-    if(target.dataset.demoLang){setLang(target.dataset.demoLang);return;}
+    if(target.dataset.accent){сайтАкцент=target.dataset.accent;setAccent(target.dataset.accent);доСайту({accent:target.dataset.accent});syncControlStates();return;}
+    // САЙТ (IDENTITEIT-015): мова сайту (cookie, <html lang>, обліковий запис); двигун перезапускається з новою мовою сам.
+    if(target.dataset.demoLang){if(typeof opties.bijTaal==="function"){if(target.dataset.demoLang!==preferences.lang)opties.bijTaal(target.dataset.demoLang);}else setLang(target.dataset.demoLang);return;}
     if(target.classList.contains("open-detail")){
       const index=target.hasAttribute("data-option-index")?Number(target.dataset.optionIndex):null;
       openInlineSettings(target.dataset.for,{index,toggle:index===null});
@@ -2122,6 +2561,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(el.classList.contains("active")||!el.dataset.dienst)jump("intro");else opties.bijDienst(el.dataset.dienst);
   }));
   byId("railItems").addEventListener("pointerover",e=>{
+    // HINT-001: на сенсорному екрані дотик не показує підказку · geen hint bij aanraken
+    if(e.pointerType==="touch")return;
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&item!==e.relatedTarget?.closest?.(".anchor-link,.nav-group-toggle"))showAnchorTooltip(item);
   });
@@ -2129,7 +2570,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
     if(item&&!item.contains(e.relatedTarget))hideAnchorTooltip();
   });
-  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item)showAnchorTooltip(item);});
+  byId("railItems").addEventListener("focusin",e=>{const item=e.target.closest(".anchor-link,.nav-group-toggle");if(item&&item.matches(":focus-visible"))showAnchorTooltip(item);});
   byId("railItems").addEventListener("focusout",hideAnchorTooltip);
   byId("railItems").addEventListener("scroll",hideAnchorTooltip,{passive:true});
 
@@ -2139,7 +2580,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   dragHandle.addEventListener("pointerdown",e=>{
     if(e.target.closest("button")||e.button!==0)return;
     dragStart={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};
-    dragHandle.setPointerCapture(e.pointerId);
+    try{dragHandle.setPointerCapture(e.pointerId);}catch{}
   });
   dragHandle.addEventListener("pointermove",e=>{
     if(!dragStart)return;
@@ -2165,6 +2606,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     });
   },{threshold:.06,rootMargin:"0px 0px 40px 0px"});
   luisteraars.push(()=>revealObserver.disconnect());
+  ініціалізовано=true;
   renderAll();
   zetMaten();
 
@@ -2174,5 +2616,17 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     direct: [...directSettingsSections],
     zetLicht(l) { setTheme(l ? 'light' : 'dark'); },
     zetProfiel(p) { прийнятиФотоПрофілю(p); },
+    // САЙТ (IDENTITEIT-015): налаштування змінилося на сайті (справжня панель, інший пристрій) — макет показує те саме, без луни назад.
+    zetWeergave(w) {
+      const колишні={positie:preferences.position,modus:preferences.railMode,accent:preferences.accent};
+      демоЗСайту(w);
+      сайтГотовий=false;
+      try{
+        if(preferences.position!==колишні.positie)setPosition(preferences.position);
+        if(preferences.railMode!==колишні.modus)setRailMode(preferences.railMode);
+        if(сайтАкцент&&сайтАкцент!==колишні.accent)setAccent(сайтАкцент);
+      }finally{сайтГотовий=true;}
+      синхронізуватиДемо();
+    },
   };
 }

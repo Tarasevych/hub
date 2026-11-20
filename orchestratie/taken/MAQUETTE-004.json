@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-004",
+  "agent": "antigravity",
+  "tak": "feature/maquette-004-20261113-204900",
+  "basisCommit": "b83a9433d122738b7fba20d1433d2bc3ce2f8f8c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T20:48:21.026Z",
+  "bijgewerkt": "2026-11-13T20:48:21.026Z",
+  "omschrijving": "Хвиля 3 теми «Макет»: повне студійне перевтілення інженерного простору github.tarasevych.com (усі 13 канонічних вкладок, провідник коду й редактор, задачі та злиття, дії й випуски, дзеркало та однодотикове підключення).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

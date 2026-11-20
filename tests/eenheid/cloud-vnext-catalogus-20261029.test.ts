@@ -64,10 +64,13 @@ export async function main(): Promise<number> {
   let merkImport = '', demo = '';
   for (const f of bundel) {
     const inhoud = lees(f);
-    if (/from\s+['"][^'"]*\/merk\//.test(inhoud) || /from\s+['"][^'"]*\/merk['"]/.test(inhoud)) merkImport = f;
+    // UPD-003 (REESTR-LOGO-001, #149): alleen MerkLogo uit het ENE merkregister mag — dat laadt de grote tabellen lui (import()).
+    // Directe import van merk-tabel/merk-logos (grote bundel) blijft verboden. · Лише MerkLogo (велика таблиця ліниво), не самі таблиці.
+    const merkRegels = [...inhoud.matchAll(/from\s+['"]([^'"]*\/merk(?:\/[^'"]*)?)['"]/g)].map((m) => m[1]);
+    if (merkRegels.some((m) => !/\/merk\/MerkLogo$/.test(m))) merkImport = f;
     if (/Olena|Kovalenko|mijnruimte\.cloud|1[.,]24\s?[TТ][BБ]/i.test(inhoud)) demo = f;
   }
-  check('D geen import uit src/merk in src/cloud-vnext/**', !merkImport, merkImport);
+  check('D uit src/merk alleen MerkLogo (lui) in src/cloud-vnext/**', !merkImport, merkImport);
   check('D geen demonstratienamen/-cijfers van de referentiebeelden', !demo, demo);
 
   // ---- E: route bestaat, is geregistreerd en gebruikt dezelfde stagingvoorwaarde als M4 zelf

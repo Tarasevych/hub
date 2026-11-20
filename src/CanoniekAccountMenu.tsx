@@ -2,6 +2,7 @@ import {
   Suspense,
   lazy,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -9,10 +10,11 @@ import {
   type ChangeEvent,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
+import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
   ChevronDown,
-  ChevronUp,
   FileText,
   KeyRound,
   LifeBuoy,
@@ -42,7 +44,8 @@ const RuimteWissel = lazy(() => import('./tech/ruimtes/RuimteWissel'));
 const UITLOG_GEBEURTENIS = 'mr-ruimtes-uitloggen';
 import { weergaveGebruiker } from './weergave/weergave-opslag';
 import { openDiagnose } from './diagnose/open';
-import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
+import { leesKeuze } from './thema/kern';
+import { hervatAuto, pauzeerAuto, useAutoStatus, zetPalet } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
   readAccountPreviewHistory,
@@ -67,6 +70,8 @@ import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoo
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';
+import { useAccountmenuV3 } from './accountmenu-v3/vlag';
+import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
 import Vraag from './tech/Vraag';
 import { isLeesfout } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
@@ -82,6 +87,9 @@ export {
 
 export type AccountTheme = 'light' | 'dark' | 'device' | 'auto' | 'plum-light' | 'plum-dark';
 
+export type AccountSelectResult = void | { techBeeindigd?: number } | { ok: false; redirected?: boolean; fout?: string; reauth?: boolean };
+export type WisselFout = { tekst: string; reauth?: boolean };
+
 type Props = {
   lang: 'uk' | 'nl';
   theme: AccountTheme;
@@ -90,6 +98,7 @@ type Props = {
   user: AccountMenuUser | null;
   busy?: boolean;
   openRequest?: number;
+  closeRequest?: number;
   sessionStartedAt?: number;
   onManage?: () => void;
   onSettings?: () => void;
@@ -110,10 +119,55 @@ type Props = {
    * en biedt het de activering voor het NIEUWE account in één stap aan. Geeft zij (zoals vroeger) niets terug, dan blijft
    * alles werken: het menu meldt dan alleen in welk profiel de mens nu staat.
    */
-  onSelectAccount?: (grantId: string) => void | Promise<void | { techBeeindigd?: number } | undefined>;
+  onSelectAccount?: (grantId: string) => void | Promise<AccountSelectResult>;
   onForgetAccount?: (grantId: string) => Promise<AccountMenuSnapshot>;
   onProfilePhotoChange?: (file: File) => Promise<AccountMenuUser | void>;
 };
+
+const THEMA_KLASSEN = ['theme-plum-dark', 'theme-plum-light', 'theme-dark', 'theme-light'] as const;
+type ThemaKlasse = (typeof THEMA_KLASSEN)[number];
+const LOGIN_CSS_VARS = ['--mr-login-sheet', '--mr-login-ink', '--mr-login-muted', '--mr-login-border', '--mr-login-card'] as const;
+
+type PortaalContext = {
+  themaKlasse: ThemaKlasse;
+  oppervlak: string;
+  opAanmelden: boolean;
+  loginVars: Record<string, string>;
+};
+
+function vindThemaKlasse(chrome: Element | null): ThemaKlasse {
+  const bronnen = [chrome, typeof document !== 'undefined' ? document.documentElement : null];
+  for (const el of bronnen) {
+    if (!el) continue;
+    for (const k of THEMA_KLASSEN) {
+      if (el.classList.contains(k)) return k;
+    }
+  }
+  return 'theme-light';
+}
+
+function leesPortaalContext(fallbackThema: AccountTheme): PortaalContext {
+  const standaardThema: ThemaKlasse =
+    fallbackThema === 'dark' || fallbackThema === 'plum-dark' || fallbackThema === 'plum-light'
+      ? `theme-${fallbackThema}`
+      : 'theme-light';
+  if (typeof document === 'undefined') {
+    return { themaKlasse: standaardThema, oppervlak: '', opAanmelden: false, loginVars: {} };
+  }
+  const chrome = document.querySelector('.canonical-chrome');
+  const themaKlasse = chrome ? vindThemaKlasse(chrome) : standaardThema;
+  const oppervlak = chrome?.getAttribute('data-oppervlak') ?? '';
+  const opAanmelden = Boolean(chrome?.querySelector('.mr-sign-in'));
+  const loginVars: Record<string, string> = {};
+  if (opAanmelden && chrome && typeof getComputedStyle === 'function') {
+    const cs = getComputedStyle(chrome);
+    for (const naam of LOGIN_CSS_VARS) {
+      const waarde = cs.getPropertyValue(naam).trim();
+      if (waarde) loginVars[naam] = waarde;
+    }
+  }
+  return { themaKlasse, oppervlak, opAanmelden, loginVars };
+}
 
 const copy = {
   uk: {
@@ -123,7 +177,7 @@ const copy = {
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через',
+    firstLogin: 'Увійти в обліковий запис через Google',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
@@ -138,9 +192,18 @@ const copy = {
     device: 'Пристрій',
     auto: 'Авто',
     autoHint: 'Автоматично: темна, коли надворі темно (або за вашим розкладом)',
-    pauze: 'Скасувати автоперемикання на сьогодні',
+    pauze: 'Призупинити до наступного перемикання',
     hervat: 'Повернути автоперемикання',
     kleuren: 'Кольори теми…',
+    maquette: 'Вигляд: Макет',
+    maquetteAan: 'Вигляд: Макет ✓',
+    maquetteHint: 'Увімкнути або вимкнути студійну палітру «Макет»',
+    klassiekWit: 'Біла класика',
+    klassiekWitAan: 'Біла класика ✓',
+    klassiekWitHint: 'Увімкнути або вимкнути прагматичну тему «Біла класика»',
+    klassiekZwart: 'Чорна класика',
+    klassiekZwartAan: 'Чорна класика ✓',
+    klassiekZwartHint: 'Увімкнути або вимкнути прагматичну тему «Чорна класика»',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -168,7 +231,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via',
+    firstLogin: 'Aanmelden bij een account via Google',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -183,9 +246,18 @@ const copy = {
     device: 'Apparaat',
     auto: 'Auto',
     autoHint: 'Automatisch: donker wanneer het buiten donker is (of volgens uw schema)',
-    pauze: 'Automatisch wisselen vandaag annuleren',
+    pauze: 'Pauzeren tot de volgende wissel',
     hervat: 'Automatisch wisselen hervatten',
     kleuren: 'Themakleuren…',
+    maquette: 'Uiterlijk: Ontwerp',
+    maquetteAan: 'Uiterlijk: Ontwerp ✓',
+    maquetteHint: 'Studiopalet «Ontwerp» in- of uitschakelen',
+    klassiekWit: 'Witte klassiek',
+    klassiekWitAan: 'Witte klassiek ✓',
+    klassiekWitHint: 'Pragmatisch thema «Witte klassiek» in- of uitschakelen',
+    klassiekZwart: 'Zwarte klassiek',
+    klassiekZwartAan: 'Zwarte klassiek ✓',
+    klassiekZwartHint: 'Pragmatisch thema «Zwarte klassiek» in- of uitschakelen',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -229,7 +301,7 @@ const V2_HULP = {
   },
   weergave: {
     wat: ['Мова сайту й тема. «Пристрій» — як у налаштуваннях телефона чи комп’ютера. «Авто» — темна, коли надворі темно (або за вашим розкладом).', 'Taal van de site en thema. «Apparaat» volgt de instelling van telefoon of computer. «Auto» — donker wanneer het buiten donker is (of volgens uw schema).'],
-    gevolg: ['Кольори теми й розклад автоперемикання — у «Налаштування → Теми» (кнопка з палітрою).', 'Themakleuren en het schema voor automatisch wisselen staan in «Instellingen → Thema’s» (knop met het palet).'],
+    gevolg: ['Кольори теми й розклад автоперемикання — у «Налаштування → Вигляд і кольори» (кнопка з палітрою).', 'Themakleuren en het schema voor automatisch wisselen staan in «Instellingen → Weergave en kleuren» (knop met het palet).'],
   },
 } as const;
 
@@ -249,14 +321,10 @@ export const accountWisselMelding = (lang: 'uk' | 'nl', stand: AccountWisselStan
 };
 
 export const rememberedAccountStatusLabel = (status: AccountPresenceStatus, lang: 'uk' | 'nl') => {
-  const t = copy[lang];
-  return status === 'active'
-    ? t.active
-    : status === 'signed_in'
-      ? t.signedIn
-      : status === 'registration'
-        ? t.registration
-        : t.reauth;
+  if (status === 'active') return lang === 'uk' ? 'Активний' : 'Actief';
+  if (status === 'signed_in') return lang === 'uk' ? 'Готовий до входу' : 'Klaar om te openen';
+  if (status === 'registration') return lang === 'uk' ? 'Завершити реєстрацію' : 'Registratie voltooien';
+  return lang === 'uk' ? 'Увійти через Google' : 'Aanmelden met Google';
 };
 
 function Avatar({ user, size = 'regular' }: { user: AccountMenuUser; size?: 'profile' | 'hero' | 'regular' | 'mini' }) {
@@ -321,12 +389,30 @@ function IconAction({
   );
 }
 
+function useMobielAccountVenster(): boolean {
+  const [mobiel, setMobiel] = useState<boolean>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 700px)').matches
+      : false,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(max-width: 700px)');
+    const werkBij = () => setMobiel(media.matches);
+    werkBij();
+    media.addEventListener?.('change', werkBij);
+    return () => media.removeEventListener?.('change', werkBij);
+  }, []);
+  return mobiel;
+}
+
 export default function CanonicalAccountMenu({
   lang,
   theme,
   user,
   busy = false,
   openRequest = 0,
+  closeRequest = 0,
   sessionStartedAt = 0,
   onManage,
   onSettings,
@@ -345,6 +431,8 @@ export default function CanonicalAccountMenu({
   const tech = useTech();
   const v2 = useRuimtesV2();
   const am2 = useAccountmenuV2();
+  const am3 = useAccountmenuV3();
+  const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
@@ -356,6 +444,7 @@ export default function CanonicalAccountMenu({
   const techUid = user?.id;
   useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
+  const portaalRef = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   // UI-008: de tooltip van de kleine avatar noemt ook hoeveel andere accounts er zijn; die lijst één keer ophalen bij aanwijzen.
   const geladenVoorTip = useRef(false);
@@ -378,11 +467,18 @@ export default function CanonicalAccountMenu({
    * profielen: een technische activering is aan EEN MENS EN EEN TABBLAD gebonden en gaat nooit mee naar een ander account.
    */
   const [gewisseld, setGewisseld] = useState<{ naam: string; email: string; techBeeindigd: boolean } | null>(null);
+  const [wisselFout, setWisselFout] = useState<WisselFout | null>(null);
 
   const close = () => {
     setOpen(false);
     setExpanded(false);
     setGewisseld(null);
+    setWisselFout(null);
+  };
+
+  const sluitMetLade = () => {
+    close();
+    if (mobielVenster) ladeBediening()?.sluit();
   };
 
   const applySnapshot = (next: AccountMenuSnapshot) => {
@@ -399,8 +495,15 @@ export default function CanonicalAccountMenu({
     setLoadFailed(false);
     try {
       applySnapshot(normalizeAccountMenuSnapshot(await onLoadAccounts()));
-    } catch {
-      setLoadFailed(true);
+    } catch (caught) {
+      const status = Number(
+        (caught as { status?: number; response?: { status?: number } })?.status ??
+          (caught as { response?: { status?: number } })?.response?.status ??
+          0,
+      );
+      if (user && status !== 401 && status !== 403) {
+        setLoadFailed(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -408,16 +511,22 @@ export default function CanonicalAccountMenu({
 
   useEffect(() => {
     if (open) void load();
-  }, [open]);
+  }, [open, user?.id]);
 
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
 
   useEffect(() => {
+    if (closeRequest > 0) close();
+  }, [closeRequest]);
+
+  useEffect(() => {
     setProfileOverride(null);
     setPhotoError(false);
-  }, [user?.id, user?.accountId, user?.email]);
+    setLoadFailed(false);
+    setWisselFout(null);
+  }, [user?.id, user?.accountId, user?.email, user?.picture, user?.customPicture, user?.customPhoto, user?.providerPicture]);
 
   const displayUser = profileOverride && user && isSameAccount(profileOverride, user) ? profileOverride : user;
 
@@ -428,7 +537,7 @@ export default function CanonicalAccountMenu({
 
   useEffect(() => {
     const outside = (event: PointerEvent) => {
-      if (!open || root.current?.contains(event.target as Node)) return;
+      if (!open || root.current?.contains(event.target as Node) || portaalRef.current?.contains(event.target as Node)) return;
       const target = event.target as Element;
       const opensMail = Boolean(target.closest('.google-mail-open,.mail-row-date-mode'));
       const functional = Boolean(target.closest('button,a,input,select,textarea,summary,[contenteditable="true"],[role="button"],[role="menuitem"],[role="checkbox"],[tabindex]:not([tabindex="-1"]),.mail-row-interactive,.mail-row-hover-actions'));
@@ -495,11 +604,32 @@ export default function CanonicalAccountMenu({
   const select = async (item: RememberedAccount) => {
     if (!item.grantId || !onSelectAccount) return;
     setSelecting(item.grantId);
+    setWisselFout(null);
     try {
       const uit = await onSelectAccount(item.grantId);
-      const beeindigd = Number((uit as { techBeeindigd?: unknown } | void | undefined)?.techBeeindigd || 0) > 0;
+      const res = uit as { techBeeindigd?: unknown; ok?: boolean; redirected?: boolean; fout?: string; reauth?: boolean } | undefined;
+      if (res && res.ok === false) {
+        if (res.redirected) { sluitMetLade(); return; }
+        setGewisseld(null);
+        setWisselFout({
+          tekst: res.fout || (lang === 'uk' ? 'Не вдалося перемкнути обліковий запис.' : 'Kan niet naar dit account wisselen.'),
+          reauth: res.reauth,
+        });
+        void load();
+        return;
+      }
+      const beeindigd = Number(res?.techBeeindigd || 0) > 0;
       setGewisseld({ naam: item.user.name || item.user.email, email: item.user.email, techBeeindigd: beeindigd });
       setExpanded(false);
+      void load();
+    } catch {
+      setGewisseld(null);
+      setWisselFout({
+        tekst: lang === 'uk'
+          ? 'Не вдалося перемкнути обліковий запис. Спробуйте ще раз або увійдіть через Google.'
+          : 'Het wisselen van account is mislukt. Probeer het opnieuw of meld u aan via Google.',
+        reauth: true,
+      });
     } finally {
       setSelecting('');
     }
@@ -543,8 +673,139 @@ export default function CanonicalAccountMenu({
   const device = theme === 'device';
   const auto = theme === 'auto';
   const autoStatus = useAutoStatus(theme);
+  const huidigPalet = leesKeuze(theme, autoStatus.palet).palet;
+  const wisselSysteemPalet = (doel: 'maquette' | 'klassiek-wit' | 'klassiek-zwart') => {
+    zetPalet(huidigPalet === doel ? 'kleur' : doel);
+    if (theme === 'plum-light' || theme === 'plum-dark') {
+      onTheme(theme === 'plum-dark' ? 'dark' : 'light');
+    }
+  };
+  const wisselMaquette = () => wisselSysteemPalet('maquette');
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
+  const [portaalStijl, setPortaalStijl] = useState<CSSProperties>({});
+  const [portaalCtx, setPortaalCtx] = useState<PortaalContext>(() => leesPortaalContext(theme));
+
+  useLayoutEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const chrome = document.querySelector<HTMLElement>('.canonical-chrome');
+    chrome?.setAttribute('data-account-menu-open', '1');
+    const mobielLaag = Boolean(am3 && mobielVenster);
+
+    const werkBij = () => {
+      const ctx = leesPortaalContext(theme);
+      setPortaalCtx((prev) =>
+        prev.themaKlasse === ctx.themaKlasse &&
+        prev.oppervlak === ctx.oppervlak &&
+        prev.opAanmelden === ctx.opAanmelden &&
+        JSON.stringify(prev.loginVars) === JSON.stringify(ctx.loginVars)
+          ? prev
+          : ctx,
+      );
+
+      if (mobielLaag) {
+        const el = portaalRef.current;
+        if (el) {
+          for (const k of THEMA_KLASSEN) el.classList.toggle(k, k === ctx.themaKlasse);
+          if (ctx.oppervlak) el.dataset.oppervlak = ctx.oppervlak;
+          else delete el.dataset.oppervlak;
+          el.dataset.signedOut = !displayUser ? 'true' : 'false';
+          if (ctx.opAanmelden) el.dataset.aanmeldScherm = 'ja';
+          else delete el.dataset.aanmeldScherm;
+          for (const naam of LOGIN_CSS_VARS) {
+            const v = ctx.loginVars[naam];
+            if (v) el.style.setProperty(naam, v);
+            else el.style.removeProperty(naam);
+          }
+        }
+        setPortaalStijl((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+        return;
+      }
+
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const inLade = Boolean(root.current?.closest('.canonical-drawer-account'));
+      const knop =
+        root.current?.querySelector<HTMLElement>('.canonical-avatar-trigger') ?? root.current;
+      const rect = knop?.getBoundingClientRect();
+
+      let stijl: CSSProperties;
+      if (inLade) {
+        stijl = {
+          top: '62px',
+          left: '8px',
+          right: 'auto',
+          width: 'calc(min(316px, 100vw - 48px) - 16px)',
+          maxHeight: 'calc(100dvh - 70px)',
+        };
+      } else if (!displayUser && vw <= 700) {
+        const topPx = rect && rect.height > 0 ? Math.max(54, Math.round(rect.bottom + 10)) : 64;
+        stijl = {
+          top: `${topPx}px`,
+          left: '50%',
+          right: 'auto',
+          transform: 'translateX(-50%)',
+          width: 'min(370px, calc(100vw - 24px))',
+          maxHeight: `calc(100dvh - ${topPx + 14}px)`,
+        };
+      } else if (vw <= 520 && !am3) {
+        stijl = {
+          top: '68px',
+          left: '10px',
+          right: 'auto',
+          width: 'calc(100vw - 20px)',
+          maxHeight: 'calc(100dvh - 80px)',
+        };
+      } else {
+        const topPx = rect && rect.height > 0
+          ? Math.max(10, Math.round(rect.bottom + (ctx.opAanmelden ? 12 : 10)))
+          : (ctx.opAanmelden ? 66 : 70);
+        const rechtPx = rect && rect.width > 0 ? Math.max(10, Math.round(vw - rect.right)) : 16;
+        const ankerRechts = rect && rect.right < 260
+          ? { left: `${Math.max(10, Math.round(rect.left))}px`, right: 'auto' as const }
+          : { right: `${rechtPx}px`, left: 'auto' as const };
+        const maxHoogte = am3
+          ? undefined
+          : ctx.opAanmelden
+            ? `min(650px, calc(100dvh - ${topPx + 14}px))`
+            : `min(760px, calc(100dvh - ${topPx + 16}px))`;
+        stijl = {
+          top: `${topPx}px`,
+          ...ankerRechts,
+          ...(maxHoogte ? { maxHeight: maxHoogte } : {}),
+        };
+      }
+
+      // MENU-STROOK-001: меню v3 — межа висоти картки за вікном (прокрутка всередині картки), див. src/canoniek-account-menu.css.
+      // NL: v3 — maximale kaarthoogte volgens het venster; de kaart scrollt zelf.
+      if (am3) {
+        const grens = typeof stijl.maxHeight === 'string'
+          ? stijl.maxHeight
+          : `calc(100dvh - ${(parseInt(String(stijl.top), 10) || 70) + 16}px)`;
+        stijl = { ...stijl, ['--am3-portaal-max' as string]: grens } as CSSProperties;
+      }
+      setPortaalStijl((prev) => (JSON.stringify(prev) === JSON.stringify(stijl) ? prev : stijl));
+    };
+
+    werkBij();
+    const knop = root.current?.querySelector<HTMLElement>('.canonical-avatar-trigger') ?? root.current;
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(werkBij) : null;
+    if (knop) ro?.observe(knop);
+    if (chrome) ro?.observe(chrome);
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(werkBij) : null;
+    if (chrome) mo?.observe(chrome, { attributes: true, attributeFilter: ['class', 'data-oppervlak', 'data-dock'] });
+    mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', werkBij);
+    window.addEventListener('scroll', werkBij, true);
+    window.visualViewport?.addEventListener('resize', werkBij);
+    return () => {
+      chrome?.removeAttribute('data-account-menu-open');
+      ro?.disconnect();
+      mo?.disconnect();
+      window.removeEventListener('resize', werkBij);
+      window.removeEventListener('scroll', werkBij, true);
+      window.visualViewport?.removeEventListener('resize', werkBij);
+    };
+  }, [open, am3, mobielVenster, displayUser, theme, huidigPalet]);
 
   const list = (
     <div className='canonical-account-list' data-account-list={displayUser ? 'other-known' : 'known'}>
@@ -568,7 +829,11 @@ export default function CanonicalAccountMenu({
                 <strong>{item.user.name || item.user.email}</strong>
                 <small>{item.user.email}</small>
                 <span className='canonical-account-statuses'>
-                  <em>{rememberedAccountStatusLabel(status, lang)}</em>
+                  <em>
+                    {selecting === item.grantId
+                      ? (lang === 'uk' ? 'Переходимо до входу…' : 'Doorsturen naar aanmelding…')
+                      : rememberedAccountStatusLabel(status, lang)}
+                  </em>
                 </span>
               </span>
               {selecting === item.grantId
@@ -631,7 +896,34 @@ export default function CanonicalAccountMenu({
           </button>
         </div>
       )}
-      <div className='canonical-thema-kleuren-link'>
+      <div className='canonical-thema-kleuren-link' style={{ justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'maquette'}
+          title={t.maquetteHint}
+          onClick={wisselMaquette}
+          data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'maquette' ? t.maquetteAan : t.maquette}
+        </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-wit'}
+          title={t.klassiekWitHint}
+          onClick={() => wisselSysteemPalet('klassiek-wit')}
+          data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-wit' ? t.klassiekWitAan : t.klassiekWit}
+        </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-zwart'}
+          title={t.klassiekZwartHint}
+          onClick={() => wisselSysteemPalet('klassiek-zwart')}
+          data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-zwart' ? t.klassiekZwartAan : t.klassiekZwart}
+        </button>
         <button type='button' onClick={() => { close(); onThemeColors?.(); }} data-thema-kleuren>{t.kleuren}</button>
       </div>
     </div>
@@ -675,6 +967,48 @@ export default function CanonicalAccountMenu({
           <Settings />
         </button>
       </div>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'maquette'}
+        title={t.maquetteHint}
+        onClick={wisselMaquette}
+        data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+      >
+        <Palette aria-hidden='true' />
+        <span>{t.maquette}</span>
+        <em className={`am2-stand${huidigPalet === 'maquette' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'maquette' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-wit'}
+        title={t.klassiekWitHint}
+        onClick={() => wisselSysteemPalet('klassiek-wit')}
+        data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+      >
+        <Sun aria-hidden='true' />
+        <span>{t.klassiekWit}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-wit' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-wit' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-zwart'}
+        title={t.klassiekZwartHint}
+        onClick={() => wisselSysteemPalet('klassiek-zwart')}
+        data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+      >
+        <Moon aria-hidden='true' />
+        <span>{t.klassiekZwart}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-zwart' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-zwart' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
     </div>
   );
 
@@ -685,6 +1019,18 @@ export default function CanonicalAccountMenu({
       <a href='?legal=terms' data-legal-link='terms' onClick={close}><FileText />{t.terms}</a>
     </div>
   );
+
+  const wisselMeldingData = gewisseld
+    ? {
+        email: gewisseld.email,
+        ...accountWisselMelding(lang, {
+          techBeeindigd: gewisseld.techBeeindigd,
+          heeftTechProfiel: !!tech.profiel,
+          techActief: techActief(tech),
+          techGeladen: tech.geladen,
+        }),
+      }
+    : null;
 
   return (
     <div
@@ -702,6 +1048,7 @@ export default function CanonicalAccountMenu({
       data-signed-out={!displayUser ? 'true' : 'false'}
       data-profile-photo-control={onProfilePhotoChange ? 'enabled' : 'unavailable'}
       data-account-menu-v2={am2 ? 'aan' : undefined}
+      data-account-menu-v3={am3 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
         {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
@@ -715,11 +1062,11 @@ export default function CanonicalAccountMenu({
       <button
         type='button'
         className='canonical-avatar-trigger'
-        aria-label={open ? t.close : am2 && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
-        title={am2 && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
+        aria-label={open ? t.close : (am2 || am3) && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
+        title={(am2 || am3) && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
         data-am2-tip={am2 && displayUser ? 'ja' : undefined}
-        onPointerEnter={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
-        onFocus={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onPointerEnter={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onFocus={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
         aria-haspopup='dialog'
         aria-expanded={open}
         onClick={() => open ? close() : setOpen(true)}
@@ -731,8 +1078,117 @@ export default function CanonicalAccountMenu({
             : <span className='canonical-account-avatar avatar-hero'><UserRound /></span>}
       </button>
 
-      {open && (
-        <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+      {open && am3 && mobielVenster && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={portaalRef}
+              className='am3-mobiel-laag'
+              data-account-menu-v3='aan'
+              data-no-edge-swipe='1'
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+            >
+              <div className='am3-mobiel-scrim' aria-hidden='true' onClick={close} />
+              <section
+                className='canonical-account-panel am3-mobiel-paneel'
+                role='dialog'
+                aria-modal='true'
+                aria-label={t.accounts}
+              >
+                <AccountMenuV3
+                  lang={lang}
+                  theme={theme}
+                  displayUser={displayUser}
+                  visibleRows={visibleRows}
+                  shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+                  expanded={expanded}
+                  onToggleExpanded={() => { setWisselFout(null); setExpanded((value) => !value); }}
+                  busy={busy}
+                  selecting={selecting}
+                  forgetting={forgetting}
+                  loading={loading}
+                  loadFailed={loadFailed}
+                  photoBusy={photoBusy}
+                  photoError={photoError}
+                  photoLeesfout={photoLeesfout}
+                  photoFailedText={t.photoFailed}
+                  changePhotoLabel={t.changePhoto}
+                  manageLabel={t.manage}
+                  settingsLabel={t.settings}
+                  privacyLabel={t.privacy}
+                  termsLabel={t.terms}
+                  showLogoutAll={showLogoutAll}
+                  wisselMelding={wisselMeldingData}
+                  wisselFout={wisselFout}
+                  v2Ruimtes={v2}
+                  onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
+                  onSelectAccount={select}
+                  onForgetAccount={onForgetAccount ? forget : undefined}
+                  onAddAccount={add}
+                  onManage={onManage}
+                  onSettings={onSettings}
+                  onTheme={onTheme}
+                  onThemeColors={onThemeColors}
+                  onLanguage={onLanguage}
+                  onLogout={onLogout}
+                  onLogoutAll={onLogoutAll}
+                  onClose={close}
+                  onSluitNavigatie={sluitMetLade}
+                  mobiel
+                  renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+                />
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {open && !(am3 && mobielVenster && typeof document !== 'undefined') && (() => {
+        const paneel = (
+          <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+          {am3 ? (
+            <AccountMenuV3
+              lang={lang}
+              theme={theme}
+              displayUser={displayUser}
+              visibleRows={visibleRows}
+              shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+              expanded={expanded}
+              onToggleExpanded={() => { setWisselFout(null); setExpanded((value) => !value); }}
+              busy={busy}
+              selecting={selecting}
+              forgetting={forgetting}
+              loading={loading}
+              loadFailed={loadFailed}
+              photoBusy={photoBusy}
+              photoError={photoError}
+              photoLeesfout={photoLeesfout}
+              photoFailedText={t.photoFailed}
+              changePhotoLabel={t.changePhoto}
+              manageLabel={t.manage}
+              settingsLabel={t.settings}
+              privacyLabel={t.privacy}
+              termsLabel={t.terms}
+              showLogoutAll={showLogoutAll}
+              wisselMelding={wisselMeldingData}
+              wisselFout={wisselFout}
+              v2Ruimtes={v2}
+              onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
+              onSelectAccount={select}
+              onForgetAccount={onForgetAccount ? forget : undefined}
+              onAddAccount={add}
+              onManage={onManage}
+              onSettings={onSettings}
+              onTheme={onTheme}
+              onThemeColors={onThemeColors}
+              onLanguage={onLanguage}
+              onLogout={onLogout}
+              onLogoutAll={onLogoutAll}
+              onClose={close}
+              renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+            />
+          ) : (
+            <>
           {displayUser ? (
             <>
               <header className='canonical-current-account'>
@@ -778,6 +1234,17 @@ export default function CanonicalAccountMenu({
                 />
               )}
 
+              {wisselFout && (
+                <section className='canonical-account-wissel-fout' role='alert' data-account-wissel-fout='true'>
+                  <p>{wisselFout.tekst}</p>
+                  {wisselFout.reauth && (
+                    <button type='button' className='canonical-menu-action primary' onClick={add} disabled={busy}>
+                      <KeyRound /><span>{lang === 'uk' ? 'Увійти через Google' : 'Aanmelden via Google'}</span>
+                    </button>
+                  )}
+                </section>
+              )}
+
               {/* Klacht 2: wat er net gebeurde, in gewone woorden — en de enige volgende stap die er is. */}
               {gewisseld && (() => {
                 const m = accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen });
@@ -811,7 +1278,7 @@ export default function CanonicalAccountMenu({
                       type='button'
                       className='canonical-other-toggle-main'
                       aria-expanded={expanded}
-                      onClick={() => setExpanded((value) => !value)}
+                      onClick={() => { setWisselFout(null); setExpanded((value) => !value); }}
                     >
                       <Users />
                       <span>{expanded ? t.hide : t.show}</span>
@@ -819,7 +1286,7 @@ export default function CanonicalAccountMenu({
                         <IllustrativePreviews items={model.collapsedSwitchPreviewAccounts} mode='quick' />
                       )}
                       <span className='canonical-other-toggle-pijl' aria-hidden='true'>
-                        {expanded ? <ChevronUp /> : <ChevronDown />}
+                        <ChevronDown />
                       </span>
                     </button>
                   </div>
@@ -967,6 +1434,16 @@ export default function CanonicalAccountMenu({
               </header>
               {loading && <p className='canonical-account-state'>{t.loading}</p>}
               {loadFailed && <p className='canonical-account-state error'>{t.loadFailed}</p>}
+              {wisselFout && (
+                <section className='canonical-account-wissel-fout' role='alert' data-account-wissel-fout='true'>
+                  <p>{wisselFout.tekst}</p>
+                  {wisselFout.reauth && (
+                    <button type='button' className='canonical-menu-action primary' onClick={add} disabled={busy}>
+                      <KeyRound /><span>{lang === 'uk' ? 'Увійти через Google' : 'Aanmelden via Google'}</span>
+                    </button>
+                  )}
+                </section>
+              )}
               {!model.isFirstLogin && list}
               <div className='canonical-add-account-control' data-add-account-control='composite'>
                 <button type='button' className='canonical-menu-action add-account' onClick={add} disabled={busy}>
@@ -979,12 +1456,44 @@ export default function CanonicalAccountMenu({
           {am2 ? controlsV2 : controls}
           {am2 && displayUser && tech.profiel && v2 ? (
             <div className='am2-ruimte' data-ruimtes-menu='1' data-am2-blok='ruimte'>
-              <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact /></Suspense>
+              <Suspense fallback={null}><RuimteWissel taal={lang === 'uk' ? 'uk' : 'nl'} compact acties /></Suspense>
             </div>
           ) : null}
           {footer}
-        </section>
-      )}
+            </>
+          )}
+          </section>
+        );
+        return typeof document !== 'undefined'
+          ? createPortal(
+              <div
+                ref={portaalRef}
+                className={`canonical-account-portal ${portaalCtx.themaKlasse}`}
+                data-no-edge-swipe='1'
+                data-oppervlak={portaalCtx.oppervlak || undefined}
+                data-signed-out={!displayUser ? 'true' : 'false'}
+                data-aanmeld-scherm={portaalCtx.opAanmelden ? 'ja' : undefined}
+                style={{ ...(portaalCtx.loginVars as CSSProperties), ...portaalStijl }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+              >
+                <div
+                  className='canonical-account-menu'
+                  data-account-menu-version='v6'
+                  data-account-menu-model='canonical-v1'
+                  data-account-menu-expanded={expanded ? 'true' : 'false'}
+                  data-signed-out={!displayUser ? 'true' : 'false'}
+                  data-account-menu-v2={am2 ? 'aan' : undefined}
+                  data-account-menu-v3={am3 ? 'aan' : undefined}
+                  data-portaal-volbreed={portaalStijl.width !== undefined ? '1' : undefined}
+                >
+                  {paneel}
+                </div>
+              </div>,
+              document.body,
+            )
+          : paneel;
+      })()}
     </div>
   );
 }

@@ -32,9 +32,10 @@ export async function main(): Promise<number> {
     // 20.10.2026: +6 agenda-hulpmiddelen die ECHT in Google Calendar schrijven (aanmaken, wijzigen, verplaatsen,
     // verwijderen, deelnemers, RSVP) — allemaal write: true en dus standaard op «vragen».
     // 21.10.2026: +7 ontwikkel-/mediahulpmiddelen (github_ci_logs, github_pr, app_domain, image_generate, diagram_generate,
-    // screenshot_design, payments_list) — alleen via connector v2, dus NIET in de oude /mcp-lijst en niet in describeTools.
-    check('catalogus: 58 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, 7 v2-ontwikkelhulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
-      SITE_TOOLS.length === 58 && new Set(namen).size === 58 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
+    // screenshot_design, payments_list) + 4 ecosysteem + 7 GitHub-werkruimtehulpmiddelen + 2 vaardigheden + uitrol_github_ophalen — alleen via connector v2.
+    // 15.11.2026: +3 hulpmiddelen voor Stroom van geheugen + 2 voor agentbots Telegram (geheugen_agent_bots_*) + 3 voor taakoverdracht (geheugen_taak_*).
+    check('catalogus: 80 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, v2-ontwikkel-, ecosysteem-, vaardigheden-, GitHub-werkruimte-, uitrol_github_ophalen-, geheugenstroom-, agentbot- en taakoverdracht-hulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
+      SITE_TOOLS.length === 80 && new Set(namen).size === 80 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
       && SITE_TOOLS.filter((s) => !s.write).every((s) => s.tool.annotations?.readOnlyHint === true) && SITE_TOOLS.filter((s) => s.write).every((s) => s.tool.annotations?.readOnlyHint === false), namen.join(','));
     const voorbeeld = (schema: any) => {
       const args: Record<string, unknown> = {};
@@ -124,10 +125,10 @@ export async function main(): Promise<number> {
     const info = await describeTools(A);
     const exec = info.find((t) => t.name === 'machine_exec')!;
     check('modus off: weg uit de lijst en geweigerd; riskant staat standaard uit en "always" wordt gehonoreerd (geen begrenzing meer)',
-      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 83 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
-      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 98); // 21.10: + 6 (mail_send, drive_*, photos, icloud)
+      weg.isError === true && /turned off/.test(weg.content[0].text as string) && !lijst.includes('mail_search_messages') && lijst.length === 92 && lijst.includes('machine_exec') && !lijst.includes('click') && !lijst.includes('browser_click')
+      && exec.mode === 'always' && exec.risky === true && info.find((t) => t.name === 'browser_click')!.mode === 'off' && info.find((t) => t.name === 'mail_search_messages')!.mode === 'off' && info.length === 107); // + 8x geheugen_* (uitrol_github_ophalen alleen via v2), + browser_local_ai (LAI-CON-001)
     check('groepen in het overzicht: apparaten, browser, mail, agenda, schijf, zoeken',
-      ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 7 && info.filter((t) => t.group === 'browser').length === 20);
+      ['devices', 'browser', 'mail', 'calendar', 'drive', 'site'].every((g) => info.some((t) => t.group === g)) && info.filter((t) => t.group === 'mail').length === 7 && info.filter((t) => t.group === 'browser').length === 21);
     await store.setToolModes(A, { mail_search_messages: null, machine_exec: null, mail_modify_message: null });
     check('terug naar de standaard (modus verwijderen)', (await store.getToolModes(A)).mail_modify_message === undefined && (await describeTools(A)).find((t) => t.name === 'mail_modify_message')!.mode === 'ask');
     check('oude lijst "uitgezet" (0012) blijft werken: telt als off, en terugzetten verwijdert het',

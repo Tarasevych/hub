@@ -14,8 +14,9 @@ export async function verouderdeEigenarenIntrekken(): Promise<string[]> {
   const ingetrokken: string[] = [];
   for (const row of rows.items as Rij[]) {
     if (isOwnerEmail(row.email)) continue;
-    const { id, ...rest } = row;
-    const [ok] = await db.update('users', [{ id, record: { ...rest, role: 'member', updatedAt: Date.now() } }]);
+    const { id } = row;
+    // SEC-002 (g10c-toets-5): alleen de rol (atomisch), niet het hele record uit de gelezen lijst terugschrijven.
+    const ok = await db.patch('users', id, { role: 'member', updatedAt: Date.now() });
     if (!ok) continue;
     ingetrokken.push(id);
     console.warn(`[eigenaar] verouderde eigenaarsrol ingetrokken: account ${id} (adres is niet OWNER_EMAIL) → member`);

@@ -9,6 +9,7 @@ import {api} from './platform/client';
 import {foutCode} from './platform/webauthn';
 import {WIJZIGING_TEKST,WijzigingDetails,type Wijziging} from './ToegangContext';
 import type {Lang} from './toegangslaag-teksten';
+import {weigeringZin} from '../shared/weigering-tekst';
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
 type Stand={recht:'kan-goedkeuren'|'wordt-ingetrokken'|'ingetrokken';passkeyAanwezig:boolean;passkeyId:string|null;sshOpdracht:string}|null;
@@ -24,7 +25,7 @@ const FOUT:Record<string,[string,string]>={
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження. Спробуйте ще раз.','Extra bevestiging is nodig. Probeer het opnieuw.'],
   RATE_LIMITED:['Забагато спроб. Зачекайте кілька хвилин.','Te veel pogingen. Wacht een paar minuten.'],
 };
-const foutTekst=(lang:Lang,c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
+const foutTekst=(lang:Lang,c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):weigeringZin(lang,c)??tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
 export const wijzigingUitUrl=()=>{try{const v=new URLSearchParams(location.search).get('wijziging')||'';return /^[0-9a-f-]{36}$/i.test(v)?v:'';}catch{return '';}};
 
 export function ToegangWijziging({lang,context,id,onChange}:{lang:Lang;context:Record<string,unknown>;id:string;onChange?:()=>void}){

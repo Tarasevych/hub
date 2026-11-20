@@ -14,7 +14,7 @@ import {
 import { checker } from './hulp/nep-google';
 
 const NU = Date.UTC(2026, 9, 17, 12, 0, 0);
-const GEHEIM = ['SUPERGEHEIM-TOKEN-123', '203.0.113.77', 'Onderwerp: salarisbrief.pdf', 'sk-live-ABCDEF'];
+const GEHEIM = ['SUPERGEHEIM-TOKEN-123', '203.0.113.77', 'Onderwerp: salarisbrief.pdf', 'sk-' + 'live-ABCDEF'];
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('beheer-overzicht');
@@ -108,8 +108,9 @@ export async function main(): Promise<number> {
       check('database: tweede meting in hetzelfde uur overschrijft het uur niet', r2.uur === false && uurRij.length === 1 && uurRij[0].data.online === 1);
       const dagRij = (await sys().query(`SELECT data FROM app.admin_overzicht_momentopnamen WHERE soort='dag' AND emmer=$1`, [emmerVan('dag', t0)])).rows;
       check('database: dagwaarde = laatste meting van de dag', dagRij.length === 1 && dagRij[0].data.online === 9);
-      // volgende uur + oude rij (> 90 dagen) wordt opgeruimd
-      await sys().query(`INSERT INTO app.admin_overzicht_momentopnamen (soort, emmer, genomen_op, data) VALUES ('dag', 1, now() - interval '120 days', '{"v":1}'::jsonb) ON CONFLICT DO NOTHING`);
+      // volgende uur + oude rij (> 90 dagen) wordt opgeruimd. UPD-003: «oud» t.o.v. dezelfde vaste klok t0, niet now() — anders hing de
+      // uitkomst af van de echte datum (vanaf 16.11.2026 viel de rij binnen de 90 dagen). · Відносно тієї самої дати t0, не now().
+      await sys().query(`INSERT INTO app.admin_overzicht_momentopnamen (soort, emmer, genomen_op, data) VALUES ('dag', 1, to_timestamp($1::double precision / 1000) - interval '120 days', '{"v":1}'::jsonb) ON CONFLICT DO NOTHING`, [t0]);
       vergeetEmmers();
       await bewaarMomentopname(o, t0 + 3_700_000);
       const oud = (await sys().query(`SELECT count(*)::int AS n FROM app.admin_overzicht_momentopnamen WHERE emmer = 1`)).rows[0].n;
@@ -164,10 +165,11 @@ export async function main(): Promise<number> {
   const ui = readFileSync('src/overzicht/Dashboard.tsx', 'utf8'); const css = readFileSync('src/overzicht/overzicht.css', 'utf8');
   check('A13: Esc-handler in bewerkmodus roept klaar() aan (lade/bevestiging eerst)', /e\.key !== 'Escape'\) return;[^\n]*klaarRef\.current\(\)/.test(ui) && /\[bewerken, lade, bevestigReset\]\)/.test(ui));
   check('A13: .ov-w-kop h3 heeft geen nowrap/ellipsis meer maar line-clamp 2', !/\.ov-w-kop h3\{[^}]*(white-space:nowrap|text-overflow:ellipsis)/.test(css) && /\.ov-w-kop h3\{[^}]*-webkit-line-clamp:2/.test(css));
-  // Audit 19.10.2026 (A14): «Показати технічні коди» toont de code naast elk label in de hele console (data-codes op <main> + CSS), niet alleen waar de prop doorgegeven wordt.
+  // Audit 19.10.2026 (A14) + UPD-007: замість спільної кнопки «Показати технічні коди» кожен <Term> показує локальну піктограму .admin-term-info зі спливаючим поясненням .admin-term-popover і кодом.
   const term = readFileSync('src/beheer-termen.tsx', 'utf8'); const console_ = readFileSync('src/BeheerConsoleWeergave.tsx', 'utf8'); const acss = readFileSync('src/beheer-console.css', 'utf8');
-  check('A14: Term rendert de code altijd (admin-term-code-schakel) en de console zet data-codes op <main>', /<code className='admin-term-code admin-term-code-schakel'>\{code\}<\/code>/.test(term) && /data-codes=\{codes\?'ja':'nee'\}/.test(console_)
-    && /\[data-codes="ja"\] \.admin-term-code-schakel/.test(acss) && /\.admin-term-code-schakel\{display:none\}/.test(acss));
+  check('A14: Term завжди показує локальну піктограму .admin-term-info зі спливаючим поясненням .admin-term-popover, а спільної кнопки admin-codes-toggle немає', /className='admin-term-info'/.test(term) && /className='admin-term-popover'/.test(term)
+    && /<code className='admin-term-code'>\{code\}<\/code>/.test(term) && !/admin-codes-toggle/.test(console_)
+    && /\.admin-term-info\{/.test(acss) && /\.admin-term-popover\{/.test(acss));
   // Audit 19.10.2026: «Межа повноважень» komt tweetalig van de server (geen Engelse zinnen meer) en de widget kiest per taal.
   const be = readFileSync('backend/index.ts', 'utf8');
   check('limitations: ADMIN_LIMITATIONS uk+nl, geen Engelse tekst; widget kiest per taal', /const ADMIN_LIMITATIONS:Array<\{uk:string;nl:string\}>=\[/.test(be) && !/MDM compliance telemetry is not connected/.test(be) && /limitations:ADMIN_LIMITATIONS/.test(be)

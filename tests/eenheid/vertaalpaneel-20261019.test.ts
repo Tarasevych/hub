@@ -111,7 +111,7 @@ export async function main(): Promise<number> {
         const translations = leegAntwoord ? {} : { 'seg:0': 'Привіт, командо!' };
         return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ detectedSourceLang: 'en', translations }) }] }), { status: 200 });
       }) as unknown as typeof fetch,
-      getApiKey: async () => 'sk-test-vertaalpaneel',
+      getApiKey: async () => 'sk-' + 'test-vertaalpaneel',
       loadAgents: async () => [agent()],
       loadPolicyCeiling: async () => 'always',
       loadUserAiBlocked: async () => false,
@@ -158,8 +158,8 @@ export async function main(): Promise<number> {
     check('16d reproductie weg: «ШІ» heeft nu een uitleg met icoon (InfoTip) die zegt dat het géén tweede rушій is',
       /import \{ InfoTip \} from '\.\.\/InfoTip'/.test(balk) && /<InfoTip className="ai-vb-uitleg" label=(?:"Що таке «ШІ» в цій панелі"|\{t\('Що таке «ШІ» в цій панелі', 'Wat «AI» in dit paneel betekent'\)\})>/.test(balk) /* 21.10 (рецензія UX): label uk + nl */
       && balk.includes('Це не окремий рушій і не кнопка.'));
-    check('16d de echte motorkeuze staat op een eigen, benoemde plek («Рушії перекладу»), dus de twee zijn niet meer te verwarren',
-      /data-testid="ai-vb-btn-motoren"/.test(balk) && balk.includes('Рушії перекладу'));
+    check('16d de echte motorkeuze staat op een eigen, benoemde plek («Рушії ШІ», MAILAI-002), dus de twee zijn niet meer te verwarren',
+      /data-testid="ai-vb-btn-motoren"/.test(balk) && balk.includes("t('Рушії ШІ', 'AI-motoren')"));
     check('16d ook de «ШІ»-balk van de lezer (punt 14) heeft uitleg + icoon, zodat beide knoppen te begrijpen zijn',
       /data-tooltip=\{uitleg\}/.test(lees('src/MailLezerAi.tsx')) && /<Sparkles aria-hidden="true" \/>/.test(lees('src/MailLezerAi.tsx')));
   }

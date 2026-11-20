@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "id": "UPD-005/20261119-065202-gemini",
+  "taakId": "UPD-005",
+  "tijd": "2026-11-19T06:52:02.717Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "gemini",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "samenvoeging",
+  "wat": {
+    "uk": "Спільний випуск UPD-005 поверх живої встановленої версії 20261117-190154 (14dbcb3a): об’єднано UPD-004 (#158: WISSEL-001, FIX-001 #156 із міграцією 0301, GEMINI-004 #153, PLAATS-TEKENS-001 #154, MELDCAT-001 #155, SEC-003 #151, AI-TERMIJN-001, HISTORIE-001 #77), облік авторства BIJDRAGE-001 (#160), посилання з назвою й станом VERWIJZING-001 (#161) та новий вигляд «Ланцюжок» із PLAATS-TEKENS-001 (#154, dcfe31a4); зафіксовано перелік гілок, які свідомо не ввійшли (MELDPANEEL-001 #159 і майбутній збір світових знаків #154)."
+  },
+  "waarom": {
+    "uk": "Власник обрав випустити всі готові розробки після 20261117-190154 одним узгодженим випуском із прозорою фіксацією, що куди увійшло і що лишилося запланованим."
+  },
+  "bouwtVoortOp": [
+    "UPD-004/20261118-002718-gemini",
+    "BIJDRAGE-001/20261118-083417-claude",
+    "VERWIJZING-001/20261118-093703-claude",
+    {
+      "beschrijving": "PR #154 claude/project-thread-t922sp (PLAATS-TEKENS-001, dcfe31a4) та PR #158 feature/upd-004-uitgave-20261117-225600 (697c7374)"
+    }
+  ],
+  "tak": "feature/upd-005-uitgave-20261119-065100",
+  "pr": null,
+  "commits": [
+    "dcfe31a4d8d7cc38b32a9e9bb703d554e069cb35",
+    "558681dc8b508e9cbde76dba3967306f30721995",
+    "453954d3263ac5940d934c2904acc808c1a6bfb1",
+    "fdd466c7259192095b812f37eb09d1415c12748e",
+    "697c73743723c472be25ad2cf4923b29c36864bc",
+    "9f8bfcb653ce9b4699919048510c872ef2591e79",
+    "d16a966ba0f7ff1294ab20d3de03c0c4e7fa4b02",
+    "531b80c44393fb0d9b30edf5cd2ca23ec1edcecf",
+    "097aae517dee9018e924d1ab7297dc7a59bf00f7",
+    "0189d7d29548f4b8054267061c88b6668294d5f0",
+    "236af456b2a87a783cf3f1edeed26c442971d829",
+    "50742ebb15d78d859c6a1c1db872ecfff7d4f23f",
+    "89b5143eb32d6978266bf2447915038397d87a43",
+    "1cb4068eac252dc52575f5d4bffc04e3c001ed62",
+    "e07180144a3d0ee124e00d53015f446e561af6db",
+    "7aa136aadd8b3f82b9f0acd2b30a9d10b6001094",
+    "8f64636983cea7b7e4a3b312de6a085166974280",
+    "9d65eb5c2cd3e2ad861e837530b63cb0e3a7241c",
+    "921fe654a100d89ea037f8f809d8bc2b8d7c05c8",
+    "bdb229c40c198e180ef6e4312e89f722db5f8cd0",
+    "fc8251be6bfef53b3968f78eccb392cefc408b2b",
+    "bf6c7a7dd5bae9599561e73c7c53c6215848721a",
+    "681f5fdd69d0a97d31e67247d56ec484f385a261",
+    "735c4bbf6133b7510e56578887fcf53a22b5892a",
+    "c9de74dc9b9d97850309d8e410fbd872edc340d0",
+    "ec4477b217bdfda7409168e45e45101a3910aef4",
+    "f27d9b2be8a39db094d9b561b1c4565ba4975b10",
+    "bff39fde31bdc6154e4951af7c7ddf00d7d5c2c0",
+    "a81725fa1927457d191aa7283c28740b622825f8",
+    "0d5f37ca7f7ac054466398568f1377b9aa41ec4e",
+    "e543d013e774793de25e6b2ffbea358d6deccf04",
+    "3f5f621e7df4121381c4ba509d3f1cdb3cb5082d",
+    "b43994f50e10eafe46c339c699b0001d49a90390",
+    "e8f5468e75f499fb5f0254776c18a2f43571ec42",
+    "7118bc41775a2e930a4e640dd7a14c3865c5f1c7",
+    "a54dc89c506e001ee9c4ec90652b2d8bf1dc4add",
+    "d3f94206edbbffcb1286569ea97558c773ca32a3",
+    "0eec7722307a648b5e3f8f656293cefffe4a4705"
+  ],
+  "onderwerpen": [
+    "auteurschap-en-vaardigheden",
+    "meldingen"
+  ]
+}

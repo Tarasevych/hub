@@ -9,10 +9,12 @@ import Oorzaak from './Oorzaak';
 import PakketActies from './PakketActies';
 import './pakket.css';
 import CommitTekst from './CommitTekst';
+import UitrolStroomKaart from './UitrolStroomKaart';
+import { VERSIE_RE } from '../../shared/uitrol-stroom';
 import { commitWeergave } from '../../shared/bron-commit';
 import { DEELSTAPPEN, datumLang, deelStanden, duur, methodeTekst, mb, runDuur, staatTekst, subTijden, tijdKort, tr, type Gebeurtenis, type Lang, type Regel, type Run } from './types';
 
-type Props = { lang: Lang; context: Record<string, unknown>; runId: string; hoogte?: number };
+type Props = { lang: Lang; context: Record<string, unknown>; runId: string; hoogte?: number; naarStroom?: (versie: string) => void };
 
 function Kopieerbaar({ lang, tekst }: { lang: Lang; tekst: string }) {
   const [ok, setOk] = useState(false);
@@ -20,7 +22,7 @@ function Kopieerbaar({ lang, tekst }: { lang: Lang; tekst: string }) {
     <button type='button' className='ut-icoon' aria-label={tr(lang, 'Копіювати', 'Kopiëren')} onClick={() => { void navigator.clipboard?.writeText(tekst).then(() => { setOk(true); window.setTimeout(() => setOk(false), 1500); }).catch(() => undefined); }}>{ok ? <Check aria-hidden='true' /> : <ClipboardCopy aria-hidden='true' />}</button></span>;
 }
 
-export default function RunDetail({ lang, context, runId, hoogte }: Props) {
+export default function RunDetail({ lang, context, runId, hoogte, naarStroom }: Props) {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<Gebeurtenis[]>([]);
   const [regels, setRegels] = useState<Regel[]>([]);
@@ -79,7 +81,7 @@ export default function RunDetail({ lang, context, runId, hoogte }: Props) {
           {rij(tr(lang, 'Метод', 'Methode'), methodeTekst(lang, run.methode))}
           {rij(tr(lang, 'Початок', 'Start'), datumLang(lang, run.gestart))}
           {rij(tr(lang, 'Кінець', 'Einde'), run.staat === 'bezig' ? tr(lang, 'ще триває', 'loopt nog') : datumLang(lang, run.geeindigd || run.bijgewerkt))}
-          {rij(tr(lang, 'Тривалість', 'Duur'), runDuur(run))}
+          {rij(tr(lang, 'Тривалість', 'Duur'), runDuur(run, lang))}
           {run.wie && rij(tr(lang, 'Хто запустив', 'Gestart door'), run.wie)}
           {run.adres && rij(tr(lang, 'Адреса', 'Adres'), run.adres)}
           {rij(tr(lang, 'Ідентифікатор', 'Run-id'), <Kopieerbaar lang={lang} tekst={run.id} />)}
@@ -118,6 +120,7 @@ export default function RunDetail({ lang, context, runId, hoogte }: Props) {
     </div>
 
     {run.staat !== 'bezig' && <PakketActies lang={lang} context={context} run={run} />}
+    {VERSIE_RE.test(run.versie || '') && <UitrolStroomKaart lang={lang} context={context} versie={run.versie} compact naarStroom={naarStroom} />}
 
     {run.methode !== 'ssh' && <section>
       <h3>{tr(lang, 'Кроки', 'Stappen')}</h3>
@@ -126,7 +129,7 @@ export default function RunDetail({ lang, context, runId, hoogte }: Props) {
           return <li key={d.id} data-stand={st}>
             {st === 'ok' ? <CheckCircle2 aria-hidden='true' /> : st === 'fout' ? <XCircle aria-hidden='true' /> : st === 'bezig' ? <Loader2 aria-hidden='true' className='ut-draai' /> : <CircleDashed aria-hidden='true' />}
             <span className='ut-deel-tekst'><b>{tr(lang, d.uk, d.nl)}</b>{info && (lang === 'uk' ? info.uk : info.nl) && <small>{lang === 'uk' ? info.uk : info.nl}</small>}</span>
-            <span className='ut-deel-stand'>{info?.tijd ? tijdKort(lang, info.tijd) : d.sub && subT[d.sub] && st !== 'wacht' ? `${tijdKort(lang, subT[d.sub].tijd)}${subT[d.sub].duurMs !== null && st === 'ok' ? ` (${duur(subT[d.sub].duurMs as number)})` : ''}` : ''}</span>
+            <span className='ut-deel-stand'>{info?.tijd ? tijdKort(lang, info.tijd) : d.sub && subT[d.sub] && st !== 'wacht' ? `${tijdKort(lang, subT[d.sub].tijd)}${subT[d.sub].duurMs !== null && st === 'ok' ? ` (${duur(subT[d.sub].duurMs as number, lang)})` : ''}` : ''}</span>
           </li>; })}
       </ul>
     </section>}

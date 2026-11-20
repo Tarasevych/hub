@@ -3,6 +3,7 @@ import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import './api-platform-weergave.css';
 import './agenten-paneel.css';
+import { alleenMens, geenAi, verborgenVoorAi } from './menselijke-actie';
 
 type Tr = (uk: string, nl: string) => string;
 type Agent = {
@@ -74,6 +75,8 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
     await api.post(`/api/owner/agents/commands/${id}/${verdict}`, body());
   }, tr('Дія вже недійсна.', 'Deze actie is niet meer geldig.'));
 
+  // SEC-002 extensie-09: het blok met deze opdracht (en dus de koppelcode) staat in [data-ai-verborgen]: de browserextensie leest
+  // en fotografeert het niet.
   const command = pairing
     ? `node agent.mjs pair --server ${location.origin} --code ${pairing.code} --name "${tr('Мій ПК', 'Mijn pc')}" --root <${tr('ДОЗВОЛЕНА_ТЕКА', 'TOEGESTANE_MAP')}> --allow git,node\nnode agent.mjs run`
     : '';
@@ -111,12 +114,12 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
         </ul>
       ) : <p>{tr('Пристроїв ще немає.', 'Nog geen apparaten.')}</p>}
 
-      <button type='button' disabled={busy} onClick={() => void createCode()}>
+      <button type='button' disabled={busy} {...geenAi} onClick={alleenMens(() => void createCode())}>
         {tr('+ Підключити ПК / віртуальну машину', '+ Pc of virtuele machine koppelen')}
       </button>
 
       {pairing ? (
-        <div className='api-platform-secret' data-agents-pairing='true'>
+        <div className='api-platform-secret' data-agents-pairing='true' {...verborgenVoorAi}>
           <span>{tr('Код дійсний 5 хвилин і спрацьовує один раз. Node.js 22+ та agent.mjs мають бути на машині.', 'De code is 5 minuten geldig en werkt één keer. Node.js 22+ en agent.mjs moeten op de machine staan.')}</span>
           <code>{command}</code>
           <div className='api-platform-secret-actions'>

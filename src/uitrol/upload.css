@@ -170,7 +170,59 @@ li[data-niveau="fout"] .ut-vc-niveau{color:var(--ut-err)}
 .ut-release-tekst p{margin:0}.ut-release-tekst ul{margin:2px 0 4px;padding-left:18px}
 .ut-deelnemers{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
 .ut-deelnemer{display:flex;align-items:center;gap:8px;font-size:.85rem;min-height:28px}
-.ut-deelnemer-mens{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ut-vlak,#eef);font-size:.75rem;font-weight:600;flex:none;overflow:hidden}
+/* BIJDRAGE-001 (стара вада): --ut-vlak ніде не визначено, тож у темній темі світле коло з білою літерою було нечитабельне — тло від кольору тексту. */
+.ut-deelnemer-mens{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ut-vlak,color-mix(in srgb,currentColor 14%,transparent));font-size:.75rem;font-weight:600;flex:none;overflow:hidden}
 .ut-deelnemer-mens img{width:100%;height:100%;object-fit:cover;display:block}
+/* BIJDRAGE-001: «Хто що зробив» — згорнуто, без зайвої підкладки, переноситься на вузькому екрані */
+.ut-bijdragen{margin-top:8px;border-radius:10px}
+.ut-bijdragen>summary{cursor:pointer;font-size:.85rem;font-weight:600;list-style-position:inside}
+.ut-bijdragen-taak{margin:6px 0 0}
+.ut-bijdragen-taak ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:6px}
+.ut-bijdrage{display:flex;align-items:flex-start;gap:8px;font-size:.82rem;line-height:1.35;overflow-wrap:anywhere}
+.ut-bijdrage .ut-deelnemer-mens{width:18px;height:18px;font-size:.7rem}
+.ut-bijdrage-soort{display:inline-block;padding:0 6px;border-radius:999px;background:var(--ut-vlak,color-mix(in srgb,currentColor 14%,transparent));font-size:.75rem}
+.ut-bijdrage a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .ut-manifest-fouten{margin:6px 0 0;padding-left:18px;font-size:.85rem;overflow-wrap:anywhere}
+/* UITROL-002: archief al op de server (hervatten zonder upload) + lijst van bewaarde archieven · архів уже на сервері */
+.ut-hervat{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-ok);background:var(--ut-ok-bg)}
+.ut-hervat>svg{width:22px;height:22px;flex:none;color:var(--ut-ok);margin-top:2px}
+.ut-hervat>div{display:grid;gap:8px;min-width:0}
+.ut-hervat b{font-size:.95rem}
+.ut-hervat p{color:var(--ut-text);font-size:.88rem;line-height:1.45}
+.ut-hervat-lijst{display:grid;gap:8px;margin-top:10px;padding:12px 14px;border-radius:12px;border:1px dashed var(--ut-ok);background:var(--ut-bg2)}
+.ut-hervat-lijst h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.92rem}
+.ut-hervat-lijst h4 svg{width:18px;height:18px;color:var(--ut-ok)}
+.ut-hervat-lijst .ut-lijst>li>span:first-child{display:grid;gap:2px;min-width:0}
+.ut-hervat-lijst .ut-lijst>li>span:first-child b{font-size:.85rem;overflow-wrap:anywhere}
+.ut-hervat-lijst .ut-acties{margin:0}
+/* UITROL-002: een andere installatie loopt (ander apparaat/beheerder) · інше встановлення триває */
+.ut-samenloop{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--ut-info);background:var(--ut-info-bg)}
+.ut-samenloop>svg{width:22px;height:22px;flex:none;color:var(--ut-info);margin-top:2px}
+.ut-samenloop>div{display:grid;gap:8px;min-width:0}
+.ut-samenloop p{font-size:.88rem;line-height:1.45}
+.ut-hint[data-ut-samenloop-hint] svg{width:14px;height:14px;vertical-align:-2px}
+/* VERWIJZING-001: посилання з назвою, підсумком і станом у «Хто що зробив». */
+.ut-vw-rij{display:flex;flex-direction:column;gap:4px;margin:6px 0 2px 26px;min-width:0;contain:inline-size}
+.ut-vw>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;padding:4px 8px;border:1px solid var(--ut-line,color-mix(in srgb,currentColor 18%,transparent));border-radius:999px;min-width:0}
+.ut-vw>summary::-webkit-details-marker{display:none}
+.ut-vw>summary:hover,.ut-vw>summary:focus-visible{border-color:var(--ut-info,currentColor)}
+.ut-vw[open]>summary{border-radius:10px 10px 0 0;border-bottom-color:transparent}
+.ut-vw-ic{display:inline-grid;color:var(--ut-muted,inherit);flex:none}
+.ut-vw{min-width:0;max-width:100%}
+.ut-vw>summary>b{flex:0 1 auto;min-width:3ch;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-vw-titel{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-vw-staat{flex:none;font-size:.7rem;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent)}
+.ut-vw-open{background:var(--ut-info-bg,color-mix(in srgb,#2563eb 16%,transparent));color:var(--ut-info,inherit)}
+.ut-vw-samengevoegd{background:var(--ut-ok-bg,color-mix(in srgb,#16a34a 16%,transparent));color:var(--ut-ok,inherit)}
+.ut-vw-gesloten{color:var(--ut-muted,inherit)}
+.ut-vw-verwijderd,.ut-vw-onbekend{background:var(--ut-warn-bg,color-mix(in srgb,#d97706 18%,transparent));color:var(--ut-warn,inherit)}
+.ut-vw-kaart{border:1px solid var(--ut-line,color-mix(in srgb,currentColor 18%,transparent));border-top:0;border-radius:0 0 10px 10px;padding:6px 10px 8px;font-size:.8rem;display:grid;gap:6px;overflow-wrap:anywhere}
+.ut-vw-kaart p{margin:0;line-height:1.4}
+.ut-vw-stand{color:var(--ut-muted,inherit)}
+.ut-vw-knoppen{display:flex;flex-wrap:wrap;gap:6px}
+.ut-vw-knoppen a{font-size:.75rem;padding:3px 9px;border-radius:8px;background:var(--ut-info-bg,color-mix(in srgb,currentColor 10%,transparent));color:var(--ut-info,inherit);text-decoration:none}
+.ut-vw-knoppen a:hover{text-decoration:underline}
+.ut-vw-tech>summary{cursor:pointer;font-size:.72rem;color:var(--ut-muted,inherit)}
+.ut-vw-tech code{display:block;font-size:.72rem;overflow-wrap:anywhere;margin-top:4px}
+/* Мобільний шар лишається в кінці файла · mobiele laag blijft onderaan */
 @media (max-width:640px){.ut-wiz-balk .ut-wiz-lang{display:none}.ut-wiz-balk .ut-wiz-kort{display:block}}

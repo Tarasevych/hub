@@ -12,6 +12,7 @@ import AiToestemmingen from '../AiToestemmingen';
 import type { Losgekoppeld, Overzicht } from './gegevens';
 import { Badge, datum, exact, GevaarKnop, Groep, Knop, Melding, Rij, Tech, Tijd, relatief, useActies } from './ui';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 /** 0.4.10 < 0.5.1: numeriek per deel. Onbekend → geen melding. */
 export function ouder(a: string | null | undefined, b: string | null | undefined): boolean {

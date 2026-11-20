@@ -6,6 +6,7 @@
   display:grid;gap:14px;min-width:0;color:var(--ov-text)}
 html.theme-dark .ov-root{--ov-s1:#3987e5;--ov-s2:#d95926;--ov-s3:#199e70;--ov-s4:#c98500;--ov-s5:#d55181;--ov-bad:var(--fout);--ov-ok:var(--ok);--ov-warn:var(--warn);--ov-info:var(--info)}
 .ov-root *{box-sizing:border-box}
+.ov-portaal{display:contents}
 .ov-root h3,.ov-root h4,.ov-root p,.ov-root ul,.ov-root ol,.ov-root dl,.ov-root dd{margin:0}
 .ov-root ul,.ov-root ol{padding:0;list-style:none}
 .ov-root svg{flex:none}

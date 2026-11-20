@@ -8,10 +8,18 @@ import App from './App';
 import { installeerUitklapGeheugen } from './platform/uitklap'; // punt 4: uitklapblokken onthouden + #anker opent het juiste blok
 import { installeerEenMenu } from './platform/een-menu';
 import { startImpersonatieModus } from './impersonatie/modus'; // «Подивитися як користувач»: vóór de app, anders gaan de eerste aanroepen als de beheerder zelf
+import { installeerMobielVeilig } from './mobiel-veilig/vlag'; // MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): <html data-mobiel-breedte-veilig> vóór de eerste lay-out
 import './index.css';
 import './ontwerp/fundament.css'; // фундамент дизайну 20.10.2026: токени → примітиви → мобільна верстка (після preflight)
 import './mobiel-ux.css';
+import './maquette-kern/maquette-tokens.css';
+import './maquette-kern/maquette-oppervlakken.css';
+import './maquette-kern/maquette-aanmelden.css';
+import './maquette-kern/maquette-klassiek.css';
 import './platform/sluitknop.css'; // gecentreerde sluitknoppen (specificiteit 0)
+import './tech/tech.css';
+import './tech/strook.css';
+import './centrering-globaal.css'; // UPD-009: єдине симетричне центрування та стабільність макета всіх сторінок без совгання
 import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026; herzien INTEG-001 print)
 import { installeerAfdruk } from './platform/afdruk'; // vlak vóór het afdrukken: vaste/afgeknipte vakken vrijmaken, knoppen sorteren (INTEG-001 print)
 
@@ -35,6 +43,7 @@ naActivering(() => {
     void import('./GastToegang').then(({ default: GastToegang }) => createRoot(document.getElementById('root')!).render(<GastToegang />));
   } else {
     startImpersonatieModus();
+    installeerMobielVeilig();
     createRoot(document.getElementById('root')!).render(<App />); installeerUitklapGeheugen(); installeerEenMenu();
     // Technisch profiel: eigen root naast de app (band + vensters), los van de dienst eronder; laadt pas na de app.
     void import('./tech/TechLaag').then(({ default: TechLaag }) => {
@@ -46,12 +55,14 @@ naActivering(() => {
       const el = document.createElement('div'); el.id = 'ext-update-band'; document.body.appendChild(el);
       createRoot(el).render(<ExtensieUpdateBand />);
     });
-    // «Сайт оновлено до …» (18.10.2026): open tabbladen horen dat er een nieuwe release draait (nieuwe-versie.ts).
-    void import('./platform/NieuweVersieBand').then(({ default: NieuweVersieBand }) => {
-      const el = document.createElement('div'); el.id = 'nieuwe-versie-band'; document.body.appendChild(el);
-      createRoot(el).render(<NieuweVersieBand />);
-    });
+    // «Сайт оновлено до …» (18.10.2026) + UPD-010: фоновий індикатор завантаження та встановлення оновлень на всіх піддоменах.
+    void Promise.all([import('./platform/NieuweVersieBand'), import('./platform/UitrolAchtergrondBand')]).then(
+      ([{ default: NieuweVersieBand }, { default: UitrolAchtergrondBand }]) => {
+        const el = document.createElement('div'); el.id = 'nieuwe-versie-band'; document.body.appendChild(el);
+        createRoot(el).render(<><NieuweVersieBand /><UitrolAchtergrondBand /></>);
+      },
+    );
   }
 });
 
-const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>undefined)},{once:true})}
+const callbackQuery=/[?&](?:code|state|token|proof|transaction|redeem|handoff)=/i.test(location.search);if('serviceWorker'in navigator&&location.protocol==='https:'&&!callbackQuery){window.addEventListener('load',()=>{const script=new URL('./service-worker.js',location.href);void navigator.serviceWorker.register(script,{scope:'./',updateViaCache:'none'}).then(registration=>{const update=()=>{void registration?.update?.().catch(()=>undefined)};const ric=(window as Window&{requestIdleCallback?:(cb:()=>void,opts?:{timeout:number})=>void}).requestIdleCallback;if(ric)ric(update,{timeout:4000});else window.setTimeout(update,2500)}).catch(()=>undefined)},{once:true})}

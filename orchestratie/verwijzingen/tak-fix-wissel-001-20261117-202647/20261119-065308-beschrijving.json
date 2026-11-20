@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "soort": "tak",
+  "id": "fix/wissel-001-20261117-202647",
+  "gebeurtenis": "beschrijving",
+  "tijd": "2026-11-19T06:53:08.086Z",
+  "wie": {
+    "naam": "Павло Тарасевич (через Google Antigravity)",
+    "agent": "gemini",
+    "model": "Gemini 3.1 Pro (Google Antigravity)"
+  },
+  "titel": {
+    "uk": "WISSEL-001: перемикання на технічний простір і чесний перехід між обліковими записами",
+    "nl": "WISSEL-001: overschakelen naar de technische ruimte en eerlijke accountwissel"
+  },
+  "samenvatting": {
+    "uk": "Увійшло до спільного випуску UPD-005 (через UPD-004, фіксація e543d013).",
+    "nl": "Opgenomen in UPD-005 (via UPD-004, vastlegging e543d013)."
+  },
+  "laatsteCommit": "e543d013e774793de25e6b2ffbea358d6deccf04",
+  "taken": [
+    "WISSEL-001",
+    "UPD-005"
+  ]
+}

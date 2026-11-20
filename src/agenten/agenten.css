@@ -57,7 +57,7 @@
 .ag-tech-rij:first-child dt,.ag-tech-rij:first-child dd{border-top:0}
 .ag-tech dt{color:var(--muted);background:var(--surface)}
 .ag-tech dd{overflow-wrap:anywhere}
-.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;word-break:break-all}
+.ag-ruw{margin:6px 0 0;padding:8px;max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;font-size:.78rem;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal}
 
 /* Badges, chips */
 .ag-badge{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border:1px solid currentColor;border-radius:99px;font-size:.75rem;font-weight:600;line-height:18px;white-space:nowrap}
@@ -110,7 +110,7 @@ small.ag-melding{display:block}
 .ag-kaart-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
 .ag-waarschuwing{border-color:var(--ag-warn);box-shadow:inset 4px 0 0 var(--ag-warn)}
 .ag-vers{border-color:var(--ag-ok)}
-.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);word-break:break-all}
+.ag-vers code{display:block;padding:8px;border-radius:6px;background:var(--surface);overflow-wrap:anywhere;word-break:normal}
 .ag-groep{border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel)}
 .ag-groep-acties{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 14px 10px}
 .ag-groep>summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;list-style:none;color:var(--muted);font-weight:600;font-size:.9rem}
@@ -194,7 +194,7 @@ small.ag-melding{display:block}
 .ag-verbind-klant:focus-visible,.ag-verbind-weg:focus-visible{outline:2px solid var(--accent,#1f5fbf);outline-offset:2px}
 .ag-verbind-rij{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px}
 .ag-verbind-rij .ag-veld select{min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:inherit;font:inherit;max-width:100%}
-.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:12px}
+.ag-verbind-wegen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:12px}
 .ag-verbind-weg{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ag-verbind-weg>svg{grid-row:span 2;width:24px;height:24px;color:var(--accent,#1f5fbf)}
 .ag-verbind-weg small{color:var(--muted);line-height:1.4}
@@ -203,7 +203,7 @@ small.ag-melding{display:block}
 .ag-verbind-stappen{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px;line-height:1.5}
 .ag-verbind-stappen li{display:flex;flex-direction:column;gap:6px}
 .ag-verbind-adres{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);word-break:break-all;font-size:13px}
+.ag-verbind-adres code{flex:1 1 16rem;min-width:0;padding:8px 10px;border-radius:8px;background:var(--panel);overflow-wrap:anywhere;word-break:normal;font-size:13px}
 .ag-verbind-let{display:flex;gap:8px;align-items:flex-start;margin:0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--ag-warn,#b45309) 12%,transparent);font-size:13px;line-height:1.45}
 .ag-verbind-snippet summary{cursor:pointer;font-weight:600;padding:4px 0}
 .ag-verbind-snippet pre{margin:8px 0;padding:10px;border-radius:8px;background:var(--surface);overflow:auto;max-width:100%;font-size:12px}
@@ -215,10 +215,13 @@ small.ag-melding{display:block}
 .ag-tech-kop{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
 .ag-tech-kop h1{margin:0;font-size:22px}
 .ag-tech-kop p{margin:0;color:var(--muted,#667);line-height:1.5}
-.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.ag-tech-regels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:0;padding:0;list-style:none}
 .ag-tech-regels li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r,12px);background:var(--surface);font-size:13px;line-height:1.45}
 .ag-tech-regels li svg{flex:none;margin-top:2px}
 @media(max-width:560px){.ag-verbind-weg{padding:12px}.ag-verbind-rij{flex-direction:column;align-items:stretch}.ag-verbind-rij .ag-veld,.ag-verbind-rij select{width:100%}}
+/* MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): dezelfde ene kolom, maar als raster. De flexkolom met stretch kostte in Chrome op ≤560 px
+   1,2–3,7 s lay-out per keer op /agenten#tokens en #toegang (gemeten 10.11.2026; als raster 0,16 s). Zonder vlag: de regel hierboven. */
+@media(max-width:560px){html[data-mobiel-breedte-veilig] .ag-verbind-rij{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}}
 /* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
 .ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
 @media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}
@@ -447,7 +450,24 @@ a.ag-knop{text-decoration:none}
 .ag-ext-regel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;padding:12px;border:1px dashed var(--line);border-radius:var(--ag-r,10px)}
 .ag-ext-regel span{flex:1 1 240px;min-width:0;line-height:1.5}
 .ag-ext-regel .ag-knop{min-height:44px}
-/* EXT090-001 (0.9.2): «Вбудований ШІ Chrome» → gebruik door pagina's van de site (siteToegang) en proefformulier. */
+/* EXT090-001 (0.9.2–0.9.7): «Вбудований ШІ Chrome» → розумне налаштування під задачу, форма проби та flags.json. */
+.ag-ext-lai-assistent{display:grid;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:var(--ag-r,10px);background:var(--panel);min-width:0}
+.ag-ext-lai-kop{display:flex;align-items:center;gap:8px;font-size:.98rem;margin:0}
+.ag-ext-lai-kop svg{width:17px;height:17px;flex:0 0 auto;color:var(--accent)}
+.ag-ext-lai-presets{display:flex;flex-wrap:wrap;gap:8px}
+.ag-ext-lai-preset{min-height:44px;white-space:normal;text-align:left}
+.ag-ext-lai-preset.is-actief{border-color:var(--accent);background:var(--accent-soft,var(--surface));color:var(--text);font-weight:700}
+.ag-ext-lai-assistent .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.ag-ext-lai-assistent :is(input[type=text],select,textarea){width:100%;max-width:100%;box-sizing:border-box;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit;font-weight:400}
+.ag-ext-lai-acties{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ag-ext-lai-acties .ag-knop{min-height:44px;white-space:normal;text-align:left}
+.ag-ext-lai-gevaar-blok{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--ag-warn);border-left:4px solid var(--ag-warn);border-radius:8px;background:var(--surface)}
+.ag-ext-lai-gevaar-blok .ag-knop{min-height:44px;justify-self:start;white-space:normal;text-align:left}
+.ag-ext-lai-vlaggen{display:grid;gap:8px;padding-top:6px;border-top:1px solid var(--line)}
+.ag-ext-lai-vlaggen>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.ag-ext-lai-vinkje{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.88rem;cursor:pointer}
+.ag-ext-lai-vinkje input{width:20px;height:20px;flex:0 0 auto}
+.ag-ext-lai-letop{color:var(--muted)}
 .ag-ext-lai-site{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .ag-ext-lai-site .ag-knop{min-height:44px;justify-self:start;white-space:normal}
 .ag-ext-lai-site .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
@@ -534,11 +554,11 @@ a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb)
 .ag-subrij{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:var(--ag-r)}
 .ag-subrij[data-aan='false']{opacity:.6}
 .ag-subrij>div{min-width:0}
-.ag-subrij code{word-break:break-all}
+.ag-subrij code{overflow-wrap:anywhere;word-break:normal}
 
 /* «Окремі простори» (src/agenten/RuimteScheiding.tsx, migratie 0082): de eenmalige keuze als drie kaarten, en de tabel met
    de stand per dienst. Geen nieuwe stijltaal: dezelfde randen, radii en gedempte tekst als de rest van dit tabblad. */
-.ag-keuzes{display:grid;gap:12px;margin:12px 0 0;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr))}
+.ag-keuzes{display:grid;gap:12px;margin:12px 0 0;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))}
 .ag-keuze{padding:12px 14px;border:1px solid var(--line);border-radius:var(--ag-r);display:grid;gap:8px;align-content:start}
 .ag-keuze h4{margin:0;font-size:1rem}
 .ag-keuze p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5}

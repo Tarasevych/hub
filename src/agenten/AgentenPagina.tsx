@@ -54,7 +54,9 @@ import '../mcp-hub.css';
 import './agenten.css';
 // INTEG-001: рамка сторінки й контракт класів — ПІСЛЯ agenten.css, щоб її правила (у межах .ag-pagina) мали останнє слово.
 import './agenten-pagina.css';
-import TabsRij from '../ontwerp/TabsRij';
+import './agenten-kern-maquette.css';
+import { wisAgentAnkers, zetAgentAnkers } from './anker-bron';
+import { useMobielVeilig } from '../mobiel-veilig/vlag';
 import { TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
 export { ALLEEN_TECHNISCH, OUDE_HASH, PLEKKEN, TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs } from './agenten-hash';
 export type { HashPlek, TabId } from './agenten-hash';
@@ -73,6 +75,8 @@ const schrijf = (tab: TabId, item: string, push: boolean, vraag?: URLSearchParam
 
 /** #extension-lokaal en #ruimte zijn ankers ín een sectie, geen tabbladnaam. Andere oude hashes (#claude) wel herschrijven. */
 const ANKER_ID = new Set(['extension-lokaal', 'ruimte']);
+/** MOBIEL-BREEDTE-VEILIG v1: invoer waaraan we zien dat de GEBRUIKER scrolt (niet de pagina zelf). */
+const INVOER = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
 
 /** Eén zin per sectie: wat dit is en waarvoor het dient (uk, nl). Staat in de kop van elk blok (zie blokKop). */
 const SECTIE_HINT: Partial<Record<TabId, [string, string]>> = {
@@ -109,6 +113,16 @@ function scrollOuder(el: HTMLElement): Element | null {
     if ((y === 'auto' || y === 'scroll' || y === 'overlay') && p.scrollHeight > p.clientHeight) return p;
   }
   return null;
+}
+
+/** ANKERS-002: де «верх» для розділу — верхній край його прокручуваного батька плюс scroll-margin-top розділу.
+ *  Bovenrand van de scrollcontainer + scroll-margin-top van de sectie: daar hoort een gekozen sectie te staan. */
+function doelBoven(el: HTMLElement): number {
+  const o = scrollOuder(el);
+  const rand = o instanceof HTMLElement ? Math.max(0, o.getBoundingClientRect().top) : 0;
+  let marge = 0;
+  try { marge = parseFloat(getComputedStyle(el).scrollMarginTop) || 0; } catch { /* geen DOM */ }
+  return rand + marge;
 }
 
 /** Skelet zolang een blok nog niet gemount is: zichtbaar «bezig», nooit een lege vlakte. */
@@ -185,6 +199,11 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const [inBeeld, setInBeeld] = useState<TabId | null>(null);
   const [dicht, setDicht] = useState<Set<TabId>>(leesDicht);
   const vastTot = useRef(0);
+  // MOBIEL-BREEDTE-VEILIG v1 (vlag 0302): de sectie in beeld volgt alleen ECHT scrollen door de gebruiker (wiel, aanraking, toets,
+  // muisknop), niet het eigen scrollIntoView of het mounten van luie secties erboven. Zo blijft het adres wat de gebruiker opende.
+  const zuinig = useMobielVeilig();
+  const gebruikerScrolt = useRef(false);
+  const laatstGezien = useRef('');
   const [plek, setPlek] = useState(() => {
     const p = leesHash(location.hash);
     const doel = ontgrendelDoel(typeof location !== 'undefined' ? location.search : '', p.vraag);
@@ -214,6 +233,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     return () => { window.removeEventListener('hashchange', volg); window.removeEventListener('popstate', volg); };
   }, []);
   const ga = useCallback((tab: TabId, item = '') => { setInBeeld(null); vastTot.current = Date.now() + 800; setPlek({ tab, item, vraag: new URLSearchParams(), anker: '' }); schrijf(tab, item, true); }, []);
+  const gaAnker = useCallback((tab: string) => { if ((TABS as readonly string[]).includes(tab)) ga(tab as TabId); }, [ga]);
   /** Blok in- of uitklappen (kop blijft altijd staan). */
   const klap = useCallback((t: TabId) => { setDicht((d) => { const n = new Set(d); if (n.has(t)) n.delete(t); else n.add(t); bewaarDicht(n); return n; }); }, []);
   // Wie naar een blok gaat (tabrij, hash, link), wil de inhoud zien: een ingeklapt doel gaat open.
@@ -227,15 +247,59 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     if (plek.tab === 'agent') return;
     vastTot.current = Math.max(vastTot.current, Date.now() + 800);
     const id = ANKER_ID.has(plek.anker) ? plek.anker : `ag-sectie-${plek.tab}`;
-    let n = 0;
+    // ANKERS-002 (стара вада): розділи вище ціль вантажаться ліниво й міняють висоту вже після прокрутки, тож сторінка зупинялась
+    // за кілька екранів від мети, а підсвічення стрибало на сусідній розділ. Тепер ціль «тримаємо» до 4 с, поки висоти не
+    // устаткуються, і зупиняємось одразу, щойно людина сама гортає. Doel vasthouden tot de luie blokken erboven stil staan.
+    // MOBIEL-002 (vlag mobiel-breedte-veilig-v1): het vasthouden van het doel doet ANKERS-002 hierboven al (en stopt bij eigen
+    // invoer van de gebruiker); met de vlag aan beginnen we alleen de telling «heeft de gebruiker zelf gescrold» opnieuw.
+    if (zuinig) { gebruikerScrolt.current = false; laatstGezien.current = ''; }
+    const tot = Date.now() + 4000;
+    vastTot.current = Math.max(vastTot.current, tot + 300);
+    let gevonden = false, n = 0;
+    let hadVorige = false, vorigeScroll = 0, vorigeDocTop = 0;
+    const leesStand = (el: HTMLElement) => {
+      const o = scrollOuder(el);
+      const s = o instanceof HTMLElement ? o.scrollTop : window.scrollY;
+      const oTop = o instanceof HTMLElement ? o.getBoundingClientRect().top : 0;
+      const docTop = s + el.getBoundingClientRect().top - oTop;
+      return { s, docTop };
+    };
+    const stop = () => { window.clearInterval(t); weg(); };
+    const door = () => { vastTot.current = 0; stop(); };
+    const weg = () => {
+      window.removeEventListener('wheel', door, true);
+      window.removeEventListener('touchstart', door, true);
+      window.removeEventListener('pointerdown', door, true);
+      window.removeEventListener('mousedown', door, true);
+      window.removeEventListener('keydown', door, true);
+    };
     const t = window.setInterval(() => {
       n += 1;
       const el = document.getElementById(id);
-      if (el) { try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch { /* geen DOM */ } window.clearInterval(t); }
-      else if (n > 20) window.clearInterval(t);
-    }, 50);
-    return () => window.clearInterval(t);
-  }, [plek.tab, plek.anker]);
+      if (!el) { if (n > 20) stop(); return; }
+      const { s: nuScroll, docTop: nuDocTop } = leesStand(el);
+      const top = el.getBoundingClientRect().top;
+      const deltaScroll = nuScroll - vorigeScroll;
+      const deltaDoc = nuDocTop - vorigeDocTop;
+      if (hadVorige && Math.abs(deltaScroll) > 3 && (Math.abs(deltaScroll - deltaDoc) > 4 || top < doelBoven(el) - 4)) {
+        stop();
+        return;
+      }
+      if (!gevonden || Math.abs(top - doelBoven(el)) > 4) { try { el.scrollIntoView({ block: 'start', behavior: 'auto' }); } catch { /* geen DOM */ } }
+      const na = leesStand(el);
+      vorigeScroll = na.s;
+      vorigeDocTop = na.docTop;
+      hadVorige = true;
+      gevonden = true;
+      if (Date.now() > tot) stop();
+    }, 60);
+    window.addEventListener('wheel', door, { capture: true, passive: true });
+    window.addEventListener('touchstart', door, { capture: true, passive: true });
+    window.addEventListener('pointerdown', door, { capture: true, passive: true });
+    window.addEventListener('mousedown', door, { capture: true, passive: true });
+    window.addEventListener('keydown', door, true);
+    return stop;
+  }, [plek.tab, plek.anker, zuinig]);
   const kies = useCallback((item: string) => { setPlek((p) => { schrijf(p.tab, item, false); return { ...p, item }; }); }, []);
 
   /** Na elke actie: lijsten bijwerken zonder de pagina te herladen, en het journaal laten verversen. */
@@ -258,7 +322,7 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
   const oauthActief = (overzicht?.oauth ?? []).filter((g) => g.status === 'active').length;
   const tokensActief = (tokens ?? []).filter((t) => !t.revokedAt && (isoMs(t.expiresAt) ?? 0) > nu).length;
   // HUB-02: één teller voor «ШІ підключено» (verschillende AI-clients), overal dezelfde.
-  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu);
+  const aiVerbonden = aiTeller(overzicht?.oauth, tokens, nu, v2.data?.agenten);
   const toolPending = calls.filter((c) => c.status === 'pending_approval');
   const wachten = pending.length + toolPending.length;
 
@@ -337,15 +401,42 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
     return lijst;
   }, [techAan, plek.tab, plek.anker]);
   const huidig: TabId = inBeeld ?? plek.tab;
-  // Липка смуга підсвічує секцію в полі зору. Під час переходу за хешем лишається обрана секція (e2e: aria-selected).
+  // Audit 19.10 (U-03/MCP-01): geldige sessie zonder het recht «API-платформа» → één vriendelijke muur, geen tabbladen, geen «Стоп»,
+  // geen pollers (gegevens.ts / agenten-gegevens.ts stoppen zelf bij API_RECHT_VEREIST). #extensie krijgt dezelfde uitleg i.p.v. «код підключення».
+  const geenRecht = isRechtFout(ov.fout) || isRechtFout(tok.fout) || isRechtFout(agentsFout);
+  // UNIF-ANKER-001 / GEMINI-004: у всіх палітрах розділи живуть лише в спільному меню якорів (MaquetteAnkerRail via anker-bron.ts).
+  // На стіні відсутності прав (geenRecht) передаємо порожній перелік, щоб не показувати розділи навігації.
+  // In alle paletten staan de onderdelen uitsluitend in het gedeelde ankermenu (geen dubbele balk bovenaan).
+  useEffect(() => {
+    zetAgentAnkers({
+      onderdelen: geenRecht
+        ? []
+        : rij.map((t) => ({ tab: t, uk: tabInfo[t].uk, nl: tabInfo[t].nl, icoon: tabInfo[t].icoon, teller: tabInfo[t].teller || undefined, waarschuwing: t === 'overzicht' && !!tabInfo[t].teller })),
+      actief: huidig,
+      ga: gaAnker,
+    });
+  });
+  useEffect(() => () => wisAgentAnkers(), []);
+  // Спільне меню якорів підсвічує секцію в полі зору. Під час переходу за хешем лишається обрана секція.
   useEffect(() => {
     if (plek.tab === 'agent') return;
     const paneel = document.getElementById('ag-paneel');
     if (!paneel || typeof IntersectionObserver === 'undefined') return;
     const kies = () => {
       if (Date.now() < vastTot.current) return;
-      const balk = document.querySelector('.ag-tabs-wrap')?.getBoundingClientRect().bottom ?? 0;
-      const lijn = balk + 24;
+      // Лінія «у полі зору» — під липкою підсмугою на телефоні чи верхньою рейкою (якщо вони є) або під відступом прокрутки розділу (scroll-margin-top),
+      // щоб розділ, до якого щойно перейшли, і вважався поточним. Onder de mobiele balk / bovenrail of onder de scroll-marge van de sectie.
+      const onderbalk = document.querySelector<HTMLElement>('.mq-anker-onderbalk');
+      const onderRect = onderbalk?.getBoundingClientRect();
+      const topRail = document.querySelector<HTMLElement>('.mq-anker-rail[data-zijde="boven"]:not([data-ingeklapt="ja"])');
+      const topRect = topRail?.getBoundingClientRect();
+      const balk = onderRect && onderRect.height > 0
+        ? onderRect.bottom
+        : topRect && topRect.height > 0 && topRect.top < window.innerHeight / 2
+          ? topRect.bottom
+          : 0;
+      const eerste = paneel.querySelector<HTMLElement>('[data-ag-sectie]');
+      const lijn = Math.max(balk, eerste ? doelBoven(eerste) : 0) + 24;
       let gezien = '';
       for (const n of paneel.querySelectorAll<HTMLElement>('[data-ag-sectie]')) {
         const r = n.getBoundingClientRect();
@@ -358,19 +449,35 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
         const zicht = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, balk);
         if (zicht > 80) return;
       }
+      if (zuinig) {
+        // alleen bij een echte wissel, en het adres alleen als het nog iets anders zegt
+        if (gezien === laatstGezien.current) return;
+        laatstGezien.current = gezien;
+        setInBeeld(gezien as TabId);
+        if (gezien !== plek.tab && !plek.anker && plek.tab !== 'agent' && leesHash(location.hash).tab !== gezien) schrijf(gezien as TabId, '', false);
+        return;
+      }
       setInBeeld(gezien as TabId);
       if (gezien !== plek.tab && !plek.anker && plek.tab !== 'agent') schrijf(gezien as TabId, '', false);
     };
+    if (zuinig) {
+      // één meting per beeld (requestAnimationFrame) en pas nadat de gebruiker zelf iets deed
+      let raf = 0;
+      const plan = () => { if (!gebruikerScrolt.current || raf) return; raf = window.requestAnimationFrame(() => { raf = 0; kies(); }); };
+      const invoer = () => { gebruikerScrolt.current = true; };
+      const io = new IntersectionObserver(plan, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 1] });
+      paneel.querySelectorAll('[data-ag-sectie]').forEach((n) => io.observe(n));
+      window.addEventListener('scroll', plan, { capture: true, passive: true });
+      for (const e of INVOER) window.addEventListener(e, invoer, { capture: true, passive: true });
+      return () => { io.disconnect(); window.cancelAnimationFrame(raf); window.removeEventListener('scroll', plan, true); for (const e of INVOER) window.removeEventListener(e, invoer, true); };
+    }
     const io = new IntersectionObserver(() => kies(), { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.25, 1] });
     paneel.querySelectorAll('[data-ag-sectie]').forEach((n) => io.observe(n));
     window.addEventListener('scroll', kies, { capture: true, passive: true });
     const later = window.setTimeout(kies, Math.max(0, vastTot.current - Date.now() + 40));
     return () => { io.disconnect(); window.removeEventListener('scroll', kies, true); window.clearTimeout(later); };
-  }, [plek.tab, plek.anker, techAan]);
+  }, [plek.tab, plek.anker, techAan, zuinig]);
   const laadFout = ov.fout || tok.fout;
-  // Audit 19.10 (U-03/MCP-01): geldige sessie zonder het recht «API-платформа» → één vriendelijke muur, geen tabbladen, geen «Стоп»,
-  // geen pollers (gegevens.ts / agenten-gegevens.ts stoppen zelf bij API_RECHT_VEREIST). #extensie krijgt dezelfde uitleg i.p.v. «код підключення».
-  const geenRecht = isRechtFout(ov.fout) || isRechtFout(tok.fout) || isRechtFout(agentsFout);
   if (geenRecht) {
     return (
       <div className='ag' data-ag-tab={plek.tab} data-ag-recht='ontbreekt'>
@@ -399,17 +506,6 @@ export default function AgentenPagina({ tr }: { tr: Tr }) {
         </div>
         <AiStopKnop tr={tr} onDone={() => void naActie()} />
       </header>
-
-      <div className='ag-ankers' data-ag-ankers='1'>
-      <TabsRij navKlasse='ag-tabs' wrapKlasse='ag-tabs-wrap' label={tr('Розділи', 'Onderdelen')} lang={tr('uk', 'nl') as 'uk' | 'nl'}>
-        {rij.map((t) => (
-          <a key={t} role='tab' href={`#${t}`} id={`ag-tab-${t}`} aria-selected={huidig === t} aria-controls={`ag-sectie-${t}`} data-tab={t} className='ag-tab-knop'
-            onClick={(e) => { e.preventDefault(); ga(t); }}>
-            {tabInfo[t].icoon}<span>{tr(tabInfo[t].uk, tabInfo[t].nl)}</span>{tabInfo[t].teller ? <span className={`ag-teller${t === 'overzicht' ? ' is-warn' : ''}`}>{tabInfo[t].teller}</span> : null}
-          </a>
-        ))}
-      </TabsRij>
-      </div>
 
       <section id='ag-paneel' className='ag-paneel' aria-label={tr('Розділи підключення ШІ', 'Onderdelen van AI-koppelingen')}>
         {laadFout ? <p className='ag-melding ag-melding-fout' role='alert' data-ag-melding='laden'>{foutTekst(laadFout, tr, ['Не всі дані вдалося завантажити', 'Niet alle gegevens konden worden geladen'])}</p> : null}

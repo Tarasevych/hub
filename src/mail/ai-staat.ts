@@ -4,10 +4,17 @@
 // niets weg; het eenvoudige ontleden werkt altijd (in de browser, zonder model).
 import { useEffect, useState } from 'react';
 import { api } from '../platform/client';
-import { STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
+import { MOTOR_AUTO, MOTOR_VOORKEUR_SLEUTEL, type MotorPrijzen } from '../../shared/mail-ai-motor';
+import type { DienstGebruik, DienstMotorPubliek } from '../../shared/ai-dienst-motor';
+import { agentKanPost, AI_TOEGANG_HREF, STANDAARD_AI_VERTALING_INSTELLINGEN, type AiVertalingAgentInfo, type AiVertalingInstellingen, type AiVertalingRunResponse } from '../../shared/ai-vertaling';
 
-export type AiStaat = { geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen };
-const LEEG: AiStaat = { geladen: false, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN };
+export type AiStaat = {
+  geladen: boolean; agent: AiVertalingAgentInfo | null; instellingen: AiVertalingInstellingen;
+  /** MAILAI-003: усі приватні агенти (для карток рушіїв), спільні рушії сайту, лічильник на сьогодні й орієнтовні ціни. */
+  agents: AiVertalingAgentInfo[]; dienst: DienstMotorPubliek[]; gebruik: Record<string, DienstGebruik>; prijzen: MotorPrijzen | null;
+};
+const LEEG_EXTRA = { agents: [] as AiVertalingAgentInfo[], dienst: [] as DienstMotorPubliek[], gebruik: {} as Record<string, DienstGebruik>, prijzen: null as MotorPrijzen | null };
+const LEEG: AiStaat = { geladen: false, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA };
 const cache = new Map<string, Promise<AiStaat>>();
 /** De laatst geladen staat (welke context ook): voor onderdelen zonder eigen context, zoals «Вигляд → Мова листа». */
 let laatste: AiStaat | null = null;
@@ -20,18 +27,24 @@ export function laadAiStaat(context: Record<string, string>): Promise<AiStaat> {
   let p = cache.get(k);
   if (!p) {
     p = api.post('/api/owner/mail/ai-vertaling/state', { ...context }).then((res) => {
-      const data = (res.data || {}) as { agents?: AiVertalingAgentInfo[]; settings?: AiVertalingInstellingen };
-      const agents = (Array.isArray(data.agents) ? data.agents : []).filter((a) => a && a.ruimte === 'prive' && a.allowedMailRead);
+      const data = (res.data || {}) as { agents?: AiVertalingAgentInfo[]; settings?: AiVertalingInstellingen; dienstMotoren?: DienstMotorPubliek[]; gebruik?: Record<string, DienstGebruik>; prijzen?: MotorPrijzen | null };
+      // MAILAI-001: лише агент, якого сайт справді може запустити (є ключ API), — інакше кнопки ШІ «працюють» лише на вигляд.
+      const alle = Array.isArray(data.agents) ? data.agents : [];
+      const agents = alle.filter((a) => agentKanPost(a));
       const instellingen = data.settings || STANDAARD_AI_VERTALING_INSTELLINGEN;
       const agent = agents.find((a) => a.id === instellingen.defaultAgentId) || agents[0] || null;
-      return { geladen: true, agent, instellingen };
-    }, () => ({ geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN }));
+      return {
+        geladen: true, agent, instellingen, agents: alle, dienst: Array.isArray(data.dienstMotoren) ? data.dienstMotoren : [],
+        gebruik: data.gebruik && typeof data.gebruik === 'object' ? data.gebruik : {}, prijzen: data.prijzen || null,
+      };
+    }, () => ({ geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA }));
     cache.set(k, p);
+    laatsteContext = { ...context };
     void p.then((s) => {
       laatste = s;
       for (const f of luisteraars) f(s);
       // een mislukte poging niet onthouden: de volgende brief mag het opnieuw proberen (setTimeout van de omgeving: ook zonder window)
-      if (!s.agent) setTimeout(() => cache.delete(k), 60_000);
+      if (!s.agent && !s.dienst.length) setTimeout(() => cache.delete(k), 60_000);
     });
   }
   return p;
@@ -41,10 +54,37 @@ export function useAiStaat(context: Record<string, string>): AiStaat {
   const [staat, setStaat] = useState<AiStaat>(LEEG);
   useEffect(() => {
     let actief = true;
-    void laadAiStaat(context).then((s) => { if (actief) setStaat(s); });
-    return () => { actief = false; };
+    const zet = (s: AiStaat) => { if (actief) setStaat(s); };
+    void laadAiStaat(context).then(zet);
+    // MAILAI-003: згода на спільний рушій чи новий лічильник — усі відкриті частини бачать це одразу.
+    luisteraars.add(zet);
+    return () => { actief = false; luisteraars.delete(zet); };
   }, [context.service, context.tabContext, context.sourceOrigin]);
   return staat;
+}
+
+/** MAILAI-003: стан із сервера заново (після згоди на спільний рушій або коли сервер сказав, що рушій вимкнено). */
+export function herlaadAiStaat(context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<AiStaat> {
+  cache.delete(sleutelVan(context));
+  return laadAiStaat(context);
+}
+
+/** MAILAI-003: новий лічильник рушія з відповіді сервера — без повторного запиту стану. */
+export function zetMotorGebruik(teller: string, g: DienstGebruik | undefined | null): void {
+  if (!g || !teller || !laatste) return;
+  laatste = { ...laatste, gebruik: { ...laatste.gebruik, [teller]: g }, dienst: laatste.dienst.map((d) => (`dienst:${d.id}` === teller ? { ...d, vandaag: g.vandaag } : d)) };
+  const nieuw = laatste;
+  for (const [k, p] of cache) cache.set(k, p.then(() => nieuw));
+  for (const f of luisteraars) f(nieuw);
+}
+
+/**
+ * MAILAI-003: погодитися на спільний рушій сайту або відкликати згоду. Сервер сам обчислює, на що саме дається згода (куди йде
+ * текст), і записує це в центр сповіщень. Akkoord geven of intrekken; de server bepaalt waarmee precies akkoord wordt gegaan.
+ */
+export async function zetDienstAkkoord(id: string, aan: boolean, context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<AiStaat> {
+  await api.post('/api/owner/mail/ai-vertaling/settings', { ...context, dienstAkkoord: { id, aan } });
+  return herlaadAiStaat(context);
 }
 
 /** De laatst geladen staat, of null zolang er nog niets geladen is (dan weet het onderdeel het niet — en zegt het niets stelligs). */
@@ -59,7 +99,46 @@ export function useLaatsteAiStaat(): AiStaat | null {
 }
 
 /** Alleen voor tests: de gedeelde staat vergeten. */
-export function vergeetAiStaat() { cache.clear(); laatste = null; }
+export function vergeetAiStaat() { cache.clear(); laatste = null; laatsteContext = null; }
+
+let laatsteContext: Record<string, string> | null = null;
+/**
+ * MAILAI-001: увімкнути/вимкнути панель «ШІ-аналіз і переклад» над листами (налаштування облікового запису, не пристрою). Одразу
+ * оновлює всі відкриті частини (панель, «Вигляд»), потім зберігає на сервері; при збої повертає попередній стан і кидає помилку.
+ * Paneel boven de brief aan/uit: meteen overal zichtbaar, daarna op de server bewaard; bij een fout terug naar de vorige stand.
+ */
+export async function zetAiBalkTonen(aan: boolean, context: Record<string, string> = laatsteContext || { service: 'mail' }): Promise<void> {
+  const vorige = laatste;
+  const pas = (v: boolean) => {
+    const basis = laatste || { geladen: true, agent: null, instellingen: STANDAARD_AI_VERTALING_INSTELLINGEN, ...LEEG_EXTRA };
+    laatste = { ...basis, instellingen: { ...basis.instellingen, balkTonen: v } };
+    for (const [k, p] of cache) cache.set(k, p.then((s) => ({ ...s, instellingen: { ...s.instellingen, balkTonen: v } })));
+    for (const f of luisteraars) f(laatste);
+  };
+  pas(aan);
+  try {
+    await api.post('/api/owner/mail/ai-vertaling/settings', { ...context, balkTonen: aan });
+  } catch (err) {
+    pas(vorige?.instellingen.balkTonen === true);
+    throw err;
+  }
+}
+
+/** MAILAI-001: «/ai» bestaat op geen enkele host (404 op mail.*). Het echte adres: rechten → «Підключення ШІ → Доступи», sleutels → «Сховище ключів». */
+export function aiHrefOplossen(href: string | undefined | null, soort: 'toegang' | 'sleutels' | 'extensie' = 'toegang'): string {
+  const h = String(href || '');
+  if (h && h !== AI_TOEGANG_HREF && !h.startsWith('/ai/') && !h.startsWith('/ai#') && !h.startsWith('/ai?')) return h;
+  try {
+    const taal = typeof document !== 'undefined' && document.documentElement.lang === 'nl' ? 'nl' : 'uk';
+    // Rechtstreeks uit de runtime (public/canonical-service.js) i.p.v. src/canoniek-navigatie: dat module gooit bij het laden zonder
+    // venster (tests). Domeinen komen uit de eigen installatie (BYOS), niet hard uit tarasevych.com.
+    const rt = (globalThis as { __TSV_CANONICAL_SERVICE__?: { canonicalUrl: (s: string, t: string, l: string, o: { explicitTab: boolean }) => string } }).__TSV_CANONICAL_SERVICE__;
+    if (!rt) throw new Error('geen runtime');
+    return soort === 'sleutels' ? rt.canonicalUrl('api', 'vault', taal, { explicitTab: true }) : `${rt.canonicalUrl('mcp', 'agents', taal, { explicitTab: true })}#${soort}`;
+  } catch {
+    return soort === 'sleutels' ? 'https://api.tarasevych.com/kluis' : `https://mcp.tarasevych.com/agenten#${soort}`;
+  }
+}
 
 export type AiFout = { code: string; uk: string; nl: string; href: string };
 /** Een weigering of fout van `/ai-vertaling/run` als eerlijke tekst (nooit een verzonnen resultaat). */
@@ -71,7 +150,7 @@ export function aiFoutVan(err: unknown): AiFout {
     code,
     uk: String(b.messageUk || '') || 'Не вдалося виконати запит до ШІ-агента. Лист не змінено.',
     nl: String(b.messageNl || '') || 'Het verzoek aan de AI-agent is niet gelukt. Het bericht is niet veranderd.',
-    href: String(b.actionHref || '/ai'),
+    href: aiHrefOplossen(String(b.actionHref || '')),
   };
 }
 
@@ -79,4 +158,45 @@ export function aiFoutVan(err: unknown): AiFout {
 export async function aiRun(context: Record<string, string>, body: Record<string, unknown>): Promise<AiVertalingRunResponse> {
   const res = await api.post('/api/owner/mail/ai-vertaling/run', { ...context, ...body });
   return res.data as AiVertalingRunResponse;
+}
+
+// MAILAI-002: «Сховати зараз» ≠ «Вимкнути зовсім». Сховати — лише до закриття цієї вкладки (sessionStorage), щоб не відволікало;
+// налаштування облікового запису не змінюється. Verbergen voor deze sessie (tabblad) — de accountinstelling blijft zoals ze is.
+const SESSIE_SLEUTEL = 'mr-ai-balk-sessie-verborgen-v1';
+const SESSIE_GEBEURTENIS = 'mail:ai-balk-sessie';
+export function balkSessieVerborgen(): boolean {
+  try { return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SESSIE_SLEUTEL) === '1'; } catch { return false; }
+}
+export function zetBalkSessieVerborgen(v: boolean): void {
+  try { if (v) sessionStorage.setItem(SESSIE_SLEUTEL, '1'); else sessionStorage.removeItem(SESSIE_SLEUTEL); } catch { /* privévenster */ }
+  try { window.dispatchEvent(new CustomEvent(SESSIE_GEBEURTENIS)); } catch { /* geen venster */ }
+}
+export function useBalkSessieVerborgen(): boolean {
+  const [v, setV] = useState<boolean>(balkSessieVerborgen);
+  useEffect(() => {
+    const op = () => setV(balkSessieVerborgen());
+    window.addEventListener(SESSIE_GEBEURTENIS, op);
+    return () => window.removeEventListener(SESSIE_GEBEURTENIS, op);
+  }, []);
+  return v;
+}
+
+// MAILAI-002: обраний рушій (на цьому пристрої — локальний ШІ є лише тут). «auto» = спершу безкоштовний.
+const VOORKEUR_GEBEURTENIS = 'mail:ai-motor-voorkeur';
+export function leesMotorVoorkeur(): string {
+  try { return localStorage.getItem(MOTOR_VOORKEUR_SLEUTEL) || MOTOR_AUTO; } catch { return MOTOR_AUTO; }
+}
+export function zetMotorVoorkeur(id: string): void {
+  try { if (!id || id === MOTOR_AUTO) localStorage.removeItem(MOTOR_VOORKEUR_SLEUTEL); else localStorage.setItem(MOTOR_VOORKEUR_SLEUTEL, id); } catch { /* */ }
+  try { window.dispatchEvent(new CustomEvent(VOORKEUR_GEBEURTENIS)); } catch { /* */ }
+}
+export function useMotorVoorkeur(): string {
+  const [v, setV] = useState<string>(leesMotorVoorkeur);
+  useEffect(() => {
+    const op = () => setV(leesMotorVoorkeur());
+    window.addEventListener(VOORKEUR_GEBEURTENIS, op);
+    window.addEventListener('storage', op);
+    return () => { window.removeEventListener(VOORKEUR_GEBEURTENIS, op); window.removeEventListener('storage', op); };
+  }, []);
+  return v;
 }

@@ -58,7 +58,8 @@ export async function main(): Promise<number> {
     check('controleer: statische import door openbare bundel en modulepreload in index.html = FOUT', s.fouten.length === 2 && s.fouten.some((f: string) => f.includes('statisch')) && s.fouten.some((f: string) => f.includes('index.html')), JSON.stringify(s.fouten));
     check('controleer: geen enkele technische bundel = FOUT (configuratie stuk)', l.fouten.length === 1, JSON.stringify(l.fouten));
   } finally { for (const d of [goed, slecht, leeg]) rmSync(d, { recursive: true, force: true }); }
-  check('package.json: «npm run build» voert de bouwcontrole uit direct na vite build', /vite build && node scripts\/tech-bundels-controle\.mjs dist/.test(lees('package.json')));
+  const buildScript = String((JSON.parse(lees('package.json')) as { scripts?: Record<string, string> }).scripts?.build || '');
+  check('package.json: «npm run build» voert de bouwcontrole uit na vite build', /vite build\b[^|;]*&&\s*node scripts\/tech-bundels-controle\.mjs dist\b/.test(buildScript));
   const vc = lees('vite.config.ts');
   check('vite.config: chunkFileNames/assetFileNames via isTechChunk → assets/tech/', vc.includes('chunkFileNames: chunkNaam') && vc.includes('assetFileNames: assetNaam') && vc.includes("'assets/tech/[name]-[hash].js'"));
 
@@ -179,6 +180,11 @@ export async function main(): Promise<number> {
     await pool.query('DELETE FROM app.tech_asset_toegang WHERE user_id=$1', [uid]).catch(() => undefined);
     await tp.beeindigenBijIntrekken(uid, 'handmatig').catch(() => undefined);
     for (const id of sessies) await pool.query("DELETE FROM app.records WHERE tbl='owner_service_sessions_v1' AND id=$1", [id]).catch(() => undefined);
+    if (!bestaand) {
+      await pool.query('DELETE FROM app.tech_activaties WHERE user_id=$1', [uid]).catch(() => undefined);
+      await pool.query('DELETE FROM app.tech_profielen WHERE user_id=$1', [uid]).catch(() => undefined);
+      await pool.query("DELETE FROM app.records WHERE tbl='users' AND id=$1", [uid]).catch(() => undefined);
+    }
     rmSync(dist, { recursive: true, force: true });
   }
   return einde();

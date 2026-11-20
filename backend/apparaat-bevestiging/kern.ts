@@ -20,6 +20,7 @@ import { publiceer } from './stroom';
 import { herstellen, instellingen, levendeApparaten, misluktTellen, misluktWissen, sql, vlagVoor, voorkeuren, voorkeurenOpslaan } from './opslag';
 import { effectieveSoort, type ApparaatInstellingen, type MethodeB, type Stand, type Tekst, type VerzoekPubliek } from '../../shared/apparaat-bevestiging/model';
 import { keuzeGeldig, trek, trekkingGeldig, type VasteSoort } from '../../shared/apparaat-bevestiging/symbolen';
+import { SERVICE_HOSTS } from '../deployment-identiteit';
 
 export const BEVESTIGING_GELDIG_MS = 5 * 60 * 1000;
 const ID_RE = /^[A-Za-z0-9_-]{12}$/;
@@ -62,12 +63,12 @@ async function audit(userId: string | null, actie: string, resultaat: string, de
   await auditToevoegen({ ownerId: userId, actorId: userId, action: `apparaat.${actie}`.slice(0, 120), type: 'identity', result: resultaat, details }).catch(() => undefined);
 }
 async function siteMelding(userId: string, titel: Tekst, tekst: Tekst, link = '/aanmeldmethoden'): Promise<void> {
-  await meld(userId, 'security', `${titel[0]} / ${titel[1]}`, `${tekst[0]} / ${tekst[1]}`, `https://id.tarasevych.com${link}`).catch(() => undefined);
+  await meld(userId, 'security', `${titel[0]} / ${titel[1]}`, `${tekst[0]} / ${tekst[1]}`, `https://${SERVICE_HOSTS.identity}${link}`).catch(() => undefined);
 }
 async function beheerAlarm(soort: string, details: Record<string, unknown>, tekst: Tekst): Promise<void> {
   const eigenaar = await eigenaarUserId().catch(() => '');
   await auditToevoegen({ ownerId: eigenaar || null, action: `apparaat.alarm.${soort}`.slice(0, 120), type: 'identity', result: 'alarm', details }).catch(() => undefined);
-  if (eigenaar) await meld(eigenaar, 'security', '🚨 Інший пристрій: тривога безпеки / Ander apparaat: beveiligingsalarm', `${tekst[0]} / ${tekst[1]}`, 'https://id.tarasevych.com/aanmeldmethoden-beheer').catch(() => undefined);
+  if (eigenaar) await meld(eigenaar, 'security', '🚨 Інший пристрій: тривога безпеки / Ander apparaat: beveiligingsalarm', `${tekst[0]} / ${tekst[1]}`, `https://${SERVICE_HOSTS.admin}/sso#apparaat-beheer`).catch(() => undefined);
 }
 
 // ------------------------------------------------------------------------------------------------ beschikbaarheid
@@ -98,10 +99,13 @@ export async function aanvragen(auth: Auth, a: Aanvraag): Promise<VerzoekPubliek
   const actie = ACTIE_RE.test(String(a.actie || '')) ? String(a.actie) : 'stap-op';
   const label = ACTIE_RE.test(String(a.label || '')) && String(a.label) in ACTIES ? String(a.label) : '';
   const b = await beschikbaarheid(auth.user.id, auth.user.role, ankerVan(auth));
-  if (!b.ok) throw new Error(b.reden);
+  if (!b.ok) {
+    const restPauze = b.reden === 'METHODE_PAUZE' && b.pauzeTot ? Math.max(1, Math.ceil((Date.parse(b.pauzeTot) - Date.now()) / 1000)) : 0;
+    throw Object.assign(new Error(b.reden), restPauze > 0 ? { retryAfter: restPauze, pauzeTot: b.pauzeTot } : {});
+  }
   const inst = b.inst;
-  const [{ n }] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM app.bevestigingen_apparaat WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'", [auth.user.id]);
-  if (n >= inst.maxPerTienMinuten) throw new Error('RATE_LIMITED');
+  const [{ n, wacht }] = await sql<{ n: number; wacht: number | null }>("SELECT count(*)::int AS n, CEIL(EXTRACT(EPOCH FROM (min(aangemaakt_op) + interval '10 minutes' - now())))::int AS wacht FROM app.bevestigingen_apparaat WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'", [auth.user.id]);
+  if (n >= inst.maxPerTienMinuten) throw Object.assign(new Error('RATE_LIMITED'), { retryAfter: Math.max(1, Number(wacht || 60)), maxAttempts: inst.maxPerTienMinuten, windowSec: 600 });
   // Een nieuw verzoek van hetzelfde tabblad voor dezelfde handeling vervangt het vorige: nooit twee kaarten voor één vraag.
   const vorige = await sql<{ id: string }>("UPDATE app.bevestigingen_apparaat SET stand = 'ingetrokken', reden = 'vervangen', afgerond_op = now() WHERE user_id = $1 AND sessie_a = $2 AND actie = $3 AND stand = 'wacht' RETURNING id", [auth.user.id, sessieA, actie]);
   for (const v of vorige) publiceer(auth.user.id, { soort: 'apparaat.afgerond', id: v.id, stand: 'ingetrokken' });
@@ -239,7 +243,7 @@ export async function verbruik(userId: string, sessieId: string, actie: string):
 /**
  * Klassieke step-up voor A nadat de poort van TELEGRAM-001 de handeling «stap-op» heeft goedgekeurd (routes.ts, /stap-op/poort).
  * Kiest de sterkste bron: een bevestiging vanaf een ander apparaat met toegangssleutel (sterk, als de beheerder dat toestaat),
- * anders Telegram (nooit sterk). Geeft de vastgelegde methode terug, of '' als er niets te leggen was.
+ * anders Telegram (sterk alleen als de mens dat zelf koos: voorkeur telegramSterk). Geeft de vastgelegde methode terug, of ''.
  */
 export async function stapOpNaPoort(auth: Auth, voldaanMethoden: ReadonlySet<string>): Promise<'apparaat' | 'telegram' | ''> {
   const sessie = stapOpSessieId(auth);
@@ -252,8 +256,9 @@ export async function stapOpNaPoort(auth: Auth, voldaanMethoden: ReadonlySet<str
     return 'apparaat';
   }
   if (voldaanMethoden.has('telegram')) {
-    await stapOpVoorSessieVastleggen(auth.user.id, sessie, 'telegram');
-    await audit(auth.user.id, 'stap-op', 'success', { methode: 'telegram' });
+    const sterk = (await voorkeuren(auth.user.id)).waarde.telegramSterk === true;
+    await stapOpVoorSessieVastleggen(auth.user.id, sessie, 'telegram', { sterk });
+    await audit(auth.user.id, 'stap-op', 'success', { methode: 'telegram', sterk });
     return 'telegram';
   }
   return '';
@@ -274,7 +279,20 @@ export async function overzicht(auth: Auth) {
     recent: recent.map((r) => ({ ...publiek(r, true), juist: undefined })),
   };
 }
-export async function voorkeurenZetten(auth: Auth, invoer: unknown) { return voorkeurenOpslaan(auth.user.id, invoer); }
+export async function voorkeurenZetten(auth: Auth, invoer: unknown) {
+  const voor = (await voorkeuren(auth.user.id)).waarde;
+  const na = await voorkeurenOpslaan(auth.user.id, invoer);
+  // Telegram als «sterke» bevestiging: elke wijziging in het auditlogboek én in het meldingencentrum (zichtbaar als iemand anders het aanzette).
+  if (voor.telegramSterk !== na.telegramSterk) {
+    await audit(auth.user.id, 'telegram-sterk', 'success', { aan: na.telegramSterk });
+    await siteMelding(auth.user.id,
+      na.telegramSterk ? ['Telegram тепер підтверджує найважливіші дії', 'Telegram bevestigt nu ook de gevoeligste handelingen'] : ['Telegram більше не підтверджує найважливіші дії', 'Telegram bevestigt de gevoeligste handelingen niet meer'],
+      na.telegramSterk
+        ? ['Ви дозволили підтверджувати в Telegram і дії, що вимагають сильного підтвердження (відкликання прав, ключі, шифрування). Якщо це були не ви, вимкніть це в «Способах входу» і змініть таємний код Telegram.', 'U stond toe dat Telegram ook handelingen bevestigt die een sterke bevestiging vragen (rechten intrekken, sleutels, versleuteling). Was u dit niet, zet het dan uit bij «Aanmeldmethoden» en wijzig de geheime Telegram-code.']
+        : ['Для найважливіших дій знову потрібен passkey, код із застосунку або код відновлення.', 'Voor de gevoeligste handelingen is weer een passkey, app-code of herstelcode nodig.']);
+  }
+  return na;
+}
 /** Herstel na «uit»: alleen met een verse toegangssleutel op DEZE sessie (de route controleert dat vóór de aanroep). */
 export async function herstelNaSleutel(auth: Auth): Promise<void> { await herstellen(auth.user.id); await audit(auth.user.id, 'hersteld', 'success'); }
 

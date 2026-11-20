@@ -5,7 +5,7 @@
 //  - «Технічний профіль»: ALLEEN als het account een technisch profiel heeft (recht.technisch !== null). Actief in dit tabblad →
 //    koppelen met ruimte 'technisch' + passkey-ontgrendeling (ExtensieOntgrendeling uit 0.5). Niet actief → één regel + «Активувати».
 // Gebruikers zonder technisch profiel zien dus geen enkel technisch element (ook geen uitgeschakelde knoppen).
-import { ArrowRight, Bug, Globe, ShieldCheck, User } from 'lucide-react';
+import { ArrowRight, Bug, Globe, Palette, ShieldCheck, User } from 'lucide-react';
 import type { Agent } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import BrowserExtensionPanel from '../BrowserExtensiePaneel';
@@ -14,8 +14,11 @@ import { combineer, useExtensieLiveToestand, type LokaalDiagnostiek } from '../e
 import { DIAG_PAKKET } from '../../shared/extensie-ontgrendeling';
 import AgentKleuren from './AgentKleuren';
 import LokaleAiPaneel from '../extensie/LokaleAiPaneel';
+// EXTUI-001: шапка розділу (стан одним поглядом + де працює) і розкривні блоки.
+import ExtensieHero from '../extensie/ExtensieHero';
 import '../extensie/BrowserEnAgenten.css';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 type PanelAgents = Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern'];
 
@@ -65,6 +68,7 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
   // De verwijzing naar «Браузер і агенти» (zone E, 22.10.2026: wat de AI mag staat dáár) is een knop in de kop van «Як користувач».
   return (
     <div className='ag-tab ag-ext ag2-blokken' data-tab-inhoud='extensie' data-tab-profiel={profiel}>
+      <ExtensieHero tr={tr} live={live} />
       <section className='ag-blok' id='extension-lokaal' data-ext-sectie='gebruiker' data-ag-blok='extensie-gebruiker' aria-labelledby='ag-ext-gebruiker'>
         <header className='ag-blok-kop'>
           <h3 className='ag-blok-titel' id='ag-ext-gebruiker'><Globe aria-hidden='true' /> {tr('Як користувач', 'Als gebruiker')}</h3>
@@ -89,7 +93,11 @@ export default function TabExtensie({ tr, agents, techAgents, naActie, versie, k
       </section>
 
       {/* 0.6.2: welke kleur hoort bij welke AI — de rand in het tabblad, de badge en de lijst gebruiken dezelfde kleur. */}
-      <AgentKleuren tr={tr} blok />
+      {/* EXTUI-001: кольори агентів — рідко змінюються, тож згорнуто; у підсумку видно, навіщо цей блок. */}
+      <details className='ext-klap' data-ext-klap='agent-kleuren'>
+        <summary><span className='ext-klap-icoon' aria-hidden='true'><Palette /></span><span>{tr('Колір кожного агента', 'Kleur per agent')}<small>{tr('Рамка цього кольору з’являється на сторінці, коли ШІ в ній читає чи діє', 'Een rand in deze kleur verschijnt op de pagina als een AI er leest of handelt')}</small></span></summary>
+        <div className='ext-klap-inhoud'><AgentKleuren tr={tr} blok /></div>
+      </details>
 
       {/* EXT090-001: ingebouwde AI van Chrome (extensie 0.9.0) — wat Chrome hier aanbiedt en wat de extensie mag; tekst blijft lokaal. */}
       <LokaleAiPaneel tr={tr} keuze={live.extensie?.lokaleAi ?? null} extVersie={live.extensie?.versie ?? ''} extId={live.extensie?.extensieId ?? ''} />
