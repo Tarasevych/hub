@@ -13,8 +13,8 @@
     "tak": "feature/upd-013-verdeelde-opslag-ux-meldpaneel-20261120-100000",
     "basisCommit": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
     "basisVersie": "20261120-093715",
-    "geinstalleerdeBasis": "ee79492666491af3c82ce9127c8a03f37420fdef",
-    "geinstalleerdeVersie": "20261120-084148",
+    "geinstalleerdeBasis": "318ad56136008cafdde193e11c5bfe638d5a6ce6",
+    "geinstalleerdeVersie": "20261120-093715",
     "integratieBasis": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
     "regelsVersie": "1.4.18",
     "regelsHash": "46491972af8283441b082c926c8923e9673f3d8dc84718f000498da2bba494dc",
@@ -25,9 +25,9 @@
         "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після підтвердження живої версії 20261120-084148 на сервері."
       },
       {
-        "taak": "UPD-012 (запит на злиття № 181, перевірений випуск 20261120-093715)",
+        "taak": "UPD-012 (запит на злиття № 181, перевірений і встановлений випуск 20261120-093715)",
         "commit": "e3c5ab3df29724bb7fab0558899bccb71417a82c",
-        "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після 100% зеленого прогону GitHub Actions № 44711013792 і перевірки TRACE-001."
+        "reden": "Злито в integratie (--no-ff) за прямим дозволом власника після 100% зеленого прогону GitHub Actions № 44711013792 і підтвердження встановленої версії 20261120-093715 на живому сервері."
       },
       {
         "taak": "MELDPANEEL-001 (запит на злиття № 159 — досьє панелі сповіщень)",
@@ -50,7 +50,9 @@
     "cb15d68f7ad01a3fb5970466c757521644b53763",
     "8187231f4faedd9479cfcc373909834fe5f9cfdb",
     "57eef3334d869629e3764eac7ed5c6c36917f671",
-    "1f8dea684863084c88e46747770681a37290eefb"
+    "1f8dea684863084c88e46747770681a37290eefb",
+    "126138983797791c7420d41c4a4cc6794a5f35db",
+    "51ad992801eaa05065766684f022899311b98c03"
   ],
   "tijdlijn": [
     {
@@ -72,6 +74,10 @@
     {
       "stap": "5) За результатами першого запуску GitHub Actions № 44719525116 збережено точну обгортку div.ag-lui-plaats.ag-blok-skelet у BlokSkelet (src/agenten/AgentenPagina.tsx).",
       "resultaat": "Пройдено agenten-pagina-blokken-20261103 (37/37); повторний запуск випуску в GitHub Actions."
+    },
+    {
+      "stap": "6) Після підтвердження відсутності нових робіт на GitHub і встановленої основи 20261120-093715 @ 318ad5613600 узгоджено контракти розмітки у McpDienstWeergave.tsx, CanoniekOmlijsting.tsx, App.tsx, HubNotities.tsx, NotitiesPagina.tsx і LegeStaatKaart.tsx, підключено тести upd-011..013 у upd-013-uitgave.yml та доповнено облік BIJDRAGE-001.",
+      "resultaat": "Пройдено gemini-004 (9/9), levende-achtergrond (42/42), zoek-in-menu (23/23), hub-agenda-notities (65/65), hub-bureau (54/54), ui-audit-g (59/59), upd-011..013 (5/5, 6/6, 6/6), повне складання та всі 13 післяскладальних випробувань."
     }
   ],
   "keuzes": [
