@@ -216,6 +216,17 @@ const PER_PAD: readonly Regel[] = [
     'Сайт зможе надсилати команди пристроям цієї інтеграції (світло, клімат тощо).', 'De site kan opdrachten sturen naar apparaten van deze integratie (licht, klimaat enz.).', true],
   [/\/huis\/opdrachten\/nieuw$/, 'Виконати важливу команду для пристрою дому', 'Een belangrijke opdracht voor een apparaat van het huis uitvoeren',
     'Пристрій (замок, сигналізація тощо) виконає команду одразу.', 'Het apparaat (slot, alarm enz.) voert de opdracht meteen uit.', true],
+  // UPD-011: персональні ключі адміністраторів, 3-чинникова синхронізація та вибіркове відкликання випуску.
+  [/\/uitrol\/sleutels\/aanmaken$/, 'Створити персональний ключ адміністратора для 3-чинникової довіри оновлень', 'Een persoonlijke beheersleutel voor driefactorvertrouwen van uitrollen aanmaken',
+    'Одноразово буде показано персональний ключ для прив’язки GitHub, MCP-з’єднувача ШІ та сайту; у базі зберігається лише його контрольна сума.', 'De persoonlijke sleutel wordt eenmalig getoond voor koppeling van GitHub, MCP AI en de site; in de database blijft alleen de controlehash bewaard.', true],
+  [/\/uitrol\/sleutels\/synchroniseren$/, 'Синхронізувати 3 чинники довіри (GitHub ↔ MCP ШІ ↔ Сайт)', 'De 3 vertrouwensfactoren synchroniseren (GitHub ↔ MCP AI ↔ Site)',
+    'Буде оновлено стан взаємної прив’язки ключа, версію чинних правил і підтвердження каналів оновлень.', 'De wederzijdse sleutelkoppeling, geldende regelversie en bevestiging van updatekanalen worden bijgewerkt.', true],
+  [/\/uitrol\/sleutels\/roteren$/, 'Перевипустити (ротувати) персональний ключ адміністратора', 'Een persoonlijke beheersleutel vernieuwen (roteren)',
+    'Попереднє значення ключа негайно втратить чинність; новий ключ покажемо один раз для оновлення в GitHub і MCP.', 'De vorige sleutelwaarde vervalt direct; de nieuwe sleutel tonen we één keer om GitHub en MCP bij te werken.', true],
+  [/\/uitrol\/sleutels\/intrekken$/, 'Відкликати персональний ключ адміністратора', 'Een persoonlijke beheersleutel intrekken',
+    'Цей ключ негайно втратить чинність і більше не зможе підтверджувати завантаження чи встановлення оновлень.', 'Deze sleutel vervalt direct en kan geen uploads of installaties meer bevestigen.', true],
+  [/\/uitrol\/releases\/selectief-aanvragen$/, 'Зафіксувати план вибіркового відкликання конкретного випуску', 'Een plan voor selectief intrekken van één release vastleggen',
+    'Буде збережено пофайловий план відкликання лише вибраного оновлення без втрати пізніших випусків і сформовано завдання для ШІ та GitHub.', 'Er wordt een bestandsplan opgeslagen om alleen de gekozen update in te trekken zonder latere releases te verliezen, met een opdracht voor AI en GitHub.', true],
 ];
 
 /** Per code van actieVoorPad (dezelfde lijst als de server). */

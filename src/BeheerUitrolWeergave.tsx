@@ -29,6 +29,8 @@ import Voorbereiders, { type RechtenWijzigInvoer } from './uitrol/Voorbereiders'
 import type { GevenInvoer } from './uitrol/AgentToevoegen';
 import GithubInstellingen from './uitrol/GithubInstellingen';
 import TelegramArchief from './uitrol/TelegramArchief';
+import SleutelsDrieFactoren from './uitrol/SleutelsDrieFactoren';
+import SelectiefTerugdraaien from './uitrol/SelectiefTerugdraaien';
 import './uitrol/pakket.css';
 import Zijkant from './uitrol/Zijkant';
 import { foutTekst, isHerstart } from './uitrol/fouten';
@@ -316,7 +318,10 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
       {tab === 'stroom' && <UitrolStroom lang={lang} context={context} versie={stroomVersie} onVersie={setStroomVersie} />}
 
       {/* Eén tijdlijn (22.10.2026): runs, afgebroken pogingen én pakketten die niet tot installatie kwamen staan samen op datum (src/uitrol/Geschiedenis.tsx). */}
-      {tab === 'historie' && <Geschiedenis lang={lang} context={context} openId={openRun} onOpenId={setOpenRun} naarUpload={naarUploadPoging} data={data} v2={v2} naarLog={openLog} naarDiagnose={() => setTab('diagnose')} naarStroom={naarStroom} />}
+      {tab === 'historie' && <>
+        <SelectiefTerugdraaien lang={lang} context={context} />
+        <Geschiedenis lang={lang} context={context} openId={openRun} onOpenId={setOpenRun} naarUpload={naarUploadPoging} data={data} v2={v2} naarLog={openLog} naarDiagnose={() => setTab('diagnose')} naarStroom={naarStroom} />
+      </>}
 
       {tab === 'log' && <section className='ut-kaart' data-ut-logtab aria-labelledby='ut-log-titel'>
         <header className='ut-kaart-kop'><div><h2 id='ut-log-titel'>{tr(lang, 'Журнал встановлення', 'Installatielogboek')}</h2>
@@ -337,6 +342,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
       {tab === 'instellen' && <>
         <UitrolMeester lang={lang} context={context} sourceOrigin={sourceOrigin} tabContext={tabContext} data={data} laden={laden} naarOverzicht={naarUpload} teGoedkeuren={wachtend} />
         <Voorbereiders lang={lang} data={data} busy={busy} geven={grantGeven} intrekken={grantIntrekken} termijn={grantTermijn} rechten={grantRechten} zoekAccounts={zoekAccounts} />
+        <SleutelsDrieFactoren lang={lang} context={context} data={data} />
         <GithubInstellingen lang={lang} context={context} onVoorstelOntvangen={() => { void laden(); setTab('overzicht'); }} />
         <TelegramArchief lang={lang} context={context} runs={recent} onGewijzigd={() => void laden()} />
         <ZoneKiezer lang={lang} />

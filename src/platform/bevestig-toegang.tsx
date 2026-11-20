@@ -3,7 +3,7 @@
 // Toont alleen manieren die deze gebruiker heeft (POST /api/owner/access/stap-op/methoden); fouten in het venster, geen alerts.
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Fingerprint, KeyRound, LifeBuoy, LogIn, Send, ShieldCheck, Smartphone } from 'lucide-react';
+import { Bot, Fingerprint, FolderOpen, KeyRound, LifeBuoy, Lock, LogIn, PackageCheck, Send, ShieldCheck, Smartphone, Terminal, Trash2 } from 'lucide-react';
 // APPARAAT-001: tabbladen «Інший пристрій» en «У Telegram» (lui geladen; alleen als de server ze aanbiedt).
 const StapOpKanaal = lazy(() => import('../apparaat-bevestiging/StapOpKanaal'));
 import { kanPasskey } from './webauthn';
@@ -15,7 +15,21 @@ import { ruimtesV2Nu } from '../tech/ruimtes/ruimtes-vlag';
 import { WOORDEN } from '../tech/ruimtes/teksten';
 import { aanmeldPauzeBericht, useAftelPauze } from '../aanmeld-pauze';
 import { beschrijfStapOp } from '../../shared/stap-op-beschrijving';
+import { categorieVoorActie, type BevestigCategorieId } from '../../shared/bevestig-categorie';
 import { doorMens, geenAi } from '../menselijke-actie';
+
+const CAT_ICOON: Record<BevestigCategorieId, typeof ShieldCheck> = {
+  aanmelden: LogIn,
+  uitrol: PackageCheck,
+  rechten: KeyRound,
+  verwijderen: Trash2,
+  kluis: Lock,
+  ai: Bot,
+  server: Terminal,
+  beveiliging: ShieldCheck,
+  gegevens: FolderOpen,
+  algemeen: ShieldCheck,
+};
 
 type Lang = 'uk' | 'nl';
 type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean; apparaat?: boolean; telegram?: boolean };
@@ -251,10 +265,12 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   };
   const alternatieven = beschikbaar.filter((m) => m !== weergave);
   const onthoudLabel = ruimtesV2Nu() ? WOORDEN.onthoud[lang === 'nl' ? 'nl' : 'uk'].replace('{u}', String(info?.onthoudUren || 12)) : lang === 'nl' ? 'Onthoud deze browser (niet opnieuw vragen tot uitloggen)' : 'Запам’ятати цей браузер (не питати знову до виходу)';
+  const cat = categorieVoorActie(opties.actie, opties.pad, lang === 'nl' ? wat.nl : wat.uk);
+  const CatIcoon = CAT_ICOON[cat.id];
 
   // Kritiek venster in de gezamenlijke laag: altijd boven elk ander venster (ook boven het venster dat erom vroeg).
   return <VensterLaag id='bevestig-toegang' titel={t('titel')} prioriteit='kritiek' breedte={400} onSluit={() => klaar({ ok: false, reden: 'geannuleerd' })} sluitenUit={!!bezig} labelledBy='bevestig-toegang-titel' lang={lang} className='bevestig-toegang-venster'>
-    <div className='bevestig-toegang'>
+    <div className='bevestig-toegang' data-categorie={cat.id}>
       <div className='bevestig-toegang-kop'>
         <ShieldCheck className='bevestig-toegang-logo' />
         <h2 id='bevestig-toegang-titel'>{t('titel')}</h2>
@@ -267,9 +283,15 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
         </p>}
       </div>
 
-      <div className='bevestig-toegang-wat' data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'} data-sterk={opties.sterk ? '1' : undefined} role='note'>
-        <p className={wat.gevaar || !wat.bekend ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg'}><strong>{!wat.bekend ? '⚠ ' : ''}{t('watKop')}:</strong> {lang === 'nl' ? wat.nl : wat.uk}</p>
-        <p className='bevestig-toegang-uitleg'><strong>{t('gevolgKop')}:</strong> {lang === 'nl' ? wat.gevolgNl : wat.gevolgUk}</p>
+      <div className='bevestig-toegang-wat' data-stap-op-wat={wat.bekend ? 'bekend' : 'onbekend'} data-sterk={opties.sterk ? '1' : undefined} data-categorie={cat.id} style={{ ['--cat-kleur' as string]: cat.kleur }} role='note'>
+        <div className='bevestig-toegang-cat-kop'>
+          <span className='bevestig-toegang-cat-icoon' aria-hidden='true'><CatIcoon /></span>
+          <div className='bevestig-toegang-cat-body'>
+            <span className='bevestig-toegang-cat-badge'>{lang === 'nl' ? cat.badgeNl : cat.badgeUk}</span>
+            <p className={wat.gevaar || !wat.bekend ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg'}><strong>{!wat.bekend ? '⚠ ' : ''}{t('watKop')}:</strong> {lang === 'nl' ? wat.nl : wat.uk}</p>
+            <p className='bevestig-toegang-uitleg'><strong>{t('gevolgKop')}:</strong> {lang === 'nl' ? wat.gevolgNl : wat.gevolgUk}</p>
+          </div>
+        </div>
         {wat.technisch && <details className='bevestig-toegang-details' data-stap-op-technisch=''>
           <summary>{t('details')}</summary>
           <p>{t('technischAdres')}: <code translate='no'>{wat.technisch}</code></p>
@@ -322,7 +344,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
               <span>{onthoudLabel}</span>
             </label>
             <p className='bevestig-toegang-uitleg' data-onthoud-uitleg='1'>{t('onthoudUitleg').replace('{u}', String(info.onthoudUren || 12))}</p></>
-          : <p className='bevestig-toegang-uitleg' data-onthoud='nooit'>{nietDirect && info.onthoudMag && !opties.sterk ? t('onthoudNietDirect') : weergave === 'codewoord' && info.onthoudMag ? t('onthoudCodewoord') : t('onthoudNooit')}</p>)}
+          : <details className='bevestig-toegang-extra'><summary>{lang === 'nl' ? 'Waarom kan deze actie niet onthouden worden?' : 'Чому цю дію не можна запам’ятати?'}</summary><p className='bevestig-toegang-uitleg' data-onthoud='nooit'>{nietDirect && info.onthoudMag && !opties.sterk ? t('onthoudNietDirect') : weergave === 'codewoord' && info.onthoudMag ? t('onthoudCodewoord') : t('onthoudNooit')}</p></details>)}
       </div>
 
       {alternatieven.length > 0 && <div className='bevestig-toegang-alt'>
@@ -330,7 +352,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
         <ul>{alternatieven.map((m) => { const [k, Icoon] = ALT[m]; return <li key={m}><button type='button' disabled={!!bezig} onClick={() => setWeergave(m)}><Icoon />{t(k)}</button></li>; })}</ul>
       </div>}
 
-      <p className='bevestig-toegang-tip'>{t('tip')}</p>
+      <details className='bevestig-toegang-extra'><summary>{lang === 'nl' ? 'Tip over geldigheid (5 min)' : 'Порада про дію підтвердження (5 хв)'}</summary><p className='bevestig-toegang-tip'>{t('tip')}</p></details>
       <div className='bevestig-toegang-voet'><button type='button' className='bevestig-toegang-annuleer' disabled={!!bezig} onClick={() => klaar({ ok: false, reden: 'geannuleerd' })}>{t('annuleren')}</button></div>
     </div>
   </VensterLaag>;

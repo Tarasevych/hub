@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.17",
-  "bijgewerkt": "2026-11-18",
+  "regelsVersie": "1.4.18",
+  "bijgewerkt": "2026-11-20",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",
@@ -372,5 +372,22 @@
     ],
     "manifestVeld": "verwijzingen",
     "toelichting": "VERWIJZING-001: на сторінці оновлень кожна гілка, запит, міграція й задача мають людську назву, підсумок і стан замість голого номера. Перед видаленням гілки чи закриттям запиту без злиття агент записує подію (хто, чому, останній коміт, куди ввійшло): node scripts/orch.mjs verwijzing. Збирання випуску попереджає про гілку, що зникла без запису (VERWIJZING_ONVERKLAARD)."
+  },
+  "drieFactoren": {
+    "factoren": [
+      "github_trace_001",
+      "mcp_ai_en_regels",
+      "site_account_en_sleutel"
+    ],
+    "vereistVoor": "installeren",
+    "sleutelTabel": "app.uitrol_beheer_sleutels",
+    "toelichting": "B-023 (UPD-011): кожен адміністратор або делегована особа має персональний відкличний ключ (у БД лише префікс і SHA-256). Право «Завантаження + встановлення» вимагає взаємної синхронізації всіх 3 чинників (GitHub ↔ MCP ШІ ↔ Сайт і чинні правила); «Лише завантаження» передає пакунок у кумулятивну чергу на перевірку й схвалення власником."
+  },
+  "selectiefTerugdraaien": {
+    "registerTabel": "app.uitrol_release_wijzigingen",
+    "mcpStatusVeld": "releasesRegister",
+    "behoudLatereReleases": true,
+    "geenDestructieveMigratieVerwijdering": true,
+    "toelichting": "B-023 (UPD-011): кожен випуск фіксується в реєстрі змін із джерелом (github|mcp|site|ssh), файлами, міграціями й 3-чинниковим статусом. Вибіркове відкликання одного випуску зберігає всі пізніші випуски, розділяючи файли на чистий відкат і перетинні правки."
   }
 }

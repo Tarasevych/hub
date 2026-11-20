@@ -379,18 +379,35 @@ export async function inlogTerugUrl(id: string, rijVooraf?: InlogRij | null): Pr
 async function inlogVraagVenster(r: InlogRij, tg: string, chatId: string, lijst: Kandidaat[], taal: BotTaal): Promise<void> {
   const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
   const waar = (x: 'uk' | 'nl') => [r.toestel || r.apparaat, plaatsTekst(r.plaats, r.land, x)].filter(Boolean).join(' · ');
-  const een = (x: 'uk' | 'nl') => invullen(TEKST.inlogVraagVenster[x], { account: lijst.map((k) => k.naam).join(' / '), tijd: tijdTekst(x), apparaat: waar(x), dienst: paginaWeergave(r),
-    netwerk: [r.ip, r.locatie].filter(Boolean).join(' · ') || (x === 'nl' ? 'niet vastgesteld' : 'не визначено') });
-  const tekst = taal === 'beide' ? `${een('uk')}\n\n${een('nl')}` : een(taal);
   const url = await vensterUrl('i', r.id, tg, new Date(r.verloopt_op), tl);
   const knoppen: Knop[][] = [[{ webApp: url, tekst: t(TEKST.knopVensterInlog, tl) }], [{ url, tekst: t(TEKST.knopVensterBrowser, tl) }], [{ letter: 'n', doel: r.id, tekst: t(TEKST.knopNietIk, tl) }]];
   const kop = lijst.length === 1 ? strook(lijst[0].naam, lijst[0].k.kleur, taal) : strook('', 0, taal);
   const nieuw = await Promise.all(lijst.map((x) => apparaatBekend(x.k.user_id, r.apparaat_sleutel))).then((b) => b.some((v) => !v));
   const overgang = nieuw && (await Promise.all(lijst.map((x) => oudLabelBekend(x.k.user_id, r.apparaat)))).every(Boolean);
   const nieuwRegel = overgang ? `${overgangRegel(taal)}\n\n` : nieuw ? `${t(TEKST.inlogNieuwApparaat, taal)}\n\n` : '';
-  // TELEGRAM-002: bij precies één account de foto van dat site-account boven de kaart (visueel kenmerk: wie vraagt er).
+  // TELEGRAM-002 + UPD-011: фірмова картка входу з піктограмою входу та круглим фото конкретного акаунта прямо на зображенні.
   const beeld = lijst.length === 1 ? await accountBeeld(lijst[0].k.user_id).catch(() => null) : null;
-  await stuur(chatId, `${kop}\n\n${nieuwRegel}${tekst}`, taal, { accountFoto: beeld?.foto || undefined, kaart: nieuw && !overgang ? 'nieuwApparaat' : 'gewoon', knoppen: await knoppenMaken(tg, `inlog-${r.id}`, knoppen) });
+  const compactInlog = tl === 'nl'
+    ? `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('nl')} · ${tijdTekst('nl')}\nTik «Controleren en aanmelden» om het pictogram te kiezen.`
+    : `${nieuwRegel ? `${nieuwRegel.trim()}\n` : ''}${waar('uk')} · ${tijdTekst('uk')}\nНатисніть «Перевірити й увійти», щоб обрати піктограму.`;
+  await stuur(chatId, `${kop}\n${compactInlog}`, taal, {
+    accountFoto: beeld?.foto || undefined,
+    actieKaart: {
+      categorie: 'aanmelden',
+      taal: tl,
+      titel: tl === 'nl' ? 'Aanmelden op Mijn Ruimte' : 'Вхід на сайт «Мій простір»',
+      accountNaam: beeld?.naam || lijst.map((k) => k.naam).join(' / '),
+      accountEmail: beeld?.email || '',
+      accountFoto: beeld?.foto || '',
+      accountLetter: beeld?.letter,
+      toestel: r.toestel || r.apparaat,
+      plaats: plaatsTekst(r.plaats, r.land, tl),
+      tijd: tijdTekst(tl),
+      gevoelig: nieuw && !overgang,
+    },
+    kaart: nieuw && !overgang ? 'nieuwApparaat' : 'gewoon',
+    knoppen: await knoppenMaken(tg, `inlog-${r.id}`, knoppen),
+  });
 }
 
 /** Heeft de gebruiker een werkende geheime code? Dan is die in het venster altijd nodig (eis van de eigenaar). */

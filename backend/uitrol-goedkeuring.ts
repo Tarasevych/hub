@@ -53,6 +53,23 @@ import {
   type LimietModus,
   type ToegangNiveau,
 } from '../shared/uitrol-wachtrij';
+import {
+  actieveSleutelStand,
+  SleutelFout,
+  sleutelAanmaken,
+  sleutelIntrekken,
+  sleutelRoteren,
+  sleutelsLijst,
+  sleutelSynchroniseren,
+} from './uitrol-sleutels';
+import {
+  releaseSelectiefAanvragen,
+  releasesRegisterLijst,
+  releaseVergelijkEnPlan,
+  releaseWijzigingVastleggen,
+  SelectiefFout,
+} from './uitrol-selectief-terugdraaien';
+import { evalueerDrieFactoren, normaliseerHerkomst, type HerkomstKanaal } from '../shared/uitrol-drie-factoren';
 
 export const UITROL_LIMIETEN = Object.freeze({
   maxBytes: 300 * 1024 * 1024,
@@ -593,6 +610,51 @@ async function afrondenNaUpload(grant: GrantRij, row: any, deel: string, hervatV
     wijzigingen = CASE WHEN length($4) >= 20 THEN $4 ELSE wijzigingen END, bron_commit = COALESCE(NULLIF($5, ''), bron_commit)
     WHERE id = $1 AND status = 'uploaden'`, [row.id, JSON.stringify(vc.resultaat), JSON.stringify(vc.meta), beschrijving, vc.meta.commit]);
   await verbruiktGrantEenheid(grant.id);
+  // UPD-011: записуємо джерело оновлення, 3-чинникову оцінку та реєстр змін випуску для прозорого контролю й вибіркового відкликання.
+  try {
+    const sleutel = await actieveSleutelStand(grant.accountId, grant.soort === 'agent' ? grant.onderwerp : undefined);
+    const kanaal: HerkomstKanaal = grant.soort === 'mcp-koppeling' || grant.soort === 'agent' || grant.soort === 'agenttoken'
+      ? 'mcp'
+      : String(grant.label || '').toLowerCase().includes('github') ? 'github' : 'site';
+    const traceOk = vc.resultaat.controles.some((c) => c.id === 'ontwikkelarchief' && c.niveau === 'ok');
+    const drieFactoren = sleutel?.drieFactoren || evalueerDrieFactoren({
+      githubKoppeling: vc.meta.ontwikkelArchiefUrl ? ONTWIKKELARCHIEF_REPO : '',
+      githubGeverifieerd: traceOk,
+      traceOk,
+      mcpKoppelingId: grant.soort === 'mcp-koppeling' ? grant.onderwerp : '',
+      mcpAgentSlug: grant.soort === 'agent' ? grant.onderwerp : vc.meta.agent || '',
+      mcpGeverifieerd: kanaal === 'mcp',
+      regelsGeldig: true,
+      siteAccountActief: true,
+      siteGrantActief: true,
+      siteSleutelActief: Boolean(sleutel),
+      siteToegangNiveau: grant.toegangNiveau,
+    });
+    const manifestObj = (vc.meta.manifest || null) as Record<string, any> | null;
+    await sys().query(
+      `UPDATE app.uitrol_voorstellen
+          SET herkomst_kanaal = $2, herkomst_sleutel_id = $3, drie_factoren = $4::jsonb
+        WHERE id = $1`,
+      [row.id, kanaal, sleutel?.id || '', JSON.stringify(drieFactoren)],
+    ).catch(() => undefined);
+    await releaseWijzigingVastleggen({
+      versie: String(row.versie),
+      voorstelId: String(row.id),
+      commitSha: String(vc.meta.commit || row.bron_commit || ''),
+      herkomstKanaal: normaliseerHerkomst(kanaal),
+      herkomstSleutelId: sleutel?.id || '',
+      auteur: String(vc.meta.auteur || manifestObj?.auteur || grant.label || ''),
+      agent: String(vc.meta.agent || ''),
+      taakId: String(manifestObj?.taakId || ''),
+      samenvattingUk: String(manifestObj?.titel?.uk || manifestObj?.samenvatting?.uk || beschrijving).slice(0, 500),
+      samenvattingNl: String(manifestObj?.titel?.nl || manifestObj?.samenvatting?.nl || beschrijving).slice(0, 500),
+      drieFactoren,
+      bestanden: Array.isArray(manifestObj?.bestanden) ? manifestObj.bestanden : [],
+      migraties: Array.isArray(manifestObj?.migraties) ? manifestObj.migraties : [],
+      commits: vc.meta.commit ? [vc.meta.commit] : [],
+      status: 'wacht',
+    });
+  } catch { /* не блокуємо основний потік, якщо міграція 0304 ще не застосована */ }
   await auditeer(grant.accountId, grant.accountId, hervatVan ? 'uitrol_voorstel_hervat' : 'uitrol_voorstel_klaar', 'success', { voorstel: row.id, versie: row.versie, sha256: row.sha256, voorbereider: grant.label, ...(hervatVan ? { hervatVan: hervatVan.id, vorigeCode: hervatVan.code } : {}) });
   // UI-014: nieuw pakket wacht op goedkeuring → melding (vroeger alleen zichtbaar als men zelf /updates opende).
   await meld(grant.accountId, 'uitrol', `Оновлення ${tekst(row.versie, 40)} чекає схвалення / Update ${tekst(row.versie, 40)} wacht op goedkeuring`,
@@ -688,6 +750,22 @@ export async function voorstelStatus(onderwerpen: Onderwerp[], a: Record<string,
       id: item.voorstel.id, versie: item.voorstel.versie, rang: item.rang, isLaatste: item.isLaatste, omvatVersies: item.omvatVersies,
     }));
   } catch { /* кумулятивна черга необов'язкова при старому макеті БД */ }
+  let drieFactorenStand: unknown = null;
+  let releasesRegister: Array<{ versie: string; status: string; herkomstKanaal: string; commitSha: string; agent: string; bestandenAantal: number; ingetrokkenReden: string }> = [];
+  try {
+    const sl = await actieveSleutelStand(grant!.accountId, grant!.soort === 'agent' ? grant!.onderwerp : undefined);
+    if (sl) drieFactorenStand = { sleutelId: sl.id, prefix: sl.prefix, toegangNiveau: sl.toegangNiveau, drieFactoren: sl.drieFactoren, toegangOordeel: sl.toegangOordeel };
+    const reg = await releasesRegisterLijst(20);
+    releasesRegister = reg.releases.map((r) => ({
+      versie: r.versie,
+      status: r.status,
+      herkomstKanaal: r.herkomstKanaal,
+      commitSha: r.commitSha,
+      agent: r.agent,
+      bestandenAantal: r.bestanden.length,
+      ingetrokkenReden: r.ingetrokkenReden,
+    }));
+  } catch { /* опційно */ }
   return {
     grantVerloopt: grant!.verlooptOp,
     rechten: {
@@ -698,6 +776,8 @@ export async function voorstelStatus(onderwerpen: Onderwerp[], a: Record<string,
       resterend: resterendAantal(grant!),
       bevestigingPerKeer: grant!.bevestigingPerKeer,
     },
+    drieFactorenStand,
+    releasesRegister,
     wachtrij,
     voorstellen: rows.map(voorstelUit).map(({ uitkomst: _u, ...v }) => v),
   };
@@ -1327,7 +1407,7 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   const metFouten = async (run: () => Promise<unknown>): Promise<Resp> => {
     try { return json(await run()); }
     catch (err) {
-      if (err instanceof UitrolFout || err instanceof VereistenFout) return error(err.code, err.status);
+      if (err instanceof UitrolFout || err instanceof VereistenFout || err instanceof SleutelFout || err instanceof SelectiefFout) return error(err.code, err.status);
       console.error('[uitrol-goedkeuring]', (err as Error).message);
       return error('UITROL_FOUT', 500);
     }
@@ -1441,6 +1521,16 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     'POST /api/owner/uitrol/voorstel/afwijzen': [eigenaar({}, async (ctx, auth) => afwijzen(wie(auth), body(ctx.body).id, body(ctx.body).reden))],
     // UITROL-001: lopende (of net goedgekeurde) installatie stoppen — step-up + reden; root honoreert tot vóór het overschakelen.
     'POST /api/owner/uitrol/run/stoppen': [eigenaar({ stepUp: true, reden: true }, async (ctx, auth) => stoppen(wie(auth), body(ctx.body)))],
+    // UPD-011: персональні відкличні ключі адміністраторів і 3-чинникова синхронізація (GitHub ↔ MCP ШІ ↔ Сайт).
+    'POST /api/owner/uitrol/sleutels': [eigenaar({}, async () => sleutelsLijst())],
+    'POST /api/owner/uitrol/sleutels/aanmaken': [eigenaar({ sterk: true }, async (ctx, auth) => sleutelAanmaken(wie(auth), body(ctx.body)))],
+    'POST /api/owner/uitrol/sleutels/synchroniseren': [eigenaar({ stepUp: true }, async (ctx, auth) => sleutelSynchroniseren(wie(auth), body(ctx.body)))],
+    'POST /api/owner/uitrol/sleutels/roteren': [eigenaar({ sterk: true }, async (ctx, auth) => sleutelRoteren(wie(auth), body(ctx.body)))],
+    'POST /api/owner/uitrol/sleutels/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => sleutelIntrekken(wie(auth), body(ctx.body)))],
+    // UPD-011: реєстр змін випусків, пофайлове порівняння й вибіркове відкликання конкретного оновлення без втрати пізніших змін.
+    'POST /api/owner/uitrol/releases': [eigenaar({}, async (ctx) => releasesRegisterLijst(Number(body(ctx.body).limiet) || 50))],
+    'POST /api/owner/uitrol/releases/vergelijk': [eigenaar({}, async (ctx) => releaseVergelijkEnPlan(String(body(ctx.body).versie || ''), String(body(ctx.body).huidigeVersie || '') || undefined))],
+    'POST /api/owner/uitrol/releases/selectief-aanvragen': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => releaseSelectiefAanvragen(wie(auth), body(ctx.body)))],
     // Passkeys (registreren, «Може схвалювати оновлення сервера», intrekken): backend/toegangssleutels.ts → Instellingen → «Способи входу».
     // Voorbereiden met een gewone sessie (account-grant). Agents gebruiken de MCP-hulpmiddelen hierboven.
     'POST /api/uitrol/voorstel/begin': [voorbereider(voorstelBegin)],
