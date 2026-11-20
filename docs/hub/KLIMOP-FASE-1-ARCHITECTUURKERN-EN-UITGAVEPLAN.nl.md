@@ -77,7 +77,7 @@ Conform §12–§15 en §43 punt 12 van het manifest (strikt verbod op eigen ong
 | 1 | Auditrapport van het huidige systeem | `docs/hub/KLIMOP-FASE-0-AUDIT-FEITELIJKE-STAAT.nl.md` · `ПЛЮЩ-ЕТАП-0-АУДИТ-ДІЙСНОГО-СТАНУ.uk.md` | **Gereed (`KLIMOP-002`)** |
 | 2 | Hoofdarchitectuurbeschrijving van «Klimop» | `docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md` · `АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md` | **Gereed (`KLIMOP-001`)** |
 | 3 | Specificatie van knooppunten en rollen | `docs/hub/KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md` (§1) + `shared/klimop/kern.ts` | **Gereed (`KLIMOP-002`)** |
-| 4 | Beschrijving van netwerkprotocollen en routering | Doeluitgave Fase 2 (`KLIMOP-003`) | Gepland (Fase 2) |
+| 4 | Beschrijving van netwerkprotocollen en routering | `docs/hub/KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md` (§1) + `shared/klimop/stengels.ts` | **Gereed (`KLIMOP-003`)** |
 | 5 | Schema van versleutelingslagen en sleutelbeheer | Basis in `docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md` → uitbreiding in Fase 3 (`KLIMOP-004`) | Deels gereed → Fase 3 |
 | 6 | Specificatie van gedistribueerde opslag | Basis in `VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md` → Fase 3 (`KLIMOP-004`) | Deels gereed → Fase 3 |
 | 7 | Regels voor identiteit en apparaten | Knooppuntpaspoort in `shared/klimop/kern.ts` → volledig document Fase 5 (`KLIMOP-006`) | Kernbasis → Fase 5 |
@@ -88,16 +88,16 @@ Conform §12–§15 en §43 punt 12 van het manifest (strikt verbod op eigen ong
 | 12 | Protocol voor menselijke bescherming onder gevaar | Kernfunctie `beoordeelDwangSignaal` in `shared/klimop/kern.ts` → Fase 9 (`KLIMOP-010`) | Kernbasis → Fase 9 |
 | 13 | Regels voor koppeling van externe diensten | Basis in `deploy/VERBINDER-EEN-PAD.nl.md` en `VERBINDER-V2.nl.md` → Fase 8 (`KLIMOP-009`) | Deels gereed → Fase 8 |
 | 14 | Regels voor veilige installatie van updates | Huidige basis in `deploy/UITROLPAKKET-REGELS.nl.md` → quorumuitbreiding Fase 6 (`KLIMOP-007`) | Huidige basis → Fase 6 |
-| 15 | Handleiding voor het opzetten van een nieuw knooppunt | Doeluitgave Fasen 2 en 10 (`KLIMOP-003` / `KLIMOP-011`) | Gepland (Fase 2 / 10) |
-| 16 | Handleiding voor alle 14 AI-agenten | `AGENTENREGELS.nl.md` / `AGENTS.md` (`1.5.1`), 14 adapters en `.agents/skills/klimop-architectuur/` | **Gereed (`KLIMOP-001`..`002`)** |
+| 15 | Handleiding voor het opzetten van een nieuw knooppunt | `docs/hub/KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md` (§3) + `backend/klimop-knooppunt-agent.ts` (spreidingsuitrol — `KLIMOP-011`) | **Proefknooppunt gereed (`KLIMOP-003`)** → Fase 10 |
+| 16 | Handleiding voor alle 14 AI-agenten | `AGENTENREGELS.nl.md` / `AGENTS.md` (`1.5.0`), 14 adapters en `.agents/skills/klimop-architectuur/` | **Gereed (`KLIMOP-001`..`003`)** |
 | 17 | Gefaseerd overzettingsplan voor bestaande diensten | `PORTEERPLAN.nl.md` / `ПЛАН-ПЕРЕНЕСЕННЯ.uk.md` + §4 van dit document | **Gereed (`KLIMOP-002`)** |
-| 18 | Beproevings- en storingsprogramma | 15-vragentoetser in `shared/klimop/kern.ts` → storingsproeftuin Fase 2/7 (`KLIMOP-003` / `KLIMOP-008`) | Kernbasis → Fase 2/7 |
+| 18 | Beproevings- en storingsprogramma | `scripts/klimop-proefnetwerk.mjs` + `klimop-003-etappe2-proefnetwerk-20261120.test.ts` → zelfhersteluitbreiding Fase 7 (`KLIMOP-008`) | **Proeftuin Fase 2 gereed (`KLIMOP-003`)** → Fase 7 |
 | 19 | Handleiding voor onafhankelijke reproductie («Zaden») | Doeluitgave Fasen 10–12 (`KLIMOP-011` / `KLIMOP-013`) | Gepland (Fase 10–12) |
 | 20 | Dreigingsmodel en tegenmaatregelen | Sectie 4 van het Fase 0-rapport + volledig dreigingsmodel Fase 11 (`KLIMOP-012`) | Basis gereed → Fase 11 |
-| 21 | Beschrijving van cryptografische wendbaarheid | Sectie 2 van dit document → rotatieprotocol Fase 3–4 (`KLIMOP-004` / `KLIMOP-005`) | Basis gereed → Fase 3–4 |
-| 22 | Regels voor privacy en beperking van metadata | Richtlijnen in manifest (§6, §19) → technische standaard Fase 2–3 (`KLIMOP-003` / `KLIMOP-004`) | Gepland (Fase 2–3) |
+| 21 | Beschrijving van cryptografische wendbaarheid | Sectie 2 van dit document + kaderalgoritmekeuze in `shared/klimop/stengels.ts` → Fase 3–4 (`KLIMOP-004` / `KLIMOP-005`) | Basis gereed → Fase 3–4 |
+| 22 | Regels voor privacy en beperking van metadata | `docs/hub/KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md` (§2, kaderopvulling tot 256 bytes, blinde opslag) | **Gereed (`KLIMOP-003`)** |
 | 23 | Overdrachtsprocedure voor nieuwe bevoegde deelnemers | Doeluitgave Fase 12 (`KLIMOP-013`) | Gepland (Fase 12) |
-| 24 | Architectuurbesluitenregister | `orchestratie/BESLUITEN.nl.md` · `BESLUITEN.md` (`B-001` .. `B-025`) | **Gereed en doorlopend** |
+| 24 | Architectuurbesluitenregister | `orchestratie/BESLUITEN.nl.md` · `BESLUITEN.md` (`B-001` .. `B-024`) | **Gereed en doorlopend** |
 | 25 | Gefaseerd ontwikkelplan zonder centrale afhankelijkheid | Dit document (`KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md`, §4) | **Gereed (`KLIMOP-002`)** |
 
 ---
@@ -108,8 +108,8 @@ Geen enkele uitgave schakelt de bestaande server of `PostgreSQL 18.6` uit vóór
 
 | Manifestfase | Doeltaak | Kern van de kleine onafhankelijke uitgave | Welk `SPOF` wordt opgelost | Terugdraaivoorwaarde |
 |---|---|---|---|---|
-| **Fase 0 + Fase 1** | `KLIMOP-001`, `KLIMOP-002` | Manifestcanon, regels `1.5.1`, adapters voor 14 agenten, Fase 0-inspecteur, technologiekeuze, geïsoleerde kern `shared/klimop/kern.ts`. | Heft afstemmingsverschillen tussen 14 agenten en architectuuronzekerheid op. | Zuiver documentatie en bibliotheek; 0 invloed op de actieve server. |
-| **Fase 2 — Beproevingsnetwerk** | `KLIMOP-003` | Lokale proefopstelling met 3 geïsoleerde knooppunten met wederzijdse authenticatie op `Ed25519`-paspoorten (`QUIC/TLS 1.3 mTLS`), buurontdekking en verbindingsbreukproeven (buiten de productie-VM). | Bereidt opheffing van `SPOF-1` en `SPOF-2` voor. | Draait volledig los van de productieserver; met één opdracht te stoppen. |
+| **Fase 0 + Fase 1 *(voltooid)*** | `KLIMOP-001`, `KLIMOP-002` | Manifestcanon, regels `1.5.0`, adapters voor 14 agenten, Fase 0-inspecteur, technologiekeuze, geïsoleerde kern `shared/klimop/kern.ts`. | Heft afstemmingsverschillen tussen 14 agenten en architectuuronzekerheid op. | Zuiver documentatie en bibliotheek; 0 invloed op de actieve server. |
+| **Fase 2 — Beproevingsnetwerk *(voltooid)*** | `KLIMOP-003` | «Stengels»-protocol `shared/klimop/stengels.ts` (`X25519 + Ed25519 + HKDF + ChaCha20-Poly1305`), geïsoleerd knooppunt `backend/klimop-knooppunt-agent.ts`, proeftuin van 3 knooppunten `NL/CH/UA` met estafette en quarantaine (`scripts/klimop-proefnetwerk.mjs`, `docker-compose.proef.yml`). | Legt werkende netwerkvervanging voor `SPOF-1` en `SPOF-2`. | Draait volledig los van de productieserver; met één opdracht te stoppen. |
 | **Fase 3 — Eind-tot-eind versleuteling en blokopslag** | `KLIMOP-004` | Stroomgewijze clientversleuteling van grote objecten (`XChaCha20-Poly1305`), inhoudsadressering met `BLAKE3`/`SHA-256`, `Reed-Solomon (k+m)` herstelcodes en geleidelijke omzetting van de 19 `nog-niet`-tabellen. | Lost `SPOF-3` op (geen geopende `DEK` nodig op een opslagknooppunt). | Parallel lezen van oude en nieuwe enveloppen zonder toegangsverlies. |
 | **Fase 4 — Verifieerbare delen en drempelhandtekeningen** | `KLIMOP-005` | Uitbreiding van `shared/verdeelde-opslag.ts` met Feldman/Pedersen-toezeggingen (`VSS`) en `FROST (RFC 9591)` $t$-van-$n$ drempelhandtekeningen in de proefketen. | Lost de cryptografische kern van `SPOF-4` op. | Bestaande eigenaarshandtekeningen blijven parallel geldig. |
 | **Fase 5 — Onafhankelijke identiteit en apparaten** | `KLIMOP-006` | Koppeling van gebruikersidentiteit aan eigen wortelsleutels en vertrouwde apparaten (in plaats van één databaseregel) plus `MLS (RFC 9420)` groepssleutels voor gedeelde ruimtes en woning. | Maakt identiteit los van één enkele database (`SPOF-1`). | Tweerichtingskoppeling tussen huidig `userId` en cryptografisch paspoort. |
