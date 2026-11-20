@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-008/20261120-215506-antigravity",
+  "taakId": "KLIMOP-008",
+  "tijd": "2026-11-20T21:55:06.915Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Павло Тарасевич"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Реалізовано Етап 7 архітектурного маніфесту «Плющ» (імунна система, самовідновлення у межах квот та 10 сценаріїв живучості, Документи №10, №11 та №18): модуль shared/klimop/immuunsysteem.ts зі сліпою перевіркою цілісності зашифрованих блоків HMAC-SHA-256 без розкриття вмісту, розмежуванням перевантаження, втрати зв'язку та компрометації з миттєвим карантином, швидкісними квотами без самовільного розширення прав, повагою до батареї й мережі пристроїв без позбавлення людини доступу до власних даних та оцінювачем 10 сценаріїв живучості §37; координатор backend/klimop-immuunsysteem-client.ts, дія controleer_blok_integriteit у вузлі, полігон 5 вузлів NL/CH/UA/SE/IS scripts/klimop-etappe7-immuunsysteem-proef.mjs, двомовну документацію та випробування klimop-008."
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника злити запит №189 (KLIMOP-007) у гілку integratie та перейти до реалізації Етапу 7 маніфесту «Плющ» без втручання в живу робочу інфраструктуру."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-007/20261120-210451-antigravity"
+  ],
+  "tak": "feature/klimop-008-etappe7-immuunsysteem-zelfherstel-20261120-213500",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

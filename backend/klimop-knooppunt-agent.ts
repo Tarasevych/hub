@@ -62,12 +62,22 @@ import {
   type KlimopUitrolGezondheidsMeting,
   type KlimopVolledigeUitgaveBundel,
 } from '../shared/klimop/bestuur';
+import {
+  berekenBlindeIntegriteitBewijs,
+  type KlimopBlindeIntegriteitAntwoord,
+} from '../shared/klimop/immuunsysteem';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
   | { actie: 'bewaar_blok'; blokSha256: string; cijfertekstB64u: string; mandaat: KlimopOndertekendMandaat }
   | { actie: 'haal_blok'; blokSha256: string; mandaat: KlimopOndertekendMandaat }
   | { actie: 'wis_blok'; blokSha256: string; mandaat: KlimopOndertekendMandaat }
+  | {
+      actie: 'controleer_blok_integriteit';
+      blokSha256: string;
+      uitdagingNonceHex: string;
+      mandaat: KlimopOndertekendMandaat;
+    }
   | {
       actie: 'dkg_maak_bijdrage';
       setId: string;
@@ -160,6 +170,7 @@ export type KnooppuntOpdrachtAntwoord =
   | { ok: true; actie: 'opgeslagen'; blokSha256: string; grootteBytes: number }
   | { ok: true; actie: 'opgehaald'; blokSha256: string; cijfertekstB64u: string }
   | { ok: true; actie: 'gewist'; blokSha256: string; bestond: boolean }
+  | { ok: true; actie: 'blok_integriteit_bewijs'; bewijs: KlimopBlindeIntegriteitAntwoord }
   | { ok: true; actie: 'dkg_bijdrage'; pakket: DkgRondePakket }
   | {
       ok: true;
@@ -274,6 +285,7 @@ export interface KlimopProefKnooppunt {
   trekMandaatIn(mandaatId: string): void;
   aantalOpgeslagenBlokken(): number;
   leesRuwOpgeslagenBlok(blokSha256: string): Buffer | undefined;
+  simuleerSchijfBeschadigingVoorProef(blokSha256: string): boolean;
   actieveDrempelEpoche(setId: string): number | null;
   aantalGeregistreerdeIdentiteiten(): number;
   actiefUitgaveVolgnummer(): number;
@@ -353,7 +365,12 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
-    if (opdracht.actie === 'bewaar_blok' || opdracht.actie === 'haal_blok' || opdracht.actie === 'wis_blok') {
+    if (
+      opdracht.actie === 'bewaar_blok'
+      || opdracht.actie === 'haal_blok'
+      || opdracht.actie === 'wis_blok'
+      || opdracht.actie === 'controleer_blok_integriteit'
+    ) {
       const mOk = controleerRolEnMandaat('opslag', opdracht.mandaat);
       if (!mOk.ok) return mOk;
 
@@ -378,6 +395,13 @@ export async function startKlimopProefKnooppunt(config: {
 
       const gevonden = blokOpslag.get(opdracht.blokSha256);
       if (!gevonden) return { ok: false, fout: 'BLOK_NIET_GEVONDEN' };
+
+      if (opdracht.actie === 'controleer_blok_integriteit') {
+        const bew = berekenBlindeIntegriteitBewijs(gevonden, opdracht.uitdagingNonceHex);
+        if (!bew.ok) return bew;
+        return { ok: true, actie: 'blok_integriteit_bewijs', bewijs: bew.antwoord };
+      }
+
       return { ok: true, actie: 'opgehaald', blokSha256: opdracht.blokSha256, cijfertekstB64u: gevonden.toString('base64url') };
     }
 
@@ -766,6 +790,14 @@ export async function startKlimopProefKnooppunt(config: {
     },
     leesRuwOpgeslagenBlok(blokSha256: string) {
       return blokOpslag.get(blokSha256);
+    },
+    simuleerSchijfBeschadigingVoorProef(blokSha256: string) {
+      const buf = blokOpslag.get(blokSha256);
+      if (!buf || buf.length === 0) return false;
+      const kopie = Buffer.from(buf);
+      kopie[0] ^= 0xff;
+      blokOpslag.set(blokSha256, kopie);
+      return true;
     },
     actieveDrempelEpoche(setId: string) {
       return drempelDelen.get(setId)?.epoche ?? null;
