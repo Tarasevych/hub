@@ -36,7 +36,9 @@
   },
   "commits": [
     "b6b963646a27946288036c246f06c953697dcfed",
-    "b6da895315dc10091fe252ea1d1f31e64ffcdfdb"
+    "b6da895315dc10091fe252ea1d1f31e64ffcdfdb",
+    "a7f61b3db9a8b8c04d013d2e848d7e90cc48c014",
+    "91c6d1824f85e395ec1276e72d217f6271253bff"
   ],
   "tijdlijn": [
     {
@@ -54,6 +56,10 @@
     {
       "stap": "4) Оновлення правил оркестрації до версії 1.4.18 (B-023): оновлено orchestratie/BESLUITEN.md, AGENTS.md, AGENTENREGELS.nl.md, orchestratie/beleid.json (без зміни секції kritiek), .agents/skills/uitgave-voorbereiden/SKILL.md; виконано orch vergrendel, context, taak-herlees --id UPD-011, bijdrage, kroniek.mjs та оновлено каталог пошуку.",
       "resultaat": "Пройдено orch controleer (regelsVersie 1.4.18), vaardigheden/valideer.mjs, npx tsc --noEmit, npm run typecheck:server, повне складання npm run build (із CRX3 0.9.7), усі статичні аудити, upd-011 (5/5), account-wissen, migraties-terugdraaibaar, stap-op-omschrijving, hulp-register, ontwerp-fundament, orch-kern, orch-uitrol-basis (15/15), trace-001 (20/20), historie-kroniek (18/18), bijdragen-001 (54/54), uitrol-codes (17/17), uitrol-risico (69/69), maquette-mobiel-prestatie (19/19) та werkstromen-veilig (9/9)."
+    },
+    {
+      "stap": "5) За результатами першого запуску GitHub Actions (telegram-venster-20261114: 97/99) узгоджено ім’я файла картки у sendPhoto (account.png у berichten.ts) та усунено дублювання назви міста у згорнутому блоці venster.ts (місто показано один раз у верхній стрічці, спосіб визначення за IP — у деталях).",
+      "resultaat": "Підтверджено контракт venster.ts (uk/nl, 1 згадка міста), upd-011 (5/5) та npm run typecheck:server; повторний запуск GitHub Actions."
     }
   ],
   "keuzes": [
