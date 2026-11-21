@@ -451,14 +451,14 @@ export async function main(): Promise<number> {
       staat: persoon.staat,
       wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
       naamLabel: 'Ноутбук власника',
-      toegestaneBevoegdheden: ['dagelijks_gebruik', 'nood_betwisting'],
+      toegestaneBevoegdheden: ['lezen_werkgegevens', 'schrijven_werkgegevens', 'nood_betwisting'],
       nuIso,
     });
     const telefoon = registreerVertrouwdApparaat({
       staat: persoon.staat,
       wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
       naamLabel: 'Телефон власника',
-      toegestaneBevoegdheden: ['dagelijks_gebruik'],
+      toegestaneBevoegdheden: ['lezen_werkgegevens', 'schrijven_werkgegevens'],
       nuIso,
     });
     const wortelSleutelPaar = {
