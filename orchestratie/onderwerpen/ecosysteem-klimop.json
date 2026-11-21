@@ -45,7 +45,13 @@
       "контекстна оцінка ризику",
       "етап 10 кероване розширення вусики",
       "обмін ресурсами живлення",
-      "захист від атак сивілли"
+      "захист від атак сивілли",
+      "етап 11 аудит безпеки",
+      "модель загроз",
+      "гібридна постквантова готовність",
+      "етап 12 насіння",
+      "незалежне відтворення",
+      "передавання спадкоємності"
     ],
     "nl": [
       "klimop",
@@ -81,7 +87,13 @@
       "contextuele risicobeoordeling",
       "fase 10 beheerste uitbreiding hechtranken",
       "middelenuitwisseling voeding",
-      "sybil weerstand"
+      "sybil weerstand",
+      "fase 11 beveiligingsaudit",
+      "dreigingsmodel",
+      "hybride postkwantum",
+      "fase 12 zaden",
+      "schone herbouw",
+      "opvolgingsoverdracht"
     ]
   },
   "paden": [
@@ -121,6 +133,12 @@
     "docs/hub/ПЛЮЩ-ЕТАП-10-КЕРОВАНЕ-РОЗШИРЕННЯ-ТА-ОБМІН-РЕСУРСАМИ.uk.md",
     "docs/hub/ПЛЮЩ-ЕТАП-10-КЕРОВАНЕ-РОЗШИРЕННЯ-ТА-ОБМІН-РЕСУРСАМИ.md",
     "docs/hub/KLIMOP-FASE-10-BEHEERSTE-UITBREIDING-EN-MIDDELENUITWISSELING.nl.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-11-НЕЗАЛЕЖНИЙ-АУДИТ-БЕЗПЕКИ-ТА-ПОСТКВАНТОВА-ГОТОВНІСТЬ.uk.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-11-НЕЗАЛЕЖНИЙ-АУДИТ-БЕЗПЕКИ-ТА-ПОСТКВАНТОВА-ГОТОВНІСТЬ.md",
+    "docs/hub/KLIMOP-FASE-11-ONAFHANKELIJKE-BEVEILIGINGSAUDIT-EN-POSTKWANTUM.nl.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-12-НАСІННЯ-СПАДКОЄМНІСТЬ-ТА-ПОСТІЙНИЙ-РОЗВИТОК.uk.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-12-НАСІННЯ-СПАДКОЄМНІСТЬ-ТА-ПОСТІЙНИЙ-РОЗВИТОК.md",
+    "docs/hub/KLIMOP-FASE-12-ZADEN-OPVOLGING-EN-DUURZAME-ONTWIKKELING.nl.md",
     "scripts/klimop-etappe0-audit.mjs",
     "scripts/klimop-proefnetwerk.mjs",
     "scripts/klimop-etappe3-opslag-proef.mjs",
@@ -131,6 +149,8 @@
     "scripts/klimop-etappe8-diensten-proef.mjs",
     "scripts/klimop-etappe9-mensbescherming-proef.mjs",
     "scripts/klimop-etappe10-hechtranken-proef.mjs",
+    "scripts/klimop-etappe11-beveiligingsaudit-proef.mjs",
+    "scripts/klimop-etappe12-zaden-proef.mjs",
     "shared/klimop/kern.ts",
     "shared/klimop/stengels.ts",
     "shared/klimop/opslag.ts",
@@ -141,6 +161,8 @@
     "shared/klimop/diensten.ts",
     "shared/klimop/mensbescherming.ts",
     "shared/klimop/hechtranken.ts",
+    "shared/klimop/beveiligingsaudit.ts",
+    "shared/klimop/zaden.ts",
     "backend/klimop-knooppunt-agent.ts",
     "backend/klimop-opslag-client.ts",
     "backend/klimop-drempel-client.ts",
@@ -150,6 +172,8 @@
     "backend/klimop-diensten-client.ts",
     "backend/klimop-mensbescherming-client.ts",
     "backend/klimop-hechtranken-client.ts",
+    "backend/klimop-audit-client.ts",
+    "backend/klimop-zaden-client.ts",
     "deploy/klimop-proefnetwerk/docker-compose.proef.yml",
     "AGENTS.md",
     "ПРАВИЛА-АГЕНТІВ.uk.md",
@@ -278,10 +302,20 @@
     {
       "taakId": "KLIMOP-012",
       "tak": "audit/klimop-012-etappe11-beveiligingsaudit-dreigingen-20261121-045500",
+      "pr": 194,
+      "integratieCommit": "372c059460a8c92e4f7dbea529421eb43c862766",
       "agent": "antigravity",
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-21",
-      "uk": "Виконано Етап 11 (незалежний аудит безпеки, зведена модель загроз і способів протидії з чесними залишковими ризиками Документ №20 та гібридна постквантова готовність): створено модуль shared/klimop/beveiligingsaudit.ts (справжні стандартизовані гібридні підписи Ed25519 + ML-DSA-65 FIPS 204 та інкапсуляція ключів X25519 + ML-KEM-768 FIPS 203 у вбудованому node:crypto, зведена модель загроз KLIMOP_DREIGINGS_MODEL по всіх 8 рівнях і SPOF-1..5 із забороною заяв про абсолютну невразливість, оцінювачі 10 криптографічних сценаріїв §38, 6 практичних сценаріїв автономності §40, 12 вимірюваних гарантій §41 і гібридно підписаний підсумковий звіт аудиту з автоматичним блокуванням переходу до Етапу 12 при відкритих слабких місцях), розширено вузол backend/klimop-knooppunt-agent.ts, створено кворумний клієнт backend/klimop-audit-client.ts, полігон NL/CH/UA/SE scripts/klimop-etappe11-beveiligingsaudit-proef.mjs та двомовну документацію Етапу 11 (Документ №20 маніфесту)."
+      "uk": "Виконано Етап 11 (незалежний аудит безпеки, зведена модель загроз і способів протидії з чесними залишковими ризиками Документ №20 та гібридна постквантова готовність): створено модуль shared/klimop/beveiligingsaudit.ts (справжні стандартизовані гібридні підписи Ed25519 + ML-DSA-65 FIPS 204 та інкапсуляція ключів X25519 + ML-KEM-768 FIPS 203 у вбудованому node:crypto, зведена модель загроз KLIMOP_DREIGINGS_MODEL по всіх 8 рівнях і SPOF-1..5 із забороною заяв про абсолютну невразливість, оцінювачі 10 криптографічних сценаріїв §38, 6 практичних сценаріїв автономності §40, 12 вимірюваних гарантій §41 і гібридно підписаний підсумковий звіт аудиту з автоматичним блокуванням переходу до Етапу 12 при відкритих слабких місцях), розширено вузол backend/klimop-knooppunt-agent.ts, створено кворумний клієнт backend/klimop-audit-client.ts, полігон NL/CH/UA/SE scripts/klimop-etappe11-beveiligingsaudit-proef.mjs та двомовну документацію Етапу 11 (Документ №20 маніфесту). Злито в integratie у запиті №194."
+    },
+    {
+      "taakId": "KLIMOP-013",
+      "tak": "feature/klimop-013-etappe12-zaden-opvolging-20261121-064800",
+      "agent": "antigravity",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-21",
+      "uk": "Виконано завершальний Етап 12 («Насіння» — самодостатній пакет незалежного відтворення екосистеми з нуля Документ №19, передавання спадкоємності новим уповноваженим учасникам без участі початкового автора Документ №23 та безперервний автономний розвиток): створено модуль shared/klimop/zaden.ts (реєстр перевірених технічних залежностей без хмарних монополій, запечатування 12 модулів ядра в дерево Меркла SHA-256 під подвійною печаткою FROST RFC 9591 + Ed25519+ML-DSA-65 FIPS 204 із забороною секретів, чисте відтворення на ізольованому середовищі з 0 звернень до старого сервера, двосторонній 72-год пороговий акт спадкоємності без розкриття особистих даних, контроль 16 напрямів ШІ-агентів без самосхвалення та звірка 12 засад §46 і всіх 25 документів §44), розширено вузол backend/klimop-knooppunt-agent.ts, створено кворумний клієнт backend/klimop-zaden-client.ts, полігон scripts/klimop-etappe12-zaden-proef.mjs та двомовну документацію Етапу 12."
     }
   ],
   "mogelijkheden": [
@@ -440,6 +474,18 @@
       "uk": "Етап 11 (незалежний аудит безпеки, 10 криптосценаріїв §38, 6 сценаріїв автономності §40, 12 виміряних гарантій §41 та допуск до Етапу 12): кворумна публікація й перевірка гібридно підписаних звітів аудиту на незалежних вузлах з автоматичним блокуванням переходу до Етапу 12 при відкритих слабких місцях (backend/klimop-audit-client.ts, scripts/klimop-etappe11-beveiligingsaudit-proef.mjs)",
       "sinds": "KLIMOP-012",
       "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-12-zelfstandig-zaad-en-schone-herbouw",
+      "uk": "Етап 12 («Насіння» та перелік технічних залежностей, Документ №19): реєстр перевірених залежностей без хмарних монополій, запечатування всіх 12 модулів ядра в дерево Меркла SHA-256 під подвійною печаткою FROST RFC 9591 + Ed25519+ML-DSA-65 FIPS 204 із забороною секретів та чисте відтворення нового покоління вузлів без старого сервера (shared/klimop/zaden.ts, backend/klimop-zaden-client.ts)",
+      "sinds": "KLIMOP-013",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-12-opvolging-en-duurzame-eindvisie",
+      "uk": "Етап 12 (порядок спадкоємності Документ №23, 16 напрямів ШІ-агентів та 12 засад кінцевого бачення §46): двосторонній 72-год пороговий акт спадкоємності без участі початкового автора і без передавання доступу до особистих даних користувачів, контроль автономних пропозицій ШІ-агентів без самосхвалення та приймальна звірка всіх 12 засад §46 і 25 документів §44 (scripts/klimop-etappe12-zaden-proef.mjs)",
+      "sinds": "KLIMOP-013",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -456,8 +502,8 @@
     },
     {
       "datum": "2026-11-21",
-      "betreft": "Послідовне злиття в integratie та перехід через Етапи 0–11",
-      "uk": "Виконати відповідні злиття попередніх кроків у гілку integratie та послідовно продовжувати наступні етапи маніфесту «Плющ» без порушення роботи чинної платформи.",
+      "betreft": "Послідовне злиття в integratie та повне виконання Етапів 0–12",
+      "uk": "Виконати відповідні злиття попередніх кроків у гілку integratie та послідовно завершити всі етапи маніфесту «Плющ» включно з Етапом 12 без порушення роботи чинної платформи.",
       "behouden": [
         "Недоторканність живої робочої інфраструктури, служб systemd і бази PostgreSQL 18.6 під час ізольованої розробки нових рівнів",
         "Повна історія фіксацій змін у гілку integratie без стискання (--no-ff)"
@@ -467,7 +513,7 @@
   ],
   "open": [
     {
-      "uk": "Етап 12 (`KLIMOP-013`, §1.7, §36 Етап 12, §44, обов'язкові Документи №19 та №23): «Насіння» та автономний безперервний розвиток — гібридно й порогово підписаний самодостатній пакет незалежного відтворення екосистеми з нуля (Документ №19), контрольна перевірка повної відбудови мережі на чистому середовищі без зв'язку зі старим сервером і порядок передавання повноважень та спадкоємності проєкту новим уповноваженим учасникам без постійної участі початкового автора (Документ №23)."
+      "uk": "Усі ізольовані архітектурні, криптографічні, мережеві й документальні Етапи 0–12 (`KLIMOP-001`..`KLIMOP-013`) та всі 25 обов'язкових двомовних документів (§44) повністю виконані та перевірені. Покрокове переведення живих робочих служб із чинної інфраструктури `*.tarasevych.com` / `PostgreSQL 18.6` можливе виключно після окремого прямого дозволу власника."
     }
   ],
   "bijgewerkt": "2026-11-21"
