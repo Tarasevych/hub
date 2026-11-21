@@ -10,7 +10,7 @@
   - Netwerkopdrachten onder het `verificatie`-mandaat binnen `knooppunt_beheer` (`bewaar_gevalideerd_zaad_pakket`, `registreer_opvolgings_overdracht`, `raadpleeg_zaad_en_opvolging`): [`backend/klimop-knooppunt-agent.ts`](../../backend/klimop-knooppunt-agent.ts)
   - Herhaalbare proeftuin voor uitschakeling van de oude hoofdserver, schone heropbouw van Generatie 2 (`SE`, `IS`, `NO`) vanuit «Zaden» en overdracht van opvolging bij volledige afwezigheid van de oorspronkelijke auteur: [`scripts/klimop-etappe12-zaden-proef.mjs`](../../scripts/klimop-etappe12-zaden-proef.mjs)
 - **Normatieve grondslag:** hoofdstukken `§1.7`, `§2`, `§18–§20`, `§32–§34`, `§36 (Fase 12)`, `§42 (15 vragen)`, verplichte **Documenten nr. 19 en nr. 23** uit het Fase 1-register (alle **25 van de 25** documenten van `§44` zijn voltooid!) en alle 12 pijlers van `§46` van het [Hoofdarchitectuurmanifest «Klimop»](ARCHITECTUURMANIFEST-KLIMOP.nl.md)
-- **Machtigings- en kostengrens:** de actieve productie-infrastructuur (`PostgreSQL 18.6`, `mijn-ruimte.service`, `*.tarasevych.com`) wordt niet zonder afzonderlijk besluit van de eigenaar gewijzigd of uitgeschakeld; nieuwe uitgaven bedragen `0` euro.
+- **Bevoegdheidsgrens:** de actieve productie-infrastructuur (`PostgreSQL 18.6`, `mijn-ruimte.service`, `*.tarasevych.com`) wordt niet zonder afzonderlijk besluit van de eigenaar gewijzigd of uitgeschakeld.
 
 ---
 

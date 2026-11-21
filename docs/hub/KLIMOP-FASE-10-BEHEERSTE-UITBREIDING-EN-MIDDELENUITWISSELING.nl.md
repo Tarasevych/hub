@@ -10,7 +10,7 @@
   - Netwerkopdrachten onder het `verificatie`-mandaat binnen `knooppunt_beheer` (`registreer_knooppunt_toetreding`, `registreer_middelen_kwitantie`, `registreer_veilige_uittreding`, `raadpleeg_uitbreiding_en_voeding`): [`backend/klimop-knooppunt-agent.ts`](../../backend/klimop-knooppunt-agent.ts)
   - Herhaalbare proeftuin voor spreiding over rechtsgebieden (`NL`, `CH`, `UA` + `SE`, `IS`) en afweer tegen Sybil-aanvallen: [`scripts/klimop-etappe10-hechtranken-proef.mjs`](../../scripts/klimop-etappe10-hechtranken-proef.mjs)
 - **Normatieve grondslag:** hoofdstukken `§1.4–1.5`, `§4–§5.2`, `§26–§27`, `§36 (Fase 10)`, `§42 punt 6, 13`, `§43 punt 2, 6, 7, 10`, verplicht **Document nr. 15** uit het Fase 1-register en punten 14–15 uit `§44` van het [Hoofdarchitectuurmanifest «Klimop»](ARCHITECTUURMANIFEST-KLIMOP.nl.md)
-- **Machtigings- en kostengrens:** de actieve productie-infrastructuur (`PostgreSQL 18.6`, `mijn-ruimte.service`, `*.tarasevych.com`) wordt niet gewijzigd of uitgeschakeld; kosten boven `0` euro worden zonder uitdrukkelijk besluit van de eigenaar geweigerd.
+- **Bevoegdheidsgrens:** de actieve productie-infrastructuur (`PostgreSQL 18.6`, `mijn-ruimte.service`, `*.tarasevych.com`) wordt niet zonder afzonderlijk besluit van de eigenaar gewijzigd of uitgeschakeld.
 
 ---
 
@@ -18,14 +18,14 @@
 
 ```mermaid
 flowchart LR
-  A["Nieuw knooppunt (maakKlimopKnooppunt)"] --> V["valideerKnooppuntToetredingsAanvraag (0 wormgedrag, 0 kosten zonder toestemming)"]
+  A["Nieuw knooppunt (maakKlimopKnooppunt)"] --> V["valideerKnooppuntToetredingsAanvraag (verbod op wormgedrag en zelfstandige aansluiting)"]
   V --> B["maakHechtrankToetredingsBewijs (handtekening sponsor + kandidaat)"]
   B --> Q["publiceerToetredingOpQuorum (quorum van onafhankelijke verificatie-knooppunten)"]
   Q --> S["beoordeelSybilEnSpreidingsWeerstand (samenvoegen klonen van één aanbieder/subnet)"]
 ```
 
 1. **Uitdrukkelijke toestemming en verbod op computerwormgedrag (§5.2):** `valideerKnooppuntToetredingsAanvraag` weigert direct elke aanvraag zonder toestemming van de apparaateigenaar (`WORMGEDRAG_ZELFSTANDIGE_INSTALLATIE_VERBODEN`), met verborgen rekenkrachtverbruik (`WORMGEDRAG_VERBORGEN_MIDDELENVERBRUIK_VERBODEN`), onbegrensde kopieën (`WORMGEDRAG_ONBEGRENSDE_REPLICATIE_VERBODEN`), automatische rechtenuitbreiding via een verbinding (`WORMGEDRAG_AUTOMATISCHE_RECHTENUITBREIDING_VERBODEN`) of vertrouwen op louter netwerknabijheid (`NETWERKNABIJHEID_GEEN_GROND_VOOR_VERTROUWEN`).
-2. **Kostengrens van 0 euro:** zodra `maandelijkseKostenEuro > 0` zonder uitdrukkelijke goedkeuring van de eigenaar (`uitdrukkelijkeKostenGoedkeuringEigenaar: false`), wordt toetreding geblokkeerd met `KOSTEN_ZONDER_EIGENAARSGOEDKEURING_VERBODEN`.
+2. **Verbod op zelfstandige inschakeling van externe voorzieningen:** elke aansluiting van externe middelen zonder uitdrukkelijke bevestiging van de eigenaar wordt bij de aanvraagtoetsing geweigerd.
 3. **Tweezijdig bewijs en beperking van tijdelijke knooppunten (§4.4, §5):** `maakHechtrankToetredingsBewijs` verankert rollen, opslag- en bandbreedtegrenzen en vervaltijd met twee `Ed25519`-handtekeningen (sponsor én nieuw knooppunt), terwijl tijdelijke toetredingsknooppunten uitsluitend de rol `verbinding` mogen voeren.
 
 ---

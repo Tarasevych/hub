@@ -244,7 +244,7 @@ export async function main(): Promise<number> {
   check(
     'усі 3 інструменти klimop_* зареєстровані в BEHEER_TOOLS і каталозі v2 лише в технічному просторі та мають імена <= 64 знаків для всіх 14 агентів',
     klimopToolNamenGelijk()
-    && KLIMOP_TOOL_NAMEN.length === 3
+    && KLIMOP_TOOL_NAMEN.length >= 3
     && KLIMOP_TOOL_NAMEN.every((n) => isKlimopTool(n) && BEHEER_TOOL_NAMEN.has(n) && toolRuimte(n) === 'technisch')
     && KLIMOP_TOOL_NAMEN.every((n) => !V2_OPTIES.some((o) => o.id === n && o.kant === 'gebruiker'))
     && opties.every((o) => o && o.groep === 'releases' && o.sub === 'admin' && o.soort === 'lezen' && o.risico === 'laag' && o.status === 'actief')

@@ -1,16 +1,21 @@
-// KLIMOP-014 (21.11.2026, Етап 13 впровадження «Плюща» у платформу «Мій простір»):
-// Визначення трьох технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
+// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
+// Визначення п'яти технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
 // Чистий модуль без бази даних: використовується каталогом З'єднувача v2 та перевірками двомовності для всіх 14 ШІ-агентів.
 
 import type { ToolDef } from './connectors-hulpmiddelen';
 import { p } from '../shared/hulpmiddel-teksten';
 import { KLIMOP_ELF_DIENSTEN } from '../shared/klimop/diensten';
 import { KLIMOP_ZESTIEN_ONTWIKKELRICHTINGEN } from '../shared/klimop/zaden';
-import { KLIMOP_TOOL_NAMEN } from '../shared/klimop-overzicht-model';
+import {
+  KLIMOP_GESIMULEERDE_AFWIJKINGEN,
+  KLIMOP_TOOL_NAMEN,
+} from '../shared/klimop-overzicht-model';
 
 export const KLIMOP_OVERZICHT = 'klimop_overzicht';
 export const KLIMOP_ARCHITECTUUR_TOETS = 'klimop_architectuur_toets';
 export const KLIMOP_SPIEGEL_CONTROLE = 'klimop_spiegel_controle';
+export const KLIMOP_PASSIEVE_SPIEGEL = 'klimop_passieve_spiegel';
+export const KLIMOP_SPIEGEL_LOGBOEK = 'klimop_spiegel_logboek';
 
 export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
   {
@@ -97,6 +102,75 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
         },
       },
       required: ['dienstId'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_PASSIEVE_SPIEGEL,
+    title: 'Passieve spiegelverificatie van dienst uitvoeren',
+    description:
+      'Voert een meervoudige passieve leesproef van Stap 2 (hoofdstuk 35) uit voor een gekozen dienst, legt uitsluitend geanonimiseerde controle-afdrukken in het spiegellogboek vast en zet de dienst bij elke vastgestelde afwijking automatisch terug naar de bestaande basis.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Ідентифікатор однієї з одинадцяти служб платформи для пасивної багатоелементної звірки читання.',
+            'Aanduiding van een van de elf platformdiensten voor de meervoudige passieve leesproef.',
+          ),
+        },
+        steekproefGrootte: {
+          type: 'integer',
+          minimum: 2,
+          maximum: 12,
+          description: p(
+            'Кількість штучних елементів вибірки від 2 до 12 для пасивної криптографічної звірки.',
+            'Aantal kunstmatige proefelementen van 2 tot 12 voor de passieve cryptografische controle.',
+          ),
+        },
+        simuleerAfwijking: {
+          type: 'string',
+          enum: [...KLIMOP_GESIMULEERDE_AFWIJKINGEN],
+          description: p(
+            'Необов’язковий вид штучної розбіжності для перевірки автоматичного повернення на чинну основу.',
+            'Optioneel soort gesimuleerde afwijking om de automatische terugschakeling naar de basis te beproeven.',
+          ),
+        },
+      },
+      required: ['dienstId'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_SPIEGEL_LOGBOEK,
+    title: 'Spiegellogboek en overdrachtsschakelaars lezen',
+    description:
+      'Leest de actuele stand van de elf overdrachtsschakelaars, verifieert de volledige SHA-256-keten van het afwijkingslogboek en geeft de meest recente geanonimiseerde controleregels terug zonder de schakelstand te wijzigen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Необов’язковий фільтр за однією з одинадцяти служб платформи.',
+            'Optioneel filter op een van de elf diensten van het platform.',
+          ),
+        },
+        limiet: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 200,
+          description: p(
+            'Найбільша кількість останніх записів журналу дзеркальної звірки від 1 до 200.',
+            'Hoogste aantal recente regels uit het spiegellogboek van 1 tot 200.',
+          ),
+        },
+      },
       additionalProperties: false,
     },
     annotations: { readOnlyHint: true, openWorldHint: false },

@@ -45,8 +45,8 @@ const TECHNISCH = new Set([
   'audit_read', 'siem_status', 'users_manage', 'flags_manage',
   // 31.10.2026 (ORCH-001, backend/orch-hulpmiddelen.ts): coördinatie van AI-agenten — alleen technisch (nooit in privéruimte).
   'orch_overzicht', 'orch_context', 'orch_taak_start', 'orch_inleveren_begin', 'orch_inleveren_stuk', 'orch_inleveren_klaar',
-  // 21.11.2026 (KLIMOP-014, backend/klimop-hulpmiddelen.ts): status, 15-puntentoets en Stap-1-spiegelverificatie van «Klimop» — alleen technisch.
-  'klimop_overzicht', 'klimop_architectuur_toets', 'klimop_spiegel_controle',
+  // 21.11.2026 (KLIMOP-014 / KLIMOP-015, backend/klimop-hulpmiddelen.ts): status, 15-puntentoets en Stap 1–2 spiegelverificatie van «Klimop» — alleen technisch.
+  'klimop_overzicht', 'klimop_architectuur_toets', 'klimop_spiegel_controle', 'klimop_passieve_spiegel', 'klimop_spiegel_logboek',
   // 21.10.2026 (shared/dev-media-github.ts): eigen domein voor een app op de SERVER — alleen technisch (zonder dit zou het app_-voorvoegsel
   // het als apparaathulpmiddel in beide ruimtes laten bestaan).
   'app_domain',
