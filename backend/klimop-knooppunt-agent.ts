@@ -449,13 +449,17 @@ function stuurJson(res: ServerResponse, status: number, waarde: unknown): void {
 }
 
 async function postJson(url: string, lichaam: unknown): Promise<{ status: number; data: any }> {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(lichaam),
-  });
-  const data = await r.json();
-  return { status: r.status, data };
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(lichaam),
+    });
+    const data = await r.json();
+    return { status: r.status, data };
+  } catch {
+    return { status: 503, data: { ok: false, fout: 'KNOOPPUNT_ONBEREIKBAAR' } };
+  }
 }
 
 export interface KlimopProefKnooppunt {
