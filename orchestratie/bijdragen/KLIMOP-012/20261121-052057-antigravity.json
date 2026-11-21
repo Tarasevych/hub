@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-012/20261121-052057-antigravity",
+  "taakId": "KLIMOP-012",
+  "tijd": "2026-11-21T05:20:57.851Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "afgerond",
+  "wat": {
+    "uk": "Реалізовано Етап 11 Головного архітектурного маніфесту «Плющ» (незалежний аудит безпеки, зведена модель загроз і способів протидії з чесними залишковими ризиками Документ №20 та гібридна постквантова готовність): створено модуль shared/klimop/beveiligingsaudit.ts із гібридними підписами Ed25519 + ML-DSA-65 (FIPS 204) та інкапсуляцією ключів X25519 + ML-KEM-768 (FIPS 203) у вбудованому node:crypto, оцінювачами 10 криптографічних перевірок §38, 6 практичних сценаріїв автономності §40 і 12 виміряних гарантій §41, розширено вузол backend/klimop-knooppunt-agent.ts, створено кворумний клієнт backend/klimop-audit-client.ts, полігон scripts/klimop-etappe11-beveiligingsaudit-proef.mjs, двомовний Документ №20 Етапу 11 та випробування klimop-012"
+  },
+  "waarom": {
+    "uk": "Послідовне виконання Етапу 11 маніфесту «Плющ» за прямим дорученням власника після злиття запиту №193 (KLIMOP-011)"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-011/20261121-021835-antigravity"
+  ],
+  "tak": "audit/klimop-012-etappe11-beveiligingsaudit-dreigingen-20261121-045500",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

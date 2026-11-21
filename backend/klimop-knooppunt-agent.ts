@@ -91,6 +91,10 @@ import {
   type SybilWeerstandVerslag,
   type VeiligeKnooppuntUittredingBewijs,
 } from '../shared/klimop/hechtranken';
+import {
+  verifieerOnafhankelijkAuditRapport,
+  type KlimopOnafhankelijkAuditRapport,
+} from '../shared/klimop/beveiligingsaudit';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -246,6 +250,21 @@ export type KnooppuntOpdracht =
       deelnemerId: string;
       vereisteDrempel: number;
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_beveiligingsaudit_rapport';
+      rapport: KlimopOnafhankelijkAuditRapport;
+      erkendeAuditorSleutels: ReadonlyArray<{
+        auditorKnooppuntId: string;
+        ed25519PubliekDerB64u: string;
+        mlDsa65PubliekSpkiB64u: string;
+      }>;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_beveiligingsaudit_staat';
+      auditId: string;
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -372,6 +391,17 @@ export type KnooppuntOpdrachtAntwoord =
       actieveKnooppuntIds: readonly string[];
       uitgetredenKnooppuntIds: readonly string[];
     }
+  | {
+      ok: true;
+      actie: 'beveiligingsaudit_rapport_geregistreerd';
+      auditId: string;
+      vrijgegevenVoorEtappe12: boolean;
+    }
+  | {
+      ok: true;
+      actie: 'beveiligingsaudit_staat';
+      rapport: KlimopOnafhankelijkAuditRapport;
+    }
   | { ok: false; fout: string; details?: string[] };
 
 export interface EstafetteVerzoek {
@@ -445,6 +475,7 @@ export interface KlimopProefKnooppunt {
   aantalDienstCrdtRuimtes(): number;
   aantalUitgesteldeOperaties(): number;
   aantalActieveToetredingen(): number;
+  aantalAuditRapporten(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -471,6 +502,7 @@ export async function startKlimopProefKnooppunt(config: {
   const ingetrokkenToetredingIds = new Set<string>();
   const middelenKwitanties = new Map<string, KlimopMiddelenBijdrageKwitantie>();
   const veiligeUittredingen = new Map<string, VeiligeKnooppuntUittredingBewijs>();
+  const auditRapporten = new Map<string, KlimopOnafhankelijkAuditRapport>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -1054,6 +1086,42 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (
+      opdracht.actie === 'registreer_beveiligingsaudit_rapport'
+      || opdracht.actie === 'raadpleeg_beveiligingsaudit_staat'
+    ) {
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'registreer_beveiligingsaudit_rapport') {
+        if (quarantaineKnooppunten.has(opdracht.rapport?.auditorKnooppuntId ?? '')) {
+          return { ok: false, fout: 'KNOOPPUNT_IN_QUARANTAINE' };
+        }
+        const vRap = verifieerOnafhankelijkAuditRapport({
+          rapport: opdracht.rapport,
+          erkendeAuditorSleutels: opdracht.erkendeAuditorSleutels,
+        });
+        if (!vRap.ok) return vRap;
+        auditRapporten.set(opdracht.rapport.auditId, opdracht.rapport);
+        return {
+          ok: true,
+          actie: 'beveiligingsaudit_rapport_geregistreerd',
+          auditId: opdracht.rapport.auditId,
+          vrijgegevenVoorEtappe12: opdracht.rapport.vrijgegevenVoorEtappe12,
+        };
+      }
+
+      const gevondenRapport = auditRapporten.get(opdracht.auditId);
+      if (!gevondenRapport) {
+        return { ok: false, fout: 'AUDITRAPPORT_NIET_GEVONDEN' };
+      }
+      return {
+        ok: true,
+        actie: 'beveiligingsaudit_staat',
+        rapport: gevondenRapport,
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -1073,6 +1141,7 @@ export async function startKlimopProefKnooppunt(config: {
           opgeslagenBlokken: blokOpslag.size,
           geregistreerdeIdentiteiten: identiteitRegister.size,
           actieveToetredingen: actieveToetredingen.size,
+          auditRapporten: auditRapporten.size,
           actiefUitgaveVolgnummer: huidigUitgaveVolgnummer,
         });
         return;
@@ -1207,6 +1276,9 @@ export async function startKlimopProefKnooppunt(config: {
     aantalActieveToetredingen() {
       return actieveToetredingen.size;
     },
+    aantalAuditRapporten() {
+      return auditRapporten.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -1229,6 +1301,7 @@ export async function startKlimopProefKnooppunt(config: {
       ingetrokkenToetredingIds.clear();
       middelenKwitanties.clear();
       veiligeUittredingen.clear();
+      auditRapporten.clear();
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },
