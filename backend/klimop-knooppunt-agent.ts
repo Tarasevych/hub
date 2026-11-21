@@ -79,6 +79,18 @@ import {
   type KlimopUitgesteldeKritiekeOperatie,
   type OnopvallendSignaalPakket,
 } from '../shared/klimop/mensbescherming';
+import {
+  beoordeelSybilEnSpreidingsWeerstand,
+  berekenEerlijkeMiddelenBalans,
+  verifieerHechtrankToetredingsBewijs,
+  verifieerMiddelenBijdrageKwitantie,
+  verifieerVeiligeKnooppuntUittreding,
+  type EerlijkeVoedingBalans,
+  type HechtrankToetredingsBewijs,
+  type KlimopMiddelenBijdrageKwitantie,
+  type SybilWeerstandVerslag,
+  type VeiligeKnooppuntUittredingBewijs,
+} from '../shared/klimop/hechtranken';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -211,6 +223,29 @@ export type KnooppuntOpdracht =
       actiefStilDwangAlarm: boolean;
       nuIso: string;
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_knooppunt_toetreding';
+      bewijs: HechtrankToetredingsBewijs;
+      erkendeSponsorPubSleutels: readonly string[];
+      nuIso?: string;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_middelen_kwitantie';
+      kwitantie: KlimopMiddelenBijdrageKwitantie;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_veilige_uittreding';
+      uittreding: VeiligeKnooppuntUittredingBewijs;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_uitbreiding_en_voeding';
+      deelnemerId: string;
+      vereisteDrempel: number;
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -309,6 +344,34 @@ export type KnooppuntOpdrachtAntwoord =
       magUitvoeren: boolean;
       redenIndienGeweigerd: string | null;
     }
+  | {
+      ok: true;
+      actie: 'knooppunt_toetreding_geregistreerd';
+      toetredingId: string;
+      knooppuntId: string;
+      actieveToetredingen: number;
+    }
+  | {
+      ok: true;
+      actie: 'middelen_kwitantie_geregistreerd';
+      kwitantieId: string;
+      totaalKwitanties: number;
+    }
+  | {
+      ok: true;
+      actie: 'veilige_uittreding_geregistreerd';
+      uittredingId: string;
+      uitgetredenKnooppuntId: string;
+      actieveToetredingen: number;
+    }
+  | {
+      ok: true;
+      actie: 'uitbreiding_en_voeding_overzicht';
+      sybilVerslag: SybilWeerstandVerslag;
+      voedingBalans: EerlijkeVoedingBalans;
+      actieveKnooppuntIds: readonly string[];
+      uitgetredenKnooppuntIds: readonly string[];
+    }
   | { ok: false; fout: string; details?: string[] };
 
 export interface EstafetteVerzoek {
@@ -381,6 +444,7 @@ export interface KlimopProefKnooppunt {
   aantalUitgaveTerugdraaiingen(): number;
   aantalDienstCrdtRuimtes(): number;
   aantalUitgesteldeOperaties(): number;
+  aantalActieveToetredingen(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -403,6 +467,10 @@ export async function startKlimopProefKnooppunt(config: {
   const voogdSignaalBussen = new Map<string, OnopvallendSignaalPakket[]>();
   const uitgesteldeOperaties = new Map<string, KlimopUitgesteldeKritiekeOperatie>();
   const operatieAnnuleringen = new Map<string, KlimopOperatieAnnulering>();
+  const actieveToetredingen = new Map<string, HechtrankToetredingsBewijs>();
+  const ingetrokkenToetredingIds = new Set<string>();
+  const middelenKwitanties = new Map<string, KlimopMiddelenBijdrageKwitantie>();
+  const veiligeUittredingen = new Map<string, VeiligeKnooppuntUittredingBewijs>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -416,7 +484,7 @@ export async function startKlimopProefKnooppunt(config: {
   let aantalEstafettes = 0;
 
   function controleerRolEnMandaat(
-    vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie' | 'herstel',
+    vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie' | 'herstel' | 'verbinding',
     mandaat: KlimopOndertekendMandaat,
   ): { ok: true } | { ok: false; fout: string; details?: string[] } {
     if (!knooppunt.identiteit.rollen.includes(vereisteRol)) {
@@ -429,7 +497,9 @@ export async function startKlimopProefKnooppunt(config: {
               ? 'KNOOPPUNT_HEEFT_GEEN_VERIFICATIEROL'
               : vereisteRol === 'synchronisatie'
                 ? 'KNOOPPUNT_HEEFT_GEEN_SYNCHRONISATIEROL'
-                : 'KNOOPPUNT_HEEFT_GEEN_HERSTELROL',
+                : vereisteRol === 'herstel'
+                  ? 'KNOOPPUNT_HEEFT_GEEN_HERSTELROL'
+                  : 'KNOOPPUNT_HEEFT_GEEN_VERBINDINGSROL',
       };
     }
     const v = verifieerKlimopMandaat(mandaat, {
@@ -450,7 +520,9 @@ export async function startKlimopProefKnooppunt(config: {
               ? 'MANDAAT_NIET_VOOR_DEZE_VERIFICATIEKNOOP'
               : vereisteRol === 'synchronisatie'
                 ? 'MANDAAT_NIET_VOOR_DEZE_SYNCHRONISATIEKNOOP'
-                : 'MANDAAT_NIET_VOOR_DEZE_HERSTELKNOOP',
+                : vereisteRol === 'herstel'
+                  ? 'MANDAAT_NIET_VOOR_DEZE_HERSTELKNOOP'
+                  : 'MANDAAT_NIET_VOOR_DEZE_VERBINDINGSKNOOP',
       };
     }
     return { ok: true };
@@ -900,6 +972,88 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (
+      opdracht.actie === 'registreer_knooppunt_toetreding'
+      || opdracht.actie === 'registreer_middelen_kwitantie'
+      || opdracht.actie === 'registreer_veilige_uittreding'
+      || opdracht.actie === 'raadpleeg_uitbreiding_en_voeding'
+    ) {
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'registreer_knooppunt_toetreding') {
+        const knId = opdracht.bewijs?.knooppuntIdentiteit?.knooppuntId ?? '';
+        if (quarantaineKnooppunten.has(knId)) {
+          return { ok: false, fout: 'KNOOPPUNT_IN_QUARANTAINE' };
+        }
+        const vBew = verifieerHechtrankToetredingsBewijs({
+          bewijs: opdracht.bewijs,
+          erkendeSponsorPubSleutels: new Set(opdracht.erkendeSponsorPubSleutels),
+          ingetrokkenToetredingIds,
+          nuIso: opdracht.nuIso,
+        });
+        if (!vBew.ok) return vBew;
+        actieveToetredingen.set(knId, opdracht.bewijs);
+        veiligeUittredingen.delete(knId);
+        return {
+          ok: true,
+          actie: 'knooppunt_toetreding_geregistreerd',
+          toetredingId: opdracht.bewijs.toetredingId,
+          knooppuntId: knId,
+          actieveToetredingen: actieveToetredingen.size,
+        };
+      }
+
+      if (opdracht.actie === 'registreer_middelen_kwitantie') {
+        const vKw = verifieerMiddelenBijdrageKwitantie(opdracht.kwitantie);
+        if (!vKw.ok) return vKw;
+        middelenKwitanties.set(opdracht.kwitantie.kwitantieId, opdracht.kwitantie);
+        return {
+          ok: true,
+          actie: 'middelen_kwitantie_geregistreerd',
+          kwitantieId: opdracht.kwitantie.kwitantieId,
+          totaalKwitanties: middelenKwitanties.size,
+        };
+      }
+
+      if (opdracht.actie === 'registreer_veilige_uittreding') {
+        const vUit = verifieerVeiligeKnooppuntUittreding(opdracht.uittreding);
+        if (!vUit.ok) return vUit;
+        const uitId = opdracht.uittreding.uittredendKnooppuntId;
+        const bestaand = actieveToetredingen.get(uitId);
+        if (bestaand) {
+          ingetrokkenToetredingIds.add(bestaand.toetredingId);
+          actieveToetredingen.delete(uitId);
+        }
+        veiligeUittredingen.set(uitId, opdracht.uittreding);
+        return {
+          ok: true,
+          actie: 'veilige_uittreding_geregistreerd',
+          uittredingId: opdracht.uittreding.uittredingId,
+          uitgetredenKnooppuntId: uitId,
+          actieveToetredingen: actieveToetredingen.size,
+        };
+      }
+
+      const actieveLijst = [...actieveToetredingen.values()];
+      const sybilVerslag = beoordeelSybilEnSpreidingsWeerstand({
+        toetredingen: actieveLijst,
+        vereisteOnafhankelijkeDrempel: opdracht.vereisteDrempel,
+      });
+      const voedingBalans = berekenEerlijkeMiddelenBalans(
+        opdracht.deelnemerId,
+        [...middelenKwitanties.values()],
+      );
+      return {
+        ok: true,
+        actie: 'uitbreiding_en_voeding_overzicht',
+        sybilVerslag,
+        voedingBalans,
+        actieveKnooppuntIds: [...actieveToetredingen.keys()],
+        uitgetredenKnooppuntIds: [...veiligeUittredingen.keys()],
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -918,6 +1072,7 @@ export async function startKlimopProefKnooppunt(config: {
           actieveStengels: sessies.size,
           opgeslagenBlokken: blokOpslag.size,
           geregistreerdeIdentiteiten: identiteitRegister.size,
+          actieveToetredingen: actieveToetredingen.size,
           actiefUitgaveVolgnummer: huidigUitgaveVolgnummer,
         });
         return;
@@ -1049,6 +1204,9 @@ export async function startKlimopProefKnooppunt(config: {
     aantalUitgesteldeOperaties() {
       return uitgesteldeOperaties.size;
     },
+    aantalActieveToetredingen() {
+      return actieveToetredingen.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -1067,6 +1225,10 @@ export async function startKlimopProefKnooppunt(config: {
       voogdSignaalBussen.clear();
       uitgesteldeOperaties.clear();
       operatieAnnuleringen.clear();
+      actieveToetredingen.clear();
+      ingetrokkenToetredingIds.clear();
+      middelenKwitanties.clear();
+      veiligeUittredingen.clear();
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },
