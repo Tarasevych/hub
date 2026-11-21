@@ -37,7 +37,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 | **Huidig architectuurmodel** | Zelfgehost op eigen Ubuntu LTS VM achter uitgaande Cloudflare-tunnel (`127.0.0.1:8080`), zonder externe cloudhosting |
 | **Doelarchitectuur (`KLIMOP-001` / `B-024`)** | **Levend digitaal ecosysteem «Klimop»** ([`docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md`](docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md)) — gedistribueerd, zelfherstellend, cryptografisch beveiligd ecosysteem met onafhankelijke knooppunten en gescheiden bevoegdheden *(doelarchitectuur; geen toestemming voor onmiddellijke wijziging van de productie-infrastructuur)* |
 | **Technologiestack** | TypeScript 5.7 · React 19 · Vite 6 · Tailwind CSS 3 · Node.js 26 LTS (`node:http` + `esbuild`) · PostgreSQL 18.6 (JSONB + relationele tabellen + FORCE RLS) · Systemd · Caddy · OPA · `age` |
-| **Canonieke regels (`ORCH-001`, versie `1.5.0`)** | [`AGENTS.md`](AGENTS.md) ([🇳🇱 NL](AGENTENREGELS.nl.md) · [🇺🇦 UK](ПРАВИЛА-АГЕНТІВ.uk.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇳🇱 NL](orchestratie/BESLUITEN.nl.md) · [🇺🇦 UK](orchestratie/РІШЕННЯ.uk.md)) · adapters voor **alle 14 AI-agenten** |
+| **Canonieke regels (`ORCH-001`, versie `1.6.0`)** | [`AGENTS.md`](AGENTS.md) ([🇳🇱 NL](AGENTENREGELS.nl.md) · [🇺🇦 UK](ПРАВИЛА-АГЕНТІВ.uk.md)) · [`orchestratie/beleid.json`](orchestratie/beleid.json) · [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) ([🇳🇱 NL](orchestratie/BESLUITEN.nl.md) · [🇺🇦 UK](orchestratie/РІШЕННЯ.uk.md)) · adapters voor **alle 14 AI-agenten** |
 | **Taalconventie** | Documentatie en rapporten — **tweetalig (`uk` / `nl`)**; URL/API-paden en modulenamen in de code — **Nederlands (`nl`)**; gebruikersinterface — **tweetalig (`uk` / `nl`)** |
 | **Bestandskaart van de codebase** | [`docs/kaart/KAART-BESTANDEN.nl.md`](docs/kaart/KAART-BESTANDEN.nl.md) ([🇳🇱 NL](docs/kaart/KAART-BESTANDEN.nl.md) · [🇺🇦 UK](docs/kaart/КАРТА-ФАЙЛІВ.uk.md)) en [`docs/kaart/bestandskaart.json`](docs/kaart/bestandskaart.json) *(531 hernoemde modules + nieuwe modules met automatische bouwcontrole)* |
 
@@ -54,7 +54,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
    - [3.4. Historische en archieftakken uit de vroege ontwikkeling (september — 16 oktober 2026)](#34-historische-en-archieftakken-uit-de-vroege-ontwikkeling-september--16-oktober-2026)
 4. [Register van Pull Requests (#1–#27) en Uitgaven (GitHub Releases)](#4-register-van-pull-requests-127-en-uitgaven-github-releases)
 5. [Repositorystructuur: waar staat wat in de code](#5-repositorystructuur-waar-staat-wat-in-de-code)
-6. [Omgevingsvariabelen, versleutelingssleutels en configuratie (`OMGEVINGSVARIABELEN.nl.md`)](#6-omgevingsvariabelen-versleutelingssleutels-en-configuratie-env-varsmd)
+6. [Omgevingsvariabelen, versleutelingssleutels en configuratie (`OMGEVINGSVARIABELEN.nl.md`)](#6-omgevingsvariabelen-versleutelingssleutels-en-configuratie-omgevingsvariabelennlmd)
 7. [Infrastructuur, serverstack (`B-009`), beveiliging en reservekopieën](#7-infrastructuur-serverstack-b-009-beveiliging-en-reservekopieën)
 8. [Coördinatie van alle 14 AI-agenten (`ORCH-001` / `BIJDRAGE-001` / `TRACE-001`) en ontwikkelopdrachten](#8-coördinatie-van-alle-14-ai-agenten-orch-001--bijdrage-001--trace-001-en-ontwikkelopdrachten)
 9. [Doelarchitectuur: levend digitaal ecosysteem «Klimop» (`KLIMOP-001` / `B-024`)](#9-doelarchitectuur-levend-digitaal-ecosysteem-klimop-klimop-001--b-024)
@@ -67,7 +67,7 @@ Elk artikel en elke documentatiepagina in de repository heeft twee volwaardige t
 
 ### Dienst-hosts van het ecosysteem (`*.tarasevych.com`)
 
-Alle subdomeinen (gedefinieerd in [`backend/deployment-identity.ts`](backend/deployment-identity.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) worden bediend door één serverkern op `127.0.0.1:8080` met een gedeelde beveiligde sessielaag (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
+Alle subdomeinen (gedefinieerd in [`backend/deployment-identiteit.ts`](backend/deployment-identiteit.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](deploy/cloudflared-config.yml)) worden bediend door één serverkern op `127.0.0.1:8080` met een gedeelde beveiligde sessielaag (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
 
 | Subdomein | Dienst | Doel en belangrijkste mogelijkheden | Kernmodules in de code |
 |---|---|---|---|
@@ -81,7 +81,7 @@ Alle subdomeinen (gedefinieerd in [`backend/deployment-identity.ts`](backend/dep
 | **[`huis.tarasevych.com`](https://huis.tarasevych.com)** | **Slim huis (`huis`)** | **Huis vNext**: integratie met Home Assistant en lokale gateways, beheer van kamers, apparaten en automatiseringen, versleuteling van adaptertokens (`HUIS_ADAPTER_SLEUTEL_V1`), beveiliging van het beheersubnet. | [`shared/huis-model.ts`](shared/huis-model.ts), [`deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md`](deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md) |
 | **[`api.tarasevych.com`](https://api.tarasevych.com)** | **API & Kluis (`api`)** | Beheer van machinetokens (`tsv_`), API-koppelingen, webhooks en de beveiligde **Sleutelkluis (Vault)** van de eigenaar. | [`src/ApiPlatformWeergave.tsx`](src/ApiPlatformWeergave.tsx), [`backend/api-platform-kluis.ts`](backend/api-platform-kluis.ts), [`shared/sleutelkluis.ts`](shared/sleutelkluis.ts) |
 | **[`admin.tarasevych.com`](https://admin.tarasevych.com)** | **Beheer (`admin`)** | **Technische ruimte**: gebruikers- en rollenbeheer, beveiligingslogboek `app.audit` (append-only hashketen), RLS-isolatiestatus, server- en renderdiagnostiek (`rook-controle`), **Verbindingswizard**, SSH-CA-beheer, browserterminal en het centrum **«Updates»** met cryptografische passkey-goedkeuring door de eigenaar. | [`backend/server-beheer.ts`](backend/server-beheer.ts), [`backend/uitrol-goedkeuring.ts`](backend/uitrol-goedkeuring.ts), [`backend/eigenaar-besluit.ts`](backend/eigenaar-besluit.ts) |
-| **[`dashboard.tarasevych.com`](https://dashboard.tarasevych.com)** | **Dashboard (`dashboard`)** | Statisch overzichtspaneel vanuit `/srv/mijn-ruimte/dashboard` (volledig gescheiden van sessies en API). | [`server/start.ts`](server/start.ts), [`deploy/PROJECTOVERZICHT.nl.md`](deploy/LEESMIJ.nl.md) |
+| **[`dashboard.tarasevych.com`](https://dashboard.tarasevych.com)** | **Dashboard (`dashboard`)** | Statisch overzichtspaneel vanuit `/srv/mijn-ruimte/dashboard` (volledig gescheiden van sessies en API). | [`server/start.ts`](server/start.ts), [`deploy/LEESMIJ.nl.md`](deploy/LEESMIJ.nl.md) |
 
 ### Architectuurschema van het platform
 

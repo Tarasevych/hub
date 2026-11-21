@@ -369,7 +369,7 @@ export async function main(): Promise<number> {
 
   const oordeelEtappe13 = beoordeelKlimopWijziging({
     naam: 'KLIMOP-014 Етап 13: платформна інтеграція, MCP 14 агентів і дзеркальна звірка Сходинки 1',
-    fase: 12,
+    fase: 13,
     raaktProductieDirectZonderGoedkeuring: false,
     antwoorden15: geldigeAntwoorden15,
     aanwezigeVerbodenVereenvoudigingen: [],

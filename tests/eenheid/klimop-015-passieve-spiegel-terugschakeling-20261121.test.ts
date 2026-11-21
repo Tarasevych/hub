@@ -429,7 +429,7 @@ export async function main(): Promise<number> {
 
   const oordeelEtappe14 = beoordeelKlimopWijziging({
     naam: 'KLIMOP-015 Етап 14: Сходинка 2 пасивного читання, криптографічного журналу та перемикача повернення',
-    fase: 12,
+    fase: 14,
     raaktProductieDirectZonderGoedkeuring: false,
     antwoorden15: geldigeAntwoorden15,
     aanwezigeVerbodenVereenvoudigingen: [],

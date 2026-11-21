@@ -88,8 +88,8 @@ export async function main(): Promise<number> {
   const lock = JSON.parse(lees('orchestratie/regels.lock.json'));
   const regelBestanden = Object.fromEntries(beleid.regelBestanden.map((p: string) => [p, lees(p)]));
 
-  check('beleid.json має версію 1.5.0, проходить valideerBeleid та узгоджений з regels.lock.json',
-    beleid.regelsVersie === '1.5.0'
+  check('beleid.json має актуальну версію >= 1.6.0, проходить valideerBeleid та узгоджений з regels.lock.json',
+    beleid.regelsVersie === '1.6.0'
     && k.valideerBeleid(beleid).length === 0
     && k.controleerLock(beleid, regelBestanden, lock).length === 0);
 
@@ -104,9 +104,12 @@ export async function main(): Promise<number> {
     && beleid.kritiek?.privesleutelsNaarAgenten === false
     && beleid.kritiek?.installatieModi?.automatischBeperkt === null);
 
-  check('реєстр рішень (BESLUITEN.md, РІШЕННЯ.uk.md, BESLUITEN.nl.md) містить B-024 для версії 1.5.0',
+  check('реєстр рішень (BESLUITEN.md, РІШЕННЯ.uk.md, BESLUITEN.nl.md) містить B-024 (1.5.0) та B-025 (1.6.0)',
     ['orchestratie/BESLUITEN.md', 'orchestratie/РІШЕННЯ.uk.md', 'orchestratie/BESLUITEN.nl.md']
-      .every((p) => existsSync(p) && /## B-024 · 2026-11-20 · 1\.5\.0 · (voorstel|bevestigd)/.test(lees(p))));
+      .every((p) =>
+        existsSync(p)
+        && /## B-024 · 2026-11-20 · 1\.5\.0 · (voorstel|bevestigd)/.test(lees(p))
+        && /## B-025 · 2026-11-21 · 1\.6\.0 · (voorstel|bevestigd)/.test(lees(p))));
 
   const agentsUk = lees('AGENTS.md');
   const agentsNl = lees('AGENTENREGELS.nl.md');

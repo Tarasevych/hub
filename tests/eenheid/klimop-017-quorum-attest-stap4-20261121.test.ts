@@ -653,7 +653,7 @@ export async function main(): Promise<number> {
 
   const oordeelEtappe16 = beoordeelKlimopWijziging({
     naam: 'KLIMOP-017 Етап 16: Сходинка 4 кворумного атестата готовності та порогового допуску власника без вимкнення живої бази',
-    fase: 12,
+    fase: 16,
     raaktProductieDirectZonderGoedkeuring: false,
     antwoorden15: geldigeAntwoorden15,
     aanwezigeVerbodenVereenvoudigingen: [],

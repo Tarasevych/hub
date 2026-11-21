@@ -80,6 +80,12 @@ export interface KlimopStengelSessie {
   readonly ontvangSleutel: Buffer;
   volgendZendNummer: number;
   gezieneOntvangNummers: Set<number>;
+  /** KLIMOP-021: нижня межа ковзного вікна прийому кадрів (обмежує пам'ять і відсікає застарілі кадри). */
+  ontvangVensterOnderGrens: number;
+  /** KLIMOP-021: гранична кількість кадрів до обов'язкової зміни сеансового ключа. */
+  maxKadersTotSleutelWissel: number;
+  /** KLIMOP-021: строк життя сеансу в мілісекундах UNIX. */
+  verlooptOpMs: number;
   gesloten: boolean;
 }
 
@@ -87,6 +93,9 @@ const HANDDRUK_AANVRAAG_DOMEIN = 'klimop-stengel-handdruk-aanvraag-v1|';
 const HANDDRUK_ANTWOORD_DOMEIN = 'klimop-stengel-handdruk-antwoord-v1|';
 const STANDAARD_KLOK_VENSTER_MS = 5 * 60 * 1000;
 const STANDAARD_OPVULLING_BLOK = 256;
+export const STENGEL_ONTVANG_VENSTER_GROOTTE = 2048;
+export const STENGEL_STANDAARD_MAX_KADERS = 65_536;
+export const STENGEL_STANDAARD_SESSIE_TTL_MS = 60 * 60 * 1000;
 
 function controleerTijdVenster(tijdIso: string, nuIso?: string, maxScheefheidMs = STANDAARD_KLOK_VENSTER_MS): boolean {
   const t = Date.parse(tijdIso);
@@ -181,6 +190,8 @@ export function beantwoordStengelHanddruk(
     nuIso?: string;
     ingetrokkenKnooppuntIds?: ReadonlySet<string>;
     opvullingBlokGrootte?: number;
+    maxKadersTotSleutelWissel?: number;
+    sessieTtlMs?: number;
   } = {},
 ): { ok: true; antwoord: StengelHanddrukAntwoord; sessie: KlimopStengelSessie } | { ok: false; fout: string } {
   if (!aanvraag || aanvraag.schema !== 1) return { ok: false, fout: 'HANDDRUK_ONGELDIGE_VORM' };
@@ -222,6 +233,8 @@ export function beantwoordStengelHanddruk(
     .digest('hex');
 
   let gedeeldGeheim: Buffer | null = null;
+  let afgeleid: ReturnType<typeof leidSessieSleutelsAf> | null = null;
+  let gelukt = false;
   try {
     const peerEfPub = createPublicKey({
       key: Buffer.from(aanvraag.efemeerX25519DerB64u, 'base64url'),
@@ -229,7 +242,7 @@ export function beantwoordStengelHanddruk(
       type: 'spki',
     });
     gedeeldGeheim = diffieHellman({ privateKey: efPriv, publicKey: peerEfPub });
-    const afgeleid = leidSessieSleutelsAf(
+    afgeleid = leidSessieSleutelsAf(
       gedeeldGeheim,
       transcriptSha256,
       aanvraag.vanIdentiteit.knooppuntId,
@@ -261,6 +274,9 @@ export function beantwoordStengelHanddruk(
       priv,
     ).toString('base64url');
 
+    const nuMs = Date.parse(tijdIso);
+    const ttlMs = Math.max(1000, opties.sessieTtlMs ?? STENGEL_STANDAARD_SESSIE_TTL_MS);
+    gelukt = true;
     return {
       ok: true,
       antwoord: { ...antwoordKern, handtekeningB64u: antwoordSig },
@@ -275,6 +291,9 @@ export function beantwoordStengelHanddruk(
         ontvangSleutel: afgeleid.sleutelInitiatorNaarOntvanger,
         volgendZendNummer: 0,
         gezieneOntvangNummers: new Set<number>(),
+        ontvangVensterOnderGrens: 0,
+        maxKadersTotSleutelWissel: Math.max(1, opties.maxKadersTotSleutelWissel ?? STENGEL_STANDAARD_MAX_KADERS),
+        verlooptOpMs: (Number.isFinite(nuMs) ? nuMs : Date.now()) + ttlMs,
         gesloten: false,
       },
     };
@@ -282,6 +301,10 @@ export function beantwoordStengelHanddruk(
     return { ok: false, fout: 'HANDDRUK_SLEUTELUITWISSELING_MISLUKT' };
   } finally {
     if (gedeeldGeheim) gedeeldGeheim.fill(0);
+    if (!gelukt && afgeleid) {
+      afgeleid.sleutelInitiatorNaarOntvanger.fill(0);
+      afgeleid.sleutelOntvangerNaarInitiator.fill(0);
+    }
   }
 }
 
@@ -294,6 +317,8 @@ export function voltooiStengelHanddruk(
     nuIso?: string;
     ingetrokkenKnooppuntIds?: ReadonlySet<string>;
     opvullingBlokGrootte?: number;
+    maxKadersTotSleutelWissel?: number;
+    sessieTtlMs?: number;
   } = {},
 ): { ok: true; sessie: KlimopStengelSessie } | { ok: false; fout: string } {
   if (!antwoord || antwoord.schema !== 1) return { ok: false, fout: 'ANTWOORD_ONGELDIGE_VORM' };
@@ -335,6 +360,8 @@ export function voltooiStengelHanddruk(
   }
 
   let gedeeldGeheim: Buffer | null = null;
+  let afgeleid: ReturnType<typeof leidSessieSleutelsAf> | null = null;
+  let gelukt = false;
   try {
     const efPriv = createPrivateKey({
       key: Buffer.from(aanvraagPakket.efemeerGeheimPkcs8B64u, 'base64url'),
@@ -347,7 +374,7 @@ export function voltooiStengelHanddruk(
       type: 'spki',
     });
     gedeeldGeheim = diffieHellman({ privateKey: efPriv, publicKey: peerEfPub });
-    const afgeleid = leidSessieSleutelsAf(
+    afgeleid = leidSessieSleutelsAf(
       gedeeldGeheim,
       verwachtTranscript,
       initiator.identiteit.knooppuntId,
@@ -357,6 +384,9 @@ export function voltooiStengelHanddruk(
       return { ok: false, fout: 'SESSIE_ID_KOMT_NIET_OVEREEN' };
     }
 
+    const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
+    const ttlMs = Math.max(1000, opties.sessieTtlMs ?? STENGEL_STANDAARD_SESSIE_TTL_MS);
+    gelukt = true;
     return {
       ok: true,
       sessie: {
@@ -370,6 +400,9 @@ export function voltooiStengelHanddruk(
         ontvangSleutel: afgeleid.sleutelOntvangerNaarInitiator,
         volgendZendNummer: 0,
         gezieneOntvangNummers: new Set<number>(),
+        ontvangVensterOnderGrens: 0,
+        maxKadersTotSleutelWissel: Math.max(1, opties.maxKadersTotSleutelWissel ?? STENGEL_STANDAARD_MAX_KADERS),
+        verlooptOpMs: (Number.isFinite(nuMs) ? nuMs : Date.now()) + ttlMs,
         gesloten: false,
       },
     };
@@ -377,6 +410,10 @@ export function voltooiStengelHanddruk(
     return { ok: false, fout: 'HANDDRUK_SLEUTELUITWISSELING_MISLUKT' };
   } finally {
     if (gedeeldGeheim) gedeeldGeheim.fill(0);
+    if (!gelukt && afgeleid) {
+      afgeleid.sleutelInitiatorNaarOntvanger.fill(0);
+      afgeleid.sleutelOntvangerNaarInitiator.fill(0);
+    }
   }
 }
 
@@ -416,28 +453,51 @@ export function verwijderKaderOpvulling(opgevuld: Buffer): Buffer {
   if (opgevuld.length < 4) throw new Error('KADER_OPVULLING_TE_KORT');
   const echteLengte = opgevuld.readUInt32BE(0);
   if (echteLengte > opgevuld.length - 4) throw new Error('KADER_LENGTE_ONGELDIG');
-  return opgevuld.subarray(4, 4 + echteLengte);
+  return Buffer.from(opgevuld.subarray(4, 4 + echteLengte));
 }
 
-/** Шифрує корисні байти у захищений кадр «Стебла» з монотонним номером та вирівнюванням довжини. */
+/** Шифрує корисні байти у захищений кадр «Стебла» з монотонним номером, межею зміни ключа та вирівнюванням довжини. */
 export function versleutelStengelKader(sessie: KlimopStengelSessie, klareInhoud: Buffer): StengelVersleuteldKader {
   if (sessie.gesloten) throw new Error('STENGEL_SESSIE_GESLOTEN');
+  const maxKaders = sessie.maxKadersTotSleutelWissel ?? STENGEL_STANDAARD_MAX_KADERS;
+  if (!Number.isSafeInteger(sessie.volgendZendNummer) || sessie.volgendZendNummer >= maxKaders) {
+    sluitStengelSessie(sessie);
+    throw new Error('STENGEL_SLEUTELWISSEL_VEREIST');
+  }
   const volgnummer = sessie.volgendZendNummer++;
   const richting: 'I2R ' | 'R2I ' = sessie.rol === 'initiator' ? 'I2R ' : 'R2I ';
   const iv = maakDeterministischeIv(richting, volgnummer);
   const opgevuld = vulKaderLadingAan(klareInhoud, sessie.opvullingBlokGrootte);
-  const aad = kaderAad(
-    sessie.sessieId,
-    sessie.eigenKnooppuntId,
-    sessie.tegenpartijIdentiteit.knooppuntId,
-    sessie.algoritme,
-    volgnummer,
-    sessie.opvullingBlokGrootte,
-  );
+  try {
+    const aad = kaderAad(
+      sessie.sessieId,
+      sessie.eigenKnooppuntId,
+      sessie.tegenpartijIdentiteit.knooppuntId,
+      sessie.algoritme,
+      volgnummer,
+      sessie.opvullingBlokGrootte,
+    );
 
-  if (sessie.algoritme === 'chacha20-poly1305') {
-    const cipher = createCipheriv('chacha20-poly1305', sessie.zendSleutel, iv, { authTagLength: 16 });
-    cipher.setAAD(aad, { plaintextLength: opgevuld.length });
+    if (sessie.algoritme === 'chacha20-poly1305') {
+      const cipher = createCipheriv('chacha20-poly1305', sessie.zendSleutel, iv, { authTagLength: 16 });
+      cipher.setAAD(aad, { plaintextLength: opgevuld.length });
+      const ct = Buffer.concat([cipher.update(opgevuld), cipher.final()]);
+      const tag = cipher.getAuthTag();
+      return {
+        schema: 1,
+        sessieId: sessie.sessieId,
+        vanKnooppuntId: sessie.eigenKnooppuntId,
+        naarKnooppuntId: sessie.tegenpartijIdentiteit.knooppuntId,
+        algoritme: sessie.algoritme,
+        volgnummer,
+        opvullingBlokGrootte: sessie.opvullingBlokGrootte,
+        cijfertekstB64u: ct.toString('base64url'),
+        authenticatieTagB64u: tag.toString('base64url'),
+      };
+    }
+
+    const cipher = createCipheriv('aes-256-gcm', sessie.zendSleutel, iv);
+    cipher.setAAD(aad);
     const ct = Buffer.concat([cipher.update(opgevuld), cipher.final()]);
     const tag = cipher.getAuthTag();
     return {
@@ -451,26 +511,12 @@ export function versleutelStengelKader(sessie: KlimopStengelSessie, klareInhoud:
       cijfertekstB64u: ct.toString('base64url'),
       authenticatieTagB64u: tag.toString('base64url'),
     };
+  } finally {
+    opgevuld.fill(0);
   }
-
-  const cipher = createCipheriv('aes-256-gcm', sessie.zendSleutel, iv);
-  cipher.setAAD(aad);
-  const ct = Buffer.concat([cipher.update(opgevuld), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return {
-    schema: 1,
-    sessieId: sessie.sessieId,
-    vanKnooppuntId: sessie.eigenKnooppuntId,
-    naarKnooppuntId: sessie.tegenpartijIdentiteit.knooppuntId,
-    algoritme: sessie.algoritme,
-    volgnummer,
-    opvullingBlokGrootte: sessie.opvullingBlokGrootte,
-    cijfertekstB64u: ct.toString('base64url'),
-    authenticatieTagB64u: tag.toString('base64url'),
-  };
 }
 
-/** Перевіряє автентичність, захист від повтору і розшифровує кадр «Стебла». */
+/** Перевіряє автентичність, ковзне вікно захисту від повторів і розшифровує кадр «Стебла». */
 export function ontsleutelStengelKader(
   sessie: KlimopStengelSessie,
   kader: StengelVersleuteldKader,
@@ -486,7 +532,15 @@ export function ontsleutelStengelKader(
   ) {
     return { ok: false, fout: 'KADER_KOP_ONGELDIG' };
   }
-  if (!Number.isInteger(kader.volgnummer) || kader.volgnummer < 0 || sessie.gezieneOntvangNummers.has(kader.volgnummer)) {
+  const onderGrens = sessie.ontvangVensterOnderGrens ?? 0;
+  const maxKaders = sessie.maxKadersTotSleutelWissel ?? STENGEL_STANDAARD_MAX_KADERS;
+  if (
+    !Number.isSafeInteger(kader.volgnummer)
+    || kader.volgnummer < onderGrens
+    || kader.volgnummer >= maxKaders
+    || kader.volgnummer >= onderGrens + STENGEL_ONTVANG_VENSTER_GROOTTE * 4
+    || sessie.gezieneOntvangNummers.has(kader.volgnummer)
+  ) {
     return { ok: false, fout: 'HERHALING_OF_VOLGORDE_FOUT' };
   }
 
@@ -503,8 +557,8 @@ export function ontsleutelStengelKader(
     kader.opvullingBlokGrootte,
   );
 
+  let opgevuld: Buffer | null = null;
   try {
-    let opgevuld: Buffer;
     if (kader.algoritme === 'chacha20-poly1305') {
       const decipher = createDecipheriv('chacha20-poly1305', sessie.ontvangSleutel, iv, { authTagLength: 16 });
       decipher.setAAD(aad, { plaintextLength: ct.length });
@@ -518,9 +572,18 @@ export function ontsleutelStengelKader(
     }
     const klareInhoud = verwijderKaderOpvulling(opgevuld);
     sessie.gezieneOntvangNummers.add(kader.volgnummer);
+    if (kader.volgnummer >= onderGrens + STENGEL_ONTVANG_VENSTER_GROOTTE) {
+      const nieuweOnderGrens = kader.volgnummer - STENGEL_ONTVANG_VENSTER_GROOTTE + 1;
+      sessie.ontvangVensterOnderGrens = nieuweOnderGrens;
+      for (const oud of sessie.gezieneOntvangNummers) {
+        if (oud < nieuweOnderGrens) sessie.gezieneOntvangNummers.delete(oud);
+      }
+    }
     return { ok: true, klareInhoud };
   } catch {
     return { ok: false, fout: 'KADER_AUTHENTICATIE_MISLUKT' };
+  } finally {
+    if (opgevuld) opgevuld.fill(0);
   }
 }
 

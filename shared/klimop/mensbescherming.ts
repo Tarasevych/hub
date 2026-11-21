@@ -23,6 +23,7 @@ import {
   generateKeyPairSync,
   hkdfSync,
   randomBytes,
+  scryptSync,
   sign,
   verify,
 } from 'node:crypto';
@@ -254,6 +255,28 @@ export function berekenKluisVerifierHex(geheimMateriaal: Buffer, kluisZout32: Bu
   ).toString('hex');
 }
 
+/**
+ * KLIMOP-021: пам'яттєво-складне виведення 32-байтного секретного матеріалу з людської парольної фрази
+ * низької ентропії через `scrypt` (`N=16384, r=8, p=1`), перш ніж передавати його у `leidScheidbareKluisContextAf`.
+ * Для сильних 32-байтних випадкових апаратних ключів використовується прямий `HKDF-SHA-256`.
+ */
+export function leidKluisGeheimUitWachtzin(wachtzin: string, kluisZout32: Buffer): Buffer {
+  if (typeof wachtzin !== 'string' || wachtzin.trim().length < 8 || kluisZout32.length < 32) {
+    throw new Error('WACHTZIN_OF_ZOUT_ONGELDIG');
+  }
+  const genormaliseerd = Buffer.from(wachtzin.normalize('NFKC'), 'utf8');
+  try {
+    return scryptSync(genormaliseerd, kluisZout32, 32, {
+      N: 16_384,
+      r: 8,
+      p: 1,
+      maxmem: 64 * 1024 * 1024,
+    });
+  } finally {
+    genormaliseerd.fill(0);
+  }
+}
+
 // Фіксований розмір внутрішнього відкритого блока (256 байт), щоб зашифрований пакет пульсу і пакет тихої тривоги
 // мали побітово однакову довжину в мережі та у сховищі вузла!
 const VASTE_SIGNAAL_KLARE_LENGTE = 256;
@@ -310,9 +333,25 @@ function verifieerEd25519(publiekDerB64u: string, boodschap: Buffer, handtekenin
 }
 
 /**
+ * KLIMOP-021: чесна модель спостерігача для 256-байтних конвертів пульсу та сигналу небезпеки (§15):
+ *   - пасивний спостерігач на транспортному каналі та оператор проміжного вузла не розрізняють `gewone_hartslag`
+ *     та `stil_dwang_alarm` за довжиною чи шифротекстом при тому самому `ontvangerVoogdId`;
+ *   - ідентифікатор одержувача `ontvangerVoogdId` та момент доставки видимі вузлу скриньки, тому для приховування
+ *     частоти пристрій повинен надсилати конверти за постійним плановим інтервалом пульсу тим самим маршрутом;
+ *   - локальні сліди пам'яті, інтерфейсу чи носія на захопленому пристрої цим конвертом не усуваються.
+ */
+export const NOODSIGNAAL_WAARNEMER_MODEL = Object.freeze({
+  vasteCijfertekstLengteBytes: VASTE_SIGNAAL_KLARE_LENGTE,
+  verbergtSoortVoorNetwerkEnTussenknoop: true,
+  ontvangerVoogdIdZichtbaarVoorPostbusKnoop: true,
+  vereistVastHartslagIntervalEnRoute: true,
+  verbergtLokaleApparaatSporen: false,
+} as const);
+
+/**
  * Формує зашифрований конверт фіксованого розміру (рівно 256 байт шифротексту) для довіреної особи (§15):
- *   - ні нападник, який бачить мережеві пакети з пристрою, ні оператор проміжного вузла не можуть розрізнити
- *     звичайний плановий пульс `gewone_hartslag` та прихований сигнал небезпеки `stil_dwang_alarm`.
+ *   - ні нападник, який бачить мережеві пакети з пристрою за фіксованим розкладом пульсу, ні оператор проміжного вузла
+ *     не можуть за шифротекстом розрізнити звичайний плановий пульс `gewone_hartslag` і сигнал `stil_dwang_alarm`.
  */
 export function maakOnopvallendNoodSignaalPakket(opties: {
   ontvangerVoogdId: string;
@@ -330,52 +369,63 @@ export function maakOnopvallendNoodSignaalPakket(opties: {
     type: 'spki',
   });
 
-  const gedeeldGeheim = diffieHellman({ privateKey: efemeer.privateKey, publicKey: ontvangerPub });
-  const pakketId = `sig_${randomBytes(12).toString('hex')}`;
-  const sleutel32 = Buffer.from(
-    hkdfSync(
-      'sha256',
-      gedeeldGeheim,
-      efemeerPubDer,
-      Buffer.from(`${SIGNAAL_AAD_PREFIX}${opties.ontvangerVoogdId}|${pakketId}`, 'utf8'),
-      32,
-    ),
-  );
+  let gedeeldGeheim: Buffer | null = null;
+  let sleutel32: Buffer | null = null;
+  let jsonBytes: Buffer | null = null;
+  let vlakBlok: Buffer | null = null;
+  try {
+    gedeeldGeheim = diffieHellman({ privateKey: efemeer.privateKey, publicKey: ontvangerPub });
+    const pakketId = `sig_${randomBytes(12).toString('hex')}`;
+    sleutel32 = Buffer.from(
+      hkdfSync(
+        'sha256',
+        gedeeldGeheim,
+        efemeerPubDer,
+        Buffer.from(`${SIGNAAL_AAD_PREFIX}${opties.ontvangerVoogdId}|${pakketId}`, 'utf8'),
+        32,
+      ),
+    );
 
-  const jsonBytes = Buffer.from(
-    canoniekeJson({
-      soort: opties.soort,
-      persoonsPsid: opties.persoonsPsid,
-      verzondenOp: opties.nuIso ?? new Date().toISOString(),
-      toelichtingCode: (opties.toelichtingCode ?? 'OK').slice(0, 48),
-    } satisfies OntsleuteldSignaalBinnenwerk),
-    'utf8',
-  );
-  if (jsonBytes.length > VASTE_SIGNAAL_KLARE_LENGTE - 2) {
-    throw new Error('SIGNAAL_BINNENWERK_TE_LANG');
+    jsonBytes = Buffer.from(
+      canoniekeJson({
+        soort: opties.soort,
+        persoonsPsid: opties.persoonsPsid,
+        verzondenOp: opties.nuIso ?? new Date().toISOString(),
+        toelichtingCode: (opties.toelichtingCode ?? 'OK').slice(0, 48),
+      } satisfies OntsleuteldSignaalBinnenwerk),
+      'utf8',
+    );
+    if (jsonBytes.length > VASTE_SIGNAAL_KLARE_LENGTE - 2) {
+      throw new Error('SIGNAAL_BINNENWERK_TE_LANG');
+    }
+
+    // Записуємо 2-байтну довжину JSON + вміст + випадкове заповнення до рівно 256 байт:
+    vlakBlok = randomBytes(VASTE_SIGNAAL_KLARE_LENGTE);
+    vlakBlok.writeUInt16BE(jsonBytes.length, 0);
+    jsonBytes.copy(vlakBlok, 2);
+
+    const iv = randomBytes(12);
+    const aad = Buffer.from(`${SIGNAAL_AAD_PREFIX}${opties.ontvangerVoogdId}|${pakketId}`, 'utf8');
+    const cipher = createCipheriv('chacha20-poly1305', sleutel32, iv, { authTagLength: 16 });
+    cipher.setAAD(aad, { plaintextLength: vlakBlok.length });
+    const ct = Buffer.concat([cipher.update(vlakBlok), cipher.final()]);
+    const tag = cipher.getAuthTag();
+
+    return {
+      schema: 1,
+      pakketId,
+      ontvangerVoogdId: opties.ontvangerVoogdId,
+      efemeerX25519PubDerB64u: efemeerPubDer.toString('base64url'),
+      ivB64u: iv.toString('base64url'),
+      cijfertekstB64u: ct.toString('base64url'),
+      authTagB64u: tag.toString('base64url'),
+    };
+  } finally {
+    gedeeldGeheim?.fill(0);
+    sleutel32?.fill(0);
+    jsonBytes?.fill(0);
+    vlakBlok?.fill(0);
   }
-
-  // Записуємо 2-байтну довжину JSON + вміст + випадкове заповнення до рівно 256 байт:
-  const vlakBlok = randomBytes(VASTE_SIGNAAL_KLARE_LENGTE);
-  vlakBlok.writeUInt16BE(jsonBytes.length, 0);
-  jsonBytes.copy(vlakBlok, 2);
-
-  const iv = randomBytes(12);
-  const aad = Buffer.from(`${SIGNAAL_AAD_PREFIX}${opties.ontvangerVoogdId}|${pakketId}`, 'utf8');
-  const cipher = createCipheriv('chacha20-poly1305', sleutel32, iv, { authTagLength: 16 });
-  cipher.setAAD(aad, { plaintextLength: vlakBlok.length });
-  const ct = Buffer.concat([cipher.update(vlakBlok), cipher.final()]);
-  const tag = cipher.getAuthTag();
-
-  return {
-    schema: 1,
-    pakketId,
-    ontvangerVoogdId: opties.ontvangerVoogdId,
-    efemeerX25519PubDerB64u: efemeerPubDer.toString('base64url'),
-    ivB64u: iv.toString('base64url'),
-    cijfertekstB64u: ct.toString('base64url'),
-    authTagB64u: tag.toString('base64url'),
-  };
 }
 
 /** Розшифровує пакет пульсу або тихої тривоги виключно приватним ключем X25519 призначеної довіреної особи. */
@@ -383,6 +433,9 @@ export function openNoodSignaalDoorVertrouwenspersoon(opties: {
   pakket: OnopvallendSignaalPakket;
   voogdX25519GeheimPkcs8B64u: string;
 }): { ok: true; inhoud: OntsleuteldSignaalBinnenwerk } | { ok: false; fout: string } {
+  let gedeeldGeheim: Buffer | null = null;
+  let sleutel32: Buffer | null = null;
+  let vlakBlok: Buffer | null = null;
   try {
     const ct = Buffer.from(opties.pakket.cijfertekstB64u, 'base64url');
     if (ct.length !== VASTE_SIGNAAL_KLARE_LENGTE) {
@@ -396,16 +449,16 @@ export function openNoodSignaalDoorVertrouwenspersoon(opties: {
     const efemeerPubDer = Buffer.from(opties.pakket.efemeerX25519PubDerB64u, 'base64url');
     const efemeerPub = createPublicKey({ key: efemeerPubDer, format: 'der', type: 'spki' });
 
-    const gedeeldGeheim = diffieHellman({ privateKey: voogdPriv, publicKey: efemeerPub });
+    gedeeldGeheim = diffieHellman({ privateKey: voogdPriv, publicKey: efemeerPub });
     const aad = Buffer.from(`${SIGNAAL_AAD_PREFIX}${opties.pakket.ontvangerVoogdId}|${opties.pakket.pakketId}`, 'utf8');
-    const sleutel32 = Buffer.from(hkdfSync('sha256', gedeeldGeheim, efemeerPubDer, aad, 32));
+    sleutel32 = Buffer.from(hkdfSync('sha256', gedeeldGeheim, efemeerPubDer, aad, 32));
 
     const decipher = createDecipheriv('chacha20-poly1305', sleutel32, Buffer.from(opties.pakket.ivB64u, 'base64url'), {
       authTagLength: 16,
     });
     decipher.setAAD(aad, { plaintextLength: ct.length });
     decipher.setAuthTag(Buffer.from(opties.pakket.authTagB64u, 'base64url'));
-    const vlakBlok = Buffer.concat([decipher.update(ct), decipher.final()]);
+    vlakBlok = Buffer.concat([decipher.update(ct), decipher.final()]);
     const jsonLengte = vlakBlok.readUInt16BE(0);
     if (jsonLengte <= 0 || jsonLengte > VASTE_SIGNAAL_KLARE_LENGTE - 2) {
       return { ok: false, fout: 'SIGNAAL_LENGTEVELD_ONGELDIG' };
@@ -414,6 +467,10 @@ export function openNoodSignaalDoorVertrouwenspersoon(opties: {
     return { ok: true, inhoud };
   } catch {
     return { ok: false, fout: 'SIGNAAL_ONTSLEUTELING_GEWEIGERD' };
+  } finally {
+    gedeeldGeheim?.fill(0);
+    sleutel32?.fill(0);
+    vlakBlok?.fill(0);
   }
 }
 
@@ -678,7 +735,12 @@ export function verifieerUitgesteldeKritiekeOperatie(
   if (!op || op.schema !== 1 || !op.operatieId) {
     return { ok: false, fout: 'UITGESTELDE_OPERATIE_ONGELDIG' };
   }
-  if (Date.parse(op.uitvoerbaarVanaf) - Date.parse(op.aangevraagdOp) < 24 * 3600 * 1000) {
+  const tAanvraag = Date.parse(op.aangevraagdOp);
+  const tVanaf = Date.parse(op.uitvoerbaarVanaf);
+  if (!Number.isFinite(tAanvraag) || !Number.isFinite(tVanaf)) {
+    return { ok: false, fout: 'UITGESTELDE_OPERATIE_TIJD_ONGELDIG' };
+  }
+  if (tVanaf - tAanvraag < 24 * 3600 * 1000) {
     return { ok: false, fout: 'UITGESTELDE_OPERATIE_TIJDSLOT_TE_KORT' };
   }
   const { handtekeningB64u, ...kern } = op;
@@ -724,9 +786,11 @@ export function beoordeelUitvoeringUitgesteldeOperatie(opties: {
   if (!vOp.ok) return { magUitvoeren: false, fout: vOp.fout };
 
   if (opties.annulering) {
+    const tGeannuleerd = Date.parse(opties.annulering.geannuleerdOp);
     const { handtekeningB64u, ...kern } = opties.annulering;
     const geldig =
-      opties.annulering.operatieId === opties.operatie.operatieId
+      Number.isFinite(tGeannuleerd)
+      && opties.annulering.operatieId === opties.operatie.operatieId
       && opties.toegestaneAnnuleerPubSleutels.has(opties.annulering.ondertekenaarPubDerB64u)
       && verifieerEd25519(
         opties.annulering.ondertekenaarPubDerB64u,
@@ -742,7 +806,12 @@ export function beoordeelUitvoeringUitgesteldeOperatie(opties: {
     return { magUitvoeren: false, fout: 'KRITIEKE_OPERATIE_GEBLOKKEERD_WEGENS_DWANGBESCHERMING' };
   }
 
-  if (Date.parse(opties.nuIso) < Date.parse(opties.operatie.uitvoerbaarVanaf)) {
+  const tNu = Date.parse(opties.nuIso);
+  const tVanaf = Date.parse(opties.operatie.uitvoerbaarVanaf);
+  if (!Number.isFinite(tNu) || !Number.isFinite(tVanaf)) {
+    return { magUitvoeren: false, fout: 'UITGESTELDE_OPERATIE_TIJD_ONGELDIG' };
+  }
+  if (tNu < tVanaf) {
     return { magUitvoeren: false, fout: 'KRITIEKE_OPERATIE_IN_WACHTTIJD' };
   }
 

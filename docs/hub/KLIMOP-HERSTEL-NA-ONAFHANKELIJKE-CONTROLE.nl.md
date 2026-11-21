@@ -2,7 +2,7 @@
 
 # Klimop — herstel na de onafhankelijke controle (`KLIMOP-018`–`KLIMOP-021`)
 
-> **Status:** de eerste golf (`KLIMOP-018`), de tweede golf (`KLIMOP-019`) en de derde golf (`KLIMOP-020`) zijn voltooid en wachten op het samenvoegbesluit van de eigenaar; golf 4 (`KLIMOP-021`) is in uitvoering.
+> **Status:** alle vier de herstelgolven — de eerste (`KLIMOP-018`, verzoek nr. 200), de tweede (`KLIMOP-019`, verzoek nr. 201), de derde (`KLIMOP-020`, verzoek nr. 202) en de vierde (`KLIMOP-021`, verzoek nr. 203) — zijn volledig uitgevoerd, met proeven getoetst en wachten op het samenvoegbesluit van de eigenaar. Alle **55 van de 55** bevindingen uit de onafhankelijke controle `AUDIT-002` (20 hoog, 24 middel, 11 laag) zijn verholpen.
 > **Bevoegdheidsgrens:** de productieomgeving, de draaiende databank `PostgreSQL 18.6` en de takken `voornaamst`, `integratie`, `release/*` worden niet gewijzigd. Tests met kunstmatige gegevens gelden niet als aanvaarding van de productieomgeving.
 
 ---
@@ -13,9 +13,9 @@
 |---|---|---|
 | Opdrachtgever en eigenaar | Tarasevych Pavlo | Gaf opdracht voor Fasen 0–16, de onafhankelijke controle en het herstel |
 | Uitvoerder Fasen 0–16 (`KLIMOP-001`–`KLIMOP-017`, samenvoegingsverzoeken nr. 183–199) | Gemini 4 Carbon (High), Google Antigravity | Programmacode, tests, artikelen Fasen 0–16 |
-| Onafhankelijke controle (`AUDIT-002`) | GPT-6.2 Astra (Ultra) | Controle op vastlegging `06312df6`: kritiek 0, hoog 20, middel 24, laag 11 |
-| Herstel van golven 1–2 (`KLIMOP-018`, `KLIMOP-019`) en begin van golf 3 (`KLIMOP-020`, vastlegging `add014c5`) | Claude Opus 5.5 (High), Google Antigravity | Samenvoegingsverzoeken nr. 200, nr. 201 en eerste helft van de vertrouwensgrenzen tot het verstrijken van de limiet van vijf uur |
-| Afronding van golf 3 (`KLIMOP-020`) vanaf het stoppunt en uitvoering van golf 4 (`KLIMOP-021`) | Gemini 4 Carbon (High), Google Antigravity | Voortzetting na het verstrijken van de limiet zonder verlies van tussenwerk (zie [Werkoverdracht KLIMOP-020](KLIMOP-020-WERKOVERDRACHT.nl.md)) |
+| Onafhankelijke controle (`AUDIT-002`) | GPT-6.2 Astra (Ultra) *(platform niet nader opgegeven door de eigenaar)* | Controle op vastlegging `06312df6`: kritiek 0, hoog 20, middel 24, laag 11 |
+| Herstel van golven 1–2 (`KLIMOP-018`, `KLIMOP-019`) en begin van golf 3 (`KLIMOP-020`, vastlegging `add014c5`) | Claude Opus 5.5 (High), Google Antigravity | Samenvoegingsverzoeken nr. 200, nr. 201 en eerste helft van de vertrouwensgrenzen tot het verstrijken van de platformlimiet van vijf uur |
+| Afronding van golf 3 (`KLIMOP-020`, verzoek nr. 202) vanaf het stoppunt en volledige uitvoering van golf 4 (`KLIMOP-021`, verzoek nr. 203) | Gemini 4 Carbon (High), Google Antigravity | Voortzetting na het verstrijken van de limiet zonder verlies van tussenwerk (zie [Werkoverdracht KLIMOP-020](KLIMOP-020-WERKOVERDRACHT.nl.md)) en afhandeling van alle overige bevindingen |
 
 De oorspronkelijke registraties `KLIMOP-001`–`KLIMOP-017` noemden ten onrechte het model «Gemini 3.1 Pro». Registraties worden niet bewerkt; daarom zijn 17 registraties van de soort `correctie` met het nieuwe veld `corrigeert` toegevoegd: de updatepagina en het uitgavepakket tonen Gemini 4 Carbon (High), en de oorspronkelijke registratie blijft zichtbaar als «was».
 
@@ -66,16 +66,38 @@ Eerlijke beperkingen van deze golf:
 - de vereenvoudigde groepsversleuteling implementeert geen volledige binaire boom `TreeKEM` uit `RFC 9420`;
 - zelfverklaarde knooppuntpaspoorten zonder extern register van bevestigde exploitanten worden gemarkeerd als `zelfverklaarde_paspoorten`, en een quorum in één proces als `lokale_simulatie`.
 
-## 5. Zo controleert u het
+## 5. Golf 4 — `KLIMOP-021`: transactionele overdrachtsstaat Stappen 1–4, geïsoleerde MCP-zandbak, paneeltoegankelijkheid, herleidbare metingen en tweetalige pariteit
 
-```
+| Gebrek uit het verslag | Wat is gedaan | Bewijs |
+|---|---|---|
+| Racecondities en ontbrekende transacties in de overdrachtsbestanden, lineair $O(N)$ herlezen van `.jsonl`, kwetsbaarheid van het Stap-4-attest na latere fouten en ontbrekende binding aan een actueel dienstbewijs | In `backend/klimop-overdracht-opslag.ts` zijn een procesoverstijgend slot `overdracht.lock`, een voorafgaand transactielogboek `overdracht-wal.json` met idempotent herstel `herstelOnderbrokenOverdrachtTransactie`, ondertekende controlepunten `*.checkpoint.json` in $O(1)$ en staartlezing voor grote `.jsonl` toegevoegd; `bevestig_quorum_gereedheid` is gebonden aan `bewijsVersie` van de dienst, een geldigheid van 24 uur en afwezigheid van recentere fouten (`KLIMOP_QUORUM_ATTEST_VEROUDERD_OF_ONGELDIG`), terwijl een geldig attest gescheiden blijft van latere afwijkingsregels | Tests `klimop-014`..`017` en `klimop-021` |
+| `MCP`-hulpmiddelen muteerden de gedeelde eigenaarsstaat bij agentproeven, overzichtsoproepen werden niet gelogd en foutmeldingen onthulden het absolute serverpad | In `backend/klimop-hulpmiddelen.ts` draait elke agentoproep in een tijdelijke geïsoleerde zandbak `metGeisoleerdeMcpProefMap` met een expliciet veld `controleUitkomst`; `backend/klimop-paden.ts` en `backend/index.ts` leggen overzichtslezingen, `401`/`403`/`429`-weigeringen en fouten met de echte sessiedienst (`admin` / `mcp`) vast in `app.audit`; het absolute pad `wortel` is verwijderd | Tests `klimop-014` en `klimop-021` |
+| Onduidelijke statusregels in `KlimopPaneel.tsx` bij 0 logregels, stilzwijgend invullen van 15 positieve antwoorden bij een leeg formulier, hulppictogrammen binnen `<label>`, ontbrekende live statusregio en afkappen van knoppen op `360px` | Eerlijke status `lege logboeken (0 regels) · basis onaangetast` en afzonderlijke uitkomst per dienst met volgnummerbewaking `laadVolgnummerRef`; vaste `id`/`htmlFor` zonder geneste knoppen, specifieke `label=` op elke `<HulpVraag>`, live statusregio `role='status'` + `aria-live='polite'`, fasekeuze `0..16`, volledige lijst van 15 vragen en geen standaardantwoorden bij een leeg bewijsveld (`0/15`); tekstterugloop op `[data-klimop-paneel] .ag-knop` | `npm run build`, `hulp-vraagtekens-controle.mjs`, `zoek-ui-catalogus --controle`, `klimop-021` |
+| Postkwantumprofiel stond rang 20 zonder `ML-DSA-65`-sleutels toe, open `klareInhoudSha256` en `klareLengteBytes` in het objectmanifest, gedeeltelijke wissing gaf `ok: true`, onbegrensde kaderset in «Stengels» en ontbrekende annulering van FROST-ronde 1 | In `opslag.ts` eist rang 20 een echte hybride handtekening `Ed25519 + ML-DSA-65`, zijn lengte en afdruk versleuteld onder `DEK` in `versleuteldeEigenaarMeta` en segmenten opgevuld tot 256 bytes; `wisObjectVanKnooppunten` verifieert het manifest en telt gewiste, reeds afwezige en onbereikbare strepen apart; `stengels.ts` heeft een schuifvenster `2048`, sleutelwisselgrens `65_536`, sessieverloop en wissen in `finally`; `frost_annuleer_ronde1` + TTL en KEM-sleutelpaartoetsing in `beveiligingsaudit.ts` toegevoegd | Tests `klimop-003`..`005`, `klimop-012`, `klimop-021` |
+| Vaste getallen in de proefopstellingen Fasen 11–12, uitrol en «Zaden» louter in het geheugen, teller van 25 documenten alleen als getal `25`, afwijkende subdomeinkaart in `diensten.ts` ten opzichte van `SERVICE_HOSTS` en achterblijvende woorden bij herindexering | Fasen 11 en 12 meten daadwerkelijk met `performance.now()` inclusief herkomstmetadata (`waardeSoort`, `eenheid`, `bronSha256`); het knooppunt schrijft en draait uitgaven fysiek terug op zijn tijdelijke schijf met `SHA-256`-controle, en `herbouwEcosysteemUitZaadOpSchoonMilieu` pakt de modules uit naar een schone map; `controleerVijfentwintigVerplichteDocumenten` controleert inhoudelijk alle 25 tweetalige paren van §44; `SERVICE_HOSTS`, opruiming van oude zoektermen en duplicaatdetectie zijn afgestemd | Proefopstellingen Fasen 10–12, tests `klimop-009`, `klimop-012`, `klimop-013`, `klimop-021` |
+| Tweetalige afwijkingen in artikelen Fasen 1, 2, 6, 11, verouderde ankers en `deployment-identity.ts` in de hoofdoverzichten, financiële bedragen in samenvoegingsverzoeken nr. 193–196 en besluit `B-025` (`1.6.0`) | Tabel §3 van Fase 1 afgestemd op de oorspronkelijke nummers 1–25 van §44; artikelen Fasen 2, 6 (`onomkeerbareHerstelProcedureId`) en 11 gesynchroniseerd; ankers en `backend/deployment-identiteit.ts` hersteld in `README.md`, `LEESMIJ.md`, `ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md` en `INDEX.nl.md`; samenvoegingsverzoeken nr. 193–196 opgeschoond en besluit `B-025` (`regelsVersie` `1.6.0`) vastgelegd | `orch controleer`, `klimop-001`, `klimop-021` |
+
+Eerlijke beperkingen na voltooiing van alle vier de golven:
+
+- alle proeven draaien in de ontwikkelomgeving (`Node.js 24`) op lokale geïsoleerde knooppunten `127.0.0.1` zonder aanspreken van de actieve `PostgreSQL 18.6` of de productieserver (`Node.js 26.13.0 LTS`), en vervangen geen aanvaardingsproeven op fysiek gescheiden machines in meerdere rechtsgebieden;
+- in `V8` zijn `BigInt`-getallen en `JavaScript`-tekenreeksen onveranderlijk op de beheerde heap: `Buffer`/`Uint8Array`-geheugen wordt wel met nullen overschreven, maar volledige hardwarematige wissing van scalairen vereist een systeembibliotheek of hardwarebeveiligingsmodule;
+- kritieke beleidsregels in `orchestratie/regels.lock.json` blijven als voorstel gemarkeerd tot persoonlijke cryptografische bevestiging door de eigenaar.
+
+## 6. Zo controleert u alle vier de golven
+
+```bash
+node scripts/orch.mjs controleer
 node scripts/klant-servergrens-controle.mjs
 node scripts/zoek-ui-catalogus.mjs --controle
+node scripts/hulp-vraagtekens-controle.mjs
 node scripts/vaardigheden/valideer.mjs
 node scripts/eenheidstests.mjs klimop-018
 node scripts/eenheidstests.mjs klimop-019
 node scripts/eenheidstests.mjs klimop-020
+node scripts/eenheidstests.mjs klimop-021
 node scripts/klimop-etappe4-frost-proef.mjs
+node scripts/klimop-etappe11-beveiligingsaudit-proef.mjs
 node scripts/klimop-etappe12-zaden-proef.mjs
 npm run build
 ```
+

@@ -57,9 +57,9 @@ Het manifest verbiedt uitdrukkelijk om geheimdeling voor korte sleutels te verwa
 
 De klasse [`KlimopVerdeeldeOpslagClient`](../../backend/klimop-opslag-client.ts) werkt boven op de beveiligde «Stengels»-verbindingen uit Fase 2 en borgt:
 1. **Onafhankelijkheidstoets vóór opslag:** bij schending van jurisdictie- of aanbiedersspreiding (`controleerKnooppuntOnafhankelijkheid(doelKnooppunten, k)`) wordt opslag geweigerd met `ONAFHANKELIJKHEID_NIET_VOLDAAN`.
-2. **Volledige integriteitsketen:** verificatie van `SHA-256` per fragment op knoop én client, `Ed25519`-handtekening van het objectmanifest, AEAD-authenticatietag per segment en eindhash `klareInhoudSha256`.
+2. **Volledige integriteitsketen zonder metadatalek:** verificatie van `SHA-256` per versleuteld fragment op knoop én client, handtekening van het objectmanifest, AEAD-authenticatietag per segment en de onder `DEK` van de eigenaar versleutelde exacte lengte en eindhash `klareInhoudSha256` in `versleuteldeEigenaarMeta` (onzichtbaar voor herstelknopen).
 3. **Sleutelloze herbouw van verloren fragmenten (`herbouwVerlorenKnooppuntZonderSleutel`):** bij uitval van een opslagknoop wordt diens ontbrekende streep uitsluitend uit $k$ overlevende versleutelde fragmenten herbouwd en naar een nieuwe onafhankelijke knoop geschreven **zonder toegang tot `KEK` of `DEK` van de eigenaar**.
-4. **Wettige verwijdering en beëindiging van opslag (`wis_blok`):** met een geldig mandaat van de gegevenseigenaar overschrijft de knoop het blok in het geheugen met nullen (`bestaand.fill(0)`) en verwijdert het fragment definitief.
+4. **Wettige verwijdering en beëindiging van opslag (`wis_blok`):** na voorafgaande controle van de manifesthandtekening en het mandaat van de gegevenseigenaar overschrijft de knoop het blok in het geheugen met nullen (`bestaand.fill(0)`), verwijdert het fragment definitief en telt de client gewiste, reeds afwezige en onbereikbare blokken afzonderlijk.
 
 ---
 
@@ -67,7 +67,7 @@ De klasse [`KlimopVerdeeldeOpslagClient`](../../backend/klimop-opslag-client.ts)
 
 Conform §13 van het manifest is de architectuur niet vastgeklonken aan één onveranderlijk algoritme:
 - Elke sleutelomslag (`KlimopDekOmslag`), elk objectmanifest (`KlimopObjectManifest`) en elk overgangsveld (`klm1.<epoche>.<profiel>…`) draagt expliciete velden `schema`, `epoche` en `profiel` (`klimop-v1-chacha20-poly1305`, `klimop-v1-aes-256-gcm`, `klimop-v2-pq-voorbereid`).
-- `onderhandelKlimopProfiel` kiest het sterkste gemeenschappelijke profiel en blokkeert elke poging tot afzwakking onder het vereiste beveiligingsniveau (`VERBODEN_AFZWAKKING_VAN_VERSLEUTELING`).
+- `onderhandelKlimopProfiel` kiest het sterkste gemeenschappelijke profiel en blokkeert elke poging tot afzwakking onder het vereiste beveiligingsniveau (`VERBODEN_AFZWAKKING_VAN_VERSLEUTELING`); daarbij krijgt `klimop-v2-pq-voorbereid` pas het effectieve niveau `20` wanneer echte postkwantumsleutels (`ML-DSA-65`) aantoonbaar aanwezig zijn (anders geldt het klassieke niveau `10`).
 - Epochewisseling (`epoche + 1`) leidt nieuwe sleutels af terwijl eerdere archieven leesbaar blijven via de vastgelegde epoche in hun manifest.
 
 ---

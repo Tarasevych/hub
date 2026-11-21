@@ -36,6 +36,7 @@ export type KlimopPadenDeps = {
     action: string,
     result: 'success' | 'denied' | 'failure',
     details: Record<string, unknown>,
+    service?: string,
   ) => Promise<void>;
   staatMap?: string;
 };
@@ -46,32 +47,75 @@ const CONTROLES_PER_MINUUT = 60;
 const SCHAKEL_PER_MINUUT = 30;
 
 export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddleware[]> {
-  const audit = (
+  const audit = async (
     e: Eigenaar,
     action: string,
     result: 'success' | 'denied' | 'failure',
     details: Record<string, unknown>,
-  ) => (deps.audit ? deps.audit(e, action, result, details).catch(() => undefined) : Promise.resolve());
+    service?: string,
+  ): Promise<void> => {
+    if (!deps.audit) return;
+    const dienstNaam = service === 'admin' || service === 'mcp' ? service : 'mcp';
+    try {
+      await deps.audit(e, action, result, { service: dienstNaam, ...details }, dienstNaam);
+    } catch (err) {
+      console.error('[klimop-audit]', (err as Error)?.message ?? 'AUDIT_SCHRIJFFOUT');
+    }
+  };
 
-  const limiet = async (e: Eigenaar, wat: string, max: number) => {
+  const limiet = async (e: Eigenaar, wat: string, max: number, routeActie: string, service: string) => {
     if (deps.rateLimit && !(await deps.rateLimit(`klimop-${wat}:${e.id}`, max, 60)).ok) {
+      await audit(e, routeActie, 'denied', { reden: 'RATE_LIMITED', limietGroep: wat }, service);
       throw new KlimopFout('RATE_LIMITED', 429);
     }
   };
 
-  const eigenaar = (run: (ctx: Ctx, e: Eigenaar) => Promise<unknown>) =>
+  const eigenaar = (routeActie: string, run: (ctx: Ctx, e: Eigenaar, service: string) => Promise<unknown>) =>
     (async (raw) => {
       const ctx = raw as unknown as Ctx;
       const auth = await deps.requireSession(ctx.event, ctx.body);
-      if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
-      if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('ADMIN_SERVICE_REQUIRED', 403);
-      if (!(auth.user.role === 'owner' && deps.isOwnerEmail(auth.user.email))) return error('OWNER_REQUIRED', 403);
+      if ('errorCode' in auth) {
+        const status = auth.errorCode.includes('FORBIDDEN') ? 403 : 401;
+        await audit({ id: 'onbekend' }, routeActie, 'denied', { reden: auth.errorCode, status }, 'mcp');
+        return error(auth.errorCode, status);
+      }
+      if (!(DIENSTEN as readonly string[]).includes(auth.service)) {
+        await audit(
+          { id: auth.user.id, email: auth.user.email },
+          routeActie,
+          'denied',
+          { reden: 'ADMIN_SERVICE_REQUIRED', aangevraagdeDienst: auth.service },
+          'mcp',
+        );
+        return error('ADMIN_SERVICE_REQUIRED', 403);
+      }
+      if (!(auth.user.role === 'owner' && deps.isOwnerEmail(auth.user.email))) {
+        await audit(
+          { id: auth.user.id, email: auth.user.email },
+          routeActie,
+          'denied',
+          { reden: 'OWNER_REQUIRED', rol: auth.user.role ?? 'onbekend' },
+          auth.service,
+        );
+        return error('OWNER_REQUIRED', 403);
+      }
+      const eigenaarGegevens: Eigenaar = { id: auth.user.id, email: auth.user.email };
       try {
-        return json(await run(ctx, { id: auth.user.id, email: auth.user.email }));
+        return json(await run(ctx, eigenaarGegevens, auth.service));
       } catch (err) {
         if (err instanceof KlimopFout) {
+          if (err.code !== 'RATE_LIMITED') {
+            await audit(
+              eigenaarGegevens,
+              routeActie,
+              err.status === 403 || err.status === 409 ? 'denied' : 'failure',
+              { reden: err.code, status: err.status },
+              auth.service,
+            );
+          }
           return json({ error: err.code, code: err.code, detail: err.detail }, err.status);
         }
+        await audit(eigenaarGegevens, routeActie, 'failure', { reden: 'KLIMOP_FOUT' }, auth.service);
         console.error('[klimop]', (err as Error).message);
         return error('KLIMOP_FOUT', 500);
       }
@@ -79,129 +123,180 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
 
   return {
     [`POST ${KLIMOP_PADEN.overzicht}`]: [
-      eigenaar(async (_ctx, e) => {
-        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
-        return klimopOverzichtA(undefined, deps.staatMap);
+      eigenaar('klimop_overzicht', async (_ctx, e, service) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT, 'klimop_overzicht', service);
+        const r = await klimopOverzichtA(undefined, deps.staatMap);
+        await audit(e, 'klimop_overzicht', 'success', { aanwezig: r.bron.aanwezig }, service);
+        return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.architectuurToets}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'toets', CONTROLES_PER_MINUUT);
+      eigenaar('klimop_architectuur_toets', async (ctx, e, service) => {
+        await limiet(e, 'toets', CONTROLES_PER_MINUUT, 'klimop_architectuur_toets', service);
         const r = klimopArchitectuurToets(ctx.body);
-        await audit(e, 'klimop_architectuur_toets', r.goedgekeurd ? 'success' : 'denied', {
-          naam: r.naam,
-          fase: r.fase,
-          goedgekeurd: r.goedgekeurd,
-          foutenAantal: r.fouten.length,
-        });
+        await audit(
+          e,
+          'klimop_architectuur_toets',
+          r.goedgekeurd ? 'success' : 'denied',
+          {
+            naam: r.naam,
+            fase: r.fase,
+            goedgekeurd: r.goedgekeurd,
+            foutenAantal: r.fouten.length,
+          },
+          service,
+        );
         return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.spiegelControle}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'spiegel', CONTROLES_PER_MINUUT);
+      eigenaar('klimop_spiegel_controle', async (ctx, e, service) => {
+        await limiet(e, 'spiegel', CONTROLES_PER_MINUUT, 'klimop_spiegel_controle', service);
         const r = klimopSpiegelControle(ctx.body);
-        await audit(e, 'klimop_spiegel_controle', r.ok ? 'success' : 'failure', {
-          dienstId: r.dienstId,
-          ok: r.ok,
-          afwijkingen: r.pariteit.afwijkingen,
-        });
+        await audit(
+          e,
+          'klimop_spiegel_controle',
+          r.ok ? 'success' : 'failure',
+          {
+            dienstId: r.dienstId,
+            ok: r.ok,
+            afwijkingen: r.pariteit.afwijkingen,
+          },
+          service,
+        );
         return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.passieveSpiegel}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'passief', CONTROLES_PER_MINUUT);
+      eigenaar('klimop_passieve_spiegel', async (ctx, e, service) => {
+        await limiet(e, 'passief', CONTROLES_PER_MINUUT, 'klimop_passieve_spiegel', service);
         const r = voerPassieveSpiegelLeesProefUit(ctx.body, { staatMap: deps.staatMap });
-        await audit(e, 'klimop_passieve_spiegel', r.ok ? 'success' : 'failure', {
-          dienstId: r.dienstId,
-          ok: r.ok,
-          steekproefGrootte: r.steekproefGrootte,
-          afwijkingen: r.pariteit.afwijkingen,
-          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
-        });
+        await audit(
+          e,
+          'klimop_passieve_spiegel',
+          r.ok ? 'success' : 'failure',
+          {
+            dienstId: r.dienstId,
+            ok: r.ok,
+            operatieId: r.logboekRegel.regelId,
+            steekproefGrootte: r.steekproefGrootte,
+            afwijkingen: r.pariteit.afwijkingen,
+            automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+          },
+          service,
+        );
         return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.spiegelLogboek}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+      eigenaar('klimop_spiegel_logboek', async (ctx, e, service) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT, 'klimop_spiegel_logboek', service);
         const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
           ? (ctx.body as Record<string, unknown>)
           : {};
-        return leesKlimopSpiegelLogboek({
+        const dienstId = typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined;
+        const r = leesKlimopSpiegelLogboek({
           staatMap: deps.staatMap,
           limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
-          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+          dienstId,
         });
+        await audit(e, 'klimop_spiegel_logboek', 'success', { dienstId: dienstId ?? 'alle', ketenOk: r.ketenIntegriteit.ok }, service);
+        return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.dubbelSchrijven}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'dubbel', CONTROLES_PER_MINUUT);
+      eigenaar('klimop_dubbel_schrijven', async (ctx, e, service) => {
+        await limiet(e, 'dubbel', CONTROLES_PER_MINUUT, 'klimop_dubbel_schrijven', service);
         const r = voerGecontroleerdeDubbelSchrijfProefUit(ctx.body, { staatMap: deps.staatMap });
-        await audit(e, 'klimop_dubbel_schrijven', r.ok ? 'success' : 'failure', {
-          dienstId: r.dienstId,
-          ok: r.ok,
-          operatiesAantal: r.operaties.totaal,
-          afwijkingen: r.pariteit.afwijkingen,
-          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
-        });
+        await audit(
+          e,
+          'klimop_dubbel_schrijven',
+          r.ok ? 'success' : 'failure',
+          {
+            dienstId: r.dienstId,
+            ok: r.ok,
+            operatieId: r.kwitantieRegel.kwitantieId,
+            operatiesAantal: r.operaties.totaal,
+            afwijkingen: r.pariteit.afwijkingen,
+            automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+          },
+          service,
+        );
         return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.dubbelLogboek}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+      eigenaar('klimop_dubbel_logboek', async (ctx, e, service) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT, 'klimop_dubbel_logboek', service);
         const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
           ? (ctx.body as Record<string, unknown>)
           : {};
-        return leesKlimopDubbelSchrijvenLogboek({
+        const dienstId = typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined;
+        const r = leesKlimopDubbelSchrijvenLogboek({
           staatMap: deps.staatMap,
           limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
-          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+          dienstId,
         });
+        await audit(e, 'klimop_dubbel_logboek', 'success', { dienstId: dienstId ?? 'alle', ketenOk: r.ketenIntegriteit.ok }, service);
+        return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.quorumAttest}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'attest', CONTROLES_PER_MINUUT);
+      eigenaar('klimop_quorum_attest', async (ctx, e, service) => {
+        await limiet(e, 'attest', CONTROLES_PER_MINUUT, 'klimop_quorum_attest', service);
         const r = voerStap4QuorumAttestProefUit(ctx.body, { staatMap: deps.staatMap });
-        await audit(e, 'klimop_quorum_attest', r.ok ? 'success' : 'failure', {
-          dienstId: r.dienstId,
-          ok: r.ok,
-          frostOk: r.drempelZegel.frostVerificatieOk,
-          hybrideOk: r.drempelZegel.hybrideVerificatieOk,
-          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
-        });
+        await audit(
+          e,
+          'klimop_quorum_attest',
+          r.ok ? 'success' : 'failure',
+          {
+            dienstId: r.dienstId,
+            ok: r.ok,
+            operatieId: r.attestRegel.attestId,
+            frostOk: r.drempelZegel.frostVerificatieOk,
+            hybrideOk: r.drempelZegel.hybrideVerificatieOk,
+            automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+          },
+          service,
+        );
         return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.quorumLogboek}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+      eigenaar('klimop_quorum_logboek', async (ctx, e, service) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT, 'klimop_quorum_logboek', service);
         const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
           ? (ctx.body as Record<string, unknown>)
           : {};
-        return leesKlimopQuorumAttestLogboek({
+        const dienstId = typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined;
+        const r = leesKlimopQuorumAttestLogboek({
           staatMap: deps.staatMap,
           limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
-          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+          dienstId,
         });
+        await audit(e, 'klimop_quorum_logboek', 'success', { dienstId: dienstId ?? 'alle', ketenOk: r.ketenIntegriteit.ok }, service);
+        return r;
       }),
     ],
     [`POST ${KLIMOP_PADEN.overdrachtSchakelaar}`]: [
-      eigenaar(async (ctx, e) => {
-        await limiet(e, 'schakel', SCHAKEL_PER_MINUUT);
+      eigenaar('klimop_overdracht_schakelaar', async (ctx, e, service) => {
+        await limiet(e, 'schakel', SCHAKEL_PER_MINUUT, 'klimop_overdracht_schakelaar', service);
         const r = schakelKlimopDienstOverdracht(ctx.body, { staatMap: deps.staatMap });
-        await audit(e, 'klimop_overdracht_schakelaar', 'success', {
-          actie: r.actie,
-          dienstId: r.dienstId,
-          omgeschakeldeDienstenAantal: r.omgeschakeldeDienstenAantal,
-          actievePassiefLezenDiensten: r.actievePassiefLezenDiensten,
-          actieveDubbelSchrijvenDiensten: r.actieveDubbelSchrijvenDiensten,
-          actieveQuorumGereedDiensten: r.actieveQuorumGereedDiensten,
-        });
+        await audit(
+          e,
+          'klimop_overdracht_schakelaar',
+          'success',
+          {
+            actie: r.actie,
+            dienstId: r.dienstId,
+            operatieId: r.logboekRegel.regelId,
+            omgeschakeldeDienstenAantal: r.omgeschakeldeDienstenAantal,
+            actievePassiefLezenDiensten: r.actievePassiefLezenDiensten,
+            actieveDubbelSchrijvenDiensten: r.actieveDubbelSchrijvenDiensten,
+            actieveQuorumGereedDiensten: r.actieveQuorumGereedDiensten,
+          },
+          service,
+        );
         return r;
       }),
     ],

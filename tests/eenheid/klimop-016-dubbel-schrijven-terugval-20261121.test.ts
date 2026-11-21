@@ -564,7 +564,7 @@ export async function main(): Promise<number> {
 
   const oordeelEtappe15 = beoordeelKlimopWijziging({
     naam: 'KLIMOP-016 Етап 15: Сходинка 3 контрольованого подвійного записування, звірки читання та миттєвого повернення',
-    fase: 12,
+    fase: 15,
     raaktProductieDirectZonderGoedkeuring: false,
     antwoorden15: geldigeAntwoorden15,
     aanwezigeVerbodenVereenvoudigingen: [],

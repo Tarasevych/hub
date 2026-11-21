@@ -10,8 +10,11 @@
 //   - негайний карантин скомпрометованих вузлів та відкликаних мандатів.
 
 import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   verifieerKlimopMandaat,
   type KlimopKnooppuntIdentiteit,
@@ -164,6 +167,12 @@ export type KnooppuntOpdracht =
       boodschapB64u: string;
       toezeggingenLijst: readonly FrostRonde1PubliekeToezegging[];
       groepsPubliekeSleutelHex: string;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'frost_annuleer_ronde1';
+      setId: string;
+      sessieTekenId: string;
       mandaat: KlimopOndertekendMandaat;
     }
   | {
@@ -345,6 +354,7 @@ export type KnooppuntOpdrachtAntwoord =
     }
   | { ok: true; actie: 'frost_ronde1_toezegging'; toezegging: FrostRonde1PubliekeToezegging; epoche: number }
   | { ok: true; actie: 'frost_ronde2_deel'; deelHandtekening: FrostRonde2DeelHandtekening; epoche: number }
+  | { ok: true; actie: 'frost_ronde1_geannuleerd'; bestond: boolean }
   | { ok: true; actie: 'ververs_nulbijdrage'; bijdrage: VersleuteldeNulBijdrage }
   | { ok: true; actie: 'ververs_voorbereid'; vanEpoche: number; naarEpoche: number; besluitId: string; herhaald: boolean }
   | { ok: true; actie: 'ververs_afgerond'; actieveEpoche: number; besluitId: string; herhaald: boolean }
@@ -556,6 +566,8 @@ export interface KlimopProefKnooppunt {
   aantalGeregistreerdeIdentiteiten(): number;
   actiefUitgaveVolgnummer(): number;
   aantalUitgaveTerugdraaiingen(): number;
+  aantalActieveSessies(): number;
+  aantalOpenFrostNonces(): number;
   aantalDienstCrdtRuimtes(): number;
   aantalUitgesteldeOperaties(): number;
   aantalActieveToetredingen(): number;
@@ -602,19 +614,48 @@ export async function startKlimopProefKnooppunt(config: {
     ed25519PubliekDerB64u: string;
     mlDsa65PubliekSpkiB64u: string;
   }>;
+  /** KLIMOP-021: межа одночасних сеансів Стебел, час життя сеансу та час життя одноразових станів FROST. */
+  maxActieveSessies?: number;
+  sessieLevensduurMs?: number;
+  frostNonceTtlMs?: number;
   /** Авторитетний годинник вузла одержувача (типово `new Date().toISOString()`). */
   klok?: () => string;
 }): Promise<KlimopProefKnooppunt> {
   const { knooppunt } = config;
   const host = config.luisterHost ?? '127.0.0.1';
   const klok = config.klok ?? (() => new Date().toISOString());
+  const maxActieveSessies = Math.max(1, config.maxActieveSessies ?? 1024);
+  const frostNonceTtlMs = Math.max(1_000, config.frostNonceTtlMs ?? 5 * 60 * 1000);
+  const MAX_FROST_NONCES = 1024;
   const sessies = new Map<string, KlimopStengelSessie>();
   const blokOpslag = new Map<string, Buffer>();
   const drempelStaat = config.staatBestand ? laadDrempelStaat(config.staatBestand, knooppunt) : laadLegeStaat();
   function bewaarDrempel(): void {
     if (config.staatBestand) bewaarDrempelStaat(config.staatBestand, knooppunt, drempelStaat);
   }
-  const frostNonces = new Map<string, FrostGeheimeNonceStaat>();
+  const frostNonces = new Map<string, { staat: FrostGeheimeNonceStaat; verlooptOpMs: number }>();
+
+  function ruimVerlopenSessiesOp(nuMs: number): void {
+    if (!Number.isFinite(nuMs)) return;
+    for (const [sid, s] of [...sessies.entries()]) {
+      if (s.gesloten || nuMs > s.verlooptOpMs) {
+        sluitStengelSessie(s);
+        sessies.delete(sid);
+      }
+    }
+  }
+
+  function ruimVerlopenFrostNoncesOp(nuMs: number): void {
+    if (!Number.isFinite(nuMs)) return;
+    for (const [sleutel, invoer] of [...frostNonces.entries()]) {
+      if (nuMs > invoer.verlooptOpMs) {
+        invoer.staat.dScalairBuf.fill(0);
+        invoer.staat.eScalairBuf.fill(0);
+        frostNonces.delete(sleutel);
+      }
+    }
+  }
+
   const identiteitRegister = new Map<string, KlimopIdentiteitRegisterInvoer>();
   const dienstCrdtRuimtes = new Map<string, KlimopDienstCrdtStaat>();
   const voogdSignaalBussen = new Map<string, OnopvallendSignaalPakket[]>();
@@ -640,6 +681,18 @@ export async function startKlimopProefKnooppunt(config: {
   let huidigMinCompatibelVolgnummer = 1;
   let aantalTerugdraaiingen = 0;
   let aantalEstafettes = 0;
+  // KLIMOP-021: ізольований тимчасовий носій вузла для господарського запису й перевіреного відкату випусків
+  const uitrolWerkMap = mkdtempSync(join(tmpdir(), 'klimop-uitrol-'));
+  const uitrolActiefPakketPad = join(uitrolWerkMap, 'actief-pakket.bin');
+  const uitrolActieveWebClientPad = join(uitrolWerkMap, 'actieve-webclient.js');
+  const uitrolActieveStaatPad = join(uitrolWerkMap, 'actieve-staat.json');
+  writeFileSync(uitrolActiefPakketPad, Buffer.from('klimop-basis-pakket-1.0.0', 'utf8'));
+  writeFileSync(uitrolActieveWebClientPad, Buffer.from('export const versie = "1.0.0";', 'utf8'));
+  writeFileSync(
+    uitrolActieveStaatPad,
+    JSON.stringify({ volgnummer: 1, versieLabel: 'klimop-basis-1.0.0', minCompatibelVolgnummer: 1, grondwetId: null }),
+    'utf8',
+  );
   const vertrouwdeUitgevers: ReadonlySet<string> | null = config.vertrouwdeUitgevers
     ? new Set(config.vertrouwdeUitgevers)
     : null;
@@ -785,6 +838,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'dkg_voltooi_sleutel'
       || opdracht.actie === 'frost_ronde1'
       || opdracht.actie === 'frost_ronde2'
+      || opdracht.actie === 'frost_annuleer_ronde1'
       || opdracht.actie === 'ververs_maak_nulbijdrage'
       || opdracht.actie === 'ververs_voorbereiden'
       || opdracht.actie === 'ververs_afronden'
@@ -893,24 +947,45 @@ export async function startKlimopProefKnooppunt(config: {
       const deel: FeldmanVssDeel | undefined = drempelStaat.drempelDelen[opdracht.setId];
       if (!deel) return { ok: false, fout: 'DREMPEL_SLEUTELSET_ONBEKEND' };
 
+      const nuMsFrost = Date.parse(klok());
+      ruimVerlopenFrostNoncesOp(nuMsFrost);
+
+      if (opdracht.actie === 'frost_annuleer_ronde1') {
+        const nonceSleutel = `${opdracht.setId}|${opdracht.sessieTekenId}`;
+        const bestaand = frostNonces.get(nonceSleutel);
+        if (bestaand) {
+          bestaand.staat.dScalairBuf.fill(0);
+          bestaand.staat.eScalairBuf.fill(0);
+          frostNonces.delete(nonceSleutel);
+          return { ok: true, actie: 'frost_ronde1_geannuleerd', bestond: true };
+        }
+        return { ok: true, actie: 'frost_ronde1_geannuleerd', bestond: false };
+      }
+
       if (opdracht.actie === 'frost_ronde1') {
         const nonceSleutel = `${opdracht.setId}|${opdracht.sessieTekenId}`;
         if (frostNonces.has(nonceSleutel)) {
           return { ok: false, fout: 'FROST_TEKEN_SESSIE_BESTAAT_REEDS' };
         }
+        if (frostNonces.size >= MAX_FROST_NONCES) {
+          return { ok: false, fout: 'TE_VEEL_OPEN_FROST_NONCES' };
+        }
         const r1 = frostRonde1MaakToezegging(deel);
-        frostNonces.set(nonceSleutel, r1.geheimeNonceStaat);
+        frostNonces.set(nonceSleutel, {
+          staat: r1.geheimeNonceStaat,
+          verlooptOpMs: (Number.isFinite(nuMsFrost) ? nuMsFrost : Date.now()) + frostNonceTtlMs,
+        });
         return { ok: true, actie: 'frost_ronde1_toezegging', toezegging: r1.publiek, epoche: deel.epoche };
       }
 
       if (opdracht.actie === 'frost_ronde2') {
         const nonceSleutel = `${opdracht.setId}|${opdracht.sessieTekenId}`;
-        const nonceStaat = frostNonces.get(nonceSleutel);
-        if (!nonceStaat) return { ok: false, fout: 'FROST_NONCE_NIET_GEVONDEN' };
+        const nonceInvoer = frostNonces.get(nonceSleutel);
+        if (!nonceInvoer) return { ok: false, fout: 'FROST_NONCE_NIET_GEVONDEN' };
         frostNonces.delete(nonceSleutel);
         const r2 = frostRonde2TekenDeel({
           deel,
-          geheimeNonceStaat: nonceStaat,
+          geheimeNonceStaat: nonceInvoer.staat,
           boodschap: Buffer.from(opdracht.boodschapB64u, 'base64url'),
           toezeggingenLijst: opdracht.toezeggingenLijst,
           groepsPubliekeSleutelHex: opdracht.groepsPubliekeSleutelHex,
@@ -1182,23 +1257,55 @@ export async function startKlimopProefKnooppunt(config: {
         return { ok: false, fout: 'GEEN_BESTUURSGRONDWET_OP_KNOOPPUNT' };
       }
 
+      const ontvangenPakketBuf = Buffer.from(opdracht.pakketInhoudB64u, 'base64url');
+      const ontvangenWebClientBuf = Buffer.from(opdracht.webClientInhoudB64u, 'base64url');
       const vBundel = verifieerUitgaveBundel({
         grondwet: actieveGrondwet,
         bundel: opdracht.bundel,
         huidigGeinstalleerdVolgnummer: huidigUitgaveVolgnummer,
-        ontvangenPakketInhoud: Buffer.from(opdracht.pakketInhoudB64u, 'base64url'),
-        ontvangenWebClientInhoud: Buffer.from(opdracht.webClientInhoudB64u, 'base64url'),
+        ontvangenPakketInhoud: ontvangenPakketBuf,
+        ontvangenWebClientInhoud: ontvangenWebClientBuf,
         erkendeDoelenRolPubDerB64u: erkendeDoelenRolPub,
         erkendeTijdstempelRolPubDerB64u: erkendeTijdstempelRolPub,
         nuIso: vertrouwensModus === 'streng' || config.klok ? klok() : opdracht.nuIso,
       });
       if (!vBundel.ok) return vBundel;
 
+      // KLIMOP-021: справжнє збереження поточного знімка на тимчасовому носії, запис нового випуску на носій,
+      // перечитування та господарська перевірка даних, прав і відсутності витоку таємних ключів
+      const vorigPakket = readFileSync(uitrolActiefPakketPad);
+      const vorigeWebClient = readFileSync(uitrolActieveWebClientPad);
+      const vorigeStaatJson = readFileSync(uitrolActieveStaatPad, 'utf8');
+      const vorigPakketSha = createHash('sha256').update(vorigPakket).digest('hex');
+
+      writeFileSync(uitrolActiefPakketPad, ontvangenPakketBuf);
+      writeFileSync(uitrolActieveWebClientPad, ontvangenWebClientBuf);
+      const herlezenPakket = readFileSync(uitrolActiefPakketPad);
+      const herlezenWebClient = readFileSync(uitrolActieveWebClientPad);
+      const schijfPakketShaOk =
+        herlezenPakket.length > 0
+        && createHash('sha256').update(herlezenPakket).digest('hex') === opdracht.bundel.doelen.pakketSha256;
+      const schijfWebShaOk =
+        herlezenWebClient.length > 0
+        && createHash('sha256').update(herlezenWebClient).digest('hex')
+          === opdracht.bundel.doelen.webClientManifest.webClientBundelSha256;
+      const samengevoegdTekst = `${herlezenPakket.toString('utf8')}\n${herlezenWebClient.toString('utf8')}`;
+      const geenechtGeheimLek =
+        !/BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/.test(samengevoegdTekst)
+        && !/AGE-SECRET-KEY-1/.test(samengevoegdTekst);
+      const echteMachtigingenOk =
+        Boolean(actieveGrondwet)
+        && Boolean(erkendeDoelenRolPub)
+        && Boolean(erkendeTijdstempelRolPub)
+        && erkendeDoelenRolPub !== erkendeTijdstempelRolPub;
+
       const meting: KlimopUitrolGezondheidsMeting = {
-        procesGestart: opdracht.gesimuleerdeMeting?.procesGestart ?? true,
-        gegevensIntegriteitOk: opdracht.gesimuleerdeMeting?.gegevensIntegriteitOk ?? true,
-        machtigingenGeldigOk: opdracht.gesimuleerdeMeting?.machtigingenGeldigOk ?? true,
-        geenGeheimLekGedetecteerd: opdracht.gesimuleerdeMeting?.geenGeheimLekGedetecteerd ?? true,
+        procesGestart: herlezenPakket.length > 0 && (opdracht.gesimuleerdeMeting?.procesGestart ?? true),
+        gegevensIntegriteitOk:
+          schijfPakketShaOk && schijfWebShaOk && (opdracht.gesimuleerdeMeting?.gegevensIntegriteitOk ?? true),
+        machtigingenGeldigOk: echteMachtigingenOk && (opdracht.gesimuleerdeMeting?.machtigingenGeldigOk ?? true),
+        geenGeheimLekGedetecteerd:
+          geenechtGeheimLek && (opdracht.gesimuleerdeMeting?.geenGeheimLekGedetecteerd ?? true),
       };
       const oordeel = beoordeelUitrolGezondheid(meting);
       if (!oordeel.gezond) {
@@ -1209,7 +1316,16 @@ export async function startKlimopProefKnooppunt(config: {
             details: [opdracht.bundel.doelen.onomkeerbareHerstelProcedureId!, ...oordeel.gefaaldeControles],
           };
         }
-        // Автоматичне безпечне повернення попередньої версії при порушенні показників (§24 маніфесту)
+        // Автоматичне безпечне повернення попередньої версії на тимчасовому носії зі звіркою відбитків даних і прав (§24)
+        herlezenPakket.fill(0);
+        herlezenWebClient.fill(0);
+        writeFileSync(uitrolActiefPakketPad, vorigPakket);
+        writeFileSync(uitrolActieveWebClientPad, vorigeWebClient);
+        writeFileSync(uitrolActieveStaatPad, vorigeStaatJson, 'utf8');
+        const hersteldPakketSha = createHash('sha256').update(readFileSync(uitrolActiefPakketPad)).digest('hex');
+        if (hersteldPakketSha !== vorigPakketSha) {
+          return { ok: false, fout: 'UITGAVE_TERUGDRAAI_SCHIJFHERSTEL_MISLUKT', details: oordeel.gefaaldeControles };
+        }
         aantalTerugdraaiingen++;
         return {
           ok: false,
@@ -1221,6 +1337,16 @@ export async function startKlimopProefKnooppunt(config: {
       huidigUitgaveVolgnummer = opdracht.bundel.doelen.uitgaveVolgnummer;
       huidigeVersieLabel = opdracht.bundel.doelen.versieLabel;
       huidigMinCompatibelVolgnummer = opdracht.bundel.doelen.minCompatibelVolgnummer;
+      writeFileSync(
+        uitrolActieveStaatPad,
+        JSON.stringify({
+          volgnummer: huidigUitgaveVolgnummer,
+          versieLabel: huidigeVersieLabel,
+          minCompatibelVolgnummer: huidigMinCompatibelVolgnummer,
+          grondwetId: actieveGrondwet.grondwetId,
+        }),
+        'utf8',
+      );
       return {
         ok: true,
         actie: 'uitgave_geactiveerd',
@@ -1603,9 +1729,18 @@ export async function startKlimopProefKnooppunt(config: {
       }
 
       if (req.method === 'POST' && url.pathname === '/klimop/v1/handdruk') {
+        const nuIsoHanddruk = klok();
+        const nuMsHanddruk = Date.parse(nuIsoHanddruk);
+        ruimVerlopenSessiesOp(nuMsHanddruk);
+        if (sessies.size >= maxActieveSessies) {
+          stuurJson(res, 429, { ok: false, fout: 'TE_VEEL_ACTIEVE_STENGEL_SESSIES' });
+          return;
+        }
         const aanvraag = (await leesJsonLichaam(req)) as StengelHanddrukAanvraag;
         const uit = beantwoordStengelHanddruk(knooppunt, aanvraag, {
           ingetrokkenKnooppuntIds: quarantaineKnooppunten,
+          nuIso: config.klok ? nuIsoHanddruk : undefined,
+          sessieTtlMs: config.sessieLevensduurMs,
         });
         if (!uit.ok) {
           stuurJson(res, 403, { ok: false, fout: uit.fout });
@@ -1617,20 +1752,35 @@ export async function startKlimopProefKnooppunt(config: {
       }
 
       if (req.method === 'POST' && url.pathname === '/klimop/v1/kader') {
+        const nuMsKader = Date.parse(klok());
         const inkomendKader = (await leesJsonLichaam(req)) as StengelVersleuteldKader;
         const sessie = sessies.get(inkomendKader?.sessieId ?? '');
         if (!sessie) {
           stuurJson(res, 404, { ok: false, fout: 'STENGEL_SESSIE_ONBEKEND' });
           return;
         }
+        if (sessie.gesloten || (Number.isFinite(nuMsKader) && nuMsKader > sessie.verlooptOpMs)) {
+          sluitStengelSessie(sessie);
+          sessies.delete(sessie.sessieId);
+          stuurJson(res, 401, { ok: false, fout: 'STENGEL_SESSIE_VERLOPEN' });
+          return;
+        }
         const geopend = ontsleutelStengelKader(sessie, inkomendKader);
         if (!geopend.ok) {
+          if (geopend.fout === 'STENGEL_SLEUTELWISSEL_VEREIST' || geopend.fout === 'STENGEL_SESSIE_GESLOTEN') {
+            sluitStengelSessie(sessie);
+            sessies.delete(sessie.sessieId);
+          }
           stuurJson(res, 400, { ok: false, fout: geopend.fout });
           return;
         }
         const opdracht = JSON.parse(geopend.klareInhoud.toString('utf8')) as KnooppuntOpdracht;
         const resultaat = verwerkBinnenkomendeOpdracht(sessie, opdracht);
         const antwoordKader = versleutelStengelKader(sessie, Buffer.from(JSON.stringify(resultaat), 'utf8'));
+        if (sessie.volgendZendNummer >= sessie.maxKadersTotSleutelWissel) {
+          sluitStengelSessie(sessie);
+          sessies.delete(sessie.sessieId);
+        }
         stuurJson(res, 200, { ok: true, kader: antwoordKader });
         return;
       }
@@ -1689,8 +1839,11 @@ export async function startKlimopProefKnooppunt(config: {
     },
     plaatsKnooppuntInQuarantaine(knooppuntId: string) {
       quarantaineKnooppunten.add(knooppuntId);
-      for (const s of sessies.values()) {
-        if (s.tegenpartijIdentiteit.knooppuntId === knooppuntId) sluitStengelSessie(s);
+      for (const [sid, s] of [...sessies.entries()]) {
+        if (s.tegenpartijIdentiteit.knooppuntId === knooppuntId) {
+          sluitStengelSessie(s);
+          sessies.delete(sid);
+        }
       }
     },
     trekMandaatIn(mandaatId: string) {
@@ -1722,6 +1875,14 @@ export async function startKlimopProefKnooppunt(config: {
     aantalUitgaveTerugdraaiingen() {
       return aantalTerugdraaiingen;
     },
+    aantalActieveSessies() {
+      ruimVerlopenSessiesOp(Date.parse(klok()));
+      return sessies.size;
+    },
+    aantalOpenFrostNonces() {
+      ruimVerlopenFrostNoncesOp(Date.parse(klok()));
+      return frostNonces.size;
+    },
     aantalDienstCrdtRuimtes() {
       return dienstCrdtRuimtes.size;
     },
@@ -1747,10 +1908,11 @@ export async function startKlimopProefKnooppunt(config: {
       for (const s of sessies.values()) sluitStengelSessie(s);
       sessies.clear();
       for (const n of frostNonces.values()) {
-        n.dScalairBuf.fill(0);
-        n.eScalairBuf.fill(0);
+        n.staat.dScalairBuf.fill(0);
+        n.staat.eScalairBuf.fill(0);
       }
       frostNonces.clear();
+      rmSync(uitrolWerkMap, { recursive: true, force: true });
       // Пам'ять очищується; зашифрований файл стану (якщо заданий) лишається для відновлення після перезапуску
       for (const k of Object.keys(drempelStaat.drempelDelen)) delete drempelStaat.drempelDelen[k];
       for (const k of Object.keys(drempelStaat.voorbereideVerversingen)) delete drempelStaat.voorbereideVerversingen[k];
@@ -1825,8 +1987,17 @@ export class KlimopNetwerkClient {
     doelKnooppuntId: string,
   ): Promise<{ ok: true; sessie: KlimopStengelSessie } | { ok: false; fout: string }> {
     const bestaand = this.sessiesNaarDoel.get(doelKnooppuntId);
-    if (bestaand && !bestaand.gesloten && !this.routeTabel.inQuarantaineSet().has(doelKnooppuntId)) {
-      return { ok: true, sessie: bestaand };
+    if (bestaand) {
+      const verouderdOfVol =
+        bestaand.gesloten
+        || this.routeTabel.inQuarantaineSet().has(doelKnooppuntId)
+        || Date.now() + 2_000 >= bestaand.verlooptOpMs
+        || bestaand.volgendZendNummer + 2 >= bestaand.maxKadersTotSleutelWissel;
+      if (!verouderdOfVol) {
+        return { ok: true, sessie: bestaand };
+      }
+      sluitStengelSessie(bestaand);
+      this.sessiesNaarDoel.delete(doelKnooppuntId);
     }
 
     const pakket = maakStengelHanddrukAanvraag(this.afzender, doelKnooppuntId);
@@ -1856,6 +2027,10 @@ export class KlimopNetwerkClient {
 
     const kader = versleutelStengelKader(s.sessie, Buffer.from(JSON.stringify(opdracht), 'utf8'));
     const r = await this.vervoerNaarDoel(doelKnooppuntId, '/klimop/v1/kader', kader);
+    if (r.status === 401 && r.data?.fout === 'STENGEL_SESSIE_VERLOPEN') {
+      sluitStengelSessie(s.sessie);
+      this.sessiesNaarDoel.delete(doelKnooppuntId);
+    }
     if (r.status !== 200 || !r.data?.ok || !r.data.kader) {
       return { antwoord: { ok: false, fout: r.data?.fout ?? 'KADER_VERZENDING_MISLUKT' }, gebruiktPad: r.gebruiktPad };
     }

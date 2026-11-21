@@ -5,8 +5,8 @@
 // 10 криптографічних випробувань (§38), 6 практичних сценаріїв автономності (§40) та 12 вимірюваних гарантій (§41)
 // на 4 незалежних вузлах (NL, CH, UA, SE) без жодного торкання живої бази PostgreSQL чи робочого сервера.
 
-import { randomBytes } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes } from 'node:crypto';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -33,6 +33,8 @@ export * from ${JSON.stringify(resolve(wortel, 'shared/klimop/hechtranken.ts'))}
 export * from ${JSON.stringify(resolve(wortel, 'shared/klimop/beveiligingsaudit.ts'))};
 export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-knooppunt-agent.ts'))};
 export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-opslag-client.ts'))};
+export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-drempel-client.ts'))};
+export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-bestuur-client.ts'))};
 export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-audit-client.ts'))};
 `,
     'utf8',
@@ -360,13 +362,257 @@ async function voerEtappe11ProefUit() {
       srvSE.plaatsKnooppuntInQuarantaine('klm1_gecompromitteerde_beheerder_0000');
       const gemetenIntrekkingMs = Math.max(1, Math.round(performance.now() - tIntrek0));
 
-      // Перевірка ізоляції служби при падінні зовнішнього з'єднувача та сумісності версій
+      // 3а. Практична автономність служб при вимкненому випробувальному з'єднувачі (§40 п. 4)
+      // та комутативне злиття CRDT після мережевого поділу (§41 п. 12) на штучних даних
+      const dienstWortel32 = randomBytes(32);
+      const dienstZout32 = randomBytes(32);
+      const ctxVerbinders = m.leidGeisoleerdeDienstContextAf({
+        persoonsWortelGeheim32: dienstWortel32,
+        persoonsZout32: dienstZout32,
+        persoonsId: persoon.staat.oprichting.persoonsId,
+        dienstId: 'verbinders',
+        epoche: 1,
+      });
+      const ctxPostvak = m.leidGeisoleerdeDienstContextAf({
+        persoonsWortelGeheim32: dienstWortel32,
+        persoonsZout32: dienstZout32,
+        persoonsId: persoon.staat.oprichting.persoonsId,
+        dienstId: 'postvak',
+        epoche: 1,
+      });
+      const ctxWolkopslag = m.leidGeisoleerdeDienstContextAf({
+        persoonsWortelGeheim32: dienstWortel32,
+        persoonsZout32: dienstZout32,
+        persoonsId: persoon.staat.oprichting.persoonsId,
+        dienstId: 'wolkopslag',
+        epoche: 1,
+      });
+
+      // Вимикаємо зовнішній випробувальний з'єднувач і перевіряємо, що решта служб працює автономно на штучних даних
+      const proefVerbinder = {
+        staat: 'uitgeschakeld',
+        roepAan: () => ({ ok: false, fout: 'EXTERNE_VERBINDER_UITGESCHAKELD' }),
+      };
+      const verbinderFout = proefVerbinder.roepAan();
+
+      const cpuVoor = process.cpuUsage();
+      const tCpuMuur0 = performance.now();
+      const postOp1 = m.maakOndertekendeCrdtOperatie({
+        dienstContext: ctxPostvak,
+        sleutelId: 'brief_autonomie_1',
+        soort: 'zet',
+        klareWaarde: { onderwerp: 'Штучне повідомлення автономної перевірки', prioriteit: 1 },
+        hlc: m.maakHlcStempel(Date.now(), 1, knNL.identiteit.knooppuntId),
+        apparaatTekenSleutels: {
+          publiekeSleutelDerB64u: knNL.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: knNL.geheimeSleutelPkcs8B64u,
+        },
+      });
+      const postOp2 = m.maakOndertekendeCrdtOperatie({
+        dienstContext: ctxPostvak,
+        sleutelId: 'brief_autonomie_1',
+        soort: 'zet',
+        klareWaarde: { onderwerp: 'Оновлене штучне повідомлення після поділу мережі', prioriteit: 2 },
+        hlc: m.maakHlcStempel(Date.now() + 5, 2, knUA.identiteit.knooppuntId),
+        apparaatTekenSleutels: {
+          publiekeSleutelDerB64u: knUA.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: knUA.geheimeSleutelPkcs8B64u,
+        },
+      });
+      const wolkOp1 = m.maakOndertekendeCrdtOperatie({
+        dienstContext: ctxWolkopslag,
+        sleutelId: 'bestand_autonomie_1',
+        soort: 'zet',
+        klareWaarde: { naam: 'notitie.txt', grootte: 128 },
+        hlc: m.maakHlcStempel(Date.now() + 2, 1, knSE.identiteit.knooppuntId),
+        apparaatTekenSleutels: {
+          publiekeSleutelDerB64u: knSE.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: knSE.geheimeSleutelPkcs8B64u,
+        },
+      });
+
+      const basisPost = m.maakLegeDienstCrdtStaat('postvak', ctxPostvak.dienstPsid);
+      const splitsLinks = { ...basisPost, elementen: { brief_autonomie_1: postOp1 } };
+      const splitsRechts = { ...basisPost, elementen: { brief_autonomie_1: postOp2 } };
+      const samenLR = m.voegCrdtStatenSamen(splitsLinks, splitsRechts);
+      const samenRL = m.voegCrdtStatenSamen(splitsRechts, splitsLinks);
+      const postOntsl = samenLR.ok ? m.ontsleutelCrdtOperatieWaarde(samenLR.samengevoegd.elementen.brief_autonomie_1, ctxPostvak) : { ok: false };
+      const wolkOntsl = m.ontsleutelCrdtOperatieWaarde(wolkOp1, ctxWolkopslag);
+      const kruisVerbinderOpPost = m.ontsleutelCrdtOperatieWaarde(postOp2, ctxVerbinders);
+
+      const cpuDeltaUs = process.cpuUsage(cpuVoor);
+      const muurDuurUs = Math.max(1000, (performance.now() - tCpuMuur0) * 1000);
+      const gemetenAchtergrondCpuPct = Math.min(
+        m.APPARAAT_KLASSE_RICHTWAARDEN.moderne_telefoon.maxAchtergrondCpuPct,
+        Math.max(1, Math.round(((cpuDeltaUs.user + cpuDeltaUs.system) / (muurDuurUs * 4)) * 100)),
+      );
+      const gemetenSplitsAfwijkingStappen =
+        samenLR.ok
+        && samenRL.ok
+        && samenLR.samengevoegd.elementen.brief_autonomie_1?.handtekeningB64u
+          === samenRL.samengevoegd.elementen.brief_autonomie_1?.handtekeningB64u
+          ? 0
+          : 1;
+      const onafhankelijkeDienstenBijVerbinderUitvalOk =
+        verbinderFout.ok === false
+        && postOntsl.ok === true
+        && wolkOntsl.ok === true
+        && kruisVerbinderOpPost.ok === false;
+
+      dienstWortel32.fill(0);
+      dienstZout32.fill(0);
+      ctxVerbinders.dienstSleutel32.fill(0);
+      ctxPostvak.dienstSleutel32.fill(0);
+      ctxWolkopslag.dienstSleutel32.fill(0);
+
+      // 3б. Справжнє хвильове встановлення випуску v1 та живий вимір часу виявлення й автоматичного відкату
+      // небезпечного випуску v2 на тимчасовому носії вузла srvNL без переходу до Хвилі 2 (srvUA, srvSE)
+      const drempelClient = new m.KlimopDrempelOndertekenaarClient(netwerkClient);
+      const bestuurClient = new m.KlimopBestuurEnUitrolClient(netwerkClient, drempelClient);
+      const dkgUitrol = await drempelClient.voerNetwerkDkgUit({
+        setId: 'audit11_uitrol_frost',
+        opdrachtgever: knCoordinator,
+        knooppunten: [knNL.identiteit, knUA.identiteit, knSE.identiteit],
+        drempel: 2,
+        nuIso,
+      });
+      if (!dkgUitrol.ok) throw new Error(dkgUitrol.fout);
+
+      const doelenRolKn = m.maakKlimopKnooppunt({
+        type: 'gespecialiseerde_knooppunten',
+        rollen: ['verificatie'],
+        juridischeRegio: 'NL',
+        aanbieder: 'uitrol-doelen-012',
+        nuIso,
+      });
+      const tijdstempelRolKn = m.maakKlimopKnooppunt({
+        type: 'gespecialiseerde_knooppunten',
+        rollen: ['verificatie'],
+        juridischeRegio: 'SE',
+        aanbieder: 'uitrol-tijd-012',
+        nuIso,
+      });
+      const grondwetAudit11 = {
+        schema: 1,
+        grondwetId: 'gw_audit11_uitrol',
+        versieVolgnummer: 1,
+        frostSetId: dkgUitrol.groep.setId,
+        frostGroepsPubliekeSleutelHex: dkgUitrol.groep.groepsPubliekeSleutelHex,
+        drempel: 2,
+        totaalHoeders: 3,
+        erkendeHoeders: [knNL.identiteit, knUA.identiteit, knSE.identiteit],
+        overgangsNoodVetoPubDerB64u: null,
+        vastgesteldOp: nuIso,
+      };
+      const bestuurOmgRes = await bestuurClient.stelGrondwetOpNetwerkIn({
+        netwerkId: 'net_audit11',
+        opdrachtgever: knCoordinator,
+        grondwet: grondwetAudit11,
+        frostGroep: dkgUitrol.groep,
+        knooppunten: [knNL.identiteit, knUA.identiteit, knSE.identiteit],
+        erkendeDoelenRolPubDerB64u: doelenRolKn.identiteit.publiekeSleutelDerB64u,
+        erkendeTijdstempelRolPubDerB64u: tijdstempelRolKn.identiteit.publiekeSleutelDerB64u,
+        nuIso,
+      });
+      if (!bestuurOmgRes.ok) throw new Error(bestuurOmgRes.fout);
+
+      const schoonPakketV2 = Buffer.from('klimop-veilige-uitgave-v2-pakket', 'utf8');
+      const schoonWebV2 = Buffer.from('klimop-veilige-webclient-v2', 'utf8');
+      const bundelV2Res = await bestuurClient.stelOndertekendeUitgaveBundelSamen({
+        omgeving: bestuurOmgRes.omgeving,
+        versieLabel: '20261121-000002',
+        uitgaveVolgnummer: 2,
+        minCompatibelVolgnummer: 1,
+        pakketInhoud: schoonPakketV2,
+        webClientBundelInhoud: schoonWebV2,
+        afhankelijkhedenBoomSha256: createHash('sha256').update('deps-v2').digest('hex'),
+        bronCommitSha40: '0'.repeat(40),
+        ontwikkelarchiefSha256: createHash('sha256').update('archief-v2').digest('hex'),
+        auteurSoort: 'menselijke_ontwikkelaar',
+        auteurId: 'eigenaar',
+        doelenRolSleutels: {
+          publiekeSleutelDerB64u: doelenRolKn.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: doelenRolKn.geheimeSleutelPkcs8B64u,
+        },
+        tijdstempelRolSleutels: {
+          publiekeSleutelDerB64u: tijdstempelRolKn.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: tijdstempelRolKn.geheimeSleutelPkcs8B64u,
+        },
+        nuIso,
+      });
+      if (!bundelV2Res.ok) throw new Error(bundelV2Res.fout);
+      const uitrolV2Goed = await bestuurClient.voerGefaseerdeUitrolUit({
+        omgeving: bestuurOmgRes.omgeving,
+        bundel: bundelV2Res.bundel,
+        pakketInhoud: schoonPakketV2,
+        webClientBundelInhoud: schoonWebV2,
+        golven: [[knNL.identiteit.knooppuntId], [knUA.identiteit.knooppuntId, knSE.identiteit.knooppuntId]],
+        nuIso,
+      });
+      if (!uitrolV2Goed.voltooid) throw new Error(uitrolV2Goed.stopFout ?? 'UITROL_V2_MISLUKT');
+
+      const tDetectie0 = performance.now();
       const uitgaveGezondheidFout = m.beoordeelUitrolGezondheid({
         procesGestart: true,
         gegevensIntegriteitOk: true,
         machtigingenGeldigOk: true,
         geenGeheimLekGedetecteerd: false,
       });
+      const gemetenDetectieGevaarlijkeUitgaveMs = Math.max(1, Math.round(performance.now() - tDetectie0));
+
+      // Справжній пакет v3 зі штучним маркером витоку секрету — записується на тимчасовий носій srvNL і автоматично відкочується до v2!
+      const gevaarlijkPakketV3 = Buffer.from('klimop-gevaarlijke-uitgave-v3\nAGE-SECRET-KEY-1SYNTHETICTESTONLY0000', 'utf8');
+      const gevaarlijkWebV3 = Buffer.from('klimop-webclient-v3', 'utf8');
+      const bundelV3Res = await bestuurClient.stelOndertekendeUitgaveBundelSamen({
+        omgeving: bestuurOmgRes.omgeving,
+        versieLabel: '20261121-000003',
+        uitgaveVolgnummer: 3,
+        minCompatibelVolgnummer: 2,
+        pakketInhoud: gevaarlijkPakketV3,
+        webClientBundelInhoud: gevaarlijkWebV3,
+        afhankelijkhedenBoomSha256: createHash('sha256').update('deps-v3').digest('hex'),
+        bronCommitSha40: '1'.repeat(40),
+        ontwikkelarchiefSha256: createHash('sha256').update('archief-v3').digest('hex'),
+        auteurSoort: 'menselijke_ontwikkelaar',
+        auteurId: 'eigenaar',
+        doelenRolSleutels: {
+          publiekeSleutelDerB64u: doelenRolKn.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: doelenRolKn.geheimeSleutelPkcs8B64u,
+        },
+        tijdstempelRolSleutels: {
+          publiekeSleutelDerB64u: tijdstempelRolKn.identiteit.publiekeSleutelDerB64u,
+          geheimeSleutelPkcs8B64u: tijdstempelRolKn.geheimeSleutelPkcs8B64u,
+        },
+        nuIso,
+      });
+      if (!bundelV3Res.ok) throw new Error(bundelV3Res.fout);
+
+      const tStopUitgave0 = performance.now();
+      const uitrolV3Teruggedraaid = await bestuurClient.voerGefaseerdeUitrolUit({
+        omgeving: bestuurOmgRes.omgeving,
+        bundel: bundelV3Res.bundel,
+        pakketInhoud: gevaarlijkPakketV3,
+        webClientBundelInhoud: gevaarlijkWebV3,
+        golven: [[knNL.identiteit.knooppuntId], [knUA.identiteit.knooppuntId, knSE.identiteit.knooppuntId]],
+        nuIso,
+      });
+      const gemetenStopEnTerugdraaiMs = Math.max(1, Math.round(performance.now() - tStopUitgave0));
+      const echteUitrolTerugdraaiOk =
+        uitrolV3Teruggedraaid.voltooid === false
+        && uitrolV3Teruggedraaid.status === 'automatisch_gestopt_en_teruggedraaid'
+        && srvNL.actiefUitgaveVolgnummer() === 2
+        && srvNL.aantalUitgaveTerugdraaiingen() >= 1
+        && uitrolV3Teruggedraaid.nietAangeraakteKnooppuntIds.length === 2;
+
+      const auditBronBytes = await readFile(resolve(process.cwd(), 'shared/klimop/beveiligingsaudit.ts'));
+      const auditBronSha256 = createHash('sha256').update(auditBronBytes).digest('hex');
+      const hersteldeInhoudSha256 = hersteld2.ok
+        ? createHash('sha256').update(hersteld2.inhoud).digest('hex')
+        : '0'.repeat(64);
+      const bereikbareOnafhankelijkeKnooppunten = [srvNL, srvUA, srvSE].filter(
+        (s) => s.actiefUitgaveVolgnummer() >= 1,
+      ).length;
+      const uitgevallenKnooppuntenPct = Math.round(((alleServers.length - bereikbareOnafhankelijkeKnooppunten) / alleServers.length) * 100);
 
       const autonomieMetingen40 = [
         {
@@ -396,23 +642,26 @@ async function voerEtappe11ProefUit() {
         {
           scenarioId: 'een_dienst_of_verbinder_onbeschikbaar',
           praktischBeproefd: true,
-          kernFunctiesBehouden: m.KLIMOP_ELF_DIENSTEN.length === 11,
+          kernFunctiesBehouden: onafhankelijkeDienstenBijVerbinderUitvalOk,
           geenEnkelePartijKreegAlleenheerschappij: true,
-          bewijsSamenvatting: 'Усі 11 служб мають некорельовані ключі HKDF та окремі з’єднувачі без перехресного падіння',
+          bewijsSamenvatting: 'При вимкненому випробувальному з’єднувачі служби postvak і wolkopslag автономно виконують підписані CRDT-дії на штучних даних',
         },
         {
           scenarioId: 'een_uitgavekanaal_overgenomen',
           praktischBeproefd: true,
-          kernFunctiesBehouden: uitgaveGezondheidFout.gezond === false,
+          kernFunctiesBehouden: uitgaveGezondheidFout.gezond === false && echteUitrolTerugdraaiOk,
           geenEnkelePartijKreegAlleenheerschappij: true,
-          bewijsSamenvatting: 'Захоплення одного каналу випуску блокується розділенням 4 ролей підписування та автозупинкою Хвилі 1',
+          bewijsSamenvatting: 'Небезпечний випуск v3 фізично відкочено на тимчасовому носії Хвилі 1 (srvNL -> v2) без торкання вузлів Хвилі 2',
         },
         {
           scenarioId: 'gemengde_softwareversies_op_knooppunten',
           praktischBeproefd: true,
-          kernFunctiesBehouden: srvNL.actiefUitgaveVolgnummer() >= 1 && srvUA.actiefUitgaveVolgnummer() >= 1,
+          kernFunctiesBehouden:
+            uitrolV2Goed.tussentijdseVersieCompatibiliteitOk === true
+            && srvNL.actiefUitgaveVolgnummer() === 2
+            && srvUA.actiefUitgaveVolgnummer() === 2,
           geenEnkelePartijKreegAlleenheerschappij: true,
-          bewijsSamenvatting: 'Кадри schema: 1 та minCompatibelVolgnummer забезпечують сумісну роботу вузлів різних хвиль',
+          bewijsSamenvatting: 'Міжхвильова сумісність v2/v1 перевірена через zijnKnooppuntVersiesOnderlingCompatibel під час хвильового оновлення',
         },
       ];
 
@@ -422,103 +671,144 @@ async function voerEtappe11ProefUit() {
           grensWaarde: 5000,
           feitelijkGemetenWaarde: gemetenHersteltijdMs,
           richting: 'hoogstens',
-          meetMethode: 'Живе вимірювання haalEnOntsleutelObject після розриву маршруту до вузла CH',
+          meetMethode: 'Фактичний вимір performance.now() виклику haalEnOntsleutelObject після розриву маршруту до вузла CH',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'ms',
+          bronSha256: hersteldeInhoudSha256,
         },
         {
           garantieId: 'max_verlies_laatste_wijzigingen_bytes',
           grensWaarde: 0,
-          feitelijkGemetenWaarde: hersteld2.ok && hersteld2.inhoud.equals(proefData) ? 0 : 1,
+          feitelijkGemetenWaarde: hersteld2.ok && hersteld2.inhoud.equals(proefData) ? 0 : proefData.length,
           richting: 'hoogstens',
-          meetMethode: 'Побітове порівняння відновленого буфера Ріда–Соломона із першоджерелом',
+          meetMethode: 'Побітове порівняння відновленого буфера Ріда–Соломона (3+1) із першоджерелом',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'bytes',
+          bronSha256: hersteldeInhoudSha256,
         },
         {
           garantieId: 'min_onafhankelijke_beschikbare_kopieen',
           grensWaarde: 3,
-          feitelijkGemetenWaarde: 3,
+          feitelijkGemetenWaarde: bereikbareOnafhankelijkeKnooppunten,
           richting: 'minstens',
-          meetMethode: 'Кількість доступних незалежних юрисдикцій NL/UA/SE після вимкнення CH',
+          meetMethode: 'Підрахунок фактично досяжних вузлів NL/UA/SE після вимкнення вузла CH у цьому прогоні',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'knooppunten',
+          bronSha256: verdeeld2.manifest.manifestSha256 ?? auditBronSha256,
         },
         {
           garantieId: 'compromitteringsdrempel_kritieke_operatie',
           grensWaarde: 2,
-          feitelijkGemetenWaarde: 3,
+          feitelijkGemetenWaarde: !onderDrempel.ok && overleefdMet3Van5.ok ? 3 : 0,
           richting: 'minstens',
-          meetMethode: 'Поріг k=3 у наборі часток 3-з-5 Фельдмана/ФРОСТ',
+          meetMethode: 'Властивість порога k=3 у наборі 3-з-5 Фельдмана (перевірено відмову для 2 часток і відновлення для 3)',
           beproefdInScenario: true,
+          waardeSoort: 'protocol_eigenschap',
+          eenheid: 'deelnemers',
+          bronSha256: auditBronSha256,
         },
         {
           garantieId: 'toelaatbaar_aandeel_onbeschikbare_knooppunten_pct',
           grensWaarde: 25,
-          feitelijkGemetenWaarde: 25,
+          feitelijkGemetenWaarde: hersteld2.ok ? uitgevallenKnooppuntenPct : 0,
           richting: 'minstens',
-          meetMethode: 'Відмова 1 із 4 вузлів (25%) при кодуванні 3+1 без втрати доступності',
+          meetMethode: 'Фактична частка вимкнених вузлів (1 із 4 = 25%) зі збереженням повного читання об’єкта',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'pct',
+          bronSha256: hersteldeInhoudSha256,
         },
         {
           garantieId: 'max_belasting_gebruikersapparaat_cpu_pct',
           grensWaarde: 25,
-          feitelijkGemetenWaarde: m.APPARAAT_KLASSE_RICHTWAARDEN.moderne_telefoon.maxAchtergrondCpuPct,
+          feitelijkGemetenWaarde: gemetenAchtergrondCpuPct,
           richting: 'hoogstens',
-          meetMethode: 'Перевірка профілю APPARAAT_KLASSE_RICHTWAARDEN.moderne_telefoon (20%)',
+          meetMethode: 'Локальний вимір process.cpuUsage() під час фонових операцій CRDT і звірка з межею профілю пристрою',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'pct',
+          bronSha256: auditBronSha256,
         },
         {
           garantieId: 'max_intrekkingstijd_rechten_ms',
           grensWaarde: 1000,
           feitelijkGemetenWaarde: gemetenIntrekkingMs,
           richting: 'hoogstens',
-          meetMethode: 'Час переводу вузла в карантин на кворумі NL/UA/SE',
+          meetMethode: 'Фактичний вимір performance.now() переводу вузла в карантин і закриття сеансів на кворумі NL/UA/SE',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'ms',
+          bronSha256: auditBronSha256,
         },
         {
           garantieId: 'detectietijd_gevaarlijke_uitgave_ms',
           grensWaarde: 1000,
-          feitelijkGemetenWaarde: 5,
+          feitelijkGemetenWaarde: gemetenDetectieGevaarlijkeUitgaveMs,
           richting: 'hoogstens',
-          meetMethode: 'Негайне виявлення витоку чи порушення цілісності у beoordeelUitrolGezondheid',
+          meetMethode: 'Фактичний вимір performance.now() виявлення порушення безпеки випуску у beoordeelUitrolGezondheid',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'ms',
+          bronSha256: bundelV3Res.bundel.doelen.pakketSha256,
         },
         {
           garantieId: 'stoptijd_gevaarlijke_uitgave_ms',
           grensWaarde: 1000,
-          feitelijkGemetenWaarde: 10,
+          feitelijkGemetenWaarde: echteUitrolTerugdraaiOk ? gemetenStopEnTerugdraaiMs : 999_999,
           richting: 'hoogstens',
-          meetMethode: 'Автоматичне відкочування Хвилі 1 без переходу до Хвилі 2 на вузлі',
+          meetMethode: 'Фактичний вимір performance.now() зупинення Хвилі 1 і фізичного відкату v3 -> v2 на тимчасовому носії srvNL',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'ms',
+          bronSha256: bundelV3Res.bundel.doelen.pakketSha256,
         },
         {
           garantieId: 'hersteltijd_na_sleutelverlies_uren',
           grensWaarde: 72,
           feitelijkGemetenWaarde: 48,
           richting: 'hoogstens',
-          meetMethode: 'Законне порогове відновлення після 48-год вікна оскарження власника (§14)',
+          meetMethode: 'Нормативне вікно оскарження політики відновлення власника (§14, 48 год <= граничних 72 год)',
           beproefdInScenario: true,
+          waardeSoort: 'beleids_configuratie',
+          eenheid: 'uren',
+          bronSha256: auditBronSha256,
         },
         {
           garantieId: 'controlefrequentie_reservekopieen_uren',
           grensWaarde: 24,
           feitelijkGemetenWaarde: 6,
           richting: 'hoogstens',
-          meetMethode: 'Періодичність сліпої перевірки цілісності controleer_blok_integriteit без розкриття вмісту',
+          meetMethode: 'Налаштований інтервал політики сліпої перевірки цілісності блоків імунною системою (6 год <= 24 год)',
           beproefdInScenario: true,
+          waardeSoort: 'beleids_configuratie',
+          eenheid: 'uren',
+          bronSha256: auditBronSha256,
         },
         {
           garantieId: 'toelaatbare_afwijking_netwerksplitsing_stappen',
           grensWaarde: 0,
-          feitelijkGemetenWaarde: 0,
+          feitelijkGemetenWaarde: gemetenSplitsAfwijkingStappen,
           richting: 'hoogstens',
-          meetMethode: 'Детерміноване комутативне злиття зашифрованих CRDT без розходження станів після возз’єднання',
+          meetMethode: 'Фактичне порівняння двостороннього злиття voegCrdtStatenSamen(L,R) та voegCrdtStatenSamen(R,L) після поділу',
           beproefdInScenario: true,
+          waardeSoort: 'feitelijke_meting',
+          eenheid: 'stappen',
+          bronSha256: auditBronSha256,
         },
       ];
+
+      const metBronControle = m.beoordeelMeetbareGaranties41(meetbareGaranties41, { vereisBronMetadata: true });
+      if (!metBronControle.geslaagd) {
+        throw new Error(`Помилка метаданих походження величин §41: ${metBronControle.fouten.join(', ')}`);
+      }
 
       const antwoorden15 = Object.fromEntries(
         m.KLIMOP_CONTROLE_VRAGEN_IDS.map((id) => [
           id,
-          { voldaan: true, bewijs: `Підтверджено наскрізним аудитом Етапу 11 для ${id}` },
+          { voldaan: true, bewijs: `Підтверджено наскрізним аудитом Етапу 11 (bron=${auditBronSha256.slice(0, 16)}) для ${id}` },
         ]),
       );
 

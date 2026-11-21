@@ -464,12 +464,24 @@
     {
       "taakId": "KLIMOP-020",
       "tak": "fix/klimop-020-vertrouwensgrenzen-20261121-151312",
+      "pr": 202,
       "agent": "antigravity",
       "model": "Claude Opus 5.5 (High) → Gemini 4 Carbon (High)",
       "modelBron": "eigenaar",
       "datum": "2026-11-21",
       "uk": "Третя хвиля виправлень за незалежною перевіркою (розпочато моделлю Claude Opus 5.5 (High) на Google Antigravity до вичерпання 5-годинного ліміту у фіксації add014c5, підхоплено й завершено моделлю Gemini 4 Carbon (High)): суворий режим мандатів streng з довіреними видавцями та підписантами кворуму, обов’язковим переліком дій, об’єктами й особою сеансу; попередньо закріплена політика й підписаний сертифікат відновлення особи, втрата повноважень попередніх коренів після відновлення та перевірка спільного префікса історій у кворумі; прив’язка зміни конституції на вузлі до відбитка змісту 72-годинного рішення FROST та однократність; точна рівність вкладень пакета «Насіння», зовнішній якір beginAnker і звірка повного пакета на кворумі; сліпа імунна перевірка виключно за незалежним еталоном і очікуваним розміром; чесне уточнення спрощеного групового шифрування з підписом привітання, одноразовими ключами повідомлень і захистом від повтору; локальні довірені корені на вузлі та позначка місцевого моделювання кворуму в одному процесі.",
       "nl": "Derde herstelgolf (begonnen door Claude Opus 5.5 (High) op Google Antigravity tot de 5-uurslimiet bij vastlegging add014c5, afgerond door Gemini 4 Carbon (High)): strenge mandaatmodus met vertrouwde uitgevers en quorumondertekenaars, verankerd herstelbeleid en overgangscertificaat met verval van oude wortels, inhoudsbinding en eenmaligheid van grondwetswijzigingen, volledige bijlagencontrole en beginanker voor Zaden, blinde immuuncontrole uitsluitend met referentie, eerlijk omschreven vereenvoudigde groepsversleuteling met welkomsthandtekening en herhalingsbescherming, en lokale vertrouwenswortels op het knooppunt."
+    },
+    {
+      "taakId": "KLIMOP-021",
+      "tak": "fix/klimop-021-overdracht-paneel-tweetaligheid-20261121-163130",
+      "pr": 203,
+      "agent": "antigravity",
+      "model": "Gemini 4 Carbon (High)",
+      "modelBron": "eigenaar",
+      "datum": "2026-11-21",
+      "uk": "Четверта (завершальна) хвиля виправлень за незалежною перевіркою AUDIT-002 (виконано моделлю Gemini 4 Carbon (High) на Google Antigravity в межах продовження роботи після вичерпання ліміту Claude Opus 5.5 (High)): міжпроцесний замок overdracht.lock, журнал випереджального запису overdracht-wal.json з ідемпотентним відновленням перерваних транзакцій та контрольні точки *.checkpoint.json за O(1); прив’язка підтвердження кворумної готовності Сходинки 4 до версії доказу служби (bewijsVersie) та ізоляція від подальших записів розбіжностей; тимчасова пісочниця для агентських викликів MCP без зміни спільного стану власника, повний аудит оглядів і відмов у app.audit з реальною службою сеансу (admin/mcp) та вилучення абсолютного шляху сервера; доступність і чесні стани порожніх журналів у KlimopPaneel.tsx (htmlFor/id, aria-live, 360px, етапи 0..16 і 15 поіменних питань без підставлення типових відповідей); суворі ключі ML-DSA-65 для рівня 20, шифрування відкритих метаданих об’єкта в versleuteldeEigenaarMeta, роздільний облік видалення смуг, ковзне вікно й зміна ключа «Стебел», скасування раунду 1 FROST, фізичний відкат випусків і розпакування «Насіння» на тимчасовому носії, змістовна перевірка 25 двомовних документів §44, справжні виміри зі значеннями waardeSoort/eenheid/bronSha256 у стендах Етапів 11–12, узгодження піддоменів із SERVICE_HOSTS, двомовна паритетність статей, усунення грошових сум у записах і рішення B-025 (regelsVersie 1.6.0).",
+      "nl": "Vierde (afsluitende) herstelgolf naar aanleiding van de onafhankelijke controle AUDIT-002 (uitgevoerd door Gemini 4 Carbon (High) op Google Antigravity als voortzetting na de sessielimiet van Claude Opus 5.5 (High)): procesoverstijgend slot overdracht.lock, voorafgaand transactielogboek overdracht-wal.json met idempotent herstel en O(1)-controlepunten *.checkpoint.json; binding van Stap-4-gereedheid aan bewijsVersie en scheiding van latere afwijkingsregels; tijdelijke zandbak voor MCP-agentoproepen zonder mutatie van de gedeelde eigenaarsstaat, volledige auditregistratie (admin/mcp) en verwijdering van het absolute serverpad; toegankelijkheid en eerlijke nulstatussen in KlimopPaneel.tsx (htmlFor/id, aria-live, 360px, fasen 0..16 en 15 vragen zonder standaardantwoorden); verplichte ML-DSA-65-sleutels op rang 20, versleutelde eigenaarsmetadata in versleuteldeEigenaarMeta, gescheiden wisboekhouding, schuifvenster en sleutelwissel voor Stengels, annulering van FROST-ronde 1, fysieke terugdraaiing van uitgaven en uitpakken van Zaden op tijdelijke schijf, inhoudelijke toetsing van alle 25 documentparen van §44, herleidbare metingen in Fasen 11–12, afstemming op SERVICE_HOSTS, tweetalige pariteit, verwijdering van geldbedragen en besluit B-025 (regelsVersie 1.6.0)."
     }
   ],
   "mogelijkheden": [
@@ -792,6 +804,27 @@
       "uk": "Локальні довірені корені на вузлі замість сліпої довіри полям запиту, чесне спрощене групове епохове шифрування з підписом привітання й захистом від повтору повідомлень та позначка місцевого моделювання кворуму в одному процесі",
       "nl": "Lokale vertrouwenswortels op het knooppunt, eerlijk vereenvoudigde groepsversleuteling met welkomsthandtekening en herhalingsbescherming, en markering van lokale nabootsing in één proces",
       "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "overdracht-wal-en-attest-bewijsversie",
+      "uk": "Транзакційне сховище стану Сходинок 1–4 із міжпроцесним замком overdracht.lock, журналом випереджального запису overdracht-wal.json, контрольними точками за O(1) та прив’язкою атестата готовності до поточної версії доказу служби",
+      "nl": "Transactionele overdrachtsopslag voor Stappen 1–4 met procesoverstijgend slot, WAL-herstel, O(1)-controlepunten en binding van het gereedheidsattest aan de actuele bewijsVersie",
+      "sinds": "KLIMOP-021",
+      "staat": "actief"
+    },
+    {
+      "id": "mcp-proefzandbak-en-paneel-toegankelijkheid",
+      "uk": "Ізольована тимчасова пісочниця для агентських інструментів MCP без зміни спільного стану власника, повний аудит оглядів і відмов у app.audit та доступність панелі KlimopPaneel (htmlFor/id, aria-live, 360px, 15 поіменних питань без підставлення типових відповідей)",
+      "nl": "Geïsoleerde tijdelijke zandbak voor MCP-agentoproepen zonder mutatie van de eigenaarsstaat, volledige auditregistratie en toegankelijkheid van KlimopPaneel (htmlFor/id, aria-live, 360px, 15 vragen zonder standaardantwoorden)",
+      "sinds": "KLIMOP-021",
+      "staat": "actief"
+    },
+    {
+      "id": "herleidbare-metingen-en-25-documenten-schijftoets",
+      "uk": "Походження вимірів §41 (waardeSoort, eenheid, bronSha256), фізичний відкат випусків і розпакування «Насіння» на тимчасовому носії, зашифровані метадані versleuteldeEigenaarMeta та змістовна перевірка всіх 25 двомовних пар документів §44 на диску",
+      "nl": "Herkomstmetadata voor §41-metingen, fysieke terugdraaiing van uitgaven en uitpakken van Zaden op tijdelijke schijf, versleutelde eigenaarsmetadata en inhoudelijke schijfcontrole van alle 25 documentparen van §44",
+      "sinds": "KLIMOP-021",
       "staat": "actief"
     }
   ],

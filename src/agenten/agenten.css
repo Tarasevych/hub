@@ -646,3 +646,22 @@ a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb)
   .ag-diagnose-acties{width:100%}
   .ag-diagnose-acties .ag-knop{flex:1 1 auto;white-space:normal}
 }
+
+/* KLIMOP-021 (21.11.2026): мобільна ширина 360 px без виходу українських кнопок за правий край, жива ділянка стану й список 15 питань. */
+[data-klimop-paneel] .ag-formrij,
+[data-klimop-paneel] .ag-knoppen,
+[data-klimop-paneel] .bsl-veld{min-width:0;max-width:100%}
+[data-klimop-paneel] .bsl-veld>span{flex-wrap:wrap}
+[data-klimop-paneel] .bsl-veld>span>label{cursor:pointer}
+[data-klimop-paneel] .ag-knop{max-width:100%;white-space:normal;height:auto;text-align:start;overflow-wrap:anywhere;line-height:1.3;padding-block:6px}
+[data-klimop-paneel] .ag-knop-icoon{flex:0 0 auto}
+[data-klimop-paneel] .ag-badge{max-width:100%;white-space:normal;height:auto;line-height:1.35;padding-block:2px}
+[data-klimop-paneel] .bsl-veld textarea{min-height:68px;width:100%;max-width:100%;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel);color:var(--text);padding:6px 10px;font:inherit;font-size:var(--tekst-klein,.85rem);resize:vertical}
+[data-klimop-paneel] .klimop-live-leeg{min-height:0;margin:0;padding:0;border:0}
+[data-klimop-paneel] .klimop-vragen-lijst{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px;font-size:.82rem}
+[data-klimop-paneel] .klimop-vragen-lijst>li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0}
+[data-klimop-paneel] .klimop-vragen-lijst>li>span{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+@media (max-width:560px){
+  [data-klimop-paneel] .ag-knoppen{width:100%}
+  [data-klimop-paneel] .ag-knop{width:100%;justify-content:flex-start}
+}

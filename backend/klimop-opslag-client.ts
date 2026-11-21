@@ -338,12 +338,35 @@ export class KlimopVerdeeldeOpslagClient {
     };
   }
 
-  /** Законне видалення всіх фрагментів об'єкта з усіх доступних вузлів за мандатами власника (§11 маніфесту). */
+  /**
+   * Законне видалення всіх фрагментів об'єкта з усіх доступних вузлів за мандатами власника (§11 маніфесту).
+   * KLIMOP-021: попередньо перевіряє підпис маніфесту та рахує окремо справді затерті (`bestond === true`),
+   * уже відсутні (`bestond === false`) і недоступні фрагменти.
+   */
   async wisObjectVanKnooppunten(opties: {
     manifest: KlimopObjectManifest;
     plaatsing: KlimopPlaatsingsKaart;
-  }): Promise<{ gewisteFragmenten: number; onbereikbareFragmenten: number }> {
+  }): Promise<{
+    manifestGeldig: boolean;
+    fout?: string;
+    gewisteFragmenten: number;
+    reedsAfwezigeFragmenten: number;
+    onbereikbareFragmenten: number;
+  }> {
+    const mv = verifieerObjectManifest(opties.manifest);
+    if (!mv.ok) {
+      const totaal = opties.manifest?.segmenten?.reduce((s, seg) => s + seg.fragmentRefs.length, 0) ?? 0;
+      return {
+        manifestGeldig: false,
+        fout: mv.fout,
+        gewisteFragmenten: 0,
+        reedsAfwezigeFragmenten: 0,
+        onbereikbareFragmenten: totaal,
+      };
+    }
+
     let gewisteFragmenten = 0;
+    let reedsAfwezigeFragmenten = 0;
     let onbereikbareFragmenten = 0;
     for (const segMeta of opties.manifest.segmenten) {
       for (const ref of segMeta.fragmentRefs) {
@@ -359,12 +382,21 @@ export class KlimopVerdeeldeOpslagClient {
           mandaat,
         });
         if (res.antwoord.ok && res.antwoord.actie === 'gewist') {
-          gewisteFragmenten++;
+          if (res.antwoord.bestond) {
+            gewisteFragmenten++;
+          } else {
+            reedsAfwezigeFragmenten++;
+          }
         } else {
           onbereikbareFragmenten++;
         }
       }
     }
-    return { gewisteFragmenten, onbereikbareFragmenten };
+    return {
+      manifestGeldig: true,
+      gewisteFragmenten,
+      reedsAfwezigeFragmenten,
+      onbereikbareFragmenten,
+    };
   }
 }
