@@ -3575,7 +3575,7 @@
   },
   {
    "pad": "backend/klimop-overdracht-opslag.ts",
-   "wat": "Serveropslag van Stappen 2–3 voor passief spiegellezen, gecontroleerd dubbel schrijven met leesverificatie, SHA-256-logboeken en directe terugval voor alle 11 diensten.",
+   "wat": "Serveropslag van Stappen 2–4 voor passief spiegellezen, gecontroleerd dubbel schrijven, FROST+postkwantum-quorumattesten, SHA-256-logboeken en directe terugval voor alle 11 diensten.",
    "sinds": "KLIMOP-015"
   },
   {
@@ -3587,6 +3587,11 @@
    "pad": "tests/eenheid/klimop-016-dubbel-schrijven-terugval-20261121.test.ts",
    "wat": "Eenheids- en integratietest voor Stap 3 gecontroleerd dubbel schrijven met leesverificatie, verwijdermarkeringen, kwitantieketen en directe terugval van alle 11 diensten.",
    "sinds": "KLIMOP-016"
+  },
+  {
+   "pad": "tests/eenheid/klimop-017-quorum-attest-stap4-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 4 quorumattesten onder FROST en Ed25519+ML-DSA-65, ketenherverificatie, eigenaarsvrijgave en directe terugval van alle 11 diensten.",
+   "sinds": "KLIMOP-017"
   }
  ]
 }

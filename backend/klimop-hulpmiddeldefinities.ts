@@ -1,5 +1,5 @@
-// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
-// Визначення семи технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 / KLIMOP-017 (21.11.2026, Етапи 13–16 впровадження «Плюща» у платформу «Мій простір»):
+// Визначення дев'яти технічних інструментів MCP екосистеми «Плющ» (kant 'beheer', технічний простір власника, З'єднувач v2).
 // Чистий модуль без бази даних: використовується каталогом З'єднувача v2 та перевірками двомовності для всіх 14 ШІ-агентів.
 
 import type { ToolDef } from './connectors-hulpmiddelen';
@@ -8,6 +8,7 @@ import { KLIMOP_ELF_DIENSTEN } from '../shared/klimop/diensten';
 import { KLIMOP_ZESTIEN_ONTWIKKELRICHTINGEN } from '../shared/klimop/zaden';
 import {
   KLIMOP_GESIMULEERDE_AFWIJKINGEN,
+  KLIMOP_GESIMULEERDE_ATTEST_FOUTEN,
   KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN,
   KLIMOP_TOOL_NAMEN,
 } from '../shared/klimop-overzicht-model';
@@ -19,6 +20,8 @@ export const KLIMOP_PASSIEVE_SPIEGEL = 'klimop_passieve_spiegel';
 export const KLIMOP_SPIEGEL_LOGBOEK = 'klimop_spiegel_logboek';
 export const KLIMOP_DUBBEL_SCHRIJVEN = 'klimop_dubbel_schrijven';
 export const KLIMOP_DUBBEL_LOGBOEK = 'klimop_dubbel_logboek';
+export const KLIMOP_QUORUM_ATTEST = 'klimop_quorum_attest';
+export const KLIMOP_QUORUM_LOGBOEK = 'klimop_quorum_logboek';
 
 export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
   {
@@ -240,6 +243,66 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
           description: p(
             'Найбільша кількість останніх квитанцій подвійного записування від 1 до 200.',
             'Hoogste aantal recente kwitanties van dubbel schrijven van 1 tot 200.',
+          ),
+        },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_QUORUM_ATTEST,
+    title: 'Quorumattest van gereedheid voor Stap 4 testen',
+    description:
+      'Stelt in een afgeschermde proefomgeving een cryptografisch quorumattest van Stap 4 (hoofdstuk 35) op over drie onafhankelijke knooppunten met twee-uit-drie drempelhandtekening en hybride postkwantumhandtekening zonder uitschakeling van de databank.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Ідентифікатор однієї з одинадцяти служб платформи для формування та перевірки кворумного атестата.',
+            'Aanduiding van een van de elf platformdiensten voor opstelling en toetsing van het quorumattest.',
+          ),
+        },
+        simuleerFout: {
+          type: 'string',
+          enum: [...KLIMOP_GESIMULEERDE_ATTEST_FOUTEN],
+          description: p(
+            'Необов’язковий вид штучного збою порогової частки, постквантового підпису або незалежності вузлів.',
+            'Optioneel soort gesimuleerde fout van een drempeldeel, postkwantumhandtekening of knooppuntonafhankelijkheid.',
+          ),
+        },
+      },
+      required: ['dienstId'],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: KLIMOP_QUORUM_LOGBOEK,
+    title: 'Quorumattestlogboek en keten lezen',
+    description:
+      'Leest het logboek van quorumattesten van Stap 4, herverifieert de SHA-256-keten én beide cryptografische handtekeningen van elk geldig attest en geeft de samenvatting terug zonder schakelrechten.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dienstId: {
+          type: 'string',
+          enum: [...KLIMOP_ELF_DIENSTEN],
+          description: p(
+            'Необов’язковий фільтр кворумних атестатів за однією з одинадцяти служб платформи.',
+            'Optioneel filter voor quorumattesten op een van de elf diensten van het platform.',
+          ),
+        },
+        limiet: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 200,
+          description: p(
+            'Найбільша кількість останніх кворумних атестатів від 1 до 200.',
+            'Hoogste aantal recente quorumattesten van 1 tot 200.',
           ),
         },
       },

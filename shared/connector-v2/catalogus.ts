@@ -550,6 +550,13 @@ const DEFS: readonly Def[] = [
   { id: 'klimop_dubbel_logboek', essentie: 'lezen_klimop_dubbel', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
     uk: ['Читати квитанції подвійного записування служб', 'Читає знеособлені квитанції подвійного записування Сходинки 3, перевіряє цілісність ланцюжка SHA-256 та повертає зведення по одинадцяти службах.', 'Лише читання знеособленого журналу квитанцій. ШІ не має доступу до перемикача режимів.'],
     nl: ['Kwitanties van dubbel schrijven lezen', 'Leest geanonimiseerde kwitanties van gecontroleerd dubbel schrijven van Stap 3, controleert de SHA-256-keten en geeft de samenvatting voor de elf diensten.', 'Alleen lezen van geanonimiseerde kwitanties. De AI kan de schakelaar niet zelfstandig bedienen.'] },
+  // KLIMOP-017 (21.11.2026) — Сходинка 4 кворумного атестата готовності під подвійною печаткою без вимкнення живої бази (§35).
+  { id: 'klimop_quorum_attest', essentie: 'testen_klimop_attest', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Виконувати перевірку кворумного атестата служби', 'Формує в ізольованому контурі кворумний атестат Сходинки 4 розділу 35 на трьох незалежних вузлах під пороговим і гібридним постквантовим підписами.', 'Лише криптографічна перевірка без вимкнення робочої бази даних і без доступу до вмісту.'],
+    nl: ['Quorumattest van dienst testen', 'Stelt in een afgeschermde proefomgeving een quorumattest van Stap 4 op voor drie onafhankelijke knooppunten onder drempel- en postkwantumhandtekening.', 'Alleen een cryptografische proef zonder uitschakeling van de databank of inzage in inhoud.'] },
+  { id: 'klimop_quorum_logboek', essentie: 'lezen_klimop_attest', sub: 'admin', kanten: B, soort: 'lezen', groep: 'releases', risico: 'laag',
+    uk: ['Читати журнал кворумних атестатів служб', 'Читає журнал атестатів Сходинки 4, повторно перевіряє цілісність ланцюжка SHA-256 та обидва криптографічні підписи кожного чинного атестата.', 'Лише читання знеособленого журналу атестатів. ШІ не має доступу до перемикача режимів.'],
+    nl: ['Quorumattestlogboek van diensten lezen', 'Leest het logboek van quorumattesten van Stap 4, herverifieert de SHA-256-keten en beide cryptografische handtekeningen van elk geldig attest.', 'Alleen lezen van geanonimiseerde attesten. De AI kan de schakelaar niet zelfstandig bedienen.'] },
 
   // ---------------------------------------------------------------- ecosysteem: gedeelde context, taakoverdracht en ruimte-uitbreidingen
   { id: 'ecosysteem_context_list', essentie: 'tonen_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',

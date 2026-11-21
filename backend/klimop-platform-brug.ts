@@ -55,10 +55,12 @@ import {
   type KlimopModuleIntegriteit,
   type KlimopPassieveLeesModus,
   type KlimopPlatformOverzicht,
+  type KlimopQuorumAttestModus,
   type KlimopSpiegelControleUitkomst,
 } from '../shared/klimop-overzicht-model';
 import {
   leesKlimopDubbelSchrijvenLogboek,
+  leesKlimopQuorumAttestLogboek,
   leesKlimopSpiegelLogboek,
 } from './klimop-overdracht-opslag';
 
@@ -89,6 +91,7 @@ function bouwDienstenStatusLijst(
   spiegelBeschikbaar: boolean,
   leesModusKaart?: ReadonlyMap<KlimopDienstId, KlimopPassieveLeesModus>,
   schrijfModusKaart?: ReadonlyMap<KlimopDienstId, KlimopDubbelSchrijfModus>,
+  attestModusKaart?: ReadonlyMap<KlimopDienstId, KlimopQuorumAttestModus>,
 ): KlimopDienstBrugStatus[] {
   return KLIMOP_ELF_DIENSTEN.map((dienstId) => {
     const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
@@ -100,30 +103,38 @@ function bouwDienstenStatusLijst(
       huidigeProductieModus: 'alleen_erfenis_postgres',
       passieveLeesModus: leesModusKaart?.get(dienstId) ?? 'alleen_erfenis_postgres',
       dubbelSchrijfModus: schrijfModusKaart?.get(dienstId) ?? 'alleen_erfenis_postgres',
+      quorumAttestModus: attestModusKaart?.get(dienstId) ?? 'alleen_erfenis_postgres',
       spiegelVerificatieBeschikbaar: spiegelBeschikbaar,
       productieDatabankActief: true,
     };
   });
 }
 
-/** Живий огляд 12 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинок 1–3 для всіх 11 служб (§35, §46). */
+/** Живий огляд 12 модулів ядра, кореня Меркла «Насіння», досьє та стану Сходинок 1–4 для всіх 11 служб (§35, §46). */
 export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): KlimopPlatformOverzicht {
   const afhankelijkheden = valideerTechnischeAfhankelijkheden();
   const logboekStaat = leesKlimopSpiegelLogboek({ staatMap, limiet: 1 });
   const dubbelStaat = leesKlimopDubbelSchrijvenLogboek({ staatMap, limiet: 1 });
+  const attestStaat = leesKlimopQuorumAttestLogboek({ staatMap, limiet: 1 });
   const leesModusKaart = new Map(
     logboekStaat.schakelaars.map((s) => [s.dienstId, s.leesModus] as const),
   );
   const schrijfModusKaart = new Map(
     logboekStaat.schakelaars.map((s) => [s.dienstId, s.schrijfModus] as const),
   );
+  const attestModusKaart = new Map(
+    logboekStaat.schakelaars.map((s) => [s.dienstId, s.attestModus] as const),
+  );
   const overdrachtStaat = {
     actievePassiefLezenDiensten: logboekStaat.samenvatting.actievePassiefLezenDiensten,
     actieveDubbelSchrijvenDiensten: logboekStaat.samenvatting.actieveDubbelSchrijvenDiensten,
+    actieveQuorumGereedDiensten: logboekStaat.samenvatting.actieveQuorumGereedDiensten,
     totaalLogboekRegels: logboekStaat.samenvatting.totaalLogboekRegels,
     totaalDubbelKwitanties: dubbelStaat.samenvatting.totaalKwitanties,
+    totaalQuorumAttesten: attestStaat.samenvatting.totaalAttesten,
     ketenIntegriteitOk: logboekStaat.ketenIntegriteit.ok,
     dubbelKetenIntegriteitOk: dubbelStaat.ketenIntegriteit.ok,
+    attestKetenIntegriteitOk: attestStaat.ketenIntegriteit.ok,
   };
 
   const kernPad = join(wortel, 'shared/klimop/kern.ts');
@@ -135,7 +146,7 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
       afhankelijkheden,
       eindvisie46: null,
       dossier: null,
-      diensten: bouwDienstenStatusLijst(true, leesModusKaart, schrijfModusKaart),
+      diensten: bouwDienstenStatusLijst(true, leesModusKaart, schrijfModusKaart, attestModusKaart),
       overdrachtStaat,
       hulpmiddelen: KLIMOP_TOOL_NAMEN,
       productieOnaangetast: true,
@@ -215,7 +226,7 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
       voltooideDocumenten44,
     },
     dossier,
-    diensten: bouwDienstenStatusLijst(alleTwaalfAanwezig, leesModusKaart, schrijfModusKaart),
+    diensten: bouwDienstenStatusLijst(alleTwaalfAanwezig, leesModusKaart, schrijfModusKaart, attestModusKaart),
     overdrachtStaat,
     hulpmiddelen: KLIMOP_TOOL_NAMEN,
     productieOnaangetast: true,
