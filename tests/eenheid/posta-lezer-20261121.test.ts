@@ -38,14 +38,16 @@ export async function main(): Promise<number> {
 
   // 2) Leesvenster-fout: server
   const fout = (m: string, extra: Record<string, unknown> = {}) => Object.assign(new Error(m), extra);
-  const abort = Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+  const abort = Object.assign(new Error('afgebroken'), { name: 'AbortError' });
   check('server: Google 401 → 403 MAIL_BRIEF_GEEN_TOEGANG (bewust geen 401)', lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 401 }))?.status === 403);
   check('server: Google 403 → 403', lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 403 }))?.code === 'MAIL_BRIEF_GEEN_TOEGANG');
   check('server: ontbrekende of ingetrokken toestemming → 403', lezerFoutAntwoord(fout('GOOGLE_SUITE_REFRESH_TOKEN_MISSING'))?.status === 403 && lezerFoutAntwoord(fout('GOOGLE_SUITE_SCOPE_INCOMPLETE'))?.status === 403);
-  check('server: afgebroken na wachttijd → 504 MAIL_BRIEF_TIJD_OM', lezerFoutAntwoord(abort)?.status === 504 && lezerFoutAntwoord(abort)?.code === 'MAIL_BRIEF_TIJD_OM');
+  check('server: afgebroken na wachttijd → 424 MAIL_BRIEF_TIJD_OM (geen 504: geen strook «server ligt eruit»)', lezerFoutAntwoord(abort)?.status === 424 && lezerFoutAntwoord(abort)?.code === 'MAIL_BRIEF_TIJD_OM');
   check('server: postbus niet gekoppeld → 409', lezerFoutAntwoord(fout('GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED'))?.status === 409);
   check('server: 404 van Google → 404', lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 404 }))?.status === 404);
-  check('server: overige fout → 502 MAIL_BRIEF_DIENST_FOUT', lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 500 }))?.code === 'MAIL_BRIEF_DIENST_FOUT' && lezerFoutAntwoord('x')?.status === 502);
+  check('server: overige fout bij Google → 424 MAIL_BRIEF_DIENST_FOUT, 429 → 424 MAIL_BRIEF_TE_VEEL_VERZOEKEN', lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 500 }))?.code === 'MAIL_BRIEF_DIENST_FOUT' && lezerFoutAntwoord('x')?.status === 424 && lezerFoutAntwoord(fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 429 }))?.code === 'MAIL_BRIEF_TE_VEEL_VERZOEKEN');
+  const statussen = [abort, fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 500 }), fout('GOOGLE_MAIL_MESSAGE_FAILED', { httpStatus: 401 }), fout('GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED'), 'x'].map((f) => lezerFoutAntwoord(f)?.status || 0);
+  check('server: met de vlag nooit 401, 502, 503 of 504', statussen.every((n) => ![401, 502, 503, 504].includes(n)), statussen.join(','));
   check('server: kluis en extra bevestiging blijven ongewijzigd (null)', lezerFoutAntwoord(fout('SLEUTELKLUIS_GESLOTEN')) === null && lezerFoutAntwoord(fout('STEP_UP_REQUIRED')) === null);
   const uitlegUk = ['GOOGLE_MAIL_MESSAGE_FAILED', 'GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED'].map((m) => lezerFoutAntwoord(fout(m, { httpStatus: 403 }))?.uitleg || '').join(' ') + lezerFoutAntwoord(abort)?.uitleg;
   check('server: uitleg in zuiver Oekraïens', !VERBODEN.test(uitlegUk) && !/[A-Za-z]{2,}/.test(uitlegUk.replace(/Google/g, '')));
@@ -55,10 +57,11 @@ export async function main(): Promise<number> {
   check('server: vlag per gebruiker via flagsBerekenen in backend/index.ts', idx.includes("lezerFoutVlag:async(u)=>(await flagsBerekenen(u as never,['lezer-fout-blijft-open-v1']))[0]?.value===true"));
 
   // 3) Leesvenster-fout: client
-  check('client: ApiError-vorm → status en code', JSON.stringify(lezerFoutUit({ status: 504, message: 'MAIL_BRIEF_TIJD_OM', response: { data: { error: 'MAIL_BRIEF_TIJD_OM' } } })) === JSON.stringify({ status: 504, code: 'MAIL_BRIEF_TIJD_OM', soort: 'tijd' }));
-  check('client: netwerkfout zonder status → «netwerk», geen vreemde tekst als code', lezerFoutUit(new TypeError('Failed to fetch')).soort === 'netwerk' && lezerFoutUit(new TypeError('Failed to fetch')).code === '');
+  check('client: ApiError-vorm → status en code', JSON.stringify(lezerFoutUit({ status: 424, message: 'MAIL_BRIEF_TIJD_OM', response: { data: { error: 'MAIL_BRIEF_TIJD_OM' } } })) === JSON.stringify({ status: 424, code: 'MAIL_BRIEF_TIJD_OM', soort: 'tijd' }));
+  check('client: 424 zonder bekende code → «google»', soortVan(424) === 'google' && soortVan(424, 'MAIL_BRIEF_TE_VEEL_VERZOEKEN') === 'te-veel');
+  check('client: netwerkfout zonder status → «netwerk», geen vreemde tekst als code', lezerFoutUit(new TypeError('verbinding weg')).soort === 'netwerk' && lezerFoutUit(new TypeError('verbinding weg')).code === '');
   check('client: soorten per status', soortVan(401) === 'sessie' && soortVan(403) === 'toegang' && soortVan(404) === 'niet-gevonden' && soortVan(409) === 'postbus' && soortVan(429) === 'te-veel' && soortVan(502) === 'server' && soortVan(418) === 'onbekend');
-  check('client: statusklasse in het Oekraïens', statusKlasse(504, 'uk') === 'HTTP 504 · помилка сервера' && statusKlasse(403, 'uk') === 'HTTP 403 · відмова запиту' && statusKlasse(0, 'uk') === 'без відповіді');
+  check('client: statusklasse in het Oekraïens', statusKlasse(424, 'uk') === 'HTTP 424 · збій служби Google' && statusKlasse(504, 'uk') === 'HTTP 504 · помилка сервера' && statusKlasse(403, 'uk') === 'HTTP 403 · відмова запиту' && statusKlasse(0, 'uk') === 'без відповіді');
   const uk = Object.values(LEZER_FOUT_TEKST).map((t) => t[0]).join(' ');
   check('client: teksten zuiver Oekraïens (geen verboden letters, geen deelwoorden op -учий)', !VERBODEN.test(uk) && !DEELWOORD.test(uk) && !/[A-Za-z]{2,}/.test(uk.replace(/Google/g, '')));
   const gmw = readFileSync('src/GoogleMailWerkruimte.tsx', 'utf8');

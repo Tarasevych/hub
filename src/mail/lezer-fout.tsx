@@ -3,6 +3,7 @@
 // LeesVenster verdween, zijn opruiming deed history.back() en de mens zag alleen een flits van «Підвантажуємо вміст листа…».
 // Nu, met de vlag aan: het venster blijft open en toont hier de reden (soort fout naar HTTP-status, in het Oekraïens of Nederlands)
 // met de knop «Спробувати ще раз». Geen history.back(): het venster wordt niet ontkoppeld.
+// Status 424 = fout bij Google (niet bij onze server); zie lezerFoutAntwoord in backend/google-suite-mail-browser.ts.
 // Укр.: якщо лист не відкрився, вікно лишається відкритим, показує причину й кнопку «Спробувати ще раз».
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import './lezer-fout.css';
@@ -11,7 +12,7 @@ export const LEZER_FOUT_VLAG = 'lezer-fout-blijft-open-v1';
 // MAQUETTE-ZWEVEND-RAIL-VERBERGEN v1 (migratie 0307, standaard UIT): de ankerrail van «Макет» niet tonen bij een zwevend leesvenster.
 export const MAQUETTE_ZWEVEND_RAIL_VLAG = 'maquette-zwevend-rail-verbergen-v1';
 
-export type LezerFoutSoort = 'netwerk' | 'sessie' | 'toegang' | 'niet-gevonden' | 'postbus' | 'te-veel' | 'tijd' | 'server' | 'onbekend';
+export type LezerFoutSoort = 'netwerk' | 'sessie' | 'toegang' | 'niet-gevonden' | 'postbus' | 'te-veel' | 'tijd' | 'google' | 'server' | 'onbekend';
 export type LezerFout = { berichtId: string; accountId: string; draad: string; status: number; code: string; soort: LezerFoutSoort };
 
 /** Status en veilige code uit een fout van api.post (ApiError) of een netwerkfout; nooit tekst van buiten tonen. */
@@ -30,6 +31,7 @@ export function soortVan(status: number, code = ''): LezerFoutSoort {
   if (status === 401) return 'sessie';
   if (status === 403) return 'toegang';
   if (status === 404 || status === 410) return 'niet-gevonden';
+  if (code === 'MAIL_BRIEF_DIENST_FOUT' || status === 424) return 'google';
   if (status >= 500) return 'server';
   if (status === 0) return 'netwerk';
   return 'onbekend';
@@ -44,6 +46,7 @@ export const LEZER_FOUT_TEKST: Record<LezerFoutSoort, [string, string]> = {
   postbus: ['Ця поштова скринька зараз не під’єднана.', 'Deze mailbox is nu niet gekoppeld.'],
   'te-veel': ['Забагато запитів до Google. Спробуйте за хвилину.', 'Te veel verzoeken aan Google. Probeer het over een minuut.'],
   tijd: ['Google відповідав надто довго.', 'Google antwoordde te traag.'],
+  google: ['Служба пошти Google зараз не відповіла як слід.', 'De maildienst van Google antwoordde nu niet zoals verwacht.'],
   server: ['Помилка на боці сервера пошти.', 'Fout aan de kant van de mailserver.'],
   onbekend: ['Лист не вдалося завантажити.', 'Het bericht kon niet worden geladen.'],
 };
@@ -52,7 +55,7 @@ export const LEZER_FOUT_TEKST: Record<LezerFoutSoort, [string, string]> = {
 export function statusKlasse(status: number, lang: 'uk' | 'nl'): string {
   const uk = lang !== 'nl';
   if (!status) return uk ? 'без відповіді' : 'geen antwoord';
-  const k = status >= 500 ? (uk ? 'помилка сервера' : 'serverfout') : status >= 400 ? (uk ? 'відмова запиту' : 'verzoek geweigerd') : (uk ? 'інша відповідь' : 'ander antwoord');
+  const k = status === 424 ? (uk ? 'збій служби Google' : 'storing bij Google') : status >= 500 ? (uk ? 'помилка сервера' : 'serverfout') : status >= 400 ? (uk ? 'відмова запиту' : 'verzoek geweigerd') : (uk ? 'інша відповідь' : 'ander antwoord');
   return `HTTP ${status} · ${k}`;
 }
 
