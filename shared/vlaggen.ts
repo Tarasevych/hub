@@ -104,6 +104,25 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Спершу тільки для себе: увімкніть, відкрийте сайт на телефоні й перевірте сторінки за списком з інструкції. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, open de site op de telefoon en controleer de pagina’s volgens de lijst uit de instructie. Daarna voor iedereen.'],
     gevolg: ['Вимкнення після перезавантаження сторінки повертає попередню верстку без змін. Дані, права й налаштування не змінюються.', 'Uitschakelen brengt na het herladen van de pagina de vorige opmaak ongewijzigd terug. Gegevens, rechten en instellingen veranderen niet.'],
   },
+  // POSTA-LEZER (21.11.2026, migratie 0307): drie vlaggen, alle standaard UIT.
+  'lezer-fout-blijft-open-v1': {
+    naam: ['Лист, що не відкрився, лишає вікно відкритим', 'Leesvenster blijft open bij een laadfout'],
+    wat: ['Якщо лист не завантажився, вікно читання більше не зникає саме. У ньому видно причину (наприклад, Google відповідав надто довго або не дав доступу) і кнопку «Спробувати ще раз». Сервер повідомляє зрозумілу причину замість загальної помилки.', 'Kan een bericht niet geladen worden, dan verdwijnt het leesvenster niet meer vanzelf. Het toont de reden (bijvoorbeeld: Google antwoordde te traag of gaf geen toegang) en de knop «Opnieuw proberen». De server meldt een duidelijke reden in plaats van een algemene fout.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, відкрийте кілька листів і перевірте за списком з інструкції. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, open een paar berichten en controleer met de lijst uit de instructie. Daarna voor iedereen.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає попередню поведінку: вікно закривається й угорі видно коротку примітку. Дані не змінюються.', 'Uitschakelen brengt na het herladen het vorige gedrag terug: het venster sluit en bovenaan staat een korte melding. Gegevens veranderen niet.'],
+  },
+  'mail-tekst-utf8-terugval-v1': {
+    naam: ['Правильні літери в листах із хибним кодуванням', 'Juiste letters in berichten met een verkeerde tekenset'],
+    wat: ['Деякі відправники пишуть лист у UTF-8, але позначають його як західноєвропейське кодування. Тоді замість «möchten» видно «mÃ¶chten». З прапорцем сервер розпізнає такий лист і показує правильні літери. Звичайні листи не змінюються.', 'Sommige afzenders schrijven in UTF-8 maar melden een West-Europese tekenset. Dan staat er «mÃ¶chten» in plaats van «möchten». Met de vlag herkent de server zo’n bericht en toont de juiste letters. Gewone berichten veranderen niet.'],
+    wanneer: ['Цей прапорець діє для всього сервера одразу (не для окремої людини): увімкніть його загалом. Сервер перевіряє стан раз на хвилину. Уже збережені в оглядачі листи можуть лишитися старими, доки їх не завантажено знову.', 'Deze vlag geldt voor de hele server tegelijk (niet per persoon): zet hem algemeen aan. De server kijkt elke minuut. Berichten die al in de browser bewaard zijn, kunnen oud blijven tot ze opnieuw geladen worden.'],
+    gevolg: ['Вимкнення протягом хвилини повертає попереднє читання листів. Дані не змінюються.', 'Uitschakelen brengt binnen een minuut het vorige lezen van berichten terug. Gegevens veranderen niet.'],
+  },
+  'maquette-zwevend-rail-verbergen-v1': {
+    naam: ['«Макет»: смуга розділів не закриває «вікно у вікні»', '«Макет»: ankerrail bedekt het zwevende venster niet'],
+    wat: ['В оформленні «Макет» праворуч є смуга «На цій сторінці». Коли лист відкрито зменшеним вікном поверх пошти, ця смуга лежала над кнопками вікна. З прапорцем смуга в цьому режимі ховається.', 'In de vormgeving «Макет» staat rechts de rail «Op deze pagina». Bij een verkleind venster boven de post lag die rail over de knoppen van het venster. Met de vlag verdwijnt de rail in die stand.'],
+    wanneer: ['Спершу тільки для себе: увімкніть, оберіть «Макет», відкрийте лист зменшеним вікном і перевірте кнопки. Потім — для всіх.', 'Eerst alleen voor uzelf: zet aan, kies «Макет», open een bericht in een verkleind venster en controleer de knoppen. Daarna voor iedereen.'],
+    gevolg: ['Вимкнення після перезавантаження сторінки повертає смугу в усіх режимах. Дані не змінюються.', 'Uitschakelen brengt na het herladen de rail in alle standen terug. Gegevens veranderen niet.'],
+  },
   'telegram-aanmelden-v1': {
     naam: ['Вхід і підтвердження через Telegram', 'Aanmelden en bevestigen via Telegram'],
     wat: ['Офіційна кнопка Telegram на сторінці входу, прив’язка Telegram з обов’язковим власним номером телефону, підтвердження дій у боті @MijnRuimte_Bot, гарні картки сповіщень, таблиця «що чим підтверджувати», таємний код і чесна служба стану. В адмінці з’являється розділ «Способи входу» → Telegram.', 'Officiële Telegram-knop op het aanmeldscherm, Telegram koppelen met verplicht eigen telefoonnummer, handelingen bevestigen in de bot @MijnRuimte_Bot, mooie meldingskaarten, een tabel «wat waarmee bevestigen», een geheime code en een eerlijke statusdienst. In het beheer verschijnt «Aanmeldmethoden» → Telegram.'],

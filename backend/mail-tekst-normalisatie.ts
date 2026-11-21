@@ -29,4 +29,22 @@ export const zonderHtmlBlok=(value:string,naam:'script'|'style',vervanging=' ')=
 export const zonderHtmlTags=(value:string,vervanging=' ')=>{const delen:string[]=[];let positie=0,zoek=0;for(;;){const begin=value.indexOf('<',zoek);if(begin<0)break;const eind=value.indexOf('>',begin+1);if(eind<0)break;if(eind===begin+1){zoek=begin+1;continue}delen.push(value.slice(positie,begin),vervanging);positie=zoek=eind+1}if(!positie)return value;delen.push(value.slice(positie));return delen.join('')};
 /** HTML van een brief → tekst met regeleinden: script/style weg, <br> en </p> worden een regeleinde, overige tags een spatie. Lineair. */
 export const mailHtmlNaarRuweTekst=(value:string)=>zonderHtmlTags(zonderHtmlBlok(zonderHtmlBlok(value,'script'),'style').replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>/gi,'\n'));
-export const decodeMailPartText=(data:string,contentType='')=>{let bytes:Buffer;try{bytes=Buffer.from(String(data||''),'base64url')}catch{return''}if(!bytes.length)return'';const charset=charsetOf(contentType)||'utf-8';try{return new TextDecoder(charset,{fatal:false}).decode(bytes)}catch{return new TextDecoder('utf-8',{fatal:false}).decode(bytes)}};
+/*
+ * MAIL-TEKST-UTF8-TERUGVAL v1 (vlag `mail-tekst-utf8-terugval-v1`, migratie 0307, standaard UIT).
+ * Sommige afzenders sturen UTF-8-bytes maar melden «charset=iso-8859-1», «windows-1252» of «us-ascii». Dan werd «möchten» als
+ * «mÃ¶chten» getoond. Met de vlag aan: is de opgegeven tekenset zo'n enkelbyte-set, bevat de inhoud bytes boven 0x7F en is de
+ * inhoud STRIKT geldige UTF-8 (fatal), dan lezen we UTF-8. Echte Latijn-1-tekst is vrijwel nooit geldige UTF-8 met hoge bytes,
+ * dus gewone brieven blijven zoals ze waren. Met de vlag uit: precies het oude gedrag.
+ * Укр.: якщо лист заявляє однобайтове кодування, а байти насправді є чинним UTF-8, читаємо UTF-8 (лише з прапорцем).
+ */
+let utf8TerugvalAan=false;
+/** Zet de terugval aan of uit (backend/mail-utf8-terugval-vlag.ts leest de vlag; tests zetten hem direct). */
+export const zetMailUtf8Terugval=(aan:boolean)=>{utf8TerugvalAan=aan===true};
+export const mailUtf8TerugvalAan=()=>utf8TerugvalAan;
+const ENKELBYTE_TEKENSETS=new Set(['iso-8859-1','iso8859-1','iso_8859-1','latin1','latin-1','l1','iso-ir-100','csisolatin1','ibm819','cp819','windows-1252','cp1252','x-cp1252','us-ascii','ascii','ansi_x3.4-1968','iso646-us','csascii']);
+/** Is dit label een enkelbyte-tekenset waarbij de terugval mag gelden? */
+export const isEnkelbyteTekenset=(charset:string)=>ENKELBYTE_TEKENSETS.has(String(charset||'').trim().toLowerCase().replace(/^["']|["']$/g,''));
+const heeftHogeBytes=(bytes:Uint8Array)=>{for(let i=0;i<bytes.length;i++)if(bytes[i]>0x7f)return true;return false};
+/** Strikte UTF-8 met minstens één meerbytereeks, anders null (lineair; één doorgang plus één decodering). */
+export const strikteUtf8MetMeerbyte=(bytes:Uint8Array):string|null=>{if(!heeftHogeBytes(bytes))return null;try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch{return null}};
+export const decodeMailPartText=(data:string,contentType='',opties:{utf8Terugval?:boolean}={})=>{let bytes:Buffer;try{bytes=Buffer.from(String(data||''),'base64url')}catch{return''}if(!bytes.length)return'';const charset=charsetOf(contentType)||'utf-8';if((opties.utf8Terugval??utf8TerugvalAan)&&isEnkelbyteTekenset(charset)){const utf8=strikteUtf8MetMeerbyte(bytes);if(utf8!==null)return utf8}try{return new TextDecoder(charset,{fatal:false}).decode(bytes)}catch{return new TextDecoder('utf-8',{fatal:false}).decode(bytes)}};
