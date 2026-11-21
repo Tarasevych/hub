@@ -72,6 +72,13 @@ import {
   type KlimopDienstCrdtStaat,
   type KlimopDienstId,
 } from '../shared/klimop/diensten';
+import {
+  beoordeelUitvoeringUitgesteldeOperatie,
+  verifieerUitgesteldeKritiekeOperatie,
+  type KlimopOperatieAnnulering,
+  type KlimopUitgesteldeKritiekeOperatie,
+  type OnopvallendSignaalPakket,
+} from '../shared/klimop/mensbescherming';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -175,6 +182,35 @@ export type KnooppuntOpdracht =
       dienstId: KlimopDienstId;
       dienstPsid: string;
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'ontvang_onopvallend_signaal';
+      pakket: OnopvallendSignaalPakket;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'haal_voogd_signalen_op';
+      voogdId: string;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_uitgestelde_operatie';
+      operatie: KlimopUitgesteldeKritiekeOperatie;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'annuleer_uitgestelde_operatie';
+      annulering: KlimopOperatieAnnulering;
+      toegestaneAnnuleerPubSleutels: readonly string[];
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'controleer_uitvoering_uitgestelde_operatie';
+      operatieId: string;
+      toegestaneAnnuleerPubSleutels: readonly string[];
+      actiefStilDwangAlarm: boolean;
+      nuIso: string;
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -243,6 +279,35 @@ export type KnooppuntOpdrachtAntwoord =
       actie: 'dienst_crdt_staat';
       staat: KlimopDienstCrdtStaat;
       aantalElementen: number;
+    }
+  | {
+      ok: true;
+      actie: 'onopvallend_signaal_ontvangen';
+      pakketId: string;
+      vasteCijfertekstBytes: 256;
+    }
+  | {
+      ok: true;
+      actie: 'voogd_signalen_opgehaald';
+      pakketten: readonly OnopvallendSignaalPakket[];
+    }
+  | {
+      ok: true;
+      actie: 'uitgestelde_operatie_geregistreerd';
+      operatieId: string;
+      uitvoerbaarVanaf: string;
+    }
+  | {
+      ok: true;
+      actie: 'uitgestelde_operatie_geannuleerd';
+      operatieId: string;
+    }
+  | {
+      ok: true;
+      actie: 'uitgestelde_operatie_uitvoerbaarheid';
+      operatieId: string;
+      magUitvoeren: boolean;
+      redenIndienGeweigerd: string | null;
     }
   | { ok: false; fout: string; details?: string[] };
 
@@ -315,6 +380,7 @@ export interface KlimopProefKnooppunt {
   actiefUitgaveVolgnummer(): number;
   aantalUitgaveTerugdraaiingen(): number;
   aantalDienstCrdtRuimtes(): number;
+  aantalUitgesteldeOperaties(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -334,6 +400,9 @@ export async function startKlimopProefKnooppunt(config: {
   const frostNonces = new Map<string, FrostGeheimeNonceStaat>();
   const identiteitRegister = new Map<string, KlimopIdentiteitRegisterInvoer>();
   const dienstCrdtRuimtes = new Map<string, KlimopDienstCrdtStaat>();
+  const voogdSignaalBussen = new Map<string, OnopvallendSignaalPakket[]>();
+  const uitgesteldeOperaties = new Map<string, KlimopUitgesteldeKritiekeOperatie>();
+  const operatieAnnuleringen = new Map<string, KlimopOperatieAnnulering>();
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -347,7 +416,7 @@ export async function startKlimopProefKnooppunt(config: {
   let aantalEstafettes = 0;
 
   function controleerRolEnMandaat(
-    vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie',
+    vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie' | 'herstel',
     mandaat: KlimopOndertekendMandaat,
   ): { ok: true } | { ok: false; fout: string; details?: string[] } {
     if (!knooppunt.identiteit.rollen.includes(vereisteRol)) {
@@ -358,7 +427,9 @@ export async function startKlimopProefKnooppunt(config: {
             ? 'KNOOPPUNT_HEEFT_GEEN_OPSLAGROL'
             : vereisteRol === 'verificatie'
               ? 'KNOOPPUNT_HEEFT_GEEN_VERIFICATIEROL'
-              : 'KNOOPPUNT_HEEFT_GEEN_SYNCHRONISATIEROL',
+              : vereisteRol === 'synchronisatie'
+                ? 'KNOOPPUNT_HEEFT_GEEN_SYNCHRONISATIEROL'
+                : 'KNOOPPUNT_HEEFT_GEEN_HERSTELROL',
       };
     }
     const v = verifieerKlimopMandaat(mandaat, {
@@ -377,7 +448,9 @@ export async function startKlimopProefKnooppunt(config: {
             ? 'MANDAAT_NIET_VOOR_DEZE_OPSLAGKNOOP'
             : vereisteRol === 'verificatie'
               ? 'MANDAAT_NIET_VOOR_DEZE_VERIFICATIEKNOOP'
-              : 'MANDAAT_NIET_VOOR_DEZE_SYNCHRONISATIEKNOOP',
+              : vereisteRol === 'synchronisatie'
+                ? 'MANDAAT_NIET_VOOR_DEZE_SYNCHRONISATIEKNOOP'
+                : 'MANDAAT_NIET_VOOR_DEZE_HERSTELKNOOP',
       };
     }
     return { ok: true };
@@ -740,6 +813,93 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (
+      opdracht.actie === 'ontvang_onopvallend_signaal'
+      || opdracht.actie === 'haal_voogd_signalen_op'
+      || opdracht.actie === 'registreer_uitgestelde_operatie'
+      || opdracht.actie === 'annuleer_uitgestelde_operatie'
+      || opdracht.actie === 'controleer_uitvoering_uitgestelde_operatie'
+    ) {
+      const mOk = controleerRolEnMandaat('herstel', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'ontvang_onopvallend_signaal') {
+        const ruwCt = Buffer.from(opdracht.pakket?.cijfertekstB64u ?? '', 'base64url');
+        if (ruwCt.length !== 256 || !opdracht.pakket.ontvangerVoogdId) {
+          return { ok: false, fout: 'SIGNAAL_PAKKET_AFWIJKENDE_LENGTE' };
+        }
+        const lijst = voogdSignaalBussen.get(opdracht.pakket.ontvangerVoogdId) ?? [];
+        if (!lijst.some((p) => p.pakketId === opdracht.pakket.pakketId)) {
+          lijst.push(opdracht.pakket);
+          voogdSignaalBussen.set(opdracht.pakket.ontvangerVoogdId, lijst);
+        }
+        return {
+          ok: true,
+          actie: 'onopvallend_signaal_ontvangen',
+          pakketId: opdracht.pakket.pakketId,
+          vasteCijfertekstBytes: 256,
+        };
+      }
+
+      if (opdracht.actie === 'haal_voogd_signalen_op') {
+        return {
+          ok: true,
+          actie: 'voogd_signalen_opgehaald',
+          pakketten: voogdSignaalBussen.get(opdracht.voogdId) ?? [],
+        };
+      }
+
+      if (opdracht.actie === 'registreer_uitgestelde_operatie') {
+        const vOp = verifieerUitgesteldeKritiekeOperatie(opdracht.operatie);
+        if (!vOp.ok) return vOp;
+        uitgesteldeOperaties.set(opdracht.operatie.operatieId, opdracht.operatie);
+        return {
+          ok: true,
+          actie: 'uitgestelde_operatie_geregistreerd',
+          operatieId: opdracht.operatie.operatieId,
+          uitvoerbaarVanaf: opdracht.operatie.uitvoerbaarVanaf,
+        };
+      }
+
+      if (opdracht.actie === 'annuleer_uitgestelde_operatie') {
+        const op = uitgesteldeOperaties.get(opdracht.annulering.operatieId);
+        if (!op) return { ok: false, fout: 'UITGESTELDE_OPERATIE_NIET_GEVONDEN' };
+        const proefBeoordeling = beoordeelUitvoeringUitgesteldeOperatie({
+          operatie: op,
+          annulering: opdracht.annulering,
+          toegestaneAnnuleerPubSleutels: new Set(opdracht.toegestaneAnnuleerPubSleutels),
+          actiefStilDwangAlarm: false,
+          nuIso: op.uitvoerbaarVanaf,
+        });
+        if (proefBeoordeling.fout !== 'KRITIEKE_OPERATIE_GEANNULEERD_DOOR_EIGENAAR') {
+          return { ok: false, fout: 'ANNULERING_HANDTEKENING_ONGELDIG' };
+        }
+        operatieAnnuleringen.set(op.operatieId, opdracht.annulering);
+        return {
+          ok: true,
+          actie: 'uitgestelde_operatie_geannuleerd',
+          operatieId: op.operatieId,
+        };
+      }
+
+      const op = uitgesteldeOperaties.get(opdracht.operatieId);
+      if (!op) return { ok: false, fout: 'UITGESTELDE_OPERATIE_NIET_GEVONDEN' };
+      const beoordeling = beoordeelUitvoeringUitgesteldeOperatie({
+        operatie: op,
+        annulering: operatieAnnuleringen.get(op.operatieId) ?? null,
+        toegestaneAnnuleerPubSleutels: new Set(opdracht.toegestaneAnnuleerPubSleutels),
+        actiefStilDwangAlarm: opdracht.actiefStilDwangAlarm,
+        nuIso: opdracht.nuIso,
+      });
+      return {
+        ok: true,
+        actie: 'uitgestelde_operatie_uitvoerbaarheid',
+        operatieId: op.operatieId,
+        magUitvoeren: beoordeling.magUitvoeren,
+        redenIndienGeweigerd: beoordeling.fout,
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -886,6 +1046,9 @@ export async function startKlimopProefKnooppunt(config: {
     aantalDienstCrdtRuimtes() {
       return dienstCrdtRuimtes.size;
     },
+    aantalUitgesteldeOperaties() {
+      return uitgesteldeOperaties.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -901,6 +1064,9 @@ export async function startKlimopProefKnooppunt(config: {
       voorbereideVerversingen.clear();
       identiteitRegister.clear();
       dienstCrdtRuimtes.clear();
+      voogdSignaalBussen.clear();
+      uitgesteldeOperaties.clear();
+      operatieAnnuleringen.clear();
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },

@@ -39,7 +39,10 @@
       "самовідновлення живучість",
       "етап 8 перенесення служб",
       "безконфліктна синхронізація crdt",
-      "ізольовані зовнішні з'єднувачі"
+      "ізольовані зовнішні з'єднувачі",
+      "етап 9 захист людини",
+      "протидія примусу сигнали небезпеки",
+      "контекстна оцінка ризику"
     ],
     "nl": [
       "klimop",
@@ -69,7 +72,10 @@
       "zelfherstel overleving",
       "fase 8 dienstenoverdracht",
       "conflictvrije synchronisatie crdt",
-      "geisoleerde externe verbinders"
+      "geisoleerde externe verbinders",
+      "fase 9 mensbescherming",
+      "onopvallende noodsignalen",
+      "contextuele risicobeoordeling"
     ]
   },
   "paden": [
@@ -103,6 +109,9 @@
     "docs/hub/ПЛЮЩ-ЕТАП-8-ПЕРЕНЕСЕННЯ-СЛУЖБ-ТА-ІЗОЛЬОВАНІ-ЗЄДНУВАЧІ.uk.md",
     "docs/hub/ПЛЮЩ-ЕТАП-8-ПЕРЕНЕСЕННЯ-СЛУЖБ-ТА-ІЗОЛЬОВАНІ-ЗЄДНУВАЧІ.md",
     "docs/hub/KLIMOP-FASE-8-DIENSTENOVERDRACHT-EN-GEISOLEERDE-VERBINDERS.nl.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-9-ЗАХИСТ-ЛЮДИНИ-ТА-ПРОТИДІЯ-ПРИМУСУ.uk.md",
+    "docs/hub/ПЛЮЩ-ЕТАП-9-ЗАХИСТ-ЛЮДИНИ-ТА-ПРОТИДІЯ-ПРИМУСУ.md",
+    "docs/hub/KLIMOP-FASE-9-MENSBESCHERMING-EN-DWANGBESTENDIGHEID.nl.md",
     "scripts/klimop-etappe0-audit.mjs",
     "scripts/klimop-proefnetwerk.mjs",
     "scripts/klimop-etappe3-opslag-proef.mjs",
@@ -111,6 +120,7 @@
     "scripts/klimop-etappe6-bestuur-proef.mjs",
     "scripts/klimop-etappe7-immuunsysteem-proef.mjs",
     "scripts/klimop-etappe8-diensten-proef.mjs",
+    "scripts/klimop-etappe9-mensbescherming-proef.mjs",
     "shared/klimop/kern.ts",
     "shared/klimop/stengels.ts",
     "shared/klimop/opslag.ts",
@@ -119,6 +129,7 @@
     "shared/klimop/bestuur.ts",
     "shared/klimop/immuunsysteem.ts",
     "shared/klimop/diensten.ts",
+    "shared/klimop/mensbescherming.ts",
     "backend/klimop-knooppunt-agent.ts",
     "backend/klimop-opslag-client.ts",
     "backend/klimop-drempel-client.ts",
@@ -126,6 +137,7 @@
     "backend/klimop-bestuur-client.ts",
     "backend/klimop-immuunsysteem-client.ts",
     "backend/klimop-diensten-client.ts",
+    "backend/klimop-mensbescherming-client.ts",
     "deploy/klimop-proefnetwerk/docker-compose.proef.yml",
     "AGENTS.md",
     "ПРАВИЛА-АГЕНТІВ.uk.md",
@@ -224,10 +236,20 @@
     {
       "taakId": "KLIMOP-009",
       "tak": "feature/klimop-009-etappe8-diensten-overdracht-20261120-223800",
+      "pr": 191,
+      "integratieCommit": "5c5cf3c292186ee6040e21c78bb4dab7184e77ad",
       "agent": "antigravity",
       "model": "Gemini 3.1 Pro (Google Antigravity)",
       "datum": "2026-11-20",
-      "uk": "Виконано Етап 8 (поетапне перенесення всіх 11 служб, криптографічна ізоляція, безконфліктна реплікація CRDT, ізольовані зовнішні з'єднувачі та локальний спільний пошук): створено модуль shared/klimop/diensten.ts (реєстр усіх 11 ізольованих служб за псевдонімами psid1_… і ключами HKDF-SHA-256, обмежені підписані міжслужбові дозволи Ed25519, сліпе комутативне злиття зашифрованих ChaCha20-Poly1305 операцій зі штампами гібридного логічного годинника HLC, перевірка зовнішніх з'єднувачів із забороною неофіційних під'єднань, спільних секретів і оманливої реклами приватності, локальний пошук у пам'яті пристрою по 4 класах джерел та 4 сходинки перенесення з автоматичним поверненням при розбіжності), розширено вузол backend/klimop-knooppunt-agent.ts роллю synchronisatie, створено координатор backend/klimop-diensten-client.ts, полігон 3 вузлів NL/CH/UA scripts/klimop-etappe8-diensten-proef.mjs та двомовну документацію Етапу 8 (Документи №13 та №17 маніфесту)."
+      "uk": "Виконано Етап 8 (поетапне перенесення всіх 11 служб, криптографічна ізоляція, безконфліктна реплікація CRDT, ізольовані зовнішні з'єднувачі та локальний спільний пошук): створено модуль shared/klimop/diensten.ts (реєстр усіх 11 ізольованих служб за псевдонімами psid1_… і ключами HKDF-SHA-256, обмежені підписані міжслужбові дозволи Ed25519, сліпе комутативне злиття зашифрованих ChaCha20-Poly1305 операцій зі штампами гібридного логічного годинника HLC, перевірка зовнішніх з'єднувачів із забороною неофіційних під'єднань, спільних секретів і оманливої реклами приватності, локальний пошук у пам'яті пристрою по 4 класах джерел та 4 сходинки перенесення з автоматичним поверненням при розбіжності), розширено вузол backend/klimop-knooppunt-agent.ts роллю synchronisatie, створено координатор backend/klimop-diensten-client.ts, полігон 3 вузлів NL/CH/UA scripts/klimop-etappe8-diensten-proef.mjs та двомовну документацію Етапу 8 (Документи №13 та №17 маніфесту). Злито в integratie у запиті №191."
+    },
+    {
+      "taakId": "KLIMOP-010",
+      "tak": "feature/klimop-010-etappe9-mensbescherming-dwang-20261120-231800",
+      "agent": "antigravity",
+      "model": "Gemini 3.1 Pro (Google Antigravity)",
+      "datum": "2026-11-20",
+      "uk": "Виконано Етап 9 (захист людини, протидія примусу, невідрізнимі сигнали небезпеки, контекстна оцінка ризику та 8 сценаріїв §39): створено модуль shared/klimop/mensbescherming.ts (регламент для всіх 9 надзвичайних обставин §14, необов'язковий профіль примусу без автоматичного знищення даних, роздільні ключі основного й обмеженого сховищ HKDF-SHA-256, невідрізнимі 256-байтні конверти пульсу й тихої тривоги X25519 + ChaCha20-Poly1305, двостороннє зняття помилкової тривоги, контекстна оцінка 7 ознак §16 без автоблокування доступу до власних даних, відкладені критичні операції з 72-год часовим замком і протокол 6 станів відсутності §17), розширено вузол backend/klimop-knooppunt-agent.ts роллю herstel, створено координатор backend/klimop-mensbescherming-client.ts, полігон 3 вузлів NL/CH/UA scripts/klimop-etappe9-mensbescherming-proef.mjs та двомовну документацію Етапу 9 (Документ №12 маніфесту)."
     }
   ],
   "mogelijkheden": [
@@ -350,6 +372,18 @@
       "uk": "Етап 8 (ізольовані з’єднувачі, локальний спільний пошук і покрокове перенесення): сувора перевірка зовнішніх з’єднувачів із забороною спільних секретів і оманливих заяв про децентралізацію (Документ №13), локальний пошук у пам’яті довіреного пристрою по 4 класах джерел із блокуванням витоку індексу в мережу та 4 сходинки перенесення з автоматичним відкочуванням при найменшій розбіжності (Документ №17, scripts/klimop-etappe8-diensten-proef.mjs)",
       "sinds": "KLIMOP-009",
       "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-9-dwangbescherming-en-stille-signalen",
+      "uk": "Етап 9 (режим протидії примусу та невідрізнимі сигнали небезпеки, Документ №12): роздільні ключі основного й обмеженого сховищ HKDF-SHA-256 без втрати основних даних, заборона автоматичного самознищення особистих даних, 256-байтні конверти X25519 + ChaCha20-Poly1305, невідрізнимі від звичайного пульсу, та безпечне двостороннє зняття помилкової тривоги (shared/klimop/mensbescherming.ts, backend/klimop-mensbescherming-client.ts)",
+      "sinds": "KLIMOP-010",
+      "staat": "actief"
+    },
+    {
+      "id": "klimop-fase-9-contextrisico-en-8-scenarios",
+      "uk": "Етап 9 (контекстна оцінка небезпеки, відкладені критичні операції та 8 сценаріїв §39): оцінювання 7 технічних ознак без несанкціонованої біометрії та без позбавлення людини доступу до її даних, 72-годинні кворумні часові замки з правом скасування підписом власника, протокол 6 станів тривалої відсутності та перевірка всіх 8 безпечних імітаційних сценаріїв §39 (scripts/klimop-etappe9-mensbescherming-proef.mjs)",
+      "sinds": "KLIMOP-010",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -366,7 +400,7 @@
     },
     {
       "datum": "2026-11-20",
-      "betreft": "Послідовне злиття в integratie та перехід через Етапи 0–8",
+      "betreft": "Послідовне злиття в integratie та перехід через Етапи 0–9",
       "uk": "Виконати відповідні злиття попередніх кроків у гілку integratie та послідовно продовжувати наступні етапи маніфесту «Плющ» без порушення роботи чинної платформи.",
       "behouden": [
         "Недоторканність живої робочої інфраструктури, служб systemd і бази PostgreSQL 18.6 під час ізольованої розробки нових рівнів",
@@ -377,7 +411,7 @@
   ],
   "open": [
     {
-      "uk": "Етап 9 (`KLIMOP-010`, §16–§17, §36, §39 маніфесту, обов'язковий Документ №12): захист людини та протидія примусу — безпечні процедури на випадок втрати пристрою, хвороби, тривалої відсутності, спадкування чи передавання довіреній особі та роботи під примусом без автоматичного знищення особистих даних."
+      "uk": "Етап 10 (`KLIMOP-011`, §5–§6, §26–§27, §36 маніфесту, обов'язковий Документ №15): кероване розширення мережі («Вусики») та чесний обмін ресурсами («Живлення») — приєднання добровільних незалежних вузлів у різних юрисдикціях без поведінки комп'ютерного хробака, перевірювані квоти зберігання/обчислень/трафіку, захист від атак Сивілли та безпечне виведення вузла з кворуму."
     }
   ],
   "bijgewerkt": "2026-11-20"
