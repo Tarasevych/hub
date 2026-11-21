@@ -508,9 +508,9 @@ export async function main(): Promise<number> {
     nuIso: liveNuIso,
   });
 
-  const srvNL = await startKlimopProefKnooppunt({ knooppunt: knNL, vertrouwdeUitgevers: [knClient.identiteit] });
-  const srvCH = await startKlimopProefKnooppunt({ knooppunt: knCH, vertrouwdeUitgevers: [knClient.identiteit] });
-  const srvUA = await startKlimopProefKnooppunt({ knooppunt: knUA, vertrouwdeUitgevers: [knClient.identiteit] });
+  const srvNL = await startKlimopProefKnooppunt({ knooppunt: knNL });
+  const srvCH = await startKlimopProefKnooppunt({ knooppunt: knCH });
+  const srvUA = await startKlimopProefKnooppunt({ knooppunt: knUA });
   const alleServers = [srvNL, srvCH, srvUA];
 
   try {

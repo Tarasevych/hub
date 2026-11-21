@@ -121,14 +121,14 @@ async function voerEtappe9ProefUit() {
         staat: persoon.staat,
         wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
         naamLabel: 'Ноутбук власника',
-        toegestaneBevoegdheden: ['dagelijks_gebruik', 'nood_betwisting'],
+        toegestaneBevoegdheden: ['lezen_werkgegevens', 'schrijven_werkgegevens', 'nood_betwisting'],
         nuIso,
       });
       const telefoonBundel = m.registreerVertrouwdApparaat({
         staat: persoon.staat,
         wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
         naamLabel: 'Кишеньковий телефон',
-        toegestaneBevoegdheden: ['dagelijks_gebruik'],
+        toegestaneBevoegdheden: ['lezen_werkgegevens', 'schrijven_werkgegevens'],
         nuIso,
       });
 

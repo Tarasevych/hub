@@ -64,7 +64,7 @@ export class KlimopMensbeschermingClient {
           ontvangerKnooppuntId: kn.knooppuntId,
           machtDomein: 'persoonlijke_gegevens',
           toegestaneRollen: ['herstel'],
-          toegestaneOpslagLagen: ['systeem_en_machtigingen'],
+          toegestaneOpslagLagen: ['gedeelde_systeemtoestanden'],
           alleenMetDrempelQuorum: false,
           drempelVereist: null,
           uitgegevenOp: nuIso,
