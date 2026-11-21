@@ -1,7 +1,8 @@
-// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 13–15 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 / KLIMOP-017 (21.11.2026, Етапи 13–16 впровадження «Плюща» у платформу «Мій простір»):
 // Спільна модель маршрутів власника (/api/owner/klimop/*), інструментів протоколу контексту моделі (klimop_*),
-// двомовних підписів 11 служб, станів Сходинок 1–3 безпечного перенесення (§35: дзеркальна звірка, пасивне читання,
-// контрольоване подвійне записування зі звіркою читання), криптографічних журналів, перемикача миттєвого повернення та підказок «?».
+// двомовних підписів 11 служб, станів Сходинок 1–4 безпечного перенесення (§35: дзеркальна звірка, пасивне читання,
+// контрольоване подвійне записування, кворумний атестат готовності під пороговим і гібридним постквантовим підписами),
+// криптографічних журналів, перемикача миттєвого повернення та підказок «?».
 // Чистий модуль (без Node.js чи оглядачевого оточення): однаково імпортується сервером і клієнтською частиною.
 
 import type {
@@ -9,6 +10,7 @@ import type {
   KlimopVerbodenVereenvoudigingId,
 } from './klimop/kern';
 import type { KlimopDienstId, KlimopOverdrachtModus } from './klimop/diensten';
+import type { HybrideDubbeleHandtekening } from './klimop/beveiligingsaudit';
 import type { KlimopOntwikkelRichtingId } from './klimop/zaden';
 
 type Tekst = [string, string];
@@ -36,6 +38,8 @@ export const KLIMOP_PADEN = Object.freeze({
   spiegelLogboek: '/api/owner/klimop/spiegel-logboek',
   dubbelSchrijven: '/api/owner/klimop/dubbel-schrijven',
   dubbelLogboek: '/api/owner/klimop/dubbel-logboek',
+  quorumAttest: '/api/owner/klimop/quorum-attest',
+  quorumLogboek: '/api/owner/klimop/quorum-logboek',
   overdrachtSchakelaar: '/api/owner/klimop/overdracht-schakelaar',
 });
 
@@ -48,11 +52,14 @@ export const KLIMOP_TOOL_NAMEN = Object.freeze([
   'klimop_spiegel_logboek',
   'klimop_dubbel_schrijven',
   'klimop_dubbel_logboek',
+  'klimop_quorum_attest',
+  'klimop_quorum_logboek',
 ] as const);
 export type KlimopToolNaam = (typeof KLIMOP_TOOL_NAMEN)[number];
 
 export type KlimopPassieveLeesModus = 'alleen_erfenis_postgres' | 'passief_spiegel_lezen';
 export type KlimopDubbelSchrijfModus = 'alleen_erfenis_postgres' | 'gecontroleerd_dubbel_schrijven';
+export type KlimopQuorumAttestModus = 'alleen_erfenis_postgres' | 'quorum_gereed_onder_erfenis';
 export type KlimopGesimuleerdeAfwijking = 'geen' | 'inhoud' | 'machtigingen' | 'ontbrekend_record';
 export type KlimopGesimuleerdeDubbelSchrijfFout =
   | 'geen'
@@ -60,9 +67,16 @@ export type KlimopGesimuleerdeDubbelSchrijfFout =
   | 'lees_inhoud_afwijking'
   | 'verwijder_tombstone_gemist'
   | 'machtigingen_afwijking';
+export type KlimopGesimuleerdeQuorumAttestFout =
+  | 'geen'
+  | 'frost_deel_vervalst'
+  | 'hybride_pq_vervalst'
+  | 'onafhankelijkheid_geschonden'
+  | 'keten_kop_afwijking';
 export type KlimopSchakelaarActie =
   | 'activeer_passief_lezen'
   | 'activeer_dubbel_schrijven'
+  | 'bevestig_quorum_gereedheid'
   | 'terug_naar_erfenis'
   | 'nood_terug_alle_elf';
 
@@ -79,6 +93,14 @@ export const KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN = Object.freeze([
   'lees_inhoud_afwijking',
   'verwijder_tombstone_gemist',
   'machtigingen_afwijking',
+] as const);
+
+export const KLIMOP_GESIMULEERDE_ATTEST_FOUTEN = Object.freeze([
+  'geen',
+  'frost_deel_vervalst',
+  'hybride_pq_vervalst',
+  'onafhankelijkheid_geschonden',
+  'keten_kop_afwijking',
 ] as const);
 
 export const KLIMOP_LEESMODUS_TEKST: Readonly<Record<KlimopPassieveLeesModus, { uk: string; nl: string }>> =
@@ -103,6 +125,19 @@ export const KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST: Readonly<
   gecontroleerd_dubbel_schrijven: {
     uk: 'Сходинка 3: контрольоване подвійне записування зі звіркою читання',
     nl: 'Stap 3: gecontroleerd dubbel schrijven met leesverificatie',
+  },
+});
+
+export const KLIMOP_QUORUM_ATTESTMODUS_TEKST: Readonly<
+  Record<KlimopQuorumAttestModus, { uk: string; nl: string }>
+> = Object.freeze({
+  alleen_erfenis_postgres: {
+    uk: 'Чинна основа (без підтвердженого кворумного атестата)',
+    nl: 'Bestaande basis (zonder bevestigd quorumattest)',
+  },
+  quorum_gereed_onder_erfenis: {
+    uk: 'Сходинка 4: кворумний атестат готовності підтверджено (база активна)',
+    nl: 'Stap 4: quorumattest van gereedheid bevestigd (databank actief)',
   },
 });
 
@@ -154,6 +189,7 @@ export interface KlimopDienstBrugStatus {
   huidigeProductieModus: KlimopOverdrachtModus;
   passieveLeesModus?: KlimopPassieveLeesModus;
   dubbelSchrijfModus?: KlimopDubbelSchrijfModus;
+  quorumAttestModus?: KlimopQuorumAttestModus;
   spiegelVerificatieBeschikbaar: boolean;
   productieDatabankActief: true;
 }
@@ -187,10 +223,13 @@ export interface KlimopPlatformOverzicht {
   overdrachtStaat?: {
     actievePassiefLezenDiensten: number;
     actieveDubbelSchrijvenDiensten: number;
+    actieveQuorumGereedDiensten: number;
     totaalLogboekRegels: number;
     totaalDubbelKwitanties: number;
+    totaalQuorumAttesten: number;
     ketenIntegriteitOk: boolean;
     dubbelKetenIntegriteitOk: boolean;
+    attestKetenIntegriteitOk: boolean;
   };
   hulpmiddelen: readonly string[];
   productieOnaangetast: true;
@@ -253,12 +292,13 @@ export interface KlimopSpiegelControleUitkomst {
   gecontroleerdOp: string;
 }
 
-// ---------------------------------------------------------------- Сходинки 2–3 (§35): пасивне читання, подвійне записування та миттєве повернення
+// ---------------------------------------------------------------- Сходинки 2–4 (§35): пасивне читання, подвійне записування, кворумний атестат і миттєве повернення
 export interface KlimopDienstSchakelaarStaat {
   dienstId: KlimopDienstId;
   primaireSchrijfBron: 'erfenis_postgres';
   leesModus: KlimopPassieveLeesModus;
   schrijfModus: KlimopDubbelSchrijfModus;
+  attestModus: KlimopQuorumAttestModus;
   laatstePariteitOk: boolean | null;
   opeenvolgendeGelijkeControles: number;
   totaalUitgevoerdeControles: number;
@@ -267,10 +307,15 @@ export interface KlimopDienstSchakelaarStaat {
   opeenvolgendeDubbelSchrijfControles: number;
   totaalDubbelSchrijfProeven: number;
   totaalDubbelSchrijfFouten: number;
+  laatsteQuorumAttestOk: boolean | null;
+  opeenvolgendeGeldigeAttesten: number;
+  totaalQuorumAttesten: number;
+  totaalQuorumAttestFouten: number;
   automatischeTerugschakelingen: number;
   handmatigeTerugschakelingen: number;
   laatsteControleOp: string | null;
   laatsteDubbelSchrijfOp: string | null;
+  laatsteQuorumAttestOp: string | null;
   laatsteSchakelingOp: string | null;
   laatsteReden: string;
 }
@@ -282,6 +327,7 @@ export interface KlimopSpiegelLogboekRegel {
   soort:
     | 'passieve_spiegel_proef'
     | 'dubbel_schrijven_proef'
+    | 'quorum_attest_proef'
     | 'handmatige_schakeling'
     | 'automatische_terugschakeling'
     | 'nood_terug_alle_elf';
@@ -339,6 +385,7 @@ export interface KlimopSpiegelLogboekOverzicht {
   samenvatting: {
     actievePassiefLezenDiensten: number;
     actieveDubbelSchrijvenDiensten: number;
+    actieveQuorumGereedDiensten: number;
     totaalDiensten: number;
     totaalLogboekRegels: number;
     totaalAutomatischeTerugschakelingen: number;
@@ -437,12 +484,103 @@ export interface KlimopDubbelLogboekOverzicht {
   samenvatting: {
     actieveDubbelSchrijvenDiensten: number;
     actievePassiefLezenDiensten: number;
+    actieveQuorumGereedDiensten: number;
     totaalDiensten: number;
     totaalKwitanties: number;
     totaalDubbelSchrijfFouten: number;
   };
   schakelaars: KlimopDienstSchakelaarStaat[];
   recenteKwitanties: KlimopDubbelSchrijfKwitantieRegel[];
+  productieDatabankGewijzigd: false;
+}
+
+export interface KlimopQuorumAttestRegel {
+  attestId: string;
+  volgnummer: number;
+  tijdstipIso: string;
+  dienstId: KlimopDienstId;
+  geisoleerdeDienstPsid: string;
+  knooppuntRegios: readonly string[];
+  knooppuntenOnafhankelijk: boolean;
+  frostDrempel: { k: number; n: number };
+  frostOndertekenaars: readonly number[];
+  spiegelKetenKopSha256: string;
+  dubbelKetenKopSha256: string;
+  zaadMerkleWortelSha256: string | null;
+  gesimuleerdeFout: KlimopGesimuleerdeQuorumAttestFout;
+  frostGroepsPubliekeSleutelHex: string;
+  frostGroepsHandtekeningHex: string;
+  hybrideHandtekening: HybrideDubbeleHandtekening;
+  frostVerificatieOk: boolean;
+  hybrideVerificatieOk: boolean;
+  ketensSluitend: boolean;
+  besluitVolledigOnafhankelijkToegestaan: boolean;
+  attestModusVoor: KlimopQuorumAttestModus;
+  attestModusNa: KlimopQuorumAttestModus;
+  automatischTeruggezet: boolean;
+  reden: string;
+  bevatGeheimenOfInhoud: false;
+  vorigeAttestSha256: string;
+  attestSha256: string;
+}
+
+export interface KlimopQuorumAttestUitkomst {
+  ok: boolean;
+  dienstId: KlimopDienstId;
+  subdomein: string;
+  geisoleerdeDienstPsid: string;
+  knooppunten: {
+    regios: readonly string[];
+    onafhankelijkQuorumOk: boolean;
+  };
+  drempelZegel: {
+    drempel: { k: number; n: number };
+    ondertekenaars: readonly number[];
+    frostGroepsPubliekeSleutelHex: string;
+    frostGroepsHandtekeningHex: string;
+    frostVerificatieOk: boolean;
+    verdachteDeelnemers: readonly number[];
+    hybrideAlgoritme: 'ed25519+ml-dsa-65';
+    hybrideVerificatieOk: boolean;
+  };
+  ketenVerankering: {
+    spiegelKetenKopSha256: string;
+    dubbelKetenKopSha256: string;
+    ketensSluitend: boolean;
+  };
+  gesimuleerdeFout: KlimopGesimuleerdeQuorumAttestFout;
+  overdrachtBesluit: {
+    toegestaan: boolean;
+    huidigeProductieModus: KlimopOverdrachtModus;
+    gevalideerdeDoelModus: KlimopOverdrachtModus;
+    reden: string;
+  };
+  schakelaar: KlimopDienstSchakelaarStaat;
+  automatischTeruggezetNaarErfenis: boolean;
+  attestRegel: KlimopQuorumAttestRegel;
+  logboekRegel: KlimopSpiegelLogboekRegel;
+  productieDatabankActief: true;
+  productieDatabankGewijzigd: false;
+}
+
+export interface KlimopQuorumLogboekOverzicht {
+  ketenIntegriteit: {
+    ok: boolean;
+    gecontroleerdeAttesten: number;
+    laatsteSha256: string;
+    gebrokenBijVolgnummer: number | null;
+    fout: string | null;
+  };
+  samenvatting: {
+    actieveQuorumGereedDiensten: number;
+    actieveDubbelSchrijvenDiensten: number;
+    actievePassiefLezenDiensten: number;
+    totaalDiensten: number;
+    totaalAttesten: number;
+    totaalQuorumAttestFouten: number;
+  };
+  schakelaars: KlimopDienstSchakelaarStaat[];
+  recenteAttesten: KlimopQuorumAttestRegel[];
   productieDatabankGewijzigd: false;
 }
 
@@ -454,6 +592,7 @@ export interface KlimopOverdrachtSchakelaarUitkomst {
   schakelaar: KlimopDienstSchakelaarStaat | null;
   actievePassiefLezenDiensten: number;
   actieveDubbelSchrijvenDiensten: number;
+  actieveQuorumGereedDiensten: number;
   logboekRegel: KlimopSpiegelLogboekRegel;
   productieDatabankGewijzigd: false;
 }
@@ -483,6 +622,14 @@ export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
     'Перед увімкненням контрольованого подвійного записування виконайте успішну перевірку запису та звірки читання без розбіжностей.',
     'Voer eerst een foutloze proef van gecontroleerd dubbel schrijven met leesverificatie uit voordat deze stand wordt ingeschakeld.',
   ),
+  KLIMOP_STAP3_ACTIEF_VEREIST: T(
+    'Перед підтвердженням кворумної готовності Сходинки 4 служба має перебувати на активній Сходинці 3 подвійного записування. Перестрибування сходинок заборонене.',
+    'Voordat quorum-gereedheid van Stap 4 kan worden bevestigd, moet de dienst op een actieve Stap 3 van dubbel schrijven staan. Stappen overslaan is verboden.',
+  ),
+  KLIMOP_QUORUM_ATTEST_VEREIST: T(
+    'Перед підтвердженням Сходинки 4 випустіть дійсний кворумний атестат під пороговим і гібридним постквантовим підписами без жодних зауважень.',
+    'Stel eerst een geldig quorumattest onder drempel- en hybride postkwantumhandtekening op voordat Stap 4 wordt bevestigd.',
+  ),
   KLIMOP_LOGBOEK_KETEN_ONGELDIG: T(
     'Порушено криптографічну цілісність ланцюжка журналу дзеркальної звірки. Перемикання вперед заблоковано, повернення на чинну основу залишається доступним.',
     'De cryptografische keten van het spiegellogboek is doorbroken. Opschakelen is geblokkeerd; terugschakelen naar de bestaande basis blijft direct beschikbaar.',
@@ -490,6 +637,10 @@ export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   KLIMOP_DUBBEL_LOGBOEK_KETEN_ONGELDIG: T(
     'Порушено цілісність ланцюжка квитанцій подвійного записування. Перемикання вперед заблоковано, миттєве повернення на чинну основу залишається доступним.',
     'De cryptografische keten van het kwitantielogboek voor dubbel schrijven is doorbroken. Opschakelen is geblokkeerd; terugzetten naar de bestaande basis blijft beschikbaar.',
+  ),
+  KLIMOP_ATTEST_KETEN_ONGELDIG: T(
+    'Порушено криптографічну цілісність або підписи ланцюжка кворумних атестатів Сходинки 4. Підтвердження вперед заблоковано, повернення залишається доступним.',
+    'De cryptografische keten of ondertekening van het quorumattestlogboek is doorbroken. Bevestigen is geblokkeerd; terugzetten naar de basis blijft beschikbaar.',
   ),
   KLIMOP_LOSKOPPELING_VERBODEN: T(
     'Самовільне відокремлення або вимкнення чинної бази даних заборонене. Робоча основа залишається обов’язковою до окремого рішення власника.',
@@ -597,11 +748,30 @@ export const HELP_KLIMOP: Readonly<Record<string, HulpItem>> = Object.freeze({
       'POST /api/owner/klimop/dubbel-schrijven en /dubbel-logboek → backend/klimop-overdracht-opslag.ts; via MCP klimop_dubbel_schrijven en klimop_dubbel_logboek.',
     ),
   ),
+  'klimop.attest': hulp(
+    'src/agenten/KlimopPaneel.tsx',
+    T(
+      'Кворумний атестат готовності Сходинки 4 під пороговим підписом Шнорра (два з трьох) і гібридним постквантовим підписом.',
+      'Quorumattest van gereedheid van Stap 4 onder een twee-uit-drie drempelhandtekening en een hybride postkwantumhandtekening.',
+    ),
+    T(
+      'Зв’язує голови журналів звірки та квитанцій із трьома незалежними вузлами й у разі підробки частки чи ключа миттєво скидає службу на чинну основу.',
+      'Koppelt de koppen van het spiegel- en kwitantielogboek aan drie onafhankelijke knooppunten en schakelt bij vervalsing direct terug naar de basis.',
+    ),
+    T(
+      'Низький ризик. Атестат ніколи не вимикає та не відокремлює робочу базу даних і не зберігає жодних таємних часток чи вмісту.',
+      'Laag risico. Het attest schakelt de draaiende productiedatabank nooit uit of los en bewaart geen geheime sleuteldelen of inhoud.',
+    ),
+    T(
+      'POST /api/owner/klimop/quorum-attest та /quorum-logboek → backend/klimop-overdracht-opslag.ts; через MCP — klimop_quorum_attest і klimop_quorum_logboek.',
+      'POST /api/owner/klimop/quorum-attest en /quorum-logboek → backend/klimop-overdracht-opslag.ts; via MCP klimop_quorum_attest en klimop_quorum_logboek.',
+    ),
+  ),
   'klimop.schakelaar': hulp(
     'src/agenten/KlimopPaneel.tsx',
     T(
-      'Керований перемикач сходинок пасивного читання, подвійного записування та миттєвого повернення однієї або всіх одинадцяти служб.',
-      'Beheerste schakelaar voor passief spiegellezen, gecontroleerd dubbel schrijven en onmiddellijke terugval van één of alle elf diensten.',
+      'Керований перемикач сходинок пасивного читання, подвійного записування, кворумної готовності та миттєвого повернення одинадцяти служб.',
+      'Beheerste schakelaar voor passief spiegellezen, gecontroleerd dubbel schrijven, quorum-gereedheid en onmiddellijke terugval van elf diensten.',
     ),
     T(
       'Дозволяє рух уперед лише послідовно без перестрибування сходинок за чистих звірок або миттєво повертає одну чи всі одинадцять служб у вихідний стан.',

@@ -1,7 +1,8 @@
-// KLIMOP-015 / KLIMOP-016 (21.11.2026, Етапи 14–15 впровадження «Плюща» у платформу «Мій простір»):
-// Сходинки 2–3 поступового переходу за §35 маніфесту — пасивне дзеркальне читання, контрольоване подвійне записування
-// зі звіркою читання після запису, збережувані криптографічно зв'язані журнали (ланцюжки SHA-256 без особистого вмісту)
-// та перемикач миттєвого повернення (автоматичний при будь-якій розбіжності й ручний для однієї або всіх 11 служб).
+// KLIMOP-015 / KLIMOP-016 / KLIMOP-017 (21.11.2026, Етапи 14–16 впровадження «Плюща» у платформу «Мій простір»):
+// Сходинки 2–4 поступового переходу за §35 маніфесту — пасивне дзеркальне читання, контрольоване подвійне записування
+// зі звіркою читання після запису, кворумний атестат готовності Сходинки 4 під подвійною печаткою FROST (RFC 9591)
+// і гібридного постквантового підпису Ed25519 + ML-DSA-65 (FIPS 204), криптографічно зв'язані журнали SHA-256
+// без особистого вмісту та незмінне право миттєвого повернення однієї або всіх 11 служб без вимкнення живої бази.
 
 import { createHash, randomBytes } from 'node:crypto';
 import {
@@ -15,6 +16,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
+  canoniekeJson,
   controleerKnooppuntOnafhankelijkheid,
   maakKlimopKnooppunt,
 } from '../shared/klimop/kern';
@@ -22,6 +24,14 @@ import {
   herstelEnOntsleutelObject,
   versleutelEnVerdeelObject,
 } from '../shared/klimop/opslag';
+import {
+  combineerDkgBijdragenVoorDeelnemer,
+  frostRonde1MaakToezegging,
+  frostRonde2TekenDeel,
+  frostVoegHandtekeningSamen,
+  maakDkgDeelnemerBijdrage,
+  verifieerStandaardEd25519Handtekening,
+} from '../shared/klimop/drempelsleutels';
 import { maakPersoonsIdentiteit } from '../shared/klimop/identiteit';
 import {
   KLIMOP_ELF_DIENSTEN,
@@ -38,7 +48,13 @@ import {
   type KlimopDienstId,
 } from '../shared/klimop/diensten';
 import {
+  maakHybridePostkwantumKnooppunt,
+  ondertekenHybrideEd25519MlDsa65,
+  verifieerHybrideEd25519MlDsa65,
+} from '../shared/klimop/beveiligingsaudit';
+import {
   KLIMOP_GESIMULEERDE_AFWIJKINGEN,
+  KLIMOP_GESIMULEERDE_ATTEST_FOUTEN,
   KLIMOP_GESIMULEERDE_DUBBEL_FOUTEN,
   KlimopFout,
   type KlimopDienstSchakelaarStaat,
@@ -48,9 +64,14 @@ import {
   type KlimopDubbelSchrijvenUitkomst,
   type KlimopGesimuleerdeAfwijking,
   type KlimopGesimuleerdeDubbelSchrijfFout,
+  type KlimopGesimuleerdeQuorumAttestFout,
   type KlimopOverdrachtSchakelaarUitkomst,
   type KlimopPassieveLeesModus,
   type KlimopPassieveSpiegelUitkomst,
+  type KlimopQuorumAttestModus,
+  type KlimopQuorumAttestRegel,
+  type KlimopQuorumAttestUitkomst,
+  type KlimopQuorumLogboekOverzicht,
   type KlimopSchakelaarActie,
   type KlimopSpiegelLogboekOverzicht,
   type KlimopSpiegelLogboekRegel,
@@ -61,6 +82,9 @@ export const KLIMOP_GENESIS_KETEN_SHA256 = '0'.repeat(64);
 const SCHAKELAARS_BESTAND = 'schakelaars.json';
 const LOGBOEK_BESTAND = 'spiegel-logboek.jsonl';
 const DUBBEL_LOGBOEK_BESTAND = 'dubbel-schrijven-kluis.jsonl';
+const ATTEST_LOGBOEK_BESTAND = 'quorum-attesten-kluis.jsonl';
+const QUORUM_ATTEST_FROST_DOMEIN = 'klimop-stap4-quorum-attest-frost-v1|';
+const QUORUM_ATTEST_HYBRIDE_DOMEIN = 'klimop-stap4-quorum-attest-hybride-v1|';
 const STANDAARD_STEEKPROEF = 4;
 const MIN_STEEKPROEF = 2;
 const MAX_STEEKPROEF = 12;
@@ -90,6 +114,7 @@ function standaardDienstSchakelaar(dienstId: KlimopDienstId): KlimopDienstSchake
     primaireSchrijfBron: 'erfenis_postgres',
     leesModus: 'alleen_erfenis_postgres',
     schrijfModus: 'alleen_erfenis_postgres',
+    attestModus: 'alleen_erfenis_postgres',
     laatstePariteitOk: null,
     opeenvolgendeGelijkeControles: 0,
     totaalUitgevoerdeControles: 0,
@@ -98,10 +123,15 @@ function standaardDienstSchakelaar(dienstId: KlimopDienstId): KlimopDienstSchake
     opeenvolgendeDubbelSchrijfControles: 0,
     totaalDubbelSchrijfProeven: 0,
     totaalDubbelSchrijfFouten: 0,
+    laatsteQuorumAttestOk: null,
+    opeenvolgendeGeldigeAttesten: 0,
+    totaalQuorumAttesten: 0,
+    totaalQuorumAttestFouten: 0,
     automatischeTerugschakelingen: 0,
     handmatigeTerugschakelingen: 0,
     laatsteControleOp: null,
     laatsteDubbelSchrijfOp: null,
+    laatsteQuorumAttestOp: null,
     laatsteSchakelingOp: null,
     laatsteReden: 'STANDAARD_ONAANGETASTE_BASIS',
   };
@@ -128,16 +158,21 @@ function leesSchakelaarsBestand(map: string): SchakelaarOpslagBestand {
         bron.leesModus === 'passief_spiegel_lezen'
           ? 'passief_spiegel_lezen'
           : 'alleen_erfenis_postgres';
-      // Сходинка 3 ніколи не може бути активною без активної Сходинки 2 (§35 — заборона перестрибування сходинок).
+      // Сходинка 3 ніколи не може бути активною без активної Сходинки 2, а Сходинка 4 — без активної Сходинки 3 (§35).
       const schrijfModus: KlimopDubbelSchrijfModus =
         leesModus === 'passief_spiegel_lezen' && bron.schrijfModus === 'gecontroleerd_dubbel_schrijven'
           ? 'gecontroleerd_dubbel_schrijven'
+          : 'alleen_erfenis_postgres';
+      const attestModus: KlimopQuorumAttestModus =
+        schrijfModus === 'gecontroleerd_dubbel_schrijven' && bron.attestModus === 'quorum_gereed_onder_erfenis'
+          ? 'quorum_gereed_onder_erfenis'
           : 'alleen_erfenis_postgres';
       diensten[d] = {
         dienstId: d,
         primaireSchrijfBron: 'erfenis_postgres',
         leesModus,
         schrijfModus,
+        attestModus,
         laatstePariteitOk: typeof bron.laatstePariteitOk === 'boolean' ? bron.laatstePariteitOk : null,
         opeenvolgendeGelijkeControles: Math.max(0, Number(bron.opeenvolgendeGelijkeControles ?? 0) | 0),
         totaalUitgevoerdeControles: Math.max(0, Number(bron.totaalUitgevoerdeControles ?? 0) | 0),
@@ -146,10 +181,15 @@ function leesSchakelaarsBestand(map: string): SchakelaarOpslagBestand {
         opeenvolgendeDubbelSchrijfControles: Math.max(0, Number(bron.opeenvolgendeDubbelSchrijfControles ?? 0) | 0),
         totaalDubbelSchrijfProeven: Math.max(0, Number(bron.totaalDubbelSchrijfProeven ?? 0) | 0),
         totaalDubbelSchrijfFouten: Math.max(0, Number(bron.totaalDubbelSchrijfFouten ?? 0) | 0),
+        laatsteQuorumAttestOk: typeof bron.laatsteQuorumAttestOk === 'boolean' ? bron.laatsteQuorumAttestOk : null,
+        opeenvolgendeGeldigeAttesten: Math.max(0, Number(bron.opeenvolgendeGeldigeAttesten ?? 0) | 0),
+        totaalQuorumAttesten: Math.max(0, Number(bron.totaalQuorumAttesten ?? 0) | 0),
+        totaalQuorumAttestFouten: Math.max(0, Number(bron.totaalQuorumAttestFouten ?? 0) | 0),
         automatischeTerugschakelingen: Math.max(0, Number(bron.automatischeTerugschakelingen ?? 0) | 0),
         handmatigeTerugschakelingen: Math.max(0, Number(bron.handmatigeTerugschakelingen ?? 0) | 0),
         laatsteControleOp: typeof bron.laatsteControleOp === 'string' ? bron.laatsteControleOp : null,
         laatsteDubbelSchrijfOp: typeof bron.laatsteDubbelSchrijfOp === 'string' ? bron.laatsteDubbelSchrijfOp : null,
+        laatsteQuorumAttestOp: typeof bron.laatsteQuorumAttestOp === 'string' ? bron.laatsteQuorumAttestOp : null,
         laatsteSchakelingOp: typeof bron.laatsteSchakelingOp === 'string' ? bron.laatsteSchakelingOp : null,
         laatsteReden: typeof bron.laatsteReden === 'string' ? bron.laatsteReden : 'STANDAARD_ONAANGETASTE_BASIS',
       };
@@ -378,6 +418,9 @@ export function leesKlimopSpiegelLogboek(opties?: {
       actieveDubbelSchrijvenDiensten: schakelaars.filter(
         (s) => s.schrijfModus === 'gecontroleerd_dubbel_schrijven',
       ).length,
+      actieveQuorumGereedDiensten: schakelaars.filter(
+        (s) => s.attestModus === 'quorum_gereed_onder_erfenis',
+      ).length,
       totaalDiensten: schakelaars.length,
       totaalLogboekRegels: ruw.regels.length,
       totaalAutomatischeTerugschakelingen: schakelaars.reduce((n, s) => n + s.automatischeTerugschakelingen, 0),
@@ -598,6 +641,7 @@ export function voerPassieveSpiegelLeesProefUit(
 
       let leesModusNa: KlimopPassieveLeesModus = leesModusVoor;
       let schrijfModusNa: KlimopDubbelSchrijfModus = huidigeStaat.schrijfModus;
+      let attestModusNa: KlimopQuorumAttestModus = huidigeStaat.attestModus;
       let automatischTeruggezet = false;
 
       if (
@@ -605,10 +649,12 @@ export function voerPassieveSpiegelLeesProefUit(
         && (
           leesModusVoor === 'passief_spiegel_lezen'
           || huidigeStaat.schrijfModus === 'gecontroleerd_dubbel_schrijven'
+          || huidigeStaat.attestModus === 'quorum_gereed_onder_erfenis'
         )
       ) {
         leesModusNa = 'alleen_erfenis_postgres';
         schrijfModusNa = 'alleen_erfenis_postgres';
+        attestModusNa = 'alleen_erfenis_postgres';
         automatischTeruggezet = true;
       }
 
@@ -617,6 +663,7 @@ export function voerPassieveSpiegelLeesProefUit(
         primaireSchrijfBron: 'erfenis_postgres',
         leesModus: leesModusNa,
         schrijfModus: schrijfModusNa,
+        attestModus: attestModusNa,
         laatstePariteitOk: allesOk,
         opeenvolgendeGelijkeControles: allesOk ? huidigeStaat.opeenvolgendeGelijkeControles + 1 : 0,
         totaalUitgevoerdeControles: huidigeStaat.totaalUitgevoerdeControles + 1,
@@ -928,6 +975,9 @@ export function leesKlimopDubbelSchrijvenLogboek(opties?: {
         (s) => s.schrijfModus === 'gecontroleerd_dubbel_schrijven',
       ).length,
       actievePassiefLezenDiensten: schakelaars.filter((s) => s.leesModus === 'passief_spiegel_lezen').length,
+      actieveQuorumGereedDiensten: schakelaars.filter(
+        (s) => s.attestModus === 'quorum_gereed_onder_erfenis',
+      ).length,
       totaalDiensten: schakelaars.length,
       totaalKwitanties: ruw.kwitanties.length,
       totaalDubbelSchrijfFouten: schakelaars.reduce((n, s) => n + s.totaalDubbelSchrijfFouten, 0),
@@ -1268,6 +1318,7 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
 
       let leesModusNa: KlimopPassieveLeesModus = leesModusVoor;
       let schrijfModusNa: KlimopDubbelSchrijfModus = schrijfModusVoor;
+      let attestModusNa: KlimopQuorumAttestModus = huidigeStaat.attestModus;
       let automatischTeruggezet = false;
 
       if (
@@ -1275,10 +1326,12 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
         && (
           schrijfModusVoor === 'gecontroleerd_dubbel_schrijven'
           || leesModusVoor === 'passief_spiegel_lezen'
+          || huidigeStaat.attestModus === 'quorum_gereed_onder_erfenis'
         )
       ) {
         leesModusNa = 'alleen_erfenis_postgres';
         schrijfModusNa = 'alleen_erfenis_postgres';
+        attestModusNa = 'alleen_erfenis_postgres';
         automatischTeruggezet = true;
       }
 
@@ -1293,6 +1346,7 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
         primaireSchrijfBron: 'erfenis_postgres',
         leesModus: leesModusNa,
         schrijfModus: schrijfModusNa,
+        attestModus: attestModusNa,
         laatstePariteitOk: allesOk ? huidigeStaat.laatstePariteitOk : false,
         opeenvolgendeGelijkeControles: allesOk ? huidigeStaat.opeenvolgendeGelijkeControles : 0,
         laatsteDubbelSchrijfOk: allesOk,
@@ -1301,6 +1355,8 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
           : 0,
         totaalDubbelSchrijfProeven: huidigeStaat.totaalDubbelSchrijfProeven + 1,
         totaalDubbelSchrijfFouten: huidigeStaat.totaalDubbelSchrijfFouten + (allesOk ? 0 : 1),
+        laatsteQuorumAttestOk: allesOk ? huidigeStaat.laatsteQuorumAttestOk : false,
+        opeenvolgendeGeldigeAttesten: allesOk ? huidigeStaat.opeenvolgendeGeldigeAttesten : 0,
         totaalGevondenAfwijkingen: huidigeStaat.totaalGevondenAfwijkingen + afwijkingenAantal,
         automatischeTerugschakelingen:
           huidigeStaat.automatischeTerugschakelingen + (automatischTeruggezet ? 1 : 0),
@@ -1416,29 +1472,718 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
   }
 }
 
+// =================================================================================================
+// Сходинка 4 (§35 маніфесту): кворумний атестат готовності під подвійною печаткою FROST (RFC 9591)
+// та гібридного постквантового підпису Ed25519 + ML-DSA-65 (FIPS 204) без самовільного вимкнення БД
+// =================================================================================================
+
+/** Формує канонічні криптографічні повідомлення з розділенням доменів для FROST та гібридного підпису. */
+export function maakQuorumAttestTekenBoodschappen(kern: {
+  attestId: string;
+  volgnummer: number;
+  tijdstipIso: string;
+  dienstId: KlimopDienstId;
+  geisoleerdeDienstPsid: string;
+  knooppuntRegios: readonly string[];
+  frostDrempel: { k: number; n: number };
+  frostOndertekenaars: readonly number[];
+  spiegelKetenKopSha256: string;
+  dubbelKetenKopSha256: string;
+  zaadMerkleWortelSha256: string | null;
+  vorigeAttestSha256: string;
+}): { frostBoodschap: Buffer; hybrideBoodschap: Buffer } {
+  const json = canoniekeJson({
+    schema: 4,
+    attestId: kern.attestId,
+    volgnummer: kern.volgnummer,
+    tijdstipIso: kern.tijdstipIso,
+    dienstId: kern.dienstId,
+    geisoleerdeDienstPsid: kern.geisoleerdeDienstPsid,
+    knooppuntRegios: kern.knooppuntRegios,
+    frostDrempel: kern.frostDrempel,
+    frostOndertekenaars: kern.frostOndertekenaars,
+    spiegelKetenKopSha256: kern.spiegelKetenKopSha256,
+    dubbelKetenKopSha256: kern.dubbelKetenKopSha256,
+    zaadMerkleWortelSha256: kern.zaadMerkleWortelSha256,
+    vorigeAttestSha256: kern.vorigeAttestSha256,
+  });
+  return {
+    frostBoodschap: Buffer.from(QUORUM_ATTEST_FROST_DOMEIN + json, 'utf8'),
+    hybrideBoodschap: Buffer.from(QUORUM_ATTEST_HYBRIDE_DOMEIN + json, 'utf8'),
+  };
+}
+
+/** Обчислює детермінований відбиток SHA-256 запису кворумного атестата у ланцюжку Сходинки 4. */
+export function berekenQuorumAttestSha256(
+  zonderEigenHash: Omit<KlimopQuorumAttestRegel, 'attestSha256'>,
+): string {
+  const kanoniek = JSON.stringify([
+    zonderEigenHash.attestId,
+    zonderEigenHash.volgnummer,
+    zonderEigenHash.tijdstipIso,
+    zonderEigenHash.dienstId,
+    zonderEigenHash.geisoleerdeDienstPsid,
+    zonderEigenHash.knooppuntRegios,
+    zonderEigenHash.knooppuntenOnafhankelijk,
+    zonderEigenHash.frostDrempel.k,
+    zonderEigenHash.frostDrempel.n,
+    zonderEigenHash.frostOndertekenaars,
+    zonderEigenHash.spiegelKetenKopSha256,
+    zonderEigenHash.dubbelKetenKopSha256,
+    zonderEigenHash.zaadMerkleWortelSha256,
+    zonderEigenHash.gesimuleerdeFout,
+    zonderEigenHash.frostGroepsPubliekeSleutelHex,
+    zonderEigenHash.frostGroepsHandtekeningHex,
+    zonderEigenHash.hybrideHandtekening.algoritme,
+    zonderEigenHash.hybrideHandtekening.ed25519PubliekDerB64u,
+    zonderEigenHash.hybrideHandtekening.mlDsa65PubliekSpkiB64u,
+    zonderEigenHash.hybrideHandtekening.ed25519HandtekeningB64u,
+    zonderEigenHash.hybrideHandtekening.mlDsa65HandtekeningB64u,
+    zonderEigenHash.frostVerificatieOk,
+    zonderEigenHash.hybrideVerificatieOk,
+    zonderEigenHash.ketensSluitend,
+    zonderEigenHash.besluitVolledigOnafhankelijkToegestaan,
+    zonderEigenHash.attestModusVoor,
+    zonderEigenHash.attestModusNa,
+    zonderEigenHash.automatischTeruggezet,
+    zonderEigenHash.reden,
+    zonderEigenHash.bevatGeheimenOfInhoud,
+    zonderEigenHash.vorigeAttestSha256,
+  ]);
+  return createHash('sha256').update(kanoniek, 'utf8').digest('hex');
+}
+
+function leesAlleQuorumAttestenRuw(map: string): {
+  attesten: KlimopQuorumAttestRegel[];
+  parseerFoutBijRegel: number | null;
+} {
+  const pad = join(map, ATTEST_LOGBOEK_BESTAND);
+  if (!existsSync(pad)) {
+    return { attesten: [], parseerFoutBijRegel: null };
+  }
+  const inhoud = readFileSync(pad, 'utf8');
+  const lijnen = inhoud
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const attesten: KlimopQuorumAttestRegel[] = [];
+  for (let i = 0; i < lijnen.length; i++) {
+    try {
+      const a = JSON.parse(lijnen[i]) as KlimopQuorumAttestRegel;
+      attesten.push(a);
+    } catch {
+      return { attesten, parseerFoutBijRegel: i + 1 };
+    }
+  }
+  return { attesten, parseerFoutBijRegel: null };
+}
+
+/**
+ * Перевіряє нерозривність ланцюжка SHA-256 та справжність ОБОХ криптографічних підписів
+ * (`FROST Ed25519 RFC 9591` + `Ed25519 + ML-DSA-65 FIPS 204`) для кожного чинного кворумного атестата.
+ */
+export function verifieerQuorumAttestKeten(
+  attesten: readonly KlimopQuorumAttestRegel[],
+): {
+  ok: boolean;
+  gecontroleerdeAttesten: number;
+  laatsteSha256: string;
+  gebrokenBijVolgnummer: number | null;
+  fout: string | null;
+} {
+  let verwachteVorige = KLIMOP_GENESIS_KETEN_SHA256;
+  for (let i = 0; i < attesten.length; i++) {
+    const a = attesten[i];
+    if (
+      !a
+      || a.volgnummer !== i + 1
+      || a.vorigeAttestSha256 !== verwachteVorige
+      || a.bevatGeheimenOfInhoud !== false
+    ) {
+      return {
+        ok: false,
+        gecontroleerdeAttesten: i,
+        laatsteSha256: verwachteVorige,
+        gebrokenBijVolgnummer: i + 1,
+        fout: 'ATTEST_KETEN_VERBROKEN',
+      };
+    }
+    const herrekend = berekenQuorumAttestSha256({
+      attestId: a.attestId,
+      volgnummer: a.volgnummer,
+      tijdstipIso: a.tijdstipIso,
+      dienstId: a.dienstId,
+      geisoleerdeDienstPsid: a.geisoleerdeDienstPsid,
+      knooppuntRegios: a.knooppuntRegios,
+      knooppuntenOnafhankelijk: a.knooppuntenOnafhankelijk,
+      frostDrempel: a.frostDrempel,
+      frostOndertekenaars: a.frostOndertekenaars,
+      spiegelKetenKopSha256: a.spiegelKetenKopSha256,
+      dubbelKetenKopSha256: a.dubbelKetenKopSha256,
+      zaadMerkleWortelSha256: a.zaadMerkleWortelSha256,
+      gesimuleerdeFout: a.gesimuleerdeFout,
+      frostGroepsPubliekeSleutelHex: a.frostGroepsPubliekeSleutelHex,
+      frostGroepsHandtekeningHex: a.frostGroepsHandtekeningHex,
+      hybrideHandtekening: a.hybrideHandtekening,
+      frostVerificatieOk: a.frostVerificatieOk,
+      hybrideVerificatieOk: a.hybrideVerificatieOk,
+      ketensSluitend: a.ketensSluitend,
+      besluitVolledigOnafhankelijkToegestaan: a.besluitVolledigOnafhankelijkToegestaan,
+      attestModusVoor: a.attestModusVoor,
+      attestModusNa: a.attestModusNa,
+      automatischTeruggezet: a.automatischTeruggezet,
+      reden: a.reden,
+      bevatGeheimenOfInhoud: false,
+      vorigeAttestSha256: a.vorigeAttestSha256,
+    });
+    if (herrekend !== a.attestSha256) {
+      return {
+        ok: false,
+        gecontroleerdeAttesten: i,
+        laatsteSha256: verwachteVorige,
+        gebrokenBijVolgnummer: i + 1,
+        fout: 'ATTEST_HASH_ONGELDIG',
+      };
+    }
+
+    // Якщо атестат заявлено чинним, повторно перевіряємо справжність порогового та постквантового підписів!
+    if (a.frostVerificatieOk || a.besluitVolledigOnafhankelijkToegestaan) {
+      const boodschappen = maakQuorumAttestTekenBoodschappen(a);
+      const frostOk = verifieerStandaardEd25519Handtekening(
+        boodschappen.frostBoodschap,
+        a.frostGroepsHandtekeningHex,
+        a.frostGroepsPubliekeSleutelHex,
+      );
+      if (!frostOk) {
+        return {
+          ok: false,
+          gecontroleerdeAttesten: i,
+          laatsteSha256: verwachteVorige,
+          gebrokenBijVolgnummer: i + 1,
+          fout: 'ATTEST_FROST_HANDTEKENING_ONGELDIG',
+        };
+      }
+    }
+    if (a.hybrideVerificatieOk || a.besluitVolledigOnafhankelijkToegestaan) {
+      const boodschappen = maakQuorumAttestTekenBoodschappen(a);
+      const hybrideOk = verifieerHybrideEd25519MlDsa65(
+        boodschappen.hybrideBoodschap,
+        a.hybrideHandtekening,
+      );
+      if (!hybrideOk.ok) {
+        return {
+          ok: false,
+          gecontroleerdeAttesten: i,
+          laatsteSha256: verwachteVorige,
+          gebrokenBijVolgnummer: i + 1,
+          fout: 'ATTEST_HYBRIDE_HANDTEKENING_ONGELDIG',
+        };
+      }
+    }
+
+    verwachteVorige = a.attestSha256;
+  }
+  return {
+    ok: true,
+    gecontroleerdeAttesten: attesten.length,
+    laatsteSha256: verwachteVorige,
+    gebrokenBijVolgnummer: null,
+    fout: null,
+  };
+}
+
+/** Читає огляд кворумних атестатів Сходинки 4, перевіряє ланцюжок і підписи та повертає стан 11 перемикачів. */
+export function leesKlimopQuorumAttestLogboek(opties?: {
+  staatMap?: string;
+  limiet?: number;
+  dienstId?: KlimopDienstId;
+}): KlimopQuorumLogboekOverzicht {
+  const map = klimopStaatMap(opties?.staatMap);
+  if (opties?.dienstId !== undefined && !KLIMOP_ELF_DIENSTEN.includes(opties.dienstId)) {
+    throw new KlimopFout('ONBEKENDE_KLIMOP_DIENST', 400);
+  }
+  const schakelaarsBestand = leesSchakelaarsBestand(map);
+  const schakelaars = KLIMOP_ELF_DIENSTEN.map((d) => schakelaarsBestand.diensten[d]);
+
+  const ruw = leesAlleQuorumAttestenRuw(map);
+  const keten =
+    ruw.parseerFoutBijRegel !== null
+      ? {
+          ok: false,
+          gecontroleerdeAttesten: Math.max(0, ruw.parseerFoutBijRegel - 1),
+          laatsteSha256: KLIMOP_GENESIS_KETEN_SHA256,
+          gebrokenBijVolgnummer: ruw.parseerFoutBijRegel,
+          fout: 'ATTEST_LOGBOEK_JSON_BESCHADIGD',
+        }
+      : verifieerQuorumAttestKeten(ruw.attesten);
+
+  const limiet = Math.min(
+    MAX_RECENTE_REGELS,
+    Math.max(1, Number.isInteger(opties?.limiet) ? Number(opties?.limiet) : 30),
+  );
+  const gefilterd = opties?.dienstId
+    ? ruw.attesten.filter((a) => a.dienstId === opties.dienstId)
+    : ruw.attesten;
+  const recenteAttesten = [...gefilterd].slice(-limiet).reverse();
+
+  return {
+    ketenIntegriteit: keten,
+    samenvatting: {
+      actieveQuorumGereedDiensten: schakelaars.filter(
+        (s) => s.attestModus === 'quorum_gereed_onder_erfenis',
+      ).length,
+      actieveDubbelSchrijvenDiensten: schakelaars.filter(
+        (s) => s.schrijfModus === 'gecontroleerd_dubbel_schrijven',
+      ).length,
+      actievePassiefLezenDiensten: schakelaars.filter((s) => s.leesModus === 'passief_spiegel_lezen').length,
+      totaalDiensten: schakelaars.length,
+      totaalAttesten: ruw.attesten.length,
+      totaalQuorumAttestFouten: schakelaars.reduce((n, s) => n + s.totaalQuorumAttestFouten, 0),
+    },
+    schakelaars,
+    recenteAttesten,
+    productieDatabankGewijzigd: false,
+  };
+}
+
+/**
+ * Сходинка 4 (§35, §10, §13 маніфесту): формує та криптографічно перевіряє кворумний атестат готовності служби
+ * на між'юрисдикційному кворумі 3 незалежних вузлів (`NL`, `CH`, `UA`) через бездилерський `DKG` (2-з-3),
+ * пороговий підпис Шнорра `FROST(Ed25519, SHA-512) RFC 9591` і гібридний постквантовий підпис `Ed25519 + ML-DSA-65`,
+ * прив'язаний до голів журналів Сходинок 2–3, без самовільного вимкнення живої бази `PostgreSQL 18.6`.
+ */
+export function voerStap4QuorumAttestProefUit(
+  raw: unknown,
+  opties?: { staatMap?: string; zaadMerkleWortelSha256?: string | null },
+): KlimopQuorumAttestUitkomst {
+  const b = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const dienstId = String(b.dienstId ?? 'postvak') as KlimopDienstId;
+  if (!KLIMOP_ELF_DIENSTEN.includes(dienstId)) {
+    throw new KlimopFout('ONBEKENDE_KLIMOP_DIENST', 400);
+  }
+
+  const gesimuleerdeFout = String(b.simuleerFout ?? 'geen') as KlimopGesimuleerdeQuorumAttestFout;
+  if (!KLIMOP_GESIMULEERDE_ATTEST_FOUTEN.includes(gesimuleerdeFout)) {
+    throw new KlimopFout('KLIMOP_INVOER_ONGELDIG', 400);
+  }
+
+  let zaadMerkleWortelSha256: string | null = opties?.zaadMerkleWortelSha256 ?? null;
+  if (typeof b.zaadMerkleWortelSha256 === 'string' && b.zaadMerkleWortelSha256.length > 0) {
+    if (!/^[0-9a-f]{64}$/i.test(b.zaadMerkleWortelSha256)) {
+      throw new KlimopFout('KLIMOP_INVOER_ONGELDIG', 400);
+    }
+    zaadMerkleWortelSha256 = b.zaadMerkleWortelSha256.toLowerCase();
+  }
+
+  const map = klimopStaatMap(opties?.staatMap);
+  mkdirSync(map, { recursive: true });
+  const nuIso = new Date().toISOString();
+  const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
+
+  const wortelGeheim32 = randomBytes(32);
+  const zout32 = randomBytes(32);
+
+  try {
+    const persoon = maakPersoonsIdentiteit(nuIso);
+    const dienstCtx = leidGeisoleerdeDienstContextAf({
+      persoonsWortelGeheim32: wortelGeheim32,
+      persoonsZout32: zout32,
+      persoonsId: persoon.staat.oprichting.persoonsId,
+      dienstId,
+      epoche: 4,
+    });
+
+    try {
+      const spiegelStaat = leesKlimopSpiegelLogboek({ staatMap: map, limiet: 1 });
+      const dubbelStaat = leesKlimopDubbelSchrijvenLogboek({ staatMap: map, limiet: 1 });
+      const ruwAttesten = leesAlleQuorumAttestenRuw(map);
+      const attestKetenVooraf = verifieerQuorumAttestKeten(ruwAttesten.attesten);
+
+      const spiegelKetenKopSha256 = spiegelStaat.ketenIntegriteit.laatsteSha256;
+      const dubbelKetenKopSha256 =
+        gesimuleerdeFout === 'keten_kop_afwijking'
+          ? 'f'.repeat(64)
+          : dubbelStaat.ketenIntegriteit.laatsteSha256;
+
+      const ketensSluitend =
+        spiegelStaat.ketenIntegriteit.ok
+        && dubbelStaat.ketenIntegriteit.ok
+        && ruwAttesten.parseerFoutBijRegel === null
+        && attestKetenVooraf.ok
+        && gesimuleerdeFout !== 'keten_kop_afwijking';
+
+      const knoopNL = maakHybridePostkwantumKnooppunt({
+        type: 'vaste_onafhankelijke_knooppunten',
+        rollen: ['opslag', 'synchronisatie', 'verificatie'],
+        juridischeRegio: 'NL',
+        aanbieder:
+          gesimuleerdeFout === 'onafhankelijkheid_geschonden'
+            ? 'gedeelde-aanbieder-sybil'
+            : 'quorum-attest-nl',
+        nuIso,
+      });
+      const knoopCH = maakHybridePostkwantumKnooppunt({
+        type: 'vaste_onafhankelijke_knooppunten',
+        rollen: ['opslag', 'synchronisatie', 'verificatie'],
+        juridischeRegio: 'CH',
+        aanbieder:
+          gesimuleerdeFout === 'onafhankelijkheid_geschonden'
+            ? 'gedeelde-aanbieder-sybil'
+            : 'quorum-attest-ch',
+        nuIso,
+      });
+      const knoopUA = maakHybridePostkwantumKnooppunt({
+        type: 'vaste_onafhankelijke_knooppunten',
+        rollen: ['opslag', 'synchronisatie', 'verificatie'],
+        juridischeRegio: 'UA',
+        aanbieder: 'quorum-attest-ua',
+        nuIso,
+      });
+
+      const onafhankelijkheid = controleerKnooppuntOnafhankelijkheid(
+        [knoopNL.identiteit, knoopCH.identiteit, knoopUA.identiteit],
+        2,
+      );
+
+      // Підготовка номера й попереднього гешу для запису в журнал кворумних атестатів
+      const vorigeAttestSha256 =
+        ruwAttesten.parseerFoutBijRegel === null && attestKetenVooraf.ok
+          ? attestKetenVooraf.laatsteSha256
+          : ruwAttesten.attesten.length > 0
+            ? String(
+                ruwAttesten.attesten[ruwAttesten.attesten.length - 1].attestSha256
+                  ?? KLIMOP_GENESIS_KETEN_SHA256,
+              )
+            : KLIMOP_GENESIS_KETEN_SHA256;
+      const volgnummer = ruwAttesten.attesten.length + 1;
+      const stempel = nuIso.replace(/[-:TZ.]/g, '').slice(0, 14);
+      const attestId = `att_${stempel}_${randomBytes(4).toString('hex')}`;
+      const frostDrempel = { k: 2, n: 3 };
+      const frostOndertekenaars = [1, 2] as const;
+      const knooppuntRegios = ['NL', 'CH', 'UA'] as const;
+
+      const boodschappen = maakQuorumAttestTekenBoodschappen({
+        attestId,
+        volgnummer,
+        tijdstipIso: nuIso,
+        dienstId,
+        geisoleerdeDienstPsid: dienstCtx.dienstPsid,
+        knooppuntRegios,
+        frostDrempel,
+        frostOndertekenaars,
+        spiegelKetenKopSha256,
+        dubbelKetenKopSha256,
+        zaadMerkleWortelSha256,
+        vorigeAttestSha256,
+      });
+
+      // Бездилерський DKG (2-з-3) між вузлами NL (1), CH (2), UA (3): повний секрет ніде не збирається
+      const setId = `dkg_${attestId}`;
+      const dkgBijdragen = [1, 2, 3].map((afzenderIndex) =>
+        maakDkgDeelnemerBijdrage({ setId, afzenderIndex, drempel: 2, totaal: 3 }),
+      );
+      const dkg1 = combineerDkgBijdragenVoorDeelnemer(1, dkgBijdragen);
+      const dkg2 = combineerDkgBijdragenVoorDeelnemer(2, dkgBijdragen);
+      if (!dkg1.ok || !dkg2.ok) {
+        throw new KlimopFout('KLIMOP_INVOER_ONGELDIG', 500, 'DKG_SAMENVOEGING_MISLUKT');
+      }
+
+      // Двораундовий пороговий підпис Шнорра FROST(Ed25519, SHA-512) за RFC 9591 (учасники 1 та 2)
+      const r1Deel1 = frostRonde1MaakToezegging(1);
+      const r1Deel2 = frostRonde1MaakToezegging(2);
+      const toezeggingenLijst = [r1Deel1.publiek, r1Deel2.publiek];
+
+      const r2Deel1 = frostRonde2TekenDeel({
+        deel: dkg1.deel,
+        geheimeNonceStaat: r1Deel1.geheimeNonceStaat,
+        boodschap: boodschappen.frostBoodschap,
+        toezeggingenLijst,
+        groepsPubliekeSleutelHex: dkg1.groepsPubliekeSleutelHex,
+      });
+      const r2Deel2 = frostRonde2TekenDeel({
+        deel: dkg2.deel,
+        geheimeNonceStaat: r1Deel2.geheimeNonceStaat,
+        boodschap: boodschappen.frostBoodschap,
+        toezeggingenLijst,
+        groepsPubliekeSleutelHex: dkg1.groepsPubliekeSleutelHex,
+      });
+      if (!r2Deel1.ok || !r2Deel2.ok) {
+        throw new KlimopFout('KLIMOP_INVOER_ONGELDIG', 500, 'FROST_RONDE2_MISLUKT');
+      }
+
+      const deelHandtekening2 =
+        gesimuleerdeFout === 'frost_deel_vervalst'
+          ? { deelnemerIndex: 2, zDeelHex: `01${'00'.repeat(31)}` }
+          : r2Deel2.deelHandtekening;
+
+      const frostSamengevoegd = frostVoegHandtekeningSamen({
+        boodschap: boodschappen.frostBoodschap,
+        toezeggingenLijst,
+        deelHandtekeningen: [r2Deel1.deelHandtekening, deelHandtekening2],
+        deelnemerPubliekeSleutelsHex: dkg1.deelnemerPubliekeSleutelsHex,
+        groepsPubliekeSleutelHex: dkg1.groepsPubliekeSleutelHex,
+        drempel: 2,
+      });
+
+      const frostGroepsHandtekeningHex = frostSamengevoegd.ok
+        ? frostSamengevoegd.handtekeningHex
+        : '00'.repeat(64);
+      const verdachteDeelnemers =
+        !frostSamengevoegd.ok && frostSamengevoegd.verdachteDeelnemers
+          ? frostSamengevoegd.verdachteDeelnemers
+          : [];
+      const frostVerificatieOk =
+        frostSamengevoegd.ok
+        && verifieerStandaardEd25519Handtekening(
+          boodschappen.frostBoodschap,
+          frostGroepsHandtekeningHex,
+          dkg1.groepsPubliekeSleutelHex,
+        );
+
+      // Гібридний постквантовий підпис Ed25519 + ML-DSA-65 (FIPS 204)
+      const ruweHybride = ondertekenHybrideEd25519MlDsa65(boodschappen.hybrideBoodschap, knoopNL);
+      const hybrideHandtekening =
+        gesimuleerdeFout === 'hybride_pq_vervalst'
+          ? {
+              ...ruweHybride,
+              mlDsa65HandtekeningB64u:
+                ruweHybride.mlDsa65HandtekeningB64u.slice(0, -4)
+                + (ruweHybride.mlDsa65HandtekeningB64u.endsWith('AAAA') ? 'BBBB' : 'AAAA'),
+            }
+          : ruweHybride;
+      const hybrideToets = verifieerHybrideEd25519MlDsa65(
+        boodschappen.hybrideBoodschap,
+        hybrideHandtekening,
+        {
+          ed25519PubliekDerB64u: knoopNL.ed25519PubliekDerB64u,
+          mlDsa65PubliekSpkiB64u: knoopNL.mlDsa65PubliekSpkiB64u,
+        },
+      );
+      const hybrideVerificatieOk = hybrideToets.ok;
+
+      const schakelaarsBestand = leesSchakelaarsBestand(map);
+      const huidigeStaat = schakelaarsBestand.diensten[dienstId];
+      const leesModusVoor = huidigeStaat.leesModus;
+      const schrijfModusVoor = huidigeStaat.schrijfModus;
+      const attestModusVoor = huidigeStaat.attestModus;
+
+      const cryptoEnKetensOk =
+        onafhankelijkheid.ok && frostVerificatieOk && hybrideVerificatieOk && ketensSluitend;
+
+      const ankerRecord: DienstStaatSamenvattingRecord = {
+        sleutelId: `attest_anker_${dienstId}`,
+        inhoudSha256: spiegelKetenKopSha256,
+        machtigingenSha256: dubbelKetenKopSha256,
+      };
+      const pariteitVerslag = vergelijkErfenisEnKlimopStaat(
+        [ankerRecord],
+        cryptoEnKetensOk
+          ? [ankerRecord]
+          : [
+              {
+                sleutelId: ankerRecord.sleutelId,
+                inhoudSha256: createHash('sha256').update('attest-afgewezen', 'utf8').digest('hex'),
+                machtigingenSha256: ankerRecord.machtigingenSha256,
+              },
+            ],
+      );
+
+      const overdrachtBesluit = beslisOverDienstOverdrachtStap({
+        dienstId,
+        huidigeModus: 'klimop_primair_met_erfenis_terugval',
+        gewensteModus: 'volledig_onafhankelijk_geverifieerd',
+        pariteit: pariteitVerslag,
+        uitdrukkelijkeGoedkeuringEigenaarVoorVolledigOnafhankelijk: cryptoEnKetensOk,
+      });
+
+      const allesOk = cryptoEnKetensOk && overdrachtBesluit.toegestaan;
+
+      let leesModusNa: KlimopPassieveLeesModus = leesModusVoor;
+      let schrijfModusNa: KlimopDubbelSchrijfModus = schrijfModusVoor;
+      let attestModusNa: KlimopQuorumAttestModus = attestModusVoor;
+      let automatischTeruggezet = false;
+
+      if (
+        !allesOk
+        && (
+          attestModusVoor === 'quorum_gereed_onder_erfenis'
+          || schrijfModusVoor === 'gecontroleerd_dubbel_schrijven'
+          || leesModusVoor === 'passief_spiegel_lezen'
+        )
+      ) {
+        leesModusNa = 'alleen_erfenis_postgres';
+        schrijfModusNa = 'alleen_erfenis_postgres';
+        attestModusNa = 'alleen_erfenis_postgres';
+        automatischTeruggezet = true;
+      }
+
+      const reden = automatischTeruggezet
+        ? 'AUTOMATISCH_TERUGGEZET_NA_QUORUM_ATTEST_FOUT'
+        : allesOk
+          ? 'QUORUM_ATTEST_STAP4_FROST_EN_HYBRIDE_GELDIG'
+          : 'QUORUM_ATTEST_AFGEWEZEN_WEGENS_CRYPTO_OF_KETEN';
+
+      const bijgewerkteStaat: KlimopDienstSchakelaarStaat = {
+        ...huidigeStaat,
+        primaireSchrijfBron: 'erfenis_postgres',
+        leesModus: leesModusNa,
+        schrijfModus: schrijfModusNa,
+        attestModus: attestModusNa,
+        laatstePariteitOk: allesOk ? huidigeStaat.laatstePariteitOk : false,
+        opeenvolgendeGelijkeControles: allesOk ? huidigeStaat.opeenvolgendeGelijkeControles : 0,
+        laatsteDubbelSchrijfOk: allesOk ? huidigeStaat.laatsteDubbelSchrijfOk : false,
+        opeenvolgendeDubbelSchrijfControles: allesOk
+          ? huidigeStaat.opeenvolgendeDubbelSchrijfControles
+          : 0,
+        laatsteQuorumAttestOk: allesOk,
+        opeenvolgendeGeldigeAttesten: allesOk
+          ? huidigeStaat.opeenvolgendeGeldigeAttesten + 1
+          : 0,
+        totaalQuorumAttesten: huidigeStaat.totaalQuorumAttesten + 1,
+        totaalQuorumAttestFouten: huidigeStaat.totaalQuorumAttestFouten + (allesOk ? 0 : 1),
+        totaalGevondenAfwijkingen: huidigeStaat.totaalGevondenAfwijkingen + (allesOk ? 0 : 1),
+        automatischeTerugschakelingen:
+          huidigeStaat.automatischeTerugschakelingen + (automatischTeruggezet ? 1 : 0),
+        laatsteQuorumAttestOp: nuIso,
+        laatsteSchakelingOp: automatischTeruggezet ? nuIso : huidigeStaat.laatsteSchakelingOp,
+        laatsteReden: reden,
+      };
+
+      schakelaarsBestand.diensten[dienstId] = bijgewerkteStaat;
+      schakelaarsBestand.bijgewerktOp = nuIso;
+      schrijfSchakelaarsAtomair(map, schakelaarsBestand);
+
+      const zonderEigenHash: Omit<KlimopQuorumAttestRegel, 'attestSha256'> = {
+        attestId,
+        volgnummer,
+        tijdstipIso: nuIso,
+        dienstId,
+        geisoleerdeDienstPsid: dienstCtx.dienstPsid,
+        knooppuntRegios,
+        knooppuntenOnafhankelijk: onafhankelijkheid.ok,
+        frostDrempel,
+        frostOndertekenaars,
+        spiegelKetenKopSha256,
+        dubbelKetenKopSha256,
+        zaadMerkleWortelSha256,
+        gesimuleerdeFout,
+        frostGroepsPubliekeSleutelHex: dkg1.groepsPubliekeSleutelHex,
+        frostGroepsHandtekeningHex,
+        hybrideHandtekening,
+        frostVerificatieOk,
+        hybrideVerificatieOk,
+        ketensSluitend,
+        besluitVolledigOnafhankelijkToegestaan: allesOk,
+        attestModusVoor,
+        attestModusNa,
+        automatischTeruggezet,
+        reden,
+        bevatGeheimenOfInhoud: false,
+        vorigeAttestSha256,
+      };
+
+      const attestRegel: KlimopQuorumAttestRegel = {
+        ...zonderEigenHash,
+        attestSha256: berekenQuorumAttestSha256(zonderEigenHash),
+      };
+      appendFileSync(join(map, ATTEST_LOGBOEK_BESTAND), `${JSON.stringify(attestRegel)}\n`, 'utf8');
+
+      const logboekRegel = voegLogboekRegelToe(map, {
+        tijdstipIso: nuIso,
+        soort: automatischTeruggezet ? 'automatische_terugschakeling' : 'quorum_attest_proef',
+        dienstId,
+        leesModusVoor,
+        leesModusNa,
+        aantalGecontroleerd: 3,
+        afwijkingenAantal: allesOk ? 0 : 1,
+        afwijkingSleutelHashes: {
+          ontbrekend: [],
+          inhoud: allesOk ? [] : [hashSleutelIdVoorLogboek(ankerRecord.sleutelId)],
+          machtigingen: [],
+        },
+        reedSolomonHersteld: true,
+        crdtSamenvoegingOk: true,
+        automatischTeruggezet,
+        reden,
+      });
+
+      return {
+        ok: allesOk,
+        dienstId,
+        subdomein: profiel.subdomeinBestaand,
+        geisoleerdeDienstPsid: dienstCtx.dienstPsid,
+        knooppunten: {
+          regios: knooppuntRegios,
+          onafhankelijkQuorumOk: onafhankelijkheid.ok,
+        },
+        drempelZegel: {
+          drempel: frostDrempel,
+          ondertekenaars: frostOndertekenaars,
+          frostGroepsPubliekeSleutelHex: dkg1.groepsPubliekeSleutelHex,
+          frostGroepsHandtekeningHex,
+          frostVerificatieOk,
+          verdachteDeelnemers,
+          hybrideAlgoritme: 'ed25519+ml-dsa-65',
+          hybrideVerificatieOk,
+        },
+        ketenVerankering: {
+          spiegelKetenKopSha256,
+          dubbelKetenKopSha256,
+          ketensSluitend,
+        },
+        gesimuleerdeFout,
+        overdrachtBesluit: {
+          toegestaan: allesOk,
+          huidigeProductieModus: 'alleen_erfenis_postgres',
+          gevalideerdeDoelModus: allesOk
+            ? overdrachtBesluit.nieuweActieveModus
+            : 'alleen_erfenis_postgres',
+          reden,
+        },
+        schakelaar: bijgewerkteStaat,
+        automatischTeruggezetNaarErfenis: automatischTeruggezet,
+        attestRegel,
+        logboekRegel,
+        productieDatabankActief: true,
+        productieDatabankGewijzigd: false,
+      };
+    } finally {
+      dienstCtx.dienstSleutel32.fill(0);
+    }
+  } finally {
+    wortelGeheim32.fill(0);
+    zout32.fill(0);
+  }
+}
+
 function telActieveModi(schakelaarsBestand: SchakelaarOpslagBestand): {
   actievePassief: number;
   actieveDubbel: number;
+  actieveQuorum: number;
 } {
   let actievePassief = 0;
   let actieveDubbel = 0;
+  let actieveQuorum = 0;
   for (const d of KLIMOP_ELF_DIENSTEN) {
     const s = schakelaarsBestand.diensten[d];
     if (s.leesModus === 'passief_spiegel_lezen') actievePassief++;
     if (s.schrijfModus === 'gecontroleerd_dubbel_schrijven') actieveDubbel++;
+    if (s.attestModus === 'quorum_gereed_onder_erfenis') actieveQuorum++;
   }
-  return { actievePassief, actieveDubbel };
+  return { actievePassief, actieveDubbel, actieveQuorum };
 }
 
 /**
  * Захищений перемикач власника (§35 маніфесту):
  *   - `activeer_passief_lezen`: вмикає Сходинку 2 пасивного читання за цілісного журналу і чистої звірки;
  *   - `activeer_dubbel_schrijven`: вмикає Сходинку 3 контрольованого подвійного записування зі звіркою читання,
- *     виключно якщо обидва журнали цілісні, служба ВЖЕ перебуває на Сходинці 2 (заборона перестрибування сходинок!)
- *     і остання перевірка подвійного записування пройшла без жодних розбіжностей;
- *   - `terug_naar_erfenis`: миттєво повертає обрану службу зі Сходинки 3 або Сходинки 2 на чинну основу (навіть за пошкоджених журналів!);
+ *     виключно якщо журнали цілісні, служба ВЖЕ перебуває на Сходинці 2 і остання проба Сходинки 3 чиста;
+ *   - `bevestig_quorum_gereedheid`: підтверджує Сходинку 4 кворумної готовності виключно за цілісності й справжності підписів
+ *     усіх трьох журналів, активної Сходинки 2, активної Сходинки 3 та чинного кворумного атестата — без вимкнення БД;
+ *   - `terug_naar_erfenis`: миттєво повертає обрану службу з будь-якої сходинки на чинну основу (навіть за пошкоджених журналів!);
  *   - `nood_terug_alle_elf`: одним рухом миттєво повертає всі 11 служб на чинну основу з 0 втрат;
- *   - спроба самовільного відокремлення чинної бази (`ontkoppel_erfenis_postgres`) негайно блокується кодом `KLIMOP_LOSKOPPELING_VERBODEN` (403).
+ *   - будь-яка спроба самовільного відокремлення чи вимкнення живої бази (`ontkoppel_erfenis_postgres`, `schakel_postgres_uit`)
+ *     негайно блокується кодом `KLIMOP_LOSKOPPELING_VERBODEN` (403).
  */
 export function schakelKlimopDienstOverdracht(
   raw: unknown,
@@ -1453,6 +2198,7 @@ export function schakelKlimopDienstOverdracht(
   if (
     ruweActie === 'ontkoppel_erfenis_postgres'
     || ruweActie === 'volledig_onafhankelijk'
+    || ruweActie === 'schakel_postgres_uit'
     || b.ontkoppelErfenisDatabank === true
   ) {
     throw new KlimopFout('KLIMOP_LOSKOPPELING_VERBODEN', 403);
@@ -1462,6 +2208,7 @@ export function schakelKlimopDienstOverdracht(
   if (
     actie !== 'activeer_passief_lezen'
     && actie !== 'activeer_dubbel_schrijven'
+    && actie !== 'bevestig_quorum_gereedheid'
     && actie !== 'terug_naar_erfenis'
     && actie !== 'nood_terug_alle_elf'
   ) {
@@ -1478,13 +2225,15 @@ export function schakelKlimopDienstOverdracht(
       const cur = schakelaarsBestand.diensten[d];
       const wasActief =
         cur.leesModus === 'passief_spiegel_lezen'
-        || cur.schrijfModus === 'gecontroleerd_dubbel_schrijven';
+        || cur.schrijfModus === 'gecontroleerd_dubbel_schrijven'
+        || cur.attestModus === 'quorum_gereed_onder_erfenis';
       if (wasActief) omgeschakeld++;
       schakelaarsBestand.diensten[d] = {
         ...cur,
         primaireSchrijfBron: 'erfenis_postgres',
         leesModus: 'alleen_erfenis_postgres',
         schrijfModus: 'alleen_erfenis_postgres',
+        attestModus: 'alleen_erfenis_postgres',
         handmatigeTerugschakelingen: cur.handmatigeTerugschakelingen + (wasActief ? 1 : 0),
         laatsteSchakelingOp: nuIso,
         laatsteReden: 'NOOD_TERUGSCHAKELING_ALLE_ELF_DOOR_EIGENAAR',
@@ -1516,6 +2265,7 @@ export function schakelKlimopDienstOverdracht(
       schakelaar: null,
       actievePassiefLezenDiensten: 0,
       actieveDubbelSchrijvenDiensten: 0,
+      actieveQuorumGereedDiensten: 0,
       logboekRegel,
       productieDatabankGewijzigd: false,
     };
@@ -1529,6 +2279,7 @@ export function schakelKlimopDienstOverdracht(
   const huidige = schakelaarsBestand.diensten[dienstId];
   const leesModusVoor = huidige.leesModus;
   const schrijfModusVoor = huidige.schrijfModus;
+  const attestModusVoor = huidige.attestModus;
 
   if (actie === 'activeer_passief_lezen') {
     const ruw = leesAlleLogboekRegelsRuw(map);
@@ -1566,7 +2317,7 @@ export function schakelKlimopDienstOverdracht(
       reden: bijgewerkt.laatsteReden,
     });
 
-    const { actievePassief, actieveDubbel } = telActieveModi(schakelaarsBestand);
+    const { actievePassief, actieveDubbel, actieveQuorum } = telActieveModi(schakelaarsBestand);
 
     return {
       ok: true,
@@ -1576,6 +2327,7 @@ export function schakelKlimopDienstOverdracht(
       schakelaar: bijgewerkt,
       actievePassiefLezenDiensten: actievePassief,
       actieveDubbelSchrijvenDiensten: actieveDubbel,
+      actieveQuorumGereedDiensten: actieveQuorum,
       logboekRegel,
       productieDatabankGewijzigd: false,
     };
@@ -1629,7 +2381,7 @@ export function schakelKlimopDienstOverdracht(
       reden: bijgewerkt.laatsteReden,
     });
 
-    const { actievePassief, actieveDubbel } = telActieveModi(schakelaarsBestand);
+    const { actievePassief, actieveDubbel, actieveQuorum } = telActieveModi(schakelaarsBestand);
 
     return {
       ok: true,
@@ -1639,6 +2391,80 @@ export function schakelKlimopDienstOverdracht(
       schakelaar: bijgewerkt,
       actievePassiefLezenDiensten: actievePassief,
       actieveDubbelSchrijvenDiensten: actieveDubbel,
+      actieveQuorumGereedDiensten: actieveQuorum,
+      logboekRegel,
+      productieDatabankGewijzigd: false,
+    };
+  }
+
+  if (actie === 'bevestig_quorum_gereedheid') {
+    const ruwSpiegel = leesAlleLogboekRegelsRuw(map);
+    const spiegelKeten = verifieerSpiegelLogboekKeten(ruwSpiegel.regels);
+    if (ruwSpiegel.parseerFoutBijRegel !== null || !spiegelKeten.ok) {
+      throw new KlimopFout('KLIMOP_LOGBOEK_KETEN_ONGELDIG', 409);
+    }
+    const ruwDubbel = leesAlleDubbelKwitantiesRuw(map);
+    const dubbelKeten = verifieerDubbelKwitantieKeten(ruwDubbel.kwitanties);
+    if (ruwDubbel.parseerFoutBijRegel !== null || !dubbelKeten.ok) {
+      throw new KlimopFout('KLIMOP_DUBBEL_LOGBOEK_KETEN_ONGELDIG', 409);
+    }
+    const ruwAttesten = leesAlleQuorumAttestenRuw(map);
+    const attestKeten = verifieerQuorumAttestKeten(ruwAttesten.attesten);
+    if (ruwAttesten.parseerFoutBijRegel !== null || !attestKeten.ok) {
+      throw new KlimopFout('KLIMOP_ATTEST_KETEN_ONGELDIG', 409);
+    }
+    if (huidige.leesModus !== 'passief_spiegel_lezen') {
+      throw new KlimopFout('KLIMOP_STAP2_ACTIEF_VEREIST', 409);
+    }
+    if (huidige.schrijfModus !== 'gecontroleerd_dubbel_schrijven') {
+      throw new KlimopFout('KLIMOP_STAP3_ACTIEF_VEREIST', 409);
+    }
+    if (
+      huidige.laatsteQuorumAttestOk !== true
+      || huidige.opeenvolgendeGeldigeAttesten < 1
+    ) {
+      throw new KlimopFout('KLIMOP_QUORUM_ATTEST_VEREIST', 409);
+    }
+
+    const bijgewerkt: KlimopDienstSchakelaarStaat = {
+      ...huidige,
+      primaireSchrijfBron: 'erfenis_postgres',
+      leesModus: 'passief_spiegel_lezen',
+      schrijfModus: 'gecontroleerd_dubbel_schrijven',
+      attestModus: 'quorum_gereed_onder_erfenis',
+      laatsteSchakelingOp: nuIso,
+      laatsteReden: 'QUORUM_GEREEDHEID_STAP4_BEVESTIGD_DOOR_EIGENAAR_ONDER_ERFENIS',
+    };
+    schakelaarsBestand.diensten[dienstId] = bijgewerkt;
+    schakelaarsBestand.bijgewerktOp = nuIso;
+    schrijfSchakelaarsAtomair(map, schakelaarsBestand);
+
+    const logboekRegel = voegLogboekRegelToe(map, {
+      tijdstipIso: nuIso,
+      soort: 'handmatige_schakeling',
+      dienstId,
+      leesModusVoor,
+      leesModusNa: 'passief_spiegel_lezen',
+      aantalGecontroleerd: huidige.opeenvolgendeGeldigeAttesten,
+      afwijkingenAantal: 0,
+      afwijkingSleutelHashes: { ontbrekend: [], inhoud: [], machtigingen: [] },
+      reedSolomonHersteld: true,
+      crdtSamenvoegingOk: true,
+      automatischTeruggezet: false,
+      reden: bijgewerkt.laatsteReden,
+    });
+
+    const { actievePassief, actieveDubbel, actieveQuorum } = telActieveModi(schakelaarsBestand);
+
+    return {
+      ok: true,
+      actie,
+      dienstId,
+      omgeschakeldeDienstenAantal: attestModusVoor === 'quorum_gereed_onder_erfenis' ? 0 : 1,
+      schakelaar: bijgewerkt,
+      actievePassiefLezenDiensten: actievePassief,
+      actieveDubbelSchrijvenDiensten: actieveDubbel,
+      actieveQuorumGereedDiensten: actieveQuorum,
       logboekRegel,
       productieDatabankGewijzigd: false,
     };
@@ -1647,12 +2473,14 @@ export function schakelKlimopDienstOverdracht(
   // actie === 'terug_naar_erfenis' — безвідмовне миттєве повернення однієї служби з будь-якої сходинки
   const wasActief =
     leesModusVoor === 'passief_spiegel_lezen'
-    || schrijfModusVoor === 'gecontroleerd_dubbel_schrijven';
+    || schrijfModusVoor === 'gecontroleerd_dubbel_schrijven'
+    || attestModusVoor === 'quorum_gereed_onder_erfenis';
   const terugStaat: KlimopDienstSchakelaarStaat = {
     ...huidige,
     primaireSchrijfBron: 'erfenis_postgres',
     leesModus: 'alleen_erfenis_postgres',
     schrijfModus: 'alleen_erfenis_postgres',
+    attestModus: 'alleen_erfenis_postgres',
     handmatigeTerugschakelingen: huidige.handmatigeTerugschakelingen + (wasActief ? 1 : 0),
     laatsteSchakelingOp: nuIso,
     laatsteReden: 'HANDMATIG_TERUGGEZET_NAAR_ERFENIS_DOOR_EIGENAAR',
@@ -1676,7 +2504,7 @@ export function schakelKlimopDienstOverdracht(
     reden: terugStaat.laatsteReden,
   });
 
-  const { actievePassief, actieveDubbel } = telActieveModi(schakelaarsBestand);
+  const { actievePassief, actieveDubbel, actieveQuorum } = telActieveModi(schakelaarsBestand);
 
   return {
     ok: true,
@@ -1686,6 +2514,7 @@ export function schakelKlimopDienstOverdracht(
     schakelaar: terugStaat,
     actievePassiefLezenDiensten: actievePassief,
     actieveDubbelSchrijvenDiensten: actieveDubbel,
+    actieveQuorumGereedDiensten: actieveQuorum,
     logboekRegel,
     productieDatabankGewijzigd: false,
   };

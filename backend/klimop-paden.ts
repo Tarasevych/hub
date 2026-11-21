@@ -1,4 +1,4 @@
-// KLIMOP-014 / KLIMOP-015 (21.11.2026, Етапи 13–14 впровадження «Плюща» у платформу «Мій простір»):
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 / KLIMOP-017 (21.11.2026, Етапи 13–16 впровадження «Плюща» у платформу «Мій простір»):
 // Захищені маршрути власника /api/owner/klimop/* (лише служби mcp.* та admin.*, роль owner + OWNER_EMAIL).
 // Тонкий шлюз над backend/klimop-platform-brug.ts та backend/klimop-overdracht-opslag.ts без прямої залежності від бази даних.
 
@@ -14,10 +14,12 @@ import {
 } from './klimop-platform-brug';
 import {
   leesKlimopDubbelSchrijvenLogboek,
+  leesKlimopQuorumAttestLogboek,
   leesKlimopSpiegelLogboek,
   schakelKlimopDienstOverdracht,
   voerGecontroleerdeDubbelSchrijfProefUit,
   voerPassieveSpiegelLeesProefUit,
+  voerStap4QuorumAttestProefUit,
 } from './klimop-overdracht-opslag';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
@@ -161,6 +163,33 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
         });
       }),
     ],
+    [`POST ${KLIMOP_PADEN.quorumAttest}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'attest', CONTROLES_PER_MINUUT);
+        const r = voerStap4QuorumAttestProefUit(ctx.body, { staatMap: deps.staatMap });
+        await audit(e, 'klimop_quorum_attest', r.ok ? 'success' : 'failure', {
+          dienstId: r.dienstId,
+          ok: r.ok,
+          frostOk: r.drempelZegel.frostVerificatieOk,
+          hybrideOk: r.drempelZegel.hybrideVerificatieOk,
+          automatischTeruggezet: r.automatischTeruggezetNaarErfenis,
+        });
+        return r;
+      }),
+    ],
+    [`POST ${KLIMOP_PADEN.quorumLogboek}`]: [
+      eigenaar(async (ctx, e) => {
+        await limiet(e, 'lezen', LEZEN_PER_MINUUT);
+        const b = ctx.body && typeof ctx.body === 'object' && !Array.isArray(ctx.body)
+          ? (ctx.body as Record<string, unknown>)
+          : {};
+        return leesKlimopQuorumAttestLogboek({
+          staatMap: deps.staatMap,
+          limiet: typeof b.limiet === 'number' ? b.limiet : undefined,
+          dienstId: typeof b.dienstId === 'string' && b.dienstId ? (b.dienstId as KlimopDienstId) : undefined,
+        });
+      }),
+    ],
     [`POST ${KLIMOP_PADEN.overdrachtSchakelaar}`]: [
       eigenaar(async (ctx, e) => {
         await limiet(e, 'schakel', SCHAKEL_PER_MINUUT);
@@ -171,6 +200,7 @@ export function klimopPaden(deps: KlimopPadenDeps): Record<string, RouterMiddlew
           omgeschakeldeDienstenAantal: r.omgeschakeldeDienstenAantal,
           actievePassiefLezenDiensten: r.actievePassiefLezenDiensten,
           actieveDubbelSchrijvenDiensten: r.actieveDubbelSchrijvenDiensten,
+          actieveQuorumGereedDiensten: r.actieveQuorumGereedDiensten,
         });
         return r;
       }),
