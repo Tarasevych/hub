@@ -166,8 +166,8 @@ export async function main(): Promise<number> {
   const deelnemerPub = berekenDeelnemerPubliekeSleutelsUitToezeggingen(uit1.deel.toezeggingenHex, 3);
 
   // Перевірка захисту від повторного використання одноразового нонса у FROST
-  const r1Hergebruik = frostRonde1MaakToezegging(1);
-  const r1Partner = frostRonde1MaakToezegging(2);
+  const r1Hergebruik = frostRonde1MaakToezegging(uit1.deel);
+  const r1Partner = frostRonde1MaakToezegging(uit2.deel);
   const msgTest = Buffer.from('Перевірка одноразовості нонса FROST', 'utf8');
   const eersteGebruik = frostRonde2TekenDeel({
     deel: uit1.deel,
@@ -193,8 +193,8 @@ export async function main(): Promise<number> {
   for (const paar of [[0, 1], [0, 2], [1, 2]]) {
     const dA = dkgDelen[paar[0]];
     const dB = dkgDelen[paar[1]];
-    const nA = frostRonde1MaakToezegging(dA.index);
-    const nB = frostRonde1MaakToezegging(dB.index);
+    const nA = frostRonde1MaakToezegging(dA);
+    const nB = frostRonde1MaakToezegging(dB);
     const lijst = [nA.publiek, nB.publiek];
     const zA = frostRonde2TekenDeel({ deel: dA, geheimeNonceStaat: nA.geheimeNonceStaat, boodschap: msgTest, toezeggingenLijst: lijst, groepsPubliekeSleutelHex: groepsHex });
     const zB = frostRonde2TekenDeel({ deel: dB, geheimeNonceStaat: nB.geheimeNonceStaat, boodschap: msgTest, toezeggingenLijst: lijst, groepsPubliekeSleutelHex: groepsHex });
@@ -215,8 +215,8 @@ export async function main(): Promise<number> {
     }
   }
 
-  const nGoed = frostRonde1MaakToezegging(1);
-  const nSlecht = frostRonde1MaakToezegging(2);
+  const nGoed = frostRonde1MaakToezegging(uit1.deel);
+  const nSlecht = frostRonde1MaakToezegging(uit2.deel);
   const zGoed = frostRonde2TekenDeel({
     deel: uit1.deel,
     geheimeNonceStaat: nGoed.geheimeNonceStaat,

@@ -176,34 +176,60 @@ function bevatGeheimMateriaal(tekst: string): boolean {
   return GEHEIME_PATRONEN.some((patroon) => patroon.test(tekst));
 }
 
-/** Обчислює детермінований корінь дерева Меркла SHA-256 над відсортованим переліком складників «Насіння». */
+/** Позначка схеми дерева Меркла «Насіння» (KLIMOP-019). */
+export const ZAAD_MERKLE_SCHEMA = 'klimop-zaad-merkle-v2';
+
+/**
+ * Обчислює детермінований корінь дерева Меркла SHA-256 над переліком складників «Насіння» (схема v2).
+ *
+ * KLIMOP-019, вади попередньої схеми, знайдені незалежною перевіркою AUDIT-002:
+ *   - `localeCompare` залежав від мовних налаштувань середовища — тепер порядок суто побайтовий (UTF-8);
+ *   - повтор останнього непарного листка давав однаковий корінь для різних переліків — тепер непарний
+ *     вузол переноситься на рівень вище без дублювання;
+ *   - текстовий роздільник «|» допускав неоднозначність — тепер листки й вузли кодуються двійково з
+ *     доменними префіксами 0x00 (листок) і 0x01 (вузол) та явними довжинами полів (як у RFC 6962);
+ *   - повторювані шляхи тепер відхиляються (`ZAAD_DUBBEL_PAD`), а не мовчки потрапляють у дерево.
+ */
 export function berekenZaadMerkleWortelSha256(
   regels: readonly ZaadOnderdeelManifestRegel[],
 ): string {
   if (regels.length === 0) {
-    return createHash('sha256').update('klimop-leeg-zaad', 'utf8').digest('hex');
+    return createHash('sha256').update(`${ZAAD_MERKLE_SCHEMA}|leeg`, 'utf8').digest('hex');
   }
-  const gesorteerd = [...regels].sort((a, b) => a.pad.localeCompare(b.pad));
-  let laag = gesorteerd.map((r) =>
-    createHash('sha256')
-      .update(`blad|${r.pad}|${r.grootteBytes}|${r.sha256}`, 'utf8')
-      .digest('hex'),
-  );
+  const gesorteerd = [...regels]
+    .map((r) => ({ r, padBytes: Buffer.from(r.pad, 'utf8') }))
+    .sort((a, b) => Buffer.compare(a.padBytes, b.padBytes));
+  for (let i = 1; i < gesorteerd.length; i++) {
+    if (gesorteerd[i].padBytes.equals(gesorteerd[i - 1].padBytes)) throw new Error('ZAAD_DUBBEL_PAD');
+  }
+  let laag: Buffer[] = gesorteerd.map(({ r, padBytes }) => {
+    if (!/^[0-9a-f]{64}$/.test(r.sha256)) throw new Error('ZAAD_SHA256_ONGELDIG');
+    if (!Number.isSafeInteger(r.grootteBytes) || r.grootteBytes < 0) throw new Error('ZAAD_GROOTTE_ONGELDIG');
+    const lengte = Buffer.alloc(4);
+    lengte.writeUInt32BE(padBytes.length, 0);
+    const grootte = Buffer.alloc(8);
+    grootte.writeBigUInt64BE(BigInt(r.grootteBytes), 0);
+    return createHash('sha256')
+      .update(Buffer.from([0x00]))
+      .update(lengte)
+      .update(padBytes)
+      .update(grootte)
+      .update(Buffer.from(r.sha256, 'hex'))
+      .digest();
+  });
 
   while (laag.length > 1) {
-    const volgende: string[] = [];
+    const volgende: Buffer[] = [];
     for (let i = 0; i < laag.length; i += 2) {
-      const links = laag[i];
-      const rechts = i + 1 < laag.length ? laag[i + 1] : links;
-      volgende.push(
-        createHash('sha256')
-          .update(`knoop|${links}|${rechts}`, 'utf8')
-          .digest('hex'),
-      );
+      if (i + 1 >= laag.length) {
+        volgende.push(laag[i]); // непарний вузол переноситься без дублювання
+        continue;
+      }
+      volgende.push(createHash('sha256').update(Buffer.from([0x01])).update(laag[i]).update(laag[i + 1]).digest());
     }
     laag = volgende;
   }
-  return laag[0];
+  return laag[0].toString('hex');
 }
 
 export function maakZaadPakketTekenKern(kern: {
@@ -294,7 +320,12 @@ export function stelKlimopZaadPakketSamen(opties: {
     ingebeddeOnderdelenUtf8[ond.pad] = ond.inhoudUtf8;
   }
 
-  const merkleWortelSha256 = berekenZaadMerkleWortelSha256(onderdelenManifest);
+  let merkleWortelSha256: string;
+  try {
+    merkleWortelSha256 = berekenZaadMerkleWortelSha256(onderdelenManifest);
+  } catch (e) {
+    return { ok: false, fout: e instanceof Error ? e.message : 'ZAAD_MERKLE_ONGELDIG' };
+  }
   const kern = {
     schema: 1 as const,
     zaadId: opties.zaadId ?? `zaad1_${randomBytes(10).toString('hex')}`,
@@ -376,7 +407,12 @@ export function verifieerKlimopZaadPakket(
     }
   }
 
-  const berekendeWortel = berekenZaadMerkleWortelSha256(pakket.onderdelenManifest);
+  let berekendeWortel: string;
+  try {
+    berekendeWortel = berekenZaadMerkleWortelSha256(pakket.onderdelenManifest);
+  } catch (e) {
+    return { ok: false, fout: e instanceof Error ? e.message : 'ZAAD_MERKLE_ONGELDIG' };
+  }
   if (berekendeWortel !== pakket.merkleWortelSha256) {
     return { ok: false, fout: 'ZAAD_MERKLE_WORTEL_KLOPT_NIET' };
   }

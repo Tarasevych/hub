@@ -291,6 +291,31 @@ export interface KlimopOndertekendeCrdtOperatie {
   handtekeningB64u: string;
 }
 
+function vergelijkTekstBytes(a: string, b: string): number {
+  return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+}
+
+/**
+ * Повний детермінований порядок двох операцій над одним ключем (KLIMOP-019).
+ * Вада, знайдена перевіркою AUDIT-002: при однакових HLC (той самий пристрій, той самий час і лічильник)
+ * `vergelijkHlcStempels` повертав 0, і переможець залежав від порядку злиття — вузли могли розійтися.
+ * Тепер після HLC порівнюються вид операції («verwijder» перемагає «zet» при рівності), потім побайтово
+ * підпис, шифротекст, вектор ініціалізації та мітка автентичності; 0 лише для побайтово однакових операцій.
+ */
+export function vergelijkCrdtOperaties(a: KlimopOndertekendeCrdtOperatie, b: KlimopOndertekendeCrdtOperatie): number {
+  const hlc = vergelijkHlcStempels(a.hlc, b.hlc);
+  if (hlc !== 0) return hlc;
+  if (a.soort !== b.soort) return a.soort === 'zet' ? -1 : 1;
+  if (a.epoche !== b.epoche) return a.epoche < b.epoche ? -1 : 1;
+  return (
+    vergelijkTekstBytes(a.handtekeningB64u, b.handtekeningB64u)
+    || vergelijkTekstBytes(a.cijfertekstB64u, b.cijfertekstB64u)
+    || vergelijkTekstBytes(a.ivB64u, b.ivB64u)
+    || vergelijkTekstBytes(a.authTagB64u, b.authTagB64u)
+    || vergelijkTekstBytes(a.apparaatTekenPubDerB64u, b.apparaatTekenPubDerB64u)
+  );
+}
+
 export interface KlimopDienstCrdtStaat {
   schema: 1;
   dienstId: KlimopDienstId;
@@ -425,7 +450,7 @@ export function voegCrdtStatenSamen(
       if (!v.ok) return v;
 
       const bestaand = elementen[sleutelId];
-      if (!bestaand || vergelijkHlcStempels(bestaand.hlc, op.hlc) < 0) {
+      if (!bestaand || vergelijkCrdtOperaties(bestaand, op) < 0) {
         elementen[sleutelId] = op;
       }
     }

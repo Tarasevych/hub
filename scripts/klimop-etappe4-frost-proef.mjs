@@ -9,6 +9,9 @@
 //      а потім виконує повний перехід в епоху 2 (проактивне оновлення часток без зміни публічного ключа групи!).
 //   5. Переводить у карантин вузол NL і в епосі 2 створює новий пороговий підпис FROST силами пари CH + UA,
 //      який знову перевіряється тим самим незмінним груповим публічним ключем Ed25519 у node:crypto.verify!
+//   6. KLIMOP-019: готує перехід в епоху 3, вимикає процес CH після підготовки (втрата зв'язку), підтверджує
+//      рішення на NL і UA, перезапускає CH із зашифрованого файла стану й повторює те саме підтвердження —
+//      усі три вузли опиняються в епосі 3, а пара CH + UA підписує під тим самим ключем групи.
 // Запуск: node scripts/klimop-etappe4-frost-proef.mjs [--json]
 
 import { build } from 'esbuild';
@@ -76,7 +79,8 @@ async function voerEtappe4ProefUit() {
     });
 
     const srvNL = await m.startKlimopProefKnooppunt({ knooppunt: knNL });
-    const srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH });
+    const staatBestandCH = resolve(tijdelijkeMap, 'knooppunt-ch.staat');
+    let srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH });
     const srvUA = await m.startKlimopProefKnooppunt({ knooppunt: knUA });
 
     try {
@@ -154,6 +158,45 @@ async function voerEtappe4ProefUit() {
       const sigEp2GeldigInNodeCrypto =
         sigEp2.ok && verify(null, boodschapEp2, spkiSleutel, Buffer.from(sigEp2.handtekeningHex, 'hex'));
 
+      // 5. KLIMOP-019: стійкий двофазний перехід в епоху 3 із перезапуском CH між фазами
+      tabel.haalUitQuarantaine(knNL.identiteit.knooppuntId);
+      const vb3 = await drempelClient.bereidEpocheVerversingVoorOpNetwerk({ groep: ververst.vernieuwdeGroep });
+      if (!vb3.ok) throw new Error(`Збій підготовки епохи 3: ${vb3.fout}`);
+      await srvCH.sluit();
+      const zonderCH = await drempelClient.rondEpocheVerversingAfOpNetwerk({
+        groep: ververst.vernieuwdeGroep,
+        voorbereiding: vb3.voorbereiding,
+        besluit: 'bevestig',
+        maxPogingen: 1,
+        wachtMs: 0,
+      });
+      const onvoltooidZonderCH = !zonderCH.ok
+        && zonderCH.fout === 'AFRONDING_ONVOLTOOID'
+        && JSON.stringify(zonderCH.openstaandeIndexen) === JSON.stringify([2]);
+      srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH });
+      adressen.set(knCH.identiteit.knooppuntId, srvCH.basisUrl);
+      netwerkClient.sluitAlleSessies();
+      const herhaald = await drempelClient.rondEpocheVerversingAfOpNetwerk({
+        groep: ververst.vernieuwdeGroep,
+        voorbereiding: vb3.voorbereiding,
+        besluit: 'bevestig',
+        maxPogingen: 2,
+        wachtMs: 50,
+      });
+      const alleOpEpoche3NaHerstart = onvoltooidZonderCH
+        && herhaald.ok
+        && herhaald.vernieuwdeGroep.epoche === 3
+        && srvNL.actieveDrempelEpoche('frost-groep-proef-001') === 3
+        && srvCH.actieveDrempelEpoche('frost-groep-proef-001') === 3
+        && srvUA.actieveDrempelEpoche('frost-groep-proef-001') === 3;
+      let sigEp3GeldigInNodeCrypto = false;
+      if (herhaald.ok) {
+        tabel.plaatsInQuarantaine(knNL.identiteit.knooppuntId);
+        const boodschapEp3 = Buffer.from('Кворумне схвалення після перезапуску вузла між фазами — епоха 3', 'utf8');
+        const sigEp3 = await drempelClient.tekenMetFrostQuorum({ groep: herhaald.vernieuwdeGroep, boodschap: boodschapEp3 });
+        sigEp3GeldigInNodeCrypto = sigEp3.ok && verify(null, boodschapEp3, spkiSleutel, Buffer.from(sigEp3.handtekeningHex, 'hex'));
+      }
+
       netwerkClient.sluitAlleSessies();
 
       const resultaat = {
@@ -165,6 +208,8 @@ async function voerEtappe4ProefUit() {
         alleOpEpoche2,
         sigEp2GeldigInNodeCrypto,
         ondertekenaarsEp2: sigEp2.ok ? sigEp2.ondertekenaarIndexen : [],
+        alleOpEpoche3NaHerstart,
+        sigEp3GeldigInNodeCrypto,
       };
 
       if (process.argv.includes('--json')) {
@@ -176,9 +221,14 @@ async function voerEtappe4ProefUit() {
         console.log(`  Безпечне відкочування при перерваній процедурі оновлення часток: ok=${resultaat.afbrekingBehoudtEp1}`);
         console.log(`  Проактивний перехід в епоху 2 зі збереженням незмінного публічного ключа групи: ok=${resultaat.alleOpEpoche2}`);
         console.log(`  Пороговий підпис FROST в епосі 2 парою CH + UA під тим самим ключем Ed25519: ok=${resultaat.sigEp2GeldigInNodeCrypto}`);
+        console.log(`  Перехід в епоху 3 завершено після перезапуску CH між фазами (стан із файла): ok=${resultaat.alleOpEpoche3NaHerstart}`);
+        console.log(`  Пороговий підпис FROST в епосі 3 парою CH + UA після перезапуску: ok=${resultaat.sigEp3GeldigInNodeCrypto}`);
       }
 
-      if (!sigEp1GeldigInNodeCrypto || !afbrekingBehoudtEp1 || !alleOpEpoche2 || !sigEp2GeldigInNodeCrypto) {
+      if (
+        !sigEp1GeldigInNodeCrypto || !afbrekingBehoudtEp1 || !alleOpEpoche2 || !sigEp2GeldigInNodeCrypto
+        || !alleOpEpoche3NaHerstart || !sigEp3GeldigInNodeCrypto
+      ) {
         process.exitCode = 1;
       }
     } finally {

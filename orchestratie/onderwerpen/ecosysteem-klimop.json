@@ -436,6 +436,16 @@
       "datum": "2026-11-21",
       "uk": "Перша хвиля виправлень за незалежною перевіркою: чисте складання клієнта (перелік служб винесено до shared/klimop/diensten-catalogus.ts без серверних залежностей, перевірка межі scripts/klant-servergrens-controle.mjs у npm run build), панель «Плюща» в пошуковому покажчику (доступ technisch, перехід #orch), спільна навичка .agents/skills/movnyi-zakon/ для всіх 14 агентів із посиланням у кожному перехіднику та обов’язковістю в перевіряльнику навичок, механізм виправлення авторства (correctie + corrigeert) і 17 записів виправлення моделі на Gemini 4 Carbon (High).",
       "nl": "Eerste herstelgolf: schone clientbouw (dienstenlijst in shared/klimop/diensten-catalogus.ts, grenscontrole in npm run build), Klimop-paneel in de zoekindex (technisch, #orch), gedeelde vaardigheid movnyi-zakon voor alle 14 agenten, auteurscorrectie (correctie + corrigeert) en 17 correcties naar Gemini 4 Carbon (High)."
+    },
+    {
+      "taakId": "KLIMOP-019",
+      "tak": "fix/klimop-019-frost-dkg-epoche-merkle-crdt-20261121-144953",
+      "agent": "antigravity",
+      "model": "Claude Opus 5.5 (High)",
+      "modelBron": "eigenaar",
+      "datum": "2026-11-21",
+      "uk": "Друга хвиля виправлень за незалежною перевіркою: FROST звірено з вектором RFC 9591 E.1 побайтово, нонси прив’язано до частки; адресне шифрування підчасток DKG і нульових вкладів (shared/klimop/drempel-vervoer.ts); стійкий двофазний перехід епох із зашифрованим файлом стану вузла (backend/klimop-knooppunt-staat.ts); Меркл «Насіння» v2; повний порядок злиття CRDT.",
+      "nl": "Tweede herstelgolf: FROST bytegewijs gelijk aan RFC 9591 E.1, geadresseerde versleuteling van subdelen en nulbijdragen, duurzame tweefasige epochewissel met versleuteld staatbestand, Merkle v2 voor Zaden en totale CRDT-ordening."
     }
   ],
   "mogelijkheden": [
@@ -681,6 +691,41 @@
       "uk": "Виправлення виконавця в обліку авторства записом «correctie» з полем corrigeert без редагування первинного запису; сторінка оновлень і пакет показують правильну модель і «було»",
       "nl": "Correctie van de uitvoerder via «correctie» met corrigeert zonder de oorspronkelijke registratie te bewerken",
       "sinds": "KLIMOP-018",
+      "staat": "actief"
+    },
+    {
+      "id": "frost-rfc9591-vectoren",
+      "uk": "FROST(Ed25519, SHA-512) збігається з еталонним вектором RFC 9591 додатка E.1 побайтово; нонси прив’язані до частки",
+      "nl": "FROST bytegewijs gelijk aan referentievector RFC 9591 E.1; nonces gebonden aan het aandeel",
+      "sinds": "KLIMOP-019",
+      "staat": "actief"
+    },
+    {
+      "id": "dkg-adresversleuteling",
+      "uk": "Підчастки DKG і нульові вклади шифруються лише для адресата (X25519 → HKDF-SHA256 → ChaCha20-Poly1305), пакети підписує відправник, усі звіряють відбиток складу учасників",
+      "nl": "DKG-subdelen en nulbijdragen alleen voor de ontvanger versleuteld, ondertekend door de afzender, met vingerafdruk van de samenstelling",
+      "sinds": "KLIMOP-019",
+      "staat": "actief"
+    },
+    {
+      "id": "epoche-duurzame-tweefase",
+      "uk": "Двофазний перехід епох зі збереженням стану вузла в зашифрованому файлі 0600, ідемпотентним підтвердженням за відбитком рішення й повторами координатора",
+      "nl": "Tweefasige epochewissel met versleuteld staatbestand 0600, herhaalbare bevestiging per besluit en herhalingen door de coördinator",
+      "sinds": "KLIMOP-019",
+      "staat": "actief"
+    },
+    {
+      "id": "zaad-merkle-v2",
+      "uk": "Корінь Меркла «Насіння» v2: побайтове сортування, двійкові листки й вузли з префіксами, без дублювання непарного вузла, відмова на повторних шляхах",
+      "nl": "Merkle-wortel v2 voor Zaden: bytegewijze sortering, binaire bladeren met voorvoegsels, geen verdubbeling, weigering van dubbele paden",
+      "sinds": "KLIMOP-019",
+      "staat": "actief"
+    },
+    {
+      "id": "crdt-totale-orde",
+      "uk": "Повний детермінований порядок операцій CRDT: злиття не залежить від порядку навіть за однакового HLC",
+      "nl": "Totale deterministische ordening van CRDT-bewerkingen, ook bij gelijke HLC",
+      "sinds": "KLIMOP-019",
       "staat": "actief"
     }
   ],

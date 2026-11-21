@@ -13,11 +13,16 @@ import {
 import {
   frostVoegHandtekeningSamen,
   werkDeelnemerPubliekeSleutelsBijNaVerversing,
-  type DkgRondePakket,
   type FrostRonde1PubliekeToezegging,
   type FrostRonde2DeelHandtekening,
-  type ProactieveNulBijdrage,
 } from '../shared/klimop/drempelsleutels';
+import {
+  berekenVerversingBesluitId,
+  verifieerDrempelSamenstelling,
+  type KlimopDrempelDeelnemer,
+  type VersleuteldDkgRondePakket,
+  type VersleuteldeNulBijdrage,
+} from '../shared/klimop/drempel-vervoer';
 import type { KlimopNetwerkClient } from './klimop-knooppunt-agent';
 
 export interface KlimopDrempelGroepManifest {
@@ -25,11 +30,18 @@ export interface KlimopDrempelGroepManifest {
   drempel: number;
   totaal: number;
   epoche: number;
+  /** KLIMOP-019: відбиток складу учасників (ідентичності + ключі отримання), однаково обчислений кожним вузлом. */
+  samenstellingHex?: string;
   groepsPubliekeSleutelHex: string;
   groepsPubliekeSleutelSpkiB64u: string;
   knooppuntPerDeelnemerIndex: Record<number, KlimopKnooppuntIdentiteit>;
   deelnemerPubliekeSleutelsHex: Record<number, string>;
   mandatenPerKnooppuntId: Record<string, KlimopOndertekendMandaat>;
+}
+
+export interface KlimopEpocheVoorbereiding {
+  besluitId: string;
+  nulBijdragen: VersleuteldeNulBijdrage[];
 }
 
 export class KlimopDrempelOndertekenaarClient {
@@ -87,8 +99,27 @@ export class KlimopDrempelOndertekenaarClient {
       }, opties.opdrachtgever);
     }
 
-    // Фаза 1 DKG: кожен вузол генерує власний випадковий поліном і перевірювані зобов'язання Фельдмана
-    const alleBijdragen: DkgRondePakket[] = [];
+    // Фаза 0 DKG (KLIMOP-019): кожен вузол створює й підписує власний ключ отримання X25519 для набору
+    const deelnemers: KlimopDrempelDeelnemer[] = [];
+    for (let idx = 1; idx <= totaal; idx++) {
+      const kn = knooppuntPerDeelnemerIndex[idx];
+      const r = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
+        actie: 'dkg_maak_ontvangstsleutel',
+        setId: opties.setId,
+        deelnemerIndex: idx,
+        mandaat: mandatenPerKnooppuntId[kn.knooppuntId],
+      });
+      if (!r.antwoord.ok || r.antwoord.actie !== 'dkg_ontvangstsleutel') {
+        return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'DKG_ONTVANGSTSLEUTEL_MISLUKT' };
+      }
+      deelnemers.push({ identiteit: kn, ontvangstSleutel: r.antwoord.ontvangstSleutel });
+    }
+    const samenstelling = verifieerDrempelSamenstelling(opties.setId, deelnemers);
+    if (!samenstelling.ok) return { ok: false, fout: samenstelling.fout };
+
+    // Фаза 1 DKG: кожен вузол генерує власний поліном, шифрує кожну підчастку лише для її адресата
+    // і підписує пакет; координатор бачить тільки зобов'язання та шифротексти.
+    const alleBijdragen: VersleuteldDkgRondePakket[] = [];
     for (let idx = 1; idx <= totaal; idx++) {
       const kn = knooppuntPerDeelnemerIndex[idx];
       const r = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
@@ -97,15 +128,20 @@ export class KlimopDrempelOndertekenaarClient {
         deelnemerIndex: idx,
         drempel: opties.drempel,
         totaal,
+        deelnemers,
         mandaat: mandatenPerKnooppuntId[kn.knooppuntId],
       });
       if (!r.antwoord.ok || r.antwoord.actie !== 'dkg_bijdrage') {
         return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'DKG_BIJDRAGE_MISLUKT' };
       }
+      if (r.antwoord.samenstellingHex !== samenstelling.samenstellingHex) {
+        return { ok: false, fout: 'DKG_SAMENSTELLING_VERSCHILT_TUSSEN_KNOOPPUNTEN' };
+      }
       alleBijdragen.push(r.antwoord.pakket);
     }
 
-    // Фаза 2 DKG: кожен вузол перевіряє всі вклади й формує свою частку у власній пам'яті
+    // Фаза 2 DKG: кожен вузол перевіряє підписи й відбиток складу, розшифровує лише свою підчастку
+    // і формує власну частку у своїй пам'яті (або в зашифрованому файлі стану).
     let groepsPubliekeSleutelHex = '';
     let groepsPubliekeSleutelSpkiB64u = '';
     let deelnemerPubliekeSleutelsHex: Record<number, string> = {};
@@ -121,6 +157,9 @@ export class KlimopDrempelOndertekenaarClient {
       });
       if (!r.antwoord.ok || r.antwoord.actie !== 'dkg_voltooid') {
         return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'DKG_VOLTOOIING_MISLUKT' };
+      }
+      if (r.antwoord.samenstellingHex !== samenstelling.samenstellingHex) {
+        return { ok: false, fout: 'DKG_SAMENSTELLING_VERSCHILT_TUSSEN_KNOOPPUNTEN' };
       }
       if (!groepsPubliekeSleutelHex) {
         groepsPubliekeSleutelHex = r.antwoord.groepsPubliekeSleutelHex;
@@ -138,6 +177,7 @@ export class KlimopDrempelOndertekenaarClient {
         drempel: opties.drempel,
         totaal,
         epoche: 1,
+        samenstellingHex: samenstelling.samenstellingHex,
         groepsPubliekeSleutelHex,
         groepsPubliekeSleutelSpkiB64u,
         knooppuntPerDeelnemerIndex,
@@ -222,18 +262,16 @@ export class KlimopDrempelOndertekenaarClient {
   }
 
   /**
-   * Проводить двофазне епохальне проактивне оновлення часток між живими вузлами без зміни секрету
-   * і без зміни публічного ключа групи (з підтримкою безпечного відкочування при `simuleerAfbrekingVoorBevestiging`).
+   * Фаза 1 двофазного переходу епохи (KLIMOP-019): збирає підписані зашифровані нульові вклади всіх вузлів
+   * і готує на кожному вузлі нову частку, не чіпаючи чинної. Якщо підготовка не вдалася хоч на одному
+   * вузлі, усім уже підготовленим надсилається скасування цієї самої підготовки (за відбитком рішення).
    */
-  async verversEpocheOpNetwerk(opties: {
-    groep: KlimopDrempelGroepManifest;
-    simuleerAfbrekingVoorBevestiging?: boolean;
-  }): Promise<
-    | { ok: true; vernieuwdeGroep: KlimopDrempelGroepManifest; afgerondeActie: 'bevestig' | 'afbreken' }
+  async bereidEpocheVerversingVoorOpNetwerk(opties: { groep: KlimopDrempelGroepManifest }): Promise<
+    | { ok: true; voorbereiding: KlimopEpocheVoorbereiding }
     | { ok: false; fout: string }
   > {
     const { groep } = opties;
-    const nulBijdragen: ProactieveNulBijdrage[] = [];
+    const nulBijdragen: VersleuteldeNulBijdrage[] = [];
 
     for (let idx = 1; idx <= groep.totaal; idx++) {
       const kn = groep.knooppuntPerDeelnemerIndex[idx];
@@ -245,10 +283,13 @@ export class KlimopDrempelOndertekenaarClient {
       if (!r.antwoord.ok || r.antwoord.actie !== 'ververs_nulbijdrage') {
         return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'NULBIJDRAGE_MISLUKT' };
       }
+      if (groep.samenstellingHex && r.antwoord.bijdrage.samenstellingHex !== groep.samenstellingHex) {
+        return { ok: false, fout: 'VERVERS_SAMENSTELLING_VERSCHILT' };
+      }
       nulBijdragen.push(r.antwoord.bijdrage);
     }
+    const besluitId = berekenVerversingBesluitId(nulBijdragen);
 
-    // Фаза 1: підготовка на кожному вузлі (стара частка зберігається у буфері відкочування)
     for (let idx = 1; idx <= groep.totaal; idx++) {
       const kn = groep.knooppuntPerDeelnemerIndex[idx];
       const r = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
@@ -257,12 +298,13 @@ export class KlimopDrempelOndertekenaarClient {
         bijdragen: nulBijdragen,
         mandaat: groep.mandatenPerKnooppuntId[kn.knooppuntId],
       });
-      if (!r.antwoord.ok || r.antwoord.actie !== 'ververs_voorbereid') {
+      if (!r.antwoord.ok || r.antwoord.actie !== 'ververs_voorbereid' || r.antwoord.besluitId !== besluitId) {
         for (let terug = 1; terug < idx; terug++) {
           const knTerug = groep.knooppuntPerDeelnemerIndex[terug];
           await this.netwerkClient.roepOpdrachtAan(knTerug.knooppuntId, {
             actie: 'ververs_afronden',
             setId: groep.setId,
+            besluitId,
             besluit: 'afbreken',
             mandaat: groep.mandatenPerKnooppuntId[knTerug.knooppuntId],
           });
@@ -270,25 +312,62 @@ export class KlimopDrempelOndertekenaarClient {
         return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'VOORBEREIDING_MISLUKT' };
       }
     }
+    return { ok: true, voorbereiding: { besluitId, nulBijdragen } };
+  }
 
-    const besluit: 'bevestig' | 'afbreken' = opties.simuleerAfbrekingVoorBevestiging ? 'afbreken' : 'bevestig';
-    for (let idx = 1; idx <= groep.totaal; idx++) {
-      const kn = groep.knooppuntPerDeelnemerIndex[idx];
-      const r = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
-        actie: 'ververs_afronden',
-        setId: groep.setId,
-        besluit,
-        mandaat: groep.mandatenPerKnooppuntId[kn.knooppuntId],
-      });
-      if (!r.antwoord.ok || r.antwoord.actie !== 'ververs_afgerond') {
-        return { ok: false, fout: !r.antwoord.ok ? r.antwoord.fout : 'AFRONDING_MISLUKT' };
+  /**
+   * Фаза 2 двофазного переходу епохи: надсилає одне й те саме рішення всім вузлам і повторює його для тих,
+   * хто не відповів (втрата зв'язку, перезапуск). Після першого `bevestig` скасування більше не надсилається:
+   * вузли з підготовкою на диску завершать перехід під час повтору, тож група не розходиться між епохами.
+   * Якщо після всіх спроб хтось лишився, повертається `AFRONDING_ONVOLTOOID` з переліком — виклик можна
+   * безпечно повторити пізніше з тією самою підготовкою.
+   */
+  async rondEpocheVerversingAfOpNetwerk(opties: {
+    groep: KlimopDrempelGroepManifest;
+    voorbereiding: KlimopEpocheVoorbereiding;
+    besluit: 'bevestig' | 'afbreken';
+    maxPogingen?: number;
+    wachtMs?: number;
+  }): Promise<
+    | { ok: true; vernieuwdeGroep: KlimopDrempelGroepManifest; afgerondeActie: 'bevestig' | 'afbreken' }
+    | { ok: false; fout: string; openstaandeIndexen?: number[]; laatsteFout?: string }
+  > {
+    const { groep, voorbereiding, besluit } = opties;
+    const maxPogingen = Math.max(1, opties.maxPogingen ?? 3);
+    const wachtMs = Math.max(0, opties.wachtMs ?? 200);
+    let openstaand = Array.from({ length: groep.totaal }, (_, i) => i + 1);
+    let laatsteFout = 'AFRONDING_ONVOLTOOID';
+
+    for (let poging = 1; poging <= maxPogingen && openstaand.length > 0; poging++) {
+      const nogOpen: number[] = [];
+      for (const idx of openstaand) {
+        const kn = groep.knooppuntPerDeelnemerIndex[idx];
+        const r = await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
+          actie: 'ververs_afronden',
+          setId: groep.setId,
+          besluitId: voorbereiding.besluitId,
+          besluit,
+          mandaat: groep.mandatenPerKnooppuntId[kn.knooppuntId],
+        });
+        if (r.antwoord.ok && r.antwoord.actie === 'ververs_afgerond' && r.antwoord.besluitId === voorbereiding.besluitId) continue;
+        if (!r.antwoord.ok && r.antwoord.fout === 'VERVERSING_REEDS_ANDERS_AFGEROND') {
+          return { ok: false, fout: 'VERVERSING_REEDS_ANDERS_AFGEROND', openstaandeIndexen: [idx] };
+        }
+        laatsteFout = !r.antwoord.ok ? r.antwoord.fout : 'AFRONDING_MISLUKT';
+        nogOpen.push(idx);
+      }
+      openstaand = nogOpen;
+      if (openstaand.length > 0 && poging < maxPogingen && wachtMs > 0) {
+        await new Promise((klaar) => setTimeout(klaar, wachtMs * poging));
       }
     }
 
+    if (openstaand.length > 0) {
+      return { ok: false, fout: 'AFRONDING_ONVOLTOOID', openstaandeIndexen: openstaand, laatsteFout };
+    }
     if (besluit === 'afbreken') {
       return { ok: true, vernieuwdeGroep: groep, afgerondeActie: 'afbreken' };
     }
-
     return {
       ok: true,
       vernieuwdeGroep: {
@@ -296,10 +375,44 @@ export class KlimopDrempelOndertekenaarClient {
         epoche: groep.epoche + 1,
         deelnemerPubliekeSleutelsHex: werkDeelnemerPubliekeSleutelsBijNaVerversing(
           groep.deelnemerPubliekeSleutelsHex,
-          nulBijdragen,
+          voorbereiding.nulBijdragen.map((b) => ({
+            schema: 1 as const,
+            setId: b.setId,
+            vanEpoche: b.vanEpoche,
+            naarEpoche: b.naarEpoche,
+            afzenderIndex: b.afzenderIndex,
+            drempel: b.drempel,
+            totaal: b.totaal,
+            nulToezeggingenVanaf1Hex: b.nulToezeggingenVanaf1Hex,
+            subdelenPerOntvanger: {},
+          })),
         ),
       },
       afgerondeActie: 'bevestig',
     };
+  }
+
+  /**
+   * Проводить двофазне епохальне проактивне оновлення часток між живими вузлами без зміни секрету
+   * і без зміни публічного ключа групи (з підтримкою безпечного відкочування при `simuleerAfbrekingVoorBevestiging`).
+   */
+  async verversEpocheOpNetwerk(opties: {
+    groep: KlimopDrempelGroepManifest;
+    simuleerAfbrekingVoorBevestiging?: boolean;
+    maxPogingen?: number;
+    wachtMs?: number;
+  }): Promise<
+    | { ok: true; vernieuwdeGroep: KlimopDrempelGroepManifest; afgerondeActie: 'bevestig' | 'afbreken' }
+    | { ok: false; fout: string; openstaandeIndexen?: number[] }
+  > {
+    const vb = await this.bereidEpocheVerversingVoorOpNetwerk({ groep: opties.groep });
+    if (!vb.ok) return vb;
+    return this.rondEpocheVerversingAfOpNetwerk({
+      groep: opties.groep,
+      voorbereiding: vb.voorbereiding,
+      besluit: opties.simuleerAfbrekingVoorBevestiging ? 'afbreken' : 'bevestig',
+      maxPogingen: opties.maxPogingen,
+      wachtMs: opties.wachtMs,
+    });
   }
 }

@@ -1889,8 +1889,8 @@ export function voerStap4QuorumAttestProefUit(
       }
 
       // Двораундовий пороговий підпис Шнорра FROST(Ed25519, SHA-512) за RFC 9591 (учасники 1 та 2)
-      const r1Deel1 = frostRonde1MaakToezegging(1);
-      const r1Deel2 = frostRonde1MaakToezegging(2);
+      const r1Deel1 = frostRonde1MaakToezegging(dkg1.deel);
+      const r1Deel2 = frostRonde1MaakToezegging(dkg2.deel);
       const toezeggingenLijst = [r1Deel1.publiek, r1Deel2.publiek];
 
       const r2Deel1 = frostRonde2TekenDeel({
