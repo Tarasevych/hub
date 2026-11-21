@@ -95,6 +95,12 @@ import {
   verifieerOnafhankelijkAuditRapport,
   type KlimopOnafhankelijkAuditRapport,
 } from '../shared/klimop/beveiligingsaudit';
+import {
+  verifieerKlimopZaadPakket,
+  verifieerOpvolgingsOverdracht,
+  type KlimopOpvolgingsOverdracht,
+  type KlimopZaadPakket,
+} from '../shared/klimop/zaden';
 
 export type KnooppuntOpdracht =
   | { actie: 'ping'; bericht: string }
@@ -265,6 +271,21 @@ export type KnooppuntOpdracht =
       actie: 'raadpleeg_beveiligingsaudit_staat';
       auditId: string;
       mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'bewaar_gevalideerd_zaad_pakket';
+      pakket: KlimopZaadPakket;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'registreer_opvolgings_overdracht';
+      overdracht: KlimopOpvolgingsOverdracht;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'raadpleeg_zaad_en_opvolging';
+      zaadId: string;
+      mandaat: KlimopOndertekendMandaat;
     };
 
 export interface KlimopIdentiteitRegisterInvoer {
@@ -402,6 +423,25 @@ export type KnooppuntOpdrachtAntwoord =
       actie: 'beveiligingsaudit_staat';
       rapport: KlimopOnafhankelijkAuditRapport;
     }
+  | {
+      ok: true;
+      actie: 'zaad_pakket_opgeslagen';
+      zaadId: string;
+      merkleWortelSha256: string;
+      geverifieerdeModules: number;
+    }
+  | {
+      ok: true;
+      actie: 'opvolgings_overdracht_geregistreerd';
+      overdrachtId: string;
+      nieuweGrondwetVersie: number;
+    }
+  | {
+      ok: true;
+      actie: 'zaad_en_opvolging_staat';
+      pakket: KlimopZaadPakket | null;
+      opvolgingen: readonly KlimopOpvolgingsOverdracht[];
+    }
   | { ok: false; fout: string; details?: string[] };
 
 export interface EstafetteVerzoek {
@@ -449,13 +489,17 @@ function stuurJson(res: ServerResponse, status: number, waarde: unknown): void {
 }
 
 async function postJson(url: string, lichaam: unknown): Promise<{ status: number; data: any }> {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(lichaam),
-  });
-  const data = await r.json();
-  return { status: r.status, data };
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(lichaam),
+    });
+    const data = await r.json();
+    return { status: r.status, data };
+  } catch {
+    return { status: 503, data: { ok: false, fout: 'KNOOPPUNT_ONBEREIKBAAR' } };
+  }
 }
 
 export interface KlimopProefKnooppunt {
@@ -476,6 +520,7 @@ export interface KlimopProefKnooppunt {
   aantalUitgesteldeOperaties(): number;
   aantalActieveToetredingen(): number;
   aantalAuditRapporten(): number;
+  aantalZaadPakketten(): number;
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -503,6 +548,8 @@ export async function startKlimopProefKnooppunt(config: {
   const middelenKwitanties = new Map<string, KlimopMiddelenBijdrageKwitantie>();
   const veiligeUittredingen = new Map<string, VeiligeKnooppuntUittredingBewijs>();
   const auditRapporten = new Map<string, KlimopOnafhankelijkAuditRapport>();
+  const zaadPakketten = new Map<string, KlimopZaadPakket>();
+  const opvolgingsOverdrachten: KlimopOpvolgingsOverdracht[] = [];
   const buurAdressen = new Map<string, string>();
   const quarantaineKnooppunten = new Set<string>();
   const ingetrokkenMandaten = new Set<string>();
@@ -1122,6 +1169,54 @@ export async function startKlimopProefKnooppunt(config: {
       };
     }
 
+    if (
+      opdracht.actie === 'bewaar_gevalideerd_zaad_pakket'
+      || opdracht.actie === 'registreer_opvolgings_overdracht'
+      || opdracht.actie === 'raadpleeg_zaad_en_opvolging'
+    ) {
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      if (!mOk.ok) return mOk;
+
+      if (opdracht.actie === 'bewaar_gevalideerd_zaad_pakket') {
+        const vZaad = verifieerKlimopZaadPakket(opdracht.pakket);
+        if (!vZaad.ok) return vZaad;
+        zaadPakketten.set(opdracht.pakket.zaadId, opdracht.pakket);
+        if (!actieveGrondwet) {
+          actieveGrondwet = opdracht.pakket.grondwet;
+        }
+        return {
+          ok: true,
+          actie: 'zaad_pakket_opgeslagen',
+          zaadId: opdracht.pakket.zaadId,
+          merkleWortelSha256: opdracht.pakket.merkleWortelSha256,
+          geverifieerdeModules: vZaad.geverifieerdeModules,
+        };
+      }
+
+      if (opdracht.actie === 'registreer_opvolgings_overdracht') {
+        const vOpv = verifieerOpvolgingsOverdracht(
+          opdracht.overdracht,
+          actieveGrondwet?.frostGroepsPubliekeSleutelHex,
+        );
+        if (!vOpv.ok) return vOpv;
+        opvolgingsOverdrachten.push(opdracht.overdracht);
+        actieveGrondwet = opdracht.overdracht.nieuweGrondwet;
+        return {
+          ok: true,
+          actie: 'opvolgings_overdracht_geregistreerd',
+          overdrachtId: opdracht.overdracht.overdrachtId,
+          nieuweGrondwetVersie: opdracht.overdracht.nieuweGrondwet.versieVolgnummer,
+        };
+      }
+
+      return {
+        ok: true,
+        actie: 'zaad_en_opvolging_staat',
+        pakket: zaadPakketten.get(opdracht.zaadId) ?? null,
+        opvolgingen: [...opvolgingsOverdrachten],
+      };
+    }
+
     return { ok: false, fout: 'ONBEKENDE_ACTIE' };
   }
 
@@ -1142,6 +1237,7 @@ export async function startKlimopProefKnooppunt(config: {
           geregistreerdeIdentiteiten: identiteitRegister.size,
           actieveToetredingen: actieveToetredingen.size,
           auditRapporten: auditRapporten.size,
+          zaadPakketten: zaadPakketten.size,
           actiefUitgaveVolgnummer: huidigUitgaveVolgnummer,
         });
         return;
@@ -1279,6 +1375,9 @@ export async function startKlimopProefKnooppunt(config: {
     aantalAuditRapporten() {
       return auditRapporten.size;
     },
+    aantalZaadPakketten() {
+      return zaadPakketten.size;
+    },
     estafetteTeller() {
       return aantalEstafettes;
     },
@@ -1302,6 +1401,8 @@ export async function startKlimopProefKnooppunt(config: {
       middelenKwitanties.clear();
       veiligeUittredingen.clear();
       auditRapporten.clear();
+      zaadPakketten.clear();
+      opvolgingsOverdrachten.length = 0;
       actieveGrondwet = null;
       await new Promise<void>((r) => server.close(() => r()));
     },

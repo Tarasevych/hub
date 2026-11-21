@@ -461,10 +461,11 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ 15. Досьє функції та 26 активних можливостей
   const dossier = JSON.parse(lees('orchestratie/onderwerpen/ecosysteem-klimop.json'));
-  check('досьє ecosysteem-klimop.json фіксує запит №193 для KLIMOP-011, задачу KLIMOP-012, відкритий KLIMOP-013 та 26 активних можливостей без втрат',
+  check('досьє ecosysteem-klimop.json фіксує запит №193 для KLIMOP-011, задачу KLIMOP-012, наступність KLIMOP-013 та >=26 активних можливостей без втрат',
     dossier.werk.some((w: { taakId: string; pr?: number }) => w.taakId === 'KLIMOP-011' && w.pr === 193)
     && dossier.werk.some((w: { taakId: string }) => w.taakId === 'KLIMOP-012')
-    && dossier.open.some((o: { uk: string }) => o.uk.includes('KLIMOP-013'))
+    && (dossier.open.some((o: { uk: string }) => o.uk.includes('KLIMOP-013'))
+      || dossier.werk.some((w: { taakId: string }) => w.taakId === 'KLIMOP-013'))
     && dossier.mogelijkheden.filter((m: { staat: string }) => m.staat === 'actief').length >= 26
     && dossier.mogelijkheden.every((m: { staat: string }) => m.staat !== 'verloren'));
 

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-013",
+  "agent": "antigravity",
+  "tak": "feature/klimop-013-etappe12-zaden-opvolging-20261121-064800",
+  "basisCommit": "372c059460a8c92e4f7dbea529421eb43c862766",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T06:47:08.287Z",
+  "bijgewerkt": "2026-11-21T06:47:08.287Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
