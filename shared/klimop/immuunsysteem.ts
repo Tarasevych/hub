@@ -79,15 +79,24 @@ export function berekenBlindeIntegriteitBewijs(
   };
 }
 
-/** Перевіряє доказ цілісності блока проти очікуваного зашифрованого фрагмента (або його перевіреної смуги Ріда–Соломона). */
+/**
+ * Перевіряє доказ цілісності блока проти очікуваного зашифрованого фрагмента (або його перевіреної смуги Ріда–Соломона).
+ * KLIMOP-020: без незалежного еталона позитивний висновок ніколи не видається (`INTEGRITEIT_REFERENTIE_ONTBREEKT`).
+ */
 export function verifieerBlindeIntegriteitBewijs(opties: {
   uitdaging: KlimopBlindeIntegriteitUitdaging;
   antwoord: KlimopBlindeIntegriteitAntwoord;
   verwachteCijfertekst?: Buffer;
   verwachteGrootteBytes?: number;
-}): { ok: true } | { ok: false; fout: string } {
+}): { ok: true } | { ok: false; fout: string; nietGeverifieerd?: boolean } {
   const { uitdaging, antwoord } = opties;
-  if (!antwoord || antwoord.schema !== 1 || !/^[0-9a-f]{64}$/i.test(antwoord.bewijsHmacHex)) {
+  if (
+    !antwoord
+    || antwoord.schema !== 1
+    || !/^[0-9a-f]{64}$/i.test(antwoord.bewijsHmacHex)
+    || !Number.isSafeInteger(antwoord.grootteBytes)
+    || antwoord.grootteBytes < 0
+  ) {
     return { ok: false, fout: 'INTEGRITEIT_ANTWOORD_ONGELDIGE_VORM' };
   }
   if (antwoord.blokSha256.toLowerCase() !== uitdaging.blokSha256.toLowerCase()) {
@@ -99,14 +108,18 @@ export function verifieerBlindeIntegriteitBewijs(opties: {
   ) {
     return { ok: false, fout: 'INTEGRITEIT_GROOTTE_KOMT_NIET_OVEREEN' };
   }
-  if (opties.verwachteCijfertekst) {
-    const verwacht = berekenBlindeIntegriteitBewijs(opties.verwachteCijfertekst, uitdaging.uitdagingNonceHex);
-    if (!verwacht.ok) return verwacht;
-    const a = Buffer.from(antwoord.bewijsHmacHex, 'hex');
-    const b = Buffer.from(verwacht.antwoord.bewijsHmacHex, 'hex');
-    if (a.length !== b.length || !timingSafeEqual(a, b)) {
-      return { ok: false, fout: 'INTEGRITEIT_HMAC_BEWIJS_ONGELDIG' };
-    }
+  if (!opties.verwachteCijfertekst) {
+    return { ok: false, fout: 'INTEGRITEIT_REFERENTIE_ONTBREEKT', nietGeverifieerd: true };
+  }
+  if (antwoord.grootteBytes !== opties.verwachteCijfertekst.length) {
+    return { ok: false, fout: 'INTEGRITEIT_GROOTTE_KOMT_NIET_OVEREEN' };
+  }
+  const verwacht = berekenBlindeIntegriteitBewijs(opties.verwachteCijfertekst, uitdaging.uitdagingNonceHex);
+  if (!verwacht.ok) return verwacht;
+  const a = Buffer.from(antwoord.bewijsHmacHex, 'hex');
+  const b = Buffer.from(verwacht.antwoord.bewijsHmacHex, 'hex');
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    return { ok: false, fout: 'INTEGRITEIT_HMAC_BEWIJS_ONGELDIG' };
   }
   return { ok: true };
 }

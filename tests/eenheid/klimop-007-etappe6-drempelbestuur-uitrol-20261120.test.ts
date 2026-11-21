@@ -24,6 +24,7 @@ import {
   beoordeelUitrolGezondheid,
   maakBestuursGrondwet,
   maakBestuursVoorstel,
+  maakGrondwetWijzigingInhoud,
   maakMomentopnameFrostBoodschap,
   maakUitgaveDoelenMetadata,
   maakUitgaveTijdstempelMetadata,
@@ -51,7 +52,7 @@ function maakEd25519SleutelPaar(): { publiekeSleutelDerB64u: string; geheimeSleu
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('klimop-007-etappe6-drempelbestuur-uitrol');
-  const t0Ms = Date.parse('2026-11-20T20:40:00.000Z');
+  const t0Ms = Date.parse('2026-11-15T20:40:00.000Z');
   const t0Iso = new Date(t0Ms).toISOString();
   const liveNuIso = new Date().toISOString();
   const liveVerlooptIso = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
@@ -492,11 +493,28 @@ export async function main(): Promise<number> {
     });
     if (!besluit1.ok) throw new Error(besluit1.fout);
 
+    const gwV2Uit = maakBestuursGrondwet({
+      grondwetId: 'klimop-gw-live-v1',
+      versieVolgnummer: 2,
+      frostSetId: 'test-bestuur-frost-set',
+      frostGroepsPubliekeSleutelHex: dkgUit.groep.groepsPubliekeSleutelHex,
+      drempel: 2,
+      erkendeHoeders: [knNL.identiteit, knCH.identiteit, knUA.identiteit],
+      overgangsNoodVetoPubDerB64u: vetoSleutels.publiekeSleutelDerB64u,
+      nuIso: new Date(t0Ms + 100 * 3600_000).toISOString(),
+    });
+    if (!gwV2Uit.ok) throw new Error(gwV2Uit.fout);
+
     const voorstel2Gw = maakBestuursVoorstel({
       grondwet: gwV1Uit.grondwet,
       categorie: 'ecosysteem_regels_wijziging',
       onderwerpSamenvatting: 'Перехід конституції керування на редакцію v2 після 72 годин перевірки',
-      inhoudPayload: { doelVersieVolgnummer: 2 },
+      inhoudPayload: maakGrondwetWijzigingInhoud({
+        vorigeGrondwet: gwV1Uit.grondwet,
+        nieuweGrondwet: gwV2Uit.grondwet,
+        erkendeDoelenRolPubDerB64u: doelenSleutels.publiekeSleutelDerB64u,
+        erkendeTijdstempelRolPubDerB64u: tijdstempelSleutels.publiekeSleutelDerB64u,
+      }),
       indienerSoort: 'ai_agent',
       indienerId: 'agent:antigravity',
       indienerSleutels: agentSleutels,
@@ -526,17 +544,6 @@ export async function main(): Promise<number> {
     tabel.haalUitQuarantaine(knCH.identiteit.knooppuntId);
 
     // Спроба оновити конституцію до v2 без 72-год рішення FROST відхиляється, а з повним журналом — приймається!
-    const gwV2Uit = maakBestuursGrondwet({
-      grondwetId: 'klimop-gw-live-v1',
-      versieVolgnummer: 2,
-      frostSetId: 'test-bestuur-frost-set',
-      frostGroepsPubliekeSleutelHex: dkgUit.groep.groepsPubliekeSleutelHex,
-      drempel: 2,
-      erkendeHoeders: [knNL.identiteit, knCH.identiteit, knUA.identiteit],
-      overgangsNoodVetoPubDerB64u: vetoSleutels.publiekeSleutelDerB64u,
-      nuIso: new Date(t0Ms + 100 * 3600_000).toISOString(),
-    });
-    if (!gwV2Uit.ok) throw new Error(gwV2Uit.fout);
 
     const gwZonderLogboek = await bestuurClient.stelGrondwetOpNetwerkIn({
       netwerkId: 'live-net-007',

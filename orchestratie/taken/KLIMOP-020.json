@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-020",
+  "agent": "antigravity",
+  "tak": "fix/klimop-020-vertrouwensgrenzen-20261121-151312",
+  "basisCommit": "4ec0c22cddcc1351c387736b437a8bbf713a5169",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T15:13:12.869Z",
+  "bijgewerkt": "2026-11-21T15:13:12.869Z",
+  "omschrijving": "Хвиля 3 виправлень за AUDIT-002: межі довіри мандатів, сертифікат відновлення й епохи коренів, прив'язка конституції, зовнішні якорі Насіння, еталони імунної перевірки (розпочато Claude Opus 5.5 (High), продовжує Gemini 4 Carbon (High))",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

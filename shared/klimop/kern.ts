@@ -123,6 +123,18 @@ export interface KlimopMandaatInhoud {
   drempelVereist: { k: number; n: number } | null;
   uitgegevenOp: string;
   verlooptOp: string;
+  /**
+   * KLIMOP-020: точний перелік дій, які відкриває мандат (наприклад `dkg_maak_bijdrage`, `bewaar_blok`).
+   * Вузол у суворому режимі (довірений реєстр видавців) відхиляє мандат без цього переліку.
+   */
+  toegestaneActies?: readonly string[];
+  /** KLIMOP-020: перелік об'єктів (набір ключів, блок, служба), до яких застосовне право. */
+  objectIds?: readonly string[];
+  /**
+   * KLIMOP-020: вузли, яким дозволено подавати цей мандат у сеансі. Без переліку подавати може лише
+   * видавець (а для порогового мандата — один із чинних підписантів).
+   */
+  gemachtigdeAfzenders?: readonly string[];
 }
 
 export interface KlimopOndertekendMandaat {
@@ -139,7 +151,9 @@ export function canoniekeJson(waarde: unknown): string {
   if (waarde === null || typeof waarde !== 'object') return JSON.stringify(waarde);
   if (Array.isArray(waarde)) return `[${waarde.map((el) => canoniekeJson(el)).join(',')}]`;
   const obj = waarde as Record<string, unknown>;
-  const sleutels = Object.keys(obj).sort();
+  // KLIMOP-020: ключі зі значенням undefined пропускаються так само, як їх губить JSON.stringify під час
+  // передавання мережею; інакше підпис, створений до передавання, не збігався б після нього.
+  const sleutels = Object.keys(obj).filter((k) => obj[k] !== undefined).sort();
   return `{${sleutels.map((k) => `${JSON.stringify(k)}:${canoniekeJson(obj[k])}`).join(',')}}`;
 }
 
@@ -229,6 +243,10 @@ export function ondertekenKlimopMandaat(
  * - чинний часовий проміжок дії (мандати без терміну дії або прострочені відхиляються);
  * - заборона одноосібної влади: у площині `netwerk_regels` обов'язковий пороговий кворум `k >= 2` з `k` різними підписантами,
  *   а площина `knooppunt_beheer` ніколи не надає доступу до `persoonlijke_geheime_gegevens` без мандата власника даних!
+ * KLIMOP-020 (вада зі звіту AUDIT-002: «мандат не встановлює, хто має право видати дозвіл на конкретний об'єкт або дію»):
+ * - `vertrouwdeUitgevers` — довірений реєстр вузла: видавець і всі зараховані підписанти мають бути в ньому;
+ * - `actie` / `objectId` — право перевіряється для конкретної дії та об'єкта (`vereisActieBereik` вимагає явного переліку);
+ * - `sessieAfzenderKnooppuntId` — мандат подає лише видавець, чинний підписант або вузол із `gemachtigdeAfzenders`.
  */
 export function verifieerKlimopMandaat(
   mandaat: KlimopOndertekendMandaat,
@@ -236,10 +254,15 @@ export function verifieerKlimopMandaat(
     nuIso?: string;
     ingetrokkenMandaatIds?: ReadonlySet<string>;
     ingetrokkenKnooppuntIds?: ReadonlySet<string>;
+    vertrouwdeUitgevers?: ReadonlySet<string>;
+    actie?: string;
+    objectId?: string;
+    vereisActieBereik?: boolean;
+    sessieAfzenderKnooppuntId?: string;
   } = {},
 ): { ok: boolean; fouten: string[] } {
   const fouten: string[] = [];
-  const { inhoud, handtekeningen } = mandaat;
+  const { inhoud, handtekeningen } = mandaat ?? ({} as KlimopOndertekendMandaat);
 
   if (!inhoud || inhoud.schema !== 1 || !inhoud.mandaatId) {
     return { ok: false, fouten: ['MANDAAT_ONGELDIGE_VORM'] };
@@ -294,6 +317,11 @@ export function verifieerKlimopMandaat(
         fouten.push(`ONDERTEKENAAR_INGETROKKEN:${h.ondertekenaarKnooppuntId}`);
         continue;
       }
+      // KLIMOP-020: підпис вузла поза довіреним реєстром не зараховується до кворуму
+      if (context.vertrouwdeUitgevers && !context.vertrouwdeUitgevers.has(h.ondertekenaarKnooppuntId)) {
+        fouten.push(`ONDERTEKENAAR_NIET_VERTROUWD:${h.ondertekenaarKnooppuntId}`);
+        continue;
+      }
       const verwachtId = berekenKnooppuntId(h.publiekeSleutelDerB64u);
       if (verwachtId !== h.ondertekenaarKnooppuntId) {
         fouten.push(`SLEUTEL_ID_KOMT_NIET_OVEREEN:${h.ondertekenaarKnooppuntId}`);
@@ -319,6 +347,40 @@ export function verifieerKlimopMandaat(
       }
     } else if (!geldigeOndertekenaars.has(inhoud.uitgeverKnooppuntId)) {
       fouten.push('UITGEVER_HEEFT_NIET_ONDERTEKEND');
+    }
+
+    // KLIMOP-020: мандат подає лише видавець, чинний підписант або явно вповноважений відправник
+    if (context.sessieAfzenderKnooppuntId !== undefined) {
+      const afzender = context.sessieAfzenderKnooppuntId;
+      const gemachtigd = afzender === inhoud.uitgeverKnooppuntId
+        || geldigeOndertekenaars.has(afzender)
+        || (Array.isArray(inhoud.gemachtigdeAfzenders) && inhoud.gemachtigdeAfzenders.includes(afzender));
+      if (!gemachtigd) fouten.push('MANDAAT_AFZENDER_NIET_GEMACHTIGD');
+    }
+  }
+
+  // KLIMOP-020: видавець має бути в довіреному реєстрі вузла
+  if (context.vertrouwdeUitgevers && !context.vertrouwdeUitgevers.has(inhoud.uitgeverKnooppuntId)) {
+    fouten.push('UITGEVER_NIET_VERTROUWD');
+  }
+
+  // KLIMOP-020: право перевіряється для конкретної дії
+  if (context.actie !== undefined) {
+    if (Array.isArray(inhoud.toegestaneActies)) {
+      if (!inhoud.toegestaneActies.includes(context.actie)) fouten.push('MANDAAT_ACTIE_NIET_TOEGESTAAN');
+    } else if (context.vereisActieBereik) {
+      fouten.push('MANDAAT_ZONDER_ACTIEBEREIK');
+    }
+  } else if (context.vereisActieBereik && !Array.isArray(inhoud.toegestaneActies)) {
+    fouten.push('MANDAAT_ZONDER_ACTIEBEREIK');
+  }
+
+  // KLIMOP-020: якщо мандат обмежений переліком об'єктів, об'єкт дії мусить бути в ньому
+  if (Array.isArray(inhoud.objectIds)) {
+    if (context.objectId === undefined || !inhoud.objectIds.includes(context.objectId)) {
+      if (context.objectId !== undefined || context.vereisActieBereik) {
+        fouten.push('MANDAAT_OBJECT_NIET_TOEGESTAAN');
+      }
     }
   }
 

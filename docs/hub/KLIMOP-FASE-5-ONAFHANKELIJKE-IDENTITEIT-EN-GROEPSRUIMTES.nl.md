@@ -55,11 +55,11 @@ sequenceDiagram
 
 ---
 
-## 3. Groepsbeveiliging van gedeelde ruimtes en slimme woning volgens `RFC 9420 (MLS)` (§12, §36)
+## 3. Vereenvoudigde groepsepocheversleuteling van gedeelde ruimtes (naar het idee van `RFC 9420`, geen volledige `MLS`) (§12, §36)
 
-Voor gedeelde gezinsruimtes en woningbeheer vervangt het epochegebaseerde `MLS`-groepsprotocol een enkele statische groepssleutel:
-- **Voorwaartse geheimhouding bij toevoeging van leden (`voegLidToeAanMlsGroep` + `pasMlsWelkomToe`):** elke epochestap $e \to e+1$ leidt via `HKDF-SHA-256` nieuwe sleutels af (`initGeheim` + vers `commitGeheim` + `groepsContextSha256`) en wist de vorige sleutels in het geheugen (`fill(0)`). Een nieuw toegevoegd toestel ontvangt alleen de sleutels vanaf de nieuwe epoche en kan historische berichten niet ontsleutelen.
-- **Herstel na compromittering bij verwijdering van apparaten (`verwijderLidUitMlsGroep` + `pasMlsCommitToe`):** bij verwijdering van een gestolen telefoon vernieuwt de afzender zijn `X25519`-bladsleutel en versleutelt het nieuwe `commitGeheim` uitsluitend voor de overblijvende leden; het verwijderde toestel is direct buitengesloten van alle nieuwe berichten.
+Voor gedeelde gezinsruimtes en woningbeheer vervangt een vereenvoudigd groepsepocheprotocol (geïnspireerd op epochen uit `RFC 9420`, maar zonder volledige `TreeKEM`-boom en zonder uitwisselbaarheid met standaard `MLS RFC 9420`) een enkele statische groepssleutel:
+- **Uitsluiting van een nieuw lid van eerdere epochen (`voegLidToeAanMlsGroep` + `pasMlsWelkomToe`):** elke epochestap $e \to e+1$ leidt via `HKDF-SHA-256` nieuwe sleutels af (`initGeheim` + vers `commitGeheim` + `groepsContextSha256`) en wist de vorige sleutels in het geheugen (`fill(0)`). Het welkomstpakket is ondertekend door het bevoegde groepslid en bevat alleen de sleutels vanaf de nieuwe epoche, zodat een nieuw toestel eerdere berichten niet kan ontsleutelen.
+- **Uitsluiting van een verwijderd toestel en bladverversing (`verwijderLidUitMlsGroep` + `verversEigenMlsBladSleutel` + `pasMlsCommitToe`):** bij verwijdering van een gestolen telefoon vernieuwt de indiener zijn `X25519`-bladsleutel en versleutelt het nieuwe `commitGeheim` uitsluitend voor de overblijvende leden; elk bericht gebruikt een afzonderlijke sleutel per afzender en volgnummer met herhalingsbescherming (`MLS_BERICHT_HERHALING_GEWEIGERD`). Herstel van geheimhouding voor een lid wiens eigen blad niet is vernieuwd vereist een uitdrukkelijke aanroep van `verversEigenMlsBladSleutel`.
 
 ---
 

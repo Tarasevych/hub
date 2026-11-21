@@ -5,8 +5,8 @@
 //   3. Сертифікати особистих пристроїв з чітко обмеженими делегованими повноваженнями, лімітами ресурсів і миттєвим відкликанням;
 //   4. Законне багатостороннє порогове відновлення доступу на основі приховувальних часток Педерсена з обов'язковим часовим
 //      вікном оскарження та захистом від незаконного спадкування чи захоплення процедури відновлення (§14, §17, §39);
-//   5. Групове узгодження ключів спільних просторів і оселі за принципами стандарту RFC 9420 (MLS / TreeKEM на X25519 + Ed25519 + HKDF)
-//      із прямою таємницею при додаванні учасників та посткомпрометаційною безпекою при вилученні пристроїв (§12).
+//   5. Спрощене групове епохове шифрування спільних просторів і оселі (на X25519 + Ed25519 + HKDF-SHA-256, за мотивами групових
+//      епох, але НЕ повна реалізація стандарту MLS RFC 9420 / TreeKEM) з підписом привітання, ключами повідомлень за відправником і захистом від повтору (§12).
 
 import {
   createCipheriv,
@@ -70,6 +70,35 @@ export interface KlimopWortelRotatieBewijs {
   handtekeningVorigeOfHerstelB64u: string;
   handtekeningNieuweB64u: string;
   herstelAanvraagId: string | null;
+  /**
+   * KLIMOP-020: повний сертифікат переходу при законному відновленні — політика, заявка зі строками
+   * та підписані голоси опікунів. Входить до підписаного змісту ротації й перевіряється кожним споживачем.
+   */
+  herstelCertificaat?: KlimopHerstelCertificaat;
+}
+
+/** KLIMOP-020: політику відновлення закріплює кореневий ключ чинної епохи ще до втрати доступу. */
+export interface KlimopHerstelBeleidVerankering {
+  schema: 1;
+  persoonsId: string;
+  epoche: number;
+  beleidSha256: string;
+  vastgelegdOp: string;
+  handtekeningB64u: string;
+}
+
+/** KLIMOP-020: сертифікат переходу відновлення, який споживач перевіряє без довіри до вузла. */
+export interface KlimopHerstelCertificaat {
+  beleid: KlimopHerstelBeleid;
+  aanvraag: {
+    aanvraagId: string;
+    persoonsId: string;
+    omstandigheid: KlimopHerstelAanvraag['omstandigheid'];
+    kandidaatNieuweWortelPubDerB64u: string;
+    geopendOp: string;
+    betwistingVerlooptOp: string;
+  };
+  voogdStemmen: KlimopHerstelAanvraag['voogdStemmen'];
 }
 
 export interface KlimopPersoonsStaat {
@@ -77,6 +106,8 @@ export interface KlimopPersoonsStaat {
   rotaties: readonly KlimopWortelRotatieBewijs[];
   actieveWortelPubDerB64u: string;
   actieveEpoche: number;
+  /** KLIMOP-020: закріплення політик відновлення підписами кореня відповідної епохи. */
+  herstelBeleidVerankeringen?: readonly KlimopHerstelBeleidVerankering[];
 }
 
 const OPRICHTING_DOMEIN = 'klimop-persoon-oprichting-v1|';
@@ -84,9 +115,12 @@ const ROTATIE_DOMEIN = 'klimop-persoon-wortelrotatie-v1|';
 const KOPPELING_DOMEIN = 'klimop-erfenis-userid-koppeling-v1|';
 const APPARAAT_CERT_DOMEIN = 'klimop-apparaat-certificaat-v1|';
 const APPARAAT_INTREKKING_DOMEIN = 'klimop-apparaat-intrekking-v1|';
-const HERSTEL_VOOGD_DOMEIN = 'klimop-herstel-voogd-stem-v1|';
+const HERSTEL_VOOGD_DOMEIN = 'klimop-herstel-voogd-stem-v2|';
+const HERSTEL_VERANKERING_DOMEIN = 'klimop-herstelbeleid-verankering-v1|';
+const MS_PER_UUR = 3600 * 1000;
 const HERSTEL_BETWIST_DOMEIN = 'klimop-herstel-eigenaar-betwisting-v1|';
 const MLS_PAKKET_DOMEIN = 'klimop-mls-sleutelpakket-v1|';
+const MLS_WELKOM_DOMEIN = 'klimop-mls-welkom-v1|';
 const MLS_COMMIT_DOMEIN = 'klimop-mls-commit-v1|';
 const MLS_BERICHT_DOMEIN = 'klimop-mls-bericht-v1|';
 
@@ -182,11 +216,23 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
     return { ok: false, fout: 'PERSOON_OPRICHTING_HANDTEKENING_ONGELDIG' };
   }
 
+  if (!Array.isArray(staat.rotaties)) return { ok: false, fout: 'PERSOON_ROTATIEKETEN_GEBROKEN' };
+  const verankeringen = staat.herstelBeleidVerankeringen ?? [];
+  if (!Array.isArray(verankeringen)) return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  for (const v of verankeringen) {
+    const vk = verifieerHerstelBeleidVerankering(v, staat);
+    if (!vk.ok) return vk;
+  }
+
   let huidigeSleutel = kern.aanvankelijkeWortelPubDerB64u;
   for (let i = 0; i < staat.rotaties.length; i++) {
     const r = staat.rotaties[i];
     if (r.persoonsId !== persoonsId || r.volgnummer !== i + 1 || r.vorigeWortelPubDerB64u !== huidigeSleutel) {
       return { ok: false, fout: 'PERSOON_ROTATIEKETEN_GEBROKEN' };
+    }
+    // KLIMOP-020: невідомий вид переходу відхиляється, а не трактується як відновлення
+    if (r.reden !== 'geplande_rotatie' && r.reden !== 'wettig_drempel_herstel') {
+      return { ok: false, fout: 'PERSOON_ONBEKEND_ROTATIETYPE' };
     }
     const { handtekeningVorigeOfHerstelB64u, handtekeningNieuweB64u, ...rotKern } = r;
     const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
@@ -197,8 +243,13 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
       if (!verifieerEd25519(huidigeSleutel, boodschap, handtekeningVorigeOfHerstelB64u)) {
         return { ok: false, fout: 'PERSOON_ROTATIE_VORIGE_SLEUTEL_ONGELDIG' };
       }
-    } else if (!r.herstelAanvraagId) {
-      return { ok: false, fout: 'PERSOON_HERSTELROTATIE_MIST_AANVRAAG_ID' };
+    } else {
+      if (!r.herstelAanvraagId) {
+        return { ok: false, fout: 'PERSOON_HERSTELROTATIE_MIST_AANVRAAG_ID' };
+      }
+      // KLIMOP-020: перехід відновлення засвідчується повним сертифікатом за політикою, закріпленою раніше
+      const hc = verifieerHerstelCertificaat(r, staat, i + 1, verankeringen);
+      if (!hc.ok) return hc;
     }
     huidigeSleutel = r.nieuweWortelPubDerB64u;
   }
@@ -210,6 +261,210 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
     return { ok: false, fout: 'PERSOON_ACTIEVE_SLEUTEL_KOMT_NIET_OVEREEN' };
   }
   return { ok: true };
+}
+
+/** KLIMOP-020: відкритий ключ кореня для епохи `epoche` (1 — засновницький ключ). */
+function wortelSleutelVoorEpoche(staat: KlimopPersoonsStaat, epoche: number): string | null {
+  if (!Number.isInteger(epoche) || epoche < 1) return null;
+  if (epoche === 1) return staat.oprichting.aanvankelijkeWortelPubDerB64u;
+  return staat.rotaties[epoche - 2]?.nieuweWortelPubDerB64u ?? null;
+}
+
+/**
+ * KLIMOP-020: чи мав кореневий ключ право видавати посвідчення на момент `momentIso`.
+ * Право має лише корінь епохи, чинної в цей момент. Після законного відновлення всі попередні корені
+ * втрачають право (їхній закритий ключ міг потрапити до чужих рук): видані ними посвідчення недійсні для
+ * будь-якого використання після моменту відновлення (`gebruiksMomentIso`), а дії, здійснені раніше, лишаються чинними.
+ */
+function wortelWasBevoegdOp(
+  staat: KlimopPersoonsStaat,
+  wortelPub: string,
+  momentIso: string,
+  gebruiksMomentIso: string = momentIso,
+): string | null {
+  const momentMs = Date.parse(momentIso);
+  const gebruikMs = Date.parse(gebruiksMomentIso);
+  if (!Number.isFinite(momentMs) || !Number.isFinite(gebruikMs)) return 'TIJDSTIP_ONGELDIG';
+  const aantalEpochen = staat.rotaties.length + 1;
+  for (let e = 1; e <= aantalEpochen; e++) {
+    if (wortelSleutelVoorEpoche(staat, e) !== wortelPub) continue;
+    const beginMs = Date.parse(e === 1 ? staat.oprichting.opgerichtOp : staat.rotaties[e - 2].geroteerdOp);
+    const eindIso = staat.rotaties[e - 1]?.geroteerdOp;
+    const eindMs = eindIso ? Date.parse(eindIso) : Number.POSITIVE_INFINITY;
+    if (!(momentMs >= beginMs && momentMs < eindMs)) continue;
+    if (staat.rotaties.slice(e - 1).some((r) => r.reden === 'wettig_drempel_herstel' && Date.parse(r.geroteerdOp) <= gebruikMs)) {
+      return 'WORTEL_VERVANGEN_DOOR_HERSTEL';
+    }
+    return null;
+  }
+  return 'WORTEL_NIET_GELDIG_OP_TIJDSTIP';
+}
+
+/** KLIMOP-020: канонічний відбиток політики відновлення. */
+export function berekenHerstelBeleidSha256(beleid: KlimopHerstelBeleid): string {
+  return createHash('sha256').update(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(beleid), 'utf8').digest('hex');
+}
+
+function verifieerHerstelBeleidVerankering(
+  v: KlimopHerstelBeleidVerankering,
+  staat: KlimopPersoonsStaat,
+): { ok: true } | { ok: false; fout: string } {
+  if (!v || v.schema !== 1 || v.persoonsId !== staat.oprichting.persoonsId || !/^[0-9a-f]{64}$/.test(v.beleidSha256 ?? '')) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  }
+  const sleutel = wortelSleutelVoorEpoche(staat, v.epoche);
+  if (!sleutel || !Number.isFinite(Date.parse(v.vastgelegdOp))) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  }
+  const { handtekeningB64u, ...kern } = v;
+  if (!verifieerEd25519(sleutel, Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_HANDTEKENING_ONGELDIG' };
+  }
+  return { ok: true };
+}
+
+/** KLIMOP-020: склад голосу опікуна охоплює політику, умову відновлення та строк оскарження. */
+function herstelStemKern(
+  aanvraag: KlimopHerstelCertificaat['aanvraag'],
+  beleidSha256: string,
+  voogdKnooppuntId: string,
+  gestemdOp: string,
+): Record<string, string> {
+  return {
+    aanvraagId: aanvraag.aanvraagId,
+    persoonsId: aanvraag.persoonsId,
+    omstandigheid: aanvraag.omstandigheid,
+    kandidaatNieuweWortelPubDerB64u: aanvraag.kandidaatNieuweWortelPubDerB64u,
+    geopendOp: aanvraag.geopendOp,
+    betwistingVerlooptOp: aanvraag.betwistingVerlooptOp,
+    beleidSha256,
+    voogdKnooppuntId,
+    gestemdOp,
+  };
+}
+
+function minimaleBetwistingsUren(beleid: KlimopHerstelBeleid, omstandigheid: KlimopHerstelAanvraag['omstandigheid']): number {
+  const eigen = Number(beleid.minimaleBetwistingsVensterUren?.[omstandigheid]);
+  return Math.max(omstandigheid === 'verlies_alle_apparaten' ? 48 : 168, Number.isFinite(eigen) ? eigen : 0);
+}
+
+/** KLIMOP-020: рахує дійсні голоси опікунів за політикою (лише різні опікуни з цієї політики). */
+function telGeldigeVoogdStemmen(
+  beleid: KlimopHerstelBeleid,
+  aanvraag: KlimopHerstelCertificaat['aanvraag'],
+  stemmen: KlimopHerstelAanvraag['voogdStemmen'],
+): number {
+  const beleidSha256 = berekenHerstelBeleidSha256(beleid);
+  const voogdSleutelMap = new Map(beleid.voogden.map((v) => [v.knooppuntId, v.publiekeSleutelDerB64u]));
+  const gezien = new Set<string>();
+  const openMs = Date.parse(aanvraag.geopendOp);
+  for (const stem of stemmen ?? []) {
+    if (gezien.has(stem.voogdKnooppuntId)) continue;
+    const pub = voogdSleutelMap.get(stem.voogdKnooppuntId);
+    if (!pub) continue;
+    const stemMs = Date.parse(stem.gestemdOp);
+    if (!Number.isFinite(stemMs) || stemMs < openMs) continue;
+    const kern = herstelStemKern(aanvraag, beleidSha256, stem.voogdKnooppuntId, stem.gestemdOp);
+    if (verifieerEd25519(pub, Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(kern), 'utf8'), stem.handtekeningB64u)) {
+      gezien.add(stem.voogdKnooppuntId);
+    }
+  }
+  return gezien.size;
+}
+
+/** KLIMOP-020: найпізніше закріплення, чинне для переходу з епохи `vanEpoche` на момент відкриття заявки. */
+function zoekVerankering(
+  verankeringen: readonly KlimopHerstelBeleidVerankering[],
+  vanEpoche: number,
+  geopendOp: string,
+): KlimopHerstelBeleidVerankering | null {
+  const openMs = Date.parse(geopendOp);
+  let beste: KlimopHerstelBeleidVerankering | null = null;
+  for (const v of verankeringen) {
+    if (v.epoche > vanEpoche || Date.parse(v.vastgelegdOp) > openMs) continue;
+    if (!beste || v.epoche > beste.epoche || (v.epoche === beste.epoche && Date.parse(v.vastgelegdOp) > Date.parse(beste.vastgelegdOp))) {
+      beste = v;
+    }
+  }
+  return beste;
+}
+
+function verifieerHerstelCertificaat(
+  r: KlimopWortelRotatieBewijs,
+  staat: KlimopPersoonsStaat,
+  vanEpoche: number,
+  verankeringen: readonly KlimopHerstelBeleidVerankering[],
+): { ok: true } | { ok: false; fout: string } {
+  const c = r.herstelCertificaat;
+  if (!c || !c.beleid || !c.aanvraag || !Array.isArray(c.voogdStemmen)) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_ONTBREEKT' };
+  }
+  const pid = staat.oprichting.persoonsId;
+  if (
+    c.beleid.persoonsId !== pid
+    || c.aanvraag.persoonsId !== pid
+    || c.aanvraag.aanvraagId !== r.herstelAanvraagId
+    || c.aanvraag.kandidaatNieuweWortelPubDerB64u !== r.nieuweWortelPubDerB64u
+  ) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_KOMT_NIET_OVEREEN' };
+  }
+  const verankering = zoekVerankering(verankeringen, vanEpoche, c.aanvraag.geopendOp);
+  if (!verankering || verankering.beleidSha256 !== berekenHerstelBeleidSha256(c.beleid)) {
+    return { ok: false, fout: 'HERSTELBELEID_NIET_VERANKERD' };
+  }
+  if (!Number.isInteger(c.beleid.drempel) || c.beleid.drempel < 2 || c.beleid.voogden.length < c.beleid.drempel) {
+    return { ok: false, fout: 'HERSTELBELEID_DREMPEL_ONGELDIG' };
+  }
+  const openMs = Date.parse(c.aanvraag.geopendOp);
+  const eindMs = Date.parse(c.aanvraag.betwistingVerlooptOp);
+  const rotMs = Date.parse(r.geroteerdOp);
+  if (![openMs, eindMs, rotMs].every(Number.isFinite)) return { ok: false, fout: 'HERSTELCERTIFICAAT_TIJD_ONGELDIG' };
+  if (eindMs - openMs < minimaleBetwistingsUren(c.beleid, c.aanvraag.omstandigheid) * MS_PER_UUR) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_BETWISTINGSVENSTER_TE_KORT' };
+  }
+  if (rotMs < eindMs) return { ok: false, fout: 'HERSTELCERTIFICAAT_VOOR_EINDE_BETWISTING' };
+  if (telGeldigeVoogdStemmen(c.beleid, c.aanvraag, c.voogdStemmen) < c.beleid.drempel) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_ONVOLDOENDE_VOOGDEN' };
+  }
+  return { ok: true };
+}
+
+/**
+ * KLIMOP-020: закріплює політику відновлення підписом кореня чинної епохи. Лише закріплена політика
+ * (її опікуни, поріг і строки) може згодом засвідчити новий корінь після втрати доступу.
+ */
+export function verankerHerstelBeleid(opties: {
+  staat: KlimopPersoonsStaat;
+  beleid: KlimopHerstelBeleid;
+  wortelGeheimPkcs8B64u: string;
+  nuIso?: string;
+}): { ok: true; nieuweStaat: KlimopPersoonsStaat } | { ok: false; fout: string } {
+  const sv = verifieerPersoonsStaat(opties.staat);
+  if (!sv.ok) return sv;
+  if (opties.beleid.persoonsId !== opties.staat.oprichting.persoonsId) {
+    return { ok: false, fout: 'HERSTELBELEID_PERSOON_KOMT_NIET_OVEREEN' };
+  }
+  const kern = {
+    schema: 1 as const,
+    persoonsId: opties.staat.oprichting.persoonsId,
+    epoche: opties.staat.actieveEpoche,
+    beleidSha256: berekenHerstelBeleidSha256(opties.beleid),
+    vastgelegdOp: opties.nuIso ?? new Date().toISOString(),
+  };
+  const handtekeningB64u = tekenEd25519(
+    opties.wortelGeheimPkcs8B64u,
+    Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'),
+  );
+  if (!verifieerEd25519(opties.staat.actieveWortelPubDerB64u, Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
+    return { ok: false, fout: 'WORTELGEHEIM_KOMT_NIET_OVEREEN' };
+  }
+  return {
+    ok: true,
+    nieuweStaat: {
+      ...opties.staat,
+      herstelBeleidVerankeringen: [...(opties.staat.herstelBeleidVerankeringen ?? []), { ...kern, handtekeningB64u }],
+    },
+  };
 }
 
 /** Планова ротація кореневого ключа зі збереженням сталого ідентифікатора особи `persoonsId`. */
@@ -245,6 +500,7 @@ export function roteerPersoonsWortelSleutel(
       rotaties: [...staat.rotaties, bewijs],
       actieveWortelPubDerB64u: nieuw.publiekDerB64u,
       actieveEpoche: staat.actieveEpoche + 1,
+      ...(staat.herstelBeleidVerankeringen ? { herstelBeleidVerankeringen: staat.herstelBeleidVerankeringen } : {}),
     },
     nieuwWortelGeheimPkcs8B64u: nieuw.geheimPkcs8B64u,
   };
@@ -426,6 +682,8 @@ export function registreerVertrouwdApparaat(opties: {
 export function verifieerApparaatIntrekking(
   intrekking: KlimopApparaatIntrekking,
   staat: KlimopPersoonsStaat,
+  /** KLIMOP-020: інші відомі відкликання — аварійний пристрій, який сам відкликаний, не може відкликати інших. */
+  andereIntrekkingen?: readonly KlimopApparaatIntrekking[],
 ): { ok: true } | { ok: false; fout: string } {
   const sv = verifieerPersoonsStaat(staat);
   if (!sv.ok) return sv;
@@ -441,6 +699,9 @@ export function verifieerApparaatIntrekking(
     if (!geldigeWortels.has(intrekking.ondertekenaarPubDerB64u)) {
       return { ok: false, fout: 'APPARAAT_INTREKKING_ONBEKENDE_WORTEL' };
     }
+    // KLIMOP-020: відкликати може лише корінь, чинний на момент відкликання
+    const bevoegd = wortelWasBevoegdOp(staat, intrekking.ondertekenaarPubDerB64u, intrekking.ingetrokkenOp);
+    if (bevoegd) return { ok: false, fout: `APPARAAT_INTREKKING_${bevoegd}` };
   } else {
     if (
       !intrekking.noodApparaatCertificaat
@@ -451,6 +712,9 @@ export function verifieerApparaatIntrekking(
     const cv = verifieerApparaatCertificaat(intrekking.noodApparaatCertificaat, staat, {
       vereisteBevoegdheid: 'nood_betwisting',
       nuIso: intrekking.ingetrokkenOp,
+      intrekkingen: andereIntrekkingen?.filter(
+        (a) => a.ingetrokkenApparaatId !== intrekking.ingetrokkenApparaatId || a.handtekeningB64u !== intrekking.handtekeningB64u,
+      ),
     });
     if (!cv.ok) return cv;
   }
@@ -485,7 +749,13 @@ export function verifieerApparaatCertificaat(
   }
 
   const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
-  if (nuMs < Date.parse(certificaat.uitgegevenOp) || nuMs > Date.parse(certificaat.verlooptOp)) {
+  const vanMs = Date.parse(certificaat.uitgegevenOp);
+  const totMs = Date.parse(certificaat.verlooptOp);
+  // KLIMOP-020: невизначений час дає закриту відмову, а не мовчазний успіх порівняння
+  if (!Number.isFinite(nuMs) || !Number.isFinite(vanMs) || !Number.isFinite(totMs) || totMs <= vanMs) {
+    return { ok: false, fout: 'APPARAAT_CERTIFICAAT_TIJD_ONGELDIG' };
+  }
+  if (nuMs < vanMs || nuMs > totMs) {
     return { ok: false, fout: 'APPARAAT_CERTIFICAAT_VERLOPEN' };
   }
 
@@ -505,6 +775,9 @@ export function verifieerApparaatCertificaat(
   if (!geldigeWortels.has(certificaat.wortelPubDerB64u)) {
     return { ok: false, fout: 'APPARAAT_ONBEKENDE_WORTELSLEUTEL' };
   }
+  // KLIMOP-020: корінь мав бути чинним на момент видачі, а не будь-яким коренем з історії
+  const bevoegd = wortelWasBevoegdOp(staat, certificaat.wortelPubDerB64u, certificaat.uitgegevenOp, new Date(nuMs).toISOString());
+  if (bevoegd) return { ok: false, fout: `APPARAAT_${bevoegd}` };
 
   const { wortelPubDerB64u, wortelHandtekeningB64u, ...kern } = certificaat;
   if (
@@ -677,13 +950,8 @@ export function voegVoogdBevestigingToe(opties: {
   }
 
   const gestemdOp = opties.nuIso ?? new Date().toISOString();
-  const stemKern = {
-    aanvraagId: opties.aanvraag.aanvraagId,
-    persoonsId: opties.aanvraag.persoonsId,
-    kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
-    voogdKnooppuntId: voogdId,
-    gestemdOp,
-  };
+  // KLIMOP-020: опікун підписує також умову відновлення, строки оскарження й відбиток політики
+  const stemKern = herstelStemKern(opties.aanvraag, berekenHerstelBeleidSha256(opties.beleid), voogdId, gestemdOp);
   const handtekeningB64u = tekenEd25519(
     opties.voogd.geheimeSleutelPkcs8B64u,
     Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(stemKern), 'utf8'),
@@ -784,31 +1052,31 @@ export function voltooiWettigHerstel(opties: {
   }
 
   const nuIso = opties.nuIso ?? new Date().toISOString();
-  if (Date.parse(nuIso) < Date.parse(opties.aanvraag.betwistingVerlooptOp)) {
+  const nuMs = Date.parse(nuIso);
+  const eindMs = Date.parse(opties.aanvraag.betwistingVerlooptOp);
+  if (!Number.isFinite(nuMs) || !Number.isFinite(eindMs)) {
+    return { ok: false, fout: 'HERSTEL_TIJD_ONGELDIG' };
+  }
+  if (nuMs < eindMs) {
     return { ok: false, fout: 'BETWISTINGSTERMIJN_NOG_NIET_VERSTREKEN' };
   }
 
-  // Перевіряємо всі підписи опікунів
-  const voogdSleutelMap = new Map(opties.beleid.voogden.map((v) => [v.knooppuntId, v.publiekeSleutelDerB64u]));
-  let geldigeStemmen = 0;
-  const gezieneVoogden = new Set<string>();
-  for (const stem of opties.aanvraag.voogdStemmen) {
-    if (gezieneVoogden.has(stem.voogdKnooppuntId)) continue;
-    const pub = voogdSleutelMap.get(stem.voogdKnooppuntId);
-    if (!pub) continue;
-    const stemKern = {
-      aanvraagId: opties.aanvraag.aanvraagId,
-      persoonsId: opties.aanvraag.persoonsId,
-      kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
-      voogdKnooppuntId: stem.voogdKnooppuntId,
-      gestemdOp: stem.gestemdOp,
-    };
-    if (verifieerEd25519(pub, Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(stemKern), 'utf8'), stem.handtekeningB64u)) {
-      gezieneVoogden.add(stem.voogdKnooppuntId);
-      geldigeStemmen++;
-    }
+  // KLIMOP-020: заявка має належати цій особі, а політика — бути закріпленою коренем раніше
+  const pid = opties.staat.oprichting.persoonsId;
+  if (opties.aanvraag.persoonsId !== pid || opties.beleid.persoonsId !== pid) {
+    return { ok: false, fout: 'HERSTEL_PERSOON_KOMT_NIET_OVEREEN' };
   }
-  if (geldigeStemmen < opties.beleid.drempel) {
+  const verankering = zoekVerankering(
+    opties.staat.herstelBeleidVerankeringen ?? [],
+    opties.staat.actieveEpoche,
+    opties.aanvraag.geopendOp,
+  );
+  if (!verankering || verankering.beleidSha256 !== berekenHerstelBeleidSha256(opties.beleid)) {
+    return { ok: false, fout: 'HERSTELBELEID_NIET_VERANKERD' };
+  }
+
+  // Перевіряємо всі підписи опікунів
+  if (telGeldigeVoogdStemmen(opties.beleid, opties.aanvraag, opties.aanvraag.voogdStemmen) < opties.beleid.drempel) {
     return { ok: false, fout: 'ONVOLDOENDE_VOOGD_BEVESTIGINGEN' };
   }
 
@@ -827,6 +1095,18 @@ export function voltooiWettigHerstel(opties: {
     geroteerdOp: nuIso,
     reden: 'wettig_drempel_herstel' as const,
     herstelAanvraagId: opties.aanvraag.aanvraagId,
+    herstelCertificaat: {
+      beleid: opties.beleid,
+      aanvraag: {
+        aanvraagId: opties.aanvraag.aanvraagId,
+        persoonsId: opties.aanvraag.persoonsId,
+        omstandigheid: opties.aanvraag.omstandigheid,
+        kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
+        geopendOp: opties.aanvraag.geopendOp,
+        betwistingVerlooptOp: opties.aanvraag.betwistingVerlooptOp,
+      },
+      voogdStemmen: opties.aanvraag.voogdStemmen,
+    },
   };
   const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
   const sigNieuw = tekenEd25519(opties.kandidaatNieuwWortelGeheimPkcs8B64u, boodschap);
@@ -847,6 +1127,9 @@ export function voltooiWettigHerstel(opties: {
       rotaties: [...opties.staat.rotaties, bewijs],
       actieveWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
       actieveEpoche: opties.staat.actieveEpoche + 1,
+      ...(opties.staat.herstelBeleidVerankeringen
+        ? { herstelBeleidVerankeringen: opties.staat.herstelBeleidVerankeringen }
+        : {}),
     },
     voltooideAanvraag: { ...opties.aanvraag, staat: 'voltooid' },
     hersteldGeheimScalairHex: pedUit.geheimScalairHex,
@@ -854,8 +1137,12 @@ export function voltooiWettigHerstel(opties: {
 }
 
 // =================================================================================================
-// 4. Захист групових просторів та оселі за принципами стандарту RFC 9420 (MLS / TreeKEM):
-//    пряма таємниця при додаванні учасників та посткомпрометаційна безпека при вилученні пристроїв (§12).
+// 4. Спрощене групове епохове шифрування спільних просторів і оселі (§12):
+//    KLIMOP-020: це спрощений протокол групових епох (НЕ повна реалізація MLS RFC 9420 / TreeKEM і без
+//    міжпрограмної сумісності з RFC 9420). Забезпечує виключення нового учасника з минулих епох, виключення
+//    вилученого пристрою з нових епох, перевірку підпису пакета привітання, окремі ключі повідомлень за
+//    відправником і номером та захист від повторного прийняття повідомлень; відновлення таємності після
+//    компрометації листка учасника потребує явного виклику `verversEigenMlsBladSleutel`.
 // =================================================================================================
 
 export interface MlsBladSleutelPakket {
@@ -863,7 +1150,7 @@ export interface MlsBladSleutelPakket {
   apparaatId: string;
   persoonsId: string;
   tekenPubDerB64u: string; // Ed25519
-  bladX25519PubDerB64u: string; // Одноразовий/оновлюваний листовий ключ X25519 учасника групи
+  bladX25519PubDerB64u: string; // Оновлюваний листовий ключ X25519 учасника групи
   aangemaaktOp: string;
   handtekeningB64u: string;
 }
@@ -893,9 +1180,11 @@ export interface MlsWelkomPakket {
   schema: 1;
   groepId: string;
   epoche: number;
+  afzenderApparaatId: string;
   actieveLeden: readonly MlsBladSleutelPakket[];
   groepsContextSha256: string;
   ingepaktInitGeheim: MlsVersleuteldeDoos;
+  handtekeningB64u: string;
 }
 
 export interface MlsLidSessieStaat {
@@ -906,9 +1195,11 @@ export interface MlsLidSessieStaat {
   epoche: number;
   actieveLeden: MlsBladSleutelPakket[];
   groepsContextSha256: string;
-  initGeheim: Buffer;       // Затирається й замінюється при кожному переході епохи (пряма таємниця!)
-  toepassingSleutel: Buffer; // Поточний AEAD-ключ повідомлень епохи
+  initGeheim: Buffer;       // Затирається й замінюється при кожному переході епохи
+  toepassingSleutel: Buffer; // Базовий секрет прикладного рівня епохи (з нього виводяться одноразові ключі повідомлень)
   volgendBerichtNummer: number;
+  /** KLIMOP-020: облік уже прийнятих номерів повідомлень за кожним відправником поточної епохи (проти повтору). */
+  ontvangenBerichtNummersPerAfzender: Record<string, Set<number>>;
 }
 
 export interface MlsGroepsBericht {
@@ -928,7 +1219,9 @@ function berekenMlsGroepsContextSha256(
   epoche: number,
   leden: readonly MlsBladSleutelPakket[],
 ): string {
-  const gesorteerd = [...leden].sort((a, b) => a.apparaatId.localeCompare(b.apparaatId));
+  const gesorteerd = [...leden].sort((a, b) =>
+    Buffer.compare(Buffer.from(a.apparaatId, 'utf8'), Buffer.from(b.apparaatId, 'utf8')),
+  );
   return createHash('sha256')
     .update(canoniekeJson({ groepId, epoche, leden: gesorteerd }), 'utf8')
     .digest('hex');
@@ -947,6 +1240,17 @@ function leidMlsEpocheSleutelsAf(
   return { toepassingSleutel, nieuwInitGeheim };
 }
 
+function leidMlsBerichtSleutelAf(
+  toepassingSleutel: Buffer,
+  groepsContextSha256: string,
+  afzenderApparaatId: string,
+  volgnummer: number,
+): Buffer {
+  const zout = Buffer.from(groepsContextSha256, 'hex');
+  const info = Buffer.from(`klimop-mls-sender-msg-key-v2|${afzenderApparaatId}|${volgnummer}`, 'utf8');
+  return Buffer.from(hkdfSync('sha256', toepassingSleutel, zout, info, 32));
+}
+
 function versleutelVoorMlsBlad(
   ontvanger: MlsBladSleutelPakket,
   geheim: Buffer,
@@ -955,25 +1259,30 @@ function versleutelVoorMlsBlad(
   const ef = genereerX25519Sleutelpaar();
   const efPriv = createPrivateKey({ key: Buffer.from(ef.geheimPkcs8B64u, 'base64url'), format: 'der', type: 'pkcs8' });
   const peerPub = createPublicKey({ key: Buffer.from(ontvanger.bladX25519PubDerB64u, 'base64url'), format: 'der', type: 'spki' });
-  const dh = diffieHellman({ privateKey: efPriv, publicKey: peerPub });
-  const sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
-  dh.fill(0);
+  let dh: Buffer | null = null;
+  let sleutel: Buffer | null = null;
+  try {
+    dh = diffieHellman({ privateKey: efPriv, publicKey: peerPub });
+    sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
 
-  const iv = randomBytes(12);
-  const c = createCipheriv('chacha20-poly1305', sleutel, iv, { authTagLength: 16 });
-  const aad = Buffer.from(`${aadLabel}|${ontvanger.apparaatId}`, 'utf8');
-  c.setAAD(aad, { plaintextLength: geheim.length });
-  const ct = Buffer.concat([c.update(geheim), c.final()]);
-  const tag = c.getAuthTag();
-  sleutel.fill(0);
+    const iv = randomBytes(12);
+    const c = createCipheriv('chacha20-poly1305', sleutel, iv, { authTagLength: 16 });
+    const aad = Buffer.from(`${aadLabel}|${ontvanger.apparaatId}`, 'utf8');
+    c.setAAD(aad, { plaintextLength: geheim.length });
+    const ct = Buffer.concat([c.update(geheim), c.final()]);
+    const tag = c.getAuthTag();
 
-  return {
-    ontvangerApparaatId: ontvanger.apparaatId,
-    efemeerX25519PubDerB64u: ef.publiekDerB64u,
-    ivB64u: iv.toString('base64url'),
-    cijfertekstB64u: ct.toString('base64url'),
-    tagB64u: tag.toString('base64url'),
-  };
+    return {
+      ontvangerApparaatId: ontvanger.apparaatId,
+      efemeerX25519PubDerB64u: ef.publiekDerB64u,
+      ivB64u: iv.toString('base64url'),
+      cijfertekstB64u: ct.toString('base64url'),
+      tagB64u: tag.toString('base64url'),
+    };
+  } finally {
+    dh?.fill(0);
+    sleutel?.fill(0);
+  }
 }
 
 function ontsleutelVoorMlsBlad(
@@ -982,27 +1291,30 @@ function ontsleutelVoorMlsBlad(
   eigenBladX25519GeheimPkcs8B64u: string,
   aadLabel: string,
 ): Buffer | null {
+  let dh: Buffer | null = null;
+  let sleutel: Buffer | null = null;
   try {
     const eigenPriv = createPrivateKey({ key: Buffer.from(eigenBladX25519GeheimPkcs8B64u, 'base64url'), format: 'der', type: 'pkcs8' });
     const efPub = createPublicKey({ key: Buffer.from(doos.efemeerX25519PubDerB64u, 'base64url'), format: 'der', type: 'spki' });
-    const dh = diffieHellman({ privateKey: eigenPriv, publicKey: efPub });
-    const sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
-    dh.fill(0);
+    dh = diffieHellman({ privateKey: eigenPriv, publicKey: efPub });
+    sleutel = Buffer.from(hkdfSync('sha256', dh, Buffer.alloc(32, 0), Buffer.from(`klimop-mls-hpke-v1|${aadLabel}`, 'utf8'), 32));
 
     const ct = Buffer.from(doos.cijfertekstB64u, 'base64url');
     const d = createDecipheriv('chacha20-poly1305', sleutel, Buffer.from(doos.ivB64u, 'base64url'), { authTagLength: 16 });
     const aad = Buffer.from(`${aadLabel}|${eigenApparaatId}`, 'utf8');
     d.setAAD(aad, { plaintextLength: ct.length });
     d.setAuthTag(Buffer.from(doos.tagB64u, 'base64url'));
-    const klaar = Buffer.concat([d.update(ct), d.final()]);
-    sleutel.fill(0);
-    return klaar;
+    return Buffer.concat([d.update(ct), d.final()]);
   } catch {
     return null;
+  } finally {
+    // KLIMOP-020: спільний секрет і похідний ключ гарантовано затираються також у разі помилки автентифікації
+    dh?.fill(0);
+    sleutel?.fill(0);
   }
 }
 
-/** Генерує підписаний листовий пакет ключа пристрою для приєднання до групового простору MLS. */
+/** Генерує підписаний листовий пакет ключа пристрою для приєднання до групового простору. */
 export function maakMlsBladSleutelPakket(
   bundel: KlimopApparaatSleutelBundel,
   nuIso?: string,
@@ -1060,6 +1372,7 @@ export function maakMlsGroep(opties: {
     initGeheim: afgeleid.nieuwInitGeheim,
     toepassingSleutel: afgeleid.toepassingSleutel,
     volgendBerichtNummer: 0,
+    ontvangenBerichtNummersPerAfzender: {},
   };
 }
 
@@ -1087,21 +1400,32 @@ function voerMlsGroepsMutatieUit(
 
   let welkom: MlsWelkomPakket | null = null;
   if (welkomDoelPakket) {
-    // Новий учасник отримує лише упакований секрет НОВОЇ епохи (не знаючи попереднього initGeheim — пряма таємниця!)
+    // Новий учасник отримує лише упакований секрет НОВОЇ епохи (не знаючи попереднього initGeheim), скріплений підписом ініціатора
     const welkomBundel = Buffer.concat([afgeleid.toepassingSleutel, afgeleid.nieuwInitGeheim]);
-    welkom = {
-      schema: 1,
-      groepId: staat.groepId,
-      epoche: naarEpoche,
-      actieveLeden: nieuweLedenLijst,
-      groepsContextSha256,
-      ingepaktInitGeheim: versleutelVoorMlsBlad(
-        welkomDoelPakket,
-        welkomBundel,
-        `mls-welkom|${staat.groepId}|ep:${naarEpoche}`,
-      ),
-    };
-    welkomBundel.fill(0);
+    try {
+      const welkomKern = {
+        schema: 1 as const,
+        groepId: staat.groepId,
+        epoche: naarEpoche,
+        afzenderApparaatId: staat.eigenApparaatId,
+        actieveLeden: nieuweLedenLijst,
+        groepsContextSha256,
+        ingepaktInitGeheim: versleutelVoorMlsBlad(
+          welkomDoelPakket,
+          welkomBundel,
+          `mls-welkom|${staat.groepId}|ep:${naarEpoche}`,
+        ),
+      };
+      welkom = {
+        ...welkomKern,
+        handtekeningB64u: tekenEd25519(
+          staat.eigenTekenGeheimPkcs8B64u,
+          Buffer.from(MLS_WELKOM_DOMEIN + canoniekeJson(welkomKern), 'utf8'),
+        ),
+      };
+    } finally {
+      welkomBundel.fill(0);
+    }
   }
 
   // Безповоротно затираємо секрети попередньої епохи у власній пам'яті!
@@ -1118,6 +1442,7 @@ function voerMlsGroepsMutatieUit(
   staat.initGeheim = afgeleid.nieuwInitGeheim;
   staat.toepassingSleutel = afgeleid.toepassingSleutel;
   staat.volgendBerichtNummer = 0;
+  staat.ontvangenBerichtNummersPerAfzender = {};
 
   const commitKern = {
     schema: 1 as const,
@@ -1143,7 +1468,7 @@ function voerMlsGroepsMutatieUit(
   };
 }
 
-/** Додає нового учасника/пристрій до групи MLS з просуванням епохи (новий учасник не читає минулих епох). */
+/** Додає нового учасника/пристрій до групового простору з просуванням епохи (новий учасник не читає минулих епох). */
 export function voegLidToeAanMlsGroep(
   staat: MlsLidSessieStaat,
   nieuwLidPakket: MlsBladSleutelPakket,
@@ -1161,9 +1486,27 @@ export function voegLidToeAanMlsGroep(
   return { commit: uit.commit, welkom: uit.welkom! };
 }
 
+/** Оновлює власний листовий ключ X25519 учасника з переходом у нову епоху для відновлення таємності після компрометації листка. */
+export function verversEigenMlsBladSleutel(
+  staat: MlsLidSessieStaat,
+  eigenBundel: KlimopApparaatSleutelBundel,
+  nuIso?: string,
+): MlsEpocheCommit {
+  const ververstEigenBlad = maakMlsBladSleutelPakket(eigenBundel, nuIso);
+  const nieuweLijst = staat.actieveLeden.map((l) =>
+    l.apparaatId === staat.eigenApparaatId ? ververstEigenBlad.pakket : l,
+  );
+  return voerMlsGroepsMutatieUit(
+    staat,
+    'sleutel_verversen',
+    nieuweLijst,
+    ververstEigenBlad.bladX25519GeheimPkcs8B64u,
+  ).commit;
+}
+
 /**
- * Вилучає втрачений чи відкликаний пристрій із групи MLS з ротацією листового ключа відправника:
- * забезпечує посткомпрометаційну безпеку — вилучений пристрій не має доступу до ключа нової епохи!
+ * Вилучає втрачений чи відкликаний пристрій із групового простору з ротацією листового ключа ініціатора:
+ * вилучений пристрій не має доступу до ключа нової епохи.
  */
 export function verwijderLidUitMlsGroep(
   staat: MlsLidSessieStaat,
@@ -1183,13 +1526,38 @@ export function verwijderLidUitMlsGroep(
   return voerMlsGroepsMutatieUit(staat, 'verwijderen', nieuweLijst, ververstEigenBlad.bladX25519GeheimPkcs8B64u).commit;
 }
 
-/** Новий учасник приєднується до групи MLS за зашифрованим пакетом привітання (лише з поточної епохи!). */
+/** Новий учасник приєднується до групового простору за підписаним пакетом привітання (лише з поточної епохи!). */
 export function pasMlsWelkomToe(
   welkom: MlsWelkomPakket,
   eigenBundel: KlimopApparaatSleutelBundel,
   eigenBladX25519GeheimPkcs8B64u: string,
 ): { ok: true; staat: MlsLidSessieStaat } | { ok: false; fout: string } {
-  if (!welkom || welkom.schema !== 1) return { ok: false, fout: 'MLS_WELKOM_ONGELDIG' };
+  if (!welkom || welkom.schema !== 1 || !welkom.afzenderApparaatId || !welkom.handtekeningB64u) {
+    return { ok: false, fout: 'MLS_WELKOM_ONGELDIG' };
+  }
+  if (
+    !Array.isArray(welkom.actieveLeden)
+    || welkom.actieveLeden.some((l) => !verifieerMlsBladSleutelPakket(l))
+  ) {
+    return { ok: false, fout: 'MLS_ONGELDIG_SLEUTELPAKKET_IN_GROEP' };
+  }
+  const afzender = welkom.actieveLeden.find(
+    (l) => l.apparaatId === welkom.afzenderApparaatId && l.apparaatId !== eigenBundel.certificaat.apparaatId,
+  );
+  if (!afzender) {
+    return { ok: false, fout: 'MLS_WELKOM_AFZENDER_NIET_IN_GROEP' };
+  }
+  const { handtekeningB64u, ...welkomKern } = welkom;
+  if (
+    !verifieerEd25519(
+      afzender.tekenPubDerB64u,
+      Buffer.from(MLS_WELKOM_DOMEIN + canoniekeJson(welkomKern), 'utf8'),
+      handtekeningB64u,
+    )
+  ) {
+    return { ok: false, fout: 'MLS_WELKOM_HANDTEKENING_ONGELDIG' };
+  }
+
   const verwachteCtx = berekenMlsGroepsContextSha256(welkom.groepId, welkom.epoche, welkom.actieveLeden);
   if (verwachteCtx !== welkom.groepsContextSha256) return { ok: false, fout: 'MLS_WELKOM_CONTEXT_FOUT' };
 
@@ -1200,8 +1568,14 @@ export function pasMlsWelkomToe(
     `mls-welkom|${welkom.groepId}|ep:${welkom.epoche}`,
   );
   if (!geopend || geopend.length !== 64) {
+    geopend?.fill(0);
     return { ok: false, fout: 'MLS_WELKOM_ONTSLEUTELING_MISLUKT' };
   }
+
+  const toepassingSleutel = Buffer.from(geopend.subarray(0, 32));
+  const initGeheim = Buffer.from(geopend.subarray(32, 64));
+  // KLIMOP-020: затираємо тимчасовий 64-байтовий буфер одразу після розділення секретів
+  geopend.fill(0);
 
   return {
     ok: true,
@@ -1213,9 +1587,10 @@ export function pasMlsWelkomToe(
       epoche: welkom.epoche,
       actieveLeden: [...welkom.actieveLeden],
       groepsContextSha256: welkom.groepsContextSha256,
-      toepassingSleutel: Buffer.from(geopend.subarray(0, 32)),
-      initGeheim: Buffer.from(geopend.subarray(32, 64)),
+      toepassingSleutel,
+      initGeheim,
       volgendBerichtNummer: 0,
+      ontvangenBerichtNummersPerAfzender: {},
     },
   };
 }
@@ -1227,6 +1602,12 @@ export function pasMlsCommitToe(
 ): { ok: true } | { ok: false; fout: string } {
   if (!commit || commit.schema !== 1 || commit.groepId !== staat.groepId || commit.vanEpoche !== staat.epoche) {
     return { ok: false, fout: 'MLS_COMMIT_EPOCHE_OF_GROEP_FOUT' };
+  }
+  if (
+    !Array.isArray(commit.actieveLeden)
+    || commit.actieveLeden.some((l) => !verifieerMlsBladSleutelPakket(l))
+  ) {
+    return { ok: false, fout: 'MLS_ONGELDIG_SLEUTELPAKKET_IN_GROEP' };
   }
   const afzender = staat.actieveLeden.find((l) => l.apparaatId === commit.afzenderApparaatId);
   if (!afzender) return { ok: false, fout: 'MLS_COMMIT_AFZENDER_NIET_IN_GROEP' };
@@ -1265,10 +1646,11 @@ export function pasMlsCommitToe(
   staat.initGeheim = afgeleid.nieuwInitGeheim;
   staat.toepassingSleutel = afgeleid.toepassingSleutel;
   staat.volgendBerichtNummer = 0;
+  staat.ontvangenBerichtNummersPerAfzender = {};
   return { ok: true };
 }
 
-/** Шифрує та підписує групове повідомлення в поточній епосі MLS. */
+/** Шифрує та підписує групове повідомлення в поточній епосі за індивідуальним ключем відправника й номера. */
 export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud: Buffer): MlsGroepsBericht {
   const volgnummer = staat.volgendBerichtNummer++;
   const iv = randomBytes(12);
@@ -1276,10 +1658,22 @@ export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud
     `klimop-mls-msg-v1|${staat.groepId}|ep:${staat.epoche}|${staat.groepsContextSha256}|${staat.eigenApparaatId}|${volgnummer}`,
     'utf8',
   );
-  const c = createCipheriv('chacha20-poly1305', staat.toepassingSleutel, iv, { authTagLength: 16 });
-  c.setAAD(aad, { plaintextLength: klareInhoud.length });
-  const ct = Buffer.concat([c.update(klareInhoud), c.final()]);
-  const tag = c.getAuthTag();
+  const berichtSleutel = leidMlsBerichtSleutelAf(
+    staat.toepassingSleutel,
+    staat.groepsContextSha256,
+    staat.eigenApparaatId,
+    volgnummer,
+  );
+  let ct: Buffer;
+  let tag: Buffer;
+  try {
+    const c = createCipheriv('chacha20-poly1305', berichtSleutel, iv, { authTagLength: 16 });
+    c.setAAD(aad, { plaintextLength: klareInhoud.length });
+    ct = Buffer.concat([c.update(klareInhoud), c.final()]);
+    tag = c.getAuthTag();
+  } finally {
+    berichtSleutel.fill(0);
+  }
 
   const kern = {
     schema: 1 as const,
@@ -1297,33 +1691,60 @@ export function versleutelMlsGroepsBericht(staat: MlsLidSessieStaat, klareInhoud
   };
 }
 
-/** Перевіряє підпис активного учасника поточної епохи та розшифровує групове повідомлення MLS. */
+/** Перевіряє підпис активного учасника поточної епохи, блокує повтор повідомлення та розшифровує групове повідомлення. */
 export function ontsleutelMlsGroepsBericht(
   staat: MlsLidSessieStaat,
   bericht: MlsGroepsBericht,
 ): { ok: true; klareInhoud: Buffer } | { ok: false; fout: string } {
-  if (!bericht || bericht.schema !== 1 || bericht.groepId !== staat.groepId || bericht.epoche !== staat.epoche) {
+  if (
+    !bericht
+    || bericht.schema !== 1
+    || bericht.groepId !== staat.groepId
+    || bericht.epoche !== staat.epoche
+    || !Number.isSafeInteger(bericht.volgnummer)
+    || bericht.volgnummer < 0
+  ) {
     return { ok: false, fout: 'MLS_BERICHT_EPOCHE_VERSCHILT' };
   }
   const afzender = staat.actieveLeden.find((l) => l.apparaatId === bericht.afzenderApparaatId);
   if (!afzender) return { ok: false, fout: 'MLS_BERICHT_AFZENDER_NIET_IN_EPOCHE' };
+
+  const gezieneSet = staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId];
+  if (gezieneSet?.has(bericht.volgnummer)) {
+    return { ok: false, fout: 'MLS_BERICHT_HERHALING_GEWEIGERD' };
+  }
 
   const { handtekeningB64u, ...kern } = bericht;
   if (!verifieerEd25519(afzender.tekenPubDerB64u, Buffer.from(MLS_BERICHT_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
     return { ok: false, fout: 'MLS_BERICHT_HANDTEKENING_ONGELDIG' };
   }
 
+  const berichtSleutel = leidMlsBerichtSleutelAf(
+    staat.toepassingSleutel,
+    staat.groepsContextSha256,
+    bericht.afzenderApparaatId,
+    bericht.volgnummer,
+  );
   try {
     const ct = Buffer.from(bericht.cijfertekstB64u, 'base64url');
     const aad = Buffer.from(
       `klimop-mls-msg-v1|${staat.groepId}|ep:${staat.epoche}|${staat.groepsContextSha256}|${bericht.afzenderApparaatId}|${bericht.volgnummer}`,
       'utf8',
     );
-    const d = createDecipheriv('chacha20-poly1305', staat.toepassingSleutel, Buffer.from(bericht.ivB64u, 'base64url'), { authTagLength: 16 });
+    const d = createDecipheriv('chacha20-poly1305', berichtSleutel, Buffer.from(bericht.ivB64u, 'base64url'), { authTagLength: 16 });
     d.setAAD(aad, { plaintextLength: ct.length });
     d.setAuthTag(Buffer.from(bericht.tagB64u, 'base64url'));
-    return { ok: true, klareInhoud: Buffer.concat([d.update(ct), d.final()]) };
+    const klareInhoud = Buffer.concat([d.update(ct), d.final()]);
+    let registratie = staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId];
+    if (!registratie) {
+      registratie = new Set<number>();
+      staat.ontvangenBerichtNummersPerAfzender[bericht.afzenderApparaatId] = registratie;
+    }
+    registratie.add(bericht.volgnummer);
+    return { ok: true, klareInhoud };
   } catch {
     return { ok: false, fout: 'MLS_BERICHT_AUTHENTICATIE_MISLUKT' };
+  } finally {
+    berichtSleutel.fill(0);
   }
 }

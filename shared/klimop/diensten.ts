@@ -379,9 +379,13 @@ export function maakOndertekendeCrdtOperatie(opties: {
 export function verifieerCrdtOperatieHandtekening(
   op: KlimopOndertekendeCrdtOperatie,
   toegestaneApparaatPubSleutels?: ReadonlySet<string>,
+  vereisToegestaneLijst?: boolean,
 ): { ok: true } | { ok: false; fout: string } {
   if (!op || op.schema !== 1 || !KLIMOP_ELF_DIENSTEN.includes(op.dienstId)) {
     return { ok: false, fout: 'CRDT_OPERATIE_ONGELDIGE_VORM' };
+  }
+  if (vereisToegestaneLijst && (!toegestaneApparaatPubSleutels || toegestaneApparaatPubSleutels.size === 0)) {
+    return { ok: false, fout: 'GEEN_LOKAAL_VERTROUWDE_APPARATEN' };
   }
   if (toegestaneApparaatPubSleutels && !toegestaneApparaatPubSleutels.has(op.apparaatTekenPubDerB64u)) {
     return { ok: false, fout: 'CRDT_ONBEKEND_OF_INGETROKKEN_APPARAAT' };
@@ -435,9 +439,13 @@ export function voegCrdtStatenSamen(
   staatA: KlimopDienstCrdtStaat,
   staatB: KlimopDienstCrdtStaat,
   toegestaneApparaatPubSleutels?: ReadonlySet<string>,
+  vereisToegestaneLijst?: boolean,
 ): { ok: true; samengevoegd: KlimopDienstCrdtStaat } | { ok: false; fout: string } {
   if (staatA.dienstId !== staatB.dienstId || staatA.dienstPsid !== staatB.dienstPsid) {
     return { ok: false, fout: 'CRDT_SAMENVOEGING_VERSCHILLENDE_DIENSTEN_GEWEIGERD' };
+  }
+  if (vereisToegestaneLijst && (!toegestaneApparaatPubSleutels || toegestaneApparaatPubSleutels.size === 0)) {
+    return { ok: false, fout: 'GEEN_LOKAAL_VERTROUWDE_APPARATEN' };
   }
 
   const elementen: Record<string, KlimopOndertekendeCrdtOperatie> = {};
@@ -446,7 +454,7 @@ export function voegCrdtStatenSamen(
       if (op.dienstId !== staatA.dienstId || op.dienstPsid !== staatA.dienstPsid || op.sleutelId !== sleutelId) {
         return { ok: false, fout: 'CRDT_ELEMENT_DIENST_MISMATCH' };
       }
-      const v = verifieerCrdtOperatieHandtekening(op, toegestaneApparaatPubSleutels);
+      const v = verifieerCrdtOperatieHandtekening(op, toegestaneApparaatPubSleutels, vereisToegestaneLijst);
       if (!v.ok) return v;
 
       const bestaand = elementen[sleutelId];

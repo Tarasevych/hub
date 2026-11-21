@@ -92,6 +92,8 @@ export class KlimopBestuurEnUitrolClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['stel_bestuursgrondwet_in', 'pas_uitgave_toe', 'raadpleeg_uitgave_staat'],
         },
         opties.opdrachtgever,
       );

@@ -113,7 +113,7 @@ function tekenFrost(
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('KLIMOP-013 · Етап 12: «Насіння», спадкоємність і безперервний автономний розвиток');
-  const nuIso = '2026-11-21T07:00:00.000Z';
+  const nuIso = '2026-11-15T07:00:00.000Z';
   const teVroegIso = new Date(Date.parse(nuIso) + 24 * 3600 * 1000).toISOString();
   const na74UurIso = new Date(Date.parse(nuIso) + 74 * 3600 * 1000).toISOString();
 
@@ -466,12 +466,17 @@ export async function main(): Promise<number> {
     && visieOnvolledigDocs.ok === false);
 
   // ------------------------------------------------------------------ 8–10. Живе мережеве вимкнення старого сервера та перехід до Покоління 2
-  const srvGen1Nl = await startKlimopProefKnooppunt({ knooppunt: knGen1Nl });
-  const srvGen1Ch = await startKlimopProefKnooppunt({ knooppunt: knGen1Ch });
-  const srvGen1Ua = await startKlimopProefKnooppunt({ knooppunt: knGen1Ua });
-  const srvGen2Se = await startKlimopProefKnooppunt({ knooppunt: knGen2Se });
-  const srvGen2Is = await startKlimopProefKnooppunt({ knooppunt: knGen2Is });
-  const srvGen2No = await startKlimopProefKnooppunt({ knooppunt: knGen2No });
+  const beginAnkerGen1 = {
+    frostGroepsPubliekeSleutelHex: frostGen1.groepsPubHex,
+    zaadBewaarderEd25519PubDerB64u: zaadBewaarder.ed25519PubliekDerB64u,
+    zaadBewaarderMlDsa65PubSpkiB64u: zaadBewaarder.mlDsa65PubliekSpkiB64u,
+  };
+  const srvGen1Nl = await startKlimopProefKnooppunt({ knooppunt: knGen1Nl, beginAnker: beginAnkerGen1 });
+  const srvGen1Ch = await startKlimopProefKnooppunt({ knooppunt: knGen1Ch, beginAnker: beginAnkerGen1 });
+  const srvGen1Ua = await startKlimopProefKnooppunt({ knooppunt: knGen1Ua, beginAnker: beginAnkerGen1 });
+  const srvGen2Se = await startKlimopProefKnooppunt({ knooppunt: knGen2Se, beginAnker: beginAnkerGen1 });
+  const srvGen2Is = await startKlimopProefKnooppunt({ knooppunt: knGen2Is, beginAnker: beginAnkerGen1 });
+  const srvGen2No = await startKlimopProefKnooppunt({ knooppunt: knGen2No, beginAnker: beginAnkerGen1 });
 
   try {
     const coord = maakKlimopKnooppunt({
@@ -537,6 +542,10 @@ export async function main(): Promise<number> {
         groep: gen1Groep.groep,
         zaadId: zaadGoed.pakket.zaadId,
         verwachteFrostPubHex: frostGen1.groepsPubHex,
+        verwachteZaadBewaarderSleutels: {
+          ed25519PubliekDerB64u: zaadBewaarder.ed25519PubliekDerB64u,
+          mlDsa65PubliekSpkiB64u: zaadBewaarder.mlDsa65PubliekSpkiB64u,
+        },
         nieuweGeneratieKnooppunten: [knGen2Se.identiteit, knGen2Is.identiteit, knGen2No.identiteit],
       });
 

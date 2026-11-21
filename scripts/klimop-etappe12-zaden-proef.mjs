@@ -103,7 +103,7 @@ async function voerEtappe12ProefUit() {
   const tijdelijkeMap = await mkdtemp(join(tmpdir(), 'klimop-etappe12-'));
   try {
     const m = await laadEtappe12Bundel(tijdelijkeMap);
-    const nuIso = '2026-11-21T06:50:00.000Z';
+    const nuIso = '2026-11-15T06:50:00.000Z';
     const na75UurIso = new Date(Date.parse(nuIso) + 75 * 3600 * 1000).toISOString();
 
     // ---------------------------------------------------------------------------------------------
@@ -267,9 +267,14 @@ async function voerEtappe12ProefUit() {
     // 3. Поширення «Насіння», ПОВНЕ ВИМКНЕННЯ головного сервера Покоління 1 та чиста відбудова
     //    Покоління 2 (SE, IS, NO) без старого сервера і без початкового автора!
     // ---------------------------------------------------------------------------------------------
-    const srvGen1Hoofd = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Hoofd });
-    const srvGen1Ch = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Ch });
-    const srvGen1Ua = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Ua });
+    const beginAnkerGen1 = {
+      frostGroepsPubliekeSleutelHex: frostGen1.groepsPubHex,
+      zaadBewaarderEd25519PubDerB64u: zaadBewaarder.ed25519PubliekDerB64u,
+      zaadBewaarderMlDsa65PubSpkiB64u: zaadBewaarder.mlDsa65PubliekSpkiB64u,
+    };
+    const srvGen1Hoofd = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Hoofd, beginAnker: beginAnkerGen1 });
+    const srvGen1Ch = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Ch, beginAnker: beginAnkerGen1 });
+    const srvGen1Ua = await m.startKlimopProefKnooppunt({ knooppunt: knGen1Ua, beginAnker: beginAnkerGen1 });
 
     const knGen2Se = m.maakKlimopKnooppunt({
       type: 'vaste_onafhankelijke_knooppunten',
@@ -293,9 +298,9 @@ async function voerEtappe12ProefUit() {
       nuIso,
     });
 
-    const srvGen2Se = await m.startKlimopProefKnooppunt({ knooppunt: knGen2Se });
-    const srvGen2Is = await m.startKlimopProefKnooppunt({ knooppunt: knGen2Is });
-    const srvGen2No = await m.startKlimopProefKnooppunt({ knooppunt: knGen2No });
+    const srvGen2Se = await m.startKlimopProefKnooppunt({ knooppunt: knGen2Se, beginAnker: beginAnkerGen1 });
+    const srvGen2Is = await m.startKlimopProefKnooppunt({ knooppunt: knGen2Is, beginAnker: beginAnkerGen1 });
+    const srvGen2No = await m.startKlimopProefKnooppunt({ knooppunt: knGen2No, beginAnker: beginAnkerGen1 });
 
     let schoneHerbouwZonderOudeServerOk = false;
     let opvolgingZonderOorspronkelijkeAuteurOk = false;
@@ -382,6 +387,10 @@ async function voerEtappe12ProefUit() {
         groep: bronGroepRes.groep,
         zaadId: zaadSamenstelling.pakket.zaadId,
         verwachteFrostPubHex: frostGen1.groepsPubHex,
+        verwachteZaadBewaarderSleutels: {
+          ed25519PubliekDerB64u: zaadBewaarder.ed25519PubliekDerB64u,
+          mlDsa65PubliekSpkiB64u: zaadBewaarder.mlDsa65PubliekSpkiB64u,
+        },
         nieuweGeneratieKnooppunten: [knGen2Se.identiteit, knGen2Is.identiteit, knGen2No.identiteit],
       });
 

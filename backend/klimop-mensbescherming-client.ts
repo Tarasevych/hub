@@ -69,6 +69,8 @@ export class KlimopMensbeschermingClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['ontvang_onopvallend_signaal', 'haal_voogd_signalen_op', 'registreer_uitgestelde_operatie', 'annuleer_uitgestelde_operatie', 'controleer_uitvoering_uitgestelde_operatie'],
         },
         opties.eigenaar,
       );

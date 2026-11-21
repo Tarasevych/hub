@@ -22,7 +22,7 @@ import {
   type KlimopKnooppuntIdentiteit,
 } from './kern';
 import { verifieerStandaardEd25519Handtekening } from './drempelsleutels';
-import type { KlimopBestuursGrondwet } from './bestuur';
+import { verifieerBestuursGrondwetVorm, type KlimopBestuursGrondwet } from './bestuur';
 import {
   ondertekenHybrideEd25519MlDsa65,
   verifieerHybrideEd25519MlDsa65,
@@ -251,6 +251,26 @@ export function maakZaadPakketTekenKern(kern: {
   };
 }
 
+export interface VerwachteZaadBewaarderSleutels {
+  ed25519PubliekDerB64u: string;
+  mlDsa65PubliekSpkiB64u?: string;
+}
+
+/** KLIMOP-020: перевірка канонічності та безпеки відносного шляху складника «Насіння». */
+export function isGeldigZaadOnderdeelPad(pad: string): boolean {
+  if (typeof pad !== 'string' || pad.length === 0 || pad.length > 256) return false;
+  if (pad.startsWith('/') || pad.endsWith('/') || pad.includes('\\') || pad.includes('\0') || pad.includes('//')) {
+    return false;
+  }
+  const delen = pad.split('/');
+  return delen.every((d) => d.length > 0 && d !== '.' && d !== '..');
+}
+
+/** KLIMOP-020: канонічний відбиток SHA-256 повного підписаного пакета «Насіння» для звірки на кворумі. */
+export function berekenZaadPakketSha256(pakket: KlimopZaadPakket): string {
+  return createHash('sha256').update(canoniekeJson(pakket), 'utf8').digest('hex');
+}
+
 /**
  * Готує та запечатує самодостатній пакет незалежного відтворення екосистеми — «Насіння» (§1.7, Документ №19):
  *   - примусово вимагає пройденого аудиту Етапу 11 (`vrijgegevenVoorEtappe12 === true`);
@@ -285,6 +305,10 @@ export function stelKlimopZaadPakketSamen(opties: {
     return { ok: false, fout: 'ETAPPE_11_VRIJGAVE_ONTBREEKT' };
   }
 
+  const grondwetVorm = verifieerBestuursGrondwetVorm(opties.grondwet);
+  if (!grondwetVorm.ok) {
+    return { ok: false, fout: grondwetVorm.fout };
+  }
   if (opties.startToetredingsKnooppunten.length < 2) {
     return { ok: false, fout: 'MINSTENS_TWEE_STARTKNOOPPUNTEN_VEREIST' };
   }
@@ -293,7 +317,16 @@ export function stelKlimopZaadPakketSamen(opties: {
     return { ok: false, fout: 'STARTKNOOPPUNTEN_NIET_ONAFHANKELIJK' };
   }
 
-  const padenSet = new Set(opties.onderdelen.map((o) => o.pad));
+  const padenSet = new Set<string>();
+  for (const ond of opties.onderdelen) {
+    if (!isGeldigZaadOnderdeelPad(ond.pad)) {
+      return { ok: false, fout: `ZAAD_PAD_ONGELDIG:${ond.pad}` };
+    }
+    if (padenSet.has(ond.pad)) {
+      return { ok: false, fout: 'ZAAD_DUBBEL_PAD' };
+    }
+    padenSet.add(ond.pad);
+  }
   for (const vereistPad of KLIMOP_TWAALF_KERNMODULES) {
     if (!padenSet.has(vereistPad)) {
       return { ok: false, fout: `ZAAD_MIST_KERNMODULE:${vereistPad}` };
@@ -302,7 +335,10 @@ export function stelKlimopZaadPakketSamen(opties: {
 
   const onderdelenManifest: ZaadOnderdeelManifestRegel[] = [];
   const ingebeddeOnderdelenUtf8: Record<string, string> = {};
-  const gesorteerd = [...opties.onderdelen].sort((a, b) => a.pad.localeCompare(b.pad));
+  // KLIMOP-020: сталий побайтовий порядок UTF-8 замість залежного від локалі localeCompare
+  const gesorteerd = [...opties.onderdelen].sort((a, b) =>
+    Buffer.compare(Buffer.from(a.pad, 'utf8'), Buffer.from(b.pad, 'utf8')),
+  );
 
   for (const ond of gesorteerd) {
     if (!ond.inhoudUtf8 || ond.inhoudUtf8.trim().length === 0) {
@@ -364,19 +400,40 @@ export function stelKlimopZaadPakketSamen(opties: {
   };
 }
 
-/** Перевіряє цілісність усіх вкладень, дерево Меркла, відсутність секретів та обидва підписи пакета «Насіння». */
+/** Перевіряє цілісність усіх вкладень, точну рівність множин, дерево Меркла, відсутність секретів та обидва підписи пакета «Насіння». */
 export function verifieerKlimopZaadPakket(
   pakket: KlimopZaadPakket,
   verwachteFrostPubHex?: string,
+  verwachteZaadBewaarderSleutels?: VerwachteZaadBewaarderSleutels,
 ): { ok: true; geverifieerdeModules: number } | { ok: false; fout: string } {
-  if (!pakket || pakket.schema !== 1 || pakket.bevatGeheimeSleutelsOfPriveInhoud !== false) {
+  if (
+    !pakket
+    || pakket.schema !== 1
+    || pakket.bevatGeheimeSleutelsOfPriveInhoud !== false
+    || !pakket.ingebeddeOnderdelenUtf8
+    || typeof pakket.ingebeddeOnderdelenUtf8 !== 'object'
+    || Array.isArray(pakket.ingebeddeOnderdelenUtf8)
+  ) {
     return { ok: false, fout: 'ZAAD_PAKKET_VORM_ONGELDIG' };
+  }
+  const grondwetVorm = verifieerBestuursGrondwetVorm(pakket.grondwet);
+  if (!grondwetVorm.ok) {
+    return { ok: false, fout: grondwetVorm.fout };
   }
   if (
     verwachteFrostPubHex
-    && pakket.grondwet.frostGroepsPubliekeSleutelHex !== verwachteFrostPubHex
+    && pakket.grondwet.frostGroepsPubliekeSleutelHex.toLowerCase() !== verwachteFrostPubHex.toLowerCase()
   ) {
     return { ok: false, fout: 'ZAAD_GRONDWET_SLEUTEL_KOMT_NIET_OVEREEN' };
+  }
+  if (verwachteZaadBewaarderSleutels) {
+    if (
+      pakket.hybrideZaadHandtekening?.ed25519PubliekDerB64u !== verwachteZaadBewaarderSleutels.ed25519PubliekDerB64u
+      || (verwachteZaadBewaarderSleutels.mlDsa65PubliekSpkiB64u !== undefined
+        && pakket.hybrideZaadHandtekening?.mlDsa65PubliekSpkiB64u !== verwachteZaadBewaarderSleutels.mlDsa65PubliekSpkiB64u)
+    ) {
+      return { ok: false, fout: 'ZAAD_BEWAARDER_SLEUTEL_KOMT_NIET_OVEREEN' };
+    }
   }
   if (pakket.startToetredingsKnooppunten.length < 2) {
     return { ok: false, fout: 'MINSTENS_TWEE_STARTKNOOPPUNTEN_VEREIST' };
@@ -385,15 +442,37 @@ export function verifieerKlimopZaadPakket(
     return { ok: false, fout: 'STARTKNOOPPUNTEN_NIET_ONAFHANKELIJK' };
   }
 
-  const padenSet = new Set(pakket.onderdelenManifest.map((r) => r.pad));
+  const padenSet = new Set<string>();
+  for (const r of pakket.onderdelenManifest) {
+    if (!isGeldigZaadOnderdeelPad(r.pad)) {
+      return { ok: false, fout: `ZAAD_PAD_ONGELDIG:${r.pad}` };
+    }
+    if (padenSet.has(r.pad)) {
+      return { ok: false, fout: 'ZAAD_DUBBEL_PAD' };
+    }
+    padenSet.add(r.pad);
+  }
   for (const vereistPad of KLIMOP_TWAALF_KERNMODULES) {
     if (!padenSet.has(vereistPad)) {
       return { ok: false, fout: `ZAAD_MIST_KERNMODULE:${vereistPad}` };
     }
   }
 
+  // KLIMOP-020: сувора рівність множини вбудованих файлів і підписаного переліку (заборона непідписаних вкладень)
+  const ingebeddeSleutels = Object.keys(pakket.ingebeddeOnderdelenUtf8);
+  for (const sleutel of ingebeddeSleutels) {
+    if (!padenSet.has(sleutel)) {
+      return { ok: false, fout: `ZAAD_ONGETEKEND_ONDERDEEL_AANWEZIG:${sleutel}` };
+    }
+  }
+  if (ingebeddeSleutels.length !== padenSet.size) {
+    return { ok: false, fout: 'ZAAD_ONDERDELEN_VERZAMELING_VERSCHILT' };
+  }
+
   for (const regel of pakket.onderdelenManifest) {
-    const tekst = pakket.ingebeddeOnderdelenUtf8[regel.pad];
+    const tekst = Object.prototype.hasOwnProperty.call(pakket.ingebeddeOnderdelenUtf8, regel.pad)
+      ? pakket.ingebeddeOnderdelenUtf8[regel.pad]
+      : undefined;
     if (typeof tekst !== 'string') {
       return { ok: false, fout: `INGEBED_ONDERDEEL_ONTBREEKT:${regel.pad}` };
     }
@@ -441,7 +520,18 @@ export function verifieerKlimopZaadPakket(
     return { ok: false, fout: 'ZAAD_FROST_HANDTEKENING_ONGELDIG' };
   }
 
-  const vHybride = verifieerHybrideEd25519MlDsa65(hybrideBoodschap, pakket.hybrideZaadHandtekening);
+  const verwachteHybrideSleutels =
+    verwachteZaadBewaarderSleutels?.mlDsa65PubliekSpkiB64u !== undefined
+      ? {
+          ed25519PubliekDerB64u: verwachteZaadBewaarderSleutels.ed25519PubliekDerB64u,
+          mlDsa65PubliekSpkiB64u: verwachteZaadBewaarderSleutels.mlDsa65PubliekSpkiB64u,
+        }
+      : undefined;
+  const vHybride = verifieerHybrideEd25519MlDsa65(
+    hybrideBoodschap,
+    pakket.hybrideZaadHandtekening,
+    verwachteHybrideSleutels,
+  );
   if (!vHybride.ok) {
     return { ok: false, fout: `ZAAD_HYBRIDE_HANDTEKENING_ONGELDIG:${vHybride.fout}` };
   }
@@ -457,6 +547,8 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
   pakket: KlimopZaadPakket;
   nieuweGeneratieKnooppunten: readonly KlimopKnooppuntIdentiteit[];
   verbindingMetOudeServerGebruikt: boolean;
+  verwachteFrostPubHex?: string;
+  verwachteZaadBewaarderSleutels?: VerwachteZaadBewaarderSleutels;
 }):
   | {
       ok: true;
@@ -468,7 +560,11 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
   if (opties.verbindingMetOudeServerGebruikt) {
     return { ok: false, fout: 'VERBINDING_MET_OUDE_SERVER_VERBODEN_BIJ_SCHONE_OPBOUW' };
   }
-  const ver = verifieerKlimopZaadPakket(opties.pakket);
+  const ver = verifieerKlimopZaadPakket(
+    opties.pakket,
+    opties.verwachteFrostPubHex,
+    opties.verwachteZaadBewaarderSleutels,
+  );
   if (!ver.ok) return ver;
 
   if (opties.nieuweGeneratieKnooppunten.length < 2) {

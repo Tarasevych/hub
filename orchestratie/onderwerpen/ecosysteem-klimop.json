@@ -157,6 +157,12 @@
     "docs/hub/ПЛЮЩ-ЕТАП-16-КВОРУМНИЙ-АТЕСТАТ-СХОДИНКИ-4-ТА-ПОРОГОВИЙ-ДОПУСК.uk.md",
     "docs/hub/ПЛЮЩ-ЕТАП-16-КВОРУМНИЙ-АТЕСТАТ-СХОДИНКИ-4-ТА-ПОРОГОВИЙ-ДОПУСК.md",
     "docs/hub/KLIMOP-FASE-16-STAP-4-QUORUMATTEST-EN-DREMPELVRIJGAVE.nl.md",
+    "docs/hub/ПЛЮЩ-ВИПРАВЛЕННЯ-ЗА-НЕЗАЛЕЖНОЮ-ПЕРЕВІРКОЮ.uk.md",
+    "docs/hub/ПЛЮЩ-ВИПРАВЛЕННЯ-ЗА-НЕЗАЛЕЖНОЮ-ПЕРЕВІРКОЮ.md",
+    "docs/hub/KLIMOP-HERSTEL-NA-ONAFHANKELIJKE-CONTROLE.nl.md",
+    "docs/hub/ПЛЮЩ-ПЕРЕДАЧА-РОБОТИ-KLIMOP-020.uk.md",
+    "docs/hub/ПЛЮЩ-ПЕРЕДАЧА-РОБОТИ-KLIMOP-020.md",
+    "docs/hub/KLIMOP-020-WERKOVERDRACHT.nl.md",
     "scripts/klimop-etappe0-audit.mjs",
     "scripts/klimop-proefnetwerk.mjs",
     "scripts/klimop-etappe3-opslag-proef.mjs",
@@ -169,19 +175,23 @@
     "scripts/klimop-etappe10-hechtranken-proef.mjs",
     "scripts/klimop-etappe11-beveiligingsaudit-proef.mjs",
     "scripts/klimop-etappe12-zaden-proef.mjs",
+    "scripts/klant-servergrens-controle.mjs",
     "shared/klimop/kern.ts",
     "shared/klimop/stengels.ts",
     "shared/klimop/opslag.ts",
     "shared/klimop/drempelsleutels.ts",
+    "shared/klimop/drempel-vervoer.ts",
     "shared/klimop/identiteit.ts",
     "shared/klimop/bestuur.ts",
     "shared/klimop/immuunsysteem.ts",
+    "shared/klimop/diensten-catalogus.ts",
     "shared/klimop/diensten.ts",
     "shared/klimop/mensbescherming.ts",
     "shared/klimop/hechtranken.ts",
     "shared/klimop/beveiligingsaudit.ts",
     "shared/klimop/zaden.ts",
     "shared/klimop-overzicht-model.ts",
+    "backend/klimop-knooppunt-staat.ts",
     "backend/klimop-knooppunt-agent.ts",
     "backend/klimop-opslag-client.ts",
     "backend/klimop-drempel-client.ts",
@@ -410,10 +420,12 @@
     {
       "taakId": "KLIMOP-017",
       "tak": "feature/klimop-017-quorum-attest-stap4-20261121-120330",
+      "pr": 199,
+      "integratieCommit": "06312df6316e905e373a2ec1a1f74147cb56b267",
       "agent": "antigravity",
       "model": "Gemini 4 Carbon (High)",
       "datum": "2026-11-21",
-      "uk": "Виконано Етап 16 (Сходинка 4 кворумного атестата готовності та порогового допуску власника за §35, §10, §13, §34 маніфесту без самовільного вимкнення живої бази даних): розширено спільну модель shared/klimop-overzicht-model.ts і сховище backend/klimop-overdracht-opslag.ts (бездилерський DKG 2-з-3 на 3 гібридних постквантових вузлах NL/CH/UA, двораундовий пороговий підпис Шнорра FROST Ed25519 RFC 9591 з поіменним виявленням підроблених часток та гібридний постквантовий підпис Ed25519 + ML-DSA-65 FIPS 204, прив’язаний до голів журналів Сходинок 2–3, збережуваний журнал quorum-attesten-kluis.jsonl із повторною криптоперевіркою обох підписів у verifieerQuorumAttestKeten, дія власника bevestig_quorum_gereedheid за одночасно активних Сходинок 2–3 і каскадне автоматичне скидання Сходинок 2–4 при найменшому збої), додано маршрути /api/owner/klimop/{quorum-attest,quorum-logboek}, зареєстровано технічні інструменти klimop_quorum_attest і klimop_quorum_logboek (разом 9 інструментів klimop_*) для всіх 14 ШІ-агентів, оновлено двомовну вебпанель src/agenten/KlimopPaneel.tsx та укладено двомовні статті Етапу 16.",
+      "uk": "Виконано Етап 16 (Сходинка 4 кворумного атестата готовності та порогового допуску власника за §35, §10, §13, §34 маніфесту без самовільного вимкнення живої бази даних): розширено спільну модель shared/klimop-overzicht-model.ts і сховище backend/klimop-overdracht-opslag.ts (бездилерський DKG 2-з-3 на 3 гібридних постквантових вузлах NL/CH/UA, двораундовий пороговий підпис Шнорра FROST Ed25519 RFC 9591 з поіменним виявленням підроблених часток та гібридний постквантовий підпис Ed25519 + ML-DSA-65 FIPS 204, прив’язаний до голів журналів Сходинок 2–3, збережуваний журнал quorum-attesten-kluis.jsonl із повторною криптоперевіркою обох підписів у verifieerQuorumAttestKeten, дія власника bevestig_quorum_gereedheid за одночасно активних Сходинок 2–3 і каскадне автоматичне скидання Сходинок 2–4 при найменшому збої), додано маршрути /api/owner/klimop/{quorum-attest,quorum-logboek}, зареєстровано технічні інструменти klimop_quorum_attest і klimop_quorum_logboek (разом 9 інструментів klimop_*) для всіх 14 ШІ-агентів, оновлено двомовну вебпанель src/agenten/KlimopPaneel.tsx та укладено двомовні статті Етапу 16. Злито в integratie у запиті №199.",
       "modelEerderGeregistreerd": "Gemini 3.1 Pro",
       "modelBron": "eigenaar"
     },
@@ -430,6 +442,7 @@
     {
       "taakId": "KLIMOP-018",
       "tak": "fix/klimop-018-klientbouw-zoek-taalvaardigheid-20261121-142230",
+      "pr": 200,
       "agent": "antigravity",
       "model": "Claude Opus 5.5 (High)",
       "modelBron": "eigenaar",
@@ -440,12 +453,23 @@
     {
       "taakId": "KLIMOP-019",
       "tak": "fix/klimop-019-frost-dkg-epoche-merkle-crdt-20261121-144953",
+      "pr": 201,
       "agent": "antigravity",
       "model": "Claude Opus 5.5 (High)",
       "modelBron": "eigenaar",
       "datum": "2026-11-21",
       "uk": "Друга хвиля виправлень за незалежною перевіркою: FROST звірено з вектором RFC 9591 E.1 побайтово, нонси прив’язано до частки; адресне шифрування підчасток DKG і нульових вкладів (shared/klimop/drempel-vervoer.ts); стійкий двофазний перехід епох із зашифрованим файлом стану вузла (backend/klimop-knooppunt-staat.ts); Меркл «Насіння» v2; повний порядок злиття CRDT.",
       "nl": "Tweede herstelgolf: FROST bytegewijs gelijk aan RFC 9591 E.1, geadresseerde versleuteling van subdelen en nulbijdragen, duurzame tweefasige epochewissel met versleuteld staatbestand, Merkle v2 voor Zaden en totale CRDT-ordening."
+    },
+    {
+      "taakId": "KLIMOP-020",
+      "tak": "fix/klimop-020-vertrouwensgrenzen-20261121-151312",
+      "agent": "antigravity",
+      "model": "Claude Opus 5.5 (High) → Gemini 4 Carbon (High)",
+      "modelBron": "eigenaar",
+      "datum": "2026-11-21",
+      "uk": "Третя хвиля виправлень за незалежною перевіркою (розпочато моделлю Claude Opus 5.5 (High) на Google Antigravity до вичерпання 5-годинного ліміту у фіксації add014c5, підхоплено й завершено моделлю Gemini 4 Carbon (High)): суворий режим мандатів streng з довіреними видавцями та підписантами кворуму, обов’язковим переліком дій, об’єктами й особою сеансу; попередньо закріплена політика й підписаний сертифікат відновлення особи, втрата повноважень попередніх коренів після відновлення та перевірка спільного префікса історій у кворумі; прив’язка зміни конституції на вузлі до відбитка змісту 72-годинного рішення FROST та однократність; точна рівність вкладень пакета «Насіння», зовнішній якір beginAnker і звірка повного пакета на кворумі; сліпа імунна перевірка виключно за незалежним еталоном і очікуваним розміром; чесне уточнення спрощеного групового шифрування з підписом привітання, одноразовими ключами повідомлень і захистом від повтору; локальні довірені корені на вузлі та позначка місцевого моделювання кворуму в одному процесі.",
+      "nl": "Derde herstelgolf (begonnen door Claude Opus 5.5 (High) op Google Antigravity tot de 5-uurslimiet bij vastlegging add014c5, afgerond door Gemini 4 Carbon (High)): strenge mandaatmodus met vertrouwde uitgevers en quorumondertekenaars, verankerd herstelbeleid en overgangscertificaat met verval van oude wortels, inhoudsbinding en eenmaligheid van grondwetswijzigingen, volledige bijlagencontrole en beginanker voor Zaden, blinde immuuncontrole uitsluitend met referentie, eerlijk omschreven vereenvoudigde groepsversleuteling met welkomsthandtekening en herhalingsbescherming, en lokale vertrouwenswortels op het knooppunt."
     }
   ],
   "mogelijkheden": [
@@ -727,6 +751,48 @@
       "nl": "Totale deterministische ordening van CRDT-bewerkingen, ook bij gelijke HLC",
       "sinds": "KLIMOP-019",
       "staat": "actief"
+    },
+    {
+      "id": "mandaat-streng-vertrouwensregister",
+      "uk": "Суворий режим мандатів на вузлі (streng): довірені видавці й кожен підписант кворуму, обов’язковий перелік дозволених дій, прив’язка до об’єкта та особи відправника сеансу",
+      "nl": "Strenge mandaatmodus op het knooppunt: vertrouwde uitgevers en quorumondertekenaars, verplichte actielijst, object- en sessieafzenderbinding",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "herstel-certificaat-en-wortelepochen",
+      "uk": "Попередньо закріплена коренем епохи політика відновлення особи, перевірюваний сертифікат переходу опікунів, втрата повноважень старих коренів після відновлення та перевірка спільного префікса історій на кворумі",
+      "nl": "Vooraf verankerd herstelbeleid, controleerbaar voogdcertificaat, verval van oude wortels na herstel en voorvoegselcontrole op het quorum",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "grondwet-inhoudsbinding-eenmalig",
+      "uk": "Прив’язка зміни конституції та ключів ролей випусків на вузлі до відбитка змісту 72-годинного рішення FROST, перевірка форми й вікон за годинником вузла та захист від повторного застосування",
+      "nl": "Binding van grondwetswijziging en rolsleutels aan de vingerafdruk van het 72-uurs FROST-besluit, klokcontrole en eenmaligheid",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "zaad-extern-beginanker-en-volledige-set",
+      "uk": "Точна рівність вкладень і підписаного переліку в пакеті «Насіння», зовнішній початковий якір ради й хранителя на вузлі (beginAnker) та звірка SHA-256 повного пакета на кворумі",
+      "nl": "Exacte gelijkheid van bijlagen en manifest in Zaden, extern beginanker op het knooppunt en controle van de volledige pakket-SHA-256 op het quorum",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "immuun-alleen-met-referentie",
+      "uk": "Сліпа імунна перевірка блоків видає позитивний висновок виключно за незалежним еталоном і очікуваним розміром (реконструкція еталонів Ріда–Соломона без KEK)",
+      "nl": "Blinde immuuncontrole geeft alleen een positieve uitkomst met onafhankelijke referentie en verwachte grootte",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
+    },
+    {
+      "id": "knooppunt-lokale-vertrouwenswortels-en-eerlijke-simulatie",
+      "uk": "Локальні довірені корені на вузлі замість сліпої довіри полям запиту, чесне спрощене групове епохове шифрування з підписом привітання й захистом від повтору повідомлень та позначка місцевого моделювання кворуму в одному процесі",
+      "nl": "Lokale vertrouwenswortels op het knooppunt, eerlijk vereenvoudigde groepsversleuteling met welkomsthandtekening en herhalingsbescherming, en markering van lokale nabootsing in één proces",
+      "sinds": "KLIMOP-020",
+      "staat": "actief"
     }
   ],
   "opmerkingenEigenaar": [
@@ -758,6 +824,16 @@
       "behouden": [
         "Усі технічні й криптографічні гарантії Етапів 0–16 та 36 активних можливостей екосистеми Плющ",
         "Недоторканність чинної робочої інфраструктури та бази PostgreSQL 18.6 як первинного джерела запису"
+      ],
+      "bron": "Прямі доручення власника від 21.11.2026"
+    },
+    {
+      "datum": "2026-11-21",
+      "betreft": "Точний історичний облік моделей під час незалежної перевірки та передачі роботи після вичерпання ліміту",
+      "uk": "Зберегти для випусків і сторінки оновлень точну історію: Етапи 0–16 виконувала модель Gemini 4 Carbon (High) (Google Antigravity); незалежну перевірку AUDIT-002 проводила модель GPT-6.2 Astra (Ультра); виправлення хвиль 1–2 (KLIMOP-018, KLIMOP-019) і першу частину хвилі 3 (KLIMOP-020, фіксація add014c5) виконала модель Claude Opus 5.5 (High) (Google Antigravity) до вичерпання 5-годинного ліміту; завершення KLIMOP-020 з місця зупинки та хвилю 4 (KLIMOP-021) виконує Gemini 4 Carbon (High) (Google Antigravity) без повторного початку з нуля.",
+      "behouden": [
+        "Незмінність первинних записів обліку BIJDRAGE-001 (лише доповнення записами correctie та bouwtVoortOp)",
+        "Всі напрацювання фіксації add014c5 та запитів на злиття №200 і №201"
       ],
       "bron": "Прямі доручення власника від 21.11.2026"
     }

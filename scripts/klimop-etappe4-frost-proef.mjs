@@ -78,10 +78,12 @@ async function voerEtappe4ProefUit() {
       nuIso,
     });
 
-    const srvNL = await m.startKlimopProefKnooppunt({ knooppunt: knNL });
+    // KLIMOP-020: усі вузли працюють у суворому режимі з довіреним реєстром видавців мандатів
+    const vertrouwdeUitgevers = [opdrachtgever.identiteit.knooppuntId];
+    const srvNL = await m.startKlimopProefKnooppunt({ knooppunt: knNL, vertrouwdeUitgevers });
     const staatBestandCH = resolve(tijdelijkeMap, 'knooppunt-ch.staat');
-    let srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH });
-    const srvUA = await m.startKlimopProefKnooppunt({ knooppunt: knUA });
+    let srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH, vertrouwdeUitgevers });
+    const srvUA = await m.startKlimopProefKnooppunt({ knooppunt: knUA, vertrouwdeUitgevers });
 
     try {
       const tabel = new m.KlimopRouteTabel();
@@ -173,7 +175,7 @@ async function voerEtappe4ProefUit() {
       const onvoltooidZonderCH = !zonderCH.ok
         && zonderCH.fout === 'AFRONDING_ONVOLTOOID'
         && JSON.stringify(zonderCH.openstaandeIndexen) === JSON.stringify([2]);
-      srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH });
+      srvCH = await m.startKlimopProefKnooppunt({ knooppunt: knCH, staatBestand: staatBestandCH, vertrouwdeUitgevers });
       adressen.set(knCH.identiteit.knooppuntId, srvCH.basisUrl);
       netwerkClient.sluitAlleSessies();
       const herhaald = await drempelClient.rondEpocheVerversingAfOpNetwerk({
@@ -199,8 +201,11 @@ async function voerEtappe4ProefUit() {
 
       netwerkClient.sluitAlleSessies();
 
+      const strengeModus = [srvNL, srvCH, srvUA].every((s) => s.vertrouwensModus() === 'streng');
+
       const resultaat = {
         code: 'KLIMOP-ETAPPE-4-FROST-PROEF',
+        strengeModus,
         dkgOk: dkgUit.ok,
         sigEp1GeldigInNodeCrypto,
         ondertekenaarsEp1: sigEp1.ok ? sigEp1.ondertekenaarIndexen : [],
@@ -216,6 +221,7 @@ async function voerEtappe4ProefUit() {
         console.log(JSON.stringify(resultaat, null, 2));
       } else {
         console.log('KLIMOP Етап 4 · Бездилерський DKG, порогові підписи FROST (RFC 9591) та проактивні епохи');
+        console.log(`  Суворий режим довіри: реєстр видавців, перелік дій і об'єктів у кожному мандаті: ok=${resultaat.strengeModus}`);
         console.log(`  Розподілене створення ключа 2-з-3 без єдиного дилера (NL, CH, UA): ok=${resultaat.dkgOk}`);
         console.log(`  Пороговий підпис FROST в епосі 1 при вимкненому CH (перевірено node:crypto.verify): ok=${resultaat.sigEp1GeldigInNodeCrypto}`);
         console.log(`  Безпечне відкочування при перерваній процедурі оновлення часток: ok=${resultaat.afbrekingBehoudtEp1}`);
@@ -226,7 +232,7 @@ async function voerEtappe4ProefUit() {
       }
 
       if (
-        !sigEp1GeldigInNodeCrypto || !afbrekingBehoudtEp1 || !alleOpEpoche2 || !sigEp2GeldigInNodeCrypto
+        !strengeModus || !sigEp1GeldigInNodeCrypto || !afbrekingBehoudtEp1 || !alleOpEpoche2 || !sigEp2GeldigInNodeCrypto
         || !alleOpEpoche3NaHerstart || !sigEp3GeldigInNodeCrypto
       ) {
         process.exitCode = 1;

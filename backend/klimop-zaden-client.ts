@@ -15,11 +15,13 @@ import {
   type KlimopOndertekendMandaat,
 } from '../shared/klimop/kern';
 import {
+  berekenZaadPakketSha256,
   herbouwEcosysteemUitZaadOpSchoonMilieu,
   verifieerKlimopZaadPakket,
   verifieerOpvolgingsOverdracht,
   type KlimopOpvolgingsOverdracht,
   type KlimopZaadPakket,
+  type VerwachteZaadBewaarderSleutels,
 } from '../shared/klimop/zaden';
 import type { KlimopNetwerkClient } from './klimop-knooppunt-agent';
 
@@ -74,6 +76,8 @@ export class KlimopZadenEnOpvolgingClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['bewaar_gevalideerd_zaad_pakket', 'registreer_opvolgings_overdracht', 'raadpleeg_zaad_en_opvolging'],
         },
         opties.coordinator,
       );
@@ -119,19 +123,21 @@ export class KlimopZadenEnOpvolgingClient {
 
   /**
    * Збирає з живого кворуму незалежних вузлів пакет «Насіння», повторно локально перевіряє його
-   * корінь Меркла SHA-256, пороговий підпис FROST та гібридний постквантовий підпис Ed25519 + ML-DSA-65
-   * і виконує чисте відтворення нового покоління вузлів без старого сервера.
+   * корінь Меркла SHA-256, пороговий підпис FROST, гібридний постквантовий підпис Ed25519 + ML-DSA-65
+   * та повний відбиток підписаного пакета і виконує чисте відтворення нового покоління вузлів без старого сервера.
    */
   async herstelEnStartNieuweGeneratieUitQuorumZaad(opties: {
     groep: KlimopZadenQuorumGroep;
     zaadId: string;
     verwachteFrostPubHex: string;
+    verwachteZaadBewaarderSleutels?: VerwachteZaadBewaarderSleutels;
     nieuweGeneratieKnooppunten: readonly KlimopKnooppuntIdentiteit[];
   }): Promise<
     | {
         ok: true;
         bevestigdeBronKnooppuntIds: string[];
         merkleWortelSha256: string;
+        pakketSha256: string;
         hersteldePadLijst: string[];
         nieuweRechtsgebieden: string[];
       }
@@ -139,6 +145,7 @@ export class KlimopZadenEnOpvolgingClient {
   > {
     const bevestigdeBronKnooppuntIds: string[] = [];
     let geverifieerdPakket: KlimopZaadPakket | null = null;
+    let geverifieerdPakketSha256 = '';
     let laatsteFout = 'ZAAD_NIET_OPGEHAALD_VAN_QUORUM';
 
     for (const kn of opties.groep.knooppunten) {
@@ -148,15 +155,25 @@ export class KlimopZadenEnOpvolgingClient {
         mandaat: opties.groep.mandatenPerKnooppuntId[kn.knooppuntId],
       });
       if (r.antwoord.ok && r.antwoord.actie === 'zaad_en_opvolging_staat' && r.antwoord.pakket) {
-        const lokaalOk = verifieerKlimopZaadPakket(r.antwoord.pakket, opties.verwachteFrostPubHex);
+        const lokaalOk = verifieerKlimopZaadPakket(
+          r.antwoord.pakket,
+          opties.verwachteFrostPubHex,
+          opties.verwachteZaadBewaarderSleutels,
+        );
         if (!lokaalOk.ok) {
           laatsteFout = lokaalOk.fout;
           continue;
         }
-        if (geverifieerdPakket && r.antwoord.pakket.merkleWortelSha256 !== geverifieerdPakket.merkleWortelSha256) {
-          return { ok: false, fout: 'QUORUM_ZAAD_MERKLE_TEGENSTRIJDIG' };
+        // KLIMOP-020: звіряємо відбиток усього підписаного пакета, а не лише корінь Меркла
+        const kandidaatSha256 = berekenZaadPakketSha256(r.antwoord.pakket);
+        if (geverifieerdPakket && kandidaatSha256 !== geverifieerdPakketSha256) {
+          if (r.antwoord.pakket.merkleWortelSha256 !== geverifieerdPakket.merkleWortelSha256) {
+            return { ok: false, fout: 'QUORUM_ZAAD_MERKLE_TEGENSTRIJDIG' };
+          }
+          return { ok: false, fout: 'QUORUM_ZAAD_PAKKET_TEGENSTRIJDIG' };
         }
         geverifieerdPakket = r.antwoord.pakket;
+        geverifieerdPakketSha256 = kandidaatSha256;
         bevestigdeBronKnooppuntIds.push(kn.knooppuntId);
       } else if (!r.antwoord.ok) {
         laatsteFout = r.antwoord.fout;
@@ -171,6 +188,8 @@ export class KlimopZadenEnOpvolgingClient {
       pakket: geverifieerdPakket,
       nieuweGeneratieKnooppunten: opties.nieuweGeneratieKnooppunten,
       verbindingMetOudeServerGebruikt: false,
+      verwachteFrostPubHex: opties.verwachteFrostPubHex,
+      verwachteZaadBewaarderSleutels: opties.verwachteZaadBewaarderSleutels,
     });
     if (!schoneOpbouw.ok) return schoneOpbouw;
 
@@ -178,6 +197,7 @@ export class KlimopZadenEnOpvolgingClient {
       ok: true,
       bevestigdeBronKnooppuntIds,
       merkleWortelSha256: schoneOpbouw.merkleWortelSha256,
+      pakketSha256: geverifieerdPakketSha256,
       hersteldePadLijst: schoneOpbouw.hersteldePadLijst,
       nieuweRechtsgebieden: schoneOpbouw.nieuweRechtsgebieden,
     };

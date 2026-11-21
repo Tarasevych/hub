@@ -73,6 +73,8 @@ export class KlimopHechtrankenEnVoedingClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['registreer_knooppunt_toetreding', 'registreer_middelen_kwitantie', 'registreer_veilige_uittreding', 'raadpleeg_uitbreiding_en_voeding'],
         },
         opties.coordinator,
       );
