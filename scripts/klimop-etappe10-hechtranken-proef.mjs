@@ -4,7 +4,7 @@
 // протидії атакам Сивілли й поведінці комп'ютерного хробака, справедливого обміну ресурсами («Живлення»)
 // та безпечного виведення вузлів із кворуму (§1.4–1.5, §4–§5.2, §26–§27, §36 Етап 10, Документ №15):
 //   - жодного підключення до живої бази PostgreSQL чи робочого сервера;
-//   - перевірка відмови всім ознакам комп'ютерного хробака та витратам > 0 євро без рішення власника;
+//   - перевірка відмови всім ознакам комп'ютерного хробака та несанкціонованому залученню сторонніх ресурсів без рішення власника;
 //   - приєднання нових незалежних вузлів SE та IS до кворуму NL/CH/UA за двосторонніми свідоцтвами;
 //   - відбиття атаки Сивілли (8 клонів одного постачальника + 3 тимчасові вузли);
 //   - підписані квитанції ресурсів та безумовний доступ пасивного учасника (0 балів внеску) до власних даних;
@@ -60,7 +60,7 @@ function bouwGeldigeAanvraag(kandidaatIdentiteit, netwerkVoorvoegsel, gevraagdeR
     geenVerborgenRekenkrachtGebruik: true,
     automatischeRechtenUitbreidingViaVerbinding: false,
     vertrouwdAlleenWegensNetwerkNabijheid: false,
-    maandelijkseKostenEuro: 0,
+    externeMiddelenBelastingEenheden: 0,
     uitdrukkelijkeKostenGoedkeuringEigenaar: false,
   };
 }
@@ -145,7 +145,7 @@ async function voerEtappe10ProefUit() {
       const groep = groepRes.groep;
 
       // -------------------------------------------------------------------------------------------
-      // 1. Відбиття поведінки комп'ютерного хробака (§5.2) та витрат без дозволу власника
+      // 1. Відбиття поведінки комп'ютерного хробака (§5.2) та залучення сторонніх ресурсів без дозволу
       // -------------------------------------------------------------------------------------------
       const wormPogingZelfInstallatie = m.valideerKnooppuntToetredingsAanvraag({
         ...bouwGeldigeAanvraag(knSE.identiteit, '193.10.40.0/24', ['opslag']),
@@ -161,7 +161,7 @@ async function voerEtappe10ProefUit() {
       });
       const kostenZonderToestemming = m.valideerKnooppuntToetredingsAanvraag({
         ...bouwGeldigeAanvraag(knSE.identiteit, '193.10.40.0/24', ['opslag']),
-        maandelijkseKostenEuro: 12,
+        externeMiddelenBelastingEenheden: 12,
         uitdrukkelijkeKostenGoedkeuringEigenaar: false,
       });
       const wormEnKostenGeblokkeerdOk =

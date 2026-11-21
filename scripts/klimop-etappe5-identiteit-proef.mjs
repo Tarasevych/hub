@@ -330,7 +330,17 @@ async function voerEtappe5ProefUit() {
         intrekkingen: [telIntrekking],
         herstelAanvraag: wettigVoltooid.voltooideAanvraag,
       });
-      const erfenisBrugBlijftGeldig = m.verifieerErfenisGebruikerKoppeling(erfenisBrug, wettigVoltooid.nieuweStaat);
+      // KLIMOP-022: після законного відновлення старий замінений корінь втрачає право прив'язки, а новий відновлений корінь перепідписує міст того самого userId
+      const oudeErfenisBrugGeweigerd = !m.verifieerErfenisGebruikerKoppeling(erfenisBrug, wettigVoltooid.nieuweStaat);
+      const hertekendeErfenisBrug = m.maakErfenisGebruikerKoppeling(
+        'usr_pavlo_bestaand_001',
+        wettigVoltooid.nieuweStaat,
+        herstelWortelPriv,
+        new Date(t0Ms + 52 * 3600_000 + 1000).toISOString(),
+      );
+      const erfenisBrugBlijftGeldig =
+        oudeErfenisBrugGeweigerd
+        && m.verifieerErfenisGebruikerKoppeling(hertekendeErfenisBrug, wettigVoltooid.nieuweStaat);
       const wettigHerstelOk =
         !teVroeg.ok
         && teVroeg.fout === 'BETWISTINGSTERMIJN_NOG_NIET_VERSTREKEN'

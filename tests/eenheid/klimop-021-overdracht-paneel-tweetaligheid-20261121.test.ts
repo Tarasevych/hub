@@ -314,17 +314,18 @@ export async function main() {
   });
   if (!hdrVol.ok) throw new Error(hdrVol.fout);
 
-  const kd1 = versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-1', 'utf8'));
-  const kd2 = versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-2', 'utf8'));
+  const kaderTijdOpt = { nuMs: Date.parse(nuIso) + 1000 };
+  const kd1 = versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-1', 'utf8'), kaderTijdOpt);
+  const kd2 = versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-2', 'utf8'), kaderTijdOpt);
   let sleutelwisselFout = '';
   try {
-    versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-3', 'utf8'));
+    versleutelStengelKader(hdrVol.sessie, Buffer.from('кадр-3', 'utf8'), kaderTijdOpt);
   } catch (e) {
     sleutelwisselFout = e instanceof Error ? e.message : String(e);
   }
-  const ont1 = ontsleutelStengelKader(hdrAntw.sessie, kd1);
-  const ontHerhaling = ontsleutelStengelKader(hdrAntw.sessie, kd1);
-  const ont2 = ontsleutelStengelKader(hdrAntw.sessie, kd2);
+  const ont1 = ontsleutelStengelKader(hdrAntw.sessie, kd1, kaderTijdOpt);
+  const ontHerhaling = ontsleutelStengelKader(hdrAntw.sessie, kd1, kaderTijdOpt);
+  const ont2 = ontsleutelStengelKader(hdrAntw.sessie, kd2, kaderTijdOpt);
   sluitStengelSessie(hdrVol.sessie);
   sluitStengelSessie(hdrAntw.sessie);
 

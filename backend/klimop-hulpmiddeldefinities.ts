@@ -4,6 +4,7 @@
 
 import type { ToolDef } from './connectors-hulpmiddelen';
 import { p } from '../shared/hulpmiddel-teksten';
+import { KLIMOP_VERBODEN_VEREENVOUDIGINGEN_IDS } from '../shared/klimop/kern';
 import { KLIMOP_ELF_DIENSTEN } from '../shared/klimop/diensten';
 import { KLIMOP_ZESTIEN_ONTWIKKELRICHTINGEN } from '../shared/klimop/zaden';
 import {
@@ -28,7 +29,7 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
     name: KLIMOP_OVERZICHT,
     title: 'Overzicht van ecosysteem Klimop',
     description:
-      'Geeft de actuele integriteitsstaat van het ecosysteem Klimop: SHA-256-afdrukken van alle twaalf kernmodules, de Merkle-wortel van het Zaadpakket, de twaalf pijlers van hoofdstuk 46, het onderwerpdossier en de overdrachtsstatus van alle elf diensten zonder wijziging van de draaiende databank.',
+      'Geeft de actuele integriteitsstaat van het ecosysteem Klimop: SHA-256-afdrukken van alle veertien kernmodules, de Merkle-wortel van het Zaadpakket, de twaalf pijlers van hoofdstuk 46, het onderwerpdossier en de overdrachtsstatus van alle elf diensten zonder wijziging van de draaiende databank.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
@@ -50,10 +51,10 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
         fase: {
           type: 'integer',
           minimum: 0,
-          maximum: 12,
+          maximum: 16,
           description: p(
-            'Номер етапу від 0 до 12 за архітектурним маніфестом.',
-            'Volgnummer van de fase van 0 tot 12 volgens het architectuurmanifest.',
+            'Номер етапу від 0 до 16 за архітектурним маніфестом.',
+            'Volgnummer van de fase van 0 tot 16 volgens het architectuurmanifest.',
           ),
         },
         richting: {
@@ -62,6 +63,20 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
           description: p(
             'Спеціалізований напрям розробки з шістнадцяти напрямів розділу 33.',
             'Gespecialiseerde ontwikkelrichting uit de zestien richtingen van hoofdstuk 33.',
+          ),
+        },
+        regelsVersie: {
+          type: 'string',
+          description: p(
+            'Версія чинних правил координації сховища.',
+            'Versie van de geldende coördinatieregels van de opslagplaats.',
+          ),
+        },
+        bevatTestBewijs: {
+          type: 'boolean',
+          description: p(
+            'Чи містить пропозиція перевірні докази проведених випробувань.',
+            'Of het voorstel verifieerbaar bewijs van uitgevoerde beproevingen bevat.',
           ),
         },
         raaktProductieDirectZonderGoedkeuring: {
@@ -76,6 +91,45 @@ export const KLIMOP_TOOLS: readonly ToolDef[] = Object.freeze([
           description: p(
             'Чи намагається агент самостійно схвалити або розгорнути зміну в обхід людини чи кворуму.',
             'Of de agent zelfstandig poogt goed te keuren of uit te rollen buiten mens of quorum om.',
+          ),
+        },
+        wijzigtCryptoregelsZonderQuorum: {
+          type: 'boolean',
+          description: p(
+            'Чи змінює пропозиція криптографічні правила без кворумного рішення.',
+            'Of het voorstel cryptografische regels wijzigt zonder quorumbesluit.',
+          ),
+        },
+        breidtEigenRechtenUit: {
+          type: 'boolean',
+          description: p(
+            'Чи розширює пропозиція власні права агента без затвердження.',
+            'Of het voorstel de eigen rechten van de agent uitbreidt zonder goedkeuring.',
+          ),
+        },
+        onthultGeheimen: {
+          type: 'boolean',
+          description: p(
+            'Чи розкриває пропозиція таємниці або закриті ключі.',
+            'Of het voorstel geheimen of privésleutels blootlegt.',
+          ),
+        },
+        aanwezigeVerbodenVereenvoudigingen: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: [...KLIMOP_VERBODEN_VEREENVOUDIGINGEN_IDS],
+          },
+          description: p(
+            'Перелік виявлених заборонених спрощень із чотирнадцяти заборон розділу 43.',
+            'Lijst van vastgestelde verboden vereenvoudigingen uit de veertien verboden van hoofdstuk 43.',
+          ),
+        },
+        antwoorden15: {
+          type: 'object',
+          description: p(
+            'Словник перевірних доказів за ідентифікаторами п’ятнадцяти питань розділу 42.',
+            'Woordenboek met verifieerbaar bewijs per vraag-aanduiding van de vijftien vragen uit hoofdstuk 42.',
           ),
         },
         gebruikStandaardBewijsVoorOntbrekendeVragen: {

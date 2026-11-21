@@ -876,3 +876,45 @@ export function zijnKnooppuntVersiesOnderlingCompatibel(
     && knoopB.actiefVolgnummer >= knoopA.minCompatibelVolgnummer
   );
 }
+
+const AANVANKELIJKE_GRONDWET_FROST_DOMEIN = 'klimop-bestuur-aanvankelijke-grondwet-frost-v1|';
+
+/** KLIMOP-022: канонічне повідомлення для порогового підпису FROST над первинною конституцією та ключами ролей випуску. */
+export function maakAanvankelijkeGrondwetFrostBoodschap(
+  grondwet: KlimopBestuursGrondwet,
+  erkendeDoelenRolPubDerB64u: string,
+  erkendeTijdstempelRolPubDerB64u: string,
+): Buffer {
+  return Buffer.from(
+    AANVANKELIJKE_GRONDWET_FROST_DOMEIN
+      + canoniekeJson({
+        schema: 1,
+        grondwet,
+        erkendeDoelenRolPubDerB64u,
+        erkendeTijdstempelRolPubDerB64u,
+      }),
+    'utf8',
+  );
+}
+
+/** KLIMOP-022: перевіряє пороговий підпис FROST ради хранителів над первинною конституцією та ключами ролей випуску. */
+export function verifieerAanvankelijkeGrondwetFrostHandtekening(opties: {
+  grondwet: KlimopBestuursGrondwet;
+  erkendeDoelenRolPubDerB64u: string;
+  erkendeTijdstempelRolPubDerB64u: string;
+  frostGroepsPubliekeSleutelHex: string;
+  frostHandtekeningHex: string;
+}): boolean {
+  if (!/^[0-9a-f]{128}$/i.test(opties.frostHandtekeningHex ?? '')) return false;
+  const boodschap = maakAanvankelijkeGrondwetFrostBoodschap(
+    opties.grondwet,
+    opties.erkendeDoelenRolPubDerB64u,
+    opties.erkendeTijdstempelRolPubDerB64u,
+  );
+  return verifieerStandaardEd25519Handtekening(
+    boodschap,
+    opties.frostHandtekeningHex,
+    opties.frostGroepsPubliekeSleutelHex,
+  );
+}
+

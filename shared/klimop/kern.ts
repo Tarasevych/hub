@@ -259,6 +259,7 @@ export function verifieerKlimopMandaat(
     objectId?: string;
     vereisActieBereik?: boolean;
     sessieAfzenderKnooppuntId?: string;
+    toegestaneMachtDomeinen?: readonly KlimopMachtDomein[];
   } = {},
 ): { ok: boolean; fouten: string[] } {
   const fouten: string[] = [];
@@ -268,6 +269,9 @@ export function verifieerKlimopMandaat(
     return { ok: false, fouten: ['MANDAAT_ONGELDIGE_VORM'] };
   }
   if (!KLIMOP_MACHT_DOMEINEN.includes(inhoud.machtDomein)) fouten.push('MANDAAT_ONGELDIG_MACHT_DOMEIN');
+  if (context.toegestaneMachtDomeinen && !context.toegestaneMachtDomeinen.includes(inhoud.machtDomein)) {
+    fouten.push('MANDAAT_MACHT_DOMEIN_NIET_TOEGESTAAN');
+  }
 
   if (context.ingetrokkenMandaatIds?.has(inhoud.mandaatId)) fouten.push('MANDAAT_INGETROKKEN');
   if (
@@ -280,7 +284,7 @@ export function verifieerKlimopMandaat(
   const nu = Date.parse(context.nuIso ?? new Date().toISOString());
   const van = Date.parse(inhoud.uitgegevenOp);
   const tot = Date.parse(inhoud.verlooptOp);
-  if (!Number.isFinite(van) || !Number.isFinite(tot) || tot <= van) {
+  if (!Number.isFinite(nu) || !Number.isFinite(van) || !Number.isFinite(tot) || tot <= van) {
     fouten.push('MANDAAT_TIJDSVENSTER_ONGELDIG');
   } else if (nu < van || nu >= tot) {
     fouten.push('MANDAAT_VERLOPEN_OF_NOG_NIET_GELDIG');
@@ -375,13 +379,15 @@ export function verifieerKlimopMandaat(
     fouten.push('MANDAAT_ZONDER_ACTIEBEREIK');
   }
 
-  // KLIMOP-020: якщо мандат обмежений переліком об'єктів, об'єкт дії мусить бути в ньому
+  // KLIMOP-020 / KLIMOP-022: предметні дії в суворому режимі вимагають явного переліку `objectIds` і входження об'єкта до нього
   if (Array.isArray(inhoud.objectIds)) {
     if (context.objectId === undefined || !inhoud.objectIds.includes(context.objectId)) {
       if (context.objectId !== undefined || context.vereisActieBereik) {
         fouten.push('MANDAAT_OBJECT_NIET_TOEGESTAAN');
       }
     }
+  } else if (context.vereisActieBereik && context.objectId !== undefined) {
+    fouten.push('MANDAAT_ZONDER_OBJECTBEREIK');
   }
 
   return { ok: fouten.length === 0, fouten };
@@ -439,6 +445,9 @@ export function controleerKnooppuntOnafhankelijkheid(
 
   for (const [aanbieder, aantal] of perAanbieder.entries()) {
     if (aantal >= drempelK) fouten.push(`EEN_AANBIEDER_HEEFT_QUORUM:${aanbieder}`);
+  }
+  for (const [regio, aantal] of perRegio.entries()) {
+    if (aantal >= drempelK) fouten.push(`EEN_JURISDICTIE_HEEFT_QUORUM:${regio}`);
   }
   for (const [operatorId, aantal] of perOperator.entries()) {
     if (aantal >= drempelK) fouten.push(`EEN_OPERATOR_HEEFT_QUORUM:${operatorId}`);

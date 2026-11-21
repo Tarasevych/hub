@@ -75,6 +75,11 @@ export interface KlimopWortelRotatieBewijs {
    * та підписані голоси опікунів. Входить до підписаного змісту ротації й перевіряється кожним споживачем.
    */
   herstelCertificaat?: KlimopHerstelCertificaat;
+  /**
+   * KLIMOP-022: криптографічний відбиток SHA-256 масиву закріплень політики відновлення на момент ротації,
+   * що унеможливлює дописування фальшивої політики заднім числом викраденим старим кореневим ключем.
+   */
+  verankeringenTotEpocheSha256?: string;
 }
 
 /** KLIMOP-020: політику відновлення закріплює кореневий ключ чинної епохи ще до втрати доступу. */
@@ -196,6 +201,39 @@ export function maakPersoonsIdentiteit(nuIso?: string): {
   };
 }
 
+/** KLIMOP-022: перевіряє, що два стани тієї самої особи не утворюють розгалуженої історії ротацій. */
+export function heeftGeldigGemeenschappelijkRotatieVoorvoegsel(
+  eerste: KlimopPersoonsStaat,
+  tweede: KlimopPersoonsStaat,
+): boolean {
+  if (
+    !eerste?.oprichting
+    || !tweede?.oprichting
+    || eerste.oprichting.persoonsId !== tweede.oprichting.persoonsId
+    || eerste.oprichting.handtekeningB64u !== tweede.oprichting.handtekeningB64u
+    || !Array.isArray(eerste.rotaties)
+    || !Array.isArray(tweede.rotaties)
+  ) {
+    return false;
+  }
+  const kort = eerste.rotaties.length <= tweede.rotaties.length ? eerste.rotaties : tweede.rotaties;
+  const lang = kort === eerste.rotaties ? tweede.rotaties : eerste.rotaties;
+  for (let i = 0; i < kort.length; i++) {
+    if (canoniekeJson(kort[i]) !== canoniekeJson(lang[i])) return false;
+  }
+  return true;
+}
+
+function berekenVerankeringenTotEpocheSha256(
+  verankeringen: readonly KlimopHerstelBeleidVerankering[],
+  totEpoche: number,
+): string {
+  const gefilterd = verankeringen.filter((v) => v.epoche <= totEpoche);
+  return createHash('sha256')
+    .update(`${HERSTEL_VERANKERING_DOMEIN}keten|${canoniekeJson(gefilterd)}`, 'utf8')
+    .digest('hex');
+}
+
 /** Перевіряє засновницьке свідоцтво та повний ланцюжок планових ротацій кореневого ключа особи. */
 export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true } | { ok: false; fout: string } {
   if (!staat?.oprichting || staat.oprichting.schema !== 1) {
@@ -233,6 +271,12 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
     // KLIMOP-020: невідомий вид переходу відхиляється, а не трактується як відновлення
     if (r.reden !== 'geplande_rotatie' && r.reden !== 'wettig_drempel_herstel') {
       return { ok: false, fout: 'PERSOON_ONBEKEND_ROTATIETYPE' };
+    }
+    if (
+      r.verankeringenTotEpocheSha256 !== undefined
+      && r.verankeringenTotEpocheSha256 !== berekenVerankeringenTotEpocheSha256(verankeringen, i + 1)
+    ) {
+      return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ACHTERAF_GEWIJZIGD' };
     }
     const { handtekeningVorigeOfHerstelB64u, handtekeningNieuweB64u, ...rotKern } = r;
     const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
@@ -313,8 +357,15 @@ function verifieerHerstelBeleidVerankering(
     return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
   }
   const sleutel = wortelSleutelVoorEpoche(staat, v.epoche);
-  if (!sleutel || !Number.isFinite(Date.parse(v.vastgelegdOp))) {
+  const vastMs = Date.parse(v.vastgelegdOp);
+  if (!sleutel || !Number.isFinite(vastMs)) {
     return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  }
+  const beginMs = Date.parse(v.epoche === 1 ? staat.oprichting.opgerichtOp : staat.rotaties[v.epoche - 2].geroteerdOp);
+  const eindIso = staat.rotaties[v.epoche - 1]?.geroteerdOp;
+  const eindMs = eindIso !== undefined ? Date.parse(eindIso) : Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(beginMs) || (eindIso !== undefined && !Number.isFinite(eindMs)) || vastMs < beginMs || vastMs >= eindMs) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_BUITEN_EPOCHE' };
   }
   const { handtekeningB64u, ...kern } = v;
   if (!verifieerEd25519(sleutel, Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
@@ -372,17 +423,39 @@ function telGeldigeVoogdStemmen(
   return gezien.size;
 }
 
-/** KLIMOP-020: найпізніше закріплення, чинне для переходу з епохи `vanEpoche` на момент відкриття заявки. */
+/**
+ * KLIMOP-020 / KLIMOP-022: найпізніше закріплення, чинне для переходу з епохи `vanEpoche` на момент відкриття заявки.
+ * Закріплення коренів, замінених під час попередніх `wettig_drempel_herstel`, відсікаються назавжди; закріплення з
+ * попередніх планових епох приймаються лише тоді, коли їхній відбиток зафіксовано в підписаному доказі ротації.
+ */
 function zoekVerankering(
+  staat: KlimopPersoonsStaat,
   verankeringen: readonly KlimopHerstelBeleidVerankering[],
   vanEpoche: number,
   geopendOp: string,
 ): KlimopHerstelBeleidVerankering | null {
   const openMs = Date.parse(geopendOp);
+  if (!Number.isFinite(openMs)) return null;
+  let minToegestaneEpoche = 1;
+  for (let j = 0; j < Math.min(staat.rotaties.length, vanEpoche - 1); j++) {
+    if (staat.rotaties[j].reden === 'wettig_drempel_herstel') {
+      minToegestaneEpoche = j + 2;
+    }
+  }
   let beste: KlimopHerstelBeleidVerankering | null = null;
   for (const v of verankeringen) {
-    if (v.epoche > vanEpoche || Date.parse(v.vastgelegdOp) > openMs) continue;
-    if (!beste || v.epoche > beste.epoche || (v.epoche === beste.epoche && Date.parse(v.vastgelegdOp) > Date.parse(beste.vastgelegdOp))) {
+    const vastMs = Date.parse(v.vastgelegdOp);
+    if (!Number.isFinite(vastMs) || v.epoche < minToegestaneEpoche || v.epoche > vanEpoche || vastMs > openMs) continue;
+    if (v.epoche < vanEpoche) {
+      const volgendeRotatie = staat.rotaties[v.epoche - 1];
+      if (
+        !volgendeRotatie?.verankeringenTotEpocheSha256
+        || volgendeRotatie.verankeringenTotEpocheSha256 !== berekenVerankeringenTotEpocheSha256(verankeringen, v.epoche)
+      ) {
+        continue;
+      }
+    }
+    if (!beste || v.epoche > beste.epoche || (v.epoche === beste.epoche && vastMs > Date.parse(beste.vastgelegdOp))) {
       beste = v;
     }
   }
@@ -408,7 +481,7 @@ function verifieerHerstelCertificaat(
   ) {
     return { ok: false, fout: 'HERSTELCERTIFICAAT_KOMT_NIET_OVEREEN' };
   }
-  const verankering = zoekVerankering(verankeringen, vanEpoche, c.aanvraag.geopendOp);
+  const verankering = zoekVerankering(staat, verankeringen, vanEpoche, c.aanvraag.geopendOp);
   if (!verankering || verankering.beleidSha256 !== berekenHerstelBeleidSha256(c.beleid)) {
     return { ok: false, fout: 'HERSTELBELEID_NIET_VERANKERD' };
   }
@@ -486,6 +559,10 @@ export function roteerPersoonsWortelSleutel(
     geroteerdOp: nuIso ?? new Date().toISOString(),
     reden: 'geplande_rotatie' as const,
     herstelAanvraagId: null,
+    verankeringenTotEpocheSha256: berekenVerankeringenTotEpocheSha256(
+      staat.herstelBeleidVerankeringen ?? [],
+      staat.actieveEpoche,
+    ),
   };
   const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
   const bewijs: KlimopWortelRotatieBewijs = {
@@ -556,15 +633,18 @@ export function maakErfenisGebruikerKoppeling(
 export function verifieerErfenisGebruikerKoppeling(
   koppeling: ErfenisGebruikerKoppeling,
   staat: KlimopPersoonsStaat,
+  opties: { nuIso?: string } = {},
 ): boolean {
   const sv = verifieerPersoonsStaat(staat);
   if (!sv.ok) return false;
-  if (koppeling.persoonsId !== staat.oprichting.persoonsId) return false;
-  const geldigeWortels = new Set([
-    staat.oprichting.aanvankelijkeWortelPubDerB64u,
-    ...staat.rotaties.map((r) => r.nieuweWortelPubDerB64u),
-  ]);
-  if (!geldigeWortels.has(koppeling.wortelPubDerB64u)) return false;
+  if (!koppeling || koppeling.schema !== 1 || koppeling.persoonsId !== staat.oprichting.persoonsId) return false;
+  const laatsteStaatMoment =
+    opties.nuIso
+    ?? staat.rotaties[staat.rotaties.length - 1]?.geroteerdOp
+    ?? koppeling.gekoppeldOp;
+  if (wortelWasBevoegdOp(staat, koppeling.wortelPubDerB64u, koppeling.gekoppeldOp, laatsteStaatMoment) !== null) {
+    return false;
+  }
   const { handtekeningB64u, ...kern } = koppeling;
   return verifieerEd25519(
     koppeling.wortelPubDerB64u,
@@ -684,11 +764,16 @@ export function verifieerApparaatIntrekking(
   staat: KlimopPersoonsStaat,
   /** KLIMOP-020: інші відомі відкликання — аварійний пристрій, який сам відкликаний, не може відкликати інших. */
   andereIntrekkingen?: readonly KlimopApparaatIntrekking[],
+  bezochteApparaatIds: ReadonlySet<string> = new Set(),
 ): { ok: true } | { ok: false; fout: string } {
   const sv = verifieerPersoonsStaat(staat);
   if (!sv.ok) return sv;
   if (!intrekking || intrekking.schema !== 1 || intrekking.persoonsId !== staat.oprichting.persoonsId) {
     return { ok: false, fout: 'APPARAAT_INTREKKING_ONGELDIG' };
+  }
+  const intrMs = Date.parse(intrekking.ingetrokkenOp);
+  if (!Number.isFinite(intrMs)) {
+    return { ok: false, fout: 'APPARAAT_INTREKKING_TIJDSTIP_ONGELDIG' };
   }
 
   if (intrekking.ondertekenaarSoort === 'wortel') {
@@ -709,12 +794,22 @@ export function verifieerApparaatIntrekking(
     ) {
       return { ok: false, fout: 'APPARAAT_INTREKKING_NOODCERTIFICAAT_ONTBREEKT' };
     }
+    const noodId = intrekking.noodApparaatCertificaat.apparaatId;
+    if (bezochteApparaatIds.has(noodId)) {
+      return { ok: false, fout: 'APPARAAT_INTREKKING_CYCLISCH' };
+    }
+    const volgendeBezocht = new Set(bezochteApparaatIds);
+    volgendeBezocht.add(noodId);
     const cv = verifieerApparaatCertificaat(intrekking.noodApparaatCertificaat, staat, {
       vereisteBevoegdheid: 'nood_betwisting',
       nuIso: intrekking.ingetrokkenOp,
       intrekkingen: andereIntrekkingen?.filter(
-        (a) => a.ingetrokkenApparaatId !== intrekking.ingetrokkenApparaatId || a.handtekeningB64u !== intrekking.handtekeningB64u,
+        (a) =>
+          (a.ingetrokkenApparaatId !== intrekking.ingetrokkenApparaatId
+            || a.handtekeningB64u !== intrekking.handtekeningB64u)
+          && Date.parse(a.ingetrokkenOp) <= intrMs,
       ),
+      bezochteApparaatIds: volgendeBezocht,
     });
     if (!cv.ok) return cv;
   }
@@ -740,6 +835,7 @@ export function verifieerApparaatCertificaat(
     vereisteBevoegdheid?: ApparaatBevoegdheid;
     intrekkingen?: readonly KlimopApparaatIntrekking[];
     nuIso?: string;
+    bezochteApparaatIds?: ReadonlySet<string>;
   } = {},
 ): { ok: true } | { ok: false; fout: string } {
   const sv = verifieerPersoonsStaat(staat);
@@ -761,7 +857,9 @@ export function verifieerApparaatCertificaat(
 
   if (
     opties.intrekkingen?.some(
-      (intr) => intr.ingetrokkenApparaatId === certificaat.apparaatId && verifieerApparaatIntrekking(intr, staat).ok,
+      (intr) =>
+        intr.ingetrokkenApparaatId === certificaat.apparaatId
+        && verifieerApparaatIntrekking(intr, staat, opties.intrekkingen, opties.bezochteApparaatIds).ok,
     )
   ) {
     return { ok: false, fout: 'APPARAAT_IS_INGETROKKEN' };
@@ -1067,6 +1165,7 @@ export function voltooiWettigHerstel(opties: {
     return { ok: false, fout: 'HERSTEL_PERSOON_KOMT_NIET_OVEREEN' };
   }
   const verankering = zoekVerankering(
+    opties.staat,
     opties.staat.herstelBeleidVerankeringen ?? [],
     opties.staat.actieveEpoche,
     opties.aanvraag.geopendOp,
@@ -1095,6 +1194,10 @@ export function voltooiWettigHerstel(opties: {
     geroteerdOp: nuIso,
     reden: 'wettig_drempel_herstel' as const,
     herstelAanvraagId: opties.aanvraag.aanvraagId,
+    verankeringenTotEpocheSha256: berekenVerankeringenTotEpocheSha256(
+      opties.staat.herstelBeleidVerankeringen ?? [],
+      opties.staat.actieveEpoche,
+    ),
     herstelCertificaat: {
       beleid: opties.beleid,
       aanvraag: {

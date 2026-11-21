@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-022",
+  "agent": "antigravity",
+  "tak": "fix/klimop-022-sluit-audit003-restbevindingen-20261121-195600",
+  "basisCommit": "6a705b3857f215a64c2575b770716e4d62438f53",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.6.0",
+  "regelsHash": "f1b6227978cedd14cecc559a756581689942ed580308898a68bd8cecc7fe47ef",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T19:56:42.617Z",
+  "bijgewerkt": "2026-11-21T19:56:42.617Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

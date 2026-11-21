@@ -61,6 +61,13 @@ const MCP_AANROEPEN_PER_UUR = 240;
 const klimopMcpTellers = new Map<string, number[]>();
 
 function binnenLimiet(sleutel: string, max: number, nuMs = Date.now()): boolean {
+  if (klimopMcpTellers.size > 256) {
+    for (const [k, tLijst] of klimopMcpTellers.entries()) {
+      const vers = tLijst.filter((t) => nuMs - t < VENSTER_MS);
+      if (vers.length === 0) klimopMcpTellers.delete(k);
+      else klimopMcpTellers.set(k, vers);
+    }
+  }
   const lijst = (klimopMcpTellers.get(sleutel) ?? []).filter((t) => nuMs - t < VENSTER_MS);
   if (lijst.length >= max) {
     klimopMcpTellers.set(sleutel, lijst);
@@ -75,16 +82,19 @@ function binnenLimiet(sleutel: string, max: number, nuMs = Date.now()): boolean 
 export const _klimopMcpLimietenLeeg = (): void => klimopMcpTellers.clear();
 
 /**
- * KLIMOP-021: створює окрему тимчасову копію стану на час одного агентського виклику MCP,
- * щоб інструменти з правом читання (`deploy.status`, `readOnlyHint: true`) ніколи не записували
- * у спільне сховище й не скидали спільні перемикачі власника навіть при штучній похибці.
+ * KLIMOP-021 / KLIMOP-022: створює окрему тимчасову копію стану на час одного агентського виклику MCP
+ * без копіювання живого файлового замка `.lock`, щоб інструменти з правом читання (`deploy.status`, `readOnlyHint: true`)
+ * ніколи не записували у спільне сховище й не блокувалися чужим замком.
  */
 function metGeisoleerdeMcpProefMap<T>(bronStaatMap: string | undefined, fn: (proefMap: string) => T): T {
   const bronMap = klimopStaatMap(bronStaatMap);
   const proefMap = mkdtempSync(join(tmpdir(), 'klimop-mcp-oefen-'));
   try {
     if (existsSync(bronMap)) {
-      cpSync(bronMap, proefMap, { recursive: true });
+      cpSync(bronMap, proefMap, {
+        recursive: true,
+        filter: (bronPad) => !bronPad.endsWith('.lock'),
+      });
     }
     return fn(proefMap);
   } finally {
@@ -100,13 +110,13 @@ export async function voerKlimopToolUit(
 ): Promise<ToolUit> {
   const eigenAgent = isAgentSlug(who.agent) ? v2Agent(who.agent).klant : (who.agent ? String(who.agent) : 'onbekend');
   try {
-    if (!binnenLimiet(`klimop:${who.userId}`, MCP_AANROEPEN_PER_UUR)) {
+    if (!binnenLimiet(`klimop:${who.userId}:${eigenAgent}`, MCP_AANROEPEN_PER_UUR)) {
       throw new KlimopFout('RATE_LIMITED', 429);
     }
 
     switch (name) {
       case KLIMOP_OVERZICHT: {
-        const ov = await klimopOverzichtA(undefined, opties?.staatMap);
+        const ov = await klimopOverzichtA(undefined, opties?.staatMap, { alleenLezenZonderMutatie: true });
         return uit({
           waarschuwing: GEGEVENS_MELDING,
           ...ov,
@@ -152,6 +162,7 @@ export async function voerKlimopToolUit(
           staatMap: opties?.staatMap,
           dienstId: typeof args.dienstId === 'string' && args.dienstId ? (args.dienstId as KlimopDienstId) : undefined,
           limiet: typeof args.limiet === 'number' ? args.limiet : undefined,
+          alleenLezenZonderMutatie: true,
         });
         return uit({
           waarschuwing: GEGEVENS_MELDING,
@@ -174,6 +185,7 @@ export async function voerKlimopToolUit(
           staatMap: opties?.staatMap,
           dienstId: typeof args.dienstId === 'string' && args.dienstId ? (args.dienstId as KlimopDienstId) : undefined,
           limiet: typeof args.limiet === 'number' ? args.limiet : undefined,
+          alleenLezenZonderMutatie: true,
         });
         return uit({
           waarschuwing: GEGEVENS_MELDING,
@@ -196,6 +208,7 @@ export async function voerKlimopToolUit(
           staatMap: opties?.staatMap,
           dienstId: typeof args.dienstId === 'string' && args.dienstId ? (args.dienstId as KlimopDienstId) : undefined,
           limiet: typeof args.limiet === 'number' ? args.limiet : undefined,
+          alleenLezenZonderMutatie: true,
         });
         return uit({
           waarschuwing: GEGEVENS_MELDING,

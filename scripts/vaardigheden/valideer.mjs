@@ -103,9 +103,12 @@ export function laadV2CatalogusSleutels(wortel = WORTEL) {
 // Незалежна перевірка «Плюща» виявила, що навички movnyi-zakon у сховищі не було, а штатний перевіряльник цього не помічав.
 export const VERPLICHTE_VAARDIGHEDEN = Object.freeze(['movnyi-zakon', 'klimop-architectuur', 'bijdragen-vastleggen']);
 export const TAALWET_VERWIJZING = '.agents/skills/movnyi-zakon/SKILL.md';
+export const TAALWET_NL_VERWIJZING = '.agents/skills/movnyi-zakon/VAARDIGHEID.nl.md';
 const VOORBEELD_TABEL_RE = /<!-- taalwet:verboden-voorbeelden:begin -->[\s\S]*?<!-- taalwet:verboden-voorbeelden:einde -->/g;
 export function zonderVoorbeeldTabel(rel, tekst) {
-  return rel === TAALWET_VERWIJZING ? tekst.replace(VOORBEELD_TABEL_RE, '') : tekst;
+  return rel === TAALWET_VERWIJZING || rel === TAALWET_NL_VERWIJZING
+    ? tekst.replace(VOORBEELD_TABEL_RE, '')
+    : tekst;
 }
 
 /** Перехідники агентів із orchestratie/beleid.json, які не посилаються на спільну навичку мовного закону. */

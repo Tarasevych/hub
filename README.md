@@ -22,7 +22,7 @@
 | **4. Структура репозиторію та карта коду** | [`docs/hub/СТРУКТУРА-ТЕК.uk.md`](./docs/hub/СТРУКТУРА-ТЕК.uk.md) | [`docs/hub/MAP-STRUCTUUR.nl.md`](./docs/hub/MAP-STRUCTUUR.nl.md) |
 | **5. Змінні середовища та ключі шифрування** | [`docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md`](./docs/hub/ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md) · [`ЗМІННІ-СЕРЕДОВИЩА.uk.md`](./ЗМІННІ-СЕРЕДОВИЩА.uk.md) | [`docs/hub/OMGEVINGSVARIABELEN.nl.md`](./docs/hub/OMGEVINGSVARIABELEN.nl.md) · [`OMGEVINGSVARIABELEN.nl.md`](./OMGEVINGSVARIABELEN.nl.md) |
 | **6. Координація `ORCH-001`, `BIJDRAGE-001`, `TRACE-001`, стек `B-009` та випуски** | [`docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md`](./docs/hub/КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) | [`docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./docs/hub/ORCHESTRATIE-EN-UITROL.nl.md) |
-| **Канонічні правила 14 агентів (`1.5.0`) та реєстр рішень (`B-024`)** | [`ПРАВИЛА-АГЕНТІВ.uk.md`](./ПРАВИЛА-АГЕНТІВ.uk.md) · [`orchestratie/РІШЕННЯ.uk.md`](./orchestratie/РІШЕННЯ.uk.md) | [`AGENTENREGELS.nl.md`](./AGENTENREGELS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) |
+| **Канонічні правила 14 агентів (`1.6.0`) та реєстр рішень (`B-024`–`B-025`)** | [`ПРАВИЛА-АГЕНТІВ.uk.md`](./ПРАВИЛА-АГЕНТІВ.uk.md) · [`orchestratie/РІШЕННЯ.uk.md`](./orchestratie/РІШЕННЯ.uk.md) | [`AGENTENREGELS.nl.md`](./AGENTENREGELS.nl.md) · [`orchestratie/BESLUITEN.nl.md`](./orchestratie/BESLUITEN.nl.md) |
 | **Безпека, розподілене зберігання та план перенесення** | [`НОТАТКИ-БЕЗПЕКИ.uk.md`](./НОТАТКИ-БЕЗПЕКИ.uk.md) · [`docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md`](./docs/beveiliging/РОЗПОДІЛЕНЕ-ЗАШИФРОВАНЕ-ЗБЕРІГАННЯ.uk.md) · [`ПЛАН-ПЕРЕНЕСЕННЯ.uk.md`](./ПЛАН-ПЕРЕНЕСЕННЯ.uk.md) | [`BEVEILIGINGSNOTITIES.nl.md`](./BEVEILIGINGSNOTITIES.nl.md) · [`docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md`](./docs/beveiliging/VERDEELDE-VERSLEUTELDE-OPSLAG.nl.md) · [`PORTEERPLAN.nl.md`](./PORTEERPLAN.nl.md) |
 
 ---
@@ -97,7 +97,7 @@ flowchart TB
             SRV["server/start.ts · Канонічний маршрутизатор + CSRF + Rate Limiter + Auth-Poort"]
             SPA["React 19 SPA (dist/) + 147 переглядачів форматів"]
             API["Backend API (backend/index.ts + спеціалізовані модулі)"]
-            WRK["Фоновий фоновий виконавець пошуку та OCR (zoek-werker.mjs / Tesseract)"]
+            WRK["Фоновий виконавець пошуку та OCR (zoek-werker.mjs / Tesseract)"]
         end
         MCP8091["MCP-двері (127.0.0.1:8091 · deploy/mcp/server.mjs)"]
         PG[("PostgreSQL 18.6 (mijnruimte)\n139 міграцій · FORCE RLS\nmijnruimte_app | mijnruimte_system | mijnruimte_migrator")]
@@ -131,38 +131,38 @@ flowchart TB
 - **План портування ([`ПЛАН-ПЕРЕНЕСЕННЯ.md`](ПЛАН-ПЕРЕНЕСЕННЯ.md), 03.10.2026):** ухвалено рішення повністю відмовитися від хмарної залежності AppDeploy (`@appdeploy/sdk` та `@appdeploy/client`) і перенести систему на власний сервер власника за Cloudflare Tunnel.
 - Написано сумісний платформний шар `@platform/server` ([`server/platform/`](server/platform/)) та `@platform/client` ([`src/platform/`](src/platform/)) поверх PostgreSQL (`app.records` з GIN-індексами JSONB), файлової системи `/srv/data/uploads` та змінних `/etc/mijn-ruimte/geheimen.env` (гілки [`basis-voor-zelf-hosten`](https://github.com/Tarasevych/hub/tree/basis-voor-zelf-hosten), [`zelf-hosten`](https://github.com/Tarasevych/hub/tree/zelf-hosten), [`sync-actief`](https://github.com/Tarasevych/hub/tree/sync-actief)).
 - **Безпекова реформа (Фази A, B, Auth Fase 1, Fase 2–3, Audit Fixes — див. [`НОТАТКИ-БЕЗПЕКИ.md`](НОТАТКИ-БЕЗПЕКИ.md)):**
-  - Гілка [`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1) (03.10.2026): усунено застарілий спадок-маршрути входу, впроваджено строгий PKCE (`oauth_pkce_v1`), прив'язку транзакцій входу до вкладки (`__Secure-tsv_aanmeld_binding_*`) та одноразовий атомарний передача контексту між піддоменами (`tsv_handoff_binding`).
+  - Гілка [`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1) (03.10.2026): усунено застарілі маршрути входу, впроваджено строгий PKCE (`oauth_pkce_v1`), прив'язку транзакцій входу до вкладки (`__Secure-tsv_aanmeld_binding_*`) та одноразове атомарне передавання контексту між піддоменами (`tsv_handoff_binding`).
   - Гілка [`beveiliging-fase-2-3`](https://github.com/Tarasevych/hub/tree/beveiliging-fase-2-3) (03.10.2026): впроваджено **захист на рівні рядків (RLS)** на рівні PostgreSQL, розділення на 3 ролі БД (`mijnruimte_migrator`, `mijnruimte_app` з `NOBYPASSRLS`, `mijnruimte_system`), центральний шлюз авторизації `auth-poort.ts` та Step-Up підтвердження (`STEP_UP_REQUIRED`).
   - Гілка [`beveiliging-fixes-audit`](https://github.com/Tarasevych/hub/tree/beveiliging-fixes-audit) (04.10.2026): захищено журнал аудиту `app.audit` криптографічним хеш-ланцюгом (`SECURITY DEFINER` функція `app.audit_toevoegen`), розділено `geheimen.env` і `migratie.env`, додано двомовні статичні сторінки `/privacy` та `/terms` без JS.
 
 ### Етап III. WebAuthn Ключі доступу, Меню v2, Технічний Простір і З'єднувачі ШІ (7–16 Жовтня 2026)
 - **Власне WebAuthn-ядро та Ключ доступу-схвалення оновлень (08–09.10.2026):**
   - У гілці [`passkey-schvalennya`](https://github.com/Tarasevych/hub/tree/passkey-schvalennya) реалізовано незалежне WebAuthn-ядро без сторонніх npm-залежностей ([`deploy/goedkeuring/webauthn-kern.mjs`](deploy/goedkeuring/webauthn-kern.mjs), підтримка ES256/EdDSA/RS256), яке використовується і додатком, і root-сценарієм для криптографічного підтвердження оновлень сервера на вкладці `Admin → Оновлення`.
-  - У гілці [`aanmeldmethoden`](https://github.com/Tarasevych/hub/tree/aanmeldmethoden) додано повноцінні користувацькі Ключі доступу у розділі «Способи входу» (`rpId: tarasevych.com`), а в [`bevestig-toegang`](https://github.com/Tarasevych/hub/tree/bevestig-toegang) — тимчасові коди доступу та гостьові сеансу (`/toegang`).
+  - У гілці [`aanmeldmethoden`](https://github.com/Tarasevych/hub/tree/aanmeldmethoden) додано повноцінні користувацькі Ключі доступу у розділі «Способи входу» (`rpId: tarasevych.com`), а в [`bevestig-toegang`](https://github.com/Tarasevych/hub/tree/bevestig-toegang) — тимчасові коди доступу та гостьові сеанси (`/toegang`).
 - **Глобальне Меню v2 ([`menu-v2`](https://github.com/Tarasevych/hub/tree/menu-v2), 09.10.2026):** створено нову навігаційну оболонку з доком (праворуч/угорі/унизу), швидкою панеллю та режимом редагування перетягуванням.
 - **Технічний профіль та MCP-Екосистема (12–16.10.2026):**
   - Серія гілок `claude/*` та `cursor/*-8d4d` побудувала **розділення Приватного й Технічного просторів** ([`claude/tech-profiel-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/tech-profiel-2026-10-13), [`cursor/mcp-spiegel-na-b-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/mcp-spiegel-na-b-8d4d)), **під'єднання ШІ одним натисканням** ([`claude/mcp-een-klik-2026-10-13`](https://github.com/Tarasevych/hub/tree/claude/mcp-een-klik-2026-10-13)), **термінал у оглядачі на базі xterm** ([`cursor/terminal-etap-c-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/terminal-etap-c-8d4d)), **Дошку ШІ-агентів і гранулярні обсяги повноважень** ([`cursor/ai-agent-board-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/ai-agent-board-8d4d)) та **З'єднувач v2 з реальними діями** ([`claude/connector-v2-2026-10-15`](https://github.com/Tarasevych/hub/tree/claude/connector-v2-2026-10-15), [`cursor/connector-functies-8d4d`](https://github.com/Tarasevych/hub/tree/cursor/connector-functies-8d4d)).
 
 ### Етап IV. Масштабне Розширення Модулів та Нідерландська Канонізація (17–30 Жовтня 2026)
 - **Sleutelkluis (Сховище ключів, 21.10.2026, міграція `0092`):** ключі даних користувача (DEK) ніколи не зберігаються на диску відкритими; для MCP-з'єднань агентів формуються криптографічні HKDF-конверти з `SLEUTELKLUIS_SLEUTEL_V1`.
-- **Глобальний пошук `/zoek` та OCR (22.10.2026, міграції `0100`–`0104`):** повнотекстовий пошук по інтерфейсу, пошті, вкладеннях, хмарі, календарях, дошці та GitHub із фоновим фоновим виконавцем вилучення тексту з PDF/Office/архівів (`zoek-werker.mjs`), OCR через Tesseract (`ukr+nld+eng+rus`) та автоматичним маскуванням секретів (`shared/geheim-patronen.ts`).
-- **Перевірка відмальовування при випуску (`rook-controle`, 22.10.2026):** після активації кожного випуску встановлювач запускає headless Chromium на ізольованій БД і перевіряє реальний відмальовування сторінок; при збої випуск автоматично повертається до попереднього стану (`ROOK_TERUGGEDRAAID`).
+- **Глобальний пошук `/zoek` та OCR (22.10.2026, міграції `0100`–`0104`):** повнотекстовий пошук по інтерфейсу, пошті, вкладеннях, хмарі, календарях, дошці та GitHub із фоновим виконавцем вилучення тексту з PDF/Office/архівів (`zoek-werker.mjs`), OCR через Tesseract (`ukr+nld+eng+rus`) та автоматичним маскуванням секретів (`shared/geheim-patronen.ts`).
+- **Перевірка відмальовування при випуску (`rook-controle`, 22.10.2026):** після активації кожного випуску встановлювач запускає безголовий Chromium на ізольованій БД і перевіряє реальне відмальовування сторінок; при збої випуск автоматично повертається до попереднього стану (`ROOK_TERUGGEDRAAID`).
 - **Нідерландська канонізація коду (24.10.2026):** 531 файл у `src/`, `backend/`, `shared/`, `server/`, `tests/`, `scripts/` перейменовано нідерландською за єдиним словником ([`docs/kaart/КАРТА-ФАЙЛІВ.md`](docs/kaart/КАРТА-ФАЙЛІВ.md)), а сценарій [`scripts/kaart-controle.mjs`](scripts/kaart-controle.mjs) інтегровано в `npm run build`.
 - **Adaptive Mail Полотно (пакети 1–3, 24–25.10.2026):** єдина рамка читання листа (`LeesVenster.tsx`), панель контексту гілки без ШІ (`ContextPaneel.tsx`: хронологія, групи версій вкладень, SPF/DKIM/DMARC, події `.ics`), верифікований блок «Що від вас потрібно?» (`WatNodigBlok.tsx`) із перевіркою цитат за оригіналом (`shared/ai-bronnen.ts`), поабзацне порівняння перекладу (`VergelijkTabel.tsx`) та порівняння версій документів PDF/DOCX (`VersieVergelijk.tsx`).
 - **Зони й гнізда рухомих кнопок (`shared/plaatsing.ts`, 25.10.2026):** математична модель розміщення всіх рухомих елементів інтерфейсу без перекриттів для телефона, планшета й комп'ютера.
 - **Cloud vNext (M1–M11), Huis vNext (`0128`), Notities vNext (`0129`), Werkblad v3 (`0114`), Agenda v3 (27–29.10.2026):** повне оновлення хмарного сховища (включно з архітектурою приватності M7), інтеграції Home Assistant, полотна робочого столу v3 та двосторонньої синхронізації календарів.
 
 ### Етап V. Аудит `SEC-001`, Оркестрація Агентів `ORCH-001` та `UX-AI-VAULT-001` (30 Жовтня — 1 Листопада 2026)
-- **Консолідація та аудит безпеки `SEC-001` (30–31.10.2026):** актуальний робоче середовище-код імпортовано в [`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030), проведено аудит і виправлення у [`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224) та базовий випуск [`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138).
+- **Консолідація та аудит безпеки `SEC-001` (30–31.10.2026):** актуальний код робочого середовища імпортовано в [`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030), проведено аудит і виправлення у [`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224) та базовий випуск [`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138).
 - **Система мультиагентної координації `ORCH-001` (31.10.2026, рішення `B-001`–`B-006`):** створено єдине джерело правил [`AGENTS.md`](AGENTS.md), машинну політику [`orchestratie/beleid.json`](orchestratie/beleid.json), криптографічний відбиток [`orchestratie/regels.lock.json`](orchestratie/regels.lock.json) та CLI/MCP/веб-конвеєр [`scripts/orch.mjs`](scripts/orch.mjs) для узгодженої роботи 8 ШІ-агентів (Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor).
 - **`MCP-ACCESS-001` та `UX-AI-VAULT-001` (01.11.2026):** впроваджено точну діагностику доступу ШІ з ізоляцією за під'єднанням, керування агентом в одному місці з підтвердженням Ключ доступу та єдине адаптивне Сховище секретів (PR #17, #18, #19).
 
 ### Етап VI. `LOGIN-001`, Інтеграція `INTEG-001`, `TRACE-001`, Мобільна Орбіта Пошти, `PRIVACY-001` та `IDENTITY-ACCOUNT` (1–4 Листопада 2026)
 - **`LOGIN-001` (01–02.11.2026):** мінімалістичний адаптивний багатомовний екран входу та оновлене меню збережених облікових записів.
 - **`INTEG-001` (03.11.2026):** масштабне зведення 9 паралельних гілок функціональності (сповіщення з поясненнями, дошка ШІ, смуга простору, прапорці мов, друк із перевіркою в Chrome, пошукове меню у верхній панелі, ремонт тестів) у єдину гілку [`feature/integ-001-zvedennia-20261103-102243`](https://github.com/Tarasevych/hub/tree/feature/integ-001-zvedennia-20261103-102243).
-- **`TRACE-001` (03.11.2026, рішення `B-007`/`B-008`, правила `1.4.1`):** обов'язковий незмінний журнал розробки `orchestratie/ontwikkelarchieven/<TASK-ID>.json` у кожному фіксації змін випуску та жорстка перевірка SHA-256 випускного архіву `.tar.gz` через GitHub API як на сайті (`voorcontrole`), так і в root-встановлювачі.
+- **`TRACE-001` (03.11.2026, рішення `B-007`/`B-008`, правила `1.4.1`):** обов'язковий незмінний журнал розробки `orchestratie/ontwikkelarchieven/<TASK-ID>.json` у кожній фіксації змін випуску та жорстка перевірка SHA-256 випускного архіву `.tar.gz` через GitHub API як на сайті (`voorcontrole`), так і в root-встановлювачі.
 - **Серія оновлень Пошти (`MAILORBIT-001` → `MAILMOB-001` → `MAILPOLISH-001` → `MAILFIX-001` → `MAILFIT-001`/`002`, 03–04.11.2026):** інтерактивна орбіта поштових сервісів на порожній сторінці пошти, мобільні шторки під'єднання для екранів 320px+, синхронізація 12-годинного Step-Up дозволу («Не питати знову») та виправлення мобільної верстки.
-- **Оновлення серверного стека `B-009` (04.11.2026, правила `1.4.2`):** фіксація переходу робоче середовище ВМ на `Ubuntu 26.04.1 LTS`, `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`, `Caddy 2.11.7` та вирішення проблеми seccomp-фільтра `systemd 259` з викликом `openat2` у `GNU tar 1.35` (`RestrictSUIDSGID=no`).
+- **Оновлення серверного стека `B-009` (04.11.2026, правила `1.4.2`):** фіксація переходу ВМ робочого середовища на `Ubuntu 26.04.1 LTS`, `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`, `Caddy 2.11.7` та вирішення проблеми seccomp-фільтра `systemd 259` з викликом `openat2` у `GNU tar 1.35` (`RestrictSUIDSGID=no`).
 - **`PRIVACY-001` (04.11.2026, рішення `B-010`/`B-011`, правила `1.4.6`):** повне видалення персональних даних та реальних IP-адрес із коду, тестів, документації та історії git; винесення реквізитів у серверні змінні `MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`, `MR_BEHEERSUBNET`, `MR_VM_SSH`.
 - **`IDENTITY-ACCOUNT` / `IDENTITY-001` / `IDENTITY-002` (04.11.2026):** проєктування та реалізація єдиного екрана облікового запису з 12 розділами та діалогом керування фото профілю.
 
@@ -174,10 +174,10 @@ flowchart TB
 
 > [!IMPORTANT]
 > **Головне правило навігації по гілках:**
-> 1. Поточний канонічний стан проєкту знаходиться у гілках **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** та **[`integratie`](https://github.com/Tarasevych/hub/tree/integratie)** (вони вказують на один і той самий фіксація змін `3095e5f` станом на синхронізацію `B-009`).
+> 1. Поточний канонічний стан проєкту знаходиться у гілках **[`voornaamst`](https://github.com/Tarasevych/hub/tree/voornaamst)** та **[`integratie`](https://github.com/Tarasevych/hub/tree/integratie)** (вони вказують на одну й ту саму фіксацію змін `3095e5f` станом на синхронізацію `B-009`).
 > 2. Усі **28 гілок Категорії 3.3** вже **повністю влиті** (`✅ Злито`) в історію `voornaamst` — їхній код уже є у головній гілці.
 > 3. **9 гілок Категорії 3.2** містять **нові незлиті фіксації змін від 04.11.2026** (`🔄 Активна / Кандидат`) поверх або паралельно з `voornaamst`.
-> 4. **30 гілок Категорії 3.4** (вересень — 16 жовтня 2026) — це **архівні гілки до консолідації робоче середовище-знімка `SEC-001` (30.10.2026)** (`📦 Архів`). Їхні напрацювання вже увійшли до кодової бази через знімок `016093f`, тому напряму зливати їх у `integratie` або `voornaamst` **не потрібно**.
+> 4. **30 гілок Категорії 3.4** (вересень — 16 жовтня 2026) — це **архівні гілки до консолідації знімка робочого середовища `SEC-001` (30.10.2026)** (`📦 Архів`). Їхні напрацювання вже увійшли до кодової бази через знімок `016093f`, тому напряму зливати їх у `integratie` або `voornaamst` **не потрібно**.
 
 ---
 
@@ -548,7 +548,7 @@ Tarasevych/hub
 
 ## 8. Координація всіх 14 ШІ-агентів (`ORCH-001` / `BIJDRAGE-001` / `TRACE-001`) та команди розробки
 
-Над репозиторієм паралельно працюють **14 інтеграцій ШІ-агентів** (усі зареєстровані в [`shared/connector-v2/agenten.ts`](shared/connector-v2/agenten.ts) та [`orchestratie/beleid.json`](orchestratie/beleid.json), версія правил `1.5.0`, рішення `B-024`). Для запобігання конфліктам, втраті авторства й перезапису чужої роботи діє обов'язковий контур **ORCH-001 + BIJDRAGE-001 + VERWIJZING-001 + KLIMOP-001** ([`AGENTS.md`](AGENTS.md)):
+Над репозиторієм паралельно працюють **14 інтеграцій ШІ-агентів** (усі зареєстровані в [`shared/connector-v2/agenten.ts`](shared/connector-v2/agenten.ts) та [`orchestratie/beleid.json`](orchestratie/beleid.json), версія правил `1.6.0`, рішення `B-024`–`B-025`). Для запобігання конфліктам, втраті авторства й перезапису чужої роботи діє обов'язковий контур **ORCH-001 + BIJDRAGE-001 + VERWIJZING-001 + KLIMOP-001** ([`AGENTS.md`](AGENTS.md)):
 
 | № | Ідентифікатор (`beleid.json`) | Агент / Середовище | Власна адреса з'єднувача MCP | Канонічний перехідник (`🇺🇦 UK` / `🇳🇱 NL`) |
 |---|---|---|---|---|
@@ -567,7 +567,7 @@ Tarasevych/hub
 | 13 | `devin` | **Devin** (Cognition) | `https://mcp.tarasevych.com/devin` | [`DEVIN.md`](DEVIN.md) · [`DEVIN.nl.md`](DEVIN.nl.md) |
 | 14 | `opencode` | **OpenCode** | `https://mcp.tarasevych.com/opencode` | [`OPENCODE.md`](OPENCODE.md) · [`OPENCODE.nl.md`](OPENCODE.nl.md) |
 
-1. **Єдине джерело правил і навичок:** [`AGENTS.md`](AGENTS.md) + [`orchestratie/beleid.json`](orchestratie/beleid.json) + [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) та каталог спільних навичок [`.agents/skills/`](.agents/skills/) ([`scripts/vaardigheden/catalogus.json`](scripts/vaardigheden/catalogus.json), 12 навичок включно з [`klimop-architectuur`](.agents/skills/klimop-architectuur/SKILL.md)). Перехідники агентів — лише тонкі вказівники (≤ 25 непорожніх рядків) із маркером `<!-- orch-adapter -->`.
+1. **Єдине джерело правил і навичок:** [`AGENTS.md`](AGENTS.md) + [`orchestratie/beleid.json`](orchestratie/beleid.json) + [`orchestratie/BESLUITEN.md`](orchestratie/BESLUITEN.md) та каталог спільних навичок [`.agents/skills/`](.agents/skills/) ([`scripts/vaardigheden/catalogus.json`](scripts/vaardigheden/catalogus.json), 13 навичок включно з [`klimop-architectuur`](.agents/skills/klimop-architectuur/SKILL.md) та [`movnyi-zakon`](.agents/skills/movnyi-zakon/SKILL.md)). Перехідники агентів — лише тонкі вказівники (≤ 25 непорожніх рядків) із маркером `<!-- orch-adapter -->`.
 2. **Ізоляція задач та авторство:** кожна задача має сталий ідентифікатор (`ABC-001`), власну гілку `feature|fix|audit|release/<тема>-YYYYMMDD-HHMMSS`, файл декларації `orchestratie/taken/<TASK-ID>.json`, запис авторства `orchestratie/bijdragen/<TASK-ID>/…json` (**BIJDRAGE-001**), доповнення досьє функції `orchestratie/onderwerpen/*.json` та зафіксований журнал розробки `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (**TRACE-001**).
 3. **Захищені гілки та робоче середовище:** жоден агент не пише напряму в `voornaamst`, `integratie`, `release/*` чи чужі гілки й не змінює робочу інфраструктуру без явного погодження власника.
 
@@ -585,7 +585,7 @@ npm run typecheck:server                             # Перевірка тип
 
 # 2. Запуск модульних випробувань та валідаторів навичок
 node scripts/eenheidstests.mjs                       # Усі модульні випробування (або з фільтром, напр.: node scripts/eenheidstests.mjs orch)
-node scripts/vaardigheden/valideer.mjs               # Перевірка каталогу 12 спільних навичок (.agents/skills/) і мовного закону
+node scripts/vaardigheden/valideer.mjs               # Перевірка каталогу 13 спільних навичок (.agents/skills/) і мовного закону
 node scripts/kaart-controle.mjs                      # Перевірка цілісності карти нідерландських назв файлів
 node scripts/plaatsing-controle.mjs                  # Перевірка зон і гнізд рухомих кнопок та відсутності несанкціонованих position:fixed
 node scripts/kleur-contrast-controle.mjs             # Перевірка контрастності кольорових палітр

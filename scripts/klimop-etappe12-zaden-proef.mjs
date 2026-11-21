@@ -582,11 +582,11 @@ async function voerEtappe12ProefUit() {
 
       schoneHerbouwZonderOudeServerOk =
         herbouwUitZaad.ok === true
-        && herbouwUitZaad.hersteldePadLijst.length === 12
+        && herbouwUitZaad.hersteldePadLijst.length === m.KLIMOP_TWAALF_KERNMODULES.length
         && herbouwUitZaad.nieuweRechtsgebieden.join(',') === 'IS,NO,SE'
         && fysiekeHerbouw.ok === true
         && fysiekeHerbouw.opSchijfGeschrevenEnGeverifieerd === true
-        && Object.keys(fysiekeHerbouw.hersteldeBestandenSha256).length === 12
+        && Object.keys(fysiekeHerbouw.hersteldeBestandenSha256).length === m.KLIMOP_TWAALF_KERNMODULES.length
         && verspreidGen2.ok === true
         && verspreidGen2.bevestigdeKnooppuntIds.length === 3;
 
@@ -658,7 +658,7 @@ async function voerEtappe12ProefUit() {
     // 4. Постійний розвиток 16 напрямів ШІ-агентів (§32–§34) та звірка 12 засад §46 і 25 документів §44
     // ---------------------------------------------------------------------------------------------
     const beleidJson = JSON.parse(await readFile(resolve(process.cwd(), 'orchestratie/beleid.json'), 'utf8'));
-    const actieveRegelsVersie = String(beleidJson.regelsVersie ?? '1.5.0');
+    const actieveRegelsVersie = String(beleidJson.regelsVersie ?? '1.6.0');
 
     const veiligVoorstel = m.beoordeelAutonoomOntwikkelVoorstel({
       voorstelId: 'VST-013-PQ',
@@ -738,7 +738,7 @@ async function voerEtappe12ProefUit() {
       console.log(JSON.stringify(resultaat, null, 2));
     } else {
       console.log('KLIMOP Етап 12 · «Насіння» (Документ №19), спадкоємність (Документ №23) та постійний розвиток');
-      console.log(`  Самодостатнє «Насіння» (12 модулів, дерево Меркла, FROST + Ed25519+ML-DSA-65): ok=${resultaat.zaadPakketEnAfhankelijkhedenOk}`);
+      console.log(`  Самодостатнє «Насіння» (${m.KLIMOP_TWAALF_KERNMODULES.length} модулів, дерево Меркла, FROST + Ed25519+ML-DSA-65): ok=${resultaat.zaadPakketEnAfhankelijkhedenOk}`);
       console.log(`  Чиста відбудова Покоління 2 (SE, IS, NO) після вимкнення старого головного сервера: ok=${resultaat.schoneHerbouwZonderOudeServerOk}`);
       console.log(`  Передавання спадкоємності без початкового автора (72-год замок, 0 розкриття даних): ok=${resultaat.opvolgingZonderOorspronkelijkeAuteurOk}`);
       console.log(`  Контур 16 напрямів ШІ-агентів, 12/12 засад §46 та 25/25 обов’язкових документів §44: ok=${resultaat.duurzameOntwikkelingEnEindvisie46Ok}`);

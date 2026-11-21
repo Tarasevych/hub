@@ -161,9 +161,10 @@ async function voerEtappe11ProefUit() {
     if (!hdrAntw.ok) throw new Error('Handdruk mislukt');
     const hdrVoltooid = m.voltooiStengelHanddruk(knA, hdrPakket, hdrAntw.antwoord, { nuIso });
     if (!hdrVoltooid.ok) throw new Error('Handdruk voltooiing mislukt');
-    const kader1 = m.versleutelStengelKader(hdrVoltooid.sessie, Buffer.from('eerste-kader', 'utf8'));
-    const eersteOntvangst = m.ontsleutelStengelKader(hdrAntw.sessie, kader1);
-    const herhalingOntvangst = m.ontsleutelStengelKader(hdrAntw.sessie, kader1);
+    const kaderTijdOpt = { nuMs: Date.parse(nuIso) + 1000 };
+    const kader1 = m.versleutelStengelKader(hdrVoltooid.sessie, Buffer.from('eerste-kader', 'utf8'), kaderTijdOpt);
+    const eersteOntvangst = m.ontsleutelStengelKader(hdrAntw.sessie, kader1, kaderTijdOpt);
+    const herhalingOntvangst = m.ontsleutelStengelKader(hdrAntw.sessie, kader1, kaderTijdOpt);
     // 38.7: зміна підписаних відомостей мандата
     const mandaatGoed = m.ondertekenKlimopMandaat(
       {

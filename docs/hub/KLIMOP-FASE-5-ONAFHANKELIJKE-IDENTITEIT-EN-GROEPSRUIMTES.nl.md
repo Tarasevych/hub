@@ -1,11 +1,11 @@
 > 🌐 **Taal / Мова:** [Українська](ПЛЮЩ-ЕТАП-5-НЕЗАЛЕЖНА-ІДЕНТИЧНІСТЬ-ТА-ГРУПОВІ-ПРОСТОРИ.uk.md) · **Nederlands** | [Startpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md) · [Hoofdarchitectuurmanifest «Klimop»](ARCHITECTUURMANIFEST-KLIMOP.nl.md) · [Fase 1 — Kern en uitgaveplan](KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md) · [Fase 2 — «Stengels»](KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md) · [Fase 3 — Versleuteling en opslag](KLIMOP-FASE-3-VERSLEUTELING-EN-VERDEELDE-OPSLAG.nl.md) · [Fase 4 — Gedistribueerde sleutels en FROST](KLIMOP-FASE-4-GEDISTRIBUEERDE-SLEUTELS-EN-DREMPELHANDTEKENINGEN.nl.md)
 
-# Fase 5 van het ecosysteem «Klimop» — Zelfsoevereine identiteit, vertrouwde apparaten, wettig toegangsherstel en `MLS`-groepsruimtes (`KLIMOP-006`)
+# Fase 5 van het ecosysteem «Klimop» — Zelfsoevereine identiteit, vertrouwde apparaten, wettig toegangsherstel en groepsepocheruimtes (`KLIMOP-006`)
 
 - **Uitvoeringsdatum:** 20-11-2026
 - **Coördinatietaak:** `KLIMOP-006` (bouwt voort op het in `integratie` samengevoegde verzoek nr. 187 `KLIMOP-005`, samenvoeging `5bd4bfcd7451db1dbe80b1c7b6ebece071b1b001`)
 - **Programmatische realisatie:**
-  - Zelfsoevereine persoonsidentiteit `klid1_…`, dienstpseudoniemen `psid1_…`, compatibiliteitsbrug met huidig `userId`, apparaatcertificaten en intrekkingen, meerzijdig toegangsherstel via Pedersen-delen en groepsbeveiliging volgens de beginselen van `RFC 9420 (MLS)`: [`shared/klimop/identiteit.ts`](../../shared/klimop/identiteit.ts)
+  - Zelfsoevereine persoonsidentiteit `klid1_…`, dienstpseudoniemen `psid1_…`, compatibiliteitsbrug met huidig `userId`, apparaatcertificaten en intrekkingen, meerzijdig toegangsherstel via Pedersen-delen en vereenvoudigde groepsepocheversleuteling naar het idee van `RFC 9420` (geen volledige `MLS`): [`shared/klimop/identiteit.ts`](../../shared/klimop/identiteit.ts)
   - Quorumcliënt voor het geheimvrije identiteits- en intrekkingsregister: [`backend/klimop-identiteit-client.ts`](../../backend/klimop-identiteit-client.ts)
   - Geïsoleerde knoopafhandeling voor het identiteitsregister met terugdraaibeveiliging op epochen: [`backend/klimop-knooppunt-agent.ts`](../../backend/klimop-knooppunt-agent.ts)
   - Herhaalbaar Fase 5-proefscenario (`NL`, `CH`, `UA`): [`scripts/klimop-etappe5-identiteit-proef.mjs`](../../scripts/klimop-etappe5-identiteit-proef.mjs)
@@ -69,4 +69,4 @@ Lokale proefopdracht op 3 onafhankelijke knooppunten (`NL`, `CH`, `UA` op `127.0
 ```bash
 node scripts/klimop-etappe5-identiteit-proef.mjs
 ```
-Bewijst zelfsoevereine identiteit `klid1_…`, gescheiden dienstpseudoniemen, quorumintrekking van een gestolen telefoon bij een in quarantaine geplaatst knooppunt `CH`, voorwaartse en na-compromittering-beveiliging in `MLS`, blokkade van onwettige erfopvolging door de eigenaar en wettig `2-van-3` Pedersen-herstel na het tijdslot van 48 uur. Alle §39-scenario's en de 15 vragen uit §42 worden automatisch getoetst in [`tests/eenheid/klimop-006-etappe5-identiteit-mls-20261120.test.ts`](../../tests/eenheid/klimop-006-etappe5-identiteit-mls-20261120.test.ts).
+Bewijst zelfsoevereine identiteit `klid1_…`, gescheiden dienstpseudoniemen, quorumintrekking van een gestolen telefoon bij een in quarantaine geplaatst knooppunt `CH`, voorwaartse en na-compromittering-beveiliging van het vereenvoudigde groepsepocheprotocol naar het idee van `RFC 9420`, blokkade van onwettige erfopvolging door de eigenaar en wettig `2-van-3` Pedersen-herstel na het tijdslot van 48 uur. Alle §39-scenario's en de 15 vragen uit §42 worden automatisch getoetst in [`tests/eenheid/klimop-006-etappe5-identiteit-mls-20261120.test.ts`](../../tests/eenheid/klimop-006-etappe5-identiteit-mls-20261120.test.ts).

@@ -9,6 +9,7 @@ import {
   appendFileSync,
   closeSync,
   existsSync,
+  fsyncSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -183,29 +184,38 @@ function metOverdrachtSlot<T>(map: string, fn: () => T): T {
   }
 }
 
-/** Обчислює сталий відбиток початку, кінця та точного розміру файла журналу за сталий час O(1) (до 12 КіБ). */
-function berekenBestandStaartVingerafdruk(
+/** Атомарно записує файл із примусовим скиданням буферів fsyncSync перед перейменуванням. */
+function schrijfBestandAtomairMetSync(doelPad: string, inhoudUtf8: string): void {
+  const tmpPad = `${doelPad}.tmp-${randomBytes(6).toString('hex')}`;
+  const fd = openSync(tmpPad, 'wx');
+  try {
+    writeFileSync(fd, inhoudUtf8, 'utf8');
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+  renameSync(tmpPad, doelPad);
+}
+
+/** Обчислює точний відбиток SHA-256 усього файла журналу потоковим читанням по 64 КіБ без сліпих зон посередині. */
+function berekenBestandVolledigeVingerafdruk(
   pad: string,
 ): { grootteBytes: number; vingerafdrukSha256: string } | null {
   if (!existsSync(pad)) return null;
   const fd = openSync(pad, 'r');
   try {
     const grootteBytes = statSync(pad).size;
-    const kopLengte = Math.min(4096, grootteBytes);
-    const kopBuf = Buffer.alloc(kopLengte);
-    if (kopLengte > 0) {
-      readSync(fd, kopBuf, 0, kopLengte, 0);
-    }
-    const staartLengte = grootteBytes > 4096 ? Math.min(8192, grootteBytes) : 0;
-    const staartBuf = Buffer.alloc(staartLengte);
-    if (staartLengte > 0) {
-      readSync(fd, staartBuf, 0, staartLengte, Math.max(0, grootteBytes - staartLengte));
-    }
     const h = createHash('sha256');
-    h.update(`${grootteBytes}|`, 'utf8');
-    h.update(kopBuf);
-    h.update('|', 'utf8');
-    h.update(staartBuf);
+    h.update(`klimop-logboek-volledig-v2|${grootteBytes}|`, 'utf8');
+    const blok = Buffer.allocUnsafe(65_536);
+    let pos = 0;
+    while (pos < grootteBytes) {
+      const gelezen = readSync(fd, blok, 0, Math.min(blok.length, grootteBytes - pos), pos);
+      if (gelezen <= 0) break;
+      h.update(blok.subarray(0, gelezen));
+      pos += gelezen;
+    }
+    if (pos !== grootteBytes) return null;
     return { grootteBytes, vingerafdrukSha256: h.digest('hex') };
   } finally {
     closeSync(fd);
@@ -218,7 +228,7 @@ function leesGeldigLogboekCheckpoint<TKeten>(
   const cpPad = `${pad}.checkpoint.json`;
   if (!existsSync(pad) || !existsSync(cpPad)) return null;
   try {
-    const actueel = berekenBestandStaartVingerafdruk(pad);
+    const actueel = berekenBestandVolledigeVingerafdruk(pad);
     if (!actueel) return null;
     const parsed = JSON.parse(readFileSync(cpPad, 'utf8')) as Partial<LogboekCheckpointBestand<TKeten>>;
     if (
@@ -245,10 +255,9 @@ function schrijfLogboekCheckpoint<TKeten>(
   totaalAantal: number,
   ketenIntegriteit: TKeten,
 ): void {
-  const actueel = berekenBestandStaartVingerafdruk(pad);
+  const actueel = berekenBestandVolledigeVingerafdruk(pad);
   if (!actueel) return;
   const cpPad = `${pad}.checkpoint.json`;
-  const tmpPad = `${cpPad}.tmp-${randomBytes(6).toString('hex')}`;
   const inhoud: LogboekCheckpointBestand<TKeten> = {
     schema: 1,
     totaalAantal,
@@ -256,8 +265,7 @@ function schrijfLogboekCheckpoint<TKeten>(
     vingerafdrukSha256: actueel.vingerafdrukSha256,
     ketenIntegriteit,
   };
-  writeFileSync(tmpPad, `${JSON.stringify(inhoud)}\n`, 'utf8');
-  renameSync(tmpPad, cpPad);
+  schrijfBestandAtomairMetSync(cpPad, `${JSON.stringify(inhoud)}\n`);
 }
 
 /** Читає лише хвостовий фрагмент великого JSONL-журналу без завантаження всієї історії в пам'ять. */
@@ -404,13 +412,9 @@ function pasOverdrachtWalToe(map: string, wal: OverdrachtWalBestand): void {
   }
 }
 
-/**
- * Дограє перервану WAL-транзакцію після можливого аварійного перезапуску між файловими кроками (ідемпотентно за ID події).
- */
-export function herstelOnderbrokenOverdrachtTransactie(
-  opgegevenMap?: string,
+function herstelOnderbrokenOverdrachtTransactieBinnenSlot(
+  map: string,
 ): { hersteld: boolean; transactieId: string | null } {
-  const map = klimopStaatMap(opgegevenMap);
   const walPad = join(map, WAL_BESTAND);
   if (!existsSync(walPad)) {
     return { hersteld: false, transactieId: null };
@@ -438,6 +442,17 @@ export function herstelOnderbrokenOverdrachtTransactie(
   }
 }
 
+/**
+ * Дограє перервану WAL-транзакцію після можливого аварійного перезапуску між файловими кроками
+ * виключно під міжпроцесним замком `metOverdrachtSlot` (ідемпотентно за ID події).
+ */
+export function herstelOnderbrokenOverdrachtTransactie(
+  opgegevenMap?: string,
+): { hersteld: boolean; transactieId: string | null } {
+  const map = klimopStaatMap(opgegevenMap);
+  return metOverdrachtSlot(map, () => herstelOnderbrokenOverdrachtTransactieBinnenSlot(map));
+}
+
 function voerOverdrachtTransactieUit(
   map: string,
   invoer: {
@@ -449,7 +464,6 @@ function voerOverdrachtTransactieUit(
 ): void {
   mkdirSync(map, { recursive: true });
   const walPad = join(map, WAL_BESTAND);
-  const tmpWalPad = `${walPad}.tmp-${randomBytes(6).toString('hex')}`;
   const wal: OverdrachtWalBestand = {
     schema: 1,
     transactieId: `tx_${Date.now()}_${randomBytes(4).toString('hex')}`,
@@ -459,8 +473,7 @@ function voerOverdrachtTransactieUit(
     ...(invoer.dubbelRegel ? { dubbelRegel: invoer.dubbelRegel } : {}),
     ...(invoer.attestRegel ? { attestRegel: invoer.attestRegel } : {}),
   };
-  writeFileSync(tmpWalPad, `${JSON.stringify(wal)}\n`, 'utf8');
-  renameSync(tmpWalPad, walPad);
+  schrijfBestandAtomairMetSync(walPad, `${JSON.stringify(wal)}\n`);
   pasOverdrachtWalToe(map, wal);
 }
 
@@ -568,9 +581,7 @@ function leesSchakelaarsBestand(map: string): SchakelaarOpslagBestand {
 function schrijfSchakelaarsAtomair(map: string, staat: SchakelaarOpslagBestand): void {
   mkdirSync(map, { recursive: true });
   const doelPad = join(map, SCHAKELAARS_BESTAND);
-  const tmpPad = join(map, `${SCHAKELAARS_BESTAND}.tmp-${randomBytes(6).toString('hex')}`);
-  writeFileSync(tmpPad, `${JSON.stringify(staat, null, 2)}\n`, 'utf8');
-  renameSync(tmpPad, doelPad);
+  schrijfBestandAtomairMetSync(doelPad, `${JSON.stringify(staat, null, 2)}\n`);
 }
 
 function hashSleutelIdVoorLogboek(sleutelId: string): string {
@@ -755,12 +766,16 @@ export function leesKlimopSpiegelLogboek(opties?: {
   limiet?: number;
   dienstId?: KlimopDienstId;
   volledigeGeschiedenisControle?: boolean;
+  alleenLezenZonderMutatie?: boolean;
 }): KlimopSpiegelLogboekOverzicht {
   const map = klimopStaatMap(opties?.staatMap);
   if (opties?.dienstId !== undefined && !KLIMOP_ELF_DIENSTEN.includes(opties.dienstId)) {
     throw new KlimopFout('ONBEKENDE_KLIMOP_DIENST', 400);
   }
-  herstelOnderbrokenOverdrachtTransactie(map);
+  const alleenLezen = opties?.alleenLezenZonderMutatie === true;
+  if (!alleenLezen && existsSync(join(map, WAL_BESTAND))) {
+    herstelOnderbrokenOverdrachtTransactie(map);
+  }
   const schakelaarsBestand = leesSchakelaarsBestand(map);
   const schakelaars = KLIMOP_ELF_DIENSTEN.map((d) => schakelaarsBestand.diensten[d]);
   const limiet = Math.min(
@@ -805,6 +820,7 @@ export function leesKlimopSpiegelLogboek(opties?: {
     }
   }
 
+  const grootteVoorLezen = existsSync(pad) ? statSync(pad).size : 0;
   const ruw = leesAlleLogboekRegelsRuw(map);
   const keten =
     ruw.parseerFoutBijRegel !== null
@@ -816,8 +832,12 @@ export function leesKlimopSpiegelLogboek(opties?: {
           fout: 'LOGBOEK_JSON_BESCHADIGD',
         }
       : verifieerSpiegelLogboekKeten(ruw.regels);
-  if (keten.ok && existsSync(pad)) {
-    schrijfLogboekCheckpoint(pad, ruw.regels.length, keten);
+  if (!alleenLezen && keten.ok && existsSync(pad)) {
+    metOverdrachtSlot(map, () => {
+      if (!existsSync(join(map, WAL_BESTAND)) && existsSync(pad) && statSync(pad).size === grootteVoorLezen) {
+        schrijfLogboekCheckpoint(pad, ruw.regels.length, keten);
+      }
+    });
   }
 
   const gefilterd = opties?.dienstId
@@ -874,7 +894,7 @@ export function voerPassieveSpiegelLeesProefUit(
 
   const map = klimopStaatMap(opties?.staatMap);
   return metOverdrachtSlot(map, () => {
-    herstelOnderbrokenOverdrachtTransactie(map);
+    herstelOnderbrokenOverdrachtTransactieBinnenSlot(map);
     const nuIso = new Date().toISOString();
     const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
 
@@ -1375,12 +1395,16 @@ export function leesKlimopDubbelSchrijvenLogboek(opties?: {
   limiet?: number;
   dienstId?: KlimopDienstId;
   volledigeGeschiedenisControle?: boolean;
+  alleenLezenZonderMutatie?: boolean;
 }): KlimopDubbelLogboekOverzicht {
   const map = klimopStaatMap(opties?.staatMap);
   if (opties?.dienstId !== undefined && !KLIMOP_ELF_DIENSTEN.includes(opties.dienstId)) {
     throw new KlimopFout('ONBEKENDE_KLIMOP_DIENST', 400);
   }
-  herstelOnderbrokenOverdrachtTransactie(map);
+  const alleenLezen = opties?.alleenLezenZonderMutatie === true;
+  if (!alleenLezen && existsSync(join(map, WAL_BESTAND))) {
+    herstelOnderbrokenOverdrachtTransactie(map);
+  }
   const schakelaarsBestand = leesSchakelaarsBestand(map);
   const schakelaars = KLIMOP_ELF_DIENSTEN.map((d) => schakelaarsBestand.diensten[d]);
   const limiet = Math.min(
@@ -1424,6 +1448,7 @@ export function leesKlimopDubbelSchrijvenLogboek(opties?: {
     }
   }
 
+  const grootteVoorLezen = existsSync(pad) ? statSync(pad).size : 0;
   const ruw = leesAlleDubbelKwitantiesRuw(map);
   const keten =
     ruw.parseerFoutBijRegel !== null
@@ -1435,8 +1460,12 @@ export function leesKlimopDubbelSchrijvenLogboek(opties?: {
           fout: 'DUBBEL_LOGBOEK_JSON_BESCHADIGD',
         }
       : verifieerDubbelKwitantieKeten(ruw.kwitanties);
-  if (keten.ok && existsSync(pad)) {
-    schrijfLogboekCheckpoint(pad, ruw.kwitanties.length, keten);
+  if (!alleenLezen && keten.ok && existsSync(pad)) {
+    metOverdrachtSlot(map, () => {
+      if (!existsSync(join(map, WAL_BESTAND)) && existsSync(pad) && statSync(pad).size === grootteVoorLezen) {
+        schrijfLogboekCheckpoint(pad, ruw.kwitanties.length, keten);
+      }
+    });
   }
 
   const gefilterd = opties?.dienstId
@@ -1499,7 +1528,7 @@ export function voerGecontroleerdeDubbelSchrijfProefUit(
 
   const map = klimopStaatMap(opties?.staatMap);
   return metOverdrachtSlot(map, () => {
-    herstelOnderbrokenOverdrachtTransactie(map);
+    herstelOnderbrokenOverdrachtTransactieBinnenSlot(map);
     const nuIso = new Date().toISOString();
     const nuMs = Date.now();
     const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
@@ -2262,12 +2291,16 @@ export function leesKlimopQuorumAttestLogboek(opties?: {
   limiet?: number;
   dienstId?: KlimopDienstId;
   volledigeGeschiedenisControle?: boolean;
+  alleenLezenZonderMutatie?: boolean;
 }): KlimopQuorumLogboekOverzicht {
   const map = klimopStaatMap(opties?.staatMap);
   if (opties?.dienstId !== undefined && !KLIMOP_ELF_DIENSTEN.includes(opties.dienstId)) {
     throw new KlimopFout('ONBEKENDE_KLIMOP_DIENST', 400);
   }
-  herstelOnderbrokenOverdrachtTransactie(map);
+  const alleenLezen = opties?.alleenLezenZonderMutatie === true;
+  if (!alleenLezen && existsSync(join(map, WAL_BESTAND))) {
+    herstelOnderbrokenOverdrachtTransactie(map);
+  }
   const schakelaarsBestand = leesSchakelaarsBestand(map);
   const schakelaars = KLIMOP_ELF_DIENSTEN.map((d) => schakelaarsBestand.diensten[d]);
   const limiet = Math.min(
@@ -2311,6 +2344,7 @@ export function leesKlimopQuorumAttestLogboek(opties?: {
     }
   }
 
+  const grootteVoorLezen = existsSync(pad) ? statSync(pad).size : 0;
   const ruw = leesAlleQuorumAttestenRuw(map);
   const keten =
     ruw.parseerFoutBijRegel !== null
@@ -2322,8 +2356,12 @@ export function leesKlimopQuorumAttestLogboek(opties?: {
           fout: 'ATTEST_LOGBOEK_JSON_BESCHADIGD',
         }
       : verifieerQuorumAttestKeten(ruw.attesten);
-  if (keten.ok && existsSync(pad)) {
-    schrijfLogboekCheckpoint(pad, ruw.attesten.length, keten);
+  if (!alleenLezen && keten.ok && existsSync(pad)) {
+    metOverdrachtSlot(map, () => {
+      if (!existsSync(join(map, WAL_BESTAND)) && existsSync(pad) && statSync(pad).size === grootteVoorLezen) {
+        schrijfLogboekCheckpoint(pad, ruw.attesten.length, keten);
+      }
+    });
   }
 
   const gefilterd = opties?.dienstId
@@ -2383,7 +2421,7 @@ export function voerStap4QuorumAttestProefUit(
   const map = klimopStaatMap(opties?.staatMap);
   mkdirSync(map, { recursive: true });
   return metOverdrachtSlot(map, () => {
-    herstelOnderbrokenOverdrachtTransactie(map);
+    herstelOnderbrokenOverdrachtTransactieBinnenSlot(map);
     const nuIso = new Date().toISOString();
     const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
 
@@ -2846,7 +2884,7 @@ export function schakelKlimopDienstOverdracht(
 
   const map = klimopStaatMap(opties?.staatMap);
   return metOverdrachtSlot(map, () => {
-    herstelOnderbrokenOverdrachtTransactie(map);
+    herstelOnderbrokenOverdrachtTransactieBinnenSlot(map);
     const nuIso = new Date().toISOString();
     const schakelaarsBestand = leesSchakelaarsBestand(map);
 

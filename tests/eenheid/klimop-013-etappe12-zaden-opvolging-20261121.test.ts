@@ -325,8 +325,8 @@ export async function main(): Promise<number> {
     },
   });
 
-  check('verifieerKlimopZaadPakket перевіряє всі 12 модулів, корінь Меркла SHA-256, пороговий підпис FROST та гібридний підпис ML-DSA-65',
-    verZaadGoed.ok === true && verZaadGoed.geverifieerdeModules === 12
+  check('verifieerKlimopZaadPakket перевіряє всі 14 модулів, корінь Меркла SHA-256, пороговий підпис FROST та гібридний підпис ML-DSA-65',
+    verZaadGoed.ok === true && verZaadGoed.geverifieerdeModules === 14
     && verZaadKapotteInhoud.ok === false && verZaadKapotteInhoud.fout === 'ZAAD_ONDERDEEL_BESCHADIGD:shared/klimop/opslag.ts'
     && verZaadKapotteFrost.ok === false && verZaadKapotteFrost.fout === 'ZAAD_FROST_HANDTEKENING_ONGELDIG'
     && verZaadKapottePq.ok === false && verZaadKapottePq.fout.startsWith('ZAAD_HYBRIDE_HANDTEKENING_ONGELDIG:'));
@@ -365,9 +365,9 @@ export async function main(): Promise<number> {
     verbindingMetOudeServerGebruikt: false,
   });
 
-  check('herbouwEcosysteemUitZaadOpSchoonMilieu блокує звернення до старого сервера і відтворює 12 модулів на новому поколінні вузлів',
+  check('herbouwEcosysteemUitZaadOpSchoonMilieu блокує звернення до старого сервера і відтворює 14 модулів на новому поколінні вузлів',
     herbouwMetOudeServer.ok === false && herbouwMetOudeServer.fout === 'VERBINDING_MET_OUDE_SERVER_VERBODEN_BIJ_SCHONE_OPBOUW'
-    && herbouwSchoon.ok === true && herbouwSchoon.hersteldePadLijst.length === 12
+    && herbouwSchoon.ok === true && herbouwSchoon.hersteldePadLijst.length === 14
     && herbouwSchoon.nieuweRechtsgebieden.join(',') === 'IS,NO,SE');
 
   // ------------------------------------------------------------------ 5. Передавання спадкоємності без початкового автора (Документ №23)
@@ -417,7 +417,7 @@ export async function main(): Promise<number> {
     voorstelId: 'VST-GOED',
     agentId: 'antigravity',
     richting: 'beveiligingsaudit',
-    regelsVersie: '1.5.0',
+    regelsVersie: '1.6.0',
     bevatTestBewijs: true,
     antwoorden15: geldigeAntwoorden15,
     probeertZelfGoedTeKeurenOfUitTeRollen: false,
@@ -429,7 +429,7 @@ export async function main(): Promise<number> {
     voorstelId: 'VST-FOUT',
     agentId: 'antigravity',
     richting: 'cryptografie',
-    regelsVersie: '1.5.0',
+    regelsVersie: '1.6.0',
     bevatTestBewijs: true,
     antwoorden15: geldigeAntwoorden15,
     probeertZelfGoedTeKeurenOfUitTeRollen: true,
@@ -553,7 +553,7 @@ export async function main(): Promise<number> {
         verspreid1.ok === true
         && herstelGen2.ok === true
         && herstelGen2.bevestigdeBronKnooppuntIds.length === 2
-        && herstelGen2.hersteldePadLijst.length === 12
+        && herstelGen2.hersteldePadLijst.length === 14
         && srvGen1Ch.aantalZaadPakketten() === 1);
 
       const gen2Groep = zadenClient.maakZadenQuorumGroep({

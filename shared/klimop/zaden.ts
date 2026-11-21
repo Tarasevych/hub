@@ -40,21 +40,25 @@ const ZAAD_PAKKET_HYBRIDE_DOMEIN = 'klimop-etappe12-zaadpakket-hybride-v1|';
 const OPVOLGING_VORIG_QUORUM_DOMEIN = 'klimop-etappe12-opvolging-oud-v1|';
 const OPVOLGING_NIEUW_QUORUM_DOMEIN = 'klimop-etappe12-opvolging-nieuw-v1|';
 
-export const KLIMOP_TWAALF_KERNMODULES = Object.freeze([
+export const KLIMOP_KERNMODULES = Object.freeze([
   'shared/klimop/kern.ts',
   'shared/klimop/stengels.ts',
   'shared/klimop/opslag.ts',
   'shared/klimop/drempelsleutels.ts',
+  'shared/klimop/drempel-vervoer.ts',
   'shared/klimop/identiteit.ts',
   'shared/klimop/bestuur.ts',
   'shared/klimop/immuunsysteem.ts',
+  'shared/klimop/diensten-catalogus.ts',
   'shared/klimop/diensten.ts',
   'shared/klimop/mensbescherming.ts',
   'shared/klimop/hechtranken.ts',
   'shared/klimop/beveiligingsaudit.ts',
   'shared/klimop/zaden.ts',
 ] as const);
-export type KlimopKernModulePad = (typeof KLIMOP_TWAALF_KERNMODULES)[number];
+/** Синонім зворотної сумісності для споживачів, які зверталися за історичною назвою константи Етапу 12. */
+export const KLIMOP_TWAALF_KERNMODULES = KLIMOP_KERNMODULES;
+export type KlimopKernModulePad = (typeof KLIMOP_KERNMODULES)[number];
 
 // =================================================================================================
 // 1. Перелік перевірених технічних залежностей екосистеми (§44 п. 19, Документ №19)
@@ -616,6 +620,22 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
     if (schijfMerkleWortel !== opties.pakket.merkleWortelSha256) {
       return { ok: false, fout: 'ZAAD_SCHIJFHERBOUW_MERKLE_FOUT' };
     }
+    // KLIMOP-022: перевіряємо, що кожен локальний імпорт `./...` всередині розпакованих модулів фізично присутній на носії
+    const relImportPatroon = /from\s+['"](\.[^'"]+)['"]/g;
+    for (const regel of opties.pakket.onderdelenManifest) {
+      if (!regel.pad.endsWith('.ts')) continue;
+      const bestandPad = join(tijdelijkeMap, regel.pad);
+      const bron = readFileSync(bestandPad, 'utf8');
+      relImportPatroon.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = relImportPatroon.exec(bron)) !== null) {
+        const relSpec = match[1];
+        const kandidaatTs = join(dirname(bestandPad), relSpec.endsWith('.ts') ? relSpec : `${relSpec}.ts`);
+        if (!existsSync(kandidaatTs)) {
+          return { ok: false, fout: `ZAAD_HERBOUW_ONTBREKENDE_IMPORT:${regel.pad}->${relSpec}` };
+        }
+      }
+    }
   } finally {
     if (moetOpruimen) {
       rmSync(tijdelijkeMap, { recursive: true, force: true });
@@ -689,6 +709,10 @@ export function stelOpvolgingsOverdrachtSamen(opties: {
   tekenMetVorigFrostQuorum: (boodschap: Buffer) => string;
   tekenMetNieuwFrostQuorum: (boodschap: Buffer) => string;
 }): { ok: true; overdracht: KlimopOpvolgingsOverdracht } | { ok: false; fout: string } {
+  const vormVorige = verifieerBestuursGrondwetVorm(opties.vorigeGrondwet);
+  if (!vormVorige.ok) return vormVorige;
+  const vormNieuwe = verifieerBestuursGrondwetVorm(opties.nieuweGrondwet);
+  if (!vormNieuwe.ok) return vormNieuwe;
   if (opties.nieuweGrondwet.versieVolgnummer <= opties.vorigeGrondwet.versieVolgnummer) {
     return { ok: false, fout: 'OPVOLGING_VERSIE_MOET_STIJGEN' };
   }
@@ -754,6 +778,10 @@ export function verifieerOpvolgingsOverdracht(
   ) {
     return { ok: false, fout: 'OPVOLGING_VORM_OF_SCHEIDING_ONGELDIG' };
   }
+  const vormVorige = verifieerBestuursGrondwetVorm(overdracht.vorigeGrondwet);
+  if (!vormVorige.ok) return vormVorige;
+  const vormNieuwe = verifieerBestuursGrondwetVorm(overdracht.nieuweGrondwet);
+  if (!vormNieuwe.ok) return vormNieuwe;
   if (
     verwachteVorigeFrostSleutelHex
     && overdracht.vorigeGrondwet.frostGroepsPubliekeSleutelHex !== verwachteVorigeFrostSleutelHex
@@ -958,6 +986,8 @@ export interface KlimopDocument44ControleRegel {
   status: 'bevestigd' | 'gedeeltelijk' | 'ontbrekend';
   ukSha256: string | null;
   nlSha256: string | null;
+  ukKoppenAantal?: number;
+  nlKoppenAantal?: number;
 }
 
 export interface KlimopDocument44ControleVerslag {
@@ -969,9 +999,9 @@ export interface KlimopDocument44ControleVerslag {
 }
 
 /**
- * KLIMOP-021: справжня змістовна звірка всіх 25 обов'язкових документів §44 маніфесту:
+ * KLIMOP-021 / KLIMOP-022: справжня змістовна звірка всіх 25 обов'язкових документів §44 маніфесту:
  * читає обидві мовні версії з диска, обчислює їхні `SHA-256`, перевіряє мінімальний обсяг,
- * наявність тематичного маркера та відсутність позначок незавершеності.
+ * паритетність кількості розділів `## `, наявність тематичного маркера та відсутність позначок незавершеності.
  */
 export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): KlimopDocument44ControleVerslag {
   let bevestigdAantal = 0;
@@ -994,6 +1024,8 @@ export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): 
         status: 'ontbrekend',
         ukSha256: null,
         nlSha256: null,
+        ukKoppenAantal: 0,
+        nlKoppenAantal: 0,
       });
       continue;
     }
@@ -1001,6 +1033,9 @@ export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): 
     const nlTekst = heeftNl ? readFileSync(volNl, 'utf8') : '';
     const ukSha256 = heeftUk ? createHash('sha256').update(ukTekst, 'utf8').digest('hex') : null;
     const nlSha256 = heeftNl ? createHash('sha256').update(nlTekst, 'utf8').digest('hex') : null;
+    const ukKoppenAantal = (ukTekst.match(/^## /gm) ?? []).length;
+    const nlKoppenAantal = (nlTekst.match(/^## /gm) ?? []).length;
+    const koppenGelijkwaardig = ukKoppenAantal >= 1 && nlKoppenAantal === ukKoppenAantal;
     const ukVolledig =
       ukTekst.trim().length >= 400
       && ukTekst.includes(def.vereistKenmerk)
@@ -1010,7 +1045,7 @@ export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): 
       && nlTekst.includes(def.vereistKenmerk)
       && !nlTekst.includes('Gepland (Fase');
 
-    if (ukVolledig && nlVolledig) {
+    if (ukVolledig && nlVolledig && koppenGelijkwaardig) {
       bevestigdAantal++;
       onderwerpen.push({
         nummer44: def.nummer44,
@@ -1020,6 +1055,8 @@ export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): 
         status: 'bevestigd',
         ukSha256,
         nlSha256,
+        ukKoppenAantal,
+        nlKoppenAantal,
       });
     } else {
       gedeeltelijkAantal++;
@@ -1031,6 +1068,8 @@ export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): 
         status: 'gedeeltelijk',
         ukSha256,
         nlSha256,
+        ukKoppenAantal,
+        nlKoppenAantal,
       });
     }
   }

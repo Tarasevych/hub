@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-022/20261121-213500-antigravity",
+  "taakId": "KLIMOP-022",
+  "tijd": "2026-11-21T21:35:00.000Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "П’ята хвиля виправлень KLIMOP-022 із повним закриттям усіх 25 знахідок AUDIT-003 (В-1..В-6, С-1..С-11, Н-1..Н-8): спільний префікс ротацій особи на вузлі, криптографічна прив’язка політики відновлення до епохи й передавання andereIntrekkingen у всіх 4 місцях із захистом від циклів; обов’язковість objectIds, вкладені ідентифікатори команд (зокрема voogdId), toegestaneMachtDomeinen, первинний якір конституції FROST і локальний стан тривоги на вузлі; замкове відновлення WAL і запис контрольних точок із повним SHA-256 файла та fsyncSync, читання MCP без модифікації теки власника й фільтр .lock; 14 модулів ядра у пакеті «Насіння» з перевіркою імпортів і форми конституції в спадкоємності та паритет заголовків ## у 25 документах; відмова на NaN-датах і прострочених сеансах «Стебел», прив’язка ключа ML-DSA-65 у маніфесті, концентрація кворуму в одній юрисдикції, межі FROST/DKG, схема MCP 0..16 + antwoorden15, поіменні відповіді й 14 заборон у KlimopPaneel.tsx, багатоланкова підписана естафета, повний хвильовий відкат, timingSafeEqual + alarmId у mensbescherming.ts, окремі ліміти частоти MCP на агента та двомовна синхронізація навичок і статей.",
+    "nl": "Vijfde herstelgolf KLIMOP-022 ter sluiting van alle 25 restbevindingen uit AUDIT-003 (6 hoog, 11 middel, 8 laag): gemeenschappelijk rotatievoorvoegsel op het registerknooppunt, epochebinding van herstelbeleid en volledige doorgave van andereIntrekkingen met cyclusbeveiliging; verplichte objectIds, geneste opdrachtpaden (waaronder voogdId), toegestaneMachtDomeinen, initieel FROST-grondwetanker en lokale dwangstaat; vergrendeld WAL-herstel en controlepunten met volledige bestands-SHA-256 en fsyncSync, mutatievrij MCP-lezen en .lock-filter; alle 14 kernmodules in «Zaden» met import- en grondwettoetsing en ##-koppenpariteit over 25 documenten; weigering van NaN-datums en verlopen Stengels-sessies, ML-DSA-65-sleutelbinding, quorumspreiding per rechtsgebied, FROST/DKG-randcontroles, MCP-schema 0..16 + antwoorden15, 14 verbodsvinkjes in KlimopPaneel.tsx, meersprongs-estafette, volledige golfterugdraaiing, timingSafeEqual + alarmId, gescheiden MCP-limiet per agent en tweetalige synchronisatie."
+  },
+  "waarom": {
+    "uk": "Виконання доручення власника закрити всі 25 залишкових знахідок повторної перевірки AUDIT-003 перед передаванням оновленої гілки на перехресну незалежну перевірку моделлю GPT-6.2 Astra (Ультра).",
+    "nl": "Uitvoering van de eigenaarsopdracht om alle 25 restbevindingen uit AUDIT-003 te sluiten vóór kruiscontrole door GPT-6.2 Astra (Ultra)."
+  },
+  "bouwtVoortOp": [
+    "AUDIT-003/20261121-193700-antigravity",
+    "KLIMOP-021/20261121-182221-antigravity"
+  ],
+  "tak": "fix/klimop-022-sluit-audit003-restbevindingen-20261121-195600",
+  "pr": 204,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

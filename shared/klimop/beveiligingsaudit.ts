@@ -468,7 +468,7 @@ export const KLIMOP_DREIGINGS_MODEL: readonly KlimopDreigingsInvoer[] = Object.f
     laag: 'identiteit_en_groepen',
     opgelosteSpofs: ['SPOF-1'],
     aanvalsVectorUk: 'Викрадення одного довіреного пристрою або спроба незаконного перехоплення процедури відновлення чи спадкування',
-    technischeTegenmaatregel: 'shared/klimop/identiteit.ts: обмежені делеговані права пристроїв без кореневого ключа, кворумне відкликання, MLS RFC 9420 і вікно оскарження 48/168 год',
+    technischeTegenmaatregel: 'shared/klimop/identiteit.ts: обмежені делеговані права пристроїв без кореневого ключа, кворумне відкликання, спрощене групове епохове шифрування за мотивами RFC 9420 і вікно оскарження 48/168 год',
     eerlijkRestrisicoUk: 'До моменту поширення відкликання викрадений розблокований пристрій може прочитати вже відкриті на ньому розшифровані дані в пам’яті.',
     beweertAbsoluteOnkwetsbaarheid: false,
   },

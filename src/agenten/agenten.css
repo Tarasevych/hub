@@ -661,6 +661,12 @@ a.ag-methode:hover,a.ag-methode:focus-visible{border-color:var(--accent,#2563eb)
 [data-klimop-paneel] .klimop-vragen-lijst{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px;font-size:.82rem}
 [data-klimop-paneel] .klimop-vragen-lijst>li{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0}
 [data-klimop-paneel] .klimop-vragen-lijst>li>span{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+[data-klimop-paneel] .klimop-verboden-details{width:100%;max-width:100%;min-width:0;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel);padding:6px 10px;font-size:.84rem}
+[data-klimop-paneel] .klimop-verboden-details>summary{cursor:pointer;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+[data-klimop-paneel] .klimop-verboden-lijst{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:5px}
+[data-klimop-paneel] .klimop-verboden-lijst>li{display:flex;align-items:flex-start;gap:8px;min-width:0}
+[data-klimop-paneel] .klimop-verboden-lijst input[type='checkbox']{flex:0 0 auto;margin-top:3px}
+[data-klimop-paneel] .klimop-verboden-lijst label{flex:1 1 auto;min-width:0;cursor:pointer;line-height:1.35;overflow-wrap:anywhere}
 @media (max-width:560px){
   [data-klimop-paneel] .ag-knoppen{width:100%}
   [data-klimop-paneel] .ag-knop{width:100%;justify-content:flex-start}

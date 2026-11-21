@@ -82,9 +82,9 @@ export async function main(): Promise<number> {
 
   const ovEcht = klimopOverzicht(process.cwd());
   check(
-    'klimopOverzicht на справжньому сховищі підтверджує 12/12 модулів ядра, корінь Меркла SHA-256, 12 засад §46, 25 документів §44 і 11 служб',
+    'klimopOverzicht на справжньому сховищі підтверджує 14/14 модулів ядра, корінь Меркла SHA-256, 12 засад §46, 25 документів §44 і 11 служб',
     ovEcht.bron.aanwezig === true
-    && ovEcht.kernModules.length === 12
+    && ovEcht.kernModules.length === 14
     && ovEcht.kernModules.every((m) => m.aanwezig && /^[0-9a-f]{64}$/.test(m.sha256) && m.grootteBytes > 1000)
     && typeof ovEcht.zaadMerkleWortelSha256 === 'string'
     && /^[0-9a-f]{64}$/.test(ovEcht.zaadMerkleWortelSha256)
@@ -223,7 +223,7 @@ export async function main(): Promise<number> {
   check(
     'маршрути власника на mcp.* та admin.* повертають огляд і результати перевірок, записують події в журнал безпеки та дотримуються обмеження частоти 429',
     rOv.status === 200
-    && rOv.data.kernModules.length === 12
+    && rOv.data.kernModules.length === 14
     && rSp.status === 200
     && rSp.data.ok === true
     && rSp.data.dienstId === 'postvak'
@@ -324,7 +324,7 @@ export async function main(): Promise<number> {
     'voerKlimopToolUit маскує локальний шлях сервера для ШІ-агента, виконує перевірку Сходинки 1 для wolkopslag і повертає двомовну помилку для невідомої служби',
     !mcpOv.isError
     && mcpOvJson.bron.wortel === 'werkkopie-server'
-    && mcpOvJson.kernModules.length === 12
+    && mcpOvJson.kernModules.length === 14
     && !mcpSp.isError
     && mcpSpJson.ok === true
     && mcpSpJson.dienstId === 'wolkopslag'

@@ -69,16 +69,17 @@ export interface KnooppuntToetredingsAanvraag {
   geenVerborgenRekenkrachtGebruik: boolean;
   automatischeRechtenUitbreidingViaVerbinding: boolean;
   vertrouwdAlleenWegensNetwerkNabijheid: boolean;
-  maandelijkseKostenEuro: number;
+  externeMiddelenBelastingEenheden?: number;
+  maandelijkseKostenEuro?: number;
   uitdrukkelijkeKostenGoedkeuringEigenaar: boolean;
 }
 
 /**
- * Перевіряє заявку нового вузла за §5, §5.2, §43 п. 6, 10 та правилом добровільного безоплатного надання ресурсів:
+ * Перевіряє заявку нового вузла за §5, §5.2, §43 п. 6, 10 та правилом добровільного надання ресурсів без прихованих зобов'язань:
  *   - блокує будь-яку ознаку комп'ютерного хробака (самовільне встановлення, приховане споживання, безмежне розмноження,
  *     автоматичне розширення повноважень через сусідство);
  *   - забороняє тимчасовим перехідним вузлам (`tijdelijke_toetredingsknooppunten`) отримувати критичні ролі `herstel` чи `opslag` закритих часток;
- *   - блокує залучення платних сторонніх ресурсів без прямого попереднього рішення власника.
+ *   - блокує несанкціоноване залучення додаткових сторонніх ресурсів без прямого попереднього рішення власника.
  */
 export function valideerKnooppuntToetredingsAanvraag(
   aanvraag: KnooppuntToetredingsAanvraag,
@@ -111,7 +112,11 @@ export function valideerKnooppuntToetredingsAanvraag(
   if (aanvraag.maxOpslagMiB <= 0 || aanvraag.maxBandbreedteMiBPerDag <= 0) {
     return { ok: false, fout: 'TOETREDING_MIDDELENQUOTA_ONGELDIG' };
   }
-  if (aanvraag.maandelijkseKostenEuro > 0 && !aanvraag.uitdrukkelijkeKostenGoedkeuringEigenaar) {
+  const externeBelasting = aanvraag.externeMiddelenBelastingEenheden ?? aanvraag.maandelijkseKostenEuro ?? 0;
+  if (!Number.isFinite(externeBelasting) || externeBelasting < 0) {
+    return { ok: false, fout: 'TOETREDING_MIDDELENQUOTA_ONGELDIG' };
+  }
+  if (externeBelasting > 0 && !aanvraag.uitdrukkelijkeKostenGoedkeuringEigenaar) {
     return { ok: false, fout: 'KOSTEN_ZONDER_EIGENAARSGOEDKEURING_VERBODEN' };
   }
   if (
@@ -260,7 +265,7 @@ export function beoordeelSybilEnSpreidingsWeerstand(opties: {
   const gezieneAanbieders = new Set<string>();
   const gezieneVoorvoegsels = new Set<string>();
   const effectieveRegios = new Set<string>();
-  const nuMs = opties.nuIso !== undefined ? Date.parse(opties.nuIso) : null;
+  const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
 
   let effectieveOnafhankelijkeStemmen = 0;
   let externBewezenStemmen = 0;
@@ -273,13 +278,11 @@ export function beoordeelSybilEnSpreidingsWeerstand(opties: {
       verlopenOfIngetrokkenGenegeerd += 1;
       continue;
     }
-    if (nuMs !== null) {
-      const uitMs = Date.parse(t.uitgegevenOp);
-      const verMs = Date.parse(t.verlooptOp);
-      if (![nuMs, uitMs, verMs].every(Number.isFinite) || nuMs < uitMs || nuMs > verMs) {
-        verlopenOfIngetrokkenGenegeerd += 1;
-        continue;
-      }
+    const uitMs = Date.parse(t.uitgegevenOp);
+    const verMs = Date.parse(t.verlooptOp);
+    if (![nuMs, uitMs, verMs].every(Number.isFinite) || verMs <= uitMs || nuMs < uitMs || nuMs > verMs) {
+      verlopenOfIngetrokkenGenegeerd += 1;
+      continue;
     }
     const kn = t.knooppuntIdentiteit;
     if (kn.type === 'tijdelijke_toetredingsknooppunten') {
