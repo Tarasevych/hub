@@ -53,7 +53,7 @@ export * from ${JSON.stringify(resolve(wortel, 'backend/klimop-zaden-client.ts')
 }
 
 function tekenMetFrostSubgroep(m, boodschap, actieveDelen, groepsPubHex, deelnemerPubMap, drempel) {
-  const r1 = actieveDelen.map((d) => m.frostRonde1MaakToezegging(d.index));
+  const r1 = actieveDelen.map((d) => m.frostRonde1MaakToezegging(d));
   const toezeggingenLijst = r1.map((x) => x.publiek);
   const deelHandtekeningen = actieveDelen.map((d, idx) => {
     const res = m.frostRonde2TekenDeel({

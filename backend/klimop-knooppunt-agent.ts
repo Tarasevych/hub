@@ -44,8 +44,21 @@ import {
   type FrostRonde1PubliekeToezegging,
   type FrostRonde2DeelHandtekening,
   type ProactieveNulBijdrage,
-  type VoorbereideEpocheStaat,
 } from '../shared/klimop/drempelsleutels';
+import {
+  berekenVerversingBesluitId,
+  maakDrempelOntvangstSleutel,
+  ontsleutelDkgPakketVoorOntvanger,
+  ontsleutelNulBijdrageVoorOntvanger,
+  verifieerDrempelSamenstelling,
+  versleutelDkgPakket,
+  versleutelNulBijdrage,
+  type KlimopDrempelDeelnemer,
+  type KlimopDrempelOntvangstSleutel,
+  type VersleuteldDkgRondePakket,
+  type VersleuteldeNulBijdrage,
+} from '../shared/klimop/drempel-vervoer';
+import { bewaarDrempelStaat, laadDrempelStaat, legeDrempelStaat as laadLegeStaat } from './klimop-knooppunt-staat';
 import {
   verifieerApparaatIntrekking,
   verifieerPersoonsStaat,
@@ -114,18 +127,26 @@ export type KnooppuntOpdracht =
       mandaat: KlimopOndertekendMandaat;
     }
   | {
+      actie: 'dkg_maak_ontvangstsleutel';
+      setId: string;
+      deelnemerIndex: number;
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
       actie: 'dkg_maak_bijdrage';
       setId: string;
       deelnemerIndex: number;
       drempel: number;
       totaal: number;
+      /** KLIMOP-019: повний склад із підписаними ключами отримання — вузол перевіряє його сам. */
+      deelnemers: readonly KlimopDrempelDeelnemer[];
       mandaat: KlimopOndertekendMandaat;
     }
   | {
       actie: 'dkg_voltooi_sleutel';
       setId: string;
       deelnemerIndex: number;
-      alleBijdragen: readonly DkgRondePakket[];
+      alleBijdragen: readonly VersleuteldDkgRondePakket[];
       mandaat: KlimopOndertekendMandaat;
     }
   | {
@@ -151,13 +172,20 @@ export type KnooppuntOpdracht =
   | {
       actie: 'ververs_voorbereiden';
       setId: string;
-      bijdragen: readonly ProactieveNulBijdrage[];
+      bijdragen: readonly VersleuteldeNulBijdrage[];
       mandaat: KlimopOndertekendMandaat;
     }
   | {
       actie: 'ververs_afronden';
       setId: string;
+      /** KLIMOP-019: відбиток рішення робить підтвердження ідемпотентним і прив'язаним до конкретної підготовки. */
+      besluitId: string;
       besluit: 'bevestig' | 'afbreken';
+      mandaat: KlimopOndertekendMandaat;
+    }
+  | {
+      actie: 'ververs_status';
+      setId: string;
       mandaat: KlimopOndertekendMandaat;
     }
   | {
@@ -300,22 +328,31 @@ export type KnooppuntOpdrachtAntwoord =
   | { ok: true; actie: 'opgehaald'; blokSha256: string; cijfertekstB64u: string }
   | { ok: true; actie: 'gewist'; blokSha256: string; bestond: boolean }
   | { ok: true; actie: 'blok_integriteit_bewijs'; bewijs: KlimopBlindeIntegriteitAntwoord }
-  | { ok: true; actie: 'dkg_bijdrage'; pakket: DkgRondePakket }
+  | { ok: true; actie: 'dkg_ontvangstsleutel'; ontvangstSleutel: KlimopDrempelOntvangstSleutel }
+  | { ok: true; actie: 'dkg_bijdrage'; pakket: VersleuteldDkgRondePakket; samenstellingHex: string }
   | {
       ok: true;
       actie: 'dkg_voltooid';
       setId: string;
       epoche: number;
       deelnemerIndex: number;
+      samenstellingHex: string;
       groepsPubliekeSleutelHex: string;
       groepsPubliekeSleutelSpkiB64u: string;
       deelnemerPubliekeSleutelsHex: Record<number, string>;
     }
   | { ok: true; actie: 'frost_ronde1_toezegging'; toezegging: FrostRonde1PubliekeToezegging; epoche: number }
   | { ok: true; actie: 'frost_ronde2_deel'; deelHandtekening: FrostRonde2DeelHandtekening; epoche: number }
-  | { ok: true; actie: 'ververs_nulbijdrage'; bijdrage: ProactieveNulBijdrage }
-  | { ok: true; actie: 'ververs_voorbereid'; vanEpoche: number; naarEpoche: number }
-  | { ok: true; actie: 'ververs_afgerond'; actieveEpoche: number }
+  | { ok: true; actie: 'ververs_nulbijdrage'; bijdrage: VersleuteldeNulBijdrage }
+  | { ok: true; actie: 'ververs_voorbereid'; vanEpoche: number; naarEpoche: number; besluitId: string; herhaald: boolean }
+  | { ok: true; actie: 'ververs_afgerond'; actieveEpoche: number; besluitId: string; herhaald: boolean }
+  | {
+      ok: true;
+      actie: 'ververs_status';
+      actieveEpoche: number;
+      voorbereidBesluitId: string | null;
+      voorbereidNaarEpoche: number | null;
+    }
   | {
       ok: true;
       actie: 'identiteit_gepubliceerd';
@@ -530,13 +567,20 @@ export async function startKlimopProefKnooppunt(config: {
   knooppunt: { identiteit: KlimopKnooppuntIdentiteit; geheimeSleutelPkcs8B64u: string };
   luisterHost?: string;
   poort?: number;
+  /**
+   * KLIMOP-019: шлях до зашифрованого файла порогового стану (частки, ключі отримання, підготовлені й
+   * завершені переходи епох). Без нього стан живе лише в пам'яті процесу (як у короткочасних випробуваннях).
+   */
+  staatBestand?: string;
 }): Promise<KlimopProefKnooppunt> {
   const { knooppunt } = config;
   const host = config.luisterHost ?? '127.0.0.1';
   const sessies = new Map<string, KlimopStengelSessie>();
   const blokOpslag = new Map<string, Buffer>();
-  const drempelDelen = new Map<string, FeldmanVssDeel>();
-  const voorbereideVerversingen = new Map<string, VoorbereideEpocheStaat>();
+  const drempelStaat = config.staatBestand ? laadDrempelStaat(config.staatBestand, knooppunt) : laadLegeStaat();
+  function bewaarDrempel(): void {
+    if (config.staatBestand) bewaarDrempelStaat(config.staatBestand, knooppunt, drempelStaat);
+  }
   const frostNonces = new Map<string, FrostGeheimeNonceStaat>();
   const identiteitRegister = new Map<string, KlimopIdentiteitRegisterInvoer>();
   const dienstCrdtRuimtes = new Map<string, KlimopDienstCrdtStaat>();
@@ -666,44 +710,117 @@ export async function startKlimopProefKnooppunt(config: {
     }
 
     if (
-      opdracht.actie === 'dkg_maak_bijdrage'
+      opdracht.actie === 'dkg_maak_ontvangstsleutel'
+      || opdracht.actie === 'dkg_maak_bijdrage'
       || opdracht.actie === 'dkg_voltooi_sleutel'
       || opdracht.actie === 'frost_ronde1'
       || opdracht.actie === 'frost_ronde2'
       || opdracht.actie === 'ververs_maak_nulbijdrage'
       || opdracht.actie === 'ververs_voorbereiden'
       || opdracht.actie === 'ververs_afronden'
+      || opdracht.actie === 'ververs_status'
     ) {
       const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
       if (!mOk.ok) return mOk;
 
+      if (
+        (opdracht.actie === 'dkg_maak_ontvangstsleutel' || opdracht.actie === 'dkg_maak_bijdrage' || opdracht.actie === 'dkg_voltooi_sleutel')
+        && drempelStaat.drempelDelen[opdracht.setId]
+      ) {
+        // Жива частка ніколи не перезаписується новим DKG того самого набору
+        return { ok: false, fout: 'DREMPEL_SLEUTELSET_BESTAAT_REEDS' };
+      }
+
+      if (opdracht.actie === 'dkg_maak_ontvangstsleutel') {
+        const bestaand = drempelStaat.ontvangstGeheimen[opdracht.setId];
+        if (bestaand) {
+          if (bestaand.deelnemerIndex !== opdracht.deelnemerIndex) return { ok: false, fout: 'ONTVANGSTSLEUTEL_INDEX_VERSCHILT' };
+          return { ok: true, actie: 'dkg_ontvangstsleutel', ontvangstSleutel: bestaand.publiek };
+        }
+        const nieuw = maakDrempelOntvangstSleutel({ setId: opdracht.setId, deelnemerIndex: opdracht.deelnemerIndex, knooppunt });
+        drempelStaat.ontvangstGeheimen[opdracht.setId] = {
+          deelnemerIndex: opdracht.deelnemerIndex,
+          publiek: nieuw.publiek,
+          geheimX25519Pkcs8B64u: nieuw.geheimX25519Pkcs8B64u,
+        };
+        bewaarDrempel();
+        return { ok: true, actie: 'dkg_ontvangstsleutel', ontvangstSleutel: nieuw.publiek };
+      }
+
       if (opdracht.actie === 'dkg_maak_bijdrage') {
-        const pakket = maakDkgDeelnemerBijdrage({
+        const eigen = drempelStaat.ontvangstGeheimen[opdracht.setId];
+        if (!eigen || eigen.deelnemerIndex !== opdracht.deelnemerIndex) return { ok: false, fout: 'ONTVANGSTSLEUTEL_ONTBREEKT' };
+        if (!Array.isArray(opdracht.deelnemers) || opdracht.deelnemers.length !== opdracht.totaal) {
+          return { ok: false, fout: 'SAMENSTELLING_TOTAAL_VERSCHILT' };
+        }
+        const sv = verifieerDrempelSamenstelling(opdracht.setId, opdracht.deelnemers);
+        if (!sv.ok) return sv;
+        const eigenInSamenstelling = opdracht.deelnemers.find((d) => d.ontvangstSleutel.deelnemerIndex === opdracht.deelnemerIndex);
+        if (
+          !eigenInSamenstelling
+          || eigenInSamenstelling.identiteit.knooppuntId !== knooppunt.identiteit.knooppuntId
+          || eigenInSamenstelling.ontvangstSleutel.x25519PubliekB64u !== eigen.publiek.x25519PubliekB64u
+        ) {
+          // Координатор підмінив ключ отримання цього вузла — відмовляємо
+          return { ok: false, fout: 'SAMENSTELLING_EIGEN_SLEUTEL_VERVALST' };
+        }
+        const open = maakDkgDeelnemerBijdrage({
           setId: opdracht.setId,
           afzenderIndex: opdracht.deelnemerIndex,
           drempel: opdracht.drempel,
           totaal: opdracht.totaal,
         });
-        return { ok: true, actie: 'dkg_bijdrage', pakket };
+        const pakket = versleutelDkgPakket({
+          pakket: open,
+          deelnemers: opdracht.deelnemers,
+          samenstellingHex: sv.samenstellingHex,
+          afzender: knooppunt,
+        });
+        drempelStaat.samenstellingen[opdracht.setId] = {
+          deelnemers: [...opdracht.deelnemers],
+          samenstellingHex: sv.samenstellingHex,
+          deelnemerIndex: opdracht.deelnemerIndex,
+        };
+        bewaarDrempel();
+        return { ok: true, actie: 'dkg_bijdrage', pakket, samenstellingHex: sv.samenstellingHex };
       }
 
       if (opdracht.actie === 'dkg_voltooi_sleutel') {
-        const gecombineerd = combineerDkgBijdragenVoorDeelnemer(opdracht.deelnemerIndex, opdracht.alleBijdragen);
+        const samenstelling = drempelStaat.samenstellingen[opdracht.setId];
+        const eigen = drempelStaat.ontvangstGeheimen[opdracht.setId];
+        if (!samenstelling || !eigen || samenstelling.deelnemerIndex !== opdracht.deelnemerIndex) {
+          return { ok: false, fout: 'SAMENSTELLING_ONBEKEND' };
+        }
+        const openPakketten: DkgRondePakket[] = [];
+        for (const vp of opdracht.alleBijdragen ?? []) {
+          const o = ontsleutelDkgPakketVoorOntvanger({
+            pakket: vp,
+            deelnemers: samenstelling.deelnemers,
+            samenstellingHex: samenstelling.samenstellingHex,
+            ontvangerIndex: opdracht.deelnemerIndex,
+            eigenGeheimX25519Pkcs8B64u: eigen.geheimX25519Pkcs8B64u,
+          });
+          if (!o.ok) return { ok: false, fout: o.fout };
+          openPakketten.push(o.pakket);
+        }
+        const gecombineerd = combineerDkgBijdragenVoorDeelnemer(opdracht.deelnemerIndex, openPakketten);
         if (!gecombineerd.ok) return { ok: false, fout: gecombineerd.fout };
-        drempelDelen.set(opdracht.setId, gecombineerd.deel);
+        drempelStaat.drempelDelen[opdracht.setId] = gecombineerd.deel;
+        bewaarDrempel();
         return {
           ok: true,
           actie: 'dkg_voltooid',
           setId: opdracht.setId,
           epoche: gecombineerd.deel.epoche,
           deelnemerIndex: opdracht.deelnemerIndex,
+          samenstellingHex: samenstelling.samenstellingHex,
           groepsPubliekeSleutelHex: gecombineerd.groepsPubliekeSleutelHex,
           groepsPubliekeSleutelSpkiB64u: gecombineerd.groepsPubliekeSleutelSpkiB64u,
           deelnemerPubliekeSleutelsHex: gecombineerd.deelnemerPubliekeSleutelsHex,
         };
       }
 
-      const deel = drempelDelen.get(opdracht.setId);
+      const deel: FeldmanVssDeel | undefined = drempelStaat.drempelDelen[opdracht.setId];
       if (!deel) return { ok: false, fout: 'DREMPEL_SLEUTELSET_ONBEKEND' };
 
       if (opdracht.actie === 'frost_ronde1') {
@@ -711,7 +828,7 @@ export async function startKlimopProefKnooppunt(config: {
         if (frostNonces.has(nonceSleutel)) {
           return { ok: false, fout: 'FROST_TEKEN_SESSIE_BESTAAT_REEDS' };
         }
-        const r1 = frostRonde1MaakToezegging(deel.index);
+        const r1 = frostRonde1MaakToezegging(deel);
         frostNonces.set(nonceSleutel, r1.geheimeNonceStaat);
         return { ok: true, actie: 'frost_ronde1_toezegging', toezegging: r1.publiek, epoche: deel.epoche };
       }
@@ -732,35 +849,112 @@ export async function startKlimopProefKnooppunt(config: {
         return { ok: true, actie: 'frost_ronde2_deel', deelHandtekening: r2.deelHandtekening, epoche: deel.epoche };
       }
 
+      const voorbereid = drempelStaat.voorbereideVerversingen[opdracht.setId];
+
+      if (opdracht.actie === 'ververs_status') {
+        return {
+          ok: true,
+          actie: 'ververs_status',
+          actieveEpoche: deel.epoche,
+          voorbereidBesluitId: voorbereid?.besluitId ?? null,
+          voorbereidNaarEpoche: voorbereid?.staat.kandidaatNieuwDeel.epoche ?? null,
+        };
+      }
+
+      const samenstelling = drempelStaat.samenstellingen[opdracht.setId];
+      const eigen = drempelStaat.ontvangstGeheimen[opdracht.setId];
+      if (!samenstelling || !eigen) return { ok: false, fout: 'SAMENSTELLING_ONBEKEND' };
+
       if (opdracht.actie === 'ververs_maak_nulbijdrage') {
-        const bijdrage = maakProactieveNulBijdrage({
+        if (voorbereid) return { ok: false, fout: 'ANDERE_VERVERSING_IN_VOORBEREIDING' };
+        const open = maakProactieveNulBijdrage({
           setId: deel.setId,
           vanEpoche: deel.epoche,
           afzenderIndex: deel.index,
           drempel: deel.drempel,
           totaal: deel.totaal,
         });
+        const bijdrage = versleutelNulBijdrage({
+          bijdrage: open,
+          deelnemers: samenstelling.deelnemers,
+          samenstellingHex: samenstelling.samenstellingHex,
+          afzender: knooppunt,
+        });
         return { ok: true, actie: 'ververs_nulbijdrage', bijdrage };
       }
 
       if (opdracht.actie === 'ververs_voorbereiden') {
-        const vb = bereidEpocheVerversingVoor(deel, opdracht.bijdragen);
+        const besluitId = berekenVerversingBesluitId(opdracht.bijdragen ?? []);
+        const reedsAfgerond = drempelStaat.afgerondeVerversingen[`${opdracht.setId}|${besluitId}`];
+        if (reedsAfgerond) {
+          return {
+            ok: true,
+            actie: 'ververs_voorbereid',
+            vanEpoche: reedsAfgerond.besluit === 'bevestig' ? reedsAfgerond.actieveEpoche - 1 : reedsAfgerond.actieveEpoche,
+            naarEpoche: reedsAfgerond.besluit === 'bevestig' ? reedsAfgerond.actieveEpoche : reedsAfgerond.actieveEpoche + 1,
+            besluitId,
+            herhaald: true,
+          };
+        }
+        if (voorbereid) {
+          if (voorbereid.besluitId !== besluitId) return { ok: false, fout: 'ANDERE_VERVERSING_IN_VOORBEREIDING' };
+          return {
+            ok: true,
+            actie: 'ververs_voorbereid',
+            vanEpoche: voorbereid.staat.huidigDeel.epoche,
+            naarEpoche: voorbereid.staat.kandidaatNieuwDeel.epoche,
+            besluitId,
+            herhaald: true,
+          };
+        }
+        const openBijdragen: ProactieveNulBijdrage[] = [];
+        for (const vb of opdracht.bijdragen ?? []) {
+          const o = ontsleutelNulBijdrageVoorOntvanger({
+            bijdrage: vb,
+            deelnemers: samenstelling.deelnemers,
+            samenstellingHex: samenstelling.samenstellingHex,
+            ontvangerIndex: deel.index,
+            eigenGeheimX25519Pkcs8B64u: eigen.geheimX25519Pkcs8B64u,
+          });
+          if (!o.ok) return o;
+          openBijdragen.push(o.bijdrage);
+        }
+        if (openBijdragen.length !== deel.totaal) return { ok: false, fout: 'NIET_ALLE_NULBIJDRAGEN_AANWEZIG' };
+        const vb = bereidEpocheVerversingVoor(deel, openBijdragen);
         if (!vb.ok) return vb;
-        voorbereideVerversingen.set(opdracht.setId, vb.staat);
+        drempelStaat.voorbereideVerversingen[opdracht.setId] = { besluitId, staat: vb.staat };
+        bewaarDrempel();
         return {
           ok: true,
           actie: 'ververs_voorbereid',
           vanEpoche: vb.staat.huidigDeel.epoche,
           naarEpoche: vb.staat.kandidaatNieuwDeel.epoche,
+          besluitId,
+          herhaald: false,
         };
       }
 
-      const voorbereid = voorbereideVerversingen.get(opdracht.setId);
-      if (!voorbereid) return { ok: false, fout: 'GEEN_VOORBEREIDE_VERVERSING' };
-      voorbereideVerversingen.delete(opdracht.setId);
-      const gekozen = rondEpocheVerversingAf(voorbereid, opdracht.besluit);
-      drempelDelen.set(opdracht.setId, gekozen);
-      return { ok: true, actie: 'ververs_afgerond', actieveEpoche: gekozen.epoche };
+      // ververs_afronden: ідемпотентне друге коло. Повтор того самого рішення повертає збережений результат;
+      // протилежне рішення після завершення відхиляється, щоб група не розійшлася між епохами.
+      const afgerondSleutel = `${opdracht.setId}|${opdracht.besluitId}`;
+      const reedsAfgerond = drempelStaat.afgerondeVerversingen[afgerondSleutel];
+      if (reedsAfgerond) {
+        if (reedsAfgerond.besluit !== opdracht.besluit) return { ok: false, fout: 'VERVERSING_REEDS_ANDERS_AFGEROND' };
+        return { ok: true, actie: 'ververs_afgerond', actieveEpoche: reedsAfgerond.actieveEpoche, besluitId: opdracht.besluitId, herhaald: true };
+      }
+      if (!voorbereid || voorbereid.besluitId !== opdracht.besluitId) return { ok: false, fout: 'GEEN_VOORBEREIDE_VERVERSING' };
+      const gekozen = rondEpocheVerversingAf(voorbereid.staat, opdracht.besluit);
+      drempelStaat.drempelDelen[opdracht.setId] = gekozen;
+      drempelStaat.afgerondeVerversingen[afgerondSleutel] = {
+        besluitId: opdracht.besluitId,
+        besluit: opdracht.besluit,
+        actieveEpoche: gekozen.epoche,
+        afgerondOp: new Date().toISOString(),
+      };
+      delete drempelStaat.voorbereideVerversingen[opdracht.setId];
+      // Стан записується до відповіді: втрата відповіді не втрачає рішення
+      bewaarDrempel();
+      return { ok: true, actie: 'ververs_afgerond', actieveEpoche: gekozen.epoche, besluitId: opdracht.besluitId, herhaald: false };
     }
 
     if (opdracht.actie === 'publiceer_identiteit_staat' || opdracht.actie === 'raadpleeg_identiteit_staat') {
@@ -1352,7 +1546,7 @@ export async function startKlimopProefKnooppunt(config: {
       return true;
     },
     actieveDrempelEpoche(setId: string) {
-      return drempelDelen.get(setId)?.epoche ?? null;
+      return drempelStaat.drempelDelen[setId]?.epoche ?? null;
     },
     aantalGeregistreerdeIdentiteiten() {
       return identiteitRegister.size;
@@ -1389,8 +1583,10 @@ export async function startKlimopProefKnooppunt(config: {
         n.eScalairBuf.fill(0);
       }
       frostNonces.clear();
-      drempelDelen.clear();
-      voorbereideVerversingen.clear();
+      // Пам'ять очищується; зашифрований файл стану (якщо заданий) лишається для відновлення після перезапуску
+      for (const k of Object.keys(drempelStaat.drempelDelen)) delete drempelStaat.drempelDelen[k];
+      for (const k of Object.keys(drempelStaat.voorbereideVerversingen)) delete drempelStaat.voorbereideVerversingen[k];
+      for (const k of Object.keys(drempelStaat.ontvangstGeheimen)) delete drempelStaat.ontvangstGeheimen[k];
       identiteitRegister.clear();
       dienstCrdtRuimtes.clear();
       voogdSignaalBussen.clear();

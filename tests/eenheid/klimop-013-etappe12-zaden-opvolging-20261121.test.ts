@@ -86,7 +86,7 @@ function tekenFrost(
   deelnemerPubMap: Readonly<Record<number, string>>,
   drempel: number,
 ): string {
-  const r1 = actieveDelen.map((d) => frostRonde1MaakToezegging(d.index));
+  const r1 = actieveDelen.map((d) => frostRonde1MaakToezegging(d));
   const toezeggingenLijst = r1.map((x) => x.publiek);
   const deelHandtekeningen = actieveDelen.map((d, idx) => {
     const res = frostRonde2TekenDeel({

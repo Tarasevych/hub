@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-019/20261121-150914-antigravity",
+  "taakId": "KLIMOP-019",
+  "tijd": "2026-11-21T15:09:14.510Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Друга хвиля виправлень за незалежною перевіркою «Плюща»: FROST(Ed25519, SHA-512) звірено з еталонним вектором RFC 9591 E.1 побайтово, нонси прив'язано до частки; адресне шифрування підчасток DKG і нульових вкладів (shared/klimop/drempel-vervoer.ts, X25519 → HKDF-SHA256 → ChaCha20-Poly1305, підпис відправника, відбиток складу); стійкий двофазний перехід епох із зашифрованим файлом стану вузла (backend/klimop-knooppunt-staat.ts), ідемпотентне підтвердження й повтори координатора; дерево Меркла «Насіння» v2; повний порядок злиття CRDT",
+    "nl": "Tweede herstelgolf na de onafhankelijke controle van Klimop: FROST bytegewijs gelijk aan RFC 9591 E.1, nonces gebonden aan het aandeel; geadresseerde versleuteling van DKG-subdelen en nulbijdragen; duurzame tweefasige epochewissel met versleuteld staatbestand; Merkle v2 voor Zaden; totale CRDT-ordening"
+  },
+  "waarom": {
+    "uk": "Незалежна перевірка GPT-6.2 Astra (Ультра) робіт Gemini 4 Carbon (High) знайшла невідповідність FROST стандарту RFC 9591, відкриті підчастки в координатора, нестійкий перехід епох, неоднозначне дерево Меркла і залежність злиття CRDT від порядку; власник доручив виправити всі вади",
+    "nl": "De onafhankelijke controle door GPT-6.2 Astra (Ultra) van het werk van Gemini 4 Carbon (High) vond afwijkingen van RFC 9591, open subdelen bij de coördinator, een niet-duurzame epochewissel, een dubbelzinnige Merkle-boom en volgordeafhankelijke CRDT-samenvoeging"
+  },
+  "bouwtVoortOp": [
+    "AUDIT-002/20261121-140000-chatgpt",
+    "KLIMOP-018/20261121-143926-antigravity",
+    "KLIMOP-005/20261120-192148-antigravity"
+  ],
+  "tak": "fix/klimop-019-frost-dkg-epoche-merkle-crdt-20261121-144953",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

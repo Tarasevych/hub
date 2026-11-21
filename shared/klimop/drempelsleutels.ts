@@ -888,34 +888,96 @@ export interface FrostRonde2DeelHandtekening {
   zDeelHex: string; // z_i = d_i + e_i * rho_i + lambda_i * s_i * c (mod L)
 }
 
-function berekenFrostBindingFactor(
-  deelnemerIndex: number,
+/**
+ * Рядок контексту набору шифрів FROST(Ed25519, SHA-512) за RFC 9591 §6.1.
+ * KLIMOP-019: раніше вживалися власні роздільники «|msg|», «|com|», «|rho|» та 4-байтові індекси,
+ * через що зобов'язання й частки підпису не збігалися з еталонними векторами RFC 9591 додатка E.1.
+ */
+export const FROST_ED25519_KONTEKST = 'FROST-ED25519-SHA512-v1';
+
+/** H1, H3 (з mod L) та H4, H5 (сирий відбиток) RFC 9591 §6.1: SHA-512(контекст || мітка || m). */
+function frostHash(mitka: 'rho' | 'nonce' | 'msg' | 'com', ...delen: Buffer[]): Buffer {
+  const h = createHash('sha512').update(FROST_ED25519_KONTEKST, 'utf8').update(mitka, 'utf8');
+  for (const d of delen) h.update(d);
+  return h.digest();
+}
+
+/** Ідентифікатор учасника RFC 9591 §4.1: ненульовий скаляр, закодований як 32 байти little-endian. */
+function codeerFrostIdentificator(deelnemerIndex: number): Buffer {
+  if (!Number.isInteger(deelnemerIndex) || deelnemerIndex < 1) {
+    throw new Error('FROST_DEELNEMER_INDEX_ONGELDIG');
+  }
+  return Buffer.from(codeerScalairHex(BigInt(deelnemerIndex)), 'hex');
+}
+
+/** encode_group_commitment_list RFC 9591 §4.3: послідовність id(32) || D(32) || E(32) за зростанням id. */
+function codeerFrostToezeggingenLijst(gesorteerd: readonly FrostRonde1PubliekeToezegging[]): Buffer {
+  return Buffer.concat(
+    gesorteerd.flatMap((t) => [
+      codeerFrostIdentificator(t.deelnemerIndex),
+      Buffer.from(t.schuilPuntDHex, 'hex'),
+      Buffer.from(t.bindPuntEHex, 'hex'),
+    ]),
+  );
+}
+
+/**
+ * nonce_generate RFC 9591 §4.1: H3(random_bytes(32) || SerializeScalar(secret)).
+ * Прив'язка до закритої частки захищає від повторення нонса навіть за слабкого джерела випадковості.
+ * `willekeur` передається явно лише в перевірці еталонним вектором; у роботі завжди береться `randomBytes(32)`.
+ */
+export function frostNonceGenereer(deelScalairHex: string, willekeur?: Buffer): string {
+  const geheim = decodeerScalairHex(deelScalairHex);
+  if (geheim === null || geheim === 0n) throw new Error('FROST_SCALAIR_ONGELDIG');
+  const ruis = willekeur ?? randomBytes(32);
+  if (!Buffer.isBuffer(ruis) || ruis.length !== 32) throw new Error('FROST_WILLEKEUR_LENGTE_ONGELDIG');
+  const nonce = leesHash512ModL(frostHash('nonce', ruis, Buffer.from(codeerScalairHex(geheim), 'hex')));
+  return codeerScalairHex(nonce);
+}
+
+export interface FrostBindingFactorVerslag {
+  /** PK || H4(msg) || H5(encode_group_commitment_list) — спільний префікс входу RFC 9591 §4.4. */
+  invoerVoorvoegselHex: string;
+  perDeelnemer: Array<{ deelnemerIndex: number; invoerHex: string; bindingFactorHex: string }>;
+}
+
+function berekenFrostBindingFactoren(
   boodschap: Buffer,
   gesorteerdeToezeggingen: readonly FrostRonde1PubliekeToezegging[],
   groepsPubliekeSleutelHex: string,
-): bigint {
-  const hBoodschap = createHash('sha512').update('FROST-ED25519-SHA512-v1|msg|').update(boodschap).digest();
-  const hLijst = createHash('sha512');
-  hLijst.update('FROST-ED25519-SHA512-v1|com|');
+): { rhoPerIndex: Map<number, bigint>; verslag: FrostBindingFactorVerslag } {
+  const voorvoegsel = Buffer.concat([
+    Buffer.from(groepsPubliekeSleutelHex, 'hex'),
+    frostHash('msg', boodschap),
+    frostHash('com', codeerFrostToezeggingenLijst(gesorteerdeToezeggingen)),
+  ]);
+  const rhoPerIndex = new Map<number, bigint>();
+  const perDeelnemer: FrostBindingFactorVerslag['perDeelnemer'] = [];
   for (const t of gesorteerdeToezeggingen) {
-    const idxBuf = Buffer.alloc(4);
-    idxBuf.writeUInt32LE(t.deelnemerIndex, 0);
-    hLijst.update(idxBuf);
-    hLijst.update(Buffer.from(t.schuilPuntDHex, 'hex'));
-    hLijst.update(Buffer.from(t.bindPuntEHex, 'hex'));
+    const invoer = Buffer.concat([voorvoegsel, codeerFrostIdentificator(t.deelnemerIndex)]);
+    const rho = leesHash512ModL(frostHash('rho', invoer));
+    rhoPerIndex.set(t.deelnemerIndex, rho);
+    perDeelnemer.push({
+      deelnemerIndex: t.deelnemerIndex,
+      invoerHex: invoer.toString('hex'),
+      bindingFactorHex: codeerScalairHex(rho),
+    });
   }
-  const lijstDigest = hLijst.digest();
+  return { rhoPerIndex, verslag: { invoerVoorvoegselHex: voorvoegsel.toString('hex'), perDeelnemer } };
+}
 
-  const idxEigen = Buffer.alloc(4);
-  idxEigen.writeUInt32LE(deelnemerIndex, 0);
-  const rhoDigest = createHash('sha512')
-    .update('FROST-ED25519-SHA512-v1|rho|')
-    .update(Buffer.from(groepsPubliekeSleutelHex, 'hex'))
-    .update(hBoodschap)
-    .update(lijstDigest)
-    .update(idxEigen)
-    .digest();
-  return leesHash512ModL(rhoDigest);
+/**
+ * Відкрито обчислює входи й коефіцієнти прив'язки RFC 9591 §4.4 для порівняння з еталонним вектором
+ * або з незалежною реалізацією. Не потребує жодних закритих даних.
+ */
+export function berekenFrostBindingFactorenRfc9591(opties: {
+  boodschap: Buffer;
+  toezeggingenLijst: readonly FrostRonde1PubliekeToezegging[];
+  groepsPubliekeSleutelHex: string;
+}): { ok: true; verslag: FrostBindingFactorVerslag; groepsToezeggingHex: string; uitdagingHex: string } | { ok: false; fout: string } {
+  const ber = berekenFrostGroepsToezeggingEnUitdaging(opties.boodschap, opties.toezeggingenLijst, opties.groepsPubliekeSleutelHex);
+  if (!ber.ok) return ber;
+  return { ok: true, verslag: ber.verslag, groepsToezeggingHex: ber.groepsPuntRHex, uitdagingHex: codeerScalairHex(ber.uitdagingC) };
 }
 
 function berekenFrostGroepsToezeggingEnUitdaging(
@@ -930,6 +992,7 @@ function berekenFrostGroepsToezeggingEnUitdaging(
       groepsPuntR: VerlengdPunt;
       groepsPuntRHex: string;
       uitdagingC: bigint;
+      verslag: FrostBindingFactorVerslag;
     }
   | { ok: false; fout: string } {
   if (!decodeerPuntHex(groepsPubliekeSleutelHex)) {
@@ -943,18 +1006,23 @@ function berekenFrostGroepsToezeggingEnUitdaging(
   }
 
   const rhoPerIndex = new Map<number, bigint>();
+  for (const t of gesorteerd) {
+    if (!decodeerPuntHex(t.schuilPuntDHex) || !decodeerPuntHex(t.bindPuntEHex)) {
+      return { ok: false, fout: 'FROST_RONDE1_PUNT_ONGELDIG' };
+    }
+  }
+  const factoren = berekenFrostBindingFactoren(boodschap, gesorteerd, groepsPubliekeSleutelHex);
   let groepsPuntR = NUL_PUNT;
   for (const t of gesorteerd) {
-    const D = decodeerPuntHex(t.schuilPuntDHex);
-    const E = decodeerPuntHex(t.bindPuntEHex);
-    if (!D || !E) return { ok: false, fout: 'FROST_RONDE1_PUNT_ONGELDIG' };
-    const rho = berekenFrostBindingFactor(t.deelnemerIndex, boodschap, gesorteerd, groepsPubliekeSleutelHex);
+    const D = decodeerPuntHex(t.schuilPuntDHex)!;
+    const E = decodeerPuntHex(t.bindPuntEHex)!;
+    const rho = factoren.rhoPerIndex.get(t.deelnemerIndex)!;
     rhoPerIndex.set(t.deelnemerIndex, rho);
     groepsPuntR = puntTelOp(groepsPuntR, puntTelOp(D, puntVermenigvuldig(E, rho)));
   }
 
   const groepsPuntRHex = codeerPuntHex(groepsPuntR);
-  // Канонічний виклик Шнорра RFC 8032 §5.1.6: SHA-512(enc(R) || enc(Y) || M) mod L
+  // H2 RFC 9591 §6.1 збігається з викликом Шнорра RFC 8032 §5.1.6: SHA-512(enc(R) || enc(Y) || M) mod L
   const cDigest = createHash('sha512')
     .update(Buffer.from(groepsPuntRHex, 'hex'))
     .update(Buffer.from(groepsPubliekeSleutelHex, 'hex'))
@@ -962,19 +1030,30 @@ function berekenFrostGroepsToezeggingEnUitdaging(
     .digest();
   const uitdagingC = leesHash512ModL(cDigest);
 
-  return { ok: true, gesorteerd, rhoPerIndex, groepsPuntR, groepsPuntRHex, uitdagingC };
+  return { ok: true, gesorteerd, rhoPerIndex, groepsPuntR, groepsPuntRHex, uitdagingC, verslag: factoren.verslag };
 }
 
-/** Раунд 1 FROST: учасник створює одноразову пару секретних нонсів (d_i, e_i) та публічні зобов'язання (D_i, E_i). */
-export function frostRonde1MaakToezegging(deelnemerIndex: number): {
+/**
+ * Раунд 1 FROST (RFC 9591 §5.1 commit): учасник виводить одноразову пару нонсів (d_i, e_i) через
+ * nonce_generate із прив'язкою до власної закритої частки s_i і публікує зобов'язання (D_i, E_i).
+ * `vasteWillekeur` дозволена лише для звірки з еталонним вектором RFC 9591 додатка E.1.
+ */
+export function frostRonde1MaakToezegging(
+  deel: FeldmanVssDeel,
+  vasteWillekeur?: { schuil: Buffer; bind: Buffer },
+): {
   publiek: FrostRonde1PubliekeToezegging;
   geheimeNonceStaat: FrostGeheimeNonceStaat;
 } {
-  if (!Number.isInteger(deelnemerIndex) || deelnemerIndex < 1) {
+  if (!deel || typeof deel !== 'object' || !Number.isInteger(deel.index) || deel.index < 1) {
     throw new Error('FROST_DEELNEMER_INDEX_ONGELDIG');
   }
-  const d = willekeurigeNietNulScalair();
-  const e = willekeurigeNietNulScalair();
+  const deelnemerIndex = deel.index;
+  const dHex = frostNonceGenereer(deel.scalairHex, vasteWillekeur?.schuil);
+  const eHex = frostNonceGenereer(deel.scalairHex, vasteWillekeur?.bind);
+  const d = decodeerScalairHex(dHex)!;
+  const e = decodeerScalairHex(eHex)!;
+  if (d === 0n || e === 0n) throw new Error('FROST_NONCE_NUL');
   const DHex = codeerPuntHex(puntVermenigvuldig(GENERATOR_B, d));
   const EHex = codeerPuntHex(puntVermenigvuldig(GENERATOR_B, e));
   return {
@@ -985,8 +1064,8 @@ export function frostRonde1MaakToezegging(deelnemerIndex: number): {
     },
     geheimeNonceStaat: {
       deelnemerIndex,
-      dScalairBuf: Buffer.from(codeerScalairHex(d), 'hex'),
-      eScalairBuf: Buffer.from(codeerScalairHex(e), 'hex'),
+      dScalairBuf: Buffer.from(dHex, 'hex'),
+      eScalairBuf: Buffer.from(eHex, 'hex'),
       verbruikt: false,
     },
   };
