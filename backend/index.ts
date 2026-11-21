@@ -131,6 +131,7 @@ import { uitrolGoedkeuringRoutes, isEigenaar as uitrolIsEigenaar } from './uitro
 import { aiBeleidRoutes } from './ai-beleid';
 import { eigenaarBesluitRoutes } from './eigenaar-besluit'; // besluiten van de eigenaar met passkey (zone B 22.10.2026, §15)
 import { orchRoutes } from './orch-routes'; // ORCH-001 етап 3 (31.10.2026): координація агентів через сайт — /api/owner/orch/*
+import { klimopPaden } from './klimop-paden'; // KLIMOP-014 (21.11.2026): маршрути екосистеми «Плющ» та Сходинки 1 — /api/owner/klimop/*
 import { besluitZoekenPg } from './orch-besluit-pg';
 import { accountVerwijderdZetten, gebruikerVeldenZetten, toegangAanvraagStatus, toegangAanvraagToegestaan } from './gebruiker-schrijven'; // SEC-002 (autorisatie-02/-06)
 import { aiWerkruimteRoutes } from './ai-werkruimte';
@@ -844,6 +845,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   ...eigenaarBesluitRoutes({ requireSession: ownerRequireSession as never }),
   // ORCH-001 етап 3: координація агентів (огляд, передача пакета через сайт, зміна правил із підписом passkey) — той самий конвеєр, що й scripts/orch.mjs.
   ...orchRoutes({ requireSession: ownerRequireSession as never, isOwnerEmail, besluitZoeken: besluitZoekenPg, rateLimit, audit: (e, action, result, details) => auditToevoegen({ ownerId: e.id, actorId: e.id, action, type: 'beveiliging', result, details, service: 'mcp' }).then(() => undefined) }),
+  ...klimopPaden({ requireSession: ownerRequireSession as never, isOwnerEmail, rateLimit, audit: (e, action, result, details) => auditToevoegen({ ownerId: e.id, actorId: e.id, action, type: 'beveiliging', result, details, service: 'mcp' }).then(() => undefined) }),
   // Werkgebied «ШІ для вас» op ai.* (punt 13, 19.10.2026): echte startstaat van het account + chat met keuze uit de ingestelde modellen.
   // Een geldige sessie zonder het recht 'api-platform' krijgt hier API_RECHT_VEREIST, nooit OWNER_API_SESSION_REQUIRED.
   ...aiWerkruimteRoutes({ requireSession: ownerRequireSession as never }),

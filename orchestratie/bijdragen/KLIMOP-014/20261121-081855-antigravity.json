@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-014/20261121-081855-antigravity",
+  "taakId": "KLIMOP-014",
+  "tijd": "2026-11-21T08:18:55.069Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 3.1 Pro (Google Antigravity)",
+      "bron": "omgeving"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "nieuw",
+  "wat": {
+    "uk": "Платформна інтеграція екосистеми «Плющ» (Етап 13): спільна модель shared/klimop-overzicht-model.ts, серверний міст backend/klimop-platform-brug.ts, маршрути власника /api/owner/klimop/* (backend/klimop-paden.ts), 3 технічні інструменти MCP klimop_* для всіх 14 ШІ-агентів (backend/klimop-hulpmiddelen.ts), двомовна панель src/agenten/KlimopPaneel.tsx у «Координації» та жива безризикова перевірка Сходинки 1 §35 для 11 служб без змін у PostgreSQL 18.6"
+  },
+  "waarom": {
+    "uk": "Пряме доручення власника злити запит №195 (Етап 12) у integratie та перейти до наступного етапу — вбудовування ядра «Плюща» у маршрути, шлюз агентів і вебінтерфейс платформи «Мій простір» у режимі паралельної звірки (§35 маніфесту)"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-013/20261121-070525-antigravity"
+  ],
+  "tak": "feature/klimop-014-platformintegratie-spiegel-20261121-080000",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}
