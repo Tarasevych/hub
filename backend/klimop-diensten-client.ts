@@ -70,6 +70,8 @@ export class KlimopDienstenOverdrachtClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['synchroniseer_dienst_crdt', 'raadpleeg_dienst_crdt'],
         },
         opties.eigenaar,
       );

@@ -69,6 +69,8 @@ export class KlimopBeveiligingsAuditClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['registreer_beveiligingsaudit_rapport', 'raadpleeg_beveiligingsaudit_staat'],
         },
         opties.coordinator,
       );

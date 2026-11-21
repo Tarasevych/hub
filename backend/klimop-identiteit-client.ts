@@ -5,6 +5,7 @@
 // повторно криптографічно перевіряється на пристрої користувача з кворумним захистом від застарілого стану.
 
 import {
+  canoniekeJson,
   controleerKnooppuntOnafhankelijkheid,
   ondertekenKlimopMandaat,
   type KlimopKnooppuntIdentiteit,
@@ -73,6 +74,8 @@ export class KlimopIdentiteitNetwerkClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['publiceer_identiteit_staat', 'raadpleeg_identiteit_staat'],
         },
         opties.opdrachtgever,
       );
@@ -183,9 +186,24 @@ export class KlimopIdentiteitNetwerkClient {
       return { ok: false, fout: 'TEGENSTRIJDIGE_OPRICHTINGSBEWIJZEN_GEDETECTEERD' };
     }
 
-    // Обираємо найвищу криптографічно підтверджену епоху особи
-    geldigeAntwoorden.sort((a, b) => b.invoer.staat.actieveEpoche - a.invoer.staat.actieveEpoche);
-    const nieuwsteStaat = geldigeAntwoorden[0].invoer.staat;
+    // KLIMOP-020: історії ротацій усіх відповідей мають бути префіксами одна одної (розбіжні голови — відмова),
+    // а обрана голова мусить бути підтверджена кворумом, а не взята з однієї відповіді з найбільшою епохою
+    const ketenVan = (st: KlimopPersoonsStaat): string[] => st.rotaties.map((r) => canoniekeJson(r));
+    const ketens = geldigeAntwoorden.map((a) => ketenVan(a.invoer.staat));
+    for (let i = 0; i < ketens.length; i++) {
+      for (let j = i + 1; j < ketens.length; j++) {
+        const kort = ketens[i].length <= ketens[j].length ? ketens[i] : ketens[j];
+        const lang = kort === ketens[i] ? ketens[j] : ketens[i];
+        if (kort.some((r, idx) => lang[idx] !== r)) {
+          return { ok: false, fout: 'TEGENSTRIJDIGE_IDENTITEITSGESCHIEDENIS_GEDETECTEERD' };
+        }
+      }
+    }
+    const geordend = geldigeAntwoorden
+      .map((a, idx) => ({ a, lengte: ketens[idx].length }))
+      .sort((x, y) => y.lengte - x.lengte);
+    // Відповідь з індексом (кворум − 1) у спадному порядку — найдовша історія, яку містять щонайменше `quorumDrempel` вузлів
+    const nieuwsteStaat = geordend[opties.groep.quorumDrempel - 1].a.invoer.staat;
 
     // Об'єднуємо всі криптографічно дійсні відкликання пристроїв з усіх опитаних вузлів
     const intrekkingenMap = new Map<string, KlimopApparaatIntrekking>();

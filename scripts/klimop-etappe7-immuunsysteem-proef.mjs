@@ -510,6 +510,15 @@ async function voerEtappe7ProefUit() {
             wettige_erfopvolging: 168,
           },
         };
+        // KLIMOP-020: політику відновлення закріплює корінь чинної епохи до втрати доступу
+        const verankering020 = m.verankerHerstelBeleid({
+          staat: persoon.staat,
+          beleid: beleid,
+          wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
+          nuIso: new Date(t0Ms).toISOString(),
+        });
+        if (!verankering020.ok) throw new Error(verankering020.fout);
+        persoon.staat = verankering020.nieuweStaat;
         const nieuwKandidaat = maakEd25519Sleutels();
         const aanvraag = m.openHerstelAanvraag({
           beleid,

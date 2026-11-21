@@ -74,6 +74,8 @@ export class KlimopZadenEnOpvolgingClient {
           drempelVereist: null,
           uitgegevenOp: nuIso,
           verlooptOp: verlooptOpIso,
+          // KLIMOP-020: явний перелік дій, які дозволяє цей мандат
+          toegestaneActies: ['bewaar_gevalideerd_zaad_pakket', 'registreer_opvolgings_overdracht', 'raadpleeg_zaad_en_opvolging'],
         },
         opties.coordinator,
       );

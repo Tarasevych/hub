@@ -70,6 +70,35 @@ export interface KlimopWortelRotatieBewijs {
   handtekeningVorigeOfHerstelB64u: string;
   handtekeningNieuweB64u: string;
   herstelAanvraagId: string | null;
+  /**
+   * KLIMOP-020: повний сертифікат переходу при законному відновленні — політика, заявка зі строками
+   * та підписані голоси опікунів. Входить до підписаного змісту ротації й перевіряється кожним споживачем.
+   */
+  herstelCertificaat?: KlimopHerstelCertificaat;
+}
+
+/** KLIMOP-020: політику відновлення закріплює кореневий ключ чинної епохи ще до втрати доступу. */
+export interface KlimopHerstelBeleidVerankering {
+  schema: 1;
+  persoonsId: string;
+  epoche: number;
+  beleidSha256: string;
+  vastgelegdOp: string;
+  handtekeningB64u: string;
+}
+
+/** KLIMOP-020: сертифікат переходу відновлення, який споживач перевіряє без довіри до вузла. */
+export interface KlimopHerstelCertificaat {
+  beleid: KlimopHerstelBeleid;
+  aanvraag: {
+    aanvraagId: string;
+    persoonsId: string;
+    omstandigheid: KlimopHerstelAanvraag['omstandigheid'];
+    kandidaatNieuweWortelPubDerB64u: string;
+    geopendOp: string;
+    betwistingVerlooptOp: string;
+  };
+  voogdStemmen: KlimopHerstelAanvraag['voogdStemmen'];
 }
 
 export interface KlimopPersoonsStaat {
@@ -77,6 +106,8 @@ export interface KlimopPersoonsStaat {
   rotaties: readonly KlimopWortelRotatieBewijs[];
   actieveWortelPubDerB64u: string;
   actieveEpoche: number;
+  /** KLIMOP-020: закріплення політик відновлення підписами кореня відповідної епохи. */
+  herstelBeleidVerankeringen?: readonly KlimopHerstelBeleidVerankering[];
 }
 
 const OPRICHTING_DOMEIN = 'klimop-persoon-oprichting-v1|';
@@ -84,7 +115,9 @@ const ROTATIE_DOMEIN = 'klimop-persoon-wortelrotatie-v1|';
 const KOPPELING_DOMEIN = 'klimop-erfenis-userid-koppeling-v1|';
 const APPARAAT_CERT_DOMEIN = 'klimop-apparaat-certificaat-v1|';
 const APPARAAT_INTREKKING_DOMEIN = 'klimop-apparaat-intrekking-v1|';
-const HERSTEL_VOOGD_DOMEIN = 'klimop-herstel-voogd-stem-v1|';
+const HERSTEL_VOOGD_DOMEIN = 'klimop-herstel-voogd-stem-v2|';
+const HERSTEL_VERANKERING_DOMEIN = 'klimop-herstelbeleid-verankering-v1|';
+const MS_PER_UUR = 3600 * 1000;
 const HERSTEL_BETWIST_DOMEIN = 'klimop-herstel-eigenaar-betwisting-v1|';
 const MLS_PAKKET_DOMEIN = 'klimop-mls-sleutelpakket-v1|';
 const MLS_COMMIT_DOMEIN = 'klimop-mls-commit-v1|';
@@ -182,11 +215,23 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
     return { ok: false, fout: 'PERSOON_OPRICHTING_HANDTEKENING_ONGELDIG' };
   }
 
+  if (!Array.isArray(staat.rotaties)) return { ok: false, fout: 'PERSOON_ROTATIEKETEN_GEBROKEN' };
+  const verankeringen = staat.herstelBeleidVerankeringen ?? [];
+  if (!Array.isArray(verankeringen)) return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  for (const v of verankeringen) {
+    const vk = verifieerHerstelBeleidVerankering(v, staat);
+    if (!vk.ok) return vk;
+  }
+
   let huidigeSleutel = kern.aanvankelijkeWortelPubDerB64u;
   for (let i = 0; i < staat.rotaties.length; i++) {
     const r = staat.rotaties[i];
     if (r.persoonsId !== persoonsId || r.volgnummer !== i + 1 || r.vorigeWortelPubDerB64u !== huidigeSleutel) {
       return { ok: false, fout: 'PERSOON_ROTATIEKETEN_GEBROKEN' };
+    }
+    // KLIMOP-020: невідомий вид переходу відхиляється, а не трактується як відновлення
+    if (r.reden !== 'geplande_rotatie' && r.reden !== 'wettig_drempel_herstel') {
+      return { ok: false, fout: 'PERSOON_ONBEKEND_ROTATIETYPE' };
     }
     const { handtekeningVorigeOfHerstelB64u, handtekeningNieuweB64u, ...rotKern } = r;
     const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
@@ -197,8 +242,13 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
       if (!verifieerEd25519(huidigeSleutel, boodschap, handtekeningVorigeOfHerstelB64u)) {
         return { ok: false, fout: 'PERSOON_ROTATIE_VORIGE_SLEUTEL_ONGELDIG' };
       }
-    } else if (!r.herstelAanvraagId) {
-      return { ok: false, fout: 'PERSOON_HERSTELROTATIE_MIST_AANVRAAG_ID' };
+    } else {
+      if (!r.herstelAanvraagId) {
+        return { ok: false, fout: 'PERSOON_HERSTELROTATIE_MIST_AANVRAAG_ID' };
+      }
+      // KLIMOP-020: перехід відновлення засвідчується повним сертифікатом за політикою, закріпленою раніше
+      const hc = verifieerHerstelCertificaat(r, staat, i + 1, verankeringen);
+      if (!hc.ok) return hc;
     }
     huidigeSleutel = r.nieuweWortelPubDerB64u;
   }
@@ -210,6 +260,210 @@ export function verifieerPersoonsStaat(staat: KlimopPersoonsStaat): { ok: true }
     return { ok: false, fout: 'PERSOON_ACTIEVE_SLEUTEL_KOMT_NIET_OVEREEN' };
   }
   return { ok: true };
+}
+
+/** KLIMOP-020: відкритий ключ кореня для епохи `epoche` (1 — засновницький ключ). */
+function wortelSleutelVoorEpoche(staat: KlimopPersoonsStaat, epoche: number): string | null {
+  if (!Number.isInteger(epoche) || epoche < 1) return null;
+  if (epoche === 1) return staat.oprichting.aanvankelijkeWortelPubDerB64u;
+  return staat.rotaties[epoche - 2]?.nieuweWortelPubDerB64u ?? null;
+}
+
+/**
+ * KLIMOP-020: чи мав кореневий ключ право видавати посвідчення на момент `momentIso`.
+ * Право має лише корінь епохи, чинної в цей момент. Після законного відновлення всі попередні корені
+ * втрачають право (їхній закритий ключ міг потрапити до чужих рук): видані ними посвідчення недійсні для
+ * будь-якого використання після моменту відновлення (`gebruiksMomentIso`), а дії, здійснені раніше, лишаються чинними.
+ */
+function wortelWasBevoegdOp(
+  staat: KlimopPersoonsStaat,
+  wortelPub: string,
+  momentIso: string,
+  gebruiksMomentIso: string = momentIso,
+): string | null {
+  const momentMs = Date.parse(momentIso);
+  const gebruikMs = Date.parse(gebruiksMomentIso);
+  if (!Number.isFinite(momentMs) || !Number.isFinite(gebruikMs)) return 'TIJDSTIP_ONGELDIG';
+  const aantalEpochen = staat.rotaties.length + 1;
+  for (let e = 1; e <= aantalEpochen; e++) {
+    if (wortelSleutelVoorEpoche(staat, e) !== wortelPub) continue;
+    const beginMs = Date.parse(e === 1 ? staat.oprichting.opgerichtOp : staat.rotaties[e - 2].geroteerdOp);
+    const eindIso = staat.rotaties[e - 1]?.geroteerdOp;
+    const eindMs = eindIso ? Date.parse(eindIso) : Number.POSITIVE_INFINITY;
+    if (!(momentMs >= beginMs && momentMs < eindMs)) continue;
+    if (staat.rotaties.slice(e - 1).some((r) => r.reden === 'wettig_drempel_herstel' && Date.parse(r.geroteerdOp) <= gebruikMs)) {
+      return 'WORTEL_VERVANGEN_DOOR_HERSTEL';
+    }
+    return null;
+  }
+  return 'WORTEL_NIET_GELDIG_OP_TIJDSTIP';
+}
+
+/** KLIMOP-020: канонічний відбиток політики відновлення. */
+export function berekenHerstelBeleidSha256(beleid: KlimopHerstelBeleid): string {
+  return createHash('sha256').update(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(beleid), 'utf8').digest('hex');
+}
+
+function verifieerHerstelBeleidVerankering(
+  v: KlimopHerstelBeleidVerankering,
+  staat: KlimopPersoonsStaat,
+): { ok: true } | { ok: false; fout: string } {
+  if (!v || v.schema !== 1 || v.persoonsId !== staat.oprichting.persoonsId || !/^[0-9a-f]{64}$/.test(v.beleidSha256 ?? '')) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  }
+  const sleutel = wortelSleutelVoorEpoche(staat, v.epoche);
+  if (!sleutel || !Number.isFinite(Date.parse(v.vastgelegdOp))) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_ONGELDIG' };
+  }
+  const { handtekeningB64u, ...kern } = v;
+  if (!verifieerEd25519(sleutel, Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
+    return { ok: false, fout: 'HERSTELBELEID_VERANKERING_HANDTEKENING_ONGELDIG' };
+  }
+  return { ok: true };
+}
+
+/** KLIMOP-020: склад голосу опікуна охоплює політику, умову відновлення та строк оскарження. */
+function herstelStemKern(
+  aanvraag: KlimopHerstelCertificaat['aanvraag'],
+  beleidSha256: string,
+  voogdKnooppuntId: string,
+  gestemdOp: string,
+): Record<string, string> {
+  return {
+    aanvraagId: aanvraag.aanvraagId,
+    persoonsId: aanvraag.persoonsId,
+    omstandigheid: aanvraag.omstandigheid,
+    kandidaatNieuweWortelPubDerB64u: aanvraag.kandidaatNieuweWortelPubDerB64u,
+    geopendOp: aanvraag.geopendOp,
+    betwistingVerlooptOp: aanvraag.betwistingVerlooptOp,
+    beleidSha256,
+    voogdKnooppuntId,
+    gestemdOp,
+  };
+}
+
+function minimaleBetwistingsUren(beleid: KlimopHerstelBeleid, omstandigheid: KlimopHerstelAanvraag['omstandigheid']): number {
+  const eigen = Number(beleid.minimaleBetwistingsVensterUren?.[omstandigheid]);
+  return Math.max(omstandigheid === 'verlies_alle_apparaten' ? 48 : 168, Number.isFinite(eigen) ? eigen : 0);
+}
+
+/** KLIMOP-020: рахує дійсні голоси опікунів за політикою (лише різні опікуни з цієї політики). */
+function telGeldigeVoogdStemmen(
+  beleid: KlimopHerstelBeleid,
+  aanvraag: KlimopHerstelCertificaat['aanvraag'],
+  stemmen: KlimopHerstelAanvraag['voogdStemmen'],
+): number {
+  const beleidSha256 = berekenHerstelBeleidSha256(beleid);
+  const voogdSleutelMap = new Map(beleid.voogden.map((v) => [v.knooppuntId, v.publiekeSleutelDerB64u]));
+  const gezien = new Set<string>();
+  const openMs = Date.parse(aanvraag.geopendOp);
+  for (const stem of stemmen ?? []) {
+    if (gezien.has(stem.voogdKnooppuntId)) continue;
+    const pub = voogdSleutelMap.get(stem.voogdKnooppuntId);
+    if (!pub) continue;
+    const stemMs = Date.parse(stem.gestemdOp);
+    if (!Number.isFinite(stemMs) || stemMs < openMs) continue;
+    const kern = herstelStemKern(aanvraag, beleidSha256, stem.voogdKnooppuntId, stem.gestemdOp);
+    if (verifieerEd25519(pub, Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(kern), 'utf8'), stem.handtekeningB64u)) {
+      gezien.add(stem.voogdKnooppuntId);
+    }
+  }
+  return gezien.size;
+}
+
+/** KLIMOP-020: найпізніше закріплення, чинне для переходу з епохи `vanEpoche` на момент відкриття заявки. */
+function zoekVerankering(
+  verankeringen: readonly KlimopHerstelBeleidVerankering[],
+  vanEpoche: number,
+  geopendOp: string,
+): KlimopHerstelBeleidVerankering | null {
+  const openMs = Date.parse(geopendOp);
+  let beste: KlimopHerstelBeleidVerankering | null = null;
+  for (const v of verankeringen) {
+    if (v.epoche > vanEpoche || Date.parse(v.vastgelegdOp) > openMs) continue;
+    if (!beste || v.epoche > beste.epoche || (v.epoche === beste.epoche && Date.parse(v.vastgelegdOp) > Date.parse(beste.vastgelegdOp))) {
+      beste = v;
+    }
+  }
+  return beste;
+}
+
+function verifieerHerstelCertificaat(
+  r: KlimopWortelRotatieBewijs,
+  staat: KlimopPersoonsStaat,
+  vanEpoche: number,
+  verankeringen: readonly KlimopHerstelBeleidVerankering[],
+): { ok: true } | { ok: false; fout: string } {
+  const c = r.herstelCertificaat;
+  if (!c || !c.beleid || !c.aanvraag || !Array.isArray(c.voogdStemmen)) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_ONTBREEKT' };
+  }
+  const pid = staat.oprichting.persoonsId;
+  if (
+    c.beleid.persoonsId !== pid
+    || c.aanvraag.persoonsId !== pid
+    || c.aanvraag.aanvraagId !== r.herstelAanvraagId
+    || c.aanvraag.kandidaatNieuweWortelPubDerB64u !== r.nieuweWortelPubDerB64u
+  ) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_KOMT_NIET_OVEREEN' };
+  }
+  const verankering = zoekVerankering(verankeringen, vanEpoche, c.aanvraag.geopendOp);
+  if (!verankering || verankering.beleidSha256 !== berekenHerstelBeleidSha256(c.beleid)) {
+    return { ok: false, fout: 'HERSTELBELEID_NIET_VERANKERD' };
+  }
+  if (!Number.isInteger(c.beleid.drempel) || c.beleid.drempel < 2 || c.beleid.voogden.length < c.beleid.drempel) {
+    return { ok: false, fout: 'HERSTELBELEID_DREMPEL_ONGELDIG' };
+  }
+  const openMs = Date.parse(c.aanvraag.geopendOp);
+  const eindMs = Date.parse(c.aanvraag.betwistingVerlooptOp);
+  const rotMs = Date.parse(r.geroteerdOp);
+  if (![openMs, eindMs, rotMs].every(Number.isFinite)) return { ok: false, fout: 'HERSTELCERTIFICAAT_TIJD_ONGELDIG' };
+  if (eindMs - openMs < minimaleBetwistingsUren(c.beleid, c.aanvraag.omstandigheid) * MS_PER_UUR) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_BETWISTINGSVENSTER_TE_KORT' };
+  }
+  if (rotMs < eindMs) return { ok: false, fout: 'HERSTELCERTIFICAAT_VOOR_EINDE_BETWISTING' };
+  if (telGeldigeVoogdStemmen(c.beleid, c.aanvraag, c.voogdStemmen) < c.beleid.drempel) {
+    return { ok: false, fout: 'HERSTELCERTIFICAAT_ONVOLDOENDE_VOOGDEN' };
+  }
+  return { ok: true };
+}
+
+/**
+ * KLIMOP-020: закріплює політику відновлення підписом кореня чинної епохи. Лише закріплена політика
+ * (її опікуни, поріг і строки) може згодом засвідчити новий корінь після втрати доступу.
+ */
+export function verankerHerstelBeleid(opties: {
+  staat: KlimopPersoonsStaat;
+  beleid: KlimopHerstelBeleid;
+  wortelGeheimPkcs8B64u: string;
+  nuIso?: string;
+}): { ok: true; nieuweStaat: KlimopPersoonsStaat } | { ok: false; fout: string } {
+  const sv = verifieerPersoonsStaat(opties.staat);
+  if (!sv.ok) return sv;
+  if (opties.beleid.persoonsId !== opties.staat.oprichting.persoonsId) {
+    return { ok: false, fout: 'HERSTELBELEID_PERSOON_KOMT_NIET_OVEREEN' };
+  }
+  const kern = {
+    schema: 1 as const,
+    persoonsId: opties.staat.oprichting.persoonsId,
+    epoche: opties.staat.actieveEpoche,
+    beleidSha256: berekenHerstelBeleidSha256(opties.beleid),
+    vastgelegdOp: opties.nuIso ?? new Date().toISOString(),
+  };
+  const handtekeningB64u = tekenEd25519(
+    opties.wortelGeheimPkcs8B64u,
+    Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'),
+  );
+  if (!verifieerEd25519(opties.staat.actieveWortelPubDerB64u, Buffer.from(HERSTEL_VERANKERING_DOMEIN + canoniekeJson(kern), 'utf8'), handtekeningB64u)) {
+    return { ok: false, fout: 'WORTELGEHEIM_KOMT_NIET_OVEREEN' };
+  }
+  return {
+    ok: true,
+    nieuweStaat: {
+      ...opties.staat,
+      herstelBeleidVerankeringen: [...(opties.staat.herstelBeleidVerankeringen ?? []), { ...kern, handtekeningB64u }],
+    },
+  };
 }
 
 /** Планова ротація кореневого ключа зі збереженням сталого ідентифікатора особи `persoonsId`. */
@@ -245,6 +499,7 @@ export function roteerPersoonsWortelSleutel(
       rotaties: [...staat.rotaties, bewijs],
       actieveWortelPubDerB64u: nieuw.publiekDerB64u,
       actieveEpoche: staat.actieveEpoche + 1,
+      ...(staat.herstelBeleidVerankeringen ? { herstelBeleidVerankeringen: staat.herstelBeleidVerankeringen } : {}),
     },
     nieuwWortelGeheimPkcs8B64u: nieuw.geheimPkcs8B64u,
   };
@@ -426,6 +681,8 @@ export function registreerVertrouwdApparaat(opties: {
 export function verifieerApparaatIntrekking(
   intrekking: KlimopApparaatIntrekking,
   staat: KlimopPersoonsStaat,
+  /** KLIMOP-020: інші відомі відкликання — аварійний пристрій, який сам відкликаний, не може відкликати інших. */
+  andereIntrekkingen?: readonly KlimopApparaatIntrekking[],
 ): { ok: true } | { ok: false; fout: string } {
   const sv = verifieerPersoonsStaat(staat);
   if (!sv.ok) return sv;
@@ -441,6 +698,9 @@ export function verifieerApparaatIntrekking(
     if (!geldigeWortels.has(intrekking.ondertekenaarPubDerB64u)) {
       return { ok: false, fout: 'APPARAAT_INTREKKING_ONBEKENDE_WORTEL' };
     }
+    // KLIMOP-020: відкликати може лише корінь, чинний на момент відкликання
+    const bevoegd = wortelWasBevoegdOp(staat, intrekking.ondertekenaarPubDerB64u, intrekking.ingetrokkenOp);
+    if (bevoegd) return { ok: false, fout: `APPARAAT_INTREKKING_${bevoegd}` };
   } else {
     if (
       !intrekking.noodApparaatCertificaat
@@ -451,6 +711,9 @@ export function verifieerApparaatIntrekking(
     const cv = verifieerApparaatCertificaat(intrekking.noodApparaatCertificaat, staat, {
       vereisteBevoegdheid: 'nood_betwisting',
       nuIso: intrekking.ingetrokkenOp,
+      intrekkingen: andereIntrekkingen?.filter(
+        (a) => a.ingetrokkenApparaatId !== intrekking.ingetrokkenApparaatId || a.handtekeningB64u !== intrekking.handtekeningB64u,
+      ),
     });
     if (!cv.ok) return cv;
   }
@@ -485,7 +748,13 @@ export function verifieerApparaatCertificaat(
   }
 
   const nuMs = Date.parse(opties.nuIso ?? new Date().toISOString());
-  if (nuMs < Date.parse(certificaat.uitgegevenOp) || nuMs > Date.parse(certificaat.verlooptOp)) {
+  const vanMs = Date.parse(certificaat.uitgegevenOp);
+  const totMs = Date.parse(certificaat.verlooptOp);
+  // KLIMOP-020: невизначений час дає закриту відмову, а не мовчазний успіх порівняння
+  if (!Number.isFinite(nuMs) || !Number.isFinite(vanMs) || !Number.isFinite(totMs) || totMs <= vanMs) {
+    return { ok: false, fout: 'APPARAAT_CERTIFICAAT_TIJD_ONGELDIG' };
+  }
+  if (nuMs < vanMs || nuMs > totMs) {
     return { ok: false, fout: 'APPARAAT_CERTIFICAAT_VERLOPEN' };
   }
 
@@ -505,6 +774,9 @@ export function verifieerApparaatCertificaat(
   if (!geldigeWortels.has(certificaat.wortelPubDerB64u)) {
     return { ok: false, fout: 'APPARAAT_ONBEKENDE_WORTELSLEUTEL' };
   }
+  // KLIMOP-020: корінь мав бути чинним на момент видачі, а не будь-яким коренем з історії
+  const bevoegd = wortelWasBevoegdOp(staat, certificaat.wortelPubDerB64u, certificaat.uitgegevenOp, new Date(nuMs).toISOString());
+  if (bevoegd) return { ok: false, fout: `APPARAAT_${bevoegd}` };
 
   const { wortelPubDerB64u, wortelHandtekeningB64u, ...kern } = certificaat;
   if (
@@ -677,13 +949,8 @@ export function voegVoogdBevestigingToe(opties: {
   }
 
   const gestemdOp = opties.nuIso ?? new Date().toISOString();
-  const stemKern = {
-    aanvraagId: opties.aanvraag.aanvraagId,
-    persoonsId: opties.aanvraag.persoonsId,
-    kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
-    voogdKnooppuntId: voogdId,
-    gestemdOp,
-  };
+  // KLIMOP-020: опікун підписує також умову відновлення, строки оскарження й відбиток політики
+  const stemKern = herstelStemKern(opties.aanvraag, berekenHerstelBeleidSha256(opties.beleid), voogdId, gestemdOp);
   const handtekeningB64u = tekenEd25519(
     opties.voogd.geheimeSleutelPkcs8B64u,
     Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(stemKern), 'utf8'),
@@ -784,31 +1051,31 @@ export function voltooiWettigHerstel(opties: {
   }
 
   const nuIso = opties.nuIso ?? new Date().toISOString();
-  if (Date.parse(nuIso) < Date.parse(opties.aanvraag.betwistingVerlooptOp)) {
+  const nuMs = Date.parse(nuIso);
+  const eindMs = Date.parse(opties.aanvraag.betwistingVerlooptOp);
+  if (!Number.isFinite(nuMs) || !Number.isFinite(eindMs)) {
+    return { ok: false, fout: 'HERSTEL_TIJD_ONGELDIG' };
+  }
+  if (nuMs < eindMs) {
     return { ok: false, fout: 'BETWISTINGSTERMIJN_NOG_NIET_VERSTREKEN' };
   }
 
-  // Перевіряємо всі підписи опікунів
-  const voogdSleutelMap = new Map(opties.beleid.voogden.map((v) => [v.knooppuntId, v.publiekeSleutelDerB64u]));
-  let geldigeStemmen = 0;
-  const gezieneVoogden = new Set<string>();
-  for (const stem of opties.aanvraag.voogdStemmen) {
-    if (gezieneVoogden.has(stem.voogdKnooppuntId)) continue;
-    const pub = voogdSleutelMap.get(stem.voogdKnooppuntId);
-    if (!pub) continue;
-    const stemKern = {
-      aanvraagId: opties.aanvraag.aanvraagId,
-      persoonsId: opties.aanvraag.persoonsId,
-      kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
-      voogdKnooppuntId: stem.voogdKnooppuntId,
-      gestemdOp: stem.gestemdOp,
-    };
-    if (verifieerEd25519(pub, Buffer.from(HERSTEL_VOOGD_DOMEIN + canoniekeJson(stemKern), 'utf8'), stem.handtekeningB64u)) {
-      gezieneVoogden.add(stem.voogdKnooppuntId);
-      geldigeStemmen++;
-    }
+  // KLIMOP-020: заявка має належати цій особі, а політика — бути закріпленою коренем раніше
+  const pid = opties.staat.oprichting.persoonsId;
+  if (opties.aanvraag.persoonsId !== pid || opties.beleid.persoonsId !== pid) {
+    return { ok: false, fout: 'HERSTEL_PERSOON_KOMT_NIET_OVEREEN' };
   }
-  if (geldigeStemmen < opties.beleid.drempel) {
+  const verankering = zoekVerankering(
+    opties.staat.herstelBeleidVerankeringen ?? [],
+    opties.staat.actieveEpoche,
+    opties.aanvraag.geopendOp,
+  );
+  if (!verankering || verankering.beleidSha256 !== berekenHerstelBeleidSha256(opties.beleid)) {
+    return { ok: false, fout: 'HERSTELBELEID_NIET_VERANKERD' };
+  }
+
+  // Перевіряємо всі підписи опікунів
+  if (telGeldigeVoogdStemmen(opties.beleid, opties.aanvraag, opties.aanvraag.voogdStemmen) < opties.beleid.drempel) {
     return { ok: false, fout: 'ONVOLDOENDE_VOOGD_BEVESTIGINGEN' };
   }
 
@@ -827,6 +1094,18 @@ export function voltooiWettigHerstel(opties: {
     geroteerdOp: nuIso,
     reden: 'wettig_drempel_herstel' as const,
     herstelAanvraagId: opties.aanvraag.aanvraagId,
+    herstelCertificaat: {
+      beleid: opties.beleid,
+      aanvraag: {
+        aanvraagId: opties.aanvraag.aanvraagId,
+        persoonsId: opties.aanvraag.persoonsId,
+        omstandigheid: opties.aanvraag.omstandigheid,
+        kandidaatNieuweWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
+        geopendOp: opties.aanvraag.geopendOp,
+        betwistingVerlooptOp: opties.aanvraag.betwistingVerlooptOp,
+      },
+      voogdStemmen: opties.aanvraag.voogdStemmen,
+    },
   };
   const boodschap = Buffer.from(ROTATIE_DOMEIN + canoniekeJson(rotKern), 'utf8');
   const sigNieuw = tekenEd25519(opties.kandidaatNieuwWortelGeheimPkcs8B64u, boodschap);
@@ -847,6 +1126,9 @@ export function voltooiWettigHerstel(opties: {
       rotaties: [...opties.staat.rotaties, bewijs],
       actieveWortelPubDerB64u: opties.aanvraag.kandidaatNieuweWortelPubDerB64u,
       actieveEpoche: opties.staat.actieveEpoche + 1,
+      ...(opties.staat.herstelBeleidVerankeringen
+        ? { herstelBeleidVerankeringen: opties.staat.herstelBeleidVerankeringen }
+        : {}),
     },
     voltooideAanvraag: { ...opties.aanvraag, staat: 'voltooid' },
     hersteldGeheimScalairHex: pedUit.geheimScalairHex,

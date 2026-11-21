@@ -422,6 +422,37 @@ export function bekrachtigBestuursBesluitMetFrost(opties: {
   };
 }
 
+/**
+ * KLIMOP-020: канонічний зміст рішення про зміну конституції. Рада підписує точний попередній стан
+ * (відбиток чинної конституції), наступну конституцію та ключі ролей випуску; вузол заново виводить цей
+ * відбиток і звіряє його з `inhoudSha256` останнього рішення, а не довіряє переданим окремо значенням.
+ */
+export function maakGrondwetWijzigingInhoud(opties: {
+  vorigeGrondwet: KlimopBestuursGrondwet;
+  nieuweGrondwet: KlimopBestuursGrondwet;
+  erkendeDoelenRolPubDerB64u: string;
+  erkendeTijdstempelRolPubDerB64u: string;
+}): {
+  soort: 'grondwet_wijziging';
+  vorigeGrondwetSha256: string;
+  nieuweGrondwet: KlimopBestuursGrondwet;
+  erkendeDoelenRolPubDerB64u: string;
+  erkendeTijdstempelRolPubDerB64u: string;
+} {
+  return {
+    soort: 'grondwet_wijziging',
+    vorigeGrondwetSha256: createHash('sha256').update(canoniekeJson(opties.vorigeGrondwet), 'utf8').digest('hex'),
+    nieuweGrondwet: opties.nieuweGrondwet,
+    erkendeDoelenRolPubDerB64u: opties.erkendeDoelenRolPubDerB64u,
+    erkendeTijdstempelRolPubDerB64u: opties.erkendeTijdstempelRolPubDerB64u,
+  };
+}
+
+/** KLIMOP-020: відбиток змісту рішення про зміну конституції (той самий спосіб, що й `inhoudSha256` пропозиції). */
+export function berekenGrondwetWijzigingSha256(opties: Parameters<typeof maakGrondwetWijzigingInhoud>[0]): string {
+  return createHash('sha256').update(canoniekeJson(maakGrondwetWijzigingInhoud(opties)), 'utf8').digest('hex');
+}
+
 /** Перевіряє цілісність усього геш-пов'язаного журналу критичних рішень керування. */
 export function verifieerBestuursBesluitLogboek(
   grondwet: KlimopBestuursGrondwet,
@@ -441,6 +472,34 @@ export function verifieerBestuursBesluitLogboek(
     const frostBoodschap = maakFrostBesluitBoodschap(item.voorstel, item.bekrachtigdOp);
     if (!verifieerStandaardEd25519Handtekening(frostBoodschap, item.frostHandtekeningHex, grondwet.frostGroepsPubliekeSleutelHex)) {
       return { ok: false, fout: 'BESLUITLOGBOEK_FROST_HANDTEKENING_ONGELDIG', foutiefVolgnummer: i + 1 };
+    }
+    // KLIMOP-020: журнал повторює перевірки часової політики, підпису ініціатора та складу кворуму
+    const v = item.voorstel;
+    const { indienerPubDerB64u, indienerHandtekeningB64u, staat: _s, noodVetoBewijs: _nv, ...voorstelKern } = v;
+    if (v.grondwetId !== grondwet.grondwetId) {
+      return { ok: false, fout: 'BESLUITLOGBOEK_GRONDWET_KOMT_NIET_OVEREEN', foutiefVolgnummer: i + 1 };
+    }
+    if (!verifieerEd25519Der(indienerPubDerB64u, Buffer.from(VOORSTEL_DOMEIN + canoniekeJson(voorstelKern), 'utf8'), indienerHandtekeningB64u)) {
+      return { ok: false, fout: 'BESLUITLOGBOEK_INDIENER_HANDTEKENING_ONGELDIG', foutiefVolgnummer: i + 1 };
+    }
+    if (v.noodVetoBewijs) {
+      return { ok: false, fout: 'BESLUITLOGBOEK_BEVAT_GEVETOOD_VOORSTEL', foutiefVolgnummer: i + 1 };
+    }
+    const regel = STANDAARD_CATEGORIE_BELEID[v.categorie];
+    const bekrMs = Date.parse(item.bekrachtigdOp);
+    const minMs = Date.parse(v.ingediendOp) + (regel?.minimaleWachttijdUren ?? Number.POSITIVE_INFINITY) * 3600 * 1000;
+    const vanafMs = Date.parse(v.uitvoerbaarVanaf);
+    if (!regel || ![bekrMs, minMs, vanafMs].every(Number.isFinite) || bekrMs < Math.max(minMs, vanafMs)) {
+      return { ok: false, fout: 'BESLUITLOGBOEK_TIJDSLOT_GESCHONDEN', foutiefVolgnummer: i + 1 };
+    }
+    const uniek = [...new Set(item.frostOndertekenaarIndexen)];
+    if (
+      uniek.length !== item.frostOndertekenaarIndexen.length
+      || uniek.length < grondwet.drempel
+      || uniek.some((idx) => !Number.isInteger(idx) || idx < 1 || idx > grondwet.totaalHoeders)
+      || uniek.filter((idx) => idx !== v.indienerHoederIndex).length === 0
+    ) {
+      return { ok: false, fout: 'BESLUITLOGBOEK_QUORUM_ONGELDIG', foutiefVolgnummer: i + 1 };
     }
     verwachteVorige = besluitSha256;
   }

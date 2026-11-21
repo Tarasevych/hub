@@ -23,6 +23,7 @@ import {
   maakPersoonsIdentiteit,
   openHerstelAanvraag,
   voegVoogdBevestigingToe,
+  verankerHerstelBeleid,
   voltooiWettigHerstel,
 } from '../../shared/klimop/identiteit';
 import { maakBestuursGrondwet, maakBestuursVoorstel } from '../../shared/klimop/bestuur';
@@ -623,6 +624,15 @@ export async function main(): Promise<number> {
         wettige_erfopvolging: 168,
       },
     };
+    // KLIMOP-020: політику відновлення закріплює корінь чинної епохи до втрати доступу
+    const verankering020 = verankerHerstelBeleid({
+      staat: persoon.staat,
+      beleid: herstelBeleid,
+      wortelGeheimPkcs8B64u: persoon.wortelGeheimPkcs8B64u,
+      nuIso: new Date(t0Ms).toISOString(),
+    });
+    if (!verankering020.ok) throw new Error(verankering020.fout);
+    persoon.staat = verankering020.nieuweStaat;
     const nieuwWortel = maakEd25519SleutelPaar();
     const aanv10 = openHerstelAanvraag({
       beleid: herstelBeleid,

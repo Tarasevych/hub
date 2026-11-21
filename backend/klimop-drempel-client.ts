@@ -25,6 +25,19 @@ import {
 } from '../shared/klimop/drempel-vervoer';
 import type { KlimopNetwerkClient } from './klimop-knooppunt-agent';
 
+/** KLIMOP-020: порогові дії, які дозволяє мандат набору ключа (перевіряються вузлом у суворому режимі). */
+export const KLIMOP_DREMPEL_MANDAAT_ACTIES = [
+  'dkg_maak_ontvangstsleutel',
+  'dkg_maak_bijdrage',
+  'dkg_voltooi_sleutel',
+  'frost_ronde1',
+  'frost_ronde2',
+  'ververs_maak_nulbijdrage',
+  'ververs_voorbereiden',
+  'ververs_afronden',
+  'ververs_status',
+] as const;
+
 export interface KlimopDrempelGroepManifest {
   setId: string;
   drempel: number;
@@ -96,6 +109,9 @@ export class KlimopDrempelOndertekenaarClient {
         drempelVereist: null,
         uitgegevenOp: nuIso,
         verlooptOp: verlooptOpIso,
+        // KLIMOP-020: лише порогові дії над цим набором ключа
+        toegestaneActies: [...KLIMOP_DREMPEL_MANDAAT_ACTIES],
+        objectIds: [opties.setId],
       }, opties.opdrachtgever);
     }
 

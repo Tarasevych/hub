@@ -39,6 +39,7 @@ function maakOpslagMandaatVoorKnooppunt(
   laag: KlimopOpslagLaag,
   nuIso: string,
   verlooptOpIso: string,
+  blokSha256s?: readonly string[],
 ): KlimopOndertekendMandaat {
   const inhoud: KlimopMandaatInhoud = {
     schema: 1,
@@ -52,6 +53,9 @@ function maakOpslagMandaatVoorKnooppunt(
     drempelVereist: null,
     uitgegevenOp: nuIso,
     verlooptOp: verlooptOpIso,
+    // KLIMOP-020: мандат дозволяє лише дії над смугами, призначеними саме цьому вузлу
+    toegestaneActies: ['bewaar_blok', 'haal_blok', 'wis_blok', 'controleer_blok_integriteit'],
+    ...(blokSha256s ? { objectIds: [...blokSha256s] } : {}),
   };
   return ondertekenKlimopMandaat(inhoud, eigenaar);
 }
@@ -124,6 +128,7 @@ export class KlimopVerdeeldeOpslagClient {
         laag,
         nuIso,
         verlooptOpIso,
+        verdeeld.fragmentenPerSegment.flatMap((seg) => seg.filter((f) => f.index === r).map((f) => f.sha256)),
       );
     }
 

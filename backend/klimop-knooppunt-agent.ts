@@ -323,7 +323,7 @@ export interface KlimopIdentiteitRegisterInvoer {
 }
 
 export type KnooppuntOpdrachtAntwoord =
-  | { ok: true; actie: 'pong'; knooppuntId: string; echo: string }
+  | { ok: true; actie: 'pong'; knooppuntId: string; echo: string; vertrouwensModus?: 'streng' | 'open_proef' }
   | { ok: true; actie: 'opgeslagen'; blokSha256: string; grootteBytes: number }
   | { ok: true; actie: 'opgehaald'; blokSha256: string; cijfertekstB64u: string }
   | { ok: true; actie: 'gewist'; blokSha256: string; bestond: boolean }
@@ -558,6 +558,8 @@ export interface KlimopProefKnooppunt {
   aantalActieveToetredingen(): number;
   aantalAuditRapporten(): number;
   aantalZaadPakketten(): number;
+  /** KLIMOP-020: `streng` — є довірений реєстр видавців; `open_proef` — лише для короткочасних штучних випробувань. */
+  vertrouwensModus(): 'streng' | 'open_proef';
   estafetteTeller(): number;
   sluit(): Promise<void>;
 }
@@ -572,6 +574,13 @@ export async function startKlimopProefKnooppunt(config: {
    * завершені переходи епох). Без нього стан живе лише в пам'яті процесу (як у короткочасних випробуваннях).
    */
   staatBestand?: string;
+  /**
+   * KLIMOP-020: довірений реєстр видавців мандатів (ідентифікатори вузлів). Якщо задано — суворий режим:
+   * видавець і зараховані підписанти мають бути в реєстрі, мандат мусить мати явний перелік дозволених дій,
+   * об'єкт дії перевіряється за переліком `objectIds`, а сеанс подає лише видавець, підписант або вповноважений
+   * відправник. Без реєстру вузол працює в явному режимі `open_proef` (лише для штучних випробувань).
+   */
+  vertrouwdeUitgevers?: readonly string[];
 }): Promise<KlimopProefKnooppunt> {
   const { knooppunt } = config;
   const host = config.luisterHost ?? '127.0.0.1';
@@ -605,10 +614,25 @@ export async function startKlimopProefKnooppunt(config: {
   let huidigMinCompatibelVolgnummer = 1;
   let aantalTerugdraaiingen = 0;
   let aantalEstafettes = 0;
+  const vertrouwdeUitgevers: ReadonlySet<string> | null = config.vertrouwdeUitgevers
+    ? new Set(config.vertrouwdeUitgevers)
+    : null;
+  const vertrouwensModus: 'streng' | 'open_proef' = vertrouwdeUitgevers ? 'streng' : 'open_proef';
+
+  /** KLIMOP-020: об'єкт дії для перевірки переліку `objectIds` мандата. */
+  function objectIdVanOpdracht(opdracht: KnooppuntOpdracht): string | undefined {
+    const o = opdracht as unknown as Record<string, unknown>;
+    for (const veld of ['setId', 'blokSha256', 'persoonsId', 'dienstId', 'operatieId'] as const) {
+      if (typeof o[veld] === 'string' && o[veld]) return o[veld] as string;
+    }
+    return undefined;
+  }
 
   function controleerRolEnMandaat(
     vereisteRol: 'opslag' | 'verificatie' | 'synchronisatie' | 'herstel' | 'verbinding',
     mandaat: KlimopOndertekendMandaat,
+    sessie?: KlimopStengelSessie,
+    opdracht?: KnooppuntOpdracht,
   ): { ok: true } | { ok: false; fout: string; details?: string[] } {
     if (!knooppunt.identiteit.rollen.includes(vereisteRol)) {
       return {
@@ -628,6 +652,15 @@ export async function startKlimopProefKnooppunt(config: {
     const v = verifieerKlimopMandaat(mandaat, {
       ingetrokkenMandaatIds: ingetrokkenMandaten,
       ingetrokkenKnooppuntIds: quarantaineKnooppunten,
+      ...(vertrouwdeUitgevers
+        ? {
+            vertrouwdeUitgevers,
+            vereisActieBereik: true,
+            actie: opdracht?.actie,
+            objectId: opdracht ? objectIdVanOpdracht(opdracht) : undefined,
+            sessieAfzenderKnooppuntId: sessie?.tegenpartijIdentiteit.knooppuntId ?? '',
+          }
+        : {}),
     });
     if (!v.ok) return { ok: false, fout: 'MANDAAT_GEWEIGERD', details: v.fouten };
     if (
@@ -666,6 +699,7 @@ export async function startKlimopProefKnooppunt(config: {
         actie: 'pong',
         knooppuntId: knooppunt.identiteit.knooppuntId,
         echo: String(opdracht.bericht ?? '').slice(0, 256),
+        vertrouwensModus,
       };
     }
 
@@ -675,7 +709,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'wis_blok'
       || opdracht.actie === 'controleer_blok_integriteit'
     ) {
-      const mOk = controleerRolEnMandaat('opslag', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('opslag', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'bewaar_blok') {
@@ -720,7 +754,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'ververs_afronden'
       || opdracht.actie === 'ververs_status'
     ) {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (
@@ -958,7 +992,7 @@ export async function startKlimopProefKnooppunt(config: {
     }
 
     if (opdracht.actie === 'publiceer_identiteit_staat' || opdracht.actie === 'raadpleeg_identiteit_staat') {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'raadpleeg_identiteit_staat') {
@@ -1027,7 +1061,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'pas_uitgave_toe'
       || opdracht.actie === 'raadpleeg_uitgave_staat'
     ) {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'raadpleeg_uitgave_staat') {
@@ -1123,7 +1157,7 @@ export async function startKlimopProefKnooppunt(config: {
     }
 
     if (opdracht.actie === 'synchroniseer_dienst_crdt' || opdracht.actie === 'raadpleeg_dienst_crdt') {
-      const mOk = controleerRolEnMandaat('synchronisatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('synchronisatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'raadpleeg_dienst_crdt') {
@@ -1165,7 +1199,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'annuleer_uitgestelde_operatie'
       || opdracht.actie === 'controleer_uitvoering_uitgestelde_operatie'
     ) {
-      const mOk = controleerRolEnMandaat('herstel', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('herstel', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'ontvang_onopvallend_signaal') {
@@ -1251,7 +1285,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'registreer_veilige_uittreding'
       || opdracht.actie === 'raadpleeg_uitbreiding_en_voeding'
     ) {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'registreer_knooppunt_toetreding') {
@@ -1331,7 +1365,7 @@ export async function startKlimopProefKnooppunt(config: {
       opdracht.actie === 'registreer_beveiligingsaudit_rapport'
       || opdracht.actie === 'raadpleeg_beveiligingsaudit_staat'
     ) {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'registreer_beveiligingsaudit_rapport') {
@@ -1368,7 +1402,7 @@ export async function startKlimopProefKnooppunt(config: {
       || opdracht.actie === 'registreer_opvolgings_overdracht'
       || opdracht.actie === 'raadpleeg_zaad_en_opvolging'
     ) {
-      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat);
+      const mOk = controleerRolEnMandaat('verificatie', opdracht.mandaat, sessie, opdracht);
       if (!mOk.ok) return mOk;
 
       if (opdracht.actie === 'bewaar_gevalideerd_zaad_pakket') {
@@ -1568,6 +1602,9 @@ export async function startKlimopProefKnooppunt(config: {
     },
     aantalAuditRapporten() {
       return auditRapporten.size;
+    },
+    vertrouwensModus() {
+      return vertrouwensModus;
     },
     aantalZaadPakketten() {
       return zaadPakketten.size;
