@@ -251,9 +251,10 @@ export const TOOL_CAPABILITY: Readonly<Record<string, string>> = {
   audit_read: 'server.read', siem_status: 'server.read',
   // ORCH-001 етап 3: координація агентів — читання як стан розгортання, передача пакета як випуск (лише пропозиція, нічого не встановлює).
   orch_overzicht: 'deploy.status', orch_context: 'deploy.status', orch_taak_start: 'deploy.release', orch_inleveren_begin: 'deploy.release', orch_inleveren_stuk: 'deploy.release', orch_inleveren_klaar: 'deploy.release',
-  // KLIMOP-014 / KLIMOP-015: огляд, безризикові перевірки Сходинок 1–2 та журнал звірки «Плющ» — лише читання стану готовності випусків.
+  // KLIMOP-014..016: огляд, безризикові перевірки Сходинок 1–3 та журнали звірки «Плющ» — лише читання стану готовності випусків.
   klimop_overzicht: 'deploy.status', klimop_architectuur_toets: 'deploy.status', klimop_spiegel_controle: 'deploy.status',
   klimop_passieve_spiegel: 'deploy.status', klimop_spiegel_logboek: 'deploy.status',
+  klimop_dubbel_schrijven: 'deploy.status', klimop_dubbel_logboek: 'deploy.status',
   admin_list_access: 'server.read', dashboard_usage: 'server.read', server_status: 'server.read', server_releases: 'server.read',
 };
 

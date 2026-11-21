@@ -38,6 +38,8 @@ export const KORT_NAAR_V2 = Object.freeze({
   klimop_spiegel_controle: { beheer: 'testen_klimop_spiegel_antigravity_admin_tarasevych_com_beheer' },
   klimop_passieve_spiegel: { beheer: 'lezen_klimop_spiegel_antigravity_admin_tarasevych_com_beheer' },
   klimop_spiegel_logboek: { beheer: 'lezen_klimop_logboek_antigravity_admin_tarasevych_com_beheer' },
+  klimop_dubbel_schrijven: { beheer: 'testen_klimop_dubbel_antigravity_admin_tarasevych_com_beheer' },
+  klimop_dubbel_logboek: { beheer: 'lezen_klimop_dubbel_antigravity_admin_tarasevych_com_beheer' },
   vaardigheden_aanbevelen: {
     gebruiker: 'kies_vaardigheden_antigravity_ai_tarasevych_com_gebruiker',
     beheer: 'kies_vaardigheden_antigravity_ai_tarasevych_com_beheer',

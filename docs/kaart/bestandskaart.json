@@ -3575,13 +3575,18 @@
   },
   {
    "pad": "backend/klimop-overdracht-opslag.ts",
-   "wat": "Serveropslag van Stap 2 voor passief spiegellezen, het SHA-256-afwijkingslogboek en de atomaire terugvalsleutel voor alle 11 diensten.",
+   "wat": "Serveropslag van Stappen 2–3 voor passief spiegellezen, gecontroleerd dubbel schrijven met leesverificatie, SHA-256-logboeken en directe terugval voor alle 11 diensten.",
    "sinds": "KLIMOP-015"
   },
   {
    "pad": "tests/eenheid/klimop-015-passieve-spiegel-terugschakeling-20261121.test.ts",
    "wat": "Eenheids- en integratietest voor Stap 2 passief spiegellezen, ketenintegriteit van het afwijkingslogboek, automatische en noodterugschakeling van 11 diensten en tweetalige weergave.",
    "sinds": "KLIMOP-015"
+  },
+  {
+   "pad": "tests/eenheid/klimop-016-dubbel-schrijven-terugval-20261121.test.ts",
+   "wat": "Eenheids- en integratietest voor Stap 3 gecontroleerd dubbel schrijven met leesverificatie, verwijdermarkeringen, kwitantieketen en directe terugval van alle 11 diensten.",
+   "sinds": "KLIMOP-016"
   }
  ]
 }
