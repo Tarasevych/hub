@@ -384,7 +384,7 @@ async function voerEtappe10ProefUit() {
         console.log(JSON.stringify(resultaat, null, 2));
       } else {
         console.log('KLIMOP Етап 10 · Кероване розширення («Вусики»), між’юрисдикційна стійкість і обмін ресурсами («Живлення»)');
-        console.log(`  Блокування поведінки комп’ютерного хробака (§5.2) та витрат > 0 євро без згоди власника: ok=${resultaat.wormEnKostenGeblokkeerdOk}`);
+        console.log(`  Блокування поведінки комп’ютерного хробака (§5.2) та несанкціонованих платних ресурсів без згоди власника: ok=${resultaat.wormEnKostenGeblokkeerdOk}`);
         console.log(`  Приєднання вузлів SE/IS до NL/CH/UA та відбиття атаки Сивілли (8 клонів + 3 тимчасові вузли): ok=${resultaat.sybilWeerstandEnSpreidingOk}`);
         console.log(`  Справедливий баланс «Живлення» і безумовний доступ пасивного учасника (0 внеску) до власних даних: ok=${resultaat.eerlijkeVoedingEnPassiefLidOk}`);
         console.log(`  Безпечне виведення вузла SE на кворумі NL/UA (при обриві CH) та заборона єдиної точки входу: ok=${resultaat.veiligeUittredingEnIngangOk}`);

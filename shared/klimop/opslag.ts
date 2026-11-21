@@ -31,34 +31,58 @@ export const KLIMOP_VERSLEUTELING_PROFIELEN = Object.freeze([
 ] as const);
 export type KlimopVersleutelingProfiel = (typeof KLIMOP_VERSLEUTELING_PROFIELEN)[number];
 
-const PROFIEL_STERKTE_RANG: Readonly<Record<KlimopVersleutelingProfiel, number>> = Object.freeze({
+const PROFIEL_KLASSIEKE_RANG: Readonly<Record<KlimopVersleutelingProfiel, number>> = Object.freeze({
   'klimop-v1-aes-256-gcm': 10,
   'klimop-v1-chacha20-poly1305': 10,
-  'klimop-v2-pq-voorbereid': 20,
+  // KLIMOP-021: підготовчий профіль без перевірених постквантових ключів має класичний рівень 10 (не 20 за самою назвою!)
+  'klimop-v2-pq-voorbereid': 10,
 });
+
+const PROFIEL_VOORKEUR_VOLGORDE: Readonly<Record<KlimopVersleutelingProfiel, number>> = Object.freeze({
+  'klimop-v2-pq-voorbereid': 3,
+  'klimop-v1-chacha20-poly1305': 2,
+  'klimop-v1-aes-256-gcm': 1,
+});
+
+export function effectieveProfielRang(
+  profiel: KlimopVersleutelingProfiel,
+  postkwantumSleutelsAanwezig = false,
+): number {
+  if (profiel === 'klimop-v2-pq-voorbereid' && postkwantumSleutelsAanwezig) {
+    return 20;
+  }
+  return PROFIEL_KLASSIEKE_RANG[profiel];
+}
 
 /**
  * Узгоджує криптографічний профіль між відправником і отримувачем та блокує будь-яку спробу
  * понизити рівень захисту нижче мінімально допустимого (§13 маніфесту: криптографічна гнучкість).
+ * Рівень 20 надається лише за наявності справжніх постквантових складників (`postkwantumSleutelsAanwezig === true`).
  */
 export function onderhandelKlimopProfiel(
   ondersteundDoorZender: readonly string[],
   ondersteundDoorOntvanger: readonly string[],
   minimaalVereisteRang = 10,
-): { ok: true; gekozenProfiel: KlimopVersleutelingProfiel } | { ok: false; fout: string } {
+  opties?: { postkwantumSleutelsAanwezig?: boolean },
+): { ok: true; gekozenProfiel: KlimopVersleutelingProfiel; effectieveRang: number } | { ok: false; fout: string } {
   const geldigeSet = new Set<string>(KLIMOP_VERSLEUTELING_PROFIELEN);
+  const pqAanwezig = opties?.postkwantumSleutelsAanwezig === true;
   const gemeenschappelijk = ondersteundDoorZender.filter(
     (p): p is KlimopVersleutelingProfiel => geldigeSet.has(p) && ondersteundDoorOntvanger.includes(p),
   );
   if (gemeenschappelijk.length === 0) {
     return { ok: false, fout: 'GEEN_GEMEENSCHAPPELIJK_VERSLEUTELINGSPROFIEL' };
   }
-  gemeenschappelijk.sort((a, b) => PROFIEL_STERKTE_RANG[b] - PROFIEL_STERKTE_RANG[a]);
+  gemeenschappelijk.sort((a, b) => {
+    const rDiff = effectieveProfielRang(b, pqAanwezig) - effectieveProfielRang(a, pqAanwezig);
+    return rDiff !== 0 ? rDiff : PROFIEL_VOORKEUR_VOLGORDE[b] - PROFIEL_VOORKEUR_VOLGORDE[a];
+  });
   const beste = gemeenschappelijk[0];
-  if (PROFIEL_STERKTE_RANG[beste] < minimaalVereisteRang) {
+  const effectieveRang = effectieveProfielRang(beste, pqAanwezig);
+  if (effectieveRang < minimaalVereisteRang) {
     return { ok: false, fout: 'VERBODEN_AFZWAKKING_VAN_VERSLEUTELING' };
   }
-  return { ok: true, gekozenProfiel: beste };
+  return { ok: true, gekozenProfiel: beste, effectieveRang };
 }
 
 export type KlimopSleutelSubdoel = 'kek' | 'zoek_blind' | 'manifest';
@@ -461,6 +485,12 @@ export interface KlimopSegmentManifest {
   }>;
 }
 
+export interface KlimopVersleuteldeEigenaarMeta {
+  ivB64u: string;
+  cijfertekstB64u: string;
+  authenticatieTagB64u: string;
+}
+
 export interface KlimopObjectManifestKern {
   schema: 1;
   objectId: string;
@@ -468,10 +498,15 @@ export interface KlimopObjectManifestKern {
   laag: KlimopOpslagLaag;
   epoche: number;
   profiel: KlimopVersleutelingProfiel;
+  effectieveBeveiligingsRang?: 10 | 20;
+  mlDsa65PubliekSpkiB64u?: string | null;
   reedSolomon: { k: number; m: number };
   segmentGrootte: number;
-  klareLengteBytes: number;
-  klareInhoudSha256: string;
+  /** Застарілі відкриті поля схеми v1 (залишені лише як необов'язкові для зворотної сумісності читання). */
+  klareLengteBytes?: number;
+  klareInhoudSha256?: string;
+  /** KLIMOP-021: зашифровані під DEK власника точна довжина та SHA-256 відкритого вмісту (не розкриваються вузлам добудови). */
+  versleuteldeEigenaarMeta?: KlimopVersleuteldeEigenaarMeta;
   dekOmslag: KlimopDekOmslag;
   segmenten: readonly KlimopSegmentManifest[];
   aangemaaktOp: string;
@@ -479,15 +514,38 @@ export interface KlimopObjectManifestKern {
 
 export interface KlimopObjectManifest extends KlimopObjectManifestKern {
   handtekeningB64u: string;
+  mlDsa65HandtekeningB64u?: string;
 }
 
 const MANIFEST_HANDTEKENING_DOMEIN = 'klimop-object-manifest-v1|';
+const MANIFEST_PQ_HANDTEKENING_DOMEIN = 'klimop-object-manifest-pq-v1|';
+const SEGMENT_OPVULLING_BLOK = 256;
 
 function maakSegmentIv(segmentIndex: number): Buffer {
   const iv = Buffer.alloc(12, 0);
   iv.write('KSEG', 0, 4, 'ascii');
   iv.writeBigUInt64BE(BigInt(segmentIndex), 4);
   return iv;
+}
+
+function maakEigenaarMetaAad(objectId: string, eigenaarId: string, laag: KlimopOpslagLaag, epoche: number): Buffer {
+  return Buffer.from(`klimop-obj-eigenaar-meta-v1|${objectId}|${eigenaarId}|${laag}|epoche:${epoche}`, 'utf8');
+}
+
+function vulSegmentStukAan(stuk: Buffer): Buffer {
+  const ruweLengte = 4 + stuk.length;
+  const doelLengte = Math.ceil(ruweLengte / SEGMENT_OPVULLING_BLOK) * SEGMENT_OPVULLING_BLOK;
+  const uit = Buffer.alloc(doelLengte, 0);
+  uit.writeUInt32BE(stuk.length, 0);
+  stuk.copy(uit, 4);
+  return uit;
+}
+
+function verwijderSegmentOpvulling(opgevuld: Buffer): Buffer {
+  if (opgevuld.length < 4) throw new Error('SEGMENT_OPVULLING_TE_KORT');
+  const echteLengte = opgevuld.readUInt32BE(0);
+  if (echteLengte > opgevuld.length - 4) throw new Error('SEGMENT_OPVULLING_ONGELDIG');
+  return Buffer.from(opgevuld.subarray(4, 4 + echteLengte));
 }
 
 function maakSegmentAad(
@@ -506,7 +564,8 @@ function maakSegmentAad(
 
 /**
  * Наскрізно шифрує об'єкт на пристрої власника одноразовим ключем DEK, загортає DEK під KEK власника,
- * розбиває кожен зашифрований сегмент на (k + m) фрагментів Ріда–Соломона та підписує маніфест паспортом Ed25519.
+ * ховає точну довжину та SHA-256 відкритого вмісту всередині зашифрованого конверта власника,
+ * розбиває кожен вирівняний сегмент на (k + m) фрагментів Ріда–Соломона та підписує маніфест.
  */
 export function versleutelEnVerdeelObject(opties: {
   inhoud: Buffer;
@@ -516,6 +575,11 @@ export function versleutelEnVerdeelObject(opties: {
   laag?: KlimopOpslagLaag;
   epoche?: number;
   profiel?: KlimopVersleutelingProfiel;
+  postkwantumEigenaarSleutels?: {
+    mlDsa65PubliekSpkiB64u: string;
+    mlDsa65GeheimPkcs8B64u: string;
+  };
+  vereisPostkwantumRang20?: boolean;
   k: number;
   m: number;
   segmentGrootte?: number;
@@ -530,6 +594,31 @@ export function versleutelEnVerdeelObject(opties: {
   const segmentGrootte = Math.max(256, Math.trunc(opties.segmentGrootte ?? 65536));
   const alg = aeadAlgoritmeVoorProfiel(profiel);
 
+  let pqPubKeyB64u: string | null = null;
+  let pqPrivKeyObj: ReturnType<typeof createPrivateKey> | null = null;
+  if (opties.postkwantumEigenaarSleutels) {
+    const pqPub = createPublicKey({
+      key: Buffer.from(opties.postkwantumEigenaarSleutels.mlDsa65PubliekSpkiB64u, 'base64url'),
+      format: 'der',
+      type: 'spki',
+    });
+    pqPrivKeyObj = createPrivateKey({
+      key: Buffer.from(opties.postkwantumEigenaarSleutels.mlDsa65GeheimPkcs8B64u, 'base64url'),
+      format: 'der',
+      type: 'pkcs8',
+    });
+    if (pqPub.asymmetricKeyType !== 'ml-dsa-65' || pqPrivKeyObj.asymmetricKeyType !== 'ml-dsa-65') {
+      throw new Error('POSTKWANTUM_SLEUTELTYPE_MOET_ML_DSA_65_ZIJN');
+    }
+    pqPubKeyB64u = opties.postkwantumEigenaarSleutels.mlDsa65PubliekSpkiB64u;
+  }
+
+  const pqActief = profiel === 'klimop-v2-pq-voorbereid' && pqPubKeyB64u !== null && pqPrivKeyObj !== null;
+  if (opties.vereisPostkwantumRang20 && !pqActief) {
+    throw new Error('POSTKWANTUM_SLEUTELS_VEREIST');
+  }
+  const effectieveBeveiligingsRang: 10 | 20 = pqActief ? 20 : 10;
+
   const dek = randomBytes(32);
   try {
     const omslagCtx: KlimopDekOmslagContext = {
@@ -541,6 +630,23 @@ export function versleutelEnVerdeelObject(opties: {
     };
     const dekOmslag = wikkelObjectDekIn(dek, opties.kek, omslagCtx);
 
+    const metaPlain = Buffer.from(
+      canoniekeJson({
+        klareLengteBytes: opties.inhoud.length,
+        klareInhoudSha256: createHash('sha256').update(opties.inhoud).digest('hex'),
+      }),
+      'utf8',
+    );
+    const metaIv = randomBytes(12);
+    const metaAad = maakEigenaarMetaAad(opties.objectId, opties.eigenaar.identiteit.knooppuntId, laag, epoche);
+    const metaEnc = versleutelAead(alg, dek, metaIv, metaPlain, metaAad);
+    metaPlain.fill(0);
+    const versleuteldeEigenaarMeta: KlimopVersleuteldeEigenaarMeta = {
+      ivB64u: metaIv.toString('base64url'),
+      cijfertekstB64u: metaEnc.cijfertekst.toString('base64url'),
+      authenticatieTagB64u: metaEnc.tag.toString('base64url'),
+    };
+
     const aantalSegmenten = Math.max(1, Math.ceil(opties.inhoud.length / segmentGrootte));
     const segmenten: KlimopSegmentManifest[] = [];
     const fragmentenPerSegment: ReedSolomonFragment[][] = [];
@@ -549,31 +655,36 @@ export function versleutelEnVerdeelObject(opties: {
       const start = s * segmentGrootte;
       const eind = Math.min(opties.inhoud.length, start + segmentGrootte);
       const stuk = opties.inhoud.subarray(start, eind);
-      const iv = maakSegmentIv(s);
-      const aad = maakSegmentAad(
-        opties.objectId,
-        opties.eigenaar.identiteit.knooppuntId,
-        laag,
-        epoche,
-        profiel,
-        s,
-      );
-      const { cijfertekst, tag } = versleutelAead(alg, dek, iv, stuk, aad);
-      const pakket = Buffer.concat([cijfertekst, tag]);
-      const gecodeerd = codeerReedSolomon(pakket, opties.k, opties.m);
+      const opgevuldStuk = vulSegmentStukAan(stuk);
+      try {
+        const iv = maakSegmentIv(s);
+        const aad = maakSegmentAad(
+          opties.objectId,
+          opties.eigenaar.identiteit.knooppuntId,
+          laag,
+          epoche,
+          profiel,
+          s,
+        );
+        const { cijfertekst, tag } = versleutelAead(alg, dek, iv, opgevuldStuk, aad);
+        const pakket = Buffer.concat([cijfertekst, tag]);
+        const gecodeerd = codeerReedSolomon(pakket, opties.k, opties.m);
 
-      fragmentenPerSegment.push(gecodeerd.fragmenten);
-      segmenten.push({
-        segmentIndex: s,
-        ivB64u: iv.toString('base64url'),
-        versleuteldeLengte: pakket.length,
-        streepLengte: gecodeerd.streepLengte,
-        fragmentRefs: gecodeerd.fragmenten.map((f) => ({
-          index: f.index,
-          soort: f.soort,
-          sha256: f.sha256,
-        })),
-      });
+        fragmentenPerSegment.push(gecodeerd.fragmenten);
+        segmenten.push({
+          segmentIndex: s,
+          ivB64u: iv.toString('base64url'),
+          versleuteldeLengte: pakket.length,
+          streepLengte: gecodeerd.streepLengte,
+          fragmentRefs: gecodeerd.fragmenten.map((f) => ({
+            index: f.index,
+            soort: f.soort,
+            sha256: f.sha256,
+          })),
+        });
+      } finally {
+        opgevuldStuk.fill(0);
+      }
     }
 
     const kern: KlimopObjectManifestKern = {
@@ -583,10 +694,11 @@ export function versleutelEnVerdeelObject(opties: {
       laag,
       epoche,
       profiel,
+      effectieveBeveiligingsRang,
+      ...(pqPubKeyB64u ? { mlDsa65PubliekSpkiB64u: pqPubKeyB64u } : {}),
       reedSolomon: { k: opties.k, m: opties.m },
       segmentGrootte,
-      klareLengteBytes: opties.inhoud.length,
-      klareInhoudSha256: createHash('sha256').update(opties.inhoud).digest('hex'),
+      versleuteldeEigenaarMeta,
       dekOmslag,
       segmenten,
       aangemaaktOp: opties.nuIso ?? new Date().toISOString(),
@@ -597,14 +709,22 @@ export function versleutelEnVerdeelObject(opties: {
       format: 'der',
       type: 'pkcs8',
     });
+    const kernJson = canoniekeJson(kern);
     const handtekeningB64u = sign(
       null,
-      Buffer.from(MANIFEST_HANDTEKENING_DOMEIN + canoniekeJson(kern), 'utf8'),
+      Buffer.from(MANIFEST_HANDTEKENING_DOMEIN + kernJson, 'utf8'),
       priv,
     ).toString('base64url');
+    const mlDsa65HandtekeningB64u = pqPrivKeyObj
+      ? sign(null, Buffer.from(MANIFEST_PQ_HANDTEKENING_DOMEIN + kernJson, 'utf8'), pqPrivKeyObj).toString('base64url')
+      : undefined;
 
     return {
-      manifest: { ...kern, handtekeningB64u },
+      manifest: {
+        ...kern,
+        handtekeningB64u,
+        ...(mlDsa65HandtekeningB64u ? { mlDsa65HandtekeningB64u } : {}),
+      },
       fragmentenPerSegment,
     };
   } finally {
@@ -612,15 +732,22 @@ export function versleutelEnVerdeelObject(opties: {
   }
 }
 
-/** Перевіряє цілісність і підпис Ed25519 маніфесту об'єкта без потреби у ключі розшифрування KEK. */
+/** Перевіряє цілісність і підпис Ed25519 (та гібридний ML-DSA-65 для рівня 20) маніфесту об'єкта без ключа KEK. */
 export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: true } | { ok: false; fout: string } {
   if (!manifest || manifest.schema !== 1) return { ok: false, fout: 'MANIFEST_ONGELDIGE_VORM' };
   const id = manifest.eigenaarIdentiteit;
   if (!id || berekenKnooppuntId(id.publiekeSleutelDerB64u) !== id.knooppuntId) {
     return { ok: false, fout: 'MANIFEST_EIGENAAR_PASPOORT_ONGELDIG' };
   }
+  if (
+    manifest.effectieveBeveiligingsRang === 20
+    && (!manifest.mlDsa65PubliekSpkiB64u || !manifest.mlDsa65HandtekeningB64u)
+  ) {
+    return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONTBREEKT' };
+  }
   try {
-    const { handtekeningB64u, ...kern } = manifest;
+    const { handtekeningB64u, mlDsa65HandtekeningB64u, ...kern } = manifest;
+    const kernJson = canoniekeJson(kern);
     const pub = createPublicKey({
       key: Buffer.from(id.publiekeSleutelDerB64u, 'base64url'),
       format: 'der',
@@ -628,11 +755,33 @@ export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: t
     });
     const geldig = verify(
       null,
-      Buffer.from(MANIFEST_HANDTEKENING_DOMEIN + canoniekeJson(kern), 'utf8'),
+      Buffer.from(MANIFEST_HANDTEKENING_DOMEIN + kernJson, 'utf8'),
       pub,
       Buffer.from(handtekeningB64u, 'base64url'),
     );
-    return geldig ? { ok: true } : { ok: false, fout: 'MANIFEST_HANDTEKENING_ONGELDIG' };
+    if (!geldig) return { ok: false, fout: 'MANIFEST_HANDTEKENING_ONGELDIG' };
+
+    if (manifest.mlDsa65PubliekSpkiB64u || mlDsa65HandtekeningB64u) {
+      if (!manifest.mlDsa65PubliekSpkiB64u || !mlDsa65HandtekeningB64u) {
+        return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONTBREEKT' };
+      }
+      const pqPub = createPublicKey({
+        key: Buffer.from(manifest.mlDsa65PubliekSpkiB64u, 'base64url'),
+        format: 'der',
+        type: 'spki',
+      });
+      if (pqPub.asymmetricKeyType !== 'ml-dsa-65') {
+        return { ok: false, fout: 'MANIFEST_POSTKWANTUM_SLEUTELTYPE_ONGELDIG' };
+      }
+      const pqOk = verify(
+        null,
+        Buffer.from(MANIFEST_PQ_HANDTEKENING_DOMEIN + kernJson, 'utf8'),
+        pqPub,
+        Buffer.from(mlDsa65HandtekeningB64u, 'base64url'),
+      );
+      if (!pqOk) return { ok: false, fout: 'MANIFEST_POSTKWANTUM_HANDTEKENING_ONGELDIG' };
+    }
+    return { ok: true };
   } catch {
     return { ok: false, fout: 'MANIFEST_VERIFICATIE_FOUT' };
   }
@@ -640,7 +789,7 @@ export function verifieerObjectManifest(manifest: KlimopObjectManifest): { ok: t
 
 /**
  * Збирає зашифровані сегменти з будь-яких k доступних фрагментів кожного сегмента за схемою Ріда–Соломона,
- * розгортає DEK під ключем KEK власника та повертає перевірений відкритий об'єкт.
+ * розгортає DEK під ключем KEK власника та повертає перевірений відкритий об'єкт (гарантовано затираючи тимчасові буфери при збої).
  */
 export function herstelEnOntsleutelObject(opties: {
   manifest: KlimopObjectManifest;
@@ -666,8 +815,47 @@ export function herstelEnOntsleutelObject(opties: {
 
   const dek = uitgepakt.dek;
   const alg = aeadAlgoritmeVoorProfiel(manifest.profiel);
+  const stukken: Buffer[] = [];
+  let metaPlain: Buffer | null = null;
   try {
-    const stukken: Buffer[] = [];
+    let verwachteLengte: number;
+    let verwachteSha256: string;
+    const gebruiktOpgevuldeSegmenten = Boolean(manifest.versleuteldeEigenaarMeta);
+
+    if (manifest.versleuteldeEigenaarMeta) {
+      try {
+        metaPlain = ontsleutelAead(
+          alg,
+          dek,
+          Buffer.from(manifest.versleuteldeEigenaarMeta.ivB64u, 'base64url'),
+          Buffer.from(manifest.versleuteldeEigenaarMeta.cijfertekstB64u, 'base64url'),
+          Buffer.from(manifest.versleuteldeEigenaarMeta.authenticatieTagB64u, 'base64url'),
+          maakEigenaarMetaAad(
+            manifest.objectId,
+            manifest.eigenaarIdentiteit.knooppuntId,
+            manifest.laag,
+            manifest.epoche,
+          ),
+        );
+        const parsed = JSON.parse(metaPlain.toString('utf8')) as {
+          klareLengteBytes: number;
+          klareInhoudSha256: string;
+        };
+        verwachteLengte = parsed.klareLengteBytes;
+        verwachteSha256 = parsed.klareInhoudSha256;
+      } catch {
+        return { ok: false, fout: 'EIGENAAR_METADATA_AUTHENTICATIE_MISLUKT' };
+      }
+    } else if (
+      typeof manifest.klareLengteBytes === 'number'
+      && typeof manifest.klareInhoudSha256 === 'string'
+    ) {
+      verwachteLengte = manifest.klareLengteBytes;
+      verwachteSha256 = manifest.klareInhoudSha256;
+    } else {
+      return { ok: false, fout: 'MANIFEST_EIGENAAR_META_ONTBREEKT' };
+    }
+
     for (let s = 0; s < manifest.segmenten.length; s++) {
       const segMeta = manifest.segmenten[s];
       const verwachtShaPerIndex = new Map(segMeta.fragmentRefs.map((r) => [r.index, r.sha256]));
@@ -694,22 +882,30 @@ export function herstelEnOntsleutelObject(opties: {
         manifest.profiel,
         s,
       );
+      let ruwOntsleuteld: Buffer | null = null;
       try {
-        const klaarStuk = ontsleutelAead(alg, dek, Buffer.from(segMeta.ivB64u, 'base64url'), ct, tag, aad);
+        ruwOntsleuteld = ontsleutelAead(alg, dek, Buffer.from(segMeta.ivB64u, 'base64url'), ct, tag, aad);
+        const klaarStuk = gebruiktOpgevuldeSegmenten ? verwijderSegmentOpvulling(ruwOntsleuteld) : Buffer.from(ruwOntsleuteld);
         stukken.push(klaarStuk);
       } catch {
         return { ok: false, fout: 'SEGMENT_AUTHENTICATIE_MISLUKT' };
+      } finally {
+        if (ruwOntsleuteld) ruwOntsleuteld.fill(0);
+        rsUit.gegevens.fill(0);
       }
     }
 
     const samengevoegd = Buffer.concat(stukken);
     const eindSha = createHash('sha256').update(samengevoegd).digest('hex');
-    if (samengevoegd.length !== manifest.klareLengteBytes || eindSha !== manifest.klareInhoudSha256) {
+    if (samengevoegd.length !== verwachteLengte || eindSha !== verwachteSha256) {
+      samengevoegd.fill(0);
       return { ok: false, fout: 'OBJECT_EINDHASH_KOMT_NIET_OVEREEN' };
     }
     return { ok: true, inhoud: samengevoegd };
   } finally {
     dek.fill(0);
+    if (metaPlain) metaPlain.fill(0);
+    for (const st of stukken) st.fill(0);
   }
 }
 

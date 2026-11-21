@@ -3,6 +3,9 @@
 // Викликається з backend/ai-beheer-hulpmiddelen.ts (лише технічний простір, власник сайту, З'єднувач v2 та підписана політика ШІ).
 // Агенти читають журнали й виконують діагностичні перевірки Сходинок 1–4, але НІКОЛИ не мають права перемикати активний режим служби в обхід власника (§34).
 
+import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { isAgentSlug, v2Agent } from '../shared/connector-v2/agenten';
 import type { KlimopDienstId } from '../shared/klimop/diensten';
 import { klimopCodeTekst } from '../shared/klimop-overzicht-model';
@@ -25,6 +28,7 @@ import {
   klimopSpiegelControle,
 } from './klimop-platform-brug';
 import {
+  klimopStaatMap,
   leesKlimopDubbelSchrijvenLogboek,
   leesKlimopQuorumAttestLogboek,
   leesKlimopSpiegelLogboek,
@@ -70,6 +74,24 @@ function binnenLimiet(sleutel: string, max: number, nuMs = Date.now()): boolean 
 /** Очищення лічильників виключно у випробуваннях. */
 export const _klimopMcpLimietenLeeg = (): void => klimopMcpTellers.clear();
 
+/**
+ * KLIMOP-021: створює окрему тимчасову копію стану на час одного агентського виклику MCP,
+ * щоб інструменти з правом читання (`deploy.status`, `readOnlyHint: true`) ніколи не записували
+ * у спільне сховище й не скидали спільні перемикачі власника навіть при штучній похибці.
+ */
+function metGeisoleerdeMcpProefMap<T>(bronStaatMap: string | undefined, fn: (proefMap: string) => T): T {
+  const bronMap = klimopStaatMap(bronStaatMap);
+  const proefMap = mkdtempSync(join(tmpdir(), 'klimop-mcp-oefen-'));
+  try {
+    if (existsSync(bronMap)) {
+      cpSync(bronMap, proefMap, { recursive: true });
+    }
+    return fn(proefMap);
+  } finally {
+    rmSync(proefMap, { recursive: true, force: true });
+  }
+}
+
 export async function voerKlimopToolUit(
   who: KlimopWie,
   name: string,
@@ -88,7 +110,6 @@ export async function voerKlimopToolUit(
         return uit({
           waarschuwing: GEGEVENS_MELDING,
           ...ov,
-          // Агентові не потрібен абсолютний шлях теки на сервері — передаємо лише знеособлену ознаку присутності.
           bron: {
             aanwezig: ov.bron.aanwezig,
             wortel: 'werkkopie-server',
@@ -103,6 +124,7 @@ export async function voerKlimopToolUit(
         });
         return uit({
           waarschuwing: GEGEVENS_MELDING,
+          controleUitkomst: res.goedgekeurd ? 'geslaagd' : 'afgewezen',
           ...res,
         });
       }
@@ -110,13 +132,18 @@ export async function voerKlimopToolUit(
         const res = klimopSpiegelControle(args);
         return uit({
           waarschuwing: GEGEVENS_MELDING,
+          controleUitkomst: res.ok ? 'geslaagd' : 'afwijking_gevonden',
           ...res,
         });
       }
       case KLIMOP_PASSIEVE_SPIEGEL: {
-        const res = voerPassieveSpiegelLeesProefUit(args, { staatMap: opties?.staatMap });
+        const res = metGeisoleerdeMcpProefMap(opties?.staatMap, (proefMap) =>
+          voerPassieveSpiegelLeesProefUit(args, { staatMap: proefMap }),
+        );
         return uit({
           waarschuwing: GEGEVENS_MELDING,
+          geisoleerdeAgentOefening: true,
+          controleUitkomst: res.ok ? 'geslaagd' : 'afwijking_gevonden',
           ...res,
         });
       }
@@ -132,9 +159,13 @@ export async function voerKlimopToolUit(
         });
       }
       case KLIMOP_DUBBEL_SCHRIJVEN: {
-        const res = voerGecontroleerdeDubbelSchrijfProefUit(args, { staatMap: opties?.staatMap });
+        const res = metGeisoleerdeMcpProefMap(opties?.staatMap, (proefMap) =>
+          voerGecontroleerdeDubbelSchrijfProefUit(args, { staatMap: proefMap }),
+        );
         return uit({
           waarschuwing: GEGEVENS_MELDING,
+          geisoleerdeAgentOefening: true,
+          controleUitkomst: res.ok ? 'geslaagd' : 'afwijking_gevonden',
           ...res,
         });
       }
@@ -150,9 +181,13 @@ export async function voerKlimopToolUit(
         });
       }
       case KLIMOP_QUORUM_ATTEST: {
-        const res = voerStap4QuorumAttestProefUit(args, { staatMap: opties?.staatMap });
+        const res = metGeisoleerdeMcpProefMap(opties?.staatMap, (proefMap) =>
+          voerStap4QuorumAttestProefUit(args, { staatMap: proefMap }),
+        );
         return uit({
           waarschuwing: GEGEVENS_MELDING,
+          geisoleerdeAgentOefening: true,
+          controleUitkomst: res.ok ? 'geslaagd' : 'afwijking_gevonden',
           ...res,
         });
       }

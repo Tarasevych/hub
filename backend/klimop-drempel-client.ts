@@ -32,6 +32,7 @@ export const KLIMOP_DREMPEL_MANDAAT_ACTIES = [
   'dkg_voltooi_sleutel',
   'frost_ronde1',
   'frost_ronde2',
+  'frost_annuleer_ronde1',
   'ververs_maak_nulbijdrage',
   'ververs_voorbereiden',
   'ververs_afronden',
@@ -217,6 +218,22 @@ export class KlimopDrempelOndertekenaarClient {
     const { groep } = opties;
     const sessieTekenId = `frst_${randomBytes(12).toString('hex')}`;
     const toezeggingen: FrostRonde1PubliekeToezegging[] = [];
+    const openRonde1Deelnemers = new Set<number>();
+
+    const annuleerOpenRonde1Nonces = async (): Promise<void> => {
+      for (const idx of openRonde1Deelnemers) {
+        const kn = groep.knooppuntPerDeelnemerIndex[idx];
+        const mandaat = kn ? groep.mandatenPerKnooppuntId[kn.knooppuntId] : undefined;
+        if (!kn || !mandaat) continue;
+        await this.netwerkClient.roepOpdrachtAan(kn.knooppuntId, {
+          actie: 'frost_annuleer_ronde1',
+          setId: groep.setId,
+          sessieTekenId,
+          mandaat,
+        });
+      }
+      openRonde1Deelnemers.clear();
+    };
 
     for (let idx = 1; idx <= groep.totaal; idx++) {
       if (toezeggingen.length >= groep.drempel) break;
@@ -231,11 +248,13 @@ export class KlimopDrempelOndertekenaarClient {
         mandaat,
       });
       if (!r1.antwoord.ok || r1.antwoord.actie !== 'frost_ronde1_toezegging') continue;
+      openRonde1Deelnemers.add(idx);
       if (r1.antwoord.epoche !== groep.epoche) continue;
       toezeggingen.push(r1.antwoord.toezegging);
     }
 
     if (toezeggingen.length < groep.drempel) {
+      await annuleerOpenRonde1Nonces();
       return { ok: false, fout: 'ONVOLDOENDE_BEREIKBARE_ONDERTEKENAARS' };
     }
 
@@ -253,11 +272,14 @@ export class KlimopDrempelOndertekenaarClient {
         groepsPubliekeSleutelHex: groep.groepsPubliekeSleutelHex,
         mandaat,
       });
+      openRonde1Deelnemers.delete(tz.deelnemerIndex);
       if (!r2.antwoord.ok || r2.antwoord.actie !== 'frost_ronde2_deel') {
+        await annuleerOpenRonde1Nonces();
         return { ok: false, fout: !r2.antwoord.ok ? r2.antwoord.fout : 'FROST_RONDE2_MISLUKT' };
       }
       deelHandtekeningen.push(r2.antwoord.deelHandtekening);
     }
+    await annuleerOpenRonde1Nonces();
 
     const samengevoegd = frostVoegHandtekeningSamen({
       boodschap: opties.boodschap,

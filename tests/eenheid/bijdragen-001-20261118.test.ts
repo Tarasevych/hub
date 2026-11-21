@@ -35,7 +35,7 @@ export async function main(): Promise<number> {
   const herwerktGoed = maakBijdrage({ ...basisB(), soort: 'herwerkt', waaromUk: 'Власник просив змінити лише вигляд стрілки.', bouwtVoortOp: ['TEST-001/20261118-080000-claude'], bekendeIds: new Set(['TEST-001/20261118-080000-claude']) });
   check('переробка з причиною й посиланням на попередній запис приймається', herwerktGoed.zaken.length === 0, JSON.stringify(herwerktGoed.zaken));
   const onbekend = maakBijdrage({ ...basisB(), soort: 'afgerond', waaromUk: 'Доробка після вичерпання ліміту.', bouwtVoortOp: ['TEST-001/19990101-000000-gemini'], bekendeIds: new Set() });
-  check('посилання на неіснуючий запис виявляється', onbekend.zaken.some((z: any) => z.code === 'BIJDRAGE_VOORGANGER_ONBEKEND'));
+  check('посилання на відсутній запис виявляється', onbekend.zaken.some((z: any) => z.code === 'BIJDRAGE_VOORGANGER_ONBEKEND'));
   const zonderRecord = maakBijdrage({ ...basisB(), soort: 'overname', waaromUk: 'Fable 5.2 вичерпав ліміт.', bouwtVoortOp: [{ beschrijving: 'гілка claude/project-thread-0u9ig1, PR 142' }] });
   check('попередник без запису описується текстом (гілка, PR)', zonderRecord.zaken.length === 0, JSON.stringify(zonderRecord.zaken));
   // KLIMOP-018: зразок утворюється з кодової позиції U+044B, щоб сам файл випробування не містив заборонених літер.

@@ -38,6 +38,7 @@ import {
   KLIMOP_ZESTIEN_ONTWIKKELRICHTINGEN,
   beoordeelAutonoomOntwikkelVoorstel,
   berekenZaadMerkleWortelSha256,
+  controleerVijfentwintigVerplichteDocumenten,
   valideerKlimopEindvisie46,
   valideerTechnischeAfhankelijkheden,
   type EindvisiePijlerBewijs,
@@ -57,6 +58,7 @@ import {
   type KlimopPlatformOverzicht,
   type KlimopQuorumAttestModus,
   type KlimopSpiegelControleUitkomst,
+  type KlimopVraagToetsResultaat,
 } from '../shared/klimop-overzicht-model';
 import {
   leesKlimopDubbelSchrijvenLogboek,
@@ -98,6 +100,7 @@ function bouwDienstenStatusLijst(
     return {
       dienstId,
       subdomein: profiel.subdomeinBestaand,
+      routePad: profiel.routePad,
       eigenGeheugenRuimte: profiel.eigenGeheugenRuimte,
       vereistExterneVerbinderIsolatie: profiel.vereistExterneVerbinderIsolatie,
       huidigeProductieModus: 'alleen_erfenis_postgres',
@@ -140,7 +143,8 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
   const kernPad = join(wortel, 'shared/klimop/kern.ts');
   if (!existsSync(kernPad)) {
     return {
-      bron: { aanwezig: false, wortel, code: 'KLIMOP_GEEN_BRON' },
+      // KLIMOP-021: не розкриваємо абсолютну серверну адресу у відкритій моделі огляду
+      bron: { aanwezig: false, wortel: 'afwezig', code: 'KLIMOP_GEEN_BRON' },
       kernModules: [],
       zaadMerkleWortelSha256: null,
       afhankelijkheden,
@@ -171,10 +175,9 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
   const alleTwaalfAanwezig = kernModules.length === 12 && kernModules.every((m) => m.aanwezig);
   const zaadMerkleWortelSha256 = alleTwaalfAanwezig ? berekenZaadMerkleWortelSha256(zaadRegels) : null;
 
-  const et1Pad = join(wortel, 'docs/hub/ПЛЮЩ-ЕТАП-1-АРХІТЕКТУРНЕ-ЯДРО-ТА-ПЛАН-ВИПУСКІВ.uk.md');
-  const et1Inhoud = existsSync(et1Pad) ? readFileSync(et1Pad, 'utf8') : '';
-  const voltooideDocumenten44 =
-    et1Inhoud && !et1Inhoud.includes('Заплановано (Етап') ? 25 : 0;
+  // KLIMOP-021: змістовна звірка обох мовних версій усіх 25 обов'язкових документів §44 маніфесту
+  const documentenVerslag = controleerVijfentwintigVerplichteDocumenten(wortel);
+  const voltooideDocumenten44 = documentenVerslag.bevestigdAantal;
 
   const pijlers: EindvisiePijlerBewijs[] = KLIMOP_EINDVISIE_TWAALF_PIJLERS.map((pijlerId) => {
     const modPad = PIJLER_MODULE_KAART[pijlerId];
@@ -191,6 +194,7 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
     voltooideVerplichteDocumenten44: voltooideDocumenten44,
     alleTwaalfEtappesVoltooid: alleTwaalfAanwezig && voltooideDocumenten44 === 25,
     productieInfrastructuurOnaangetast: true,
+    wortelPad: wortel,
   });
 
   let dossier: KlimopPlatformOverzicht['dossier'] = null;
@@ -215,7 +219,7 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
   }
 
   return {
-    bron: { aanwezig: true, wortel },
+    bron: { aanwezig: true, wortel: 'werkkopie-server' },
     kernModules,
     zaadMerkleWortelSha256,
     afhankelijkheden,
@@ -224,6 +228,8 @@ export function klimopOverzicht(wortel = klimopWortel(), staatMap?: string): Kli
       gedektePijlers: visie.gedektePijlers,
       totaalPijlers: KLIMOP_EINDVISIE_TWAALF_PIJLERS.length,
       voltooideDocumenten44,
+      gedeeltelijkeDocumenten44: documentenVerslag.gedeeltelijkAantal,
+      ontbrekendeDocumenten44: documentenVerslag.ontbrekendAantal,
     },
     dossier,
     diensten: bouwDienstenStatusLijst(alleTwaalfAanwezig, leesModusKaart, schrijfModusKaart, attestModusKaart),
@@ -248,22 +254,44 @@ export function klimopArchitectuurToets(raw: unknown): KlimopArchitectuurToetsUi
 
   const antwoorden15 = {} as Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>;
   const standaardAanvullen = b.gebruikStandaardBewijsVoorOntbrekendeVragen === true;
+  const onbeoordeeldeVragen: KlimopControleVraagId[] = [];
+  const vragenResultaten: KlimopVraagToetsResultaat[] = [];
   let beoordeeldeVragen = 0;
 
   for (const vraagId of KLIMOP_CONTROLE_VRAGEN_IDS) {
     const opgegeven = b.antwoorden15?.[vraagId];
-    if (opgegeven && typeof opgegeven === 'object') {
+    const ruwBewijs = opgegeven && typeof opgegeven === 'object' ? String(opgegeven.bewijs ?? '').trim() : '';
+    if (opgegeven && typeof opgegeven === 'object' && (ruwBewijs.length > 0 || opgegeven.voldaan === false)) {
       beoordeeldeVragen++;
+      const voldaan = opgegeven.voldaan === true && ruwBewijs.length >= 8;
       antwoorden15[vraagId] = {
         voldaan: opgegeven.voldaan === true,
-        bewijs: String(opgegeven.bewijs ?? '').trim(),
+        bewijs: ruwBewijs,
       };
+      vragenResultaten.push({
+        vraagId,
+        status: voldaan ? 'voldaan' : 'gefaald',
+        bewijs: ruwBewijs,
+      });
     } else if (standaardAanvullen) {
       beoordeeldeVragen++;
+      const stdBewijs = 'Перевірено за канонічними інваріантами модулів shared/klimop/*.ts без втручання в робочу базу.';
       antwoorden15[vraagId] = {
         voldaan: true,
-        bewijs: 'Перевірено за канонічними інваріантами модулів shared/klimop/*.ts без втручання в робочу базу.',
+        bewijs: stdBewijs,
       };
+      vragenResultaten.push({
+        vraagId,
+        status: 'voldaan',
+        bewijs: stdBewijs,
+      });
+    } else {
+      onbeoordeeldeVragen.push(vraagId);
+      vragenResultaten.push({
+        vraagId,
+        status: 'onbeoordeeld',
+        bewijs: '',
+      });
     }
   }
 
@@ -327,9 +355,11 @@ export function klimopArchitectuurToets(raw: unknown): KlimopArchitectuurToetsUi
   return {
     naam,
     fase,
-    goedgekeurd: alleFouten.length === 0,
+    goedgekeurd: alleFouten.length === 0 && onbeoordeeldeVragen.length === 0,
     vereistMenselijkOfQuorumBesluit: true,
     beoordeeldeVragen,
+    onbeoordeeldeVragen,
+    vragenResultaten,
     ontbrekendeOfGefaaldeVragen: basisOordeel.ontbrekendeOfGefaaldeVragen,
     geschondenVereenvoudigingen: basisOordeel.geschondenVereenvoudigingen,
     fouten: alleFouten,

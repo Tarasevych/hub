@@ -33,10 +33,10 @@ sequenceDiagram
 ```
 
 Kerngaranties van het protocol:
-1. **Voorwaartse geheimhouding:** elke sessie gebruikt verse efemere `X25519`-sleutels en wist het ruwe Diffie-Hellman-geheim onmiddellijk met nullen (`gedeeldGeheim.fill(0)`).
+1. **Voorwaartse geheimhouding:** voor elke sessie worden verse efemere `X25519`-sleutels aangemaakt en wordt het ruwe Diffie-Hellman-geheim onmiddellijk in het afsluitende `finally`-blok met nullen gewist (`gedeeldGeheim.fill(0)`), net als tijdelijke kaderbuffers en afgeleide sessiesleutels bij een afgewezen handdruk.
 2. **Gescheiden eenrichtingssleutels:** de zendsleutel van initiator naar ontvanger (`klimop-stengel-i2r`) verschilt cryptografisch van de retoursleutel (`klimop-stengel-r2i`), waardoor spiegelaanvallen onmogelijk zijn.
-3. **Bescherming tegen doelverwisseling en herhaling:** beide paspoorten, `doelKnooppuntId`, beide `nonceB64u`-waarden en tijdstempels zitten in het ondertekende transcript; elk kader draagt een oplopend `volgnummer` en herhaalde nummers worden geweigerd met `HERHALING_OF_VOLGORDE_FOUT`.
-4. **Voorbereiding op postkwantuminkapseling:** de handdrukberichten bevatten reeds de velden `postkwantumKemB64u` en `postkwantumKemAntwoordB64u` voor naadloze koppeling van `X25519MLKEM768` (`FIPS 203`).
+3. **Bescherming tegen doelverwisseling en herhaling:** beide paspoorten, `doelKnooppuntId`, beide `nonceB64u`-waarden en tijdstempels zitten in het ondertekende transcript; elk kader draagt een oplopend `volgnummer` binnen een begrensd schuifvenster en herhaalde nummers worden geweigerd met `HERHALING_OF_VOLGORDE_FOUT`.
+4. **Voorbereiding op postkwantuminkapseling:** de handdrukberichten bevatten reeds de velden `postkwantumKemB64u` en `postkwantumKemAntwoordB64u` voor naadloze koppeling van `X25519MLKEM768` (`FIPS 203`) zonder breuk in de protocolstructuur.
 
 ### 1.2. Omleiding langs defecte trajecten en eind-tot-eind estafetteroutering
 
@@ -52,7 +52,7 @@ Wanneer een directe stengel tussen het apparaat van de eigenaar (of knooppunt `A
 Ter uitvoering van §6 en §19 van het Hoofdarchitectuurmanifest «Klimop» gelden op de transportlaag vier technische maatregelen:
 1. **Blokopvulling van kaders (`vulKaderLadingAan`):** elke lading wordt vóór versleuteling aangevuld tot een veelvoud van een vaste blokgrootte (standaard `256 bytes`), zodat korte beheeropdrachten en metadata niet aan hun pakketlengte te herkennen zijn.
 2. **Pseudonieme knooppunt-ID's (`klm1_…`):** op de lijn staan uitsluitend eenrichtings-`SHA-256`-afdrukken van publieke knooppuntsleutels zonder e-mailadres, naam of telefoonnummer.
-3. **Blinde opslag van versleutelde blokken:** een opslagknooppunt ontvangt uitsluitend aan clientzijde versleutelde bytes op hun `SHA-256`-afdruk en toetst het `Ed25519`-mandaat zonder bestandsnamen of `DEK` te kennen.
+3. **Blinde opslag van versleutelde blokken:** een knooppunt met de rol `opslag` aanvaardt uitsluitend aan clientzijde versleutelde bytes op hun `SHA-256`-afdruk en toetst het `Ed25519`-mandaat, zonder de bestandsnaam, noch het doel van de inhoud, noch de ontsleutelingssleutel `DEK` te kennen.
 4. **Minimale gezondheidscontrole (`/klimop/v1/gezondheid`):** het gezondheidseindpunt toont alleen technische knooppuntrollen en tellers zonder partnerlijsten of blok-ID's.
 
 ---

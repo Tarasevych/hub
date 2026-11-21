@@ -50,7 +50,7 @@ flowchart LR
    - strikte rollenscheiding (`doelenRol !== tijdstempelRol` + `FROST`-quorum op `momentopname`);
    - monotoon stijgend `uitgaveVolgnummer > huidigGeinstalleerdVolgnummer` blokkeert terugdraai-aanvallen (`UITGAVE_TERUGDRAAI_AANVAL_GEWEIGERD`);
    - kortlopend `tijdstempel` blokkeert bevroren metadata (`UITGAVE_TIJDSTEMPEL_BEVROREN_OF_VERLOPEN`).
-3. **Golfgewijze uitrol en de 4 gezondheids- en veiligheidseisen (§24):** succes wordt niet louter afgemeten aan een gestart proces (`procesGestart`), maar aan alle 4 eisen in `beoordeelUitrolGezondheid`: processtart, gegevensintegriteit (`gegevensIntegriteitOk`), geldige machtigingen (`machtigingenGeldigOk`) en afwezigheid van geheimlekken (`geenGeheimLekGedetecteerd`). Bij een fout in Golf 1 rolt het knooppunt direct terug naar de vorige versie en worden Golf 2 en 3 niet aangeraakt.
+3. **Golfgewijze uitrol en de 4 gezondheids- en veiligheidseisen (§24):** succes wordt niet louter afgemeten aan een gestart proces (`procesGestart`), maar aan het gelijktijdig vervullen van alle 4 eisen in `beoordeelUitrolGezondheid`: processtart, gegevensintegriteit (`gegevensIntegriteitOk`), geldige machtigingen (`machtigingenGeldigOk`) en afwezigheid van geheimlekken (`geenGeheimLekGedetecteerd`). Bij de kleinste schending in Golf 1 rolt het knooppunt automatisch terug naar de vorige versie (of vereist voor onomkeerbare migraties de vooraf vastgelegde herstelprocedure `onomkeerbareHerstelProcedureId`), terwijl volgende golven onmiddellijk worden gestopt.
 
 ---
 

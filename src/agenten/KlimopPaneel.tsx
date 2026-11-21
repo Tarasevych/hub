@@ -1,21 +1,23 @@
-// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 / KLIMOP-017 (21.11.2026, Етапи 13–16 впровадження «Плюща» у платформу «Мій простір»):
-// Двомовна панель стану живої цифрової екосистеми «Плющ», цілісності пакета «Насіння»,
+// KLIMOP-014 / KLIMOP-015 / KLIMOP-016 / KLIMOP-017 / KLIMOP-021 (21.11.2026, Етапи 13–16 впровадження «Плюща»):
+// Двомовна панель стану живої цифрової екосистеми «Плющ», наявності й відбитків пакета «Насіння»,
 // Сходинок 1–4 безризикової перевірки всіх 11 служб (§35: дзеркальна звірка, пасивне читання, контрольоване подвійне записування,
 // кворумний атестат готовності під печатками FROST RFC 9591 та Ed25519+ML-DSA-65), журналів і миттєвого повернення (§42–§43).
 // Вбудована в розділ «Координація» (src/agenten/TabOrch.tsx) за спільним контрактом .ag-blok без власного <style>.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, FileText, GitCommit, KeyRound, Loader2, Network, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import type { Tr } from '../mcp-ui';
 import HulpVraag from '../hulp/HulpVraag';
 import { besluitFoutCode } from '../besluit/besluit-client';
 import { KLIMOP_ELF_DIENSTEN, type KlimopDienstId } from '../../shared/klimop/diensten-catalogus';
+import type { KlimopControleVraagId } from '../../shared/klimop/kern';
 import {
   KLIMOP_DIENST_TEKST,
   KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST,
   KLIMOP_LEESMODUS_TEKST,
   KLIMOP_OVERDRACHT_TEKST,
   KLIMOP_QUORUM_ATTESTMODUS_TEKST,
+  KLIMOP_VIJFTIEN_VRAGEN_LIJST,
   type KlimopArchitectuurToetsUitkomst,
   type KlimopDubbelLogboekOverzicht,
   type KlimopDubbelSchrijvenUitkomst,
@@ -43,6 +45,42 @@ import {
 import { Badge, Knop, Tech } from './ui';
 
 const kort = (s: string | null | undefined, n = 16) => (s ? s.slice(0, n) : '—');
+const KLIMOP_BESCHIKBARE_FASEN = Array.from({ length: 17 }, (_, i) => i);
+
+function ontleedVoorstelBewijsNaarAntwoorden(
+  ruwBewijs: string,
+): Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> {
+  const getrimd = ruwBewijs.trim();
+  if (!getrimd) return {};
+
+  if (getrimd.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(getrimd) as Record<string, unknown>;
+      const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
+      for (const v of KLIMOP_VIJFTIEN_VRAGEN_LIJST) {
+        const waarde = parsed[v.id];
+        if (typeof waarde === 'string' && waarde.trim()) {
+          uit[v.id] = { voldaan: true, bewijs: waarde.trim() };
+        } else if (waarde && typeof waarde === 'object' && !Array.isArray(waarde)) {
+          const obj = waarde as Record<string, unknown>;
+          uit[v.id] = {
+            voldaan: obj.voldaan !== false,
+            bewijs: String(obj.bewijs ?? '').trim(),
+          };
+        }
+      }
+      return uit;
+    } catch {
+      // Якщо це не JSON-словник, трактуємо введений текст як спільний перевірний доказ власника
+    }
+  }
+
+  const uit: Partial<Record<KlimopControleVraagId, { voldaan: boolean; bewijs: string }>> = {};
+  for (const v of KLIMOP_VIJFTIEN_VRAGEN_LIJST) {
+    uit[v.id] = { voldaan: true, bewijs: getrimd };
+  }
+  return uit;
+}
 
 export default function KlimopPaneel({
   tr,
@@ -60,26 +98,45 @@ export default function KlimopPaneel({
   const [verborgenVoorNietEigenaar, setVerborgenVoorNietEigenaar] = useState(false);
   const [laadFout, setLaadFout] = useState('');
   const [gekozenDienst, setGekozenDienst] = useState<KlimopDienstId>('postvak');
+  const laadVolgnummerRef = useRef(0);
+
   const [spiegelBezig, setSpiegelBezig] = useState(false);
-  const [spiegelUit, setSpiegelUit] = useState<KlimopSpiegelControleUitkomst | null>(null);
+  const [spiegelPerDienst, setSpiegelPerDienst] = useState<
+    Partial<Record<KlimopDienstId, KlimopSpiegelControleUitkomst>>
+  >({});
   const [spiegelFout, setSpiegelFout] = useState('');
 
   const [passiefBezig, setPassiefBezig] = useState(false);
-  const [passiefUit, setPassiefUit] = useState<KlimopPassieveSpiegelUitkomst | null>(null);
+  const [passiefPerDienst, setPassiefPerDienst] = useState<
+    Partial<Record<KlimopDienstId, KlimopPassieveSpiegelUitkomst>>
+  >({});
   const [dubbelBezig, setDubbelBezig] = useState(false);
-  const [dubbelUit, setDubbelUit] = useState<KlimopDubbelSchrijvenUitkomst | null>(null);
+  const [dubbelPerDienst, setDubbelPerDienst] = useState<
+    Partial<Record<KlimopDienstId, KlimopDubbelSchrijvenUitkomst>>
+  >({});
   const [attestBezig, setAttestBezig] = useState(false);
-  const [attestUit, setAttestUit] = useState<KlimopQuorumAttestUitkomst | null>(null);
+  const [attestPerDienst, setAttestPerDienst] = useState<
+    Partial<Record<KlimopDienstId, KlimopQuorumAttestUitkomst>>
+  >({});
   const [schakelBezig, setSchakelBezig] = useState(false);
   const [passiefMelding, setPassiefMelding] = useState('');
   const [passiefFout, setPassiefFout] = useState('');
+  const [liveStatusTekst, setLiveStatusTekst] = useState('');
 
   const [voorstelNaam, setVoorstelNaam] = useState('');
+  const [voorstelFase, setVoorstelFase] = useState<number>(16);
+  const [voorstelBewijs, setVoorstelBewijs] = useState('');
   const [toetsBezig, setToetsBezig] = useState(false);
   const [toetsUit, setToetsUit] = useState<KlimopArchitectuurToetsUitkomst | null>(null);
   const [toetsFout, setToetsFout] = useState('');
 
+  const dienstNaam = useCallback(
+    (d: KlimopDienstId) => (lang === 'uk' ? KLIMOP_DIENST_TEKST[d].uk : KLIMOP_DIENST_TEKST[d].nl),
+    [lang],
+  );
+
   const laden = useCallback(async () => {
+    const volgnummer = ++laadVolgnummerRef.current;
     setLaadFout('');
     try {
       const [ov, lb, dl, ql] = await Promise.all([
@@ -88,11 +145,13 @@ export default function KlimopPaneel({
         klimopDubbelLogboekOphalen(ctx, { limiet: 6 }),
         klimopQuorumLogboekOphalen(ctx, { limiet: 6 }),
       ]);
+      if (volgnummer !== laadVolgnummerRef.current) return;
       setOverzicht(ov);
       setLogboek(lb);
       setDubbelLogboek(dl);
       setQuorumLogboek(ql);
     } catch (e) {
+      if (volgnummer !== laadVolgnummerRef.current) return;
       const c = besluitFoutCode(e);
       if (c === 'OWNER_REQUIRED' || c === 'ADMIN_SERVICE_REQUIRED') {
         setVerborgenVoorNietEigenaar(true);
@@ -108,12 +167,26 @@ export default function KlimopPaneel({
 
   if (verborgenVoorNietEigenaar) return null;
 
+  const kiesDienst = (nieuweDienst: KlimopDienstId) => {
+    setGekozenDienst(nieuweDienst);
+    setSpiegelFout('');
+    setPassiefFout('');
+    setPassiefMelding('');
+  };
+
   const startSpiegel = async () => {
+    const doelDienst = gekozenDienst;
     setSpiegelBezig(true);
     setSpiegelFout('');
-    setSpiegelUit(null);
     try {
-      setSpiegelUit(await klimopSpiegelControleren(ctx, gekozenDienst));
+      const uitkomst = await klimopSpiegelControleren(ctx, doelDienst);
+      setSpiegelPerDienst((oud) => ({ ...oud, [doelDienst]: uitkomst }));
+      setLiveStatusTekst(
+        tr(
+          `${dienstNaam(doelDienst)}: дзеркальна звірка Сходинки 1 ${uitkomst.ok ? 'успішна' : 'виявила розбіжність'}.`,
+          `${dienstNaam(doelDienst)}: spiegelverificatie van Stap 1 ${uitkomst.ok ? 'geslaagd' : 'heeft afwijking vastgesteld'}.`,
+        ),
+      );
     } catch (e) {
       setSpiegelFout(klimopFoutTekst(e, lang));
     } finally {
@@ -122,16 +195,23 @@ export default function KlimopPaneel({
   };
 
   const startPassieveSpiegel = async () => {
+    const doelDienst = gekozenDienst;
     setPassiefBezig(true);
     setPassiefFout('');
     setPassiefMelding('');
     try {
       const uitkomst = await klimopPassieveSpiegelUitvoeren(ctx, {
-        dienstId: gekozenDienst,
+        dienstId: doelDienst,
         steekproefGrootte: 4,
       });
-      setPassiefUit(uitkomst);
-      setLogboek(await klimopSpiegelLogboekOphalen(ctx, { limiet: 8 }));
+      setPassiefPerDienst((oud) => ({ ...oud, [doelDienst]: uitkomst }));
+      setLiveStatusTekst(
+        tr(
+          `${dienstNaam(doelDienst)}: пасивна звірка Сходинки 2 ${uitkomst.ok ? 'без розбіжностей' : 'повернула службу на основу'}.`,
+          `${dienstNaam(doelDienst)}: passieve proef van Stap 2 ${uitkomst.ok ? 'zonder afwijkingen' : 'heeft dienst teruggezet'}.`,
+        ),
+      );
+      await laden();
     } catch (e) {
       setPassiefFout(klimopFoutTekst(e, lang));
     } finally {
@@ -140,15 +220,22 @@ export default function KlimopPaneel({
   };
 
   const startDubbelSchrijven = async () => {
+    const doelDienst = gekozenDienst;
     setDubbelBezig(true);
     setPassiefFout('');
     setPassiefMelding('');
     try {
       const uitkomst = await klimopDubbelSchrijvenUitvoeren(ctx, {
-        dienstId: gekozenDienst,
+        dienstId: doelDienst,
         operatiesAantal: 4,
       });
-      setDubbelUit(uitkomst);
+      setDubbelPerDienst((oud) => ({ ...oud, [doelDienst]: uitkomst }));
+      setLiveStatusTekst(
+        tr(
+          `${dienstNaam(doelDienst)}: подвійне записування Сходинки 3 ${uitkomst.ok ? 'підтверджено звіркою читання' : 'повернуло службу на основу'}.`,
+          `${dienstNaam(doelDienst)}: dubbel schrijven van Stap 3 ${uitkomst.ok ? 'bevestigd met leesverificatie' : 'heeft dienst teruggezet'}.`,
+        ),
+      );
       await laden();
     } catch (e) {
       setPassiefFout(klimopFoutTekst(e, lang));
@@ -158,14 +245,21 @@ export default function KlimopPaneel({
   };
 
   const startQuorumAttest = async () => {
+    const doelDienst = gekozenDienst;
     setAttestBezig(true);
     setPassiefFout('');
     setPassiefMelding('');
     try {
       const uitkomst = await klimopQuorumAttestUitvoeren(ctx, {
-        dienstId: gekozenDienst,
+        dienstId: doelDienst,
       });
-      setAttestUit(uitkomst);
+      setAttestPerDienst((oud) => ({ ...oud, [doelDienst]: uitkomst }));
+      setLiveStatusTekst(
+        tr(
+          `${dienstNaam(doelDienst)}: кворумний атестат Сходинки 4 ${uitkomst.ok ? 'запечатано подвійним підписом' : 'відхилено із захисним поверненням'}.`,
+          `${dienstNaam(doelDienst)}: quorumattest van Stap 4 ${uitkomst.ok ? 'verzegeld met dubbele handtekening' : 'afgewezen met beschermende terugval'}.`,
+        ),
+      );
       await laden();
     } catch (e) {
       setPassiefFout(klimopFoutTekst(e, lang));
@@ -175,29 +269,30 @@ export default function KlimopPaneel({
   };
 
   const bedienSchakelaar = async (actie: KlimopSchakelaarActie) => {
+    const doelDienst = gekozenDienst;
     setSchakelBezig(true);
     setPassiefFout('');
     setPassiefMelding('');
     try {
       const r = await klimopOverdrachtSchakelen(ctx, {
         actie,
-        ...(actie === 'nood_terug_alle_elf' ? {} : { dienstId: gekozenDienst }),
+        ...(actie === 'nood_terug_alle_elf' ? {} : { dienstId: doelDienst }),
       });
-      setPassiefMelding(
+      const melding =
         actie === 'activeer_passief_lezen'
           ? tr(
-              `Пасивне дзеркальне читання Сходинки 2 увімкнено (${r.actievePassiefLezenDiensten}/11 активних).`,
-              `Passief spiegellezen van Stap 2 ingeschakeld (${r.actievePassiefLezenDiensten}/11 actief).`,
+              `${dienstNaam(doelDienst)}: пасивне дзеркальне читання Сходинки 2 увімкнено (${r.actievePassiefLezenDiensten}/11 активних).`,
+              `${dienstNaam(doelDienst)}: passief spiegellezen van Stap 2 ingeschakeld (${r.actievePassiefLezenDiensten}/11 actief).`,
             )
           : actie === 'activeer_dubbel_schrijven'
             ? tr(
-                `Контрольоване подвійне записування Сходинки 3 увімкнено (${r.actieveDubbelSchrijvenDiensten}/11 активних).`,
-                `Gecontroleerd dubbel schrijven van Stap 3 ingeschakeld (${r.actieveDubbelSchrijvenDiensten}/11 actief).`,
+                `${dienstNaam(doelDienst)}: контрольоване подвійне записування Сходинки 3 увімкнено (${r.actieveDubbelSchrijvenDiensten}/11 активних).`,
+                `${dienstNaam(doelDienst)}: gecontroleerd dubbel schrijven van Stap 3 ingeschakeld (${r.actieveDubbelSchrijvenDiensten}/11 actief).`,
               )
             : actie === 'bevestig_quorum_gereedheid'
               ? tr(
-                  `Кворумну готовність Сходинки 4 підтверджено без вимкнення бази (${r.actieveQuorumGereedDiensten}/11 активних).`,
-                  `Quorum-gereedheid van Stap 4 bevestigd zonder uitschakeling van de databank (${r.actieveQuorumGereedDiensten}/11 actief).`,
+                  `${dienstNaam(doelDienst)}: кворумну готовність Сходинки 4 підтверджено без вимкнення бази (${r.actieveQuorumGereedDiensten}/11 активних).`,
+                  `${dienstNaam(doelDienst)}: quorum-gereedheid van Stap 4 bevestigd zonder uitschakeling van de databank (${r.actieveQuorumGereedDiensten}/11 actief).`,
                 )
               : actie === 'nood_terug_alle_elf'
                 ? tr(
@@ -205,10 +300,11 @@ export default function KlimopPaneel({
                     'Alle elf diensten zijn onmiddellijk teruggezet naar de bestaande basis.',
                   )
                 : tr(
-                    'Вибрану службу повернено на чинну основу.',
-                    'De gekozen dienst is teruggezet naar de bestaande basis.',
-                  ),
-      );
+                    `${dienstNaam(doelDienst)}: службу повернено на чинну основу.`,
+                    `${dienstNaam(doelDienst)}: de dienst is teruggezet naar de bestaande basis.`,
+                  );
+      setPassiefMelding(melding);
+      setLiveStatusTekst(melding);
       await laden();
     } catch (e) {
       setPassiefFout(klimopFoutTekst(e, lang));
@@ -222,18 +318,26 @@ export default function KlimopPaneel({
     setToetsFout('');
     setToetsUit(null);
     try {
-      setToetsUit(
-        await klimopArchitectuurToetsen(ctx, {
-          naam:
-            voorstelNaam.trim()
-            || tr(
-              'Перевірка сумісності етапу екосистеми Плющ',
-              'Compatibiliteitstoets van het Klimop-ecosysteem',
-            ),
-          fase: 12,
-          raaktProductieDirectZonderGoedkeuring: false,
-          gebruikStandaardBewijsVoorOntbrekendeVragen: true,
-        }),
+      const antwoorden15 = ontleedVoorstelBewijsNaarAntwoorden(voorstelBewijs);
+      const uitkomst = await klimopArchitectuurToetsen(ctx, {
+        naam:
+          voorstelNaam.trim()
+          || tr(
+            'Перевірка сумісності етапу екосистеми Плющ',
+            'Compatibiliteitstoets van het Klimop-ecosysteem',
+          ),
+        fase: voorstelFase,
+        raaktProductieDirectZonderGoedkeuring: false,
+        antwoorden15,
+        gebruikStandaardBewijsVoorOntbrekendeVragen: false,
+      });
+      setToetsUit(uitkomst);
+      const onbeoordeeldAantal = uitkomst.onbeoordeeldeVragen?.length ?? 0;
+      setLiveStatusTekst(
+        tr(
+          `Архітектурна перевірка етапу ${uitkomst.fase}: оцінено ${uitkomst.beoordeeldeVragen}/15, неоцінено ${onbeoordeeldAantal}.`,
+          `Architectuurtoets van fase ${uitkomst.fase}: beoordeeld ${uitkomst.beoordeeldeVragen}/15, onbeoordeeld ${onbeoordeeldAantal}.`,
+        ),
       );
     } catch (e) {
       setToetsFout(klimopFoutTekst(e, lang));
@@ -246,13 +350,35 @@ export default function KlimopPaneel({
   const gekozenSchakelaar = logboek?.schakelaars.find((s) => s.dienstId === gekozenDienst) ?? null;
   const drukBezig = spiegelBezig || passiefBezig || dubbelBezig || attestBezig || schakelBezig;
 
+  const spiegelUit = spiegelPerDienst[gekozenDienst] ?? null;
+  const passiefUit = passiefPerDienst[gekozenDienst] ?? null;
+  const dubbelUit = dubbelPerDienst[gekozenDienst] ?? null;
+  const attestUit = attestPerDienst[gekozenDienst] ?? null;
+
+  const overdrachtStaat = overzicht?.overdrachtStaat;
+  const totaalLogboekItems =
+    (overdrachtStaat?.totaalLogboekRegels ?? 0)
+    + (overdrachtStaat?.totaalDubbelKwitanties ?? 0)
+    + (overdrachtStaat?.totaalQuorumAttesten ?? 0);
+  const heeftKetenBreuk =
+    overdrachtStaat !== undefined
+    && (
+      overdrachtStaat.ketenIntegriteitOk === false
+      || overdrachtStaat.dubbelKetenIntegriteitOk === false
+      || overdrachtStaat.attestKetenIntegriteitOk === false
+    );
+
   return (
     <section className='ag-blok' id='orch-klimop' aria-labelledby='orch-klimop-titel' data-klimop-paneel='1'>
       <header className='ag-blok-kop'>
         <h3 className='ag-blok-titel' id='orch-klimop-titel'>
           <Network aria-hidden='true' />{' '}
           {tr('Екосистема «Плющ» та дзеркальна звірка служб', 'Ecosysteem «Klimop» en spiegelverificatie van diensten')}{' '}
-          <HulpVraag k='klimop.overzicht' lang={lang} />
+          <HulpVraag
+            k='klimop.overzicht'
+            lang={lang}
+            label={tr('Огляд стану екосистеми Плющ', 'Overzicht van ecosysteem Klimop')}
+          />
         </h3>
         <div className='ag-knoppen'>
           <Knop
@@ -269,11 +395,21 @@ export default function KlimopPaneel({
         </div>
         <p className='ag-blok-uitleg'>
           {tr(
-            'Жива готовність дванадцяти модулів ядра, корінь Меркла пакета відтворення «Насіння» та безризикова перевірка Сходинок 1–4 розділу 35 із криптографічними журналами, кворумними атестатами й миттєвим поверненням без зміни робочої бази даних.',
-            'Actuele gereedheid van de twaalf kernmodules, de Merkle-wortel van het Zaadpakket en risicoloze verificatie van Stappen 1–4 van hoofdstuk 35 met cryptografische logboeken, quorumattesten en directe terugval zonder wijziging van de draaiende databank.',
+            'Перевірка наявності й поточних відбитків дванадцяти модулів ядра, кореня Меркла пакета «Насіння» та Сходинок 1–4 розділу 35 із криптографічними журналами, кворумними атестатами й миттєвим поверненням без зміни робочої бази даних.',
+            'Controle van aanwezigheid en actuele afdrukken van de twaalf kernmodules, de Merkle-wortel van het Zaadpakket en Stappen 1–4 van hoofdstuk 35 met cryptografische logboeken, quorumattesten en directe terugval zonder wijziging van de draaiende databank.',
           )}
         </p>
       </header>
+
+      <div
+        className={liveStatusTekst ? 'ag-melding ag-melding-ok' : 'klimop-live-leeg'}
+        role='status'
+        aria-live='polite'
+        aria-atomic='true'
+        data-klimop-live-status='1'
+      >
+        {liveStatusTekst ? <span>{liveStatusTekst}</span> : null}
+      </div>
 
       {laadFout ? (
         <p className='ag-fout' role='alert'>
@@ -295,7 +431,9 @@ export default function KlimopPaneel({
             <b>
               {aanwezigeModules} / {overzicht.kernModules.length}{' '}
               <Badge toon={aanwezigeModules === 12 ? 'ok' : 'warn'}>
-                {aanwezigeModules === 12 ? tr('усі 12 цілісні', 'alle 12 integer') : tr('неповний набір', 'onvolledig')}
+                {aanwezigeModules === 12
+                  ? tr('усі 12 наявні (відбитки знято)', 'alle 12 aanwezig (afdrukken berekend)')
+                  : tr('неповний набір', 'onvolledig')}
               </Badge>
             </b>
             <code title={overzicht.zaadMerkleWortelSha256 ?? ''}>
@@ -317,6 +455,16 @@ export default function KlimopPaneel({
                 '—'
               )}
             </b>
+            {overzicht.eindvisie46
+            && ((overzicht.eindvisie46.gedeeltelijkeDocumenten44 ?? 0) > 0
+              || (overzicht.eindvisie46.ontbrekendeDocumenten44 ?? 0) > 0) ? (
+              <small>
+                {tr(
+                  `часткових: ${overzicht.eindvisie46.gedeeltelijkeDocumenten44 ?? 0} · відсутніх: ${overzicht.eindvisie46.ontbrekendeDocumenten44 ?? 0}`,
+                  `gedeeltelijk: ${overzicht.eindvisie46.gedeeltelijkeDocumenten44 ?? 0} · ontbrekend: ${overzicht.eindvisie46.ontbrekendeDocumenten44 ?? 0}`,
+                )}
+              </small>
+            ) : null}
             {overzicht.dossier ? (
               <small>
                 {tr(
@@ -330,22 +478,28 @@ export default function KlimopPaneel({
           <div className='orch-kv'>
             <small>{tr('Сходинки 1–4 та журнали звірки', 'Stappen 1–4 en logboeken')}</small>
             <b>
-              <Badge
-                toon={
-                  overzicht.overdrachtStaat?.ketenIntegriteitOk !== false
-                  && overzicht.overdrachtStaat?.dubbelKetenIntegriteitOk !== false
-                  && overzicht.overdrachtStaat?.attestKetenIntegriteitOk !== false
-                    ? 'ok'
-                    : 'warn'
-                }
-              >
-                {tr('недоторканна основа', 'onaangetaste basis')}
-              </Badge>
+              {!overdrachtStaat ? (
+                <Badge toon='off'>
+                  {tr('стан журналів невідомий', 'logboekstaat onbekend')}
+                </Badge>
+              ) : heeftKetenBreuk ? (
+                <Badge toon='warn'>
+                  {tr('виявлено пошкодження ланцюжка', 'ketenbeschadiging vastgesteld')}
+                </Badge>
+              ) : totaalLogboekItems === 0 ? (
+                <Badge toon='info'>
+                  {tr('порожні журнали (0 записів) · основа недоторканна', 'lege logboeken (0 regels) · basis onaangetast')}
+                </Badge>
+              ) : (
+                <Badge toon='ok'>
+                  {tr('ланцюжки перевірено · основа недоторканна', 'ketens geverifieerd · basis onaangetast')}
+                </Badge>
+              )}
             </b>
             <small>
               {tr(
-                `Сходинка 2: ${overzicht.overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · Сходинка 3: ${overzicht.overdrachtStaat?.actieveDubbelSchrijvenDiensten ?? 0}/11 · Сходинка 4: ${overzicht.overdrachtStaat?.actieveQuorumGereedDiensten ?? 0}/11`,
-                `Stap 2: ${overzicht.overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · Stap 3: ${overzicht.overdrachtStaat?.actieveDubbelSchrijvenDiensten ?? 0}/11 · Stap 4: ${overzicht.overdrachtStaat?.actieveQuorumGereedDiensten ?? 0}/11`,
+                `Сходинка 2: ${overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · Сходинка 3: ${overdrachtStaat?.actieveDubbelSchrijvenDiensten ?? 0}/11 · Сходинка 4: ${overdrachtStaat?.actieveQuorumGereedDiensten ?? 0}/11`,
+                `Stap 2: ${overdrachtStaat?.actievePassiefLezenDiensten ?? 0}/11 · Stap 3: ${overdrachtStaat?.actieveDubbelSchrijvenDiensten ?? 0}/11 · Stap 4: ${overdrachtStaat?.actieveQuorumGereedDiensten ?? 0}/11`,
               )}
             </small>
           </div>
@@ -353,25 +507,28 @@ export default function KlimopPaneel({
       ) : null}
 
       <div className='ag-formrij' data-klimop-spiegel='1'>
-        <label className='bsl-veld bsl-groei'>
+        <div className='bsl-veld bsl-groei'>
           <span>
-            {tr('Служба для дзеркальної перевірки та керування Сходинками 1–4 (розділ 35)', 'Dienst voor spiegelverificatie en beheer van Stappen 1–4 (hoofdstuk 35)')}{' '}
-            <HulpVraag k='klimop.spiegel' lang={lang} />
+            <label htmlFor='klimop-dienst-keuze'>
+              {tr('Служба для дзеркальної перевірки та керування Сходинками 1–4 (розділ 35)', 'Dienst voor spiegelverificatie en beheer van Stappen 1–4 (hoofdstuk 35)')}
+            </label>{' '}
+            <HulpVraag k='klimop.spiegel' lang={lang} label={tr('Вибір служби для дзеркальної перевірки Сходинок 1–4', 'Dienstkeuze voor spiegelverificatie van Stappen 1–4')} />{/* hulp:eigen-vraag — довідка поля вибору служби */}
           </span>
           <select
+            id='klimop-dienst-keuze'
             value={gekozenDienst}
             disabled={drukBezig}
             data-hulp='klimop.spiegel'
             data-klimop-veld='dienst'
-            onChange={(e) => setGekozenDienst(e.target.value as KlimopDienstId)}
+            onChange={(e) => kiesDienst(e.target.value as KlimopDienstId)}
           >
             {KLIMOP_ELF_DIENSTEN.map((d) => (
               <option key={d} value={d}>
-                {lang === 'uk' ? KLIMOP_DIENST_TEKST[d].uk : KLIMOP_DIENST_TEKST[d].nl} ({d})
+                {dienstNaam(d)} ({d})
               </option>
             ))}
           </select>
-        </label>
+        </div>
         <Knop
           toon='primary'
           icoon={<ShieldCheck />}
@@ -394,7 +551,11 @@ export default function KlimopPaneel({
       ) : null}
 
       {spiegelUit ? (
-        <div className={`ag-kaart${spiegelUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`} data-klimop-spiegel-uitkomst={spiegelUit.ok ? 'ok' : 'fout'}>
+        <div
+          className={`ag-kaart${spiegelUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`}
+          data-klimop-spiegel-uitkomst={spiegelUit.ok ? 'ok' : 'fout'}
+          data-klimop-uitkomst-dienst={spiegelUit.dienstId}
+        >
           <p>
             <CheckCircle2 size={15} aria-hidden='true' />{' '}
             <b>
@@ -402,7 +563,7 @@ export default function KlimopPaneel({
                 ? tr('Дзеркальна звірка Сходинки 1 успішна', 'Spiegelverificatie van Stap 1 geslaagd')
                 : tr('Виявлено розбіжність у перевірці', 'Afwijking gevonden bij spiegelverificatie')}
             </b>{' '}
-            · {lang === 'uk' ? KLIMOP_DIENST_TEKST[spiegelUit.dienstId].uk : KLIMOP_DIENST_TEKST[spiegelUit.dienstId].nl}
+            · {dienstNaam(spiegelUit.dienstId)} ({spiegelUit.dienstId})
           </p>
           <Tech
             rijen={[
@@ -440,14 +601,15 @@ export default function KlimopPaneel({
         <div className='bsl-veld bsl-groei'>
           <span>
             {tr('Сходинка 2: пасивне читання, журнал розбіжностей та перемикач миттєвого повернення', 'Stap 2: passief lezen, afwijkingslogboek en directe terugvalsleutel')}{' '}
-            <HulpVraag k='klimop.passief' lang={lang} />{' '}
-            <HulpVraag k='klimop.schakelaar' lang={lang} />
+            <HulpVraag k='klimop.passief' lang={lang} label={tr('Сходинка 2 пасивного дзеркального читання', 'Stap 2 van passief spiegellezen')} />{/* hulp:eigen-vraag — окрема сходинка */}
+            {' '}
+            <HulpVraag k='klimop.schakelaar' lang={lang} label={tr('Перемикач миттєвого повернення служби', 'Directe terugvalschakelaar van dienst')} />{/* hulp:eigen-vraag — окрема сходинка */}
           </span>
           <small data-hulp='klimop.schakelaar'>
             {gekozenSchakelaar
               ? lang === 'uk'
-                ? `${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].uk} · послідовних чистих звірок: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
-                : `${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].nl} · opeenvolgende foutloze controles: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
+                ? `${dienstNaam(gekozenDienst)} · ${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].uk} · послідовних чистих звірок: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
+                : `${dienstNaam(gekozenDienst)} · ${KLIMOP_LEESMODUS_TEKST[gekozenSchakelaar.leesModus].nl} · opeenvolgende foutloze controles: ${gekozenSchakelaar.opeenvolgendeGelijkeControles}`
               : tr(
                   'Основним джерелом запису завжди залишається чинна база даних; за будь-якої розбіжності служба повертається миттєво.',
                   'De bestaande databank blijft altijd de schrijfbron; bij elke afwijking valt de dienst direct terug.',
@@ -498,13 +660,13 @@ export default function KlimopPaneel({
         <div className='bsl-veld bsl-groei'>
           <span>
             {tr('Сходинка 3: контрольоване подвійне записування зі звіркою читання після запису', 'Stap 3: gecontroleerd dubbel schrijven met onmiddellijke leesverificatie')}{' '}
-            <HulpVraag k='klimop.dubbel' lang={lang} />
+            <HulpVraag k='klimop.dubbel' lang={lang} label={tr('Сходинка 3 контрольованого подвійного записування', 'Stap 3 van gecontroleerd dubbel schrijven')} />{/* hulp:eigen-vraag — окрема сходинка */}
           </span>
           <small data-hulp='klimop.dubbel'>
             {gekozenSchakelaar
               ? lang === 'uk'
-                ? `${KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST[gekozenSchakelaar.schrijfModus].uk} · перевірених циклів: ${gekozenSchakelaar.opeenvolgendeDubbelSchrijfControles}`
-                : `${KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST[gekozenSchakelaar.schrijfModus].nl} · geverifieerde cycli: ${gekozenSchakelaar.opeenvolgendeDubbelSchrijfControles}`
+                ? `${dienstNaam(gekozenDienst)} · ${KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST[gekozenSchakelaar.schrijfModus].uk} · перевірених циклів: ${gekozenSchakelaar.opeenvolgendeDubbelSchrijfControles}`
+                : `${dienstNaam(gekozenDienst)} · ${KLIMOP_DUBBEL_SCHRIJFMODUS_TEKST[gekozenSchakelaar.schrijfModus].nl} · geverifieerde cycli: ${gekozenSchakelaar.opeenvolgendeDubbelSchrijfControles}`
               : tr(
                   'Перехід до Сходинки 3 дозволено лише після активної Сходинки 2 та безрозбіжної звірки читання й видалень.',
                   'Opschakelen naar Stap 3 is alleen toegestaan vanuit een actieve Stap 2 na foutloze lees- en wisverificatie.',
@@ -537,13 +699,13 @@ export default function KlimopPaneel({
         <div className='bsl-veld bsl-groei'>
           <span>
             {tr('Сходинка 4: кворумний атестат готовності (порогова й постквантова печатки без вимкнення бази)', 'Stap 4: quorumattest van gereedheid (drempel- en postkwantumzegel zonder uitschakeling van databank)')}{' '}
-            <HulpVraag k='klimop.attest' lang={lang} />
+            <HulpVraag k='klimop.attest' lang={lang} label={tr('Сходинка 4 кворумного атестата готовності', 'Stap 4 van het quorumattest van gereedheid')} />{/* hulp:eigen-vraag — окрема сходинка */}
           </span>
           <small data-hulp='klimop.attest'>
             {gekozenSchakelaar
               ? lang === 'uk'
-                ? `${KLIMOP_QUORUM_ATTESTMODUS_TEKST[gekozenSchakelaar.attestModus].uk} · чинних атестатів: ${gekozenSchakelaar.opeenvolgendeGeldigeAttesten}`
-                : `${KLIMOP_QUORUM_ATTESTMODUS_TEKST[gekozenSchakelaar.attestModus].nl} · geldige attesten: ${gekozenSchakelaar.opeenvolgendeGeldigeAttesten}`
+                ? `${dienstNaam(gekozenDienst)} · ${KLIMOP_QUORUM_ATTESTMODUS_TEKST[gekozenSchakelaar.attestModus].uk} · чинних атестатів: ${gekozenSchakelaar.opeenvolgendeGeldigeAttesten}`
+                : `${dienstNaam(gekozenDienst)} · ${KLIMOP_QUORUM_ATTESTMODUS_TEKST[gekozenSchakelaar.attestModus].nl} · geldige attesten: ${gekozenSchakelaar.opeenvolgendeGeldigeAttesten}`
               : tr(
                   'Підтвердження Сходинки 4 вимагає активної Сходинки 3 та чинного атестата без самовільного відокремлення чинної бази.',
                   'Bevestiging van Stap 4 vereist een actieve Stap 3 en een geldig attest zonder loskoppeling van de databank.',
@@ -585,14 +747,18 @@ export default function KlimopPaneel({
       ) : null}
 
       {passiefUit ? (
-        <div className={`ag-kaart${passiefUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`} data-klimop-passief-uitkomst={passiefUit.ok ? 'ok' : 'fout'}>
+        <div
+          className={`ag-kaart${passiefUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`}
+          data-klimop-passief-uitkomst={passiefUit.ok ? 'ok' : 'fout'}
+          data-klimop-uitkomst-dienst={passiefUit.dienstId}
+        >
           <p>
             <b>
               {passiefUit.ok
                 ? tr('Пасивна багатоелементна звірка Сходинки 2 без розбіжностей', 'Meervoudige passieve proef van Stap 2 zonder afwijkingen')
                 : tr('Виявлено розбіжність — виконано захисне повернення', 'Afwijking vastgesteld — beschermende terugval uitgevoerd')}
             </b>{' '}
-            · {kort(passiefUit.logboekRegel.regelSha256)}…
+            · {dienstNaam(passiefUit.dienstId)} ({passiefUit.dienstId}) · {kort(passiefUit.logboekRegel.regelSha256)}…
           </p>
           <Tech
             rijen={[
@@ -612,14 +778,18 @@ export default function KlimopPaneel({
       ) : null}
 
       {dubbelUit ? (
-        <div className={`ag-kaart${dubbelUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`} data-klimop-dubbel-uitkomst={dubbelUit.ok ? 'ok' : 'fout'}>
+        <div
+          className={`ag-kaart${dubbelUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`}
+          data-klimop-dubbel-uitkomst={dubbelUit.ok ? 'ok' : 'fout'}
+          data-klimop-uitkomst-dienst={dubbelUit.dienstId}
+        >
           <p>
             <b>
               {dubbelUit.ok
                 ? tr('Подвійне записування та звірка читання Сходинки 3 без розбіжностей', 'Dubbel schrijven en leesverificatie van Stap 3 zonder afwijkingen')
                 : tr('Збій подвійного записування — виконано миттєве повернення', 'Fout bij dubbel schrijven — onmiddellijke terugval uitgevoerd')}
             </b>{' '}
-            · {kort(dubbelUit.kwitantieRegel.kwitantieSha256)}…
+            · {dienstNaam(dubbelUit.dienstId)} ({dubbelUit.dienstId}) · {kort(dubbelUit.kwitantieRegel.kwitantieSha256)}…
           </p>
           <Tech
             rijen={[
@@ -639,14 +809,18 @@ export default function KlimopPaneel({
       ) : null}
 
       {attestUit ? (
-        <div className={`ag-kaart${attestUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`} data-klimop-attest-uitkomst={attestUit.ok ? 'ok' : 'fout'}>
+        <div
+          className={`ag-kaart${attestUit.ok ? ' ag-vers' : ' ag-waarschuwing'}`}
+          data-klimop-attest-uitkomst={attestUit.ok ? 'ok' : 'fout'}
+          data-klimop-uitkomst-dienst={attestUit.dienstId}
+        >
           <p>
             <b>
               {attestUit.ok
                 ? tr('Кворумний атестат Сходинки 4 запечатано пороговим і постквантовим підписами', 'Quorumattest van Stap 4 verzegeld met drempel- en postkwantumhandtekening')
                 : tr('Атестат Сходинки 4 відхилено — виконано захисне повернення', 'Attest van Stap 4 afgewezen — beschermende terugval uitgevoerd')}
             </b>{' '}
-            · {kort(attestUit.attestRegel.attestSha256)}…
+            · {dienstNaam(attestUit.dienstId)} ({attestUit.dienstId}) · {kort(attestUit.attestRegel.attestSha256)}…
           </p>
           <Tech
             rijen={[
@@ -732,12 +906,15 @@ export default function KlimopPaneel({
       ) : null}
 
       <div className='ag-formrij' data-klimop-toets='1'>
-        <label className='bsl-veld bsl-groei'>
+        <div className='bsl-veld bsl-groei'>
           <span>
-            {tr('Назва пропозиції для 15-пунктової архітектурної перевірки (розділи 42–43)', 'Naam van voorstel voor 15-punten-architectuurtoets (hoofdstukken 42–43)')}{' '}
-            <HulpVraag k='klimop.toets' lang={lang} />
+            <label htmlFor='klimop-voorstel-naam'>
+              {tr('Назва пропозиції для 15-пунктової архітектурної перевірки (розділи 42–43)', 'Naam van voorstel voor 15-punten-architectuurtoets (hoofdstukken 42–43)')}
+            </label>{' '}
+            <HulpVraag k='klimop.toets' lang={lang} label={tr('15-пунктова архітектурна перевірка пропозиції', '15-punten-architectuurtoets van het voorstel')} />{/* hulp:eigen-vraag — довідка форми 15 питань */}
           </span>
           <input
+            id='klimop-voorstel-naam'
             type='text'
             value={voorstelNaam}
             maxLength={200}
@@ -746,7 +923,48 @@ export default function KlimopPaneel({
             onChange={(e) => setVoorstelNaam(e.target.value)}
             data-klimop-veld='voorstel'
           />
-        </label>
+        </div>
+        <div className='bsl-veld'>
+          <span>
+            <label htmlFor='klimop-voorstel-fase'>
+              {tr('Цільовий етап (0–16)', 'Doelfase (0–16)')}
+            </label>
+          </span>
+          <select
+            id='klimop-voorstel-fase'
+            value={voorstelFase}
+            disabled={toetsBezig}
+            data-hulp='klimop.toets'
+            data-klimop-veld='voorstel-fase'
+            onChange={(e) => setVoorstelFase(Number(e.target.value))}
+          >
+            {KLIMOP_BESCHIKBARE_FASEN.map((f) => (
+              <option key={f} value={f}>
+                {tr(`Етап ${f}`, `Fase ${f}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className='bsl-veld ag-formrij-uitleg'>
+          <span>
+            <label htmlFor='klimop-voorstel-bewijs'>
+              {tr('Перевірний доказ до 15 питань (посилання на випробування або JSON за ідентифікаторами питань; порожнє поле = неоцінено)', 'Verifieerbaar bewijs voor de 15 vragen (testverwijzing of JSON per vraag-id; leeg veld = onbeoordeeld)')}
+            </label>
+          </span>
+          <textarea
+            id='klimop-voorstel-bewijs'
+            rows={2}
+            value={voorstelBewijs}
+            maxLength={4000}
+            disabled={toetsBezig}
+            placeholder={tr(
+              'Вкажіть перевірний доказ (щонайменше 8 знаків); без доказу питання залишаються неоціненими',
+              'Geef verifieerbaar bewijs op (minstens 8 tekens); zonder bewijs blijven de vragen onbeoordeeld',
+            )}
+            onChange={(e) => setVoorstelBewijs(e.target.value)}
+            data-klimop-veld='voorstel-bewijs'
+          />
+        </div>
         <Knop
           icoon={<CheckCircle2 />}
           bezig={toetsBezig}
@@ -768,17 +986,42 @@ export default function KlimopPaneel({
           <p>
             <b>
               {toetsUit.goedgekeurd
-                ? tr('Усі 15 питань архітектурної перевірки виконано', 'Aan alle 15 architectuurvragen voldaan')
-                : tr('Виявлено порушення архітектурних правил', 'Schending van architectuurregels vastgesteld')}
+                ? tr('Усі 15 питань архітектурної перевірки підтверджено доказами', 'Alle 15 architectuurvragen met bewijs bevestigd')
+                : (toetsUit.onbeoordeeldeVragen?.length ?? 0) > 0
+                  ? tr('Частина питань архітектурної перевірки ще неоцінена (немає перевірного доказу)', 'Een deel van de architectuurvragen is nog onbeoordeeld (geen verifieerbaar bewijs)')
+                  : tr('Виявлено порушення архітектурних правил', 'Schending van architectuurregels vastgesteld')}
             </b>{' '}
-            · {toetsUit.naam}
+            · {toetsUit.naam} · {tr(`Етап ${toetsUit.fase}`, `Fase ${toetsUit.fase}`)}
           </p>
           <p className='ag-meta'>
             {tr(
-              `Перевірено питань: ${toetsUit.beoordeeldeVragen}/15 · Будь-яка реальна зміна потребує окремого рішення власника або кворуму.`,
-              `Getoetste vragen: ${toetsUit.beoordeeldeVragen}/15 · Elke echte doorvoering vereist een afzonderlijk besluit van eigenaar of quorum.`,
+              `Оцінено питань: ${toetsUit.beoordeeldeVragen}/15 · Неоцінено: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Будь-яка реальна зміна потребує окремого рішення власника або кворуму.`,
+              `Beoordeelde vragen: ${toetsUit.beoordeeldeVragen}/15 · Onbeoordeeld: ${toetsUit.onbeoordeeldeVragen?.length ?? 0}/15 · Elke echte doorvoering vereist een afzonderlijk besluit van eigenaar of quorum.`,
             )}
           </p>
+          <ul className='klimop-vragen-lijst' data-klimop-vragen-lijst='1'>
+            {KLIMOP_VIJFTIEN_VRAGEN_LIJST.map((vraag) => {
+              const item = toetsUit.vragenResultaten?.find((r) => r.vraagId === vraag.id);
+              const status = item?.status
+                ?? (toetsUit.onbeoordeeldeVragen?.includes(vraag.id)
+                  ? 'onbeoordeeld'
+                  : toetsUit.ontbrekendeOfGefaaldeVragen.includes(vraag.id)
+                    ? 'gefaald'
+                    : 'voldaan');
+              return (
+                <li key={vraag.id} data-klimop-vraag-id={vraag.id} data-klimop-vraag-status={status}>
+                  <span>{lang === 'uk' ? vraag.uk : vraag.nl}</span>
+                  <Badge toon={status === 'voldaan' ? 'ok' : status === 'onbeoordeeld' ? 'off' : 'warn'}>
+                    {status === 'voldaan'
+                      ? tr('підтверджено', 'voldaan')
+                      : status === 'onbeoordeeld'
+                        ? tr('неоцінено', 'onbeoordeeld')
+                        : tr('відхилено', 'afgewezen')}
+                  </Badge>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       ) : null}
     </section>

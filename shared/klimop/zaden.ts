@@ -13,6 +13,9 @@
 //   5. Контроль пропозицій автономного розвитку ШІ-агентів та перевірка 12 засад §46.
 
 import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import {
   beoordeelKlimopWijziging,
   berekenKnooppuntId,
@@ -549,12 +552,18 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
   verbindingMetOudeServerGebruikt: boolean;
   verwachteFrostPubHex?: string;
   verwachteZaadBewaarderSleutels?: VerwachteZaadBewaarderSleutels;
+  /** KLIMOP-021: чиста цільова тека розпакування; якщо не вказана — тимчасова тека ОС, яка прибирається після звірки. */
+  doelMap?: string;
+  bewaarDoelMap?: boolean;
 }):
   | {
       ok: true;
       hersteldePadLijst: string[];
       merkleWortelSha256: string;
       nieuweRechtsgebieden: string[];
+      opSchijfGeschrevenEnGeverifieerd: true;
+      hersteldeBestandenSha256: Record<string, string>;
+      doelMap?: string;
     }
   | { ok: false; fout: string } {
   if (opties.verbindingMetOudeServerGebruikt) {
@@ -575,6 +584,44 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
     return { ok: false, fout: 'NIEUWE_GENERATIE_NIET_ONAFHANKELIJK' };
   }
 
+  // KLIMOP-021: господарська відбудова на чистому носії — записуємо всі модулі на диск і заново звіряємо їхні SHA-256 та корінь Меркла
+  const tijdelijkeMap = opties.doelMap ?? mkdtempSync(join(tmpdir(), 'klimop-zaad-herbouw-'));
+  const moetOpruimen = !opties.doelMap && opties.bewaarDoelMap !== true;
+  const hersteldeBestandenSha256: Record<string, string> = {};
+  try {
+    mkdirSync(tijdelijkeMap, { recursive: true });
+    const herlezenRegels: Array<{ pad: string; sha256: string; grootteBytes: number }> = [];
+    for (const regel of opties.pakket.onderdelenManifest) {
+      if (!isGeldigZaadOnderdeelPad(regel.pad)) {
+        return { ok: false, fout: `ZAAD_PAD_ONGELDIG:${regel.pad}` };
+      }
+      const doelBestand = join(tijdelijkeMap, regel.pad);
+      mkdirSync(dirname(doelBestand), { recursive: true });
+      const bronTekst = opties.pakket.ingebeddeOnderdelenUtf8[regel.pad];
+      writeFileSync(doelBestand, bronTekst, 'utf8');
+      const schijfBuf = readFileSync(doelBestand);
+      const schijfSha = createHash('sha256').update(schijfBuf).digest('hex');
+      if (schijfBuf.length !== regel.grootteBytes || schijfSha !== regel.sha256) {
+        return { ok: false, fout: `ZAAD_SCHIJFHERBOUW_SHA256_FOUT:${regel.pad}` };
+      }
+      hersteldeBestandenSha256[regel.pad] = schijfSha;
+      herlezenRegels.push({ pad: regel.pad, sha256: schijfSha, grootteBytes: schijfBuf.length });
+    }
+    writeFileSync(
+      join(tijdelijkeMap, 'ZAAD-GRONDWET.json'),
+      canoniekeJson(opties.pakket.grondwet),
+      'utf8',
+    );
+    const schijfMerkleWortel = berekenZaadMerkleWortelSha256(herlezenRegels);
+    if (schijfMerkleWortel !== opties.pakket.merkleWortelSha256) {
+      return { ok: false, fout: 'ZAAD_SCHIJFHERBOUW_MERKLE_FOUT' };
+    }
+  } finally {
+    if (moetOpruimen) {
+      rmSync(tijdelijkeMap, { recursive: true, force: true });
+    }
+  }
+
   const nieuweRechtsgebieden = [
     ...new Set(opties.nieuweGeneratieKnooppunten.map((k) => k.juridischeRegio)),
   ].sort();
@@ -584,6 +631,9 @@ export function herbouwEcosysteemUitZaadOpSchoonMilieu(opties: {
     hersteldePadLijst: opties.pakket.onderdelenManifest.map((m) => m.pad),
     merkleWortelSha256: opties.pakket.merkleWortelSha256,
     nieuweRechtsgebieden,
+    opSchijfGeschrevenEnGeverifieerd: true,
+    hersteldeBestandenSha256,
+    ...(opties.doelMap || opties.bewaarDoelMap ? { doelMap: tijdelijkeMap } : {}),
   };
 }
 
@@ -860,27 +910,194 @@ export interface EindvisiePijlerBewijs {
   geverifieerd: boolean;
 }
 
+export interface KlimopVerplichtDocument44Definitie {
+  readonly nummer44: number;
+  readonly titelUk: string;
+  readonly ukPad: string;
+  readonly nlPad: string;
+  readonly vereistKenmerk: string;
+}
+
+/**
+ * KLIMOP-021: первинний реєстр усіх 25 обов'язкових двомовних документів точно за §44 Головного маніфесту
+ * (`docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md`, рядки 1052–1076) із прив'язкою обох мовних версій і перевірного маркера змісту.
+ */
+export const KLIMOP_VIJFENTWINTIG_VERPLICHTE_DOCUMENTEN: readonly KlimopVerplichtDocument44Definitie[] = Object.freeze([
+  { nummer44: 1, titelUk: 'Повний аудит чинного «Мого простору»', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-0-АУДИТ-ДІЙСНОГО-СТАНУ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-0-AUDIT-FEITELIJKE-STAAT.nl.md', vereistKenmerk: 'SPOF-1' },
+  { nummer44: 2, titelUk: 'Архітектурна схема «Плющ»', ukPad: 'docs/hub/АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md', nlPad: 'docs/hub/ARCHITECTUURMANIFEST-KLIMOP.nl.md', vereistKenmerk: '44.' },
+  { nummer44: 3, titelUk: 'Модель вузлів і зв’язків', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-2-ВИПРОБУВАЛЬНА-МЕРЕЖА-ТА-СТЕБЛА.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-2-BEPROEVINGSNETWERK-EN-STENGELS.nl.md', vereistKenmerk: 'stengels.ts' },
+  { nummer44: 4, titelUk: 'Модель загроз', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-11-НЕЗАЛЕЖНИЙ-АУДИТ-БЕЗПЕКИ-ТА-МОДЕЛЬ-ЗАГРОЗ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-11-ONAFHANKELIJKE-BEVEILIGINGSAUDIT-EN-DREIGINGSMODEL.nl.md', vereistKenmerk: 'KLIMOP_DREIGINGS_MODEL' },
+  { nummer44: 5, titelUk: 'Модель довіри', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-1-АРХІТЕКТУРНЕ-ЯДРО-ТА-ПЛАН-ВИПУСКІВ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-1-ARCHITECTUURKERN-EN-UITGAVEPLAN.nl.md', vereistKenmerk: 'Ed25519' },
+  { nummer44: 6, titelUk: 'Правила криптографії', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-4-РОЗПОДІЛЕНІ-КЛЮЧІ-ТА-ПОРОГОВІ-ПІДПИСИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-4-GEDISTRIBUEERDE-SLEUTELS-EN-DREMPELHANDTEKENINGEN.nl.md', vereistKenmerk: 'FROST' },
+  { nummer44: 7, titelUk: 'Схема розподіленого зберігання', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-3-ШИФРУВАННЯ-ТА-РОЗПОДІЛЕНЕ-ЗБЕРІГАННЯ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-3-VERSLEUTELING-EN-VERDEELDE-OPSLAG.nl.md', vereistKenmerk: 'Reed-Solomon' },
+  { nummer44: 8, titelUk: 'Модель ідентичності', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-5-НЕЗАЛЕЖНА-ІДЕНТИЧНІСТЬ-ТА-ГРУПОВІ-ПРОСТОРИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-5-ONAFHANKELIJKE-IDENTITEIT-EN-GROEPSRUIMTES.nl.md', vereistKenmerk: 'klid1_' },
+  { nummer44: 9, titelUk: 'Порядок відновлення доступу', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-5-НЕЗАЛЕЖНА-ІДЕНТИЧНІСТЬ-ТА-ГРУПОВІ-ПРОСТОРИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-5-ONAFHANKELIJKE-IDENTITEIT-EN-GROEPSRUIMTES.nl.md', vereistKenmerk: 'identiteit.ts' },
+  { nummer44: 10, titelUk: 'Модель захисту людини', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-9-ЗАХИСТ-ЛЮДИНИ-ТА-ПРОТИДІЯ-ПРИМУСУ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-9-MENSBESCHERMING-EN-DWANGBESTENDIGHEID.nl.md', vereistKenmerk: 'mensbescherming.ts' },
+  { nummer44: 11, titelUk: 'Порядок розподіленого керування', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-6-РОЗПОДІЛЕНЕ-КЕРУВАННЯ-ТА-БЕЗПЕЧНІ-ВИПУСКИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-6-DREMPELBESTUUR-EN-VEILIGE-UITGAVEN.nl.md', vereistKenmerk: 'bestuur.ts' },
+  { nummer44: 12, titelUk: 'Специфікація самовідновлення', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-7-ІМУННА-СИСТЕМА-ТА-САМОВІДНОВЛЕННЯ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-7-IMMUUNSYSTEEM-EN-ZELFHERSTEL.nl.md', vereistKenmerk: 'immuunsysteem.ts' },
+  { nummer44: 13, titelUk: 'Правила безпечних випусків', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-6-РОЗПОДІЛЕНЕ-КЕРУВАННЯ-ТА-БЕЗПЕЧНІ-ВИПУСКИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-6-DREMPELBESTUUR-EN-VEILIGE-UITGAVEN.nl.md', vereistKenmerk: 'klimop-bestuur-client.ts' },
+  { nummer44: 14, titelUk: 'Правила участі користувацьких пристроїв', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-10-КЕРОВАНЕ-РОЗШИРЕННЯ-ТА-ОБМІН-РЕСУРСАМИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-10-BEHEERSTE-UITBREIDING-EN-MIDDELENUITWISSELING.nl.md', vereistKenmerk: 'hechtranken.ts' },
+  { nummer44: 15, titelUk: 'Модель ресурсів і винагород', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-10-КЕРОВАНЕ-РОЗШИРЕННЯ-ТА-ОБМІН-РЕСУРСАМИ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-10-BEHEERSTE-UITBREIDING-EN-MIDDELENUITWISSELING.nl.md', vereistKenmerk: 'berekenEerlijkeMiddelenBalans' },
+  { nummer44: 16, titelUk: 'Специфікація зовнішніх з’єднувачів', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-8-ПЕРЕНЕСЕННЯ-СЛУЖБ-ТА-ІЗОЛЬОВАНІ-ЗЄДНУВАЧІ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-8-DIENSTENOVERDRACHT-EN-GEISOLEERDE-VERBINDERS.nl.md', vereistKenmerk: 'diensten.ts' },
+  { nummer44: 17, titelUk: 'План перенесення бази даних', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-15-ПОДВІЙНЕ-ЗАПИСУВАННЯ-ЗВІРКА-ЧИТАННЯ-ТА-ПОВЕРНЕННЯ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-15-DUBBEL-SCHRIJVEN-LEESVERIFICATIE-EN-TERUGVAL.nl.md', vereistKenmerk: 'PostgreSQL 18.6' },
+  { nummer44: 18, titelUk: 'План перенесення кожної чинної служби', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-14-ПАСИВНЕ-ЧИТАННЯ-ЖУРНАЛ-РОЗБІЖНОСТЕЙ-ТА-ПЕРЕМИКАЧ-ПОВЕРНЕННЯ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-14-PASSIEF-LEZEN-AFWIJKINGSLOGBOEK-EN-TERUGSCHAKELING.nl.md', vereistKenmerk: 'klimop-overdracht-opslag.ts' },
+  { nummer44: 19, titelUk: 'Перелік технічних залежностей', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-12-НАСІННЯ-СПАДКОЄМНІСТЬ-ТА-ПОСТІЙНИЙ-РОЗВИТОК.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-12-ZADEN-OPVOLGING-EN-DUURZAME-ONTWIKKELING.nl.md', vereistKenmerk: 'KLIMOP_TECHNISCHE_AFHANKELIJKHEDEN' },
+  { nummer44: 20, titelUk: 'Програма випробувань', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-7-ІМУННА-СИСТЕМА-ТА-САМОВІДНОВЛЕННЯ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-7-IMMUUNSYSTEEM-EN-ZELFHERSTEL.nl.md', vereistKenmerk: 'klimop-etappe7-immuunsysteem-proef.mjs' },
+  { nummer44: 21, titelUk: 'Перелік невирішених ризиків', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-11-НЕЗАЛЕЖНИЙ-АУДИТ-БЕЗПЕКИ-ТА-МОДЕЛЬ-ЗАГРОЗ.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-11-ONAFHANKELIJKE-BEVEILIGINGSAUDIT-EN-DREIGINGSMODEL.nl.md', vereistKenmerk: 'beveiligingsaudit.ts' },
+  { nummer44: 22, titelUk: 'План незалежної перевірки', ukPad: 'docs/hub/ПЛЮЩ-ВИПРАВЛЕННЯ-ЗА-НЕЗАЛЕЖНОЮ-ПЕРЕВІРКОЮ.uk.md', nlPad: 'docs/hub/KLIMOP-HERSTEL-NA-ONAFHANKELIJKE-CONTROLE.nl.md', vereistKenmerk: 'KLIMOP-018' },
+  { nummer44: 23, titelUk: 'Поетапний план випусків', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-16-КВОРУМНИЙ-АТЕСТАТ-СХОДИНКИ-4-ТА-ПОРОГОВИЙ-ДОПУСК.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-16-STAP-4-QUORUMATTEST-EN-DREMPELVRIJGAVE.nl.md', vereistKenmerk: 'FROST' },
+  { nummer44: 24, titelUk: 'Переглянуті правила ШІ-агентів', ukPad: 'AGENTS.md', nlPad: 'AGENTENREGELS.nl.md', vereistKenmerk: 'KLIMOP-001' },
+  { nummer44: 25, titelUk: 'План подальшого розвитку', ukPad: 'docs/hub/ПЛЮЩ-ЕТАП-12-НАСІННЯ-СПАДКОЄМНІСТЬ-ТА-ПОСТІЙНИЙ-РОЗВИТОК.uk.md', nlPad: 'docs/hub/KLIMOP-FASE-12-ZADEN-OPVOLGING-EN-DUURZAME-ONTWIKKELING.nl.md', vereistKenmerk: 'valideerKlimopEindvisie46' },
+]);
+
+export interface KlimopDocument44ControleRegel {
+  nummer44: number;
+  titelUk: string;
+  ukPad: string;
+  nlPad: string;
+  status: 'bevestigd' | 'gedeeltelijk' | 'ontbrekend';
+  ukSha256: string | null;
+  nlSha256: string | null;
+}
+
+export interface KlimopDocument44ControleVerslag {
+  totaal: 25;
+  bevestigdAantal: number;
+  gedeeltelijkAantal: number;
+  ontbrekendAantal: number;
+  onderwerpen: KlimopDocument44ControleRegel[];
+}
+
+/**
+ * KLIMOP-021: справжня змістовна звірка всіх 25 обов'язкових документів §44 маніфесту:
+ * читає обидві мовні версії з диска, обчислює їхні `SHA-256`, перевіряє мінімальний обсяг,
+ * наявність тематичного маркера та відсутність позначок незавершеності.
+ */
+export function controleerVijfentwintigVerplichteDocumenten(wortelPad: string): KlimopDocument44ControleVerslag {
+  let bevestigdAantal = 0;
+  let gedeeltelijkAantal = 0;
+  let ontbrekendAantal = 0;
+  const onderwerpen: KlimopDocument44ControleRegel[] = [];
+
+  for (const def of KLIMOP_VIJFENTWINTIG_VERPLICHTE_DOCUMENTEN) {
+    const volUk = join(wortelPad, def.ukPad);
+    const volNl = join(wortelPad, def.nlPad);
+    const heeftUk = existsSync(volUk);
+    const heeftNl = existsSync(volNl);
+    if (!heeftUk && !heeftNl) {
+      ontbrekendAantal++;
+      onderwerpen.push({
+        nummer44: def.nummer44,
+        titelUk: def.titelUk,
+        ukPad: def.ukPad,
+        nlPad: def.nlPad,
+        status: 'ontbrekend',
+        ukSha256: null,
+        nlSha256: null,
+      });
+      continue;
+    }
+    const ukTekst = heeftUk ? readFileSync(volUk, 'utf8') : '';
+    const nlTekst = heeftNl ? readFileSync(volNl, 'utf8') : '';
+    const ukSha256 = heeftUk ? createHash('sha256').update(ukTekst, 'utf8').digest('hex') : null;
+    const nlSha256 = heeftNl ? createHash('sha256').update(nlTekst, 'utf8').digest('hex') : null;
+    const ukVolledig =
+      ukTekst.trim().length >= 400
+      && ukTekst.includes(def.vereistKenmerk)
+      && !ukTekst.includes('Заплановано (Етап');
+    const nlVolledig =
+      nlTekst.trim().length >= 400
+      && nlTekst.includes(def.vereistKenmerk)
+      && !nlTekst.includes('Gepland (Fase');
+
+    if (ukVolledig && nlVolledig) {
+      bevestigdAantal++;
+      onderwerpen.push({
+        nummer44: def.nummer44,
+        titelUk: def.titelUk,
+        ukPad: def.ukPad,
+        nlPad: def.nlPad,
+        status: 'bevestigd',
+        ukSha256,
+        nlSha256,
+      });
+    } else {
+      gedeeltelijkAantal++;
+      onderwerpen.push({
+        nummer44: def.nummer44,
+        titelUk: def.titelUk,
+        ukPad: def.ukPad,
+        nlPad: def.nlPad,
+        status: 'gedeeltelijk',
+        ukSha256,
+        nlSha256,
+      });
+    }
+  }
+
+  return {
+    totaal: 25,
+    bevestigdAantal,
+    gedeeltelijkAantal,
+    ontbrekendAantal,
+    onderwerpen,
+  };
+}
+
 /** Приймальна звірка всіх 12 засад кінцевого бачення §46 та повного комплекту 25 обов'язкових документів §44. */
 export function valideerKlimopEindvisie46(opties: {
   pijlers: readonly EindvisiePijlerBewijs[];
   voltooideVerplichteDocumenten44: number;
   alleTwaalfEtappesVoltooid: boolean;
   productieInfrastructuurOnaangetast: boolean;
-}): { ok: boolean; gedektePijlers: number; fouten: string[] } {
+  /** KLIMOP-021: якщо передано корінь сховища, перевіряє справжній вміст модулів і всіх 25 пар документів на диску. */
+  wortelPad?: string;
+}): {
+  ok: boolean;
+  gedektePijlers: number;
+  bevestigdeDocumentenOpSchijf?: number;
+  moduleBronnenSha256?: Record<string, string>;
+  fouten: string[];
+} {
   const fouten: string[] = [];
   const gezien = new Set<KlimopEindvisiePijlerId>();
+  const moduleBronnenSha256: Record<string, string> = {};
 
   for (const p of opties.pijlers) {
     gezien.add(p.pijlerId);
     if (!p.geverifieerd || !KLIMOP_TWAALF_KERNMODULES.includes(p.verwezenlijktInModule)) {
       fouten.push(`EINDVISIE_PIJLER_NIET_BEWEZEN:${p.pijlerId}`);
+      continue;
+    }
+    if (opties.wortelPad) {
+      const volModPad = join(opties.wortelPad, p.verwezenlijktInModule);
+      if (!existsSync(volModPad)) {
+        fouten.push(`EINDVISIE_MODULE_ONTBREEKT_OP_SCHIJF:${p.verwezenlijktInModule}`);
+      } else {
+        const inhoud = readFileSync(volModPad, 'utf8');
+        if (inhoud.trim().length < 200 || !inhoud.includes('export ')) {
+          fouten.push(`EINDVISIE_MODULE_LEEG_OF_ONGELDIG:${p.verwezenlijktInModule}`);
+        } else {
+          moduleBronnenSha256[p.verwezenlijktInModule] = createHash('sha256').update(inhoud, 'utf8').digest('hex');
+        }
+      }
     }
   }
   for (const vereist of KLIMOP_EINDVISIE_TWAALF_PIJLERS) {
     if (!gezien.has(vereist)) fouten.push(`ONTBREKENDE_EINDVISIE_PIJLER_46:${vereist}`);
   }
-  if (opties.voltooideVerplichteDocumenten44 < 25) {
-    fouten.push(`NIET_ALLE_25_DOCUMENTEN_VOLTOOID:${opties.voltooideVerplichteDocumenten44}`);
+
+  let bevestigdeDocumentenOpSchijf: number | undefined;
+  if (opties.wortelPad) {
+    const docVerslag = controleerVijfentwintigVerplichteDocumenten(opties.wortelPad);
+    bevestigdeDocumentenOpSchijf = docVerslag.bevestigdAantal;
+    if (docVerslag.bevestigdAantal < 25) {
+      fouten.push(`NIET_ALLE_25_DOCUMENTEN_INHOUDELIJK_BEVESTIGD:${docVerslag.bevestigdAantal}`);
+    }
+  }
+  const effectieveDoc25 = bevestigdeDocumentenOpSchijf ?? opties.voltooideVerplichteDocumenten44;
+  if (effectieveDoc25 < 25) {
+    fouten.push(`NIET_ALLE_25_DOCUMENTEN_VOLTOOID:${effectieveDoc25}`);
   }
   if (!opties.alleTwaalfEtappesVoltooid) {
     fouten.push('NIET_ALLE_ETAPPES_0_TOT_12_VOLTOOID');
@@ -895,6 +1112,7 @@ export function valideerKlimopEindvisie46(opties: {
   return {
     ok: fouten.length === 0,
     gedektePijlers: gezien.size,
+    ...(bevestigdeDocumentenOpSchijf !== undefined ? { bevestigdeDocumentenOpSchijf, moduleBronnenSha256 } : {}),
     fouten,
   };
 }

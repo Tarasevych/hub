@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-021/20261121-182221-antigravity",
+  "taakId": "KLIMOP-021",
+  "tijd": "2026-11-21T18:22:21.502Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Gemini 4 Carbon (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "herwerkt",
+  "wat": {
+    "uk": "Четверта (завершальна) хвиля виправлень за незалежною перевіркою AUDIT-002: міжпроцесний замок overdracht.lock, журнал випереджального запису overdracht-wal.json та контрольні точки *.checkpoint.json за O(1); прив'язка підтвердження кворумної готовності Сходинки 4 до bewijsVersie служби та ізоляція від подальших записів розбіжностей; тимчасова пісочниця для агентських інструментів MCP без зміни спільного стану власника та повний аудит у app.audit (admin/mcp); доступність і чесні стани порожніх журналів у KlimopPaneel.tsx (htmlFor/id, aria-live, 360px, етапи 0..16, 15 поіменних питань без підставлення типових відповідей); суворі ключі ML-DSA-65 для рівня 20, зашифровані метадані versleuteldeEigenaarMeta, роздільний облік видалення смуг, ковзне вікно й зміна ключа «Стебел», скасування раунду 1 FROST, фізичний відкат випусків і розпакування «Насіння» на тимчасовому носії, змістовна перевірка 25 двомовних документів §44, справжні виміри з метаданими походження в стендах Етапів 11–12, узгодження піддоменів із SERVICE_HOSTS, двомовна синхронізація статей, очищення запитів №193–196 і рішення B-025 (regelsVersie 1.6.0).",
+    "nl": "Vierde (afsluitende) herstelgolf naar aanleiding van AUDIT-002: procesoverstijgend slot overdracht.lock, voorafgaand transactielogboek overdracht-wal.json en O(1)-controlepunten *.checkpoint.json; binding van Stap-4-gereedheid aan bewijsVersie en scheiding van latere afwijkingsregels; tijdelijke zandbak voor MCP-agentoproepen zonder mutatie van de eigenaarsstaat en volledige auditregistratie (admin/mcp); toegankelijkheid en eerlijke nulstatussen in KlimopPaneel.tsx (htmlFor/id, aria-live, 360px, fasen 0..16, 15 vragen zonder standaardantwoorden); verplichte ML-DSA-65 op rang 20, versleutelde eigenaarsmetadata in versleuteldeEigenaarMeta, gescheiden wisboekhouding, schuifvenster en sleutelwissel voor Stengels, annulering van FROST-ronde 1, fysieke terugdraaiing van uitgaven en uitpakken van Zaden op schijf, inhoudelijke toetsing van 25 documentparen van §44, herleidbare metingen in Fasen 11–12, afstemming op SERVICE_HOSTS, tweetalige pariteit, opschoning van nr. 193–196 en besluit B-025 (regelsVersie 1.6.0)."
+  },
+  "waarom": {
+    "uk": "Завершальна четверта хвиля виправлень усіх решти зауважень незалежної перевірки AUDIT-002 (GPT-6.2 Astra (Ультра)) на моделі Gemini 4 Carbon (High) після вичерпання 5-годинного ліміту Claude Opus 5.5 (High) на платформі Google Antigravity.",
+    "nl": "Afsluitende vierde herstelgolf van alle overige bevindingen uit de onafhankelijke controle AUDIT-002 (GPT-6.2 Astra (Ultra)) op Gemini 4 Carbon (High) na het verstrijken van de sessielimiet van vijf uur voor Claude Opus 5.5 (High) op Google Antigravity."
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-020/20261121-162725-antigravity",
+    "AUDIT-002/20261121-140000-chatgpt"
+  ],
+  "tak": "fix/klimop-021-overdracht-paneel-tweetaligheid-20261121-163130",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ]
+}

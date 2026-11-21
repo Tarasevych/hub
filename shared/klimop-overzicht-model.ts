@@ -184,6 +184,7 @@ export interface KlimopModuleIntegriteit {
 export interface KlimopDienstBrugStatus {
   dienstId: KlimopDienstId;
   subdomein: string;
+  routePad?: string;
   eigenGeheugenRuimte: boolean;
   vereistExterneVerbinderIsolatie: boolean;
   huidigeProductieModus: KlimopOverdrachtModus;
@@ -212,6 +213,8 @@ export interface KlimopPlatformOverzicht {
     gedektePijlers: number;
     totaalPijlers: number;
     voltooideDocumenten44: number;
+    gedeeltelijkeDocumenten44?: number;
+    ontbrekendeDocumenten44?: number;
   } | null;
   dossier: {
     bijgewerkt: string;
@@ -233,6 +236,34 @@ export interface KlimopPlatformOverzicht {
   };
   hulpmiddelen: readonly string[];
   productieOnaangetast: true;
+}
+
+export const KLIMOP_VIJFTIEN_VRAGEN_LIJST: ReadonlyArray<{
+  id: KlimopControleVraagId;
+  uk: string;
+  nl: string;
+}> = Object.freeze([
+  { id: 'geen_nieuw_spof', uk: '1. Чи виникає нова єдина точка відмови?', nl: '1. Ontstaat er een nieuw enkel punt van uitval?' },
+  { id: 'geen_verborgen_bevoegdheden', uk: '2. Чи не розширюються приховані повноваження?', nl: '2. Worden er geen verborgen bevoegdheden uitgebreid?' },
+  { id: 'wettig_herstel_beschikbaar', uk: '3. Чи залишається доступним законне відновлення?', nl: '3. Blijft wettig herstel van toegang beschikbaar?' },
+  { id: 'beschermd_op_apparaat_lijn_opslag', uk: '4. Чи захищено дані на пристрої, у каналі та в сховищі?', nl: '4. Zijn gegevens beschermd op apparaat, verbinding en opslag?' },
+  { id: 'geen_onnodige_metadata', uk: '5. Чи не розкриваються непотрібні метадані?', nl: '5. Worden er geen onnodige metagegevens onthuld?' },
+  { id: 'toestemmingen_intrekbaar', uk: '6. Чи можна відкликати створені дозволи?', nl: '6. Kunnen aangemaakte toestemmingen worden ingetrokken?' },
+  { id: 'knooppunten_compatibel', uk: '7. Чи не порушується сумісність між вузлами?', nl: '7. Blijft de compatibiliteit tussen knooppunten behouden?' },
+  { id: 'isolatie_defect_onderdeel', uk: '8. Чи зберігається можливість ізолювати несправний складник?', nl: '8. Blijft isolatie van een defect onderdeel mogelijk?' },
+  { id: 'bescherming_mens_behouden', uk: '9. Чи не погіршується захист людини (втрата, хвороба, примус)?', nl: '9. Verslechtert de bescherming van de mens niet (verlies, ziekte, dwang)?' },
+  { id: 'wijziging_verifieerbaar', uk: '10. Чи залишається зміна перевірюваною?', nl: '10. Blijft de wijziging onafhankelijk verifieerbaar?' },
+  { id: 'veilig_terugdraaien_mogelijk', uk: '11. Чи є спосіб безпечного повернення попереднього стану?', nl: '11. Is er een veilige manier om de vorige staat terug te zetten?' },
+  { id: 'geen_grotere_afhankelijkheid_auteur', uk: '12. Чи не збільшується залежність від початкового автора?', nl: '12. Neemt de afhankelijkheid van de oorspronkelijke auteur niet toe?' },
+  { id: 'geen_middelenverbruik_zonder_toestemming', uk: '13. Чи не витрачаються ресурси користувачів без їхньої згоди?', nl: '13. Worden er geen middelen van gebruikers verbruikt zonder toestemming?' },
+  { id: 'rechten_gegevenseigenaar_intact', uk: '14. Чи не порушуються права власників особистих даних?', nl: '14. Blijven de rechten van gegevenseigenaren ongeschonden?' },
+  { id: 'geen_netwerkrisico_door_een_verbinder', uk: '15. Чи не створюється нова небезпека для мережі через один з’єднувач?', nl: '15. Ontstaat er geen netwerkbreed risico via één enkele verbinder?' },
+]);
+
+export interface KlimopVraagToetsResultaat {
+  vraagId: KlimopControleVraagId;
+  status: 'voldaan' | 'gefaald' | 'onbeoordeeld';
+  bewijs: string;
 }
 
 export interface KlimopArchitectuurToetsInvoer {
@@ -258,6 +289,8 @@ export interface KlimopArchitectuurToetsUitkomst {
   goedgekeurd: boolean;
   vereistMenselijkOfQuorumBesluit: true;
   beoordeeldeVragen: number;
+  onbeoordeeldeVragen?: KlimopControleVraagId[];
+  vragenResultaten?: readonly KlimopVraagToetsResultaat[];
   ontbrekendeOfGefaaldeVragen: KlimopControleVraagId[];
   geschondenVereenvoudigingen: KlimopVerbodenVereenvoudigingId[];
   fouten: string[];
@@ -318,6 +351,10 @@ export interface KlimopDienstSchakelaarStaat {
   laatsteQuorumAttestOp: string | null;
   laatsteSchakelingOp: string | null;
   laatsteReden: string;
+  /** KLIMOP-021: монотонна версія доказів служби, яка змінюється при кожному новому вимірюванні чи збої. */
+  bewijsVersie?: number;
+  /** KLIMOP-021: точний відбиток SHA-256 останнього чинного атестата цієї служби (скидається при будь-якому збої). */
+  laatsteGeldigeAttestSha256?: string | null;
 }
 
 export interface KlimopSpiegelLogboekRegel {
@@ -517,6 +554,12 @@ export interface KlimopQuorumAttestRegel {
   besluitVolledigOnafhankelijkToegestaan: boolean;
   /** KLIMOP-020: чесно вказує, чи створено кворум як місцеве моделювання в одному процесі, чи за зовнішнім реєстром ключів. */
   uitvoeringsAard?: 'lokale_simulatie_een_proces' | 'extern_knooppuntenregister';
+  /** KLIMOP-021: версія доказів служби на момент підписання атестата. */
+  dienstBewijsVersie?: number;
+  /** KLIMOP-021: засвідчений підписами перелік ідентифікаторів вузлів кворуму. */
+  quorumKnooppuntIds?: readonly string[];
+  /** KLIMOP-021: підписаний кворумом висновок про виконання умов цілісності журналів і незалежності вузлів. */
+  gereedheidVoorwaardeOk?: boolean;
   attestModusVoor: KlimopQuorumAttestModus;
   attestModusNa: KlimopQuorumAttestModus;
   automatischTeruggezet: boolean;
@@ -565,7 +608,7 @@ export interface KlimopQuorumAttestUitkomst {
   schakelaar: KlimopDienstSchakelaarStaat;
   automatischTeruggezetNaarErfenis: boolean;
   attestRegel: KlimopQuorumAttestRegel;
-  logboekRegel: KlimopSpiegelLogboekRegel;
+  logboekRegel: KlimopSpiegelLogboekRegel | null;
   productieDatabankActief: true;
   productieDatabankGewijzigd: false;
 }
@@ -636,6 +679,10 @@ export const KLIMOP_CODES: Readonly<Record<string, Tekst>> = Object.freeze({
   KLIMOP_QUORUM_ATTEST_VEREIST: T(
     'Перед підтвердженням Сходинки 4 випустіть дійсний кворумний атестат під пороговим і гібридним постквантовим підписами без жодних зауважень.',
     'Stel eerst een geldig quorumattest onder drempel- en hybride postkwantumhandtekening op voordat Stap 4 wordt bevestigd.',
+  ),
+  KLIMOP_QUORUM_ATTEST_VEROUDERD_OF_ONGELDIG: T(
+    'Кворумний атестат обраної служби відсутній, прострочений або замінений новішою зміною стану чи збоєм. Випустіть свіжий атестат для поточної версії доказів цієї служби.',
+    'Het quorumattest voor de gekozen dienst ontbreekt, is verlopen of is ingehaald door een nieuwere statuswijziging of storing. Stel een vers attest op voor de huidige bewijsversie van deze dienst.',
   ),
   KLIMOP_LOGBOEK_KETEN_ONGELDIG: T(
     'Порушено криптографічну цілісність ланцюжка журналу дзеркальної звірки. Перемикання вперед заблоковано, повернення на чинну основу залишається доступним.',

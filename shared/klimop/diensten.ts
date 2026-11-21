@@ -36,6 +36,8 @@ export { KLIMOP_ELF_DIENSTEN, isKlimopDienstId, type KlimopDienstId } from './di
 export interface KlimopDienstIsolatieProfiel {
   dienstId: KlimopDienstId;
   subdomeinBestaand: string;
+  /** KLIMOP-021: канонічний шлях подання на піддомені (зокрема `/agenda` на `hub.tarasevych.com`). */
+  routePad: string;
   eigenGeheugenRuimte: true;
   magAndereDienstenLezenZonderToestemming: false;
   vereistExterneVerbinderIsolatie: boolean;
@@ -45,7 +47,8 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
   Object.freeze({
     werkblad: {
       dienstId: 'werkblad',
-      subdomeinBestaand: 'tarasevych.com',
+      subdomeinBestaand: 'hub.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: false,
@@ -53,6 +56,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     postvak: {
       dienstId: 'postvak',
       subdomeinBestaand: 'mail.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -60,6 +64,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     identiteit: {
       dienstId: 'identiteit',
       subdomeinBestaand: 'id.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: false,
@@ -67,13 +72,15 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     wolkopslag: {
       dienstId: 'wolkopslag',
       subdomeinBestaand: 'cloud.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: false,
     },
     agenda: {
       dienstId: 'agenda',
-      subdomeinBestaand: 'agenda.tarasevych.com',
+      subdomeinBestaand: 'hub.tarasevych.com',
+      routePad: '/agenda',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -81,6 +88,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     ai_ruimte: {
       dienstId: 'ai_ruimte',
       subdomeinBestaand: 'ai.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -88,6 +96,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     mcp_poort: {
       dienstId: 'mcp_poort',
       subdomeinBestaand: 'mcp.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: false,
@@ -95,6 +104,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     ontwikkelmiddelen: {
       dienstId: 'ontwikkelmiddelen',
       subdomeinBestaand: 'github.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -102,6 +112,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     slimwoon: {
       dienstId: 'slimwoon',
       subdomeinBestaand: 'huis.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -109,6 +120,7 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     verbinders: {
       dienstId: 'verbinders',
       subdomeinBestaand: 'api.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: true,
@@ -116,11 +128,30 @@ export const STANDAARD_DIENST_ISOLATIE_PROFIELEN: Readonly<Record<KlimopDienstId
     beheer_en_diagnose: {
       dienstId: 'beheer_en_diagnose',
       subdomeinBestaand: 'admin.tarasevych.com',
+      routePad: '/',
       eigenGeheugenRuimte: true,
       magAndereDienstenLezenZonderToestemming: false,
       vereistExterneVerbinderIsolatie: false,
     },
   });
+
+/**
+ * KLIMOP-021: звіряє всі 11 ізоляційних профілів «Плюща» з канонічною картою `SERVICE_HOSTS`
+ * (`backend/deployment-identiteit.ts`), щоб жодна служба не посилалася на неіснуючий хост.
+ */
+export function controleerDienstIsolatieTegenServiceHosts(
+  serviceHosts: Readonly<Record<string, string>>,
+): { ok: boolean; onbekendeSubdomeinen: Array<{ dienstId: KlimopDienstId; subdomeinBestaand: string }> } {
+  const erkendeHosts = new Set(Object.values(serviceHosts));
+  const onbekendeSubdomeinen: Array<{ dienstId: KlimopDienstId; subdomeinBestaand: string }> = [];
+  for (const dienstId of KLIMOP_ELF_DIENSTEN) {
+    const profiel = STANDAARD_DIENST_ISOLATIE_PROFIELEN[dienstId];
+    if (!erkendeHosts.has(profiel.subdomeinBestaand) || !profiel.routePad.startsWith('/')) {
+      onbekendeSubdomeinen.push({ dienstId, subdomeinBestaand: profiel.subdomeinBestaand });
+    }
+  }
+  return { ok: onbekendeSubdomeinen.length === 0, onbekendeSubdomeinen };
+}
 
 const KRUIS_DIENST_DOMEIN = 'klimop-kruisdienst-toestemming-v1|';
 const CRDT_OP_DOMEIN = 'klimop-crdt-operatie-v1|';
@@ -643,7 +674,27 @@ export function maakLokaleZoekIndex(): KlimopLokaleZoekIndex {
   };
 }
 
+export function verwijderUitLokaleZoekIndex(index: KlimopLokaleZoekIndex, documentId: string): boolean {
+  const oud = index.documenten.get(documentId);
+  if (!oud) return false;
+  for (const woord of tokeniseerZoekTekst(`${oud.titel} ${oud.tekstInhoud}`)) {
+    const verzameling = index.omgekeerdeWoorden.get(woord);
+    if (verzameling) {
+      verzameling.delete(documentId);
+      if (verzameling.size === 0) {
+        index.omgekeerdeWoorden.delete(woord);
+      }
+    }
+  }
+  index.documenten.delete(documentId);
+  return true;
+}
+
 export function voegToeAanLokaleZoekIndex(index: KlimopLokaleZoekIndex, doc: LokaalZoekDocument): void {
+  // KLIMOP-021: при заміні документа спочатку вичищаємо його попередні слова, щоб пошук не знаходив видалених слів
+  if (index.documenten.has(doc.documentId)) {
+    verwijderUitLokaleZoekIndex(index, doc.documentId);
+  }
   index.documenten.set(doc.documentId, doc);
   for (const woord of tokeniseerZoekTekst(`${doc.titel} ${doc.tekstInhoud}`)) {
     let verzameling = index.omgekeerdeWoorden.get(woord);
@@ -747,6 +798,8 @@ export interface TweezijdigePariteitVerslag {
   totaalErfenisRecords: number;
   totaalKlimopRecords: number;
   ontbrekendeInKlimopIds: string[];
+  extraInKlimopIds: string[];
+  dubbeleSleutelIds: string[];
   afwijkendeInhoudIds: string[];
   afwijkendeMachtigingenIds: string[];
 }
@@ -756,28 +809,48 @@ export function vergelijkErfenisEnKlimopStaat(
   erfenisRecords: readonly DienstStaatSamenvattingRecord[],
   klimopRecords: readonly DienstStaatSamenvattingRecord[],
 ): TweezijdigePariteitVerslag {
-  const klimopMap = new Map(klimopRecords.map((r) => [r.sleutelId, r]));
+  const dubbeleSet = new Set<string>();
+  const erfenisGezien = new Set<string>();
+  for (const r of erfenisRecords) {
+    if (erfenisGezien.has(r.sleutelId)) dubbeleSet.add(r.sleutelId);
+    erfenisGezien.add(r.sleutelId);
+  }
+  const klimopMap = new Map<string, DienstStaatSamenvattingRecord>();
+  for (const r of klimopRecords) {
+    if (klimopMap.has(r.sleutelId)) dubbeleSet.add(r.sleutelId);
+    klimopMap.set(r.sleutelId, r);
+  }
+
   const ontbrekendeInKlimopIds: string[] = [];
+  const extraInKlimopIds: string[] = [];
   const afwijkendeInhoudIds: string[] = [];
   const afwijkendeMachtigingenIds: string[] = [];
 
   for (const erf of erfenisRecords) {
     const kl = klimopMap.get(erf.sleutelId);
     if (!kl) {
-      ontbrekendeInKlimopIds.push(erf.sleutelId);
+      if (!ontbrekendeInKlimopIds.includes(erf.sleutelId)) ontbrekendeInKlimopIds.push(erf.sleutelId);
       continue;
     }
-    if (kl.inhoudSha256 !== erf.inhoudSha256) {
+    if (kl.inhoudSha256 !== erf.inhoudSha256 && !afwijkendeInhoudIds.includes(erf.sleutelId)) {
       afwijkendeInhoudIds.push(erf.sleutelId);
     }
-    if (kl.machtigingenSha256 !== erf.machtigingenSha256) {
+    if (kl.machtigingenSha256 !== erf.machtigingenSha256 && !afwijkendeMachtigingenIds.includes(erf.sleutelId)) {
       afwijkendeMachtigingenIds.push(erf.sleutelId);
     }
   }
+  for (const sleutelId of klimopMap.keys()) {
+    if (!erfenisGezien.has(sleutelId)) {
+      extraInKlimopIds.push(sleutelId);
+    }
+  }
 
+  const dubbeleSleutelIds = [...dubbeleSet];
   const volledigGelijk =
     erfenisRecords.length === klimopRecords.length
+    && dubbeleSleutelIds.length === 0
     && ontbrekendeInKlimopIds.length === 0
+    && extraInKlimopIds.length === 0
     && afwijkendeInhoudIds.length === 0
     && afwijkendeMachtigingenIds.length === 0;
 
@@ -786,6 +859,8 @@ export function vergelijkErfenisEnKlimopStaat(
     totaalErfenisRecords: erfenisRecords.length,
     totaalKlimopRecords: klimopRecords.length,
     ontbrekendeInKlimopIds,
+    extraInKlimopIds,
+    dubbeleSleutelIds,
     afwijkendeInhoudIds,
     afwijkendeMachtigingenIds,
   };

@@ -387,14 +387,32 @@ export function verifieerKlimopMandaat(
   return { ok: fouten.length === 0, fouten };
 }
 
+export interface ErkendOperatorRegisterInvoer {
+  operatorId: string;
+  foutgroepId: string;
+}
+
 /**
  * Перевіряє незалежність набору постійних вузлів (§4.1, §43 п. 2):
  * копії на одному сервері, у одного постачальника чи в одній юрисдикції НЕ вважаються достатньою пороговою групою.
+ * KLIMOP-021: окремо розмежовує самозаявлені паспорти (`zelfverklaarde_paspoorten`) та зовнішньо підтверджений
+ * реєстр уповноважених операторів і груп спільної відмови (`extern_geverifieerd_operatorregister`).
  */
 export function controleerKnooppuntOnafhankelijkheid(
   knooppunten: readonly KlimopKnooppuntIdentiteit[],
   drempelK: number,
-): { ok: boolean; fouten: string[]; uniekeRegios: number; uniekeAanbieders: number } {
+  opties?: {
+    erkendeOperatorRegister?: ReadonlyMap<string, ErkendOperatorRegisterInvoer>;
+    vereisExternBewijs?: boolean;
+  },
+): {
+  ok: boolean;
+  fouten: string[];
+  uniekeRegios: number;
+  uniekeAanbieders: number;
+  fysiekeOnafhankelijkheidExternBewezen: boolean;
+  onafhankelijkheidsBewijsBron: 'zelfverklaarde_paspoorten' | 'extern_geverifieerd_operatorregister';
+} {
   const fouten: string[] = [];
   if (drempelK < 2) fouten.push('DREMPEL_TE_LAAG');
   if (knooppunten.length < drempelK) fouten.push('TE_WEINIG_KNOOPPUNTEN');
@@ -404,21 +422,47 @@ export function controleerKnooppuntOnafhankelijkheid(
 
   const perAanbieder = new Map<string, number>();
   const perRegio = new Map<string, number>();
+  const perOperator = new Map<string, number>();
+  const perFoutgroep = new Map<string, number>();
+  let externBewezenAantal = 0;
+
   for (const kn of knooppunten) {
     perAanbieder.set(kn.aanbieder, (perAanbieder.get(kn.aanbieder) ?? 0) + 1);
     perRegio.set(kn.juridischeRegio, (perRegio.get(kn.juridischeRegio) ?? 0) + 1);
+    const ext = opties?.erkendeOperatorRegister?.get(kn.knooppuntId);
+    if (ext) {
+      externBewezenAantal++;
+      perOperator.set(ext.operatorId, (perOperator.get(ext.operatorId) ?? 0) + 1);
+      perFoutgroep.set(ext.foutgroepId, (perFoutgroep.get(ext.foutgroepId) ?? 0) + 1);
+    }
   }
 
   for (const [aanbieder, aantal] of perAanbieder.entries()) {
     if (aantal >= drempelK) fouten.push(`EEN_AANBIEDER_HEEFT_QUORUM:${aanbieder}`);
   }
+  for (const [operatorId, aantal] of perOperator.entries()) {
+    if (aantal >= drempelK) fouten.push(`EEN_OPERATOR_HEEFT_QUORUM:${operatorId}`);
+  }
+  for (const [foutgroepId, aantal] of perFoutgroep.entries()) {
+    if (aantal >= drempelK) fouten.push(`EEN_FOUTGROEP_HEEFT_QUORUM:${foutgroepId}`);
+  }
   if (perRegio.size < 2) fouten.push('MINSTENS_TWEE_JURISDICTIES_VEREIST');
+
+  const fysiekeOnafhankelijkheidExternBewezen =
+    knooppunten.length > 0 && externBewezenAantal === knooppunten.length;
+  if (opties?.vereisExternBewijs && !fysiekeOnafhankelijkheidExternBewezen) {
+    fouten.push('EXTERN_ONAFHANKELIJKHEIDSBEWIJS_ONTBREEKT');
+  }
 
   return {
     ok: fouten.length === 0,
     fouten,
     uniekeRegios: perRegio.size,
     uniekeAanbieders: perAanbieder.size,
+    fysiekeOnafhankelijkheidExternBewezen,
+    onafhankelijkheidsBewijsBron: fysiekeOnafhankelijkheidExternBewezen
+      ? 'extern_geverifieerd_operatorregister'
+      : 'zelfverklaarde_paspoorten',
   };
 }
 
@@ -470,6 +514,9 @@ export function beoordeelDwangSignaal(invoer: {
   };
 }
 
+/** Базові архітектурні етапи 0–12 (§36) та платформні сходинки перенесення 13–16 (§35). */
+export const KLIMOP_MAX_FASE = 16;
+
 export interface KlimopWijzigingBeoordelingInvoer {
   naam: string;
   fase: number;
@@ -489,7 +536,7 @@ export function beoordeelKlimopWijziging(invoer: KlimopWijzigingBeoordelingInvoe
   fouten: string[];
 } {
   const fouten: string[] = [];
-  if (!Number.isInteger(invoer.fase) || invoer.fase < 0 || invoer.fase > 12) {
+  if (!Number.isInteger(invoer.fase) || invoer.fase < 0 || invoer.fase > KLIMOP_MAX_FASE) {
     fouten.push('ONGELDIGE_KLIMOP_FASE');
   }
   if (invoer.raaktProductieDirectZonderGoedkeuring) {

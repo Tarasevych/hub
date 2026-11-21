@@ -291,33 +291,49 @@ export function kapselHybrideX25519MlKem768In(ontvanger: {
     format: 'der',
     type: 'spki',
   });
+  if (ontvXPub.asymmetricKeyType !== 'x25519' || ontvKemPub.asymmetricKeyType !== 'ml-kem-768') {
+    throw new Error('HYBRIDE_KEM_SLEUTELTYPE_ONGELDIG');
+  }
 
-  const xGeheim = diffieHellman({ privateKey: efemeerX.privateKey, publicKey: ontvXPub });
-  const kemUit = encapsulate(ontvKemPub);
-  const efemeerXPubB64u = (efemeerX.publicKey.export({ type: 'spki', format: 'der' }) as Buffer).toString('base64url');
-  const kemCtB64u = Buffer.from(kemUit.ciphertext).toString('base64url');
+  let xGeheim: Buffer | null = null;
+  let kemGedeeldView: Uint8Array | null = null;
+  let kemGedeeldKopie: Buffer | null = null;
+  let ikm: Buffer | null = null;
+  try {
+    xGeheim = diffieHellman({ privateKey: efemeerX.privateKey, publicKey: ontvXPub });
+    const kemUit = encapsulate(ontvKemPub);
+    kemGedeeldView = ArrayBuffer.isView(kemUit.sharedKey)
+      ? new Uint8Array(kemUit.sharedKey.buffer, kemUit.sharedKey.byteOffset, kemUit.sharedKey.byteLength)
+      : new Uint8Array(kemUit.sharedKey);
+    kemGedeeldKopie = Buffer.from(kemGedeeldView);
+    const efemeerXPubB64u = (efemeerX.publicKey.export({ type: 'spki', format: 'der' }) as Buffer).toString('base64url');
+    const kemCtB64u = Buffer.from(kemUit.ciphertext).toString('base64url');
 
-  const ikm = Buffer.concat([xGeheim, Buffer.from(kemUit.sharedKey)]);
-  const info = bouwHybrideKemTranscriptInfo({
-    contextLabel,
-    efemeerX25519PubSpkiB64u: efemeerXPubB64u,
-    mlKem768CijfertekstB64u: kemCtB64u,
-    ontvangerX25519PubSpkiB64u: ontvanger.x25519PubliekSpkiB64u,
-    ontvangerMlKem768PubSpkiB64u: ontvanger.mlKem768PubliekSpkiB64u,
-  });
-  const afgeleid = Buffer.from(hkdfSync('sha256', ikm, Buffer.alloc(32, 0), info, 32));
-  xGeheim.fill(0);
-  ikm.fill(0);
-
-  return {
-    ingekapseld: {
-      schema: 1,
-      algoritme: 'x25519+ml-kem-768-hkdf-sha256',
+    ikm = Buffer.concat([xGeheim, kemGedeeldKopie]);
+    const info = bouwHybrideKemTranscriptInfo({
+      contextLabel,
       efemeerX25519PubSpkiB64u: efemeerXPubB64u,
       mlKem768CijfertekstB64u: kemCtB64u,
-    },
-    gedeeldeSleutel32: afgeleid,
-  };
+      ontvangerX25519PubSpkiB64u: ontvanger.x25519PubliekSpkiB64u,
+      ontvangerMlKem768PubSpkiB64u: ontvanger.mlKem768PubliekSpkiB64u,
+    });
+    const afgeleid = Buffer.from(hkdfSync('sha256', ikm, Buffer.alloc(32, 0), info, 32));
+
+    return {
+      ingekapseld: {
+        schema: 1,
+        algoritme: 'x25519+ml-kem-768-hkdf-sha256',
+        efemeerX25519PubSpkiB64u: efemeerXPubB64u,
+        mlKem768CijfertekstB64u: kemCtB64u,
+      },
+      gedeeldeSleutel32: afgeleid,
+    };
+  } finally {
+    xGeheim?.fill(0);
+    kemGedeeldView?.fill(0);
+    kemGedeeldKopie?.fill(0);
+    ikm?.fill(0);
+  }
 }
 
 /** Розкриває гібридну інкапсуляцію `X25519 + ML-KEM-768` та відновлює 32-байтний ключ. */
@@ -334,6 +350,10 @@ export function ontkapselHybrideX25519MlKem768(
   if (!ingekapseld || ingekapseld.schema !== 1 || ingekapseld.algoritme !== 'x25519+ml-kem-768-hkdf-sha256') {
     return { ok: false, fout: 'HYBRIDE_INKAPSELING_ONGELDIG' };
   }
+  let xGeheim: Buffer | null = null;
+  let kemRuwView: Uint8Array | null = null;
+  let kemGeheim: Buffer | null = null;
+  let ikm: Buffer | null = null;
   try {
     const efemeerXPub = createPublicKey({
       key: Buffer.from(ingekapseld.efemeerX25519PubSpkiB64u, 'base64url'),
@@ -350,10 +370,29 @@ export function ontkapselHybrideX25519MlKem768(
       format: 'der',
       type: 'pkcs8',
     });
+    if (
+      efemeerXPub.asymmetricKeyType !== 'x25519'
+      || xPriv.asymmetricKeyType !== 'x25519'
+      || kemPriv.asymmetricKeyType !== 'ml-kem-768'
+    ) {
+      return { ok: false, fout: 'HYBRIDE_KEM_SLEUTELTYPE_ONGELDIG' };
+    }
+    const afgeleideXPubB64u = (createPublicKey(xPriv).export({ type: 'spki', format: 'der' }) as Buffer).toString('base64url');
+    const afgeleideKemPubB64u = (createPublicKey(kemPriv).export({ type: 'spki', format: 'der' }) as Buffer).toString('base64url');
+    if (
+      afgeleideXPubB64u !== ontvanger.x25519PubliekSpkiB64u
+      || afgeleideKemPubB64u !== ontvanger.mlKem768PubliekSpkiB64u
+    ) {
+      return { ok: false, fout: 'HYBRIDE_KEM_SLEUTELPAAR_KOMT_NIET_OVEREEN' };
+    }
 
-    const xGeheim = diffieHellman({ privateKey: xPriv, publicKey: efemeerXPub });
-    const kemGeheim = Buffer.from(decapsulate(kemPriv, Buffer.from(ingekapseld.mlKem768CijfertekstB64u, 'base64url')));
-    const ikm = Buffer.concat([xGeheim, kemGeheim]);
+    xGeheim = diffieHellman({ privateKey: xPriv, publicKey: efemeerXPub });
+    const kemRuw = decapsulate(kemPriv, Buffer.from(ingekapseld.mlKem768CijfertekstB64u, 'base64url'));
+    kemRuwView = ArrayBuffer.isView(kemRuw)
+      ? new Uint8Array(kemRuw.buffer, kemRuw.byteOffset, kemRuw.byteLength)
+      : new Uint8Array(kemRuw);
+    kemGeheim = Buffer.from(kemRuwView);
+    ikm = Buffer.concat([xGeheim, kemGeheim]);
     const info = bouwHybrideKemTranscriptInfo({
       contextLabel,
       efemeerX25519PubSpkiB64u: ingekapseld.efemeerX25519PubSpkiB64u,
@@ -362,13 +401,15 @@ export function ontkapselHybrideX25519MlKem768(
       ontvangerMlKem768PubSpkiB64u: ontvanger.mlKem768PubliekSpkiB64u,
     });
     const afgeleid = Buffer.from(hkdfSync('sha256', ikm, Buffer.alloc(32, 0), info, 32));
-    xGeheim.fill(0);
-    kemGeheim.fill(0);
-    ikm.fill(0);
 
     return { ok: true, gedeeldeSleutel32: afgeleid };
   } catch {
     return { ok: false, fout: 'HYBRIDE_ONTKAPSELING_MISLUKT' };
+  } finally {
+    xGeheim?.fill(0);
+    kemRuwView?.fill(0);
+    kemGeheim?.fill(0);
+    ikm?.fill(0);
   }
 }
 
@@ -624,6 +665,11 @@ export const KLIMOP_MEETBARE_GARANTIES_IDS = Object.freeze([
 ] as const);
 export type KlimopMeetbareGarantieId = (typeof KLIMOP_MEETBARE_GARANTIES_IDS)[number];
 
+export type KlimopWaardeSoort =
+  | 'feitelijke_meting'
+  | 'protocol_eigenschap'
+  | 'beleids_configuratie';
+
 export interface MeetbareGarantieInvoer {
   garantieId: KlimopMeetbareGarantieId;
   grensWaarde: number;
@@ -631,19 +677,42 @@ export interface MeetbareGarantieInvoer {
   richting: 'hoogstens' | 'minstens';
   meetMethode: string;
   beproefdInScenario: boolean; // §41 абз. 5: заборонено встановлювати довільні числа без фактичного випробування!
+  /** KLIMOP-021 ([469], [474]): явно розмежовує фактичний вимір, властивість протоколу та налаштування політики. */
+  waardeSoort?: KlimopWaardeSoort;
+  eenheid?: string;
+  bronSha256?: string;
 }
 
 export function beoordeelMeetbareGaranties41(
   garanties: readonly MeetbareGarantieInvoer[],
+  opties?: { vereisBronMetadata?: boolean },
 ): { geslaagd: boolean; gedekteGaranties: number; fouten: string[] } {
   const fouten: string[] = [];
   const gezien = new Set<KlimopMeetbareGarantieId>();
 
   for (const g of garanties) {
     gezien.add(g.garantieId);
-    if (!g.beproefdInScenario || !g.meetMethode.trim()) {
+    if (
+      !g.beproefdInScenario
+      || !g.meetMethode.trim()
+      || !Number.isFinite(g.feitelijkGemetenWaarde)
+      || !Number.isFinite(g.grensWaarde)
+    ) {
       fouten.push(`ONBEPROEFDE_WILLEKEURIGE_GARANTIE_VERBODEN:${g.garantieId}`);
       continue;
+    }
+    if (opties?.vereisBronMetadata || g.waardeSoort !== undefined) {
+      if (
+        (g.waardeSoort !== 'feitelijke_meting'
+          && g.waardeSoort !== 'protocol_eigenschap'
+          && g.waardeSoort !== 'beleids_configuratie')
+        || !g.eenheid?.trim()
+        || !g.bronSha256
+        || !/^[0-9a-f]{64}$/i.test(g.bronSha256)
+      ) {
+        fouten.push(`ONTBREKENDE_BRONMETADATA_GARANTIE:${g.garantieId}`);
+        continue;
+      }
     }
     const binnenGrens =
       g.richting === 'hoogstens'
