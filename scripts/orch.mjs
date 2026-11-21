@@ -22,6 +22,7 @@
 //   pakket-controleer --bron <zip>  перевірити пакет передачі без встановлення (цілісність, метадані, база, правила)
 //   begin [--agent a] [--taak X] [--onderwerp naam]… [--tekst "…"] [--kort]   BIJDRAGE-001: єдиний старт — правила, навички (і їх завантаження), досьє функції, хто працював і хто паралельно
 //   bijdrage --taak X --agent a --platform p --model m --opdrachtgever "Імʼя" --soort s --wat "…" [--waarom "…"] [--bouwt-voort-op id]… [--onderwerp n]… [--pr N]
+//                               [--soort correctie --corrigeert <id>… --juist-agent a --juist-platform p --juist-model m --juist-model-bron eigenaar] — KLIMOP-018: виправити виконавця попередніх записів
 //                               записати внесок (хто, яка модель, що, чому, на чому будує) у orchestratie/bijdragen/<X>/ — лише доповнюється
 //   bijdragen [--taak X] [--onderwerp n] [--json]   хронологія: хто що робив, переробляв, доробляв
 //   onderwerp [naam] [--zoek "…"]   досьє функції (orchestratie/onderwerpen/): уся історія, можливості, утрачене, зауваження власника

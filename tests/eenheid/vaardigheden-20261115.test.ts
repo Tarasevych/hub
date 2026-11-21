@@ -28,6 +28,7 @@ const VERWACHTE_VAARDIGHEDEN = [
   'reyestr-lohotypiv', // REESTR-LOGO-001 (16.11.2026): логотипи лише з єдиного реєстру src/merk
   'bijdragen-vastleggen', // BIJDRAGE-001 (18.11.2026): облік авторства, досьє функцій, злиття без утрат
   'klimop-architectuur', // KLIMOP-001 (20.11.2026): архітектурний маніфест «Плющ» / «Klimop» для всіх 14 агентів
+  'movnyi-zakon', // KLIMOP-018 (21.11.2026): спільна навичка Абсолютного мовного закону для всіх 14 агентів
 ] as const;
 
 const MET_VOORBEELD = [

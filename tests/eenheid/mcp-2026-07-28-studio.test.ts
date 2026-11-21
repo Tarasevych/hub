@@ -153,7 +153,9 @@ export async function main(): Promise<number> {
   is(
     skillRead !== null &&
       skillRead.soort === 'result' &&
-      ((skillRead.result.contents as Array<{ text: string }>)[0]?.text ?? '').includes('Мовний закон Мій простір'),
+      // KLIMOP-018: ресурс подає повний текст спільної навички .agents/skills/movnyi-zakon/SKILL.md (системний каталог).
+      ((skillRead.result.contents as Array<{ text: string }>)[0]?.text ?? '').includes('Абсолютний мовний закон')
+      && ((skillRead.result.contents as Array<{ text: string }>)[0]?.text ?? '').includes('KLIMOP-018'),
     'resources/read повертає вміст навички mr://skills/movnyi-zakon',
   );
 

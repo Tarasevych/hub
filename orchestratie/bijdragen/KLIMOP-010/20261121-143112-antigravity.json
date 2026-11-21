@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-010/20261121-143112-antigravity",
+  "taakId": "KLIMOP-010",
+  "tijd": "2026-11-21T14:31:12.852Z",
+  "uitvoerder": {
+    "soort": "ai",
+    "agent": "antigravity",
+    "platform": "Google Antigravity",
+    "model": {
+      "id": "Claude Opus 5.5 (High)",
+      "bron": "eigenaar"
+    }
+  },
+  "opdrachtgever": {
+    "naam": "Тарасевич Павло"
+  },
+  "soort": "correctie",
+  "wat": {
+    "uk": "Виправлено виконавця в обліку авторства KLIMOP-010 (запит на злиття №192): роботу виконала модель Gemini 4 Carbon (High) у Google Antigravity, а не «Gemini 3.1 Pro», як помилково записано в первинному записі з джерелом «omgeving»",
+    "nl": "Uitvoerder in de auteurschapsregistratie van KLIMOP-010 (samenvoegingsverzoek nr. 192) gecorrigeerd: het werk is uitgevoerd door het model Gemini 4 Carbon (High) in Google Antigravity, niet door «Gemini 3.1 Pro» zoals de oorspronkelijke registratie ten onrechte vermeldde"
+  },
+  "waarom": {
+    "uk": "Власник прямо підтвердив 21.11.2026, що Етапи KLIMOP-001–017 виконувала модель Gemini 4 Carbon (High); первинний запис не редагується, тому додано окремий запис виправлення для точної історії випуску",
+    "nl": "De eigenaar bevestigde op 21.11.2026 uitdrukkelijk dat KLIMOP-001–017 door Gemini 4 Carbon (High) zijn uitgevoerd; de oorspronkelijke registratie wordt niet bewerkt, daarom een aparte correctie"
+  },
+  "bouwtVoortOp": [
+    "KLIMOP-010/20261120-233611-antigravity"
+  ],
+  "tak": "fix/klimop-018-klientbouw-zoek-taalvaardigheid-20261121-142230",
+  "pr": null,
+  "onderwerpen": [
+    "ecosysteem-klimop"
+  ],
+  "corrigeert": {
+    "bijdragen": [
+      "KLIMOP-010/20261120-233611-antigravity"
+    ],
+    "uitvoerder": {
+      "soort": "ai",
+      "agent": "antigravity",
+      "platform": "Google Antigravity",
+      "model": {
+        "id": "Gemini 4 Carbon (High)",
+        "bron": "eigenaar"
+      }
+    }
+  }
+}

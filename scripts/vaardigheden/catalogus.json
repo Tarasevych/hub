@@ -784,6 +784,138 @@
           ]
         }
       ]
+    },
+    {
+      "naam": "movnyi-zakon",
+      "pad": ".agents/skills/movnyi-zakon/SKILL.md",
+      "versie": "1.0.0",
+      "afhankelijkheden": [],
+      "titel": {
+        "uk": "Абсолютний мовний закон (uk + nl)",
+        "nl": "Absolute taalwet (uk + nl)"
+      },
+      "samenvatting": {
+        "uk": "Єдиний спільний для 14 агентів текст мовного закону власника: лише чиста українська та нідерландська мови, заборона російської, літер поза українською абеткою, суржику, англійської прози й технічного жаргону, таблиця питомих відповідників і автоперевірка перед кожною дією.",
+        "nl": "De enige gedeelde tekst van de taalwet van de eigenaar voor alle 14 agenten: uitsluitend zuiver Oekraïens en Nederlands, verbod op Russisch, letters buiten het Oekraïense alfabet, mengtaal, Engels proza en jargon, met een tabel van eigen termen en zelfcontrole vóór elke handeling."
+      },
+      "termen": {
+        "uk": [
+          "мовний закон",
+          "абсолютний мовний закон",
+          "чиста українська",
+          "двомовність",
+          "суржик",
+          "русизми",
+          "технічний жаргон",
+          "питомі відповідники"
+        ],
+        "nl": [
+          "taalwet",
+          "absolute taalwet",
+          "zuiver nederlands",
+          "tweetaligheid",
+          "mengtaal",
+          "jargon",
+          "eigen termen"
+        ]
+      },
+      "vereisteHulpmiddelen": [],
+      "mogelijkheden": [
+        {
+          "id": "taalwet-twee-talen",
+          "uk": "Лише чиста українська (uk) та нідерландська (nl) мови в усіх текстах, коді, метаданих і спілкуванні",
+          "nl": "Uitsluitend zuiver Oekraïens en Nederlands in alle teksten, code, metadata en communicatie",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-verboden-letters-en-jargon",
+          "uk": "Заборона літер поза українською абеткою, русизмів, суржику, активних дієприкметників і технічного жаргону з таблицею питомих відповідників",
+          "nl": "Verbod op letters buiten het Oekraïense alfabet, russismen, mengtaal, actieve deelwoorden en jargon, met tabel van eigen termen",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-zelfcontrole",
+          "uk": "Обов’язкова автоперевірка тексту й коду перед кожною відповіддю, збереженням файла та відправленням змін",
+          "nl": "Verplichte zelfcontrole van tekst en code vóór elk antwoord, elke opslag en elke verzending",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        },
+        {
+          "id": "taalwet-tweetalige-pariteit",
+          "uk": "Парні українські та нідерландські статті й тексти інтерфейсу з однаковою будовою, умовами та станом",
+          "nl": "Gekoppelde Oekraïense en Nederlandse artikelen en interfaceteksten met gelijke opbouw, voorwaarden en status",
+          "agenten": [
+            "claude",
+            "gemini",
+            "antigravity",
+            "codex",
+            "copilot",
+            "cursor",
+            "chatgpt",
+            "grok",
+            "autoclaw",
+            "windsurf",
+            "cline",
+            "devin",
+            "opencode",
+            "mscopilot"
+          ]
+        }
+      ],
+      "ookBekendAls": [
+        {
+          "bron": "globale regels van de eigenaar (Antigravity)",
+          "naam": "movnyi-zakon"
+        },
+        {
+          "bron": "MCP-bron",
+          "naam": "mr://skills/movnyi-zakon"
+        }
+      ]
     }
   ],
   "regels": {

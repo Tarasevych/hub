@@ -177,7 +177,8 @@ export async function main(): Promise<number> {
     && vaardInhoud.includes('АРХІТЕКТУРНИЙ-МАНІФЕСТ-ПЛЮЩ.uk.md')
     && vaardInhoud.includes('ARCHITECTUURMANIFEST-KLIMOP.nl.md')
     && valVaard.ok === true
-    && valVaard.aantallen.catalogus === 12);
+    // KLIMOP-018: до 12 навичок додано тринадцяту — спільну навичку мовного закону movnyi-zakon.
+    && valVaard.aantallen.catalogus >= 13);
 
   const kiesUk = kiesVaardigheden('перевір архітектурний маніфест екосистема плющ і порогові підписи фрост', { catalogus: cat });
   const kiesNl = kiesVaardigheden('toets wijziging aan architectuurmanifest ecosysteem klimop en drempelhandtekeningen frost', { catalogus: cat });

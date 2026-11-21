@@ -3,7 +3,7 @@
 
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
-import type { KlimopDienstId } from '../../shared/klimop/diensten';
+import type { KlimopDienstId } from '../../shared/klimop/diensten-catalogus';
 import {
   KLIMOP_PADEN,
   klimopCodeTekst,

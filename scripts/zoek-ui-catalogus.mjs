@@ -59,6 +59,9 @@ export const PLEKKEN = [
   ['HerstelcodesSectie', 'identity', 'recovery', 'iedereen'], ['ToegangssleutelsSectie', 'identity', 'methods', 'iedereen'], ['Toegangscodes', 'identity', 'security', 'iedereen'], ['geheim/', 'identity', 'security', 'iedereen'],
   ['AIDienstWeergave', 'ai', 'workspace', 'iedereen'], ['AiWerkruimte', 'ai', 'workspace', 'iedereen'],
   ['agenten/TabOrch', 'mcp', 'agents', 'technisch'] /* ORCH-001: «Координація» — alleen eigenaar op mcp.* */,
+  // KLIMOP-018 (21.11.2026): панель «Плюща» вбудована у вкладку «Координація» (TabOrch → KlimopPaneel) і має той самий технічний
+  // доступ власника; без цього правила загальне правило теки agenten/ давало їй доступ «для всіх» (незалежна перевірка «Плюща»).
+  ['agenten/KlimopPaneel', 'mcp', 'agents', 'technisch'],
   // «Підключення ШІ» (hub, 19.10.2026) leeft op mcp.*/agents (McpDienstWeergave → McpAgentsHub, voor iedereen). ai.*/agents toont
   // alleen een verwijzing erheen (AIDienstWeergave → AiOnderdeel); tot 05.11.2026 stuurde de catalogus 160+ elementen daarheen.
   // Twee delen van agenten/ leven NIET in de hub maar in de beheerconsole (BeheerAiBeleidWeergave → admin/ai, ook in UitrolMeester).
@@ -101,6 +104,7 @@ export const PLEKKEN = [
  */
 export const HASH_REGELS = [
   ['agenten/TabOrch', 'mcp', 'agents', 'orch'],
+  ['agenten/KlimopPaneel', 'mcp', 'agents', 'orch'] /* KLIMOP-018: панель «Плюща» живе в розділі «Координація» (#orch) */,
   ['agenten/RuimteScheiding', 'mcp', 'agents', 'technisch'], ['agenten/TechVerbindingen', 'mcp', 'agents', 'technisch'],
   ['agenten/SiteSchakelaars', 'mcp', 'agents', 'technisch'], ['agenten/DeurVerbindingen', 'mcp', 'agents', 'technisch'], ['agenten/TabTechnisch', 'mcp', 'agents', 'technisch'],
   ['agenten/TabAi', 'mcp', 'agents', 'ai'], ['agenten/AgentBord', 'mcp', 'agents', 'ai'], ['agenten/AiToegangTab', 'mcp', 'agents', 'ai'],
