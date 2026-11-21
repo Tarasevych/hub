@@ -3,7 +3,7 @@
 # Klimop — Fase 13: Platformintegratie, hulpmiddelen voor 14 AI-agenten en Stap-1-spiegelverificatie (`KLIMOP-014`)
 
 > **Status:** voltooid en geïntegreerd in de hoofdcodebasis van «Mijn Ruimte» in de veilige modus van parallelle spiegelverificatie (§35 van het manifest).
-> **Bevoegdheidsgrens (§3.2, §35):** de actieve databank `PostgreSQL 18.6`, de `systemd`-diensten, het installatieprogramma `/usr/local/sbin/mijn-ruimte-installeer`, de versleutelde `age`-reservekopieën en alle 11 draaiende subdomeinen `*.tarasevych.com` blijven volledig onaangetast; kosten — `0` euro.
+> **Bevoegdheidsgrens (§3.2, §35):** de actieve databank `PostgreSQL 18.6`, de `systemd`-diensten, het installatieprogramma `/usr/local/sbin/mijn-ruimte-installeer`, de versleutelde `age`-reservekopieën en alle 11 draaiende subdomeinen `*.tarasevych.com` blijven volledig onaangetast.
 
 ---
 
