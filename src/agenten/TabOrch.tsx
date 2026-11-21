@@ -16,6 +16,7 @@ import { besluitCodeTekst, type OrchRegelsInhoud } from '../../shared/eigenaar-b
 import { besluitFoutCode, besluitOndertekenen, besluitStarten, besluitVolgen, type Gestart } from '../besluit/besluit-client';
 import type { OrchOverzicht, OrchRegelsOverzicht, OrchTaak, OrchVoorstel, OrchZaak } from '../../shared/orch-model';
 import { orchFoutTekst, orchInleveren, orchOverzicht, orchRegels, orchToepassen, orchVoorstelIntrekken, orchVoorstelMaken, type InleverUitkomst, type ToepassenUitkomst } from '../orch/orch-client';
+import KlimopPaneel from './KlimopPaneel';
 import '../orch/orch.css';
 import './agenten-inspectie-maquette.css';
 
@@ -83,6 +84,7 @@ export default function TabOrch({ tr }: { tr: Tr }) {
     {data?.repo.aanwezig && <Taken tr={tr} lang={lang} data={data} open={open} setOpen={setOpen} />}
     {data?.repo.aanwezig && <Inleveren tr={tr} lang={lang} ctx={ctx} data={data} naKlaar={laden} />}
     {data?.repo.aanwezig && <Regels tr={tr} lang={lang} ctx={ctx} naKlaar={laden} acties={acties} />}
+    <KlimopPaneel tr={tr} lang={lang} ctx={ctx} />
     <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
   </div>;
 }

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLIMOP-014",
+  "agent": "antigravity",
+  "tak": "feature/klimop-014-platformintegratie-spiegel-20261121-080000",
+  "basisCommit": "3a339652bd590ef0a22c18d81a57ccbd58ea40a9",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.5.0",
+  "regelsHash": "ec86719112093a765c3711917f2ccecff77b35f98d066aceb471939a6ab07c8a",
+  "staat": "in_progress",
+  "gestart": "2026-11-21T07:59:57.149Z",
+  "bijgewerkt": "2026-11-21T07:59:57.150Z",
+  "omschrijving": "Платформна інтеграція «Плюща»: маршрути /api/owner/klimop/*, MCP-інструменти klimop_* для 14 агентів, вебпанель у Координації та дзеркальна звірка Сходинки 1 для 11 служб (§35)",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

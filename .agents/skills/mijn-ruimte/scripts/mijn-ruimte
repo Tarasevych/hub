@@ -33,6 +33,9 @@ export const KORT_NAAR_V2 = Object.freeze({
   orch_inleveren_begin: { beheer: 'starten_overdracht_antigravity_admin_tarasevych_com_beheer' },
   orch_inleveren_stuk: { beheer: 'uploaden_overdracht_deel_antigravity_admin_tarasevych_com_beheer' },
   orch_inleveren_klaar: { beheer: 'afronden_overdracht_antigravity_admin_tarasevych_com_beheer' },
+  klimop_overzicht: { beheer: 'tonen_klimop_status_antigravity_admin_tarasevych_com_beheer' },
+  klimop_architectuur_toets: { beheer: 'toetsen_klimop_regels_antigravity_admin_tarasevych_com_beheer' },
+  klimop_spiegel_controle: { beheer: 'testen_klimop_spiegel_antigravity_admin_tarasevych_com_beheer' },
   vaardigheden_aanbevelen: {
     gebruiker: 'kies_vaardigheden_antigravity_ai_tarasevych_com_gebruiker',
     beheer: 'kies_vaardigheden_antigravity_ai_tarasevych_com_beheer',
